@@ -97,10 +97,10 @@ tangent vectors of norm at most one, based at points of `S` and of a compact set
 time domain of each maximal geodesic the times at which it is defined and lies in `K`. Then the cut
 time from `S`, capped at `R`, is an upper semicontinuous function of the parameter. -/
 theorem upperSemicontinuous_rayCutTime_maximalGeodesic (hZ : Continuous Z) (hK : IsCompact K)
-    (hv : ∀ q, ‖(Z q).2‖ ≤ 1) (hR : 0 ≤ R) (hZS : ∀ q, (Z q).proj ∈ S)
+    (hv : ∀ q, ‖(Z q).snd‖ ≤ 1) (hR : 0 ≤ R) (hZS : ∀ q, (Z q).proj ∈ S)
     (hZK : ∀ q, (Z q).proj ∈ K) :
-    UpperSemicontinuous fun q ↦ rayCutTime (maximalGeodesic I M (Z q).proj (Z q).2) S
-      (geodesicInterval I M (Z q).proj (Z q).2 ∩ maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K)
+    UpperSemicontinuous fun q ↦ rayCutTime (maximalGeodesic I M (Z q).proj (Z q).snd) S
+      (geodesicInterval I M (Z q).proj (Z q).snd ∩ maximalGeodesic I M (Z q).proj (Z q).snd ⁻¹' K)
       R := by
   refine upperSemicontinuous_rayCutTime (fun q u _ hu ↦ (lipschitzOnWith_maximalGeodesic.mono
       (hu.trans inter_subset_left)).weaken (mod_cast hv q)) hR
@@ -114,10 +114,10 @@ theorem upperSemicontinuous_rayCutTime_maximalGeodesic (hZ : Continuous Z) (hK :
 vectors of norm at most one, based at points of `S` and of `K`, is a measurable function of the
 parameter. -/
 theorem measurable_rayCutTime_maximalGeodesic [MeasurableSpace P] [OpensMeasurableSpace P]
-    (hZ : Continuous Z) (hK : IsClosed K) (hv : ∀ q, ‖(Z q).2‖ ≤ 1) (hR : 0 ≤ R)
+    (hZ : Continuous Z) (hK : IsClosed K) (hv : ∀ q, ‖(Z q).snd‖ ≤ 1) (hR : 0 ≤ R)
     (hZS : ∀ q, (Z q).proj ∈ S) (hZK : ∀ q, (Z q).proj ∈ K) :
-    Measurable fun q ↦ rayCutTime (maximalGeodesic I M (Z q).proj (Z q).2) S
-      (geodesicInterval I M (Z q).proj (Z q).2 ∩ maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K)
+    Measurable fun q ↦ rayCutTime (maximalGeodesic I M (Z q).proj (Z q).snd) S
+      (geodesicInterval I M (Z q).proj (Z q).snd ∩ maximalGeodesic I M (Z q).proj (Z q).snd ⁻¹' K)
       R := by
   refine measurable_rayCutTime (fun q u _ hu ↦ (lipschitzOnWith_maximalGeodesic.mono
       (hu.trans inter_subset_left)).weaken (mod_cast hv q)) hR
@@ -125,20 +125,20 @@ theorem measurable_rayCutTime_maximalGeodesic [MeasurableSpace P] [OpensMeasurab
     (fun q ↦ by rw [maximalGeodesic_zero]; exact hZS q) ?_
   intro r
   by_cases hr : (r : ℝ) ∈ Icc 0 R
-  · let A : Set P := {q | Icc 0 (r : ℝ) ⊆ geodesicInterval I M (Z q).proj (Z q).2 ∩
-        maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K}
+  · let A : Set P := {q | Icc 0 (r : ℝ) ⊆ geodesicInterval I M (Z q).proj (Z q).snd ∩
+        maximalGeodesic I M (Z q).proj (Z q).snd ⁻¹' K}
     have hA : MeasurableSet A := by
       simpa only [A, subset_inter_iff, mapsTo_iff_subset_preimage] using
         measurableSet_setOfPred_Icc_subset_geodesicInterval_and_mapsTo hZ hK (r : ℝ)
-    have hc : ContinuousOn (fun q ↦ infEDist (maximalGeodesic I M (Z q).proj (Z q).2 r) S) A :=
+    have hc : ContinuousOn (fun q ↦ infEDist (maximalGeodesic I M (Z q).proj (Z q).snd r) S) A :=
       continuous_infEDist.comp_continuousOn fun q hq ↦
         (continuousAt_maximalGeodesic_comp hZ.continuousAt continuousAt_const
           (hq (right_mem_Icc.2 hr.1)).1).continuousWithinAt
     obtain ⟨C, hC, heq⟩ := continuousOn_iff_isClosed.1 hc
       {ENNReal.ofReal (r : ℝ)} isClosed_singleton
     have hmin : {q | (r : ℝ) ∈ rayMinimizingTimes
-        (maximalGeodesic I M (Z q).proj (Z q).2) S
-        (geodesicInterval I M (Z q).proj (Z q).2 ∩ maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K)
+        (maximalGeodesic I M (Z q).proj (Z q).snd) S
+        (geodesicInterval I M (Z q).proj (Z q).snd ∩ maximalGeodesic I M (Z q).proj (Z q).snd ⁻¹' K)
         R} = C ∩ A := by
       rw [← heq]
       ext q

@@ -7,23 +7,34 @@ module
 
 public import TauCeti.FieldTheory.Kummer.Cyclic
 public import TauCeti.RingTheory.Norm.RationalPoint
+public import TauCeti.RingTheory.Norm.Units
+import Mathlib.FieldTheory.SeparableDegree
+import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
-# Norms from a radical extension at a split base change
+# Norms from radical extensions
 
-Let `L = K(s)` with `sⁿ = b`, and suppose that `K` contains a primitive `n`-th root of
-unity. If `b` has an `n`-th root in a field extension `F/K`, then the norm from `F ⊗[K] L`
-is surjective on units. The binomial need not be irreducible, and no assumption that `n` is
-prime or that `[L : K] = n` is made.
+This file establishes two norm properties for radical extensions `L = K(s)` with `sⁿ = b`:
 
-Taking `F` to be a completion gives the local norm conditions at places where the radicand
-is a power, used in the Kummer norm argument. The splitting-field realization comes from
-`TauCeti.isSplittingField_X_pow_sub_C_of_adjoin_eq_top`, and the norm theorem comes from
-`AlgHom.normUnits_tensorProduct_surjective`.
+1. **Split base change** (`IsPrimitiveRoot.normUnits_tensorProduct_surjective_of_pow_eq`): when `K`
+   contains a primitive `n`-th root of unity and `b` has an `n`-th root in a field extension `F/K`,
+   the norm from `F ⊗[K] L` is surjective on units. The binomial need not be irreducible, and no
+   assumption that `n` is prime or that `[L : K] = n` is made. Taking `F` to be a completion gives
+   the local norm conditions at places where the radicand is a power, used in the Kummer proof of
+   the fundamental inequalities.
+2. **Tate's Steinberg norm-product criterion** (`Submonoid.mem_of_add_eq_one_of_normUnits_mem`):
+   for any field `K` in which `n` is invertible and units `a, b ∈ Kˣ` with `a + b = 1`, `a` is a
+   product of norms from finite separable simple radical extensions `L = K(β)` with `βⁿ = b`.
+   Factoring `Xⁿ - b` into monic irreducible polynomials `f`, each factor contributes
+   `f(1) = N_{K[X]/(f)/K}(1 - θ)` via `AdjoinRoot.norm_algebraMap_sub_root`. This is the
+   field-generic core factored from `TauCeti/FieldTheory/GaloisCohomology/Steinberg.lean`
+   (`TauCeti.explicitCup11_kummerMap_eq_zero_of_add_eq_one`) and shared with the local
+   norm-residue symbol (`TauCeti/NumberTheory/LocalField/NormResidueSymbol/Steinberg.lean`).
 
 ## References
 
 * J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, Proposition 6.10.
+* J. Tate, *Relations between K₂ and Galois cohomology*, Invent. Math. 36 (1976), 257–274.
 -/
 
 public noncomputable section
@@ -51,3 +62,79 @@ theorem normUnits_tensorProduct_surjective_of_pow_eq
   exact (IsSplittingField.lift L (X ^ n - C b) hsplit).normUnits_tensorProduct_surjective
 
 end IsPrimitiveRoot
+
+namespace Submonoid
+
+universe u
+
+/-- For a monic irreducible factor `f` of `Xⁿ - b` with `(b : K) ≠ 1`, `f(1)` is a unit equal to
+`N_{K[X]/(f)/K}(1 - θ)` and hence lies in any submonoid `S ≤ Kˣ` containing norms from finite
+separable simple `n`-th-root extensions of `b`. -/
+private theorem exists_eval_one_mem_of_dvd_X_pow_sub_C {K : Type u} [Field K] (S : Submonoid Kˣ)
+    {n : ℕ} (hn : (n : K) ≠ 0) {b : Kˣ} (hb : (b : K) ≠ 1) {f : K[X]} (hirr : Irreducible f)
+    (hmonic : f.Monic) (hdvd : f ∣ X ^ n - C (b : K))
+    (hS : ∀ (L : Type u) [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
+      (β : Lˣ), β ^ n = Units.map (algebraMap K L).toMonoidHom b → K⟮(β : L)⟯ = ⊤ →
+      ∀ c : Lˣ, TauCeti.Algebra.normUnits K c ∈ S) :
+    ∃ c : Kˣ, (c : K) = f.eval 1 ∧ c ∈ S := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have := Fact.mk hirr
+  have : FiniteDimensional K (AdjoinRoot f) := (AdjoinRoot.powerBasis hirr.ne_zero).finite
+  have hsep : IsSeparable K (AdjoinRoot.root f) := by
+    rw [IsSeparable, AdjoinRoot.minpoly_root hirr.ne_zero, hmonic.leadingCoeff, inv_one, C_1,
+      mul_one]
+    exact (separable_X_pow_sub_C (b : K) hn b.ne_zero).of_dvd hdvd
+  have : Algebra.IsSeparable K (AdjoinRoot f) := by
+    have h := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable K (AdjoinRoot f)).2 hsep
+    rw [IntermediateField.adjoin_root_eq_top f] at h
+    exact (IntermediateField.isSeparable_top K (AdjoinRoot f)).1 h
+  have hθ : AdjoinRoot.root f ^ n = AdjoinRoot.of f (b : K) := by
+    have h := AdjoinRoot.mk_eq_zero.2 hdvd
+    rw [← AdjoinRoot.aeval_eq, map_sub, map_pow, aeval_X, aeval_C] at h
+    exact sub_eq_zero.1 h
+  have hθ0 : AdjoinRoot.root f ≠ 0 := fun h ↦ by
+    rw [h, zero_pow hn0, eq_comm, map_eq_zero_iff _ (AdjoinRoot.of f).injective] at hθ
+    exact b.ne_zero hθ
+  have hθ1 : (1 : AdjoinRoot f) - AdjoinRoot.root f ≠ 0 := fun h ↦ by
+    rw [← sub_eq_zero.1 h, one_pow, eq_comm, map_eq_one_iff _ (AdjoinRoot.of f).injective] at hθ
+    exact hb hθ
+  refine ⟨TauCeti.Algebra.normUnits K (Units.mk0 (1 - AdjoinRoot.root f) hθ1), ?_,
+    hS (AdjoinRoot f) (Units.mk0 (AdjoinRoot.root f) hθ0)
+      (Units.ext (by simpa [AdjoinRoot.algebraMap_eq] using hθ))
+      (by simpa using IntermediateField.adjoin_root_eq_top f) _⟩
+  rw [TauCeti.Algebra.coe_normUnits, Units.val_mk0, ← map_one (AdjoinRoot.of f),
+    AdjoinRoot.norm_algebraMap_sub_root hmonic]
+
+/-- **Tate's Steinberg norm-product criterion** (Tate, *Invent. Math.* 36 (1976), 257–274).
+Let `K` be a field in which `n` is invertible, `a, b ∈ Kˣ` with `(a : K) + b = 1`, and
+`S : Submonoid Kˣ`. If `S` contains `Algebra.normUnits K c` for every unit `c` of every finite
+separable simple radical extension `L = K(β)` with `βⁿ = b`, then `a ∈ S`. -/
+theorem mem_of_add_eq_one_of_normUnits_mem {K : Type u} [Field K] (S : Submonoid Kˣ) {n : ℕ}
+    (hn : (n : K) ≠ 0) {a b : Kˣ} (hab : (a : K) + b = 1)
+    (hS : ∀ (L : Type u) [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
+      (β : Lˣ), β ^ n = Units.map (algebraMap K L).toMonoidHom b → K⟮(β : L)⟯ = ⊤ →
+      ∀ c : Lˣ, TauCeti.Algebra.normUnits K c ∈ S) :
+    a ∈ S := by
+  classical
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hb : (b : K) ≠ 1 := fun hb1 ↦ a.ne_zero (by linear_combination hab - hb1)
+  set p : K[X] := X ^ n - C (b : K) with hp
+  have hpmonic : p.Monic := monic_X_pow_sub_C (b : K) hn0
+  -- `p(1) = 1 - b = a` is the product of `f(1)` over the monic irreducible factors `f` of `p`.
+  obtain ⟨c, hc, hcS⟩ : ∃ c : Kˣ, (c : K) = p.eval 1 ∧ c ∈ S := by
+    have hprod := leadingCoeff_mul_prod_normalizedFactors p
+    rw [hpmonic.leadingCoeff, C_1, one_mul] at hprod
+    rw [← hprod, eval_multiset_prod]
+    refine Multiset.prod_induction (fun y ↦ ∃ c : Kˣ, (c : K) = y ∧ c ∈ S) _ ?_
+      ⟨1, Units.val_one, S.one_mem⟩ ?_
+    · rintro _ _ ⟨c₁, rfl, hc₁⟩ ⟨c₂, rfl, hc₂⟩
+      exact ⟨c₁ * c₂, Units.val_mul c₁ c₂, S.mul_mem hc₁ hc₂⟩
+    · intro y hy
+      obtain ⟨f, hf, rfl⟩ := Multiset.mem_map.1 hy
+      obtain ⟨hirr, hmonic, hdvd⟩ := (Polynomial.mem_normalizedFactors_iff hpmonic.ne_zero).1 hf
+      exact S.exists_eval_one_mem_of_dvd_X_pow_sub_C hn hb hirr hmonic hdvd hS
+  have hca : c = a := Units.ext (by
+    rw [hc, hp, eval_sub, eval_pow, eval_X, eval_C, one_pow, ← hab, add_sub_cancel_right])
+  exact hca ▸ hcS
+
+end Submonoid

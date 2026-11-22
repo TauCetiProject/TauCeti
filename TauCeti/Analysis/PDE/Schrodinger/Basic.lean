@@ -28,6 +28,8 @@ is the strongly continuous unitary Schrödinger group. The dispersive estimate
 ## Main declarations
 
 * `TauCeti.schrodingerPropagator`: the propagator `S(t)` on `L²(E, F)`.
+* `TauCeti.adjoint_schrodingerPropagator`: the adjoint of `S(t)` is `S(-t)`.
+* `TauCeti.hasTemperateGrowth_phaseSymbol_laplacianSymbol`: its symbol has temperate growth.
 
 ## References
 
@@ -57,5 +59,22 @@ abbrev schrodingerPropagator (t : ℝ) :
 theorem schrodingerPropagator_def (t : ℝ) :
     schrodingerPropagator F t = phasePropagator (E := E) F laplacianSymbol t :=
   (rfl)
+
+/-- The adjoint of `S(t)` is `S(-t)`. -/
+theorem adjoint_schrodingerPropagator (t : ℝ) :
+    ContinuousLinearMap.adjoint (schrodingerPropagator (E := E) F t) =
+      schrodingerPropagator F (-t) := by
+  rw [schrodingerPropagator_def, schrodingerPropagator_def, adjoint_phasePropagator]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The Schrödinger symbol `exp(-4π² i t ‖ξ‖²)` has temperate growth. -/
+theorem hasTemperateGrowth_phaseSymbol_laplacianSymbol (t : ℝ) :
+    (phaseSymbol (laplacianSymbol (E := E)) t).HasTemperateGrowth := by
+  have h : phaseSymbol (laplacianSymbol (E := E)) t =
+      fun ξ ↦ Complex.exp (((t * -(4 * Real.pi ^ 2 * ‖ξ‖ ^ 2) : ℝ) : ℂ) * Complex.I) := by
+    ext ξ
+    rw [phaseSymbol_apply, laplacianSymbol_apply]
+  rw [h]
+  exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
 
 end TauCeti

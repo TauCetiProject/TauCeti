@@ -97,6 +97,14 @@ theorem mem_smoothVanishingIdeal_iff {x : M} {f : C^∞⟮I, M; ℝ⟯} :
     f ∈ smoothVanishingIdeal I x ↔ f x = 0 :=
   RingHom.mem_ker
 
+/-- The vanishing ideal at `x` is also the kernel of evaluation at `x` as an `ℝ`-algebra
+homomorphism. -/
+@[simp]
+theorem ker_evalAlgHom_eq_smoothVanishingIdeal (x : M) :
+    RingHom.ker (ContMDiffMap.evalAlgHom x : C^∞⟮I, M; ℝ⟯ →ₐ[ℝ] ℝ) = smoothVanishingIdeal I x :=
+  Ideal.ext fun f ↦ by
+    rw [RingHom.mem_ker, ContMDiffMap.evalAlgHom_apply, mem_smoothVanishingIdeal_iff]
+
 /-- A function in the square of the vanishing ideal at `x` vanishes at `x`. -/
 theorem apply_eq_zero_of_mem_smoothVanishingIdeal_sq {x : M} {f : C^∞⟮I, M; ℝ⟯}
     (hf : f ∈ smoothVanishingIdeal I x ^ 2) : f x = 0 :=
@@ -146,7 +154,7 @@ private theorem mvfderivSmoothVanishingIdeal_mul (x : M) (f g : smoothVanishingI
   rw [mvfderivSmoothVanishingIdeal_apply]
   refine mvfderiv_eq_zero_of_mem_smoothVanishingIdeal_sq ?_
   rw [sq]
-  exact Ideal.mul_mem_mul f.2 g.2
+  exact Ideal.mul_mem_mul f.property g.property
 
 section Pullback
 
@@ -187,7 +195,7 @@ theorem smoothCotangentMap_toCotangent (φ : C^∞⟮J, N; I, M⟯) {x : M} {y :
     (f : smoothVanishingIdeal I x) :
     smoothCotangentMap φ h ((smoothVanishingIdeal I x).toCotangent f) =
       (smoothVanishingIdeal J y).toCotangent
-        ⟨(f : C^∞⟮I, M; ℝ⟯).comp φ, comp_mem_smoothVanishingIdeal φ h f.2⟩ :=
+        ⟨(f : C^∞⟮I, M; ℝ⟯).comp φ, comp_mem_smoothVanishingIdeal φ h f.property⟩ :=
   (Ideal.mapCotangent_toCotangent _ _ _ _ f).trans
     (congrArg _ (Subtype.ext (ContMDiffMap.compRightAlgHom_apply ℝ φ _)))
 
@@ -337,7 +345,7 @@ def smoothCotangentEquiv {x : M} (hx : I.IsInteriorPoint x) :
       rw [Ideal.Cotangent.lift_toCotangent, mvfderivSmoothVanishingIdeal_apply] at hu
       rw [Ideal.toCotangent_eq_zero]
       exact mem_smoothVanishingIdeal_sq_of_mvfderiv_eq_zero hx
-        (mem_smoothVanishingIdeal_iff.mp f.2) hu,
+        (mem_smoothVanishingIdeal_iff.mp f.property) hu,
     fun L ↦ by
       -- Realize `L` as the differential of a smooth function vanishing at `x`.
       obtain ⟨f, hf, -, -, hf₀, hf₁⟩ :=
@@ -513,7 +521,7 @@ spaces `I_x(M) / I_x(M)² ≃ I_x(U) / I_x(U)²`. -/
 def smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (x : M)) :
     (smoothVanishingIdeal I (x : M)).Cotangent ≃ₗ[ℝ] (smoothVanishingIdeal I x).Cotangent :=
   LinearEquiv.ofBijective
-    (smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
+    (smoothCotangentMap (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯) (y := x)
       (by simp))
     (smoothCotangentMap_bijective _ _ (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
       ⟨Manifold.tangentSpaceOpenEquiv x, (Manifold.mfderiv_subtype_val x).symm⟩)
@@ -521,7 +529,7 @@ def smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (
 /-- Restriction to an open set is the pullback of cotangent classes along the inclusion of `U`. -/
 theorem coe_smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (x : M)) :
     ⇑(smoothCotangentRestrictEquiv U hx) =
-      smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
+      smoothCotangentMap (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯) (y := x)
         (by simp) :=
   funext (LinearEquiv.ofBijective_apply _)
 
@@ -531,8 +539,8 @@ theorem smoothCotangentRestrictEquiv_toCotangent (U : Opens M) {x : U}
     (hx : I.IsInteriorPoint (x : M)) (f : smoothVanishingIdeal I (x : M)) :
     smoothCotangentRestrictEquiv U hx ((smoothVanishingIdeal I (x : M)).toCotangent f) =
       (smoothVanishingIdeal I x).toCotangent
-        ⟨(f : C^∞⟮I, M; ℝ⟯).comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯),
-          comp_mem_smoothVanishingIdeal _ (by simp) f.2⟩ := by
+        ⟨(f : C^∞⟮I, M; ℝ⟯).comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯),
+          comp_mem_smoothVanishingIdeal _ (by simp) f.property⟩ := by
   rw [coe_smoothCotangentRestrictEquiv]
   exact smoothCotangentMap_toCotangent _ (by simp) f
 

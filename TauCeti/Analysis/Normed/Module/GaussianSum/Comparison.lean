@@ -22,7 +22,8 @@ Contractions of the finite Euclidean coefficient space decrease the second momen
 of a normed-space-valued Gaussian sum. Consequently, domination of all scalar square
 functions implies domination of the Gaussian second moments. The target need not be
 complete: integration of vector-valued functions is performed only in the finite-dimensional
-coefficient space.
+coefficient space. In particular the Gaussian second moment of a family does not change when the
+family is reindexed or when the signs of its members are changed.
 
 ## References
 
@@ -108,5 +109,27 @@ theorem gaussianSecondMoment_le_of_weakTwo_le (x : ι → Y) (y : κ → Y)
   simpa only [U, sum_apply, ContinuousLinearMap.smulRight_apply,
     EuclideanSpace.coe_proj, ← hxy] using
     U.integral_norm_sq_comp_le_stdGaussian D.adjoint (ContinuousLinearMap.adjoint.norm_map D ▸ hD)
+
+/-- Families with the same square sums against every real continuous functional have the same
+Gaussian second moment. -/
+theorem gaussianSecondMoment_eq_of_weakTwo_eq (x : ι → Y) (y : κ → Y)
+    (h : ∀ f : StrongDual ℝ Y,
+      ∑ i, |f (x i)| ^ 2 = ∑ j, |f (y j)| ^ 2) :
+    gaussianSecondMoment x = gaussianSecondMoment y :=
+  le_antisymm (gaussianSecondMoment_le_of_weakTwo_le x y fun f ↦ (h f).le)
+    (gaussianSecondMoment_le_of_weakTwo_le y x fun f ↦ (h f).ge)
+
+/-- Reindexing a family along an equivalence does not change its Gaussian second moment. -/
+theorem gaussianSecondMoment_comp_equiv (e : κ ≃ ι) (x : ι → Y) :
+    gaussianSecondMoment (x ∘ e) = gaussianSecondMoment x :=
+  gaussianSecondMoment_eq_of_weakTwo_eq _ _ fun f ↦ e.sum_comp fun i ↦ |f (x i)| ^ 2
+
+/-- Changing the signs of the members of a family does not change its Gaussian second moment. -/
+@[simp]
+theorem gaussianSecondMoment_units_smul (ε : ι → ℤˣ) (x : ι → Y) :
+    gaussianSecondMoment (fun i ↦ ε i • x i) = gaussianSecondMoment x := by
+  refine gaussianSecondMoment_eq_of_weakTwo_eq _ _ fun f ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Units.smul_def, map_zsmul, ← Units.smul_def, ← Real.norm_eq_abs, ← Real.norm_eq_abs,
+    norm_units_zsmul]
 
 end TauCeti

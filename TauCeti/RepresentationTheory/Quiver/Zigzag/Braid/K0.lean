@@ -58,7 +58,7 @@ open CategoryTheory CategoryTheory.Limits
 
 universe u w
 
-variable (k : Type w) {V : Type u} [Finite V] (G : SimpleGraph V)
+variable (k : Type w) {V : Type u} (G : SimpleGraph V)
 
 local notation "A" => zigzagAlgebraIntegerGrade k G
 local notation "Γ" => zigzagAlgebraInternalGrading k G
@@ -69,7 +69,7 @@ attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 
 section CommRing
 
-variable [CommRing k]
+variable [CommRing k] [Finite V]
 
 /-! ### The terms of `B_i ⊗_Z P_j` are finite graded projectives -/
 
@@ -149,6 +149,8 @@ end CommRing
 
 /-! ### The Artin group action -/
 
+section Field
+
 variable [Field k] [Fintype V] [DecidableEq V]
 
 /-- **The action of the graph's Artin group on `K₀^gr(proj Z)`.** The standard generator at `i`
@@ -194,5 +196,7 @@ theorem zigzagBraidK0Action_gen_zigzagAlgebraGradedProjectiveClass (i j : V) :
   simp only [SimpleGraph.deformedReflection_apply, SimpleGraph.deformedCartanRow_single,
     map_sub, map_smul, Basis.equivFun_symm_single, zigzagAlgebraGradedProjectiveClassBasis_apply,
     IsUnit.unit_spec]
+
+end Field
 
 end TauCeti

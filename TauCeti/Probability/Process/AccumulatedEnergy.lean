@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Cumulative
+public import TauCeti.MeasureTheory.Integral.Lebesgue.CumulativeRepair
 public import TauCeti.Probability.Process.Predictable.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 
@@ -20,8 +21,9 @@ filtration are required.
 For a predictable process `H` valued in a normed additive commutative group, this makes the
 set where its accumulated square energy is finite predictable. Cutting `H` off on the complement
 therefore preserves predictability, and changes no values up to a horizon with finite square
-energy. The lower integral retains infinite energy instead of the fallback zero of a
-nonintegrable Bochner integral.
+energy. Its accumulated energy is continuous, even on paths with immediate right-hand
+explosion of the original energy. The lower integral retains infinite energy instead of the
+fallback zero of a nonintegrable Bochner integral.
 
 The results allow any s-finite atomless time measure; for Brownian integration use
 Lebesgue measure pulled back from `ℝ` to `ℝ≥0`. The closed initial segment can be replaced
@@ -51,6 +53,16 @@ def accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) (t : ℝ
 
 theorem accumulatedEnergy_def (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) :
     accumulatedEnergy μ H = fun t ω ↦ ∫⁻ s in Iic t, ‖H s ω‖ₑ ^ 2 ∂μ := (rfl)
+
+/-- For an atomless time measure, accumulated energy is the square-energy integral over
+`(0,t]`; the time-zero section contributes no mass. -/
+theorem accumulatedEnergy_eq_setLIntegral_Ioc (μ : Measure ℝ≥0) [NullSingletonClass μ]
+    (H : ℝ≥0 → Ω → E) (t : ℝ≥0) (ω : Ω) :
+    μ.accumulatedEnergy H t ω = ∫⁻ s in Ioc 0 t, ‖H s ω‖ₑ ^ 2 ∂μ := by
+  have heq : Iic t =ᵐ[μ] Ioc 0 t := by
+    simpa only [← bot_eq_zero, Icc_bot] using
+      (Ioc_ae_eq_Icc (μ := μ) (a := 0) (b := t)).symm
+  simp only [accumulatedEnergy_def, Measure.restrict_congr_set heq]
 
 /-- Accumulated square energy is nondecreasing on every path. -/
 theorem monotone_accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) (ω : Ω) :
@@ -101,6 +113,25 @@ theorem finiteEnergyCutoff_eqOn {μ : Measure ℝ≥0} {H : ℝ≥0 → Ω → E
     (hT : accumulatedEnergy μ H T ω < ∞) :
     EqOn (fun t ↦ finiteEnergyCutoff μ H t ω) (fun t ↦ H t ω) (Iic T) :=
   fun _ ht ↦ finiteEnergyCutoff_of_lt_top ((monotone_accumulatedEnergy μ H ω ht).trans_lt hT)
+
+/-- The repaired square-energy clock is continuous, including on paths where the original
+energy becomes infinite immediately after a finite-energy time. -/
+theorem continuous_accumulatedEnergy_finiteEnergyCutoff (μ : Measure ℝ≥0)
+    [NullSingletonClass μ] (H : ℝ≥0 → Ω → E) (ω : Ω) :
+    Continuous (fun t ↦ μ.accumulatedEnergy (μ.finiteEnergyCutoff H) t ω) := by
+  simpa only [accumulatedEnergy_eq_setLIntegral_Ioc, finiteEnergyCutoff_def,
+    Set.indicator_apply, Set.mem_ofPred_eq] using
+    μ.continuous_setLIntegral_enorm_sq_indicator_cumulative_lt_top (fun t ↦ H t ω) 0
+
+/-- Repairing an integrand never increases its accumulated energy. -/
+theorem accumulatedEnergy_finiteEnergyCutoff_le (μ : Measure ℝ≥0)
+    (H : ℝ≥0 → Ω → E) (t : ℝ≥0) (ω : Ω) :
+    μ.accumulatedEnergy (μ.finiteEnergyCutoff H) t ω ≤ μ.accumulatedEnergy H t ω := by
+  simp only [accumulatedEnergy_def]
+  apply lintegral_mono
+  intro s
+  simp only [finiteEnergyCutoff_def]
+  split_ifs <;> simp
 
 end MeasureTheory.Measure
 

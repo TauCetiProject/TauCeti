@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.KilledByRank
 public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.CartierDuality.Rank
+import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat.Affine
 import TauCeti.CategoryTheory.Monoidal.Mon
 
 /-!
@@ -88,11 +89,7 @@ private theorem pow_id_eq_one_of_isAffine {R : CommRingCat.{u}}
     (G : FiniteFlatCommGroupScheme (Spec R)) {n : ℕ} (hn : ∀ s, G.structureMap.finrank s = n) :
     (𝟙 G.toOver) ^ n = 1 := by
   let A := Grp.mk G.toOver
-  have : IsAffine A.X.left := isAffine_of_isAffineHom G.structureMap
-  let G' : FiniteLocallyFreeCommAffineGroupSchemeCat (CommRingCat.of R) :=
-    ⟨⟨A, (affineGroupSchemeProperty_iff _).mpr ‹_›⟩,
-      (finiteLocallyFreeCommAffineGroupSchemeProperty_iff _ _).mpr
-        ⟨G.finite, G.flat, G.locallyOfFinitePresentation, G.comm⟩⟩
+  let G' := (toAffine R).obj G
   let H := FiniteLocallyFreeCommAffineGroupSchemeCat.coordinateHopfAlgebra R G'
   -- `A` is the Hopf spectrum of its coordinate Hopf algebra `H`.
   let e : (hopfSpec (CommRingCat.of R)).obj (op H.obj) ≅ A :=

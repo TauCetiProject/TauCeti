@@ -66,7 +66,7 @@ theorem lcsToPLowerCentral_gradedMk (p : ℕ) (n : ℕ) (x : pLowerCentralSeries
     lcsToPLowerCentral p G n (gradedMk 0 G n x) =
       gradedMk p G n
         ⟨x, closedLowerCentralSeries_le_pLowerCentralSeries (G := G) p n (by
-          simpa only [closedLowerCentralSeries_def] using x.2)⟩ := by
+          simpa only [closedLowerCentralSeries_def] using x.property)⟩ := by
   rw [lcsToPLowerCentral, gradedMk_def, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
     QuotientGroup.quotientMapSubgroupOfOfLe_mk, gradedMk_def]
   congr 1

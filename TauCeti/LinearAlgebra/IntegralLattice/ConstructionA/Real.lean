@@ -63,7 +63,7 @@ theorem realEmbedding_injective [NeZero m] : Function.Injective (realEmbedding m
   funext i
   have hcoord := congrFun h i
   simp only [realEmbedding_apply] at hcoord
-  exact Rat.cast_injective ((div_left_inj' (Real.sqrt_ne_zero'.mpr
+  exact Rat.cast_injective ((div_left_inj₀ (Real.sqrt_ne_zero'.mpr
     (by exact_mod_cast NeZero.pos m))).mp hcoord)
 
 /-- The real Construction A carrier is the normalized image of its rational carrier. -/
@@ -94,17 +94,16 @@ theorem intCast_div_sqrt_mem_realLattice [NeZero m] {C : AddSubgroup (ι → ZMo
   · rintro ⟨w, hw, h⟩
     have hwz : w = z := by
       funext i
-      exact Int.cast_injective ((div_left_inj' (Real.sqrt_ne_zero'.mpr
+      exact Int.cast_injective ((div_left_inj₀ (Real.sqrt_ne_zero'.mpr
         (by exact_mod_cast NeZero.pos m))).mp (congrFun h i))
     simpa [hwz] using hw
   · exact fun hz ↦ ⟨z, hz, rfl⟩
 
 /-- For a nonzero modulus and finite coordinates, the real Construction A carrier is a full,
 finitely generated lattice in `ι → ℝ`. -/
-instance isLattice_realLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
-    (realLattice m C).IsLattice ℝ where
-  fg := (Submodule.IsLattice.fg (A := ℚ) (M := lattice m C)).map _
-  span_eq_top := by
+instance isFullLattice_realLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
+    (realLattice m C).IsFullLattice ℝ :=
+  have hspan : Submodule.span ℝ (realLattice m C : Set (ι → ℝ)) = ⊤ := by
     classical
     let := Fintype.ofFinite ι
     apply top_unique
@@ -119,6 +118,17 @@ instance isLattice_realLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → Z
     rcases eq_or_ne j i with rfl | hj
     · simp [field]
     · simp [hj]
+  -- An injective image of a full rational lattice has full real rank, so it is a real lattice.
+  have : (realLattice m C).IsLattice ℝ := by
+    classical
+    let := Fintype.ofFinite ι
+    refine (Submodule.IsLattice.iff_fg_and_finrank_span_eq_finrank ℝ _).mpr
+      ⟨(Submodule.IsLattice.fg ℚ (lattice m C)).map _, ?_⟩
+    rw [hspan, finrank_top, Module.finrank_fintype_fun_eq_card, realLattice,
+      ← LinearEquiv.finrank_eq (Submodule.equivMapOfInjective
+        ((realEmbedding m).restrictScalars ℤ) (realEmbedding_injective m) (lattice m C)),
+      Submodule.IsFullLattice.finrank_eq ℚ, Module.finrank_fintype_fun_eq_card]
+  ⟨hspan⟩
 
 variable [Fintype ι]
 
