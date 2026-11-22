@@ -42,6 +42,10 @@ near the diagonal of properly supported operators.
   diagonal, a symbol of order `m`, with the Leibniz rules `TauCeti.Amplitude.spatialDeriv_diagonal`
   and `TauCeti.Amplitude.frequencyDeriv_diagonal`.
 * `TauCeti.Amplitude.ofRight`: the amplitude `b(y, ξ)` of the right quantization of a symbol `b`.
+* `TauCeti.Amplitude.ofBoundedFrequencySupport`: a smooth coefficient vanishing at all large
+  frequencies, an amplitude of every order; so a smooth coefficient agreeing with an amplitude at
+  all large frequencies is an amplitude of the same order
+  (`TauCeti.Amplitude.exists_coefficient_eq_of_forall_le_norm`).
 * `TauCeti.Amplitude.smulPositions`: the product `φ(x, y) a(x, y, ξ)` with a smooth function of the
   positions, an amplitude of the same order; cutoffs `φ(x, y) = χ(x - y)` localize the kernel near
   the diagonal.
@@ -379,6 +383,86 @@ theorem iteratedFDerivAlong_amplitudeDirections_nil_ofRight (b : Symbol n V W m)
     iteratedFDerivAlong_comp_of_hasFDerivAt (fun _ ↦ hasFDerivAt_snd) b.contDiff_coefficient _
       (by simp), map_snd_amplitudeDirections_nil,
     ← mixedDeriv_eq_iteratedFDerivAlong _ _ (b.contDiff_coefficient.of_le (by simp))]
+
+/-! ### Coefficients with bounded frequency support -/
+
+section BoundedFrequencySupport
+
+/-- A smooth coefficient vanishing at every frequency of norm at least `R` satisfies the
+amplitude estimates of every order. -/
+private theorem exists_bound_of_forall_le_norm_eq_zero
+    {f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = 0) (s : ℝ)
+    {K : Set (CoordinateSpace n × CoordinateSpace n)} (hK : IsCompact K)
+    (ds : List (CoordinateSpace n × CoordinateSpace n × CoordinateSpace n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x y, (x, y) ∈ K → ∀ ξ,
+      ‖iteratedFDerivAlong ℝ ds f (x, y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+  -- On `K × closedBall 0 R` the continuous quotient of the derivative by the weight is bounded;
+  -- beyond the radius `R` the coefficient vanishes on a neighbourhood, and so do its derivatives.
+  have hw : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
+      (1 + ‖q.2‖ ^ 2) ^ (s / 2) :=
+    (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun q ↦
+      Or.inl (by positivity : (0 : ℝ) < 1 + ‖q.2‖ ^ 2).ne'
+  have hD : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
+      ‖iteratedFDerivAlong ℝ ds f (q.1.1, q.1.2, q.2)‖ :=
+    ((hf.iteratedFDerivAlong (m := 0) ds (by simp)).continuous.comp (by fun_prop)).norm
+  obtain ⟨M, hM⟩ := (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R))
+    |>.exists_bound_of_continuousOn (hD.div hw fun q ↦ (rpow_weight_pos q.2 _).ne').continuousOn
+  refine ⟨max M 0, le_max_right _ _, fun x y hxy ξ ↦ ?_⟩
+  rcases le_or_gt ‖ξ‖ R with hξ | hξ
+  · have h := hM ((x, y), ξ) ⟨hxy, mem_closedBall_zero_iff.2 hξ⟩
+    rw [Real.norm_eq_abs] at h
+    rw [← div_le_iff₀ (rpow_weight_pos ξ _)]
+    exact (le_abs_self _).trans (h.trans (le_max_left M 0))
+  · have hzero : f =ᶠ[𝓝 (x, y, ξ)] 0 := by
+      filter_upwards [(isOpen_lt continuous_const
+        (continuous_norm.comp (continuous_snd.comp continuous_snd))).mem_nhds hξ] with q hq
+      exact hR q.1 q.2.1 q.2.2 hq.le
+    rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero hzero, norm_zero]
+    exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+
+/-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
+of a coefficient and an amplitude agreeing at large frequencies, is an amplitude of every order
+`m`. -/
+def ofBoundedFrequencySupport
+    (f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = 0) :
+    Amplitude n V W m where
+  coefficient := f
+  contDiff_coefficient := hf
+  exists_bound _ hK α γ β :=
+    exists_bound_of_forall_le_norm_eq_zero hf R hR _ hK (amplitudeDirections α γ β)
+
+@[simp]
+theorem coefficient_ofBoundedFrequencySupport
+    (f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = 0) :
+    (ofBoundedFrequencySupport f hf R hR : Amplitude n V W m).coefficient = f :=
+  (rfl)
+
+/-- A smooth coefficient that agrees with an amplitude `b` of order `m' ≤ m` at all frequencies of
+norm at least `R` is an amplitude of order `m`: the difference vanishes at large frequencies. -/
+theorem exists_coefficient_eq_of_forall_le_norm
+    {f : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) {m' : ℝ} (b : Amplitude n V W m') (hm : m' ≤ m) (R : ℝ)
+    (h : ∀ x y ξ, R ≤ ‖ξ‖ → f (x, y, ξ) = b.coefficient (x, y, ξ)) :
+    ∃ c : Amplitude n V W m, c.coefficient = f := by
+  -- `f` is `b` plus the difference `f - b`, an amplitude of every order.
+  have hg : ContDiff ℝ ∞ (f - b.coefficient) := hf.sub b.contDiff_coefficient
+  let d : Amplitude n V W m := ofBoundedFrequencySupport (f - b.coefficient) hg R
+    fun x y ξ hξ ↦ sub_eq_zero.2 (h x y ξ hξ)
+  refine ⟨⟨f, hf, fun K hK α γ β ↦ ?_⟩, rfl⟩
+  obtain ⟨C, hC0, hC⟩ := b.exists_bound K hK α γ β
+  obtain ⟨D, hD0, hD⟩ := d.exists_bound K hK α γ β
+  refine ⟨C + D, add_nonneg hC0 hD0, fun x y hxy ξ ↦ ?_⟩
+  have e : f = b.coefficient + d.coefficient := by simp [d]
+  rw [e, iteratedFDerivAlong_add b.contDiff_coefficient d.contDiff_coefficient _ (by simp),
+    Pi.add_apply, add_mul]
+  exact (norm_add_le _ _).trans (add_le_add ((hC x y hxy ξ).trans
+    (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ (by linarith)) hC0))
+    (hD x y hxy ξ))
+
+end BoundedFrequencySupport
 
 /-! ### Multiplication by functions of the positions -/
 
