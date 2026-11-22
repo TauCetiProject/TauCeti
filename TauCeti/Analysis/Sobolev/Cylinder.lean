@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Sobolev.Strip.Operator
 import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
@@ -35,7 +36,10 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   (`TauCeti.StripSobolev.memLp_stripMeasure_of_bound_of_eq_zero`), in particular a continuous
   section vanishing for `|s|` large (`TauCeti.StripSobolev.memLp_stripMeasure_of_continuous`)
   and a product section `φ(s) ψ(t)` with `φ` compactly supported
-  (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`).
+  (`TauCeti.CylinderSobolev.memLp_smul_of_hasCompactSupport`). A section depending continuously
+  on `t` alone is essentially bounded (`TauCeti.CylinderSobolev.memLp_top_comp_snd`), and
+  multiplication by a continuous family of invertible maps depending on `t` alone maps `Lᵖ` onto
+  `Lᵖ` (`TauCeti.CylinderSobolev.surjective_operatorMultiplication_comp_snd`).
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
   `t` that vanish for `|s|` large.
 * The **jet** of a section is `jet ξ = (ξ, ∂s ξ, ∂t ξ)` (`TauCeti.StripSobolev.jet`). The jet of
@@ -113,6 +117,15 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem stripMeasure_eq_prod :
     stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
   rw [stripMeasure, Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
+
+omit [NormedSpace ℝ V] in
+/-- A section depending continuously on `t` alone is essentially bounded on the strip. -/
+theorem memLp_top_comp_snd {f : ℝ → V} (hf : Continuous f) :
+    MemLp (fun z : ℝ × ℝ ↦ f z.2) ∞ stripMeasure := by
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc (0 : ℝ) 1)
+    hf.continuousOn
+  exact memLp_top_of_bound (hf.comp continuous_snd).aestronglyMeasurable C
+    (ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ hC z.2 hz.2)
 
 /-- A product section `φ(s) ψ(t)`, with `φ` continuous of compact support and `ψ` continuous,
 lies in every `Lᵖ` of the strip. -/
@@ -378,6 +391,21 @@ theorem isCompactOperator_restrictValue_comp_subtypeL [FiniteDimensional ℝ V] 
 section Operator
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+
+/-- Multiplication by a continuous family `Φ_t` of invertible maps depending on `t` alone, the
+operator `f ↦ (z ↦ Φ_{z.2} (f z))`, maps `Lᵖ` of the strip onto `Lᵖ`: multiplication by the
+inverses `Φ_t⁻¹` is a right inverse. -/
+theorem surjective_operatorMultiplication_comp_snd [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {Φ : ℝ → V →L[ℝ] W} (hΦ : Continuous Φ) (hΦi : ∀ t, (Φ t).IsInvertible) :
+    Function.Surjective (Lp.operatorMultiplication p ((memLp_top_comp_snd hΦ).toLp _)) := by
+  have hΦinv := ((contDiff_zero (𝕜 := ℝ).2 hΦ).clm_inverse hΦi).continuous
+  set A := (memLp_top_comp_snd hΦ).toLp _
+  set B := (memLp_top_comp_snd hΦinv).toLp _
+  refine fun g ↦ ⟨Lp.operatorMultiplication p B g, Lp.ext ?_⟩
+  filter_upwards [Lp.operatorMultiplication_ae A (Lp.operatorMultiplication p B g),
+    Lp.operatorMultiplication_ae B g, (memLp_top_comp_snd hΦ).coeFn_toLp,
+    (memLp_top_comp_snd hΦinv).coeFn_toLp] with z h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, (hΦi z.2).self_apply_inverse]
 
 /-- The **semi-Fredholm estimate** with constants `C` and `T` for the first-order operator
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder: for every `C²` section `ξ` of period one in `t` that

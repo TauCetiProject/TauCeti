@@ -126,16 +126,16 @@ private theorem exists_forall_norm_fderiv_le {χ : ℝ → ℝ} {C₁ : ℝ} (h 
   ⟨C₁, fun s _ ↦ by rw [← norm_deriv_eq_norm_fderiv]; exact h s⟩
 
 omit [CompleteSpace D] in
-/-- **The error of a cutoff.** If `|χ| ≤ 1`, `|χ'| ≤ C₁` and `χ'` vanishes off the window
-`(-b, b)`, then `‖D_A (χ u)‖ ≤ ‖D_A u‖ + C₁ ‖ι ∘ u‖_{L²((-b, b), H)}`. -/
-private theorem norm_familyDomainTrajectoryOperator_smulLeftCLM_le {χ : ℝ → ℝ}
+/-- **The error of a cutoff.** If `|χ| ≤ C₀`, `|χ'| ≤ C₁` and `χ'` vanishes off the window
+`(-b, b)`, then `‖D_A (χ u)‖ ≤ C₀ ‖D_A u‖ + C₁ ‖ι ∘ u‖_{L²((-b, b), H)}`. -/
+theorem norm_familyDomainTrajectoryOperator_smulLeftCLM_le {χ : ℝ → ℝ}
     (hχ : ContDiffOn ℝ ∞ χ ((⊤ : Opens ℝ) : Set ℝ)) (h₀ : ∃ C, ∀ s ∈ (⊤ : Opens ℝ), ‖χ s‖ ≤ C)
-    (h₁ : ∃ C, ∀ s ∈ (⊤ : Opens ℝ), ‖fderiv ℝ χ s‖ ≤ C) (hχ₀ : ∀ s, |χ s| ≤ 1) {C₁ b : ℝ}
+    (h₁ : ∃ C, ∀ s ∈ (⊤ : Opens ℝ), ‖fderiv ℝ χ s‖ ≤ C) {C₀ C₁ b : ℝ} (hχ₀ : ∀ s, |χ s| ≤ C₀)
     (hχ₁ : ∀ s, |deriv χ s| ≤ C₁) (hχ' : ∀ s ∉ Ioo (-b) b, deriv χ s = 0)
     (AL : Lp (D →L[ℝ] H) ∞ μ₀) (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
     ‖familyDomainTrajectoryOperator ι AL
         (smulLeftCLM χ hχ h₀ h₁ ι.compLpL_multiplicationOperator u)‖ ≤
-      ‖familyDomainTrajectoryOperator ι AL u‖ +
+      C₀ * ‖familyDomainTrajectoryOperator ι AL u‖ +
         C₁ * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
   have hC₁ : 0 ≤ C₁ := (abs_nonneg _).trans (hχ₁ 0)
   set f := familyDomainTrajectoryOperator ι AL
@@ -147,7 +147,7 @@ private theorem norm_familyDomainTrajectoryOperator_smulLeftCLM_le {χ : ℝ →
   have hm := Lp.multiplicationOperator_linftyOfContinuousOn_ae hχ.continuousOn
     (⊤ : Opens ℝ).isOpen.measurableSet h₀ g
   refine (norm_le_insert' f m).trans (add_le_add ?_ ?_)
-  · refine (Lp.norm_le_mul_norm_of_ae_le_mul (c := 1) ?_).trans_eq (one_mul _)
+  · refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
     filter_upwards [hm] with s hs
     rw [hs, norm_smul, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_right (hχ₀ s) (norm_nonneg _)
@@ -162,6 +162,23 @@ private theorem norm_familyDomainTrajectoryOperator_smulLeftCLM_le {χ : ℝ →
       exact mul_le_mul_of_nonneg_right (hχ₁ s) (norm_nonneg _)
     · filter_upwards [hfm] with s hs hsW
       rw [hs, hχ' s hsW, zero_smul]
+
+/-- **A window estimate in the form of Peetre's lemma.** For compact `ι`, an estimate
+`‖u‖ ≤ C (‖P u‖ + ‖ι ∘ u‖_{L²((-T, T), H)})` on `L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` gives a compact operator
+`K` on the graph space with `‖u‖ ≤ C ‖P u‖ + ‖K u‖`: the restriction of `ι ∘ u` to the window is
+compact (`TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL_compLpL`). -/
+theorem exists_isCompactOperator_and_norm_le_of_forall_norm_le (hι : IsCompactOperator ι)
+    {G : Type*} [Norm G] {P : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) → G} {C T : ℝ}
+    (hC : ∀ u, ‖u‖ ≤ C * (‖P u‖ +
+      ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top u‖)) :
+    ∃ K : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] Lp H 2 (volume.restrict (Ioo (-T) T)),
+      IsCompactOperator K ∧ ∀ u, ‖u‖ ≤ C * ‖P u‖ + ‖K u‖ := by
+  set R := restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top
+  refine ⟨C • R, ?_, fun u ↦ ?_⟩
+  · rw [FunLike.coe_smul]
+    exact (isCompactOperator_restrictBaseL_compLpL hι _).smul C
+  · rw [smul_apply, norm_smul, Real.norm_eq_abs]
+    linarith [hC u, mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg (R u))]
 
 /-! ### The middle piece -/
 
@@ -271,11 +288,11 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
     (exists_forall_norm_fderiv_le hmL) ι.compLpL_multiplicationOperator u)
   -- The two ends `w₊ = βp u` and `w₋ = βm u`.
   have hDtop : ‖familyDomainTrajectoryOperator ι AL wtop‖ ≤ N + L * R :=
-    norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hp1 hpL
-      (fun s hs ↦ hpT s (hwin s hs)) _ u
+    (norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hp1 hpL
+      (fun s hs ↦ hpT s (hwin s hs)) _ u).trans_eq (by rw [one_mul])
   have hDbot : ‖familyDomainTrajectoryOperator ι AL wbot‖ ≤ N + L * R :=
-    norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hm1 hmL
-      (fun s hs ↦ hmT s (hwin s hs)) _ u
+    (norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hm1 hmL
+      (fun s hs ↦ hmT s (hwin s hs)) _ u).trans_eq (by rw [one_mul])
   have hwtop := norm_le_max_mul_of_ae_prev_eq_smul (S := Iio Ttop) hCtop
     (fun s hs ↦ hβp s (by linarith [mem_Iio.1 hs])) hptop hDtop
   have hwbot := norm_le_max_mul_of_ae_prev_eq_smul (S := Ioi Tbot) hCbot
@@ -344,26 +361,6 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_r
     mul_nonneg (mul_nonneg hM hL₀) hN, mul_nonneg (mul_nonneg hM (le_max_right c 0)) hN,
     mul_nonneg hM hR]
 
-/-- The semi-Fredholm estimate in the form of Peetre's lemma: for compact `ι`, there is a compact
-operator `K` on the graph space with `‖u‖ ≤ C ‖D_A u‖ + ‖K u‖`. -/
-private theorem exists_isCompactOperator_and_norm_le (hι : IsCompactOperator ι)
-    (hSymmbot : ∀ x y : D, ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ) (hBbot : Bbot.IsInvertible)
-    (hSymmtop : ∀ x y : D, ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ) (hBtop : Btop.IsInvertible)
-    (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
-    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
-    ∃ (T C : ℝ) (K : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ]
-      Lp H 2 (volume.restrict (Ioo (-T) T))), IsCompactOperator K ∧
-        ∀ u, ‖u‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL u‖ + ‖K u‖ := by
-  obtain ⟨C, T, hC⟩ :=
-    exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL
-      hSymmbot hBbot hSymmtop hBtop hAL hbot htop hc
-  set R := restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-T) T, isOpen_Ioo⟩) le_top
-  refine ⟨T, C, C • R, ?_, fun u ↦ ?_⟩
-  · rw [FunLike.coe_smul]
-    exact (isCompactOperator_restrictBaseL_compLpL hι _).smul C
-  · rw [smul_apply, norm_smul, Real.norm_eq_abs]
-    linarith [hC u, mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg (R u))]
-
 /-- **The kernel of the trajectory operator over a compactly embedded domain is finite
 dimensional.** Under the hypotheses of
 `exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL`, if moreover
@@ -375,8 +372,10 @@ theorem finiteDimensional_ker_familyDomainTrajectoryOperator (hι : IsCompactOpe
     (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     FiniteDimensional ℝ (familyDomainTrajectoryOperator (p := 2) ι AL).ker := by
-  obtain ⟨T, C, K, hK, hCK⟩ := exists_isCompactOperator_and_norm_le hι hSymmbot hBbot hSymmtop
-    hBtop hAL hbot htop hc
+  obtain ⟨C, T, hC⟩ :=
+    exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL
+      hSymmbot hBbot hSymmtop hBtop hAL hbot htop hc
+  obtain ⟨K, hK, hCK⟩ := exists_isCompactOperator_and_norm_le_of_forall_norm_le hι hC
   exact (familyDomainTrajectoryOperator ι AL).finiteDimensional_ker_of_compact_estimate hK hCK
 
 /-- **The range of the trajectory operator over a compactly embedded domain is closed.** Under the
@@ -390,8 +389,10 @@ theorem isClosed_range_familyDomainTrajectoryOperator (hι : IsCompactOperator �
     (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     IsClosed ((familyDomainTrajectoryOperator (p := 2) ι AL).range : Set (Lp H 2 μ₀)) := by
-  obtain ⟨T, C, K, hK, hCK⟩ := exists_isCompactOperator_and_norm_le hι hSymmbot hBbot hSymmtop
-    hBtop hAL hbot htop hc
+  obtain ⟨C, T, hC⟩ :=
+    exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_restrictBaseL
+      hSymmbot hBbot hSymmtop hBtop hAL hbot htop hc
+  obtain ⟨K, hK, hCK⟩ := exists_isCompactOperator_and_norm_le_of_forall_norm_le hι hC
   exact (familyDomainTrajectoryOperator ι AL).isClosed_range_of_compact_estimate hK hCK
 
 end TauCeti.WeakDerivStep
