@@ -425,8 +425,8 @@ theorem isUniformizer_iff_ord_eq_one {t : F} : P.valuation.IsUniformizer t ↔ P
   Valuation.isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top P.valuation P.valueGroup_eq_top
 
 theorem exists_isUniformizer : ∃ t : F, P.valuation.IsUniformizer t :=
-  (Valuation.exists_isUniformizer_iff_generator_mem_range P.valuation).mpr
-    (P.valuation_surjective _)
+  let ⟨π, hπ⟩ := P.valuation.exists_isUniformizer_of_isCyclic_of_nontrivial
+  ⟨π, hπ⟩
 
 /-- A uniformizer of a place is irreducible in its valuation ring. -/
 theorem irreducible_of_isUniformizer {t : P.integers}

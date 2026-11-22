@@ -21,10 +21,11 @@ value group, and one exists exactly when the valuation attains that generator. I
 quotient laws are stated on division rings; valuation-subring results are stated on fields. Facts
 about surjective valuations that do not involve the order are in
 `TauCeti.RingTheory.Valuation.Surjective`, under the conditions on the value group each needs: the
-value group is full with no condition (and on a division ring, full value group means
-surjectivity), the valuation is nontrivial exactly when its target has an element other than `0`
-and `1`, equivalent surjective valuations are equal when the units of the target form a cyclic
-group, and the valuation ring is discrete when those units are moreover nontrivial.
+value group is full with no condition (and for a valuation from a division ring into an ordered
+group with zero, full value group means surjectivity), the valuation is nontrivial exactly when
+its target has an element other than `0` and `1`, equivalent surjective valuations are equal when
+the units of the target form a cyclic group, and the valuation ring is discrete when those units
+are moreover nontrivial.
 As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
 On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
 included where necessary.
@@ -300,11 +301,10 @@ theorem ord_div_zpow (v : _root_.Valuation F ℤᵐ⁰) {f t : F} (hf : f ≠ 0)
   rw [ord_div v hf (zpow_ne_zero _ ht), ord_zpow]
 
 /-- **A valuation that takes the value `exp (-1)` is surjective onto `ℤᵐ⁰`**: `exp (-1)` generates
-the units of `ℤᵐ⁰`, so the value group is full, which on a division ring means surjectivity. -/
+the units of `ℤᵐ⁰`, and on a division ring a valuation attaining a generator is surjective. -/
 theorem surjective_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰) {t : F}
     (ht : v t = WithZero.exp (-1)) : Function.Surjective v :=
-  (valueGroup_eq_top_iff_surjective (v : F →*₀ ℤᵐ⁰)).mp <| top_unique <|
-    zpowers_mk0_exp_neg_one ▸ Subgroup.zpowers_le.mpr (mem_valueGroup _ ⟨t, ht⟩)
+  (v : F →*₀ ℤᵐ⁰).surjective_of_mem_range_of_zpowers_eq_top ⟨t, ht⟩ zpowers_mk0_exp_neg_one
 
 end DivisionRing
 

@@ -14,8 +14,10 @@ public import Mathlib.RingTheory.Valuation.Discrete.Basic
 Normalized valuations, such as the valuation of a place of a function field, are surjective onto
 their value group with zero. This file records the consequences of surjectivity that do not involve
 an additive order. A surjective monoid-with-zero homomorphism has full value group, with no
-condition on the codomain; between groups with zero, for instance for a valuation on a division
-ring, full value group conversely means surjectivity. A surjective valuation is nontrivial exactly
+condition on the codomain; between groups with zero, for instance for a valuation from a division
+ring into an ordered group with zero, full value group conversely means surjectivity, so such a map
+is surjective as soon as it attains a generator of the units of its codomain. A surjective
+valuation is nontrivial exactly
 when its target has an element other than `0` and `1`, for instance a unit other than `1`; on a
 field its valuation ring is then a proper subring, and a discrete valuation ring if moreover the
 units of the target form a cyclic group. Finally, two equivalent valuations whose value groups
@@ -28,6 +30,8 @@ isomorphic as ordered groups is not enough: equivalence always provides such an 
   has full value group.
 * `MonoidWithZeroHom.valueGroup_eq_top_iff_surjective`: between groups with zero, the converse
   holds as well.
+* `MonoidWithZeroHom.surjective_of_mem_range_of_zpowers_eq_top`: between groups with zero, a map
+  that attains a generator of the units of its codomain is surjective.
 * `Valuation.isNontrivial_iff_of_surjective`: a surjective valuation is nontrivial exactly when
   `Γ₀` has an element other than `0` and `1`.
 * `Valuation.isNontrivial_of_surjective`: a surjective valuation is nontrivial when `Γ₀ˣ` is.
@@ -74,9 +78,17 @@ theorem valueGroup_eq_top_iff_surjective (f : A →*₀ B) :
   refine ⟨fun h b ↦ ?_, valueGroup_eq_top_of_surjective f⟩
   rcases eq_or_ne b 0 with rfl | hb
   · exact ⟨0, map_zero f⟩
-  have hb' : b ∈ Units.val '' (f.valueGroup : Set Bˣ) := ⟨Units.mk0 b hb, by simp [h], rfl⟩
-  rw [valueGroup_eq_range] at hb'
-  exact hb'.1
+  have hb' : Units.mk0 b hb ∈ (f.valueMonoid : Set Bˣ) := by
+    rw [valueMonoid_eq_valueGroup', h]
+    trivial
+  exact (mem_valueMonoid_iff f).mp hb'
+
+/-- **Between groups with zero, a map that attains a generator of the units of its codomain is
+surjective**: the value group contains that generator, so it is full. -/
+theorem surjective_of_mem_range_of_zpowers_eq_top (f : A →*₀ B) {u : Bˣ}
+    (hu : (u : B) ∈ Set.range f) (hzu : Subgroup.zpowers u = ⊤) : Function.Surjective f :=
+  (valueGroup_eq_top_iff_surjective f).mp <| top_unique <|
+    hzu ▸ Subgroup.zpowers_le.mpr (mem_valueGroup _ hu)
 
 end GroupWithZero
 
