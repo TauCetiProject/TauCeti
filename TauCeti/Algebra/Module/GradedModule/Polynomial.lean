@@ -9,6 +9,8 @@ public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Polynomial.Degree.Support
 public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
+import Mathlib.RingTheory.Adjoin.Polynomial.Basic
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # Graded modules over a polynomial ring
@@ -96,19 +98,9 @@ theorem bddAbove_setOf_piece_ne_bot [Module.Finite k[X] M]
     refine Submodule.iSup_induction _ (motive := fun y ↦ (X : k[X]) • y ∈ L) hy
       (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simpa only [smul_add] using L.add_mem hy hz
     exact Submodule.mem_iSup_of_mem ⟨(q : ℤ) - d, by grind⟩ (hX hy)
-  have hXnL : ∀ n : ℕ, ∀ y ∈ L, (X ^ n : k[X]) • y ∈ L := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih => exact fun y hy ↦ by simpa only [pow_succ, mul_smul] using ih _ (hXL y hy)
-  have hAL : ∀ (a : k[X]), ∀ y ∈ L, a • y ∈ L := by
-    intro a
-    induction a using Polynomial.induction_on' with
-    | add a b ha hb => exact fun y hy ↦ by simpa only [add_smul] using L.add_mem (ha y hy) (hb y hy)
-    | monomial n c =>
-      intro y hy
-      rw [← C_mul_X_pow_eq_monomial, mul_smul, ← algebraMap_eq, algebraMap_smul]
-      exact L.smul_mem c (hXnL n y hy)
+  have hAL : ∀ (a : k[X]), ∀ y ∈ L, a • y ∈ L := fun a _ hy ↦
+    Algebra.smul_mem_of_mem_adjoin (s := {X}) (by simpa using hXL)
+      (adjoin_X (R := k) ▸ Algebra.mem_top) hy
   let L' : Submodule k[X] M := { L.toAddSubmonoid with smul_mem' := hAL }
   have hL : ∀ y : M, y ∈ L := by
     have hsL : Submodule.span k[X] (s : Set M) ≤ L' := by
