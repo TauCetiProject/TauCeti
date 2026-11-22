@@ -58,30 +58,23 @@ theorem IsPrincipalIdealRing.of_krullDimLE_one {R : Type*} [CommRing R] [IsDomai
     ⟨inferInstance, fun P hP _ ↦ eq_maximalIdeal (Ideal.isMaximal_of_isPrime_of_ne_bot P hP)⟩
   exact ((tfae_of_isNoetherianRing_of_isLocalRing_of_isDomain R).out 4 1).mp hnormal
 
-namespace IsDiscreteValuationRing
-
 /-- A Noetherian integrally closed local domain of Krull dimension at most one that is not a
 field is a discrete valuation ring. -/
-theorem of_krullDimLE_one {R : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
-    [IsNoetherianRing R] [IsIntegrallyClosed R] [Ring.KrullDimLE 1 R]
-    (hnot : ¬ IsField R) : _root_.IsDiscreteValuationRing R := by
-  have hmax : maximalIdeal R ≠ ⊥ := fun hbot ↦ hnot (isField_iff_maximalIdeal_eq.mpr hbot)
+theorem IsDiscreteValuationRing.of_krullDimLE_one {R : Type*} [CommRing R] [IsDomain R]
+    [IsLocalRing R] [IsNoetherianRing R] [IsIntegrallyClosed R] [Ring.KrullDimLE 1 R]
+    (hnot : ¬ IsField R) : IsDiscreteValuationRing R := by
   have : IsPrincipalIdealRing R := .of_krullDimLE_one
-  exact { not_a_field' := hmax }
+  exact { not_a_field' := isField_iff_maximalIdeal_eq.not.mp hnot }
 
 /-- A Noetherian integrally closed local domain of Krull dimension one is a discrete valuation
 ring. Stacks, Lemma 10.119.7 (00PD). -/
 @[stacks 00PD]
-theorem of_ringKrullDim_eq_one {R : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
-    [IsNoetherianRing R] [IsIntegrallyClosed R] (h : ringKrullDim R = 1) :
-    _root_.IsDiscreteValuationRing R := by
+theorem IsDiscreteValuationRing.of_ringKrullDim_eq_one {R : Type*} [CommRing R] [IsDomain R]
+    [IsLocalRing R] [IsNoetherianRing R] [IsIntegrallyClosed R] (h : ringKrullDim R = 1) :
+    IsDiscreteValuationRing R := by
   have : Ring.KrullDimLE 1 R := Ring.krullDimLE_iff.mpr h.le
-  apply of_krullDimLE_one
-  intro hfield
-  rw [ringKrullDim_eq_zero_of_isField hfield] at h
-  exact zero_ne_one h
-
-end IsDiscreteValuationRing
+  -- A field has Krull dimension zero.
+  exact of_krullDimLE_one fun hR ↦ zero_ne_one ((ringKrullDim_eq_zero_of_isField hR).symm.trans h)
 
 /-- The localization of a Noetherian integrally closed domain at a prime of height one is a
 discrete valuation ring. Stacks, Lemma 10.119.7 (00PD). -/
@@ -107,7 +100,6 @@ theorem IsLocalization.AtPrime.isPrincipalIdealRing_of_height_le_one {A : Type*}
   have := IsLocalization.AtPrime.isLocalRing Aₚ P
   have := IsLocalization.isNoetherianRing P.primeCompl Aₚ inferInstance
   have := isIntegrallyClosed_of_isLocalization Aₚ P.primeCompl P.primeCompl_le_nonZeroDivisors
-  have : Ring.KrullDimLE 1 Aₚ := Ring.krullDimLE_iff.mpr <| by
-    rw [IsLocalization.AtPrime.ringKrullDim_eq_height P Aₚ]
-    exact_mod_cast hP
+  have : Ring.KrullDimLE 1 Aₚ := Ring.krullDimLE_iff.mpr <|
+    (IsLocalization.AtPrime.ringKrullDim_eq_height P Aₚ).trans_le (by exact_mod_cast hP)
   exact .of_krullDimLE_one

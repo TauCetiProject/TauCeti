@@ -45,8 +45,8 @@ theorem abelianizationProPExtensionKernel_le_ker (p : ℕ) (V : Subgroup G) {E :
     abelianizationProPExtensionKernel p G V ≤ (φ : G →* E).ker := by
   have : CompactSpace A := isCompact_iff_compactSpace.mp hA.isCompact
   let f : V →ₜ* A :=
-    ⟨((φ : G →* E).comp V.subtype).codRestrict A fun v ↦ hVA v.2,
-      ((map_continuous φ).comp continuous_subtype_val).subtype_mk _⟩
+    ⟨((φ : G →* E).comp V.subtype).codRestrict A fun v ↦ hVA v.property,
+      ((map_continuous φ).comp continuous_subtypeVal).subtype_mk _⟩
   intro x hx
   obtain ⟨hv, hzero⟩ := (mem_abelianizationProPExtensionKernel_iff p G V x).mp hx
   rw [abelianizationProPMk_apply] at hzero
@@ -68,8 +68,8 @@ theorem abelianizationProPExtensionKernel_le_of_isPGroup_map (p : ℕ)
     exact (Subgroup.map_eq_bot_iff _).mpr (by simpa using hcomm)
   have : IsMulCommutative H := Subgroup.commutator_self_eq_bot_iff.mp hHcomm
   let f : V →ₜ* H :=
-    ⟨((QuotientGroup.mk' U.toSubgroup).comp V.subtype).codRestrict H fun v ↦ ⟨v, v.2, rfl⟩,
-      ((continuous_quotient_mk'.comp continuous_subtype_val).subtype_mk _)⟩
+    ⟨((QuotientGroup.mk' U.toSubgroup).comp V.subtype).codRestrict H fun v ↦ ⟨v, v.property, rfl⟩,
+      ((continuous_quotient_mk'.comp continuous_subtypeVal).subtype_mk _)⟩
   let fab := TopologicalAbelianization.lift f
   let N : OpenNormalSubgroup (TopologicalAbelianization V) :=
     ⟨⟨(fab : TopologicalAbelianization V →* H).ker,
