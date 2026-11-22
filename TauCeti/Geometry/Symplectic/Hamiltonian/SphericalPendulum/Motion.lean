@@ -50,7 +50,12 @@ oscillation, from `z₋` up to `z₊` and back, takes the **period**
 `T(h, j) = 2 ∫_{z₋}^{z₊} dz / √(2 (h - z) (1 - z²) - j²)`
 
 (`TauCeti.sphericalPendulumPeriod`, `TauCeti.sub_eq_sphericalPendulumPeriod_of_isMIntegralCurveOn`),
-the companion of the rotation angle `TauCeti.sphericalPendulumRotationAngle`.
+the companion of the rotation angle `TauCeti.sphericalPendulumRotationAngle`. As for the rotation
+angle, the substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` writes the period as
+`2 ∫_{-π/2}^{π/2} dθ / √(2 (z₃ - z))`, with `z₃ = h - z₋ - z₊` the third root of the radicand. This
+integrand is continuous in `θ` and `(h, j)`, so the period is continuous above the curve of
+relative equilibria, and it is at least `1 / √(2 (h + 3))` since `z₃ - z < h + 3`, which bounds the
+period below by `2π / √(2 (h + 3))`.
 
 ## Main declarations
 
@@ -69,6 +74,12 @@ the companion of the rotation angle `TauCeti.sphericalPendulumRotationAngle`.
 * `TauCeti.intervalIntegrable_inv_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq`,
   `TauCeti.sphericalPendulumPeriod_pos`: the period integrand is integrable between the turning
   points, and the period is positive.
+* `TauCeti.sphericalPendulumPeriod_eq_integral_sin`, `TauCeti.continuousOn_sphericalPendulumPeriod`:
+  after the sine substitution the period is the integral of a continuous function, so it is
+  continuous above the curve of relative equilibria.
+* `TauCeti.two_mul_pi_div_sqrt_le_sphericalPendulumPeriod`: the lower bound
+  `2π / √(2 (h + 3)) ≤ T(h, j)`.
+* `TauCeti.sphericalPendulumPeriod_neg_right`: the period is even in `j`.
 
 ## References
 
@@ -395,6 +406,12 @@ theorem sphericalPendulumPeriod_pos (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
     (fun z hz ↦ inv_pos.2 (Real.sqrt_pos.2 (two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV hz)))
     (sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV)
 
+/-- On the domain of distinct nonpolar turning points, the period of the height is positive. -/
+theorem sphericalPendulumPeriod_pos_of_mem
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain) : 0 < sphericalPendulumPeriod h j :=
+  let ⟨hj, _, hz₀, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hc
+  sphericalPendulumPeriod_pos hj hz₀ hV
+
 /-- **The period of the height of the spherical pendulum.** Above the curve of relative
 equilibria, let a motion of the spherical pendulum with energy `h` and vertical angular momentum
 `j` start at the lower turning point `z₋` at time `t₁`, reach the upper turning point `z₊` at time
@@ -430,5 +447,77 @@ theorem sub_eq_sphericalPendulumPeriod_of_isMIntegralCurveOn {γ : ℝ → spher
   linarith
 
 end Regular
+
+/-! ### The period as a regular integral -/
+
+/-- The period is even in the vertical angular momentum: `T(h, -j) = T(h, j)`. -/
+@[simp]
+theorem sphericalPendulumPeriod_neg_right (h j : ℝ) :
+    sphericalPendulumPeriod h (-j) = sphericalPendulumPeriod h j := by
+  simp only [sphericalPendulumPeriod_def, neg_sq]
+
+section Continuity
+
+variable {h j z₀ : ℝ}
+
+open Real
+
+/-- **The period as a regular integral.** For `j ≠ 0` and `(h, j)` strictly above the curve of
+relative equilibria, the substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between the
+turning points `z₋ < z₊` turns the period into the integral
+`T(h, j) = 2 ∫_{-π/2}^{π/2} dθ / √(2 (z₃ - z))`, where `z₃ = h - z₋ - z₊` is the third root of
+the radicand. Its integrand is continuous, since `z ≤ z₊ < 1 < z₃`. -/
+theorem sphericalPendulumPeriod_eq_integral_sin (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
+    (hV : sphericalPendulumEffectivePotential j z₀ < h) :
+    sphericalPendulumPeriod h j =
+      2 * ∫ θ in (-(π / 2))..(π / 2),
+        (√(2 * (h - sphericalPendulumLowerTurningPoint h j -
+          sphericalPendulumUpperTurningPoint h j -
+          ((sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+            (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) /
+              2 * sin θ))))⁻¹ := by
+  have := integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin hj hz₀ hV fun _ ↦ 1
+  simp only [one_div] at this
+  rw [sphericalPendulumPeriod_def, this]
+
+/-- **Continuity of the period.** The period `T(h, j)` is continuous on the values `(h, j)` with
+`j ≠ 0` lying strictly above the curve of relative equilibria, that is, with `V_j(z) < h` for some
+height `z ∈ (-1, 1)`. -/
+theorem continuousOn_sphericalPendulumPeriod :
+    ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumPeriod c.1 c.2)
+      sphericalPendulumTurningPointDomain := by
+  refine ((continuousOn_const (c := (2 : ℝ))).mul
+    (continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq (g := fun _ _ ↦ 1)
+      continuousOn_const)).congr fun c _ ↦ ?_
+  simp only [sphericalPendulumPeriod_def, one_div, Pi.mul_apply]
+
+/-- **A lower bound for the period.** For `j ≠ 0` and `(h, j)` strictly above the curve of relative
+equilibria, `2π / √(2 (h + 3)) ≤ T(h, j)`: in the regular integral for the period, the distance
+`z₃ - z = h - z₋ - z₊ - z` from the height to the third root is less than `h + 3`, since the three
+heights `z₋`, `z₊` and `z` exceed `-1`. -/
+theorem two_mul_pi_div_sqrt_le_sphericalPendulumPeriod (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
+    (hV : sphericalPendulumEffectivePotential j z₀ < h) :
+    2 * π / √(2 * (h + 3)) ≤ sphericalPendulumPeriod h j := by
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
+  -- The substituted height satisfies `-1 < z` and `z < z₃ = h - z₋ - z₊`.
+  have hu := add_mul_sin_mem_Ioo_and_lt_sub_sphericalPendulumTurningPoints hj hz₀ hV
+  rw [sphericalPendulumPeriod_eq_integral_sin hj hz₀ hV]
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  have hpos : ∀ θ, 0 < √(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))) := fun θ ↦
+    Real.sqrt_pos.2 (by linarith [(hu θ).2])
+  have hle : ∀ θ ∈ Icc (-(π / 2)) (π / 2), (√(2 * (h + 3)))⁻¹ ≤
+      (√(2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * sin θ))))⁻¹ := fun θ _ ↦
+    inv_anti₀ (hpos θ) (Real.sqrt_le_sqrt (by linarith [(hu θ).1.1]))
+  have hint := intervalIntegral.integral_mono_on (by linarith [pi_pos] : -(π / 2) ≤ π / 2)
+    (intervalIntegrable_const (μ := volume))
+    ((Continuous.inv₀ (by fun_prop) fun θ ↦ (hpos θ).ne').intervalIntegrable _ _) hle
+  rw [intervalIntegral.integral_const, smul_eq_mul] at hint
+  simp only [Pi.inv_apply] at hint
+  calc 2 * π / √(2 * (h + 3)) = 2 * ((π / 2 - -(π / 2)) * (√(2 * (h + 3)))⁻¹) := by ring
+    _ ≤ _ := by gcongr
+
+end Continuity
 
 end TauCeti
