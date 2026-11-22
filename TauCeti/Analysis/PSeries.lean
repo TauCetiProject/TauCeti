@@ -96,13 +96,14 @@ theorem _root_.Summable.const_add_rpow {ι : Type*} {a : ι → ℝ} {r : ℝ}
     (c : ℝ) : Summable fun i ↦ (c + a i) ^ r := by
   rcases hr.eq_or_lt with rfl | hr
   · simpa only [Real.rpow_zero] using h
-  -- Summability forces `a i → ∞`: for `b > 0`, eventually `a i ^ r < b ^ r`, i.e. `b < a i`.
+  -- Summability forces `a i ^ r → 0⁺`, so `a i = (a i ^ r) ^ r⁻¹ → ∞` as `r⁻¹ < 0`.
   have htop : Filter.Tendsto a Filter.cofinite Filter.atTop := by
-    refine Filter.tendsto_atTop.2 fun b ↦ ?_
-    have hb : 0 < max b 1 := lt_max_of_lt_right one_pos
-    filter_upwards [ha, h.tendsto_cofinite_zero.eventually
-      (gt_mem_nhds (Real.rpow_pos_of_pos hb r))] with i hi hlt
-    exact (le_max_left b 1).trans ((Real.rpow_lt_rpow_iff_of_neg hi hb hr).1 hlt).le
+    have h0 : Filter.Tendsto (fun i ↦ a i ^ r) Filter.cofinite (nhdsWithin 0 (Set.Ioi 0)) :=
+      tendsto_nhdsWithin_iff.2 ⟨h.tendsto_cofinite_zero,
+        ha.mono fun i hi ↦ Real.rpow_pos_of_pos hi r⟩
+    refine ((tendsto_rpow_neg_nhdsGT_zero (inv_lt_zero.2 hr)).comp h0).congr' ?_
+    filter_upwards [ha] with i hi
+    exact Real.rpow_rpow_inv hi.le hr.ne
   -- So `c + a i ~ a i`, hence `(c + a i) ^ r =Θ a i ^ r`.
   have hequiv : Asymptotics.IsEquivalent Filter.cofinite (fun i ↦ c + a i) a :=
     Asymptotics.IsEquivalent.refl.const_add_of_norm_tendsto_atTop
