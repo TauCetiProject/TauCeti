@@ -73,7 +73,7 @@ stabilization chain map carries every chain of bidegree `g` to a chain of bidegr
 theorem simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece {g : ℤ × ℤ}
     {c : GridChainHat R (n + 1) j}
     (hc : c ∈ (G.stabilizeX s).bigradedChainHatPiece R j g) :
-    G.1.simplyBlockedStabilizeXMap s i R c ∈ G.bigradedChainHatPiece R i g := by
+    G.val.simplyBlockedStabilizeXMap s i R c ∈ G.bigradedChainHatPiece R i g := by
   obtain ⟨b, hb, rfl⟩ := (G.stabilizeX s).mem_bigradedChainHatPiece_iff_exists.mp hc
   rw [GridDiagram.simplyBlockedStabilizeXMap_simplyBlockedSpecialization,
     GridDiagram.stabilizeXChainMap_apply]
@@ -84,14 +84,14 @@ theorem simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece {g : ℤ × ℤ}
 a linear map over the ground ring `R`. -/
 noncomputable def gradedSimplyBlockedStabilizeXChainMap (g : ℤ × ℤ) :
     (G.stabilizeX s).bigradedChainHatPiece R j g →ₗ[R] G.bigradedChainHatPiece R i g where
-  toFun c := ⟨G.1.simplyBlockedStabilizeXMap s i R c,
-    G.simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece s i R c.2⟩
-  map_add' c d := Subtype.ext (map_add _ c.1 d.1)
+  toFun c := ⟨G.val.simplyBlockedStabilizeXMap s i R c,
+    G.simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece s i R c.property⟩
+  map_add' c d := Subtype.ext (map_add _ c.val d.val)
   map_smul' r c := by
     apply Subtype.ext
     simp only [Submodule.coe_smul, RingHom.id_apply]
-    have h := (G.1.simplyBlockedStabilizeXMap s i R).map_smulₛₗ
-      (MvPolynomial.C r : MvPolynomial {k : Fin (n + 1) // k ≠ j} R) c.1
+    have h := (G.val.simplyBlockedStabilizeXMap s i R).map_smulₛₗ
+      (MvPolynomial.C r : MvPolynomial {k : Fin (n + 1) // k ≠ j} R) c.val
     rw [GridDiagram.simplyBlockedStabilizeXRingHom_C] at h
     simpa only [← MvPolynomial.algebraMap_eq, algebraMap_smul] using h
 
@@ -101,7 +101,7 @@ noncomputable def gradedSimplyBlockedStabilizeXChainMap (g : ℤ × ℤ) :
 theorem coe_gradedSimplyBlockedStabilizeXChainMap (g : ℤ × ℤ)
     (c : (G.stabilizeX s).bigradedChainHatPiece R j g) :
     (G.gradedSimplyBlockedStabilizeXChainMap s i R g c : GridChainHat R n i) =
-      G.1.simplyBlockedStabilizeXMap s i R c :=
+      G.val.simplyBlockedStabilizeXMap s i R c :=
   (rfl)
 
 /-- On homogeneous chains specialized from `GC⁻`, `gradedSimplyBlockedStabilizeXChainMap` agrees
@@ -111,13 +111,13 @@ theorem gradedSimplyBlockedStabilizeXChainMap_gradedSimplyBlockedSpecialization 
     G.gradedSimplyBlockedStabilizeXChainMap s i R g
         ((G.stabilizeX s).gradedSimplyBlockedSpecialization R j g c) =
       G.gradedSimplyBlockedSpecialization R i g
-        ⟨G.1.stabilizeXChainMap s R c, by
+        ⟨G.val.stabilizeXChainMap s R c, by
           rw [GridDiagram.stabilizeXChainMap_apply]
-          exact G.stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece s R c.2⟩ := by
+          exact G.stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece s R c.property⟩ := by
   apply Subtype.ext
   rw [coe_gradedSimplyBlockedStabilizeXChainMap, coe_gradedSimplyBlockedSpecialization,
     coe_gradedSimplyBlockedSpecialization]
-  exact G.1.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R c.1
+  exact G.val.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R c.val
 
 end CommRing
 
@@ -136,7 +136,7 @@ theorem gradedSimplyBlockedStabilizeXChainMap_differential (a m : ℤ)
   apply Subtype.ext
   rw [coe_gradedSimplyBlockedStabilizeXChainMap, coe_gradedSimplyBlockedDifferential,
     coe_gradedSimplyBlockedDifferential, coe_gradedSimplyBlockedStabilizeXChainMap]
-  exact G.1.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R c.1
+  exact G.val.simplyBlockedStabilizeXMap_simplyBlockedDifferential s i R c.val
 
 /-- The specialized `X`-stabilization comparison as a chain map of Maslov-indexed complexes of
 `R`-modules in Alexander degree `a`. -/

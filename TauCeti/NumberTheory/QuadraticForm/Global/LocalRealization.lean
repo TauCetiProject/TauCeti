@@ -333,7 +333,7 @@ theorem isAdmissible_ofLocalForms (hn : 1 ≤ n)
       (algebraMap K (v.adicCompletion K)).squareClassMap d)
     (hR : ∀ w, (R w).Nondegenerate)
     (hRd : ∀ w, RegularFormClass.discr (formClass (R w) (hR w)) =
-      (embedding_of_isReal w.2).squareClassMap d)
+      (embedding_of_isReal w.property).squareClassMap d)
     (hs : Function.HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 K) ↦
       letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
       RegularFormClass.localHasse (formClass (U v) (hU v)))

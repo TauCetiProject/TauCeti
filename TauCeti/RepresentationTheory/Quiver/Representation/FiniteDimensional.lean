@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
+public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.LinearAlgebra.DirectSum.Finite
-import Mathlib.CategoryTheory.Preadditive.LeftExact
 -- Non-public: monomorphisms and epimorphisms of functors into an abelian category are
 -- monomorphisms and epimorphisms at every object.
 import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
@@ -36,8 +36,10 @@ that a path algebra module finite-dimensional over the base field gives such a r
 * `TauCeti.IsFinDim.of_mono` and `TauCeti.IsFinDim.of_epi`: subobjects and quotients of pointwise
   finite-dimensional representations are pointwise finite-dimensional.
 * The full subcategory of `IsFinDim` representations is abelian, by Mathlib's abelian
-  full-subcategory construction. Its inclusion preserves finite limits and colimits, so kernels,
-  cokernels and short exact sequences have their ambient pointwise meaning.
+  full-subcategory construction. Its inclusion preserves finite limits and colimits, by the general
+  instances `CategoryTheory.ObjectProperty.preservesFiniteLimits_ι` and
+  `CategoryTheory.ObjectProperty.preservesFiniteColimits_ι`, so kernels, cokernels and short exact
+  sequences have their ambient pointwise meaning.
 * `TauCeti.isFinDim_biproduct`: finite biproducts of finite-dimensional representations are
   finite-dimensional.
 * The full subcategory of `IsFinDim` representations is essentially small for finite `Q`.
@@ -139,7 +141,7 @@ instance : ObjectProperty.ContainsZero (IsFinDim.{u, v, w, t} k Q) where
     infer_instance
 
 /-- Pointwise finite-dimensional representations are closed under extensions. -/
-theorem isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations :
+theorem IsFinDim.isExtensionClosed :
     (ExactStructure.abelian (QuiverRep.{u, v, w, t} k Q)).IsExtensionClosed
       (IsFinDim k Q) := by
   refine ⟨fun {S} hS h₁ h₃ => ?_⟩
@@ -161,7 +163,7 @@ theorem isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations :
 /-- Binary products keep the finite-dimensional full subcategory additive, as required by its
 induced exact structure. -/
 instance : ObjectProperty.IsClosedUnderBinaryProducts (IsFinDim.{u, v, w, t} k Q) := by
-  have h := isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q
+  have h := IsFinDim.isExtensionClosed k Q
   exact h.isClosedUnderBinaryProducts
 
 /-- Finite products stay in the pointwise finite-dimensional subcategory. Together with closure
@@ -178,31 +180,21 @@ theorem isFinDim_biproduct {ι : Type*} [Finite ι]
   ObjectProperty.prop_of_iso _ (Limits.biproduct.isoProduct M).symm
     (ObjectProperty.prop_pi (IsFinDim.{u, v, w, t} k Q) M hM)
 
-/-- The inclusion of pointwise finite-dimensional representations preserves finite limits. -/
-instance : PreservesFiniteLimits (ObjectProperty.ι (IsFinDim.{u, v, w, t} k Q)) := by
-  have := ObjectProperty.preservesKernels_ι (IsFinDim.{u, v, w, t} k Q)
-  exact Functor.preservesFiniteLimits_of_preservesKernels _
-
-/-- The inclusion of pointwise finite-dimensional representations preserves finite colimits. -/
-instance : PreservesFiniteColimits (ObjectProperty.ι (IsFinDim.{u, v, w, t} k Q)) := by
-  have := ObjectProperty.preservesCokernels_ι (IsFinDim.{u, v, w, t} k Q)
-  exact Functor.preservesFiniteColimits_of_preservesCokernels _
-
 /-- The exact structure on pointwise finite-dimensional quiver representations. -/
-noncomputable def pointwiseFiniteDimensionalQuiverRepresentationsExactStructure :
+noncomputable def IsFinDim.exactStructure :
     ExactStructure (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q)) :=
   (ExactStructure.abelian _).fullSubcategory _
-    (isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q)
+    (IsFinDim.isExtensionClosed k Q)
 
 /-- Conflations of pointwise finite-dimensional quiver representations are exactly their short exact
 sequences in the ambient functor category. -/
 @[simp]
-theorem pointwiseFiniteDimensionalQuiverRepresentationsExactStructure_conflation_iff
+theorem IsFinDim.exactStructure_conflation_iff
     (S : ShortComplex (ObjectProperty.FullSubcategory (IsFinDim.{u, v, w, t} k Q))) :
-    (pointwiseFiniteDimensionalQuiverRepresentationsExactStructure k Q).Conflation S ↔
+    (IsFinDim.exactStructure k Q).Conflation S ↔
       (S.map (ObjectProperty.ι (IsFinDim k Q))).ShortExact :=
   (ExactStructure.fullSubcategory_conflation_iff
-    (isExtensionClosed_pointwiseFiniteDimensionalQuiverRepresentations k Q) S).trans
+    (IsFinDim.isExtensionClosed k Q) S).trans
     (ExactStructure.abelian_conflation _)
 
 end ExactStructure
@@ -258,13 +250,13 @@ instance : EssentiallySmall.{max (max u v) w}
   apply essentiallySmall_of_fully_faithful
     ((ModuleCat.isFG (pathAlgebra k Q)).lift
       ((ObjectProperty.ι (IsFinDim k Q)) ⋙ (quiverRepEquivalence k Q).functor) (fun M => by
-        let hmodule : Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M.1) :=
-          module_finite_asModule_of_isFinDim k Q M.1 M.property
+        let hmodule : Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M.obj) :=
+          module_finite_asModule_of_isFinDim k Q M.obj M.property
         let hshrink : Module.Finite (pathAlgebra k Q)
-            (QuiverRep.asModuleShrink k Q M.1) :=
-          Module.Finite.equiv (QuiverRep.asModuleShrinkEquiv k Q M.1).symm
+            (QuiverRep.asModuleShrink k Q M.obj) :=
+          Module.Finite.equiv (QuiverRep.asModuleShrinkEquiv k Q M.obj).symm
         exact Module.Finite.equiv
-          ((quiverRepEquivalenceFunctorObjShrinkIso k Q M.1).toLinearEquiv.symm)))
+          ((quiverRepEquivalenceFunctorObjShrinkIso k Q M.obj).toLinearEquiv.symm)))
 
 /-- A path algebra module finite-dimensional over the base field gives a representation with
 finite-dimensional vertex spaces. -/

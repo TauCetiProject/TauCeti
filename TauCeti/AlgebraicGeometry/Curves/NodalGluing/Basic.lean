@@ -433,6 +433,22 @@ theorem Marking.mem_specialPoints_iff {L : Type*} {m : Marking d L} {i : ι} {x 
     x ∈ m.specialPoints i ↔ (⟨i, x⟩ : Σ i, X i) ∈ flagPointSet d ∨ ∃ l, m.point l = ⟨i, x⟩ :=
   Iff.rfl
 
+variable {d} in
+/-- The marks of `m` relabelled along an embedding `e : L' ↪ L` of labels: the mark `l` is the
+mark `e l` of `m`. Forgetting the mark `none` of marks labelled by `Option L` is relabelling along
+`Function.Embedding.some`. -/
+def Marking.reindex {L L' : Type*} (m : Marking d L) (e : L' ↪ L) : Marking d L' where
+  point l := m.point (e l)
+  point_injective := m.point_injective.comp e.injective
+  point_notMem_flagPointSet l := m.point_notMem_flagPointSet (e l)
+
+variable {d} in
+/-- The mark `l` of a relabelled marking is the mark `e l`. -/
+@[simp]
+theorem Marking.point_reindex {L L' : Type*} (m : Marking d L) (e : L' ↪ L) (l : L') :
+    (m.reindex e).point l = m.point (e l) :=
+  (rfl)
+
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/
 theorem eq_or_mem_flagPointSet_of_gluedRel (d : FlagPairData ι Flag X) {a b : Σ i, X i}
