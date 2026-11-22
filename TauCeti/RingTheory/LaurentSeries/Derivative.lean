@@ -57,6 +57,8 @@ operation is introduced.
   `f` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
 * `LaurentSeries.derivative_eq_zero_iff_exists_C`: without additive torsion the kernel of `D`
   consists of the constants.
+* `LaurentSeries.derivative_mapRingHom`: differentiation commutes with coefficient extension along
+  a ring homomorphism.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
   rules over a field.
 * `LaurentSeries.continuous_derivative`: `D` is continuous for the valuation topology.
@@ -334,6 +336,13 @@ theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R
   refine ⟨fun h ↦ ⟨_, by simpa only [C_apply] using h.symm⟩, ?_⟩
   rintro ⟨c, rfl⟩
   simp
+
+/-- **Coefficient extension commutes with differentiation**: for a ring homomorphism
+`φ : R →+* S`, applying `φ` to the coefficients of `f'` gives the derivative of the image of `f`. -/
+theorem derivative_mapRingHom {R S : Type*} [Ring R] [Ring S] (φ : R →+* S) (f : R⸨X⸩) :
+    derivative S (mapRingHom φ f) = mapRingHom φ (derivative R f) := by
+  ext n
+  simp only [coeff_derivative, coeff_mapRingHom, map_zsmul]
 
 section Ramified
 
