@@ -44,12 +44,12 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
 /-- Mapping the distinguished point of a source cone into any containing target chart gives
 that of the least target cone, viewed as a face of the chosen target cone. -/
 theorem analyticChartMap_distinguishedPoint {σ : Φ.cones} {τ : Ψ.cones}
-    (h : MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
-    f.analyticChartMap h (distinguishedPoint Φ.lattice (⊤ : σ.1.Face)) =
+    (h : MapsTo f.realMap (σ.val : Set V) (τ.val : Set V')) :
+    f.analyticChartMap h (distinguishedPoint Φ.lattice (⊤ : σ.val.Face)) =
       distinguishedPoint Ψ.lattice (Ψ.orbitFace
-        (τ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) (σ := τ)
+        (τ := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩) (σ := τ)
         (Subtype.coe_le_coe.1
-          (f.leastCone_le σ.2 τ.2 (by rintro _ ⟨x, hx, rfl⟩; exact h hx)))) := by
+          (f.leastCone_le σ.property τ.property (by rintro _ ⟨x, hx, rfl⟩; exact h hx)))) := by
   classical
   -- The bundled chart carrier is the affine complex-point carrier; full transparency
   -- lets the chart formula apply to its distinguished point.
@@ -57,15 +57,15 @@ theorem analyticChartMap_distinguishedPoint {σ : Φ.cones} {τ : Ψ.cones}
   refine AffineSemigroupComplexPoint.ext fun m ↦ ?_
   rw [AffineSemigroupComplexPoint.comap_apply_single,
     distinguishedPoint_apply_single, distinguishedPoint_apply_single]
-  have hleast : f.leastCone σ.2 ≤ τ.1 :=
-    f.leastCone_le σ.2 τ.2 (by rintro _ ⟨x, hx, rfl⟩; exact h hx)
-  have hleast' : (⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ : Ψ.cones) ≤ τ :=
+  have hleast : f.leastCone σ.property ≤ τ.val :=
+    f.leastCone_le σ.property τ.property (by rintro _ ⟨x, hx, rfl⟩; exact h hx)
+  have hleast' : (⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩ : Ψ.cones) ≤ τ :=
     Subtype.coe_le_coe.1 hleast
-  have hvanish := f.realCharacter_eq_zero_on_leastCone_iff σ.2
-    (dualSemigroup_anti Ψ.lattice hleast m.2)
+  have hvanish := f.realCharacter_eq_zero_on_leastCone_iff σ.property
+    (dualSemigroup_anti Ψ.lattice hleast m.property)
   simp only [coe_dualSemigroupMap]
-  have htop (x : V) : x ∈ (⊤ : σ.1.Face) ↔ x ∈ σ.1 := Iff.rfl
-  have horbit (y : V') : y ∈ Ψ.orbitFace hleast' ↔ y ∈ f.leastCone σ.2 :=
+  have htop (x : V) : x ∈ (⊤ : σ.val.Face) ↔ x ∈ σ.val := Iff.rfl
+  have horbit (y : V') : y ∈ Ψ.orbitFace hleast' ↔ y ∈ f.leastCone σ.property :=
     SetLike.ext_iff.mp (Ψ.coe_orbitFace hleast') y
   exact if_congr (by simpa only [htop, horbit] using hvanish.symm) rfl rfl
 
@@ -74,11 +74,11 @@ target cones. -/
 @[simp]
 theorem analyticMap_analyticDistinguishedPoint (σ : Φ.cones) :
     f.analyticMap hΦ hΨ (Φ.analyticDistinguishedPoint hΦ σ) =
-      Ψ.analyticDistinguishedPoint hΨ ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ := by
+      Ψ.analyticDistinguishedPoint hΨ ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩ := by
   rw [Fan.analyticDistinguishedPoint_def]
   -- As above, the distinguished point uses the underlying affine-point carrier.
   erw [f.analyticMap_analyticAffineChartι_of_mapsTo hΦ hΨ
-      (υ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) (f.mapsTo_leastCone σ.2),
+      (υ := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩) (f.mapsTo_leastCone σ.property),
     f.analyticChartMap_distinguishedPoint]
   exact Ψ.analyticAffineChartι_distinguishedPoint hΨ le_rfl
 
@@ -86,7 +86,7 @@ theorem analyticMap_analyticDistinguishedPoint (σ : Φ.cones) :
 the lattice map or its torus homomorphism is required. -/
 theorem mapsTo_analyticConeOrbit (σ : Φ.cones) :
     MapsTo (f.analyticMap hΦ hΨ) (Φ.analyticConeOrbit hΦ σ)
-      (Ψ.analyticConeOrbit hΨ ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) := by
+      (Ψ.analyticConeOrbit hΨ ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩) := by
   intro x hx
   rw [Φ.analyticConeOrbit_eq_orbit hΦ] at hx
   obtain ⟨t, rfl⟩ := hx
@@ -98,16 +98,16 @@ theorem mapsTo_analyticConeOrbit (σ : Φ.cones) :
 the least target cone of `σ`. -/
 theorem analyticMap_mem_analyticConeOrbit_iff {σ : Φ.cones} {τ : Ψ.cones}
     {x : Φ.analyticRealization hΦ} (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
-    f.analyticMap hΦ hΨ x ∈ Ψ.analyticConeOrbit hΨ τ ↔ f.leastCone σ.2 = τ.1 := by
+    f.analyticMap hΦ hΨ x ∈ Ψ.analyticConeOrbit hΨ τ ↔ f.leastCone σ.property = τ.val := by
   have hm := f.mapsTo_analyticConeOrbit hΦ hΨ σ hx
   exact ⟨fun h ↦ congrArg Subtype.val (Ψ.eq_of_mem_analyticConeOrbit hΨ hm h),
-    fun h ↦ (Subtype.ext h : ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ = τ) ▸ hm⟩
+    fun h ↦ (Subtype.ext h : ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩ = τ) ▸ hm⟩
 
 /-- The preimage of a target orbit is exactly the union of the source orbits with that least
 target cone. -/
 theorem preimage_analyticMap_analyticConeOrbit (τ : Ψ.cones) :
     f.analyticMap hΦ hΨ ⁻¹' Ψ.analyticConeOrbit hΨ τ =
-      ⋃ σ : Φ.cones, ⋃ (_ : f.leastCone σ.2 = τ.1), Φ.analyticConeOrbit hΦ σ := by
+      ⋃ σ : Φ.cones, ⋃ (_ : f.leastCone σ.property = τ.val), Φ.analyticConeOrbit hΦ σ := by
   ext x
   obtain ⟨σ, hx⟩ := Φ.exists_mem_analyticConeOrbit hΦ x
   rw [mem_preimage, f.analyticMap_mem_analyticConeOrbit_iff hΦ hΨ hx, mem_iUnion₂]
@@ -118,7 +118,7 @@ theorem preimage_analyticMap_analyticConeOrbit (τ : Ψ.cones) :
 least target cone contains that cone. -/
 theorem preimage_analyticMap_closure_analyticConeOrbit (τ : Ψ.cones) :
     f.analyticMap hΦ hΨ ⁻¹' closure (Ψ.analyticConeOrbit hΨ τ) =
-      ⋃ σ : Φ.cones, ⋃ (_ : τ.1 ≤ f.leastCone σ.2), Φ.analyticConeOrbit hΦ σ := by
+      ⋃ σ : Φ.cones, ⋃ (_ : τ.val ≤ f.leastCone σ.property), Φ.analyticConeOrbit hΦ σ := by
   ext x
   obtain ⟨σ, hx⟩ := Φ.exists_mem_analyticConeOrbit hΦ x
   rw [mem_preimage,
@@ -129,23 +129,23 @@ theorem preimage_analyticMap_closure_analyticConeOrbit (τ : Ψ.cones) :
 of the least target cone in the chart's cone. -/
 theorem analyticMap_mem_range_analyticAffineChartι_iff {σ : Φ.cones} {τ : Ψ.cones}
     {x : Φ.analyticRealization hΦ} (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
-    f.analyticMap hΦ hΨ x ∈ range (Ψ.analyticAffineChartι hΨ τ) ↔ f.leastCone σ.2 ≤ τ.1 :=
+    f.analyticMap hΦ hΨ x ∈ range (Ψ.analyticAffineChartι hΨ τ) ↔ f.leastCone σ.property ≤ τ.val :=
   Ψ.mem_range_analyticAffineChartι_iff hΨ (f.mapsTo_analyticConeOrbit hΦ hΨ σ hx)
 
 /-- The preimage of an affine target chart is the union of the source orbits whose cones map
 into its cone. -/
 theorem preimage_analyticMap_range_analyticAffineChartι (τ : Ψ.cones) :
     f.analyticMap hΦ hΨ ⁻¹' range (Ψ.analyticAffineChartι hΨ τ) =
-      ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), Φ.analyticConeOrbit hΦ σ := by
+      ⋃ σ : Φ.cones, ⋃ (_ : σ.val.map f.realMap ≤ τ.val), Φ.analyticConeOrbit hΦ σ := by
   ext x
   obtain ⟨σ, hx⟩ := Φ.exists_mem_analyticConeOrbit hΦ x
   rw [mem_preimage, f.analyticMap_mem_range_analyticAffineChartι_iff hΦ hΨ hx, mem_iUnion₂]
   constructor
   · intro h
-    exact ⟨σ, (f.map_le_leastCone σ.2).trans h, hx⟩
+    exact ⟨σ, (f.map_le_leastCone σ.property).trans h, hx⟩
   · rintro ⟨σ', h, hx'⟩
     have heq := Φ.eq_of_mem_analyticConeOrbit hΦ hx' hx
     subst σ'
-    exact f.leastCone_le σ.2 τ.2 h
+    exact f.leastCone_le σ.property τ.property h
 
 end TauCeti.Toric.FanHom

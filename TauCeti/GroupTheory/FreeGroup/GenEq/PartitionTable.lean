@@ -206,10 +206,10 @@ pair of dual bases of length one, with the signs of the letters; and every posit
 carrying a letter of `A^{±1}` is a constant base with that letter. -/
 @[reducible] noncomputable def ofEntries : GenEq A :=
   ofBases (β := {p // IsVarPair E p} ⊕ {q // IsLetterPair E q}) (E.flatMap Prod.snd).length
-    (Sum.elim (fun p => ⟨entryStart E p.1.1, Nat.lt_succ_of_le (entryStart_le E _)⟩)
-      fun q => q.1.1.castSucc)
-    (Sum.elim (fun p => ⟨entryStart E ((p.1.1 : ℕ) + 1), Nat.lt_succ_of_le (entryStart_le E _)⟩)
-      fun q => q.1.1.succ)
+    (Sum.elim (fun p => ⟨entryStart E p.val.1, Nat.lt_succ_of_le (entryStart_le E _)⟩)
+      fun q => q.val.1.castSucc)
+    (Sum.elim (fun p => ⟨entryStart E ((p.val.1 : ℕ) + 1), Nat.lt_succ_of_le (entryStart_le E _)⟩)
+      fun q => q.val.1.succ)
     (by
       rintro (⟨p, hp⟩ | ⟨q, -⟩)
       · have := List.length_pos_iff.2 hp.2.2.2.1
@@ -217,8 +217,8 @@ carrying a letter of `A^{±1}` is a constant base with that letter. -/
           Fin.getElem_fin] at this ⊢
         lia
       · exact Fin.castSucc_lt_succ)
-    (Sum.elim (fun p => E[p.1.1].1.2) fun q => (E.flatMap Prod.snd)[q.1.1].2)
-    (Sum.map (fun p => ⟨p.1.swap, p.2.swap⟩) fun q => ⟨q.1.swap, q.2.swap⟩)
+    (Sum.elim (fun p => E[p.val.1].1.2) fun q => (E.flatMap Prod.snd)[q.val.1].2)
+    (Sum.map (fun p => ⟨p.val.swap, p.property.swap⟩) fun q => ⟨q.val.swap, q.property.swap⟩)
     (by rintro (_ | _) <;> rfl)
     (Finset.univ.filterMap
       (fun c : Fin (E.flatMap Prod.snd).length => ((E.flatMap Prod.snd)[c].1.getRight?).map

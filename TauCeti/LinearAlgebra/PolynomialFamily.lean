@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Polynomial.Eval.Degree
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Vandermonde
+public import Mathlib.RingTheory.Polynomial.ContentIdeal
 
 /-!
 # Families of vectors and operators depending polynomially on a parameter
@@ -28,7 +29,10 @@ has torsion, `c ↦ c • 1` and `c ↦ c ^ 2 • 1` agree.
 Over an arbitrary commutative ring the values still determine the coefficients up to the
 Vandermonde determinant of the evaluation points, by Cramer's rule
 (`TauCeti.det_vandermonde_smul_eq_sum_adjugate_smul`). For instance, if the points and the values
-lie in a subring `S`, then the determinant times each coefficient lies in `S`.
+lie in a subring `S`, then the determinant times each coefficient lies in `S`. If the pairwise
+differences of the points are units, so is the determinant, and the values at the points of a
+polynomial of smaller degree generate its content ideal, the ideal of its coefficients
+(`Polynomial.span_eval_eq_contentIdeal_of_natDegree_lt`).
 
 *Producing the coefficients.* Conversely, let `K` be a commutative semiring and `f c` a family
 of `K`-linear maps between modules with finite bases. If every matrix entry of `f c` against
@@ -44,6 +48,8 @@ functions is expanded along a one-parameter subgroup and its terms then identifi
 * `TauCeti.det_vandermonde_smul_eq_sum_adjugate_smul`: over any commutative ring, the
   Vandermonde determinant of `d` points times a coefficient of a power sum of length `d` is a
   linear combination of the values of the power sum at the points.
+* `Polynomial.span_eval_eq_contentIdeal_of_natDegree_lt`: the values of a polynomial at more points
+  than its degree, with unit pairwise differences, generate its content ideal.
 * `TauCeti.eq_zero_of_forall_sum_range_pow_smul_eq_zero`: the coefficients below `d` of an
   identically vanishing power sum `∑ m < d, c ^ m • u m` are zero.
 * `TauCeti.eq_of_forall_sum_range_pow_smul_eq`: two power sums of length `d` agreeing at every
@@ -114,6 +120,36 @@ theorem eq_of_forall_sum_range_pow_smul_eq {d : ℕ} {u v : ℕ → M}
 end Coefficients
 
 end TauCeti
+
+-- The leading explicit argument is a polynomial, so this lives in its namespace and is used
+-- through dot notation.
+namespace Polynomial
+
+/-- If a polynomial `P` has degree less than `N`, and `N` points `x i` have pairwise differences
+that are units, then the values `P (x i)` generate the content ideal of `P`, the ideal generated
+by its coefficients. -/
+theorem span_eval_eq_contentIdeal_of_natDegree_lt {R : Type u} [CommRing R] (P : R[X]) {N : ℕ}
+    (hP : P.natDegree < N) {x : Fin N → R} (hx : Pairwise fun i j ↦ IsUnit (x i - x j)) :
+    Ideal.span (Set.range fun i ↦ P.eval (x i)) = P.contentIdeal := by
+  refine le_antisymm (Ideal.span_le.mpr ?_) (Ideal.span_le.mpr ?_)
+  · -- Each value is a combination of the coefficients.
+    rintro _ ⟨i, rfl⟩
+    simp only [SetLike.mem_coe, eval_eq_sum_range' hP]
+    exact Submodule.sum_mem _ fun k _ ↦ Ideal.mul_mem_right _ _ (coeff_mem_contentIdeal P k)
+  · -- Cramer's rule recovers each coefficient of `P` from its values, up to the Vandermonde
+    -- determinant of the `xᵢ`, which is a unit.
+    intro _ hc
+    obtain ⟨k, hk, rfl⟩ := mem_coeffs_iff.mp hc
+    have hV : IsUnit (Matrix.vandermonde x).det := by
+      simp only [Matrix.det_vandermonde, IsUnit.prod_iff]
+      exact fun i _ j hj ↦ hx (Finset.mem_Ioi.mp hj).ne'
+    have key := TauCeti.det_vandermonde_smul_eq_sum_adjugate_smul x P.coeff
+      ⟨k, (le_natDegree_of_mem_supp k hk).trans_lt hP⟩
+    simp only [smul_eq_mul, mul_comm (x _ ^ _), ← eval_eq_sum_range' hP] at key
+    rw [SetLike.mem_coe, ← Ideal.unit_mul_mem_iff_mem _ hV, key]
+    exact Submodule.sum_mem _ fun i _ ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨i, rfl⟩)
+
+end Polynomial
 
 /-! ## Producing the coefficients from polynomial matrix entries -/
 

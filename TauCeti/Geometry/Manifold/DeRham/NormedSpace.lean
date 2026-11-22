@@ -46,8 +46,8 @@ on `E` is the exterior derivative of a smooth form. -/
 theorem exactForms_succ_eq_closedForms_normedSpace (k : ℕ) :
     exactForms 𝓘(ℝ, E) E (k + 1) = closedForms 𝓘(ℝ, E) E (k + 1) := by
   refine le_antisymm (exactForms_le_closedForms _ _) fun φ hφ ↦ ?_
-  have hsmooth : ContDiff ℝ ∞ φ.1 := isSmoothForm_modelSpace_iff.mp φ.isSmoothForm
-  have hclosed (y : E) (_ : y ∈ Set.univ) : extDeriv φ.1 y = 0 := by
+  have hsmooth : ContDiff ℝ ∞ φ.val := isSmoothForm_modelSpace_iff.mp φ.isSmoothForm
+  have hclosed (y : E) (_ : y ∈ Set.univ) : extDeriv φ.val y = 0 := by
     rw [← mextDeriv_eq_extDeriv, (mem_closedForms _ φ).mp hφ]
     -- The two zeros differ only through the identification `TangentSpace 𝓘(ℝ, E) y = E`.
     rfl
@@ -66,6 +66,6 @@ theorem subsingleton_deRhamCohomology_normedSpace (k : ℕ) :
   refine subsingleton_of_forall_eq 0 fun c ↦ ?_
   obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective _ _ c
   rw [deRhamCohomology.mk_eq_zero_iff, exactForms_succ_eq_closedForms_normedSpace]
-  exact φ.2
+  exact φ.property
 
 end TauCeti

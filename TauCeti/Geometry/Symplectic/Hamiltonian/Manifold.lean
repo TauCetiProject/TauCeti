@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
@@ -25,6 +26,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Symplectic.Manifold.Opens
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -47,7 +49,9 @@ Hamiltonian vector field by `c⁻¹`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`), and post-composing the
 Hamiltonian with a real function `φ` rescales it pointwise by `φ'`, `X_{φ ∘ f} = φ'(f) X_f`
 (`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`). The value of `X_f` at `x` only depends on the
-germ of `f` at `x` (`Filter.EventuallyEq.hamiltonianVectorField_eq`).
+germ of `f` at `x` (`Filter.EventuallyEq.hamiltonianVectorField_eq`). At a point where the flat
+map is invertible, `X_f` is the unique vector whose contraction with `σ` is `df`, with no condition
+on `σ` elsewhere (`TauCeti.SmoothTwoForm.hamiltonianVectorField_eq_iff_of_isInvertible_flat`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
@@ -203,7 +207,7 @@ theorem isHamiltonianVectorField_iff_flat :
 exterior derivative of the `0`-form of the Hamiltonian. -/
 theorem isHamiltonianVectorField_iff_interior_eq :
     σ.IsHamiltonianVectorField f X ↔
-      RoughForm.interior X σ.1 = mextDeriv (RoughForm.ofFunction I f) := by
+      RoughForm.interior X σ.val = mextDeriv (RoughForm.ofFunction I f) := by
   -- Both sides are one-forms of one vector, the images of `σ♭ X` and `df` respectively.
   simp only [isHamiltonianVectorField_iff_flat, funext_iff, interior_apply_eq_ofSubsingleton_flat,
     mextDeriv_ofFunction, EmbeddingLike.apply_eq_iff_eq]
@@ -253,6 +257,14 @@ Hamiltonian at `x`. -/
 theorem _root_.Filter.EventuallyEq.hamiltonianVectorField_eq (σ : SmoothTwoForm I M) {x : M}
     (hfg : f =ᶠ[𝓝 x] g) : σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hfg.mvfderiv_eq]
+
+/-- At a point where the flat map of `σ` is invertible, the Hamiltonian vector field of `f` is the
+unique vector whose contraction with `σ` is `df`. -/
+theorem hamiltonianVectorField_eq_iff_of_isInvertible_flat {x : M}
+    (hx : (σ.flat x).IsInvertible) {v : TangentSpace I x} :
+    σ.hamiltonianVectorField f x = v ↔ ∀ w, SmoothBundleForm.eval₂ σ x v w = mvfderiv I f x w := by
+  rw [hamiltonianVectorField_def, hx.inverse_apply_eq, ContinuousLinearMap.ext_iff]
+  exact forall_congr' fun w ↦ by rw [flat_apply, eq_comm]
 
 /-- The Hamiltonian vector field of a constant function vanishes. -/
 @[simp]
@@ -356,11 +368,11 @@ theorem apply_mfderiv_sinChartVariation [I.Boundaryless] {H : ℝ → M → ℝ}
     (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
       extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
     (hφ : ContDiff ℝ n φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I n γ) (t : ℝ) :
-    σ.1 (Manifold.sinChartVariation I γ x₀ J φ e (0, t))
+    σ.val (Manifold.sinChartVariation I γ x₀ J φ e (0, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (0, 1) -
             σ.hamiltonianVectorField (H t) (Manifold.sinChartVariation I γ x₀ J φ e (0, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (1, 0)] =
-      φ t * σ.1 (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
+      φ t * σ.val (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
         (trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e] := by
   have : IsManifold I n M := IsManifold.of_le (n := ∞) (WithTop.coe_le_coe.2 le_top)
   have hn1 : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
@@ -374,7 +386,7 @@ theorem apply_mfderiv_sinChartVariation [I.Boundaryless] {H : ℝ → M → ℝ}
     rw [← Manifold.curveVelocity_eq_mfderiv_snd
       (f := fun a b ↦ Manifold.sinChartVariation I γ x₀ J φ e (a, b)) hwd, funext hw0]
   -- first the base point `w (0, t) = γ t` and the velocity `∂_t w (0, t) = γ'(t)`
-  trans σ.1 (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
+  trans σ.val (γ t) ![Manifold.curveVelocity I γ t - σ.hamiltonianVectorField (H t) (γ t),
     mfderiv 𝓘(ℝ, ℝ × ℝ) I (Manifold.sinChartVariation I γ x₀ J φ e) (0, t) (1, 0)]
   · rw [hv, hw0 t]
   -- then the variation field
@@ -385,7 +397,7 @@ theorem apply_mfderiv_sinChartVariation [I.Boundaryless] {H : ℝ → M → ℝ}
       SmoothBundleForm.eval₂_apply, smul_eq_mul]
   · have hφt : φ t = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ htJ (hφJ h')
     rw [Manifold.mfderiv_sinChartVariation_of_notMem hwd htJ, hφt, zero_mul]
-    exact (σ.1 (γ t)).map_coord_zero 1 rfl
+    exact (σ.val (γ t)).map_coord_zero 1 rfl
 
 namespace IsNondegenerate
 
@@ -415,13 +427,13 @@ theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace
 `σ_x(X_f, v) = df_x(v)`. -/
 @[simp]
 theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
-    σ.1 x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
+    σ.val x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v := by
   rw [← SmoothBundleForm.eval₂_apply, h.eval₂_hamiltonianVectorField]
 
 /-- Pairing `a - X_f` with `b` under `σ`: `σ(a - X_f, b) = -σ(b, a) - df(b)`. This is the
 integrand of the first variation of the action functional. -/
 theorem apply_sub_hamiltonianVectorField (f : M → ℝ) (x : M) (a b : TangentSpace I x) :
-    σ.1 x ![a - σ.hamiltonianVectorField f x, b] = -σ.1 x ![b, a] - mvfderiv I f x b := by
+    σ.val x ![a - σ.hamiltonianVectorField f x, b] = -σ.val x ![b, a] - mvfderiv I f x b := by
   rw [← SmoothBundleForm.eval₂_apply, ← SmoothBundleForm.eval₂_apply, ← flat_apply, map_sub,
     sub_apply, flat_apply, flat_apply, h.eval₂_hamiltonianVectorField, SmoothBundleForm.eval₂_swap]
 
@@ -431,7 +443,7 @@ taken at `(s₀, t)`, is continuous. -/
 theorem continuous_apply_sub_hamiltonianVectorField {H : ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (Function.uncurry H)) {w : ℝ × ℝ → M}
     (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (s₀ : ℝ) :
-    Continuous fun t ↦ σ.1 (w (s₀, t))
+    Continuous fun t ↦ σ.val (w (s₀, t))
       ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
         mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)] :=
   ((((σ.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hw (1, 0) (0, 1)).comp
@@ -449,7 +461,7 @@ theorem continuous_mul_apply_curveVelocity_sub [I.Boundaryless] {H : ℝ → M �
     (hT : ∀ t ∈ J, ∀ c : ℝ, |c| ≤ 1 →
       extChartAt I x₀ (γ t) + (c * φ t) • e ∈ (extChartAt I x₀).target)
     (hφ : ContDiff ℝ n φ) (hφJ : tsupport φ ⊆ J) (hγ : ContMDiff 𝓘(ℝ, ℝ) I n γ) :
-    Continuous fun t ↦ φ t * σ.1 (γ t) ![Manifold.curveVelocity I γ t -
+    Continuous fun t ↦ φ t * σ.val (γ t) ![Manifold.curveVelocity I γ t -
       σ.hamiltonianVectorField (H t) (γ t), (trivializationAt E (TangentSpace I) x₀).symmL ℝ
         (γ t) e] :=
   have : IsManifold I n M := IsManifold.of_le (n := ∞) (WithTop.coe_le_coe.2 le_top)
@@ -465,17 +477,17 @@ trivialization at `x₀`, and, near `x₀`, the points displaced by `c • e` wi
 target of the extended chart at `x₀`. -/
 theorem exists_pos_apply_and_eventually_add_smul_mem_target [I.Boundaryless] {x₀ : M}
     {v : TangentSpace I x₀} (hv : v ≠ 0) :
-    ∃ e : E, 0 < σ.1 x₀ ![v, (trivializationAt E (TangentSpace I) x₀).symmL ℝ x₀ e] ∧
+    ∃ e : E, 0 < σ.val x₀ ![v, (trivializationAt E (TangentSpace I) x₀).symmL ℝ x₀ e] ∧
       ∀ᶠ x in 𝓝 x₀, x ∈ (extChartAt I x₀).source ∧
         ∀ c : ℝ, |c| ≤ 1 → extChartAt I x₀ x + c • e ∈ (extChartAt I x₀).target := by
   -- a tangent vector `u` at `x₀` pairing positively with `v`
-  obtain ⟨u, hu⟩ : ∃ u : TangentSpace I x₀, 0 < σ.1 x₀ ![v, u] := by
+  obtain ⟨u, hu⟩ : ∃ u : TangentSpace I x₀, 0 < σ.val x₀ ![v, u] := by
     obtain ⟨u, hu⟩ : ∃ u, SmoothBundleForm.eval₂ σ x₀ v u ≠ 0 := by
       by_contra hcon
       exact hv (SmoothTwoForm.isNondegenerate_iff_separatingLeft.mp h x₀ _
         fun u ↦ not_not.mp (not_exists.mp hcon u))
     rw [SmoothBundleForm.eval₂_apply] at hu
-    refine ⟨σ.1 x₀ ![v, u] • u, ?_⟩
+    refine ⟨σ.val x₀ ![v, u] • u, ?_⟩
     rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_smul_right,
       SmoothBundleForm.eval₂_apply, smul_eq_mul]
     exact mul_self_pos.mpr hu
@@ -753,6 +765,18 @@ theorem poissonBracket_fun_sum_right {ι : Type*} {s : Finset ι} {G : ι → M 
   simp only [poissonBracket_def, hamiltonianVectorField_fun_sum hG,
     ← SmoothForm.bilinFormAt_apply, map_sum]
 
+/-- The Poisson bracket `{f, g}` is minus the derivative of `g` along the Hamiltonian vector
+field of `f`. If the flat map `σ.flat x` is not invertible, both Hamiltonian vector fields vanish
+at `x` and both sides are zero. -/
+theorem poissonBracket_eq_neg_mvfderiv (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x = -mvfderiv I g x (σ.hamiltonianVectorField f x) := by
+  by_cases hx : (σ.flat x).IsInvertible
+  · rw [← neg_poissonBracket, poissonBracket_def, ← flat_apply]
+    simp [hamiltonianVectorField_def, hx.self_apply_inverse]
+  · simp only [poissonBracket_def, hamiltonianVectorField_def,
+      ContinuousLinearMap.inverse_of_not_isInvertible hx, zero_apply, map_zero, neg_zero]
+    rw [← flat_apply, map_zero]
+
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
@@ -763,12 +787,6 @@ include h
 theorem poissonBracket_eq_mvfderiv (f g : M → ℝ) (x : M) :
     σ.poissonBracket f g x = mvfderiv I f x (σ.hamiltonianVectorField g x) :=
   h.eval₂_hamiltonianVectorField f x _
-
-/-- The Poisson bracket `{f, g}` is minus the derivative of `g` along the Hamiltonian vector
-field of `f`. -/
-theorem poissonBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
-    σ.poissonBracket f g x = -mvfderiv I g x (σ.hamiltonianVectorField f x) := by
-  rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv]
 
 /-- **Regularity of the Poisson bracket.** For a nondegenerate two-form on a finite-dimensional
 manifold, the Poisson bracket of two `C^(n+1)` functions is `C^n`, for `n ≤ ∞`. -/
@@ -987,11 +1005,11 @@ differentiability is needed: both sides are computed from the same form and diff
 theorem hamiltonianVectorField_comp_subtype_val (σ : SmoothTwoForm I M)
     {U : TopologicalSpace.Opens M} (f : M → ℝ) (x : U) :
     SmoothTwoForm.hamiltonianVectorField
-        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)
         (f ∘ Subtype.val) x =
       (Manifold.tangentSpaceOpenEquiv (I := I) x).symm (σ.hamiltonianVectorField f x) := by
   have hflat : SmoothTwoForm.flat
-      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) x = σ.flat x := by
+      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) x = σ.flat x := by
     ext v w
     rw [flat_apply, SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val,
       ContinuousLinearEquiv.coe_coe, Manifold.tangentSpaceOpenEquiv_apply,
@@ -1012,7 +1030,7 @@ their Poisson bracket. -/
 theorem poissonBracket_comp_subtype_val (σ : SmoothTwoForm I M)
     {U : TopologicalSpace.Opens M} (f g : M → ℝ) (x : U) :
     SmoothTwoForm.poissonBracket
-        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)
         (f ∘ Subtype.val) (g ∘ Subtype.val) x =
       σ.poissonBracket f g x := by
   rw [poissonBracket_def, poissonBracket_def, hamiltonianVectorField_comp_subtype_val,
@@ -1050,6 +1068,46 @@ theorem poissonBracket_constSmooth (omegaForm : SymplecticForm V) (f g : V → �
   -- The tangent spaces of the model space are `V` itself, through the identity map
   -- `NormedSpace.fromTangentSpace`.
   exact fromTangentSpace_constSmooth_apply omegaForm x _ _
+
+/-- **Integral curves on an open subset solve Hamilton's equations.** For a constant symplectic
+form `ω` on `V` and an open set `U ⊆ V`, a global integral curve in `U` of the Hamiltonian vector
+field of `f ∘ val` for the restriction of `ω` to `U` is, read in `V`, a solution of Hamilton's
+equations `x' = X_f(x)` of the linear theory. -/
+theorem hasDerivAt_coe_of_isMIntegralCurve (omegaForm : SymplecticForm V)
+    {U : TopologicalSpace.Opens V} {f : V → ℝ} {γ : ℝ → U}
+    (hγ : IsMIntegralCurve γ (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : U → V) contMDiff_subtypeVal omegaForm.constSmooth)
+      (f ∘ Subtype.val))) (t : ℝ) :
+    HasDerivAt (fun s ↦ (γ s : V)) (omegaForm.hamiltonianVectorField f (γ t)) t := by
+  -- The inclusion of `U` carries the restricted Hamiltonian vector field to that of `f`.
+  have h := (hγ.isMIntegralCurveOn Set.univ).map_of_mfderiv_eq (f := (Subtype.val : U → V))
+    (W := fun y ↦ omegaForm.constSmooth.hamiltonianVectorField f y)
+    (fun _ _ ↦ contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) fun s _ ↦ by
+      rw [Manifold.mfderiv_subtype_val, SmoothTwoForm.hamiltonianVectorField_comp_subtype_val,
+        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+  have h' := (TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn.1 h t (Set.mem_univ t)).hasDerivAt
+    Filter.univ_mem
+  simpa [Function.comp_def, hamiltonianVectorField_constSmooth] using h'
+
+/-- **Complete Hamiltonian flows on an open subset give global motions.** For a constant symplectic
+form `ω` on `V`, an open set `U ⊆ V` and a function `f` that is `C²` on `U`, if the Hamiltonian
+vector field of `f ∘ val` for the restriction of `ω` to `U` is complete, then through every
+`x ∈ U` passes a solution `γ : ℝ → V` of Hamilton's equations `γ' = X_f(γ)` of the linear theory,
+defined and staying in `U` at all times. -/
+theorem exists_forall_hasDerivAt_of_isCompleteVectorField (omegaForm : SymplecticForm V)
+    {U : TopologicalSpace.Opens V} {f : V → ℝ}
+    (hf : ContMDiff 𝓘(ℝ, V) 𝓘(ℝ) 2 (f ∘ (Subtype.val : U → V)))
+    (hcomplete : IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : U → V) contMDiff_subtypeVal omegaForm.constSmooth)
+      (f ∘ Subtype.val))) {x : V} (hx : x ∈ U) :
+    ∃ γ : ℝ → V, γ 0 = x ∧
+      ∀ t, γ t ∈ U ∧ HasDerivAt γ (omegaForm.hamiltonianVectorField f (γ t)) t := by
+  -- The restricted Hamiltonian vector field is `C¹`, so it has a global integral curve through `x`.
+  obtain ⟨γ, hγ₀, hγ⟩ := hcomplete.exists_isMIntegralCurve
+    (((isNondegenerate_constSmooth omegaForm).mpullback_subtype_val U
+      ).contMDiff_hamiltonianVectorField (n := 1) (by simp) (by norm_num [hf])) ⟨x, hx⟩
+  exact ⟨fun s ↦ γ s, by simp [hγ₀], fun t ↦
+    ⟨(γ t).property, omegaForm.hasDerivAt_coe_of_isMIntegralCurve hγ t⟩⟩
 
 end SymplecticForm
 

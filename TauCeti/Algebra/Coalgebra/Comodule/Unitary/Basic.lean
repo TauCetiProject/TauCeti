@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Dual
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.ChangeBasis
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import Mathlib.RingTheory.HopfAlgebra.Convolution
@@ -23,9 +24,12 @@ on the coefficient algebra is required.
 including bases with different finite index types. Consequently
 `OrthonormalBasis.isUnitary_comodule_iff` tests unitarity in any orthonormal basis,
 independently of the arbitrary standard basis used in the definition. For Hopf algebras,
-unitarity is equivalent to the antipode acting on coefficients by transposed star, and any matrix
-`G` satisfying `(u.map star)ᴴ * G * u.map star = G` for a unitary coefficient matrix `u` has `Gᵀ`
-intertwining `u` with its double antipode `(u.map S).map S`.
+unitarity is equivalent to the antipode acting on coefficients by transposed star, the explicit
+right dual comodule in the dual basis has coefficient matrix given by the entrywise star
+(`TauCeti.Comodule.coefficientMatrix_dualBasis_of_mem_unitary` and
+`TauCeti.Comodule.IsUnitary.coefficientMatrix_dualBasis`), and any matrix `G` satisfying
+`(u.map star)ᴴ * G * u.map star = G` for a unitary coefficient matrix `u` has `Gᵀ` intertwining
+`u` with its double antipode `(u.map S).map S`.
 
 These algebraic unitary objects—and the set `TauCeti.unitaryCoefficientSet` of matrix entries of
 unitary `Fin n × Fin n` coefficient matrices over `ℂ`
@@ -188,6 +192,34 @@ theorem isUnitary_comodule (g : GroupLike 𝕜 A) (hg : (g : A) ∈ unitary A) :
 
 end GroupLike
 
+section HopfDual
+
+namespace TauCeti.Comodule
+
+variable {R A M ι : Type*} [CommSemiring R] [Semiring A] [StarRing A]
+  [HopfAlgebra R A] [AddCommMonoid M] [Module R M] [Comodule R A M]
+  [Module.Finite R M] [Module.Projective R M] [Fintype ι] [DecidableEq ι]
+
+attribute [local instance] Comodule.dual
+
+/-- When `b` has unitary coefficient matrix `u`, the dual basis `b.dualBasis` of the explicit right
+dual comodule has coefficient matrix `u.map star`, the entrywise star (conjugate matrix). -/
+theorem coefficientMatrix_dualBasis_of_mem_unitary (b : Basis ι R M)
+    (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) :
+    coefficientMatrix (C := A) b.dualBasis = (coefficientMatrix (C := A) b).map star := by
+  have hu2 : coefficientMatrix (C := A) b * (coefficientMatrix (C := A) b)ᴴ = 1 := by
+    simpa [Matrix.star_eq_conjTranspose] using (Unitary.mem_iff.mp hu).2
+  have hS : (coefficientMatrix (C := A) b).map (HopfAlgebra.antipode R) =
+      (coefficientMatrix (C := A) b)ᴴ :=
+    left_inv_eq_right_inv (map_antipode_mul_coefficientMatrix b) hu2
+  ext i j
+  rw [coefficientMatrix_dualBasis, hS, Matrix.transpose_apply, Matrix.conjTranspose_apply,
+    Matrix.map_apply]
+
+end TauCeti.Comodule
+
+end HopfDual
+
 section Hopf
 
 variable {𝕜 A M ι : Type*} [RCLike 𝕜] [Semiring A] [StarRing A] [HopfAlgebra 𝕜 A]
@@ -226,6 +258,15 @@ theorem IsUnitary.antipode_coefficientMatrix (h : IsUnitary 𝕜 A M)
       star (coefficientMatrix (C := A) b.toBasis j i) := by
   classical
   exact congrFun (congrFun (b.isUnitary_comodule_iff_map_antipode_eq_conjTranspose.mp h) i) j
+
+attribute [local instance] Comodule.dual in
+/-- For a finite-dimensional unitary comodule in an orthonormal basis `b`, the dual basis
+`b.toBasis.dualBasis` has coefficient matrix `(coefficientMatrix b.toBasis).map star`. -/
+theorem IsUnitary.coefficientMatrix_dualBasis [DecidableEq ι] (hM : IsUnitary 𝕜 A M)
+    (b : OrthonormalBasis ι 𝕜 M) :
+    coefficientMatrix (C := A) b.toBasis.dualBasis =
+      (coefficientMatrix (C := A) b.toBasis).map star :=
+  coefficientMatrix_dualBasis_of_mem_unitary b.toBasis (hM.coefficientMatrix_mem_unitary b)
 
 end TauCeti.Comodule
 

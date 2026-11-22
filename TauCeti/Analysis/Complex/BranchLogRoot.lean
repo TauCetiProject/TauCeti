@@ -229,7 +229,7 @@ theorem exists_differentiableOn_pow_eq {U : Set ℂ} (hUc : IsSimplyConnected U)
   have hne : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hmul : (n : ℂ) * (L z / n) = L z := by field_simp
   have hpow : Complex.exp (L z / n) ^ n = Complex.exp (L z) := by
-    rw [← Complex.exp_nat_mul, hmul]
+    rw [← Complex.exp_natCast_mul, hmul]
   simpa only [hpow, Function.comp_apply] using hLeq hz
 
 /-- The germ form of `TauCeti.exists_differentiableOn_pow_eq`: a holomorphic germ that does not

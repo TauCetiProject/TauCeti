@@ -126,7 +126,7 @@ open scoped Matrix.Norms.Frobenius in
 
 /-- Every element of `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)` is a Hermitian matrix. -/
 theorem isHermitian_coe (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
-    (A : Matrix (Fin p) (Fin p) 𝕜).IsHermitian := A.2
+    (A : Matrix (Fin p) (Fin p) 𝕜).IsHermitian := A.property
 
 /-- Every element of the self-adjoint matrix subspace equals its conjugate transpose. -/
 @[simp] theorem conjTranspose_coe (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
@@ -172,13 +172,13 @@ def selfAdjointConj (U : Matrix.unitaryGroup (Fin p) 𝕜) :
       (e.symm.toAlgEquiv.toLinearMap.restrict
         (p := selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))
         fun _ hA ↦ by rw [Unitary.conjStarAlgAut_symm]; exact IsSelfAdjoint.conjugate hA (star U))
-      (LinearMap.ext fun A ↦ Subtype.ext (e.apply_symm_apply A.1))
-      (LinearMap.ext fun A ↦ Subtype.ext (e.symm_apply_apply A.1))
+      (LinearMap.ext fun A ↦ Subtype.ext (e.apply_symm_apply A.val))
+      (LinearMap.ext fun A ↦ Subtype.ext (e.symm_apply_apply A.val))
     norm_map' A := by
       let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusNormedAddCommGroup
       refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
       have hsq := Matrix.frobenius_norm_sq_conj_unitary
-        (star (U : Matrix (Fin p) (Fin p) 𝕜)) (A : Matrix (Fin p) (Fin p) 𝕜) (star U).2
+        (star (U : Matrix (Fin p) (Fin p) 𝕜)) (A : Matrix (Fin p) (Fin p) 𝕜) (star U).property
       rwa [star_eq_conjTranspose, Matrix.conjTranspose_conjTranspose] at hsq }
 
 /-- Ambient matrix coercion of `Matrix.UnitaryGroup.selfAdjointConj`. -/

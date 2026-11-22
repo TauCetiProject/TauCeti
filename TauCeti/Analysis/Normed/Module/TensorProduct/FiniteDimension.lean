@@ -162,19 +162,23 @@ noncomputable def toOperatorEquiv : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F 
   letI : DecidableEq (Module.Basis.ofVectorSpaceIndex 𝕜 E) := Classical.decEq _
   let c : Module.Dual 𝕜 E ⊗[𝕜] F ≃ₗ[𝕜] StrongDual 𝕜 E ⊗[𝕜] F :=
     _root_.TensorProduct.congr LinearMap.toContinuousLinearMap (LinearEquiv.refl 𝕜 F)
-  ContinuousLinearEquiv.equivOfInverse (toOperator 𝕜 E F) (toOperatorInvOfBasis b)
-    (fun ⟨u⟩ ↦ (linearEquiv 𝕜 (StrongDual 𝕜 E) F).injective <| by
-      obtain ⟨v, rfl⟩ := c.surjective u
-      rw [linearEquiv_apply, linearEquiv_apply, toTensorProduct_toOperatorInvOfBasis b,
-        toOperator_mk, TensorProduct.toLinearMap_toOperator_congr,
-        dualTensorHomEquivOfBasis_symm_cancel_left])
-    (fun T ↦ ContinuousLinearMap.coe_injective <| DFunLike.coe_injective <| by
+  ContinuousLinearEquiv.ofContinuousLinearMap (toOperator 𝕜 E F) (toOperatorInvOfBasis b)
+    (ContinuousLinearMap.ext <|
+      show Function.RightInverse (toOperatorInvOfBasis b) (toOperator 𝕜 E F) from
+      fun T ↦ ContinuousLinearMap.coe_injective <| DFunLike.coe_injective <| by
       rcases hv : toOperatorInvOfBasis b T with ⟨w⟩
       have h : w = c ((dualTensorHomEquivOfBasis (N := F) b).symm T.toLinearMap) := by
         simpa [hv] using toTensorProduct_toOperatorInvOfBasis b T
       have hr := congrArg DFunLike.coe
         (dualTensorHomEquivOfBasis_symm_cancel_right b T.toLinearMap)
       rwa [← TensorProduct.toLinearMap_toOperator_congr, ← h, ← toOperator_mk] at hr)
+    (ContinuousLinearMap.ext <|
+      show Function.LeftInverse (toOperatorInvOfBasis b) (toOperator 𝕜 E F) from
+      fun ⟨u⟩ ↦ (linearEquiv 𝕜 (StrongDual 𝕜 E) F).injective <| by
+      obtain ⟨v, rfl⟩ := c.surjective u
+      rw [linearEquiv_apply, linearEquiv_apply, toTensorProduct_toOperatorInvOfBasis b,
+        toOperator_mk, TensorProduct.toLinearMap_toOperator_congr,
+        dualTensorHomEquivOfBasis_symm_cancel_left])
 
 @[simp] theorem toOperatorEquiv_toContinuousLinearMap :
     (toOperatorEquiv 𝕜 E F).toContinuousLinearMap = toOperator 𝕜 E F := (rfl)

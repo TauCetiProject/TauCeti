@@ -43,6 +43,10 @@ positive dimension its kernel is `{1, -1}` and it is a quotient covering map by 
 
 ## Main results
 
+* `TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply` and
+  `TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply`: the
+  quadratic-form group acts on coordinates by Euclidean isometries, continuously in the group
+  element.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply`: the Euclidean
   Spin projection acts on coordinates by `CliffordAlgebra.spinVectorAction`.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToEuclideanSpecialOrthogonal_surjective`: the Euclidean
@@ -90,6 +94,32 @@ theorem realCliffordSpecialOrthogonalContinuousMulEquivEuclidean_apply_apply (n 
         EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) v =
       WithLp.toLp 2 ((g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) v.ofLp) := by
   simp [realCliffordSpecialOrthogonalContinuousMulEquivEuclidean, Matrix.toLpLin_apply]
+
+/-- An element of `QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)` preserves the
+Euclidean norm of coordinate vectors. -/
+theorem norm_toLp_specialOrthogonalGroup_realCliffordForm_apply (n : ℕ)
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) (v : Fin n → ℝ) :
+    ‖WithLp.toLp 2 ((g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) v)‖ = ‖WithLp.toLp 2 v‖ := by
+  have h := Unitary.norm_map (realCliffordSpecialOrthogonalContinuousMulEquivEuclidean n g :
+    unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))) (WithLp.toLp 2 v)
+  rwa [realCliffordSpecialOrthogonalContinuousMulEquivEuclidean_apply_apply,
+    WithLp.ofLp_toLp] at h
+
+/-- Applying an element of `QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)` to a
+fixed coordinate vector is continuous in the group element. -/
+@[fun_prop]
+theorem continuous_specialOrthogonalGroup_realCliffordForm_apply (n : ℕ) (v : Fin n → ℝ) :
+    Continuous fun g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ↦
+      (g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) v := by
+  have h : Continuous fun g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ↦
+      ((((realCliffordSpecialOrthogonalContinuousMulEquivEuclidean n g :
+          specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))) :
+        unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))) :
+          EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) (WithLp.toLp 2 v)).ofLp :=
+    (PiLp.continuous_ofLp 2 _).comp <| (continuous_subtypeVal.comp <| continuous_subtypeVal.comp
+      (realCliffordSpecialOrthogonalContinuousMulEquivEuclidean n).continuous).clm_apply
+        continuous_const
+  simpa using h
 
 /-- The compact real Spin projection onto the special orthogonal operator group of
 `EuclideanSpace ℝ (Fin n)`, bundled as a continuous group homomorphism. -/

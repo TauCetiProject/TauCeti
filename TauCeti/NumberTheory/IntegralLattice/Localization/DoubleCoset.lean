@@ -103,7 +103,7 @@ private theorem isFullLattice_and_padicLocalization_adelicTranslateCarrier :
   -- At almost every prime `g_p ∈ K_p(L)`, so that `g_p L_p = L_p`.
   have hX : ∀ᶠ p : Nat.Primes in cofinite,
       L.localTranslate p (g p) = L.carrier.padicLocalization p :=
-    g.2.mono fun p hp ↦ (L.mem_localStabilizer_iff_localTranslate_eq p).mp
+    g.property.mono fun p hp ↦ (L.mem_localStabilizer_iff_localTranslate_eq p).mp
       (L.orthogonalCompactOpens_orthogonal p ▸ hp)
   obtain ⟨M, ⟨hM, hMX⟩, -⟩ := Submodule.existsUnique_isFullLattice_padicLocalization_eq _ hX
   obtain rfl : M = adelicTranslateCarrier L g := Submodule.ext fun v ↦ by
@@ -123,7 +123,7 @@ private theorem norm_form_le_one_of_mem_adelicTranslateCarrier {v w : V}
   obtain ⟨b, hb⟩ := hw'
   have hg : (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) ∈
       (L.completedRationalForm p).isometryGroup :=
-    L.orthogonalGroup_norm_baseChange p ▸ (g p).2
+    L.orthogonalGroup_norm_baseChange p ▸ (g p).property
   have h := LinearMap.BilinForm.mem_isometryGroup_iff.mp hg (L.localizationToCompletion p a)
     (L.localizationToCompletion p b)
   have hva : (g p : ℚ_[p] ⊗[ℚ] V ≃ₗ[ℚ_[p]] ℚ_[p] ⊗[ℚ] V) (L.localizationToCompletion p a) =
@@ -226,7 +226,7 @@ noncomputable def adelicTranslateDiagonalIsometry (γ : orthogonalGroup L.norm) 
     Isometry (L.adelicTranslate g)
       (L.adelicTranslate (L.orthogonalCompactOpens.finiteAdelicOrthogonalDiagonal γ * g)) where
   toLinearEquiv := (γ : V ≃ₗ[ℚ] V)
-  map_app' := LinearMap.BilinForm.mem_isometryGroup_iff.mp (L.orthogonalGroup_norm ▸ γ.2)
+  map_app' := LinearMap.BilinForm.mem_isometryGroup_iff.mp (L.orthogonalGroup_norm ▸ γ.property)
   map_carrier := (L.adelicTranslate_finiteAdelicOrthogonalDiagonal_mul_carrier g γ).symm
 
 /-- The isometry `g • L ≅ γ g • L` is `γ` on the ambient space. -/
@@ -244,7 +244,7 @@ theorem sameGenus_adelicTranslate : L.SameGenus (L.adelicTranslate g) := by
   refine (localIntegralForm_equivalent_iff_exists_isometryEquiv q).mpr ?_
   rw [adelicTranslate_completedRationalForm]
   refine ⟨(L.completedRationalForm q).isometryGroupEquivIsometryEquiv
-      ⟨g q, L.orthogonalGroup_norm_baseChange q ▸ (g q).2⟩, fun x ↦ ?_⟩
+      ⟨g q, L.orthogonalGroup_norm_baseChange q ▸ (g q).property⟩, fun x ↦ ?_⟩
   rw [L.range_localizationToCompletion, (L.adelicTranslate g).range_localizationToCompletion,
     padicLocalization_adelicTranslate_carrier,
     LinearMap.BilinForm.coe_isometryGroupEquivIsometryEquiv]

@@ -67,28 +67,30 @@ the specialized family `p.map (φ x)`, `p ∈ F`, has a delineation over `X`. -/
 theorem nonempty_delineation_of_collinsProjection (φ : X → R →+* ℝ)
     (hcont : ∀ a ∈ F.collinsProjection, Continuous fun x ↦ φ x a)
     (hzero : ∀ a ∈ F.collinsProjection, ∀ x y, φ x a = 0 ↔ φ y a = 0) :
-    Nonempty (Delineation fun (p : F) x ↦ p.1.map (φ x)) := by
+    Nonempty (Delineation fun (p : F) x ↦ p.val.map (φ x)) := by
   refine nonempty_delineation (fun p i ↦ ?_) (fun p ↦ ?_)
-    (fun p x y ↦ Finset.natDegree_map_eq_of_collinsProjection (fun a ha ↦ hzero a ha x y) p.2)
+    (fun p x y ↦ Finset.natDegree_map_eq_of_collinsProjection
+        (fun a ha ↦ hzero a ha x y) p.property)
     (fun p x y ↦ ?_)
     fun p q _ x y ↦
-      Finset.natDegree_gcd_map_eq_of_collinsProjection (fun a ha ↦ hzero a ha x y) p.2 q.2
+      Finset.natDegree_gcd_map_eq_of_collinsProjection (fun a ha ↦ hzero a ha x y) p.property
+          q.property
   · -- the coefficients up to the degree are elements of the projection, the others vanish
     simp only [coeff_map]
-    rcases le_or_gt i p.1.natDegree with hi | hi
-    · exact hcont _ (Finset.coeff_mem_collinsProjection p.2 p.1.self_mem_reducta hi)
+    rcases le_or_gt i p.val.natDegree with hi | hi
+    · exact hcont _ (Finset.coeff_mem_collinsProjection p.property p.val.self_mem_reducta hi)
     · simpa [coeff_eq_zero_of_natDegree_lt hi] using continuous_const
-  · by_cases h : ∃ x, p.1.map (φ x) = 0
+  · by_cases h : ∃ x, p.val.map (φ x) = 0
     · obtain ⟨x, hx⟩ := h
       exact .inl fun y ↦
-        (Finset.map_eq_zero_iff_of_collinsProjection (fun a ha ↦ hzero a ha x y) p.2).1 hx
+        (Finset.map_eq_zero_iff_of_collinsProjection (fun a ha ↦ hzero a ha x y) p.property).1 hx
     · exact .inr fun x hx ↦ h ⟨x, hx⟩
   · -- count distinct complex roots after composing with the injective map `ℝ → ℂ`
     have hzero' (a) (ha : a ∈ F.collinsProjection) :
         (algebraMap ℝ ℂ).comp (φ x) a = 0 ↔ (algebraMap ℝ ℂ).comp (φ y) a = 0 := by
       simpa using hzero a ha x y
     simpa only [aroots, map_map] using
-      Finset.card_roots_toFinset_map_eq_of_collinsProjection hzero' p.2
+      Finset.card_roots_toFinset_map_eq_of_collinsProjection hzero' p.property
 
 end General
 
@@ -107,14 +109,14 @@ Only the zero pattern of the projection on `S` is used; see
 `TauCeti.nonempty_delineation_of_collinsProjection`. -/
 theorem nonempty_delineation_of_signInvariant_collinsProjection (hS : IsPreconnected S)
     (h : ∀ q ∈ F.collinsProjection, SignInvariant (fun x ↦ MvPolynomial.eval₂ φ x q) S) :
-    Nonempty (Delineation fun (p : F) (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom φ x.1)) := by
+    Nonempty (Delineation fun (p : F) (x : S) ↦ p.val.map (MvPolynomial.eval₂Hom φ x.val)) := by
   have := isPreconnected_iff_preconnectedSpace.1 hS
-  refine nonempty_delineation_of_collinsProjection (fun x : S ↦ MvPolynomial.eval₂Hom φ x.1)
+  refine nonempty_delineation_of_collinsProjection (fun x : S ↦ MvPolynomial.eval₂Hom φ x.val)
     (fun q _ ↦ ?_) fun q hq x y ↦ ?_
   · simp only [MvPolynomial.coe_eval₂Hom, ← MvPolynomial.eval_map]
-    exact (MvPolynomial.continuous_eval _).comp continuous_subtype_val
+    exact (MvPolynomial.continuous_eval _).comp continuous_subtypeVal
   · simpa only [MvPolynomial.coe_eval₂Hom, sign_eq_zero_iff] using
-      (congrArg (· = 0) (signInvariant_def.1 (h q hq) x x.2 y y.2)).to_iff
+      (congrArg (· = 0) (signInvariant_def.1 (h q hq) x x.property y y.property)).to_iff
 
 /-- **Delineability of families mapped to `ℝ`.** Let `P` be a finite family of polynomials in
 the variables `X 0, …, X n` over `A`, and let `φ : A →+* ℝ`. If every element of the
@@ -128,21 +130,21 @@ theorem nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProj
     (h : ∀ q ∈ (P.image (MvPolynomial.finSuccEquiv A n)).collinsProjection,
       SignInvariant (fun x ↦ MvPolynomial.eval₂ φ x q) S) :
     Nonempty (Delineation fun (p : P.image fun f ↦ MvPolynomial.finSuccEquiv ℝ n (f.map φ))
-      (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1)) := by
+      (x : S) ↦ p.val.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.val)) := by
   classical
   obtain ⟨D⟩ := nonempty_delineation_of_signInvariant_collinsProjection hS h
   -- The two families have the same members: specializing the mapped image of `f` at `x` is
   -- specializing the image of `f` along `φ` at `x`.
   have hspec (f : MvPolynomial (Fin (n + 1)) A) (x : S) :
-      (MvPolynomial.finSuccEquiv ℝ n (f.map φ)).map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1) =
-        (MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ x.1) := by
+      (MvPolynomial.finSuccEquiv ℝ n (f.map φ)).map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.val) =
+        (MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ x.val) := by
     simp only [MvPolynomial.finSuccEquiv_map, Polynomial.map_map]
     congr 1
     ext <;> simp
   refine D.nonempty_of_forall_exists_eq (fun q ↦ ?_) fun p ↦ ?_
-  · obtain ⟨f, hf, hq⟩ := Finset.mem_image.1 q.2
+  · obtain ⟨f, hf, hq⟩ := Finset.mem_image.1 q.property
     exact ⟨⟨_, Finset.mem_image_of_mem _ hf⟩, fun x ↦ hq ▸ hspec f x⟩
-  · obtain ⟨f, hf, hp⟩ := Finset.mem_image.1 p.2
+  · obtain ⟨f, hf, hp⟩ := Finset.mem_image.1 p.property
     exact ⟨⟨_, Finset.mem_image_of_mem _ hf⟩, fun x ↦ hp ▸ hspec f x⟩
 
 end MvPolynomial

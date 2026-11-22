@@ -241,7 +241,7 @@ theorem mem_continuousCoboundary_succ_iff {n : ℕ} {z : continuousCocycle R L M
 and only if it corresponds under `oneCochainEquiv` to a principal `1`-cochain `d₀₁ R L M m`. -/
 theorem mem_continuousCoboundary_one_iff {z : continuousCocycle R L M 1} :
     z ∈ continuousCoboundary R L M 1 ↔
-      ∃ m : M, d₀₁ R L M m = oneCochainEquiv R L M z.1 := by
+      ∃ m : M, d₀₁ R L M m = oneCochainEquiv R L M z.val := by
   rw [mem_continuousCoboundary_succ_iff]
   refine ⟨fun ⟨ω, _, hω⟩ ↦ ⟨ω ![], ?_⟩, fun ⟨m, hm⟩ ↦ ?_⟩
   · rw [← oneCochainEquiv_d_zero, hω]
@@ -305,9 +305,9 @@ theorem continuousCohomologyMk_succ_eq_iff {n : ℕ} (z w : continuousCocycle R 
 
 @[simp]
 theorem continuousCohomologyMk_d {n : ℕ} (ω : continuousCochain R L M n)
-    {hz : d R L M n ω.1 ∈ continuousCocycle R L M (n + 1)} :
-    continuousCohomologyMk R L M (n + 1) ⟨d R L M n ω.1, hz⟩ = 0 :=
-  (continuousCohomologyMk_succ_eq_zero_iff _).mpr ⟨ω.1, ω.2, rfl⟩
+    {hz : d R L M n ω.val ∈ continuousCocycle R L M (n + 1)} :
+    continuousCohomologyMk R L M (n + 1) ⟨d R L M n ω.val, hz⟩ = 0 :=
+  (continuousCohomologyMk_succ_eq_zero_iff _).mpr ⟨ω.val, ω.property, rfl⟩
 
 end Cohomology
 
@@ -352,7 +352,7 @@ theorem continuousCocycleMap_id
     continuousCocycleMap (LinearMap.id : M →ₗ[R] M) (LieHom.id : L →ₗ⁅R⁆ L) he hφ n =
       LinearMap.id := by
   ext z : 1
-  exact Subtype.ext <| LinearMap.congr_fun (cochainMap_id n) z.1
+  exact Subtype.ext <| LinearMap.congr_fun (cochainMap_id n) z.val
 
 theorem continuousCocycleMap_comp (e : M →ₗ[R] M') (e' : M' →ₗ[R] M'')
     (φ : L' →ₗ⁅R⁆ L) (ψ : L'' →ₗ⁅R⁆ L')
@@ -363,7 +363,7 @@ theorem continuousCocycleMap_comp (e : M →ₗ[R] M') (e' : M' →ₗ[R] M'')
       continuousCocycleMap (e'.comp e) (φ.comp ψ) (fun x m ↦ by simp [he, he'])
         (hφ.comp hψ) n := by
   ext z : 1
-  exact Subtype.ext <| LinearMap.congr_fun (cochainMap_comp e e' φ ψ n) z.1
+  exact Subtype.ext <| LinearMap.congr_fun (cochainMap_comp e e' φ ψ n) z.val
 
 /-- `continuousCocycleMap` maps continuous coboundaries into continuous coboundaries. -/
 theorem continuousCocycleMap_mem_continuousCoboundary (e : M →ₗ[R] M') (φ : L' →ₗ⁅R⁆ L)
@@ -511,8 +511,8 @@ variable {R L M}
 
 @[simp]
 theorem coe_continuousCocycleZeroEquiv (z : continuousCocycle R L M 0) :
-    (continuousCocycleZeroEquiv R L M z : M) = z.1 ![] :=
-  congrArg z.1 (Subsingleton.elim 0 ![])
+    (continuousCocycleZeroEquiv R L M z : M) = z.val ![] :=
+  congrArg z.val (Subsingleton.elim 0 ![])
 
 @[simp]
 theorem coe_continuousCocycleZeroEquiv_symm (m : LieModule.maxTrivSubmodule R L M) :
@@ -573,12 +573,12 @@ variable {R L M}
 
 @[simp]
 theorem coe_continuousCocycleTwoEquiv (z : continuousCocycle R L M 2) :
-    (continuousCocycleTwoEquiv R L M z : twoCochain R L M) = twoCochainEquiv R L M z.1 := (rfl)
+    (continuousCocycleTwoEquiv R L M z : twoCochain R L M) = twoCochainEquiv R L M z.val := (rfl)
 
 @[simp]
 theorem coe_continuousCocycleTwoEquiv_symm (c : continuousTwoCocycle R L M) :
     ((continuousCocycleTwoEquiv R L M).symm c : L [⋀^Fin 2]→ₗ[R] M) =
-      (twoCochainEquiv R L M).symm c.1 := (rfl)
+      (twoCochainEquiv R L M).symm c.val := (rfl)
 
 /-- `continuousCocycleTwoEquiv` carries `continuousCoboundary R L M 2` onto
 `continuousTwoCoboundary R L M`. -/
@@ -644,7 +644,7 @@ theorem continuousCohomologyTwoEquiv_continuousCohomologyMap {L' M' : Type*}
   apply Subtype.ext
   rw [coe_continuousCocycleTwoEquiv, coe_continuousCocycleMap, coe_continuousTwoCocycleMap,
     coe_continuousCocycleTwoEquiv]
-  exact twoCochainEquiv_cochainMap e φ z.1
+  exact twoCochainEquiv_cochainMap e φ z.val
 
 end DegreeTwo
 

@@ -214,10 +214,10 @@ private theorem hermiteBound_succ (n : ℕ) (ih : HermiteBound.{u} n) :
   · simpa using hdet.le
   have : Nontrivial K := nontrivial_of_ne _ _ (bK.ne_zero ⟨0, hn⟩)
   obtain ⟨y, hy, hyb⟩ := ih S hSsymm (fun y hy ↦ hS y y ▸ sub_pos.mpr
-    (apply_mul_apply_lt_of_mem_ker hpos (by simp [hf]) y.2 (by simpa using hy))) bK
+    (apply_mul_apply_lt_of_mem_ker hpos (by simp [hf]) y.property (by simpa using hy))) bK
   have hyv : (y : M) ∉ ℤ ∙ v := fun h ↦ by
     obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp h
-    obtain rfl : a = 0 := by simpa [hf, LinearMap.mem_ker.mp y.2] using congrArg f ha
+    obtain rfl : a = 0 := by simpa [hf, LinearMap.mem_ker.mp y.property] using congrArg f ha
     exact hy (Subtype.ext (by simp [← ha]))
   rw [show (n + 1).choose 2 = n.choose 2 + n by simp [Nat.choose_succ_succ', add_comm]]
   exact three_pow_mul_pow_succ_le hμ

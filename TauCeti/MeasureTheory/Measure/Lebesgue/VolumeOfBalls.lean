@@ -19,7 +19,7 @@ form used in normalizing constants. It also shows that every finite-dimensional 
 product space has a closed ball of volume one about the origin, that a closed ball of
 radius `r` in a one-dimensional space has volume `2 * r`, that a ball of radius `r` in `ℝ × ℝ`, a
 square of side `2 * r` for the sup norm, has real volume `(2 * r) ^ 2`, and that a disc of radius
-`r` in `ℂ` has real volume `π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
+`r` in `ℂ` has real volume `π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ₑ r √π`.
 -/
 
 public section
@@ -79,9 +79,8 @@ open MeasureTheory Metric
 `(2 * r) ^ 2`. -/
 theorem volume_real_ball_prod (z : ℝ × ℝ) {r : ℝ} (hr : 0 ≤ r) :
     volume.real (ball z r) = (2 * r) ^ 2 := by
-  rw [measureReal_def, ← ball_prod_same, Measure.volume_eq_prod, Measure.prod_prod,
-    Real.volume_ball, Real.volume_ball, ← ENNReal.ofReal_mul (by positivity),
-    ENNReal.toReal_ofReal (by positivity), sq]
+  rw [← ball_prod_same, Measure.volume_eq_prod, measureReal_prod_prod]
+  simp [hr, sq]
 
 end Real
 
@@ -93,18 +92,20 @@ open MeasureTheory Metric Real
 theorem volume_real_ball (a : ℂ) {r : ℝ} (hr : 0 ≤ r) : volume.real (ball a r) = π * r ^ 2 := by
   simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hr, mul_comm]
 
-/-- The `L²` norm of a constant `c` on the closed disc of radius `R` in `ℂ` is `‖c‖ R √π`, the
-square root of the disc area `π R²` times `‖c‖`. -/
-theorem eLpNorm_two_indicator_closedBall_const {E : Type*} [NormedAddCommGroup E] (a : ℂ)
-    (c : E) {R : ℝ} (hR : 0 ≤ R) :
+/-- The `L²` norm of a constant `c` on the closed disc of radius `R` in `ℂ` is `‖c‖ₑ R √π`, the
+square root of the disc area `π R²` times `‖c‖ₑ`. For `R < 0` the disc is empty and both sides
+vanish. -/
+theorem eLpNorm_two_indicator_closedBall_const {E : Type*} [TopologicalSpace E]
+    [ESeminormedAddMonoid E] (a : ℂ) (c : E) (R : ℝ) :
     eLpNorm ((closedBall a R).indicator fun _ ↦ c) 2 volume = ‖c‖ₑ * ENNReal.ofReal (R * √π) := by
   rw [eLpNorm_indicator_const measurableSet_closedBall.nullMeasurableSet two_ne_zero
     ENNReal.ofNat_ne_top, Complex.volume_closedBall]
   congr 1
   -- The area `R² π` is the square of `R √π`.
   have harea : ENNReal.ofReal R ^ 2 * NNReal.pi = ENNReal.ofReal (R * √π) ^ 2 := by
-    rw [ENNReal.ofReal_mul hR, mul_pow, ← ENNReal.ofReal_pow (Real.sqrt_nonneg π),
-      Real.sq_sqrt Real.pi_pos.le, ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi]
+    rw [ENNReal.ofReal_mul' (Real.sqrt_nonneg π), mul_pow,
+      ← ENNReal.ofReal_pow (Real.sqrt_nonneg π), Real.sq_sqrt Real.pi_pos.le,
+      ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi]
   rw [harea, ENNReal.toReal_ofNat, ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
   norm_num
 

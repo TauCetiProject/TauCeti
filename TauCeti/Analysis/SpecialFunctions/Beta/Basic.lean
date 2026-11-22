@@ -292,29 +292,34 @@ theorem hasDerivAt_rpow_mul_one_sub_rpow (a b : ℝ) {t : ℝ} (ht0 : t ≠ 0 �
   ring
 
 /-- Raising the second parameter of the beta integrand by one splits its integral as a
-difference: off the endpoints
+difference: the integrands agree at every point,
 `t ^ (a - 1) * (1 - t) ^ b = t ^ (a - 1) * (1 - t) ^ (b - 1) - t ^ a * (1 - t) ^ (b - 1)`. -/
-theorem integral_rpow_mul_one_sub_rpow_add_one_right (ha : 0 < a) (hb : 0 < b)
-    (hx0 : 0 ≤ x) (hx1 : x ≤ 1) :
+theorem integral_rpow_mul_one_sub_rpow_add_one_right (ha : 0 < a) (hb : 0 < b) :
     ∫ t in (0 : ℝ)..x, t ^ (a - 1) * (1 - t) ^ b =
       (∫ t in (0 : ℝ)..x, t ^ (a - 1) * (1 - t) ^ (b - 1)) -
         ∫ t in (0 : ℝ)..x, t ^ a * (1 - t) ^ (b - 1) := by
-  have hmem : x ∈ Icc (0 : ℝ) 1 := ⟨hx0, hx1⟩
-  have hzero : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-  have hI := intervalIntegrable_rpow_mul_one_sub_rpow ha hb hzero hmem
+  have hI : IntervalIntegrable (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ b) volume 0 x :=
+    (intervalIntegral.intervalIntegrable_rpow' (by linarith : -1 < a - 1)).mul_continuousOn
+      ((Real.continuous_rpow_const hb.le).comp (continuous_const.sub continuous_id)).continuousOn
   have hJ : IntervalIntegrable (fun t : ℝ => t ^ a * (1 - t) ^ (b - 1)) volume 0 x := by
-    simpa using
-      intervalIntegrable_rpow_mul_one_sub_rpow (by linarith : (0 : ℝ) < a + 1) hb hzero hmem
-  rw [← intervalIntegral.integral_sub hI hJ]
-  refine intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun t ht => ?_)
-  rw [uIoc_of_le hx0] at ht
-  have ht0 : 0 < t := ht.1
-  rcases eq_or_lt_of_le (ht.2.trans hx1) with rfl | ht1
-  · rw [Real.one_rpow, Real.one_rpow, sub_self, Real.zero_rpow hb.ne']
-    ring
-  · have h1t : (0 : ℝ) < 1 - t := by linarith
-    rw [Real.rpow_sub_one ht0.ne' a, Real.rpow_sub_one h1t.ne' b]
+    have h1 : IntervalIntegrable (fun t : ℝ => t ^ (b - 1)) volume 1 (1 - x) :=
+      intervalIntegral.intervalIntegrable_rpow' (by linarith : -1 < b - 1)
+    simpa using (h1.comp_sub_left 1).continuousOn_mul
+      (Real.continuous_rpow_const ha.le).continuousOn
+  have hpt : ∀ t : ℝ, t ^ (a - 1) * (1 - t) ^ (b - 1) =
+      t ^ (a - 1) * (1 - t) ^ b + t ^ a * (1 - t) ^ (b - 1) := by
+    intro t
+    by_cases ht0 : t = 0
+    · simp [ht0, Real.zero_rpow ha.ne']
+    by_cases ht1 : t = 1
+    · simp [ht1, Real.zero_rpow hb.ne']
+    have h1t : (1 : ℝ) - t ≠ 0 := sub_ne_zero_of_ne (Ne.symm ht1)
+    rw [Real.rpow_sub_one ht0 a, Real.rpow_sub_one h1t b]
     field_simp
+    ring
+  simp only [hpt]
+  rw [intervalIntegral.integral_add hI hJ]
+  ring
 
 /-! ### The power substitution `u = t ^ p` -/
 
@@ -696,6 +701,39 @@ theorem integrableOn_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0
     Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])
   positivity
 
+/-- **The Mellin transform of `x / (1 + t x)` in `t`.** For `0 < s < 1` and `x ≥ 0`,
+`∫ t in Ioi 0, t ^ (-s) * (x / (1 + t x)) = π / sin (π s) * x ^ s`. For `x > 0` this is
+`TauCeti.integral_rpow_div_add` at the exponent `1 - s` and the point `x⁻¹`, since
+`x / (1 + t x) = 1 / (t + x⁻¹)`; unlike that form, the integrand is continuous in `x` up to `x = 0`,
+where both sides vanish. -/
+theorem integral_rpow_neg_mul_div_one_add_mul (s x : ℝ) (hs : 0 < s) (hs1 : s < 1) (hx : 0 ≤ x) :
+    ∫ t in Ioi (0 : ℝ), t ^ (-s) * (x / (1 + t * x)) =
+      Real.pi / Real.sin (Real.pi * s) * x ^ s := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp [Real.zero_rpow hs.ne']
+  calc
+    _ = ∫ t in Ioi (0 : ℝ), t ^ ((1 - s) - 1) / (t + x⁻¹) := by
+      refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+      rw [sub_sub_cancel_left]
+      field_simp
+      ring
+    _ = _ := by
+      rw [integral_rpow_div_add (1 - s) x⁻¹ (by linarith) (by linarith) (inv_pos.2 hx),
+        sub_sub_cancel_left, Real.inv_rpow hx.le, Real.rpow_neg hx.le, inv_inv,
+        show Real.pi * (1 - s) = Real.pi - Real.pi * s by ring, Real.sin_pi_sub, mul_comm]
+
+/-- Integrability of `t ↦ t ^ (-s) * (x / (1 + t x))` on `(0, ∞)`, for `0 < s < 1` and
+`x ≥ 0`. -/
+theorem integrableOn_rpow_neg_mul_div_one_add_mul (s x : ℝ) (hs : 0 < s) (hs1 : s < 1)
+    (hx : 0 ≤ x) : IntegrableOn (fun t : ℝ ↦ t ^ (-s) * (x / (1 + t * x))) (Ioi 0) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  refine (integrableOn_rpow_div_add (1 - s) x⁻¹ (by linarith) (by linarith)
+    (inv_pos.2 hx)).congr_fun (fun t (ht : 0 < t) ↦ ?_) measurableSet_Ioi
+  rw [sub_sub_cancel_left]
+  field_simp
+  ring
+
 /-- **The Mellin transform of `1 / (1 + y ^ 2)`.** For `0 < s < 2`,
 `∫ y in Ioi 0, y ^ (s - 1) / (1 + y ^ 2) = π / (2 * sin (π * s / 2))`. This is the radial
 second beta integral at `r = 2`, evaluated by Euler's reflection formula. -/
@@ -1019,25 +1057,25 @@ theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
     Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
       ∫ x in Ioo (0 : ℝ) 1, x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x := by
   have ha : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.1 : ℝ) :=
-    continuous_subtype_val.comp continuous_fst
+    continuous_subtypeVal.comp continuous_fst
   have hb : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.2 : ℝ) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   -- Halving the shapes gives a locally uniform integrable bound at both endpoints.
   let bound : ℝ → ℝ := fun x ↦
     ‖f‖ * (x ^ ((p.1 : ℝ) / 2 - 1) * (1 - x) ^ ((p.2 : ℝ) / 2 - 1))
   have hbound : Integrable bound (volume.restrict (Ioo (0 : ℝ) 1)) :=
     (TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff.2
-      ⟨half_pos p.1.2, half_pos p.2.2⟩).const_mul ‖f‖
+      ⟨half_pos p.1.property, half_pos p.2.property⟩).const_mul ‖f‖
   apply continuousAt_of_dominated (bound := bound)
   · exact .of_forall fun q ↦
       (((by fun_prop : Measurable fun x : ℝ ↦
         x ^ ((q.1 : ℝ) - 1) * (1 - x) ^ ((q.2 : ℝ) - 1))).mul
         f.continuous.measurable).aestronglyMeasurable
   · have hpa : ∀ᶠ q in 𝓝 p, (p.1 : ℝ) / 2 < (q.1 : ℝ) :=
-      ha.continuousAt (lt_mem_nhds (half_lt_self p.1.2))
+      ha.continuousAt (lt_mem_nhds (half_lt_self p.1.property))
     have hpb : ∀ᶠ q in 𝓝 p, (p.2 : ℝ) / 2 < (q.2 : ℝ) :=
-      hb.continuousAt (lt_mem_nhds (half_lt_self p.2.2))
+      hb.continuousAt (lt_mem_nhds (half_lt_self p.2.property))
     filter_upwards [hpa, hpb] with q hqa hqb
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
     have hxa := Real.rpow_le_rpow_of_exponent_ge hx.1 hx.2.le

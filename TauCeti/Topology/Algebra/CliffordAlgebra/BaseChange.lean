@@ -76,7 +76,7 @@ theorem continuous_lipschitzGroupBaseChange (hKL : Continuous (algebraMap K L))
   apply continuous_induced_rng.mpr
   have hUnits : Continuous (Units.map (ofBaseChangeAux L Q).toMonoidHom) :=
     (continuous_ofBaseChangeAux hKL Q).units_map _
-  exact (hUnits.comp continuous_subtype_val).congr fun x => by
+  exact (hUnits.comp continuous_subtypeVal).congr fun x => by
     apply Units.ext
     exact (coe_lipschitzGroupBaseChange_apply (A := L) Q x).symm
 
@@ -85,7 +85,7 @@ theorem continuous_lipschitzGroupBaseChange (hKL : Continuous (algebraMap K L))
 theorem continuous_spinGroupBaseChange (hKL : Continuous (algebraMap K L))
     (Q : QuadraticForm K V) : Continuous (spinGroupBaseChange (A := L) Q) := by
   apply continuous_induced_rng.mpr
-  exact ((continuous_ofBaseChangeAux hKL Q).comp continuous_subtype_val).congr fun x =>
+  exact ((continuous_ofBaseChangeAux hKL Q).comp continuous_subtypeVal).congr fun x =>
     (coe_spinGroupBaseChange_apply (A := L) Q x).symm
 
 section ClosedEmbedding
@@ -111,16 +111,16 @@ theorem isClosedEmbedding_spinGroupBaseChange (hQ : Q.Nondegenerate) :
     IsClosedEmbedding (spinGroupBaseChange (A := L) Q) := by
   have he := isClosedEmbedding_ofBaseChangeAux (L := L) Q
   have hmaps : Set.MapsTo (ofBaseChangeAux L Q) (spinGroup Q) (spinGroup (Q.baseChange L)) :=
-    fun x hx => by simpa using (spinGroupBaseChange (A := L) Q ⟨x, hx⟩).2
+    fun x hx => by simpa using (spinGroupBaseChange (A := L) Q ⟨x, hx⟩).property
   refine ⟨?_, ?_⟩
   · convert he.isEmbedding.restrict hmaps using 1
     ext x
     exact coe_spinGroupBaseChange_apply (A := L) Q x
   · -- The range is the preimage of the image of the closed Spin group of `Q`, which is closed.
-    convert (he.isClosedMap _ (isClosed_spinGroup Q hQ)).preimage continuous_subtype_val using 1
+    convert (he.isClosedMap _ (isClosed_spinGroup Q hQ)).preimage continuous_subtypeVal using 1
     ext g
     simp only [Set.mem_range, Set.mem_preimage, Set.mem_image, SetLike.mem_coe]
-    refine ⟨fun ⟨x, hx⟩ => ⟨x, x.2, ?_⟩, fun ⟨x, hx, hxg⟩ => ⟨⟨x, hx⟩, Subtype.ext ?_⟩⟩
+    refine ⟨fun ⟨x, hx⟩ => ⟨x, x.property, ?_⟩, fun ⟨x, hx, hxg⟩ => ⟨⟨x, hx⟩, Subtype.ext ?_⟩⟩
     · rw [← hx, coe_spinGroupBaseChange_apply]
     · rw [coe_spinGroupBaseChange_apply, hxg]
 

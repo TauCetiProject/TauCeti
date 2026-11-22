@@ -107,19 +107,6 @@ theorem isNormMulUnit_one : IsNormMulUnit (1 : R) :=
 
 namespace IsNormMulUnit
 
-omit [NormOneClass R] in
-/-- Powers of a multiplicative unit are multiplicative units. -/
-theorem pow {u : R} (hu : IsNormMulUnit u) (n : ℕ) : IsNormMulUnit (u ^ n) := by
-  induction n with
-  | zero =>
-    rw [pow_zero]
-    refine ⟨isUnit_one, fun x ↦ ?_⟩
-    obtain ⟨w, rfl⟩ := hu.isUnit
-    by_cases hu0 : ‖(w : R)‖ = 0
-    · rw [one_mul, NormedRing.norm_eq_zero_of_norm_mul hu0 hu.norm_mul x, mul_zero]
-    · rw [one_mul, NormedRing.norm_one_of_norm_mul hu0 hu.norm_mul, one_mul]
-  | succ n ih => simpa [pow_succ] using ih.mul hu
-
 /-- The norm of a power of a multiplicative unit is the power of its norm. -/
 theorem norm_pow {u : R} (hu : IsNormMulUnit u) (n : ℕ) : ‖u ^ n‖ = ‖u‖ ^ n := by
   induction n with
@@ -138,9 +125,8 @@ theorem units_inv {u : Rˣ} (hu : IsNormMulUnit (u : R)) :
   refine ⟨Units.isUnit _, fun x ↦ ?_⟩
   by_cases hu0 : ‖(u : R)‖ = 0
   · simp [NormedRing.norm_eq_zero_of_norm_mul hu0 hu.norm_mul]
-  · rw [NormedRing.norm_units_inv_of_norm_mul hu.norm_mul,
-      eq_inv_mul_iff_mul_eq₀ hu0]
-    simpa [← mul_assoc] using (hu.norm_mul (((u⁻¹ : Rˣ) : R) * x)).symm
+  · rw [NormedRing.norm_units_inv_of_norm_mul hu.norm_mul, eq_inv_mul_iff_mul_eq₀ hu0,
+      ← hu.norm_mul, Units.mul_inv_cancel_left]
 
 /-- If `u : Rˣ` is a multiplicative unit with `‖(u : R)‖ * S₀ = R₀` and `R₀ ≠ 0`, then
 `‖((u⁻¹ : Rˣ) : R)‖ * R₀ = S₀`. -/
@@ -150,6 +136,16 @@ theorem norm_units_inv_mul_eq {u : Rˣ} (hu : IsNormMulUnit (u : R)) {S₀ R₀ 
   have hu0 : ‖(u : R)‖ ≠ 0 := left_ne_zero_of_mul (huS.trans_ne hR₀)
   rw [NormedRing.norm_units_inv_of_norm_mul hu.norm_mul, ← huS,
     inv_mul_cancel_left₀ hu0]
+
+/-- Powers of a multiplicative unit are multiplicative units. -/
+theorem pow {u : R} (hu : IsNormMulUnit u) (n : ℕ) : IsNormMulUnit (u ^ n) := by
+  induction n with
+  | zero =>
+    -- `1 = w * w⁻¹` is a product of multiplicative units, even when `‖1‖ ≠ 1`.
+    obtain ⟨w, rfl⟩ := hu.isUnit
+    rw [pow_zero, ← Units.mul_inv w]
+    exact hu.mul hu.units_inv
+  | succ n ih => simpa [pow_succ] using ih.mul hu
 
 end IsNormMulUnit
 
@@ -185,14 +181,10 @@ theorem isNormMulUnit_iff_isUnit [NormMulClass R] (u : R) :
 /-- Norm-preserving multiplicative equivalences preserve and reflect multiplicative units. -/
 theorem _root_.MulEquiv.isNormMulUnit_iff (e : R ≃* S)
     (he : ∀ x, ‖e x‖ = ‖x‖) (u : R) : IsNormMulUnit (e u) ↔ IsNormMulUnit u := by
-  have he' (x : S) : ‖e.symm x‖ = ‖x‖ := by simpa using (he (e.symm x)).symm
-  constructor
-  · intro hu
-    refine ⟨by simpa using hu.isUnit.map e.symm.toMonoidHom, fun x ↦ ?_⟩
-    rw [← he (u * x), e.map_mul, hu.norm_mul, he, he]
-  · intro hu
-    refine ⟨hu.isUnit.map e.toMonoidHom, fun x ↦ ?_⟩
-    rw [← he' (e u * x), e.symm.map_mul, e.symm_apply_apply, hu.norm_mul, he', he]
+  rw [TauCeti.isNormMulUnit_iff, TauCeti.isNormMulUnit_iff, isUnit_map_iff]
+  -- Every element of `S` is `e x`, and `e (u * x) = e u * e x` has the norm of `u * x`.
+  refine and_congr_right fun _ ↦ e.surjective.forall.trans ?_
+  simp only [← map_mul, he]
 
 end Monoid
 

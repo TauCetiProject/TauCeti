@@ -13,14 +13,27 @@ public import Mathlib.Analysis.Complex.Basic
 Complex conjugation is an isometry fixing the real axis (Mathlib's `Complex.dist_conj_conj`), so
 it maps every open or closed disc centred on the real axis to itself. Such discs are the natural
 domains for reflection across the real axis, for instance the even reflection
-`TauCeti.evenReflection`. Conjugation maps the real axis into itself
+`TauCeti.evenReflection`. A disc centred in the closed upper half-plane is not invariant, but
+its mirror image meets the closed upper half-plane inside the disc itself, since a point of the
+closed upper half-plane is at least as close to such a centre as to its mirror image
+(`TauCeti.dist_le_dist_conj_of_im_nonneg`, `TauCeti.mem_ball_of_conj_mem_ball_of_im_nonneg`).
+Any set becomes invariant under conjugation once its mirror image is added
+(`TauCeti.conj_mem_union_preimage_conj`).
+Conjugation maps the real axis into itself
 (`TauCeti.mapsTo_conj_setOf_im_eq_zero`), whereas the rotation `z ↦ I z` does not
 (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`).
 
 Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
 `1 - conj w * z` is symmetric in `z` and `w` (`Complex.norm_one_sub_conj_mul_comm`). This
 expression is the denominator of the Möbius automorphisms of the unit disc and of the
-pseudo-hyperbolic expression.
+pseudo-hyperbolic expression. For `w` on the unit circle it has the norm of `z - w`
+(`Complex.norm_one_sub_conj_mul`), and for `z` in the closed unit disc it lies in the closed right
+half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in the open disc,
+`Complex.re_one_sub_conj_mul_pos`), by the bound `re (conj u * e) ≤ ‖u‖ ‖e‖`
+(`Complex.re_conj_mul_le`).
+
+As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
+the counterpart of Mathlib's `Complex.conjLIE_symm`).
 
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
@@ -37,6 +50,9 @@ by itself; at `z = r`, Lean's totalized inverse gives value one.
 
 Two integers whose images in `ℂ` are at distance less than `1` are equal.
 
+A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
+(`Complex.add_im_ne_zero_of_abs_im_lt`).
+
 The canonical embedding of an `RCLike` field into `ℂ` is bundled as
 `TauCeti.toComplexStarAlgHom`, so real star-algebra constructions can be transported to `ℂ`.
 
@@ -46,6 +62,11 @@ whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
 The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increase distances, so they map the
 disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
 (`Complex.dist_equivRealProdCLM_le`).
+
+On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
+(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
+
+A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 -/
 
 public section
@@ -157,6 +178,43 @@ theorem conj_mem_closedBall_of_im_eq_zero (hx₀ : x₀.im = 0) (hz : z ∈ clos
     conj z ∈ closedBall x₀ r := by
   rwa [mem_closedBall, ← Complex.conj_eq_iff_im.2 hx₀, Complex.dist_conj_conj]
 
+/-- A point `w` of the closed upper half-plane is at least as close to a point `z` of the closed
+upper half-plane as to its mirror image `conj z`. -/
+theorem dist_le_dist_conj_of_im_nonneg {w : ℂ} (hw : 0 ≤ w.im) (hz : 0 ≤ z.im) :
+    dist w z ≤ dist w (conj z) := by
+  rw [Complex.dist_eq_re_im, Complex.dist_eq_re_im]
+  refine Real.sqrt_le_sqrt ?_
+  simp only [Complex.conj_re, Complex.conj_im]
+  nlinarith [mul_nonneg hw hz]
+
+/-- If the mirror image of a point `z` of the closed upper half-plane lies in an open disc centred
+in the closed upper half-plane, then so does `z`. -/
+theorem mem_ball_of_conj_mem_ball_of_im_nonneg (hx₀ : 0 ≤ x₀.im) (hz : 0 ≤ z.im)
+    (h : conj z ∈ ball x₀ r) : z ∈ ball x₀ r :=
+  (dist_le_dist_conj_of_im_nonneg hz hx₀).trans_lt (by rwa [← Complex.dist_conj_comm])
+
+/-- If the mirror image of a point `z` of the closed upper half-plane lies in a closed disc centred
+in the closed upper half-plane, then so does `z`. -/
+theorem mem_closedBall_of_conj_mem_closedBall_of_im_nonneg (hx₀ : 0 ≤ x₀.im) (hz : 0 ≤ z.im)
+    (h : conj z ∈ closedBall x₀ r) : z ∈ closedBall x₀ r :=
+  (dist_le_dist_conj_of_im_nonneg hz hx₀).trans (by rwa [← Complex.dist_conj_comm])
+
+/-- The union of a set `s` with its preimage under conjugation is invariant under conjugation. -/
+theorem conj_mem_union_preimage_conj {s : Set ℂ} (hz : z ∈ s ∪ conj ⁻¹' s) :
+    conj z ∈ s ∪ conj ⁻¹' s := by
+  simp only [Set.mem_union, Set.mem_preimage, Complex.conj_conj] at hz ⊢
+  exact hz.symm
+
+/-- A set `s` and its preimage under conjugation meet the closed upper half-plane in the same set,
+provided every point of the closed upper half-plane whose mirror image lies in `s` lies in `s`,
+as for discs centred in the closed upper half-plane
+(`TauCeti.mem_ball_of_conj_mem_ball_of_im_nonneg`). -/
+theorem setOfPred_le_im_inter_union_preimage_conj {s : Set ℂ}
+    (hs : ∀ z, 0 ≤ z.im → conj z ∈ s → z ∈ s) :
+    {z : ℂ | 0 ≤ z.im} ∩ (s ∪ conj ⁻¹' s) = {z : ℂ | 0 ≤ z.im} ∩ s :=
+  subset_antisymm (fun z ⟨hz, hzs⟩ ↦ ⟨hz, hzs.elim id (hs z hz)⟩)
+    (Set.inter_subset_inter_right _ Set.subset_union_left)
+
 /-- Complex conjugation maps the real axis into itself. -/
 theorem mapsTo_conj_setOf_im_eq_zero :
     Set.MapsTo (conj ·) {z : ℂ | z.im = 0} {z : ℂ | z.im = 0} := fun z hz => by
@@ -213,9 +271,18 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- Complex conjugation, as a continuous real-linear equivalence, is its own inverse. -/
+@[simp]
+theorem conjCLE_symm : conjCLE.symm = conjCLE := by
+  rw [← conjLIE_toCLE, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm]
+
 /-- The imaginary part of a conjugate product is bounded by the product of the norms. -/
 theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by
   simpa [norm_mul] using abs_im_le_norm (conj u * e)
+
+/-- The real part of a conjugate product is bounded by the product of the norms. -/
+theorem re_conj_mul_le (u e : ℂ) : (conj u * e).re ≤ ‖u‖ * ‖e‖ := by
+  simpa [norm_mul] using re_le_norm (conj u * e)
 
 /-- The norm of `1 - conj w * z` is symmetric in `z` and `w`: conjugation swaps the two
 expressions and preserves norms. -/
@@ -223,6 +290,22 @@ theorem norm_one_sub_conj_mul_comm (z w : ℂ) : ‖1 - conj w * z‖ = ‖1 - c
   rw [← norm_conj]
   simp [mul_comm]
 
+/-- For `‖w‖ = 1`, `1 - conj w * z` has the norm of `z - w`. -/
+theorem norm_one_sub_conj_mul {w z : ℂ} (hw : ‖w‖ = 1) : ‖1 - conj w * z‖ = ‖z - w‖ := by
+  have h : w * (1 - conj w * z) = w - z := by
+    rw [mul_sub, mul_one, ← mul_assoc, mul_conj, normSq_eq_norm_sq, hw]
+    simp
+  rw [norm_sub_rev z w, ← h, norm_mul, hw, one_mul]
+
+/-- For `‖w‖ = 1` and `‖z‖ ≤ 1`, `1 - conj w * z` has nonnegative real part. -/
+theorem re_one_sub_conj_mul_nonneg {w z : ℂ} (hw : ‖w‖ = 1) (hz : ‖z‖ ≤ 1) :
+    0 ≤ (1 - conj w * z).re := by
+  simpa [hw] using (re_conj_mul_le w z).trans (by simpa [hw] using hz)
+
+/-- For `‖w‖ = 1` and `‖z‖ < 1`, `1 - conj w * z` has positive real part. -/
+theorem re_one_sub_conj_mul_pos {w z : ℂ} (hw : ‖w‖ = 1) (hz : ‖z‖ < 1) :
+    0 < (1 - conj w * z).re := by
+  simpa [hw] using (re_conj_mul_le w z).trans_lt (by simpa [hw] using hz)
 
 /-- For a point `x` of the closed disc of radius `r` and a point `y` outside the open disc, the
 conjugate `conj x` is within `3 ‖x - y‖` of the point `r² / y`, the inversion of `y` in the circle
@@ -271,4 +354,24 @@ theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
   conv_lhs => rw [← equivRealProdCLM.apply_symm_apply z₀]
   exact (lipschitz_equivRealProd.dist_le_mul y _).trans (by simp)
 
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has real part at least `1`. -/
+theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
+  simp [hz]
+
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has norm at least `1`. -/
+theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
+  (one_le_re_one_add hz).trans (re_le_norm _)
+
+/-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
+theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
+  fun h0 ↦ by
+    rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
+    rw [h0, abs_neg] at h
+    exact h.false
+
 end Complex
+
+/-- A linear isometry from the plane maps `i` to a unit vector. -/
+theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
+    (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
+  (ι.norm_map _).trans Complex.norm_I

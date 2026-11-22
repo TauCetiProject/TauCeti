@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningPoint
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.MeasureTheory.Function.Jacobian.OneDim
 
@@ -58,6 +59,8 @@ the companion of the rotation angle `TauCeti.sphericalPendulumRotationAngle`.
 * `TauCeti.isIntegralCurveOn_sphericalPendulumVectorField`: the motions of the pendulum solve the
   equations of motion in `ℝ³ × ℝ³`.
 * `TauCeti.sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn`: conservation of `(H, J)`.
+* `TauCeti.integral_comp_eq_integral_div_sqrt_of_isMIntegralCurveOn_sphericalPendulum`: time
+  integrals of functions of the height along a passage are height quadratures.
 * `TauCeti.sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum`: the time between two
   heights is the height quadrature.
 * `TauCeti.sphericalPendulumPeriod`, `TauCeti.sub_eq_sphericalPendulumPeriod_of_isMIntegralCurveOn`:
@@ -169,15 +172,17 @@ theorem mfderiv_coe_sphericalPendulumPhaseSpace_hamiltonianVectorField_spherical
   -- tangent to the phase space.
   have hE : (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumHamiltonian y) =
       extendedEnergy ∘ Subtype.val :=
-    funext fun y ↦ (extendedEnergy_eq y.2).symm
-  have hd : DifferentiableAt ℝ extendedEnergy x := (hasFDerivAt_extendedEnergy x.2).differentiableAt
+    funext fun y ↦ (extendedEnergy_eq y.property).symm
+  have hd : DifferentiableAt ℝ extendedEnergy x :=
+      (hasFDerivAt_extendedEnergy x.property).differentiableAt
   have hk : (SymplecticForm.constSmooth stdSymplecticForm).hamiltonianVectorField extendedEnergy
       x ∈ (mfderiv 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))
         Subtype.val x).range := by
     rw [range_mfderiv_coe_sphericalPendulumPhaseSpace,
-      SymplecticForm.hamiltonianVectorField_constSmooth, hamiltonianVectorField_extendedEnergy x.2]
-    exact sphericalPendulumVectorField_mem_ker_fderiv_sphericalPendulumConstraint x.2
-  rw [hE, ← hamiltonianVectorField_extendedEnergy x.2]
+      SymplecticForm.hamiltonianVectorField_constSmooth, hamiltonianVectorField_extendedEnergy
+          x.property]
+    exact sphericalPendulumVectorField_mem_ker_fderiv_sphericalPendulumConstraint x.property
+  rw [hE, ← hamiltonianVectorField_extendedEnergy x.property]
   simpa only [SymplecticForm.hamiltonianVectorField_constSmooth] using
     isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
       |>.mfderiv_hamiltonianVectorField_comp_of_mem_range
@@ -215,10 +220,13 @@ theorem sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn (hs : IsPreconn
     (hγ : IsMIntegralCurveOn γ (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ sphericalPendulumHamiltonian y) s) {t₀ : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     sphericalPendulumEnergyMomentum (γ t) = sphericalPendulumEnergyMomentum (γ t₀) := by
-  have hI := isIntegrableSystem_sphericalPendulumEnergyMomentum
+  have hI := isIntegrableSystem_sphericalPendulumEnergyMomentumVec
   have hσ := isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
+  have hH : (fun x ↦ sphericalPendulumEnergyMomentumVec x 0) =
+      fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumHamiltonian y :=
+    funext sphericalPendulumEnergyMomentumVec_apply_zero
   -- Each component of `F` is a first integral of the energy, and is smooth.
-  have h (i : Fin 2) := (hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hσ hs hγ
+  have h (i : Fin 2) := (hH ▸ hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hσ hs hγ
     (fun u _ ↦ ((contMDiff_pi_module_iff.1 hI.contMDiff i) (γ u)).mdifferentiableAt (by simp))
     ht₀ ht
   exact Prod.ext (by simpa using h 0) (by simpa using h 1)
@@ -230,8 +238,8 @@ theorem hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
     HasDerivWithinAt (fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2)
       ((γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) s t := by
   simpa [Function.comp_def, sphericalPendulumVectorField_def] using
-    ((PiLp.proj 2 (fun _ : Fin 3 ↦ ℝ) 2).comp (ContinuousLinearMap.fst ℝ _ _)).hasFDerivAt
-      |>.comp_hasDerivWithinAt t (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)
+    ((ContinuousLinearMap.fst ℝ _ _).hasFDerivAt.comp_hasDerivWithinAt t
+      (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)).piLp_apply 2
 
 /-- Along a motion of the spherical pendulum, the vertical momentum `p₃` changes with velocity
 `(q₃ - ‖p‖²) q₃ - 1`, the vertical component of the gravitational and constraint forces. -/
@@ -243,8 +251,53 @@ theorem hasDerivWithinAt_snd_apply_two_of_isMIntegralCurveOn_sphericalPendulum
         ‖(γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2‖ ^ 2) *
           (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 - 1) s t := by
   simpa [Function.comp_def, sphericalPendulumVectorField_def] using
-    ((PiLp.proj 2 (fun _ : Fin 3 ↦ ℝ) 2).comp (ContinuousLinearMap.snd ℝ _ _)).hasFDerivAt
-      |>.comp_hasDerivWithinAt t (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)
+    ((ContinuousLinearMap.snd ℝ _ _).hasFDerivAt.comp_hasDerivWithinAt t
+      (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)).piLp_apply 2
+
+/-- **Time integrals along a passage are height quadratures.** Let a motion of the spherical
+pendulum on `[t₁, t₂]` have energy `h` and vertical angular momentum `j`, and suppose its height
+`z = q₃` moves from one of `z₁`, `z₂` to the other and stays strictly between them meanwhile, where
+the radicand `2 (h - z) (1 - z²) - j²` is positive. Then for every function `g` of the height,
+
+`∫_{t₁}^{t₂} g(z(t)) dt = ∫_{z₁}^{z₂} g(z) dz / √(2 (h - z) (1 - z²) - j²)`. -/
+theorem integral_comp_eq_integral_div_sqrt_of_isMIntegralCurveOn_sphericalPendulum
+    {t₁ t₂ z₁ z₂ h j : ℝ} (ht : t₁ ≤ t₂)
+    (hγ : IsMIntegralCurveOn γ (sphericalPendulumSymplecticForm.hamiltonianVectorField
+      fun y ↦ sphericalPendulumHamiltonian y) (Icc t₁ t₂))
+    (hF : sphericalPendulumEnergyMomentum (γ t₁) = (h, j))
+    (hpos : ∀ z ∈ Ioo z₁ z₂, 0 < 2 * (h - z) * (1 - z ^ 2) - j ^ 2)
+    (hends : (γ t₁ : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 = z₁ ∧
+        (γ t₂ : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 = z₂ ∨
+      (γ t₁ : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 = z₂ ∧
+        (γ t₂ : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 = z₁)
+    (hmem : ∀ t ∈ Ioo t₁ t₂,
+      (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ∈ Ioo z₁ z₂)
+    (g : ℝ → ℝ) :
+    ∫ t in t₁..t₂, g ((γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2) =
+      ∫ z in z₁..z₂, g z / √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) := by
+  set z : ℝ → ℝ := fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2
+  have hIoo : Ioo t₁ t₂ ⊆ Icc t₁ t₂ := Ioo_subset_Icc_self
+  have hzd (t : ℝ) (ht : t ∈ Icc t₁ t₂) :=
+    hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ ht
+  -- On the fibre over `(h, j)` the vertical momentum satisfies `p₃² = 2 (h - z) (1 - z²) - j²`, so
+  -- it does not vanish strictly between `z₁` and `z₂`.
+  have hp (t : ℝ) (htI : t ∈ Ioo t₁ t₂) :
+      |(γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2| =
+          √(2 * (h - z t) * (1 - z t ^ 2) - j ^ 2) ∧
+        (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 ≠ 0 := by
+    have hsq := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace (γ t).property
+    rw [sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn isPreconnected_Icc hγ
+      (left_mem_Icc.2 ht) (hIoo htI), hF] at hsq
+    have hR := hpos _ (hmem t htI)
+    rw [← hsq] at hR
+    refine ⟨?_, fun h0 ↦ by simp [h0] at hR⟩
+    rw [← hsq, Real.sqrt_sq_eq_abs]
+  rw [intervalIntegral.integral_eq_integral_Ioo_abs_deriv_smul_of_ne_zero ht
+      (fun t ht ↦ (hzd t ht).continuousWithinAt) (fun t ht ↦ (hzd t (hIoo ht)).mono hIoo)
+      (fun t ht ↦ (hp t ht).2) hends hmem,
+    intervalIntegral.integral_of_le ht, integral_Ioc_eq_integral_Ioo]
+  refine setIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
+  rw [smul_eq_mul, (hp t ht).1, mul_div_cancel₀ _ (Real.sqrt_ne_zero'.2 (hpos _ (hmem t ht)))]
 
 /-- **The time between two heights is the height quadrature.** Let a motion of the spherical
 pendulum on `[t₁, t₂]` have energy `h` and vertical angular momentum `j`, and suppose its height
@@ -265,30 +318,9 @@ theorem sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum {t₁ t
     (hmem : ∀ t ∈ Ioo t₁ t₂,
       (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ∈ Ioo z₁ z₂) :
     t₂ - t₁ = ∫ z in z₁..z₂, (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ := by
-  set z : ℝ → ℝ := fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2
-  have hIoo : Ioo t₁ t₂ ⊆ Icc t₁ t₂ := Ioo_subset_Icc_self
-  have hzd (t : ℝ) (ht : t ∈ Icc t₁ t₂) :=
-    hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ ht
-  -- On the fibre over `(h, j)` the vertical momentum satisfies `p₃² = 2 (h - z) (1 - z²) - j²`, so
-  -- it does not vanish strictly between `z₁` and `z₂`.
-  have hp (t : ℝ) (htI : t ∈ Ioo t₁ t₂) :
-      |(γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2| =
-          √(2 * (h - z t) * (1 - z t ^ 2) - j ^ 2) ∧
-        (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 ≠ 0 := by
-    have hsq := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace (γ t).2
-    rw [sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn isPreconnected_Icc hγ
-      (left_mem_Icc.2 ht) (hIoo htI), hF] at hsq
-    have hR := hpos _ (hmem t htI)
-    rw [← hsq] at hR
-    refine ⟨?_, fun h0 ↦ by simp [h0] at hR⟩
-    rw [← hsq, Real.sqrt_sq_eq_abs]
-  rw [intervalIntegral.integral_eq_integral_Ioo_abs_deriv_smul_of_ne_zero ht
-      (fun t ht ↦ (hzd t ht).continuousWithinAt) (fun t ht ↦ (hzd t (hIoo ht)).mono hIoo)
-      (fun t ht ↦ (hp t ht).2) hends hmem,
-    setIntegral_congr_fun measurableSet_Ioo (g := fun _ ↦ (1 : ℝ)) fun t ht ↦ ?_,
-    setIntegral_const, smul_eq_mul, mul_one, Real.volume_real_Ioo_of_le ht]
-  rw [smul_eq_mul, (hp t ht).1]
-  exact mul_inv_cancel₀ (Real.sqrt_ne_zero'.2 (hpos _ (hmem t ht)))
+  simpa [one_div] using
+    integral_comp_eq_integral_div_sqrt_of_isMIntegralCurveOn_sphericalPendulum ht hγ hF hpos hends
+      hmem fun _ ↦ 1
 
 end Motion
 
@@ -318,18 +350,9 @@ theorem sphericalPendulumPeriod_eq_integral (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo
     sphericalPendulumPeriod h j =
       2 * ∫ z in (sphericalPendulumLowerTurningPoint h j)..(sphericalPendulumUpperTurningPoint h j),
         (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ := by
-  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
-  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
-  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
-  set a := sphericalPendulumLowerTurningPoint h j
-  set b := sphericalPendulumUpperTurningPoint h j
-  rw [sphericalPendulumPeriod_def, intervalIntegral.integral_of_le (by norm_num),
-    intervalIntegral.integral_of_le hab.le, ← integral_Icc_eq_integral_Ioc,
-    integral_Ioc_eq_integral_Ioo, setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Icc
-      (s := Ioo a b) fun z hz ↦ ⟨ha.le.trans hz.1.le, hz.2.le.trans hb.le⟩]
-  rintro z ⟨hz, hzab⟩
-  rw [Real.sqrt_eq_zero'.2 (two_mul_sub_mul_one_sub_sq_sub_sq_nonpos hj hz₀ hV hz.2 hzab),
-    inv_zero]
+  rw [sphericalPendulumPeriod_def]
+  simpa only [one_div] using congrArg (2 * ·)
+    (integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV fun _ ↦ 1)
 
 /-- **The period of the height of the spherical pendulum.** Above the curve of relative
 equilibria, let a motion of the spherical pendulum with energy `h` and vertical angular momentum

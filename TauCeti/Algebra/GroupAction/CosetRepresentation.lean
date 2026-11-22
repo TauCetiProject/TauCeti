@@ -75,14 +75,14 @@ def ofIndex (G : Type*) [Group G] (n : ℕ) : SubMulAction (ConjAct G) (Subgroup
 /-- Since conjugation preserves subgroup index, the `ConjAct G`-orbit of `H` inside
 `Subgroup.ofIndex G n` bijects with its conjugacy orbit in `Subgroup G`. -/
 def orbitOfIndexEquiv {n : ℕ} (H : ofIndex G n) :
-    MulAction.orbit (ConjAct G) H ≃ MulAction.orbit (ConjAct G) H.1 where
-  toFun K := ⟨K.1.1, by
-    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
+    MulAction.orbit (ConjAct G) H ≃ MulAction.orbit (ConjAct G) H.val where
+  toFun K := ⟨K.val.val, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.property
     exact MulAction.mem_orbit_iff.mpr ⟨c, congrArg Subtype.val hc⟩⟩
-  invFun K := ⟨⟨K.1, by
-    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
-    exact mem_ofIndex.mpr (hc ▸ (index_smul c H.1).trans (mem_ofIndex.mp H.2))⟩, by
-    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
+  invFun K := ⟨⟨K.val, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.property
+    exact mem_ofIndex.mpr (hc ▸ (index_smul c H.val).trans (mem_ofIndex.mp H.property))⟩, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.property
     exact MulAction.mem_orbit_iff.mpr ⟨c, Subtype.ext hc⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -224,7 +224,7 @@ private noncomputable def normalizerQuotientEquivCentralizerOp (H : Subgroup G) 
   let τ := y.unop
   have hcomm (g : G) (q : G ⧸ H) : (τ : Equiv.Perm (G ⧸ H)) (g • q) =
       g • (τ : Equiv.Perm (G ⧸ H)) q :=
-    (Equiv.congr_fun ((mem_centralizer_iff.mp τ.2) _ ⟨g, rfl⟩) q).symm
+    (Equiv.congr_fun ((mem_centralizer_iff.mp τ.property) _ ⟨g, rfl⟩) q).symm
   obtain ⟨n, hn⟩ := QuotientGroup.mk_surjective ((τ : Equiv.Perm (G ⧸ H)) ((1 : G) : G ⧸ H))
   have hτx (x : G) : (τ : Equiv.Perm (G ⧸ H)) (x : G ⧸ H) = ((x * n : G) : G ⧸ H) := by
     have hx : (x : G ⧸ H) = x • ((1 : G) : G ⧸ H) := by
@@ -281,18 +281,18 @@ def ofIndexEquiv (φ : G ≃* G') (n : ℕ) : Subgroup.ofIndex G n ≃ Subgroup.
 
 /-- `φ.ofIndexEquiv` acts on subgroups as `Subgroup.map φ`. -/
 @[simp] theorem coe_ofIndexEquiv_apply (φ : G ≃* G') (n : ℕ) (H : Subgroup.ofIndex G n) :
-    (φ.ofIndexEquiv n H : Subgroup G') = H.1.map (φ : G →* G') := (rfl)
+    (φ.ofIndexEquiv n H : Subgroup G') = H.val.map (φ : G →* G') := (rfl)
 
 /-- `(φ.ofIndexEquiv n).symm` acts on subgroups as `Subgroup.comap φ`. -/
 @[simp] theorem coe_ofIndexEquiv_symm_apply (φ : G ≃* G') (n : ℕ) (H : Subgroup.ofIndex G' n) :
-    ((φ.ofIndexEquiv n).symm H : Subgroup G) = H.1.comap (φ : G →* G') :=
-  (Subgroup.comap_equiv_eq_map_symm φ H.1).symm
+    ((φ.ofIndexEquiv n).symm H : Subgroup G) = H.val.comap (φ : G →* G') :=
+  (Subgroup.comap_equiv_eq_map_symm φ H.val).symm
 
 /-- `φ.ofIndexEquiv` is equivariant with respect to subgroup conjugation. -/
 @[simp] theorem ofIndexEquiv_conjAct_smul (φ : G ≃* G') (n : ℕ) (g : G)
     (H : Subgroup.ofIndex G n) :
     φ.ofIndexEquiv n (ConjAct.toConjAct g • H) = ConjAct.toConjAct (φ g) • φ.ofIndexEquiv n H :=
-  Subtype.ext (Subgroup.map_map_conj H.1 φ.toMonoidHom g)
+  Subtype.ext (Subgroup.map_map_conj H.val φ.toMonoidHom g)
 
 /-- A group isomorphism identifies the conjugacy classes of subgroups of index `n` of `G` and `G'`.
 -/
@@ -317,7 +317,7 @@ def orbitRelQuotientOfIndexEquiv (φ : G ≃* G') (n : ℕ) :
       Quotient.mk'' (φ.symm.ofIndexEquiv n H) := by
   rw [orbitRelQuotientOfIndexEquiv, TauCeti.MulAction.orbitRelQuotientCongr_symm_mk]
   exact congrArg Quotient.mk'' <| Subtype.ext <|
-    (φ.coe_ofIndexEquiv_symm_apply n H).trans (Subgroup.comap_equiv_eq_map_symm φ H.1)
+    (φ.coe_ofIndexEquiv_symm_apply n H).trans (Subgroup.comap_equiv_eq_map_symm φ H.val)
 
 end MulEquiv
 

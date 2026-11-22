@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.PDE.Regularity.Oscillation
 public import TauCeti.Analysis.Sobolev.W1p.Truncation
-import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
+import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 

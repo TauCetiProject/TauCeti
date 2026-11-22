@@ -686,6 +686,18 @@ theorem IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub {m : ℕ → ℝ}
     rw [coefficient_add, hs, ← hr, coefficient_sub]
     abel
 
+/-- If a symbol `p` of order `μ`, included into order `m₀`, is an asymptotic sum of symbols `aⱼ`
+whose orders tend to `-∞`, then a symbol `c` of order `μ' ≤ μ`, included into order `m₀`, is one
+exactly when `p - c` is smoothing. -/
+theorem IsAsymptoticSum.isAsymptoticSum_inclusion_iff_isSmoothing_sub {m : ℕ → ℝ} {μ μ' : ℝ}
+    (hm' : Tendsto m atTop atBot) {a : ∀ j, Symbol n V W (m j)} {p : Symbol n V W μ}
+    {c : Symbol n V W μ'} (hp : μ ≤ m 0) (hc : μ' ≤ m 0) (h : μ' ≤ μ)
+    (hb : (inclusion hp p).IsAsymptoticSum a) :
+    (inclusion hc c).IsAsymptoticSum a ↔ (p - inclusion h c).IsSmoothing := by
+  rw [hb.isAsymptoticSum_iff_isSmoothing_sub hm',
+    show inclusion hc c - inclusion hp p = -inclusion hp (p - inclusion h c) from
+      Symbol.ext (funext fun _ ↦ by simp), isSmoothing_neg_iff, isSmoothing_inclusion_iff]
+
 /-- **Asymptotic summation with parameters** (Borel). Let `m₀ ≥ m₁ ≥ ⋯` be real orders tending to
 `-∞`, let `T` be a compact space, and let `aⱼ : T → S^{mⱼ}` be continuous families of symbols.
 Then there is a continuous family `b : T → S^{m₀}` such that for every `N` the remainders
@@ -727,8 +739,9 @@ private theorem exists_corrections_of_exists_add {μ : ℝ} (P : ℕ → Symbol 
   choose d hdQ hd using hsucc
   -- The successive approximations `s N`, with `P N (s N)`, and the corrections between them.
   let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
-    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
-  refine ⟨fun N ↦ d N (s N).1 (s N).2, fun N ↦ hdQ N _ _, fun N ↦ ⟨(s N).1, (s N).2, ?_⟩⟩
+    (fun N b ↦ ⟨b.val + inclusion (by simp) (d N b.val b.property), hd N b.val b.property⟩) N
+  refine ⟨fun N ↦ d N (s N).val (s N).property, fun N ↦ hdQ N _ _, fun N ↦ ⟨(s N).val,
+      (s N).property, ?_⟩⟩
   induction N with
   | zero => simp [s]
   | succ N ih =>

@@ -5,8 +5,8 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Probability.Density
 public import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Real densities of statistical models
@@ -32,6 +32,8 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
 
 * `TauCeti.HasDensity.congr_ae`, `TauCeti.HasDensity.ae_eq`: a density may be changed on a
   `μ`-null set, and for σ-finite `μ` it is unique up to such a change.
+* `TauCeti.HasDensity.ae_pos`: a density is positive almost everywhere for the measure it
+  defines.
 * `TauCeti.HasDensity.integral_eq`: `∫ g dP = ∫ f • g dμ`, for every `g`.
 * `TauCeti.HasDensity.integrable_iff`: `g` is `P`-integrable iff `f • g` is `μ`-integrable.
 * `TauCeti.HasDensity.integrable`, `TauCeti.HasDensity.integral_eq_one`: the density of a finite
@@ -98,6 +100,11 @@ theorem ae_eq [SigmaFinite μ] (hf : HasDensity P μ f) {g : X → ℝ} (hg : Ha
   filter_upwards [h, hf.ae_nonneg, hg.ae_nonneg] with x hx hfx hgx
   exact (ENNReal.ofReal_eq_ofReal_iff hfx hgx).mp hx
 
+/-- A density is positive almost everywhere with respect to the measure it defines. -/
+theorem ae_pos (h : HasDensity P μ f) : ∀ᵐ x ∂P, 0 < f x := by
+  rw [h.eq_withDensity, ae_withDensity_iff h.measurable.ennreal_ofReal]
+  exact ae_of_all _ fun x hx ↦ ENNReal.ofReal_pos.1 (pos_iff_ne_zero.2 hx)
+
 /-- The mass of a measurable set is the integral of the density over it. -/
 theorem measure_apply (h : HasDensity P μ f) {s : Set X} (hs : MeasurableSet s) :
     P s = ∫⁻ x in s, ENNReal.ofReal (f x) ∂μ := by
@@ -109,17 +116,17 @@ integrand against `μ`. No integrability hypothesis is needed: when `g` is not `
 theorem integral_eq (h : HasDensity P μ f) (g : X → E) :
     ∫ x, g x ∂P = ∫ x, f x • g x ∂μ := by
   rw [h.eq_withDensity]
-  exact Probability.integral_withDensity_ofReal h.measurable.aemeasurable h.ae_nonneg g
+  exact MeasureTheory.integral_withDensity_ofReal h.measurable.aemeasurable h.ae_nonneg g
 
 /-- A function is `P`-integrable iff its product with the density is `μ`-integrable. -/
 theorem integrable_iff (h : HasDensity P μ f) {g : X → E} :
     Integrable g P ↔ Integrable (fun x ↦ f x • g x) μ := by
   rw [h.eq_withDensity]
-  exact Probability.integrable_withDensity_ofReal_iff h.measurable.aemeasurable h.ae_nonneg
+  exact MeasureTheory.integrable_withDensity_ofReal_iff h.measurable.aemeasurable h.ae_nonneg
 
 /-- The density of a finite measure is integrable. -/
 theorem integrable [IsFiniteMeasure P] (h : HasDensity P μ f) : Integrable f μ :=
-  Probability.integrable_of_eq_withDensity h.eq_withDensity h.measurable.aemeasurable h.ae_nonneg
+  MeasureTheory.integrable_of_eq_withDensity h.eq_withDensity h.measurable.aemeasurable h.ae_nonneg
 
 /-- The density of a probability measure has integral `1`. -/
 theorem integral_eq_one [IsProbabilityMeasure P] (h : HasDensity P μ f) : ∫ x, f x ∂μ = 1 := by
@@ -140,7 +147,7 @@ theorem map {k : Y → ℝ} {φ : X → Y} (h : HasDensity P μ (k ∘ φ)) (hφ
   ae_nonneg := (ae_map_iff hφ.aemeasurable (measurableSet_le measurable_const hk)).mpr h.ae_nonneg
   eq_withDensity := by
     rw [h.eq_withDensity]
-    exact Measure.map_withDensity_comp hφ hk.ennreal_ofReal
+    exact Measure.map_withDensity_comp hφ.aemeasurable hk.ennreal_ofReal.aemeasurable
 
 end HasDensity
 
