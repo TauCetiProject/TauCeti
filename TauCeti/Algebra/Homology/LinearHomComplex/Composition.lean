@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
 
@@ -38,10 +41,10 @@ instance and its associativity and unit axioms in Mathlib's factor order are con
 The monoidal structure used here is Mathlib's `HomologicalComplex.monoidalCategory` at
 `ComplexShape.up ℤ`; nothing is re-totalized.  The component equations for the whiskerings, the
 unitors and the associator, which Mathlib does not state, are taken from
-`TauCeti/Algebra/Homology/Monoidal/Summand.lean` rather than repeated here.  Its
-colimit-preservation hypotheses are discharged
+`TauCeti/Algebra/Homology/Monoidal/Summand.lean` rather than repeated here.  The
+colimit-preservation hypotheses of Mathlib's monoidal structure are discharged
 by Mathlib's instances for a braided monoidal closed category, so
-`Mathlib.CategoryTheory.Monoidal.Closed.Braided`, which that file imports, is what makes the
+`Mathlib.CategoryTheory.Monoidal.Closed.Braided`, imported here, is what makes the
 tensor product of cochain complexes exist at all.  Note that `ModuleCat.{v} R` is monoidal only for
 a commutative `R : Type v`, so this file, unlike
 `TauCeti/Algebra/Homology/LinearHomComplex/Basic.lean`, requires `CommRing R` and ties the ring to
@@ -536,10 +539,10 @@ lemma linearHomComplexOfHom_comp (ψ : G ⟶ K) :
   rw [Iso.inv_hom_id_assoc]
   ext j : 1
   simp only [HomologicalComplex.comp_f]
-  rw [HomologicalComplex.leftUnitor_inv_f, HomologicalComplex.leftUnitor'_inv]
+  rw [HomologicalComplex.leftUnitor_inv_f]
   have hι :
       HomologicalComplex.ιTensorObj
-          (HomologicalComplex.tensorUnit (ModuleCat.{v} R) (ComplexShape.up ℤ))
+          (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))
           (linearHomComplex R F G) 0 j j (zero_add j) ≫
         (linearHomComplexOfHom R ψ ▷ linearHomComplex R F G).f j ≫
           (linearHomComplexComp R F G K).f j =
@@ -586,10 +589,10 @@ lemma linearHomComplexComp_ofHom {F' : CochainComplex C ℤ} (φ : F' ⟶ F) :
   rw [Iso.inv_hom_id_assoc]
   ext j : 1
   simp only [HomologicalComplex.comp_f]
-  rw [HomologicalComplex.rightUnitor_inv_f, HomologicalComplex.rightUnitor'_inv]
+  rw [HomologicalComplex.rightUnitor_inv_f]
   have hι :
       HomologicalComplex.ιTensorObj (linearHomComplex R F G)
-          (HomologicalComplex.tensorUnit (ModuleCat.{v} R) (ComplexShape.up ℤ))
+          (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))
           j 0 j (add_zero j) ≫
         (linearHomComplex R F G ◁ linearHomComplexOfHom R φ).f j ≫
           (linearHomComplexComp R F' F G).f j =

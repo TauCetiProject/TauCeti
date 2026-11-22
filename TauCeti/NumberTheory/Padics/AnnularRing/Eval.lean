@@ -136,7 +136,8 @@ def eval (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) : AnnularRing p →+* K whe
       (summable_norm_padicIntAlgebraMap_coeff_mul_zpow ht x)
       (summable_norm_padicIntAlgebraMap_coeff_mul_zpow ht y)).congr_fun fun m ↦ ?_).tsum_eq
     refine Eq.symm ((tsum_congr fun i ↦ ?_).trans (((hasSum_coeff_mul x y m).map
-      (padicIntAlgebraMap p K) continuous_padicIntAlgebraMap).mul_right (t ^ m)).tsum_eq)
+      (padicIntAlgebraMap p K)
+      (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K))).mul_right (t ^ m)).tsum_eq)
     rw [mul_mul_mul_comm, ← zpow_add₀ (ne_zero_of_norm_mem_Ioo ht), add_sub_cancel, ← map_mul]; rfl
 
 theorem eval_apply (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1) (x : AnnularRing p) :
@@ -218,7 +219,7 @@ theorem hasSum_eval_ofMvPowerSeries (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
       (fun k ↦ MvPowerSeries.coeff (Finsupp.finTwoSubMinEquiv.symm (m, k)) F)).mul_left
       ((p : ℤ_[p]) ^ (-m).toNat)
   exact ((hsum.hasSum.map (padicIntAlgebraMap p K)
-    continuous_padicIntAlgebraMap).mul_right (t ^ m)).tsum_eq.symm
+    (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K))).mul_right (t ^ m)).tsum_eq.symm
 end NormedAlgebra
 end Eval
 

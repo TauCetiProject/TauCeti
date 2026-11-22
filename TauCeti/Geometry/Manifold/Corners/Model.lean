@@ -171,4 +171,12 @@ theorem nonneg_of_mem_range_modelWithCornersEuclideanQuadrant (i : Fin m) :
   rw [range_modelWithCornersEuclideanQuadrant]
   exact fun _ hz ↦ hz i
 
+/-- The quadrant model sends a point to the frontier of its range exactly when the point has a
+vanishing coordinate. -/
+theorem modelWithCornersEuclideanQuadrant_mem_frontier_range_iff (z : EuclideanQuadrant m) :
+    (𝓡c m) z ∈ frontier (range (𝓡c m)) ↔ ∃ i, z.val i = 0 := by
+  rw [frontier_range_modelWithCornersEuclideanQuadrant, modelWithCornersEuclideanQuadrant_apply]
+  simp only [mem_ofPred_eq, eq_comm (a := (0 : ℝ))]
+  exact and_iff_right z.property
+
 end TauCeti
