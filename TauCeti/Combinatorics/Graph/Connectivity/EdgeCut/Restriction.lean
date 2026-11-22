@@ -82,22 +82,6 @@ theorem edgeCut_subset_edgeCut_of_edgeCut_induce_eq_empty (hTS : T ⊆ S)
   rw [edgeCut_induce_eq_sdiff G hTS, sdiff_eq_empty] at h
   exact h
 
-/-- Deleting vertices retains exactly the original cut edges whose two ends survive. -/
-theorem edgeCut_deleteVerts_eq_inter_edgeSet (G : Graph α β) (X T : Set α) :
-    (G.deleteVerts X).edgeCut T = E(G.deleteVerts X) ∩ G.edgeCut T := by
-  ext e
-  rw [mem_edgeCut_iff, mem_inter_iff, mem_edgeCut_iff, edgeSet_deleteVerts]
-  constructor
-  · rintro ⟨x, y, hxy, hxT, hyT⟩
-    rw [deleteVerts_isLink] at hxy
-    exact ⟨⟨x, y, hxy⟩, ⟨x, y, hxy.1, hxT, hyT⟩⟩
-  · rintro ⟨⟨a, b, hab, haX, hbX⟩, ⟨x, y, hxy, hxT, hyT⟩⟩
-    rcases hxy.eq_and_eq_or_eq_and_eq hab with h | h
-    · obtain ⟨rfl, rfl⟩ := h
-      exact ⟨x, y, (deleteVerts_isLink G X).2 ⟨hxy, haX, hbX⟩, hxT, hyT⟩
-    · obtain ⟨rfl, rfl⟩ := h
-      exact ⟨x, y, (deleteVerts_isLink G X).2 ⟨hxy, hbX, haX⟩, hxT, hyT⟩
-
 /-- If `T` is disjoint from `X`, deleting `X` removes exactly the edges that cross the boundary of
 `X` from the cut along `T`. -/
 theorem edgeCut_deleteVerts_eq_sdiff (G : Graph α β) (hTX : Disjoint T X) :
