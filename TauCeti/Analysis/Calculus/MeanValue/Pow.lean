@@ -23,7 +23,9 @@ For `0 < a` and `0 < b`, the mean value inequality gives the bound
 every `r` between `a` and `b`. Here `β` may be any real number, and no Hölder hypothesis is
 involved. The factor is `(min a b) ^ (β - 1)` for `β ≤ 1` and `(max a b) ^ (β - 1)` for `1 ≤ β`.
 When the derivative bound holds at every time near a positive time `t`, this estimate makes `u`
-Lipschitz near `t`, with a constant that depends on `t` and, for `β < 1`, blows up as `t → 0`.
+Lipschitz on a sufficiently small neighborhood of `t`, and a Lipschitz constant there can be
+bounded by a multiple of `D t ^ (β - 1)`. For `β < 1` this bound grows as `t → 0`. It is only an
+upper bound on the constant needed, and does not show that the best constant grows.
 
 The two other cases need no derivative, only data at the two endpoints, so they are stated for
 two points `x` and `y` of a pseudometric space, the values of `u` at `b` and `a`. For `a < 0`,
