@@ -14,7 +14,7 @@ import TauCeti.Topology.LocallyClosed
 # Balls, closures and interiors of real semialgebraic sets
 
 This file shows that the basic metric and topological constructions on the real coordinate space
-`σ → ℝ`, for a finite index type `σ`, preserve semialgebraicity.
+`σ → ℝ`, for a finite index type `σ` unless stated otherwise, preserve semialgebraicity.
 
 * Open and closed balls are semialgebraic, both for the sup norm, which is the norm Mathlib puts
   on `σ → ℝ`, and for the Euclidean norm of `EuclideanSpace ℝ σ`. In particular every point has
@@ -38,6 +38,9 @@ and differences.
   the locus where the sup distance between two polynomial maps is bounded by a polynomial is
   semialgebraic.
 * `TauCeti.isSemialgebraic_ball`, `TauCeti.isSemialgebraic_closedBall`: sup-norm balls.
+* `TauCeti.exists_isOpen_isSemialgebraic_subset`: for any index type `σ`, every neighbourhood of a
+  point contains an open semialgebraic neighbourhood (a box constraining finitely many
+  coordinates).
 * `TauCeti.isSemialgebraic_preimage_toLp_ball`, `TauCeti.isSemialgebraic_preimage_toLp_closedBall`:
   Euclidean balls, read in the coordinates `σ → ℝ`.
 * `TauCeti.IsSemialgebraic.closure`, `TauCeti.IsSemialgebraic.interior`,
@@ -134,6 +137,27 @@ theorem isSemialgebraic_preimage_toLp_closedBall [Fintype σ] (x : EuclideanSpac
   simp only [mem_preimage, Metric.mem_closedBall, EuclideanSpace.dist_eq,
     Real.dist_eq, sq_abs, mem_inter_iff, mem_ofPred_eq, eval_C, map_sum, map_pow, map_sub, eval_X,
     Real.sqrt_le_iff]
+
+open Filter Metric Topology in
+/-- Every neighbourhood of `x` contains an open semialgebraic neighbourhood of `x`: a box
+constraining finitely many coordinates. -/
+theorem exists_isOpen_isSemialgebraic_subset {V : Set (σ → ℝ)} {x : σ → ℝ} (hV : V ∈ 𝓝 x) :
+    ∃ B, IsOpen B ∧ x ∈ B ∧ B ⊆ V ∧ IsSemialgebraic B := by
+  rw [nhds_pi, Filter.mem_pi] at hV
+  obtain ⟨I, hI, t, ht, hIt⟩ := hV
+  choose ε hε hεt using fun i => Metric.mem_nhds_iff.1 (ht i)
+  have hmem (i : σ) : {y : σ → ℝ | y i ∈ ball (x i) (ε i)} =
+      {y | eval y (C (x i - ε i)) < eval y (X i)} ∩
+        {y | eval y (X i) < eval y (C (x i + ε i))} := by
+    ext y
+    simp [Real.ball_eq_Ioo, sub_eq_add_neg]
+  have hxB (i : σ) : x i ∈ ball (x i) (ε i) := mem_ball_self (hε i)
+  refine ⟨⋂ i ∈ I, {y | y i ∈ ball (x i) (ε i)}, hI.isOpen_biInter fun i _ =>
+    isOpen_ball.preimage (continuous_apply i), by simpa using fun i _ => hxB i,
+    fun y hy => hIt fun i hi => hεt i (mem_iInter₂.1 hy i hi), ?_⟩
+  exact .biInter hI fun i _ => by
+    rw [hmem]
+    exact (isSemialgebraic_eval_lt _ _).inter (isSemialgebraic_eval_lt _ _)
 
 /-! ### Closures, interiors and frontiers -/
 
@@ -232,7 +256,7 @@ theorem IsSemialgebraic.isNowhereDense_iff {n : ℕ} {s : Set (Fin n → ℝ)} (
   rw [← h𝒞.sUnion_sep_subset hsub] at h ⊢
   have := (h𝒞.finite.subset (sep_subset 𝒞 (· ⊆ s))).to_subtype
   rw [sUnion_eq_iUnion]
-  exact IsNowhereDense.iUnion fun E ↦ (h𝒞.isLocallyClosed E.2.1).isNowhereDense_iff.2 <|
-    subset_empty_iff.1 (h ▸ interior_mono (subset_sUnion_of_mem E.2))
+  exact IsNowhereDense.iUnion fun E ↦ (h𝒞.isLocallyClosed E.property.1).isNowhereDense_iff.2 <|
+    subset_empty_iff.1 (h ▸ interior_mono (subset_sUnion_of_mem E.property))
 
 end TauCeti

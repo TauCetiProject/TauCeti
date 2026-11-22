@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 public import TauCeti.Topology.MappingSpace.Evaluation
+public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import TauCeti.Topology.Sphere.Suspension
+public import Mathlib.Topology.Homotopy.HomotopyGroup
 
 /-!
 # Manifolds abundant with two-spheres
@@ -41,12 +43,15 @@ does not lie in the image of `c_* : Hₙ(Q, Q ∖ {b}) → Hₙ(E, E ∖ F)`.
 The definition only uses the space `Q`, a point `b` and the dimension `n`; it is meant for closed
 connected oriented `n`-manifolds, where it is the source's definition. Coefficients are the
 integers, written `ULift ℤ` as for the integral fundamental classes of
-`TauCeti.HomologicalOrientation`.
+`TauCeti.HomologicalOrientation`. Witnesses are built as cross products of integral classes, with
+coefficients `ℤ ⊗ ℤ` identified with `ℤ` (`ModuleCat.uliftTensorSelfIso`), from classes of the
+double loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedMap`).
 
 ## Main definitions
 
 * `TauCeti.IsAbundantWithTwoSpheres Q n b`: `Q` is abundant with 2-spheres at `b`, in
   dimension `n`, characterized by `TauCeti.isAbundantWithTwoSpheres_iff`.
+* `TauCeti.doubleLoopSpaceHomologyIsoBasedMap`: `Hₘ(Ω²Q; ℤ) ≅ Hₘ(Map_*(S², Q); ℤ)`.
 
 ## Main results
 
@@ -54,6 +59,13 @@ integers, written `ULift ℤ` as for the integral fundamental classes of
   fundamental class witnesses abundance.
 * `TauCeti.isAbundantWithTwoSpheres_of_eq`: so does a class of degree `n` living over the
   fundamental class whose localization is not that of a constant sphere class.
+* `TauCeti.isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub`: this holds for a class `α`
+  of degree `n` when both `α` and `α - ρ_* α` live over the fundamental class, where `ρ` is the
+  self-map `f ↦ const (f(north))` of `Map(S², Q)`.
+* `TauCeti.fiberLocalization_mem_range_localHomologyMap_const'_iff`: the localization of a class
+  `α` of `Map(B, X)` is that of a class of constant maps exactly when `α - ρ_* α` does not live over
+  the fundamental class, where `ρ` sends a map to the constant map at its value at the base point.
+* `TauCeti.IsAbundantWithTwoSpheres.homeomorph`: abundance is invariant under homeomorphisms.
 
 ## References
 
@@ -67,8 +79,57 @@ public section
 noncomputable section
 
 open CategoryTheory
+open scoped Topology Topology.Homotopy
 
 namespace TauCeti
+
+section ConstantMaps
+
+universe w
+
+variable {Λ : Type*} [Ring Λ] (R : ModuleCat.{w} Λ) {B X : Type w} [TopologicalSpace B]
+  [TopologicalSpace X] (b₀ : B) (x : X)
+
+/-- **Localizations of classes of constant maps.** For evaluation `ev : Map(B, X) → X` at `b₀`,
+let `ρ = const ∘ ev` send a map to the constant map at its value at `b₀`. The localization of a
+class `α ∈ Hₖ(Map(B, X))` at the fibre over `x` lies in the image of the local homology
+`Hₖ(X, X ∖ {x})` under the constant maps exactly when `α - ρ_* α` does not live over the
+fundamental class at `x`. Indeed `ρ` lies over `X` and fixes the constant maps, and its effect on
+localizations factors through `ev`. -/
+theorem fiberLocalization_mem_range_localHomologyMap_const'_iff {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of C(B, X))).homology R k : ModuleCat.{w} Λ)) :
+    (fiberLocalization R (mappingSpaceEval b₀) x k).hom α ∈
+        LinearMap.range (localHomologyMap R ContinuousMap.const'
+          (const'_preimage_mappingSpaceEval_preimage_subset b₀ x) k).hom ↔
+      ¬LivesOverFundamentalClass R (mappingSpaceEval b₀) x
+        (α - (SSet.homologyMap (TopCat.toSSet.map
+          (TopCat.ofHom (ContinuousMap.const'.comp (mappingSpaceEval b₀)))) R k).hom α) := by
+  have hρ : mappingSpaceEval b₀ ∘ (ContinuousMap.const'.comp (mappingSpaceEval (X := X) b₀)) =
+      mappingSpaceEval b₀ := funext fun _ ↦ by simp
+  -- `ρ` lies over `X`, so it acts on localizations through the map `ρ_*` of local homology,
+  -- which is `const_* ∘ ev_*` and fixes the image of `const_*`.
+  have h₁ := ConcreteCategory.congr_hom (homologyMap_comp_fiberLocalization R
+    (ContinuousMap.const'.comp (mappingSpaceEval b₀)) hρ x k) α
+  rw [ModuleCat.comp_apply, ModuleCat.comp_apply] at h₁
+  have h₂ := localHomologyMap_comp R (mappingSpaceEval b₀) ContinuousMap.const' subset_rfl
+    (const'_preimage_mappingSpaceEval_preimage_subset b₀ x) k
+  have h₃ : localHomologyMap R ContinuousMap.const'
+      (const'_preimage_mappingSpaceEval_preimage_subset b₀ x) k ≫
+        localHomologyMap R (ContinuousMap.const'.comp (mappingSpaceEval b₀))
+          (by rw [← Set.preimage_comp, hρ]) k =
+      localHomologyMap R ContinuousMap.const'
+        (const'_preimage_mappingSpaceEval_preimage_subset b₀ x) k := by
+    rw [localHomologyMap_comp]
+    exact localHomologyMap_congr R (ContinuousMap.ext fun _ ↦ by simp) _ k
+  rw [livesOverFundamentalClass_iff, not_not, map_sub, sub_eq_zero, h₁]
+  constructor
+  · rintro ⟨y, hy⟩
+    rw [← hy, ← ModuleCat.comp_apply, h₃]
+  · intro h
+    rw [h, ← h₂, ModuleCat.comp_apply]
+    exact ⟨_, rfl⟩
+
+end ConstantMaps
 
 variable (Q : Type) [TopologicalSpace Q]
 
@@ -136,5 +197,80 @@ theorem isAbundantWithTwoSpheres_of_eq {n : ℕ} {b : Q}
           n).hom α) :
     IsAbundantWithTwoSpheres Q n b :=
   ⟨n, α, hα, Or.inr ⟨rfl, fun ⟨β, hβ⟩ ↦ hc β hβ⟩⟩
+
+/-- **Abundance from a class in the dimension not fixed by the constant spheres.** Let `ρ` be the
+self-map `f ↦ const (f(north))` of `Map(S², Q)`. If a class `α ∈ Hₙ(Map(S², Q); ℤ)` lives over the
+fundamental class at `b`, and so does `α - ρ_* α`, then `Q` is abundant with 2-spheres at `b` in
+dimension `n`, by `TauCeti.fiberLocalization_mem_range_localHomologyMap_const'_iff`. -/
+theorem isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub {n : ℕ} {b : Q}
+    {α : ((TopCat.toSSet.obj (TopCat.of C(Sphere2, Q))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) n : ModuleCat.{0} ℤ)}
+    (hα : LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (mappingSpaceEval Sphere2.north) b α)
+    (hρα : LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (mappingSpaceEval Sphere2.north) b (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+        (ContinuousMap.const'.comp (mappingSpaceEval (X := Q) Sphere2.north))))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom α)) :
+    IsAbundantWithTwoSpheres Q n b :=
+  ⟨n, α, hα, Or.inr ⟨rfl, fun h ↦
+    (fiberLocalization_mem_range_localHomologyMap_const'_iff _ _ _ α).1 h hρα⟩⟩
+
+/-- The integral homology of the double loop space `Ω²Q` at `x` is that of the based mapping space
+`Map_*(S², Q)` of maps sending the north pole to `x`, with the coefficients `ULift ℤ` of
+`TauCeti.IsAbundantWithTwoSpheres`, through the homeomorphism of `Map_*(S², Q)` with the iterated
+loop space (`BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace`). -/
+def doubleLoopSpaceHomologyIsoBasedMap (x : Q) (m : ℕ) :
+    ((singularChains ℤ).obj (TopCat.of (Ω (Ω Q x) (Path.refl x)))).homology m ≅
+      (TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 Q Sphere2.north x))).homology
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) m :=
+  (uliftIntHomologyIso _ m).symm ≪≫
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso (TopCat.isoOfHomeo
+        (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩
+          Sphere2.north).symm)
+
+/-- **Abundance is invariant under homeomorphisms.** If `Q` is abundant with 2-spheres at `b` in
+dimension `n`, and `e : Q ≃ₜ Q'`, then `Q'` is abundant with 2-spheres at `e b` in dimension `n`:
+composing with `e` carries a witness for `Q` to a witness for `Q'`. -/
+theorem IsAbundantWithTwoSpheres.homeomorph {Q' : Type} [TopologicalSpace Q'] {n : ℕ} {b : Q}
+    (h : IsAbundantWithTwoSpheres Q n b) (e : Q ≃ₜ Q') : IsAbundantWithTwoSpheres Q' n (e b) := by
+  obtain ⟨k, α, hα, hk⟩ := (isAbundantWithTwoSpheres_iff Q n b).1 h
+  let H : C(C(Sphere2, Q), C(Sphere2, Q')) :=
+    ⟨fun f ↦ (e : C(Q, Q')).comp f, ContinuousMap.continuous_postcomp _⟩
+  let H' : C(C(Sphere2, Q'), C(Sphere2, Q)) :=
+    ⟨fun f ↦ (e.symm : C(Q', Q)).comp f, ContinuousMap.continuous_postcomp _⟩
+  have hH : H'.comp H = ContinuousMap.id _ :=
+    ContinuousMap.ext fun f ↦ ContinuousMap.ext fun s ↦ by simp [H, H']
+  -- Composing with `e` lies over `e`, and the fibre of `e ∘ ev` over `e b` is that of `ev`
+  -- over `b`.
+  have hlo : ∀ β : ((TopCat.toSSet.obj (TopCat.of C(Sphere2, Q))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ),
+      LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north)
+          (e b) ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom H))
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom β) ↔
+        LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ))
+          (mappingSpaceEval Sphere2.north) b β := fun β ↦
+    (livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id _ H H' hH
+      (p := e ∘ mappingSpaceEval Sphere2.north) (funext fun f ↦ by simp [H])
+      (funext fun f ↦ by simp [H'])).trans
+      (livesOverFundamentalClass_congr _ (Set.ext fun f ↦ by simp) β)
+  rcases hk with hk | ⟨rfl, hk⟩
+  · exact isAbundantWithTwoSpheres_of_lt ((hlo α).2 hα) hk
+  · refine (isAbundantWithTwoSpheres_iff _ _ _).2
+      ⟨_, _, (hlo α).2 hα, Or.inr ⟨rfl, ?_⟩⟩
+    rw [fiberLocalization_mem_range_localHomologyMap_const'_iff, not_not] at hk ⊢
+    -- Composing with `e` commutes with sending maps to constant maps.
+    have hcomm : SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom H))
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) k ≫ SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+          (ContinuousMap.const'.comp (mappingSpaceEval (X := Q') Sphere2.north))))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) k =
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+          (ContinuousMap.const'.comp (mappingSpaceEval (X := Q) Sphere2.north))))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) k ≫ SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom H))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) k :=
+      homologyMap_toSSet_ofHom_comp_comm _ _
+        (ContinuousMap.ext fun f ↦ ContinuousMap.ext fun s ↦ by simp [H])
+    rw [← ModuleCat.comp_apply, hcomm, ModuleCat.comp_apply, ← map_sub]
+    exact (hlo _).2 hk
 
 end TauCeti
