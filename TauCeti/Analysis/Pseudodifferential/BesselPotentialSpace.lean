@@ -887,7 +887,8 @@ theorem HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_smu
     (ha : a.HasCompactSpatialSupport) {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
     (hψt : ψ.HasTemperateGrowth) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
     (u : H^{s, p}(CoordinateSpace n, V)) :
-    ((smulLeft hψ a).quantizeUniformBesselPotentialSpace (ha.smulLeft hψ).isUniform s p u).toDistr =
+    ((Symbol.smulLeft hψ a).quantizeUniformBesselPotentialSpace (ha.smulLeft hψ).isUniform s p
+        u).toDistr =
       TemperedDistribution.smulLeftCLM W ψ
         (a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr := by
   have hq : quantizeUniformCLM _ (ha.smulLeft hψ).isUniform =
@@ -898,7 +899,7 @@ theorem HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_smu
       quantizeSchwartzValue_congr_left (b := ψ x • a.coefficient) (fun ξ ↦ by simp),
       quantizeSchwartzValue_smul_left]
   have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
-        (smulLeft hψ a).quantizeUniformBesselPotentialSpace (ha.smulLeft hψ).isUniform s p =
+        (Symbol.smulLeft hψ a).quantizeUniformBesselPotentialSpace (ha.smulLeft hψ).isUniform s p =
       TemperedDistribution.smulLeftCLM W ψ ∘L BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
         a.quantizeUniformBesselPotentialSpace ha.isUniform s p := by
     refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
