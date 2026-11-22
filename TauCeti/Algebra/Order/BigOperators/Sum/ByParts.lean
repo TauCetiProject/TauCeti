@@ -200,7 +200,7 @@ theorem abs_sum_Ioc_mul_le {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R
           (hf (K + 1) (mem_Icc.mpr ⟨le_rfl, by omega⟩))
       _ = 2 * B := (two_mul B).symm
   have hsum_eq : ∑ j ∈ Ioc K m, f j * g j = ∑ i ∈ range (m - K), f (K + 1 + i) * w i := by
-    rw [← Ico_add_one_add_one_eq_Ioc, sum_Ico_eq_sum_range, show m + 1 - (K + 1) = m - K by omega]
+    rw [← Ico_add_one_add_one_eq_Ioc, sum_Ico_eq_sum_range, Nat.add_sub_add_right]
     exact sum_congr rfl fun i hi ↦ by simp [w, mem_range.mp hi]
   have hw0 : w 0 = g (K + 1) := by simp [w, Nat.sub_pos_of_lt hKm]
   rw [hsum_eq, ← hw0]

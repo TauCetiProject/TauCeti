@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Order.BigOperators.Expect
+import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.Module
 
@@ -32,6 +33,7 @@ forward window.
 
 ## Main results
 
+* `TauCeti.tendsto_inv_smul_sum_Icc_floor`: real-cutoff Cesàro mean for convergent sequences.
 * `TauCeti.tendsto_inv_smul_sum_Ico_of_cesaro`: Cesàro convergence implies convergence of the
   averages over windows whose length is a fixed proportion of their right end.
 * `TauCeti.tendsto_of_cesaro_of_sub_le`: Landau's theorem for slowly decreasing real sequences.
@@ -54,6 +56,25 @@ open Filter Finset Topology
 namespace TauCeti
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A sequence in a normed space converging to `l` has real-cutoff Cesàro mean
+`x⁻¹ • ∑ n ∈ Icc 1 ⌊x⌋₊, a n → l`. -/
+theorem tendsto_inv_smul_sum_Icc_floor {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {a : ℕ → F} {l : F} (ha : Tendsto a atTop (𝓝 l)) :
+    Tendsto (fun x : ℝ ↦ x⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n) atTop (𝓝 l) := by
+  have hces : Tendsto (fun x : ℝ ↦ (⌊x⌋₊ : ℝ)⁻¹ • ∑ n ∈ Finset.range ⌊x⌋₊, a (n + 1))
+      atTop (𝓝 l) :=
+    (ha.comp (tendsto_add_atTop_nat 1)).cesaro_smul.comp tendsto_nat_floor_atTop
+  have hprod : Tendsto (fun x : ℝ ↦
+      ((⌊x⌋₊ : ℝ) / x) • ((⌊x⌋₊ : ℝ)⁻¹ • ∑ n ∈ Finset.range ⌊x⌋₊, a (n + 1))) atTop (𝓝 l) := by
+    simpa using (tendsto_nat_floor_div_atTop (R := ℝ)).smul hces
+  refine hprod.congr' ?_
+  filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+  have hfl : (⌊x⌋₊ : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.floor_pos.mpr hx).ne'
+  have hsum_eq : ∑ n ∈ Finset.range ⌊x⌋₊, a (n + 1) = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n := by
+    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel]
+    exact Finset.sum_congr rfl fun n _ ↦ by rw [add_comm]
+  rw [hsum_eq, smul_smul, div_eq_mul_inv, mul_right_comm, mul_inv_cancel₀ hfl, one_mul]
 
 /-- **Window averages of a Cesàro convergent sequence.** If the Cesàro means of `u` converge to
 `l`, then so do the averages of `u` over windows `[a, a + m)` whose left end `a` tends to infinity

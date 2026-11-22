@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
 # Pointwise limits from moving averages
@@ -20,17 +19,6 @@ above by a sequence tending to zero.
 The one-sided criterion is the analytic step used to pass from uniform occupation bounds
 to decay of transition probabilities in the null-recurrent case. No boundedness of the
 original sequence is required. The averages include times `n + 1` through `n + k`.
-
-Also included is the real-cutoff Cesàro mean `x⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n`, which
-inherits the limit of `a` from Mathlib's `Filter.Tendsto.cesaro_smul`.
-
-## Main results
-
-* `TauCeti.tendsto_inv_smul_sum_range_add_sub`,
-  `TauCeti.tendsto_of_norm_inv_smul_sum_range_add_sub_le`,
-  `TauCeti.tendsto_zero_of_nonneg_of_sum_range_add_div_le`: pointwise limits from forward moving
-  averages.
-* `TauCeti.tendsto_inv_smul_sum_Icc_floor`: real-cutoff Cesàro mean for convergent sequences.
 
 ## References
 
@@ -107,39 +95,5 @@ theorem tendsto_zero_of_nonneg_of_sum_range_add_div_le {u b : ℕ → ℝ}
     mul_nonneg (inv_nonneg.mpr (Nat.cast_nonneg k)) (sum_nonneg fun i _ => hu _)
   simp only [sub_zero, Real.norm_eq_abs, smul_eq_mul, abs_of_nonneg hnonneg]
   simpa only [div_eq_mul_inv, mul_comm] using hbound n k hk
-
-/-- A sequence in a normed space converging to `l` has real-cutoff Cesàro mean
-`x⁻¹ • ∑ n ∈ Icc 1 ⌊x⌋₊, a n → l`. -/
-theorem tendsto_inv_smul_sum_Icc_floor {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {a : ℕ → F} {l : F} (ha : Tendsto a atTop (𝓝 l)) :
-    Tendsto (fun x : ℝ ↦ x⁻¹ • ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n) atTop (𝓝 l) := by
-  let b : ℕ → F := fun n ↦ if n = 0 then 0 else a n
-  have hb : Tendsto b atTop (𝓝 l) := by
-    refine ha.congr' ?_
-    filter_upwards [eventually_ge_atTop 1] with n hn
-    simp [b, Nat.one_le_iff_ne_zero.mp hn]
-  have hces : Tendsto (fun x : ℝ ↦ ((⌊x⌋₊ + 1 : ℕ) : ℝ)⁻¹ • ∑ n ∈ Finset.range (⌊x⌋₊ + 1), b n)
-      atTop (𝓝 l) :=
-    hb.cesaro_smul.comp ((tendsto_add_atTop_nat 1).comp tendsto_nat_floor_atTop)
-  have hratio : Tendsto (fun x : ℝ ↦ ((⌊x⌋₊ + 1 : ℕ) : ℝ) / x) atTop (𝓝 1) := by
-    simpa only [add_zero] using
-      (tendsto_nat_floor_div_atTop (R := ℝ) |>.add tendsto_inv_atTop_zero).congr fun x ↦ by
-        push_cast; rw [add_div, one_div]
-  have hprod : Tendsto (fun x : ℝ ↦ (((⌊x⌋₊ + 1 : ℕ) : ℝ) / x) •
-      (((⌊x⌋₊ + 1 : ℕ) : ℝ)⁻¹ • ∑ n ∈ Finset.range (⌊x⌋₊ + 1), b n)) atTop (𝓝 l) := by
-    simpa using hratio.smul hces
-  refine hprod.congr' ?_
-  filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
-  have hsum_eq : ∑ n ∈ Finset.range (⌊x⌋₊ + 1), b n = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, a n := by
-    rw [Finset.sum_range_eq_add_Ico _ (Nat.succ_pos _), Nat.succ_eq_add_one,
-      Finset.Ico_add_one_right_eq_Icc]
-    have hb0 : b 0 = 0 := by simp [b]
-    rw [hb0, zero_add]
-    refine Finset.sum_congr rfl fun n hn ↦ ?_
-    simp [b, Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1]
-  have hpos : ((⌊x⌋₊ + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero _)
-  rw [hsum_eq, smul_smul]
-  congr 1
-  field_simp [hpos, hx.ne']
 
 end TauCeti

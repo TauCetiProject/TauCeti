@@ -72,9 +72,7 @@ theorem exists_bounded_continuousOn_laplace_not_tendsto_intervalIntegral :
     intro z hz
     simpa [f] using hG_eq z hz
   have hint_nat (N : ℕ) : ∫ t in (0 : ℝ)..(N : ℝ), f t = ∑ n ∈ Finset.range N, c n := by
-    have hstep := intervalIntegral_floor_div_mul_cexp_neg_mul (c := fun n ↦ (c n : ℂ)) one_pos N 0
-    simp only [mul_one, div_one, neg_zero, zero_mul, Complex.exp_zero,
-      intervalIntegral.integral_const, sub_zero] at hstep
+    have hstep := intervalIntegral_floor_div (fun n ↦ (c n : ℂ)) one_pos N
     apply Complex.ofReal_injective
     simpa [f, intervalIntegral.integral_ofReal, Complex.ofReal_sum] using hstep
   have hnot : ∀ L : ℂ, ¬ Tendsto (fun T : ℝ ↦ ∫ t in (0 : ℝ)..T, (f t : ℂ)) atTop (𝓝 L) := by

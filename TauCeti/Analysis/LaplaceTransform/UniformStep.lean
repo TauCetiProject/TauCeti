@@ -15,10 +15,11 @@ import TauCeti.Analysis.SpecificLimits.Normed
 
 For a uniform step function `t ↦ c ⌊t / h⌋₊` of step length `h > 0`:
 
-* the truncated Laplace transform over `[0, N * h]` (`intervalIntegral_floor_div_mul_cexp_neg_mul`)
-  and, for bounded `c` and `0 < re z`, the full Laplace transform on `[0, ∞)`
-  (`integral_floor_div_mul_cexp_neg_mul`) factor as the entire single-step integral
-  `∫ u in 0..h, exp (-z * u)` times the power series of `c` evaluated at `exp (-h * z)`;
+* the truncated Laplace transform over `[0, N * h]` (`intervalIntegral_floor_div_mul_cexp_neg_mul`,
+  with unweighted `z = 0` specialization `intervalIntegral_floor_div`) and, for bounded `c` and
+  `0 < re z`, the full Laplace transform on `[0, ∞)` (`integral_floor_div_mul_cexp_neg_mul`) factor
+  as the entire single-step integral `∫ u in 0..h, exp (-z * u)` times the power series of `c`
+  evaluated at `exp (-h * z)`;
 * when the power series of `c` has a sum `P` continuous on `closedBall 0 1` agreeing with
   `∑' n, c n * w ^ n` on `ball 0 1`, `exists_continuousOn_integral_floor_div_mul_cexp_neg_mul`
   transfers `P` to a continuous extension on `0 ≤ re z` that is holomorphic on `0 < re z` and
@@ -87,6 +88,13 @@ theorem intervalIntegral_floor_div_mul_cexp_neg_mul (c : ℕ → ℂ) {h : ℝ} 
     ring
   simp_rw [hexp, intervalIntegral.integral_const_mul]
   ring
+
+/-- **Unweighted truncated integral of a uniform step function.** Specializing
+`intervalIntegral_floor_div_mul_cexp_neg_mul` to `z = 0` yields
+`∫ t in 0..(N * h), c ⌊t / h⌋₊ = h * ∑ n ∈ range N, c n`. -/
+theorem intervalIntegral_floor_div (c : ℕ → ℂ) {h : ℝ} (hh : 0 < h) (N : ℕ) :
+    ∫ t in (0 : ℝ)..((N : ℝ) * h), c ⌊t / h⌋₊ = (h : ℂ) * ∑ n ∈ Finset.range N, c n := by
+  simpa [Complex.real_smul] using intervalIntegral_floor_div_mul_cexp_neg_mul c hh N 0
 
 /-- **Laplace transform of a bounded uniform step function.** For `h > 0`, a bounded sequence
 `c : ℕ → ℂ`, and `0 < re z`, the Laplace transform of `t ↦ c ⌊t / h⌋₊` on `[0, ∞)` factors as

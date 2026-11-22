@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.StepCorrection
 import TauCeti.Analysis.LaplaceTransform.ExponentialStep
@@ -37,8 +36,6 @@ for `0 ≤ t` (`Real.natFloor_logb_eq_natLog_natFloor`). Combining this with the
 * `TauCeti.LSeries.sum_Icc_natLog_div_add_stepCorrectionTerm`: partial-sum identity at powers
   of `b`.
 * `TauCeti.LSeries.exists_continuousOn_LSeries_natLog`: disc-algebra transfer to `1 ≤ re s`.
-* `TauCeti.LSeries.re_sum_ofReal_div_natCast`: real part of a finite harmonic sum with real
-  coefficients.
 * `TauCeti.LSeries.unbounded_sum_Icc_natLog_div`: unboundedness of real ordered harmonic sums.
 -/
 
@@ -49,15 +46,16 @@ open scoped Topology Interval
 
 namespace TauCeti.LSeries
 
+private theorem norm_ite_natLog_le (b : ℕ) {c : ℕ → ℂ} {M : ℝ} (hbound : ∀ n, ‖c n‖ ≤ M) :
+    ∀ n, 1 ≤ n → ‖if n = 0 then (0 : ℂ) else c (Nat.log b n)‖ ≤ M := fun n hn ↦ by
+  simpa [Nat.one_le_iff_ne_zero.mp hn] using hbound (Nat.log b n)
+
 private theorem LSeries_natLog_add_stepCorrection_eq_integral (b : ℕ) {c : ℕ → ℂ} {M : ℝ}
     (hbound : ∀ n, ‖c n‖ ≤ M) {z : ℂ} (hz : 0 < z.re) :
     LSeries (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) (z + 1) +
         stepCorrection (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) z =
       ∫ t in Ici (0 : ℝ), c ⌊t / Real.log b⌋₊ * cexp (-z * t) := by
-  have habound : ∀ n, 1 ≤ n → ‖(if n = 0 then 0 else c (Nat.log b n))‖ ≤ M := by
-    intro n hn
-    simp [Nat.one_le_iff_ne_zero.mp hn, hbound]
-  rw [← integral_floor_exp_mul_cexp_neg_mul habound hz,
+  rw [← integral_floor_exp_mul_cexp_neg_mul (norm_ite_natLog_le b hbound) hz,
     integral_floor_exp_natLog_mul_cexp_neg_mul b c z]
 
 /-- **Laplace–Dirichlet bridge for `b`-adic block coefficients.** For an integer base `b > 1`,
@@ -94,9 +92,7 @@ theorem sum_Icc_natLog_div_add_stepCorrectionTerm {b : ℕ} (hb : 1 < b) (c : �
   have hL := intervalIntegral_floor_exp_mul_cexp_neg_mul_log_succ a (b ^ K - 1) 0
   simp only [neg_zero, zero_mul, Complex.exp_zero, mul_one, zero_add] at hL
   rw [hlog_eq, Nat.sub_add_cancel hpow_pos, Finset.sum_add_distrib] at hL
-  have hR := intervalIntegral_floor_div_mul_cexp_neg_mul c hlogb K 0
-  simp only [neg_zero, zero_mul, Complex.exp_zero, mul_one,
-    intervalIntegral.integral_const, sub_zero] at hR
+  have hR := intervalIntegral_floor_div c hlogb K
   have hint_eq : ∫ t in (0 : ℝ)..((K : ℝ) * Real.log b), a ⌊Real.exp t⌋₊ =
       ∫ t in (0 : ℝ)..((K : ℝ) * Real.log b), c ⌊t / Real.log b⌋₊ := by
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
@@ -108,7 +104,6 @@ theorem sum_Icc_natLog_div_add_stepCorrectionTerm {b : ℕ} (hb : 1 < b) (c : �
     refine Finset.sum_congr rfl fun n hn ↦ ?_
     simp [a, Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1]
   rw [← hterm, ← hL, hint_eq, hR]
-  simp [Complex.real_smul]
 
 /-- **Transfer of a disc-algebra power series to a `b`-adic block Dirichlet series.** Given an
 integer base `b > 1` and a bounded sequence `c : ℕ → ℂ` whose power series `∑' n, c n * w ^ n`
@@ -125,8 +120,7 @@ theorem exists_continuousOn_LSeries_natLog {b : ℕ} (hb : 1 < b) {c : ℕ → �
       (∀ s : ℂ, 1 < s.re →
         LSeriesHasSum (fun n ↦ if n = 0 then (0 : ℂ) else c (Nat.log b n)) s (F s)) := by
   set a : ℕ → ℂ := fun n ↦ if n = 0 then 0 else c (Nat.log b n)
-  have ha_bound : ∀ n, 1 ≤ n → ‖a n‖ ≤ M := fun n hn ↦ by
-    simpa [a, Nat.one_le_iff_ne_zero.mp hn] using hc_bound (Nat.log b n)
+  have ha_bound : ∀ n, 1 ≤ n → ‖a n‖ ≤ M := norm_ite_natLog_le b hc_bound
   have hlogb : 0 < Real.log b := Real.log_pos (by exact_mod_cast hb)
   obtain ⟨G, hG_cont, hG_diff, hG_eq⟩ :=
     exists_continuousOn_integral_floor_div_mul_cexp_neg_mul hc_bound hlogb hP_cont hP_sum
@@ -163,12 +157,6 @@ theorem exists_continuousOn_LSeries_natLog {b : ℕ} (hb : 1 < b) {c : ℕ → �
       exact eq_sub_of_add_eq hlap
     exact hFeq ▸ hsumm.LSeriesHasSum
 
-/-- The real part of a finite harmonic sum with real coefficients is the corresponding real
-harmonic sum. -/
-theorem re_sum_ofReal_div_natCast (s : Finset ℕ) (f : ℕ → ℝ) :
-    (∑ n ∈ s, (f n : ℂ) / (n : ℂ)).re = ∑ n ∈ s, f n / (n : ℝ) := by
-  simp only [Complex.re_sum, Complex.div_natCast_re, Complex.ofReal_re]
-
 /-- **Unboundedness of ordered harmonic partial sums for `b`-adic block coefficients.** For an
 integer base `b > 1` and a bounded real sequence `c : ℕ → ℝ` whose partial sums `∑ k ∈ range K, c k`
 are unbounded above, the real ordered harmonic partial sums `∑ n ∈ Icc 1 N, c (Nat.log b n) / n`
@@ -177,9 +165,9 @@ theorem unbounded_sum_Icc_natLog_div {b : ℕ} (hb : 1 < b) {c : ℕ → ℝ} {M
     (hc_bound : ∀ n, |c n| ≤ M) (hc_unb : ∀ B : ℝ, ∃ K : ℕ, B ≤ ∑ k ∈ Finset.range K, c k) :
     ∀ B : ℝ, ∃ N : ℕ, B ≤ ∑ n ∈ Finset.Icc 1 N, c (Nat.log b n) / (n : ℝ) := by
   set aC : ℕ → ℂ := fun n ↦ if n = 0 then 0 else (c (Nat.log b n) : ℂ)
-  have haC_bound : ∀ n, 1 ≤ n → ‖aC n‖ ≤ M := fun n hn ↦ by
-    simpa [aC, Nat.one_le_iff_ne_zero.mp hn, Complex.norm_real, Real.norm_eq_abs] using
-      hc_bound (Nat.log b n)
+  have hcC_bound : ∀ n, ‖(c n : ℂ)‖ ≤ M := fun n ↦ by
+    simpa [Complex.norm_real, Real.norm_eq_abs] using hc_bound n
+  have haC_bound : ∀ n, 1 ≤ n → ‖aC n‖ ≤ M := norm_ite_natLog_le b hcC_bound
   have hlogb : 0 < Real.log b := Real.log_pos (by exact_mod_cast hb)
   have hcorr_lim : Tendsto (fun m : ℕ ↦ (∑ n ∈ Finset.range m, stepCorrectionTerm aC n 0).re)
       atTop (𝓝 (stepCorrection aC 0).re) :=
@@ -194,7 +182,8 @@ theorem unbounded_sum_Icc_natLog_div {b : ℕ} (hb : 1 < b) {c : ℕ → ℝ} {M
   have hre_rhs : ((Real.log b : ℂ) * ∑ k ∈ Finset.range K, (c k : ℂ)).re =
       Real.log b * ∑ k ∈ Finset.range K, c k := by
     rw [← Complex.ofReal_sum, ← Complex.ofReal_mul, Complex.ofReal_re]
-  rw [Complex.add_re, re_sum_ofReal_div_natCast, Complex.re_sum, hre_rhs] at hre
+  simp only [Complex.add_re, Complex.re_sum, Complex.div_natCast_re, Complex.ofReal_re, hre_rhs]
+    at hre
   have hcorr_le : (∑ n ∈ Finset.range (b ^ K), stepCorrectionTerm aC n 0).re ≤ C :=
     hC ⟨b ^ K, rfl⟩
   simp only [Complex.re_sum] at hcorr_le
