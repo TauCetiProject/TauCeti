@@ -9,11 +9,8 @@ public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
-public import TauCeti.Algebra.Category.FGModuleCat.Finrank
+public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
-import TauCeti.Algebra.Category.FGModuleCat.Homology
-import TauCeti.Algebra.Homology.EulerCharacteristic.Basic
-import TauCeti.Algebra.Homology.EulerCharacteristic.Finite
 import TauCeti.Algebra.Homology.ShortComplex.Abelian
 import TauCeti.CategoryTheory.Abelian.Images
 import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
@@ -45,11 +42,8 @@ each relation `c.Rel i j` appears once from `i` with sign `c.χ i` and once from
 `c.χ j = -c.χ i`, so all boundary terms cancel pairwise.
 
 Specializing to `P = ⊤` yields the identity for any `TauCeti.AbelianK0.AdditiveInvariant`
-(`HomologicalComplex.sum_χ_smul_obj_X_eq_sum_χ_smul_obj_homology`), and specializing to finrank on
-finitely generated modules over a Noetherian ring satisfying rank-nullity identifies Mathlib's
-`HomologicalComplex.eulerChar` with `HomologicalComplex.homologyEulerChar` for any finitely
-supported complex of arbitrary shape
-(`HomologicalComplex.eulerChar_eq_homologyEulerChar_of_finset`).
+(`HomologicalComplex.sum_χ_smul_obj_X_eq_sum_χ_smul_obj_homology`). For the specialization to
+`ModuleCat` Euler characteristics, see `TauCeti.Algebra.Homology.EulerCharacteristic.Finite`.
 
 ## References
 
@@ -195,77 +189,5 @@ theorem sum_χ_smul_obj_X_eq_sum_χ_smul_obj_homology [c.EulerCharSigns]
     (fun _ _ ↦ trivial)
 
 end Abelian
-
-section ModuleCat
-
-variable {R : Type u} [Ring R] {ι : Type*} {c : ComplexShape ι}
-
-/-- The finrank support of a complex of modules vanishing outside `s` is contained in `s`. -/
-lemma finrankSupport_X_subset_of_isZero [Nontrivial R]
-    (K : HomologicalComplex (ModuleCat.{v} R) c)
-    (s : Finset ι) (hs : ∀ i : ι, i ∉ s → IsZero (K.X i)) :
-    GradedObject.finrankSupport K.X ⊆ s := by
-  rw [GradedObject.finrankSupport_subset_iff]
-  intro i hi
-  exact ModuleCat.finrank_eq_zero_of_isZero (hs i (fun h ↦ hi (Finset.mem_coe.2 h)))
-
-/-- The finrank support of the homology of a complex of modules vanishing outside `s` is contained
-in `s`. -/
-lemma finrankSupport_homology_subset_of_isZero [Nontrivial R]
-    (K : HomologicalComplex (ModuleCat.{v} R) c)
-    (s : Finset ι) (hs : ∀ i : ι, i ∉ s → IsZero (K.X i)) :
-    GradedObject.finrankSupport (fun i ↦ K.homology i) ⊆ s := by
-  rw [GradedObject.finrankSupport_subset_iff]
-  intro i hi
-  exact ModuleCat.finrank_eq_zero_of_isZero
-    ((K.sc i).isZero_homology_of_isZero_X₂ (hs i (fun h ↦ hi (Finset.mem_coe.2 h))))
-
-/-- **Euler--Poincaré for a finitely supported complex of finitely generated modules of arbitrary
-shape**, in Mathlib's `HomologicalComplex.eulerChar` API. Over a Noetherian ring with the
-rank-nullity property (such as a division ring or `ℤ`), the term and homology Euler
-characteristics agree for any complex in `FGModuleCat R` vanishing outside a finite set. -/
-theorem eulerChar_forgetFG_eq_homologyEulerChar_of_finset [IsNoetherianRing R]
-    [HasRankNullity.{v} R] [c.EulerCharSigns]
-    (K : HomologicalComplex (FGModuleCat.{v} R) c) (s : Finset ι)
-    (hs : ∀ i : ι, i ∉ s → IsZero (K.X i)) :
-    eulerChar (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj K) =
-      homologyEulerChar
-        (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj K) := by
-  have hsF : ∀ i : ι, i ∉ s →
-      IsZero ((((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj
-        K).X i) := fun i hi ↦
-    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map_isZero (hs i hi)
-  rw [eulerChar_eq_sum_finSet_of_finrankSupport_subset _ s
-        (finrankSupport_X_subset_of_isZero _ s hsF),
-      homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset _ s
-        (finrankSupport_homology_subset_of_isZero _ s hsF)]
-  have h := K.sum_χ_smul_obj_X_eq_sum_χ_smul_obj_homology
-    (TauCeti.AbelianK0.AdditiveInvariant.finrank R) s hs
-  simpa only [Functor.mapHomologicalComplex_obj_X, FGModuleCat.finrank_forget₂_obj,
-    finrank_homology_forget, TauCeti.AbelianK0.AdditiveInvariant.finrank_obj, smul_eq_mul] using h
-
-/-- **Euler--Poincaré for a finitely supported complex in `ModuleCat R` of arbitrary shape.**
-Over a Noetherian ring with the rank-nullity property (such as a division ring or `ℤ`), a complex
-of `R`-modules vanishing outside a finite set `s` whose terms in `s` are finitely generated has the
-same `eulerChar` and `homologyEulerChar`. -/
-theorem eulerChar_eq_homologyEulerChar_of_finset [IsNoetherianRing R] [HasRankNullity.{v} R]
-    [c.EulerCharSigns] (K : HomologicalComplex (ModuleCat.{v} R) c) (s : Finset ι)
-    (hs : ∀ i : ι, i ∉ s → IsZero (K.X i)) (hK : ∀ i ∈ s, Module.Finite R (K.X i)) :
-    K.eulerChar = K.homologyEulerChar := by
-  classical
-  let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
-  have hall : ∀ i : ι, Module.Finite R (K.X i) := fun i ↦
-    if hi : i ∈ s then hK i hi else
-      have := ModuleCat.subsingleton_of_isZero (hs i hi)
-      inferInstance
-  let L : HomologicalComplex (FGModuleCat.{v} R) c :=
-    K.liftObjectProperty (ModuleCat.isFG R) fun i ↦ (ModuleCat.isFG_iff _).2 (hall i)
-  let e : (F.mapHomologicalComplex c).obj L ≅ K := K.liftFGModuleCatIso hall
-  have hsL : ∀ i : ι, i ∉ s → IsZero (L.X i) := fun i hi ↦
-    IsZero.of_full_of_faithful_of_isZero F (L.X i) (hs i hi)
-  rw [← eulerChar_eq_of_iso e, ← homologyEulerChar_eq_of_iso e]
-  exact L.eulerChar_forgetFG_eq_homologyEulerChar_of_finset s hsL
-
-end ModuleCat
 
 end HomologicalComplex

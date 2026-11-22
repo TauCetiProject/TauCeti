@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.SpectralSequence.Bidegree
 public import TauCeti.Algebra.Homology.SpectralSequence.Reindex
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
 public import TauCeti.CategoryTheory.Subobject.Cokernel
@@ -47,7 +48,9 @@ degreewise vanishing and exhaustiveness hypotheses of
 (`CochainComplex.decreasingFiltrationSpectralSequencePageXIsoGradedOfExhaustive`,
 `CochainComplex.homologicalFiltrationSpectralSequencePageXIsoGradedOfExhaustive`), which hold
 for instance for a first-quadrant decreasing filtration (`F^0 = K` and `F^{n+1} K^n = 0`) on every
-page `r` large compared with `p` and `q`.
+page `r` large compared with `p` and `q`. We also record the bidegree assignment
+`CategoryTheory.SpectralSequence.BidegreeAssignment.classicalFiltered` matching the native `E₂`
+coordinates of an increasingly filtered complex.
 
 ## References
 
@@ -326,3 +329,34 @@ noncomputable def homologicalFiltrationSpectralSequencePageXIsoGradedOfExhaustiv
 end ModuleCat
 
 end CochainComplex
+
+namespace CategoryTheory.SpectralSequence.BidegreeAssignment
+
+/-- The classical filtered-complex bidegree assignment `(p, q) ↦ (-q - 1, p + q)` with page offset
+`1` on the native `E₂` cohomological coordinates `ComplexShape.up' (r, 1 - r)` of the spectral
+sequence of an increasingly filtered complex (`coreE₂Cohomological`). -/
+def classicalFiltered (r₀ : ℤ) :
+    BidegreeAssignment (fun r ↦ ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ)) r₀ 1 where
+  fil pq := -pq.2 - 1
+  deg pq := pq.1 + pq.2
+  injective := by
+    rintro ⟨p, q⟩ ⟨p', q'⟩ h
+    simp only [Prod.mk.injEq] at h
+    ext <;> lia
+  deg_rel r _ pq pq' h := by
+    obtain ⟨p, q⟩ := pq
+    obtain ⟨p', q'⟩ := pq'
+    simp only [ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq] at h
+    lia
+  fil_rel r _ pq pq' h := by
+    obtain ⟨p, q⟩ := pq
+    obtain ⟨p', q'⟩ := pq'
+    simp only [ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq] at h
+    lia
+
+@[simp] lemma classicalFiltered_fil (r₀ : ℤ) (pq : ℤ × ℤ) :
+    (classicalFiltered r₀).fil pq = -pq.2 - 1 := (rfl)
+@[simp] lemma classicalFiltered_deg (r₀ : ℤ) (pq : ℤ × ℤ) :
+    (classicalFiltered r₀).deg pq = pq.1 + pq.2 := (rfl)
+
+end CategoryTheory.SpectralSequence.BidegreeAssignment

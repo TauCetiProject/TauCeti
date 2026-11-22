@@ -5,11 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.EulerCharacteristic
+public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
+public import Mathlib.CategoryTheory.ObjectProperty.Kernels
+public import Mathlib.LinearAlgebra.Dimension.RankNullity
+public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.Algebra.Homology.SpectralSequence.Bidegree
+public import TauCeti.Algebra.Homology.SpectralSequence.EulerCharSigns
+public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
-import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
+import TauCeti.Algebra.Homology.EulerCharacteristic.Finite
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
+import TauCeti.Algebra.Homology.SpectralSequence.ModuleCat
+import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
 import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
 import TauCeti.CategoryTheory.ObjectProperty.Homology
 import TauCeti.CategoryTheory.ObjectProperty.Kernels
@@ -18,15 +29,12 @@ import TauCeti.CategoryTheory.ObjectProperty.Kernels
 # Euler characteristics of pages of a spectral sequence
 
 Let `E : SpectralSequence C c r₀` be a spectral sequence in an abelian category with a bidegree
-assignment `A : BidegreeAssignment c r₀`, let `P : ObjectProperty C` contain zero and be closed
+assignment `A : BidegreeAssignment c r₀ e`, let `P : ObjectProperty C` contain zero and be closed
 under kernels and cokernels (for instance a weak Serre class or a Serre class), and let
 `v : C → G` be a function into an abelian group that is additive on short exact sequences in `P`.
 
 If page `r` vanishes outside a finite set `s : Finset κ` and every term in `s` lies in `P`, then:
 
-* every later page `r' ≥ r` vanishes outside `s`
-  (`CategoryTheory.SpectralSequence.isZero_page_X_of_le`) and has every term in `P`
-  (`CategoryTheory.SpectralSequence.prop_page_X_of_finset`);
 * the alternating sum of `v` weighted by `(-1)^(A.deg pq)` is invariant on passing from page `r` to
   page `r + 1` (`CategoryTheory.SpectralSequence.sum_negOnePow_page_eq_sum_negOnePow_page_add_one`),
   and hence to any later page `r' ≥ r`
@@ -55,37 +63,7 @@ universe v u
 section Abelian
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {κ : Type*} {c : ℤ → ComplexShape κ}
-  {r₀ : ℤ}
-
-/-- **Persistence of a kernel/cokernel-closed class across pages.** If every object of page `r`
-lies in a nonempty class `P` closed under kernels and cokernels (such as a weak Serre class), then
-every object of every later page `r' ≥ r` lies in `P`. -/
-lemma prop_page_X_of_forall (E : SpectralSequence C c r₀) (P : ObjectProperty C)
-    [P.Nonempty] [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
-    {r : ℤ} (hr : r₀ ≤ r) (h : ∀ pq : κ, P ((E.page r hr).X pq))
-    (r' : ℤ) (hrr' : r ≤ r') (pq : κ) :
-    P ((E.page r' (hr.trans hrr')).X pq) := by
-  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
-  induction r', hrr' using Int.leInduction generalizing pq with
-  | base => exact h pq
-  | succ r' hrr' ih =>
-    exact P.prop_of_iso (E.iso r' (r' + 1) pq rfl (hr.trans hrr'))
-      (P.prop_homology_of_isClosedUnderKernels (E.page r' (hr.trans hrr')) pq (ih _) (ih _) (ih _))
-
-/-- If page `r` vanishes outside a finite set `s` and its terms in `s` lie in a class `P`
-containing zero and closed under kernels and cokernels, then every term of every later page
-`r' ≥ r` lies in `P`. -/
-lemma prop_page_X_of_finset (E : SpectralSequence C c r₀) (P : ObjectProperty C)
-    [P.ContainsZero] [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
-    {r : ℤ} (hr : r₀ ≤ r) (s : Finset κ)
-    (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq))
-    (hsP : ∀ pq ∈ s, P ((E.page r hr).X pq))
-    (r' : ℤ) (hrr' : r ≤ r') (pq : κ) :
-    P ((E.page r' (hr.trans hrr')).X pq) := by
-  classical
-  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
-  exact E.prop_page_X_of_forall P hr
-    (fun i ↦ if hi : i ∈ s then hsP i hi else P.prop_of_isZero (hs i hi)) r' hrr' pq
+  {r₀ e : ℤ}
 
 /-- **The Euler characteristic of a page equals that of the next page** (Stacks Project, Tag 0BDW,
 page step of Lemma 24.12). Let `A` be a bidegree assignment, `P` a property containing zero and
@@ -98,7 +76,7 @@ vanishes outside a finite set `s` and its terms in `s` lie in `P`, then
   ∑ pq ∈ s, (-1)^(A.deg pq) • v ((E.page (r + 1)).X pq).
 ``` -/
 theorem sum_negOnePow_page_eq_sum_negOnePow_page_add_one
-    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
+    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
     (P : ObjectProperty C) [P.ContainsZero] [P.IsClosedUnderKernels]
     [P.IsClosedUnderCokernels]
     {G : Type*} [AddCommGroup G] (v : C → G)
@@ -124,7 +102,7 @@ theorem sum_negOnePow_page_eq_sum_negOnePow_page_add_one
 `sum_negOnePow_page_eq_sum_negOnePow_page_add_one`, the alternating sum over `s` is unchanged on
 every later page `r' ≥ r`. -/
 theorem sum_negOnePow_page_eq_sum_negOnePow_page_of_le
-    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
+    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
     (P : ObjectProperty C) [P.ContainsZero] [P.IsClosedUnderKernels]
     [P.IsClosedUnderCokernels]
     {G : Type*} [AddCommGroup G] (v : C → G)
@@ -146,7 +124,7 @@ theorem sum_negOnePow_page_eq_sum_negOnePow_page_of_le
 /-- Specialization of `sum_negOnePow_page_eq_sum_negOnePow_page_add_one` to a
 `TauCeti.AbelianK0.AdditiveInvariant`, taking `P = ⊤`. -/
 theorem sum_negOnePow_obj_page_eq_sum_negOnePow_obj_page_add_one
-    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
+    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
     {G : Type*} [AddCommGroup G] (v : TauCeti.AbelianK0.AdditiveInvariant C G)
     (r : ℤ) (hr : r₀ ≤ r) (s : Finset κ)
     (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq)) :
@@ -158,7 +136,7 @@ theorem sum_negOnePow_obj_page_eq_sum_negOnePow_obj_page_add_one
 /-- Specialization of `sum_negOnePow_page_eq_sum_negOnePow_page_of_le` to a
 `TauCeti.AbelianK0.AdditiveInvariant`, taking `P = ⊤`. -/
 theorem sum_negOnePow_obj_page_eq_sum_negOnePow_obj_page_of_le
-    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
+    (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
     {G : Type*} [AddCommGroup G] (v : TauCeti.AbelianK0.AdditiveInvariant C G)
     (r : ℤ) (hr : r₀ ≤ r) (s : Finset κ)
     (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq))
@@ -174,22 +152,6 @@ section ModuleCat
 
 variable {R : Type u} [Ring R] [IsNoetherianRing R] {κ : Type*} {c : ℤ → ComplexShape κ}
   {r₀ : ℤ}
-
-/-- Over a Noetherian ring, finite generation of an object on page `r` persists to every later
-page `r' ≥ r`. -/
-lemma finite_page_X_of_le (E : SpectralSequence (ModuleCat.{v} R) c r₀)
-    {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (h : Module.Finite R ((E.page r hr).X pq))
-    (r' : ℤ) (hrr' : r ≤ r') :
-    Module.Finite R ((E.page r' (hr.trans hrr')).X pq) := by
-  induction r', hrr' using Int.leInduction with
-  | base => exact h
-  | succ t hrt ih =>
-    have : Module.Finite R (((E.page t (hr.trans hrt)).sc pq).X₂) := ih
-    have : IsNoetherian R (((E.page t (hr.trans hrt)).sc pq).X₂) :=
-      isNoetherian_of_isNoetherianRing_of_finite R _
-    have hH : Module.Finite R ((E.page t (hr.trans hrt)).homology pq) :=
-      ((E.page t (hr.trans hrt)).sc pq).finite_homology
-    exact Module.Finite.equiv (E.iso t (t + 1) pq rfl (hr.trans hrt)).toLinearEquiv
 
 /-- **Invariance of Mathlib's `HomologicalComplex.eulerChar` across one page** for a spectral
 sequence of modules over a Noetherian ring with rank-nullity (such as a field or `ℤ`). When the
@@ -208,21 +170,33 @@ theorem eulerChar_page_eq_eulerChar_page_add_one [HasRankNullity.{v} R]
     rw [hχ pq, (E.iso r (r + 1) pq rfl hr).toLinearEquiv.finrank_eq]
 
 /-- **Invariance of Mathlib's `HomologicalComplex.eulerChar` across later pages** for a spectral
-sequence of modules over a Noetherian ring with rank-nullity. -/
+sequence of modules over a Noetherian ring with rank-nullity, requiring
+`ComplexShape.EulerCharSigns` and compatibility of signs only on pages in `[r, r']`. -/
 theorem eulerChar_page_eq_eulerChar_page_of_le [HasRankNullity.{v} R]
-    (E : SpectralSequence (ModuleCat.{v} R) c r₀) [∀ r, (c r).EulerCharSigns]
+    (E : SpectralSequence (ModuleCat.{v} R) c r₀)
     (r : ℤ) (hr : r₀ ≤ r)
     (s : Finset κ) (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq))
     (hfg : ∀ pq ∈ s, Module.Finite R ((E.page r hr).X pq))
     (r' : ℤ) (hrr' : r ≤ r')
-    (hχ : ∀ (t : ℤ) (pq : κ), (c t).χ pq = (c (t + 1)).χ pq := by simp) :
-    (E.page r hr).eulerChar = (E.page r' (hr.trans hrr')).eulerChar := by
+    (signs : ∀ t : ℤ, r ≤ t → t ≤ r' → (c t).EulerCharSigns :=
+      by exact fun _ _ _ ↦ inferInstance)
+    (hχ : ∀ (t : ℤ) (ht : r ≤ t) (ht' : t < r') (pq : κ),
+      (signs t ht ht'.le).χ pq =
+        (signs (t + 1) (ht.trans (Int.le_add_one le_rfl)) ht').χ pq := by simp) :
+    @HomologicalComplex.eulerChar _ _ _ _ (signs r le_rfl hrr') (E.page r hr) =
+      @HomologicalComplex.eulerChar _ _ _ _ (signs r' hrr' le_rfl)
+        (E.page r' (hr.trans hrr')) := by
   induction r', hrr' using Int.leInduction with
   | base => rfl
   | succ t hrt ih =>
-    exact ih.trans (E.eulerChar_page_eq_eulerChar_page_add_one t (hr.trans hrt) s
+    let _ : (c t).EulerCharSigns := signs t hrt (Int.le_add_one le_rfl)
+    let _ : (c (t + 1)).EulerCharSigns := signs (t + 1) (hrt.trans (Int.le_add_one le_rfl)) le_rfl
+    refine (ih (fun u hu hut ↦ signs u hu (hut.trans (Int.le_add_one le_rfl)))
+      (fun u hu hut ↦ hχ u hu (lt_of_lt_of_le hut (Int.le_add_one le_rfl)))).trans ?_
+    exact E.eulerChar_page_eq_eulerChar_page_add_one t (hr.trans hrt) s
       (fun pq hpq ↦ E.isZero_page_X_of_le hr (hs pq hpq) t hrt)
-      (fun pq hpq ↦ E.finite_page_X_of_le hr (hfg pq hpq) t hrt) (hχ t))
+      (fun pq hpq ↦ E.finite_page_X_of_le hr (hfg pq hpq) t hrt)
+      (hχ t hrt (Int.lt_add_one_iff.2 le_rfl))
 
 end ModuleCat
 

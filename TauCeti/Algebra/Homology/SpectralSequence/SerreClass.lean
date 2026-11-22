@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.SpectralSequence.Basic
+public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import TauCeti.Algebra.Homology.ShortComplex.SerreClass
+
+import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 /-!
 # Spectral sequences modulo a Serre class
@@ -14,13 +17,18 @@ public import TauCeti.Algebra.Homology.ShortComplex.SerreClass
 Let `P` be a Serre class in an abelian category `C`: a class of objects containing zero and
 closed under subobjects, quotients and extensions, for instance the torsion abelian groups or the
 abelian groups killed by some power of a fixed integer. Serre's theory of classes of abelian
-groups computes in spectral sequences modulo `P`. This file proves the three facts about the
-pages of a spectral sequence on which those computations rest.
+groups computes in spectral sequences modulo `P`. This file proves the facts about the pages of a
+spectral sequence on which those computations rest.
 
 * **Survival.** Each page is the homology of the previous one, so its objects are subquotients
   of those of every earlier page. Hence an object which lies in `P` on some page lies in `P` on
   every later page (`CategoryTheory.SpectralSequence.prop_page_X_of_le`). For the Serre class of
-  zero objects this is `CategoryTheory.SpectralSequence.isZero_page_X_of_le`.
+  zero objects this is `CategoryTheory.SpectralSequence.isZero_page_X_of_le`. More generally, for
+  a nonempty class closed under kernels and cokernels (such as a weak Serre class), if every object
+  on a page lies in `P` (in particular, if the page vanishes outside a finite set whose terms lie
+  in `P`), then every object on every later page lies in `P`
+  (`CategoryTheory.SpectralSequence.prop_page_X_of_forall`,
+  `CategoryTheory.SpectralSequence.prop_page_X_of_finset`).
 * **Recovery from a later page.** Conversely, suppose that every object joined to the position
   `pq` by a differential of one of the pages `r ≤ s < r'` lies in `P` on the page `r`. Then the
   object at `pq` lies in `P` on the page `r` exactly when it does on the page `r'`
@@ -43,6 +51,9 @@ pages of a spectral sequence on which those computations rest.
 
 * `CategoryTheory.SpectralSequence.prop_page_X_of_le`: an object in `P` stays in `P` on later
   pages; this only uses closure under subobjects and quotients.
+* `CategoryTheory.SpectralSequence.prop_page_X_of_forall`,
+  `CategoryTheory.SpectralSequence.prop_page_X_of_finset`: an entire page in a nonempty class
+  closed under kernels and cokernels stays in the class on later pages.
 * `CategoryTheory.SpectralSequence.prop_page_X_of_prop_page_X_add_one`: an object whose
   neighbours on the page `s` lie in `P` lies in `P` if it does on the page `s + 1`.
 * `CategoryTheory.SpectralSequence.prop_page_X_iff_of_forall`: an object whose neighbours lie in
@@ -78,6 +89,34 @@ lemma prop_page_X_of_le [P.IsClosedUnderSubobjects] [P.IsClosedUnderQuotients] {
   | succ r' hrr' ih =>
     exact P.prop_of_iso (E.iso r' (r' + 1) pq rfl (hr.trans hrr'))
       (P.prop_homology_of_prop_X₂ (S := (E.page r' (hr.trans hrr')).sc pq) ih)
+
+/-- **Persistence of a kernel/cokernel-closed class across pages.** If every object of page `r`
+lies in a nonempty class `P` closed under kernels and cokernels (such as a weak Serre class), then
+every object of every later page `r' ≥ r` lies in `P`. -/
+lemma prop_page_X_of_forall [P.Nonempty] [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
+    {r : ℤ} (hr : r₀ ≤ r) (h : ∀ pq : κ, P ((E.page r hr).X pq))
+    (r' : ℤ) (hrr' : r ≤ r') (pq : κ) :
+    P ((E.page r' (hr.trans hrr')).X pq) := by
+  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
+  induction r', hrr' using Int.leInduction generalizing pq with
+  | base => exact h pq
+  | succ r' hrr' ih =>
+    exact P.prop_of_iso (E.iso r' (r' + 1) pq rfl (hr.trans hrr'))
+      (P.prop_homology_of_isClosedUnderKernels (E.page r' (hr.trans hrr')) pq (ih _) (ih _) (ih _))
+
+/-- If page `r` vanishes outside a finite set `s` and its terms in `s` lie in a class `P`
+containing zero and closed under kernels and cokernels, then every term of every later page
+`r' ≥ r` lies in `P`. -/
+lemma prop_page_X_of_finset [P.ContainsZero] [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
+    {r : ℤ} (hr : r₀ ≤ r) (s : Finset κ)
+    (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq))
+    (hsP : ∀ pq ∈ s, P ((E.page r hr).X pq))
+    (r' : ℤ) (hrr' : r ≤ r') (pq : κ) :
+    P ((E.page r' (hr.trans hrr')).X pq) := by
+  classical
+  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
+  exact E.prop_page_X_of_forall P hr
+    (fun i ↦ if hi : i ∈ s then hsP i hi else P.prop_of_isZero (hs i hi)) r' hrr' pq
 
 variable [P.IsSerreClass]
 
