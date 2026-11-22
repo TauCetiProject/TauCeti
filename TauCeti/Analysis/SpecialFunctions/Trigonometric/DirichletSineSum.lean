@@ -100,16 +100,13 @@ theorem abs_sum_Ioc_sin_div_le {θ : ℝ} (hθ0 : 0 < θ) (hθ : θ ≤ π) (K m
     | succ n =>
       rw [sum_range_succ_sin_eq_sum_Icc]
       exact abs_sum_Icc_sin_le_pi_div hθ0 hθ n
-  have habel := abs_sum_Ioc_mul_le (f := fun j : ℕ ↦ (j : ℝ)⁻¹)
-    (g := fun j : ℕ ↦ sin (j * θ)) (B := π / θ) (K := K) (m := m)
-    (by positivity) (fun _ ↦ by positivity)
+  have habel := abs_sum_Ioc_mul_le (f := fun j : ℕ ↦ sin (j * θ)) (g := fun j : ℕ ↦ (j : ℝ)⁻¹)
+    (B := π / θ) (K := K) (m := m)
+    (by positivity) (fun n _ ↦ hG n) (by positivity) (fun _ ↦ by positivity)
     (fun j hj ↦ inv_anti₀ (Nat.cast_pos.mpr (by grind)) (by exact_mod_cast Nat.le_succ j))
-    (by positivity) (fun n _ ↦ hG n)
   calc |∑ j ∈ Ioc K m, sin (j * θ) / j|
-      = |∑ j ∈ Ioc K m, (j : ℝ)⁻¹ * sin (j * θ)| := by
-        congr 1
-        exact sum_congr rfl fun j _ ↦ by rw [div_eq_inv_mul]
-    _ ≤ 2 * ((K + 1 : ℕ) : ℝ)⁻¹ * (π / θ) := habel
+      = |∑ j ∈ Ioc K m, sin (j * θ) * (j : ℝ)⁻¹| := by simp_rw [div_eq_mul_inv]
+    _ ≤ 2 * (π / θ) * ((K + 1 : ℕ) : ℝ)⁻¹ := habel
     _ = 2 * (π / θ) / (K + 1 : ℝ) := by push_cast; ring
 
 /-- **Uniform Gibbs–Fejér bound on `(0, π]`.** -/

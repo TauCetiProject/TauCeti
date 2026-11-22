@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.LaplaceTransform.Truncated
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Analysis.SpecialFunctions.Exp.Decay
 
 /-!
 # Laplace transforms of uniform step functions
@@ -30,13 +31,9 @@ open scoped Topology Complex Interval
 
 namespace TauCeti
 
-private theorem norm_cexp_neg_mul (h : ℝ) (z : ℂ) :
-    ‖cexp (-(h : ℂ) * z)‖ = Real.exp (-h * z.re) := by
-  rw [Complex.norm_exp, ← Complex.ofReal_neg, Complex.re_ofReal_mul]
-
 private theorem norm_cexp_neg_mul_lt_one {h : ℝ} (hh : 0 < h) {z : ℂ} (hz : 0 < z.re) :
     ‖cexp (-(h : ℂ) * z)‖ < 1 := by
-  rw [norm_cexp_neg_mul]
+  rw [neg_mul, mul_comm (h : ℂ) z, Complex.norm_exp_neg_mul_ofReal]
   exact Real.exp_lt_one_iff.mpr (by nlinarith)
 
 /-- **Truncated Laplace transform of a uniform step function.** For `h > 0`, `c : ℕ → ℂ`,
@@ -142,7 +139,7 @@ theorem exists_continuousOn_integral_floor_div_mul_cexp_neg_mul
   refine hK_diff.continuous.continuousOn.mul
     (hP_cont.comp (by fun_prop : Continuous fun z : ℂ ↦ cexp (-(h : ℂ) * z)).continuousOn
       fun z (hz : 0 ≤ z.re) ↦ ?_)
-  rw [mem_closedBall_zero_iff, norm_cexp_neg_mul]
+  rw [mem_closedBall_zero_iff, neg_mul, mul_comm (h : ℂ) z, Complex.norm_exp_neg_mul_ofReal]
   exact Real.exp_le_one_iff.mpr (by nlinarith)
 
 end TauCeti

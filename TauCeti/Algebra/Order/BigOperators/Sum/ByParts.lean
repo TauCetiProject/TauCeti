@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import Mathlib.Algebra.Order.Module.Defs
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Algebra.Order.Interval.Finset.SuccPred
 import Mathlib.Algebra.Order.Ring.Abs
 
@@ -37,8 +38,8 @@ the mass is exactly `k`, no sign condition on `w` is needed. This is the step th
 Bessel-type weight bounds into Ky Fan inequalities for singular values and eigenvalues.
 
 Abel's tail estimate (`TauCeti.abs_sum_Ioc_mul_le`) bounds `|∑ j ∈ Ioc K m, f j * g j|` by
-`2 * f (K + 1) * B` when the weights `f` are nonnegative and antitone on `Icc (K + 1) m` and the
-initial partial sums of `g` are bounded in absolute value by `B`.
+`2 * B * g (K + 1)` when the initial partial sums of `f` are bounded in absolute value by `B` and
+the weights `g` are nonnegative and antitone on `Icc (K + 1) m`.
 
 ## Main results
 
@@ -158,59 +159,56 @@ theorem sum_range_eq_zero_of_sum_smul_eq_zero {R M : Type*} [Ring R] [PartialOrd
   exact ((hd _ hkN).eq_or_lt.resolve_right fun h ↦
     (smul_pos (sub_pos.mpr (hw k hkN)) h).ne' hterm).symm
 
-/-- **Abel's tail estimate for bounded initial sums.** If `f : ℕ → R` is nonnegative at `K + 1`
-and `m` (when `K < m`) and antitone on `Icc (K + 1) m`, and every initial sum `∑ i ∈ range n, g i`
-for `K + 1 ≤ n ≤ m + 1` has absolute value at most `B` (with `0 ≤ B`), then
-`|∑ j ∈ Ioc K m, f j * g j| ≤ 2 * f (K + 1) * B`. -/
-theorem abs_sum_Ioc_mul_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+/-- **Abel's tail estimate for bounded initial sums.** If `0 ≤ B`, every initial sum
+`∑ i ∈ range n, f i` for `K + 1 ≤ n ≤ m + 1` has absolute value at most `B`, and `g : ℕ → R` is
+nonnegative at `K + 1` and `m` (when `K < m`) and antitone on `Icc (K + 1) m`, then
+`|∑ j ∈ Ioc K m, f j * g j| ≤ 2 * B * g (K + 1)`. -/
+theorem abs_sum_Ioc_mul_le {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R]
     {f g : ℕ → R} {B : R} {K m : ℕ}
-    (hf_nonneg : 0 ≤ f (K + 1)) (hfm : K < m → 0 ≤ f m)
-    (hf_anti : ∀ j ∈ Ico (K + 1) m, f (j + 1) ≤ f j)
-    (hB : 0 ≤ B) (hg : ∀ n ∈ Icc (K + 1) (m + 1), |∑ i ∈ range n, g i| ≤ B) :
-    |∑ j ∈ Ioc K m, f j * g j| ≤ 2 * f (K + 1) * B := by
+    (hB : 0 ≤ B) (hf : ∀ n ∈ Icc (K + 1) (m + 1), |∑ i ∈ range n, f i| ≤ B)
+    (hg_nonneg : 0 ≤ g (K + 1)) (hgm : K < m → 0 ≤ g m)
+    (hg_anti : ∀ j ∈ Ico (K + 1) m, g (j + 1) ≤ g j) :
+    |∑ j ∈ Ioc K m, f j * g j| ≤ 2 * B * g (K + 1) := by
   by_cases hKm : K < m
   swap
   · rw [Ioc_eq_empty hKm, sum_empty, abs_zero]
-    exact mul_nonneg (mul_nonneg zero_le_two hf_nonneg) hB
-  have hparts := sum_Ioc_by_parts f g hKm
-  simp only [smul_eq_mul] at hparts
-  rw [hparts]
-  have hIoc : Ioc K (m - 1) = Ico (K + 1) m := by
-    simpa using Finset.Ioc_sub_one_sub_one_eq_Ico_of_not_isMin (by simp : ¬ IsMin (K + 1)) m
-  have hterm1 : |f m * ∑ i ∈ range (m + 1), g i| ≤ f m * B := by
-    rw [abs_mul, abs_of_nonneg (hfm hKm)]
-    exact mul_le_mul_of_nonneg_left (hg (m + 1) (mem_Icc.mpr ⟨by omega, le_rfl⟩)) (hfm hKm)
-  have hterm2 : |f (K + 1) * ∑ i ∈ range (K + 1), g i| ≤ f (K + 1) * B := by
-    rw [abs_mul, abs_of_nonneg hf_nonneg]
-    exact mul_le_mul_of_nonneg_left (hg (K + 1) (mem_Icc.mpr ⟨le_rfl, by omega⟩)) hf_nonneg
-  have hterm3 : |∑ j ∈ Ioc K (m - 1), (f (j + 1) - f j) * ∑ i ∈ range (j + 1), g i| ≤
-      (f (K + 1) - f m) * B := by
-    calc _ ≤ ∑ j ∈ Ioc K (m - 1), |(f (j + 1) - f j) * ∑ i ∈ range (j + 1), g i| :=
-          abs_sum_le_sum_abs _ _
-      _ ≤ ∑ j ∈ Ioc K (m - 1), (f j - f (j + 1)) * B := by
-          refine sum_le_sum fun j hj ↦ ?_
-          rw [hIoc] at hj
-          have hj_mem := mem_Ico.mp hj
-          have hdec : f (j + 1) ≤ f j := hf_anti j hj
-          rw [abs_mul, abs_of_nonpos (sub_nonpos.mpr hdec), neg_sub]
-          exact mul_le_mul_of_nonneg_left
-            (hg (j + 1) (mem_Icc.mpr ⟨by omega, by omega⟩)) (sub_nonneg.mpr hdec)
-      _ = (∑ j ∈ Ico (K + 1) m, (f j - f (j + 1))) * B := by
-          rw [hIoc, ← sum_mul]
-      _ = (f (K + 1) - f m) * B := by
-          have htel := sum_Ico_sub f (Nat.succ_le_of_lt hKm)
-          rw [← neg_sub, ← htel, ← sum_neg_distrib]
-          congr 1
-          exact sum_congr rfl fun _ _ ↦ (neg_sub _ _).symm
-  calc |f m * (∑ i ∈ range (m + 1), g i) - f (K + 1) * (∑ i ∈ range (K + 1), g i) -
-          ∑ j ∈ Ioc K (m - 1), (f (j + 1) - f j) * ∑ i ∈ range (j + 1), g i|
-      ≤ |f m * ∑ i ∈ range (m + 1), g i| + |f (K + 1) * ∑ i ∈ range (K + 1), g i| +
-          |∑ j ∈ Ioc K (m - 1), (f (j + 1) - f j) * ∑ i ∈ range (j + 1), g i| :=
-        (abs_sub _ _).trans (add_le_add (abs_sub _ _) le_rfl)
-    _ ≤ f m * B + f (K + 1) * B + (f (K + 1) - f m) * B :=
-        add_le_add (add_le_add hterm1 hterm2) hterm3
-    _ = 2 * f (K + 1) * B := by
-        simp only [sub_mul, two_mul, add_mul]
-        abel
+    exact mul_nonneg (mul_nonneg zero_le_two hB) hg_nonneg
+  have hg_mono : ∀ ⦃i j : ℕ⦄, K + 1 ≤ i → i ≤ j → j ≤ m → g j ≤ g i := by
+    intro i j hi hij hj
+    induction j, hij using Nat.le_induction with
+    | base => exact le_rfl
+    | succ k hik ih =>
+      exact (hg_anti k (mem_Ico.mpr ⟨hi.trans hik, hj⟩)).trans (ih (Nat.le_of_succ_le hj))
+  let w : ℕ → R := fun i ↦ if i < m - K then g (K + 1 + i) else 0
+  have hw₀ : 0 ≤ w := fun i ↦ by
+    dsimp [w]
+    split_ifs with hi
+    · exact (hgm hKm).trans (hg_mono (by omega) (by omega) (by omega))
+    · exact le_rfl
+  have hw_anti : AntitoneOn w (Set.Iio (m - K)) := by
+    intro i hi j hj hij
+    simp only [Set.mem_Iio] at hi hj
+    simp only [w, hi, hj, ↓reduceIte]
+    exact hg_mono (by omega) (by omega) (by omega)
+  have hshift (k : ℕ) (h : ℕ → R) :
+      ∑ i ∈ range k, h (K + 1 + i) = ∑ j ∈ Ico (K + 1) (K + 1 + k), h j := by
+    simp_rw [add_comm (K + 1)]
+    rw [← Nat.Ico_zero_eq_range, sum_Ico_add' h 0 k (K + 1), zero_add, add_comm k (K + 1)]
+  have hf' : ∀ k ≤ m - K, |∑ i ∈ range k, f (K + 1 + i)| ≤ 2 * B := by
+    intro k hk
+    rw [hshift k f, Finset.sum_Ico_eq_sub _ (by omega)]
+    calc |∑ j ∈ range (K + 1 + k), f j - ∑ j ∈ range (K + 1), f j|
+        ≤ |∑ j ∈ range (K + 1 + k), f j| + |∑ j ∈ range (K + 1), f j| := abs_sub _ _
+      _ ≤ B + B := add_le_add
+          (hf (K + 1 + k) (mem_Icc.mpr ⟨by omega, by omega⟩))
+          (hf (K + 1) (mem_Icc.mpr ⟨le_rfl, by omega⟩))
+      _ = 2 * B := (two_mul B).symm
+  have hm : K + 1 + (m - K) = m + 1 := by omega
+  have hsum_eq : ∑ j ∈ Ioc K m, f j * g j = ∑ i ∈ range (m - K), f (K + 1 + i) * w i := by
+    rw [← Ico_add_one_add_one_eq_Ioc, ← hm, ← hshift (m - K) (fun j ↦ f j * g j)]
+    exact sum_congr rfl fun i hi ↦ by simp [w, mem_range.mp hi]
+  have hw0 : w 0 = g (K + 1) := by simp [w, Nat.sub_pos_of_lt hKm]
+  rw [hsum_eq, ← hw0]
+  exact Finset.abs_sum_mul_le_mul_of_abs_sum_range_le hf' hw₀ hw_anti
 
 end TauCeti
