@@ -33,11 +33,17 @@ mollification is a test function (`TauCeti.W1p.normedBumpL_mem_range_of_ae_eq_ze
 ball of radius `R` and is dominated by a fixed multiple of it, so the truncations converge to `u`
 by dominated convergence.  Closedness of `W^{1,p}_0(ℝⁿ)` then gives the theorem.
 
+As a consequence, a weak equation `∫ ⟪∇u, ∇φ⟫ + ∫ f φ = 0` for `u ∈ W^{1,2}(ℝⁿ)` and `f ∈ L²`,
+tested against smooth compactly supported `φ`, holds against every `v ∈ W^{1,2}(ℝⁿ)`
+(`TauCeti.W1p.inner_gradient_add_integral_mul_value_eq_zero`).
+
 ## Main declarations
 
 * `TauCeti.W1p.mem_w1p0Submodule_top`: every `u ∈ W^{1,p}(ℝⁿ)` lies in `W^{1,p}_0(ℝⁿ)`.
 * `TauCeti.w1p0Submodule_top_eq_top`: `W^{1,p}_0(ℝⁿ) = W^{1,p}(ℝⁿ)` for `p < ∞`.
 * `TauCeti.W1p.denseRange_ofTestFunctionₗ_top`: test functions are dense in `W^{1,p}(ℝⁿ)`.
+* `TauCeti.W1p.inner_gradient_add_integral_mul_value_eq_zero`: weak equations with an `L²` source
+  extend from test functions to `W^{1,2}(ℝⁿ)`.
 
 ## References
 
@@ -302,5 +308,41 @@ theorem W1p.denseRange_ofTestFunctionₗ_top (hp : p ≠ ∞) :
     DenseRange (W1p.ofTestFunctionₗ mu ⊤ p) := fun u => by
   rw [← coe_w1p0Submodule]
   exact W1p.mem_w1p0Submodule_top hp u
+
+open scoped ContDiff RealInnerProductSpace in
+/-- **Weak equations extend from test functions to `W^{1,2}(ℝⁿ)`.** Let `u ∈ W^{1,2}(E)` and
+`f ∈ L²(E)` satisfy `∫ ⟪∇u, ∇φ⟫ + ∫ f φ = 0` for every smooth compactly supported `φ`, that is,
+`-Δu + f = 0` weakly. Then `⟪∇u, ∇v⟫ + ∫ f v = 0` for every `v ∈ W^{1,2}(E)`, since both sides are
+continuous in `v` and test functions are dense. -/
+theorem W1p.inner_gradient_add_integral_mul_value_eq_zero {u : W1p mu ⊤ 2} {f : E → ℝ}
+    (hf : MemLp f 2 mu)
+    (hweak : ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      (∫ z, ⟪W1p.gradient u z, ∇ φ z⟫ ∂mu) + ∫ z, f z * φ z ∂mu = 0)
+    (v : W1p mu ⊤ 2) :
+    ⟪W1p.gradient u, W1p.gradient v⟫ + ∫ z, f z * W1p.value v z ∂mu = 0 := by
+  have hf' : MemLp f 2 (mu.restrict ((⊤ : Opens E) : Set E)) := hf.restrict _
+  have hval (w : W1p mu ⊤ 2) : ⟪hf'.toLp f, W1p.value w⟫ = ∫ z, f z * W1p.value w z ∂mu := by
+    have hfa := hf'.coeFn_toLp
+    rw [L2.inner_def]
+    simp only [Opens.coe_top, Measure.restrict_univ] at hfa ⊢
+    refine integral_congr_ae (hfa.mono fun z hz ↦ ?_)
+    dsimp only
+    rw [hz, RCLike.inner_apply, conj_trivial, mul_comm]
+  let T : W1p mu ⊤ 2 →L[ℝ] ℝ :=
+    (innerSL ℝ (W1p.gradient u)).comp W1p.gradientL + (innerSL ℝ (hf'.toLp f)).comp W1p.valueL
+  have hT (w : W1p mu ⊤ 2) :
+      T w = ⟪W1p.gradient u, W1p.gradient w⟫ + ∫ z, f z * W1p.value w z ∂mu := by
+    simp only [T, FunLike.coe_add, Pi.add_apply, ContinuousLinearMap.comp_apply,
+      innerSL_apply_apply, W1p.gradientL_apply, W1p.valueL_apply, hval]
+  rw [← hT]
+  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := mu) (p := 2) (by norm_num)).induction_on
+    v (isClosed_eq T.continuous continuous_const) fun φ ↦ ?_
+  rw [hT, ← hweak φ φ.contDiff φ.hasCompactSupport, L2.inner_def]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  congr 1
+  · exact integral_congr_ae ((W1p.gradient_ofTestFunctionₗ_top_ae (mu := mu) (p := 2) φ).mono
+      fun z hz ↦ by simp only [hz])
+  · exact integral_congr_ae ((W1p.value_ofTestFunctionₗ_top_ae (mu := mu) (p := 2) φ).mono
+      fun z hz ↦ by simp only [hz])
 
 end TauCeti

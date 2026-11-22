@@ -23,8 +23,8 @@ The main application is to normal schemes. Let `T` be an integral scheme whose l
 integrally closed, and `g : T ⟶ Y` an integral morphism. Then `T` is the normalization of `Y` in
 the function field of `T`, along the generic point `Spec k(T) ⟶ T ⟶ Y`. On a nonempty affine open
 `V` of `T`, the ring `Γ(T, V)` is an integrally closed domain with fraction field `k(T)`
-(`AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`), and it is integral over `Γ(Y, U)` when
-`V = g ⁻¹ U`, so it is the integral closure of `Γ(Y, U)` in `k(T)`.
+(`AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed_iff_forall_stalk`), and it is integral over
+`Γ(Y, U)` when `V = g ⁻¹ U`, so it is the integral closure of `Γ(Y, U)` in `k(T)`.
 
 ## Main results
 
@@ -173,7 +173,7 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
     set f := T.fromSpecStalk (genericPoint T)
     let := (f.app (g ⁻¹ᵁ U)).hom.toAlgebra
     have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hV
-    have := hV.isIntegrallyClosed fun x _ ↦ hT x
+    have := hV.isIntegrallyClosed_iff_forall_stalk.mpr fun x _ ↦ hT x
     have key : f.appLE (g ⁻¹ᵁ U) ((f ≫ g) ⁻¹ᵁ U) (by simp) = f.app (g ⁻¹ᵁ U) := by
       rw [Scheme.Hom.app_eq_appLE]
       simp only [Scheme.Hom.comp_preimage]

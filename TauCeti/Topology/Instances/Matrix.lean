@@ -61,7 +61,8 @@ The Kronecker product of two continuously varying matrices is continuous in the 
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous. So are
 both partial traces of a continuously varying matrix on a product index.
 
-The matrices with nonnegative diagonal form a closed set
+A matrix-valued function converges exactly when each of its entries does
+(`Matrix.tendsto_iff_tendsto_apply`). The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
 
 `Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
@@ -354,6 +355,13 @@ theorem continuous_oneKroneckerStarAlgHom :
 end Matrix
 
 namespace Matrix
+
+open Filter Topology in
+/-- Convergence of a matrix-valued function is entrywise convergence. -/
+theorem tendsto_iff_tendsto_apply {α m n R : Type*} [TopologicalSpace R] {l : Filter α}
+    {M : α → Matrix m n R} {D : Matrix m n R} :
+    Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) :=
+  tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
 
 /-- The matrices with nonnegative diagonal form a closed set. -/
 theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]

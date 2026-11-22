@@ -33,6 +33,8 @@ The algebraic closure `PadicAlgCl p` of `ℚ_p` carries the spectral norm, which
 ## Main results
 
 * `AlgEquiv.norm_apply`: elements of `G_{ℚ_p}` preserve the norm of `PadicAlgCl p`.
+* `PadicAlgCl.instIsIsometricSMul`: for every field `K` between `ℚ_p` and `PadicAlgCl p`, the
+  `K`-automorphisms of `PadicAlgCl p` act by isometries.
 * `TauCeti.exists_mem_norm_sub_lt_of_mem_adjoin`
 * `TauCeti.exists_algEquiv_apply_eq_of_norm_apply_eq`
 * `TauCeti.algebraMap_norm_eq_prod_embeddings_of_le_adjoin`: the norm down to `ℚ_p` of an element
@@ -58,6 +60,22 @@ theorem norm_apply {p : ℕ} [Fact p.Prime]
   exact (spectralNorm_eq_of_equiv σ x).symm
 
 end AlgEquiv
+
+namespace PadicAlgCl
+
+variable {p : ℕ} [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K]
+  [Algebra K (PadicAlgCl p)] [IsScalarTower ℚ_[p] K (PadicAlgCl p)]
+
+/-- `PadicAlgCl p` is algebraic over every field between `ℚ_p` and `PadicAlgCl p`. -/
+instance instIsIntegral : Algebra.IsIntegral K (PadicAlgCl p) :=
+  Algebra.IsIntegral.tower_top ℚ_[p]
+
+/-- The `K`-automorphisms of `PadicAlgCl p` are isometries for its spectral norm. -/
+instance instIsIsometricSMul : IsIsometricSMul (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (PadicAlgCl p) :=
+  ⟨fun σ ↦ AddMonoidHomClass.isometry_of_norm σ fun x ↦ by
+    rw [← AlgEquiv.restrictScalars_apply (R := ℚ_[p]), AlgEquiv.norm_apply]⟩
+
+end PadicAlgCl
 
 namespace TauCeti
 

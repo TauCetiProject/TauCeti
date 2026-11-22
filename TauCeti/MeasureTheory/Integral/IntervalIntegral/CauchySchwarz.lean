@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Cauchy–Schwarz inequality for interval integrals
@@ -22,6 +23,10 @@ dimension.
 It is the case `f = 1`, `p = q = 2` of Hölder's inequality
 `MeasureTheory.integral_mul_le_Lp_mul_Lq_of_nonneg`, restated for interval integrals with square
 roots in place of the powers `1 / 2`.
+
+Its consequence `TauCeti.integral_norm_sq_le_of_forall_norm_le_mul` passes from a pointwise bound
+`‖w t‖ ≤ B ∫₀ᵈ ‖f‖` on `[0, d]` to the `L²` bound `∫₀ᵈ ‖w‖² ≤ d² B² ∫₀ᵈ ‖f‖²`, as used for the
+`L²` estimates of linear differential equations.
 -/
 
 public section
@@ -57,5 +62,25 @@ theorem integral_le_sqrt_mul_sqrt_integral_sq {g : ℝ → ℝ} {a b : ℝ} (hab
   rw [intervalIntegral.integral_of_le hab, intervalIntegral.integral_of_le hab,
     Real.sqrt_eq_rpow, Real.sqrt_eq_rpow]
   exact h
+
+/-- **From a pointwise to an `L²` bound.** If `‖w t‖ ≤ B ∫₀ᵈ ‖f‖` for every `t ∈ [0, d]`, then
+`∫₀ᵈ ‖w‖² ≤ d² B² ∫₀ᵈ ‖f‖²`, by the Cauchy–Schwarz inequality `(∫₀ᵈ ‖f‖)² ≤ d ∫₀ᵈ ‖f‖²`. -/
+theorem integral_norm_sq_le_of_forall_norm_le_mul {X : Type*} [NormedAddCommGroup X] {d B : ℝ}
+    (hd : 0 ≤ d) {w f : ℝ → X} (hw : Continuous w) (hf : Continuous f)
+    (h : ∀ t ∈ Icc 0 d, ‖w t‖ ≤ B * ∫ s in 0..d, ‖f s‖) :
+    ∫ t in 0..d, ‖w t‖ ^ 2 ≤ d ^ 2 * B ^ 2 * ∫ t in 0..d, ‖f t‖ ^ 2 := by
+  set F := ∫ s in 0..d, ‖f s‖
+  have hCS : F ^ 2 ≤ d * ∫ s in 0..d, ‖f s‖ ^ 2 := by
+    have h := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
+      (μ := volume) (fun s ↦ ‖f s‖) (Ioc 0 d) measure_Ioc_lt_top.ne
+      ((hf.norm.pow 2).integrableOn_Icc.mono_set Ioc_subset_Icc_self)
+    rwa [Real.volume_real_Ioc_of_le hd, sub_zero, ← intervalIntegral.integral_of_le hd,
+      ← intervalIntegral.integral_of_le hd] at h
+  calc ∫ t in 0..d, ‖w t‖ ^ 2 ≤ ∫ _ in 0..d, (B * F) ^ 2 :=
+        intervalIntegral.integral_mono_on hd ((hw.norm.pow 2).intervalIntegrable _ _)
+          intervalIntegrable_const fun t ht ↦ pow_le_pow_left₀ (norm_nonneg _) (h t ht) 2
+    _ = d * B ^ 2 * F ^ 2 := by rw [intervalIntegral.integral_const, smul_eq_mul]; ring
+    _ ≤ d * B ^ 2 * (d * ∫ s in 0..d, ‖f s‖ ^ 2) := by gcongr
+    _ = d ^ 2 * B ^ 2 * ∫ s in 0..d, ‖f s‖ ^ 2 := by ring
 
 end TauCeti

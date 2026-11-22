@@ -88,8 +88,7 @@ private def cechEvalIso (n : ℕ) :
       (CategoryTheory.Functor.whiskeringLeft (Discrete (Fin (n + 1) → ι)) Cᵒᵖ A).obj
         (Discrete.functor (fun a ↦ op (∏ᶜ fun j ↦ U (a j)))) ⋙ lim :=
   NatIso.ofComponents (fun P ↦
-    let e : ((cechComplexFunctor U).obj P).X n ≅
-        ∏ᶜ (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) := Iso.refl _
+    let e := cechXIso U P n
     e ≪≫ HasLimit.isoOfNatIso
       (F := Discrete.functor (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))))
       (G := Discrete.functor (fun a : Fin (n + 1) → ι ↦ op (∏ᶜ fun j ↦ U (a j))) ⋙ P)
@@ -98,17 +97,15 @@ private def cechEvalIso (n : ℕ) :
     intro a
     -- The Čech term and the product use definitionally equal diagrams with different
     -- chosen-limit instances; `erw` also normalizes those instances.
-    erw [Iso.trans_hom, Iso.trans_hom, Iso.refl_hom, Iso.refl_hom,
-      Category.id_comp, Category.id_comp]
+    erw [Iso.trans_hom, Iso.trans_hom]
     dsimp only [CategoryTheory.Functor.comp_map, HomologicalComplex.eval_map,
       CategoryTheory.Functor.whiskeringLeft_obj_obj, CategoryTheory.Functor.whiskeringLeft_obj_map]
-    erw [Category.assoc, HasLimit.isoOfNatIso_hom_π, Category.assoc, limMap_π,
-      HasLimit.isoOfNatIso_hom_π_assoc]
+    simp only [Category.assoc]
+    erw [HasLimit.isoOfNatIso_hom_π, limMap_π, HasLimit.isoOfNatIso_hom_π_assoc]
     simp only [Discrete.compNatIsoDiscrete, Iso.symm_hom, Discrete.natIso_inv_app,
       Iso.refl_inv]
     erw [Category.comp_id, Category.id_comp]
-    convert cechComplexFunctor_map_f_π U _ α n a.as using 1
-    rfl)
+    exact cechComplexFunctor_map_f_comp_cechXIso_hom_π U α n a.as)
 
 /-- The Čech complex functor preserves every limit that exists in the coefficient category: in
 each degree it is a product of evaluations, and limits commute with products and evaluations. -/
