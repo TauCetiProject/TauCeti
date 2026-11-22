@@ -73,9 +73,9 @@ equality.
 
 The coefficients of `Q` are ranks of boundary maps. Cut the band at regular values
 `a = s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1) = b` so that each piece `f⁻¹[s j, s (j + 1)]` contains at most one
-critical value; on a compact manifold such values exist
-(`TauCeti.IsMorse.exists_regular_sublevel_partition`). Each piece then has `bᵢ = cᵢ dim V`, and
-summing the defects of subadditivity of `Sₙ` over the triples
+critical value; on a compact manifold such values exist, since a Morse function has finitely many
+critical values (`TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`). Each
+piece then has `bᵢ = cᵢ dim V`, and summing the defects of subadditivity of `Sₙ` over the triples
 `(M_{s (j + 2)}, M_{s (j + 1)}, M_{s 0})` (`Monotone.sum_range_finrank_range_singularHomologyδ_eq`)
 shows that the coefficient of `tⁿ` in `Q` is the sum over `j < N` of the ranks of the connecting
 maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
@@ -127,7 +127,7 @@ maps `Hₙ₊₁(M_{s (j + 2)}, M_{s (j + 1)}) ⟶ Hₙ(M_{s (j + 1)}, M_{s 0})`
   `TauCeti.IsMorse.coeff_eq_sum_range_finrank_range_singularHomologyδ`: on a compact manifold, the
   coefficients of `Q` as sums of ranks of connecting maps along a cut of the values of `f` into
   pieces with at most one critical value each, which exists by
-  `TauCeti.IsMorse.exists_regular_sublevel_partition`.
+  `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`.
 
 ## References
 
