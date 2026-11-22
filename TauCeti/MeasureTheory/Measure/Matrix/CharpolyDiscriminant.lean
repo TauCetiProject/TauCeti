@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Disintegration
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Discriminant
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Measure.MvPolynomialZeroLocus
 
 /-!

@@ -14,9 +14,10 @@ public import TauCeti.MeasureTheory.Function.Jacobian
 
 Every self-adjoint matrix with simple spectrum has an open neighborhood parametrized by
 a real diagonal and transverse unitary angles, the fixed-frame chart
-`TauCeti.spectralMatrix`. The matrix volume in such a chart is the product of the Vandermonde
-factor in the diagonal, with exponent `1` for real symmetric matrices and `2` for complex
-Hermitian matrices, and the angular Jacobian.
+`TauCeti.spectralMatrix`. In such a chart, an additive Haar measure on the matrices, such as
+Frobenius volume, has density the product of the Vandermonde factor in the diagonal, with
+exponent `1` for real symmetric matrices and `2` for complex Hermitian matrices, and the angular
+Jacobian.
 
 This is the local change of variables used in Anderson, Guionnet and Zeitouni,
 *An Introduction to Random Matrices* (2010), proof of Theorem 2.5.2 and §4.1.
@@ -61,21 +62,23 @@ theorem lintegral_image_spectralCoordinates (μ : Measure (SelfAdjointCoordinate
   simp only [hjac, abs_det_fderiv_spectralCoordinates, Function.comp_apply] at he
   exact he
 
-/-- Frobenius volume transforms by the spectral Jacobian on every injective null-measurable
-patch. The source measure is Frobenius volume transported to the linear matrix coordinates. -/
-theorem lintegral_image_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
-    {s : Set (SelfAdjointCoordinates n 𝕜)}
-    (hs : NullMeasurableSet s (volume.map selfAdjointCoordinates))
+/-- An additive Haar measure on the self-adjoint matrices, such as Frobenius volume, transforms by
+the spectral Jacobian on every injective null-measurable patch. The source measure is the same
+measure transported to the linear matrix coordinates. -/
+theorem lintegral_image_spectralMatrix
+    (ν : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))) [ν.IsAddHaarMeasure]
+    (U : unitaryGroup (Fin n) 𝕜) {s : Set (SelfAdjointCoordinates n 𝕜)}
+    (hs : NullMeasurableSet s (ν.map selfAdjointCoordinates))
     (h : Set.InjOn (spectralMatrix U) s)
     (g : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) → ℝ≥0∞) :
-    (∫⁻ A in spectralMatrix U '' s, g A) =
+    (∫⁻ A in spectralMatrix U '' s, g A ∂ν) =
       ∫⁻ x in s, ENNReal.ofReal (|(spectralAngularFDeriv x.2).det| *
         ∏ ij : FinStrictUpper n, |x.1 ij.val.2 - x.1 ij.val.1| ^ Module.finrank ℝ 𝕜) *
-        g (spectralMatrix U x) ∂(volume.map selfAdjointCoordinates) := by
+        g (spectralMatrix U x) ∂(ν.map selfAdjointCoordinates) := by
   let c := selfAdjointCoordinates (n := n) (𝕜 := 𝕜)
   let e := c.toHomeomorph.toMeasurableEquiv
-  let μ : Measure (SelfAdjointCoordinates n 𝕜) := volume.map c
-  let : μ.IsAddHaarMeasure := c.isAddHaarMeasure_map volume
+  let μ : Measure (SelfAdjointCoordinates n 𝕜) := ν.map c
+  let : μ.IsAddHaarMeasure := c.isAddHaarMeasure_map ν
   let F := unitaryConjCoordinates U ∘ spectralCoordinates
   have hF : F = e ∘ spectralMatrix U := by
     funext x
@@ -86,9 +89,9 @@ theorem lintegral_image_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
     (selfAdjointCoordinates.injective (by rw [selfAdjointCoordinates_spectralMatrix,
       selfAdjointCoordinates_spectralMatrix, hxy]))
   have hchange := lintegral_image_spectralCoordinates μ U hs hinj (g ∘ e.symm)
-  have hrestrict : μ.restrict (F '' s) = (volume.restrict (spectralMatrix U '' s)).map e := by
+  have hrestrict : μ.restrict (F '' s) = (ν.restrict (spectralMatrix U '' s)).map e := by
     rw [← hp]
-    exact e.restrict_map volume (F '' s)
+    exact e.restrict_map ν (F '' s)
   have hsymm (x : SelfAdjointCoordinates n 𝕜) :
       e.symm (unitaryConjCoordinates U (spectralCoordinates x)) = spectralMatrix U x := by
     have hx : unitaryConjCoordinates U (spectralCoordinates x) = e (spectralMatrix U x) :=

@@ -10,8 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.Matrix.SkewAdjoint
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Analysis.Calculus.FDeriv.Star
+import TauCeti.Analysis.Calculus.FDeriv.Unitary
 
 /-!
 # The unitary exponential of strict upper coordinates
@@ -127,18 +126,10 @@ theorem contDiff_relativeFrame (a : FinStrictUpper n → 𝕜) {k : WithTop ℕ�
 /-- At the base angle, the derivative of the relative frame is skew-adjoint. -/
 theorem star_fderiv_relativeFrame (a v : FinStrictUpper n → 𝕜) :
     star (fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) =
-      -(fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) := by
-  let F (b : FinStrictUpper n → 𝕜) := (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)
-  let L := fderiv ℝ F a
-  have hF : HasFDerivAt F L a :=
-    ((contDiff_relativeFrame a (k := 1)).differentiable one_ne_zero a).hasFDerivAt
-  have hu : (fun b ↦ F b * star (F b)) = fun _ ↦ (1 : Matrix (Fin n) (Fin n) 𝕜) :=
-    funext fun b ↦ Unitary.coe_mul_star_self (relativeFrame a b)
-  have he := hF.fun_mul' hF.star
-  rw [hu] at he
-  have hv := DFunLike.congr_fun (he.unique (hasFDerivAt_const _ _)) v
-  have h1 : F a = 1 := by simp [F]
-  simpa [L, F, h1, eq_neg_iff_add_eq_zero, add_comm] using hv
+      -(fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) :=
+  star_fderiv_apply_eq_neg_of_mem_unitary
+    (Filter.Eventually.of_forall fun b ↦ (relativeFrame a b).property)
+    (by rw [relativeFrame_self, Submonoid.coe_one]) v
 
 /-- Each entry of the angular differential is the derivative of the corresponding strict upper
 entry of the frame relative to the frame at the base angle. -/
