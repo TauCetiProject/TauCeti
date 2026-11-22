@@ -72,6 +72,8 @@ the flat base change of sections over a quasi-compact quasi-separated open
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
   the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field,
+  `TauCeti.AlgebraicGeometry.subsingleton_cohomology_pullback_iff_of_isPullback`: `Hⁿ(X, M)`
+  vanishes exactly when it vanishes after extension of the base field,
   `TauCeti.AlgebraicGeometry.finrank_cohomology_trivial_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_trivial_of_isPullback`: their
   specialisation to the structure sheaf, whose pullback is identified with `𝒪_Y`, with
@@ -603,6 +605,17 @@ theorem finiteDimensional_cohomology_pullback_of_isPullback [CompactSpace X]
     (n : ℕ) [FiniteDimensional k (Cohomology M n)] :
     FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) :=
   Module.Finite.equiv (cohomologyBaseChangeLinearEquiv H M n)
+
+include H in
+/-- `Hⁿ(X, M)` vanishes exactly when it vanishes after extension of the base field, for a
+quasi-coherent sheaf `M` on a quasi-compact quasi-separated scheme over a field. The vanishing
+is that of the canonical pullback sheaf `g^* M`. -/
+theorem subsingleton_cohomology_pullback_iff_of_isPullback [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    Subsingleton (Cohomology ((Scheme.Modules.pullback g).obj M) n) ↔
+      Subsingleton (Cohomology M n) := by
+  rw [← (cohomologyBaseChangeLinearEquiv H M n).toEquiv.subsingleton_congr,
+    Module.FaithfullyFlat.subsingleton_tensorProduct_iff_right]
 
 include H in
 /-- The dimension of `Hⁿ(X, 𝒪_X)` does not change under extension of the base field, on a
