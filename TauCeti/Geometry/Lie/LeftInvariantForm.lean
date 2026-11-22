@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Lie.Cohomology.FiniteDimensional
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
+public import TauCeti.Geometry.Lie.Tangent.Differential
+import TauCeti.Geometry.Lie.Functor
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 
@@ -24,9 +26,12 @@ the identity by the differential of `L_{g⁻¹} : x ↦ g⁻¹ * x` and evaluate
 `α^L_g (v₁, …, vₖ) = α (dL_{g⁻¹} v₁, …, dL_{g⁻¹} vₖ)`.
 
 On the left-invariant vector fields `X^L` (`mulInvariantVectorField X`) the form is constant,
-`α^L (X₁^L, …, Xₖ^L) = α (X₁, …, Xₖ)`. Every left translation preserves `α^L`, and conversely a
-form preserved by every left translation is the extension of its value at the identity
-(`TauCeti.forall_mpullback_mul_left_eq_iff`). The extension is smooth
+`α^L (X₁^L, …, Xₖ^L) = α (X₁, …, Xₖ)`, so `α^L` vanishes at no point unless `α = 0`. Every left
+translation preserves `α^L`, and conversely a form preserved by every left translation is the
+extension of its value at the identity (`TauCeti.forall_mpullback_mul_left_eq_iff`). A smooth
+homomorphism `φ : K → G` pulls `α^L` back to `(α ∘ dφ)^L`, where `dφ : 𝔨 → 𝔤` is its
+differential at the identity
+(`ContMDiffMonoidMorphism.mpullback_leftInvariantSmoothForm`). The extension is smooth
 (`TauCeti.isSmoothForm_leftInvariantForm`); on a smooth Lie group it is bundled as a smooth form,
 `TauCeti.leftInvariantSmoothForm`.
 
@@ -61,9 +66,12 @@ since the exterior derivative has no term in which `𝔤` acts on the values of 
 ## Main results
 
 * `TauCeti.leftInvariantForm_apply_mulInvariantVectorField`: `α^L (X₁^L, …, Xₖ^L) = α (X₁, …, Xₖ)`.
+* `TauCeti.leftInvariantForm_apply_eq_zero_iff`: `α^L` vanishes at a point exactly when `α = 0`.
 * `TauCeti.mpullback_mul_left_leftInvariantForm`,
   `TauCeti.mpullback_mul_left_leftInvariantSmoothForm`: left translations preserve `α^L`.
 * `TauCeti.forall_mpullback_mul_left_eq_iff`: the left-invariant forms are the forms `α^L`.
+* `ContMDiffMonoidMorphism.mpullback_leftInvariantSmoothForm`: `φ^* α^L = (α ∘ dφ)^L` for a smooth
+  homomorphism `φ`.
 * `TauCeti.isSmoothForm_leftInvariantForm`: on a `C^n` Lie group, `α^L` is `C^m` for `m + 1 ≤ n`.
 * `TauCeti.mextDeriv_leftInvariantForm`, `TauCeti.mextDerivₗ_leftInvariantSmoothForm`:
   `d (α^L) = (d α)^L`.
@@ -146,6 +154,16 @@ theorem leftInvariantForm_apply_mulInvariantVectorField
     (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) (g : G) (X : Fin k → GroupLieAlgebra I G) :
     leftInvariantForm I G F k α g (fun i ↦ mulInvariantVectorField (X i) g) = α X := by
   simp only [leftInvariantForm_apply, mfderiv_inv_mul_mulInvariantVectorField]
+
+/-- The left-invariant extension of `α` vanishes at a point exactly when `α` is zero: its value
+at `g` on the left-invariant vector fields is `α` itself. -/
+@[simp]
+theorem leftInvariantForm_apply_eq_zero_iff {α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F} {g : G} :
+    leftInvariantForm I G F k α g = 0 ↔ α = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  ext X
+  rw [← leftInvariantForm_apply_mulInvariantVectorField α g X, h]
+  simp
 
 /-- Every left translation preserves the left-invariant extension of `α`. -/
 @[simp]
@@ -258,6 +276,41 @@ theorem mpullback_mul_left_leftInvariantSmoothForm (α : GroupLieAlgebra I G [�
       mpullback_mul_left_leftInvariantForm]
 
 end Smooth
+
+/-! ### Pullback along homomorphisms -/
+
+section Homomorphism
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable [IsManifold I 1 G] [LieGroup I ∞ G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G'] [IsManifold I' 1 G']
+  [LieGroup I' ∞ G']
+
+/-- **Left-invariant forms along a homomorphism.** A smooth homomorphism `φ : G' → G` pulls the
+left-invariant extension of a form `α` on the Lie algebra of `G` back to the left-invariant
+extension of `α ∘ dφ`, where `dφ` is the differential of `φ` at the identity. -/
+@[simp]
+theorem _root_.ContMDiffMonoidMorphism.mpullback_leftInvariantSmoothForm
+    (φ : ContMDiffMonoidMorphism I' I ∞ G' G) (α : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    SmoothForm.mpullback φ φ.contMDiff_toFun (leftInvariantSmoothForm I G F k α) =
+      leftInvariantSmoothForm I' G' F k
+        (α.compContinuousLinearMap (φ.toMonoidHom.groupLieAlgebraMap I' I)) := by
+  apply Subtype.ext
+  funext g
+  ext v
+  -- Write the tangent vectors at `g` as values of left-invariant vector fields.
+  obtain ⟨X, rfl⟩ : ∃ X : Fin k → GroupLieAlgebra I' G',
+      (fun i ↦ mulInvariantVectorField (X i) g) = v :=
+    ⟨fun i ↦ mfderiv I' I' (g⁻¹ * ·) g (v i),
+      funext fun i ↦ mulInvariantVectorField_mfderiv_inv_mul (v i)⟩
+  simp only [SmoothForm.coe_mpullback, leftInvariantSmoothForm_val, mpullback_apply,
+    φ.mfderiv_mulInvariantVectorField, leftInvariantForm_apply_mulInvariantVectorField,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+
+end Homomorphism
 
 /-! ### The exterior derivative -/
 
