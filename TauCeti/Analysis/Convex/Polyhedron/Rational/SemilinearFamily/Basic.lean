@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.PiecewiseAffine
-public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Finite semilinear families and finite branches
@@ -101,6 +100,8 @@ structure fiber (w : W) where
   /-- This point evaluates to the specified target. -/
   eval_eq : F.eval chart point = w
 
+attribute [simp] fiber.eval_eq
+
 /-- Fiber points are equal when their chart labels and ambient points agree. -/
 @[ext]
 theorem fiber.ext {w : W} {x y : F.fiber w} (hc : x.chart = y.chart)
@@ -112,17 +113,57 @@ theorem fiber.ext {w : W} {x y : F.fiber w} (hc : x.chart = y.chart)
   rfl
 
 /-- The representation equivalence used to apply the generic dependent-sum APIs. -/
-private def fiberSigmaEquiv (w : W) : F.fiber w ≃ Σ c, {x : F.domain c // F.eval c x = w} where
+def fiberSigmaEquiv (w : W) : F.fiber w ≃ Σ c, {x : F.domain c // F.eval c x = w} where
   toFun x := ⟨x.chart, x.point, x.eval_eq⟩
   invFun x := ⟨x.1, x.2.val, x.2.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
+
+/-- The chartwise representation records all fields of the named fiber point. -/
+theorem fiberSigmaEquiv_apply (w : W) (z : F.fiber w) :
+    F.fiberSigmaEquiv w z = ⟨z.chart, z.point, z.eval_eq⟩ := by rfl
+
+/-- The inverse chartwise representation reconstructs all fields of the fiber point. -/
+theorem fiberSigmaEquiv_symm_apply (w : W)
+    (z : Σ c, {x : F.domain c // F.eval c x = w}) :
+    (F.fiberSigmaEquiv w).symm z = ⟨z.1, z.2.val, z.2.property⟩ := by rfl
+
+/-- The chartwise representation preserves the chart label. -/
+@[simp]
+theorem fiberSigmaEquiv_apply_chart (w : W) (z : F.fiber w) :
+    (F.fiberSigmaEquiv w z).1 = z.chart := by rfl
+
+/-- The chartwise representation preserves the ambient point. -/
+@[simp]
+theorem fiberSigmaEquiv_apply_point (w : W) (z : F.fiber w) :
+    ((F.fiberSigmaEquiv w z).2.val : V) = z.point := by rfl
+
+/-- The inverse chartwise representation preserves the chart label. -/
+@[simp]
+theorem fiberSigmaEquiv_symm_apply_chart (w : W)
+    (z : Σ c, {x : F.domain c // F.eval c x = w}) :
+    ((F.fiberSigmaEquiv w).symm z).chart = z.1 := by rfl
+
+/-- The inverse chartwise representation preserves the ambient point. -/
+@[simp]
+theorem fiberSigmaEquiv_symm_apply_point (w : W)
+    (z : Σ c, {x : F.domain c // F.eval c x = w}) :
+    (((F.fiberSigmaEquiv w).symm z).point : V) = z.2.val := by rfl
 
 /-- Transporting a fiber point along equality of families preserves its chart label. -/
 @[simp]
 theorem fiber_cast_chart {F G : FiniteSemilinearFamily h h' ι} (e : F = G)
     (w : W) (z : F.fiber w) :
     (cast (congrArg (fun F : FiniteSemilinearFamily h h' ι => F.fiber w) e) z).chart = z.chart := by
+  subst G
+  rfl
+
+/-- Transport along equality of families preserves the ambient preimage point. -/
+@[simp]
+theorem fiber_cast_point {F G : FiniteSemilinearFamily h h' ι} (e : F = G)
+    (w : W) (z : F.fiber w) :
+    ((cast (congrArg (fun F : FiniteSemilinearFamily h h' ι => F.fiber w) e) z).point : V) =
+      z.point := by
   subst G
   rfl
 
@@ -218,45 +259,47 @@ def fiberSumEquiv (w : W) : (F.sum G).fiber w ≃ F.fiber w ⊕ G.fiber w :=
     ((Equiv.sumSigmaDistrib fun c => {x : (F.sum G).domain c // (F.sum G).eval c x = w}).trans
       (Equiv.sumCongr (F.fiberSigmaEquiv w).symm (G.fiberSigmaEquiv w).symm))
 
+private theorem fiberSumEquiv_symm_apply_inl (w : W) (z : F.fiber w) :
+    (F.fiberSumEquiv G w).symm (.inl z) = ⟨.inl z.chart, z.point, z.eval_eq⟩ := by
+  apply (F.fiberSumEquiv G w).injective
+  rw [Equiv.apply_symm_apply]
+  symm
+  simp only [fiberSumEquiv, Equiv.trans_apply, fiberSigmaEquiv_apply]
+  rw [Equiv.sumSigmaDistrib_apply]
+  exact congrArg Sum.inl (F.fiberSigmaEquiv_symm_apply w ⟨z.chart, z.point, z.eval_eq⟩)
+
+private theorem fiberSumEquiv_symm_apply_inr (w : W) (z : G.fiber w) :
+    (F.fiberSumEquiv G w).symm (.inr z) = ⟨.inr z.chart, z.point, z.eval_eq⟩ := by
+  apply (F.fiberSumEquiv G w).injective
+  rw [Equiv.apply_symm_apply]
+  symm
+  simp only [fiberSumEquiv, Equiv.trans_apply, fiberSigmaEquiv_apply]
+  rw [Equiv.sumSigmaDistrib_apply]
+  exact congrArg Sum.inr (G.fiberSigmaEquiv_symm_apply w ⟨z.chart, z.point, z.eval_eq⟩)
+
 /-- The inverse fiber comparison preserves the chart label on the left summand. -/
 @[simp]
 theorem fiberSumEquiv_symm_apply_inl_chart (w : W) (z : F.fiber w) :
-    ((F.fiberSumEquiv G w).symm (.inl z)).chart = .inl z.chart := by
-  change ((Equiv.sumSigmaDistrib
-    (fun c => {x : (F.sum G).domain c // (F.sum G).eval c x = w})).symm
-      (.inl ⟨z.chart, ⟨z.point, z.eval_eq⟩⟩)).1 = .inl z.chart
-  rw [Equiv.sumSigmaDistrib_symm_apply]
-  rfl
+    ((F.fiberSumEquiv G w).symm (.inl z)).chart = .inl z.chart :=
+  congrArg fiber.chart (F.fiberSumEquiv_symm_apply_inl G w z)
 
 /-- The inverse fiber comparison preserves the chart label on the right summand. -/
 @[simp]
 theorem fiberSumEquiv_symm_apply_inr_chart (w : W) (z : G.fiber w) :
-    ((F.fiberSumEquiv G w).symm (.inr z)).chart = .inr z.chart := by
-  change ((Equiv.sumSigmaDistrib
-    (fun c => {x : (F.sum G).domain c // (F.sum G).eval c x = w})).symm
-      (.inr ⟨z.chart, ⟨z.point, z.eval_eq⟩⟩)).1 = .inr z.chart
-  rw [Equiv.sumSigmaDistrib_symm_apply]
-  rfl
+    ((F.fiberSumEquiv G w).symm (.inr z)).chart = .inr z.chart :=
+  congrArg fiber.chart (F.fiberSumEquiv_symm_apply_inr G w z)
 
 /-- The inverse fiber comparison retains the ambient point on the left summand. -/
 @[simp]
 theorem fiberSumEquiv_symm_apply_inl_point (w : W) (z : F.fiber w) :
-    (((F.fiberSumEquiv G w).symm (.inl z)).point : V) = z.point := by
-  change (((Equiv.sumSigmaDistrib
-    (fun c => {x : (F.sum G).domain c // (F.sum G).eval c x = w})).symm
-      (.inl ⟨z.chart, ⟨z.point, z.eval_eq⟩⟩)).2.val : V) = z.point
-  rw [Equiv.sumSigmaDistrib_symm_apply]
-  rfl
+    (((F.fiberSumEquiv G w).symm (.inl z)).point : V) = z.point :=
+  congrArg (fun p => (p.point : V)) (F.fiberSumEquiv_symm_apply_inl G w z)
 
 /-- The inverse fiber comparison retains the ambient point on the right summand. -/
 @[simp]
 theorem fiberSumEquiv_symm_apply_inr_point (w : W) (z : G.fiber w) :
-    (((F.fiberSumEquiv G w).symm (.inr z)).point : V) = z.point := by
-  change (((Equiv.sumSigmaDistrib
-    (fun c => {x : (F.sum G).domain c // (F.sum G).eval c x = w})).symm
-      (.inr ⟨z.chart, ⟨z.point, z.eval_eq⟩⟩)).2.val : V) = z.point
-  rw [Equiv.sumSigmaDistrib_symm_apply]
-  rfl
+    (((F.fiberSumEquiv G w).symm (.inr z)).point : V) = z.point :=
+  congrArg (fun p => (p.point : V)) (F.fiberSumEquiv_symm_apply_inr G w z)
 
 /-- Forward transport retains the chart label, interpreted in the disjoint index type. -/
 @[simp]
@@ -285,7 +328,7 @@ theorem enat_card_fiber_sum (w : W) :
     ENat.card ((F.sum G).fiber w) = ENat.card (F.fiber w) + ENat.card (G.fiber w) := by
   rw [ENat.card_congr (F.fiberSumEquiv G w), ENat.card_sum]
 
-/-- A disjoint union of families with finite fibers has finite fibers. -/
+/-- The union fiber over `w` is finite when both input fibers over that same `w` are finite. -/
 instance (w : W) [Finite (F.fiber w)] [Finite (G.fiber w)] :
     Finite ((F.sum G).fiber w) :=
   Finite.of_equiv _ (F.fiberSumEquiv G w).symm
@@ -302,29 +345,33 @@ theorem isFiniteBranch_sum_iff :
     (F.sum G).IsFiniteBranch ↔ F.IsFiniteBranch ∧ G.IsFiniteBranch :=
   Sum.forall
 
-/-- Restriction of each chart to its own rational semilinear set. -/
-def restrict (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) :
+/-- Restrict each chart by its own cut. Only the intersection of that cut with the
+chart domain must be rational semilinear. -/
+def restrict (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c)) :
     FiniteSemilinearFamily h h' ι where
   domain c := F.domain c ∩ P c
   eval c := Set.domRestrict₂ (π := fun _ : V => W) Set.inter_subset_left (F.eval c)
   isRationalPiecewiseAffine c := (F.isRationalPiecewiseAffine c).inter (hP c)
 
-/-- Restricting a family intersects each domain with the restricting set. -/
+/-- Restriction intersects each chart domain with that chart's own cut. -/
 @[simp]
-theorem restrict_domain (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) (c : ι) :
+theorem restrict_domain (P : ι → Set V)
+    (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c)) (c : ι) :
     (F.restrict P hP).domain c = F.domain c ∩ P c := (rfl)
 
 /-- Restriction evaluates a point using its original domain membership. -/
 @[simp]
-theorem restrict_eval (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) (c : ι)
+theorem restrict_eval (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c)) (c : ι)
     (x : (F.restrict P hP).domain c) :
     (F.restrict P hP).eval c x =
       Set.domRestrict₂ (π := fun _ : V => W)
         (Set.inter_subset_left : F.domain c ∩ P c ⊆ F.domain c) (F.eval c)
         ⟨x.val, by simpa only [restrict_domain] using x.property⟩ := (rfl)
 
-/-- The fiber of a restriction consists of the original fiber points in the restricting set. -/
-def fiberRestrictEquiv (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W) :
+/-- A restricted fiber retains exactly the original points `p` whose ambient point
+belongs to the cut `P p.chart` assigned to their own chart. -/
+def fiberRestrictEquiv (P : ι → Set V)
+    (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c)) (w : W) :
     (F.restrict P hP).fiber w ≃ {p : F.fiber w // (p.point : V) ∈ P p.chart} where
   toFun p := ⟨⟨p.chart, ⟨p.point.val, p.point.property.1⟩, p.eval_eq⟩, p.point.property.2⟩
   invFun p := ⟨p.val.chart, ⟨p.val.point.val, p.val.point.property, p.property⟩, p.val.eval_eq⟩
@@ -333,39 +380,41 @@ def fiberRestrictEquiv (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P
 
 /-- Restriction preserves the chart label. -/
 @[simp]
-theorem fiberRestrictEquiv_apply_chart (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c))
+theorem fiberRestrictEquiv_apply_chart (P : ι → Set V)
+    (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c))
     (w : W) (z : (F.restrict P hP).fiber w) :
     (F.fiberRestrictEquiv P hP w z).val.chart = z.chart := (rfl)
 
 /-- Restriction retains the ambient point. -/
 @[simp]
 theorem fiberRestrictEquiv_apply_point (P : ι → Set V)
-    (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W) (z : (F.restrict P hP).fiber w) :
+    (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c)) (w : W) (z : (F.restrict P hP).fiber w) :
     ((F.fiberRestrictEquiv P hP w z).val.point : V) = z.point := (rfl)
 
 /-- Inverse restriction retains the chart label. -/
 @[simp]
 theorem fiberRestrictEquiv_symm_apply_chart (P : ι → Set V)
-    (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W)
+    (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c)) (w : W)
     (z : {p : F.fiber w // (p.point : V) ∈ P p.chart}) :
     ((F.fiberRestrictEquiv P hP w).symm z).chart = z.val.chart := (rfl)
 
 /-- Inverse restriction retains the ambient point. -/
 @[simp]
 theorem fiberRestrictEquiv_symm_apply_point (P : ι → Set V)
-    (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W)
+    (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c)) (w : W)
     (z : {p : F.fiber w // (p.point : V) ∈ P p.chart}) :
     (((F.fiberRestrictEquiv P hP w).symm z).point : V) = z.val.point := (rfl)
 
-/-- Restricting chart domains preserves finiteness of the fibers. -/
-instance (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (P c)) (w : W) [Finite (F.fiber w)] :
+/-- The restricted fiber over `w` is finite if the original fiber over that `w` is finite. -/
+instance (P : ι → Set V) (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c))
+    (w : W) [Finite (F.fiber w)] :
     Finite ((F.restrict P hP).fiber w) :=
   Finite.of_equiv _ (F.fiberRestrictEquiv P hP w).symm
 
-/-- Restricting a family of finite branches to a rational semilinear set gives a family of
-finite branches. -/
+/-- Restricting each finite-branch chart by its own cut preserves finite branches
+when each actual chart-domain intersection is rational semilinear. -/
 theorem IsFiniteBranch.restrict {F : FiniteSemilinearFamily h h' ι} (P : ι → Set V)
-    (hP : ∀ c, IsRationalSemilinear h (P c)) (hF : F.IsFiniteBranch) :
+    (hP : ∀ c, IsRationalSemilinear h (F.domain c ∩ P c)) (hF : F.IsFiniteBranch) :
     (F.restrict P hP).IsFiniteBranch :=
   fun c => (hF c).inter (hP c)
 
@@ -388,6 +437,13 @@ theorem postcomp_eval (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLine
     (c : ι) (x : (F.postcomp φ hφ).domain c) :
     (F.postcomp φ hφ).eval c x =
       φ (F.eval c ⟨x.val, congrFun (F.postcomp_domain φ hφ) c ▸ x.property⟩) := (rfl)
+
+/-- Injective rational affine post-composition preserves finite branches chartwise. -/
+theorem IsFiniteBranch.postcomp {F : FiniteSemilinearFamily h h' ι}
+    (hF : F.IsFiniteBranch) (φ : W →ᵃ[ℝ] X)
+    (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear) (hinj : Function.Injective φ) :
+    (F.postcomp φ hφ).IsFiniteBranch :=
+  fun c => (hF c).postcomp φ hφ hinj
 
 /-- The fiber of a post-composition over `w'` is the disjoint union of the original fibers
 indexed by the intermediate values in `φ ⁻¹' {w'}`. -/

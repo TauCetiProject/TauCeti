@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Set
+public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Order.SetNotation
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Fibres of a map over a base
@@ -23,6 +26,9 @@ topology, so they are stated for bare functions and equivalences; a `ContinuousM
 
 ## Main declarations
 
+* `Set.finite_preimage_of_subset_iUnion`: a finite target has finite preimage under a
+  finite cover with injectivity only on the portions lying over that target.
+* `Set.finite_fiber_of_subset_iUnion`: the single-target specialization.
 * `Function.mapsTo_fiber`: a map over `X` sends each fibre into the corresponding fibre.
 * `Function.fiberMap`: the restriction of a map over `X` to the fibre over `x`.
 * `Equiv.compFiberEquiv`: the relabelling of fibres under an equivalence of bases.
@@ -138,3 +144,21 @@ theorem compFiberEquiv_symm_apply_coe (h : X ≃ Y) (y : Y) (e : p ⁻¹' {h.sym
   (rfl)
 
 end Equiv
+
+/-- A finite target has finite preimage if that preimage is covered by finitely many
+pieces on whose portions over the target the function is injective. -/
+theorem Set.finite_preimage_of_subset_iUnion {α β κ : Type*} [Finite κ] {f : α → β}
+    {t : Set β} (ht : t.Finite) {S : κ → Set α} (hS : f ⁻¹' t ⊆ ⋃ k, S k)
+    (hf : ∀ k, Set.InjOn f (S k ∩ f ⁻¹' t)) : (f ⁻¹' t).Finite := by
+  have hpiece (k : κ) : (S k ∩ f ⁻¹' t).Finite :=
+    Set.Finite.of_injOn (f := f) (fun _ hx => hx.2) (hf k) ht
+  apply (Set.finite_iUnion hpiece).subset
+  rw [← Set.iUnion_inter]
+  exact fun x hx => ⟨hS hx, hx⟩
+
+/-- A fiber covered by finitely many pieces is finite when the function is injective
+on the part of each piece lying in that fiber. No condition is imposed elsewhere. -/
+theorem Set.finite_fiber_of_subset_iUnion {α β κ : Type*} [Finite κ] {f : α → β}
+    {S : κ → Set α} (w : β) (hS : f ⁻¹' {w} ⊆ ⋃ k, S k)
+    (hf : ∀ k, Set.InjOn f (S k ∩ f ⁻¹' {w})) : Finite {x : α // f x = w} :=
+  (Set.finite_preimage_of_subset_iUnion (Set.finite_singleton w) hS hf).to_subtype

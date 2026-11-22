@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.LocallyClosed
-import TauCeti.Data.Set.InjOnUnion
+import TauCeti.Logic.Function.Fiber
 
 /-!
 # Piecewise-affine maps with rational linear parts
@@ -14,7 +14,8 @@ import TauCeti.Data.Set.InjOnUnion
 Finite covers describe maps that agree piecewise with affine maps whose linear parts
 are rational for the specified lattices. The offsets can be arbitrary real vectors.
 For finite branches, the covers use locally closed rational-normal polyhedra, and each
-representative is injective on its own piece.
+representative is injective on its own piece. Injectivity on finitely many pieces gives finite
+fibers even on nonclosed domains; see `IsFiniteBranchOn.finite_fiber`.
 
 The predicates and their operations are adapted from
 `Mei/Geometry/Convex/Polyhedron/Rational/SemilinearFamily/Basic.lean`
@@ -82,15 +83,26 @@ theorem IsRationalSemilinear.isRationalPiecewiseAffine {D : Set V}
     ⟨Unit, inferInstance, fun _ => D, fun _ => g, Set.iUnion_const _,
       fun _ => ⟨hD, hg, fun _ _ => rfl⟩⟩
 
-/-- An affine map with rational linear part, injective on a locally closed rational-normal
-polyhedron, is a finite branch on that domain. -/
+/-- An affine map with rational linear part, injective on a rational semilinear
+set, is a finite branch on that set. -/
+theorem IsRationalSemilinear.isFiniteBranchOn {D : Set V}
+    (hD : IsRationalSemilinear h D) (g : V →ᵃ[ℝ] W)
+    (hg : TauCeti.Toric.IsRationalLinearMap h h' g.linear) (hinj : Set.InjOn g D) :
+    IsFiniteBranchOn h h' D (fun x => g x) := by
+  obtain ⟨κ, _, S, hS, -, hcover⟩ :=
+    TauCeti.isRationalSemilinear_iff_exists_pairwise_disjoint.mp hD
+  refine isFiniteBranchOn_iff.mpr ⟨κ, ‹_›, S, fun _ => g, hcover, fun k =>
+    ⟨hS k, hg, hinj.mono ?_, fun _ _ => rfl⟩⟩
+  rw [← hcover]
+  exact Set.subset_iUnion S k
+
+/-- An injective affine representative on a locally closed rational-normal polyhedron
+is a finite branch, as a special case of the semilinear-domain constructor. -/
 theorem IsLocallyClosedPolyhedron.isFiniteBranchOn {D : Set V}
     (hD : IsLocallyClosedPolyhedron h D) (g : V →ᵃ[ℝ] W)
     (hg : TauCeti.Toric.IsRationalLinearMap h h' g.linear) (hinj : Set.InjOn g D) :
     IsFiniteBranchOn h h' D (fun x => g x) :=
-  isFiniteBranchOn_iff.mpr
-    ⟨Unit, inferInstance, fun _ => D, fun _ => g, Set.iUnion_const _,
-      fun _ => ⟨hD, hg, hinj, fun _ _ => rfl⟩⟩
+  hD.isRationalSemilinear.isFiniteBranchOn g hg hinj
 
 namespace IsRationalPiecewiseAffine
 
@@ -100,14 +112,16 @@ theorem isRationalSemilinear {D : Set V} {f : D → W} (hf : IsRationalPiecewise
   obtain ⟨κ, _, S, g, rfl, hS⟩ := hf
   exact IsRationalSemilinear.iUnion fun k => (hS k).1
 
-/-- Restricting to a rational semilinear set keeps the map piecewise affine. -/
+/-- Restricting a piecewise-affine map requires semilinearity only of the actual
+intersection of its domain with the cut. -/
 theorem inter {D : Set V} {f : D → W} (hf : IsRationalPiecewiseAffine h h' D f) {P : Set V}
-    (hP : IsRationalSemilinear h P) :
+    (hP : IsRationalSemilinear h (D ∩ P)) :
     IsRationalPiecewiseAffine h h' (D ∩ P)
       (Set.domRestrict₂ (π := fun _ : V => W) Set.inter_subset_left f) := by
-  obtain ⟨κ, _, S, g, rfl, hS⟩ := hf
-  refine ⟨κ, ‹_›, fun k => S k ∩ P, g, (Set.iUnion_inter ..).symm, fun k =>
+  obtain ⟨κ, _, S, g, hD, hS⟩ := hf
+  refine ⟨κ, ‹_›, fun k => S k ∩ (D ∩ P), g, ?_, fun k =>
     ⟨(hS k).1.inter hP, (hS k).2.1, fun x hx => (hS k).2.2 ⟨x.val, x.property.1⟩ hx.1⟩⟩
+  rw [← Set.iUnion_inter, hD, ← Set.inter_assoc, Set.inter_self]
 
 /-- Composing the values with an affine map with rational linear part
 keeps the map piecewise affine. -/
@@ -131,17 +145,36 @@ theorem isRationalPiecewiseAffine {D : Set V} {f : D → W} (hf : IsFiniteBranch
   exact ⟨κ, ‹_›, S, g, hD, fun k =>
     ⟨(hS k).1.isRationalSemilinear, (hS k).2.1, (hS k).2.2.2⟩⟩
 
-/-- Restricting a finite branch to a rational semilinear set gives a finite branch. -/
+/-- A finite branch remains so after a cut whose intersection with the domain
+is rational semilinear; the cut need not be semilinear in the ambient space. -/
 theorem inter {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) {P : Set V}
-    (hP : IsRationalSemilinear h P) :
+    (hP : IsRationalSemilinear h (D ∩ P)) :
     IsFiniteBranchOn h h' (D ∩ P)
       (Set.domRestrict₂ (π := fun _ : V => W) Set.inter_subset_left f) := by
-  obtain ⟨κ, _, S, g, rfl, hS⟩ := hf
-  obtain ⟨μ, _, C, hC, -, rfl⟩ := TauCeti.isRationalSemilinear_iff_exists_pairwise_disjoint.mp hP
+  obtain ⟨κ, _, S, g, hD, hS⟩ := hf
+  obtain ⟨μ, _, C, hC, -, hcover⟩ :=
+    TauCeti.isRationalSemilinear_iff_exists_pairwise_disjoint.mp hP
   refine ⟨κ × μ, inferInstance, fun p => S p.1 ∩ C p.2, fun p => g p.1, ?_, fun p =>
     ⟨(hS p.1).1.inter (hC p.2), (hS p.1).2.1, (hS p.1).2.2.1.mono Set.inter_subset_left,
       fun x hx => (hS p.1).2.2.2 ⟨x.val, x.property.1⟩ hx.1⟩⟩
-  rw [Set.iUnion_prod', Set.iUnion_inter_iUnion]
+  rw [Set.iUnion_prod', ← Set.iUnion_inter_iUnion, hD, hcover,
+    ← Set.inter_assoc, Set.inter_self]
+
+/-- Injective rational affine post-composition preserves the finite branch property. -/
+theorem postcomp {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f)
+    (φ : W →ᵃ[ℝ] X) (hφ : TauCeti.Toric.IsRationalLinearMap h' h'' φ.linear)
+    (hinj : Function.Injective φ) : IsFiniteBranchOn h h'' D (fun x => φ (f x)) := by
+  obtain ⟨κ, _, S, g, hD, hS⟩ := hf
+  refine ⟨κ, ‹_›, S, fun k => φ.comp (g k), hD, fun k =>
+    ⟨(hS k).1, ?_, ?_, ?_⟩⟩
+  · rw [AffineMap.comp_linear]
+    exact hφ.comp (hS k).2.1
+  · intro x hx y hy he
+    apply (hS k).2.2.1 hx hy
+    apply hinj
+    simpa only [AffineMap.comp_apply] using he
+  · intro x hx
+    simp only [AffineMap.comp_apply, (hS k).2.2.2 x hx]
 
 /-- A finite branch has finite fibers: on each piece the affine map is injective. -/
 theorem finite_fiber {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) (w : W) :
@@ -151,8 +184,8 @@ theorem finite_fiber {D : Set V} {f : D → W} (hf : IsFiniteBranchOn h h' D f) 
   · rw [← Set.preimage_iUnion, hD]
     exact fun x _ => x.property
   · intro k
-    exact ((hS k).2.2.1.comp Set.injOn_subtypeVal (fun _ hx => hx)).congr
-      (fun x hx => ((hS k).2.2.2 x hx).symm)
+    exact (((hS k).2.2.1.comp Set.injOn_subtypeVal (fun _ hx => hx)).congr
+      (fun x hx => ((hS k).2.2.2 x hx).symm)).mono Set.inter_subset_left
 
 end IsFiniteBranchOn
 
