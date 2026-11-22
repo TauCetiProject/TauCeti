@@ -47,6 +47,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
   algebraic operations.
+* `CStarMatrix.isStarProjection_ofMatrix_symm_iff`: a C⋆-matrix is a star projection exactly when
+  the underlying matrix is.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
@@ -234,6 +236,16 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
     M.conjTranspose.conjTranspose = M := by
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
+
+/-- A C⋆-matrix is a star projection exactly when the underlying matrix is. -/
+@[simp]
+lemma isStarProjection_ofMatrix_symm_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
+    {M : CStarMatrix n n A} : IsStarProjection (ofMatrix.symm M) ↔ IsStarProjection M := by
+  have h₁ : ofMatrix.symm M * ofMatrix.symm M = ofMatrix.symm M ↔ M * M = M := by
+    rw [← ofMatrix_symm_mul, ofMatrix.symm.injective.eq_iff]
+  have h₂ : star (ofMatrix.symm M) = ofMatrix.symm M ↔ star M = M := by
+    rw [Matrix.star_eq_conjTranspose, ← ofMatrix_symm_star, ofMatrix.symm.injective.eq_iff]
+  simp only [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint, h₁, h₂]
 
 /-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
 an idempotent `p` is supported on `p`. -/
