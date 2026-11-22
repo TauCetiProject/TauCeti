@@ -29,7 +29,6 @@ open Set
 namespace Real
 
 /-- Coercing `SignType.sign r` to `ℝ` agrees with `Real.sign r`. -/
-@[simp]
 theorem coe_sign_eq_sign (r : ℝ) : (SignType.sign r : ℝ) = sign r := by
   rcases lt_trichotomy r 0 with hr | rfl | hr
   · simp [_root_.sign_neg hr, sign_of_neg hr]

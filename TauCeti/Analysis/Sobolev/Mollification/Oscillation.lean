@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Oscillation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.WeakDeriv
 import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Sobolev mollification oscillation bounds
@@ -87,8 +88,7 @@ theorem HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le_mul_rpow
   have hK1 : 0 < 1 + (φ.rOut / φ.rIn) ^ finrank ℝ E := by
     have : 0 ≤ (φ.rOut / φ.rIn) ^ finrank ℝ E := by positivity [φ.rOut_pos.le, φ.rIn_pos.le]
     linarith
-  have hωpos : 0 < μ.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hωpos : 0 < μ.real (ball (0 : E) 1) := Metric.measureReal_ball_pos μ 0 one_pos
   have hK2 : 0 < 2 ^ (finrank ℝ E + 1) * μ.real (ball (0 : E) 1) ^ (-p.toReal⁻¹) *
       φ.rOut ^ (1 - (finrank ℝ E : ℝ) / p.toReal) :=
     mul_pos (mul_pos (by positivity) (Real.rpow_pos_of_pos hωpos _))

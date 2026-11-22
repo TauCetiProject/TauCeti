@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Measure.RegularityCompacts
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Convolution oscillation bounds on balls
@@ -56,6 +57,13 @@ variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
+omit [BorelSpace E] [ProperSpace E] [μ.IsAddHaarMeasure] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F] in
+private lemma radius_pos_of_integral_eq_one {ρ : E → ℝ} {r : ℝ} (hρ1 : ∫ y, ρ y ∂μ = 1)
+    (hρs : Function.support ρ ⊆ ball 0 r) : 0 < r :=
+  let ⟨y, hy⟩ := exists_ne_zero_of_integral_ne_zero (by rw [hρ1]; exact one_ne_zero)
+  Metric.nonempty_ball.1 ⟨y, hρs hy⟩
+
 /-- **Distance from a mollification to the ball average.** Let `ρ ≥ 0` have integral `1`, support
 in `ball 0 r`, and upper bound `C / μ.real (ball 0 r)`. For any `f` integrable on `ball x r`,
 `‖(ρ ⋆ f) x - ⨍_{B(x, r)} f‖ₑ` is at most `C` times the mean oscillation of `f` on `ball x r`. -/
@@ -64,11 +72,9 @@ theorem enorm_convolution_sub_setAverage_ball_le {ρ : E → ℝ} {f : E → F} 
     (hρM : ∀ y, ρ y ≤ C / μ.real (ball 0 r)) (hf : IntegrableOn f (ball x r) μ) :
     ‖(ρ ⋆[lsmul ℝ ℝ, μ] f) x - ⨍ z in ball x r, f z ∂μ‖ₑ ≤
       ENNReal.ofReal C * ⨍⁻ z in ball x r, ‖f z - ⨍ w in ball x r, f w ∂μ‖ₑ ∂μ := by
-  obtain ⟨y, hy⟩ := exists_ne_zero_of_integral_ne_zero (by rw [hρ1]; exact one_ne_zero)
-  have hr : 0 < r := Metric.nonempty_ball.1 ⟨y, hρs hy⟩
+  have hr : 0 < r := radius_pos_of_integral_eq_one hρ1 hρs
   have hBtop : μ (ball (0 : E) r) ≠ ∞ := measure_ball_lt_top.ne
-  have hBreal_pos : 0 < μ.real (ball (0 : E) r) :=
-    ENNReal.toReal_pos (measure_ball_pos μ 0 hr).ne' hBtop
+  have hBreal_pos : 0 < μ.real (ball (0 : E) r) := Metric.measureReal_ball_pos μ 0 hr
   set m : F := ⨍ z in ball x r, f z ∂μ
   have hρi : Integrable ρ μ := Integrable.of_integral_ne_zero (by rw [hρ1]; exact one_ne_zero)
   have hfi : Integrable ((ball x r).indicator f) μ := hf.integrable_indicator measurableSet_ball
@@ -95,10 +101,11 @@ theorem enorm_convolution_sub_setAverage_ball_le {ρ : E → ℝ} {f : E → F} 
     _ = ENNReal.ofReal (C / μ.real (ball 0 r)) * ∫⁻ z in ball x r, ‖f z - m‖ₑ ∂μ := by
         rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_indicator measurableSet_ball]
     _ = ENNReal.ofReal C * ⨍⁻ z in ball x r, ‖f z - m‖ₑ ∂μ := by
-        rw [ENNReal.ofReal_div_of_pos hBreal_pos, measureReal_def,
-          ENNReal.ofReal_toReal hBtop, ← Measure.addHaar_ball_center μ x r,
-          setLAverage_eq, div_eq_mul_inv, div_eq_mul_inv]
-        ring
+        have hcoeff : ENNReal.ofReal (C / μ.real (ball 0 r)) = ENNReal.ofReal C / μ (ball x r) := by
+          rw [ENNReal.ofReal_div_of_pos hBreal_pos, ofReal_measureReal hBtop,
+            ← Measure.addHaar_ball_center]
+        rw [hcoeff, setLAverage_eq, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul,
+          mul_assoc, mul_left_comm]
 
 /-- **Mean deviation from a mollified value.** Under the hypotheses of
 `TauCeti.enorm_convolution_sub_setAverage_ball_le`, the average distance on `ball x r` between `f`
@@ -108,15 +115,13 @@ theorem setLAverage_enorm_sub_convolution_le {ρ : E → ℝ} {f : E → F} {x :
     (hρM : ∀ y, ρ y ≤ C / μ.real (ball 0 r)) (hf : IntegrableOn f (ball x r) μ) :
     ⨍⁻ z in ball x r, ‖f z - (ρ ⋆[lsmul ℝ ℝ, μ] f) x‖ₑ ∂μ ≤
       ENNReal.ofReal (1 + C) * ⨍⁻ z in ball x r, ‖f z - ⨍ w in ball x r, f w ∂μ‖ₑ ∂μ := by
-  obtain ⟨y, hy⟩ := exists_ne_zero_of_integral_ne_zero (by rw [hρ1]; exact one_ne_zero)
-  have hr : 0 < r := Metric.nonempty_ball.1 ⟨y, hρs hy⟩
+  have hr : 0 < r := radius_pos_of_integral_eq_one hρ1 hρs
   have hB0 : μ (ball x r) ≠ 0 := (measure_ball_pos μ x hr).ne'
   have hBtop : μ (ball x r) ≠ ∞ := measure_ball_lt_top.ne
   have hC0 : 0 ≤ C := by
     by_contra hC
     have hneg : C / μ.real (ball (0 : E) r) < 0 :=
-      div_neg_of_neg_of_pos (not_le.1 hC)
-        (ENNReal.toReal_pos (measure_ball_pos μ 0 hr).ne' measure_ball_lt_top.ne)
+      div_neg_of_neg_of_pos (not_le.1 hC) (Metric.measureReal_ball_pos μ 0 hr)
     have h0 := (hρ0 0).trans (hρM 0)
     linarith
   set m : F := ⨍ w in ball x r, f w ∂μ

@@ -72,6 +72,17 @@ half-line. -/
 theorem normed_convolution_abs_eq_of_le_abs {φ : ContDiffBump (0 : ℝ)} {x : ℝ}
     (hx : φ.rOut ≤ |x|) :
     (φ.normed volume ⋆[lsmul ℝ ℝ, volume] (abs : ℝ → ℝ)) x = |x| := by
+  wlog hx0 : 0 ≤ x generalizing x
+  · have hneg := integral_neg_eq_self (fun y : ℝ => φ.normed volume y * |x - y|) volume
+    have hcon : (φ.normed volume ⋆[lsmul ℝ ℝ, volume] (abs : ℝ → ℝ)) x =
+        (φ.normed volume ⋆[lsmul ℝ ℝ, volume] (abs : ℝ → ℝ)) (-x) := by
+      simp only [convolution_def, lsmul_apply, smul_eq_mul]
+      rw [← hneg]
+      refine integral_congr_ae (.of_forall fun y => ?_)
+      dsimp only
+      rw [φ.normed_neg, show x - -y = -(-x - y) by ring, abs_neg]
+    rw [hcon, ← abs_neg]
+    exact this (by simpa using hx) (by linarith)
   have hodd : ∫ y : ℝ, φ.normed volume y * y ∂volume = 0 := by
     have hneg := integral_neg_eq_self (fun y : ℝ => φ.normed volume y * y) (volume : Measure ℝ)
     simp only [φ.normed_neg, mul_neg, integral_neg] at hneg
@@ -81,30 +92,17 @@ theorem normed_convolution_abs_eq_of_le_abs {φ : ContDiffBump (0 : ℝ)} {x : �
       φ.hasCompactSupport_normed.mul_right
   have hint_const : Integrable (fun y : ℝ => φ.normed volume y * x) volume :=
     φ.integrable_normed.mul_const x
-  rcases le_or_gt 0 x with hx0 | hx0
-  · rw [abs_of_nonneg hx0] at hx ⊢
-    have hcongr : ∀ y : ℝ, φ.normed volume y * |x - y| =
-        φ.normed volume y * x - φ.normed volume y * y := fun y => by
-      by_cases hy : y ∈ ball (0 : ℝ) φ.rOut
-      · rw [mem_ball_zero_iff, Real.norm_eq_abs] at hy
-        rw [abs_of_nonneg (by linarith [(abs_le.1 hy.le).2]), mul_sub]
-      · rw [← φ.support_normed_eq (μ := volume), Function.notMem_support] at hy
-        simp [hy]
-    simp only [convolution_def, lsmul_apply, smul_eq_mul, hcongr]
-    rw [integral_sub hint_const hint_id, integral_mul_const, φ.integral_normed, one_mul, hodd,
-      sub_zero]
-  · rw [abs_of_neg hx0] at hx ⊢
-    have hcongr : ∀ y : ℝ, φ.normed volume y * |x - y| =
-        φ.normed volume y * y - φ.normed volume y * x := fun y => by
-      by_cases hy : y ∈ ball (0 : ℝ) φ.rOut
-      · rw [mem_ball_zero_iff, Real.norm_eq_abs] at hy
-        rw [abs_of_nonpos (by linarith [(abs_le.1 hy.le).1])]
-        ring
-      · rw [← φ.support_normed_eq (μ := volume), Function.notMem_support] at hy
-        simp [hy]
-    simp only [convolution_def, lsmul_apply, smul_eq_mul, hcongr]
-    rw [integral_sub hint_id hint_const, hodd, integral_mul_const, φ.integral_normed, one_mul,
-      zero_sub]
+  rw [abs_of_nonneg hx0] at hx ⊢
+  have hcongr : ∀ y : ℝ, φ.normed volume y * |x - y| =
+      φ.normed volume y * x - φ.normed volume y * y := fun y => by
+    by_cases hy : y ∈ ball (0 : ℝ) φ.rOut
+    · rw [mem_ball_zero_iff, Real.norm_eq_abs] at hy
+      rw [abs_of_nonneg (by linarith [(abs_le.1 hy.le).2]), mul_sub]
+    · rw [← φ.support_normed_eq (μ := volume), Function.notMem_support] at hy
+      simp [hy]
+  simp only [convolution_def, lsmul_apply, smul_eq_mul, hcongr]
+  rw [integral_sub hint_const hint_id, integral_mul_const, φ.integral_normed, one_mul, hodd,
+    sub_zero]
 
 /-- The derivative of `φ.normed volume ⋆ |·|` is `φ.normed volume ⋆ sign`. -/
 theorem _root_.ContDiffBump.fderiv_normed_convolution_abs_apply (φ : ContDiffBump (0 : ℝ))

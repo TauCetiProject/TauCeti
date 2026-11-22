@@ -46,8 +46,8 @@ exact form of the bounded-overlap count.
   inequalities, whose right-hand side is a power of a mean rather than a mean.
 * `TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`: the same for local estimates by two
   functions on concentric balls of radii `r` and `2 r`, with the explicit constant `2 ^ (d + 1)`.
-* `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure`,
-  `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_zero`, and
+* `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_nhds_zero_of_tendsto_measure`,
+  `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_nhds_zero`, and
   `TauCeti.tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball`: for `0 < p < ∞` and
   `eLpNorm f p μ ≠ ∞`, the supremum over all centres `x` of `‖f‖_{Lᵖ(B(x, r))}` (and any quantity
   eventually bounded by a finite multiple of it) tends to `0` as the ball measure (or radius, in a
@@ -150,7 +150,7 @@ omit [ProperSpace E] in
 /-- **Uniform vanishing of `Lᵖ` seminorms on shrinking balls.** For `0 < p < ∞` and `f` with finite
 `Lᵖ` seminorm, if the Haar measure of the centred balls `B(0, r i)` tends to `0`, then
 `sup_x ‖f‖_{Lᵖ(B(x, r i))} → 0` uniformly in the centre `x`. -/
-theorem tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure {ι : Type*} {l : Filter ι}
+theorem tendsto_iSup_eLpNorm_restrict_ball_nhds_zero_of_tendsto_measure {ι : Type*} {l : Filter ι}
     {r : ι → ℝ} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : E → F} (hf : eLpNorm f p μ ≠ ∞)
     (hr : Tendsto (fun i => μ (ball (0 : E) (r i))) l (𝓝 0)) :
     Tendsto (fun i => ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i)))) l (𝓝 0) := by
@@ -313,11 +313,11 @@ omit [ProperSpace E] in
 /-- **Uniform vanishing of `Lᵖ` seminorms on shrinking balls in positive dimension.** In a
 nontrivial finite-dimensional real normed space, for `0 < p < ∞` and `f` with finite `Lᵖ` seminorm,
 `sup_x ‖f‖_{Lᵖ(B(x, r i))} → 0` whenever `r i → 0`. -/
-theorem tendsto_iSup_eLpNorm_restrict_ball_zero [Nontrivial E] {ι : Type*} {l : Filter ι}
+theorem tendsto_iSup_eLpNorm_restrict_ball_nhds_zero [Nontrivial E] {ι : Type*} {l : Filter ι}
     {r : ι → ℝ} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : E → F} (hf : eLpNorm f p μ ≠ ∞)
     (hr : Tendsto r l (𝓝 0)) :
     Tendsto (fun i => ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i)))) l (𝓝 0) := by
-  refine tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure hp0 hp hf ?_
+  refine tendsto_iSup_eLpNorm_restrict_ball_nhds_zero_of_tendsto_measure hp0 hp hf ?_
   have hpos : Tendsto (fun t => μ (ball (0 : E) t)) (𝓝[>] 0) (𝓝 0) := by
     simpa using tendsto_measure_ball_nhdsGT_zero (μ := μ) (z := (0 : E))
       ⟨1, one_pos, measure_ball_lt_top.ne⟩
@@ -337,7 +337,7 @@ theorem tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball [Nontrivial
     (hC : C ≠ ∞) :
     Tendsto a l (𝓝 0) := by
   have hrhs := ENNReal.Tendsto.const_mul
-    (tendsto_iSup_eLpNorm_restrict_ball_zero hp0 hp hf hr) (Or.inr hC)
+    (tendsto_iSup_eLpNorm_restrict_ball_nhds_zero hp0 hp hf hr) (Or.inr hC)
   rw [mul_zero] at hrhs
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hrhs
     (.of_forall fun _ => zero_le) ha

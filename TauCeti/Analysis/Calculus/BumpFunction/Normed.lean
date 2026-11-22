@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.MeasureTheory.Measure.Comap
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Integrals against normalized bumps
@@ -26,6 +27,8 @@ it may be taken over that compact ball, with the pullback of `μ`, which is a fi
   radius `f.rOut` are integrals over the whole space.
 * `ContDiffBump.integral_closedBall_normed_smul_const`: over that closed ball, the normalized bump
   averages a constant to itself.
+* `ContDiffBump.normed_le_div_measureReal_ball`: pointwise upper bound on a normalized bump in
+  terms of the open-ball measure.
 -/
 
 public section
@@ -73,5 +76,19 @@ theorem integrable_closedBall_normed_smul_const (z : G) :
 theorem integral_closedBall_normed_smul_const [CompleteSpace G] (z : G) :
     ∫ x : closedBall c f.rOut, f.normed μ x • z ∂(μ.comap (↑)) = z := by
   rw [integral_smul_const, f.integral_closedBall_normed, one_smul]
+
+section AddHaar
+
+omit [HasContDiffBump E] [NormedAddCommGroup G] [NormedSpace ℝ G] [IsLocallyFiniteMeasure μ]
+  [μ.IsOpenPosMeasure]
+
+/-- Pointwise upper bound on a normalized bump in terms of the open-ball measure. -/
+theorem normed_le_div_measureReal_ball [HasContDiffBump E] [μ.IsAddHaarMeasure]
+    (K : ℝ) (h : f.rOut ≤ K * f.rIn) (x : E) :
+    f.normed μ x ≤ K ^ Module.finrank ℝ E / μ.real (ball c f.rOut) := by
+  rw [← measureReal_congr (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero c _ f.rOut_pos.ne')]
+  exact f.normed_le_div_measure_closedBall_rOut μ K h x
+
+end AddHaar
 
 end ContDiffBump

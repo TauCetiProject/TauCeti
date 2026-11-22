@@ -21,6 +21,7 @@ import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The Poincaré–Wirtinger inequality for weakly differentiable Banach-valued functions
@@ -269,8 +270,7 @@ theorem HasWeakFDerivOn.eLpNorm_sub_setAverage_le_of_convex (hu : HasWeakFDerivO
     have hSne : S.Nonempty := nonempty_of_measure_ne_zero hS0
     obtain ⟨x₀, hx₀S⟩ := hSne
     have hdiam_pos : 0 < diam (Ω : Set E) := Ω.isOpen.diam_pos hΩb (hS hx₀S)
-    have hball_pos : 0 < μ.real (ball (0 : E) 1) :=
-      ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+    have hball_pos : 0 < μ.real (ball (0 : E) 1) := Metric.measureReal_ball_pos μ 0 one_pos
     have hS_pos : 0 < μ.real S := ENNReal.toReal_pos hS0 hSfin
     have hC_pos : 0 < μ.real (ball (0 : E) 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S :=
       div_pos (mul_pos hball_pos (pow_pos hdiam_pos _)) hS_pos
@@ -401,23 +401,20 @@ theorem HasWeakFDerivOn.setLAverage_enorm_sub_setAverage_ball_le_mul_rpow
         eLpNorm Du p (μ.restrict (ball x r)) := by
   refine (hu.setLAverage_enorm_sub_setAverage_ball_le_mul_measure_rpow hball hp1).trans_eq ?_
   congr 1
-  have hBpos : 0 < μ.real (ball x r) :=
-    ENNReal.toReal_pos (measure_ball_pos μ x hr).ne' measure_ball_lt_top.ne
-  rw [← ENNReal.ofReal_toReal (measure_ball_lt_top (μ := μ) (x := x) (r := r)).ne,
-    ← measureReal_def, ENNReal.ofReal_rpow_of_pos hBpos, ← ENNReal.ofReal_mul (by positivity)]
+  have hBpos : 0 < μ.real (ball x r) := Metric.measureReal_ball_pos μ x hr
+  rw [← ofReal_measureReal measure_ball_lt_top.ne, ENNReal.ofReal_rpow_of_pos hBpos,
+    ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   rw [μ.addHaar_real_ball_rpow x hr (-p.toReal⁻¹)]
-  have hexp : r * r ^ ((finrank ℝ E : ℝ) * -p.toReal⁻¹) =
-      r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) := by
-    conv_lhs => arg 1; rw [← Real.rpow_one r]
-    rw [← Real.rpow_add hr]
-    congr 1
-    ring
+  have hmul_rpow (a : ℝ) : r * r ^ a = r ^ (1 + a) := by
+    rw [Real.rpow_add hr, Real.rpow_one]
   calc 2 ^ (finrank ℝ E + 1) * r *
         (r ^ ((finrank ℝ E : ℝ) * -p.toReal⁻¹) * μ.real (ball 0 1) ^ (-p.toReal⁻¹))
       = 2 ^ (finrank ℝ E + 1) * μ.real (ball 0 1) ^ (-p.toReal⁻¹) *
           (r * r ^ ((finrank ℝ E : ℝ) * -p.toReal⁻¹)) := by ring
-    _ = _ := by rw [hexp]
+    _ = 2 ^ (finrank ℝ E + 1) * μ.real (ball 0 1) ^ (-p.toReal⁻¹) *
+          r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) := by
+        rw [hmul_rpow]; congr 2; ring
 
 /-- **Scale-invariant mean oscillation bound at the borderline exponent `p = n`.** In positive
 dimension `n = finrank ℝ E ≥ 1`, for every ball `B(x, r) ⊆ Ω`,
