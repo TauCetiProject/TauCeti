@@ -419,12 +419,9 @@ theorem IsItoIntegral.tendsto_measure_exists_le_norm_simpleGains_sub_lt
   obtain ⟨S, hSc, hST, hS⟩ := TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ) T
   have hW_meas : ∀ s, AEStronglyMeasurable (W s) P :=
     fun s ↦ ((hW.martingale.stronglyAdapted s).mono (ℱ.le s)).aestronglyMeasurable
-  have hG₂_meas (m : ℕ) (s : ℝ≥0) : AEStronglyMeasurable (G₂ m s) P := by
-    dsimp only [G₂]
-    rw [funext (Finance.simpleGains_def (τ₂ m) (n₂ m) (a₂ m) W s)]
-    exact Finset.aestronglyMeasurable_fun_sum _ fun j hj ↦
-      ((ha₂ m j (Finset.mem_range.1 hj)).mono (ℱ.le _)).aestronglyMeasurable.mul
-        ((hW_meas _).sub (hW_meas _))
+  have hG₂_meas (m : ℕ) (s : ℝ≥0) : AEStronglyMeasurable (G₂ m s) P :=
+    Finance.aestronglyMeasurable_simpleGains
+      (fun j hj ↦ ((ha₂ m j hj).mono (ℱ.le _)).aestronglyMeasurable) fun _ _ ↦ hW_meas _
   have hS_lim : ∀ᵐ ω ∂P, ∀ s ∈ S, Tendsto (fun m ↦ G₂ (k m) s ω) atTop (𝓝 (I s ω)) := by
     rw [ae_ball_iff hSc]
     intro s hs

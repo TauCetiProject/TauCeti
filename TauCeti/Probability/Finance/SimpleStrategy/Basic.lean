@@ -345,6 +345,18 @@ theorem stronglyMeasurable_ite_le_min (ha : ∀ j < n, StronglyMeasurable[ℱ (�
     simpa only [hjt, ↓reduceIte] using ha j hj
   · simpa only [hjt, ↓reduceIte] using stronglyMeasurable_zero
 
+/-- The gains of a simple strategy at time `t` are almost everywhere strongly measurable when each
+position and each clipped price marginal `X (min (τ j) t)` are almost everywhere strongly
+measurable. -/
+theorem aestronglyMeasurable_simpleGains {Q : Measure Ω}
+    (ha : ∀ j < n, AEStronglyMeasurable (a j) Q)
+    (hX : ∀ j ≤ n, AEStronglyMeasurable (X (min (τ j) t)) Q) :
+    AEStronglyMeasurable (simpleGains τ n a X t) Q := by
+  rw [funext (simpleGains_def τ n a X t)]
+  exact Finset.aestronglyMeasurable_fun_sum _ fun j hj ↦
+    have hj' := mem_range.1 hj
+    (ha j hj').mul ((hX (j + 1) hj').sub (hX j hj'.le))
+
 /-- The gains of a simple strategy at a trading date are integrable when each of its trades has
 integrable gains. -/
 theorem integrable_simpleGains {m : ℕ} {Q : Measure Ω} (hτ : MonotoneOn τ (Set.Iic n))

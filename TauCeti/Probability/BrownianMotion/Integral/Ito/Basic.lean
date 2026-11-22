@@ -209,10 +209,8 @@ is almost-everywhere strongly measurable at each horizon, without assuming adapt
 theorem aestronglyMeasurable (hW : ∀ s, AEStronglyMeasurable (W s) P)
     (hI : IsItoIntegral ℱ P W H I) (t : ℝ≥0) : AEStronglyMeasurable (I t) P := by
   obtain ⟨n, g, a, _, ha, _, hG⟩ := hI.exists_approx t
-  refine hG.aestronglyMeasurable fun m ↦ ?_
-  rw [funext (Finance.simpleGains_def (g m) (n m) (a m) W t)]
-  exact Finset.aestronglyMeasurable_fun_sum _ fun j hj ↦
-    ((ha m j (mem_range.1 hj)).mono (ℱ.le _)).aestronglyMeasurable.mul ((hW _).sub (hW _))
+  exact hG.aestronglyMeasurable fun m ↦ Finance.aestronglyMeasurable_simpleGains
+    (fun j hj ↦ ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable) fun _ _ ↦ hW _
 
 /-- The zero process is an Itô integral of the zero integrand. -/
 @[simp] theorem zero : IsItoIntegral ℱ P W 0 0 :=

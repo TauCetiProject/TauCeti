@@ -148,7 +148,7 @@ theorem predictableMeasure_singleton_zero_prod (ℱ : Filtration ℝ≥0 m) (P :
   have hzero : MeasurableSet[ℱ.predictable] ({0} ×ˢ A) := by
     simpa only [NNReal.bot_eq_zero] using measurableSet_predictable_singleton_bot_prod hA
   rw [predictableMeasure_apply _ _ _ hzero, Measure.prod_prod,
-    timeMeasure_singleton_zero, zero_mul]
+    measure_singleton, zero_mul]
 
 /-- Restricting the predictable measure to `(0,S]` clips its horizon to `min S T`. -/
 @[simp]

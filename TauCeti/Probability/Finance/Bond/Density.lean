@@ -70,7 +70,7 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral_bo
           ‖simpleHolding (τ m) (n m) (a m) t ω - b t ω‖ₑ
             ∂timeMeasure T) atTop (𝓝 0) := by
   exact ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_one_and_ae_tendsto_lintegral
-    (timeMeasure T) (timeMeasure_singleton_zero T) P
+    (timeMeasure T) (measure_singleton 0) P
     ((integrable_mul_bondPrice_timeMeasure hr β₀).comp_fst P) hb hb₁
 
 end TauCeti.Finance

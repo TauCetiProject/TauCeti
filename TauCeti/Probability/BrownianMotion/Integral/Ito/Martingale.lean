@@ -125,7 +125,7 @@ theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
 `E[(I_t - I_s)²]` equals the expected square energy of `H` over `(s, t] × Ω`. -/
 theorem integral_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t)
-    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
+    (hH : MemLp (Function.uncurry H) 2 (((timeMeasure t).prod P).restrict (Ioc s t ×ˢ Set.univ))) :
     ∫ ω, (I t ω - I s ω) ^ 2 ∂P =
       ∫ p in Ioc s t ×ˢ Set.univ, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
   have hcut : IsItoIntegral ℱ P W (fun u ω ↦ if s < u then H u ω else 0)
@@ -133,10 +133,13 @@ theorem integral_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
     simpa only [one_mul] using hI.ite_lt_mul hW s (ξ := fun _ ↦ 1) stronglyMeasurable_const
   have hH_mem : MemLp (Function.uncurry (fun u ω ↦ if s < u then H u ω else 0)) 2
       ((timeMeasure t).prod P) := by
-    refine hH.mono (hcut.isStronglyPredictable.mono ℱ.predictable_le_prod).aestronglyMeasurable
-      (Eventually.of_forall fun p ↦ ?_)
-    dsimp only [Function.uncurry]
-    split_ifs <;> simp
+    refine ((memLp_indicator_iff_restrict
+      (measurableSet_Ioc.prod MeasurableSet.univ).nullMeasurableSet).2 hH).ae_eq ?_
+    filter_upwards [Measure.quasiMeasurePreserving_fst.tendsto_ae (ae_mem_Ioc_timeMeasure t)]
+      with p hp
+    by_cases hs : s < p.1
+    · simp [Function.uncurry, hs, hp.2]
+    · simp [Function.uncurry, hs]
   have hsq := hcut.integral_sq hW hH_mem
   simp only [min_eq_left hst] at hsq
   rw [hsq, ← integral_indicator (measurableSet_Ioc.prod MeasurableSet.univ)]
@@ -169,8 +172,10 @@ theorem continuous_toLp (hW : IsFilteredPreBrownianReal ℱ W P)
       ∫ p, (Ioc (min (u n).val t.val) (max (u n).val t.val) ×ˢ Set.univ).indicator
         (fun p ↦ H p.1 p.2 ^ 2) p ∂(timeMeasure T).prod P := by
     have hmax_le : max (u n).val t.val ≤ T := max_le (u n).property t.property
-    have hH_max : MemLp (Function.uncurry H) 2 ((timeMeasure (max (u n).val t.val)).prod P) :=
-      hH.mono_measure (Measure.prod_mono (timeMeasure_mono hmax_le) le_rfl)
+    have hH_max : MemLp (Function.uncurry H) 2
+        (((timeMeasure (max (u n).val t.val)).prod P).restrict
+          (Ioc (min (u n).val t.val) (max (u n).val t.val) ×ˢ Set.univ)) :=
+      (hH.mono_measure (Measure.prod_mono (timeMeasure_mono hmax_le) le_rfl)).restrict _
     have hinc := hI.integral_sub_sq_of_memLp hW (min_le_max : min (u n).val t.val ≤ _) hH_max
     have heq_lhs : ∫ ω, (I (u n) ω - I t ω) ^ 2 ∂P =
         ∫ ω, (I (max (u n).val t.val) ω - I (min (u n).val t.val) ω) ^ 2 ∂P := by
