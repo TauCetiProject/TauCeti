@@ -12,7 +12,6 @@ import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Analysis.Normed.Module.HahnBanach
-import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.ConvergenceRadius
 
 /-!
@@ -24,7 +23,9 @@ normed space `E`, with values in a complex normed space `V`, and suppose `‖f�
 Restricting along the complex line `ζ ↦ x + ζ • y` and pairing with a norming dual functional
 reduces the homogeneous term `p n (fun _ ↦ y)` to a one-variable Cauchy coefficient on the unit
 circle, giving **Cauchy's inequality** `‖p n (fun _ ↦ y)‖ ≤ M` for every `y` in the open ball of
-the same radius about `0`, without requiring `V` to be complete.
+the same radius about `0`, and by continuity of `p n` also on the closed ball `‖v‖ ≤ R` (and
+`‖y‖ₑ ≤ r`), without requiring `V` to be complete. By homogeneity, this gives the scaling form
+`‖p n (fun _ ↦ v)‖ * R ^ n ≤ M * ‖v‖ ^ n` for every `v : E`.
 
 Combining this bound on the terms of degree `< T` with Mathlib's higher-order Schwarz lemma
 (`Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO`) applied to the scalarized remainder
@@ -40,8 +41,10 @@ allowed.
 ## Main results
 
 * `HasFPowerSeriesOnBall.norm_apply_le_of_forall_mem_eball` and
-  `HasFPowerSeriesOnBall.norm_apply_le`: Cauchy's inequality `‖p n (fun _ ↦ y)‖ ≤ M` for every
-  homogeneous term on `Metric.eball` and `Metric.ball`.
+  `HasFPowerSeriesOnBall.norm_apply_le`: Cauchy's inequality `‖p n (fun _ ↦ v)‖ ≤ M` for every
+  homogeneous term on `‖y‖ₑ ≤ r` and on the closed ball `‖v‖ ≤ R`.
+* `HasFPowerSeriesOnBall.norm_apply_mul_pow_le`: the homogeneous scaling form
+  `‖p n (fun _ ↦ v)‖ * R ^ n ≤ M * ‖v‖ ^ n` on `Metric.ball x R`.
 * `HasFPowerSeriesOnBall.norm_add_sub_partialSum_le` and
   `HasFPowerSeriesOnBall.norm_sub_partialSum_le`: the Taylor remainder bound
   `(1 + T) * M * (‖z‖ / R) ^ T` about an arbitrary centre `x` and about `0`.
@@ -64,39 +67,39 @@ namespace HasFPowerSeriesOnBall
 variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup V] [NormedSpace ℂ V]
 
-/-- **Cauchy's inequality for homogeneous terms** on an `eball`: if `f` has the power series `p`
-on `Metric.eball x r` and `‖f‖ ≤ M` there, then `‖p n (fun _ ↦ y)‖ ≤ M` for every
-`y ∈ Metric.eball 0 r` and every `n : ℕ`. -/
-theorem norm_apply_le_of_forall_mem_eball {f : E → V} {p : FormalMultilinearSeries ℂ E V}
+/-- Strict-eball case of Cauchy's inequality for homogeneous terms. -/
+private theorem norm_apply_le_of_forall_mem_eball_lt {f : E → V} {p : FormalMultilinearSeries ℂ E V}
     {x : E} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f p x r)
     {M : ℝ} (hM : ∀ w ∈ Metric.eball x r, ‖f w‖ ≤ M) (n : ℕ) {y : E}
     (hy : y ∈ Metric.eball (0 : E) r) : ‖p n (fun _ ↦ y)‖ ≤ M := by
   obtain ⟨ℓ, hℓ1, hℓv⟩ := exists_dual_vector'' ℂ (p n (fun _ ↦ y))
+  let u : ℂ →L[ℂ] E := ContinuousLinearMap.toSpanSingleton ℂ y
   have hyr : ‖y‖ₑ < r := by simpa [mem_eball_zero_iff] using hy
-  have h1r : (1 : ℝ≥0∞) < r / ‖y‖ₑ := by
-    rcases eq_or_ne ‖y‖ₑ 0 with hy0 | hy0
-    · simp [hy0, ENNReal.div_zero hf.r_pos.ne']
-    · exact (ENNReal.lt_div_iff_mul_lt (Or.inl hy0) (Or.inl eNorm_ne_top)).2 (by simpa)
+  have hu : ‖u‖ₑ = ‖y‖ₑ := by simp [u, eNorm_eq_nnNorm]
+  have h1r : (1 : ℝ≥0∞) < r / ‖u‖ₑ := by
+    rcases eq_or_ne ‖u‖ₑ 0 with hu0 | hu0
+    · simp [hu0, ENNReal.div_zero hf.r_pos.ne']
+    · exact (ENNReal.lt_div_iff_mul_lt (Or.inl hu0) (Or.inl eNorm_ne_top)).2 (by simpa [hu])
+  have hf₀ : HasFPowerSeriesOnBall (fun z ↦ (ℓ ∘ f) (x + z))
+      (ℓ.compFormalMultilinearSeries p) 0 r := by
+    simpa [add_comm] using (ℓ.comp_hasFPowerSeriesOnBall hf).comp_sub (-x)
   let g : ℂ → ℂ := fun ζ ↦ (ℓ ∘ f) (x + ζ • y)
   have hg : HasFPowerSeriesOnBall g
-      ((ℓ.compFormalMultilinearSeries p).compContinuousLinearMap
-        (ContinuousLinearMap.toSpanSingleton ℂ y)) 0 (r / ‖y‖ₑ) :=
-    (ℓ.comp_hasFPowerSeriesOnBall hf).comp_add_smul y
-  have hsub : closedBall (0 : ℂ) (1 : ℝ≥0) ⊆ Metric.eball (0 : ℂ) (r / ‖y‖ₑ) := fun ζ hζ ↦ by
+      ((ℓ.compFormalMultilinearSeries p).compContinuousLinearMap u) 0 (r / ‖u‖ₑ) :=
+    ((map_zero u).symm ▸ hf₀).compContinuousLinearMap
+  have hsub : closedBall (0 : ℂ) (1 : ℝ≥0) ⊆ Metric.eball (0 : ℂ) (r / ‖u‖ₑ) := fun ζ hζ ↦ by
     rw [mem_eball_zero_iff, ← ofReal_norm]
     exact (ENNReal.ofReal_le_one.2 (by simpa using hζ)).trans_lt h1r
   have hd : DifferentiableOn ℂ g (closedBall (0 : ℂ) (1 : ℝ≥0)) :=
     (hg.analyticOnNhd.mono hsub).differentiableOn
-  have heq : (ℓ.compFormalMultilinearSeries p).compContinuousLinearMap
-      (ContinuousLinearMap.toSpanSingleton ℂ y) = cauchyPowerSeries g 0 (1 : ℝ≥0) :=
+  have heq : (ℓ.compFormalMultilinearSeries p).compContinuousLinearMap u =
+      cauchyPowerSeries g 0 (1 : ℝ≥0) :=
     hg.hasFPowerSeriesAt.eq_formalMultilinearSeries
       (hd.hasFPowerSeriesOnBall zero_lt_one).hasFPowerSeriesAt
   have happly : ‖p n (fun _ ↦ y)‖ = ‖cauchyPowerSeries g 0 (1 : ℝ≥0) n (fun _ ↦ 1)‖ := by
     have hval := congr_arg (fun q : FormalMultilinearSeries ℂ ℂ ℂ ↦ q n (fun _ ↦ 1)) heq
-    rw [FormalMultilinearSeries.compContinuousLinearMap_toSpanSingleton_apply_one,
-      ContinuousLinearMap.compFormalMultilinearSeries_apply', hℓv] at hval
-    have hnorm := congr_arg norm hval
-    simpa only [RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _)] using hnorm
+    simpa [-FormalMultilinearSeries.apply_eq_prod_smul_coeff, u, Function.comp_def, hℓv] using
+      congr_arg norm hval
   rw [happly, cauchyPowerSeries_apply]
   refine (circleIntegral.norm_two_pi_i_inv_smul_integral_le_of_norm_le_const
     (by positivity) (C := M) fun ζ hζ ↦ ?_).trans (by simp)
@@ -106,29 +109,36 @@ theorem norm_apply_le_of_forall_mem_eball {f : E → V} {p : FormalMultilinearSe
   simpa [g, norm_smul, hζ1] using
     (ℓ.le_opNorm _).trans ((mul_le_of_le_one_left (norm_nonneg _) hℓ1).trans (hM _ hmem))
 
+/-- **Cauchy's inequality for homogeneous terms** on an `eball`: if `f` has the power series `p`
+on `Metric.eball x r` and `‖f‖ ≤ M` there, then `‖p n (fun _ ↦ y)‖ ≤ M` for every `y : E` with
+`‖y‖ₑ ≤ r` and every `n : ℕ`. -/
+theorem norm_apply_le_of_forall_mem_eball {f : E → V} {p : FormalMultilinearSeries ℂ E V}
+    {x : E} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f p x r)
+    {M : ℝ} (hM : ∀ w ∈ Metric.eball x r, ‖f w‖ ≤ M) (n : ℕ) {y : E}
+    (hy : ‖y‖ₑ ≤ r) : ‖p n (fun _ ↦ y)‖ ≤ M := by
+  rcases hy.lt_or_eq with hy_lt | hy_eq
+  · exact hf.norm_apply_le_of_forall_mem_eball_lt hM n (mem_eball_zero_iff.2 hy_lt)
+  · have hy0 : 0 < ‖y‖ := by
+      rw [← ofReal_norm] at hy_eq
+      exact ENNReal.ofReal_pos.1 (hy_eq ▸ hf.r_pos)
+    have hmaps : Set.MapsTo (fun z : E ↦ ‖p n (fun _ ↦ z)‖) (Metric.ball (0 : E) ‖y‖) (Set.Iic M) :=
+      fun z hz ↦ hf.norm_apply_le_of_forall_mem_eball_lt hM n (by
+        rw [mem_eball_zero_iff, ← ofReal_norm, ← hy_eq, ← ofReal_norm]
+        exact ENNReal.ofReal_lt_ofReal_iff hy0 |>.2 (by simpa using hz))
+    have hcont : Continuous fun z : E ↦ ‖p n (fun _ ↦ z)‖ :=
+      ((p n).coe_continuous.comp (continuous_pi fun _ ↦ continuous_id)).norm
+    have hcl := hmaps.closure_left hcont isClosed_Iic
+    rw [closure_ball (0 : E) hy0.ne'] at hcl
+    exact hcl (by simp)
+
 /-- **Cauchy's inequality for homogeneous terms**: if `f` has the power series `p` on
-`Metric.ball x R` and `‖f‖ ≤ M` there, then `‖p n (fun _ ↦ y)‖ ≤ M` whenever `‖y‖ < R`. -/
+`Metric.ball x R` and `‖f‖ ≤ M` there, then `‖p n (fun _ ↦ v)‖ ≤ M` whenever `‖v‖ ≤ R`. -/
 theorem norm_apply_le {f : E → V} {p : FormalMultilinearSeries ℂ E V} {x : E} {R : ℝ≥0}
     (hf : HasFPowerSeriesOnBall f p x R) {M : ℝ} (hM : ∀ w ∈ Metric.ball x R, ‖f w‖ ≤ M)
-    (n : ℕ) {y : E} (hy : ‖y‖ < R) : ‖p n (fun _ ↦ y)‖ ≤ M := by
+    (n : ℕ) {v : E} (hv : ‖v‖ ≤ R) : ‖p n (fun _ ↦ v)‖ ≤ M := by
   rw [← Metric.eball_coe] at hM
   refine hf.norm_apply_le_of_forall_mem_eball hM n ?_
-  rwa [Metric.eball_coe, mem_ball_zero_iff]
-
-/-- **Cauchy's inequality on the closed ball of radius `R`.** If `f : E → V` has formal power
-series `p` on `Metric.ball x R` and `‖f w‖ ≤ M` there, then `‖p n (fun _ ↦ v)‖ ≤ M` whenever
-`‖v‖ ≤ R`. -/
-theorem norm_apply_le_of_norm_le {f : E → V} {p : FormalMultilinearSeries ℂ E V} {x : E}
-    {R : ℝ≥0} (hf : HasFPowerSeriesOnBall f p x R) {M : ℝ} (hM : ∀ w ∈ Metric.ball x R, ‖f w‖ ≤ M)
-    (n : ℕ) {v : E} (hv : ‖v‖ ≤ R) : ‖p n (fun _ ↦ v)‖ ≤ M := by
-  have hR : 0 < (R : ℝ) := mod_cast ENNReal.coe_pos.1 hf.r_pos
-  have hmaps : Set.MapsTo (fun y : E ↦ ‖p n (fun _ ↦ y)‖) (Metric.ball (0 : E) R) (Set.Iic M) :=
-    fun y hy ↦ hf.norm_apply_le hM n (by simpa using hy)
-  have hcont : Continuous fun y : E ↦ ‖p n (fun _ ↦ y)‖ :=
-    ((p n).coe_continuous.comp (continuous_pi fun _ ↦ continuous_id)).norm
-  have hcl := hmaps.closure_left hcont isClosed_Iic
-  rw [closure_ball (0 : E) hR.ne'] at hcl
-  exact hcl (by simpa using hv)
+  rwa [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe]
 
 /-- **Cauchy's inequality for homogeneous terms (homogeneous scaling form).** If `f : E → V` has
 formal power series `p` on `Metric.ball x R` and satisfies `‖f w‖ ≤ M` there, then
@@ -147,7 +157,7 @@ theorem norm_apply_mul_pow_le {f : E → V} {p : FormalMultilinearSeries ℂ E V
     have hc0 : 0 ≤ (R : ℝ) / ‖v‖ := div_nonneg hR.le hv0.le
     have hy_norm : ‖((R / ‖v‖ : ℝ) : ℂ) • v‖ = R := by
       rw [norm_smul, Complex.norm_real, Real.norm_of_nonneg hc0, div_mul_cancel₀ _ hv0.ne']
-    have hle := hf.norm_apply_le_of_norm_le hM n hy_norm.le
+    have hle := hf.norm_apply_le hM n hy_norm.le
     have hsmul : p n (fun _ ↦ ((R / ‖v‖ : ℝ) : ℂ) • v) =
         ((R / ‖v‖ : ℝ) : ℂ) ^ n • p n (fun _ ↦ v) := by
       simpa [div_pow] using (p n).map_smul_univ (fun _ ↦ ((R / ‖v‖ : ℝ) : ℂ)) (fun _ ↦ v)
@@ -189,7 +199,7 @@ theorem norm_add_sub_partialSum_le {f : E → V} {p : FormalMultilinearSeries �
       _ ≤ M + ∑ k ∈ Finset.range T, ‖pℓ k (fun _ ↦ w)‖ :=
           add_le_add (hMℓ _ (by simpa [dist_eq_norm] using hwR)) (norm_sum_le _ _)
       _ ≤ M + ∑ _k ∈ Finset.range T, M :=
-          add_le_add le_rfl (Finset.sum_le_sum fun k _ ↦ hfℓ.norm_apply_le hMℓ k hwR)
+          add_le_add le_rfl (Finset.sum_le_sum fun k _ ↦ hfℓ.norm_apply_le hMℓ k hwR.le)
       _ = (1 + T) * M := by simp [nsmul_eq_mul]; ring
   have hlittle : (fun w ↦ g w - g 0) =o[𝓝 (0 : E)] fun w ↦ ‖w - 0‖ ^ (T - 1) := by
     rw [hg0]

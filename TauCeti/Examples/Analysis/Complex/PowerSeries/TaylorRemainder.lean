@@ -16,7 +16,9 @@ import Mathlib.Tactic.FinCases
 
 Concrete checks of the constants and normalisations in
 `Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`,
-`HasFPowerSeriesOnBall.norm_sub_partialSum_le`, `HasFPowerSeriesOnBall.norm_mvCoeff_mul_pow_le`, and
+`TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt`,
+`HasFPowerSeriesOnBall.norm_sub_partialSum_le`, `HasFPowerSeriesOnBall.norm_mvCoeff_mul_pow_le`,
+`HasFPowerSeriesOnBall.norm_mvCoeff_mul_prod_pow_le`, and
 `HasFPowerSeriesOnBall.norm_le_add_sum_mvCoeff`:
 
 * For `g w = w ^ 2` on `Metric.ball (0 : ℂ) 2` (`M = 4`, `T = 2`), at `w = 1` both `‖g 1‖` and
@@ -25,8 +27,13 @@ Concrete checks of the constants and normalisations in
   remainders at orders `T = 0, 2, 3` have norms `1, 1, 0` while `(1 + T) * 4 * (1 / 2) ^ T`
   evaluates to `4, 3, 2`.
 * On `Fin 2 → ℂ`, the bilinear monomial `F z = z 0 * z 1`, represented by the unsymmetrised
-  series with single nonzero term `p 2 (u, v) = u 0 * v 1`, has `p.mvCoeff ![1, 1] = 1` and
-  satisfies `‖p.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for every `0 ≤ ρ ≤ 2` (attained at `ρ = 2`).
+  series with single nonzero term `p 2 (u, v) = u 0 * v 1`, has `p.mvCoeff ![1, 1] = 1`,
+  satisfies `‖p.mvCoeff ![1, 1]‖ * ρ ^ 2 ≤ 4` for every `0 ≤ ρ ≤ 2` (attained at `ρ = 2`), and
+  satisfies the unequal-polyradii bound at `ρ = ![1, 2]`.
+* Boundary counterexamples show that `‖z‖ < R` cannot be weakened to `‖z‖ ≤ R` in
+  `HasFPowerSeriesOnBall.norm_sub_partialSum_le` (for `f z = if ‖z‖ < 1 then 0 else 1`) and
+  `1 ≤ T` cannot be dropped at `T = 0` in
+  `TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt` (for `g w = if w = 0 then 0 else 1`).
 -/
 
 public section
