@@ -191,12 +191,14 @@ theorem exists_isOpen_openPartialHomeomorph_vortexModuli_eq (hk : 2 ≤ k)
             ⟨_, (realSobolevSliceEquation_realSubRef_congrOrder_eq_zero_iff hk x₀ y).2 ⟨hS, hy⟩⟩
           let q : vortexModuli f m hs :=
             ⟨Quotient.mk _ y, mk_mem_vortexModuli hy⟩
-          (q ∈ e.source ↔
-              p ∈ (coulombSliceChart hk (congrOrder (Nat.cast_succ k) x₀)
-                (coe_congrOrder _ x₀ ▸ hmem) (coe_congrOrder _ x₀ ▸ hsol)).source) ∧
-            e q = coulombSliceChart hk (congrOrder (Nat.cast_succ k) x₀)
-                (coe_congrOrder _ x₀ ▸ hmem) (coe_congrOrder _ x₀ ▸ hsol) p := by
+          let c := coulombSliceChart hk (congrOrder (Nat.cast_succ k) x₀)
+            (coe_congrOrder _ x₀ ▸ hmem) (coe_congrOrder _ x₀ ▸ hsol)
+          (q ∈ e.source ↔ p ∈ c.source) ∧ e q = c p := by
   have hk3 : 3 ≤ k + 1 := by omega
+  have hmem' : ∀ j : ℕ, ⇑(congrOrder (Nat.cast_succ k) x₀) ∈ framedFieldSpace f m j :=
+    coe_congrOrder _ x₀ ▸ hmem
+  have hsol' : ∀ z, equation (congrOrder (Nat.cast_succ k) x₀) z = 0 :=
+    coe_congrOrder _ x₀ ▸ hsol
   -- The slice theorem embeds the slice near `x₀` openly into the orbit space, so its vortices
   -- into the vortex moduli; their real coordinates embed them openly into the source of the
   -- Coulomb slice chart. The chart is the composite.
@@ -214,8 +216,8 @@ theorem exists_isOpen_openPartialHomeomorph_vortexModuli_eq (hk : 2 ≤ k)
   have : Nonempty {y : ↥(V ∩ {y | ∀ z, gaugeAdjoint x₀ (⇑y - ⇑x₀) z = 0}) |
       Quotient.mk _ (y : SobolevFieldSpace f m (k + 1 : ℕ)) ∈ vortexModuli f m hs} := hne
   refine ⟨V, hV, hx₀V, (hι.toOpenPartialHomeomorph _).symm.trans
-    ((hψ.toOpenPartialHomeomorph _).trans (coulombSliceChart hk _ (coe_congrOrder _ x₀ ▸ hmem)
-      (coe_congrOrder _ x₀ ▸ hsol))), fun q hq ↦ ?_, fun y hyV hS hy ↦ ?_⟩
+    ((hψ.toOpenPartialHomeomorph _).trans (coulombSliceChart hk _ hmem' hsol')),
+    fun q hq ↦ ?_, fun y hyV hS hy ↦ ?_⟩
   · obtain ⟨p, rfl⟩ : q ∈ Set.range ((vortexModuli f m hs).restrictPreimage ι) := by
       simpa using hq.1
     exact ⟨p.val.val, ⟨p.val.property.1, mem_coulombSlice.2 p.val.property.2⟩, rfl⟩
@@ -230,10 +232,10 @@ theorem exists_isOpen_openPartialHomeomorph_vortexModuli_eq (hk : 2 ≤ k)
         ⟨_, (realSobolevSliceEquation_realSubRef_congrOrder_eq_zero_iff hk x₀ y).2 ⟨hS, hy⟩⟩ :=
       Subtype.ext <| by rw [IsOpenEmbedding.toOpenPartialHomeomorph_apply]
     refine ⟨?_, ?_⟩
-    · rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.trans_source,
-        OpenPartialHomeomorph.symm_source, IsOpenEmbedding.toOpenPartialHomeomorph_target,
-        IsOpenEmbedding.toOpenPartialHomeomorph_source]
-      simp only [Set.mem_inter_iff, Set.mem_preimage, hp, hψp, Set.mem_univ, true_and, hq]
+    · simp only [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
+        IsOpenEmbedding.toOpenPartialHomeomorph_target,
+        IsOpenEmbedding.toOpenPartialHomeomorph_source, Set.mem_inter_iff, Set.mem_preimage, hp,
+        hψp, Set.mem_univ, true_and, hq]
     · rw [OpenPartialHomeomorph.trans_apply, OpenPartialHomeomorph.trans_apply, hp, hψp]
 
 /-- **The vortex moduli space is locally homeomorphic to `ℝ^(2m)`.** Let `x₀` be a continuous
@@ -250,12 +252,8 @@ theorem exists_openPartialHomeomorph_vortexModuli (hk : 2 ≤ k)
   obtain ⟨V, -, hx₀V, e, -, he⟩ :=
     exists_isOpen_openPartialHomeomorph_vortexModuli_eq (hs := hs) hk x₀ hmem hsol
   obtain ⟨hsrc, hval⟩ := he x₀ hx₀V (self_mem_coulombSlice x₀) hsol
-  have hmem' : ∀ j : ℕ, ⇑(congrOrder (Nat.cast_succ k) x₀) ∈ framedFieldSpace f m j :=
-    coe_congrOrder _ x₀ ▸ hmem
-  have hsol' : ∀ z, equation (congrOrder (Nat.cast_succ k) x₀) z = 0 :=
-    coe_congrOrder _ x₀ ▸ hsol
-  exact ⟨e, hsrc.2 (mem_coulombSliceChart_source hk _ hmem' hsol'),
-    hval.trans (coulombSliceChart_apply_self hk _ hmem' hsol')⟩
+  exact ⟨e, hsrc.2 (mem_coulombSliceChart_source hk _ _ _),
+    hval.trans (coulombSliceChart_apply_self hk _ _ _)⟩
 
 end SobolevFieldSpace
 
