@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Riemannian
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
 # The induced metric on an intrinsic normal bundle
@@ -16,6 +17,11 @@ pairs the unique orthogonal representatives of two normal classes. This metric i
 existing quotient topology and varies smoothly over the embedded submanifold. Consequently its
 fibre lengths can be used for smooth radial compression and for normal disc and sphere bundles,
 without choosing a global normal frame.
+
+Without an ambient metric, the normal bundle of a smooth embedding of a σ-compact manifold into a
+Hausdorff manifold still carries a smooth fibre metric
+(`SmoothEmbedding.nonempty_contMDiffRiemannianMetric_normalSpace`), by the existence of
+Riemannian metrics on smooth vector bundles.
 
 ## References
 
@@ -193,5 +199,39 @@ theorem isContMDiffRiemannianBundle_normalRiemannianMetric
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun _ => inferInstance
   rw [← f.toRiemannianMetric_normalContMDiffRiemannianMetric hn hm hdim]
   exact Bundle.instIsContMDiffRiemannianBundle (f.normalContMDiffRiemannianMetric hn hm hdim)
+
+end TauCeti.SmoothEmbedding
+
+/-! ### Existence of smooth normal metrics -/
+
+namespace TauCeti.SmoothEmbedding
+
+variable {E V P H G M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+  [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ V G}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
+
+/-- **Existence of smooth normal metrics.** The intrinsic normal bundle of a smooth embedding of a
+σ-compact manifold into a Hausdorff manifold carries a smooth fibre metric. No ambient metric is
+needed: this is the existence of Riemannian metrics on smooth vector bundles
+(`TauCeti.nonempty_contMDiffRiemannianMetric`). -/
+theorem nonempty_contMDiffRiemannianMetric_normalSpace [T2Space N] [SigmaCompactSpace M]
+    (f : SmoothEmbedding I J ∞ M N) (hn : (∞ : ℕ∞ω) ≠ 0)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) :
+    letI := f.normalSpaceFiberBundle hn hdim
+    letI := f.normalSpaceVectorBundle hn hdim
+    Nonempty (ContMDiffRiemannianMetric I ∞ P fun x ↦ f.NormalSpace x hn) := by
+  have : T2Space M := f.isEmbedding.t2Space
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
+  let := f.normalSpaceFiberBundle hn hdim
+  let := f.normalSpaceVectorBundle hn hdim
+  let := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
+  exact nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := P)
+    (E := fun x ↦ f.NormalSpace x hn)
 
 end TauCeti.SmoothEmbedding

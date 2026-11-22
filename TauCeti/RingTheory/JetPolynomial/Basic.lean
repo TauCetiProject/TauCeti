@@ -242,7 +242,7 @@ theorem apply_jetEval [Algebra R A] (d : ι → Derivation R A A)
     obtain ⟨a, I⟩ := v
     have hI : δ μ (multiIndexDeriv δ hδ I (f a)) =
         multiIndexDeriv δ hδ (I + Pi.single μ 1) (f a) := by
-      rw [add_comm I, multiIndexDeriv_single_add, mul_apply_eq_comp, Derivation.coeFn_coe]
+      rw [multiIndexDeriv_add_single', mul_apply_eq_comp, Derivation.coeFn_coe]
     simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add, jetEval_X, totalDeriv_X, hI, hp]
 
 end Eval

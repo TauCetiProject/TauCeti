@@ -164,13 +164,20 @@ theorem symmetricCongruenceLinearMap_one :
   refine LinearMap.ext fun A => Subtype.ext ?_
   simp
 
+/-- Congruence by the zero matrix is the zero linear map. -/
+@[simp]
+theorem symmetricCongruenceLinearMap_zero :
+    symmetricCongruenceLinearMap (0 : Matrix (Fin q) (Fin p) ℝ) = 0 := by
+  refine LinearMap.ext fun A ↦ Subtype.ext ?_
+  simp
+
 /-! ### The determinant of congruence -/
 
 /-- Counting how often each index occurs in an on-or-above-diagonal pair: the index `i` occurs
 `p - i` times as the first entry and `i + 1` times as the second, so `p + 1` times in all. -/
 private theorem prod_upperTriangle_mul (d : Fin p → ℝ) :
-    ∏ c : upperTriangle p, d c.1.1 * d c.1.2 = (∏ i, d i) ^ (p + 1) := by
-  have key : ∏ c : upperTriangle p, d c.1.1 * d c.1.2 =
+    ∏ c : upperTriangle p, d c.val.1 * d c.val.2 = (∏ i, d i) ^ (p + 1) := by
+  have key : ∏ c : upperTriangle p, d c.val.1 * d c.val.2 =
       ∏ i : Fin p, ∏ j ∈ Finset.Ici i, d i * d j := by
     rw [← Finset.prod_subtype (Finset.univ.filter fun ij : Fin p × Fin p => ij.1 ≤ ij.2)
       (by simp) fun ij => d ij.1 * d ij.2]
@@ -199,8 +206,8 @@ there, symmetrized off the diagonal. -/
 private theorem coe_symmetricBasis_eq_single_add (p : ℕ) (c : upperTriangle p) :
     ((symmetricBasis p c : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
         Matrix (Fin p) (Fin p) ℝ) =
-      Matrix.single c.1.1 c.1.2 1 +
-        (if c.1.1 = c.1.2 then 0 else Matrix.single c.1.2 c.1.1 1) := by
+      Matrix.single c.val.1 c.val.2 1 +
+        (if c.val.1 = c.val.2 then 0 else Matrix.single c.val.2 c.val.1 1) := by
   obtain ⟨⟨i, j⟩, hij⟩ := c
   by_cases hd : i = j
   · subst hd
@@ -220,11 +227,11 @@ private theorem toMatrix_symmetricCongruenceLinearMap (M : Matrix (Fin p) (Fin p
     (r c : upperTriangle p) :
     LinearMap.toMatrix (symmetricBasis p) (symmetricBasis p)
         (symmetricCongruenceLinearMap M) r c =
-      M r.1.1 c.1.1 * M r.1.2 c.1.2 +
-        (if c.1.1 = c.1.2 then 0 else M r.1.1 c.1.2 * M r.1.2 c.1.1) := by
+      M r.val.1 c.val.1 * M r.val.2 c.val.2 +
+        (if c.val.1 = c.val.2 then 0 else M r.val.1 c.val.2 * M r.val.2 c.val.1) := by
   rw [LinearMap.toMatrix_apply, symmetricBasis_repr, coe_symmetricCongruenceLinearMap_apply,
     coe_symmetricBasis_eq_single_add]
-  by_cases hd : c.1.1 = c.1.2
+  by_cases hd : c.val.1 = c.val.2
   · rw [ite_eq_left hd, ite_eq_left hd, add_zero, add_zero, mul_single_mul_transpose_apply]
   · rw [ite_eq_right hd, ite_eq_right hd, Matrix.mul_add, Matrix.add_mul, Matrix.add_apply,
       mul_single_mul_transpose_apply, mul_single_mul_transpose_apply]
@@ -233,16 +240,16 @@ private theorem toMatrix_symmetricCongruenceLinearMap (M : Matrix (Fin p) (Fin p
 monotone for the componentwise order on positions, which is what makes the coordinate matrix of
 a triangular congruence triangular. -/
 private theorem injective_upperRank (p : ℕ) :
-    Function.Injective fun c : upperTriangle p => p * c.1.1.1 + c.1.2.1 := by
+    Function.Injective fun c : upperTriangle p => p * c.val.1.val + c.val.2.val := by
   rintro ⟨⟨i, j⟩, hij⟩ ⟨⟨i', j'⟩, hij'⟩ heq
-  have heq' : p * i.1 + j.1 = p * i'.1 + j'.1 := heq
+  have heq' : p * i.val + j.val = p * i'.val + j'.val := heq
   have hj := j.isLt
   have hj' := j'.isLt
   have hp : 0 < p := lt_of_le_of_lt (Nat.zero_le _) hj
-  have hi : i.1 = i'.1 := by
+  have hi : i.val = i'.val := by
     have h := congrArg (· / p) heq'
     simpa [Nat.mul_add_div hp, Nat.div_eq_of_lt hj, Nat.div_eq_of_lt hj'] using h
-  have hj2 : j.1 = j'.1 := by
+  have hj2 : j.val = j'.val := by
     have h := congrArg (· % p) heq'
     simpa [Nat.mul_add_mod, Nat.mod_eq_of_lt hj, Nat.mod_eq_of_lt hj'] using h
   simp only [Subtype.mk.injEq, Prod.mk.injEq]
@@ -255,12 +262,12 @@ weakly below the input position `c` in both components. In the second case this 
 pairs are ordered, `r.1.1 ≤ r.1.2` and `c.1.1 ≤ c.1.2`. -/
 private theorem le_of_congruence_products_ne_zero {M : Matrix (Fin p) (Fin p) ℝ}
     (hle : ∀ i j : Fin p, M i j ≠ 0 → i ≤ j) {r c : upperTriangle p}
-    (h : M r.1.1 c.1.1 * M r.1.2 c.1.2 ≠ 0 ∨ M r.1.2 c.1.1 ≠ 0) :
-    r.1.1 ≤ c.1.1 ∧ r.1.2 ≤ c.1.2 := by
+    (h : M r.val.1 c.val.1 * M r.val.2 c.val.2 ≠ 0 ∨ M r.val.2 c.val.1 ≠ 0) :
+    r.val.1 ≤ c.val.1 ∧ r.val.2 ≤ c.val.2 := by
   rcases h with h | h
   · exact ⟨hle _ _ (left_ne_zero_of_mul h), hle _ _ (right_ne_zero_of_mul h)⟩
-  · have h2 : r.1.2 ≤ c.1.1 := hle _ _ h
-    exact ⟨r.2.trans h2, h2.trans c.2⟩
+  · have h2 : r.val.2 ≤ c.val.1 := hle _ _ h
+    exact ⟨r.property.trans h2, h2.trans c.property⟩
 
 /-- If a coordinate of the congruence matrix is nonzero, then so is one of the two entry products
 making it up. -/
@@ -275,8 +282,8 @@ private theorem ne_zero_or_ne_zero_of_add_ite_ne_zero {x y : ℝ} {P : Prop} [De
 carries the products `d i * d j` on its diagonal. -/
 private theorem det_eq_of_blockTriangular_upperRank
     {N : Matrix (upperTriangle p) (upperTriangle p) ℝ} (d : Fin p → ℝ)
-    (hN : N.BlockTriangular fun c : upperTriangle p => p * c.1.1.1 + c.1.2.1)
-    (hdiag : ∀ r : upperTriangle p, N r r = d r.1.1 * d r.1.2) :
+    (hN : N.BlockTriangular fun c : upperTriangle p => p * c.val.1.val + c.val.2.val)
+    (hdiag : ∀ r : upperTriangle p, N r r = d r.val.1 * d r.val.2) :
     N.det = (∏ i, d i) ^ (p + 1) := by
   rw [hN.det_eq_prod_diag (injective_upperRank p),
     Finset.prod_congr rfl fun r _ => hdiag r, prod_upperTriangle_mul d]
@@ -296,9 +303,9 @@ private theorem det_symmetricCongruenceLinearMap_of_isUpperTriangular
       ((ne_zero_or_ne_zero_of_add_ite_ne_zero hne).imp_right right_ne_zero_of_mul)
     exact absurd (Nat.add_le_add (Nat.mul_le_mul_left p h1) h2) (not_le.2 hlt)
   · rw [toMatrix_symmetricCongruenceLinearMap]
-    by_cases hd : r.1.1 = r.1.2
+    by_cases hd : r.val.1 = r.val.2
     · rw [ite_eq_left hd, add_zero]
-    · rw [ite_eq_right hd, hM (lt_of_le_of_ne r.2 hd), mul_zero, add_zero]
+    · rw [ite_eq_right hd, hM (lt_of_le_of_ne r.property hd), mul_zero, add_zero]
 
 /-- The lower-triangular counterpart: now the transposed coordinate matrix is the triangular one
 for the same ranking of positions, and it has the same diagonal. -/
@@ -316,9 +323,10 @@ private theorem det_symmetricCongruenceLinearMap_of_isLowerTriangular
       ((ne_zero_or_ne_zero_of_add_ite_ne_zero hne).imp_right left_ne_zero_of_mul)
     exact absurd (Nat.add_le_add (Nat.mul_le_mul_left p h1) h2) (not_le.2 hlt)
   · rw [Matrix.transpose_apply, toMatrix_symmetricCongruenceLinearMap]
-    by_cases hd : r.1.1 = r.1.2
+    by_cases hd : r.val.1 = r.val.2
     · rw [ite_eq_left hd, add_zero]
-    · rw [ite_eq_right hd, hM (OrderDual.toDual_lt_toDual.2 (lt_of_le_of_ne r.2 hd)), zero_mul,
+    · rw [ite_eq_right hd, hM (OrderDual.toDual_lt_toDual.2 (lt_of_le_of_ne r.property hd)),
+        zero_mul,
         add_zero]
 
 private theorem det_symmetricCongruenceLinearMap_mul {A B : Matrix (Fin p) (Fin p) ℝ}

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Normed.Module.ApproximationProperty.Basic
 import Mathlib.Analysis.Normed.Lp.lpSpace
 import TauCeti.Analysis.Convex.TotallyBounded
+import TauCeti.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Module.Dual.NullSequence
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.NullSequence
@@ -132,16 +133,8 @@ theorem exists_hasFiniteRange_forall_norm_sub_lt_of_mem_closure [NormedSpace ℝ
   refine ⟨S, (LinearMap.HasFiniteRange.of_isNoetherian_rng
     (f := (S₀ : E →ₗ[𝕜] LinearMap.range (G : Y →ₗ[𝕜] E)))).comp_left _, ?_⟩
   -- The estimate `‖G v - S (J v)‖ ≤ ε / 2` passes from the `y n` to their closed convex hull.
-  have hD : C ⊆ {v | ‖G v - S (J v)‖ ≤ ε / 2} := by
-    refine closure_minimal (convexHull_min ?_ ?_) (isClosed_le (by fun_prop) continuous_const)
-    · rintro _ ⟨n, rfl⟩
-      exact (hS₀ n).le
-    · have : {v | ‖G v - S (J v)‖ ≤ ε / 2} =
-          ((G - S ∘L J).restrictScalars ℝ : Y →ₗ[ℝ] E) ⁻¹' Metric.closedBall 0 (ε / 2) := by
-        ext v
-        simp
-      rw [this]
-      exact (convex_closedBall _ _).linear_preimage _
+  have hD {v : Y} (hv : v ∈ C) : ‖G v - S (J v)‖ ≤ ε / 2 :=
+    (G - S ∘L J).norm_le_of_mem_closure_convexHull (by rintro _ ⟨n, rfl⟩; exact (hS₀ n).le) hv
   -- Every point of the closed convex hull of `J ∘ y` is `J v` for some `v ∈ C`.
   have hJC : closure (convexHull ℝ (range (J ∘ y))) ⊆ J '' C := by
     refine closure_minimal ?_ (hC.image J.continuous).isClosed

@@ -32,7 +32,9 @@ are the inclusion-maximal members of the cover (`TauCeti.maximal_isIrreducible_s
 If the solution set of `S` is covered by those of systems `Tᵢ`, contained in it, the coordinate
 group `G_{R(S)}` embeds in `∏ᵢ G_{R(Tᵢ)}` compatibly with the coefficients, because
 `Rad_H(S) = ⋂ᵢ Rad_H(Tᵢ)`. Applied to the irreducible components, this embeds the coordinate group
-of an algebraic set in the product of the coordinate groups of its components.
+of an algebraic set in the product of the coordinate groups of its components. Over a domain `H`
+no Noetherian hypothesis is needed for two pieces: the union `V_H(S) ∪ V_H(T)` is cut out by
+`unionEquations S T`, and its coordinate group embeds in `G_{R(S)} × G_{R(T)}`.
 
 ## Main definitions
 
@@ -50,12 +52,14 @@ of an algebraic set in the product of the coordinate groups of its components.
   the coordinate groups of a covering family.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_injective_coordGroup_toPi`: the coordinate
   group of an algebraic set embeds in the product of those of its irreducible components.
+* `TauCeti.GroupAlgGeom.CoordGroup.exists_injective_toPi_unionEquations`: over a domain, the
+  coordinate group of `V_H(S) ∪ V_H(T)` embeds in `G_{R(S)} × G_{R(T)}`.
 
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §3.6, Proposition 10, Theorem D1, Corollaries 10–11
-  and Proposition 12.
+  and ideal theory*, J. Algebra 219 (1999), §3.1, Lemma 6; §3.6, Proposition 10, Theorem D1,
+  Corollaries 10–11 and Proposition 12.
 -/
 
 public section
@@ -80,7 +84,7 @@ theorem IsEquationallyNoetherian.isCompact (h : IsEquationallyNoetherian ι) [Fi
   let T : Set (GX G X) := ⋃ U ∈ P, S U
   obtain ⟨T₀, hT₀, hfin, hV⟩ := h.exists_finite T
   -- Each equation of the finite subsystem `T₀` comes from one member of `P`.
-  have hU (w : T₀) : ∃ U ∈ P, w.1 ∈ S U := by simpa [T] using hT₀ w.2
+  have hU (w : T₀) : ∃ U ∈ P, w.val ∈ S U := by simpa [T] using hT₀ w.property
   choose U hUP hwU using hU
   have : Finite T₀ := hfin
   refine ⟨Set.range U, Set.range_subset_iff.2 hUP, Set.finite_range U, fun v hv ↦ ?_⟩
@@ -157,11 +161,11 @@ theorem IsEquationallyNoetherian.exists_finite_irreducible_systems
   obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin 𝒴
   choose T hTfin hV using fun i : Fin m ↦
     (h.exists_finite (I ι (e.symm i : Set (X → H)) : Set (GX G X))).imp fun _ hT ↦ hT.2
-  have hVT (i : Fin m) : V ι (T i) = e.symm i := (hV i).trans (hirr _ (e.symm i).2).2
-  refine ⟨m, T, hTfin, fun i ↦ (hVT i).symm ▸ (hirr _ (e.symm i).2).1,
+  have hVT (i : Fin m) : V ι (T i) = e.symm i := (hV i).trans (hirr _ (e.symm i).property).2
+  refine ⟨m, T, hTfin, fun i ↦ (hVT i).symm ▸ (hirr _ (e.symm i).property).1,
     fun i j hij ↦ e.symm.injective (Subtype.ext ?_), ?_⟩
   · rw [hVT, hVT] at hij
-    exact hanti.eq (e.symm i).2 (e.symm j).2 hij
+    exact hanti.eq (e.symm i).property (e.symm j).property hij
   · simp_rw [hVT, Set.sUnion_eq_iUnion]
     exact (e.symm.surjective.iUnion_comp _).symm
 
@@ -210,6 +214,19 @@ theorem toPi_injective {S : Set (GX G X)} {T : κ → Set (GX G X)} (hT : ∀ i,
   refine I_antitone ι hS ?_
   rw [I_iUnion]
   exact Subgroup.mem_iInf.2 hw
+
+/-- **The coordinate group of a union embeds in the product.** Over a domain `H` over `G`, the
+solution set of `unionEquations S T` is `V_H(S) ∪ V_H(T)` (`V_unionEquations`), and the canonical
+map from its coordinate group to the product of `G_{R(S)}` and `G_{R(T)}`, indexed by `Fin 2`, is
+injective. -/
+theorem exists_injective_toPi_unionEquations (hdom : IsGDomain ι) (S T : Set (GX G X)) :
+    ∃ hT : ∀ i, V ι (![S, T] i) ⊆ V ι (unionEquations S T),
+      Function.Injective (toPi ι (unionEquations S T) ![S, T] hT) := by
+  refine ⟨Fin.forall_fin_two.2 ⟨Set.subset_union_left.trans (union_subset_V_unionEquations S T),
+    Set.subset_union_right.trans (union_subset_V_unionEquations S T)⟩, toPi_injective _ ?_⟩
+  rw [V_unionEquations hdom]
+  exact Set.union_subset (Set.subset_iUnion_of_subset 0 le_rfl)
+    (Set.subset_iUnion_of_subset 1 le_rfl)
 
 end CoordGroup
 

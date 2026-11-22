@@ -100,7 +100,7 @@ theorem coe_weilPairing_eq_coe_weilPairing_nsmul {k : ℕ} (hk : m * k = N)
   have hψk := psiFunctionField_ne_zero W hck
   -- `g` computes `e_m(·, T)`
   obtain ⟨g, hg⟩ := exists_principal_eq_weilPairingDivisor W hcm
-    ((Submodule.mem_torsionBy_iff _ _).mp T.2)
+    ((Submodule.mem_torsionBy_iff _ _).mp T.property)
   -- and its pullback `[k]^* g` computes `e_N(·, T)`
   let g' : W.toAffine.FunctionFieldˣ :=
     Units.map ((mulByIntIsogeny W hψk).fieldPullback : W.toAffine.FunctionField →* _) g

@@ -89,7 +89,7 @@ private theorem exists_mem_span_add_pow_smul (m : ℕ) (u : Lˣ) :
 constant function of the coefficients: it only depends on them modulo `p ^ m`. -/
 private theorem isLocallyConstant_linearCombination_apply {ι : Type*} [Fintype ι]
     (x : ι → Additive ↑(padicCompletionUnits p L)) (m : ℕ) :
-    IsLocallyConstant fun c : ι → ℤ_[p] ↦ (Fintype.linearCombination ℤ_[p] x c).toMul.1 m := by
+    IsLocallyConstant fun c : ι → ℤ_[p] ↦ (Fintype.linearCombination ℤ_[p] x c).toMul.val m := by
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun c ↦ ?_
   have hnhds : ∀ᶠ c' in nhds c, ∀ i, c' i - c i ∈ Ideal.span {(p : ℤ_[p]) ^ m} := by
     refine Filter.eventually_all.2 fun i ↦ ((continuous_apply i).tendsto c).eventually
@@ -119,20 +119,20 @@ private theorem surjective_linearCombination_padicCompletionUnitsOf_out
   let f := Fintype.linearCombination ℤ_[p] x
   intro a
   -- The coefficient vectors that represent `a` at level `m`.
-  let C : ℕ → Set (Q → ℤ_[p]) := fun m ↦ {c | (f c).toMul.1 m = a.toMul.1 m}
+  let C : ℕ → Set (Q → ℤ_[p]) := fun m ↦ {c | (f c).toMul.val m = a.toMul.val m}
   have hanti (m : ℕ) : C (m + 1) ⊆ C m := by
     intro c hc
-    have hfc := (mem_padicCompletionUnits_iff p L _).1 (f c).toMul.2 m
-    have ha := (mem_padicCompletionUnits_iff p L _).1 a.toMul.2 m
+    have hfc := (mem_padicCompletionUnits_iff p L _).1 (f c).toMul.property m
+    have ha := (mem_padicCompletionUnits_iff p L _).1 a.toMul.property m
     simp only [C, Set.mem_ofPred_eq] at hc ⊢
     rw [← hfc, ← ha, hc]
   have hne (m : ℕ) : (C m).Nonempty := by
-    obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (a.toMul.1 m)
+    obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (a.toMul.val m)
     obtain ⟨y, hy, w, hw⟩ := exists_mem_span_add_pow_smul p L m u
     rw [← Fintype.range_linearCombination] at hy
     obtain ⟨c, rfl⟩ := hy
     refine ⟨c, ?_⟩
-    have hwm := congrArg (fun z : Additive ↑(padicCompletionUnits p L) ↦ z.toMul.1 m) hw
+    have hwm := congrArg (fun z : Additive ↑(padicCompletionUnits p L) ↦ z.toMul.val m) hw
     simp only [padicCompletionUnits_add_pow_smul_apply, toMul_ofMul,
       padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply] at hwm
     exact hwm.symm.trans hu

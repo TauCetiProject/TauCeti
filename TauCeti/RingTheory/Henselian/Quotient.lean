@@ -14,10 +14,12 @@ If `(R, I)` is henselian and `φ : R →+* S` is surjective, then `(S, I.map φ)
 henselian. In particular, one can quotient by any ideal, not only an ideal contained
 in `I`. This permanence result is used when changing the ambient ring of a henselian pair.
 The local form `RingHom.henselianLocalRing_of_surjective` passes from a henselian local ring
-to any nontrivial quotient.
+to any nontrivial quotient (`Ideal.henselianLocalRing_quotient`), and `RingEquiv.henselianLocalRing`
+transports `HenselianLocalRing` along ring isomorphisms.
 
 ## References
 
+* Stacks Project, Lemma 10.153.4 (04GH), (1), quotients of henselian local rings.
 * Stacks Project, Lemma 15.11.8 (09XK), the quotient case of integral permanence.
 -/
 
@@ -79,6 +81,7 @@ theorem henselianRing_of_surjective (φ : R →+* S) (hφ : Function.Surjective 
 /-- A surjective ring map from a henselian local ring to a nontrivial ring has a henselian
 local target. In particular, the quotient of a henselian local ring by a proper ideal is
 henselian local. -/
+@[stacks 04GH "(1)"]
 theorem henselianLocalRing_of_surjective [HenselianLocalRing R] [Nontrivial S] (φ : R →+* S)
     (hφ : Function.Surjective φ) : HenselianLocalRing S := by
   have := IsLocalRing.of_surjective' φ hφ
@@ -97,4 +100,27 @@ instance henselianRing_quotient {R : Type*} [CommRing R] (I J : Ideal R)
     [HenselianRing R I] : HenselianRing (R ⧸ J) (I.map (Ideal.Quotient.mk J)) :=
   (Ideal.Quotient.mk J).henselianRing_of_surjective Ideal.Quotient.mk_surjective I
 
+/-- Every nontrivial quotient of a henselian local ring is a henselian local ring. -/
+@[stacks 04GH "(1)"]
+instance henselianLocalRing_quotient {R : Type*} [CommRing R] [HenselianLocalRing R]
+    (I : Ideal R) [Nontrivial (R ⧸ I)] : HenselianLocalRing (R ⧸ I) :=
+  (Ideal.Quotient.mk I).henselianLocalRing_of_surjective Ideal.Quotient.mk_surjective
+
 end Ideal
+
+namespace RingEquiv
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- A ring isomorphism carries a henselian pair `(R, I)` to `(S, I.map e)`. -/
+protected theorem henselianRing (I : Ideal R) [HenselianRing R I] (e : R ≃+* S) :
+    HenselianRing S (I.map e) :=
+  (e : R →+* S).henselianRing_of_surjective e.surjective I
+
+/-- A ring isomorphism transports `HenselianLocalRing`. -/
+protected theorem henselianLocalRing [HenselianLocalRing R] (e : R ≃+* S) :
+    HenselianLocalRing S :=
+  have := e.symm.toEquiv.nontrivial
+  (e : R →+* S).henselianLocalRing_of_surjective e.surjective
+
+end RingEquiv
