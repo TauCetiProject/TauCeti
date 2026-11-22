@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PushforwardContinuous
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
+import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackContinuous
 
 /-!
 # Pushforward of sheaves of modules on underlying presheaves
@@ -15,7 +16,8 @@ Let `F : C ⥤ D` be a continuous functor between sites, `R` and `S` sheaves of 
 rings on `D` and `C`, and `φ : S ⟶ F_* R` a morphism of the underlying sheaves of rings. This file
 records the data underlying the pushforward `SheafOfModules.pushforward φ` of sheaves of modules
 that sectionwise constructions transfer along: the morphism of presheaves of commutative rings
-underlying `φ`, and the pushforward of the underlying presheaves of modules.
+underlying `φ`, and the pushforward of the underlying presheaves of modules. It also records that
+pushforward between small sites in the same universe is a right adjoint.
 
 ## Main declarations
 
@@ -24,7 +26,9 @@ underlying `φ`, and the pushforward of the underlying presheaves of modules.
 * `SheafOfModules.presheafPushforward`: the pushforward of presheaves of modules underlying the
   pushforward of sheaves of modules;
 * `SheafOfModules.forget_map_pushforward_map`: on underlying presheaves, the pushforward of a
-  morphism of sheaves of modules is the pushforward of the underlying morphism.
+  morphism of sheaves of modules is the pushforward of the underlying morphism;
+* `SheafOfModules.isRightAdjoint_pushforward`: pushforward of module sheaves between small sites in
+  the same universe is a right adjoint.
 -/
 
 public section
@@ -87,3 +91,20 @@ end SheafOfModules
 end
 
 end TauCeti
+
+namespace SheafOfModules
+
+/-- Between small sites in the same universe, pushforward of module sheaves along any continuous
+functor and ring-sheaf morphism is a right adjoint. This is a theorem rather than a global instance
+so that explicit `[IsRightAdjoint]` hypotheses on general site-level lemmas do not become redundant
+instance binders. -/
+theorem isRightAdjoint_pushforward {C D : Type u} [SmallCategory C] [SmallCategory D]
+    {J : GrothendieckTopology C} {K : GrothendieckTopology D} {F : C ⥤ D}
+    [Functor.IsContinuous F J K] {S : Sheaf J RingCat.{u}} {R : Sheaf K RingCat.{u}}
+    [HasWeakSheafify K AddCommGrpCat.{u}] [K.WEqualsLocallyBijective AddCommGrpCat.{u}]
+    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R) :
+    (pushforward.{u} φ).IsRightAdjoint :=
+  have := PresheafOfModules.instIsRightAdjointPushforward (F := F) φ.hom
+  inferInstance
+
+end SheafOfModules

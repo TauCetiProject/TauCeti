@@ -16,10 +16,9 @@ rings. Mathlib defines the unit comparisons `SheafOfModules.unitToPushforwardObj
 `SheafOfModules.pullbackObjUnitToUnit φ` and proves that the latter is invertible when `F` is
 final. This file supplies the identity, composition, and congruence coherences for these unit
 comparisons, packages `pullbackObjUnitToUnit φ` as an isomorphism
-`SheafOfModules.pullbackObjUnitIso` when `F` is final, constructs the natural isomorphisms
+`SheafOfModules.pullbackObjUnitIso` when `F` is final, and constructs the natural isomorphisms
 `SheafOfModules.pullbackCongr` and `SheafOfModules.pullbackCongr₂` conjugate to
-`SheafOfModules.pushforwardCongr` and `SheafOfModules.pushforwardCongr₂`, and records that
-pushforward between small sites in the same universe is a right adjoint.
+`SheafOfModules.pushforwardCongr` and `SheafOfModules.pushforwardCongr₂`.
 
 ## Main declarations
 
@@ -27,9 +26,7 @@ pushforward between small sites in the same universe is a right adjoint.
   underlying continuous functor `F` is final, with identity and composition coherences
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp`, and `pullbackObjUnitIso_inv_comp`;
 * `SheafOfModules.pullbackCongr` and `SheafOfModules.pullbackCongr₂`: natural isomorphisms between
-  pullback functors along equal ring-sheaf morphisms or naturally isomorphic site functors;
-* `SheafOfModules.isRightAdjoint_pushforward`: pushforward of module sheaves between small sites in
-  the same universe is a right adjoint.
+  pullback functors along equal ring-sheaf morphisms or naturally isomorphic site functors.
 -/
 
 public section
@@ -53,7 +50,7 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 
 /-- Along the identity morphism of ring sheaves, `unitToPushforwardObjUnit` is the inverse of the
 identity comparison `pushforwardId`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem unitToPushforwardObjUnit_id (S : Sheaf J RingCat.{u}) :
     unitToPushforwardObjUnit (F := 𝟭 C) (𝟙 S) ≫ (pushforwardId S).hom.app (unit S) =
       𝟙 (unit S) := by
@@ -76,6 +73,7 @@ theorem unitToPushforwardObjUnit_comp
 
 /-- Along the identity morphism of ring sheaves, `pullbackObjUnitToUnit` is the component of
 `pullbackId` at the unit module sheaf. -/
+@[simp]
 theorem pullbackObjUnitToUnit_id (S : Sheaf J RingCat.{u}) :
     pullbackObjUnitToUnit (F := 𝟭 C) (𝟙 S) = (pullbackId S).hom.app (unit S) := by
   apply ((pullbackPushforwardAdjunction.{u} (F := 𝟭 C) (𝟙 S)).homEquiv _ _).injective
@@ -249,20 +247,39 @@ theorem conjugateEquiv_pullbackCongr₂_inv {F' : C ⥤ D} [Functor.IsContinuous
       (pushforwardCongr₂.{v} φ e he).hom :=
   (conjugateEquiv _ _).apply_symm_apply _
 
-end PullbackCongr
+/-- `pullbackCongr₂` commutes with `pullbackObjUnitToUnit`. -/
+@[reassoc]
+theorem pullbackCongr₂_hom_app_pullbackObjUnitToUnit {F' : C ⥤ D} [Functor.IsContinuous F' J K]
+    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
+    {ψ : S ⟶ (F'.sheafPushforwardContinuous RingCat.{u} J K).obj R}
+    (e : F' ≅ F)
+    (he : φ ≫ (Functor.sheafPushforwardContinuousNatTrans e.hom RingCat.{u} J K).app R = ψ)
+    [(pushforward.{u} φ).IsRightAdjoint] [(pushforward.{u} ψ).IsRightAdjoint] :
+    (pullbackCongr₂.{u} φ e he).hom.app (unit S) ≫ pullbackObjUnitToUnit ψ =
+      pullbackObjUnitToUnit φ := by
+  have hinv : (pullbackCongr₂.{u} φ e he).inv.app (unit S) ≫ pullbackObjUnitToUnit φ =
+      pullbackObjUnitToUnit ψ := by
+    apply ((pullbackPushforwardAdjunction.{u} ψ).homEquiv _ _).injective
+    refine ((Adjunction.homEquiv_conjugateEquiv
+        (pullbackPushforwardAdjunction.{u} φ)
+        (pullbackPushforwardAdjunction.{u} ψ)
+        (pullbackCongr₂.{u} φ e he).inv _).symm.trans ?_).trans
+      (pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitToUnit ψ).symm
+    rw [conjugateEquiv_pullbackCongr₂_inv,
+      pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitToUnit]
+    ext U
+    change (((pushforwardCongr he).hom.app (unit R)).val.app U)
+        (((pushforwardNatTrans φ e.hom).app (unit R)).val.app U
+          ((unitToPushforwardObjUnit φ).val.app U (1 : S.obj.obj U))) =
+      (unitToPushforwardObjUnit ψ).val.app U (1 : S.obj.obj U)
+    rw [pushforwardCongr_hom_app_val_app, pushforwardNatTrans_app_val_app,
+      unitToPushforwardObjUnit_val_app_apply, unitToPushforwardObjUnit_val_app_apply,
+      map_one, map_one]
+    exact (R.obj.map (e.hom.app U.unop).op).hom.map_one
+  rw [← hinv, ← Category.assoc]
+  simp
 
-/-- Between small sites in the same universe, pushforward of module sheaves along any continuous
-functor and ring-sheaf morphism is a right adjoint. This is a theorem rather than a global instance
-so that explicit `[IsRightAdjoint]` hypotheses on general site-level lemmas do not become redundant
-instance binders. -/
-theorem isRightAdjoint_pushforward {C D : Type u} [SmallCategory C] [SmallCategory D]
-    {J : GrothendieckTopology C} {K : GrothendieckTopology D} {F : C ⥤ D}
-    [Functor.IsContinuous F J K] {S : Sheaf J RingCat.{u}} {R : Sheaf K RingCat.{u}}
-    [HasWeakSheafify K AddCommGrpCat.{u}] [K.WEqualsLocallyBijective AddCommGrpCat.{u}]
-    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R) :
-    (pushforward.{u} φ).IsRightAdjoint :=
-  have := PresheafOfModules.instIsRightAdjointPushforward (F := F) φ.hom
-  inferInstance
+end PullbackCongr
 
 end SiteCoherence
 

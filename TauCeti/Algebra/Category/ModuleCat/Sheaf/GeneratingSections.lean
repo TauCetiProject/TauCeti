@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.Basic
 import Mathlib.Algebra.Category.Grp.Abelian
 import Mathlib.Algebra.Category.Grp.EpiMono
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono

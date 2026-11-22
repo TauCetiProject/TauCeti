@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Sites.Pullback
 public import Mathlib.Topology.Sheaves.AddCommGrpCat
 public import Mathlib.Topology.Sheaves.Functors
 public import TauCeti.CategoryTheory.Sites.Pullback
+public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
 # Pushforward, pullback, and transport of sheaves on topological spaces
@@ -29,8 +30,8 @@ presheaves with right whiskering along `Opens.map`.
 It also records that the restriction maps of Mathlib's restriction of a sheaf along an open
 embedding, `Topology.IsOpenEmbedding.sheafPullback`, are restriction maps of the original sheaf
 between the image opens, and supplies general open-subspace restriction helpers for sheaves and
-sheaf morphisms (`TopologicalSpace.Opens.sheafInclusionHom`, `TopologicalSpace.Opens.resLE`,
-`TopologicalSpace.Opens.sheafHomResLE`, and `TopologicalSpace.Opens.coversTop_map`).
+sheaf morphisms (`TopologicalSpace.Opens.sheafInclusionHom` and
+`TopologicalSpace.Opens.sheafHomResLE`).
 
 Finally, it records that the inverse image functor `f⁻¹` of abelian sheaves along a continuous map
 `f` is left exact, and that it carries constant sheaves to constant sheaves. Its right exactness
@@ -52,11 +53,9 @@ and additivity hold for the pullback along any continuous functor of sites
   sheaves with right whiskering along `Opens.map`.
 * `Topology.IsOpenEmbedding.sheafPullback_obj_obj_map`: the restriction maps of the restriction of
   a sheaf along an open embedding.
-* `TopologicalSpace.Opens.sheafInclusionHom`, `TopologicalSpace.Opens.resLE`,
-  `TopologicalSpace.Opens.sheafHomResLE`, and `TopologicalSpace.Opens.coversTop_map`: the
-  canonical sheaf morphism `F ⟶ (U.inclusion')_* (F|_U)`, the restricted map between open
-  subspaces, the restriction of `φ : S ⟶ f_* R` to opens `V ⊆ Y` and `U ⊆ f⁻¹(V)`, and pullback
-  of covering families.
+* `TopologicalSpace.Opens.sheafInclusionHom` and `TopologicalSpace.Opens.sheafHomResLE`: the
+  canonical sheaf morphism `F ⟶ (U.inclusion')_* (F|_U)` and the restriction of `φ : S ⟶ f_* R`
+  to opens `V ⊆ Y` and `U ⊆ f⁻¹(V)`.
 * `TopCat.Hom.pullbackConstantSheafIso`: the inverse image of a constant abelian sheaf is
   constant.
 -/
@@ -265,37 +264,6 @@ theorem sheafInclusionHom_hom_app (U : Opens X) (A : Type*) [Category.{u} A]
       F.obj.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app W.unop).op :=
   (rfl)
 
-/-- The continuous map `(Opens.toTopCat X).obj U ⟶ (Opens.toTopCat Y).obj V` between open
-subspaces induced by `f : X ⟶ Y` when `U ≤ (Opens.map f).obj V`. -/
-def resLE (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
-    (Opens.toTopCat X).obj U ⟶ (Opens.toTopCat Y).obj V :=
-  TopCat.ofHom ⟨fun x ↦ ⟨f x.1, e x.2⟩, (f.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩
-
-/-- `Opens.resLE` commutes with the open inclusions `Opens.inclusion'` into `X` and `Y`. -/
-@[reassoc (attr := simp)]
-theorem resLE_comp_inclusion' (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
-    (e : U ≤ (Opens.map f).obj V) :
-    Opens.resLE f V U e ≫ V.inclusion' = U.inclusion' ≫ f := by
-  ext x
-  rfl
-
-/-- Underlying point value of `Opens.resLE`. -/
-@[simp]
-theorem inclusion'_resLE_apply (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
-    (e : U ≤ (Opens.map f).obj V) (x : (Opens.toTopCat X).obj U) :
-    V.inclusion' (Opens.resLE f V U e x) = f (U.inclusion' x) :=
-  (rfl)
-
-/-- For an open `W` of `(Opens.toTopCat Y).obj V` and `e : U ≤ (Opens.map f).obj V`, the image in
-`X` of the preimage of `W` under `Opens.resLE f V U e` is contained in the preimage under `f` of
-the image of `W` in `Y`. -/
-theorem functor_map_resLE_le (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
-    (e : U ≤ (Opens.map f).obj V) (W : Opens ((Opens.toTopCat Y).obj V)) :
-    U.isOpenEmbedding.functor.obj ((Opens.map (Opens.resLE f V U e)).obj W) ≤
-      (Opens.map f).obj (V.isOpenEmbedding.functor.obj W) := by
-  rintro _ ⟨u, hu, rfl⟩
-  exact ⟨⟨f u.1, e u.2⟩, hu, rfl⟩
-
 /-- Restriction of a sheaf morphism `φ : S ⟶ f_* R` to open subspaces `V ⊆ Y` and `U ⊆ f⁻¹(V)`
 along `Opens.resLE f V U e`. -/
 def sheafHomResLE {A : Type*} [Category.{u} A] {f : X ⟶ Y}
@@ -346,14 +314,6 @@ theorem sheafHomResLE_hom_app {A : Type*} [Category.{u} A] {f : X ⟶ Y}
       φ.hom.app (op (V.isOpenEmbedding.functor.obj W.unop)) ≫
         R.obj.map (homOfLE (Opens.functor_map_resLE_le f V U e W.unop)).op :=
   (rfl)
-
-/-- Natural isomorphism between composed open-preimage functors witnessing the commutative square
-`resLE_comp_inclusion'`. -/
-def mapCompResLEIso (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
-    Opens.map f ⋙ Opens.map U.inclusion' ≅
-      Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e) :=
-  Opens.mapIso (U.inclusion' ≫ f) (Opens.resLE f V U e ≫ V.inclusion')
-    (Opens.resLE_comp_inclusion' f V U e).symm
 
 /-- Compatibility of `sheafHomResLE` with `sheafInclusionHom`: restricting `S` to `V` and applying
 `sheafHomResLE` agrees with applying `φ` and restricting `R` to `U` along the commutative square
@@ -427,14 +387,6 @@ theorem sheafInclusionHom_comp_map_sheafHomResLE {A : Type*} [Category.{u} A] {f
   exact (congrArg (· ≫ d) ((Category.assoc a b₂ c).symm.trans
     ((congrArg (· ≫ c) hnat).trans (Category.assoc b₁ e₀ c)))).trans
       ((Category.assoc b₁ (e₀ ≫ c) d).trans (congrArg (b₁ ≫ ·) hR))
-
-/-- Pulling back a covering family of opens along a continuous map `f : X ⟶ Y` gives a covering
-family of opens of `X`. -/
-theorem coversTop_map (f : X ⟶ Y) {ι : Type*} {V : ι → Opens Y}
-    (hV : (Opens.grothendieckTopology Y).CoversTop V) :
-    (Opens.grothendieckTopology X).CoversTop (fun i ↦ (Opens.map f).obj (V i)) := by
-  rw [Opens.coversTop_iff] at hV ⊢
-  rw [IsOpenCover, ← Function.comp_def, ← Opens.map_iSup, hV.iSup_eq_top, Opens.map_top]
 
 end
 

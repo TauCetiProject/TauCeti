@@ -171,7 +171,7 @@ theorem rank_pullback_apply {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFre
   obtain ⟨U, hx, σ, hσ, -⟩ := E.exists_generatingSections (f x)
   let τ := σ.mapIso (SheafOfModules.pullbackOver f.toRingCatSheafHom U)
     (SheafOfModules.pullbackOverUnitIso f.toRingCatSheafHom U)
-    (SheafOfModules.pullbackOverObjIso f.toRingCatSheafHom U E.obj)
+    ((SheafOfModules.overFunctorCompPullbackOverIso f.toRingCatSheafHom U).app E.obj)
   have hτ : Nat.card τ.I = Nat.card σ.I :=
     congrArg Nat.card (SheafOfModules.GeneratingSections.mapIso_I _ _ _ _)
   rw [E.rank_apply_eq_natCard hx σ, ← hτ]

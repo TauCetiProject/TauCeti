@@ -34,6 +34,10 @@ and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` ly
   embedding.
 * `TopologicalSpace.Opens.exists_compacts_map_inclusion'_eq`: a compact subset of `X` lying in an
   open set `U` is the image of a compact subset of `U` under its inclusion.
+* `TopologicalSpace.Opens.resLE` and `TopologicalSpace.Opens.mapCompResLEIso`: the continuous map
+  between open subspaces `U ≤ f ⁻¹' V` induced by `f : X ⟶ Y`, its compatibility with
+  `Opens.inclusion'` (`resLE_comp_inclusion'`, `inclusion'_resLE_apply`, `functor_map_resLE_le`),
+  and the induced isomorphism of preimage functors.
 -/
 
 public section
@@ -88,6 +92,45 @@ lemma exists_compacts_map_inclusion'_eq {U : Opens X} {K : Compacts X} (hK : (K 
 /-- An open subset of a Hausdorff space is Hausdorff. -/
 instance t2Space_toTopCat_obj [T2Space X] (V : Opens X) : T2Space ((toTopCat X).obj V) :=
   inferInstanceAs (T2Space V)
+
+/-- The continuous map `(Opens.toTopCat X).obj U ⟶ (Opens.toTopCat Y).obj V` between open
+subspaces induced by `f : X ⟶ Y` when `U ≤ (Opens.map f).obj V`. -/
+def resLE (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
+    (Opens.toTopCat X).obj U ⟶ (Opens.toTopCat Y).obj V :=
+  TopCat.ofHom ⟨fun x ↦ ⟨f x.1, e x.2⟩, (f.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩
+
+/-- `Opens.resLE` commutes with the open inclusions `Opens.inclusion'` into `X` and `Y`. -/
+@[reassoc (attr := simp)]
+theorem resLE_comp_inclusion' (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
+    (e : U ≤ (Opens.map f).obj V) :
+    Opens.resLE f V U e ≫ V.inclusion' = U.inclusion' ≫ f := by
+  ext x
+  rfl
+
+/-- Underlying point value of `Opens.resLE`. -/
+@[simp]
+theorem inclusion'_resLE_apply (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
+    (e : U ≤ (Opens.map f).obj V) (x : (Opens.toTopCat X).obj U) :
+    V.inclusion' (Opens.resLE f V U e x) = f (U.inclusion' x) :=
+  (rfl)
+
+/-- For an open `W` of `(Opens.toTopCat Y).obj V` and `e : U ≤ (Opens.map f).obj V`, the image in
+`X` of the preimage of `W` under `Opens.resLE f V U e` is contained in the preimage under `f` of
+the image of `W` in `Y`. -/
+theorem functor_map_resLE_le (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
+    (e : U ≤ (Opens.map f).obj V) (W : Opens ((Opens.toTopCat Y).obj V)) :
+    U.isOpenEmbedding.functor.obj ((Opens.map (Opens.resLE f V U e)).obj W) ≤
+      (Opens.map f).obj (V.isOpenEmbedding.functor.obj W) := by
+  rintro _ ⟨u, hu, rfl⟩
+  exact ⟨⟨f u.1, e u.2⟩, hu, rfl⟩
+
+/-- Natural isomorphism between composed open-preimage functors witnessing the commutative square
+`resLE_comp_inclusion'`. -/
+def mapCompResLEIso (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
+    Opens.map f ⋙ Opens.map U.inclusion' ≅
+      Opens.map V.inclusion' ⋙ Opens.map (Opens.resLE f V U e) :=
+  Opens.mapIso (U.inclusion' ≫ f) (Opens.resLE f V U e ≫ V.inclusion')
+    (Opens.resLE_comp_inclusion' f V U e).symm
 
 end TopologicalSpace.Opens
 

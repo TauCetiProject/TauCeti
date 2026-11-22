@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.PushforwardZeroMonoidal
 public import Mathlib.Algebra.Category.Grp.FilteredColimits
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
