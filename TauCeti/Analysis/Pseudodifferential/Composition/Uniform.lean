@@ -448,26 +448,24 @@ section Composition
 
 variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
 
-variable (W) in
 /-- The lattice piece `χ(x - j) a(x, ξ)` of a symbol `a`, cut off by the integer translate of the
 bump `χ = TauCeti.latticeBump n` centred at the lattice point `j ∈ ℤⁿ`. -/
-private def latticePiece (a : Symbol n V W m) (j : Fin n → ℤ) : Symbol n V W (0 + m) :=
-  (ofSpatial (fun x ↦ latticeBump n (x - latticePoint j) • ContinuousLinearMap.id ℂ W)
-    ((contDiff_latticeBump_sub j).smul contDiff_const)).comp a
+private def latticePiece (a : Symbol n V W m) (j : Fin n → ℤ) : Symbol n V W m :=
+  smulLeft (Complex.ofRealCLM.contDiff.comp (contDiff_latticeBump_sub j)) a
 
 omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
 private theorem coefficient_latticePiece (a : Symbol n V W m) (j : Fin n → ℤ)
     (q : CoordinateSpace n × CoordinateSpace n) :
-    (latticePiece W a j).coefficient q =
+    (latticePiece a j).coefficient q =
       latticeBump n (q.1 - latticePoint j) • a.coefficient q := by
-  simp [latticePiece, coefficient_comp, coefficient_ofSpatial]
+  rw [latticePiece, coefficient_smulLeft_ofReal]
 
 omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
 /-- The lattice pieces of a uniform symbol `a` form a ball family centred at the lattice points,
 with radius `√n`. -/
 private theorem isBallFamily_latticePiece {a : Symbol n V W m} (ha : a.IsUniform) :
-    IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n (latticePiece W a) :=
-  isBallFamily_latticeBump_comp ha
+    IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n (latticePiece a) :=
+  isBallFamily_smulLeft_latticeBump ha
 
 omit [CompleteSpace V] in
 /-- The quantization of `p # (χ(· - j) a)` is `Op(p)` applied to `χ(· - j) Op(a) u`. -/
@@ -481,9 +479,8 @@ private theorem quantizeSchwartzValue_sharp_latticePiece (p : Symbol n W U m')
   rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
   congr 1
   ext y
-  rw [HasCompactSupport.toSchwartzMap_toFun, latticePiece,
-    quantizeSchwartzValue_ofSpatial_smul_id_comp,
-    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j), Complex.coe_smul,
+  simp [latticePiece, quantizeSchwartzValue_smulLeft,
+    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j),
     quantizeUniformCLM_apply]
 
 /-- The series `∑ⱼ p # χⱼ a` over the lattice pieces of `a` converges to a symbol of order
@@ -491,24 +488,20 @@ private theorem quantizeSchwartzValue_sharp_latticePiece (p : Symbol n W U m')
 private theorem IsUniform.exists_hasSum_sharp_latticePiece {p : Symbol n W U m'}
     (hp : p.IsUniform) {a : Symbol n V W m} (ha : a.IsUniform) :
     ∃ (c : Symbol n V U (m' + m)) (hc : c.IsUniform),
-      (∀ q, HasSum (fun j ↦ (p.sharp (latticePiece W a j)
+      (∀ q, HasSum (fun j ↦ (p.sharp (latticePiece a j)
         ((isBallFamily_latticePiece ha).hasCompactSpatialSupport j)).coefficient q)
           (c.coefficient q)) ∧
       quantizeUniformCLM p hp ∘L quantizeUniformCLM a ha = quantizeUniformCLM c hc := by
   have hfam := isBallFamily_latticePiece ha
-  set F : (Fin n → ℤ) → Symbol n V U (m' + (0 + m)) := fun j ↦ p.sharp _
+  set F : (Fin n → ℤ) → Symbol n V U (m' + m) := fun j ↦ p.sharp _
     (hfam.hasCompactSpatialSupport j)
   obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient F
     (fun j x ↦ ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹) (fun _ _ ↦ by positivity)
     exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
     tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le (hfam.exists_norm_mixedDeriv_sharp_le hp)
-  have hord : m' + (0 + m) = m' + m := by ring
-  refine ⟨Symbol.inclusion hord.le b, hb.inclusion hord.le, fun q ↦ ?_, ?_⟩
-  · rw [coefficient_inclusion]
-    exact hbsum q
+  refine ⟨b, hb, hbsum, ?_⟩
   ext u x
-  rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply,
-    coefficient_inclusion]
+  rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply]
   -- Both sides are the sum of the series `∑ⱼ Op(p # χⱼ a) u (x)`.
   obtain ⟨C, -, hC⟩ := hfam.exists_norm_mixedDeriv_sharp_le hp [] []
   simp only [mixedDeriv_nil_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at hC
@@ -541,7 +534,7 @@ omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
 `b`: near each position only finitely many pieces are nonzero, and they sum to `b` there. -/
 private theorem hasSum_coefficient_sharpTerm_latticePiece (p : Symbol n W U m')
     (b : Symbol n V W m) (k : ℕ) (q : CoordinateSpace n × CoordinateSpace n) :
-    HasSum (fun j ↦ (p.sharpTerm (latticePiece W b j) k).coefficient q)
+    HasSum (fun j ↦ (p.sharpTerm (latticePiece b j) k).coefficient q)
       ((p.sharpTerm b k).coefficient q) := by
   obtain ⟨x, ξ⟩ := q
   set R := ‖x‖ + √n + 1
@@ -551,11 +544,11 @@ private theorem hasSum_coefficient_sharpTerm_latticePiece (p : Symbol n W U m')
     (isOpen_lt (continuous_norm.add continuous_const) continuous_const).mem_nhds (by simp [R])
   -- Near `x`, the pieces centred at the lattice points of `hfin.toFinset` sum to `b`.
   have hsum : (p.sharpTerm b k).coefficient (x, ξ) =
-      ∑ j ∈ hfin.toFinset, (p.sharpTerm (latticePiece W b j) k).coefficient (x, ξ) := by
+      ∑ j ∈ hfin.toFinset, (p.sharpTerm (latticePiece b j) k).coefficient (x, ξ) := by
     rw [← coefficient_sharpTerm_congr_of_eventually
-      (b' := ∑ j ∈ hfin.toFinset, latticePiece W b j) ?_ p k ξ]
+      (b' := ∑ j ∈ hfin.toFinset, latticePiece b j) ?_ p k ξ]
     · simpa using congrFun (coefficient_sharpTerm_eq_sum_right hfin.toFinset (fun _ ↦ 1)
-        (latticePiece W b) (b₀ := ∑ j ∈ hfin.toFinset, latticePiece W b j)
+        (latticePiece b) (b₀ := ∑ j ∈ hfin.toFinset, latticePiece b j)
         (by simp [coefficient_sum]) p k) (x, ξ)
     · filter_upwards [hnear] with y hy η
       rw [coefficient_sum, Finset.sum_apply]
@@ -593,7 +586,7 @@ theorem IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq {p : Symbol n W U 
   -- The remainders of the pieces decay away from their lattice points, so their series converges
   -- to a uniform symbol of order `m' + m - N`.
   obtain ⟨r, hr, hrsum⟩ := exists_isUniform_hasSum_coefficient
-    (fun j ↦ p.sharpRemainder (latticePiece W a j) (hfam.hasCompactSpatialSupport j) N)
+    (fun j ↦ p.sharpRemainder (latticePiece a j) (hfam.hasCompactSpatialSupport j) N)
     (fun j x ↦ ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹) (fun _ _ ↦ by positivity)
     exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
     tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le
