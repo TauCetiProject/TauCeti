@@ -11,6 +11,7 @@ import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Plane
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Restrict
 import TauCeti.Geometry.Symplectic.Spectrum
+import TauCeti.LinearAlgebra.Eigenspace.Commute
 
 /-!
 # Williamson's classification of nondegenerate families: the elliptic–hyperbolic case

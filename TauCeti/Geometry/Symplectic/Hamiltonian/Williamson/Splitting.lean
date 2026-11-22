@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
 public import TauCeti.Geometry.Symplectic.Restrict
 public import TauCeti.Geometry.Symplectic.Spectrum
 import Mathlib.LinearAlgebra.Semisimple
+import TauCeti.LinearAlgebra.Eigenspace.Commute
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!

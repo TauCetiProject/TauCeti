@@ -23,8 +23,7 @@ the range of `p(g)`. When `B` is right-separating, `g` is determined by `f`
 (`LinearMap.IsAdjointPair.right_unique`), so every polynomial killing `f` kills `g`
 (`LinearMap.IsAdjointPair.aeval_eq_zero`) and `p(g)` is nilpotent whenever `p(f)` is
 (`LinearMap.IsAdjointPair.isNilpotent_aeval`). This file develops the consequences for generalized
-eigenspaces, which are preserved by every endomorphism commuting with `f`
-(`Module.End.mapsTo_maxGenEigenspace_aeval_of_comm`):
+eigenspaces:
 
 * `B` pairs the generalized `μ`-eigenspace of `f` to zero against the generalized `ν`-eigenspace
   of `g` whenever `μ - ν` is a unit (`LinearMap.IsAdjointPair.apply_eq_zero_of_mem_genEigenspace`),
@@ -77,20 +76,6 @@ orthogonal Lie algebra. Its adjoint is `-f`, whose generalized `ν`-eigenspace i
 public section
 
 open Module Polynomial
-
-namespace Module.End
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- An endomorphism `g` commuting with `f` preserves the maximal generalized eigenspaces of `p(f)`,
-for every polynomial `p`. -/
-theorem mapsTo_maxGenEigenspace_aeval_of_comm {f g : End R M} (h : Commute f g) (p : R[X])
-    (μ : R) : Set.MapsTo g ((aeval f p).maxGenEigenspace μ) ((aeval f p).maxGenEigenspace μ) :=
-  mapsTo_maxGenEigenspace_of_comm
-    (Algebra.commute_of_mem_adjoin_singleton_of_commute (aeval_mem_adjoin_singleton R f)
-      h.symm).symm μ
-
-end Module.End
 
 namespace LinearMap
 
