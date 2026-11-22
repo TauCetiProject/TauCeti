@@ -344,8 +344,8 @@ variable {E₁ E₂ : WeierstrassCurve ℚ} [E₁.IsElliptic] [E₂.IsElliptic] 
 with `Ω` the real period of a global minimal equation and `c_p` the local Tamagawa numbers. The
 Selmer groups are cut out at every place of `ℚ`. -/
 theorem bsdQuotient_div_bsdQuotient (ψ : Isogeny E₁.toAffine E₂.toAffine)
-    (h₁ : (ofIsogeny ψ).shafarevichTateMap τ = 0)
-    (h₂ : (ofIsogeny ψ.dual).shafarevichTateMap τ = 0) :
+    (h₁ : (ofIsogeny ψ).shaMap = 0)
+    (h₂ : (ofIsogeny ψ.dual).shaMap = 0) :
     E₁.bsdQuotient / E₂.bsdQuotient =
       (Nat.card (ψ.selmerGroup τ) / Nat.card (ψ.dual.selmerGroup τ)) /
           (Nat.card (ofIsogeny ψ).pointMapHom.ker / Nat.card (ofIsogeny ψ.dual).pointMapHom.ker) *
@@ -353,10 +353,9 @@ theorem bsdQuotient_div_bsdQuotient (ψ : Isogeny E₁.toAffine E₂.toAffine)
           (E₂.minimalRealPeriod * E₂.tamagawaProduct (R := ℤ))) := by
   have h := ψ.bsdQuotient_mul_card_selmerGroup_dual τ
   have hr₁ : Nat.card (ofIsogeny ψ).shaMap.range = 1 := by
-    rw [((ofIsogeny ψ).shaMap_eq_zero_iff τ).2 h₁, AddMonoidHom.range_zero, AddSubgroup.card_bot]
+    rw [h₁, AddMonoidHom.range_zero, AddSubgroup.card_bot]
   have hr₂ : Nat.card (ofIsogeny ψ.dual).shaMap.range = 1 := by
-    rw [((ofIsogeny ψ.dual).shaMap_eq_zero_iff τ).2 h₂, AddMonoidHom.range_zero,
-      AddSubgroup.card_bot]
+    rw [h₂, AddMonoidHom.range_zero, AddSubgroup.card_bot]
   rw [hr₁, hr₂, Nat.cast_one, mul_one, mul_one, kummerRatioProduct_eq_div] at h
   have := ψ.dual.finite_selmerGroup_place τ
   have := (ofIsogeny ψ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero ψ)
@@ -391,9 +390,7 @@ theorem Hom.exists_isogeny_bsdQuotient_div_bsdQuotient {f : Hom E₁.toAffine E�
               Nat.card (ofIsogeny ψ.dual).pointMapHom.ker) *
           (E₁.minimalRealPeriod * E₁.tamagawaProduct (R := ℤ) /
             (E₂.minimalRealPeriod * E₂.tamagawaProduct (R := ℤ))) := by
-  have : Finite (E₂.shafarevichTateGroup τ) := by rwa [← E₂.sha_eq_shafarevichTateGroup τ]
-  obtain ⟨ψ, hψ, h₁, h₂⟩ := f.exists_isogeny_shafarevichTateMap_eq_zero τ hf
-  rw [← E₂.sha_eq_shafarevichTateGroup τ] at hψ
+  obtain ⟨ψ, hψ, h₁, h₂⟩ := f.exists_isogeny_shaMap_eq_zero hf
   exact ⟨ψ, hψ, bsdQuotient_div_bsdQuotient τ ψ h₁ h₂⟩
 
 end Rat
