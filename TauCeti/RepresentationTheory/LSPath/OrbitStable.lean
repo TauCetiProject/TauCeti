@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
 # Root operators preserve velocities in a Weyl orbit
