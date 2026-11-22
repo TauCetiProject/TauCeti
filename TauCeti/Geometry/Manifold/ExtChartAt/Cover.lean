@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
-public import Mathlib.Order.Disjointed
+public import TauCeti.Order.Disjointed
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import Mathlib.MeasureTheory.Function.Jacobian
 
 /-!
 # Finite open chart covers and disjointed cover integrals
@@ -15,7 +17,8 @@ public import Mathlib.Order.Disjointed
 `TauCeti.ChartCover I s` packages a finite cover of `s ⊆ M` by open subsets of preferred extended
 chart sources, with disjointed chart-measurable pieces (`piece`), compact-set choice (`choose`),
 chart prepending (`cons`), Bochner cover integrals (`integral`, `integral_cons`, `integral_eq`,
-`integral_eq_integral_of_ae_support`), and `integrable_of_open_cover_extChartAt`.
+`integral_eq_integral_of_ae_support`), overlap Jacobian invariance
+(`extChartAt_coordChange_setIntegral_and_integrableOn`), and `integrable_of_open_cover_extChartAt`.
 -/
 
 public section
@@ -119,17 +122,8 @@ theorem integral_cons {s : Set M} (c : ChartCover I s) (x₀ : M) (F : M → E �
       ∑ i : Fin c.n, ∫ y in (extChartAt I (c.center i)) '' (c.piece i \ (extChartAt I x₀).source),
         F (c.center i) y ∂ν := by
   unfold integral piece cons; dsimp only; rw [Fin.sum_univ_succ]; congr 1
-  · rw [Fin.cons_zero, ← bot_eq_zero, disjointed_bot, bot_eq_zero, Fin.cons_zero,
-      (extChartAt I x₀).image_source_eq_target]
-  · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hi : disjointed (Fin.cons (extChartAt I x₀).source c.domain) i.succ =
-        disjointed c.domain i \ (extChartAt I x₀).source := by
-      ext x; simp only [disjointed_apply, Finset.sup_set_eq_biUnion, mem_sdiff, mem_iUnion,
-        Finset.mem_Iio, Fin.cons_succ, exists_prop, not_exists, not_and]
-      exact ⟨fun ⟨hx, h⟩ ↦ ⟨⟨hx, fun j hj ↦ by simpa using h j.succ (Fin.succ_lt_succ_iff.mpr hj)⟩,
-          by simpa using h 0 (Fin.succ_pos i)⟩, fun ⟨⟨hx, h⟩, hx₀⟩ ↦ ⟨hx, Fin.cases
-        (fun _ ↦ by simpa using hx₀) fun k hk ↦ by simpa using h k (Fin.succ_lt_succ_iff.mp hk)⟩⟩
-    simp only [Fin.cons_succ, hi]
+  · rw [Fin.cons_zero, disjointed_cons_zero, (extChartAt I x₀).image_source_eq_target]
+  · simp only [Fin.cons_succ, disjointed_cons_succ]
 
 /-- The cover integral of the zero chart family vanishes. -/
 @[simp] theorem integral_zero {s : Set M} (c : ChartCover I s) (ν : Measure E) :
@@ -244,5 +238,34 @@ theorem integrable_of_open_cover_extChartAt [MeasurableSpace E] {G : Type*} [Nor
       hchange i ((hlocal i).mono_set (image_mono inter_subset_right)))
   obtain ⟨x, ⟨hxα, hxK⟩, rfl⟩ := hsupp hy; obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp (ht hxK)
   exact mem_iUnion.mpr ⟨⟨i, hi⟩, mem_image_of_mem _ ⟨hxα, hxi⟩⟩
+
+/-- On a measurable chart-overlap subset `s`, if `fα` and `fβ` satisfy the absolute Jacobian
+change-of-variables law on `s`, then their Haar set integrals and integrability on the coordinate
+images of `s` agree. -/
+theorem extChartAt_coordChange_setIntegral_and_integrableOn {E H M G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 1 M] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (α β : M) {s : Set M} (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source)
+    (hs : MeasurableSet ((extChartAt I α) '' s)) (fα fβ : E → G)
+    (hcoef : ∀ x ∈ s,
+      |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I)
+        (extChartAt I α x)).toLinearMap.det| • fβ (extChartAt I β x) = fα (extChartAt I α x))
+    (ν : Measure E) [ν.IsAddHaarMeasure] :
+    ((∫ y in (extChartAt I α) '' s, fα y ∂ν) = ∫ y in (extChartAt I β) '' s, fβ y ∂ν) ∧
+      (IntegrableOn fα ((extChartAt I α) '' s) ν ↔ IntegrableOn fβ ((extChartAt I β) '' s) ν) := by
+  have himage := extChartAt_coordChange_image α β hsub
+  have hinj := injOn_extChartAt_coordChange α β hsub
+  have hderiv := hasFDerivWithinAt_extChartAt_coordChange α β hsub
+  have hcoef' : ∀ y ∈ (extChartAt I α) '' s,
+      |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I) y).toLinearMap.det| •
+        fβ (((extChartAt I α).symm ≫ extChartAt I β) y) = fα y := by
+    rintro _ ⟨x, hx, rfl⟩
+    rw [PartialEquiv.trans_apply, (extChartAt I α).left_inv (hsub hx).1]
+    exact hcoef x hx
+  exact ⟨by rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul ν hs hderiv hinj]
+            exact setIntegral_congr_fun hs fun y hy ↦ (hcoef' y hy).symm,
+    by rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul ν hs hderiv hinj]
+       exact (integrableOn_congr_fun hcoef' hs).symm⟩
 
 end TauCeti

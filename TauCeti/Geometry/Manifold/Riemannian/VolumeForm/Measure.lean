@@ -180,12 +180,15 @@ theorem integralTopForm_smul_riemannianVolumeForm
     rw [disjointed_apply, Finset.sup_set_eq_biUnion]
     exact (hu i).1.measurableSet.diff
       (Finset.measurableSet_biUnion _ fun j _ ↦ (hu j).1.measurableSet)
-  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b α u (fun i ↦ (hu i).1)
-    (fun i ↦ (hu i).2.1) (hsupp.trans hcover), Finset.mul_sum,
+  let c : ChartCover I (tsupport f) :=
+    ⟨n, α, u, fun i ↦ (hu i).1, fun i ↦ (hu i).2.1, hcover⟩
+  rw [integralTopForm_eq_chartCover_integral l φ hi b c hsupp, ChartCover.integral_eq_sum,
+    Finset.mul_sum,
     ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := ⋃ i, disjointed u i) fun x hx ↦
       image_eq_zero_of_notMem_tsupport fun h ↦ hx (by rw [iUnion_disjointed]; exact hcover h),
     integral_iUnion_fintype hmeas (disjoint_disjointed u)
       fun i ↦ (hf.integrable_of_hasCompactSupport hc).integrableOn]
+  simp only [c, ChartCover.piece_eq_disjointed]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [setIntegral_riemannianVolume_of_subset (by simpa only [extChartAt_source] using hpiece i)
     (hmeas i), ← integral_const_mul, Basis.addHaar_reindex]

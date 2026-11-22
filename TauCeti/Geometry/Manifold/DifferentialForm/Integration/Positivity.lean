@@ -190,12 +190,12 @@ theorem integralTopForm_nonneg [NeZero k] (o : Manifold.Orientation I M (Fin k))
   obtain ⟨l, rfl⟩ := o.exists_lift
   simp only [Manifold.Orientation.orientationAt_mk] at hφ
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
-  obtain ⟨m, α, u, _, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hi.isCompact
-  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b α u (fun i ↦ (hu i).1)
-    (fun i ↦ (hu i).2.1) hcover, Finset.mul_sum]
+  let c := ChartCover.choose I hi.isCompact
+  rw [integralTopForm_eq_chartCover_integral l φ hi b c Subset.rfl,
+    ChartCover.integral_eq_sum, Finset.mul_sum]
   refine Finset.sum_nonneg fun i _ ↦ ?_
   rw [← integral_const_mul]
-  exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hφ b (α i) y
+  exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hφ b (c.center i) y
 
 /-- **Positivity of integration** [Lee, Prop. 16.6]. On an oriented manifold of positive
 dimension, a continuous, compactly supported top form that is nonnegative on every positively
@@ -219,14 +219,8 @@ theorem integralTopForm_pos [NeZero k] (o : Manifold.Orientation I M (Fin k))
   -- Compute the integral on a chart cover whose first chart is the chart at `x₀`, so that the
   -- first disjointed piece is that chart's whole source.
   let c := ChartCover.choose I hc
-  let c' := c.cons x₀
-  have hsum : (∑ i, ∫ y in (extChartAt I (c'.center i)) '' disjointed c'.domain i,
-      φ.signedInChartAt b (c'.center i) (fun x ↦ l.signAt (c'.center i) x) y ∂b.addHaar) =
-      c'.integral (fun α ↦ φ.signedInChartAt b α (fun x ↦ l.signAt α x)) b.addHaar := by
-    rw [ChartCover.integral_eq_sum]
-    simp only [ChartCover.piece_eq_disjointed]
-  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b c'.center c'.domain
-    c'.isOpen_domain c'.domain_subset c'.covers, hsum, c.integral_cons x₀, mul_add, Finset.mul_sum]
+  rw [integralTopForm_eq_chartCover_integral l φ hi b (c.cons x₀) Subset.rfl,
+    c.integral_cons x₀, mul_add, Finset.mul_sum]
   refine add_pos_of_pos_of_nonneg ?_ (Finset.sum_nonneg fun i _ ↦ ?_)
   · rw [← integral_const_mul]
     exact setIntegral_signBasis_mul_signedInChartAt_pos l hφ hi hnn b (mem_extChartAt_source x₀)

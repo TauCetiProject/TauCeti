@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.Orientation.Lift
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+import TauCeti.Topology.PartitionOfUnity.Basic
 
 /-!
 # Finite smooth localization in oriented charts
@@ -74,9 +75,10 @@ theorem exists_finset_smooth_partition_in_charts (φ : RoughForm I M F k)
     · exact mem_univ x
     · exact hx
   obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ U hU hcover
-  obtain ⟨s, heq, _⟩ := φ.exists_finset_partition_eq hc ρ.toPartitionOfUnity
+  obtain ⟨s, heq, -⟩ := ρ.toPartitionOfUnity.exists_finset_eq_sum_smul
+    (show M → E [⋀^Fin k]→L[ℝ] F from φ) hc (subset_univ _)
   refine ⟨s, ρ, ?_, ?_⟩
-  · exact heq.trans (by ext x; simp)
+  · exact heq.trans (by funext x; simp only [Finset.sum_apply]; rfl)
   · intro i _
     -- Fix the model-fibre view of φ for the ordinary function support lemmas; the form's
     -- tangent-fibre type otherwise leaves an expensive dependent-type identification implicit.

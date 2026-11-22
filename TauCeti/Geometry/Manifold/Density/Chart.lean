@@ -12,12 +12,13 @@ public import TauCeti.MeasureTheory.Integral.Bochner.Density
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Lift
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 
 /-!
 # Coordinate expressions and chart coefficients of rough densities
 
 Defines `TauCeti.RoughDensity.inChartAt` and `TauCeti.RoughDensity.coeffInChartAt`, proves overlap
-Jacobian laws (`inChartAt_eq_compEnd`, `coeffInChartAt_changeChart`), bundle continuity
+Jacobian laws (`inChartAt_eq_compLinearMap`, `coeffInChartAt_changeChart`), bundle continuity
 (`continuousOn_inChartAt_of_continuousOn_section`), and `RoughForm.coeffInChartAt_toDensity`.
 
 ## References
@@ -102,9 +103,10 @@ theorem inChartAt_extChartAt_self (μ : RoughDensity I M m) (x : M) :
 
 private theorem inChartAt_chart_eq_compLinearEquiv [IsManifold I 1 M] (μ : RoughDensity I M m)
     {α x : M} (hx : x ∈ (extChartAt I α).source) :
-    μ.inChartAt α (extChartAt I α x) = (μ x).compLinearEquiv
+    μ.inChartAt α (extChartAt I α x) = Density.compLinearEquiv
       ((trivializationAt E (TangentSpace I) α).linearEquivAt ℝ x
-        (by rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source (I := I)])).symm := by
+        (by rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source (I := I)])).symm
+      (μ x) := by
   ext v; rw [inChartAt_apply, Density.compLinearEquiv_apply]
   simp_rw [mfderivWithin_extChartAt_symm_apply_eq_trivializationAt_symm α
     ((extChartAt I α).map_source hx)]
@@ -117,7 +119,7 @@ theorem inChartAt_chart_eq_iff [IsManifold I 1 M] {μ ν : RoughDensity I M m} {
     (hx : x ∈ (extChartAt I α).source) :
     μ.inChartAt α (extChartAt I α x) = ν.inChartAt α (extChartAt I α x) ↔ μ x = ν x := by
   rw [μ.inChartAt_chart_eq_compLinearEquiv hx, ν.inChartAt_chart_eq_compLinearEquiv hx]
-  exact (Density.compLinearEquiv_injective _).eq_iff
+  exact (Density.compLinearEquiv _).injective.eq_iff
 
 /-- Evaluating `μ.inChartAt α` at `extChartAt I α x` on a model basis `b` equals evaluating `μ x`
 on some basis of `TangentSpace I x`. -/
@@ -139,12 +141,15 @@ theorem exists_basis_inChartAt_apply_eq [IsManifold I 1 M] (μ : RoughDensity I 
     μ.exists_basis_inChartAt_chart_apply_eq b α ((extChartAt I α).map_target hy)
 
 /-- On a preferred-chart overlap, `inChartAt` pulls back by the coordinate-change derivative. -/
-theorem inChartAt_eq_compEnd [IsManifold I 1 M] (μ : RoughDensity I M m) {x₀ x : M} {z : E}
+theorem inChartAt_eq_compLinearMap [IsManifold I 1 M] (μ : RoughDensity I M m) {x₀ x : M} {z : E}
     (hz : z ∈ (extChartAt I x₀).target) (hx : (extChartAt I x₀).symm z ∈ (extChartAt I x).source) :
-    μ.inChartAt x₀ z = (μ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z))).compEnd
-      (fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z).toLinearMap := by
+    μ.inChartAt x₀ z =
+      (μ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z))).compLinearMap
+        (fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z).toLinearMap
+        ⟨LinearEquiv.refl ℝ E⟩ := by
   have hcomp := mfderivWithin_extChartAt_symm_eq_comp_fderivWithin hz hx
-  ext v; rw [inChartAt_apply, Density.compEnd_apply, inChartAt_apply, (extChartAt I x).left_inv hx]
+  ext v
+  rw [inChartAt_apply, Density.compLinearMap_apply, inChartAt_apply, (extChartAt I x).left_inv hx]
   exact congrArg _ (funext fun i ↦ congrArg (· (v i)) hcomp)
 
 /-- Between overlapping preferred charts, `inChartAt` transforms by the absolute Jacobian
@@ -155,7 +160,7 @@ theorem inChartAt_apply_eq_abs_det_mul [IsManifold I 1 M] (μ : RoughDensity I M
     μ.inChartAt x₀ z v =
       |(fderivWithin ℝ (extChartAt I x ∘ (extChartAt I x₀).symm) (range I) z).toLinearMap.det| *
         μ.inChartAt x (extChartAt I x ((extChartAt I x₀).symm z)) v := by
-  rw [μ.inChartAt_eq_compEnd hz hx, Density.compEnd_apply, Density.comp_apply]
+  rw [μ.inChartAt_eq_compLinearMap hz hx, Density.compLinearMap_apply, Density.comp_apply]
 
 end InChartAt
 
@@ -196,6 +201,13 @@ theorem coeffInChartAt_apply_of_mem_source (μ : RoughDensity I M m) (b : Basis 
     (α : M) {x : M} (hx : x ∈ (extChartAt I α).source) :
     μ.coeffInChartAt b α (extChartAt I α x) = μ.inChartAt α (extChartAt I α x) b :=
   μ.coeffInChartAt_apply_of_mem_target b α ((extChartAt I α).map_source hx)
+
+/-- Evaluating `μ.coeffInChartAt b x` at `extChartAt I x x` recovers `μ x b`. -/
+theorem coeffInChartAt_extChartAt_self (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E)
+    (x : M) : μ.coeffInChartAt b x (extChartAt I x x) = μ x b := by
+  rw [μ.coeffInChartAt_apply_of_mem_target b x (mem_extChartAt_target x),
+    inChartAt_extChartAt_self]
+  rfl
 
 /-- If `μ ((extChartAt I α).symm y) = 0`, then `μ.coeffInChartAt b α y = 0`. -/
 theorem coeffInChartAt_eq_zero_of_apply_eq_zero {μ : RoughDensity I M m} (b : Basis (Fin m) ℝ E)
@@ -335,21 +347,14 @@ theorem coeffInChartAt_changeChart [IsManifold I 1 M] (μ : RoughDensity I M m)
       (IntegrableOn (μ.coeffInChartAt b α) ((extChartAt I α) '' s) ν ↔
         IntegrableOn (μ.coeffInChartAt b β) ((extChartAt I β) '' s) ν) := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
-  have himage := TauCeti.extChartAt_coordChange_image α β hsub
-  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
-  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
-  have hcoef : ∀ y ∈ (extChartAt I α) '' s,
-      |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I) y).toLinearMap.det| •
-        μ.coeffInChartAt b β (((extChartAt I α).symm ≫ extChartAt I β) y) =
-          μ.coeffInChartAt b α y := by
-    rintro _ ⟨x, hx, rfl⟩; have ⟨hα, hβ⟩ := hsub hx; have hl := (extChartAt I α).left_inv hα
-    have hc := μ.inChartAt_apply_eq_abs_det_mul ((extChartAt I α).map_source hα) (hl.symm ▸ hβ) b
-    rw [hl] at hc; rw [PartialEquiv.trans_apply, hl, μ.coeffInChartAt_apply_of_mem_source b α hα,
-      μ.coeffInChartAt_apply_of_mem_source b β hβ, hc, smul_eq_mul]
-  exact ⟨by rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul ν hs hderiv hinj]
-            exact setIntegral_congr_fun hs fun y hy ↦ (hcoef y hy).symm,
-    by rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul ν hs hderiv hinj]
-       exact (integrableOn_congr_fun (fun y hy ↦ hcoef y hy) hs).symm⟩
+  refine TauCeti.extChartAt_coordChange_setIntegral_and_integrableOn α β hsub hs
+    (μ.coeffInChartAt b α) (μ.coeffInChartAt b β) (fun x hx ↦ ?_) ν
+  have ⟨hα, hβ⟩ := hsub hx
+  have hl := (extChartAt I α).left_inv hα
+  have hc := μ.inChartAt_apply_eq_abs_det_mul ((extChartAt I α).map_source hα) (hl.symm ▸ hβ) b
+  rw [hl] at hc
+  rw [μ.coeffInChartAt_apply_of_mem_source b α hα, μ.coeffInChartAt_apply_of_mem_source b β hβ,
+    hc, smul_eq_mul]
 
 /-- A rough density supported in two preferred charts has equal chart-coefficient integrals. -/
 theorem integral_coeffInChartAt_eq_of_tsupport_subset [IsManifold I 1 M] (μ : RoughDensity I M m)

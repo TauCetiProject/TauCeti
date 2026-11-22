@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
-public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+public import TauCeti.MeasureTheory.Integral.Bochner.OfBasis
 public import TauCeti.LinearAlgebra.Orientation.Basis
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Basis independence of alternating-form integrals
@@ -37,11 +36,9 @@ variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 orientation sign. Positive Haar scaling and signed form coefficients are both retained. -/
 theorem integral_apply_basis_change (b b' : Basis ι ℝ E) (ω : E → E [⋀^ι]→L[ℝ] ℝ) :
     (∫ x, ω x b' ∂b'.addHaar) = (b.det b' / |b.det b'|) * ∫ x, ω x b ∂b.addHaar := by
-  rw [addHaar_eq_smul_of_basis b b', integral_smul_measure]
-  simp_rw [ContinuousAlternatingMap.apply_eq_det_mul (b := b) (v := b')]
-  rw [integral_const_mul, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
-  simp only [smul_eq_mul]
-  field_simp
+  simpa only [Measure.restrict_univ, smul_eq_mul] using
+    b.setIntegral_addHaar_eq_of_eq_smul b' (b.det b')
+      (fun x ↦ ContinuousAlternatingMap.apply_eq_det_mul (ω x) b b') Set.univ
 
 /-- The actual integral of a top-form coefficient is invariant under an orientation-compatible
 basis change. The compensating Haar normalization is essential. -/
@@ -66,11 +63,9 @@ theorem integrable_apply_basis_iff (b b' : Basis ι ℝ E)
     (ω : E → E [⋀^ι]→L[ℝ] ℝ) :
     Integrable (fun x ↦ ω x b') b'.addHaar ↔ Integrable (fun x ↦ ω x b) b.addHaar := by
   classical
-  have hd : b.det b' ≠ 0 := (b.isUnit_det b').ne_zero
-  rw [addHaar_eq_smul_of_basis b b', integrable_smul_measure
-    (ENNReal.ofReal_ne_zero_iff.mpr (abs_pos.mpr (inv_ne_zero hd))) ENNReal.ofReal_ne_top]
-  simp_rw [ContinuousAlternatingMap.apply_eq_det_mul (b := b) (v := b')]
-  exact integrable_const_mul_iff (b.isUnit_det b') _
+  simpa only [← integrableOn_univ] using
+    b.integrableOn_addHaar_iff_of_eq_smul b' (b.isUnit_det b').ne_zero
+      (fun x ↦ ContinuousAlternatingMap.apply_eq_det_mul (ω x) b b') Set.univ
 
 omit [DecidableEq ι] in
 /-- **The density of a top-degree form is independent of the basis.** The Haar measure of a basis

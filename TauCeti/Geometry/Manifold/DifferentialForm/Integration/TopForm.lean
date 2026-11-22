@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basis
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Operations
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Linear
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OrientationLift
-import TauCeti.Geometry.Manifold.ExtChartAt.Cover
+public import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -391,31 +391,19 @@ private theorem integralTopForm_mk [MeasurableSpace E] [BorelSpace E]
   · rw [show Classical.choose (Manifold.Orientation.mk l).exists_lift = l.flip from h,
       coverIntegral_flip]
 
-private theorem integralTopForm_eq_coverIntegral [MeasurableSpace E] [BorelSpace E]
+/-- Any finite open chart cover containing `tsupport φ` computes the canonical integral through its
+disjointed Borel pieces. The formula is independent of the cover and model basis and permits
+overlapping charts. -/
+public theorem integralTopForm_eq_chartCover_integral [MeasurableSpace E] [BorelSpace E]
     [IsManifold I 1 M] (l : Manifold.OrientationLift I M (Fin k))
     (φ : RoughForm I M ℝ k) (hi : IntegrableTopForm φ)
     (b : Module.Basis (Fin k) ℝ E) {s : Set M} (c : ChartCover I s)
     (hc : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ⊆ s) :
-    integralTopForm (Manifold.Orientation.mk l) φ = coverIntegral l b φ c := by
+    integralTopForm (Manifold.Orientation.mk l) φ =
+      (Orientation.signBasis l.modelOrientation b : ℝ) *
+        c.integral (fun α ↦ φ.signedInChartAt b α (fun x ↦ l.signAt α x.val)) b.addHaar := by
   rw [integralTopForm_mk l φ hi b]
   exact coverIntegral_eq l φ hi b _ c Subset.rfl hc
-
-/-- Any finite open chart cover computes the canonical integral through its disjoint Borel
-pieces. The formula is independent of the cover and model basis and permits overlapping charts. -/
-public theorem integralTopForm_eq_sum_disjointed_chart_integrals [IsManifold I 1 M]
-    [MeasurableSpace E] [BorelSpace E] (l : Manifold.OrientationLift I M (Fin k))
-    (φ : RoughForm I M ℝ k) (hi : IntegrableTopForm φ) (b : Module.Basis (Fin k) ℝ E)
-    {m : ℕ} (α : Fin m → M) (u : Fin m → Set M) (hu : ∀ i, IsOpen (u i))
-    (hs : ∀ i, u i ⊆ (extChartAt I (α i)).source)
-    (hc : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, u i) :
-    integralTopForm (Manifold.Orientation.mk l) φ =
-      (Orientation.signBasis l.modelOrientation b : ℝ) * ∑ i,
-        ∫ y in (extChartAt I (α i)) '' disjointed u i,
-          φ.signedInChartAt b (α i) (fun x ↦ l.signAt (α i) x) y ∂b.addHaar := by
-  let c : ChartCover I (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) := ⟨m, α, u, hu, hs, hc⟩
-  rw [integralTopForm_eq_coverIntegral l φ hi b c Subset.rfl, coverIntegral,
-    ChartCover.integral_eq_sum]
-  simp only [ChartCover.piece_eq_disjointed, c]
 
 /-- A compact manifold admits a finite disjoint chartwise Borel partition computing every
 integrable top-form integral. No measurable structure on the manifold is installed. -/
@@ -436,8 +424,7 @@ public theorem exists_chart_partition_integralTopForm [IsManifold I 1 M] [Compac
   refine ⟨c.n, c.center, c.piece, c.isChartMeasurable_piece, c.piece_subset,
     c.pairwise_disjoint, Subset.antisymm (subset_univ _) c.piece_covers, ?_⟩
   intro φ hi
-  rw [integralTopForm_eq_coverIntegral l φ hi b c (subset_univ _), coverIntegral,
-    ChartCover.integral_eq_sum]
+  rw [integralTopForm_eq_chartCover_integral l φ hi b c (subset_univ _), ChartCover.integral_eq_sum]
 
 /-- The top-form integral is additive on integrable rough forms. -/
 public theorem integralTopForm_add_of_integrable [IsManifold I 1 M]
@@ -452,11 +439,11 @@ public theorem integralTopForm_add_of_integrable [IsManifold I 1 M]
   let c := ChartCover.choose I (hφ.isCompact.union hψ.isCompact)
   -- tsupport_add is a fixed-codomain function lemma; identify the tangent fibres
   -- with the model space to select that function argument.
-  rw [integralTopForm_eq_coverIntegral l _ (hφ.add hψ) b c (_root_.tsupport_add
+  rw [integralTopForm_eq_chartCover_integral l _ (hφ.add hψ) b c (_root_.tsupport_add
     (show M → E [⋀^Fin k]→L[ℝ] ℝ from φ) ψ),
-    integralTopForm_eq_coverIntegral l _ hφ b c subset_union_left,
-    integralTopForm_eq_coverIntegral l _ hψ b c subset_union_right,
-    coverIntegral_add l b φ ψ hφ hψ c]
+    integralTopForm_eq_chartCover_integral l _ hφ b c subset_union_left,
+    integralTopForm_eq_chartCover_integral l _ hψ b c subset_union_right]
+  exact coverIntegral_add l b φ ψ hφ hψ c
 
 /-- Reversing the manifold orientation reverses the total integral, including its value on
 nonintegrable rough forms. -/

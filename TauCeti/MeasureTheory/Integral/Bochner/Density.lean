@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Density.Basic
-public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import TauCeti.MeasureTheory.Integral.Bochner.OfBasis
 
 /-!
 # Basis independence of density integrals
@@ -31,13 +29,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
 /-- Set integrability of `x ↦ μ x b` against `b.addHaar` is independent of `b` (any `s`). -/
 theorem integrableOn_density_apply_iff (b b' : Basis (Fin m) ℝ E)
     (μ : E → TauCeti.Density E m) (s : Set E) :
-    IntegrableOn (fun x ↦ μ x b') s b'.addHaar ↔ IntegrableOn (fun x ↦ μ x b) s b.addHaar := by
-  have hd : b.det b' ≠ 0 := (b.isUnit_det b').ne_zero
-  simp only [IntegrableOn, addHaar_eq_smul_of_basis b b', Measure.restrict_smul]
-  rw [integrable_smul_measure
-    (ENNReal.ofReal_ne_zero_iff.mpr (abs_pos.mpr (inv_ne_zero hd))) ENNReal.ofReal_ne_top]
-  simp_rw [TauCeti.Density.apply_eq_abs_det_mul _ b b']
-  exact integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (abs_ne_zero.mpr hd)) _
+    IntegrableOn (fun x ↦ μ x b') s b'.addHaar ↔ IntegrableOn (fun x ↦ μ x b) s b.addHaar :=
+  b.integrableOn_addHaar_iff_of_eq_smul b' (abs_ne_zero.mpr (b.isUnit_det b').ne_zero)
+    (fun x ↦ (μ x).apply_eq_abs_det_mul b b') s
 
 /-- Integrability of `x ↦ μ x b` against `b.addHaar` is independent of `b` (all dims). -/
 theorem integrable_density_apply_iff (b b' : Basis (Fin m) ℝ E) (μ : E → TauCeti.Density E m) :
@@ -48,10 +42,10 @@ theorem integrable_density_apply_iff (b b' : Basis (Fin m) ℝ E) (μ : E → Ta
 theorem setIntegral_density_apply_eq (b b' : Basis (Fin m) ℝ E)
     (μ : E → TauCeti.Density E m) (s : Set E) :
     (∫ x in s, μ x b ∂b.addHaar) = ∫ x in s, μ x b' ∂b'.addHaar := by
-  have hd : |b.det b'| ≠ 0 := abs_ne_zero.mpr (b.isUnit_det b').ne_zero
-  rw [addHaar_eq_smul_of_basis b b', Measure.restrict_smul, integral_smul_measure]
-  simp_rw [TauCeti.Density.apply_eq_abs_det_mul _ b b']
-  rw [integral_const_mul, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv, smul_eq_mul]; field_simp
+  have h := b.setIntegral_addHaar_eq_of_eq_smul b' |b.det b'|
+    (fun x ↦ (μ x).apply_eq_abs_det_mul b b') s
+  rw [div_self (abs_ne_zero.mpr (b.isUnit_det b').ne_zero), one_smul] at h
+  exact h.symm
 
 /-- The normalized Haar integral `∫ x, μ x b ∂b.addHaar` is independent of `b` (all dims). -/
 theorem integral_density_apply_eq (b b' : Basis (Fin m) ℝ E) (μ : E → TauCeti.Density E m) :

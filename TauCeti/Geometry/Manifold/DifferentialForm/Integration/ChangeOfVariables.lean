@@ -401,10 +401,14 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
   have hψcover : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ ⋃ i, u i := fun x hx ↦ by
     obtain ⟨i, hi⟩ := mem_iUnion.mp (hcover (e.mapsTo_tsupport_of_eq_mpullback hfe hψ hψφ hx))
     exact mem_iUnion.mpr ⟨i, hψ hx, hi⟩
-  rw [integralTopForm_eq_sum_disjointed_chart_integrals l ψ hψi b (fun i ↦ e.symm (α i)) u hu
-      hus hψcover,
-    integralTopForm_eq_sum_disjointed_chart_integrals l' φ hφ (b.map C.toLinearEquiv) α w
-      (fun i ↦ hv _) hw hcover, hl, Orientation.signBasis_map]
+  let cψ : ChartCover I (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ) :=
+    ⟨t.card, fun i ↦ e.symm (α i), u, hu, hus, hψcover⟩
+  let cφ : ChartCover J (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ) :=
+    ⟨t.card, α, w, fun i ↦ hv _, hw, hcover⟩
+  rw [integralTopForm_eq_chartCover_integral l ψ hψi b cψ Subset.rfl,
+    integralTopForm_eq_chartCover_integral l' φ hφ (b.map C.toLinearEquiv) cφ Subset.rfl,
+    ChartCover.integral_eq_sum, ChartCover.integral_eq_sum, hl, Orientation.signBasis_map]
+  simp only [cψ, cφ, ChartCover.piece_eq_disjointed]
   refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
   have hdisj : disjointed u i = e.source ∩ e ⁻¹' disjointed w i := by
     ext x
@@ -542,12 +546,16 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
     obtain ⟨y, hy, hyx⟩ := hx
     rw [← hf.injective hyx]
     simpa only [extChartAt_source] using hy.1
-  rw [integralTopForm_eq_sum_disjointed_chart_integrals l _ (hint.mpr hφi) b α
-      (fun i ↦ f ⁻¹' w i) (fun i ↦ (hv _).preimage hf.continuous) hu
-      ((RoughForm.tsupport_mpullback_subset_preimage hf.continuous φ).trans
-        (by simpa only [preimage_iUnion] using preimage_mono hcover)),
-    integralTopForm_eq_sum_disjointed_chart_integrals l' φ hφi (b.map C.toLinearEquiv)
-      (fun i ↦ f (α i)) w (fun i ↦ hv _) hw hcover, hl, Orientation.signBasis_map]
+  let cψ : ChartCover I (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (mpullback I J f φ)) :=
+    ⟨t.card, α, fun i ↦ f ⁻¹' w i, fun i ↦ (hv _).preimage hf.continuous, hu,
+      (RoughForm.tsupport_mpullback_subset_preimage hf.continuous φ).trans
+        (by simpa only [preimage_iUnion] using preimage_mono hcover)⟩
+  let cφ : ChartCover J (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ) :=
+    ⟨t.card, fun i ↦ f (α i), w, fun i ↦ hv _, hw, hcover⟩
+  rw [integralTopForm_eq_chartCover_integral l _ (hint.mpr hφi) b cψ Subset.rfl,
+    integralTopForm_eq_chartCover_integral l' φ hφi (b.map C.toLinearEquiv) cφ Subset.rfl,
+    ChartCover.integral_eq_sum, ChartCover.integral_eq_sum, hl, Orientation.signBasis_map]
+  simp only [cψ, cφ, ChartCover.piece_eq_disjointed]
   refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
   have hdisj : disjointed (fun j ↦ f ⁻¹' w j) i = f ⁻¹' disjointed w i := by
     simp only [disjointed_eq_inter_compl, preimage_inter, preimage_iInter, preimage_compl]
