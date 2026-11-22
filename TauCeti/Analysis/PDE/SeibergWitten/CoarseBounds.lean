@@ -387,7 +387,7 @@ theorem setIntegral_norm_le_div_sqrt {S : Set X} {Dα : X → F₁} {Dbar : X �
     (hint : IntegrableOn (fun x ↦ ‖Dbar x‖ ^ 2) S μ)
     (hDbar : √(∫ x in S, ‖Dbar x‖ ^ 2 ∂μ) ≤ C / √r * (√(∫ x in S, ‖Dα x‖ ^ 2 ∂μ) + 1)) :
     ∫ x in S, ‖Dbar x‖ ∂μ ≤ √(μ.real S) * (C * (√(2 * C * (C + μ.real S)) + 1)) / √r := by
-  have hcs := TauCeti.MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ S hμS hint
+  have hcs := TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ S hμS hint
   rcases le_or_gt r 0 with hr | hr
   · -- For `r ≤ 0`, `√r = 0`, so the `L²` bound forces `∫_S |∂bar_a α|² = 0` and both sides vanish.
     have h0 : √(∫ x in S, ‖Dbar x‖ ^ 2 ∂μ) ≤ 0 := by simpa [Real.sqrt_eq_zero'.2 hr] using hDbar

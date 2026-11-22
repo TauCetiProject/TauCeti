@@ -87,7 +87,7 @@ private theorem integrable_graphonDegree_sq (W : Graphon Ω μ) :
 
 private theorem integral_graphonDegree_sq_ge (W : Graphon Ω μ) :
     (∫ x, graphonDegree W x ∂μ) ^ 2 ≤ ∫ x, graphonDegree W x ^ 2 ∂μ := by
-  have h := TauCeti.MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
+  have h := TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq
     (graphonDegree W) Set.univ (measure_ne_top μ Set.univ)
     (by simpa using integrable_graphonDegree_sq W)
   simpa [measureReal_def, IsProbabilityMeasure.measure_univ] using h
@@ -432,7 +432,7 @@ fourth power of the edge density, on every probability carrier. This is the grap
 theorem sidorenko_cycleGraph_four (W : Graphon Ω μ) :
     homDensity (SimpleGraph.cycleGraph 4) W ≥
       homDensity (⊤ : SimpleGraph (Fin 2)) W ^ 4 := by
-  have hmean := TauCeti.MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
+  have hmean := TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq
     (fun p : Ω × Ω ↦ twoStepIntegral W p.1 p.2) Set.univ
     (measure_ne_top (μ.prod μ) Set.univ)
     (by simpa using integrable_twoStep_sq W)

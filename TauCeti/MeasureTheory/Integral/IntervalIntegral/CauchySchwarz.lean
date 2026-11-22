@@ -71,7 +71,7 @@ theorem integral_norm_sq_le_of_forall_norm_le_mul {X : Type*} [NormedAddCommGrou
     ∫ t in 0..d, ‖w t‖ ^ 2 ≤ d ^ 2 * B ^ 2 * ∫ t in 0..d, ‖f t‖ ^ 2 := by
   set F := ∫ s in 0..d, ‖f s‖
   have hCS : F ^ 2 ≤ d * ∫ s in 0..d, ‖f s‖ ^ 2 := by
-    have h := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
+    have h := TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq
       (μ := volume) (fun s ↦ ‖f s‖) (Ioc 0 d) measure_Ioc_lt_top.ne
       ((hf.norm.pow 2).integrableOn_Icc.mono_set Ioc_subset_Icc_self)
     rwa [Real.volume_real_Ioc_of_le hd, sub_zero, ← intervalIntegral.integral_of_le hd,

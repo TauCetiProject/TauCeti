@@ -301,7 +301,7 @@ theorem W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset {c : E} {R 
   -- Cauchy–Schwarz on the strip `S`, where `∇u = ∇w`.
   have hmem : MemLp (fun x => ‖W1p.gradient u x‖) 2 nu :=
     ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono_set mu hball)).norm
-  have hCS := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
+  have hCS := TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq
     (μ := nu) (fun x => ‖W1p.gradient u x‖) S (measure_ne_top _ _)
     hmem.integrable_sq.integrableOn
   have hstrip : ∫ x in S, ‖W1p.gradient u x‖ ^ 2 ∂nu ≤
