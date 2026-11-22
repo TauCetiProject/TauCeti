@@ -133,6 +133,7 @@ theorem exists_eta_natCast_mul_smul_eq (δ : ℕ) [NeZero δ] (σ : SL(2, ℤ)) 
     have := σ.det_coe
     rwa [Matrix.det_fin_two] at this
   -- `diag(δ, 1) σ = σ' (A B; 0 D)` with `B = y d`.
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
   let σ' : SL(2, ℤ) := .mk !![D * σ 0 0, x * δ * σ 0 1 - y; c', x * σ 1 1] (by
     rw [Matrix.det_fin_two_of]
     refine mul_left_cancel₀ (a := (A : ℤ)) (by exact_mod_cast hA) ?_
