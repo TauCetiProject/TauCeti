@@ -157,21 +157,6 @@ theorem exists_pos_forall_exists_mem_periodicSolutions_forall_dist_lt_of_floer_o
 
 end IsNondegenerate
 
-omit [FiniteDimensional ℝ F] in
-/-- On a compact manifold, the pushforwards `d e (X_{H_t})` of the Hamiltonian vector fields of a
-`C¹` Hamiltonian `H`, `1`-periodic in time, by a `C¹` map `e : M → F` are uniformly bounded. -/
-private theorem IsNondegenerate.exists_forall_norm_mvfderiv_hamiltonianVectorField_le
-    [CompactSpace M] (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
-    (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) :
-    ∃ B, ∀ t x, ‖mvfderiv I e x (ω.hamiltonianVectorField (H t) x)‖ ≤ B := by
-  obtain ⟨B, hB⟩ := ((isCompact_Icc (a := (0 : ℝ)) (b := 1)).prod
-    (isCompact_univ (X := M))).exists_bound_of_continuousOn
-      (hω.continuous_mvfderiv_hamiltonianVectorField hH he).continuousOn
-  refine ⟨B, fun t x ↦ ?_⟩
-  obtain ⟨t', ht', hHt⟩ := hHper.exists_mem_Ico₀ one_pos t
-  rw [hHt]
-  exact hB (t', x) ⟨Ico_subset_Icc_self ht', mem_univ x⟩
-
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- The pushforward by `e` of the Hamiltonian vector field of the zero Hamiltonian is bounded by
 `max B 0`, for every `B`. -/

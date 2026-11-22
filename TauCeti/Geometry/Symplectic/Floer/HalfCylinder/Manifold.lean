@@ -181,15 +181,6 @@ theorem IsNondegenerate.lintegral_norm_sq_sliceDefect_comp_ne_top (hω : ω.IsNo
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
-omit [FiniteDimensional ℝ F] in
-/-- The pushforward `(t, p) ↦ d e_p (X_{H_t}(p))` of the Hamiltonian vector field of a `C¹`
-Hamiltonian by a `C¹` map `e` is continuous. -/
-theorem IsNondegenerate.continuous_mvfderiv_hamiltonianVectorField (hω : ω.IsNondegenerate)
-    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (he : ContMDiff I 𝓘(ℝ, F) 1 e) :
-    Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
-  (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
-    (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp) (by simpa using hH)).continuous
-
 /-- The pushforward `d e (X_{H_t})` of the Hamiltonian vector field on a compact set `K` on which
 `e` is injective extends to a continuous field `Y` on `F`, `1`-periodic in time. -/
 theorem IsNondegenerate.exists_continuous_periodic_extension (hω : ω.IsNondegenerate)
