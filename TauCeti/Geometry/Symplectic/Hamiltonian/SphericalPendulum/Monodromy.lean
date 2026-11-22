@@ -26,9 +26,9 @@ around the counterclockwise circle `γ(t) = (1 + r cos t, r sin t)`, `t ∈ [0, 
 `r > 0` about the focus–focus value `(1, 0)` of `F`, assuming that off the axis `j = 0` it runs
 strictly above the curve of relative equilibria, as every circle of radius `r ≤ 1` does
 (`TauCeti.mem_sphericalPendulumTurningPointDomain_of_le_one`). It computes the **monodromy** of the
-pendulum: the continuation of `γ₂` comes back as `γ₂ + γ_J`, while `γ_J` comes back as itself, so
-in the basis `(γ_J, γ₂)` the monodromy matrix, whose columns are the transported basis vectors, is
-`[[1, 1], [0, 1]]`.
+pendulum: any continuous continuation of `γ₂` comes back as `γ₂ + γ_J`, while `γ_J` comes back as
+itself, so in the basis `(γ_J, γ₂)` the monodromy matrix, whose columns are the transported basis
+vectors, is `[[1, 1], [0, 1]]`.
 
 Precisely, let `v` be continuous on `[0, 2π]`, with `v(t)` in the period lattice over `γ(t)` at
 every `t` with `γ(t)` off the axis `j = 0`, that is, with `sin t ≠ 0`. Then there is a single
@@ -243,8 +243,8 @@ private theorem apply_two_mul_pi_eq_apply_zero_of_eq_intCast_mul {f : ℝ → �
 curve of relative equilibria off the axis `j = 0`, and let `v` be continuous on `[0, 2π]` with
 `v(t)` in the lattice spanned by `(T(γ(t)), -Θ(γ(t)))` and `(0, 2π)` whenever `sin t ≠ 0`. Then
 for one integer `m` the energy component of `v(t)` is `m T(γ(t))` at all these times, and after
-one turn `v(2π) = v(0) + m (0, 2π)`. So transport around the circle fixes
-`(0, 2π)` and sends the continuation of `(T, -Θ)` to `(T, -Θ) + (0, 2π)`. -/
+one turn `v(2π) = v(0) + m (0, 2π)`. So transport around the circle fixes `(0, 2π)`, and any
+continuous continuation of `(T, -Θ)` (the case `m = 1`) returns as `(T, -Θ) + (0, 2π)`. -/
 theorem exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod (hr : 0 < r)
     (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
     {v : ℝ → Fin 2 → ℝ} (hv : ContinuousOn v (Icc 0 (2 * π)))
@@ -284,7 +284,8 @@ theorem exists_eq_add_zsmul_of_mem_closure_sphericalPendulumPeriod (hr : 0 < r)
   fin_cases i
   · simp [hend₀]
   · push_cast at hend₁
-    simp
+    simp only [Fin.mk_one, Fin.isValue, Matrix.smul_cons, smul_zero, zsmul_eq_mul,
+      Matrix.smul_empty, Pi.add_apply, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     linarith
 
 /-- **The monodromy of the spherical pendulum.** Let `γ(t) = (1 + r cos t, r sin t)`, with
@@ -294,8 +295,10 @@ energy–momentum map `F = (H, J)`, running above the curve of relative equilibr
 `sin t ≠ 0`, and let `v` be continuous on `[0, 2π]` with `v(t)` in the period lattice, the
 stabilizer of `x(t)` under the flow action of `F`, at all these times. Then for one integer `m`,
 the `γ₂`-coordinate of `v`, the energy component of `v(t)` is `m T(γ(t))`, and after one turn
-`v(2π) = v(0) + m (0, 2π)`. In the basis `γ_J = (0, 2π)`, `γ₂ = (T, -Θ)` of the period lattice the
-monodromy fixes `γ_J` and sends `γ₂` to `γ₂ + γ_J`: its matrix is `[[1, 1], [0, 1]]`. -/
+`v(2π) = v(0) + m (0, 2π)`. In the basis `γ_J = (0, 2π)`, `γ₂ = (T, -Θ)` of the period lattice,
+transport fixes `γ_J`, and any continuous continuation of `γ₂` (the case `m = 1`) returns as
+`γ₂ + γ_J`; were such a continuation to exist, the monodromy matrix would be `[[1, 1], [0, 1]]`.
+The existence of this continuation across the axis is not proved here. -/
 theorem exists_eq_add_zsmul_of_mem_hamiltonianFlowStabilizer_sphericalPendulum (hr : 0 < r)
     (hγ : ∀ t, sin t ≠ 0 → (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain)
     {x : ℝ → sphericalPendulumPhaseSpace}
@@ -376,13 +379,13 @@ theorem closure_pair_ne_hamiltonianFlowStabilizer_sphericalPendulum (hr : 0 < r)
     rw [h, hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure hj hz hV (hx t hs)]
     exact AddSubgroup.subset_closure (mem_insert _ _)
   obtain ⟨a, b, hab⟩ := AddSubgroup.mem_closure_pair.1 hγ₂
-  have h0 := congrFun hab 0
-  rw [Pi.add_apply, Pi.smul_apply, Pi.smul_apply, Matrix.cons_val_zero,
+  have hv0 :=
     apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum hr hγ hx hv hvΛ hvper ht
-      hs,
+      hs
+  have hw0 :=
     apply_zero_eq_zero_of_mem_hamiltonianFlowStabilizer_sphericalPendulum hr hγ hx hw hwΛ hwper ht
-      hs, smul_zero, smul_zero, add_zero] at h0
-  exact (sphericalPendulumPeriod_pos hj hz hV).ne h0
+      hs
+  exact (sphericalPendulumPeriod_pos hj hz hV).ne (by simpa [hv0, hw0] using congrFun hab 0)
 
 end Monodromy
 

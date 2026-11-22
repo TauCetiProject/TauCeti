@@ -699,54 +699,17 @@ theorem sphericalPendulumRotationAngle_eq_integral_sin (hj : j ≠ 0) (hz₀ : z
   rw [sphericalPendulumRotationAngle_def, this]
   simp only [sphericalPendulumRotationAngleSinIntegrand_def]
 
-/-- **Joint continuity of the regular integrand.** With the turning points `z₋(h, j)`,
-`z₊(h, j)` substituted, the integrand of `sphericalPendulumRotationAngle_eq_integral_sin` is jointly
-continuous in `((h, j), θ)` for `(h, j)` in `sphericalPendulumTurningPointDomain`, since its
-denominator is positive there. -/
-theorem continuousOn_sphericalPendulumRotationAngleSinIntegrand :
-    ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumRotationAngleSinIntegrand
-        (sphericalPendulumLowerTurningPoint p.1.1 p.1.2)
-        (sphericalPendulumUpperTurningPoint p.1.1 p.1.2) p.1.1 p.1.2 p.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) := by
-  have ha : ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumLowerTurningPoint p.1.1 p.1.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) :=
-    continuousOn_sphericalPendulumLowerTurningPoint.comp continuousOn_fst fun p hp ↦ hp.1
-  have hb : ContinuousOn (fun p : (ℝ × ℝ) × ℝ ↦ sphericalPendulumUpperTurningPoint p.1.1 p.1.2)
-      (sphericalPendulumTurningPointDomain ×ˢ univ) :=
-    continuousOn_sphericalPendulumUpperTurningPoint.comp continuousOn_fst fun p hp ↦ hp.1
-  simp only [sphericalPendulumRotationAngleSinIntegrand_def]
-  refine ContinuousOn.div (by fun_prop) (by fun_prop) fun p hp ↦ ?_
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hp.1
-  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz hV
-  have ha₁ := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz hV
-  have hb₁ := sphericalPendulumUpperTurningPoint_lt_one hj hz hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz hV
-  exact (one_sub_sq_mul_sqrt_sub_add_mul_sin_pos ha₁ hab.le hb₁ (by linarith) p.2).ne'
-
 /-- **Continuity of the rotation angle.** The rotation angle `Θ(h, j)` is continuous on the
 values `(h, j)` with `j ≠ 0` lying strictly above the curve of relative equilibria, that is, with
 `V_j(z) < h` for some height `z ∈ (-1, 1)`. -/
 theorem continuousOn_sphericalPendulumRotationAngle :
     ContinuousOn (fun c : ℝ × ℝ ↦ sphericalPendulumRotationAngle c.1 c.2)
       sphericalPendulumTurningPointDomain := by
-  let R := sphericalPendulumTurningPointDomain
-  let G : R → ℝ → ℝ := fun c θ ↦
-    sphericalPendulumRotationAngleSinIntegrand
-      (sphericalPendulumLowerTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2)
-      (sphericalPendulumUpperTurningPoint (c : ℝ × ℝ).1 (c : ℝ × ℝ).2) (c : ℝ × ℝ).1
-      (c : ℝ × ℝ).2 θ
-  have hG : Continuous (Function.uncurry G) :=
-    continuousOn_sphericalPendulumRotationAngleSinIntegrand.comp_continuous
-      (by fun_prop : Continuous fun p : R × ℝ ↦ ((p.1 : ℝ × ℝ), p.2)) fun p ↦ ⟨p.1.property,
-          trivial⟩
-  rw [continuousOn_iff_continuous_domRestrict]
-  refine ((continuous_const (y := (2 : ℝ))).mul
-    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume) hG
-      (-(π / 2)) (π / 2))).congr fun c ↦ ?_
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 c.property
-  simp only [G, domRestrict_apply]
-  exact (sphericalPendulumRotationAngle_eq_integral_sin hj hz hV).symm
+  refine ((continuousOn_const (c := (2 : ℝ))).mul
+    (continuousOn_integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
+      (g := fun c z ↦ c.2 / (1 - z ^ 2)) (ContinuousOn.div (by fun_prop) (by fun_prop)
+        fun p hp ↦ (by nlinarith [hp.2.1, hp.2.2] : 0 < 1 - p.2 ^ 2).ne'))).congr fun c _ ↦ ?_
+  simp only [sphericalPendulumRotationAngle_def, div_div, Pi.mul_apply]
 
 end Continuity
 
@@ -871,22 +834,6 @@ theorem sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle {r : ℝ}
     L (2 * π) - L 0 = -(2 * π) := by
   simpa using sub_eq_neg_intCast_mul_two_mul_pi_of_coe_eq_intCast_mul_sphericalPendulumRotationAngle
     hr hγ 1 hL (by simpa using hLΘ)
-
-/-- The counterclockwise circles of radius `0 < r ≤ 1` about the focus–focus value `(1, 0)` run
-above the curve of relative equilibria off the axis `j = 0`. -/
-theorem mem_sphericalPendulumTurningPointDomain_of_le_one {r t : ℝ} (hr : 0 < r) (hr₂ : r ≤ 1)
-    (ht : sin t ≠ 0) : (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain := by
-  refine mem_sphericalPendulumTurningPointDomain_of_sq_lt (mul_ne_zero hr.ne' ht) ?_
-  -- `2 (1 + r cos t) - r² sin² t = (1 + r cos t)² + 1 - r²`, and `cos t > -1` off the axis.
-  have hc : 0 < 1 + cos t := by
-    rcases (neg_one_le_cos t).lt_or_eq with hc | hc
-    · linarith
-    · exact absurd (by linear_combination sin_sq_add_cos_sq t + (cos t - 1) * hc)
-        (pow_ne_zero 2 ht)
-  have hrc : 0 < r * (1 + cos t) := mul_pos hr hc
-  have key : 2 * (1 + r * cos t) - (r * sin t) ^ 2 = (1 + r * cos t) ^ 2 + (1 - r ^ 2) := by
-    linear_combination -r ^ 2 * sin_sq_add_cos_sq t
-  nlinarith [mul_pos hrc (by linarith : 0 < 2 - r + r * cos t)]
 
 /-- The counterclockwise circles of radius `0 < r ≤ 1` about the focus–focus value `(1, 0)`
 run above the curve of relative equilibria off the axis `j = 0`
