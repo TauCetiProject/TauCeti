@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Order.ProjIcc
-import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 
 /-!
 # The Dyson series of a continuous path in a Banach algebra
