@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Sobolev
-public import TauCeti.Analysis.PDE.Vortex.Background
+public import TauCeti.Analysis.PDE.Vortex.Variational
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -37,7 +37,7 @@ Write `φ = 1 - h = (1 + ‖P‖²)⁻¹` and `E = exp (2w) - 1`, so that the ri
 
 `E / 8 - φ E / 8 - φ / 8 + g`.
 
-The coefficients `φ` and `g` lie in every `H^k(ℂ)`
+The coefficients `φ` and `g` lie in every `H^s(ℂ)`
 (`Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions`,
 `Polynomial.norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_mem_realSobolevFunctions`). The
 proof is a bootstrap:
@@ -53,6 +53,8 @@ proof is a bootstrap:
 
 ## Main results
 
+* `TauCeti.Vortex.backgroundSource_mem_realSobolevFunctions`: the source of the reduced equation
+  lies in `H^s(ℂ)` for every `s`.
 * `TauCeti.Vortex.mem_realSobolevFunctions_of_laplacian_eq_reduced`: a `C²` square-integrable
   solution of the reduced equation lies in `H^s(ℂ)` for every `s`.
 
@@ -122,6 +124,24 @@ private theorem laplacian_mem_realSobolevFunctions (hm : 0 < P.natDegree) {w : �
   rw [hΔeq]
   exact add_mem (sub_mem (sub_mem (Submodule.smul_mem _ _ hE) (Submodule.smul_mem _ _ hφE))
     (Submodule.smul_mem _ _ hφ)) (Submodule.smul_mem _ _ hg)
+
+/-- The source `k = (h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²` of the reduced equation,
+`TauCeti.Vortex.backgroundSource`, lies in `H^s(ℂ)` for every real `s`. -/
+theorem backgroundSource_mem_realSobolevFunctions (hm : 0 < P.natDegree) (s : ℝ) :
+    backgroundSource (P.eval ·) ∈ realSobolevFunctions ℂ s 2 := by
+  have hk : backgroundSource (P.eval ·) = (-(8 : ℝ)⁻¹) • (fun z ↦ (1 + ‖P.eval z‖ ^ 2)⁻¹) +
+      (2 : ℝ) • fun z ↦ ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
+    ext z
+    have hN : (1 + ‖P.eval z‖ ^ 2) ≠ 0 := by positivity
+    simp only [backgroundSource_def, backgroundWeight_def, Polynomial.deriv, Pi.add_apply,
+      Pi.smul_apply, smul_eq_mul]
+    field_simp
+    ring
+  rw [hk]
+  exact add_mem
+    (Submodule.smul_mem _ _ (Polynomial.inv_one_add_norm_eval_sq_mem_realSobolevFunctions hm s))
+    (Submodule.smul_mem _ _
+      (Polynomial.norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_mem_realSobolevFunctions P s))
 
 /-- **Sobolev regularity of the reduced vortex equation.** Let `P` be a polynomial of positive
 degree and let `w` be a `C²` square-integrable solution of

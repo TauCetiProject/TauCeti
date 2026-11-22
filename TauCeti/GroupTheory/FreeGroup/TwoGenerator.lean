@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Data.ZMod.Basic
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.GroupTheory.FreeGroup.Basis
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import TauCeti.GroupTheory.FreeGroup.Hopfian
@@ -21,7 +22,7 @@ import TauCeti.GroupTheory.FreeGroup.Rank
 Let `a` and `b` be elements of a free group `F`. If they do not commute, the homomorphism
 `FreeGroup (Fin 2) →* F` sending the two generators to `a` and `b` is injective, so `a` and `b`
 freely generate the subgroup they generate. Together with the description of commuting pairs as
-powers of a common element (`IsFreeGroup.commute_iff_exists_common_zpow`), this shows that a
+powers of a common element (`IsFreeGroup.commute_iff_exists_zpow`), this shows that a
 two-generated subgroup of a free group is trivial, infinite cyclic, or free of rank two.
 
 The proof is the classical one. The subgroup `H = ⟨a, b⟩` is free by the Nielsen–Schreier theorem,
@@ -149,7 +150,7 @@ theorem injective_lift_of_pow_of_ne (hab : a ≠ b) (hn : n ≠ 0) :
     Function.Injective (FreeGroup.lift ![of a ^ n, of b]) := by
   -- An element commuting with `b` is a power of `b`, and `aⁿ = bᵐ` forces `n = 0`.
   refine IsFreeGroup.injective_lift_of_not_commute fun h => ?_
-  obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute h)
+  obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.1 (commute_of_iff.mp h.symm)
   have := eq_of_of_zpow_eq_of_zpow hab (n := n) (m := m) (by simpa using hm.symm)
   lia
 

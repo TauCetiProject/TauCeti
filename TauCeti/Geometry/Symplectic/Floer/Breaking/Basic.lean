@@ -1,0 +1,498 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Symplectic.Floer.Action
+public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Calculus.StripTranslate
+import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+
+/-!
+# Limits of translated Floer cylinders
+
+Along a cylindrical end of a Floer trajectory, or of a pair of pants, a solution with finite
+energy breaks off Hamiltonian orbits: translating it further and further along the end, the
+translates converge to a stationary cylinder `(s, t) ↦ x(t)` over a Hamiltonian orbit `x`. The
+same happens for a sequence of solutions along any sequence of windows whose energy tends to zero,
+such as the long necks between the levels of a sequence of Floer trajectories that breaks. This
+file proves the identification of the limit, which is the first step of Floer breaking.
+
+Let `u_k` solve the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the cylindrical
+perturbation `K = H_t dt` on a part `E` of the strip `ℝ × [0, 1]`, for almost complex structures
+`J_k z` with uniform tameness constants `c ‖v‖² ≤ ω(v, J_k z v)` and `‖J_k z v‖ ≤ M ‖v‖`. Let `s_k`
+be translation parameters such that every window `[a + s_k, b + s_k] × [0, 1]` eventually lies in
+`E`, and such that the energy of `u_k` over it tends to zero. For a single solution `u_k = u` of
+finite energy over `E` and `s_k` tending to infinity, in either direction, this holds as soon as
+the windows eventually lie in `E` (`TauCeti.tendsto_setLIntegral_of_eventually_subset`); for
+instance `E = [s₀, ∞) × [0, 1]` and `s_k → ∞`. Suppose that the
+translates `(s, t) ↦ u_k(s + s_k, t)` converge locally uniformly on the strip to a map `v`. Then:
+
+* `v` does not depend on `s` (`SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`);
+* `x(t) = v(0, t)` is an orbit of the Hamiltonian vector field, `x'(t) = X_{H_t}(x(t))` on
+  `[0, 1]` (`SymplecticForm.hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`);
+* if `u_k(s, 0) = u_k(s, 1)` on `E`, then `x(0) = x(1)`, so that `x` is a one-periodic orbit for
+  a one-periodic Hamiltonian; this boundary condition passes to the limit of the translates by the
+  general `TauCeti.apply_eq_apply_of_tendstoLocallyUniformlyOn_comp_add`;
+* the limit is a stationary Floer cylinder: its perturbed derivative `dv - X_K(v)` vanishes on the
+  open strip (`SymplecticForm.perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add`).
+
+If the derivatives of the translates also converge locally uniformly on the strip, to the
+derivative of `v`, then the actions `A_H(u(s_k, ·))` of the end loops converge to the action of
+`x` (`SymplecticForm.tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add`). This uses
+the continuity of the action for uniform `C¹` convergence of loops
+(`SymplecticForm.tendsto_hamiltonianAction`). So the limiting end actions, in terms of which the
+energy identity is stated, are actions of Hamiltonian orbits.
+
+The argument is the following. The energy over the translated windows tends to zero. By the
+coercivity of the energy density under tameness
+(`SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`), the `L²` norm, hence the
+`L¹` norm, of the perturbed derivative over the windows tends to zero. Its `s`-component is
+`∂_s u`, whose integral along a horizontal segment is the variation of `u` along it; its
+`t`-component is `∂_t u - X_{H_t}(u)`, whose integral along a vertical segment is the defect of
+`u` from the integral equation of the Hamiltonian flow. Both defects therefore vanish in the
+limit, which converges uniformly on compact windows. These two steps hold for any maps into a
+Banach space (`TauCeti.eq_of_tendstoLocallyUniformlyOn_comp_add` and
+`TauCeti.hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`), and
+`TauCeti.Geometry.Symplectic.Floer.Breaking.Manifold` applies them to Floer cylinders in a manifold
+read through an embedding into a vector space.
+
+The convergence of the translates is an assumption here. For periodic data and solutions with
+image in a compact set, it comes from the derivative bound that small energy gives through the
+mean-value inequality: `TauCeti.Geometry.Symplectic.Floer.CylindricalEnd` extracts locally
+uniformly convergent subsequences of translates and applies the results of this file to them. The
+nondegeneracy of the orbits, the convergence of the whole half-cylinder rather than a sequence of
+translates, and the exponential decay along the end are not treated here.
+
+Conversely, the windows that keep a fixed amount of energy produce nonstationary limits. If maps
+`f i`, such as translates of Floer cylinders, converge locally uniformly on an open set containing
+`[a, b] × [0, 1]` to `g`, with derivatives bounded along the loops `s = a` and `s = b`, and their
+energy over `[a, b] × [0, 1]` is frequently at least `ε > 0`, then the loops of `g` at `s = a` and
+`s = b` differ (`SymplecticForm.exists_apply_ne_apply_of_tendstoLocallyUniformlyOn`). This
+separates the nonstationary levels of a broken limit from the necks between them. It needs no
+convergence of the derivatives, since the energy over the window is a difference of actions of its
+boundary loops (`SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`).
+
+## Main results
+
+* `SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`: the limit of the translates is
+  independent of `s`.
+* `SymplecticForm.hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`: the limit is a
+  Hamiltonian orbit.
+* `SymplecticForm.perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add`: the limit is a
+  stationary Floer cylinder.
+* `SymplecticForm.exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add`: for periodic data
+  and loops in a closed set `K`, the limit is the stationary cylinder over a `1`-periodic orbit in
+  `K`.
+* `SymplecticForm.tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add`: the actions of
+  the end loops converge to the action of the limit loop.
+* `SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly`:
+  uniformly Lipschitz maps converging to the stationary cylinder over an orbit have loop actions
+  asymptotic to the action of the orbit, without convergence of the derivatives.
+* `SymplecticForm.exists_apply_ne_apply_of_tendstoLocallyUniformlyOn`: windows that keep a fixed
+  amount of energy have limits whose boundary loops differ.
+
+## References
+
+* A. Floer, *Symplectic fixed points and holomorphic spheres*, Comm. Math. Phys. **120** (1989),
+  575–611.
+* D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
+  Math. Ser. 7 (1999), Lecture 1, on finite-energy Floer cylinders and their limits at the ends.
+* D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 4.5 and the
+  chapter on Floer homology, on the removal of the ends of finite-energy solutions.
+-/
+
+public section
+
+open Filter Function MeasureTheory Set Topology
+open scoped ENNReal NNReal
+
+namespace TauCeti.SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {H : ℝ → V → ℝ} {U : Set (ℝ × ℝ)}
+
+section Segments
+
+variable {u : ℝ × ℝ → V}
+
+/-- For `K = H_t dt` the `s`-component of the perturbed derivative of a `C¹` map is continuous. -/
+private theorem continuousOn_perturbedFDeriv_cylindrical_stdComplexLineReal (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 1 u U) :
+    ContinuousOn
+      (fun z ↦ ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineReal) U := by
+  simp_rw [perturbedFDeriv_cylindrical_apply_stdComplexLineReal]
+  exact (hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const
+
+/-- For `K = H_t dt` with `H` jointly `C¹`, the `t`-component of the perturbed derivative of a `C¹`
+map is continuous. -/
+private theorem continuousOn_perturbedFDeriv_cylindrical_stdComplexLineImag
+    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) :
+    ContinuousOn
+      (fun z ↦ ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineImag) U := by
+  simp_rw [perturbedFDeriv_cylindrical_apply_stdComplexLineImag]
+  exact ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).sub
+    ((ω.continuous_uncurry_hamiltonianVectorField hH).comp_continuousOn
+      (continuousOn_snd.prodMk hu.continuousOn))
+
+end Segments
+
+
+section Limit
+
+variable {u : ℕ → ℝ × ℝ → V} {E : Set (ℝ × ℝ)} {J : ℕ → ℝ × ℝ → AlmostComplexStructure V}
+  {c M : ℝ} {s : ℕ → ℝ} {v : ℝ × ℝ → V}
+
+/-- The `L²` norm of the perturbed derivative over the translated windows tends to zero, by the
+coercivity of the energy density and the vanishing of the energy over the windows. -/
+private theorem tendsto_lintegral_norm_sq_perturbedFDeriv
+    (hc : 0 < c) (hJc : ∀ k, ∀ z ∈ E, ∀ w, c * ‖w‖ ^ 2 ≤ ω w (J k z w))
+    (hJM : ∀ k, ∀ z ∈ E, ∀ w, ‖J k z w‖ ≤ M * ‖w‖)
+    (hfloer : ∀ k, ∀ z ∈ E, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J k z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E)
+    (hen : ∀ a b : ℝ, Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z)) atTop (𝓝 0))
+    (a b : ℝ) :
+    Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ENNReal.ofReal
+        (‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z stdComplexLineReal‖ ^ 2 +
+          ‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z stdComplexLineImag‖ ^ 2))
+      atTop (𝓝 0) := by
+  have hlim := ENNReal.Tendsto.const_mul (hen a b)
+    (Or.inr (ENNReal.ofReal_ne_top (r := (1 + M ^ 2) / c)))
+  rw [mul_zero] at hlim
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hW a b] with k hk
+  exact ω.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le
+    (measurableSet_Icc.prod measurableSet_Icc) hc (fun z hz ↦ hJc k z (hk hz))
+    (fun z hz ↦ hJM k z (hk hz)) fun z hz ↦ hfloer k z (hk hz)
+
+/-- On windows of a fixed size, the `L¹` norm of a continuous function is controlled by its `L²`
+norm, so the `L¹` norm of each component of the perturbed derivative over the translated windows
+tends to zero. -/
+private theorem tendsto_lintegral_enorm_perturbedFDeriv (hEU : E ⊆ U)
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E) {e : ℝ × ℝ}
+    (he : e = stdComplexLineReal ∨ e = stdComplexLineImag)
+    (hg : ∀ k, ContinuousOn
+      (fun z ↦ ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z e) U) {a b : ℝ}
+    (h : Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ENNReal.ofReal
+        (‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z stdComplexLineReal‖ ^ 2 +
+          ‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z stdComplexLineImag‖ ^ 2))
+      atTop (𝓝 0)) :
+    Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z e‖ₑ) atTop (𝓝 0) := by
+  refine tendsto_setLIntegral_enorm_Icc_prod_of_tendsto_setLIntegral_ofReal_norm_sq
+    ((hW a b).mono fun k hk ↦ ((hg k).mono (hk.trans hEU)).aestronglyMeasurable
+      (measurableSet_Icc.prod measurableSet_Icc))
+    (tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h
+      (Eventually.of_forall fun _ ↦ zero_le) (Eventually.of_forall fun k ↦ lintegral_mono
+        fun z ↦ ENNReal.ofReal_le_ofReal ?_))
+  -- The square of a component is bounded by the sum of the squares of both components.
+  rcases he with rfl | rfl
+  · exact le_add_of_nonneg_right (sq_nonneg _)
+  · exact le_add_of_nonneg_left (sq_nonneg _)
+
+
+/-- **Limits of translated Floer cylinders along windows of vanishing energy are stationary.**
+Let each `u_k` be `C¹` on an open set `U` and solve the Floer equation for the cylindrical
+perturbation `K = H_t dt` on `E ⊆ U`, for almost complex structures with
+`c ‖w‖² ≤ ω(w, J_k z w)` and `‖J_k z w‖ ≤ M ‖w‖` on `E`, where `c > 0` does not depend on `k`.
+Let `s_k` be translation parameters such that each window `[a + s_k, b + s_k] × [0, 1]`
+eventually lies in `E`, and such that the energy of `u_k` over it tends to zero. If the translates
+`(s, t) ↦ u_k(s + s_k, t)` converge locally uniformly on the strip `ℝ × [0, 1]` to `v`, then `v`
+does not depend on `s`.
+
+For a single solution `u_k = u` of finite energy over `E` and `s_k → ∞`, the energy hypothesis
+follows from `TauCeti.tendsto_setLIntegral_of_eventually_subset`. -/
+theorem eq_of_tendstoLocallyUniformlyOn_comp_add
+    (hU : IsOpen U) (hu : ∀ k, ContDiffOn ℝ 1 (u k) U) (hEU : E ⊆ U) (hc : 0 < c)
+    (hJc : ∀ k, ∀ z ∈ E, ∀ w, c * ‖w‖ ^ 2 ≤ ω w (J k z w))
+    (hJM : ∀ k, ∀ z ∈ E, ∀ w, ‖J k z w‖ ≤ M * ‖w‖)
+    (hfloer : ∀ k, ∀ z ∈ E, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J k z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E)
+    (hen : ∀ a b : ℝ, Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z)) atTop (𝓝 0))
+    (hv : TendstoLocallyUniformlyOn (fun k z ↦ u k (z + (s k, 0))) v atTop
+      ((univ : Set ℝ) ×ˢ Icc 0 1)) :
+    ∀ r, ∀ t ∈ Icc (0 : ℝ) 1, v (r, t) = v (0, t) := by
+  have hWU (a b : ℝ) : ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ U :=
+    (hW a b).mono fun _ hk ↦ hk.trans hEU
+  refine _root_.TauCeti.eq_of_tendstoLocallyUniformlyOn_comp_add hU hu hWU
+    (fun a b ↦ ?_) hv
+  simpa only [perturbedFDeriv_cylindrical_apply_stdComplexLineReal] using
+    tendsto_lintegral_enorm_perturbedFDeriv hEU hW (Or.inl rfl)
+      (fun k ↦ continuousOn_perturbedFDeriv_cylindrical_stdComplexLineReal hU (hu k))
+      (tendsto_lintegral_norm_sq_perturbedFDeriv hc hJc hJM hfloer hW hen a b)
+
+
+/-- **Limits of translated Floer cylinders along windows of vanishing energy are Hamiltonian
+orbits.** Under the hypotheses of
+`TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and for a jointly `C¹`
+Hamiltonian `H`, the path `x(t) = v(0, t)`,
+along which the limit `v(s, t) = x(t)` is stationary, solves `x'(t) = X_{H_t}(x(t))` on
+`[0, 1]`. -/
+theorem hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add (hH : ContDiff ℝ 1 (uncurry H))
+    (hU : IsOpen U) (hu : ∀ k, ContDiffOn ℝ 1 (u k) U) (hEU : E ⊆ U) (hc : 0 < c)
+    (hJc : ∀ k, ∀ z ∈ E, ∀ w, c * ‖w‖ ^ 2 ≤ ω w (J k z w))
+    (hJM : ∀ k, ∀ z ∈ E, ∀ w, ‖J k z w‖ ≤ M * ‖w‖)
+    (hfloer : ∀ k, ∀ z ∈ E, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J k z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E)
+    (hen : ∀ a b : ℝ, Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z)) atTop (𝓝 0))
+    (hv : TendstoLocallyUniformlyOn (fun k z ↦ u k (z + (s k, 0))) v atTop
+      ((univ : Set ℝ) ×ˢ Icc 0 1)) :
+    ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt (fun t ↦ v (0, t))
+      (ω.hamiltonianVectorField (H t) (v (0, t))) (Icc 0 1) t := by
+  have hWU (a b : ℝ) : ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ U :=
+    (hW a b).mono fun _ hk ↦ hk.trans hEU
+  have hl (e : ℝ × ℝ) (he : e = stdComplexLineReal ∨ e = stdComplexLineImag)
+      (hg : ∀ k, ContinuousOn
+        (fun z ↦ ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z e) U) (a b : ℝ) :=
+    tendsto_lintegral_enorm_perturbedFDeriv hEU hW he hg
+      (tendsto_lintegral_norm_sq_perturbedFDeriv hc hJc hJM hfloer hW hen a b)
+  refine _root_.TauCeti.hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add
+    (Φ := fun p ↦ ω.hamiltonianVectorField (H p.1) p.2)
+    (ω.continuous_uncurry_hamiltonianVectorField hH) hU hu hWU (fun a b ↦ ?_) ?_ hv
+  · simpa only [perturbedFDeriv_cylindrical_apply_stdComplexLineReal] using
+      hl _ (Or.inl rfl)
+        (fun k ↦ continuousOn_perturbedFDeriv_cylindrical_stdComplexLineReal hU (hu k)) a b
+  · simpa only [perturbedFDeriv_cylindrical_apply_stdComplexLineImag, zero_add] using
+      hl _ (Or.inr rfl)
+        (fun k ↦ continuousOn_perturbedFDeriv_cylindrical_stdComplexLineImag hH hU (hu k)) 0 1
+
+
+/-- **Limits of translated Floer cylinders along windows of vanishing energy are stationary
+solutions.** Under the hypotheses
+of `TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and for a jointly `C¹`
+Hamiltonian `H`, the perturbed derivative
+`dv - X_K(v)` of the limit vanishes on the open strip `ℝ × (0, 1)`: the limit is the stationary
+solution `(s, t) ↦ v(0, t)` over a Hamiltonian orbit. -/
+theorem perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
+    (hH : ContDiff ℝ 1 (uncurry H))
+    (hU : IsOpen U) (hu : ∀ k, ContDiffOn ℝ 1 (u k) U) (hEU : E ⊆ U) (hc : 0 < c)
+    (hJc : ∀ k, ∀ z ∈ E, ∀ w, c * ‖w‖ ^ 2 ≤ ω w (J k z w))
+    (hJM : ∀ k, ∀ z ∈ E, ∀ w, ‖J k z w‖ ≤ M * ‖w‖)
+    (hfloer : ∀ k, ∀ z ∈ E, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J k z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E)
+    (hen : ∀ a b : ℝ, Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z)) atTop (𝓝 0))
+    (hv : TendstoLocallyUniformlyOn (fun k z ↦ u k (z + (s k, 0))) v atTop
+      ((univ : Set ℝ) ×ˢ Icc 0 1)) :
+    ∀ z ∈ (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1,
+      ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) v z = 0 := by
+  intro z hz
+  have hstat := eq_of_tendstoLocallyUniformlyOn_comp_add hU hu hEU hc hJc hJM hfloer hW hen hv
+  have hder := hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add hH hU hu hEU hc hJc hJM
+    hfloer hW hen hv z.2 (Ioo_subset_Icc_self hz.2)
+  -- Near `z` the limit is the stationary map `(s, t) ↦ v(0, t)`.
+  have hev : v =ᶠ[𝓝 z] fun w ↦ v (0, w.2) :=
+    Filter.mem_of_superset ((isOpen_univ.prod isOpen_Ioo).mem_nhds hz)
+      fun w hw ↦ hstat w.1 w.2 (Ioo_subset_Icc_self hw.2)
+  have hd := hder.hasDerivAt (Icc_mem_nhds hz.2.1 hz.2.2)
+  rw [ω.perturbedFDeriv_congr_of_eventuallyEq _ _ hev]
+  refine ContinuousLinearMap.ext fun w ↦ ?_
+  rw [perturbedFDeriv_comp_snd_apply hd.differentiableAt, hd.deriv]
+  simp
+
+/-- **Limits of translates along windows of vanishing energy are stationary cylinders over
+orbits.** Let `H` be a `C¹` Hamiltonian, `1`-periodic in time, `K` a closed set and `S` an open
+set of `s`-values. Let `u k` be `C¹` on `S × ℝ`, with `1`-periodic loops `t ↦ u k (s, t)` in `K`
+for `s ∈ S`, solving the Floer equation `∂_s u + J_k (∂_t u - X_{H_t}(u)) = 0` on `S × [0, 1]` for
+uniformly tame almost complex structures, `c ‖w‖² ≤ ω(w, J_k z w)` and `‖J_k z w‖ ≤ M ‖w‖` with
+`c > 0`. Suppose that every window `[a + s k, b + s k]` eventually lies in `S` and that the energy
+of `u k` over `[a + s k, b + s k] × [0, 1]` tends to zero. If the translates
+`(s', t) ↦ u k (s' + s k, t)` converge locally uniformly to `v`, then `v(s', t) = x(t)` for a
+`1`-periodic orbit `x` of the Hamiltonian vector field with values in `K`. -/
+theorem exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add
+    (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1) {K : Set V} (hK : IsClosed K)
+    {S : Set ℝ} (hS : IsOpen S) (hu : ∀ k, ContDiffOn ℝ 1 (u k) (S ×ˢ univ))
+    (hper : ∀ k, ∀ r ∈ S, Periodic (fun t ↦ u k (r, t)) 1)
+    (huK : ∀ k, ∀ r ∈ S, ∀ t, u k (r, t) ∈ K) (hc : 0 < c)
+    (hJc : ∀ k, ∀ z ∈ S ×ˢ Icc 0 1, ∀ w, c * ‖w‖ ^ 2 ≤ ω w (J k z w))
+    (hJM : ∀ k, ∀ z ∈ S ×ˢ Icc 0 1, ∀ w, ‖J k z w‖ ≤ M * ‖w‖)
+    (hfloer : ∀ k, ∀ z ∈ S ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J k z) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    (hsS : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ⊆ S)
+    (hen : ∀ a b : ℝ, Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z)) atTop (𝓝 0))
+    (hv : TendstoLocallyUniformly (fun k z ↦ u k (z + (s k, 0))) v atTop) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
+      (∀ t, x t ∈ K) ∧ v = fun z ↦ x z.2 := by
+  have hzs (y : ℝ × ℝ) (r : ℝ) : y + (r, 0) = (y.1 + r, y.2) := by ext <;> simp
+  have hmem (r : ℝ) : ∀ᶠ k in atTop, r + s k ∈ S :=
+    (hsS r r).mono fun _ hk ↦ hk ⟨le_rfl, le_rfl⟩
+  -- The limit is periodic in `t`, since the translates eventually are at each point.
+  have hvper (z : ℝ × ℝ) : v (z.1, z.2 + 1) = v z := by
+    refine tendsto_nhds_unique ((hv.tendsto_at (z.1, z.2 + 1)).congr' ?_) (hv.tendsto_at z)
+    filter_upwards [hmem z.1] with k hk
+    simpa only [hzs] using hper k _ hk z.2
+  -- On the strip `ℝ × [0, 1]` the limit does not depend on `s`, and `x(t) = v(0, t)` solves
+  -- Hamilton's equation on `[0, 1]`.
+  have hEU : S ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ univ := prod_mono le_rfl (subset_univ _)
+  have hW (a b : ℝ) : ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ Icc 0 1 :=
+    (hsS a b).mono fun _ hk ↦ prod_mono hk le_rfl
+  have hv' := hv.tendstoLocallyUniformlyOn (s := univ ×ˢ Icc 0 1)
+  have hstat := eq_of_tendstoLocallyUniformlyOn_comp_add (hS.prod isOpen_univ) hu hEU hc hJc hJM
+    hfloer hW hen hv'
+  have hder := hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add hH (hS.prod isOpen_univ) hu
+    hEU hc hJc hJM hfloer hW hen hv'
+  set x : ℝ → V := fun t ↦ v (0, t)
+  have hxper : Periodic x 1 := fun t ↦ hvper (0, t)
+  have hvx : v = fun z ↦ x z.2 := funext fun z ↦
+    calc v z = v (z.1, Int.fract z.2) :=
+          (Periodic.apply_fract (f := fun t ↦ v (z.1, t)) (fun t ↦ hvper (z.1, t)) z.2).symm
+      _ = x (Int.fract z.2) := hstat z.1 _ ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
+      _ = x z.2 := hxper.apply_fract z.2
+  -- By periodicity, `x` solves Hamilton's equation everywhere.
+  set Y : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
+  have hYper : Periodic Y 1 := fun t ↦ by simp only [Y, hHper t, hxper t]
+  refine ⟨x, hxper, hasDerivAt_of_periodic_of_hasDerivWithinAt one_pos hxper hYper hder,
+    fun t ↦ hK.mem_of_tendsto (hv.tendsto_at (0, t)) ?_, hvx⟩
+  filter_upwards [hmem 0] with k hk
+  simpa only [hzs] using huK k _ hk t
+
+end Limit
+
+section Action
+
+variable {u : ℝ × ℝ → V} {s : ℕ → ℝ} {v : ℝ × ℝ → V}
+
+/-- **The end actions converge to the action of the limit loop.** Let `H` be a continuous
+time-dependent Hamiltonian and let `u` be `C¹` on an open set `U` that eventually contains the
+segments `{s_k} × [0, 1]`. If the translates `(s, t) ↦ u(s + s_k, t)` and their derivatives
+converge locally uniformly on the strip `ℝ × [0, 1]` to `v` and to the derivative of `v`, where `v`
+is differentiable along `{0} × [0, 1]`, then the actions of the loops `t ↦ u(s_k, t)` converge to
+the action of the loop `x(t) = v(0, t)`.
+
+Under the hypotheses of
+`TauCeti.SymplecticForm.hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`, `x` is a
+Hamiltonian orbit, so the end actions converge to the action of an orbit. -/
+theorem tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add
+    (hH : Continuous (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U)
+    (hsU : ∀ᶠ k in atTop, ∀ t ∈ Icc (0 : ℝ) 1, (s k, t) ∈ U)
+    (hv : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (0, t))
+    (hx : TendstoLocallyUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop
+      ((univ : Set ℝ) ×ˢ Icc 0 1))
+    (hdx : TendstoLocallyUniformlyOn (fun k z ↦ fderiv ℝ u (z + (s k, 0))) (fderiv ℝ v) atTop
+      ((univ : Set ℝ) ×ˢ Icc 0 1)) :
+    Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ u (s k, t))) atTop
+      (𝓝 (ω.hamiltonianAction H (fun t ↦ v (0, t)))) := by
+  have hKs : ∀ t ∈ Icc (0 : ℝ) 1, ((0 : ℝ), t) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 :=
+    fun _ ht ↦ ⟨mem_univ _, ht⟩
+  have hdiff : ∀ᶠ k in atTop, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ u (s k, t) :=
+    hsU.mono fun k hk t ht ↦
+      (hu.differentiableOn one_ne_zero _ (hk t ht)).differentiableAt (hU.mem_nhds (hk t ht))
+  have hline (k : ℕ) : Continuous fun t : ℝ ↦ (s k, t) := by fun_prop
+  -- The loops and their derivatives, which are the `∂_t` derivatives of the maps, converge
+  -- uniformly on `[0, 1]`.
+  refine ω.tendsto_hamiltonianAction hH
+    (hsU.mono fun k hk ↦ hu.continuousOn.comp (hline k).continuousOn fun t ht ↦ hk t ht)
+    (hsU.mono fun k hk ↦ hu.continuousOn_deriv_slice_right hU hk) ?_ ?_
+  · simpa using hx.tendstoUniformlyOn_slice_right isCompact_Icc hKs
+  · have h := (ContinuousLinearMap.apply ℝ V ((0 : ℝ), (1 : ℝ))).uniformContinuous
+      |>.comp_tendstoUniformlyOn (hdx.tendstoUniformlyOn_slice_right isCompact_Icc hKs)
+    refine (h.congr (hdiff.mono fun k hk t ht ↦ ?_)).congr_right fun t ht ↦ ?_
+    · simp [(hasDerivAt_slice_right (hk t ht)).deriv]
+    · simp [(hasDerivAt_slice_right (hv t ht)).deriv]
+
+/-- **Loops converging to an orbit have asymptotically equal actions.** Let `H` be a `C¹`
+Hamiltonian and `x` a `1`-periodic orbit of its Hamiltonian vector field. Let `f k` be `C¹` maps
+with `1`-periodic loops and a common Lipschitz constant, converging locally uniformly to the
+stationary cylinder `(s, t) ↦ x(t)`. Then the actions of the loops `f k (0, ·)` are asymptotic to
+the action of `x`. No convergence of the derivatives is needed. -/
+theorem tendsto_hamiltonianAction_sub_hamiltonianAction_of_tendstoLocallyUniformly
+    (hH : ContDiff ℝ 1 (uncurry H)) {f : ℕ → ℝ × ℝ → V} (hf : ∀ k, ContDiff ℝ 1 (f k))
+    (hper : ∀ k s, Periodic (fun t ↦ f k (s, t)) 1) {L : ℝ≥0} (hL : ∀ k, LipschitzWith L (f k))
+    {x : ℝ → V} (hxper : Periodic x 1)
+    (hxd : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hg : TendstoLocallyUniformly f (fun z ↦ x z.2) atTop) :
+    Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ f k (0, t)) - ω.hamiltonianAction H x)
+      atTop (𝓝 0) := by
+  have hdf (k : ℕ) (z : ℝ × ℝ) : DifferentiableAt ℝ (f k) z := (hf k).differentiable one_ne_zero z
+  -- The orbit has a continuous, hence bounded, derivative on `[0, 1]`.
+  have hderiv : deriv x = fun t ↦ ω.hamiltonianVectorField (H t) (x t) :=
+    funext fun t ↦ (hxd t).deriv
+  have hY : Continuous (deriv x) := hderiv ▸
+    (ω.continuous_uncurry_hamiltonianVectorField hH).comp
+      (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦ (hxd t).continuousAt))
+  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc (0 : ℝ) 1)
+    hY.continuousOn
+  -- The loops `f k (0, ·)` and the orbit `x` have speed at most `max L B` and the same uniform
+  -- limit.
+  exact ω.tendsto_hamiltonianAction_sub_hamiltonianAction (H := H) hH.continuous
+    (y := fun _ ↦ x) (L := max L B)
+    (Eventually.of_forall fun k t _ ↦ (hasDerivAt_slice_right (hdf k (0, t))).differentiableAt)
+    (Eventually.of_forall fun _ t _ ↦ (hxd t).differentiableAt)
+    (Eventually.of_forall fun k ↦
+      (hf k).contDiffOn.continuousOn_deriv_slice_right isOpen_univ fun _ _ ↦ mem_univ _)
+    (Eventually.of_forall fun _ ↦ hY.continuousOn)
+    (Eventually.of_forall fun k ↦ by simpa using hper k 0 0)
+    (Eventually.of_forall fun _ ↦ by simpa using hxper 0)
+    (Eventually.of_forall fun k t _ ↦ (norm_deriv_slice_right_le (hdf k (0, t))).trans
+      ((norm_fderiv_le_of_lipschitz ℝ (hL k)).trans (le_max_left _ _)))
+    (Eventually.of_forall fun _ t ht ↦ (hB t ht).trans (le_max_right _ _))
+    ((hg.tendstoLocallyUniformlyOn (s := univ)).tendstoUniformlyOn_slice_right isCompact_Icc
+      fun _ _ ↦ mem_univ _)
+    fun _ hu ↦ Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hu
+
+end Action
+
+section Nonstationary
+
+variable {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {f : ι → ℝ × ℝ → V}
+  {g : ℝ × ℝ → V} {a b L ε : ℝ}
+
+/-- **Windows that keep a fixed amount of energy have nonstationary limits.** Let `H` be a `C¹`
+time-dependent Hamiltonian, and let the maps `f i` be eventually `C²` on an open set `U` containing
+`[a, b] × [0, 1]`, with `f i (s, 1) = f i (s, 0)` for `s ∈ [a, b]` and with derivatives bounded by
+`L` along the loops `s = a` and `s = b`. Suppose that the `f i` converge locally uniformly on `U` to
+`g`, and that frequently their Floer energy over `[a, b] × [0, 1]` for `K = H_t dt` is at least
+`ε > 0`. Then the loops of `g` at `s = a` and at `s = b` differ. In particular `g` is not
+independent of `s` on the window, so it is not a stationary cylinder over an orbit.
+
+The `f i` are typically translates `z ↦ u_i(z + (σ_i, 0))` of Floer cylinders, with `U` the
+complement of the bubbling points of a compactness theorem, and `[a, b]` a window in which the
+energy of the translates does not go to zero. This is the property that distinguishes the
+nonstationary levels of a broken limit from the necks between them, along which the energy does go
+to zero and the translates converge to stationary cylinders
+(`TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`). No convergence of the
+derivatives is assumed: the energy over the window is the difference of the actions of its two
+boundary loops, and uniform convergence of loops of bounded speed to a common limit makes such
+differences tend to zero
+(`TauCeti.SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn`). -/
+theorem exists_apply_ne_apply_of_tendstoLocallyUniformlyOn (hH : ContDiff ℝ 1 (uncurry H))
+    (hU : IsOpen U) (hf : ∀ᶠ i in l, ContDiffOn ℝ 2 (f i) U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ᶠ i in l, ∀ s ∈ Icc a b, f i (s, 1) = f i (s, 0))
+    (hL : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ (f i) (a, t)‖ ≤ L ∧ ‖fderiv ℝ (f i) (b, t)‖ ≤ L)
+    (hlim : TendstoLocallyUniformlyOn f g l U) (hε : 0 < ε)
+    (hE : ∃ᶠ i in l, ε ≤ ∫ z in Icc a b ×ˢ Icc 0 1,
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (f i) z) :
+    ∃ t ∈ Icc (0 : ℝ) 1, g (a, t) ≠ g (b, t) := by
+  -- Along each boundary loop of the window the convergence is uniform.
+  have hslice (s : ℝ) (hs : s ∈ Icc a b) :
+      TendstoUniformlyOn (fun i t ↦ f i (s, t)) (fun t ↦ g (s, t)) l (Icc 0 1) :=
+    hlim.tendstoUniformlyOn_slice_right isCompact_Icc fun _ ht ↦ hRU ⟨hs, ht⟩
+  by_contra! hg
+  -- If the two loops of `g` agreed, the energy over the window would tend to zero.
+  have h := ω.tendsto_integral_floerEnergyDensity_of_tendstoUniformlyOn hH hU hf hab hRU hper hL
+    (hslice a ⟨le_rfl, hab⟩) ((hslice b ⟨hab, le_rfl⟩).congr_right fun t ht ↦ (hg t ht).symm)
+  obtain ⟨i, hi, hlt⟩ := (hE.and_eventually (h.eventually (gt_mem_nhds hε))).exists
+  exact hlt.not_ge hi
+
+end Nonstationary
+
+end TauCeti.SymplecticForm
