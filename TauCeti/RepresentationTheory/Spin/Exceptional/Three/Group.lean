@@ -12,7 +12,6 @@ public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Spin.OddStructure
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # The three-dimensional Spin group

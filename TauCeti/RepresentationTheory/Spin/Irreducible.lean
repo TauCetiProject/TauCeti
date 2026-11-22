@@ -73,9 +73,10 @@ theorem is stated with, so no separate parity hypothesis is carried. The lattice
 only the zero-dimensional quadratic space: there `S = K` is entirely even and `S⁻` is zero. `S⁺`
 always contains the scalars, so it needs no such hypothesis, and neither does the inequivalence.
 
-The odd-dimensional case is the opposite of all this, and the last section records it. There the
-even subalgebra is a *single* block rather than a product, so the Fock action already carries it
-onto all of `Module.End K S` (`TauCeti.evenSpinAction_surjective`), and the whole spinor module —
+The odd-dimensional case is the opposite of all this, and the last section records it. There, over
+a field with `2 ≠ 0`, the even subalgebra is a *single* block rather than a product, so the Fock
+action already carries it onto all of `Module.End K S` (`TauCeti.evenSpinAction_surjective`, which
+assumes `2 ≠ 0`), and the whole spinor module —
 not a half of it — is the irreducible object: `TauCeti.spinRep_isIrreducible_of_odd`.
 As soon as `P.W ≠ ⊥`, exterior parity still splits `S` as a vector space but no longer as a
 representation, which `TauCeti.not_forall_map_spinRep_spinPlus_le` and
@@ -87,9 +88,10 @@ of anything to split.
 
 The two parities are separated by exactly one hypothesis, the surjectivity of
 `TauCeti.evenSpinAction`, and `TauCeti.isIrreducible_spinRep_comp_of_span_of_surjective` is stated
-against it rather than against a dimension, so the dichotomy is visible in the statement. It fails
-in even dimension except for the zero-dimensional quadratic space, where `S = K` is
-one-dimensional and there is no room for it to fail.
+against it rather than against a dimension, so the dichotomy is visible in the statement and the
+criterion itself holds in every characteristic. It holds in odd dimension over a field with
+`2 ≠ 0`, and fails in even dimension except for the zero-dimensional quadratic space, where
+`S = K` is one-dimensional and there is no room for it to fail.
 
 What is not proved here is the odd-dimensional splitting of `CliffordAlgebra Q` into its two
 central summands, for which the results here are the even-dimensional half; it is
@@ -486,7 +488,8 @@ exhausts the endomorphisms of the spinor module. The Spin group itself is the ca
 The second hypothesis is exactly what separates the two parities of `finrank K V`. In *positive*
 even dimension it fails — the even subalgebra is the *product* of the two half-spin endomorphism
 algebras, by `TauCeti.SpinPolarizationData.evenCliffordEquivProdEnd`, and `S` visibly splits — and
-in odd dimension it holds, by `TauCeti.evenSpinAction_surjective`. Dimension zero is the exception
+in odd dimension over a field with `2 ≠ 0` it holds, by `TauCeti.evenSpinAction_surjective`. The
+criterion itself needs no hypothesis on the characteristic. Dimension zero is the exception
 on the even side: there `W = ⊥`, the odd block is zero, `S = K` is one-dimensional and the even
 subalgebra is already all of `Module.End K S`. -/
 theorem isIrreducible_spinRep_comp_of_span_of_surjective {H : Type*} [Monoid H]

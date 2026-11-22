@@ -273,42 +273,15 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   have hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
   refine ⟨hline, ?_⟩
   obtain ⟨T, hT⟩ := exists_linearEquiv_dual_spinPlus_conj P hline hV
-  let eplus : spinPlus Q P ≃ₗ[K] (spinPlusSubrep P hline).toSubmodule :=
-    LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
-  let eminus : spinMinus Q P ≃ₗ[K] (spinMinusSubrep P hline).toSubmodule :=
-    LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm
-  let E : (spinMinusSubrep P hline).toSubmodule ≃ₗ[K]
-      Module.Dual K (spinPlusSubrep P hline).toSubmodule :=
-    eminus.symm.trans <| T.symm.trans eplus.symm.dualMap
-  refine ⟨Representation.Equiv.mk E ?_⟩
-  intro g
-  apply LinearMap.ext
-  intro s
-  apply eplus.dualMap.injective
-  apply LinearMap.ext
-  intro p
-  -- Apply the conjugacy equation to the chosen odd spinor.
-  have hintertwine :
-      T.symm (spinMinusAction Q P hline (spinGroupToEven Q g) (eminus.symm s)) =
-        (spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap
-          (T.symm (eminus.symm s)) := by
-    have h := hT (spinGroupToEven Q g⁻¹) (T.symm (eminus.symm s))
-    rw [reverseEven_spinGroupToEven, inv_inv, LinearEquiv.apply_symm_apply] at h
-    exact T.symm_apply_eq.2 h.symm
-  have hplusAction := spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction P hline g⁻¹ p
-  have hminusAction := spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction P hline g s
-  -- The remaining equality is the evaluation pairing for the transported dual action.
-  simp only [E, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-    LinearEquiv.dualMap_apply]
-  rw [hminusAction, hintertwine]
-  simp only [LinearMap.dualMap_apply]
-  rw [eplus.symm_apply_apply]
-  -- Expand the dual evaluation after transporting through the subtype equivalence.
-  change (T.symm (eminus.symm s))
-      (spinPlusAction Q P hline (spinGroupToEven Q g⁻¹) p) =
-    (eplus.symm.dualMap (T.symm (eminus.symm s)))
-      ((spinPlusSubrep P hline).toRepresentation g⁻¹ (eplus p))
-  rw [LinearEquiv.dualMap_apply, hplusAction]
+  -- The duality on the restricted even Clifford actions, from the conjugacy equation at `g⁻¹`.
+  let E : Representation.Equiv
+      ((spinMinusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))
+      (Representation.dual ((spinPlusAction Q P hline).toMonoidHom.comp (spinGroupToEven Q))) :=
+    .mk T.symm fun g ↦ LinearMap.ext fun s ↦ by
+      have h := hT (spinGroupToEven Q g⁻¹) (T.symm s)
+      rw [reverseEven_spinGroupToEven, inv_inv, LinearEquiv.apply_symm_apply] at h
+      exact T.symm_apply_eq.2 h.symm
+  exact ⟨(spinMinusSubrepEquiv P hline).symm.trans (E.trans (spinPlusSubrepEquiv P hline).dual)⟩
 
 /-- Combine an equivalence of the even half-spin representation with the canonical duality of the
 odd and even half-spin representations in dimension six. -/

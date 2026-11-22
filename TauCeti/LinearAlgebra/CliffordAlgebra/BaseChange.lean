@@ -139,8 +139,10 @@ theorem ofBaseChangeAux_mem_even (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
 /-- On the tensor carrier `A ⊗[R] Cℓ(M, Q)`, `CliffordAlgebra.ofBaseChange` sends a pure tensor
 `a ⊗ x` to the `a`-multiple of the canonical image `CliffordAlgebra.ofBaseChangeAux A Q x`. -/
 theorem ofBaseChange_tmul {Q : QuadraticForm R M} (a : A) (x : CliffordAlgebra Q) :
-    ofBaseChange A Q (a ⊗ₜ x) = a • ofBaseChangeAux A Q x :=
-  (Algebra.TensorProduct.lift_tmul _ _ _ a x).trans (Algebra.smul_def a _).symm
+    ofBaseChange A Q (a ⊗ₜ x) = a • ofBaseChangeAux A Q x := by
+  unfold ofBaseChange
+  exact (Algebra.TensorProduct.lift_tmul _ _ _ a x).trans <| by
+    rw [Algebra.ofId_apply, Algebra.smul_def]
 
 /-- On the pure tensors `1 ⊗ x`, `CliffordAlgebra.ofBaseChange` restricts to the canonical map
 `CliffordAlgebra.ofBaseChangeAux`. -/

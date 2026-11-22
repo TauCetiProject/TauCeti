@@ -61,8 +61,6 @@ taking invariants under it.
   the dual representations.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
   generating set of the group.
-* `AlgHom.toMonoidHom_comp_apply`: the restriction of an algebra map along a monoid homomorphism
-  acts through the algebra map.
 * `AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top`: equivariance under a monoid
   acting through a spanning image in an algebra is equivariance under the whole algebra.
 
@@ -467,13 +465,6 @@ theorem isIntertwiningMap_iff_of_closure_eq_top {A G V W : Type*} [Semiring A] [
     calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := (σ.inv_self_apply g _).symm
       _ = σ g⁻¹ (f v) := by rw [← hg, ρ.self_inv_apply]
 
-/-- The restriction `F.toMonoidHom.comp φ` of an algebra map `F` along a monoid homomorphism `φ`
-acts by `F (φ h)`. -/
-theorem _root_.AlgHom.toMonoidHom_comp_apply {A B C H : Type*} [CommSemiring A] [Semiring B]
-    [Semiring C] [Algebra A B] [Algebra A C] [Monoid H] (F : B →ₐ[A] C) (φ : H →* B) (h : H) :
-    F.toMonoidHom.comp φ h = F (φ h) :=
-  (rfl)
-
 /-- **Equivariance under a spanning monoid is equivariance under the whole algebra.** If the image
 of `φ : H →* B` spans the `A`-algebra `B`, a linear map intertwines the restrictions along `φ` of
 two algebra actions `F` and `G` exactly when it intertwines `F b` and `G b` for every `b : B`. -/
@@ -485,7 +476,8 @@ theorem _root_.AlgHom.isIntertwiningMap_toMonoidHom_comp_iff_of_span_eq_top {A B
     IsIntertwiningMap (F.toMonoidHom.comp φ) (G.toMonoidHom.comp φ) f ↔
       ∀ b v, f (F b v) = G b (f v) := by
   -- The restricted actions act by `F (φ g)` and `G (φ g)`.
-  simp only [isIntertwiningMap_iff, AlgHom.toMonoidHom_comp_apply]
+  simp only [isIntertwiningMap_iff, MonoidHom.comp_apply, AlgHom.toRingHom_eq_coe,
+    RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom, AlgHom.coe_toMonoidHom]
   refine ⟨fun hf b v ↦ ?_, fun h g v ↦ h (φ g) v⟩
   -- Both sides are linear in `b`: `F b` postcomposed with `f`, and `G b` precomposed with `f`.
   have hext : LinearMap.llcomp A V V W f ∘ₗ F.toLinearMap =

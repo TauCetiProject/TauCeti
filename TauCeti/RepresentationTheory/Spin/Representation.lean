@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
-public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 

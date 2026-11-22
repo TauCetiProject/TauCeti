@@ -425,17 +425,16 @@ theorem AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top {R B H M : 
     (p : Submodule R M) :
     p ∈ Representation.invtSubmodule (F.toMonoidHom.comp φ) ↔
       ∀ b, p ∈ Module.End.invtSubmodule (F b) := by
-  simp only [Representation.mem_invtSubmodule, AlgHom.toMonoidHom_comp_apply]
+  simp only [Representation.mem_invtSubmodule, MonoidHom.comp_apply]
   refine ⟨fun hp b ↦ ?_, fun hp g ↦ hp (φ g)⟩
   -- The elements of `B` whose action preserves `p` form a submodule containing the image of `φ`.
+  have hmem (c : B) : c ∈ (p.compatibleMaps p).comap F.toLinearMap ↔
+      p ∈ Module.End.invtSubmodule (F c) := by
+    rw [Submodule.mem_comap, AlgHom.coe_toLinearMap, Submodule.mem_compatibleMaps,
+      Module.End.mem_invtSubmodule]
   have hle : Submodule.span R (Set.range φ) ≤ (p.compatibleMaps p).comap F.toLinearMap :=
-    Submodule.span_le.2 <| Set.range_subset_iff.2 fun g ↦ by
-      rw [SetLike.mem_coe, Submodule.mem_comap, AlgHom.coe_toLinearMap,
-        Submodule.mem_compatibleMaps, ← Module.End.mem_invtSubmodule]
-      exact hp g
-  have hb := (hφ ▸ hle) (Submodule.mem_top (x := b))
-  rwa [Submodule.mem_comap, AlgHom.coe_toLinearMap, Submodule.mem_compatibleMaps,
-    ← Module.End.mem_invtSubmodule] at hb
+    Submodule.span_le.2 <| Set.range_subset_iff.2 fun g ↦ (hmem (φ g)).2 (hp g)
+  exact (hmem b).1 ((hφ ▸ hle) (Submodule.mem_top (x := b)))
 
 section Irreducible
 

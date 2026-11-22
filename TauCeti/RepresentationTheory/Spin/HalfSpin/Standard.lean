@@ -47,19 +47,12 @@ theorem nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action
         LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s))) :
     Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
       ((stdSLRep K n).comp f)) := by
-  let ep : spinPlus Q P ≃ₗ[K] (spinPlusSubrep P hline).toSubmodule :=
-    LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
-  refine ⟨Representation.Equiv.ofBasisAction _ _ ep.symm b
-    (fun s ↦ spinPlusAction Q P hline (spinGroupToEven Q s)) ?_ ?_⟩
-  · intro s x
-    apply Subtype.ext
-    simpa only [ep, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply] using
-      (coe_spinPlusAction_spinGroupToEven_apply P hline s (ep.symm x)).symm
-  · intro s x
-    simp only [MonoidHom.comp_apply, stdSLRep_apply_apply]
-    rw [hmatrix]
-    exact LinearMap.toMatrix_mulVec_repr b b
-      (spinPlusAction Q P hline (spinGroupToEven Q s)) x
+  refine ⟨(spinPlusSubrepEquiv P hline).symm.trans <| Representation.Equiv.ofBasisAction _ _
+    (LinearEquiv.refl K _) b (fun s ↦ spinPlusAction Q P hline (spinGroupToEven Q s))
+    (fun _ _ ↦ rfl) fun s x ↦ ?_⟩
+  simp only [MonoidHom.comp_apply, stdSLRep_apply_apply]
+  rw [hmatrix]
+  exact LinearMap.toMatrix_mulVec_repr b b (spinPlusAction Q P hline (spinGroupToEven Q s)) x
 
 /-- A matrix formula for the odd half-spin action identifies that representation with the
 standard representation pulled back along a homomorphism to the special linear group. -/
@@ -72,17 +65,12 @@ theorem nonempty_spinMinusSubrep_equiv_stdSLRep_of_matrix_action
         LinearMap.toMatrix b b (spinMinusAction Q P hline (spinGroupToEven Q s))) :
     Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv
       ((stdSLRep K n).comp f)) := by
-  let em : spinMinus Q P ≃ₗ[K] (spinMinusSubrep P hline).toSubmodule :=
-    LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm
-  refine ⟨Representation.Equiv.ofBasisAction _ _ em.symm b
-    (fun s ↦ spinMinusAction Q P hline (spinGroupToEven Q s)) ?_ ?_⟩
-  · intro s x
-    exact spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction P hline s x
-  · intro s x
-    simp only [MonoidHom.comp_apply, stdSLRep_apply_apply]
-    rw [hmatrix]
-    exact LinearMap.toMatrix_mulVec_repr b b
-      (spinMinusAction Q P hline (spinGroupToEven Q s)) x
+  refine ⟨(spinMinusSubrepEquiv P hline).symm.trans <| Representation.Equiv.ofBasisAction _ _
+    (LinearEquiv.refl K _) b (fun s ↦ spinMinusAction Q P hline (spinGroupToEven Q s))
+    (fun _ _ ↦ rfl) fun s x ↦ ?_⟩
+  simp only [MonoidHom.comp_apply, stdSLRep_apply_apply]
+  rw [hmatrix]
+  exact LinearMap.toMatrix_mulVec_repr b b (spinMinusAction Q P hline (spinGroupToEven Q s)) x
 
 end TauCeti
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.RepresentationTheory.Spin.Representation
 -- Private: `CliffordAlgebra.contractLeft_mem_evenOdd` is used only inside a proof, and
 -- `CliffordAction` imports this module privately too, so it is not available transitively.
@@ -66,7 +65,8 @@ belong to the complex theory and are not proved here.
 * `TauCeti.spinPlusAction` and `TauCeti.spinMinusAction`: the actions of the even Clifford
   subalgebra on the two summands, and `TauCeti.evenSpinActionProd` their product.
 * `TauCeti.spinPlusSubrepEquiv` and `TauCeti.spinMinusSubrepEquiv`: the two actions composed with
-  `CliffordAlgebra.spinGroupToEven` are equivalent to the two subrepresentations.
+  `CliffordAlgebra.spinGroupToEven` are equivalent to the two subrepresentations, keeping the
+  underlying exterior-algebra vector (`TauCeti.coe_spinPlusSubrepEquiv_apply` and its variants).
 
 ## Main results
 
@@ -472,8 +472,7 @@ noncomputable def spinPlusSubrepEquiv (hline : P.line = ⊥) :
       -- the subrepresentation statement, solved for the transported output
       have hs := (LinearEquiv.symm_apply_eq _).1
         (spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction P hline g s)
-      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toMonoidHom_comp_apply] using
-        hs.symm
+      exact hs.symm
 
 /-- **The odd half-spin action restricted to the Spin group is the odd half-spin
 subrepresentation**: the even-subalgebra action `TauCeti.spinMinusAction` composed with
@@ -488,7 +487,34 @@ noncomputable def spinMinusSubrepEquiv (hline : P.line = ⊥) :
       have hs := spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction P hline g
         (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm s)
       rw [LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_eq] at hs
-      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, AlgHom.toMonoidHom_comp_apply] using
-        hs.symm
+      exact hs.symm
+
+/-- `TauCeti.spinPlusSubrepEquiv` keeps the underlying exterior-algebra vector. -/
+@[simp]
+theorem coe_spinPlusSubrepEquiv_apply (hline : P.line = ⊥) (s : spinPlus Q P) :
+    ((spinPlusSubrepEquiv P hline s : (spinPlusSubrep P hline).toSubmodule) :
+      ExteriorAlgebra K P.W) = s :=
+  (rfl)
+
+/-- The inverse of `TauCeti.spinPlusSubrepEquiv` keeps the underlying exterior-algebra vector. -/
+@[simp]
+theorem coe_spinPlusSubrepEquiv_symm_apply (hline : P.line = ⊥)
+    (s : (spinPlusSubrep P hline).toSubmodule) :
+    ((spinPlusSubrepEquiv P hline).symm s : ExteriorAlgebra K P.W) = s :=
+  (rfl)
+
+/-- `TauCeti.spinMinusSubrepEquiv` keeps the underlying exterior-algebra vector. -/
+@[simp]
+theorem coe_spinMinusSubrepEquiv_apply (hline : P.line = ⊥) (s : spinMinus Q P) :
+    ((spinMinusSubrepEquiv P hline s : (spinMinusSubrep P hline).toSubmodule) :
+      ExteriorAlgebra K P.W) = s :=
+  (rfl)
+
+/-- The inverse of `TauCeti.spinMinusSubrepEquiv` keeps the underlying exterior-algebra vector. -/
+@[simp]
+theorem coe_spinMinusSubrepEquiv_symm_apply (hline : P.line = ⊥)
+    (s : (spinMinusSubrep P hline).toSubmodule) :
+    ((spinMinusSubrepEquiv P hline).symm s : ExteriorAlgebra K P.W) = s :=
+  (rfl)
 
 end TauCeti
