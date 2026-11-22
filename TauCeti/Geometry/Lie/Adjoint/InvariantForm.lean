@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.InvariantForm
 public import TauCeti.Geometry.Lie.Adjoint.Derivation
 public import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.Compact.BilinearForm
 import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
@@ -50,10 +51,9 @@ It uses `TauCeti.Lie.hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero` for `
   algebra of a compact Lie group, some adjoint translate of `X` brackets to zero with `Y`.
 * `TauCeti.Lie.lieInvariant_iff_adjoint_invariant`: on a connected group, tangent bilinear forms
   are infinitesimally invariant exactly when they are Ad-invariant.
+* `TauCeti.Lie.lieInvariant_of_isInvariantForm_adjointRepresentation`: a bilinear form invariant
+  under `TauCeti.Lie.adjointRepresentation` is invariant under the tangent Lie algebra.
 
-* `TauCeti.Lie.exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompact`:
-  a continuous symmetric positive form on the tangent Lie algebra invariant under the adjoint
-  action of a compact subgroup, for an arbitrary Lie group.
 * `TauCeti.Lie.exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant`:
   a continuous symmetric positive adjoint-invariant form on the tangent Lie algebra of a compact
   Lie group.
@@ -251,34 +251,23 @@ theorem averageAdjointBilinForm_eq_self_iff
 
 end AverageAdjoint
 
-omit [T2Space G] in
-/-- **An inner product on the Lie algebra invariant under a compact subgroup.** The tangent Lie
-algebra of a Lie group carries a continuous symmetric positive form invariant under the adjoint
-action of a given compact subgroup `K`. Neither `G` nor `K` need be connected, and `G` need not be
-compact; no form invariant under all of `G` is asserted. -/
-theorem exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompact
-    {K : Subgroup G} (hK : IsCompact (K : Set G)) :
+/-- The tangent Lie algebra of a compact Lie group has a continuous symmetric positive form
+invariant under the adjoint action. No connectedness or boundaryless-model hypothesis is needed. -/
+theorem exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant [CompactSpace G] :
     ∃ b : GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G →L[ℝ] ℝ,
       (∀ a c, b a c = b c a) ∧ (∀ a, a ≠ 0 → 0 < b a a) ∧
-        ∀ g ∈ K, ∀ (a c : GroupLieAlgebra I G),
+        ∀ (g : G) (a c : GroupLieAlgebra I G),
           b (adjointContinuousLinearMap g a) (adjointContinuousLinearMap g c) = b a c := by
-  have : T2Space G := I.t2Space_of_lieGroup ∞
   let : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  let : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  -- Average over `K` an inner product on the derivation model of the Lie algebra.
-  obtain ⟨B, hsymm, hpos, hAd⟩ := ContRepresentation.exists_isSymm_bilinForm_invariant
-    ((continuousAdjointRepresentation (I := I) (G := G)).restrict K.subtype)
-    ((contMDiff_continuousAdjointRepresentation (I := I) (G := G)).continuous.comp
-      continuous_subtypeVal)
+  obtain ⟨B, hsymm, hpos, hAd⟩ := exists_isSymm_bilinForm_Ad_invariant (I := I) (G := G)
   let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
     BoundarylessManifold.isInteriorPoint
   let b := (B.compl₁₂ e.symm.toLinearMap e.symm.toLinearMap).toContinuousBilinearMap
   have hb (a c : GroupLieAlgebra I G) : b a c = B (e.symm a) (e.symm c) := by
     simp only [b, LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply,
       LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom]
-  refine ⟨b, fun a c ↦ ?_, fun a ha ↦ ?_, fun g hg a c ↦ ?_⟩
+  refine ⟨b, fun a c ↦ ?_, fun a ha ↦ ?_, fun g a c ↦ ?_⟩
   · rw [hb, hb]
     exact hsymm.eq _ _
   · rw [hb]
@@ -287,21 +276,7 @@ theorem exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompac
     simp only [e, adjointContinuousLinearMap_apply,
       leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph]
     rw [← continuousAdjointRepresentation_apply, ← continuousAdjointRepresentation_apply]
-    simpa only [ContRepresentation.toRepresentation_apply, ContRepresentation.restrict_apply_apply,
-      Subgroup.coe_subtype] using hAd.apply ⟨g, hg⟩ (e.symm a) (e.symm c)
-
-omit [T2Space G] in
-/-- The tangent Lie algebra of a compact Lie group has a continuous symmetric positive form
-invariant under the adjoint action. No connectedness or boundaryless-model hypothesis is needed. -/
-theorem exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant [CompactSpace G] :
-    ∃ b : GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G →L[ℝ] ℝ,
-      (∀ a c, b a c = b c a) ∧ (∀ a, a ≠ 0 → 0 < b a a) ∧
-        ∀ (g : G) (a c : GroupLieAlgebra I G),
-          b (adjointContinuousLinearMap g a) (adjointContinuousLinearMap g c) = b a c := by
-  obtain ⟨b, hsymm, hpos, hAd⟩ :=
-    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompact (I := I)
-      (K := ⊤) (by simpa only [Subgroup.coe_top] using isCompact_univ (X := G))
-  exact ⟨b, hsymm, hpos, fun g ↦ hAd g (Subgroup.mem_top g)⟩
+    exact hAd.apply g (e.symm a) (e.symm c)
 
 /-- **Hunt's lemma.** For `X` and `Y` in the Lie algebra of a compact Lie group, some adjoint
 translate of `X` brackets to zero with `Y`. -/
@@ -393,6 +368,17 @@ theorem lieInvariant_of_adjoint_invariant
   rw [heq] at h
   simp only [ContinuousLinearMap.toBilinForm_apply]
   linarith [h.unique (hasDerivAt_const 0 (b Y Z))]
+
+/-- **A form invariant under `adjointRepresentation` is invariant under the tangent Lie algebra.**
+This is `TauCeti.Lie.lieInvariant_of_adjoint_invariant` for a bilinear form, read as a continuous
+bilinear map; the group may be disconnected. -/
+theorem lieInvariant_of_isInvariantForm_adjointRepresentation
+    {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
+    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B) :
+    B.lieInvariant (GroupLieAlgebra I G) :=
+  lieInvariant_of_adjoint_invariant (b := LinearMap.toContinuousBilinearMap B) fun g X Y ↦ by
+    simpa only [LinearMap.toContinuousBilinearMap_apply, adjointRepresentation_apply] using
+      hB.apply g X Y
 
 /-- On a connected Lie group, an infinitesimally invariant bilinear form is Ad-invariant. -/
 theorem adjoint_invariant_of_lieInvariant [PreconnectedSpace G]

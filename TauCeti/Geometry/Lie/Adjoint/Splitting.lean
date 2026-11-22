@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
-public import TauCeti.RepresentationTheory.InvariantForm.Orthogonal
-import TauCeti.Geometry.Lie.Adjoint.InvariantForm
+public import TauCeti.RepresentationTheory.Subrepresentation
 import TauCeti.RepresentationTheory.Dual
 
 /-!
@@ -15,9 +14,10 @@ import TauCeti.RepresentationTheory.Dual
 
 Let `H` be a compact subgroup of a Lie group `G`, acting on the Lie algebra
 `𝔤 = GroupLieAlgebra I G` by the adjoint action, and let `𝔥 ≤ 𝔨` be `Ad(H)`-invariant subspaces of
-`𝔤`. Averaging an inner product over `H`
-(`TauCeti.Lie.exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompact`) and taking
-orthogonal complements gives `Ad(H)`-invariant subspaces `𝔪` and `𝔮` with
+`𝔤`. The adjoint representation of `H` is semisimple
+(`TauCeti.Lie.isSemisimpleRepresentation_adjointRepresentation_comp_subtype`, by averaging over
+`H`), so its subrepresentations form a complemented modular lattice. Taking a relative complement
+of `𝔥` in `𝔨` and a complement of `𝔨` gives `Ad(H)`-invariant subspaces `𝔪` and `𝔮` with
 
 `𝔤 = 𝔥 ⊕ 𝔪 ⊕ 𝔮`,  `𝔥 ⊕ 𝔪 = 𝔨`,
 
@@ -94,8 +94,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H' : Type*} [TopologicalSpace H'] {I : ModelWithCorners ℝ E H'}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H' G] [Group G] [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-
 /-- **Invariant splittings of the Lie algebra along a compact subgroup.** Let `H` be a compact
 subgroup of a Lie group `G` and `𝔥 ≤ 𝔨` subspaces of `𝔤` invariant under `Ad(H)`. There are
 `Ad(H)`-invariant subspaces `𝔪` and `𝔮` with `𝔥 ⊕ 𝔪 = 𝔨` and `𝔨 ⊕ 𝔮 = 𝔤`, so that
@@ -104,23 +102,11 @@ theorem exists_sup_eq_and_isCompl_of_isCompact {H : Subgroup G} (hH : IsCompact 
     {𝔥 𝔨 : Subrepresentation ((adjointRepresentation ℝ I G).comp H.subtype)} (h𝔥𝔨 : 𝔥 ≤ 𝔨) :
     ∃ 𝔪 𝔮 : Subrepresentation ((adjointRepresentation ℝ I G).comp H.subtype),
       𝔥 ⊔ 𝔪 = 𝔨 ∧ IsCompl 𝔨 𝔮 ∧ IsCompl 𝔥 (𝔪 ⊔ 𝔮) ∧ IsCompl 𝔪 (𝔥 ⊔ 𝔮) := by
-  obtain ⟨b, -, hpos, hAd⟩ :=
-    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompact (I := I) hH
-  have hB : TauCeti.Representation.IsInvariantForm
-      ((adjointRepresentation ℝ I G).comp H.subtype) b.toBilinForm :=
-    TauCeti.Representation.isInvariantForm_iff.mpr fun g X Y ↦ by
-      simpa only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
-        adjointRepresentation_apply, ContinuousLinearMap.toBilinForm_apply]
-          using hAd g g.property X Y
-  have hani : b.toBilinForm.toQuadraticMap.Anisotropic :=
-    QuadraticMap.PosDef.anisotropic fun X hX ↦ by
-      simpa only [LinearMap.BilinMap.toQuadraticMap_apply,
-        ContinuousLinearMap.toBilinForm_apply] using hpos X hX
-  exact ⟨𝔨 ⊓ hB.orthogonalSubrepresentation 𝔥, hB.orthogonalSubrepresentation 𝔨,
-    hB.sup_inf_orthogonalSubrepresentation hani h𝔥𝔨,
-    hB.isCompl_orthogonalSubrepresentation hani 𝔨,
-    hB.isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation_right hani h𝔥𝔨,
-    hB.isCompl_inf_orthogonalSubrepresentation_sup_orthogonalSubrepresentation hani h𝔥𝔨⟩
+  have := isSemisimpleRepresentation_adjointRepresentation_comp_subtype (I := I) hH
+  obtain ⟨𝔪, h𝔪, h𝔪'⟩ := IsModularLattice.exists_disjoint_and_sup_eq h𝔥𝔨
+  obtain ⟨𝔮, h𝔮⟩ := exists_isCompl 𝔨
+  refine ⟨𝔪, 𝔮, h𝔪', h𝔮, h𝔪.isCompl_sup_right_of_isCompl_sup_left (h𝔪' ▸ h𝔮),
+    h𝔪.symm.isCompl_sup_right_of_isCompl_sup_left ((sup_comm 𝔪 𝔥 ▸ h𝔪') ▸ h𝔮)⟩
 
 end Splitting
 

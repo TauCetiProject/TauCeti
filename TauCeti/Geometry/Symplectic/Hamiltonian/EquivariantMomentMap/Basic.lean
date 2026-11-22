@@ -346,6 +346,14 @@ theorem neg (h : σ.IsEquivariantMomentMap μ) : (-σ).IsEquivariantMomentMap fu
   toIsMomentMap := h.toIsMomentMap.neg
   apply_smul g x := by rw [h.apply_smul, map_neg]
 
+/-- Shifting a group-level moment map by a coadjoint-invariant constant `ν ∈ 𝔤*` gives a
+group-level moment map. -/
+theorem add_const (h : σ.IsEquivariantMomentMap μ) {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hν : ∀ g : G, Lie.coadjointRepresentation ℝ I G g ν = ν) :
+    σ.IsEquivariantMomentMap (fun x ↦ μ x + ν) where
+  toIsMomentMap := h.toIsMomentMap.add_const ν
+  apply_smul g x := by rw [h.apply_smul, map_add, hν]
+
 /-- **Equivariant shifts.** Shifting a group-level moment map on a nonempty manifold by a constant
 `ν ∈ 𝔤*` gives a group-level moment map exactly when `ν` is coadjoint-invariant. -/
 theorem add_const_iff [Nonempty M] (h : σ.IsEquivariantMomentMap μ)

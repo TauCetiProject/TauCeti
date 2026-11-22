@@ -31,7 +31,11 @@ When `H` is compact, as it is for a proper action, `𝔤` therefore splits as
 with `Ad(H)`-invariant `𝔪` and `𝔮`
 (`exists_isotropySubrepresentation_sup_eq_lieAnnihilatorSubrepresentation_and_isCompl_of_isCompact`
 in the same namespace). No `Ad(G)`-invariant inner product is used, and `G` need be neither
-compact nor connected. This is the splitting of the Marle–Guillemin–Sternberg local model
+compact nor connected. The point-level splitting
+`TauCeti.SmoothTwoForm.IsNondegenerate.exists_subrepresentation_complements` gives such
+complements under other hypotheses: a nondegenerate two-form preserved by `H` and a vanishing
+moment cocycle at `p`, from which the symplectic linear algebra at `p` gives `𝔤_p ≤ 𝔤_{μ(p)}`. Here coadjoint equivariance of `μ` alone gives that inclusion, and `σ` need not be
+nondegenerate. This is the splitting of the Marle–Guillemin–Sternberg local model
 `G ×_H (𝔪* × V)` of the action near the orbit of `p`: `𝔪*` is included into `𝔤*` by extending
 forms by zero on `𝔥 ⊕ 𝔮`
 (`TauCeti.Lie.isIntertwiningMap_dualMap_projectionOnto_coadjointRepresentation`), and the
