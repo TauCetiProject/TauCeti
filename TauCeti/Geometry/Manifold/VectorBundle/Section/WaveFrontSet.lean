@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
+public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
@@ -95,6 +96,9 @@ covectors read in two charts.
 * `TauCeti.BundleTest.waveFrontSet_delta`: the point mass `δ_x ℓ` with `ℓ ≠ 0` has wave front set
   the nonzero covectors at `x`, so its singular support is `{x}` in positive dimension
   (`TauCeti.BundleTest.singularSupport_delta`).
+* `TauCeti.BundleTest.isOpen_setOf_isMicrolocallySmoothAt`: microlocal smoothness is an open
+  condition on the cotangent bundle, so the wave front set is closed in the complement of the
+  zero section (`TauCeti.BundleTest.isOpen_diff_waveFrontSet`).
 
 ## Singular support
 
@@ -824,5 +828,65 @@ theorem singularSupport_delta [MeasurableSpace E] [BorelSpace E] [I.Boundaryless
   refine subset_antisymm (fun _ ⟨p, hp, h⟩ ↦ h ▸ hp.1) (singleton_subset_iff.2
     ⟨⟨x, toDual ℝ E w⟩, ⟨rfl, ?_⟩, rfl⟩)
   exact fun h0 ↦ hw ((toDual ℝ E).map_eq_zero_iff.1 h0)
+
+/-! ### Closedness of the wave front set -/
+
+/-- **Microlocal smoothness is an open condition.** The covectors at which a real functional on
+bundle tests is microlocally smooth form an open subset of the cotangent bundle. -/
+theorem isOpen_setOf_isMicrolocallySmoothAt (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    IsOpen {p : CotangentBundle I M | IsMicrolocallySmoothAt T p.proj p.snd} := by
+  refine isOpen_iff_mem_nhds.2 fun p₀ ⟨t, _, c, hc, hcs, hct, hx₀, h⟩ ↦ ?_
+  have hsrc : ∀ᶠ p : CotangentBundle I M in 𝓝 p₀, p.proj ∈ c.source :=
+    (FiberBundle.continuous_proj _ _).continuousAt.preimage_mem_nhds
+      (c.open_source.mem_nhds hx₀)
+  -- A covector `p` read in the chart `c`: its base point and its direction in `E`.
+  let Φ : CotangentBundle I M → E × E := fun p ↦
+    (c p.proj, (toDual ℝ E).symm (p.snd ∘L mfderiv 𝓘(ℝ, E) I c.symm (c p.proj)))
+  have hΦ : ContinuousAt Φ p₀ := by
+    refine ((c.continuousAt hx₀).comp (FiberBundle.continuous_proj _ _).continuousAt).prodMk
+      ((toDual ℝ E).symm.continuous.continuousAt.comp (continuousAt_clm_apply.2 fun e ↦ ?_))
+    -- Pair the covector with the image of the constant tangent vector `e` at `c p.proj` under
+    -- the differential of `c⁻¹`, rewriting the covector over the base point `c⁻¹ (c p.proj)`.
+    have hΨ : ContinuousAt (fun p : CotangentBundle I M ↦
+        (TotalSpace.mk' (E →L[ℝ] ℝ) (c.symm (c p.proj)) p.snd : CotangentBundle I M)) p₀ :=
+      continuousAt_id.congr <| hsrc.mono fun p hp ↦ CotangentBundle.ext (z := p)
+        (w := TotalSpace.mk' (E →L[ℝ] ℝ) (c.symm (c p.proj)) p.snd) (c.left_inv hp).symm
+        fun _ ↦ rfl
+    have hv : ContinuousAt (fun p : CotangentBundle I M ↦
+        ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, E)).symm (c p.proj, e))) p₀ :=
+      (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, E)).symm.continuous.continuousAt.comp
+        (((c.continuousAt hx₀).comp
+          (FiberBundle.continuous_proj _ _).continuousAt).prodMk continuousAt_const)
+    have hf : ContMDiffAt 𝓘(ℝ, E) I 1 c.symm (c p₀.proj) :=
+      (hcs.contMDiffAt (c.open_target.mem_nhds (c.map_source hx₀))).of_le (by simp)
+    -- The base point and the vector of `(c p.proj, e)` in the tangent bundle of `E` are
+    -- `c p.proj` and `e` by definition of `tangentBundleModelSpaceHomeomorph`.
+    exact CotangentBundle.continuousAt_snd_apply_mfderiv (f := c.symm) (hΨ := hΨ) (hv := hv)
+      (hf := hf) (hΨv := fun _ ↦ rfl)
+  -- In a basis of `F`, finitely many components are microlocally smooth near `Φ p₀`.
+  let b := Module.finBasis ℝ F
+  have hb : ∀ᶠ p in 𝓝 p₀, ∀ i, (t.chartComponent c hc hct T (b i)).IsMicrolocallySmoothAt
+      (Φ p).1 (Φ p).2 :=
+    eventually_all.2 fun i ↦
+      hΦ.eventually ((Distribution.isOpen_setOf_isMicrolocallySmoothAt _).mem_nhds (h (b i)))
+  filter_upwards [hsrc, hb] with p hp hpb
+  refine ⟨t, inferInstance, c, hc, hcs, hct, hp, fun v ↦ ?_⟩
+  rw [t.chartComponent_eq_sum c hc hct b]
+  exact Distribution.IsMicrolocallySmoothAt.sum _ (c.map_source hp) fun i _ ↦ (hpb i).smul _
+
+/-- **The wave front set is closed** in the complement of the zero section of the cotangent
+bundle. -/
+theorem isOpen_diff_waveFrontSet (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    IsOpen (zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) \
+      waveFrontSet I T) := by
+  have h : zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) \
+      waveFrontSet I T = zeroSectionCompl (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ∩
+        {p | IsMicrolocallySmoothAt T p.proj p.snd} := by
+    ext p
+    simp only [Set.mem_sdiff, mem_zeroSectionCompl, mem_waveFrontSet_iff, mem_inter_iff,
+      mem_ofPred_eq]
+    tauto
+  rw [h]
+  exact (isOpen_zeroSectionCompl _ _).inter (isOpen_setOf_isMicrolocallySmoothAt T)
 
 end TauCeti.BundleTest
