@@ -13,9 +13,9 @@ import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 # Constructing a Belyi model by adjoining a primitive element
 
 Given an algebraic Belyi pair `X = (F, k(t) ↪ F)` over a field `k` of characteristic zero and a
-subfield `K → k` over which `t` remains transcendental, a primitive element `z` of `F / k(t)` that
-is integral over `K(t)` and satisfies `[K(t)⟮z⟯ : K(t)] = [F : k(t)]` defines a model of `X` over
-`K` (`TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple`) without requiring `k / K` to be algebraic.
+subfield `K → k` over which `t` remains transcendental, a primitive element `z` of `F / k(t)`
+satisfying `[K(t)⟮z⟯ : K(t)] = [F : k(t)]` defines a model of `X` over `K`
+(`TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple`) without requiring `k / K` to be algebraic.
 
 ## Main definitions
 
@@ -26,6 +26,8 @@ is integral over `K(t)` and satisfies `[K(t)⟮z⟯ : K(t)] = [F : k(t)]` define
 
 * `TauCeti.AlgebraicBelyiPair.finrank_modelOfAdjoinSimple_pair`: the constructed model has the same
   Belyi degree as `X`.
+* `TauCeti.AlgebraicBelyiPair.fieldRange_modelOfAdjoinSimple_embedding`: the embedding image of the
+  constructed model is `K(t)⟮z⟯`.
 -/
 
 public section
@@ -38,8 +40,8 @@ namespace TauCeti.AlgebraicBelyiPair
 
 variable {k : Type u} [Field k] [CharZero k] (X : AlgebraicBelyiPair k)
 
-/-- Promote a primitive element `z` of `X / k(t)` that is integral over `K(t)` of full degree
-`[K(t)⟮z⟯ : K(t)] = [X : k(t)]` to a model of `X` over `K`. -/
+/-- Promote a primitive element `z` of `X / k(t)` of full degree `[K(t)⟮z⟯ : K(t)] = [X : k(t)]`
+to a model of `X` over `K`. -/
 noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algebra K k]
     [Algebra (RatFunc K) (RatFunc k)]
     [Algebra (RatFunc K) X] [IsScalarTower (RatFunc K) (RatFunc k) X]
@@ -47,7 +49,7 @@ noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algeb
       algebraMap (RatFunc K) (RatFunc k) (algebraMap K (RatFunc K) c) =
         algebraMap k (RatFunc k) (algebraMap K k c))
     (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
-    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤) (hz_int : IsIntegral (RatFunc K) z)
+    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
     (hfinrank : Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
     Model K X :=
   letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
@@ -65,19 +67,16 @@ noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algeb
       rw [IsScalarTower.algebraMap_apply K (RatFunc K) X,
         IsScalarTower.algebraMap_apply (RatFunc K) E X,
         ← IsScalarTower.algebraMap_apply K (RatFunc K) E]
-  haveI : FiniteDimensional (RatFunc K) E := IntermediateField.adjoin.finiteDimensional hz_int
+  haveI : FiniteDimensional (RatFunc K) E :=
+    FiniteDimensional.of_finrank_pos (hfinrank ▸ Module.finrank_pos)
   have hX_E : algebraMap E X (algebraMap (RatFunc K) E RatFunc.X) =
       algebraMap (RatFunc k) X RatFunc.X := by
     rw [← IsScalarTower.algebraMap_apply (RatFunc K) E X,
       IsScalarTower.algebraMap_apply (RatFunc K) (RatFunc k) X, hX]
   have hcomp : constantCompositum E k X = ⊤ :=
     constantCompositum_adjoin_simple_ratFunc_eq_top hX hgen
-  have hadj : IntermediateField.adjoin k (Set.range (algebraMap E X)) = ⊤ := by
-    have h := hcomp
-    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
-      constantCompositum_def, IntermediateField.adjoin_toSubfield] at h
-    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
-      IntermediateField.adjoin_toSubfield, Set.union_comm, h]
+  have hadj : IntermediateField.adjoin k (Set.range (algebraMap E X)) = ⊤ :=
+    (constantCompositum_eq_top_iff_adjoin_range_eq_top E k X).mp hcomp
   have hembed : ∀ c : K,
       algebraMap E X (algebraMap K E c) = algebraMap k X (algebraMap K k c) := fun c ↦ by
     rw [← IsScalarTower.algebraMap_apply K E X, IsScalarTower.algebraMap_apply K k X]
@@ -99,11 +98,28 @@ theorem finrank_modelOfAdjoinSimple_pair {K : Type u} [Field K] [CharZero K] [Al
       algebraMap (RatFunc K) (RatFunc k) (algebraMap K (RatFunc K) c) =
         algebraMap k (RatFunc k) (algebraMap K k c))
     (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
-    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤) (hz_int : IsIntegral (RatFunc K) z)
+    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
     (hfinrank : Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
     Module.finrank (RatFunc K)
-        (X.modelOfAdjoinSimple hC hX hgen hz_int hfinrank).pair =
+        (X.modelOfAdjoinSimple hC hX hgen hfinrank).pair =
       Module.finrank (RatFunc k) X :=
   hfinrank
+
+/-- The embedding image of the model constructed from `z` is `K(t)⟮z⟯`. -/
+@[simp]
+theorem fieldRange_modelOfAdjoinSimple_embedding {K : Type u} [Field K] [CharZero K] [Algebra K k]
+    [Algebra (RatFunc K) (RatFunc k)]
+    [Algebra (RatFunc K) X] [IsScalarTower (RatFunc K) (RatFunc k) X]
+    (hC : ∀ c : K,
+      algebraMap (RatFunc K) (RatFunc k) (algebraMap K (RatFunc K) c) =
+        algebraMap k (RatFunc k) (algebraMap K k c))
+    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
+    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
+    (hfinrank : Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
+    (X.modelOfAdjoinSimple hC hX hgen hfinrank).embedding.fieldRange =
+      ((RatFunc K)⟮z⟯).toSubfield := by
+  ext x
+  simp only [modelOfAdjoinSimple, IntermediateField.mem_toSubfield]
+  exact ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
 
 end TauCeti.AlgebraicBelyiPair

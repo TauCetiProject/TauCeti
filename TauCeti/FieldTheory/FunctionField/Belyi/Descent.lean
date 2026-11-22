@@ -272,12 +272,9 @@ noncomputable def model : Model K X where
   embedding_algebraMap c := by
     rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply K L X]
   embedding_algebraMap_X := D.algebraMap_descend_X
-  adjoin_range_embedding := by
-    have h := D.constantCompositum_descend_eq_top
-    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
-      constantCompositum_def, IntermediateField.adjoin_toSubfield] at h
-    rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
-      IntermediateField.adjoin_toSubfield, Set.union_comm, h]
+  adjoin_range_embedding :=
+    (constantCompositum_eq_top_iff_adjoin_range_eq_top D.descend L X).mp
+      D.constantCompositum_descend_eq_top
 
 include D in
 /-- **Descent data are effective**: an algebraic Belyi pair with a descent datum relative to `K`

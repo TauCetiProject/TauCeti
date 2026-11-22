@@ -310,6 +310,25 @@ end ConstantsInBase
 
 end Compositum
 
+/-- The compositum `F · k'` is the same subfield of `F'` whether it is formed by adjoining `k'` to
+`F` or by adjoining the image of `F` to `k'`. -/
+theorem constantCompositum_toSubfield_eq_adjoin (F k' F' : Type*) [Field F] [Field k'] [Field F']
+    [Algebra F F'] [Algebra k' F'] :
+    (constantCompositum F k' F').toSubfield =
+      (IntermediateField.adjoin k' (Set.range (algebraMap F F'))).toSubfield := by
+  rw [constantCompositum_def, IntermediateField.adjoin_toSubfield,
+    IntermediateField.adjoin_toSubfield, Set.union_comm]
+
+/-- The compositum `F · k'` is all of `F'` if and only if the image of `F` generates `F'` over
+`k'`. -/
+theorem constantCompositum_eq_top_iff_adjoin_range_eq_top (F k' F' : Type*) [Field F] [Field k']
+    [Field F'] [Algebra F F'] [Algebra k' F'] :
+    constantCompositum F k' F' = ⊤ ↔
+      IntermediateField.adjoin k' (Set.range (algebraMap F F')) = ⊤ := by
+  rw [← IntermediateField.toSubfield_inj, ← IntermediateField.toSubfield_inj,
+    IntermediateField.top_toSubfield, IntermediateField.top_toSubfield,
+    constantCompositum_toSubfield_eq_adjoin]
+
 /-! ### The compositum of an intermediate field with the constants -/
 
 section IntermediateFieldCompositum
@@ -325,9 +344,8 @@ omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] 
 by adjoining `K` to `C` or by adjoining the image of `C` to `K`. -/
 theorem _root_.IntermediateField.constantCompositum_toSubfield (C : IntermediateField k F) :
     (constantCompositum C K F').toSubfield =
-      (IntermediateField.adjoin K (Set.range (algebraMap C F'))).toSubfield := by
-  rw [constantCompositum_def, IntermediateField.adjoin_toSubfield,
-    IntermediateField.adjoin_toSubfield, Set.union_comm]
+      (IntermediateField.adjoin K (Set.range (algebraMap C F'))).toSubfield :=
+  constantCompositum_toSubfield_eq_adjoin C K F'
 
 /-- For a simple parameter field `k(t)`, extending constants gives exactly `K(t)`
 as a subfield of the ambient field. -/

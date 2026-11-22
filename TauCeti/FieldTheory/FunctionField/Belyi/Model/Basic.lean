@@ -8,7 +8,10 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.FieldOfModuli
 public import Mathlib.RingTheory.TensorProduct.Basic
 import TauCeti.FieldTheory.AlgebraicClosure
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Parameter
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Regular
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
+import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
 # Models of algebraic Belyi pairs and fields of definition
@@ -17,8 +20,12 @@ Let `X = (F, k(t) ↪ F)` be an algebraic Belyi pair over a field `k` of charact
 as `AlgebraicClosure ℚ`, and let `K → k` be a field extension, such as a number field inside
 `AlgebraicClosure ℚ`. A **model** of `X` over `K` is an algebraic Belyi pair `Y = (F₀, K(t) ↪ F₀)`
 over `K` together with an embedding `F₀ ↪ F` which is the given map on the constants, sends `t`
-to `t`, and whose image generates `F` over `k`. When `k / K` is algebraic, multiplication
-identifies the base change `F₀ ⊗[K] k` with `F`
+to `t`, and whose image generates `F` over `k`. When `k / K` is arbitrary (possibly
+transcendental), `F` is still isomorphic to the fraction field of `F₀ ⊗[K] k`
+(`TauCeti.AlgebraicBelyiPair.Model.fractionRingEquiv`) and multiplication
+identifies `k(t) ⊗[K(t)] F₀` with `F`
+(`TauCeti.AlgebraicBelyiPair.Model.ratFuncBaseChangeEquiv`). When `k / K` is algebraic,
+multiplication identifies the base change `F₀ ⊗[K] k` with `F`
 (`TauCeti.AlgebraicBelyiPair.Model.baseChangeEquiv`): the exact constant field `K` of `F₀` makes
 the tensor product a field, and the generation hypothesis makes multiplication onto. So a model
 is exactly an algebraic Belyi pair over `K` with an isomorphism from its base change to `k` onto
@@ -36,8 +43,11 @@ defined over its field of moduli (Couveignes).
 ## Main definitions
 
 * `TauCeti.AlgebraicBelyiPair.Model`: a model of an algebraic Belyi pair over a subfield.
+* `TauCeti.AlgebraicBelyiPair.Model.fractionRingEquiv` and
+  `TauCeti.AlgebraicBelyiPair.Model.ratFuncBaseChangeEquiv`: the fraction-field and parameter
+  base-change isomorphisms for an arbitrary extension `k / K`.
 * `TauCeti.AlgebraicBelyiPair.Model.baseChangeEquiv`: the isomorphism from the base change of a
-  model onto the pair.
+  model onto the pair when `k / K` is algebraic.
 * `TauCeti.AlgebraicBelyiPair.Model.baseChangeAut`: the automorphism of the pair induced by an
   automorphism of the constants fixing the field of the model.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.IsDefinedOver`: an isomorphism class is defined over a
@@ -45,6 +55,8 @@ defined over its field of moduli (Couveignes).
 
 ## Main results
 
+* `TauCeti.AlgebraicBelyiPair.Model.isDomain_tensorProduct`: the tensor product `F₀ ⊗[K] k` of a
+  model with an arbitrary constant extension is a domain.
 * `TauCeti.AlgebraicBelyiPair.Model.smul_mk_eq_mk`: an automorphism of `k` fixing the field of a
   model fixes the class of the pair.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.IsDefinedOver.fieldOfModuli_le`: the field of moduli of a
@@ -125,12 +137,126 @@ variable (M : Model K X)
 is the whole function field of `X`. -/
 private theorem constantCompositum_eq_top :
     letI : Algebra M.pair X := M.embedding.toAlgebra
-    constantCompositum M.pair k X = ⊤ := by
-  let : Algebra M.pair X := M.embedding.toAlgebra
-  rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield, constantCompositum_def,
-    IntermediateField.adjoin_toSubfield, Set.union_comm, RingHom.algebraMap_toAlgebra,
-    ← IntermediateField.adjoin_toSubfield, M.adjoin_range_embedding,
-    IntermediateField.top_toSubfield]
+    constantCompositum M.pair k X = ⊤ :=
+  letI : Algebra M.pair X := M.embedding.toAlgebra
+  (constantCompositum_eq_top_iff_adjoin_range_eq_top M.pair k X).mpr M.adjoin_range_embedding
+
+/-- A model of `X` is linearly disjoint from `k` over `K` inside `X`, with no algebraicity
+hypothesis on `k / K`. -/
+private theorem linearDisjoint :
+    letI : Algebra M.pair X := M.embedding.toAlgebra
+    letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
+    haveI : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
+    haveI : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
+    (IsScalarTower.toAlgHom K k X).fieldRange.LinearDisjoint M.pair := by
+  let _ : Algebra M.pair X := M.embedding.toAlgebra
+  let _ : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
+  have _ : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
+  have _ : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
+  exact linearDisjoint_of_isGeometricallyReduced_ratFunc
+    M.pair.isAlgebraicBelyiPair.isIntegrallyClosedIn M.embedding_algebraMap_X
+
+/-- The base change `M.pair ⊗[K] k` of a model over `K` to an arbitrary extension `k` is an
+integral domain. -/
+theorem isDomain_tensorProduct : IsDomain (M.pair ⊗[K] k) :=
+  isDomain_tensorProduct_of_isGeometricallyReduced
+    M.pair.isAlgebraicBelyiPair.isIntegrallyClosedIn k
+
+/-- **Fraction-field base change of a model**: for an arbitrary extension `k / K` (possibly
+transcendental), `X` is canonically isomorphic to `FractionRing (M.pair ⊗[K] k)`. -/
+noncomputable def fractionRingEquiv : FractionRing (M.pair ⊗[K] k) ≃+* X :=
+  letI : Algebra M.pair X := M.embedding.toAlgebra
+  letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
+  haveI : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
+  haveI : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
+  letI : Algebra (M.pair ⊗[K] k) X :=
+    (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom K M.pair X)
+      (IsScalarTower.toAlgHom K k X)).toRingHom.toAlgebra
+  haveI : IsFractionRing (M.pair ⊗[K] k) X :=
+    isFractionRing_tensorProduct_of_linearDisjoint M.linearDisjoint M.constantCompositum_eq_top
+  haveI : IsDomain (M.pair ⊗[K] k) := M.isDomain_tensorProduct
+  (IsLocalization.algEquiv (nonZeroDivisors (M.pair ⊗[K] k))
+    (FractionRing (M.pair ⊗[K] k)) X).toRingEquiv
+
+/-- On the image of a pure tensor `y ⊗ₜ c` in `FractionRing (M.pair ⊗[K] k)`,
+`M.fractionRingEquiv` is `M.embedding y * algebraMap k X c`. -/
+@[simp]
+theorem fractionRingEquiv_algebraMap_tmul (y : M.pair) (c : k) :
+    M.fractionRingEquiv
+        (algebraMap (M.pair ⊗[K] k) (FractionRing (M.pair ⊗[K] k)) (y ⊗ₜ c)) =
+      M.embedding y * algebraMap k X c := by
+  let _ : Algebra M.pair X := M.embedding.toAlgebra
+  let _ : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
+  have _ : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
+  have _ : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
+  let _ : Algebra (M.pair ⊗[K] k) X :=
+    (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom K M.pair X)
+      (IsScalarTower.toAlgHom K k X)).toRingHom.toAlgebra
+  have _ : IsFractionRing (M.pair ⊗[K] k) X :=
+    isFractionRing_tensorProduct_of_linearDisjoint M.linearDisjoint M.constantCompositum_eq_top
+  have _ : IsDomain (M.pair ⊗[K] k) := M.isDomain_tensorProduct
+  change ((IsLocalization.algEquiv (nonZeroDivisors (M.pair ⊗[K] k))
+    (FractionRing (M.pair ⊗[K] k)) X)
+      (algebraMap (M.pair ⊗[K] k) (FractionRing (M.pair ⊗[K] k)) (y ⊗ₜ c))) =
+    M.embedding y * algebraMap k X c
+  rw [AlgEquiv.commutes]
+  rfl
+
+/-- **Parameter base change of a model**: for an arbitrary extension `k / K` (possibly
+transcendental) with compatible `RatFunc K → RatFunc k` sending `RatFunc.X` to `RatFunc.X`,
+multiplication identifies `RatFunc k ⊗[RatFunc K] M.pair` with `X` as `RatFunc k`-algebras. -/
+noncomputable def ratFuncBaseChangeEquiv [Algebra (RatFunc K) (RatFunc k)]
+    [IsScalarTower K (RatFunc K) (RatFunc k)]
+    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X) :
+    RatFunc k ⊗[RatFunc K] M.pair ≃ₐ[RatFunc k] X :=
+  letI : Algebra M.pair X := M.embedding.toAlgebra
+  letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
+  haveI : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
+  haveI : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
+  constantExtensionRatFuncTensorEquiv M.linearDisjoint M.constantCompositum_eq_top
+    hX M.embedding_algebraMap_X
+
+/-- On pure tensors, `ratFuncBaseChangeEquiv` multiplies the `k(t)` scalar and the model
+embedding. -/
+@[simp]
+theorem ratFuncBaseChangeEquiv_tmul [Algebra (RatFunc K) (RatFunc k)]
+    [IsScalarTower K (RatFunc K) (RatFunc k)]
+    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
+    (r : RatFunc k) (y : M.pair) :
+    M.ratFuncBaseChangeEquiv hX (r ⊗ₜ[RatFunc K] y) =
+      algebraMap (RatFunc k) X r * M.embedding y :=
+  letI : Algebra M.pair X := M.embedding.toAlgebra
+  letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
+  haveI : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
+  haveI : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
+  constantExtensionRatFuncTensorEquiv_tmul M.linearDisjoint M.constantCompositum_eq_top
+    hX M.embedding_algebraMap_X r y
+
+/-- The inverse of `ratFuncBaseChangeEquiv` sends a product of a `k(t)`-element and a model
+element to a pure tensor. -/
+@[simp]
+theorem ratFuncBaseChangeEquiv_symm_mul [Algebra (RatFunc K) (RatFunc k)]
+    [IsScalarTower K (RatFunc K) (RatFunc k)]
+    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
+    (r : RatFunc k) (y : M.pair) :
+    (M.ratFuncBaseChangeEquiv hX).symm (algebraMap (RatFunc k) X r * M.embedding y) =
+      r ⊗ₜ[RatFunc K] y := by
+  apply (M.ratFuncBaseChangeEquiv hX).injective
+  simp
+
+/-- Comparison of `ratFuncBaseChangeEquiv` with the fraction field of `M.pair ⊗[K] k`:
+under `M.fractionRingEquiv`, a pure tensor `y ⊗ₜ c` corresponds to `algebraMap k (RatFunc k) c ⊗ₜ y`
+in `RatFunc k ⊗[RatFunc K] M.pair`. -/
+theorem ratFuncBaseChangeEquiv_symm_fractionRingEquiv_algebraMap_tmul
+    [Algebra (RatFunc K) (RatFunc k)] [IsScalarTower K (RatFunc K) (RatFunc k)]
+    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
+    (y : M.pair) (c : k) :
+    (M.ratFuncBaseChangeEquiv hX).symm
+        (M.fractionRingEquiv
+          (algebraMap (M.pair ⊗[K] k) (FractionRing (M.pair ⊗[K] k)) (y ⊗ₜ c))) =
+      algebraMap k (RatFunc k) c ⊗ₜ[RatFunc K] y := by
+  rw [fractionRingEquiv_algebraMap_tmul, mul_comm,
+    IsScalarTower.algebraMap_apply k (RatFunc k) X, ratFuncBaseChangeEquiv_symm_mul]
 
 /-- The **base change** of a model `Y = (F₀, t)` over `K` of `X = (F, t)` to an algebraic
 extension `k` of `K` is `X`: multiplication `F₀ ⊗[K] k → F` is an isomorphism. -/
@@ -139,8 +265,7 @@ noncomputable def baseChangeEquiv [Algebra.IsAlgebraic K k] : M.pair ⊗[K] k �
   letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
   haveI : IsScalarTower K M.pair X := .of_algebraMap_eq fun c ↦ (M.embedding_algebraMap c).symm
   haveI : IsScalarTower K k X := .of_algebraMap_eq fun _ ↦ rfl
-  haveI : IsDomain (M.pair ⊗[K] k) := isDomain_tensorProduct_of_isIntegrallyClosedIn
-    M.pair.isAlgebraicBelyiPair.isIntegrallyClosedIn k
+  haveI : IsDomain (M.pair ⊗[K] k) := M.isDomain_tensorProduct
   RingEquiv.ofBijective (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom K M.pair X)
     (IsScalarTower.toAlgHom K k X)) (productMap_bijective_of_constantCompositum_eq_top
       M.constantCompositum_eq_top)

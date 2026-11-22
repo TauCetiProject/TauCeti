@@ -54,8 +54,6 @@ Three ingredients enter the comparison:
   `F' / F` is integral.
 * `TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`: the base change of `F` to an
   arbitrary extension `k' / k` is an algebraic Belyi pair exactly when `F` is.
-* `TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`: linearly disjoint base change of an
-  algebraic Belyi pair.
 * `TauCeti.IsAlgebraicBelyiPair.of_finrank_eq`: degree-preserving descent of an algebraic Belyi
   pair across an arbitrary constant extension.
 
@@ -192,21 +190,5 @@ theorem IsAlgebraicBelyiPair.of_finrank_eq [CharZero k'] (h' : IsAlgebraicBelyiP
   have H := linearDisjoint_of_finrank_ratFunc_eq hcomp hX hfin.symm
   (isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top
     (H.isIntegrallyClosedIn h'.isIntegrallyClosedIn) hcomp hX).mp h'
-
-/-- **Base change of algebraic Belyi pairs along any linearly disjoint constant extension**: let
-`F / k(t)` be a finite extension in characteristic zero, let `F' = F · k'` be its compositum with
-an arbitrary — possibly transcendental — constant extension `k' / k` linearly disjoint from `F`
-over `k`, and suppose `t` acts on `F'` as it does on `F`. Then `F' / k'(t)` is an algebraic Belyi
-pair if and only if `F / k(t)` is. -/
-theorem isAlgebraicBelyiPair_iff_of_linearDisjoint [CharZero k']
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (hcomp : constantCompositum F k' F' = ⊤)
-    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc k') F' RatFunc.X) :
-    IsAlgebraicBelyiPair k' F' ↔ IsAlgebraicBelyiPair k F :=
-  ⟨fun h' ↦ (isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top
-      (H.isIntegrallyClosedIn h'.isIntegrallyClosedIn) hcomp hX).mp h',
-    fun h ↦ (isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top
-      h.isIntegrallyClosedIn hcomp hX).mpr h⟩
 
 end TauCeti

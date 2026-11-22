@@ -88,6 +88,15 @@ theorem relfinrank_pointedFieldOfModuli_le {P : Place k X} {q : ℚ}
   exact (IntermediateField.relfinrank_fixedField_le_relIndex (X.pointedStabilizer_le_stabilizer P)
     (X.relIndex_pointedStabilizer_ne_zero hP)).trans (X.relIndex_pointedStabilizer_le_finrank hP)
 
+/-- **For a Galois Belyi pair, the pointed field of moduli at any place whose fibre over `k(t)`
+is preserved by semilinear automorphisms is the field of moduli of the pair.** -/
+theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq
+    [IsGalois (RatFunc k) X] {P : Place k X}
+    (hfib : ∀ p : X.semilinearAut, (p • P).restrict k (RatFunc k) = P.restrict k (RatFunc k)) :
+    X.pointedFieldOfModuli P = (IsoClass.mk X).fieldOfModuli := by
+  rw [pointedFieldOfModuli_def, IsoClass.fieldOfModuli_def,
+    X.pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq hfib]
+
 /-- **For a Galois Belyi pair, the pointed field of moduli at any place over a rational point is
 the field of moduli of the pair.** -/
 theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois [IsGalois (RatFunc k) X]
