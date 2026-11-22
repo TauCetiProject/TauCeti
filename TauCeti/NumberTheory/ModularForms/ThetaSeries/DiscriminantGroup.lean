@@ -276,16 +276,13 @@ theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [Fintype (Discrimin
       sup_eq_right, ← isIntegral_iff_le_dual] at heq
     exact heq
   · exfalso
-    classical
-    have : Finite (dual L ⧸ ((1 : ℝ) • L).submoduleOf (dual L)) := by
-      simpa only [one_smul] using inferInstanceAs (Finite (DiscriminantGroup L))
-    have hspan : Submodule.span ℝ (L : Set E) = ⊤ :=
-      span_eq_top_of_finite_quotient_smul_submoduleOf_dual 1
+    have hspan : Submodule.span ℝ (L : Set E) = ⊤ := by
+      by_contra hne
+      exact not_finite_iff_infinite.mpr (infinite_discriminantGroup_of_span_ne_top hne)
+        inferInstance
     let b := Module.Basis.ofSpan hspan.ge
     have := FiniteDimensional.fintypeBasisIndex b
-    have hd : DiscreteTopology (dual (Submodule.span ℤ (Set.range b))) := by
-      rw [dual_span_basis]
-      infer_instance
+    have hd : DiscreteTopology (dual (Submodule.span ℤ (Set.range b))) := inferInstance
     have : DiscreteTopology (dual L) :=
       DiscreteTopology.of_subset hd
         (dual_anti (Submodule.span_le.mpr (Module.Basis.ofSpan_subset hspan.ge)))
