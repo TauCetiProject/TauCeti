@@ -39,8 +39,8 @@ and the moment map property there are not proved here.
   quotient Lie group structure, the differential at the identity of the projection `G → G ⧸ N`
   induces a canonical isomorphism `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)`, and under it the dual action corresponds
   to the coadjoint action of `G ⧸ N`; that comparison is not proved here.
-* The components of the map satisfy the moment map equation pulled back to `Z`:
-  `d⟨μ_res, [ξ]⟩ = i^* (ι_{ξ_M} σ)`
+* At every point `z` where `i` is manifold differentiable, the components of the map satisfy the
+  moment map equation pulled back to `Z`: `d⟨μ_res, [ξ]⟩ = i^* (ι_{ξ_M} σ)` at `z`
   (`TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_residualMomentMapLift_apply_mk`). This is the
   equation to be descended along reduction data `p : Z → Q`, `p^* η = i^* σ`, to the moment map of
   the residual action on the first reduced space.
@@ -59,7 +59,7 @@ and the moment map property there are not proved here.
 * `TauCeti.contMDiff_residualMomentMapLift_apply`: its components are of class `C^n` along a
   `C^n` level map, when the components of `μ` are.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_residualMomentMapLift_apply_mk`: the moment map
-  equation of the map along the level.
+  equation of the map along the level, at points where `i` is manifold differentiable.
 
 ## References
 
@@ -79,7 +79,7 @@ open Lie
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   {M Z : Type*} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)} {N : Subgroup G} {i : Z → M}
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField

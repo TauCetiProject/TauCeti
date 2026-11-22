@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Lie.Subgroup.GroupLieAlgebra
 import TauCeti.RepresentationTheory.Dual
 
 /-!
-# The adjoint and coadjoint actions of subgroups on Lie algebras of subgroups
+# Adjoint actions on subgroup Lie algebras and coadjoint actions on their annihilators
 
 Let `K` be a subgroup of a Lie group `G`, with Lie algebra `𝔨 = Subgroup.groupLieSubalgebra K`
 in the tangent Lie algebra `𝔤`. The adjoint action `Ad_g` of an element `g` of the normalizer of
@@ -51,7 +51,7 @@ open scoped ContDiff Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
@@ -60,6 +60,7 @@ theorem adjointRepresentation_apply_mem_groupLieSubalgebra {K : Subgroup G} {g :
     (hg : g ∈ Subgroup.normalizer (K : Set G)) {ξ : GroupLieAlgebra I G}
     (hξ : ξ ∈ K.groupLieSubalgebra (I := I)) :
     adjointRepresentation ℝ I G g ξ ∈ K.groupLieSubalgebra (I := I) := by
+  have := I.t2Space_of_lieGroup (G := G) ∞
   rw [mem_groupLieSubalgebra_iff] at hξ ⊢
   rw [tangentToLeftInvariantDerivation_adjointRepresentation_apply]
   exact Ad_mem_lieSubalgebraOfSubgroup hg hξ
@@ -77,6 +78,7 @@ theorem groupLieSubalgebra_le_comap_adjointRepresentation {N : Subgroup G} [N.No
 theorem adjointRepresentation_apply_sub_mem_groupLieSubalgebra {N : Subgroup G}
     [N.Normal] (hN : IsClosed (N : Set G)) {n : G} (hn : n ∈ N) (ξ : GroupLieAlgebra I G) :
     adjointRepresentation ℝ I G n ξ - ξ ∈ N.groupLieSubalgebra (I := I) := by
+  have := I.t2Space_of_lieGroup (G := G) ∞
   rw [mem_groupLieSubalgebra_iff, map_sub,
     tangentToLeftInvariantDerivation_adjointRepresentation_apply]
   exact Ad_sub_mem_lieSubalgebraOfSubgroup hN hn _

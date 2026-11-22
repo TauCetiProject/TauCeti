@@ -193,11 +193,9 @@ its dual annihilator `W⁰` is stable under `ρ.dual g`, since `(ρ.dual g φ) w
 for `w ∈ W`. -/
 theorem dualAnnihilator_le_comap_dual [CommSemiring k] [AddCommMonoid V] [Module k V]
     (ρ : Representation k G V) {W : Submodule k V} {g : G} (hW : W ≤ W.comap (ρ g⁻¹)) :
-    W.dualAnnihilator ≤ W.dualAnnihilator.comap (ρ.dual g) := fun φ hφ ↦ by
-  rw [Submodule.mem_comap, Submodule.mem_dualAnnihilator]
-  intro w hw
-  rw [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply]
-  exact (Submodule.mem_dualAnnihilator φ).1 hφ _ (hW hw)
+    W.dualAnnihilator ≤ W.dualAnnihilator.comap (ρ.dual g) := by
+  rw [← Submodule.map_le_iff_le_comap, dual_apply, ← LinearMap.dualMap_def]
+  exact (W.dualAnnihilator_map_dualMap_le (ρ g⁻¹)).trans (Submodule.dualAnnihilator_anti hW)
 
 /-- The dual of the representation `ρ.ofQuotient S` descended through a normal subgroup `S`,
 pulled back along `G → G ⧸ S`, is the dual of `ρ`:

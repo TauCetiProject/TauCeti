@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Slice
 public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel.Equivariant
 
 import Mathlib.RepresentationTheory.Maschke
+import TauCeti.Geometry.Lie.Adjoint.Representation.Semisimple
 import TauCeti.Geometry.Manifold.GroupAction.EquivariantSlice
 import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.RepresentationTheory.Semisimple

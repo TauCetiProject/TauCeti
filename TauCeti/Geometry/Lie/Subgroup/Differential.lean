@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Subgroup.GroupLieAlgebra
 import TauCeti.Geometry.Lie.AutomaticSmoothness
-import TauCeti.Geometry.Lie.Exponential.Classification
 
 /-!
 # The Lie algebra of an embedded subgroup
@@ -41,10 +40,10 @@ independent of the choice of finite-dimensional model for the subgroup.
   space of the subgroup has the dimension of that subalgebra.
 * `TauCeti.Lie.range_groupLieAlgebraMap_subtype`: in the tangent Lie algebra, the differential at
   the identity of the inclusion of a subgroup `K` has range `Subgroup.groupLieSubalgebra K`, for
-  any finite-dimensional Lie group structure on `K`.
+  any finite-dimensional Lie group structure on `K` with its subspace topology.
 * `TauCeti.Lie.comp_groupLieAlgebraMap_subtype_eq_zero_iff`: a linear form vanishes along that
   differential exactly when it annihilates `Subgroup.groupLieSubalgebra K`; for a moment map `μ`,
-  this identifies the zero level of the restriction `μ ∘ dι` to `K`.
+  this identifies the zero level of the restricted moment map `x ↦ (μ x) ∘ dι` of `K`.
 
 ## References
 
@@ -90,14 +89,16 @@ theorem range_lieMap_le_lieSubalgebraOfSubgroup {K : Subgroup G'} [T2Space G']
 
 section Subtype
 
-variable [T2Space G] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {HK : Type*} [TopologicalSpace HK] {J : ModelWithCorners ℝ F HK}
   {K : Subgroup G} [ChartedSpace HK K] [LieGroup J ∞ K]
 
-/-- For any finite-dimensional Lie group structure on a subgroup `K`, a smooth homomorphism
-`K → G` agreeing with the inclusion has Lie-map range `lieSubalgebraOfSubgroup K`. -/
-private theorem range_lieMap_eq_lieSubalgebraOfSubgroup (φ : ContMDiffMonoidMorphism J I ∞ K G)
-    (hφ : ∀ k, φ k = k) : (lieMap φ).range = lieSubalgebraOfSubgroup (I := I) K := by
+/-- For any finite-dimensional Lie group structure on a subgroup `K` with its subspace topology, a
+smooth homomorphism `K → G` agreeing with the inclusion has Lie-map range
+`lieSubalgebraOfSubgroup K`. -/
+private theorem range_lieMap_eq_lieSubalgebraOfSubgroup [T2Space G]
+    (φ : ContMDiffMonoidMorphism J I ∞ K G) (hφ : ∀ k, φ k = k) :
+    (lieMap φ).range = lieSubalgebraOfSubgroup (I := I) K := by
   refine le_antisymm (range_lieMap_le_lieSubalgebraOfSubgroup φ ?_) ?_
   · rintro _ ⟨k, rfl⟩
     exact (hφ k).symm ▸ k.property
@@ -122,12 +123,14 @@ private theorem range_lieMap_eq_lieSubalgebraOfSubgroup (φ : ContMDiffMonoidMor
     _ = oneParameterSubgroup X t := (hφ (χ t)).trans (hχcoe t)
 
 /-- **The differential of a subgroup inclusion has range the Lie algebra of the subgroup.** For any
-finite-dimensional Lie group structure on a subgroup `K`, the differential at the identity of the
-inclusion `K → G` has range `Subgroup.groupLieSubalgebra K`. The inclusion is smooth by automatic
-smoothness, so no compatibility of the structure on `K` with that of `G` is assumed. -/
+finite-dimensional Lie group structure on a subgroup `K` with its subspace topology, the
+differential at the identity of the inclusion `K → G` has range `Subgroup.groupLieSubalgebra K`.
+The inclusion is continuous, hence smooth by automatic smoothness, so no separate smoothness
+hypothesis on the inclusion is needed. -/
 theorem range_groupLieAlgebraMap_subtype :
     LinearMap.range (K.subtype.groupLieAlgebraMap J I).toLinearMap =
       (K.groupLieSubalgebra (I := I)).toSubmodule := by
+  have := I.t2Space_of_lieGroup (G := G) ∞
   let φ := (⟨K.subtype, continuous_subtypeVal⟩ : K →ₜ* G).toContMDiffMonoidMorphism J I
   have hφ (k : K) : φ k = k := by
     rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
@@ -152,9 +155,11 @@ theorem range_groupLieAlgebraMap_subtype :
   simp [hmap, eG]
 
 /-- **Restriction of a linear form to a subgroup.** For any finite-dimensional Lie group structure
-on a subgroup `K`, a linear form `ν` on `𝔤` vanishes along the differential `dι` of the inclusion
-exactly when it annihilates the Lie algebra `𝔨` of `K`. For a moment map `μ` this identifies the
-zero level of the restricted moment map `μ ∘ dι` with the points where `μ` takes values in `𝔨⁰`. -/
+on a subgroup `K` with its subspace topology, a linear form `ν` on `𝔤` vanishes along the
+differential `dι` of the inclusion exactly when it annihilates the Lie algebra `𝔨` of `K`. No
+separate smoothness hypothesis on the inclusion is needed. For a moment map `μ` this identifies
+the zero level of the restricted moment map `x ↦ (μ x) ∘ dι` with the points where `μ` takes values
+in `𝔨⁰`. -/
 theorem comp_groupLieAlgebraMap_subtype_eq_zero_iff (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
     ν.comp (K.subtype.groupLieAlgebraMap J I).toLinearMap = 0 ↔
       ν ∈ (K.groupLieSubalgebra (I := I)).toSubmodule.dualAnnihilator := by

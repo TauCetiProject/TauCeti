@@ -51,18 +51,26 @@ open scoped ContDiff Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- **The Lie algebra of a subgroup `K`, in the tangent Lie algebra** `𝔤 = GroupLieAlgebra I G`:
 the image of `TauCeti.Lie.lieSubalgebraOfSubgroup K` under evaluation of left-invariant
-derivations at the identity. -/
+derivations at the identity. The Hausdorff property that `TauCeti.Lie.lieSubalgebraOfSubgroup`
+assumes holds for every Lie group (`ModelWithCorners.t2Space_of_lieGroup`), so it is not a
+parameter here. -/
 def _root_.Subgroup.groupLieSubalgebra (K : Subgroup G) : LieSubalgebra ℝ (GroupLieAlgebra I G) :=
+  haveI := I.t2Space_of_lieGroup (G := G) ∞
   (lieSubalgebraOfSubgroup (I := I) K).map
     (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
       (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).toLieHom
+
+/-! The remaining statements involve `TauCeti.Lie.lieSubalgebraOfSubgroup` or the exponential
+`TauCeti.mulInvariantExp`, which are stated for a Hausdorff `G`. -/
+
+variable [T2Space G]
 
 /-- The Lie algebra of `K` in the tangent Lie algebra is the image of
 `TauCeti.Lie.lieSubalgebraOfSubgroup K` under evaluation at the identity, for any proof that the
