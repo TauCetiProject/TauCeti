@@ -351,6 +351,12 @@ theorem coe_realSubmoduleCongr {t : ℝ} (hst : s = t) (ht : 0 ≤ t) (F : realS
     (realSubmoduleCongr E hst h ht F : H^{t}(E)) = inclusion hst.ge (F : H^{s}(E)) :=
   (rfl)
 
+/-- The inverse of `realSubmoduleCongr` is `realSubmoduleCongr` for the reversed equality. -/
+@[simp]
+theorem realSubmoduleCongr_symm {t : ℝ} (hst : s = t) (ht : 0 ≤ t) :
+    (realSubmoduleCongr E hst h ht).symm = realSubmoduleCongr E hst.symm ht h :=
+  (rfl)
+
 /-- `realSubmoduleCongr` does not change the `L²` function. -/
 theorem inclusionLp_realSubmoduleCongr {t : ℝ} (hst : s = t) (ht : 0 ≤ t)
     (F : realSubmodule E h) :

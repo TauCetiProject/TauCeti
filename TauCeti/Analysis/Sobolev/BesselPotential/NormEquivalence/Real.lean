@@ -23,7 +23,9 @@ characterized by the `L²` function of the image (`TauCeti.Wkp.coeFn_inclusionLp
 `TauCeti.Wkp.toRealSubmodule_eq_iff`); above the Sobolev threshold the value of `u` is almost
 everywhere the continuous representative of the image
 (`TauCeti.Wkp.value_ae_eq_continuousRep_toRealSubmodule`). Its inverse is bounded by the open
-mapping theorem. So
+mapping theorem, and takes `F` to the real part of its `L²` function
+(`TauCeti.Wkp.value_toRealSubmodule_symm`,
+`TauCeti.Wkp.value_toRealSubmodule_symm_ae_eq_continuousRep`). So
 operators constructed on `W^{k,2}` with weak derivatives, such as Schrödinger operators inverted by
 the Lax–Milgram method, transfer to the real Bessel-potential scale, where products and power
 series act.
@@ -112,5 +114,22 @@ theorem value_ae_eq_continuousRep_toRealSubmodule {k : ℕ}
   filter_upwards [coeFn_inclusionLp_toRealSubmodule k u,
     coeFn_inclusionLp_ae_eq_continuousRep hk (toRealSubmodule k u)] with z h₁ h₂
   exact_mod_cast h₁.symm.trans h₂
+
+/-- The value of `(toRealSubmodule k).symm F` is the real part of the `L²` function of `F`. -/
+theorem value_toRealSubmodule_symm (k : ℕ) (F : realSubmodule E (Nat.cast_nonneg k)) :
+    (value k ((toRealSubmodule k).symm F) : E → ℝ) =ᵐ[volume]
+      fun x ↦ (inclusionLp (Nat.cast_nonneg k) (F : H^{(k : ℝ)}(E)) x).re := by
+  have h := coeFn_inclusionLp_toRealSubmodule k ((toRealSubmodule k).symm F)
+  rw [ContinuousLinearEquiv.apply_symm_apply] at h
+  filter_upwards [h] with x hx
+  rw [hx, Complex.ofReal_re]
+
+/-- Above the Sobolev threshold `k > dim E / 2`, the value of `(toRealSubmodule k).symm F` is
+almost everywhere the continuous representative of `F`. -/
+theorem value_toRealSubmodule_symm_ae_eq_continuousRep {k : ℕ}
+    (hk : (Module.finrank ℝ E : ℝ) < 2 * k) (F : realSubmodule E (Nat.cast_nonneg k)) :
+    (value k ((toRealSubmodule k).symm F) : E → ℝ) =ᵐ[volume] continuousRep F := by
+  have h := value_ae_eq_continuousRep_toRealSubmodule hk ((toRealSubmodule k).symm F)
+  rwa [ContinuousLinearEquiv.apply_symm_apply] at h
 
 end TauCeti.Wkp

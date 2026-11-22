@@ -56,7 +56,7 @@ zeros `y ↦ (y, f(y))` with `f(x) = 0`, and `g y = exp (i f(y))`.
 **From the Sobolev identity to every point.** The identity in `H^(k-1)` computes the defect almost
 everywhere. Its gauge Laplacian term is the classical `d₀* d₀ f` by the weak equation of
 `realGaugeLaplacian`
-(`TauCeti.Vortex.integral_mul_gaugeAdjoint_gaugeDirection_eq_of_realGaugeLaplacian_eq`,
+(`TauCeti.Vortex.realGaugeLaplacian_eq_iff`,
 `TauCeti.Vortex.gaugeAdjoint_gaugeDirection_eq_of_integral_mul_eq`),
 and all terms are continuous, so the Coulomb condition holds at every point.
 
@@ -135,8 +135,8 @@ private theorem integral_mul_gaugeAdjoint_gaugeDirection_eq_of_coulombPhaseDeriv
   rw [← continuousRep_realSubmoduleCongr
     (finrank_lt_two_mul_natCast_add_two_add_one j)
     (natCast_add_two_add_one j) (Nat.cast_nonneg _) F]
-  exact integral_mul_gaugeAdjoint_gaugeDirection_eq_of_realGaugeLaplacian_eq (by omega) (by omega)
-    (by omega) x.mem_framedFieldSpace x.continuous hFG hφ hc
+  exact (realGaugeLaplacian_eq_iff (by omega) (by omega) (by omega) x.mem_framedFieldSpace
+    x.continuous).1 hFG φ hφ hc
 
 /-! #### The sine and cosine of a real phase -/
 

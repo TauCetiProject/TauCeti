@@ -619,16 +619,8 @@ theorem realGaugeLaplacian_eq_iff (hk : 1 < k) (hjk : j ≤ k) (hj : 2 ≤ j)
   have hd (n : ℕ) (hn : 2 ≤ n) : (Module.finrank ℝ ℂ : ℝ) < 2 * (n : ℝ) :=
     finrank_real_complex_lt_two_mul (by exact_mod_cast hn)
   -- The values of the Sobolev functions are the continuous representatives.
-  have hw : (Wkp.value (j + 2) ((Wkp.toRealSubmodule (E := ℂ) (j + 2)).symm F) : ℂ → ℝ)
-      =ᵐ[volume] continuousRep F := by
-    have h := Wkp.value_ae_eq_continuousRep_toRealSubmodule (hd _ (by omega))
-      ((Wkp.toRealSubmodule (E := ℂ) (j + 2)).symm F)
-    rwa [ContinuousLinearEquiv.apply_symm_apply] at h
-  have hg : (Wkp.value j ((Wkp.toRealSubmodule (E := ℂ) j).symm G) : ℂ → ℝ)
-      =ᵐ[volume] continuousRep G := by
-    have h := Wkp.value_ae_eq_continuousRep_toRealSubmodule (hd _ hj)
-      ((Wkp.toRealSubmodule (E := ℂ) j).symm G)
-    rwa [ContinuousLinearEquiv.apply_symm_apply] at h
+  have hw := Wkp.value_toRealSubmodule_symm_ae_eq_continuousRep (hd (j + 2) (by omega)) F
+  have hg := Wkp.value_toRealSubmodule_symm_ae_eq_continuousRep (hd j hj) G
   rw [realGaugeLaplacian_apply, ← ContinuousLinearEquiv.eq_symm_apply,
     sobolevGaugeLaplacianEquiv_eq_iff hk hjk hx hcont]
   refine forall_congr' fun φ ↦ imp_congr_right fun _ ↦ imp_congr_right fun _ ↦ Eq.congr
@@ -647,19 +639,6 @@ theorem realGaugeLaplacian_symm_apply_eq_iff (hk : 1 < k) (hjk : j ≤ k) (hj : 
         ∫ z, continuousRep F z * gaugeAdjoint x (gaugeDirection x φ) z =
           ∫ z, continuousRep G z * φ z := by
   rw [ContinuousLinearEquiv.symm_apply_eq, eq_comm, realGaugeLaplacian_eq_iff hk hjk hj hx hcont]
-
-/-- **The weak equation of the real gauge Laplacian**: for `j ≥ 2`, if `d₀* d₀ F = G`, then
-`∫ F · d₀* d₀ φ = ∫ G φ` for the continuous representatives of `F` and `G` and every smooth
-compactly supported `φ`. -/
-theorem integral_mul_gaugeAdjoint_gaugeDirection_eq_of_realGaugeLaplacian_eq (hk : 1 < k)
-    (hjk : j ≤ k) (hj : 2 ≤ j) (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
-    {F : realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))}
-    {G : realSubmodule ℂ (Nat.cast_nonneg j : (0 : ℝ) ≤ (j : ℝ))}
-    (hFG : realGaugeLaplacian hk hjk hx hcont F = G)
-    {φ : ℂ → ℝ} (hφ : ContDiff ℝ ∞ φ) (hc : HasCompactSupport φ) :
-    ∫ z, continuousRep F z * gaugeAdjoint x (gaugeDirection x φ) z =
-      ∫ z, continuousRep G z * φ z :=
-  (realGaugeLaplacian_eq_iff hk hjk hj hx hcont).1 hFG φ hφ hc
 
 end Isomorphism
 
