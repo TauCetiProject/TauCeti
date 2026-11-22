@@ -341,10 +341,30 @@ theorem mem_eval_pair {cf cg : Code} {n y : ℕ} :
   simp only [eval_pair, Seq.seq, Part.map_eq_map, Part.bind_map, Part.mem_bind_iff,
     Part.mem_map_iff]
 
-/-- Pairing the two unpairing projections returns the input. -/
-theorem eval_pair_left_right (O : ℕ →. ℕ) (n : ℕ) :
+/-- If the left evaluation returns `a`, pair `a` with the result of the right evaluation. -/
+theorem eval_pair_of_left_eq_some {cf cg : Code} {n a : ℕ}
+    (h : eval O cf n = Part.some a) :
+    eval O (pair cf cg) n = (eval O cg n).map (Nat.pair a) := by
+  ext y
+  simp only [mem_eval_pair, h, Part.mem_some_iff, exists_eq_left, Part.mem_map_iff]
+
+/-- Pairing the two projections reconstructs the input. -/
+@[simp high]
+theorem eval_pair_left_right (n : ℕ) :
     eval O (pair left right) n = Part.some n := by
-  simp [Seq.seq]
+  rw [eval_pair_of_left_eq_some (eval_left n), eval_right, Part.map_some, Nat.pair_unpair]
+
+/-- Pairing zero with the reconstructed input supplies an initial argument for recursion. -/
+@[simp high]
+theorem eval_pair_zero_left_right (n : ℕ) :
+    eval O (pair zero (pair left right)) n = Part.some (Nat.pair 0 n) := by
+  rw [eval_pair_of_left_eq_some (eval_zero n), eval_pair_left_right, Part.map_some]
+
+/-- Pairing the reconstructed input with zero supplies a zero starting index for search. -/
+@[simp high]
+theorem eval_pair_left_right_zero (n : ℕ) :
+    eval O (pair (pair left right) zero) n = Part.some (Nat.pair n 0) := by
+  rw [eval_pair_of_left_eq_some (eval_pair_left_right n), eval_zero, Part.map_some]
 
 /-- `comp cf cg` runs `cg`, then `cf` on its output. -/
 @[simp]
@@ -563,7 +583,8 @@ theorem exists_code_of_recursiveIn {f : ℕ →. ℕ} (hf : Nat.RecursiveIn {O} 
     obtain ⟨cf, rfl⟩ := ihf
     -- search from zero: run `rfind' cf` on `Nat.pair a 0`
     refine ⟨comp (rfind' cf) (pair (pair left right) zero), funext fun a => ?_⟩
-    simp [eval, Seq.seq, pure, PFun.pure, Part.map_id']
+    rw [eval_comp, eval_pair_left_right_zero, PFun.some_bind, eval_rfind']
+    simp [Part.map_id']
 
 /-- **Adequacy.** For every oracle `O`, a partial function is recursive in `O` exactly when some
 program computes it relative to `O`. -/

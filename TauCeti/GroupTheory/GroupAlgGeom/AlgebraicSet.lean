@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Group.TypeTags.Finite
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Order.Concept
@@ -619,6 +620,14 @@ theorem quotientCoeff_def : quotientCoeff N = (QuotientGroup.mk' N).comp inl := 
 @[simp]
 theorem quotientCoeff_apply (g : G) : quotientCoeff N g = ((inl g : GX G X) : GX G X ⧸ N) := (rfl)
 
+variable {N} in
+/-- A `G`-homomorphism out of `G[X] ⧸ N` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `quotientCoeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} (φ : GHom (quotientCoeff N) κ) (g : G) :
+    φ ((inl g : GX G X) : GX G X ⧸ N) = κ g :=
+  φ.map_coeff g
+
 variable {N}
 
 /-- A `G`-homomorphism `G[X] ⧸ N → H`, composed with the quotient map, restricts to `ι` on the
@@ -733,6 +742,13 @@ theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff ι S g = ((inl g : GX G X) : CoordGroup ι S) := (rfl)
+
+/-- A `G`-homomorphism out of the coordinate group sends the class of a coefficient to its image. It
+is the simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff ι S) κ)
+    (g : G) : φ ((inl g : GX G X) : CoordGroup ι S) = κ g :=
+  φ.map_coeff g
 
 variable (v) in
 /-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_{R(S)} → H`. -/
@@ -1020,6 +1036,13 @@ theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff S g = ((inl g : GX G X) : SystemGroup G S) := (rfl)
+
+/-- A `G`-homomorphism out of `G_S` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff S) κ)
+    (g : G) : φ ((inl g : GX G X) : SystemGroup G S) = κ g :=
+  φ.map_coeff g
 
 variable (ι) in
 /-- The canonical surjection `G_S →* G_{R(S)}`, a `G`-homomorphism. -/
@@ -1353,7 +1376,7 @@ generator `a` are the points whose `x`-coordinate is a power of `a`. -/
 theorem V_singleton_commutatorElement_of {α : Type*} (x : X) (a : α) :
     V (.id (FreeGroup α)) {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆} =
       {v | v x ∈ zpowers (of a)} := by
-  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_singleton_of]
+  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_of]
 
 namespace CoordGroup
 
@@ -1386,7 +1409,7 @@ def gHomEquivZPowers {α : Type*} (a : α) : GHom (coeff (.id (FreeGroup α))
     {⁅(inr (of ()) : GX (FreeGroup α) Unit), (inl (of a) : GX (FreeGroup α) Unit)⁆})
     (.id (FreeGroup α)) ≃ zpowers (of a) :=
   (gHomEquivCentralizer (.id _) (of a)).trans <| Equiv.subtypeEquivRight fun h => by
-    rw [MonoidHom.id_apply, centralizer_singleton_of]
+    rw [MonoidHom.id_apply, centralizer_of]
 
 @[simp]
 theorem gHomEquivZPowers_apply_coe {α : Type*} (a : α) (φ : GHom (coeff (.id (FreeGroup α))

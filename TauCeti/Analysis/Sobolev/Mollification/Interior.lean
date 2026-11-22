@@ -23,6 +23,8 @@ the support condition ensures that no boundary term enters the identity.
 `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_right` states this for arbitrary kernels.
 `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed` specializes to normalized smooth bumps,
 with the geometric condition that the closed ball of the outer radius lies inside the domain.
+`HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply` restates the derivative identity in a
+fixed direction, with the bump as the left factor of the convolution.
 The vector-valued formulation applies to successive weak derivative fields when constructing
 smooth local approximations in higher-order Sobolev spaces.
 
@@ -159,5 +161,31 @@ theorem HasWeakFDerivOn.exists_testFunction_convolution_normed
   rw [huOmega, convolution_flip, convolution_flip] at this
   rw [hφ]
   exact this
+
+omit [SFinite mu] in
+/-- At a point `x` with `closedBall x phi.rOut ⊆ Omega`, the derivative in a direction `e` of the
+mollification `phi.normed mu ⋆ u` of the zero extension of `u`, with the bump on the left, is the
+mollification of the zero extension of the weak directional derivative `fun y => U y e`. -/
+theorem HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply
+    [FiniteDimensional ℝ E] [HasContDiffBump E] [mu.IsAddHaarMeasure] [mu.IsNegInvariant]
+    (h : HasWeakFDerivOn mu Omega u U)
+    (hu : MemLp u p (mu.restrict Omega)) (hU : MemLp U q (mu.restrict Omega))
+    (hp : 1 ≤ p) (hq : 1 ≤ q) (phi : ContDiffBump (0 : E)) {x : E}
+    (hx : Metric.closedBall x phi.rOut ⊆ Omega) (e : E) :
+    fderiv ℝ (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator u) x e =
+      (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu]
+        (Omega : Set E).indicator (fun y => U y e)) x := by
+  have h1 := h.fderiv_indicator_convolution_normed hu hU hp hq phi x hx
+  rw [convolution_flip, convolution_flip] at h1
+  have hloc : LocallyIntegrable ((Omega : Set E).indicator U) mu :=
+    ((memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
+      hU).locallyIntegrable hq
+  have hint := ((phi.hasCompactSupport_normed (μ := mu)).convolutionExists_left
+    (ContinuousLinearMap.lsmul ℝ ℝ) phi.continuous_normed hloc) x
+  rw [h1, convolution_def, convolution_def, ContinuousLinearMap.integral_apply hint]
+  refine integral_congr_ae (.of_forall fun y => ?_)
+  by_cases hy : x - y ∈ (Omega : Set E)
+  · simp [Set.indicator_of_mem hy]
+  · simp [Set.indicator_of_notMem hy]
 
 end TauCeti
