@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Primrec
+import TauCeti.Computability.SingleOracle.Staged.Search
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -20,10 +21,13 @@ program works for all oracles at once.
 
 On the input `Nat.pair e x`, the universal program searches for the least fuel `k` at which the
 run of the program numbered `e` on `x` against the finite oracle string `O 0, …, O (k - 1)`
-succeeds, and returns the output of that run. It gathers the string by querying the oracle, and
-bounded evaluation against a finite string is primitive recursive. A successful run is correct by
+succeeds, and returns the output of that run. The stage program gathers the string by querying
+the oracle and runs the primitive-recursive finite-string evaluator. The search is compiled by
+`TauCeti.Oracle.Single.Code.searchStages`. A successful run is correct by
 the use principle, and every computation relative to `O` is found at some fuel
 (`TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`).
+Mathlib's `Nat.Partrec.Code.eval_eq_rfindOpt` gives the analogous bounded search for ordinary
+programs.
 
 The construction needs a total oracle: the universal program queries the oracle at every address
 below the fuel before running anything, so relative to a partial oracle it would diverge at an
@@ -103,52 +107,20 @@ private theorem primrec_run : Primrec run :=
 private theorem exists_universal : ∃ u : Code, ∀ (O : ℕ → ℕ) (e x : ℕ),
     eval (O : ℕ →. ℕ) u (Nat.pair e x) =
       eval (O : ℕ →. ℕ) (ofNat Code e) x := by
-  -- `t` tests whether the run at fuel `k` succeeds, and `r` returns its output
-  obtain ⟨t, ht⟩ := exists_code_answers_apply (g := fun p => bif (run p).isSome then 0 else 1)
-    (Primrec.cond (option_isSome.comp primrec_run) (const 0) (const 1))
-  obtain ⟨r, hr⟩ := exists_code_answers_apply (g := fun p => ((run p).map Halt.output).getD 0)
-    (option_getD.comp (option_map primrec_run (Halt.primrec_output.comp snd).to₂) (const 0))
-  -- search for the least fuel at which the run succeeds, and return the output of that run
-  refine ⟨comp r (pair (pair left right) (comp (rfind' t) (pair (pair left right) zero))),
-    fun O e x => Part.ext fun y => ?_⟩
-  set R : ℕ → Option Halt :=
-    fun k => evaln (fun z => ((List.range k).map O)[z]?) k (ofNat Code e) x with hR
-  have hrun (k : ℕ) : run (Nat.pair e x, k, (List.range k).map O) = R k := by
-    simp only [run, Nat.unpair_pair, hR]
-  have hid : eval (O : ℕ →. ℕ) (pair left right) (Nat.pair e x) = Part.some (Nat.pair e x) := by
-    simp [Seq.seq]
-  have hsearch :
-      eval (O : ℕ →. ℕ) (comp (rfind' t) (pair (pair left right) zero)) (Nat.pair e x) =
-        Nat.rfind fun k => Part.some (R k).isSome := by
-    have hp : (fun k => Part.some !decide (R k = none) : ℕ →. Bool) =
-        fun k => Part.some (R k).isSome :=
-      funext fun k => by cases R k <;> rfl
-    simp [hid, ht, hrun, hp, Seq.seq, Part.map_id', -List.getElem?_map]
-  have hout (k : ℕ) : eval (O : ℕ →. ℕ) r (Nat.pair (Nat.pair e x) k) =
-      Part.some (((R k).map Halt.output).getD 0) := by
-    rw [hr, hrun]
-  rw [eval_comp]
-  constructor
-  · intro h
-    obtain ⟨m, hm, hy⟩ := Part.mem_bind_iff.1 h
-    obtain ⟨n, hn, k, hk, rfl⟩ := mem_eval_pair.1 hm
-    rw [hid, Part.mem_some_iff] at hn
-    subst hn
-    obtain ⟨hk, -⟩ := Nat.mem_rfind.1 (hsearch ▸ hk)
-    obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 (Part.mem_some_iff.1 hk).symm
-    rw [hout, Part.mem_some_iff, hd] at hy
-    exact mem_eval_iff_exists_evaln_range_map.2 ⟨k, d, hd, hy.symm⟩
-  · intro h
-    obtain ⟨k, d, hd, rfl⟩ := mem_eval_iff_exists_evaln_range_map.1 h
-    have hex : ∃ k, (R k).isSome := ⟨k, by simp only [hR, hd, Option.isSome_some]⟩
-    obtain ⟨d₀, hd₀⟩ := Option.isSome_iff_exists.1 (Nat.find_spec hex)
-    have h₀ : d₀.output = d.output := Part.mem_unique
-      (mem_eval_iff_exists_evaln_range_map.2 ⟨_, d₀, hd₀, rfl⟩) h
-    refine Part.mem_bind (mem_eval_pair.2 ⟨_, by rw [hid]; exact Part.mem_some _, _,
-      hsearch ▸ Nat.mem_rfind.2 ⟨Part.mem_some_iff.2 (Nat.find_spec hex).symm, fun hj =>
-        Part.mem_some_iff.2 (by simpa using Nat.find_min hex hj)⟩, rfl⟩) ?_
-    · rw [hout, hd₀]
-      simp [h₀]
+  obtain ⟨c, hc⟩ := exists_code_answers_apply
+    (g := fun p => encode ((run p).map Halt.output)) <|
+    Primrec.encode.comp (option_map₁ Halt.primrec_output |>.comp primrec_run)
+  refine ⟨c.searchStages, fun O e x => ?_⟩
+  let A (s : ℕ) := (run (Nat.pair e x, s, (List.range s).map O)).map Halt.output
+  rw [eval_searchStages (A := A) (hc O (Nat.pair e x))]
+  ext y
+  rw [Nat.rfindOpt_mono, mem_eval_iff_exists_evaln_range_map]
+  · simp only [A, run, Nat.unpair_pair, Option.mem_def, Option.map_eq_some_iff]
+  · intro z s t hst hs
+    simp only [A, run, Nat.unpair_pair, Option.mem_def, Option.map_eq_some_iff,
+      evaln_range_map] at hs ⊢
+    obtain ⟨d, hd, hy⟩ := hs
+    exact ⟨d, evaln_mono hst hd, hy⟩
 
 /-- A **universal program**: relative to every total oracle `O`, on the input `Nat.pair e x` it
 computes the value of the program numbered `e` on `x`. -/

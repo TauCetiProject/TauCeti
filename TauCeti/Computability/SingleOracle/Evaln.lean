@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Code
-public import Mathlib.Algebra.Notation.Indicator
+public import TauCeti.Computability.TuringDegree
 
 /-!
 # Bounded evaluation of oracle programs, with use
@@ -55,6 +55,10 @@ the program relative to every oracle extending those answers.
 * `TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`: the values of a program
   relative to a total oracle are exactly the outputs of its successful runs against the finite
   initial segments of the oracle.
+* `TauCeti.Oracle.Single.Code.mem_eval_oracle_iff_exists_evaln_finset`,
+  `TauCeti.Oracle.Single.Code.dom_eval_oracle_iff_exists_evaln_finset`: the values and halting
+  of a program relative to a set oracle are witnessed by successful runs against finite sets
+  agreeing with the oracle below the use.
 
 ## References
 
@@ -730,16 +734,27 @@ theorem mem_eval_restrict_iff_exists_boundedAnswers {O : ℕ →. ℕ}
 
 end BoundedAnswers
 
-/-- A run with fuel `k` depends only on the first `k` answers of a total oracle. Truncating
-that oracle to a string of length `k` preserves failure as well as output and use. -/
-theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
-    evaln (fun z => ((List.range k).map O)[z]?) k c n =
-      evaln (fun z => some (O z)) k c n := by
+/-- A run with fuel `k` depends only on the first `k` optional answers. Truncating the answers
+to a list of length `k` preserves failure as well as output and use. -/
+theorem evaln_range_map_option (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => (((List.range k).map σ)[z]?).bind id) k c n = evaln σ k c n := by
   apply Option.ext
   intro d
   constructor <;> intro hd <;>
     refine evaln_eq_some_of_eqOn hd fun z hz => ?_
   all_goals simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
+
+/-- A run with fuel `k` sees only the first `k` answers of a total oracle. -/
+theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => ((List.range k).map O)[z]?) k c n =
+      evaln (fun z => some (O z)) k c n := by
+  have h : (fun z : ℕ => ((List.range k).map O)[z]?) =
+      fun z => (((List.range k).map (some ∘ O))[z]?).bind id := by
+    funext z
+    rw [List.getElem?_map, List.getElem?_map, Option.bind_map]
+    exact Option.map_eq_bind
+  rw [h]
+  exact evaln_range_map_option (some ∘ O) k c n
 
 /-- **Evaluation through finite initial segments.** For a total oracle `O`, the values of a
 program relative to `O` are exactly the outputs of its successful runs, at some fuel `k`, against
@@ -749,5 +764,48 @@ theorem mem_eval_iff_exists_evaln_range_map {O : ℕ → ℕ} {c : Code} {n y : 
       ∃ k d, evaln (fun z => ((List.range k).map O)[z]?) k c n = some d ∧ d.output = y := by
   simp_rw [evaln_range_map]
   exact mem_eval_iff_exists_evaln (σ := fun z => some (O z)) (by simp [eq_comm])
+
+/-- **Evaluation through finite oracle sets.** For a set oracle `A`, the values of a program
+relative to `A` are exactly the outputs of its successful runs against finite sets `F` agreeing
+with `A` below the run's use. -/
+theorem mem_eval_oracle_iff_exists_evaln_finset {A : Set ℕ} {c : Code} {n y : ℕ} :
+    y ∈ eval A.oracle c n ↔
+      ∃ (k : ℕ) (F : Finset ℕ) (d : Halt),
+        evaln (setAnswers F) k c n = some d ∧
+          d.output = y ∧ ∀ z < d.use, z ∈ F ↔ z ∈ A := by
+  classical
+  have hanswers : ∀ z y, setAnswers A z = some y ↔ y ∈ A.oracle z := by
+    simp [eq_comm]
+  constructor
+  · intro hy
+    obtain ⟨k, d, hd, rfl⟩ := (mem_eval_iff_exists_evaln hanswers).1 hy
+    let F : Finset ℕ := (Finset.range d.use).filter (· ∈ A)
+    have hdF : evaln (setAnswers F) k c n = some d :=
+      evaln_eq_some_of_eqOn hd <| eqOn_setAnswers_iff.2 fun z hz => by
+        simp [F, Set.mem_Iio.1 hz]
+    exact ⟨k, F, d, hdF, rfl, fun z hz => by simp [F, hz]⟩
+  · rintro ⟨k, F, d, hd, rfl, hagree⟩
+    have hdA : evaln (setAnswers A) k c n = some d :=
+      evaln_eq_some_of_eqOn hd <| eqOn_setAnswers_iff.2 fun z hz => hagree z (Set.mem_Iio.1 hz)
+    exact evaln_sound hdA fun z _ y hy => (hanswers z y).1 hy
+
+/-- **Halting through finite oracle sets.** A program halts relative to a set oracle `A` if and
+only if it succeeds at some fuel against a finite set `F` agreeing with `A` below the run's stage
+use. -/
+theorem dom_eval_oracle_iff_exists_evaln_finset {A : Set ℕ} {c : Code} {n : ℕ} :
+    (eval A.oracle c n).Dom ↔
+      ∃ (k : ℕ) (F : Finset ℕ),
+        (evaln (setAnswers F) k c n).isSome ∧
+          ∀ z < stageUse (setAnswers F) k c n, z ∈ F ↔ z ∈ A := by
+  constructor
+  · intro hdom
+    obtain ⟨y, hy⟩ := Part.dom_iff_mem.1 hdom
+    obtain ⟨k, F, d, hd, -, hagree⟩ := mem_eval_oracle_iff_exists_evaln_finset.1 hy
+    exact ⟨k, F, by simp [hd], by simpa [stageUse_eq_of_evaln_eq_some hd] using hagree⟩
+  · rintro ⟨k, F, hsome, hagree⟩
+    obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 hsome
+    rw [stageUse_eq_of_evaln_eq_some hd] at hagree
+    exact Part.dom_iff_mem.2 ⟨d.output, mem_eval_oracle_iff_exists_evaln_finset.2
+      ⟨k, F, d, hd, rfl, hagree⟩⟩
 
 end TauCeti.Oracle.Single.Code

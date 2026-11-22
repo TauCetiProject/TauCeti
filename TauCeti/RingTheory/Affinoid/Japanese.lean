@@ -188,3 +188,90 @@ example {K : Type*} {A : Type*} [NontriviallyNormedField K] [IsUltrametricDist K
 end Examples
 
 end TauCeti.IsAffinoidAlgebra
+
+/-! ### Further results -/
+
+public section
+
+namespace TauCeti
+
+open _root_.MvPowerSeries
+
+section NormedField
+
+variable {K A : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [CommRing A] [Algebra K A]
+
+namespace IsAffinoidAlgebra
+
+/-- Every reduced affinoid algebra over a complete nonarchimedean field is an N-1 ring. -/
+theorem isN1 [IsReduced A] (hA : IsAffinoidAlgebra K A) : Ring.IsN1 A :=
+  let := hA.isNagata
+  inferInstance
+
+/-- For an affinoid algebra `A` over a complete nonarchimedean field and a reduced `A`-algebra `B`
+essentially of finite type, the integral closure of `A` in `B` is a finite `A`-module. -/
+theorem finite_integralClosure (hA : IsAffinoidAlgebra K A) (B : Type*) [CommRing B] [IsReduced B]
+    [Algebra A B] [Algebra.EssFiniteType A B] : Module.Finite A (_root_.integralClosure A B) :=
+  let := hA.isNagata
+  Ring.IsNagata.finite_integralClosure B
+
+/-- Abstract integral-closure form of `IsAffinoidAlgebra.finite_integralClosure`. -/
+theorem finite_of_isIntegralClosure (hA : IsAffinoidAlgebra K A) (B C : Type*) [CommRing B]
+    [IsReduced B] [Algebra A B] [Algebra.EssFiniteType A B] [CommRing C] [Algebra A C]
+    [Algebra C B] [IsScalarTower A C B] [IsIntegralClosure C A B] : Module.Finite A C :=
+  let := hA.isNagata
+  Ring.IsNagata.finite_of_isIntegralClosure B C
+
+/-- For a reduced affinoid algebra `A` over a complete nonarchimedean field, the integral closure of
+`A` in any localization `S` of `A` — in particular in its total ring of fractions
+`Localization (nonZeroDivisors A)` — is a finite `A`-module
+(Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §6.1.2, Corollary 2). -/
+theorem finite_integralClosure_of_isLocalization [IsReduced A] (hA : IsAffinoidAlgebra K A)
+    (M : Submonoid A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization M S] :
+    Module.Finite A (_root_.integralClosure A S) :=
+  let := hA.isNagata
+  Ring.IsNagata.finite_integralClosure_of_isLocalization M S
+
+/-- The zero quotient `K ⧸ ⊤` is an affinoid algebra (with no Noether normalization injection from
+a Tate algebra) and is Nagata. -/
+example : IsAffinoidAlgebra K (K ⧸ (⊤ : Ideal K)) ∧ Ring.IsNagata (K ⧸ (⊤ : Ideal K)) :=
+  let h0 := (isAffinoidAlgebra_self (K := K)).quotient (⊤ : Ideal K)
+  ⟨h0, h0.isNagata⟩
+
+end IsAffinoidAlgebra
+
+end NormedField
+
+section NontriviallyNormedField
+
+namespace IsAffinoidAlgebra
+
+variable {K A : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [CommRing A] [Algebra K A]
+
+/-- **Normalization of a reduced affinoid algebra is affinoid**
+(Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §6.1.2, Corollary 2). Over a nontrivially
+normed complete nonarchimedean field `K`, the integral closure of any reduced affinoid `K`-algebra
+`A` in any localization `S` of `A` (for instance in its total ring of fractions
+`Localization (nonZeroDivisors A)`) is an affinoid `K`-algebra. -/
+theorem integralClosure_of_isLocalization [IsReduced A] (hA : IsAffinoidAlgebra K A)
+    (M : Submonoid A) (S : Type*) [CommRing S] [Algebra K S] [Algebra A S]
+    [IsScalarTower K A S] [IsLocalization M S] :
+    IsAffinoidAlgebra K (_root_.integralClosure A S) :=
+  have := hA.finite_integralClosure_of_isLocalization M S
+  hA.of_finite
+
+/-- The normalization of any reduced affinoid `K`-algebra `A` in its total ring of fractions
+`Localization (nonZeroDivisors A)` is both finite over `A` and an affinoid `K`-algebra. -/
+example [IsReduced A] (hA : IsAffinoidAlgebra K A) :
+    Module.Finite A (_root_.integralClosure A (Localization (nonZeroDivisors A))) ∧
+      IsAffinoidAlgebra K (_root_.integralClosure A (Localization (nonZeroDivisors A))) :=
+  ⟨hA.finite_integralClosure_of_isLocalization (nonZeroDivisors A) _,
+    hA.integralClosure_of_isLocalization (nonZeroDivisors A) _⟩
+
+end IsAffinoidAlgebra
+
+end NontriviallyNormedField
+
+end TauCeti

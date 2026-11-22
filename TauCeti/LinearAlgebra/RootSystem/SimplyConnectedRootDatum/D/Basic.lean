@@ -80,7 +80,7 @@ here.
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
 4--6*, Plate IV, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
 12.1. The layout of the file follows its sibling
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` (#2594), whose type-agnostic
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic` (#2594), whose type-agnostic
 scaffolding — the perfect pairing, the pinned support, the Cartan-type criterion and the coroot
 span — now lives in `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic` and is shared
 with this file.
