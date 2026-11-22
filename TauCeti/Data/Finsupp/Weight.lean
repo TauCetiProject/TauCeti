@@ -113,8 +113,11 @@ theorem degree_optionElim {σ R : Type*} [AddCommMonoid R] (f : σ →₀ R) (y 
 /-- Prepending `c` at coordinate `0` adds `c` to the degree. -/
 @[simp] theorem degree_cons {n : ℕ} {M : Type*} [AddCommMonoid M] (c : M) (α' : Fin n →₀ M) :
     (cons c α').degree = c + α'.degree := by
-  rw [show cons c α' = cons c 0 + cons 0 α' by rw [cons_add_cons, add_zero, zero_add],
-    map_add, cons_zero_eq_single_zero, degree_single, ← mapDomain_finSucc, degree_mapDomain]
+  have hsplit : cons c α' = cons c 0 + cons 0 α' := by simp [cons_add_cons]
+  calc (cons c α').degree = (cons c 0 + cons 0 α').degree := congrArg degree hsplit
+    _ = (cons c (0 : Fin n →₀ M)).degree + (cons 0 α').degree := map_add _ _ _
+    _ = c + α'.degree := by
+      rw [cons_zero_eq_single_zero, degree_single, ← mapDomain_finSucc, degree_mapDomain]
 
 /-- The degree of a finitely supported function on `Fin (n + 1)` splits into its head at `0`
 plus the degree of its tail. -/

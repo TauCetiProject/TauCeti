@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
+public import Mathlib.Algebra.MvPolynomial.Division
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-import Mathlib.Algebra.MvPolynomial.Division
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
@@ -380,19 +380,24 @@ theorem IsHomogeneous.killCompl {τ : Type*} {f : σ → τ} (hf : Function.Inje
     rw [Finsupp.degree_eq_weight_one]; exact hp (by rwa [coeff_killCompl] at hs)
   rwa [Finsupp.degree_mapDomain, Finsupp.degree_eq_weight_one] at hdeg
 
-/-- If an injective map `f : σ → τ` omits only a single variable `i : τ`, every homogeneous
-polynomial `p` of degree `d + 1` in `τ` decomposes as `rename f (p.killCompl hf) + X i * q` for
-some homogeneous polynomial `q` of degree `d`. -/
+/-- Dividing a homogeneous polynomial of degree `d + e` by a monomial exponent `μ` of degree `e`
+yields a homogeneous polynomial of degree `d`. -/
+theorem IsHomogeneous.divMonomial {d e : ℕ} {p : MvPolynomial σ R}
+    (hp : p.IsHomogeneous (d + e)) {μ : σ →₀ ℕ} (hμ : μ.degree = e) :
+    (p.divMonomial μ).IsHomogeneous d := fun γ hγ ↦ by
+  have hdeg := hp (by rwa [coeff_divMonomial] at hγ)
+  rw [map_add] at hdeg; rw [Finsupp.degree_eq_weight_one, ← Pi.one_def] at hμ; omega
+
+/-- If an injective map `f : σ → τ` has image `{i}ᶜ` (omitting only the variable `i : τ`), every
+homogeneous polynomial `p` of degree `d + 1` in `τ` decomposes as
+`rename f (p.killCompl hf) + X i * q` for some homogeneous polynomial `q` of degree `d`. -/
 theorem IsHomogeneous.exists_eq_rename_killCompl_add_X_mul {τ : Type*} {f : σ → τ}
-    (hf : Function.Injective f) {i : τ} (hi : ∀ j, j ∉ Set.range f ↔ j = i) {d : ℕ}
+    (hf : Function.Injective f) {i : τ} (hrange : Set.range f = {i}ᶜ) {d : ℕ}
     {p : MvPolynomial τ R} (hp : p.IsHomogeneous (d + 1)) :
-    ∃ q : MvPolynomial τ R, q.IsHomogeneous d ∧ p = rename f (p.killCompl hf) + X i * q := by
-  refine ⟨p.divMonomial (Finsupp.single i 1), fun γ hγ ↦ ?_, ?_⟩
-  · have hdeg := hp (by rwa [coeff_divMonomial] at hγ)
-    simp only [map_add, Finsupp.weight_single, Pi.one_apply, smul_eq_mul, mul_one] at hdeg; omega
-  · have hrange : Set.range f = {i}ᶜ := Set.ext fun j ↦ by simpa using (hi j).not
+    ∃ q : MvPolynomial τ R, q.IsHomogeneous d ∧ p = rename f (p.killCompl hf) + X i * q :=
+  ⟨p.divMonomial (Finsupp.single i 1), hp.divMonomial (Finsupp.degree_single i 1), by
     rw [← modMonomial_single_one_eq_rename_killCompl hf hrange p,
-      modMonomial_add_divMonomial_single]
+      modMonomial_add_divMonomial_single]⟩
 
 /-- Every homogeneous polynomial `p` of degree `d + 1` in `n + 1` variables decomposes as the lift
 along `Fin.succ` of `p.killCompl (Fin.succ_injective n)` plus `X 0 * q` for a homogeneous `q` of
@@ -401,8 +406,7 @@ theorem IsHomogeneous.exists_eq_rename_succ_add_X_zero_mul {n d : ℕ}
     {p : MvPolynomial (Fin (n + 1)) R} (hp : p.IsHomogeneous (d + 1)) :
     ∃ q : MvPolynomial (Fin (n + 1)) R, q.IsHomogeneous d ∧
       p = rename Fin.succ (p.killCompl (Fin.succ_injective n)) + X 0 * q :=
-  hp.exists_eq_rename_killCompl_add_X_mul (Fin.succ_injective n) fun j ↦ by
-    cases j using Fin.cases <;> simp
+  hp.exists_eq_rename_killCompl_add_X_mul (Fin.succ_injective n) (Fin.range_succ n)
 
 end CommSemiring
 
@@ -570,8 +574,8 @@ theorem MvPolynomial.IsHomogeneous.exists_eq_rename_castSucc_add_mul_X_last {R :
     [CommSemiring R] {n ν : ℕ} {F : MvPolynomial (Fin (n + 1)) R} (hF : F.IsHomogeneous (ν + 1)) :
     ∃ G : MvPolynomial (Fin n) R, G.IsHomogeneous (ν + 1) ∧ ∃ H, H.IsHomogeneous ν ∧
       F = rename Fin.castSucc G + H * X (Fin.last n) := by
-  have hi : ∀ j : Fin (n + 1), j ∉ Set.range Fin.castSucc ↔ j = Fin.last n := fun j ↦ by
-    cases j using Fin.lastCases <;> simp [Fin.castSucc_ne_last]
-  obtain ⟨H, hH, hEq⟩ := hF.exists_eq_rename_killCompl_add_X_mul (Fin.castSucc_injective n) hi
+  obtain ⟨H, hH, hEq⟩ := hF.exists_eq_rename_killCompl_add_X_mul (Fin.castSucc_injective n)
+    (i := Fin.last n) (by
+      rw [Fin.range_castSucc]; ext j; simp [← Fin.lt_last_iff_ne_last, Fin.lt_def])
   exact ⟨F.killCompl (Fin.castSucc_injective n), hF.killCompl _, H, hH,
     by rwa [mul_comm (X (Fin.last n))] at hEq⟩
