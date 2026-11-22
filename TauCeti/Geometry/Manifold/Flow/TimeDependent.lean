@@ -93,6 +93,9 @@ the initial position of the submanifold to the later ones.
   `t ↦ X (t + θ)` from `s` to `t` is the flow of `X` from `s + θ` to `t + θ`.
 * `TauCeti.timeDependentFlowOf_const_smul`: the time-dependent flow of a constant multiple `c • v`
   of a complete autonomous field `v` is a time map of the flow of `v`.
+* `TauCeti.timeDependentFlowOf_const_eq_flowOf`: with no completeness, the time-dependent flow of
+  an autonomous field `v` from `s` to `t` is defined wherever the flow of `v` is defined for time
+  `t - s`, and is that time map there.
 * `TauCeti.timeDependentFlowOf_symm_of_mem`: flowing back from time `t` to time `s` undoes the flow
   from `s` to `t`.
 * `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ico`,
@@ -519,6 +522,38 @@ theorem timeDependentFlowOf_const_smul [T2Space M] [IsManifold I 1 M] [Boundaryl
     ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
     ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
   simpa [flowOf_zero, sub_eq_add_neg] using h
+
+/-- **The time-dependent flow of an autonomous field.** For a `C¹` vector field `v`, wherever the
+flow of `v` is defined for time `t - s` at `x`, the time-dependent flow of the time-independent
+field `v` from time `s` to time `t` is defined at `x` and is the time-`(t - s)` map of the flow of
+`v`. Unlike `TauCeti.timeDependentFlowOf_const_smul`, no completeness of `v` is assumed. -/
+theorem timeDependentFlowOf_const_eq_flowOf [T2Space M] [IsManifold I 1 M]
+    [BoundarylessManifold I M] {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (h : (t - s, x) ∈ flowDomain v) :
+    ((s, t), x) ∈ timeDependentFlowDomain (fun _ ↦ v) ∧
+      timeDependentFlowOf (fun _ ↦ v) s t x = flowOf v (t - s) x := by
+  have hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, v p.2⟩ : TangentBundle I M)) :=
+    hv.comp contMDiff_snd
+  obtain ⟨γ, a, b, hγ, hγ0, h0, ht, heq⟩ :=
+    exists_isMIntegralCurveOn_maximalIntegralCurve_eq (mem_flowDomain.1 h)
+  -- The trajectory of `v` through `x`, started at time `s`, solves the time-dependent equation.
+  have hc : IsMIntegralCurveOn (γ ∘ (· - s)) v {r | r - s ∈ Ioo a b} :=
+    (isMIntegralCurveOn_comp_sub (dt := s)).2 hγ
+  have hγ' (u : ℝ) (hu : u ∈ Ioo (a + s) (b + s)) : HasMFDerivAt 𝓘(ℝ, ℝ) I (fun r ↦ γ (r - s)) u
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (v (γ (u - s)))) :=
+    (IsMIntegralCurveOn.isMIntegralCurveAt hc
+      ((isOpen_Ioo.preimage (continuous_sub_right s)).mem_nhds
+        ⟨by linarith [hu.1], by linarith [hu.2]⟩)).hasMFDerivAt
+  have hs : s ∈ Ioo (a + s) (b + s) := ⟨by linarith [h0.1], by linarith [h0.2]⟩
+  have ht' : t ∈ Ioo (a + s) (b + s) := ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have hγs : (fun r ↦ γ (r - s)) s = x := by simp [hγ0]
+  refine ⟨hγs ▸ mem_timeDependentFlowDomain_of_hasMFDerivAt hγ' hs ht', ?_⟩
+  calc timeDependentFlowOf (fun _ ↦ v) s t x = γ (t - s) := by
+        conv_lhs => rw [← hγs]
+        exact timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ' hs ht'
+    _ = flowOf v (t - s) x := by rw [flowOf_apply, heq]
 
 /-- On a complete normed model space, the time-dependent flow of a `C^n` field, `1 ≤ n`, is
 jointly `C^n` in
