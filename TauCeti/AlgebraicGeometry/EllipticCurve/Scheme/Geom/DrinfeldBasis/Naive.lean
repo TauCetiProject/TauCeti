@@ -125,13 +125,14 @@ variable {K : Type u} [Field K] {E : EllipticCurveGeom (Spec (.of K))}
 theorem IsDrinfeldBasis.injective (h : E.IsDrinfeldBasis N φ) (hN : (N : K) ≠ 0) :
     Function.Injective φ :=
   (E.isFiberwiseInjective_iff_injective φ).mp
-    (h.isFiberwiseInjective (Spec.natCast_residueField_ne_zero hN))
+    (h.isFiberwiseInjective fun s ↦ (Spec.natCast_residueField_ne_zero_iff s).mpr hN)
 
 /-- **Over a field in which `N` is invertible, the Drinfeld bases of `E[N]` are the injective
 homomorphisms `(ℤ/Nℤ)² →* E(K)`.** -/
 theorem isDrinfeldBasis_iff_injective (hN : (N : K) ≠ 0) :
     E.IsDrinfeldBasis N φ ↔ Function.Injective φ :=
-  (isDrinfeldBasis_iff_isFiberwiseInjective (Spec.natCast_residueField_ne_zero hN)).trans
+  (isDrinfeldBasis_iff_isFiberwiseInjective fun s ↦
+    (Spec.natCast_residueField_ne_zero_iff s).mpr hN).trans
     (E.isFiberwiseInjective_iff_injective φ)
 
 end Field

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.NegationClosed
-public import TauCeti.ModelTheory.Infinitary.Symbols
 import Mathlib.ModelTheory.Encoding
 import TauCeti.ModelTheory.Basic
 
@@ -66,6 +65,10 @@ distinct.
   formation-closed fragment forces countably many function and relation symbols.
 * `FirstOrder.Language.BoundedFormulaInf.countable_setOf_isAtomic`: over a countable language and
   countably many free variables, there are countably many atomic formulas of each arity.
+* `FirstOrder.Language.Fragment.FormationClosed.comap`,
+  `FirstOrder.Language.LEquiv.formationClosed_map_iff` and
+  `FirstOrder.Language.LEquiv.map_formationClosure`: formation closure pulls back along any
+  language homomorphism and is preserved and reflected by language equivalences.
 
 ## References
 
@@ -74,7 +77,7 @@ distinct.
 
 public section
 
-universe u v u' uι
+universe u v u' v' uι
 
 namespace FirstOrder
 
@@ -268,7 +271,7 @@ open Cardinal in
 members are distinct because each formula is tagged with its arity. -/
 theorem aleph0_le_mk : ℵ₀ ≤ #A := by
   have h : Function.Injective fun n : ℕ => (⟨⟨n, ⊥⟩, hA.bot_mem n⟩ : A) := fun m n h => by
-    simpa using congrArg (fun p : A => p.1.1) h
+    simpa using congrArg (fun p : A => p.val.1) h
   simpa using lift_mk_le_lift_mk_of_injective h
 
 open Cardinal in
@@ -488,7 +491,74 @@ theorem formationClosure_countable [Countable (Σ l, L.Functions l)]
     (SetLike.coe_subset_coe.2 ((formationClosure_le_iff (formationClosed_formationLimit S)).2 ?_))
   exact fun p hp => mem_formationLimit.2 ⟨0, Or.inl (Or.inl hp)⟩
 
+/-! ### Transport along language maps -/
+
+section LanguageMap
+
+variable {L' : Language.{u', v'}}
+
+/-- Pulling back a formation-closed fragment along any language homomorphism gives a
+formation-closed fragment. -/
+theorem FormationClosed.comap {B : Fragment L'} (hB : B.FormationClosed) (g : L →ᴸ L') :
+    (B.comap g).FormationClosed where
+  bot_mem n := mem_comap.2 (by rw [LHom.onBoundedFormulaInf_bot]; exact hB.bot_mem n)
+  atomic_mem h := by
+    cases h with
+    | equal t₁ t₂ =>
+      exact mem_comap.2 (by rw [LHom.onBoundedFormulaInf_equal]; exact hB.atomic_mem (.equal _ _))
+    | rel R ts =>
+      exact mem_comap.2 (by rw [LHom.onBoundedFormulaInf_rel]; exact hB.atomic_mem (.rel _ _))
+  imp_mem hφ hψ := mem_comap.2 (by
+    rw [LHom.onBoundedFormulaInf_imp]
+    exact hB.imp_mem (mem_comap.1 hφ) (mem_comap.1 hψ))
+  all_mem hφ := mem_comap.2 (by
+    rw [LHom.onBoundedFormulaInf_all]
+    exact hB.all_mem (mem_comap.1 hφ))
+  mapBound_mem f hφ := mem_comap.2 (by
+    rw [LHom.onBoundedFormulaInf_mapBound]
+    exact hB.mapBound_mem f (mem_comap.1 hφ))
+
+/-- The image of a formation closure along a language homomorphism lies inside the formation
+closure of the image. Equality need not hold when `g` misses symbols of `L'`, since the formation
+closure in `L'` contains atomic formulas in those symbols. -/
+theorem map_formationClosure_le (g : L →ᴸ L') (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
+    (formationClosure S).map g ≤
+      formationClosure ((fun p : Σ n, L.BoundedFormulaω Empty n =>
+        (⟨p.1, g.onBoundedFormulaInf p.2⟩ : Σ n, L'.BoundedFormulaω Empty n)) '' S) := by
+  rw [map_le_iff_le_comap, formationClosure_le_iff ((formationClosed_formationClosure _).comap g)]
+  exact fun p hp => mem_comap.2 (subset_formationClosure _ ⟨p, hp, rfl⟩)
+
+end LanguageMap
+
 end Fragment
+
+namespace LEquiv
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}}
+
+/-- Mapping along a language equivalence preserves and reflects formation closure. -/
+@[simp]
+theorem formationClosed_map_iff (e : L ≃ᴸ L') {A : Fragment L} :
+    (A.map e.toLHom).FormationClosed ↔ A.FormationClosed := by
+  constructor
+  · intro h
+    simpa only [Fragment.comap_comap, e.left_inv, Fragment.comap_id,
+      ← e.comap_invLHom_eq_map_toLHom] using h.comap e.toLHom
+  · rw [← e.comap_invLHom_eq_map_toLHom]
+    exact fun h => h.comap e.invLHom
+
+/-- Mapping along a language equivalence commutes with formation closure. -/
+theorem map_formationClosure (e : L ≃ᴸ L') (S : Set (Σ n, L.BoundedFormulaω Empty n)) :
+    (Fragment.formationClosure S).map e.toLHom =
+      Fragment.formationClosure ((fun p : Σ n, L.BoundedFormulaω Empty n =>
+        (⟨p.1, e.toLHom.onBoundedFormulaInf p.2⟩ : Σ n, L'.BoundedFormulaω Empty n)) '' S) := by
+  refine le_antisymm (Fragment.map_formationClosure_le e.toLHom S)
+    ((Fragment.formationClosure_le_iff
+      (e.formationClosed_map_iff.2 (Fragment.formationClosed_formationClosure S))).2 ?_)
+  rintro _ ⟨⟨n, φ⟩, hp, rfl⟩
+  exact Fragment.onBoundedFormulaInf_mem_map e.toLHom (Fragment.subset_formationClosure S hp)
+
+end LEquiv
 
 end Language
 

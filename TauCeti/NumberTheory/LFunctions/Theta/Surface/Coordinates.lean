@@ -184,14 +184,14 @@ noncomputable def archParamHomeomorphSurfaceProd :
   continuous_toFun := by
     apply Continuous.prodMk
     · apply Continuous.subtype_mk
-      exact continuousOn_surfacePart.comp_continuous continuous_subtype_val
+      exact continuousOn_surfacePart.comp_continuous continuous_subtypeVal
         (fun y ↦ (archNorm_pos y.property).ne')
-    · exact (continuous_archNorm.comp continuous_subtype_val).subtype_mk _
+    · exact (continuous_archNorm.comp continuous_subtypeVal).subtype_mk _
   continuous_invFun := by
     apply Continuous.subtype_mk
     exact continuous_surfaceScale.comp
-      ((continuous_subtype_val.comp continuous_fst).prodMk
-        (continuous_subtype_val.comp continuous_snd))
+      ((continuous_subtypeVal.comp continuous_fst).prodMk
+        (continuous_subtypeVal.comp continuous_snd))
 
 @[simp]
 theorem archParamHomeomorphSurfaceProd_apply_surface

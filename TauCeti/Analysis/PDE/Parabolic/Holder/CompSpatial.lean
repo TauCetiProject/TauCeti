@@ -247,10 +247,10 @@ variable (α F hab) in
 change of variables by `e⁻¹`. -/
 def compSpatialCLE (e : E ≃L[ℝ] E') :
     ParabolicC2HolderSpace α E' F hab ≃L[ℝ] ParabolicC2HolderSpace α E F hab :=
-  ContinuousLinearEquiv.equivOfInverse (compSpatialL α F hab (e : E →L[ℝ] E'))
+  ContinuousLinearEquiv.ofContinuousLinearMap (compSpatialL α F hab (e : E →L[ℝ] E'))
     (compSpatialL α F hab (e.symm : E' →L[ℝ] E))
-    (fun u ↦ by ext p; simp)
-    (fun v ↦ by ext p; simp)
+    (ContinuousLinearMap.ext fun v ↦ by ext p; simp)
+    (ContinuousLinearMap.ext fun u ↦ by ext p; simp)
 
 @[simp]
 theorem compSpatialCLE_apply (e : E ≃L[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab) :
