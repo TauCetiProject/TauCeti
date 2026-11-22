@@ -89,7 +89,8 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
 * `TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`: uniform ellipticity and boundedness are
   preserved, with explicit constants.
 * `TauCeti.PDE.matrixBilinearForm_pullbackPrincipal_eq_bilinearComp`: the bilinear form of the
-  transformed principal coefficient, written with a left inverse `T` of `DΦ`.
+  transformed principal coefficient, written with a left inverse `T` of `DΦ`, and
+  `TauCeti.PDE.pullbackPrincipal_apply_apply_of_comp_eq_id`: its entries in the same terms.
 * `TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_pullbackPrincipal`: Hölder principal
   coefficients stay Hölder, with the same exponent; in particular Lipschitz ones stay Lipschitz.
 * `TauCeti.PDE.exists_holderOnWith_pullbackDrift`: Hölder drifts and divergence data stay Hölder.
@@ -282,6 +283,33 @@ theorem matrixBilinearForm_pullbackPrincipal_eq_bilinearComp
   conv_lhs => rw [← hinv η, ← hinv ξ]
   rw [matrixBilinearForm_pullbackPrincipal a hdet]
   simp
+
+/-- **Entries of the transformed principal coefficient through a left inverse of `DΦ`.** If `T`
+is a left inverse of `DΦ(x)`, the entry `(i, j)` of `a'(x)` is
+`|det DΦ(x)| ∑ₖₗ (T eₖ)ᵢ aₖₗ(Φ x) (T eₗ)ⱼ`. -/
+theorem pullbackPrincipal_apply_apply_of_comp_eq_id
+    {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    {x : EuclideanSpace ℝ ι} {T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι}
+    (hT : T ∘L fderiv ℝ Φ x = ContinuousLinearMap.id ℝ _) (i j : ι) :
+    pullbackPrincipal Φ a x i j = |(fderiv ℝ Φ x).det| * ∑ k, ∑ l,
+      (T (EuclideanSpace.single k 1)).ofLp i * a (Φ x) k l *
+        (T (EuclideanSpace.single l 1)).ofLp j := by
+  have h := congrArg (fun B => B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
+    (matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a hT)
+  -- The coordinates of `T* eₘ` are those of the columns of `T`.
+  have hadj (m k : ι) : (T.adjoint (EuclideanSpace.single m 1)).ofLp k =
+      (T (EuclideanSpace.single k 1)).ofLp m := by
+    have h1 := EuclideanSpace.inner_single_left (𝕜 := ℝ) k 1
+      (T.adjoint (EuclideanSpace.single m 1))
+    rw [ContinuousLinearMap.adjoint_inner_right, real_inner_comm,
+      EuclideanSpace.inner_single_left] at h1
+    simpa using h1.symm
+  -- Evaluating both bilinear forms on `eᵢ` and `eⱼ` expands them into coordinates.
+  simp only [matrixBilinearForm_apply, ContinuousLinearMap.bilinearComp_apply, smul_apply,
+    smul_eq_mul, dotProduct, Matrix.mulVec, PiLp.single_apply, hadj, mul_ite, mul_one, mul_zero,
+    ite_mul, one_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte] at h
+  rw [h]
+  simp only [Finset.mul_sum, mul_assoc]
 
 /-- **The transformed drift through a left inverse of `DΦ`.** If `T` is a left inverse of
 `DΦ(x)`, then `b'(x) = |det DΦ(x)| T b(Φ x)`. -/
@@ -861,20 +889,9 @@ theorem contDiffOn_pullbackPrincipal_apply (hΦ : Wkp.IsChangeOfVariables 1 U' U
         (fderiv ℝ Ψ (Φ x) (EuclideanSpace.single l 1)).ofLp j)
     (ContDiffOn.sum fun k _ => ContDiffOn.sum fun l _ =>
       ((hT i k).mul ((ha k l).comp hΦn hmaps)).mul (hT j l)) fun x hx => ?_
-  have h := congrArg (fun B => B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
-    (matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a
-      (hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ (hsU hx)))
-  -- The coordinates of `DΨ(Φ x)* eₘ` are those of the columns of `DΨ(Φ x)`.
-  have hadj (m k : ι) : ((fderiv ℝ Ψ (Φ x)).adjoint (EuclideanSpace.single m 1)).ofLp k =
-      (fderiv ℝ Ψ (Φ x) (EuclideanSpace.single k 1)).ofLp m := by
-    have h1 := EuclideanSpace.inner_single_left (𝕜 := ℝ) k 1
-      ((fderiv ℝ Ψ (Φ x)).adjoint (EuclideanSpace.single m 1))
-    rw [ContinuousLinearMap.adjoint_inner_right, real_inner_comm,
-      EuclideanSpace.inner_single_left] at h1
-    simpa using h1.symm
-  simp [hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ (hsU hx), Matrix.mulVec, dotProduct, hadj,
-    Finset.mul_sum] at h
-  simpa only [mul_assoc] using h
+  rw [pullbackPrincipal_apply_apply_of_comp_eq_id a
+    (hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ (hsU hx)) i j,
+    hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ (hsU hx), one_mul]
 
 /-- **Restricting and transforming a weak solution.** Let `Φ` be a change of variables from `Ω'`
 into an open `D ⊆ Ω`, with inverse change of variables `Ψ` from `D` into `Ω'`. If `u ∈ H¹(Ω)` is a
