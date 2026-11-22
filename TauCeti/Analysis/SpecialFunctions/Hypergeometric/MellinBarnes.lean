@@ -458,7 +458,7 @@ private theorem eulerIntegral_neg_ofReal_eq_mellinBarnes (a : ℂ) {b c : ℂ} (
           rw [hexp, cpow_add _ _ (ofReal_ne_zero.mpr ht.1.ne')]
         have hxt_pow : (t : ℂ) ^ ((σ : ℂ) + y * I) * (x : ℂ) ^ ((σ : ℂ) + y * I) =
             ((x * t : ℝ) : ℂ) ^ ((σ : ℂ) + y * I) := by
-          rw [ofReal_mul, ofReal_mul_cpow hx.le, mul_comm]
+          rw [ofReal_mul, Complex.ofReal_mul_cpow hx.le, mul_comm]
         have hneg1 : -((τ : ℂ) + (-y : ℝ) * I) = (σ : ℂ) + y * I := by dsimp [τ]; push_cast; ring
         have hneg2 : (τ : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by dsimp [τ]; push_cast; ring
         have hneg3 : a - ((τ : ℂ) + (-y : ℝ) * I) = a + ((σ : ℂ) + y * I) := by

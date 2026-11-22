@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.ModularForms.Discriminant
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Product identities for the Dedekind eta function
@@ -148,7 +147,7 @@ theorem eta_neg_one_div_ofReal_mul_mul {c : ℝ} (hc : 0 < c) {τ : ℂ} (hτ : 
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hτ
   -- `Complex.sqrt` is the principal power `2⁻¹`, which splits across the real factor `c ≥ 0`.
   have hsqrt : Complex.sqrt (c * τ) = √c * Complex.sqrt τ :=
-    (TauCeti.ofReal_mul_cpow hc.le τ 2⁻¹).trans
+    (Complex.ofReal_mul_cpow hc.le τ 2⁻¹).trans
       (congrArg (· * Complex.sqrt τ) (Complex.sqrt_of_nonneg (zero_le_real.2 hc.le)))
   rw [h₁, h₂, hsqrt]
   ring

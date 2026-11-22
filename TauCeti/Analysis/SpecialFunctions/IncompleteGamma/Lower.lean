@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The complex lower incomplete Gamma function
@@ -165,7 +164,7 @@ theorem intervalIntegral_cpow_mul_exp_neg_mul {a r : ℂ} (ha : 0 < a.re) (hr : 
   have hra : r ^ a ≠ 0 := (cpow_ne_zero_iff_of_exponent_ne_zero
     (fun h => by simp [h] at ha)).mpr hr
   have hrx : (r * x) ^ a = r ^ a * (x : ℂ) ^ a := by
-    rw [mul_comm, TauCeti.ofReal_mul_cpow hx.le, mul_comm]
+    rw [mul_comm, Complex.ofReal_mul_cpow hx.le, mul_comm]
   rw [lowerIncompleteGamma_eq_integral ha, hrx, ← mul_assoc, ← mul_assoc, cpow_neg,
     inv_mul_cancel₀ hra, one_mul]
   have h := intervalIntegral.smul_integral_comp_mul_left (a := 0) (b := 1)
@@ -175,7 +174,7 @@ theorem intervalIntegral_cpow_mul_exp_neg_mul {a r : ℂ} (ha : 0 < a.re) (hr : 
     ← intervalIntegral.integral_const_mul]
   refine intervalIntegral.integral_congr fun u hu => ?_
   rw [uIcc_of_le zero_le_one] at hu
-  rw [ofReal_mul, ofReal_mul_cpow hx.le, cpow_sub _ _ hx0, cpow_one]
+  rw [ofReal_mul, Complex.ofReal_mul_cpow hx.le, cpow_sub _ _ hx0, cpow_one]
   field_simp
 
 end TauCeti

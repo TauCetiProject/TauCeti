@@ -126,7 +126,7 @@ theorem integral_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq (a : ℝ) {z : ℂ}
       Gammaℝ z * ((|a| : ℝ) : ℂ) ^ (-z) := by
   have hz2 : 0 < (z / 2).re := by rw [div_ofNat_re]; exact half_pos hz
   rw [integral_multHaar_cpow_mul_exp_neg_mul (by positivity) hz2, ← sq_abs a, ofReal_mul,
-    ofReal_mul_cpow Real.pi_pos.le, ofReal_pow, ofReal_pow_cpow (abs_nonneg a), Gammaℝ_def,
+    Complex.ofReal_mul_cpow Real.pi_pos.le, ofReal_pow, ofReal_pow_cpow (abs_nonneg a), Gammaℝ_def,
     neg_div, Nat.cast_ofNat, mul_neg, mul_div_cancel₀ _ two_ne_zero]
   ring
 

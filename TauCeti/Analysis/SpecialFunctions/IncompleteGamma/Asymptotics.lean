@@ -184,11 +184,11 @@ private theorem kummerLaplace_saddle_pointwise (a : ℂ) {z : ℂ} (hz : z ∈ s
     have hre1 : 0 < ((Real.sqrt k : ℂ) * ζ⁻¹).re := by rw [re_ofReal_mul]; positivity
     have hre2 : 0 < ((u : ℂ) + ζ / (Real.sqrt k : ℂ)).re := by
       rw [add_re, ofReal_re, div_ofReal_re]; positivity
-    rw [hprod, TauCeti.mul_cpow_of_re_pos hre1 hre2, TauCeti.ofReal_mul_cpow hsk_pos.le]
+    rw [hprod, TauCeti.mul_cpow_of_re_pos hre1 hre2, Complex.ofReal_mul_cpow hsk_pos.le]
   have hexp_split : cexp (-ζ * (s : ℂ)) =
       cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) * cexp (-(Real.sqrt k : ℂ) * ζ * ((u : ℂ) - 2)) := by
     have hkz : ((k : ℂ) * z) ^ (1 / 2 : ℂ) = (Real.sqrt k : ℂ) * ζ := by
-      rw [← ofReal_natCast, TauCeti.ofReal_mul_cpow hk_pos.le,
+      rw [← ofReal_natCast, Complex.ofReal_mul_cpow hk_pos.le,
         Real.sqrt_eq_rpow, ofReal_cpow hk_pos.le, ofReal_div, ofReal_one, ofReal_ofNat]
     rw [← Complex.exp_add, hkz, hs_eq, ofReal_mul]; congr 1; ring
   unfold kummerLaplaceSaddleCore; dsimp only
@@ -619,7 +619,7 @@ private theorem tendsto_integral_kummerLaplaceSaddleIntegrand (a : ℂ) {z : ℂ
       ext v; rw [← Complex.exp_add]; congr 1; ring
     rw [heq, integral_const_mul, integral_gaussian_complex hσ,
       div_eq_mul_inv (π : ℂ) ζ,
-      TauCeti.ofReal_mul_cpow Real.pi_pos.le, Real.sqrt_eq_rpow, ofReal_cpow Real.pi_pos.le]
+      Complex.ofReal_mul_cpow Real.pi_pos.le, Real.sqrt_eq_rpow, ofReal_cpow Real.pi_pos.le]
     push_cast; ring
   rw [← hgauss]
   refine tendsto_integral_filter_of_dominated_convergence B ?_ ?_ hB_int

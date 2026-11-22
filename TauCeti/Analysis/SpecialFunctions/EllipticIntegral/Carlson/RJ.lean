@@ -205,7 +205,7 @@ theorem carlsonRJ_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z p : ℂ) :
   have hl0 : (l : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hl.ne'
   have hscale (s : ℝ) (w : ℂ) : (((l * s : ℝ) : ℂ) + l * w) ^ (-(1 / 2) : ℂ) =
       (l : ℂ) ^ (-(1 / 2) : ℂ) * ((s : ℂ) + w) ^ (-(1 / 2) : ℂ) := by
-    rw [Complex.ofReal_mul, ← mul_add, TauCeti.ofReal_mul_cpow hl.le]
+    rw [Complex.ofReal_mul, ← mul_add, Complex.ofReal_mul_cpow hl.le]
   have hscale_inv (s : ℝ) (w : ℂ) :
       (((l * s : ℝ) : ℂ) + l * w)⁻¹ = (l : ℂ)⁻¹ * ((s : ℂ) + w)⁻¹ := by
     rw [Complex.ofReal_mul, ← mul_add, mul_inv]
