@@ -168,7 +168,8 @@ theorem exists_subseq_varifoldTendsto [T2Space Y] [LocallyCompactSpace Y]
     (hμ : ∀ K, IsCompact K → ⨆ n, μ n K ≠ ∞) :
     ∃ (ν : Measure Y) (φ : ℕ → ℕ), IsFiniteMeasureOnCompacts ν ∧ StrictMono φ ∧
       VarifoldTendsto (μ ∘ φ) ν := by
-  obtain ⟨ν, φ, hν, hφ, hlim⟩ := exists_subseq_tendsto_integral_of_iSup_measure_ne_top μ hμ
+  obtain ⟨ν, φ, hν, hφ, hlim⟩ := exists_subseq_tendsto_integral_of_iSup_measure_ne_top μ
+    (fun K hK ↦ by rw [iSup_range]; exact hμ K hK) (.of_forall mem_range_self)
   exact ⟨ν, φ, inferInstance, hφ, hlim⟩
 
 /-- Dirac masses at a convergent sequence of points converge to the Dirac mass at the limit. -/

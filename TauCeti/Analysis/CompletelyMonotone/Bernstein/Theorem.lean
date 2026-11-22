@@ -128,8 +128,9 @@ theorem exists_representsLaplace_of_isCompletelyMonotone
   obtain ⟨L, C, hL, hL_nn, -, hmass⟩ := chafaiRescaled_prokhorov_mass_bound f hcm
   have hmass' : ∀ n, (chafaiRescaled f n) univ ≤ (C : ℝ≥0∞) := fun n => (hmass n).2
   obtain ⟨μ₀, U, hU, hμ₀fin, -, hweak⟩ :=
-    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet (chafaiRescaled f) atTop C hmass'
-      (isTightMeasureSet_range_chafaiRescaled hcm)
+    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet (chafaiRescaled f) atTop C
+      (forall_mem_range.2 hmass') (isTightMeasureSet_range_chafaiRescaled hcm)
+      (.of_forall mem_range_self)
   -- The limit represents the non-constant part `f - L`.
   have key : ∀ t : ℝ, 0 ≤ t → f t - L = ∫ p, Real.exp (-(t * (p : ℝ))) ∂μ₀ :=
     fun t ht => sub_eq_integral_exp_neg_mul_of_weak_limit hcm hL (.of_forall hmass') hU hweak ht

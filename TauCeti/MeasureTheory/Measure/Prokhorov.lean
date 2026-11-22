@@ -11,7 +11,8 @@ public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Topology.MetricSpace.Polish
-import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
+import TauCeti.MeasureTheory.Measure.LevyProkhorovMetric
+import TauCeti.MeasureTheory.Measure.Tight.Basic
 import Mathlib.Topology.UrysohnsLemma
 import TauCeti.Topology.Compactness.Compact
 
@@ -32,20 +33,17 @@ measures on a Polish space, a weakly convergent sequence is tight.
 * `TauCeti.exists_tendsto_finiteMeasure_of_eventually_measure_compl_eq_zero`: finite measures
   eventually carried by a compact set, with bounded mass, converge along an ultrafilter to a finite
   measure carried by that set.
-* `TauCeti.exists_ultrafilter_tendsto_integral_of_isTightMeasureSet`: a tight, mass-bounded family
-  of finite measures has a weak cluster limit along an ultrafilter below any nontrivial filter.
+* `TauCeti.exists_ultrafilter_tendsto_integral_of_isTightMeasureSet`: a family of finite Borel
+  measures on a Hausdorff space that frequently lies in a tight, mass-bounded set has a weak
+  cluster limit along an ultrafilter below the filter.
 * `TauCeti.exists_subseq_tendsto_integral_of_isTightMeasureSet`: the corresponding subsequence
-  form on a metrizable space, without requiring a first-countability instance for finite
-  measures.
+  form for finite Borel measures on a metrizable space, without requiring a first-countability
+  instance for finite measures.
 * `TauCeti.exists_subseq_tendsto_integral_of_withDensity`: compact-test subsequential convergence
   after tight weighting by a strictly positive continuous function.
 * `TauCeti.exists_subseq_tendsto_integral_of_iSup_measure_ne_top`: vague compactness, a sequence
-  of measures with uniformly bounded masses on every compact set of a locally compact, σ-compact,
-  metrizable space has a subsequence converging vaguely to a locally finite measure.
-* `IsCompact.exists_compactlySupported_measure_le_integral_le`: a compactly supported cutoff
-  whose integral lies between the masses of a compact set and of an open neighbourhood of it.
-* `IsCompact.measure_le_of_tendsto_integral`: compact-set mass bounds inherited from open
-  neighbourhood bounds under convergence against compactly supported continuous functions.
+  of Borel measures with uniformly bounded masses on every compact set of a locally compact,
+  σ-compact, metrizable space has a subsequence converging vaguely to a locally finite measure.
 * `TauCeti.isTightMeasureSet_range_of_tendsto`: a weakly convergent sequence of probability
   measures on a Polish space is tight.
 -/
@@ -99,153 +97,112 @@ theorem exists_tendsto_finiteMeasure_of_eventually_measure_compl_eq_zero {ι : T
         (FiniteMeasure.null_iff_toMeasure_null _ _).2 hi.1⟩
   exact ⟨μ, (FiniteMeasure.null_iff_toMeasure_null _ _).1 hμK, hμ⟩
 
-/-- A tight, uniformly mass-bounded family of finite measures has a weak cluster limit along any
-nontrivial filter.
+/-- **Prokhorov's theorem along an ultrafilter.** A family of finite Borel measures on a
+Hausdorff space that frequently lies, along a filter `l`, in a tight set with uniformly bounded
+mass has a weak cluster limit along an ultrafilter `U ≤ l`.
 
-Given tightness of the family and a common total-mass bound, the conclusion is a finite limiting
-measure with the same mass bound and weak convergence of all bounded-continuous test-function
-integrals along an ultrafilter `U ≤ l`; no first-countability assumption on `FiniteMeasure α`
-is needed. -/
+The limit is a finite measure with the same mass bound, and the integrals of every bounded
+continuous function converge along `U`; no first-countability assumption on `FiniteMeasure α` is
+needed. The members of the family outside the set are unconstrained. -/
 lemma exists_ultrafilter_tendsto_integral_of_isTightMeasureSet {ι : Type*} (σ : ι → Measure α)
-    (l : Filter ι) [l.NeBot] (C : ℝ≥0) (hmass : ∀ i, σ i univ ≤ C)
-    (hTight : IsTightMeasureSet (range σ)) :
+    (l : Filter ι) {S : Set (Measure α)} (C : ℝ≥0) (hmass : ∀ μ ∈ S, μ univ ≤ C)
+    (hTight : IsTightMeasureSet S) (hσ : ∃ᶠ i in l, σ i ∈ S) :
     ∃ (μ₀ : Measure α) (U : Ultrafilter ι), ↑U ≤ l ∧ IsFiniteMeasure μ₀ ∧ μ₀ univ ≤ C ∧
       ∀ g : BoundedContinuousFunction α ℝ,
         Tendsto (fun i => ∫ x, g x ∂σ i) U (𝓝 (∫ x, g x ∂μ₀)) := by
-  -- First coerce the family to `FiniteMeasure`; the uniform mass bound supplies finiteness.
-  have hfin : ∀ i, IsFiniteMeasure (σ i) := fun i =>
-    ⟨(hmass i).trans_lt ENNReal.coe_lt_top⟩
-  let σf : ι → FiniteMeasure α := fun i => ⟨σ i, hfin i⟩
-  have hσf_mass : range σf ⊆ {μ | μ.mass ≤ C} := by
-    rintro - ⟨i, rfl⟩
+  -- The members of `S` are finite measures, and their closure in `FiniteMeasure α` is compact.
+  let Sf : Set (FiniteMeasure α) := {μ | (μ : Measure α) ∈ S}
+  have hSf_mass : Sf ⊆ {μ | μ.mass ≤ C} := fun μ hμ => by
     rw [mem_ofPred_eq, ← ENNReal.coe_le_coe, FiniteMeasure.ennreal_mass]
-    exact hmass i
-  have hcompact : IsCompact (closure (range σf)) :=
-    isCompact_closure_of_isTightMeasureSet_of_mass_le
-      (hTight.subset (by rintro - ⟨-, ⟨i, rfl⟩, rfl⟩; exact ⟨i, rfl⟩)) hσf_mass
-  -- Compactness gives a cluster point and an ultrafilter below `l` along which `σf`
-  -- converges weakly.
-  obtain ⟨μf, hμf, hcluster⟩ := hcompact (f := map σf l)
-    (tendsto_principal.mpr (.of_forall fun i => subset_closure (mem_range_self i)))
+    exact hmass _ hμ
+  have hcompact : IsCompact (closure Sf) := isCompact_closure_of_isTightMeasureSet_of_mass_le
+    (hTight.subset (by rintro - ⟨μ, hμ, rfl⟩; exact hμ)) hSf_mass
+  -- Index by the subtype of the `i` with `σ i ∈ S`; the filter `l` restricts to it because these
+  -- indices are frequent in `l`.
+  let s : Set ι := {i | σ i ∈ S}
+  have : (comap ((↑) : s → ι) l).NeBot :=
+    comap_neBot_iff_frequently.2 (by rwa [Subtype.range_coe])
+  let σf : s → FiniteMeasure α := fun i => ⟨σ i, ⟨(hmass _ i.property).trans_lt ENNReal.coe_lt_top⟩⟩
+  -- Compactness gives a cluster point and an ultrafilter along which `σf` converges weakly.
+  obtain ⟨μf, hμf, hcluster⟩ := hcompact.exists_mapClusterPt (f := comap (↑) l) (u := σf)
+    (tendsto_principal.2 (.of_forall fun i => subset_closure i.property))
   obtain ⟨U, hUle, hUtend⟩ := mapClusterPt_iff_ultrafilter.mp hcluster
-  refine ⟨(μf : Measure α), U, hUle, inferInstance, ?_, ?_⟩
-  -- Finally unwrap the closure membership into the mass bound and weak convergence of
-  -- integrals against bounded continuous test functions.
-  · have hle : μf.mass ≤ C := closure_minimal hσf_mass
-      (isClosed_le FiniteMeasure.continuous_mass continuous_const) hμf
-    rw [← FiniteMeasure.ennreal_mass]
-    exact_mod_cast hle
-  · exact fun g => by simpa [σf] using FiniteMeasure.tendsto_iff_forall_integral_tendsto.mp hUtend g
+  refine ⟨μf, U.map (↑), map_le_iff_le_comap.2 hUle, inferInstance, ?_, fun g => ?_⟩
+  · rw [← FiniteMeasure.ennreal_mass, ENNReal.coe_le_coe]
+    exact closure_minimal hSf_mass (isClosed_le FiniteMeasure.continuous_mass continuous_const) hμf
+  · rw [Ultrafilter.coe_map, tendsto_map'_iff]
+    simpa only [σf, Function.comp_def, FiniteMeasure.toMeasure_mk] using
+      FiniteMeasure.tendsto_iff_forall_integral_tendsto.mp hUtend g
 
-/-- The separable case of `exists_subseq_tendsto_integral_of_isTightMeasureSet`, where the space of
-probability measures is metrizable. -/
-private lemma exists_subseq_tendsto_integral_of_isTightMeasureSet_of_separableSpace
-    [PseudoMetrizableSpace α] [SeparableSpace α] (σ : ℕ → Measure α) (C : ℝ≥0)
-    (hmass : ∀ n, σ n univ ≤ C) (hTight : IsTightMeasureSet (range σ)) :
-    ∃ (μ₀ : Measure α) (φ : ℕ → ℕ), IsFiniteMeasure μ₀ ∧ StrictMono φ ∧ μ₀ univ ≤ C ∧
-      ∀ g : BoundedContinuousFunction α ℝ,
-        Tendsto (fun k => ∫ x, g x ∂σ (φ k)) atTop (𝓝 (∫ x, g x ∂μ₀)) := by
-  -- Start from the ultrafilter cluster limit supplied by compactness.
-  obtain ⟨μ₀, U, hUle, hμ₀_fin, hmass_μ₀, hweakU⟩ :=
-    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet σ atTop C hmass hTight
-  -- Repackage the sequence and limit as finite measures so that weak convergence can be read
-  -- through bounded-continuous integrals.
-  have hfin : ∀ n, IsFiniteMeasure (σ n) := fun n =>
-    ⟨(hmass n).trans_lt ENNReal.coe_lt_top⟩
-  let σf : ℕ → FiniteMeasure α := fun n => ⟨σ n, hfin n⟩
-  let μf : FiniteMeasure α := ⟨μ₀, hμ₀_fin⟩
-  have hUtend : Tendsto σf (U : Filter ℕ) (nhds μf) := by
-    rw [FiniteMeasure.tendsto_iff_forall_integral_tendsto]
-    intro g
-    simpa [σf, μf] using hweakU g
-  have hsubseq : ∃ φ : ℕ → ℕ, StrictMono φ ∧ Tendsto (σf ∘ φ) atTop (𝓝 μf) := by
-    by_cases hzero : μf = 0
-    · -- At zero, convergence of the mass alone controls every bounded test function.
-      have hmassU : Tendsto (fun n => (σf n).mass) (U : Filter ℕ) (𝓝 0) := by
-        simpa [hzero] using hUtend.mass
-      obtain ⟨φ, hφ, hlim⟩ := (hmassU.mapClusterPt.mono hUle).tendsto_subseq
-      exact ⟨φ, hφ, hzero ▸ FiniteMeasure.tendsto_zero_of_tendsto_zero_mass hlim⟩
-    · -- Away from zero, mass and normalized probability determine weak convergence.
-      -- Normalization needs `α` nonempty; on an empty space every measure is zero.
-      have : Nonempty α := not_isEmpty_iff.mp fun _ =>
-        hzero (FiniteMeasure.toMeasure_injective (Measure.eq_zero_of_isEmpty _))
-      have hpair : Tendsto (fun n => ((σf n).mass, (σf n).normalize)) (U : Filter ℕ)
-          (𝓝 (μf.mass, μf.normalize)) :=
-        hUtend.mass.prodMk_nhds (FiniteMeasure.tendsto_normalize_of_tendsto hUtend hzero)
-      obtain ⟨φ, hφ, hlim⟩ := (hpair.mapClusterPt.mono hUle).tendsto_subseq
-      exact ⟨φ, hφ, FiniteMeasure.tendsto_of_tendsto_normalize_testAgainstNN_of_tendsto_mass
-        (μ := μf) hlim.snd_nhds hlim.fst_nhds⟩
-  obtain ⟨φ, hφ, hφ_tendsto⟩ := hsubseq
-  refine ⟨μ₀, φ, hμ₀_fin, hφ, hmass_μ₀, fun g => ?_⟩
-  have hweak :=
-    (FiniteMeasure.tendsto_iff_forall_integral_tendsto.mp hφ_tendsto) g
-  -- `hweak` is stated through the `FiniteMeasure` integral coercion; `change` reads it back as
-  -- the plain Bochner integral against the underlying measures, which is the statement wanted.
-  change Tendsto (fun k => ∫ x, g x ∂σ (φ k)) atTop (𝓝 (∫ x, g x ∂μ₀)) at hweak
-  exact hweak
-
-/-- A tight, mass-bounded sequence of finite measures on a metrizable space has a weakly
-convergent subsequence. The limiting measure retains the common mass bound. -/
+/-- **Prokhorov's theorem for sequences.** A sequence of finite Borel measures on a metrizable
+space that frequently lies in a tight set with uniformly bounded mass has a weakly convergent
+subsequence. The limiting measure retains the common mass bound. -/
 lemma exists_subseq_tendsto_integral_of_isTightMeasureSet [PseudoMetrizableSpace α]
-    (σ : ℕ → Measure α) (C : ℝ≥0) (hmass : ∀ n, σ n univ ≤ C)
-    (hTight : IsTightMeasureSet (range σ)) :
+    (σ : ℕ → Measure α) {S : Set (Measure α)} (C : ℝ≥0) (hmass : ∀ μ ∈ S, μ univ ≤ C)
+    (hTight : IsTightMeasureSet S) (hσ : ∃ᶠ n in atTop, σ n ∈ S) :
     ∃ (μ₀ : Measure α) (φ : ℕ → ℕ), IsFiniteMeasure μ₀ ∧ StrictMono φ ∧ μ₀ univ ≤ C ∧
       ∀ g : BoundedContinuousFunction α ℝ,
         Tendsto (fun k => ∫ x, g x ∂σ (φ k)) atTop (𝓝 (∫ x, g x ∂μ₀)) := by
-  -- Tightness gives compact sets `K j` carrying each `σ n` up to mass `j⁻¹`, so every `σ n` lives
-  -- on the separable measurable set `S = ⋃ j, K j`; we run the separable case on `S`.
-  have hK (j : ℕ) : ∃ K, IsCompact K ∧ ∀ n, σ n Kᶜ ≤ (j : ℝ≥0∞)⁻¹ := by
-    obtain ⟨K, hK, h⟩ := isTightMeasureSet_iff_exists_isCompact_measure_compl_le.mp hTight
-      (j : ℝ≥0∞)⁻¹ (ENNReal.inv_pos.2 (ENNReal.natCast_ne_top j))
-    exact ⟨K, hK, fun n => h _ (mem_range_self n)⟩
-  choose K hKc hKσ using hK
-  let S : Set α := ⋃ j, K j
-  have hS : MeasurableSet S := .iUnion fun j => (hKc j).isClosed.measurableSet
-  have : SeparableSpace S := (IsSeparable.iUnion fun j => (hKc j).isSeparable).separableSpace
-  have hσS (n : ℕ) : σ n Sᶜ = 0 := nonpos_iff_eq_zero.mp <|
-    ge_of_tendsto' ENNReal.tendsto_inv_nat_nhds_zero fun j =>
-      (measure_mono (compl_subset_compl.2 (subset_iUnion K j))).trans (hKσ j n)
-  -- The restrictions `τ n` of `σ n` to `S` push forward back to `σ n`.
-  let τ : ℕ → Measure S := fun n => (σ n).comap (↑)
-  have hτ (n : ℕ) : (τ n).map (↑) = σ n := by
-    rw [map_comap_subtypeVal hS, Measure.restrict_eq_self_of_ae_mem (mem_ae_iff.2 (hσS n))]
-  have hτ_univ (n : ℕ) : τ n univ = σ n univ := by
-    conv_rhs => rw [← hτ n, Measure.map_apply measurable_subtypeVal .univ, preimage_univ]
-  have hτTight : IsTightMeasureSet (range τ) := by
+  -- Pass to a subsequence `σ ∘ ψ` in `S`.
+  obtain ⟨ψ, hψ, hψS⟩ := extraction_of_frequently_atTop hσ
+  have hfin (n : ℕ) : IsFiniteMeasure (σ (ψ n)) := ⟨(hmass _ (hψS n)).trans_lt ENNReal.coe_lt_top⟩
+  -- Every measure of `S` lives on the separable measurable set `T = ⋃ j, K j`, a union of compact
+  -- sets with uniform tail bounds. We find the limit on `T`, where `FiniteMeasure T` has
+  -- subsequential limits at cluster points.
+  obtain ⟨K, hKc, hKS, hTS⟩ := hTight.exists_seq_isCompact_measure_compl_le
+  let T : Set α := ⋃ j, K j
+  have hT : MeasurableSet T := .iUnion fun j => (hKc j).isClosed.measurableSet
+  have : SeparableSpace T := (IsSeparable.iUnion fun j => (hKc j).isSeparable).separableSpace
+  -- The restrictions `τ n` of `σ (ψ n)` to `T` push forward back to `σ (ψ n)`.
+  let τ : ℕ → FiniteMeasure T := fun n => ⟨(σ (ψ n)).comap (↑), inferInstance⟩
+  have hτ (n : ℕ) : ((τ n).map Subtype.val : Measure α) = σ (ψ n) := by
+    rw [FiniteMeasure.toMeasure_map, FiniteMeasure.toMeasure_mk, map_comap_subtypeVal hT,
+      Measure.restrict_eq_self_of_ae_mem (mem_ae_iff.2 (hTS _ (hψS n)))]
+  have hτ_univ (n : ℕ) : (τ n : Measure T) univ = σ (ψ n) univ := by
+    conv_rhs => rw [← hτ n, FiniteMeasure.toMeasure_map,
+      Measure.map_apply measurable_subtypeVal .univ, preimage_univ]
+  have hτ_mass : range τ ⊆ {ν | ν.mass ≤ C} := by
+    rintro - ⟨n, rfl⟩
+    rw [mem_ofPred_eq, ← ENNReal.coe_le_coe, FiniteMeasure.ennreal_mass, hτ_univ]
+    exact hmass _ (hψS n)
+  have hτTight : IsTightMeasureSet {(ν : Measure T) | ν ∈ range τ} := by
     refine isTightMeasureSet_iff_exists_isCompact_measure_compl_le.2 fun ε hε => ?_
     obtain ⟨j, hj⟩ := ENNReal.exists_inv_nat_lt hε.ne'
-    refine ⟨(↑) ⁻¹' K j, Subtype.isCompact_iff.2 ?_, ?_⟩
-    · rw [Subtype.image_preimage_coe, inter_eq_right.2 (subset_iUnion K j)]
-      exact hKc j
-    · rintro - ⟨n, rfl⟩
-      rw [comap_subtypeVal_apply hS, ← preimage_compl, Subtype.image_preimage_coe]
-      exact (measure_mono inter_subset_right).trans ((hKσ j n).trans hj.le)
-  obtain ⟨ν, φ, hν, hφ, hνC, hlim⟩ :=
-    exists_subseq_tendsto_integral_of_isTightMeasureSet_of_separableSpace τ C
-      (fun n => (hτ_univ n).trans_le (hmass n)) hτTight
-  refine ⟨ν.map (↑), φ, inferInstance, hφ, ?_, fun g => ?_⟩
-  · rwa [Measure.map_apply measurable_subtypeVal .univ, preimage_univ]
-  -- Integrals of `g` against push-forwards are integrals of its restriction to `S`.
-  have hint (μ : Measure S) : ∫ x, g x ∂μ.map (↑) =
-      ∫ x, g.compContinuous ⟨(↑), continuous_subtypeVal⟩ x ∂μ := by
-    simp only [(MeasurableEmbedding.subtypeVal hS).integral_map,
-      BoundedContinuousFunction.compContinuous_apply, ContinuousMap.coe_mk]
-  simpa only [← hint, hτ] using hlim (g.compContinuous ⟨(↑), continuous_subtypeVal⟩)
+    refine ⟨(↑) ⁻¹' K j, IsInducing.subtypeVal.isCompact_preimage' (hKc j)
+      (by rw [Subtype.range_coe]; exact subset_iUnion K j), ?_⟩
+    rintro - ⟨-, ⟨n, rfl⟩, rfl⟩
+    rw [← preimage_compl, ← Measure.map_apply measurable_subtypeVal
+      (hKc j).isClosed.measurableSet.compl, ← FiniteMeasure.toMeasure_map, hτ n]
+    exact (hKS j _ (hψS n)).trans hj.le
+  -- Prokhorov compactness gives a cluster point `ν` of `τ`, which is a subsequential limit.
+  obtain ⟨ν, hν, hcluster⟩ :=
+    (isCompact_closure_of_isTightMeasureSet_of_mass_le hτTight hτ_mass).exists_mapClusterPt
+      (f := atTop) (u := τ) (tendsto_principal.2 (.of_forall fun n => subset_closure ⟨n, rfl⟩))
+  obtain ⟨φ, hφ, hlim⟩ := FiniteMeasure.tendsto_subseq_of_mapClusterPt hcluster
+  -- Push the limit forward to `α`.
+  have hmap := FiniteMeasure.tendsto_map_of_tendsto_of_continuous _ _ hlim continuous_subtypeVal
+  refine ⟨ν.map Subtype.val, ψ ∘ φ, inferInstance, hψ.comp hφ, ?_, fun g => ?_⟩
+  · rw [← FiniteMeasure.ennreal_mass, ENNReal.coe_le_coe]
+    exact (FiniteMeasure.mass_map_le measurable_subtypeVal.aemeasurable).trans <|
+      closure_minimal hτ_mass (isClosed_le FiniteMeasure.continuous_mass continuous_const) hν
+  · simpa only [Function.comp_apply, hτ] using
+      FiniteMeasure.tendsto_iff_forall_integral_tendsto.mp hmap g
 
 open scoped CompactlySupported in
-/-- If weighting by a strictly positive continuous function gives a tight family with bounded
-mass, then a sequence of measures has a locally finite subsequential limit against every
-compactly supported continuous test function. The unweighted measures may have infinite mass. -/
+/-- If weighting by a strictly positive continuous function frequently puts a sequence of Borel
+measures on a metrizable space into a tight set with bounded mass, then the sequence has a locally
+finite subsequential limit against every compactly supported continuous test function. The
+unweighted measures may have infinite mass. -/
 theorem exists_subseq_tendsto_integral_of_withDensity [PseudoMetrizableSpace α]
     (σ : ℕ → Measure α) (w : α → ℝ≥0) (hw : Continuous w) (hpos : ∀ x, 0 < w x)
-    (C : ℝ≥0) (hmass : ∀ n, ((σ n).withDensity fun x => w x) univ ≤ (C : ENNReal))
-    (hTight : IsTightMeasureSet (range fun n => (σ n).withDensity fun x => w x)) :
+    {S : Set (Measure α)} (C : ℝ≥0) (hmass : ∀ μ ∈ S, μ univ ≤ C) (hTight : IsTightMeasureSet S)
+    (hσ : ∃ᶠ n in atTop, ((σ n).withDensity fun x => w x) ∈ S) :
     ∃ (μ : Measure α) (φ : ℕ → ℕ), IsLocallyFiniteMeasure μ ∧ StrictMono φ ∧
       ∀ f : C_c(α, ℝ), Tendsto (fun k => ∫ x, f x ∂σ (φ k)) atTop
         (𝓝 (∫ x, f x ∂μ)) := by
   obtain ⟨ρ, φ, hρ, hφ, -, hlim⟩ :=
     exists_subseq_tendsto_integral_of_isTightMeasureSet (fun n => (σ n).withDensity fun x => w x)
-      C hmass hTight
+      C hmass hTight hσ
   let μ : Measure α := ρ.withDensity fun x => ((w x)⁻¹ : ℝ≥0)
   have hwInv : Continuous fun x => (w x)⁻¹ := hw.inv₀ fun x => (hpos x).ne'
   have : IsFiniteMeasure ρ := hρ
@@ -352,22 +309,28 @@ private lemma exists_weight_of_iSup_measure_ne_top [LocallyCompactSpace α]
   exact le_iSup (fun n ↦ σ n (K (k + 1))) n
 
 open scoped CompactlySupported in
-/-- **Vague compactness.** A sequence of measures on a locally compact, σ-compact, metrizable
-space whose masses on each compact set are bounded uniformly in `n` has a subsequence converging
-vaguely, that is against every continuous compactly supported function, to a locally finite
-measure. The measures may have infinite total mass. -/
+/-- **Vague compactness.** A sequence of Borel measures on a locally compact, σ-compact,
+metrizable space that frequently lies in a set of measures with uniformly bounded masses on each
+compact set has a subsequence converging vaguely, that is against every continuous compactly
+supported function, to a locally finite measure. The measures may have infinite total mass. -/
 theorem exists_subseq_tendsto_integral_of_iSup_measure_ne_top [LocallyCompactSpace α]
-    [SigmaCompactSpace α] [PseudoMetrizableSpace α] (σ : ℕ → Measure α)
-    (hσ : ∀ K, IsCompact K → ⨆ n, σ n K ≠ ∞) :
+    [SigmaCompactSpace α] [PseudoMetrizableSpace α] (σ : ℕ → Measure α) {S : Set (Measure α)}
+    (hS : ∀ K, IsCompact K → ⨆ μ ∈ S, μ K ≠ ∞) (hσ : ∃ᶠ n in atTop, σ n ∈ S) :
     ∃ (μ : Measure α) (φ : ℕ → ℕ), IsLocallyFiniteMeasure μ ∧ StrictMono φ ∧
       ∀ f : C_c(α, ℝ), Tendsto (fun k => ∫ x, f x ∂σ (φ k)) atTop
         (𝓝 (∫ x, f x ∂μ)) := by
-  obtain ⟨w, K, hw, hpos, htail⟩ := exists_weight_of_iSup_measure_ne_top σ hσ
-  refine exists_subseq_tendsto_integral_of_withDensity σ w hw hpos 2 (fun n ↦ ?_) ?_
-  · -- The total mass is the case `S = univ`, `N = 0`.
+  -- Pass to a subsequence `σ ∘ ψ` in `S`, whose compact-set masses are uniformly bounded.
+  obtain ⟨ψ, hψ, hψS⟩ := extraction_of_frequently_atTop hσ
+  obtain ⟨w, K, hw, hpos, htail⟩ := exists_weight_of_iSup_measure_ne_top (σ ∘ ψ) fun K hK ↦
+    ne_top_of_le_ne_top (hS K hK) (iSup_le fun n ↦ le_iSup₂_of_le (σ (ψ n)) (hψS n) le_rfl)
+  let ρ : ℕ → Measure α := fun n ↦ (σ (ψ n)).withDensity fun x ↦ w x
+  -- The total mass is the case `S = univ`, `N = 0`.
+  have hmass : ∀ ν ∈ range ρ, ν univ ≤ (2 : ℝ≥0) := by
+    rintro - ⟨n, rfl⟩
     rw [withDensity_apply _ MeasurableSet.univ]
     simpa using htail univ 0 (fun k hk ↦ absurd hk (Nat.not_lt_zero k)) n
-  · -- The tails outside `K N` are uniformly small.
+  -- The tails outside `K N` are uniformly small.
+  have hTight : IsTightMeasureSet (range ρ) := by
     refine isTightMeasureSet_iff_exists_isCompact_measure_compl_le.2 fun ε hε ↦ ?_
     have hlim : Tendsto (fun N : ℕ ↦ ENNReal.ofReal ((1 / 2) ^ N * 2)) atTop (𝓝 0) := by
       simpa using ENNReal.tendsto_ofReal ((tendsto_pow_atTop_nhds_zero_of_lt_one
@@ -379,40 +342,9 @@ theorem exists_subseq_tendsto_integral_of_iSup_measure_ne_top [LocallyCompactSpa
     rw [withDensity_apply _ hKN]
     exact (htail _ N (fun k hk ↦ disjoint_compl_right_iff_subset.2
       (K.subset (Nat.succ_le_of_lt hk))) n).trans hN.le
-
-omit [T2Space α] [BorelSpace α] in
-open scoped CompactlySupported in
-/-- A compactly supported continuous function whose integral against every measure lies between
-the mass of a compact set `K` and the mass of an open neighbourhood `U` of `K`; the lower bound
-needs the measure to be finite on compact sets. -/
-theorem _root_.IsCompact.exists_compactlySupported_measure_le_integral_le [R1Space α]
-    [LocallyCompactSpace α] [OpensMeasurableSpace α] {K U : Set α} (hK : IsCompact K)
-    (hU : IsOpen U) (hKU : K ⊆ U) :
-    ∃ f : C_c(α, ℝ), (∀ (ρ : Measure α) [IsFiniteMeasureOnCompacts ρ],
-      ρ K ≤ ENNReal.ofReal (∫ x, f x ∂ρ)) ∧
-      ∀ ρ : Measure α, ENNReal.ofReal (∫ x, f x ∂ρ) ≤ ρ U := by
-  obtain ⟨f, hf1, hfc, hfU, hfr⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen hK hU hKU
-  refine ⟨⟨f, hfc⟩, fun ρ _ ↦ ?_, fun ρ ↦ ?_⟩
-  · exact (CompactlySupportedContinuousMap.integrable ⟨f, hfc⟩).measure_le_integral
-      (ae_of_all _ fun x ↦ (hfr x).1) fun _ hx ↦ (hf1 hx).ge
-  · exact integral_le_measure (fun x _ ↦ (hfr x).2) fun x hx ↦
-      (image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfU h)).le
-
-omit [T2Space α] [BorelSpace α] in
-open scoped CompactlySupported in
-/-- Under convergence against compactly supported continuous functions, a mass bound on an
-open neighbourhood passes to the measure of a compact subset for the limiting measure. -/
-theorem _root_.IsCompact.measure_le_of_tendsto_integral [R1Space α] [LocallyCompactSpace α]
-    [OpensMeasurableSpace α]
-    {ι : Type*} {l : Filter ι} [NeBot l] {K V : Set α}
-    (hK : IsCompact K) (hV : IsOpen V) (hKV : K ⊆ V)
-    {μ : Measure α} [IsFiniteMeasureOnCompacts μ] {σ : ι → Measure α} {C : ℝ≥0∞}
-    (hbound : ∀ᶠ i in l, σ i V ≤ C)
-    (hlim : ∀ f : C_c(α, ℝ), Tendsto (fun i => ∫ x, f x ∂σ i) l
-      (𝓝 (∫ x, f x ∂μ))) : μ K ≤ C := by
-  obtain ⟨f, hfK, hfV⟩ := hK.exists_compactlySupported_measure_le_integral_le hV hKV
-  exact (hfK μ).trans (le_of_tendsto ((ENNReal.continuous_ofReal.tendsto _).comp (hlim f))
-    (hbound.mono fun i hi ↦ (hfV (σ i)).trans hi))
+  obtain ⟨μ, φ, hμ, hφ, hlim⟩ := exists_subseq_tendsto_integral_of_withDensity (σ ∘ ψ) w hw hpos
+    2 hmass hTight (.of_forall fun n ↦ ⟨n, rfl⟩)
+  exact ⟨μ, ψ ∘ φ, hμ, hψ.comp hφ, hlim⟩
 
 section ProbabilityMeasure
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
 
 /-!
-# The Lévy–Prokhorov distance between pushforward measures
+# Lévy–Prokhorov distance of pushforwards, and subsequences of finite measures
 
 Mathlib's `MeasureTheory.left_measure_le_of_levyProkhorovEDist_lt` compares the masses of a set and
 of its thickening under two measures on the same space. This file restates it for the images
@@ -22,11 +22,18 @@ into a common extended pseudometric space `Z`, in terms of sets of `X` and `Y`.
 * `MeasureTheory.Measure.levyProkhorovEDist_map_le_of_edist_le`: if an a.e.-measurable self-map
   moves almost every point by at most `δ`, then the Lévy–Prokhorov distance from a measure to its
   pushforward is at most `δ`.
+* `MeasureTheory.FiniteMeasure.tendsto_subseq_of_mapClusterPt`: on a separable pseudo-metrizable
+  space, a cluster point of a sequence of finite measures is the limit of a subsequence.
+
+Mathlib's Lévy–Prokhorov metrization makes `ProbabilityMeasure X` pseudo-metrizable when `X` is
+separable and pseudo-metrizable, but gives no first-countability instance for `FiniteMeasure X`.
+A finite measure is determined by its mass and, away from zero, by its normalization, so cluster
+points of sequences of finite measures are still subsequential limits.
 -/
 
 public section
 
-open MeasureTheory Set Metric
+open MeasureTheory Set Metric Filter Topology
 open scoped ENNReal
 
 namespace TauCeti
@@ -84,3 +91,34 @@ theorem levyProkhorovEDist_map_le_of_edist_le
     exact (measure_mono_ae (by filter_upwards [hmem] with z hz h using hz.2 h)).trans le_self_add
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory.FiniteMeasure
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [TopologicalSpace.PseudoMetrizableSpace X] [TopologicalSpace.SeparableSpace X]
+
+/-- On a separable pseudo-metrizable space, a cluster point of a sequence of finite measures is
+the weak limit of a subsequence. The space of finite measures need not be first countable here:
+the subsequence is extracted from the masses and the normalizations, which live in
+pseudo-metrizable spaces. -/
+theorem tendsto_subseq_of_mapClusterPt {μs : ℕ → FiniteMeasure X} {μ : FiniteMeasure X}
+    (h : MapClusterPt μ atTop μs) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ Tendsto (μs ∘ φ) atTop (𝓝 μ) := by
+  by_cases hzero : μ = 0
+  · -- At zero, convergence of the mass alone controls every bounded test function.
+    subst hzero
+    obtain ⟨φ, hφ, hlim⟩ := (h.continuousAt_comp continuous_mass.continuousAt).tendsto_subseq
+    exact ⟨φ, hφ, tendsto_zero_of_tendsto_zero_mass <| by
+      simpa only [zero_mass, Function.comp_def] using hlim⟩
+  · -- Away from zero, mass and normalized probability determine weak convergence.
+    -- Normalization needs `X` nonempty; on an empty space every measure is zero.
+    have : Nonempty X := not_isEmpty_iff.mp fun _ ↦ hzero <| toMeasure_injective <| by
+      rw [toMeasure_zero]
+      exact Measure.eq_zero_of_isEmpty _
+    have hpair : ContinuousAt (fun ν : FiniteMeasure X ↦ (ν.mass, ν.normalize)) μ :=
+      continuous_mass.continuousAt.prodMk_nhds (tendsto_normalize_of_tendsto tendsto_id hzero)
+    obtain ⟨φ, hφ, hlim⟩ := (h.continuousAt_comp hpair).tendsto_subseq
+    exact ⟨φ, hφ, tendsto_of_tendsto_normalize_testAgainstNN_of_tendsto_mass hlim.snd_nhds
+      hlim.fst_nhds⟩
+
+end MeasureTheory.FiniteMeasure

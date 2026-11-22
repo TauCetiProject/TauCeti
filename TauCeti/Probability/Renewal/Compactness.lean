@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Translate.Bounds
 public import TauCeti.MeasureTheory.Measure.Prokhorov
+import TauCeti.MeasureTheory.Measure.Vague
 
 /-!
 # Subsequential limits of translated renewal measures
@@ -56,7 +57,8 @@ theorem exists_subseq_tendsto_integral_translatedRenewalMeasure
   obtain ⟨η, φ, hη, hφ, hlim⟩ :=
     TauCeti.exists_subseq_tendsto_integral_of_withDensity
       (fun n => F.translatedRenewalMeasure (t n)) w hw hpos C
-      (by simpa only [hcast] using hmass) (by simpa only [hcast] using htight)
+      (forall_mem_range.2 (by simpa only [hcast] using hmass)) (by simpa only [hcast] using htight)
+      (.of_forall mem_range_self)
   have : IsLocallyFiniteMeasure η := hη
   refine ⟨η, φ, hη, hφ, fun a => ?_, hlim⟩
   apply isCompact_Icc.measure_le_of_tendsto_integral

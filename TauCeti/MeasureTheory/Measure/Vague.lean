@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.Topology.UrysohnsLemma
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
+import Mathlib.MeasureTheory.Integral.CompactlySupported
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -31,6 +32,12 @@ measures `χ μs i`
 (`MeasureTheory.Measure.tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported`), and
 these agree with `μs i` on the set when `χ` is a cutoff equal to one there
 (`MeasureTheory.withDensity_apply_eq_self_of_eqOn_one`).
+
+In the other direction, a mass bound on an open neighbourhood `V` of a compact set `K` passes to
+the limit measure of `K` (`IsCompact.measure_le_of_tendsto_integral`). This needs no local
+finiteness of the approximating measures and only an `R1Space`: it tests against a compactly
+supported cutoff whose integral lies between the masses of `K` and of `V`
+(`IsCompact.exists_compactlySupported_measure_le_integral_le`).
 
 ## References
 
@@ -106,3 +113,39 @@ theorem limsup_measure_le_of_tendsto_integral_compactlySupported
         fun x ↦ (hχrange x).1) hK.isClosed
 
 end MeasureTheory.Measure
+
+section CompactMassBound
+
+open MeasureTheory
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [R1Space X] [LocallyCompactSpace X]
+  [OpensMeasurableSpace X]
+
+/-- A compactly supported continuous function whose integral against every measure lies between
+the mass of a compact set `K` and the mass of an open neighbourhood `U` of `K`; the lower bound
+needs the measure to be finite on compact sets. -/
+theorem IsCompact.exists_compactlySupported_measure_le_integral_le {K U : Set X}
+    (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ f : C_c(X, ℝ), (∀ (ρ : Measure X) [IsFiniteMeasureOnCompacts ρ],
+      ρ K ≤ ENNReal.ofReal (∫ x, f x ∂ρ)) ∧
+      ∀ ρ : Measure X, ENNReal.ofReal (∫ x, f x ∂ρ) ≤ ρ U := by
+  obtain ⟨f, hf1, hfc, hfU, hfr⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen hK hU hKU
+  refine ⟨⟨f, hfc⟩, fun ρ _ ↦ ?_, fun ρ ↦ ?_⟩
+  · exact (CompactlySupportedContinuousMap.integrable ⟨f, hfc⟩).measure_le_integral
+      (ae_of_all _ fun x ↦ (hfr x).1) fun _ hx ↦ (hf1 hx).ge
+  · exact integral_le_measure (fun x _ ↦ (hfr x).2) fun x hx ↦
+      (image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfU h)).le
+
+/-- Under convergence against compactly supported continuous functions, a mass bound on an
+open neighbourhood passes to the measure of a compact subset for the limiting measure. -/
+theorem IsCompact.measure_le_of_tendsto_integral {ι : Type*} {l : Filter ι} [NeBot l]
+    {K V : Set X} (hK : IsCompact K) (hV : IsOpen V) (hKV : K ⊆ V)
+    {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {σ : ι → Measure X} {C : ℝ≥0∞}
+    (hbound : ∀ᶠ i in l, σ i V ≤ C)
+    (hlim : ∀ f : C_c(X, ℝ), Tendsto (fun i => ∫ x, f x ∂σ i) l
+      (𝓝 (∫ x, f x ∂μ))) : μ K ≤ C := by
+  obtain ⟨f, hfK, hfV⟩ := hK.exists_compactlySupported_measure_le_integral_le hV hKV
+  exact (hfK μ).trans (le_of_tendsto ((ENNReal.continuous_ofReal.tendsto _).comp (hlim f))
+    (hbound.mono fun i hi ↦ (hfV (σ i)).trans hi))
+
+end CompactMassBound

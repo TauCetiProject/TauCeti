@@ -221,8 +221,8 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
     exact_mod_cast fejerCount_le (N + 1) 0
   -- By Prokhorov's theorem on the compact circle, the `ν N` cluster weakly at some `μ`.
   obtain ⟨μ, U, hU, hμ, -, hlim⟩ :=
-    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet ν atTop C hmass
-      IsTightMeasureSet.of_compactSpace
+    exists_ultrafilter_tendsto_integral_of_isTightMeasureSet ν atTop C (forall_mem_range.2 hmass)
+      IsTightMeasureSet.of_compactSpace (.of_forall mem_range_self)
   refine ⟨μ, hμ, fun m ↦ ?_⟩
   let νf : ℕ → FiniteMeasure Circle := fun N ↦ ⟨ν N, hνfin N⟩
   let μf : FiniteMeasure Circle := ⟨μ, hμ⟩
