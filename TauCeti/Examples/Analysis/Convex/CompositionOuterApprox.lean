@@ -36,10 +36,10 @@ identity-map and two-anchor bullets are computed with unrestricted heights.
   copies of this anchor gives `x₀ + x₁ ≤ 3/2` for both the direct set and the projected shared set.
 * For the identity inner map and outer sum on an input domain `D`, both sets are the points of `D`
   satisfying `∑ j, x j ≤ b`, for every nonempty family of anchors.
-* Without anchors both approximations are the box when every height is admissible. With no
-  admissible heights the shared approximation is empty, whatever the anchors, while the direct set
-  of the box with budget one and copies of the anchor `(1, 1)` contains `0`: the height domain
-  cannot be discarded.
+* Without anchors the direct set and the projected shared set are the box when every height is
+  admissible. With no admissible heights the shared approximation is empty, whatever the anchors,
+  while the direct set of the box with budget one and copies of the anchor `(1, 1)` contains `0`:
+  the height domain cannot be discarded.
 * On the box `[-1, 1]²`, the two anchors `(1, 1)` and `(-1, -1)` with budget `1/2` give the
   direct set `|x₀ + x₁| ≤ 5/4` and the projected shared set `|x₀| + |x₁| ≤ 5/4`. The objective
   `-x₀ + x₁` attains `-2`, `-5/4` and `-1` on the direct, shared and original sets, and the exact
@@ -47,9 +47,9 @@ identity-map and two-anchor bullets are computed with unrestricted heights.
 * For `g x = x ^ 2` and `h = id` with budget `1/4`, the shared heights at the anchor `0` project
   onto the whole line, while the direct row at the anchor `1` is `x ≤ 5/8`: with different anchors
   the shared projection need not lie in the direct set.
-* For `g = id` and `h = exp` at the anchor `0` with budget two, both finite approximations are
-  `x ≤ 1` on the line and `[0, 1]` on the half-line `x ≥ 0`, where the height constraint `y ≥ 0`
-  is retained.
+* For `g = id` and `h = exp` at the anchor `0` with budget two, the direct set and the projected
+  shared set are `x ≤ 1` on the line and `[0, 1]` on the half-line `x ≥ 0`, where the height
+  constraint `y ≥ 0` is retained.
 * For `g = id` and `h y = y ^ 2` at the anchor `-1` with budget one, inequality heights project
   onto the whole line while the direct set is `[-1, ∞)`, so the shared set without exact rows is
   not contained in the direct one; the outer derivative `-2` is not monotone. With an exact row on
