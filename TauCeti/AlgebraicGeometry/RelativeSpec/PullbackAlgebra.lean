@@ -348,25 +348,6 @@ theorem pullbackComp_hom_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : Quasic
     Category.id_comp]
   rfl
 
-/-- On underlying modules, `(pullbackComp f g).hom.app A` followed by `eqToHom` along `f ≫ g = h`
-is Mathlib's `Scheme.Modules.pullbackComp f g ≪≫ Scheme.Modules.pullbackCongr hf`. -/
-theorem pullbackComp_hom_app_comp_eqToHom_hom_hom_hom {f : X ⟶ Y} {g : Y ⟶ Z} {h : X ⟶ Z}
-    (hf : f ≫ g = h) (A : QuasicoherentAlgebra Z) :
-    ((pullbackComp f g).hom.app A ≫
-        eqToHom (congrArg (fun k ↦ (pullback k).obj A) hf)).hom.hom.hom =
-      eqToHom ((pullback_obj_X f _).trans (congrArg _ (pullback_obj_X g A))) ≫
-        ((Scheme.Modules.pullbackComp f g ≪≫ Scheme.Modules.pullbackCongr hf).app A.obj.X).hom ≫
-        eqToHom (pullback_obj_X h A).symm := by
-  subst hf
-  rw [eqToHom_refl, Category.comp_id]
-  have hcongr :
-      ((Scheme.Modules.pullbackComp f g ≪≫
-          Scheme.Modules.pullbackCongr (rfl : f ≫ g = f ≫ g)).app A.obj.X).hom =
-        (Scheme.Modules.pullbackComp f g).hom.app A.obj.X := by
-    simp [Scheme.Modules.pullbackCongr]
-  rw [hcongr]
-  exact pullbackComp_hom_app_hom_hom_hom f g A
-
 /-- The inverse composition comparison of algebra pullback is Mathlib's inverse composition
 comparison of module pullback on underlying modules. -/
 @[simp]
