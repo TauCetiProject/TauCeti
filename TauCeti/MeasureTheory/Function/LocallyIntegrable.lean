@@ -692,15 +692,14 @@ open scoped InnerProductSpace
 theorem integrable_inner_left_of_hasCompactSupport {f g : X → E}
     (hf : LocallyIntegrableOn f s μ) (hg : Continuous g) (h'g : HasCompactSupport g)
     (hgs : tsupport g ⊆ s) : Integrable (fun x ↦ ⟪g x, f x⟫_𝕜) μ := by
-  have hK := hf.integrableOn_compact_subset hgs h'g
-  obtain ⟨C, hC⟩ := h'g.isCompact.exists_bound_of_continuousOn hg.continuousOn
   refine IntegrableOn.integrable_of_forall_notMem_eq_zero (s := tsupport g) ?_
     fun x hx ↦ by simp [image_eq_zero_of_notMem_tsupport hx]
-  refine (hK.norm.const_mul C).mono' (AEStronglyMeasurable.inner
-    (hg.continuousOn.aestronglyMeasurable_of_isCompact h'g.isCompact
-      (isClosed_tsupport g).measurableSet) hK.aestronglyMeasurable)
-    ((ae_restrict_iff' (isClosed_tsupport g).measurableSet).2 <| ae_of_all _ fun x hx ↦ ?_)
-  exact (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (hC x hx) (norm_nonneg _))
+  -- Evaluate the continuous field `x ↦ innerSL 𝕜 (g x)` at the integrable `f` on `tsupport g`.
+  simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.id_apply, Function.comp_apply,
+    innerSL_apply_apply] using (ContinuousLinearMap.id 𝕜 (E →L[𝕜] 𝕜)).flip
+      |>.integrableOn_of_bilin_of_continuousOn_of_subset (hf.integrableOn_compact_subset hgs h'g)
+        ((innerSL 𝕜).continuous.comp hg).continuousOn h'g.isCompact
+        (ae_restrict_mem (isClosed_tsupport g).measurableSet)
 
 end MeasureTheory.LocallyIntegrableOn
 
@@ -745,13 +744,9 @@ theorem continuousOn_clm_apply {f : X → F} {A : X → F →L[𝕜] G} (hs : Is
     LocallyIntegrableOn (fun x ↦ A x (f x)) s μ := by
   rw [locallyIntegrableOn_iff hs] at hf ⊢
   intro k hks hk
-  obtain ⟨C, hC⟩ := hk.exists_bound_of_continuousOn (hA.mono hks)
-  refine Integrable.mono' ((hf k hks hk).norm.const_mul C) ?_
-    ((ae_restrict_iff' hk.measurableSet).2 <| ae_of_all _ fun x hx ↦ (A x).le_of_opNorm_le
-      (hC x hx) _)
-  exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
-    ((hA.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
-    (hf k hks hk).aestronglyMeasurable
+  simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.id_apply] using
+    (ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).flip.integrableOn_of_bilin_of_continuousOn_of_subset
+      (hf k hks hk) (hA.mono hks) hk (ae_restrict_mem hk.measurableSet)
 
 /-- Applying a field of continuous linear maps that is locally integrable on a locally closed set
 `s` to a function continuous on `s` gives a function locally integrable on `s`. This is the

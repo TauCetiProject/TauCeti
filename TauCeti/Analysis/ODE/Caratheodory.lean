@@ -144,6 +144,7 @@ the Picard map. -/
 private theorem isFixedPt_next {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x t) :
     IsFixedPt (next hab hM hF x₀) ⟨(Icc a b).domRestrict x, hx.domRestrict⟩ := by
+  unfold Function.IsFixedPt
   ext t
   simp only [next_apply, ContinuousMap.coe_mk, domRestrict_apply]
   rw [h t t.property]
