@@ -59,6 +59,15 @@ theorem coeff_expPointPolynomial (h : H) (n : ℕ) :
         ((n.factorial : ℚ)⁻¹ • (leftInvariantDerivation d)^[n] h) := by
   simp [expPointPolynomial, Polynomial.coeff_map]
 
+/-- The support of `expPointPolynomial d hd h` is contained in `Finset.range n` whenever the
+`n`-th iterate of `leftInvariantDerivation d` vanishes on `h`. -/
+theorem support_expPointPolynomial_subset_range {h : H} {n : ℕ}
+    (hn : (leftInvariantDerivation d)^[n] h = 0) :
+    (expPointPolynomial d hd h).support ⊆ Finset.range n := by
+  simpa [expPointPolynomial, Polynomial.coe_mapAlgHom] using
+    (Polynomial.support_map_subset _ _).trans
+      ((leftInvariantDerivation d).support_taylorExpPolynomial_subset_range hd hn)
+
 /-- The velocity of the exponential curve at zero is its specified tangent vector. -/
 theorem coeff_one_expPointPolynomial (h : H) :
     (expPointPolynomial d hd h).coeff 1 = CounitAlgebra.algEquivSelf R H R (d h) := by
@@ -139,16 +148,6 @@ theorem curveVelocity_expPointPolynomial_comp {K : Type*} [CommRing K]
   apply (CounitAlgebra.algEquivSelf R K R).injective
   rw [algEquivSelf_curveVelocity_apply, AlgHom.comp_apply,
     coeff_one_expPointPolynomial, algEquivSelf_derivationComp_apply]
-
-include hd in
-omit [Algebra ℚ H] in
-/-- Scaling a tangent vector whose invariant derivation is locally nilpotent preserves local
-nilpotence of its invariant derivation. -/
-theorem exists_iterate_leftInvariantDerivation_smul_eq_zero (t : R) (h : H) :
-    ∃ n, (leftInvariantDerivation (t • d))^[n] h = 0 := by
-  have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
-    map_smul leftInvariantDerivation t d
-  simpa only [hsmul] using (leftInvariantDerivation d).exists_iterate_smul_eq_zero hd t h
 
 /-- Over the base ring, evaluating the exponential curve at `t` gives the exponential point of
 the scaled tangent vector `t • d`. -/

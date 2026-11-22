@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 -- Non-public: an element of `S(H)` is determined by its values over the infinite field `K`, used
 -- only in the comparison with the invariants of the coroot representation.
 import Mathlib.Algebra.CharZero.Infinite
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import TauCeti.RingTheory.Invariant.OrbitSeparation
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 

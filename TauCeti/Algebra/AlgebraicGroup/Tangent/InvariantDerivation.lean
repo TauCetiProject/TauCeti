@@ -49,6 +49,8 @@ tangent space as the ambient group. This is the infinitesimal input to Cartier's
 * `TauCeti.Bialgebra.iterate_leftInvariantDerivation_apply`: `Dⁿ h = ∑ h₍₁₎ ε(Dⁿ h₍₂₎)`.
 * `TauCeti.Bialgebra.eq_leftInvariantDerivation`: a left-invariant derivation is determined
   by its value at the identity.
+* `TauCeti.Bialgebra.exists_iterate_leftInvariantDerivation_smul_eq_zero`: scaling preserves local
+  nilpotence of left-invariant derivations.
 * `BialgHom.map_leftInvariantDerivation`: invariant derivations intertwine a
   bialgebra morphism and its tangent map. The same holds for their iterates; local nilpotence
   descends through surjective coordinate maps and is reflected by injective ones.
@@ -190,6 +192,16 @@ theorem eq_leftInvariantDerivation (D : Derivation R H H)
   rw [LinearMap.lTensor_def, tensorComponent_map, hvalue, LinearMap.id_apply,
     ← leftInvariantDerivation_apply] at hc
   simpa [LinearMap.tensorComponent_def] using hc
+
+/-- Scaling a tangent vector whose invariant derivation is locally nilpotent preserves local
+nilpotence of its invariant derivation. -/
+theorem exists_iterate_leftInvariantDerivation_smul_eq_zero
+    (d : Derivation R H (CounitAlgebra R H R))
+    (hd : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) (t : R) (h : H) :
+    ∃ n, (leftInvariantDerivation (t • d))^[n] h = 0 := by
+  have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
+    map_smul leftInvariantDerivation t d
+  simpa only [hsmul] using (leftInvariantDerivation d).exists_iterate_smul_eq_zero hd t h
 
 end TauCeti.Bialgebra
 

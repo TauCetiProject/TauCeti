@@ -86,6 +86,17 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   rw [pointInCounitAlgebra_eq_pointsMulEquiv_symm, adDerivation_dualNumber_apply]
   simp only [snd_add, snd_inl, snd_inr, zero_add, cotangentDualLieEquiv_apply]
 
+/-- In the cotangent-dual model, the differential of the adjoint comodule along
+`cotangentDualLieEquiv x` is the adjoint operator `LieAlgebra.ad R _ x`. -/
+theorem differential_cotangentDualLieEquiv
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    Comodule.differential (R := R) (H := H)
+        (M := Module.Dual R (Bialgebra.CotangentSpace R H))
+        (cotangentDualLieEquiv (R := R) (H := H) x) =
+      LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x := by
+  ext y
+  rw [differential_adjointComodule, LieEquiv.symm_apply_apply, LieAlgebra.ad_apply]
+
 end Derivation
 
 namespace TauCeti

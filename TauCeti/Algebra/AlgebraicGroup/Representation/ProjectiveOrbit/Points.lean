@@ -77,6 +77,17 @@ theorem mem_projectiveOrbitMap_kernelPoint_iff (m : M) (hm : Module.IsUnimodular
     simp only [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker, AlgHom.coe_toRingHom,
       ← AlgHom.comp_apply, comp_orbitCoordinates]
 
+/-- A homogeneous polynomial vanishes at the identity projective orbit point precisely when it
+vanishes on the base vector. -/
+theorem mem_projectiveOrbitMap_kernelPoint_counitAlgHom_iff (m : M) (hm : Module.IsUnimodular k m)
+    {s : SymmetricAlgebra k (Module.Dual k M)} {n : ℕ}
+    (hs : s ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M) n) :
+    s ∈ (projectiveOrbitMap (H := H) m hm
+        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H))).asHomogeneousIdeal ↔
+      SymmetricAlgebra.lift (Module.Dual.eval k M m) s = 0 := by
+  simpa [← Bialgebra.ofConv_one_eq_counitAlgHom] using
+    mem_projectiveOrbitMap_kernelPoint_iff (H := H) m hm 1 hs
+
 /-- A linear homogeneous coordinate vanishes at a rational orbit image exactly when the
 corresponding functional annihilates the translated vector. -/
 @[simp]

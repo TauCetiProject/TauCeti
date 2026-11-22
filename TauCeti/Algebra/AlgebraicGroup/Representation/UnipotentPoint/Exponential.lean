@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.OneParameter
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Comodule
-import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
 # Unipotence of exponential points and exponential curves
@@ -49,23 +48,22 @@ variable [CommRing R] [CommRing H] [_root_.HopfAlgebra R H] [Algebra ℚ H]
 
 /-- Every point on the exponential curve of a tangent vector with locally nilpotent invariant
 derivation is unipotent, over any commutative value algebra `B`. -/
+@[simp]
 theorem isUnipotentPoint_expPointAt [CommRing B] [Algebra R B]
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (t : B) :
     IsUnipotentPoint (Bialgebra.expPointAt d hd t) := by
-  -- The counit pulls the `ℚ`-algebra structure of `H` to `R` and then to `B`.
-  let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
-  let : Algebra ℚ B :=
-    ((algebraMap R B).comp (algebraMap ℚ R)).toAlgebra
   rw [isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one]
   intro M
+  let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
+  let : Algebra ℚ B := Algebra.compHom B (algebraMap ℚ R)
   rw [Comodule.endOfPoint_expPointAt d hd t]
-  obtain ⟨K, hK⟩ :=
-    Comodule.isNilpotent_smul_baseChange_differential (R := R) (H := H) (M := M) hd t
-  exact ⟨K, IsNilpotent.pow_exp_sub_one_eq_zero hK⟩
+  exact IsNilpotent.isNilpotent_exp_sub_one
+    (Comodule.isNilpotent_smul_baseChange_differential (R := R) (H := H) (M := M) hd t)
 
 /-- The exponential point of a tangent vector with locally nilpotent invariant derivation is
 unipotent. -/
+@[simp]
 theorem isUnipotentPoint_expPoint
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) :

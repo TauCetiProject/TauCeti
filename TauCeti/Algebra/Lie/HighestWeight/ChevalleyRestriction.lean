@@ -11,8 +11,6 @@ public import TauCeti.Algebra.Lie.Killing.ChevalleyRestriction
 import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
 import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
 import TauCeti.LinearAlgebra.RootSystem.IntegralCoweight
-import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Chevalley's restriction theorem

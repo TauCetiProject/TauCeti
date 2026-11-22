@@ -255,8 +255,10 @@ omit [Comodule R H M] in
 /-- Expanding the `endOfPoint` tensor action of `expPointAt d hd t` on `M ⊗[R] H` into a
 finite Taylor sum. -/
 private theorem smul_comm_lTensor_expPointAt_eq_sum {B : Type*} [CommRing B] [Algebra R B]
-    [Algebra ℚ B] (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (t b : B) (z : M ⊗[R] H) :
+    letI : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
+    letI : Algebra ℚ B := Algebra.compHom B (algebraMap ℚ R)
     ∃ N, ∀ n ≥ N,
       b • TensorProduct.comm R M B
           (((Bialgebra.expPointAt d hd t).ofConv.toLinearMap.lTensor M) z) =
@@ -266,24 +268,23 @@ private theorem smul_comm_lTensor_expPointAt_eq_sum {B : Type*} [CommRing B] [Al
               (Coalgebra.counit (R := R) ∘ₗ
                 (Bialgebra.leftInvariantDerivation d).toLinearMap ^ k) z) := by
   let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
+  let : Algebra ℚ B := Algebra.compHom B (algebraMap ℚ R)
   set D := Bialgebra.leftInvariantDerivation d
   induction z using TensorProduct.inductionOn with
   | tmul m h =>
     obtain ⟨N, hN⟩ := hd h
-    refine ⟨N + 1, fun n hn ↦ ?_⟩
-    have hdeg : (Bialgebra.expPointPolynomial d hd h).natDegree < n := by
-      refine lt_of_le_of_lt (Polynomial.natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦ ?_)
-        (Nat.lt_of_succ_le hn)
-      have hzero : D^[k] h = 0 := by
-        simpa [FunLike.coe_pow_eq_iterate] using
-          Module.End.pow_map_zero_of_le (f := D.toLinearMap) hk.le
-            (by simpa [FunLike.coe_pow_eq_iterate] using hN)
-      simp [Bialgebra.coeff_expPointPolynomial, D, hzero]
+    refine ⟨N, fun n hn ↦ ?_⟩
+    have hn0 : D^[n] h = 0 := by
+      simpa [FunLike.coe_pow_eq_iterate] using
+        Module.End.pow_map_zero_of_le (f := D.toLinearMap) hn
+          (by simpa [FunLike.coe_pow_eq_iterate] using hN)
+    have hsupp : (Bialgebra.expPointPolynomial d hd h).support ⊆ Finset.range n :=
+      Bialgebra.support_expPointPolynomial_subset_range d hd hn0
     have haeval : (Bialgebra.expPointAt d hd t).ofConv h =
         ∑ k ∈ Finset.range n,
           algebraMap R B ((Bialgebra.expPointPolynomial d hd h).coeff k) * t ^ k := by
-      simpa [Bialgebra.expPointAt_apply, Algebra.smul_def] using
-        Polynomial.aeval_eq_sum_range' hdeg t
+      rw [Bialgebra.expPointAt_apply, Polynomial.aeval_def, Polynomial.eval₂_eq_sum,
+        Polynomial.sum_eq_of_subset _ (fun k ↦ by rw [map_zero, zero_mul]) hsupp]
     simp only [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, haeval,
       TensorProduct.comm_tmul, TensorProduct.sum_tmul, Finset.smul_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -302,13 +303,17 @@ private theorem smul_comm_lTensor_expPointAt_eq_sum {B : Type*} [CommRing B] [Al
 
 /-- **Exponential points act on finitely generated comodules by the exponential of the
 differentiated action.** For any value algebra `B` and parameter `t : B`, the exponential point
-`expPointAt d hd t` acts on `B ⊗[R] M` as `exp (t • (differential d).baseChange B)`. -/
+`expPointAt d hd t` acts on `B ⊗[R] M` as `exp (t • (differential d).baseChange B)` under the
+induced rational algebra structure on `B`. -/
 theorem endOfPoint_expPointAt [Module.Finite R M] {B : Type*} [CommRing B] [Algebra R B]
-    [Algebra ℚ B] (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (t : B) :
+    letI : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
+    letI : Algebra ℚ B := Algebra.compHom B (algebraMap ℚ R)
     endOfPoint M (Bialgebra.expPointAt d hd t).ofConv =
       IsNilpotent.exp (t • (differential (R := R) (H := H) (M := M) d).baseChange B) := by
   let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
+  let : Algebra ℚ B := Algebra.compHom B (algebraMap ℚ R)
   obtain ⟨K, hK⟩ := isNilpotent_smul_baseChange_differential (R := R) (H := H) (M := M) hd t
   apply LinearMap.ext_iff.mpr
   intro x
