@@ -78,10 +78,11 @@ admissible functions through their boundary traces:
   bounded on the sum spaces** (`ComplexMethodSpace.norm_analyticFamilyMap_le`): if
   `‖T₀ t x‖ ≤ M₀ ‖x‖` and `‖T₁ t x‖ ≤ M₁ ‖x‖` for all `t`, then
   `‖T θ u‖_θ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖_θ` for `0 ≤ θ ≤ 1`. Stein's theorem in general allows
-  operators `T z` defined only on a dense subspace of the intersection, such as the Bessel
-  potentials of varying order between Bessel potential spaces of different orders; that form needs
-  the density of intersection-valued admissible functions (Bergh–Löfström, Lemma 4.2.3) and is
-  not proved here.
+  operators `T z` defined only on a dense subspace of the intersection, such as Bessel potentials of
+  varying order. By the density of intersection-valued admissible functions (Bergh–Löfström,
+  Lemma 4.2.3), that form reduces to elementary admissible functions; it is carried out for the
+  Bessel potentials in `TauCeti.CompatibleCouple.exists_besselPotentialSpace_complexMethod_map`
+  through `TauCeti.CompatibleCouple.ComplexMethodSpace.exists_map_of_forall_elementaryStripTraces`.
 * `ComplexMethodSpace.map`: the constant families (`IsBoundedAnalyticFamily.const`). Continuous
   linear maps `T₀ : X₀ → Y₀`, `T₁ : X₁ → Y₁` that agree on the intersection, with norms at most
   `M₀, M₁ ≥ 0`, induce a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at most `M₀ ^ (1 - θ) * M₁ ^ θ`
@@ -591,6 +592,15 @@ end Lift
     (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ g = 0 → A g = 0) :
     ‖lift A hA‖ = ‖A‖ := (C.stripEval θ).ker.norm_liftQL A hA
 
+/-- A map from `[X₀, X₁]_θ` has norm at most `K ≥ 0` when `‖T (mk θ g)‖ ≤ K ‖g‖` for all traces
+`g`, the norm of `[X₀, X₁]_θ` being the quotient norm. -/
+theorem opNorm_le_of_norm_apply_mk_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+    {T : C.ComplexMethodSpace θ →L[ℂ] E} {K : ℝ} (hK : 0 ≤ K)
+    (h : ∀ g, ‖T (mk θ g)‖ ≤ K * ‖g‖) : ‖T‖ ≤ K := by
+  rw [lift_unique (T.comp (mk θ)) (fun g hg ↦ by
+    simpa using congrArg T ((mk_eq_mk_iff (h := 0)).2 (by simpa using hg))) fun _ ↦ rfl, norm_lift]
+  exact (T.comp (mk θ)).opNorm_le_bound hK h
+
 /-- The inclusion of `[X₀, X₁]_θ` into the sum space, `F ↦ F θ`. -/
 def toSum : C.ComplexMethodSpace θ →L[ℂ] C.SumSpace :=
   (C.stripEval θ).ker.liftQL (C.stripEval θ) le_rfl
@@ -868,7 +878,9 @@ Every `T z` must be bounded on the whole sum space `X₀ + X₁`. This excludes 
 regularity in the interior of the strip, such as `z ↦ J ^ ((1 - z) s₀ + z s₁)` from
 `(H^(s₀,p), H^(s₁,p))` to `(L^p, L^p)` for `s₀ ≠ s₁`, where `J` is the Bessel potential; those
 are only defined on the intersection, and interpolating them needs the density of
-intersection-valued admissible functions (Bergh–Löfström, Lemma 4.2.3). -/
+intersection-valued admissible functions (Bergh–Löfström, Lemma 4.2.3); see
+`TauCeti.CompatibleCouple.ComplexMethodSpace.exists_map_of_forall_elementaryStripTraces` and its
+application `TauCeti.CompatibleCouple.exists_besselPotentialSpace_complexMethod_map`. -/
 structure IsBoundedAnalyticFamily (T : ℂ → C.SumSpace →L[ℂ] D.SumSpace) (T₀ : ℝ → X₀ →L[ℂ] Y₀)
     (T₁ : ℝ → X₁ →L[ℂ] Y₁) : Prop where
   /-- `T` is holomorphic in operator norm on the open strip. -/
@@ -1087,15 +1099,14 @@ private theorem norm_analyticFamilyMap_le_of_pos (hT : IsBoundedAnalyticFamily T
     (u : C.ComplexMethodSpace θ) : ‖analyticFamilyMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
   set K := M₀ ^ (1 - θ) * M₁ ^ θ
   have hKpos : 0 < K := by positivity
-  -- every representative `g` of `u` gives `‖analyticFamilyMap u‖ ≤ K * ‖g‖`; take the infimum
-  refine le_of_forall_pos_le_add fun ε hε => ?_
-  obtain ⟨g, rfl, hg⟩ := norm_lt_iff.1 (lt_add_of_pos_right ‖u‖ (div_pos hε hKpos))
+  -- every representative `g` of `u` gives `‖analyticFamilyMap u‖ ≤ K * ‖g‖`
+  refine (analyticFamilyMap θ hT).le_of_opNorm_le (opNorm_le_of_norm_apply_mk_le hKpos.le
+    fun g => ?_) u
   calc ‖analyticFamilyMap θ hT (mk θ g)‖
       = K * ‖scaleFactor M₀ M₁ θ • analyticFamilyMap θ hT (mk θ g)‖ := by
         rw [norm_smul, ← mul_assoc, mul_comm K, norm_scaleFactor_mul_rpow hM₀ hM₁, one_mul]
-    _ ≤ K * (‖mk θ g‖ + ε / K) := mul_le_mul_of_nonneg_left
-        ((norm_scaleFactor_smul_analyticFamilyMap_mk_le hT hθ hM₀ hM₁ h₀ h₁ g).trans hg.le) hKpos.le
-    _ = K * ‖mk θ g‖ + ε := by rw [mul_add, mul_div_cancel₀ _ hKpos.ne']
+    _ ≤ K * ‖g‖ := mul_le_mul_of_nonneg_left
+        (norm_scaleFactor_smul_analyticFamilyMap_mk_le hT hθ hM₀ hM₁ h₀ h₁ g) hKpos.le
 
 /-- **Stein's interpolation theorem for bounded analytic families.** If the boundary operators of a
 bounded analytic family `T` satisfy `‖T₀ t x‖ ≤ M₀ ‖x‖` and `‖T₁ t x‖ ≤ M₁ ‖x‖` with

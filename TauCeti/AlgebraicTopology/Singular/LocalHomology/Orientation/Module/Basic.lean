@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Group.Units.ULift
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.Data.ZMod.RingHoms
-import TauCeti.Geometry.Manifold.ModelTransport.EuclideanULift
+import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 /-!
 # Module orientations of manifolds
 
@@ -178,15 +178,17 @@ variable {M : Type w} {E : Type v} [TopologicalSpace M] [T1Space M]
 /-- Every point of a `T₁` `n`-manifold has a local `R`-orientation in degree `n`. -/
 theorem nonempty_of_finrank_eq {R : Type w} [Ring R] (x : M) {n : ℕ} (hn : finrank ℝ E = n) :
     Nonempty (ModuleLocalOrientation (of R R) M x n) :=
-  let _ := chartedSpaceEuclideanULift.{w} M E; let E' := EuclideanModel.{w} E
-  ⟨moduleLocalOrientationOfChart (chartAt E' x) (mem_chart_source E' x)
-    ((finrank_euclideanModel.{w} E).trans hn)⟩
+  let E' := ULift.{w} (Fin (finrank ℝ E)) → ℝ
+  let _ : ChartedSpace E' M := ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [E'])
+  ⟨moduleLocalOrientationOfChart (chartAt E' x) (mem_chart_source E' x) (by simpa [E'] using hn)⟩
 /-- At a point of an `n`-manifold (`[CommRing R]`, faithful `N`), `Rˣ` acts freely. -/
 theorem units_smul_injective {R : Type u} [CommRing R] {N : ModuleCat.{w} R} [FaithfulSMul R N]
     {x : M} {n : ℕ} (hn : finrank ℝ E = n) (z : ModuleLocalOrientation N M x n) :
     Function.Injective fun u : Rˣ ↦ u • z := by
-  let _ := chartedSpaceEuclideanULift.{w} M E; let E' := EuclideanModel.{w} E
-  have hE' : finrank ℝ E' = n := (finrank_euclideanModel.{w} E).trans hn; subst hE'; intro u v huv
+  let E' := ULift.{w} (Fin (finrank ℝ E)) → ℝ
+  let _ : ChartedSpace E' M := ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [E'])
+  have hE' : finrank ℝ E' = n := by simpa [E'] using hn
+  subst hE'; intro u v huv
   have hfix : ((u⁻¹ * v : Rˣ) : R) • z.val = z.val := (mul_smul _ _ _).trans
     ((congrArg ((u⁻¹ : Rˣ) • ·) (congrArg Subtype.val huv).symm).trans (inv_smul_smul u z.val))
   exact inv_mul_eq_one.1 <| Units.ext <| (singularHomologyComplSingletonFinrankIso N (chartAt E' x)
@@ -196,8 +198,9 @@ theorem units_smul_injective {R : Type u} [CommRing R] {N : ModuleCat.{w} R} [Fa
 @[instance_reducible] def uniqueOfSubsingletonUnits {K : Type w} [Ring K] [IsDedekindFiniteMonoid K]
     [Subsingleton Kˣ] (x : M) {n : ℕ} (hn : finrank ℝ E = n) :
     Unique (ModuleLocalOrientation (of K K) M x n) :=
-  letI := chartedSpaceEuclideanULift.{w} M E; let E' := EuclideanModel.{w} E
-  have hE' : finrank ℝ E' = n := (finrank_euclideanModel.{w} E).trans hn
+  let E' := ULift.{w} (Fin (finrank ℝ E)) → ℝ
+  letI : ChartedSpace E' M := ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [E'])
+  have hE' : finrank ℝ E' = n := by simpa [E'] using hn
   ⟨⟨moduleLocalOrientationOfChart (chartAt E' x) (mem_chart_source E' x) hE'⟩, fun z ↦ by
     subst hE'
     exact (equivUnits (singularHomologyComplSingletonFinrankIso (of K K) (chartAt E' x)

@@ -22,8 +22,16 @@ agree as functions, so the `A`-linearity of the first applies to the second.
 For a subring `B` of a commutative ring `R` and an `R`-module `M`, an element of `B` can be moved
 across the tensor sign of `R ⊗[B] M`.
 
-Finally, base change of submodules and of linear maps along an `R`-algebra `A` interacts well with
+Base change of submodules and of linear maps along an `R`-algebra `A` interacts well with
 elements of `R` that become units in `A`, and with left inverses.
+
+Finally, for an `R`-algebra `A`, not necessarily commutative, and an `A`-module `M`, the action is
+an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
+`TensorProduct.lidOfCompatibleSMul` give this map only for commutative `A`.
+
+## Main definitions
+
+* `TauCeti.tensorSMul`: the action map `A ⊗[R] M →ₗ[A] M`, `a ⊗ m ↦ a • m`.
 
 ## Main results
 
@@ -134,3 +142,22 @@ theorem LinearMap.baseChange_leftInverse {R A M N : Type*} [CommSemiring R] [Sem
     Function.LeftInverse (f.baseChange A) (g.baseChange A) := fun z ↦ by
   rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, h, LinearMap.baseChange_id,
     LinearMap.id_apply]
+
+namespace TauCeti
+
+variable (R A M : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [AddCommMonoid M]
+  [Module A M] [Module R M] [IsScalarTower R A M]
+
+/-- The action map `A ⊗[R] M →ₗ[A] M`, `a ⊗ m ↦ a • m`, of a module `M` over an `R`-algebra `A`
+that need not be commutative. -/
+noncomputable def tensorSMul : A ⊗[R] M →ₗ[A] M :=
+  AlgebraTensorModule.lift (LinearMap.toSpanSingleton A (M →ₗ[R] M) LinearMap.id)
+
+variable {R A M}
+
+/-- The action map on a pure tensor. -/
+@[simp]
+theorem tensorSMul_tmul (a : A) (m : M) : tensorSMul R A M (a ⊗ₜ m) = a • m := by
+  simp [tensorSMul]
+
+end TauCeti
