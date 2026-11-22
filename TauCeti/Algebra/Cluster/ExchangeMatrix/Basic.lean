@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Order.Group.PosPart
 public import Mathlib.Algebra.Order.Ring.Int
-public import Mathlib.Data.Matrix.Block
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 
 import Mathlib.LinearAlgebra.Matrix.Notation
@@ -374,18 +373,18 @@ noncomputable def extendFrozen (B : ExchangeMatrix (Function.Embedding.inl : K �
     ext i k
     simp [Matrix.submatrix_apply, Function.Embedding.inl_apply]
 
-variable (B C : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (e : J ↪ F)
+variable (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (e : J ↪ F)
 
 /-- Extending the boundary keeps each mutable entry. -/
 @[simp] theorem extendFrozen_matrix_inl (i k : K) :
     (B.extendFrozen e).matrix (Sum.inl i) k = B.matrix (Sum.inl i) k := by
   simp [extendFrozen]
 
-/-- A frozen column is the zero extension of the original frozen column. -/
+/-- The frozen-row portion of each mutable column is extended by zero along the embedding. -/
 theorem extendFrozen_matrix_frozen (f : F) (k : K) :
     (B.extendFrozen e).matrix (Sum.inr f) k =
       Function.extend e (fun j ↦ B.matrix (Sum.inr j) k) 0 f := by
-  rfl
+  simp only [extendFrozen, Matrix.fromRows_apply_inr, Matrix.of_apply]
 
 /-- The original frozen rows are retained at their embedded vertices. -/
 @[simp] theorem extendFrozen_matrix_inr (j : J) (k : K) :
@@ -429,40 +428,31 @@ theorem extendFrozen_matrix_frozen (f : F) (k : K) :
         (fun j ↦ B.matrix (Sum.inr j) k) 0).symm f
   · simp
 
-/-- A column extension depends only on the original column. -/
-theorem extendFrozen_column_congr (k : K) (h : ∀ r, B.matrix r k = C.matrix r k)
-    (r : K ⊕ F) : (B.extendFrozen e).matrix r k = (C.extendFrozen e).matrix r k := by
-  rcases r with i | f
-  · simpa only [extendFrozen_matrix_inl] using h (Sum.inl i)
-  · rw [extendFrozen_matrix_frozen, extendFrozen_matrix_frozen]
-    congr 1
-    funext j
-    exact h (Sum.inr j)
-
-/-- Extending local frozen rows commutes with relabelling mutable and common frozen vertices. -/
-theorem extendFrozen_reindex {K' F' : Type*} (eK : K ≃ K') (eF : F ≃ F') :
-    (reindex (row' := (Function.Embedding.inl : K' ↪ K' ⊕ J))
-      (Equiv.sumCongr eK (Equiv.refl J)) eK (fun _ ↦ by simp) B).extendFrozen
-        (e.trans eF.toEmbedding) =
+/-- Extending local frozen rows commutes with relabelling mutable, local frozen and common
+frozen vertices. The local frozen embedding is transported along the inverse local equivalence. -/
+theorem extendFrozen_reindex {K' J' F' : Type*}
+    (eK : K ≃ K') (eJ : J ≃ J') (eF : F ≃ F') :
+    (reindex (row' := (Function.Embedding.inl : K' ↪ K' ⊕ J'))
+      (Equiv.sumCongr eK eJ) eK (fun _ ↦ by simp) B).extendFrozen
+        ((eJ.symm.toEmbedding.trans e).trans eF.toEmbedding) =
       reindex (row' := (Function.Embedding.inl : K' ↪ K' ⊕ F'))
         (Equiv.sumCongr eK eF) eK (fun _ ↦ by simp) (B.extendFrozen e) := by
   ext : 1
   · ext (i | f) k
     · simp [reindex_matrix, Matrix.submatrix_apply]
-    · by_cases hf : eF.symm f ∈ Set.range e
-      · obtain ⟨j, hj⟩ := hf
-        have hfj : f = eF (e j) := (eF.symm_apply_eq).mp hj.symm
-        subst f
-        simpa [reindex_matrix, Matrix.submatrix_apply] using
-          extendFrozen_matrix_inr
-            (reindex (row' := (Function.Embedding.inl : K' ↪ K' ⊕ J))
-      (Equiv.sumCongr eK (Equiv.refl J)) eK (fun _ ↦ by simp) B)
-            (e.trans eF.toEmbedding) j k
-      · have hf' : f ∉ Set.range (e.trans eF.toEmbedding) := by
-          rintro ⟨j, rfl⟩
-          exact hf ⟨j, by simp⟩
-        rw [extendFrozen_matrix_of_not_mem_range _ _ _ hf']
-        simp [reindex_matrix, Matrix.submatrix_apply, hf]
+    · simp only [extendFrozen_matrix_frozen, reindex_matrix, Matrix.submatrix_apply,
+        Equiv.sumCongr_symm, Equiv.sumCongr_apply, Sum.map_inr]
+      let v : J → ℤ := fun j ↦ B.matrix (Sum.inr j) (eK.symm k)
+      change Function.extend (eF ∘ (e ∘ eJ.symm)) (v ∘ eJ.symm) 0 f =
+        Function.extend e v 0 (eF.symm f)
+      rw [(e.injective.comp eJ.symm.injective).extend_comp eF.injective,
+        Equiv.extend_apply, eJ.symm.injective.extend_comp e.injective]
+      have he : Function.extend eJ.symm (v ∘ eJ.symm) (((0 : F' → ℤ) ∘ eF) ∘ e) = v := by
+        funext j
+        simp only [Equiv.extend_apply, Equiv.symm_symm, Function.comp_apply,
+          Equiv.symm_apply_apply]
+      rw [he]
+      rfl
   · simp
 
 end FrozenExtension
@@ -491,10 +481,10 @@ noncomputable def amalgamate (e : ∀ a, L a ↪ F)
       · simp [Matrix.submatrix_apply, Matrix.blockDiagonal'_apply_ne, h, Ne.symm h]
 
 variable (e : ∀ a, L a ↪ F)
-variable (Bs Cs : ∀ a, ExchangeMatrix (Function.Embedding.inl : M a ↪ M a ⊕ L a))
+variable (Bs : ∀ a, ExchangeMatrix (Function.Embedding.inl : M a ↪ M a ⊕ L a))
 
 /-- Mutable entries in one factor are retained. -/
-@[simp] theorem amalgamate_matrix_same (a : A) (i j : M a) :
+@[simp] theorem amalgamate_matrix_eq (a : A) (i j : M a) :
     (amalgamate e Bs).matrix (Sum.inl ⟨a, i⟩) ⟨a, j⟩ = (Bs a).matrix (Sum.inl i) j := by
   simp [amalgamate, Matrix.submatrix_apply]
 
@@ -507,7 +497,7 @@ variable (Bs Cs : ∀ a, ExchangeMatrix (Function.Embedding.inl : M a ↪ M a �
 @[simp] theorem amalgamate_matrix_frozen (f : F) (a : A) (k : M a) :
     (amalgamate e Bs).matrix (Sum.inr f) ⟨a, k⟩ =
       ((Bs a).extendFrozen (e a)).matrix (Sum.inr f) k := by
-  rfl
+  simp only [amalgamate, Matrix.fromRows_apply_inr, Matrix.of_apply]
 
 /-- The chosen symmetrizers are retained as data. -/
 @[simp] theorem amalgamate_symmetrizer (a : A) (k : M a) :
@@ -528,25 +518,21 @@ variable (Bs Cs : ∀ a, ExchangeMatrix (Function.Embedding.inl : M a ↪ M a �
 @[simp] theorem submatrix_amalgamate (a : A) :
     (amalgamate e Bs).submatrix (Sum.map (Sigma.mk a) (e a)) (Sigma.mk a)
       (fun _ ↦ by simp only [Function.Embedding.inl_apply, Sum.map_inl]) = Bs a := by
-  ext : 1
-  · ext (i | f) j <;> simp [submatrix_matrix]
-  · funext k
-    simp
-
-/-- Assembly of a column depends only on that factor's original column. -/
-theorem amalgamate_column_congr (a : A) (k : M a)
-    (h : ∀ r, (Bs a).matrix r k = (Cs a).matrix r k) (r : (Σ a, M a) ⊕ F) :
-    (amalgamate e Bs).matrix r ⟨a, k⟩ = (amalgamate e Cs).matrix r ⟨a, k⟩ := by
-  rcases r with ⟨b, i⟩ | f
-  · by_cases hba : b = a
-    · subst b
-      simpa only [amalgamate_matrix_same] using h (Sum.inl i)
-    · rw [amalgamate_matrix_ne e Bs i k hba, amalgamate_matrix_ne e Cs i k hba]
-  · simpa only [amalgamate_matrix_frozen] using
-      extendFrozen_column_congr (Bs a) (Cs a) (e a) k h (Sum.inr f)
+  have h := congrArg (fun C : ExchangeMatrix
+      (Function.Embedding.inl : M a ↪ M a ⊕ F) ↦
+        C.submatrix (row' := (Function.Embedding.inl : M a ↪ M a ⊕ L a))
+          (Sum.map id (e a)) id (fun _ ↦ by simp))
+      (submatrix_amalgamate_all_frozen e Bs a)
+  rw [submatrix_submatrix] at h
+  have hm : Sum.map (Sigma.mk (β := M) a) (id : F → F) ∘
+      Sum.map (id : M a → M a) (e a) = Sum.map (Sigma.mk a) (e a) := by
+    funext r
+    cases r <;> rfl
+  simpa only [hm, Function.comp_id, submatrix_extendFrozen] using h
 
 /-- Restrictions to the zero-padded factors and absence of cross-factor entries characterize
-an amalgamation, including the required zero rows outside each local frozen image. -/
+an amalgamation: a frozen vertex outside a factor's image has zero entries in that
+factor's columns. -/
 theorem eq_amalgamate_iff
     (C : ExchangeMatrix (Function.Embedding.inl : (Σ a, M a) ↪ (Σ a, M a) ⊕ F)) :
     C = amalgamate e Bs ↔
@@ -572,13 +558,14 @@ theorem eq_amalgamate_iff
       have h := congrFun (congrArg ExchangeMatrix.symmetrizer (hf a)) k
       simpa using h
 
-/-- Assembly commutes with permutations of factors, fibrewise mutable relabellings, and a
-common relabelling of frozen vertices. -/
-theorem amalgamate_reindex {A' F' : Type*} [DecidableEq A'] {N : A' → Type*}
-    (eA : A' ≃ A) (eM : ∀ a, M (eA a) ≃ N a) (eF : F ≃ F') :
-    amalgamate (fun a ↦ (e (eA a)).trans eF.toEmbedding)
-        (fun a ↦ reindex (row' := (Function.Embedding.inl : N a ↪ N a ⊕ L (eA a)))
-          (Equiv.sumCongr (eM a) (Equiv.refl (L (eA a)))) (eM a) (fun _ ↦ by simp) (Bs (eA a))) =
+/-- Assembly commutes with permutations of factors, fibrewise mutable and local frozen
+relabellings, and a common relabelling of frozen vertices. -/
+theorem amalgamate_reindex {A' F' : Type*} [DecidableEq A'] {N Q : A' → Type*}
+    (eA : A' ≃ A) (eM : ∀ a, M (eA a) ≃ N a)
+    (eL : ∀ a, L (eA a) ≃ Q a) (eF : F ≃ F') :
+    amalgamate (fun a ↦ ((eL a).symm.toEmbedding.trans (e (eA a))).trans eF.toEmbedding)
+        (fun a ↦ reindex (row' := (Function.Embedding.inl : N a ↪ N a ⊕ Q a))
+          (Equiv.sumCongr (eM a) (eL a)) (eM a) (fun _ ↦ by simp) (Bs (eA a))) =
       reindex (row' := Function.Embedding.inl)
         (Equiv.sumCongr (Equiv.sigmaCongr eA (fun a ↦ (eM a).symm)).symm eF)
         (Equiv.sigmaCongr eA (fun a ↦ (eM a).symm)).symm (fun _ ↦ rfl)
@@ -600,17 +587,17 @@ end Amalgamation
 
 section Stages
 
-variable {A F : Type*} {B : A → Type*} {M L : ∀ a, B a → Type*}
+variable {A F : Type*} {B G : A → Type*} {M L : ∀ a, B a → Type*}
   [DecidableEq A] [∀ a, DecidableEq (B a)]
 
-/-- Grouping a family over a common frozen boundary does not change its amalgamation,
-after the canonical association of mutable indices. -/
-theorem amalgamate_amalgamate (e : ∀ a b, L a b ↪ F)
+/-- Grouping through individual intermediate frozen boundaries agrees with assembly along
+the composite embeddings, after the canonical association of mutable indices. -/
+theorem amalgamate_amalgamate (e : ∀ a b, L a b ↪ G a) (g : ∀ a, G a ↪ F)
     (Bs : ∀ a b, ExchangeMatrix (Function.Embedding.inl : M a b ↪ M a b ⊕ L a b)) :
-    amalgamate (fun _ ↦ Function.Embedding.refl F) (fun a ↦ amalgamate (e a) (Bs a)) =
+    amalgamate g (fun a ↦ amalgamate (e a) (Bs a)) =
       reindex (row' := Function.Embedding.inl)
         (Equiv.sumCongr (Equiv.sigmaAssoc M) (Equiv.refl F)) (Equiv.sigmaAssoc M)
-        (fun _ ↦ rfl) (amalgamate (fun p : Σ a, B a ↦ e p.1 p.2)
+        (fun _ ↦ rfl) (amalgamate (fun p : Σ a, B a ↦ (e p.1 p.2).trans (g p.1))
           (fun p ↦ Bs p.1 p.2)) := by
   ext : 1
   · ext (⟨a, b, i⟩ | f) ⟨c, d, j⟩
@@ -625,7 +612,10 @@ theorem amalgamate_amalgamate (e : ∀ a b, L a b ↪ F)
           simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaAssoc, hbd, hp]
       · have hp : (⟨a, b⟩ : Σ a, B a) ≠ ⟨c, d⟩ := fun h ↦ hac (congrArg Sigma.fst h)
         simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaAssoc, hac, hp]
-    · simp [reindex_matrix, Matrix.submatrix_apply, Equiv.sigmaAssoc]
+    · simp only [amalgamate_matrix_frozen]
+      simp only [Equiv.sigmaAssoc, extendFrozen_matrix_frozen, amalgamate_matrix_frozen]
+      exact congrFun ((e c d).injective.extend_comp (g c).injective
+        (fun l ↦ (Bs c d).matrix (Sum.inr l) j) 0).symm f
   · funext ⟨a, b, k⟩
     simp [reindex_symmetrizer, Equiv.sigmaAssoc]
 
