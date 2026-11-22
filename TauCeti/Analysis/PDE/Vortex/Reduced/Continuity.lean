@@ -95,6 +95,9 @@ not treated here.
   `TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`: under the hypotheses of
   `TauCeti.Vortex.tendsto_reducedMinimizer`, the smooth reduced solutions and their derivatives
   converge uniformly on the plane.
+* `TauCeti.Vortex.exists_abs_reducedSolution_le`,
+  `TauCeti.Vortex.exists_norm_fderiv_reducedSolution_le`: the smooth reduced solution and its
+  derivative are bounded on the plane.
 * `TauCeti.Vortex.continuous_ofFun_reducedSolution`,
   `TauCeti.Vortex.continuous_ofFun_fderiv_reducedSolution`: the smooth reduced solutions and their
   derivatives are continuous, for the topology of uniform convergence on the plane, on families of
@@ -812,6 +815,34 @@ private theorem laplacian_reducedSolution_bounds {P : Polynomial ℂ} (hm : 0 < 
       (Real.exp_pos _).le
   have he0 := mul_nonneg (Real.exp_pos (2 * reducedSolution P z)).le h0
   constructor <;> linarith [hG z]
+
+/-- The reduced solution is bounded, since it is continuous and vanishes at infinity. -/
+theorem exists_abs_reducedSolution_le (P : Polynomial ℂ) :
+    ∃ B, ∀ z, |reducedSolution P z| ≤ B := by
+  let f : ZeroAtInftyContinuousMap ℂ ℝ :=
+    ⟨⟨reducedSolution P, (contDiff_reducedSolution P).continuous⟩,
+      tendsto_reducedSolution_cocompact P⟩
+  exact ⟨‖f.toBCF‖, fun z ↦ f.toBCF.norm_coe_le_norm z⟩
+
+/-- The derivative of the reduced solution is bounded, by the interior gradient estimate. -/
+theorem exists_norm_fderiv_reducedSolution_le (P : Polynomial ℂ) :
+    ∃ D, ∀ z, ‖fderiv ℝ (reducedSolution P) z‖ ≤ D := by
+  rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
+  · exact ⟨0, fun z ↦ by simp [reducedSolution_eq_zero_of_natDegree_eq_zero hm]⟩
+  obtain ⟨B, hB⟩ := exists_abs_reducedSolution_le P
+  obtain ⟨G, hG⟩ := P.exists_forall_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_le
+  have hG' (z : ℂ) : 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ 2 * G := by
+    rw [mul_div_assoc]
+    exact mul_le_mul_of_nonneg_left (hG z) zero_le_two
+  have hG0 : 0 ≤ G := le_trans (by positivity) (hG 0)
+  have hK (y : ℂ) : |Δ (reducedSolution P) y| ≤ Real.exp (2 * B) / 8 + 2 * G + 1 / 8 := by
+    obtain ⟨h₁, h₂⟩ := laplacian_reducedSolution_bounds hm hB hG' y
+    rw [abs_le]
+    constructor <;> linarith [Real.exp_pos (2 * B)]
+  refine ⟨8 * B / 1 + 340 * (Real.exp (2 * B) / 8 + 2 * G + 1 / 8) * 1, fun z ↦ ?_⟩
+  exact norm_fderiv_le_of_abs_le_of_abs_laplacian_le
+    (fun y _ ↦ ((contDiff_reducedSolution P).of_le (by simp)).contDiffAt) one_pos
+    (fun y _ ↦ hB y) fun y _ ↦ hK y
 
 /-- The `L²` distance of two reduced solutions is at most the `H¹` distance of the minimizers. -/
 private theorem integral_sub_sq_le_norm_sub_sq {P Q : Polynomial ℂ} (hP : 0 < P.natDegree)
