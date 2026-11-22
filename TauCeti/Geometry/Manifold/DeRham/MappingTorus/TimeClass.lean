@@ -198,10 +198,8 @@ theorem eq_timeClass_iff
     a = timeClass φ ↔ ∀ c, (TopCat.of (SmoothMappingTorus φ)).singularKronecker ℤ 1 a c =
       intTimePeriodHom φ c := by
   refine ⟨fun h c ↦ h ▸ singularKronecker_timeClass φ c, fun h ↦ ?_⟩
-  apply ((TopCat.of (SmoothMappingTorus φ)).singularKroneckerEquivOne
-    (𝟙_ (ModuleCat.{0} ℤ))).injective
-  rw [TopCat.singularKroneckerEquivOne_apply, TopCat.singularKroneckerEquivOne_apply]
-  exact ModuleCat.hom_ext (LinearMap.ext fun c ↦ (h c).trans (singularKronecker_timeClass φ c).symm)
+  exact TopCat.singularCohomology_one_ext _ fun c ↦
+    (h c).trans (singularKronecker_timeClass φ c).symm
 
 /-- **`[dt]` is the pullback of the angular class**: the integral class of `dt` is the pullback
 `proj^* θ` of the angular class `θ = [ds]` of `ℝ / ℤ` along the projection `Y_φ → ℝ / ℤ`, since
@@ -346,11 +344,11 @@ theorem exists_eq_zsmul_timeClass
     ∃ n : ℤ, a = n • timeClass φ := by
   obtain ⟨g, hg⟩ := exists_singularKronecker_timeClass_eq_one φ
   set f := ((TopCat.of (SmoothMappingTorus φ)).singularKronecker ℤ 1 a).hom
-  refine ⟨f g, ?_⟩
-  apply ((TopCat.of (SmoothMappingTorus φ)).singularKroneckerEquivOne
-    (𝟙_ (ModuleCat.{0} ℤ))).injective
-  rw [TopCat.singularKroneckerEquivOne_apply, TopCat.singularKroneckerEquivOne_apply, map_zsmul]
-  refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
+  refine ⟨f g, TopCat.singularCohomology_one_ext _ fun c ↦ ?_⟩
+  rw [map_zsmul]
+  -- The pairings are evaluated through `ConcreteCategory.hom`, which is `ModuleCat.Hom.hom`.
+  change f c = ModuleCat.Hom.hom
+    ((f g : ℤ) • (TopCat.of (SmoothMappingTorus φ)).singularKronecker ℤ 1 (timeClass φ)) c
   -- The pairing with `a` kills the torsion class `c - N(c) • g`, so it sends `c` to `N(c) f(g)`.
   have htor : IsOfFinAddOrder (c - intTimePeriodHom φ c • g) :=
     isOfFinAddOrder_sub_intTimePeriodHom_zsmul φ hdet
