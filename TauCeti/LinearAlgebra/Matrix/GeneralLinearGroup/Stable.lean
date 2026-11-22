@@ -653,6 +653,15 @@ theorem stabilizeGL_map {m n : ℕ} (h : m ≤ n) (f : A →+* B) (u : GL (Fin m
   ext i j
   simp [coe_stabilizeGL_apply, apply_dite f, apply_ite f, Matrix.one_apply]
 
+/-- Stabilization of determinant-one matrices commutes with applying a ring homomorphism to the
+entries. -/
+theorem stabilizeSL_map {R S : Type*} [CommRing R] [CommRing S] {m n : ℕ} (h : m ≤ n)
+    (f : R →+* S) (g : SpecialLinearGroup (Fin m) R) :
+    stabilizeSL h (SpecialLinearGroup.map f g) =
+      SpecialLinearGroup.map f (stabilizeSL h g) := by
+  ext i j
+  simp [coe_stabilizeSL_apply, apply_dite f, apply_ite f, Matrix.one_apply]
+
 namespace AlgebraicK1
 
 /-- The homomorphism of algebraic `K₁` induced by a ring homomorphism `f : A →+* B`, applying `f`

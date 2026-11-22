@@ -145,21 +145,45 @@ section GeneralLinear
 variable {X A 𝕜 n : Type*} [TopologicalSpace X] [Ring A] [Ring 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [Fintype n] [DecidableEq n]
 
+private def evalPointwiseRingHom (f : A →+* C(X, 𝕜)) (x : X) : A →+* 𝕜 :=
+  ((Pi.evalRingHom (fun _ : X ↦ 𝕜) x).comp ContinuousMap.coeFnRingHom).comp f
+
+private theorem evalPointwiseRingHom_apply (f : A →+* C(X, 𝕜)) (x : X) (a : A) :
+    evalPointwiseRingHom f x a = f a x := by
+  simp [evalPointwiseRingHom]
+
+private theorem coe_unitsMap_evalPointwiseRingHom (f : A →+* C(X, 𝕜)) (g : GL n A) (x : X)
+    (i j : n) :
+    ((Units.map ((evalPointwiseRingHom f x).mapMatrix (m := n)).toMonoidHom g : GL n 𝕜) :
+        Matrix n n 𝕜) i j =
+      f ((g : Matrix n n A) i j) x := by
+  simp only [Units.coe_map, toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mapMatrix_apply,
+    Matrix.map_apply, evalPointwiseRingHom_apply]
+
+private theorem coe_inv_unitsMap_evalPointwiseRingHom (f : A →+* C(X, 𝕜)) (g : GL n A)
+    (x : X) (i j : n) :
+    (↑(Units.map ((evalPointwiseRingHom f x).mapMatrix (m := n)).toMonoidHom g)⁻¹ :
+        Matrix n n 𝕜) i j =
+      f ((↑g⁻¹ : Matrix n n A) i j) x := by
+  simp only [Units.coe_map_inv, toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mapMatrix_apply,
+    Matrix.map_apply, evalPointwiseRingHom_apply]
+
 /-- The group homomorphism `GL n A →* C(X, GL n 𝕜)` induced by a ring homomorphism
 `f : A →+* C(X, 𝕜)`, applying `f · x` entrywise at each point `x : X`. -/
 def mapGLContinuousMap (f : A →+* C(X, 𝕜)) : GL n A →* C(X, GL n 𝕜) where
   toFun g :=
     { toFun := fun x ↦
-        Units.map
-          ((((Pi.evalRingHom (fun _ : X ↦ 𝕜) x).comp ContinuousMap.coeFnRingHom).comp f).mapMatrix
-            (m := n)).toMonoidHom g
+        Units.map ((evalPointwiseRingHom f x).mapMatrix (m := n)).toMonoidHom g
       continuous_toFun := by
         rw [Units.continuous_iff]
         constructor
         · refine continuous_matrix fun i j ↦ ?_
-          simpa using (f ((g : Matrix n n A) i j)).continuous
+          dsimp only [Function.comp_def]
+          simp_rw [coe_unitsMap_evalPointwiseRingHom]
+          exact (f ((g : Matrix n n A) i j)).continuous
         · refine continuous_matrix fun i j ↦ ?_
-          simpa using (f ((↑g⁻¹ : Matrix n n A) i j)).continuous }
+          simp_rw [coe_inv_unitsMap_evalPointwiseRingHom]
+          exact (f ((↑g⁻¹ : Matrix n n A) i j)).continuous }
   map_one' := by
     ext x i j
     simp
@@ -180,7 +204,7 @@ theorem mapGLContinuousMap_apply (f : A →+* C(X, 𝕜)) (g : GL n A) (x : X) :
 @[simp]
 theorem coe_mapGLContinuousMap_apply (f : A →+* C(X, 𝕜)) (g : GL n A) (x : X) (i j : n) :
     ((f.mapGLContinuousMap g x : GL n 𝕜) : Matrix n n 𝕜) i j = f ((g : Matrix n n A) i j) x :=
-  (rfl)
+  coe_unitsMap_evalPointwiseRingHom f g x i j
 
 /-- Evaluating `f.mapGLContinuousMap` on a transvection evaluates its parameter along `f`. -/
 @[simp]
@@ -224,6 +248,14 @@ section SpecialLinear
 variable {X R 𝕜 n : Type*} [TopologicalSpace X] [CommRing R] [CommRing 𝕜]
   [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] [Fintype n] [DecidableEq n]
 
+private theorem coe_specialLinearGroup_map_evalAlgHom (f : R →+* C(X, 𝕜))
+    (g : SpecialLinearGroup n R) (x : X) (i j : n) :
+    (SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g :
+        Matrix n n 𝕜) i j =
+      f ((g : Matrix n n R) i j) x := by
+  rw [SpecialLinearGroup.map_apply_coe, Matrix.map_apply, RingHom.comp_apply,
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ContinuousMap.evalAlgHom_apply]
+
 /-- The group homomorphism `SL n R →* C(X, SL n 𝕜)` induced by a ring homomorphism
 `f : R →+* C(X, 𝕜)`, applying `f · x` entrywise at each point `x : X`. -/
 def mapSLContinuousMap (f : R →+* C(X, 𝕜)) :
@@ -234,8 +266,10 @@ def mapSLContinuousMap (f : R →+* C(X, 𝕜)) :
       continuous_toFun := by
         have hcont : Continuous fun x : X ↦
             (SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g :
-              Matrix n n 𝕜) :=
-          continuous_matrix fun i j ↦ (f ((g : Matrix n n R) i j)).continuous
+              Matrix n n 𝕜) := by
+          refine continuous_matrix fun i j ↦ ?_
+          simp_rw [coe_specialLinearGroup_map_evalAlgHom]
+          exact (f ((g : Matrix n n R) i j)).continuous
         exact hcont.subtype_mk fun x ↦
           (SpecialLinearGroup.map ((ContinuousMap.evalAlgHom 𝕜 𝕜 x).toRingHom.comp f) g).property }
   map_one' := by
@@ -257,7 +291,7 @@ theorem mapSLContinuousMap_apply (f : R →+* C(X, 𝕜)) (g : SpecialLinearGrou
 theorem coe_mapSLContinuousMap_apply (f : R →+* C(X, 𝕜)) (g : SpecialLinearGroup n R)
     (x : X) (i j : n) :
     (f.mapSLContinuousMap g x : Matrix n n 𝕜) i j = f ((g : Matrix n n R) i j) x :=
-  (rfl)
+  coe_specialLinearGroup_map_evalAlgHom f g x i j
 
 /-- Viewing `f.mapSLContinuousMap g x` in `GL n 𝕜` agrees with
 `f.mapGLContinuousMap (toGL g) x`. -/
