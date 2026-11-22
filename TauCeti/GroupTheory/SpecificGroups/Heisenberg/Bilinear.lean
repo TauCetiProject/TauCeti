@@ -8,7 +8,9 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
-public import TauCeti.LinearAlgebra.BilinearForm.Basic
+import Mathlib.Algebra.Group.Equiv.TypeTags
+import TauCeti.Algebra.Group.TypeTags.Hom
+import TauCeti.LinearAlgebra.BilinearForm.Polarization
 
 /-!
 # The Heisenberg group of a bilinear form
@@ -23,7 +25,8 @@ extensions and the half-alternating convention of the metaplectic cover. In gene
 coefficient group supplied by `TauCeti.FactorSet.inl` is only a subgroup of the centre; it is the
 whole centre exactly when the skew part `B - Bᵀ` has trivial left radical, i.e. is left-separating.
 For the half-form extension `E_{ω/2}` of an alternating `ω` with `2` invertible, the skew part is
-`ω` itself, so a nondegenerate alternating form gives the familiar centre criterion.
+`ω` itself (`LinearMap.IsAlt.half_skew_eq_self`), so the centre is `inl.range` exactly when `ω` is
+left-separating, and in particular when `ω` is nondegenerate.
 
 The extension of `B : W × W → C` is the `TauCeti.FactorSet.Extension` of
 `B.bilinearFactorSet`: its elements are pairs `(t, w)` with the coefficient written first, its
@@ -36,9 +39,9 @@ supplied by `TauCeti.FactorSet.inl` is central (`TauCeti.FactorSet.inl_range_le_
 commutator of two elements measures the failure of `B` to be symmetric
 (`TauCeti.HeisenbergGroup.Bilinear.bilinearExtension_commutatorElement_eq_inl`). Halving an
 alternating form is what makes the commutator recover the form itself
-(`LinearMap.IsAlt.halfForm_commutatorElement_eq_inl`), and for a nondegenerate alternating `ω`
-the centre of the extension of `ω / 2` is exactly the copy of the coefficient group
-(`LinearMap.IsAlt.halfForm_center`).
+(`LinearMap.IsAlt.halfForm_commutatorElement_eq_inl`), and the centre of the extension of `ω / 2`
+is the copy of the coefficient group exactly when `ω` is left-separating
+(`LinearMap.IsAlt.halfForm_center_eq_range_iff`), in particular when `ω` is nondegenerate.
 
 ## Main definitions
 
@@ -57,10 +60,11 @@ the centre of the extension of `ω / 2` is exactly the copy of the coefficient g
 * `TauCeti.HeisenbergGroup.Bilinear.bilinearExtension_center_eq_range_iff`: the coefficient
   subgroup is the whole centre exactly when `B - Bᵀ` is left-separating.
 * `LinearMap.IsAlt.halfForm_commutatorElement_eq_inl` and
-  `LinearMap.IsAlt.halfForm_center`: the two forms the half-alternating convention needs.
+  `LinearMap.IsAlt.halfForm_center_eq_range_iff`: the commutator and centre formulas for the
+  half-alternating convention.
 * `LinearMap.BilinMap.polarization_cocycle` (in
-  `TauCeti.LinearAlgebra.BilinearForm.Basic`): the quadratic correction `q x = B x x / 2` converts
-  the cocycle of `B` into the cocycle of `ω / 2` for `ω = B - Bᵀ`.
+  `TauCeti.LinearAlgebra.BilinearForm.Polarization`): the quadratic correction `q x = B x x / 2`
+  converts the cocycle of `B` into the cocycle of `ω / 2` for `ω = B - Bᵀ`.
 
 ## References
 
@@ -80,12 +84,10 @@ namespace LinearMap.BilinMap
 variable {R : Type*} [CommSemiring R] {W C : Type*} [AddCommGroup W] [Module R W]
   [AddCommGroup C] [Module R C]
 
-/-- **The factor set of a bilinear map**, specializing `TauCeti.FactorSet.ofBimultiplicative` to the
-case where the bimultiplicative map is a bilinear map written multiplicatively on both the bilinear
-space and the coefficient group. The bimultiplicative map itself is obtained by composing the
-canonical conversions `LinearMap.toAddMonoidHom'` and `B.toAddMonoidHom` with the type-tag
-equivalence `AddMonoidHom.toMultiplicativeLeftAddEquiv`, then `AddMonoidHom.toMultiplicativeLeft`;
-no preservation-of-one/multiplication proof is repeated by hand. The associated extension
+/-- **The factor set of a bilinear map**, specializing `TauCeti.FactorSet.ofBimultiplicative`: for
+`B : W × W → C`, it is the normalized factor set `(w, v) ↦ ofAdd (B w.toAdd v.toAdd)` (additively
+`(w, v) ↦ B w v`) on `Multiplicative W` with coefficients in `Multiplicative C` and the trivial
+action of `Multiplicative W` on `Multiplicative C`. The associated extension
 `TauCeti.FactorSet.Extension (B.bilinearFactorSet)` is the **Heisenberg group of `B`**; its law is
 `(t, w) * (s, v) = (t + s + B w v, w + v)`. -/
 def bilinearFactorSet (B : LinearMap.BilinMap R W C) :
@@ -94,7 +96,8 @@ def bilinearFactorSet (B : LinearMap.BilinMap R W C) :
     (AddMonoidHom.toMultiplicativeLeft
       ((AddMonoidHom.toMultiplicativeLeftAddEquiv (M := W)
           (N := Multiplicative C)).toAddMonoidHom.comp
-        ((LinearMap.toAddMonoidHom'.comp B.toAddMonoidHom) : W →+ W →+ C)))
+        ((LinearMap.toAddMonoidHom'.comp B.toAddMonoidHom).compr₂
+          (AddEquiv.additiveMultiplicative C).symm.toAddMonoidHom)))
     TauCeti.trivialMulDistribMulAction_smul
 
 /-- The value of the factor set of `B` at two multiplicatively written space coordinates is the
@@ -104,7 +107,11 @@ value of the factor set is `B` itself. -/
 theorem bilinearFactorSet_apply (B : LinearMap.BilinMap R W C) (w v : Multiplicative W) :
     B.bilinearFactorSet (w, v) = ofAdd (B w.toAdd v.toAdd) := by
   rw [bilinearFactorSet, FactorSet.ofBimultiplicative_apply]
-  rfl
+  simp only [AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply,
+    AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddMonoidHom.toMultiplicativeLeftAddEquiv_apply, toMul_ofMul,
+    AddMonoidHom.compr₂_apply, LinearMap.toAddMonoidHom'_apply, LinearMap.toAddMonoidHom_coe,
+    AddEquiv.additiveMultiplicative_symm_apply]
 
 end LinearMap.BilinMap
 
@@ -138,8 +145,8 @@ theorem bilinearExtension_commutatorElement_eq_inl :
     ⁅p, q⁆ = FactorSet.inl (bilinearFactorSet B)
       (ofAdd (B p.right.toAdd q.right.toAdd - B q.right.toAdd p.right.toAdd)) := by
   rw [FactorSet.commutatorElement_eq_inl (bilinearFactorSet B)
-      TauCeti.trivialMulDistribMulAction_smul, bilinearFactorSet_apply, bilinearFactorSet_apply,
-    ← ofAdd_sub]
+    TauCeti.trivialMulDistribMulAction_smul]
+  simp only [bilinearFactorSet_apply, ← ofAdd_sub]
 
 /-- **The centre criterion for the Heisenberg group of `B`**: `(t, w)` is central exactly when the
 two maps `B w ·` and `B · w` agree. No nondegeneracy is assumed, so a degenerate `B` can have a
@@ -157,8 +164,8 @@ theorem bilinearExtension_mem_center_iff :
     refine commutatorElement_eq_one_iff_mul_comm.mp ?_
     rw [bilinearExtension_commutatorElement_eq_inl]
     have h0 : B q.right.toAdd p.right.toAdd - B p.right.toAdd q.right.toAdd = 0 := by
-      rw [hv q.right.toAdd]; abel
-    simp [h0, map_one]
+      rw [hv q.right.toAdd, sub_self]
+    simp only [h0, ofAdd_zero, map_one]
 
 end
 
@@ -170,64 +177,27 @@ theorem bilinearExtension_center_eq_range_iff {B : LinearMap.BilinMap R W C} :
     Subgroup.center ((bilinearFactorSet B).Extension) =
       (FactorSet.inl (bilinearFactorSet B)).range ↔
       (B - B.flip).SeparatingLeft := by
-  have h_le :
-      (FactorSet.inl (bilinearFactorSet B)).range ≤
-        Subgroup.center ((bilinearFactorSet B).Extension) := by
-    -- With the trivial action, the coefficient copy is central (library lemma, no re-derivation).
-    apply FactorSet.inl_range_le_center
-    intro g a
-    exact trivialMulDistribMulAction_smul g a
+  have hmem_range (p : (bilinearFactorSet B).Extension) :
+      p ∈ (FactorSet.inl (bilinearFactorSet B)).range ↔ p.right.toAdd = 0 := by
+    rw [FactorSet.range_inl_eq_ker_rightHom, MonoidHom.mem_ker, FactorSet.rightHom_apply,
+      ← toAdd_eq_zero]
+  have hmem_center (p : (bilinearFactorSet B).Extension) :
+      p ∈ Subgroup.center ((bilinearFactorSet B).Extension) ↔
+        ∀ v : W, (B - B.flip) p.right.toAdd v = 0 := by
+    simp only [bilinearExtension_mem_center_iff, LinearMap.sub_apply, LinearMap.flip_apply,
+      sub_eq_zero]
   constructor
-  · -- (→) centre = coefficient range implies the skew part is left-separating.
-    intro h_eq w hw
-    have hcentral : ⟨1, ofAdd w⟩ ∈ Subgroup.center ((bilinearFactorSet B).Extension) := by
-      rw [bilinearExtension_mem_center_iff (B := B)]
-      intro v
-      have : B w v = B v w := by
-        have := hw v
-        simp only [LinearMap.sub_apply, LinearMap.flip_apply] at this
-        exact sub_eq_zero.mp this
-      exact this
+  · intro h_eq w hw
+    have hcentral : ⟨1, ofAdd w⟩ ∈ Subgroup.center ((bilinearFactorSet B).Extension) :=
+      (hmem_center ⟨1, ofAdd w⟩).mpr (by simpa only [toAdd_ofAdd] using hw)
     have hin_range : ⟨1, ofAdd w⟩ ∈ (FactorSet.inl (bilinearFactorSet B)).range := by
-      have h₁ : Subgroup.center _ = (FactorSet.inl _).range := h_eq
-      rw [h₁] at hcentral
+      rw [← h_eq]
       exact hcentral
-    -- membership in the range is exactly `p.right = 1`, i.e. `p.right.toAdd = 0`.
-    simp only [FactorSet.range_inl_eq_ker_rightHom, MonoidHom.mem_ker,
-      FactorSet.rightHom_apply] at hin_range
-    have h₁ : ofAdd w = (1 : Multiplicative W) := by simpa using hin_range
-    have h₂ : w = 0 := by
-      have h₃ : (ofAdd w : Multiplicative W).toAdd = (1 : Multiplicative W).toAdd := by rw [h₁]
-      simp [toAdd_ofAdd, toAdd_one] at h₃ ⊢
-      simp_all
-    exact h₂
-  · -- (←) left-separating skew part implies centre = coefficient range.
-    intro h_sep
-    -- centre ⊆ range: a central element with space coordinate w has `(B - Bᵀ) w = 0`, so `w = 0`.
-    have h_subset :
-      Subgroup.center ((bilinearFactorSet B).Extension) ≤
-        (FactorSet.inl (bilinearFactorSet B)).range := by
-      intro p hp
-      have hmem : ∀ v : W, B p.right.toAdd v = B v p.right.toAdd := by
-        rw [bilinearExtension_mem_center_iff] at hp
-        exact hp
-      have h0 : ∀ v : W, ((B - B.flip) p.right.toAdd) v = 0 := by
-        intro v
-        have := hmem v
-        simp only [LinearMap.sub_apply, LinearMap.flip_apply] at this ⊢
-        simp_all
-      have hw : p.right.toAdd = 0 := h_sep p.right.toAdd h0
-      simp only [FactorSet.range_inl_eq_ker_rightHom, MonoidHom.mem_ker,
-        FactorSet.rightHom_apply, Multiplicative.ext_iff] at hp ⊢
-      simp_all
-    -- range ⊆ centre is `h_le`, so centre = range.
-    have h_eq :
-      Subgroup.center ((bilinearFactorSet B).Extension) =
-        (FactorSet.inl (bilinearFactorSet B)).range := by
-      apply le_antisymm
-      · exact h_subset
-      · exact h_le
-    exact h_eq
+    simpa only [toAdd_ofAdd] using (hmem_range ⟨1, ofAdd w⟩).mp hin_range
+  · intro h_sep
+    refine le_antisymm ?_ (FactorSet.inl_range_le_center _ TauCeti.trivialMulDistribMulAction_smul)
+    intro p hp
+    exact (hmem_range p).mpr (h_sep p.right.toAdd ((hmem_center p).mp hp))
 
 end TauCeti.HeisenbergGroup.Bilinear
 
@@ -238,15 +208,6 @@ open LinearMap.BilinMap TauCeti
 variable {R : Type*} [CommSemiring R] {W C : Type*} [AddCommGroup W] [Module R W]
   [AddCommGroup C] [Module R C] [Invertible (2 : R)] {ω : LinearMap.BilinMap R W C}
 
-/- **Half of an alternating form has itself as its skew part**: `⅟2 • ω - (⅟2 • ω)ᵀ = ω`.
-This is the calculation shared by the half-form commutator and centre statements. -/
-lemma half_skew_eq_self (hω : ω.IsAlt) :
-    ⅟(2 : R) • ω - (⅟(2 : R) • ω).flip = ω := by
-  ext w v
-  simp only [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.flip_apply]
-  rw [← hω.neg w v]
-  simp only [smul_neg, sub_eq_add_neg, neg_neg, ← add_smul, invOf_two_add_invOf_two, one_smul]
-
 /-- **The commutator in the half-alternating Heisenberg group**: for an alternating `ω` with `2`
 invertible, the commutator of two elements of the extension of `ω / 2` is the central element
 `inl (ω w v)`. The halving is what makes the commutator recover `ω` itself, rather than twice `ω`.
@@ -256,28 +217,20 @@ theorem halfForm_commutatorElement_eq_inl (hω : ω.IsAlt)
     ⁅p, q⁆ = FactorSet.inl (bilinearFactorSet (⅟(2 : R) • ω))
       (ofAdd (ω p.right.toAdd q.right.toAdd)) := by
   rw [HeisenbergGroup.Bilinear.bilinearExtension_commutatorElement_eq_inl]
-  congr 1
-  have key : (⅟(2 : R) • ω) p.right.toAdd q.right.toAdd
-      - (⅟(2 : R) • ω) q.right.toAdd p.right.toAdd = ω p.right.toAdd q.right.toAdd := by
-    calc
-      (⅟(2 : R) • ω) p.right.toAdd q.right.toAdd - (⅟(2 : R) • ω) q.right.toAdd p.right.toAdd
-        = ((⅟(2 : R) • ω) - (⅟(2 : R) • ω).flip) p.right.toAdd q.right.toAdd := by
-          simp [LinearMap.sub_apply, LinearMap.flip_apply]
-      _ = ω p.right.toAdd q.right.toAdd := by
-        rw [half_skew_eq_self hω]
+  have key := LinearMap.congr_fun (LinearMap.congr_fun hω.half_skew_eq_self p.right.toAdd)
+    q.right.toAdd
+  simp only [LinearMap.sub_apply, LinearMap.flip_apply] at key
   rw [key]
 
-/-- **The centre of the Heisenberg group**: for a nondegenerate alternating `ω` with `2`
-invertible, the centre of the extension of `ω / 2` is exactly the range of
-`TauCeti.FactorSet.inl`, the copy of the coefficient group. This follows from the general criterion
-`TauCeti.HeisenbergGroup.Bilinear.bilinearExtension_center_eq_range_iff`, because the skew part of
-`ω / 2` is `ω` itself. -/
-theorem halfForm_center (hω : ω.IsAlt) (hωn : ω.Nondegenerate) :
+/-- **The centre of the half-alternating Heisenberg group**: for an alternating `ω` with `2`
+invertible, the centre of the extension of `ω / 2` is the range of `TauCeti.FactorSet.inl`
+exactly when `ω` is left-separating. In particular, for a nondegenerate alternating `ω`
+(`hωn : ω.Nondegenerate`), the reverse implication applied to `hωn.1` gives the standard centre
+equality. -/
+theorem halfForm_center_eq_range_iff (hω : ω.IsAlt) :
     Subgroup.center ((bilinearFactorSet (⅟(2 : R) • ω)).Extension) =
-      (FactorSet.inl (bilinearFactorSet (⅟(2 : R) • ω))).range := by
-  rw [HeisenbergGroup.Bilinear.bilinearExtension_center_eq_range_iff]
-  have heq : ⅟(2 : R) • ω - (⅟(2 : R) • ω).flip = ω := half_skew_eq_self hω
-  rw [heq]
-  exact hωn.1
+      (FactorSet.inl (bilinearFactorSet (⅟(2 : R) • ω))).range ↔
+      ω.SeparatingLeft := by
+  rw [HeisenbergGroup.Bilinear.bilinearExtension_center_eq_range_iff, hω.half_skew_eq_self]
 
 end LinearMap.IsAlt
