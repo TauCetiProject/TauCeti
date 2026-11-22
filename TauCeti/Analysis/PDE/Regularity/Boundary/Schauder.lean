@@ -607,17 +607,14 @@ private theorem mul_sq_rpow_mul_add_le {c₁ d R Q₀ K P M V Kp γ α : ℝ} (h
         gcongr
     _ = (2 + 2 * c₁ * M ^ 2 * Kp) * V := by ring
 
-/-- **The size of the normal part of the average gradient.** If `p` is at most the average of `g`
-over a set `S` with `|S| ≥ ω (2d)^{n+1} / 2`, and `∫_S ‖g‖² ≤ C V (2d / (R / 2))^{n+1}`, then
-`R^{n+1} ‖p‖² ≤ 2^{n+2} C V / ω`, here written `w₁`. -/
-private theorem rpow_mul_norm_sq_le {S : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    {p : EuclideanSpace ℝ (Fin (n + 1))} {d R C V w₁ : ℝ} (hd : 0 < d) (hR : 0 < R) (hw₁ : 0 < w₁)
-    (hS : volume S ≠ ⊤) (hg : MemLp g 2 (volume.restrict S))
-    (hSd : 2⁻¹ * (w₁ * (2 * d) ^ (n + 1)) ≤ volume.real S)
-    (hint : ∫ y in S, ‖g y‖ ^ 2 ≤ C * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1))
-    (hp : ‖p‖ ≤ ‖⨍ y in S, g y‖) :
+/-- **The size of the normal part of the average gradient.** If
+`‖p‖ ≤ √(C V (2d / (R / 2))^{n+1} / (ω (2d)^{n+1} / 2))`, the bound that
+`norm_setAverage_closedBall_restrict_le_sqrt` gives for an average over a half-ball of radius `2d`,
+then `R^{n+1} ‖p‖² ≤ 2^{n+2} C V / ω`, here written `w₁`. -/
+private theorem rpow_mul_norm_sq_le {p : EuclideanSpace ℝ (Fin (n + 1))} {d R C V w₁ : ℝ}
+    (hd : 0 < d) (hR : 0 < R) (hw₁ : 0 < w₁) (hC : 0 ≤ C) (hV : 0 ≤ V)
+    (hp : ‖p‖ ≤ √(C * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1) / (2⁻¹ * ((2 * d) ^ (n + 1) * w₁)))) :
     R ^ ((n : ℝ) + 1) * ‖p‖ ^ 2 ≤ 2 ^ (n + 2) * C * V / w₁ := by
-  have hm := (measureReal_mul_sq_norm_setAverage_le hS hg).trans hint
   have hpow : (2 * d / (R / 2)) ^ ((n : ℝ) + 1) = (2 * d) ^ (n + 1) * 2 ^ (n + 1) /
       R ^ ((n : ℝ) + 1) := by
     rw [Real.div_rpow (by positivity) (by positivity), Real.div_rpow hR.le zero_le_two,
@@ -625,27 +622,22 @@ private theorem rpow_mul_norm_sq_le {S : Set (EuclideanSpace ℝ (Fin (n + 1)))}
       Real.rpow_natCast, Real.rpow_natCast]
     field_simp
   have hRpos : 0 < R ^ ((n : ℝ) + 1) := Real.rpow_pos_of_pos hR _
-  have hp2 : ‖p‖ ^ 2 ≤ ‖⨍ y in S, g y‖ ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hp 2
-  have hkey : 2⁻¹ * (w₁ * (2 * d) ^ (n + 1)) * ‖p‖ ^ 2 ≤
-      C * V * ((2 * d) ^ (n + 1) * 2 ^ (n + 1) / R ^ ((n : ℝ) + 1)) := by
-    rw [← hpow]
-    exact (mul_le_mul hSd hp2 (sq_nonneg _) measureReal_nonneg).trans hm
-  have hd' : 0 < (2 * d) ^ (n + 1) := by positivity
-  rw [le_div_iff₀ hw₁]
-  rw [mul_div_assoc', le_div_iff₀ hRpos] at hkey
-  have : (2 * d) ^ (n + 1) * (2⁻¹ * (w₁ * (R ^ ((n : ℝ) + 1) * ‖p‖ ^ 2))) ≤
-      (2 * d) ^ (n + 1) * (2 ^ (n + 1) * C * V) := by
-    nlinarith
-  have h' := le_of_mul_le_mul_left this hd'
-  rw [pow_succ 2 (n + 1)]
-  nlinarith
+  have heq : C * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1) / (2⁻¹ * ((2 * d) ^ (n + 1) * w₁)) =
+      2 ^ (n + 2) * C * V / w₁ / R ^ ((n : ℝ) + 1) := by
+    rw [hpow, pow_succ 2 (n + 1)]
+    field_simp
+  rw [heq] at hp
+  rw [mul_comm, ← le_div_iff₀ hRpos]
+  calc ‖p‖ ^ 2 ≤ √(2 ^ (n + 2) * C * V / w₁ / R ^ ((n : ℝ) + 1)) ^ 2 :=
+        pow_le_pow_left₀ (norm_nonneg _) hp 2
+    _ = 2 ^ (n + 2) * C * V / w₁ / R ^ ((n : ℝ) + 1) := Real.sq_sqrt (by positivity)
 
 
 /-- **Small balls near the boundary.** Let `x` be at distance `d` from the boundary point `z`, with
-`B(x, d) ⊆ B(z, 2d) ∩ H`, and let `p` be at most the average of `g` over `S = B(z, 2d) ∩ H`, with
-`|S| ≥ ω (2d)^{n+1} / 2`. Suppose that the boundary decay at `z` bounds `∫_S ‖g - p‖²` and
-`∫_S ‖g‖²`, and that the interior decay holds on `B(x, d)` for the excess over `p`, with the shifted
-data of `mul_sq_rpow_mul_add_le`, at the radius `t ≥ 0`. Then some constant vector `c` has
+`B(x, d) ⊆ B(z, 2d) ∩ H`, and let `S = B(z, 2d) ∩ H`. Suppose that the boundary decay at `z` bounds
+`∫_S ‖g - p‖²`, that `‖p‖` obeys the bound of `rpow_mul_norm_sq_le`, and that the interior decay
+holds on `B(x, d)` for the excess over `p`, with the shifted data of `mul_sq_rpow_mul_add_le`, at
+the radius `t ≥ 0`. Then some constant vector `c` has
 `∫_{B(x, t)} ‖g - c‖² ≤ C' V (t / R)^{n+1+2γ}`, with `C'` depending only on the constants. -/
 private theorem exists_setIntegral_ball_sub_sq_le_of_near {p : EuclideanSpace ℝ (Fin (n + 1))}
     {R C Ci V d c₁ Q₀ Ka M w₁ γ α t : ℝ} (hd : 0 < d) (hR : 0 < R) (hw₁ : 0 < w₁) (ht : 0 ≤ t)
@@ -653,11 +645,9 @@ private theorem exists_setIntegral_ball_sub_sq_le_of_near {p : EuclideanSpace �
     (hV : c₁ * (R ^ (((n : ℝ) + 1) / 2 + γ) * Q₀) ^ 2 ≤ V)
     (hsub : ball x d ⊆ ball z (2 * d) ∩ H) (hSfin : volume (ball z (2 * d) ∩ H) ≠ ⊤)
     (hgS : MemLp g 2 (volume.restrict (ball z (2 * d) ∩ H)))
-    (hSd : 2⁻¹ * (w₁ * (2 * d) ^ (n + 1)) ≤ volume.real (ball z (2 * d) ∩ H))
-    (hp : ‖p‖ ≤ ‖⨍ y in ball z (2 * d) ∩ H, g y‖)
+    (hp : ‖p‖ ≤ √(C * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1) / (2⁻¹ * ((2 * d) ^ (n + 1) * w₁))))
     (hBz : ∫ y in ball z (2 * d) ∩ H, ‖g y - p‖ ^ 2 ≤
       C * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1 + 2 * γ))
-    (hMz : ∫ y in ball z (2 * d) ∩ H, ‖g y‖ ^ 2 ≤ C * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1))
     (hI : ∀ W, c₁ * (d ^ (((n : ℝ) + 1) / 2 + γ) * (Q₀ + R ^ (α - γ) * Ka * ‖p‖)) ^ 2 ≤ W →
       ∫ y in ball x d, ‖g y - p‖ ^ 2 ≤ W → ∃ c : EuclideanSpace ℝ (Fin (n + 1)),
         ∫ y in ball x t, ‖g y - c‖ ^ 2 ≤ Ci * W * (t / d) ^ ((n : ℝ) + 1 + 2 * γ)) :
@@ -669,7 +659,7 @@ private theorem exists_setIntegral_ball_sub_sq_le_of_near {p : EuclideanSpace �
   have hV0 : 0 ≤ V := (mul_nonneg hc₁ (sq_nonneg _)).trans hV
   have hdR : 0 < d / R := div_pos hd hR
   have hPV : R ^ ((n : ℝ) + 1) * ‖p‖ ^ 2 ≤ 2 ^ (n + 2) * C / w₁ * V :=
-    (rpow_mul_norm_sq_le hd hR hw₁ hSfin hgS hSd hMz hp).trans_eq (by ring)
+    (rpow_mul_norm_sq_le hd hR hw₁ hC hV0 hp).trans_eq (by ring)
   have hdata := mul_sq_rpow_mul_add_le hd hR hc₁ hKa hKaM hPV hV
   have h4 : (2 * d / (R / 2)) ^ e = 4 ^ e * (d / R) ^ e := by
     rw [show 2 * d / (R / 2) = 4 * (d / R) by field_simp; ring,
@@ -888,19 +878,22 @@ private theorem exists_setIntegral_norm_gradient_sub_sq_le {α : ℝ≥0} {γ : 
     have hsub : ball x d ⊆ ball z (2 * d) ∩ H := subset_inter (fun y hy => by
       rw [mem_ball] at hy ⊢
       linarith [dist_triangle y x z]) hballH
-    have hSd : 2⁻¹ * (w₁ * (2 * d) ^ (n + 1)) ≤ volume.real (ball z (2 * d) ∩ H) := by
-      have h := volume.mul_measureReal_ball_le_measureReal_ball_inter
-        (volume.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner
-          (r := 2 * d) hν hzc.ge)
-      rw [Measure.addHaar_real_ball_of_pos volume z (by positivity), finrank_euclideanSpace_fin,
-        NNReal.coe_inv, NNReal.coe_ofNat, show {y | c₀ < ⟪y, ν⟫_ℝ} = (H : Set _) from
-          Set.ext fun y => (hH y).symm] at h
-      exact (le_of_eq (by ring)).trans h
+    have hgS : MemLp (W1p.gradient u) 2 (volume.restrict (ball z (2 * d) ∩ H)) :=
+      (Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono
+        (inter_subset_left.trans (hS.trans hU)) le_rfl)
+    -- The average over the half-ball `B(z, 2d) ∩ H` is bounded by the `L²` bound `hM2`.
+    have havg := norm_setAverage_closedBall_restrict_le_sqrt (μ := volume)
+      (Ω := (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) (z := z) (c := 2⁻¹) (by norm_num)
+      (by positivity : (0 : ℝ) < 2 * d) (by
+        rw [show (H : Set _) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
+        exact volume.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner
+          hν hzc.ge) subset_rfl measure_ball_inter_ne_top hgS hM2
+    rw [volume.restrict_restrict_closedBall_eq_restrict_ball_inter,
+      Measure.addHaar_real_ball_of_pos volume z (by positivity), finrank_euclideanSpace_fin,
+      NNReal.coe_inv, NNReal.coe_ofNat] at havg
     obtain ⟨c, hc⟩ := exists_setIntegral_ball_sub_sq_le_of_near hd hR hw₁ ht.le hc₁
-      Ka.coe_nonneg hM hC hVc hsub measure_ball_inter_ne_top
-      ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono
-        (inter_subset_left.trans (hS.trans hU)) le_rfl)) hSd
-      (norm_inner_div_norm_sq_smul_self_le _ _) hB2 hM2
+      Ka.coe_nonneg hM hC hVc hsub measure_ball_inter_ne_top hgS
+      ((norm_inner_div_norm_sq_smul_self_le _ _).trans havg) hB2
       fun W hW hΦ => hIx x _ d W hxd hd (by linarith) hW hΦ t ht htd
     exact ⟨ball x t, c, inter_subset_left, htx,
       hc.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (by linarith) hV0) htR)⟩

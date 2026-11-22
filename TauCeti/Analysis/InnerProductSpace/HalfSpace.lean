@@ -87,23 +87,29 @@ theorem closedBall_subset_setOf_lt_inner {E : Type*} [SeminormedAddCommGroup E]
   rw [Set.mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff] at hy'
   exact hy'
 
+/-- An open ball `Metric.ball w r` lies in the open half-space `{y | c < ⟪y, ν⟫}` whenever
+`ν ≠ 0` and `c + r * ‖ν‖ ≤ ⟪w, ν⟫`. -/
+theorem ball_subset_setOf_lt_inner {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {w ν : E} {r c : ℝ} (hν : ν ≠ 0) (h : c + r * ‖ν‖ ≤ ⟪w, ν⟫_ℝ) :
+    Metric.ball w r ⊆ {y | c < ⟪y, ν⟫_ℝ} := by
+  intro y hy
+  have hyw : ‖w - y‖ < r := by rwa [Metric.mem_ball, dist_eq_norm, norm_sub_rev] at hy
+  have hcs : ⟪w - y, ν⟫_ℝ < r * ‖ν‖ :=
+    (real_inner_le_norm (w - y) ν).trans_lt
+      (mul_lt_mul_of_pos_right hyw (norm_pos_iff.2 hν))
+  rw [inner_sub_left] at hcs
+  exact Set.mem_ofPred.2 (by linarith)
+
 /-- For a point `x` of the closed half-space `{z | c ≤ ⟪z, ν⟫}`, `ν ≠ 0`, the open ball of radius
 `ρ` about `x + (ρ / ‖ν‖) ν` lies in the open half-space `{z | c < ⟪z, ν⟫}`. -/
 theorem ball_add_smul_subset_setOf_lt_inner {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] {ν x : E} {c ρ : ℝ} (hν : ν ≠ 0) (hx : c ≤ ⟪x, ν⟫_ℝ) :
-    Metric.ball (x + (ρ / ‖ν‖) • ν) ρ ⊆ {z | c < ⟪z, ν⟫_ℝ} := by
-  intro z hz
-  have hν0 : 0 < ‖ν‖ := norm_pos_iff.2 hν
-  set w := z - (x + (ρ / ‖ν‖) • ν)
-  have hw : ‖w‖ * ‖ν‖ < ρ * ‖ν‖ :=
-    mul_lt_mul_of_pos_right (by rw [← dist_eq_norm]; exact hz) hν0
-  have hc : ⟪(ρ / ‖ν‖) • ν, ν⟫_ℝ = ρ * ‖ν‖ := by
-    rw [real_inner_smul_left, real_inner_self_eq_norm_sq]
-    field_simp
-  have hz' : ⟪z, ν⟫_ℝ = ⟪x, ν⟫_ℝ + ⟪(ρ / ‖ν‖) • ν, ν⟫_ℝ + ⟪w, ν⟫_ℝ := by
-    simp only [w, inner_sub_left, inner_add_left]
-    ring
-  exact Set.mem_ofPred.2 (by linarith [neg_le_of_abs_le (abs_real_inner_le_norm w ν)])
+    Metric.ball (x + (ρ / ‖ν‖) • ν) ρ ⊆ {z | c < ⟪z, ν⟫_ℝ} :=
+  ball_subset_setOf_lt_inner hν (by
+    have h : ρ / ‖ν‖ * ‖ν‖ ^ 2 = ρ * ‖ν‖ := by
+      rw [pow_two, ← mul_assoc, div_mul_cancel₀ _ (norm_ne_zero_iff.2 hν)]
+    rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, h]
+    linarith)
 
 /-- The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` onto the hyperplane orthogonal to `ν` is orthogonal
 to `ν`. It is the explicit form of `z - (ℝ ∙ ν).starProjection z`, by
@@ -149,19 +155,6 @@ theorem real_inner_sub_div_norm_sq_smul_self_eq {E : Type*} [NormedAddCommGroup 
     ⟪x - ((⟪x, ν⟫_ℝ - c) / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = c := by
   rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
     div_mul_cancel₀ _ (pow_pos (norm_pos_iff.2 hν) 2).ne', sub_sub_cancel]
-
-/-- An open ball `Metric.ball w r` lies in the open half-space `{y | c < ⟪y, ν⟫}` whenever
-`ν ≠ 0` and `c + r * ‖ν‖ ≤ ⟪w, ν⟫`. -/
-theorem ball_subset_setOf_lt_inner {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    {w ν : E} {r c : ℝ} (hν : ν ≠ 0) (h : c + r * ‖ν‖ ≤ ⟪w, ν⟫_ℝ) :
-    Metric.ball w r ⊆ {y | c < ⟪y, ν⟫_ℝ} := by
-  intro y hy
-  have hyw : ‖w - y‖ < r := by rwa [Metric.mem_ball, dist_eq_norm, norm_sub_rev] at hy
-  have hcs : ⟪w - y, ν⟫_ℝ < r * ‖ν‖ :=
-    (real_inner_le_norm (w - y) ν).trans_lt
-      (mul_lt_mul_of_pos_right hyw (norm_pos_iff.2 hν))
-  rw [inner_sub_left] at hcs
-  exact Set.mem_ofPred.2 (by linarith)
 
 /-- Every point `w` of the hyperplane `{y | ⟪y, ν⟫ = c}` lies at distance at least
 `(⟪x, ν⟫ - c) / ‖ν‖` from `x`. -/
