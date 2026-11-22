@@ -646,9 +646,13 @@ end LocalSymbol
 symbol on `U`. -/
 theorem Symbol.IsSmoothing.restrict {U : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
     [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
-    {a : Symbol n V W m} (ha : a.IsSmoothing) : (a.restrict U).IsSmoothing :=
-  LocalSymbol.IsSmoothing.restrict (a := Symbol.restrictTopEquiv a)
-    (fun m' => (Symbol.isSmoothing_iff.1 ha m').elim fun b hb => ⟨Symbol.restrictTopEquiv b, hb⟩)
-    le_top
+    {a : Symbol n V W m} (ha : a.IsSmoothing) : (a.restrict U).IsSmoothing := by
+  simpa only [Symbol.restrict_restrictTopEquiv] using
+    LocalSymbol.IsSmoothing.restrict (a := Symbol.restrictTopEquiv a)
+      (fun m' => (Symbol.isSmoothing_iff.1 ha m').elim fun b hb =>
+        ⟨Symbol.restrictTopEquiv b, by
+          rw [Symbol.coefficient_restrictTopEquiv_apply, Symbol.coefficient_restrictTopEquiv_apply,
+            hb]⟩)
+      (le_top : U ≤ ⊤)
 
 end TauCeti
