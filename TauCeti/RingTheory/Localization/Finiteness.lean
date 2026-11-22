@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Finiteness
-public import TauCeti.RingTheory.Localization.AtPrime
+public import TauCeti.RingTheory.Localization.AtPrime.FractionRing
 
 /-!
 # Finiteness and clearing denominators under localization
