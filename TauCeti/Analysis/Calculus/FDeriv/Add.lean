@@ -51,13 +51,14 @@ theorem exists_differentiableOn_norm_sum_sub_lt {𝕜 E F ι : Type*}
   rw [Finset.sum_const, nsmul_eq_mul, mul_div_left_comm]
   exact mul_lt_of_lt_one_right hε ((div_lt_one hpos).mpr (lt_add_one (s.card : ℝ)))
 
-/-- The derivative of a point `u + μ • (u' - u)` of the segment between two differentiable maps. -/
+/-- The derivative at `z` of a point `u + μ • (u' - u)` of the segment between two maps
+differentiable at `z`. -/
 theorem fderiv_add_smul_sub_apply {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {u u' : E → F} (hu : Differentiable 𝕜 u) (hu' : Differentiable 𝕜 u') (μ : 𝕜) (z v : E) :
+    {u u' : E → F} {z : E} (hu : DifferentiableAt 𝕜 u z) (hu' : DifferentiableAt 𝕜 u' z) (μ : 𝕜)
+    (v : E) :
     fderiv 𝕜 (u + μ • (u' - u)) z v = fderiv 𝕜 u z v + μ • (fderiv 𝕜 u' z v - fderiv 𝕜 u z v) := by
-  rw [((hu z).hasFDerivAt.add (((hu' z).hasFDerivAt.sub (hu z).hasFDerivAt).const_smul
-    μ)).fderiv]
+  rw [(hu.hasFDerivAt.add ((hu'.hasFDerivAt.sub hu.hasFDerivAt).const_smul μ)).fderiv]
   simp
 
 end TauCeti

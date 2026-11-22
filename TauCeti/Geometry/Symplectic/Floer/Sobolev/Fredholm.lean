@@ -192,7 +192,7 @@ private theorem exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt (ω : Sympl
     obtain ⟨h₁, h₂, h₃, h₄⟩ := hB z.1 z.2 hz
     refine ⟨⟨Subtype.prop _, hz⟩, mem_closedBall_zero_iff.2 ?_, mem_closedBall_zero_iff.2 ?_⟩
     · simpa using hnorm hμ h₁ h₂
-    · simpa [fderiv_add_smul_sub_apply hu hu'] using hnorm hμ h₃ h₄
+    · simpa [fderiv_add_smul_sub_apply (hu _) (hu' _)] using hnorm hμ h₃ h₄
   obtain ⟨δ, hδ, hΦ⟩ := Metric.uniformContinuousOn_iff.1 (hK.uniformContinuousOn_of_continuous
     (continuous_jetCoeffAt ω (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs
       hKt).continuousOn) r hr
@@ -212,7 +212,7 @@ private theorem exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt (ω : Sympl
       _ < δ / (2 * B + 1) * (2 * B + 1) := by gcongr; exact hμ.2
       _ = δ := div_mul_cancel₀ _ (by positivity)
   simp only [Prod.dist_eq, dist_self, Pi.add_apply, Pi.smul_apply, Pi.sub_apply,
-    fderiv_add_smul_sub_apply hu hu']
+    fderiv_add_smul_sub_apply (hu _) (hu' _)]
   exact max_lt hδ (max_lt (hsmall h₁ h₂) (hsmall h₃ h₄))
 
 /-- **Continuity of the coefficient fields along a segment of maps in `L^∞`.** Under the

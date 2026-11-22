@@ -1133,7 +1133,7 @@ theorem tendstoUniformlyOn_add_smul_sub_and_sliceDefect [ProperSpace V]
   refine (((hd.fun_add ((hd'.fun_sub hd).const_smul μ)).fun_sub
     (isCompact_Icc.tendstoUniformlyOn_comp_prodMk_of_continuous hX hx.continuousOn hv)).congr
       (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
-  · simp [sliceDefect_def, fderiv_add_smul_sub_apply hu hu']
+  · simp [sliceDefect_def, fderiv_add_smul_sub_apply (hu _) (hu' _)]
   · simp
 
 end Segment
