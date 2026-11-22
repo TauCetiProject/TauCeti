@@ -80,8 +80,14 @@ independent of `s`) are the case `R = 0`, and continuation cylinders are treated
   compatible `J_t(x(t))` the operator is conjugate to this model by a unitary frame along the
   orbit; that conjugation is not treated here.
 
-The finiteness of the cokernel, hence the Fredholm property and the index, needs the same estimate
-for the formal adjoint of `D_u`.
+The Fredholm property and the index of `D_u` depend only on the asymptotic orbits, and in a unitary
+trivialization `D_u` is Fredholm of index zero when both ends are the same nondegenerate orbit;
+both are proved by deformation in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm`
+(`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`,
+`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt`,
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt`). For distinct
+ends `x₋ ≠ x₊`, the finiteness of the cokernel, hence the Fredholm property and the index, needs
+the same estimate for the formal adjoint of `D_u`.
 
 ## References
 
