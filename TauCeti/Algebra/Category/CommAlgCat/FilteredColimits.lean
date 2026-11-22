@@ -6,20 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.AlgCat.FilteredColimits
-public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
+public import TauCeti.Algebra.Category.CommAlgCat.Basic
 
 /-!
 # Filtered colimits in commutative algebras
 
-The forgetful functor from commutative algebras over a base ring to commutative rings preserves
+The forgetful functor from commutative algebras over a base ring to commutative rings creates
 filtered colimits: a colimit of the underlying diagram of rings carries the algebra structure
 induced by any one of its legs, and is then a colimit of commutative algebras. This follows the
 construction of filtered colimits of algebras in Mathlib
-(`Mathlib/Algebra/Category/AlgCat/FilteredColimits.lean`). Consequently the forgetful functor
-from commutative algebras to types preserves small filtered colimits, and, since the forgetful
-functor from algebras to types reflects filtered colimits, so does the forgetful functor from
-commutative algebras to algebras.
+(`Mathlib/Algebra/Category/AlgCat/FilteredColimits.lean`). Hence commutative algebras in any
+universe have the filtered colimits that commutative rings have, and the forgetful functor to
+commutative rings preserves small filtered colimits. Consequently the forgetful functor from
+commutative algebras to types preserves small filtered colimits, and, since the forgetful functor
+from algebras to types reflects filtered colimits, so does the forgetful functor from commutative
+algebras to algebras.
 -/
 
 public section
@@ -30,12 +32,11 @@ universe v u
 
 namespace CommAlgCat
 
-variable {Base : Type u} [CommRing Base]
+variable {Base : Type u} [CommRing Base] {J : Type*} [Category* J]
 
 section
 
-variable {J : Type*} [Category* J] {F : J ⥤ CommAlgCat.{v} Base}
-  {c : Cocone (F ⋙ forget₂ _ CommRingCat.{v})}
+variable {F : J ⥤ CommAlgCat.{v} Base} {c : Cocone (F ⋙ forget₂ _ CommRingCat.{v})}
 
 /-- (Implementation): The algebra structure on the cocone point of the underlying diagram of
 rings induced by the `j`-th leg. When `J` is filtered, every choice of `j` gives the same
@@ -78,16 +79,24 @@ private def isColimitCoconeOfIsFiltered (hc : IsColimit c) (j : J) :
 
 end
 
-/-- The forgetful functor from commutative algebras to commutative rings preserves filtered
+/-- The forgetful functor from commutative algebras to commutative rings creates filtered
+colimits. -/
+@[no_expose] noncomputable instance forget₂CommRingCat_createsColimitsOfShape [IsFiltered J] :
+    CreatesColimitsOfShape J (forget₂ (CommAlgCat.{v} Base) CommRingCat.{v}) where
+  CreatesColimit := createsColimitOfReflectsIso fun _ hc ↦
+    -- The lifted cocone is mapped back to `c` itself.
+    ⟨⟨coconeOfIsFiltered IsFiltered.nonempty.some, Iso.refl _⟩, isColimitCoconeOfIsFiltered hc _⟩
+
+/-- Commutative algebras have the filtered colimits that commutative rings have. -/
+noncomputable instance hasColimitsOfShape_of_isFiltered [IsFiltered J]
+    [HasColimitsOfShape J CommRingCat.{v}] : HasColimitsOfShape J (CommAlgCat.{v} Base) :=
+  hasColimitsOfShape_of_hasColimitsOfShape_createsColimitsOfShape (forget₂ _ CommRingCat.{v})
+
+/-- The forgetful functor from commutative algebras to commutative rings preserves small filtered
 colimits. -/
 noncomputable instance forget₂CommRingCat_preservesFilteredColimits :
     PreservesFilteredColimits (forget₂ (CommAlgCat.{v} Base) CommRingCat.{v}) where
-  preserves_filtered_colimits J _ _ := ⟨fun {F} ↦
-    have hc := colimit.isColimit (F ⋙ forget₂ _ CommRingCat.{v})
-    preservesColimit_of_preserves_colimit_cocone
-      (isColimitCoconeOfIsFiltered hc (IsFiltered.nonempty (C := J)).some)
-      -- The lifted cocone is mapped back to `c` itself.
-      (hc.ofIsoColimit (Cocone.ext (Iso.refl _)))⟩
+  preserves_filtered_colimits _ := inferInstance
 
 /-- The forgetful functor from commutative algebras to types preserves small filtered colimits. -/
 noncomputable instance forget_preservesFilteredColimits :
