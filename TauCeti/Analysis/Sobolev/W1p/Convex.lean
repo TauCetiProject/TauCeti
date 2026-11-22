@@ -35,10 +35,11 @@ Local continuity comes from the interior Morrey theorem. Mollification on a neig
 each segment gives the sharp constant, without assuming that smooth functions are dense in
 the `W^{1,∞}` norm.
 
-A `W^{1,p}` function of any exponent whose value is essentially bounded on an open convex subset
-`V` of its domain, with weak gradient essentially bounded by `M` there, restricts to a `W^{1,∞}`
-class on `V`, so its precise representative is `M`-Lipschitz on `V`
-(`TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`). This is how a weak
+A `W^{1,p}` function of any exponent whose weak gradient is essentially bounded by `M` on an open
+convex subset `V` of its domain has a precise representative that is `M`-Lipschitz on `V`
+(`TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`), with no bound on the
+value. Its mollifications are `M`-Lipschitz near each segment of `V` and converge to it almost
+everywhere, so on `V` it agrees almost everywhere with an `M`-Lipschitz function. This is how a weak
 solution of an elliptic equation whose gradient is known to be locally bounded, for instance
 Hölder continuous, is shown to be locally Lipschitz. If the precise representatives of the value
 and of the gradient are bounded on the `ρ`-thickening of a set `S`, the precise representative of
@@ -68,7 +69,7 @@ then gives the Hölder bound.
   representative is locally Lipschitz, with classical directional derivatives a.e. equal to the
   components of the weak gradient.
 * `TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`: the Lipschitz
-  bound for `W^{1,p}` functions with essentially bounded value and gradient on a convex subset.
+  bound for `W^{1,p}` functions with essentially bounded gradient on an open convex subset.
 * `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`: Hölder bounds
   on thickenings from pointwise bounds on the value and the gradient.
 * `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_convex`: Morrey's inequality on a
@@ -98,47 +99,71 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
 
-private theorem W1p.memLp_indicator_preciseRepresentative (u : W1p μ Ω ∞) :
-    MemLp ((Ω : Set E).indicator (preciseRepresentative μ (W1p.value u))) ∞ μ := by
+private theorem W1p.memLp_indicator_preciseRepresentative {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (u : W1p μ Ω p) :
+    MemLp ((Ω : Set E).indicator (preciseRepresentative μ (W1p.value u))) p μ := by
   apply (memLp_indicator_iff_restrict Ω.isOpen.measurableSet.nullMeasurableSet).2
   exact (Lp.memLp (W1p.value u)).ae_eq (W1p.ae_eq_preciseRepresentative u)
 
-private theorem W1p.norm_fderiv_convolution_indicator_le (u : W1p μ Ω ∞)
+private theorem W1p.norm_fderiv_convolution_indicator_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (u : W1p μ Ω p) {M : ℝ≥0} (hM : ∀ᵐ x ∂μ.restrict Ω, ‖W1p.gradient u x‖ ≤ M)
     (ρ : ContDiffBump (0 : E)) {z : E}
     (hz : ∀ y ∈ tsupport (ρ.normed μ), z - y ∈ Ω) :
     ‖fderiv ℝ (ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ]
-      ((Ω : Set E).indicator (preciseRepresentative μ (W1p.value u)))) z‖ ≤
-        ‖W1p.gradient u‖ := by
+      ((Ω : Set E).indicator (preciseRepresentative μ (W1p.value u)))) z‖ ≤ M := by
   let f := (Ω : Set E).indicator (preciseRepresentative μ (W1p.value u))
   let G := (Ω : Set E).indicator (fun x ↦ innerSL ℝ (W1p.gradient u x))
   have hf := W1p.memLp_indicator_preciseRepresentative u
-  have hG₀ : MemLp (fun x ↦ innerSL ℝ (W1p.gradient u x)) ∞ (μ.restrict Ω) :=
+  have hG₀ : MemLp (fun x ↦ innerSL ℝ (W1p.gradient u x)) p (μ.restrict Ω) :=
     (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).comp_memLp' (Lp.memLp (W1p.gradient u))
-  have hG : MemLp G ∞ μ := by
+  have hG : MemLp G p μ := by
     exact (memLp_indicator_iff_restrict (f := fun x ↦ innerSL ℝ (W1p.gradient u x))
       Ω.isOpen.measurableSet.nullMeasurableSet).2 hG₀
   have hweak : HasWeakFDerivOn μ Ω f G := by
     exact ((W1p.hasWeakFDerivOn u).congr_ae (W1p.ae_eq_preciseRepresentative u)).indicator
-  have hbound : ∀ᵐ x ∂μ, ‖G x‖ ≤ ‖W1p.gradient u‖ := by
-    have h := (ae_restrict_iff' Ω.isOpen.measurableSet).1
-      (Lp.ae_norm_le_norm_top (W1p.gradient u))
-    filter_upwards [h] with x hx
+  have hbound : ∀ᵐ x ∂μ, ‖G x‖ ≤ M := by
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hM] with x hx
     by_cases hxΩ : x ∈ Ω
     · simpa [G, hxΩ] using hx hxΩ
     · simp [G, hxΩ]
-  rw [← convolution_flip, hweak.fderiv_convolution_right (hf.locallyIntegrable le_top)
-    (hG.locallyIntegrable le_top) _ ρ.contDiff_normed ρ.hasCompactSupport_normed z hz,
+  rw [← convolution_flip, hweak.fderiv_convolution_right (hf.locallyIntegrable Fact.out)
+    (hG.locallyIntegrable Fact.out) _ ρ.contDiff_normed ρ.hasCompactSupport_normed z hz,
     convolution_flip, convolution_def]
   calc
     ‖∫ y, ContinuousLinearMap.lsmul ℝ ℝ (ρ.normed μ y) (G (z - y)) ∂μ‖ ≤
-        ∫ y, ρ.normed μ y * ‖W1p.gradient u‖ ∂μ := by
+        ∫ y, ρ.normed μ y * M ∂μ := by
       apply norm_integral_le_of_norm_le (ρ.integrable_normed.mul_const _)
       filter_upwards [((μ.measurePreserving_sub_left z).quasiMeasurePreserving.ae hbound)]
         with y hy
       simpa only [ContinuousLinearMap.lsmul_apply, norm_smul,
         Real.norm_of_nonneg (ρ.nonneg_normed y)] using
           mul_le_mul_of_nonneg_left hy (ρ.nonneg_normed y)
-    _ = ‖W1p.gradient u‖ := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+    _ = M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+
+/-- Mollifying with a bump of radius at most `δ`, where the `δ`-thickening of the segment `[x, y]`
+lies in the domain, gives values at `x` and `y` at distance at most `M * dist x y`, where `M` bounds
+the weak gradient almost everywhere. -/
+private theorem W1p.dist_convolution_indicator_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : W1p μ Ω p)
+    {M : ℝ≥0} (hM : ∀ᵐ x ∂μ.restrict Ω, ‖W1p.gradient u x‖ ≤ M) {x y : E} {δ : ℝ}
+    (hδ : cthickening δ (segment ℝ x y) ⊆ Ω) (ρ : ContDiffBump (0 : E)) (hρ : ρ.rOut ≤ δ) :
+    dist ((ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ]
+        ((Ω : Set E).indicator (preciseRepresentative μ (W1p.value u)))) x)
+      ((ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ]
+        ((Ω : Set E).indicator (preciseRepresentative μ (W1p.value u)))) y) ≤ M * dist x y := by
+  rw [dist_eq_norm, dist_eq_norm]
+  apply (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
+  · intro z _
+    exact (ρ.hasCompactSupport_normed.contDiff_convolution_left (ContinuousLinearMap.lsmul ℝ ℝ)
+      ρ.contDiff_normed ((W1p.memLp_indicator_preciseRepresentative u).locallyIntegrable Fact.out)
+        (n := ⊤)).differentiable (by simp) z
+  · intro z hz
+    refine W1p.norm_fderiv_convolution_indicator_le u hM ρ fun v hv ↦ hδ ?_
+    apply mem_cthickening_of_dist_le _ z δ _ hz
+    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+    rw [ρ.tsupport_normed_eq, mem_closedBall, dist_zero_right] at hv
+    exact hv.trans hρ
+  · exact right_mem_segment ℝ x y
+  · exact left_mem_segment ℝ x y
 
 /-- On any convex subset of its open domain the precise representative of a `W^{1,∞}`
 class is Lipschitz, with the sharp bound given by the essential supremum of its weak gradient. -/
@@ -152,13 +177,6 @@ theorem W1p.lipschitzOnWith_preciseRepresentative_of_convex (u : W1p μ Ω ∞)
   obtain ⟨δ, hδ, hδΩ⟩ := (isCompact_segment ℝ x y).exists_cthickening_subset_open Ω.isOpen
     ((hs.segment_subset hx hy).trans hsΩ)
   let ρ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hδ
-  have hsupp (n : ℕ) (z : E) (hz : z ∈ segment ℝ x y)
-      (w : E) (hw : w ∈ tsupport ((ρ n).normed μ)) : z - w ∈ Ω := by
-    apply hδΩ
-    apply mem_cthickening_of_dist_le _ z δ _ hz
-    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-    rw [(ρ n).tsupport_normed_eq, mem_closedBall, dist_zero_right] at hw
-    exact hw.trans (ContDiffBump.rOut_shrinking_le hδ n)
   have hlim (z : E) (hz : z ∈ Ω) :
       Tendsto (fun n ↦ ((ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f) z)
         atTop (𝓝 (preciseRepresentative μ (W1p.value u) z)) := by
@@ -170,22 +188,9 @@ theorem W1p.lipschitzOnWith_preciseRepresentative_of_convex (u : W1p μ Ω ∞)
       ContDiffBump.convolution_tendsto_right (ContDiffBump.tendsto_rOut_shrinking hδ)
         (Eventually.of_forall fun _ ↦ hf.aestronglyMeasurable)
         (hcont.tendsto.comp tendsto_snd) (tendsto_const_nhds (x := z))
-  have hle (n : ℕ) :
-      dist (((ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f) x)
-        (((ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f) y) ≤
-          ‖W1p.gradient u‖ * dist x y := by
-    rw [dist_eq_norm, dist_eq_norm]
-    apply (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
-    · intro z _
-      exact ((ρ n).hasCompactSupport_normed.contDiff_convolution_left
-        (ContinuousLinearMap.lsmul ℝ ℝ) (ρ n).contDiff_normed
-        (hf.locallyIntegrable le_top) (n := ⊤)).differentiable (by simp) z
-    · intro z hz
-      exact W1p.norm_fderiv_convolution_indicator_le u (ρ n) (hsupp n z hz)
-    · exact right_mem_segment ℝ x y
-    · exact left_mem_segment ℝ x y
-  exact le_of_tendsto ((hlim x (hsΩ hx)).dist (hlim y (hsΩ hy)))
-    (Eventually.of_forall hle)
+  exact le_of_tendsto ((hlim x (hsΩ hx)).dist (hlim y (hsΩ hy))) (Eventually.of_forall fun n ↦
+    W1p.dist_convolution_indicator_le u (Lp.ae_norm_le_norm_top _) hδΩ (ρ n)
+      (ContDiffBump.rOut_shrinking_le hδ n))
 
 /-- On the whole space the precise representative of a `W^{1,∞}` class is globally
 Lipschitz with constant at most the essential supremum of its weak gradient. -/
@@ -194,40 +199,57 @@ theorem W1p.lipschitzWith_preciseRepresentative (u : W1p μ ⊤ ∞) :
   rw [← lipschitzOnWith_univ]
   exact W1p.lipschitzOnWith_preciseRepresentative_of_convex u convex_univ subset_rfl
 
-/-- A Sobolev function whose value is essentially bounded on an open convex subset `V` of its
-domain, and whose weak gradient is essentially bounded by `M` there, has a precise representative
-that is `M`-Lipschitz on `V`. The exponent `p` of the Sobolev space is arbitrary. -/
+/-- A Sobolev function whose weak gradient is essentially bounded by `M` on an open convex subset
+`V` of its domain has a precise representative that is `M`-Lipschitz on `V`. The exponent `p` of
+the Sobolev space is arbitrary, and the value need not be bounded on `V`.
+
+The mollifications of the restriction to `V` are `M`-Lipschitz along each segment of `V` once
+their radius is below the distance from the segment to the complement of `V`, and they converge
+almost everywhere. So the precise representative is `M`-Lipschitz on a subset of `V` of full
+measure, agrees almost everywhere on `V` with an `M`-Lipschitz extension, and hence equals it on
+`V`. -/
 theorem W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (u : W1p μ Ω p) {V : Opens E} (hV : V ≤ Ω) (hVc : Convex ℝ (V : Set E))
-    (hval : MemLp (W1p.value u) ∞ (μ.restrict V)) {M : NNReal}
-    (hM : ∀ᵐ x ∂μ.restrict V, ‖W1p.gradient u x‖ ≤ M) :
+    {M : NNReal} (hM : ∀ᵐ x ∂μ.restrict V, ‖W1p.gradient u x‖ ≤ M) :
     LipschitzOnWith M (preciseRepresentative μ (W1p.value u)) V := by
-  -- The restriction of `u` to `V` is a `W^{1,∞}(V)` class.
-  have hv : MemLp (W1p.value (W1p.restrictL hV u)) ∞ (μ.restrict V) :=
-    hval.ae_eq (W1p.value_restrictL_ae hV u).symm
-  have hgM : ∀ᵐ x ∂μ.restrict V, ‖W1p.gradient (W1p.restrictL hV u) x‖ ≤ M := by
+  -- Pass to the restriction `w` of `u` to `V`, and mollify it.
+  set w := W1p.restrictL hV u
+  have hgM : ∀ᵐ x ∂μ.restrict V, ‖W1p.gradient w x‖ ≤ M := by
     filter_upwards [W1p.gradient_restrictL_ae hV u, hM] with x hx hxM
     rwa [hx]
-  have hg : MemLp (W1p.gradient (W1p.restrictL hV u)) ∞ (μ.restrict V) :=
-    memLp_top_of_bound (Lp.aestronglyMeasurable _) M hgM
-  let w : W1p μ V ∞ := W1p.mk (hv.toLp _) (hg.toLp _)
-    (((W1p.hasWeakFDerivOn (W1p.restrictL hV u)).congr_ae hv.coeFn_toLp.symm).congr_ae_deriv
-      (hg.coeFn_toLp.symm.mono fun x hx => congrArg (fun v => innerSL ℝ v) hx))
-  have hw : ‖W1p.gradient w‖₊ ≤ M := by
-    rw [← NNReal.coe_le_coe, coe_nnNorm, W1p.gradient_mk]
-    refine Lp.norm_le_of_ae_bound_top M.coe_nonneg ?_
-    filter_upwards [hg.coeFn_toLp, hgM] with x hx hxM
-    rwa [hx]
-  -- On `V` the precise representatives of `w` and `u` agree.
-  have heq : ∀ x ∈ (V : Set E), preciseRepresentative μ (W1p.value w) x =
-      preciseRepresentative μ (W1p.value u) x := fun x hx => by
-    refine preciseRepresentative_congr_ae_nhds (V.isOpen.mem_nhds hx) ?_
-    rw [W1p.value_mk]
-    exact hv.coeFn_toLp.trans (W1p.value_restrictL_ae hV u)
-  have hL := (W1p.lipschitzOnWith_preciseRepresentative_of_convex w hVc le_rfl).weaken hw
+  let f := (V : Set E).indicator (preciseRepresentative μ (W1p.value w))
+  have hf : LocallyIntegrable f μ :=
+    (W1p.memLp_indicator_preciseRepresentative w).locallyIntegrable Fact.out
+  let ρ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking one_pos
+  have hρ := ContDiffBump.tendsto_rOut_shrinking (c := (0 : E)) one_pos
+  let T := {x | Tendsto (fun n ↦ ((ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f) x)
+    atTop (𝓝 (f x))}
+  have hT : ∀ᵐ x ∂μ, x ∈ T :=
+    ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable (K := 2) hρ
+      (Eventually.of_forall fun n ↦ (ContDiffBump.rOut_shrinking_eq_two_mul_rIn one_pos n).le) hf
+  -- At the points of `V` where the mollifications converge, `f` is `M`-Lipschitz.
+  have hfT : LipschitzOnWith M f ((V : Set E) ∩ T) := by
+    refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
+    obtain ⟨δ, hδ, hδV⟩ := (isCompact_segment ℝ x y).exists_cthickening_subset_open V.isOpen
+      (hVc.segment_subset hx.1 hy.1)
+    have hle : ∀ᶠ n in atTop,
+        dist (((ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f) x)
+          (((ρ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] f) y) ≤ M * dist x y := by
+      filter_upwards [hρ.eventually (ge_mem_nhds hδ)] with n hn
+      exact W1p.dist_convolution_indicator_le w hgM hδV (ρ n) hn
+    exact le_of_tendsto (hx.2.dist hy.2) hle
+  -- So `u` agrees almost everywhere on `V` with an `M`-Lipschitz function `g`.
+  obtain ⟨g, hg, hfg⟩ := hfT.extend_real
+  have hug : W1p.value u =ᵐ[μ.restrict V] g := by
+    filter_upwards [W1p.value_restrictL_ae hV u, W1p.ae_eq_preciseRepresentative w,
+      ae_restrict_mem V.isOpen.measurableSet, ae_restrict_of_ae hT] with x h₁ h₂ hxV hxT
+    rw [← h₁, h₂, ← hfg ⟨hxV, hxT⟩]
+    exact (indicator_of_mem hxV _).symm
+  have heq := eqOn_preciseRepresentative_of_continuousOn V.isOpen
+    ((W1p.hasWeakFDerivOn u).locallyIntegrableOn.mono_set hV) hug hg.continuous.continuousOn
   intro x hx y hy
-  rw [← heq x hx, ← heq y hy]
-  exact hL hx hy
+  rw [heq hx, heq hy]
+  exact hg.edist_le_mul x y
 
 /-- A Sobolev function whose precise representative and the precise representative of whose
 gradient are bounded on the `ρ`-thickening of a set `S` inside its domain has a precise
@@ -241,8 +263,6 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ
     {γ : NNReal} (hγ : γ ≤ 1) :
     ∃ C : NNReal,
       HolderOnWith C γ (preciseRepresentative μ (W1p.value u)) (thickening (ρ / 2) S) := by
-  have hval : (W1p.value u : E → ℝ) =ᵐ[μ.restrict Ω] preciseRepresentative μ (W1p.value u) :=
-    W1p.ae_eq_preciseRepresentative u
   have hgrad : (W1p.gradient u : E → E) =ᵐ[μ.restrict Ω]
       preciseRepresentative μ (W1p.gradient u) :=
     ae_eq_restrict_preciseRepresentative Ω.isOpen
@@ -250,7 +270,7 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ
   have hball : ∀ x ∈ thickening (ρ / 2) S, ball x (ρ / 2) ⊆ thickening ρ S := fun x hx =>
     (ball_subset_thickening hx _).trans
       ((thickening_thickening_subset _ _ _).trans (by rw [add_halves]))
-  -- On each such ball, the value and the gradient of `u` are essentially bounded.
+  -- On each such ball, the gradient of `u` is essentially bounded.
   have hlip : ∀ x ∈ thickening (ρ / 2) S,
       LipschitzOnWith M₂.toNNReal (preciseRepresentative μ (W1p.value u)) (ball x (ρ / 2)) := by
     intro x hx
@@ -260,15 +280,10 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ
     have hae : ae (μ.restrict (V : Set E)) ≤ ae (μ.restrict Ω) :=
       ae_mono (Measure.restrict_mono hV le_rfl)
     refine W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le u hV
-      (convex_ball x _) ?_ ?_
-    · refine memLp_top_of_bound ((Lp.aestronglyMeasurable _).mono_measure
-        (Measure.restrict_mono hV le_rfl)) M₁ ?_
-      filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hval.filter_mono hae] with y hy hy'
-      rw [hy']
-      exact hv y (hVU hy)
-    · filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hgrad.filter_mono hae] with y hy hy'
-      rw [hy']
-      exact (hg y (hVU hy)).trans (Real.le_coe_toNNReal _)
+      (convex_ball x _) ?_
+    filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hgrad.filter_mono hae] with y hy hy'
+    rw [hy']
+    exact (hg y (hVU hy)).trans (Real.le_coe_toNNReal _)
   have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)
   refine ⟨_, HolderOnWith.of_le_of_dist_le (K := M₂.toNNReal) (D := (2 * M₁).toNNReal)
     (δ := (ρ / 2).toNNReal) (β := 1) (fun x hx y _ hxy => ?_) (fun x hx y hy => ?_) hγ
