@@ -136,7 +136,7 @@ theorem solvableRadicalDefiningIdeal_eq_augmentation_of_finite_kernel
   let _ : Algebra.Smooth k (CommHopfAlgCat.quotient G.obj I) := hI.smooth
   let _ : IsReduced (CommHopfAlgCat.quotient G.obj I) := isReduced_of_smooth k _
   let _ : ConnectedSpace (PrimeSpectrum (CommHopfAlgCat.quotient G.obj I)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hI.geometricallyConnected
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace hI.geometricallyConnected
   have hbot := HopfIdeal.augmentation_eq_bot_of_moduleFinite
     (k := k) (H := CommHopfAlgCat.quotient G.obj I)
   have hsurj : Function.Surjective (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal) :=

@@ -55,6 +55,9 @@ inert although `2 ∣ 6`, and in `ℚ(ζ₂) = ℚ` the prime `2` splits complet
   prime `p` is inert iff `p ∤ n` and `p` has order `φ(n)` modulo `n`;
   `isPrime_span_natCast_iff_orderOf_eq_totient_of_mod_four_eq_two` is the version for
   `n ≡ 2 mod 4`.
+* `TauCeti.NumberField.inertiaDeg_dvd_totient_of_not_dvd` and
+  `TauCeti.NumberField.not_dvd_inertiaDeg_of_not_dvd`: for `p ∤ m` and a maximal ideal `P` of
+  `𝓞 K` over `p`, `P.inertiaDeg ℤ` divides `φ(m)`, and hence `m ∤ P.inertiaDeg ℤ` when `m > 1`.
 * `TauCeti.NumberField.sum_val_galEquivZMod_filter_inv_smul_eq_smul`: for `p ∤ n`, the classes
   in `(ZMod n)ˣ` of the `σ` sending `τ P` to `P` form a coset of `⟨p⟩`, so their representatives
   in `[1, n)` sum to `∑_{i < f} (p ^ i c(τ⁻¹) mod n)`.
@@ -261,6 +264,28 @@ theorem ncard_primesOver_mul_orderOf_eq_totient {m : ℕ} [IsCyclotomicExtension
     [Fact p.Prime] (hm : ¬ p ∣ m) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * orderOf (p : ZMod m) = Nat.totient m :=
   ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (k := 0) (by rw [pow_zero, one_mul]) hm
+
+/-- **The residue degree of an unramified prime divides `φ(m)`.** For a maximal ideal `P` of `𝓞 K`
+lying over `(p)` with `p ∤ m` in an `m`-th cyclotomic field `K` over `ℚ`, the inertia degree
+`P.inertiaDeg ℤ` divides `φ(m)`. -/
+theorem inertiaDeg_dvd_totient_of_not_dvd {m p : ℕ} [IsCyclotomicExtension {m} ℚ K]
+    (hpm : ¬ p ∣ m) (P : Ideal (𝓞 K)) [P.IsMaximal] [P.LiesOver (span {(p : ℤ)})] :
+    P.inertiaDeg ℤ ∣ m.totient := by
+  have : NeZero m := ⟨by rintro rfl; exact hpm (dvd_zero p)⟩
+  have : Fact p.Prime := ⟨P.prime_of_isMaximal_of_liesOver⟩
+  rw [IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd p K P hpm,
+    ← ncard_primesOver_mul_orderOf_eq_totient (K := K) p hpm]
+  exact dvd_mul_left _ _
+
+/-- **The level does not divide the residue degree of an unramified prime.** For `m > 1` and a
+maximal ideal `P` of `𝓞 K` lying over `(p)` with `p ∤ m` in an `m`-th cyclotomic field `K` over
+`ℚ`, `m` does not divide `P.inertiaDeg ℤ`. -/
+theorem not_dvd_inertiaDeg_of_not_dvd {m p : ℕ} [IsCyclotomicExtension {m} ℚ K]
+    (hm : 1 < m) (hpm : ¬ p ∣ m) (P : Ideal (𝓞 K)) [P.IsMaximal] [P.LiesOver (span {(p : ℤ)})] :
+    ¬ m ∣ P.inertiaDeg ℤ :=
+  Nat.not_dvd_of_pos_of_lt (inertiaDeg_pos P ℤ) <|
+    (Nat.le_of_dvd (Nat.totient_pos.2 (zero_lt_one.trans hm))
+      (inertiaDeg_dvd_totient_of_not_dvd hpm P)).trans_lt (Nat.totient_lt m hm)
 
 section DecompositionCoset
 

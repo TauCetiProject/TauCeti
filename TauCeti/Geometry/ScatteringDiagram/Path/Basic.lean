@@ -29,7 +29,7 @@ segments between off-wall points of a convex set avoiding singular support are a
 For a finite family, the crossing events (segment index, wall index and affine
 parameter) form a finite set. Thus repeated visits and simultaneous coplanar
 crossings are retained. Every crossing lies in the relative
-interior of its wall. In finite dimension, finite families of codimension-one
+interior of its wall. Finite families of codimension-one
 polyhedra admit such paths between any two allowed endpoints, with two edges
 sufficing and all vertices in any prescribed open set containing the endpoints.
 A function that is locally constant off the walls takes equal values at the
@@ -246,7 +246,7 @@ theorem apply_eq_of_crossings_eq_empty {Y : Type*} {F : V → Y}
     (hF : ∀ θ, (∀ i, θ ∉ W i) → ∀ᶠ φ in nhds θ, F φ = F θ) {x y : WallComplement W}
     (he : crossings x y = ∅) : F x.val = F y.val := by
   have hc : Continuous fun r : I => AffineMap.lineMap x.val y.val (r : ℝ) :=
-    AffineMap.lineMap_continuous.comp continuous_subtype_val
+    AffineMap.lineMap_continuous.comp continuous_subtypeVal
   have hf : IsLocallyConstant fun r : I => F (AffineMap.lineMap x.val y.val (r : ℝ)) := by
     refine (IsLocallyConstant.iff_eventually_eq _).mpr fun r =>
       (hc.tendsto r).eventually (p := fun φ => F φ = F _) (hF _ fun i hi => ?_)
@@ -497,7 +497,7 @@ variable {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {W : ι → S
 /-- Allowed endpoints in an open set, for a finite family of codimension-one
 polyhedra, admit an admissible chain with exactly two edges whose vertices all lie
 in that set. The set need not be convex. -/
-theorem exists_length_eq_two_vertices_mem_of_isOpen [FiniteDimensional ℝ V] [Finite ι]
+theorem exists_length_eq_two_vertices_mem_of_isOpen [Finite ι]
     (hpoly : ∀ i, TauCeti.IsConvexPolyhedron (W i))
     (hdim : ∀ i, Module.finrank ℝ (affineSpan ℝ (W i)).direction + 1 = Module.finrank ℝ V)
     {U : Set V} (hU : IsOpen U) {x y : WallComplement W} (hx : x.val ∈ U) (hy : y.val ∈ U) :
@@ -519,7 +519,7 @@ theorem exists_length_eq_two_vertices_mem_of_isOpen [FiniteDimensional ℝ V] [F
 
 /-- Allowed endpoints in a finite family of codimension-one polyhedra admit
 an admissible chain with exactly two edges. -/
-theorem exists_length_eq_two [FiniteDimensional ℝ V] [Finite ι]
+theorem exists_length_eq_two [Finite ι]
     (hpoly : ∀ i, TauCeti.IsConvexPolyhedron (W i))
     (hdim : ∀ i, Module.finrank ℝ (affineSpan ℝ (W i)).direction + 1 = Module.finrank ℝ V)
     (x y : WallComplement W) : ∃ p : AdmissiblePLPath x y, p.length = 2 :=

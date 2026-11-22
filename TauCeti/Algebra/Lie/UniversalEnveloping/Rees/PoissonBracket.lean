@@ -339,17 +339,12 @@ private theorem ker_le_compr₂_reesDividedCommutator_right :
   ext a
   simp [mul_comm]
 
-private theorem reesSpecializationZero_toLinearMap_surjective :
-    Function.Surjective (reesSpecializationZero R L).toLinearMap :=
-  reesSpecializationZero_surjective R L
-
 /-- The **zero-fibre Poisson bracket** on `SymmetricAlgebra R L`, induced by descending
 `reesDividedCommutator R L` modulo `reesParameter R L` in both arguments. -/
 noncomputable def reesZeroFiberBracket :
     SymmetricAlgebra R L →ₗ[R] SymmetricAlgebra R L →ₗ[R] SymmetricAlgebra R L :=
   let π := (reesSpecializationZero R L).toLinearMap
-  let e := (π.quotKerEquivOfSurjective
-    (reesSpecializationZero_toLinearMap_surjective R L)).symm.toLinearMap
+  let e := (π.quotKerEquivOfSurjective (reesSpecializationZero_surjective R L)).symm.toLinearMap
   (((reesDividedCommutator R L).compr₂ π).liftQ₂ (LinearMap.ker π) (LinearMap.ker π)
     (ker_le_compr₂_reesDividedCommutator_left R L)
     (ker_le_compr₂_reesDividedCommutator_right R L)).compl₁₂ e e
