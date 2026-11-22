@@ -465,6 +465,7 @@ private theorem hasStrictFDerivAt_coulombNonlinear (x : SobolevFieldSpace f m ((
       (hasStrictFDerivAt_fieldMul_add_mulR x 2 3 hC hC0)).sub
         (hasStrictFDerivAt_fieldMul_add_mulR x 3 2 hC hC0))
   simp only [add_zero, sub_zero] at key
+  rw [show coulombNonlinear x = fun p ↦ _ from funext fun p ↦ coulombNonlinear_eq x p.1 p.2]
   exact key
 
 /-- **The strict derivative of the Coulomb map** at `(x, 0)`: `(v, G) ↦ d₀* v + d₀* d₀ G`. -/
