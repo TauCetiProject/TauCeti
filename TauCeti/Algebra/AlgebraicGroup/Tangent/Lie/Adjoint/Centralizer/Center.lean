@@ -25,9 +25,6 @@ the induced centralizer morphism `C_K(x) → C_H(df(x))` is canonically isomorph
   `centralizerHopfIdeal H x`.
 * `CommHopfAlgCat.centralizerHopfIdeal_le_centerDefiningIdeal`: the center `Z(G)` lies in
   `C_G(x)`.
-* `CommHopfAlgCat.Hom.kernelCentralizerMapIsoOfIsCentral` and
-  `CommHopfAlgCat.Hom.quotientMapOfLe_comp_kernelCentralizerMapIsoOfIsCentral_hom`: specialization
-  of the centralizer kernel isomorphism to central kernels.
 -/
 
 public section
@@ -80,41 +77,5 @@ theorem centralizerHopfIdeal_le_centerDefiningIdeal (H : CommHopfAlgCat.{u} k)
     TauCeti.centralizerHopfIdeal H x ≤ TauCeti.CommHopfAlgCat.centerDefiningIdeal H :=
   TauCeti.centralizerHopfIdeal_le_of_isCentral
     (TauCeti.CommHopfAlgCat.isCentral_centerDefiningIdeal H) x
-
-namespace Hom
-
-variable {H K : CommHopfAlgCat.{u} k}
-  [Module.Finite k (TauCeti.Bialgebra.CotangentSpace k H)]
-  [Module.Finite k (TauCeti.Bialgebra.CotangentSpace k K)]
-
-/-- When `ker(f)` is central, the scheme-theoretic kernel of `C_K(x) → C_H(df(x))` is canonically
-isomorphic to `ker(f)`. -/
-noncomputable def kernelCentralizerMapIsoOfIsCentral (f : H ⟶ K)
-    (hf : (TauCeti.CommHopfAlgCat.kernelHopfIdeal f).IsCentral)
-    (x : Module.Dual k (TauCeti.Bialgebra.CotangentSpace k K)) :
-    CommHopfAlgCat.quotient K (TauCeti.CommHopfAlgCat.kernelHopfIdeal f) ≅
-      CommHopfAlgCat.quotient
-        (CommHopfAlgCat.quotient K (TauCeti.centralizerHopfIdeal K x))
-        (TauCeti.CommHopfAlgCat.kernelHopfIdeal
-          (CommHopfAlgCat.ofHom (f.hom.centralizerMap x))) :=
-  f.kernelCentralizerMapIso x (TauCeti.centralizerHopfIdeal_le_of_isCentral hf x)
-
-/-- The canonical isomorphism `ker(f) ≅ ker(C_K(x) → C_H(df(x)))` for central `ker(f)` identifies
-the closed immersion `ker(f) ↪ C_K(x)` with the kernel immersion
-`ker(centralizerMap) ↪ C_K(x)`. -/
-theorem quotientMapOfLe_comp_kernelCentralizerMapIsoOfIsCentral_hom
-    (f : H ⟶ K) (hf : (TauCeti.CommHopfAlgCat.kernelHopfIdeal f).IsCentral)
-    (x : Module.Dual k (TauCeti.Bialgebra.CotangentSpace k K)) :
-    CommHopfAlgCat.quotientMapOfLe K
-          (TauCeti.centralizerHopfIdeal_le_of_isCentral hf x) ≫
-        (f.kernelCentralizerMapIsoOfIsCentral hf x).hom =
-      CommHopfAlgCat.mkQuotient
-        (CommHopfAlgCat.quotient K (TauCeti.centralizerHopfIdeal K x))
-        (TauCeti.CommHopfAlgCat.kernelHopfIdeal
-          (CommHopfAlgCat.ofHom (f.hom.centralizerMap x))) :=
-  f.quotientMapOfLe_comp_kernelCentralizerMapIso_hom x
-    (TauCeti.centralizerHopfIdeal_le_of_isCentral hf x)
-
-end Hom
 
 end CommHopfAlgCat

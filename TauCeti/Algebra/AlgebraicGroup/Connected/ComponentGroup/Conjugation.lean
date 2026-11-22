@@ -140,27 +140,27 @@ theorem componentGroupConjugationEquiv_symm (I J : HopfIdeal k H)
   ext C
   exact (MulEquiv.symm_apply_eq _).mpr (MulEquiv.congr_fun hcomp C).symm
 
-/-- Postcomposing conjugation with equality transport gives conjugation into the transported
-Hopf ideal. -/
-theorem componentGroupConjugationEquiv_trans_componentGroupEquivOfEq (I J J' : HopfIdeal k H)
+/-- Postcomposing conjugation with `MulEquiv.cast` gives conjugation into the transported Hopf
+ideal. -/
+theorem componentGroupConjugationEquiv_trans_cast (I J J' : HopfIdeal k H)
     (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
     (hJ : J = I.conjugate g) (hJJ' : J = J') :
-    (componentGroupConjugationEquiv I J g hJ).trans (componentGroupEquivOfEq hJJ') =
+    (componentGroupConjugationEquiv I J g hJ).trans
+        (MulEquiv.cast (M := fun I : HopfIdeal k H ↦ I.ComponentGroup) hJJ') =
       componentGroupConjugationEquiv I J' g (hJJ' ▸ hJ) := by
   subst hJJ'
-  rw [componentGroupEquivOfEq_refl]
   rfl
 
-/-- Precomposing conjugation with equality transport gives conjugation from the transported
-Hopf ideal. -/
-theorem componentGroupEquivOfEq_trans_componentGroupConjugationEquiv {I I' : HopfIdeal k H}
+/-- Precomposing conjugation with `MulEquiv.cast` gives conjugation from the transported Hopf
+ideal. -/
+theorem cast_trans_componentGroupConjugationEquiv {I I' : HopfIdeal k H}
     (hI : I = I') (J : HopfIdeal k H)
     (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
     (hJ : J = I'.conjugate g) :
-    (componentGroupEquivOfEq hI).trans (componentGroupConjugationEquiv I' J g hJ) =
+    (MulEquiv.cast (M := fun I : HopfIdeal k H ↦ I.ComponentGroup) hI).trans
+        (componentGroupConjugationEquiv I' J g hJ) =
       componentGroupConjugationEquiv I J g (hI ▸ hJ) := by
   subst hI
-  rw [componentGroupEquivOfEq_refl]
   rfl
 
 /-- Conjugation on a closed subgroup's component group commutes with the induced homomorphism

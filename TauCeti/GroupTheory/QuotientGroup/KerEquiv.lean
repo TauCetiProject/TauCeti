@@ -133,10 +133,8 @@ with `p`. -/
   /-- An additive homomorphism out of the target of a surjection is uniquely determined by its
   precomposition with `p`. -/]
 theorem descOfSurjective_unique (χ : Q →* M') (hχ : ∀ g, χ (p g) = ψ g) :
-    χ = descOfSurjective p hp ψ hψ := by
-  ext q
-  obtain ⟨g, rfl⟩ := hp q
-  rw [hχ, descOfSurjective_apply]
+    χ = descOfSurjective p hp ψ hψ :=
+  (MonoidHom.cancel_right hp).mp ((MonoidHom.ext hχ).trans (descOfSurjective_comp p hp ψ hψ).symm)
 
 /-- The kernel of the descended homomorphism is the image of `ψ.ker` under `p`. -/
 @[to_additive TauCeti.QuotientAddGroup.ker_descOfSurjective
@@ -150,8 +148,8 @@ theorem ker_descOfSurjective :
   /-- The descended additive homomorphism is injective if and only if `ψ.ker = p.ker`. -/]
 theorem injective_descOfSurjective_iff :
     Function.Injective (descOfSurjective p hp ψ hψ) ↔ ψ.ker = p.ker := by
-  rw [← MonoidHom.ker_eq_bot_iff, ker_descOfSurjective, Subgroup.map_eq_bot_iff]
-  exact ⟨fun h ↦ le_antisymm h hψ, fun h ↦ h.le⟩
+  rw [descOfSurjective, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom,
+    EquivLike.injective_comp, QuotientGroup.injective_lift_iff, eq_comm]
 
 end DescOfSurjective
 

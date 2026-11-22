@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Functor
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+public import TauCeti.Algebra.Group.Equiv.Cast
 
 /-!
 # Component groups of closed subgroups
@@ -25,8 +26,9 @@ the rational points of `N`, viewed inside `G(k)`:
   (`TauCeti.HopfIdeal.quotientMulEquivComponentGroup`).
 * `TauCeti.HopfIdeal.componentGroupInclusion I : π₀(N) →* π₀(G)` is induced by the inclusion
   `N ⊆ G` (trivial when `G` is connected, `TauCeti.HopfIdeal.componentGroupInclusion_eq_one`).
-* `TauCeti.HopfIdeal.componentGroupEquivOfEq` and `TauCeti.HopfIdeal.componentGroupEquivOfEqBot`
-  transport component groups along equalities of Hopf ideals and identify `π₀(V(⊥)) ≃* π₀(G)`.
+* `MulEquiv.cast` transports component groups along equalities of Hopf ideals
+  (`TauCeti.HopfIdeal.cast_rationalComponentMap`), and
+  `TauCeti.HopfIdeal.componentGroupEquivOfEqBot` identifies `π₀(V(⊥)) ≃* π₀(G)`.
 * `TauCeti.HopfIdeal.componentGroupMap I J f h : π₀(N') →* π₀(N)` is induced by a homomorphism
   `φ : G' → G` mapping the closed subgroup `N'` cut out by `J` into `N`. It commutes with the
   ambient inclusions (`TauCeti.HopfIdeal.componentGroupInclusion_comp_componentGroupMap`) and is
@@ -229,43 +231,14 @@ end Inclusion
 
 section Transport
 
-/-- Transport a closed-subgroup component group across an equality of Hopf ideals. -/
-noncomputable def componentGroupEquivOfEq {I J : HopfIdeal k H} (hIJ : I = J) :
-    I.ComponentGroup ≃* J.ComponentGroup := by
-  subst hIJ
-  exact MulEquiv.refl _
-
 /-- Transporting a rational-point component across an equality of Hopf ideals preserves the
 underlying rational point. -/
-@[simp]
-theorem componentGroupEquivOfEq_rationalComponentMap {I J : HopfIdeal k H} (hIJ : I = J)
+theorem cast_rationalComponentMap {I J : HopfIdeal k H} (hIJ : I = J)
     (n : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
-    componentGroupEquivOfEq hIJ (I.rationalComponentMap n) =
+    MulEquiv.cast (M := fun I : HopfIdeal k H ↦ I.ComponentGroup) hIJ
+        (I.rationalComponentMap n) =
       J.rationalComponentMap ⟨n.val, hIJ ▸ n.property⟩ := by
   subst hIJ
-  rfl
-
-/-- Reflexive transport on closed-subgroup component groups is the identity equivalence. -/
-@[simp]
-theorem componentGroupEquivOfEq_refl (I : HopfIdeal k H) (h : I = I) :
-    componentGroupEquivOfEq h = MulEquiv.refl I.ComponentGroup := by
-  rw [componentGroupEquivOfEq]
-
-/-- The inverse of a closed-subgroup component-group transport is transport along the symmetric
-equality. -/
-@[simp]
-theorem componentGroupEquivOfEq_symm {I J : HopfIdeal k H} (hIJ : I = J) :
-    (componentGroupEquivOfEq hIJ).symm = componentGroupEquivOfEq hIJ.symm := by
-  subst hIJ
-  rfl
-
-/-- Composing two closed-subgroup component-group transports gives the transport along the
-transitive equality. -/
-@[simp]
-theorem componentGroupEquivOfEq_trans {I J L : HopfIdeal k H} (hIJ : I = J) (hJL : J = L) :
-    (componentGroupEquivOfEq hIJ).trans (componentGroupEquivOfEq hJL) =
-      componentGroupEquivOfEq (hIJ.trans hJL) := by
-  subst hIJ hJL
   rfl
 
 /-- Transporting a closed-subgroup component group along `I = ⊥` identifies it with `π₀(G)`. -/
@@ -357,20 +330,22 @@ theorem componentGroupMap_comp {L : FiniteTypeCommHopfAlgCat.{u, u} k} (I : Hopf
   rw [componentGroupMap, componentGroupMap, componentGroupMap, ← mapComponentGroup_comp,
     quotientMap_comp]
 
-/-- Transporting the target of `componentGroupMap` along an equality of Hopf ideals agrees with
+/-- Transporting the target of `componentGroupMap` with `MulEquiv.cast` agrees with
 `componentGroupMap` at the transported ideal. -/
-theorem componentGroupEquivOfEq_comp_componentGroupMap {I I' : HopfIdeal k H}
+theorem cast_comp_componentGroupMap {I I' : HopfIdeal k H}
     (hI : I = I') (J : HopfIdeal k K) (f : H ⟶ K) (h : I.map (toBialgHom f) ≤ J) :
-    (componentGroupEquivOfEq hI).toMonoidHom.comp (componentGroupMap I J f h) =
+    (MulEquiv.cast (M := fun I : HopfIdeal k H ↦ I.ComponentGroup) hI).toMonoidHom.comp
+        (componentGroupMap I J f h) =
       componentGroupMap I' J f (hI ▸ h) := by
   subst hI
   rfl
 
-/-- Transporting the source of `componentGroupMap` along an equality of Hopf ideals agrees with
+/-- Transporting the source of `componentGroupMap` with `MulEquiv.cast` agrees with
 `componentGroupMap` at the original ideal. -/
-theorem componentGroupMap_comp_componentGroupEquivOfEq (I : HopfIdeal k H)
+theorem componentGroupMap_comp_cast (I : HopfIdeal k H)
     {J J' : HopfIdeal k K} (hJ : J = J') (f : H ⟶ K) (h : I.map (toBialgHom f) ≤ J) :
-    (componentGroupMap I J' f (hJ ▸ h)).comp (componentGroupEquivOfEq hJ).toMonoidHom =
+    (componentGroupMap I J' f (hJ ▸ h)).comp
+        (MulEquiv.cast (M := fun J : HopfIdeal k K ↦ J.ComponentGroup) hJ).toMonoidHom =
       componentGroupMap I J f h := by
   subst hJ
   rfl
