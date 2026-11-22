@@ -27,7 +27,10 @@ point gives the negative of that identification. Transport along a path sends ev
 point to evaluation at the endpoint of its lift
 (`IsCoveringMap.signLocalSystemObjEquiv_map_apply_monodromy`). Monodromy follows continuous
 sections (`IsCoveringMap.monodromy_section`), so a continuous section of such a double cover
-trivializes the sign local system (`IsCoveringMap.signLocalSystemIsoOfSection`).
+trivializes the sign local system (`IsCoveringMap.signLocalSystemIsoOfSection`). More generally, a
+map `f` over `X` from a double cover to another one, intertwining their involutions, is a bijection
+on each fibre, so precomposition with `f` identifies their sign local systems
+(`IsCoveringMap.signLocalSystemIsoOfMap`): monodromy commutes with `f`.
 
 For the orientation double cover of a real vector bundle `E` with integral coefficients this is
 the orientation local system `o(E)`: its fibre over `b` is a copy of `ℤ` whose two generators are
@@ -43,6 +46,9 @@ the two orientations of `E_b`, and an orientation of the bundle trivializes it.
 * `IsCoveringMap.signLocalSystemObjEquiv`: the fibres of the sign local system are the modules
   `TauCeti.signFiber`.
 * `IsCoveringMap.signLocalSystemIsoOfSection`: the trivialization given by a continuous section.
+* `TauCeti.signFiberComapEquiv`: for a map of double covers, precomposition on the sign modules.
+* `IsCoveringMap.signLocalSystemIsoOfMap`: the isomorphism of sign local systems induced by a map
+  of double covers.
 
 ## Main results
 
@@ -185,6 +191,71 @@ theorem mem_signFiber_of_sum_eq_zero {x : X} [Fintype (p ⁻¹' {x})] {g : p ⁻
   exact eq_neg_of_add_eq_zero_right hg
 
 end DoubleCover
+
+section Map
+
+variable {F : Type*} {q : F → X} {σ : E → E} {hσ : p ∘ σ = p} {τ : F → F} {hτ : q ∘ τ = q}
+  {f : E → F} (hf : q ∘ f = p) (hfστ : f ∘ σ = τ ∘ f)
+
+include hfστ in
+variable (R) in
+/-- Precomposition with a map over `X` intertwining `σ` and `τ` carries the functions on a fibre of
+`q` changing sign under `τ` to the functions on the fibre of `p` changing sign under `σ`. -/
+def signFiberComap (x : X) : signFiber R τ hτ x →ₗ[R] signFiber R σ hσ x :=
+  ((LinearMap.funLeft R R (Function.fiberMap f hf x)).comp
+    (signFiber R τ hτ x).subtype).codRestrict _ fun g ↦ mem_signFiber_iff.2 fun e ↦ by
+      simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.funLeft_apply]
+      rw [Function.fiberMap_fiberMap_of_comp_eq hσ hτ hf hfστ e]
+      exact mem_signFiber_iff.1 g.property _
+
+@[simp]
+theorem coe_signFiberComap_apply {x : X} (g : signFiber R τ hτ x) (e : p ⁻¹' {x}) :
+    (signFiberComap (hσ := hσ) R hf hfστ x g : p ⁻¹' {x} → R) e =
+      (g : q ⁻¹' {x} → R) (Function.fiberMap f hf x e) :=
+  (rfl)
+
+variable (hfixτ : ∀ e, τ e ≠ e) (hfib : ∀ e e', p e' = p e → e' = e ∨ e' = σ e)
+  (hfibτ : ∀ e e', q e' = q e → e' = e ∨ e' = τ e) (hsurj : Function.Surjective p)
+
+include hfixτ hfib hfibτ hsurj in
+variable (R) in
+/-- For a map of double covers over `X` intertwining the involutions, precomposition identifies the
+functions on a fibre of `q` changing sign under `τ` with those on the fibre of `p` changing sign
+under `σ` (`TauCeti.signFiberComap`). -/
+def signFiberComapEquiv (x : X) : signFiber R τ hτ x ≃ₗ[R] signFiber R σ hσ x := by
+  refine LinearEquiv.ofBijective (signFiberComap R hf hfστ x) ⟨fun g₁ g₂ h ↦ ?_, fun g ↦ ?_⟩
+  all_goals
+    let φ := Equiv.ofBijective _
+      (Function.bijective_fiberMap_of_comp_eq hσ hf hfστ hfixτ hfib hfibτ hsurj x)
+  · -- The fibre map is onto, so functions agreeing after precomposition agree.
+    exact Subtype.ext (LinearMap.funLeft_injective_of_surjective R R _ φ.surjective
+      (congrArg Subtype.val h))
+  · -- Precompose with the inverse of the fibre map.
+    refine ⟨⟨(g : p ⁻¹' {x} → R) ∘ φ.symm, mem_signFiber_iff.2 fun e' ↦ ?_⟩,
+      Subtype.ext (funext fun e ↦ ?_)⟩
+    · obtain ⟨e, rfl⟩ := φ.surjective e'
+      have h := Function.fiberMap_fiberMap_of_comp_eq hσ hτ hf hfστ e
+      simp only [Function.comp_apply, Equiv.ofBijective_apply, φ] at h ⊢
+      rw [← h, Equiv.ofBijective_symm_apply_apply, Equiv.ofBijective_symm_apply_apply]
+      exact mem_signFiber_iff.1 g.property e
+    · simp [φ]
+
+@[simp]
+theorem coe_signFiberComapEquiv_apply {x : X} (g : signFiber R τ hτ x) (e : p ⁻¹' {x}) :
+    (signFiberComapEquiv (hσ := hσ) R hf hfστ hfixτ hfib hfibτ hsurj x g : p ⁻¹' {x} → R) e =
+      (g : q ⁻¹' {x} → R) (Function.fiberMap f hf x e) :=
+  (rfl)
+
+/-- The inverse of precomposition with a map of double covers takes, at the image of `e`, the value
+at `e`. -/
+@[simp]
+theorem coe_signFiberComapEquiv_symm_apply_fiberMap {x : X} (g : signFiber R σ hσ x)
+    (e : p ⁻¹' {x}) :
+    ((signFiberComapEquiv (hτ := hτ) R hf hfστ hfixτ hfib hfibτ hsurj x).symm g : q ⁻¹' {x} → R)
+        (Function.fiberMap f hf x e) = (g : p ⁻¹' {x} → R) e := by
+  rw [← coe_signFiberComapEquiv_apply hf hfστ hfixτ hfib hfibτ hsurj, LinearEquiv.apply_symm_apply]
+
+end Map
 
 end TauCeti
 
@@ -339,5 +410,53 @@ theorem monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one {x : X}
       (Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm)))
 
 end Monodromy
+
+/-! ### Maps of double covers -/
+
+section Map
+
+variable {F : Type w} [TopologicalSpace F] {q : F → X} (hq : IsCoveringMap q) {σ hσ}
+  {τ : C(F, F)} {hτ : q ∘ τ = q} {f : C(E, F)} (hf : q ∘ f = p) (hfστ : f ∘ σ = τ ∘ f)
+  (hfixτ : ∀ e, τ e ≠ e) (hfib : ∀ e e', p e' = p e → e' = e ∨ e' = σ e)
+  (hfibτ : ∀ e e', q e' = q e → e' = e ∨ e' = τ e) (hsurj : Function.Surjective p)
+
+/-- **A map of double covers identifies their sign local systems.** Let `f` be a map over `X` from
+a double cover `p` to a double cover `q`, intertwining the involutions `σ` and `τ` exchanging the
+two points of each fibre, and let the fibres of `p` be nonempty. Then precomposition with `f`
+(`TauCeti.signFiberComapEquiv`) is an isomorphism from the sign local system of `τ` to that of
+`σ`: monodromy commutes with `f`. -/
+def signLocalSystemIsoOfMap : hq.signLocalSystem R τ hτ ≅ hp.signLocalSystem R σ hσ :=
+  NatIso.ofComponents
+    (fun x ↦ (hq.signLocalSystemObjEquiv τ hτ x ≪≫ₗ
+      TauCeti.signFiberComapEquiv R hf hfστ hfixτ hfib hfibτ hsurj x.as ≪≫ₗ
+        (hp.signLocalSystemObjEquiv σ hσ x).symm).toModuleIso)
+    -- Both sides evaluate `g` at the image under `f` of a lifted endpoint, by the definition of
+    -- the transport; `f` carries lifts for `p` to lifts for `q`.
+    fun γ ↦ ModuleCat.hom_ext <| LinearMap.ext fun g ↦ Subtype.ext <| funext fun e ↦
+      congrArg g.val (hp.fiberMap_monodromy hq f hf (inv γ) e).symm
+
+/-- The isomorphism of sign local systems induced by a map of double covers is precomposition with
+the map. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemIsoOfMap_hom_app_apply
+    (x : FundamentalGroupoid X) (g : (hq.signLocalSystem R τ hτ).obj x) (e : p ⁻¹' {x.as}) :
+    (hp.signLocalSystemObjEquiv σ hσ x
+        ((hp.signLocalSystemIsoOfMap hq hf hfστ hfixτ hfib hfibτ hsurj).hom.app x g) :
+        p ⁻¹' {x.as} → R) e =
+      (hq.signLocalSystemObjEquiv τ hτ x g : q ⁻¹' {x.as} → R) (Function.fiberMap f hf x.as e) :=
+  (rfl)
+
+/-- The inverse of the isomorphism of sign local systems induced by a map of double covers takes,
+at the image of `e`, the value at `e`. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemIsoOfMap_inv_app_apply_fiberMap
+    (x : FundamentalGroupoid X) (g : (hp.signLocalSystem R σ hσ).obj x) (e : p ⁻¹' {x.as}) :
+    (hq.signLocalSystemObjEquiv τ hτ x
+        ((hp.signLocalSystemIsoOfMap hq hf hfστ hfixτ hfib hfibτ hsurj).inv.app x g) :
+        q ⁻¹' {x.as} → R) (Function.fiberMap f hf x.as e) =
+      (hp.signLocalSystemObjEquiv σ hσ x g : p ⁻¹' {x.as} → R) e :=
+  TauCeti.coe_signFiberComapEquiv_symm_apply_fiberMap hf hfστ hfixτ hfib hfibτ hsurj _ e
+
+end Map
 
 end IsCoveringMap
