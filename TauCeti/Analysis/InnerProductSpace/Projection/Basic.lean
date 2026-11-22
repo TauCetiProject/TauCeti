@@ -121,6 +121,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
 * `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
   equivalence `e` gives the orthogonal projection onto `e(V)`.
+* `Submodule.starProjection_orthogonal_ker_one_sub_mul`: the orthogonal projection onto
+  `(ker ((1 - P_U) * P_V))ᗮ` is `P_V - P_{U ⊓ V}`.
 -/
 
 public section
@@ -473,6 +475,54 @@ theorem apply_mem_of_commute_starProjection {U : Submodule 𝕜 E} [U.HasOrthogo
     _root_.mul_apply_eq_comp, U.starProjection_eq_self_iff.2 hx]
 
 end Commute
+
+/-- The orthogonal projection onto `(ker ((1 - P_U) * P_V))ᗮ` is `P_V - P_{U ⊓ V}`. -/
+theorem starProjection_orthogonal_ker_one_sub_mul [CompleteSpace E]
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    [(U ⊓ V).HasOrthogonalProjection] :
+    ((1 - U.starProjection) * V.starProjection).kerᗮ.starProjection =
+      V.starProjection - (U ⊓ V).starProjection := by
+  set x : E →L[𝕜] E := (1 - U.starProjection) * V.starProjection
+  set r : E →L[𝕜] E := V.starProjection - (U ⊓ V).starProjection
+  have hcomp' : (U ⊓ V).starProjection * V.starProjection = (U ⊓ V).starProjection := by
+    rw [ContinuousLinearMap.mul_def]
+    exact Submodule.starProjection_comp_starProjection_of_le inf_le_right
+  have hcomp : V.starProjection * (U ⊓ V).starProjection = (U ⊓ V).starProjection := by
+    rw [ContinuousLinearMap.mul_def]
+    have h := congrArg adjoint
+      (Submodule.starProjection_comp_starProjection_of_le (inf_le_right : U ⊓ V ≤ V))
+    rwa [adjoint_comp, (isSelfAdjoint_starProjection V).adjoint_eq,
+      (isSelfAdjoint_starProjection (U ⊓ V)).adjoint_eq] at h
+  have hr : IsStarProjection r := by
+    refine ⟨?_, (isSelfAdjoint_starProjection V).sub (isSelfAdjoint_starProjection (U ⊓ V))⟩
+    dsimp only [r]
+    rw [IsIdempotentElem, sub_mul, mul_sub, mul_sub,
+      V.isIdempotentElem_starProjection.eq, (U ⊓ V).isIdempotentElem_starProjection.eq,
+      hcomp, hcomp']
+    abel
+  have hker : x.ker = r.ker := by
+    ext ξ
+    rw [LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, coe_coe]
+    have hx_zero : x ξ = 0 ↔ V.starProjection ξ ∈ U := by
+      dsimp only [x]
+      rw [_root_.mul_apply_eq_comp, sub_apply, one_apply_eq_self, sub_eq_zero,
+        eq_comm, U.starProjection_eq_self_iff]
+    have hUV : (U ⊓ V).starProjection ξ = (U ⊓ V).starProjection (V.starProjection ξ) := by
+      have h := congrArg (fun T : E →L[𝕜] E => T ξ) hcomp'
+      simpa only [_root_.mul_apply_eq_comp] using h.symm
+    have hr_zero : r ξ = 0 ↔ V.starProjection ξ ∈ U := by
+      dsimp only [r]
+      rw [sub_apply, sub_eq_zero, hUV, eq_comm, (U ⊓ V).starProjection_eq_self_iff,
+        Submodule.mem_inf]
+      exact ⟨fun ⟨h, _⟩ => h, fun h => ⟨h, V.starProjection_apply_mem ξ⟩⟩
+    exact hx_zero.trans hr_zero.symm
+  obtain ⟨hr_has, hr_eq⟩ := isStarProjection_iff_eq_starProjection_range.mp hr
+  have : CompleteSpace x.ker := x.isClosed_ker.isComplete.completeSpace_coe
+  have hker_r : r.ker = r.rangeᗮ := by
+    conv_lhs => rw [hr_eq]
+    exact Submodule.ker_starProjection r.range
+  refine IsStarProjection.ext isStarProjection_starProjection hr ?_
+  rw [Submodule.range_starProjection, hker, hker_r, Submodule.orthogonal_orthogonal]
 
 end Submodule
 
