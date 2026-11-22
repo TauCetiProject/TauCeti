@@ -304,6 +304,20 @@ theorem uliftBoolEquivCoprod_symm_inr {M : Type u} {N : Type v} [Monoid M] [Mono
       of (i := true) (MulEquiv.ulift.symm y) := by
   simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]; rfl
 
+/-- The inverse of `uliftBoolEquivCoprod` maps the product of a word `L : List (M ⊕ N)` to the
+product of the lifted factor inclusions along `L`. -/
+@[simp]
+theorem uliftBoolEquivCoprod_symm_mk_ofList {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+    (L : List (M ⊕ N)) :
+    (uliftBoolEquivCoprod M N).symm (Coprod.mk (FreeMonoid.ofList L)) =
+      (L.map (Sum.elim (fun m => of (i := false) (MulEquiv.ulift.symm m))
+        (fun n => of (i := true) (MulEquiv.ulift.symm n)))).prod := by
+  induction L with
+  | nil => simp
+  | cons s L ih =>
+    rw [FreeMonoid.ofList_cons, map_mul, map_mul, ih, List.map_cons, List.prod_cons]
+    cases s <;> simp
+
 end ULiftBool
 
 section FinTwo

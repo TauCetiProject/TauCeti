@@ -24,21 +24,26 @@ order of every torsion element of `G` divides `H.index`.
   and `k ∈ K`, then `Nat.card K ∣ H.index`.
 * `Subgroup.orderOf_dvd_index_of_forall_isOfFinOrder_eq_one`: if `H` has no nontrivial torsion
   elements, then `orderOf x ∣ H.index` for every torsion element `x : G`.
-* `Subgroup.eq_one_of_isOfFinOrder_mem`: a torsion-free subgroup contains no nontrivial ambient
+* `Submonoid.eq_one_of_isOfFinOrder_mem`: a torsion-free submonoid contains no nontrivial ambient
   element of finite order.
 * `Subgroup.orderOf_dvd_index_of_isMulTorsionFree`: typeclass form for `[IsMulTorsionFree H]`.
 -/
 
 public section
 
+namespace Submonoid
+
+/-- If `H : Submonoid G` is torsion-free, every element of `H` that has finite order in `G` is
+`1`. -/
+theorem eq_one_of_isOfFinOrder_mem {G : Type*} [Monoid G] (H : Submonoid G) [IsMulTorsionFree H]
+    {x : G} (hx : x ∈ H) (hfin : IsOfFinOrder x) : x = 1 :=
+  congrArg Subtype.val (Submonoid.isOfFinOrder_coe.mp hfin : IsOfFinOrder (⟨x, hx⟩ : H)).eq_one'
+
+end Submonoid
+
 namespace Subgroup
 
 variable {G : Type*} [Group G]
-
-/-- If `H ≤ G` is torsion-free, every element of `H` that has finite order in `G` is `1`. -/
-theorem eq_one_of_isOfFinOrder_mem (H : Subgroup G) [IsMulTorsionFree H]
-    {x : G} (hx : x ∈ H) (hfin : IsOfFinOrder x) : x = 1 :=
-  congrArg Subtype.val (Submonoid.isOfFinOrder_coe.mp hfin : IsOfFinOrder (⟨x, hx⟩ : H)).eq_one'
 
 /-- If a subgroup `K ≤ G` meets every conjugate of `H ≤ G` trivially, then `K` acts freely on
 `G ⧸ H`, so `Nat.card K` divides `H.index`. No finiteness assumption on `H.index` is required. -/
@@ -77,6 +82,6 @@ theorem orderOf_dvd_index_of_isMulTorsionFree (H : Subgroup G) [IsMulTorsionFree
     {x : G} (hx : IsOfFinOrder x) :
     orderOf x ∣ H.index :=
   H.orderOf_dvd_index_of_forall_isOfFinOrder_eq_one
-    (fun _ hy hy_fin => H.eq_one_of_isOfFinOrder_mem hy hy_fin) hx
+    (fun _ hy hy_fin => H.toSubmonoid.eq_one_of_isOfFinOrder_mem hy hy_fin) hx
 
 end Subgroup

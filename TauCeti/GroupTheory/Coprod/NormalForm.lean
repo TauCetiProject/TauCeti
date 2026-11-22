@@ -76,15 +76,6 @@ private theorem toSigma_injective : Function.Injective (toSigma (M := M) (N := N
       match p with | ⟨true, y⟩ => y.down | ⟨false, _⟩ => n) h
     rfl
 
-private theorem uliftBoolEquivCoprod_symm_mk_ofList (L : List (M ⊕ N)) :
-    (CoprodI.uliftBoolEquivCoprod M N).symm (mk (FreeMonoid.ofList L)) =
-      (L.map fun s => CoprodI.of (toSigma s).2).prod := by
-  induction L with
-  | nil => simp
-  | cons s L ih =>
-    rw [FreeMonoid.ofList_cons, map_mul, map_mul, ih, List.map_cons, List.prod_cons]
-    cases s <;> simp [toSigma]
-
 /-- A reduced word of `M ∗ N` as a reduced word of `Monoid.CoprodI (boolFactors M N)`. -/
 private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
     (h₁ : Sum.inl 1 ∉ L) (h₂ : Sum.inr 1 ∉ L) :
@@ -105,7 +96,10 @@ private theorem prod_toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsCha
     (h₁ : Sum.inl 1 ∉ L) (h₂ : Sum.inr 1 ∉ L) :
     (toWord L hc h₁ h₂).prod =
       (CoprodI.uliftBoolEquivCoprod M N).symm (mk (FreeMonoid.ofList L)) := by
-  simp [CoprodI.Word.prod, toWord, uliftBoolEquivCoprod_symm_mk_ofList, Function.comp_def]
+  rw [CoprodI.Word.prod, toWord, CoprodI.uliftBoolEquivCoprod_symm_mk_ofList, List.map_map]
+  congr 2
+  funext s
+  cases s <;> rfl
 
 /-! ### Uniqueness of reduced words -/
 

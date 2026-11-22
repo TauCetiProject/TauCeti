@@ -84,14 +84,6 @@ open _root_.ModularGroup
 
 /-! ### Free-product decompositions of `PSL(2, ℤ)` -/
 
-private theorem triangleGroupEquiv_symm_coe_S :
-    triangleGroupEquiv.symm (S : PSL(2, ℤ)) = TriangleGroup.y 3 2 0 :=
-  triangleGroupEquiv.symm_apply_eq.mpr triangleGroupEquiv_y.symm
-
-private theorem triangleGroupEquiv_symm_coe_R :
-    triangleGroupEquiv.symm (R : PSL(2, ℤ)) = TriangleGroup.x 3 2 0 :=
-  triangleGroupEquiv.symm_apply_eq.mpr (triangleGroupEquiv_x.trans coe_S_mul_coe_T).symm
-
 /-- **Free-product decomposition of `PSL(2, ℤ)`.** The projective modular group is isomorphic to
 the free product `Multiplicative (ZMod 2) ∗ Multiplicative (ZMod 3)`, sending `S` to
 `inl (ofAdd 1)` and `R = S * T` to `inr (ofAdd 1)`. -/
@@ -391,7 +383,7 @@ theorem _root_.Subgroup.six_dvd_index_of_isMulTorsionFree (Γ : Subgroup PSL(2, 
     [IsMulTorsionFree Γ] :
     6 ∣ Γ.index :=
   Γ.six_dvd_index_of_forall_isOfFinOrder_eq_one
-    fun _ hg hg_fin ↦ Γ.eq_one_of_isOfFinOrder_mem hg hg_fin
+    fun _ hg hg_fin ↦ Γ.toSubmonoid.eq_one_of_isOfFinOrder_mem hg hg_fin
 
 /-! ### Abelianization of `PSL(2, ℤ)` -/
 

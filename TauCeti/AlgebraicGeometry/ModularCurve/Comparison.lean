@@ -254,8 +254,8 @@ variable (B N) in
 theorem gammaNaiveAction_hom_comp_gammaNaiveToGamma (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) :
     (gammaNaiveAction B N g).asIso.hom ≫ gammaNaiveToGamma B N =
       gammaNaiveToGamma B N ≫ (gammaAction B N g).asIso.hom := by
-  ext X α a
-  simp
+  ext X α
+  all_goals simp
 
 variable (B N) in
 /-- **Drinfeld `[Γ(N)]`-structures are naive where `N` is invertible** (Katz–Mazur, §3.7). Over a
@@ -285,15 +285,15 @@ theorem naiveLevelEquiv_gammaToGammaNaive_app (X : EllObj B) (α : (gamma B N).o
 @[reassoc (attr := simp)]
 theorem gammaToGammaNaive_comp_gammaNaiveToGamma :
     gammaToGammaNaive B N hN ≫ gammaNaiveToGamma B N = 𝟙 (gamma B N) := by
-  ext X α a
-  simp
+  ext X α
+  all_goals simp
 
 /-- `gammaNaiveToGamma` and `gammaToGammaNaive` compose to the identity on `[Γ(N)]_naive`. -/
 @[reassoc (attr := simp)]
 theorem gammaNaiveToGamma_comp_gammaToGammaNaive :
     gammaNaiveToGamma B N ≫ gammaToGammaNaive B N hN = 𝟙 (gammaNaive B N) := by
-  ext X α a
-  simp
+  ext X α
+  all_goals simp
 
 variable (B N) in
 /-- **Drinfeld and naive `[Γ(N)]`-structures coincide where `N` is invertible** (Katz–Mazur, §3.7):
@@ -330,8 +330,8 @@ theorem isIso_gammaNaiveToGamma (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
 theorem gammaAction_hom_comp_gammaToGammaNaive (g : (GL (Fin 2) (ZMod N))ᵐᵒᵖ) :
     (gammaAction B N g).asIso.hom ≫ gammaToGammaNaive B N hN =
       gammaToGammaNaive B N hN ≫ (gammaNaiveAction B N g).asIso.hom := by
-  ext X α a
-  simp
+  ext X α
+  all_goals simp
 
 /-- **Where `N` is invertible, `GL₂(ℤ/Nℤ)` acts freely on `[Γ(N)]` over a nonempty base.** -/
 theorem eq_one_of_gammaAction_hom_app_eq_self {X : EllObj B} [Nonempty X.base]

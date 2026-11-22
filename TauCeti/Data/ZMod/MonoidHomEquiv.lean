@@ -34,6 +34,8 @@ The groups `ℤ/Nℤ` and `(ℤ/Nℤ)²` are written multiplicatively, as `Multi
 * `TauCeti.zmodMulLift_ofAdd_one`, `TauCeti.zmodMulLift_ofAdd_natCast`,
   `TauCeti.zmodMulLift_ofAdd_intCast`: evaluation of `zmodMulLift` on the generator and integer
   multiples.
+* `TauCeti.zmodMonoidHom_ext`, `TauCeti.zmodProdMonoidHom_ext`: extensionality on the standard
+  generators `ofAdd 1`, and `ofAdd (1, 0)` and `ofAdd (0, 1)`.
 * `TauCeti.zmodMonoidHomEquiv_symm_eq_zmodMulLift`: the inverse of `zmodMonoidHomEquiv N G` is
   `zmodMulLift`.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply`, `TauCeti.zmodProdMonoidHomEquiv_symm_apply`, and
@@ -103,6 +105,16 @@ private theorem zmodLift_apply {G : Type*} [Group G] [NeZero N] (g : G) (hg : g 
   conv_lhs => rw [← ZMod.natCast_zmod_val a]
   exact zmodMulLift_ofAdd_natCast g hg a.val
 
+/-- Two homomorphisms `Multiplicative (ZMod N) →* G` that agree on `ofAdd 1` are equal. -/
+@[ext]
+theorem zmodMonoidHom_ext {G : Type*} [Monoid G] {φ ψ : Multiplicative (ZMod N) →* G}
+    (h : φ (.ofAdd 1) = ψ (.ofAdd 1)) : φ = ψ :=
+  MonoidHom.eq_of_eqOn_dense
+    (by
+      rw [← Subgroup.zpowers_eq_closure, eq_top_iff]
+      exact fun x _ ↦ Multiplicative.mem_zpowers_ofAdd_one x)
+    (by rintro _ rfl; exact h)
+
 variable (N) in
 /-- **Homomorphisms `ℤ/Nℤ →* G` are the elements of `G` killed by `N`**, through the image of
 `1` (valid for all `N : ℕ`, including `N = 0`). -/
@@ -112,10 +124,8 @@ noncomputable def zmodMonoidHomEquiv (G : Type*) [Group G] :
     rw [← map_pow, ofAdd_one_pow_self, map_one]⟩
   invFun g := zmodMulLift g.val g.property
   left_inv φ := by
-    refine MonoidHom.ext fun z ↦ ?_
-    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp (Multiplicative.mem_zpowers_ofAdd_one z)
-    dsimp only
-    rw [← ofAdd_zsmul, zsmul_one, zmodMulLift_ofAdd_intCast, ← map_zpow, ← ofAdd_zsmul, zsmul_one]
+    ext
+    simp [zmodMulLift_ofAdd_one]
   right_inv g := Subtype.ext (zmodMulLift_ofAdd_one g.val g.property)
 
 /-- The inverse of `zmodMonoidHomEquiv` is `zmodMulLift`. -/
@@ -141,18 +151,17 @@ theorem zmodMonoidHomEquiv_symm_apply {G : Type*} [Group G] [NeZero N] (g : {g :
     (a : ZMod N) : (zmodMonoidHomEquiv N G).symm g (.ofAdd a) = g.val ^ a.val :=
   zmodLift_apply _ _ a
 
-variable (N) in
-/-- **Homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of `G` killed by `N`**, through the
-images of `(1, 0)` and `(0, 1)` (valid for all `N : ℕ`, including `N = 0`). -/
-noncomputable def zmodProdMonoidHomEquiv (G : Type*) [CommGroup G] :
-    (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} where
-  toFun φ := (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative),
-    zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative))
-  invFun g := ((zmodLift g.1.val g.1.property).coprod
-      (zmodLift g.2.val g.2.property)).toMultiplicativeLeft
-  left_inv φ := by
-    refine MonoidHom.ext fun z ↦ ?_
-    obtain ⟨a, ha⟩ := Subgroup.mem_zpowers_iff.mp
+/-- Two homomorphisms `Multiplicative (ZMod N × ZMod N) →* G` that agree on `ofAdd (1, 0)` and
+`ofAdd (0, 1)` are equal. -/
+@[ext]
+theorem zmodProdMonoidHom_ext {G : Type*} [Monoid G]
+    {φ ψ : Multiplicative (ZMod N × ZMod N) →* G}
+    (h₁ : φ (.ofAdd (1, 0)) = ψ (.ofAdd (1, 0)))
+    (h₂ : φ (.ofAdd (0, 1)) = ψ (.ofAdd (0, 1))) : φ = ψ := by
+  refine MonoidHom.eq_of_eqOn_dense
+    (s := {(Multiplicative.ofAdd (1, 0) : Multiplicative (ZMod N × ZMod N)), .ofAdd (0, 1)})
+    (eq_top_iff.mpr fun z _ ↦ ?_) ?_
+  · obtain ⟨a, ha⟩ := Subgroup.mem_zpowers_iff.mp
       (Multiplicative.mem_zpowers_ofAdd_one (.ofAdd z.toAdd.1))
     obtain ⟨b, hb⟩ := Subgroup.mem_zpowers_iff.mp
       (Multiplicative.mem_zpowers_ofAdd_one (.ofAdd z.toAdd.2))
@@ -163,8 +172,24 @@ noncomputable def zmodProdMonoidHomEquiv (G : Type*) [CommGroup G] :
     have hz : z = .ofAdd (1, 0) ^ a * .ofAdd (0, 1) ^ b := by
       rw [← ofAdd_zsmul, ← ofAdd_zsmul, ← ofAdd_add]
       ext <;> simp [ha', hb']
-    rw [hz, map_mul, map_zpow, map_zpow, map_mul, map_zpow, map_zpow]
-    simp [zmodMonoidHomEquiv, zmodLift_one]
+    rw [hz]
+    exact mul_mem (zpow_mem (Subgroup.subset_closure (by simp)) a)
+      (zpow_mem (Subgroup.subset_closure (by simp)) b)
+  · rintro _ (rfl | rfl)
+    · exact h₁
+    · exact h₂
+
+variable (N) in
+/-- **Homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of `G` killed by `N`**, through the
+images of `(1, 0)` and `(0, 1)` (valid for all `N : ℕ`, including `N = 0`). -/
+noncomputable def zmodProdMonoidHomEquiv (G : Type*) [CommGroup G] :
+    (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} where
+  toFun φ := (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative),
+    zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative))
+  invFun g := ((zmodLift g.1.val g.1.property).coprod
+      (zmodLift g.2.val g.2.property)).toMultiplicativeLeft
+  left_inv φ := by
+    ext <;> simp [zmodLift_one]
   right_inv g := by
     refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;> simp [zmodMonoidHomEquiv, zmodLift_one]
 

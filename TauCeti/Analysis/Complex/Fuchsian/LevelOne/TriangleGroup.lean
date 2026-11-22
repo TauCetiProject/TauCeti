@@ -333,6 +333,18 @@ theorem triangleGroupEquiv_z :
     triangleGroupEquiv (TriangleGroup.z 3 2 0) = (_root_.ModularGroup.T : PSL(2, ℤ))⁻¹ :=
   TriangleGroup.lift_z ..
 
+/-- The inverse of `triangleGroupEquiv` sends `S` to `y`. -/
+@[simp]
+theorem triangleGroupEquiv_symm_coe_S :
+    triangleGroupEquiv.symm (_root_.ModularGroup.S : PSL(2, ℤ)) = TriangleGroup.y 3 2 0 :=
+  triangleGroupEquiv.symm_apply_eq.mpr triangleGroupEquiv_y.symm
+
+/-- The inverse of `triangleGroupEquiv` sends `R = S * T` to `x`. -/
+@[simp]
+theorem triangleGroupEquiv_symm_coe_R :
+    triangleGroupEquiv.symm (R : PSL(2, ℤ)) = TriangleGroup.x 3 2 0 :=
+  triangleGroupEquiv.symm_apply_eq.mpr (triangleGroupEquiv_x.trans coe_S_mul_coe_T).symm
+
 /-- The modular triangle homomorphism is bijective, by comparison with the geometric
 presentation precomposed with the mirror automorphism. -/
 theorem modularHom_bijective : Function.Bijective modularHom := by
