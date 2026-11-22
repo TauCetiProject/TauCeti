@@ -100,7 +100,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
   (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version;
   `Subgroup.orbitRelQuotientEquiv` (and `AddSubgroup.orbitRelQuotientEquiv`) identifies the
-  `(G ⧸ N)`-orbits on `N`-orbits with the `G`-orbits.
+  `(G ⧸ N)`-orbits on `N`-orbits with the `G`-orbits, and
+  `Subgroup.stabilizer_quotientGroup_orbitRelQuotient_mk` and
+  `Subgroup.comap_stabilizer_quotientGroup_orbitRelQuotient_mk` (with their additive versions)
+  compute the stabilizer in `G ⧸ N` of an `N`-orbit and its preimage in `G`.
 * `MulAction.orbitRel.Quotient.instMulActionOfSMulCommClass`: an action commuting with that of
   `K` acts on the space of `K`-orbits by translating representatives
   (`MulAction.orbitRel.Quotient.smul_mk`, `MulAction.orbitRel.Quotient.smul_comp_mk`,
@@ -1079,6 +1082,52 @@ theorem orbitRelQuotientEquiv_symm_mk (N : Subgroup G) [N.Normal] (x : X) :
     (orbitRelQuotientEquiv N).symm (Quotient.mk'' x) =
       Quotient.mk'' (Quotient.mk'' x : MulAction.orbitRel.Quotient N X) :=
   (rfl)
+
+section Stabilizer
+
+open MulAction
+
+/-- **Stabilizer of an `N`-orbit in `G ⧸ N`.** An element of `G ⧸ N` stabilizes the `N`-orbit of
+`x` exactly when it is the image of an element of `stabilizer G x`. -/
+@[to_additive
+  /-- **Stabilizer of an `N`-orbit in `G ⧸ N`.** An element of the additive quotient group `G ⧸ N`
+  stabilizes the `N`-orbit of `x` exactly when it is the image of an element of
+  `AddAction.stabilizer G x`. -/]
+theorem stabilizer_quotientGroup_orbitRelQuotient_mk (N : Subgroup G) [N.Normal] (x : X) :
+    stabilizer (G ⧸ N) (_root_.Quotient.mk'' x : orbitRel.Quotient N X) =
+      (stabilizer G x).map (QuotientGroup.mk' N) := by
+  ext q
+  induction q using QuotientGroup.induction_on with | H g =>
+  simp only [mem_stabilizer_iff, orbitRel.Quotient.mk_smul_mk, Subgroup.mem_map,
+    QuotientGroup.mk'_apply]
+  constructor
+  · intro h
+    obtain ⟨n, hn⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (_root_.Quotient.exact' h))
+    refine ⟨(n : G)⁻¹ * g, ?_, ?_⟩
+    · rw [mul_smul, inv_smul_eq_iff, ← Subgroup.smul_def, hn]
+    · rw [QuotientGroup.eq, mul_inv_rev, inv_inv]
+      exact ‹N.Normal›.conj_mem' n n.property g
+  · rintro ⟨s, hs, hsg⟩
+    have hns : s⁻¹ * g ∈ N := QuotientGroup.eq.mp hsg
+    have hgn : g * s⁻¹ ∈ N := by
+      have h := ‹N.Normal›.conj_mem (s⁻¹ * g) hns s
+      rwa [← mul_assoc, mul_inv_cancel, one_mul] at h
+    exact _root_.Quotient.sound' (orbitRel_apply.mpr (mem_orbit_iff.mpr
+      ⟨⟨g * s⁻¹, hgn⟩, by rw [Subgroup.smul_def, mul_smul]; congr 1; rw [inv_smul_eq_iff, hs]⟩))
+
+/-- **Preimage of the stabilizer of an `N`-orbit.** The elements of `G` whose coset stabilizes the
+`N`-orbit of `x` form the join `N ⊔ stabilizer G x`. -/
+@[to_additive
+  /-- **Preimage of the stabilizer of an `N`-orbit.** The elements of `G` whose coset stabilizes
+  the `N`-orbit of `x` form the join `N ⊔ AddAction.stabilizer G x`. -/]
+theorem comap_stabilizer_quotientGroup_orbitRelQuotient_mk (N : Subgroup G) [N.Normal] (x : X) :
+    (stabilizer (G ⧸ N) (_root_.Quotient.mk'' x : orbitRel.Quotient N X)).comap
+        (QuotientGroup.mk' N) =
+      N ⊔ stabilizer G x := by
+  rw [stabilizer_quotientGroup_orbitRelQuotient_mk, Subgroup.comap_map_eq, QuotientGroup.ker_mk',
+    sup_comm]
+
+end Stabilizer
 
 end Subgroup
 

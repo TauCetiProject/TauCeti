@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
-import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
