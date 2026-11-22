@@ -243,7 +243,9 @@ end PullbackData
 
 omit [HasPullbacks C] in
 /-- The descent datum `A` is the pullback of itself along the identity. -/
-def PullbackData.refl {U : C} (A : Obj.{w} J F U) : PullbackData (𝟙 U) A A where
+-- The body is exposed so that the index map and the morphisms `β` are definitionally the identity
+-- in other files, where local evaluations along `refl` are computed.
+@[expose] def PullbackData.refl {U : C} (A : Obj.{w} J F U) : PullbackData (𝟙 U) A A where
   α j := j
   β j := 𝟙 _
   w j := by simp
@@ -271,7 +273,9 @@ private lemma iso_hom_comp_iso_hom_congr {U V W : C} {q : V ⟶ U} {r : W ⟶ V}
 /-- The composite of an identification of `E` with the pullback of `B` along `r` and of `B` with
 the pullback of `A` along `q`: an identification of `E` with the pullback of `A` along
 `r ≫ q`. -/
-def PullbackData.trans {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F U}
+-- The body is exposed so that the index map, the morphisms `β` and the identifications are
+-- definitionally the composites in other files, where local evaluations along `trans` are computed.
+@[expose] def PullbackData.trans {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F U}
     {B : Obj.{w} J F V} {E : Obj.{w} J F W} (P : PullbackData r B E) (Q : PullbackData q A B)
     (rq : W ⟶ U) (hrq : r ≫ q = rq) : PullbackData rq A E where
   α j := Q.α (P.α j)
