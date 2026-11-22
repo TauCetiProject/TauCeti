@@ -43,6 +43,8 @@ yields the all-charts universal continuity criterion
 * `ContMDiffSection.compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection` and
   `ContMDiffSection.continuous_compactlySupportedTopology_iff_chartTestSection`: all-charts
   identification and universal property on boundaryless manifolds.
+* `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
+  finite sums of chart extensions of native test functions.
 
 ## References
 
@@ -279,6 +281,47 @@ theorem t2Space_chartTestTopology [LocallyCompactSpace E] [IsManifold I n M] :
     (chartTestTopology_le_compactlySupportedTopology t c hc hct e₀ U₀ hU₀)
     (t2Space_compactlySupportedTopology e₀ U₀ hU₀ hcover₀)
 
+/-- **Partition-of-unity sum factorization through chart localizations.** When the model space is
+finite-dimensional and the charts have `C^n` inverses and cover the manifold, every fixed-compact
+inclusion factors as a finite sum of chart extensions composed with chart localizations. -/
+private theorem exists_sum_chartLocalization [FiniteDimensional ℝ E] [IsManifold I n M]
+    (hc_symm : ∀ j, ContMDiffOn 𝓘(ℝ, E) I n (c j).symm (c j).target)
+    (hcover_c : ∀ x : M, ∃ j, x ∈ (c j).source) (K : Compacts M) :
+    ∃ (s : Finset κ) (ρ : κ → C^n⟮I, M; ℝ⟯) (L : κ → Compacts E)
+      (hL : ∀ j, (L j : Set E) ⊆ (c j).target)
+      (hψ : ∀ j, MapsTo (c j) (_root_.tsupport (ρ j)) (L j)),
+      ofSupportedIn (I := I) (F := F) (V := V) (n := n) K =
+        ∑ j ∈ s, (t j).chartTestSection (c j) (hc j) (hct j) ∘ₗ
+          (TestFunction.ofSupportedInCLM ℝ (hL j)).toLinearMap ∘ₗ
+          (t j).chartLocalization (c j) (hc_symm j) (hct j) (ρ j) (L j) (hL j) (hψ j) ∘ₗ
+          (supportedIn I F n V K).subtype := by
+  obtain ⟨s, ρ, hρ_sub, hρ_cpt, _, _, hρ_sum⟩ :=
+    K.isCompact.exists_finset_contMDiff_sum_eq_one I (n := (n : ℕ∞ω)) (by simp)
+      (fun j ↦ (c j).open_source) fun x _ ↦ hcover_c x
+  let Kρ : κ → Compacts M := fun j ↦ ⟨_root_.tsupport (ρ j), hρ_cpt j⟩
+  let L : κ → Compacts E := fun j ↦ (c j).imageCompact (K := Kρ j) (hρ_sub j)
+  have hL (j : κ) : (L j : Set E) ⊆ (c j).target :=
+    (c j).imageCompact_subset_target (hρ_sub j)
+  have hψ (j : κ) : MapsTo (c j) (_root_.tsupport (ρ j)) (L j) := fun _ hx ↦ by
+    dsimp only [L]
+    rw [(c j).coe_imageCompact]
+    exact mem_image_of_mem _ hx
+  refine ⟨s, ρ, L, hL, hψ, LinearMap.ext fun sec ↦ Subtype.ext ?_⟩
+  ext x
+  simp only [LinearMap.sum_apply, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_sum,
+    ContinuousLinearMap.coe_coe, TestFunction.coe_ofSupportedInCLM, Submodule.coe_subtype,
+    chartTestSection_chartLocalization _ _ _ _ _ _ _ _ (hc _) (hρ_sub _)]
+  have hsum_apply : (∑ j ∈ s, (ρ j • sec.val : Cₛ^n⟮I; F, V⟯)) x =
+      ∑ j ∈ s, ρ j x • sec.val x := by
+    have h := congrFun (map_sum (coeAddHom I F (n : ℕ∞ω) V)
+      (fun j ↦ (ρ j • sec.val : Cₛ^n⟮I; F, V⟯)) s) x
+    simpa only [coeAddHom_apply, Finset.sum_apply, ContMDiffSection.smul_apply] using h
+  rw [hsum_apply, ← Finset.sum_smul, ofSupportedIn_apply]
+  by_cases hx : x ∈ (K : Set M)
+  · rw [hρ_sum x hx, one_smul]
+  · rw [sec.val.eq_zero_of_notMem_tsupport fun h ↦ hx (mem_supportedIn.1 sec.property h),
+      smul_zero]
+
 /-- **Reverse comparison via finite partitions of unity.** When the model space is
 finite-dimensional and the charts have `C^n` inverses and cover the manifold, the fixed-compact
 inductive topology is finer than the chart-generated test topology. -/
@@ -295,41 +338,14 @@ theorem compactlySupportedTopology_le_chartTestTopology [FiniteDimensional ℝ E
   refine TauCeti.FinalLocallyConvexTopology.le_of_sum_factor
     (ofSupportedIn (I := I) (F := F) (V := V) (n := n))
     (fun j ↦ (t j).chartTestSection (c j) (hc j) (hct j)) fun K ↦ ?_
-  obtain ⟨s, ρ, hρ_sub, hρ_cpt, _, _, hρ_sum⟩ :=
-    K.isCompact.exists_finset_contMDiff_sum_eq_one I (n := (n : ℕ∞ω)) (by simp)
-      (fun j ↦ (c j).open_source) fun x _ ↦ hcover_c x
-  let Kρ : κ → Compacts M := fun j ↦ ⟨_root_.tsupport (ρ j), hρ_cpt j⟩
-  let L : κ → Compacts E := fun j ↦ (c j).imageCompact (K := Kρ j) (hρ_sub j)
-  have hL (j : κ) : (L j : Set E) ⊆ (c j).target :=
-    (c j).imageCompact_subset_target (hρ_sub j)
-  have hψ (j : κ) : MapsTo (c j) (_root_.tsupport (ρ j)) (L j) := fun _ hx ↦ by
-    dsimp only [L]
-    rw [(c j).coe_imageCompact]
-    exact mem_image_of_mem _ hx
-  let a (j : κ) :
-      supportedIn I F n V K →ₗ[ℝ] 𝓓^{n}(⟨(c j).target, (c j).open_target⟩, F) :=
-    ((TestFunction.ofSupportedInCLM ℝ (hL j)).toLinearMap.comp
-      ((t j).chartLocalization (c j) (hc_symm j) (hct j) (ρ j) (L j) (hL j) (hψ j))).comp
-      (supportedIn I F n V K).subtype
-  refine ⟨s, a, fun j _ ↦ ?_, ?_⟩
-  · exact (TestFunction.continuous_ofSupportedIn (hL j)).comp <|
-      ((t j).continuous_chartLocalization (c j) (hc_symm j) (hct j) e U hU (ρ j) (L j) (hL j)
-        (hψ j) hcover_e).comp continuous_subtypeVal
-  · refine LinearMap.ext fun sec ↦ Subtype.ext ?_
-    ext x
-    simp only [LinearMap.sum_apply, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_sum,
-      a, ContinuousLinearMap.coe_coe, TestFunction.coe_ofSupportedInCLM, Submodule.coe_subtype,
-      chartTestSection_chartLocalization _ _ _ _ _ _ _ _ (hc _) (hρ_sub _)]
-    have hsum_apply : (∑ j ∈ s, (ρ j • sec.val : Cₛ^n⟮I; F, V⟯)) x =
-        ∑ j ∈ s, ρ j x • sec.val x := by
-      have h := congrFun (map_sum (coeAddHom I F (n : ℕ∞ω) V)
-        (fun j ↦ (ρ j • sec.val : Cₛ^n⟮I; F, V⟯)) s) x
-      simpa only [coeAddHom_apply, Finset.sum_apply, ContMDiffSection.smul_apply] using h
-    rw [hsum_apply, ← Finset.sum_smul, ofSupportedIn_apply]
-    by_cases hx : x ∈ (K : Set M)
-    · rw [hρ_sum x hx, one_smul]
-    · rw [sec.val.eq_zero_of_notMem_tsupport fun h ↦ hx (mem_supportedIn.1 sec.property h),
-        smul_zero]
+  obtain ⟨s, ρ, L, hL, hψ, hdecomp⟩ :=
+    exists_sum_chartLocalization t c hc hct hc_symm hcover_c K
+  refine ⟨s, fun j ↦ (TestFunction.ofSupportedInCLM ℝ (hL j)).toLinearMap ∘ₗ
+    (t j).chartLocalization (c j) (hc_symm j) (hct j) (ρ j) (L j) (hL j) (hψ j) ∘ₗ
+    (supportedIn I F n V K).subtype, fun j _ ↦ ?_, hdecomp.symm⟩
+  exact (TestFunction.continuous_ofSupportedIn (hL j)).comp <|
+    ((t j).continuous_chartLocalization (c j) (hc_symm j) (hct j) e U hU (ρ j) (L j) (hL j)
+      (hψ j) hcover_e).comp continuous_subtypeVal
 
 /-- **Equivalence of the chart-generated and fixed-compact test topologies.** On a Hausdorff `C^n`
 manifold modeled on a finite-dimensional real space, the final locally convex topology generated
@@ -393,6 +409,50 @@ theorem continuous_compactlySupportedTopology_iff_comp_chartTestSection
 
 end ChartTestTopology
 
+section RestrictedExtChart
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace F]
+  (V : M → Type*) [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] {n : ℕ∞} [IsManifold I n M]
+
+private def restrictedExtChart (x : M) : PartialDiffeomorph I 𝓘(ℝ, E) M E n :=
+  (TauCeti.extChartPartialDiffeomorph I (n : ℕ∞ω) x).restrOpen
+    (trivializationAt F V x).baseSet (trivializationAt F V x).open_baseSet
+
+private theorem restrictedExtChart_source_subset (x : M) :
+    (restrictedExtChart (I := I) (F := F) (n := n) V x).toOpenPartialHomeomorph.source ⊆
+      (trivializationAt F V x).baseSet := by
+  rw [restrictedExtChart, PartialDiffeomorph.toOpenPartialHomeomorph_source,
+    PartialDiffeomorph.restrOpen_source]
+  exact inter_subset_right
+
+private theorem contMDiffOn_restrictedExtChart (x : M) :
+    ContMDiffOn I 𝓘(ℝ, E) n
+      (restrictedExtChart (I := I) (F := F) (n := n) V x).toOpenPartialHomeomorph
+      (restrictedExtChart (I := I) (F := F) (n := n) V x).toOpenPartialHomeomorph.source := by
+  rw [(restrictedExtChart V x).toFun'_toOpenPartialHomeomorph,
+    (restrictedExtChart V x).toOpenPartialHomeomorph_source]
+  exact (restrictedExtChart V x).contMDiffOn
+
+private theorem contMDiffOn_restrictedExtChart_symm (x : M) :
+    ContMDiffOn 𝓘(ℝ, E) I n
+      (restrictedExtChart (I := I) (F := F) (n := n) V x).toOpenPartialHomeomorph.symm
+      (restrictedExtChart (I := I) (F := F) (n := n) V x).toOpenPartialHomeomorph.target := by
+  rw [(restrictedExtChart V x).coe_toOpenPartialHomeomorph_symm,
+    (restrictedExtChart V x).toOpenPartialHomeomorph_target]
+  exact (restrictedExtChart V x).symm.contMDiffOn
+
+private theorem mem_restrictedExtChart_source [BoundarylessManifold I M] (x : M) :
+    x ∈ (restrictedExtChart (I := I) (F := F) (n := n) V x).toOpenPartialHomeomorph.source := by
+  rw [restrictedExtChart, PartialDiffeomorph.toOpenPartialHomeomorph_source,
+    PartialDiffeomorph.restrOpen_source]
+  exact ⟨(TauCeti.mem_extChartPartialDiffeomorph_source I (n : ℕ∞ω) x).2
+    (BoundarylessManifold.isInteriorPoint (I := I)), mem_baseSet_trivializationAt F V x⟩
+
+end RestrictedExtChart
+
 section Boundaryless
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -404,11 +464,32 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [FiberBundle F V] [VectorBundle ℝ F V]
   {n : ℕ∞} [ContMDiffVectorBundle n F V I] [IsManifold I n M] [BoundarylessManifold I M]
 
-private def restrictedExtChart (V : M → Type*)
-    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
-    (x : M) : PartialDiffeomorph I 𝓘(ℝ, E) M E n :=
-  (TauCeti.extChartPartialDiffeomorph I (n : ℕ∞ω) x).restrOpen
-    (trivializationAt F V x).baseSet (trivializationAt F V x).open_baseSet
+/-- **Compactly supported sections are spanned by chart extensions.** On a boundaryless Hausdorff
+`C^n` manifold with finite-dimensional model, every compactly supported section is a finite sum of
+chart extensions of native test functions. In particular a linear map on compactly supported
+sections is determined by its composites with the chart extensions. -/
+theorem span_iUnion_range_chartTestSection_eq_top :
+    Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
+  refine Submodule.eq_top_iff'.2 fun s ↦ ?_
+  let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
+  let σ : supportedIn I F n V K := ⟨s, mem_supportedIn.2 subset_rfl⟩
+  let t₀ : M → Trivialization F (π F V) := fun x ↦ trivializationAt F V x
+  let c₀ : M → OpenPartialHomeomorph M E := fun x ↦
+    (restrictedExtChart (I := I) (F := F) (n := n) V x).toOpenPartialHomeomorph
+  obtain ⟨S, ρ, L, hL, hψ, hdecomp⟩ := exists_sum_chartLocalization t₀ c₀
+    (fun x ↦ contMDiffOn_restrictedExtChart V x) (fun x ↦ restrictedExtChart_source_subset V x)
+    (fun x ↦ contMDiffOn_restrictedExtChart_symm V x)
+    (fun x ↦ ⟨x, mem_restrictedExtChart_source V x⟩) K
+  have hs : s = ∑ x ∈ S, (t₀ x).chartTestSection (c₀ x) (contMDiffOn_restrictedExtChart V x)
+      (restrictedExtChart_source_subset V x) ((TestFunction.ofSupportedInCLM ℝ (hL x))
+        ((t₀ x).chartLocalization (c₀ x) (contMDiffOn_restrictedExtChart_symm V x)
+          (restrictedExtChart_source_subset V x) (ρ x) (L x) (hL x) (hψ x) σ)) := by
+    simpa [LinearMap.sum_apply, LinearMap.coe_comp, Function.comp_apply] using
+      (Subtype.ext (ofSupportedIn_apply K σ).symm).trans (LinearMap.congr_fun hdecomp σ)
+  rw [hs]
+  refine Submodule.sum_mem _ fun x _ ↦ Submodule.subset_span (mem_iUnion.2
+    ⟨⟨t₀ x, c₀ x, contMDiffOn_restrictedExtChart V x, restrictedExtChart_source_subset V x⟩,
+      mem_range_self _⟩)
 
 /-- **The test topology is generated by chart extensions.** On a boundaryless Hausdorff `C^n`
 manifold with finite-dimensional model, the fixed-compact topology on compactly supported sections
@@ -423,31 +504,15 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
       TauCeti.finalLocallyConvexTopology (ChartTestData.chartTestSection (I := I) (F := F)
         (V := V) (n := n)) := by
   let t₀ : M → Trivialization F (π F V) := fun x ↦ trivializationAt F V x
-  let Φ : M → PartialDiffeomorph I 𝓘(ℝ, E) M E n :=
-    fun x ↦ restrictedExtChart (I := I) (F := F) V x
-  let c₀ : M → OpenPartialHomeomorph M E := fun x ↦ (Φ x).toOpenPartialHomeomorph
-  have hct₀ (x : M) : (c₀ x).source ⊆ (t₀ x).baseSet := by
-    dsimp only [c₀, Φ, restrictedExtChart]
-    rw [PartialDiffeomorph.toOpenPartialHomeomorph_source, PartialDiffeomorph.restrOpen_source]
-    exact inter_subset_right
-  have hc₀ (x : M) : ContMDiffOn I 𝓘(ℝ, E) n (c₀ x) (c₀ x).source := by
-    dsimp only [c₀]
-    rw [(Φ x).toFun'_toOpenPartialHomeomorph, (Φ x).toOpenPartialHomeomorph_source]
-    exact (Φ x).contMDiffOn
-  have hc₀_symm (x : M) : ContMDiffOn 𝓘(ℝ, E) I n (c₀ x).symm (c₀ x).target := by
-    dsimp only [c₀]
-    rw [(Φ x).coe_toOpenPartialHomeomorph_symm, (Φ x).toOpenPartialHomeomorph_target]
-    exact (Φ x).symm.contMDiffOn
-  have hcover₀ (x : M) : ∃ y : M, x ∈ (c₀ y).source := by
-    refine ⟨x, ?_⟩
-    dsimp only [c₀, Φ, restrictedExtChart]
-    rw [PartialDiffeomorph.toOpenPartialHomeomorph_source, PartialDiffeomorph.restrOpen_source]
-    exact ⟨(TauCeti.mem_extChartPartialDiffeomorph_source I (n : ℕ∞ω) x).2
-      (BoundarylessManifold.isInteriorPoint (I := I)), mem_baseSet_trivializationAt F V x⟩
-  let p : M → ChartTestData I F V n := fun x ↦ ⟨t₀ x, c₀ x, hc₀ x, hct₀ x⟩
+  let c₀ : M → OpenPartialHomeomorph M E := fun x ↦
+    (restrictedExtChart (I := I) (F := F) (n := n) V x).toOpenPartialHomeomorph
+  let p : M → ChartTestData I F V n := fun x ↦ ⟨t₀ x, c₀ x,
+    contMDiffOn_restrictedExtChart V x, restrictedExtChart_source_subset V x⟩
   refine le_antisymm ?_ ?_
-  · refine (compactlySupportedTopology_le_chartTestTopology
-      t₀ c₀ hc₀ hct₀ e U hU hcover hc₀_symm hcover₀).trans ?_
+  · refine (compactlySupportedTopology_le_chartTestTopology t₀ c₀
+      (fun x ↦ contMDiffOn_restrictedExtChart V x) (fun x ↦ restrictedExtChart_source_subset V x)
+      e U hU hcover (fun x ↦ contMDiffOn_restrictedExtChart_symm V x)
+      (fun x ↦ ⟨x, mem_restrictedExtChart_source V x⟩)).trans ?_
     let := TauCeti.finalLocallyConvexTopology
       (ChartTestData.chartTestSection (I := I) (F := F) (V := V) (n := n))
     exact (TauCeti.FinalLocallyConvexTopology.le_iff _ _).2 fun x ↦ by

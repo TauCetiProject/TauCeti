@@ -53,9 +53,11 @@ within a homotopy class.
 This is the two-dimensional analogue of the line integral `TauCeti.pathIntegral`: it integrates
 along an arbitrary map of the plane, without the integrability conditions of the integral of a top
 form over the rectangle manifold. Like the line integral, it is additive over adjacent rectangles
-(`TauCeti.rectangleIntegral_add_adjacent`) and invariant under `C¹` reparametrization
+(`TauCeti.rectangleIntegral_add_adjacent`), invariant under `C¹` reparametrization
 (`TauCeti.rectangleIntegral_comp_prodMap`, in the first coordinate, and
-`TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` function), and the two are
+`TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` function) and under translation
+of the plane together with the rectangle (`TauCeti.rectangleIntegral_comp_add_right`), and the two
+are
 related by Stokes' formula: the integral of an exact form `dα` over a map of a rectangle is the
 signed sum of the line integrals of `α` along the images of the four edges
 (`TauCeti.rectangleIntegral_mextDeriv`).
@@ -315,6 +317,24 @@ theorem mpullback_comp_prodMap_apply (φ : RoughForm I M F 2) {u : ℝ × ℝ �
   refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
     (congrArg _ hv)).trans ((ψ (σ s, τ t)).map_smul_univ _ _)).trans ?_
   simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+  rfl
+
+/-- **Translation invariance.** For a differentiable map `u` of the plane, the integral over the
+translate `z ↦ u (z + c)` on the rectangle with corners `a` and `b` is the integral over `u` on the
+translated rectangle with corners `a + c` and `b + c`. -/
+theorem rectangleIntegral_comp_add_right (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) (c a b : ℝ × ℝ) :
+    rectangleIntegral φ (fun z ↦ u (z + c)) a b = rectangleIntegral φ u (a + c) (b + c) := by
+  have h (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (fun z ↦ u (z + c)) φ z ![(1, 0), (0, 1)] =
+      mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (z + c) ![(1, 0), (0, 1)] :=
+    congrArg (fun A ↦ A ![(1, 0), (0, 1)]) (mpullback_comp_add_right (hu (z + c)) φ)
+  simp only [rectangleIntegral_def, h, Prod.fst_add, Prod.snd_add]
+  rw [← intervalIntegral.integral_comp_add_right _ c.1]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  rw [← intervalIntegral.integral_comp_add_right _ c.2]
+  -- The points `(s, t) + c` and `(s + c.1, t + c.2)` agree by the definition of addition on
+  -- products; the tangent spaces at them are both `ℝ × ℝ`, but they are indexed by the point, so
+  -- the two integrands cannot be identified by rewriting.
   rfl
 
 section Continuous
