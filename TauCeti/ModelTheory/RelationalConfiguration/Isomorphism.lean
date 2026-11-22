@@ -61,11 +61,9 @@ itself (Mathlib's `MulAction.IsInvariantBlock` for the logic action), or it equa
   `TauCeti.RelationalConfiguration.analyticSet_setOf_isoSetoid` — on a countable carrier, with
   countably many relation symbols, the orbit relation of the logic action is analytic for every
   language, and so is the graph of isomorphism;
-* `TauCeti.RelationalConfiguration.isomorphismInvariant_iff_isInvariantBlock`,
-  `TauCeti.RelationalConfiguration.isomorphismInvariant_iff_preimage_image_quotientMk`, and
-  `TauCeti.RelationalConfiguration.IsomorphismInvariant.disjoint_image_quotientMk_right` /
-  `IsomorphismInvariant.disjoint_image_quotientMk_left` — isomorphism invariance is invariance under
-  the logic action, equality with the saturation, and preserves disjointness into the quotient;
+* `TauCeti.RelationalConfiguration.isomorphismInvariant_iff_isInvariantBlock` and
+  `TauCeti.RelationalConfiguration.isomorphismInvariant_iff_preimage_image_quotientMk` —
+  isomorphism invariance is invariance under the logic action and equality with the saturation;
 * `TauCeti.RelationalConfiguration.analyticSet_iUnion_smul` — on a countable carrier the
   saturation of an analytic set under the logic action is analytic, for every language;
 * `TauCeti.RelationalConfiguration.mem_stabilizer_iff` — the stabilizer of a configuration is the
@@ -296,11 +294,6 @@ theorem isomorphismInvariant_univ :
     IsomorphismInvariant (univ : Set (RelationalConfiguration L V)) :=
   fun _ _ _ _ => mem_univ _
 
-/-- On a subsingleton carrier, every set of configurations is isomorphism invariant. -/
-theorem isomorphismInvariant_of_subsingleton [Subsingleton V]
-    (A : Set (RelationalConfiguration L V)) : IsomorphismInvariant A :=
-  fun _ _ h hc => isoSetoid_iff_eq_of_subsingleton.1 h ▸ hc
-
 /-- The complement of an isomorphism-invariant set is isomorphism invariant. -/
 theorem IsomorphismInvariant.compl (hA : IsomorphismInvariant A) : IsomorphismInvariant Aᶜ :=
   fun _ _ h hc hd => hc (hA ((isoSetoid L V).symm h) hd)
@@ -314,20 +307,6 @@ theorem IsomorphismInvariant.inter (hA : IsomorphismInvariant A) (hB : Isomorphi
 theorem IsomorphismInvariant.union (hA : IsomorphismInvariant A) (hB : IsomorphismInvariant B) :
     IsomorphismInvariant (A ∪ B) :=
   fun _ _ h hc => hc.imp (hA h) (hB h)
-
-/-- If `B` is isomorphism invariant and disjoint from `A`, no isomorphism class meets both `A` and
-`B`. -/
-theorem IsomorphismInvariant.disjoint_image_quotientMk_right
-    (hB : IsomorphismInvariant B) (hAB : Disjoint A B) :
-    Disjoint (Quotient.mk (isoSetoid L V) '' A) (Quotient.mk (isoSetoid L V) '' B) := by
-  rwa [disjoint_image_left, isomorphismInvariant_iff_preimage_image_quotientMk.1 hB]
-
-/-- If `A` is isomorphism invariant and disjoint from `B`, no isomorphism class meets both `A` and
-`B`. -/
-theorem IsomorphismInvariant.disjoint_image_quotientMk_left
-    (hA : IsomorphismInvariant A) (hAB : Disjoint A B) :
-    Disjoint (Quotient.mk (isoSetoid L V) '' A) (Quotient.mk (isoSetoid L V) '' B) :=
-  (hA.disjoint_image_quotientMk_right hAB.symm).symm
 
 /-- An intersection of isomorphism-invariant sets is isomorphism invariant. -/
 theorem isomorphismInvariant_iInter {ι : Sort*} {A : ι → Set (RelationalConfiguration L V)}

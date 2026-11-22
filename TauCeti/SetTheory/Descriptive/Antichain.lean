@@ -11,7 +11,7 @@ public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import TauCeti.MeasureTheory.Constructions.Polish.Perfect
 import Mathlib.Topology.DerivedSet
 import Mathlib.Topology.MetricSpace.Perfect
-import TauCeti.Logic.Countable
+import TauCeti.Basic.Countable.Basic
 import TauCeti.Topology.Bases
 import TauCeti.Topology.Perfect
 

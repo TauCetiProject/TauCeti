@@ -71,9 +71,7 @@ Further facts:
   pull back Borel graphs, and smooth relations are Borel.
 * `Setoid.borelReducible_bot_bot_iff_lift_mk_le`: reductions between equalities on standard
   Borel spaces.
-* `Setoid.isSmooth_iff_countablySeparated` and `Setoid.isSmooth_of_countablySeparated`: smoothness
-  is countable separation of the quotient, and any measurable complete invariant into a countably
-  separated space witnesses smoothness.
+* `Setoid.isSmooth_iff_countablySeparated`: smoothness is countable separation of the quotient.
 * `Setoid.isSmooth_iff_borelReducible_bot`: smoothness is reducibility to equality on any
   uncountable standard Borel space.
 * `Setoid.isSmooth_of_countable_quotient`, `Setoid.borelBireducible_bot_quotient`: relations
@@ -387,12 +385,6 @@ theorem isSmooth_bot_iff : (⊥ : Setoid X).IsSmooth ↔ CountablySeparated X :=
   rw [IsSmooth, borelReducible_bot_bot_iff]
   exact ⟨fun ⟨f, hf, hinj⟩ => CountablySeparated.of_injective hf hinj,
     fun _ => measurable_injection_nat_bool_of_countablySeparated X⟩
-
-/-- An equivalence relation classified by a measurable map into a countably separated measurable
-space is smooth. -/
-theorem isSmooth_of_countablySeparated [CountablySeparated Y] {g : X → Y} (hg : Measurable g)
-    (hsep : ∀ x y, E x y ↔ g x = g y) : E.IsSmooth :=
-  (borelReducible_iff.2 ⟨g, hg, hsep⟩).isSmooth (isSmooth_bot_iff.2 inferInstance)
 
 /-- **Smoothness through any uncountable standard Borel space.** For an uncountable standard Borel
 space `Y`, `E` is smooth iff it is Borel reducible to equality on `Y`: equality on `Y` and equality

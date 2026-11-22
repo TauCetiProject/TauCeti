@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Countable.Defs
+public import Mathlib.Basic.Countable.Basic
 import Mathlib.Data.Fintype.EquivFin
 
 /-!

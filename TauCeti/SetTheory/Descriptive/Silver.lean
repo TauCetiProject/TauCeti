@@ -62,12 +62,10 @@ the ambient space and for any finer relation `R`.
   equivalence relation `F` on a Borel subset `A` of a Polish space and any relation `R` on the
   ambient space refining `F`, countably many `F`-classes or a Cantor antichain on `A` for `R`.
 * `Setoid.IsThinOn.countable_quotient_of_measurableSet`,
-  `Setoid.IsThinOn.countable_quotient_comap_of_measurableSet`,
-  `Setoid.IsThinOn.countable_quotient_comap_of_isSmooth`, and
-  `Setoid.IsThinOn.countable_quotient_comap_of_countablySeparated`: on a thin Borel subset of a
-  Polish space, any coarsening Borel relation — in particular the restriction of `R` when its graph
-  is measurable, smooth, or classified into a countably separated space — has countably many
-  classes.
+  `Setoid.IsThinOn.countable_quotient_comap_of_measurableSet`, and
+  `Setoid.IsThinOn.countable_quotient_comap_of_isSmooth`: on a thin Borel subset of a Polish
+  space, any coarsening Borel relation — in particular the restriction of `R` when its graph is
+  measurable or smooth — has countably many classes.
 * `Setoid.borelReducible_bot_iff_not_countable_quotient`: the reducibility form, equality on
   Cantor space Borel reduces to a Borel equivalence relation on a standard Borel space exactly
   when the latter has uncountably many classes.
@@ -213,15 +211,6 @@ theorem IsThinOn.countable_quotient_comap_of_isSmooth [TopologicalSpace X] [Poli
     (hA : MeasurableSet A) (hsmooth : (R.comap (Subtype.val : A → X)).IsSmooth) :
     Countable (Quotient (R.comap (Subtype.val : A → X))) :=
   hR.countable_quotient_comap_of_measurableSet hA hsmooth.measurableSet_setOf
-
-/-- A thin Borel subset of a Polish space admitting a measurable complete invariant into a
-countably separated measurable space meets only countably many classes. -/
-theorem IsThinOn.countable_quotient_comap_of_countablySeparated [TopologicalSpace X] [PolishSpace X]
-    [MeasurableSpace X] [BorelSpace X] {R : Setoid X} {A : Set X} (hR : R.IsThinOn A)
-    (hA : MeasurableSet A) {Y : Type*} [MeasurableSpace Y] [MeasurableSpace.CountablySeparated Y]
-    {g : A → Y} (hg : Measurable g) (hsep : ∀ x y : A, R x y ↔ g x = g y) :
-    Countable (Quotient (R.comap (Subtype.val : A → X))) :=
-  hR.countable_quotient_comap_of_isSmooth hA (isSmooth_of_countablySeparated hg hsep)
 
 /-- **Silver's theorem in reducibility form.** Equality on Cantor space is Borel reducible to a
 Borel equivalence relation on a standard Borel space exactly when the latter has uncountably many

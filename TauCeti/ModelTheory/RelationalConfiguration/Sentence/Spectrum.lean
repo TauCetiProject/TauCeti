@@ -7,9 +7,9 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Basic
 public import TauCeti.SetTheory.Descriptive.Antichain
+import TauCeti.Basic.Countable.Basic
 import TauCeti.Data.Set.Countable
 import TauCeti.Data.Setoid.Countable
-import TauCeti.Logic.Countable
 import TauCeti.ModelTheory.RelationalConfiguration.Observables
 import TauCeti.SetTheory.Descriptive.Silver
 
