@@ -73,6 +73,8 @@ spectrum of the function field of `Spec R` over `Spec R`, so that generic fibres
 * `TauCeti.AlgebraicGeometry.Scheme.algEquivAppPreimageSpecExtension`: on an integral scheme, for
   a field extension `L` of `k(X)`, the sections of `Spec L` over the preimage of a nonempty open `U`
   along `Spec L ⟶ Spec k(X) ⟶ X` are `L`, as a `Γ(X, U)`-algebra.
+* `TauCeti.isFractionRingFunctionFieldSpec`: for a domain `R`, the function field of `Spec R` is
+  an `R`-algebra (`TauCeti.algebraFunctionFieldSpec`) and a fraction field of `R`.
 * `TauCeti.specFractionRingIsoFunctionField`: `Spec K ≅ Spec k(Spec R)` for a fraction field `K`
   of a domain `R`, compatibly with the maps to `Spec R`
   (`TauCeti.specFractionRingIsoFunctionField_hom_fromSpecStalk`).
@@ -381,26 +383,21 @@ variable (R K : Type u) [CommRing R] [IsDomain R] [CommRing K] [Algebra R K] [Is
 /-- The function field of `Spec R` is an `R`-algebra through the map to the generic stalk.
 Mathlib states this instance over the bundled ring `CommRingCat.of R`, where instance search does
 not find the domain hypothesis on `R`. -/
-private noncomputable local instance algebraFunctionFieldSpec :
-    Algebra R (Spec (.of R)).functionField :=
+noncomputable instance algebraFunctionFieldSpec : Algebra R (Spec (.of R)).functionField :=
   instAlgebraCarrierFunctionFieldSpec (.of R)
 
-private local instance isFractionRingFunctionFieldSpec :
-    IsFractionRing R (Spec (.of R)).functionField :=
+/-- The function field of `Spec R` is a fraction field of the domain `R`, so it is isomorphic as an
+`R`-algebra to any chosen fraction field `K` of `R` (`IsLocalization.algEquiv`). -/
+instance isFractionRingFunctionFieldSpec : IsFractionRing R (Spec (.of R)).functionField :=
   functionField_isFractionRing_of_affine (.of R)
-
-/-- The function field of `Spec R` is isomorphic to a chosen fraction field `K` of `R`. -/
-private noncomputable def functionFieldIsoFractionRing :
-    (Spec (.of R)).functionField ≅ CommRingCat.of K :=
-  (IsLocalization.algEquiv (nonZeroDivisors R) (Spec (.of R)).functionField K).toRingEquiv
-    |>.toCommRingCatIso
 
 /-- The spectrum of a chosen fraction field `K` of a domain `R` is isomorphic to the spectrum of
 the function field of `Spec R`, over `Spec R`
 (`TauCeti.specFractionRingIsoFunctionField_hom_fromSpecStalk`). -/
 noncomputable def specFractionRingIsoFunctionField :
     Spec (.of K) ≅ Spec (Spec (.of R)).functionField :=
-  asIso (Spec.map (functionFieldIsoFractionRing R K).hom)
+  asIso (Spec.map (RingEquiv.toCommRingCatIso
+    (IsLocalization.algEquiv (nonZeroDivisors R) (Spec (.of R)).functionField K).toRingEquiv).hom)
 
 /-- The isomorphism `Spec K ≅ Spec K(Spec R)` lies over `Spec R`: followed by the generic point of
 `Spec R`, it is the morphism induced by `R → K`. -/
@@ -419,17 +416,12 @@ lemma specFractionRingIsoFunctionField_hom_fromSpecStalk :
 end FunctionField
 
 /-- The generic point `Spec K(Spec k) ⟶ Spec k` of the spectrum of a field is an isomorphism: the
-generic stalk of `Spec k` is the localization of `k` at its nonzero elements, which are units. -/
+generic point of `Spec k` is its closed point, whose stalk is `k` (`Spec_stalkClosedPointIso`). -/
 instance isIso_fromSpecStalk_genericPoint_spec (k : Type u) [Field k] :
     IsIso ((Spec (.of k)).fromSpecStalk (genericPoint (Spec (.of k)))) := by
-  let := instAlgebraCarrierFunctionFieldSpec (.of k)
-  have : IsFractionRing k (Spec (.of k)).functionField :=
-    functionField_isFractionRing_of_affine (.of k)
-  have : IsIso (StructureSheaf.toStalk (CommRingCat.of k) (genericPoint (Spec (.of k)))) :=
-    (ConcreteCategory.isIso_iff_bijective _).mpr <| Field.localization_map_bijective
-      (Kₘ := (Spec (.of k)).functionField) (zero_notMem_nonZeroDivisors (M₀ := k))
-  rw [Spec.fromSpecStalk_eq']
-  exact Functor.map_isIso Scheme.Spec
-    (StructureSheaf.toStalk (CommRingCat.of k) (genericPoint (Spec (.of k)))).op
+  have h : genericPoint (Spec (.of k)) = IsLocalRing.closedPoint (CommRingCat.of k) :=
+    Subsingleton.elim _ _
+  rw [h, ← Spec_stalkClosedPointIso]
+  infer_instance
 
 end TauCeti

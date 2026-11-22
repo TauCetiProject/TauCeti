@@ -21,8 +21,9 @@ finite presentation `f : X ⟶ S` together with a morphism `ι : C ⟶ X` exhibi
 fibre `X ×_S Spec K` of `f`: the square formed by `ι`, `C ⟶ Spec K`, `f` and the generic point
 `Spec K ⟶ S` is a pullback. Equivalently, it is the datum of an isomorphism `X_η ≅ C` over `K`
 (`TauCeti.MarkedModel.genericFiberIso`, and conversely `TauCeti.MarkedModel.ofGenericFiberIso`).
-The typical base is a Dedekind scheme, such as the spectrum of a Dedekind domain or a field, and
-then a marked model is an integral model of `C`.
+The typical base is a Dedekind scheme. Over the spectrum of a Dedekind domain which is not a
+field, a marked model is an integral model of `C`; over a field, the total space is `C` itself
+(`TauCeti.MarkedModel.isIso_genericι`).
 
 Marked models form a category: a morphism is a morphism of total spaces over `S` which restricts to
 the identity of `C` on generic fibres (`TauCeti.MarkedModel.genericι_comp_eq_iff` restates this
@@ -33,7 +34,7 @@ not isomorphic to the original one through the identity of the total space.
 Over an integral base, flatness makes the generic fibre scheme-theoretically dense in the total
 space (`TauCeti.MarkedModel.isSchemeTheoreticallyDominant_genericι`), so a morphism of total spaces
 into a scheme separated over `S` is determined by its restriction to the generic fibre
-(`TauCeti.MarkedModel.ext_of_genericι_comp_eq`). In particular there is at most one morphism of
+(`TauCeti.ext_of_isSchemeTheoreticallyDominant`). In particular there is at most one morphism of
 marked models into a model which is separated over `S`
 (`TauCeti.MarkedModel.subsingleton_hom`). This gives uniqueness of morphisms extending a generic
 identification, not their existence.
@@ -160,6 +161,10 @@ identification `e` of its generic fibre with `C` over `Spec K(S)`. Its marking i
   genericι := e.inv ≫ pullback.fst _ _
   isPullback := (IsPullback.of_hasPullback toBase (S.fromSpecStalk (genericPoint S))).of_iso
     e (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp [he]) (by simp) (by simp)
+
+@[simp]
+lemma ofGenericFiberIso_total : (ofGenericFiberIso toBase e he).total = X :=
+  (rfl)
 
 @[simp]
 lemma ofGenericFiberIso_toBase : (ofGenericFiberIso toBase e he).toBase = toBase :=
@@ -314,26 +319,19 @@ section Integral
 variable [IsIntegral S]
 
 /-- Over an integral base, the marked generic fibre of a model is scheme-theoretically dense in its
-total space, because the total space is flat over the base. In particular the total space need not
-be reduced. -/
+total space, because the total space is flat over the base. -/
 instance isSchemeTheoreticallyDominant_genericι (M : MarkedModel S C toK) :
     IsSchemeTheoreticallyDominant M.genericι := by
   have : IsSchemeTheoreticallyDominant (S.fromSpecStalk (genericPoint S)) :=
     .of_isDominant _
   exact .of_isPullback M.isPullback.flip
 
-/-- Over an integral base, a morphism from the total space of a marked model to a scheme separated
-over the base is determined by its restriction to the marked generic fibre. -/
-theorem ext_of_genericι_comp_eq (M : MarkedModel S C toK) {Y : Scheme.{u}} (s : Y ⟶ S)
-    [IsSeparated s] {f g : M.total ⟶ Y} (h : f ≫ s = g ≫ s)
-    (hη : M.genericι ≫ f = M.genericι ≫ g) : f = g :=
-  ext_of_isSchemeTheoreticallyDominant M.genericι s h hη
-
 /-- Over an integral base, there is at most one morphism of marked models into a model which is
 separated over the base. Existence is a separate question. -/
 instance subsingleton_hom {M N : MarkedModel S C toK} [IsSeparated N.toBase] :
     Subsingleton (M ⟶ N) where
-  allEq f g := hom_ext (ext_of_genericι_comp_eq M N.toBase (by simp) (by simp))
+  allEq f g :=
+    hom_ext (ext_of_isSchemeTheoreticallyDominant M.genericι N.toBase (by simp) (by simp))
 
 /-- Over an integral base, there is at most one isomorphism between two marked models when the
 target is separated over the base. -/

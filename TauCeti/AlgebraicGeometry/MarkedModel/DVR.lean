@@ -118,8 +118,8 @@ lemma toModel_toBase : M.toModel.toBase = M.toBase :=
 
 @[simp]
 lemma toModel_genericι : M.toModel.genericι = M.genericι := by
-  rw [Model.genericι_def]
-  exact M.isPullback_specMap.isoPullback_hom_fst
+  simp only [Model.genericι_def, toModel, Over.isoMk_inv_left, Iso.symm_inv]
+  exact IsPullback.isoPullback_hom_fst _
 
 /-- A proper marked model over the spectrum of a discrete valuation ring is a proper model. -/
 instance isProper_toModel [M.IsProper] : M.toModel.IsProper :=
