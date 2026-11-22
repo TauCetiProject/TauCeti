@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 
 /-!
 # The linearized Floer operator on the Sobolev space of a conformal metric
@@ -34,7 +35,8 @@ realizes `D_u` when `M` is essentially bounded on `U` (and is `0` by convention 
 first two terms are bounded where `J` is, so the condition is that `C(z)` grows at most like
 `√ρ(z)` (`norm_floerConformalJetCoeff_le`): on a cylindrical end of `U`, where `ρ` is the conformal
 factor of the metric `ds² + dt²`, this says that the zeroth-order part of `D_u` in the end
-coordinates is bounded. The realization is
+coordinates is bounded
+(`norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le`). The realization is
 `TauCeti.SymplecticForm.floerConformalSobolevOperator`, which agrees with `D_u` on test sections
 (`TauCeti.SymplecticForm.floerConformalSobolevOperator_toLp_jet_ae_eq`), so that its norm on the jet
 of a test section `ξ` is the `L²` norm of `D_u ξ`
@@ -112,6 +114,43 @@ theorem norm_floerConformalJetCoeff_le (ω : SymplecticForm V) (ρ : ℝ × ℝ 
       1 + ‖J z (u z)‖ + (√(ρ z))⁻¹ * ‖ω.floerLinearizationCoeff J Ks Kt u z‖ := by
   refine (norm_firstOrderJetCoeff_le _ _).trans_eq ?_
   rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _)]
+
+/-- **The coefficient field on conformal jets on an end.** Let `φ` be a chart of an end with
+`J(φ ζ, ·) = J_e(ζ, ·)`, let `C` be the zeroth-order part of `D_u` and let `C_e` be the
+zeroth-order part for end data `K'`, with the structures `J ∘ φ`, along `u ∘ φ`. If `B` bounds the
+coefficient field on jets of the end data, with the structures `J_e`, along `u ∘ φ` at `ζ`, and if
+`r ‖C(φ ζ)‖ ≤ (1 + ‖J(φ ζ, u (φ ζ))‖) ‖C_e(ζ)‖` and `ρ(φ ζ)^(-1/2) ≤ κ r` with `κ ≥ 0`, then the
+coefficient field on conformal jets is at most `1 + B + κ (1 + B) B` at `φ ζ`. -/
+theorem norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le (ω : SymplecticForm V)
+    {ρ : ℝ × ℝ → ℝ} {J Je : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {φ : ℝ × ℝ → ℝ × ℝ} {ζ : ℝ × ℝ} {B κ r : ℝ} (hJ : J (φ ζ) = Je ζ)
+    (hB : ‖ω.floerJetCoeff Je Ks' Kt' (u ∘ φ) ζ‖ ≤ B)
+    (hC : r * ‖ω.floerLinearizationCoeff J Ks Kt u (φ ζ)‖ ≤
+      (1 + ‖J (φ ζ) (u (φ ζ))‖) * ‖ω.floerLinearizationCoeff (J ∘ φ) Ks' Kt' (u ∘ φ) ζ‖)
+    (hρ : (√(ρ (φ ζ)))⁻¹ ≤ κ * r) (hκ : 0 ≤ κ) :
+    ‖ω.floerConformalJetCoeff ρ J Ks Kt u (φ ζ)‖ ≤ 1 + B + κ * ((1 + B) * B) := by
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
+  rw [floerJetCoeff_def] at hB
+  -- The leading coefficient `J(φ ζ, u (φ ζ)) = J_e(ζ, u (φ ζ))` and the end coefficient `C_e(ζ)`
+  -- are components of the coefficient field on jets of the end data.
+  have hJb : ‖J (φ ζ) (u (φ ζ))‖ ≤ B := by
+    rw [hJ]
+    exact (norm_le_norm_firstOrderJetCoeff_left _ _).trans hB
+  have hCe : ‖ω.floerLinearizationCoeff (J ∘ φ) Ks' Kt' (u ∘ φ) ζ‖ ≤ B := by
+    have heq : ω.floerLinearizationCoeff (J ∘ φ) Ks' Kt' (u ∘ φ) ζ =
+        ω.floerLinearizationCoeff Je Ks' Kt' (u ∘ φ) ζ := by
+      ext v
+      simp only [floerLinearizationCoeff_apply, Function.comp_apply, hJ]
+    rw [heq]
+    exact (norm_le_norm_firstOrderJetCoeff_right _ _).trans hB
+  refine (ω.norm_floerConformalJetCoeff_le _ _ _ _ _ _).trans ?_
+  calc _ ≤ 1 + B + κ * (r * ‖ω.floerLinearizationCoeff J Ks Kt u (φ ζ)‖) := by
+        rw [← mul_assoc]
+        gcongr
+    _ ≤ 1 + B + κ * ((1 + B) * B) := by
+        have h1 : 1 + ‖J (φ ζ) (u (φ ζ))‖ ≤ 1 + B := by linarith
+        gcongr 1 + B + κ * ?_
+        exact hC.trans (mul_le_mul h1 hCe (norm_nonneg _) (by linarith))
 
 /-- The coefficient field on conformal jets is continuous on `U` when the weight is a conformal
 weight on `U`, the data are `C¹` (and the Hamiltonians `C²`) along the graph of `u` over `U`, and

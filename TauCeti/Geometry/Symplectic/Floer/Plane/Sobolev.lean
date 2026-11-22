@@ -337,56 +337,19 @@ theorem norm_floerConformalJetCoeff_cylindricalEndLift_le (ω : SymplecticForm V
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
       (realChart p.cylindricalEndLift ζ)‖ ≤ 1 + B + (1 + B) * B / π := by
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
-  rw [floerJetCoeff_def] at hB
-  -- The leading coefficient `J(w, u w) = J_q(t)(u w)` and the end coefficient `C_end(ζ)` are
-  -- components of the coefficient field on jets of the end datum.
-  have hJb : ‖(J (realChart p.cylindricalEndLift ζ)
-      (u (realChart p.cylindricalEndLift ζ))).toLinearMap.toContinuousLinearMap‖ ≤ B := by
-    rw [hJz]
-    exact (norm_le_norm_firstOrderJetCoeff_left _ _).trans hB
-  have hCe : ‖ω.floerLinearizationCoeff
-      (fun ζ' y ↦ (J (realChart p.cylindricalEndLift ζ') y).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun ζ' ↦ H ζ'.2) (u ∘ realChart p.cylindricalEndLift) ζ‖ ≤ B := by
-    have heq : ω.floerLinearizationCoeff
-        (fun ζ' y ↦ (J (realChart p.cylindricalEndLift ζ') y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun ζ' ↦ H ζ'.2) (u ∘ realChart p.cylindricalEndLift) ζ =
-      ω.floerLinearizationCoeff (fun w y ↦ (Jq w.2 y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun w ↦ H w.2) (u ∘ realChart p.cylindricalEndLift) ζ := by
-      ext v
-      simp only [floerLinearizationCoeff_apply, Function.comp_apply, hJz]
-    rw [heq]
-    exact (norm_le_norm_firstOrderJetCoeff_right _ _).trans hB
   -- The zeroth-order part `C(w)` is at most `(1 + B) B / (2π d)` with `d = |w| ≥ 1`, and the
   -- inverse square root of the weight is at most `1 + d ≤ 2 d`.
-  have hcmp := ω.mul_norm_floerLinearizationCoeff_cylindricalEndLift_le hH hHs hζ hu hfl
-  have hρd := inv_sqrt_cylindricalWeight_le (realChart p.cylindricalEndLift ζ)
   have hd1 : 1 ≤ ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)‖ := by
     rw [norm_symm_realChart_cylindricalEndLift]
     exact Real.one_le_exp (by nlinarith [Real.two_pi_pos])
-  generalize ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)‖ = d
-    at hcmp hρd hd1
-  refine (ω.norm_floerConformalJetCoeff_le _ _ _ _ _ _).trans ?_
-  have hc := norm_nonneg (ω.floerLinearizationCoeff
-    (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-    (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-    (realChart p.cylindricalEndLift ζ))
-  generalize ‖ω.floerLinearizationCoeff (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-    (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-    (realChart p.cylindricalEndLift ζ)‖ = c at hcmp hc ⊢
-  have hC : 2 * d * c ≤ (1 + B) * B / π := by
-    rw [le_div_iff₀ pi_pos]
-    calc 2 * d * c * π = 2 * π * d * c := by ring
-      _ ≤ _ := hcmp
-      _ ≤ (1 + B) * B := mul_le_mul (by linarith) hCe (norm_nonneg _) (by linarith)
-  have hρc : (√(PSSPlane.cylindricalWeight (realChart p.cylindricalEndLift ζ)))⁻¹ * c ≤
-      2 * d * c := by
-    nlinarith
-  calc _ ≤ 1 + B + (√(PSSPlane.cylindricalWeight (realChart p.cylindricalEndLift ζ)))⁻¹ * c := by
-        gcongr
-    _ ≤ 1 + B + (1 + B) * B / π := by linarith
+  have hρd := inv_sqrt_cylindricalWeight_le (realChart p.cylindricalEndLift ζ)
+  refine (ω.norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le
+    (ρ := PSSPlane.cylindricalWeight) (by simp only [hJz]) hB
+    (ω.mul_norm_floerLinearizationCoeff_cylindricalEndLift_le hH hHs hζ hu hfl) ?_
+    (inv_nonneg.2 pi_pos.le)).trans_eq (by ring)
+  calc _ ≤ 1 + ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)‖ := hρd
+    _ ≤ 2 * ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)‖ := by linarith
+    _ = _ := by field_simp
 
 /-- **The linearized operator of a PSS plane is bounded on `W^{1,2}`.** Let `H` be a jointly `C²`
 period-one Hamiltonian, let `u` be `C¹` on the plane, and let the almost complex structures
