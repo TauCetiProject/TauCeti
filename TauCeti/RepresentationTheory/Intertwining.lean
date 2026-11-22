@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.RepresentationTheory.Stabilizer
 public import Mathlib.LinearAlgebra.Basis.Defs
 
 /-!
@@ -55,6 +56,8 @@ taking invariants under it.
 
 * `Representation.IntertwiningMap.equivLinearMapAsModule_apply`: the attached module map acts
   by the original intertwining map on the underlying types.
+* `Representation.IntertwiningMap.stabilizer_apply_eq_of_injective`: an injective intertwining
+  map preserves stabilizers exactly, not only up to the inclusion `IntertwiningMap.stabilizer_le`.
 * `Representation.IntertwiningMap.apply_asAlgebraHom`: an intertwining map commutes with the
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
@@ -232,6 +235,21 @@ theorem res_comp (ψ : IntertwiningMap σ τ) (φ : IntertwiningMap ρ σ) (f : 
   (rfl)
 
 end Restriction
+
+section Stabilizer
+
+variable {A G V W : Type*} [Semiring A] [Group G] [AddCommMonoid V] [AddCommMonoid W]
+  [Module A V] [Module A W] {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- **An injective intertwining map preserves stabilizers.** Mathlib's
+`Representation.IntertwiningMap.stabilizer_le` gives one inclusion for any intertwining map;
+injectivity gives the other, since `σ g (f v) = f v` reads `f (ρ g v) = f v`. -/
+theorem stabilizer_apply_eq_of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
+    (v : V) : stabilizer σ (f v) = stabilizer ρ v := by
+  ext g
+  rw [mem_stabilizer, mem_stabilizer, ← isIntertwining _ _ f g v, hf.eq_iff]
+
+end Stabilizer
 
 end Representation.IntertwiningMap
 

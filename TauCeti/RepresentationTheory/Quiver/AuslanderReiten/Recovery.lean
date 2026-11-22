@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Representation.Translate
 public import TauCeti.RepresentationTheory.Quiver.Representation.InverseTranslate
-import TauCeti.Algebra.Module.AuslanderReiten.DoubleTranspose.Recovery
 
 /-!
 # Inverse identities for Auslander–Reiten translates of quiver representations
@@ -17,9 +16,11 @@ representation from its `D Tr` translate. Conversely, `D Tr` recovers a non-inje
 indecomposable from its `Tr D` translate. Thus the explicit inverse translate realizes
 the inverse of the correspondence on indecomposable isomorphism classes.
 
-The identities are isomorphisms of actual representations, with independently chosen minimal
-presentations. The base field is arbitrary; neither algebraic closedness nor finite
-representation type is needed.
+The identities are isomorphisms of actual representations. They are the identities
+`ModuleCat.nonempty_iso_arInverseTranslate_arTranslate` and
+`ModuleCat.nonempty_iso_arTranslate_arInverseTranslate` for the path algebra, transported through
+the equivalence with its modules. The base field is arbitrary; neither algebraic closedness nor
+finite representation type is needed.
 
 ## References
 
@@ -46,6 +47,18 @@ local notation "kQ" => pathAlgebra k Q
 local notation "E" => quiverRepEquivalence k Q
 local notation "F" => quiverRepFunctor k Q
 
+/-- The path-algebra module of a represented module is that module, through the counit. -/
+private theorem nonempty_iso_functor_obj_quiverRepFunctor_obj (T : ModuleCat.{max u v w t} kQ) :
+    Nonempty ((E).functor.obj ((F).obj T) ≅ T) :=
+  ⟨by simpa only [quiverRepEquivalence_inverse, Functor.comp_obj, Functor.id_obj] using
+    (E).counitIso.app T⟩
+
+/-- A representation is the representation of its path-algebra module, through the unit. -/
+private theorem nonempty_iso_quiverRepFunctor_obj_functor_obj
+    (M : QuiverRep.{u, v, w, max u v w t} k Q) : Nonempty ((F).obj ((E).functor.obj M) ≅ M) :=
+  ⟨by simpa only [quiverRepEquivalence_inverse, Functor.comp_obj, Functor.id_obj] using
+    ((E).unitIso.app M).symm⟩
+
 /-- The inverse translate `Tr D` recovers every finite-dimensional non-projective
 indecomposable representation from its `D Tr` translate. -/
 theorem nonempty_iso_arInverseTranslate_arTranslate
@@ -53,51 +66,20 @@ theorem nonempty_iso_arInverseTranslate_arTranslate
     (hiM : Indecomposable M) (hpM : ¬ Projective M) :
     Nonempty (arInverseTranslate.{u, v, w, t} k Q (arTranslate.{u, v, w, t} k Q M hM)
       (isFinDim_arTranslate.{u, v, w, t} k Q M hM) ≅ M) := by
-  let : IsArtinianRing kQ := IsArtinianRing.of_finite k kQ
-  let : IsArtinianRing kQᵐᵒᵖ := IsArtinianRing.of_finite k kQᵐᵒᵖ
-  let : IsNoetherianRing kQ := IsNoetherianRing.of_finite k kQ
-  let : IsNoetherianRing kQᵐᵒᵖ := IsNoetherianRing.of_finite k kQᵐᵒᵖ
   have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
-  have := Module.finitePresentation_of_finite kQ ((E).functor.obj M)
-  let P : FiniteProjectivePresentation ((E).functor.obj M) := .minimal
-  have hP : IsMinimalProjectivePresentation P.p P.π :=
-    FiniteProjectivePresentation.isMinimal_minimal
-  let T := ModuleCat.of kQ (AuslanderReitenTranslate k P.p)
-  have : Module.Finite k T := Module.Finite.trans kQ T
-  let N := (E).functor.obj (arTranslate.{u, v, w, t} k Q M hM)
-  have : Module.Finite k N :=
-    module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim k Q _
-      (isFinDim_arTranslate.{u, v, w, t} k Q M hM)
-  let D := ModuleCat.matlisDualObj k k N
-  have : Module.Finite kQᵐᵒᵖ D := Module.Finite.of_restrictScalars_finite k kQᵐᵒᵖ D
-  have := Module.finitePresentation_of_finite kQᵐᵒᵖ D
-  let R : FiniteProjectivePresentation D := .minimal
-  have hR : IsMinimalProjectivePresentation R.p R.π :=
-    FiniteProjectivePresentation.isMinimal_minimal
-  obtain ⟨a⟩ := nonempty_iso_arTranslate.{u, v, w, t} k Q M hM P hP
-  -- The counit reads the represented translate back as a path-algebra module.
-  have c : (E).functor.obj ((F).obj T) ≅ T := by
-    simpa only [quiverRepEquivalence_inverse, Functor.comp_obj, Functor.id_obj] using
-      (E).counitIso.app T
-  let g : T ≅ N := c.symm ≪≫ (E).functor.mapIso a.symm
-  let e : AuslanderReitenTranslate k P.p ≃ₗ[k] Module.Dual k D :=
-    (g.toLinearEquiv.restrictScalars k).trans (ModuleCat.scalarDualEvalEquiv k N)
-  have he (b : kQ) (y : AuslanderReitenTranslate k P.p) (x : D) :
-      e (b • y) x = e y (MulOpposite.op b • x) := by
-    simp only [e, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply, map_smul]
-    exact ModuleCat.scalarDualEvalEquiv_smul k N b _ x
-  have hi := (E).functor.indecomposable_obj_of_map_bijective hiM
-    ((E).fullyFaithfulFunctor.map_bijective _ _)
-  have hp : ¬ Module.Projective kQ ((E).functor.obj M) := fun h ↦
-    hpM (((E).map_projective_iff M).mp ((IsProjective.iff_projective _).mp h))
-  obtain ⟨r⟩ := P.nonempty_linearEquiv_rightTranspose_dual_translate.{u, max u v w, t} hP R hR e he
-    ((indecomposable_iff_isIndecomposableModule _).mp hi) hp
-  obtain ⟨s⟩ := nonempty_iso_arInverseTranslate.{u, v, w, t} k Q (arTranslate.{u, v, w, t} k Q M hM)
-    (isFinDim_arTranslate.{u, v, w, t} k Q M hM) R hR
-  have cM : (F).obj ((E).functor.obj M) ≅ M := by
-    simpa only [quiverRepEquivalence_inverse, Functor.comp_obj, Functor.id_obj] using
-      ((E).unitIso.app M).symm
-  exact ⟨s ≪≫ (F).mapIso r.toModuleIso ≪≫ cM⟩
+  have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q _
+    (isFinDim_arTranslate.{u, v, w, t} k Q M hM)
+  obtain ⟨c⟩ := nonempty_iso_functor_obj_quiverRepFunctor_obj.{u, v, w, t} k Q
+    (ModuleCat.arTranslate.{u, max u v w, t} k k ((E).functor.obj M))
+  rw [← arTranslate_eq_quiverRepFunctor_obj] at c
+  obtain ⟨a⟩ := ModuleCat.nonempty_iso_arInverseTranslate_of_iso.{u, max u v w, t} k k c
+  obtain ⟨b⟩ := ModuleCat.nonempty_iso_arInverseTranslate_arTranslate.{u, max u v w, t}
+    (length_quotient_linearMap_self_eq_one k) _ ((E).functor.indecomposable_obj_of_map_bijective
+      hiM ((E).fullyFaithfulFunctor.map_bijective _ _))
+    (fun h ↦ hpM (((E).map_projective_iff M).mp h))
+  obtain ⟨cM⟩ := nonempty_iso_quiverRepFunctor_obj_functor_obj.{u, v, w, t} k Q M
+  rw [arInverseTranslate_eq_quiverRepFunctor_obj]
+  exact ⟨(F).mapIso (a ≪≫ b) ≪≫ cM⟩
 
 /-- The translate `D Tr` recovers every finite-dimensional non-injective indecomposable
 representation from its `Tr D` inverse translate. -/
@@ -106,12 +88,19 @@ theorem nonempty_iso_arTranslate_arInverseTranslate
     (hiN : Indecomposable N) (hinj : ¬ Injective N) :
     Nonempty (arTranslate.{u, v, w, t} k Q (arInverseTranslate.{u, v, w, t} k Q N hN)
       (isFinDim_arInverseTranslate.{u, v, w, t} k Q N hN) ≅ N) := by
-  obtain ⟨M, hM, hiM, hpM, ⟨e⟩⟩ := exists_nonempty_iso_arTranslate.{u, v, w, t} k Q N hN hiN hinj
-  obtain ⟨r⟩ := nonempty_iso_arInverseTranslate_arTranslate.{u, v, w, t} k Q M hM hiM hpM
-  obtain ⟨s⟩ := nonempty_iso_arInverseTranslate_of_iso.{u, v, w, t} k Q
-    (isFinDim_arTranslate.{u, v, w, t} k Q M hM) hN e
-  obtain ⟨a⟩ := nonempty_iso_arTranslate_of_iso.{u, v, w, t} k Q
-    (isFinDim_arInverseTranslate.{u, v, w, t} k Q N hN) hM (s.symm ≪≫ r)
-  exact ⟨a ≪≫ e⟩
+  have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q N hN
+  have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q _
+    (isFinDim_arInverseTranslate.{u, v, w, t} k Q N hN)
+  obtain ⟨c⟩ := nonempty_iso_functor_obj_quiverRepFunctor_obj.{u, v, w, t} k Q
+    (ModuleCat.arInverseTranslate.{u, max u v w, t} k k ((E).functor.obj N))
+  rw [← arInverseTranslate_eq_quiverRepFunctor_obj] at c
+  obtain ⟨a⟩ := ModuleCat.nonempty_iso_arTranslate_of_iso.{u, max u v w, t} k k c
+  obtain ⟨b⟩ := ModuleCat.nonempty_iso_arTranslate_arInverseTranslate.{u, max u v w, t}
+    (length_quotient_linearMap_self_eq_one k) _ ((E).functor.indecomposable_obj_of_map_bijective
+      hiN ((E).fullyFaithfulFunctor.map_bijective _ _))
+    (fun h ↦ hinj (((E).map_injective_iff N).mp h))
+  obtain ⟨cN⟩ := nonempty_iso_quiverRepFunctor_obj_functor_obj.{u, v, w, t} k Q N
+  rw [arTranslate_eq_quiverRepFunctor_obj]
+  exact ⟨(F).mapIso (a ≪≫ b) ≪≫ cN⟩
 
 end TauCeti
