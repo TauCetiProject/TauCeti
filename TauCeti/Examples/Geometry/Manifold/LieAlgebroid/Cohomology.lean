@@ -48,16 +48,13 @@ private def realFieldCoord (u : VFℝ) : C∞ℝ :=
 
 private theorem eq_realFieldCoord_smul (u : VFℝ) :
     u = realFieldCoord u • realUnitVectorField := by
-  ext x
-  apply (NormedSpace.fromTangentSpace x).injective
+  ext x; apply (NormedSpace.fromTangentSpace x).injective
   simp [ContMDiffSection.smul_apply, realUnitVectorField_apply]
 
 private theorem tangent_anchorDeriv_realUnitVectorField (g : C∞ℝ) :
     (tangent 𝓘(ℝ, ℝ) ℝ).anchorDeriv realUnitVectorField g = lineDerivation ℝ 1 g := by
-  ext x
-  rw [anchorDeriv_apply, tangent_anchor_apply, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, realUnitVectorField_apply,
-    ContinuousLinearEquiv.apply_symm_apply, lineDerivation_apply_apply]
+  ext x; simp [anchorDeriv_apply, mvfderiv_eq_fderiv, realUnitVectorField_apply,
+    lineDerivation_apply_apply]
 
 private theorem tangent_real_bracket_eq (u v : VFℝ) :
     (tangent 𝓘(ℝ, ℝ) ℝ).bracket u v =
@@ -70,38 +67,30 @@ private theorem tangent_real_bracket_eq (u v : VFℝ) :
   conv_lhs => rw [eq_realFieldCoord_smul u, eq_realFieldCoord_smul v]
   simp only [(tangent 𝓘(ℝ, ℝ) ℝ).bracket_smul_right, hskew (_ • _) _,
     (tangent 𝓘(ℝ, ℝ) ℝ).bracket_self, (tangent 𝓘(ℝ, ℝ) ℝ).anchorDeriv_smul_left,
-    tangent_anchorDeriv_realUnitVectorField]
-  module
+    tangent_anchorDeriv_realUnitVectorField]; module
 
 /-- The Lie algebroid on `Tℝ` with rescaled anchor `ρ(∂_x) = x ∂_x` and bracket
 `[f ∂_x, g ∂_x] = x (f g' - g f') ∂_x`. -/
 def scaledTangentReal : LieAlgebroid 𝓘(ℝ, ℝ) ℝ (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _) where
   anchor := (ContMDiffMap.id : C∞ℝ) • (tangent 𝓘(ℝ, ℝ) ℝ).anchor
   bracket := LinearMap.mk₂ ℝ (fun u v ↦ (ContMDiffMap.id : C∞ℝ) • (tangent 𝓘(ℝ, ℝ) ℝ).bracket u v)
-    (fun _ _ _ ↦ by simp [map_add, smul_add])
-    (fun c _ _ ↦ by simp [smul_comm c (ContMDiffMap.id : C∞ℝ)])
-    (fun _ _ _ ↦ by simp [map_add, smul_add])
-    (fun c _ _ ↦ by simp [smul_comm c (ContMDiffMap.id : C∞ℝ)])
+    (fun _ _ _ ↦ by simp [map_add, smul_add]) (fun c _ _ ↦ by simp [smul_comm c])
+    (fun _ _ _ ↦ by simp [map_add, smul_add]) (fun c _ _ ↦ by simp [smul_comm c])
   bracket_self _ := by simp [(tangent 𝓘(ℝ, ℝ) ℝ).bracket_self]
   bracket_bracket u v w := by
     have hmul (f : C∞ℝ) : realFieldCoord (f • realUnitVectorField) = f := by
-      ext y
-      simp [ContMDiffSection.smul_apply, realUnitVectorField_apply]
+      ext y; simp [ContMDiffSection.smul_apply, realUnitVectorField_apply]
     simp only [LinearMap.mk₂_apply, tangent_real_bracket_eq, ← mul_smul, hmul, ← add_smul,
-      Derivation.leibniz, map_sub, smul_eq_mul]
-    congr 1; ring
+      Derivation.leibniz, map_sub, smul_eq_mul]; congr 1; ring
   bracket_smul_apply u v f x := by
     simp only [LinearMap.mk₂_apply, ContMDiffSection.smul_apply,
       (tangent 𝓘(ℝ, ℝ) ℝ).bracket_smul_apply, tangent_anchor_apply, FunLike.coe_smul,
-      Pi.smul_apply, map_smul]
-    simp only [ContMDiffMap.id, ContMDiffMap.coeFn_mk, id_eq]
-    module
+      Pi.smul_apply, map_smul]; simp only [ContMDiffMap.id, ContMDiffMap.coeFn_mk, id_eq]; module
 
 @[simp] theorem scaledTangentReal_anchor_apply (x : ℝ) (v : TangentSpace 𝓘(ℝ, ℝ) x) :
     scaledTangentReal.anchor x v = x • v := by
-  dsimp only [scaledTangentReal]
-  rw [ContMDiffSection.smul_apply, ContMDiffMap.id, ContMDiffMap.coeFn_mk, id_eq,
-    FunLike.coe_smul, Pi.smul_apply, tangent_anchor_apply]
+  dsimp only [scaledTangentReal]; rw [ContMDiffSection.smul_apply, ContMDiffMap.id,
+    ContMDiffMap.coeFn_mk, id_eq, FunLike.coe_smul, Pi.smul_apply, tangent_anchor_apply]
 
 /-- The Lie bracket of `scaledTangentReal` rescales the vector-field Lie bracket by `x`. -/
 theorem scaledTangentReal_bracket (u v : VFℝ) :
@@ -136,20 +125,17 @@ theorem scaledTangentReal_extDeriv_zero_eq_zero_iff (η : scaledTangentReal.Coch
       ∃ c : ℝ, η = scaledTangentReal.cochainZeroEquiv.symm (ContMDiffMap.const c) := by
   constructor
   · intro hη
-    let f : C^∞⟮𝓘(ℝ, ℝ), ℝ; ℝ⟯ := scaledTangentReal.cochainZeroEquiv η
+    let f := scaledTangentReal.cochainZeroEquiv η
     have hηf : η = scaledTangentReal.cochainZeroEquiv.symm f :=
       (scaledTangentReal.cochainZeroEquiv.symm_apply_apply η).symm
-    have hmul (x : ℝ) : x * lineDerivation ℝ (1 : ℝ) f x = 0 := by
-      have hx := congr($hη x ![realUnitVectorField x])
-      rw [hηf, scaledTangentReal_extDeriv_zero_apply] at hx
-      simpa [lineDerivation_apply_apply] using hx
-    have hcompl : ∀ x ∈ ({0}ᶜ : Set ℝ), lineDerivation ℝ (1 : ℝ) f x = 0 := fun x hx ↦
-      (mul_eq_zero.mp (hmul x)).resolve_left hx
-    have hderiv0 : ∀ x : ℝ, lineDerivation ℝ (1 : ℝ) f x = 0 := fun x ↦
-      congr_fun ((lineDerivation ℝ (1 : ℝ) f).contMDiff.continuous.ext_on
-        (dense_compl_singleton (0 : ℝ)) continuous_const hcompl) x
+    have hcompl : ∀ x ∈ ({0}ᶜ : Set ℝ), lineDerivation ℝ (1 : ℝ) f x = 0 := fun x hx ↦ by
+      have hx' := congr($hη x ![realUnitVectorField x])
+      rw [hηf, scaledTangentReal_extDeriv_zero_apply, ← lineDerivation_apply_apply] at hx'
+      exact (mul_eq_zero.mp hx').resolve_left hx
     have hfderiv (x : ℝ) : fderiv ℝ f x = 0 := by
-      ext; rw [← lineDerivation_apply_apply, hderiv0 x, _root_.zero_apply]
+      ext; rw [← lineDerivation_apply_apply]
+      exact congr_fun ((lineDerivation ℝ (1 : ℝ) f).contMDiff.continuous.ext_on
+        (dense_compl_singleton (0 : ℝ)) continuous_const hcompl) x
     refine ⟨f 0, ?_⟩; rw [hηf]; congr 1; ext x
     exact is_const_of_fderiv_eq_zero (f.contMDiff.contDiff.differentiable (by simp)) hfderiv x 0
   · rintro ⟨c, rfl⟩

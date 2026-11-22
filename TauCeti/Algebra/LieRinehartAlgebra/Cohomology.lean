@@ -61,12 +61,12 @@ private theorem lie_restrictScalars_update_smul {ι : Type*} [Fintype ι] [Decid
     have hoff : ∑ j ∈ Finset.univ.erase i, (ω.restrictScalars R)
           (Function.update (Function.update v i (a • y)) j ⁅x, Function.update v i (a • y) j⁆) =
         ∑ j ∈ Finset.univ.erase i,
-          a • ω (Function.update (Function.update v i y) j ⁅x, Function.update v i y j⁆) := by
-      refine Finset.sum_congr rfl fun j hj ↦ ?_
-      have hji : j ≠ i := Finset.ne_of_mem_erase hj
-      rw [restrictScalars_apply, Function.update_of_ne hji, Function.update_of_ne hji,
-        Function.update_comm hji.symm (a • y) ⁅x, v j⁆ v,
-        Function.update_comm hji.symm y ⁅x, v j⁆ v, ω.map_update_smul]
+          a • ω (Function.update (Function.update v i y) j ⁅x, Function.update v i y j⁆) :=
+      Finset.sum_congr rfl fun j hj ↦ by
+        have hji : j ≠ i := Finset.ne_of_mem_erase hj
+        rw [restrictScalars_apply, Function.update_of_ne hji, Function.update_of_ne hji,
+          Function.update_comm hji.symm (a • y) ⁅x, v j⁆ v,
+          Function.update_comm hji.symm y ⁅x, v j⁆ v, ω.map_update_smul]
     rw [hoff, hdiag]; abel
   rw [hval, hsum]; simp only [restrictScalars_apply, smul_eq_mul, mul_sub]; ring
 
@@ -114,9 +114,7 @@ def lieDeriv {ι : Type*} [Fintype ι] [inst₀ : DecidableEq ι] :
 theorem lieDeriv_lie {ι : Type*} [Fintype ι] [DecidableEq ι] (x y : L) (ω : L [⋀^ι]→ₗ[A] A) :
     lieDeriv R ⁅x, y⁆ ω = lieDeriv R x (lieDeriv R y ω) - lieDeriv R y (lieDeriv R x ω) := by
   refine restrictScalars_injective R ?_
-  rw [restrictScalars_sub, restrictScalars_lieDeriv, restrictScalars_lieDeriv,
-    restrictScalars_lieDeriv, restrictScalars_lieDeriv, restrictScalars_lieDeriv,
-    lie_lie x y (ω.restrictScalars R)]
+  simpa only [restrictScalars_sub, restrictScalars_lieDeriv] using lie_lie x y (ω.restrictScalars R)
 
 /-- Commutator of Lie derivative and interior product: `ι_y (L_x ω) = L_x (ι_y ω) - ι_{[x,y]} ω`. -/
 theorem curryLeft_lieDeriv {n : ℕ} (x y : L) (ω : L [⋀^Fin (n + 1)]→ₗ[A] A) :
@@ -162,9 +160,8 @@ theorem lieModule_d_smul_apply :
       rw [Fin.sum_univ_succ]
       simp [Matrix.vecCons, removeNth_succ_cons, pow_succ, curryLeft_apply_apply, sub_eq_add_neg]
     rw [← curryLeft_apply_apply, TauCeti.LieModule.Cohomology.curryLeft_d_succ,
-      ← curryLeft_apply_apply, TauCeti.LieModule.Cohomology.curryLeft_d_succ,
-      sub_apply, sub_apply, hlie, hcurry, lieModule_d_smul_apply a (η.curryLeft x) w, hsum, mul_sub]
-    abel
+      ← curryLeft_apply_apply, TauCeti.LieModule.Cohomology.curryLeft_d_succ, sub_apply, sub_apply,
+      hlie, hcurry, lieModule_d_smul_apply a (η.curryLeft x) w, hsum, mul_sub]; abel
 
 variable {R A L} in
 private theorem curryLeft_d_restrictScalars_smul :
@@ -189,21 +186,19 @@ private theorem curryLeft_d_restrictScalars_smul :
           rw [← lie_skew, LieRinehartRing.leibniz_smul_right, neg_add, ← smul_neg, lie_skew,
             sub_eq_add_neg]
         rw [hbr, ω.map_update_sub, ω.map_update_smul, ω.map_update_smul, smul_eq_mul, smul_eq_mul]
-        congr 1
-        rw [← insertNth_removeNth k x w, ω.map_insertNth, curryLeft_apply_apply,
+        congr 1; rw [← insertNth_removeNth k x w, ω.map_insertNth, curryLeft_apply_apply,
           mul_comm (⁅w k, a⁆), smul_mul_assoc, mul_comm _ (⁅w k, a⁆)]
       simp only [restrictScalars_apply, LieRinehartRing.lie_smul_eq_mul, hterm, sub_eq_add_neg,
         Finset.sum_add_distrib, Finset.sum_neg_distrib, ← Finset.mul_sum]; ring
     rw [hlie, hcurry, lieModule_d_smul_apply a ((ω.curryLeft x).restrictScalars R) w,
-      ← restrictScalars_curryLeft]
-    simp only [restrictScalars_apply, smul_eq_mul, mul_sub]; abel
+      ← restrictScalars_curryLeft]; simp only [restrictScalars_apply, smul_eq_mul, mul_sub]; abel
 
 /-- The Chevalley–Eilenberg differential on `A`-multilinear alternating cochains of `(R, A, L)`. -/
 def d (n : ℕ) : (L [⋀^Fin n]→ₗ[A] A) →ₗ[R] L [⋀^Fin (n + 1)]→ₗ[A] A where
   toFun ω := ofCurryLeftSMul (TauCeti.LieModule.Cohomology.d R L A n (ω.restrictScalars R))
     (curryLeft_d_restrictScalars_smul ω)
-  map_add' _ _ := by refine restrictScalars_injective R ?_; simp
-  map_smul' _ _ := by refine restrictScalars_injective R ?_; simp
+  map_add' _ _ := restrictScalars_injective R (by simp)
+  map_smul' _ _ := restrictScalars_injective R (by simp)
 
 variable {R A L}
 
@@ -220,18 +215,18 @@ theorem d_apply_eq_lieModule (n : ℕ) (ω : L [⋀^Fin n]→ₗ[A] A) (v : Fin 
 
 /-- Cartan's formula in degree zero: the interior product of `d ω` is the Lie derivative. -/
 @[simp] theorem curryLeft_d_zero (ω : L [⋀^Fin 0]→ₗ[A] A) (x : L) :
-    (d R A L 0 ω).curryLeft x = lieDeriv R x ω := by
-  refine restrictScalars_injective R ?_
-  simpa only [restrictScalars_curryLeft, restrictScalars_d, restrictScalars_lieDeriv] using
-    TauCeti.LieModule.Cohomology.curryLeft_d_zero (ω.restrictScalars R) x
+    (d R A L 0 ω).curryLeft x = lieDeriv R x ω :=
+  restrictScalars_injective R <| by
+    simpa only [restrictScalars_curryLeft, restrictScalars_d, restrictScalars_lieDeriv] using
+      TauCeti.LieModule.Cohomology.curryLeft_d_zero (ω.restrictScalars R) x
 
 /-- **Cartan's magic formula** for Lie–Rinehart cochains: `ι_x (d ω) = L_x ω - d (ι_x ω)`. -/
 @[simp] theorem curryLeft_d_succ {n : ℕ} (ω : L [⋀^Fin (n + 1)]→ₗ[A] A) (x : L) :
-    (d R A L (n + 1) ω).curryLeft x = lieDeriv R x ω - d R A L n (ω.curryLeft x) := by
-  refine restrictScalars_injective R ?_
-  simpa only [restrictScalars_curryLeft, restrictScalars_d, restrictScalars_sub,
-    restrictScalars_lieDeriv] using
-    TauCeti.LieModule.Cohomology.curryLeft_d_succ (ω.restrictScalars R) x
+    (d R A L (n + 1) ω).curryLeft x = lieDeriv R x ω - d R A L n (ω.curryLeft x) :=
+  restrictScalars_injective R <| by
+    simpa only [restrictScalars_curryLeft, restrictScalars_d, restrictScalars_sub,
+      restrictScalars_lieDeriv] using
+      TauCeti.LieModule.Cohomology.curryLeft_d_succ (ω.restrictScalars R) x
 
 /-- The differential of a `0`-cochain evaluates to the anchor action on its value `ω ![]`. -/
 @[simp] theorem d_zero_apply (ω : L [⋀^Fin 0]→ₗ[A] A) (v : Fin 1 → L) :
@@ -256,16 +251,16 @@ theorem d_smul_apply {n : ℕ} (a : A) (ω : L [⋀^Fin n]→ₗ[A] A) (v : Fin 
 
 /-- The Lie derivative commutes with the Chevalley–Eilenberg differential `d`. -/
 @[simp] theorem lieDeriv_d (n : ℕ) (x : L) (ω : L [⋀^Fin n]→ₗ[A] A) :
-    lieDeriv R x (d R A L n ω) = d R A L n (lieDeriv R x ω) := by
-  refine restrictScalars_injective R ?_
-  simpa only [restrictScalars_lieDeriv, restrictScalars_d] using
-    TauCeti.LieModule.Cohomology.lie_d n x (ω.restrictScalars R)
+    lieDeriv R x (d R A L n ω) = d R A L n (lieDeriv R x ω) :=
+  restrictScalars_injective R <| by
+    simpa only [restrictScalars_lieDeriv, restrictScalars_d] using
+      TauCeti.LieModule.Cohomology.lie_d n x (ω.restrictScalars R)
 
 /-- The Chevalley–Eilenberg differential of a Lie–Rinehart algebra squares to zero. -/
-@[simp] theorem d_d (n : ℕ) (ω : L [⋀^Fin n]→ₗ[A] A) : d R A L (n + 1) (d R A L n ω) = 0 := by
-  refine restrictScalars_injective R ?_
-  simpa only [restrictScalars_d, restrictScalars_zero] using
-    TauCeti.LieModule.Cohomology.d_d n (ω.restrictScalars R)
+@[simp] theorem d_d (n : ℕ) (ω : L [⋀^Fin n]→ₗ[A] A) : d R A L (n + 1) (d R A L n ω) = 0 :=
+  restrictScalars_injective R <| by
+    simpa only [restrictScalars_d, restrictScalars_zero] using
+      TauCeti.LieModule.Cohomology.d_d n (ω.restrictScalars R)
 
 variable (R A L)
 
@@ -275,18 +270,16 @@ theorem d_comp_d (n : ℕ) : d R A L (n + 1) ∘ₗ d R A L n = 0 := LinearMap.e
 /-- The Chevalley–Eilenberg cochain complex of `(R, A, L)` in `ModuleCat R`. -/
 noncomputable def cochainComplex : CochainComplex (ModuleCat R) ℕ :=
   CochainComplex.of (fun n ↦ ModuleCat.of R (L [⋀^Fin n]→ₗ[A] A))
-    (fun n ↦ ModuleCat.ofHom (d R A L n)) fun n ↦ by
-      rw [← ModuleCat.ofHom_comp, d_comp_d R A L, ModuleCat.ofHom_zero]
+    (fun n ↦ ModuleCat.ofHom (d R A L n))
+    fun n ↦ by rw [← ModuleCat.ofHom_comp, d_comp_d R A L, ModuleCat.ofHom_zero]
 
 /-- The degree-`n` term of `cochainComplex` is the `R`-module of `A`-multilinear alternating
 cochains `L [⋀^Fin n]→ₗ[A] A`. -/
 noncomputable def cochainComplexXIso (n : ℕ) :
-    (cochainComplex R A L).X n ≅ ModuleCat.of R (L [⋀^Fin n]→ₗ[A] A) :=
-  Iso.refl _
+    (cochainComplex R A L).X n ≅ ModuleCat.of R (L [⋀^Fin n]→ₗ[A] A) := Iso.refl _
 
 /-- Under the canonical identifications of terms, the differential of `cochainComplex` is `d`. -/
-@[reassoc]
-theorem cochainComplex_d (n : ℕ) :
+@[reassoc] theorem cochainComplex_d (n : ℕ) :
     (cochainComplex R A L).d n (n + 1) ≫ (cochainComplexXIso R A L (n + 1)).hom =
       (cochainComplexXIso R A L n).hom ≫ ModuleCat.ofHom (d R A L n) := by
   simp [cochainComplex, cochainComplexXIso, CochainComplex.of_d]
@@ -295,10 +288,8 @@ variable {R A L} in
 /-- The differential of `cochainComplex`, evaluated on an element. -/
 theorem cochainComplex_d_apply (n : ℕ) (ω : (cochainComplex R A L).X n) :
     (cochainComplex R A L).d n (n + 1) ω =
-      (cochainComplexXIso R A L (n + 1)).inv
-        (d R A L n ((cochainComplexXIso R A L n).hom ω)) := by
-  rw [(Iso.eq_comp_inv _).mpr (cochainComplex_d R A L n), ModuleCat.comp_apply,
-    ModuleCat.comp_apply, ModuleCat.ofHom_apply]
+      (cochainComplexXIso R A L (n + 1)).inv (d R A L n ((cochainComplexXIso R A L n).hom ω)) := by
+  rw [(Iso.eq_comp_inv _).mpr (cochainComplex_d R A L n)]; rfl
 
 /-- The degree-`n` Rinehart cohomology `R`-module of `(R, A, L)`. -/
 noncomputable abbrev cohomology (n : ℕ) : ModuleCat R := (cochainComplex R A L).homology n

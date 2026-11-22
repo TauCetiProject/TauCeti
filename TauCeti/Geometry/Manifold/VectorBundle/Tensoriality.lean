@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
+public import Mathlib.LinearAlgebra.Alternating.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Geometry.Manifold.BumpFunction
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
@@ -25,6 +26,8 @@ these operations are required beyond the stated laws for the section operation.
   implies locality.
 * `TauCeti.Manifold.eq_of_contMDiff_tensorial`: an operation satisfying these laws has equal
   values on globally smooth sections which agree at the point of evaluation.
+* `MultilinearMap.contMDiffSection_eval_congr` and `AlternatingMap.contMDiffSection_eval_congr`:
+  `C^∞(M, ℝ)`-multilinear and alternating maps on sections depend pointwise on section values.
 -/
 
 public section
@@ -148,3 +151,60 @@ theorem eq_of_contMDiff_tensorial
   simp only [coeff', ρ.eq_one, one_mul, t.localFrameCoeff_congr (I := I) b (i := i) hss']
 
 end TauCeti.Manifold
+
+section EvalCongr
+variable {E H M FW FV ι : Type*} [Finite ι]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [IsManifold I ∞ M] [NormedAddCommGroup FW] [NormedSpace ℝ FW] [FiniteDimensional ℝ FW]
+  [NormedAddCommGroup FV] [NormedSpace ℝ FV] {W V : M → Type*}
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle ℝ FW W]
+  [TopologicalSpace (TotalSpace FV V)] [FiberBundle FV V] [VectorBundle ℝ FV V]
+  [ContMDiffVectorBundle ∞ FW W I]
+
+/-- A `C^∞(M, ℝ)`-multilinear map on `Γ(W)` depends at `x` only on the values of its input
+sections at `x`. -/
+theorem MultilinearMap.contMDiffSection_eval_congr
+    (Φ : (ι → Cₛ^∞⟮I; FW, W⟯) →ₘₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯)
+    (x : M) {s s' : ι → Cₛ^∞⟮I; FW, W⟯} (h : ∀ i, s i x = s' i x) : Φ s x = Φ s' x := by
+  classical
+  cases nonempty_fintype ι
+  suffices ∀ q : Finset ι, Φ (fun i ↦ if i ∈ q then s' i else s i) x = Φ s x by
+    simpa using (this Finset.univ).symm
+  intro q; induction q using Finset.induction_on with
+  | empty => simp
+  | @insert j q hj ih =>
+    let u : ι → Cₛ^∞⟮I; FW, W⟯ := fun i ↦ if i ∈ q then s' i else s i
+    have hu_self : Function.update u j (s j) = u :=
+      Function.update_eq_self_iff.mpr (by simp [u, hj])
+    have hins : (fun i ↦ if i ∈ insert j q then s' i else s i) = Function.update u j (s' j) := by
+      ext i; by_cases hij : i = j <;> simp [u, hij]
+    change Φ u x = Φ s x at ih
+    rw [hins, ← ih]; conv_rhs => rw [← hu_self]
+    let Ψ : (Π y : M, W y) → V x := fun t ↦
+      if ht : CMDiff ∞ (T% t) then Φ (Function.update u j ⟨t, ht⟩) x else 0
+    have hΨ (t : Cₛ^∞⟮I; FW, W⟯) : Φ (Function.update u j t) x = Ψ ⇑t := by
+      cases t with | mk t ht => simp [Ψ, ht]
+    rw [hΨ (s' j), hΨ (s j)]
+    refine TauCeti.Manifold.eq_of_contMDiff_tensorial Ψ x
+      (fun {t₁ t₂} ht₁ ht₂ ↦ ?_) (fun {f t} hf ht ↦ ?_) (s' j).contMDiff (s j).contMDiff (h j).symm
+    · simp only [Ψ, ht₁, ht₂, ht₁.add_section ht₂, ↓reduceDIte]
+      have hadd : (⟨t₁ + t₂, ht₁.add_section ht₂⟩ : Cₛ^∞⟮I; FW, W⟯) = ⟨t₁, ht₁⟩ + ⟨t₂, ht₂⟩ :=
+        ContMDiffSection.ext fun _ ↦ rfl
+      rw [hadd]; exact congr($(Φ.map_update_add u j ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩) x)
+    · simp only [Ψ, ht, hf.smul_section ht, ↓reduceDIte]
+      let F : C^∞⟮I, M; ℝ⟯ := ⟨f, hf⟩
+      have hft : (⟨f • t, hf.smul_section ht⟩ : Cₛ^∞⟮I; FW, W⟯) = F • ⟨t, ht⟩ :=
+        ContMDiffSection.ext fun y ↦ (ContMDiffSection.smul_apply F ⟨t, ht⟩ y).symm
+      rw [hft]; exact (congr($(Φ.map_update_smul u j F ⟨t, ht⟩) x)).trans (by
+        rw [RingHom.id_apply, ContMDiffSection.smul_apply]; rfl)
+
+/-- A `C^∞(M, ℝ)`-multilinear alternating map on `Γ(W)` depends at `x` only on the values of its
+input sections at `x`. -/
+theorem AlternatingMap.contMDiffSection_eval_congr
+    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯)
+    (x : M) {s s' : ι → Cₛ^∞⟮I; FW, W⟯} (h : ∀ i, s i x = s' i x) : Φ s x = Φ s' x :=
+  Φ.toMultilinearMap.contMDiffSection_eval_congr x h
+end EvalCongr
