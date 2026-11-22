@@ -198,19 +198,16 @@ theorem lieMap_realToSpecialOrthogonalRange_realDetLieLift (a : ℝ) :
 theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpin (X : 𝔰) :
     πO (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
       (ofSpinContinuousMonoidHom _ hQ) X) = realSpinToSpecialOrthogonalLieEquiv n X := by
-  have hcomp :
-      (πO).comp (ContinuousMonoidHom.lieMap (I := IS) (I' := IC)
-        (ofSpinContinuousMonoidHom _ hQ)) =
-      (realSpinToSpecialOrthogonalLieEquiv n).toLieHom := by
-    have h := congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO))
-      (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)
-    rw [ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IC) (I'' := ISO),
-      ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IS) (I'' := ISO),
-      ← realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
-      ← realCliffordSpinToSpecialOrthogonalRangeLieEquiv_toLieHom] at h
-    exact h.trans (congrArg ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).toLieHom.comp)
-      (LieHom.ext fun Y ↦ (realSpinLieEquivUnitsRange_apply n Y).symm))
-  exact LieHom.congr_fun hcomp X
+  have h := LieHom.congr_fun (congrArg (ContinuousMonoidHom.lieMap (I := IS) (I' := ISO))
+    (realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom n hQ)) X
+  rw [ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IC) (I'' := ISO),
+    ContinuousMonoidHom.lieMap_comp (I := IS) (I' := IS) (I'' := ISO),
+    ← realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
+    LieHom.comp_apply, LieHom.comp_apply,
+    ← realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
+    ← realSpinLieEquivUnitsRange_apply,
+    ← realSpinToSpecialOrthogonalLieEquiv_apply] at h
+  exact h
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
@@ -372,14 +369,12 @@ rotation differential together with the normalized determinant weight. -/
 @[simp]
 theorem realSoProdDetLinearEquiv_symm_apply (Y : 𝔤) :
     (realSoProdDetLinearEquiv n hQ).symm Y =
-      (realCliffordSpecialOrthogonalLieEquivSo n (πO Y), d Y) :=
-  (realSoProdDetLinearEquiv n hQ).injective <|
-    ((realSoProdDetLinearEquiv n hQ).apply_symm_apply Y).trans <|
-      ((realSpecialOrthogonalProdDetLinearEquiv n hQ).apply_symm_apply Y).symm.trans <|
-        (congrArg (realSpecialOrthogonalProdDetLinearEquiv n hQ)
-          (realSpecialOrthogonalProdDetLinearEquiv_symm_apply n hQ Y)).trans <|
-          congrArg (fun W : 𝔬 ↦ realSpecialOrthogonalProdDetLinearEquiv n hQ (W, d Y))
-            ((realCliffordSpecialOrthogonalLieEquivSo n).symm_apply_apply _).symm
+      (realCliffordSpecialOrthogonalLieEquivSo n (πO Y), d Y) := by
+  apply (realSoProdDetLinearEquiv n hQ).injective
+  rw [(realSoProdDetLinearEquiv n hQ).apply_symm_apply, realSoProdDetLinearEquiv_apply,
+    (realCliffordSpecialOrthogonalLieEquivSo n).symm_apply_apply,
+    ← realSpecialOrthogonalProdDetLinearEquiv_symm_apply,
+    (realSpecialOrthogonalProdDetLinearEquiv n hQ).apply_symm_apply]
 
 /-- Lie brackets in `𝔰𝔬(n) × ℝ` coordinates preserve the matrix commutator on `𝔰𝔬(n)` and
 annihilate the central determinant parameter. -/

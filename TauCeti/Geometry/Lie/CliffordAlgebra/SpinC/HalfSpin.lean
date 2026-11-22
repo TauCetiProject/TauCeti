@@ -222,12 +222,7 @@ theorem realSpinCHalfSpinUnitsSmoothHom_comp_ofSpin :
   apply DFunLike.coe_injective
   funext s
   apply Units.ext
-  simp only [ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
-    coe_realSpinCHalfSpinUnitsSmoothHom_apply,
-    ContinuousMonoidHom.coe_toContMDiffMonoidMorphism,
-    spinCGroup.ofSpinContinuousMonoidHom_apply, realSpinCHalfSpinSmoothHom_ofSpin,
-    realHalfSpinSmoothHom_apply, ContinuousMonoidHom.coe_coe,
-    ContinuousMulEquiv.symm_apply_apply]
+  simp [realSpinCHalfSpinSmoothHom_ofSpin, realHalfSpinSmoothHom_apply]
 
 /-- On the Spin summand `ofSpin_* X`, the differentiated `Spinᶜ(4)` half-spin representation agrees
 with the framed even Clifford action evaluated on the quadratic Clifford coordinate of `X`. -/
