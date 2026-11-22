@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Reduction
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.Topology.Algebra.Valued.Integer
 public import TauCeti.RingTheory.Huber.Reduction
 public import TauCeti.Analysis.Normed.Ring.UnitBall
@@ -43,7 +44,9 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
 
 * `TauCeti.MvPowerSeries.restrictedIntegerEquiv`: the isometric ring isomorphism
   `𝒪[K]⟨X⟩ ≃ T°`.
-* `TauCeti.MvPowerSeries.restrictedReduction`: coefficientwise reduction `T° →+* 𝓀[K][X]`.
+* `TauCeti.MvPowerSeries.restrictedReduction`: coefficientwise reduction `T° →+* 𝓀[K][X]`, defined
+  from `(maximalIdeal 𝒪[K]).isRestrictedReduction`
+  (`TauCeti.MvPowerSeries.restrictedReduction_restrictedIntegerEquiv_eq`).
 * `TauCeti.MvPowerSeries.restrictedReductionQuotientEquiv`: `T° ⧸ T°° ≃+* 𝓀[K][X]`, where the
   kernel `T°°` is described by `TauCeti.MvPowerSeries.restrictedReduction_eq_zero_iff`.
 * `TauCeti.MvPowerSeries.canonicalReductionAlgEquiv`: the `𝓀[K]`-algebra isomorphism
@@ -224,6 +227,20 @@ theorem coeff_restrictedReduction (f : T°) (t : σ →₀ ℕ) :
   (Ideal.coeff_isRestrictedSubringReduction 𝓂[K] TauCeti.isOpen_maximalIdeal_integer
     (restrictedIntegerEquiv.symm f) t).trans <|
     (residue_def _).symm.trans <| congrArg (residue 𝒪[K]) (Subtype.ext (by simp))
+
+/-- **Compatibility of unit-ball reduction and open-ideal reduction.** Under the coefficient
+identification `restrictedIntegerEquiv : 𝒪[K]⟨X⟩ ≃+* K⟨X⟩°`, the residue-field reduction
+`TauCeti.MvPowerSeries.restrictedReduction` on the Gauss unit ball agrees with
+`(maximalIdeal 𝒪[K]).isRestrictedReduction` on `𝒪[K]⟨X⟩`. -/
+theorem restrictedReduction_restrictedIntegerEquiv_eq (f : Tint) :
+    restrictedReduction (restrictedIntegerEquiv f) =
+      (maximalIdeal 𝒪[K]).isRestrictedReduction TauCeti.isOpen_maximalIdeal_integer f := by
+  refine MvPolynomial.ext _ _ fun t ↦ ?_
+  rw [coeff_restrictedReduction]
+  exact (congrArg (residue 𝒪[K]) (Subtype.ext (coeff_restrictedIntegerEquiv f t))).trans
+    (Ideal.coeff_isRestrictedReduction (maximalIdeal 𝒪[K]) TauCeti.isOpen_maximalIdeal_integer
+      f t).symm
+
 
 /-- A coefficient of the reduction vanishes exactly when the corresponding coefficient of the
 series has norm less than one. -/

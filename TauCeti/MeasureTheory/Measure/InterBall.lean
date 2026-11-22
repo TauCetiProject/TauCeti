@@ -44,6 +44,8 @@ over the parts of `S` in the balls about a point tend to `0` with the radius
 
 ## Main results
 
+* `TauCeti.measure_ball_inter_ne_top`: the intersection of a ball with any set has finite
+  measure.
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
 * `TauCeti.ball_ae_eq_ball_of_measure_eq`: concentric balls of equal measure agree a.e.
 * `TauCeti.measure_ball_symmDiff_ball_le`: concentric balls are no farther apart in measure than
@@ -70,6 +72,12 @@ open MeasureTheory Metric Filter Set
 open scoped ENNReal Topology symmDiff
 
 variable {E : Type*} [PseudoMetricSpace E] [ProperSpace E] [MeasurableSpace E]
+
+/-- The intersection of a ball with any set has finite measure, for a measure that is finite on
+compact sets of a proper space. -/
+theorem measure_ball_inter_ne_top {μ : Measure E} [IsFiniteMeasureOnCompacts μ] {x : E} {r : ℝ}
+    {s : Set E} : μ (ball x r ∩ s) ≠ ⊤ :=
+  (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
 
 /-- For a measure finite on compact sets, the measure `m(ρ) = μ(s ∩ ball x₀ ρ)` of `s` in the
 balls about `x₀` is monotone in the radius. -/

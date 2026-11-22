@@ -58,6 +58,9 @@ preconnected base these are all of its orientations
   constant when read in any trivialization of the atlas.
 * `TauCeti.VectorBundleOrientation.mapOrientation_eq_of_isPreconnected`: on a preconnected part of
   the base set of such a trivialization, it reads as a single orientation of the model fibre.
+* `TauCeti.VectorBundleOrientation.isEmpty_of_det_coordChangeL_pos_of_neg`: a bundle with two
+  such trivializations over preconnected sets, whose coordinate change has positive determinant at
+  one common point and negative determinant at another, is not orientable.
 * `TauCeti.VectorBundleOrientation.eq_or_eq_neg`: over a preconnected base, two orientations of
   a bundle are equal or opposite.
 * `TauCeti.VectorBundleOrientation.eq_trivial`: over a preconnected base, every orientation of a
@@ -300,6 +303,18 @@ theorem trivial_apply (o : Orientation ℝ F ι) (b : B) : trivial B o b = o :=
 theorem neg_trivial (o : Orientation ℝ F ι) : -trivial B o = trivial B (-o) :=
   ext fun _ ↦ (rfl)
 
+variable (B) in
+/-- The trivialization of the trivial bundle `B × F` reads every orientation of a fibre as the same
+orientation of `F`. -/
+@[simp]
+theorem _root_.Bundle.Trivial.mapOrientation_trivialization {b : B}
+    (hb : b ∈ (Bundle.Trivial.trivialization B F).baseSet) (o : Orientation ℝ F ι) :
+    (Bundle.Trivial.trivialization B F).mapOrientation ι hb o = o := by
+  have h : (Bundle.Trivial.trivialization B F).linearEquivAt ℝ b hb = LinearEquiv.refl ℝ F := by
+    ext v
+    simp [Trivialization.linearEquivAt_apply]
+  rw [Trivialization.mapOrientation_apply, h, Orientation.map_refl, Equiv.refl_apply]
+
 section Pullback
 
 variable {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
@@ -427,6 +442,28 @@ theorem mapOrientation_eq_of_isPreconnected (hι : Fintype.card ι = finrank ℝ
       ((continuous_subtypeVal.tendsto z).eventually
         (o.eventually_mapOrientation_eq hι e (hse z.property))).mono fun w hw ↦ hw (hse w.property)
   exact hlc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
+
+/-- **A criterion for non-orientability.** If two trivializations `e` and `e'` of the atlas are
+defined over preconnected sets `s` and `s'` that both contain points `x` and `y`, and the
+coordinate change from `e` to `e'` has positive determinant at `x` but negative determinant at
+`y`, then the bundle has no orientation: each chart reads an orientation as a single orientation
+of the model fibre, and these two readings would have to agree at `x` and be opposite at `y`. -/
+theorem isEmpty_of_det_coordChangeL_pos_of_neg [FiniteDimensional ℝ F]
+    (hι : Fintype.card ι = finrank ℝ F) (e e' : Trivialization F (π F E))
+    [MemTrivializationAtlas e] [MemTrivializationAtlas e'] {s s' : Set B} (hs : IsPreconnected s)
+    (hs' : IsPreconnected s') (hse : s ⊆ e.baseSet) (hse' : s' ⊆ e'.baseSet) {x y : B}
+    (hx : x ∈ s) (hx' : x ∈ s') (hy : y ∈ s) (hy' : y ∈ s')
+    (hpos : 0 < LinearMap.det ((e.coordChangeL ℝ e' x).toLinearEquiv : F →ₗ[ℝ] F))
+    (hneg : LinearMap.det ((e.coordChangeL ℝ e' y).toLinearEquiv : F →ₗ[ℝ] F) < 0) :
+    IsEmpty (VectorBundleOrientation F E ι) := by
+  refine ⟨fun o ↦ ?_⟩
+  have h := o.mapOrientation_eq_of_isPreconnected hι e hs hse hx hy
+  have h' := o.mapOrientation_eq_of_isPreconnected hι e' hs' hse' hx' hy'
+  rw [Trivialization.mapOrientation_eq_map_coordChangeL e e' (hse hx) (hse' hx'),
+    Trivialization.mapOrientation_eq_map_coordChangeL e e' (hse hy) (hse' hy'),
+    (Orientation.map_eq_iff_det_pos _ _ hι).2 hpos,
+    (Orientation.map_eq_neg_iff_det_neg _ _ hι).2 hneg, h] at h'
+  exact Module.Ray.ne_neg_self _ h'
 
 /-- An orientation of the bundle from fibre orientations that are locally constant near each
 point `b` when read in some trivialization `e b` of the atlas whose base set contains `b`. -/
