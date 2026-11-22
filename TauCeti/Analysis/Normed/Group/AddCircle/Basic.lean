@@ -18,6 +18,8 @@ This file records elementary metric and geometric estimates on the unit additive
 * `Real.two_mul_norm_unitAddCircle_le_abs_sin` and
   `Real.four_mul_norm_unitAddCircle_sq_le_sin_sq`: Jordan's sine lower bound
   `2 * ‖(t : UnitAddCircle)‖ ≤ |sin (π * t)|` and its squared form.
+* `Real.norm_unitAddCircle_sub_le_abs_sub_round`: circle norm of `a - b` is at most the distance
+  between centered rounded representatives `(a - round a) - (b - round b)`.
 * `TauCeti.card_filter_floor_norm_unitAddCircle_div_le_two`: circular radial bin-packing bound
   showing that at most two points of a `δ`-separated finite family lie in each shell
   `m δ ≤ ‖(c - x j : UnitAddCircle)‖ < (m + 1) δ`.
@@ -61,6 +63,18 @@ theorem four_mul_norm_unitAddCircle_sq_le_sin_sq (t : ℝ) :
   nlinarith [t.two_mul_norm_unitAddCircle_le_abs_sin, sq_abs (Real.sin (Real.pi * t)),
     norm_nonneg (t : UnitAddCircle)]
 
+/-- For any `a b : ℝ`, the norm of `((a - b : ℝ) : UnitAddCircle)` is at most the distance
+between the centered fractional representatives `(a - round a) - (b - round b)`. -/
+theorem norm_unitAddCircle_sub_le_abs_sub_round (a b : ℝ) :
+    ‖((a - b : ℝ) : UnitAddCircle)‖ ≤ |(a - round a) - (b - round b)| := by
+  have hcoe : ((a - b : ℝ) : UnitAddCircle) =
+      (((a - round a) - (b - round b) : ℝ) : UnitAddCircle) := by
+    have hsub : (a - round a) - (b - round b) = (a - b) + (round b - round a : ℤ) • (1 : ℝ) := by
+      simp only [zsmul_eq_mul, mul_one, Int.cast_sub]; ring
+    rw [hsub, AddCircle.coe_add, AddCircle.coe_zsmul, AddCircle.coe_period, smul_zero, add_zero]
+  rw [hcoe, UnitAddCircle.norm_eq]
+  simpa using round_le ((a - round a) - (b - round b)) 0
+
 end Real
 
 namespace TauCeti
@@ -77,21 +91,16 @@ theorem card_filter_floor_norm_unitAddCircle_div_le_two {ι : Type*}
   let B : Finset ι :=
     s.filter fun j ↦ ⌊‖((c - x j : ℝ) : UnitAddCircle)‖ / δ⌋₊ = m
   let u : ι → ℝ := fun j ↦ (c - x j) - round (c - x j)
-  have hdiff_le : ∀ j₁ j₂, ‖((x j₁ - x j₂ : ℝ) : UnitAddCircle)‖ ≤ |u j₂ - u j₁| := by
-    intro j₁ j₂
-    have hcoe : ((x j₁ - x j₂ : ℝ) : UnitAddCircle) = ((u j₂ - u j₁ : ℝ) : UnitAddCircle) := by
-      let k : ℤ := round (c - x j₁) - round (c - x j₂)
-      have hsub : u j₂ - u j₁ = (x j₁ - x j₂) + k • (1 : ℝ) := by
-        simp only [u, k, zsmul_eq_mul, mul_one, Int.cast_sub]; ring
-      rw [hsub, AddCircle.coe_add, AddCircle.coe_zsmul, AddCircle.coe_period, smul_zero, add_zero]
-    rw [hcoe, UnitAddCircle.norm_eq]
-    simpa using round_le (u j₂ - u j₁) 0
   have hbin : ∀ j ∈ B, (m : ℝ) * δ ≤ |u j| ∧ |u j| < ((m : ℝ) + 1) * δ := by
     intro j hj
     have hm : ⌊‖((c - x j : ℝ) : UnitAddCircle)‖ / δ⌋₊ = m := (Finset.mem_filter.mp hj).2
     rw [← UnitAddCircle.norm_eq (x := c - x j)]
     exact ⟨(le_div_iff₀ hδ).mp (hm ▸ Nat.floor_le (by positivity)),
       (div_lt_iff₀ hδ).mp (hm ▸ Nat.lt_floor_add_one _)⟩
+  -- Split the radial shell `B` (`m * δ ≤ |u j| < (m + 1) * δ`) into its nonnegative (`0 ≤ u j`)
+  -- and negative (`u j < 0`) halves. Two distinct indices in the same half satisfy
+  -- `|u j₂ - u j₁| = |(|u j₂| - |u j₁|)| < δ`, contradicting `δ`-separation via
+  -- `Real.norm_unitAddCircle_sub_le_abs_sub_round`.
   have hside : ∀ (P : ℝ → Prop) [DecidablePred P],
       (∀ r₁ r₂, P r₁ → P r₂ → |r₂ - r₁| = |(|r₂| - |r₁|)|) →
       (B.filter fun j ↦ P (u j)).card ≤ 1 := by
@@ -105,8 +114,10 @@ theorem card_filter_floor_norm_unitAddCircle_div_le_two {ι : Type*}
     have hlt : |u j₂ - u j₁| < δ := by
       rw [hP (u j₁) (u j₂) hP₁ hP₂, abs_lt]
       exact ⟨by linarith, by linarith⟩
-    linarith [hsep j₁ (Finset.mem_filter.mp hj₁B).1 j₂ (Finset.mem_filter.mp hj₂B).1 hne,
-      hdiff_le j₁ j₂]
+    have hdiff := Real.norm_unitAddCircle_sub_le_abs_sub_round (c - x j₂) (c - x j₁)
+    have hsub : (c - x j₂) - (c - x j₁) = x j₁ - x j₂ := by ring
+    rw [hsub] at hdiff
+    linarith [hsep j₁ (Finset.mem_filter.mp hj₁B).1 j₂ (Finset.mem_filter.mp hj₂B).1 hne]
   have hpos_card := hside (0 ≤ ·) fun r₁ r₂ h₁ h₂ ↦ by rw [abs_of_nonneg h₁, abs_of_nonneg h₂]
   have hneg_card := hside (¬ 0 ≤ ·) fun r₁ r₂ h₁ h₂ ↦ by
     rw [abs_of_neg (lt_of_not_ge h₁), abs_of_neg (lt_of_not_ge h₂), ← abs_neg (r₂ - r₁)]

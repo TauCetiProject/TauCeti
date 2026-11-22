@@ -14,7 +14,7 @@ import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Fourier.Fejer.Finite
 import TauCeti.Analysis.InnerProductSpace.Gram.Selberg
 import TauCeti.Analysis.Normed.Group.AddCircle.Basic
-import TauCeti.Analysis.Normed.Group.AddCircle.Cosecant
+import TauCeti.Analysis.Fourier.LargeSieve.Cosecant
 import TauCeti.Analysis.SpecialFunctions.Complex.Circle.FourierChar
 
 /-!
@@ -37,8 +37,9 @@ tapered Fourier vectors.
 
 ## Main results
 
-* `TauCeti.inner_taperedFourierVec`, `TauCeti.norm_taperedFourierVec_sq`, and
-  `TauCeti.norm_inner_taperedFourierVec_le`: Gram entries of `taperedFourierVec`.
+* `TauCeti.inner_taperedFourierVec_eq_sum_taperWeight`, `TauCeti.inner_taperedFourierVec`,
+  `TauCeti.norm_taperedFourierVec_sq`, and `TauCeti.norm_inner_taperedFourierVec_le`: Gram entries
+  of `taperedFourierVec`.
 * `TauCeti.icoCorePadVec_eq_zero_of_lt_abs`, `TauCeti.norm_icoCorePadVec_sq`,
   `TauCeti.fourierChar_mul_sum_icoCorePadVec`, and `TauCeti.norm_sum_icoCorePadVec_fourierChar`:
   support, squared-norm, and Fourier phase identities for `icoCorePadVec`.
@@ -168,38 +169,58 @@ theorem taperedFourierVec_apply_of_abs_le {N L : ℕ} (hL : 0 < L) (x : ℝ)
       (Real.fourierChar (-((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * x)) : ℂ) := by
   rw [taperedFourierVec_apply, taperWeight_eq_one hL hk, Real.sqrt_one, Complex.ofReal_one, one_mul]
 
+/-- Coordinatewise weighted character-sum formula for
+`⟪taperedFourierVec N L x, taperedFourierVec N L y⟫_ℂ`. -/
+theorem inner_taperedFourierVec_eq_sum_taperWeight (N L : ℕ) (x y : ℝ) :
+    ⟪taperedFourierVec N L x, taperedFourierVec N L y⟫_ℂ =
+      ∑ k : Fin (2 * (N + L) + 1),
+        (taperWeight N L ((k : ℤ) - ((N + L : ℕ) : ℤ)) : ℂ) *
+          (Real.fourierChar (((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * (x - y))) : ℂ) := by
+  rw [PiLp.inner_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  simp only [RCLike.inner_apply, taperedFourierVec_apply, map_mul, Complex.conj_ofReal,
+    Real.conj_fourierChar, neg_neg]
+  set n : ℤ := (k : ℤ) - ((N + L : ℕ) : ℤ)
+  calc
+    (Real.sqrt (taperWeight N L n) : ℂ) * (Real.fourierChar (-((n : ℝ) * y)) : ℂ) *
+        ((Real.sqrt (taperWeight N L n) : ℂ) * (Real.fourierChar ((n : ℝ) * x) : ℂ))
+        = ((Real.sqrt (taperWeight N L n) * Real.sqrt (taperWeight N L n) : ℝ) : ℂ) *
+            ((Real.fourierChar (-((n : ℝ) * y)) : ℂ) * (Real.fourierChar ((n : ℝ) * x) : ℂ)) := by
+          rw [Complex.ofReal_mul]; ring
+    _ = (taperWeight N L n : ℂ) * (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ) := by
+          rw [Real.mul_self_sqrt (taperWeight_nonneg N L n), Real.fourierChar_mul_fourierChar]
+          congr 3
+          ring
+
 /-- Exact Gram inner product of two tapered Fourier vectors as a difference of two Fejér sums. -/
 theorem inner_taperedFourierVec (N L : ℕ) (x y : ℝ) :
     ⟪taperedFourierVec N L x, taperedFourierVec N L y⟫_ℂ =
       (((‖∑ k ∈ Finset.range (N + L), (Real.fourierChar ((k : ℝ) * (x - y)) : ℂ)‖ ^ 2 -
           ‖∑ k ∈ Finset.range N, (Real.fourierChar ((k : ℝ) * (x - y)) : ℂ)‖ ^ 2) /
           (L : ℝ) : ℝ) : ℂ) := by
-  have hsum :
-      ⟪taperedFourierVec N L x, taperedFourierVec N L y⟫_ℂ =
-        ∑ k : Fin (2 * (N + L) + 1),
-          (taperWeight N L ((k : ℤ) - ((N + L : ℕ) : ℤ)) : ℂ) *
-            (Real.fourierChar (((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * (x - y))) : ℂ) := by
-    rw [PiLp.inner_apply]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    set n : ℤ := (k : ℤ) - ((N + L : ℕ) : ℤ)
-    simp only [RCLike.inner_apply, taperedFourierVec_apply, map_mul, Complex.conj_ofReal,
-      Real.conj_fourierChar, neg_neg]
-    rw [mul_mul_mul_comm, ← Complex.ofReal_mul, Real.mul_self_sqrt (taperWeight_nonneg N L n),
-      Real.fourierChar_mul_fourierChar]
-    congr 3; ring
-  have hreindex :
-      (∑ k : Fin (2 * (N + L) + 1),
-          (taperWeight N L ((k : ℤ) - ((N + L : ℕ) : ℤ)) : ℂ) *
-            (Real.fourierChar (((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * (x - y))) : ℂ)) =
-        ∑ n ∈ Finset.Icc (-((N + L : ℕ) : ℤ)) (N + L : ℕ),
-          (taperWeight N L n : ℂ) * (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ) :=
-    (Finset.sum_Icc_neg_eq_sum_fin (N + L) fun n ↦
-      (taperWeight N L n : ℂ) * (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ)).symm
-  rw [hsum, hreindex]
-  simp_rw [taperWeight_def, Complex.ofReal_div, Complex.ofReal_sub, div_mul_eq_mul_div,
-    sub_mul, ← Finset.sum_div, Finset.sum_sub_distrib]
-  rw [sum_Icc_max_sub_abs_mul_fourierChar le_rfl (x - y),
-    sum_Icc_max_sub_abs_mul_fourierChar (Nat.le_add_right N L) (x - y)]
+  rw [inner_taperedFourierVec_eq_sum_taperWeight,
+    ← Finset.sum_Icc_neg_eq_sum_fin (N + L) fun n ↦
+      (taperWeight N L n : ℂ) * (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ)]
+  calc
+    ∑ n ∈ Finset.Icc (-((N + L : ℕ) : ℤ)) (N + L : ℕ),
+        (taperWeight N L n : ℂ) * (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ)
+        = (∑ n ∈ Finset.Icc (-((N + L : ℕ) : ℤ)) (N + L : ℕ),
+            (((max (0 : ℝ) (((N + L : ℕ) : ℝ) - |(n : ℝ)|) : ℝ) : ℂ) *
+              (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ) -
+            ((max (0 : ℝ) ((N : ℝ) - |(n : ℝ)|) : ℝ) : ℂ) *
+              (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ))) / (L : ℂ) := by
+          rw [Finset.sum_div]
+          refine Finset.sum_congr rfl fun n _ ↦ ?_
+          simp only [taperWeight_def, Complex.ofReal_div, Complex.ofReal_sub,
+            Complex.ofReal_natCast]
+          ring
+    _ = (((‖∑ k ∈ Finset.range (N + L), (Real.fourierChar ((k : ℝ) * (x - y)) : ℂ)‖ ^ 2 -
+            ‖∑ k ∈ Finset.range N, (Real.fourierChar ((k : ℝ) * (x - y)) : ℂ)‖ ^ 2) /
+            (L : ℝ) : ℝ) : ℂ) := by
+          rw [Finset.sum_sub_distrib, sum_Icc_max_sub_abs_mul_fourierChar le_rfl (x - y),
+            sum_Icc_max_sub_abs_mul_fourierChar (Nat.le_add_right N L) (x - y)]
+          push_cast
+          rfl
 
 /-- For positive taper width `0 < L`, `‖taperedFourierVec N L x‖ ^ 2 = 2 * N + L`. -/
 theorem norm_taperedFourierVec_sq {N L : ℕ} (hL : 0 < L) (x : ℝ) :
@@ -323,12 +344,21 @@ theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 *
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [icoCorePadVec_apply]
   split_ifs with hk
-  · rw [← mul_assoc, mul_comm (Real.fourierChar _ : ℂ), mul_assoc,
-      Real.fourierChar_mul_fourierChar]
-    congr 3
-    have heq : M + ((k.val - L : ℕ) : ℤ) = (M + (N : ℤ)) + ((k : ℤ) - ((N + L : ℕ) : ℤ)) := by
-      omega
-    rw [heq]; push_cast; ring
+  · calc
+      (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
+          (a (M + ((k.val - L : ℕ) : ℤ)) *
+            (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ))
+          = a (M + ((k.val - L : ℕ) : ℤ)) *
+              ((Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
+                (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)) := by
+            ring
+      _ = a (M + ((k.val - L : ℕ) : ℤ)) *
+            (Real.fourierChar (((M + ((k.val - L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ) := by
+          rw [Real.fourierChar_mul_fourierChar]
+          congr 3
+          have heq : M + ((k.val - L : ℕ) : ℤ) =
+              (M + (N : ℤ)) + ((k : ℤ) - ((N + L : ℕ) : ℤ)) := by omega
+          rw [heq]; push_cast; ring
   · simp
 
 /-- When `H ≤ 2 * N + 1`, the centered Fourier sum of `icoCorePadVec M H N L a` has the same norm
@@ -499,25 +529,19 @@ theorem sum_norm_sum_Ico_fourierChar_sq_le {ι : Type*} (s : Finset ι) (M : ℤ
       ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
   by_cases hδ' : δ ≤ 1 / 2
   · exact s.sum_norm_sum_Ico_fourierChar_sq_le_of_le_half M H a x hδ hδ' hsep
-  have hcard : (s.card : ℝ) ≤ 1 := by
-    exact_mod_cast card_le_one_of_half_lt_of_unitAddCircle_separated (lt_of_not_ge hδ') hsep
+  have hcard : s.card ≤ 1 :=
+    card_le_one_of_half_lt_of_unitAddCircle_separated (lt_of_not_ge hδ') hsep
   have hsingle : ∀ i ∈ s,
       ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * x i) : ℂ)‖ ^ 2 ≤
-        ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
-    intro i _
-    exact (norm_sum_Ico_fourierChar_sq_le_mul_sum M H a (x i)).trans
+        ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := fun i _ ↦
+    (norm_sum_Ico_fourierChar_sq_le_mul_sum M H a (x i)).trans
       (mul_le_mul_of_nonneg_right (by linarith [div_pos (two_pos : (0 : ℝ) < 2) hδ])
         (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _))
-  calc
-    ∑ i ∈ s, ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * x i) : ℂ)‖ ^ 2
-        ≤ ∑ _i ∈ s, (((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2) :=
-      Finset.sum_le_sum hsingle
-    _ = (s.card : ℝ) * (((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2) := by
-      rw [Finset.sum_const, nsmul_eq_mul]
-    _ ≤ 1 * (((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2) :=
-      mul_le_mul_of_nonneg_right hcard
-        (mul_nonneg (by positivity) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _))
-    _ = ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := one_mul _
+  refine (Finset.sum_le_card_nsmul _ _ _ hsingle).trans ?_
+  rw [nsmul_eq_mul]
+  exact mul_le_of_le_one_left
+    (mul_nonneg (by positivity) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _))
+    (by exact_mod_cast hcard)
 
 /-- **Bombieri's additive large sieve inequality** (Bombieri 1971, Theorem 2) indexed by `Fin H`:
 for any finite family of `δ`-separated real frequencies (`0 < δ`) in `UnitAddCircle` and any

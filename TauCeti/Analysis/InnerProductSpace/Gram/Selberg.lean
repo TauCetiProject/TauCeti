@@ -53,6 +53,12 @@ variable {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProd
 private theorem norm_inner_self_eq_norm_sq (x : E) : ‖⟪x, x⟫_𝕜‖ = ‖x‖ ^ 2 := by
   simp [inner_self_eq_norm_sq_to_K]
 
+private theorem norm_inner_eq_zero_of_norm_eq_zero {x y : E} (hy : ‖y‖ = 0) :
+    ‖⟪x, y⟫_𝕜‖ = 0 := by
+  have hle := norm_inner_le_norm (𝕜 := 𝕜) x y
+  rw [hy, mul_zero] at hle
+  exact le_antisymm hle (norm_nonneg _)
+
 namespace TauCeti
 
 /-- A Gram row sum `∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖` vanishes if and only if `‖y i‖ = 0`. -/
@@ -66,9 +72,8 @@ theorem sum_norm_inner_eq_zero_iff_norm_eq_zero {s : Finset ι} {y : ι → E} {
     nlinarith [norm_nonneg (y i)]
   · intro h
     refine Finset.sum_eq_zero fun j _ ↦ ?_
-    have hle : ‖⟪y i, y j⟫_𝕜‖ ≤ ‖y i‖ * ‖y j‖ := norm_inner_le_norm (y i) (y j)
-    rw [h, zero_mul] at hle
-    exact le_antisymm hle (norm_nonneg _)
+    rw [norm_inner_symm]
+    exact norm_inner_eq_zero_of_norm_eq_zero (𝕜 := 𝕜) h
 
 end TauCeti
 
@@ -131,9 +136,15 @@ theorem norm_sub_sum_smul_sq_le (s : Finset ι) (y : ι → E) (x : E) :
       RCLike.re ⟪x, ∑ i ∈ s, c i • y i⟫_𝕜 = ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i := by
     rw [inner_sum, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    dsimp only [c]
-    rw [inner_smul_right, div_mul_eq_mul_div, ← inner_conj_symm x (y i), RCLike.mul_conj,
-      RCLike.norm_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_div, RCLike.ofReal_re]
+    calc
+      RCLike.re ⟪x, c i • y i⟫_𝕜
+          = RCLike.re ((⟪y i, x⟫_𝕜 * ⟪x, y i⟫_𝕜) / (r i : 𝕜)) := by
+        simp only [c, inner_smul_right, div_mul_eq_mul_div]
+      _ = RCLike.re (((‖⟪y i, x⟫_𝕜‖ ^ 2 / r i : ℝ) : 𝕜)) := by
+        rw [← inner_conj_symm x (y i), RCLike.mul_conj]
+        push_cast
+        rfl
+      _ = ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i := by rw [RCLike.ofReal_re, norm_inner_symm]
   have hquad :
       ∑ i ∈ s, ‖c i‖ ^ 2 * r i = ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / r i := by
     refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -174,10 +185,7 @@ theorem sum_norm_inner_sq_le_of_sum_norm_inner_le (s : Finset ι) (y : ι → E)
     set r : ℝ := ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖
     by_cases hr : r = 0
     · have hy0 : ‖y i‖ = 0 := (TauCeti.sum_norm_inner_eq_zero_iff_norm_eq_zero (𝕜 := 𝕜) hi).mp hr
-      have hinner0 : ‖⟪x, y i⟫_𝕜‖ = 0 := by
-        have hle := norm_inner_le_norm (𝕜 := 𝕜) x (y i)
-        rw [hy0, mul_zero] at hle
-        exact le_antisymm hle (norm_nonneg _)
+      have hinner0 : ‖⟪x, y i⟫_𝕜‖ = 0 := norm_inner_eq_zero_of_norm_eq_zero (𝕜 := 𝕜) hy0
       simp [hinner0]
     · have hr0 : 0 ≤ r := Finset.sum_nonneg fun j _ ↦ norm_nonneg _
       calc
