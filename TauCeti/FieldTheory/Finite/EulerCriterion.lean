@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.FieldTheory.Finite.GaloisField
 import TauCeti.FieldTheory.Finite.Card
@@ -41,6 +42,9 @@ characteristic two where every element is already a square).
   `a ^ ((#F - 1) / n)` to the extension degree `[F' : F]`.
 * `TauCeti.FiniteField.exists_pow_eq_algebraMap_iff_pow_finrank_eq_one`: Euler's criterion in a
   finite field extension.
+* `TauCeti.FiniteField.norm_eq_one_iff_exists_pow_eq`: in a finite extension `F'/F`, the nonzero
+  elements of norm `1` are exactly the `(#F - 1)`-th powers (Hilbert's Theorem 90 for finite
+  fields).
 * `TauCeti.FiniteField.exists_pow_eq_algebraMap_iff`: for a prime `p`, `a ∈ F` is a `p`-th power
   in `F'` if and only if `a` is a `p`-th power in `F` or `p ∣ [F' : F]`.
 * `TauCeti.FiniteField.isSquare_algebraMap_iff` and
@@ -124,6 +128,21 @@ theorem exists_pow_eq_algebraMap_iff_pow_finrank_eq_one {n : ℕ} (hn : n ∣ Na
   rw [exists_pow_eq_iff_pow_card_sub_one_div_eq_one hn'
       ((map_ne_zero_iff _ (algebraMap F F').injective).mpr ha),
     algebraMap_pow_card_sub_one_div hn, map_eq_one_iff _ (algebraMap F F').injective]
+
+/-- **Norm-one elements of a finite field extension.** In a finite extension `F'/F` of finite
+fields, a nonzero `a ∈ F'` has norm `1` exactly when it is a `(#F - 1)`-th power. Since
+`b ^ (#F - 1) = b ^ #F / b` is the quotient of the Frobenius image of `b` by `b`, this is
+Hilbert's Theorem 90 for the cyclic extension `F'/F`; it is Euler's criterion in `F'` at the
+exponent `#F - 1`, raising to the power `(#F' - 1) / (#F - 1)` being the norm. -/
+theorem norm_eq_one_iff_exists_pow_eq {a : F'} (ha : a ≠ 0) :
+    Algebra.norm F a = 1 ↔ ∃ b : F', b ^ (Nat.card F - 1) = a := by
+  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
+  have : Module.Finite F F' := .of_finite
+  have hq : Nat.card F - 1 ∣ Nat.card F' - 1 := by
+    rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
+    exact Nat.sub_one_dvd_pow_sub_one _ _
+  rw [exists_pow_eq_iff_pow_card_sub_one_div_eq_one hq ha, ← FiniteField.algebraMap_norm_eq_pow,
+    map_eq_one_iff _ (algebraMap F F').injective]
 
 /-- **Criterion for `p`-th powers in a finite field extension.** For a prime `p`, an element
 `a ∈ F` becomes a `p`-th power in a finite extension `F'/F` of finite fields if and only if either
