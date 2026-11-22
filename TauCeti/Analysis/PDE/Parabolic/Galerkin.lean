@@ -11,7 +11,9 @@ public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -129,13 +131,8 @@ theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] Stro
       simpa [hQ, R, D, inner_add_left] using (eq_sub_iff_add_eq).1 hv
   -- Solve the reduced ODE, then transfer both its equation and its uniqueness back.
   obtain ⟨c, hc, huniq⟩ := B.existsUnique_hasDerivAt_add hg x t₀
-  have hderiv : deriv c = fun t ↦ B (c t) + g t := by
-    funext t
-    exact (hc.2 t).deriv
-  have hc1 : ContDiff ℝ 1 c := contDiff_one_iff_deriv.2
-    ⟨fun t ↦ (hc.2 t).differentiableAt,
-      hderiv ▸ (B.continuous.comp
-        (continuous_iff_continuousAt.2 fun t ↦ (hc.2 t).continuousAt)).add hg⟩
+  have hc1 : ContDiff ℝ 1 c := contDiff_one_of_hasDerivAt (X := fun t z ↦ B z + g t)
+    ((B.continuous.comp continuous_snd).add (hg.comp continuous_fst)) hc.2
   refine ⟨c, ⟨hc.1, hc1, fun t ↦ (hEq _ _ t).2 ((hc.2 t).deriv)⟩, ?_⟩
   intro d hd
   apply huniq d
@@ -192,7 +189,9 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
   -- `x` is `u₀` plus the primitive of `M x + F` on `(a, b)`, so it has weak derivative `M x + F`.
   have hxg := ((hasWeakLineDerivOn_const (μ := volume) (Ω := ⟨Ioo a b, isOpen_Ioo⟩) (v := 1)
     u₀).add (hasWeakLineDerivOn_intervalIntegral_left
-      (integrableOn_clm_apply_add hM hMK hF hx))).congr_ae
+      ((IntegrableOn.clm_apply_continuousOn_of_ae_mem (Integrable.of_bound hM _ hMK) hx
+        isCompact_Icc (ae_restrict_of_forall_mem measurableSet_Ioo fun _ ht ↦
+          Ioo_subset_Icc_self ht)).add hF))).congr_ae
     ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht ↦
       (hxeq t (Ioo_subset_Icc_self ht)).symm)) |>.congr_ae_deriv (EventuallyEq.of_eq (zero_add _))
   -- Applying `G` gives the weak derivative `G (M x + F) = f - A x` of `G x`.

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # Basic API for the complex unit disc
@@ -20,8 +21,14 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
   disc, which is nontrivial.
 * Compactness of the disc points of Euclidean norm at most `ρ < 1`
   (`Complex.UnitDisc.isCompact_setOf_norm_le`).
-* The closed unit disc `Complex.UnitClosedDisc` is a compact, second countable Hausdorff space,
-  homeomorphic to the subtype `Metric.closedBall 0 1` it is a type synonym of
+* The inclusion of the open unit disc into `ℂ` is an open embedding
+  (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff; it is connected
+  (`Complex.UnitDisc.instConnectedSpace`) and not compact
+  (`Complex.UnitDisc.instNoncompactSpace`). A point outside a set of the disc with closed image in
+  `ℂ` is the centre of a round disc missing that set
+  (`Complex.UnitDisc.exists_pos_forall_notMem_ball`).
+* The closed unit disc `Complex.UnitClosedDisc` is a compact, contractible, second countable
+  Hausdorff space, homeomorphic to the subtype `Metric.closedBall 0 1` it is a type synonym of
   (`Complex.UnitClosedDisc.homeomorphClosedBall`).
 * Transport between a self-map of the bundled disc and a scalar representative `ℂ → ℂ` of it:
   such a representative maps `Metric.ball 0 1` into itself
@@ -59,6 +66,38 @@ lemma isCompact_setOf_norm_le {ρ : ℝ} (hρ : ρ < 1) : IsCompact {z : 𝔻 | 
   convert isEmbedding_coe.isInducing.isCompact_preimage' (isCompact_closedBall (0 : ℂ) ρ) _
   · simp
   · exact fun w hw => ⟨mk w ((mem_closedBall_zero_iff.1 hw).trans_lt hρ), rfl⟩
+
+/-- The inclusion of the open unit disc into `ℂ` is an open embedding. -/
+theorem isOpenEmbedding_coe : Topology.IsOpenEmbedding ((↑) : 𝔻 → ℂ) :=
+  isOpen_ball.isOpenEmbedding_subtypeVal
+
+/-- The open unit disc is Hausdorff. -/
+instance instT2Space : T2Space 𝔻 :=
+  isEmbedding_coe.t2Space
+
+/-- The open unit disc is connected. -/
+instance instConnectedSpace : ConnectedSpace 𝔻 :=
+  Subtype.connectedSpace (isConnected_ball zero_lt_one)
+
+/-- The open unit disc is not compact: otherwise its image `Metric.ball 0 1` would be a nonempty
+clopen subset of `ℂ`, hence all of `ℂ`. -/
+instance instNoncompactSpace : NoncompactSpace 𝔻 := by
+  refine ⟨fun h ↦ ?_⟩
+  have hrange : range ((↑) : 𝔻 → ℂ) = ball (0 : ℂ) 1 :=
+    Subset.antisymm (range_subset_iff.2 fun z ↦ mem_ball_zero_iff.2 z.norm_lt_one)
+      fun w hw ↦ ⟨mk w (mem_ball_zero_iff.1 hw), rfl⟩
+  have hcl : IsClosed (ball (0 : ℂ) 1) := by
+    simpa [hrange] using (h.image continuous_coe).isClosed
+  have h1 : (1 : ℂ) ∈ ball (0 : ℂ) 1 :=
+    (IsClopen.eq_univ ⟨hcl, isOpen_ball⟩ ⟨0, mem_ball_self one_pos⟩).symm ▸ mem_univ _
+  simp at h1
+
+/-- If `K ⊆ 𝔻` has closed image in `ℂ` and `z ∉ K`, some round disc `B(z, R)` misses `K`. -/
+theorem exists_pos_forall_notMem_ball {K : Set 𝔻} (hK : IsClosed (((↑) : 𝔻 → ℂ) '' K))
+    {z : 𝔻} (hz : z ∉ K) : ∃ R > 0, ∀ w ∈ K, (w : ℂ) ∉ ball (z : ℂ) R := by
+  obtain ⟨R, hR, hRK⟩ := Metric.isOpen_iff.1 hK.isOpen_compl (z : ℂ) fun ⟨w, hw, hwz⟩ ↦
+    hz (coe_injective hwz ▸ hw)
+  exact ⟨R, hR, fun w hw hwb ↦ hRK hwb ⟨w, hw, rfl⟩⟩
 
 /-- Circle rotations act jointly continuously on the bundled open unit disc. -/
 instance instContinuousSMulCircle : ContinuousSMul Circle 𝔻 :=
@@ -110,6 +149,11 @@ instance instSecondCountableTopology : SecondCountableTopology 𝕔𝔻 :=
 /-- The closed unit disc is compact. -/
 instance instCompactSpace : CompactSpace 𝕔𝔻 :=
   inferInstanceAs <| CompactSpace (closedBall (0 : ℂ) 1)
+
+/-- The closed unit disc is contractible, being a closed ball. -/
+instance instContractibleSpace : ContractibleSpace 𝕔𝔻 :=
+  have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
+  homeomorphClosedBall.contractibleSpace
 
 end Complex.UnitClosedDisc
 

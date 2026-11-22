@@ -7,8 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.Algebra.Group.Pi.Finset
 public import TauCeti.LinearAlgebra.Matrix.Block
+public import TauCeti.Logic.Equiv.Pi
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Logic.Equiv.Set
 
 /-!
 # Supports, splittings, determinants and coordinate separation for dependent products
@@ -16,7 +19,8 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `∀ i, M i` consists of the families
 vanishing outside `s`, the `Pi` analogue of `Finsupp.supported`; such submodules for disjoint
 supports meet in `⊥`. This file also records the linear splitting of a dependent product along a
-predicate on the indices, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
+predicate on the indices, the extension of a linear automorphism of `κ → M` to `ι → M` along an
+injective map `κ → ι`, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
 segment and its last coordinate and of a `Fin (m + n)`-indexed product into its two blocks, and the
 determinant of a coordinatewise endomorphism of a finite dependent product, which is used in
 finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
@@ -36,6 +40,9 @@ weights.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
   coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
   the image coordinate.
+* `LinearEquiv.piCongrLeft_symm_apply` and `LinearEquiv.piCongrLeft_trans`: the inverse of
+  reindexing reads coordinates through the reindexing, and reindexing along two equivalences in
+  turn is reindexing along their composite.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
 * `LinearEquiv.piFinAppend`: the linear splitting of a tuple of length `m + n` into its first `m`
@@ -45,8 +52,14 @@ weights.
   with coefficients `x` and `y`.
 * `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
   one-point family `Pi.single` at the last index.
+* `LinearEquiv.piExtendOfInjective`: a linear automorphism of `κ → M` extended along an injective
+  map `κ → ι` to `ι → M`, fixing the coordinates outside the range.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
+* `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
+  disjoint finite sets `s` and `t` into a family on `s ∪ t`.
+* `LinearMap.compLeft_single`: applying a linear map coordinatewise to the one-point family
+  `Pi.single i x` gives the one-point family `Pi.single i (f x)`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -68,6 +81,8 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
+* `TauCeti.piMatrixLinearEquiv`: the `R`-linear equivalence flattening a family of matrices
+  `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α`.
 -/
 
 /-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
@@ -127,6 +142,21 @@ public theorem piCongrLeft_apply_apply {R ι ι' : Type*} [Semiring R] (M : ι �
     [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) (f : ∀ i, M (e i)) (i : ι') :
     piCongrLeft R M e f (e i) = f i :=
   Equiv.piCongrLeft_apply_apply (P := M) e f i
+
+/-- The inverse of reindexing along `e` reads the coordinate at `i'` from `e i'`. -/
+@[simp]
+public theorem piCongrLeft_symm_apply {R ι ι' : Type*} [Semiring R] (M : ι → Type*)
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e : ι' ≃ ι) (f : ∀ i, M i) (i' : ι') :
+    (piCongrLeft R M e).symm f i' = f (e i') :=
+  (rfl)
+
+/-- Reindexing the coordinates along `e₁` and then along `e₂` is reindexing them along
+`e₁.trans e₂`. -/
+public theorem piCongrLeft_trans (R : Type*) {ι ι' ι'' : Type*} [Semiring R] (M : ι → Type*)
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (e₁ : ι'' ≃ ι') (e₂ : ι' ≃ ι) :
+    (piCongrLeft R (fun i' ↦ M (e₂ i')) e₁).trans (piCongrLeft R M e₂) =
+      piCongrLeft R M (e₁.trans e₂) :=
+  toEquiv_injective (Equiv.piCongrLeft_trans M e₁ e₂)
 
 /-- Reindexing the coordinates along `e` moves a one-point family at `i` to the one-point family
 at `e i`. -/
@@ -213,6 +243,49 @@ public theorem coprod_linearCombination_comp_piFinAppend (x : Fin m → M) (y : 
 
 end FinAppend
 
+section ExtendOfInjective
+
+variable {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {f : κ → ι}
+
+/-- Extends a linear automorphism `e` of `κ → M` along an injective map `f : κ → ι` to a linear
+automorphism of `ι → M`, acting by `e` on the coordinates in the range of `f`
+(`piExtendOfInjective_apply_apply`) and fixing the others (`piExtendOfInjective_apply_of_notMem`).
+It splits `ι → M` as `(κ → M) × ((Set.range f)ᶜ → M)` along `Equiv.ofInjectiveSumCompl` and
+applies `e` to the first factor. -/
+public noncomputable def piExtendOfInjective (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective) :
+    (ι → M) ≃ₗ[R] (ι → M) :=
+  let L := funCongrLeft R M (Equiv.ofInjectiveSumCompl f hf) ≪≫ₗ sumArrowLequivProdArrow _ _ R M
+  L ≪≫ₗ e.prodCongr (.refl R _) ≪≫ₗ L.symm
+
+/-- The extension of `e` along `f` acts by `e` on the coordinates in the range of `f`. -/
+@[simp]
+public theorem piExtendOfInjective_apply_apply (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective)
+    (x : ι → M) (k : κ) :
+    e.piExtendOfInjective hf x (f k) = e (x ∘ f) k := by
+  -- The first factor of the split of `x` is `x ∘ f`.
+  have h : (sumArrowLequivProdArrow κ _ R M
+      (LinearMap.funLeft R M (Equiv.ofInjectiveSumCompl f hf) x)).1 = x ∘ f := by
+    ext k'
+    simp [LinearMap.funLeft_apply]
+  simp [piExtendOfInjective, funCongrLeft_apply, LinearMap.funLeft_apply, h]
+
+/-- The extension of `e` along `f` fixes the coordinates outside the range of `f`. -/
+@[simp]
+public theorem piExtendOfInjective_apply_of_notMem (e : (κ → M) ≃ₗ[R] (κ → M))
+    (hf : f.Injective) (x : ι → M) {i : ι} (hi : i ∉ Set.range f) :
+    e.piExtendOfInjective hf x i = x i := by
+  lift i to ↥(Set.range f)ᶜ using hi
+  simp [piExtendOfInjective, funCongrLeft_apply, LinearMap.funLeft_apply]
+
+/-- The inverse of the extension of `e` along `f` is the extension of `e.symm`. -/
+@[simp]
+public theorem piExtendOfInjective_symm (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective) :
+    (e.piExtendOfInjective hf).symm = e.symm.piExtendOfInjective hf := by
+  simp only [piExtendOfInjective, trans_symm, prodCongr_symm, symm_symm, refl_symm]
+  exact (trans_assoc _ _ _).symm
+
+end ExtendOfInjective
+
 variable (R : Type*) {ι : Type*} [Semiring R] (p : ι → Prop) [DecidablePred p] (M : ι → Type*)
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 
@@ -234,9 +307,42 @@ public theorem piEquivPiSubtypeProd_symm_apply
     (f : ((i : {x : ι // p x}) → M i) × ((i : {x : ι // ¬p x}) → M i)) (i : ι) :
     (piEquivPiSubtypeProd R p M).symm f i = if h : p i then f.1 ⟨i, h⟩ else f.2 ⟨i, h⟩ := (rfl)
 
+section FinsetUnion
+
+variable [DecidableEq ι] {s t : Finset ι}
+
+/-- Gluing a family on `s` and a family on `t` into a family on `s ∪ t`, for disjoint `s` and
+`t`. This is `Equiv.piFinsetUnion` as a `LinearEquiv`; its inverse takes the restrictions to `s`
+and to `t`. -/
+public def piFinsetUnion (h : Disjoint s t) :
+    ((∀ i : s, M i) × ∀ i : t, M i) ≃ₗ[R] ∀ i : (s ∪ t : Finset ι), M i where
+  toEquiv := Equiv.piFinsetUnion M h
+  map_add' x y := by simpa using map_add (AddEquiv.piFinsetUnion M h) x y
+  map_smul' _ _ := Finset.restrict₂_union_ext (by simp) (by simp)
+
+@[simp]
+public theorem coe_piFinsetUnion (h : Disjoint s t) :
+    ⇑(piFinsetUnion R M h) = Equiv.piFinsetUnion M h :=
+  (rfl)
+
+@[simp]
+public theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
+    ⇑(piFinsetUnion R M h).symm = (Equiv.piFinsetUnion M h).symm :=
+  (rfl)
+
+end FinsetUnion
+
 end LinearEquiv
 
 namespace LinearMap
+
+/-- Applying a linear map coordinatewise to the one-point family `Pi.single i x` gives the
+one-point family `Pi.single i (f x)`. -/
+@[simp]
+public theorem compLeft_single {R M M₂ ι : Type*} [Semiring R] [AddCommMonoid M]
+    [AddCommMonoid M₂] [Module R M] [Module R M₂] [DecidableEq ι] (f : M →ₗ[R] M₂) (i : ι)
+    (x : M) : f.compLeft ι (Pi.single i x) = Pi.single i (f x) :=
+  funext (Pi.apply_single (fun _ ↦ f) (fun _ ↦ map_zero f) i x)
 
 /-- In the product bases `Pi.basis b` and `Pi.basis c`, the coordinatewise linear map
 `LinearMap.piMap f` has the block-diagonal matrix whose blocks are the matrices of the `f i`.
@@ -352,7 +458,7 @@ public theorem finrank_pi_eq_finsum {R ι : Type*} [Semiring R] [StrongRankCondi
     Module.finrank R ((i : ι) → M i) = ∑ᶠ i, Module.finrank R (M i) := by
   classical
   have (i : {x // x ∉ h.toFinset}) : Subsingleton (M i) :=
-    not_nontrivial_iff_subsingleton.mp (by simpa using i.2)
+    not_nontrivial_iff_subsingleton.mp (by simpa using i.property)
   rw [(LinearEquiv.piEquivPiSubtypeProd R (· ∈ h.toFinset) M).finrank_eq, Module.finrank_prod,
     Module.finrank_zero_of_subsingleton (M := (i : {x // x ∉ h.toFinset}) → M i), add_zero,
     Module.finrank_pi_fintype,
@@ -431,5 +537,32 @@ public theorem exists_isRegular_neg_single_add_single_sub_single_add_single
   · exact ⟨i, by convert hneg2 using 1; norm_num [hai, hbi, hij]⟩
   · exact ⟨i, by convert hneg2 using 1; norm_num [hai, hbi, hij]⟩
   · exact ⟨i, by simpa [hai, hbi, hij] using h1⟩
+
+section MatrixCoordinates
+
+variable (R : Type*) [Semiring R] {ι : Type*} (κ μ : ι → Type*) (α : Type*)
+  [AddCommMonoid α] [Module R α]
+
+/-- Flatten a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to a single coordinate tuple
+indexed by `Σ i, κ i × μ i`, as an `R`-linear equivalence. -/
+public def piMatrixLinearEquiv :
+    ((i : ι) → Matrix (κ i) (μ i) α) ≃ₗ[R] ((p : Σ i, κ i × μ i) → α) :=
+  (LinearEquiv.piCongrRight fun i ↦
+      (Matrix.ofLinearEquiv R).symm.trans (LinearEquiv.curry R α (κ i) (μ i)).symm).trans
+    (LinearEquiv.piCurry R fun (_ : ι) (_ : κ _ × μ _) ↦ α).symm
+
+@[simp]
+public theorem piMatrixLinearEquiv_apply (A : (i : ι) → Matrix (κ i) (μ i) α)
+    (p : Σ i, κ i × μ i) :
+    piMatrixLinearEquiv R κ μ α A p = A p.1 p.2.1 p.2.2 := by
+  simp [piMatrixLinearEquiv, Sigma.uncurry, Function.uncurry]
+
+@[simp]
+public theorem piMatrixLinearEquiv_symm_apply (a : (p : Σ i, κ i × μ i) → α)
+    (i : ι) (j : κ i) (k : μ i) :
+    (piMatrixLinearEquiv R κ μ α).symm a i j k = a ⟨i, j, k⟩ := by
+  simp [piMatrixLinearEquiv, Sigma.curry]
+
+end MatrixCoordinates
 
 end TauCeti

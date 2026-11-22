@@ -53,8 +53,12 @@ continues to hold when the input family loses rank.
   every parameter where the relevant initial segment of the family is linearly independent, with
   `ContinuousAt`, `ContinuousOn` and `Continuous` variants for the normalized process.
 * `InnerProductSpace.inner_gramSchmidt_eq_norm_sq`,
-  `InnerProductSpace.inner_gramSchmidtNormed_eq_norm` — pairing the residual or normalized
-  vector with its original input gives its squared norm or its residual norm.
+  `InnerProductSpace.inner_gramSchmidtNormed_eq_norm`,
+  `InnerProductSpace.inner_gramSchmidtOrthonormalBasis_eq_norm`,
+  `InnerProductSpace.gramSchmidtOrthonormalBasis_det_eq_prod_norm` — pairing the residual,
+  normalized vector, or `gramSchmidtOrthonormalBasis` vector with its original input gives its
+  squared norm or its residual norm, and the coordinate determinant in
+  `gramSchmidtOrthonormalBasis` is the product of the residual norms.
 * `ContDiffWithinAt.gramSchmidt`, `ContDiffWithinAt.gramSchmidtNormed` — the corresponding real
   smoothness statements, with at-point, on-set and global versions for the normalized process.
 -/
@@ -108,6 +112,26 @@ theorem inner_gramSchmidtNormed_eq_norm (f : ι → E) (j : ι) :
   by_cases h : gramSchmidt 𝕜 f j = 0
   · simp [gramSchmidtNormed, h]
   · simp [gramSchmidtNormed, inner_smul_left, h, sq]
+
+/-- Every vector of `gramSchmidtOrthonormalBasis` paired with its original input gives the
+corresponding Gram–Schmidt residual norm, even when the residual vanishes. -/
+@[simp]
+theorem inner_gramSchmidtOrthonormalBasis_eq_norm [Fintype ι] [FiniteDimensional 𝕜 E]
+    (h : finrank 𝕜 E = Fintype.card ι) (f : ι → E) (i : ι) :
+    inner 𝕜 (gramSchmidtOrthonormalBasis h f i) (f i) = (‖gramSchmidt 𝕜 f i‖ : 𝕜) := by
+  by_cases hi : gramSchmidtNormed 𝕜 f i = 0
+  · rw [inner_gramSchmidtOrthonormalBasis_eq_zero h hi]
+    have hg : gramSchmidt 𝕜 f i = 0 := by simpa [gramSchmidtNormed] using hi
+    simp [hg]
+  · rw [gramSchmidtOrthonormalBasis_apply h hi, inner_gramSchmidtNormed_eq_norm]
+
+/-- The determinant of a family `f` in the coordinates of its `gramSchmidtOrthonormalBasis` is the
+product of its Gram–Schmidt residual norms. -/
+theorem gramSchmidtOrthonormalBasis_det_eq_prod_norm [Fintype ι] [DecidableEq ι]
+    [FiniteDimensional 𝕜 E] (h : finrank 𝕜 E = Fintype.card ι) (f : ι → E) :
+    (gramSchmidtOrthonormalBasis h f).toBasis.det f = ∏ i, (‖gramSchmidt 𝕜 f i‖ : 𝕜) := by
+  rw [gramSchmidtOrthonormalBasis_det]
+  simp only [inner_gramSchmidtOrthonormalBasis_eq_norm]
 
 /-- The Gram–Schmidt process fixes an input vector orthogonal to all earlier inputs. This is the
 pointwise form of Mathlib's `InnerProductSpace.gramSchmidt_of_orthogonal`: every earlier

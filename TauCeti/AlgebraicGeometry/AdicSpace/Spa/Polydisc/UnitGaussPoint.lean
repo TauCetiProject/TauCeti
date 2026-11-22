@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Topology.Algebra.Valued.NormedValued
-import TauCeti.Analysis.Normed.Ring.UnitBall
 import TauCeti.RingTheory.Huber.Restricted.Reduction
 import TauCeti.RingTheory.Valuation.Continuous.Valued
 
@@ -246,7 +245,7 @@ compares restricted power series as their unit Gauss norms `‖∑ a_α T^α‖ 
 def IsUnitGaussPoint (K : Type*) [NormedField K] [IsUltrametricDist K] (n : ℕ)
     (η : closedPolydisc n K) : Prop :=
   ∀ f g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
-    η.1.toValuativeRel.vle f g ↔
+    η.val.toValuativeRel.vle f g ↔
       MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (f : MvPowerSeries (Fin n) K) ≤
         MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (g : MvPowerSeries (Fin n) K)
 
@@ -255,7 +254,7 @@ theorem isUnitGaussPoint_iff {n : ℕ} {K : Type*} [NormedField K] [IsUltrametri
     {η : closedPolydisc n K} :
     IsUnitGaussPoint K n η ↔
       ∀ f g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
-        η.1.toValuativeRel.vle f g ↔
+        η.val.toValuativeRel.vle f g ↔
           MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (f : MvPowerSeries (Fin n) K) ≤
             MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (g : MvPowerSeries (Fin n) K) :=
   Iff.rfl
@@ -271,25 +270,25 @@ noncomputable def unitGaussPoint : closedPolydisc n K :=
 
 /-- The underlying point of `unitGaussPoint n K` in `Spv K⟨T₁, …, Tₙ⟩`. -/
 theorem unitGaussPoint_val :
-    (unitGaussPoint n K).1 = ofValuation (unitGaussValuation n K) := (rfl)
+    (unitGaussPoint n K).val = ofValuation (unitGaussValuation n K) := (rfl)
 
 /-- The unit Gauss point compares restricted power series by their unit Gauss valuations. -/
 @[simp]
 theorem unitGaussPoint_vle_iff
     (f g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (unitGaussPoint n K).1.toValuativeRel.vle f g ↔
+    (unitGaussPoint n K).val.toValuativeRel.vle f g ↔
       unitGaussValuation n K f ≤ unitGaussValuation n K g := by
   rw [unitGaussPoint_val, vle_ofValuation]
 
 /-- The unit Gauss point kills only the zero series. -/
 theorem unitGaussPoint_vle_zero_iff
     {f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight} :
-    (unitGaussPoint n K).1.toValuativeRel.vle f 0 ↔ f = 0 := by
+    (unitGaussPoint n K).val.toValuativeRel.vle f 0 ↔ f = 0 := by
   rw [unitGaussPoint_vle_iff, map_zero, nonpos_iff_eq_zero, unitGaussValuation_eq_zero_iff]
 
 /-- **The support of the unit Gauss point is trivial.** -/
 @[simp]
-theorem supp_unitGaussPoint : (unitGaussPoint n K).1.supp = ⊥ :=
+theorem supp_unitGaussPoint : (unitGaussPoint n K).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by rw [mem_supp_iff, unitGaussPoint_vle_zero_iff, Ideal.mem_bot]
 
 /-- `unitGaussPoint n K` satisfies `IsUnitGaussPoint K n`. -/
@@ -369,7 +368,7 @@ theorem unitGaussPoint_zero_mem_closure_classicalPoint {K : Type*} [NormedField 
     [IsUltrametricDist K] [CompleteSpace K] (x : spa (powerBoundedSubring K)) :
     unitGaussPoint 0 K ∈ closure (Set.range
       (fun a : {a : Fin 0 → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.1 a.2)) :=
+        classicalPoint x a.val a.property)) :=
   subset_closure ⟨⟨Fin.elim0, fun i ↦ i.elim0⟩,
     (unitGaussPoint_zero_eq_classicalPoint x Fin.elim0 fun i ↦ i.elim0).symm⟩
 
@@ -384,15 +383,15 @@ private def weightedSubringToMvPowerSeries
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
     MvPowerSeries (Fin n) (powerBoundedSubring K) :=
-  fun ν ↦ ⟨MvPowerSeries.coeff ν (f.1 : MvPowerSeries (Fin n) K),
+  fun ν ↦ ⟨MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K),
     by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
-      mem_weightedNhd.mp (mem_weightedSubring.mp f.2) ν⟩
+      mem_weightedNhd.mp (mem_weightedSubring.mp f.property) ν⟩
 
 private theorem coe_coeff_weightedSubringToMvPowerSeries
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) (ν : Fin n →₀ ℕ) :
     ((MvPowerSeries.coeff ν (weightedSubringToMvPowerSeries f) : powerBoundedSubring K) : K) =
-      MvPowerSeries.coeff ν (f.1 : MvPowerSeries (Fin n) K) :=
+      MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K) :=
   rfl
 
 /-- The canonical ring map sending a series in `K°⟨T₁, …, Tₙ⟩` to a unit-weight restricted series
@@ -406,7 +405,7 @@ private noncomputable def weightedSubringToRestricted :
     ⟨weightedSubringToMvPowerSeries f,
       mem_weightedRestrictedSubring.mpr <| isWeightedRestricted_one_weight_iff.mpr <|
         tendsto_subtype_rng.mpr <|
-          isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp f.1.2)⟩
+          isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp f.val.property)⟩
   map_one' := Subtype.ext <| MvPowerSeries.ext fun ν ↦ Subtype.ext <| by
     rw [coe_coeff_weightedSubringToMvPowerSeries, Subring.coe_one, Subring.coe_one,
       Subring.coe_one, MvPowerSeries.coeff_one, MvPowerSeries.coeff_one]
@@ -436,11 +435,10 @@ noncomputable def polydiscReduction (n : ℕ) (K : Type*) [NormedField K] [IsUlt
     have hopen : (topologicallyNilpotentIdeal K : Set (powerBoundedSubring K)) =
         (Subtype.val : powerBoundedSubring K → K) ⁻¹' Metric.ball 0 1 := by
       ext a
-      simp only [SetLike.mem_coe, mem_topologicallyNilpotentIdeal,
-        isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun _ _ _ ↦ norm_pow _ _,
-        Set.mem_preimage, mem_ball_zero_iff]
+      simp only [SetLike.mem_coe, mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
+        tendsto_pow_atTop_nhds_zero_iff_norm_lt_one, Set.mem_preimage, mem_ball_zero_iff]
     rw [hopen]
-    exact Metric.isOpen_ball.preimage continuous_subtype_val).comp weightedSubringToRestricted
+    exact Metric.isOpen_ball.preimage continuous_subtypeVal).comp weightedSubringToRestricted
 
 /-- Each coefficient of `polydiscReduction n K f` is the residue class of the corresponding
 coefficient of `f`. -/
@@ -450,9 +448,9 @@ theorem coeff_polydiscReduction
       (powerBoundedSubring K)) (ν : Fin n →₀ ℕ) :
     (polydiscReduction n K f).coeff ν =
       Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
-        ⟨MvPowerSeries.coeff ν (f.1 : MvPowerSeries (Fin n) K),
+        ⟨MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K),
           by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
-            mem_weightedNhd.mp (mem_weightedSubring.mp f.2) ν⟩ := by
+            mem_weightedNhd.mp (mem_weightedSubring.mp f.property) ν⟩ := by
   simp only [polydiscReduction, RingHom.comp_apply, Ideal.coeff_restrictedReduction]
   rfl
 
@@ -462,16 +460,16 @@ theorem coeff_polydiscReduction_eq_zero_iff
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) (ν : Fin n →₀ ℕ) :
     (polydiscReduction n K f).coeff ν = 0 ↔
-      ‖MvPowerSeries.coeff ν (f.1 : MvPowerSeries (Fin n) K)‖ < 1 := by
+      ‖MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K)‖ < 1 := by
   rw [coeff_polydiscReduction, Ideal.Quotient.eq_zero_iff_mem, mem_topologicallyNilpotentIdeal,
-    isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun _ _ _ ↦ norm_pow _ _]
+    IsTopologicallyNilpotent, tendsto_pow_atTop_nhds_zero_iff_norm_lt_one]
 
 /-- The reduction of a unit-bounded series vanishes if and only if its unit Gauss valuation is
 strictly less than `1`. -/
 theorem polydiscReduction_eq_zero_iff
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
-    polydiscReduction n K f = 0 ↔ unitGaussValuation n K f.1 < 1 := by
+    polydiscReduction n K f = 0 ↔ unitGaussValuation n K f.val < 1 := by
   rw [MvPolynomial.ext_iff, unitGaussValuation_lt_iff]
   refine forall_congr' fun ν ↦ ?_
   rw [AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply,
@@ -482,10 +480,10 @@ equals `1`. -/
 theorem polydiscReduction_ne_zero_iff
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
-    polydiscReduction n K f ≠ 0 ↔ unitGaussValuation n K f.1 = 1 := by
+    polydiscReduction n K f ≠ 0 ↔ unitGaussValuation n K f.val = 1 := by
   rw [Ne, polydiscReduction_eq_zero_iff, not_lt]
-  have hle : unitGaussValuation n K f.1 ≤ 1 :=
-    (unitGaussValuation_le_one_iff_mem_weightedSubring n K).mpr f.2
+  have hle : unitGaussValuation n K f.val ≤ 1 :=
+    (unitGaussValuation_le_one_iff_mem_weightedSubring n K).mpr f.property
   exact ⟨fun h ↦ le_antisymm hle h, fun h ↦ h.ge⟩
 
 /-- Truncating `f ∈ K°⟨T⟩` to the finite support of `polydiscReduction n K f` leaves a remainder
@@ -494,9 +492,9 @@ private theorem unitGaussValuation_sub_truncation_lt_one
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
     unitGaussValuation n K
-        (f.1 - weightedPolynomialHom _ isWeightFamily_one_weight
+        (f.val - weightedPolynomialHom _ isWeightFamily_one_weight
           (∑ ν ∈ (polydiscReduction n K f).support,
-            MvPolynomial.monomial ν (MvPowerSeries.coeff ν (f.1 : MvPowerSeries (Fin n) K)))) <
+            MvPolynomial.monomial ν (MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K)))) <
       1 := by
   classical
   set s := (polydiscReduction n K f).support
@@ -517,7 +515,7 @@ private theorem exists_unit_mul_unitGaussValuation_eq_one
     (T : Finset (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
       isWeightFamily_one_weight))
     (g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
-    (hη : (unitGaussPoint n K).1 ∈ basicOpenFinset T g) :
+    (hη : (unitGaussPoint n K).val ∈ basicOpenFinset T g) :
     ∃ u : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight,
       IsUnit u ∧ unitGaussValuation n K (g * u) = 1 ∧
         ∀ f ∈ T.image (· * u), unitGaussValuation n K f ≤ 1 := by
@@ -545,11 +543,11 @@ theorem evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring
     (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i))
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
-    evalAtHom a ha f.1 ∈ powerBoundedSubring K := by
+    evalAtHom a ha f.val ∈ powerBoundedSubring K := by
   rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one]
-  refine (norm_evalAtHom_le ha (fun i ↦ isPowerBounded_iff_norm_le_one.mp (ha i)) f.1).trans ?_
+  refine (norm_evalAtHom_le ha (fun i ↦ isPowerBounded_iff_norm_le_one.mp (ha i)) f.val).trans ?_
   rw [← coe_unitGaussValuation]
-  exact_mod_cast (unitGaussValuation_le_one_iff_mem_weightedSubring n K).mpr f.2
+  exact_mod_cast (unitGaussValuation_le_one_iff_mem_weightedSubring n K).mpr f.property
 
 /-- **Reduction commutes with evaluation at power-bounded tuples.** For `f ∈ K°⟨T₁, …, Tₙ⟩` and
 `a ∈ (K°)ⁿ`, the residue class of `f(a)` in `K° ⧸ K°°` equals the value of `polydiscReduction n K f`
@@ -558,7 +556,7 @@ theorem mk_evalAtHom_eq_eval_polydiscReduction (a : Fin n → K) (ha : ∀ i, Is
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
     Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
-        ⟨evalAtHom a ha f.1, evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f⟩ =
+        ⟨evalAtHom a ha f.val, evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f⟩ =
       MvPolynomial.eval
         (fun i ↦ Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
           ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩)
@@ -566,26 +564,26 @@ theorem mk_evalAtHom_eq_eval_polydiscReduction (a : Fin n → K) (ha : ∀ i, Is
   classical
   set s := (polydiscReduction n K f).support
   let p : MvPolynomial (Fin n) K :=
-    ∑ ν ∈ s, MvPolynomial.monomial ν (MvPowerSeries.coeff ν (f.1 : MvPowerSeries (Fin n) K))
+    ∑ ν ∈ s, MvPolynomial.monomial ν (MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K))
   let P := weightedPolynomialHom (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight p
-  have hnorm_diff : ‖evalAtHom a ha f.1 - evalAtHom a ha P‖ < 1 := by
+  have hnorm_diff : ‖evalAtHom a ha f.val - evalAtHom a ha P‖ < 1 := by
     rw [← map_sub]
     refine (norm_evalAtHom_le ha (fun i ↦ isPowerBounded_iff_norm_le_one.mp (ha i))
-      (f.1 - P)).trans_lt ?_
+      (f.val - P)).trans_lt ?_
     rw [← coe_unitGaussValuation]
     exact_mod_cast unitGaussValuation_sub_truncation_lt_one f
   have hP_pb : evalAtHom a ha P ∈ powerBoundedSubring K := by
     rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one,
-      ← sub_add_cancel (evalAtHom a ha P) (evalAtHom a ha f.1)]
+      ← sub_add_cancel (evalAtHom a ha P) (evalAtHom a ha f.val)]
     exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le
       (by rw [norm_sub_rev]; exact hnorm_diff.le)
       (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp
         (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f))))
   have hP_sub : (⟨evalAtHom a ha P, hP_pb⟩ : powerBoundedSubring K) =
       ∑ ν ∈ s,
-        (⟨MvPowerSeries.coeff ν (f.1 : MvPowerSeries (Fin n) K),
+        (⟨MvPowerSeries.coeff ν (f.val : MvPowerSeries (Fin n) K),
           by simpa only [weightMul_one_weight, Subring.mem_toAddSubgroup] using
-            mem_weightedNhd.mp (mem_weightedSubring.mp f.2) ν⟩ : powerBoundedSubring K) *
+            mem_weightedNhd.mp (mem_weightedSubring.mp f.property) ν⟩ : powerBoundedSubring K) *
         ν.prod fun i e ↦
           (⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩ : powerBoundedSubring K) ^ e := by
     refine Subtype.ext ?_
@@ -595,10 +593,10 @@ theorem mk_evalAtHom_eq_eval_polydiscReduction (a : Fin n → K) (ha : ∀ i, Is
     refine Finset.sum_congr rfl fun ν _ ↦ ?_
     simp [MvPolynomial.eval_monomial, Finsupp.prod]
   have hmk_eq : Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
-      ⟨evalAtHom a ha f.1, evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f⟩ =
+      ⟨evalAtHom a ha f.val, evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f⟩ =
       Ideal.Quotient.mk (topologicallyNilpotentIdeal K) ⟨evalAtHom a ha P, hP_pb⟩ := by
     rw [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, mem_topologicallyNilpotentIdeal,
-      isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun _ _ _ ↦ norm_pow _ _]
+      IsTopologicallyNilpotent, tendsto_pow_atTop_nhds_zero_iff_norm_lt_one]
     exact hnorm_diff
   rw [hmk_eq, hP_sub, map_sum, MvPolynomial.eval_eq']
   refine Finset.sum_congr rfl fun ν _ ↦ ?_
@@ -612,18 +610,18 @@ theorem norm_evalAtHom_eq_one_iff_eval_polydiscReduction_ne_zero (a : Fin n → 
     (ha : ∀ i, IsPowerBounded (a i))
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
-    ‖evalAtHom a ha f.1‖ = 1 ↔
+    ‖evalAtHom a ha f.val‖ = 1 ↔
       MvPolynomial.eval
         (fun i ↦ Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
           ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩)
         (polydiscReduction n K f) ≠ 0 := by
-  have hle : ‖evalAtHom a ha f.1‖ ≤ 1 :=
+  have hle : ‖evalAtHom a ha f.val‖ ≤ 1 :=
     isPowerBounded_iff_norm_le_one.mp
       (mem_powerBoundedSubring.mp
         (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f))
   rw [← mk_evalAtHom_eq_eval_polydiscReduction a ha f, Ne, Ideal.Quotient.eq_zero_iff_mem,
-    mem_topologicallyNilpotentIdeal,
-    isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun _ _ _ ↦ norm_pow _ _, not_lt]
+    mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
+    tendsto_pow_atTop_nhds_zero_iff_norm_lt_one, not_lt]
   exact ⟨fun h ↦ h.ge, fun h ↦ le_antisymm hle h⟩
 
 /-- **Normalized rational-neighbourhood criterion at the unit Gauss point.** If `g ∈ K°⟨T⟩` and
@@ -641,8 +639,8 @@ theorem classicalPoint_mem_rationalSubset_of_eval_polydiscReduction_ne_zero
       (fun i ↦ Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
         ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩)
       (polydiscReduction n K g) ≠ 0) :
-    (classicalPoint x a ha).1 ∈ rationalSubset (powerBoundedSubring _) T g.1 := by
-  have hg1 : ‖evalAtHom a ha g.1‖ = 1 :=
+    (classicalPoint x a ha).val ∈ rationalSubset (powerBoundedSubring _) T g.val := by
+  have hg1 : ‖evalAtHom a ha g.val‖ = 1 :=
     (norm_evalAtHom_eq_one_iff_eval_polydiscReduction_ne_zero a ha g).mpr hga
   rw [classicalPoint_mem_rationalSubset_iff]
   refine ⟨fun f hf ↦ ?_, norm_pos_iff.mp (by linarith)⟩
@@ -660,9 +658,9 @@ theorem exists_classicalPoint_mem_basicOpenFinset
     (T : Finset (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
       isWeightFamily_one_weight))
     (g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
-    (hη : (unitGaussPoint n K).1 ∈ basicOpenFinset T g) :
+    (hη : (unitGaussPoint n K).val ∈ basicOpenFinset T g) :
     ∃ (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i)),
-      (classicalPoint x a ha).1 ∈ basicOpenFinset T g := by
+      (classicalPoint x a ha).val ∈ basicOpenFinset T g := by
   obtain ⟨u, hu, hg'_val, hT'_val⟩ := exists_unit_mul_unitGaussValuation_eq_one T g hη
   let g' : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K) :=
@@ -677,18 +675,19 @@ theorem exists_classicalPoint_mem_basicOpenFinset
     exact hred_ne (MvPolynomial.funext fun ā ↦ by simpa using hall ā)
   obtain ⟨ā, hā⟩ := hex
   choose b hb using fun i ↦ Ideal.Quotient.mk_surjective (ā i)
-  refine ⟨fun i ↦ (b i : K), fun i ↦ mem_powerBoundedSubring.mp (b i).2, ?_⟩
+  refine ⟨fun i ↦ (b i : K), fun i ↦ mem_powerBoundedSubring.mp (b i).property, ?_⟩
   have hmem := classicalPoint_mem_rationalSubset_of_eval_polydiscReduction_ne_zero x
-    (T := T.image (· * u)) (g := g') hT'_val (fun i ↦ mem_powerBoundedSubring.mp (b i).2)
+    (T := T.image (· * u)) (g := g') hT'_val (fun i ↦ mem_powerBoundedSubring.mp (b i).property)
     (by
       have heq : (fun i ↦ Ideal.Quotient.mk (topologicallyNilpotentIdeal K)
-          ⟨(b i : K), mem_powerBoundedSubring.mpr (mem_powerBoundedSubring.mp (b i).2)⟩) = ā :=
+          ⟨(b i : K), mem_powerBoundedSubring.mpr
+            (mem_powerBoundedSubring.mp (b i).property)⟩) = ā :=
         funext fun i ↦ hb i
       rwa [heq])
   dsimp only [g'] at hmem
   rw [rationalSubset_def, Set.mem_inter_iff] at hmem
   rw [← basicOpenFinset_image_mul_right T g u hu]
-  convert hmem.2
+  convert hmem.right
 
 /-- Every rational subset `R(T/g)` of `closedPolydisc n K` containing the unit Gauss point contains
 a classical point when `K° ⧸ K°°` is infinite. -/
@@ -698,14 +697,14 @@ theorem exists_classicalPoint_mem_rationalSubset
     (T : Finset (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
       isWeightFamily_one_weight))
     (g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
-    (hη : (unitGaussPoint n K).1 ∈ rationalSubset (powerBoundedSubring _) T g) :
+    (hη : (unitGaussPoint n K).val ∈ rationalSubset (powerBoundedSubring _) T g) :
     ∃ (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i)),
-      (classicalPoint x a ha).1 ∈ rationalSubset (powerBoundedSubring _) T g := by
+      (classicalPoint x a ha).val ∈ rationalSubset (powerBoundedSubring _) T g := by
   rw [rationalSubset_def, Set.mem_inter_iff] at hη
-  obtain ⟨a, ha, hmem⟩ := exists_classicalPoint_mem_basicOpenFinset x T g hη.2
+  obtain ⟨a, ha, hmem⟩ := exists_classicalPoint_mem_basicOpenFinset x T g hη.right
   refine ⟨a, ha, ?_⟩
   rw [rationalSubset_def]
-  exact ⟨closedPolydisc_def n K ▸ (classicalPoint x a ha).2, hmem⟩
+  exact ⟨closedPolydisc_def n K ▸ (classicalPoint x a ha).property, hmem⟩
 
 /-- **Gauss-point closure.** Over a complete ultrametric normed field `K` whose residue field
 `K° ⧸ K°°` is infinite, the unit Gauss point of `closedPolydisc n K` lies in the closure of the
@@ -715,7 +714,7 @@ theorem unitGaussPoint_mem_closure_classicalPoint
     (x : spa (powerBoundedSubring K)) :
     unitGaussPoint n K ∈ closure (Set.range
       (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.1 a.2)) := by
+        classicalPoint x a.val a.property)) := by
   have : IsHuberRing K := by
     rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨_, rfl⟩
     · infer_instance
@@ -756,7 +755,7 @@ theorem gaussPoint_mem_closure_rationalPoints
     ∃ η : closedPolydisc n K,
       IsUnitGaussPoint K n η ∧ η ∈ closure (Set.range
         (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-          classicalPoint x a.1 a.2)) :=
+          classicalPoint x a.val a.property)) :=
   ⟨unitGaussPoint n K, isUnitGaussPoint_unitGaussPoint n K,
     unitGaussPoint_mem_closure_classicalPoint x⟩
 
@@ -777,10 +776,10 @@ theorem not_isClosed_range_classicalPoint
     [Infinite (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K)] [NeZero n]
     (x : spa (powerBoundedSubring K)) :
     ¬ IsClosed (Set.range fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.1 a.2) := fun hclosed ↦ by
+      classicalPoint x a.val a.property) := fun hclosed ↦ by
   obtain ⟨a, ha⟩ := unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem x hclosed
     fun a ha ↦ ⟨⟨a, ha⟩, rfl⟩
-  exact unitGaussPoint_ne_classicalPoint x a.1 a.2 ha.symm
+  exact unitGaussPoint_ne_classicalPoint x a.val a.property ha.symm
 
 end ReductionAndClosure
 
@@ -824,7 +823,7 @@ theorem unitGaussPoint_notMem_closure_classicalPoint_of_finite
     (x : spa (powerBoundedSubring K)) :
     unitGaussPoint n K ∉ closure (Set.range
       (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.1 a.2)) := by
+        classicalPoint x a.val a.property)) := by
   let : Field (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K) :=
     Ideal.Quotient.field (topologicallyNilpotentIdeal K)
   let : Fintype (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K) := Fintype.ofFinite _
@@ -837,7 +836,7 @@ theorem unitGaussPoint_notMem_closure_classicalPoint_of_finite
     one_le_unitGaussValuation_weightedX_pow_sub Fintype.one_lt_card
   have hηU : unitGaussPoint n K ∈ U := by
     rw [Set.mem_preimage, mem_rationalSubset_iff]
-    refine ⟨closedPolydisc_def n K ▸ (unitGaussPoint n K).2, ?_, ?_⟩
+    refine ⟨closedPolydisc_def n K ▸ (unitGaussPoint n K).property, ?_, ?_⟩
     · intro t ht
       rw [Finset.mem_singleton.mp ht, unitGaussPoint_vle_iff, map_one]
       exact hg_ge
@@ -849,17 +848,16 @@ theorem unitGaussPoint_notMem_closure_classicalPoint_of_finite
   obtain ⟨_, hpU, ⟨a, rfl⟩⟩ :=
     mem_closure_iff.mp hmem U (isOpen_val_preimage_rationalSubset_closedPolydisc _ _) hηU
   rw [Set.mem_preimage, classicalPoint_mem_rationalSubset_iff] at hpU
-  have hle := hpU.1 1 (Finset.mem_singleton_self 1)
+  have hle := hpU.left 1 (Finset.mem_singleton_self 1)
   rw [map_one, norm_one] at hle
   -- Every power-bounded `a 0` satisfies `a 0 ^ q - a 0 ∈ K°°` by `FiniteField.pow_card`.
-  let a₀ : powerBoundedSubring K := ⟨a.1 0, mem_powerBoundedSubring.mpr (a.2 0)⟩
+  let a₀ : powerBoundedSubring K := ⟨a.val 0, mem_powerBoundedSubring.mpr (a.property 0)⟩
   have hnil : a₀ ^ q - a₀ ∈ topologicallyNilpotentIdeal K := by
     rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_pow, sub_eq_zero]
     exact FiniteField.pow_card (Ideal.Quotient.mk (topologicallyNilpotentIdeal K) a₀)
-  have hlt : ‖evalAtHom a.1 a.2 g‖ < 1 := by
+  have hlt : ‖evalAtHom a.val a.property g‖ < 1 := by
     have hlt' : ‖((a₀ ^ q - a₀ : powerBoundedSubring K) : K)‖ < 1 :=
-      (isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun _ _ _ ↦ norm_pow _ _).mp
-        (mem_topologicallyNilpotentIdeal.mp hnil)
+      (tendsto_pow_atTop_nhds_zero_iff_norm_lt_one).mp (mem_topologicallyNilpotentIdeal.mp hnil)
     simpa only [g, X₀, map_sub, map_pow, evalAtHom_weightedX, AddSubgroupClass.coe_sub,
       Subring.coe_pow] using hlt'
   exact hlt.not_ge hle
@@ -871,7 +869,7 @@ theorem unitGaussPoint_mem_closure_classicalPoint_iff [NeZero n]
     (x : spa (powerBoundedSubring K)) :
     unitGaussPoint n K ∈ closure (Set.range
         (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-          classicalPoint x a.1 a.2)) ↔
+          classicalPoint x a.val a.property)) ↔
       Infinite (powerBoundedSubring K ⧸ topologicallyNilpotentIdeal K) :=
   ⟨fun h ↦ not_finite_iff_infinite.mp fun _ ↦
       unitGaussPoint_notMem_closure_classicalPoint_of_finite x h,

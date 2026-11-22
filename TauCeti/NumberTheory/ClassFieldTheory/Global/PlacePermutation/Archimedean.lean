@@ -72,12 +72,12 @@ infinite place, has quotient `2^r` times the product of the finite local degrees
 above the finite places may be chosen arbitrarily. -/
 theorem herbrandQuotient_ofMulAction_places
     (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.val.asIdeal}) :
     TateCohomology.herbrandQuotient
       (Rep.ofMulAction ℤ (L ≃ₐ[K] L)
         (InfinitePlace L ⊕ ↥(HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) ↑S))) =
       (2 : ℚ) ^ (Finset.univ.filter fun v : InfinitePlace K ↦ ¬ v.IsUnramifiedIn L).card *
-        ∏ v : S, (Module.finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) := by
+        ∏ v : S, (Module.finrank (v.val.adicCompletion K) ((w v).val.adicCompletion L) : ℚ) := by
   classical
   let := (HeightOneSpectrum.primesAbove_finite (𝓞 K) (𝓞 L) S.finite_toSet).to_subtype
   rw [TateCohomology.herbrandQuotient_ofMulAction_sum,

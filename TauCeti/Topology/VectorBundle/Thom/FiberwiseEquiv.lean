@@ -62,16 +62,16 @@ equivalences `φ b' : E'_{b'} ≃ E_{g b'}` over a continuous map `g : B' → B`
 `v ↦ (g (π v), φ (π v) v)` is continuous, as a map `(E', E'₀) ⟶ (E, E₀)` of Thom pairs: a linear
 equivalence carries nonzero vectors to nonzero vectors. -/
 def thomPairMapOfFiberwise
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
     thomPair F' E' ⟶ thomPair F E :=
   TopPair.ofSubsetMap (TopCat.ofHom ⟨_, hφ⟩) fun v hv ↦
     mem_zeroSectionCompl.2 ((φ v.proj).map_ne_zero_iff.2 (mem_zeroSectionCompl.1 hv))
 
 @[simp]
 theorem thomPairMapOfFiberwise_fst_apply
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd))
     (v : TotalSpace F' E') :
-    TopPair.Hom.fst (thomPairMapOfFiberwise hφ) v = TotalSpace.mk' F (g v.proj) (φ v.proj v.2) :=
+    TopPair.Hom.fst (thomPairMapOfFiberwise hφ) v = TotalSpace.mk' F (g v.proj) (φ v.proj v.snd) :=
   TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F' E')) _ _ v
 
 variable [TopologicalSpace F] [TopologicalSpace F'] [FiberBundle F E] [FiberBundle F' E']
@@ -79,7 +79,7 @@ variable [TopologicalSpace F] [TopologicalSpace F'] [FiberBundle F E] [FiberBund
 /-- On the fibre over `b'`, the map of Thom pairs of a fibrewise isomorphism `φ` is the isomorphism
 of fibre pairs `(E'_{b'}, E'_{b'} ∖ {0}) ≅ (E_{g b'}, E_{g b'} ∖ {0})` induced by `φ b'`. -/
 theorem fiberThomPairMap_comp_thomPairMapOfFiberwise
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd))
     (b' : B') :
     fiberThomPairMap F' E' b' ≫ thomPairMapOfFiberwise hφ =
       (φ b').complZeroPairIso.hom ≫ fiberThomPairMap F E (g b') := by
@@ -97,7 +97,7 @@ theorem fiberThomPairMap_comp_thomPairMapOfFiberwise
 
 /-- The map of Thom pairs of a fibrewise isomorphism over `g` covers `g`. -/
 theorem thomPairMapOfFiberwise_fst_comp_thomPairProj
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
     TopPair.Hom.fst (thomPairMapOfFiberwise hφ) ≫ thomPairProj F E =
       thomPairProj F' E' ≫ TopCat.ofHom g :=
   TopCat.ext fun v ↦ (thomPairProj_apply F E _).trans <|
@@ -123,7 +123,7 @@ along the map of Thom pairs of a fibrewise isomorphism `E'_{b'} ≃ E_{g b'}` ov
 class of `E'`. -/
 theorem IsThomClass.thomPairMapOfFiberwise
     {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)} (hu : IsThomClass F E u)
-    (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
     IsThomClass F E' (TopPair.singularCohomologyMap (TauCeti.thomPairMapOfFiberwise hφ) _ u) :=
   hu.singularCohomologyMap _ g (fun b' ↦ (φ b').complZeroPairIso)
     (fiberThomPairMap_comp_thomPairMapOfFiberwise hφ)
@@ -143,7 +143,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 `E` over `g`, since every `φ b'` is linear. -/
 theorem zeroSectionHom_comp_thomPairMapOfFiberwise_fst {g : C(B', B)}
     {φ : ∀ b', E' b' ≃L[ℝ] E (g b')}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
     zeroSectionHom F' E' ≫ TopPair.Hom.fst (thomPairMapOfFiberwise hφ) =
       TopCat.ofHom g ≫ zeroSectionHom F E :=
   TopCat.ext fun b' ↦ by
@@ -155,7 +155,7 @@ theorem zeroSectionHom_comp_thomPairMapOfFiberwise_fst {g : C(B', B)}
 `E'_{b'} ≃ E_{g b'}` over `g : B' → B`, pulling a relative class back along the map of Thom pairs
 and then taking its Euler class gives the pull-back along `g` of its Euler class. -/
 theorem eulerClass_thomPairMapOfFiberwise {g : C(B', B)} {φ : ∀ b', E' b' ≃L[ℝ] E (g b')}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd))
     (n : ℕ) :
     TopPair.singularCohomologyMap (thomPairMapOfFiberwise hφ) n ≫ eulerClass R k M F' E' n =
       eulerClass R k M F E n ≫ TopCat.singularCohomologyMap (TopCat.ofHom g) n :=
@@ -168,7 +168,7 @@ theorem eulerClass_thomPairMapOfFiberwise_id {E' : B → Type w}
     [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)] [∀ b, Module ℝ (E' b)]
     [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] [VectorBundle ℝ F' E']
     {φ : ∀ b, E' b ≃L[ℝ] E b}
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2)) (n : ℕ) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.snd)) (n : ℕ) :
     TopPair.singularCohomologyMap (thomPairMapOfFiberwise (g := ContinuousMap.id B) hφ) n ≫
       eulerClass R k M F' E' n = eulerClass R k M F E n := by
   rw [eulerClass_thomPairMapOfFiberwise (g := ContinuousMap.id B) hφ n]

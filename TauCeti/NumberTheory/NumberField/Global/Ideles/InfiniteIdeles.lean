@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.InfiniteAdele
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.InfiniteGaloisAction
-public import TauCeti.RepresentationTheory.Pi
+public import TauCeti.RepresentationTheory.Pi.Basic
 
 /-!
 # The infinite ideles as a Galois representation
@@ -101,7 +101,7 @@ def infiniteIdelesPiIso :
     LinearMap.ext fun x ↦ funext fun v ↦ Additive.toMul.injective <| Units.ext <| by
       rw [LinearMap.comp_apply, LinearMap.comp_apply, Representation.pi_apply,
         Representation.ofMulDistribMulAction_apply_apply]
-      exact infiniteAdeleSemilocalEquiv_infiniteAdeleGaloisAction σ x.toMul.1 v
+      exact infiniteAdeleSemilocalEquiv_infiniteAdeleGaloisAction σ x.toMul.val v
 
 variable {K L}
 

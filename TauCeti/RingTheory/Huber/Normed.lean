@@ -9,8 +9,9 @@ public import TauCeti.RingTheory.Huber.Uniform
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecificLimits.Normed
-
-import TauCeti.Analysis.Normed.Ring.UnitBall
+public import Mathlib.Topology.Algebra.Valued.NormedValued
+public import Mathlib.Topology.Algebra.Valued.ValuedField
+import TauCeti.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Bounded and power-bounded elements of normed rings
@@ -33,9 +34,19 @@ field with an ultrametric norm is a Tate ring. This is the Tate structure of the
 rank-one nonarchimedean fields over which rigid geometry takes place: their closed polydiscs are
 the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 
+## Main definitions
+
+* `TauCeti.Huber.powerBoundedSubringEquivInteger`: the canonical ring isomorphism `K° ≃+* 𝒪[K]`
+  for an ultrametric normed field `K`.
+* `TauCeti.Huber.integerToPowerBounded`: the homomorphism `𝒪[K] →+* A°` for a nonarchimedean
+  topological `K`-algebra `A` with continuous scalar multiplication over a nontrivially normed
+  ultrametric field `K`.
+
 ## Main results
 
 * `TauCeti.Huber.isBounded_closedBall_zero`: closed balls about zero are bounded.
+* `TauCeti.Huber.isPowerBounded_map_mul_of_norm_le`: along a bounded monoid homomorphism `φ`, if
+  `‖u‖ * c ≤ 1` and `‖b‖ ≤ c`, then `φ u * b` is power-bounded.
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
 * `TauCeti.Huber.IsUniform.of_normedDivisionRing`: normed division rings are uniform.
@@ -52,12 +63,16 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   than one is a pseudouniformiser.
 * `TauCeti.Huber.isPseudoUniformizer_iff_norm_lt_one`: in a normed division ring the
   pseudouniformisers are the nonzero elements of norm less than one.
-* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`: in an ultrametric normed field `K°` is the
-  closed unit ball.
-* `TauCeti.Huber.isMaximal_topologicallyNilpotentIdeal`: in an ultrametric normed field `K°°` is a
-  maximal ideal of `K°`, so `K° ⧸ K°°` is a field.
-* `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le`: in an ultrametric normed field
-  divisibility in `K°` is comparison of norms.
+* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall` and
+  `TauCeti.Huber.powerBoundedSubring_eq_integer`: in an ultrametric normed field `K°` is the
+  closed unit ball, equal as a subring to `𝒪[K]`.
+* `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le` and
+  `TauCeti.Huber.powerBoundedSubring.isUnit_iff_norm_eq_one`: in an ultrametric normed field
+  divisibility in `K°` is comparison of norms and units of `K°` are the elements of norm one.
+* `TauCeti.Huber.isLocalRing_powerBoundedSubring`,
+  `TauCeti.Huber.maximalIdeal_powerBoundedSubring`, and
+  `TauCeti.Huber.isMaximal_topologicallyNilpotentIdeal`: `K°` is a local ring with maximal ideal
+  `K°°`.
 * `TauCeti.Huber.exists_isOpen_isBounded_subring`: an ultrametric seminormed ring has an open
   bounded subring, even when `‖1‖ ≠ 1`.
 * `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
@@ -74,7 +89,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 
 public section
 
-open Filter Topology
+open Filter Topology IsLocalRing
+open scoped NormedField Valued
 
 namespace TauCeti.Huber
 
@@ -107,6 +123,35 @@ theorem IsPowerBounded.of_norm_le_one {R : Type*} [SeminormedRing R] {x : R}
   | succ n =>
     exact (norm_pow_le' x (Nat.succ_pos n)).trans
       ((pow_le_one₀ (norm_nonneg x) hx).trans (le_max_left 1 ‖(1 : R)‖))
+
+/-- If `φ` is bounded by `C`, `‖u‖ * c ≤ 1`, and `‖b‖ ≤ c`, then `φ u * b` is power-bounded: its
+positive powers have norm at most `max C 0`. -/
+theorem isPowerBounded_map_mul_of_norm_le {R S F : Type*} [SeminormedRing R]
+    [SeminormedCommRing S] [FunLike F R S] [MonoidHomClass F R S] {φ : F} {C c : ℝ}
+    {u : R} {b : S} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (hu : ‖u‖ * c ≤ 1) (hb : ‖b‖ ≤ c) :
+    IsPowerBounded (φ u * b) := by
+  refine isPowerBounded_iff.mpr
+    ((isBounded_closedBall_zero (R := S) (max ‖(1 : S)‖ (max C 0))).subset ?_)
+  rintro _ ⟨n, rfl⟩
+  rw [mem_closedBall_zero_iff]
+  rcases n with _ | m
+  · simp only [pow_zero]
+    exact le_max_left _ _
+  · refine le_trans ?_ (le_max_right _ _)
+    have hc0 : 0 ≤ c := (norm_nonneg b).trans hb
+    have hφu : ‖φ (u ^ (m + 1))‖ ≤ max C 0 * ‖u‖ ^ (m + 1) :=
+      (hφ _).trans <| (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _)).trans <|
+        mul_le_mul_of_nonneg_left (norm_pow_le' u m.succ_pos) (le_max_right C 0)
+    have hbm : ‖b ^ (m + 1)‖ ≤ c ^ (m + 1) :=
+      (norm_pow_le' b m.succ_pos).trans (pow_le_pow_left₀ (norm_nonneg b) hb _)
+    calc ‖(φ u * b) ^ (m + 1)‖ = ‖φ (u ^ (m + 1)) * b ^ (m + 1)‖ := by rw [mul_pow, map_pow]
+      _ ≤ ‖φ (u ^ (m + 1))‖ * ‖b ^ (m + 1)‖ := norm_mul_le _ _
+      _ ≤ (max C 0 * ‖u‖ ^ (m + 1)) * c ^ (m + 1) :=
+          mul_le_mul hφu hbm (norm_nonneg _) (mul_nonneg (le_max_right C 0) (by positivity))
+      _ = max C 0 * (‖u‖ * c) ^ (m + 1) := by rw [mul_assoc, ← mul_pow]
+      _ ≤ max C 0 * 1 := mul_le_mul_of_nonneg_left
+          (pow_le_one₀ (mul_nonneg (norm_nonneg u) hc0) hu) (le_max_right C 0)
+      _ = max C 0 := mul_one _
 
 /-- **In a seminormed ring a unit of norm less than one is a pseudouniformiser**: its powers tend
 to zero. -/
@@ -214,7 +259,7 @@ theorem powerBoundedSubring.dvd_iff_norm_le {a b : powerBoundedSubring K} :
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ?_⟩
   · rw [hc, Subring.coe_mul, norm_mul]
     exact mul_le_of_le_one_right (norm_nonneg _)
-      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2))
+      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.property))
   · rcases eq_or_ne (b : K) 0 with hb | hb
     · have ha : (a : K) = 0 := norm_le_zero_iff.mp (by simpa [hb] using h)
       exact ⟨0, Subtype.ext (by simp [ha])⟩
@@ -223,6 +268,54 @@ theorem powerBoundedSubring.dvd_iff_norm_le {a b : powerBoundedSubring K} :
       · rw [norm_div]
         exact div_le_one_of_le₀ h (norm_nonneg _)
       · simp [mul_div_cancel₀ _ hb]
+
+/-- In an ultrametric normed field, an element of `K°` is a unit of `K°` exactly when its norm in
+`K` is one. -/
+theorem powerBoundedSubring.isUnit_iff_norm_eq_one {x : powerBoundedSubring K} :
+    IsUnit x ↔ ‖(x : K)‖ = 1 := by
+  rw [isUnit_iff_dvd_one, powerBoundedSubring.dvd_iff_norm_le, OneMemClass.coe_one, norm_one]
+  exact (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property)).ge_iff_eq
+
+/-- The power-bounded subring `K°` of an ultrametric normed field coincides as a subring of `K`
+with its valuation ring `𝒪[K]`. -/
+theorem powerBoundedSubring_eq_integer : powerBoundedSubring K = 𝒪[K] := by
+  ext x
+  rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, Valuation.mem_integer_iff,
+    TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply, ← NNReal.coe_le_coe,
+    coe_nnNorm, NNReal.coe_one]
+
+/-- The canonical ring isomorphism `K° ≃+* 𝒪[K]` between the power-bounded subring and the
+valuation ring of an ultrametric normed field. -/
+noncomputable def powerBoundedSubringEquivInteger : powerBoundedSubring K ≃+* 𝒪[K] :=
+  RingEquiv.subringCongr powerBoundedSubring_eq_integer
+
+@[simp]
+theorem coe_powerBoundedSubringEquivInteger (x : powerBoundedSubring K) :
+    (powerBoundedSubringEquivInteger x : K) = x :=
+  RingEquiv.coe_subringCongr_apply _ x
+
+@[simp]
+theorem coe_powerBoundedSubringEquivInteger_symm (c : 𝒪[K]) :
+    (powerBoundedSubringEquivInteger.symm c : K) = c := by
+  rw [powerBoundedSubringEquivInteger, RingEquiv.subringCongr_symm,
+    RingEquiv.coe_subringCongr_apply]
+
+/-- The power-bounded subring `K°` of an ultrametric normed field is a local ring. -/
+instance isLocalRing_powerBoundedSubring : IsLocalRing (powerBoundedSubring K) :=
+  powerBoundedSubringEquivInteger.symm.isLocalRing
+
+/-- The maximal ideal of `K°` is the ideal `K°°` of topologically nilpotent elements. -/
+theorem maximalIdeal_powerBoundedSubring :
+    maximalIdeal (powerBoundedSubring K) = topologicallyNilpotentIdeal K := by
+  ext x
+  rw [mem_maximalIdeal, mem_nonunits_iff, powerBoundedSubring.isUnit_iff_norm_eq_one,
+    mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
+    tendsto_pow_atTop_nhds_zero_iff_norm_lt_one,
+    (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property)).lt_iff_ne]
+
+/-- For an ultrametric normed field `K`, `K°°` is a maximal ideal of `K°`. -/
+instance isMaximal_topologicallyNilpotentIdeal : (topologicallyNilpotentIdeal K).IsMaximal :=
+  maximalIdeal_powerBoundedSubring (K := K) ▸ maximalIdeal.isMaximal (powerBoundedSubring K)
 
 end UltrametricDvd
 
@@ -251,6 +344,28 @@ theorem isPowerBounded_algebraMap_of_norm_le_one {K : Type*} [NontriviallyNormed
     _ ≤ 1 * ‖d‖ := by gcongr; exact pow_le_one₀ (norm_nonneg c) hc
     _ < ε := by rwa [one_mul]
 
+section IntegerToPowerBounded
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+  {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanAddGroup A]
+  [Algebra K A] [ContinuousSMul K A]
+
+variable (K A) in
+/-- Over a nontrivially normed ultrametric field `K`, scalars in the valuation ring `𝒪[K]` map
+into the power-bounded subring `A°` of any nonarchimedean topological `K`-algebra with continuous
+scalar multiplication. -/
+noncomputable def integerToPowerBounded : 𝒪[K] →+* powerBoundedSubring A :=
+  (algebraMap K A).comp (Subring.subtype 𝒪[K]) |>.codRestrict (powerBoundedSubring A) fun c ↦
+    mem_powerBoundedSubring.mpr <| isPowerBounded_algebraMap_of_norm_le_one <|
+      isPowerBounded_iff_norm_le_one.mp <| mem_powerBoundedSubring.mp <|
+        (powerBoundedSubring_eq_integer (K := K)).ge c.property
+
+@[simp]
+theorem coe_integerToPowerBounded (c : 𝒪[K]) :
+    (integerToPowerBounded K A c : A) = algebraMap K A c := (rfl)
+
+end IntegerToPowerBounded
+
 section Ultrametric
 
 variable (K : Type*) [NormedField K] [IsUltrametricDist K]
@@ -263,23 +378,6 @@ theorem coe_powerBoundedSubring_eq_closedBall :
   simp
 
 end Ultrametric
-
-/-- Over any ultrametric normed field (trivially or nontrivially normed), `K°°` is a maximal ideal
-of `K°`, so `K° ⧸ K°°` is a field (`Ideal.Quotient.field`). -/
-instance isMaximal_topologicallyNilpotentIdeal {K : Type*} [NormedField K] [IsUltrametricDist K] :
-    (topologicallyNilpotentIdeal K).IsMaximal := by
-  have hsub : powerBoundedSubring K = Subring.unitClosedBall K := by
-    ext x
-    rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, Subring.mem_unitClosedBall]
-  let e : powerBoundedSubring K ≃+* Subring.unitClosedBall K := RingEquiv.subringCongr hsub
-  have hcomap : topologicallyNilpotentIdeal K = (unitBallIdeal K).comap e.toRingHom := by
-    ext a
-    rw [mem_topologicallyNilpotentIdeal,
-      isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun _ _ _ ↦ norm_pow _ _,
-      Ideal.mem_comap, mem_unitBallIdeal]
-    rfl
-  rw [hcomap]
-  exact Ideal.comap_isMaximal_of_surjective e.toRingHom e.surjective
 
 /-- **An ultrametric seminormed ring has an open bounded subring**: the elements
 acting contractively by multiplication. This is the closed unit ball when `‖1‖ = 1`, and it is
