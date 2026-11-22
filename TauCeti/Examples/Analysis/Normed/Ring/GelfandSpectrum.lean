@@ -81,7 +81,52 @@ end TateAlgebra
 
 /-! ### Trivial square-zero extensions and dual numbers -/
 
+private theorem spectral_eq_zero_of_isNilpotent {A : Type*} [SeminormedCommRing A] {x : A}
+    (hx : IsNilpotent x) :
+    smoothingFun (normRingSeminorm A) x = 0 ∧
+      sSup (Set.range fun α : GelfandSpectrum A ↦ α x) = 0 := by
+  have hsm : smoothingFun (normRingSeminorm A) x = 0 := by
+    rw [← (normRingSeminorm A).smoothing_apply]
+    exact (normRingSeminorm A).smoothing_eq_zero_of_isNilpotent hx
+  exact ⟨hsm, by rw [← smoothingFun_eq_sSup, hsm]⟩
+
+private theorem not_exists_apply_eq_norm_of_sq_zero {A : Type*} [SeminormedRing A] {x : A}
+    (hx : x * x = 0) (hx_norm : ‖x‖ ≠ 0) :
+    ¬∃ α : GelfandSpectrum A, ∀ y, α y = ‖y‖ := by
+  rintro ⟨α, hα⟩
+  have h0 : α x = 0 := α.eq_zero_of_isNilpotent ⟨2, by rwa [sq]⟩
+  exact hx_norm (by rw [← hα x, h0])
+
 section TrivSqZeroExt
+
+private theorem inlHom_isBounded (R M : Type*) [SeminormedRing R]
+    [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
+    [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] :
+    (TrivSqZeroExt.inlHom R M).IsBounded :=
+  ⟨1, zero_lt_one, fun x ↦ by simp⟩
+
+private theorem fstHom_isBounded (R M : Type*) [SeminormedRing R]
+    [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
+    [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] :
+    ((TrivSqZeroExt.fstHom ℕ R M).toRingHom).IsBounded :=
+  ⟨1, zero_lt_one, fun y ↦ by
+    rw [one_mul, TrivSqZeroExt.norm_def]
+    exact le_add_of_nonneg_right (norm_nonneg _)⟩
+
+private theorem fstHom_inlHom (R M : Type*) [Semiring R]
+    [AddCommMonoid M] [Module R M] [Module Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] (x : R) :
+    (TrivSqZeroExt.fstHom ℕ R M).toRingHom (TrivSqZeroExt.inlHom R M x) = x := by
+  simp
+
+private theorem sub_inlHom_fstHom_isNilpotent (R M : Type*) [Ring R]
+    [AddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M]
+    (y : TrivSqZeroExt R M) :
+    IsNilpotent (y - (TrivSqZeroExt.inlHom R M) ((TrivSqZeroExt.fstHom ℕ R M).toRingHom y)) := by
+  refine ⟨2, ?_⟩
+  have hy : y - TrivSqZeroExt.inl y.fst = TrivSqZeroExt.inr y.snd := by
+    ext <;> simp
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
+    TrivSqZeroExt.inlHom_apply, hy, sq, TrivSqZeroExt.inr_mul_inr]
 
 /-- Projection to the first component gives a homeomorphism between the Gel'fand spectrum of a
 trivial square-zero extension `TrivSqZeroExt R M` (with the `ℓ¹` norm) and `GelfandSpectrum R`. -/
@@ -91,17 +136,11 @@ noncomputable def trivSqZeroExtHomeomorph (R M : Type*) [SeminormedRing R]
     GelfandSpectrum (TrivSqZeroExt R M) ≃ₜ GelfandSpectrum R :=
   retractHomeomorph
     (TrivSqZeroExt.inlHom R M)
-    ⟨1, zero_lt_one, fun x ↦ by simp⟩
+    (inlHom_isBounded R M)
     (TrivSqZeroExt.fstHom ℕ R M).toRingHom
-    ⟨1, zero_lt_one, fun y ↦ by
-      rw [one_mul, TrivSqZeroExt.norm_def]
-      exact le_add_of_nonneg_right (norm_nonneg _)⟩
-    (fun x ↦ TrivSqZeroExt.fst_inl M x)
-    (fun y ↦ ⟨2, by
-      have hy : y - TrivSqZeroExt.inl y.fst = TrivSqZeroExt.inr y.snd := by
-        ext <;> simp
-      simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
-        TrivSqZeroExt.inlHom_apply, hy, sq, TrivSqZeroExt.inr_mul_inr]⟩)
+    (fstHom_isBounded R M)
+    (fstHom_inlHom R M)
+    (sub_inlHom_fstHom_isNilpotent R M)
 
 /-- `trivSqZeroExtHomeomorph` evaluates a spectrum point on `TrivSqZeroExt R M` along `inl`. -/
 @[simp]
@@ -109,8 +148,8 @@ theorem trivSqZeroExtHomeomorph_apply {R M : Type*} [SeminormedRing R]
     [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
     [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M]
     (β : GelfandSpectrum (TrivSqZeroExt R M)) (r : R) :
-    trivSqZeroExtHomeomorph R M β r = β (TrivSqZeroExt.inl r) :=
-  retractHomeomorph_apply _ _ _ _ _ _ β r
+    trivSqZeroExtHomeomorph R M β r = β (TrivSqZeroExt.inl r) := by
+  simp only [trivSqZeroExtHomeomorph, retractHomeomorph_apply, TrivSqZeroExt.inlHom_apply]
 
 /-- `(trivSqZeroExtHomeomorph R M).symm` pulls a spectrum point on `R` back along `fst`. -/
 @[simp]
@@ -118,8 +157,9 @@ theorem trivSqZeroExtHomeomorph_symm_apply {R M : Type*} [SeminormedRing R]
     [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
     [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M]
     (α : GelfandSpectrum R) (y : TrivSqZeroExt R M) :
-    (trivSqZeroExtHomeomorph R M).symm α y = α y.fst :=
-  retractHomeomorph_symm_apply _ _ _ _ _ _ α y
+    (trivSqZeroExtHomeomorph R M).symm α y = α y.fst := by
+  simp only [trivSqZeroExtHomeomorph, retractHomeomorph_symm_apply, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe, TrivSqZeroExt.fstHom_apply]
 
 /-- Over a normed division ring `K`, the Gel'fand spectrum of `DualNumber K` has a unique point. -/
 theorem unique_dualNumber (K : Type*) [NormedDivisionRing K] :
@@ -140,19 +180,14 @@ theorem dualNumber_eps_checks (K : Type*) [NormedField K] :
   have hε_norm : ‖ε‖ = 1 := by
     rw [TrivSqZeroExt.norm_def, DualNumber.fst_eps, DualNumber.snd_eps, norm_zero, norm_one,
       zero_add]
-  have hε_nil : IsNilpotent ε := ⟨2, by rw [sq, DualNumber.eps_mul_eps]⟩
-  have hε_sm : smoothingFun (normRingSeminorm (DualNumber K)) ε = 0 := by
-    rw [← (normRingSeminorm (DualNumber K)).smoothing_apply]
-    exact (normRingSeminorm (DualNumber K)).smoothing_eq_zero_of_isNilpotent hε_nil
-  have hε_sup : sSup (Set.range fun α : GelfandSpectrum (DualNumber K) ↦ α ε) = 0 := by
-    rw [← smoothingFun_eq_sSup, hε_sm]
+  have hε_sq : ε * ε = 0 := DualNumber.eps_mul_eps
+  have hε_nil : IsNilpotent ε := ⟨2, by rw [sq, hε_sq]⟩
+  obtain ⟨hε_sm, hε_sup⟩ := spectral_eq_zero_of_isNilpotent hε_nil
   have hε_mul : ‖ε * ε‖ ≠ ‖ε‖ * ‖ε‖ := by
-    rw [DualNumber.eps_mul_eps, norm_zero, hε_norm, mul_one]
+    rw [hε_sq, norm_zero, hε_norm, mul_one]
     exact zero_ne_one
-  refine ⟨hε_norm, hε_sm, hε_sup, hε_mul, ?_⟩
-  rintro ⟨α, hα⟩
-  have h0 : α ε = 0 := α.eq_zero_of_isNilpotent hε_nil
-  linarith [hα ε, hε_norm]
+  exact ⟨hε_norm, hε_sm, hε_sup, hε_mul,
+    not_exists_apply_eq_norm_of_sq_zero hε_sq (by rw [hε_norm]; exact one_ne_zero)⟩
 
 end TrivSqZeroExt
 
@@ -193,16 +228,19 @@ inclusion. -/
 @[simp]
 theorem maxDualNumberHomeomorph_apply {K : Type*} [NormedCommRing K] [IsUltrametricDist K]
     (β : GelfandSpectrum (MaxDualNumber K)) (r : K) :
-    maxDualNumberHomeomorph K β r = β (MaxDualNumber.ofDualNumber (TrivSqZeroExt.inl r)) :=
-  retractHomeomorph_apply _ _ _ _ _ _ β r
+    maxDualNumberHomeomorph K β r = β (MaxDualNumber.ofDualNumber (TrivSqZeroExt.inl r)) := by
+  simp only [maxDualNumberHomeomorph, retractHomeomorph_apply, RingHom.comp_apply,
+    RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, TrivSqZeroExt.inlHom_apply]
 
 /-- `(maxDualNumberHomeomorph K).symm` pulls a spectrum point on `K` back along the first
 coefficient projection. -/
 @[simp]
 theorem maxDualNumberHomeomorph_symm_apply {K : Type*} [NormedCommRing K] [IsUltrametricDist K]
     (α : GelfandSpectrum K) (y : MaxDualNumber K) :
-    (maxDualNumberHomeomorph K).symm α y = α (MaxDualNumber.ofDualNumber.symm y).fst :=
-  retractHomeomorph_symm_apply _ _ _ _ _ _ α y
+    (maxDualNumberHomeomorph K).symm α y = α (MaxDualNumber.ofDualNumber.symm y).fst := by
+  simp only [maxDualNumberHomeomorph, retractHomeomorph_symm_apply, RingHom.comp_apply,
+    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
+    RingEquiv.toRingHom_eq_coe]
 
 /-- Over an ultrametric normed field `K`, the ultrametric dual numbers `MaxDualNumber K` have a
 singleton Gel'fand spectrum, while `MaxDualNumber.eps` has norm `1`, spectral seminorm `0`, and
@@ -216,20 +254,15 @@ theorem maxDualNumber_eps_checks (K : Type*) [NormedField K] [IsUltrametricDist 
       ‖ε * ε‖ ≠ ‖ε‖ * ‖ε‖ ∧
       ¬∃ α : GelfandSpectrum (MaxDualNumber K), ∀ x, α x = ‖x‖ := by
   intro ε
-  have hε_nil : IsNilpotent ε := ⟨2, by rw [sq, MaxDualNumber.eps_mul_eps]⟩
-  have hε_sm : smoothingFun (normRingSeminorm (MaxDualNumber K)) ε = 0 := by
-    rw [← (normRingSeminorm (MaxDualNumber K)).smoothing_apply]
-    exact (normRingSeminorm (MaxDualNumber K)).smoothing_eq_zero_of_isNilpotent hε_nil
-  have hε_sup : sSup (Set.range fun α : GelfandSpectrum (MaxDualNumber K) ↦ α ε) = 0 := by
-    rw [← smoothingFun_eq_sSup, hε_sm]
+  have hε_sq : ε * ε = 0 := MaxDualNumber.eps_mul_eps
+  have hε_nil : IsNilpotent ε := ⟨2, by rw [sq, hε_sq]⟩
+  obtain ⟨hε_sm, hε_sup⟩ := spectral_eq_zero_of_isNilpotent hε_nil
   have hε_mul : ‖ε * ε‖ ≠ ‖ε‖ * ‖ε‖ := by
-    rw [MaxDualNumber.eps_mul_eps, norm_zero, MaxDualNumber.norm_eps, mul_one]
+    rw [hε_sq, norm_zero, MaxDualNumber.norm_eps, mul_one]
     exact zero_ne_one
-  refine ⟨⟨(maxDualNumberHomeomorph K).toEquiv.unique⟩,
-    MaxDualNumber.norm_eps, hε_sm, hε_sup, hε_mul, ?_⟩
-  rintro ⟨α, hα⟩
-  have h0 : α ε = 0 := α.eq_zero_of_isNilpotent hε_nil
-  linarith [hα ε, MaxDualNumber.norm_eps (K := K)]
+  exact ⟨⟨(maxDualNumberHomeomorph K).toEquiv.unique⟩, MaxDualNumber.norm_eps, hε_sm, hε_sup,
+    hε_mul, not_exists_apply_eq_norm_of_sq_zero hε_sq
+      (by rw [MaxDualNumber.norm_eps]; exact one_ne_zero)⟩
 
 end MaxDualNumber
 
@@ -252,9 +285,7 @@ theorem sq_zero_apply_and_sSup_eq_zero {A : Type*} [SeminormedCommRing A] {x : A
     (∀ α : GelfandSpectrum A, α x = 0) ∧
       sSup (Set.range fun α : GelfandSpectrum A ↦ α x) = 0 := by
   have hnil : IsNilpotent x := ⟨2, by rwa [sq]⟩
-  refine ⟨fun α ↦ α.eq_zero_of_isNilpotent hnil, ?_⟩
-  rw [← smoothingFun_eq_sSup, ← (normRingSeminorm A).smoothing_apply]
-  exact (normRingSeminorm A).smoothing_eq_zero_of_isNilpotent hnil
+  exact ⟨fun α ↦ α.eq_zero_of_isNilpotent hnil, (spectral_eq_zero_of_isNilpotent hnil).2⟩
 
 /-- **Negative control (dropping `map_zero`).** On any ring `R`, the constant-`1` function
 `fun _ : R ↦ (1 : ℝ)` is nonnegative, even, subadditive, normalized (`f 1 = 1`), and

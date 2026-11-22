@@ -247,14 +247,8 @@ theorem tendsto_smoothingFun (μ : RingSeminorm R) (x : R) :
 Neither `μ 1 ≤ 1` nor `IsNonarchimedean μ` is required. -/
 noncomputable def smoothing (μ : RingSeminorm R) : RingSeminorm R where
   toFun := smoothingFun μ
-  map_zero' := by
-    rw [μ.smoothingFun_eq_boundedSeminorm]
-    refine tendsto_nhds_unique_of_eventuallyEq
-      (tendsto_smoothingFun_of_map_one_le_one _ μ.boundedSeminorm_one_le 0) tendsto_const_nhds
-      (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
-    dsimp [smoothingSeminormSeq]
-    rw [zero_pow (Nat.one_le_iff_ne_zero.1 hn), map_zero,
-      Real.zero_rpow (one_div_ne_zero (Nat.cast_ne_zero.2 (Nat.one_le_iff_ne_zero.1 hn)))]
+  map_zero' := le_antisymm ((smoothingFun_le_self μ 0).trans_eq (map_zero μ))
+    (le_ciInf fun _ ↦ Real.rpow_nonneg (apply_nonneg μ _) _)
   add_le' x y := by
     simp only [μ.smoothingFun_eq_boundedSeminorm]
     exact smoothingFun_add_le_of_map_one_le_one μ.boundedSeminorm μ.boundedSeminorm_one_le x y

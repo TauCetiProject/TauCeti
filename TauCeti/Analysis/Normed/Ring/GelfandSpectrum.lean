@@ -272,15 +272,15 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → GelfandSpectr
 /-- Explicit description of the image of `GelfandSpectrum A` inside `A → ℝ`. -/
 theorem range_coeFn :
     Set.range (⇑· : GelfandSpectrum A → A → ℝ) =
-      {f : A → ℝ | f 0 = 0 ∧ f 1 = 1 ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f (-x) = f x) ∧
+      {f : A → ℝ | f 0 = 0 ∧ f 1 = 1 ∧ (∀ x, f (-x) = f x) ∧
         (∀ x y, f (x + y) ≤ f x + f y) ∧ (∀ x y, f (x * y) = f x * f y) ∧ ∀ x, f x ≤ ‖x‖} := by
   ext f
   simp only [Set.mem_range, Set.mem_ofPred_eq]
   refine ⟨?_, ?_⟩
   · rintro ⟨α, rfl⟩
-    exact ⟨map_zero α, map_one α, apply_nonneg α, map_neg_eq_map α, map_add_le_add α,
+    exact ⟨map_zero α, map_one α, map_neg_eq_map α, map_add_le_add α,
       map_mul α, α.apply_le_norm⟩
-  · rintro ⟨hf0, hf1, _, hfneg, hfadd, hfmul, hfle⟩
+  · rintro ⟨hf0, hf1, hfneg, hfadd, hfmul, hfle⟩
     refine ⟨ofLeNorm
       { toFun := f
         map_zero' := hf0
@@ -294,9 +294,6 @@ theorem isClosed_range_coeFn : IsClosed (Set.range (⇑· : GelfandSpectrum A �
   rw [range_coeFn]
   have h0 : IsClosed {f : A → ℝ | f 0 = 0} := isClosed_eq (continuous_apply 0) continuous_const
   have h1 : IsClosed {f : A → ℝ | f 1 = 1} := isClosed_eq (continuous_apply 1) continuous_const
-  have hnn : IsClosed {f : A → ℝ | ∀ x, 0 ≤ f x} := by
-    simpa only [Set.ofPred_forall] using
-      isClosed_iInter fun x ↦ isClosed_le continuous_const (continuous_apply x)
   have hneg : IsClosed {f : A → ℝ | ∀ x, f (-x) = f x} := by
     simpa only [Set.ofPred_forall] using
       isClosed_iInter fun x ↦ isClosed_eq (continuous_apply (-x)) (continuous_apply x)
@@ -309,7 +306,7 @@ theorem isClosed_range_coeFn : IsClosed (Set.range (⇑· : GelfandSpectrum A �
   have hle : IsClosed {f : A → ℝ | ∀ x, f x ≤ ‖x‖} := by
     simpa only [Set.ofPred_forall] using
       isClosed_iInter fun x ↦ isClosed_le (continuous_apply x) continuous_const
-  exact h0.inter <| h1.inter <| hnn.inter <| hneg.inter <| hadd.inter <| hmul.inter hle
+  exact h0.inter <| h1.inter <| hneg.inter <| hadd.inter <| hmul.inter hle
 
 /-- Function coercion embeds `GelfandSpectrum A` as a closed subset of `A → ℝ`. -/
 theorem isClosedEmbedding_coeFn : Topology.IsClosedEmbedding (⇑· : GelfandSpectrum A → A → ℝ) :=
