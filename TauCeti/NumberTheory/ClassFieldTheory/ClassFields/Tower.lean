@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.RingTheory.Norm.Transitivity
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.PurelyFinite
 import TauCeti.NumberTheory.NumberField.Global.RayClass.ClassNumber

@@ -13,7 +13,8 @@ public import TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Three
 
 For a number field `K` and a ring isomorphism `e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b` with
 `discr a b < -4` and `(a : ZMod 3) = (b : ZMod 3) = 0` — as holds for the period presentation of
-`TauCeti.NumberTheory.NumberField.Quadratic.PeriodAlgebra` whenever `3` ramifies (`3 ∣ D` and
+`TauCeti.NumberTheory.ClassFieldTheory.ClassFields.MatrixReciprocity.PeriodAlgebra` whenever `3`
+ramifies (`3 ∣ D` and
 `D < -4`, for example `D ≡ 0 (mod 12)` or `D ≡ 9, 21 (mod 24)`) — the three lower-triangular
 unipotent matrices `!![1, 0; s, 1]` (`s : ZMod 3`) identify `Multiplicative (ZMod 3)` with
 `Gal(rayClassField (Modulus.spanNat K 3) / hilbertClassField K)`:

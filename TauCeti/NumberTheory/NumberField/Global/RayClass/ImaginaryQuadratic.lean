@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.PurelyFinite
-import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.NumberTheory.NumberField.Quadratic.CongruenceUnits
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
 

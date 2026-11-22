@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient
+public import TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Quotient
 import TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two.Basic
 
 /-!

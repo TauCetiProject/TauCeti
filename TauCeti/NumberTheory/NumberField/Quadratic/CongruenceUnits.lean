@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.QuadraticAlgebra
 import TauCeti.NumberTheory.QuadraticOrder.Reduction
 
 /-!

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 public import Mathlib.Data.ZMod.Defs
+public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 import Mathlib.Data.ZMod.Basic
+import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.QuadraticAlgebra
 
 /-!
 # Period-algebra presentations of quadratic rings of integers

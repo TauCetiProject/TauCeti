@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.Tower
-public import TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient
+public import TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Quotient
 
 /-!
 # Multiplication-matrix Galois actions on ray class fields
@@ -14,9 +14,9 @@ public import TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient
 For a number field `K`, a positive natural number `N`, and any ring isomorphism
 `e : 𝓞 K ≃+* QuadraticAlgebra ℤ a b`, combining the relative ray-class reciprocity of
 `TauCeti.NumberTheory.ClassFieldTheory.ClassFields.Tower` with the multiplication-matrix
-presentation of `TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient` expresses the Galois group
-`Gal(rayClassField (Modulus.spanNat K N) / hilbertClassField K)` and its relative norm in terms
-of multiplication matrices:
+presentation of `TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Quotient` expresses the Galois
+group `Gal(rayClassField (Modulus.spanNat K N) / hilbertClassField K)` and its relative norm in
+terms of multiplication matrices:
 
 * `TauCeti.ClassFieldTheory.periodMatrixQuotientArtinEquiv`: group isomorphism
   `periodMatrixGroup (a : ZMod N) (b : ZMod N) ⧸ unitPeriodMatrixSubgroup a b N ≃*

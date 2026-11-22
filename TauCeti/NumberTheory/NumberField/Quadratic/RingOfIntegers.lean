@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
-public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.NumberTheory.SumTwoSquares
@@ -41,9 +40,6 @@ Reducing the norm form modulo a prime `p ∣ d` shows that an algebraic integer 
 `-1` a square modulo `p`. So no algebraic integer, and in particular no unit, has norm `-1` when
 some prime `p ≡ 3 (mod 4)` divides `d`.
 
-Finally, any integral generator `g` of `𝓞 K` over `ℤ` not lying in `ℚ` presents `𝓞 K` as an
-integral quadratic algebra (`TauCeti.NumberField.ringOfIntegersAlgEquivOfAdjoin`).
-
 ## Main results
 
 * `NumberField.adjoin_gen_eq_top_of_mod_four_ne_one`: `𝓞 K = ℤ[θ]` for `d % 4 ≠ 1`.
@@ -63,9 +59,6 @@ integral quadratic algebra (`TauCeti.NumberField.ringOfIntegersAlgEquivOfAdjoin`
 * `TauCeti.NumberField.norm_ne_neg_one_of_mod_four_eq_three_of_dvd`: if a natural number
   `p ≡ 3 (mod 4)` divides `d` (so some prime factor of `p` is `≡ 3 (mod 4)`), no algebraic
   integer has norm `-1`.
-* `TauCeti.NumberField.ringOfIntegersAlgEquivOfAdjoin`: presentation
-  `𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ a b` from any non-rational generator of `𝓞 K` (with
-  `ringOfIntegersAlgEquivOfAdjoin_symm_apply` and `ringOfIntegersAlgEquivOfAdjoin_apply_gen`).
 -/
 
 public section
@@ -536,51 +529,5 @@ theorem norm_ne_neg_one_of_mod_four_eq_three_of_dvd (hmin : minpoly ℤ θ = X ^
     (Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_primeFactors hq)).trans hpd
   exact ZMod.exists_sq_eq_neg_one_iff.mp (isSquare_neg_one_of_norm_eq_neg_one hmin hgen hsf hqd hz)
     hq3
-
-/-! ### Quadratic-algebra presentations of `𝓞 K` -/
-
-private theorem bijective_lift_of_adjoin {g : 𝓞 K} {a b : ℤ}
-    (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
-    (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) :
-    Function.Bijective (QuadraticAlgebra.lift ⟨g, hg_sq⟩) := by
-  refine ⟨?_, (QuadraticAlgebra.lift_surjective_iff _).mpr hg_top⟩
-  rw [RingHom.injective_iff_ker_eq_bot, RingHom.ker_eq_bot_iff_eq_zero]
-  intro z hz
-  have hzK : (z.re : K) + (z.im : K) * (g : K) = 0 := by
-    simpa [zsmul_eq_mul] using congrArg (algebraMap (𝓞 K) K) hz
-  have him : z.im = 0 := by
-    by_contra hne
-    refine hg_notMem ⟨-(z.re : ℚ) / (z.im : ℚ), ?_⟩
-    rw [show algebraMap ℚ K (-(z.re : ℚ) / (z.im : ℚ)) = -(z.re : K) / (z.im : K) by simp,
-      div_eq_iff (by exact_mod_cast hne)]
-    linear_combination -hzK
-  exact QuadraticAlgebra.ext (by simpa [him] using hzK) him
-
-/-- An algebraic integer generating `𝓞 K` over `ℤ` and not lying in `ℚ` presents `𝓞 K` as an
-integral quadratic algebra. -/
-noncomputable def ringOfIntegersAlgEquivOfAdjoin {g : 𝓞 K} {a b : ℤ}
-    (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
-    (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) :
-    𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ a b :=
-  (AlgEquiv.ofBijective (QuadraticAlgebra.lift ⟨g, hg_sq⟩)
-    (bijective_lift_of_adjoin hg_sq hg_top hg_notMem)).symm
-
-/-- The inverse of `ringOfIntegersAlgEquivOfAdjoin` sends `z` to `z.re • 1 + z.im • g`. -/
-@[simp]
-theorem ringOfIntegersAlgEquivOfAdjoin_symm_apply {g : 𝓞 K} {a b : ℤ}
-    (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
-    (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) (z : QuadraticAlgebra ℤ a b) :
-    (ringOfIntegersAlgEquivOfAdjoin hg_sq hg_top hg_notMem).symm z = z.re • 1 + z.im • g := by
-  rw [ringOfIntegersAlgEquivOfAdjoin, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply,
-    QuadraticAlgebra.lift_apply_apply]
-
-/-- `ringOfIntegersAlgEquivOfAdjoin` sends the generator `g` to `QuadraticAlgebra.omega`
-(`⟨0, 1⟩`). -/
-@[simp]
-theorem ringOfIntegersAlgEquivOfAdjoin_apply_gen {g : 𝓞 K} {a b : ℤ}
-    (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
-    (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) :
-    ringOfIntegersAlgEquivOfAdjoin hg_sq hg_top hg_notMem g = QuadraticAlgebra.omega :=
-  (ringOfIntegersAlgEquivOfAdjoin hg_sq hg_top hg_notMem).symm.injective (by simp)
 
 end TauCeti.NumberField
