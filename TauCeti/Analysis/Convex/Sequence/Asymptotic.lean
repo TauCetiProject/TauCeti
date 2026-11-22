@@ -24,8 +24,10 @@ The key observation is that every slope strictly below the lower limit admits an
 minorant: a bound on the tail can be extended over the finitely many earlier heights by
 lowering the intercept. Conversely, an affine minorant bounds the lower limit from below.
 The envelope therefore preserves this lower limit. For a convex sequence on a half-line,
-height divided by index actually converges to its supremum of finite slopes. The growth
-API is Mathlib’s `LinearGrowth.linearGrowthInf`; no second growth invariant is defined.
+height divided by index actually converges to its supremum of finite slopes. In particular, a
+nonnegative sequence vanishing at `0` with nonpositive lower linear growth has the horizontal ray
+`0` as its envelope. The growth API is Mathlib’s `LinearGrowth.linearGrowthInf`; no second growth
+invariant is defined.
 
 ## References
 
@@ -173,5 +175,51 @@ theorem linearGrowthInf_eq_iSup_unitSlope_lowerConvexEnvelope (ha : IsAdmissible
   rw [← hh.linearGrowthInf_eq]
   exact (hh.isConvexSeq.tendsto_div_iSup_unitSlope
     (hinf.mono fun n hn => ne_top_of_le_ne_top hn (hh.le n))).liminf_eq
+
+/-- A nonnegative height sequence that vanishes at `0` and has nonpositive lower linear growth
+has the identically zero sequence as its lower convex envelope: an infinite horizontal ray. A
+convex minorant that is at most `0` at `0` and positive at `n` grows at least linearly with slope
+`g n / n` beyond `n`, which the growth bound forbids. -/
+theorem isLowerConvexEnvelope_zero_of_linearGrowthInf_nonpos (h0 : a 0 = 0) (hnonneg : 0 ≤ a)
+    (hgrowth : linearGrowthInf (fun n => (a n).toEReal) ≤ 0) :
+    IsLowerConvexEnvelope a 0 := by
+  refine ⟨by simpa [Pi.zero_def] using isConvexSeq_affine 0 0, hnonneg, fun g hg hga n => ?_⟩
+  rw [Pi.zero_apply]
+  by_contra hlt
+  rw [not_le] at hlt
+  have hg0 : g 0 ≠ ⊤ := ne_top_of_le_ne_top (by rw [h0]; exact WithTop.zero_ne_top) (hga 0)
+  have hg0le : (g 0).untop₀ ≤ 0 := by
+    have h := hga 0
+    rwa [h0, ← WithTop.coe_untop₀_of_ne_top hg0, ← WithTop.coe_zero, WithTop.coe_le_coe] at h
+  have hn : (0 : ℝ) < n := by
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · exact absurd ((hga 0).trans_eq h0) (not_le_of_gt hlt)
+    · exact_mod_cast hn
+  -- Beyond `n`, the minorant lies above a line of positive slope `σ` through the origin.
+  obtain ⟨σ, hσ, hσm⟩ : ∃ σ : ℝ, 0 < σ ∧ ∀ m, n ≤ m → g m ≠ ⊤ → σ * m ≤ (g m).untop₀ := by
+    by_cases hgn : g n = ⊤
+    · exact ⟨1, one_pos, fun m hm hgm =>
+        absurd hgn (hg.ne_top_of_le_of_le hg0 hgm (Nat.zero_le n) hm)⟩
+    obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp hgn
+    have htpos : 0 < t := by rwa [← ht, ← WithTop.coe_zero, WithTop.coe_lt_coe] at hlt
+    refine ⟨t / n, div_pos htpos hn, fun m hm hgm => ?_⟩
+    have hchord := hg.chord_inequality hg0 hgm (Nat.zero_le n) hm
+    rw [← ht, WithTop.untop₀_coe] at hchord
+    push_cast at hchord
+    have hmn : (n : ℝ) ≤ m := by exact_mod_cast hm
+    have h1 : ((m : ℝ) - n) * (g 0).untop₀ ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos (by linarith) hg0le
+    rw [div_mul_eq_mul_div, div_le_iff₀ hn]
+    linarith
+  have hline : ∀ᶠ m : ℕ in atTop, ((0 + σ * m : ℝ) : WithTop ℝ) ≤ a m := by
+    filter_upwards [eventually_ge_atTop n] with m hm
+    refine le_trans ?_ (hga m)
+    by_cases hgm : g m = ⊤
+    · simp [hgm]
+    rw [← WithTop.coe_untop₀_of_ne_top hgm, WithTop.coe_le_coe, zero_add]
+    exact hσm m hm hgm
+  obtain ⟨d, hd⟩ := exists_affine_le_of_eventually_le hline
+  exact (not_le_of_gt hσ) (EReal.coe_le_coe_iff.mp
+    ((le_linearGrowthInf_of_affine_le hd).trans hgrowth))
 
 end TauCeti

@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import TauCeti.Analysis.Normed.Module.TensorProduct.FiniteDimension
+public import TauCeti.LinearAlgebra.Determinant.TensorProduct
 
 /-!
 # The normalized determinant of a complex-linear automorphism
@@ -23,8 +26,15 @@ loop of determinants.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
 * `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
   `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
+* `ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans`: the cocycle law for the transitions
+  between isomorphisms `E ≃ G`.
 * `ContinuousLinearEquiv.normalizedDet_trans_trans_symm`: it is invariant under conjugation by an
   isomorphism `E' ≃ E`.
+* `ContinuousLinearEquiv.normalizedDet_prodCongr`: the normalized determinant of `A × B` is the
+  product of those of `A` and `B`.
+* `ContinuousLinearEquiv.normalizedDet_eq_pow_mul_pow_of_apply_tmul`: the normalized determinant
+  of `A₁ ⊗ A₂` on the projective tensor product is
+  `normalizedDet A₁ ^ dim E₂ * normalizedDet A₂ ^ dim E₁`.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
   has continuous normalized determinant.
 -/
@@ -82,6 +92,14 @@ theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 
 theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
   eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
 
+/-- **Cocycle law.** For isomorphisms `a b : E ≃ G` and `L : G ≃ E`, the normalized determinant
+of `L ∘ a` factors through `b`: it is that of the transition `b⁻¹ ∘ a` times that of `L ∘ b`. -/
+theorem normalizedDet_trans_symm_mul_trans {G : Type*} [AddCommGroup G] [Module ℂ G]
+    [TopologicalSpace G] (a b : E ≃L[ℂ] G) (L : G ≃L[ℂ] E) :
+    (a.trans b.symm).normalizedDet * (b.trans L).normalizedDet = (a.trans L).normalizedDet := by
+  rw [← normalizedDet_trans]
+  exact congrArg _ (ext <| funext fun v ↦ by simp)
+
 /-- The normalized determinant is invariant under conjugation: transporting an automorphism `A` of
 `E` along an isomorphism `L : E' ≃ E` does not change it. -/
 @[simp]
@@ -93,6 +111,54 @@ theorem normalizedDet_trans_trans_symm {E' : Type*} [NormedAddCommGroup E'] [Nor
     LinearMap.det_conj (A.toLinearEquiv : E →ₗ[ℂ] E) L.symm.toLinearEquiv
   ext1
   simp only [coe_normalizedDet, hdet]
+
+/-- The normalized determinant of a product of automorphisms is the product of their normalized
+determinants. -/
+@[simp]
+theorem normalizedDet_prodCongr {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    [FiniteDimensional ℂ E] [FiniteDimensional ℂ E'] (A : E ≃L[ℂ] E) (B : E' ≃L[ℂ] E') :
+    (A.prodCongr B).normalizedDet = A.normalizedDet * B.normalizedDet := by
+  have hdet : LinearMap.det ((A.prodCongr B).toLinearEquiv : E × E' →ₗ[ℂ] E × E') =
+      LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) *
+        LinearMap.det (B.toLinearEquiv : E' →ₗ[ℂ] E') :=
+    LinearMap.det_prodMap _ _
+  ext1
+  simp only [coe_normalizedDet, Circle.coe_mul, hdet, norm_mul, Complex.ofReal_mul]
+  ring
+
+section TensorProduct
+
+open Module
+open scoped TensorProduct
+
+variable {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℂ E₁] [FiniteDimensional ℂ E₁]
+  [NormedAddCommGroup E₂] [NormedSpace ℂ E₂] [FiniteDimensional ℂ E₂]
+
+/-- An automorphism of the projective tensor product `E₁ ⊗ E₂` acting on pure tensors as
+`A₁ ⊗ A₂` has normalized determinant `normalizedDet A₁ ^ dim E₂ * normalizedDet A₂ ^ dim E₁`. -/
+theorem normalizedDet_eq_pow_mul_pow_of_apply_tmul
+    {A : TauCeti.ProjectiveTensor ℂ E₁ E₂ ≃L[ℂ] TauCeti.ProjectiveTensor ℂ E₁ E₂}
+    {A₁ : E₁ ≃L[ℂ] E₁} {A₂ : E₂ ≃L[ℂ] E₂} (h : ∀ v w, A ⟨v ⊗ₜ w⟩ = ⟨A₁ v ⊗ₜ A₂ w⟩) :
+    A.normalizedDet = A₁.normalizedDet ^ finrank ℂ E₂ * A₂.normalizedDet ^ finrank ℂ E₁ := by
+  set L := TauCeti.ProjectiveTensor.linearEquiv ℂ E₁ E₂
+  -- Read through the underlying algebraic tensor product, `A` is `TensorProduct.map A₁ A₂`.
+  have hconj : (L : TauCeti.ProjectiveTensor ℂ E₁ E₂ →ₗ[ℂ] E₁ ⊗[ℂ] E₂) ∘ₗ
+      (A.toLinearEquiv :
+        TauCeti.ProjectiveTensor ℂ E₁ E₂ →ₗ[ℂ] TauCeti.ProjectiveTensor ℂ E₁ E₂) ∘ₗ
+        (L.symm : E₁ ⊗[ℂ] E₂ →ₗ[ℂ] TauCeti.ProjectiveTensor ℂ E₁ E₂) =
+      TensorProduct.map (A₁.toLinearEquiv : E₁ →ₗ[ℂ] E₁) (A₂.toLinearEquiv : E₂ →ₗ[ℂ] E₂) :=
+    TensorProduct.ext' fun v w ↦ by simp [L, h]
+  have hdet : LinearMap.det (A.toLinearEquiv :
+      TauCeti.ProjectiveTensor ℂ E₁ E₂ →ₗ[ℂ] TauCeti.ProjectiveTensor ℂ E₁ E₂) =
+      LinearMap.det (A₁.toLinearEquiv : E₁ →ₗ[ℂ] E₁) ^ finrank ℂ E₂ *
+        LinearMap.det (A₂.toLinearEquiv : E₂ →ₗ[ℂ] E₂) ^ finrank ℂ E₁ := by
+    rw [← LinearMap.det_conj _ L, hconj, LinearMap.det_tensorProductMap]
+  ext1
+  simp only [coe_normalizedDet, Circle.coe_mul, Circle.coe_pow, hdet, norm_mul, norm_pow,
+    Complex.ofReal_mul, Complex.ofReal_pow]
+  ring
+
+end TensorProduct
 
 end ContinuousLinearEquiv
 
