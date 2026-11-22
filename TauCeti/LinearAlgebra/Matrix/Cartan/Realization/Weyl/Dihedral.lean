@@ -17,8 +17,10 @@ For a realization `R` of any rank-two matrix `A` with diagonal `2` on `{i, j}` o
 `R.weylGroup hdiag` is canonically isomorphic to
 `DihedralGroup (orderOf (R.weylSimple hdiag i * R.weylSimple hdiag j))`.
 
-* **Type `B₂`**: `s₀ * s₁` has order `4` over any field
-  (`TauCeti.CartanRealization.orderOf_weylSimple_mul_B_two`), yielding `DihedralGroup 4 ≃* W(B₂)`
+* **Order-four pairs and type `B₂`**: for any distinct `i ≠ j` with `A i j * A j i = 2` and
+  `A i j ≠ 0 ∨ A j i ≠ 0`, `sᵢ * sⱼ` has order `4` over any field
+  (`TauCeti.CartanRealization.orderOf_weylSimple_mul_weylSimple_eq_four`), specializing in type
+  `B₂` to `TauCeti.CartanRealization.orderOf_weylSimple_mul_B_two` and `DihedralGroup 4 ≃* W(B₂)`
   of order `8`.
 * **Generalized Cartan matrices in characteristic zero**: `orderOf (sᵢ * sⱼ)` equals
   `coxeterMatrixOfGeneralizedCartanMatrix A i j`
@@ -37,9 +39,10 @@ For a realization `R` of any rank-two matrix `A` with diagonal `2` on `{i, j}` o
 
 ## Main results
 
-* `TauCeti.CartanRealization.orderOf_weylSimple_mul_B_two` and
-  `TauCeti.CartanRealization.card_weylGroup_B_two`: `orderOf (s₀ * s₁) = 4` and
-  `Nat.card (W(B₂)) = 8` over any field.
+* `TauCeti.CartanRealization.orderOf_weylSimple_mul_weylSimple_eq_four`,
+  `TauCeti.CartanRealization.orderOf_weylSimple_mul_B_two`, and
+  `TauCeti.CartanRealization.card_weylGroup_B_two`: `orderOf (sᵢ * sⱼ) = 4` whenever `i ≠ j`,
+  `A i j * A j i = 2`, and `A i j ≠ 0 ∨ A j i ≠ 0`, and `Nat.card (W(B₂)) = 8` over any field.
 * `TauCeti.CartanRealization.orderOf_weylSimple_mul_affine_A_one` and
   `TauCeti.CartanRealization.instInfiniteWeylGroupAffineAOne`: `s₀ s₁` has infinite order and
   `W(A₁⁽¹⁾)` is infinite.
@@ -107,55 +110,61 @@ noncomputable def dihedralGroupMulEquivWeyl {I K H : Type*} [Field K]
     (R.weylSimple_mul_self hdiag j) (R.weylSimple_ne_one hdiag i) (R.weylSimple_ne_one hdiag j)
     rfl (by rw [hrange, R.closure_range_weylSimple])
 
-/-- **Type `B₂` product-order check**: `s₀ * s₁` has order `4` over any field. -/
-theorem orderOf_weylSimple_mul_B_two {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
-    (R : CartanRealization ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) H) :
-    orderOf (R.weylSimple (diag_map_intCast (CartanMatrix.B_diag 2)) 0 *
-        R.weylSimple (diag_map_intCast (CartanMatrix.B_diag 2)) 1) = 4 := by
-  let hd := diag_map_intCast (K := K) (CartanMatrix.B_diag 2)
-  let s₀ := R.weylSimple hd 0
-  let s₁ := R.weylSimple hd 1
-  have hpow4 : (s₀ * s₁) ^ 4 = 1 := by
+/-- **Order-four pair in `R.weylGroup`**: over any field `K` (including characteristic `2`),
+for distinct indices `i ≠ j` with `A i j * A j i = 2` and `A i j ≠ 0 ∨ A j i ≠ 0`, the product
+`R.weylSimple hdiag i * R.weylSimple hdiag j` has order `4`. -/
+theorem orderOf_weylSimple_mul_weylSimple_eq_four {I K H : Type*} [Field K]
+    [AddCommGroup H] [Module K H] {A : Matrix I I K}
+    (R : CartanRealization A H) (hdiag : ∀ k, A k k = 2) {i j : I} (hij : i ≠ j)
+    (hprod : A i j * A j i = 2) (hne : A i j ≠ 0 ∨ A j i ≠ 0) :
+    orderOf (R.weylSimple hdiag i * R.weylSimple hdiag j) = 4 := by
+  let sᵢ := R.weylSimple hdiag i
+  let sⱼ := R.weylSimple hdiag j
+  have hpow4 : (sᵢ * sⱼ) ^ 4 = 1 := by
     apply Subtype.ext
-    have hf0 : Dual.eval K H (R.coroot 0) (R.root 0) = 2 := by simp [R.root_coroot]
-    have hf1 : Dual.eval K H (R.coroot 1) (R.root 1) = 2 := by simp [R.root_coroot]
-    have hprod : Dual.eval K H (R.coroot 0) (R.root 1) *
-        Dual.eval K H (R.coroot 1) (R.root 0) = 2 := by
-      simp [R.root_coroot, CartanMatrix.B_two]
-    simpa [s₀, s₁, R.simpleReflection_eq_reflection hd 0 hf0,
-      R.simpleReflection_eq_reflection hd 1 hf1] using
-      Module.reflection_mul_reflection_pow_four_eq_one hf0 hf1 hprod
+    have hfi : Dual.eval K H (R.coroot i) (R.root i) = 2 := by simp [hdiag i]
+    have hfj : Dual.eval K H (R.coroot j) (R.root j) = 2 := by simp [hdiag j]
+    have heval : Dual.eval K H (R.coroot i) (R.root j) *
+        Dual.eval K H (R.coroot j) (R.root i) = 2 := by
+      simpa [R.root_coroot] using hprod
+    simpa [sᵢ, sⱼ, R.simpleReflection_eq_reflection hdiag i hfi,
+      R.simpleReflection_eq_reflection hdiag j hfj] using
+      Module.reflection_mul_reflection_pow_four_eq_one hfi hfj heval
   refine orderOf_eq_of_pow_and_pow_div_prime hpow4 fun p hp hpd ↦ ?_
   obtain rfl : p = 2 :=
     (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (hp.dvd_of_dvd_pow (n := 2) hpd)
   intro hpow2
-  have hcomm : s₀ * s₁ = s₁ * s₀ := by
-    calc s₀ * s₁ = s₀ * (s₀ * s₁) ^ 2 * s₁ := by rw [hpow2, mul_one]
-      _ = (s₀ * s₀) * (s₁ * s₀) * (s₁ * s₁) := by simp [sq, mul_assoc]
-      _ = s₁ * s₀ := by simp [s₀, s₁]
-  have h10 : ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) 1 0 = (-1 : K) := by
-    simp [CartanMatrix.B_two]
-  have h01 : ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) 0 1 = (-2 : K) := by
-    simp [CartanMatrix.B_two]
-  have hcor0 : R.coroot 0 = 0 := by
-    rw [← Module.forall_dual_apply_eq_zero_iff K]
-    intro φ
-    have hφ : ((s₀ * s₁ : R.weylGroup hd) : Dual K H ≃ₗ[K] Dual K H) φ =
-        ((s₁ * s₀ : R.weylGroup hd) : Dual K H ≃ₗ[K] Dual K H) φ := by
+  have hcomm : sᵢ * sⱼ = sⱼ * sᵢ := by
+    calc sᵢ * sⱼ = sᵢ * (sᵢ * sⱼ) ^ 2 * sⱼ := by rw [hpow2, mul_one]
+      _ = (sᵢ * sᵢ) * (sⱼ * sᵢ) * (sⱼ * sⱼ) := by simp [sq, mul_assoc]
+      _ = sⱼ * sᵢ := by simp [sᵢ, sⱼ]
+  have hpair (φ : Dual K H) : A i j * φ (R.coroot j) = 0 ∧ A j i * φ (R.coroot i) = 0 := by
+    have hφ : ((sᵢ * sⱼ : R.weylGroup hdiag) : Dual K H ≃ₗ[K] Dual K H) φ =
+        ((sⱼ * sᵢ : R.weylGroup hdiag) : Dual K H ≃ₗ[K] Dual K H) φ := by
       rw [hcomm]
-    simp only [s₀, s₁, Subgroup.coe_mul, mul_apply_eq_comp, coe_weylSimple,
-      simpleReflection_apply, map_sub, map_smul, R.root_coroot, h01, h10] at hφ
-    have hlin : (-(2 : K) * φ (R.coroot 1)) • R.root 0 + φ (R.coroot 0) • R.root 1 = 0 := by
-      have := sub_eq_zero.mpr hφ
-      rw [← this]
+    simp only [sᵢ, sⱼ, Subgroup.coe_mul, mul_apply_eq_comp, coe_weylSimple,
+      simpleReflection_apply, map_sub, map_smul, R.root_coroot] at hφ
+    have hlin : (A i j * φ (R.coroot j)) • R.root i + (-(A j i * φ (R.coroot i))) • R.root j =
+        (0 : K) • R.root i + (0 : K) • R.root j := by
+      have hsub := sub_eq_zero.mpr hφ
+      simp only [zero_smul, add_zero]
+      rw [← hsub]
       module
-    have hli : LinearIndependent K ![R.root 0, R.root 1] :=
-      R.linearIndependent_root_pair (by decide : (0 : Fin 2) ≠ 1)
-    have h0 : (-(2 : K) * φ (R.coroot 1)) • R.root 0 + φ (R.coroot 0) • R.root 1 =
-        (0 : K) • R.root 0 + (0 : K) • R.root 1 := by
-      simpa using hlin
-    exact (hli.eq_of_pair h0).2
-  exact R.coroot_linearIndependent.ne_zero 0 hcor0
+    have hc := (R.linearIndependent_root_pair hij).eq_of_pair hlin
+    exact ⟨hc.1, neg_eq_zero.mp hc.2⟩
+  rcases hne with hne_ij | hne_ji
+  · exact R.coroot_linearIndependent.ne_zero j <| (Module.forall_dual_apply_eq_zero_iff K _).mp
+      fun φ ↦ (mul_eq_zero.mp (hpair φ).1).resolve_left hne_ij
+  · exact R.coroot_linearIndependent.ne_zero i <| (Module.forall_dual_apply_eq_zero_iff K _).mp
+      fun φ ↦ (mul_eq_zero.mp (hpair φ).2).resolve_left hne_ji
+
+/-- **Type `B₂` product-order check**: `s₀ * s₁` has order `4` over any field. -/
+theorem orderOf_weylSimple_mul_B_two {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
+    (R : CartanRealization ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) H) :
+    orderOf (R.weylSimple (diag_map_intCast (CartanMatrix.B_diag 2)) 0 *
+        R.weylSimple (diag_map_intCast (CartanMatrix.B_diag 2)) 1) = 4 :=
+  R.orderOf_weylSimple_mul_weylSimple_eq_four (diag_map_intCast (CartanMatrix.B_diag 2))
+    (by decide) (by simp [CartanMatrix.B_two]) (Or.inr (by simp [CartanMatrix.B_two]))
 
 /-- **Type `B₂` Weyl group**: isomorphic to `DihedralGroup 4` over any field. -/
 noncomputable def dihedralGroupFourEquivWeylBTwo {K H : Type*} [Field K]
@@ -176,26 +185,6 @@ theorem card_weylGroup_B_two {K H : Type*} [Field K] [AddCommGroup H] [Module K 
     Nat.card (R.weylGroup (diag_map_intCast (CartanMatrix.B_diag 2))) = 8 := by
   rw [← Nat.card_congr (R.dihedralGroupFourEquivWeylBTwo).toEquiv, DihedralGroup.nat_card]
 
-private theorem coxeterMatrix_affine_A_one_zero_one :
-    coxeterMatrixOfGeneralizedCartanMatrix !![(2 : ℤ), -2; -2, 2] 0 1 = 0 :=
-  coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le _ (by decide) (by decide)
-
-/-- **Affine `A₁⁽¹⁾` Weyl group**: isomorphic to the infinite dihedral group `DihedralGroup 0`. -/
-noncomputable def dihedralGroupZeroEquivWeylAffineAOne {K H : Type*} [Field K] [CharZero K]
-    [AddCommGroup H] [Module K H]
-    (R : CartanRealization ((!![(2 : ℤ), -2; -2, 2]).map (Int.cast : ℤ → K)) H) :
-    DihedralGroup 0 ≃*
-      R.weylGroup (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) :=
-  (by rw [R.orderOf_weylSimple_mul_weylSimple (by decide) (by decide) (by decide),
-      coxeterMatrix_affine_A_one_zero_one] :
-      DihedralGroup 0 ≃*
-        DihedralGroup (orderOf
-          (R.weylSimple (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 0 *
-            R.weylSimple (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 1))).trans <|
-    R.dihedralGroupMulEquivWeyl
-      (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide))
-      (fun k ↦ by fin_cases k <;> simp)
-
 /-- **Affine `A₁⁽¹⁾` infinite-order check**: `s₀ s₁` has infinite order (`orderOf = 0`). -/
 theorem orderOf_weylSimple_mul_affine_A_one {K H : Type*} [Field K] [CharZero K]
     [AddCommGroup H] [Module K H]
@@ -203,7 +192,22 @@ theorem orderOf_weylSimple_mul_affine_A_one {K H : Type*} [Field K] [CharZero K]
     orderOf (R.weylSimple (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 0 *
         R.weylSimple (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 1) = 0 := by
   rw [R.orderOf_weylSimple_mul_weylSimple (by decide) (by decide) (by decide),
-    coxeterMatrix_affine_A_one_zero_one]
+    coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le _ (by decide) (by decide)]
+
+/-- **Affine `A₁⁽¹⁾` Weyl group**: isomorphic to the infinite dihedral group `DihedralGroup 0`. -/
+noncomputable def dihedralGroupZeroEquivWeylAffineAOne {K H : Type*} [Field K] [CharZero K]
+    [AddCommGroup H] [Module K H]
+    (R : CartanRealization ((!![(2 : ℤ), -2; -2, 2]).map (Int.cast : ℤ → K)) H) :
+    DihedralGroup 0 ≃*
+      R.weylGroup (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) :=
+  (by rw [R.orderOf_weylSimple_mul_affine_A_one] :
+      DihedralGroup 0 ≃*
+        DihedralGroup (orderOf
+          (R.weylSimple (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 0 *
+            R.weylSimple (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 1))).trans <|
+    R.dihedralGroupMulEquivWeyl
+      (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide))
+      (fun k ↦ by fin_cases k <;> simp)
 
 /-- The Weyl group of affine `A₁⁽¹⁾` is infinite. -/
 instance instInfiniteWeylGroupAffineAOne {K H : Type*} [Field K] [CharZero K]
