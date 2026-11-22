@@ -69,6 +69,15 @@ forcing the integral and real ranks to agree.
   `p i(N)` of the image of an integral lattice is closed.
 * `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
   finite-dimensional space is an integral lattice for its inclusion.
+* `TauCeti.Toric.isIntegralLattice_castAddHom`, `TauCeti.Toric.isIntegralLattice_intCast`: the
+  standard lattices `ℤ ⊆ ℝ` and `ℤ^n ⊆ ℝ^n`.
+* `TauCeti.Toric.IsIntegralLattice.dualBasis`: in a normed space, the basis of the continuous dual
+  `V*` dual to the real basis `i ∘ b` of an integral basis `b`, with coordinates `x ↦ x (i (b j))`.
+  Its `ℤ`-span is the weight lattice `TauCeti.Toric.weightLattice` of functionals taking integer
+  values on the lattice (`TauCeti.Toric.IsIntegralLattice.span_dualBasis`), whatever `b` is.
+* `TauCeti.Toric.IsIntegralLattice.isZLattice_weightLattice`: the weight lattice is discrete,
+  hence a `ZLattice` in Mathlib's sense, with `ℤ`-basis
+  `TauCeti.Toric.IsIntegralLattice.weightLatticeBasis` given by the dual basis.
 
 ## Implementation notes
 
@@ -403,7 +412,126 @@ theorem isIntegralLattice_subtype_of_isZLattice [FiniteDimensional ℝ V] (L : S
 
 end Discrete
 
+/-! ### The dual basis of an integral basis -/
+
+section DualBasis
+
+open Module Set Submodule
+
+variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+  (h : IsIntegralLattice i) {κ : Type*} [Finite κ]
+
+variable (i) in
+/-- The weight lattice `{x ∈ V* | x (i n) ∈ ℤ for every n ∈ N}` of `i`: the functionals taking
+integer values on the lattice. -/
+def weightLattice : Submodule ℤ (StrongDual ℝ V) where
+  carrier := {x | ∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ)}
+  add_mem' {x y} hx hy n := by
+    obtain ⟨p, hp⟩ := hx n
+    obtain ⟨q, hq⟩ := hy n
+    exact ⟨p + q, by simp [hp, hq]⟩
+  zero_mem' _ := ⟨0, by simp⟩
+  smul_mem' m x hx n := by
+    obtain ⟨p, hp⟩ := hx n
+    exact ⟨m * p, by simp [hp, zsmul_eq_mul]⟩
+
+/-- A functional lies in the weight lattice when it takes integer values on the lattice. -/
+@[simp]
+theorem mem_weightLattice {x : StrongDual ℝ V} :
+    x ∈ weightLattice i ↔ ∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ) :=
+  Iff.rfl
+
+namespace IsIntegralLattice
+
+/-- The basis of `V* = StrongDual ℝ V` dual to the real basis `i ∘ b` of `V` attached to an
+integral basis `b` of `N`. -/
+noncomputable def dualBasis (b : Basis κ ℤ N) : Basis κ ℝ (StrongDual ℝ V) :=
+  have := h.finiteDimensional
+  by classical exact (h.isBaseChange.basis b).dualBasis.map LinearMap.toContinuousLinearMap
+
+/-- The coordinates of a functional in the dual basis of `b` are its values on the lattice vectors
+`i (b j)`. -/
+@[simp]
+theorem dualBasis_repr (b : Basis κ ℤ N) (x : StrongDual ℝ V) (j : κ) :
+    (h.dualBasis b).repr x j = x (i (b j)) := by
+  have := h.finiteDimensional
+  classical
+  simp [dualBasis, IsBaseChange.basis_apply]
+
+@[simp]
+theorem dualBasis_equivFun (b : Basis κ ℤ N) (x : StrongDual ℝ V) (j : κ) :
+    (h.dualBasis b).equivFun x j = x (i (b j)) := by
+  rw [Basis.equivFun_apply, dualBasis_repr]
+
+/-- The dual basis of `b` takes the value `1` on the matching lattice vector and `0` on the
+others. -/
+@[simp]
+theorem dualBasis_apply_apply [DecidableEq κ] (b : Basis κ ℤ N) (j k : κ) :
+    h.dualBasis b j (i (b k)) = if k = j then 1 else 0 := by
+  rw [← h.dualBasis_repr, Basis.repr_self, Finsupp.single_apply]
+  exact if_congr eq_comm rfl rfl
+
+/-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
+it takes integer values on the lattice. In particular this span does not depend on `b`. -/
+theorem span_dualBasis (b : Basis κ ℤ N) : span ℤ (range (h.dualBasis b)) = weightLattice i := by
+  have := Fintype.ofFinite κ
+  ext x
+  rw [Basis.mem_span_iff_repr_mem, mem_weightLattice]
+  simp only [dualBasis_repr, algebraMap_int_eq, Int.coe_castRingHom]
+  refine ⟨fun hx n ↦ ?_, fun hx j ↦ hx (b j)⟩
+  choose m hm using hx
+  refine ⟨∑ j, b.repr n j * m j, ?_⟩
+  conv_rhs => rw [← b.sum_repr n, map_sum, map_sum]
+  push_cast
+  simp only [map_zsmul, zsmul_eq_mul, ← hm]
+
+/-- The `ℤ`-basis of the weight lattice given by the dual basis of an integral basis `b`. -/
+noncomputable def weightLatticeBasis (b : Basis κ ℤ N) : Basis κ ℤ (weightLattice i) :=
+  ((h.dualBasis b).restrictScalars ℤ).map (LinearEquiv.ofEq _ _ (h.span_dualBasis b))
+
+/-- The vectors of `weightLatticeBasis b` are those of the dual basis of `b`. -/
+@[simp]
+theorem coe_weightLatticeBasis (b : Basis κ ℤ N) (j : κ) :
+    (h.weightLatticeBasis b j : StrongDual ℝ V) = h.dualBasis b j := by
+  simp [weightLatticeBasis]
+
+/-- The integer coordinates of a weight in `weightLatticeBasis b` are its values on the lattice
+vectors `i (b j)`. -/
+@[simp]
+theorem weightLatticeBasis_repr (b : Basis κ ℤ N) (x : weightLattice i) (j : κ) :
+    ((h.weightLatticeBasis b).repr x j : ℝ) = (x : StrongDual ℝ V) (i (b j)) := by
+  simpa [weightLatticeBasis] using Basis.restrictScalars_repr_apply ℤ (h.dualBasis b)
+    (LinearEquiv.ofEq _ _ (h.span_dualBasis b).symm x) j
+
+include h in
+/-- The weight lattice of an integral lattice is a discrete subgroup of `V*`. -/
+theorem discreteTopology_weightLattice : DiscreteTopology (weightLattice i) := by
+  let _ := h.free
+  let _ := h.finite
+  rw [← h.span_dualBasis (Module.Free.chooseBasis ℤ N)]
+  infer_instance
+
+/-- The weight lattice of an integral lattice is a `ℤ`-lattice in Mathlib's sense. -/
+theorem isZLattice_weightLattice :
+    haveI := h.discreteTopology_weightLattice
+    IsZLattice ℝ (weightLattice i) := by
+  let _ := h.free
+  let _ := h.finite
+  have := h.discreteTopology_weightLattice
+  refine ⟨?_⟩
+  rw [← h.span_dualBasis (Module.Free.chooseBasis ℤ N)]
+  exact ZSpan.span_top _
+
+end IsIntegralLattice
+
+end DualBasis
+
 /-! ### The standard lattice -/
+
+/-- The standard lattice `ℤ ⊆ ℝ` given by the integer cast. -/
+theorem isIntegralLattice_castAddHom : IsIntegralLattice (Int.castAddHom ℝ) :=
+  isIntegralLattice_of_basis (Module.Basis.singleton (Fin 1) ℤ) (Module.Basis.singleton (Fin 1) ℝ)
+    fun _ ↦ by simp
 
 /-- The standard lattice `ℤ^n ⊆ ℝ^n` given by the coordinatewise integer cast. -/
 theorem isIntegralLattice_intCast (n : ℕ) :
