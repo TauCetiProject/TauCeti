@@ -102,9 +102,12 @@ then `(x + y) ^ k • u = 0` whenever `r₁ + r₀ ≤ k + 1`. This is the point
 `Commute.add_pow_eq_zero_of_add_le_succ_of_pow_eq_zero`. -/
 theorem add_pow_smul_eq_zero_of_add_le_succ_of_pow_smul_eq_zero [Semiring A] [Module A M]
     (hxy : Commute x y) (hx : x ^ r₁ • u = 0) (hy : y ^ r₀ • u = 0) (hk : r₁ + r₀ ≤ k + 1) :
-    (x + y) ^ k • u = 0 :=
+    (x + y) ^ k • u = 0 := by
   -- The scalars killing `u` form the left ideal `ker (a ↦ a • u)`, i.e. `Ideal.torsionOf A M u`.
-  Ideal.add_pow_mem_of_pow_mem_of_le_of_commute (LinearMap.toSpanSingleton A M u).ker hx hy hk hxy
+  have hmem (a : A) : a ∈ (LinearMap.toSpanSingleton A M u).ker ↔ a • u = 0 := by
+    rw [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply]
+  exact (hmem _).1 <|
+    Ideal.add_pow_mem_of_pow_mem_of_le_of_commute _ ((hmem _).2 hx) ((hmem _).2 hy) hk hxy
 
 /-- If commuting elements `x` and `y` of a ring satisfy `x ^ r₁ • u = 0` and `y ^ r₀ • u = 0`,
 then `(x - y) ^ k • u = 0` whenever `r₁ + r₀ ≤ k + 1`. -/
