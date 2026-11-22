@@ -107,6 +107,20 @@ theorem mul_card_le_natDegree_of_le_rootMultiplicity {f : R[X]} {s : Finset R} {
   rw [mul_comm, ← smul_eq_mul]
   exact (Finset.card_nsmul_le_sum s _ k h).trans (sum_rootMultiplicity_le_natDegree f s)
 
+/-- Over an integral domain, if `f : α → R` is injective on a finite set `s : Finset α`, then the
+number of points `x ∈ s` at which a nonzero polynomial `c : R[X]` vanishes at `f x` is at most
+`c.natDegree`. -/
+theorem card_filter_eval_comp_eq_zero_le {α : Type*} [DecidableEq R] {c : R[X]} (hc0 : c ≠ 0)
+    {s : Finset α} {f : α → R} (hinj : Set.InjOn f (s : Set α)) :
+    (s.filter fun x ↦ c.eval (f x) = 0).card ≤ c.natDegree := by
+  let s₀ : Finset α := s.filter fun x ↦ c.eval (f x) = 0
+  have hinj₀ : Set.InjOn f (s₀ : Set α) :=
+    hinj.mono (Finset.coe_subset.mpr (Finset.filter_subset _ s))
+  rw [← Finset.card_image_of_injOn hinj₀]
+  refine card_le_degree_of_subset_roots fun b hb ↦ ?_
+  obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp (Finset.mem_val.mp hb)
+  exact (mem_roots hc0).mpr (Finset.mem_filter.mp hx).2
+
 /-- Over an integral domain, the root multiplicity of a multiset product of nonzero polynomials is
 the sum of the root multiplicities of its factors. -/
 theorem rootMultiplicity_multiset_prod (a : R) (s : Multiset R[X]) (hs : ∀ p ∈ s, p ≠ 0) :

@@ -36,21 +36,8 @@ theorem card_filter_piFinset_eval_eq_zero_le {R : Type*} [CommRing R] [IsDomain 
       S.card ^ (n - 1) * p.totalDegree := by
   cases n with
   | zero =>
-    have hcoeff0 : p.coeff 0 ≠ 0 := fun h0 ↦ hp (by
-      ext m
-      simp [Subsingleton.elim m 0, h0])
-    have hempty : (Fintype.piFinset fun _ : Fin 0 ↦ S).filter (fun v ↦ eval v p = 0) = ∅ := by
-      rw [Finset.filter_eq_empty_iff]
-      intro v _
-      have heval : eval v p = p.coeff 0 := by
-        rw [eval_eq']
-        refine (Finset.sum_eq_single 0 (fun m _ hm ↦ absurd (Subsingleton.elim m 0) hm)
-          fun h0 ↦ by simp [notMem_support_iff.mp h0]).trans ?_
-        simp
-      rw [heval]
-      exact hcoeff0
-    rw [hempty, Finset.card_empty]
-    exact Nat.zero_le _
+    rw [p.eq_C_of_isEmpty] at *
+    simp [C_ne_zero.mp hp]
   | succ m =>
     rcases S.eq_empty_or_nonempty with rfl | hS
     · simp

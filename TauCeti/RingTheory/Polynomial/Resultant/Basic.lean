@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.Algebra.Polynomial.Degree.Operations
-import TauCeti.LinearAlgebra.Matrix.Polynomial
+import TauCeti.LinearAlgebra.Matrix.Determinant.Degree
 
 /-!
 # Resultant lemmas
@@ -46,8 +46,8 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
 
 * `Polynomial.sylvester_apply_of_lt`, `Polynomial.sylvester_apply_of_le`: the entries of the
   Sylvester matrix in its first `n` and its last `m` columns.
-* `Polynomial.natDegree_resultant_le`: bound on the degree of the resultant of two bivariate
-  polynomials from coefficient degree bounds.
+* `Polynomial.natDegree_resultant_le`: bound on the natural degree of the resultant in the
+  surviving coefficient variable from coefficient degree bounds (eliminating the outer variable).
 * `Polynomial.resultant_C_sub_X_right`
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
@@ -146,9 +146,10 @@ end Sylvester
 
 variable {R : Type*} [CommRing R]
 
-/-- The `Y`-degree of `f.resultant g m n` for bivariate polynomials `f, g : R[X][X]` is at most
-`m * dg + n * df`, where `df` and `dg` bound the `Y`-degrees of the coefficients of `f` and `g`
-up to `m` and `n`. -/
+/-- Eliminating the outer variable of `f, g : R[X][X]`, the natural degree of `f.resultant g m n`
+in the surviving coefficient variable is at most `m * dg + n * df`, where `df` and `dg` bound
+the coefficient natural degrees `(f.coeff i).natDegree` (for `i ≤ m`) and `(g.coeff i).natDegree`
+(for `i ≤ n`). -/
 theorem natDegree_resultant_le {f g : R[X][X]} {m n df dg : ℕ}
     (hf : ∀ i ≤ m, (f.coeff i).natDegree ≤ df)
     (hg : ∀ i ≤ n, (g.coeff i).natDegree ≤ dg) :
