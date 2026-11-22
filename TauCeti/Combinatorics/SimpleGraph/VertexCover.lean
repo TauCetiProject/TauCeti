@@ -80,23 +80,15 @@ theorem IsMinimumVertexCover.minimal (hc : G.IsMinimumVertexCover c) (hfin : c.F
 /-- A vertex cover is minimum if and only if its `Set.encard` equals the vertex cover number. -/
 theorem isMinimumVertexCover_iff_encard_eq :
     G.IsMinimumVertexCover c ↔ G.IsVertexCover c ∧ c.encard = G.vertexCoverNum := by
-  rw [isMinimumVertexCover_def]
-  refine and_congr_right fun hc ↦ ⟨fun h ↦ ?_, fun h c' hc' ↦ ?_⟩
-  · obtain ⟨s, hs_eq, hs⟩ := G.vertexCoverNum_exists
-    exact le_antisymm (hs_eq ▸ h hs) hc.vertexCoverNum_le
-  · exact h.trans_le hc'.vertexCoverNum_le
+  refine ⟨fun ⟨hc, hmin⟩ ↦ ⟨hc, ?_⟩, fun ⟨hc, h⟩ ↦
+    isMinimumVertexCover_def.2 ⟨hc, fun _ hc' ↦ h.trans_le hc'.vertexCoverNum_le⟩⟩
+  exact (IsMinOn.iInf_eq hc hmin).symm.trans iInf_subtype
 
 /-- Every minimum vertex cover has `Set.encard` equal to the vertex cover number. -/
 @[grind →]
 theorem IsMinimumVertexCover.encard_eq (hc : G.IsMinimumVertexCover c) :
     c.encard = G.vertexCoverNum :=
   (isMinimumVertexCover_iff_encard_eq.mp hc).2
-
-/-- Any two minimum vertex covers of the same graph have the same `Set.encard` (with every
-infinite cover counting as `⊤`). -/
-theorem IsMinimumVertexCover.encard_eq_of_isMinimumVertexCover (hc : G.IsMinimumVertexCover c)
-    (hc' : G.IsMinimumVertexCover c') : c.encard = c'.encard :=
-  hc.encard_eq.trans hc'.encard_eq.symm
 
 /-- The `Set.encard` of a minimum vertex cover is the least `Set.encard` among all vertex
 covers. -/
@@ -158,11 +150,6 @@ theorem IsMinimumVertexCover.ncard_le (hc : G.IsMinimumVertexCover c) (hc' : G.I
 theorem IsMinimumVertexCover.ncard_eq_toNat (hc : G.IsMinimumVertexCover c) :
     c.ncard = G.vertexCoverNum.toNat := by
   rw [Set.ncard_def, hc.encard_eq]
-
-/-- Any two minimum vertex covers of the same graph have the same `ncard`. -/
-theorem IsMinimumVertexCover.ncard_eq_of_isMinimumVertexCover (hc : G.IsMinimumVertexCover c)
-    (hc' : G.IsMinimumVertexCover c') : c.ncard = c'.ncard := by
-  rw [hc.ncard_eq_toNat, hc'.ncard_eq_toNat]
 
 /-- A finite vertex cover is minimum if and only if its `ncard` equals the vertex cover number. -/
 theorem isMinimumVertexCover_iff_ncard_eq (hfin : c.Finite) :

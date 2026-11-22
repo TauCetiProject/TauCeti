@@ -16,19 +16,18 @@ import TauCeti.Combinatorics.SimpleGraph.Bipartite
 /-!
 # Kőnig's theorem, the Kőnig–Ore deficiency formula, and Hall's theorem
 
-This file proves Kőnig's min-max theorem and the Kőnig–Ore deficiency theorem for finite bipartite
-simple graphs, together with the resulting Hall marriage equivalences:
+This file proves Kőnig's min-max theorem and the Kőnig–Ore deficiency theorem for bipartite simple
+graphs, together with the resulting Hall marriage equivalences:
 
-* **Kőnig's theorem** (`SimpleGraph.IsBipartite.matchingNum_eq_vertexCoverNum`): in every finite
+* **Kőnig's theorem** (`SimpleGraph.IsBipartite.matchingNum_eq_vertexCoverNum`): in every
   bipartite simple graph `G`, `G.matchingNum = G.vertexCoverNum`. Combining
   `h.matchingNum_eq_vertexCoverNum` with the general duality lemmas in
   `TauCeti.Combinatorics.SimpleGraph.Matching.Basic` yields extremal witnesses
-  (`SimpleGraph.exists_isMaximumMatching_isMinimumVertexCover_encard_eq_of_matchingNum_eq` and
-  `SimpleGraph.exists_isMaximumMatching_isMinimumVertexCover_ncard_eq_of_matchingNum_eq`),
-  universal equal-size duality in `SimpleGraph.Subgraph.IsMaximumMatching`
-  (`encard_edgeSet_eq_of_isMinimumVertexCover_of_matchingNum_eq` and
-  `ncard_edgeSet_eq_of_isMinimumVertexCover_of_matchingNum_eq`),
-  and dual-witness characterizations in `ℕ∞`
+  (`SimpleGraph.exists_isMaximumMatching_isMinimumVertexCover_encard_eq_of_matchingNum_eq` and the
+  finite-vertex specialization
+  `SimpleGraph.IsBipartite.exists_isMaximumMatching_isMinimumVertexCover_ncard_eq`), universal
+  equal-size duality (`encard_edgeSet_eq_of_isMinimumVertexCover_of_matchingNum_eq`), and
+  dual-witness characterizations in `ℕ∞`
   (`SimpleGraph.Subgraph.isMaximumMatching_iff_exists_isVertexCover_encard_eq_of_matchingNum_eq` and
   `SimpleGraph.isMinimumVertexCover_iff_exists_isMatching_encard_eq_of_matchingNum_eq`), together
   with the finite-vertex `ℕ` specializations
@@ -37,15 +36,11 @@ simple graphs, together with the resulting Hall marriage equivalences:
 * **The Kőnig–Ore deficiency formula**: for any `G.IsBipartiteWith L R`, every matching `M` and
   every `S ⊆ L` satisfy `M.edgeSet.encard + S.encard ≤ L.encard + (⋃ x ∈ S, G.neighborSet x).encard`
   (`SimpleGraph.Subgraph.IsMatching.encard_edgeSet_add_encard_le`, with finite `ℕ` form
-  `SimpleGraph.Subgraph.IsMatching.ncard_edgeSet_add_ncard_le`). Whenever
-  `G.matchingNum = G.vertexCoverNum` (in particular on any finite vertex type via
-  `hLR.isBipartite.matchingNum_eq_vertexCoverNum`), some matching `M` and `S ⊆ L` attain equality
-  in `ℕ∞` (`SimpleGraph.IsBipartiteWith.exists_isMatching_encard_add_encard_eq_of_matchingNum_eq`)
+  `SimpleGraph.Subgraph.IsMatching.ncard_edgeSet_add_ncard_le`). Some matching `M` and `S ⊆ L`
+  attain equality in `ℕ∞` (`SimpleGraph.IsBipartiteWith.exists_isMatching_encard_add_encard_eq`)
   and, whenever `L` is finite, in `ℕ`
-  (`SimpleGraph.IsBipartiteWith.exists_isMatching_ncard_add_ncard_eq_of_matchingNum_eq`, with
-  finite-vertex specialization `SimpleGraph.IsBipartiteWith.exists_isMatching_ncard_add_ncard_eq`),
-  yielding the numerical deficiency formula
-  `SimpleGraph.IsBipartiteWith.matchingNum_eq_encard_sub_iSup`.
+  (`SimpleGraph.IsBipartiteWith.exists_isMatching_ncard_add_ncard_eq`), yielding the numerical
+  deficiency formula `SimpleGraph.IsBipartiteWith.matchingNum_eq_encard_sub_iSup`.
 * **Hall's marriage theorem**: Mathlib's `SimpleGraph.exists_isMatching_of_forall_ncard_le` already
   gives the sufficient Hall condition for locally finite bipartite graphs. This file supplies the
   converse and two-way side-saturating equivalences in `ℕ` and `ℕ∞` under `[G.LocallyFinite]`
@@ -60,7 +55,10 @@ simple graphs, together with the resulting Hall marriage equivalences:
 On a finite vertex type, Kőnig's theorem is transported from the multigraph theorem
 `Graph.IsBipartition.exists_isCapacitatedMatching_sum_eq_vertexCoverNum` on `Graph.ofSimpleGraph G`
 via `SimpleGraph.IsBipartite.exists_isBipartition_ofSimpleGraph` (which extends any bipartition
-`G.IsBipartiteWith s t` to `G.IsBipartiteWith s sᶜ`). The extremal Kőnig interface
+`G.IsBipartiteWith s t` to `G.IsBipartiteWith s sᶜ`). For an arbitrary bipartite simple graph `G`,
+the infinite-value case `G.matchingNum = ⊤` follows from
+`SimpleGraph.matchingNum_eq_top_iff_vertexCoverNum_eq_top`, while the finite-value case reduces to a
+finite induced subgraph preserving `G.vertexCoverNum`. The extremal Kőnig interface
 (`SimpleGraph.Subgraph.IsMaximumMatching`, `SimpleGraph.IsMinimumVertexCover`, and the extremal
 duality characterizations) follows the formal design precedent of
 [Mathlib PR #33032](https://github.com/leanprover-community/mathlib4/pull/33032), while the proof
@@ -91,10 +89,8 @@ variable {V : Type*} {G : SimpleGraph V}
 /-! ### Kőnig's theorem -/
 
 open scoped Graph in
-/-- **Kőnig's theorem.** In any finite bipartite simple graph, the matching number equals the
-vertex cover number. -/
-theorem IsBipartite.matchingNum_eq_vertexCoverNum [Finite V] (h : G.IsBipartite) :
-    G.matchingNum = G.vertexCoverNum := by
+private theorem IsBipartite.matchingNum_eq_vertexCoverNum_of_finite [Finite V]
+    (h : G.IsBipartite) : G.matchingNum = G.vertexCoverNum := by
   classical
   let _ : Fintype V := Fintype.ofFinite V
   let _ : Fintype E(Graph.ofSimpleGraph G) := Fintype.ofFinite _
@@ -114,9 +110,92 @@ theorem IsBipartite.matchingNum_eq_vertexCoverNum [Finite V] (h : G.IsBipartite)
           Set.ncard_coe_finset, ← hx.sum_eq_card_support]
     _ ≤ G.matchingNum := hM₀.encard_edgeSet_le_matchingNum
 
+/-- **Kőnig's theorem.** In any bipartite simple graph, the matching number equals the vertex cover
+number. -/
+theorem IsBipartite.matchingNum_eq_vertexCoverNum (h : G.IsBipartite) :
+    G.matchingNum = G.vertexCoverNum := by
+  rcases eq_or_ne G.matchingNum ⊤ with htop | hfin
+  · rw [htop, (matchingNum_eq_top_iff_vertexCoverNum_eq_top.1 htop).symm]
+  · classical
+    have hcov_fin : G.vertexCoverNum ≠ ⊤ := mt matchingNum_eq_top_iff_vertexCoverNum_eq_top.2 hfin
+    let n : ℕ := G.vertexCoverNum.toNat
+    have hn : (n : ℕ∞) = G.vertexCoverNum := ENat.natCast_toNat hcov_fin
+    obtain ⟨C₀, hC₀eq, hC₀⟩ := G.vertexCoverNum_exists
+    have hC₀fin : C₀.Finite := Set.encard_ne_top_iff.1 (hC₀eq ▸ hcov_fin)
+    have hT : ∀ v : V, ∃ t ⊆ G.neighborSet v,
+        t.Finite ∧ ((G.neighborSet v).Finite → t = G.neighborSet v) ∧
+          ((G.neighborSet v).Infinite → t.ncard = n) := by
+      intro v
+      by_cases hv : (G.neighborSet v).Finite
+      · exact ⟨G.neighborSet v, Subset.rfl, hv, fun _ ↦ rfl, fun hinf ↦ (hinf hv).elim⟩
+      · obtain ⟨t, ht_sub, ht_fin, ht_card⟩ := Set.Infinite.exists_subset_ncard_eq hv n
+        exact ⟨t, ht_sub, ht_fin, fun hf ↦ (hv hf).elim, fun _ ↦ ht_card⟩
+    choose T hT_sub hT_fin hT_all hT_card using hT
+    let s : Set V := C₀ ∪ ⋃ v ∈ C₀, T v
+    have hs_fin : s.Finite := hC₀fin.union (hC₀fin.biUnion fun v _ ↦ hT_fin v)
+    have _ : Finite s := hs_fin.to_subtype
+    have hG'bip : (G.induce s).IsBipartite := h.of_hom (Embedding.induce s).toHom
+    have hG'eq : (G.induce s).matchingNum = (G.induce s).vertexCoverNum :=
+      hG'bip.matchingNum_eq_vertexCoverNum_of_finite
+    have hle_match : (G.induce s).matchingNum ≤ G.matchingNum :=
+      IsContained.matchingNum_le_matchingNum ⟨Copy.induce G s⟩
+    have hcov_le : G.vertexCoverNum ≤ (G.induce s).vertexCoverNum := by
+      by_contra! hlt
+      obtain ⟨D₀, hD₀eq, hD₀⟩ := (G.induce s).vertexCoverNum_exists
+      let D : Set V := Subtype.val '' D₀
+      have hD_encard : D.encard = (G.induce s).vertexCoverNum := by
+        rw [Subtype.val_injective.encard_image, hD₀eq]
+      have hDfin : D.Finite := Set.encard_lt_top_iff.1 (hD_encard ▸ hlt.trans_le le_top)
+      have hD_ncard : D.ncard < n := by
+        rw [← Nat.cast_lt (α := ℕ∞), hDfin.cast_ncard_eq, hn, hD_encard]
+        exact hlt
+      have hDcov : G.IsVertexCover D := by
+        have step : ∀ {u w : V}, G.Adj u w → u ∈ C₀ → u ∈ D ∨ w ∈ D := by
+          intro u w huw huC₀
+          by_cases huD : u ∈ D
+          · exact Or.inl huD
+          · right
+            by_cases hfin_u : (G.neighborSet u).Finite
+            · have hw_s : w ∈ s :=
+                subset_union_right (mem_biUnion huC₀ (hT_all u hfin_u ▸ huw))
+              have hus : u ∈ s := subset_union_left huC₀
+              rcases hD₀ (show (G.induce s).Adj ⟨u, hus⟩ ⟨w, hw_s⟩ from huw) with h | h
+              · exact False.elim (huD ⟨⟨u, hus⟩, h, rfl⟩)
+              · exact ⟨⟨w, hw_s⟩, h, rfl⟩
+            · have hsubD : T u ⊆ D := by
+                intro z hz
+                have hz_s : z ∈ s := subset_union_right (mem_biUnion huC₀ hz)
+                have hus : u ∈ s := subset_union_left huC₀
+                have huz : G.Adj u z := hT_sub u hz
+                rcases hD₀ (show (G.induce s).Adj ⟨u, hus⟩ ⟨z, hz_s⟩ from huz) with h | h
+                · exact False.elim (huD ⟨⟨u, hus⟩, h, rfl⟩)
+                · exact ⟨⟨z, hz_s⟩, h, rfl⟩
+              have hle_n : n ≤ D.ncard := by
+                rw [← hT_card u hfin_u]
+                exact Set.ncard_le_ncard hsubD hDfin
+              exact False.elim (not_le_of_gt hD_ncard hle_n)
+        intro u w huw
+        rcases hC₀ huw with hu | hw
+        · exact step huw hu
+        · exact (step huw.symm hw).symm
+      exact not_le_of_gt hlt (hD_encard ▸ hDcov.vertexCoverNum_le)
+    exact le_antisymm G.matchingNum_le_vertexCoverNum (hcov_le.trans (hG'eq ▸ hle_match))
+
 section Extremal
 
 variable {M : G.Subgraph} {c : Set V}
+
+/-- **Kőnig's theorem with extremal witnesses in `ℕ`.** Every finite bipartite simple graph admits
+a maximum matching and a minimum vertex cover of equal `ncard`. -/
+theorem IsBipartite.exists_isMaximumMatching_isMinimumVertexCover_ncard_eq [Finite V]
+    (h : G.IsBipartite) :
+    ∃ (M : G.Subgraph) (c : Set V), M.IsMaximumMatching ∧ G.IsMinimumVertexCover c ∧
+      M.edgeSet.ncard = c.ncard := by
+  obtain ⟨M, c, hM, hc, heq⟩ :=
+    exists_isMaximumMatching_isMinimumVertexCover_encard_eq_of_matchingNum_eq
+      h.matchingNum_eq_vertexCoverNum
+  exact ⟨M, c, hM, hc,
+    (hM.isMatching.encard_edgeSet_eq_iff_ncard_edgeSet_eq hc.isVertexCover c.toFinite).1 heq⟩
 
 /-- In a finite bipartite simple graph, a matching is maximum if and only if some vertex cover has
 the same `ncard`. -/
@@ -170,23 +249,20 @@ theorem Subgraph.IsMatching.ncard_edgeSet_add_ncard_le {M : G.Subgraph}
     (hL : L.Finite) (hN : (⋃ x ∈ S, G.neighborSet x).Finite) :
     M.edgeSet.ncard + S.ncard ≤ L.ncard + (⋃ x ∈ S, G.neighborSet x).ncard := by
   have hSfin : S.Finite := hL.subset hS
-  have hMfin : M.edgeSet.Finite :=
-    encard_lt_top_iff.1 <| (hM.encard_verts_inter_left hLR).symm.trans_lt
-      (hL.subset inter_subset_right).encard_lt_top
+  have hMfin : M.edgeSet.Finite := hM.finite_edgeSet_of_isBipartiteWith hLR hL
   have hle := hM.encard_edgeSet_add_encard_le hLR hS
-  rwa [← hMfin.cast_ncard_eq, ← hSfin.cast_ncard_eq, ← hL.cast_ncard_eq, ← hN.cast_ncard_eq,
-    ← Nat.cast_add, ← Nat.cast_add, Nat.cast_le] at hle
+  rw [← hMfin.cast_ncard_eq, ← hSfin.cast_ncard_eq, ← hL.cast_ncard_eq, ← hN.cast_ncard_eq] at hle
+  exact_mod_cast hle
 
-/-- **The Kőnig–Ore formula in `ℕ∞`** whenever `G.matchingNum = G.vertexCoverNum`. In any
-bipartite graph with sides `L` and `R` satisfying `G.matchingNum = G.vertexCoverNum`, there exist
+/-- **The Kőnig–Ore formula in `ℕ∞`.** In any bipartite graph with sides `L` and `R`, there exist
 a matching `M` and `S ⊆ L` with
 `M.edgeSet.encard + S.encard = L.encard + (⋃ x ∈ S, G.neighborSet x).encard`. -/
-theorem IsBipartiteWith.exists_isMatching_encard_add_encard_eq_of_matchingNum_eq
-    (hLR : G.IsBipartiteWith L R) (h : G.matchingNum = G.vertexCoverNum) :
+theorem IsBipartiteWith.exists_isMatching_encard_add_encard_eq (hLR : G.IsBipartiteWith L R) :
     ∃ (M : G.Subgraph) (S : Set V), M.IsMatching ∧ S ⊆ L ∧
       M.edgeSet.encard + S.encard = L.encard + (⋃ x ∈ S, G.neighborSet x).encard := by
   obtain ⟨M, C, hM, hC, heq⟩ :=
-    exists_isMaximumMatching_isMinimumVertexCover_encard_eq_of_matchingNum_eq h
+    exists_isMaximumMatching_isMinimumVertexCover_encard_eq_of_matchingNum_eq
+      hLR.isBipartite.matchingNum_eq_vertexCoverNum
   refine ⟨M, L \ C, hM.isMatching, sdiff_subset,
     le_antisymm (hM.isMatching.encard_edgeSet_add_encard_le hLR sdiff_subset) ?_⟩
   have hNsub := hC.isVertexCover.biUnion_neighborSet_sdiff_subset L
@@ -204,42 +280,30 @@ theorem IsBipartiteWith.exists_isMatching_encard_add_encard_eq_of_matchingNum_eq
     _ = ((L ∩ C).encard + (⋃ x ∈ L \ C, G.neighborSet x).encard) + (L \ C).encard := by ac_rfl
     _ ≤ M.edgeSet.encard + (L \ C).encard := add_le_add_left hCle _
 
-/-- **The Kőnig–Ore formula in `ℕ`** whenever `L` is finite and `G.matchingNum = G.vertexCoverNum`.
-In any bipartite graph with finite left side `L` and right side `R` satisfying
-`G.matchingNum = G.vertexCoverNum`, there exist a matching `M` and `S ⊆ L` with
+/-- **The Kőnig–Ore formula in `ℕ`.** In any bipartite graph with finite left side `L` and right
+side `R`, there exist a matching `M` and `S ⊆ L` with
 `M.edgeSet.ncard + S.ncard = L.ncard + (⋃ x ∈ S, G.neighborSet x).ncard`. -/
-theorem IsBipartiteWith.exists_isMatching_ncard_add_ncard_eq_of_matchingNum_eq
-    (hLR : G.IsBipartiteWith L R) (hL : L.Finite) (h : G.matchingNum = G.vertexCoverNum) :
+theorem IsBipartiteWith.exists_isMatching_ncard_add_ncard_eq
+    (hLR : G.IsBipartiteWith L R) (hL : L.Finite) :
     ∃ (M : G.Subgraph) (S : Set V), M.IsMatching ∧ S ⊆ L ∧
       M.edgeSet.ncard + S.ncard = L.ncard + (⋃ x ∈ S, G.neighborSet x).ncard := by
-  obtain ⟨M, S, hM, hS, heq⟩ :=
-    hLR.exists_isMatching_encard_add_encard_eq_of_matchingNum_eq h
+  obtain ⟨M, S, hM, hS, heq⟩ := hLR.exists_isMatching_encard_add_encard_eq
   have hSfin : S.Finite := hL.subset hS
-  have hMfin : M.edgeSet.Finite :=
-    encard_lt_top_iff.1 <| (hM.encard_verts_inter_left hLR).symm.trans_lt
-      (hL.subset inter_subset_right).encard_lt_top
+  have hMfin : M.edgeSet.Finite := hM.finite_edgeSet_of_isBipartiteWith hLR hL
   have hNfin : (⋃ x ∈ S, G.neighborSet x).Finite := by
     rw [← encard_lt_top_iff]
     exact (le_add_self.trans_eq heq.symm).trans_lt
       (ENat.add_lt_top.2 ⟨hMfin.encard_lt_top, hSfin.encard_lt_top⟩)
   refine ⟨M, S, hM, hS, ?_⟩
-  rwa [← hMfin.cast_ncard_eq, ← hSfin.cast_ncard_eq, ← hL.cast_ncard_eq,
-    ← hNfin.cast_ncard_eq, ← Nat.cast_add, ← Nat.cast_add, Nat.cast_inj] at heq
+  rw [← hMfin.cast_ncard_eq, ← hSfin.cast_ncard_eq, ← hL.cast_ncard_eq, ← hNfin.cast_ncard_eq]
+    at heq
+  exact_mod_cast heq
 
-/-- **The Kőnig–Ore formula in `ℕ`.** In a finite bipartite graph with sides `L` and `R`, there
-exist a matching `M` and `S ⊆ L` with
-`M.edgeSet.ncard + S.ncard = L.ncard + (⋃ x ∈ S, G.neighborSet x).ncard`. -/
-theorem IsBipartiteWith.exists_isMatching_ncard_add_ncard_eq [Finite V]
-    (hLR : G.IsBipartiteWith L R) :
-    ∃ (M : G.Subgraph) (S : Set V), M.IsMatching ∧ S ⊆ L ∧
-      M.edgeSet.ncard + S.ncard = L.ncard + (⋃ x ∈ S, G.neighborSet x).ncard :=
-  hLR.exists_isMatching_ncard_add_ncard_eq_of_matchingNum_eq
-    (Set.toFinite L) hLR.isBipartite.matchingNum_eq_vertexCoverNum
-
-/-- **Numerical Kőnig–Ore deficiency formula in `ℕ∞`.** On a finite bipartite graph with sides `L`
-and `R`, the matching number of `G` is `L.encard` minus the largest deficiency
+/-- **Numerical Kőnig–Ore deficiency formula in `ℕ∞`.** On a bipartite graph with finite left side
+`L` and right side `R`, the matching number of `G` is `L.encard` minus the largest deficiency
 `S.encard - N(S).encard` over subsets `S ⊆ L`. -/
-theorem IsBipartiteWith.matchingNum_eq_encard_sub_iSup [Finite V] (hLR : G.IsBipartiteWith L R) :
+theorem IsBipartiteWith.matchingNum_eq_encard_sub_iSup (hLR : G.IsBipartiteWith L R)
+    (hL : L.Finite) :
     G.matchingNum =
       L.encard - ⨆ (S : Set V) (_ : S ⊆ L), (S.encard - (⋃ x ∈ S, G.neighborSet x).encard) := by
   let f (S : Set V) : ℕ∞ := S.encard - (⋃ x ∈ S, G.neighborSet x).encard
@@ -247,26 +311,28 @@ theorem IsBipartiteWith.matchingNum_eq_encard_sub_iSup [Finite V] (hLR : G.IsBip
   have hsup_eq : (⨆ S : {S : Set V // S ⊆ L}, f S.val) = ⨆ (S : Set V) (_ : S ⊆ L), f S :=
     iSup_subtype
   have hsup_lt : (⨆ S : {S : Set V // S ⊆ L}, f S.val) < ⊤ :=
-    (iSup_le fun S ↦ tsub_le_self.trans (encard_le_encard S.property)).trans_lt
-      (Set.toFinite L).encard_lt_top
+    (iSup_le fun S ↦ tsub_le_self.trans (encard_le_encard S.property)).trans_lt hL.encard_lt_top
   obtain ⟨⟨S₀, hS₀⟩, hS₀eq⟩ := ENat.exists_eq_iSup_of_lt_top hsup_lt
   rw [← hsup_eq, ← hS₀eq]
   refine le_antisymm (matchingNum_le_iff.2 fun M hM ↦ ?_) ?_
   · refine ENat.le_sub_of_add_le_right (hS₀eq ▸ hsup_lt.ne) ?_
     by_cases hle : S₀.encard ≤ (⋃ x ∈ S₀, G.neighborSet x).encard
-    · simp only [f, tsub_eq_zero_of_le hle, add_zero, ← hM.encard_verts_inter_left hLR]
-      exact encard_le_encard inter_subset_right
+    · simp only [f, tsub_eq_zero_of_le hle, add_zero]
+      exact hM.encard_edgeSet_le_encard_left hLR
     · have hNlt : (⋃ x ∈ S₀, G.neighborSet x).encard < S₀.encard := not_le.1 hle
-      refine (ENat.add_le_add_iff_right
-        (Set.toFinite (⋃ x ∈ S₀, G.neighborSet x)).encard_lt_top.ne).1 ?_
+      have hNne : (⋃ x ∈ S₀, G.neighborSet x).encard ≠ ⊤ :=
+        (lt_trans hNlt ((encard_le_encard hS₀).trans_lt hL.encard_lt_top)).ne
+      refine (ENat.add_le_add_iff_right hNne).1 ?_
       rw [add_assoc, tsub_add_cancel_of_le hNlt.le]
       exact hM.encard_edgeSet_add_encard_le hLR hS₀
-  · obtain ⟨M, S₁, hM, hS₁, heq⟩ :=
-      hLR.exists_isMatching_encard_add_encard_eq_of_matchingNum_eq
-        hLR.isBipartite.matchingNum_eq_vertexCoverNum
+  · obtain ⟨M, S₁, hM, hS₁, heq⟩ := hLR.exists_isMatching_encard_add_encard_eq
+    have hMfin : M.edgeSet.Finite := hM.finite_edgeSet_of_isBipartiteWith hLR hL
+    have hS₁fin : S₁.Finite := hL.subset hS₁
+    have hNne : (⋃ x ∈ S₁, G.neighborSet x).encard ≠ ⊤ :=
+      ((le_add_self.trans_eq heq.symm).trans_lt
+        (ENat.add_lt_top.2 ⟨hMfin.encard_lt_top, hS₁fin.encard_lt_top⟩)).ne
     have hLle : L.encard ≤ M.edgeSet.encard + f S₁ := by
-      refine (ENat.add_le_add_iff_right
-        (Set.toFinite (⋃ x ∈ S₁, G.neighborSet x)).encard_lt_top.ne).1 ?_
+      refine (ENat.add_le_add_iff_right hNne).1 ?_
       calc
         L.encard + (⋃ x ∈ S₁, G.neighborSet x).encard
           = M.edgeSet.encard + S₁.encard := heq.symm
