@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.JamesReducedProduct
+public import TauCeti.AlgebraicTopology.JamesReducedProduct.Basic
 public import TauCeti.Topology.Category.TopPair.FatWedge
 public import TauCeti.Topology.Category.TopPair.Quotient
 

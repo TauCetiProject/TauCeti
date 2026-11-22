@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
+import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 /-!
 # Short exact sequences of canonical continuous cochains
@@ -17,9 +18,12 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 Mathlib's continuous cohomology is the homology of the homogeneous cochain complex
 `TopRep.homogeneousCochains X`, whose degree-`n` term is the `G`-invariant submodule of the
 iterated coinduced representation `C(G, C(G, …, C(G, X)))` with `n + 1` factors of `C(G, -)`.
-This file shows that a short exact sequence `0 → A → B → C → 0` of discrete `G`-modules induces,
-in **every** degree, a short exact sequence of these cochain modules. This is the input to the
-snake lemma, hence to the long exact sequence of continuous cohomology in all degrees.
+This file shows that a topologically short exact sequence `0 → X₁ → X₂ → X₃ → 0` of topological
+`G`-modules (`CategoryTheory.ShortComplex.TopShortExact`: an embedding followed by a map with a
+continuous set-theoretic section, with `G` acting jointly continuously on `X₂`) induces, in
+**every** degree, a short exact sequence of these cochain modules; a short exact sequence of
+discrete `G`-modules is an instance. This is the input to the snake lemma, hence to the long exact
+sequence of continuous cohomology in all degrees.
 
 The three exactness statements have different hypotheses, and the statements below carry exactly
 those:
@@ -28,14 +32,14 @@ those:
   with an injective map is injective, so this holds for any injective coefficient map.
 * **Exactness in the middle** (`resolutionMap_id_exact`, `cochainsMap_id_f_exact`): a continuous
   function killed by `g` factors pointwise through `f`, and the factorization is continuous when
-  `f` is inducing. For discrete `A` and `B` every injection is an embedding.
+  `f` is inducing. For discrete coefficients every injection is an embedding.
 * **Surjectivity** (`cochainsMap_id_f_surjective_of_section`,
-  `DiscreteShortExact.continuousCochainsShortExact_g_surjective`) is the
+  `CategoryTheory.ShortComplex.TopShortExact.cochainsMap_g_f_surjective`) is the
   substantial one, because an *invariant* cochain has to be lifted to an *invariant* cochain. A
   homogeneous cochain `F` satisfies `F(g x₀, …, g xₙ) = g • F(x₀, …, xₙ)`, and it is lifted by
-  `(x₀, …, xₙ) ↦ x₀ • s (x₀⁻¹ • F(x₀, …, xₙ))` for any set-theoretic section `s` of `B → C`. The
-  twisted section `(h, c) ↦ h • s (h⁻¹ • c)` is jointly continuous because `C` is discrete and the
-  actions are continuous, and it is equivariant in the sense
+  `(x₀, …, xₙ) ↦ x₀ • s (x₀⁻¹ • F(x₀, …, xₙ))` for a continuous section `s` of `X₂ → X₃`. The
+  twisted section `(h, c) ↦ h • s (h⁻¹ • c)` is jointly continuous because the actions are, and
+  it is equivariant in the sense
   `k • σ(h, c) = σ(k h, k • c)`, which is what makes the lift invariant. Carrying this through the
   iterated function spaces uses continuity of evaluation `C(G, V) × G → V`, which is where local
   compactness of `G` enters; profinite groups are locally compact.
@@ -43,16 +47,28 @@ those:
 The cochain functor is defined in `Additive.lean`, and the coefficient short complex is defined
 in `ShortExact.lean`.
 
-## Main definition
+## Main definitions
 
-* `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact`: its image under
-  `continuousCochainsFunctor`, a short complex of cochain complexes.
+* `CategoryTheory.ShortComplex.TopShortExact`: a short complex of topological representations
+  whose second map has a continuous section, with an embedding as first map and a jointly
+  continuous action on the middle term.
+* `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact`: the image of a short
+  exact sequence of discrete modules under `continuousCochainsFunctor`, a short complex of cochain
+  complexes.
 
 ## Main results
 
 * `TauCeti.ContinuousCohomology.cochainsMap_id_f_surjective_of_section`: invariant cochains lift
   along any coefficient map admitting a continuous family of sections `σ : G × Z → Y` that is
   equivariant in the sense `k • σ(h, z) = σ(k h, k • z)`, over a locally compact group.
+* `CategoryTheory.ShortComplex.TopShortExact.cochains_shortExact_moduleCat`: after forgetting
+  topologies, the cochains of a topologically short exact sequence form a short exact sequence of
+  cochain complexes of modules.
+* `CategoryTheory.ShortComplex.TopShortExact.of_compactSpace`: a short complex with profinite
+  middle term, Hausdorff last term, an embedding as first map, a surjective second map, exact in
+  the middle, and a jointly continuous action on the middle term, is topologically short exact.
+* `TauCeti.ContCohomology.DiscreteShortExact.topShortExact`: a short exact sequence of discrete
+  modules, with a continuous action on the middle term, is topologically short exact.
 * `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact_f_injective`,
   `continuousCochainsShortExact_exact` and `continuousCochainsShortExact_g_surjective`: the
   degreewise exactness of the cochain sequence.
@@ -64,8 +80,12 @@ in `ShortExact.lean`.
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
-  Chapter I §2 (homogeneous continuous cochains) and (1.3.2) (the long exact sequence, whose proof
-  starts from the exactness of cochains proved here).
+  Chapter I §2 (homogeneous continuous cochains), (1.3.2) (the long exact sequence, whose proof
+  starts from the exactness of cochains proved here), Chapter I §1, Exercise 4 (the continuous
+  section for compact coefficients) and Chapter II §7, Lemma 2.7.2 (the cochain sequence and the
+  long exact sequence for topological coefficients).
+* K. Rubin, *Euler Systems*, Annals of Mathematics Studies 147, Princeton University Press (2000),
+  Appendix B, §2, Definition 2.1.
 -/
 
 public section
@@ -278,6 +298,121 @@ end Lift
 
 end ContinuousCohomology
 
+end TauCeti
+
+/-! ### Short exact sequences with a continuous section -/
+
+namespace CategoryTheory.ShortComplex
+
+open _root_.ContinuousCohomology TauCeti.ContinuousCohomology
+
+universe u v
+
+variable {R : Type u} [Ring R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- A short complex `0 → X₁ → X₂ → X₃ → 0` of topological representations is *topologically
+short exact* when `X₁ → X₂` is a topological embedding, the sequence is exact at `X₂`, the map
+`X₂ → X₃` has a continuous set-theoretic section, and `G` acts jointly continuously on `X₂`.
+These are the conditions under which the homogeneous continuous cochains form a short exact
+sequence in every degree (`TopShortExact.cochains_shortExact_moduleCat`), so that continuous
+cohomology has a long exact sequence. A short exact sequence of discrete modules is an instance
+(`TauCeti.ContCohomology.DiscreteShortExact.topShortExact`); for compact coefficients, a
+continuous section of a continuous surjection of profinite additive groups exists by
+`AddMonoidHom.exists_continuous_section_of_surjective`. -/
+structure TopShortExact (S : ShortComplex (TopRep.{v} R G)) : Prop where
+  /-- The first map is a topological embedding. -/
+  isEmbedding_f : IsEmbedding S.f.hom
+  /-- The sequence is exact at the middle term. -/
+  exact : Function.Exact S.f.hom S.g.hom
+  /-- The second map has a continuous set-theoretic section. -/
+  exists_continuous_section : ∃ s : S.X₃ → S.X₂, Continuous s ∧ ∀ z, S.g.hom (s z) = z
+  /-- The group acts jointly continuously on the middle term. -/
+  continuous_ρ₂ : Continuous fun p : G × S.X₂ ↦ S.X₂.ρ p.1 p.2
+
+namespace TopShortExact
+
+omit [IsTopologicalGroup G] in
+/-- **Compact coefficients.** A short complex of topological representations whose middle term is
+profinite as an additive group and whose last term is Hausdorff is topologically short exact as
+soon as its first map is an embedding, it is exact at the middle term, its second map is surjective
+and `G` acts jointly continuously on the middle term: the continuous section is provided by
+`AddMonoidHom.exists_continuous_section_of_surjective`. -/
+theorem of_compactSpace {S : ShortComplex (TopRep.{v} R G)} [CompactSpace S.X₂]
+    [TotallyDisconnectedSpace S.X₂] [T2Space S.X₃] (hf : IsEmbedding S.f.hom)
+    (hfg : Function.Exact S.f.hom S.g.hom) (hg : Function.Surjective S.g.hom)
+    (hρ : Continuous fun p : G × S.X₂ ↦ S.X₂.ρ p.1 p.2) : S.TopShortExact where
+  isEmbedding_f := hf
+  exact := hfg
+  exists_continuous_section := by
+    obtain ⟨s, hs, hgs, -⟩ := AddMonoidHom.exists_continuous_section_of_surjective
+      (S.g.hom : S.X₂ →+ S.X₃) S.g.hom.continuous hg
+    exact ⟨s, hs, hgs⟩
+  continuous_ρ₂ := hρ
+
+variable {S : ShortComplex (TopRep.{v} R G)} (hS : S.TopShortExact)
+include hS
+
+section
+
+omit [IsTopologicalGroup G]
+
+/-- The first map of a topologically short exact sequence is injective. -/
+theorem injective_f : Function.Injective S.f.hom :=
+  hS.isEmbedding_f.injective
+
+/-- The second map of a topologically short exact sequence is surjective. -/
+theorem surjective_g : Function.Surjective S.g.hom := by
+  obtain ⟨s, -, hgs⟩ := hS.exists_continuous_section
+  exact fun z ↦ ⟨s z, hgs z⟩
+
+/-- The group acts jointly continuously on the last term of a topologically short exact
+sequence: `h • z = g (h • s z)` for the continuous section `s`. -/
+theorem continuous_ρ₃ : Continuous fun p : G × S.X₃ ↦ S.X₃.ρ p.1 p.2 := by
+  obtain ⟨s, hs, hgs⟩ := hS.exists_continuous_section
+  have h : (fun p : G × S.X₃ ↦ S.X₃.ρ p.1 p.2) = fun p ↦ S.g.hom (S.X₂.ρ p.1 (s p.2)) := by
+    funext p
+    rw [S.g.hom.isIntertwining, hgs]
+  rw [h]
+  exact S.g.hom.continuous.comp
+    (hS.continuous_ρ₂.comp (continuous_fst.prodMk (hs.comp continuous_snd)))
+
+end
+
+/-- **Continuous cochains lift along the second map** of a topologically short exact sequence,
+in every degree, over a locally compact group. The lift uses the twisted section
+`(h, z) ↦ h • s (h⁻¹ • z)`, which is continuous by joint continuity of the actions and
+equivariant. -/
+theorem cochainsMap_g_f_surjective [LocallyCompactSpace G] (n : ℕ) :
+    Function.Surjective ((cochainsMap (ContinuousMonoidHom.id G) S.g).f n).hom := by
+  obtain ⟨s, hs, hgs⟩ := hS.exists_continuous_section
+  let σ : C(G × S.X₃, S.X₂) :=
+    ⟨fun p ↦ S.X₂.ρ p.1 (s (S.X₃.ρ p.1⁻¹ p.2)), hS.continuous_ρ₂.comp <| continuous_fst.prodMk <|
+      hs.comp <| hS.continuous_ρ₃.comp (continuous_fst.inv.prodMk continuous_snd)⟩
+  have hσ (h : G) (z : S.X₃) : σ (h, z) = S.X₂.ρ h (s (S.X₃.ρ h⁻¹ z)) := rfl
+  refine cochainsMap_id_f_surjective_of_section S.g σ (fun h z ↦ ?_) (fun k h z ↦ ?_) n
+  · simp [hσ, S.g.hom.isIntertwining, hgs, ← mul_apply_eq_comp, ← map_mul]
+  · simp [hσ, ← mul_apply_eq_comp, ← map_mul, mul_assoc]
+
+/-- **The cochain sequence of a topologically short exact sequence is short exact.** After
+forgetting topologies, `0 → C•(G, X₁) → C•(G, X₂) → C•(G, X₃) → 0` is a short exact sequence of
+cochain complexes of modules, for a locally compact group `G`. This is the input to the snake
+lemma, and hence to the long exact sequence of continuous cohomology in every degree. -/
+theorem cochains_shortExact_moduleCat [LocallyCompactSpace G] :
+    ((S.map (continuousCochainsFunctor R G)).map
+      ((forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _)).ShortExact :=
+  HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
+    ModuleCat.shortComplex_shortExact _ (cochainsMap_id_f_exact hS.isEmbedding_f hS.exact n)
+      (cochainsMap_f_injective (ContinuousMonoidHom.id G) S.f Function.surjective_id
+        hS.injective_f n)
+      (hS.cochainsMap_g_f_surjective n)
+
+end TopShortExact
+
+end CategoryTheory.ShortComplex
+
+namespace TauCeti
+
 namespace ContCohomology
 
 namespace DiscreteShortExact
@@ -382,40 +517,30 @@ theorem continuousCochainsShortExact_exact (n : ℕ) :
     (IsClosedEmbedding.of_continuous_injective_isClosedMap continuous_of_discreteTopology
       S.incl_injective fun _ _ ↦ isClosed_discrete _).isEmbedding S.exact n
 
+omit [IsTopologicalGroup G] in
+/-- **A short exact sequence of discrete modules is topologically short exact** when `G` acts
+continuously on the middle term: an injection of discrete spaces is an embedding, and every
+set-theoretic section of `B → C` is continuous because `C` is discrete. -/
+theorem topShortExact [ContinuousSMul G B] : S.toShortComplex.TopShortExact where
+  isEmbedding_f := (IsClosedEmbedding.of_continuous_injective_isClosedMap
+    continuous_of_discreteTopology S.incl_injective fun _ _ ↦ isClosed_discrete _).isEmbedding
+  -- The remaining fields hold by unfolding `toShortComplex`, `ofDiscreteModuleMap` and
+  -- `ofDiscreteModule`: the objects are `B` and `C`, the maps are `S.incl` and `S.proj` on
+  -- elements, and `X₂.ρ` is the given action (`toShortComplex_g_hom_apply`,
+  -- `toShortComplex_X₂_ρ_apply`). Those rfl lemmas are stated for elements of `B` and do not
+  -- match elements of `S.toShortComplex.X₂` syntactically, so the fields are given as terms.
+  exact := S.exact
+  exists_continuous_section := ⟨Function.surjInv S.proj_surjective,
+    continuous_of_discreteTopology (α := C), Function.surjInv_eq S.proj_surjective⟩
+  continuous_ρ₂ := continuous_smul (M := G) (X := B)
+
 /-- **Continuous cochains lift along `B → C` in every degree.** For a locally compact group `G`
 acting continuously on the discrete module `B`, every homogeneous continuous `n`-cochain with
-values in `C` is the image of one with values in `B`. Continuity on `C` follows from the
-equivariant surjection `B → C`. -/
+values in `C` is the image of one with values in `B`. -/
 theorem continuousCochainsShortExact_g_surjective [LocallyCompactSpace G]
     [ContinuousSMul G B] (n : ℕ) :
-    Function.Surjective (S.continuousCochainsShortExact.g.f n).hom := by
-  have : ContinuousSMul G C := ⟨by
-    have hs : Continuous (Function.surjInv S.proj_surjective) :=
-      continuous_of_discreteTopology
-    have hp : Continuous (S.proj : B → C) := continuous_of_discreteTopology
-    have heq : (fun p : G × C ↦ p.1 • p.2) =
-        (fun p ↦ S.proj (p.1 • Function.surjInv S.proj_surjective p.2)) := by
-      funext p
-      rw [S.proj_equivariant, Function.surjInv_eq S.proj_surjective]
-    rw [heq]
-    exact hp.comp (continuous_fst.smul (hs.comp continuous_snd))⟩
-  let s : C → B := Function.surjInv S.proj_surjective
-  let σ : C(G × C, B) :=
-    ⟨fun p ↦ p.1 • s (p.1⁻¹ • p.2), continuous_fst.smul
-      ((continuous_of_discreteTopology (f := s)).comp (continuous_fst.inv.smul continuous_snd))⟩
-  refine cochainsMap_id_f_surjective_of_section _ σ (fun h (c : C) ↦ ?_)
-    (fun k h (c : C) ↦ ?_) n
-  · -- Unfold `σ` to use the public rule identifying the short-complex projection with `proj`.
-    change S.toShortComplex.g.hom (h • s (h⁻¹ • c)) = c
-    rw [S.toShortComplex_g_hom_apply]
-    rw [S.proj_equivariant, Function.surjInv_eq S.proj_surjective, smul_inv_smul]
-  · -- Unfold the bundled coefficient actions before reducing the equivariance identity.
-    change (S.toShortComplex.X₂).ρ k (σ (h, c)) =
-      σ (k * h, (S.toShortComplex.X₃).ρ k c)
-    rw [S.toShortComplex_X₂_ρ_apply, S.toShortComplex_X₃_ρ_apply]
-    -- Both sides now have the original coefficient carriers, so unfold `σ` to compare actions.
-    change k • (h • s (h⁻¹ • c)) = (k * h) • s ((k * h)⁻¹ • (k • c))
-    rw [mul_inv_rev, mul_smul, mul_smul, inv_smul_smul]
+    Function.Surjective (S.continuousCochainsShortExact.g.f n).hom :=
+  S.topShortExact.cochainsMap_g_f_surjective n
 
 /-- **The cochain sequence of a short exact sequence of discrete modules is short exact.** After
 forgetting topologies, `0 → C•(G, A) → C•(G, B) → C•(G, C) → 0` is a short exact sequence of
@@ -426,10 +551,7 @@ theorem continuousCochainsShortExact_shortExact_moduleCat [LocallyCompactSpace G
     [ContinuousSMul G B] :
     (S.continuousCochainsShortExact.map
       ((forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)).mapHomologicalComplex _)).ShortExact :=
-  HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦
-    ModuleCat.shortComplex_shortExact _ (S.continuousCochainsShortExact_exact n)
-      (S.continuousCochainsShortExact_f_injective n)
-      (S.continuousCochainsShortExact_g_surjective n)
+  S.topShortExact.cochains_shortExact_moduleCat
 
 end DiscreteShortExact
 

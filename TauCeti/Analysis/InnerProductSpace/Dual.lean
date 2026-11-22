@@ -37,6 +37,7 @@ No inner product instance on the algebraic dual is installed.
 * `InnerProductSpace.apply_toDual_symm_eq_conj`: `β(α♯) = conj (α(β♯))`, writing `α♯` for
   `(toDual 𝕜 E).symm α`.
 * `InnerProductSpace.apply_toDual_symm_self`: `q(q♯) = ‖q‖²`.
+* `InnerProductSpace.toDual_symm_eq_sum`: `q♯ = ∑ᵢ conj (q(eᵢ)) eᵢ` in an orthonormal basis `eᵢ`.
 * `InnerProductSpace.toDualSymmL`: over `ℝ`, the inverse Riesz map `q ↦ q♯` as a continuous
   linear map.
 * `InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner`: over `ℝ`, a bilinear form that is
@@ -68,6 +69,8 @@ No inner product instance on the algebraic dual is installed.
   positive semidefinite.
 * `InnerProductSpace.dualMetric_self_eq_zero_iff`: a functional has zero square norm iff it is zero.
 * `LinearMap.dualMetric_dualMap_left`: transposition and Hermitian adjunction commute.
+* `LinearIndependent.innerSL`: the functionals `⟪vᵢ, ·⟫` of a linearly independent family are
+  linearly independent.
 -/
 
 public section
@@ -142,6 +145,13 @@ theorem apply_toDual_symm_self (q : StrongDual 𝕜 E) :
     q ((toDual 𝕜 E).symm q) = (‖q‖ : 𝕜) ^ 2 := by
   rw [← toDual_symm_apply, inner_self_eq_norm_sq_to_K, LinearIsometryEquiv.norm_map]
 
+/-- The Riesz representative in an orthonormal basis `eᵢ`: `q♯ = ∑ᵢ conj (q(eᵢ)) eᵢ`. -/
+theorem toDual_symm_eq_sum (q : StrongDual 𝕜 E) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι 𝕜 E) :
+    (toDual 𝕜 E).symm q = ∑ i, starRingEnd 𝕜 (q (b i)) • b i := by
+  conv_lhs => rw [← b.sum_repr' ((toDual 𝕜 E).symm q)]
+  simp only [← inner_conj_symm (b _), toDual_symm_apply]
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
@@ -163,6 +173,14 @@ theorem isInvertible_of_apply_apply_eq_mul_inner {c : ℝ} (hc : c ≠ 0)
   refine ⟨(Units.mk0 c hc) • e,
     ContinuousLinearMap.ext fun b ↦ ContinuousLinearMap.ext fun a ↦ ?_⟩
   simpa [e] using (hB b a).symm
+
+/-- The real Riesz map to the continuous dual is invertible on every Hilbert space. -/
+theorem isInvertible_innerSL {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] :
+    (innerSL ℝ (E := E)).IsInvertible :=
+  isInvertible_of_apply_apply_eq_mul_inner one_ne_zero fun b a ↦ by
+    rw [one_mul]
+    exact innerSL_apply_apply ℝ b a
 
 /-- The adjoint of the Fréchet–Riesz operator of a real bilinear form represents the transposed
 form. -/
@@ -300,6 +318,16 @@ theorem _root_.LinearMap.dualMetric_dualMap_left (T : E →ₗ[𝕜] F)
 end FiniteDimensional
 
 end InnerProductSpace
+
+/-- The inner-product functionals `⟪vᵢ, ·⟫` of a linearly independent family `vᵢ` are linearly
+independent, since `v ↦ ⟪v, ·⟫` is injective and conjugate-linear. -/
+theorem LinearIndependent.innerSL {𝕜 F ι : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] {v : ι → F} (hv : LinearIndependent 𝕜 v) :
+    LinearIndependent 𝕜 fun i ↦ _root_.innerSL 𝕜 (v i) :=
+  -- `_root_` is needed because `innerSL` alone would refer to this theorem.
+  hv.map_of_surjective_injectiveₛ (starRingEnd 𝕜)
+    (_root_.innerSL 𝕜 : F →L⋆[𝕜] StrongDual 𝕜 F).toLinearMap.toAddMonoidHom
+    (starRingEnd 𝕜).surjective (fun _ _ ↦ innerSL_inj.mp) fun _ _ ↦ by simp
 
 namespace ContinuousLinearMap
 

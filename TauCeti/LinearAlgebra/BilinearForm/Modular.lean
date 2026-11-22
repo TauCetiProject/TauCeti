@@ -47,7 +47,7 @@ This file proves the facts about modular forms that hold over every commutative 
   the actual scale rather than the coefficient ring;
 * when `a` is a non-zero-divisor, every form `C` with `a • C = B` for an `a`-modular `B` is a
   perfect pairing (`LinearMap.BilinForm.IsModular.isPerfPair_of_smul_eq`), and it is symmetric
-  when `B` is (`LinearMap.BilinForm.IsSymm.of_smul`);
+  when `B` is (`IsSMulRegular.isSymm_smul_iff`);
 * a vector `x` with `a r ∣ B x y` for all `y`, where `B` is `a`-modular and `a` and `r` are
   non-zero-divisors, is divisible by `r`
   (`LinearMap.BilinForm.IsModular.exists_eq_smul_of_forall_dvd`);
@@ -268,6 +268,12 @@ theorem IsModular.isPerfPair_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroD
   have : C = C' := LinearMap.ext₂ fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
     simpa using LinearMap.congr_fun₂ (hC.trans hC'.symm) x y)
   exact this ▸ hperf
+
+/-- The rescaling of a modular form by its regular scale has unit Gram determinant. -/
+theorem IsModular.isUnit_det_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)
+    {C : BilinForm R M} (hC : a • C = B) {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) : IsUnit (C.toMatrix b).det :=
+  b.isUnit_det_of_isPerfPair b C (h.isPerfPair_of_smul_eq ha hC)
 
 /-- **Divisibility in a modular form.** If `B` is `a`-modular, with `a` and `r` non-zero-divisors,
 and `a * r` divides `B x y` for every `y`, then `x` is `r` times a vector. -/

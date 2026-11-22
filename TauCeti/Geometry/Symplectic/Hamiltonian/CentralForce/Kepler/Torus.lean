@@ -38,8 +38,8 @@ with nonzero angular momentum fill out invariant tori.
   (`TauCeti.isCompact_keplerBoundPhaseSpace_preimage_singleton`), so the Hamiltonian vector fields
   of `H` and `L` are complete there
   (`TauCeti.isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace`). On the whole
-  punctured phase space the Kepler flow is not complete, since motions with `L = 0` fall into the
-  collision set in finite time.
+  punctured phase space the Kepler flow is not complete, since motions with `L = 0` leave it in
+  finite time (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_kepler`).
 * **Liouville tori.** By the topological Liouville–Arnold theorem
   (`TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus`), every connected
   component of a level of `F` in the bound phase space with energy above the circular energy is

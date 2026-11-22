@@ -7,8 +7,10 @@ module
 
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.UniformRing
+import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Topology.UniformSpace.DiscreteUniformity
 
 /-!
@@ -17,7 +19,8 @@ import Mathlib.Topology.UniformSpace.DiscreteUniformity
 For a commutative ring `R`, an element `t` and an ideal `I`, the `(t, I)`-adic
 completion is the ring of compatible residues in `R / tⁿ I`, with discrete residue
 rings. It is a complete Hausdorff topological ring, and the canonical map from `R`
-has dense image. Its kernel is the intersection of the ideals `tⁿ I`.
+has dense image. Its kernel is the intersection of the ideals `tⁿ I`, left-regularity of `t`
+passes to `completion t I`, and the first filtration kernel lies in the Jacobson radical.
 
 This filtration must not be replaced by powers of `tI`: when `t = 1`, its completion
 is `R / I`, not the `I`-adic completion. No regularity, noetherianity or henselianity
@@ -63,6 +66,62 @@ theorem filtrationIdeal_one (I : Ideal R) (n : ℕ) : filtrationIdeal (1 : R) I 
 @[simp]
 theorem filtrationIdeal_bot (t : R) (n : ℕ) : filtrationIdeal t (⊥ : Ideal R) n = ⊥ := by
   simp [filtrationIdeal_def]
+
+/-- The `(t, I)`-adic filtration is monotone in the ideal `I`. -/
+theorem filtrationIdeal_mono_right (t : R) {I J : Ideal R} (h : I ≤ J) (n : ℕ) :
+    filtrationIdeal t I n ≤ filtrationIdeal t J n := by
+  rw [filtrationIdeal_def, filtrationIdeal_def]
+  exact Ideal.mul_mono_right h
+
+/-- Shifting the filtration index by `m` multiplies by `(t ^ m)`. -/
+theorem filtrationIdeal_add (t : R) (I : Ideal R) (m n : ℕ) :
+    filtrationIdeal t I (m + n) = Ideal.span {t ^ m} * filtrationIdeal t I n := by
+  rw [filtrationIdeal_def, filtrationIdeal_def, pow_add, mul_assoc, Ideal.span_singleton_pow]
+
+/-- An element lies in `filtrationIdeal t I (m + n)` if and only if it is `t ^ m` times an element
+of `filtrationIdeal t I n`. -/
+theorem mem_filtrationIdeal_add_iff {t : R} {I : Ideal R} {m n : ℕ} {x : R} :
+    x ∈ filtrationIdeal t I (m + n) ↔ ∃ y ∈ filtrationIdeal t I n, t ^ m * y = x := by
+  rw [filtrationIdeal_add, Ideal.mem_span_singleton_mul]
+
+/-- Multiplying two `(t, -)`-filtration ideals adds the exponents of `t` and multiplies the base
+ideals. -/
+theorem filtrationIdeal_mul_filtrationIdeal (t : R) (I J : Ideal R) (m n : ℕ) :
+    filtrationIdeal t I m * filtrationIdeal t J n = filtrationIdeal t (I * J) (m + n) := by
+  simp only [filtrationIdeal_def, pow_add]
+  calc
+    (Ideal.span {t} ^ m * I) * (Ideal.span {t} ^ n * J) =
+        Ideal.span {t} ^ m * (I * Ideal.span {t} ^ n) * J := by
+      simp only [mul_assoc]
+    _ = Ideal.span {t} ^ m * (Ideal.span {t} ^ n * I) * J := by
+      rw [mul_comm I (Ideal.span {t} ^ n)]
+    _ = Ideal.span {t} ^ m * Ideal.span {t} ^ n * (I * J) := by
+      simp only [mul_assoc]
+
+/-- Squaring `filtrationIdeal t I m` squares `I` and doubles the exponent of `t`. -/
+theorem filtrationIdeal_sq (t : R) (I : Ideal R) (m : ℕ) :
+    filtrationIdeal t I m ^ 2 = filtrationIdeal t (I ^ 2) (2 * m) := by
+  rw [sq, filtrationIdeal_mul_filtrationIdeal, ← sq, two_mul]
+
+/-- Squaring `filtrationIdeal t I m` lands inside `filtrationIdeal t I (2 * m)`. -/
+theorem filtrationIdeal_sq_le (t : R) (I : Ideal R) (m : ℕ) :
+    filtrationIdeal t I m ^ 2 ≤ filtrationIdeal t I (2 * m) := by
+  rw [filtrationIdeal_sq]
+  exact filtrationIdeal_mono_right t (Ideal.pow_le_self (by decide)) (2 * m)
+
+/-- Powers of `(t) * I` match diagonal terms of the `(t, I ^ n)`-filtration. -/
+theorem pow_span_singleton_mul (t : R) (I : Ideal R) (n : ℕ) :
+    (Ideal.span {t} * I) ^ n = filtrationIdeal t (I ^ n) n := by
+  rw [filtrationIdeal_def, mul_pow]
+
+/-- When both the ideal exponent `m` and the filtration level `n` are at least `k`,
+`filtrationIdeal t (I ^ m) n` is contained in `((t) * I) ^ k`. -/
+theorem filtrationIdeal_pow_le_pow_span_singleton_mul (t : R) (I : Ideal R)
+    {k m n : ℕ} (hkm : k ≤ m) (hkn : k ≤ n) :
+    filtrationIdeal t (I ^ m) n ≤ (Ideal.span {t} * I) ^ k := by
+  rw [pow_span_singleton_mul]
+  exact (filtrationIdeal_mono_right t (Ideal.pow_le_pow_right hkm) n).trans
+    (filtrationIdeal_antitone t (I ^ k) hkn)
 
 private theorem filtrationBasis (t : R) (I : Ideal R) :
     RingSubgroupsBasis (fun n ↦ (filtrationIdeal t I n).toAddSubgroup) where
@@ -367,5 +426,69 @@ theorem completionMap_bot_bijective (t : R) :
   · intro x
     obtain ⟨a, ha⟩ := residueMap_surjective t ⊥ 0 (eval t ⊥ 0 x)
     exact ⟨a, he ha⟩
+
+/-- If `t` is left-regular in `R`, its canonical image in `completion t I` is left-regular. -/
+theorem isLeftRegular_completionMap {t : R} (I : Ideal R) (ht : IsLeftRegular t) :
+    IsLeftRegular (completionMap t I t) := by
+  intro x y hxy
+  have hxy' : completionMap t I t * x = completionMap t I t * y := hxy
+  suffices hzero : ∀ z : completion t I, completionMap t I t * z = 0 → z = 0 by
+    refine sub_eq_zero.mp (hzero (x - y) ?_)
+    rw [mul_sub, hxy', sub_self]
+  intro z hz
+  apply completion_ext
+  intro n
+  obtain ⟨r, hr⟩ := residueMap_surjective t I (n + 1) (eval t I (n + 1) z)
+  have htr : residueMap t I (n + 1) (t * r) = 0 := by
+    have h1 := congrArg (eval t I (n + 1)) hz
+    simpa only [map_mul, eval_completionMap, ← hr, map_zero] using h1
+  have hmem : t * r ∈ filtrationIdeal t I (1 + n) := by
+    rw [Nat.add_comm]
+    exact (residueMap_eq_zero_iff t I (n + 1) (t * r)).mp htr
+  obtain ⟨s, hs, hsr⟩ := mem_filtrationIdeal_add_iff.mp hmem
+  rw [pow_one] at hsr
+  have hrn : r ∈ filtrationIdeal t I n := ht hsr ▸ hs
+  have heval : eval t I n z = residueMap t I n r := by
+    rw [← transition_eval t I (Nat.le_succ n) z, ← hr, transition_residueMap]
+  rw [heval, map_zero, (residueMap_eq_zero_iff t I n r).mpr hrn]
+
+/-- Elements of `completion t I` vanishing at residue level `1` lie in the Jacobson radical. -/
+theorem ker_eval_one_le_jacobson (t : R) (I : Ideal R) :
+    RingHom.ker (eval t I 1) ≤ Ring.jacobson (completion t I) := by
+  suffices hunit : ∀ z : completion t I, eval t I 1 z = 0 → IsUnit (1 - z) by
+    intro z hz
+    rw [Ring.mem_jacobson_iff]
+    intro y
+    have hzy : eval t I 1 (-(z * y)) = 0 := by
+      simp [RingHom.mem_ker.mp hz]
+    simpa only [sub_neg_eq_add, add_comm] using hunit (-(z * y)) hzy
+  intro z hz
+  have hnil (m : ℕ) : eval t I m z ^ (m + 1) = 0 := by
+    obtain ⟨r, hr⟩ := residueMap_surjective t I (max m 1) (eval t I (max m 1) z)
+    have hr1 : residueMap t I 1 r = 0 := by
+      rw [← transition_residueMap t I (le_max_right m 1) r, hr, transition_eval, hz]
+    have hrmem : r ∈ Ideal.span {t} * I := by
+      simpa only [filtrationIdeal_def, pow_one] using (residueMap_eq_zero_iff t I 1 r).mp hr1
+    have hpow : r ^ (m + 1) ∈ filtrationIdeal t I m := by
+      have hpow1 : r ^ (m + 1) ∈ filtrationIdeal t (I ^ (m + 1)) (m + 1) := by
+        rw [← pow_span_singleton_mul]
+        exact Ideal.pow_mem_pow hrmem (m + 1)
+      exact (filtrationIdeal_mono_right t (Ideal.pow_le_self (Nat.succ_ne_zero m)) (m + 1)).trans
+        (filtrationIdeal_antitone t I (Nat.le_succ m)) hpow1
+    have hrm : eval t I m z = residueMap t I m r := by
+      rw [← transition_eval t I (le_max_left m 1) z, ← hr, transition_residueMap]
+    rw [hrm, ← map_pow, (residueMap_eq_zero_iff t I m _).mpr hpow]
+  let g : ∀ m, Residue t I m := fun m ↦ ∑ k ∈ Finset.range (m + 1), eval t I m z ^ k
+  have hg : g ∈ completionSubring t I := by
+    rw [mem_completionSubring]
+    intro m n hmn
+    simp only [g, map_sum, map_pow, transition_eval]
+    refine (Finset.sum_subset (Finset.range_mono (Nat.succ_le_succ hmn)) fun k _ hkm ↦ ?_).symm
+    have hle : m + 1 ≤ k := Nat.not_lt.mp (mt Finset.mem_range.mpr hkm)
+    rw [← Nat.add_sub_cancel' hle, pow_add, hnil m, zero_mul]
+  refine IsUnit.of_mul_eq_one ⟨g, hg⟩ (completion_ext fun m ↦ ?_)
+  have hg_eval : eval t I m ⟨g, hg⟩ = g m := eval_apply t I m ⟨g, hg⟩
+  rw [map_mul, map_sub, map_one, hg_eval]
+  simp only [g, mul_neg_geom_sum, hnil m, sub_zero]
 
 end TauCeti.HenselianApproximation
