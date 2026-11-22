@@ -351,10 +351,19 @@ theorem isClosed_basedCyclicDistanceCut [T1Space X] (δ : Fin (n + 1) → ℝ) (
   rw [basedCyclicDistanceCut_eq_inter]
   exact (isClosed_cyclicDistanceCut δ).inter (isClosed_singleton.preimage (continuous_apply 0))
 
-/-- In a compact `T₁` space the based distance cut is compact. -/
-theorem isCompact_basedCyclicDistanceCut [CompactSpace X] [T1Space X] (δ : Fin (n + 1) → ℝ)
-    (x : X) : IsCompact (basedCyclicDistanceCut δ x) :=
-  (isClosed_basedCyclicDistanceCut δ x).isCompact
+/-- In a compact space the based distance cut is compact: it is the closed distance cut
+intersected with the compact fibre `{x} × Xⁿ`. -/
+theorem isCompact_basedCyclicDistanceCut [CompactSpace X] (δ : Fin (n + 1) → ℝ) (x : X) :
+    IsCompact (basedCyclicDistanceCut δ x) := by
+  have hfib : (fun q : Fin (n + 1) → X ↦ q 0) ⁻¹' {x} =
+      Set.range fun r : Fin n → X ↦ (Fin.cons x r : Fin (n + 1) → X) := by
+    ext q
+    refine ⟨fun h ↦ ⟨Fin.tail q, h ▸ Fin.cons_self_tail q⟩, ?_⟩
+    rintro ⟨r, rfl⟩
+    simp
+  rw [basedCyclicDistanceCut_eq_inter, hfib]
+  exact (isCompact_range (continuous_const.finCons continuous_id)).inter_left
+    (isClosed_cyclicDistanceCut δ)
 
 /-- The constant tuple at `x` lies in the based distance cut at `x` for nonnegative cut-offs. -/
 theorem const_mem_basedCyclicDistanceCut {δ : Fin (n + 1) → ℝ} (hδ : 0 ≤ δ) (x : X) :
