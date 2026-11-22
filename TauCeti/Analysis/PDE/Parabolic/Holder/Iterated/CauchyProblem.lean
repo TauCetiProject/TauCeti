@@ -14,7 +14,6 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.OfDeriv
 import TauCeti.Analysis.Holder.CompLinear
 import TauCeti.Analysis.Holder.Inclusion
-import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Higher regularity for the parabolic Cauchy problem
@@ -71,43 +70,13 @@ section Lower
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-/-- A parabolic Hölder map of order `j + i` is one of order `j`. -/
-private theorem exists_coe_eq_of_add (hα : α ≤ 1) {j : ℕ} :
-    ∀ (i : ℕ) (A : ParabolicCkHolderSpace (j + i) α E F hab),
-      ∃ B : ParabolicCkHolderSpace j α E F hab, ⇑B = ⇑A
-  | 0, A => ⟨A, rfl⟩
-  | i + 1, A => by
-    obtain ⟨B, hB⟩ := exists_coe_eq_of_add hα i (ParabolicCkHolderSpace.inclusionL hα A)
-    exact ⟨B, hB.trans (funext (ParabolicCkHolderSpace.inclusionL_apply hα A))⟩
-
-/-- A parabolic Hölder map of order `k` is one of every order `j ≤ k`. -/
-private theorem exists_coe_eq_of_le (hα : α ≤ 1) {j k : ℕ} (h : j ≤ k)
-    (A : ParabolicCkHolderSpace k α E F hab) :
-    ∃ B : ParabolicCkHolderSpace j α E F hab, ⇑B = ⇑A := by
-  obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le h
-  exact exists_coe_eq_of_add hα i A
-
-/-- A parabolic Hölder map of order `k` lies in `C_b^{α,α/2}`. -/
-private theorem exists_holderSpace_coe_eq (hα : α ≤ 1) {k : ℕ}
-    (A : ParabolicCkHolderSpace k α E F hab) :
-    ∃ X : HolderSpace α (slab (E := E) a b) F, ⇑X = ⇑A := by
-  obtain ⟨B, hB⟩ := exists_coe_eq_of_le hα k.zero_le A
-  exact ⟨ParabolicCkHolderSpace.equivHolderSpace B,
-    funext fun p ↦ (ParabolicCkHolderSpace.equivHolderSpace_apply B p).trans (congrFun hB p)⟩
-
-/-- A bounded `C^{j+i,α}` map is a bounded `C^{j,α}` map. -/
-private theorem exists_ckHolderSpace_coe_eq_of_add (hα : α ≤ 1) {j : ℕ} :
-    ∀ (i : ℕ) (G : CkHolderSpace (j + i) α E F), ∃ G' : CkHolderSpace j α E F, ⇑G' = ⇑G
-  | 0, G => ⟨G, rfl⟩
-  | i + 1, G => by
-    obtain ⟨G', hG'⟩ := exists_ckHolderSpace_coe_eq_of_add hα i (CkHolderSpace.inclusionSuccL hα G)
-    exact ⟨G', hG'.trans (CkHolderSpace.coe_inclusionSuccL hα G)⟩
-
-/-- A bounded `C^{k,α}` map is a bounded `C^{j,α}` map for every `j ≤ k`. -/
-private theorem exists_ckHolderSpace_coe_eq_of_le (hα : α ≤ 1) {j k : ℕ} (h : j ≤ k)
-    (G : CkHolderSpace k α E F) : ∃ G' : CkHolderSpace j α E F, ⇑G' = ⇑G := by
-  obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le h
-  exact exists_ckHolderSpace_coe_eq_of_add hα i G
+/-- A map with the values of a parabolic Hölder map of order `k + 1` has those of one of order
+`k`. -/
+private theorem exists_coe_eq_of_exists_succ (hα : α ≤ 1) {k : ℕ} {X : slab (E := E) a b → F}
+    (hX : ∃ A : ParabolicCkHolderSpace (k + 1) α E F hab, ⇑A = X) :
+    ∃ A : ParabolicCkHolderSpace k α E F hab, ⇑A = X :=
+  hX.elim fun A hA ↦
+    (ParabolicCkHolderSpace.exists_coe_eq_of_le hα k.le_succ A).imp fun _ h ↦ h.trans hA
 
 end Lower
 
@@ -151,7 +120,7 @@ private theorem exists_hasLineDerivAt (hα : α ≤ 1) {k : ℕ}
           HasLineDerivAt ℝ (fun y ↦ X (slabMk y t)) (X' (slabMk x t)) x e := by
   set A' := ParabolicCkHolderSpace.compLeftL (ContinuousLinearMap.apply ℝ F e)
     (ParabolicCkHolderSpace.spatialFDerivL k α E F hab A)
-  obtain ⟨X', hX'⟩ := exists_holderSpace_coe_eq hα A'
+  obtain ⟨X', hX'⟩ := ParabolicCkHolderSpace.exists_holderSpace_coe_eq hα A'
   refine ⟨X', ⟨A', hX'.symm⟩, fun t x ↦ ?_⟩
   have hd := (A.hasSpatialFDerivAt t x).hasLineDerivAt e
   rw [hA] at hd
@@ -168,7 +137,7 @@ private theorem exists_fderiv_apply_eq (hα : α ≤ 1) {k : ℕ}
         ∀ x, fderiv ℝ g x e = g' x := by
   set G' := CkHolderSpace.compLeftL (ContinuousLinearMap.apply ℝ F e)
     (CkHolderSpace.fderivL (k + 2) α E F G)
-  obtain ⟨g', hg'⟩ := exists_ckHolderSpace_coe_eq_of_le hα (by omega : 2 ≤ k + 2) G'
+  obtain ⟨g', hg'⟩ := CkHolderSpace.exists_coe_eq_of_le hα (by omega : 2 ≤ k + 2) G'
   refine ⟨g', ⟨G', hg'.symm⟩, fun x ↦ ?_⟩
   rw [hg', CkHolderSpace.compLeftL_apply, ContinuousLinearMap.apply_apply,
     CkHolderSpace.fderivL_apply, hG]
@@ -258,7 +227,7 @@ private theorem exists_apply_eq_spatialFDerivL_apply (hα₀ : 0 < α) (hα₁ :
   choose B' hB' using hb'k
   obtain ⟨C', hC'⟩ := hc'k
   obtain ⟨F', hF'⟩ := hf'k
-  obtain ⟨U₀, hU₀⟩ := exists_coe_eq_of_le hα₁.le (by omega : k ≤ k + 2) U
+  obtain ⟨U₀, hU₀⟩ := ParabolicCkHolderSpace.exists_coe_eq_of_le hα₁.le (by omega : k ≤ k + 2) U
   have hW₁ := spatialFDerivL_eq_of_coe_eq hU
   obtain ⟨Z, hZ⟩ := exists_apply_eq_add_sum hα₁.le A' B' C' F' U₀
     (ParabolicCkHolderSpace.spatialFDerivL (k + 1) α _ ℝ hT U)
@@ -291,19 +260,21 @@ private theorem exists_coe_eq_succ (hα₀ : 0 < α) (hα₁ : α < 1) {k : ℕ}
   set u := (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)
   -- By the induction hypothesis `u` has order `k + 2`.
   obtain ⟨G₀, hG₀⟩ := hgk
-  obtain ⟨G₁, hG₁⟩ := exists_ckHolderSpace_coe_eq_of_le hα₁.le (by omega : k + 2 ≤ k + 3) G₀
-  have hlow {X : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-      (hX : ∃ A : ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT, ⇑A = ⇑X) :
-      ∃ A : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT, ⇑A = ⇑X :=
-    hX.elim fun A hA ↦ (exists_coe_eq_of_le hα₁.le k.le_succ A).imp fun _ h ↦ h.trans hA
-  obtain ⟨U, hU⟩ := ih f g (hlow hfk) ⟨G₁, hG₁.trans hG₀⟩
+  obtain ⟨G₁, hG₁⟩ := CkHolderSpace.exists_coe_eq_of_le hα₁.le (by omega : k + 2 ≤ k + 3) G₀
+  obtain ⟨U, hU⟩ := ih f g (exists_coe_eq_of_exists_succ hα₁.le hfk) ⟨G₁, hG₁.trans hG₀⟩
   -- Its gradient has order `k + 2`, assembled from the directional derivatives.
   choose V hV using fun l ↦ exists_apply_eq_spatialFDerivL_apply hα₀ hα₁ ih hak hbk hck hfk
     ⟨G₀, hG₀⟩ hU (EuclideanSpace.single l 1)
   set Gr := ∑ l, ParabolicCkHolderSpace.compLeftL
     ((ContinuousLinearMap.id ℝ ℝ).smulRight (EuclideanSpace.proj (𝕜 := ℝ) l)) (V l)
   have hGr (p : slab (E := EuclideanSpace ℝ ι) 0 T) : Gr p = spatialFDerivL u p := by
-    simpa [Gr, Finset.sum_apply, hV] using EuclideanSpace.sum_smul_proj (spatialFDerivL u p)
+    have hcoord (l : ι) : (EuclideanSpace.basisFun ι ℝ).toBasis.coord l =
+        (EuclideanSpace.proj l : EuclideanSpace ℝ ι →L[ℝ] ℝ) :=
+      LinearMap.ext fun v ↦ by simp [Module.Basis.coord_apply]
+    refine ContinuousLinearMap.coe_injective ?_
+    simpa [Gr, Finset.sum_apply, hV, EuclideanSpace.basisFun_apply, hcoord] using
+      (EuclideanSpace.basisFun ι ℝ).toBasis.sum_dual_apply_smul_coord
+        (spatialFDerivL u p : Module.Dual ℝ (EuclideanSpace ℝ ι))
   -- By the equation, its time derivative has order `k + 1`.
   choose A hA using hak
   choose B hB using hbk
@@ -349,12 +320,10 @@ theorem exists_coe_eq_euclideanInitialDataCLE_symm_apply (hα₀ : 0 < α) (hα�
     exact ⟨ParabolicCkHolderSpace.equivParabolicC2HolderSpace.symm _,
       ParabolicCkHolderSpace.coe_equivParabolicC2HolderSpace_symm _⟩
   | succ k ih =>
-    have hlow {X : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-        (hX : ∃ A : ParabolicCkHolderSpace (k + 1) α (EuclideanSpace ℝ ι) ℝ hT, ⇑A = ⇑X) :
-        ∃ A : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT, ⇑A = ⇑X :=
-      hX.elim fun A hA ↦ (exists_coe_eq_of_le hα₁.le k.le_succ A).imp fun _ h ↦ h.trans hA
     exact exists_coe_eq_succ hα₀ hα₁
-      (fun f' g' hf' hg' ↦ ih (fun i j ↦ hlow (hak i j)) (fun i ↦ hlow (hbk i)) (hlow hck) hf' hg')
+      (fun f' g' hf' hg' ↦ ih (fun i j ↦ exists_coe_eq_of_exists_succ hα₁.le (hak i j))
+        (fun i ↦ exists_coe_eq_of_exists_succ hα₁.le (hbk i))
+        (exists_coe_eq_of_exists_succ hα₁.le hck) hf' hg')
       hak hbk hck hfk hgk
 
 end Euclidean
