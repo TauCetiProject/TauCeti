@@ -49,9 +49,6 @@ constant.
   `TauCeti.PDE.exists_forall_energyFormH1_sub_eq_neg_setIntegral_inner`: subtracting boundary
   values `g` whose value is `K₁`-Lipschitz on `Ω`, the difference `u - g` solves the equation with
   the datum `F + a ∇g`, of `L^q` norm at most `‖F‖_{L^q} + Λ K₁ |Ω|^(1/q)`.
-* `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inner`: for the
-  equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with `f ∈ Lʳ(Ω)`, `r > 1`, `n (2 - r) < 2 r`, subtracting the
-  weak solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f` leaves the divergence datum alone.
 * `TauCeti.PDE.exists_ae_eq_and_holderOnWith_of_measureReal_ball_diff_divergence`: for boundary
   values `G` with `|G| ≤ K₀` and Lipschitz constant `K₁` on `Ω`, the solution agrees almost
   everywhere on `Ω` with a function that is `α`-Hölder on `Ω` with constant
@@ -403,39 +400,6 @@ theorem exists_ae_eq_and_holderOnWith_of_measureReal_ball_diff_divergence
       (mul_nonneg (mul_nonneg h.upper_nonneg K₁.coe_nonneg) (by positivity)))) hlam.le
   rw [mul_div_assoc, mul_div_assoc, mul_assoc]
   gcongr
-
-/-- **Splitting off a scalar datum.** Let `n ≥ 1` be the dimension and let `r > 1` with
-`n (2 - r) < 2 r`, that is `r > 2n/(n+2)`, the range in which `v ↦ ∫_Ω f v` is continuous on
-`H¹₀(Ω)`; this holds in particular for `r > n/2`. On `Ω` of finite measure, let `a` be
-measurable and uniformly elliptic, let `f ∈ Lʳ(Ω)`, and let `u ∈ H¹(Ω)` satisfy
-`a(u, v) = ∫_Ω f v - ∫_Ω F · ∇v` for every `v ∈ H¹₀(Ω)`, the weak form of
-`-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`. Then there is a weak solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f`, and
-`u - w` satisfies `a(u - w, v) = -∫_Ω F · ∇v` for every `v ∈ H¹₀(Ω)`: it solves the equation with
-the divergence datum alone and has the boundary values of `u`. -/
-theorem exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inner [Nonempty ι]
-    {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hfin : mu (Omega : Set (EuclideanSpace ℝ ι)) ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
-    (hrn : (Fintype.card ι : ℝ) * (2 - r) < 2 * r) {f : EuclideanSpace ℝ ι → ℝ}
-    (hf : MemLp f r (mu.restrict Omega)) {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    {u : W1p mu Omega 2}
-    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
-      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
-        ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) :
-    ∃ w : W1p0 mu Omega 2,
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
-        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) ∧
-      ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u - (w : W1p mu Omega 2)) (v : W1p mu Omega 2) =
-        -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu := by
-  obtain ⟨w, hw, -⟩ := h.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (c := 0)
-    (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hfin hr
-    hrn hf
-  have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
-    memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) h.upper_nonneg ha
-      aestronglyMeasurable_const aestronglyMeasurable_const (fun _ hx => h.upper_bound hx)
-      (fun _ _ => by simp) (fun _ _ => by simp)
-  exact ⟨w, hw, fun v => by rw [energyFormH1_sub_left (b := 0) (c := 0) hcoeff, hu v, hw v]; ring⟩
 
 end PDE
 
