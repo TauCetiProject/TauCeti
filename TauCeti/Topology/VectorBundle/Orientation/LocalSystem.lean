@@ -10,6 +10,7 @@ public import TauCeti.Topology.Homotopy.Monodromy.Basic
 public import TauCeti.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
+import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Topology.Homotopy.Covering
 
 /-!
@@ -220,6 +221,15 @@ theorem monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one (b : B)
     (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) g
 
 variable [FiniteDimensional ℝ F]
+
+/-- The fibres of the orientation local system are projective: evaluation at either orientation
+of the fibre identifies each of them with `R`. -/
+instance projective_signLocalSystem_obj (x : FundamentalGroupoid (TopCat.of B)) :
+    CategoryTheory.Projective ((signLocalSystem F E R hι).obj x) := by
+  obtain ⟨b⟩ := x
+  obtain ⟨⟨b', o⟩, rfl⟩ := surjective_proj (F := F) (E := E) hι b
+  have := Module.Projective.of_equiv (signLocalSystemFiberEquiv (R := R) hι o).symm
+  exact ModuleCat.projective_of_categoryTheory_projective _
 
 /-- **A non-orientable bundle has an orientation-reversing loop.** Over a connected, locally
 path-connected base, if `E` is not orientable, some loop at `b` acts by `-1` on the fibre of the
