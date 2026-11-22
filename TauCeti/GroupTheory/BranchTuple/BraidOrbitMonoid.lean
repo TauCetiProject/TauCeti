@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.PresentedMonoid.Basic
-public import TauCeti.GroupTheory.BranchTuple.Hurwitz
+public import TauCeti.GroupTheory.BranchTuple.Hurwitz.Basic
 import Mathlib.Tactic.Group
 import TauCeti.Data.List.ProdOfFn
 
