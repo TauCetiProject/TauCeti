@@ -113,6 +113,8 @@ computed in any chart, also on manifolds with boundary or corners
   `f^[j] x` of the orbit.
 * `HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub`: on a normed space, a fixed point at
   which `f` has derivative `D` is nondegenerate exactly when `1 - D` is injective.
+* `TauCeti.IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero`: on a finite-dimensional normed
+  space, `det (1 - df_x) ≠ 0` at a nondegenerate fixed point `x`.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
@@ -516,6 +518,15 @@ theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub {f : E �
   -- The tangent space `TangentSpace 𝓘(𝕜, E) x` is `E` by definition.
   exact forall_congr' fun v ↦ imp_congr_left
     ⟨fun h ↦ sub_eq_zero.2 h.symm, fun h ↦ (sub_eq_zero.1 h).symm⟩
+
+/-- **Nondegeneracy gives a nonzero determinant.** At a nondegenerate fixed point `x` of a self-map
+`f` of a finite-dimensional normed space, with its trivial chart, `det (1 - df_x) ≠ 0`. -/
+theorem IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero [FiniteDimensional 𝕜 E] {f : E → E}
+    {x : E} (h : IsNondegenerateFixedPt 𝓘(𝕜, E) f x) : (1 - fderiv 𝕜 f x).det ≠ 0 := by
+  have hD := (mdifferentiableAt_iff_differentiableAt.1 h.mdifferentiableAt).hasFDerivAt
+  rw [Ne, ContinuousLinearMap.det, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not,
+    LinearMap.ker_eq_bot]
+  exact (hD.isNondegenerateFixedPt_iff_injective_id_sub h.isFixedPt).1 h
 
 /-- **The fixed-point derivative of an iterate.** If `f` is differentiable at a fixed point `x`,
 the fixed-point derivative of `f^[n]` at `x` is the `n`-th power of that of `f`. -/
