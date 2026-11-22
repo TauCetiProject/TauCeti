@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Normed.Operator.Banach
 public import TauCeti.Analysis.PDE.HeatKernel.Resolvent
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Laplacian
-public import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakLaplacianLp
 import TauCeti.Analysis.PDE.HeatKernel.Generator
 import TauCeti.Analysis.PDE.Regularity.Hessian.Poisson
+import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -21,9 +21,10 @@ import TauCeti.MeasureTheory.Measure.Restrict
 Let `E` be a finite-dimensional real inner product space and `1 < p < ∞`. This file shows that
 `1 - Δ` is an isomorphism of Banach spaces
 
-`W^{2,p}(E) ≃ Lᵖ(E)`, `w ↦ w - tr D²w`
+`W^{2,p}(E) ≃ Lᵖ(E)`, `w ↦ w - Δw = w - tr D²w`
 
-(`TauCeti.Wkp.oneSubLaplacianEquiv`), where `D²w` is the weak Hessian, and that its inverse is
+(`TauCeti.Wkp.oneSubLaplacianEquiv`), where `Δ` is the weak Laplacian `TauCeti.Wkp.laplacianL` and
+`D²w` is the weak Hessian, and that its inverse is
 convolution with the heat resolvent kernel `G₁ = ∫₀^∞ e^{-t} K_t dt`
 (`TauCeti.Wkp.value_oneSubLaplacianEquiv_symm_ae`).
 
@@ -42,16 +43,15 @@ So `v = G₁ ⋆ f` lies in `Lᵖ` with `Δv = v - f ∈ Lᵖ` in the sense of d
 `W^{2,p}` regularity for Poisson's equation
 (`TauCeti.exists_wkp_two_value_ae_eq_of_integral_laplacian_mul_eq`) it is the value of an element
 `w` of `W^{2,p}(E)` with `tr D²w = v - f`: `1 - Δ` is onto. Conversely, for `w ∈ W^{2,p}(E)` the
-trace of the weak Hessian is the distributional Laplacian of `w`, so `(w, tr D²w)` lies on the
-graph of `A`, and `(1 - A)⁻¹ (w - tr D²w) = w`. In particular `1 - Δ` is injective, and its inverse
+weak Laplacian is the distributional Laplacian of `w`, so `(w, Δw)` lies on the graph of `A`, and
+`(1 - A)⁻¹ (w - Δw) = w`. In particular `1 - Δ` is injective, and its inverse
 is bounded by the open mapping theorem.
 
 ## Main declarations
 
-* `TauCeti.Wkp.oneSubLaplacianL`: the bounded operator `w ↦ w - tr D²w` from `W^{2,p}(E)` to
-  `Lᵖ(E)`, which is `w - Δw` for the weak Laplacian
-  (`TauCeti.Wkp.oneSubLaplacianL_eq_value_sub_laplacianL`).
-* `TauCeti.Wkp.heatResolventKernel_convolution_oneSubLaplacianL_ae_eq`: `G₁ ⋆ (w - tr D²w) = w`.
+* `TauCeti.Wkp.oneSubLaplacianL`: the bounded operator `w ↦ w - Δw` from `W^{2,p}(E)` to
+  `Lᵖ(E)`, which is `w - tr D²w` almost everywhere (`TauCeti.Wkp.oneSubLaplacianL_ae`).
+* `TauCeti.Wkp.heatResolventKernel_convolution_oneSubLaplacianL_ae_eq`: `G₁ ⋆ (w - Δw) = w`.
 * `TauCeti.Wkp.oneSubLaplacianL_injective`, `TauCeti.Wkp.oneSubLaplacianL_surjective`: `1 - Δ` is
   a bijection for `1 < p < ∞`.
 * `TauCeti.Wkp.oneSubLaplacianEquiv`: `1 - Δ` as an isomorphism `W^{2,p}(E) ≃L[ℝ] Lᵖ(E)`.
@@ -77,72 +77,40 @@ open Filter MeasureTheory TopologicalSpace
 open scoped Convolution ENNReal Laplacian
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {p : ℝ≥0∞}
-
-/-- An element of `Lᵖ` of the volume restricted to the whole space, as a class in `Lᵖ(E)`. -/
-private def toVolumeLp (g : Lp ℝ p ((volume : Measure E).restrict (⊤ : Opens E))) :
-    Lp ℝ p (volume : Measure E) :=
-  ((Lp.memLp g).mono_measure (Measure.restrict_coe_opens_top (volume : Measure E)).ge).toLp g
-
-/-- The class `TauCeti.toVolumeLp g` is represented by `g`. -/
-private theorem coeFn_toVolumeLp (g : Lp ℝ p ((volume : Measure E).restrict (⊤ : Opens E))) :
-    (toVolumeLp g : E → ℝ) =ᵐ[volume] g :=
-  MemLp.coeFn_toLp _
-
-variable [Fact (1 ≤ p)]
+  [FiniteDimensional ℝ E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 namespace Wkp
 
-/-- **The operator `1 - Δ` on `W^{2,p}(E)`**: `w ↦ w - tr D²w`, where `D²w` is the weak Hessian. -/
+/-- **The operator `1 - Δ` on `W^{2,p}(E)`**: `w ↦ w - Δw`, where `Δ` is the weak Laplacian
+`TauCeti.Wkp.laplacianL`. -/
 def oneSubLaplacianL :
     Wkp (volume : Measure E) ⊤ p 2 →L[ℝ] Lp ℝ p ((volume : Measure E).restrict (⊤ : Opens E)) :=
-  valueL 2 - (traceCLM ℝ E).compLpL p _ ∘L iteratedGradientL 1
+  valueL 2 - valueL 0 ∘L laplacianL 0
 
 /-- The defining formula of `TauCeti.Wkp.oneSubLaplacianL`. -/
 theorem oneSubLaplacianL_apply (w : Wkp (volume : Measure E) ⊤ p 2) :
-    oneSubLaplacianL w = value 2 w - (traceCLM ℝ E).compLpL p _ (iteratedGradient 1 w) := by
+    oneSubLaplacianL w = value 2 w - value 0 (laplacianL 0 w) := by
   rw [oneSubLaplacianL, _root_.sub_apply, ContinuousLinearMap.comp_apply, valueL_apply,
-    iteratedGradientL_apply]
+    valueL_apply]
 
-/-- `TauCeti.Wkp.oneSubLaplacianL` sends `w` to the class of `x ↦ w(x) - tr D²w(x)`. -/
+/-- `TauCeti.Wkp.oneSubLaplacianL` sends `w` to the class of `x ↦ w(x) - tr D²w(x)`, where `D²w`
+is the weak Hessian. -/
 theorem oneSubLaplacianL_ae (w : Wkp (volume : Measure E) ⊤ p 2) :
     (oneSubLaplacianL w : E → ℝ) =ᵐ[volume]
       fun x ↦ value 2 w x - LinearMap.trace ℝ E (iteratedGradient 1 w x) := by
   rw [← Measure.ae_restrict_coe_opens_top]
-  filter_upwards [Lp.coeFn_sub (value 2 w) ((traceCLM ℝ E).compLpL p _ (iteratedGradient 1 w)),
-    (traceCLM ℝ E).coeFn_compLpL (iteratedGradient 1 w)] with x h₁ h₂
-  rw [oneSubLaplacianL_apply, h₁, Pi.sub_apply, h₂, traceCLM_apply]
+  filter_upwards [Lp.coeFn_sub (value 2 w) (value 0 (laplacianL 0 w)),
+    value_laplacianL_zero_ae_eq_trace w] with x h₁ h₂
+  rw [oneSubLaplacianL_apply, h₁, Pi.sub_apply, h₂]
 
-/-- `TauCeti.Wkp.oneSubLaplacianL` is `1 - Δ` for the weak Laplacian `TauCeti.Wkp.laplacianL`. -/
-theorem oneSubLaplacianL_eq_value_sub_laplacianL (w : Wkp (volume : Measure E) ⊤ p 2) :
-    oneSubLaplacianL w = value 2 w - value 0 (laplacianL 0 w) := by
-  refine Lp.ext ?_
-  filter_upwards [(Measure.ae_restrict_coe_opens_top (volume : Measure E)).symm ▸
-      oneSubLaplacianL_ae w, Lp.coeFn_sub (value 2 w) (value 0 (laplacianL 0 w)),
-    value_laplacianL_zero_ae_eq_trace w] with x h₁ h₂ h₃
-  rw [h₁, h₂, Pi.sub_apply, h₃]
-
-/-- The value of `w ∈ W^{2,p}(E)` and the trace of its weak Hessian lie on the graph of the
-distributional Laplacian on `Lᵖ(E)`. -/
+/-- The value of `w ∈ W^{2,p}(E)` and its weak Laplacian lie on the graph of the distributional
+Laplacian on `Lᵖ(E)`. -/
 private theorem mem_graph_weakLaplacianLp (w : Wkp (volume : Measure E) ⊤ p 2) :
-    (toVolumeLp (value 2 w), toVolumeLp ((traceCLM ℝ E).compLpL p _ (iteratedGradient 1 w))) ∈
+    (castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) (value 2 w),
+      castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) (value 0 (laplacianL 0 w))) ∈
       (weakLaplacianLp E ℝ p).graph := by
-  set T := (traceCLM ℝ E).compLpL p ((volume : Measure E).restrict (⊤ : Opens E))
-    (iteratedGradient 1 w)
-  have hloc : LocallyIntegrableOn (T : E → ℝ) ⊤ volume :=
-    (((Lp.memLp T).locallyIntegrable Fact.out).mono_measure
-      (Measure.restrict_coe_opens_top (volume : Measure E)).ge).locallyIntegrableOn _
-  have htr : (fun x ↦ LinearMap.trace ℝ E (iteratedGradient 1 w x)) =ᵐ[volume.restrict ⊤] T := by
-    filter_upwards [(traceCLM ℝ E).coeFn_compLpL (iteratedGradient 1 w)] with x hx
-    rw [hx, traceCLM_apply]
-  have h := (forall_integral_laplacian_smul_value_eq_iff w hloc).2 htr
   refine mem_graph_weakLaplacianLp_iff.2 fun φ ↦ ?_
-  calc ∫ x, Δ (φ : E → ℝ) x • toVolumeLp (value 2 w) x
-      = ∫ x, Δ (φ : E → ℝ) x • value 2 w x :=
-        integral_congr_ae ((coeFn_toVolumeLp (value 2 w)).mono fun x hx ↦ by simp only [hx])
-    _ = ∫ x, (φ : E → ℝ) x • T x := h φ
-    _ = ∫ x, φ x • toVolumeLp T x :=
-        integral_congr_ae ((coeFn_toVolumeLp T).mono fun x hx ↦ by simp only [hx])
+  simpa only [coeFn_castLpₗᵢ] using integral_laplacian_smul_value_eq_laplacianL 0 w φ
 
 /-- Convolution with the heat resolvent kernel `G₁` is the resolvent of the distributional
 Laplacian on `Lᵖ(E)` at `1`. -/
@@ -153,61 +121,48 @@ private theorem isResolventAt_weakLaplacianLp (hp_top : p ≠ ⊤) :
   exact isResolventAt_generator_heatSemigroup hp_top one_pos
 
 /-- **Convolution with `G₁` inverts `1 - Δ` on `W^{2,p}(E)`**: for `1 ≤ p < ∞` and
-`w ∈ W^{2,p}(E)`, `G₁ ⋆ (w - tr D²w) = w` almost everywhere, where `G₁` is the heat resolvent
+`w ∈ W^{2,p}(E)`, `G₁ ⋆ (w - Δw) = w` almost everywhere, where `G₁` is the heat resolvent
 kernel at `1`. -/
 theorem heatResolventKernel_convolution_oneSubLaplacianL_ae_eq (hp_top : p ≠ ⊤)
     (w : Wkp (volume : Measure E) ⊤ p 2) :
     heatResolventKernel 1 ⋆ (oneSubLaplacianL w : E → ℝ) =ᵐ[volume] value 2 w := by
-  set F := toVolumeLp (value 2 w)
-  set G := toVolumeLp ((traceCLM ℝ E).compLpL p _ (iteratedGradient 1 w))
+  set F := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) (value 2 w)
+  set G := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) (value 0 (laplacianL 0 w))
   have hR := ((LinearPMap.isResolventAt_iff_forall_mem_graph.1
     (isResolventAt_weakLaplacianLp (E := E) hp_top)).2 (F, G)) (mem_graph_weakLaplacianLp w)
   have hFG : ((1 : ℝ) • F - G : Lp ℝ p volume) =ᵐ[volume] oneSubLaplacianL w := by
     filter_upwards [Lp.coeFn_sub ((1 : ℝ) • F) G, Lp.coeFn_smul (1 : ℝ) F,
-      coeFn_toVolumeLp (value 2 w),
-      coeFn_toVolumeLp ((traceCLM ℝ E).compLpL p _ (iteratedGradient 1 w)),
-      (Lp.coeFn_sub (value 2 w) ((traceCLM ℝ E).compLpL p _ (iteratedGradient 1 w))).filter_mono
-        Measure.ae_le_ae_restrict_coe_opens_top] with x h₁ h₂ h₃ h₄ h₅
-    rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, one_smul, h₃, h₄, oneSubLaplacianL_apply, h₅,
-      Pi.sub_apply]
+      (Lp.coeFn_sub (value 2 w) (value 0 (laplacianL 0 w))).filter_mono
+        Measure.ae_le_ae_restrict_coe_opens_top] with x h₁ h₂ h₃
+    rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, one_smul, coeFn_castLpₗᵢ, coeFn_castLpₗᵢ,
+      oneSubLaplacianL_apply, h₃, Pi.sub_apply]
   rw [← convolution_congr (ContinuousLinearMap.lsmul ℝ ℝ) (EventuallyEq.refl _ _) hFG]
   refine (convolutionLp_ae_eq_convolution_coeFn hp_top (integrable_heatResolventKernel one_pos)
     _).symm.trans ?_
   rw [hR]
-  exact coeFn_toVolumeLp _
+  exact .of_forall (coeFn_castLpₗᵢ _ _)
 
-/-- **`1 - Δ` is injective on `W^{2,p}(E)`**: if `w - tr D²w = 0`, then `w = 0`. -/
+/-- **`1 - Δ` is injective on `W^{2,p}(E)`**: if `w - Δw = 0`, then `w = 0`. -/
 theorem oneSubLaplacianL_injective :
     Function.Injective (oneSubLaplacianL (E := E) (p := p)) := by
   refine (injective_iff_map_eq_zero oneSubLaplacianL).2 fun w hw ↦ ?_
-  -- The trace of the weak Hessian of `w` is its value, so `(w, 1 • w)` lies on the graph of the
+  -- The weak Laplacian of `w` is its value, so `(w, 1 • w)` lies on the graph of the
   -- distributional Laplacian.
-  set F := toVolumeLp (value 2 w)
-  set G := toVolumeLp ((traceCLM ℝ E).compLpL p _ (iteratedGradient 1 w))
-  have hFG : G = (1 : ℝ) • F := by
-    refine Lp.ext ?_
-    filter_upwards [oneSubLaplacianL_ae w, Lp.coeFn_smul (1 : ℝ) F, coeFn_toVolumeLp (value 2 w),
-      coeFn_toVolumeLp ((traceCLM ℝ E).compLpL p _ (iteratedGradient 1 w)),
-      ((traceCLM ℝ E).coeFn_compLpL (iteratedGradient 1 w)).filter_mono
-        Measure.ae_le_ae_restrict_coe_opens_top,
-      (Lp.coeFn_zero ℝ p _).filter_mono Measure.ae_le_ae_restrict_coe_opens_top]
-      with x h₁ h₂ h₃ h₄ h₅ h₆
-    rw [hw, h₆, Pi.zero_apply, eq_comm, sub_eq_zero] at h₁
-    rw [h₂, Pi.smul_apply, one_smul, h₃, h₄, h₅, traceCLM_apply, h₁]
-  have hmem : (F, G) ∈ (weakLaplacianLp E ℝ p).graph := mem_graph_weakLaplacianLp w
-  rw [hFG] at hmem
-  have hF : F = 0 := eq_zero_of_mem_graph_weakLaplacianLp_smul one_pos hmem
-  refine ext_ae ((coeFn_toVolumeLp (value 2 w)).symm.trans ?_)
-  rw [show toVolumeLp (value 2 w) = 0 from hF, value_zero']
-  exact (Lp.coeFn_zero ℝ p _).trans
-    ((Lp.coeFn_zero ℝ p _).filter_mono Measure.ae_le_ae_restrict_coe_opens_top).symm
+  rw [oneSubLaplacianL_apply, sub_eq_zero] at hw
+  have hmem := mem_graph_weakLaplacianLp w
+  rw [← hw] at hmem
+  have hF := eq_zero_of_mem_graph_weakLaplacianLp_smul one_pos
+    (f := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) (value 2 w))
+    (by rwa [one_smul])
+  rw [LinearIsometryEquiv.map_eq_zero_iff] at hF
+  exact Wkp.ext 2 (by rw [hF, value_zero'])
 
 /-- **`1 - Δ` is onto `Lᵖ(E)` from `W^{2,p}(E)`** for `1 < p < ∞`: every `f ∈ Lᵖ(E)` is
-`w - tr D²w` for some `w ∈ W^{2,p}(E)`. -/
+`w - Δw` for some `w ∈ W^{2,p}(E)`. -/
 theorem oneSubLaplacianL_surjective (hp : 1 < p) (hp_top : p ≠ ⊤) :
     Function.Surjective (oneSubLaplacianL (E := E) (p := p)) := by
   intro y
-  set y' := toVolumeLp y
+  set y' := castLpₗᵢ (𝕜 := ℝ) (Measure.restrict_coe_opens_top volume) y
   set R := convolutionLp hp_top (heatResolventKernel 1) (volume : Measure E) (F := ℝ)
   have hg := mem_graph_weakLaplacianLp_iff.1 ((LinearPMap.isResolventAt_iff_forall_mem_graph.1
     (isResolventAt_weakLaplacianLp (E := E) hp_top)).1 y')
@@ -217,12 +172,12 @@ theorem oneSubLaplacianL_surjective (hp : 1 < p) (hp_top : p ≠ ⊤) :
   refine ⟨w, Lp.ext ?_⟩
   rw [Filter.EventuallyEq, Measure.ae_restrict_coe_opens_top]
   filter_upwards [oneSubLaplacianL_ae w, hwv, hwtr, Lp.coeFn_sub ((1 : ℝ) • R y') y',
-    Lp.coeFn_smul (1 : ℝ) (R y'), coeFn_toVolumeLp y] with x h₁ h₂ h₃ h₄ h₅ h₆
-  rw [h₁, h₂, h₃, h₄, Pi.sub_apply, h₅, Pi.smul_apply, one_smul, ← h₆]
+    Lp.coeFn_smul (1 : ℝ) (R y')] with x h₁ h₂ h₃ h₄ h₅
+  rw [h₁, h₂, h₃, h₄, Pi.sub_apply, h₅, Pi.smul_apply, one_smul, coeFn_castLpₗᵢ]
   ring
 
-/-- **`1 - Δ` as an isomorphism `W^{2,p}(E) ≃ Lᵖ(E)`** for `1 < p < ∞`: `w ↦ w - tr D²w`, where
-`D²w` is the weak Hessian. Its inverse is convolution with the heat resolvent kernel
+/-- **`1 - Δ` as an isomorphism `W^{2,p}(E) ≃ Lᵖ(E)`** for `1 < p < ∞`: `w ↦ w - Δw`, where `Δ`
+is the weak Laplacian. Its inverse is convolution with the heat resolvent kernel
 (`TauCeti.Wkp.value_oneSubLaplacianEquiv_symm_ae`). -/
 def oneSubLaplacianEquiv (hp : 1 < p) (hp_top : p ≠ ⊤) :
     Wkp (volume : Measure E) ⊤ p 2 ≃L[ℝ] Lp ℝ p ((volume : Measure E).restrict (⊤ : Opens E)) :=
