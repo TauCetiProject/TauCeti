@@ -192,10 +192,7 @@ private theorem exists_continuous_apply_eq_mvfderiv_hamiltonianVectorField
       ∀ t, ∀ p ∈ K, Φ (t, e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p) := by
   have hemb : IsClosedEmbedding fun p : K ↦ e p :=
     hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj
-  have hXe : Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
-    (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
-      (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp)
-        (by simpa using hH)).continuous
+  have hXe := hω.continuous_mvfderiv_hamiltonianVectorField hH he
   -- The Tietze extension theorem along the closed embedding `ℝ × K → ℝ × F`.
   obtain ⟨Φ, hΦ⟩ := ContinuousMap.exists_extension' (IsClosedEmbedding.id.prodMap hemb)
     ⟨fun q : ℝ × K ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2),
