@@ -21,7 +21,7 @@ Building on `TauCeti.PLPath.dilationSimilarityHom` from
 `TauCeti.RepresentationTheory.LSPath.Similarity`, this file supplies the specialization to
 Littelmann's ambient integral-path crystal `normalCrystal hf hF`
 (`TauCeti.PLPath.dilationToNormalCrystalSimilarityHom`), compatibility with `embedHom`,
-`inclusionHom`, multiplicative composition, and `reverseIso` on duals.
+`inclusionHom`, multiplicative composition, and `reverseOnIso` / `reverseIso` on duals.
 
 Conversely, integrality of a dilated path does **not** descend to the original path for any
 magnification `1 < n`, even when the original path already has zero endpoint
@@ -49,10 +49,11 @@ construction.
   `TauCeti.PLPath.toStrictHom_dilationSimilarityHom_one`,
   `TauCeti.PLPath.toStrictHom_dilationToNormalCrystalSimilarityHom_one`,
   `TauCeti.PLPath.dilationSimilarityHom_comp`,
-  `TauCeti.PLPath.reverseIso_dilationToNormalCrystalSimilarityHom_dual_apply`: compatibility with
-  `inclusionHom` and `embedHom`, reduction at `n = 1` to `inclusionHom` and `embedHom`,
-  multiplicative composition, and agreement on underlying paths with `reverseIso` on dualized
-  dilation.
+  `TauCeti.PLPath.reverseOnIso_compSimilarityHom_dilationSimilarityHom_dual`,
+  `TauCeti.PLPath.reverseIso_compSimilarityHom_dilationToNormalCrystalSimilarityHom_dual`:
+  compatibility with `inclusionHom` and `embedHom`, reduction at `n = 1` to `inclusionHom` and
+  `embedHom`, multiplicative composition, and commuting squares with `reverseOnIso` / `reverseIso`
+  on duals.
 * `TauCeti.PLPath.exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath_of_isolated`,
   `TauCeti.PLPath.exists_isIntegralPath_map_natCast_smul_and_not_isIntegralPath`: for every
   `1 < n`, integrality of the `n`-dilation of `π` and `π.endpoint = 0` do not imply integrality of
@@ -192,15 +193,33 @@ theorem dilationSimilarityHom_comp (hf : Function.Injective f)
   NormalCrystal.SimilarityHom.ext fun _ ↦ Subtype.ext
     (by simp [map_map, LinearMap.comp_smul, smul_smul, Nat.cast_mul, mul_comm])
 
-/-- Applying `reverseIso` to the dual of `dilationToNormalCrystalSimilarityHom` agrees on
-underlying paths with dilating the reversed path. -/
-theorem reverseIso_dilationToNormalCrystalSimilarityHom_dual_apply (hf : Function.Injective f)
+/-- Reversing after dualized dilation equals dilating after reversing the source crystal. -/
+theorem reverseOnIso_compSimilarityHom_dilationSimilarityHom_dual (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {S T : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T)
+    {n : ℕ} (hn : 0 < n) (hST : ∀ ⦃π⦄, π ∈ S → π.map ((n : 𝕜) • LinearMap.id) ∈ T) :
+    (reverseOnIso hf hF hT).toStrictHom.compSimilarityHom
+        (dilationSimilarityHom hf hF hS hT hn hST).dual =
+      (dilationSimilarityHom hf hF (hS.preimage_reverse hF) (hT.preimage_reverse hF) hn
+        fun _ hπ ↦ by simpa only [Set.mem_preimage, map_reverse] using hST hπ).compStrictHom
+        (reverseOnIso hf hF hS).toStrictHom :=
+  NormalCrystal.SimilarityHom.ext fun _ ↦ Subtype.ext (by simp [map_reverse])
+
+/-- Reversing in `normalCrystal` after dualized `dilationToNormalCrystalSimilarityHom` equals
+dilating after reversing the source crystal. -/
+theorem reverseIso_compSimilarityHom_dilationToNormalCrystalSimilarityHom_dual
+    (hf : Function.Injective f)
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     {S : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) {n : ℕ} (hn : 0 < n)
-    (hmap : ∀ ⦃π⦄, π ∈ S → IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id))) (x : S) :
-    (reverseIso hf hF ((dilationToNormalCrystalSimilarityHom hf hF hS hn hmap).dual x)).val =
-      x.val.reverse.map ((n : 𝕜) • LinearMap.id) := by
-  simp [map_reverse]
+    (hmap : ∀ ⦃π⦄, π ∈ S → IsIntegralPath b f F (π.map ((n : 𝕜) • LinearMap.id))) :
+    (reverseIso hf hF).toStrictHom.compSimilarityHom
+        (dilationToNormalCrystalSimilarityHom hf hF hS hn hmap).dual =
+      (dilationToNormalCrystalSimilarityHom hf hF (hS.preimage_reverse hF) hn
+        fun _ hπ ↦ by
+          simpa only [Set.mem_preimage, map_reverse, isIntegralPath_reverse_iff hF] using
+            hmap hπ).compStrictHom
+        (reverseOnIso hf hF hS).toStrictHom :=
+  NormalCrystal.SimilarityHom.ext fun _ ↦ Subtype.ext (by simp [map_reverse])
 
 end DilationHom
 

@@ -46,8 +46,8 @@ rank-one/isolated-node string examples:
 * `TauCeti.PLPath.centralStraightIso`, `TauCeti.PLPath.centralHom`, `TauCeti.PLPath.oneHom`:
   central straight paths and the constant path `1` as strict morphisms from
   `TauCeti.NormalCrystal.central`.
-* `TauCeti.PLPath.reverseIso`: path reversal as a strict crystal isomorphism from
-  `(normalCrystal hf hF).dual` to `normalCrystal hf hF`.
+* `TauCeti.PLPath.reverseOnIso`, `TauCeti.PLPath.reverseIso`: path reversal as strict crystal
+  isomorphisms on `(normalCrystalOn hf hF hS).dual` and `(normalCrystal hf hF).dual`.
 * `TauCeti.PLPath.mulOnHom`, `TauCeti.PLPath.mulHom`: path concatenation as strict crystal
   morphisms from the Kashiwara tensor product.
 * `TauCeti.PLPath.mapHom`, `TauCeti.PLPath.mapIso`: strict crystal morphisms and isomorphisms
@@ -231,6 +231,38 @@ theorem IsIntegralPath.reverse
     {π : PLPath 𝕜 V} (h : IsIntegralPath b f F π) :
     IsIntegralPath b f F π.reverse :=
   (isIntegralPath_reverse_iff hF).mpr h
+
+/-- Path reversal realizes crystal duality on any crystal-admissible set `S`, giving a strict
+isomorphism from `(normalCrystalOn hf hF hS).dual` to
+`normalCrystalOn hf hF (hS.preimage_reverse hF)`. -/
+noncomputable def reverseOnIso (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {S : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) :
+    NormalCrystal.StrictIso (normalCrystalOn hf hF hS).dual
+      (normalCrystalOn hf hF (hS.preimage_reverse hF)) where
+  toEquiv :=
+    { toFun := fun π ↦
+        ⟨π.val.reverse, by simpa only [Set.mem_preimage, reverse_reverse] using π.property⟩
+      invFun := fun π ↦ ⟨π.val.reverse, π.property⟩
+      left_inv := fun π ↦ Subtype.ext (reverse_reverse π.val)
+      right_inv := fun π ↦ Subtype.ext (reverse_reverse π.val) }
+  wt_toFun π := hf (by simp)
+  e_toFun i π := by simp [normalCrystalOn_e_eq_map_iff, raise_reverse]
+
+@[simp]
+theorem reverseOnIso_apply (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {S : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (π : S) :
+    (reverseOnIso hf hF hS π).val = π.val.reverse :=
+  (rfl)
+
+@[simp]
+theorem reverseOnIso_symm_apply (hf : Function.Injective f)
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {S : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (π : ↑(reverse ⁻¹' S)) :
+    ((reverseOnIso hf hF hS).symm π).val = π.val.reverse := by
+  have h := congrArg (fun x ↦ x.val.reverse) ((reverseOnIso hf hF hS).apply_symm_apply π)
+  rwa [reverseOnIso_apply, reverse_reverse] at h
 
 /-- **Path reversal realizes crystal duality**: `π ↦ π.reverse` is a strict isomorphism from the
 dual of Littelmann's integral-path crystal to itself. -/

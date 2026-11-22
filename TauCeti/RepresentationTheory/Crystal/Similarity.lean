@@ -339,6 +339,11 @@ theorem comp_assoc {B''' : Type*} {d'' : NormalCrystal P b B'''} {k : ℕ}
     (θ.comp χ).comp ψ = (Nat.mul_assoc k m n).symm ▸ θ.comp (χ.comp ψ) :=
   eq_cast_of_forall (Nat.mul_assoc k m n).symm fun _ ↦ rfl
 
+@[simp]
+theorem toStrictHom_comp (χ : SimilarityHom 1 d d') (ψ : SimilarityHom 1 c d) :
+    (χ.comp ψ).toStrictHom = χ.toStrictHom.comp ψ.toStrictHom :=
+  StrictHom.ext fun _ ↦ by simp; rfl
+
 /-- Precomposing a scale-factor-`n` similarity morphism with a strict crystal morphism keeps the
 scale factor definitionally equal to `n`. -/
 def compStrictHom (ψ : SimilarityHom n d d') (φ : StrictHom c d) : SimilarityHom n c d' where
@@ -371,6 +376,11 @@ theorem comp_compStrictHom {B''' : Type*} {d'' : NormalCrystal P b B'''}
     (θ : SimilarityHom m d' d'') (χ : SimilarityHom n d d') (φ : StrictHom c d) :
     (θ.comp χ).compStrictHom φ = θ.comp (χ.compStrictHom φ) :=
   (rfl)
+
+@[simp]
+theorem toStrictHom_compStrictHom (ψ : SimilarityHom 1 d d') (φ : StrictHom c d) :
+    (ψ.compStrictHom φ).toStrictHom = ψ.toStrictHom.comp φ :=
+  StrictHom.ext fun _ ↦ by simp
 
 /-- A similarity morphism induces a similarity morphism of the same scale factor between the dual
 crystals. -/
@@ -552,5 +562,12 @@ theorem SimilarityHom.comp_compSimilarityHom {B''' : Type*} {d'' : NormalCrystal
     (θ : SimilarityHom m d' d'') (φ : StrictHom d d') (ψ : SimilarityHom n c d) :
     θ.comp (φ.compSimilarityHom ψ) = (θ.compStrictHom φ).comp ψ :=
   (rfl)
+
+@[simp]
+theorem SimilarityHom.toStrictHom_compSimilarityHom
+    {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''}
+    (φ : StrictHom d d') (ψ : SimilarityHom 1 c d) :
+    (φ.compSimilarityHom ψ).toStrictHom = φ.comp ψ.toStrictHom :=
+  StrictHom.ext fun _ ↦ by simp
 
 end TauCeti.NormalCrystal
