@@ -82,9 +82,9 @@ noncomputable def orderSignHom : Additive Rˣ →+ ZMod 2 :=
 
 @[simp] theorem orderSignHom_ofMul (a : Rˣ) :
     orderSignHom R (Additive.ofMul a) = orderSign a := by
-  change additiveIntUnitsAddEquiv
-      (Additive.ofMul (Units.signEquiv R (QuotientGroup.mk a))) = orderSign a
-  rw [additiveIntUnitsAddEquiv_apply, toMul_ofMul, orderSign_def]
+  simp only [orderSignHom, AddMonoidHom.comp_apply, AddEquiv.toAddMonoidHom_eq_coe,
+    MonoidHom.coe_toAdditive, Function.comp_apply, toMul_ofMul, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, QuotientGroup.coe_mk', orderSign_def]
   rcases lt_or_gt_of_ne a.ne_zero with ha | ha
   · have hs : Units.signEquiv R (QuotientGroup.mk a) = -1 :=
       (Units.signEquiv_mk_eq_neg_one_iff a).mpr ha

@@ -180,10 +180,9 @@ theorem induction {P : MilnorK R → Prop}
 /-- Two `ℤ`-algebra homomorphisms out of `MilnorK R` agree when they agree on units. -/
 @[ext 1200] theorem hom_ext {A : Type v} [Semiring A] [Algebra ℤ A] {f g : MilnorK R →ₐ[ℤ] A}
     (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g :=
-  AlgHom.ext fun x => by
-    obtain ⟨t, rfl⟩ := RingQuot.mkRingHom_surjective (milnorRel R) x
-    exact DFunLike.congr_fun (TensorAlgebra.hom_ext (f := f.comp (quotient R).toIntAlgHom)
-      (g := g.comp (quotient R).toIntAlgHom) (LinearMap.ext fun u => h (Additive.toMul u))) t
+  RingQuot.ringQuot_ext' ℤ f g <| TensorAlgebra.hom_ext <| LinearMap.ext fun u => by
+    simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
+      ← AlgHom.coe_toRingHom, RingQuot.mkAlgHom_coe, quotient_ι] using h (Additive.toMul u)
 
 section Lift
 
@@ -202,9 +201,6 @@ def lift : MilnorK R →+* A :=
 @[simp] theorem lift_ofUnit (a : Rˣ) : lift R f hf (ofUnit a) = f (Additive.ofMul a) := by
   rw [ofUnit_def, lift, RingQuot.lift_mkRingHom_apply]
   exact TensorAlgebra.lift_ι_apply f.toIntLinearMap (Additive.ofMul a)
-@[simp] theorem lift_quotient (t : TensorAlgebra ℤ (Additive Rˣ)) :
-    lift R f hf (quotient R t) = TensorAlgebra.lift ℤ f.toIntLinearMap t :=
-  RingQuot.lift_mkRingHom_apply _ _ t
 theorem lift_symbol (l : List Rˣ) :
     lift R f hf (symbol l) = (l.map fun a => f (Additive.ofMul a)).prod := by
   simp [symbol_def, map_list_prod, Function.comp_def]

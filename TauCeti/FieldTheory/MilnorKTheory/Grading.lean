@@ -346,12 +346,17 @@ end GradedLift
 /-- Canonical surjective `ℤ`-linear map from `⨂[ℤ]^n (Additive Rˣ)` onto `MilnorK.degree R n`. -/
 noncomputable def tensorPowerToDegree (R : Type u) [CommSemiring R] (n : ℕ) :
     TensorPower ℤ n (Additive Rˣ) →ₗ[ℤ] degree R n :=
-  ((quotient R).toIntAlgHom.toLinearMap.comp TensorPower.toTensorAlgebra).codRestrict
-    (degree R n) fun x => Submodule.mem_map_of_mem (TensorAlgebra.toTensorAlgebra_mem_range_ι_pow x)
+  (((quotient R).toIntAlgHom.toLinearMap.domRestrict _).codRestrict (degree R n)
+      fun x => Submodule.mem_map_of_mem x.property).comp
+    (TensorAlgebra.rangePowEquivTensorPower n).symm.toLinearMap
 
 /-- Unfolding lemma for `TauCeti.MilnorK.tensorPowerToDegree`. -/
 theorem tensorPowerToDegree_coe (n : ℕ) (x : TensorPower ℤ n (Additive Rˣ)) :
-    (tensorPowerToDegree R n x : MilnorK R) = quotient R (TensorPower.toTensorAlgebra x) := by rfl
+    (tensorPowerToDegree R n x : MilnorK R) = quotient R (TensorPower.toTensorAlgebra x) := by
+  have h : (tensorPowerToDegree R n x : MilnorK R) =
+      quotient R ((TensorAlgebra.rangePowEquivTensorPower n).symm x :
+        TensorAlgebra ℤ (Additive Rˣ)) := rfl
+  rw [h, TensorAlgebra.rangePowEquivTensorPower_symm_apply]
 @[simp] theorem tensorPowerToDegree_tprod (n : ℕ) (v : Fin n → Additive Rˣ) :
     (tensorPowerToDegree R n (PiTensorProduct.tprod ℤ v) : MilnorK R) =
       symbol (List.ofFn fun i => Additive.toMul (v i)) := by
@@ -359,11 +364,12 @@ theorem tensorPowerToDegree_coe (n : ℕ) (x : TensorPower ℤ n (Additive Rˣ))
 
 theorem tensorPowerToDegree_surjective (R : Type u) [CommSemiring R] (n : ℕ) :
     Function.Surjective (tensorPowerToDegree R n) := by
-  rintro ⟨x, hx⟩
-  rw [degree] at hx
+  rintro ⟨_, hx⟩
   obtain ⟨t, ht, rfl⟩ := Submodule.mem_map.mp hx
-  exact ⟨tensorPowerProjection n t, Subtype.ext (by
-    simp [tensorPowerToDegree_coe, TensorAlgebra.toTensorAlgebra_tensorPowerProjection_of_mem ht])⟩
+  refine ⟨TensorAlgebra.rangePowEquivTensorPower n ⟨t, ht⟩, Subtype.ext ?_⟩
+  dsimp only [tensorPowerToDegree, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [LinearEquiv.symm_apply_apply]
+  rfl
 
 theorem ker_tensorPowerToDegree (R : Type u) [CommSemiring R] (n : ℕ) :
     LinearMap.ker (tensorPowerToDegree R n) = milnorTensorRel R n := by
@@ -564,17 +570,17 @@ section Map
 variable {S T : Type*} [CommSemiring S] [CommSemiring T]
 
 /-- Graded ring homomorphism `degree R →+*ᵍ degree S` induced by `f : R →+* S`. -/
-def gradedMap (f : R →+* S) : degree R →+*ᵍ degree S :=
-  gradedLift R (degree S) ((ofUnitHom S).comp (MonoidHom.toAdditive (Units.map f.toMonoidHom)))
-    (fun a => by simpa using ofUnit_mem_degree_one (Units.map f.toMonoidHom a))
-    (fun a b hab => by
-      simpa using ofUnit_mul_ofUnit_eq_zero (R := S) (a := Units.map f.toMonoidHom a)
-        (b := Units.map f.toMonoidHom b) (by simp [← map_add, hab]))
+def gradedMap (f : R →+* S) : degree R →+*ᵍ degree S where
+  toRingHom := map f
+  map_mem {n _} hx := by
+    rw [degree, Submodule.map_pow, ← LinearMap.range_comp] at hx ⊢
+    refine AlgHom.apply_mem_pow_of_mem_pow (map f).toIntAlgHom ?_ hx
+    rintro _ ⟨_, ⟨u, rfl⟩, rfl⟩
+    exact ⟨Additive.ofMul (Units.map f.toMonoidHom (Additive.toMul u)), by
+      simp [quotient_ι, map_ofUnit]⟩
 
-@[simp] theorem gradedMap_toRingHom (f : R →+* S) : (gradedMap f).toRingHom = map f :=
-  ringHom_ext fun _ => by simp [gradedMap]
-@[simp] theorem gradedMap_apply (f : R →+* S) (x : MilnorK R) : gradedMap f x = map f x :=
-  RingHom.congr_fun (gradedMap_toRingHom f) x
+@[simp] theorem gradedMap_toRingHom (f : R →+* S) : (gradedMap f).toRingHom = map f := by rfl
+@[simp] theorem gradedMap_apply (f : R →+* S) (x : MilnorK R) : gradedMap f x = map f x := by rfl
 @[simp] theorem gradedMap_id : gradedMap (RingHom.id R) = GradedRingHom.id (degree R) :=
   gradedHom_ext fun _ => by simp
 @[simp] theorem gradedMap_comp (g : S →+* T) (f : R →+* S) :

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.CharP.Two
 public import TauCeti.FieldTheory.MilnorKTheory.Grading
-import TauCeti.FieldTheory.MatsumotoGroup
+import TauCeti.FieldTheory.Finite.Nonsquare
 
 /-!
 # Vanishing of Milnor K-theory of finite fields
@@ -61,24 +61,30 @@ theorem eq_zero_of_isCyclic_of_exists_odd_add_eq_one {c : Fˣ → Fˣ → A}
 identically zero. -/
 theorem eq_zero_of_finite [Finite F] {c : Fˣ → Fˣ → A} (hc : IsSteinbergPairing c)
     (a b : Fˣ) : c a b = 0 := by
-  let f : Additive Fˣ →+ Additive Fˣ →+ A :=
-    { toFun := fun u =>
-        { toFun := fun v => c (Additive.toMul u) (Additive.toMul v)
-          map_zero' := hc.map_one_right _
-          map_add' := fun _ _ => hc.map_mul_right _ _ _ }
-      map_zero' := AddMonoidHom.ext fun _ => hc.map_one_left _
-      map_add' := fun _ _ => AddMonoidHom.ext fun _ => hc.map_mul_left _ _ _ }
-  have h : c a b =
-      MatsumotoGroup.lift f (fun x y h => hc.steinberg x y h) (MatsumotoGroup.symbol a b) := by
-    simp [f]
-  rw [h, MatsumotoGroup.symbol_eq_zero_of_finite, map_zero]
+  by_cases hF : ringChar F = 2
+  · have : CharP F 2 := ringChar.of_eq hF
+    exact hc.eq_zero_of_isCyclic_of_charTwo a b
+  · obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Fˣ)
+    obtain ⟨x, hx, hx'⟩ := TauCeti.FiniteField.exists_not_isSquare_and_not_isSquare_one_sub hF
+    have hx0 : x ≠ 0 := by rintro rfl; exact hx IsSquare.zero
+    have hx1 : 1 - x ≠ 0 := by intro h; rw [h] at hx'; exact hx' IsSquare.zero
+    obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp (hg (Units.mk0 x hx0))
+    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (hg (Units.mk0 (1 - x) hx1))
+    have hm_odd : Odd m := Int.not_even_iff_odd.mp fun heven =>
+      hx (by simpa [hm] using (heven.isSquare_zpow g).map (Units.coeHom F))
+    have hn_odd : Odd n := Int.not_even_iff_odd.mp fun heven =>
+      hx' (by simpa [hn] using (heven.isSquare_zpow g).map (Units.coeHom F))
+    have hadd : ((g ^ m : Fˣ) : F) + (g ^ n : Fˣ) = 1 := by
+      rw [hm, hn]
+      simp
+    exact hc.eq_zero_of_isCyclic_of_exists_odd_add_eq_one hg hm_odd hn_odd hadd a b
 
 end IsSteinbergPairing
 
 namespace SymbolGroup
 
 /-- The degree-two Steinberg symbol group `SymbolGroup F` of any finite field `F` is trivial. -/
-theorem subsingleton_of_finite (F : Type*) [Field F] [Finite F] : Subsingleton (SymbolGroup F) :=
+instance subsingleton_of_finite (F : Type*) [Field F] [Finite F] : Subsingleton (SymbolGroup F) :=
   subsingleton_of_forall_eq 0 fun z => by
     induction z using SymbolGroup.induction_on with
     | symbol a b => exact (isSteinbergPairing_symbol (R := F)).eq_zero_of_finite a b
