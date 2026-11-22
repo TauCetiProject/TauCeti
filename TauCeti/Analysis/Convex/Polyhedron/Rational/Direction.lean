@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.Direction
 public import TauCeti.LinearAlgebra.Dual.Basic
-import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
 # Integral equations for rational-normal polyhedral directions
@@ -127,17 +126,14 @@ theorem exists_swept_direction_normal (hP : IsRationalNormalPolyhedron h P)
   have hv' := hfg ▸ hv
   refine ⟨f v • g - g v • f, ?_, ?_⟩
   · have hi : LinearIndependent ℤ ![f.toIntLinearMap, g.toIntLinearMap] := by
-      rw [LinearIndependent.pair_iffₛ]
-      intro a b a' b' he
-      have he' : (a : ℝ) • h.realCharacter f + (b : ℝ) • h.realCharacter g =
-          (a' : ℝ) • h.realCharacter f + (b' : ℝ) • h.realCharacter g := by
-        have hm : a • f + b • g = a' • f + b' • g := by
-          ext n
-          exact DFunLike.congr_fun he n
-        simpa only [map_add, map_zsmul, ← Int.cast_smul_eq_zsmul ℝ] using
-          congrArg h.realCharacter hm
-      obtain ⟨ha, hb⟩ := hind.eq_of_pair he'
-      exact ⟨Int.cast_injective ha, Int.cast_injective hb⟩
+      apply LinearIndependent.of_comp h.isBaseChange.toDual
+      have hfamily : h.isBaseChange.toDual ∘ ![f.toIntLinearMap, g.toIntLinearMap] =
+          ![h.realCharacter f, h.realCharacter g] := by
+        funext j
+        fin_cases j <;> apply h.eq_realCharacter <;> intro n <;>
+          exact h.isBaseChange.toDual_comp_apply _ n
+      rw [hfamily]
+      exact hind.restrict_scalars' ℤ
     have hvI : v ∉ f.toIntLinearMap.ker ⊓ g.toIntLinearMap.ker := by
       intro hmem
       apply hv'
@@ -147,8 +143,8 @@ theorem exists_swept_direction_normal (hP : IsRationalNormalPolyhedron h P)
       simp [Submodule.mem_inf, LinearMap.mem_ker, hf', hg']
     intro he
     apply LinearMap.apply_smul_sub_apply_smul_ne_zero f.toIntLinearMap g.toIntLinearMap hi hvI
-    ext n
-    exact DFunLike.congr_fun he n
+    simpa only [map_sub, map_smul, map_zero, addMonoidHomLequivInt_apply,
+      AddMonoidHom.coe_toIntLinearMap] using congrArg (addMonoidHomLequivInt ℤ) he
   · rw [h.ker_realCharacter_apply_smul_sub_apply_smul f g v hv', ← hfg]
 
 end TauCeti.IsRationalNormalPolyhedron
