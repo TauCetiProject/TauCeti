@@ -53,6 +53,8 @@ of degree `m` is the divisor of such a vortex, so these results apply over all o
   values (`TauCeti.Vortex.coeFn_sobolevGaugeFixedKernelEquiv`).
 * `TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_eq_two_mul`: at a plane vortex in every
   `A_m^k`, the kernel of the realization has real dimension `2m`.
+* `TauCeti.Vortex.sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace`: at such a
+  vortex, the realization is onto.
 * `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace`: at such a
   vortex, the realization is Fredholm.
 * `TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul`: at such a vortex, the realization
@@ -180,6 +182,17 @@ theorem finrank_ker_sobolevGaugeFixedOperator_eq_finrank_weakGaugeFixedKernel (h
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ}
 
+/-- **The kernel of the realization at a plane vortex is finite-dimensional.** Let `x` be a
+continuous field lying in `A_m^k` for every `k` whose section satisfies the holomorphicity rows
+`∂bar_a α = 0`, for instance a continuous plane vortex lying in every `A_m^k`, and let `a` be its
+`L∞` class. Then the kernel of `L_x : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` is finite-dimensional. -/
+theorem finiteDimensional_ker_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace
+    (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k)
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) (hax : a =ᵐ[μ⊤] x) :
+    FiniteDimensional ℝ (sobolevGaugeFixedOperator a).ker :=
+  have := finiteDimensional_weakGaugeFixedKernel hx hmem hhol
+  (sobolevGaugeFixedKernelEquiv hx hax).symm.finiteDimensional
+
 /-- **The kernel of the realization at a plane vortex has dimension `2m`.** Let `x` be a
 continuous field lying in the affine field space `A_m^k` for every `k` whose section satisfies the
 holomorphicity rows `∂bar_a α = 0`, for instance a continuous plane vortex lying in every `A_m^k`,
@@ -191,6 +204,17 @@ theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul (hx : Continuous x)
     finrank ℝ (sobolevGaugeFixedOperator a).ker = 2 * m := by
   rw [finrank_ker_sobolevGaugeFixedOperator_eq_finrank_weakGaugeFixedKernel hx hax,
     finrank_weakGaugeFixedKernel_eq_two_mul hx hmem hhol]
+
+/-- **The realization at a plane vortex is onto.** Let `x` be a continuous plane vortex lying in
+the affine field space `A_m^k` for every `k`, with `L∞` class `a`. Then the cokernel of the
+realization `L_x : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` vanishes. -/
+theorem sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace
+    (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k)
+    (hsol : ∀ z, equation x z = 0) (hax : a =ᵐ[μ⊤] x) :
+    Function.Surjective (sobolevGaugeFixedOperator a) :=
+  sobolevGaugeFixedOperator_surjective
+    ((contDiff_of_forall_mem_framedFieldSpace hx hmem).of_le (by simp)) hsol
+    (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx) hax
 
 /-- **The realization at a plane vortex is Fredholm.** Let `x` be a continuous plane vortex lying
 in the affine field space `A_m^k` for every `k`, with `L∞` class `a`. Then the realization
@@ -214,10 +238,8 @@ theorem index_sobolevGaugeFixedOperator_eq_two_mul (hx : Continuous x)
     (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (hsol : ∀ z, equation x z = 0)
     (hax : a =ᵐ[μ⊤] x) :
     (sobolevGaugeFixedOperator a).index = 2 * m := by
-  have hxs := contDiff_of_forall_mem_framedFieldSpace hx hmem
-  rw [ContinuousLinearMap.index_of_surjective _ (sobolevGaugeFixedOperator_surjective
-      (hxs.of_le (by simp)) hsol
-      (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx) hax),
+  rw [ContinuousLinearMap.index_of_surjective _
+      (sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace hx hmem hsol hax),
     finrank_ker_sobolevGaugeFixedOperator_eq_two_mul hx hmem (fun w ↦ by simp [hsol w]) hax]
   omega
 

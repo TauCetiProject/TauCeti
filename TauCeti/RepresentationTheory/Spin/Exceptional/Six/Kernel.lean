@@ -39,27 +39,22 @@ theorem spinSixSpecialLinearToIsometryGroup_eq_one_iff
     (g : Matrix.SpecialLinearGroup (Fin 4) K) :
     spinSixSpecialLinearToIsometryGroup K g = 1 ↔
       (g : Matrix (Fin 4) (Fin 4) K) = 1 ∨ (g : Matrix (Fin 4) (Fin 4) K) = -1 := by
-  let f := LinearMap.GeneralLinearGroup.generalLinearEquiv K (Fin 4 → K)
-    ((stdSLRep K 4).asGroupHom g)
-  have hf : f.toLinearMap = stdSLRep K 4 g :=
-    (LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap _).trans
-      (Representation.asGroupHom_apply _ _)
   have hext : spinSixSpecialLinearToIsometryGroup K g = 1 ↔
-      exteriorPower.map 2 f.toLinearMap = LinearMap.id := by
+      exteriorPower.map 2 (stdSLRep K 4 g) = LinearMap.id := by
     constructor
     · intro h
       apply LinearMap.ext
       intro x
       have hx := congrArg (fun e : (spinSixWedgeForm K).isometryGroup ↦ e.val x) h
-      simpa [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply,
-        hf] using hx
+      simpa [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply]
+        using hx
     · intro h
       apply Subtype.ext
       apply LinearEquiv.ext
       intro x
-      simpa [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply,
-        hf] using LinearMap.congr_fun h x
-  rw [hext, (Pi.basisFun K (Fin 4)).exteriorPower_map_eq_id_iff_eq_or_eq_neg_id (by norm_num), hf,
+      simpa [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply]
+        using LinearMap.congr_fun h x
+  rw [hext, (Pi.basisFun K (Fin 4)).exteriorPower_map_eq_id_iff_eq_or_eq_neg_id (by norm_num),
     stdSLRep_apply]
   simp only [← Matrix.toLin'_apply', ← Matrix.toLin'_one, ← map_neg,
     Matrix.toLin'.injective.eq_iff]

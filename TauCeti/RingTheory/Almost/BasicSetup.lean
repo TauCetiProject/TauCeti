@@ -150,6 +150,10 @@ theorem tildeMul_tmul (x y : S.ideal) : S.tildeMul (x ⊗ₜ y) = x * y :=
 theorem range_tildeMul : LinearMap.range S.tildeMul = S.ideal :=
   (Submodule.mulMap_range S.ideal S.ideal).trans S.isIdempotentElem.eq
 
+/-- Every element of `m` is the image of an element of `m~` under the multiplication map. -/
+theorem exists_tildeMul_eq {ε : V} (hε : ε ∈ S.ideal) : ∃ t, S.tildeMul t = ε :=
+  LinearMap.mem_range.mp (S.range_tildeMul.ge hε)
+
 /-- Induction principle for elements of `m`, using `m = m * m`: a property that holds for all
 products `a * b` with `a, b ∈ m` and is closed under addition holds on `m`. -/
 @[elab_as_elim]

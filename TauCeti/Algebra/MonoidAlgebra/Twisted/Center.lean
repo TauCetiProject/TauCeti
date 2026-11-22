@@ -76,6 +76,7 @@ def centralIndices (α : G → G → Rˣ) [IsFactorSet α] : Submonoid G where
 @[simp]
 theorem mem_centralIndices (a : G) : a ∈ centralIndices α ↔ ∀ b, α a b = α b a := Iff.rfl
 
+/-- The central-index twist restricts the original factor set along the inclusion. -/
 instance : IsFactorSet (fun a b : centralIndices α ↦ α a b) :=
   IsFactorSet.comp (centralIndices α).subtype α
 
@@ -94,6 +95,42 @@ theorem centerHom_of (a : centralIndices α) :
     centerHom α (of a) =
       ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩ := by
   simp only [centerHom, lift_of]
+
+/-- In ambient basis coordinates, the restricted center map extends coefficients by zero. -/
+theorem repr_centerHom (f : twistedMonoidAlgebra R (centralIndices α) (fun a b ↦ α a b)) :
+    (basis R G α).repr ((centerHom α f :
+      Subalgebra.center R (twistedMonoidAlgebra R G α)) : twistedMonoidAlgebra R G α) =
+        Finsupp.mapDomain (fun a : centralIndices α ↦ (a : G))
+          ((basis R (centralIndices α) (fun a b ↦ α a b)).repr f) := by
+  let b := basis R (centralIndices α) (fun a b ↦ α a b)
+  have h : (basis R G α).repr.toLinearMap ∘ₗ
+      ((Subalgebra.center R (twistedMonoidAlgebra R G α)).val.toLinearMap ∘ₗ
+        (centerHom α).toLinearMap) =
+      Finsupp.lmapDomain R R (fun a : centralIndices α ↦ (a : G)) ∘ₗ b.repr.toLinearMap := by
+    apply b.ext
+    intro a
+    simp [b, LinearMap.comp_apply, Finsupp.lmapDomain_apply, Finsupp.mapDomain_single]
+  exact LinearMap.congr_fun h f
+
+/-- The restricted center map leaves every included coefficient unchanged. -/
+@[simp]
+theorem repr_centerHom_apply (f : twistedMonoidAlgebra R (centralIndices α) (fun a b ↦ α a b))
+    (a : centralIndices α) :
+    (basis R G α).repr ((centerHom α f :
+      Subalgebra.center R (twistedMonoidAlgebra R G α)) : twistedMonoidAlgebra R G α) (a : G) =
+      (basis R (centralIndices α) (fun a b ↦ α a b)).repr f a := by
+  rw [repr_centerHom, Finsupp.mapDomain_apply_of_injective Subtype.val_injective]
+
+/-- Coefficients of the restricted center map vanish outside the included indices. -/
+theorem repr_centerHom_apply_eq_zero
+    (f : twistedMonoidAlgebra R (centralIndices α) (fun a b ↦ α a b))
+    (a : G) (ha : a ∉ centralIndices α) :
+    (basis R G α).repr ((centerHom α f :
+      Subalgebra.center R (twistedMonoidAlgebra R G α)) : twistedMonoidAlgebra R G α) a = 0 := by
+  rw [repr_centerHom]
+  apply Finsupp.mapDomain_of_notMem_range
+  rintro ⟨x, rfl⟩
+  exact ha x.property
 
 private theorem centerHom_val_eq_constr :
     (Subalgebra.center R (twistedMonoidAlgebra R G α)).val.toLinearMap.comp
@@ -175,7 +212,9 @@ theorem centerHom_surjective [IsLeftCancelMulZero R] : Function.Surjective (cent
     exact (Set.image_eq_range of (centralIndices α : Set G)).symm
   rintro ⟨f, hf⟩
   have hs : f ∈ LinearMap.range F := by
-    have hset : (centralIndices α : Set G) = {a | ∀ b, α a b = α b a} := rfl
+    have hset : (centralIndices α : Set G) = {a | ∀ b, α a b = α b a} := by
+      ext a
+      exact mem_centralIndices a
     rw [hr, hset, ← center_toSubmodule_eq_span]
     exact hf
   obtain ⟨g, hg⟩ := hs
@@ -193,6 +232,19 @@ theorem centerEquiv_of [IsLeftCancelMulZero R] (a : centralIndices α) :
     centerEquiv (α := α) (of a) =
       ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩ :=
   (AlgEquiv.ofBijective_apply _ _ _).trans (centerHom_of a)
+
+/-- The forward map of the restricted center equivalence is the canonical inclusion. -/
+@[simp]
+theorem centerEquiv_toAlgHom [IsLeftCancelMulZero R] :
+    (centerEquiv (α := α)).toAlgHom = centerHom α :=
+  AlgEquiv.toAlgHom_ofBijective _ _
+
+/-- The inverse restricted center equivalence recovers the basis element at a central index. -/
+@[simp]
+theorem centerEquiv_symm_of [IsLeftCancelMulZero R] (a : centralIndices α) :
+    (centerEquiv (α := α)).symm
+      ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩ = of a :=
+  (centerEquiv (α := α)).symm_apply_eq.mpr (centerEquiv_of a).symm
 
 end CancelCommMonoid
 

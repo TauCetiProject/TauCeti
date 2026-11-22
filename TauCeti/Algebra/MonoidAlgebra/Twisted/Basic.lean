@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.UniqueProds.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.Algebra.Regular.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
@@ -428,47 +429,68 @@ theorem repr_mul_apply_of_uniqueMul {f g : twistedMonoidAlgebra k G α} {a b : G
     · simp [Finsupp.notMem_support_iff.mp ha]
     · simp [Finsupp.notMem_support_iff.mp hb]
 
-section CancelMonoidCoefficients
+section MonoidCoefficients
 
 variable {R H : Type*} [CommSemiring R] [Monoid H]
   {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- Right multiplication by a basis element at an index with a unique supporting preimage. -/
+theorem repr_mul_of_apply_of_unique (f : twistedMonoidAlgebra R H β) (a b : H)
+    (h : ∀ x ∈ ((basis R H β).repr f).support, x * b = a * b → x = a) :
+    (basis R H β).repr (f * of b) (a * b) =
+      (basis R H β).repr f a * (β a b : R) := by
+  classical
+  have h' : UniqueMul ((basis R H β).repr f).support
+      ((basis R H β).repr (of b)).support a b := by
+    intro x y hx hy hxy
+    have hyb : y = b := Finset.mem_singleton.mp (Finsupp.support_single_subset
+      (by simpa only [repr_of] using hy))
+    subst y
+    exact ⟨h x hx hxy, rfl⟩
+  simpa only [repr_of, Finsupp.single_eq_same, mul_one] using repr_mul_apply_of_uniqueMul h'
+
+/-- Left multiplication by a basis element at an index with a unique supporting preimage. -/
+theorem repr_of_mul_apply_of_unique (f : twistedMonoidAlgebra R H β) (a b : H)
+    (h : ∀ x ∈ ((basis R H β).repr f).support, b * x = b * a → x = a) :
+    (basis R H β).repr (of b * f) (b * a) =
+      (basis R H β).repr f a * (β b a : R) := by
+  classical
+  have h' : UniqueMul ((basis R H β).repr (of b)).support
+      ((basis R H β).repr f).support b a := by
+    intro x y hx hy hxy
+    have hxb : x = b := Finset.mem_singleton.mp (Finsupp.support_single_subset
+      (by simpa only [repr_of] using hx))
+    subst x
+    exact ⟨rfl, h y hy hxy⟩
+  simpa only [repr_of, Finsupp.single_eq_same, one_mul] using repr_mul_apply_of_uniqueMul h'
+
+/-- The shifted coefficient formula when the right multiplying index is right regular. -/
+theorem repr_mul_of_apply_of_isRightRegular (f : twistedMonoidAlgebra R H β) (a b : H)
+    (hb : IsRightRegular b) :
+    (basis R H β).repr (f * of b) (a * b) =
+      (basis R H β).repr f a * (β a b : R) :=
+  repr_mul_of_apply_of_unique f a b fun _ _ h ↦ hb h
+
+/-- The shifted coefficient formula when the left multiplying index is left regular. -/
+theorem repr_of_mul_apply_of_isLeftRegular (f : twistedMonoidAlgebra R H β) (a b : H)
+    (hb : IsLeftRegular b) :
+    (basis R H β).repr (of b * f) (b * a) =
+      (basis R H β).repr f a * (β b a : R) :=
+  repr_of_mul_apply_of_unique f a b fun _ _ h ↦ hb h
 
 /-- The coefficient of right multiplication by a basis element, with its shifted index. -/
 @[simp]
 theorem repr_mul_of_apply [IsRightCancelMul H] (f : twistedMonoidAlgebra R H β) (a b : H) :
     (basis R H β).repr (f * of b) (a * b) =
-      (basis R H β).repr f a * (β a b : R) := by
-  classical
-  have h : UniqueMul ((basis R H β).repr f).support
-      ((basis R H β).repr (of b)).support a b := by
-    intro x y _ hy hxy
-    have hyb : y = b := Finset.mem_singleton.mp (Finsupp.support_single_subset
-      (by simpa only [repr_of] using hy))
-    subst y
-    exact ⟨mul_right_cancel hxy, rfl⟩
-  simpa only [repr_of, Finsupp.single_eq_same, mul_one] using repr_mul_apply_of_uniqueMul h
+      (basis R H β).repr f a * (β a b : R) :=
+  repr_mul_of_apply_of_isRightRegular f a b fun _ _ h ↦ mul_right_cancel h
 
 /-- The coefficient of left multiplication by a basis element, with its shifted index. -/
 @[simp]
 theorem repr_of_mul_apply [IsLeftCancelMul H] (f : twistedMonoidAlgebra R H β) (a b : H) :
     (basis R H β).repr (of b * f) (b * a) =
-      (basis R H β).repr f a * (β b a : R) := by
-  classical
-  have h : UniqueMul ((basis R H β).repr (of b)).support
-      ((basis R H β).repr f).support b a := by
-    intro x y hx _ hxy
-    have hxb : x = b := Finset.mem_singleton.mp (Finsupp.support_single_subset
-      (by simpa only [repr_of] using hx))
-    subst x
-    exact ⟨rfl, mul_left_cancel hxy⟩
-  simpa only [repr_of, Finsupp.single_eq_same, one_mul] using repr_mul_apply_of_uniqueMul h
-
-end CancelMonoidCoefficients
-
-section UnitCoefficients
-
-variable {R H : Type*} [CommSemiring R] [Monoid H]
-  {β : H → H → Rˣ} [IsFactorSet β]
+      (basis R H β).repr f a * (β b a : R) :=
+  repr_of_mul_apply_of_isLeftRegular f a b fun _ _ h ↦ mul_left_cancel h
 
 /-- A coefficient outside the right translate of the index monoid vanishes. -/
 theorem repr_mul_of_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
@@ -491,34 +513,20 @@ theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
 theorem repr_mul_of_unit_apply (f : twistedMonoidAlgebra R H β) (b : Hˣ) (c : H) :
     (basis R H β).repr (f * of (b : H)) c =
       (basis R H β).repr f (c * ↑b⁻¹) * (β (c * ↑b⁻¹) b : R) := by
-  classical
-  have h : UniqueMul ((basis R H β).repr f).support
-      ((basis R H β).repr (of (b : H))).support (c * ↑b⁻¹) (b : H) := by
-    intro x y _ hy hxy
-    have hyb : y = (b : H) := Finset.mem_singleton.mp (Finsupp.support_single_subset
-      (by simpa only [repr_of] using hy))
-    subst y
-    exact ⟨(Units.mul_left_inj b).mp hxy, rfl⟩
-  simpa only [Units.inv_mul_cancel_right, repr_of, Finsupp.single_eq_same, mul_one] using
-    repr_mul_apply_of_uniqueMul h
+  simpa only [Units.inv_mul_cancel_right] using
+    repr_mul_of_apply_of_isRightRegular f (c * ↑b⁻¹) (b : H)
+      (fun _ _ h ↦ (Units.mul_left_inj b).mp h)
 
 /-- The coefficient at a free index after left multiplication by a unit-index basis element. -/
 @[simp]
 theorem repr_of_unit_mul_apply (f : twistedMonoidAlgebra R H β) (b : Hˣ) (c : H) :
     (basis R H β).repr (of (b : H) * f) c =
       (basis R H β).repr f (↑b⁻¹ * c) * (β b (↑b⁻¹ * c) : R) := by
-  classical
-  have h : UniqueMul ((basis R H β).repr (of (b : H))).support
-      ((basis R H β).repr f).support (b : H) (↑b⁻¹ * c) := by
-    intro x y hx _ hxy
-    have hxb : x = (b : H) := Finset.mem_singleton.mp (Finsupp.support_single_subset
-      (by simpa only [repr_of] using hx))
-    subst x
-    exact ⟨rfl, (Units.mul_right_inj b).mp hxy⟩
-  simpa only [Units.mul_inv_cancel_left, repr_of, Finsupp.single_eq_same, one_mul] using
-    repr_mul_apply_of_uniqueMul h
+  simpa only [Units.mul_inv_cancel_left] using
+    repr_of_mul_apply_of_isLeftRegular f (↑b⁻¹ * c) (b : H)
+      (fun _ _ h ↦ (Units.mul_right_inj b).mp h)
 
-end UnitCoefficients
+end MonoidCoefficients
 
 section GroupCoefficients
 
@@ -541,22 +549,25 @@ theorem repr_of_mul_apply_inv_mul (f : twistedMonoidAlgebra R H β) (b c : H) :
 
 end GroupCoefficients
 
-section CancelCommMonoidCoefficients
+section CommMonoidCoefficients
 
-variable {R H : Type*} [CommSemiring R] [CancelCommMonoid H]
+variable {R H : Type*} [CommSemiring R] [CommMonoid H]
   {β : H → H → Rˣ} [IsFactorSet β]
 
 /-- Commutation with a basis element is equality of coefficients weighted by opposite
 factor-set values. -/
-theorem commute_of_iff (f : twistedMonoidAlgebra R H β) (b : H) :
+theorem commute_of_iff_of_isRightRegular (f : twistedMonoidAlgebra R H β) (b : H)
+    (hb : IsRightRegular b) :
     Commute f (of b) ↔ ∀ a,
       (basis R H β).repr f a * (β a b : R) =
         (basis R H β).repr f a * (β b a : R) := by
+  have hleft : IsLeftRegular b := hb.left_of_commute (fun x ↦ mul_comm b x)
   rw [commute_iff_eq]
   constructor
   · intro h a
     have he := congrArg (fun z ↦ (basis R H β).repr z (a * b)) h
-    rw [repr_mul_of_apply, mul_comm a b, repr_of_mul_apply] at he
+    rw [repr_mul_of_apply_of_isRightRegular f a b hb, mul_comm a b,
+      repr_of_mul_apply_of_isLeftRegular f a b hleft] at he
     exact he
   · intro h
     apply (basis R H β).repr.injective
@@ -565,13 +576,21 @@ theorem commute_of_iff (f : twistedMonoidAlgebra R H β) (b : H) :
     by_cases hc : c ∈ Set.range (fun a : H ↦ a * b)
     · obtain ⟨a, ha⟩ := hc
       dsimp only at ha
-      rw [← ha, repr_mul_of_apply, mul_comm a b, repr_of_mul_apply]
+      rw [← ha, repr_mul_of_apply_of_isRightRegular f a b hb, mul_comm a b,
+        repr_of_mul_apply_of_isLeftRegular f a b hleft]
       exact h a
     · rw [repr_mul_of_apply_eq_zero f b c hc,
         repr_of_mul_apply_eq_zero f b c (by simpa only [mul_comm b] using hc)]
 
 
-end CancelCommMonoidCoefficients
+/-- Coefficientwise commutation with a basis element over a cancellative commutative monoid. -/
+theorem commute_of_iff [IsCancelMul H] (f : twistedMonoidAlgebra R H β) (b : H) :
+    Commute f (of b) ↔ ∀ a,
+      (basis R H β).repr f a * (β a b : R) =
+        (basis R H β).repr f a * (β b a : R) :=
+  commute_of_iff_of_isRightRegular f b fun _ _ h ↦ mul_right_cancel h
+
+end CommMonoidCoefficients
 
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]

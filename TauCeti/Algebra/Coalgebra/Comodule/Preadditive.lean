@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Preadditive.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 
 /-!
-# Preadditive structure on comodule categories
+# Preadditive and linear structure on comodule categories
 
 This file records the additive-group structure on morphisms of right comodules over a
 coalgebra over a commutative ring, and uses it to make the bundled comodule category
-preadditive. It also provides the faithful additive forgetful functor to `ModuleCat R`.
+preadditive and `R`-linear. It also provides the faithful, additive and `R`-linear forgetful
+functor to `ModuleCat R`.
 
 The semiring-level files already show that comodule morphisms are closed under zero, addition,
 scalar multiplication, and finite sums. Over a ring, every semimodule is an additive group by
@@ -29,6 +31,8 @@ subtraction of comodule morphisms.
   morphisms over a commutative ring.
 * `TauCeti.ComoduleCat.preadditive`: `ComoduleCat R C` is preadditive over a commutative
   ring `R`.
+* `TauCeti.ComoduleCat.linear`: `ComoduleCat R C` is `R`-linear, with the pointwise scalar
+  multiplication of comodule morphisms.
 -/
 
 public section
@@ -218,6 +222,12 @@ instance preadditive : Preadditive (ComoduleCat.{u, v, w} R C) where
     let : AddCommGroup P := Module.addCommMonoidToAddCommGroup R
     exact Comodule.Hom.add_comp (R := R) (C := C) g h f
 
+/-- The category of right comodules over a coalgebra over a commutative ring `R` is `R`-linear:
+composition is bilinear for the pointwise scalar multiplication of comodule morphisms. -/
+instance linear : Linear R (ComoduleCat.{u, v, w} R C) where
+  smul_comp _ _ _ r f g := ComoduleCat.smul_comp R C r f g
+  comp_smul _ _ _ f r g := ComoduleCat.comp_smul R C r f g
+
 variable {R C}
 
 /-- Forget a comodule over a ring to its underlying module. -/
@@ -235,6 +245,9 @@ instance : (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Faithful wh
 
 instance : (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Additive where
   map_add := rfl
+
+instance : (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Linear R where
+  map_smul _ _ := rfl
 
 end ComoduleCat
 
