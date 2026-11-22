@@ -234,7 +234,8 @@ theorem orthogonalNormalSpaceEquivQuotient_apply (w : orthogonalNormalSpace I J 
     orthogonalNormalSpaceEquivQuotient f x w =
       Submodule.Quotient.mk (w : TangentSpace J (f x)) := by
   rw [orthogonalNormalSpaceEquivQuotient]
-  exact (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal_symm_eq_mk _ w.2
+  exact (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal_symm_eq_mk _
+    w.property
 
 /-- The inverse comparison takes the class of an ambient vector to its orthogonal projection onto
 the normal space; in particular this projection depends only on the class. -/
