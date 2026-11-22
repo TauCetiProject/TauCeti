@@ -334,21 +334,6 @@ lemma mk_eq_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0
   rw [← EquivLike.apply_eq_iff_eq <| W.equivProdA' hx]
   simpa only [equivProdA'_apply] using Prod.mk_inj
 
-/-- At a root `x` of `f`, the class of `p` is a unit of `W.A` exactly when `p.eval x` is a unit
-of `R` and the class of `p` is a unit modulo the cofactor `fCofactor x`. Unlike the
-decomposition `equivProdA'`, this holds over any commutative ring, with no ellipticity or normal
-form hypothesis on `W`. -/
-lemma isUnit_mk_iff {x : R} (hx : W.f.eval x = 0) {p : R[X]} :
-    IsUnit (AdjoinRoot.mk W.f p) ↔
-      IsUnit (p.eval x) ∧ IsUnit (AdjoinRoot.mk (W.fCofactor x) p) := by
-  -- `quotientSpanXSubCAlgEquiv x : R[X]/(X - x) ≃ R` is by definition evaluation at `x`
-  -- (`quotientSpanXSubCAlgEquiv_mk`), so `p.eval x` is a unit iff `p` is a unit mod `X - x`.
-  have hlin : IsUnit (p.eval x) ↔ IsCoprime (X - C x) p :=
-    (MulEquiv.isUnit_map (quotientSpanXSubCAlgEquiv x).toRingEquiv.toMulEquiv
-      (x := AdjoinRoot.mk (X - C x) p)).trans AdjoinRoot.isUnit_mk_iff_isCoprime
-  rw [AdjoinRoot.isUnit_mk_iff_isCoprime, W.f_eq_mul_of_eval_eq_zero hx, IsCoprime.mul_left_iff]
-  exact and_comm.trans (and_congr hlin.symm AdjoinRoot.isUnit_mk_iff_isCoprime.symm)
-
 /-! ### Square classes of the cubic quotient algebra -/
 
 section SquareClasses
@@ -599,7 +584,7 @@ variable [W.IsElliptic]
 
 lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero {x : K} (h : W.f.eval x = 0) :
     IsUnit <| AdjoinRoot.mk W.f <| C x - X + W.fCofactor x := by
-  rw [isUnit_mk_iff W h]
+  rw [W.f_eq_mul_of_eval_eq_zero h, AdjoinRoot.isUnit_mk_mul_X_sub_C_iff]
   have H₀ : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ≠ 0 := deriv_f_ne_zero W h
   have H₁ : eval x (C x - X + W.fCofactor x) = 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ := by
     rw [eval_add, W.eval_fCofactor_self]; simp

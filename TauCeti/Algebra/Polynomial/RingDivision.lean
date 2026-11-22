@@ -16,7 +16,9 @@ import Mathlib.RingTheory.Polynomial.Wronskian
 Mathlib's `Polynomial.isCoprime_X_sub_C_of_isUnit_sub` says that `X - C a` and `X - C b` are
 coprime when `a - b` is a unit. Substituting any polynomial `p` for `X` shows that `p - C a` and
 `p - C b` are coprime as well (`Polynomial.isCoprime_sub_C_of_isUnit_sub`), for example the
-binomials `X ^ n - C a` and `X ^ n - C b`.
+binomials `X ^ n - C a` and `X ^ n - C b`. More generally, over any commutative ring, `X - C a`
+is coprime to a polynomial `p` exactly when `p.eval a` is a unit
+(`Polynomial.isCoprime_X_sub_C_iff_isUnit_eval`).
 
 Over a ring without zero divisors, if `p = a X + b` and `q = c X + d` are coprime polynomials with
 `max p.natDegree q.natDegree = 1`, then the determinant `a d - b c` of their coefficient matrix is
@@ -35,6 +37,18 @@ variable {R : Type*} [CommRing R]
 theorem isCoprime_sub_C_of_isUnit_sub (p : R[X]) {a b : R} (h : IsUnit (a - b)) :
     IsCoprime (p - C a) (p - C b) := by
   simpa using (isCoprime_X_sub_C_of_isUnit_sub h).map (aeval p).toRingHom
+
+/-- Over any commutative ring, `X - C a` is coprime to `p` exactly when `p.eval a` is a unit:
+evaluating a Bézout identity at `a` inverts `p.eval a`, and conversely `p` is congruent to the
+constant `p.eval a` modulo `X - C a`. -/
+@[simp]
+theorem isCoprime_X_sub_C_iff_isUnit_eval {p : R[X]} {a : R} :
+    IsCoprime (X - C a) p ↔ IsUnit (p.eval a) := by
+  refine ⟨fun ⟨u, v, h⟩ ↦ .of_mul_eq_one_right (v.eval a) ?_, fun h ↦ ?_⟩
+  · simpa using congrArg (eval a) h
+  · rw [← modByMonic_add_div p (X - C a), IsCoprime.add_mul_left_right_iff,
+      modByMonic_X_sub_C_eq_C_eval]
+    exact isCoprime_one_right.of_isCoprime_of_dvd_right (isUnit_C.2 h).dvd
 
 /-- Over a ring without zero divisors, if `p` and `q` are coprime and
 `max p.natDegree q.natDegree = 1`, then `p.coeff 1 * q.coeff 0 - p.coeff 0 * q.coeff 1 ≠ 0`; for

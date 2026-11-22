@@ -15,7 +15,7 @@ import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Depressed
 import TauCeti.Algebra.Polynomial.Derivative
-import TauCeti.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.Algebra.Polynomial.RingDivision
 
 /-!
 # Hensel lifting of coprime factorizations over power series
@@ -303,7 +303,7 @@ theorem Monic.exists_X_sub_C_mul_eq_of_isUnit_eval_derivative {P : R⟦X⟧[X]} 
   rcases subsingleton_or_nontrivial R with hR | hR
   · exact ⟨0, 1, Subsingleton.elim _ _, monic_one, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
   obtain ⟨G, H, hG, hH, hGa, hHq, hGH⟩ := hP.exists_monic_mul_eq_of_isCoprime (monic_X_sub_C a)
-    (isCoprime_X_sub_C_of_isUnit_eval (by rwa [eval_divByMonic_X_sub_C_self]))
+    (isCoprime_X_sub_C_iff_isUnit_eval.mpr (by rwa [eval_divByMonic_X_sub_C_self]))
     (mul_divByMonic_eq_iff_isRoot.mpr hroot).symm
   -- The monic lift `G` of `X - a` has degree one, so it is `X - α` with `α = -G.coeff 0`.
   have hGα : G = X - C (-G.coeff 0) := by
@@ -334,7 +334,7 @@ theorem Monic.existsUnique_isRoot_constantCoeff_eq {P : R⟦X⟧[X]} (hP : P.Mon
     (by rw [hmap hα, hmap hβa])
     (by
       rw [hmap hα, hH]
-      exact isCoprime_X_sub_C_of_isUnit_eval (by rwa [eval_divByMonic_X_sub_C_self]))
+      exact isCoprime_X_sub_C_iff_isUnit_eval.mpr (by rwa [eval_divByMonic_X_sub_C_self]))
     (hαH.trans (mul_divByMonic_eq_iff_isRoot.mpr hβ).symm)
   exact (C_injective (sub_right_injective h.1)).symm
 
