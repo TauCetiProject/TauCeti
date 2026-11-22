@@ -231,6 +231,22 @@ theorem mapsTo_range_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
   rw [LinearMap.coe_range, coe_coe]
   exact Function.Semiconj.mapsTo_range fun x ↦ congr($((hE.commute_aeval P).eq.symm) x)
 
+/-- **Monotonicity in the polynomial.** If the leading coefficient of `Q` is a unit and `Q ∣ Q'`,
+then the range `ker Q*(u)` of a Riesz–Coleman projection of `u` for `Q` lies in the range
+`ker Q'*(u)` of any Riesz–Coleman projection of `u` for `Q'`. -/
+theorem range_le_range_of_dvd {Q' : R[X]} {E' : M →L[R] M} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection u Q' E') (hQ : IsUnit Q.leadingCoeff) (hQQ' : Q ∣ Q') :
+    LinearMap.range (E : M →ₗ[R] M) ≤ LinearMap.range (E' : M →ₗ[R] M) := by
+  obtain ⟨A, rfl⟩ := hQQ'
+  have hker := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE).range_eq_ker
+  have hker' := by simpa only [pow_one] using (isRieszColemanProjection_def.mp hE').range_eq_ker
+  rw [hker, hker']
+  rcases eq_or_ne A 0 with rfl | hA
+  · simp
+  rw [reverse_mul (by rwa [Ne, hQ.mul_right_eq_zero, leadingCoeff_eq_zero]), toLinearMap_aeval,
+    toLinearMap_aeval]
+  exact le_sup_left.trans Polynomial.sup_ker_aeval_le_ker_aeval_mul
+
 /-- When `Q.leadingCoeff` is a unit, `E` factors on the left through `u`: specifically,
 `u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E) = E`. -/
 theorem mul_smul_aeval_divX_reverse_mul (hE : IsRieszColemanProjection u Q E)

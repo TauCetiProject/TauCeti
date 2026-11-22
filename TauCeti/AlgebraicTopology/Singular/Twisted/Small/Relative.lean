@@ -25,7 +25,10 @@ For subsets `C ⊆ A` of `X`, with `L` restricted to `A`, the relative twisted c
 of subsets induces a map of relative twisted chains
 (`TauCeti.LocalCoefficientSystem.subsetPairTwistedChainComplexMap`), characterized by
 `TauCeti.LocalCoefficientSystem.twistedChainComplexπ_comp_subsetPairTwistedChainComplexMap` and
-functorial in the inclusion.
+functorial in the inclusion, as is the induced map of relative twisted homology
+(`TauCeti.LocalCoefficientSystem.subsetPairTwistedHomologyMap`). Equal pairs of subsets have
+isomorphic relative twisted homology
+(`TauCeti.LocalCoefficientSystem.subsetPairTwistedHomologyIsoOfEq`).
 
 ## References
 
@@ -319,6 +322,63 @@ lemma subsetPairTwistedChainComplexIsoOfEq_hom (hA : A₁ = A₂) (hC : C₁ = C
 lemma subsetPairTwistedChainComplexIsoOfEq_inv (hA : A₁ = A₂) (hC : C₁ = C₂) :
     (subsetPairTwistedChainComplexIsoOfEq L hC₁ hC₂ hA hC).inv =
       subsetPairTwistedChainComplexMap L hC₂ hC₁ hA.ge hC.ge :=
+  (rfl)
+
+/-- The map of relative twisted homology `Hₙ(A₁, C₁; L) ⟶ Hₙ(A₂, C₂; L)` induced by an inclusion
+of pairs of subsets of `X`. -/
+abbrev subsetPairTwistedHomologyMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) (n : ℕ) :
+    (TopPair.ofInclusion hC₁).twistedHomology
+        ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj L) n ⟶
+      (TopPair.ofInclusion hC₂).twistedHomology
+        ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) n :=
+  HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC) n
+
+/-- The map of relative twisted homology induced by the identity inclusion of a pair of subsets is
+the identity. -/
+@[simp]
+lemma subsetPairTwistedHomologyMap_self (n : ℕ) :
+    subsetPairTwistedHomologyMap L hC₁ hC₁ subset_rfl subset_rfl n = 𝟙 _ :=
+  (congrArg (HomologicalComplex.homologyMap · n)
+    (subsetPairTwistedChainComplexMap_self L hC₁)).trans (HomologicalComplex.homologyMap_id _ n)
+
+/-- The maps of relative twisted homology induced by inclusions of pairs of subsets compose. -/
+@[reassoc (attr := simp)]
+lemma subsetPairTwistedHomologyMap_comp (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) (hA' : A₂ ⊆ A₃)
+    (hC' : C₂ ⊆ C₃) (n : ℕ) :
+    subsetPairTwistedHomologyMap L hC₁ hC₂ hA hC n ≫
+        subsetPairTwistedHomologyMap L hC₂ hC₃ hA' hC' n =
+      subsetPairTwistedHomologyMap L hC₁ hC₃ (hA.trans hA') (hC.trans hC') n :=
+  (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap L _ _ _ _ _ _ _))
+
+/-- Equal pairs of subsets of `X` have isomorphic relative twisted homology, by the maps of the
+inclusions in both directions. -/
+def subsetPairTwistedHomologyIsoOfEq (hA : A₁ = A₂) (hC : C₁ = C₂) (n : ℕ) :
+    (TopPair.ofInclusion hC₁).twistedHomology
+        ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj L) n ≅
+      (TopPair.ofInclusion hC₂).twistedHomology
+        ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) n where
+  hom := subsetPairTwistedHomologyMap L hC₁ hC₂ hA.le hC.le n
+  inv := subsetPairTwistedHomologyMap L hC₂ hC₁ hA.ge hC.ge n
+  hom_inv_id := (subsetPairTwistedHomologyMap_comp L _ _ _ _ _ _ _ n).trans
+    (subsetPairTwistedHomologyMap_self L hC₁ n)
+  inv_hom_id := (subsetPairTwistedHomologyMap_comp L _ _ _ _ _ _ _ n).trans
+    (subsetPairTwistedHomologyMap_self L hC₂ n)
+
+/-- The isomorphism of equal pairs of subsets is the map of the inclusion. -/
+@[simp]
+lemma subsetPairTwistedHomologyIsoOfEq_hom (hA : A₁ = A₂) (hC : C₁ = C₂) (n : ℕ) :
+    (subsetPairTwistedHomologyIsoOfEq L hC₁ hC₂ hA hC n).hom =
+      subsetPairTwistedHomologyMap L hC₁ hC₂ hA.le hC.le n :=
+  (rfl)
+
+/-- The inverse of the isomorphism of equal pairs of subsets is the map of the reverse
+inclusion. -/
+@[simp]
+lemma subsetPairTwistedHomologyIsoOfEq_inv (hA : A₁ = A₂) (hC : C₁ = C₂) (n : ℕ) :
+    (subsetPairTwistedHomologyIsoOfEq L hC₁ hC₂ hA hC n).inv =
+      subsetPairTwistedHomologyMap L hC₂ hC₁ hA.ge hC.ge n :=
   (rfl)
 
 end SubsetPair
