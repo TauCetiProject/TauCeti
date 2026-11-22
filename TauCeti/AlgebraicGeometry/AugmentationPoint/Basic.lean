@@ -8,7 +8,18 @@ module
 public import Mathlib.AlgebraicGeometry.Scheme
 
 /-!
-# The spectrum point defined by an augmentation
+# The spectrum point and section defined by an augmentation
+
+For a commutative ring `R` and a commutative `R`-algebra `A`, an augmentation `f : A →ₐ[R] R` is a
+retraction of the structure map `algebraMap R A`. Hence `Spec f : Spec R ⟶ Spec A` is a section of
+the structure morphism `Spec A ⟶ Spec R`.
+
+For example, the projection `TrivSqZeroExt.fstHom R R R` from the dual numbers `R[ε]` to `R`,
+`ε ↦ 0`, is an augmentation, so the structure morphism `Spec R[ε] ⟶ Spec R` is split by the section
+`Spec R ⟶ Spec R[ε]` that it induces. Base change along `Spec R[ε] ⟶ Spec R` is the trivial
+first-order deformation of a scheme over `R`, and base change along the section
+`Spec R ⟶ Spec R[ε]` is reduction modulo `ε`;
+`TauCeti.AlgebraicGeometry.PrestableMap.infinitesimalAut` uses this splitting.
 
 An algebra homomorphism `f : H →ₐ[k] k` from a commutative `k`-algebra to an integral domain `k`
 determines a point of the algebra's prime spectrum, whose prime ideal is `ker f`: the image of the
@@ -17,6 +28,10 @@ file records that point and its underlying prime ideal.
 
 ## Main declarations
 
+* `AlgHom.specSplitEpi`: the structure morphism `Spec A ⟶ Spec R`, split by the section induced
+  by an augmentation `A →ₐ[R] R`.
+* `AlgHom.Spec_map_comp_Spec_map_algebraMap`: the splitting identity for the explicit spectrum
+  maps.
 * `AlgHom.kernelPoint`: the point cut out by the kernel of an augmentation.
 * `AlgHom.comap_kernelPoint`: contraction of a kernel point is the kernel point of the
   composite algebra homomorphism.
@@ -24,11 +39,39 @@ file records that point and its underlying prime ideal.
 
 public section
 
-open AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry
 
 namespace AlgHom
 
 universe u v w
+
+section SplitEpi
+
+variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- An augmentation `f : A →ₐ[R] R` induces a section `Spec R ⟶ Spec A` of the structure morphism
+`Spec A ⟶ Spec R`. -/
+@[reassoc (attr := simp)]
+theorem Spec_map_comp_Spec_map_algebraMap (f : A →ₐ[R] R) :
+    Spec.map (CommRingCat.ofHom (f : A →+* R)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R A)) =
+      𝟙 (Spec (CommRingCat.of R)) := by
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, f.comp_algebraMap, Algebra.algebraMap_self,
+    CommRingCat.ofHom_id, Spec.map_id]
+
+/-- The structure morphism `Spec A ⟶ Spec R` of a commutative `R`-algebra `A`, split by the
+section `Spec R ⟶ Spec A` induced by an augmentation `f : A →ₐ[R] R`. -/
+noncomputable def specSplitEpi (f : A →ₐ[R] R) :
+    SplitEpi (Spec.map (CommRingCat.ofHom (algebraMap R A))) where
+  section_ := Spec.map (CommRingCat.ofHom (f : A →+* R))
+  id := f.Spec_map_comp_Spec_map_algebraMap
+
+/-- The section of `f.specSplitEpi` is induced by the augmentation `f`. -/
+@[simp]
+theorem specSplitEpi_section (f : A →ₐ[R] R) :
+    f.specSplitEpi.section_ = Spec.map (CommRingCat.ofHom (f : A →+* R)) :=
+  (rfl)
+
+end SplitEpi
 
 variable {k : Type u} [CommRing k] [IsDomain k]
 variable {H : Type v} [CommRing H] [Algebra k H]

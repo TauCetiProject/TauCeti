@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.GroupTheory.GroupExtension.Basic
-public import TauCeti.AlgebraicGeometry.AugmentationPoint.Section
+public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Category
 
 /-!
