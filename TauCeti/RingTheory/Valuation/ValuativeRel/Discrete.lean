@@ -67,7 +67,7 @@ theorem eq_one_of_forall_exists_le_pow_eq {γ : ValueGroupWithZero R} (hγ : γ 
     one_le_of_forall_exists_le_pow_eq (inv_ne_zero hγ) fun n ↦ by
       obtain ⟨k, hkn, δ, hδ⟩ := h n
       exact ⟨k, hkn, δ⁻¹, by rw [inv_pow, hδ]⟩
-  exact le_antisymm ((one_le_inv₀ (zero_lt_iff.mpr hγ)).mp hge_inv) hge
+  exact le_antisymm ((one_le_inv₀ (pos_iff_ne_zero.mpr hγ)).mp hge_inv) hge
 
 end ValueGroupWithZero
 

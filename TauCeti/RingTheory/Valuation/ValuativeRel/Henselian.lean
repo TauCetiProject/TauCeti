@@ -121,7 +121,7 @@ theorem valuation_map_le_one_of_valuation_le_one [IsNontrivial K] (f : K →+* R
         = (valuation R (f m))⁻¹ * valuation R (f m) := (inv_mul_cancel₀ hfm0).symm
       _ < valuation R (f x) ^ (n + 1) * valuation R (f m) :=
           mul_lt_mul_of_pos_right (hn.trans_lt (pow_lt_pow_right₀ hgt n.lt_succ_self))
-            (zero_lt_iff.2 hfm0)
+            (pos_iff_ne_zero.2 hfm0)
   exact hgt'.not_ge hle
 
 /-- **Dichotomy for discrete archimedean valuations pulled back to a nontrivial archimedean
