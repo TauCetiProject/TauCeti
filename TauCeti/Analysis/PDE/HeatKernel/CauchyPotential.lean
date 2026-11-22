@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.FDeriv.Extend
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.MeanValue.Pow
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
