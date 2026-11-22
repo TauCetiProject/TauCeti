@@ -40,6 +40,8 @@ at `ν = 0` (`Γ(0) = ⊥`), the normal closure of `T ^ N` has infinite index in
 * `CongruenceSubgroup.IsCongruenceSubgroup.Gamma_strictLevel_le_normalCore`,
   `CongruenceSubgroup.IsCongruenceSubgroup.Gamma_strictLevel_le`: every congruence subgroup `Γ`
   contains `Γ(Γ.strictLevel)` inside its normal core.
+* `CongruenceSubgroup.IsCongruenceSubgroup.Gamma_le_iff_strictLevel_dvd`: a congruence subgroup
+  `Γ` contains `Γ(N)` exactly when `Γ.strictLevel ∣ N`.
 * `CongruenceSubgroup.isCongruenceSubgroup_iff_strictLevel_ne_zero_and_Gamma_le`,
   `CongruenceSubgroup.isCongruenceSubgroup_iff_Gamma_le_of_dvd`,
   `CongruenceSubgroup.isCongruenceSubgroup_iff_Gamma_strictLevel_le`: **Wohlfahrt's theorem in
@@ -241,6 +243,14 @@ theorem IsCongruenceSubgroup.Gamma_strictLevel_le {Γ : Subgroup SL(2, ℤ)}
     (h : IsCongruenceSubgroup Γ) : Gamma Γ.strictLevel ≤ Γ :=
   h.Gamma_strictLevel_le_normalCore.trans Γ.normalCore_le
 
+/-- A congruence subgroup `Γ ≤ SL(2, ℤ)` contains `Γ(N)` exactly when its strict level divides
+`N`: the levels of the principal congruence subgroups inside `Γ` are the multiples of
+`Γ.strictLevel`. -/
+theorem IsCongruenceSubgroup.Gamma_le_iff_strictLevel_dvd {Γ : Subgroup SL(2, ℤ)}
+    (h : IsCongruenceSubgroup Γ) {N : ℕ} : Gamma N ≤ Γ ↔ Γ.strictLevel ∣ N :=
+  ⟨strictLevel_dvd_of_Gamma_le,
+    fun hdvd ↦ (Gamma_le_Gamma_of_dvd hdvd).trans h.Gamma_strictLevel_le⟩
+
 /-- **Wohlfahrt's theorem in strict form, unconditional**: an arbitrary subgroup `Γ ≤ SL(2, ℤ)` is
 a congruence subgroup if and only if its strict level is nonzero and `Γ(Γ.strictLevel) ≤ Γ`. -/
 theorem isCongruenceSubgroup_iff_strictLevel_ne_zero_and_Gamma_le {Γ : Subgroup SL(2, ℤ)} :
@@ -253,8 +263,7 @@ it contains `Γ(N)`. -/
 theorem isCongruenceSubgroup_iff_Gamma_le_of_dvd {Γ : Subgroup SL(2, ℤ)} {N : ℕ} [NeZero N]
     (hdvd : Γ.strictLevel ∣ N) :
     IsCongruenceSubgroup Γ ↔ Gamma N ≤ Γ :=
-  ⟨fun h ↦ (Gamma_le_Gamma_of_dvd hdvd).trans h.Gamma_strictLevel_le,
-    fun h ↦ ⟨N, NeZero.ne N, h⟩⟩
+  ⟨fun h ↦ h.Gamma_le_iff_strictLevel_dvd.mpr hdvd, fun h ↦ ⟨N, NeZero.ne N, h⟩⟩
 
 /-- **Wohlfahrt's theorem in strict form**: a subgroup `Γ ≤ SL(2, ℤ)` of nonzero strict level (in
 particular any subgroup of finite index, via `Subgroup.instNeZeroStrictLevel`) is a congruence
@@ -269,8 +278,7 @@ theorem isCongruenceSubgroup_iff_Gamma_strictLevel_le (Γ : Subgroup SL(2, ℤ))
 theorem IsCongruenceSubgroup.Gamma_two_mul_strictLevel_withCenter_le {Γ : Subgroup SL(2, ℤ)}
     (h : IsCongruenceSubgroup Γ) :
     Gamma (2 * Γ.withCenter.strictLevel) ≤ Γ :=
-  (Gamma_le_Gamma_of_dvd Γ.strictLevel_dvd_two_mul_strictLevel_withCenter).trans
-    h.Gamma_strictLevel_le
+  h.Gamma_le_iff_strictLevel_dvd.mpr Γ.strictLevel_dvd_two_mul_strictLevel_withCenter
 
 /-! ### The odd lift `{γ ∈ Γ(2) | γ₀₀ ≡ 1 (mod 4)}`
 

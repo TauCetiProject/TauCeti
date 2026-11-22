@@ -5,160 +5,355 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Basic
-public import Mathlib.RingTheory.ClassGroup.Basic
+public import Mathlib.LinearAlgebra.BilinearForm.DualLattice
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+public import Mathlib.NumberTheory.NumberField.FractionalIdeal
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
-
-import Mathlib.NumberTheory.NumberField.FractionalIdeal
-import Mathlib.RingTheory.LocalProperties.Invertible
+public import TauCeti.RingTheory.Trace.WedgeForm
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.RingTheory.DedekindDomain.Different.Basic
 import TauCeti.RingTheory.FractionalIdeal.Projective
 
 /-!
-# Hilbert modular polarization lattices
+# The polarization lattices of Hilbert modular varieties
 
-For a number field `F` and an invertible fractional ideal `c` of its ring of integers `O`, the
-polarization lattice in the space of row vectors `F × F` is `O ⊕ c⁻¹𝔡⁻¹`, with `𝔡` the absolute
-different. It is finite projective of constant rank two over `O` and free of rank `2 [F : ℚ]`
-over `ℤ`. No generator of `c` is chosen. Replacing `c` by `a c` for `a ∈ Fˣ` acts on the
-second coordinate by `a⁻¹`.
+Let `K` be a number field with ring of integers `𝓞 K` and inverse different
+`𝔡⁻¹ = FractionalIdeal.dual ℤ ℚ 1`. For a fractional ideal `c` of `𝓞 K`, the polarization lattice
+is the `𝓞 K`-submodule of row vectors
 
-The lattice is that of Birkbeck, Heuer and Williams, *Overconvergent Hilbert modular forms via
-perfectoid modular varieties*, Notation 5.1(3). We use Mathlib's `FractionalIdeal.dual` for
-trace duality.
+```text
+L_c = 𝓞_K ⊕ c⁻¹𝔡⁻¹ ⊆ K².
+```
+
+For a totally real `K` and a nonzero ideal `c` it is the integral lattice of the Hilbert modular
+Shimura datum with `c`-polarization, refining its rational representation on `K²`. The integral
+alternating forms on it are the restrictions of the trace symplectic forms
+`ψ_a(x, y) = Tr_{K/ℚ}(a (x₀ y₁ - x₁ y₀))` of `TauCeti.traceWedgeForm` with parameter `a ∈ c`,
+an `𝓞 K`-module family of `ℤ`-valued forms rather than a single principal form. The lattice is
+defined without choosing a generator of `c`, so nonprincipal polarization modules are included.
+Its `ℤ`-dual for `ψ₁` is `c ⊕ 𝔡⁻¹ = c L_c`, which determines the level groups stabilizing it.
+
+## Main definitions
+
+* `TauCeti.HilbertModular.polarizationLattice c`: the lattice `L_c = 𝓞_K ⊕ c⁻¹𝔡⁻¹`.
+* `TauCeti.HilbertModular.polarizationLatticeEquivProd c`: `L_c` is the product of its two
+  coordinate fractional ideals.
+* `TauCeti.HilbertModular.integralTraceWedgeForm c`: the `ℤ`-linear family `a ↦ ψ_{c, a}` of
+  alternating `ℤ`-valued `ℤ`-bilinear forms on `L_c`, indexed by `a ∈ c`.
+
+## Main statements
+
+* `TauCeti.HilbertModular.mem_polarizationLattice`: `x ∈ L_c ↔ x₀ ∈ 𝓞_K ∧ x₁ ∈ c⁻¹𝔡⁻¹`.
+* `TauCeti.HilbertModular.projective_polarizationLattice`,
+  `TauCeti.HilbertModular.rankAtStalk_polarizationLattice`: `L_c` is finite projective over
+  `𝓞 K`, of rank two at every prime for `c ≠ 0`.
+* `TauCeti.HilbertModular.finrank_int_polarizationLattice`: for `c ≠ 0`, `L_c` is free of rank
+  `2 [K : ℚ]` over `ℤ`.
+* `TauCeti.HilbertModular.map_polarizationLattice`: the row action of `diag(1, a⁻¹)` carries
+  `L_c` onto `L_{a c}` as an equality of submodules.
+* `TauCeti.HilbertModular.exists_traceWedgeForm_eq_intCast`: for `a ∈ c` the trace symplectic
+  form `ψ_a` is integral on `L_c`.
+* `TauCeti.HilbertModular.mem_dualSubmodule_polarizationLattice`: for `c ≠ 0` the `ℤ`-dual of
+  `L_c` for `ψ₁` is `c ⊕ 𝔡⁻¹`.
+
+## References
+
+* C. Birkbeck, B. Heuer and C. Williams, *Overconvergent Hilbert modular forms via perfectoid
+  modular varieties*, Ann. Inst. Fourier 73 (2023), Notation 5.1(3) and Definition 5.2(1).
+* P. Deligne and G. Pappas, *Singularités des espaces de modules de Hilbert, en les
+  caractéristiques divisant le discriminant*, Compositio Math. 90 (1994), §2.
 -/
 
 public section
 
-open scoped NumberField nonZeroDivisors
-open FractionalIdeal
+open Module NumberField FractionalIdeal
+open scoped Matrix nonZeroDivisors
 
 namespace TauCeti.HilbertModular
 
-variable {F : Type*} [Field F] [NumberField F]
+variable {K : Type*} [Field K] [NumberField K]
 
-/-- The polarization lattice `O ⊕ c⁻¹𝔡⁻¹` in the row representation, expressed using the trace
-dual of `c` for its second summand. -/
-noncomputable def polarizationLattice (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) :
-    Submodule (𝓞 F) (F × F) :=
-  (1 : FractionalIdeal (𝓞 F)⁰ F).coeToSubmodule.prod
-    (dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)).coeToSubmodule
+/-- The polarization lattice `L_c = 𝓞_K ⊕ c⁻¹𝔡⁻¹` of row vectors in `K²`, for a fractional ideal
+`c` of `𝓞 K`, where `𝔡⁻¹ = FractionalIdeal.dual ℤ ℚ 1` is the inverse different. -/
+noncomputable def polarizationLattice (c : FractionalIdeal (𝓞 K)⁰ K) :
+    Submodule (𝓞 K) (Fin 2 → K) :=
+  Submodule.pi Set.univ
+    ![((1 : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K),
+      ((c⁻¹ * dual ℤ ℚ 1 : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)]
 
-/-- The polarization lattice written as a product with the inverse different. -/
-theorem polarizationLattice_def (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) :
-    polarizationLattice c = (1 : Submodule (𝓞 F) F).prod
-      ((c : FractionalIdeal (𝓞 F)⁰ F)⁻¹ * dual ℤ ℚ 1).coeToSubmodule := by
-  rw [polarizationLattice, coeToSubmodule_one, dual_eq_mul_inv, mul_comm (dual ℤ ℚ 1)]
+@[simp]
+theorem mem_polarizationLattice {c : FractionalIdeal (𝓞 K)⁰ K} {x : Fin 2 → K} :
+    x ∈ polarizationLattice c ↔ x 0 ∈ (1 : FractionalIdeal (𝓞 K)⁰ K) ∧
+      x 1 ∈ c⁻¹ * dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+  simp only [polarizationLattice, Submodule.mem_pi, Set.mem_univ, true_implies,
+    Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, mem_coeToSubmodule]
 
-/-- A row belongs to the polarization lattice exactly when its first coordinate is integral
-and its second lies in the trace dual of `c`. -/
-@[simp] theorem mem_polarizationLattice {c : (FractionalIdeal (𝓞 F)⁰ F)ˣ} {x : F × F} :
-    x ∈ polarizationLattice c ↔ x.1 ∈ (1 : FractionalIdeal (𝓞 F)⁰ F) ∧
-      x.2 ∈ dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F) := (Iff.rfl)
+/-- For `c ≠ 0`, the second coordinate ideal `c⁻¹𝔡⁻¹` of `L_c` is nonzero. -/
+private theorem inv_mul_dual_one_ne_zero {c : FractionalIdeal (𝓞 K)⁰ K} (hc : c ≠ 0) :
+    c⁻¹ * dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) ≠ 0 :=
+  mul_ne_zero (inv_ne_zero hc) (dual_ne_zero ℤ ℚ one_ne_zero)
 
-/-- The coordinate equivalence of the polarization lattice with the product of the unit
-fractional ideal and the trace dual of `c`. -/
-noncomputable def polarizationLatticeEquiv (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) :
-    polarizationLattice c ≃ₗ[𝓞 F]
-      ((1 : FractionalIdeal (𝓞 F)⁰ F) × dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)) :=
-  Submodule.prodEquiv _ _
+/-- For `c ≠ 0`, `u ∈ c` and `v ∈ c⁻¹𝔡⁻¹`, the product `u v` lies in `𝔡⁻¹`. -/
+private theorem mul_mem_dual_one_of_mem_inv_mul {c : FractionalIdeal (𝓞 K)⁰ K} (hc : c ≠ 0)
+    {u v : K} (hu : u ∈ c) (hv : v ∈ c⁻¹ * dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K)) :
+    u * v ∈ dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+  simpa only [mul_inv_cancel_left₀ hc] using mul_mem_mul hu hv
 
-/-- The coordinate equivalence preserves the two entries of the row. -/
-@[simp] theorem polarizationLatticeEquiv_apply (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ)
-    (x : polarizationLattice c) :
-    (((polarizationLatticeEquiv c x).1 : F), ((polarizationLatticeEquiv c x).2 : F)) = x :=
+/-- The polarization lattice `L_c` is the product of the fractional ideals `𝓞_K` and `c⁻¹𝔡⁻¹`
+of its two coordinates. -/
+noncomputable def polarizationLatticeEquivProd (c : FractionalIdeal (𝓞 K)⁰ K) :
+    polarizationLattice c ≃ₗ[𝓞 K]
+      (1 : FractionalIdeal (𝓞 K)⁰ K) × (c⁻¹ * dual ℤ ℚ 1 : FractionalIdeal (𝓞 K)⁰ K) where
+  toFun x :=
+    (⟨x.val 0, (mem_polarizationLattice.1 x.property).1⟩,
+      ⟨x.val 1, (mem_polarizationLattice.1 x.property).2⟩)
+  invFun y := ⟨![y.1, y.2], mem_polarizationLattice.2 ⟨y.1.property, y.2.property⟩⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := Subtype.ext <| funext <| Fin.forall_fin_two.2 ⟨rfl, rfl⟩
+  right_inv _ := rfl
+
+@[simp]
+theorem coe_polarizationLatticeEquivProd_apply_fst (c : FractionalIdeal (𝓞 K)⁰ K)
+    (x : polarizationLattice c) : ((polarizationLatticeEquivProd c x).1 : K) = x.val 0 :=
   (rfl)
 
-/-- The inverse coordinate equivalence assembles the two entries into a row. -/
-@[simp] theorem polarizationLatticeEquiv_symm_apply (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ)
-    (x : (1 : FractionalIdeal (𝓞 F)⁰ F) × dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)) :
-    ((polarizationLatticeEquiv c).symm x : F × F) = ((x.1 : F), (x.2 : F)) :=
+@[simp]
+theorem coe_polarizationLatticeEquivProd_apply_snd (c : FractionalIdeal (𝓞 K)⁰ K)
+    (x : polarizationLattice c) : ((polarizationLatticeEquivProd c x).2 : K) = x.val 1 :=
   (rfl)
 
-private noncomputable def dualUnit (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) :
-    (FractionalIdeal (𝓞 F)⁰ F)ˣ :=
-  Units.mk0 (dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)) (dual_ne_zero ℤ ℚ c.ne_zero)
+@[simp]
+theorem coe_polarizationLatticeEquivProd_symm_apply (c : FractionalIdeal (𝓞 K)⁰ K)
+    (y : (1 : FractionalIdeal (𝓞 K)⁰ K) × (c⁻¹ * dual ℤ ℚ 1 : FractionalIdeal (𝓞 K)⁰ K)) :
+    ((polarizationLatticeEquivProd c).symm y : Fin 2 → K) = ![(y.1 : K), (y.2 : K)] :=
+  (rfl)
 
-instance (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) : Module.Finite (𝓞 F) (polarizationLattice c) := by
-  let : Module.Finite (𝓞 F) (1 : FractionalIdeal (𝓞 F)⁰ F) := finite_units 1
-  let : Module.Finite (𝓞 F) (dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)) := finite_units (dualUnit c)
-  exact Module.Finite.of_surjective (polarizationLatticeEquiv c).symm.toLinearMap
-    (polarizationLatticeEquiv c).symm.surjective
+instance (c : FractionalIdeal (𝓞 K)⁰ K) : Module.Free ℤ (polarizationLattice c) :=
+  Module.Free.of_equiv ((polarizationLatticeEquivProd c).restrictScalars ℤ).symm
 
-instance (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) : Module.Projective (𝓞 F) (polarizationLattice c) := by
-  let : Module.Projective (𝓞 F) (1 : FractionalIdeal (𝓞 F)⁰ F) := projective_units 1
-  let : Module.Projective (𝓞 F) (dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)) :=
-    projective_units (dualUnit c)
-  exact Module.Projective.of_equiv' (polarizationLatticeEquiv c).symm
+instance (c : FractionalIdeal (𝓞 K)⁰ K) : Module.Finite ℤ (polarizationLattice c) :=
+  Module.Finite.equiv ((polarizationLatticeEquivProd c).restrictScalars ℤ).symm
 
-/-- At every prime of the ring of integers the polarization lattice has rank two. -/
-theorem rankAtStalk_polarizationLattice (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ)
-    (p : PrimeSpectrum (𝓞 F)) : Module.rankAtStalk (polarizationLattice c) p = 2 := by
-  let : Module.Invertible (𝓞 F) (1 : FractionalIdeal (𝓞 F)⁰ F) := invertible_units 1
-  let : Module.Invertible (𝓞 F) (dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)) :=
-    invertible_units (dualUnit c)
-  rw [Module.rankAtStalk_eq_of_equiv (polarizationLatticeEquiv c), Module.rankAtStalk_prod]
-  simp [Module.rankAtStalk, Module.Invertible.finrank_eq_one]
+instance (c : FractionalIdeal (𝓞 K)⁰ K) : Module.Finite (𝓞 K) (polarizationLattice c) :=
+  Module.Finite.of_restrictScalars_finite ℤ _ _
 
-instance (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) : Module.Free ℤ (polarizationLattice c) :=
-  Module.Free.of_equiv ((polarizationLatticeEquiv c).symm.restrictScalars ℤ)
+/-- For `c ≠ 0`, the polarization lattice `L_c` is free of rank `2 [K : ℚ]` over `ℤ`. -/
+theorem finrank_int_polarizationLattice {c : FractionalIdeal (𝓞 K)⁰ K} (hc : c ≠ 0) :
+    finrank ℤ (polarizationLattice c) = 2 * finrank ℚ K := by
+  have h₀ := fractionalIdeal_rank K (1 : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+  have h₁ := fractionalIdeal_rank K (Units.mk0 _ (inv_mul_dual_one_ne_zero hc))
+  rw [Units.val_one] at h₀
+  rw [Units.val_mk0] at h₁
+  rw [((polarizationLatticeEquivProd c).restrictScalars ℤ).finrank_eq, finrank_prod, h₀, h₁,
+    RingOfIntegers.rank, two_mul]
 
-instance (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) : Module.Finite ℤ (polarizationLattice c) :=
-  Module.Finite.trans (𝓞 F) (polarizationLattice c)
+/-- The polarization lattice `L_c` is a projective `𝓞 K`-module. -/
+instance projective_polarizationLattice (c : FractionalIdeal (𝓞 K)⁰ K) :
+    Module.Projective (𝓞 K) (polarizationLattice c) :=
+  Module.Projective.of_equiv (polarizationLatticeEquivProd c).symm
 
-/-- The integral rank of the polarization lattice is twice the degree of the field. -/
-theorem finrank_int_polarizationLattice (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) :
-    Module.finrank ℤ (polarizationLattice c) = 2 * Module.finrank ℚ F := by
-  rw [((polarizationLatticeEquiv c).restrictScalars ℤ).finrank_eq, Module.finrank_prod]
-  have h₁ : Module.finrank ℤ (1 : FractionalIdeal (𝓞 F)⁰ F) =
-      Module.finrank ℤ (𝓞 F) := NumberField.fractionalIdeal_rank F 1
-  have h₂ : Module.finrank ℤ (dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)) =
-      Module.finrank ℤ (𝓞 F) := NumberField.fractionalIdeal_rank F (dualUnit c)
-  rw [h₁, h₂, NumberField.RingOfIntegers.rank, two_mul]
+/-- For `c ≠ 0`, the polarization lattice `L_c` has rank two over `𝓞 K`. -/
+theorem finrank_polarizationLattice {c : FractionalIdeal (𝓞 K)⁰ K} (hc : c ≠ 0) :
+    finrank (𝓞 K) (polarizationLattice c) = 2 := by
+  -- `L_c` spans `K²`, of rank two over `𝓞 K`; it contains `(1, 0)` and `(0, d)` for some
+  -- nonzero `d ∈ c⁻¹𝔡⁻¹`, which are linearly independent.
+  obtain ⟨d, hd, hd0⟩ : ∃ d ∈ c⁻¹ * dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K), d ≠ 0 := by
+    by_contra! h
+    exact inv_mul_dual_one_ne_zero hc (eq_zero_iff.2 h)
+  apply finrank_eq_of_rank_eq
+  apply le_antisymm
+  · grw [Submodule.rank_le, ← IsFractionRing.rank_right_eq (𝓞 K) K, rank_fin_fun]
+  · let v : Fin 2 → polarizationLattice c :=
+      ![⟨![1, 0], mem_polarizationLattice.2 ⟨one_mem_one _, zero_mem _⟩⟩,
+        ⟨![0, d], mem_polarizationLattice.2 ⟨zero_mem _, hd⟩⟩]
+    have hv : LinearIndependent (𝓞 K) v := by
+      refine LinearIndependent.of_comp (polarizationLattice c).subtype ?_
+      refine Fintype.linearIndependent_iff.2 fun g hg ↦ ?_
+      have h₀ : (g 0 : K) = 0 := by simpa [v, Fin.sum_univ_two] using congr_fun hg 0
+      have h₁ : (g 1 : K) * d = 0 := by simpa [v, Fin.sum_univ_two] using congr_fun hg 1
+      intro i
+      fin_cases i
+      · exact_mod_cast h₀
+      · exact_mod_cast (mul_eq_zero.1 h₁).resolve_right hd0
+    simpa using hv.cardinal_lift_le_rank
 
-/-- Multiplying the polarization ideal by `(a)` sends the lattice to its image under the
-right row action of `diag(1, a⁻¹)`. -/
-theorem map_polarizationLattice (c : (FractionalIdeal (𝓞 F)⁰ F)ˣ) (a : Fˣ) :
-    (polarizationLattice c).map (LinearMap.id.prodMap (LinearMap.mulLeft (𝓞 F) (a : F)⁻¹)) =
-      polarizationLattice (toPrincipalIdeal (𝓞 F) F a * c) := by
-  rw [polarizationLattice, polarizationLattice, LinearMap.prodMap_map_prod, Submodule.map_id]
-  congr 1
-  have h : dual ℤ ℚ (↑(toPrincipalIdeal (𝓞 F) F a * c) : FractionalIdeal (𝓞 F)⁰ F) =
-      spanSingleton _ (a : F)⁻¹ * dual ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F) := by
-    rw [dual_eq_mul_inv, dual_eq_mul_inv ℤ ℚ (c : FractionalIdeal (𝓞 F)⁰ F)]
-    simp only [Units.val_mul, mul_inv, coe_toPrincipalIdeal, spanSingleton_inv]
-    ac_rfl
-  rw [h, coeToSubmodule_mul, coeToSubmodule_spanSingleton]
-  ext x
-  simp only [Submodule.mem_map, LinearMap.mulLeft_apply, Submodule.mem_span_singleton_mul]
+/-- For `c ≠ 0`, the polarization lattice has rank two at every prime of `𝓞 K`. -/
+theorem rankAtStalk_polarizationLattice {c : FractionalIdeal (𝓞 K)⁰ K} (hc : c ≠ 0)
+    (p : PrimeSpectrum (𝓞 K)) : Module.rankAtStalk (polarizationLattice c) p = 2 := by
+  rw [Module.rankAtStalk_eq, p.asIdeal.finrank_fiber_eq_finrank, finrank_polarizationLattice hc]
 
-private theorem mem_polarizationLattice_rat_one {x : ℚ × ℚ} :
-    x ∈ polarizationLattice (F := ℚ) 1 ↔
-      x.1 ∈ (algebraMap ℤ ℚ).range ∧ x.2 ∈ (algebraMap ℤ ℚ).range := by
-  have h {y : ℚ} : y ∈ (1 : FractionalIdeal (𝓞 ℚ)⁰ ℚ) ↔
-      y ∈ (algebraMap ℤ ℚ).range := by
-    rw [mem_one_iff, ← IsIntegralClosure.isIntegral_iff (A := 𝓞 ℚ) (R := ℤ)]
-    exact IsIntegrallyClosed.isIntegral_iff
-  rw [mem_polarizationLattice, h, Units.val_one, mem_dual one_ne_zero]
-  refine and_congr_right fun _ ↦ ⟨fun hy ↦ ?_, fun hy z hz ↦ ?_⟩
-  · simpa [Algebra.traceForm_apply] using hy 1 (h.mpr (algebraMap ℤ ℚ).range.one_mem)
-  · simpa [Algebra.traceForm_apply] using (algebraMap ℤ ℚ).range.mul_mem hy (h.mp hz)
+/-- A row vector `x` lies in `L_c` exactly when `x diag(1, a⁻¹)` lies in `L_{a c}`: the row
+action of `diag(1, a⁻¹)` carries the polarization lattice `L_c` onto `L_{a c}`. -/
+theorem vecMul_diagonal_mem_polarizationLattice_iff {a : K} (ha : a ≠ 0)
+    {c : FractionalIdeal (𝓞 K)⁰ K} {x : Fin 2 → K} :
+    x ᵥ* Matrix.diagonal ![1, a⁻¹] ∈ polarizationLattice (spanSingleton (𝓞 K)⁰ a * c) ↔
+      x ∈ polarizationLattice c := by
+  simp only [mem_polarizationLattice, Matrix.vecMul_diagonal, Matrix.cons_val_zero,
+    Matrix.cons_val_one, mul_one, mul_inv, spanSingleton_inv, mul_assoc, mem_singleton_mul]
+  refine and_congr_right fun _ ↦ ⟨fun ⟨y, hy, h⟩ ↦ ?_, fun h ↦ ⟨x 1, h, mul_comm _ _⟩⟩
+  rw [mul_comm, mul_right_inj' (inv_ne_zero ha)] at h
+  rwa [h]
 
--- A principal change of ideal can genuinely enlarge the embedded lattice.
+/-- The image of `L_c` under the right row action of `diag(1, a⁻¹)` is the polarization lattice
+of the rescaled ideal `(a)c`. -/
+theorem map_polarizationLattice {a : K} (ha : a ≠ 0) (c : FractionalIdeal (𝓞 K)⁰ K) :
+    (polarizationLattice c).map ((Matrix.diagonal ![1, a⁻¹]).vecMulLinear.restrictScalars (𝓞 K)) =
+      polarizationLattice (spanSingleton (𝓞 K)⁰ a * c) := by
+  let f := (Matrix.diagonal ![1, a⁻¹]).vecMulLinear.restrictScalars (𝓞 K)
+  have hf : Function.Surjective f := by
+    apply Matrix.vecMul_surjective_iff_isUnit.mpr
+    rw [Matrix.isUnit_diagonal, Pi.isUnit_iff, Fin.forall_fin_two]
+    simp [ha]
+  change (polarizationLattice c).map f = _
+  have hcomap : (polarizationLattice (spanSingleton (𝓞 K)⁰ a * c)).comap f =
+      polarizationLattice c :=
+    Submodule.ext fun _ ↦ vecMul_diagonal_mem_polarizationLattice_iff ha
+  rw [← hcomap, Submodule.map_comap_eq_of_surjective hf]
+
+/-- For `a ∈ c` and `x, y ∈ L_c`, the wedge `a (x₀ y₁ - x₁ y₀)` lies in `𝔡⁻¹`. -/
+private theorem mul_wedge_mem_dual_one {c : FractionalIdeal (𝓞 K)⁰ K} {a : K} (ha : a ∈ c)
+    {x y : Fin 2 → K} (hx : x ∈ polarizationLattice c) (hy : y ∈ polarizationLattice c) :
+    a * (x 0 * y 1 - x 1 * y 0) ∈ dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+  obtain ⟨hx₀, hx₁⟩ := mem_polarizationLattice.1 hx
+  obtain ⟨hy₀, hy₁⟩ := mem_polarizationLattice.1 hy
+  rcases eq_or_ne c 0 with rfl | hc
+  · rw [(mem_zero_iff _).1 ha, zero_mul]
+    exact zero_mem _
+  have h {u v : K} (hu : u ∈ (1 : FractionalIdeal (𝓞 K)⁰ K))
+      (hv : v ∈ c⁻¹ * dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K)) :
+      u * (a * v) ∈ dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+    simpa only [one_mul] using mul_mem_mul hu (mul_mem_dual_one_of_mem_inv_mul hc ha hv)
+  rw [← mem_coeToSubmodule]
+  convert Submodule.sub_mem _ (h hx₀ hy₁) (h hy₀ hx₁) using 1
+  ring
+
+/-- For `a ∈ c`, the trace symplectic form `ψ_a` takes integer values on the polarization
+lattice `L_c`. -/
+theorem exists_traceWedgeForm_eq_intCast {c : FractionalIdeal (𝓞 K)⁰ K} {a : K} (ha : a ∈ c)
+    {x y : Fin 2 → K} (hx : x ∈ polarizationLattice c) (hy : y ∈ polarizationLattice c) :
+    ∃ n : ℤ, traceWedgeForm ℚ a x y = n := by
+  obtain ⟨n, hn⟩ := trace_mem_range_of_mem_dual_one (mul_wedge_mem_dual_one ha hx hy)
+  exact ⟨n, by rw [traceWedgeForm_apply, ← hn, algebraMap_int_eq, eq_intCast]⟩
+
+/-- The restriction of the trace symplectic form `ψ_a` to `L_c`, for `a ∈ c`, as a `ℤ`-valued
+form. It is the value at `a` of `integralTraceWedgeForm c`. -/
+private noncomputable def integralTraceWedgeFormAux (c : FractionalIdeal (𝓞 K)⁰ K)
+    (a : (c : Submodule (𝓞 K) K)) :
+    LinearMap.BilinForm ℤ (polarizationLattice c) :=
+  LinearMap.codRestrict₂
+    (((traceWedgeForm ℚ (a : K)).restrictScalars₁₂ ℤ ℤ).compl₁₂
+      ((polarizationLattice c).subtype.restrictScalars ℤ)
+      ((polarizationLattice c).subtype.restrictScalars ℤ))
+    (Int.castAddHom ℚ).toIntLinearMap Int.cast_injective fun x y ↦ by
+      obtain ⟨n, hn⟩ := exists_traceWedgeForm_eq_intCast a.property x.property y.property
+      exact ⟨n, by simp [hn]⟩
+
+private theorem intCast_integralTraceWedgeFormAux_apply (c : FractionalIdeal (𝓞 K)⁰ K)
+    (a : (c : Submodule (𝓞 K) K)) (x y : polarizationLattice c) :
+    ((integralTraceWedgeFormAux c a x y : ℤ) : ℚ) = traceWedgeForm ℚ (a : K) x y := by
+  unfold integralTraceWedgeFormAux
+  exact LinearMap.codRestrict₂_apply (i := (Int.castAddHom ℚ).toIntLinearMap)
+    (hi := Int.cast_injective) _ _ x y
+
+/-- The integral trace polarization forms on `L_c`: the `ℤ`-linear family `a ↦ ψ_{c, a}` indexed
+by `a ∈ c`, where `ψ_{c, a}` is the restriction of the trace symplectic form `ψ_a` to `L_c`, an
+alternating `ℤ`-bilinear form with values in `ℤ` (`intCast_integralTraceWedgeForm_apply`). -/
+noncomputable def integralTraceWedgeForm (c : FractionalIdeal (𝓞 K)⁰ K) :
+    (c : Submodule (𝓞 K) K) →ₗ[ℤ] LinearMap.BilinForm ℤ (polarizationLattice c) where
+  toFun := integralTraceWedgeFormAux c
+  map_add' a b := LinearMap.ext₂ fun x y ↦ Int.cast_injective (α := ℚ) <| by
+    simp [intCast_integralTraceWedgeFormAux_apply]
+  map_smul' n a := LinearMap.ext₂ fun x y ↦ Int.cast_injective (α := ℚ) <| by
+    simp only [LinearMap.smul_apply, smul_eq_mul, Int.cast_mul, eq_intCast,
+      intCast_integralTraceWedgeFormAux_apply, Submodule.coe_smul_of_tower, map_zsmul]
+    exact (zsmul_eq_mul _ _).symm
+
+variable {c : FractionalIdeal (𝓞 K)⁰ K}
+
+@[simp]
+theorem intCast_integralTraceWedgeForm_apply (a : (c : Submodule (𝓞 K) K))
+    (x y : polarizationLattice c) :
+    ((integralTraceWedgeForm c a x y : ℤ) : ℚ) = traceWedgeForm ℚ (a : K) x y :=
+  intCast_integralTraceWedgeFormAux_apply c a x y
+
+@[simp]
+theorem integralTraceWedgeForm_self (a : (c : Submodule (𝓞 K) K)) (x : polarizationLattice c) :
+    integralTraceWedgeForm c a x x = 0 :=
+  Int.cast_injective (α := ℚ) <| by
+    rw [intCast_integralTraceWedgeForm_apply, traceWedgeForm_self, Int.cast_zero]
+
+theorem isAlt_integralTraceWedgeForm (a : (c : Submodule (𝓞 K) K)) :
+    (integralTraceWedgeForm c a).IsAlt :=
+  integralTraceWedgeForm_self a
+
+/-- The parameter of `ψ_c` can be moved into the first argument:
+`ψ_{c, b a}(x, y) = ψ_{c, a}(b x, y)` for `b ∈ 𝓞 K`. -/
+theorem integralTraceWedgeForm_smul_left (b : 𝓞 K) (a : (c : Submodule (𝓞 K) K))
+    (x y : polarizationLattice c) :
+    integralTraceWedgeForm c (b • a) x y = integralTraceWedgeForm c a (b • x) y :=
+  Int.cast_injective (α := ℚ) <| by
+    rw [intCast_integralTraceWedgeForm_apply, intCast_integralTraceWedgeForm_apply,
+      Submodule.coe_smul, Submodule.coe_smul, Algebra.smul_def, ← algebraMap_smul K b]
+    exact traceWedgeForm_mul_smul_left _ _ _ _
+
+/-- The parameter of `ψ_c` can be moved into the second argument:
+`ψ_{c, b a}(x, y) = ψ_{c, a}(x, b y)` for `b ∈ 𝓞 K`. -/
+theorem integralTraceWedgeForm_smul_right (b : 𝓞 K) (a : (c : Submodule (𝓞 K) K))
+    (x y : polarizationLattice c) :
+    integralTraceWedgeForm c (b • a) x y = integralTraceWedgeForm c a x (b • y) :=
+  Int.cast_injective (α := ℚ) <| by
+    rw [intCast_integralTraceWedgeForm_apply, intCast_integralTraceWedgeForm_apply,
+      Submodule.coe_smul, Submodule.coe_smul, Algebra.smul_def, ← algebraMap_smul K b]
+    exact traceWedgeForm_mul_smul_right _ _ _ _
+
+/-- For `c ≠ 0`, the `ℤ`-dual of the polarization lattice `L_c = 𝓞_K ⊕ c⁻¹𝔡⁻¹` for the trace
+symplectic form `ψ₁` is `c ⊕ 𝔡⁻¹`. -/
+theorem mem_dualSubmodule_polarizationLattice (hc : c ≠ 0) {x : Fin 2 → K} :
+    x ∈ (traceWedgeForm ℚ (1 : K)).dualSubmodule ((polarizationLattice c).restrictScalars ℤ) ↔
+      x 0 ∈ c ∧ x 1 ∈ dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+  rw [LinearMap.BilinForm.mem_dualSubmodule]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨h₀, h₁⟩ y hy ↦ ?_⟩
+  · -- Testing against `(0, t)` for `t ∈ c⁻¹𝔡⁻¹` puts `x₀` in the trace dual of `c⁻¹𝔡⁻¹`.
+    have hdual : dual ℤ ℚ (c⁻¹ * dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K)) = c := by
+      rw [dual_eq_mul_inv, mul_inv, inv_inv, mul_left_comm,
+        mul_inv_cancel₀ (dual_ne_zero ℤ ℚ one_ne_zero), mul_one]
+    rw [← hdual, mem_dual (inv_mul_dual_one_ne_zero hc)]
+    intro t ht
+    have := h ![0, t] (mem_polarizationLattice.2 ⟨zero_mem _, ht⟩)
+    simpa [traceWedgeForm_apply, Submodule.mem_one] using this
+  · -- Testing against `(-t, 0)` for `t ∈ 𝓞_K` puts `x₁` in `𝔡⁻¹`.
+    rw [mem_dual one_ne_zero]
+    intro t ht
+    have := h ![-t, 0] (mem_polarizationLattice.2 ⟨Submodule.neg_mem _ ht, zero_mem _⟩)
+    simpa [traceWedgeForm_apply, Submodule.mem_one] using this
+  · obtain ⟨hy₀, hy₁⟩ := mem_polarizationLattice.1 hy
+    have h : x 0 * y 1 - x 1 * y 0 ∈ dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+      have h₁ := mul_mem_mul h₁ hy₀
+      rw [mul_one] at h₁
+      exact Submodule.sub_mem _ (mul_mem_dual_one_of_mem_inv_mul hc h₀ hy₁) h₁
+    obtain ⟨n, hn⟩ := trace_mem_range_of_mem_dual_one h
+    exact Submodule.mem_one.2 ⟨n, by simp [traceWedgeForm_apply, ← hn]⟩
+
+-- Over `ℚ`, the row `(0, 1/2)` belongs to the lattice for `(2)` but not the lattice for `(1)`.
 example :
-    (0, 1 / 2) ∈ polarizationLattice (toPrincipalIdeal (𝓞 ℚ) ℚ (Units.mk0 2 (by norm_num))) ∧
-      (0, 1 / 2) ∉ polarizationLattice (F := ℚ) 1 := by
-  have h (a : ℚˣ) := map_polarizationLattice (F := ℚ) 1 a
+    ![0, (1 / 2 : ℚ)] ∈ polarizationLattice (spanSingleton (𝓞 ℚ)⁰ (2 : ℚ)) ∧
+      ![0, (1 / 2 : ℚ)] ∉ polarizationLattice (K := ℚ) 1 := by
   refine ⟨?_, ?_⟩
-  · rw [← mul_one (toPrincipalIdeal _ _ _), ← h, Submodule.mem_map]
-    refine ⟨(0, 1), mem_polarizationLattice_rat_one.mpr ⟨?_, ?_⟩, ?_⟩
-    · exact (algebraMap ℤ ℚ).range.zero_mem
-    · exact (algebraMap ℤ ℚ).range.one_mem
-    · simp [one_div]
-  · rw [mem_polarizationLattice_rat_one]
-    rintro ⟨_, n, hn⟩
-    have hn' : (n : ℚ) * 2 = 1 := by
-      simpa [algebraMap_int_eq] using (eq_div_iff (by norm_num)).mp hn
-    exact (by omega : ¬ n * 2 = 1) (by exact_mod_cast hn')
+  · have h : ![0, (1 : ℚ)] ∈ polarizationLattice (K := ℚ) 1 := by
+      rw [mem_polarizationLattice, inv_one, one_mul]
+      exact ⟨zero_mem _, one_le_dual_one ℤ ℚ (one_mem_one _)⟩
+    have h₂ := (vecMul_diagonal_mem_polarizationLattice_iff (a := (2 : ℚ)) (by norm_num)).mpr h
+    have hrow : ![0, (1 : ℚ)] ᵥ* Matrix.diagonal ![1, (2 : ℚ)⁻¹] = ![0, (1 / 2 : ℚ)] := by
+      ext i
+      fin_cases i <;> simp [Matrix.vecMul_diagonal, one_div]
+    simpa only [hrow, mul_one] using h₂
+  · rw [mem_polarizationLattice, inv_one, one_mul]
+    rintro ⟨_, h⟩
+    rcases trace_mem_range_of_mem_dual_one h with ⟨n, hn⟩
+    have hn' : (n : ℚ) = 1 / 2 := by simpa [algebraMap_int_eq] using hn
+    have hn₂ : (n : ℚ) * 2 = 1 := (eq_div_iff (by norm_num)).mp hn'
+    exact (by omega : ¬ n * 2 = 1) (by exact_mod_cast hn₂)
 
 end TauCeti.HilbertModular

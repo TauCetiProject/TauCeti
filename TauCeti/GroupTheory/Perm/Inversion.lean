@@ -126,12 +126,8 @@ inversion. -/
 @[simp]
 theorem _root_.Fin.sign_revPerm (n : ℕ) :
     Equiv.Perm.sign (Fin.revPerm : Equiv.Perm (Fin n)) = (-1) ^ n.choose 2 := by
-  have h : (Finset.univ.filter fun p : Fin n × Fin n =>
-      p.1 < p.2 ∧ Fin.revPerm p.2 < Fin.revPerm p.1) =
-      Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 :=
-    Finset.filter_congr fun p _ => by simp
-  rw [sign_eq_neg_one_pow_card_inversion, Finset.inversions_univ, h,
-    Fintype.card_product_filter_lt, Fintype.card_fin]
+  rw [sign_eq_neg_one_pow_card_inversion]
+  exact congrArg _ (Finset.card_univ_inversions_rev n)
 
 private lemma card_inversion_finAddFlip_trans_finCongr (m n : ℕ) :
     (Finset.univ.filter fun p : Fin (m + n) × Fin (m + n) =>

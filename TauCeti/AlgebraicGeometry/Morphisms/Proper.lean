@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 
 /-!
-# Proper morphisms of affine schemes, and integrality over affine opens
+# Proper morphisms, and integrality over affine opens
 
 A morphism of affine schemes `Spec S ⟶ Spec R` is proper exactly when `S` is a finite
 `R`-module. This is the affine case of Mathlib's characterization of finite morphisms as the
@@ -24,6 +24,9 @@ For a universally closed morphism `f : X ⟶ Y` and an affine open `U ⊆ Y`, th
 (`AlgebraicGeometry.Scheme.Hom.isIntegral_app_of_universallyClosed`). This is Mathlib's
 `AlgebraicGeometry.isIntegral_appTop_of_universallyClosed` applied to the restriction of `f`
 over `U`; it holds without finiteness or Noetherian hypotheses.
+
+An open subscheme whose inclusion is a closed immersion is proper over every base over which
+the ambient scheme is proper (`AlgebraicGeometry.Scheme.Opens.isProper_over`).
 -/
 
 public section
@@ -56,5 +59,12 @@ theorem Scheme.Hom.isIntegral_app_of_universallyClosed {X Y : Scheme.{u}} (f : X
     rintro _ rfl h
     exact h
   exact key _ (by simp) h
+
+/-- An open subscheme whose inclusion is closed is proper over any base over which the ambient
+scheme is proper. -/
+instance Scheme.Opens.isProper_over {S X : Scheme} [X.Over S] (U : X.Opens)
+    [IsClosedImmersion U.ι] [IsProper (X ↘ S)] : IsProper (U.toScheme ↘ S) := by
+  rw [← Scheme.Opens.ι_comp_over]
+  infer_instance
 
 end AlgebraicGeometry

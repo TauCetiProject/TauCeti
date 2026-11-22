@@ -27,6 +27,8 @@ with multiplication by `i` preserves invertibility.
   for a continuous real-linear map `L : Y →L[ℝ] X`.
 * `ContinuousLinearMap.complexOfMapISmul`: a continuous real-linear map between complex modules
   that commutes with multiplication by `i`, as a continuous complex-linear map.
+* `ContinuousLinearEquiv.complexOfMapISmul`: the corresponding conversion of continuous
+  real-linear equivalences, preserving their forward and inverse maps.
 -/
 
 public section
@@ -104,6 +106,45 @@ theorem restrictScalars_complexOfMapISmul (u : V →L[ℝ] W)
 
 end ContinuousLinearMap
 
+namespace ContinuousLinearEquiv
+
+variable [TopologicalSpace V] [TopologicalSpace W]
+
+/-- A continuous real-linear equivalence commuting with multiplication by `I`, viewed as a
+continuous complex-linear equivalence with the same forward and inverse maps. -/
+def complexOfMapISmul (e : V ≃L[ℝ] W)
+    (h : ∀ v, e (Complex.I • v) = Complex.I • e v) : V ≃L[ℂ] W where
+  toEquiv := e.toEquiv
+  map_add' := e.map_add
+  map_smul' c v := by
+    let u := e.toContinuousLinearMap.complexOfMapISmul h
+    have hu (v : V) : u v = e v :=
+      congrFun (ContinuousLinearMap.coe_complexOfMapISmul e.toContinuousLinearMap h) v
+    -- `toEquiv := e.toEquiv` fixes the forward map to `e`. The promoted CLM has an
+    -- opaque linear-map constructor, so its explicit coercion law `hu` is needed to
+    -- transfer the scalar identity to this equivalence field.
+    change e (c • v) = c • e v
+    exact (hu _).symm.trans ((u.map_smul c v).trans (congrArg (c • ·) (hu v)))
+  continuous_toFun := e.continuous
+  continuous_invFun := e.symm.continuous
+
+@[simp]
+theorem complexOfMapISmul_apply (e : V ≃L[ℝ] W) (h) (v : V) :
+    e.complexOfMapISmul h v = e v := by rfl
+
+@[simp]
+theorem complexOfMapISmul_symm_apply (e : V ≃L[ℝ] W) (h) (w : W) :
+    (e.complexOfMapISmul h).symm w = e.symm w := by rfl
+
+@[simp]
+theorem restrictScalars_complexOfMapISmul (e : V ≃L[ℝ] W)
+    (h : ∀ v, e (Complex.I • v) = Complex.I • e v) :
+    (e.complexOfMapISmul h).toContinuousLinearMap.restrictScalars ℝ =
+      e.toContinuousLinearMap := by
+  ext v
+  exact e.complexOfMapISmul_apply h v
+
+end ContinuousLinearEquiv
 
 end ComplexOfMapISmul
 
