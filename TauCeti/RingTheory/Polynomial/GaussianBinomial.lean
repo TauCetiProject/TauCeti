@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.LinearCombination
+public import TauCeti.Algebra.Ring.QPochhammer
 import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
@@ -21,10 +22,11 @@ denominator-free: it holds over every commutative (semi)ring, in particular at r
 positive characteristic, and at the integer `q` counting the elements of a finite field.
 
 The polynomial identities are proved without division. Over a commutative ring the coefficient
-satisfies `[n k]_t ∏_{i<k} (1 - t^(i+1)) = ∏_{i<k} (1 - t^(n-i))`, and for `k ≤ n` the
-factorial form `[n k]_t (t;t)_k (t;t)_(n-k) = (t;t)_n`. Over a field these give the classical
-quotient formula `[n k]_t = ∏_{i=1}^{k} (1 - t^(n-k+i)) / (1 - t^i)` whenever its denominators
-are nonzero. The factorial form, applied in the domain `ℤ[t]`, gives the symmetry
+satisfies `[n k]_t (t;t)_k = ∏_{i<k} (1 - t^(n-i))`, where `(t;t)_k = ∏_{i<k} (1 - t^(i+1))` is
+the q-Pochhammer product `TauCeti.qPochhammer t t k`, and for `k ≤ n` the factorial form
+`[n k]_t (t;t)_k (t;t)_(n-k) = (t;t)_n`. Over a field these give the classical quotient formula
+`[n k]_t = ∏_{i=1}^{k} (1 - t^(n-k+i)) / (1 - t^i)` for `k ≤ n`, whenever its denominators are
+nonzero. The factorial form, applied in the domain `ℤ[t]`, gives the symmetry
 `[n n-k] = [n k]`.
 
 The Gaussian coefficient is the non-symmetric normalization of `TauCeti.quantumBinomial`; the
@@ -44,8 +46,9 @@ comparison is in `TauCeti.QuantumGroups.QuantumInteger.Gaussian`.
   `n < k`, and `[n n]_t = 1`.
 * `TauCeti.gaussianBinomial_one`: `[n k]_1 = n.choose k`.
 * `TauCeti.gaussianBinomial_symm`: `[n n-k]_t = [n k]_t` for `k ≤ n`.
-* `TauCeti.gaussianBinomial_mul_prod_one_sub_pow` and
-  `TauCeti.gaussianBinomial_mul_prod_mul_prod`: the denominator-free product formulas.
+* `TauCeti.gaussianBinomial_mul_qPochhammer` and
+  `TauCeti.gaussianBinomial_mul_qPochhammer_mul_qPochhammer`: the denominator-free product
+  formulas.
 * `TauCeti.gaussianBinomial_eq_prod_div`: the quotient formula over a field.
 * `TauCeti.prod_one_add_pow_mul_eq_sum_gaussianBinomial`: **Cauchy's `q`-binomial theorem**
   `∏_{i<n} (1 + t^i z) = ∑_{k ≤ n} t^(k(k-1)/2) [n k]_t z^k` over every commutative semiring.
@@ -182,11 +185,12 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
-/-- The denominator-free product formula `[n k]_t ∏_{i<k} (1 - t^(i+1)) = ∏_{i<k} (1 - t^(n-i))`,
-valid for all `n` and `k` over every commutative ring: for `k > n` both sides vanish. -/
-theorem gaussianBinomial_mul_prod_one_sub_pow (t : R) (n k : ℕ) :
-    gaussianBinomial t n k * ∏ i ∈ range k, (1 - t ^ (i + 1)) =
-      ∏ i ∈ range k, (1 - t ^ (n - i)) := by
+/-- The denominator-free product formula `[n k]_t (t;t)_k = ∏_{i<k} (1 - t^(n-i))`, where
+`(t;t)_k = ∏_{i<k} (1 - t^(i+1))`, valid for all `n` and `k` over every commutative ring: for
+`k > n` both sides vanish. -/
+theorem gaussianBinomial_mul_qPochhammer (t : R) (n k : ℕ) :
+    gaussianBinomial t n k * qPochhammer t t k = ∏ i ∈ range k, (1 - t ^ (n - i)) := by
+  rw [qPochhammer_self]
   induction n generalizing k with
   | zero =>
     cases k with
@@ -214,14 +218,14 @@ theorem gaussianBinomial_mul_prod_one_sub_pow (t : R) (n k : ℕ) :
         linear_combination (1 - t ^ (k + 1)) * e₁ + t ^ (k + 1) * e₂
 
 /-- The factorial form of the product formula: for `k ≤ n`,
-`[n k]_t (t;t)_k (t;t)_(n-k) = (t;t)_n`, where `(t;t)_m = ∏_{i<m} (1 - t^(i+1))`. -/
-theorem gaussianBinomial_mul_prod_mul_prod (t : R) {n k : ℕ} (h : k ≤ n) :
-    gaussianBinomial t n k * (∏ i ∈ range k, (1 - t ^ (i + 1))) *
-        ∏ i ∈ range (n - k), (1 - t ^ (i + 1)) =
-      ∏ i ∈ range n, (1 - t ^ (i + 1)) := by
+`[n k]_t (t;t)_k (t;t)_(n-k) = (t;t)_n`. -/
+theorem gaussianBinomial_mul_qPochhammer_mul_qPochhammer (t : R) {n k : ℕ} (h : k ≤ n) :
+    gaussianBinomial t n k * qPochhammer t t k * qPochhammer t t (n - k) =
+      qPochhammer t t n := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [gaussianBinomial_mul_prod_one_sub_pow, Nat.add_sub_cancel_left, add_comm k m,
-    prod_range_add, mul_comm, prod_range_add_sub_eq (fun j ↦ 1 - t ^ j)]
+  rw [gaussianBinomial_mul_qPochhammer, Nat.add_sub_cancel_left, qPochhammer_self,
+    qPochhammer_self, add_comm k m, prod_range_add, mul_comm,
+    prod_range_add_sub_eq (fun j ↦ 1 - t ^ j)]
 
 /-- The subspace-counting form of the product formula
 `[n k]_t ∏_{i<k} (t^k - t^i) = ∏_{i<k} (t^n - t^i)`; for `k > n` both sides vanish. At the
@@ -239,9 +243,9 @@ theorem gaussianBinomial_mul_prod_pow_sub_pow (t : R) (n k : ℕ) :
     rw [mem_range] at hi
     rw [← pow_mul_pow_sub t (hi.le.trans hm)]
     ring
-  have hreflect : ∏ i ∈ range k, (1 - t ^ (k - i)) = ∏ i ∈ range k, (1 - t ^ (i + 1)) := by
-    simpa using prod_range_add_sub_eq (fun j ↦ 1 - t ^ j) 0 k
-  rw [hfactor le_rfl, hfactor h, hreflect, mul_left_comm, gaussianBinomial_mul_prod_one_sub_pow]
+  have hreflect : ∏ i ∈ range k, (1 - t ^ (k - i)) = qPochhammer t t k := by
+    simpa [qPochhammer_self] using prod_range_add_sub_eq (fun j ↦ 1 - t ^ j) 0 k
+  rw [hfactor le_rfl, hfactor h, hreflect, mul_left_comm, gaussianBinomial_mul_qPochhammer]
 
 end CommRing
 
@@ -253,14 +257,14 @@ theorem gaussianPoly_symm {n k : ℕ} (h : k ≤ n) : gaussianPoly n (n - k) = g
   have hφ : Function.Injective φ := map_injective _ Nat.cast_injective
   have hmap (j : ℕ) : φ (gaussianPoly n j) = gaussianBinomial (X : ℤ[X]) n j :=
     map_gaussianPoly _ n j
-  have hP (m : ℕ) : ∏ i ∈ range m, (1 - (X : ℤ[X]) ^ (i + 1)) ≠ 0 := by
-    refine prod_ne_zero_iff.2 fun i _ ↦ ?_
-    rw [← neg_sub, neg_ne_zero, ← C_1]
-    exact X_pow_sub_C_ne_zero i.succ_pos 1
+  have hP (m : ℕ) : qPochhammer (X : ℤ[X]) X m ≠ 0 := by
+    rintro h0
+    obtain ⟨i, -, hi⟩ := qPochhammer_eq_zero_iff.1 h0
+    simpa using congrArg (eval 0) hi
   apply hφ
   rw [hmap, hmap]
-  have e₁ := gaussianBinomial_mul_prod_mul_prod (X : ℤ[X]) h
-  have e₂ := gaussianBinomial_mul_prod_mul_prod (X : ℤ[X]) (Nat.sub_le n k)
+  have e₁ := gaussianBinomial_mul_qPochhammer_mul_qPochhammer (X : ℤ[X]) h
+  have e₂ := gaussianBinomial_mul_qPochhammer_mul_qPochhammer (X : ℤ[X]) (Nat.sub_le n k)
   rw [Nat.sub_sub_self h] at e₂
   refine mul_right_cancel₀ (mul_ne_zero (hP k) (hP (n - k))) ?_
   linear_combination e₂ - e₁
@@ -298,9 +302,10 @@ theorem gaussianPoly_succ_succ' (n k : ℕ) :
 theorem gaussianBinomial_eq_prod_div {K : Type*} [Field K] {t : K} {n k : ℕ} (h : k ≤ n)
     (ht : ∀ i ∈ range k, t ^ (i + 1) ≠ 1) :
     gaussianBinomial t n k = ∏ i ∈ range k, (1 - t ^ (n - k + i + 1)) / (1 - t ^ (i + 1)) := by
-  have hden : ∏ i ∈ range k, (1 - t ^ (i + 1)) ≠ 0 :=
-    prod_ne_zero_iff.2 fun i hi ↦ sub_ne_zero.2 (ht i hi).symm
-  rw [prod_div_distrib, eq_div_iff hden, gaussianBinomial_mul_prod_one_sub_pow,
+  have hden : qPochhammer t t k ≠ 0 := fun h0 ↦ by
+    obtain ⟨i, hi, hi1⟩ := qPochhammer_eq_zero_iff.1 h0
+    exact ht i (mem_range.2 hi) (by rwa [pow_succ'])
+  rw [prod_div_distrib, ← qPochhammer_self, eq_div_iff hden, gaussianBinomial_mul_qPochhammer,
     ← prod_range_add_sub_eq (fun j ↦ 1 - t ^ j), Nat.sub_add_cancel h]
 
 /-- **Cauchy's `q`-binomial theorem**: over every commutative semiring,
