@@ -117,7 +117,8 @@ theorem mem_closure_setOf_lt_of_mvfderiv_pos {f : M → ℝ} {x : M} {v : Tangen
   by_contra h
   rw [mem_closure_iff_frequently, not_frequently] at h
   have hmax : IsLocalMax f x := h.mono fun y hy ↦ not_lt.1 hy
-  simp [mem_criticalPoints.1 (hmax.mem_criticalPoints (I := I))] at hpos
+  simp [mem_criticalPoints.1
+    (hmax.mem_criticalPoints (I := I) BoundarylessManifold.isInteriorPoint)] at hpos
 
 /-- **The frontier of a sublevel set crossed outwards by a vector field.** Let `f` be continuous,
 and let `Z` be a vector field with `df(Z) > 0` along the level `f⁻¹(c)`. Then the frontier of the

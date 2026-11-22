@@ -225,8 +225,9 @@ on the diagonal. No metric, finite dimensionality, or global smooth atlas is req
 theorem _root_.ContMDiffAt.criticalHessian_self_nonneg_of_isLocalMin
     (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : I.IsInteriorPoint x) (hmin : IsLocalMin f x)
     (v : TangentSpace I x) : 0 ≤ criticalHessian I f x v v := by
-  rw [criticalHessian_apply_self]
-  exact hf.hessianQuadraticForm_comp_extChartAt_symm_nonneg hx hmin v
+  rw [criticalHessian_apply_eq_fderiv_fderiv, ← hessianQuadraticForm_apply]
+  exact hf.hessianQuadraticForm_comp_extChartAt_symm_nonneg hx hmin
+    (tangentSpaceCastModel I x v)
 
 /-- At an interior local maximum of a `C¹` function, the critical Hessian is nonpositive
 on the diagonal. No metric, finite dimensionality, or global smooth atlas is required. -/
@@ -491,11 +492,10 @@ end Prod
 /-- At every interior point, critical or not, differentiating `df(W)` along `v`, where
 `W = FiberBundle.extend E w` is the vector field with constant coordinates `w` in the preferred
 chart at `x`, gives `criticalHessian I f x v w`. -/
-theorem mvfderiv_mvfderiv_extend_eq_criticalHessian [IsManifold I 2 M]
+theorem mvfderiv_mvfderiv_extend_eq_criticalHessian [IsManifold I 1 M]
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hx : I.IsInteriorPoint x) (v w : TangentSpace I x) :
     mvfderiv I (fun y ↦ mvfderiv I f y (FiberBundle.extend E w y)) x v =
       criticalHessian I f x v w := by
-  let _ : IsManifold I 1 M := IsManifold.of_le one_le_two
   have hDg : DifferentiableAt ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x) :=
     ((hf.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx).fderiv_right
       (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero

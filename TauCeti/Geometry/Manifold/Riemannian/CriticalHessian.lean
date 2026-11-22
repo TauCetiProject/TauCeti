@@ -11,10 +11,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 /-!
 # Riemannian and intrinsic Hessians
 
-For a metric-compatible connection `∇` and a function `f` which is `C²` at an interior point
-`x`, the covariant derivative of the gradient of `f`, paired with the metric, is the critical
-Hessian of `f` at `x`, the second derivative of `f` in the preferred chart at `x`, corrected by
-a first-order term:
+On a finite-dimensional Riemannian manifold, for a metric-compatible connection `∇` and a function
+`f` which is `C²` at an interior point `x`, the covariant derivative of the gradient of `f`,
+paired with the metric, is the critical Hessian of `f` at `x`, the second derivative of `f` in the
+preferred chart at `x`, corrected by a first-order term:
 
 `⟪∇_v grad f, w⟫ = criticalHessian f x v w - df_x(∇_v W)`,
 
@@ -31,7 +31,8 @@ defined using the Levi–Civita connection is the critical Hessian there, so its
 critical point is independent of the chosen metric and connection, and the intrinsic Morse index
 can be read from it.
 
-The comparison requires only `C²` regularity of the function at the point and a `C¹` metric.
+In this finite-dimensional setting, the comparison requires only `C²` regularity of the function
+at the point and a `C¹` metric.
 
 ## Main results
 
@@ -39,8 +40,8 @@ The comparison requires only `C²` regularity of the function at the point and a
   metric-compatible connection is the critical Hessian minus `df_x(∇_v W)`.
 * `TauCeti.Manifold.hessian_eq_criticalHessian_sub`: the same for the Riemannian Hessian.
 * `TauCeti.criticalHessian_apply_eq_inner_covariantDerivative` and
-  `TauCeti.Manifold.hessian_eq_criticalHessian`: at a critical point, these Hessians are the
-  critical Hessian.
+  `TauCeti.Manifold.hessian_eq_criticalHessian`: at an interior critical point, these Hessians
+  are the critical Hessian.
 
 ## References
 
@@ -65,11 +66,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {f : M → ℝ} {x : M}
 
 /-- **The Hessian of a metric-compatible connection in the preferred chart.** For any
-metric-compatible connection `∇` and any interior point `x` at which `f` is `C²`, pairing `∇_v
-grad f` with `w` gives the critical Hessian of `f` at `x`, minus `df_x(∇_v W)` for the vector
-field `W` with constant coordinates `w` in the preferred chart at `x`. That correction is `df_x`
-of the Christoffel map of `∇` in this chart, and vanishes at critical points. No torsion
-condition is needed. -/
+metric-compatible connection `∇` on a finite-dimensional Riemannian manifold and any interior point
+`x` at which `f` is `C²`, pairing `∇_v grad f` with `w` gives the critical Hessian of `f` at `x`,
+minus `df_x(∇_v W)` for the vector field `W` with constant coordinates `w` in the preferred chart
+at `x`. That correction is `df_x` of the Christoffel map of `∇` in this chart, and vanishes at
+critical points. No torsion condition is needed. -/
 theorem inner_covariantDerivative_mgradient_eq_criticalHessian_sub
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hx : I.IsInteriorPoint x)
     {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
@@ -92,8 +93,8 @@ theorem inner_covariantDerivative_mgradient_eq_criticalHessian_sub
   rw [← mvfderiv_mvfderiv_extend_eq_criticalHessian hf hx, hmetric, add_sub_cancel_right]
 
 /-- For any metric-compatible connection, the derivative of the gradient at an interior critical
-point, paired with the metric, equals the intrinsic critical Hessian. No torsion condition is
-needed. -/
+point on a finite-dimensional Riemannian manifold, paired with the metric, equals the intrinsic
+critical Hessian. No torsion condition is needed. -/
 theorem criticalHessian_apply_eq_inner_covariantDerivative
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hx : I.IsInteriorPoint x) (hcrit : mvfderiv I f x = 0)
     {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
@@ -107,9 +108,10 @@ theorem criticalHessian_apply_eq_inner_covariantDerivative
 namespace Manifold
 
 /-- **The Riemannian Hessian in the preferred chart.** At any interior point `x` at which `f` is
-`C²`, the Riemannian Hessian for a `C¹` metric is the critical Hessian, the second derivative of
-`f` in the preferred chart at `x`, minus `df_x(∇_v W)` for the Levi–Civita connection `∇` and
-the vector field `W` with constant coordinates `w` in that chart. -/
+`C²` on a finite-dimensional Riemannian manifold, the Riemannian Hessian for a `C¹` metric is the
+critical Hessian, the second derivative of `f` in the preferred chart at `x`, minus `df_x(∇_v W)`
+for the Levi–Civita connection `∇` and the vector field `W` with constant coordinates `w` in that
+chart. -/
 theorem hessian_eq_criticalHessian_sub (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hx : I.IsInteriorPoint x) (v w : TangentSpace I x) :
     hessian I f x v w = criticalHessian I f x v w -
@@ -119,8 +121,9 @@ theorem hessian_eq_criticalHessian_sub (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
   exact inner_covariantDerivative_mgradient_eq_criticalHessian_sub hf hx
     (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) v w
 
-/-- At an interior critical point, the Riemannian Hessian for any `C¹` metric is the intrinsic
-Hessian. Only `C²` regularity of the function at this point is required. -/
+/-- At an interior critical point of a finite-dimensional Riemannian manifold, the Riemannian
+Hessian for any `C¹` metric is the intrinsic Hessian. Only `C²` regularity of the function at this
+point is required. -/
 theorem hessian_eq_criticalHessian (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hx : I.IsInteriorPoint x) (hcrit : mvfderiv I f x = 0) (v w : TangentSpace I x) :
     hessian I f x v w = criticalHessian I f x v w := by

@@ -89,57 +89,60 @@ noncomputable section
 namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {x : M}
 
-/-- At a local maximum of a `C²` function on a boundaryless Riemannian manifold, the
+/-- At an interior local maximum of a `C²` function on a Riemannian manifold, the
 Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/
 theorem laplaceBeltrami_nonpos_of_isLocalMax (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hmax : IsLocalMax f x) : laplaceBeltrami I f x ≤ 0 := by
+    (hx : I.IsInteriorPoint x) (hmax : IsLocalMax f x) : laplaceBeltrami I f x ≤ 0 := by
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
   exact Finset.sum_nonpos fun i _ ↦
-    hessian_self_nonpos_of_isLocalMax hf BoundarylessManifold.isInteriorPoint hmax _
+    hessian_self_nonpos_of_isLocalMax hf hx hmax _
 
-/-- At a local maximum of `f + k g`, with `f` and `g` both `C²`, on a boundaryless Riemannian
+/-- At a local maximum of `f + k g`, with `f` and `g` both `C²`, at an interior point of a
+Riemannian
 manifold, `Δ f + k Δ g ≤ 0`. -/
 theorem laplaceBeltrami_add_mul_nonpos_of_isLocalMax {g : M → ℝ} {k : ℝ}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x)
-    (hmax : IsLocalMax (fun y ↦ f y + k * g y) x) :
+    (hx : I.IsInteriorPoint x) (hmax : IsLocalMax (fun y ↦ f y + k * g y) x) :
     laplaceBeltrami I f x + k * laplaceBeltrami I g x ≤ 0 := by
   have hkg : ContMDiffAt I 𝓘(ℝ) 2 (k • g) x := by
     simpa only [Pi.smul_def, smul_eq_mul, Pi.mul_def] using contMDiffAt_const.mul hg
   -- The pointwise function `y ↦ f y + k * g y` is `f + k • g`.
   have hfg : (fun y ↦ f y + k * g y) = f + k • g := rfl
-  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax (hf.add hkg) (hfg ▸ hmax)
+  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax (hf.add hkg) hx (hfg ▸ hmax)
   rwa [laplaceBeltrami_add_of_contMDiffAt I hf hkg,
     laplaceBeltrami_smul_of_contMDiffAt I k hg] at hΔ
 
-/-- At a local minimum of a `C²` function on a boundaryless Riemannian manifold, the
+/-- At an interior local minimum of a `C²` function on a Riemannian manifold, the
 Laplace–Beltrami operator `Δ = div ∘ grad` is nonnegative. -/
 theorem laplaceBeltrami_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hmin : IsLocalMin f x) : 0 ≤ laplaceBeltrami I f x := by
+    (hx : I.IsInteriorPoint x) (hmin : IsLocalMin f x) : 0 ≤ laplaceBeltrami I f x := by
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
   exact Finset.sum_nonneg fun i _ ↦
-    hessian_self_nonneg_of_isLocalMin hf BoundarylessManifold.isInteriorPoint hmin _
+    hessian_self_nonneg_of_isLocalMin hf hx hmin _
 
-/-- If `g` touches `f` from above, its diagonal Hessian at the contact point is larger. -/
+/-- If `g` touches `f` from above at an interior point, its diagonal Hessian there is larger. -/
 theorem hessian_self_le_of_eventuallyLE_of_eq {g : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hx : I.IsInteriorPoint x)
+    (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
     (heq : f x = g x) (v : TangentSpace I x) : hessian I f x v v ≤ hessian I g x v v := by
   have hmin : IsLocalMin (g - f) x := by
     filter_upwards [hle] with y hy
     simpa only [Pi.sub_apply, ← heq, sub_self] using sub_nonneg.mpr hy
   have hh : 0 ≤ hessian I (g - f) x v v :=
-    hessian_self_nonneg_of_isLocalMin (hg.sub hf) BoundarylessManifold.isInteriorPoint hmin v
+    hessian_self_nonneg_of_isLocalMin (hg.sub hf) hx hmin v
   rw [hessian_sub_of_contMDiffAt I (f := g) (g := f) hg hf] at hh
   exact sub_nonneg.mp hh
 
-/-- If `g` touches `f` from above, its Laplace–Beltrami operator is larger at contact. -/
+/-- If `g` touches `f` from above at an interior point, its Laplace–Beltrami operator is larger. -/
 theorem laplaceBeltrami_le_of_eventuallyLE_of_eq {g : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hx : I.IsInteriorPoint x)
+    (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
     (heq : f x = g x) : laplaceBeltrami I f x ≤ laplaceBeltrami I g x := by
   have hmax : IsLocalMax (f - g) x := by
     filter_upwards [hle] with y hy
@@ -147,39 +150,44 @@ theorem laplaceBeltrami_le_of_eventuallyLE_of_eq {g : M → ℝ}
   have hsub : ContMDiffAt I 𝓘(ℝ) 2 (f - g) x := hf.sub hg
   have hadd := laplaceBeltrami_add_of_contMDiffAt I hsub hg
   rw [sub_add_cancel] at hadd
-  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax hsub hmax
+  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax hsub hx hmax
   linarith
 
 /-- On a compact boundaryless Riemannian manifold, a `C²` function attains its maximum at a point
 where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/
-theorem exists_forall_ge_and_laplaceBeltrami_nonpos [CompactSpace M] [Nonempty M]
+theorem exists_forall_ge_and_laplaceBeltrami_nonpos [I.Boundaryless] [CompactSpace M] [Nonempty M]
     (hf : ContMDiff I 𝓘(ℝ) 2 f) : ∃ x₀, (∀ y, f y ≤ f x₀) ∧ laplaceBeltrami I f x₀ ≤ 0 := by
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hf.continuous.continuousOn
   exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
-    laplaceBeltrami_nonpos_of_isLocalMax hf.contMDiffAt (hx₀.isLocalMax Filter.univ_mem)⟩
+    laplaceBeltrami_nonpos_of_isLocalMax hf.contMDiffAt BoundarylessManifold.isInteriorPoint
+      (hx₀.isLocalMax Filter.univ_mem)⟩
 
 /-- On a compact boundaryless Riemannian manifold, a `C²` function attains its minimum at a point
 where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonnegative. -/
-theorem exists_forall_le_and_laplaceBeltrami_nonneg [CompactSpace M] [Nonempty M]
+theorem exists_forall_le_and_laplaceBeltrami_nonneg [I.Boundaryless] [CompactSpace M] [Nonempty M]
     (hf : ContMDiff I 𝓘(ℝ) 2 f) : ∃ x₀, (∀ y, f x₀ ≤ f y) ∧ 0 ≤ laplaceBeltrami I f x₀ := by
   obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty hf.continuous.continuousOn
   exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
-    laplaceBeltrami_nonneg_of_isLocalMin hf.contMDiffAt (hx₀.isLocalMin Filter.univ_mem)⟩
+    laplaceBeltrami_nonneg_of_isLocalMin hf.contMDiffAt BoundarylessManifold.isInteriorPoint
+      (hx₀.isLocalMin Filter.univ_mem)⟩
 
 /-- **Touching functions are ordered by their Laplacians.** If `f ≤ g` near `x` and `f x = g x`,
-with `f` and `g` both `C²` at `x`, on a boundaryless Riemannian manifold, then `Δ f x ≤ Δ g x`.
+with `f` and `g` both `C²` at the interior point `x` of a Riemannian manifold, then `Δ f x ≤ Δ g x`.
 Neither function needs to be `C²` away from `x`; for instance `g` may be a smooth upper barrier
 for a function `μ` that is not differentiable, touching it at `x`, and `f` a test function touching
 `μ` from below. -/
 theorem laplaceBeltrami_le_laplaceBeltrami_of_eventuallyLE {g : M → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hle : f ≤ᶠ[𝓝 x] g)
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hx : I.IsInteriorPoint x)
+    (hle : f ≤ᶠ[𝓝 x] g)
     (heq : f x = g x) : laplaceBeltrami I f x ≤ laplaceBeltrami I g x := by
   -- `f - g` has a local maximum, of value `0`, at `x`.
-  have hΔ := laplaceBeltrami_add_mul_nonpos_of_isLocalMax (k := -1) hf hg (by
+  have hΔ := laplaceBeltrami_add_mul_nonpos_of_isLocalMax (k := -1) hf hg hx (by
     filter_upwards [hle] with y hy
     rw [heq]
     linarith)
   linarith
+
+variable [I.Boundaryless]
 
 /-- **The maximum principle for functions with smooth upper barriers.** On a compact boundaryless
 Riemannian manifold, let `μ` be a lower semicontinuous function, not necessarily continuous or
@@ -205,8 +213,8 @@ theorem le_of_forall_exists_laplaceBeltrami_neg [CompactSpace M] {μ : M → ℝ
   have hconst : (fun _ ↦ μ x₀) ≤ᶠ[𝓝 x₀] f := by
     filter_upwards [hle] with z hz
     exact (hx₀ (Set.mem_univ z)).trans hz
-  have hΔ₀ := laplaceBeltrami_le_laplaceBeltrami_of_eventuallyLE contMDiffAt_const hf hconst
-    heq.symm
+  have hΔ₀ := laplaceBeltrami_le_laplaceBeltrami_of_eventuallyLE contMDiffAt_const hf
+    BoundarylessManifold.isInteriorPoint hconst heq.symm
   rw [laplaceBeltrami_const] at hΔ₀
   linarith
 

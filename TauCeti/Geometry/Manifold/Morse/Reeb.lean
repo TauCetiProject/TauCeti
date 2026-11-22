@@ -136,9 +136,10 @@ theorem IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two (hf : Is
     have hmin : IsLocalMin f p := .of_forall fun y ↦ by rw [hall y]
     have hmin' : IsLocalMin (-f) p := .of_forall fun y ↦ by simp [hall y]
     have h₀ := manifoldMorseIndex_eq_zero_of_isLocalMin
-      ((hf.contMDiff p).of_le (by norm_cast)) hmin
+      ((hf.contMDiff p).of_le (by norm_cast)) BoundarylessManifold.isInteriorPoint hmin
     have h₀' := manifoldMorseIndex_eq_zero_of_isLocalMin (f := -f)
-      ((contDiff_neg.contMDiff.contMDiffAt.comp p (hf.contMDiff p)).of_le (by norm_cast)) hmin'
+      ((contDiff_neg.contMDiff.contMDiffAt.comp p (hf.contMDiff p)).of_le (by norm_cast))
+        BoundarylessManifold.isInteriorPoint hmin'
     have := hnd.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     omega
   -- The discs are points, the single points `p` and `q`.

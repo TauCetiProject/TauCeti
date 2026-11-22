@@ -137,6 +137,7 @@ theorem mfderiv_sq_real_zero : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ) (fun y : ℝ ↦
 theorem manifoldMorseIndex_sq_real_zero :
     manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) 0 = 0 :=
   manifoldMorseIndex_eq_zero_of_isLocalMin (contDiff_id.pow 2).contMDiff.contMDiffAt
+    BoundarylessManifold.isInteriorPoint
     (Eventually.of_forall fun y ↦ by simp [sq_nonneg])
 
 /-! ### The trajectories -/

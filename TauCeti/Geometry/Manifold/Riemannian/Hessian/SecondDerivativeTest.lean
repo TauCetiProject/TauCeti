@@ -15,7 +15,8 @@ Let `f` be a real function on a finite-dimensional Riemannian manifold, `C²` at
 critical point `x`. If the Riemannian Hessian of `f` at `x` is positive definite, then `x` is a
 strict local minimum of `f`.
 
-At a critical point, the Riemannian Hessian is the second derivative of `f` read in the preferred
+At the interior critical point `x`, the Riemannian Hessian is the second derivative of `f` read in
+the preferred
 chart (`TauCeti.Manifold.hessian_eq_criticalHessian`), and the first derivative of the coordinate
 expression vanishes, so the test reduces to the second derivative test on the model space
 (`eventually_lt_of_fderiv_eq_zero_of_fderiv_fderiv_pos`).
@@ -27,7 +28,8 @@ expression vanishes, so the test reduces to the second derivative test on the mo
   `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the necessary second derivative tests.
 
 The strict test is adapted from Giada Franz's formalization in
-[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/master/ForTauCeti/Geometry/Manifold/Riemannian/Hessian/SecondDerivativeTest.lean).
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/master/ForT
+auCeti/Geometry/Manifold/Riemannian/Hessian/SecondDerivativeTest.lean).
 Its metric-free interior-point argument is `ContMDiffAt.eventually_lt_of_criticalHessian_pos`.
 -/
 
@@ -62,14 +64,7 @@ manifold, the Hessian is positive semidefinite. -/
 theorem hessian_self_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hx : I.IsInteriorPoint x) (hmin : IsLocalMin f x) (v : TangentSpace I x) :
     0 ≤ hessian I f x v v := by
-  have hg := hf.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx
-  have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by
-    rwa [extChartAt_to_inv]
-  have hcrit : mvfderiv I f x = 0 := by
-    rw [← mem_criticalPoints,
-      mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt
-        (hg.differentiableAt (by norm_num))]
-    exact (hm.comp_continuous (continuousAt_extChartAt_symm x)).fderiv_eq_zero
+  have hcrit := mem_criticalPoints.1 (hmin.mem_criticalPoints hx)
   rw [hessian_eq_criticalHessian hf hx hcrit]
   exact (hf.of_le one_le_two).criticalHessian_self_nonneg_of_isLocalMin hx hmin v
 
