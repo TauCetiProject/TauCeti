@@ -99,7 +99,7 @@ theorem localizationRingEnd_mk' (g : G) (a : A) (s : S) (hs : g • (s : A) ∈ 
 
 end Localization
 
-variable {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] (M : Submonoid R)
+variable {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] {M : Submonoid R}
 
 /-- If `G` acts on the `R`-algebra `A` by `R`-algebra endomorphisms, it fixes the image in `A` of a
 submonoid of `R`. -/
@@ -113,7 +113,7 @@ submonoid `M` of `R`: `G` fixes the denominators, so they stay units in `B`. -/
 theorem isUnit_algebraMap_smul (B : Type*) [CommSemiring B] [Algebra A B]
     [IsLocalization (Algebra.algebraMapSubmonoid A M) B] (g : G)
     (s : Algebra.algebraMapSubmonoid A M) : IsUnit (algebraMap A B (g • (s : A))) := by
-  rw [smul_eq_of_mem_algebraMapSubmonoid M g s.property]
+  rw [smul_eq_of_mem_algebraMapSubmonoid g s.property]
   exact IsLocalization.map_units B s
 
 end TauCeti.IsLocalization
@@ -121,14 +121,14 @@ end TauCeti.IsLocalization
 namespace TauCeti.Localization
 
 variable {G A : Type*} [Monoid G] [CommSemiring A] [MulSemiringAction G A]
-  {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] (M : Submonoid R)
+  {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] {M : Submonoid R}
 
 /-- The action of `G` on the localization `M⁻¹A` at the image of a submonoid `M` of `R`, where `G`
 acts on the `R`-algebra `A` by `R`-algebra endomorphisms, given by `localizationRingEnd`. -/
 noncomputable instance instMulSemiringActionLocalization :
     MulSemiringAction G (Localization (Algebra.algebraMapSubmonoid A M)) :=
   MulSemiringAction.compHom _ <| IsLocalization.localizationRingEnd _ <|
-    IsLocalization.isUnit_algebraMap_smul (A := A) M
+    IsLocalization.isUnit_algebraMap_smul (A := A) (M := M)
       (Localization (Algebra.algebraMapSubmonoid A M))
 
 end TauCeti.Localization
@@ -136,7 +136,7 @@ end TauCeti.Localization
 namespace TauCeti.IsLocalization
 
 variable {G A : Type*} [Monoid G] [CommSemiring A] [MulSemiringAction G A]
-  {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] (M : Submonoid R)
+  {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] {M : Submonoid R}
 
 /-- The action of `G` on `M⁻¹A` is `localizationRingEnd`. -/
 @[simp]
@@ -155,14 +155,14 @@ namespace TauCeti.Localization
 open TauCeti.IsLocalization
 
 variable {G A : Type*} [Monoid G] [CommSemiring A] [MulSemiringAction G A]
-  {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] (M : Submonoid R)
+  {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] {M : Submonoid R}
 
 /-- The action of `G` on `M⁻¹A` extends the action on `A`. -/
 @[simp]
 theorem smul_algebraMap (g : G) (a : A) :
     g • algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) a =
       algebraMap A (Localization (Algebra.algebraMapSubmonoid A M)) (g • a) := by
-  rw [← localizationRingEnd_apply M (isUnit_algebraMap_smul (A := A) M _)]
+  rw [← localizationRingEnd_apply (isUnit_algebraMap_smul (A := A) (M := M) _)]
   exact localizationRingEnd_algebraMap _ _ g a
 
 /-- The action of `G` on `M⁻¹A` on fractions: `g • (a / s) = (g • a) / s`, since the
@@ -171,9 +171,9 @@ denominator `s` is invariant. -/
 theorem smul_mk' (g : G) (a : A) (s : Algebra.algebraMapSubmonoid A M) :
     g • _root_.IsLocalization.mk' (Localization (Algebra.algebraMapSubmonoid A M)) a s =
       _root_.IsLocalization.mk' _ (g • a) s := by
-  rw [← localizationRingEnd_apply M (isUnit_algebraMap_smul (A := A) M _),
+  rw [← localizationRingEnd_apply (isUnit_algebraMap_smul (A := A) (M := M) _),
     localizationRingEnd_mk' _ _ g a s
       (Algebra.algebraMapSubmonoid_le_comap M (MulSemiringAction.toAlgHom R A g) s.property)]
-  exact congrArg _ <| Subtype.ext <| smul_eq_of_mem_algebraMapSubmonoid M g s.property
+  exact congrArg _ <| Subtype.ext <| smul_eq_of_mem_algebraMapSubmonoid g s.property
 
 end TauCeti.Localization

@@ -138,7 +138,7 @@ theorem specComap_comp_specAlgebraMap_away (r : FixedPoints.subring A G) (g : G)
   rw [specComap_def, specComap_def, ← Spec.map_comp, ← Spec.map_comp]
   congr 1
   ext a
-  exact Localization.smul_algebraMap _ g a
+  exact Localization.smul_algebraMap g a
 
 variable {A G}
 
