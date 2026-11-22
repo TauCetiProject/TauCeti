@@ -60,8 +60,6 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 * `TauCeti.SmoothForm.IsContactForm.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one`:
   existence of a function `g`, `C^n` at `x`, with `dg_x(R_α x) = 1`.
 * `TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_add_iff`: the rescaling law.
-* `TauCeti.SmoothForm.apply_eq_apply_reebVectorField_mul_of_isContactFormAt`: a one-form
-  vanishing on `ker α_x` at a contact point is `β_x(R_α) α_x`.
 
 ## References
 
@@ -236,9 +234,8 @@ vector `v` leaves a vector of `ker α_x`. -/
 theorem sub_smul_reebVectorField_mem_kerDistribution_of_isContactFormAt {x : M}
     (h : IsContactFormAt α.val x) (v : TangentSpace I x) :
     v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
-  rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
-  simp only [degreeOneEquiv_apply_apply_vec, apply_reebVectorField_of_isContactFormAt h,
-    smul_eq_mul, mul_one, sub_self]
+  simp [mem_kerDistribution, ContinuousAlternatingMap.vecCons_smul,
+    apply_reebVectorField_of_isContactFormAt h]
 
 /-- Removing its Reeb component `α(v) R_α` from a tangent vector `v` leaves a vector of the
 contact distribution. -/
@@ -247,19 +244,6 @@ theorem IsContactForm.sub_smul_reebVectorField_mem_kerDistribution (hα : α.IsC
     v - α.val x ![v] • α.reebVectorField x ∈ α.kerDistribution x :=
   sub_smul_reebVectorField_mem_kerDistribution_of_isContactFormAt
     (isContactForm_iff_forall_isContactFormAt.1 hα x) v
-
-/-- **A one-form vanishing on the kernel of a contact form is a multiple of it**, the factor
-being its value on the Reeb vector: if `α` is a contact form at `x` and `β_x` vanishes on
-`ker α_x`, then `β_x = β_x(R_α) α_x`. -/
-theorem apply_eq_apply_reebVectorField_mul_of_isContactFormAt {β : SmoothForm I M ℝ 1} {x : M}
-    (h : IsContactFormAt α.val x) (hβ : α.kerDistribution x ≤ β.kerDistribution x)
-    (v : TangentSpace I x) :
-    β.val x ![v] = β.val x ![α.reebVectorField x] * α.val x ![v] := by
-  have h0 := mem_kerDistribution.1
-    (hβ (sub_smul_reebVectorField_mem_kerDistribution_of_isContactFormAt h v))
-  rw [← degreeOneEquiv_apply_apply_vec β, map_sub, map_smul, smul_eq_mul,
-    degreeOneEquiv_apply_apply_vec, degreeOneEquiv_apply_apply_vec] at h0
-  linarith
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in

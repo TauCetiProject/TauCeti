@@ -381,8 +381,7 @@ theorem apply_mlieBracket_contactVectorField (hV : CMDiff ∞ (T% V)) (hW : CMDi
       (fun y ↦ α.val y ![contactVectorField I D U y]) =ᶠ[𝓝 x] fun y ↦ α.val y ![U y] := by
     filter_upwards [hαD] with y hy
     have h := mem_kerDistribution.1 (hy ▸ contactVectorField_sub_mem hD hU y)
-    rwa [← degreeOneEquiv_apply_apply_vec, map_sub, sub_eq_zero,
-      degreeOneEquiv_apply_apply_vec, degreeOneEquiv_apply_apply_vec] at h
+    rwa [ContinuousAlternatingMap.map_vecCons_sub, sub_eq_zero] at h
   rw [((preservesDistribution_contactVectorField hD hV).preservesDistributionAt x)
     |>.apply_mlieBracket_eq_jacobiBracket hD
       ((preservesDistribution_contactVectorField hD hW).preservesDistributionAt x)
@@ -402,9 +401,9 @@ theorem jacobiBracket_eq_apply_reebVectorField_mul_jacobiBracket (hV : CMDiff �
         α.jacobiBracket (fun y ↦ α.val y ![V y]) (fun y ↦ α.val y ![W y]) x := by
   rw [← hD.apply_mlieBracket_contactVectorField hV hW hαD,
     ← hD.apply_mlieBracket_contactVectorField hV hW hβD]
-  exact apply_eq_apply_reebVectorField_mul_of_isContactFormAt
-    (hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp) hαD)
-    (hαD.self_of_nhds.trans hβD.self_of_nhds.symm).le _
+  exact DFunLike.congr_fun (apply_eq_smul_of_kerDistribution_le
+    (hαD.self_of_nhds.trans hβD.self_of_nhds.symm).le (apply_reebVectorField_of_isContactFormAt
+      (hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp) hαD))) _
 
 /-- **The bracket of sections of the contact line is determined by the local Jacobi brackets.** A
 vector field `Z` represents the bracket `[[X_V, X_W]]` of the sections `[V]` and `[W]` of the
@@ -420,8 +419,7 @@ theorem mlieBracket_contactVectorField_sub_mem_iff (hV : CMDiff ∞ (T% V))
       mlieBracket I (contactVectorField I D V) (contactVectorField I D W) x - Z x ∈ D x ↔
         α.val x ![Z x] =
           α.jacobiBracket (fun y ↦ α.val y ![V y]) (fun y ↦ α.val y ![W y]) x := by
-    rw [← hαD.self_of_nhds, mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub,
-      degreeOneEquiv_apply_apply_vec, degreeOneEquiv_apply_apply_vec,
+    rw [← hαD.self_of_nhds, mem_kerDistribution, ContinuousAlternatingMap.map_vecCons_sub,
       hD.apply_mlieBracket_contactVectorField hV hW hαD, sub_eq_zero, eq_comm]
   refine ⟨fun h α x hαD ↦ (key hαD).1 (h x), fun h x ↦ ?_⟩
   obtain ⟨U, hU, hxU, α, hα⟩ := hD.exists_smoothForm_ker_eq_isContactFormAt x

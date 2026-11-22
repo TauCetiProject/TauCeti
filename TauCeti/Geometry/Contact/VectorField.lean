@@ -77,8 +77,10 @@ fields, `α([X, Y]) = {α(X), α(Y)}_α` at `x`
 * `TauCeti.SmoothForm.IsContactForm.apply_mlieBracket_eq_jacobiBracket`: the bracket of contact
   vector fields is the Jacobi bracket of their Hamiltonians.
 * `TauCeti.PreservesDistributionAt.apply_eq_contactHamiltonianVectorField`,
-  `TauCeti.PreservesDistributionAt.apply_mlieBracket_eq_jacobiBracket`: the same two statements at
-  a point, for a one-form defining the contact structure near that point.
+  `TauCeti.PreservesDistributionAt.apply_mlieBracket_eq_jacobiBracket`: at a point, for a one-form
+  defining the contact structure near that point, a contact vector field equals the contact
+  Hamiltonian vector field of its Hamiltonian, and its bracket with another is the Jacobi bracket
+  of their Hamiltonians.
 
 ## References
 
@@ -149,97 +151,6 @@ theorem eq_of_forall_mkQ_eq (hD : IsContactDistribution I ∞ D) (hX : Preserves
 end PreservesDistribution
 
 end ContactDistribution
-
-/-! ### Kernels of one-forms -/
-
-namespace SmoothForm
-
-variable [IsManifold I ∞ M] {α : SmoothForm I M ℝ 1} {f : M → ℝ}
-
-/-- **A vector field preserves `ker α` exactly when `L_X α` vanishes on `ker α`**, that is, when
-`L_X α` is a multiple of `α`. The one-form `α` is required to vanish nowhere, so that `ker α` is a
-smooth hyperplane field; it need not be a contact form. -/
-theorem preservesDistribution_kerDistribution_iff_mlieDerivForm (hα : ∀ x, α.val x ≠ 0) :
-    PreservesDistribution I α.kerDistribution X ↔
-      ∀ x, ∀ v ∈ α.kerDistribution x, mlieDerivForm X α.val x ![v] = 0 := by
-  -- The formula `L_X α (W) = X(α(W)) - α([X, W])` for `W` tangent to `ker α` near the point,
-  -- where `α(W)` vanishes near the point, so that its derivative vanishes.
-  have key {x : M} {W : Π y : M, TangentSpace I y} (hWd : MDiffAt (T% W) x)
-      (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
-      mlieDerivForm X α.val x ![W x] = -α.val x ![mlieBracket I X W x] := by
-    rw [mlieDerivForm_apply_one (α.mdifferentiableAt x) hWd,
-      Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
-        (hW.mono fun y hy ↦ mem_kerDistribution.1 hy), mvfderiv_const,
-      zero_apply, zero_sub]
-  constructor
-  · intro hX x v hv
-    let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-    obtain ⟨U, hU, hxU, W, hW, hWD, hWx⟩ :=
-      (isContMDiffDistribution_kerDistribution (n := ∞) hα).exists_contMDiffOn_apply_eq
-        (⟨v, hv⟩ : α.kerDistribution x)
-    have hWd : MDiffAt (T% W) x := (hW.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt (by simp)
-    have hWx' : W x = v := hWx
-    rw [← hWx', key hWd (eventually_of_mem (hU.mem_nhds hxU) hWD),
-      mem_kerDistribution.1 (preservesDistribution_iff.1 hX hU hW hWD x hxU), neg_zero]
-  · refine fun h ↦ preservesDistribution_iff.2 fun U hU V hV hVD x hx ↦ ?_
-    have hVd : MDiffAt (T% V) x := (hV.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
-    have hx' := h x (V x) (hVD x hx)
-    rw [key hVd (eventually_of_mem (hU.mem_nhds hx) hVD), neg_eq_zero] at hx'
-    exact mem_kerDistribution.2 hx'
-
-omit [FiniteDimensional ℝ E] in
-/-- **Contact Hamiltonian vector fields are contact vector fields**: a differentiable contact
-Hamiltonian vector field of a one-form `α` preserves `ker α`. -/
-theorem IsContactHamiltonianVectorField.preservesDistribution
-    (hX : α.IsContactHamiltonianVectorField f X) (hXd : MDiff (T% X)) :
-    PreservesDistribution I α.kerDistribution X :=
-  preservesDistribution_iff.2 fun _ hU _ hV hVD x hx ↦ hX.mlieBracket_mem_kerDistribution (hXd x)
-    ((hV.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp))
-    (eventually_of_mem (hU.mem_nhds hx) hVD)
-
-namespace IsContactForm
-
-variable (hα : α.IsContactForm)
-include hα
-
-/-- **The contact vector fields of a contact form are its contact Hamiltonian vector fields.** A
-differentiable vector field `X` preserves the contact structure `ker α` exactly when it is a contact
-Hamiltonian vector field of its Hamiltonian `α(X)`. -/
-theorem preservesDistribution_kerDistribution_iff (hXd : MDiff (T% X)) :
-    PreservesDistribution I α.kerDistribution X ↔
-      α.IsContactHamiltonianVectorField (fun y ↦ α.val y ![X y]) X := by
-  refine ⟨fun hX ↦ hα.isContactHamiltonianVectorField_iff_kerDistribution.2 fun x ↦
-    ⟨rfl, fun v hv ↦ ?_⟩, fun hX ↦ hX.preservesDistribution hXd⟩
-  -- Cartan's formula `L_X α = ι_X dα + d(α(X))`, where `L_X α` vanishes on `ker α`.
-  have h := mlieDerivForm_apply_eq_mextDeriv_add (fun _ ↦ rfl) (α.mdifferentiableAt x) (hXd x) v
-  rw [(preservesDistribution_kerDistribution_iff_mlieDerivForm hα.apply_ne_zero).1 hX x v
-    hv] at h
-  linarith
-
-/-- **A contact vector field of a contact form is the contact Hamiltonian vector field of its
-Hamiltonian**: a differentiable vector field `X` preserves `ker α` exactly when
-`X = X_(α(X))`. -/
-theorem preservesDistribution_kerDistribution_iff_eq (hXd : MDiff (T% X)) :
-    PreservesDistribution I α.kerDistribution X ↔
-      X = α.contactHamiltonianVectorField fun y ↦ α.val y ![X y] :=
-  (hα.preservesDistribution_kerDistribution_iff hXd).trans hα.isContactHamiltonianVectorField_iff_eq
-
-/-- **The Jacobi bracket is the Lie bracket of contact vector fields.** For differentiable vector
-fields `X` and `Y` preserving the contact structure `ker α`, the bracket `[X, Y]` has Hamiltonian
-the Jacobi bracket of their Hamiltonians: `α([X, Y]) = {α(X), α(Y)}_α`. -/
-theorem apply_mlieBracket_eq_jacobiBracket (hX : PreservesDistribution I α.kerDistribution X)
-    (hY : PreservesDistribution I α.kerDistribution Y) (hXd : MDiff (T% X)) (hYd : MDiff (T% Y))
-    (x : M) : α.val x ![mlieBracket I X Y x] =
-      α.jacobiBracket (fun y ↦ α.val y ![X y]) (fun y ↦ α.val y ![Y y]) x := by
-  have hXH := (hα.preservesDistribution_kerDistribution_iff hXd).1 hX
-  have hYH := (hα.preservesDistribution_kerDistribution_iff hYd).1 hY
-  rw [hXH.apply_mlieBracket hYH (hXd x) (hYd x), jacobiBracket_def,
-    ← hα.isContactHamiltonianVectorField_iff_eq.1 hXH,
-    ← hα.isContactHamiltonianVectorField_iff_eq.1 hYH]
-
-end IsContactForm
-
-end SmoothForm
 
 /-! ### Contact vector fields in a local contact form -/
 
@@ -332,5 +243,88 @@ theorem apply_mlieBracket_eq_jacobiBracket (hD : IsContactDistribution I ∞ D)
 end PreservesDistributionAt
 
 end LocalForm
+
+/-! ### Kernels of one-forms -/
+
+namespace SmoothForm
+
+variable [IsManifold I ∞ M] {α : SmoothForm I M ℝ 1} {f : M → ℝ}
+
+/-- **A vector field preserves `ker α` exactly when `L_X α` vanishes on `ker α`**, that is, when
+`L_X α` is a multiple of `α`. The one-form `α` is required to vanish nowhere, so that `ker α` is a
+smooth hyperplane field; it need not be a contact form. -/
+theorem preservesDistribution_kerDistribution_iff_mlieDerivForm (hα : ∀ x, α.val x ≠ 0) :
+    PreservesDistribution I α.kerDistribution X ↔
+      ∀ x, ∀ v ∈ α.kerDistribution x, mlieDerivForm X α.val x ![v] = 0 := by
+  -- The formula `L_X α (W) = X(α(W)) - α([X, W])` for `W` tangent to `ker α` near the point,
+  -- where `α(W)` vanishes near the point, so that its derivative vanishes.
+  have key {x : M} {W : Π y : M, TangentSpace I y} (hWd : MDiffAt (T% W) x)
+      (hW : ∀ᶠ y in 𝓝 x, W y ∈ α.kerDistribution y) :
+      mlieDerivForm X α.val x ![W x] = -α.val x ![mlieBracket I X W x] := by
+    rw [mlieDerivForm_apply_one (α.mdifferentiableAt x) hWd,
+      Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
+        (hW.mono fun y hy ↦ mem_kerDistribution.1 hy), mvfderiv_const,
+      zero_apply, zero_sub]
+  constructor
+  · intro hX x v hv
+    let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
+    exact (hX.preservesDistributionAt x).mlieDerivForm_apply_eq_zero
+      (isContMDiffDistribution_kerDistribution (n := ∞) hα) (.of_forall fun _ ↦ rfl) hv
+  · refine fun h ↦ preservesDistribution_iff.2 fun U hU V hV hVD x hx ↦ ?_
+    have hVd : MDiffAt (T% V) x := (hV.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
+    have hx' := h x (V x) (hVD x hx)
+    rw [key hVd (eventually_of_mem (hU.mem_nhds hx) hVD), neg_eq_zero] at hx'
+    exact mem_kerDistribution.2 hx'
+
+omit [FiniteDimensional ℝ E] in
+/-- **Contact Hamiltonian vector fields are contact vector fields**: a differentiable contact
+Hamiltonian vector field of a one-form `α` preserves `ker α`. -/
+theorem IsContactHamiltonianVectorField.preservesDistribution
+    (hX : α.IsContactHamiltonianVectorField f X) (hXd : MDiff (T% X)) :
+    PreservesDistribution I α.kerDistribution X :=
+  preservesDistribution_iff.2 fun _ hU _ hV hVD x hx ↦ hX.mlieBracket_mem_kerDistribution (hXd x)
+    ((hV.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp))
+    (eventually_of_mem (hU.mem_nhds hx) hVD)
+
+namespace IsContactForm
+
+variable (hα : α.IsContactForm)
+include hα
+
+/-- **The contact vector fields of a contact form are its contact Hamiltonian vector fields.** A
+differentiable vector field `X` preserves the contact structure `ker α` exactly when it is a contact
+Hamiltonian vector field of its Hamiltonian `α(X)`. -/
+theorem preservesDistribution_kerDistribution_iff (hXd : MDiff (T% X)) :
+    PreservesDistribution I α.kerDistribution X ↔
+      α.IsContactHamiltonianVectorField (fun y ↦ α.val y ![X y]) X := by
+  refine ⟨fun hX ↦ hα.isContactHamiltonianVectorField_iff_eq.2 (funext fun x ↦ ?_),
+    fun hX ↦ hX.preservesDistribution hXd⟩
+  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  exact (hX.preservesDistributionAt x).apply_eq_contactHamiltonianVectorField
+    (hα.isContactDistribution_kerDistribution (n := ∞)) (hXd x) (.of_forall fun _ ↦ rfl)
+
+/-- **A contact vector field of a contact form is the contact Hamiltonian vector field of its
+Hamiltonian**: a differentiable vector field `X` preserves `ker α` exactly when
+`X = X_(α(X))`. -/
+theorem preservesDistribution_kerDistribution_iff_eq (hXd : MDiff (T% X)) :
+    PreservesDistribution I α.kerDistribution X ↔
+      X = α.contactHamiltonianVectorField fun y ↦ α.val y ![X y] :=
+  (hα.preservesDistribution_kerDistribution_iff hXd).trans hα.isContactHamiltonianVectorField_iff_eq
+
+/-- **The Jacobi bracket is the Lie bracket of contact vector fields.** For differentiable vector
+fields `X` and `Y` preserving the contact structure `ker α`, the bracket `[X, Y]` has Hamiltonian
+the Jacobi bracket of their Hamiltonians: `α([X, Y]) = {α(X), α(Y)}_α`. -/
+theorem apply_mlieBracket_eq_jacobiBracket (hX : PreservesDistribution I α.kerDistribution X)
+    (hY : PreservesDistribution I α.kerDistribution Y) (hXd : MDiff (T% X)) (hYd : MDiff (T% Y))
+    (x : M) : α.val x ![mlieBracket I X Y x] =
+      α.jacobiBracket (fun y ↦ α.val y ![X y]) (fun y ↦ α.val y ![Y y]) x := by
+  let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  exact (hX.preservesDistributionAt x).apply_mlieBracket_eq_jacobiBracket
+    (hα.isContactDistribution_kerDistribution (n := ∞)) (hY.preservesDistributionAt x) (hXd x)
+    (hYd x) (.of_forall fun _ ↦ rfl)
+
+end IsContactForm
+
+end SmoothForm
 
 end TauCeti
