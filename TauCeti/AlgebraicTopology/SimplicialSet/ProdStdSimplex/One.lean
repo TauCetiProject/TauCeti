@@ -20,6 +20,12 @@ opposite to the vertices `(i, 0)` and `(i, 1)` (`SSet.prodStdSimplex₁.δ_castS
 `codimOneSimplex (Fin.last (p + 1))` with the top and bottom inclusions `ι₁` and `ι₀` of `Δ[p]`.
 The vertices of the `k`th nondegenerate `(p + 1)`-simplex are `(i, 0)` at `i.castSucc` for `i ≤ k`
 and `(i, 1)` at `i.succ` for `k ≤ i`, all distinct.
+
+For `p = 1`, the square `Δ[1] ⊗ Δ[1]` is the union of the `2`-simplices `ι 0`, with vertices
+`(0, 0), (0, 1), (1, 1)`, and `ι 1`, with vertices `(0, 0), (1, 0), (1, 1)`, glued along the
+diagonal (`SSet.prodStdSimplex₁.δ_one_ι_zero`). We describe their sides as whiskered inclusions
+of `Δ[0] ⊗ Δ[1]` and `Δ[1] ⊗ Δ[0]`, the form in which maps out of `Δ[1] ⊗ Z` are constrained on
+`{i} × Z` and `Z × {i}`.
 -/
 
 public section
@@ -109,6 +115,58 @@ lemma objEquiv_nonDegenerateEquiv_succ (k i : Fin (p + 1)) (hi : k ≤ i) :
 lemma injective_objEquiv_nonDegenerateEquiv (k : Fin (p + 1)) :
     Function.Injective (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val) :=
   (prodStdSimplex.nonDegenerate_iff_injective_objEquiv _).1 (nonDegenerateEquiv k).property
+
+/-! ### The square `Δ[1] ⊗ Δ[1]` -/
+
+/-- The side of `ι 0 : Δ[2] ⟶ Δ[1] ⊗ Δ[1]` opposite to its vertex `(1, 1)` is the edge
+`{0} × Δ[1]`. -/
+@[reassoc]
+lemma δ_two_ι_zero :
+    stdSimplex.δ 2 ≫ ι.{u} (p := 1) 0 =
+      lift (stdSimplex.σ 0) (𝟙 _) ≫ stdSimplex.δ 1 ▷ Δ[1] := by
+  apply yonedaEquiv.injective
+  apply prodStdSimplex.objEquiv.injective
+  ext i : 2
+  fin_cases i <;> rfl
+
+/-- The side of `ι 1 : Δ[2] ⟶ Δ[1] ⊗ Δ[1]` opposite to its vertex `(0, 0)` is the edge
+`{1} × Δ[1]`. -/
+@[reassoc]
+lemma δ_zero_ι_one :
+    stdSimplex.δ 0 ≫ ι.{u} (p := 1) 1 =
+      lift (stdSimplex.σ 0) (𝟙 _) ≫ stdSimplex.δ 0 ▷ Δ[1] := by
+  apply yonedaEquiv.injective
+  apply prodStdSimplex.objEquiv.injective
+  ext i : 2
+  fin_cases i <;> rfl
+
+/-- The side of `ι 0 : Δ[2] ⟶ Δ[1] ⊗ Δ[1]` opposite to its vertex `(0, 0)` is the edge
+`Δ[1] × {1}`. -/
+@[reassoc]
+lemma δ_zero_ι_zero :
+    stdSimplex.δ 0 ≫ ι.{u} (p := 1) 0 =
+      lift (𝟙 _) (stdSimplex.σ 0) ≫ Δ[1] ◁ stdSimplex.δ 0 := by
+  apply yonedaEquiv.injective
+  apply prodStdSimplex.objEquiv.injective
+  ext i : 2
+  fin_cases i <;> rfl
+
+/-- The side of `ι 1 : Δ[2] ⟶ Δ[1] ⊗ Δ[1]` opposite to its vertex `(1, 1)` is the edge
+`Δ[1] × {0}`. -/
+@[reassoc]
+lemma δ_two_ι_one :
+    stdSimplex.δ 2 ≫ ι.{u} (p := 1) 1 =
+      lift (𝟙 _) (stdSimplex.σ 0) ≫ Δ[1] ◁ stdSimplex.δ 1 := by
+  apply yonedaEquiv.injective
+  apply prodStdSimplex.objEquiv.injective
+  ext i : 2
+  fin_cases i <;> rfl
+
+/-- The two `2`-simplices `ι 0` and `ι 1` of `Δ[1] ⊗ Δ[1]` share their diagonal, the edge from
+`(0, 0)` to `(1, 1)`. -/
+@[reassoc]
+lemma δ_one_ι_zero : stdSimplex.δ 1 ≫ ι.{u} (p := 1) 0 = stdSimplex.δ 1 ≫ ι 1 :=
+  (δ_succ_ι 0).trans (δ_castSucc_ι 1).symm
 
 end prodStdSimplex₁
 

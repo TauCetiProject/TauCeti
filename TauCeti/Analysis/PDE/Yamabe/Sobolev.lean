@@ -27,7 +27,9 @@ Laplacian `L_g = aₙ Δ⁺_g + Scal_g` on `H¹(M)` (`TauCeti.Manifold.SobolevH1
 symmetric bilinear form `E_g(w, v) = aₙ D_g(w, v) + ∫ Scal_g w v dV_g`
 (`TauCeti.Yamabe.energyForm`). Dividing `E_g(w, w)` by `(∫ |w| ^ pₙ dV_g) ^ (2 / pₙ)`
 (`pₙ = 2 n / (n - 2)`) defines the **weak Yamabe quotient** `TauCeti.Yamabe.weakYamabeQuotient` on
-`H¹(M)`.
+`H¹(M)`. Dividing instead by `(∫ |w| ^ q dV_g) ^ (2 / q)` for an exponent `q` defines the
+**subcritical Yamabe quotient** `TauCeti.Yamabe.subcriticalYamabeQuotient`, which is the weak
+Yamabe quotient at `q = pₙ` and is scale invariant for every `q ≠ 0`.
 
 In dimension `n > 2`, the critical Sobolev embedding `SobolevH1.toLpOfLE` makes the denominator
 finite, norm-continuous, and positive away from `0`. We establish:
@@ -202,6 +204,53 @@ theorem weakYamabeQuotient_def (w : SobolevH1 I M) :
         (∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M) ^
           (2 / criticalExponent (finrank ℝ E)) := (rfl)
 
+variable (I) in
+/-- The **subcritical Yamabe quotient** `Q^q_g(w) = E_g(w, w) / (∫ |w| ^ q dV_g) ^ (2 / q)` of an
+element `w ∈ H¹(M)` at an exponent `q`. At the critical exponent `q = pₙ` it is the weak Yamabe
+quotient (`TauCeti.Yamabe.subcriticalYamabeQuotient_criticalExponent`); the exponents
+`2 ≤ q < pₙ` approximate the Yamabe problem from below. -/
+def subcriticalYamabeQuotient (q : ℝ) (w : SobolevH1 I M) : ℝ :=
+  energyForm I w w / (∫ x, |SobolevH1.toLp w x| ^ q ∂riemannianVolume I M) ^ (2 / q)
+
+variable (I) in
+/-- Unfolding lemma for `TauCeti.Yamabe.subcriticalYamabeQuotient`. -/
+theorem subcriticalYamabeQuotient_def (q : ℝ) (w : SobolevH1 I M) :
+    subcriticalYamabeQuotient I q w =
+      energyForm I w w / (∫ x, |SobolevH1.toLp w x| ^ q ∂riemannianVolume I M) ^ (2 / q) :=
+  (rfl)
+
+/-- At the critical exponent `pₙ`, the subcritical Yamabe quotient is the weak Yamabe quotient. -/
+@[simp]
+theorem subcriticalYamabeQuotient_criticalExponent (w : SobolevH1 I M) :
+    subcriticalYamabeQuotient I (criticalExponent (finrank ℝ E)) w = weakYamabeQuotient I w := by
+  rw [subcriticalYamabeQuotient_def, weakYamabeQuotient_def]
+
+/-- The subcritical Yamabe quotient of `0` is `0`. -/
+@[simp]
+theorem subcriticalYamabeQuotient_zero (q : ℝ) :
+    subcriticalYamabeQuotient I q (0 : SobolevH1 I M) = 0 := by
+  simp [subcriticalYamabeQuotient_def]
+
+/-- **Scale invariance of the subcritical Yamabe quotient.** For an exponent `q ≠ 0`, multiplying
+`w ∈ H¹(M)` by a nonzero constant `c` preserves `subcriticalYamabeQuotient`. -/
+theorem subcriticalYamabeQuotient_smul {q : ℝ} (hq : q ≠ 0) {w : SobolevH1 I M} {c : ℝ}
+    (hc : c ≠ 0) : subcriticalYamabeQuotient I q (c • w) = subcriticalYamabeQuotient I q w := by
+  have hnum : energyForm I (c • w) (c • w) = c ^ 2 * energyForm I w w := by
+    simp only [map_smul, smul_apply, smul_eq_mul]; ring
+  have hden : ∫ x, |SobolevH1.toLp (c • w) x| ^ q ∂riemannianVolume I M =
+      |c| ^ q * ∫ x, |SobolevH1.toLp w x| ^ q ∂riemannianVolume I M := by
+    rw [← integral_const_mul]
+    exact integral_congr_ae <|
+      (map_smul SobolevH1.toLp c w ▸ Lp.coeFn_smul c (SobolevH1.toLp w)).mono fun x hx ↦ by
+        dsimp only
+        rw [hx, Pi.smul_apply, smul_eq_mul, abs_mul, Real.mul_rpow (abs_nonneg _) (abs_nonneg _)]
+  have hc2 : (|c| ^ q) ^ (2 / q) = c ^ 2 := by
+    rw [← Real.rpow_mul (abs_nonneg _), mul_div_cancel₀ _ hq, Real.rpow_two, sq_abs]
+  rw [subcriticalYamabeQuotient_def, subcriticalYamabeQuotient_def, hnum, hden,
+    Real.mul_rpow (Real.rpow_nonneg (abs_nonneg _) _)
+      (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _),
+    hc2, mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
+
 /-- On smooth functions, `weakYamabeQuotient` agrees with `yamabeQuotient`. -/
 @[simp]
 theorem weakYamabeQuotient_ofSmooth (u : C^∞⟮I, M; ℝ⟯) :
@@ -226,25 +275,8 @@ theorem weakYamabeQuotient_nonneg_of_scalarCurvature_nonneg (w : SobolevH1 I M)
 by a nonzero constant `c` preserves `weakYamabeQuotient`. -/
 theorem weakYamabeQuotient_smul (hn : 2 < finrank ℝ E) {w : SobolevH1 I M} {c : ℝ} (hc : c ≠ 0) :
     weakYamabeQuotient I (c • w) = weakYamabeQuotient I w := by
-  have hp := criticalExponent_pos hn
-  have hnum : energyForm I (c • w) (c • w) = c ^ 2 * energyForm I w w := by
-    simp only [map_smul, smul_apply, smul_eq_mul]; ring
-  have hden : ∫ x, |SobolevH1.toLp (c • w) x| ^ criticalExponent (finrank ℝ E)
-      ∂riemannianVolume I M =
-      |c| ^ criticalExponent (finrank ℝ E) *
-        ∫ x, |SobolevH1.toLp w x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M := by
-    rw [← integral_const_mul]
-    exact integral_congr_ae <|
-      (map_smul SobolevH1.toLp c w ▸ Lp.coeFn_smul c (SobolevH1.toLp w)).mono fun x hx ↦ by
-        dsimp only
-        rw [hx, Pi.smul_apply, smul_eq_mul, abs_mul, Real.mul_rpow (abs_nonneg _) (abs_nonneg _)]
-  have hc2 : (|c| ^ criticalExponent (finrank ℝ E)) ^ (2 / criticalExponent (finrank ℝ E)) =
-      c ^ 2 := by
-    rw [← Real.rpow_mul (abs_nonneg _), mul_div_cancel₀ _ hp.ne', Real.rpow_two, sq_abs]
-  rw [weakYamabeQuotient_def, weakYamabeQuotient_def, hnum, hden,
-    Real.mul_rpow (Real.rpow_nonneg (abs_nonneg _) _)
-      (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _),
-    hc2, mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
+  simpa only [subcriticalYamabeQuotient_criticalExponent] using
+    subcriticalYamabeQuotient_smul (criticalExponent_pos hn).ne' (w := w) hc
 
 /-- **Norm continuity of the weak Yamabe quotient away from zero.** On a closed manifold of
 dimension `n > 2`, `weakYamabeQuotient I` is continuous at every nonzero `w ∈ H¹(M)`. -/

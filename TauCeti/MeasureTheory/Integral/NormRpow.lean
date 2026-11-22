@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 import Mathlib.MeasureTheory.Function.L1Space.Integrable
@@ -25,6 +26,9 @@ exponent `s > -d`.  The singularity is locally integrable because the radial Jac
 
 `\int x in ball 0 R, ‖x‖ ^ s ∂μ = d * μ.real (ball 0 1) * (R ^ (d + s) / (d + s))`.
 
+Outside a ball of radius `R > 0` the kernel is integrable exactly when `s < -d`, with
+`\int x in (closedBall 0 R)ᶜ, ‖x‖ ^ s ∂μ = d * μ.real (ball 0 1) * (R ^ (d + s) / -(d + s))`.
+
 The weakly singular exponent `s = 1 - d` gives the value `d * μ.real (ball 0 1) * R`; this is
 the kernel bound used when the straight-segment estimate is averaged over a ball in the proof of
 the Poincaré--Wirtinger inequality.  When `d > 1`, the exponents `s = (1 - d) q` with
@@ -40,6 +44,10 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball, and
   `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
+* `TauCeti.integrableOn_norm_rpow_compl_closedBall_iff`,
+  `TauCeti.memLp_norm_rpow_compl_closedBall_iff`: integrability and `Lᵖ` membership outside a
+  ball, and `TauCeti.integral_norm_rpow_compl_closedBall`: the exact integral there for
+  `s < -d`.
 * `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a power of the distance to a point is
   never integrable over the whole space, for an additive Haar measure on a nontrivial space.
 * `TauCeti.integrableOn_norm_sub_rpow_ball_iff_integrableOn_norm_rpow_ball`,
@@ -56,6 +64,9 @@ at most `|x - Re e| ^ s`.
   `TauCeti.setIntegral_norm_sub_rpow_le_of_mem_closure`: diameter bounds on any bounded set for
   poles in its closure and exponents `s > -d`, together with divergence `= ∞` at interior poles for
   `s ≤ -d` (`TauCeti.setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior`).
+* `TauCeti.setLAverage_ball_enorm_sub_rpow_lt_top`,
+  `TauCeti.setLAverage_ball_enorm_sub_rpow_eq_top`: the average over a ball about the pole is
+  finite for `s > -d` and infinite for `s ≤ -d`.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
 * `TauCeti.memLp_div_pow_compl_closedBall_iff` and
   `TauCeti.memLp_div_sub_pow_compl_closedBall_iff`: `a / (z - c) ^ m` is in `Lᵖ` off a disc
@@ -143,6 +154,17 @@ theorem integrableOn_norm_rpow_ball_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R) 
     intervalIntegral.integrableOn_Ioo_rpow_iff hR]
   constructor <;> intro h <;> linarith
 
+/-- The radial profile of `‖x‖ ^ s` outside the closed ball of radius `R`, multiplied by the
+polar Jacobian `r ^ (d - 1)`, is the single power `r ^ (d - 1 + s)` for `r > R`. -/
+private theorem radial_indicator_rpow_eqOn {d : ℕ} (hd : 1 ≤ d) (s R : ℝ) :
+    EqOn (fun r : ℝ => r ^ (d - 1) • (Ioi R).indicator (fun r => r ^ s) r)
+      ((Ioi R).indicator fun r => r ^ ((d : ℝ) - 1 + s)) (Ioi 0) := by
+  intro r hr
+  by_cases h : R < r
+  · simp only [indicator_of_mem (show r ∈ Ioi R from h), smul_eq_mul]
+    rw [← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr]
+  · simp [h]
+
 /-- A norm power is integrable outside a positive-radius closed ball exactly below the
 negative dimension. This includes divergence at the logarithmic borderline. -/
 theorem integrableOn_norm_rpow_compl_closedBall_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R) :
@@ -158,20 +180,59 @@ theorem integrableOn_norm_rpow_compl_closedBall_iff [Nontrivial E] {s R : ℝ} (
   have hrad := integrable_fun_norm_addHaar mu (f := f)
   rw [hnorm, integrable_indicator_iff isClosed_closedBall.measurableSet.compl] at hrad
   have heq : EqOn (fun r : ℝ => r ^ (d-1) • f r)
-      ((Ioi R).indicator (fun r => r ^ ((d : ℝ)-1+s))) (Ioi 0) := by
-    intro r hr
-    have hr0 : 0 < r := hr
-    by_cases h : R < r
-    · have hrmem : r ∈ Ioi R := h
-      simp only [f, indicator_of_mem hrmem, smul_eq_mul]
-      rw [← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr0]
-    · simp [f, h]
+      ((Ioi R).indicator (fun r => r ^ ((d : ℝ)-1+s))) (Ioi 0) :=
+    radial_indicator_rpow_eqOn hd s R
   have hsupp : Function.support ((Ioi R).indicator (fun r : ℝ => r ^ ((d : ℝ)-1+s))) ⊆ Ioi 0 :=
     (support_indicator_subset).trans (Ioi_subset_Ioi hR.le)
   rw [integrableOn_congr_fun heq measurableSet_Ioi,
     integrableOn_iff_integrable_of_support_subset hsupp,
     integrable_indicator_iff measurableSet_Ioi, integrableOn_Ioi_rpow_iff hR] at hrad
   exact hrad.trans (by dsimp [d]; constructor <;> intro h <;> linarith)
+
+/-- For a finite nonzero exponent `p`, a norm power lies in `Lᵖ` outside a positive-radius closed
+ball exactly when `s p < -dim E`. -/
+theorem memLp_norm_rpow_compl_closedBall_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R)
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) :
+    MemLp (fun x : E => ‖x‖ ^ s) p (mu.restrict (closedBall 0 R)ᶜ) ↔
+      s * p.toReal < -(Module.finrank ℝ E : ℝ) := by
+  rw [← integrable_norm_rpow_iff
+    (by fun_prop : Measurable fun x : E => ‖x‖ ^ s).aestronglyMeasurable hp0 hp, ← IntegrableOn,
+    ← integrableOn_norm_rpow_compl_closedBall_iff (mu := mu) hR]
+  refine integrableOn_congr_fun (fun x _ => ?_) isClosed_closedBall.measurableSet.compl
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) s),
+    ← Real.rpow_mul (norm_nonneg x)]
+
+/-- The exact integral of the kernel `x ↦ ‖x‖ ^ s` outside a closed ball of positive radius
+centred at the origin, for `s < -dim E`. -/
+theorem integral_norm_rpow_compl_closedBall {s : ℝ} (hs : s < -(Module.finrank ℝ E : ℝ))
+    {R : ℝ} (hR : 0 < R) :
+    ∫ x in (closedBall (0 : E) R)ᶜ, ‖x‖ ^ s ∂mu =
+      (Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) *
+        (R ^ ((Module.finrank ℝ E : ℝ) + s) / -((Module.finrank ℝ E : ℝ) + s)) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · rw [closedBall_eq_singleton_of_subsingleton hR.le, eq_of_nonempty_of_subsingleton {0} univ,
+      compl_univ]
+    simp [Module.finrank_zero_of_subsingleton]
+  let d := Module.finrank ℝ E
+  have hd : 1 ≤ d := Module.finrank_pos
+  let f : ℝ → ℝ := (Ioi R).indicator fun r => r ^ s
+  have hconv : ∫ x in (closedBall (0 : E) R)ᶜ, ‖x‖ ^ s ∂mu = ∫ x : E, f ‖x‖ ∂mu := by
+    rw [← integral_indicator isClosed_closedBall.measurableSet.compl]
+    congr 1
+    funext x
+    simp [f, Set.indicator, mem_closedBall, not_le]
+  have heq : EqOn (fun r : ℝ => r ^ (d - 1) • f r)
+      ((Ioi R).indicator fun r => r ^ ((d : ℝ) - 1 + s)) (Ioi 0) :=
+    radial_indicator_rpow_eqOn hd s R
+  have hradial : ∫ r in Ioi (0 : ℝ), r ^ (d - 1) • f r =
+      -R ^ ((d : ℝ) + s) / ((d : ℝ) + s) := by
+    rw [setIntegral_congr_fun measurableSet_Ioi heq, setIntegral_indicator measurableSet_Ioi,
+      inter_eq_right.mpr (Ioi_subset_Ioi hR.le),
+      integral_Ioi_rpow_of_lt (by linarith) hR]
+    ring_nf
+  rw [hconv, integral_fun_norm_addHaar mu f, hradial, nsmul_eq_mul, smul_eq_mul, div_neg,
+    neg_div]
+  ring
 
 /-- The exact integral of the kernel `x ↦ ‖x‖ ^ s` on a ball centred at the origin, for
 `-dim E < s`. The coefficient is stated using the chosen additive Haar measure, so the result
@@ -385,6 +446,24 @@ theorem setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior [Nontrivial E] {s : �
   exact (((integrableOn_norm_sub_rpow_ball_iff_integrableOn_norm_rpow_ball x).trans
     (integrableOn_norm_rpow_ball_iff hr)).1 hint).not_ge hs
 
+/-- If `-dim E < s`, the average of `y ↦ ‖x - y‖ₑ ^ s` over a ball about `x` is finite. -/
+theorem setLAverage_ball_enorm_sub_rpow_lt_top {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s)
+    (x : E) (r : ℝ) : ⨍⁻ y in ball x r, ‖x - y‖ₑ ^ s ∂mu < ⊤ := by
+  rcases le_or_gt r 0 with hr | hr
+  · simp [ball_eq_empty.2 hr]
+  refine setLAverage_lt_top (ne_top_of_le_ne_top ?_ (lintegral_mono_set ball_subset_closedBall))
+  rw [setLIntegral_closedBall_enorm_sub_rpow hs hr.le x]
+  exact ENNReal.ofReal_ne_top
+
+/-- On a nontrivial space, if `s ≤ -dim E`, the average of `y ↦ ‖x - y‖ₑ ^ s` over a ball of
+positive radius about `x` is infinite. -/
+theorem setLAverage_ball_enorm_sub_rpow_eq_top [Nontrivial E] {s : ℝ}
+    (hs : s ≤ -(Module.finrank ℝ E : ℝ)) (x : E) {r : ℝ} (hr : 0 < r) :
+    ⨍⁻ y in ball x r, ‖x - y‖ₑ ^ s ∂mu = ⊤ := by
+  rw [setLAverage_eq, setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior hs
+    (by rw [isOpen_ball.interior_eq]; exact mem_ball_self hr),
+    ENNReal.top_div_of_ne_top measure_ball_lt_top.ne]
+
 /-- On a bounded set `Ω` containing `x`, the Riesz kernel `‖x - y‖ ^ (1 - n)` has integral over
 `Ω` at most `n μ(B(0, 1)) diam Ω`, since `Ω` lies in the closed ball of radius `diam Ω` about
 `x`. -/
@@ -522,16 +601,12 @@ theorem memLp_div_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) {R : ℝ} (h
       simpa only [div_eq_mul_inv, ← mul_assoc, inv_mul_cancel₀ ha, one_mul] using hi
     · intro h
       simpa only [div_eq_mul_inv] using h.const_mul a
-  rw [hscale, ← integrable_norm_rpow_iff (by fun_prop) hp0 hp_top]
-  have heq : (fun z : ℂ => ‖(z^m)⁻¹‖ ^ p.toReal) =
-      (fun z => ‖z‖ ^ (-((m : ℝ)*p.toReal))) := by
+  have heq : (fun z : ℂ => ‖(z^m)⁻¹‖) = fun z => ‖z‖ ^ (-(m : ℝ)) := by
     funext z
-    rw [norm_inv, norm_pow, Real.inv_rpow (by positivity),
-      ← Real.rpow_natCast_mul (norm_nonneg z), Real.rpow_neg (norm_nonneg z)]
-  rw [heq]
-  simpa only [IntegrableOn, Complex.finrank_real_complex, Nat.cast_ofNat, neg_lt_neg_iff] using
-    (TauCeti.integrableOn_norm_rpow_compl_closedBall_iff (E := ℂ) (mu := volume)
-      (s := -((m : ℝ)*p.toReal)) hR)
+    rw [norm_inv, norm_pow, Real.rpow_neg (norm_nonneg z), Real.rpow_natCast]
+  rw [hscale, ← memLp_norm_iff (by fun_prop), heq,
+    memLp_norm_rpow_compl_closedBall_iff hR hp0 hp_top, Complex.finrank_real_complex,
+    Nat.cast_ofNat, neg_mul, neg_lt_neg_iff]
 
 /-- The translate of `memLp_div_pow_compl_closedBall_iff` to an arbitrary centre `c`. -/
 theorem memLp_div_sub_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) (c : ℂ) {R : ℝ}
