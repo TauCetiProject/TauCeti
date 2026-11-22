@@ -26,8 +26,9 @@ inclusion `O[P] →ₐ[O] O[G]`, and acting on `O[H]` via character evaluation `
 ## Main results
 
 * `MonoidAlgebra.componentProj_single`, `MonoidAlgebra.componentProj_single_mul`,
-  `MonoidAlgebra.componentProj_mapDomain_left`, `MonoidAlgebra.componentProj_mapDomain_right`,
-  and `MonoidAlgebra.componentProj_surjective`: evaluation on basis elements, splitting on `O[P]`,
+  `MonoidAlgebra.componentProj_comp_mapDomainAlgHom_left`,
+  `MonoidAlgebra.componentProj_comp_mapDomainAlgHom_right`, and
+  `MonoidAlgebra.componentProj_surjective`: evaluation on basis elements, splitting on `O[P]`,
   evaluation on `O[H]`, and surjectivity.
 * `MonoidAlgebra.charEval_componentProj`: evaluating `componentProj hPH χ x` at `φ : P →* Oˣ`
   agrees with evaluating `x` at `hPH.extendChar φ χ`.
@@ -79,34 +80,53 @@ theorem componentProj_single_right (hPH : P.IsComplement' H) (χ : H →* Oˣ) (
     componentProj hPH χ (single (h : G) a) = single 1 (a * (χ h : O)) := by
   simpa using componentProj_single_mul hPH χ 1 h a
 
+/-- `componentProj` is a left inverse to the canonical inclusion `O[P] →ₐ[O] O[G]`. -/
+@[simp]
+theorem componentProj_comp_mapDomainAlgHom_left (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
+    (componentProj hPH χ).comp (mapDomainAlgHom O O P.subtype) =
+      AlgHom.id O (MonoidAlgebra O P) := by
+  apply MonoidAlgebra.algHom_ext
+  · intro p
+    simp
+  · ext
+
+/-- Applying `componentProj` to an element pushed forward from `O[P]` recovers it. -/
+theorem componentProj_mapDomainAlgHom_left (hPH : P.IsComplement' H) (χ : H →* Oˣ)
+    (y : MonoidAlgebra O P) :
+    componentProj hPH χ (mapDomainAlgHom O O P.subtype y) = y :=
+  DFunLike.congr_fun (componentProj_comp_mapDomainAlgHom_left hPH χ) y
+
 /-- Applying `componentProj` to an element embedded from `O[P]` via `mapDomain Subtype.val`
 recovers it. -/
 @[simp]
 theorem componentProj_mapDomain_left (hPH : P.IsComplement' H) (χ : H →* Oˣ)
     (y : MonoidAlgebra O P) :
-    componentProj hPH χ (mapDomain (Subtype.val : P → G) y) = y := by
-  induction y using induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [mapDomain_add, map_add, hx, hy]
-  | single p a => simp
-
-/-- Applying `componentProj` to an element pushed forward from `O[P]` recovers it. -/
-theorem componentProj_mapDomainAlgHom_left (hPH : P.IsComplement' H) (χ : H →* Oˣ)
-    (y : MonoidAlgebra O P) :
-    componentProj hPH χ (mapDomainAlgHom O O P.subtype y) = y := by
-  simp
-
-/-- `componentProj` is a left inverse to the canonical inclusion `O[P] →ₐ[O] O[G]`. -/
-@[simp]
-theorem componentProj_comp_mapDomainAlgHom_left (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
-    (componentProj hPH χ).comp (mapDomainAlgHom O O P.subtype) =
-      AlgHom.id O (MonoidAlgebra O P) :=
-  AlgHom.ext (componentProj_mapDomainAlgHom_left hPH χ)
+    componentProj hPH χ (mapDomain (Subtype.val : P → G) y) = y :=
+  componentProj_mapDomainAlgHom_left hPH χ y
 
 /-- `componentProj` is surjective, with right inverse `mapDomainAlgHom O O P.subtype`. -/
 theorem componentProj_surjective (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
     Function.Surjective (componentProj hPH χ) :=
   Function.RightInverse.surjective (componentProj_mapDomainAlgHom_left hPH χ)
+
+/-- On `O[H] ⊆ O[G]`, `componentProj hPH χ` acts as scalar evaluation `χ.charEval` composed with
+the structure map `O →ₐ[O] O[P]`. -/
+@[simp]
+theorem componentProj_comp_mapDomainAlgHom_right (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
+    (componentProj hPH χ).comp (mapDomainAlgHom O O H.subtype) =
+      (Algebra.ofId O (MonoidAlgebra O P)).comp χ.charEval := by
+  apply MonoidAlgebra.algHom_ext
+  · intro h
+    simp [Algebra.algebraMap_eq_smul_one, MonoidAlgebra.one_def, smul_single]
+  · ext
+
+/-- On `O[H] ⊆ O[G]`, `componentProj hPH χ` acts as scalar evaluation `χ.charEval` followed by
+`algebraMap O O[P]`. -/
+theorem componentProj_mapDomainAlgHom_right (hPH : P.IsComplement' H) (χ : H →* Oˣ)
+    (y : MonoidAlgebra O H) :
+    componentProj hPH χ (mapDomainAlgHom O O H.subtype y) =
+      algebraMap O (MonoidAlgebra O P) (χ.charEval y) :=
+  DFunLike.congr_fun (componentProj_comp_mapDomainAlgHom_right hPH χ) y
 
 /-- On `O[H]` embedded into `O[G]` via `mapDomain Subtype.val`, `componentProj hPH χ` acts as
 `single 1 (χ.charEval y)`. -/
@@ -114,18 +134,8 @@ theorem componentProj_surjective (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
 theorem componentProj_mapDomain_right (hPH : P.IsComplement' H) (χ : H →* Oˣ)
     (y : MonoidAlgebra O H) :
     componentProj hPH χ (mapDomain (Subtype.val : H → G) y) = single 1 (χ.charEval y) := by
-  induction y using induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [mapDomain_add, map_add, map_add, single_add, hx, hy]
-  | single h a => simp
-
-/-- On `O[H] ⊆ O[G]`, `componentProj hPH χ` acts as scalar evaluation `χ.charEval` followed by
-`algebraMap O O[P]`. -/
-theorem componentProj_mapDomainAlgHom_right (hPH : P.IsComplement' H) (χ : H →* Oˣ)
-    (y : MonoidAlgebra O H) :
-    componentProj hPH χ (mapDomainAlgHom O O H.subtype y) =
-      algebraMap O (MonoidAlgebra O P) (χ.charEval y) := by
-  simp
+  simpa [mapDomainAlgHom_apply, Algebra.algebraMap_eq_smul_one, MonoidAlgebra.one_def,
+    smul_single] using componentProj_mapDomainAlgHom_right hPH χ y
 
 /-- Evaluating `componentProj hPH χ x` at a character `φ : P →* Oˣ` agrees with evaluating `x` at
 the extended character `hPH.extendChar φ χ : G →* Oˣ`. -/
@@ -133,13 +143,14 @@ the extended character `hPH.extendChar φ χ : G →* Oˣ`. -/
 theorem charEval_componentProj (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ)
     (x : MonoidAlgebra O G) :
     φ.charEval (componentProj hPH χ x) = (hPH.extendChar φ χ).charEval x := by
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | single g a =>
-    obtain ⟨⟨p, h⟩, rfl⟩ := hPH.prodMulEquiv.surjective g
-    rw [Subgroup.IsComplement'.prodMulEquiv_apply]
-    simp [mul_assoc, mul_comm (χ h : O)]
+  have heq : φ.charEval.comp (componentProj hPH χ) = (hPH.extendChar φ χ).charEval := by
+    apply MonoidAlgebra.algHom_ext
+    · intro g
+      obtain ⟨⟨p, h⟩, rfl⟩ := hPH.prodMulEquiv.surjective g
+      rw [Subgroup.IsComplement'.prodMulEquiv_apply]
+      simp [mul_comm (χ h : O)]
+    · ext
+  exact DFunLike.congr_fun heq x
 
 end CommSemiring
 

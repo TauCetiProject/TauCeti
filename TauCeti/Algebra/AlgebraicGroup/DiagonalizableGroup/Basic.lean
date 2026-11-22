@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Defs
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 
@@ -32,7 +33,8 @@ by `AddMonoidAlgebra.toMultiplicativeAlgEquiv`.
 
 ## Main definitions
 
-* `TauCeti.DiagonalizableGroup.point`: the `R[G]`-point extending a character of `G`.
+* `TauCeti.DiagonalizableGroup.point`: the `R[G]`-point extending a character of `G` (from
+  `TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Defs`).
 * `TauCeti.DiagonalizableGroup.charOfPoint`: the character of `G` read off from a point.
 * `TauCeti.DiagonalizableGroup.pointEquiv`: algebra maps `R[G] →ₐ[R] A` are equivalent to
   characters `G →* Aˣ`.
@@ -64,24 +66,6 @@ namespace DiagonalizableGroup
 
 variable {R : Type u} {A : Type v} {G : Type w}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A] [CommGroup G]
-
-/-- The `R[G]`-point of the diagonalizable group `D(G)` corresponding to a character of `G`.
-It is the algebra map extending `χ` via the universal property of the group algebra; it sends
-`single g r` to `r • χ g`. -/
-@[expose] noncomputable def point (χ : G →* Aˣ) : MonoidAlgebra R G →ₐ[R] A :=
-  MonoidAlgebra.lift R A G ((Units.coeHom A).comp χ)
-
-/-- The point associated to a character sends `single g r` to `r • χ g`. -/
-@[simp]
-theorem point_single (χ : G →* Aˣ) (g : G) (r : R) :
-    point (R := R) χ (MonoidAlgebra.single g r) = r • (χ g : A) := by
-  rw [point, MonoidAlgebra.lift_single, MonoidHom.coe_comp, Function.comp_apply,
-    Units.coeHom_apply]
-
-/-- The point associated to a character sends the group-like `single g 1` to `χ g`. -/
-theorem point_single_one (χ : G →* Aˣ) (g : G) :
-    point (R := R) χ (MonoidAlgebra.single g 1) = (χ g : A) := by
-  rw [point_single, one_smul]
 
 /-- The character of `G` read off from an `R[G]`-point: it sends `g` to the unit
 `f (single g 1)` of `A`, whose inverse is `f (single g⁻¹ 1)`. It is the monoid hom

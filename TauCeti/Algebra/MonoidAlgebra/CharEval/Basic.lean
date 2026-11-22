@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Basic
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Defs
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 import Mathlib.RingTheory.IntegralDomain

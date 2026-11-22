@@ -42,10 +42,14 @@ theorem residue_charEval_eq_of_residue_eq {ψ₁ ψ₂ : G →* Oˣ}
     (h : ∀ g : G, IsLocalRing.residue O (ψ₁ g) = IsLocalRing.residue O (ψ₂ g))
     (x : MonoidAlgebra O G) :
     IsLocalRing.residue O (ψ₁.charEval x) = IsLocalRing.residue O (ψ₂.charEval x) := by
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | single g a => simp [h g]
+  have heq :
+      (Algebra.ofId O (IsLocalRing.ResidueField O)).comp ψ₁.charEval =
+        (Algebra.ofId O (IsLocalRing.ResidueField O)).comp ψ₂.charEval := by
+    apply MonoidAlgebra.algHom_ext
+    · intro g
+      simpa [IsLocalRing.ResidueField.algebraMap_eq] using h g
+    · apply AlgHom.ext; intro a; simp
+  simpa [IsLocalRing.ResidueField.algebraMap_eq] using DFunLike.congr_fun heq x
 
 end ResidueEq
 
@@ -60,9 +64,7 @@ theorem residue_charEval_eq_of_pow_eq {ψ₁ ψ₂ : G →* Oˣ}
     (h : ∀ g : G, ∃ k : ℕ, ψ₁ g ^ p ^ k = ψ₂ g ^ p ^ k) (x : MonoidAlgebra O G) :
     IsLocalRing.residue O (ψ₁.charEval x) = IsLocalRing.residue O (ψ₂.charEval x) :=
   residue_charEval_eq_of_residue_eq
-    (fun g ↦ let ⟨_, hk⟩ := h g
-      IsLocalRing.residue_eq_of_pow_eq p (by simpa using congrArg Units.val hk))
-    x
+    (fun g ↦ IsLocalRing.residue_units_eq_of_exists_pow_eq p (h g)) x
 
 end ExpChar
 

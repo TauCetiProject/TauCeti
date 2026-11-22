@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.FiniteAbelian.Duality
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.Algebra.MonoidAlgebra.CharEval.Basic
+import TauCeti.Algebra.Algebra.Hom
 
 /-!
 # Character group rings
@@ -37,6 +38,8 @@ character group ring of the set of all characters is `O[G]` itself.
 * `Set.charGroupRing`: the character group ring `R_Ψ`, the range of `Ψ.jointEval`.
 * `Set.charGroupRing.proj`: the canonical surjection `α_Ψ : O[G] →ₐ[O] R_Ψ` onto the character
   group ring.
+* `Set.charGroupRing.lift`: for commutative ring coefficients, descent of an `O`-algebra
+  homomorphism out of `O[G]` whose kernel contains `ker (proj Ψ)`.
 * `Set.charGroupRing.restrictAlgHom`: the canonical surjective transition homomorphism
   `R_Ψ →ₐ[O] R_{Ψ'}` for `Ψ' ⊆ Ψ`.
 * `Set.charGroupRing.evalAlgHom`: coordinate evaluation `R_Ψ →ₐ[O] O` at `ψ ∈ Ψ`.
@@ -47,8 +50,8 @@ character group ring of the set of all characters is `O[G]` itself.
 * `TauCeti.eq_of_forall_charEval_eq` and `Set.jointEval_injective`: for `G` finite and `O` a
   domain with enough roots of unity, an element of `O[G]` is determined by its values at all
   characters.
-* `Set.charGroupRing.proj_eq_proj_iff` and `Set.charGroupRing.ker_proj`: the kernel of
-  `α_Ψ` is the intersection of the kernels of the evaluations at the members of `Ψ`.
+* `Set.charGroupRing.proj_eq_proj_iff`, `Set.charGroupRing.ker_proj`, and
+  `Set.charGroupRing.lift_unique`: the kernel and universal property of `α_Ψ`.
 
 ## Implementation notes
 
@@ -152,22 +155,29 @@ theorem ker_proj : RingHom.ker (proj Ψ) = ⨅ ψ ∈ Ψ, RingHom.ker ψ.charEva
   ext x
   simp [RingHom.mem_ker, proj_eq_zero_iff]
 
+private noncomputable def restrictAmbient {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    (Ψ → O) →ₐ[O] (Ψ' → O) :=
+  AlgHom.pi fun ψ : Ψ' ↦ Pi.evalAlgHom O (fun _ : Ψ ↦ O) ⟨ψ.val, h ψ.property⟩
+
+private theorem map_restrictAmbient_charGroupRing {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    Ψ.charGroupRing.map (restrictAmbient h) = Ψ'.charGroupRing := by
+  rw [charGroupRing_def, charGroupRing_def, ← AlgHom.range_comp]
+  congr 1
+
 /-- For `Ψ' ⊆ Ψ`, restricting functions from `Ψ` to `Ψ'` defines the canonical surjective
 `O`-algebra transition homomorphism `R_Ψ →ₐ[O] R_{Ψ'}` through which `α_{Ψ'}` factors. -/
 noncomputable def restrictAlgHom {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
     Ψ.charGroupRing →ₐ[O] Ψ'.charGroupRing :=
-  (AlgHom.pi fun ψ : Ψ' ↦
-    (Pi.evalAlgHom O (fun _ : Ψ ↦ O) ⟨ψ.val, h ψ.property⟩).comp Ψ.charGroupRing.val).codRestrict
-      Ψ'.charGroupRing fun y ↦ by
-    obtain ⟨x, hx⟩ := mem_iff.mp y.property
-    exact mem_iff.mpr ⟨x, fun ψ ↦ hx ⟨ψ.val, h ψ.property⟩⟩
+  (Subalgebra.equivOfEq _ _ (map_restrictAmbient_charGroupRing h)).toAlgHom.comp
+    ((restrictAmbient h).subalgebraMap Ψ.charGroupRing)
 
 /-- Coordinatewise formula for `restrictAlgHom`. -/
 @[simp]
 theorem coe_restrictAlgHom_apply {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ)
     (y : Ψ.charGroupRing) (ψ : Ψ') :
     (restrictAlgHom h y : Ψ' → O) ψ = (y : Ψ → O) ⟨ψ.val, h ψ.property⟩ := by
-  simp [restrictAlgHom]
+  rw [restrictAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, Subalgebra.equivOfEq_apply]
+  rfl
 
 /-- Restricting a character group ring to itself is the identity algebra homomorphism. -/
 @[simp]
@@ -206,9 +216,9 @@ theorem restrictAlgHom_comp_proj {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
 
 /-- `restrictAlgHom` is surjective whenever `Ψ' ⊆ Ψ`. -/
 theorem restrictAlgHom_surjective {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
-    Function.Surjective (restrictAlgHom h) := fun y ↦ by
-  obtain ⟨x, rfl⟩ := proj_surjective Ψ' y
-  exact ⟨proj Ψ x, restrictAlgHom_proj h x⟩
+    Function.Surjective (restrictAlgHom h) :=
+  (Subalgebra.equivOfEq _ _ (map_restrictAmbient_charGroupRing h)).surjective.comp
+    ((restrictAmbient h).subalgebraMap_surjective Ψ.charGroupRing)
 
 /-- Evaluation of `R_Ψ` at a member `ψ ∈ Ψ`: the surjective `O`-algebra homomorphism `R_Ψ →ₐ[O] O`
 projecting onto the `ψ`-coordinate. -/
@@ -298,6 +308,48 @@ end charGroupRing
 end Set
 
 end CommSemiring
+
+section CommRing
+
+variable {O G : Type*} [CommRing O] [CommGroup G]
+
+namespace Set.charGroupRing
+
+/-- Universal property of the character group ring as a quotient of `O[G]`: any `O`-algebra
+homomorphism out of `O[G]` whose kernel contains `ker (proj Ψ)` descends to `R_Ψ →ₐ[O] A`. -/
+noncomputable def lift (Ψ : Set (G →* Oˣ)) {A : Type*} [Ring A] [Algebra O A]
+    (f : MonoidAlgebra O G →ₐ[O] A) (hf : RingHom.ker (proj Ψ) ≤ RingHom.ker f) :
+    charGroupRing Ψ →ₐ[O] A :=
+  (proj Ψ).descend (proj_surjective Ψ) f fun a b hab ↦
+    sub_eq_zero.mp <| map_sub f a b ▸ RingHom.mem_ker.mp <|
+      hf (RingHom.mem_ker.mpr <| by rw [map_sub, hab, sub_self])
+
+/-- The descent of `f` along `proj Ψ` evaluates on `proj Ψ x` as `f x`. -/
+@[simp]
+theorem lift_proj (Ψ : Set (G →* Oˣ)) {A : Type*} [Ring A] [Algebra O A]
+    (f : MonoidAlgebra O G →ₐ[O] A) (hf : RingHom.ker (proj Ψ) ≤ RingHom.ker f)
+    (x : MonoidAlgebra O G) :
+    lift Ψ f hf (proj Ψ x) = f x :=
+  (proj Ψ).descend_apply (proj_surjective Ψ) f _ x
+
+/-- Composing `lift Ψ f hf` with `proj Ψ` recovers `f`. -/
+@[simp]
+theorem lift_comp_proj (Ψ : Set (G →* Oˣ)) {A : Type*} [Ring A] [Algebra O A]
+    (f : MonoidAlgebra O G →ₐ[O] A) (hf : RingHom.ker (proj Ψ) ≤ RingHom.ker f) :
+    (lift Ψ f hf).comp (proj Ψ) = f :=
+  (proj Ψ).descend_comp (proj_surjective Ψ) f _
+
+/-- `lift Ψ f hf` is the unique `O`-algebra homomorphism out of `R_Ψ` whose composition with
+`proj Ψ` is `f`. -/
+theorem lift_unique (Ψ : Set (G →* Oˣ)) {A : Type*} [Ring A] [Algebra O A]
+    (f : MonoidAlgebra O G →ₐ[O] A) (hf : RingHom.ker (proj Ψ) ≤ RingHom.ker f)
+    (g : charGroupRing Ψ →ₐ[O] A) (hg : g.comp (proj Ψ) = f) :
+    g = lift Ψ f hf :=
+  (proj Ψ).descend_unique (proj_surjective Ψ) f _ g hg
+
+end Set.charGroupRing
+
+end CommRing
 
 section Domain
 

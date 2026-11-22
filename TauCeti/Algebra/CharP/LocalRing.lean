@@ -29,6 +29,8 @@ ideal because iterated Frobenius on the residue field is injective.
   has a residue field of the same characteristic.
 * `IsLocalRing.residue_eq_of_pow_eq`: in a local ring of residue exponential characteristic `p`,
   elements with equal `p^k`-th powers have equal residues.
+* `IsLocalRing.residue_units_eq_of_exists_pow_eq`: in a local ring of residue exponential
+  characteristic `p`, units with equal `p^k`-th powers for some `k` have equal residues.
 -/
 
 public section
@@ -58,5 +60,14 @@ theorem residue_eq_of_pow_eq {R : Type*} [CommRing R] [IsLocalRing R]
     IsLocalRing.residue R x = IsLocalRing.residue R y := by
   refine iterateFrobenius_inj (IsLocalRing.ResidueField R) p k ?_
   simpa only [iterateFrobenius_def, ← map_pow] using congrArg (IsLocalRing.residue R) h
+
+/-- In a local ring whose residue field has exponential characteristic `p`, units with equal
+`p ^ k`-th powers for some `k` have equal residues modulo the maximal ideal. -/
+theorem residue_units_eq_of_exists_pow_eq {R : Type*} [CommRing R] [IsLocalRing R]
+    (p : ℕ) [ExpChar (IsLocalRing.ResidueField R) p] {u v : Rˣ}
+    (h : ∃ k : ℕ, u ^ p ^ k = v ^ p ^ k) :
+    IsLocalRing.residue R u = IsLocalRing.residue R v :=
+  let ⟨_, hk⟩ := h
+  residue_eq_of_pow_eq p (by simpa using congrArg Units.val hk)
 
 end IsLocalRing

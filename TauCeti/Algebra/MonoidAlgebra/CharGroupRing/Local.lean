@@ -47,8 +47,9 @@ adic topology, and equips it with its complete Noetherian local `O`-algebra stru
   module-finite over `O` (e.g. when `G` is finite, or when `O` is Noetherian and `Ψ` is finite),
   some positive power of `𝔪_{R_Ψ}` lies inside `𝔪 R_Ψ` by
   `TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map` and the `𝔪_{R_Ψ}`-adic topology coincides
-  with the `(𝔪_O R_Ψ)`-adic topology (`Set.charGroupRing.maximalIdeal_adicTopology_eq_map`;
-  Dasgupta–Kakde §7.2.9), and when `O` is a complete Noetherian local ring, `R_Ψ` is Noetherian
+  with the `(𝔪_O R_Ψ)`-adic topology
+  (`IsLocalRing.maximalIdeal_adicTopology_eq_map O Ψ.charGroupRing`; Dasgupta–Kakde §7.2.9), and
+  when `O` is a complete Noetherian local ring, `R_Ψ` is Noetherian
   (`Set.charGroupRing.instIsNoetherianRing`) and `𝔪_{R_Ψ}`-adically complete.
 * **Component specialization (`Set.charGroupRing.isLocalRing_of_subset_component`,
   `Set.charGroupRing.isLocalRing_component`)**: whenever `G ⧸ H` is a `p`-group
@@ -65,9 +66,9 @@ adic topology, and equips it with its complete Noetherian local `O`-algebra stru
   modulo the maximal ideal of `O`.
 * `Set.charGroupRing.isLocalHom_evalAlgHom` and `Set.charGroupRing.isLocalRing`: locality of `R_Ψ`
   when characters in `Ψ` have equal `p^k`-th powers.
-* `Set.charGroupRing.maximalIdeal_eq_comap`, `Set.charGroupRing.residueFieldEquiv`, and
-  `Set.charGroupRing.maximalIdeal_adicTopology_eq_map`: maximal ideal, residue field, and adic
-  topology of a local character group ring.
+* `Set.charGroupRing.maximalIdeal_eq_comap` and `Set.charGroupRing.residueFieldEquiv`: maximal
+  ideal and residue field of a local character group ring (with adic topology given by
+  `IsLocalRing.maximalIdeal_adicTopology_eq_map`).
 * `Set.charGroupRing.isLocalRing_of_subset_component` and `Set.charGroupRing.isLocalRing_component`:
   specialization to subsets of a `χ`-component when `G ⧸ H` is a `p`-group.
 
@@ -215,15 +216,6 @@ instance [IsNoetherianRing O] [IsAdicComplete (IsLocalRing.maximalIdeal O) O]
     IsAdicComplete (IsLocalRing.maximalIdeal Ψ.charGroupRing) Ψ.charGroupRing :=
   IsAdicComplete.of_finite_of_isLocalRing O Ψ.charGroupRing
 
-/-- When `O` is a Noetherian local ring and `R_Ψ` is a module-finite local character group ring,
-the intrinsic `𝔪_{R_Ψ}`-adic topology coincides with the `(𝔪_O R_Ψ)`-adic topology induced from
-`O` (Dasgupta–Kakde, §7.2.9). -/
-theorem maximalIdeal_adicTopology_eq_map [IsNoetherianRing O] [IsLocalRing Ψ.charGroupRing]
-    [Module.Finite O Ψ.charGroupRing] :
-    (IsLocalRing.maximalIdeal Ψ.charGroupRing).adicTopology =
-      ((IsLocalRing.maximalIdeal O).map (algebraMap O Ψ.charGroupRing)).adicTopology :=
-  IsLocalRing.maximalIdeal_adicTopology_eq_map O Ψ.charGroupRing
-
 section ResidueEq
 
 /-- When any two characters in `Ψ` agree modulo the maximal ideal of `O` at every element of `G`,
@@ -275,9 +267,7 @@ theorem residue_apply_eq_of_pow_eq
     (y : Ψ.charGroupRing) (ψ₁ ψ₂ : Ψ) :
     IsLocalRing.residue O ((y : Ψ → O) ψ₁) = IsLocalRing.residue O ((y : Ψ → O) ψ₂) :=
   residue_apply_eq_of_residue_eq
-    (fun _ h₁ _ h₂ g ↦
-      (hΨ _ h₁ _ h₂ g).elim fun _ hk ↦
-        IsLocalRing.residue_eq_of_pow_eq p (by simpa using congrArg Units.val hk))
+    (fun _ h₁ _ h₂ g ↦ IsLocalRing.residue_units_eq_of_exists_pow_eq p (hΨ _ h₁ _ h₂ g))
     y ψ₁ ψ₂
 
 /-- **Coordinate evaluation is a local homomorphism**: when `Ψ` is finite and any two characters in
@@ -288,9 +278,7 @@ theorem isLocalHom_evalAlgHom [Finite Ψ]
     {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
     IsLocalHom (evalAlgHom hψ) :=
   isLocalHom_evalAlgHom_of_residue_eq
-    (fun _ h₁ _ h₂ g ↦
-      (hΨ _ h₁ _ h₂ g).elim fun _ hk ↦
-        IsLocalRing.residue_eq_of_pow_eq p (by simpa using congrArg Units.val hk))
+    (fun _ h₁ _ h₂ g ↦ IsLocalRing.residue_units_eq_of_exists_pow_eq p (hΨ _ h₁ _ h₂ g))
     hψ
 
 /-- **Locality criterion for character group rings** (Dasgupta–Kakde, §2.3, §5.1, §7.1): over a
@@ -302,9 +290,7 @@ theorem isLocalRing [Finite Ψ]
     (hne : Ψ.Nonempty) :
     IsLocalRing Ψ.charGroupRing :=
   isLocalRing_of_residue_eq
-    (fun _ h₁ _ h₂ g ↦
-      (hΨ _ h₁ _ h₂ g).elim fun _ hk ↦
-        IsLocalRing.residue_eq_of_pow_eq p (by simpa using congrArg Units.val hk))
+    (fun _ h₁ _ h₂ g ↦ IsLocalRing.residue_units_eq_of_exists_pow_eq p (hΨ _ h₁ _ h₂ g))
     hne
 
 end ExpChar

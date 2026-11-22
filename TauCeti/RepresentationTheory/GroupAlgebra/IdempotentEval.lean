@@ -26,6 +26,8 @@ into `O[G]` along a subgroup inclusion `H ≤ G`:
 * `MonoidHom.charEval_mapDomainAlgHom_charIdempotent`: for a finite subgroup `H ≤ G` with `#H` a
   unit in the domain `O`, the pushed-forward idempotent `e_χ ∈ O[G]` evaluates to `1` on
   characters extending `χ` and to `0` on all other characters of `G`.
+* `MonoidHom.charEval_mapDomainAlgHom_charIdempotent_mul_eq_zero`: over a domain `O`, if `ψ`
+  vanishes on `x` whenever it restricts to `χ`, then `ψ(e_χ * x) = 0`.
 -/
 
 public section
@@ -47,6 +49,7 @@ theorem charEval_charIdempotent_self (hH : IsUnit (Nat.card H : O)) (χ : H →*
 
 /-- Over a domain, a character `ψ` vanishes on the character idempotent `e_χ` of any distinct
 character `χ ≠ ψ`. No unit hypothesis on `#H` is required. -/
+@[simp]
 theorem charEval_charIdempotent_of_ne [IsDomain O] {χ ψ : H →* Oˣ} (h : χ ≠ ψ) :
     ψ.charEval (TauCeti.charIdempotent χ) = 0 := by
   classical
@@ -74,6 +77,20 @@ theorem charEval_mapDomainAlgHom_charIdempotent [IsDomain O] (H : Subgroup G) [F
       if ψ.comp H.subtype = χ then 1 else 0 := by
   simp only [MonoidAlgebra.mapDomainAlgHom_apply, charEval_mapDomain,
     charEval_charIdempotent hH, eq_comm]
+
+omit [Fintype H] in
+/-- Over a domain `O`, if `ψ : G →* Oˣ` vanishes on `x : O[G]` whenever `ψ` restricts to `χ` on
+`H`, then `ψ` vanishes on `e_χ * x` unconditionally. No unit hypothesis on `#H` is required. -/
+theorem charEval_mapDomainAlgHom_charIdempotent_mul_eq_zero [IsDomain O] {H : Subgroup G}
+    [Fintype H] {χ : H →* Oˣ} {x : MonoidAlgebra O G} {ψ : G →* Oˣ}
+    (hx : ψ.comp H.subtype = χ → ψ.charEval x = 0) :
+    ψ.charEval (MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ) * x) =
+      0 := by
+  rw [map_mul]
+  by_cases hψ : ψ.comp H.subtype = χ
+  · rw [hx hψ, mul_zero]
+  · simp only [MonoidAlgebra.mapDomainAlgHom_apply, charEval_mapDomain,
+      charEval_charIdempotent_of_ne (Ne.symm hψ), zero_mul]
 
 end CommRing
 

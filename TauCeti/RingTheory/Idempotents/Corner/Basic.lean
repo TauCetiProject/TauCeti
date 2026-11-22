@@ -24,8 +24,9 @@ ring structure when `A` is a nonunital ring. The corner inherits the compatible 
 and module structure of `A`. Over a commutative semiring `R`, this makes it an `R`-algebra,
 with `algebraMap R eAe r = r • e`. When `A` is unital, this is the structure under which `eAe`
 can be compared with `A` as `R`-algebras, for instance through Mathlib's `MoritaEquivalence`.
-When `A` is a commutative `R`-algebra, compression `x ↦ e * x * e` is a surjective `R`-algebra
-homomorphism `IsIdempotentElem.compressAlgHom`, whose kernel over a commutative ring is `(1 - e)`.
+When `A` is an `R`-algebra and `e` is a central idempotent, compression `x ↦ e * x * e` is a
+surjective `R`-algebra homomorphism `IsIdempotentElem.compressAlgHom`, whose kernel over a ring
+is `(1 - e)`.
 
 ## Main definitions
 
@@ -33,8 +34,8 @@ homomorphism `IsIdempotentElem.compressAlgHom`, whose kernel over a commutative 
 * `IsIdempotentElem.compress`: the compression `x ↦ e * x * e` of `A` onto the corner ring `eAe`.
 * `IsIdempotentElem.Corner.instAlgebra`: the corner `eAe` of an idempotent of a nonunital
   `R`-algebra is a unital `R`-algebra.
-* `IsIdempotentElem.compressAlgHom`: for a commutative `R`-algebra `A`, compression `x ↦ e * x * e`
-  as a surjective `R`-algebra homomorphism `A →ₐ[R] eAe`.
+* `IsIdempotentElem.compressAlgHom`: for an `R`-algebra `A` and central idempotent `e`,
+  compression `x ↦ e * x * e` as a surjective `R`-algebra homomorphism `A →ₐ[R] eAe`.
 * `IsIdempotentElem.cornerFunctional`: the compression `x ↦ φ x / φ e` of a linear functional `φ`
   to the corner `eAe`, normalised at its unit `e`.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
@@ -54,8 +55,9 @@ homomorphism `IsIdempotentElem.compressAlgHom`, whose kernel over a commutative 
   `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
   corner ring `eAe` is fixed by `e` on both sides.
-* `IsIdempotentElem.compressAlgHom_surjective` and `IsIdempotentElem.ker_compressAlgHom`:
-  compression `A →ₐ[R] eAe` is surjective, and over a commutative ring its kernel is `(1 - e)`.
+* `IsIdempotentElem.compressAlgHom_surjective`, `IsIdempotentElem.ker_compressAlgHom`, and
+  `IsIdempotentElem.ker_eq_span_one_sub_of_iff_mul_eq_zero`: compression `A →ₐ[R] eAe` onto a
+  central idempotent corner is surjective, and over a ring its kernel is `(1 - e)`.
 * `IsIdempotentElem.val_list_prod_map_compress`: a product of compressions in `eAe` is
   `e (x₁ e) ⋯ (xₙ e)` in `A`.
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
@@ -280,59 +282,72 @@ theorem val_list_prod_map_compress (l : List A) :
 
 end Semiring
 
-section CommSemiring
+section CentralSemiring
 
-variable (R : Type v) [CommSemiring R] {A : Type u} [CommSemiring A] [Algebra R A]
-  {e : A} (he : IsIdempotentElem e)
+variable (R : Type v) [CommSemiring R] {A : Type u} [Semiring A] [Algebra R A]
+  {e : A} (he : IsIdempotentElem e) (hcomm : ∀ x : A, Commute e x)
 
-/-- Compression `x ↦ e * x * e` from a commutative `R`-algebra `A` onto the idempotent corner
-`eAe` as an `R`-algebra homomorphism. -/
+/-- Compression `x ↦ e * x * e` from an `R`-algebra `A` onto the corner `eAe` of a central
+idempotent `e`, as an `R`-algebra homomorphism. -/
 def compressAlgHom : A →ₐ[R] he.Corner where
   toFun := he.compress
   map_one' := Subtype.ext <| by simp [he.eq]
   map_mul' x y := Subtype.ext <| by
     simp only [Corner.val_mul, val_compress]
+    have h3 : e * (e * (e * y)) = e * y := by rw [← mul_assoc, he.eq, ← mul_assoc, he.eq]
     calc
-      e * (x * y) * e = (e * e) * (x * y) * (e * e) := by rw [he.eq]
-      _ = (e * x * e) * (e * y * e) := by ac_rfl
+      e * (x * y) * e = e * (x * (y * e)) := by rw [mul_assoc, mul_assoc]
+      _ = e * (x * (e * y)) := by rw [← (hcomm y).eq]
+      _ = e * (x * (e * (e * (e * y)))) := by rw [h3]
+      _ = e * (x * (e * (e * (y * e)))) := by rw [(hcomm y).eq]
+      _ = (e * x * e) * (e * y * e) := by simp only [mul_assoc]
   map_zero' := he.compress_zero
   map_add' := he.compress_add
   commutes' r := Subtype.ext <| by
-    simp only [Corner.val_algebraMap, val_compress, Algebra.smul_def]
-    rw [mul_assoc, mul_comm (algebraMap R A r) e, ← mul_assoc, he.eq, mul_comm e]
+    rw [Corner.val_algebraMap, val_compress, Algebra.smul_def, Algebra.commutes r e, mul_assoc,
+      Algebra.commutes r e, ← mul_assoc, he.eq]
 
 /-- `compressAlgHom` acts by `IsIdempotentElem.compress`. -/
 @[simp]
-theorem compressAlgHom_apply (x : A) : he.compressAlgHom R x = he.compress x :=
+theorem compressAlgHom_apply (x : A) : he.compressAlgHom R hcomm x = he.compress x :=
   (rfl)
 
-/-- Compression `A →ₐ[R] eAe` onto a commutative idempotent corner is surjective. -/
-theorem compressAlgHom_surjective : Function.Surjective (he.compressAlgHom R) :=
+/-- Compression `A →ₐ[R] eAe` onto a central idempotent corner is surjective. -/
+theorem compressAlgHom_surjective : Function.Surjective (he.compressAlgHom R hcomm) :=
   fun b ↦ ⟨b.val, he.compress_val b⟩
 
-end CommSemiring
+end CentralSemiring
 
-section CommRing
+section CentralRing
 
-variable (R : Type v) [CommSemiring R] {A : Type u} [CommRing A] [Algebra R A]
-  {e : A} (he : IsIdempotentElem e)
+/-- A ring homomorphism out of `A` whose kernel pointwise agrees with annihilation by a central
+idempotent `e` has kernel equal to the principal ideal `(1 - e)`. -/
+theorem ker_eq_span_one_sub_of_iff_mul_eq_zero {A : Type u} {B : Type*} [Ring A] [Ring B]
+    {e : A} (he : IsIdempotentElem e) (hcomm : ∀ x : A, Commute e x) (f : A →+* B)
+    (hf : ∀ x : A, f x = 0 ↔ e * x = 0) :
+    RingHom.ker f = Ideal.span {1 - e} := by
+  ext x
+  rw [RingHom.mem_ker, hf, Ideal.mem_span_singleton']
+  refine ⟨fun hx ↦ ⟨x, by rw [mul_sub, mul_one, ← (hcomm x).eq, hx, sub_zero]⟩, ?_⟩
+  rintro ⟨r, rfl⟩
+  rw [mul_sub, mul_one, mul_sub, ← mul_assoc, (hcomm r).eq, mul_assoc, he.eq, sub_self]
 
-/-- The kernel of compression `A →ₐ[R] eAe` onto a commutative idempotent corner is the
-principal ideal `(1 - e)`. -/
+variable (R : Type v) [CommSemiring R] {A : Type u} [Ring A] [Algebra R A]
+  {e : A} (he : IsIdempotentElem e) (hcomm : ∀ x : A, Commute e x)
+
+/-- The kernel of compression `A →ₐ[R] eAe` onto a central idempotent corner is the principal
+ideal `(1 - e)`. -/
 theorem ker_compressAlgHom :
-    RingHom.ker (he.compressAlgHom R) = Ideal.span {1 - e} := by
-  have hker : RingHom.ker (he.compressAlgHom R) =
-      LinearMap.ker (LinearMap.toSpanSingleton A A e) := by
-    ext x
-    rw [RingHom.mem_ker, LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul,
-      compressAlgHom_apply]
-    exact ⟨fun hx ↦ by
-        have h := congrArg Subtype.val hx
-        simpa [mul_comm e x, mul_assoc, he.eq] using h,
-      fun hx ↦ Subtype.ext <| by simpa [mul_comm e x, mul_assoc, he.eq] using hx⟩
-  exact hker.trans he.ker_toSpanSingleton_eq_span
+    RingHom.ker (he.compressAlgHom R hcomm) = Ideal.span {1 - e} :=
+  he.ker_eq_span_one_sub_of_iff_mul_eq_zero hcomm (he.compressAlgHom R hcomm : A →+* he.Corner)
+    fun x ↦ by
+      rw [AlgHom.coe_toRingHom, compressAlgHom_apply]
+      have hval : (he.compress x).val = e * x := by
+        rw [val_compress, mul_assoc, ← (hcomm x).eq, ← mul_assoc, he.eq]
+      exact ⟨fun hx ↦ hval.symm.trans (congrArg Subtype.val hx),
+        fun hx ↦ Subtype.ext (hval.trans hx)⟩
 
-end CommRing
+end CentralRing
 
 section Functional
 

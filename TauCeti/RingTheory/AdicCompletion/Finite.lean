@@ -8,12 +8,10 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.AdicCompletion.Pow
 import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Finite
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Adic completion of finite modules
@@ -46,9 +44,6 @@ their restrictions to the module.
   is precomplete at its own maximal ideal, without a Noetherian hypothesis.
 * `IsAdicComplete.of_finite_of_isLocalRing`: a finite local algebra over a complete Noetherian
   local ring is complete at its own maximal ideal.
-* `IsLocalRing.maximalIdeal_adicTopology_eq_map`: for a finite local algebra over a
-  Noetherian local ring, the intrinsic maximal-ideal-adic topology coincides with the
-  coefficient-induced adic topology.
 * `AdicCompletion.linearMap_ext_of_finite`: a linear map over the completion out of the completion
   of a finite module is determined on the image of the module, since
   `AdicCompletion.ofTensorProduct` is surjective.
@@ -129,19 +124,6 @@ theorem IsAdicComplete.of_finite_of_isLocalRing (R S : Type*) [CommRing R] [IsLo
   exact {
     toIsHausdorff := inferInstance
     toIsPrecomplete := IsPrecomplete.of_finite_of_isLocalRing R S }
-
-/-- For a finite local algebra `R → S` over a Noetherian local ring, the intrinsic `𝔪_S`-adic
-topology coincides with the `(𝔪_R S)`-adic topology induced from the coefficients. -/
-theorem IsLocalRing.maximalIdeal_adicTopology_eq_map (R S : Type*)
-    [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
-    [CommRing S] [IsLocalRing S] [Algebra R S] [Module.Finite R S] :
-    (IsLocalRing.maximalIdeal S).adicTopology =
-      ((IsLocalRing.maximalIdeal R).map (algebraMap R S)).adicTopology := by
-  have : IsNoetherianRing S := .of_finite R S
-  exact Ideal.adicTopology_eq_of_radical_eq
-    (IsNoetherian.noetherian _) (IsNoetherian.noetherian _)
-    ((IsLocalRing.maximalIdeal.isMaximal S).isPrime.radical.trans
-      TauCeti.radical_map_maximalIdeal_of_isIntegral.symm)
 
 variable {M} in
 /-- Linear maps over the completion out of the completion of a finite module are determined by

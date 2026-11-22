@@ -26,8 +26,8 @@ products:
    subgroups `P` and `H` (`P.IsComplement' H`, `[P.Normal]`, `[H.Normal]`) of a group `G`:
    * `Subgroup.IsComplement'.prodMulEquiv`: the canonical multiplicative isomorphism `P × H ≃* G`
      sending `(p, h)` to `(p : G) * (h : G)`.
-   * `Subgroup.IsComplement'.extendChar`: given any commutative monoid `O` and homomorphisms
-     `φ : P →* Oˣ` and `χ : H →* Oˣ`, the unique homomorphism `G →* Oˣ` sending
+   * `Subgroup.IsComplement'.extendChar`: given any commutative monoid `M` and homomorphisms
+     `φ : P →* M` and `χ : H →* M`, the unique homomorphism `G →* M` sending
      `(p : G) * (h : G)` to `φ p * χ h`.
 -/
 
@@ -203,50 +203,51 @@ end ProdMulEquiv
 
 section ExtendChar
 
-variable {O G : Type*} [CommMonoid O] [Group G] {P H : Subgroup G} [P.Normal] [H.Normal]
+variable {M G : Type*} [CommMonoid M] [Group G] {P H : Subgroup G} [P.Normal] [H.Normal]
 
-/-- Given normal complementary subgroups `P` and `H` of a group `G`, combine characters
-`φ : P →* Oˣ` and `χ : H →* Oˣ` into the unique character `G →* Oˣ` sending `p * h ↦ φ(p) χ(h)`. -/
-noncomputable def extendChar (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) : G →* Oˣ :=
+/-- Given normal complementary subgroups `P` and `H` of a group `G` and a commutative monoid `M`,
+combine homomorphisms `φ : P →* M` and `χ : H →* M` into the unique homomorphism `G →* M`
+sending `p * h ↦ φ(p) χ(h)`. -/
+noncomputable def extendChar (hPH : P.IsComplement' H) (φ : P →* M) (χ : H →* M) : G →* M :=
   (φ.coprod χ).comp hPH.prodMulEquiv.symm.toMonoidHom
 
 /-- `extendChar hPH φ χ` evaluates at `g : G` via the coordinates of `hPH.prodMulEquiv.symm g`. -/
-theorem extendChar_apply (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (g : G) :
+theorem extendChar_apply (hPH : P.IsComplement' H) (φ : P →* M) (χ : H →* M) (g : G) :
     hPH.extendChar φ χ g = φ (hPH.prodMulEquiv.symm g).1 * χ (hPH.prodMulEquiv.symm g).2 := by
   simp [extendChar]
 
 /-- `extendChar hPH φ χ` sends `(p : G) * (h : G)` to `φ p * χ h`. -/
-theorem extendChar_mul (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (p : P) (h : H) :
+theorem extendChar_mul (hPH : P.IsComplement' H) (φ : P →* M) (χ : H →* M) (p : P) (h : H) :
     hPH.extendChar φ χ ((p : G) * (h : G)) = φ p * χ h := by
   simp [extendChar]
 
 /-- Evaluating `extendChar hPH φ χ` at `(p : G)` for `p : P` gives `φ p`. -/
 @[simp]
-theorem extendChar_coe_left (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (p : P) :
+theorem extendChar_coe_left (hPH : P.IsComplement' H) (φ : P →* M) (χ : H →* M) (p : P) :
     hPH.extendChar φ χ (p : G) = φ p := by
   simpa using hPH.extendChar_mul φ χ p 1
 
 /-- Evaluating `extendChar hPH φ χ` at `(h : G)` for `h : H` gives `χ h`. -/
 @[simp]
-theorem extendChar_coe_right (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (h : H) :
+theorem extendChar_coe_right (hPH : P.IsComplement' H) (φ : P →* M) (χ : H →* M) (h : H) :
     hPH.extendChar φ χ (h : G) = χ h := by
   simpa using hPH.extendChar_mul φ χ 1 h
 
 /-- Restricting `extendChar hPH φ χ` to `P` recovers `φ`. -/
 @[simp]
-theorem extendChar_comp_left (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) :
+theorem extendChar_comp_left (hPH : P.IsComplement' H) (φ : P →* M) (χ : H →* M) :
     (hPH.extendChar φ χ).comp P.subtype = φ :=
   MonoidHom.ext fun p ↦ by simp
 
 /-- Restricting `extendChar hPH φ χ` to `H` recovers `χ`. -/
 @[simp]
-theorem extendChar_comp_right (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) :
+theorem extendChar_comp_right (hPH : P.IsComplement' H) (φ : P →* M) (χ : H →* M) :
     (hPH.extendChar φ χ).comp H.subtype = χ :=
   MonoidHom.ext fun h ↦ by simp
 
-/-- Every character of `G` is `extendChar` of its restrictions to `P` and `H`. -/
+/-- Every homomorphism of `G` into `M` is `extendChar` of its restrictions to `P` and `H`. -/
 @[simp]
-theorem extendChar_comp_self (hPH : P.IsComplement' H) (ψ : G →* Oˣ) :
+theorem extendChar_comp_self (hPH : P.IsComplement' H) (ψ : G →* M) :
     hPH.extendChar (ψ.comp P.subtype) (ψ.comp H.subtype) = ψ :=
   MonoidHom.ext fun g ↦ by
     obtain ⟨⟨p, h⟩, rfl⟩ := hPH.prodMulEquiv.surjective g

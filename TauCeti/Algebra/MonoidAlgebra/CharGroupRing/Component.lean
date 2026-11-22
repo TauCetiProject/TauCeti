@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Norm
-public import TauCeti.RepresentationTheory.GroupAlgebra.ComponentProj
+public import TauCeti.Algebra.MonoidAlgebra.TwistedProj
+public import TauCeti.RepresentationTheory.GroupAlgebra.IdempotentEval
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
 
 /-!
@@ -137,18 +138,6 @@ theorem proj_componentNorm_subgroupCharSum_one_eq_zero (H I : Subgroup G) [Finty
       (TauCeti.subgroupCharSum (1 : G →* O) I) = 0 :=
   proj_subgroupCharSum_one_eq_zero_of_forall I fun _ hψ ↦ hψ.right
 
-private theorem charEval_charIdempotent_mul_eq_zero_of_forall {S : Set (G →* Oˣ)}
-    {H : Subgroup G} [Fintype H] {χ : H →* Oˣ} {x : MonoidAlgebra O G}
-    (hx : ∀ ψ ∈ S, ψ.comp H.subtype = χ → ψ.charEval x = 0)
-    {ψ : G →* Oˣ} (hψS : ψ ∈ S) :
-    ψ.charEval (MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ) * x) =
-      0 := by
-  rw [map_mul]
-  by_cases hψ : ψ.comp H.subtype = χ
-  · rw [hx ψ hψS hψ, mul_zero]
-  · simp only [MonoidAlgebra.mapDomainAlgHom_apply, MonoidHom.charEval_mapDomain,
-      MonoidHom.charEval_charIdempotent_of_ne (Ne.symm hψ), zero_mul]
-
 end DomainNoFin
 
 variable [IsDomain O] [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)]
@@ -161,29 +150,25 @@ theorem ker_proj_eq_span_one_sub_charIdempotent (H : Subgroup G) [Fintype H]
     (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) :
     RingHom.ker (proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ}) =
       Ideal.span
-        {(1 - MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ))} := by
-  let e := MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)
-  have hker : RingHom.ker (proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ}) =
-      LinearMap.ker (LinearMap.toSpanSingleton (MonoidAlgebra O G) (MonoidAlgebra O G) e) := by
-    ext x
-    rw [RingHom.mem_ker, LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, smul_eq_mul,
-      mul_comm x]
-    constructor
-    · intro hx
-      rw [proj_eq_zero_iff] at hx
-      exact TauCeti.eq_of_forall_charEval_eq fun ψ ↦ by
-        rw [map_zero]
-        exact charEval_charIdempotent_mul_eq_zero_of_forall (fun ψ _ hψ ↦ hx ψ hψ) (Set.mem_univ ψ)
-    · intro hx
-      rw [proj_eq_zero_iff]
-      intro ψ hψ
-      have h0 : ψ.charEval (e * x) = 0 := by rw [hx, map_zero]
-      dsimp only [e] at h0
-      rw [map_mul, MonoidAlgebra.mapDomainAlgHom_apply, ψ.charEval_mapDomain, hψ,
-        χ.charEval_charIdempotent_self hH, one_mul] at h0
-      exact h0
-  exact hker.trans
-    (TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent H χ).ker_toSpanSingleton_eq_span
+        {(1 - MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ))} :=
+  (TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent H
+    χ).ker_eq_span_one_sub_of_iff_mul_eq_zero (fun _ ↦ Commute.all _ _)
+    (proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ} :
+      MonoidAlgebra O G →+* {ψ : G →* Oˣ | ψ.comp H.subtype = χ}.charGroupRing)
+    fun x ↦ by
+      rw [AlgHom.coe_toRingHom, proj_eq_zero_iff]
+      constructor
+      · intro hx
+        exact TauCeti.eq_of_forall_charEval_eq fun ψ ↦ by
+          rw [map_zero]
+          exact MonoidHom.charEval_mapDomainAlgHom_charIdempotent_mul_eq_zero (hx ψ)
+      · intro hx ψ hψ
+        have h0 : ψ.charEval
+            (MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ) * x) = 0 := by
+          rw [hx, map_zero]
+        rw [map_mul, MonoidAlgebra.mapDomainAlgHom_apply, ψ.charEval_mapDomain, hψ,
+          χ.charEval_charIdempotent_self hH, one_mul] at h0
+        exact h0
 
 /-- **Idempotent corner description of a character component**: for a finite commutative group `G`,
 a domain `O` with enough roots of unity of order `exponent G`, and a subgroup `H` with `#H` a unit
@@ -197,9 +182,10 @@ noncomputable def componentCornerAlgEquiv (H : Subgroup G) [Fintype H]
     (Ideal.quotientEquivAlgOfEq O
       ((ker_proj_eq_span_one_sub_charIdempotent H hH χ).trans
         ((TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent H χ).ker_compressAlgHom
-          O).symm)).trans
+          O (fun _ ↦ Commute.all _ _)).symm)).trans
       (Ideal.quotientKerAlgEquivOfSurjective
-        ((TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent H χ).compressAlgHom_surjective O))
+        ((TauCeti.isIdempotentElem_mapDomainAlgHom_charIdempotent H χ).compressAlgHom_surjective
+          O (fun _ ↦ Commute.all _ _)))
 
 /-- `componentCornerAlgEquiv` sends `α_{Ψ_χ}(x)` to the compression of `x` by `e_χ`. -/
 @[simp]
@@ -236,11 +222,13 @@ noncomputable def piComponentAlgEquiv (H : Subgroup G)
       (fun χ : H →* Oˣ ↦ MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)) :=
     (TauCeti.completeOrthogonalIdempotents_charIdempotent hH).map
       (MonoidAlgebra.mapDomainAlgHom O O H.subtype).toRingHom
-  (AlgEquiv.ofBijective
-    (AlgHom.pi fun χ : H →* Oˣ ↦
-      Ideal.Quotient.mkₐ O
-        (Ideal.span {1 - MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)}))
-    he.bijective_pi).trans <|
+  have hbij : Function.Bijective (AlgHom.pi fun χ : H →* Oˣ ↦ Ideal.Quotient.mkₐ O
+      (Ideal.span
+        {1 - MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)})) := by
+    convert he.bijective_pi
+    ext x χ
+    simp
+  (AlgEquiv.ofBijective _ hbij).trans <|
     AlgEquiv.piCongrRight fun χ ↦
       (Ideal.quotientEquivAlgOfEq O (ker_proj_eq_span_one_sub_charIdempotent H hH χ).symm).trans
         (Ideal.quotientKerAlgEquivOfSurjective (proj_surjective _))
@@ -250,7 +238,10 @@ noncomputable def piComponentAlgEquiv (H : Subgroup G)
 theorem piComponentAlgEquiv_apply (H : Subgroup G) (hH : IsUnit (Nat.card H : O))
     (x : MonoidAlgebra O G) (χ : H →* Oˣ) :
     piComponentAlgEquiv H hH x χ = proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ} x := by
-  (rfl)
+  rw [piComponentAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.piCongrRight_apply,
+    AlgEquiv.ofBijective_apply, AlgHom.pi_apply, AlgEquiv.trans_apply,
+    Ideal.Quotient.mkₐ_eq_mk, Ideal.quotientEquivAlgOfEq_mk,
+    Ideal.quotientKerAlgEquivOfSurjective_mk]
 
 /-- Projecting `(piComponentAlgEquiv H hH).symm f` onto the `χ`-component recovers `f χ`. -/
 @[simp]
@@ -287,8 +278,8 @@ theorem ker_proj_component_norm (H I : Subgroup G) [Fintype H] [Fintype I]
     have hex : e * x ∈ Ideal.span {N} := by
       rw [← ker_proj_eq_span_norm I, RingHom.mem_ker, proj_eq_zero_iff]
       intro ψ hI
-      exact charEval_charIdempotent_mul_eq_zero_of_forall
-        (fun ψ hI' hψ ↦ hx ψ ⟨hψ, hI'⟩) hI
+      exact MonoidHom.charEval_mapDomainAlgHom_charIdempotent_mul_eq_zero
+        fun hψ ↦ hx ψ ⟨hψ, hI⟩
     obtain ⟨y, hy⟩ := Ideal.mem_span_singleton.mp hex
     refine Ideal.mem_span_pair.mpr ⟨x, y, ?_⟩
     rw [mul_sub, mul_one, mul_comm x, hy, mul_comm y N, sub_add_cancel]
@@ -435,9 +426,7 @@ noncomputable def componentEquiv (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
 theorem componentEquiv_proj (hPH : P.IsComplement' H) (χ : H →* Oˣ) (x : MonoidAlgebra O G) :
     componentEquiv hPH χ (proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ} x) =
       MonoidAlgebra.componentProj hPH χ x := by
-  rw [componentEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    Ideal.quotientKerAlgEquivOfSurjective_symm_apply, Ideal.quotientEquivAlgOfEq_mk,
-    Ideal.quotientKerAlgEquivOfSurjective_mk]
+  simp [componentEquiv]
 
 /-- The inverse of `componentEquiv` embeds `y ∈ O[P]` into `O[G]` and projects to `R_{Ψ_χ}`. -/
 @[simp]
