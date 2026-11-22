@@ -58,6 +58,8 @@ chain rule for the gradient of a real profile composed with a real function.
   supported; `HasCompactSupport.mono_of_forall_gradient`: so is any function vanishing where both
   the function and its gradient vanish.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
+* `TauCeti.gradient_apply_eq_fderiv_apply_single`: on `EuclideanSpace ℝ ι`, the `i`-th coordinate
+  of the gradient `∇ f` is the partial derivative `∂ᵢ f`.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
   function is `Cᵐ`, and `ContDiff.continuous_gradient`: that of a `Cⁿ` function with `n ≠ 0` is
   continuous; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
@@ -402,5 +404,14 @@ theorem inner_fderiv_gradient {E : Type*} [NormedAddCommGroup E] [InnerProductSp
     ⟪fderiv ℝ (∇ f) x v, w⟫_ℝ = iteratedFDeriv ℝ 2 f x ![v, w] := by
   rw [iteratedFDeriv_two_apply, ← toDual_comp_gradient, LinearIsometryEquiv.comp_fderiv]
   simpa using (toDual_apply_apply (𝕜 := ℝ)).symm
+
+/-- **The gradient in Euclidean coordinates**: the `i`-th coordinate of the gradient of a real
+function on `ℝⁿ` is its derivative in the `i`-th coordinate direction. No differentiability is
+needed. -/
+theorem gradient_apply_eq_fderiv_apply_single {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (f : EuclideanSpace ℝ ι → ℝ) (x : EuclideanSpace ℝ ι) (i : ι) :
+    ∇ f x i = fderiv ℝ f x (EuclideanSpace.single i 1) := by
+  rw [← inner_gradient_left, EuclideanSpace.inner_single_right]
+  simp
 
 end TauCeti

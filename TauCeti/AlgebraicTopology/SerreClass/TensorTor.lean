@@ -65,11 +65,10 @@ arbitrary module on the right is torsion as an abelian group. -/
 theorem isAddTorsion_Tor_left (h : IsAddTorsion M) (n : ℕ) :
     IsAddTorsion (((Tor (ModuleCat.{u} R) n).obj M).obj N) := by
   let P := AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{u} R) AddCommGrpCat)
-  apply (AddCommGrpCat.prop_isTorsion_iff
-    (AddCommGrpCat.of (((Tor (ModuleCat.{u} R) n).obj M).obj N))).1
-  exact P.prop_leftDerived_obj ((tensoringLeft (ModuleCat.{u} R)).obj M)
-    (fun Y _ ↦ (AddCommGrpCat.prop_isTorsion_iff _).2
-      (isAddTorsion_tensorProduct_left (R := R) h)) N n
+  exact (AddCommGrpCat.prop_inverseImage_isTorsion_iff _).1
+    (P.prop_leftDerived_obj ((tensoringLeft (ModuleCat.{u} R)).obj M)
+      (fun Y _ ↦ (AddCommGrpCat.prop_inverseImage_isTorsion_iff _).2
+        (isAddTorsion_tensorProduct_left (R := R) h)) N n)
 
 /-- Every Tor group of a module annihilated by some power of `d` on the left and an arbitrary
 module on the right is annihilated by some power of `d` as an abelian group. -/
