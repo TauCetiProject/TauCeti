@@ -110,7 +110,7 @@ theorem sphereMapHomotopyGroupHom_basedMapSphereHomotopyGroupMulEquiv [NeZero k]
     (a : π_ (m + 1) (BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) Q s₀ x)
       ⟨ContinuousMap.const _ x, ContinuousMap.const_apply x s₀⟩) :
     sphereMapHomotopyGroupHom k x s₀ m (basedMapSphereHomotopyGroupMulEquiv k x s₀ m a) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a :=
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ rfl a :=
   basedMapHomotopyGroupHom_apply_mulEquiv _ a
 
 /-- The injection `π_{m+1+k}(Q, x) → π_{m+1}(Map(Sᵏ, Q), x)` is injective. -/

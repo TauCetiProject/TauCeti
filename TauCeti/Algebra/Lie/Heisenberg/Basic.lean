@@ -166,7 +166,7 @@ theorem eq_smul_heisenbergX_add_smul_heisenbergY_add_smul_heisenbergZ (A : heise
     A = (A : Matrix (Fin 3) (Fin 3) R) 0 1 • heisenbergX R
       + (A : Matrix (Fin 3) (Fin 3) R) 1 2 • heisenbergY R
       + (A : Matrix (Fin 3) (Fin 3) R) 0 2 • heisenbergZ R := by
-  have hA := mem_strictUpperTriangular_iff.mp A.2
+  have hA := mem_strictUpperTriangular_iff.mp A.property
   refine Subtype.ext (Matrix.ext fun i j => ?_)
   fin_cases i <;> fin_cases j <;> simp [hA]
 
@@ -193,8 +193,8 @@ theorem lie_eq_smul_heisenbergZ (A B : heisenberg R) :
     ⁅A, B⁆ = ((A : Matrix (Fin 3) (Fin 3) R) 0 1 * (B : Matrix (Fin 3) (Fin 3) R) 1 2
       - (B : Matrix (Fin 3) (Fin 3) R) 0 1 * (A : Matrix (Fin 3) (Fin 3) R) 1 2)
       • heisenbergZ R := by
-  have hA := mem_strictUpperTriangular_iff.mp A.2
-  have hB := mem_strictUpperTriangular_iff.mp B.2
+  have hA := mem_strictUpperTriangular_iff.mp A.property
+  have hB := mem_strictUpperTriangular_iff.mp B.property
   refine Subtype.ext (Matrix.ext fun i j => ?_)
   fin_cases i <;> fin_cases j <;>
     simp [LieRing.of_associative_ring_bracket, Matrix.mul_apply, Fin.sum_univ_three, hA, hB]
@@ -544,8 +544,8 @@ noncomputable def heisenbergDualEquiv :
       simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
         heisenbergTracePairing_apply_heisenbergX, heisenbergTracePairing_apply_heisenbergY,
         heisenbergTracePairing_apply_heisenbergZ] at hx hy hz
-      rw [eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ.2,
-        eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ'.2,
+      rw [eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ.property,
+        eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ'.property,
         hx, hy, hz]
     · refine ⟨⟨ν (heisenbergX R) • single 1 0 1 + ν (heisenbergY R) • single 2 1 1 +
         ν (heisenbergZ R) • single 2 0 1, add_mem (add_mem
@@ -567,7 +567,7 @@ theorem coe_heisenbergDualEquiv_symm_apply (ν : Dual R (heisenberg R)) :
         ν (heisenbergZ R) • single 2 0 1 := by
   set Λ := (heisenbergDualEquiv R).symm ν
   have h : heisenbergDualEquiv R Λ = ν := LinearEquiv.apply_symm_apply _ _
-  rw [eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ.2, ← h]
+  rw [eq_smul_single_add_smul_single_add_smul_single_of_mem_strictLowerTriangular Λ.property, ← h]
   simp
 
 end TauCeti

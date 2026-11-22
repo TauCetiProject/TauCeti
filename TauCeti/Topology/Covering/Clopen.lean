@@ -60,7 +60,7 @@ theorem subtypeVal_comp {p : E → s} (hp : IsCoveringMap p) (hs : IsClopen s) :
   · exact ((hp ⟨x, hx⟩).subtypeVal_comp _ hs.isOpen).to_isEvenlyCovered_preimage
   · refine IsEvenlyCovered.to_isEvenlyCovered_preimage
       (IsEvenlyCovered.of_preimage_eq_empty Empty (hs.isClosed.isOpen_compl.mem_nhds hx) ?_)
-    exact Set.eq_empty_of_forall_notMem fun e he => he (p e).2
+    exact Set.eq_empty_of_forall_notMem fun e he => he (p e).property
 
 /-- **A covering map with finite fibres restricts to a covering map on a clopen set.** For a
 clopen subset `t ⊆ E`, the inclusion `t ↪ E` followed by `p : E → X` is a covering map
@@ -102,6 +102,6 @@ theorem surjective [PreconnectedSpace X] [Nonempty E] {p : E → X}
     (hp : IsCoveringMap p) : Function.Surjective p := fun x => by
   obtain ⟨e⟩ := ‹Nonempty E›
   obtain ⟨ν⟩ := hp.nonempty_fiber_equiv x (p e)
-  exact ⟨(ν.symm ⟨e, rfl⟩).1, (ν.symm ⟨e, rfl⟩).2⟩
+  exact ⟨(ν.symm ⟨e, rfl⟩).val, (ν.symm ⟨e, rfl⟩).property⟩
 
 end IsCoveringMap

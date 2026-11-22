@@ -122,7 +122,7 @@ private theorem coe_evenToNeg_mem_spinGroup (Q' : QuadraticForm R M) (h : Q' = -
     rw [hstar, ← Subalgebra.coe_mul, ← map_mul, spinGroupToEven_mul_reverseEven, map_one,
       Subalgebra.coe_one]
   refine spinGroup.mem_iff.mpr ⟨pinGroup.mem_iff.mpr ⟨?_, Unitary.mem_iff.mpr ⟨hunit₁, hunit₂⟩⟩,
-    y.2⟩
+    y.property⟩
   let u : (CliffordAlgebra (-Q))ˣ := ⟨y, star (y : CliffordAlgebra (-Q)), hunit₂, hunit₁⟩
   refine (lipschitzGroup.coe_mem_iff_mem (x := u)).mpr ?_
   cases l with
