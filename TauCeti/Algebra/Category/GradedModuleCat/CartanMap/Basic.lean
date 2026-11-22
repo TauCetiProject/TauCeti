@@ -275,33 +275,14 @@ instance : ObjectProperty.EssentiallySmall.{uA}
 
 /-! ### Induced graded exact structures -/
 
-private abbrev finiteZero : GradedModuleCat.{uA} 𝒜 where
-  carrier := PUnit
-  grading :=
-    { piece := fun _ => ⊥
-      isInternal :=
-        ⟨fun _ _ _ => Subsingleton.elim _ _, fun _ => ⟨0, Subsingleton.elim _ _⟩⟩ }
-  gradedSMul := ⟨fun _ _ => by simp⟩
-
-private theorem isZero_finiteZero : IsZero (finiteZero (𝒜 := 𝒜)) :=
-  (IsZero.iff_id_eq_zero _).2 (by
-    apply GradedModuleCat.hom_ext
-    apply LinearMap.ext
-    intro x
-    exact Subsingleton.elim (α := PUnit) _ _)
-
-private theorem finite_finiteZero : Module.Finite A (finiteZero (𝒜 := 𝒜)) :=
-  inferInstance
-
-private theorem projective_finiteZero : Module.Projective A (finiteZero (𝒜 := 𝒜)) :=
-  inferInstance
-
 instance : (gradedFiniteModules 𝒜).ContainsZero where
-  exists_zero := ⟨finiteZero, isZero_finiteZero, finite_finiteZero⟩
+  exists_zero :=
+    ⟨GradedModuleCat.zeroObj, GradedModuleCat.isZero_zeroObj,
+      gradedFiniteModules_iff.mpr inferInstance⟩
 
 instance : (gradedFiniteProjectiveModules 𝒜).ContainsZero where
-  exists_zero := ⟨finiteZero, isZero_finiteZero,
-    ⟨finite_finiteZero, projective_finiteZero⟩⟩
+  exists_zero := ⟨GradedModuleCat.zeroObj, GradedModuleCat.isZero_zeroObj,
+    gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
 
 /-- Finite graded modules are extension closed in the abelian category of graded modules. -/
 theorem isExtensionClosed_gradedFiniteModules :

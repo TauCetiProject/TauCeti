@@ -31,6 +31,7 @@ graded algebras are formed in this category with this shift.
 ## Main definitions
 
 * `TauCeti.GradedModuleCat 𝒜`: the category of graded `𝒜`-modules.
+* `TauCeti.GradedModuleCat.zeroObj`: the zero graded `𝒜`-module, carried by `PUnit`.
 * `TauCeti.GradedModuleCat.ofHom`: the morphism given by an `A`-linear map of degree zero.
 * `TauCeti.GradedModuleCat.isoMk`: the isomorphism given by an `A`-linear equivalence which
   preserves and reflects degrees.
@@ -87,6 +88,15 @@ noncomputable abbrev regular [DirectSum.Decomposition 𝒜] [SetLike.GradedMul �
   gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
     rw [InternalGrading.ofDecomposition_piece] at hx ⊢
     exact SetLike.GradedMul.mul_mem ha hx⟩
+
+/-- The zero graded `𝒜`-module, carried by `PUnit` with every homogeneous piece equal to `⊥`. -/
+abbrev zeroObj : GradedModuleCat.{v} 𝒜 where
+  carrier := PUnit
+  grading :=
+    { piece := fun _ => ⊥
+      isInternal :=
+        ⟨fun _ _ _ => Subsingleton.elim _ _, fun _ => ⟨0, Subsingleton.elim _ _⟩⟩ }
+  gradedSMul := ⟨fun _ _ => by simp⟩
 
 /-- A morphism of graded `𝒜`-modules: an `A`-linear map of degree zero. -/
 structure Hom (M N : GradedModuleCat.{v} 𝒜) where

@@ -76,14 +76,6 @@ section Resolution
 
 variable (k Q) [CommRing k] [Finite Q]
 
-private abbrev zeroGradedModule : GradedModuleCat.{max u v w} (integerGrade k Q) where
-  carrier := PUnit.{max u v w + 1}
-  grading :=
-    { piece := fun _ => ⊥
-      isInternal :=
-        ⟨fun _ _ _ => Subsingleton.elim _ _, fun _ => ⟨0, Subsingleton.elim _ _⟩⟩ }
-  gradedSMul := ⟨fun _ _ => by simp⟩
-
 /-- The graded vertex projective `kQ eᵢ` is generated as a `kQ`-module in internal degree `0`. -/
 theorem isGeneratedInDegree_zero_gradedVertexProjective (i : Q) :
     (gradedVertexProjective k Q i).grading.IsGeneratedInDegree (pathAlgebra k Q) 0 := by
@@ -129,7 +121,7 @@ theorem gradedFiniteProjectiveModules_gradedArrowSum (i : Q) [Finite ((j : Q) ×
 private abbrev resolutionTerm (i : Q) : ℕ → GradedModuleCat.{max u v w} (integerGrade k Q)
   | 0 => gradedVertexProjective k Q i
   | 1 => gradedArrowSum k Q i
-  | _ + 2 => zeroGradedModule k Q
+  | _ + 2 => GradedModuleCat.zeroObj
 
 /-- **The length-one graded projective resolution of a graded vertex simple `Sᵢ`**:
 `⋯ ⟶ 0 ⟶ ⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ ⟶ Sᵢ ⟶ 0`. -/
@@ -160,19 +152,14 @@ def gradedVertexSimpleProjectiveResolution (i : Q) [Finite ((j : Q) × (i ⟶ j)
     rw [gradedVertexSimpleResolution_def] at hex
     exact hex
   exact_d_d
-    | 0 => by
-      have hinj : Function.Injective (gradedArrowSumToVertexProjective k Q i).hom :=
-        (GradedModuleCat.mono_iff_injective _).mp (mono_gradedArrowSumToVertexProjective k Q i)
-      intro y
-      constructor
-      · intro hy
-        exact ⟨PUnit.unit, by simpa using (hinj (hy.trans (map_zero _).symm)).symm⟩
-      · rintro ⟨_, rfl⟩
-        exact map_zero _
-    | 1 => fun _ =>
-      ⟨fun _ => ⟨PUnit.unit, Subsingleton.elim _ _⟩, fun _ => rfl⟩
-    | _ + 2 => fun _ =>
-      ⟨fun _ => ⟨PUnit.unit, Subsingleton.elim _ _⟩, fun _ => rfl⟩
+    | 0 => (LinearMap.exact_zero_iff_injective _ _).mpr <|
+      (GradedModuleCat.mono_iff_injective _).mp (mono_gradedArrowSumToVertexProjective k Q i)
+    | 1 => by
+      dsimp [resolutionTerm]
+      exact (LinearMap.exact_zero_iff_injective _ _).mpr (Function.injective_of_subsingleton _)
+    | _ + 2 => by
+      dsimp [resolutionTerm]
+      exact (LinearMap.exact_zero_iff_injective _ _).mpr (Function.injective_of_subsingleton _)
 
 /-- The degree-zero term of the first-arrow resolution of `Sᵢ` is `kQ eᵢ`. -/
 @[simp]
@@ -401,17 +388,10 @@ theorem eval_neg_one_trunc_two_bettiPoincareMatrix [DecidableEq Q]
       1 - (T 1 : LaurentPolynomial ℤ) •
         (Matrix.of fun i j : Q => (Nat.card (i ⟶ j) : LaurentPolynomial ℤ))ᵀ := by
   refine Matrix.ext fun i j => ?_
-  rw [Matrix.map_apply, bettiPoincareMatrix_gradedVertexSimple k Q r hr i j,
-    Polynomial.eval, PowerSeries.eval₂_trunc_eq_sum_range]
-  simp only [Matrix.sub_apply, Matrix.one_apply, Matrix.smul_apply, Matrix.transpose_apply,
-    Matrix.of_apply, smul_eq_mul, Finset.sum_range_succ, Finset.sum_range_zero, zero_add,
-    pow_zero, pow_one, mul_one, RingHom.id_apply, map_add, PowerSeries.coeff_zero_mul_X,
-    PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_C, add_zero]
-  split_ifs
-  · simp only [PowerSeries.coeff_one, ↓reduceIte, one_ne_zero, zero_add]
-    ring
-  · simp only [map_zero, zero_add]
-    ring
+  rw [Matrix.map_apply, bettiPoincareMatrix_gradedVertexSimple k Q r hr i j, map_add]
+  by_cases hij : i = j <;>
+    simp [hij, PowerSeries.trunc_one, PowerSeries.trunc_C_mul, PowerSeries.trunc_X,
+      Polynomial.eval_X, sub_eq_add_neg, -map_mul, -map_natCast]
 
 end BettiMatrix
 

@@ -96,8 +96,8 @@ theorem gradedCartanMatrixA2_mul_eval_neg_one_trunc_gradedBettiMatrixA2 :
       gradedBettiMatrixA2.map (fun P => (PowerSeries.trunc 2 P).eval (-1)) = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [gradedBettiMatrixA2, Matrix.mul_apply, Fin.sum_univ_two, Polynomial.eval,
-      PowerSeries.eval₂_trunc_eq_sum_range, Finset.sum_range_succ, PowerSeries.coeff_one]
+    simp [gradedBettiMatrixA2, Matrix.mul_apply, Fin.sum_univ_two,
+      PowerSeries.trunc_one, PowerSeries.trunc_C_mul, PowerSeries.trunc_X, Polynomial.eval_X]
 
 /-- The `t = -1` evaluation of the Betti Poincaré matrix of `1 ⟶ 2` is also a left inverse of the
 graded Cartan matrix. -/

@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Polynomial.Laurent.Units
+public import TauCeti.CategoryTheory.Exact.Resolution.OfChainComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Resolution
 
 /-!
@@ -44,6 +45,9 @@ directly when the resolution vanishes from homological degree `N` onward.
   finite graded module has a finite graded-projective resolution.
 * `TauCeti.GradedProjectiveResolution.finiteProjectiveTerm`: the `n`-th finitely generated term
   of a `GradedProjectiveResolution` in the finite graded projective subcategory.
+* `TauCeti.GradedProjectiveResolution.toFiniteResolution`: a `GradedProjectiveResolution` with
+  finitely generated terms and vanishing `(n + 1)`-st term packaged as a
+  `ExactStructure.FiniteResolution`.
 
 ## Main results
 
@@ -58,6 +62,8 @@ directly when the resolution vanishes from homological degree `N` onward.
 * `TauCeti.exists_gradedCartanMatrix_det_eq_T_or_neg_T_of_le_admitsFiniteResolution`: the
   graded Cartan determinant is `qⁿ` or `-qⁿ`, the graded counterpart of
   `TauCeti.cartanMatrix_det_eq_one_or_neg_one`.
+* `TauCeti.GradedProjectiveResolution.foldAlternating_toFiniteResolution`: computes
+  `foldAlternating` along `toFiniteResolution` as a finite alternating sum.
 * `TauCeti.GradedProjectiveResolution.laurentK0_eq_gradedCartanMap_sum`: alternating resolution
   class formula in `G₀^gr(mod A)` for a resolution vanishing from degree `N` onward.
 
@@ -403,6 +409,116 @@ end Terms
 
 section FiniteResolution
 
+/-- A concrete graded projective resolution whose terms are finitely generated and whose
+`(n + 1)`-st term vanishes, packaged as a finite `gradedFiniteProjectiveModules`-resolution of `M`
+for the canonical graded exact structure. -/
+noncomputable def toFiniteResolution {M : GradedModuleCat.{uA} 𝒜}
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
+    [∀ n, Module.Finite A (r.X n)] {n : ℕ} (h : Subsingleton (r.X (n + 1))) :
+    (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution
+      (gradedFiniteProjectiveModules 𝒜) M := by
+  let K : ChainComplex (GradedModuleCat.{uA} 𝒜) ℕ :=
+    ChainComplex.of r.termObj r.differential r.differential_comp_differential
+  have hε : K.d 1 0 ≫ r.augmentation = 0 := by
+    rw [show K.d 1 0 = r.differential 0 from ChainComplex.of_d _ _ 0]
+    exact r.differential_zero_comp_augmentation
+  have h₀ : (ShortComplex.mk (K.d 1 0) r.augmentation hε).Exact :=
+    ChainComplex.of_exact_d_one_zero r.termObj r.differential r.differential_comp_differential
+      r.augmentation r.differential_zero_comp_augmentation
+      (GradedModuleCat.exact_iff.mpr r.exact_d_π)
+  have hK : ∀ i < n, (ShortComplex.mk (K.d (i + 2) (i + 1)) (K.d (i + 1) i)
+      (K.d_comp_d _ _ _)).Exact := fun i _ =>
+    (ShortComplex.exact_iff_of_iso
+      (S₁ := ShortComplex.mk (K.d (i + 2) (i + 1)) (K.d (i + 1) i) (K.d_comp_d _ _ _))
+      (S₂ := ShortComplex.mk (r.differential (i + 1)) (r.differential i)
+        (r.differential_comp_differential i))
+      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+        (by dsimp; simp only [Category.comp_id]
+            exact (ChainComplex.of_d r.termObj r.differential (i + 1)).symm)
+        (by dsimp; simp only [Category.comp_id]
+            exact (ChainComplex.of_d r.termObj r.differential i).symm))).2
+      (GradedModuleCat.exact_iff.mpr (r.exact_d_d i))
+  have hn : IsZero (K.X (n + 1)) :=
+    haveI : Subsingleton (K.X (n + 1)) := h
+    GradedModuleCat.isZero_of_subsingleton _
+  have : Epi r.augmentation := (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
+  have : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderIsomorphisms :=
+    ObjectProperty.isClosedUnderIsomorphisms_of_containsZero _
+  have hP : ∀ i ≤ n, gradedFiniteProjectiveModules 𝒜 (K.X i) := fun i _ =>
+    gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective i⟩
+  exact (GradedExactStructure.abelian_toExactStructure
+    (GradedModuleCat.shift (𝒜 := 𝒜))).symm ▸
+    ExactStructure.FiniteResolution.ofChainComplex h₀ hK hn hP
+
+/-- Alternating sums along `r.toFiniteResolution h` are alternating sums over the terms
+`r.termObj i` for `i : Fin (n + 1)`. -/
+theorem foldAlternating_toFiniteResolution {M : GradedModuleCat.{uA} 𝒜}
+    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading)
+    [∀ n, Module.Finite A (r.X n)] {n : ℕ} (h : Subsingleton (r.X (n + 1)))
+    {B : Type*} [AddCommGroup B]
+    (f : ∀ Z : GradedModuleCat.{uA} 𝒜, gradedFiniteProjectiveModules 𝒜 Z → B)
+    (hf : ∀ {Y Z : GradedModuleCat.{uA} 𝒜} (_ : Y ≅ Z)
+      (hY : gradedFiniteProjectiveModules 𝒜 Y) (hZ : gradedFiniteProjectiveModules 𝒜 Z),
+      f Y hY = f Z hZ) :
+    (r.toFiniteResolution h).foldAlternating f =
+      ∑ i : Fin (n + 1),
+        (-1 : ℤ) ^ (i : ℕ) •
+          f (r.termObj i)
+            (gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective i⟩) := by
+  have : Epi r.augmentation := (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
+  have : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderIsomorphisms :=
+    ObjectProperty.isClosedUnderIsomorphisms_of_containsZero _
+  have hcast : ∀ {E₁ E₂ : ExactStructure (GradedModuleCat.{uA} 𝒜)} (heq : E₁ = E₂)
+      (rf : E₁.FiniteResolution (gradedFiniteProjectiveModules 𝒜) M),
+      (heq ▸ rf).foldAlternating f = rf.foldAlternating f := by
+    rintro _ _ rfl _
+    rfl
+  rw [toFiniteResolution, hcast]
+  exact ExactStructure.FiniteResolution.foldAlternating_ofChainComplex _ _ _ _ f hf
+
+private theorem gradedFiniteModules_of_finiteResolution {M : GradedModuleCat.{uA} 𝒜}
+    (rf : (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution
+      (gradedFiniteProjectiveModules 𝒜) M) :
+    gradedFiniteModules 𝒜 M := by
+  induction rf with
+  | base hX => exact gradedFiniteProjectiveModules_le_finiteModules _ hX
+  | @step K Q X hQ i p zero hp _ _ =>
+    rw [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure,
+      ExactStructure.abelian_conflation] at hp
+    have : Module.Finite A Q :=
+      gradedFiniteModules_iff.1 (gradedFiniteProjectiveModules_le_finiteModules _ hQ)
+    exact gradedFiniteModules_iff.2 <|
+      Module.Finite.of_surjective p.hom ((GradedModuleCat.epi_iff_surjective p).1 hp.epi_g)
+
+private theorem laurentK0_of_eq_gradedCartanMap_foldAlternating {M : GradedModuleCat.{uA} 𝒜}
+    (rf : (gradedModuleCanonicalExactStructure 𝒜).toExactStructure.FiniteResolution
+      (gradedFiniteProjectiveModules 𝒜) M)
+    (hM : gradedFiniteModules 𝒜 M := gradedFiniteModules_of_finiteResolution rf) :
+    LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ =
+      gradedCartanMap 𝒜
+        (rf.foldAlternating fun Z hZ =>
+          LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩) := by
+  induction rf with
+  | base hX =>
+    rw [ExactStructure.FiniteResolution.foldAlternating_base, gradedCartanMap_of]
+  | @step K Q X hQ i p zero hp r' ih =>
+    have hK : gradedFiniteModules 𝒜 K := gradedFiniteModules_of_finiteResolution r'
+    have hQ' : gradedFiniteModules 𝒜 Q := gradedFiniteProjectiveModules_le_finiteModules _ hQ
+    let K' : (gradedFiniteModules 𝒜).FullSubcategory := ⟨K, hK⟩
+    let Q' : (gradedFiniteModules 𝒜).FullSubcategory := ⟨Q, hQ'⟩
+    let X' : (gradedFiniteModules 𝒜).FullSubcategory := ⟨X, hM⟩
+    let S : ShortComplex (gradedFiniteModules 𝒜).FullSubcategory :=
+      ShortComplex.mk (⟨i⟩ : K' ⟶ Q') (⟨p⟩ : Q' ⟶ X') (ObjectProperty.hom_ext _ zero)
+    have hS : (gradedFiniteModulesExactStructure 𝒜).Conflation S := by
+      rw [gradedFiniteModulesExactStructure_conflation_iff]
+      rw [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure,
+        ExactStructure.abelian_conflation] at hp
+      exact hp
+    have hconf := LaurentK0.of_conflation.{uA} (gradedFiniteModulesExactStructure 𝒜) hS
+    rw [ExactStructure.FiniteResolution.foldAlternating_step, map_sub, gradedCartanMap_of hQ,
+      ← ih hK]
+    exact eq_sub_of_add_eq' hconf.symm
+
 /-- **Alternating class of a finite graded projective resolution.** If a graded projective
 resolution `r` of `M` has finitely generated terms and vanishes from homological degree `N`
 onward, then `[M]` equals the image under `gradedCartanMap` of the alternating sum
@@ -418,58 +534,28 @@ theorem laurentK0_eq_gradedCartanMap_sum {M : GradedModuleCat.{uA} 𝒜}
           (-1 : LaurentPolynomial ℤ) ^ n •
             LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
               (r.finiteProjectiveTerm n)) := by
-  induction N generalizing M with
+  cases N with
   | zero =>
     have hsub0 : Subsingleton (r.X 0) := hN 0 (Nat.zero_le 0)
     have hsubM : Subsingleton M := r.surjective_π.subsingleton
-    have hzeroM : IsZero M :=
-      (IsZero.iff_id_eq_zero _).2 (GradedModuleCat.hom_ext <| LinearMap.ext fun _ => hsubM.elim _ _)
+    have hzeroM : IsZero M := GradedModuleCat.isZero_of_subsingleton M
     have hzero : IsZero (⟨M, hM⟩ : (gradedFiniteModules 𝒜).FullSubcategory) :=
       IsZero.of_full_of_faithful_of_isZero (gradedFiniteModules 𝒜).ι _ hzeroM
     rw [Finset.range_zero, Finset.sum_empty, map_zero, ← LaurentK0.ofExactK0_exactK0_of.{uA},
       ExactK0.of_eq_zero_of_isZero.{uA} hzero, map_zero]
-  | succ N ih =>
-    -- Split off `0 → ker(π) → P₀ → M → 0` and apply the induction hypothesis to `r.tail`.
-    let K : GradedModuleCat.{uA} 𝒜 := GradedModuleCat.kernelObj r.augmentation
-    have hKfin : gradedFiniteModules 𝒜 K :=
-      gradedFiniteModules_iff.mpr (Module.Finite.of_surjective r.tail.π r.tail.surjective_π)
-    have hK := ih r.tail (fun n hn => hN (n + 1) (Nat.succ_le_succ hn)) hKfin
-    let S : ShortComplex (gradedFiniteModules 𝒜).FullSubcategory :=
-      ShortComplex.mk
-        (⟨GradedModuleCat.kernelι r.augmentation⟩ :
-          (⟨K, hKfin⟩ : (gradedFiniteModules 𝒜).FullSubcategory) ⟶
-            ⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩)
-        (⟨r.augmentation⟩ :
-          (⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩ :
-            (gradedFiniteModules 𝒜).FullSubcategory) ⟶ ⟨M, hM⟩)
-        (ObjectProperty.hom_ext _ (GradedModuleCat.kernelι_comp r.augmentation))
-    have hS : (gradedFiniteModulesExactStructure 𝒜).Conflation S := by
-      rw [gradedFiniteModulesExactStructure_conflation_iff]
-      exact ShortComplex.ShortExact.mk'
-        (GradedModuleCat.exact_iff.mpr (LinearMap.exact_subtype_ker_map r.π))
-        ((GradedModuleCat.mono_iff_injective _).mpr (Submodule.injective_subtype _))
-        ((GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π)
-    have hconf := LaurentK0.of_conflation.{uA} (gradedFiniteModulesExactStructure 𝒜) hS
-    have hterm :
-        gradedCartanMap 𝒜
-            (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-              (r.finiteProjectiveTerm 0)) =
-          LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜)
-            ⟨r.termObj 0, gradedFiniteModules_iff.mpr inferInstance⟩ := by
-      rw [gradedCartanMap_of]
-      exact congrArg _ (ObjectProperty.FullSubcategory.ext (r.finiteProjectiveTerm_obj 0))
-    have hM_eq :
-        LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨M, hM⟩ =
-          gradedCartanMap 𝒜
-              (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-                (r.finiteProjectiveTerm 0)) -
-            LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) ⟨K, hKfin⟩ :=
-      hterm ▸ eq_sub_of_add_eq' hconf.symm
-    rw [hM_eq, hK, ← map_sub, Finset.sum_range_succ', pow_zero, one_smul, sub_eq_add_neg,
-      add_comm, ← Finset.sum_neg_distrib]
-    congr 2
-    refine Finset.sum_congr rfl fun n _ => ?_
-    rw [pow_succ, mul_neg_one, neg_smul, finiteProjectiveTerm_tail]
+  | succ n =>
+    rw [laurentK0_of_eq_gradedCartanMap_foldAlternating
+      (r.toFiniteResolution (hN (n + 1) (Nat.le_refl _))) hM]
+    congr 1
+    rw [r.foldAlternating_toFiniteResolution (hN (n + 1) (Nat.le_refl _))
+      (fun Z hZ => LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩)
+      (fun e _ _ => LaurentK0.of_congr _ (ObjectProperty.isoMk _ e))]
+    rw [Fin.sum_univ_eq_sum_range (fun i => (-1 : ℤ) ^ i •
+      LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+        ⟨r.termObj i, gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective i⟩⟩)]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [← Int.cast_smul_eq_zsmul (LaurentPolynomial ℤ), Int.cast_pow, Int.cast_neg, Int.cast_one]
+    rfl
 
 end FiniteResolution
 

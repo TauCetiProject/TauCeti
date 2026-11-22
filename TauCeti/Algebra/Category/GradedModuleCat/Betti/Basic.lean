@@ -147,8 +147,7 @@ theorem coeff_bettiPoincareSeries_eq_zero_of_subsingleton (i : I) {n : ℕ}
     PowerSeries.coeff n (r.bettiPoincareSeries bP i) = 0 := by
   have hzeroObj : IsZero ((gradedFiniteProjectiveModules 𝒜).ι.obj (r.finiteProjectiveTerm n)) := by
     rw [ObjectProperty.ι_obj, finiteProjectiveTerm_obj]
-    exact (IsZero.iff_id_eq_zero _).2
-      (GradedModuleCat.hom_ext <| LinearMap.ext fun _ => h.elim _ _)
+    exact GradedModuleCat.isZero_of_subsingleton _
   have hzero : IsZero (r.finiteProjectiveTerm n) :=
     IsZero.of_full_of_faithful_of_isZero (gradedFiniteProjectiveModules 𝒜).ι _ hzeroObj
   rw [coeff_bettiPoincareSeries, ← LaurentK0.ofExactK0_exactK0_of.{uA},
@@ -230,7 +229,7 @@ theorem IsMinimal.bettiPoincareSeries_shiftObj_eq
     [∀ n, Module.Finite A (r.X n)] [∀ n, Module.Finite A (r'.X n)]
     (hr : r.IsMinimal) (hr' : r'.IsMinimal) (hneg : ∀ p < 0, 𝒜 p = ⊥) (i : I) :
     r'.bettiPoincareSeries bP i = PowerSeries.C (T d) * r.bettiPoincareSeries bP i := by
-  have hmin : (r.shiftObj d).IsMinimal := (r.isMinimal_shiftObj_iff d).mpr hr
+  have hmin : (r.shiftObj d).IsMinimal := (r.isMinimal_shift_iff (-d)).mpr hr
   rw [hr'.bettiPoincareSeries_eq_of_nonneg bP hmin hneg i, bettiPoincareSeries_shiftObj]
 
 end Uniqueness
@@ -336,16 +335,33 @@ theorem eval_neg_one_trunc_bettiPoincareMatrix_eq_toMatrix_gradedCartanInverse
   refine Matrix.ext fun i j => ?_
   rw [Matrix.map_apply, bettiPoincareMatrix_apply,
     GradedProjectiveResolution.eval_neg_one_trunc_bettiPoincareSeries,
-    LinearMap.toMatrix_apply, hbM j,
-    (r j).laurentK0_eq_gradedCartanMap_sum N (hN j) (M j).property]
-  have hinv := (gradedCartanEquiv 𝒜 h).symm_apply_apply
-    (∑ n ∈ Finset.range N,
-      (-1 : LaurentPolynomial ℤ) ^ n •
+    LinearMap.toMatrix_apply, hbM j]
+  cases N with
+  | zero =>
+    have hsub0 : Subsingleton ((r j).X 0) := hN j 0 (Nat.zero_le 0)
+    have hsubM : Subsingleton (M j).obj := (r j).surjective_π.subsingleton
+    have hzeroObj : IsZero (M j).obj := GradedModuleCat.isZero_of_subsingleton _
+    have hzero : IsZero (M j) :=
+      IsZero.of_full_of_faithful_of_isZero (gradedFiniteModules 𝒜).ι _ hzeroObj
+    rw [Finset.range_zero, Finset.sum_empty, ← LaurentK0.ofExactK0_exactK0_of.{uA},
+      ExactK0.of_eq_zero_of_isZero.{uA} hzero, map_zero, map_zero, map_zero, Finsupp.zero_apply]
+  | succ n =>
+    rw [gradedCartanInverse_of_eq_foldAlternating 𝒜 h (M j).obj (M j).property
+      ((r j).toFiniteResolution (hN j (n + 1) (Nat.le_refl _))),
+      (r j).foldAlternating_toFiniteResolution (hN j (n + 1) (Nat.le_refl _))
+        (fun Z hZ => LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) ⟨Z, hZ⟩)
+        (fun e _ _ => LaurentK0.of_congr _ (ObjectProperty.isoMk _ e)),
+      Fin.sum_univ_eq_sum_range (fun m => (-1 : ℤ) ^ m •
         LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-          ((r j).finiteProjectiveTerm n))
-  rw [gradedCartanEquiv_symm_apply, gradedCartanEquiv_apply] at hinv
-  rw [hinv]
-  simp [map_sum, map_smul, Finsupp.finsetSum_apply]
+          ⟨(r j).termObj m,
+            gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, (r j).projective m⟩⟩),
+      map_sum, Finsupp.finsetSum_apply]
+    refine Finset.sum_congr rfl fun m _ => ?_
+    have hterm : (r j).finiteProjectiveTerm m = ⟨(r j).termObj m,
+        gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, (r j).projective m⟩⟩ :=
+      ObjectProperty.FullSubcategory.ext ((r j).finiteProjectiveTerm_obj m)
+    rw [← Int.cast_smul_eq_zsmul (LaurentPolynomial ℤ), Int.cast_pow, Int.cast_neg, Int.cast_one,
+      map_smul, Finsupp.smul_apply, smul_eq_mul, hterm]
 
 include hbM in
 /-- When every finite graded module admits a finite graded-projective resolution, the truncated

@@ -88,11 +88,6 @@ theorem termObj_shiftObj (d : ℤ) (n : ℕ) :
     (r.shiftObj d).termObj n = (r.termObj n).shiftObj d :=
   rfl
 
-/-- Shifting a resolution preserves minimality. -/
-theorem isMinimal_shiftObj_iff (d : ℤ) :
-    (r.shiftObj d).IsMinimal ↔ r.IsMinimal :=
-  r.isMinimal_shift_iff (-d)
-
 /-- The tail (first syzygy) resolution of a graded projective resolution `r`, resolving
 `GradedModuleCat.kernelObj r.augmentation` with `n`-th term `r.X (n + 1)`. -/
 noncomputable abbrev tail :

@@ -66,6 +66,8 @@ graded abelian category, whose canonical exact structure is
   underlying linear maps are exact.
 * `TauCeti.GradedModuleCat.shortExact_cokernelπ`: a monomorphism and the projection onto its
   cokernel form a short exact sequence.
+* `TauCeti.GradedModuleCat.isZero_of_subsingleton` and `TauCeti.GradedModuleCat.isZero_zeroObj`:
+  graded modules with subsingleton carrier, and in particular `zeroObj`, are zero objects.
 -/
 
 public section
@@ -365,5 +367,13 @@ theorem shortExact_cokernelπ [Mono f] :
     (ShortComplex.mk f (cokernelπ f) (comp_cokernelπ f)).ShortExact where
   exact := exact_iff.mpr (LinearMap.exact_map_mkQ_range f.hom)
   epi_g := (epi_iff_surjective _).mpr (Submodule.mkQ_surjective _)
+
+/-- A graded module with subsingleton carrier is a zero object in `GradedModuleCat 𝒜`. -/
+theorem isZero_of_subsingleton (M : GradedModuleCat.{v} 𝒜) [Subsingleton M] : IsZero M :=
+  (IsZero.iff_id_eq_zero _).2 (hom_ext <| LinearMap.ext fun _ => Subsingleton.elim _ _)
+
+/-- The zero graded module `zeroObj` is a zero object in `GradedModuleCat 𝒜`. -/
+theorem isZero_zeroObj : IsZero (zeroObj (𝒜 := 𝒜)) :=
+  isZero_of_subsingleton zeroObj
 
 end TauCeti.GradedModuleCat
