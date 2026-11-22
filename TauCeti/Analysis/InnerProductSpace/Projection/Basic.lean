@@ -214,10 +214,9 @@ theorem lift_rank_comp_starProjection_le {F : Type v} [AddCommMonoid F] [Module 
 theorem finrank_range_comp_starProjection_le {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
     [FiniteDimensional 𝕜 U] (T : E →ₗ[𝕜] F) :
     Module.finrank 𝕜 (LinearMap.range (T ∘ₗ (U.starProjection : E →ₗ[𝕜] E))) ≤
-      Module.finrank 𝕜 U := by
-  have h := U.lift_rank_comp_starProjection_le T
-  rw [← Module.finrank_eq_rank, Cardinal.lift_natCast] at h
-  exact Module.finrank_le_of_rank_le (Cardinal.lift_le_nat_iff.mp h)
+      Module.finrank 𝕜 U :=
+  Module.finrank_le_finrank_of_rank_le_rank (U.lift_rank_comp_starProjection_le T)
+    (Module.rank_lt_aleph0 𝕜 U)
 
 omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
 /-- For finite-dimensional subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same
