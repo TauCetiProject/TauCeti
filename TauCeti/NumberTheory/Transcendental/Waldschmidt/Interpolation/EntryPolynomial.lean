@@ -106,8 +106,9 @@ private theorem totalDegree_waldschmidtPoint_X_le (s : Fin (n + 1) → ℤ) (i :
   have hz (z : ℤ) : (z : MvPolynomial (Fin (n + 1)) R).totalDegree = 0 := by
     rw [← map_intCast (C : R →+* MvPolynomial (Fin (n + 1)) R), totalDegree_C]
   have hCX (z : ℤ) (j : Fin (n + 1)) :
-      ((z : MvPolynomial (Fin (n + 1)) R) * X j).totalDegree ≤ 1 :=
-    (totalDegree_mul _ _).trans (by rw [hz, zero_add]; exact totalDegree_X_le j)
+      ((z : MvPolynomial (Fin (n + 1)) R) * X j).totalDegree ≤ 1 := by
+    rw [← map_intCast (C : R →+* MvPolynomial (Fin (n + 1)) R), ← smul_eq_C_mul]
+    exact (totalDegree_smul_le (z : R) (X j)).trans (totalDegree_X_le j)
   cases i using Fin.cases with
   | zero =>
     rw [waldschmidtPoint_apply_zero]
