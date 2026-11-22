@@ -26,9 +26,10 @@ lift* is the same with strictly decreasing; it is described here through its inv
 
 ## Main results
 
-* `TauCeti.IsTwistLift.strictMono_fst_apply_of_mem_boundary`: for `ℓ ≠ 0`, a twist lift maps each
-  boundary line onto itself preserving its direction, and so does the induced homeomorphism of the
-  annulus `Homeomorph.annulusHomeomorphOfLift` on each boundary circle
+* `TauCeti.IsTwistLift.strictMono_fst_apply_of_mem_boundary`: for `ℓ ≠ 0`, a twist lift is
+  strictly increasing along each boundary line, which it preserves
+  (`TauCeti.IsTwistLift.snd_apply_of_mem_boundary`), and the induced homeomorphism of the annulus
+  `Homeomorph.annulusHomeomorphOfLift` maps each boundary circle onto itself
   (`TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_left`,
   `TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_right`). The general facts about
   homeomorphisms of the strip commuting with the deck translation are in
@@ -129,7 +130,7 @@ private theorem fst_symm_apply_lt (hℓ : ℓ ≠ 0) (x : ℝ) {y₀ y : Icc a b
   -- No point of the vertical through `u` is sent to height `y` on or left of `x`.
   have key : ∀ (t : ℝ) (s : Icc a b), t ≤ x → F (u, s) ≠ (t, y) := by
     intro t s ht hs
-    rcases (show y₀ ≤ s from Subtype.coe_le_coe.1 (by rw [hy₀]; exact s.2.1)).eq_or_lt
+    rcases (show y₀ ≤ s from Subtype.coe_le_coe.1 (by rw [hy₀]; exact s.property.1)).eq_or_lt
       with h | h
     · rw [← h, hu] at hs
       have := congrArg (fun p => (p.2 : ℝ)) hs
