@@ -59,10 +59,12 @@ theorem localization {A B C D A' B' C' D' : CommRingCat.{u}}
     CommRingCat.isPushout_of_isLocalization i.hom i'.hom (congrArg CommRingCat.Hom.hom hi₀) M
   have hjP : IsPushout j a c j' :=
     CommRingCat.isPushout_of_isLocalization j.hom j'.hom (congrArg CommRingCat.Hom.hom hj₀) M
+  -- Reassociate the two numerator squares to obtain the composite square.
+  have hdComm : a ≫ (i' ≫ f') = (i ≫ f) ≫ d := by
+    rw [← Category.assoc, hi₀, Category.assoc, hf₀, Category.assoc]
   have hdP : IsPushout (i ≫ f) a d (i' ≫ f') :=
     CommRingCat.isPushout_of_isLocalization (i ≫ f).hom (i' ≫ f').hom
-      (congrArg CommRingCat.Hom.hom (show a ≫ (i' ≫ f') = (i ≫ f) ≫ d by
-        rw [← Category.assoc, hi₀, Category.assoc, hf₀, Category.assoc])) M
+      (congrArg CommRingCat.Hom.hom hdComm) M
   have haP : IsPushout (𝟙 A) a a (𝟙 A') := IsPushout.of_id_fst
   -- Lift the original square to rings under `A`, where flat base change preserves limits.
   let ii : Under.mk (𝟙 A) ⟶ Under.mk i := Under.homMk i
@@ -76,14 +78,16 @@ theorem localization {A B C D A' B' C' D' : CommRingCat.{u}}
     CommRingCat.Under.preservesFiniteLimits_of_flat a
       (RingHom.flat_algebraMap_iff.mpr (IsLocalization.flat A' M))
   have hm := hu.map F
+  -- Evaluate the original square on numerators before extending to the localizations.
+  have hw_on_numerators (x : A) :
+      (i' ≫ f') (algebraMap A A' x) = (j' ≫ g') (algebraMap A A' x) := by
+    rw [CommRingCat.comp_apply, CommRingCat.comp_apply, hi, hj, hf, hg]
+    exact congrArg (algebraMap D D') (ConcreteCategory.congr_hom h.w x)
   have hw : i' ≫ f' = j' ≫ g' := by
     apply CommRingCat.hom_ext
     apply IsLocalization.ringHom_ext M
     ext x
-    simpa only [RingHom.comp_apply] using
-      (show (i' ≫ f') (algebraMap A A' x) = (j' ≫ g') (algebraMap A A' x) from by
-        rw [CommRingCat.comp_apply, CommRingCat.comp_apply, hi, hj, hf, hg]
-        exact congrArg (algebraMap D D') (ConcreteCategory.congr_hom h.w x))
+    exact hw_on_numerators x
   -- Identify each chosen localization with its categorical pushout.
   exact hm.of_iso haP.isoPushout.symm hiP.isoPushout.symm hjP.isoPushout.symm
     hdP.isoPushout.symm
