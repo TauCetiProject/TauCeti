@@ -1045,6 +1045,27 @@ theorem integralTopForm_inner_add_left (o : Manifold.Orientation I M (Fin m)) (h
   funext x
   rw [Submodule.coe_add, Pi.add_apply, LinearMap.map_add₂, add_smul, Pi.add_apply]
 
+/-- **The `L²` norm of a sum**: compactly supported smooth `k`-forms satisfy
+`∫_M |α + β|² vol = ∫_M |α|² vol + 2 ∫_M ⟨α, β⟩ vol + ∫_M |β|² vol`. -/
+theorem integralTopForm_inner_add_add_self (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α β : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k)
+    (hβ : β ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k ((α + β).val x)
+        ((α + β).val x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x) (α.val x) •
+          riemannianVolumeForm o x) +
+        2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x)
+          (β.val x) • riemannianVolumeForm o x) +
+        integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.val x) (β.val x) •
+          riemannianVolumeForm o x) := by
+  rw [integralTopForm_inner_add_left o hkl α β (α + β) (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o α.val,
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val,
+    integralTopForm_inner_add_left o hkl α β α (.inl ⟨hα, hβ⟩),
+    integralTopForm_inner_add_left o hkl α β β (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val α.val]
+  ring
+
 /-- **Young's inequality for the `L²` pairing**: on an oriented Riemannian manifold of positive
 dimension `m = k + l`, compactly supported smooth `k`-forms satisfy
 `-(∫_M |α|² vol + ∫_M |β|² vol) ≤ 2 ∫_M ⟨α, β⟩ vol`, from `0 ≤ ∫_M |α + β|² vol`. -/
@@ -1058,12 +1079,7 @@ theorem neg_add_le_two_mul_integralTopForm_inner [NeZero m] (o : Manifold.Orient
       2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x) (β.val x) •
         riemannianVolumeForm o x) := by
   have hsq := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o (α + β).val
-  rw [integralTopForm_inner_add_left o hkl α β (α + β) (.inl ⟨hα, hβ⟩),
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o α.val,
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val,
-    integralTopForm_inner_add_left o hkl α β α (.inl ⟨hα, hβ⟩),
-    integralTopForm_inner_add_left o hkl α β β (.inl ⟨hα, hβ⟩),
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val α.val] at hsq
+  rw [integralTopForm_inner_add_add_self o hkl hα hβ] at hsq
   linarith
 
 end SmoothPairing
