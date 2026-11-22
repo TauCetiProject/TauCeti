@@ -259,8 +259,9 @@ theorem cyclicDistanceCutRepeatFirstIterate_mem_contractibleCyclicDistanceCut {k
     (hq : q ∈ contractibleCyclicDistanceCut hr hδ) :
     (cyclicDistanceCutRepeatFirstIterate k h ⟨q, contractibleCyclicDistanceCut_subset hr hδ hq⟩ :
       Fin (n + k + 1) → M) ∈ contractibleCyclicDistanceCut hr hδ' :=
-  mem_contractibleCyclicDistanceCut_of_joined hr hδ hδ' hq <| by
+  (mem_contractibleCyclicDistanceCut hr).2 ⟨Subtype.property _, by
     rw [cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate hr hδ hδ' h]
+    exact cyclicDistanceCutBrokenGeodesic_mem_contractibleLoops hr hq⟩
 
 /-- **`ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ : 𝓛ⁿ₀M → 𝓛ⁿ⁺ᵏ₀M`**, repeating the first vertex `k` more times
 (`TauCeti.cyclicDistanceCutRepeatFirstIterate`) between contractible distance cuts, for cut-offs

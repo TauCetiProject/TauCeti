@@ -590,11 +590,7 @@ theorem brokenGeodesicLoop_repeatFirstIterate (n : ℕ) (q : Fin (n + 1) → M)
     -- zero, so they are shorter than `r`.
     have hk : ∀ j : Fin (n + k + 1),
         dist (q ⟨j - k, by omega⟩) (q ⟨(j - 1 : Fin (n + k + 1)) - k, by omega⟩) < r :=
-      fun j ↦ (mem_cyclicDistanceCut.1 (repeatFirstIterate_mem_cyclicDistanceCut
-        (δ := fun i ↦ dist (q i) (q (i - 1)))
-        (δ' := fun j : Fin (n + k + 1) ↦
-          dist (q ⟨j - k, by omega⟩) (q ((⟨j - k, by omega⟩ : Fin (n + 1)) - 1)))
-        (fun _ ↦ le_rfl) (mem_cyclicDistanceCut.2 fun _ ↦ le_rfl)) j).trans_lt (h _)
+      fun j ↦ (dist_repeatFirstIterate_le q j).trans_lt (h _)
     -- Repeating `q₀` once more is `Fin.cons` of the first vertex.
     have hcons : (fun j : Fin (n + (k + 1) + 1) ↦ q ⟨j - (k + 1), by omega⟩) =
         Fin.cons (q ⟨(0 : Fin (n + k + 1)) - k, by omega⟩)
@@ -720,8 +716,8 @@ theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate {n k
     funext (coe_cyclicDistanceCutRepeatFirstIterate_apply k h q)
   rw [cyclicDistanceCutBrokenGeodesic_apply, cyclicDistanceCutBrokenGeodesic_apply,
     ← brokenGeodesicLoop_repeatFirstIterate hr n q.val _ k
-      fun j ↦ (mem_cyclicDistanceCut.1 (repeatFirstIterate_mem_cyclicDistanceCut h q.property)
-        j).trans_lt (hδ' j)]
+      fun j ↦ (dist_repeatFirstIterate_le q.val j).trans_lt
+        ((mem_cyclicDistanceCut.1 q.property _).trans_lt (hδ _))]
   -- The two tuples agree by `hq`.
   congr 1
 

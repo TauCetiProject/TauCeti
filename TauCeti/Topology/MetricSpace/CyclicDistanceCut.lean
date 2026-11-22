@@ -231,17 +231,13 @@ theorem isClosedEmbedding_cyclicDistanceCutRepeatFirst [T2Space X] {δ : Fin (n 
 
 /-! ### Repeating the first vertex several times -/
 
-/-- **Repeating the first vertex `k` more times maps one distance cut into another.** The tuple
-`(q₀, …, q₀, q₁, …, qₙ)`, with `q₀` repeated `k + 1` times, has the closing edge `(q₀, qₙ)` of `q`,
-`k` edges of length zero, and the other edges of `q`. So it lies in the cut with cut-offs `δ'` when
-`q` lies in the cut with cut-offs `δ` and the cut-off `δ (j - k)` of the vertex `q_{j - k}` at the
-position `j` is at most `δ' j`. -/
-theorem repeatFirstIterate_mem_cyclicDistanceCut {k : ℕ} {δ : Fin (n + 1) → ℝ}
-    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
-    {q : Fin (n + 1) → X} (hq : q ∈ cyclicDistanceCut δ) :
-    (fun j : Fin (n + k + 1) ↦ q ⟨j - k, by omega⟩) ∈ cyclicDistanceCut δ' := by
-  rw [mem_cyclicDistanceCut]
-  intro j
+/-- **Each edge of the tuple repeating the first vertex `k` more times is at most an edge of the
+tuple.** The edge of `(q₀, …, q₀, q₁, …, qₙ)`, with `q₀` repeated `k + 1` times, ending at the
+position `j` has length zero when it joins two copies of `q₀`, and otherwise it is the edge of `q`
+ending at the vertex `q_{j - k}`. -/
+theorem dist_repeatFirstIterate_le {k : ℕ} (q : Fin (n + 1) → X) (j : Fin (n + k + 1)) :
+    dist (q ⟨j - k, by omega⟩) (q ⟨(j - 1 : Fin (n + k + 1)) - k, by omega⟩) ≤
+      dist (q ⟨j - k, by omega⟩) (q (⟨j - k, by omega⟩ - 1)) := by
   by_cases hj : (j : ℕ) ≤ k ∧ (j : ℕ) ≠ 0
   · -- The edge ending at a repeated copy of `q₀` has length zero.
     have hj' : ((j - 1 : Fin (n + k + 1)) : ℕ) - k = (j : ℕ) - k := by
@@ -249,14 +245,24 @@ theorem repeatFirstIterate_mem_cyclicDistanceCut {k : ℕ} {δ : Fin (n + 1) →
       split_ifs <;> omega
     rw [show q ⟨(j - 1 : Fin (n + k + 1)) - k, by omega⟩ = q ⟨j - k, by omega⟩ from
       congrArg q (Fin.ext hj'), dist_self]
-    exact (nonneg_of_mem_cyclicDistanceCut hq _).trans (h j)
+    exact dist_nonneg
   · -- Otherwise the edge ending at the vertex `j` is the edge of `q` ending at the vertex `j - k`.
     have hj' : q ⟨(j - 1 : Fin (n + k + 1)) - k, by omega⟩ = q (⟨j - k, by omega⟩ - 1) := by
       refine congrArg q (Fin.ext ?_)
       simp only [Fin.coe_sub_one, Fin.ext_iff, Fin.val_zero]
       split_ifs <;> omega
     rw [hj']
-    exact (hq _).trans (h j)
+
+/-- **Repeating the first vertex `k` more times maps one distance cut into another.** The tuple
+`(q₀, …, q₀, q₁, …, qₙ)`, with `q₀` repeated `k + 1` times, has the closing edge `(q₀, qₙ)` of `q`,
+`k` edges of length zero, and the other edges of `q` (`TauCeti.dist_repeatFirstIterate_le`). So it
+lies in the cut with cut-offs `δ'` when `q` lies in the cut with cut-offs `δ` and the cut-off
+`δ (j - k)` of the vertex `q_{j - k}` at the position `j` is at most `δ' j`. -/
+theorem repeatFirstIterate_mem_cyclicDistanceCut {k : ℕ} {δ : Fin (n + 1) → ℝ}
+    {δ' : Fin (n + k + 1) → ℝ} (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j)
+    {q : Fin (n + 1) → X} (hq : q ∈ cyclicDistanceCut δ) :
+    (fun j : Fin (n + k + 1) ↦ q ⟨j - k, by omega⟩) ∈ cyclicDistanceCut δ' :=
+  mem_cyclicDistanceCut.2 fun j ↦ ((dist_repeatFirstIterate_le q j).trans (hq _)).trans (h j)
 
 /-- **The iterated embedding `ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ : 𝓛ⁿ → 𝓛ⁿ⁺ᵏ` repeating the first vertex**,
 `(q₀, …, qₙ) ↦ (q₀, …, q₀, q₁, …, qₙ)` with `q₀` repeated `k + 1` times, between the distance cuts
