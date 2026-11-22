@@ -258,6 +258,14 @@ theorem contactHamiltonianVectorField_def (α : SmoothForm I M ℝ 1) (f : M →
       ((f x + mvfderiv I f x (α.reebVectorField x)) • degreeOneEquiv α x - mvfderiv I f x) :=
   (rfl)
 
+/-- The value at `x` of the contact Hamiltonian vector field of `f` only depends on the germ of `f`
+at `x`. -/
+theorem _root_.Filter.EventuallyEq.contactHamiltonianVectorField_eq (α : SmoothForm I M ℝ 1)
+    {x : M} (h : f =ᶠ[𝓝 x] g) :
+    α.contactHamiltonianVectorField f x = α.contactHamiltonianVectorField g x := by
+  rw [contactHamiltonianVectorField_def, contactHamiltonianVectorField_def, h.eq_of_nhds,
+    h.mvfderiv_eq]
+
 /-- The contact Hamiltonian vector field of the zero function vanishes. -/
 @[simp]
 theorem contactHamiltonianVectorField_zero (α : SmoothForm I M ℝ 1) :

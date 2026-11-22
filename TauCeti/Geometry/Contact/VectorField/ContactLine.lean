@@ -46,6 +46,21 @@ every smooth contact vector field, and the bracket of two of them is again one:
 of `L` by `α` the bracket of the sections `[V]`, `[W]` is the Jacobi bracket
 `{α(V), α(W)}_α` (`TauCeti.SmoothForm.IsContactForm.apply_mlieBracket_contactVectorField`).
 
+**Local contact forms.** When `ξ` is not coorientable there is no global contact form, but every
+point has a one-form `α` whose kernel is `ξ` nearby
+(`TauCeti.IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt`), which trivializes `L`
+near that point by `[V] ↦ α(V)`. In each such local trivialization the bracket of sections is the
+Jacobi bracket of `α`: `α([X_V, X_W]) = {α(V), α(W)}_α` near the point
+(`TauCeti.IsContactDistribution.apply_mlieBracket_contactVectorField`). On the overlap with a
+second local contact form `β`, where `β = u α` with `u = β(R_α)`, the two local brackets satisfy the
+transition law `{β(V), β(W)}_β = u {α(V), α(W)}_α`
+(`TauCeti.IsContactDistribution.jacobiBracket_eq_apply_reebVectorField_mul_jacobiBracket`); the
+factor `u` may be negative. Conversely, a vector field `Z` represents the bracket section
+`[[X_V, X_W]]` exactly when `α(Z) = {α(V), α(W)}_α` at every point, for every local contact form
+`α` there (`TauCeti.IsContactDistribution.mlieBracket_contactVectorField_sub_mem_iff`): the bracket
+of sections of the contact line is the unique bracket whose local representatives are the Jacobi
+brackets of the local contact forms.
+
 ## Main definitions
 
 * `TauCeti.contactVectorField I ξ V`: the smooth contact vector field in the class of `V` modulo
@@ -61,6 +76,12 @@ of `L` by `α` the bracket of the sections `[V]`, `[W]` is the Jacobi bracket
 * `TauCeti.contactVectorField_mlieBracket`: the bracket of contact vector fields of sections.
 * `TauCeti.SmoothForm.IsContactForm.contactVectorField_kerDistribution`: for a contact form,
   `X_V = X_(α(V))`.
+* `TauCeti.IsContactDistribution.apply_mlieBracket_contactVectorField`: the bracket of sections
+  in a local contact form is its Jacobi bracket.
+* `TauCeti.IsContactDistribution.jacobiBracket_eq_apply_reebVectorField_mul_jacobiBracket`: the
+  transition law of the local brackets.
+* `TauCeti.IsContactDistribution.mlieBracket_contactVectorField_sub_mem_iff`: the bracket of
+  sections is characterized by its local Jacobi brackets.
 
 ## References
 
@@ -336,5 +357,79 @@ theorem apply_mlieBracket_contactVectorField (hV : CMDiff ∞ (T% V)) (hW : CMDi
       ((α.contMDiff_apply_vectorField hW).of_le (by simp)) x)
 
 end SmoothForm.IsContactForm
+
+/-! ### Local contact forms -/
+
+namespace IsContactDistribution
+
+variable [T2Space M] (hD : IsContactDistribution I ∞ D) {α β : SmoothForm I M ℝ 1} {x : M}
+include hD
+
+open SmoothForm
+
+/-- **The bracket of sections of the contact line in a local contact form.** If the kernel of `α`
+is the smooth contact structure `D` near `x`, the bracket of the contact vector fields of the
+sections `[V]` and `[W]` of the contact line is read in the trivialization `α` as the Jacobi bracket
+`{α(V), α(W)}_α` at `x`. No global contact form or coorientation is needed. -/
+theorem apply_mlieBracket_contactVectorField (hV : CMDiff ∞ (T% V)) (hW : CMDiff ∞ (T% W))
+    (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) :
+    α.val x ![mlieBracket I (contactVectorField I D V) (contactVectorField I D W) x] =
+      α.jacobiBracket (fun y ↦ α.val y ![V y]) (fun y ↦ α.val y ![W y]) x := by
+  -- Near `x`, the Hamiltonian of a contact vector field `X_V` is `α(V)`, since `X_V - V` lies in
+  -- `D = ker α` there.
+  have hham {U : Π x : M, TangentSpace I x} (hU : CMDiff ∞ (T% U)) :
+      (fun y ↦ α.val y ![contactVectorField I D U y]) =ᶠ[𝓝 x] fun y ↦ α.val y ![U y] := by
+    filter_upwards [hαD] with y hy
+    have h := mem_kerDistribution.1 (hy ▸ contactVectorField_sub_mem hD hU y)
+    rwa [← degreeOneEquiv_apply_apply_vec, map_sub, sub_eq_zero,
+      degreeOneEquiv_apply_apply_vec, degreeOneEquiv_apply_apply_vec] at h
+  rw [((preservesDistribution_contactVectorField hD hV).preservesDistributionAt x)
+    |>.apply_mlieBracket_eq_jacobiBracket hD
+      ((preservesDistribution_contactVectorField hD hW).preservesDistributionAt x)
+      ((contMDiff_contactVectorField hD hV).mdifferentiableAt (by simp))
+      ((contMDiff_contactVectorField hD hW).mdifferentiableAt (by simp)) hαD]
+  exact (hham hV).jacobiBracket_eq α (hham hW)
+
+/-- **The transition law of the local brackets of the contact line.** If `α` and `β` are both
+local contact forms of the smooth contact structure `D` near `x`, then `β_x = u α_x` with
+`u = β(R_α)`, and the brackets of the sections `[V]` and `[W]` in the two trivializations satisfy
+`{β(V), β(W)}_β = u {α(V), α(W)}_α` at `x`. The factor `u` may be negative. -/
+theorem jacobiBracket_eq_apply_reebVectorField_mul_jacobiBracket (hV : CMDiff ∞ (T% V))
+    (hW : CMDiff ∞ (T% W)) (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y)
+    (hβD : ∀ᶠ y in 𝓝 x, β.kerDistribution y = D y) :
+    β.jacobiBracket (fun y ↦ β.val y ![V y]) (fun y ↦ β.val y ![W y]) x =
+      β.val x ![α.reebVectorField x] *
+        α.jacobiBracket (fun y ↦ α.val y ![V y]) (fun y ↦ α.val y ![W y]) x := by
+  rw [← hD.apply_mlieBracket_contactVectorField hV hW hαD,
+    ← hD.apply_mlieBracket_contactVectorField hV hW hβD]
+  exact apply_eq_apply_reebVectorField_mul_of_isContactFormAt
+    (hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp) hαD)
+    (hαD.self_of_nhds.trans hβD.self_of_nhds.symm).le _
+
+/-- **The bracket of sections of the contact line is determined by the local Jacobi brackets.** A
+vector field `Z` represents the bracket `[[X_V, X_W]]` of the sections `[V]` and `[W]` of the
+contact line exactly when, at every point `x` and for every local contact form `α` of `D` near `x`,
+`α(Z) = {α(V), α(W)}_α` at `x`. -/
+theorem mlieBracket_contactVectorField_sub_mem_iff (hV : CMDiff ∞ (T% V))
+    (hW : CMDiff ∞ (T% W)) {Z : Π x : M, TangentSpace I x} :
+    (∀ x, mlieBracket I (contactVectorField I D V) (contactVectorField I D W) x - Z x ∈ D x) ↔
+      ∀ (α : SmoothForm I M ℝ 1) (x : M), (∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) →
+        α.val x ![Z x] = α.jacobiBracket (fun y ↦ α.val y ![V y]) (fun y ↦ α.val y ![W y]) x := by
+  -- In a local contact form at `x`, membership in `D x` is the vanishing of `α_x`.
+  have key {α : SmoothForm I M ℝ 1} {x : M} (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) :
+      mlieBracket I (contactVectorField I D V) (contactVectorField I D W) x - Z x ∈ D x ↔
+        α.val x ![Z x] =
+          α.jacobiBracket (fun y ↦ α.val y ![V y]) (fun y ↦ α.val y ![W y]) x := by
+    rw [← hαD.self_of_nhds, mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub,
+      degreeOneEquiv_apply_apply_vec, degreeOneEquiv_apply_apply_vec,
+      hD.apply_mlieBracket_contactVectorField hV hW hαD, sub_eq_zero, eq_comm]
+  refine ⟨fun h α x hαD ↦ (key hαD).1 (h x), fun h x ↦ ?_⟩
+  obtain ⟨U, hU, hxU, α, hα⟩ := hD.exists_smoothForm_ker_eq_isContactFormAt x
+  have hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y :=
+    eventually_of_mem (hU.mem_nhds hxU) fun y hy ↦
+      (SmoothForm.kerDistribution_eq_ker α y).trans (hα y hy).1
+  exact (key hαD).2 (h α x hαD)
+
+end IsContactDistribution
 
 end TauCeti
