@@ -48,7 +48,7 @@ The classical proof (Evans, §6.3.2, Theorem 4) localizes the global theorem on 
 * On `Ω ∩ W` the restriction of `u` solves the equation with `a'`, and the lower-order terms move
   to the right-hand side.
 * For a cutoff `ψ` equal to one near `closure V` and supported in `W`, the zero boundary values of
-  `u` give `ψ u ∈ H¹₀(Ω ∩ W)` (`TauCeti.W1p.restrictL_mem_w1p0Submodule_of_isCompact`). Extended by
+  `u` give `ψ u ∈ H¹₀(Ω ∩ W)` (`TauCeti.W1p.exists_w1p0_value_ae_eq_mul_restrictL`). Extended by
   zero, `ψ u ∈ H¹₀(H)` solves an equation `-div(a' ∇w) = g` on all of `H` with `g ∈ L²(H)`
   (`TauCeti.PDE.exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem`), because
   `tsupport ψ ∩ H ⊆ Ω ∩ W`.
@@ -106,28 +106,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c₀ : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
-omit [DecidableEq ι] in
-/-- Zero boundary values on `∂Ω ∩ U` pass to the restriction of `u` to `Ω ∩ U'` for an open
-`U' ⊆ U`: `ψ u ∈ H¹₀(Ω ∩ U')` for every smooth `ψ` compactly supported in `U'`. -/
-private theorem exists_w1p0_value_ae_eq_mul_restrictL {U' : Opens (EuclideanSpace ℝ ι)}
-    {u : W1p mu Omega 2} (hU' : (U' : Set (EuclideanSpace ℝ ι)) ⊆ U)
-    (hu0 : ∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
-      tsupport ψ ⊆ U → ∃ v : W1p0 mu Omega 2,
-        W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x)
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hψs : tsupport ψ ⊆ U') :
-    ∃ v : W1p0 mu (Omega ⊓ U') 2, W1p.value (v : W1p mu (Omega ⊓ U') 2) =ᵐ[mu.restrict (Omega ⊓ U')]
-      fun x => ψ x * W1p.value (W1p.restrictL (inf_le_left : Omega ⊓ U' ≤ Omega) u) x := by
-  obtain ⟨v, hv⟩ := hu0 ψ hψ hψc (hψs.trans hU')
-  have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport ψ → W1p.value (v : W1p mu Omega 2) x = 0 := by
-    filter_upwards [hv] with x hx hxψ
-    rw [hx, image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
-  refine ⟨⟨_, W1p.restrictL_mem_w1p0Submodule_of_isCompact hψc hψs v.property hv0⟩, ?_⟩
-  filter_upwards [W1p.value_restrictL_ae inf_le_left (v : W1p mu Omega 2),
-    W1p.value_restrictL_ae inf_le_left u,
-    ae_restrict_of_ae_restrict_of_subset inter_subset_left hv] with x h1 h2 h3
-  rw [h1, h3, h2]
-
 /-- **Local `H²` regularity near a flat part of the boundary.** Let `ν ≠ 0`, and let `H` be an
 open set mapped into itself by every translation orthogonal to `ν`, as a half-space
 `{x | c₀ < ⟪x, ν⟫}` is. Let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`. Let `a` be uniformly
@@ -180,7 +158,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := mem_interior_iff_mem_nhds.1 (hψ1 hx)
     exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const x 1)⟩
   -- The zero boundary values of `u` give `ψ u ∈ H¹₀(Ω ∩ W)`.
-  obtain ⟨v, hv⟩ := exists_w1p0_value_ae_eq_mul_restrictL hWU' hu0 hψ hψc hψs
+  obtain ⟨v, hv⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL hWU' hu0 hψ hψc hψs
   have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁ =
       (v : W1p mu Ω₁ 2) := by
     refine W1p.ext_value (Lp.ext ?_)
@@ -248,24 +226,6 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_halfSpace (hν : �
 section ThirdOrder
 
 variable {F u : W1p mu Omega 2}
-
-omit [DecidableEq ι] in
-/-- Restricting a weak solution of `-div(a ∇u) = F` to an open `U' ⊆ Ω` on which `a` agrees with
-`a'` gives a weak solution of `-div(a' ∇u) = F` on `U'`. -/
-private theorem energyFormH1_restrictL_eq_of_eqOn {U' : Opens (EuclideanSpace ℝ ι)}
-    {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (hU' : U' ≤ Omega)
-    (haa' : EqOn a' a (U' : Set (EuclideanSpace ℝ ι)))
-    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
-      ∫ x in Omega, W1p.value F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
-    (v : W1p0 mu U' 2) :
-    energyFormH1 a' 0 0 (W1p.restrictL hU' u) (v : W1p mu U' 2) =
-      ∫ x in U', W1p.value (W1p.restrictL hU' F) x * W1p.value (v : W1p mu U' 2) x ∂mu := by
-  have h := energyFormH1_restrictL_eq_setIntegral hU' hu v
-  rw [energyFormH1_def] at h ⊢
-  rw [setIntegral_congr_fun U'.isOpen.measurableSet fun x hx => by rw [haa' hx], h]
-  refine integral_congr_ae ?_
-  filter_upwards [W1p.value_restrictL_ae hU' F] with x hx
-  rw [hx]
 
 omit [DecidableEq ι] in
 /-- **The localized equation on the whole flat domain.** Let `Ω ⊆ H` and let `u ∈ H²(Ω)` solve
@@ -349,12 +309,17 @@ private theorem exists_value_eq_value_restrictL_of_contDiff (hν : ν ≠ 0)
     (b := 0) (c := 0) hν hH hΩU (ha.mono_set fun x hx => (hΩH x hx.2).1 hx.1)
     hK.lipschitzOnWith (MemLp.zero) (MemLp.zero) hu hu0 hWc hWU
   have hΩ₁H : Ω₁ ≤ H := fun x hx => (hΩH x (hWU' hx.2)).1 hx.1
-  have hu₁ := energyFormH1_restrictL_eq_of_eqOn hΩ₁ (fun _ _ => rfl) hu
-  rw [← hU2] at hu₁
+  have hu₁ : ∀ v : W1p0 mu Ω₁ 2, energyFormH1 a 0 0 (Wkp.lowerOrder 1 U2) (v : W1p mu Ω₁ 2) =
+      ∫ x in Ω₁, W1p.value (W1p.restrictL hΩ₁ F) x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu :=
+    fun v => by
+      rw [hU2, energyFormH1_restrictL_eq_setIntegral hΩ₁ hu v]
+      refine integral_congr_ae ?_
+      filter_upwards [W1p.value_restrictL_ae hΩ₁ F] with x hx
+      rw [hx]
   -- A cutoff `ψ` equal to one near `closure V` and supported in `W`; then `ψ u ∈ H¹₀(Ω₁)`.
   obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
     hV.exists_contDiff_cutoff_with_bounds hWo hVW
-  obtain ⟨v, hv⟩ := exists_w1p0_value_ae_eq_mul_restrictL hWU' hu0 hψ hψc hψs
+  obtain ⟨v, hv⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL hWU' hu0 hψ hψc hψs
   have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x)
       (Wkp.lowerOrder 1 U2) = (v : W1p mu Ω₁ 2) := by
     refine W1p.ext_value (Lp.ext ?_)
@@ -425,8 +390,13 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo (hν : ν 
       fun hx => ⟨⟨(h.2 ⟨hx.1, hU₂U' hx.2⟩).1, hx.2⟩, hx.2⟩⟩
   obtain ⟨W, hW⟩ := exists_value_eq_value_restrictL_of_contDiff (Omega := Ω₂) (U := U₂) hν hHc hH
     hΩ₂U ha' hsm' hK hK' hM
-    (energyFormH1_restrictL_eq_of_eqOn hΩ₂ (fun x hx => haa' (hU₂W₀ (subset_closure hx.2))) hu)
-    (fun _ hψ hψc hψs => exists_w1p0_value_ae_eq_mul_restrictL hU₂U' hu0 hψ hψc hψs) hV hVU₂
+    (fun v => by
+      rw [energyFormH1_restrictL_eq_setIntegral_of_eqOn hΩ₂
+        (fun x hx => haa' (hU₂W₀ (subset_closure hx.2))) hu v]
+      refine integral_congr_ae ?_
+      filter_upwards [W1p.value_restrictL_ae hΩ₂ F] with x hx
+      rw [hx])
+    (fun _ hψ hψc hψs => W1p.exists_w1p0_value_ae_eq_mul_restrictL hU₂U' hu0 hψ hψc hψs) hV hVU₂
   -- Since `V ⊆ U₂`, the sets `Ω ∩ V` and `Ω₂ ∩ V` agree.
   have hVV : Omega ⊓ V ≤ Ω₂ ⊓ V := fun x hx => ⟨⟨hx.1, hVU₂ (subset_closure hx.2)⟩, hx.2⟩
   refine ⟨Wkp.restrictL hVV 3 W, Lp.ext ?_⟩

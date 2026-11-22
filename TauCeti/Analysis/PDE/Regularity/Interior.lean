@@ -13,6 +13,7 @@ public import TauCeti.Analysis.PDE.Ellipticity.Extension
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
+import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -543,14 +544,6 @@ theorem exists_value_ae_eq_localizedForcing
   set b := EuclideanSpace.basisFun ι ℝ
   set u : W1p mu Omega 2 := Wkp.lowerOrder 1 U
   have hgψ : ContDiff ℝ ∞ (∇ ψ) := hψ.gradient_right (m := ∞) (by simp)
-  -- Multiplying by a smooth compactly supported function preserves `H¹(Ω)`.
-  have hmul : ∀ φ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
-      ∀ w : W1p mu Omega 2, ∃ h : W1p mu Omega 2,
-        W1p.value h =ᵐ[mu.restrict Omega] fun x => φ x * W1p.value w x := by
-    intro φ hφ hφc w
-    obtain ⟨M, hM, h1, h2⟩ := (hφ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hφc
-    exact ⟨W1p.contDiffSMul φ hφ hM (fun x _ => h1 x) (fun x _ => h2 x) w,
-      W1p.value_contDiffSMul_ae hφ hM _ _ w⟩
   -- The multipliers of the first derivatives of `u` and of `u` itself.
   set c : ι → EuclideanSpace ℝ ι → ℝ := fun i x =>
     -(matrixBilinearForm (a x) (b i) (∇ ψ x) + matrixBilinearForm (a x) (∇ ψ x) (b i))
@@ -569,6 +562,12 @@ theorem exists_value_ae_eq_localizedForcing
     obtain ⟨d, hd, -⟩ := Wkp.exists_w1p_value_eq_inner_gradient U (b i)
     exact ⟨d, by rwa [Wkp.iteratedGradient_zero] at hd⟩
   choose d hdv using hd
+  -- Multiplying by a smooth compactly supported function preserves `H¹(Ω)`.
+  have hmul : ∀ φ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∀ w : W1p mu Omega 2, ∃ h : W1p mu Omega 2,
+        W1p.value h =ᵐ[mu.restrict Omega] fun x => φ x * W1p.value w x := fun φ hφ hφc w => by
+    obtain ⟨h, hh⟩ := Wkp.exists_value_ae_eq_mul_of_hasCompactSupport 1 hφ hφc w
+    exact ⟨h, by rwa [Wkp.value_one h, Wkp.value_one (p := 2) w] at hh⟩
   obtain ⟨T, hT⟩ := hmul ψ hψ hψc F
   choose S hS using fun i => hmul (c i) (hc i) (hcc i) (d i)
   obtain ⟨Z, hZ⟩ := hmul _ (contDiff_divMatrixGradient (k := ∞)
