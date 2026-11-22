@@ -14,7 +14,6 @@ public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
 public import TauCeti.Topology.EMetricSpace.Rpow
-import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 
 /-!
 # The Wasserstein distance of two measures
@@ -118,9 +117,6 @@ gluing lemma consumes.
   transport cost `TauCeti.transportCost` of `edist ^ p`, with
   `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the minimizers,
   `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`,
-  `TauCeti.wassersteinEDist_two_sq_eq_two_mul_transportCost` and
-  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top` bridging `W₂²` and
-  the half-squared-norm cost `‖x - y‖ ^ 2 / 2`,
   `TauCeti.wassersteinEDist_rpow_le_lintegral` the bound by the transport integral of a single
   coupling, and `TauCeti.transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment` the infinite
   value against a target without finite moment;
@@ -1126,29 +1122,6 @@ theorem IsOptimalCoupling.memLp_sub (hp0 : p ≠ 0) (hp : p ≠ ∞)
   (memLp_congr_eNorm (by fun_prop) measurable_edist.aestronglyMeasurable
     (.of_forall fun z ↦ by simp [eDist_eq_eNorm_sub, eNorm_sub_rev])).2
     (hπ.memLp_edist measurable_edist hp0 hp hfin)
-
-/-- For the quadratic Wasserstein exponent `p = 2` on a seminormed additive group,
-`W₂(μ, ν) ^ 2` equals twice the quadratic transport cost `‖x - y‖ ^ 2 / 2`. -/
-theorem wassersteinEDist_two_sq_eq_two_mul_transportCost (μ ν : Measure E) :
-    wassersteinEDist 2 μ ν ^ 2 =
-      2 * transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν := by
-  have h := wassersteinEDist_rpow_eq_transportCost (p := 2) (μ := μ) (ν := ν)
-    measurable_edist two_ne_zero ENNReal.ofNat_ne_top
-  rw [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] at h
-  rw [h, ← transportCost_const_mul two_ne_zero ENNReal.ofNat_ne_top]
-  congr 1
-  funext z
-  exact edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two z
-
-/-- Finite quadratic Wasserstein distance implies finite quadratic transport cost for
-`‖x - y‖ ^ 2 / 2`. -/
-theorem transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top
-    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
-    transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
-  intro htop
-  have hsq := wassersteinEDist_two_sq_eq_two_mul_transportCost μ ν
-  rw [htop, ENNReal.mul_top two_ne_zero] at hsq
-  exact ENNReal.pow_ne_top hfin hsq
 
 end NormedOptimal
 

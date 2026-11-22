@@ -28,9 +28,10 @@ positive semidefinite one. The two factors are unique in different senses.
   functions pushing `P` to the law of `U` it is unique when both laws have finite second moments.
 * Once `u` is fixed, the measure-preserving factor is determined `m`-almost everywhere: it is
   `s = ∇u⋆ ∘ U`, where `u⋆` is the Legendre–Fenchel conjugate of `u`. Variationally, `s` is the
-  unique map of law `P` closest to `U`, minimising `∫⁻ ω, ENNReal.ofReal (‖s' ω - U ω‖ ^ 2 / 2) ∂m`;
-  when `P` and the law of `U` have finite second moments, it is the unique map of law `P`
-  maximising the correlation `∫ ⟪s', U⟫ dm`.
+  `m`-almost everywhere unique map of law `P` closest to `U`, minimising
+  `∫⁻ ω, ENNReal.ofReal (‖s' ω - U ω‖ ^ 2 / 2) ∂m`; when `P` and the law of `U` have finite second
+  moments, it is the `m`-almost everywhere unique map of law `P` maximising the correlation
+  `∫ ⟪s', U⟫ dm`.
 
 Both factors come from Brenier's theorem applied in the two directions between `P` and the law
 of `U`: the conjugate gradients `∇u` and `∇u⋆` are inverse to each other almost everywhere, so
@@ -55,8 +56,9 @@ monotone rearrangement is `TauCeti.gradient_ae_eq_gradient_of_hasLaw`.
   quadratic transport map `T` and a map `s` of law `μ`, then `s` maximises the correlation
   `∫ ⟪s', U⟫` among maps `s'` of law `μ`;
 * `TauCeti.ae_eq_of_lintegral_norm_sub_sq_div_two_le` and `TauCeti.ae_eq_of_integral_inner_le`:
-  the measure-preserving factor is the unique map of law `P` minimising the quadratic cost to `U`,
-  and, for laws with finite second moments, the unique one maximising the correlation with `U`.
+  the measure-preserving factor is the `m`-almost everywhere unique map of law `P` minimising the
+  quadratic cost to `U`, and, for laws with finite second moments, the `m`-almost everywhere unique
+  one maximising the correlation with `U`.
 
 ## References
 
@@ -144,8 +146,9 @@ theorem ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp (hU : IsCCRe
 a.e. measurable map into a finite-dimensional real inner product space, and let `P` be a measure
 on `E`. Suppose that `P` and the law of `U` are `c - c`-regular (a condition implied, for instance,
 by absolute continuity with respect to an additive Haar measure) and that the optimal cost between
-them for `‖x - y‖ ^ 2 / 2` is finite, as it is for laws with finite second moment. Then `P` is a
-finite measure with the same total mass as `m`, and there is a convex, lower
+them for `‖x - y‖ ^ 2 / 2` is finite, as it is for finite measures of equal total mass and finite
+second moments (`TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_memLp`). Then `P` is a finite
+measure with the same total mass as `m`, and there is a convex, lower
 semicontinuous `u : E → EReal` that never takes the value `⊥`, finite near `P`-almost every point
 with differentiable real representative there, such that:
 

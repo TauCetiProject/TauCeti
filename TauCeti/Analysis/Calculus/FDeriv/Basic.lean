@@ -91,21 +91,29 @@ theorem differentiableAt_and_of_differentiableAt_comb {F G : E → 𝕜} {a b c 
     rw [this]
     exact (hA.const_mul _).add (hB.const_mul _)
 
-/-- If a real-valued function on a real normed space satisfies a positive linear lower bound
+/-- If a real-valued function on a real seminormed space satisfies a positive linear lower bound
 `c * t ≤ u (x + t • v) + u (x - t • v) - 2 * u x` for all `t ∈ (0, δ)`, then `u` is not
 differentiable at `x`. -/
-theorem not_differentiableAt_of_add_sub_two_mul_ge {V : Type*} [NormedAddCommGroup V]
+theorem not_differentiableAt_of_add_sub_two_mul_ge {V : Type*} [SeminormedAddCommGroup V]
     [NormedSpace ℝ V] {u : V → ℝ} {x v : V} {c δ : ℝ} (hc : 0 < c) (hδ : 0 < δ)
     (h : ∀ t ∈ Set.Ioo 0 δ, c * t ≤ u (x + t • v) + u (x - t • v) - 2 * u x) :
     ¬ DifferentiableAt ℝ u x := fun hd => by
-  have h₁ : HasDerivAt (fun t : ℝ => u (x + t • v)) (fderiv ℝ u x v) 0 := by
-    simpa [Function.comp_def] using ((by simpa using hd.hasFDerivAt :
-      HasFDerivAt u (fderiv ℝ u x) (x + (0 : ℝ) • v)).comp (0 : ℝ)
-      (((hasFDerivAt_id (0 : ℝ)).smul_const v).const_add x)).hasDerivAt
+  have hderiv (w : V) : HasDerivAt (fun t : ℝ => u (x + t • w)) (fderiv ℝ u x w) 0 := by
+    rw [hasDerivAt_iff_isLittleO_nhds_zero]
+    have h1 : (fun y : V => u y - u x - fderiv ℝ u x (y - x)) =o[nhds x] (fun y => y - x) :=
+      hasFDerivAt_iff_isLittleO.1 hd.hasFDerivAt
+    have h2 : Filter.Tendsto (fun t : ℝ => x + t • w) (nhds (0 : ℝ)) (nhds x) := by
+      simpa [Pi.add_def] using
+        ((continuous_const (y := x)).add (continuous_id.smul continuous_const) :
+          Continuous (fun t : ℝ => x + t • w)).tendsto 0
+    have h3 : (fun t : ℝ => (x + t • w) - x) =O[nhds 0] (fun t : ℝ => t) :=
+      Asymptotics.IsBigO.of_bound ‖w‖ (.of_forall fun t => by
+        simp [norm_smul, Real.norm_eq_abs, mul_comm])
+    simpa [Function.comp_def, add_sub_cancel_left, map_smul, smul_eq_mul] using
+      (h1.comp_tendsto h2).trans_isBigO h3
+  have h₁ : HasDerivAt (fun t : ℝ => u (x + t • v)) (fderiv ℝ u x v) 0 := hderiv v
   have h₂ : HasDerivAt (fun t : ℝ => u (x - t • v)) (-fderiv ℝ u x v) 0 := by
-    simpa [Function.comp_def] using ((by simpa using hd.hasFDerivAt :
-      HasFDerivAt u (fderiv ℝ u x) (x - (0 : ℝ) • v)).comp (0 : ℝ)
-      (((hasFDerivAt_id (0 : ℝ)).smul_const v).const_sub x)).hasDerivAt
+    simpa [sub_eq_add_neg, neg_smul] using hderiv (-v)
   refine not_le_of_gt hc
     (ge_of_tendsto (add_neg_cancel (fderiv ℝ u x v) ▸ h₁.add h₂).tendsto_slope_zero_right ?_)
   filter_upwards [Ioo_mem_nhdsGT hδ] with t ht

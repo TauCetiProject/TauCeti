@@ -21,6 +21,7 @@ import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
 import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Finite
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quadratic
 
 /-!
 # Brenier's theorem
@@ -30,7 +31,8 @@ transport cost `c (x, y) = ‖x - y‖ ^ 2 / 2`. **Brenier's theorem** says that
 `μ` is `c - c`-regular (`TauCeti.IsCCRegular`, e.g. a.c.) and the optimal cost is finite, the
 optimal transport plan is unique and is induced by the gradient of a convex function: there is a
 lower semicontinuous convex `u : E → EReal` never taking `⊥`, finite and differentiable `μ`-almost
-everywhere, such that `x ↦ ∇ u (x)` pushes `μ` to `ν` and is the unique optimal transport map.
+everywhere, such that `x ↦ ∇ u (x)` pushes `μ` to `ν` and is the `μ`-almost everywhere unique
+optimal transport map.
 
 The proof avoids Kantorovich duality. The support of an optimal plan of finite cost is
 `c`-cyclically monotone (`TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support`), so by
@@ -204,6 +206,7 @@ theorem IsOptimalCoupling.exists_support_subset_subdifferential [IsFiniteMeasure
   exact ⟨_, convex_epigraph_fenchelConjugate (innerₗ E) g,
     lowerSemicontinuous_fenchelConjugate_innerₗ g, hbot, htop, hsub⟩
 
+omit [InnerProductSpace ℝ E] in
 /-- **Optimal quadratic Wasserstein plans have cyclically monotone support.** If `π` is a coupling
 of a finite measure `μ` and a measure `ν`, both with finite second moments, whose quadratic cost
 realizes the quadratic Wasserstein distance, then its support is cyclically monotone for the cost
@@ -544,6 +547,20 @@ theorem map_swap_eq_graphPlan_gradient_fenchelConjugate (hπ : π.snd = ν) (hν
     (convex_epigraph_fenchelConjugate (innerₗ E) u)
     (ae_mem_subdifferential_fenchelConjugate_map_swap hsub)
 
+private theorem IsCoupling.gradient_fenchelConjugate_comp_ae_eq_id_and (hπ : IsCoupling π μ ν)
+    (hμ : IsCCRegular μ) (hν : IsCCRegular ν) {u : E → EReal}
+    (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
+    (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
+    ((∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal) =ᵐ[μ] id) ∧
+      ((∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) =ᵐ[ν]
+        id) := by
+  have h₁ :=
+    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hsub).2
+  have h₂ := (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub).2
+  rw [h₁] at h₂
+  exact comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
+    (measurable_gradient _).aemeasurable h₂
+
 /-- **Conjugate potentials give inverse maps.** Let `π` couple `μ` and `ν`, both `c - c`-regular
 on a finite-dimensional real inner product
 space, and let `u : E → EReal` have convex real epigraph, with `y ∈ ∂u(x)`
@@ -553,13 +570,8 @@ theorem IsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id (hπ : IsCou
     (hμ : IsCCRegular μ) (hν : IsCCRegular ν) {u : E → EReal}
     (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
     (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
-    (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal) =ᵐ[μ] id := by
-  have h₁ :=
-    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hsub).2
-  have h₂ := (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub).2
-  rw [h₁] at h₂
-  exact (comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
-    (measurable_gradient _).aemeasurable h₂).1
+    (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal) =ᵐ[μ] id :=
+  (hπ.gradient_fenchelConjugate_comp_ae_eq_id_and hμ hν hconv hsub).1
 
 /-- **Conjugate potentials give inverse maps.** Let `π` couple `μ` and `ν`, both `c - c`-regular
 on a finite-dimensional real inner product
@@ -570,13 +582,8 @@ theorem IsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id (hπ : IsCou
     (hμ : IsCCRegular μ) (hν : IsCCRegular ν) {u : E → EReal}
     (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
     (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
-    (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) =ᵐ[ν] id := by
-  have h₁ :=
-    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hsub).2
-  have h₂ := (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub).2
-  rw [h₁] at h₂
-  exact (comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
-    (measurable_gradient _).aemeasurable h₂).2
+    (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) =ᵐ[ν] id :=
+  (hπ.gradient_fenchelConjugate_comp_ae_eq_id_and hμ hν hconv hsub).2
 
 /-- **Uniqueness of the optimal quadratic plan.** Between finite measures on a finite-dimensional
 real inner product space, if the source `μ` is `c - c`-regular
@@ -651,7 +658,8 @@ theorem gradient_ae_eq_gradient_of_hasLaw [IsFiniteMeasure μ] (hμ2 : MemLp id 
 /-- **Brenier's theorem.** Let `μ` be a finite measure and `ν` a measure on a
 finite-dimensional real inner product space `E`, with `μ` `c - c`-regular,
 and suppose the optimal cost for `‖x - y‖ ^ 2 / 2` is finite, as it is for
-laws with finite second moment (`TauCeti.transportCost_norm_sub_sq_div_two_ne_top`); then `ν` is
+finite measures of equal total mass with finite second moment
+(`TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_memLp`); then `ν` is
 finite with `ν univ = μ univ`. Then there is a convex, lower
 semicontinuous `u : E → EReal` that never takes the value `⊥`, is finite near `μ`-almost every
 point and has differentiable real representative there, such that the gradient
@@ -675,8 +683,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient [IsFiniteMeasure μ]
           μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal := by
   have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
     continuous_ofReal_norm_sub_sq_div_two
-  obtain ⟨π, hπ⟩ := (exists_isOptimalCoupling_iff (μ := μ) (ν := ν) hc.lowerSemicontinuous).2
-    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.measure_univ_eq
+  obtain ⟨π, hπ⟩ := exists_isOptimalCoupling_of_transportCost_ne_top hc.lowerSemicontinuous hfin
   obtain ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩ := hπ.exists_eq_graphPlan_gradient hμ hfin
   have hT := measurable_gradient fun x => (u x).toReal
   have hopt_T : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
@@ -722,8 +729,7 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
         =ᵐ[ν] id := by
   have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
     continuous_ofReal_norm_sub_sq_div_two
-  obtain ⟨π, hπ⟩ := (exists_isOptimalCoupling_iff (μ := μ) (ν := ν) hc.lowerSemicontinuous).2
-    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.measure_univ_eq
+  obtain ⟨π, hπ⟩ := exists_isOptimalCoupling_of_transportCost_ne_top hc.lowerSemicontinuous hfin
   obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := hπ.exists_support_subset_subdifferential hfin
   have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
     filter_upwards [π.support_mem_ae] with z hz using hsub hz
@@ -741,13 +747,14 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
     exact hcs ▸ hπ.swap
   have hT := measurable_gradient fun x => (u x).toReal
   have hS := measurable_gradient fun y => (fenchelConjugate (innerₗ E) u y).toReal
+  have hinv := comp_ae_eq_id_of_map_swap_graphPlan_eq hT.aemeasurable hS.aemeasurable
+    (hgraph ▸ hgraph')
   refine ⟨u, hconv, hlsc, hbot, hdiff, hdiff',
     isKantorovichOptimalTransportMap_of_isOptimalCoupling_graphPlan hT.aemeasurable
       hc.measurable.aemeasurable (hgraph ▸ hπ),
     isKantorovichOptimalTransportMap_of_isOptimalCoupling_graphPlan hS.aemeasurable
       hc.measurable.aemeasurable (hgraph' ▸ hswap),
-    hπ.toIsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id hμ hν hconv hsub',
-    hπ.toIsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id hμ hν hconv hsub'⟩
+    hinv.1, hinv.2⟩
 
 /-- **Strict convexity of the quadratic transport cost in the target for `c - c`-regular sources.**
 Whenever `μ` is a finite `c - c`-regular measure and `ν₀ ≠ ν₁` have finite quadratic transport cost
@@ -763,10 +770,8 @@ theorem IsCCRegular.transportCost_smul_add_smul_lt [IsFiniteMeasure μ] (hμ : I
         b * transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν₁ := by
   let c : E × E → ℝ≥0∞ := fun z => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)
   have hc := (continuous_ofReal_norm_sub_sq_div_two (F := E)).lowerSemicontinuous
-  obtain ⟨π₀, hπ₀⟩ := (exists_isOptimalCoupling_iff (μ := μ) (ν := ν₀) hc).2
-    (exists_isCoupling_of_transportCost_ne_top hfin₀).choose_spec.measure_univ_eq
-  obtain ⟨π₁, hπ₁⟩ := (exists_isOptimalCoupling_iff (μ := μ) (ν := ν₁) hc).2
-    (exists_isCoupling_of_transportCost_ne_top hfin₁).choose_spec.measure_univ_eq
+  obtain ⟨π₀, hπ₀⟩ := exists_isOptimalCoupling_of_transportCost_ne_top hc hfin₀
+  obtain ⟨π₁, hπ₁⟩ := exists_isOptimalCoupling_of_transportCost_ne_top hc hfin₁
   have hatop : a ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (hab ▸ le_self_add)
   have hbtop : b ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (hab ▸ le_add_self)
   have hfin_mix : transportCost c μ (a • ν₀ + b • ν₁) ≠ ∞ :=

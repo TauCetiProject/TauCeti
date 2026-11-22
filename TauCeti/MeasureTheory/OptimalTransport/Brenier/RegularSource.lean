@@ -64,7 +64,7 @@ mass with `MemLp id 2 ν` and a quadratic optimal coupling `π` between `μ` and
 form `graphPlan T μ` for any map `T : E → E`. -/
 theorem exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular {μ : Measure E}
     [IsFiniteMeasure μ] (hμ2 : MemLp id 2 μ) (hnot : ¬ IsCCRegular μ) :
-    ∃ (ν : Measure E) (_ : ν univ = μ univ) (_ : MemLp id 2 ν) (π : Measure (E × E)),
+    ∃ (ν : Measure E) (_ : MemLp id 2 ν) (π : Measure (E × E)),
       IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν ∧
         ∀ T : E → E, π ≠ graphPlan T μ := by
   have : MeasurableEq E := ⟨isClosed_diagonal.measurableSet⟩
@@ -98,7 +98,7 @@ theorem exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular {�
         (mem_subdifferential_norm_sq_div_two z.1)
         ((mem_subdifferential_coe_iff (innerₗ E) ψ).2 fun w => by
           simpa only [innerₗ_apply_apply] using hTs z.1 w)) _
-  exact ⟨ν, hπ.measure_univ_eq.symm, hν2, _,
+  exact ⟨ν, hν2, _,
     hπ.isOptimalCoupling_of_ae_mem_subdifferential hμ2 hν2
       (ae_add_measure_iff.2 ⟨hsub hT₁m hT₁s, hsub hT₂m hT₂s⟩),
     smul_graphPlan_add_smul_graphPlan_ne_graphPlan (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)
@@ -109,22 +109,21 @@ theorem exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular {�
 
 /-- **Ambrosio–Gigli Theorem 1.26 (determinism of all optimal plans).** Let `μ` be a finite
 measure with `MemLp id 2 μ` on a finite-dimensional real inner product space `E`. Then `μ` is
-`c - c`-regular if and only if for every measure `ν` on `E` of the same total mass with
-`MemLp id 2 ν`, every optimal quadratic coupling between `μ` and `ν` is induced by a measurable
-transport map. -/
+`c - c`-regular if and only if for every measure `ν` on `E` with `MemLp id 2 ν`, every optimal
+quadratic coupling between `μ` and `ν` is induced by a measurable transport map. -/
 theorem isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan {μ : Measure E}
     [IsFiniteMeasure μ] (hμ2 : MemLp id 2 μ) :
     IsCCRegular μ ↔
-      ∀ (ν : Measure E), ν univ = μ univ → MemLp id 2 ν →
+      ∀ (ν : Measure E), MemLp id 2 ν →
         ∀ π, IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν →
           ∃ T : E → E, Measurable T ∧ π = graphPlan T μ := by
-  refine ⟨fun hμ ν _ hν2 π hπ => ?_, fun hall => by_contra fun hnot => ?_⟩
+  refine ⟨fun hμ ν hν2 π hπ => ?_, fun hall => by_contra fun hnot => ?_⟩
   · have hfin := hπ.toIsCoupling.transportCost_norm_sub_sq_div_two_ne_top hμ2 hν2
     exact let ⟨_, _, _, _, _, hgraph⟩ := hπ.exists_eq_graphPlan_gradient hμ hfin
       ⟨_, measurable_gradient _, hgraph⟩
-  · obtain ⟨ν, hνeq, hν2, π, hπ, hne⟩ :=
+  · obtain ⟨ν, hν2, π, hπ, hne⟩ :=
       exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular hμ2 hnot
-    exact let ⟨T, _, hT⟩ := hall ν hνeq hν2 π hπ; hne T hT
+    exact let ⟨T, _, hT⟩ := hall ν hν2 π hπ; hne T hT
 
 /-- **Ambrosio–Gigli Theorem 1.26 (existence of a unique, map-induced optimal plan).** Let `μ` be a
 finite measure with `MemLp id 2 μ` on a finite-dimensional real inner product space `E`. Then `μ` is
@@ -143,8 +142,8 @@ theorem
             π = graphPlan T μ := by
   refine ⟨fun hμ ν hνeq hν2 => ?_, fun hall =>
     (isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan hμ2).2
-      fun ν hνeq hν2 π hπ => by
-        obtain ⟨T, hT, hiff⟩ := hall ν hνeq hν2
+      fun ν hν2 π hπ => by
+        obtain ⟨T, hT, hiff⟩ := hall ν hπ.toIsCoupling.measure_univ_eq.symm hν2
         exact ⟨hT.aemeasurable.mk T, hT.aemeasurable.measurable_mk,
           ((hiff π).1 hπ).trans (graphPlan_congr hT.aemeasurable.ae_eq_mk)⟩⟩
   have hfin := transportCost_norm_sub_sq_div_two_ne_top_of_memLp hνeq.symm hμ2 hν2
@@ -164,9 +163,9 @@ theorem isCCRegular_iff_forall_isOptimalCoupling_exists_eq_graphPlan (μ : Wasse
           ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) →
         ∃ T : E → E, Measurable T ∧ π = graphPlan T ((μ : ProbabilityMeasure E) : Measure E) := by
   rw [isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan μ.hasFiniteMoment.memLp_id]
-  refine ⟨fun h ν π hπ => h _ (by simp) ν.hasFiniteMoment.memLp_id π hπ,
-    fun h ν hνeq hν2 π hπ => ?_⟩
-  have : IsProbabilityMeasure ν := ⟨by rw [hνeq, measure_univ]⟩
+  refine ⟨fun h ν π hπ => h _ ν.hasFiniteMoment.memLp_id π hπ,
+    fun h ν hν2 π hπ => ?_⟩
+  have : IsProbabilityMeasure ν := ⟨hπ.toIsCoupling.measure_univ_eq.symm.trans measure_univ⟩
   let νP : ProbabilityMeasure E := ⟨ν, inferInstance⟩
   have hmk := h (WassersteinSpace.mk νP (hasFiniteMoment_of_memLp_id hν2)) π
   rw [WassersteinSpace.coe_mk] at hmk; exact hmk hπ

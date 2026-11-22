@@ -123,7 +123,7 @@ theorem vadd_setOf_inner_eq {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F
     map_sub, inner_sub_right, sub_eq_iff_eq_add]
 
 /-- The image of a graph `{x | ⟪x, e⟫ = w (P x)}` over `(ℝ ∙ e)ᗮ` under a continuous linear
-equivalence `L : E ≃L[ℝ] F` is again a graph over `(ℝ ∙ e')ᗮ` (for `e' = ‖L e‖⁻¹ • L e`) of a
+equivalence `L : E ≃L[ℝ] F` is again a graph over `(ℝ ∙ e')ᗮ` for some unit vector `e'` of a
 positively scaled pullback `c * w ∘ B - ℓ`, where `B` and `ℓ` are continuous linear. -/
 theorem image_continuousLinearEquiv_setOf_inner_eq {F : Type*}
     [NormedAddCommGroup F] [InnerProductSpace ℝ F] (L : E ≃L[ℝ] F) {e : E} (he : ‖e‖ = 1)
@@ -169,10 +169,9 @@ theorem image_continuousLinearEquiv_setOf_inner_eq {F : Type*}
 /-- In a one-dimensional real inner product space, every parametric graph over `(ℝ ∙ e)ᗮ` collapses
 to the singleton `{φ 0 • e}`. -/
 theorem range_eq_singleton_of_finrank_eq_one (hdim : Module.finrank ℝ E = 1) {e : E}
-    (he : ‖e‖ = 1) (φ : ↥(ℝ ∙ e)ᗮ → ℝ) :
+    (he : e ≠ 0) (φ : ↥(ℝ ∙ e)ᗮ → ℝ) :
     (Set.range fun y : ↥(ℝ ∙ e)ᗮ => (y : E) + φ y • e) = {φ 0 • e} := by
-  have horth := Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim (v := e)
-    (fun h => by simp [h] at he)
+  have horth := Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim (v := e) he
   ext z
   refine ⟨?_, by rintro rfl; exact ⟨0, by simp⟩⟩
   rintro ⟨y, rfl⟩

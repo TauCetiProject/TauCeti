@@ -26,6 +26,21 @@ open MeasureTheory
 
 namespace TauCeti
 
+section Measurability
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
+  [OpensMeasurableSpace E]
+
+/-- Every `c - c` hypersurface is Borel measurable. -/
+theorem IsCCHypersurface.measurableSet {s : Set E} (hs : IsCCHypersurface s) :
+    MeasurableSet s := hs.isClosed.measurableSet
+
+/-- Every Lipschitz hypersurface is Borel measurable. -/
+theorem IsLipschitzHypersurface.measurableSet {s : Set E} (hs : IsLipschitzHypersurface s) :
+    MeasurableSet s := hs.isClosed.measurableSet
+
+end Measurability
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 

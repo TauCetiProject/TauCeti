@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Analysis.Convex.Continuous
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
@@ -17,19 +16,24 @@ import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
 
 In a real inner product space `E`, a *`c - c` hypersurface* (or *delta-convex hypersurface*) is the
 graph over `(ℝ ∙ e)ᗮ` (for unit `e`) of `f - g` for continuous convex `f, g : ↥(ℝ ∙ e)ᗮ → ℝ`; a
-*Lipschitz hypersurface* is the graph of a globally Lipschitz function. Both classes are closed,
-Borel measurable, and invariant under translations and continuous linear equivalences. In finite
-dimensions, they are equivalently graphs in orthonormal coordinates `E ≃ₗᵢ[ℝ] ℝ^{d-1} ×₂ ℝ`, and in
-dimension one they are precisely the singletons.
+*Lipschitz hypersurface* is the graph of a globally Lipschitz function. Both classes are closed and
+invariant under translations and continuous linear equivalences. In separable spaces, every `c - c`
+hypersurface is covered by countably many Lipschitz hypersurfaces. In finite dimensions, they are
+equivalently graphs in orthonormal coordinates `E ≃ₗᵢ[ℝ] ℝ^{d-1} ×₂ ℝ`, and in dimension one they
+are precisely the singletons.
 
 ## Main declarations
 
 * `TauCeti.IsCCHypersurface`, `TauCeti.IsLipschitzHypersurface` — `c - c` and Lipschitz
-  hypersurfaces, with parametric (`*_iff_exists_eq_range`), orthonormal coordinate
-  (`*_iff_exists_linearIsometryEquiv`), and 1D (`*_iff_exists_eq_singleton`) characterizations.
+  hypersurfaces, with direct graph constructors (`TauCeti.isCCHypersurface_setOf_inner_eq_sub`,
+  `TauCeti.isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith`), parametric
+  (`*_iff_exists_eq_range`), orthonormal coordinate (`*_iff_exists_linearIsometryEquiv`), and 1D
+  (`*_iff_exists_eq_singleton`) characterizations.
 * `TauCeti.isCCHypersurface_vadd_iff`, `TauCeti.isCCHypersurface_image_continuousLinearEquiv_iff`,
   `TauCeti.isLipschitzHypersurface_vadd_iff`,
   `TauCeti.isLipschitzHypersurface_image_continuousLinearEquiv_iff` — affine invariance.
+* `TauCeti.IsCCHypersurface.exists_subset_iUnion_isLipschitzHypersurface` — countable Lipschitz
+  covering of any `c - c` hypersurface in a separable space.
 
 ## References
 
@@ -129,33 +133,40 @@ theorem IsLipschitzHypersurface.nonempty {s : Set E} (hs : IsLipschitzHypersurfa
 theorem not_isLipschitzHypersurface_empty : ¬ IsLipschitzHypersurface (∅ : Set E) :=
   (·.nonempty.ne_empty rfl)
 
+/-- Every graph `{x | ⟪x, e⟫ = f (P x) - g (P x)}` over `(ℝ ∙ e)ᗮ` of a difference of
+continuous convex functions is a `c - c` hypersurface. -/
+theorem isCCHypersurface_setOf_inner_eq_sub {e : E} (he : ‖e‖ = 1) {f g : ↥(ℝ ∙ e)ᗮ → ℝ}
+    (hfc : Continuous f) (hgc : Continuous g) (hf : ConvexOn ℝ univ f) (hg : ConvexOn ℝ univ g) :
+    IsCCHypersurface {x : E | inner ℝ x e =
+      f ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) - g ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} :=
+  ⟨e, he, f, g, hfc, hgc, hf, hg, rfl⟩
+
+/-- Every graph `{x | ⟪x, e⟫ = h (P x)}` over `(ℝ ∙ e)ᗮ` of a globally Lipschitz function is
+a Lipschitz hypersurface. -/
+theorem isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith {e : E} (he : ‖e‖ = 1)
+    {K : ℝ≥0} {h : ↥(ℝ ∙ e)ᗮ → ℝ} (hh : LipschitzWith K h) :
+    IsLipschitzHypersurface {x : E | inner ℝ x e = h ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} :=
+  ⟨e, he, K, h, hh, rfl⟩
+
 /-- Every affine hyperplane `{x | ⟪x, e⟫ = c}` normal to unit `e` is a `c - c` hypersurface. -/
 theorem isCCHypersurface_setOf_inner_eq {e : E} (he : ‖e‖ = 1) (c : ℝ) :
-    IsCCHypersurface {x : E | inner ℝ x e = c} :=
-  ⟨e, he, fun _ => c, fun _ => 0, continuous_const, continuous_const,
-    convexOn_const c convex_univ, convexOn_const 0 convex_univ, by simp⟩
+    IsCCHypersurface {x : E | inner ℝ x e = c} := by
+  simpa using isCCHypersurface_setOf_inner_eq_sub he continuous_const continuous_const
+    (convexOn_const c convex_univ) (convexOn_const 0 convex_univ)
 
 /-- Every affine hyperplane `{x | ⟪x, e⟫ = c}` normal to unit `e` is a Lipschitz hypersurface. -/
 theorem isLipschitzHypersurface_setOf_inner_eq {e : E} (he : ‖e‖ = 1) (c : ℝ) :
     IsLipschitzHypersurface {x : E | inner ℝ x e = c} :=
-  ⟨e, he, 0, fun _ => c, LipschitzWith.const c, by simp⟩
+  isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith he (LipschitzWith.const c)
 
 /-- Every `c - c` hypersurface is closed. -/
 theorem IsCCHypersurface.isClosed {s : Set E} (hs : IsCCHypersurface s) : IsClosed s :=
   let ⟨_, _, _, _, hfc, hgc, _, _, hs'⟩ := hs; hs' ▸ isClosed_eq (by fun_prop) (by fun_prop)
 
-/-- Every `c - c` hypersurface is Borel measurable. -/
-theorem IsCCHypersurface.measurableSet [MeasurableSpace E] [OpensMeasurableSpace E] {s : Set E}
-    (hs : IsCCHypersurface s) : MeasurableSet s := hs.isClosed.measurableSet
-
 /-- Every Lipschitz hypersurface is closed. -/
 theorem IsLipschitzHypersurface.isClosed {s : Set E} (hs : IsLipschitzHypersurface s) :
     IsClosed s :=
   let ⟨_, _, _, _, hh, h⟩ := hs; h ▸ isClosed_eq (by fun_prop) (hh.continuous.comp (by fun_prop))
-
-/-- Every Lipschitz hypersurface is Borel measurable. -/
-theorem IsLipschitzHypersurface.measurableSet [MeasurableSpace E] [OpensMeasurableSpace E]
-    {s : Set E} (hs : IsLipschitzHypersurface s) : MeasurableSet s := hs.isClosed.measurableSet
 
 /-- Translates of `c - c` hypersurfaces are `c - c` hypersurfaces. -/
 theorem IsCCHypersurface.vadd {s : Set E} (hs : IsCCHypersurface s) (v : E) :
@@ -164,10 +175,15 @@ theorem IsCCHypersurface.vadd {s : Set E} (hs : IsCCHypersurface s) (v : E) :
   let v₀ := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto v
   have hsub {w : ↥(ℝ ∙ e)ᗮ → ℝ} (hw : ConvexOn ℝ univ w) : ConvexOn ℝ univ (w ∘ (· - v₀)) := by
     simpa [Function.comp_def, sub_eq_add_neg] using hw.translate_left (-v₀)
-  exact ⟨e, he, fun y => f (y - v₀) + inner ℝ v e, fun y => g (y - v₀), by fun_prop, by fun_prop,
-    (hsub hf).add_const _, hsub hg,
-    by simpa [v₀, real_inner_comm e, sub_add_eq_add_sub] using
-      vadd_setOf_inner_eq (𝕜 := ℝ) e v (fun y => f y - g y)⟩
+  have heq : v +ᵥ {x : E | inner ℝ x e =
+        f ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) - g ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} =
+      {x : E | inner ℝ x e =
+        (f ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x - v₀) + inner ℝ v e) -
+          g ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x - v₀)} := by
+    simpa [v₀, real_inner_comm e, sub_add_eq_add_sub] using
+      vadd_setOf_inner_eq (𝕜 := ℝ) e v (fun y => f y - g y)
+  exact heq ▸ isCCHypersurface_setOf_inner_eq_sub he (by fun_prop) (by fun_prop)
+    ((hsub hf).add_const _) (hsub hg)
 
 /-- A translate `v +ᵥ s` is a `c - c` hypersurface if and only if `s` is. -/
 @[simp]
@@ -177,12 +193,16 @@ theorem isCCHypersurface_vadd_iff {s : Set E} {v : E} :
 
 /-- Translates of Lipschitz hypersurfaces are Lipschitz hypersurfaces. -/
 theorem IsLipschitzHypersurface.vadd {s : Set E} (hs : IsLipschitzHypersurface s) (v : E) :
-    IsLipschitzHypersurface (v +ᵥ s) :=
-  let ⟨e, he, K, h, hh, hs'⟩ := hs
+    IsLipschitzHypersurface (v +ᵥ s) := by
+  obtain ⟨e, he, K, h, hh, rfl⟩ := hs
   let v₀ := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto v
-  hs' ▸ ⟨e, he, K, fun y => h (y - v₀) + inner ℝ v e,
-    ((hh.comp (LipschitzWith.id.sub (.const v₀))).add (.const _)).weaken (by simp),
-    by simpa [v₀, real_inner_comm e] using vadd_setOf_inner_eq (𝕜 := ℝ) e v h⟩
+  have heq : v +ᵥ {x : E | inner ℝ x e = h ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} =
+      {x : E | inner ℝ x e = h ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x - v₀) + inner ℝ v e} := by
+    simpa [v₀, real_inner_comm e] using vadd_setOf_inner_eq (𝕜 := ℝ) e v h
+  exact heq ▸ isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith he
+    (LipschitzWith.of_dist_le_mul fun a b =>
+      (dist_add_right _ _ _).le.trans ((hh.dist_le_mul (a - v₀) (b - v₀)).trans_eq
+        (by rw [dist_sub_right])))
 
 /-- A translate `v +ᵥ s` is a Lipschitz hypersurface if and only if `s` is. -/
 @[simp]
@@ -197,10 +217,16 @@ theorem IsCCHypersurface.image_continuousLinearEquiv {F : Type*} [NormedAddCommG
   obtain ⟨e, he, f, g, hfc, hgc, hf, hg, rfl⟩ := hs
   obtain ⟨e', he', c, hc, B, ℓ, himg⟩ :=
     image_continuousLinearEquiv_setOf_inner_eq L he (fun y => f y - g y)
-  exact ⟨e', he', fun y => c * f (B y), fun y => c * g (B y) + ℓ y, by fun_prop, by fun_prop,
-    (hf.comp_linearMap B.toLinearMap).smul hc.le,
-    ((hg.comp_linearMap B.toLinearMap).smul hc.le).add
-      ⟨convex_univ, fun _ _ _ _ _ _ _ _ _ => by simp⟩, by simpa only [mul_sub, sub_sub] using himg⟩
+  have heq : L '' {x : E | inner ℝ x e =
+        f ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) - g ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} =
+      {z : F | inner ℝ z e' = c * f (B ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z)) -
+        (c * g (B ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z)) +
+          ℓ ((ℝ ∙ e')ᗮ.orthogonalProjectionOnto z))} := by
+    simpa only [mul_sub, sub_sub] using himg
+  exact heq ▸ isCCHypersurface_setOf_inner_eq_sub he' (by fun_prop) (by fun_prop)
+    ((hf.comp_linearMap B.toLinearMap).smul hc.le)
+    (((hg.comp_linearMap B.toLinearMap).smul hc.le).add
+      ⟨convex_univ, fun _ _ _ _ _ _ _ _ _ => by simp⟩)
 
 /-- Images under continuous linear equivalences preserve `c - c` hypersurfaces. -/
 @[simp]
@@ -231,7 +257,8 @@ theorem IsLipschitzHypersurface.image_continuousLinearEquiv {F : Type*} [NormedA
   obtain ⟨e', he', c, hc, B, ℓ, himg⟩ := image_continuousLinearEquiv_setOf_inner_eq L he h
   have hmul : LipschitzWith ⟨c, hc.le⟩ (c * ·) := LipschitzWith.of_dist_le_mul fun _ _ =>
     by rw [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos hc, Real.dist_eq]; exact le_rfl
-  exact ⟨e', he', _, _, (hmul.comp (hh.comp B.lipschitzWith)).sub ℓ.lipschitzWith, himg⟩
+  exact himg ▸ isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith he'
+    ((hmul.comp (hh.comp B.lipschitzWith)).sub ℓ.lipschitzWith)
 
 /-- Images under continuous linear equivalences preserve Lipschitz hypersurfaces. -/
 @[simp]
@@ -256,6 +283,41 @@ theorem isLipschitzHypersurface_image_linearIsometryEquiv_iff {F : Type*} [Norme
 
 end Defs
 
+section LipschitzCover
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [TopologicalSpace.SeparableSpace E]
+
+/-- Every `c - c` hypersurface in a separable real inner product space is covered by countably many
+Lipschitz hypersurfaces. -/
+theorem IsCCHypersurface.exists_subset_iUnion_isLipschitzHypersurface {s : Set E}
+    (hs : IsCCHypersurface s) :
+    ∃ t : ℕ → Set E, (∀ n, IsLipschitzHypersurface (t n)) ∧ s ⊆ ⋃ n, t n := by
+  obtain ⟨e, he, f, g, hfc, hgc, hf, hg, rfl⟩ := isCCHypersurface_def.1 hs
+  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
+  have hloc_f := (hf.locallyLipschitzOn_iff_continuousOn isOpen_univ).2 hfc.continuousOn
+  have hloc_g := (hg.locallyLipschitzOn_iff_continuousOn isOpen_univ).2 hgc.continuousOn
+  choose Kf Uf hUf hLf using fun y => hloc_f (mem_univ y)
+  choose Kg Ug hUg hLg using fun y => hloc_g (mem_univ y)
+  have hU_nhds (y : ↥(ℝ ∙ e)ᗮ) : Uf y ∩ Ug y ∈ nhds y := by
+    rw [← nhdsWithin_univ]
+    exact Filter.inter_mem (hUf y) (hUg y)
+  choose h hhLip hhEq using fun y =>
+    (((hLf y).mono inter_subset_left).sub ((hLg y).mono inter_subset_right)).extend_real
+  obtain ⟨C, hC_count, hC_cov⟩ := TopologicalSpace.countable_cover_nhds hU_nhds
+  have hC_ne : C.Nonempty := by
+    by_contra hC0
+    rw [not_nonempty_iff_eq_empty.1 hC0, biUnion_empty] at hC_cov
+    exact absurd hC_cov empty_ne_univ
+  obtain ⟨y, rfl⟩ := hC_count.exists_eq_range hC_ne
+  refine ⟨fun n => {x | inner ℝ x e = h (y n) (P x)},
+    fun n => isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith he (hhLip (y n)),
+    fun x hx => ?_⟩
+  obtain ⟨_, ⟨n, rfl⟩, hn⟩ := mem_iUnion₂.1 (hC_cov.symm ▸ mem_univ (P x))
+  exact mem_iUnion.2 ⟨n, by simpa [← hhEq (y n) hn] using hx⟩
+
+end LipschitzCover
+
 section Coordinates
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -274,11 +336,14 @@ theorem isCCHypersurface_iff_exists_linearIsometryEquiv [FiniteDimensional ℝ E
     exact ⟨Φ, f ∘ ψ.symm, g ∘ ψ.symm, hf.comp_linearMap ψ.symm.toLinearMap,
       hg.comp_linearMap ψ.symm.toLinearMap, by rw [hs]; ext x; simp [hfst, hsnd]⟩
   · obtain ⟨e, he, ψ, hfst, hsnd⟩ := exists_unit_of_linearIsometryEquiv Φ
-    exact ⟨e, he, f ∘ ψ, g ∘ ψ,
-      (continuousOn_univ.1 (hf.continuousOn isOpen_univ)).comp ψ.continuous,
-      (continuousOn_univ.1 (hg.continuousOn isOpen_univ)).comp ψ.continuous,
-      hf.comp_linearMap ψ.toLinearMap, hg.comp_linearMap ψ.toLinearMap,
-      by rw [hs]; ext x; simp [hfst, hsnd]⟩
+    have hs' : s = {x : E | inner ℝ x e =
+        (f ∘ ψ) ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) -
+          (g ∘ ψ) ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} := by
+      rw [hs]; ext x; simp [hfst, hsnd]
+    exact hs' ▸ isCCHypersurface_setOf_inner_eq_sub he
+      ((continuousOn_univ.1 (hf.continuousOn isOpen_univ)).comp ψ.continuous)
+      ((continuousOn_univ.1 (hg.continuousOn isOpen_univ)).comp ψ.continuous)
+      (hf.comp_linearMap ψ.toLinearMap) (hg.comp_linearMap ψ.toLinearMap)
 
 /-- **Orthonormal coordinate characterization of Lipschitz hypersurfaces.** In finite dimension `d`,
 `s ⊆ E` is a Lipschitz hypersurface iff in some orthonormal splitting `Φ : E ≃ₗᵢ[ℝ] ℝ^{d-1} ×₂ ℝ`
@@ -293,15 +358,18 @@ theorem isLipschitzHypersurface_iff_exists_linearIsometryEquiv [FiniteDimensiona
     exact ⟨Φ, K, h ∘ ψ.symm, by simpa using hh.comp ψ.symm.lipschitzWith,
       by rw [hs]; ext x; simp [hfst, hsnd]⟩
   · obtain ⟨e, he, ψ, hfst, hsnd⟩ := exists_unit_of_linearIsometryEquiv Φ
-    exact ⟨e, he, K, h ∘ ψ, by simpa using hh.comp ψ.lipschitzWith,
-      by rw [hs]; ext x; simp [hfst, hsnd]⟩
+    have hs' : s = {x : E | inner ℝ x e = (h ∘ ψ) ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)} := by
+      rw [hs]; ext x; simp [hfst, hsnd]
+    exact hs' ▸ isLipschitzHypersurface_setOf_inner_eq_of_lipschitzWith he
+      (by simpa using hh.comp ψ.lipschitzWith)
 
 /-- **Dimension-one characterization of `c - c` hypersurfaces.** In a one-dimensional real inner
 product space, the `c - c` hypersurfaces are precisely the singletons. -/
 theorem isCCHypersurface_iff_exists_eq_singleton (hdim : Module.finrank ℝ E = 1) {s : Set E} :
     IsCCHypersurface s ↔ ∃ x : E, s = {x} :=
   ⟨fun hs => let ⟨_, he, f, g, _, _, _, _, h⟩ := isCCHypersurface_iff_exists_eq_range.1 hs
-    ⟨_, h.trans (range_eq_singleton_of_finrank_eq_one hdim he (fun y => f y - g y))⟩,
+    ⟨_, h.trans (range_eq_singleton_of_finrank_eq_one hdim (fun h0 => by simp [h0] at he)
+      (fun y => f y - g y))⟩,
    fun ⟨x, hx⟩ => let ⟨_, he, heq⟩ := exists_unit_singleton_eq_setOf_inner_eq hdim x
     hx ▸ heq ▸ isCCHypersurface_setOf_inner_eq he _⟩
 
@@ -310,7 +378,7 @@ product space, the Lipschitz hypersurfaces are precisely the singletons. -/
 theorem isLipschitzHypersurface_iff_exists_eq_singleton (hdim : Module.finrank ℝ E = 1)
     {s : Set E} : IsLipschitzHypersurface s ↔ ∃ x : E, s = {x} :=
   ⟨fun hs => let ⟨_, he, _, h, _, hs'⟩ := isLipschitzHypersurface_iff_exists_eq_range.1 hs
-    ⟨_, hs'.trans (range_eq_singleton_of_finrank_eq_one hdim he h)⟩,
+    ⟨_, hs'.trans (range_eq_singleton_of_finrank_eq_one hdim (fun h0 => by simp [h0] at he) h)⟩,
    fun ⟨x, hx⟩ => let ⟨_, he, heq⟩ := exists_unit_singleton_eq_setOf_inner_eq hdim x
     hx ▸ heq ▸ isLipschitzHypersurface_setOf_inner_eq he _⟩
 

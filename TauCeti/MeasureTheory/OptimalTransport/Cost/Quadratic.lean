@@ -140,6 +140,48 @@ theorem isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two
     ENNReal.inv_mul_cancel_left two_ne_zero ENNReal.ofNat_ne_top] using
     hπ.const_mul (a := 2⁻¹) (ENNReal.inv_ne_top.2 two_ne_zero)
 
+/-- **Coupled measures with finite second moments have finite quadratic transport cost.** -/
+theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top {μ ν : Measure F}
+    {σ : Measure (F × F)} (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
+    transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+  have hl {g : Measure F} (hg : MemLp id 2 g) : ∫⁻ x : F, ‖x‖ₑ ^ (2 : ℝ) ∂g < ⊤ := by
+    have h := eLpNorm_eq_lintegral_rpow_eNorm_toReal (μ := g) (f := id)
+      two_ne_zero ENNReal.ofNat_ne_top hg.aestronglyMeasurable
+    rw [ENNReal.toReal_ofNat] at h
+    have hlt : eLpNorm (id : F → F) 2 g ^ (2 : ℝ) < ⊤ :=
+      ENNReal.rpow_lt_top_of_nonneg (by positivity) hg.eLpNorm_ne_top
+    rwa [h, ← ENNReal.rpow_mul, one_div, inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one] at hlt
+  have hae₁ : AEMeasurable (fun x : F => ‖x‖ₑ ^ (2 : ℝ)) μ :=
+    hμ.aestronglyMeasurable.eNorm.pow_const _
+  have hae₂ : AEMeasurable (fun y : F => ‖y‖ₑ ^ (2 : ℝ)) ν :=
+    hν.aestronglyMeasurable.eNorm.pow_const _
+  have h1 : ∫⁻ z : F × F, ‖z.1‖ₑ ^ (2 : ℝ) ∂σ = ∫⁻ x : F, ‖x‖ₑ ^ (2 : ℝ) ∂μ :=
+    MeasurePreserving.lintegral_comp' hσ.measurePreserving_fst hae₁
+  have h2 : ∫⁻ z : F × F, ‖z.2‖ₑ ^ (2 : ℝ) ∂σ = ∫⁻ y : F, ‖y‖ₑ ^ (2 : ℝ) ∂ν :=
+    MeasurePreserving.lintegral_comp' hσ.measurePreserving_snd hae₂
+  have h1m : AEMeasurable (fun z : F × F => ‖z.1‖ₑ ^ (2 : ℝ)) σ :=
+    hae₁.comp_quasiMeasurePreserving hσ.measurePreserving_fst.quasiMeasurePreserving
+  refine ((transportCost_le_lintegral hσ _).trans_lt ?_).ne
+  calc ∫⁻ z : F × F, ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ∂σ
+      ≤ ∫⁻ z : F × F, (‖z.1‖ₑ ^ (2 : ℝ) + ‖z.2‖ₑ ^ (2 : ℝ)) ∂σ := by
+        refine lintegral_mono fun z => ?_
+        have hn (w : F) : (‖w‖ₑ ^ (2 : ℝ)) = ENNReal.ofReal (‖w‖ ^ 2) := by
+          rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, ENNReal.rpow_natCast,
+            ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg w)]
+        rw [hn, hn, ← ENNReal.ofReal_add (by positivity) (by positivity)]
+        exact ENNReal.ofReal_le_ofReal <| by
+          nlinarith [norm_sub_le z.1 z.2, norm_nonneg (z.1 - z.2), sq_nonneg (‖z.1‖ - ‖z.2‖)]
+    _ = ∫⁻ z : F × F, ‖z.1‖ₑ ^ (2 : ℝ) ∂σ + ∫⁻ z : F × F, ‖z.2‖ₑ ^ (2 : ℝ) ∂σ :=
+        lintegral_add_left' h1m _
+    _ < ⊤ := by rw [h1, h2]; exact ENNReal.add_lt_top.2 ⟨hl hμ, hl hν⟩
+
+/-- **Equal-mass finite measures with finite second moments have finite quadratic transport cost.**
+-/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_memLp {μ ν : Measure F} [IsFiniteMeasure μ]
+    (hμν : μ Set.univ = ν Set.univ) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
+    transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ :=
+  (isCoupling_inv_smul_prod hμν).transportCost_norm_sub_sq_div_two_ne_top hμ hν
+
 end TauCeti
 
 namespace TauCeti
@@ -230,20 +272,6 @@ theorem _root_.ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two {α : Type
     (continuous_ofReal_norm_sub_sq_div_two.comp_aestronglyMeasurable (h₁.prodMk h₂)).aemeasurable
   refine (lintegral_map' hcost hpair).symm.trans ?_
   rw [hσ.lintegral_norm_sub_sq_div_two hμ hν, integral_map hpair (h₁.inner h₂)]
-
-/-- **Coupled measures with finite second moments have finite quadratic transport cost.** -/
-theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top (hσ : IsCoupling σ μ ν)
-    (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
-    transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ :=
-  ne_top_of_le_ne_top (hσ.lintegral_norm_sub_sq_div_two hμ hν ▸ ENNReal.ofReal_ne_top)
-    (transportCost_le_lintegral hσ _)
-
-/-- **Equal-mass finite measures with finite second moments have finite quadratic transport cost.**
--/
-theorem transportCost_norm_sub_sq_div_two_ne_top_of_memLp [IsFiniteMeasure μ]
-    (hμν : μ Set.univ = ν Set.univ) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
-    transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ :=
-  (isCoupling_inv_smul_prod hμν).transportCost_norm_sub_sq_div_two_ne_top hμ hν
 
 end TauCeti
 

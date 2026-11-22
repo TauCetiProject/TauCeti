@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.FunctionTopology
 public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.MetricSpace.Lipschitz
@@ -37,7 +38,11 @@ shifted to `(1 + ε) v + b` so that it passes from above to below an arbitrary f
 For a family of Lipschitz convex functions `ψ i` vanishing at `0` with Lipschitz constants `K i`
 and nonnegative weights `w i` satisfying `Summable (fun i => w i * K i)`, the weighted series
 `∑' i, w i * ψ i x` converges everywhere and is convex on `univ`
-(`TauCeti.summable_and_convexOn_tsum_weighted`).
+(`TauCeti.summable_and_convexOn_tsum_weighted`), and its symmetric second differences bound those
+of any individual summand (`TauCeti.mul_add_sub_two_mul_le_tsum_weighted`).
+
+A consistent bounded-slope family of supporting hyperplanes interpolates to a globally convex
+Lipschitz function (`TauCeti.exists_convexOn_lipschitzWith_apply_eq`).
 -/
 
 public section
@@ -132,6 +137,81 @@ theorem summable_and_convexOn_tsum_weighted {ι E : Type*} [SeminormedAddCommGro
   have hc := (hconv i).2 (mem_univ x) (mem_univ y) ha hb hab
   simp only [smul_eq_mul] at hc
   linarith [mul_le_mul_of_nonneg_left hc (hw i)]
+
+/-- **Weighted series of convex functions: single-term symmetric second-difference lower bound.**
+For a weighted series of convex functions with nonnegative weights `w i ≥ 0` that converges at `x`,
+`x + v`, and `x - v`, the symmetric second difference of the sum at `x` along `v` is at least that
+of any individual term `i₀`. -/
+theorem mul_add_sub_two_mul_le_tsum_weighted {ι E : Type*} [AddCommGroup E] [Module ℝ E]
+    {ψ : ι → E → ℝ} {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (hconv : ∀ i, ConvexOn ℝ univ (ψ i))
+    {x v : E} (hadd : Summable fun i => w i * ψ i (x + v))
+    (hsub : Summable fun i => w i * ψ i (x - v)) (hx : Summable fun i => w i * ψ i x) (i₀ : ι) :
+    w i₀ * (ψ i₀ (x + v) + ψ i₀ (x - v) - 2 * ψ i₀ x) ≤
+      (∑' i, w i * ψ i (x + v)) + (∑' i, w i * ψ i (x - v)) - 2 * (∑' i, w i * ψ i x) := by
+  have htsum_eq :
+      (∑' i, w i * ψ i (x + v)) + (∑' i, w i * ψ i (x - v)) - 2 * (∑' i, w i * ψ i x) =
+        ∑' i, w i * (ψ i (x + v) + ψ i (x - v) - 2 * ψ i x) := by
+    rw [← Summable.tsum_add hadd hsub, ← tsum_mul_left,
+      ← Summable.tsum_sub (hadd.add hsub) (hx.mul_left 2)]
+    congr 1
+    ext i
+    ring
+  have hterm : Summable fun i => w i * (ψ i (x + v) + ψ i (x - v) - 2 * ψ i x) :=
+    ((hadd.add hsub).sub (hx.mul_left 2)).congr fun i => by ring
+  rw [htsum_eq]
+  refine Summable.le_tsum hterm i₀ fun i _ => mul_nonneg (hw i) ?_
+  have hmid := (hconv i).2 (mem_univ (x + v)) (mem_univ (x - v))
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
+  have hxmid : (1 / 2 : ℝ) • (x + v) + (1 / 2 : ℝ) • (x - v) = x := by
+    rw [smul_add, smul_sub]
+    module
+  rw [hxmid] at hmid
+  simp only [smul_eq_mul] at hmid
+  linarith
+
+/-- **Global convex Lipschitz interpolation of consistent supporting hyperplanes.** Given an
+indexed family of points `x : ι → E`, values `a : ι → ℝ`, and slopes `p : ι → E` bounded in norm by
+`L : NNReal` such that every affine function `y ↦ a i + ⟪y - x i, p i⟫` lies below `a j` at `x j`,
+there exists a globally convex, `L`-Lipschitz function `F : E → ℝ` satisfying `F (x i) = a i` for
+every `i`. -/
+theorem exists_convexOn_lipschitzWith_apply_eq {E : Type*} [SeminormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {ι : Sort*} {x p : ι → E} {a : ι → ℝ} {L : NNReal}
+    (hp : ∀ i, ‖p i‖ ≤ L) (hsub : ∀ i j, a i + inner ℝ (x j - x i) (p i) ≤ a j) :
+    ∃ F : E → ℝ, ConvexOn ℝ univ F ∧ LipschitzWith L F ∧ ∀ i, F (x i) = a i := by
+  by_cases hι : Nonempty ι
+  · have : Nonempty ι := hι
+    obtain ⟨i₀⟩ := hι
+    let g : ι → E → ℝ := fun i y => a i + inner ℝ (y - x i) (p i)
+    have hlip (i : ι) (y₁ y₂ : E) : g i y₁ ≤ g i y₂ + (L : ℝ) * dist y₁ y₂ := by
+      have hs : g i y₁ = g i y₂ + inner ℝ (y₁ - y₂) (p i) := by
+        simp only [g, inner_sub_left]; ring
+      have hcs : inner ℝ (y₁ - y₂) (p i) ≤ (L : ℝ) * dist y₁ y₂ :=
+        (real_inner_le_norm (y₁ - y₂) (p i)).trans (by
+          rw [mul_comm, ← dist_eq_norm]; exact mul_le_mul_of_nonneg_right (hp i) dist_nonneg)
+      linarith
+    have hbdd (y : E) : BddAbove (range fun i : ι => g i y) :=
+      ⟨a i₀ + (L : ℝ) * dist y (x i₀), forall_mem_range.2 fun i =>
+        (hlip i y (x i₀)).trans (add_le_add (hsub i i₀) le_rfl)⟩
+    let F : E → ℝ := fun y => ⨆ i : ι, g i y
+    have hstep (y₁ y₂ : E) : F y₁ - F y₂ ≤ (L : ℝ) * dist y₁ y₂ :=
+      sub_le_iff_le_add'.2 <| ciSup_le fun i =>
+        (hlip i y₁ y₂).trans (add_le_add (le_ciSup (hbdd y₂) i) le_rfl)
+    refine ⟨F, ⟨convex_univ, fun y₁ _ y₂ _ t₁ t₂ ht₁ ht₂ hsum => ciSup_le fun i => ?_⟩,
+      lipschitzWith_iff_dist_le_mul.2 fun y₁ y₂ => (Real.dist_eq _ _).trans_le
+        (abs_sub_le_iff.2 ⟨hstep y₁ y₂, dist_comm y₁ y₂ ▸ hstep y₂ y₁⟩),
+      fun j => le_antisymm (ciSup_le fun i => hsub i j)
+        (by simpa [g] using le_ciSup (hbdd (x j)) j)⟩
+    have haff : g i (t₁ • y₁ + t₂ • y₂) = t₁ * g i y₁ + t₂ * g i y₂ := by
+      simp only [g, inner_sub_left, inner_add_left, real_inner_smul_left]
+      calc a i + (t₁ * inner ℝ y₁ (p i) + t₂ * inner ℝ y₂ (p i) - inner ℝ (x i) (p i))
+          = (t₁ + t₂) * a i + (t₁ * inner ℝ y₁ (p i) + t₂ * inner ℝ y₂ (p i) -
+              (t₁ + t₂) * inner ℝ (x i) (p i)) := by simp only [hsum, one_mul]
+        _ = t₁ * (a i + (inner ℝ y₁ (p i) - inner ℝ (x i) (p i))) +
+              t₂ * (a i + (inner ℝ y₂ (p i) - inner ℝ (x i) (p i))) := by ring
+    exact haff.le.trans (add_le_add (mul_le_mul_of_nonneg_left (le_ciSup (hbdd y₁) i) ht₁)
+      (mul_le_mul_of_nonneg_left (le_ciSup (hbdd y₂) i) ht₂))
+  · exact ⟨0, convexOn_const 0 convex_univ, (LipschitzWith.const (0 : ℝ)).weaken bot_le,
+      fun i => False.elim (hι ⟨i⟩)⟩
 
 end TauCeti
 

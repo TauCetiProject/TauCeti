@@ -15,7 +15,7 @@ Every real function convex on an open subset `Ω` of a finite-dimensional real i
 admits a Borel measurable selection of subgradients relative to `Ω`
 (`ConvexOn.exists_measurable_forall_add_inner_le`), obtained via the closed-graph measurable
 selection theorem (`IsClosed.exists_measurable_forall_mem`). We also record a piecewise measurable
-selection helper for the maximum of two continuous functions
+selection helper for the maximum of two measurable functions
 (`TauCeti.exists_measurable_piecewise_subgradient_max`).
 -/
 
@@ -51,14 +51,14 @@ theorem _root_.ConvexOn.exists_measurable_forall_add_inner_le {E : Type*} [Norme
       simpa only [dite_eq_left hx] using hS ⟨x, hx⟩ y hy⟩
 
 /-- **Piecewise measurable subgradient selection for a maximum of two functions.** Given two
-continuous functions `u₁, u₂ : E → ℝ` and Borel measurable maps `b₁, b₂ : E → E` that supply
-subgradients of `max (u₁ ·) (u₂ ·)` wherever `u₂ ≤ u₁` (resp. `u₁ ≤ u₂`), there exist two Borel
+measurable functions `u₁, u₂ : E → ℝ` and measurable maps `b₁, b₂ : E → E` that supply
+subgradients of `max (u₁ ·) (u₂ ·)` wherever `u₂ ≤ u₁` (resp. `u₁ ≤ u₂`), there exist two
 measurable subgradient selections `T₁, T₂` everywhere that coincide with `b₁` and `b₂` on the
 tie locus `{x | u₁ x = u₂ x}`. -/
 theorem exists_measurable_piecewise_subgradient_max {E : Type*} [SeminormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [InnerProductSpace ℝ E] [MeasurableSpace E]
     {u₁ u₂ : E → ℝ} {b₁ b₂ : E → E}
-    (hu₁ : Continuous u₁) (hu₂ : Continuous u₂) (hb₁ : Measurable b₁) (hb₂ : Measurable b₂)
+    (hu₁ : Measurable u₁) (hu₂ : Measurable u₂) (hb₁ : Measurable b₁) (hb₂ : Measurable b₂)
     (h₁ : ∀ x z, u₂ x ≤ u₁ x → max (u₁ x) (u₂ x) + inner ℝ (z - x) (b₁ x) ≤ max (u₁ z) (u₂ z))
     (h₂ : ∀ x z, u₁ x ≤ u₂ x → max (u₁ x) (u₂ x) + inner ℝ (z - x) (b₂ x) ≤ max (u₁ z) (u₂ z)) :
     ∃ T₁ T₂ : E → E, Measurable T₁ ∧ Measurable T₂ ∧
@@ -67,8 +67,8 @@ theorem exists_measurable_piecewise_subgradient_max {E : Type*} [SeminormedAddCo
       (∀ x, u₁ x = u₂ x → T₁ x = b₁ x ∧ T₂ x = b₂ x) := by
   classical
   exact ⟨fun x => if u₂ x ≤ u₁ x then b₁ x else b₂ x, fun x => if u₁ x ≤ u₂ x then b₂ x else b₁ x,
-    Measurable.ite (isClosed_le hu₂ hu₁).measurableSet hb₁ hb₂,
-    Measurable.ite (isClosed_le hu₁ hu₂).measurableSet hb₂ hb₁,
+    Measurable.ite (measurableSet_le hu₂ hu₁) hb₁ hb₂,
+    Measurable.ite (measurableSet_le hu₁ hu₂) hb₂ hb₁,
     fun x z => by dsimp only; split_ifs with hx; exacts [h₁ x z hx, h₂ x z (le_of_not_ge hx)],
     fun x z => by dsimp only; split_ifs with hx; exacts [h₂ x z hx, h₁ x z (le_of_not_ge hx)],
     fun x heq => by simp [heq]⟩

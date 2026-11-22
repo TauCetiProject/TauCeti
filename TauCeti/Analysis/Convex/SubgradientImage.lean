@@ -13,6 +13,7 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Analysis.Convex.Function.Topology
 
 /-!
 # Compactness of subgradient images of convex functions
@@ -54,10 +55,9 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
   bounded in terms of a bound for `|u|` on a ball about `x` inside `Ω`;
 * `LipschitzWith.norm_le_of_forall_add_inner_le` — a global subgradient of a `K`-Lipschitz
   function has norm at most `K`;
-* `TauCeti.exists_convexOn_lipschitzWith_apply_eq` — a consistent bounded-slope family of
-  supporting hyperplanes interpolates to a globally convex Lipschitz function;
-* `TauCeti.exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner` — specialization to bounded
-  subgradients of `u : E → EReal` with fixed component along a unit vector `e`;
+* `TauCeti.exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner` — specialization of
+  `TauCeti.exists_convexOn_lipschitzWith_apply_eq` to bounded subgradients of `u : E → EReal` with
+  fixed component along a unit vector `e`;
 * `TauCeti.exists_norm_le_of_mem_subdifferential` — the subgradients of `f` are bounded over
   compact subsets of `D`;
 * `TauCeti.isClosed_setOf_mem_subdifferential` — the graph of the subdifferential over a closed
@@ -148,40 +148,6 @@ theorem _root_.LipschitzWith.norm_le_of_forall_add_inner_le {u : E → ℝ} {K :
     rw [Real.dist_eq, dist_eq_norm, add_sub_cancel_left] at h2
     nlinarith [(le_abs_self _).trans h2]
 
-/-- **Global convex Lipschitz interpolation of consistent supporting hyperplanes.** Given a nonempty
-indexed family of points `x : ι → E`, values `a : ι → ℝ`, and slopes `p : ι → E` bounded in norm by
-`L : NNReal` such that every affine function `y ↦ a i + ⟪y - x i, p i⟫` lies below `a j` at `x j`,
-there exists a globally convex, `L`-Lipschitz function `F : E → ℝ` satisfying `F (x i) = a i` for
-every `i`. -/
-theorem exists_convexOn_lipschitzWith_apply_eq {ι : Sort*} [Nonempty ι] {x p : ι → E}
-    {a : ι → ℝ} {L : NNReal} (hp : ∀ i, ‖p i‖ ≤ L)
-    (hsub : ∀ i j, a i + inner ℝ (x j - x i) (p i) ≤ a j) :
-    ∃ F : E → ℝ, ConvexOn ℝ univ F ∧ LipschitzWith L F ∧ ∀ i, F (x i) = a i := by
-  obtain ⟨i₀⟩ := ‹Nonempty ι›
-  let g : ι → E → ℝ := fun i y => a i + inner ℝ (y - x i) (p i)
-  have hlip (i : ι) (y₁ y₂ : E) : g i y₁ ≤ g i y₂ + (L : ℝ) * dist y₁ y₂ := by
-    have hs : g i y₁ = g i y₂ + inner ℝ (y₁ - y₂) (p i) := by simp only [g, inner_sub_left]; ring
-    have hcs : inner ℝ (y₁ - y₂) (p i) ≤ (L : ℝ) * dist y₁ y₂ :=
-      (real_inner_le_norm (y₁ - y₂) (p i)).trans (by
-        rw [mul_comm, ← dist_eq_norm]; exact mul_le_mul_of_nonneg_right (hp i) dist_nonneg)
-    linarith
-  have hbdd (y : E) : BddAbove (range fun i : ι => g i y) :=
-    ⟨a i₀ + (L : ℝ) * dist y (x i₀), forall_mem_range.2 fun i =>
-      (hlip i y (x i₀)).trans (add_le_add (hsub i i₀) le_rfl)⟩
-  let F : E → ℝ := fun y => ⨆ i : ι, g i y
-  have hstep (y₁ y₂ : E) : F y₁ - F y₂ ≤ (L : ℝ) * dist y₁ y₂ := sub_le_iff_le_add'.2 <| ciSup_le
-    fun i => (hlip i y₁ y₂).trans (add_le_add (le_ciSup (hbdd y₂) i) le_rfl)
-  refine ⟨F, ⟨convex_univ, fun y₁ _ y₂ _ t₁ t₂ ht₁ ht₂ hsum => ciSup_le fun i => ?_⟩,
-    lipschitzWith_iff_dist_le_mul.2 fun y₁ y₂ => (Real.dist_eq _ _).trans_le
-      (abs_sub_le_iff.2 ⟨hstep y₁ y₂, dist_comm y₁ y₂ ▸ hstep y₂ y₁⟩),
-    fun j => le_antisymm (ciSup_le fun i => hsub i j)
-      (by simpa [g] using le_ciSup (hbdd (x j)) j)⟩
-  have haff : g i (t₁ • y₁ + t₂ • y₂) = t₁ * g i y₁ + t₂ * g i y₂ := by
-    simp only [g, inner_sub_left, inner_add_left, real_inner_smul_left]
-    linear_combination (a i - inner ℝ (x i) (p i)) * hsum.symm
-  exact haff.le.trans (add_le_add (mul_le_mul_of_nonneg_left (le_ciSup (hbdd y₁) i) ht₁)
-    (mul_le_mul_of_nonneg_left (le_ciSup (hbdd y₂) i) ht₂))
-
 /-- The graph of the subdifferential of `f : E → EReal`, never `⊥`, over a closed set `K` is
 closed if `f` is finite on `K` and its real representative is continuous there. -/
 theorem isClosed_setOf_mem_subdifferential {f : E → EReal} (hbot : ∀ x, f x ≠ ⊥)
@@ -224,10 +190,6 @@ theorem exists_convexOn_lipschitzWith_eq_toReal_sub_mul_inner {u : E → EReal} 
     (hα : ∀ x : S, α x ∈ subdifferential (innerₗ E) u x ∧ ‖α x‖ ≤ M ∧ inner ℝ (α x) e = c) :
     ∃ F : ↥(ℝ ∙ e)ᗮ → ℝ, ConvexOn ℝ univ F ∧ LipschitzWith M.toNNReal F ∧
       ∀ x : S, F ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) = (u x).toReal - c * inner ℝ (x : E) e := by
-  rcases S.eq_empty_or_nonempty with rfl | hSne
-  · exact ⟨0, convexOn_const 0 convex_univ,
-      (LipschitzWith.const (0 : ℝ)).weaken (zero_le : 0 ≤ M.toNNReal), fun x => x.property.elim⟩
-  have : Nonempty S := hSne.to_subtype
   let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
   obtain ⟨F, hconv, hlip, hF⟩ := exists_convexOn_lipschitzWith_apply_eq
     (x := fun x : S => P x) (p := fun x : S => P (α x))
@@ -458,9 +420,6 @@ theorem _root_.ConvexOn.exists_convexOn_lipschitzWith_eqOn {Ω : Set E} {u : E �
     (hu : ConvexOn ℝ Ω u) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ (L : NNReal) (v : E → ℝ), ConvexOn ℝ univ v ∧ LipschitzWith L v ∧ EqOn u v K := by
   classical
-  rcases K.eq_empty_or_nonempty with rfl | hKne
-  · exact ⟨0, 0, convexOn_const 0 convex_univ, LipschitzWith.const 0, by simp⟩
-  have : Nonempty K := hKne.to_subtype
   obtain ⟨M, hM⟩ := exists_norm_le_of_mem_subdifferential
     (f := fun z => if z ∈ Ω then (u z : EReal) else ⊤) (convexOn_iff_convex_epigraph_ite.1 hu)
     ite_ne_bot hK (by rwa [setOf_ite_ne_top, hΩ.interior_eq])

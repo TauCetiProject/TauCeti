@@ -68,8 +68,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
 /-- A measure `μ` on a real inner product space `E` is **`c - c`-regular** if it assigns measure
 zero to every `c - c` hypersurface (`TauCeti.IsCCHypersurface`). In finite dimensions, for
 probability sources of finite second moment, this is the sharp condition under which quadratic
-optimal transport out of `μ` is uniquely solved by convex gradients for all finite-second-moment
-targets (Ambrosio–Gigli, Def. 1.25 and Thm. 1.26). -/
+optimal transport out of `μ` is uniquely solved by convex gradients for all probability targets
+with finite second moment (Ambrosio–Gigli, Def. 1.25 and Thm. 1.26). -/
 def IsCCRegular (μ : Measure E) : Prop := ∀ ⦃s : Set E⦄, IsCCHypersurface s → μ s = 0
 
 /-- Unfolding lemma for `TauCeti.IsCCRegular`. -/
@@ -77,6 +77,7 @@ theorem isCCRegular_def (μ : Measure E) :
     IsCCRegular μ ↔ ∀ ⦃s : Set E⦄, IsCCHypersurface s → μ s = 0 := Iff.rfl
 
 /-- A `c - c`-regular measure vanishes on every `c - c` hypersurface. -/
+@[grind →]
 theorem IsCCRegular.measure_eq_zero (hμ : IsCCRegular μ) {s : Set E} (hs : IsCCHypersurface s) :
     μ s = 0 := hμ hs
 

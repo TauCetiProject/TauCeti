@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quadratic
 
 /-!
 # Strict convexity of `W₂ ^ 2` on a Euclidean space

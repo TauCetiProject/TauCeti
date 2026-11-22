@@ -19,10 +19,11 @@ theorems of Agueh–Carlier and Le Gouic–Loubes
 (`TauCeti.WassersteinSpace.exists_isFrechetBarycenter_sum_smul_dirac` and
 `TauCeti.WassersteinSpace.exists_isFrechetBarycenter`) provide quadratic Fréchet barycenters in
 `P₂(E)` for every finitely supported probability law `∑ i, w i • δ_{μ i}` and, more generally, for
-every probability law `P` on `P₂(E)` of finite second moment. Combining existence with the Brenier
-uniqueness theorems of
+every probability law `P` on `P₂(E)` of finite second moment. Combining existence with the
+at-most-one uniqueness theorems of
 `TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean` yields
-existence and uniqueness whenever positive mass is given to `c - c`-regular laws (for example, via
+existence and uniqueness whenever `P` is a probability law on `P₂(E)` with finite second moment
+that gives positive mass to `c - c`-regular laws (for example, via
 `TauCeti.isCCRegular_of_null_lipschitz_graphs`, `TauCeti.isCCRegular_of_dimH_add_one_le`,
 `TauCeti.isCCRegular_of_dimH_le`, or `TauCeti.isCCRegular_of_absolutelyContinuous`).
 
