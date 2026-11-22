@@ -19,13 +19,14 @@ and the target by isomorphic models.
 
 The invariant subalgebra `FixedPoints.subalgebra R S G` of a monoid `G` acting on `S` is the
 equalizer of the diagonal map `S → (ι → S)` and `s ↦ (σ i • s)ᵢ`, for any family `σ : ι → G`
-enumerating `G` (`TauCeti.FixedPoints.subalgebra_eq_equalizer`). Properties of equalizers
-therefore pass to invariant subalgebras.
+generating `G` as a monoid (`TauCeti.FixedPoints.subalgebra_eq_equalizer`). Properties of
+equalizers therefore pass to invariant subalgebras.
 
 For algebra maps `f g : A →ₐ[R] B` and an element `P : B`, the elements `x` of `A` with
 `P * g x = f x * P` form a subalgebra (`TauCeti.intertwiningSubalgebra`): `P` intertwines `g`
 with `f` on it. For `P = 1` this is the equalizer of `g` and `f`. To show that `P` intertwines
-`g` with `f` on a subalgebra, it suffices to check it on generators.
+`g` with `f` on a subalgebra, it therefore suffices to check it on generators
+(`Algebra.adjoin_le`).
 -/
 
 public section
@@ -39,7 +40,7 @@ variable {R A B A' B' : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Semir
 
 /-- Transport of an equalizer along isomorphisms of the source and the target: `eA` restricts to
 an isomorphism from `equalizer f g` to the equalizer of the transported maps. -/
-noncomputable def equalizerCongr (eA : A ≃ₐ[R] A') (eB : B ≃ₐ[R] B') (f g : A →ₐ[R] B) :
+def equalizerCongr (eA : A ≃ₐ[R] A') (eB : B ≃ₐ[R] B') (f g : A →ₐ[R] B) :
     equalizer f g ≃ₐ[R]
       equalizer ((eB : B →ₐ[R] B').comp (f.comp (eA.symm : A' →ₐ[R] A)))
         ((eB : B →ₐ[R] B').comp (g.comp (eA.symm : A' →ₐ[R] A))) :=
@@ -59,17 +60,20 @@ end AlgEquiv
 
 namespace TauCeti.FixedPoints
 
-/-- For a family `σ : ι → G` enumerating a monoid `G`, the invariant subalgebra is the equalizer of
+/-- For a family `σ : ι → G` generating a monoid `G`, the invariant subalgebra is the equalizer of
 the diagonal map `S → (ι → S)` and `s ↦ (σ i • s)ᵢ`. -/
 theorem subalgebra_eq_equalizer {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
     (G : Type*) [Monoid G] [MulSemiringAction G S] [SMulCommClass G R S] {ι : Type*} {σ : ι → G}
-    (hσ : Function.Surjective σ) :
+    (hσ : Submonoid.closure (Set.range σ) = ⊤) :
     FixedPoints.subalgebra R S G = AlgHom.equalizer (AlgHom.pi fun _ ↦ AlgHom.id R S)
       (AlgHom.pi fun i ↦ MulSemiringAction.toAlgHom R S (σ i)) := by
   ext s
   simp only [FixedPoints.mem_subalgebra, AlgHom.mem_equalizer, funext_iff, AlgHom.pi_apply,
-    AlgHom.id_apply, MulSemiringAction.toAlgHom_apply, hσ.forall]
-  exact forall_congr' fun _ ↦ eq_comm
+    AlgHom.id_apply, MulSemiringAction.toAlgHom_apply]
+  -- The stabilizer of `s` is a submonoid, so it is all of `G` once it contains every `σ i`.
+  refine ⟨fun h i ↦ (h (σ i)).symm, fun h g ↦ MulAction.mem_stabilizerSubmonoid_iff.1 ?_⟩
+  exact Submonoid.closure_le.2 (Set.range_subset_iff.2 fun i ↦ (h i).symm)
+    (hσ ▸ Submonoid.mem_top g)
 
 end TauCeti.FixedPoints
 

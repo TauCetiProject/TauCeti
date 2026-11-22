@@ -309,14 +309,14 @@ variable [Algebra.Etale R S] [Module.Finite R S] [Finite G]
 an étale algebra.** -/
 instance etale_subalgebra : Algebra.Etale R (FixedPoints.subalgebra R S G) := by
   obtain ⟨n, ⟨σ⟩⟩ := Finite.exists_equiv_fin G
-  rw [subalgebra_eq_equalizer G σ.symm.surjective]
+  rw [subalgebra_eq_equalizer G (σ := σ.symm) (by simp)]
   infer_instance
 
 /-- The invariants of a finite étale algebra under a finite monoid of algebra endomorphisms form a
 finite module. -/
 instance finite_subalgebra : Module.Finite R (FixedPoints.subalgebra R S G) := by
   obtain ⟨n, ⟨σ⟩⟩ := Finite.exists_equiv_fin G
-  rw [subalgebra_eq_equalizer G σ.symm.surjective]
+  rw [subalgebra_eq_equalizer G (σ := σ.symm) (by simp)]
   infer_instance
 
 end TauCeti.FixedPoints
