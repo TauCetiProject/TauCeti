@@ -129,7 +129,9 @@ theorem pullback_ιMulti (f : B →ₐ[A] C) (n : ℕ) (ω : Fin n → KaehlerDi
       exteriorPower.ιMulti C n (KaehlerDifferential.mapSemilinear f ∘ ω) := by
   let : Algebra B C := f.toRingHom.toAlgebra
   have : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
-  have hf : IsScalarTower.toAlgHom A B C = f := AlgHom.ext fun _ => rfl
+  have hf : IsScalarTower.toAlgHom A B C = f := AlgHom.ext fun b => by
+    rw [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom]
   rw [pullback_apply, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, pullbackAlt_apply]
   congr 1
   funext i
@@ -189,12 +191,8 @@ theorem pullback_d (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
   | zero => rw [map_zero, map_zero, map_zero, map_zero]
   | add ω₁ ω₂ h₁ h₂ => rw [map_add, map_add, map_add, map_add, h₁, h₂]
   | elem c v =>
-    rw [d_elementary, pullback_ιMulti, pullback_elementary, d_elementary]
-    congr 1
-    funext i
-    refine Fin.cases ?_ (fun j => ?_) i
-    · exact KaehlerDifferential.mapSemilinear_D f c
-    · exact KaehlerDifferential.mapSemilinear_D f (v j)
+    rw [d_elementary, pullback_ιMulti, pullback_elementary, d_elementary, Fin.comp_cons]
+    simp only [KaehlerDifferential.mapSemilinear_D, Function.comp_def]
 
 /-- Pullback preserves the exterior wedge product of differential forms. -/
 theorem pullback_wedge (f : B →ₐ[A] C) {m n : ℕ} (α : Forms A B m) (β : Forms A B n) :
@@ -269,18 +267,10 @@ def complexMap (f : B →ₐ[A] C) : complex A B ⟶ complex A C :=
   CochainComplex.ofHom
     (fun n => ModuleCat.ofHom (pullbackLinearMap f n))
     (fun n => by
-      refine ConcreteCategory.hom_ext _ _ fun ω => ?_
-      refine (ModuleCat.comp_apply (ModuleCat.ofHom (pullbackLinearMap f n))
-        ((complex A C).d n (n + 1)) ω).trans ?_
-      refine (complex_d_apply A C n _).trans ?_
-      refine (congrArg (d A C n) ((ModuleCat.ofHom_apply (pullbackLinearMap f n) ω).trans
-        (pullbackLinearMap_apply f n ω))).trans ?_
-      refine (pullback_d f n ω).symm.trans ?_
-      refine (congrArg (pullback f (n + 1)) (complex_d_apply A B n ω).symm).trans ?_
-      refine (pullbackLinearMap_apply f (n + 1) _).symm.trans ?_
-      refine (ModuleCat.ofHom_apply (pullbackLinearMap f (n + 1)) _).symm.trans ?_
-      exact (ModuleCat.comp_apply ((complex A B).d n (n + 1))
-        (ModuleCat.ofHom (pullbackLinearMap f (n + 1))) ω).symm)
+      refine ModuleCat.hom_ext ?_
+      simp only [complex_d, complex_X, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom]
+      refine LinearMap.ext fun ω => ?_
+      simp only [LinearMap.comp_apply, pullbackLinearMap_apply, pullback_d])
 
 /-- In degree `n`, `complexMap f` is the `ModuleCat` morphism induced by `pullbackLinearMap f n`. -/
 @[simp]
@@ -305,13 +295,11 @@ theorem complexMap_id : complexMap (AlgHom.id A B) = 𝟙 (complex A B) := by
 @[simp]
 theorem complexMap_comp (g : C →ₐ[A] E) (f : B →ₐ[A] C) :
     complexMap (g.comp f) = complexMap f ≫ complexMap g := by
-  refine HomologicalComplex.hom_ext _ _ fun n => ConcreteCategory.hom_ext _ _ fun ω => ?_
-  rw [HomologicalComplex.comp_f,
-    ModuleCat.comp_apply ((complexMap f).f n) ((complexMap g).f n) ω]
-  exact (complexMap_apply (g.comp f) n ω).trans
-    ((pullback_comp_apply g f n ω).trans
-      ((congrArg (pullback g n) (complexMap_apply f n ω).symm).trans
-        (complexMap_apply g n _).symm))
+  refine HomologicalComplex.hom_ext _ _ fun n => ModuleCat.hom_ext ?_
+  simp only [HomologicalComplex.comp_f, complexMap_f, complex_X, ModuleCat.hom_comp,
+    ConcreteCategory.hom_ofHom]
+  refine LinearMap.ext fun ω => ?_
+  simp only [LinearMap.comp_apply, pullbackLinearMap_apply, pullback_comp_apply]
 
 end ComplexMap
 
