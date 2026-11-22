@@ -946,17 +946,12 @@ variable (G S) in
 subgroup `[G_i, G_j]` lies in `G_{i + j}`. -/
 theorem commutator_ramificationGroup_le (i j : ℤ) :
     ⁅ramificationGroup G S i, ramificationGroup G S j⁆ ≤ ramificationGroup G S (i + j) := by
+  rcases lt_or_ge i 0 with hi | hi
+  · exact (Subgroup.commutator_le_right _ _).trans (ramificationGroup_antitone G S (by omega))
+  rcases lt_or_ge j 0 with hj | hj
+  · exact (Subgroup.commutator_le_left _ _).trans (ramificationGroup_antitone G S (by omega))
   rw [Subgroup.commutator_le]
   intro σ hσ τ hτ
-  rcases lt_or_ge i 0 with hi | hi
-  · refine ramificationGroup_antitone G S (by omega : i + j ≤ j) ?_
-    rw [commutatorElement_def]
-    exact mul_mem ((instNormalRamificationGroup G S j).conj_mem τ hτ σ) (inv_mem hτ)
-  rcases lt_or_ge j 0 with hj | hj
-  · refine ramificationGroup_antitone G S (by omega : i + j ≤ i) ?_
-    have hcomm_eq : ⁅σ, τ⁆ = σ * (τ * σ⁻¹ * τ⁻¹) := by group
-    rw [hcomm_eq]
-    exact mul_mem hσ ((instNormalRamificationGroup G S i).conj_mem σ⁻¹ (inv_mem hσ) τ)
   obtain ⟨a, rfl⟩ := Int.eq_ofNat_of_zero_le hi
   obtain ⟨b, rfl⟩ := Int.eq_ofNat_of_zero_le hj
   have hcast : (a : ℤ) + (b : ℤ) = ((a + b : ℕ) : ℤ) := by push_cast; ring

@@ -45,8 +45,6 @@ analogous statements for nonarchimedean local fields are in
   uniformizer.
 * `TauCeti.Place.tameCharacter_eq_one_iff`: `σ` lies in the kernel exactly when `σ t ≡ t` modulo
   `𝔪_P²`.
-* `TauCeti.Place.mem_ramificationGroup_one_iff`: for a separable residue extension, an element of
-  `G_0(P)` lies in `G_1(P)` exactly when it fixes a uniformizer modulo `𝔪_P²`.
 * `TauCeti.Place.ker_tameCharacter`: for a separable residue extension, the kernel of the tame
   character is `G_1(P)`.
 * `TauCeti.Place.tameCharacterGraded_injective`: for a separable residue extension, the induced
@@ -106,27 +104,6 @@ private theorem coe_ramificationGroupEquiv (i : ℕ) (j : ℤ) (hij : (i : ℤ) 
       IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers j) :
       P.integers.decompositionSubgroup F) = (g : P.integers.decompositionSubgroup F) :=
   rfl
-
-omit [Algebra k F] [IsScalarTower k F F'] in
-private noncomputable def ramificationGroupGradedEquiv :
-    (ramificationGroup F P 0 ⧸
-      (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)) ≃*
-      IsLocalRing.RamificationGroupGraded (P.integers.decompositionSubgroup F) P.integers 0 :=
-  QuotientGroup.congr _ _ (ramificationGroupEquiv F P 0 0 Nat.cast_zero) <| by
-    ext ⟨g, hg⟩
-    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
-    constructor
-    · rintro ⟨⟨h, _⟩, hh, hhg⟩
-      rw [ramificationGroup_def, Nat.cast_one] at hh
-      have : h = g := congrArg (fun x : IsLocalRing.ramificationGroup
-        (P.integers.decompositionSubgroup F) P.integers 0 ↦
-          (x : P.integers.decompositionSubgroup F)) hhg
-      exact this ▸ hh
-    · intro h1
-      have h1' : g ∈ ramificationGroup F P 1 := by
-        rw [ramificationGroup_def, Nat.cast_one]
-        exact h1
-      exact ⟨⟨g, ramificationGroup_antitone F P (Nat.zero_le 1) h1'⟩, h1', rfl⟩
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The tame character** (Stichtenoth, Proposition 3.8.5): for a uniformizer `t` at `P`, the
@@ -194,17 +171,30 @@ noncomputable def tameCharacterGraded (ht : P.ord t = 1) :
     ramificationGroup F P 0 ⧸ (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)
       →* P.ResidueFieldˣ :=
   (IsDiscreteValuationRing.tameCharacterGraded (P.integers.decompositionSubgroup F)
-    (irreducible_of_ord_eq_one P ht)).comp (ramificationGroupGradedEquiv F P).toMonoidHom
+    (irreducible_of_ord_eq_one P ht)).comp
+    (QuotientGroup.equivQuotientSubgroupOfOfEq
+      (by rw [ramificationGroup_def, Nat.cast_one, zero_add])
+      (by rw [ramificationGroup_def, Nat.cast_zero])).toMonoidHom
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The induced tame character evaluated on the class of an inertia automorphism. -/
 @[simp]
 theorem tameCharacterGraded_mk (ht : P.ord t = 1) (g : ramificationGroup F P 0) :
     tameCharacterGraded F P ht (QuotientGroup.mk g) = tameCharacter F P ht g := by
-  rw [tameCharacterGraded, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ramificationGroupGradedEquiv, QuotientGroup.congr_mk,
-    IsDiscreteValuationRing.tameCharacterGraded_mk]
-  rfl
+  rw [tameCharacterGraded, tameCharacter, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom]
+  have h1 : ramificationGroup F P 1 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers (0 + 1) := by
+    rw [ramificationGroup_def, Nat.cast_one, zero_add]
+  have h2 : ramificationGroup F P 0 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 := by
+    rw [ramificationGroup_def, Nat.cast_zero]
+  have hquot :
+      QuotientGroup.equivQuotientSubgroupOfOfEq h1 h2 (QuotientGroup.mk g) =
+        QuotientGroup.mk (Subgroup.inclusion h2.le g) :=
+    QuotientGroup.quotientMapSubgroupOfOfLe_mk h1.le h2.le g
+  rw [hquot, IsDiscreteValuationRing.tameCharacterGraded_mk]
+  exact congrArg _ (Subtype.ext (coe_ramificationGroupEquiv F P 0 0 Nat.cast_zero g).symm)
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The induced tame character does not depend on the choice of uniformizer. -/
@@ -220,20 +210,6 @@ end Character
 section Separable
 
 variable (F) [Algebra.IsIntegral F F'] (P : Place k F') {t : F'}
-
-/-- **Membership in the first ramification group is decided at a uniformizer**, when the residue
-extension is separable (Stichtenoth, Proposition 3.8.5): an element of `G_0(P)` lies in `G_1(P)`
-exactly when it fixes `t` modulo `𝔪_P²`. -/
-theorem mem_ramificationGroup_one_iff
-    [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField] (ht : P.ord t = 1)
-    {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P 0) :
-    g ∈ ramificationGroup F P 1 ↔ (g : F' ≃ₐ[F] F') t - t ∈ P.filtration 2 := by
-  rw [ramificationGroup_def, Nat.cast_zero] at hg
-  rw [ramificationGroup_def, IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem
-    (P.restrict k F).integers (irreducible_of_ord_eq_one P ht) hg,
-    P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,
-    ValuationSubring.coe_decompositionSubgroup_smul]
-  norm_num
 
 /-- **The kernel of the tame character is the first ramification group**, when the residue
 extension is separable (Stichtenoth, Proposition 3.8.5): so `G_0(P) / G_1(P)` embeds in the
@@ -254,7 +230,10 @@ theorem tameCharacterGraded_injective
     [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField] (ht : P.ord t = 1) :
     Function.Injective (tameCharacterGraded F P ht) :=
   (IsDiscreteValuationRing.tameCharacterGraded_injective _ (P.restrict k F).integers
-    (irreducible_of_ord_eq_one P ht)).comp (ramificationGroupGradedEquiv F P).injective
+    (irreducible_of_ord_eq_one P ht)).comp
+    (QuotientGroup.equivQuotientSubgroupOfOfEq
+      (by rw [ramificationGroup_def, Nat.cast_one, zero_add])
+      (by rw [ramificationGroup_def, Nat.cast_zero])).injective
 
 /-- **The tame quotient `G_0(P) / G_1(P)` is cyclic** when the inertia group is finite and the
 residue extension is separable (Stichtenoth, Proposition 3.8.5): it embeds in the multiplicative
@@ -264,13 +243,19 @@ theorem isCyclic_quotient_ramificationGroup_one
     [Finite (ramificationGroup F P 0)] :
     IsCyclic (ramificationGroup F P 0 ⧸
       (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)) := by
+  have h1 : ramificationGroup F P 1 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers (0 + 1) := by
+    rw [ramificationGroup_def, Nat.cast_one, zero_add]
+  have h2 : ramificationGroup F P 0 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 := by
+    rw [ramificationGroup_def, Nat.cast_zero]
+  let e := QuotientGroup.equivQuotientSubgroupOfOfEq h1 h2
   have : Finite
       (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) :=
     Finite.of_equiv (ramificationGroup F P 0) (ramificationGroupEquiv F P 0 0 Nat.cast_zero).toEquiv
   have := IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero
     (P.integers.decompositionSubgroup F) (P.restrict k F).integers P.integers
-  exact isCyclic_of_injective (ramificationGroupGradedEquiv F P).toMonoidHom
-    (ramificationGroupGradedEquiv F P).injective
+  exact isCyclic_of_injective e.toMonoidHom e.injective
 
 /-- **The index of `G_1(P)` in `G_0(P)` is prime to the residue characteristic `p`**, when the
 inertia group is finite and the residue extension is separable (Stichtenoth, Proposition 3.8.5):
@@ -283,7 +268,14 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP P.ResidueField p]
   have : Finite
       (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) :=
     Finite.of_equiv (ramificationGroup F P 0) (ramificationGroupEquiv F P 0 0 Nat.cast_zero).toEquiv
-  rw [Subgroup.index_eq_card, Nat.card_congr (ramificationGroupGradedEquiv F P).toEquiv,
+  have h1 : ramificationGroup F P 1 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers (0 + 1) := by
+    rw [ramificationGroup_def, Nat.cast_one, zero_add]
+  have h2 : ramificationGroup F P 0 =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 := by
+    rw [ramificationGroup_def, Nat.cast_zero]
+  rw [Subgroup.index_eq_card,
+    Nat.card_congr (QuotientGroup.equivQuotientSubgroupOfOfEq h1 h2).toEquiv,
     ← Subgroup.index_eq_card]
   exact IsDiscreteValuationRing.not_dvd_index_ramificationGroup_one _
     (P.restrict k F).integers P.integers p
