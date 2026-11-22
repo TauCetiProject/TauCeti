@@ -102,7 +102,8 @@ variable {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMarkovTra
 instance instIsStarTraceRadical (n : ℕ) : (htr.traceRadical n).IsStar :=
   htr.isStar_traceRadical n
 
-/-- Unital `⋆`-algebra strand inclusion `htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1)` (`n ≥ 0`). -/
+/-- Unital `⋆`-algebra strand map `htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1)` (`n ≥ 0`),
+injective at every successor level `n + 1` and at level `0` whenever `(δ * ·)` is injective. -/
 def quotientStrandStarAlgHom (n : ℕ) :
     htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1) :=
   { Ideal.quotientMapₐ (htr.traceRadical (n + 1)) (strandInclAll n)

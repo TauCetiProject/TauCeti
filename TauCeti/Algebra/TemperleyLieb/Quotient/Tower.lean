@@ -95,7 +95,9 @@ private theorem eq_of_forall_positiveQuotientTrace_mul_eq {n : ℕ} {a b : htr.Q
     ((htr.positiveQuotientTrace hδ n).mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _).2 <| by
       rw [mul_sub, map_sub, h, sub_self]
   rwa [htr.nullSubmodule_positiveQuotientTrace hδ n, Submodule.mem_bot, sub_eq_zero] at hmem
-/-- Unital strand `⋆`-inclusion `htr.Quotient n →⋆ₐ[ℂ] htr.Quotient (n + 1)` (`n ≥ 0`). -/
+/-- Unital `⋆`-algebra strand map `htr.Quotient n →⋆ₐ[ℂ] htr.Quotient (n + 1)` (`n ≥ 0`),
+which is an inclusion at every successor level and at level `0` whenever `δ ≠ 0` (in particular,
+for every `δ ∈ jonesLoopParameters`). -/
 def jonesStrandIncl (n : ℕ) : htr.Quotient n →⋆ₐ[ℂ] htr.Quotient (n + 1) :=
   htr.quotientStrandStarAlgHom n
 @[simp] theorem jonesStrandIncl_mk (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n) :
@@ -103,7 +105,7 @@ def jonesStrandIncl (n : ℕ) : htr.Quotient n →⋆ₐ[ℂ] htr.Quotient (n + 
       Ideal.Quotient.mk (htr.traceRadical (n + 1)) (strandInclAll n x) :=
   htr.quotientStrandStarAlgHom_mk n x
 include hδ in
-/-- Each tower inclusion `jonesStrandIncl` is injective. -/
+/-- For `δ ∈ jonesLoopParameters`, each tower strand map `jonesStrandIncl` is injective. -/
 theorem jonesStrandIncl_injective (n : ℕ) : Function.Injective (htr.jonesStrandIncl n) :=
   htr.quotientStrandStarAlgHom_injective n fun _ ↦
     (isUnit_of_mem_jonesLoopParameters hδ).mul_right_injective
