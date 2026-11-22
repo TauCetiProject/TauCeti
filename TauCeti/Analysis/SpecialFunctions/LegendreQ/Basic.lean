@@ -15,6 +15,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # The Legendre function of the second kind
@@ -42,6 +44,13 @@ used for automorphic Green kernels.
 * `Complex.legendreQ_eq_regularizedGaussHGFun` — the hypergeometric form
   `Q_ν(t) = Γ(ν + 1)² / (2 Γ(2ν + 2)) · z ^ (ν + 1) · ₂F₁(ν + 1, ν + 1; 2ν + 2; z)` with
   `z = 2 / (1 + t)`, stated with the regularized Gauss function.
+* `Complex.norm_legendreQ_le` — the bound
+  `‖Q_ν(t)‖ ≤ (2 / √(t² - 1)) ^ (re ν + 1) / (re ν + 1)`, depending on `ν` only through `re ν`.
+* `Complex.isBigO_legendreQ_rpow_atTop`, `Complex.tendsto_cpow_mul_legendreQ_atTop` — the decay
+  `Q_ν(t) = O(t ^ (-(re ν + 1)))` at infinity, and its sharp form
+  `t ^ (ν + 1) Q_ν(t) → 2 ^ ν Γ(ν + 1)² / Γ(2ν + 2)`.
+* `Complex.isBigO_legendreQ_add_half_log_nhdsGT_one` — the logarithmic singularity
+  `Q_ν(t) = -½ log (t - 1) + O(1)` as `t → 1⁺`.
 
 Together, `legendreQ_zero`, `legendreQ_one` and the recurrence at natural `ν` determine `Q_n(t)`
 for every natural number `n` in terms of `Q₀(t) = ½ log((t + 1) / (t - 1))`.
@@ -62,19 +71,28 @@ The recurrence and the value `Q₁` come from integrating the derivative of
 `sinh u · (t + √(t² - 1) cosh u) ^ (-s)`; at `s = 1` the boundary term at infinity is
 `1 / √(t² - 1)` rather than `0`, which is why `Q₁` is not the case `ν = 0` of the recurrence.
 
+The bound `norm_legendreQ_le` compares the base with `√(t² - 1) eᵘ / 2`, which gives the decay
+`O(t ^ (-(re ν + 1)))` at infinity. Its sharp form follows from the hypergeometric form, since
+`t · 2 / (1 + t) → 2` and the regularized Gauss function is continuous at `0` with value
+`1 / Γ(2ν + 2)`. Near `t = 1` the
+singularity is that of `Q₀(t) = ½ log((t + 1) / (t - 1))`: the mean value theorem in the degree
+bounds the difference of the integrands of `Q_ν` and `Q₀` by `‖ν‖ log b · b ^ (-m)`, with `b` the
+base and `m = min (re ν + 1) 1`, and splitting at `u = log (2 / √(t² - 1))`, where
+`√(t² - 1) cosh u` reaches size `1`, bounds its integral uniformly for `1 < t < 2`.
+
 ## References
 
 * B. Gross and D. Zagier, *Heegner points and derivatives of L-series*, Invent. Math. 84 (1986),
-  Chapter II, §2, (2.5)–(2.6).
-* *NIST Digital Library of Mathematical Functions*, §14.5 (special values), §14.10 (recurrence
-  relations) and §14.12 (integral representations).
+  Chapter II, §2, (2.5)–(2.8).
+* *NIST Digital Library of Mathematical Functions*, §14.5 (special values), §14.8 (behavior at
+  singularities), §14.10 (recurrence relations) and §14.12 (integral representations).
 -/
 
 public section
 
 noncomputable section
 
-open Filter MeasureTheory Set
+open Asymptotics Filter MeasureTheory Set
 open scoped Topology
 
 namespace Complex
@@ -585,5 +603,241 @@ theorem legendreQ_eq_regularizedGaussHGFun {ν : ℂ} (hν : -1 < ν.re) (ht : 1
     rw [integral_const_mul, integral_cpow_neg_eq_two_mul hint, legendreQ]
   rw [hJ, show 2 * (ν + 1) - (ν + 1) = ν + 1 by ring]
   field_simp
+
+/-! ### Asymptotics -/
+
+/-- An explicit bound for Heine's integral: for `-1 < re ν` and `1 < t`,
+`‖Q_ν(t)‖ ≤ (2 / √(t² - 1)) ^ (re ν + 1) / (re ν + 1)`. It depends on `ν` only through `re ν`, and
+gives the decay `Q_ν(t) = O(t ^ (-(re ν + 1)))` at infinity. -/
+theorem norm_legendreQ_le {ν : ℂ} (hν : -1 < ν.re) (ht : 1 < t) :
+    ‖legendreQ ν t‖ ≤ (2 / √(t ^ 2 - 1)) ^ (ν.re + 1) / (ν.re + 1) := by
+  have hσ : 0 < ν.re + 1 := by linarith
+  have hb := sqrt_sq_sub_one_pos ht
+  refine (norm_integral_le_of_norm_le ((exp_neg_integrableOn_Ioi 0 hσ).const_mul
+    ((√(t ^ 2 - 1) / 2) ^ (-(ν.re + 1)))) (ae_of_all _ fun u => ?_)).trans_eq ?_
+  · rw [norm_cpow_base ht, neg_re, add_re, one_re]
+    exact base_rpow_neg_le ht hσ.le u
+  · rw [integral_const_mul, integral_exp_mul_Ioi (by linarith), mul_zero, Real.exp_zero,
+      Real.rpow_neg (by positivity), ← Real.inv_rpow (by positivity), inv_div]
+    field_simp
+
+/-- `Q_ν(t) = O(t ^ (-(re ν + 1)))` as `t → ∞`, for `-1 < re ν`. -/
+theorem isBigO_legendreQ_rpow_atTop {ν : ℂ} (hν : -1 < ν.re) :
+    (legendreQ ν ·) =O[atTop] fun t : ℝ => t ^ (-(ν.re + 1)) := by
+  have hσ : 0 < ν.re + 1 := by linarith
+  refine IsBigO.of_bound (4 ^ (ν.re + 1) / (ν.re + 1)) ?_
+  filter_upwards [eventually_ge_atTop 2] with t ht
+  have ht0 : 0 < t := by linarith
+  have hs : t / 2 ≤ √(t ^ 2 - 1) := Real.le_sqrt_of_sq_le (by nlinarith)
+  have key : (2 / √(t ^ 2 - 1)) ^ (ν.re + 1) ≤ 4 ^ (ν.re + 1) * t ^ (-(ν.re + 1)) := by
+    rw [Real.rpow_neg ht0.le, ← div_eq_mul_inv, ← Real.div_rpow (by norm_num) ht0.le]
+    refine Real.rpow_le_rpow (by positivity) ?_ hσ.le
+    rw [div_le_div_iff₀ (by linarith) ht0]
+    linarith
+  calc ‖legendreQ ν t‖ ≤ (2 / √(t ^ 2 - 1)) ^ (ν.re + 1) / (ν.re + 1) :=
+        norm_legendreQ_le hν (by linarith)
+    _ ≤ 4 ^ (ν.re + 1) * t ^ (-(ν.re + 1)) / (ν.re + 1) := by gcongr
+    _ = 4 ^ (ν.re + 1) / (ν.re + 1) * ‖t ^ (-(ν.re + 1))‖ := by
+        rw [Real.norm_of_nonneg (by positivity)]
+        ring
+
+/-- The exact decay of `Q_ν` at infinity: for `-1 < re ν`,
+`t ^ (ν + 1) Q_ν(t) → 2 ^ ν Γ(ν + 1)² / Γ(2ν + 2)` as `t → ∞`. The limit is nonzero, so the
+order `t ^ (-(re ν + 1))` of `isBigO_legendreQ_rpow_atTop` cannot be improved. -/
+theorem tendsto_cpow_mul_legendreQ_atTop {ν : ℂ} (hν : -1 < ν.re) :
+    Tendsto (fun t : ℝ => (t : ℂ) ^ (ν + 1) * legendreQ ν t) atTop
+      (𝓝 (2 ^ ν * Gamma (ν + 1) ^ 2 / Gamma (2 * (ν + 1)))) := by
+  have hz : Tendsto (fun t : ℝ => 2 / (1 + t)) atTop (𝓝 0) :=
+    tendsto_const_nhds.div_atTop (tendsto_atTop_add_const_left _ 1 tendsto_id)
+  have htz : Tendsto (fun t : ℝ => t * (2 / (1 + t))) atTop (𝓝 2) := by
+    have h := (tendsto_const_nhds (x := (2 : ℝ))).sub hz
+    rw [sub_zero] at h
+    refine h.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    field_simp
+    ring
+  have hF : Tendsto (fun t : ℝ => regularizedGaussHGFun (ν + 1) (ν + 1) (2 * (ν + 1))
+      ((2 / (1 + t) : ℝ) : ℂ)) atTop (𝓝 (Gamma (2 * (ν + 1)))⁻¹) := by
+    have h := (analyticAt_regularizedGaussHGFun (ν + 1) (ν + 1) (2 * (ν + 1))
+      (z := 0) (by simp)).continuousAt.tendsto.comp ((continuous_ofReal.tendsto 0).comp hz)
+    rw [regularizedGaussHGFun_zero] at h
+    exact h
+  have hp : Tendsto (fun t : ℝ => ((t * (2 / (1 + t)) : ℝ) : ℂ) ^ (ν + 1)) atTop
+      (𝓝 (2 ^ (ν + 1))) := by
+    have h := (continuousAt_cpow_const (b := ν + 1)
+      (ofReal_mem_slitPlane.2 two_pos)).tendsto.comp ((continuous_ofReal.tendsto 2).comp htz)
+    exact h
+  have hlim : 2 ^ ν * Gamma (ν + 1) ^ 2 / Gamma (2 * (ν + 1)) =
+      Gamma (ν + 1) ^ 2 / 2 * 2 ^ (ν + 1) * (Gamma (2 * (ν + 1)))⁻¹ := by
+    rw [cpow_add _ _ two_ne_zero, cpow_one]
+    ring
+  rw [hlim]
+  refine ((hp.const_mul _).mul hF).congr' ?_
+  filter_upwards [eventually_gt_atTop 1] with t ht
+  rw [legendreQ_eq_regularizedGaussHGFun hν ht, ofReal_mul,
+    ofReal_mul_cpow (by linarith)]
+  ring
+
+/-- The log-weighted integrand `log b · b ^ (-m)` of the degree comparison is at most
+`(2 / m) b ^ (-(m / 2))`, where `b = t + √(t² - 1) cosh u`. -/
+private lemma log_mul_base_rpow_neg_le (ht : 1 < t) {m : ℝ} (hm : 0 < m) (u : ℝ) :
+    Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤
+      2 / m * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-(m / 2)) := by
+  have h := norm_log_mul_cpow_base_le ht (w := (m : ℂ) - 1) hm (by simp) u
+  rwa [norm_neg, norm_mul, norm_cpow_base ht, norm_real,
+    Real.norm_of_nonneg (Real.log_nonneg (one_lt_base ht u).le), sub_add_cancel, neg_re,
+    ofReal_re] at h
+
+private lemma log_mul_base_rpow_neg_nonneg (ht : 1 < t) (m u : ℝ) :
+    0 ≤ Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) :=
+  mul_nonneg (Real.log_nonneg (one_lt_base ht u).le) (Real.rpow_nonneg (base_pos ht u).le _)
+
+private lemma continuous_log_mul_base_rpow_neg (ht : 1 < t) (m : ℝ) :
+    Continuous fun u => Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
+      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) :=
+  ((by fun_prop : Continuous fun u => t + √(t ^ 2 - 1) * Real.cosh u).log
+    fun u => (base_pos ht u).ne').mul
+    ((by fun_prop : Continuous fun u => t + √(t ^ 2 - 1) * Real.cosh u).rpow_const
+      fun u => Or.inl (base_pos ht u).ne')
+
+/-- Before the cut `U = log (2 / √(t² - 1))`, the log-weighted integrand is at most
+`b - 1 ≤ (t - 1) + √(t² - 1) eᵘ`, whose integral over `(0, U]` is at most `4` when `t < 2`. -/
+private lemma setIntegral_Ioc_log_mul_base_rpow_neg_le (ht : 1 < t) (ht2 : t < 2) {m : ℝ}
+    (hm : 0 ≤ m) :
+    ∫ u in Ioc 0 (Real.log (2 / √(t ^ 2 - 1))), Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
+      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤ 4 := by
+  have hε0 := sqrt_sq_sub_one_pos ht
+  have hε2 : √(t ^ 2 - 1) < 2 := by
+    rw [Real.sqrt_lt' two_pos]
+    nlinarith
+  have htε : t - 1 ≤ √(t ^ 2 - 1) := Real.le_sqrt_of_sq_le (by nlinarith)
+  set U := Real.log (2 / √(t ^ 2 - 1))
+  have hU0 : 0 < U := Real.log_pos (by rw [lt_div_iff₀ hε0]; linarith)
+  have hexpU : Real.exp U = 2 / √(t ^ 2 - 1) := Real.exp_log (by positivity)
+  have hg : Continuous fun u => (t - 1) + √(t ^ 2 - 1) * Real.exp u := by fun_prop
+  refine (setIntegral_mono_on
+    ((continuous_log_mul_base_rpow_neg ht m).integrableOn_Icc.mono_set Ioc_subset_Icc_self)
+    (hg.integrableOn_Icc.mono_set Ioc_subset_Icc_self) measurableSet_Ioc
+    fun u hu => ?_).trans ?_
+  · have hb := one_lt_base ht u
+    calc Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)
+        ≤ Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * 1 :=
+          mul_le_mul_of_nonneg_left (Real.rpow_le_one_of_one_le_of_nonpos hb.le
+            (by linarith)) (Real.log_nonneg hb.le)
+      _ ≤ t + √(t ^ 2 - 1) * Real.cosh u - 1 := by
+          rw [mul_one]
+          exact Real.log_le_sub_one_of_pos (by linarith)
+      _ ≤ (t - 1) + √(t ^ 2 - 1) * Real.exp u := by
+          have : Real.cosh u ≤ Real.exp u := by
+            rw [Real.cosh_eq]
+            linarith [Real.exp_le_exp.2 (by linarith [hu.1] : -u ≤ u)]
+          nlinarith
+  · rw [← intervalIntegral.integral_of_le hU0.le,
+      intervalIntegral.integral_add intervalIntegrable_const
+        ((by fun_prop : Continuous fun u => √(t ^ 2 - 1) * Real.exp u).intervalIntegrable _ _),
+      intervalIntegral.integral_const, intervalIntegral.integral_const_mul, integral_exp,
+      hexpU, Real.exp_zero, smul_eq_mul]
+    have hUle : U ≤ 2 / √(t ^ 2 - 1) := by
+      rw [← hexpU]
+      linarith [Real.add_one_le_exp U]
+    have h2 : 2 / √(t ^ 2 - 1) * √(t ^ 2 - 1) = 2 := div_mul_cancel₀ _ hε0.ne'
+    nlinarith
+
+/-- After the cut `U = log (2 / √(t² - 1))`, the log-weighted integrand decays like
+`(2 / m) e ^ (-(m / 2) (u - U))`, since `b ≥ e ^ (u - U)`; its integral over `(U, ∞)` is at most
+`4 / m²`. -/
+private lemma setIntegral_Ioi_log_mul_base_rpow_neg_le (ht : 1 < t) {m : ℝ} (hm : 0 < m) :
+    ∫ u in Ioi (Real.log (2 / √(t ^ 2 - 1))), Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
+      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤ 4 / m ^ 2 := by
+  have hε0 := sqrt_sq_sub_one_pos ht
+  set U := Real.log (2 / √(t ^ 2 - 1))
+  have hexpU : Real.exp U = 2 / √(t ^ 2 - 1) := Real.exp_log (by positivity)
+  have hle (u : ℝ) : Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
+      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤
+        2 / m * Real.exp (m / 2 * U) * Real.exp (-(m / 2) * u) := by
+    have hlow : Real.exp (u - U) ≤ t + √(t ^ 2 - 1) * Real.cosh u := by
+      have he : Real.exp (u - U) = √(t ^ 2 - 1) / 2 * Real.exp u := by
+        rw [Real.exp_sub, hexpU]
+        field_simp
+      rw [he]
+      exact mul_exp_le_base ht u
+    calc Real.log (t + √(t ^ 2 - 1) * Real.cosh u) * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)
+        ≤ 2 / m * (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-(m / 2)) :=
+          log_mul_base_rpow_neg_le ht hm u
+      _ ≤ 2 / m * Real.exp (u - U) ^ (-(m / 2)) :=
+          mul_le_mul_of_nonneg_left
+            (Real.rpow_le_rpow_of_nonpos (Real.exp_pos _) hlow (by linarith)) (by positivity)
+      _ = 2 / m * Real.exp (m / 2 * U) * Real.exp (-(m / 2) * u) := by
+          rw [← Real.exp_mul, mul_assoc, ← Real.exp_add]
+          ring_nf
+  have hg := (integrableOn_exp_mul_Ioi (by linarith : -(m / 2) < 0) U).const_mul
+    (2 / m * Real.exp (m / 2 * U))
+  have hφ : IntegrableOn (fun u => Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
+      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)) (Ioi U) :=
+    hg.mono' (continuous_log_mul_base_rpow_neg ht m).aestronglyMeasurable (ae_of_all _ fun u => by
+      rw [Real.norm_of_nonneg (log_mul_base_rpow_neg_nonneg ht m u)]
+      exact hle u)
+  refine (setIntegral_mono_on hφ hg measurableSet_Ioi fun u _ => hle u).trans_eq ?_
+  rw [integral_const_mul, integral_exp_mul_Ioi (by linarith)]
+  have he : Real.exp (m * U / 2) * Real.exp (-(m * U / 2)) = 1 := by
+    rw [← Real.exp_add]
+    simp
+  field_simp
+  linear_combination 4 * he
+
+/-- Near `t = 1` the difference `Q_ν(t) - Q₀(t)` stays bounded: for `1 < t < 2`,
+`‖Q_ν(t) - Q₀(t)‖ ≤ ‖ν‖ (4 + 4 / m²)` with `m = min (re ν + 1) 1`. -/
+private lemma norm_legendreQ_sub_legendreQ_zero_le {ν : ℂ} (hν : -1 < ν.re) (ht : 1 < t)
+    (ht2 : t < 2) :
+    ‖legendreQ ν t - legendreQ 0 t‖ ≤ ‖ν‖ * (4 + 4 / min (ν.re + 1) 1 ^ 2) := by
+  set m := min (ν.re + 1) 1
+  have hm0 : 0 < m := lt_min (by linarith) one_pos
+  have hε0 := sqrt_sq_sub_one_pos ht
+  have hU0 : 0 ≤ Real.log (2 / √(t ^ 2 - 1)) := Real.log_nonneg (by
+    rw [le_div_iff₀ hε0, one_mul]
+    exact ((Real.sqrt_lt' two_pos).2 (by nlinarith)).le)
+  have hφ : IntegrableOn (fun u => Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
+      (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m)) (Ioi 0) :=
+    ((integrableOn_base_rpow_neg ht (by linarith : 0 < m / 2)).const_mul (2 / m)).mono'
+      (continuous_log_mul_base_rpow_neg ht m).aestronglyMeasurable (ae_of_all _ fun u => by
+        rw [Real.norm_of_nonneg (log_mul_base_rpow_neg_nonneg ht m u)]
+        exact log_mul_base_rpow_neg_le ht hm0 u)
+  rw [legendreQ, legendreQ, ← integral_sub (integrableOn_legendreQ_integrand hν ht)
+    (integrableOn_legendreQ_integrand (by simp) ht)]
+  refine (norm_integral_le_of_norm_le (hφ.const_mul ‖ν‖) (ae_of_all _ fun u => ?_)).trans ?_
+  · -- the exponents `-(ν + 1)` and `-1` both have real part at most `-m`
+    have hm1 : m ≤ ν.re + 1 := min_le_left _ _
+    have hm2 : m ≤ 1 := min_le_right _ _
+    have h := norm_ofReal_cpow_sub_ofReal_cpow_le (one_lt_base ht u).le (z := -(ν + 1))
+      (w := -(0 + 1)) (M := -m) (by rw [neg_re, add_re, one_re]; linarith)
+      (by rw [neg_re, add_re, zero_re, one_re]; linarith)
+    rw [show -(ν + 1) - -(0 + 1) = -ν by ring, norm_neg] at h
+    exact h.trans_eq (by ring)
+  · rw [integral_const_mul, ← Ioc_union_Ioi_eq_Ioi hU0, setIntegral_union Ioc_disjoint_Ioi_same
+      measurableSet_Ioi (hφ.mono_set Ioc_subset_Ioi_self) (hφ.mono_set (Ioi_subset_Ioi hU0))]
+    gcongr
+    · exact setIntegral_Ioc_log_mul_base_rpow_neg_le ht ht2 hm0.le
+    · exact setIntegral_Ioi_log_mul_base_rpow_neg_le ht hm0
+
+/-- The logarithmic singularity of `Q_ν` at `t = 1`: for `-1 < re ν`,
+`Q_ν(t) = -½ log (t - 1) + O(1)` as `t → 1⁺`. -/
+theorem isBigO_legendreQ_add_half_log_nhdsGT_one {ν : ℂ} (hν : -1 < ν.re) :
+    (fun t : ℝ => legendreQ ν t + (Real.log (t - 1) / 2 : ℝ)) =O[𝓝[>] 1] fun _ => (1 : ℝ) := by
+  refine IsBigO.of_bound (‖ν‖ * (4 + 4 / min (ν.re + 1) 1 ^ 2) + Real.log 3 / 2) ?_
+  filter_upwards [Ioo_mem_nhdsGT (by norm_num : (1 : ℝ) < 2)] with t ⟨ht, ht2⟩
+  have hQ0 : legendreQ 0 t + (Real.log (t - 1) / 2 : ℝ) = (Real.log (t + 1) / 2 : ℝ) := by
+    rw [legendreQ_zero ht, ← ofReal_add, Real.log_div (by linarith) (by linarith)]
+    ring_nf
+  have hl : ‖((Real.log (t + 1) / 2 : ℝ) : ℂ)‖ ≤ Real.log 3 / 2 := by
+    rw [norm_real, Real.norm_of_nonneg (div_nonneg (Real.log_nonneg (by linarith)) two_pos.le)]
+    gcongr
+    linarith
+  calc ‖legendreQ ν t + (Real.log (t - 1) / 2 : ℝ)‖
+      = ‖(legendreQ ν t - legendreQ 0 t) + (legendreQ 0 t + (Real.log (t - 1) / 2 : ℝ))‖ := by
+        ring_nf
+    _ ≤ ‖ν‖ * (4 + 4 / min (ν.re + 1) 1 ^ 2) + Real.log 3 / 2 :=
+        (norm_add_le _ _).trans
+          (add_le_add (norm_legendreQ_sub_legendreQ_zero_le hν ht ht2) (hQ0 ▸ hl))
+    _ = (‖ν‖ * (4 + 4 / min (ν.re + 1) 1 ^ 2) + Real.log 3 / 2) * ‖(1 : ℝ)‖ := by simp
 
 end Complex
