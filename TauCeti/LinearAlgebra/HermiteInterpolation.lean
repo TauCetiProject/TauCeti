@@ -250,12 +250,11 @@ theorem hasseJet_surjective [Finite ι] (ha : Pairwise fun i j => IsUnit (a i - 
     (fun _ _ hij => (Ideal.isCoprime_span_singleton_iff _ _).2
       (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow)
     (fun i => ∑ k : Fin (m i), c i k • (X - C (a i)) ^ (k : ℕ))
-  refine ⟨g, ?_⟩
-  ext i k
-  have h := X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.1
-    (Ideal.mem_span_singleton.1 (hg i)) k k.isLt
-  rw [map_sub, eval_sub, sub_eq_zero] at h
-  simp [h, map_sum, eval_finsetSum, Fin.val_inj]
+  refine ⟨g, _root_.funext fun i => ?_⟩
+  -- At each node, `g` has the Taylor coordinates of its local representative.
+  have h := TauCeti.taylorJet_eq_zero_iff.2 (hg i)
+  rw [map_sub, sub_eq_zero, TauCeti.taylorJet_sum_smul_X_sub_C_pow] at h
+  exact h
 
 variable [Fintype ι]
 
@@ -339,6 +338,8 @@ theorem hasseJetQuotientEquiv_apply (x : R[X] ⧸ Ideal.span {∏ i, (X - C (a i
     hasseJetQuotientEquiv ha m x i =
       TauCeti.taylorJetQuotientEquiv (a i) (m i) (hermiteQuotientEquiv ha m x i) := by
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [hasseJetQuotientEquiv_mk, hermiteQuotientEquiv_mk, ← Ideal.Quotient.mk_eq_mk,
+    TauCeti.taylorJetQuotientEquiv_mk]
   ext k
   simp
 

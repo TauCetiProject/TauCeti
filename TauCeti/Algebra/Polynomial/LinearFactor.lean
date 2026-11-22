@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Div
-public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Algebra.Polynomial.FieldDivision
@@ -30,8 +29,10 @@ factor on the left.
 Factoring out the full multiplicity of a root of a nonzero polynomial leaves a cofactor
 that does not vanish at the root.
 
-Over any ring, the Hasse derivative of order `k + 1` of `(X - C r) * g` is `X - C r` times that of
-`g`, plus the Hasse derivative of `g` of order `k`. Consequently a Hasse derivative of order `k`
+Over any semiring, the Hasse derivative of order `k + 1` of `a * g`, for a polynomial `a` of degree
+at most one, is `a` times that of `g` plus `derivative a` times the Hasse derivative of `g` of order
+`k`. For `a = X - C r` over a ring the second term is the Hasse derivative of `g` of order `k`.
+Consequently a Hasse derivative of order `k`
 lowers the power of `X - C r` that is a left factor of a polynomial by at most `k`.
 
 ## Main results
@@ -44,8 +45,9 @@ lowers the power of `X - C r` that is a left factor of a polynomial by at most `
 * `Polynomial.eval_mul_pos_of_natDegree_le_one_of_no_roots`: constant nonzero sign on a root-free
   closed interval for polynomials of degree at most one.
 * `Polynomial.derivative_root_factors`: factor the derivative of a polynomial with two root powers.
-* `Polynomial.hasseDeriv_succ_X_sub_C_mul`: the Leibniz rule for Hasse derivatives of a left
-  multiple of `X - C r`, over any ring.
+* `Polynomial.hasseDeriv_succ_mul_of_natDegree_le_one`, `Polynomial.hasseDeriv_succ_X_sub_C_mul`:
+  the Leibniz rule for Hasse derivatives of a polynomial with a left factor of degree at most one,
+  over any semiring, and of a polynomial with left factor `X - C r`, over any ring.
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - C r) ^ n` is a left factor of `p`, then
   `(X - C r) ^ (n - k)` is a left factor of its Hasse derivative of order `k`, over any ring.
 * `Polynomial.IsRoot.exists_eq_pow_succ_mul`: factor out a positive power of `X - C x`, leaving a
@@ -173,17 +175,25 @@ theorem derivative_root_factors {A : Type*} [CommRing A] (a b : A) (m n : ℕ) (
   simp only [pow_succ]
   ring
 
-/-- The Leibniz rule for Hasse derivatives of a left multiple of the linear factor `X - C r`:
+/-- The Leibniz rule for Hasse derivatives of a polynomial with a left factor `a` of degree at most
+one: `D⁽ᵏ⁺¹⁾ (a * g) = a * D⁽ᵏ⁺¹⁾ g + a' * D⁽ᵏ⁾ g`. Only the Hasse derivatives of `a` of order at
+most one contribute. -/
+theorem hasseDeriv_succ_mul_of_natDegree_le_one {S : Type*} [Semiring S] {a : S[X]}
+    (ha : a.natDegree ≤ 1) (k : ℕ) (g : S[X]) :
+    hasseDeriv (k + 1) (a * g) = a * hasseDeriv (k + 1) g + derivative a * hasseDeriv k g := by
+  rw [hasseDeriv_mul, Finset.Nat.sum_antidiagonal_succ, Finset.sum_eq_single (0, k)]
+  · simp
+  · rintro ⟨_ | i, j⟩ hij hne
+    · simp_all
+    · simp [hasseDeriv_eq_zero_of_lt_natDegree a (i + 1 + 1) (by omega)]
+  · simp
+
+/-- The Leibniz rule for Hasse derivatives of a polynomial with left factor `X - C r`:
 `D⁽ᵏ⁺¹⁾ ((X - C r) * g) = (X - C r) * D⁽ᵏ⁺¹⁾ g + D⁽ᵏ⁾ g`. This is the polynomial analogue of
 `PowerSeries.hasseDeriv_succ_X_sub_C_mul`. -/
 theorem hasseDeriv_succ_X_sub_C_mul (k : ℕ) (r : R) (g : R[X]) :
     hasseDeriv (k + 1) ((X - C r) * g) = (X - C r) * hasseDeriv (k + 1) g + hasseDeriv k g := by
-  rw [hasseDeriv_mul, Finset.Nat.sum_antidiagonal_succ, Finset.sum_eq_single (0, k)]
-  · simp
-  · rintro ⟨_ | a, b⟩ hab hne
-    · simp_all
-    · simp [hasseDeriv_X, hasseDeriv_C]
-  · simp
+  simpa using hasseDeriv_succ_mul_of_natDegree_le_one (natDegree_X_sub_C_le r) k g
 
 /-- If `(X - C r) ^ n` is a left factor of `p`, then `(X - C r) ^ (n - k)` is a left factor of the
 Hasse derivative of `p` of order `k`. This is the analogue of
