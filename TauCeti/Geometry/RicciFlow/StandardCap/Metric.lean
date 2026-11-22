@@ -10,7 +10,7 @@ public import TauCeti.Geometry.RicciFlow.StandardCap.PuncturedMetric
 import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.CosSqrt
-import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Coercive
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
@@ -184,14 +184,10 @@ theorem isInvertible_mfderiv_standardCapPolar (p : standardCapRadialDomain × sp
     (mfderiv (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
       (standardCapPolar V) p).IsInvertible := by
   have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
-  have : FiniteDimensional ℝ (TangentSpace 𝓘(ℝ, V) (standardCapPolar V p)) :=
-    inferInstanceAs (FiniteDimensional ℝ V)
-  -- The tangent spaces are copies of the model spaces `ℝ × ℝⁿ` and `V`, of the same dimension
-  -- `n + 1`.
-  refine (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq ?_).2
-    (injective_mfderiv_standardCapPolar p)
-  rw [finrank_tangentSpace, finrank_tangentSpace, Module.finrank_prod, finrank_euclideanSpace_fin,
-    Module.finrank_self, Fact.out (p := Module.finrank ℝ V = n + 1), add_comm]
+  -- The model spaces `ℝ × ℝⁿ` and `V` have the same dimension `n + 1`.
+  refine (isInvertible_mfderiv_iff_injective ?_).2 (injective_mfderiv_standardCapPolar p)
+  rw [Module.finrank_prod, finrank_euclideanSpace_fin, Module.finrank_self,
+    Fact.out (p := Module.finrank ℝ V = n + 1), add_comm]
 
 end Polar
 
