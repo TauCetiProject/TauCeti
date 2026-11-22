@@ -35,10 +35,15 @@ global functions of the base change.
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
+* `AlgebraicGeometry.Scheme.Hom.existsUnique_apply_eq_of_isIso_morphismRestrict`: if `f` restricts
+  to an isomorphism over `U`, every point of `U` has a unique preimage under `f`.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
   `Γ(Y, U) ⟶ Γ(X, V)`, whatever the proofs of `V ≤ f ⁻¹ᵁ U`.
+* `CategoryTheory.CommSq.preimage_preimage_eq` and
+  `CategoryTheory.CommSq.app_comp_app_eq_app_comp_appLE`: the two paths around a square induce
+  equal inverse images of opens and equal pullback maps on sections over those opens.
 * `CategoryTheory.CommSq.appLE_app_topIso_hom`: in a commutative square over the inclusion of an
   open `U`, the two ways of pulling a function on `U` back to the source of the square agree.
 * `CategoryTheory.IsPullback.isIso_appLE`: in a pullback square of the inclusion of an open `U`
@@ -104,6 +109,21 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z
   -- `(ι ≫ f) ⁻¹ᵁ V` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ V`, which instance search does not unfold.
   exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι ∣_ f ⁻¹ᵁ V) (f ∣_ V) _ h
 
+/-- If the restriction of `f` over `U` is an isomorphism, every point in `U` has a
+unique preimage in the whole source of `f`. -/
+theorem Scheme.Hom.existsUnique_apply_eq_of_isIso_morphismRestrict (U : Y.Opens)
+    [IsIso (f ∣_ U)] {x : Y} (hx : x ∈ U) : ∃! y : X, f y = x := by
+  have hf : Function.Bijective (f ∣_ U) := by
+    simpa only [Scheme.coe_homeoOfIso, asIso_hom] using
+      (Scheme.homeoOfIso (asIso (f ∣_ U))).bijective
+  obtain ⟨y, hy, huniq⟩ := hf.existsUnique ⟨x, hx⟩
+  refine ⟨y.val, (morphismRestrict_base_coe f U y).symm.trans (congrArg Subtype.val hy),
+    fun z hz ↦ ?_⟩
+  have hzU : z ∈ f ⁻¹ᵁ U := (Scheme.Hom.mem_preimage f).mpr (hz.symm ▸ hx)
+  have hz' : (f ∣_ U) ⟨z, hzU⟩ = ⟨x, hx⟩ :=
+    Subtype.ext ((morphismRestrict_base_coe f U ⟨z, hzU⟩).trans hz)
+  exact congrArg Subtype.val (huniq ⟨z, hzU⟩ hz')
+
 /-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
 ring-hom property `Q`. Then `P` holds for the restriction `V ⟶ U` of `f` iff `Q` holds for
 `f.appLE U V : Γ(Y, U) ⟶ Γ(X, V)`. -/
@@ -129,6 +149,25 @@ end AlgebraicGeometry
 namespace CategoryTheory
 
 open AlgebraicGeometry
+
+/-- The two paths around a commutative square of schemes give the same inverse image of
+an open of the target. -/
+theorem CommSq.preimage_preimage_eq {W X Y Z : Scheme.{u}}
+    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+    (h : CommSq i j f g) (U : Z.Opens) : i ⁻¹ᵁ f ⁻¹ᵁ U = j ⁻¹ᵁ g ⁻¹ᵁ U := by
+  rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, h.w]
+
+/-- The two paths around a commutative square give the same pullback of sections, with
+`appLE` presenting the second composite on the first path's inverse-image open. -/
+theorem CommSq.app_comp_app_eq_app_comp_appLE {W X Y Z : Scheme.{u}}
+    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+    (h : CommSq i j f g) (U : Z.Opens) :
+    f.app U ≫ i.app (f ⁻¹ᵁ U) =
+      g.app U ≫ j.appLE (g ⁻¹ᵁ U) (i ⁻¹ᵁ f ⁻¹ᵁ U) (h.preimage_preimage_eq U).le := by
+  have e := Scheme.Hom.congr_appLE _ h.w U (i ⁻¹ᵁ f ⁻¹ᵁ U)
+    (by rw [Scheme.Hom.comp_preimage])
+    (by rw [Scheme.Hom.comp_preimage]; exact (h.preimage_preimage_eq U).le)
+  simpa only [Scheme.Hom.comp_appLE, Scheme.Hom.appLE_eq_app] using e
 
 variable {Z Y T : Scheme.{u}} {U : T.Opens} {j : Z ⟶ Y} {g : Z ⟶ U} {f : Y ⟶ T}
 

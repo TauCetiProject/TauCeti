@@ -166,9 +166,9 @@ theorem isPushout_pullback_algebra {B C D : Type u} [CommRing B] [CommRing C] [C
 
 /-- For `t ∈ ker (p.pullbackSnd q)`, the first projection induces a bijection between
 arbitrary localizations of `B ×_C D` away from `t` and of `B` away from
-`p.pullbackFst q t`. No surjectivity hypothesis on `p` or `q` is needed.
-The inverse on numerators is computed by `IsLocalization.Away.ofBijective_map_symm_algebraMap`. -/
-theorem bijective_away_map_pullbackFst {B C D : Type*} [CommRing B] [Semiring C] [CommRing D]
+`p.pullbackFst q t`. No surjectivity hypothesis on `p` or `q` is needed. -/
+theorem bijective_away_map_pullbackFst_of_mem_ker_pullbackSnd {B C D : Type*}
+    [CommRing B] [Semiring C] [CommRing D]
     (p : B →+* C) (q : D →+* C) (Aₜ Bₜ : Type*) [CommRing Aₜ] [CommSemiring Bₜ]
     [Algebra (p.pullback q) Aₜ] [Algebra B Bₜ] {t : p.pullback q}
     [IsLocalization.Away t Aₜ] [IsLocalization.Away (p.pullbackFst q t) Bₜ]

@@ -16,8 +16,6 @@ This file records general-purpose facts about open subsets of schemes.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Spec.map_appLE_algebraMap`: on arbitrary opens, `Spec.map` sends a constant
-  section to the constant section of its image.
 * `TauCeti.AlgebraicGeometry.Scheme.instNonemptyTop` states that the whole space is a nonempty open
   subset of any nonempty scheme.
 * `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom` identifies restriction of
@@ -82,23 +80,6 @@ public section
 open CategoryTheory Opposite
 
 noncomputable section
-
-/-- On arbitrary opens, the map induced by `Spec.map f` sends the constant section `x`
-to the constant section `f x`. The algebra structures are the canonical structure-sheaf
-algebras, as in `IsAffineOpen.algebraMap_Spec_obj`. The rule runs before algebra maps
-are simplified into composites of restriction maps. -/
-@[simp↓]
-theorem _root_.AlgebraicGeometry.Spec.map_appLE_algebraMap {R S : CommRingCat.{u}} (f : R ⟶ S)
-    (U : (Spec R).Opens) (V : (Spec S).Opens) (e : V ≤ Spec.map f ⁻¹ᵁ U) (x : R) :
-    (Spec.map f).appLE U V e (algebraMap R Γ(Spec R, U) x) =
-      algebraMap S Γ(Spec S, V) (f x) := by
-  have h : CommRingCat.ofHom (algebraMap R Γ(Spec R, U)) ≫ (Spec.map f).appLE U V e =
-      f ≫ CommRingCat.ofHom (algebraMap S Γ(Spec S, V)) := by
-    simp only [IsAffineOpen.algebraMap_Spec_obj, CommRingCat.ofHom_hom,
-      Category.assoc, Scheme.Hom.map_appLE]
-    dsimp [Scheme.Hom.appLE]
-    exact (Scheme.ΓSpecIso_inv_naturality_assoc f _).symm
-  exact ConcreteCategory.congr_hom h x
 
 variable {X : Scheme.{u}} {U : X.Opens}
 

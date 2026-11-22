@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 import Mathlib.Algebra.Category.Ring.Under.Limits
-import Mathlib.Algebra.Category.Ring.Instances
 import TauCeti.CategoryTheory.Comma.Under.Pushout
 
 /-!

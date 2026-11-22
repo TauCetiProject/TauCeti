@@ -12,6 +12,7 @@ import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.RingTheory.FiberProduct.Basic
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Topology.Category.TopCat.Pushout
@@ -63,12 +64,13 @@ theorem isFinite_spec_pullbackFst (hp : Surjective p) (hq : q.Finite) :
 
 /-- The first projection induces an isomorphism over the basic open of an element in the kernel
 of the second projection. -/
-theorem isIso_spec_pullbackFst_restrict_basicOpen {t : p.pullback q}
+theorem isIso_spec_pullbackFst_restrict_basicOpen_of_mem_ker_pullbackSnd
+    {t : p.pullback q}
     (ht : t ∈ RingHom.ker (p.pullbackSnd q)) :
     IsIso (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ∣_ PrimeSpectrum.basicOpen t) :=
   (isIso_SpecMap_morphismRestrict_basicOpen_iff
     (CommRingCat.ofHom (p.pullbackFst q)) t).mpr
-    (p.bijective_away_map_pullbackFst q (Localization.Away t)
+    (p.bijective_away_map_pullbackFst_of_mem_ker_pullbackSnd q (Localization.Away t)
       (Localization.Away (p.pullbackFst q t)) ht)
 
 /-- The map from `Spec B` is an isomorphism over the complement of
@@ -86,7 +88,8 @@ theorem isIso_spec_pullbackFst_restrict_compl_zeroLocus_ker_pullbackSnd :
         (isClosed_zeroLocus _).isOpen_compl⟩ : (Spec (CommRingCat.of (p.pullback q))).Opens) := by
     exact iSup_basicOpen_eq_compl_zeroLocus _
   have h : IsIso (f ∣_ iSup U) :=
-    f.isIso_morphismRestrict_iSup U fun t ↦ p.isIso_spec_pullbackFst_restrict_basicOpen q t.property
+    f.isIso_morphismRestrict_iSup U fun t ↦
+      p.isIso_spec_pullbackFst_restrict_basicOpen_of_mem_ker_pullbackSnd q t.property
   exact hU ▸ h
 
 private theorem existsUnique_comap_pullbackFst_of_notMem {t : p.pullback q}
@@ -96,19 +99,12 @@ private theorem existsUnique_comap_pullbackFst_of_notMem {t : p.pullback q}
   let f := Spec.map (CommRingCat.ofHom (p.pullbackFst q))
   let U : (Spec (CommRingCat.of (p.pullback q))).Opens := PrimeSpectrum.basicOpen t
   have hxU : x ∈ U := (mem_basicOpen t x).mpr hx
-  have : IsIso (f ∣_ U) := p.isIso_spec_pullbackFst_restrict_basicOpen q ht
-  have hf := (Scheme.homeoOfIso (asIso (f ∣_ U))).bijective
-  obtain ⟨y, hy, huniq⟩ := hf.existsUnique ⟨x, hxU⟩
-  have hrestrict (z : f ⁻¹ᵁ U) : ((f ∣_ U) z).val = comap (p.pullbackFst q) z.val :=
-    (morphismRestrict_base_coe f U z).trans
-      (Spec.map_apply (CommRingCat.ofHom (p.pullbackFst q)) z.val)
-  refine ⟨y.val, (hrestrict y).symm.trans (congrArg Subtype.val hy), fun y' hy' ↦ ?_⟩
-  have hy'U : y' ∈ f ⁻¹ᵁ U :=
-    (Scheme.Hom.mem_preimage f).mpr <|
-      (Spec.map_apply (CommRingCat.ofHom (p.pullbackFst q)) y').symm ▸ (hy'.symm ▸ hxU)
-  have hy'' : (f ∣_ U) ⟨y', hy'U⟩ = ⟨x, hxU⟩ := Subtype.ext
-    ((hrestrict ⟨y', hy'U⟩).trans hy')
-  exact congrArg Subtype.val (huniq ⟨y', hy'U⟩ hy'')
+  have : IsIso (f ∣_ U) :=
+    p.isIso_spec_pullbackFst_restrict_basicOpen_of_mem_ker_pullbackSnd q ht
+  have hf : (f : PrimeSpectrum B → PrimeSpectrum (p.pullback q)) = comap (p.pullbackFst q) :=
+    funext (Spec.map_apply (CommRingCat.ofHom (p.pullbackFst q)))
+  rw [← hf]
+  exact f.existsUnique_apply_eq_of_isIso_morphismRestrict U hxU
 
 private theorem surjective_sumElim_comap_pullback (hp : Surjective p) :
     Surjective (Sum.elim (comap (p.pullbackFst q)) (comap (p.pullbackSnd q))) := by
@@ -225,28 +221,45 @@ theorem isPushout_base_spec_pullback (hp : Surjective p) :
   have hpre := hs.toCommSq.map F
   let fst := F.map (Spec.map (CommRingCat.ofHom (p.pullbackFst q)))
   let snd := F.map (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)))
-  have hinj : Injective snd :=
-    comap_injective_of_surjective _ (p.surjective_pullbackSnd_of_surjective q hp)
+  have hfst : (fst : PrimeSpectrum B → PrimeSpectrum (p.pullback q)) = comap (p.pullbackFst q) :=
+    funext (Spec.map_apply (CommRingCat.ofHom (p.pullbackFst q)))
+  have hsnd : (snd : PrimeSpectrum D → PrimeSpectrum (p.pullback q)) = comap (p.pullbackSnd q) :=
+    funext (Spec.map_apply (CommRingCat.ofHom (p.pullbackSnd q)))
+  have hpmap : (Spec.map (CommRingCat.ofHom p) : PrimeSpectrum C → PrimeSpectrum B) = comap p :=
+    funext (Spec.map_apply (CommRingCat.ofHom p))
+  have hinj : Injective snd := by
+    rw [hsnd]
+    exact comap_injective_of_surjective _ (p.surjective_pullbackSnd_of_surjective q hp)
   have : Mono snd := (mono_iff_injective _).mpr hinj
   have hSet : IsPullback (F.map (Spec.map (CommRingCat.ofHom q)))
       (F.map (Spec.map (CommRingCat.ofHom p))) snd fst := by
     refine (Types.isPullback_iff ..).mpr ⟨hpre.w, ?_, ?_⟩
-    · exact fun x y h ↦ comap_injective_of_surjective _ hp h.2
+    · intro x y h
+      have he : Spec.map (CommRingCat.ofHom p) x = Spec.map (CommRingCat.ofHom p) y := h.2
+      rw [hpmap] at he
+      exact comap_injective_of_surjective _ hp he
     · exact Scheme.exists_preimage_of_isPullback hs
   -- Apply Tau Ceti's `IsPushout.of_isPushout_forget` to the underlying set pushout
   -- given by Mathlib's `Types.isPushout_of_isPullback_of_mono'`.
   apply IsPushout.of_isPushout_forget
   · refine (Types.isPushout_of_isPullback_of_mono' hSet ?_ ?_).flip
-    · refine Set.eq_univ_of_forall fun x ↦ ?_
-      obtain ⟨y | y, rfl⟩ := p.surjective_sumElim_comap_pullback q hp x
-      · exact Or.inr (Set.mem_range_self y)
-      · exact Or.inl (Set.mem_range_self y)
-    · exact fun x y hx _ hxy ↦ p.eq_of_notMem_range_of_comap_pullbackFst_eq q hp x y hx hxy
+    · rw [hfst, hsnd]
+      refine Set.eq_univ_of_forall fun x ↦ ?_
+      obtain ⟨y | y, hy⟩ := p.surjective_sumElim_comap_pullback q hp x
+      · exact Or.inr ⟨y, hy⟩
+      · exact Or.inl ⟨y, hy⟩
+    · intro x y hx _ hxy
+      have hx' : x ∉ Set.range (Spec.map (CommRingCat.ofHom p)) := hx
+      rw [hpmap] at hx'
+      rw [hfst] at hxy
+      exact p.eq_of_notMem_range_of_comap_pullbackFst_eq q hp x y hx' hxy
   · intro W hB hD
     -- Use the prime-spectrum presentation to apply the closed-set criterion.
     let W' : Set (PrimeSpectrum (p.pullback q)) := W
-    have hB' : IsOpen (comap (p.pullbackFst q) ⁻¹' W') := hB
-    have hD' : IsOpen (comap (p.pullbackSnd q) ⁻¹' W') := hD
+    have hB' : @IsOpen (PrimeSpectrum B) _ (fst ⁻¹' W') := hB
+    have hD' : @IsOpen (PrimeSpectrum D) _ (snd ⁻¹' W') := hD
+    rw [hfst] at hB'
+    rw [hsnd] at hD'
     have h : IsClosed W'ᶜ := p.isClosed_of_isClosed_preimages_comap_pullback q hp
       (by rw [Set.preimage_compl]; exact hB'.isClosed_compl)
       (by rw [Set.preimage_compl]; exact hD'.isClosed_compl)

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Scheme.Opens
+public import Mathlib.AlgebraicGeometry.Scheme
 public import Mathlib.RingTheory.LocalRing.Pullback
 
 import TauCeti.AlgebraicGeometry.Restrict
@@ -52,12 +52,15 @@ maps form a pullback square. -/
 theorem isPullback_spec_pullback_sections_basicOpen (r : p.pullback q) :
     IsPullback
       ((Spec.map (CommRingCat.ofHom (p.pullbackFst q))).appLE
-        (PrimeSpectrum.basicOpen r) (PrimeSpectrum.basicOpen (p.pullbackFst q r)) le_rfl)
+        (PrimeSpectrum.basicOpen r) (PrimeSpectrum.basicOpen (p.pullbackFst q r))
+        (by rw [SpecMap_preimage_basicOpen]; exact le_rfl))
       ((Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).appLE
-        (PrimeSpectrum.basicOpen r) (PrimeSpectrum.basicOpen (p.pullbackSnd q r)) le_rfl)
+        (PrimeSpectrum.basicOpen r) (PrimeSpectrum.basicOpen (p.pullbackSnd q r))
+        (by rw [SpecMap_preimage_basicOpen]; exact le_rfl))
       ((Spec.map (CommRingCat.ofHom p)).appLE
         (PrimeSpectrum.basicOpen (p.pullbackFst q r))
-        (PrimeSpectrum.basicOpen (p (p.pullbackFst q r))) le_rfl)
+        (PrimeSpectrum.basicOpen (p (p.pullbackFst q r)))
+        (by rw [SpecMap_preimage_basicOpen]; exact le_rfl))
       ((Spec.map (CommRingCat.ofHom q)).appLE
         (PrimeSpectrum.basicOpen (p.pullbackSnd q r))
         (PrimeSpectrum.basicOpen (p (p.pullbackFst q r))) (by
@@ -66,6 +69,17 @@ theorem isPullback_spec_pullback_sections_basicOpen (r : p.pullback q) :
   have h : IsPullback (CommRingCat.ofHom (p.pullbackFst q))
       (CommRingCat.ofHom (p.pullbackSnd q)) (CommRingCat.ofHom p) (CommRingCat.ofHom q) :=
     .of_isLimit (CommRingCat.pullbackConeIsLimit (CommRingCat.ofHom p) (CommRingCat.ofHom q))
+  have mapNumerator {R S : CommRingCat.{u}} (f : R ⟶ S) (a : R) (b : S) (hab : f a = b)
+      (e : PrimeSpectrum.basicOpen b ≤ Spec.map f ⁻¹ᵁ PrimeSpectrum.basicOpen a) (x : R) :
+      (Spec.map f).appLE (PrimeSpectrum.basicOpen a) (PrimeSpectrum.basicOpen b) e
+          (algebraMap R ((Spec.structureSheaf R).obj.obj (Opposite.op (PrimeSpectrum.basicOpen a)))
+            x) =
+        algebraMap S ((Spec.structureSheaf S).obj.obj (Opposite.op (PrimeSpectrum.basicOpen b)))
+          (f x) := by
+    subst b
+    exact (ConcreteCategory.congr_hom (Spec.map_appLE f e) _).trans
+      ((DFunLike.congr_fun (StructureSheaf.comap_basicOpen f.hom a) _).trans
+        (IsLocalization.map_eq _ x))
   -- Present the section rings as structure-sheaf objects so their canonical instances match.
   refine h.localizationAway
     (A' := (Spec.structureSheaf (p.pullback q)).obj.obj (Opposite.op (PrimeSpectrum.basicOpen r)))
@@ -75,7 +89,11 @@ theorem isPullback_spec_pullback_sections_basicOpen (r : p.pullback q) :
       (Opposite.op (PrimeSpectrum.basicOpen (p.pullbackSnd q r))))
     (D' := (Spec.structureSheaf C).obj.obj
       (Opposite.op (PrimeSpectrum.basicOpen (p (p.pullbackFst q r)))))
-    r ?_ ?_ ?_ ?_ <;> exact Spec.map_appLE_algebraMap _ _ _ _
+    r ?_ ?_ ?_ ?_
+  · exact mapNumerator _ _ _ rfl _
+  · exact mapNumerator _ _ _ rfl _
+  · exact mapNumerator _ _ _ rfl _
+  · exact mapNumerator (CommRingCat.ofHom q) _ _ r.property.symm _
 
 private def overlapSheaf :
     TopCat.Sheaf CommRingCat.{u} (Spec (CommRingCat.of (p.pullback q))) :=
@@ -84,8 +102,10 @@ private def overlapSheaf :
       (Spec (CommRingCat.of C)).sheaf)
 
 private theorem spec_pullback_comm :
-    Spec.map (CommRingCat.ofHom p) ≫ Spec.map (CommRingCat.ofHom (p.pullbackFst q)) =
-      Spec.map (CommRingCat.ofHom q) ≫ Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) := by
+    CommSq (Spec.map (CommRingCat.ofHom p)) (Spec.map (CommRingCat.ofHom q))
+      (Spec.map (CommRingCat.ofHom (p.pullbackFst q)))
+      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))) := by
+  constructor
   rw [← Spec.map_comp, ← Spec.map_comp]
   exact congrArg Spec.map (CommRingCat.hom_ext (p.pullback_comm_sq q))
 
@@ -95,41 +115,7 @@ private theorem spec_pullback_base_comm :
       (Spec.map (CommRingCat.ofHom p)).base ≫
         (Spec.map (CommRingCat.ofHom (p.pullbackFst q))).base := by
   exact congrArg (fun f : Spec (CommRingCat.of C) ⟶
-    Spec (CommRingCat.of (p.pullback q)) => f.base) (spec_pullback_comm p q).symm
-
-private theorem overlap_preimage (U : (Spec (CommRingCat.of (p.pullback q))).Opens) :
-    Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
-      (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ U) =
-    Spec.map (CommRingCat.ofHom q) ⁻¹ᵁ
-      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ U) := by
-  rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, spec_pullback_comm]
-
-private theorem overlap_le (U : (Spec (CommRingCat.of (p.pullback q))).Opens) :
-    Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
-      (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ U) ≤
-    Spec.map (CommRingCat.ofHom q) ⁻¹ᵁ
-      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ U) :=
-  le_of_eq (overlap_preimage p q U)
-
--- Compare both composites on the same source and target opens using `appLE`.
--- This makes the transport along `overlap_preimage` explicit.
-private theorem spec_pullback_app_comm
-    (U : (Spec (CommRingCat.of (p.pullback q))).Opens) :
-    (Spec.map (CommRingCat.ofHom (p.pullbackFst q))).app U ≫
-        (Spec.map (CommRingCat.ofHom p)).app
-          (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ U) =
-      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).app U ≫
-        (Spec.map (CommRingCat.ofHom q)).appLE
-          (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ U)
-          (Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
-            (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ U))
-          (overlap_le p q U) := by
-  have h := Scheme.Hom.congr_appLE _ (spec_pullback_comm p q) U
-    (Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
-      (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ U))
-    (by rw [Scheme.Hom.comp_preimage])
-    (by rw [Scheme.Hom.comp_preimage]; exact overlap_le p q U)
-  simpa only [Scheme.Hom.comp_appLE, Scheme.Hom.appLE_eq_app] using h
+    Spec (CommRingCat.of (p.pullback q)) => f.base) (spec_pullback_comm p q).w.symm
 
 private def leftSheaf :
     TopCat.Sheaf CommRingCat.{u} (Spec (CommRingCat.of (p.pullback q))) :=
@@ -190,11 +176,12 @@ private theorem rightOverlapMap_app (V : (Spec (CommRingCat.of (p.pullback q))).
         (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ V)
         (Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
           (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ V))
-        (overlap_le p q V) := by
+        ((spec_pullback_comm p q).preimage_preimage_eq V).le := by
   unfold rightOverlapMap
   erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app,
     TopCat.Presheaf.Pushforward.comp_inv_app,
-    TopCat.Presheaf.Pushforward.comp_hom_app, TopCat.Presheaf.pushforwardEq_hom_app]
+    TopCat.Presheaf.Pushforward.comp_hom_app, TopCat.Presheaf.pushforwardEq_hom_app,
+    TopCat.Presheaf.pushforward_map_app', Category.id_comp, Category.comp_id]
   simp only [Scheme.Hom.appLE]
   -- Both transports restrict from the right inverse image to the left inverse image.
   apply congrArg ((Spec.map (CommRingCat.ofHom q)).app
@@ -207,7 +194,7 @@ private theorem sheafSquare_comm :
   refine CategoryTheory.Sheaf.hom_ext (NatTrans.ext ?_)
   funext V
   rw [TopCat.Sheaf.comp_app, TopCat.Sheaf.comp_app]
-  have h := spec_pullback_app_comm p q V.unop
+  have h := (spec_pullback_comm p q).app_comp_app_eq_app_comp_appLE V.unop
   simp only [← leftMap_app, ← rightMap_app, ← leftOverlapMap_app,
     ← rightOverlapMap_app, Opposite.op_unop] at h
   exact h
@@ -234,6 +221,7 @@ private theorem isPullback_sheafSquare :
         (E.map l) (E.map r) := by
       simp only [hEval, l, r, leftMap_app, rightMap_app,
         leftOverlapMap_app, rightOverlapMap_app]
+      rw [Scheme.Hom.app_eq_appLE, Scheme.Hom.app_eq_appLE, Scheme.Hom.app_eq_appLE]
       exact p.isPullback_spec_pullback_sections_basicOpen q x
     -- Record evaluation's limit preservation at the chosen open before composing functors.
     have : PreservesLimitsOfShape WalkingCospan
@@ -266,7 +254,7 @@ theorem isPullback_spec_pullback_sections
         (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ U)
         (Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
           (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ U))
-        (by exact overlap_le p q U)) := by
+        (by exact ((spec_pullback_comm p q).preimage_preimage_eq U).le)) := by
   have h : IsPullback ((p.leftMap q).hom.app (Opposite.op U))
       ((p.rightMap q).hom.app (Opposite.op U))
       ((p.leftOverlapMap q).hom.app (Opposite.op U))
