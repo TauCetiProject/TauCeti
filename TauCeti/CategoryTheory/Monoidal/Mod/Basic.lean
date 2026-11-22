@@ -161,16 +161,4 @@ theorem isModHom_of_epi_whiskerLeft_comp {C : Type*} [Category C] [MonoidalCateg
     rw [← cancel_epi (G ◁ p), ← Category.assoc, ← hp, Category.assoc, hpf,
       ← Category.assoc, ← whiskerLeft_comp]
 
-/-- If `G ◁ p` is an epimorphism and `p : G ⟶ X` and `p ≫ f` intertwine left multiplication on
-`G` with the target actions, then `f` is `G`-equivariant. -/
-theorem isModHom_of_epi_whiskerLeft_mul_comp {C : Type*} [Category C] [MonoidalCategory C]
-    {G X Y : C} [MonObj G] [ModObj G X] [ModObj G Y] (p : G ⟶ X) [Epi (G ◁ p)]
-    (hp : μ[G] ≫ p = G ◁ p ≫ γ[G,X]) (f : X ⟶ Y)
-    (hpf : μ[G] ≫ (p ≫ f) = G ◁ (p ≫ f) ≫ γ[G,Y]) :
-    IsModHom G f := by
-  let _ : ModObj G G := ModObj.regular G
-  have _ : IsModHom G p := ⟨hp⟩
-  have _ : IsModHom G (p ≫ f) := ⟨hpf⟩
-  exact isModHom_of_epi_whiskerLeft_comp p f
-
 end CategoryTheory

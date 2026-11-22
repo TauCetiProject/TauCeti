@@ -232,28 +232,15 @@ variable {k : Type u} [Field k]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
   [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
 
-/-- When a single orbit covers `X`, the orbit immersion is a closed immersion. -/
-theorem isClosedImmersion_orbitι_of_orbit_eq_univ (h : orbit G x = Set.univ) :
-    let _ := compactSpace_of_orbit_eq_univ G x h
-    IsClosedImmersion (orbitι G x) := by
-  let _ := compactSpace_of_orbit_eq_univ G x h
-  exact (isClosedImmersion_orbitι_iff G x).mpr (h ▸ isClosed_univ)
-
-/-- When a single orbit covers `X`, the orbit immersion is surjective. -/
-theorem surjective_orbitι_of_orbit_eq_univ (h : orbit G x = Set.univ) :
-    let _ := compactSpace_of_orbit_eq_univ G x h
-    Surjective (orbitι G x) := by
-  let _ := compactSpace_of_orbit_eq_univ G x h
-  exact ⟨Set.range_eq_univ.mp ((range_orbitι G x).trans h)⟩
-
 /-- When a single orbit covers a reduced finite-type scheme `X`, the orbit immersion is an
 isomorphism of schemes. -/
 theorem isIso_orbitι_of_orbit_eq_univ [IsReduced X.left] (h : orbit G x = Set.univ) :
     let _ := compactSpace_of_orbit_eq_univ G x h
     IsIso (orbitι G x) := by
   let _ := compactSpace_of_orbit_eq_univ G x h
-  have : IsClosedImmersion (orbitι G x) := isClosedImmersion_orbitι_of_orbit_eq_univ G x h
-  have : Surjective (orbitι G x) := surjective_orbitι_of_orbit_eq_univ G x h
+  have : IsClosedImmersion (orbitι G x) :=
+    (isClosedImmersion_orbitι_iff G x).mpr (h ▸ isClosed_univ)
+  have : Surjective (orbitι G x) := ⟨Set.range_eq_univ.mp ((range_orbitι G x).trans h)⟩
   exact isIso_of_isClosedImmersion_of_surjective (orbitι G x)
 
 end FullOrbit

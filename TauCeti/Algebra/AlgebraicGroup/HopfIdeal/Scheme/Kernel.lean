@@ -185,14 +185,21 @@ private lemma isPullback_kernelSpec_scheme (f : H ⟶ K) :
 -- The following four lemmas isolate the underlying scheme maps of the group-object square.
 -- In particular, the two zero morphisms become the structural map and the identity section,
 -- rather than being left to unfold inside the pullback proof.
+private lemma hopfSpec_map_underlying {A B : _root_.CommHopfAlgCat.{u} R} (g : A ⟶ B) :
+    (Over.forget (Spec (CommRingCat.of R))).map
+        ((Grp.forget (Over (Spec (CommRingCat.of R)))).map
+          ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map g.op)) =
+      Spec.map (CommRingCat.ofHom g.hom.toAlgHom.toRingHom) := by
+  rw [Over.forget_map, Grp.forget_map]
+  exact hopfSpec_map_left (S := CommRingCat.of R) g
+
 private lemma kernelSpecι_underlying (f : H ⟶ K) :
     (Over.forget (Spec (CommRingCat.of R))).map
         ((Grp.forget (Over (Spec (CommRingCat.of R)))).map (kernelSpecι f)) =
       Spec.map (CommRingCat.ofHom
         (mkQuotient K (kernelHopfIdeal f)).hom.toAlgHom.toRingHom) := by
-  rw [kernelSpecι_def, quotientSpecι_def,
-    ← hopfSpec_map_left (S := CommRingCat.of R) (mkQuotient K (kernelHopfIdeal f))]
-  rfl
+  rw [kernelSpecι_def, quotientSpecι_def]
+  exact hopfSpec_map_underlying (mkQuotient K (kernelHopfIdeal f))
 
 private lemma kernelSpec_to_trivial_underlying (f : H ⟶ K) :
     (Over.forget (Spec (CommRingCat.of R))).map
@@ -200,14 +207,6 @@ private lemma kernelSpec_to_trivial_underlying (f : H ⟶ K) :
           (0 : kernelSpec f ⟶ Grp.trivial (Over (Spec (CommRingCat.of R))))) =
       Spec.map (CommRingCat.ofHom
         (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal))) := by
-  rfl
-
-private lemma hopfSpec_map_underlying (f : H ⟶ K) :
-    (Over.forget (Spec (CommRingCat.of R))).map
-        ((Grp.forget (Over (Spec (CommRingCat.of R)))).map
-          ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op)) =
-      Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) := by
-  rw [← hopfSpec_map_left (S := CommRingCat.of R) f]
   rfl
 
 private lemma trivial_to_hopfSpec_underlying (H : _root_.CommHopfAlgCat.{u} R) :

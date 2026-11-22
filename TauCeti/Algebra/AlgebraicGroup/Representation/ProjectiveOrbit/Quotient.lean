@@ -177,17 +177,8 @@ private theorem mapMulEquiv_comp_toProjectiveOrbit_eq_iff (m : M) (hm : Module.I
       ∃ c : Aˣ, ∀ φ : Module.Dual k M,
         h.ofConv (matrixCoefficient (C := H) φ m) =
           c * g.ofConv (matrixCoefficient (C := H) φ m) := by
-  have hg : (toProjectiveOrbitPoints (H := H) m hm).app (op (op A)) (ULift.up g) =
-      ULift.up (Spec.mapMulEquiv g ≫ toProjectiveOrbitOver (H := H) m hm) :=
-    CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H (toProjectiveOrbitOver (H := H) m hm)
-      (op (op A)) g
-  have hh : (toProjectiveOrbitPoints (H := H) m hm).app (op (op A)) (ULift.up h) =
-      ULift.up (Spec.mapMulEquiv h ≫ toProjectiveOrbitOver (H := H) m hm) :=
-    CommHopfAlgCat.specPointsHomEquiv_apply_app_apply H (toProjectiveOrbitOver (H := H) m hm)
-      (op (op A)) h
-  refine (ULift.up_inj (x := Spec.mapMulEquiv g ≫ toProjectiveOrbitOver (H := H) m hm)
-    (y := Spec.mapMulEquiv h ≫ toProjectiveOrbitOver (H := H) m hm)).symm.trans ?_
-  rw [← hg, ← hh]
+  rw [← CommHopfAlgCat.specPointsHomEquiv_apply_app_apply_eq_iff H
+    (toProjectiveOrbitOver (H := H) m hm) (op (op A)) g h]
   exact toProjectiveOrbitPoints_app_eq_iff (H := H) m hm (op (op A)) g h
 
 variable (I : HopfIdeal k H) (m : M) (hm : Module.IsUnimodular k m)

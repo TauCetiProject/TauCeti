@@ -10,9 +10,7 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mod
 import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
 import Mathlib.CategoryTheory.Sites.CartesianClosed
 import Mathlib.CategoryTheory.Sites.PreservesLimits
-import TauCeti.AlgebraicGeometry.Morphisms.Flat.Lifting
 import TauCeti.CategoryTheory.Monoidal.Mod.Basic
-import TauCeti.CategoryTheory.Sites.Continuous
 
 /-!
 # Equivariance descent and fppf local surjectivity for points sheaves
@@ -28,8 +26,7 @@ Specifically:
 * Morphisms inducing fppf-locally surjective maps on affine points sheaves stay epimorphic after
   whiskering on the left (`TauCeti.CommAlgCat.epi_whiskerLeft_of_isLocallySurjective`).
 * Equivariance under an internal monoid-scheme action descends along equivariant fppf-locally
-  surjective morphisms (`TauCeti.CommAlgCat.isModHom_of_isLocallySurjective_comp`,
-  `TauCeti.CommAlgCat.isModHom_of_isLocallySurjective_mul_comp`).
+  surjective morphisms (`TauCeti.CommAlgCat.isModHom_of_isLocallySurjective_comp`).
 -/
 
 public section
@@ -49,29 +46,37 @@ the value algebra. -/
 instance isLocallySurjective_pointsSheafFunctor_map
     {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
     [Flat f.left] [Surjective f.left] [LocallyOfFinitePresentation f.left] :
-    Presheaf.IsLocallySurjective (fppfTopology R) ((pointsSheafFunctor R).map f).hom where
-  imageSieve_mem {U} s := by
-    obtain ⟨y⟩ := s
-    let y' : Spec (CommRingCat.of U.unop) ⟶ Y.left := y.left
-    obtain ⟨B, φ, z, hflat, hfp, hz⟩ := f.left.exists_faithfullyFlat_lift y'
-    let _ : Algebra R B := (φ.hom.comp (algebraMap R U.unop)).toAlgebra
-    let φ' : U.unop ⟶ CommAlgCat.of R B :=
-      CommAlgCat.ofHom { φ.hom with commutes' := fun _ ↦ rfl }
-    have hbase : z ≫ X.hom = Spec.map (CommRingCat.ofHom (algebraMap R B)) := by
-      have hscalar : CommRingCat.ofHom (algebraMap R B) =
-          CommRingCat.ofHom (algebraMap R U.unop) ≫ φ := rfl
-      rw [hscalar, Spec.map_comp, ← Over.w f, ← Category.assoc, hz, Category.assoc]
-      exact congrArg (Spec.map φ ≫ ·) (Over.w y)
-    refine GrothendieckTopology.superset_covering _ ?_
-      (generate_singleton_op_mem_fppfTopology φ' hflat hfp)
-    rw [Sieve.generate_le_iff]
-    rintro _ _ ⟨⟩
-    refine ⟨ULift.up (Over.homMk z hbase), ?_⟩
-    rw [pointsSheafFunctor_map_hom_app, pointsSheaf_obj_map]
-    refine congrArg ULift.up (Over.OverMorphism.ext ?_)
-    dsimp only [Quiver.Hom.unop_op, Functor.op_obj, unop_op]
-    rw [Over.comp_left, Over.comp_left, AlgebraicGeometry.algSpec_map_left]
-    exact hz
+    Presheaf.IsLocallySurjective (fppfTopology R) ((pointsSheafFunctor R).map f).hom := by
+  have hcov : Sieve.ofArrows (fun _ : PUnit.{1} ↦ X) (fun _ : PUnit.{1} ↦ f) ∈
+      Scheme.fppfTopology.over (Spec (CommRingCat.of R)) Y := by
+    rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
+    refine Precoverage.generate_mem_toGrothendieck ?_
+    rw [Presieve.ofArrows_pUnit]
+    exact f.left.singleton_mem_fppfPrecoverage
+  let c : Limits.Cofan (fun _ : PUnit.{1} ↦ uliftYoneda.{u + 1}.obj X) :=
+    Limits.Cofan.mk (uliftYoneda.{u + 1}.obj X) (fun _ ↦ 𝟙 _)
+  have hc : Limits.IsColimit c :=
+    Limits.Cofan.IsColimit.mk c (fun s ↦ s.inj PUnit.unit) (fun _ _ ↦ Category.id_comp _)
+      (fun _ m hm ↦ by simpa [c] using hm PUnit.unit)
+  have hloc : Presheaf.IsLocallySurjective (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))
+      (uliftYoneda.{u + 1}.map f) := by
+    have h :=
+      (GrothendieckTopology.ofArrows_mem_iff_isLocallySurjective_cofanIsColimitDesc_uliftYoneda_map
+        (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) (fun _ : PUnit.{1} ↦ f) hc).mp hcov
+    have hdesc : Limits.Cofan.IsColimit.desc hc (fun _ ↦ uliftYoneda.{u + 1}.map f) =
+        uliftYoneda.{u + 1}.map f := by
+      simpa [c] using Limits.Cofan.IsColimit.fac hc (fun _ ↦ uliftYoneda.{u + 1}.map f) PUnit.unit
+    rwa [hdesc] at h
+  have : Sheaf.IsLocallySurjective ((GrothendieckTopology.uliftYoneda.{u + 1}
+      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) := hloc
+  have hepi : Epi ((GrothendieckTopology.uliftYoneda.{u + 1}
+      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) :=
+    Sheaf.epi_of_isLocallySurjective _
+  have hepi' : Epi ((pointsSheafFunctor R).map f) := by
+    dsimp only [pointsSheafFunctor, Functor.comp_map]
+    rw [← fppfSheafEquiv_inverse]
+    exact (fppfSheafEquiv R (Type (u + 1))).inverse.map_epi _
+  exact (Sheaf.isLocallySurjective_iff_epi ((pointsSheafFunctor R).map f)).mpr hepi'
 
 /-- If `p : Z ⟶ X` over `Spec R` induces an fppf-locally surjective map on affine points sheaves,
 then `W ◁ p : W ⊗ Z ⟶ W ⊗ X` is an epimorphism in `Over (Spec R)` for every `R`-scheme `W`. -/
@@ -109,16 +114,5 @@ theorem isModHom_of_isLocallySurjective_comp {G Z X Y : Over (Spec (CommRingCat.
     IsModHom G f :=
   have : Epi (G ◁ p) := epi_whiskerLeft_of_isLocallySurjective G p
   isModHom_of_epi_whiskerLeft_comp p f
-
-/-- Equivariance descends along an fppf-locally surjective morphism out of `G` that intertwines
-left multiplication with the target actions. -/
-theorem isModHom_of_isLocallySurjective_mul_comp {G X Y : Over (Spec (CommRingCat.of R))}
-    [MonObj G] [ModObj G X] [ModObj G Y] (p : G ⟶ X)
-    [Presheaf.IsLocallySurjective (fppfTopology R) ((pointsSheafFunctor R).map p).hom]
-    (hp : μ[G] ≫ p = G ◁ p ≫ γ[G,X]) (f : X ⟶ Y)
-    (hpf : μ[G] ≫ (p ≫ f) = G ◁ (p ≫ f) ≫ γ[G,Y]) :
-    IsModHom G f :=
-  have : Epi (G ◁ p) := epi_whiskerLeft_of_isLocallySurjective G p
-  isModHom_of_epi_whiskerLeft_mul_comp p hp f hpf
 
 end TauCeti.CommAlgCat

@@ -45,6 +45,8 @@ namespace TauCeti.SchemeAction
 
 universe u
 
+section CompactTarget
+
 variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
@@ -83,5 +85,26 @@ instance flat_toOrbit [GeometricallyReduced G.hom] : Flat (toOrbit G x) := by
   exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact
     (isPullback_toOrbit_baseChange f G x)
     (flat_toOrbit_of_isAlgClosed ((Over.pullback f).obj G) _)
+
+end CompactTarget
+
+section Homogeneous
+
+variable {k : Type u} [Field k]
+  (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
+  [LocallyOfFiniteType G.hom] [CompactSpace G.left]
+  [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+
+/-- The orbit morphism onto a reduced finite-type homogeneous scheme for a geometrically reduced
+finite-type group over a field is flat. -/
+theorem flat_orbitMap_of_orbit_eq_univ [GeometricallyReduced G.hom] [IsReduced X.left]
+    (h : orbit G x = Set.univ) :
+    Flat (orbitMap G x).left := by
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ G x h
+  have : IsIso (orbitι G x) := isIso_orbitι_of_orbit_eq_univ G x h
+  rw [← toOrbit_ι G x]
+  infer_instance
+
+end Homogeneous
 
 end TauCeti.SchemeAction

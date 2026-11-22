@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Stabilizer
 public import TauCeti.Algebra.Category.CommAlgCat.PointsSheaf
-public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Homogeneous
+public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Action
+public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Flat
+import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Transitivity
 
 /-!
 # Orbit-map comparison for fppf homogeneous quotients

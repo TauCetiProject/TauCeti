@@ -42,6 +42,41 @@ namespace TauCeti.SchemeAction
 
 universe u
 
+section GeneralBase
+
+variable {S : Scheme.{u}} (G : Over S) {X : Over S} [GrpObj G] [ModObj G X]
+  (x : 𝟙_ (Over S) ⟶ X)
+
+/-- Smoothness of the orbit morphism implies smoothness of its scheme-theoretic stabilizer, over an
+arbitrary base scheme and in every characteristic. -/
+theorem smooth_stabilizer_of_smooth_orbitMap (h : Smooth (orbitMap G x).left) :
+    Smooth (stabilizer G x).hom := by
+  have hpb : IsPullback (stabilizer.incl G x).left (stabilizer G x).hom
+      (orbitMap G x).left x.left := by
+    simpa only [Over.forget_map, Over.toUnit_left] using
+      (orbitFiber.isPullback G x x).map (Over.forget S)
+  exact MorphismProperty.of_isPullback hpb h
+
+/-- Over an arbitrary base scheme, a faithfully flat and quasi-compact orbit morphism is smooth if
+and only if its scheme-theoretic stabilizer is smooth over the base scheme. -/
+theorem smooth_orbitMap_iff [Flat (orbitMap G x).left] [Surjective (orbitMap G x).left]
+    [QuasiCompact (orbitMap G x).left] :
+    Smooth (orbitMap G x).left ↔ Smooth (stabilizer G x).hom := by
+  refine ⟨smooth_stabilizer_of_smooth_orbitMap G x, fun hs ↦ ?_⟩
+  let := hs
+  have hp : Smooth (fst G (stabilizer G x)).left := by
+    rw [Over.fst_left]
+    infer_instance
+  have hpb : IsPullback (fst G (stabilizer G x)).left (stabilizer.rightMul G x).left
+      (orbitMap G x).left (orbitMap G x).left := by
+    simpa only [Over.forget_map] using
+      (stabilizer.isPullback_rightMul G x).map (Over.forget S)
+  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact hpb hp
+
+end GeneralBase
+
+section Orbit
+
 variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
@@ -106,5 +141,35 @@ instance smooth_toOrbit_of_charZero [CharZero k] [IsAffine G.left] :
     Smooth (toOrbit G x) := by
   have : Smooth G.hom := TauCeti.AlgebraicGeometry.smooth_of_grpObj_of_charZero G
   exact (smooth_toOrbit_iff G x).mpr (smooth_stabilizer G x)
+
+end Orbit
+
+section Homogeneous
+
+variable {k : Type u} [Field k]
+  (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
+  [LocallyOfFiniteType G.hom] [CompactSpace G.left]
+  [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+
+/-- For a geometrically reduced finite-type group acting transitively on a reduced finite-type
+scheme `X` over a field, the orbit morphism `G ⟶ X` is smooth if and only if the scheme-theoretic
+stabilizer `stabilizer G x` is smooth over `Spec k`. -/
+theorem smooth_orbitMap_iff_of_orbit_eq_univ [GeometricallyReduced G.hom] [IsReduced X.left]
+    (h : orbit G x = Set.univ) :
+    Smooth (orbitMap G x).left ↔ Smooth (stabilizer G x).hom := by
+  have : Flat (orbitMap G x).left := flat_orbitMap_of_orbit_eq_univ G x h
+  have : Surjective (orbitMap G x).left := (surjective_orbitMap_iff_orbit_eq_univ G x).mpr h
+  have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
+  exact smooth_orbitMap_iff G x
+
+/-- In characteristic zero, the orbit morphism from an affine finite-type group onto a reduced
+finite-type homogeneous scheme over a field is smooth. -/
+theorem smooth_orbitMap_of_orbit_eq_univ_of_charZero [CharZero k] [IsAffine G.left]
+    [IsReduced X.left] (h : orbit G x = Set.univ) :
+    Smooth (orbitMap G x).left := by
+  have : Smooth G.hom := TauCeti.AlgebraicGeometry.smooth_of_grpObj_of_charZero G
+  exact (smooth_orbitMap_iff_of_orbit_eq_univ G x h).mpr (smooth_stabilizer G x)
+
+end Homogeneous
 
 end TauCeti.SchemeAction

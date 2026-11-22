@@ -306,7 +306,9 @@ theorem hom_ext_of_forall_algSpec {X Y : Over (Spec R)} {f g : X ⟶ Y}
   have hφ : Spec.map (CommRingCat.ofHom (algebraMap R A)) = a ≫ X.hom := Spec.map_preimage _
   let p : (algSpec R).obj (op (CommAlgCat.of R A)) ⟶ X :=
     (algSpecObjIsoOverMk (CommAlgCat.of R A)).hom ≫ Over.homMk a hφ.symm
-  have hp : p.left = a := Category.id_comp a
+  have hp : p.left = a := by
+    simp only [p, Over.comp_left, algSpecObjIsoOverMk_hom_left, Over.homMk_left]
+    exact Category.id_comp _
   rw [← hp]
   exact congrArg Over.Hom.left (h (CommAlgCat.of R A) p)
 
