@@ -125,10 +125,12 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {X : ℝ → V → V} {u : ℝ × ℝ → V} {a : ℝ}
 
-/-- On the half-cylinder `s > a`, the loops `t ↦ f(s, t)` of a continuous map are continuous. -/
+/-- If a map is continuous on a set `U` containing the line `{s} × ℝ`, its loop `t ↦ f(s, t)` is
+continuous. -/
 theorem continuous_slice_of_continuousOn {Y : Type*} [TopologicalSpace Y] {f : ℝ × ℝ → Y}
-    (hf : ContinuousOn f (Ioi a ×ˢ univ)) {s : ℝ} (hs : a < s) : Continuous fun t ↦ f (s, t) :=
-  hf.comp_continuous (continuous_const.prodMk continuous_id) fun t ↦ ⟨hs, mem_univ t⟩
+    {U : Set (ℝ × ℝ)} (hf : ContinuousOn f U) {s : ℝ} (hsU : ∀ t, (s, t) ∈ U) :
+    Continuous fun t ↦ f (s, t) :=
+  hf.comp_continuous (continuous_const.prodMk continuous_id) hsU
 
 /-- The defect `∂_t u(z) - X(t, u(z))` of a map `u` from solving the time-dependent equation
 `x' = X(t, x)` along its `t`-slices, at `z = (s, t)`. -/
@@ -151,23 +153,26 @@ theorem sliceDefect_comp_snd_eq_zero {x : ℝ → V} (hx : ∀ t, HasDerivAt x (
     (hx t).hasFDerivAt.comp (s, t) (hasFDerivAt_snd (p := (s, t)))
   simp [sliceDefect_def, h.fderiv]
 
-/-- The defect of a `C¹` map is continuous on the half-cylinder, for a continuous vector field. -/
-theorem continuousOn_sliceDefect (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hX : Continuous (uncurry X)) : ContinuousOn (sliceDefect X u) (Ioi a ×ˢ univ) :=
-  ((hu.continuousOn_fderiv_of_isOpen (isOpen_Ioi.prod isOpen_univ) le_rfl).clm_apply
-    continuousOn_const).sub <| hX.comp_continuousOn (continuousOn_snd.prodMk hu.continuousOn)
+/-- The defect of a map that is `C¹` on an open set `U` is continuous on `U`, for a continuous
+vector field. -/
+theorem continuousOn_sliceDefect {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U)
+    (hX : Continuous (uncurry X)) : ContinuousOn (sliceDefect X u) U :=
+  ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).sub <|
+    hX.comp_continuousOn (continuousOn_snd.prodMk hu.continuousOn)
 
-/-- The defect along one loop of a `C¹` map is continuous in `t`. -/
-theorem continuous_sliceDefect_slice (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hX : Continuous (uncurry X)) {s : ℝ} (hs : a < s) :
+/-- The defect along the loop at `s` of a map that is `C¹` on an open set containing the line
+`{s} × ℝ` is continuous in `t`. -/
+theorem continuous_sliceDefect_slice {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U)
+    (hX : Continuous (uncurry X)) {s : ℝ} (hsU : ∀ t, (s, t) ∈ U) :
     Continuous fun t ↦ sliceDefect X u (s, t) :=
-  continuous_slice_of_continuousOn (continuousOn_sliceDefect hu hX) hs
+  continuous_slice_of_continuousOn (continuousOn_sliceDefect hU hu hX) hsU
 
-/-- The squared norm of the defect along one loop is continuous in `t`. -/
-theorem continuous_norm_sliceDefect_sq (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ))
-    (hX : Continuous (uncurry X)) {s : ℝ} (hs : a < s) :
+/-- The squared norm of the defect along the loop at `s` of a map that is `C¹` on an open set
+containing the line `{s} × ℝ` is continuous in `t`. -/
+theorem continuous_norm_sliceDefect_sq {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 1 u U) (hX : Continuous (uncurry X)) {s : ℝ} (hsU : ∀ t, (s, t) ∈ U) :
     Continuous fun t ↦ ‖sliceDefect X u (s, t)‖ ^ 2 :=
-  (continuous_sliceDefect_slice hu hX hs).norm.pow 2
+  (continuous_sliceDefect_slice hU hu hX hsU).norm.pow 2
 
 /-- Along the loop at `s > a`, a map differentiable on the half-cylinder has `t`-derivative
 `X(t, u(s, t))` plus the defect. -/
@@ -195,9 +200,11 @@ private theorem sub_eq_integral_add_integral_sliceDefect_map {W : Type*} [Normed
       (∫ t in t₁..t₂, L (X t (u (s, t)))) + ∫ t in t₁..t₂, L (sliceDefect X u (s, t)) := by
   have hXc : Continuous fun t ↦ L (X t (u (s, t))) :=
     L.continuous.comp
-      (hX.comp (continuous_id.prodMk (continuous_slice_of_continuousOn hu.continuousOn hs)))
+      (hX.comp (continuous_id.prodMk
+        (continuous_slice_of_continuousOn hu.continuousOn fun t ↦ ⟨hs, mem_univ t⟩)))
   have hd : Continuous fun t ↦ L (sliceDefect X u (s, t)) :=
-    L.continuous.comp (continuous_sliceDefect_slice hu hX hs)
+    L.continuous.comp (continuous_sliceDefect_slice (isOpen_Ioi.prod isOpen_univ) hu hX
+      fun t ↦ ⟨hs, mem_univ t⟩)
   rw [← intervalIntegral.integral_add (hXc.intervalIntegrable _ _) (hd.intervalIntegrable _ _)]
   refine (intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun t ↦ L (u (s, t)))
     (fun t _ ↦ ?_) ((hXc.add hd).intervalIntegrable _ _)).symm
@@ -265,7 +272,8 @@ private theorem setLIntegral_ofReal_norm_sq_sliceDefect (hu : ContDiffOn ℝ 1 u
       ENNReal.ofReal (∫ t in (0 : ℝ)..1, ‖sliceDefect X u (s, t)‖ ^ 2) := by
   rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc,
     ofReal_integral_eq_lintegral_ofReal
-      ((continuous_norm_sliceDefect_sq hu hX hs).integrableOn_Icc)
+      ((continuous_norm_sliceDefect_sq (isOpen_Ioi.prod isOpen_univ) hu hX
+        fun t ↦ ⟨hs, mem_univ t⟩).integrableOn_Icc)
       (Eventually.of_forall fun t ↦ sq_nonneg _)]
 
 /-- **Loops with small defect.** If the squared defect has finite integral over the half-cylinder
@@ -282,7 +290,8 @@ theorem exists_tendsto_integral_norm_sq_sliceDefect
       AEMeasurable f ((volume.restrict (Ioi a)).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
     refine (ENNReal.continuous_ofReal.comp_continuousOn
-      (((continuousOn_sliceDefect hu hX).norm.pow 2).mono ?_)).aemeasurable
+      (((continuousOn_sliceDefect (isOpen_Ioi.prod isOpen_univ) hu hX).norm.pow 2).mono
+        ?_)).aemeasurable
       (measurableSet_Ioi.prod measurableSet_Icc)
     exact prod_mono le_rfl (subset_univ _)
   have hiter : ∫⁻ s in Ioi a, ∫⁻ t in Icc (0 : ℝ) 1, f (s, t) ≠ ⊤ := by
@@ -327,7 +336,8 @@ theorem exists_mem_Icc_integral_norm_sq_sliceDefect_lt (hu : ContDiffOn ℝ 1 u 
     prod_mono (fun s hs ↦ haσ.trans_le hs.1) (subset_univ _)
   have hmeas : AEMeasurable f (volume.restrict (Icc σ τ ×ˢ Icc (0 : ℝ) 1)) :=
     (ENNReal.continuous_ofReal.comp_continuousOn
-      (((continuousOn_sliceDefect hu hX).norm.pow 2).mono hsub)).aemeasurable
+      (((continuousOn_sliceDefect (isOpen_Ioi.prod isOpen_univ) hu hX).norm.pow 2).mono
+        hsub)).aemeasurable
       (measurableSet_Icc.prod measurableSet_Icc)
   rw [Measure.volume_eq_prod, setLIntegral_prod f (by rwa [← Measure.volume_eq_prod])]
   -- Every loop in the window has squared defect integral at least `r`, so the integral over the
@@ -394,7 +404,8 @@ theorem norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect
     {B t₁ t₂ : ℝ} (ht : t₁ ≤ t₂) (hB : ∀ t ∈ Icc t₁ t₂, ‖X t (u (s, t))‖ ≤ B) :
     ‖u (s, t₂) - u (s, t₁)‖ ≤
       B * (t₂ - t₁) + √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) := by
-  have hd := continuous_sliceDefect_slice hu hX hs
+  have hd := continuous_sliceDefect_slice (isOpen_Ioi.prod isOpen_univ) hu hX
+    fun t ↦ ⟨hs, mem_univ t⟩
   have hder : ∀ t, HasDerivAt (fun t ↦ u (s, t)) (X t (u (s, t)) + sliceDefect X u (s, t)) t :=
     hasDerivAt_slice_add_sliceDefect (hu.differentiableOn one_ne_zero) hs
   have hBi : IntervalIntegrable (fun t ↦ B + ‖sliceDefect X u (s, t)‖) volume t₁ t₂ :=
@@ -402,7 +413,7 @@ theorem norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect
   calc ‖u (s, t₂) - u (s, t₁)‖
       ≤ ∫ t in t₁..t₂, (B + ‖sliceDefect X u (s, t)‖) :=
         norm_sub_le_integral_of_norm_deriv_le_of_le (f := fun t ↦ u (s, t)) ht
-          (continuous_slice_of_continuousOn hu.continuousOn hs).continuousOn
+          (continuous_slice_of_continuousOn hu.continuousOn fun t ↦ ⟨hs, mem_univ t⟩).continuousOn
           (fun t _ ↦ (hder t).differentiableAt.differentiableWithinAt)
           (Eventually.of_forall fun t htm ↦ by
             rw [(hder t).deriv]
@@ -423,7 +434,8 @@ theorem integral_norm_sliceDefect_le_sqrt (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ u
     (h₁ : t₂ ≤ 1) :
     ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ≤
       √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (s, t)‖ ^ 2) := by
-  have hd := continuous_norm_sliceDefect_sq hu hX hs
+  have hd := continuous_norm_sliceDefect_sq (isOpen_Ioi.prod isOpen_univ) hu hX
+    fun t ↦ ⟨hs, mem_univ t⟩
   calc ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖
       ≤ √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) :=
         integral_le_sqrt_mul_sqrt_integral_sq ht
@@ -473,7 +485,7 @@ private theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map {W :
     (ht : t ∈ Icc (0 : ℝ) 1) :
     L (x t) - L (x 0) = ∫ τ in (0 : ℝ)..t, L (X τ (x τ)) := by
   have hloop : ∀ i, Continuous fun τ ↦ u i (φ i, τ) := fun i ↦
-    continuous_slice_of_continuousOn (hu i).continuousOn (hφa i)
+    continuous_slice_of_continuousOn (hu i).continuousOn fun t ↦ ⟨hφa i, mem_univ t⟩
   -- Along the sequence, `u(s, t) - u(s, 0) = ∫₀ᵗ X(τ, u(s, τ)) dτ + ∫₀ᵗ (defect)`.
   have hsplit : ∀ i, L (u i (φ i, t)) - L (u i (φ i, 0)) =
       (∫ τ in (0 : ℝ)..t, L (X τ (u i (φ i, τ)))) +
@@ -494,8 +506,8 @@ private theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map {W :
     rw [← intervalIntegral.integral_const_mul]
     exact intervalIntegral.norm_integral_le_of_norm_le ht.1
       (Eventually.of_forall fun τ _ ↦ L.le_opNorm _)
-      ((continuous_const.mul
-        (continuous_sliceDefect_slice (hu i) hX (hφa i)).norm).intervalIntegrable _ _)
+      ((continuous_const.mul (continuous_sliceDefect_slice (isOpen_Ioi.prod isOpen_univ)
+        (hu i) hX fun t ↦ ⟨hφa i, mem_univ t⟩).norm).intervalIntegrable _ _)
   have hL : Tendsto (fun i ↦ L (u i (φ i, t)) - L (u i (φ i, 0))) l (𝓝 (L (x t) - L (x 0))) :=
     ((L.continuous.tendsto _).comp (hx t)).sub ((L.continuous.tendsto _).comp (hx 0))
   simp_rw [hsplit] at hL
@@ -549,7 +561,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral {u : ℕ
     have hle : ∫ t in t₁..t₂, ‖sliceDefect X (u (N + n)) (φ (N + n), t)‖ ^ 2 ≤ 1 :=
       (intervalIntegral.integral_mono_interval ht₁.1 ht ht₂.2
         (Eventually.of_forall fun t ↦ sq_nonneg _)
-        ((continuous_norm_sliceDefect_sq (hu _) hX hs).intervalIntegrable _ _)).trans
+        ((continuous_norm_sliceDefect_sq (isOpen_Ioi.prod isOpen_univ) (hu _) hX
+          fun t ↦ ⟨hs, mem_univ t⟩).intervalIntegrable _ _)).trans
         (hN _ (Nat.le_add_right N n)).le
     exact add_le_add le_rfl (mul_le_of_le_one_right (Real.sqrt_nonneg _)
       (Real.sqrt_le_one.mpr hle))
@@ -559,7 +572,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral {u : ℕ
     simpa using hb.tendsto 0
   obtain ⟨ψ', hψ', x, hxper, hxcont, hux'⟩ :=
     exists_tendstoUniformly_subseq_of_periodic_of_modulus hK
-      (fun n ↦ continuous_slice_of_continuousOn (hu _).continuousOn (hφa (N + n)))
+      (fun n ↦ continuous_slice_of_continuousOn (hu _).continuousOn
+        fun t ↦ ⟨hφa (N + n), mem_univ t⟩)
       (fun n ↦ hper (N + n)) (fun n ↦ huK (N + n)) hρ hmod
   set ψ : ℕ → ℕ := fun n ↦ N + ψ' n
   have hψ : StrictMono ψ := fun m n h ↦ Nat.add_lt_add_left (hψ' h) N
@@ -657,20 +671,11 @@ private theorem exists_mem_Icc_integral_norm_sq_sliceDefect_lt_of_setLIntegral_l
   by_contra! hge
   refine hE.not_ge ?_
   set f : ℝ × ℝ → ℝ≥0∞ := fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)
-  -- Along each loop of the rectangle the squared defect is continuous, so its lower integral is
-  -- its integral.
-  have hcont (σ : ℝ) (hσ : σ ∈ Ioo a b) : Continuous fun t ↦ ‖sliceDefect X u (σ, t)‖ ^ 2 := by
-    obtain ⟨hγ, hdef⟩ := contDiff_slice_and_sliceDefect_eq (X := X) hu hσ
-    simp_rw [hdef]
-    exact ((hγ.continuous_deriv le_rfl).sub
-      (hX.comp (continuous_id.prodMk hγ.continuous))).norm.pow 2
-  have hmeas : AEMeasurable f (volume.restrict (Icc s (s + h) ×ˢ Icc (0 : ℝ) 1)) := by
-    refine (ENNReal.continuous_ofReal.comp_continuousOn ?_).aemeasurable
+  have hmeas : AEMeasurable f (volume.restrict (Icc s (s + h) ×ˢ Icc (0 : ℝ) 1)) :=
+    (ENNReal.continuous_ofReal.comp_continuousOn
+      (((continuousOn_sliceDefect (isOpen_Ioo.prod isOpen_univ) hu hX).norm.pow 2).mono
+        (prod_mono hs (subset_univ _)))).aemeasurable
       (measurableSet_Icc.prod measurableSet_Icc)
-    have hd : ContinuousOn (sliceDefect X u) (Ioo a b ×ˢ univ) :=
-      ((hu.continuousOn_fderiv_of_isOpen (isOpen_Ioo.prod isOpen_univ) le_rfl).clm_apply
-        continuousOn_const).sub <| hX.comp_continuousOn (continuousOn_snd.prodMk hu.continuousOn)
-    exact ((hd.norm.pow 2).mono (prod_mono hs (subset_univ _)))
   rw [Measure.volume_eq_prod, setLIntegral_prod f (by rwa [← Measure.volume_eq_prod])]
   calc ENNReal.ofReal (h * δ) = ∫⁻ _ in Icc s (s + h), ENNReal.ofReal δ := by
         rw [setLIntegral_const, Real.volume_Icc, add_sub_cancel_left, ENNReal.ofReal_mul hh.le,
@@ -680,7 +685,9 @@ private theorem exists_mem_Icc_integral_norm_sq_sliceDefect_lt_of_setLIntegral_l
         have heq : ∫⁻ t in Icc (0 : ℝ) 1, f (σ, t) =
             ENNReal.ofReal (∫ t in (0 : ℝ)..1, ‖sliceDefect X u (σ, t)‖ ^ 2) := by
           rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc,
-            ofReal_integral_eq_lintegral_ofReal ((hcont σ (hs hσ)).integrableOn_Icc)
+            ofReal_integral_eq_lintegral_ofReal
+              ((continuous_norm_sliceDefect_sq (isOpen_Ioo.prod isOpen_univ) hu hX
+                fun t ↦ ⟨hs hσ, mem_univ t⟩).integrableOn_Icc)
               (Eventually.of_forall fun t ↦ sq_nonneg _)]
         rw [heq]
         exact ENNReal.ofReal_le_ofReal (hge σ hσ)
