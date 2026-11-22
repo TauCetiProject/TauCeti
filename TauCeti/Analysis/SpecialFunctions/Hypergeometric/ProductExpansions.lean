@@ -143,6 +143,7 @@ theorem cayleyOrrCoeff_one {𝕂 : Type*} [Field 𝕂] (a b c : 𝕂) :
 /-- The Cayley–Orr coefficients are symmetric in `a` and `b`. -/
 theorem cayleyOrrCoeff_comm {𝕂 : Type*} [Field 𝕂] (a b c : 𝕂) (s : ℕ) :
     cayleyOrrCoeff a b c s = cayleyOrrCoeff b a c s := by
+  rw [cayleyOrrCoeff_def, cayleyOrrCoeff_def]
   refine sum_congr rfl fun k _ ↦ ?_
   have hsub : c - b - a = c - a - b := by ring
   simp only [ordinaryHypergeometricCoefficient, hsub]
@@ -316,6 +317,28 @@ private noncomputable def cayleyCertH (a b c : 𝕂) (n : ℕ) : ℕ → 𝕂
         (ascPochhammer 𝕂 (j + 1)).eval (2 * a) * (ascPochhammer 𝕂 (j + 1)).eval (2 * b) *
         (j ! : 𝕂)⁻¹ * ((n + 1 - j)! : 𝕂)⁻¹ * ((ascPochhammer 𝕂 j).eval (2 * c - 1))⁻¹
 
+private theorem succ_add_sub_succ (j l : ℕ) : j + 1 + l - (j + 1) = l :=
+  Nat.add_sub_cancel_left (j + 1) l
+
+private theorem succ_add_add_sub_succ (j l m : ℕ) : j + 1 + l + m - (j + 1) = l + m := by
+  omega
+
+private theorem succ_add_sub_self (j l : ℕ) : j + 1 + l - j = l + 1 := by
+  omega
+
+private theorem succ_add_one_sub_self (j l : ℕ) : j + 1 + l + 1 - j = l + 2 := by
+  omega
+
+private theorem add_two_sub_add_one (n : ℕ) : n + 2 - (n + 1) = 1 := by
+  omega
+
+private theorem add_one_sub_self (n : ℕ) : n + 1 - n = 1 :=
+  Nat.add_sub_cancel_left n 1
+
+private theorem cayleyOrrCoeff_eq_sum_cayleySummand (a b c : 𝕂) (s : ℕ) :
+    cayleyOrrCoeff a b c s = ∑ k ∈ range (s + 1), cayleySummand a b c s k := by
+  simp only [cayleyOrrCoeff_def, cayleySummand]
+
 private theorem cayleySummand_step [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc : ∀ m : ℕ, 2 * c - 1 ≠ -m)
     {n k : ℕ} (hk : k ≤ n) :
     cayleyRecR2 c n * cayleySummand a b c (n + 2) k +
@@ -338,12 +361,8 @@ private theorem cayleySummand_step [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc :
     dsimp only [cayleyRecR2, cayleyRecR1, cayleyRecR0]
     ring
   | succ j =>
-    have hs0 : j + 1 + l - (j + 1) = l := by omega
-    have hs1 : j + 1 + l + 1 - (j + 1) = l + 1 := by omega
-    have hs2 : j + 1 + l + 2 - (j + 1) = l + 2 := by omega
-    have hs3 : j + 1 + l - j = l + 1 := by omega
-    have hs4 : j + 1 + l + 1 - j = l + 2 := by omega
-    simp only [cayleySummand, cayleyCertH, hs0, hs1, hs2, hs3, hs4]
+    simp only [cayleySummand, cayleyCertH, succ_add_sub_succ, succ_add_add_sub_succ,
+      succ_add_sub_self, succ_add_one_sub_self]
     rw [inv_factorial_mul_ascPochhammer_eq_add_two (c - a - b) l,
       inv_factorial_mul_ascPochhammer_add_one_eq_add_two (c - a - b) l,
       inv_factorial_mul_ascPochhammer_add_two (c - a - b) l,
@@ -357,6 +376,28 @@ private theorem cayleySummand_step [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc :
     simp only [Nat.cast_add, Nat.cast_one]
     ring
 
+private theorem cayleyOrrCoeff_recurrence_aux [CharZero 𝕂] (a b : 𝕂) {c : 𝕂}
+    (hc : ∀ m : ℕ, 2 * c - 1 ≠ -m) (n : ℕ) :
+    cayleyRecR2 c n * cayleyOrrCoeff a b c (n + 2) +
+      cayleyRecR1 a b c n * cayleyOrrCoeff a b c (n + 1) +
+      cayleyRecR0 a b c n * cayleyOrrCoeff a b c n = 0 := by
+  simp only [cayleyOrrCoeff_eq_sum_cayleySummand]
+  refine sum_range_recurrence_of_cert (F := cayleySummand a b c) (C := cayleyCertH a b c n)
+    (by simp [cayleyCertH]) (fun k hk ↦ cayleySummand_step a b hc hk) ?_
+  simp only [cayleyCertH, cayleySummand, Nat.sub_self, add_two_sub_add_one, add_one_sub_self]
+  rw [ordinaryHypergeometricCoefficient_add_one_eq_add_two (2 * a) (2 * b)
+      (two_mul_sub_one_add_ne_zero hc (n + 1)),
+    ordinaryHypergeometricCoefficient_add_two_eq_add_two,
+    inv_factorial_eq_mul_inv_factorial_add_two n,
+    inv_ascPochhammer_eq_mul_inv_ascPochhammer_add_two
+      (two_mul_sub_one_add_ne_zero hc n) (two_mul_sub_one_add_ne_zero hc (n + 1)),
+    ascPochhammer_succ_eval n (2 * a), ascPochhammer_succ_eval n (2 * b),
+    ascPochhammer_succ_eval 0 (c - a - b)]
+  simp only [ascPochhammer_zero, Polynomial.eval_one, Nat.factorial_zero, Nat.factorial_one,
+    Nat.cast_one, Nat.cast_zero, inv_one]
+  dsimp only [cayleyRecR2, cayleyRecR1]
+  ring
+
 /-- **Three-term recurrence for the Cayley–Orr coefficients.** Over any characteristic-zero field
 `𝕂`, when `2 * c - 1` avoids the nonpositive integers, `cayleyOrrCoeff a b c` satisfies the
 second-order polynomial recurrence
@@ -368,22 +409,7 @@ theorem cayleyOrrCoeff_recurrence [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc : 
       (-2 * (n + 1) * n - 4 * c * (n + 1) + (a + b - c) * (2 * c - 1) - 4 * a * b) *
         cayleyOrrCoeff a b c (n + 1) +
       (n + c + a - b) * (n + c - a + b) * cayleyOrrCoeff a b c n = 0 := by
-  refine sum_range_recurrence_of_cert (F := cayleySummand a b c) (C := cayleyCertH a b c n) rfl
-    (fun k hk ↦ cayleySummand_step a b hc hk) ?_
-  have hs1 : n + 2 - (n + 1) = 1 := by omega
-  have hs2 : n + 1 - n = 1 := by omega
-  simp only [cayleyCertH, cayleySummand, Nat.sub_self, hs1, hs2]
-  rw [ordinaryHypergeometricCoefficient_add_one_eq_add_two (2 * a) (2 * b)
-      (two_mul_sub_one_add_ne_zero hc (n + 1)),
-    ordinaryHypergeometricCoefficient_add_two_eq_add_two,
-    inv_factorial_eq_mul_inv_factorial_add_two n,
-    inv_ascPochhammer_eq_mul_inv_ascPochhammer_add_two
-      (two_mul_sub_one_add_ne_zero hc n) (two_mul_sub_one_add_ne_zero hc (n + 1)),
-    ascPochhammer_succ_eval n (2 * a), ascPochhammer_succ_eval n (2 * b),
-    ascPochhammer_succ_eval 0 (c - a - b)]
-  simp only [ascPochhammer_zero, Polynomial.eval_one, Nat.factorial_zero, Nat.factorial_one,
-    Nat.cast_one, Nat.cast_zero, inv_one]
-  ring
+  simpa only [cayleyRecR2, cayleyRecR1, cayleyRecR0] using cayleyOrrCoeff_recurrence_aux a b hc n
 
 private def cayleyRecQ2 (c : 𝕂) (n : ℕ) : 𝕂 := cayleyRecR2 c n * (c + n + 1 / 2) * (c + n + 3 / 2)
 
@@ -446,12 +472,8 @@ private theorem cayleyConvTerm_step [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc 
       cayleyCertPoly, cayleyCertPolyAux]
     ring
   | succ j =>
-    have hs0 : j + 1 + l - (j + 1) = l := by omega
-    have hs1 : j + 1 + l + 1 - (j + 1) = l + 1 := by omega
-    have hs2 : j + 1 + l + 2 - (j + 1) = l + 2 := by omega
-    have hs3 : j + 1 + l - j = l + 1 := by omega
-    have hs4 : j + 1 + l + 1 - j = l + 2 := by omega
-    simp only [cayleyConvTerm, cayleyCertG, hs0, hs1, hs2, hs3, hs4]
+    simp only [cayleyConvTerm, cayleyCertG, succ_add_sub_succ, succ_add_add_sub_succ,
+      succ_add_sub_self, succ_add_one_sub_self]
     rw [ordinaryHypergeometricCoefficient_eq_add_two (c - a) (c - b) hadd1 hadd2,
       ordinaryHypergeometricCoefficient_add_one_eq_add_two (c - a) (c - b) hadd2,
       ordinaryHypergeometricCoefficient_add_two_eq_add_two,
@@ -471,11 +493,10 @@ private theorem cayleyConvSum_recurrence [CharZero 𝕂] (a b : 𝕂) {c : 𝕂}
     cayleyRecQ2 c n * cayleyConvSum a b c (n + 2) +
       cayleyRecQ1 a b c n * cayleyConvSum a b c (n + 1) +
       cayleyRecQ0 a b c n * cayleyConvSum a b c n = 0 := by
-  refine sum_range_recurrence_of_cert (F := cayleyConvTerm a b c) (C := cayleyCertG a b c n) rfl
-    (fun k hk ↦ cayleyConvTerm_step a b hc hk) ?_
-  have hs1 : n + 2 - (n + 1) = 1 := by omega
-  have hs2 : n + 1 - n = 1 := by omega
-  simp only [cayleyCertG, cayleyConvTerm, Nat.sub_self, hs1, hs2]
+  simp only [cayleyConvSum]
+  refine sum_range_recurrence_of_cert (F := cayleyConvTerm a b c) (C := cayleyCertG a b c n)
+    (by simp [cayleyCertG]) (fun k hk ↦ cayleyConvTerm_step a b hc hk) ?_
+  simp only [cayleyCertG, cayleyConvTerm, Nat.sub_self, add_two_sub_add_one, add_one_sub_self]
   rw [ordinaryHypergeometricCoefficient_add_one_eq_add_two a b (sub_half_add_ne_zero hc (n + 1)),
     ordinaryHypergeometricCoefficient_add_two_eq_add_two,
     inv_factorial_eq_mul_inv_factorial_add_two n,
@@ -525,19 +546,9 @@ private theorem cayleyConvSum_one [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc : 
   field_simp
   subst hu_eq hv_eq hw_eq; ring
 
-end CayleyOrrRecurrence
-
-/-- **Algebraic Cayley–Orr coefficient identity (DLMF 15.16.1–15.16.2).** Over any field `𝕂` of
-characteristic zero, if `2 * c - 1` avoids the nonpositive integers, the Cauchy product of the
-hypergeometric coefficients of `₂F₁(a, b; c - 1/2; z)` and `₂F₁(c - a, c - b; c + 1/2; z)` equals
-`((c)_s / (c + 1/2)_s) * cayleyOrrCoeff a b c s`. -/
-theorem sum_ordinaryHypergeometricCoefficient_mul_eq_div_mul_cayleyOrrCoeff {𝕂 : Type*} [Field 𝕂]
-    [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc : ∀ n : ℕ, 2 * c - 1 ≠ -n) (s : ℕ) :
-    ∑ k ∈ range (s + 1),
-      ordinaryHypergeometricCoefficient a b (c - 1 / 2) k *
-        ordinaryHypergeometricCoefficient (c - a) (c - b) (c + 1 / 2) (s - k) =
-      (ascPochhammer 𝕂 s).eval c / (ascPochhammer 𝕂 s).eval (c + 1 / 2) *
-        cayleyOrrCoeff a b c s := by
+private theorem cayleyConvSum_eq_cayleyRhs [CharZero 𝕂] (a b : 𝕂) {c : 𝕂}
+    (hc : ∀ n : ℕ, 2 * c - 1 ≠ -n) (s : ℕ) :
+    cayleyConvSum a b c s = cayleyRhs a b c s := by
   suffices ∀ m : ℕ,
       cayleyConvSum a b c m = cayleyRhs a b c m ∧
         cayleyConvSum a b c (m + 1) = cayleyRhs a b c (m + 1) from (this s).1
@@ -562,6 +573,21 @@ theorem sum_ordinaryHypergeometricCoefficient_mul_eq_div_mul_cayleyOrrCoeff {�
       rw [ih.1, ih.2] at hS
       linear_combination hS - hB
     exact sub_eq_zero.mp ((mul_eq_zero.mp hdiff).resolve_left hq2)
+
+end CayleyOrrRecurrence
+
+/-- **Algebraic Cayley–Orr coefficient identity (DLMF 15.16.1–15.16.2).** Over any field `𝕂` of
+characteristic zero, if `2 * c - 1` avoids the nonpositive integers, the Cauchy product of the
+hypergeometric coefficients of `₂F₁(a, b; c - 1/2; z)` and `₂F₁(c - a, c - b; c + 1/2; z)` equals
+`((c)_s / (c + 1/2)_s) * cayleyOrrCoeff a b c s`. -/
+theorem sum_ordinaryHypergeometricCoefficient_mul_eq_div_mul_cayleyOrrCoeff {𝕂 : Type*} [Field 𝕂]
+    [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc : ∀ n : ℕ, 2 * c - 1 ≠ -n) (s : ℕ) :
+    ∑ k ∈ range (s + 1),
+      ordinaryHypergeometricCoefficient a b (c - 1 / 2) k *
+        ordinaryHypergeometricCoefficient (c - a) (c - b) (c + 1 / 2) (s - k) =
+      (ascPochhammer 𝕂 s).eval c / (ascPochhammer 𝕂 s).eval (c + 1 / 2) *
+        cayleyOrrCoeff a b c s := by
+  simpa only [cayleyConvSum, cayleyConvTerm, cayleyRhs] using cayleyConvSum_eq_cayleyRhs a b hc s
 
 /-! ### Analytic Cayley–Orr product expansion over `RCLike` scalars (DLMF 15.16.1) -/
 
@@ -626,7 +652,7 @@ theorem hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric (a b c : �
         ∑ k ∈ range (s + 1), Ring.choose (c - a - b + k - 1) k *
           ordinaryHypergeometricCoefficient (2 * a) (2 * b) (2 * c - 1) (s - k)) =
       FormalMultilinearSeries.ofScalars ℂ (TauCeti.cayleyOrrCoeff a b c) := by
-    congr 1; ext s; rw [← sum_range_reflect]
+    congr 1; ext s; rw [TauCeti.cayleyOrrCoeff_def, ← sum_range_reflect]
     refine sum_congr rfl fun k hk ↦ ?_
     rw [Nat.add_succ_sub_one, add_zero, Nat.sub_sub_self (mem_range_succ_iff.mp hk), hchoose]
   rw [hser] at hmul

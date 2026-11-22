@@ -788,30 +788,20 @@ private theorem regularizedGaussHGFun_step_one (a b c : ℂ) {z : ℂ} (hz : ‖
     regularizedGaussHGFun a b c z =
       c * (1 - z) * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z +
         (c - a) * (c - b) * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 2) z := by
-  have hs₀ := (hasSum_nat_add_iff' 1).mpr (hasSum_regularizedGaussHGFun a b c hz)
-  have hs₁ := (hasSum_nat_add_iff' 1).mpr
-    ((hasSum_regularizedGaussHGFun (a + 1) (b + 1) (c + 1) hz).mul_left c)
-  have hs₂ := (hasSum_regularizedGaussHGFun (a + 1) (b + 1) (c + 1) hz).mul_left (c * z)
-  have hs₃ := (hasSum_regularizedGaussHGFun (a + 1) (b + 1) (c + 2) hz).mul_left
-    ((c - a) * (c - b) * z)
-  have hcomb := (hs₁.sub hs₂).add hs₃
-  have hzero : (regularizedGaussHGFunSeries a b c).coeff 0 * z ^ 0 =
-      c * ((regularizedGaussHGFunSeries (a + 1) (b + 1) (c + 1)).coeff 0 * z ^ 0) := by
-    simp [coeff_regularizedGaussHGFunSeries, ← one_div_Gamma_eq_self_mul_one_div_Gamma_add_one c]
-  have hterm : _ := hs₀.unique (hcomb.congr_fun fun k ↦ ?_)
-  · simp only [range_one, sum_singleton, hzero] at hterm
-    linear_combination hterm
-  · have hΓ := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c + 1 + k)
-    have hc1 : c + (k + 1 : ℕ) = c + 1 + k := by push_cast; ring
-    have hc2 : c + 1 + (k + 1 : ℕ) = c + 1 + k + 1 := by push_cast; ring
-    have hc3 : c + 2 + (k : ℂ) = c + 1 + k + 1 := by ring
-    have hk1 : ((k + 1 : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero k)
-    have hfk : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k)
-    simp only [coeff_regularizedGaussHGFunSeries, hc1, hc2, hc3, div_eq_mul_inv, mul_inv,
-      Nat.factorial_succ, Nat.cast_mul, pow_succ, TauCeti.ascPochhammer_succ_left_eval k a,
-      TauCeti.ascPochhammer_succ_left_eval k b, ascPochhammer_succ_eval]
-    rw [hΓ]
-    field_simp; push_cast; ring
+  have h0 := mul_deriv_regularizedGaussHGFun_add_mul_eq a b c hz
+  rw [deriv_regularizedGaussHGFun a b (c + 1) hz] at h0
+  have h1 := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul b a (c + 1) hz
+  rw [regularizedGaussHGFun_symm b a, regularizedGaussHGFun_symm b (a + 1),
+    regularizedGaussHGFun_symm (b + 1) (a + 1)] at h1
+  have h2 := regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul (a + 1) b (c + 1) hz
+  have h3 := regularizedGaussHGFun_eq_sub_mul_add_mul (a + 1) (b + 1) (c + 1) hz
+  have hca : c + 1 - (a + 1) = c - a := by ring
+  have hc2 : c + 1 + 1 = c + 2 := by ring
+  have ha2 : a + 1 + 1 = a + 2 := by ring
+  rw [hca, hc2, ha2] at h3
+  rw [hc2] at h0 h1
+  rw [hc2, ha2] at h2
+  linear_combination -h0 + c * h1 + c * h2 + c * z * h3
 
 private noncomputable def bcFiniteSummand (a b c z : ℂ) (n s : ℕ) : ℂ :=
   (n.choose s : ℂ) * (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) *
