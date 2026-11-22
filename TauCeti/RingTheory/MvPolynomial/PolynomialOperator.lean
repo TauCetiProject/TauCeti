@@ -43,6 +43,10 @@ exponentials of `t E` and `t F`. The `sl₂`-triple itself and the primitive vec
 * `TauCeti.pow_polynomialOperator_zero_one_polynomialMonomial`,
   `TauCeti.pow_polynomialOperator_one_zero_polynomialMonomial`: the ladder formulas on the binary
   monomials.
+* `TauCeti.polynomialAction_transvection_zero_one_polynomialMonomial`,
+  `TauCeti.polynomialAction_transvection_one_zero_polynomialMonomial`: the transvections
+  `!![1, t; 0, 1]` and `!![1, 0; t, 1]` on the binary monomials, with binomial coefficients, in
+  every characteristic.
 * `TauCeti.lie_polynomialOperator_zero_one_one_zero`: `⁅x ∂_y, y ∂_x⁆ = x ∂_x - y ∂_y`.
 
 ## References
@@ -268,6 +272,51 @@ theorem polynomialOperator_one_one_polynomialMonomial :
   · simp [polynomialMonomial_of_lt h]
 
 end Binary
+
+section BinaryTransvection
+
+variable {R : Type*} [CommRing R] {d i : ℕ}
+
+/-- **The upper unitriangular matrix on binary monomials**: `!![1, t; 0, 1]` substitutes
+`y ↦ y + t x`, so it sends `e_i = x ^ (d - i) * y ^ i` to `∑ₖ (i choose k) tᵏ e_(i-k)`, in every
+characteristic. The terms with `k > i` vanish. -/
+theorem polynomialAction_transvection_zero_one_polynomialMonomial (t : R) (h : i ≤ d) :
+    polynomialAction (transvection (0 : Fin 2) 1 t) (polynomialMonomial R d i) =
+      ∑ k ∈ Finset.range (d + 1), ((i.choose k : R) * t ^ k) • polynomialMonomial R d (i - k) := by
+  rw [polynomialMonomial_of_le h, map_mul, map_pow, map_pow, polynomialAction_transvection_X,
+    polynomialAction_transvection_X]
+  simp only [Fin.zero_eq_one_iff, OfNat.ofNat_ne_one, ↓reduceIte, add_zero]
+  rw [add_comm, add_pow, Finset.mul_sum, ← Finset.sum_subset (Finset.range_subset_range.mpr
+    (by omega : i + 1 ≤ d + 1))]
+  · refine Finset.sum_congr rfl fun k hk ↦ ?_
+    have hk : k ≤ i := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+    rw [polynomialMonomial_of_le (by omega), show d - (i - k) = (d - i) + k by omega, smul_eq_C_mul,
+      map_mul, map_pow, map_natCast]
+    ring
+  · intro k _ hk
+    rw [Nat.choose_eq_zero_of_lt (by simpa using hk), Nat.cast_zero, zero_mul, zero_smul]
+
+/-- **The lower unitriangular matrix on binary monomials**: `!![1, 0; t, 1]` substitutes
+`x ↦ x + t y`, so it sends `e_i = x ^ (d - i) * y ^ i` to `∑ₖ (d - i choose k) tᵏ e_(i+k)`, in
+every characteristic. The terms with `i + k > d` vanish. -/
+theorem polynomialAction_transvection_one_zero_polynomialMonomial (t : R) (h : i ≤ d) :
+    polynomialAction (transvection (1 : Fin 2) 0 t) (polynomialMonomial R d i) =
+      ∑ k ∈ Finset.range (d + 1),
+        (((d - i).choose k : R) * t ^ k) • polynomialMonomial R d (i + k) := by
+  rw [polynomialMonomial_of_le h, map_mul, map_pow, map_pow, polynomialAction_transvection_X,
+    polynomialAction_transvection_X]
+  simp only [Fin.one_eq_zero_iff, OfNat.ofNat_ne_one, ↓reduceIte, add_zero]
+  rw [add_comm, add_pow, Finset.sum_mul, ← Finset.sum_subset (Finset.range_subset_range.mpr
+    (by omega : d - i + 1 ≤ d + 1))]
+  · refine Finset.sum_congr rfl fun k hk ↦ ?_
+    have hk : k ≤ d - i := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+    rw [polynomialMonomial_of_le (by omega), show d - (i + k) = d - i - k by omega, smul_eq_C_mul,
+      map_mul, map_pow, map_natCast]
+    ring
+  · intro k _ hk
+    rw [Nat.choose_eq_zero_of_lt (by simpa using hk), Nat.cast_zero, zero_mul, zero_smul]
+
+end BinaryTransvection
 
 section Lie
 

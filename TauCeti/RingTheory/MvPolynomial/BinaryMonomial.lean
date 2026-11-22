@@ -24,6 +24,8 @@ standard vectors `TauCeti.polynomialAction` scales `x ^ (d - i) * y ^ i` by
 
 * `TauCeti.coeff_polynomialMonomial`: the binary monomial has coefficient `1` at the exponent
   `(d - i, i)` when `i ≤ d`, and `0` elsewhere.
+* `TauCeti.sum_coeff_smul_polynomialMonomial`: a form of degree `d` is the combination of the
+  binary monomials with its coefficients.
 * `TauCeti.polynomialAction_diagonal_polynomialMonomial`: the binary monomial has weight
   `(d - i, i)`.
 
@@ -120,6 +122,35 @@ theorem coeff_polynomialMonomial_of_ne {s : Fin 2 →₀ ℕ}
     (polynomialMonomial R d i).coeff s = 0 := by
   rw [coeff_polynomialMonomial, ite_eq_right_iff]
   exact fun h ↦ (hs h.2.symm).elim
+
+/-- **A form is the combination of the binary monomials with its coefficients**: a homogeneous
+polynomial `f` of degree `d` in two variables is `∑_{i ≤ d} f_(d - i, i) e_i^d`, where
+`f_(d - i, i)` is its coefficient at the exponent `(d - i, i)`. -/
+theorem sum_coeff_smul_polynomialMonomial {f : MvPolynomial (Fin 2) R} (hf : f.IsHomogeneous d) :
+    ∑ i ∈ Finset.range (d + 1),
+      f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) • polynomialMonomial R d i = f := by
+  ext s
+  simp only [coeff_sum, smul_eq_C_mul, coeff_C_mul, coeff_polynomialMonomial, mul_ite, mul_one,
+    mul_zero]
+  by_cases hs : s 0 + s 1 = d
+  · -- Only the binary monomial with exponent `s` contributes.
+    have hs' : Finsupp.single 0 (d - s 1) + Finsupp.single 1 (s 1) = s := by
+      ext j
+      fin_cases j
+      · simp
+        omega
+      · simp
+    rw [Finset.sum_eq_single (s 1), hs', ite_eq_left_iff.mpr fun h ↦ (h ⟨by omega, rfl⟩).elim]
+    · refine fun i _ hi ↦ ite_eq_right_iff.mpr fun h ↦ (hi ?_).elim
+      simpa using congrArg (· 1) h.2
+    · simp
+      omega
+  · -- A coefficient off degree `d` vanishes, and no binary monomial of degree `d` has exponent `s`.
+    rw [hf.coeff_eq_zero (by simpa [Finsupp.degree_eq_sum] using hs)]
+    refine Finset.sum_eq_zero fun i _ ↦ ite_eq_right_iff.mpr fun h ↦ (hs ?_).elim
+    rw [← h.2]
+    simp
+    omega
 
 variable (R d i) in
 /-- **The weight of `e_i^d` is `(d - i, i)`**: the diagonal matrix `diag(t₀, t₁)` scales the
