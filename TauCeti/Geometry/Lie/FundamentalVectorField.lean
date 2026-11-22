@@ -394,7 +394,10 @@ theorem fundamentalVectorField_eq_add_of_smul_eq_smul_smul
   simp only [Pi.add_apply, fundamentalVectorField_apply, MonoidHom.groupLieAlgebraMap_fst,
     MonoidHom.groupLieAlgebraMap_snd]
   -- The rewrites change the base point of the target tangent space only up to definitional
-  -- equality (`1 • x` against `1.1 • 1.2 • x`), so they are performed with `erw`.
+  -- equality (`1 • x` against `1.1 • 1.2 • x`), so they are performed with `erw`. The two sides
+  -- of the remaining goal differ only in writing the base points `(1 : G × K).1` and
+  -- `(1 : G × K).2` for `1`, and the components `ξ.1` and `ξ.2` for `fst ξ` and `snd ξ`, which
+  -- agree by definition.
   erw [e, mfderiv_prod_eq_add_apply (v := ξ) hF, e₁, e₂]
   rfl
 

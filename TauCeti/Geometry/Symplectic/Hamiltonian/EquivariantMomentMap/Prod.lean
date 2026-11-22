@@ -363,8 +363,8 @@ theorem IsMomentMap.differential_prod_of_smul_eq_smul_smul
         (hμ.differential x v, hν.differential x v) := by
   ext ξ
   simp only [differential_apply, Lie.groupLieAlgebraDualProdDualEquivDual_apply]
-  rw [mvfderiv_fun_add (hμ.mdifferentiableAt _ x) (hν.mdifferentiableAt _ x)]
-  rfl
+  rw [mvfderiv_fun_add (hμ.mdifferentiableAt _ x) (hν.mdifferentiableAt _ x),
+    add_apply]
 
 /-- **Equivariant moment maps of commuting actions.** Let `G` and `G'` act on `M`, and let `G × G'`
 act by `(g, g') • x = g • g' • x`. If `μ` and `ν` are coadjoint-equivariant moment maps of the
