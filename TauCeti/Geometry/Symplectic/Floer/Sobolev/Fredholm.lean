@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.Cylinder.Fredholm
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
-import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -19,9 +18,9 @@ Let `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` be the Sobolev realiza
 (`TauCeti.SymplecticForm.floerSobolevOperator`) of the linearized Floer operator
 `D_u ξ = ∂s ξ + J(z, u z) ∂t ξ + A(z) ξ` along a map `u : ℝ × ℝ → V` of the cylinder into a
 finite-dimensional symplectic inner product space `V`, for Floer data that are cylindrical near
-the ends (`TauCeti.Floer.IsCylindricalNearEnds`) and smooth on the whole cylinder, with almost
-complex structures compatible with `ω`. This file shows that the Fredholm property and the index
-of `D_u` do not depend on `u` beyond its asymptotic orbits.
+the ends (`TauCeti.Floer.IsCylindricalNearEnds`) and `C¹` on the whole cylinder (with `C²`
+Hamiltonians), with almost complex structures compatible with `ω`. This file shows that the
+Fredholm property and the index of `D_u` do not depend on `u` beyond its asymptotic orbits.
 
 * **Invariance.** Let `u` and `u'` be `C¹` maps whose loops converge uniformly to the same
   nondegenerate one-periodic orbits `x₋` at `-∞` and `x₊` at `+∞`, with slice defects
@@ -71,101 +70,6 @@ namespace TauCeti.SymplecticForm
 open CylinderSobolev
 open StripSobolev (stripMeasure)
 
-section Segment
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- If the loops of `v` converge uniformly to a continuous loop `x`, then the loops
-`t ↦ X_t(v(s, t))` converge uniformly to `t ↦ X_t(x t)`, for a jointly continuous `X`. -/
-private theorem tendstoUniformlyOn_apply_comp {X : ℝ → V → V} (hX : Continuous (uncurry X))
-    {v : ℝ × ℝ → V} {x : ℝ → V} (hx : Continuous x) {l : Filter ℝ}
-    (h : TendstoUniformlyOn (fun s t ↦ v (s, t)) x l (Icc 0 1)) :
-    TendstoUniformlyOn (fun s t ↦ X t (v (s, t))) (fun t ↦ X t (x t)) l (Icc 0 1) := by
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hx.continuousOn
-  have hF : ∀ᶠ s in l, MapsTo (fun t ↦ v (s, t)) (Icc 0 1) (closedBall 0 (C + 1)) := by
-    filter_upwards [Metric.tendstoUniformlyOn_iff.1 h 1 one_pos] with s hs t ht
-    have h₁ := norm_sub_norm_le (v (s, t)) (x t)
-    rw [← dist_eq_norm, dist_comm] at h₁
-    exact mem_closedBall_zero_iff.2 (by linarith [hs t ht, hC t ht])
-  exact isCompact_Icc.tendstoUniformlyOn_comp_prodMk (P := uncurry X)
-    (isCompact_closedBall 0 (C + 1)) hX.continuousOn hF
-    (fun t ht ↦ mem_closedBall_zero_iff.2 ((hC t ht).trans (by linarith))) h
-
-/-- If the loops of `u` converge uniformly to a continuous loop `x` and the slice defect
-`∂t u - X_t(u)` tends uniformly to zero, then `∂t u` converges uniformly to `t ↦ X_t(x t)`. -/
-private theorem tendstoUniformlyOn_fderiv_apply {X : ℝ → V → V} (hX : Continuous (uncurry X))
-    {u : ℝ × ℝ → V} {x : ℝ → V} (hx : Continuous x) {l : Filter ℝ}
-    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
-    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 l (Icc 0 1)) :
-    TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t) (0, 1)) (fun t ↦ X t (x t)) l (Icc 0 1) := by
-  refine ((hδ.fun_add (tendstoUniformlyOn_apply_comp hX hx hux)).congr
-    (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
-  · simp only [sliceDefect_def, sub_add_cancel]
-  · simp only [Pi.zero_apply, zero_add]
-
-/-- A `C¹` map of the cylinder and its derivative in `t` are bounded on the strip `ℝ × [0, 1]`
-when its loops converge uniformly at both ends and its slice defects for continuous Hamiltonian
-vector fields tend uniformly to zero there. -/
-private theorem exists_forall_norm_le_and_norm_fderiv_apply_le {X Y : ℝ → V → V}
-    (hX : Continuous (uncurry X)) (hY : Continuous (uncurry Y)) {u : ℝ × ℝ → V}
-    (hu : ContDiff ℝ 1 u) {xm xp : ℝ → V} (hxm : Continuous xm) (hxp : Continuous xp)
-    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
-    (hδm : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 atBot (Icc 0 1))
-    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
-    (hδp : TendstoUniformlyOn (fun s t ↦ sliceDefect Y u (s, t)) 0 atTop (Icc 0 1)) :
-    ∃ C, ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t)‖ ≤ C ∧ ‖fderiv ℝ u (s, t) (0, 1)‖ ≤ C := by
-  obtain ⟨C₁, hC₁⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
-    hu.continuous.continuousOn huxm huxp
-  obtain ⟨C₂, hC₂⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
-    (f := fun z ↦ fderiv ℝ u z (0, 1))
-    ((hu.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn
-    (tendstoUniformlyOn_fderiv_apply hX hxm huxm hδm)
-    (tendstoUniformlyOn_fderiv_apply hY hxp huxp hδp)
-  exact ⟨max C₁ C₂, fun s t ht ↦
-    ⟨(hC₁ s t ht).trans (le_max_left _ _), (hC₂ s t ht).trans (le_max_right _ _)⟩⟩
-
-omit [FiniteDimensional ℝ V] in
-/-- The derivative of a point `u + λ (u' - u)` of the segment between two differentiable maps. -/
-private theorem fderiv_add_smul_sub_apply {u u' : ℝ × ℝ → V} (hu : Differentiable ℝ u)
-    (hu' : Differentiable ℝ u') (μ : ℝ) (z v : ℝ × ℝ) :
-    fderiv ℝ (u + μ • (u' - u)) z v = fderiv ℝ u z v + μ • (fderiv ℝ u' z v - fderiv ℝ u z v) := by
-  rw [((hu z).hasFDerivAt.add (((hu' z).hasFDerivAt.sub (hu z).hasFDerivAt).const_smul
-    μ)).fderiv]
-  simp
-
-omit [FiniteDimensional ℝ V] in
-/-- Uniform convergence passes to the points `F + μ (G - F)` of the segment between two families. -/
-private theorem tendstoUniformlyOn_segment {F G : ℝ → ℝ → V} {f g : ℝ → V} {l : Filter ℝ}
-    {s : Set ℝ} (hF : TendstoUniformlyOn F f l s) (hG : TendstoUniformlyOn G g l s) (μ : ℝ) :
-    TendstoUniformlyOn (fun i x ↦ F i x + μ • (G i x - F i x)) (fun x ↦ f x + μ • (g x - f x))
-      l s :=
-  hF.fun_add ((lipschitzWith_smul μ).uniformContinuous.comp_tendstoUniformlyOn (hG.fun_sub hF))
-
-/-- If two `C¹` maps have loops converging uniformly to the same continuous loop `x` at an end,
-with slice defects tending uniformly to zero there, then so does every point `u + μ (u' - u)` of
-the segment between them. -/
-private theorem tendstoUniformlyOn_add_smul_sub {X : ℝ → V → V} (hX : Continuous (uncurry X))
-    {u u' : ℝ × ℝ → V} (hu : Differentiable ℝ u) (hu' : Differentiable ℝ u') {x : ℝ → V}
-    (hx : Continuous x) {l : Filter ℝ}
-    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
-    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect X u (s, t)) 0 l (Icc 0 1))
-    (hu'x : TendstoUniformlyOn (fun s t ↦ u' (s, t)) x l (Icc 0 1))
-    (hδ' : TendstoUniformlyOn (fun s t ↦ sliceDefect X u' (s, t)) 0 l (Icc 0 1)) (μ : ℝ) :
-    TendstoUniformlyOn (fun s t ↦ (u + μ • (u' - u)) (s, t)) x l (Icc 0 1) ∧
-      TendstoUniformlyOn (fun s t ↦ sliceDefect X (u + μ • (u' - u)) (s, t)) 0 l
-        (Icc 0 1) := by
-  have hv : TendstoUniformlyOn (fun s t ↦ (u + μ • (u' - u)) (s, t)) x l (Icc 0 1) :=
-    (tendstoUniformlyOn_segment hux hu'x μ).congr_right fun t _ ↦ by simp
-  refine ⟨hv, ?_⟩
-  have hd := tendstoUniformlyOn_segment (tendstoUniformlyOn_fderiv_apply hX hx hux hδ)
-    (tendstoUniformlyOn_fderiv_apply hX hx hu'x hδ') μ
-  refine ((hd.fun_sub (tendstoUniformlyOn_apply_comp hX hx hv)).congr
-    (.of_forall fun s t _ ↦ ?_)).congr_right fun t _ ↦ ?_
-  · simp only [sliceDefect_def, fderiv_add_smul_sub_apply hu hu']
-  · simp
-
-end Segment
-
 section Coefficient
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
@@ -189,100 +93,41 @@ private theorem floerJetCoeff_eq_jetCoeffAt (ω : SymplecticForm V) (J : ℝ × 
   refine ContinuousLinearMap.ext fun v ↦ ?_
   simp [floerJetCoeff_apply, floerLinearizationCoeff_apply, jetCoeffAt, stdComplexLineImag_eq]
 
-omit [FiniteDimensional ℝ V] in
-/-- The partial derivative in the target of a `C¹` function of `(z, y)` is continuous, here as a
-function of `(z, y, d)`. -/
-private theorem continuous_fderiv_apply_fst {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {f : ℝ × ℝ → V → G} (hf : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ f p.1 p.2) :
-    Continuous fun p : (ℝ × ℝ) × V × V ↦ fderiv ℝ (f p.1) p.2.1 :=
-  (ContDiff.fderiv (f := fun (q : (ℝ × ℝ) × V) y ↦ f q.1 y)
-    (hf.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0))
-      (by simp)).continuous.comp (continuous_fst.prodMk continuous_snd.fst)
-
 /-- `jetCoeffAt` is continuous when the data are `C¹` (with `C²` Hamiltonians) on the whole
 cylinder. -/
 private theorem continuous_jetCoeffAt (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Ks Kt : ℝ × ℝ → V → ℝ} (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ J p.1 p.2)
     (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt)) :
     Continuous (jetCoeffAt ω J Ks Kt) := by
-  have hXs := continuous_fderiv_apply_fst (f := fun z ↦ ω.hamiltonianVectorField (Ks z))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKs)
+  have hπ : Continuous fun p : (ℝ × ℝ) × V × V ↦ (p.1, p.2.1) :=
+    continuous_fst.prodMk continuous_snd.fst
+  have hXs := (continuous_fderiv_slice_right (f := fun z ↦ ω.hamiltonianVectorField (Ks z))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKs)).comp hπ
   have hXt := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKt
-  have hdXt := continuous_fderiv_apply_fst (f := fun z ↦ ω.hamiltonianVectorField (Kt z)) hXt
-  have hJp : Continuous fun p : (ℝ × ℝ) × V × V ↦ J p.1 p.2.1 :=
-    hJ.continuous.comp (continuous_fst.prodMk continuous_snd.fst)
+  have hdXt := (continuous_fderiv_slice_right
+    (f := fun z ↦ ω.hamiltonianVectorField (Kt z)) hXt).comp hπ
+  have hJp : Continuous fun p : (ℝ × ℝ) × V × V ↦ J p.1 p.2.1 := hJ.continuous.comp hπ
   have hXtp : Continuous fun p : (ℝ × ℝ) × V × V ↦ ω.hamiltonianVectorField (Kt p.1) p.2.1 :=
-    hXt.continuous.comp (continuous_fst.prodMk continuous_snd.fst)
+    hXt.continuous.comp hπ
   have hflip : Continuous fun p : (ℝ × ℝ) × V × V ↦
       (fderiv ℝ (J p.1) p.2.1).flip (p.2.2 - ω.hamiltonianVectorField (Kt p.1) p.2.1) :=
-    ((flipₗᵢ ℝ V V V).continuous.comp (continuous_fderiv_apply_fst hJ)).clm_apply
+    ((flipₗᵢ ℝ V V V).continuous.comp ((continuous_fderiv_slice_right hJ).comp hπ)).clm_apply
       (continuous_snd.snd.sub hXtp)
   exact (continuous_const.fun_add (hJp.clm_comp continuous_const)).fun_add
     (((hflip.fun_sub hXs).fun_sub (hJp.clm_comp hdXt)).clm_comp continuous_const)
 
-/-- The point of `[-|R|, |R|] × ℝ` nearest to `z`, at which data cylindrical near the ends with
-radius `R` agree with their values at `z`. -/
-private def clampEnd (R : ℝ) (z : ℝ × ℝ) : ℝ × ℝ :=
-  (max (-|R|) (min |R| z.1), z.2)
-
-private theorem clampEnd_mem {R : ℝ} {z : ℝ × ℝ} (hz : z.2 ∈ Icc (0 : ℝ) 1) :
-    clampEnd R z ∈ Icc (-|R|) |R| ×ˢ Icc (0 : ℝ) 1 :=
-  ⟨⟨le_max_left _ _, max_le (by linarith [abs_nonneg R]) (min_le_left _ _)⟩, hz⟩
-
-/-- Floer data cylindrical near the ends with radius `R` take the same values at `z` and at the
-point `clampEnd R z`. -/
-private theorem jetCoeffAt_clampEnd (ω : SymplecticForm V)
+/-- Floer data cylindrical near the ends with radius `R` give the same coefficient field at `z`
+and at the point `(projIcc (-|R|) |R| _ z.1, z.2)` of `[-|R|, |R|] × ℝ` nearest to `z`. -/
+private theorem jetCoeffAt_projIcc (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
     (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u) (z : ℝ × ℝ) (y d : V) :
     jetCoeffAt ω (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt (z, y, d) =
       jetCoeffAt ω (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-        (clampEnd R z, y, d) := by
+        (((projIcc (-|R|) |R| (neg_le_self (abs_nonneg R)) z.1 : ℝ), z.2), y, d) := by
   obtain ⟨s, t⟩ := z
-  have hR := le_abs_self R
-  have hR' := neg_abs_le R
-  have h : J (s, t) = J (clampEnd R (s, t)) ∧ Ks (s, t) = Ks (clampEnd R (s, t)) ∧
-      Kt (s, t) = Kt (clampEnd R (s, t)) := by
-    rcases le_or_gt s (-|R|) with hs | hs
-    · -- On the negative end both points carry the data of the negative end.
-      have hc : clampEnd R (s, t) = (-|R|, t) := by
-        simp [clampEnd, min_eq_right (show s ≤ |R| by linarith [abs_nonneg R]), max_eq_left hs]
-      have h₁ : s ≤ -R := by linarith
-      have h₂ : -|R| ≤ -R := by linarith
-      rw [hc, hcyl.almostComplex_eq_of_le_neg (s, t) h₁, hcyl.almostComplex_eq_of_le_neg _ h₂,
-        hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ absurd h.1 (not_lt.2 h₁),
-        hcyl.hamiltonianS_eq_zero (-|R|, t) fun h ↦ absurd h.1 (not_lt.2 h₂),
-        hcyl.hamiltonianT_eq_of_le_neg (s, t) h₁, hcyl.hamiltonianT_eq_of_le_neg _ h₂]
-      exact ⟨rfl, rfl, rfl⟩
-    rcases le_or_gt |R| s with hs' | hs'
-    · -- On the positive end both points carry the data of the positive end.
-      have hc : clampEnd R (s, t) = (|R|, t) := by
-        simp [clampEnd, min_eq_left hs']
-      have h₁ : R ≤ s := by linarith
-      rw [hc, hcyl.almostComplex_eq_of_le (s, t) h₁, hcyl.almostComplex_eq_of_le _ hR,
-        hcyl.hamiltonianS_eq_zero (s, t) fun h ↦ absurd h.2 (not_lt.2 h₁),
-        hcyl.hamiltonianS_eq_zero (|R|, t) fun h ↦ absurd h.2 (not_lt.2 hR),
-        hcyl.hamiltonianT_eq_of_le (s, t) h₁, hcyl.hamiltonianT_eq_of_le _ hR]
-      exact ⟨rfl, rfl, rfl⟩
-    · have hc : clampEnd R (s, t) = (s, t) := by
-        simp [clampEnd, min_eq_right hs'.le, max_eq_right hs.le]
-      rw [hc]
-      exact ⟨rfl, rfl, rfl⟩
-  simp only [jetCoeffAt, h.1, h.2.1, h.2.2]
-
-/-- Data that are `C¹` on the whole cylinder (with `C²` Hamiltonians) and cylindrical near the
-ends along one map are cylindrical near the ends along every map. -/
-private theorem isCylindricalNearEnds_of_contDiff
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
-    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
-    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
-    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt)) (v : ℝ × ℝ → V) :
-    Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R v :=
-  { hcyl with
-    contDiffAt_almostComplex := fun _ ↦ hJ.contDiffAt
-    contDiffAt_hamiltonianS := fun _ ↦ hKs.contDiffAt
-    contDiffAt_hamiltonianT := fun _ ↦ hKt.contDiffAt }
+  obtain ⟨hJ, hKs, hKt⟩ := hcyl.eq_projIcc s t
+  simp only [jetCoeffAt, hJ, hKs, hKt]
 
 /-- Data of an end of the cylinder that are the values of `C¹` cylinder data at a fixed `s = a`
 (with `C²` Hamiltonians) are `C¹` (with `C²` Hamiltonians), and compatible where the cylinder data
@@ -300,10 +145,10 @@ private theorem endData_of_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → 
     hKt.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd), fun t ↦ hJc (a, t)⟩
 
 /-- **Uniform closeness of the coefficient fields along a segment of maps.** For data cylindrical
-near the ends and smooth on the whole cylinder, and differentiable maps `u`, `u'` which are bounded
-on the strip `ℝ × [0, 1]` together with their derivatives in `t`, the coefficient fields of the
-linearized Floer operator along `u + μ (u' - u)` and `u + lam (u' - u)` are uniformly close on the
-strip for `μ` close to `lam`. -/
+near the ends and `C¹` on the whole cylinder (with `C²` Hamiltonians), and differentiable maps
+`u`, `u'` which are bounded on the strip `ℝ × [0, 1]` together with their derivatives in `t`, the
+coefficient fields of the linearized Floer operator along `u + μ (u' - u)` and `u + lam (u' - u)`
+are uniformly close on the strip for `μ` close to `lam`. -/
 private theorem exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u u' : ℝ × ℝ → V}
@@ -320,8 +165,9 @@ private theorem exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt (ω : Sympl
         (ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           (u + lam • (u' - u)) z) < r := by
   have hB₀ : 0 ≤ B := (norm_nonneg _).trans (hB 0 0 ⟨le_rfl, zero_le_one⟩).1
-  -- For `|μ - lam| ≤ 1`, the arguments `(clampEnd R z, u_μ z, ∂t u_μ z)` of `jetCoeffAt` on the
-  -- strip lie in the compact set `K`, on which `jetCoeffAt` is uniformly continuous.
+  -- For `|μ - lam| ≤ 1`, the arguments `((projIcc (-|R|) |R| _ z.1, z.2), u_μ z, ∂t u_μ z)` of
+  -- `jetCoeffAt` on the strip lie in the compact set `K`, on which `jetCoeffAt` is uniformly
+  -- continuous.
   set B' := B + 2 * (|lam| + 1) * B
   set K : Set ((ℝ × ℝ) × V × V) :=
     (Icc (-|R|) |R| ×ˢ Icc (0 : ℝ) 1) ×ˢ (closedBall 0 B' ×ˢ closedBall 0 B')
@@ -337,9 +183,10 @@ private theorem exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt (ω : Sympl
       _ ≤ B + (|lam| + 1) * (B + B) := by gcongr
       _ = B' := by ring
   have hmem {μ : ℝ} (hμ : |μ - lam| ≤ 1) {z : ℝ × ℝ} (hz : z.2 ∈ Icc (0 : ℝ) 1) :
-      (clampEnd R z, (u + μ • (u' - u)) z, fderiv ℝ (u + μ • (u' - u)) z (0, 1)) ∈ K := by
+      (((projIcc (-|R|) |R| (neg_le_self (abs_nonneg R)) z.1 : ℝ), z.2), (u + μ • (u' - u)) z,
+        fderiv ℝ (u + μ • (u' - u)) z (0, 1)) ∈ K := by
     obtain ⟨h₁, h₂, h₃, h₄⟩ := hB z.1 z.2 hz
-    refine ⟨clampEnd_mem hz, mem_closedBall_zero_iff.2 ?_, mem_closedBall_zero_iff.2 ?_⟩
+    refine ⟨⟨Subtype.prop _, hz⟩, mem_closedBall_zero_iff.2 ?_, mem_closedBall_zero_iff.2 ?_⟩
     · simpa using hnorm hμ h₁ h₂
     · simpa [fderiv_add_smul_sub_apply hu hu'] using hnorm hμ h₃ h₄
   obtain ⟨δ, hδ, hΦ⟩ := Metric.uniformContinuousOn_iff.1 (hK.uniformContinuousOn_of_continuous
@@ -348,8 +195,8 @@ private theorem exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt (ω : Sympl
   refine ⟨min 1 (δ / (2 * B + 1)), lt_min one_pos (by positivity), fun μ hμ z hz ↦ ?_⟩
   rw [lt_min_iff] at hμ
   rw [floerJetCoeff_eq_jetCoeffAt, floerJetCoeff_eq_jetCoeffAt,
-    jetCoeffAt_clampEnd ω hcyl z ((u + μ • (u' - u)) z),
-    jetCoeffAt_clampEnd ω hcyl z ((u + lam • (u' - u)) z)]
+    jetCoeffAt_projIcc ω hcyl z ((u + μ • (u' - u)) z),
+    jetCoeffAt_projIcc ω hcyl z ((u + lam • (u' - u)) z)]
   refine hΦ _ (hmem hμ.1.le hz) _ (hmem (by simp) hz) ?_
   -- The two points differ by `(μ - lam) (u' - u)` in the value and the slice velocity.
   obtain ⟨h₁, h₂, h₃, h₄⟩ := hB z.1 z.2 hz
@@ -469,7 +316,8 @@ private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
     hu'xm hδ'm μ) (tendstoUniformlyOn_add_smul_sub hXpc hd hd' hxpc huxp hδp hu'xp hδ'p μ)
   set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦
     ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt (u + μ • (u' - u))
-  have hcylμ (μ : ℝ) := isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt (u + μ • (u' - u))
+  have hcylμ (μ : ℝ) :=
+    Floer.isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt (u + μ • (u' - u))
   have huμ (μ : ℝ) : ContDiff ℝ 1 (u + μ • (u' - u)) := hu.add ((hu'.sub hu).const_smul μ)
   have hM (μ : ℝ) : MemLp (M μ) ∞ stripMeasure :=
     ω.memLp_floerJetCoeff_of_cylindrical (hcylμ μ) (huμ μ) hHm hJm (hseg μ).1.1 (hseg μ).1.2 hHp
@@ -539,8 +387,8 @@ theorem isFredholm_floerSobolevOperator_iff_of_cylindrical (ω : SymplecticForm 
   ⟨fun h ↦ (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm
       hδm hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).1,
     fun h ↦ (isFredholm_and_index_eq_of_cylindrical ω
-      (isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt u') hJ hKs hKt hJc hu' hu hXm hxm hndm
-      hu'xm hδ'm huxm hδm hXp hxp hndp hu'xp hδ'p huxp hδp h).1⟩
+      (Floer.isCylindricalNearEnds_of_contDiff hcyl hJ hKs hKt u') hJ hKs hKt hJc hu' hu hXm hxm
+      hndm hu'xm hδ'm huxm hδm hXp hxp hndp hu'xp hδ'p huxp hδp h).1⟩
 
 /-- **The index of the linearized Floer operator depends only on the asymptotic orbits.** Under
 the hypotheses of `TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_iff_of_cylindrical`, if
