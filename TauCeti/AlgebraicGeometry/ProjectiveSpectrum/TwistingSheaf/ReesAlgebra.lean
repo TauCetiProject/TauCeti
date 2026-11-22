@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
-public import TauCeti.RingTheory.ReesAlgebra.Grading
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ReesAlgebra
+public import TauCeti.AlgebraicGeometry.Modules.Sections
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ReesAlgebra
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.NonvanishingLocus
+import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 
 /-!
 # Twisting sheaves on `Proj` of a Rees algebra
@@ -65,10 +65,11 @@ theorem smul_toTwistingSheaf_monomialDegreeOne_eq {a b : R} (ha : a ∈ I) (hb :
 
 /-- The nonvanishing locus of the degree-one Rees section `a t` of `𝒪(1)` on `Proj R[It]` is the
 standard open `D₊(a t)`. -/
+@[simp]
 theorem nonvanishingLocus_toTwistingSheaf_monomialDegreeOne {a : R} (ha : a ∈ I) :
     haveI := isInvertible_twistingSheaf_reesAlgebra I 1
     (Proj.twistingSheaf (grade I) 1).nonvanishingLocus
-        (Proj.toTwistingSheaf (grade I) rfl ⊤
+        (Proj.toTwistingSheaf (grade I) (n := 1) (j := 1) Int.cast_one ⊤
           ⟨monomialDegreeOne ha, monomialDegreeOne_mem_grade ha⟩) =
       Proj.basicOpen (grade I) (monomialDegreeOne ha) :=
   Proj.twistingSheaf.nonvanishingLocus_toTwistingSheaf
@@ -88,7 +89,7 @@ theorem epi_freeHomEquiv_symm_toTwistingSheaf_reesAlgebra {ι : Type u} (g : ι 
             monomialDegreeOne_mem_grade _⟩)) := by
   have := isInvertible_twistingSheaf_reesAlgebra I 1
   refine epi_freeHomEquiv_symm_of_iSup_nonvanishingLocus_eq_top _ ?_
-  simp_rw [nonvanishingLocus_toTwistingSheaf_monomialDegreeOne]
+  simp_rw [Int.cast_ofNat_Int, nonvanishingLocus_toTwistingSheaf_monomialDegreeOne]
   exact iSup_basicOpen_monomialDegreeOne hg
 
 /-- **No common zero of the degree-one Rees sections.** On `Proj R[(x₁, x₂)t]`, the nonvanishing

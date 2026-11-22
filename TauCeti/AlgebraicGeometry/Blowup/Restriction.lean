@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.IdealSheaf
 public import TauCeti.AlgebraicGeometry.Blowup.AwayFromCenter
-import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.Restrict
 
 /-!

@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Blowup.Restriction
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 public import Mathlib.AlgebraicGeometry.Noetherian
-import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 
 /-!
 # Separating closed subsets by a blowup

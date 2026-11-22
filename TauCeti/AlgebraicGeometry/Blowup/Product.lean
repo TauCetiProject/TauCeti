@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
 import TauCeti.Algebra.Regular.SMul
-import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 
@@ -62,20 +61,14 @@ theorem isEffectiveCartier_comap_toSpecCoeff_mul_left {R : Type u} [CommRing R]
       simp only [Set.mem_range, Set.mem_mul, s, Prod.exists, Subtype.exists]
       aesop
     rw [hrange, ← Ideal.span_mul_span, Ideal.span_eq, Ideal.span_eq]
-  rw [isEffectiveCartier_iff_exists_isOpenImmersion]
-  intro x
-  obtain ⟨p, hx⟩ := TopologicalSpace.Opens.mem_iSup.mp
-    ((iSup_opensRange_affineBlowupι hs).ge (Set.mem_univ x))
+  refine isEffectiveCartier_of_affineBlowupι hs fun p ↦ ?_
   let B := (I * J).affineBlowup (s p) (Localization.Away (s p))
   let φ := algebraMap R B
   have hp : s p ∈ I * J := Ideal.mul_mem_mul p.1.property p.2.property
   have hreg : IsRegular (φ p.1.val * φ p.2.val) := by
     rw [← map_mul]
     exact Ideal.isRegular_algebraMap_affineBlowup
-  refine ⟨_, inferInstance, affineBlowupι (Localization.Away (s p)) hp,
-    inferInstance, hx, (Scheme.ΓSpecIso (.of B)).inv (φ p.1.val),
-    (isSMulRegular_map_iff (Scheme.ΓSpecIso _).symm.commRingCatIsoToRingEquiv _).mpr
-      hreg.of_mul_left.left.isSMulRegular, ?_⟩
+  refine ⟨φ p.1.val, hreg.of_mul_left.left.isSMulRegular, ?_⟩
   rw [comap_affineBlowupι_toSpecCoeff (Localization.Away (s p)) hp I,
     Ideal.map_algebraMap_affineBlowup_mul_left (I := I) J _ p.1.property p.2.property,
     Ideal.map_span, Set.image_singleton]

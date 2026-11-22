@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.RingTheory.ReesAlgebra.Grading
 
 /-!
