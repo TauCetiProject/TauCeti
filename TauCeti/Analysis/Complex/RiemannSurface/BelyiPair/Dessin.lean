@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair
+public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Basic
 public import TauCeti.Combinatorics.RibbonGraph.Classification
 
 /-!

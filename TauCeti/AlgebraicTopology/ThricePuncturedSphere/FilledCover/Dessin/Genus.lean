@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Dessin
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Dessin.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Genus
 
 /-!

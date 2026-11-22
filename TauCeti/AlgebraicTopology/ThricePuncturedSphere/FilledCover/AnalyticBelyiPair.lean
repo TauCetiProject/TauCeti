@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover
-public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Basic
+public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Basic
 
 import TauCeti.Analysis.Complex.RiemannSurface.Branch.FiberCount
 

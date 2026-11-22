@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
-public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair
+public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair.Basic
 public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Deck
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Basic
 
 /-!
 # Deck groups of topological branched covers of the sphere
