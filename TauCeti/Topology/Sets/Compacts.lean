@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Sets.Compacts
+public import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
 # Images and preimages of compact sets
@@ -25,9 +26,14 @@ with compact supports covariant in open embeddings. A compact set lies in one me
 directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`), and open sets containing two compact sets
-together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). Finally, in a
+together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). In a
 Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
-(`TopologicalSpace.Compacts.toClosedsFunctor`).
+(`TopologicalSpace.Compacts.toClosedsFunctor`). In a
+locally compact space, a closed set disjoint from a compact set `K` misses some compact
+neighbourhood of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_disjoint`), so the compact
+neighbourhoods of `K` form a nonempty family; local homology along `K` is the colimit over them.
+Finally, inducing maps pull back compact sets contained in their range
+(`IsInducing.preimageCompacts`).
 -/
 
 public section
@@ -143,4 +149,41 @@ variable (α) in
 abbrev toClosedsFunctor [T2Space α] : Compacts α ⥤ Closeds α :=
   toCloseds_mono.functor
 
+section CompactNhds
+
+variable [LocallyCompactSpace α]
+
+/-- In a locally compact space, a closed set disjoint from a compact set `K` misses some compact
+neighbourhood of `K`. -/
+lemma exists_mem_compactNhds_disjoint (K : Compacts α) {T : Set α} (hT : IsClosed T)
+    (hKT : Disjoint (K : Set α) T) : ∃ L ∈ K.compactNhds, Disjoint (L : Set α) T := by
+  obtain ⟨L, hL, hKL, hLT⟩ := exists_compact_between K.isCompact hT.isOpen_compl
+    hKT.subset_compl_right
+  exact ⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.property),
+    disjoint_compl_left.mono_left hLT⟩
+
+/-- In a locally compact space, every compact set has a compact neighbourhood. -/
+instance (K : Compacts α) : Nonempty K.compactNhds :=
+  let ⟨L, hL, _⟩ := K.exists_mem_compactNhds_disjoint isClosed_empty (disjoint_empty _)
+  ⟨⟨L, hL⟩⟩
+
+end CompactNhds
+
 end TopologicalSpace.Compacts
+
+namespace Topology.IsInducing
+
+variable {α β : Type*} [TopologicalSpace α] [TopologicalSpace β] {f : α → β}
+
+/-- The compact preimage of a compact set contained in the range of an inducing map.
+Its carrier is definitionally the preimage, as for `Compacts.compactNhdsOfSubsetInterior`. -/
+@[expose, simps] def preimageCompacts (hf : IsInducing f) {S : Set β} (hS : IsCompact S)
+    (hSf : S ⊆ Set.range f) : TopologicalSpace.Compacts α :=
+  ⟨f ⁻¹' S, hf.isCompact_preimage' hS hSf⟩
+
+lemma subset_map_preimageCompacts (hf : IsInducing f) {S : Set β} (hS : IsCompact S)
+    (hSf : S ⊆ Set.range f) :
+    S ⊆ ((hf.preimageCompacts hS hSf).map f hf.continuous : Set β) :=
+  (Set.image_preimage_eq_of_subset hSf).ge
+
+end Topology.IsInducing

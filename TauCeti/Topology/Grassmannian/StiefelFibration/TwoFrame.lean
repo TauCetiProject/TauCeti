@@ -86,7 +86,7 @@ private abbrev forgetSecond (N : ℕ) :
 /-- The first vector of an orthonormal two-frame, as a point of the unit sphere. -/
 private abbrev firstVector (N : ℕ) :
     C(finiteOrthonormalFrame ℝ 2 N, sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :=
-  (sphereHomeomorph N : C(finiteOrthonormalFrame ℝ 1 N, _)).comp (forgetSecond N)
+  (sphereHomeomorph ℝ N : C(finiteOrthonormalFrame ℝ 1 N, _)).comp (forgetSecond N)
 
 /-- The second vector of an orthonormal two-frame, as a point of the unit sphere. -/
 private def secondVector (N : ℕ) :
@@ -124,9 +124,9 @@ theorem homotopyGroupMap_forgetLast_eq_const {N : ℕ} (hN : Odd N) {M : Type*} 
     apply (HomotopyGroup.congrEquiv e).injective
     rw [← HomotopyGroup.map_congrEquiv, hu, HomotopyGroup.congrEquiv_const, HomotopyGroup.one_def]
   -- Forgetting the second vector is the first vector, read in `V₁` through `sphereHomeomorph`.
-  apply (HomotopyGroup.homeomorphEquiv (sphereHomeomorph _) (forgetLast f)).injective
+  apply (HomotopyGroup.homeomorphEquiv (sphereHomeomorph ℝ _) (forgetLast f)).injective
   -- `homeomorphEquiv` is by definition `homeomorphEquivOfEq` at `rfl`.
-  have hc : HomotopyGroup.homeomorphEquiv (sphereHomeomorph _) (forgetLast f)
+  have hc : HomotopyGroup.homeomorphEquiv (sphereHomeomorph ℝ _) (forgetLast f)
       (⟦GenLoop.const⟧ : HomotopyGroup M _ (forgetLast f)) = ⟦GenLoop.const⟧ :=
     HomotopyGroup.homeomorphEquivOfEq_mk_const _ _
   rw [hc, HomotopyGroup.homeomorphEquiv_apply, HomotopyGroup.map_comp_apply]
