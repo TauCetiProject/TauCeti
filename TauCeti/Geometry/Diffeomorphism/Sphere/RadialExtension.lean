@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Instances.Icc
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.Instances.Sphere
 
 /-!
@@ -87,24 +88,25 @@ the slice of `g` at time `τ ‖x‖`, evaluated at `x`. -/
 private def radialFun (g : I × sphere (0 : E) 1 → sphere (0 : E) 1) (x : E) : E :=
   sphereCone (fun u ↦ (g (collaredSmoothTransitionUnit ‖x‖, u) : E)) x
 
-/-- On the ray through `u`, the radial extension is `r • u ↦ r • g (τ r, u)`. -/
-private theorem radialFun_smul_coe (g : I × sphere (0 : E) 1 → sphere (0 : E) 1) {r : ℝ}
-    (hr : 0 ≤ r) (u : sphere (0 : E) 1) :
-    radialFun g (r • (u : E)) = r • (g (collaredSmoothTransitionUnit r, u) : E) := by
-  rw [radialFun, sphereCone_smul_coe hr, norm_smul, norm_eq_of_mem_sphere u, mul_one,
-    Real.norm_of_nonneg hr]
-
 /-- The radial extension of a family of maps into the unit sphere preserves norms. -/
 private theorem norm_radialFun (g : I × sphere (0 : E) 1 → sphere (0 : E) 1) (x : E) :
     ‖radialFun g x‖ = ‖x‖ :=
   norm_sphereCone (fun _ ↦ norm_eq_of_mem_sphere _) x
 
+/-- Radial extension turns the timewise composite of two families into the composite of their
+radial extensions. -/
+private theorem radialFun_radialFun (g h : I × sphere (0 : E) 1 → sphere (0 : E) 1) (x : E) :
+    radialFun h (radialFun g x) = radialFun (fun p ↦ h (p.1, g p)) x := by
+  unfold radialFun
+  rw [norm_sphereCone fun _ ↦ norm_eq_of_mem_sphere _]
+  exact sphereCone_sphereCone _ _ x
+
 /-- If `h` undoes `g` at every time, the radial extension of `h` undoes that of `g`. -/
-private theorem radialFun_radialFun {g h : I × sphere (0 : E) 1 → sphere (0 : E) 1}
+private theorem radialFun_radialFun_of_leftInverse {g h : I × sphere (0 : E) 1 → sphere (0 : E) 1}
     (hgh : ∀ t u, h (t, g (t, u)) = u) (x : E) : radialFun h (radialFun g x) = x := by
-  rcases eq_zero_or_exists_eq_smul_coe_sphere x with rfl | ⟨r, hr, u, rfl⟩
-  · simp [radialFun]
-  rw [radialFun_smul_coe g hr.le, radialFun_smul_coe h hr.le, hgh]
+  rw [radialFun_radialFun, radialFun]
+  simp only [hgh]
+  rw [sphereCone_subtypeVal, id_eq]
 
 /-- If `g` starts at the identity, its radial extension is the identity on the closed ball of
 radius `1 / 4`. -/
@@ -114,30 +116,28 @@ private theorem radialFun_of_norm_le {g : I × sphere (0 : E) 1 → sphere (0 : 
   simp only [hg]
   rw [sphereCone_subtypeVal, id_eq]
 
-/-- The punctured space `E \ {0}`, as an open subset of `E`. -/
-private abbrev puncturedOpens (E : Type*) [NormedAddCommGroup E] : TopologicalSpace.Opens E :=
-  ⟨{0}ᶜ, isOpen_compl_singleton⟩
-
 /-- Away from the origin, the radial extension of a `C^k` family is `C^k`: on the punctured space
 it is `x ↦ ‖x‖ • g (τ ‖x‖, x / ‖x‖)`, a composite of `C^k` maps. -/
 private theorem contDiffAt_radialFun_of_ne_zero {g : I × sphere (0 : E) 1 → sphere (0 : E) 1}
     (hg : ContMDiff ((𝓡∂ 1).prod (𝓡 n)) (𝓡 n) k g) (hk : k ≤ ∞) {x : E} (hx : x ≠ 0) :
     ContDiffAt ℝ k (radialFun g) x := by
-  have hnorm : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) k fun y : puncturedOpens E ↦ ‖(y : E)‖ := fun y ↦
+  have hnorm : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) k
+      fun y : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : TopologicalSpace.Opens E) ↦ ‖(y : E)‖ := fun y ↦
     (contDiffAt_norm ℝ y.property).contMDiffAt.comp y contMDiff_subtypeVal.contMDiffAt
   have hdir := contMDiff_normalize_sphere (E := E) (n := n) (m := k)
-  have hmotion : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) k fun y : puncturedOpens E ↦
-      ‖(y : E)‖ • (g (collaredSmoothTransitionUnit ‖(y : E)‖,
+  have hmotion : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) k
+      fun y : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : TopologicalSpace.Opens E) ↦
+        ‖(y : E)‖ • (g (collaredSmoothTransitionUnit ‖(y : E)‖,
         ⟨NormedSpace.normalize (y : E), mem_sphere_zero_iff_norm.2
           (NormedSpace.norm_normalize_eq_one_iff.2 y.property)⟩) : E) :=
     hnorm.smul (contMDiff_coe_sphere.comp
       (hg.comp (((contMDiff_collaredSmoothTransitionUnit hk).comp hnorm).prodMk hdir)))
   have hcomp : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) k
-      (fun y : puncturedOpens E ↦ radialFun g y) ⟨x, hx⟩ := by
+      (fun y : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : TopologicalSpace.Opens E) ↦ radialFun g y)
+      ⟨x, hx⟩ := by
     refine (hmotion _).congr_of_eventuallyEq (.of_forall fun y ↦ ?_)
     dsimp only
-    rw [radialFun, sphereCone_eq_norm_smul_sphereExtend,
-      sphereExtend_of_ne_zero _ (show (y : E) ≠ 0 from y.property)]
+    rw [radialFun, sphereCone_eq_norm_smul_sphereExtend, sphereExtend_of_ne_zero _ y.property]
   exact contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 hcomp)
 
 /-- The radial extension of a `C^k` family starting at the identity is `C^k`, for `k ≤ ∞`. Near
@@ -166,8 +166,8 @@ def radialExtension (Φ : Diffeotopy (𝓡 n) k (sphere (0 : E) 1)) (hk : k ≤ 
     E ≃ₘ^k⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E where
   toFun := radialFun Φ
   invFun := radialFun Φ.symm
-  left_inv := radialFun_radialFun Φ.symm_apply_mk_apply
-  right_inv := radialFun_radialFun Φ.apply_mk_symm_apply
+  left_inv := radialFun_radialFun_of_leftInverse Φ.symm_apply_mk_apply
+  right_inv := radialFun_radialFun_of_leftInverse Φ.apply_mk_symm_apply
   contMDiff_toFun := (contDiff_radialFun Φ.contMDiff Φ.apply_zero hk).contMDiff
   contMDiff_invFun := (contDiff_radialFun Φ.symm.contMDiff Φ.symm.apply_zero hk).contMDiff
 
@@ -181,14 +181,34 @@ theorem radialExtension_apply (x : E) :
 
 /-- On the ray through a unit vector `u`, the radial extension is `r • u ↦ r • Φ (τ r, u)`. -/
 theorem radialExtension_smul_coe {r : ℝ} (hr : 0 ≤ r) (u : sphere (0 : E) 1) :
-    Φ.radialExtension hk (r • (u : E)) = r • (Φ (collaredSmoothTransitionUnit r, u) : E) :=
-  radialFun_smul_coe Φ hr u
+    Φ.radialExtension hk (r • (u : E)) = r • (Φ (collaredSmoothTransitionUnit r, u) : E) := by
+  rw [radialExtension_apply, sphereCone_smul_coe hr, norm_smul, norm_eq_of_mem_sphere u, mul_one,
+    Real.norm_of_nonneg hr]
 
 /-- The inverse of the radial extension of `Φ` is the radial extension of the inverse
 diffeotopy. -/
 @[simp]
 theorem radialExtension_symm : (Φ.radialExtension hk).symm = Φ.symm.radialExtension hk :=
   _root_.Diffeomorph.ext fun _ ↦ rfl
+
+/-- The radial extension of the constant diffeotopy is the identity. -/
+@[simp]
+theorem radialExtension_refl :
+    (Diffeotopy.refl (𝓡 n) k (sphere (0 : E) 1)).radialExtension hk =
+      _root_.Diffeomorph.refl 𝓘(ℝ, E) E k :=
+  _root_.Diffeomorph.ext fun x ↦ by
+    rw [radialExtension_apply]
+    simp only [refl_apply]
+    rw [sphereCone_subtypeVal]
+    rfl
+
+/-- The radial extension of a composite diffeotopy is the composite of the radial extensions. -/
+theorem radialExtension_trans (Ψ : Diffeotopy (𝓡 n) k (sphere (0 : E) 1)) :
+    (Φ.trans Ψ).radialExtension hk = (Φ.radialExtension hk).trans (Ψ.radialExtension hk) :=
+  _root_.Diffeomorph.ext fun x ↦ by
+    rw [_root_.Diffeomorph.coe_trans, Function.comp_apply]
+    refine ((radialFun_radialFun (g := ⇑Φ) Ψ x).trans ?_).symm
+    simp only [radialFun, radialExtension_apply, trans_apply]
 
 /-- The radial extension preserves norms. -/
 @[simp]
@@ -199,8 +219,13 @@ theorem norm_radialExtension (x : E) : ‖Φ.radialExtension hk x‖ = ‖x‖ :
 theorem radialExtension_of_norm_le {x : E} (hx : ‖x‖ ≤ 1 / 4) : Φ.radialExtension hk x = x :=
   radialFun_of_norm_le (g := ⇑Φ) Φ.apply_zero hx
 
+/-- The radial extension fixes the origin. -/
+@[simp]
+theorem radialExtension_zero : Φ.radialExtension hk 0 = 0 :=
+  sphereCone_zero _
+
 /-- From radius `3 / 4` on, the radial extension is the cone over the final diffeomorphism. -/
-theorem radialExtension_smul_coe_of_le {r : ℝ} (hr : 3 / 4 ≤ r) (u : sphere (0 : E) 1) :
+theorem radialExtension_smul_coe_of_ge {r : ℝ} (hr : 3 / 4 ≤ r) (u : sphere (0 : E) 1) :
     Φ.radialExtension hk (r • (u : E)) = r • (Φ.final u : E) := by
   rw [radialExtension_smul_coe Φ hk (by linarith), collaredSmoothTransitionUnit_eq_one_of_ge hr,
     final_apply]
@@ -209,16 +234,14 @@ theorem radialExtension_smul_coe_of_le {r : ℝ} (hr : 3 / 4 ≤ r) (u : sphere 
 @[simp]
 theorem radialExtension_coe_sphere (u : sphere (0 : E) 1) :
     Φ.radialExtension hk u = Φ.final u := by
-  simpa using Φ.radialExtension_smul_coe_of_le hk (by norm_num : (3 / 4 : ℝ) ≤ 1) u
+  simpa using Φ.radialExtension_smul_coe_of_ge hk (by norm_num : (3 / 4 : ℝ) ≤ 1) u
 
 /-- The radial extension maps each closed ball about the origin onto itself. -/
 theorem image_radialExtension_closedBall (r : ℝ) :
     Φ.radialExtension hk '' closedBall 0 r = closedBall 0 r := by
+  rw [_root_.Diffeomorph.image_eq_preimage_symm]
   ext y
-  simp only [mem_image, mem_closedBall_zero_iff]
-  refine ⟨fun ⟨x, hx, hxy⟩ ↦ hxy ▸ (Φ.norm_radialExtension hk x).trans_le hx, fun hy ↦
-    ⟨(Φ.radialExtension hk).symm y, ?_, (Φ.radialExtension hk).apply_symm_apply y⟩⟩
-  rwa [radialExtension_symm, norm_radialExtension]
+  simp only [mem_preimage, mem_closedBall_zero_iff, radialExtension_symm, norm_radialExtension]
 
 /-- **Extension over the ball.** If a diffeomorphism of the unit sphere is a linear isometry
 followed by the final diffeomorphism of a `C^k` diffeotopy, `k ≤ ∞`, it extends to a
@@ -230,15 +253,14 @@ theorem exists_diffeomorph_norm_eq_final_mul_unitSphereDiffeomorph (hk : k ≤ �
     ∃ F : E ≃ₘ^k⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E, (∀ x, ‖F x‖ = ‖x‖) ∧
       ∀ u : sphere (0 : E) 1,
         F u = ((Φ.final * e.unitSphereDiffeomorph k : Diff (𝓡 n) (sphere (0 : E) 1) k) u : E) := by
-  let L : E ≃ₘ^k⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E :=
-    { toEquiv := e.toLinearEquiv.toEquiv
-      contMDiff_toFun := e.contDiff.contMDiff
-      contMDiff_invFun := e.symm.contDiff.contMDiff }
-  have hL (x : E) : L x = e x := (rfl)
-  refine ⟨L.trans (Φ.radialExtension hk), fun x ↦ ?_, fun u ↦ ?_⟩
-  · rw [_root_.Diffeomorph.coe_trans, Function.comp_apply, norm_radialExtension, hL,
-      e.norm_map]
-  · rw [_root_.Diffeomorph.coe_trans, Function.comp_apply, hL, _root_.Diffeomorph.mul_apply,
+  refine ⟨(e.toContinuousLinearEquiv.toContDiffDiffeomorph k).trans (Φ.radialExtension hk),
+    fun x ↦ ?_, fun u ↦ ?_⟩
+  · rw [_root_.Diffeomorph.coe_trans, Function.comp_apply, norm_radialExtension,
+      ContinuousLinearEquiv.coe_toContDiffDiffeomorph,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, e.norm_map]
+  · rw [_root_.Diffeomorph.coe_trans, Function.comp_apply,
+      ContinuousLinearEquiv.coe_toContDiffDiffeomorph,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, _root_.Diffeomorph.mul_apply,
       ← e.coe_unitSphereDiffeomorph_apply (n := n) (k := n) (m := k) u,
       radialExtension_coe_sphere]
 
