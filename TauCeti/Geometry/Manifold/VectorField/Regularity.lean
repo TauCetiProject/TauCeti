@@ -24,6 +24,8 @@ manifold differential of a function to tangent vectors whose base point varies.
   smooth section of the tangent bundle of a model space.
 * `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
+* `contMDiff_tangentBundle_mk_modelSpace`: smoothness of a varying model vector over a varying
+  point of the model space.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
   along a differentiable vector field is differentiable at the point.
 * `ContMDiffAt.contMDiffAt_mvfderiv_apply`: applying the differential of a function that is
@@ -126,6 +128,20 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
   -- Both fibers are over `x`, so their coordinate change is the identity on the model space.
   change tangentCoordChange I x x x (v q) = v q
   exact tangentCoordChange_self (mem_extChartAt_source x)
+
+/-- A model-space vector over a model-space point, both varying smoothly, gives a smooth map into
+the tangent bundle of the model space. -/
+theorem contMDiff_tangentBundle_mk_modelSpace {f v : N → E}
+    (hf : ContMDiff J 𝓘(𝕜, E) n f) (hv : ContMDiff J 𝓘(𝕜, E) n v) :
+    ContMDiff J 𝓘(𝕜, E).tangent n
+      (fun p => TotalSpace.mk' E (f p) (v p) : N → TangentBundle 𝓘(𝕜, E) E) := by
+  have hpair : ContMDiff J 𝓘(𝕜, E).tangent n (fun p : N ↦ (f p, v p)) := hf.prodMk hv
+  rw [chartedSpaceSelf_prod] at hpair
+  have h := contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
+  -- The inverse homeomorphism is `(TotalSpace.toProd E E).symm`, whose inverse function sends
+  -- `(a, b)` to the bundle point `⟨a, b⟩` by definition, so `h` is the claim.
+  rw [tangentBundleModelSpaceHomeomorph_coe_symm] at h
+  exact h
 
 end TangentBundleInputs
 

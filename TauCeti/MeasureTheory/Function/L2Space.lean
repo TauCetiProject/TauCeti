@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Inner products of square-integrable functions
@@ -27,15 +28,20 @@ hypotheses on random vectors are usually stated, together with the special case 
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
 squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
 integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`), and the squared norm `‖u‖²` of an
-element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`). The `Lᵖ` seminorm of
-the pairing `x ↦ ⟪f x, c⟫` of a function with a constant vector is at most `‖c‖ₑ` times that of
-`f` (`MeasureTheory.eLpNorm_inner_const_le`).
+element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`). The `L²` seminorm of
+`V • g` is the square root of `∫⁻ V² ‖g‖²` (`TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow`),
+so a bound `∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²` gives `‖V • g‖₂ ≤ √K ‖g‖₂`
+(`MeasureTheory.MemLp.eLpNorm_two_smul_le_of_lintegral_le`). The `Lᵖ` seminorm of the pairing
+`x ↦ ⟪f x, c⟫` of a function with a constant vector is at most `‖c‖ₑ` times that of `f`
+(`MeasureTheory.eLpNorm_inner_const_le`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
+almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
@@ -115,6 +121,33 @@ theorem eLpNorm_inner_const_le (f : α → E) (c : E) (p : ℝ≥0∞) :
 theorem Lp.integrable_sq_norm {F : Type*} [NormedAddCommGroup F] (u : Lp F 2 μ) :
     Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
   (Lp.memLp u).norm.integrable_sq
+
+/-- The `L²` seminorm of `V • g` for a real weight `V` is the square root of
+`∫⁻ V² ‖g‖²`. -/
+theorem _root_.TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {V : α → ℝ} {g : α → F}
+    (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) :
+    eLpNorm (fun x ↦ V x • g x) 2 μ =
+      (∫⁻ x, ENNReal.ofReal (V x ^ 2 * ‖g x‖ ^ 2) ∂μ) ^ (1 / 2 : ℝ) := by
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hVg,
+    ENNReal.toReal_ofNat]
+  congr 1
+  refine lintegral_congr fun x ↦ ?_
+  rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two, norm_smul,
+    Real.norm_eq_abs, Real.rpow_two, mul_pow, sq_abs]
+
+/-- **A weighted `L²` bound from a weighted integral bound.** If `g ∈ L²` and
+`∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²`, then `‖V • g‖₂ ≤ √K ‖g‖₂`. -/
+theorem MemLp.eLpNorm_two_smul_le_of_lintegral_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {g : α → F} (hg : MemLp g 2 μ) {V : α → ℝ}
+    (hVg : AEStronglyMeasurable (fun x ↦ V x • g x) μ) {K : ℝ} (hK : 0 ≤ K)
+    (h : ∫⁻ x, ENNReal.ofReal (V x ^ 2 * ‖g x‖ ^ 2) ∂μ ≤ ENNReal.ofReal (K * ∫ x, ‖g x‖ ^ 2 ∂μ)) :
+    eLpNorm (fun x ↦ V x • g x) 2 μ ≤ ENNReal.ofReal √K * eLpNorm g 2 μ := by
+  rw [TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow hVg]
+  refine (ENNReal.rpow_le_rpow h (by norm_num)).trans_eq ?_
+  rw [hg.eLpNorm_two_eq_ofReal_sqrt_integral,
+    ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← Real.sqrt_eq_rpow,
+    Real.sqrt_mul hK, ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
@@ -248,6 +281,27 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   refine integral_congr_ae ?_
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
+
+/-- An L² function orthogonal to every L² function vanishing outside a measurable set `A`
+vanishes almost everywhere on `A`: it is orthogonal to its own restriction to `A`. -/
+theorem L2.ae_restrict_eq_zero_of_forall_inner_eq_zero {A : Set α} (hA : MeasurableSet A)
+    (f : Lp E 2 μ) (h : ∀ φ : Lp E 2 μ, (∀ᵐ x ∂μ, x ∉ A → φ x = 0) → ⟪φ, f⟫_𝕜 = 0) :
+    f =ᵐ[μ.restrict A] 0 := by
+  have hmem : MemLp (A.indicator f) 2 μ := (Lp.memLp f).indicator hA.nullMeasurableSet
+  have hφ : ∀ᵐ x ∂μ, x ∉ A → hmem.toLp (A.indicator f) x = 0 := by
+    filter_upwards [hmem.coeFn_toLp] with x hx hxA
+    rw [hx, Set.indicator_of_notMem hxA]
+  -- The restriction of `f` to `A` is orthogonal to `f`, hence to itself.
+  have hself : ⟪hmem.toLp (A.indicator f), hmem.toLp (A.indicator f)⟫_𝕜 = 0 := by
+    rw [← h _ hφ, L2.inner_def, L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [hmem.coeFn_toLp] with x hx
+    rw [hx]
+    by_cases hxA : x ∈ A <;> simp [hxA]
+  have h0 := hmem.coeFn_toLp.symm.trans (Lp.eq_zero_iff_ae_eq_zero.1 (inner_self_eq_zero.1 hself))
+  rw [Filter.EventuallyEq, ae_restrict_iff' hA]
+  filter_upwards [h0] with x hx hxA
+  rwa [Set.indicator_of_mem hxA] at hx
 
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map
