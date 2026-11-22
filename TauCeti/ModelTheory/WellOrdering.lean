@@ -725,6 +725,29 @@ theorem wellOrder_type_boundedness
   obtain ⟨g⟩ := Ordinal.type_le_iff'.1 hαr
   exact hbound M _ hne hφ g fun _ _ hxy => g.map_rel_iff.2 hxy
 
+/-- If `lt` is well-founded in every countable nonempty model of `φ`, then `φ` cannot hold in
+every countable successor-ordinal structure interpreting `lt` as `<`. -/
+theorem not_forall_realize_relStructure_add_one
+    (hwf : ∀ (M : Type w) (_ : L.Structure M), Nonempty M → Countable M →
+      SentenceInf.Realize φ M → WellFounded fun x y : M => RelMap lt ![x, y])
+    (hord : ∀ β : Ordinal.{w}, β < ω₁ → ∀ (inst : L.Structure (β + 1).ToType),
+      (∀ x y : (β + 1).ToType, RelMap lt ![x, y] ↔ x < y) →
+      Nonempty (β + 1).ToType → Countable (β + 1).ToType →
+      IsWellOrder (β + 1).ToType (fun x y => RelMap lt ![x, y]) →
+      SentenceInf.Realize φ (β + 1).ToType) : False := by
+  obtain ⟨β, hβ, hbound⟩ := wellFounded_boundedness (φ := φ) (lt := lt) hwf
+  -- `(β + 1).ToType` is a nonempty countable well-order of length at least `β`.
+  let M := (β + 1).ToType
+  have hne : Nonempty M := nonempty_toType_iff.2 (by simp)
+  let inst := relStructure lt (· < ·) (Classical.arbitrary M)
+  have hrel (x y : M) : RelMap lt ![x, y] ↔ x < y := relMap_relStructure_self lt _ _ x y
+  have hwo : IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
+    simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
+  have hc : Countable M := TauCeti.countable_toType_add_one_of_lt_omega_one hβ
+  let f := TauCeti.toTypeOrderEmbeddingOfLE (Order.le_succ β)
+  exact hbound M inst hne (hord β hβ inst hrel hne hc hwo) f fun x y hxy =>
+    (hrel _ _).2 (f.strictMono hxy)
+
 end Sentenceω
 
 /-- **Undefinability of well-ordering.** Among countable nonempty structures in `Type w`, no
@@ -735,18 +758,9 @@ theorem wellOrdering_undefinable (lt : L.Relations 2) :
     ¬∃ φ : L.Sentenceω, ∀ (M : Type w) (_ : L.Structure M), Nonempty M → Countable M →
       (SentenceInf.Realize φ M ↔ IsWellOrder M fun x y : M => RelMap lt ![x, y]) := by
   rintro ⟨φ, hφ⟩
-  obtain ⟨α, hα, hbound⟩ := Sentenceω.wellFounded_boundedness (φ := φ) (lt := lt)
-    fun M _ hne hc h => ((hφ M _ hne hc).1 h).wf
-  -- `α + 1` is a nonempty well-order of length at least `α`
-  let M := (α + 1).ToType
-  have hne : Nonempty M := nonempty_toType_iff.2 (by simp)
-  let := relStructure lt (· < ·) (Classical.arbitrary M)
-  have hrel (x y : M) : RelMap lt ![x, y] ↔ x < y := relMap_relStructure_self lt _ _ x y
-  have hwo : IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
-    simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
-  have hc : Countable M := TauCeti.countable_toType_add_one_of_lt_omega_one hα
-  let f := TauCeti.toTypeOrderEmbeddingOfLE (Order.le_succ α)
-  exact hbound M _ hne ((hφ M _ hne hc).2 hwo) f fun x y hxy => (hrel _ _).2 (f.strictMono hxy)
+  exact Sentenceω.not_forall_realize_relStructure_add_one (φ := φ) (lt := lt)
+    (fun M _ hne hc h => ((hφ M _ hne hc).1 h).wf)
+    fun β _ inst _ hne hc hwo => (hφ _ inst hne hc).2 hwo
 
 end FirstOrder.Language
 
@@ -855,7 +869,7 @@ holds in exactly the well-founded ones among the countable nonempty linear order
 counterpart of `FirstOrder.Language.wellOrdering_undefinable`, which concerns a symbol interpreted
 as a strict well-order, for the language whose only symbol `≤` is interpreted reflexively.
 
-By `TauCeti.WellOrdersOfBoundedType.realize_boundedTypeSentence_iff_type_lt`, the well-orders of
+By `FirstOrder.Language.realize_boundedWellOrderSentence_iff`, the well-orders of
 type below each countable ordinal do form a definable class; so the countable well-orders are a
 union of `ω₁` definable classes, one for each countable ordinal, that is not itself definable. -/
 theorem not_exists_sentenceω_realize_iff_wellFoundedLT :

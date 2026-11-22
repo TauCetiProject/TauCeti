@@ -83,6 +83,29 @@ theorem realize_scottSentence_iff (N : Type w') [L.Structure N] [Countable N] :
 
 end Relational
 
+/-- The back-translation of the canonical Scott sentence of the graph expansion of `M` is
+satisfied by `M`, and characterizes isomorphism with `M` among all structures `N` for which that
+graph Scott sentence characterizes graph-expansion isomorphism with `M`. -/
+theorem scott_isomorphism_of_graph [Countable (Σ k, L.Functions k)]
+    [Countable (Σ k, L.Relations k)] (M : Type w) [L.Structure M] [Countable M] :
+    ∃ σ : L.Sentenceω, SentenceInf.Realize σ M ∧
+      ∀ (N : Type w') [L.Structure N],
+        (letI := graphExpansion L M
+        letI := graphExpansion L N
+        SentenceInf.Realize (scottSentence (L := L.graphLanguage) M) N ↔
+          Nonempty (M ≃[L.graphLanguage] N)) →
+        (SentenceInf.Realize σ N ↔ Nonempty (M ≃[L] N)) := by
+  let := graphExpansion L M
+  refine ⟨(scottSentence (L := L.graphLanguage) M).backTranslate, ?_, fun N _ hN => ?_⟩
+  · have h := realize_scottSentence_self (L := L.graphLanguage) M
+    rw [SentenceInf.realize_def, FormulaInf.realize_def] at h ⊢
+    exact (BoundedFormulaInf.realize_backTranslate _ _ _).mpr h
+  let := graphExpansion L N
+  rw [← nonempty_equiv_graphExpansion_iff, ← hN,
+    SentenceInf.realize_def, FormulaInf.realize_def, SentenceInf.realize_def,
+    FormulaInf.realize_def]
+  exact BoundedFormulaInf.realize_backTranslate _ _ _
+
 /-- **Scott's isomorphism theorem.** In a countable language, every countable structure `M` has
 an `Lω₁ω` sentence that `M` satisfies and that holds in a countable structure, in any universe,
 exactly when that structure is isomorphic to `M`.
@@ -94,15 +117,10 @@ theorem scott_isomorphism [Countable (Σ k, L.Functions k)] [Countable (Σ k, L.
     ∃ σ : L.Sentenceω, SentenceInf.Realize σ M ∧
       ∀ (N : Type w') [L.Structure N] [Countable N],
         (SentenceInf.Realize σ N ↔ Nonempty (M ≃[L] N)) := by
+  obtain ⟨σ, hM, hN⟩ := scott_isomorphism_of_graph.{u, v, w, w'} (L := L) M
+  refine ⟨σ, hM, fun N _ _ => hN N ?_⟩
   let := graphExpansion L M
-  refine ⟨(scottSentence (L := L.graphLanguage) M).backTranslate, ?_, fun N _ _ => ?_⟩
-  · have h := realize_scottSentence_self (L := L.graphLanguage) M
-    rw [SentenceInf.realize_def, FormulaInf.realize_def] at h ⊢
-    exact (BoundedFormulaInf.realize_backTranslate _ _ _).mpr h
   let := graphExpansion L N
-  rw [← nonempty_equiv_graphExpansion_iff, ← realize_scottSentence_iff M N,
-    SentenceInf.realize_def, FormulaInf.realize_def, SentenceInf.realize_def,
-    FormulaInf.realize_def]
-  exact BoundedFormulaInf.realize_backTranslate _ _ _
+  exact realize_scottSentence_iff (L := L.graphLanguage) M N
 
 end TauCeti

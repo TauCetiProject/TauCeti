@@ -22,9 +22,8 @@ the image under `g` of the codomain of `f`. It is monotone in both partial equiv
 
 * `FirstOrder.Language.PartialEquiv.toEquiv_apply_of_le`: a larger partial equivalence agrees
   with a smaller one on the smaller domain.
-* `FirstOrder.Language.PartialEquiv.map_rel` and
-  `FirstOrder.Language.PartialEquiv.map_rel_two`: partial equivalences preserve relations on their
-  domains.
+* `FirstOrder.Language.PartialEquiv.map_rel_two`: partial equivalences preserve binary relations on
+  elements of their domains.
 * `FirstOrder.Language.PartialEquiv.mem_cod_comp`: the codomain of a composite.
 * `FirstOrder.Language.PartialEquiv.cod_comp_eq_cod_iff`: a composite has the codomain of the
   second partial equivalence exactly when the codomain of the first is the domain of the second.
@@ -48,12 +47,6 @@ theorem toEquiv_apply_of_le {f g : M ≃ₚ[L] N} (h : f ≤ g) {x : M} (hx : x 
     (g.toEquiv ⟨x, dom_le_dom h hx⟩ : N) = f.toEquiv ⟨x, hx⟩ :=
   congrArg Subtype.val (toEquiv_inclusion_apply h ⟨x, hx⟩)
 
-/-- A partial equivalence preserves `n`-ary relations on tuples in its domain. -/
-theorem map_rel (f : M ≃ₚ[L] N) {n : ℕ} (R : L.Relations n) (a : Fin n → f.dom) :
-    Structure.RelMap R (fun i => (f.toEquiv (a i) : N)) ↔
-      Structure.RelMap R (fun i => (a i : M)) :=
-  f.toEquiv.map_rel R a
-
 /-- A partial equivalence preserves binary relations on elements of its domain. -/
 theorem map_rel_two (f : M ≃ₚ[L] N) (R : L.Relations 2) (x y : f.dom) :
     Structure.RelMap R ![(f.toEquiv x : N), f.toEquiv y] ↔
@@ -62,7 +55,10 @@ theorem map_rel_two (f : M ≃ₚ[L] N) (R : L.Relations 2) (x y : f.dom) :
     funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
   have h2 : (fun i => ((![x, y] i : f.dom) : M)) = ![x.val, y.val] :=
     funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
-  simpa only [h1, h2] using f.map_rel R ![x, y]
+  have h : Structure.RelMap R (fun i => (f.toEquiv (![x, y] i) : N)) ↔
+      Structure.RelMap R (fun i => ((![x, y] i : f.dom) : M)) :=
+    f.toEquiv.map_rel R ![x, y]
+  simpa only [h1, h2] using h
 
 section comp
 

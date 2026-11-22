@@ -145,21 +145,23 @@ theorem scott_isomorphism_of_isWellOrder {L : Language.{u, v}}
     ∃ σ : L.Sentenceω, SentenceInf.Realize σ M ∧
       ∀ (N : Type w') [L.Structure N],
         (SentenceInf.Realize σ N ↔ Nonempty (M ≃[L] N)) := by
+  obtain ⟨σ, hM, hN⟩ := scott_isomorphism_of_graph.{u, v, w, w'} (L := L) M
+  refine ⟨σ, hM, fun N _ => hN N ?_⟩
   let := graphExpansion L M
+  let := graphExpansion L N
   have : IsWellOrder M (fun x y =>
       (graphExpansion L M).RelMap (GraphRelation.base lt) ![x, y]) := by
     simpa only [graphExpansion_relMap_base] using
       (inferInstance : IsWellOrder M (fun x y => RelMap lt ![x, y]))
-  refine ⟨(scottSentence (L := L.graphLanguage) M).backTranslate, ?_, fun N _ => ?_⟩
-  · have h := realize_scottSentence_self (L := L.graphLanguage) M
-    rw [SentenceInf.realize_def, FormulaInf.realize_def] at h ⊢
-    exact (BoundedFormulaInf.realize_backTranslate _ _ _).mpr h
-  let := graphExpansion L N
-  rw [← nonempty_equiv_graphExpansion_iff,
-    ← realize_scottSentence_iff_of_isWellOrder (L := L.graphLanguage) M (GraphRelation.base lt) N,
-    SentenceInf.realize_def, FormulaInf.realize_def, SentenceInf.realize_def,
-    FormulaInf.realize_def]
-  exact BoundedFormulaInf.realize_backTranslate _ _ _
+  exact realize_scottSentence_iff_of_isWellOrder (L := L.graphLanguage) M (GraphRelation.base lt) N
+
+private theorem nonempty_equiv_order_iff {M : Type w} {N : Type w'}
+    [Language.order.Structure M] [LE M] [Language.order.OrderedStructure M]
+    [Language.order.Structure N] [LE N] [Language.order.OrderedStructure N] :
+    Nonempty (M ≃[Language.order] N) ↔ Nonempty (M ≃o N) := by
+  refine ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩
+  let := StrongHomClass.toOrderIsoClass Language.order M N (M ≃[Language.order] N)
+  exact ⟨OrderIso.ofClass e⟩
 
 /-- A countable ordinal satisfies its own Scott sentence. -/
 @[simp]
@@ -180,9 +182,7 @@ theorem realize_ordinalScottSentence_iff {β : Ordinal.{w}} (hβ : β < ω₁) (
   let := orderStructure β.ToType
   have := Cardinal.countable_toType_of_lt_omega_one hβ
   rw [ordinalScottSentence_def, realize_scottSentence_iff]
-  refine ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩
-  let := StrongHomClass.toOrderIsoClass Language.order β.ToType N (β.ToType ≃[Language.order] N)
-  exact ⟨OrderIso.ofClass e⟩
+  exact nonempty_equiv_order_iff
 
 /-- Every countable order `M` has an `Lω₁ω` sentence in the language of orders that holds in a
 countable order, in any universe, exactly when that order is isomorphic to `M`. For a countable
@@ -194,9 +194,7 @@ theorem exists_sentenceω_realize_iff_nonempty_orderIso (M : Type w) [LE M] [Cou
       SentenceInf.Realize σ N ↔ Nonempty (M ≃o N) := by
   let := orderStructure M
   obtain ⟨σ, -, hσ⟩ := scott_isomorphism.{_, _, _, w'} (L := Language.order) M
-  refine ⟨σ, fun N _ _ _ _ => (hσ N).trans ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩⟩
-  let := StrongHomClass.toOrderIsoClass Language.order M N (M ≃[Language.order] N)
-  exact ⟨OrderIso.ofClass e⟩
+  exact ⟨σ, fun N _ _ _ _ => (hσ N).trans nonempty_equiv_order_iff⟩
 
 /-- Every countable well-order `M` has an `Lω₁ω` sentence in the language of orders that holds in
 an order `N` of any cardinality, in any universe, exactly when `N` is isomorphic to `M`. -/
@@ -206,10 +204,8 @@ theorem exists_sentenceω_realize_iff_nonempty_orderIso_of_wellFoundedLT
       [Language.order.OrderedStructure N],
       SentenceInf.Realize σ N ↔ Nonempty (M ≃o N) := by
   let := orderStructure M
-  refine ⟨scottSentence (L := Language.order) M, fun N _ _ _ =>
+  exact ⟨scottSentence (L := Language.order) M, fun N _ _ _ =>
     (realize_scottSentence_iff_of_wellFoundedLT (L := Language.order) M N).trans
-      ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩⟩
-  let := StrongHomClass.toOrderIsoClass Language.order M N (M ≃[Language.order] N)
-  exact ⟨OrderIso.ofClass e⟩
+      nonempty_equiv_order_iff⟩
 
 end TauCeti
