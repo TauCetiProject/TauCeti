@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Monoidal.Center
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import TauCeti.CategoryTheory.Monoidal.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -48,7 +49,7 @@ biproduct there. Since the forgetful functor is additive, it preserves these bip
 * `CategoryTheory.Center.instMonoidalPreadditive` and `CategoryTheory.Center.instMonoidalLinear`:
   the centre is monoidal preadditive (resp. monoidal `R`-linear);
 * `CategoryTheory.HalfBraiding.biproduct`: the half-braiding on a finite biproduct of objects
-  with half-braidings, with components `CategoryTheory.HalfBraiding.biproductβ`, characterized by
+  with half-braidings, with components `CategoryTheory.biproductCommIso`, characterized by
   `CategoryTheory.HalfBraiding.biproduct_ι_comp_biproduct_β_hom` and
   `CategoryTheory.HalfBraiding.biproduct_β_hom_comp_biproduct_π`;
 * `CategoryTheory.Center.biproductBicone` and `CategoryTheory.Center.isBilimitBiproductBicone`:
@@ -73,36 +74,14 @@ namespace HalfBraiding
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Preadditive C] [MonoidalPreadditive C]
   [HasFiniteBiproducts C] {J : Type} [Finite J]
 
-/-- The isomorphism `(⨁ f) ⊗ U ≅ U ⊗ ⨁ f` assembled from isomorphisms `β j : f j ⊗ U ≅ U ⊗ f j`
-on the summands: it distributes `(⨁ f) ⊗ U` over the summands, applies the isomorphisms `β j`,
-and collects `U ⊗ ⨁ f` again. With `β j` the half-braidings of the summands at `U`, these are the
-components of the half-braiding on `⨁ f`. -/
-noncomputable def biproductβ (f : J → C) (U : C) (β : ∀ j, f j ⊗ U ≅ U ⊗ f j) :
-    (⨁ f) ⊗ U ≅ U ⊗ ⨁ f :=
-  rightDistributor f U ≪≫ biproduct.mapIso β ≪≫ (leftDistributor U f).symm
-
-/-- On the summand `f j`, the isomorphism `biproductβ f U β` is `β j`. -/
-@[reassoc (attr := simp)]
-theorem biproduct_ι_comp_biproductβ_hom (f : J → C) (U : C) (β : ∀ j, f j ⊗ U ≅ U ⊗ f j)
-    (j : J) :
-    biproduct.ι f j ▷ U ≫ (biproductβ f U β).hom = (β j).hom ≫ U ◁ biproduct.ι f j := by
-  simp [biproductβ]
-
-/-- Projected to the summand `f j`, the isomorphism `biproductβ f U β` is `β j`. -/
-@[reassoc (attr := simp)]
-theorem biproductβ_hom_comp_biproduct_π (f : J → C) (U : C) (β : ∀ j, f j ⊗ U ≅ U ⊗ f j)
-    (j : J) :
-    (biproductβ f U β).hom ≫ U ◁ biproduct.π f j = biproduct.π f j ▷ U ≫ (β j).hom := by
-  simp [biproductβ]
-
 /-- The half-braiding on a finite biproduct `⨁ f` of objects carrying half-braidings `b j`, with
-components `biproductβ f U fun j ↦ (b j).β U`. -/
+components `biproductCommIso f U fun j ↦ (b j).β U`. -/
 noncomputable def biproduct (f : J → C) (b : ∀ j, HalfBraiding (f j)) :
     HalfBraiding (⨁ f) where
-  β U := biproductβ f U fun j ↦ (b j).β U
+  β U := biproductCommIso f U fun j ↦ (b j).β U
   monoidal U U' := by
     refine rightDistributor_ext_left fun j ↦ ?_
-    rw [biproduct_ι_comp_biproductβ_hom]
+    rw [biproduct_ι_comp_biproductCommIso_hom]
     simp [← comp_whiskerRight_assoc, -comp_whiskerRight]
     simp [← whiskerLeft_comp_assoc, -whiskerLeft_comp]
   naturality g := by
@@ -116,7 +95,7 @@ theorem biproduct_ι_comp_biproduct_β_hom (f : J → C) (b : ∀ j, HalfBraidin
     (j : J) :
     biproduct.ι f j ▷ U ≫ ((HalfBraiding.biproduct f b).β U).hom =
       ((b j).β U).hom ≫ U ◁ biproduct.ι f j :=
-  biproduct_ι_comp_biproductβ_hom f U (fun j ↦ (b j).β U) j
+  biproduct_ι_comp_biproductCommIso_hom f U (fun j ↦ (b j).β U) j
 
 /-- Projected to the summand `f j`, the half-braiding of `⨁ f` is that of `f j`. -/
 @[reassoc (attr := simp)]
@@ -124,7 +103,7 @@ theorem biproduct_β_hom_comp_biproduct_π (f : J → C) (b : ∀ j, HalfBraidin
     (j : J) :
     ((HalfBraiding.biproduct f b).β U).hom ≫ U ◁ biproduct.π f j =
       biproduct.π f j ▷ U ≫ ((b j).β U).hom :=
-  biproductβ_hom_comp_biproduct_π f U (fun j ↦ (b j).β U) j
+  biproductCommIso_hom_comp_biproduct_π f U (fun j ↦ (b j).β U) j
 
 end HalfBraiding
 

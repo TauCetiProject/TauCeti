@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Center.Preadditive
+public import TauCeti.CategoryTheory.Monoidal.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Center.Relative.Basic
+public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # The centre of a lax monoidal functor into a preadditive monoidal category
@@ -80,12 +81,12 @@ half-braidings `b j` relative to `F`: its component `(biproduct f b).β U` distr
 `F.obj U ⊗ ⨁ f` again. -/
 noncomputable def biproduct (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f j)) :
     F.RelativeHalfBraiding (⨁ f) where
-  β U := HalfBraiding.biproductβ f (F.obj U) fun j ↦ (b j).β U
+  β U := biproductCommIso f (F.obj U) fun j ↦ (b j).β U
   monoidal U U' := by
     refine rightDistributor_ext_left fun j ↦ ?_
     calc
       _ = (f j ◁ μ F U U' ≫ ((b j).β (U ⊗ U')).hom) ≫ F.obj (U ⊗ U') ◁ biproduct.ι f j := by
-        rw [← whisker_exchange_assoc, HalfBraiding.biproduct_ι_comp_biproductβ_hom, Category.assoc]
+        rw [← whisker_exchange_assoc, biproduct_ι_comp_biproductCommIso_hom, Category.assoc]
       _ = 𝟙 _ ⊗≫ ((b j).β U).hom ▷ F.obj U' ⊗≫ F.obj U ◁ ((b j).β U').hom ⊗≫
             (μ F U U' ▷ f j ≫ F.obj (U ⊗ U') ◁ biproduct.ι f j) := by
         rw [(b j).monoidal]; monoidal
@@ -93,14 +94,14 @@ noncomputable def biproduct (f : J → D) (b : ∀ j, F.RelativeHalfBraiding (f 
             F.obj U ◁ (((b j).β U').hom ≫ F.obj U' ◁ biproduct.ι f j) ⊗≫ μ F U U' ▷ ⨁ f := by
         rw [← whisker_exchange]; monoidal
       _ = 𝟙 _ ⊗≫ (((b j).β U).hom ≫ F.obj U ◁ biproduct.ι f j) ▷ F.obj U' ⊗≫
-            F.obj U ◁ (HalfBraiding.biproductβ f (F.obj U') fun j ↦ (b j).β U').hom ⊗≫
+            F.obj U ◁ (biproductCommIso f (F.obj U') fun j ↦ (b j).β U').hom ⊗≫
             μ F U U' ▷ ⨁ f := by
-        rw [← HalfBraiding.biproduct_ι_comp_biproductβ_hom f _ (fun j ↦ (b j).β U') j]; monoidal
+        rw [← biproduct_ι_comp_biproductCommIso_hom f _ (fun j ↦ (b j).β U') j]; monoidal
       _ = _ := by
-        rw [← HalfBraiding.biproduct_ι_comp_biproductβ_hom f _ (fun j ↦ (b j).β U) j]; monoidal
+        rw [← biproduct_ι_comp_biproductCommIso_hom f _ (fun j ↦ (b j).β U) j]; monoidal
   unit := by
     refine rightDistributor_ext_left fun j ↦ ?_
-    rw [← whisker_exchange_assoc, HalfBraiding.biproduct_ι_comp_biproductβ_hom, (b j).unit_assoc]
+    rw [← whisker_exchange_assoc, biproduct_ι_comp_biproductCommIso_hom, (b j).unit_assoc]
     simp [← whisker_exchange]
   naturality g := by
     refine rightDistributor_ext_left fun j ↦ ?_
@@ -113,7 +114,7 @@ theorem biproduct_ι_comp_biproduct_β_hom (f : J → D) (b : ∀ j, F.RelativeH
     (U : C) (j : J) :
     biproduct.ι f j ▷ F.obj U ≫ ((RelativeHalfBraiding.biproduct f b).β U).hom =
       ((b j).β U).hom ≫ F.obj U ◁ biproduct.ι f j :=
-  HalfBraiding.biproduct_ι_comp_biproductβ_hom f _ _ j
+  biproduct_ι_comp_biproductCommIso_hom f _ _ j
 
 /-- Projected to the summand `f j`, the half-braiding of `⨁ f` is that of `f j`. -/
 @[reassoc (attr := simp)]
@@ -121,7 +122,7 @@ theorem biproduct_β_hom_comp_biproduct_π (f : J → D) (b : ∀ j, F.RelativeH
     (U : C) (j : J) :
     ((RelativeHalfBraiding.biproduct f b).β U).hom ≫ F.obj U ◁ biproduct.π f j =
       biproduct.π f j ▷ F.obj U ≫ ((b j).β U).hom :=
-  HalfBraiding.biproductβ_hom_comp_biproduct_π f _ _ j
+  biproductCommIso_hom_comp_biproduct_π f _ _ j
 
 end RelativeHalfBraiding
 
