@@ -92,6 +92,13 @@ theorem _root_.RingHom.isDiscreteValuationRing_integer_of_norm_map_eq {L : Type*
   -- As for `K`, `𝒪[L]` is by definition the carrier of `Valued.v.valuationSubring`.
   exact inferInstanceAs (IsDiscreteValuationRing (Valued.v : Valuation L ℝ≥0).valuationSubring)
 
+/-- If the valuation ring of a nonarchimedean field is a discrete valuation ring with uniformizer
+`ϖ`, every element of norm less than `1` has norm at most `‖ϖ‖`. -/
+theorem _root_.Irreducible.norm_le_of_norm_lt_one [IsDiscreteValuationRing 𝒪[K]] {ϖ : 𝒪[K]}
+    (hϖ : Irreducible ϖ) {x : K} (hx : ‖x‖ < 1) : ‖x‖ ≤ ‖ϖ‖ := by
+  have hmem : (⟨x, mem_iff.2 hx.le⟩ : 𝒪[K]) ∈ (𝓂[K] : Set 𝒪[K]) := mem_maximalIdeal_iff.2 hx
+  rwa [hϖ.maximalIdeal_eq_closedBall, mem_closedBall_zero_iff] at hmem
+
 end Discrete
 
 section Residue
