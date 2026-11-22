@@ -55,9 +55,16 @@ decomposes as `∑ j, c j • Γ j` plus a coboundary for a *unique* tuple `c : 
 (`FormalGroup.IsSymmetricCocycle.existsUnique_sum_smul_add_homDefect_𝔾ₐ`).
 
 In Lubin–Tate deformation theory, symmetric 2-cocycles modulo coboundaries describe the
-first-order deformations of `F`; these results show that the symmetric cohomology modulo
-coboundaries is free of rank `h - 1` over `R`, spanned by representatives in degrees `pⁱ`,
-`0 < i < h`.
+first-order deformations of `F`; these results confine the obstructions to the `h - 1` degrees
+`pⁱ`, `0 < i < h`. Each of these degrees carries exactly one class: if `Φ i`, `0 < i < h`, are
+symmetric 2-cocycles vanishing below degree `pⁱ` with degree-`pⁱ` part `C_(pⁱ)`, such as the
+cocycles of the derivatives of Lubin and Tate's generic deformation in its parameters, then their
+classes form a basis of the symmetric 2-cocycles without constant term modulo coboundaries. They
+span (`FormalGroup.IsSymmetricCocycle.exists_eq_sum_smul_add_homDefect_𝔾ₐ`): degree by degree, a
+leading term `c C_(pⁱ)` is removed by subtracting `c Φ i`, and every other leading term by a
+coboundary. They are independent (`FormalGroup.eq_zero_of_sum_smul_eq_homDefect_𝔾ₐ`): in the
+first degree `pⁱ` with a nonzero coefficient, a combination of the `Φ i` has leading term
+`aᵢ C_(pⁱ)`, which no coboundary has.
 
 ## Main results
 
@@ -72,11 +79,13 @@ coboundaries is free of rank `h - 1` over `R`, spanned by representatives in deg
   order greater than `pⁱ` for every `0 < i < h`, and without constant term, is a coboundary.
 * `FormalGroup.IsSymmetricCocycle.exists_eq_homDefect_𝔾ₐ_of_le_order_nsmulSeries_prime`: for
   `h = 1`, every symmetric 2-cocycle without constant term is a coboundary.
-* `FormalGroup.sum_smul_eq_homDefect_𝔾ₐ_iff`: series of orders `≥ p^(j + 1)` with unit Lazard
-  leading coefficients in degrees `p, …, p^(h - 1)` are linearly independent modulo coboundaries.
-* `FormalGroup.IsSymmetricCocycle.existsUnique_sum_smul_add_homDefect_𝔾ₐ`: every symmetric
-  2-cocycle without constant term decomposes uniquely modulo coboundaries along such a family of
-  symmetric 2-cocycles.
+* `FormalGroup.IsSymmetricCocycle.exists_eq_sum_smul_add_homDefect_𝔾ₐ` and
+  `FormalGroup.eq_zero_of_sum_smul_eq_homDefect_𝔾ₐ`: for symmetric 2-cocycles `Φ i` with leading
+  term `C_(pⁱ)`, `0 < i < h`, every symmetric 2-cocycle without constant term is uniquely
+  `∑ aᵢ Φ i` modulo coboundaries.
+* `FormalGroup.sum_smul_eq_homDefect_𝔾ₐ_iff` and
+  `FormalGroup.IsSymmetricCocycle.existsUnique_sum_smul_add_homDefect_𝔾ₐ`: `Fin (h - 1)`-indexed
+  forms with arbitrary unit Lazard leading coefficients `u j • C_(p^(j + 1))`.
 
 ## References
 
@@ -325,6 +334,137 @@ theorem IsSymmetricCocycle.exists_eq_homDefect_𝔾ₐ_of_le_order_nsmulSeries_p
     (F.natCast_eq_zero_of_two_le_order_nsmulSeries ((Nat.cast_le.mpr hp.two_le).trans hF))
     (by simpa using hF) (by simpa using hv) hΓ₀ fun _ _ _ ↦ by omega
 
+/-! ### A basis of the symmetric 2-cocycles modulo coboundaries -/
+
+/-- **Independence modulo coboundaries.** Let `p` be a prime and let `[p]_F` have order at least
+`pʰ`, so that `p = 0` in `R`. Let `Φ i`, for `0 < i < h`, vanish below degree `pⁱ` with degree-`pⁱ`
+part the Lazard cocycle `C_(pⁱ)`. If a combination `∑ aᵢ Φ i` is a coboundary
+`g(F(X, Y)) - g(X) - g(Y)`, then every `aᵢ` vanishes: no coboundary has a nonzero leading term in
+the degrees `pⁱ`, `0 < i < h`. -/
+theorem eq_zero_of_sum_smul_eq_homDefect_𝔾ₐ (hp : p.Prime)
+    (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order) {Φ : ℕ → MvPowerSeries (Fin 2) R}
+    (hΦo : ∀ i, 0 < i → i < h → ((p ^ i : ℕ) : ℕ∞) ≤ (Φ i).order)
+    (hΦc : ∀ i, 0 < i → i < h →
+      homogeneousComponent (p ^ i) (Φ i) = ↑(TauCeti.lazardCocycle (p ^ i) R))
+    {a : ℕ → R} {g : PowerSeries R}
+    (hag : ∑ i ∈ Finset.Ioo 0 h, a i • Φ i = F.homDefect 𝔾ₐ g) {i : ℕ} (hi₀ : 0 < i)
+    (hih : i < h) : a i = 0 := by
+  induction i using Nat.strong_induction_on with
+  | _ i ih =>
+  -- the earlier coefficients vanish, so every term vanishes below degree `pⁱ`, and only the
+  -- `i`-th term contributes in degree `pⁱ`
+  have hterm (j : ℕ) (hj : j ∈ Finset.Ioo 0 h) : ((p ^ i : ℕ) : ℕ∞) ≤ (a j • Φ j).order ∧
+      homogeneousComponent (p ^ i) (a j • Φ j) =
+        if j = i then ↑(a i • TauCeti.lazardCocycle (p ^ i) R) else 0 := by
+    rw [Finset.mem_Ioo] at hj
+    rcases lt_trichotomy j i with hji | rfl | hij
+    · simp [ih j hji hj.1 (hji.trans hih), hji.ne]
+    · refine ⟨(hΦo j hj.1 hj.2).trans le_order_smul, ?_⟩
+      simp [hΦc j hj.1 hj.2]
+    · have hlt : ((p ^ i : ℕ) : ℕ∞) < (Φ j).order :=
+        (Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt hij)).trans_le (hΦo j hj.1 hj.2)
+      refine ⟨hlt.le.trans le_order_smul, ?_⟩
+      simp [hij.ne', homogeneousComponent_of_lt_order_eq_zero hlt]
+  have hord : ((p ^ i : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := by
+    rw [← hag]
+    exact le_order_sum fun j hj ↦ (hterm j hj).1
+  -- the coboundary vanishes in degree `pⁱ`, while the combination has degree-`pⁱ` part `aᵢ C_(pⁱ)`
+  have hcomp := homogeneousComponent_homDefect_𝔾ₐ_eq_zero hp
+    ((Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt hih)).trans_le hF) hord
+  rw [← hag, map_sum, Finset.sum_congr rfl fun j hj ↦ (hterm j hj).2, Finset.sum_ite_eq'] at hcomp
+  simp only [Finset.mem_Ioo, hi₀, hih, and_self, ↓reduceIte, MvPolynomial.coe_eq_zero_iff] at hcomp
+  exact (TauCeti.smul_lazardCocycle_eq_zero_iff
+    (hp.two_le.trans (Nat.le_self_pow hi₀.ne' p))).mp hcomp
+
+/-- The remainder `Ψ - ∑ aᵢ Φ i - δg` of a symmetric 2-cocycle `Ψ`, for symmetric 2-cocycles
+`Φ i`, is a symmetric 2-cocycle. -/
+private theorem IsSymmetricCocycle.sub_sum_smul_sub_homDefect_𝔾ₐ
+    {Φ : ℕ → MvPowerSeries (Fin 2) R} (hΦ : ∀ i, 0 < i → i < h → F.IsSymmetricCocycle (Φ i))
+    {Ψ : MvPowerSeries (Fin 2) R} (hΨ : F.IsSymmetricCocycle Ψ) (a : ℕ → R) (g : PowerSeries R) :
+    F.IsSymmetricCocycle (Ψ - ∑ i ∈ Finset.Ioo 0 h, a i • Φ i - F.homDefect 𝔾ₐ g) :=
+  (hΨ.sub (IsSymmetricCocycle.sum fun i hi ↦
+    (hΦ i (Finset.mem_Ioo.mp hi).1 (Finset.mem_Ioo.mp hi).2).smul (a i))).sub
+    (F.isSymmetricCocycle_homDefect_𝔾ₐ g)
+
+/-- One step towards `IsSymmetricCocycle.exists_eq_sum_smul_add_homDefect_𝔾ₐ`: if
+`Ψ - ∑ aᵢ Φ i - δg` vanishes below degree `n ≠ 0`, then changing `aᵢ` when `n = pⁱ` with
+`0 < i < h`, and `g` otherwise, makes it vanish below degree `n + 1`. -/
+private theorem IsSymmetricCocycle.exists_succ_le_order_sub_sum_smul_sub_homDefect_𝔾ₐ
+    (hp : p.Prime) (hpR : (p : R) = 0) (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order)
+    (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
+    {Φ : ℕ → MvPowerSeries (Fin 2) R} (hΦ : ∀ i, 0 < i → i < h → F.IsSymmetricCocycle (Φ i))
+    (hΦo : ∀ i, 0 < i → i < h → ((p ^ i : ℕ) : ℕ∞) ≤ (Φ i).order)
+    (hΦc : ∀ i, 0 < i → i < h →
+      homogeneousComponent (p ^ i) (Φ i) = ↑(TauCeti.lazardCocycle (p ^ i) R))
+    {Ψ : MvPowerSeries (Fin 2) R} (hΨ : F.IsSymmetricCocycle Ψ) {n : ℕ} (hn : n ≠ 0)
+    {a : ℕ → R} {g : PowerSeries R} (hg₀ : PowerSeries.constantCoeff g = 0)
+    (hagn : (n : ℕ∞) ≤ (Ψ - ∑ i ∈ Finset.Ioo 0 h, a i • Φ i - F.homDefect 𝔾ₐ g).order) :
+    ∃ (b : ℕ → R) (e : PowerSeries R), PowerSeries.constantCoeff e = 0 ∧
+      ((n + 1 : ℕ) : ℕ∞) ≤ (Ψ - ∑ i ∈ Finset.Ioo 0 h, b i • Φ i - F.homDefect 𝔾ₐ e).order := by
+  have hrem := hΨ.sub_sum_smul_sub_homDefect_𝔾ₐ hΦ a g
+  by_cases hpow : ∃ i, 0 < i ∧ i < h ∧ n = p ^ i
+  · -- in degree `pⁱ` the leading term is `c C_(pⁱ)`, removed by adding `c` to `aᵢ`
+    obtain ⟨i, hi₀, hih, rfl⟩ := hpow
+    obtain ⟨c, hc⟩ := hrem.exists_homogeneousComponent_eq_smul_lazardCocycle hn hagn
+    refine ⟨a + Pi.single i c, g, hg₀, ?_⟩
+    have hsum : ∑ j ∈ Finset.Ioo 0 h, (a + Pi.single i c : ℕ → R) j • Φ j =
+        ∑ j ∈ Finset.Ioo 0 h, a j • Φ j + c • Φ i := by
+      simp only [Pi.add_apply, add_smul, Finset.sum_add_distrib, add_right_inj]
+      rw [Finset.sum_eq_single_of_mem i (Finset.mem_Ioo.mpr ⟨hi₀, hih⟩) fun j _ hji ↦ by
+        simp [hji], Pi.single_eq_same]
+    rw [hsum, sub_add_eq_sub_sub, sub_right_comm]
+    refine succ_le_order_of_homogeneousComponent_eq_zero
+      (le_order_sub hagn ((hΦo i hi₀ hih).trans le_order_smul)) ?_
+    rw [map_sub, hc, map_smul, hΦc i hi₀ hih, MvPolynomial.coe_smul, sub_self]
+  · -- elsewhere the leading term is that of a coboundary
+    push Not at hpow
+    obtain ⟨e, he₀, -, hlt⟩ :=
+      hrem.exists_succ_le_order_sub_homDefect_𝔾ₐ hp hpR hF hv hn hpow hagn
+    refine ⟨a, g + e, by rw [map_add, hg₀, he₀, _root_.add_zero], ?_⟩
+    rwa [homDefect_𝔾ₐ_add, ← sub_sub]
+
+/-- **Lubin–Tate: the symmetric 2-cocycles modulo coboundaries are spanned by `h - 1` classes.**
+Let `p` be a prime with `p = 0` in `R`, and let `F` be a commutative formal group law whose
+`p`-series has order at least `pʰ` and a unit coefficient of `X^(pʰ)`, for instance a law of
+height `h` over a field of characteristic `p`. Let `Φ i`, for `0 < i < h`, be symmetric 2-cocycles
+of `F` vanishing below degree `pⁱ` with degree-`pⁱ` part the Lazard cocycle `C_(pⁱ)`. Then every
+symmetric 2-cocycle `Ψ` of `F` without constant term is `∑ aᵢ Φ i + (g(F(X, Y)) - g(X) - g(Y))`
+for some coefficients `aᵢ` and a power series `g` without constant term.
+
+Together with `FormalGroup.eq_zero_of_sum_smul_eq_homDefect_𝔾ₐ`, the classes of the `Φ i` form a
+basis of the symmetric 2-cocycles modulo coboundaries. -/
+theorem IsSymmetricCocycle.exists_eq_sum_smul_add_homDefect_𝔾ₐ (hp : p.Prime)
+    (hpR : (p : R) = 0) (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order)
+    (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
+    {Φ : ℕ → MvPowerSeries (Fin 2) R} (hΦ : ∀ i, 0 < i → i < h → F.IsSymmetricCocycle (Φ i))
+    (hΦo : ∀ i, 0 < i → i < h → ((p ^ i : ℕ) : ℕ∞) ≤ (Φ i).order)
+    (hΦc : ∀ i, 0 < i → i < h →
+      homogeneousComponent (p ^ i) (Φ i) = ↑(TauCeti.lazardCocycle (p ^ i) R))
+    {Ψ : MvPowerSeries (Fin 2) R} (hΨ : F.IsSymmetricCocycle Ψ) (hΨ₀ : constantCoeff Ψ = 0) :
+    ∃ (a : ℕ → R) (g : PowerSeries R), PowerSeries.constantCoeff g = 0 ∧
+      Ψ = ∑ i ∈ Finset.Ioo 0 h, a i • Φ i + F.homDefect 𝔾ₐ g := by
+  -- match `Ψ` degree by degree up to degree `pʰ`
+  have key (n : ℕ) : ∃ (a : ℕ → R) (g : PowerSeries R), PowerSeries.constantCoeff g = 0 ∧
+      ((n + 1 : ℕ) : ℕ∞) ≤ (Ψ - ∑ i ∈ Finset.Ioo 0 h, a i • Φ i - F.homDefect 𝔾ₐ g).order := by
+    induction n with
+    | zero =>
+      refine ⟨0, 0, map_zero _, ?_⟩
+      simpa [one_le_order_iff_constCoeff_eq_zero] using hΨ₀
+    | succ n ih =>
+      obtain ⟨a, g, hg₀, hag⟩ := ih
+      exact hΨ.exists_succ_le_order_sub_sum_smul_sub_homDefect_𝔾ₐ hp hpR hF hv hΦ hΦo hΦc
+        n.succ_ne_zero hg₀ hag
+  obtain ⟨a, g, hg₀, hag⟩ := key (p ^ h)
+  -- the remainder vanishes beyond the degrees `pⁱ`, `0 < i < h`, so it is a coboundary
+  obtain ⟨e, he₀, he⟩ := (hΨ.sub_sum_smul_sub_homDefect_𝔾ₐ hΦ a g).exists_eq_homDefect_𝔾ₐ hp hpR
+    hF hv (one_le_order_iff_constCoeff_eq_zero.mp
+      ((Nat.one_le_cast.mpr (Nat.le_add_left 1 _)).trans hag))
+    fun i _ hih ↦ (Nat.cast_lt.mpr (Nat.lt_succ_of_le
+      (Nat.pow_le_pow_right hp.pos hih.le))).trans_le hag
+  refine ⟨a, g + e, by rw [map_add, hg₀, he₀, _root_.add_zero], ?_⟩
+  rw [homDefect_𝔾ₐ_add, ← he]
+  abel
+
 /-- **Linear independence of Lazard-leading cocycle representatives modulo coboundaries.** Let `p`
 be a prime and `[p]_F` have order at least `pʰ`. Suppose `Γ : Fin (h - 1) → MvPowerSeries (Fin 2) R`
 has `Γ j` of order at least `p^(j + 1)` with degree-`p^(j + 1)` homogeneous component `u j • C` for
@@ -339,108 +479,46 @@ theorem sum_smul_eq_homDefect_𝔾ₐ_iff (hp : p.Prime)
     (hu : ∀ j, IsUnit (u j)) {c : Fin (h - 1) → R} :
     (∃ g : PowerSeries R, ∑ j, c j • Γ j = F.homDefect 𝔾ₐ g) ↔ c = 0 := by
   refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun hc ↦ ⟨0, by simp [hc]⟩⟩
-  suffices ∀ k : ℕ, (hk : k < h - 1) → c ⟨k, hk⟩ = 0 from funext fun ⟨k, hk⟩ ↦ this k hk
-  intro k
-  induction k using Nat.strong_induction_on with
-  | ind k ih =>
-    intro hk
-    have hsum_ord : ((p ^ (k + 1) : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := by
-      rw [← hg]
-      refine le_order fun d hd ↦ by
-        rw [map_sum]
-        refine Finset.sum_eq_zero fun j _ ↦ ?_
-        rcases lt_or_ge j.val k with hlt | hge
-        · simp [ih j.val hlt j.isLt]
-        · exact coeff_of_lt_order <| hd.trans_le
-            (((Nat.cast_le.mpr (Nat.pow_le_pow_right hp.pos (by omega))).trans (hΓ_ord j)).trans
-              le_order_smul)
-    have hrhs : homogeneousComponent (p ^ (k + 1)) (F.homDefect 𝔾ₐ g) = 0 :=
-      F.homogeneousComponent_homDefect_𝔾ₐ_eq_zero hp
-        ((Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt (by omega))).trans_le hF) hsum_ord
-    have hlhs := congrArg (homogeneousComponent (p ^ (k + 1))) hg
-    rw [hrhs, map_sum, Finset.sum_eq_single_of_mem ⟨k, hk⟩ (Finset.mem_univ _)] at hlhs
-    · rw [map_smul, hΓ_comp ⟨k, hk⟩, ← MvPolynomial.coe_smul, smul_smul,
-        MvPolynomial.coe_eq_zero_iff, TauCeti.smul_lazardCocycle_eq_zero_iff
-          (hp.two_le.trans (Nat.le_self_pow k.succ_ne_zero p))] at hlhs
-      exact (hu ⟨k, hk⟩).mul_left_eq_zero.mp hlhs
-    · intro j _ hj
-      rcases lt_trichotomy j.val k with hlt | heq | hgt
-      · simp [ih j.val hlt j.isLt]
-      · exact absurd (Fin.ext heq) hj
-      · exact homogeneousComponent_of_lt_order_eq_zero <|
-          ((Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt (by omega))).trans_le
-            (hΓ_ord j)).trans_le le_order_smul
-
-/-- Pushing the order of `Ψ - δg` across an interval `[n, n + d)` containing no obstruction degree
-`pⁱ`, `0 < i < h`. -/
-private theorem IsSymmetricCocycle.exists_add_le_order_sub_homDefect_𝔾ₐ (hp : p.Prime)
-    (hpR : (p : R) = 0) (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order)
-    (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
-    {Ψ : MvPowerSeries (Fin 2) R} (hΨ : F.IsSymmetricCocycle Ψ) {n : ℕ} (hn₀ : n ≠ 0)
-    (hΨn : (n : ℕ∞) ≤ Ψ.order) (d : ℕ)
-    (hd : ∀ m, n ≤ m → m < n + d → ∀ i, 0 < i → i < h → m ≠ p ^ i) :
-    ∃ e : PowerSeries R, PowerSeries.constantCoeff e = 0 ∧
-      ((n + d : ℕ) : ℕ∞) ≤ (Ψ - F.homDefect 𝔾ₐ e).order := by
-  induction d with
-  | zero => exact ⟨0, map_zero _, by simpa using hΨn⟩
-  | succ d ih =>
-    obtain ⟨e₁, he₁₀, hord₁⟩ := ih fun m hnm hm ↦ hd m hnm (by omega)
-    obtain ⟨e₂, he₂₀, -, hord₂⟩ := (hΨ.sub (F.isSymmetricCocycle_homDefect_𝔾ₐ e₁)
-      ).exists_succ_le_order_sub_homDefect_𝔾ₐ hp hpR hF hv (by omega)
-        (hd (n + d) (by omega) (by omega)) hord₁
-    exact ⟨e₁ + e₂, by rw [map_add, he₁₀, he₂₀, _root_.add_zero], by
-      rwa [homDefect_𝔾ₐ_add, ← sub_sub, ← Nat.add_assoc]⟩
-
-/-- Clearing the obstruction degrees `pⁱ` for `1 ≤ i ≤ k` from a symmetric 2-cocycle `Φ` by
-subtracting a linear combination of the representatives `Γ` and a coboundary `F.homDefect 𝔾ₐ g`,
-leaving order at least `pᵏ + 1`. -/
-private theorem IsSymmetricCocycle.exists_le_order_sub_sum_smul_sub_homDefect_𝔾ₐ
-    (hp : p.Prime) (hpR : (p : R) = 0) (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order)
-    (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
-    {Γ : Fin (h - 1) → MvPowerSeries (Fin 2) R} {u : Fin (h - 1) → R}
-    (hΓ : ∀ j, F.IsSymmetricCocycle (Γ j))
-    (hΓ_ord : ∀ j, ((p ^ (j.val + 1) : ℕ) : ℕ∞) ≤ (Γ j).order)
-    (hΓ_comp : ∀ j, homogeneousComponent (p ^ (j.val + 1)) (Γ j) =
-      ↑(u j • TauCeti.lazardCocycle (p ^ (j.val + 1)) R))
-    (hu : ∀ j, IsUnit (u j)) {Φ : MvPowerSeries (Fin 2) R} (hΦ : F.IsSymmetricCocycle Φ)
-    (hΦ₀ : constantCoeff Φ = 0) {k : ℕ} (hk : k ≤ h - 1) :
-    ∃ (c : Fin (h - 1) → R) (g : PowerSeries R), PowerSeries.constantCoeff g = 0 ∧
-      ((p ^ k + 1 : ℕ) : ℕ∞) ≤ (Φ - ∑ j, c j • Γ j - F.homDefect 𝔾ₐ g).order := by
-  induction k with
-  | zero => exact ⟨0, 0, map_zero _, by simpa using hΦ.two_le_order hΦ₀⟩
-  | succ k ih =>
-    obtain ⟨c, g, hg₀, hord⟩ := ih (by omega)
-    set Ψ₀ := Φ - ∑ j, c j • Γ j - F.homDefect 𝔾ₐ g
-    have hΨ₀ : F.IsSymmetricCocycle Ψ₀ :=
-      (hΦ.sub (.sum _ fun j _ ↦ (hΓ j).smul (c j))).sub (F.isSymmetricCocycle_homDefect_𝔾ₐ g)
-    have hle : p ^ k + 1 ≤ p ^ (k + 1) :=
-      Nat.succ_le_of_lt (Nat.pow_lt_pow_right hp.one_lt (Nat.lt_succ_self k))
-    -- No obstruction degree `pⁱ` (`0 < i < h`) lies in `[pᵏ + 1, p^(k + 1))`, so a coboundary
-    -- lifts the order of `Ψ₀` to `p^(k + 1)`.
-    obtain ⟨e, he₀, hord₁⟩ := hΨ₀.exists_add_le_order_sub_homDefect_𝔾ₐ hp hpR hF hv (by omega)
-      hord (p ^ (k + 1) - (p ^ k + 1)) fun m hlo hhi i _ _ hmi ↦ by
-        rw [Nat.add_sub_cancel' hle] at hhi
-        rcases le_or_gt i k with hik | hik
-        · exact absurd (hmi ▸ Nat.pow_le_pow_right hp.pos hik) (by omega)
-        · exact absurd (hmi ▸ Nat.pow_le_pow_right hp.pos (by omega : k + 1 ≤ i)) (by omega)
-    rw [Nat.add_sub_cancel' hle] at hord₁
-    -- Cancel the degree-`p^(k + 1)` Lazard leading term using the representative `Γ ⟨k, _⟩`.
-    obtain ⟨a, ha⟩ := (hΨ₀.sub (F.isSymmetricCocycle_homDefect_𝔾ₐ e)
-      ).exists_homogeneousComponent_eq_smul_lazardCocycle (pow_ne_zero _ hp.ne_zero) hord₁
-    let j₀ : Fin (h - 1) := ⟨k, by omega⟩
-    let d : R := a * ↑(hu j₀).unit⁻¹
-    refine ⟨fun j ↦ c j + if j = j₀ then d else 0, g + e,
-      by rw [map_add, hg₀, he₀, _root_.add_zero], ?_⟩
-    have hrew : Φ - ∑ j, (c j + if j = j₀ then d else 0) • Γ j - F.homDefect 𝔾ₐ (g + e) =
-        (Ψ₀ - F.homDefect 𝔾ₐ e) - d • Γ j₀ := by
-      simp only [add_smul, Finset.sum_add_distrib, ite_smul, zero_smul, Finset.sum_ite_eq',
-        Finset.mem_univ, ↓reduceIte, homDefect_𝔾ₐ_add, Ψ₀]
-      abel
-    rw [hrew]
-    refine succ_le_order_of_homogeneousComponent_eq_zero
-      (le_order_sub hord₁ ((hΓ_ord j₀).trans le_order_smul)) ?_
-    rw [map_sub, ha, map_smul, hΓ_comp j₀, ← MvPolynomial.coe_smul, smul_smul,
-      mul_assoc, (hu j₀).val_inv_mul, mul_one, sub_self]
+  let Φ (i : ℕ) : MvPowerSeries (Fin 2) R :=
+    if hi : 0 < i ∧ i < h then (↑(hu ⟨i - 1, by omega⟩).unit⁻¹ : R) • Γ ⟨i - 1, by omega⟩ else 0
+  let a (i : ℕ) : R := if hi : 0 < i ∧ i < h then c ⟨i - 1, by omega⟩ * u ⟨i - 1, by omega⟩ else 0
+  have hsum : ∑ j : Fin (h - 1), c j • Γ j = ∑ i ∈ Finset.Ioo 0 h, a i • Φ i := by
+    refine Finset.sum_bij (fun j _ ↦ j.val + 1) (fun j _ ↦ Finset.mem_Ioo.mpr ⟨by omega, by omega⟩)
+      (fun j₁ _ j₂ _ h12 ↦ Fin.ext (by omega))
+      (fun i hi ↦ ⟨⟨i - 1, by rw [Finset.mem_Ioo] at hi; omega⟩, Finset.mem_univ _,
+        by rw [Finset.mem_Ioo] at hi; simp; omega⟩)
+      (fun j _ ↦ ?_)
+    dsimp only [a, Φ]
+    split_ifs with hj
+    · have hfin : (⟨j.val + 1 - 1, by omega⟩ : Fin (h - 1)) = j := Fin.ext (by simp)
+      rw [hfin, smul_smul, mul_assoc, mul_comm (u j), (hu j).val_inv_mul, mul_one]
+    · omega
+  have ha (i : ℕ) (hi₀ : 0 < i) (hih : i < h) : a i = 0 :=
+    F.eq_zero_of_sum_smul_eq_homDefect_𝔾ₐ hp hF (Φ := Φ)
+      (fun k hk₀ hkh ↦ by
+        dsimp only [Φ]
+        split_ifs with hk
+        · have hord := hΓ_ord ⟨k - 1, by omega⟩
+          simp only [Nat.sub_add_cancel hk₀] at hord
+          exact hord.trans (le_order_smul (f := Γ ⟨k - 1, by omega⟩))
+        · exact absurd ⟨hk₀, hkh⟩ hk)
+      (fun k hk₀ hkh ↦ by
+        dsimp only [Φ]
+        split_ifs with hk
+        · have hcomp := hΓ_comp ⟨k - 1, by omega⟩
+          simp only [Nat.sub_add_cancel hk₀] at hcomp
+          rw [map_smul, hcomp, ← MvPolynomial.coe_smul, smul_smul,
+            (hu ⟨k - 1, by omega⟩).val_inv_mul, one_smul]
+        · exact absurd ⟨hk₀, hkh⟩ hk)
+      (hsum.symm.trans hg) hi₀ hih
+  ext j
+  have h0 := ha (j.val + 1) (by omega) (by omega)
+  dsimp only [a] at h0
+  split_ifs at h0 with hj
+  · have hfin : (⟨j.val + 1 - 1, by omega⟩ : Fin (h - 1)) = j := Fin.ext (by simp)
+    rw [hfin] at h0
+    exact (hu j).mul_left_eq_zero.mp h0
+  · omega
 
 /-- **Lubin–Tate basis theorem for symmetric 2-cocycles.** Let `p` be a prime with `p = 0` in `R`,
 and let `F` be a commutative formal group law whose `p`-series has order at least `pʰ` with a unit
@@ -461,32 +539,51 @@ theorem IsSymmetricCocycle.existsUnique_sum_smul_add_homDefect_𝔾ₐ (hp : p.P
     (hΦ₀ : constantCoeff Φ = 0) :
     ∃! c : Fin (h - 1) → R, ∃ g : PowerSeries R,
       PowerSeries.constantCoeff g = 0 ∧ Φ = ∑ j, c j • Γ j + F.homDefect 𝔾ₐ g := by
-  have huniq (c₁ c₂ : Fin (h - 1) → R)
-      (h₁ : ∃ g, PowerSeries.constantCoeff g = 0 ∧ Φ = ∑ j, c₁ j • Γ j + F.homDefect 𝔾ₐ g)
-      (h₂ : ∃ g, PowerSeries.constantCoeff g = 0 ∧ Φ = ∑ j, c₂ j • Γ j + F.homDefect 𝔾ₐ g) :
-      c₁ = c₂ := by
-    obtain ⟨g₁, -, hg₁⟩ := h₁; obtain ⟨g₂, -, hg₂⟩ := h₂
-    have h0 := (F.sum_smul_eq_homDefect_𝔾ₐ_iff (c := c₁ - c₂) hp hF hΓ_ord hΓ_comp hu).mp
-      ⟨g₂ - g₁, by
-        simp only [Pi.sub_apply, sub_smul, Finset.sum_sub_distrib, homDefect_𝔾ₐ_sub]
-        linear_combination hg₂ - hg₁⟩
-    exact funext fun j ↦ sub_eq_zero.mp (congrFun h0 j)
-  -- Clear all obstruction degrees `p¹, …, p^(h - 1)` to obtain a remainder `Ψ` of order
-  -- at least `p^(h - 1) + 1` (already `≥ 2` when `h = 0` or `h = 1`).
-  obtain ⟨c, g₁, hg₁₀, hord⟩ := hΦ.exists_le_order_sub_sum_smul_sub_homDefect_𝔾ₐ
-    hp hpR hF hv hΓ hΓ_ord hΓ_comp hu hΦ₀ le_rfl
-  set Ψ := Φ - ∑ j, c j • Γ j - F.homDefect 𝔾ₐ g₁
-  have hΨ : F.IsSymmetricCocycle Ψ :=
-    (hΦ.sub (.sum _ fun j _ ↦ (hΓ j).smul (c j))).sub (F.isSymmetricCocycle_homDefect_𝔾ₐ g₁)
-  -- Since `Ψ` has no obstruction terms of degree `pⁱ` (`0 < i < h`), it is a coboundary
-  -- `F.homDefect 𝔾ₐ g₂`, so `g₁ + g₂` completes the decomposition.
-  obtain ⟨g₂, hg₂₀, hg₂⟩ := hΨ.exists_eq_homDefect_𝔾ₐ hp hpR hF hv
-    (one_le_order_iff_constCoeff_eq_zero.mp ((Nat.cast_le.mpr (by omega)).trans hord))
-    fun i _ hih ↦ (Nat.cast_lt.mpr (Nat.lt_succ_of_le (Nat.pow_le_pow_right hp.pos
-      (by omega)))).trans_le hord
+  let Ψ (i : ℕ) : MvPowerSeries (Fin 2) R :=
+    if hi : 0 < i ∧ i < h then (↑(hu ⟨i - 1, by omega⟩).unit⁻¹ : R) • Γ ⟨i - 1, by omega⟩ else 0
+  obtain ⟨a, g, hg₀, hΦeq⟩ := hΦ.exists_eq_sum_smul_add_homDefect_𝔾ₐ hp hpR hF hv (Φ := Ψ)
+    (fun i hi₀ hih ↦ by
+      dsimp only [Ψ]
+      split_ifs with hi
+      · exact (hΓ _).smul _
+      · exact absurd ⟨hi₀, hih⟩ hi)
+    (fun i hi₀ hih ↦ by
+      dsimp only [Ψ]
+      split_ifs with hi
+      · have hord := hΓ_ord ⟨i - 1, by omega⟩
+        simp only [Nat.sub_add_cancel hi₀] at hord
+        exact hord.trans le_order_smul
+      · exact absurd ⟨hi₀, hih⟩ hi)
+    (fun i hi₀ hih ↦ by
+      dsimp only [Ψ]
+      split_ifs with hi
+      · have hcomp := hΓ_comp ⟨i - 1, by omega⟩
+        simp only [Nat.sub_add_cancel hi₀] at hcomp
+        rw [map_smul, hcomp, ← MvPolynomial.coe_smul, smul_smul,
+          (hu ⟨i - 1, by omega⟩).val_inv_mul, one_smul]
+      · exact absurd ⟨hi₀, hih⟩ hi)
+    hΦ₀
+  let c (j : Fin (h - 1)) : R := a (j.val + 1) * ↑(hu j).unit⁻¹
+  have hsum : ∑ i ∈ Finset.Ioo 0 h, a i • Ψ i = ∑ j : Fin (h - 1), c j • Γ j := by
+    refine (Finset.sum_bij (fun j _ ↦ j.val + 1)
+      (fun j _ ↦ Finset.mem_Ioo.mpr ⟨by omega, by omega⟩)
+      (fun j₁ _ j₂ _ h12 ↦ Fin.ext (by omega))
+      (fun i hi ↦ ⟨⟨i - 1, by rw [Finset.mem_Ioo] at hi; omega⟩, Finset.mem_univ _,
+        by rw [Finset.mem_Ioo] at hi; simp; omega⟩)
+      (fun j _ ↦ ?_)).symm
+    dsimp only [Ψ, c]
+    split_ifs with hj
+    · have hfin : (⟨j.val + 1 - 1, by omega⟩ : Fin (h - 1)) = j := Fin.ext (by simp)
+      rw [hfin, smul_smul]
+    · omega
+  rw [hsum] at hΦeq
   have hex : ∃ g, PowerSeries.constantCoeff g = 0 ∧ Φ = ∑ j, c j • Γ j + F.homDefect 𝔾ₐ g :=
-    ⟨g₁ + g₂, by rw [map_add, hg₁₀, hg₂₀, _root_.add_zero],
-      by rw [homDefect_𝔾ₐ_add]; linear_combination hg₂⟩
-  exact ⟨c, hex, fun c' hc' ↦ huniq c' c hc' hex⟩
+    ⟨g, hg₀, hΦeq⟩
+  refine ⟨c, hex, fun c' ⟨g', _, hg'⟩ ↦ ?_⟩
+  have h0 := (F.sum_smul_eq_homDefect_𝔾ₐ_iff (c := c' - c) hp hF hΓ_ord hΓ_comp hu).mp
+    ⟨g - g', by
+      simp only [Pi.sub_apply, sub_smul, Finset.sum_sub_distrib, homDefect_𝔾ₐ_sub]
+      linear_combination hΦeq - hg'⟩
+  exact funext fun j ↦ sub_eq_zero.mp (congrFun h0 j)
 
 end FormalGroup

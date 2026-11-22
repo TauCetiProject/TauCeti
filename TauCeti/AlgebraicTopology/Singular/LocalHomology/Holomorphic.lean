@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
@@ -22,6 +21,7 @@ import TauCeti.Analysis.Complex.IsolatedZero
 import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.LinearAlgebra.Complex.Determinant
+import TauCeti.LinearAlgebra.LinearIndependent.Prod
 import TauCeti.LinearAlgebra.LinearMap.Coprod
 import TauCeti.Topology.Maps.Proper.Metric
 
@@ -91,8 +91,10 @@ positive number of preimages.
   counts `1`.
 
 The examples at the end of the file compute the local intersection numbers of the line `w = 0`
-with the lines `z = 0` and `w = z` (both `1`), with the parabola `w = z²` (it is `2`), and with
-itself (there is no isolated intersection, and the index is `0`).
+with the lines `z = 0` and `w = z` (both `1`) and with itself (there is no isolated intersection,
+and the index is `0`). Tangent and critical intersections, such as that of the line `w = 0` with the
+parabola `w = z²`, are computed by orders of vanishing in
+`TauCeti.AlgebraicTopology.Singular.LocalHomology.GraphIntersection`.
 
 ## References
 
@@ -426,13 +428,6 @@ private theorem hasDerivAt_lineZero (z : ℂ) :
     HasDerivAt (fun z : ℂ ↦ ((z, 0) : ℂ × ℂ)) ((1 : ℂ), (0 : ℂ)) z :=
   (hasDerivAt_id z).prodMk (hasDerivAt_const z 0)
 
-/-- The vectors `(1, 0)` and `(c, d)` of `ℂ²` are linearly independent when `d ≠ 0`. -/
-private theorem linearIndependent_one_zero {c d : ℂ} (hd : d ≠ 0) :
-    LinearIndependent ℂ ![((1 : ℂ), (0 : ℂ)), (c, d)] :=
-  LinearIndependent.pair_iff.2 fun s t hst ↦ by
-    have ht : t = 0 := by simpa [hd] using congrArg Prod.snd hst
-    exact ⟨by simpa [ht] using congrArg Prod.fst hst, ht⟩
-
 include hn in
 /-- The coordinate lines `w = 0` and `z = 0` of `ℂ²` meet at the origin with local intersection
 number `1`. -/
@@ -440,76 +435,14 @@ example : o.localIndex o ⟨fun p ↦ (p.1, -p.2), by fun_prop⟩ (0, 0) = 1 :=
   o.localIndex_eq_one_of_apply_eq_sub hn (u₁ := fun z ↦ (z, 0)) (u₂ := fun w ↦ (0, w))
     (fun p ↦ by simp) (hasDerivAt_lineZero 0)
     ((hasDerivAt_const (0 : ℂ) (0 : ℂ)).prodMk (hasDerivAt_id 0))
-    (linearIndependent_one_zero one_ne_zero)
+    (linearIndependent_pair_mk_one_iff.2 (by simp))
 
 include hn in
 /-- The lines `w = 0` and `w = z` of `ℂ²` meet at the origin with local intersection number `1`. -/
 example : o.localIndex o ⟨fun p ↦ (p.1 - p.2, -p.2), by fun_prop⟩ (0, 0) = 1 :=
   o.localIndex_eq_one_of_apply_eq_sub hn (u₁ := fun z ↦ (z, 0)) (u₂ := fun w ↦ (w, w))
     (fun p ↦ by simp) (hasDerivAt_lineZero 0) ((hasDerivAt_id 0).prodMk (hasDerivAt_id 0))
-    (linearIndependent_one_zero one_ne_zero)
-
-/-- On the unit sphere of `ℂ²`, the map `(z, w) ↦ (z - w, -w²)` has norm at least `1 / 4`. -/
-private theorem one_div_four_le_norm_sub_neg_sq {p : ℂ × ℂ} (hp : p ∈ sphere ((0 : ℂ), (0 : ℂ)) 1) :
-    1 / 4 ≤ ‖((p.1 - p.2, -p.2 ^ 2) : ℂ × ℂ)‖ := by
-  rw [Prod.norm_def, norm_neg, norm_pow]
-  rw [mem_sphere, Prod.dist_eq, dist_zero_right, dist_zero_right] at hp
-  by_cases hw : 1 / 2 ≤ ‖p.2‖
-  · exact le_max_of_le_right (by nlinarith)
-  · refine le_max_of_le_left ?_
-    have hz : ‖p.1‖ = 1 := by
-      rcases max_choice ‖p.1‖ ‖p.2‖ with h | h
-      · rw [← h, hp]
-      · rw [h] at hp
-        linarith
-    linarith [norm_sub_norm_le p.1 p.2]
-
-/-- The solutions of `(z - w, -w²) = (0, -1/16)` in the unit ball of `ℂ²` are `±(1/4, 1/4)`. -/
-private theorem setOf_sub_neg_sq_eq :
-    {p ∈ ball ((0 : ℂ), (0 : ℂ)) 1 | ((p.1 - p.2, -p.2 ^ 2) : ℂ × ℂ) = (0, -(1 / 16))} =
-      {(1 / 4, 1 / 4), (-(1 / 4), -(1 / 4))} := by
-  ext p
-  simp only [mem_ofPred_eq, mem_insert_iff, mem_singleton_iff, Prod.mk.injEq]
-  constructor
-  · rintro ⟨-, h1, h2⟩
-    have hsq : p.2 ^ 2 = (1 / 4) ^ 2 := by linear_combination -h2
-    have he : p.1 = p.2 := sub_eq_zero.1 h1
-    rcases sq_eq_sq_iff_eq_or_eq_neg.1 hsq with h | h
-    · exact Or.inl (Prod.ext (he.trans h) h)
-    · exact Or.inr (Prod.ext (he.trans h) h)
-  · rintro (h | h) <;> refine ⟨?_, ?_, ?_⟩ <;>
-      norm_num [h, Prod.dist_eq]
-
-include hn in
-/-- The line `w = 0` and the parabola `w = z²` of `ℂ²` are tangent at the origin and meet there with
-local intersection number `2`: the value `(0, -1/16)` has the two regular preimages `(1/4, 1/4)`
-and `(-1/4, -1/4)` near the origin. -/
-example : o.localIndex o ⟨fun p ↦ (p.1 - p.2, -p.2 ^ 2), by fun_prop⟩ (0, 0) = 2 := by
-  have hu₂ (w : ℂ) : HasDerivAt (fun w : ℂ ↦ ((w, w ^ 2) : ℂ × ℂ)) ((1 : ℂ), 2 * w) w :=
-    ((hasDerivAt_id w).prodMk (hasDerivAt_pow 2 w)).congr_deriv (by simp)
-  rw [o.localIndex_eq_ncard_of_hasFDerivAt hn (r := 1) (δ := 1 / 4) (y := (0, -(1 / 16))) one_pos
-    (by norm_num) (fun p hp ↦ by simpa using one_div_four_le_norm_sub_neg_sq hp) ?iso ?hy
-    (f' := fun p ↦ (ContinuousLinearMap.fst ℂ ℂ ℂ).smulRight ((1 : ℂ), (0 : ℂ)) -
-      (ContinuousLinearMap.snd ℂ ℂ ℂ).smulRight ((1 : ℂ), 2 * p.2))
-    (fun p _ _ ↦ ((hasDerivAt_lineZero p.1).hasFDerivAt_comp_fst_sub_comp_snd
-      (hu₂ p.2)).congr_of_eventuallyEq (.of_forall fun p ↦ by simp)) ?inj]
-  · simp only [ContinuousMap.coe_mk]
-    rw [setOf_sub_neg_sq_eq, ncard_pair (by norm_num), Nat.cast_ofNat]
-  case iso =>
-    intro p _ hp
-    simp only [ContinuousMap.coe_mk, sub_self, zero_pow two_ne_zero, neg_zero, Prod.mk.injEq,
-      neg_eq_zero, pow_eq_zero_iff two_ne_zero, sub_eq_zero] at hp
-    exact Prod.ext (hp.1.trans hp.2) hp.2
-  case hy =>
-    norm_num [Prod.norm_def]
-  case inj =>
-    intro p _ hp
-    have hp2 : p.2 ≠ 0 := by
-      rintro h0
-      have h := congrArg Prod.snd hp
-      simp [h0] at h
-    exact LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff.2
-      (linearIndependent_one_zero (mul_ne_zero two_ne_zero hp2))
+    (linearIndependent_pair_mk_one_iff.2 (by simp))
 
 include hn in
 /-- The line `w = 0` meets itself along a whole line: `(z, z)` is not isolated among the solutions

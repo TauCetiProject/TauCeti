@@ -167,7 +167,7 @@ private noncomputable def lubinTateLift (F : FormalGroupLift π_A F₀) {q : A �
     (p h : ℕ) [Fact p.Prime] (m : Fin (h - 1) → RingHom.ker q) :
     FormalGroupLift π_A F₀ :=
   F.deformByCocycle hker (ker_le_ker_of_comp_eq hq)
-    (FormalGroup.IsSymmetricCocycle.sum Finset.univ fun j _ ↦
+    (FormalGroup.IsSymmetricCocycle.sum (s := Finset.univ) fun j _ ↦
       (F.formalGroup.isSymmetricCocycle_lubinTateCocycle (primePowPred p j.val)).smul (m j : A))
     (by rw [map_sum]; exact Finset.sum_eq_zero fun j _ ↦ by simp)
     (fun d ↦ by

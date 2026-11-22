@@ -108,12 +108,6 @@ theorem add (hΦ : F.IsSymmetricCocycle Φ) (hΨ : F.IsSymmetricCocycle Ψ) :
       subst_add (.cons_subst_zero_right 0 1 2 F.zero_constantCoeff), subst_add .X_X]
     linear_combination hΦ.subst_add_subst_eq + hΨ.subst_add_subst_eq
 
-/-- A finite sum of symmetric 2-cocycles is a symmetric 2-cocycle. -/
-theorem sum {ι : Type*} (s : Finset ι) {f : ι → MvPowerSeries (Fin 2) R}
-    (hf : ∀ i ∈ s, F.IsSymmetricCocycle (f i)) :
-    F.IsSymmetricCocycle (∑ i ∈ s, f i) :=
-  Finset.sum_induction f F.IsSymmetricCocycle (fun _ _ ↦ add) zero hf
-
 /-- A scalar multiple of a symmetric 2-cocycle is a symmetric 2-cocycle. -/
 theorem smul (hΦ : F.IsSymmetricCocycle Φ) (c : R) : F.IsSymmetricCocycle (c • Φ) where
   subst_swap := by
@@ -259,6 +253,11 @@ theorem two_le_order (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ 
   · simpa using hΦ₀
   · simpa using hΦ.coeff_single_one_eq_zero one_ne_zero
   · simpa using hΦ.coeff_single_zero_eq_zero one_ne_zero
+
+/-- A finite sum of symmetric 2-cocycles is a symmetric 2-cocycle. -/
+theorem sum {ι : Type*} {s : Finset ι} {Φ : ι → MvPowerSeries (Fin 2) R}
+    (hΦ : ∀ i ∈ s, F.IsSymmetricCocycle (Φ i)) : F.IsSymmetricCocycle (∑ i ∈ s, Φ i) :=
+  Finset.sum_induction Φ F.IsSymmetricCocycle (fun _ _ ↦ add) zero hΦ
 
 /-- **Leading terms of symmetric 2-cocycles.** If a symmetric 2-cocycle `Φ` vanishes below degree
 `n ≠ 0`, its degree-`n` part is a multiple `c C_n` of the Lazard cocycle. -/
