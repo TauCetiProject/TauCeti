@@ -147,6 +147,28 @@ theorem piScalarRight_baseChange_mulVecLin {A B ι₁ ι₂ : Type*}
       Matrix.mulVec, dotProduct, Matrix.map_apply, Finset.sum_smul, mul_smul]
     exact Finset.sum_congr rfl fun j _ ↦ _root_.Algebra.smul_def _ _
 
+/-- Under `TensorProduct.piScalarRight` and basis coordinates `Module.Basis.equivFun`, the
+scalar extension of `Matrix.mulVecLin M` intertwines with a linear map `f` whose matrix is
+`M.map (algebraMap E L)`. -/
+theorem piScalarRight_equivFun_intertwining {E L V W ιV ιW : Type*}
+    [CommSemiring E] [CommSemiring L] [Algebra E L]
+    [AddCommMonoid V] [Module L V] [AddCommMonoid W] [Module L W]
+    [Fintype ιV] [DecidableEq ιV] [Fintype ιW] [DecidableEq ιW]
+    (bV : Module.Basis ιV L V) (bW : Module.Basis ιW L W)
+    (f : V →ₗ[L] W) (M : Matrix ιW ιV E)
+    (hM : M.map (algebraMap E L) = LinearMap.toMatrix bV bW f)
+    (x : L ⊗[E] (ιV → E)) :
+    bW.equivFun.symm (TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x)) =
+      f (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) := by
+  apply bW.equivFun.injective
+  rw [LinearEquiv.apply_symm_apply, TensorProduct.piScalarRight_baseChange_mulVecLin, hM]
+  have hrepr : (bV.repr (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) : ιV → L) =
+      TensorProduct.piScalarRight E L L ιV x := by
+    ext i
+    simp only [← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+  rw [← hrepr, LinearMap.toMatrix_mulVec_repr bV bW f, hrepr]
+  exact (Module.Basis.equivFun_apply bW _).symm
+
 end TensorProduct
 
 public section
@@ -186,9 +208,12 @@ public section
 
 open TensorProduct
 
-namespace LinearMap
+namespace TensorProduct.AlgebraTensorModule
 
-private theorem cancelBaseChange_one_tmul_cancelBaseChange
+/-- Tower compatibility for `AlgebraTensorModule.cancelBaseChange` on nested unit scalar
+extensions `(1 : L) ⊗ₜ cancelBaseChange E E₁ E' E' W ((1 : E') ⊗ₜ y)`. -/
+@[simp]
+theorem cancelBaseChange_one_tmul_cancelBaseChange
     {E E₁ E' L W : Type*} [CommSemiring E] [CommSemiring E₁] [CommSemiring E'] [Semiring L]
     [Algebra E E₁] [Algebra E E'] [Algebra E L] [Algebra E₁ E'] [Algebra E₁ L] [Algebra E' L]
     [IsScalarTower E E₁ E'] [IsScalarTower E E₁ L] [IsScalarTower E₁ E' L] [IsScalarTower E E' L]
@@ -199,6 +224,10 @@ private theorem cancelBaseChange_one_tmul_cancelBaseChange
   induction y using TensorProduct.inductionOn with
   | add a b ha hb => simp only [TensorProduct.tmul_add, map_add, ha, hb]
   | tmul c w => simp
+
+end TensorProduct.AlgebraTensorModule
+
+namespace LinearMap
 
 /-- **Linear maps equal over a faithfully flat extension agree over any common enlargement.**
 If `f₁` over `E₁` and `f₂` over `E₂` induce the same map `L ⊗[E] V → L ⊗[E] W` after extending
@@ -246,8 +275,8 @@ theorem baseChange_eq_of_baseChange_eq
   simp only [g₁, g₂, AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
     LinearMap.restrictScalars_apply, LinearMap.baseChange_tmul, LinearMap.comp_apply,
     LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_symm_tmul]
-  exact (cancelBaseChange_one_tmul_cancelBaseChange _).trans
-    (hv.trans (cancelBaseChange_one_tmul_cancelBaseChange _).symm)
+  exact (AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange _).trans
+    (hv.trans (AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange _).symm)
 
 end LinearMap
 

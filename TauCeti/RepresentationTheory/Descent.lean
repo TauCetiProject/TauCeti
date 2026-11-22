@@ -94,6 +94,41 @@ variable {E L G V W : Type*} [Field E] [Field L] [Algebra E L] [Algebra.IsAlgebr
   [Monoid G] [AddCommGroup V] [Module E V] [FiniteDimensional E V]
   [AddCommGroup W] [Module E W]
 
+/-- Compatibility of a descended sum `f₀ = ∑ p ∈ s.attach, p.1 • p.2.baseChange E'` with
+`AlgebraTensorModule.cancelBaseChange` when `∑ p ∈ s, p.1 ⊗ₜ p.2` represents `f`. -/
+private theorem cancelBaseChange_sum_smul_baseChange
+    {E L V W : Type*} [Field E] [Field L] [Algebra E L]
+    [AddCommGroup V] [Module E V] [AddCommGroup W] [Module E W]
+    (s : Finset (L × (V →ₗ[E] W))) (E' : IntermediateField E L)
+    (hs_mem : ∀ p ∈ s, p.1 ∈ E') (f : (L ⊗[E] V) →ₗ[L] (L ⊗[E] W))
+    (hf : LinearMap.baseChangeTensorHom E L V W (∑ p ∈ s, p.1 ⊗ₜ[E] p.2) = f)
+    (x : L ⊗[E'] (E' ⊗[E] V)) :
+    let f₀ : (E' ⊗[E] V) →ₗ[E'] (E' ⊗[E] W) :=
+      ∑ p ∈ s.attach, (⟨p.val.1, hs_mem p.val p.property⟩ : E') • p.val.2.baseChange E'
+    AlgebraTensorModule.cancelBaseChange E E' L L W (f₀.baseChange L x) =
+      f (AlgebraTensorModule.cancelBaseChange E E' L L V x) := by
+  intro f₀
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul a y =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ h₁ h₂ => simp only [TensorProduct.tmul_add, map_add, h₁, h₂]
+    | tmul b v =>
+      have hfb : f (((b : L) * a) ⊗ₜ[E] v) =
+          ∑ p ∈ s, (p.1 * ((b : L) * a)) ⊗ₜ[E] p.2 v := by
+        rw [← hf, map_sum, LinearMap.sum_apply]
+        refine Finset.sum_congr rfl fun p _ ↦ ?_
+        simp only [LinearMap.baseChangeTensorHom_tmul, LinearMap.smul_apply,
+          LinearMap.baseChange_tmul, TensorProduct.smul_tmul', smul_eq_mul]
+      simp only [LinearMap.baseChange_tmul, f₀, LinearMap.sum_apply, LinearMap.smul_apply,
+        TensorProduct.smul_tmul', smul_eq_mul, TensorProduct.tmul_sum, map_sum,
+        AlgebraTensorModule.cancelBaseChange_tmul, Algebra.smul_def, map_mul,
+        IntermediateField.algebraMap_apply, hfb]
+      rw [← Finset.sum_attach s (fun p ↦ (p.1 * ((b : L) * a)) ⊗ₜ[E] p.2 v)]
+      refine Finset.sum_congr rfl fun p _ ↦ ?_
+      congr 1
+      ring
+
 /-- **Morphism descent over an algebraic field extension.** Any intertwining map between the
 scalar extensions to `L` of two `E`-representations, with finite-dimensional domain `V`, descends
 to a finite intermediate field `E' : IntermediateField E L`. -/
@@ -105,6 +140,7 @@ theorem IntertwiningMap.exists_descent_of_baseChange
         ∀ x : L ⊗[E'] (E' ⊗[E] V),
           AlgebraTensorModule.cancelBaseChange E E' L L W (f'.baseChange L x) =
             f (AlgebraTensorModule.cancelBaseChange E E' L L V x) := by
+  -- 1. Represent `f` as a finite sum in `L ⊗[E] (V →ₗ[E] W)` and adjoin its scalar coefficients.
   let z : L ⊗[E] (V →ₗ[E] W) :=
     (LinearMap.baseChangeTensorHomEquiv (R := E) (A := L) (M := V) (N := W)).symm f.toLinearMap
   have hz : LinearMap.baseChangeTensorHom E L V W z = f.toLinearMap := by
@@ -119,33 +155,16 @@ theorem IntertwiningMap.exists_descent_of_baseChange
       (s.finite_toSet.image Prod.fst).to_subtype
     exact IntermediateField.finiteDimensional_adjoin fun x _ ↦
       (Algebra.IsAlgebraic.isAlgebraic x).isIntegral
+  -- 2. Define the descended linear map `f₀` over `E'` and check compatibility with `f` over `L`.
+  have hs_mem : ∀ p ∈ s, p.1 ∈ E' := fun p hp ↦
+    IntermediateField.subset_adjoin E _ ⟨p, Finset.mem_coe.mpr hp, rfl⟩
   let f₀ : (E' ⊗[E] V) →ₗ[E'] (E' ⊗[E] W) :=
-    ∑ p ∈ s.attach, (⟨p.val.1, IntermediateField.subset_adjoin E _
-      ⟨p.val, Finset.mem_coe.mpr p.property, rfl⟩⟩ : E') • p.val.2.baseChange E'
+    ∑ p ∈ s.attach, (⟨p.val.1, hs_mem p.val p.property⟩ : E') • p.val.2.baseChange E'
   have hcompat : ∀ x : L ⊗[E'] (E' ⊗[E] V),
       AlgebraTensorModule.cancelBaseChange E E' L L W (f₀.baseChange L x) =
-        f (AlgebraTensorModule.cancelBaseChange E E' L L V x) := by
-    intro x
-    induction x using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul a y =>
-      induction y using TensorProduct.inductionOn with
-      | add y₁ y₂ h₁ h₂ => simp only [TensorProduct.tmul_add, map_add, h₁, h₂]
-      | tmul b v =>
-        have hf : f (((b : L) * a) ⊗ₜ[E] v) =
-            ∑ p ∈ s, (p.1 * ((b : L) * a)) ⊗ₜ[E] p.2 v := by
-          rw [← IntertwiningMap.coe_toLinearMap, ← hz, hs, map_sum, LinearMap.sum_apply]
-          refine Finset.sum_congr rfl fun p _ ↦ ?_
-          simp only [LinearMap.baseChangeTensorHom_tmul, LinearMap.smul_apply,
-            LinearMap.baseChange_tmul, TensorProduct.smul_tmul', smul_eq_mul]
-        simp only [LinearMap.baseChange_tmul, f₀, LinearMap.sum_apply, LinearMap.smul_apply,
-          TensorProduct.smul_tmul', smul_eq_mul, TensorProduct.tmul_sum, map_sum,
-          AlgebraTensorModule.cancelBaseChange_tmul, Algebra.smul_def, map_mul,
-          IntermediateField.algebraMap_apply, hf]
-        rw [← Finset.sum_attach s (fun p ↦ (p.1 * ((b : L) * a)) ⊗ₜ[E] p.2 v)]
-        refine Finset.sum_congr rfl fun p _ ↦ ?_
-        congr 1
-        ring
+        f (AlgebraTensorModule.cancelBaseChange E E' L L V x) :=
+    cancelBaseChange_sum_smul_baseChange s E' hs_mem f.toLinearMap (hs ▸ hz)
+  -- 3. Check `f₀` is intertwining via faithful flatness (`LinearMap.baseChange_injective`).
   have hint : ∀ g : G, f₀ ∘ₗ (ρ.baseChange E' g) = (σ.baseChange E' g) ∘ₗ f₀ := by
     intro g
     apply LinearMap.baseChange_injective (R := E') (A := L)

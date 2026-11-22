@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.Topology.Algebra.IntermediateField
 public import Mathlib.Topology.Baire.LocallyCompactRegular
 public import TauCeti.RepresentationTheory.Continuous.GeneralLinear
+public import TauCeti.Topology.Algebra.IntermediateField
 
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.LinearAlgebra.TensorProduct.Pi
@@ -176,28 +177,102 @@ end BaireDescent
 
 section DiagramDescent
 
-local instance {K L : Type*} [Field K] [Field L] [Algebra K L]
-    [TopologicalSpace L] [IsTopologicalSemiring L] (E : IntermediateField K L) :
-    IsTopologicalSemiring E :=
-  inferInstanceAs (IsTopologicalSemiring E.toSubalgebra)
+/-- **Single-object descent isomorphism.** Given a continuous representation `ρ` over `L` whose
+matrix entries in a basis `b` lie in `E : IntermediateField K L`, its lift `ofGL (liftGL (toGL ρ b)
+E hmem)` base-changed back to `L` is continuously isomorphic to `ρ`. -/
+private noncomputable def descentObjectIso {Γ K L V ι : Type*}
+    [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
+    [Field K] [Field L] [Algebra K L] [TopologicalSpace L] [IsTopologicalRing L]
+    [AddCommGroup V] [Module L V] [TopologicalSpace V] [IsModuleTopology L V]
+    [Fintype ι] [DecidableEq ι]
+    (ρ : ContinuousRep Γ L V) (b : Module.Basis ι L V) (E : IntermediateField K L)
+    (hmem : ∀ (g : Γ) (r c : ι), (toGL ρ b g : Matrix ι ι L) r c ∈ E)
+    [TopologicalSpace (L ⊗[E] (ι → E))] [IsModuleTopology L (L ⊗[E] (ι → E))] :
+    ((ofGL (liftGL (toGL ρ b) E hmem)).baseChange L).Iso ρ :=
+  have hcomp :
+      ContinuousMonoidHom.comp
+        (continuousMapGL (algebraMap E L) (continuous_algebraMap E L))
+        (liftGL (toGL ρ b) E hmem) = toGL ρ b := by
+    ext1 g
+    simp [map_liftGL_intermediateField]
+  ((baseChangeOfGLIso L (liftGL (toGL ρ b) E hmem)).trans (ofGLCongr hcomp)).trans
+    (ofGLToGLIso ρ b)
 
-private theorem piScalarRight_equivFun_intertwining {E L V W ιV ιW : Type*} [Field E] [Field L]
-    [Algebra E L] [AddCommGroup V] [Module L V] [AddCommGroup W] [Module L W]
-    [Fintype ιV] [DecidableEq ιV] [Fintype ιW] [DecidableEq ιW]
-    (bV : Module.Basis ιV L V) (bW : Module.Basis ιW L W)
-    (f : V →ₗ[L] W) (M : Matrix ιW ιV E)
-    (hM : M.map (algebraMap E L) = LinearMap.toMatrix bV bW f)
-    (x : L ⊗[E] (ιV → E)) :
-    bW.equivFun.symm (TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x)) =
-      f (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) := by
-  apply bW.equivFun.injective
-  rw [LinearEquiv.apply_symm_apply, TensorProduct.piScalarRight_baseChange_mulVecLin, hM]
-  have hrepr : (bV.repr (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) : ιV → L) =
-      TensorProduct.piScalarRight E L L ιV x := by
-    ext i
-    simp only [← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
-  rw [← hrepr, LinearMap.toMatrix_mulVec_repr bV bW f, hrepr]
-  exact (Module.Basis.equivFun_apply bW _).symm
+private theorem descentObjectIso_apply {Γ K L V ι : Type*}
+    [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
+    [Field K] [Field L] [Algebra K L] [TopologicalSpace L] [IsTopologicalRing L]
+    [AddCommGroup V] [Module L V] [TopologicalSpace V] [IsModuleTopology L V]
+    [Fintype ι] [DecidableEq ι]
+    (ρ : ContinuousRep Γ L V) (b : Module.Basis ι L V) (E : IntermediateField K L)
+    (hmem : ∀ (g : Γ) (r c : ι), (toGL ρ b g : Matrix ι ι L) r c ∈ E)
+    [TopologicalSpace (L ⊗[E] (ι → E))] [IsModuleTopology L (L ⊗[E] (ι → E))]
+    (x : L ⊗[E] (ι → E)) :
+    descentObjectIso ρ b E hmem x = b.equivFun.symm (TensorProduct.piScalarRight E L L ι x) := by
+  simp only [descentObjectIso, Iso.trans_apply, baseChangeOfGLIso_apply, ofGLCongr_apply,
+    ofGLToGLIso_apply]
+
+/-- **Topology-free intertwining descent.** If `M₁`, `M₂`, `M` lift the matrices of linear maps
+`T₁ : V₁ →ₗ[L] V₁`, `T₂ : V₂ →ₗ[L] V₂`, `f : V₁ →ₗ[L] V₂` in bases `b₁`, `b₂` with
+`f ∘ₗ T₁ = T₂ ∘ₗ f`, then `Matrix.mulVecLin M ∘ₗ Matrix.mulVecLin M₁ = Matrix.mulVecLin M₂ ∘ₗ
+Matrix.mulVecLin M`. -/
+private theorem mulVecLin_comp_eq_of_matrix_eq
+    {E L V₁ V₂ ι₁ ι₂ : Type*} [Field E] [Field L] [Algebra E L]
+    [AddCommGroup V₁] [Module L V₁] [AddCommGroup V₂] [Module L V₂]
+    [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂]
+    (b₁ : Module.Basis ι₁ L V₁) (b₂ : Module.Basis ι₂ L V₂)
+    (T₁ : V₁ →ₗ[L] V₁) (T₂ : V₂ →ₗ[L] V₂) (f : V₁ →ₗ[L] V₂) (hf : f ∘ₗ T₁ = T₂ ∘ₗ f)
+    (M₁ : Matrix ι₁ ι₁ E) (M₂ : Matrix ι₂ ι₂ E) (M : Matrix ι₂ ι₁ E)
+    (h₁ : M₁.map (algebraMap E L) = LinearMap.toMatrix b₁ b₁ T₁)
+    (h₂ : M₂.map (algebraMap E L) = LinearMap.toMatrix b₂ b₂ T₂)
+    (hM : M.map (algebraMap E L) = LinearMap.toMatrix b₁ b₂ f) :
+    Matrix.mulVecLin M ∘ₗ Matrix.mulVecLin M₁ = Matrix.mulVecLin M₂ ∘ₗ Matrix.mulVecLin M := by
+  apply LinearMap.baseChange_injective (R := E) (A := L)
+  refine LinearMap.ext fun x ↦
+    (b₂.equivFun.symm.injective.comp (TensorProduct.piScalarRight E L L ι₂).injective) ?_
+  simp only [LinearMap.baseChange_comp, LinearMap.comp_apply, Function.comp_apply]
+  rw [TensorProduct.piScalarRight_equivFun_intertwining b₁ b₂ f M hM,
+    TensorProduct.piScalarRight_equivFun_intertwining b₁ b₁ T₁ M₁ h₁,
+    TensorProduct.piScalarRight_equivFun_intertwining b₂ b₂ T₂ M₂ h₂,
+    TensorProduct.piScalarRight_equivFun_intertwining b₁ b₂ f M hM]
+  exact LinearMap.congr_fun hf _
+
+/-- **Single-morphism descent.** Given a matrix `ME` over `E` lifting the matrix of an intertwining
+map `f : ρ₁ → ρ₂` in bases `b₁`, `b₂`, `Matrix.mulVecLin ME` intertwines the descended matrix
+representations `ofGL (liftGL (toGL ρ₁ b₁) E h₁)` and `ofGL (liftGL (toGL ρ₂ b₂) E h₂)`. -/
+private noncomputable def descentIntertwiningMap {Γ K L V₁ V₂ ι₁ ι₂ : Type*}
+    [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
+    [Field K] [Field L] [Algebra K L] [TopologicalSpace L] [IsTopologicalRing L]
+    [AddCommGroup V₁] [Module L V₁] [TopologicalSpace V₁] [IsModuleTopology L V₁]
+    [AddCommGroup V₂] [Module L V₂] [TopologicalSpace V₂] [IsModuleTopology L V₂]
+    [Fintype ι₁] [DecidableEq ι₁] [Fintype ι₂] [DecidableEq ι₂]
+    (ρ₁ : ContinuousRep Γ L V₁) (ρ₂ : ContinuousRep Γ L V₂)
+    (b₁ : Module.Basis ι₁ L V₁) (b₂ : Module.Basis ι₂ L V₂)
+    (f : Representation.IntertwiningMap ρ₁.toRepresentation ρ₂.toRepresentation)
+    (E : IntermediateField K L)
+    (h₁ : ∀ (g : Γ) (r c : ι₁), (toGL ρ₁ b₁ g : Matrix ι₁ ι₁ L) r c ∈ E)
+    (h₂ : ∀ (g : Γ) (r c : ι₂), (toGL ρ₂ b₂ g : Matrix ι₂ ι₂ L) r c ∈ E)
+    (ME : Matrix ι₂ ι₁ E)
+    (hME : ME.map (algebraMap E L) = LinearMap.toMatrix b₁ b₂ f.toLinearMap) :
+    Representation.IntertwiningMap
+      (ofGL (liftGL (toGL ρ₁ b₁) E h₁)).toRepresentation
+      (ofGL (liftGL (toGL ρ₂ b₂) E h₂)).toRepresentation where
+  toLinearMap := Matrix.mulVecLin ME
+  isIntertwining' g := by
+    have h := mulVecLin_comp_eq_of_matrix_eq b₁ b₂ (ρ₁ g) (ρ₂ g) f.toLinearMap
+      (f.isIntertwining' g) (liftGL (toGL ρ₁ b₁) E h₁ g : Matrix ι₁ ι₁ E)
+      (liftGL (toGL ρ₂ b₂) E h₂ g : Matrix ι₂ ι₂ E) ME
+      (by
+        ext i j
+        simp only [Matrix.map_apply, IntermediateField.algebraMap_apply, coe_liftGL,
+          coe_toGL_apply, LinearMap.toMatrix_apply])
+      (by
+        ext i j
+        simp only [Matrix.map_apply, IntermediateField.algebraMap_apply, coe_liftGL,
+          coe_toGL_apply, LinearMap.toMatrix_apply])
+      hME
+    refine LinearMap.ext fun v ↦ ?_
+    simpa only [LinearMap.comp_apply, Matrix.mulVecLin_apply, coe_toRepresentation,
+      ofGL_apply] using LinearMap.congr_fun h v
 
 /-- **Abstract simultaneous descent of a finite diagram of continuous representations.** Let `Γ`
 be a compact Baire group with continuous inversion and `L / K` an algebraic extension of
@@ -232,6 +307,7 @@ theorem exists_descent_family_of_countable {Γ : Type*} [Group Γ] [TopologicalS
           ∃ e : ∀ a : α, ((ρE a).baseChange L).Iso (ρ a),
             ∀ (j : β) (x),
               e (dst j) ((fE j).baseChange L x) = f j (e (src j) x) := by
+  -- 1. Descend each object representation via Baire category and adjoin morphism matrix entries.
   let b (a : α) := Module.finBasis L (V a)
   choose Eobj _ hfinObj hmemObj using fun a ↦
     baire_descent_of_countable hcount hclosed (toGL (ρ a) (b a)) K₀
@@ -242,70 +318,31 @@ theorem exists_descent_family_of_countable {Γ : Type*} [Group Γ] [TopologicalS
     have : Finite (Set.range fun p : _ × _ ↦ M j p.1 p.2) := Set.finite_range _
     exact IntermediateField.finiteDimensional_adjoin fun x _ ↦
       (Algebra.IsAlgebraic.isAlgebraic x).isIntegral
+  -- 2. Take the finite compositum `E` containing `K₀`, all `Eobj a`, and all `Emor j`.
   let E : IntermediateField K L := K₀ ⊔ (⨆ a, Eobj a) ⊔ (⨆ j, Emor j)
   have hmemE (a : α) (g : Γ) (r c : Fin (Module.finrank L (V a))) :
       (toGL (ρ a) (b a) g : Matrix _ _ L) r c ∈ E :=
     le_sup_of_le_left (le_sup_of_le_right (le_iSup Eobj a)) (hmemObj a g r c)
   let ρE (a : α) : ContinuousRep Γ E (Fin (Module.finrank L (V a)) → E) :=
     ofGL (liftGL (toGL (ρ a) (b a)) E (hmemE a))
-  have hcomp (a : α) :
-      ContinuousMonoidHom.comp
-        ⟨Matrix.GeneralLinearGroup.map (algebraMap E L),
-          (continuous_algebraMap E L).generalLinearGroup_map⟩
-        (liftGL (toGL (ρ a) (b a)) E (hmemE a)) = toGL (ρ a) (b a) := by
-    ext1 g
-    simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply]
-    let m : GL (Fin (Module.finrank L (V a))) E →ₜ* GL (Fin (Module.finrank L (V a))) L :=
-      ⟨Matrix.GeneralLinearGroup.map (algebraMap E L),
-        (continuous_algebraMap E L).generalLinearGroup_map⟩
-    exact (DFunLike.congr_fun (ContinuousMonoidHom.coe_toMonoidHom m).symm _).trans
-      (map_liftGL_intermediateField (toGL (ρ a) (b a)) E (hmemE a) g)
-  let mkIso [∀ a, TopologicalSpace (L ⊗[E] (Fin (Module.finrank L (V a)) → E))]
-      [∀ a, IsModuleTopology L (L ⊗[E] (Fin (Module.finrank L (V a)) → E))] (a : α) :
-      ((ρE a).baseChange L).Iso (ρ a) :=
-    ((baseChangeOfGLIso L (liftGL (toGL (ρ a) (b a)) E (hmemE a))).trans
-      (ofGLCongr (hcomp a))).trans (ofGLToGLIso (ρ a) (b a))
-  have hmkIso_apply [∀ a, TopologicalSpace (L ⊗[E] (Fin (Module.finrank L (V a)) → E))]
-      [∀ a, IsModuleTopology L (L ⊗[E] (Fin (Module.finrank L (V a)) → E))] (a : α) (x) :
-      mkIso a x = (b a).equivFun.symm (TensorProduct.piScalarRight E L L _ x) := by
-    simp only [mkIso, Iso.trans_apply, baseChangeOfGLIso_apply, ofGLCongr_apply, ofGLToGLIso_apply]
+  -- 3. Lift each intertwining matrix to `E` and verify equivariance topology-freely.
   have hmorE (j : β) : Emor j ≤ E := le_trans (le_iSup Emor j) le_sup_right
   let ME (j : β) : Matrix _ _ E := Matrix.of fun r c ↦
     ⟨M j r c, hmorE j (IntermediateField.subset_adjoin K _ ⟨(r, c), rfl⟩)⟩
   have hME (j : β) : (ME j).map (algebraMap E L) = M j := by
     ext r c
     simp only [Matrix.map_apply, ME, Matrix.of_apply, IntermediateField.algebraMap_apply]
-  have hcompat (j : β) (x) :
-      (b (dst j)).equivFun.symm
-          (TensorProduct.piScalarRight E L L _ ((Matrix.mulVecLin (ME j)).baseChange L x)) =
-        f j ((b (src j)).equivFun.symm (TensorProduct.piScalarRight E L L _ x)) :=
-    piScalarRight_equivFun_intertwining (b (src j)) (b (dst j)) (f j).toLinearMap (ME j)
-      (hME j) x
-  let fE (j : β) : Representation.IntertwiningMap
-      (ρE (src j)).toRepresentation (ρE (dst j)).toRepresentation :=
-    { toLinearMap := Matrix.mulVecLin (ME j)
-      isIntertwining' g := by
-        let : ∀ a, TopologicalSpace (L ⊗[E] (Fin (Module.finrank L (V a)) → E)) :=
-          fun _ ↦ moduleTopology L _
-        have : ∀ a, IsModuleTopology L (L ⊗[E] (Fin (Module.finrank L (V a)) → E)) :=
-          fun _ ↦ ⟨rfl⟩
-        apply LinearMap.baseChange_injective (R := E) (A := L)
-        refine LinearMap.ext fun x ↦ EquivLike.injective (mkIso (dst j)) ?_
-        have hsrc := (mkIso (src j)).isIntertwining g x
-        have hdst := (mkIso (dst j)).isIntertwining g
-          ((Matrix.mulVecLin (ME j)).baseChange L x)
-        simp only [baseChange_apply] at hsrc hdst
-        simp only [LinearMap.baseChange_comp, LinearMap.comp_apply, coe_toRepresentation]
-        rw [hdst, hmkIso_apply (dst j), hmkIso_apply (dst j), hcompat j, hcompat j,
-          ← hmkIso_apply (src j), ← hmkIso_apply (src j), hsrc]
-        simpa only [LinearMap.comp_apply, Representation.IntertwiningMap.coe_toLinearMap,
-          coe_toRepresentation] using
-          LinearMap.congr_fun ((f j).isIntertwining' g) (mkIso (src j) x) }
+  let fE (j : β) := descentIntertwiningMap (ρ (src j)) (ρ (dst j)) (b (src j)) (b (dst j))
+    (f j) E (hmemE (src j)) (hmemE (dst j)) (ME j) (hME j)
+  -- 4. Package the descent isomorphisms for any `L`-module topology on the base-changed spaces.
   refine ⟨E, inferInstance, ρE, fE, le_sup_of_le_left le_sup_left, ?_⟩
   intro _ _
-  exact ⟨mkIso, fun j x ↦ by
-    simpa only [hmkIso_apply, fE, ← Representation.IntertwiningMap.coe_toLinearMap,
-      Representation.IntertwiningMap.toLinearMap_baseChange] using hcompat j x⟩
+  refine ⟨fun a ↦ descentObjectIso (ρ a) (b a) E (hmemE a), fun j x ↦ ?_⟩
+  rw [descentObjectIso_apply, descentObjectIso_apply]
+  simpa only [fE, descentIntertwiningMap, ← Representation.IntertwiningMap.coe_toLinearMap,
+    Representation.IntertwiningMap.toLinearMap_baseChange] using
+    TensorProduct.piScalarRight_equivFun_intertwining (b (src j)) (b (dst j))
+      (f j).toLinearMap (ME j) (hME j) x
 
 /-- **Abstract object descent for a continuous representation.** Under the hypotheses of
 `exists_descent_family_of_countable`, every finite-dimensional continuous representation `ρ` of a

@@ -49,6 +49,8 @@ This file connects continuous matrix homomorphisms `Γ →ₜ* GL ι A` with con
 * `TauCeti.ContinuousRep.ofGLToGLIso`: canonical isomorphism `Iso (ofGL (toGL ρ b)) ρ`.
 * `TauCeti.ContinuousRep.liftGL`: continuous lift of `Γ →ₜ* GL ι L` with entries in a subfield
   `E` to `Γ →ₜ* GL ι E`.
+* `TauCeti.ContinuousRep.continuousMapGL`: continuous `GL` map induced by a continuous ring
+  homomorphism.
 * `TauCeti.ContinuousRep.baseChangeOfGLIso`: canonical isomorphism identifying `(ofGL φ).baseChange
   B` with the entrywise image under `algebraMap A B`.
 
@@ -160,10 +162,10 @@ noncomputable def ofGLToGLIso (ρ : ContinuousRep Γ A V) (b : Module.Basis ι A
 
 @[simp]
 theorem ofGLToGLIso_apply (ρ : ContinuousRep Γ A V) (b : Module.Basis ι A V) (v : ι → A) :
-    ofGLToGLIso ρ b v = b.equivFun.symm v :=
-  (Iso.ofEquiv_apply _ v).trans <|
-    (Representation.Equiv.ofBasisAction_symm_apply _ _ _ _ _ _ _ v).trans <| by
-      simp only [LinearEquiv.refl_symm, LinearEquiv.refl_apply]
+    ofGLToGLIso ρ b v = b.equivFun.symm v := by
+  rw [ofGLToGLIso, Iso.ofEquiv_apply]
+  exact (Representation.Equiv.ofBasisAction_symm_apply (e := .refl A V) (b := b) (w := v)
+    ..).trans (by simp only [LinearEquiv.refl_symm, LinearEquiv.refl_apply])
 
 @[simp]
 theorem ofGLToGLIso_symm_apply (ρ : ContinuousRep Γ A V) (b : Module.Basis ι A V) (x : V) :
@@ -254,6 +256,25 @@ theorem liftGL_unique {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [Topologica
 
 end LiftGL
 
+section MapGL
+
+/-- **Continuous `GL` map induced by a continuous ring homomorphism.** -/
+def continuousMapGL {A B ι : Type*} [CommRing A] [TopologicalSpace A]
+    [CommRing B] [TopologicalSpace B] [Fintype ι] [DecidableEq ι]
+    (f : A →+* B) (hf : Continuous f) : GL ι A →ₜ* GL ι B where
+  toMonoidHom := Matrix.GeneralLinearGroup.map f
+  continuous_toFun := hf.generalLinearGroup_map
+
+/-- Applying `continuousMapGL f hf` agrees with `Matrix.GeneralLinearGroup.map f`. -/
+@[simp]
+theorem continuousMapGL_apply {A B ι : Type*} [CommRing A] [TopologicalSpace A]
+    [CommRing B] [TopologicalSpace B] [Fintype ι] [DecidableEq ι]
+    (f : A →+* B) (hf : Continuous f) (g : GL ι A) :
+    continuousMapGL f hf g = Matrix.GeneralLinearGroup.map f g :=
+  (rfl)
+
+end MapGL
+
 section BaseChangeOfGL
 
 variable {Γ A ι : Type*} [Monoid Γ] [TopologicalSpace Γ]
@@ -270,27 +291,16 @@ the image matrices under `algebraMap A B`, through `TensorProduct.piScalarRight`
 def baseChangeOfGLIso (φ : Γ →ₜ* GL ι A) :
     Iso ((ofGL φ).baseChange B)
       (ofGL (ContinuousMonoidHom.comp
-        ⟨Matrix.GeneralLinearGroup.map (algebraMap A B),
-          (continuous_algebraMap A B).generalLinearGroup_map⟩
-        φ)) :=
+        (continuousMapGL (algebraMap A B) (continuous_algebraMap A B)) φ)) :=
   .ofEquiv (.mk (TensorProduct.piScalarRight A B B ι) fun g ↦ by
     have hrep : (ofGL φ).toRepresentation g = Matrix.mulVecLin (φ g : Matrix ι ι A) :=
       LinearMap.ext fun v ↦ by simp only [coe_toRepresentation, ofGL_apply, Matrix.mulVecLin_apply]
-    let m : GL ι A →ₜ* GL ι B :=
-      ⟨Matrix.GeneralLinearGroup.map (algebraMap A B),
-        (continuous_algebraMap A B).generalLinearGroup_map⟩
-    have hmap : m (φ g) = Matrix.GeneralLinearGroup.map (algebraMap A B) (φ g) :=
-      DFunLike.congr_fun (ContinuousMonoidHom.coe_toMonoidHom m).symm (φ g)
-    have hmat : ((m.comp φ g : GL ι B) : Matrix ι ι B) =
-        (φ g : Matrix ι ι A).map (algebraMap A B) := by
-      ext i j
-      rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, hmap,
-        Matrix.GeneralLinearGroup.map_apply, Matrix.map_apply]
     refine LinearMap.ext fun x ↦ ?_
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, toRepresentation_baseChange,
       Representation.baseChange_apply, hrep, TensorProduct.piScalarRight_baseChange_mulVecLin,
-      coe_toRepresentation, ofGL_apply]
-    rw [hmat])
+      coe_toRepresentation, ofGL_apply, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      continuousMapGL_apply]
+    rfl)
 
 /-- Underlying map of `baseChangeOfGLIso` as `TensorProduct.piScalarRight`. -/
 theorem baseChangeOfGLIso_apply (φ : Γ →ₜ* GL ι A) (x : B ⊗[A] (ι → A)) :
