@@ -28,8 +28,6 @@ estimates open only `Matrix.Norms.L2Operator` and write the Frobenius pairing ex
 
 ## Main declarations
 
-* `Matrix.frobenius_toEuclideanLin`: bridge between the Frobenius unitarily invariant seminorm
-  of `A.toEuclideanLin` and the scoped matrix Frobenius norm.
 * `Matrix.nuclear_toEuclideanLin_conjTranspose`, `Matrix.nuclear_toEuclideanLin_vecMulVec`:
   conjugate-transpose invariance and the nuclear norm of a rank-one outer product.
 * `Matrix.norm_trace_conjTranspose_mul_le_l2_opNorm_mul_nuclear`,
@@ -69,16 +67,6 @@ open TauCeti.UnitarilyInvariantSeminorm
 namespace Matrix
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {m : Type*} [Fintype m]
-
-open scoped Matrix.Norms.Frobenius in
-/-- The Frobenius seminorm of `A.toEuclideanLin` is the scoped Frobenius norm of `A`. -/
-theorem frobenius_toEuclideanLin (A : Matrix m n 𝕜) :
-    frobenius 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin = ‖A‖ := by
-  classical
-  have h := LinearMap.frobenius_norm_toMatrix A.toEuclideanLin
-    (EuclideanSpace.basisFun n 𝕜) (EuclideanSpace.basisFun m 𝕜)
-  rw [toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin] at h
-  exact h.symm
 
 /-- Taking the conjugate transpose preserves the nuclear norm of a matrix. -/
 theorem nuclear_toEuclideanLin_conjTranspose [DecidableEq m] (A : Matrix m n 𝕜) :

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frob
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
 
+import TauCeti.Analysis.InnerProductSpace.Polar.Finite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
@@ -106,10 +107,10 @@ theorem trace_adjoint_sub_starProjection_comp_eq_zero (Δ : E →ₗ[𝕜] F) (W
   set PK : E →ₗ[𝕜] E := K.starProjection.toLinearMap
   have hPW_adj : adjoint PW = PW := W.starProjection_isSymmetric.adjoint_eq
   have hPK_adj : adjoint PK = PK := K.starProjection_isSymmetric.adjoint_eq
-  have hPW_idem : PW ∘ₗ PW = PW :=
-    LinearMap.ext fun y ↦ congrArg (fun f : F →L[𝕜] F ↦ f y) W.isIdempotentElem_starProjection
-  have hPK_idem : PK ∘ₗ PK = PK :=
-    LinearMap.ext fun x ↦ congrArg (fun f : E →L[𝕜] E ↦ f x) K.isIdempotentElem_starProjection
+  have hPW_idem : PW ∘ₗ PW = PW := (Module.End.mul_eq_comp PW PW).symm.trans
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap W.isIdempotentElem_starProjection).eq
+  have hPK_idem : PK ∘ₗ PK = PK := (Module.End.mul_eq_comp PK PK).symm.trans
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap K.isIdempotentElem_starProjection).eq
   have hΔ₂ : adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK) = PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ ∘ₗ PK := by
     calc adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)
         = PK ∘ₗ adjoint Δ ∘ₗ (PW ∘ₗ PW) ∘ₗ Δ ∘ₗ PK := by
@@ -174,56 +175,23 @@ theorem exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear (B : E →ₗ[𝕜] F
       LinearMap.range U ≤ LinearMap.range B ∧
       LinearMap.range (LinearMap.adjoint U) ≤ LinearMap.range (LinearMap.adjoint B) ∧
       LinearMap.trace 𝕜 E (LinearMap.adjoint U ∘ₗ B) = (nuclear 𝕜 E F B : 𝕜) := by
-  -- Build the polar partial isometry `U = ∑ᵢ uᵢ ⊗ vᵢ` sending `vᵢ ↦ uᵢ`.
-  let U : E →ₗ[𝕜] F := ∑ i : Fin (finrank 𝕜 E),
-    (InnerProductSpace.rankOne 𝕜 (B.leftSingularVector i) (B.rightSingularBasis i)).toLinearMap
-  have hU_apply (x : E) :
-      U x = ∑ i : Fin (finrank 𝕜 E),
-        ⟪B.rightSingularBasis i, x⟫_𝕜 • B.leftSingularVector i := by
-    simp [U]
-  have hU_basis (j : Fin (finrank 𝕜 E)) :
-      U (B.rightSingularBasis j) = B.leftSingularVector j := by
-    rw [hU_apply, Finset.sum_eq_single j]
-    · simp [B.rightSingularBasis.orthonormal.1 j]
-    · intro i _ hij
-      simp [orthonormal_iff_ite.mp B.rightSingularBasis.orthonormal i j, hij]
-    · simp
-  -- Bound `‖U† y‖ ≤ ‖y‖` by Bessel's inequality for the left singular vectors, then pass to `U`.
-  have hU_adj_norm (y : F) : ‖LinearMap.adjoint U y‖ ≤ 1 * ‖y‖ := by
-    have hsq : ‖LinearMap.adjoint U y‖ ^ 2 ≤ ‖y‖ ^ 2 := by
-      rw [← B.rightSingularBasis.sum_sq_norm_inner_right (LinearMap.adjoint U y)]
-      simp_rw [LinearMap.adjoint_inner_right, hU_basis]
-      exact B.sum_norm_inner_leftSingularVector_sq_le y
-    simpa using le_of_sq_le_sq hsq (norm_nonneg y)
-  have hU_norm : opNorm 𝕜 E F U ≤ 1 := by
-    rw [opNorm_apply]
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ ?_
-    simpa using LinearMap.norm_adjoint_apply_le zero_le_one hU_adj_norm x
-  -- Both ranges sit inside those of `B` and `B†`.
-  have hU_rng : LinearMap.range U ≤ LinearMap.range B := by
-    rintro _ ⟨x, rfl⟩
-    rw [hU_apply]
-    refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ ?_
-    rw [B.leftSingularVector_def]
-    exact Submodule.smul_mem _ _ ⟨B.rightSingularBasis i, rfl⟩
-  have hU_adj_rng :
-      LinearMap.range (LinearMap.adjoint U) ≤ LinearMap.range (LinearMap.adjoint B) := by
-    rintro _ ⟨y, rfl⟩
-    rw [← B.rightSingularBasis.sum_repr' (LinearMap.adjoint U y)]
-    refine Submodule.sum_mem _ fun i _ ↦ ?_
-    rw [LinearMap.adjoint_inner_right, hU_basis]
-    by_cases hσ : B.singularValues i = 0
-    · simp [(B.leftSingularVector_eq_zero_iff).mpr hσ]
-    · refine Submodule.smul_mem _ _ ⟨((B.singularValues i : ℝ) : 𝕜)⁻¹ • B.leftSingularVector i, ?_⟩
-      rw [map_smul, B.adjoint_leftSingularVector i, smul_smul,
-        inv_mul_cancel₀ (by exact_mod_cast hσ), one_smul]
-  have hU_tr : LinearMap.trace 𝕜 E (LinearMap.adjoint U ∘ₗ B) = (nuclear 𝕜 E F B : 𝕜) := by
-    rw [LinearMap.trace_adjoint_comp_eq_sum_singularValues U B, nuclear_apply,
-      ← B.sum_fin_singularValues (fun s ↦ s) rfl, RCLike.ofReal_sum]
+  refine ⟨B.polarFactor, ?_, B.range_polarFactor.le, B.range_adjoint_polarFactor.le, ?_⟩
+  · let := FiniteDimensional.completeSpace 𝕜 E
+    let := FiniteDimensional.completeSpace 𝕜 F
+    rw [opNorm_apply, B.toContinuousLinearMap_polarFactor]
+    exact ContinuousLinearMap.norm_factorThru_le zero_le_one fun x ↦ by simp
+  · rw [B.adjoint_polarFactor_comp, LinearMap.trace_eq_sum_inner _ B.rightSingularBasis,
+      nuclear_apply, ← B.sum_fin_singularValues (fun s ↦ s) rfl, RCLike.ofReal_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [hU_basis, B.inner_leftSingularVector]
-    by_cases hσ : B.singularValues i = 0 <;> simp [hσ]
-  exact ⟨U, hU_norm, hU_rng, hU_adj_rng, hU_tr⟩
+    have hsqrt : B.operatorAbs (B.rightSingularBasis i) =
+        ((√(B.singularValues i ^ 2) : ℝ) : 𝕜) • B.rightSingularBasis i := by
+      rw [← (LinearMap.isPositive_adjoint_comp_self B).sqrt_isPositive.eq_operatorAbs
+        (LinearMap.isPositive_adjoint_comp_self B).sqrt_sq]
+      exact (LinearMap.isPositive_adjoint_comp_self B).sqrt_apply_of_apply_eq_smul
+        (B.adjoint_comp_self_rightSingularBasis i)
+    rw [hsqrt, Real.sqrt_sq (B.singularValues_nonneg _), inner_smul_right,
+      orthonormal_iff_ite.mp B.rightSingularBasis.orthonormal i i]
+    simp
 
 /-- **Variational characterization of the nuclear seminorm**:
 `‖B‖₁ = ⨆_{‖U‖ ≤ 1} ‖tr (U† B)‖`. -/
@@ -239,37 +207,27 @@ theorem nuclear_eq_iSup_norm_trace_adjoint_comp (B : E →ₗ[𝕜] F) :
           norm_trace_adjoint_comp_le_opNorm_mul_nuclear U.val B
       _ ≤ 1 * nuclear 𝕜 E F B := mul_le_mul_of_nonneg_right U.property (apply_nonneg _ _)
       _ = nuclear 𝕜 E F B := one_mul _
-  refine le_antisymm ?_ (ciSup_le hle)
+  symm
+  refine ciSup_eq_of_forall_le_of_forall_lt_exists_gt hle fun w hw ↦ ?_
   obtain ⟨U, hU_norm, _, _, hU_tr⟩ := exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear B
-  have hbdd : BddAbove (Set.range fun U : {U : E →ₗ[𝕜] F // opNorm 𝕜 E F U ≤ 1} ↦
-      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.val ∘ₗ B)‖) :=
-    ⟨nuclear 𝕜 E F B, by rintro _ ⟨V, rfl⟩; exact hle V⟩
-  calc nuclear 𝕜 E F B
-      = ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U ∘ₗ B)‖ := by
-        rw [hU_tr, RCLike.norm_ofReal, abs_of_nonneg (apply_nonneg _ _)]
-    _ ≤ ⨆ U : {U : E →ₗ[𝕜] F // opNorm 𝕜 E F U ≤ 1},
-          ‖LinearMap.trace 𝕜 E (LinearMap.adjoint U.val ∘ₗ B)‖ :=
-        le_ciSup hbdd ⟨U, hU_norm⟩
+  refine ⟨⟨U, hU_norm⟩, ?_⟩
+  rwa [hU_tr, RCLike.norm_ofReal, abs_of_nonneg (apply_nonneg _ _)]
 
 /-- The nuclear seminorm of a rank-one map `x ↦ ⟪v, x⟫ u` is `‖u‖ * ‖v‖`. -/
 theorem nuclear_rankOne (u : F) (v : E) :
     nuclear 𝕜 E F (InnerProductSpace.rankOne 𝕜 u v).toLinearMap = ‖u‖ * ‖v‖ := by
+  by_cases hu : u = 0
+  · simp [hu]
+  by_cases hv : v = 0
+  · simp [hv]
+  have hrank : finrank 𝕜 (LinearMap.range (InnerProductSpace.rankOne 𝕜 u v).toLinearMap) = 1 :=
+    Module.rank_eq_one_iff_finrank_eq_one.mp (InnerProductSpace.rank_rankOne hu hv)
   refine le_antisymm ?_ ?_
-  · have hrng : LinearMap.range (InnerProductSpace.rankOne 𝕜 u v).toLinearMap ≤
-        Submodule.span 𝕜 {u} := by
-      rintro _ ⟨x, rfl⟩
-      exact Submodule.smul_mem _ _ (Submodule.subset_span rfl)
-    have hrank : finrank 𝕜 (LinearMap.range (InnerProductSpace.rankOne 𝕜 u v).toLinearMap) ≤ 1 :=
-      (Submodule.finrank_mono hrng).trans ((finrank_span_le_card ({u} : Set F)).trans (by simp))
-    calc nuclear 𝕜 E F (InnerProductSpace.rankOne 𝕜 u v).toLinearMap
+  · calc nuclear 𝕜 E F (InnerProductSpace.rankOne 𝕜 u v).toLinearMap
         ≤ √(finrank 𝕜 (LinearMap.range (InnerProductSpace.rankOne 𝕜 u v).toLinearMap)) *
             frobenius 𝕜 E F (InnerProductSpace.rankOne 𝕜 u v).toLinearMap :=
           nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply _
-      _ ≤ √1 * (‖u‖ * ‖v‖) := by
-          rw [frobenius_rankOne]
-          exact mul_le_mul_of_nonneg_right
-            (Real.sqrt_le_sqrt (by exact_mod_cast hrank)) (by positivity)
-      _ = ‖u‖ * ‖v‖ := by simp
+      _ = ‖u‖ * ‖v‖ := by rw [hrank, frobenius_rankOne]; simp
   · have hclm :
         LinearMap.toContinuousLinearMap (InnerProductSpace.rankOne 𝕜 u v).toLinearMap =
           InnerProductSpace.rankOne 𝕜 u v :=
@@ -296,14 +254,13 @@ theorem exists_nuclear_le_one_trace_adjoint_comp_eq_opNorm (A : E →ₗ[𝕜] F
     refine ⟨B, ?_, ?_⟩
     · rw [nuclear_rankOne, A.rightSingularBasis.norm_eq_one i₀, mul_one]
       exact A.norm_leftSingularVector_le_one i₀
-    · have hcomp : LinearMap.adjoint A ∘ₗ B =
-          (InnerProductSpace.rankOne 𝕜
-            (LinearMap.adjoint A (A.leftSingularVector i₀))
-            (A.rightSingularBasis i₀)).toLinearMap := by
-        ext x
-        simp only [LinearMap.comp_apply, B, ContinuousLinearMap.coe_coe,
-          InnerProductSpace.rankOne_apply, map_smul]
-      simp only [hcomp, InnerProductSpace.trace_rankOne, A.adjoint_leftSingularVector i₀,
+    · rw [show LinearMap.adjoint A ∘ₗ B = (InnerProductSpace.rankOne 𝕜
+          (LinearMap.adjoint A (A.leftSingularVector i₀)) (A.rightSingularBasis i₀)).toLinearMap
+        from by
+          simpa [B] using congrArg ContinuousLinearMap.toLinearMap
+            (InnerProductSpace.comp_rankOne (A.leftSingularVector i₀) (A.rightSingularBasis i₀)
+              (LinearMap.adjoint A).toContinuousLinearMap)]
+      simp only [InnerProductSpace.trace_rankOne, A.adjoint_leftSingularVector i₀,
         inner_smul_right, orthonormal_iff_ite.mp A.rightSingularBasis.orthonormal i₀ i₀, ↓reduceIte,
         mul_one, opNorm_apply, A.norm_toContinuousLinearMap_eq_singularValues_zero, i₀]
 
@@ -321,17 +278,11 @@ theorem opNorm_eq_iSup_norm_trace_adjoint_comp (A : E →ₗ[𝕜] F) :
           norm_trace_adjoint_comp_le_opNorm_mul_nuclear A B.val
       _ ≤ opNorm 𝕜 E F A * 1 := mul_le_mul_of_nonneg_left B.property (apply_nonneg _ _)
       _ = opNorm 𝕜 E F A := mul_one _
-  refine le_antisymm ?_ (ciSup_le hle)
+  symm
+  refine ciSup_eq_of_forall_le_of_forall_lt_exists_gt hle fun w hw ↦ ?_
   obtain ⟨B, hB_norm, hB_tr⟩ := exists_nuclear_le_one_trace_adjoint_comp_eq_opNorm A
-  have hbdd : BddAbove (Set.range fun B : {B : E →ₗ[𝕜] F // nuclear 𝕜 E F B ≤ 1} ↦
-      ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.val)‖) :=
-    ⟨opNorm 𝕜 E F A, by rintro _ ⟨C, rfl⟩; exact hle C⟩
-  calc opNorm 𝕜 E F A
-      = ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)‖ := by
-        rw [hB_tr, RCLike.norm_ofReal, abs_of_nonneg (apply_nonneg _ _)]
-    _ ≤ ⨆ B : {B : E →ₗ[𝕜] F // nuclear 𝕜 E F B ≤ 1},
-          ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B.val)‖ :=
-        le_ciSup hbdd ⟨B, hB_norm⟩
+  refine ⟨⟨B, hB_norm⟩, ?_⟩
+  rwa [hB_tr, RCLike.norm_ofReal, abs_of_nonneg (apply_nonneg _ _)]
 
 /-! ### Orthogonal additivity of the nuclear seminorm -/
 

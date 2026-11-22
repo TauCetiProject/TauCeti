@@ -61,9 +61,8 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   continuous linear map;
 * `Matrix.toEuclideanLin_conjTranspose_mul`, `Matrix.toEuclideanLin_mul_conjTranspose` —
   adjoint-composition bridges for `toEuclideanLin`;
-* `Matrix.trace_toEuclideanLin`, `Matrix.trace_adjoint_comp_toEuclideanLin` — operator traces of
-  `M.toEuclideanLin` and `A.toEuclideanLin† ∘ₗ B.toEuclideanLin` equal `M.trace` and
-  `(Aᴴ * B).trace`;
+* `Matrix.trace_adjoint_comp_toEuclideanLin` — operator trace of
+  `A.toEuclideanLin† ∘ₗ B.toEuclideanLin` equals `(Aᴴ * B).trace`;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
 * `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`: the adjoint and the determinant
@@ -217,13 +216,6 @@ theorem toEuclideanLin_mul_conjTranspose {m n p : Type*} [Fintype n] [Fintype p]
   classical
   rw [toLpLin_mul_same, toEuclideanLin_conjTranspose_eq_adjoint]
 
-omit [Fintype κ] [DecidableEq κ] in
-/-- The operator trace of `M.toEuclideanLin` on `EuclideanSpace 𝕜 ι` is `M.trace`. -/
-@[simp]
-theorem trace_toEuclideanLin (M : Matrix ι ι 𝕜) :
-    LinearMap.trace 𝕜 (EuclideanSpace 𝕜 ι) M.toEuclideanLin = M.trace := by
-  rw [toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
-
 omit [DecidableEq κ] in
 /-- The Hilbert–Schmidt operator trace pairing `tr (A† B)` of `A.toEuclideanLin` and
 `B.toEuclideanLin` equals the matrix trace `(Aᴴ * B).trace`. -/
@@ -231,7 +223,7 @@ theorem trace_adjoint_comp_toEuclideanLin (A B : Matrix κ ι 𝕜) :
     LinearMap.trace 𝕜 (EuclideanSpace 𝕜 ι)
         (LinearMap.adjoint A.toEuclideanLin ∘ₗ B.toEuclideanLin) =
       (Aᴴ * B).trace := by
-  rw [← toEuclideanLin_conjTranspose_mul, trace_toEuclideanLin]
+  rw [← toEuclideanLin_conjTranspose_mul, toEuclideanLin_eq_toLin_orthonormal, trace_toLin_eq]
 
 end MultiplicationAndTrace
 
