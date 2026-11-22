@@ -13,8 +13,8 @@ public import Mathlib.RingTheory.Polynomial.GaussLemma
 Let `R` be a GCD domain with fraction field `K`. Every nonzero polynomial over `K` is, up to
 a unit, the image of a primitive polynomial over `R`, and by Gauss's lemma a primitive
 polynomial divides a polynomial over `R` as soon as it does so over `K`. Hence a polynomial
-over `K` is a unit as soon as every primitive polynomial whose image divides it is a unit
-(`Polynomial.isUnit_of_forall_isPrimitive_map_dvd`).
+over `K` is a unit exactly when every primitive polynomial whose image divides it is a unit
+(`Polynomial.isUnit_iff_forall_isPrimitive_map_dvd`).
 
 Consequently squarefreeness and relative primality pass from `R[X]` to `K[X]`
 (`Squarefree.map_fraction_map`, `IsRelPrime.map_fraction_map`). No primitivity is assumed:
@@ -40,12 +40,13 @@ variable {R K : Type*} [CommRing R] [IsGCDMonoid R] [Field K] [Algebra R K]
 
 namespace Polynomial
 
-/-- A polynomial over the fraction field of a GCD domain is a unit as soon as every
+/-- A polynomial over the fraction field of a GCD domain is a unit if and only if every
 primitive polynomial whose image divides it is a unit. -/
-theorem isUnit_of_forall_isPrimitive_map_dvd {q : K[X]}
-    (h : ∀ q₀ : R[X], q₀.IsPrimitive → q₀.map (algebraMap R K) ∣ q → IsUnit q₀) :
-    IsUnit q := by
+theorem isUnit_iff_forall_isPrimitive_map_dvd {q : K[X]} :
+    IsUnit q ↔ ∀ q₀ : R[X], q₀.IsPrimitive → q₀.map (algebraMap R K) ∣ q → IsUnit q₀ := by
   have : IsDomain R := Function.Injective.isDomain (algebraMap R K) (IsFractionRing.injective R K)
+  refine ⟨fun hq q₀ hq₀ hdvd ↦ hq₀.isUnit_iff_isUnit_map.2 (isUnit_of_dvd_unit hdvd hq),
+    fun h ↦ ?_⟩
   let := Classical.arbitrary (NormalizedGCDMonoid R)
   have hq : q ≠ 0 := by
     rintro rfl
@@ -66,7 +67,7 @@ theorem Squarefree.map_fraction_map {p : R[X]} (hp : Squarefree p) :
   have : IsDomain R := Function.Injective.isDomain (algebraMap R K) (IsFractionRing.injective R K)
   let := Classical.arbitrary (NormalizedGCDMonoid R)
   intro q hq
-  refine isUnit_of_forall_isPrimitive_map_dvd fun q₀ hq₀ hdvd ↦ hp q₀ ?_
+  refine isUnit_iff_forall_isPrimitive_map_dvd.2 fun q₀ hq₀ hdvd ↦ hp q₀ ?_
   refine (hq₀.mul hq₀).dvd_of_fraction_map_dvd_fraction_map (K := K) ?_
   rw [Polynomial.map_mul]
   exact (mul_dvd_mul hdvd hdvd).trans hq
@@ -77,6 +78,6 @@ theorem IsRelPrime.map_fraction_map {p q : R[X]} (h : IsRelPrime p q) :
     IsRelPrime (p.map (algebraMap R K)) (q.map (algebraMap R K)) := by
   have : IsDomain R := Function.Injective.isDomain (algebraMap R K) (IsFractionRing.injective R K)
   intro d hdp hdq
-  exact isUnit_of_forall_isPrimitive_map_dvd fun d₀ hd₀ hdvd ↦
+  exact isUnit_iff_forall_isPrimitive_map_dvd.2 fun d₀ hd₀ hdvd ↦
     h (hd₀.dvd_of_fraction_map_dvd_fraction_map (hdvd.trans hdp))
       (hd₀.dvd_of_fraction_map_dvd_fraction_map (hdvd.trans hdq))
