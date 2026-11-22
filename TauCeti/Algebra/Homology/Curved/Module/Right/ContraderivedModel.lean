@@ -125,16 +125,13 @@ private theorem exists_gradedProjective_contraacyclic_cone_of_bound (d : ℕ)
   obtain ⟨Q, g, hQ, hg⟩ := exists_gradedProjective_absolutelyAcyclic_cone hTotDim
   refine ⟨Q, g ≫ r.prodTotalAug, hQ, ?_⟩
   have hgW : (contraacyclic R h).trW ((dgClosedToHomotopy R).map g) :=
-    ((contraacyclic R h).trW_iff_of_distinguished _ (coneTriangle_distinguished g)).2
-      (absolutelyAcyclic_le_contraacyclic R h _ hg)
+    (trW_dgClosedToHomotopy_map_iff _ g).2 (absolutelyAcyclic_le_contraacyclic R h _ hg)
   have haugW : (contraacyclic R h).trW ((dgClosedToHomotopy R).map r.prodTotalAug) :=
-    ((contraacyclic R h).trW_iff_of_distinguished _ (coneTriangle_distinguished r.prodTotalAug)).2
-      r.contraacyclic_cone_prodTotalAug
+    (trW_dgClosedToHomotopy_map_iff _ r.prodTotalAug).2 r.contraacyclic_cone_prodTotalAug
   have hcompW : (contraacyclic R h).trW ((dgClosedToHomotopy R).map (g ≫ r.prodTotalAug)) := by
     rw [Functor.map_comp]
     exact MorphismProperty.comp_mem _ _ _ hgW haugW
-  exact ((contraacyclic R h).trW_iff_of_distinguished _
-    (coneTriangle_distinguished (g ≫ r.prodTotalAug))).1 hcompW
+  exact (trW_dgClosedToHomotopy_map_iff _ (g ≫ r.prodTotalAug)).1 hcompW
 
 /-- Under Positselski's countable-product projective-dimension bound `(**)`, every curved right
 module admits a closed morphism from a graded-projective curved right module whose mapping cone
@@ -184,7 +181,7 @@ theorem isEquivalence_gradedProjective_ι_comp_Q (hprod : CountableProjectiveCon
   obtain ⟨P, f, hP, hf⟩ := exists_gradedProjective_contraacyclic_cone hprod X.underlying
   refine ⟨DGHomotopyCategory.of R P, (dgClosedToHomotopy R).map f,
     (gradedProjective_iff _).2 hP, ?_⟩
-  exact ((contraacyclic R h).trW_iff_of_distinguished _ (coneTriangle_distinguished f)).2 hf
+  exact (trW_dgClosedToHomotopy_map_iff _ f).2 hf
 
 variable (R h) in
 /-- Under Positselski's countable-product projective-dimension bound `(**)`, the triangulated full

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Acyclic
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangulated
 public import TauCeti.CategoryTheory.Triangulated.VerdierLocalization
 
 /-!
@@ -43,8 +44,16 @@ sequence of curved modules.
 
 ## Main results
 
+* `TauCeti.CurvedDGRightModuleCat.trW_dgClosedToHomotopy_map_iff`: a closed morphism lies in
+  `P.trW` in the curved homotopy category if and only if its mapping cone satisfies `P`.
 * `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.isZero_Q_obj_iff`: a curved module is
   zero in the absolute derived category if and only if it is absolutely acyclic.
+* `TauCeti.CurvedDGRightModuleCat.AbsoluteDerivedCategory.isIso_Q_map_iff`: a closed morphism
+  becomes an isomorphism in the absolute derived category if and only if its mapping cone is
+  absolutely acyclic.
+* `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.isIso_Q_map_iff`: a closed morphism
+  becomes an isomorphism in the contraderived category if and only if its mapping cone is
+  contraacyclic.
 * `TauCeti.CurvedDGRightModuleCat.absolutelyAcyclic_trW_isInvertedBy_iff`: a triangle functor
   out of the curved homotopy category inverts the absolutely acyclic weak equivalences if and
   only if it kills every totalization of a short exact sequence.
@@ -63,9 +72,24 @@ namespace TauCeti.CurvedDGRightModuleCat
 
 universe u
 
+-- The closed and homotopy categories keep the original curved module objects.
+attribute [local implicit_reducible] ForgetEnrichment dgClosedToHomotopy
+  DGHomotopyCategory.of DGHomotopyCategory.underlying
+
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
+
+/-- A closed morphism belongs to `P.trW` in the curved homotopy category if and only if its
+mapping cone satisfies `P`. -/
+theorem trW_dgClosedToHomotopy_map_iff
+    (P : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)))
+    [P.IsClosedUnderIsomorphisms]
+    {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    P.trW ((dgClosedToHomotopy R).map f) ↔ P (DGHomotopyCategory.of R (cone f)) :=
+  P.trW_iff_of_distinguished _ (coneTriangle_distinguished f)
 
 variable (R h) in
 /-- The **absolute derived category** of curved right modules: the Verdier quotient of the
@@ -97,6 +121,17 @@ theorem isZero_Q_obj_iff (X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u
     IsZero ((Q R h).obj X) ↔ absolutelyAcyclic R h X :=
   ObjectProperty.TrWLocalization.isZero_obj_iff _ _ X
 
+/-- A closed morphism becomes an isomorphism in the absolute derived category if and only if its
+mapping cone is absolutely acyclic. -/
+theorem isIso_Q_map_iff {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    IsIso ((Q R h).map ((dgClosedToHomotopy R).map f)) ↔
+      absolutelyAcyclic R h (DGHomotopyCategory.of R (cone f)) :=
+  (Triangle.isZero₃_iff_isIso₁ _
+    ((Q R h).map_distinguished _ (coneTriangle_distinguished f))).symm.trans
+      (isZero_Q_obj_iff _)
+
 end AbsoluteDerivedCategory
 
 namespace CoderivedCategory
@@ -126,6 +161,17 @@ noncomputable abbrev Q :
 theorem isZero_Q_obj {X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
     (hX : contraacyclic R h X) : IsZero ((Q R h).obj X) :=
   ObjectProperty.TrWLocalization.isZero_obj _ _ hX
+
+/-- A closed morphism becomes an isomorphism in the contraderived category if and only if its
+mapping cone is contraacyclic. -/
+theorem isIso_Q_map_iff {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    IsIso ((Q R h).map ((dgClosedToHomotopy R).map f)) ↔
+      contraacyclic R h (DGHomotopyCategory.of R (cone f)) :=
+  (Triangle.isZero₃_iff_isIso₁ _
+    ((Q R h).map_distinguished _ (coneTriangle_distinguished f))).symm.trans
+      (ObjectProperty.TrWLocalization.isZero_obj_iff _ (Q R h) _)
 
 end ContraderivedCategory
 

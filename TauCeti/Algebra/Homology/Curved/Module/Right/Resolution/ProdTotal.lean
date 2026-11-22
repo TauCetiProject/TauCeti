@@ -945,15 +945,13 @@ is contraacyclic. -/
 theorem contraacyclic_cone_prodTotalAug :
     contraacyclic R h (DGHomotopyCategory.of R (cone r.prodTotalAug)) := by
   have h0 : (contraacyclic R h).trW ((dgClosedToHomotopy R).map r.prodTotalAugZero) :=
-    ((contraacyclic R h).trW_iff_of_distinguished _
-      (coneTriangle_distinguished r.prodTotalAugZero)).2 r.contraacyclic_cone_prodTotalAugZero
+    (trW_dgClosedToHomotopy_map_iff _ r.prodTotalAugZero).2 r.contraacyclic_cone_prodTotalAugZero
   have hiso : (contraacyclic R h).trW ((dgClosedToHomotopy R).map r.syzygyZeroIso.hom) :=
     ObjectProperty.trW_of_isIso _ _
   have hcomp : (contraacyclic R h).trW ((dgClosedToHomotopy R).map r.prodTotalAug) := by
     rw [prodTotalAug, Functor.map_comp]
     exact MorphismProperty.comp_mem _ _ _ h0 hiso
-  exact ((contraacyclic R h).trW_iff_of_distinguished _
-    (coneTriangle_distinguished r.prodTotalAug)).1 hcomp
+  exact (trW_dgClosedToHomotopy_map_iff _ r.prodTotalAug).1 hcomp
 
 end LeftResolution
 

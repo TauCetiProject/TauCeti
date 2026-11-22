@@ -78,17 +78,6 @@ local instance : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).pie
 
 /-! ### Finite graded projective dimension replacement -/
 
-/-- A closed morphism whose mapping cone is absolutely acyclic becomes an isomorphism in the
-absolute derived category, and conversely. -/
-private theorem isIso_absoluteDerived_map_iff {M N : CurvedDGRightModuleCat.{u, u, u} h}
-    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
-    IsIso ((AbsoluteDerivedCategory.Q R h).map ((dgClosedToHomotopy R).map f)) ↔
-      absolutelyAcyclic R h (DGHomotopyCategory.of R (cone f)) := by
-  have hT := (AbsoluteDerivedCategory.Q R h).map_distinguished _ (coneTriangle_distinguished f)
-  rw [← AbsoluteDerivedCategory.isZero_Q_obj_iff]
-  exact (Triangle.isZero₃_iff_isIso₁ _ hT).symm
-
 /-- If `g : Q' ⟶ K` becomes an isomorphism in the absolute derived category, then the induced
 comparison `cone (g ≫ ι) ⟶ cone ι` with `𝟙 P` on the target also becomes an isomorphism there. -/
 private theorem isIso_absoluteDerived_coneMap_id {Q' K P : CurvedDGRightModuleCat.{u, u, u} h}
@@ -156,12 +145,13 @@ theorem exists_gradedProjective_absolutelyAcyclic_cone
         closedHom_coneMap_apply, closedHom_id, LinearMap.id_apply, Submodule.coe_zero,
         LinearMap.zero_apply, add_zero]
       rfl
-    have hcMapIso := isIso_absoluteDerived_coneMap_id g ι ((isIso_absoluteDerived_map_iff g).2 hg)
+    have hcMapIso := isIso_absoluteDerived_coneMap_id g ι
+      ((AbsoluteDerivedCategory.isIso_Q_map_iff g).2 hg)
     have hDescIso : IsIso ((AbsoluteDerivedCategory.Q R h).map
         ((dgClosedToHomotopy R).map (coneDesc ι p (kernelι_comp p)))) := by
-      rw [isIso_absoluteDerived_map_iff, ← totalization_eq S]
+      rw [AbsoluteDerivedCategory.isIso_Q_map_iff, ← totalization_eq S]
       exact totalizations_le_absolutelyAcyclic R h _ (totalizations_totalization hS)
-    rw [← isIso_absoluteDerived_map_iff, hfac, Functor.map_comp, Functor.map_comp]
+    rw [← AbsoluteDerivedCategory.isIso_Q_map_iff, hfac, Functor.map_comp, Functor.map_comp]
     infer_instance
 
 /-! ### Left resolutions in the closed abelian category -/
