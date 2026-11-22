@@ -161,16 +161,11 @@ theorem finite_of_forall_continuous_eq_one [ConnectedSpace G] (hΓ : Γ ≤ cent
 
 /-- **A central extension of a compact group without real characters is compact.** Let `Γ` be a
 discrete central subgroup of a connected locally compact group `G`, with `G ⧸ Γ`
-compact. If every continuous homomorphism `G → ℝ` is trivial, then `G` is compact: it is covered
-by the translates `K γ` of a compact set `K` by the finitely many elements `γ` of `Γ`. -/
+compact. If every continuous homomorphism `G → ℝ` is trivial, then `G` is compact, since `Γ` is
+finite (`Subgroup.compactSpace_of_finite`). -/
 theorem compactSpace_of_forall_continuous_eq_one [ConnectedSpace G] (hΓ : Γ ≤ center G)
     (h : ∀ F : G →* Multiplicative ℝ, Continuous F → F = 1) : CompactSpace G := by
   have := Γ.finite_of_forall_continuous_eq_one hΓ h
-  obtain ⟨U, K, -, -, hK, hUK, hcov⟩ := Γ.exists_isOpen_isCompact_forall_exists_mul_mem
-  have hcover : (⋃ γ : Γ, (· * (γ : G)⁻¹) '' K) = Set.univ :=
-    Set.eq_univ_of_forall fun g ↦ by
-      obtain ⟨γ, hγΓ, hgγ⟩ := hcov g
-      exact Set.mem_iUnion.mpr ⟨⟨γ, hγΓ⟩, g * γ, hUK hgγ, mul_inv_cancel_right g γ⟩
-  exact ⟨hcover ▸ isCompact_iUnion fun γ ↦ hK.image (continuous_mul_const _)⟩
+  exact Γ.compactSpace_of_finite
 
 end Subgroup

@@ -18,7 +18,7 @@ import TauCeti.Topology.Compactness.LocallyCompact
 # Discrete subgroups with compact coset space
 
 Let `Γ` be a discrete subgroup of a locally compact topological group `G` whose coset space
-`G ⧸ Γ` is compact. This file proves two facts about such a pair.
+`G ⧸ Γ` is compact. This file proves three facts about such a pair.
 
 * **Finite generation.** If `G` is connected, then `Γ` is finitely generated
   (`Subgroup.fg_of_compactSpace_quotient`). Choose an open neighbourhood `U` of `1` inside a
@@ -28,7 +28,11 @@ Let `Γ` be a discrete subgroup of a locally compact topological group `G` whose
   there is a continuous `f : G → ℝ` with `f (g γ) = f g + χ γ` for all `g ∈ G` and `γ ∈ Γ`
   (`Subgroup.exists_continuousMap_mul_eq_add`). It is `f = -(∑ᶠ γ, ψ(g γ) χ γ) / ∑ᶠ γ, ψ(g γ)`,
   for a compactly supported bump function `ψ` equal to `1` on a compact set meeting every coset
-  `g Γ`; both sums are locally finite because `Γ` meets every compact set in a finite set.
+  `g Γ`; both sums are locally finite because `Γ` meets every compact set in a finite set
+  (`Subgroup.finite_preimage_coe_of_isCompact`).
+* **Compactness.** If `Γ` is finite, then `G` is compact (`Subgroup.compactSpace_of_finite`): it
+  is covered by the finitely many translates of a compact set meeting every coset `g Γ`. This
+  does not use discreteness.
 
 Real homomorphisms are written multiplicatively, as `χ : Γ →* Multiplicative ℝ`, so that they
 apply to groups written multiplicatively.
@@ -39,12 +43,15 @@ Lie group with semisimple Lie algebra has finite fundamental group.
 
 ## Main results
 
+* `Subgroup.finite_preimage_coe_of_isCompact`: a discrete subgroup meets every compact set in a
+  finite set.
 * `Subgroup.exists_isOpen_isCompact_forall_exists_mul_mem`: an open neighbourhood of `1` inside a
   compact set, meeting every coset `g Γ`.
 * `Subgroup.fg_of_compactSpace_quotient`: a discrete subgroup with compact coset space of a
   connected locally compact group is finitely generated.
 * `Subgroup.exists_continuousMap_mul_eq_add`: every real homomorphism on `Γ` is
   `γ ↦ f (g γ) - f g` for a continuous `f : G → ℝ`.
+* `Subgroup.compactSpace_of_finite`: if `Γ` is finite and `G ⧸ Γ` is compact, `G` is compact.
 
 ## References
 
@@ -61,6 +68,14 @@ open Filter Function Set Topology
 open scoped Pointwise
 
 namespace Subgroup
+
+/-- A discrete subgroup meets every compact set in a finite set. -/
+@[to_additive /-- A discrete additive subgroup meets every compact set in a finite set. -/]
+theorem finite_preimage_coe_of_isCompact {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] (Γ : Subgroup G) [DiscreteTopology Γ] {K : Set G}
+    (hK : IsCompact K) : ((↑) ⁻¹' K : Set Γ).Finite :=
+  tendsto_cofinite_cocompact_iff.mp
+    (Γ.tendsto_coe_cofinite_of_isDiscrete (isDiscrete_iff_discreteTopology.mpr ‹_›)) K hK
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] (Γ : Subgroup G) [CompactSpace (G ⧸ Γ)]
@@ -112,9 +127,8 @@ theorem fg_of_compactSpace_quotient [ConnectedSpace G] [DiscreteTopology Γ] : G
     obtain ⟨δ, hδΓ, hgδ⟩ := hcov g
     exact ⟨⟨δ, hδΓ⟩, fun hδ ↦ h _ hδ hgδ, hgδ⟩
   have hAuniv : A = univ := hA.eq_univ ⟨1, mem_iUnion₂.mpr ⟨1, H.one_mem, by simpa using hU1⟩⟩
-  refine Group.fg_iff.mpr ⟨S, eq_top_iff.mpr fun γ _ ↦ ?_, tendsto_cofinite_cocompact_iff.mp
-    (Γ.tendsto_coe_cofinite_of_isDiscrete (isDiscrete_iff_discreteTopology.mpr ‹_›)) _
-    (hK.inv.mul hK)⟩
+  refine Group.fg_iff.mpr ⟨S, eq_top_iff.mpr fun γ _ ↦ ?_,
+    Γ.finite_preimage_coe_of_isCompact (hK.inv.mul hK)⟩
   obtain ⟨η, hη, hγη⟩ := mem_iUnion₂.mp (hAuniv ▸ mem_univ (γ : G))
   simpa using key γ η γ⁻¹ hη hγη (by simpa using hU1)
 
@@ -133,8 +147,7 @@ theorem exists_continuousMap_mul_eq_add [DiscreteTopology Γ]
   have hlf : LocallyFinite fun γ ↦ support (w γ) := by
     intro g
     obtain ⟨N, hN, hgN⟩ := exists_compact_mem_nhds g
-    refine ⟨N, hgN, (tendsto_cofinite_cocompact_iff.mp (Γ.tendsto_coe_cofinite_of_isDiscrete
-      (isDiscrete_iff_discreteTopology.mpr ‹_›)) _ (hN.inv.mul hψc)).subset ?_⟩
+    refine ⟨N, hgN, (Γ.finite_preimage_coe_of_isCompact (hN.inv.mul hψc)).subset ?_⟩
     rintro γ ⟨x, hxγ, hxN⟩
     exact ⟨x⁻¹, inv_mem_inv.mpr hxN, x * γ, subset_tsupport _ hxγ, by group⟩
   have hfin : ∀ g, (support fun γ ↦ w γ g).Finite := hlf.point_finite
@@ -147,6 +160,7 @@ theorem exists_continuousMap_mul_eq_add [DiscreteTopology Γ]
     obtain ⟨γ, hγΓ, hgγ⟩ := hcov g
     have h1 : w ⟨γ, hγΓ⟩ g = 1 := hψK (hUK hgγ)
     exact h1 ▸ single_le_finsum _ (hfin g) fun δ ↦ (hψ01 _).1
+  have hS0 : ∀ g, S g ≠ 0 := fun g ↦ (zero_lt_one.trans_le (hS1 g)).ne'
   -- Translating by `γ` permutes the terms of `S` and shifts those of `T` by `χ γ`.
   have hSγ : ∀ g (γ : Γ), S (g * γ) = S g := fun g γ ↦ by
     simp only [S, w, mul_assoc, ← coe_mul]
@@ -162,11 +176,21 @@ theorem exists_continuousMap_mul_eq_add [DiscreteTopology Γ]
       _ = T g - (χ γ).toAdd * S g := by
           rw [finsum_sub_distrib ((hfin g).subset (support_mul_subset_left _ _))
             ((hfin g).subset (support_mul_subset_left _ _)), ← finsum_mul, mul_comm]
-  refine ⟨⟨fun g ↦ -T g / S g, (hT.neg.div hS fun g ↦ (zero_lt_one.trans_le (hS1 g)).ne')⟩,
-    fun g γ ↦ ?_⟩
-  have hSg : S g ≠ 0 := (zero_lt_one.trans_le (hS1 g)).ne'
+  refine ⟨⟨fun g ↦ -T g / S g, hT.neg.div hS hS0⟩, fun g γ ↦ ?_⟩
+  have hSg := hS0 g
   simp only [ContinuousMap.coe_mk, hSγ, hTγ]
   field_simp
   ring
+
+/-- **A finite subgroup with compact coset space has compact ambient group.** If `Γ` is finite
+and `G ⧸ Γ` is compact, then `G` is compact: it is covered by the finitely many translates `K γ⁻¹`
+of a compact set `K` meeting every coset `g Γ`. -/
+theorem compactSpace_of_finite [Finite Γ] : CompactSpace G := by
+  obtain ⟨U, K, -, -, hK, hUK, hcov⟩ := Γ.exists_isOpen_isCompact_forall_exists_mul_mem
+  have hcover : (⋃ γ : Γ, (· * (γ : G)⁻¹) '' K) = Set.univ :=
+    Set.eq_univ_of_forall fun g ↦ by
+      obtain ⟨γ, hγΓ, hgγ⟩ := hcov g
+      exact Set.mem_iUnion.mpr ⟨⟨γ, hγΓ⟩, g * γ, hUK hgγ, mul_inv_cancel_right g γ⟩
+  exact ⟨hcover ▸ isCompact_iUnion fun γ ↦ hK.image (continuous_mul_const _)⟩
 
 end Subgroup
