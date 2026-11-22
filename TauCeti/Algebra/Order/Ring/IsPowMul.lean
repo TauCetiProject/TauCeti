@@ -16,9 +16,10 @@ submultiplicative, with values in a linearly ordered monoid with zero in which m
 the right by a positive element is strictly monotone, satisfies `f (-a) ≤ f a`
 (`IsPowMul.map_neg_le`). Neither negation invariance nor `f 1 ≤ 1` is assumed.
 
-The root bound `Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero` uses this to
-apply the nonarchimedean inequality to `xᵈ = -∑_{i < d} aᵢ xⁱ` without assuming that `f` is
-invariant under negation.
+Applied to `a` and to `-a`, it gives `f (-a) = f a`. This lets the root bound
+`Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero` use the leading-term criterion
+`IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`, which assumes invariance under negation,
+without taking that invariance as a hypothesis.
 -/
 
 public section

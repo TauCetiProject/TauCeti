@@ -23,9 +23,10 @@ nontrivial ring `R`, with values in a linearly ordered monoid with zero in which
 on the right by a positive element is strictly monotone, such as a nonarchimedean
 power-multiplicative ring seminorm or a valuation. If `x : R` is a root of a monic polynomial
 `p = X ^ d + ∑_{i < d} aᵢ X ^ i` over `R` itself, then some `i < d` satisfies
-`f x ^ (d - i) ≤ f aᵢ` (`Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero`):
-otherwise every lower term `aᵢ xⁱ` would be strictly smaller than `xᵈ`, which is impossible in
-the nonarchimedean relation `xᵈ = -∑_{i < d} aᵢ xⁱ`.
+`f x ^ (d - i) ≤ f aᵢ` (`Polynomial.Monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero`).
+Otherwise `f (aᵢ xⁱ) < f (xᵈ)` for every `i < d`. As `f (-a) = f a` (`IsPowMul.map_neg_le`), the
+leading-term criterion then gives `f 0 = f (p.eval x) = f (xᵈ)`, contradicting
+`f 0 ≤ f a₀ < f (xᵈ)`, where the first inequality is the nonarchimedean inequality for `a₀ + -a₀`.
 
 For real-valued `f` with `f 0 = 0`, taking `(d - i)`-th roots gives the root bound
 `Polynomial.Monic.apply_le_iSup_apply_coeff_rpow_of_eval_eq_zero` over every ring, in
