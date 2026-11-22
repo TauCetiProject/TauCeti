@@ -166,7 +166,8 @@ theorem mem_smoothVanishingIdeal_pow_succ_smul_top_of_iteratedFDeriv_eq_zero
   have he : e.baseSet ∈ 𝓝 x := e.open_baseSet.mem_nhds hx
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) he).mem_iff.mp he
   let c := e.cutoffLocalFrameCoeff b ⟨ρ, ρ.contMDiff⟩ hρ
-  obtain ⟨fr', hfr', hfreq⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
+  obtain ⟨fr', hfr', hfreq⟩ :=
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := ∞) b le_rfl hx
   let fr (i : Fin (Module.finrank ℝ F)) : Cₛ^∞⟮I; F, V⟯ := ⟨fr' i, hfr' i⟩
   -- Near `x`, the cut-off coefficient `c i s` is the `i`-th coordinate of the frame coefficients.
   have hcoeff (i : Fin (Module.finrank ℝ F)) : ((c i s : C^∞⟮I, M; ℝ⟯) : M → ℝ) =ᶠ[𝓝 x]

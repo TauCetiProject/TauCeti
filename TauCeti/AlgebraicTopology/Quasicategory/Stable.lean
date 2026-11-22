@@ -22,24 +22,31 @@ cocone (`SSet.square.cocone σ`) under its span `σ(1, 0) ⟵ σ(0, 0) ⟶ σ(0,
 (`SSet.square.span σ`), with cone point `σ(1, 1)`, and it is a *pushout square*
 (`SSet.IsPushoutSquare`) if this is a colimit cocone. The edges of the cospan and the span are
 edges of the square (`SSet.square.ι_zero_comp_cospan`, `SSet.square.ι_one_comp_cospan`,
-`SSet.square.ι_two_comp_span`, `SSet.square.ι_one_comp_span`).
+`SSet.square.ι_two_comp_span`, `SSet.square.ι_one_comp_span`). Every limit cone over a cospan
+`Λ[2, 2] ⟶ X` is a pullback square with that cospan (`SSet.exists_isPullbackSquare_of_isLimit`),
+and every colimit cocone under a span `Λ[2, 0] ⟶ X` a pushout square with that span
+(`SSet.exists_isPushoutSquare_of_isColimit`).
 
 A quasicategory is *stable* (`SSet.IsStable`) if it is pointed (`SSet.HasZeroVertex`), has
 limits and colimits of all diagrams indexed by finite simplicial sets, and a square in it is a
 pullback square exactly when it is a pushout square. This is the characterization of Lurie's
 stable ∞-categories in *Higher Algebra*, Proposition 1.1.3.4; the conditions of Definition 1.1.1.9
 (fibres, cofibres, and the agreement of fibre and cofibre sequences) are its special cases with a
-zero corner. The motivating example, not treated here, is the dg nerve of cochain complexes, whose
-suspension and cofibres are the shift and the mapping cone (Lurie, *Higher Algebra*, §1.3.2). Its
-homotopy category is the homotopy category of complexes; the derived ∞-category is obtained from
-it by restricting to fibrant (for instance K-injective) complexes.
+zero corner. In a stable quasicategory every cospan is the cospan of a square that is both a
+pullback and a pushout square (`SSet.IsStable.exists_isPullbackSquare`), and dually every span
+(`SSet.IsStable.exists_isPushoutSquare`). The motivating example, not treated here, is the dg
+nerve of cochain complexes, whose suspension and cofibres are the shift and the mapping cone
+(Lurie, *Higher Algebra*, §1.3.2). Its homotopy category is the homotopy category of complexes; the
+derived ∞-category is obtained from it by restricting to fibrant (for instance K-injective)
+complexes.
 
 The point `Δ[0]` is stable (`SSet.stdSimplex.isStable_zero`), since every cone and cocone in it is
 a limit; the interval `Δ[1]` is not (`SSet.stdSimplex.not_isStable_one`), since it has no zero
-vertex. In `Δ[1]`, the square sending `(0, 0)` to `0` and the other vertices to `1` is not a
-pullback square (`SSet.stdSimplex.not_isPullbackSquare_coneIso_inv_comp_π`): the limit of its
-cospan, constant at `1`, is `1`. Dually, the square sending `(1, 1)` to `1` and the other vertices
-to `0` is not a pushout square (`SSet.stdSimplex.not_isPushoutSquare_coconeIso_inv_comp_π`).
+vertex, and neither is an empty simplicial set (`SSet.not_isStable_of_not_nonempty`). In `Δ[1]`,
+the square sending `(0, 0)` to `0` and the other vertices to `1` is not a pullback square
+(`SSet.stdSimplex.not_isPullbackSquare_coneIso_inv_comp_π`): the limit of its cospan, constant at
+`1`, is `1`. Dually, the square sending `(1, 1)` to `1` and the other vertices to `0` is not a
+pushout square (`SSet.stdSimplex.not_isPushoutSquare_coconeIso_inv_comp_π`).
 
 ## References
 
@@ -146,6 +153,46 @@ lemma isPushoutSquare_iff (σ : Δ[1] ⊗ Δ[1] ⟶ X) :
     IsPushoutSquare σ ↔ coslice.IsColimit (square.span σ) (square.cocone σ) :=
   Iff.rfl
 
+/-- A square `σ` is a pullback square exactly when the cone `Δ[0] ⋆ Λ[2, 2] ⟶ X` it defines is a
+limit cone over `q`, for any diagram `q` equal to the cospan of `σ`. -/
+lemma isPullbackSquare_iff_isLimit {σ : Δ[1] ⊗ Δ[1] ⟶ X} {q : (Λ[2, 2] : SSet.{u}) ⟶ X}
+    (h : square.cospan σ = q) :
+    IsPullbackSquare σ ↔ slice.IsLimit q
+      (slice.objEquiv.symm ⟨square.coneIso.hom ≫ σ, (square.cospan_def σ).symm.trans h⟩) := by
+  subst h
+  rfl
+
+/-- A square `σ` is a pushout square exactly when the cocone `Λ[2, 0] ⋆ Δ[0] ⟶ X` it defines is a
+colimit cocone under `q`, for any diagram `q` equal to the span of `σ`. -/
+lemma isPushoutSquare_iff_isColimit {σ : Δ[1] ⊗ Δ[1] ⟶ X} {q : (Λ[2, 0] : SSet.{u}) ⟶ X}
+    (h : square.span σ = q) :
+    IsPushoutSquare σ ↔ coslice.IsColimit q
+      (coslice.objEquiv.symm ⟨square.coconeIso.hom ≫ σ, (square.span_def σ).symm.trans h⟩) := by
+  subst h
+  rfl
+
+/-- Every limit cone over a cospan `q : Λ[2, 2] ⟶ X` is a pullback square with cospan `q`. -/
+lemma exists_isPullbackSquare_of_isLimit {q : (Λ[2, 2] : SSet.{u}) ⟶ X} {c : (slice q) _⦋0⦌}
+    (hc : slice.IsLimit q c) :
+    ∃ σ : Δ[1] ⊗ Δ[1] ⟶ X, square.cospan σ = q ∧ IsPullbackSquare σ := by
+  have h : square.cospan (square.coneIso.inv ≫ (slice.objEquiv c).val) = q := by
+    rw [square.cospan_def, Iso.hom_inv_id_assoc, (slice.objEquiv c).property]
+  -- The cone defined by this square is `c` itself.
+  have hc' : slice.objEquiv.symm ⟨_, (square.cospan_def _).symm.trans h⟩ = c :=
+    (Equiv.symm_apply_eq _).2 (Subtype.ext (Iso.hom_inv_id_assoc _ _))
+  exact ⟨_, h, (isPullbackSquare_iff_isLimit h).2 (by rw [hc']; exact hc)⟩
+
+/-- Every colimit cocone under a span `q : Λ[2, 0] ⟶ X` is a pushout square with span `q`. -/
+lemma exists_isPushoutSquare_of_isColimit {q : (Λ[2, 0] : SSet.{u}) ⟶ X} {c : (coslice q) _⦋0⦌}
+    (hc : coslice.IsColimit q c) :
+    ∃ σ : Δ[1] ⊗ Δ[1] ⟶ X, square.span σ = q ∧ IsPushoutSquare σ := by
+  have h : square.span (square.coconeIso.inv ≫ (coslice.objEquiv c).val) = q := by
+    rw [square.span_def, Iso.hom_inv_id_assoc, (coslice.objEquiv c).property]
+  -- The cocone defined by this square is `c` itself.
+  have hc' : coslice.objEquiv.symm ⟨_, (square.span_def _).symm.trans h⟩ = c :=
+    (Equiv.symm_apply_eq _).2 (Subtype.ext (Iso.hom_inv_id_assoc _ _))
+  exact ⟨_, h, (isPushoutSquare_iff_isColimit h).2 (by rw [hc']; exact hc)⟩
+
 /-- In a terminal simplicial set, such as `Δ[0]`, every square is a pullback square. -/
 lemma isPullbackSquare_of_isTerminal (hX : IsTerminal X) (σ : Δ[1] ⊗ Δ[1] ⟶ X) :
     IsPullbackSquare σ :=
@@ -170,6 +217,37 @@ class IsStable [X.Quasicategory] : Prop where
   /-- A square is a pullback square exactly when it is a pushout square. -/
   isPullbackSquare_iff_isPushoutSquare (σ : Δ[1] ⊗ Δ[1] ⟶ X) :
     IsPullbackSquare σ ↔ IsPushoutSquare σ
+
+namespace IsStable
+
+variable [X.Quasicategory] [X.IsStable]
+
+/-- In a stable quasicategory, every cospan `q : Λ[2, 2] ⟶ X` is the cospan of a pullback square,
+which is also a pushout square. -/
+theorem exists_isPullbackSquare (q : (Λ[2, 2] : SSet.{u}) ⟶ X) :
+    ∃ σ : Δ[1] ⊗ Δ[1] ⟶ X, square.cospan σ = q ∧ IsPullbackSquare σ ∧ IsPushoutSquare σ := by
+  obtain ⟨c, hc⟩ := exists_isLimit q
+  obtain ⟨σ, hσ, h⟩ := exists_isPullbackSquare_of_isLimit hc
+  exact ⟨σ, hσ, h, (isPullbackSquare_iff_isPushoutSquare σ).1 h⟩
+
+/-- In a stable quasicategory, every span `q : Λ[2, 0] ⟶ X` is the span of a pushout square, which
+is also a pullback square. -/
+theorem exists_isPushoutSquare (q : (Λ[2, 0] : SSet.{u}) ⟶ X) :
+    ∃ σ : Δ[1] ⊗ Δ[1] ⟶ X, square.span σ = q ∧ IsPullbackSquare σ ∧ IsPushoutSquare σ := by
+  obtain ⟨c, hc⟩ := exists_isColimit q
+  obtain ⟨σ, hσ, h⟩ := exists_isPushoutSquare_of_isColimit hc
+  exact ⟨σ, hσ, (isPullbackSquare_iff_isPushoutSquare σ).2 h, h⟩
+
+/-- A stable quasicategory is nonempty: it has a zero vertex. -/
+lemma nonempty : X.Nonempty :=
+  let ⟨x, _⟩ := (hasZeroVertex_iff (X := X)).1 hasZeroVertex
+  ⟨x⟩
+
+end IsStable
+
+/-- An empty simplicial set is not stable, since it has no zero vertex. -/
+theorem not_isStable_of_not_nonempty [X.Quasicategory] (hX : ¬ X.Nonempty) : ¬ X.IsStable :=
+  fun _ ↦ hX IsStable.nonempty
 
 /-- The point `Δ[0]` is a stable quasicategory: its unique vertex is a zero vertex, and every cone
 and every cocone in it is a limit. -/
