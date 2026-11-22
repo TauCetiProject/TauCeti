@@ -420,7 +420,8 @@ theorem chainSimplexTimed_durationSimplex (π : LSPath P b lam) (𝕜 : Type*) {
     [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
     (f : M →+ V) :
     PLPath.chainSimplexTimed (fun j ↦ f ((π.dir j).val • lam))
-      (π.durationSimplex.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)) = π.timed 𝕜 f := by
+      (π.durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_one (fun _ ↦ Rat.cast_nonneg.2)) =
+        π.timed 𝕜 f := by
   simp [PLPath.chainSimplexTimed_def, timed_def]
 
 /-- Evaluating `chainSimplexPath` at the scalar pushforward of `π.durationSimplex` recovers
@@ -429,7 +430,7 @@ theorem chainSimplexPath_durationSimplex (π : LSPath P b lam) (𝕜 : Type*) {V
     [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V]
     (f : M →+ V) :
     PLPath.chainSimplexPath (fun j ↦ f ((π.dir j).val • lam))
-      (π.durationSimplex.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)) =
+      (π.durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_one (fun _ ↦ Rat.cast_nonneg.2)) =
         π.toPLPath 𝕜 f := by
   rw [← PLPath.ofSegments_map_snd_chainSimplexTimed, chainSimplexTimed_durationSimplex,
     toPLPath_def]
@@ -611,7 +612,7 @@ theorem toPLPath_ofChainSimplex {l : ℕ}
     [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
     (ofChainSimplex dir hne w hw).toPLPath 𝕜 f =
       PLPath.chainSimplexPath (fun j ↦ f ((dir j).val • lam))
-        (w.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)) := by
+        (w.mapRange (Rat.castHom 𝕜) Rat.cast_one (fun _ ↦ Rat.cast_nonneg.2)) := by
   simp only [toPLPath_def, timed_def, PLPath.chainSimplexPath_def]
   rw [List.map_ofFn, List.ofFn_congr (congrArg (· + 1) (length_ofChainSimplex dir hne w hw))]
   simp
@@ -660,7 +661,8 @@ def lsChainSimplexSet {l : ℕ}
     Set (Convexity.StdSimplex 𝕜 (Fin (l + 1))) :=
   {x | ∃ (π : LSPath P b lam) (φ : Fin (π.length + 1) ↪o Fin (l + 1)),
     dir ∘ φ = π.dir ∧
-      (π.durationSimplex.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)).map φ = x}
+      (π.durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_one
+        (fun _ ↦ Rat.cast_nonneg.2)).map φ = x}
 
 variable {𝕜}
 
@@ -672,7 +674,8 @@ theorem mem_lsChainSimplexSet_iff {l : ℕ}
     x ∈ lsChainSimplexSet 𝕜 dir ↔
       ∃ (π : LSPath P b lam) (φ : Fin (π.length + 1) ↪o Fin (l + 1)),
         dir ∘ φ = π.dir ∧
-          (π.durationSimplex.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)).map φ = x :=
+          (π.durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_one
+            (fun _ ↦ Rat.cast_nonneg.2)).map φ = x :=
   Iff.rfl
 
 /-- **Open-simplex characterization of `lsChainSimplexSet`.** For a direction sequence `dir` with
@@ -687,13 +690,14 @@ theorem mem_lsChainSimplexSet_and_weights_pos_iff {l : ℕ}
     (x : Convexity.StdSimplex 𝕜 (Fin (l + 1))) :
     x ∈ lsChainSimplexSet 𝕜 dir ∧ (∀ j, 0 < x.weights j) ↔
       ∃ w : Convexity.StdSimplex ℚ (Fin (l + 1)),
-        IsLSChainBreak dir w ∧ w.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2) = x := by
+        IsLSChainBreak dir w ∧
+          w.mapRange (Rat.castHom 𝕜) Rat.cast_one (fun _ ↦ Rat.cast_nonneg.2) = x := by
   constructor
   · rintro ⟨⟨π, φ, hdir, rfl⟩, hpos⟩
     have hsurj : Function.Surjective φ := fun j ↦ by
       by_contra hj
-      have h0 : ((π.durationSimplex.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)).map
-          φ).weights j = 0 := by
+      have h0 : ((π.durationSimplex.mapRange (Rat.castHom 𝕜 : ℚ →+ 𝕜) Rat.cast_one
+          (fun _ ↦ Rat.cast_nonneg.2)).map φ).weights j = 0 := by
         rw [Convexity.StdSimplex.weights_map_apply]
         exact Finset.sum_eq_zero fun i hi ↦
           absurd (Finset.mem_filter.mp hi).2 fun h ↦ hj ⟨i, h⟩
@@ -769,9 +773,11 @@ theorem chainSimplexPath_mem_range_toPLPath_of_mem_lsChainSimplexSet {V : Type*}
     funext i
     exact congrArg (fun τ ↦ f (τ.val • lam)) (congrFun hdir i)
   have hmap : PLPath.chainSimplexPath (fun j ↦ f ((dir j).val • lam))
-      ((π.durationSimplex.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)).map φ) =
+      ((π.durationSimplex.mapRange (Rat.castHom 𝕜 : ℚ →+ 𝕜) Rat.cast_one
+        (fun _ ↦ Rat.cast_nonneg.2)).map φ) =
       PLPath.chainSimplexPath ((fun j ↦ f ((dir j).val • lam)) ∘ φ)
-        (π.durationSimplex.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)) :=
+        (π.durationSimplex.mapRange (Rat.castHom 𝕜 : ℚ →+ 𝕜) Rat.cast_one
+          (fun _ ↦ Rat.cast_nonneg.2)) :=
     PLPath.chainSimplexPath_map_orderHom (fun j ↦ f ((dir j).val • lam)) φ.toOrderHom _
   rw [hmap, hcomp, π.chainSimplexPath_durationSimplex 𝕜 f]
 
@@ -841,7 +847,7 @@ theorem finite_lsChainSimplexSet (hlam : lam ∈ dominantChamber P b) {l : ℕ}
   have := LSPath.finite hlam
   let S (π : LSPath P b lam) : Set (Convexity.StdSimplex 𝕜 (Fin (l + 1))) :=
     Set.range fun φ : Fin (π.length + 1) ↪o Fin (l + 1) ↦
-      (π.durationSimplex.mapRange (Rat.castHom 𝕜) (fun _ ↦ Rat.cast_nonneg.2)).map φ
+      (π.durationSimplex.mapRange (Rat.castHom 𝕜) Rat.cast_one (fun _ ↦ Rat.cast_nonneg.2)).map φ
   refine (Set.finite_iUnion (f := S) fun π ↦ ?_).subset ?_
   · have : Finite (Fin (π.length + 1) ↪o Fin (l + 1)) :=
       Finite.of_injective (fun φ : Fin (π.length + 1) ↪o Fin (l + 1) ↦

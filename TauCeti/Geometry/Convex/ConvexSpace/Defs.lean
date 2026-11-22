@@ -26,9 +26,9 @@ both composites of face maps, the two sides of the simplicial identity
 `SimplexCategory.δ_comp_δ`.
 
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights of a point `x` of
-`StdSimplex R (Fin n)` lie between `0` and `1`. Scalar pushforward `StdSimplex.mapRange` along a
-semiring homomorphism sending nonnegative elements to nonnegative elements applies the
-homomorphism to each weight and commutes with `StdSimplex.map`.
+`StdSimplex R (Fin n)` lie between `0` and `1`. Scalar pushforward `StdSimplex.mapRange` along an
+additive homomorphism sending `1` to `1` and nonnegative elements to nonnegative elements applies
+the homomorphism to each weight and commutes with `StdSimplex.map`.
 -/
 
 public section
@@ -282,55 +282,55 @@ end PrefixSum
 
 section MapRange
 
-variable {R S T X Y : Type*} [LE R] [NonAssocSemiring R] [LE S] [NonAssocSemiring S]
-  [LE T] [NonAssocSemiring T]
+variable {R S T X Y : Type*} [LE R] [AddCommMonoid R] [One R] [LE S] [AddCommMonoid S] [One S]
+  [LE T] [AddCommMonoid T] [One T]
 
-/-- Push a point of a standard simplex forward along a semiring homomorphism on its weights which
-sends nonnegative elements to nonnegative elements, such as casting rational barycentric
-coordinates into an ordered field. -/
-noncomputable def mapRange (f : R →+* S) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (w : StdSimplex R X) :
-    StdSimplex S X where
+/-- Push a point of a standard simplex forward along an additive homomorphism on its weights which
+sends `1` to `1` and nonnegative elements to nonnegative elements, such as casting rational
+barycentric coordinates into an ordered field. -/
+noncomputable def mapRange (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+    (w : StdSimplex R X) : StdSimplex S X where
   weights := w.weights.mapRange f (map_zero f)
   nonneg x := by simpa using hf _ (w.nonneg x)
   total := by
     rw [Finsupp.sum_mapRange_index (by simp), ← map_finsuppSum f w.weights fun _ r ↦ r,
-      w.total, map_one]
+      w.total, hf₁]
 
 /-- Scalar pushforward applies `Finsupp.mapRange` to the weight vector. -/
-theorem weights_mapRange (f : R →+* S) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (w : StdSimplex R X) :
-    (w.mapRange f hf).weights = w.weights.mapRange f (map_zero f) :=
+theorem weights_mapRange (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+    (w : StdSimplex R X) : (w.mapRange f hf₁ hf).weights = w.weights.mapRange f (map_zero f) :=
   (rfl)
 
 /-- Scalar pushforward applies the homomorphism to each weight. -/
 @[simp]
-theorem weights_mapRange_apply (f : R →+* S) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (w : StdSimplex R X)
-    (x : X) :
-    (w.mapRange f hf).weights x = f (w.weights x) := by
+theorem weights_mapRange_apply (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+    (w : StdSimplex R X) (x : X) : (w.mapRange f hf₁ hf).weights x = f (w.weights x) := by
   rw [weights_mapRange, Finsupp.mapRange_apply]
 
 /-- Scalar pushforward along an injective homomorphism is injective. -/
-theorem mapRange_injective {f : R →+* S} (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+theorem mapRange_injective {f : R →+ S} (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
     (hfinj : Function.Injective f) :
-    Function.Injective (mapRange (X := X) f hf) := fun _ _ h ↦
+    Function.Injective (mapRange (X := X) f hf₁ hf) := fun _ _ h ↦
   toFun_comp_weights_injective <| congrArg DFunLike.coe <|
     Finsupp.mapRange_injective _ (map_zero f) hfinj congr(($h).weights)
 
 /-- Scalar pushforward along an injective homomorphism preserves the support of weights. -/
 @[simp]
-theorem support_weights_mapRange {f : R →+* S} (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+theorem support_weights_mapRange {f : R →+ S} (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
     (hfinj : Function.Injective f) (w : StdSimplex R X) :
-    (w.mapRange f hf).weights.support = w.weights.support :=
+    (w.mapRange f hf₁ hf).weights.support = w.weights.support :=
   Finsupp.support_mapRange_of_injective (map_zero f) _ hfinj
 
 /-- Scalar pushforward along the identity homomorphism is the identity. -/
 @[simp]
-theorem mapRange_id (w : StdSimplex R X) : w.mapRange (RingHom.id R) (fun _ ↦ id) = w :=
+theorem mapRange_id (w : StdSimplex R X) : w.mapRange (AddMonoidHom.id R) rfl (fun _ ↦ id) = w :=
   toFun_comp_weights_injective <| funext fun _ ↦ by simp
 
-/-- Scalar pushforward preserves composition of semiring homomorphisms. -/
-theorem mapRange_comp (g : S →+* T) (hg : ∀ s, 0 ≤ s → 0 ≤ g s) (f : R →+* S)
-    (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (w : StdSimplex R X) :
-    (w.mapRange f hf).mapRange g hg = w.mapRange (g.comp f) (fun r hr ↦ hg _ (hf r hr)) :=
+/-- Scalar pushforward preserves composition of homomorphisms. -/
+theorem mapRange_comp (g : S →+ T) (hg₁ : g 1 = 1) (hg : ∀ s, 0 ≤ s → 0 ≤ g s) (f : R →+ S)
+    (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (w : StdSimplex R X) :
+    (w.mapRange f hf₁ hf).mapRange g hg₁ hg =
+      w.mapRange (g.comp f) ((congrArg g hf₁).trans hg₁) (fun r hr ↦ hg _ (hf r hr)) :=
   toFun_comp_weights_injective <| funext fun _ ↦ by simp
 
 end MapRange
@@ -342,15 +342,15 @@ variable {R S X Y : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R]
 
 /-- Scalar pushforward sends each vertex point mass to the corresponding vertex point mass. -/
 @[simp]
-theorem mapRange_single (f : R →+* S) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (x : X) :
-    (single x).mapRange f hf = single x := by
+theorem mapRange_single (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (x : X) :
+    (single x).mapRange f hf₁ hf = single x := by
   ext y
-  by_cases h : x = y <;> simp [h]
+  by_cases h : x = y <;> simp [h, hf₁]
 
 /-- Scalar pushforward commutes with pushing vertices forward along a map. -/
-theorem mapRange_map (f : R →+* S) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (g : X → Y)
+theorem mapRange_map (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (g : X → Y)
     (w : StdSimplex R X) :
-    (w.map g).mapRange f hf = (w.mapRange f hf).map g :=
+    (w.map g).mapRange f hf₁ hf = (w.mapRange f hf₁ hf).map g :=
   StdSimplex.ext (Finsupp.mapDomain_mapRange g w.weights f (map_zero f) (map_add f)).symm
 
 end MapRangeOrderedSemiring
