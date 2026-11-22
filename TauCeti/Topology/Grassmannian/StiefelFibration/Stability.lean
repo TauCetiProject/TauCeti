@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.OrthogonalGroup
+public import TauCeti.Topology.Grassmannian.StiefelFibration.Basic
 public import TauCeti.Topology.Grassmannian.StiefelFibration.ForgetLast
 
 /-!
@@ -76,7 +77,7 @@ theorem isNConnected_fromBlocksOne :
     have hfib : (p.fiberι (specialOrthogonalFrameMap r (n + 1) 1)).hom.IsNConnected n :=
       TopCat.isNConnected_fiberι_of_mem_serreFibrations
         specialOrthogonalFrameMap_mem_serreFibrations fun k hk ↦
-          finiteOrthonormalFrame.subsingleton_homotopyGroup (by simp; omega) _
+          finiteOrthonormalFrame.subsingleton_homotopyGroup_real (by simp; omega) _
     -- The block embedding is the fibre inclusion after the homeomorphism of `SO(n + 1)` with the
     -- fibre.
     let φ := specialOrthogonalFrameFiberHomeomorph r (n + 1)

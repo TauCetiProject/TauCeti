@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Enriched.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
@@ -300,6 +303,20 @@ theorem dgHomComplex_d_dgComp {X Y Z : C} {p q n p' q' n' : ℤ} (hp : p + 1 = p
   subst hp hq hn
   exact dgDifferential_dgComp R f g h
 
+/-- Precomposition with a closed morphism of degree zero commutes with the differential. -/
+theorem dgDifferential_dgComp_of_dgDifferential_eq_zero_left {X Y Z : C} {n : ℤ}
+    {f : DGHom R 0 X Y} (hf : dgDifferential R 0 f = 0) (g : DGHom R n Y Z) :
+    dgDifferential R n (dgComp R f g (zero_add n)) =
+      dgComp R f (dgDifferential R n g) (zero_add (n + 1)) := by
+  rw [dgDifferential_dgComp, hf, zero_dgComp, zero_add, Int.negOnePow_zero, one_smul]
+
+/-- Postcomposition with a closed morphism of degree zero commutes with the differential. -/
+theorem dgDifferential_dgComp_of_dgDifferential_eq_zero_right {X Y Z : C} {n : ℤ}
+    (f : DGHom R n X Y) {g : DGHom R 0 Y Z} (hg : dgDifferential R 0 g = 0) :
+    dgDifferential R n (dgComp R f g (add_zero n)) =
+      dgComp R (dgDifferential R n f) g (add_zero (n + 1)) := by
+  rw [dgDifferential_dgComp, hg, dgComp_zero, smul_zero, add_zero]
+
 /-! ### Associativity -/
 
 /- The enriched associativity axiom, restricted to a summand of the triple tensor product of Hom
@@ -416,7 +433,7 @@ theorem dgId_dgComp {X Y : C} {q : ℤ} (g : DGHom R q X Y) :
   have h := HomologicalComplex.congr_hom
     (e_id_comp (CochainComplex (ModuleCat.{v} R) ℤ) X Y) q
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, leftUnitor_inv_f,
-    HomologicalComplex.leftUnitor'_inv, Category.assoc, Category.assoc,
+    Category.assoc, Category.assoc,
     ι_whiskerRight_assoc, HomologicalComplex.id_f] at h
   have key := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) g
   simpa only [dgComp, dgCompMap, ModuleCat.hom_comp, dgId, LinearMap.coe_comp,
@@ -431,7 +448,7 @@ theorem dgComp_dgId {X Y : C} {p : ℤ} (f : DGHom R p X Y) :
   have h := HomologicalComplex.congr_hom
     (e_comp_id (CochainComplex (ModuleCat.{v} R) ℤ) X Y) p
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, rightUnitor_inv_f,
-    HomologicalComplex.rightUnitor'_inv, Category.assoc, Category.assoc,
+    Category.assoc, Category.assoc,
     ι_whiskerLeft_assoc, HomologicalComplex.id_f] at h
   have key := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) f
   simpa only [dgComp, dgCompMap, ModuleCat.hom_comp, dgId, LinearMap.coe_comp,

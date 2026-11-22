@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SpectralObject.Abutment
-public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
+public import TauCeti.Algebra.Homology.SpectralObject.Naturality
 public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
 
 /-!
@@ -96,25 +95,8 @@ lemma spectralSequencePageXMap_comp_pageXIsoEInfty_hom (r : ℤ) (hr : 2 ≤ r) 
         EMap φ (homOfLE (bot_le : (⊥ : EInt) ≤ pq.2)) (homOfLE (coe_le_coe_add_one pq.2))
           (homOfLE (le_top : ((pq.2 + 1 : ℤ) : EInt) ≤ ⊤)) (n - 1) n (n + 1)
           (sub_add_cancel n 1) rfl := by
-  have h₀₁ : ((pq.2 - r + 2 : ℤ) : EInt) ≤ pq.2 := by simp; lia
-  have h₂₃ : ((pq.2 + 1 : ℤ) : EInt) ≤ ((pq.2 + r - 1 : ℤ) : EInt) := by simp; lia
-  have := X.isIso_mapFourδ₁Toδ₀' ⊥ _ _ _ _ bot_le h₀₁ (coe_le_coe_add_one pq.2) h₂₃ (n - 1) n
-    (n + 1) hX₀ (sub_add_cancel n 1) rfl
-  -- the indices of the recipe `coreE₂Cohomological`, as hypotheses with their syntactic types
-  have e₀ : ((pq.2 - r + 2 : ℤ) : EInt) = coreE₂Cohomological.i₀ r pq hr := rfl
-  have e₁ : ((pq.2 : ℤ) : EInt) = coreE₂Cohomological.i₁ pq := rfl
-  have e₂ : ((pq.2 + 1 : ℤ) : EInt) = coreE₂Cohomological.i₂ pq := rfl
-  have e₃ : ((pq.2 + r - 1 : ℤ) : EInt) = coreE₂Cohomological.i₃ r pq hr := rfl
-  rw [← cancel_epi (X.mapFourδ₁Toδ₀' ⊥ _ _ _ _ bot_le h₀₁ (coe_le_coe_add_one pq.2) h₂₃ (n - 1) n
-      (n + 1) (sub_add_cancel n 1) rfl ≫
-    (X.spectralSequencePageXIso coreE₂Cohomological r hr pq _ _ _ _ e₀ e₁ e₂ e₃ (n - 1) n (n + 1)
-      hn (sub_add_cancel n 1) rfl).inv),
-    spectralSequencePageXMap_eq coreE₂Cohomological φ r hr pq _ _ _ _ e₀ e₁ e₂ e₃ (n - 1) n
-      (n + 1) hn (sub_add_cancel n 1) rfl]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc]
-  rw [map_EMap_assoc, Y.mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom r hr pq n hn hY₀ hY₃,
-    X.mapFourδ₁Toδ₀'_comp_spectralSequencePageXIsoEInfty_hom_assoc r hr pq n hn hX₀ hX₃]
-  exact (map_EMap ..).symm
+  rw [spectralSequencePageXIsoEInfty_hom, spectralSequencePageXIsoEInfty_hom]
+  exact spectralSequencePageXToEInfty_naturality φ r hr pq n hn hX₀ hY₀
 
 /-- **The comparison theorem.** Let `φ : X ⟶ Y` be a morphism of spectral objects indexed by
 `EInt` and integers `a`, `b` (no inequality between them is needed) such that `H^m(⊥ ≤ i)`
