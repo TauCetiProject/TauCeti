@@ -335,10 +335,6 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
         z (u z)‖ₑ ≤ ENNReal.ofReal (B q) := by
   have hS {w : ℝ × ℝ} (hw : w ∈ endStrip q) :=
     endChart_mem_thricePuncturedSphereReal (endSign_mul_pos_of_mem_endStrip hw)
-  have hm : Measurable fun s ↦
-      ‖deriv smoothTransition (q.endSign * s - 1)‖ₑ * ENNReal.ofReal (B q) :=
-    ((((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).measurable.comp
-      ((measurable_const.mul measurable_id).sub measurable_const)).eNorm).mul_const _
   rw [ω.lintegral_enorm_hamiltonianCurvature_image (measurableSet_endStrip q) (injOn_endChart q)
     (fun w _ ↦ (contDiff_endChart q 2).contDiffAt)
     (fun w hw ↦ differentiableAt_pairOfPantsPerturbation_domain hH hHs (hS hw) _ 1)
@@ -354,9 +350,10 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
           Real.eNorm_eq_ofReal_abs (H _ _ _)]
         gcongr
         exact hB q z.2 _ (hu (hS hz))
-    _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s},
+    _ ≤ ∫⁻ s in {s | 1 / 2 < q.endSign * s},
           ‖deriv smoothTransition (q.endSign * s - 1)‖ₑ * ENNReal.ofReal (B q) :=
-        setLIntegral_endStrip_fst q hm
+        setLIntegral_endStrip_fst_le q fun s ↦
+          ‖deriv smoothTransition (q.endSign * s - 1)‖ₑ * ENNReal.ofReal (B q)
     _ ≤ ∫⁻ s, ‖deriv smoothTransition (q.endSign * s - 1)‖ₑ * ENNReal.ofReal (B q) :=
         setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal (B q) := by
