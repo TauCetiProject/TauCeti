@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.Rotation
 import TauCeti.Geometry.Symplectic.Floer.Tameness
