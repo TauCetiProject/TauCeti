@@ -242,20 +242,15 @@ private theorem norm_floerLinearization_smul_sq_le {ξ : ℝ × ℝ → V} {γ :
         (fun w ↦ γ w • ξ w) z‖ ^ 2 ≤
       2 * ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
         Ks Kt u ξ z‖ ^ 2 + 2 * (B * (1 + N)) ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z := by
-  set Dξ := ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-    Ks Kt u ξ z
-  have hγD : ‖γ z • Dξ‖ ≤ ‖Dξ‖ := by
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_left (norm_nonneg _) (hγ1 z)
   by_cases hz : z ∈ K
-  · have h := ω.norm_floerLinearization_fun_smul_sub_le
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (hγ z) (hξ z) (hB z) (hN z hz)
-    have h' := (norm_le_insert' _ _).trans (add_le_add hγD h)
-    rw [indicator_of_mem hz]
-    nlinarith [pow_le_pow_left₀ (norm_nonneg _) h' 2, sq_nonneg (‖Dξ‖ - B * (1 + N) * ‖ξ z‖)]
-  · rw [floerLinearization_fun_smul _ _ _ _ _ _ (hγ z) (hξ z), hγK z hz, indicator_of_notMem hz]
-    simp only [zero_apply, zero_smul, add_zero, mul_zero]
-    nlinarith [pow_le_pow_left₀ (norm_nonneg _) hγD 2, sq_nonneg ‖Dξ‖]
+  · simpa only [indicator_of_mem hz] using ω.norm_floerLinearization_fun_smul_sq_le
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (hγ z) (hξ z) (hγ1 z)
+      (hB z) (hN z hz)
+  · have h := ω.norm_floerLinearization_fun_smul_sq_le
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (hγ z) (hξ z) (hγ1 z)
+      (M := 0) (by simp [hγK z hz]) le_rfl
+    simpa only [indicator_of_notMem hz, zero_mul, zero_pow two_ne_zero, mul_zero, add_zero]
+      using h
 
 /-- Integrating the pointwise bound of `norm_floerLinearization_smul_sq_le`. -/
 private theorem integral_norm_floerLinearization_sq_le
