@@ -13,14 +13,16 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 /-!
 # Functoriality of the continuous dual
 
-Precomposition by a continuous linear map acts contravariantly on continuous duals. This file
-records the identity and composition laws for modules with arbitrary topologies, and proves that
-over a complete nontrivially normed field, a continuous linear map between finite-dimensional
-Hausdorff topological vector spaces is bijective if and only if its transpose is
-(`ContinuousLinearMap.bijective_precomp_iff_of_finiteDimensional`). For normed spaces, it proves
-that taking the adjoint preserves the operator norm over `ℝ` or `ℂ`, packages this operation as a
-linear isometry between operator spaces, and proves the naturality of the canonical map into the
-bidual.
+Precomposition by a continuous linear map `T : E →L[𝕜] F` gives its adjoint
+`ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E`. The identity and
+composition laws, and the bound `‖T*‖ ≤ ‖T‖`, hold for precomposition into any target and are
+recorded in `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp` and
+`TauCeti.Analysis.Normed.Operator.Basic`. Over a complete nontrivially normed field, a continuous
+linear map between finite-dimensional Hausdorff topological vector spaces is bijective if and only
+if its transpose is (`ContinuousLinearMap.bijective_precomp_iff_of_finiteDimensional`). For normed
+spaces, this file proves that taking the adjoint preserves the operator norm over `ℝ` or `ℂ`,
+packages this operation as a linear isometry between operator spaces, and proves the naturality
+of the canonical map into the bidual.
 
 For normed spaces over `ℝ` or `ℂ`, the adjoint of `T : E →L[𝕜] F`, with its arguments exchanged,
 is the composition of `T` with Mathlib's canonical bidual isometry
@@ -34,53 +36,17 @@ public section
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F G : Type*}
+variable {𝕜 E F : Type*}
 
-section Algebraic
-
-variable [NormedField 𝕜]
-  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
-  [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F]
-  [AddCommGroup G] [TopologicalSpace G] [Module 𝕜 G]
-
-/-- The adjoint of the identity map is the identity map on the continuous dual. -/
-@[simp]
-theorem precomp_id :
-    ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.id 𝕜 E) =
-      ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E) := by
-  ext f x
-  rfl
-
-/-- Taking adjoints reverses composition. -/
-@[simp]
-theorem precomp_comp (T : E →L[𝕜] F) (S : F →L[𝕜] G) :
-    ContinuousLinearMap.precomp 𝕜 (S.comp T) =
-      (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).comp
-        (ContinuousLinearMap.precomp 𝕜 S : StrongDual 𝕜 G →L[𝕜] StrongDual 𝕜 F) := by
-  ext f x
-  rfl
-
-end Algebraic
-
-section NormBound
+section Normed
 
 variable [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- The operator norm of the adjoint is at most the operator norm of the original map. -/
-theorem norm_precomp_le (T : E →L[𝕜] F) :
-    ‖(ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)‖ ≤ ‖T‖ := by
-  refine opNorm_le_bound _ (norm_nonneg T) fun f ↦ ?_
-  simpa only [precomp_apply, mul_comm] using opNorm_comp_le f T
-
-end NormBound
-
 section Norm
 
-variable [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable [IsRCLikeNormedField 𝕜]
 
 /-- Taking the adjoint preserves the operator norm. -/
 @[simp]
@@ -99,9 +65,8 @@ theorem norm_precomp (T : E →L[𝕜] F) :
 /-- Taking the adjoint preserves the nonnegative operator norm. -/
 @[simp]
 theorem nnnorm_precomp (T : E →L[𝕜] F) :
-    ‖(ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)‖₊ = ‖T‖₊ := by
-  ext
-  exact norm_precomp T
+    ‖(ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)‖₊ = ‖T‖₊ :=
+  NNReal.eq (norm_precomp T)
 
 /-- Taking adjoints, bundled as a linear isometry between spaces of bounded operators. -/
 def precompLinearIsometry :
@@ -124,10 +89,6 @@ theorem precompLinearIsometry_apply (T : E →L[𝕜] F) :
 end Norm
 
 section Bidual
-
-variable [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Pointwise naturality of the canonical map into the bidual. -/
 @[simp]
@@ -159,6 +120,8 @@ theorem toWeakDual_precomp_precomp_inclusionInDoubleDualWeak (T : E →L[𝕜] F
   simp [NormedSpace.inclusionInDoubleDualWeak_apply]
 
 end Bidual
+
+end Normed
 
 section FiniteDimensional
 

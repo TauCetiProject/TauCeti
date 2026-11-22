@@ -64,9 +64,8 @@ theorem index_pow (A : X →L[𝕜] X) (hA : IsFredholm A)
         zero_mul]
   | succ n ih =>
       have hcomp : index ((A ^ n).comp A) =
-          index (A ^ n) + index A := by
-        simpa only [index_def, toLinearMap_comp] using
-          (hA.pow n).index_comp hA
+          index (A ^ n) + index A :=
+        index_comp (hA.pow n) hA
       rw [pow_succ, mul_def, hcomp, ih]
       push_cast
       ring
