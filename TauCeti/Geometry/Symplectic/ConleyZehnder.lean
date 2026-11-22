@@ -152,6 +152,35 @@ theorem toGLSymplectic_symm {b : Basis (ι ⊕ ι) ℝ V}
     ω.toGLSymplectic_congr hb (A' := LinearMap.id) (by ext; simp) _ fun u v ↦ rfl,
     toGLSymplectic_id]
 
+/-- The change of basis matrix `b'.toMatrix b` between two symplectic bases of `(V, ω)` indexed by
+the same type, as a symplectic matrix. It conjugates the matrices of linear symplectic maps in `b`
+to their matrices in `b'` (`TauCeti.SymplecticForm.toGLSymplectic_eq_basisChange_mul`). -/
+def basisChange {b b' : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ)
+    (hb' : LinearMap.BilinForm.toMatrix b' ω.toBilinForm = J ι ℝ) : GLSymplectic ι ℝ :=
+  GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ
+    ⟨_, LinearMap.BilinForm.basis_toMatrix_mem_symplecticGroup_of_toMatrix_eq_J hb' hb⟩
+
+/-- **Change of symplectic basis.** The matrix of a linear symplectic map in a symplectic basis `b'`
+is the conjugate `P M P⁻¹` of its matrix `M` in another symplectic basis `b`, by the change of
+basis matrix `P = b'.toMatrix b`. -/
+theorem toGLSymplectic_eq_basisChange_mul {b b' : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ)
+    (hb' : LinearMap.BilinForm.toMatrix b' ω.toBilinForm = J ι ℝ) (A : V →ₗ[ℝ] V)
+    (hA : ∀ u v, ω (A u) (A v) = ω u v) :
+    ω.toGLSymplectic hb' A hA =
+      ω.basisChange hb hb' * ω.toGLSymplectic hb A hA * (ω.basisChange hb hb')⁻¹ := by
+  have hP : ((ω.basisChange hb hb' : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) =
+      b'.toMatrix b := by
+    simp [basisChange, GLSymplectic.coe_ofSymplecticGroup]
+  have hP_inv : (((ω.basisChange hb hb')⁻¹ : GLSymplectic ι ℝ) : GL (ι ⊕ ι) ℝ) =
+      (b.toMatrix b' : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) := by
+    rw [Subgroup.coe_inv, Matrix.coe_units_inv, hP]
+    exact Matrix.inv_eq_right_inv (Basis.toMatrix_mul_toMatrix_flip b' b)
+  refine Subtype.ext (Units.ext ?_)
+  simp only [Subgroup.coe_mul, Units.val_mul, hP, hP_inv, coe_toGLSymplectic]
+  exact (basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b' b b' b _).symm
+
 end Matrix
 
 /-! ### Paths of symplectic matrices -/
@@ -198,21 +227,10 @@ theorem conleyZehnderIndex_matrixPath_eq {b b' : Basis (ι ⊕ ι) ℝ V}
     (Ψ : Path A B) (hΨ : ∀ t u v, ω (Ψ t u) (Ψ t v) = ω u v) :
     GLSymplectic.conleyZehnderIndex (ω.matrixPath hb' Ψ hΨ) =
       GLSymplectic.conleyZehnderIndex (ω.matrixPath hb Ψ hΨ) := by
-  -- The change of basis matrix `P = b'.toMatrix b` is symplectic, with inverse `b.toMatrix b'`.
-  let P : GLSymplectic ι ℝ := GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ
-    ⟨_, LinearMap.BilinForm.basis_toMatrix_mem_symplecticGroup_of_toMatrix_eq_J hb' hb⟩
-  have hP_coe : ((P : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) = b'.toMatrix b := by
-    simp [P, GLSymplectic.coe_ofSymplecticGroup]
-  have hP_inv : (((P⁻¹ : GLSymplectic ι ℝ) : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) =
-      b.toMatrix b' := by
-    rw [Subgroup.coe_inv, Matrix.coe_units_inv, hP_coe]
-    exact Matrix.inv_eq_right_inv (Basis.toMatrix_mul_toMatrix_flip b' b)
   -- In the basis `b'` the matrices are the conjugates `P M P⁻¹` of those in `b`.
-  rw [← GLSymplectic.conleyZehnderIndex_map_conj P (ω.matrixPath hb Ψ hΨ)]
-  refine GLSymplectic.conleyZehnderIndex_congr _ _ fun t ↦ Subtype.ext (Units.ext ?_)
-  simp only [Path.map_coe, Function.comp_apply, Subgroup.coe_mul, Units.val_mul, hP_coe, hP_inv,
-    matrixPath_apply, coe_toGLSymplectic]
-  exact (basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b' b b' b _).symm
+  rw [← GLSymplectic.conleyZehnderIndex_map_conj (ω.basisChange hb hb') (ω.matrixPath hb Ψ hΨ)]
+  exact GLSymplectic.conleyZehnderIndex_congr _ _ fun t ↦
+    ω.toGLSymplectic_eq_basisChange_mul hb hb' _ (hΨ t)
 
 /-! ### Operations on paths of linear symplectic maps -/
 
