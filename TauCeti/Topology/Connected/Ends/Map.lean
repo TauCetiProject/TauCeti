@@ -120,7 +120,7 @@ theorem map_eq_of_proper_homotopy (e : EndComponents X) {f g : C(X, Y)}
   obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe (e.component hP)
   rw [← hx]
   simp only [Continuous.connectedComponentsMap_mk]
-  have havoid (t) : H (t, x) ∉ K := fun ht ↦ x.2 ⟨(t, x), ht, rfl⟩
+  have havoid (t) : H (t, x) ∉ K := fun ht ↦ x.property ⟨(t, x), ht, rfl⟩
   let γ : Path ((f.restrictPreimage Kᶜ) (inclusion (compl_subset_compl.2 hfP) x))
       ((g.restrictPreimage Kᶜ) (inclusion (compl_subset_compl.2 hgP) x)) :=
     { toFun := fun t ↦ ⟨H (t, x), havoid t⟩

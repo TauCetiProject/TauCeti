@@ -147,7 +147,7 @@ local instance : IsManifold (𝓡∂ (0 + 1)) 1 (Icc a b) := instIsManifoldIcc a
     ((𝓡∂ (0 + 1)).boundary (Icc a b)) := boundaryChartedSpace (n := 0)
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1
-    ((𝓡∂ (0 + 1)).boundary (Icc a b)) := isManifold_boundary (n := 0) (Icc a b) one_ne_zero
+    ((𝓡∂ (0 + 1)).boundary (Icc a b)) := isManifold_boundary (n := 0) (Icc a b)
 
 /-- The left endpoint of an increasing closed interval has negative boundary orientation. -/
 theorem orientationAt_boundaryOrientation_interval_left :

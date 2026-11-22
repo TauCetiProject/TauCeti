@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Aut
+public import TauCeti.Combinatorics.Graph.Serre.Card
+import Mathlib.Basic.Finite.Sum
 
 /-!
 # Barycentric subdivision of a Serre graph
@@ -21,7 +23,9 @@ automorphism never maps a dart to its reverse: an automorphism inverting an edge
 the midpoint of that edge instead. This is how an action with inversions is replaced by an
 action without inversions.
 
-Subdivision preserves connectedness and acyclicity, so the subdivision of a tree is a tree.
+Subdivision preserves connectedness and acyclicity, so the subdivision of a tree is a tree. The
+subdivision of a finite graph is finite, with one new vertex for each geometric edge, and with
+twice as many darts and twice as many geometric edges as the graph.
 
 ## Main declarations
 
@@ -136,6 +140,35 @@ theorem barycentricSubdivision_dart_cases {motive : Γ.barycentricSubdivision.E 
 @[simp] theorem barycentricSubdivision_tgt_false (e : Γ.E) :
     Γ.barycentricSubdivision.tgt (Γ.barycentricDart e false) = Γ.barycentricVertex (Γ.src e) :=
   (rfl)
+
+/-! ### Finiteness -/
+
+/-- The barycentric subdivision of a graph with finitely many vertices and geometric edges has
+finitely many vertices. -/
+instance [Finite Γ.V] [Finite Γ.GeomEdge] : Finite Γ.barycentricSubdivision.V :=
+  inferInstanceAs (Finite (Γ.V ⊕ Γ.GeomEdge))
+
+/-- The barycentric subdivision of a graph with finitely many darts has finitely many darts. -/
+instance [Finite Γ.E] : Finite Γ.barycentricSubdivision.E :=
+  inferInstanceAs (Finite (Γ.E × Bool))
+
+/-- The vertices of the barycentric subdivision are the vertices and the midpoints of the
+geometric edges of the graph. -/
+@[simp] theorem card_barycentricSubdivision_V [Finite Γ.V] [Finite Γ.GeomEdge] :
+    Nat.card Γ.barycentricSubdivision.V = Nat.card Γ.V + Nat.card Γ.GeomEdge :=
+  Nat.card_sum
+
+/-- Each dart of the graph has two halves in the barycentric subdivision. -/
+@[simp] theorem card_barycentricSubdivision_E :
+    Nat.card Γ.barycentricSubdivision.E = 2 * Nat.card Γ.E :=
+  (Nat.card_prod Γ.E Bool).trans <| by simp [mul_comm]
+
+/-- Each geometric edge of the graph has two halves in the barycentric subdivision. -/
+@[simp] theorem card_barycentricSubdivision_geomEdge :
+    Nat.card Γ.barycentricSubdivision.GeomEdge = 2 * Nat.card Γ.GeomEdge := by
+  have h := Γ.barycentricSubdivision.card_E_eq_two_mul_card_geomEdge
+  rw [card_barycentricSubdivision_E, card_E_eq_two_mul_card_geomEdge] at h
+  omega
 
 /-! ### Induced automorphisms -/
 
@@ -290,8 +323,8 @@ private theorem isReduced_cons_dart {a : Γ.V} {e : Γ.E} (q : Γ.Path a (Γ.src
   | nil => exact Path.isReduced_toPath Γ (Γ.dart e)
   | cons q d =>
     refine (Path.isReduced_cons_cons Γ q d _).mpr ⟨hq, fun he => ?_⟩
-    have hne : e ≠ Γ.rev d.1 := by
-      simpa using h (Γ.barycentricDart (Γ.rev d.1) false) (by simp [barycentricHalves])
+    have hne : e ≠ Γ.rev d.val := by
+      simpa using h (Γ.barycentricDart (Γ.rev d.val) false) (by simp [barycentricHalves])
     exact hne (by simpa using he)
 
 /-- Two darts `e` and `f` with the same midpoint are mutually reverse as soon as the reverse of
@@ -310,9 +343,9 @@ private theorem exists_darts_eq_of_isReduced {a : Γ.V} {y : Γ.barycentricSubdi
     (∀ b, y = Γ.barycentricVertex b → ∃ q : Γ.Path a b, Path.IsReduced Γ q ∧
       Path.darts _ p = (Path.darts Γ q).flatMap Γ.barycentricHalves) ∧
     (∀ m, y = Γ.barycentricMidpoint m → ∃ (b c : Γ.V) (q : Γ.Path a b) (f : b ⟶ c),
-      Γ.toGeomEdge f.1 = m ∧ Path.IsReduced Γ (q.cons f) ∧
+      Γ.toGeomEdge f.val = m ∧ Path.IsReduced Γ (q.cons f) ∧
       Path.darts _ p =
-        (Path.darts Γ q).flatMap Γ.barycentricHalves ++ [Γ.barycentricDart f.1 true]) := by
+        (Path.darts Γ q).flatMap Γ.barycentricHalves ++ [Γ.barycentricDart f.val true]) := by
   induction p with
   | nil =>
     refine ⟨fun b hb => ?_, fun m hm => by simp at hm⟩

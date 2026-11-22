@@ -91,8 +91,6 @@ public section
 
 namespace WeierstrassCurve.Affine
 
-open Polynomial
-
 variable {F : Type*} [Field F] {W : WeierstrassCurve F} {α : F}
 
 /-! ### Models singular at the origin -/
@@ -642,8 +640,8 @@ theorem natCard_torsionBy_dvd_of_isSingular (h : W.toAffine.IsSingular x₀ y₀
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) ∣ n := by
   by_cases hc : 2 * α + W.a₁ = 0
   · rw [Nat.card_congr ((cuspAddEquiv h hα hc).torsionByCongr n).toEquiv]
-    have := TauCeti.subsingleton_torsionBy_of_injective_zsmul (V := F) n fun a b hab ↦ by
-      simpa [hn] using hab
+    have := (Submodule.subsingleton_torsionBy_iff_smul_right_injective (M := F)
+      (a := (n : ℤ))).mpr fun a b hab ↦ by simpa [hn] using hab
     rw [Nat.card_of_subsingleton (0 : AddSubgroup.torsionBy F n)]
     exact one_dvd n
   · -- the `n`-torsion of `Additive Fˣ` is the group of `n`-th roots of unity
@@ -655,22 +653,6 @@ theorem natCard_torsionBy_dvd_of_isSingular (h : W.toAffine.IsSingular x₀ y₀
             (Nat.card_congr Additive.toMul)
       _ ∣ n := TauCeti.card_rootsOfUnity_dvd n
 
-omit [DecidableEq F] in
-/-- Over an algebraic closure, a curve with `Δ = 0` has a singular point together with a root of
-its tangent quadratic there. -/
-private theorem exists_isSingular_map_algebraicClosure (hΔ : W.Δ = 0) :
-    ∃ x₀ y₀ α : AlgebraicClosure F,
-      (W.map (algebraMap F (AlgebraicClosure F))).toAffine.IsSingular x₀ y₀ ∧
-        α ^ 2 + (W.map (algebraMap F (AlgebraicClosure F))).a₁ * α -
-          (3 * x₀ + (W.map (algebraMap F (AlgebraicClosure F))).a₂) = 0 := by
-  let f := algebraMap F (AlgebraicClosure F)
-  obtain ⟨x₀, y₀, h⟩ := exists_isSingular_of_Δ_eq_zero (W.map f).toAffine
-    (by rw [map_Δ, hΔ, _root_.map_zero])
-  obtain ⟨α, hα⟩ := IsAlgClosed.exists_root
-    (C 1 * X ^ 2 + C (W.map f).a₁ * X + C (-(3 * x₀ + (W.map f).a₂)))
-    (by rw [degree_quadratic one_ne_zero]; decide)
-  exact ⟨x₀, y₀, α, h, by simpa [sub_eq_add_neg] using hα⟩
-
 /-- **Torsion of a singular cubic.** If `Δ = 0`, then for `n` invertible in `F` the number of
 `n`-torsion points among the nonsingular points divides `n`. In particular the `n`-torsion is not
 `(ℤ / n)²` for `n > 1`, unlike the `n`-torsion of an elliptic curve. -/
@@ -679,7 +661,9 @@ theorem natCard_torsionBy_dvd_of_Δ_eq_zero (hΔ : W.Δ = 0) {n : ℕ} (hn : (n 
   classical
   let f := algebraMap F (AlgebraicClosure F)
   -- over an algebraic closure the curve has a singular point with rational tangent slopes
-  obtain ⟨x₀, y₀, α, h, hα⟩ := exists_isSingular_map_algebraicClosure hΔ
+  obtain ⟨x₀, y₀, α, h, hα⟩ :=
+    (W.map f).toAffine.exists_isSingular_and_tangent_root_of_Δ_eq_zero
+      (by rw [map_Δ, hΔ, _root_.map_zero])
   have hK := natCard_torsionBy_dvd_of_isSingular h hα (n := n)
     (by rwa [← map_natCast f, _root_.map_ne_zero])
   exact (AddSubgroup.card_dvd_of_injective (W.torsionMapAlong f n)
@@ -693,7 +677,9 @@ theorem torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero (hΔ : W.Δ = 0) (hc₄ :
     (hn : (n : F) ≠ 0) : AddSubgroup.torsionBy W.toAffine.Point n = ⊥ := by
   classical
   let f := algebraMap F (AlgebraicClosure F)
-  obtain ⟨x₀, y₀, α, h, hα⟩ := exists_isSingular_map_algebraicClosure hΔ
+  obtain ⟨x₀, y₀, α, h, hα⟩ :=
+    (W.map f).toAffine.exists_isSingular_and_tangent_root_of_Δ_eq_zero
+      (by rw [map_Δ, hΔ, _root_.map_zero])
   -- `c₄ = (2 α + a₁) ^ 4` vanishes, so the singular point is a cusp
   have hc : 2 * α + (W.map f).a₁ = 0 := by
     refine (pow_eq_zero_iff (n := 4) (by norm_num)).1 ?_
@@ -701,7 +687,8 @@ theorem torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero (hΔ : W.Δ = 0) (hc₄ :
   -- the cusp is the additive group of the algebraic closure, which has no `n`-torsion
   have hn' : (n : AlgebraicClosure F) ≠ 0 := by rwa [← map_natCast f, _root_.map_ne_zero]
   have : Subsingleton (AddSubgroup.torsionBy (W.map f).toAffine.Point n) := by
-    have := TauCeti.subsingleton_torsionBy_of_injective_zsmul (V := AlgebraicClosure F) n
+    have := (Submodule.subsingleton_torsionBy_iff_smul_right_injective
+      (M := AlgebraicClosure F) (a := (n : ℤ))).mpr
       fun a b hab ↦ by simpa [hn'] using hab
     exact ((cuspAddEquiv h hα hc).torsionByCongr n).toEquiv.subsingleton
   have := (W.torsionMapAlong_injective f n).subsingleton

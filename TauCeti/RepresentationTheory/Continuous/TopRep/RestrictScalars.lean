@@ -146,8 +146,7 @@ section Restriction
 universe u v
 
 variable {k : Type v} [Ring k] [TopologicalSpace k]
-  {G H : Type u} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
-  [IsTopologicalGroup G] [IsTopologicalGroup H]
+  {G H : Type u} [Group G] [Group H]
 
 /-- The scalar-restricted coefficient map used when the acting group changes. -/
 noncomputable def resRestrictScalarsIntMap (phi : H →* G) {X : TopRep.{u} k G}
@@ -162,8 +161,6 @@ noncomputable def resRestrictScalarsIntMap (phi : H →* G) {X : TopRep.{u} k G}
         change f.hom (X.ρ (phi h) x) = Y.ρ h (f.hom x)
         exact DFunLike.congr_fun (f.hom.isIntertwining' h) x }
 
-omit [TopologicalSpace G] [TopologicalSpace H] [IsTopologicalGroup G]
-  [IsTopologicalGroup H] in
 /-- `resRestrictScalarsIntMap` has the same underlying function as the original coefficient map. -/
 @[simp]
 theorem resRestrictScalarsIntMap_hom_apply (phi : H →* G) {X : TopRep.{u} k G}
@@ -253,20 +250,20 @@ of the invariants. -/
 def invariantsRestrictScalarsIntEquiv (X : TopRep k G) :
     (restrictScalarsInt.obj X).invariants ≃L[ℤ]
       TopModuleCat.restrictScalarsInt.obj X.invariants where
-  toFun x := ⟨x.1, x.2⟩
-  invFun x := ⟨x.1, x.2⟩
+  toFun x := ⟨x.val, x.property⟩
+  invFun x := ⟨x.val, x.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_induced_rng.2 continuous_subtype_val
-  continuous_invFun := continuous_induced_rng.2 continuous_subtype_val
+  continuous_toFun := continuous_induced_rng.2 continuous_subtypeVal
+  continuous_invFun := continuous_induced_rng.2 continuous_subtypeVal
 
 /-- `invariantsRestrictScalarsIntEquiv` is the identity on the underlying elements. -/
 @[simp]
 theorem coe_invariantsRestrictScalarsIntEquiv_apply (X : TopRep k G)
     (x : (restrictScalarsInt.obj X).invariants) :
-    (invariantsRestrictScalarsIntEquiv X x).1 = x.1 :=
+    (invariantsRestrictScalarsIntEquiv X x).val = x.val :=
   (rfl)
 
 /-- Taking invariants commutes with forgetting the scalars, as an isomorphism in
@@ -280,14 +277,14 @@ noncomputable def invariantsRestrictScalarsIntIso (X : TopRep k G) :
 @[simp]
 theorem coe_invariantsRestrictScalarsIntIso_hom_apply (X : TopRep k G)
     (x : (restrictScalarsInt.obj X).invariants) :
-    ((invariantsRestrictScalarsIntIso X).hom x).1 = x.1 :=
+    ((invariantsRestrictScalarsIntIso X).hom x).val = x.val :=
   (rfl)
 
 /-- The inverse of `invariantsRestrictScalarsIntIso` is the identity on the underlying invariant
 elements. -/
 @[simp]
 theorem coe_invariantsRestrictScalarsIntIso_inv_apply (X : TopRep k G) (x : X.invariants) :
-    ((invariantsRestrictScalarsIntIso X).inv x).1 = x.1 :=
+    ((invariantsRestrictScalarsIntIso X).inv x).val = x.val :=
   (rfl)
 
 /-- The identification of the invariants is compatible with the maps induced by

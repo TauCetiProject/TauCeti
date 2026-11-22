@@ -44,7 +44,7 @@ theorem eq_of_le_of_check (hg : Subgroup.closure (Set.range g) = ⊤)
     (hrep : ∀ i, ((T.word i).map g).prod ∈ K → ((T.word i).map g).prod ∈ H) :
     H = K := by
   refine le_antisymm hHK fun x hx ↦ ?_
-  obtain ⟨i, hcoset⟩ := T.exists_inv_word_mul_mem hg hT hrels hstab x
+  obtain ⟨i, hcoset⟩ := T.exists_inv_word_mul_mem hT hrels hstab (hg ▸ Subgroup.mem_top x)
   have hword : ((T.word i).map g).prod ∈ K := by
     simpa using K.mul_mem hx (K.inv_mem (hHK hcoset))
   simpa using H.mul_mem (hrep i hword) hcoset

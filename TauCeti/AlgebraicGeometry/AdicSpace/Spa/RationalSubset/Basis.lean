@@ -50,6 +50,8 @@ the basis arguments uses it.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit_mem`:
+  if some numerator `u ∈ T` is a unit, then `R(T/s)` belongs to the rational family.
 * `TauCeti.ValuationSpectrum.val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit`: a
   rational subset `R(T/s)` with unit denominator belongs to the family for every finite `T`, which
   is Wedhorn Remark 7.30(4); `TauCeti.ValuationSpectrum.setOf_vle_one_mem_spaRationalFamily` is
@@ -178,6 +180,15 @@ theorem univ_mem_spaRationalFamily (Aplus : Subring A) :
   · rw [rationalSubset_singleton_one]
     exact (Subtype.coe_preimage_self (spa Aplus)).symm
 
+/-- If one of the numerators `u ∈ T` is a unit, then `T · A = ⊤` is open and `R(T/s)` belongs to
+`spaRationalFamily A⁺`. -/
+theorem val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit_mem (Aplus : Subring A)
+    {T : Finset A} {s u : A} (huT : u ∈ T) (hu : IsUnit u) :
+    Subtype.val ⁻¹' rationalSubset Aplus T s ∈ spaRationalFamily Aplus := by
+  refine ⟨T, s, ?_, rfl⟩
+  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr huT)) hu]
+  exact isOpen_univ
+
 /-- **Wedhorn Remark 7.30(4).** If the denominator `s` is a unit, then `R(T/s)` is a rational
 subset for every finite `T`, whether or not `T · A` is open: it is also `R((T ∪ {s})/s)`, and the
 numerator ideal of that presentation is the unit ideal. -/
@@ -185,19 +196,18 @@ theorem val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit (Aplus : Sub
     (T : Finset A) {s : A} (hs : IsUnit s) :
     Subtype.val ⁻¹' rationalSubset Aplus T s ∈ spaRationalFamily Aplus := by
   classical
-  refine ⟨insert s T, s, ?_, by rw [rationalSubset_insert_self]⟩
-  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr
-    (Finset.mem_insert_self s T))) hs]
-  exact isOpen_univ
+  rw [← rationalSubset_insert_self]
+  exact val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit_mem Aplus
+    (Finset.mem_insert_self s T) hs
 
 /-- **Wedhorn Remark 7.30(4)** for the denominator `1`: for every `f : A`, the locus
 `{v : v(f) ≤ 1}` of `Spa(A, A⁺)` is the rational subset `R(f/1)`. -/
 theorem setOf_vle_one_mem_spaRationalFamily (Aplus : Subring A) (f : A) :
-    {v : spa Aplus | v.1.toValuativeRel.vle f 1} ∈ spaRationalFamily Aplus := by
-  have h : {v : spa Aplus | v.1.toValuativeRel.vle f 1} =
+    {v : spa Aplus | v.val.toValuativeRel.vle f 1} ∈ spaRationalFamily Aplus := by
+  have h : {v : spa Aplus | v.val.toValuativeRel.vle f 1} =
       Subtype.val ⁻¹' rationalSubset Aplus {f} 1 := by
     ext v
-    simp [v.1.toValuativeRel.not_vle_one_zero]
+    simp [v.val.toValuativeRel.not_vle_one_zero]
   exact h ▸ val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit Aplus {f} isUnit_one
 
 open scoped Classical in
@@ -208,7 +218,7 @@ form the rational subset `R({σ f, f² - r σ} / (f² - r σ))`
 ideal. -/
 theorem setOf_vle_or_vle_mem_spaRationalFamily (Aplus : Subring A) (f : A) {r σ : A}
     (hr : IsUnit r) (hσ : IsUnit σ) (hrσ : ∀ v ∈ spa Aplus, v.toValuativeRel.vlt r σ) :
-    {v : spa Aplus | v.1.toValuativeRel.vle f r ∨ v.1.toValuativeRel.vle σ f} ∈
+    {v : spa Aplus | v.val.toValuativeRel.vle f r ∨ v.val.toValuativeRel.vle σ f} ∈
       spaRationalFamily Aplus := by
   refine ⟨{σ * f, f * f - r * σ}, f * f - r * σ, ?_, ?_⟩
   · -- `u w f · σ f - u (f² - r σ) = 1` for inverses `u` of `r σ` and `w` of `σ`
@@ -223,11 +233,11 @@ theorem setOf_vle_or_vle_mem_spaRationalFamily (Aplus : Subring A) (f : A) {r σ
     rw [hspan]
     exact isOpen_univ
   · ext v
-    have h := v.1.valuation.le_or_le_iff_map_mul_le_map_mul_self_sub (f := f)
-      (hr.map v.1.valuation).ne_zero ((valuation_lt_iff _ _ _).mpr (hrσ v.1 v.2))
-    simp only [mem_ofPred_eq, mem_preimage, mem_rationalSubset_iff, v.2, true_and,
+    have h := v.val.valuation.le_or_le_iff_map_mul_le_map_mul_self_sub (f := f)
+      (hr.map v.val.valuation).ne_zero ((valuation_lt_iff _ _ _).mpr (hrσ v.val v.property))
+    simp only [mem_ofPred_eq, mem_preimage, mem_rationalSubset_iff, v.property, true_and,
       Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq, ← valuation_le_iff,
-      le_refl, and_true, map_zero, le_zero_iff]
+      le_refl, and_true, map_zero, nonpos_iff_eq_zero]
     exact h
 
 section TopologicalRing
@@ -317,7 +327,7 @@ theorem isTopologicalBasis_spaRationalFamily_of_pairOfDefinition
       ⟨x, spa_subset_spvOfIdeal P Aplus x.property⟩
     have hxO : xI ∈ Subtype.val ⁻¹' O := hx
     have hOI : IsOpen (Subtype.val ⁻¹' O : Set (spvOfIdeal P.extendedIdealOfDefinition hfg)) :=
-      hO.preimage continuous_subtype_val
+      hO.preimage continuous_subtypeVal
     obtain ⟨V, hVr, hxV, hVO⟩ :=
       (isTopologicalBasis_rationalFamily P.extendedIdealOfDefinition hfg).isOpen_iff.mp hOI xI hxO
     obtain ⟨T, s, hadm, rfl⟩ := mem_rationalFamily_iff.mp hVr
@@ -359,7 +369,7 @@ the basis indexed by presentations, as consumers comparing sections presentation
 need. -/
 theorem isBasis_range_spaBasicOpen (P : PairOfDefinition A) (Aplus : Subring A) :
     Opens.IsBasis (Set.range fun p : {p : Presentation P //
-      IsOpen (Ideal.span (p.num : Set A) : Set A)} ↦ spaBasicOpen Aplus p.1.num p.1.den) := by
+      IsOpen (Ideal.span (p.num : Set A) : Set A)} ↦ spaBasicOpen Aplus p.val.num p.val.den) := by
   refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
   obtain ⟨p, hp, hxp, hle⟩ := exists_presentation_mem_spaBasicOpen_le P hx
   exact ⟨_, ⟨⟨p, hp⟩, rfl⟩, hxp, hle⟩
@@ -386,7 +396,7 @@ theorem isCompact_of_mem_spaRationalFamily_of_pairOfDefinition
     Subtype.val ⁻¹' basicOpenFinset T s
   have := spectralSpace_spvOfIdeal P.extendedIdealOfDefinition hfg
   have hS : IsProConstructible S := isProConstructible_val_preimage_spa P Aplus
-  have hVopen : IsOpen V := (isOpen_basicOpenFinset T s).preimage continuous_subtype_val
+  have hVopen : IsOpen V := (isOpen_basicOpenFinset T s).preimage continuous_subtypeVal
   have hVmem : V ∈ rationalFamily P.extendedIdealOfDefinition hfg :=
     mem_rationalFamily_iff.mpr
       ⟨T, s, isAdmissible_extendedIdealOfDefinition_of_isOpen_span P hT, rfl⟩
@@ -481,11 +491,11 @@ theorem finsetInf_mem_spaRationalOpens [IsHuberRing A] {Aplus : Subring A} {ι :
 theorem exists_finite_subcover_spaRationalOpens [IsHuberRing A] {Aplus : Subring A}
     {W : Opens (spa Aplus)} (hW : W ∈ spaRationalOpens Aplus) {ι : Type*}
     {U : ι → Opens (spa Aplus)} (hcov : ⨆ i, U i = W) :
-    ∃ I : Finset ι, (⨆ k : ↥I, U k.1) = W := by
+    ∃ I : Finset ι, (⨆ k : ↥I, U k.val) = W := by
   obtain ⟨I, hIW⟩ := (isCompact_of_mem_spaRationalFamily
       (mem_spaRationalOpens.mp hW)).elim_finite_subcover (fun i ↦ (U i : Set (spa Aplus)))
     (fun i ↦ (U i).isOpen) (by rw [← Opens.coe_iSup, hcov])
-  refine ⟨I, le_antisymm (iSup_le fun k ↦ (le_iSup U k.1).trans_eq hcov) fun x hx ↦ ?_⟩
+  refine ⟨I, le_antisymm (iSup_le fun k ↦ (le_iSup U k.val).trans_eq hcov) fun x hx ↦ ?_⟩
   obtain ⟨i, hi, hxU⟩ := Set.mem_iUnion₂.mp (hIW hx)
   exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxU⟩
 
@@ -553,11 +563,11 @@ theorem exists_unit_forall_mem_spa_exists_vlt (Aplus : Subring A) {T : Finset A}
       have h := (isCompact_of_mem_spaRationalFamily
         (mem_spaRationalFamily_iff.mpr ⟨T, t, hTopen, rfl⟩ :
           (Subtype.val ⁻¹' rationalSubset Aplus T t : Set (spa Aplus)) ∈
-            spaRationalFamily Aplus)).image continuous_subtype_val
+            spaRationalFamily Aplus)).image continuous_subtypeVal
       rwa [Subtype.image_preimage_coe,
         Set.inter_eq_right.mpr (rationalSubset_subset_spa Aplus T t)] at h
     exact exists_mem_nhds_zero_forall_vlt
-      (fun v hv ↦ (spa_def Aplus ▸ Set.inter_subset_left) (rationalSubset_subset_spa Aplus T t hv))
+      (fun v hv ↦ spa_subset_cont Aplus (rationalSubset_subset_spa Aplus T t hv))
       hcpt fun v hv ↦ ((mem_rationalSubset_iff _ _ _ _).mp hv).2.2
   choose I hI hIt using hdom
   -- a unit in the intersection of these neighbourhoods

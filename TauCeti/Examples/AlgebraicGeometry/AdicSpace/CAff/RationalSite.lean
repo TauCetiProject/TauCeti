@@ -136,7 +136,7 @@ example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopolo
         W ∈ spaRationalOpens S.plus → (∀ k, V k ∈ spaRationalOpens S.plus) →
         ∀ hcov : ⨆ k, V k = W,
         Topology.IsInducing (fun (x : presentationLimit (P := P) S.plus W) (k : κ) ↦
-          (presentationLimitMap (P := P) ((le_iSup V k).trans_eq hcov)).hom.1 x) := by
+          (presentationLimitMap (P := P) ((le_iSup V k).trans_eq hcov)).hom.val x) := by
   have hsheaf : IsSheafyForEveryPresentation S.plus :=
     isSheafyForEveryPresentation_of_isStablyUniform S.isRingOfIntegralElements
   have hset : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(ValuationSpectrum.spa S.plus))
@@ -166,7 +166,7 @@ example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopolo
 `¬ IsRationalLocalization (𝟙 Zp) ∅ 1` because `Ideal.span ∅ = ⊥` is not open in `ℤ_[p]`. -/
 example (p : ℕ) [Fact p.Prime] :
     (∀ w : ValuationSpectrum.spa (CAff.of (Pair.powerBounded ℤ_[p])).pair.plus,
-      (Pair.Hom.spaComap (𝟙 (CAff.of (Pair.powerBounded ℤ_[p]))) w).1 ∈
+      (Pair.Hom.spaComap (𝟙 (CAff.of (Pair.powerBounded ℤ_[p]))) w).val ∈
         rationalSubset (Pair.powerBounded ℤ_[p]).plus ∅ 1) ∧
       (∀ (Z : CAff.{0}) (ψ : CAff.of (Pair.powerBounded ℤ_[p]) ⟶ Z),
         ∃! χ : CAff.of (Pair.powerBounded ℤ_[p]) ⟶ Z,
@@ -176,11 +176,11 @@ example (p : ℕ) [Fact p.Prime] :
     fun Z ψ ↦ ⟨ψ, Category.id_comp ψ, fun χ hχ ↦ (Category.id_comp χ).symm.trans hχ⟩,
     fun h ↦ ?_⟩
   · rw [id_spaComap, id_eq, mem_rationalSubset_iff]
-    have hw1 : w.1 ∈ rationalSubset (Pair.powerBounded ℤ_[p]).plus {1} 1 := by
+    have hw1 : w.val ∈ rationalSubset (Pair.powerBounded ℤ_[p]).plus {1} 1 := by
       rw [rationalSubset_singleton_one]
-      exact w.2
-    exact ⟨w.2, fun t ht ↦ absurd ht (Finset.notMem_empty t),
-      ((mem_rationalSubset_iff _ {1} 1 w.1).mp hw1).2.2⟩
+      exact w.property
+    exact ⟨w.property, fun t ht ↦ absurd ht (Finset.notMem_empty t),
+      ((mem_rationalSubset_iff _ {1} 1 w.val).mp hw1).2.2⟩
   · have hopen : IsOpen ({0} : Set ℤ_[p]) := by
       simpa only [Finset.coe_empty, Ideal.span_empty, Submodule.bot_coe] using h.isOpen_span
     have : (𝓝[≠] (0 : ℤ_[p])).NeBot :=
@@ -229,12 +229,12 @@ example (p : ℕ) [Fact p.Prime] :
   have hcovZ : IsRationalCovering (discrete ℤ) (fun _ : Unit ↦ ∅) (fun _ : Unit ↦ 1) :=
     { isOpen_span _ := isOpen_discrete _
       iUnion_eq_univ := Set.eq_univ_of_forall fun v ↦ Set.mem_iUnion.mpr ⟨(), by
-        have hv1 : v.1 ∈ rationalSubset (discrete ℤ).pair.plus {1} 1 := by
+        have hv1 : v.val ∈ rationalSubset (discrete ℤ).pair.plus {1} 1 := by
           rw [rationalSubset_singleton_one]
-          exact v.2
-        exact (mem_rationalSubset_iff _ ∅ 1 v.1).mpr
-          ⟨v.2, fun t ht ↦ absurd ht (Finset.notMem_empty t),
-            ((mem_rationalSubset_iff _ {1} 1 v.1).mp hv1).2.2⟩⟩ }
+          exact v.property
+        exact (mem_rationalSubset_iff _ ∅ 1 v.val).mpr
+          ⟨v.property, fun t ht ↦ absurd ht (Finset.notMem_empty t),
+            ((mem_rationalSubset_iff _ {1} 1 v.val).mp hv1).2.2⟩⟩ }
   have : (𝓝[≠] (0 : ℤ_[p])).NeBot :=
     (_root_.PadicInt.isOpenEmbedding_coe.toOpenPartialHomeomorph _).nhdsNE_neBot trivial
   refine ⟨ψ, hcovZ, rfl, fun hadic ↦ ?_, fun hcovZp ↦ ?_, ?_⟩

@@ -112,7 +112,7 @@ theorem toEnd_diagonalCartan_eq_toLin_diagonal (A : diagonalCartan R n) :
   refine (stdBasis R n n).ext fun p => ?_
   rw [LieModule.toEnd_apply_apply, LieSubalgebra.coe_bracket_of_module, toLin_self,
     Finset.sum_eq_single p (fun q _ hq => by rw [diagonal_apply_ne _ hq, zero_smul]) (by simp),
-    diagonal_apply_eq, stdBasis_eq_single, lie_single_of_mem_diagonalCartan A.2]
+    diagonal_apply_eq, stdBasis_eq_single, lie_single_of_mem_diagonalCartan A.property]
 
 /-! ### Triangularizability: the diagonal Cartan of `gl n R` is split -/
 
@@ -162,7 +162,7 @@ theorem mem_rootSpace_diagonalCartan_of_forall {χ : Module.Dual R (diagonalCart
   rw [LieModule.mem_weightSpace]
   intro A
   ext a b
-  rw [LieSubalgebra.coe_bracket_of_module, lie_apply_of_mem_diagonalCartan A.2,
+  rw [LieSubalgebra.coe_bracket_of_module, lie_apply_of_mem_diagonalCartan A.property,
     Matrix.smul_apply, smul_eq_mul]
   by_cases hab : glWeightSub R n a b = χ
   · rw [← glWeightSub_apply a b A, hab]
@@ -190,7 +190,8 @@ theorem mem_rootSpace_diagonalCartan_iff [IsDomain R] (χ : Module.Dual R (diago
   rw [rootSpace_diagonalCartan_eq_weightSpace, LieModule.mem_weightSpace] at hB
   set A := diagonalCartanBasis R n k
   have hentry := congrFun (congrFun (hB A) a) b
-  rw [LieSubalgebra.coe_bracket_of_module, lie_apply_of_mem_diagonalCartan A.2, Matrix.smul_apply,
+  rw [LieSubalgebra.coe_bracket_of_module, lie_apply_of_mem_diagonalCartan A.property,
+      Matrix.smul_apply,
     smul_eq_mul, ← glWeightSub_apply a b A] at hentry
   exact (mul_eq_zero.mp (by linear_combination hentry)).resolve_left (sub_ne_zero.mpr hk)
 

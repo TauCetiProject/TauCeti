@@ -75,6 +75,18 @@ theorem Modules.isIntegral_baseRingToGlobalSections (X : Scheme.{u}) (R : Type u
 
 variable [IsIntegral X]
 
+/-- The global functions on an integral scheme universally closed and locally of finite type
+over a field form a finite algebra over that field. -/
+theorem Modules.finite_baseRingToGlobalSections [LocallyOfFiniteType (X ↘ Spec (.of k))] :
+    (Modules.baseRingToGlobalSections k X).Finite := by
+  have hmap : Modules.baseRingToGlobalSections k X =
+      (X ↘ Spec (.of k)).appTop.hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom :=
+    RingHom.ext (Modules.baseRingToGlobalSections_apply k X)
+  rw [hmap]
+  exact (finite_appTop_of_universallyClosed k (X ↘ Spec (.of k))).comp
+    (RingHom.Finite.of_surjective _
+      (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective)
+
 /-- Global functions on a universally closed integral scheme are constants if the ground field
 is integrally closed in its function field. No rational point is required. -/
 theorem baseRingToGlobalSections_bijective_of_isIntegrallyClosedIn
