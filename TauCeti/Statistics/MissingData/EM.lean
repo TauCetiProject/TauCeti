@@ -198,6 +198,19 @@ theorem integral_missingLaw (h : 0 ≤ᵐ[ρ] f θ) (g : Z → F) :
   · have hL : ρ.obsLikelihood f θ = 0 := integral_undef hi
     simp [missingLaw_of_obsLikelihood_eq_zero hL, hL]
 
+/-- Integrability under the conditional law is integrability of the `f θ`-weighted function
+against the reference measure, for an integrable and almost everywhere nonnegative `f θ`. -/
+theorem integrable_missingLaw_iff (h : 0 ≤ᵐ[ρ] f θ) (hi : Integrable (f θ) ρ) (g : Z → F) :
+    Integrable g (ρ.missingLaw f θ) ↔ Integrable (fun z ↦ f θ z • g z) ρ := by
+  by_cases hL : ρ.obsLikelihood f θ = 0
+  · have hf : f θ =ᵐ[ρ] 0 := (integral_eq_zero_iff_of_nonneg_ae h hi).1 hL
+    simp only [missingLaw_of_obsLikelihood_eq_zero hL, integrable_zero_measure, true_iff]
+    exact (integrable_zero Z F ρ).congr (hf.mono fun z hz ↦ by simp [hz])
+  · rw [missingLaw_def, TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
+      (hi.aemeasurable.div_const _) (h.mono fun z hz ↦ div_nonneg hz (obsLikelihood_nonneg h))]
+    simp_rw [div_eq_inv_mul, mul_smul]
+    exact integrable_smul_iff (inv_ne_zero hL) _
+
 /-- The conditional law of the missing part is a probability measure when the complete-data
 density is almost everywhere nonnegative with nonzero observed-data likelihood (which forces it
 to be integrable). -/
@@ -225,10 +238,20 @@ theorem emQ_eq_inv_mul_integral (h : 0 ≤ᵐ[ρ] f θ') (θ : E) :
     ρ.emQ f θ θ' = (ρ.obsLikelihood f θ')⁻¹ * ∫ z, f θ' z * Real.log (f θ z) ∂ρ :=
   integral_missingLaw h _
 
+@[simp]
+theorem emQ_zero_measure (f : E → Z → ℝ) (θ θ' : E) : (0 : Measure Z).emQ f θ θ' = 0 := by
+  simp [emQ_def]
+
+/-- When the observed-data likelihood at `θ'` vanishes, the criterion `Q(θ | θ')` is the junk
+value `0`. -/
+theorem emQ_of_obsLikelihood_eq_zero (h : ρ.obsLikelihood f θ' = 0) (θ : E) :
+    ρ.emQ f θ θ' = 0 := by
+  simp [emQ_def, missingLaw_of_obsLikelihood_eq_zero h]
+
 /-- An EM step is a maximizer over `Θ` of the totalized criterion `Q(· | θ')`. -/
 theorem isEMStep_iff_isMaxOn :
-    ρ.IsEMStep Θ f θ' θ'' ↔ θ'' ∈ Θ ∧ IsMaxOn (fun θ ↦ ρ.emQ f θ θ') Θ θ'' :=
-  Iff.rfl
+    ρ.IsEMStep Θ f θ' θ'' ↔ θ'' ∈ Θ ∧ IsMaxOn (fun θ ↦ ρ.emQ f θ θ') Θ θ'' := by
+  rw [isEMStep_iff, isMaxOn_iff]
 
 namespace IsEMStep
 
@@ -241,7 +264,7 @@ theorem le (h : ρ.IsEMStep Θ f θ' θ'') (hθ : θ ∈ Θ) : ρ.emQ f θ θ' �
   h.2 θ hθ
 
 theorem isMaxOn (h : ρ.IsEMStep Θ f θ' θ'') : IsMaxOn (fun θ ↦ ρ.emQ f θ θ') Θ θ'' :=
-  h.2
+  isMaxOn_iff.2 h.2
 
 end IsEMStep
 
