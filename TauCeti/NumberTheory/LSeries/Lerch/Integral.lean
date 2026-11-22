@@ -30,17 +30,17 @@ extending `TauCeti.lerchSeries z s c` from `‖z‖ < 1` across `ℂ \ [1, ∞)`
 * `TauCeti.lerchIntegral`, `IsCompact.exists_integrableOn_Ioi_lerchMajorant`,
   `TauCeti.integrableOn_lerchIntegrand`: Gamma-normalized integral representation, compact
   dominated majorant, and integrability on `(0, ∞)`.
-* `TauCeti.analyticOnNhd_lerchIntegral`, `TauCeti.analyticOnNhd_lerchIntegral_z`,
+* `TauCeti.analyticOnNhd_lerchIntegral`, `TauCeti.analyticOnNhd_lerchIntegral_middle`,
   `TauCeti.differentiableOn_lerchIntegral`: joint analyticity, `z`-slice analyticity, and
   holomorphy on `{p | 0 < p.1.re ∧ 1 - p.2.1 ∈ Complex.slitPlane ∧ 0 < p.2.2.re}`.
 * `TauCeti.lerchIntegral_eq_lerchSeries`,
   `TauCeti.lerchIntegral_eq_sum_range_add_pow_mul_add_natCast_right`,
   `TauCeti.lerchIntegral_eq_exp_add_mul_add_one_right`: agreement with `lerchSeries` on `‖z‖ < 1`,
   `N`-step and `1`-step `c`-shift identities.
-* `TauCeti.mul_deriv_lerchIntegral_z_add_mul`, `TauCeti.hasDerivAt_lerchIntegral_c`,
-  `TauCeti.deriv_lerchIntegral_c`, `TauCeti.mul_deriv_deriv_lerchIntegral_c_add_mul`: lowering
-  relation `(z ∂_z + c) lerchIntegral (s, z, c) = lerchIntegral (s - 1, z, c)`, raising relation
-  `∂_c lerchIntegral (s, z, c) = -s * lerchIntegral (s + 1, z, c)`, and Lerch PDE
+* `TauCeti.mul_deriv_lerchIntegral_middle_add_mul`, `TauCeti.hasDerivAt_lerchIntegral_right`,
+  `TauCeti.deriv_lerchIntegral_right`, `TauCeti.mul_deriv_deriv_lerchIntegral_right_add_mul`:
+  lowering relation `(z ∂_z + c) lerchIntegral (s, z, c) = lerchIntegral (s - 1, z, c)`, raising
+  relation `∂_c lerchIntegral (s, z, c) = -s * lerchIntegral (s + 1, z, c)`, and Lerch PDE
   `(z ∂_z + c) ∂_c lerchIntegral (s, z, c) = -s * lerchIntegral (s, z, c)` on
   `1 - z ∈ Complex.slitPlane`.
 
@@ -177,7 +177,7 @@ theorem analyticOnNhd_lerchIntegral :
 
 /-- For `0 < Re s` and `0 < Re c`, `z ↦ lerchIntegral (s, z, c)` is analytic on the cut plane
 `{w : ℂ | 1 - w ∈ Complex.slitPlane}`. -/
-theorem analyticOnNhd_lerchIntegral_z {s c : ℂ} (hs : 0 < s.re) (hc : 0 < c.re) :
+theorem analyticOnNhd_lerchIntegral_middle {s c : ℂ} (hs : 0 < s.re) (hc : 0 < c.re) :
     AnalyticOnNhd ℂ (fun w : ℂ => lerchIntegral (s, w, c)) {w | 1 - w ∈ Complex.slitPlane} :=
   fun w hw =>
     (analyticOnNhd_lerchIntegral (s, w, c) ⟨hs, hw, hc⟩).comp
@@ -298,7 +298,7 @@ theorem lerchIntegral_eq_sum_range_add_pow_mul_add_natCast_right {s z c : ℂ} (
 /-- Lowering differential relation
 `(z ∂_z + c) lerchIntegral (s, z, c) = lerchIntegral (s - 1, z, c)` on the principal cut plane
 `1 - z ∈ Complex.slitPlane` for `1 < s.re` and `0 < c.re`. -/
-theorem mul_deriv_lerchIntegral_z_add_mul {s z c : ℂ} (hs : 1 < s.re)
+theorem mul_deriv_lerchIntegral_middle_add_mul {s z c : ℂ} (hs : 1 < s.re)
     (hz : 1 - z ∈ Complex.slitPlane) (hc : 0 < c.re) :
     z * deriv (fun w => lerchIntegral (s, w, c)) z + c * lerchIntegral (s, z, c) =
       lerchIntegral (s - 1, z, c) := by
@@ -306,13 +306,13 @@ theorem mul_deriv_lerchIntegral_z_add_mul {s z c : ℂ} (hs : 1 < s.re)
   have hs0 : 0 < s.re := by linarith
   have hs1 : 0 < (s - 1).re := by simp; linarith
   have hF_an : AnalyticOnNhd ℂ (fun w : ℂ => lerchIntegral (s, w, c)) Ω :=
-    analyticOnNhd_lerchIntegral_z hs0 hc
+    analyticOnNhd_lerchIntegral_middle hs0 hc
   have han1 : AnalyticOnNhd ℂ
       (fun w : ℂ => w * deriv (fun u => lerchIntegral (s, u, c)) w + c * lerchIntegral (s, w, c))
       Ω := fun w hw =>
     (analyticAt_id.mul (hF_an w hw).deriv).add (analyticAt_const.mul (hF_an w hw))
   have han2 : AnalyticOnNhd ℂ (fun w : ℂ => lerchIntegral (s - 1, w, c)) Ω :=
-    analyticOnNhd_lerchIntegral_z hs1 hc
+    analyticOnNhd_lerchIntegral_middle hs1 hc
   have hev : (fun w : ℂ =>
         w * deriv (fun u => lerchIntegral (s, u, c)) w + c * lerchIntegral (s, w, c)) =ᶠ[𝓝 (0 : ℂ)]
       fun w => lerchIntegral (s - 1, w, c) := by
@@ -323,7 +323,7 @@ theorem mul_deriv_lerchIntegral_z_add_mul {s z c : ℂ} (hs : 1 < s.re)
       exact lerchIntegral_eq_lerchSeries hs0 (mem_ball_zero_iff.mp hu) hc
     rw [hloc.deriv_eq, lerchIntegral_eq_lerchSeries hs0 hw1 hc,
       lerchIntegral_eq_lerchSeries hs1 hw1 hc]
-    exact mul_deriv_lerchSeries_z_add_mul hw1 s fun n =>
+    exact mul_deriv_lerchSeries_left_add_mul hw1 s fun n =>
       Complex.slitPlane_ne_zero
         (Complex.mem_slitPlane_iff.mpr (Or.inl (Complex.natCast_add_re_pos n hc)))
   exact han1.eqOn_of_preconnected_of_eventuallyEq han2
@@ -332,7 +332,7 @@ theorem mul_deriv_lerchIntegral_z_add_mul {s z c : ℂ} (hs : 1 < s.re)
 /-- `HasDerivAt` form of the raising relation in `c` for `lerchIntegral`:
 `∂_c lerchIntegral (s, z, c) = -s * lerchIntegral (s + 1, z, c)` on `0 < Re s`,
 `1 - z ∈ Complex.slitPlane`, `0 < Re c`. -/
-theorem hasDerivAt_lerchIntegral_c {s z c : ℂ} (hs : 0 < s.re) (hz : 1 - z ∈ Complex.slitPlane)
+theorem hasDerivAt_lerchIntegral_right {s z c : ℂ} (hs : 0 < s.re) (hz : 1 - z ∈ Complex.slitPlane)
     (hc : 0 < c.re) :
     HasDerivAt (fun w => lerchIntegral (s, z, w)) (-s * lerchIntegral (s + 1, z, c)) c := by
   obtain ⟨δ, hδ, hcb⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
@@ -376,15 +376,15 @@ theorem hasDerivAt_lerchIntegral_c {s z c : ℂ} (hs : 0 < s.re) (hz : 1 - z ∈
 /-- Raising relation in `c` for `lerchIntegral`:
 `∂_c lerchIntegral (s, z, c) = -s * lerchIntegral (s + 1, z, c)` on `0 < Re s`,
 `1 - z ∈ Complex.slitPlane`, `0 < Re c`. -/
-theorem deriv_lerchIntegral_c {s z c : ℂ} (hs : 0 < s.re) (hz : 1 - z ∈ Complex.slitPlane)
+theorem deriv_lerchIntegral_right {s z c : ℂ} (hs : 0 < s.re) (hz : 1 - z ∈ Complex.slitPlane)
     (hc : 0 < c.re) :
     deriv (fun w => lerchIntegral (s, z, w)) c = -s * lerchIntegral (s + 1, z, c) :=
-  (hasDerivAt_lerchIntegral_c hs hz hc).deriv
+  (hasDerivAt_lerchIntegral_right hs hz hc).deriv
 
 /-- Coupling the raising derivative in `c` with the lowering operator `z ∂_z + c` yields the
 second-order Lerch partial differential equation `(z ∂_z + c) ∂_c lerchIntegral (s, z, c) =
 -s * lerchIntegral (s, z, c)` on `0 < s.re`, `1 - z ∈ Complex.slitPlane`, and `0 < c.re`. -/
-theorem mul_deriv_deriv_lerchIntegral_c_add_mul {s z c : ℂ} (hs : 0 < s.re)
+theorem mul_deriv_deriv_lerchIntegral_right_add_mul {s z c : ℂ} (hs : 0 < s.re)
     (hz : 1 - z ∈ Complex.slitPlane) (hc : 0 < c.re) :
     z * deriv (fun w => deriv (fun u => lerchIntegral (s, w, u)) c) z +
         c * deriv (fun u => lerchIntegral (s, z, u)) c =
@@ -393,11 +393,11 @@ theorem mul_deriv_deriv_lerchIntegral_c_add_mul {s z c : ℂ} (hs : 0 < s.re)
   have hloc : (fun w => deriv (fun u => lerchIntegral (s, w, u)) c) =ᶠ[𝓝 z]
       fun w => -s * lerchIntegral (s + 1, w, c) := by
     filter_upwards [Complex.isOpen_setOf_one_sub_mem_slitPlane.mem_nhds hz] with w hw
-    exact deriv_lerchIntegral_c hs hw hc
+    exact deriv_lerchIntegral_right hs hw hc
   have hdiff : DifferentiableAt ℂ (fun w => lerchIntegral (s + 1, w, c)) z :=
-    (analyticOnNhd_lerchIntegral_z (by linarith) hc z hz).differentiableAt
-  rw [hloc.deriv_eq, deriv_const_mul _ hdiff, deriv_lerchIntegral_c hs hz hc]
-  have hlow := mul_deriv_lerchIntegral_z_add_mul hs1 hz hc
+    (analyticOnNhd_lerchIntegral_middle (by linarith) hc z hz).differentiableAt
+  rw [hloc.deriv_eq, deriv_const_mul _ hdiff, deriv_lerchIntegral_right hs hz hc]
+  have hlow := mul_deriv_lerchIntegral_middle_add_mul hs1 hz hc
   rw [add_sub_cancel_right] at hlow
   linear_combination -s * hlow
 

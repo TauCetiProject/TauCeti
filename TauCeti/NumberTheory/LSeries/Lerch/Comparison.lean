@@ -62,7 +62,7 @@ theorem mul_lerchIntegral_one_one_eq_polylog_one {z : ℂ} (hz : 1 - z ∈ Compl
     z * lerchIntegral (1, z, 1) = Polylog.polylog 1 z := by
   let Ω : Set ℂ := {w : ℂ | 1 - w ∈ Complex.slitPlane}
   have han1 : AnalyticOnNhd ℂ (fun w : ℂ => w * lerchIntegral (1, w, 1)) Ω := fun w hw =>
-    analyticAt_id.mul (analyticOnNhd_lerchIntegral_z one_pos one_pos w hw)
+    analyticAt_id.mul (analyticOnNhd_lerchIntegral_middle one_pos one_pos w hw)
   have hev : (fun w : ℂ => w * lerchIntegral (1, w, 1)) =ᶠ[𝓝 (0 : ℂ)] Polylog.polylog 1 := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_self one_pos)] with w hw
     have hw1 : ‖w‖ < 1 := mem_ball_zero_iff.mp hw

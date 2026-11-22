@@ -53,8 +53,8 @@ in `(z, s, c)` admit uniform summable bounds, giving joint analyticity, the lowe
   `TauCeti.lerchZeta_eq_exp_add_mul_add_one_right`, `TauCeti.analyticOnNhd_lerchZeta`,
   `TauCeti.differentiableOn_lerchZeta`, `TauCeti.hasSum_lerchZeta_of_im_nonneg`: characteristic API
   for `lerchZeta`.
-* `TauCeti.hasDerivAt_lerchSeries_z`, `TauCeti.mul_deriv_lerchSeries_z_add_mul`,
-  `TauCeti.hasDerivAt_lerchSeries_s`, `TauCeti.hasDerivAt_lerchSeries_c`,
+* `TauCeti.hasDerivAt_lerchSeries_left`, `TauCeti.mul_deriv_lerchSeries_left_add_mul`,
+  `TauCeti.hasDerivAt_lerchSeries_middle`, `TauCeti.hasDerivAt_lerchSeries_right`,
   `TauCeti.analyticOnNhd_lerchSeries`, `TauCeti.differentiableOn_lerchSeries`: termwise derivatives,
   lowering relation, and joint analyticity in `(s, z, c)`.
 * `TauCeti.summable_norm_lerchSeries_term_of_norm_le_one`,
@@ -339,7 +339,7 @@ private theorem isOpen_lerchSeriesDomain :
 
 /-- On `‖z‖ < 1`, `w ↦ lerchSeries w s c` has term-by-term complex derivative at `z` for all
 `s, c : ℂ`. -/
-theorem hasDerivAt_lerchSeries_z {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
+theorem hasDerivAt_lerchSeries_left {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
     HasDerivAt (fun w => lerchSeries w s c)
       (∑' n : ℕ, (n : ℂ) * z ^ (n - 1) * Complex.exp (-s * Complex.log (n + c))) z := by
   set r : ℝ := (‖z‖ + 1) / 2
@@ -355,20 +355,20 @@ theorem hasDerivAt_lerchSeries_z {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
   simpa [F, lerchSeries_def] using hd
 
 /-- Term-by-term formula for `deriv (fun w => lerchSeries w s c) z` on `‖z‖ < 1`. -/
-theorem deriv_lerchSeries_z {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
+theorem deriv_lerchSeries_left {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
     deriv (fun w => lerchSeries w s c) z =
       ∑' n : ℕ, (n : ℂ) * z ^ (n - 1) * Complex.exp (-s * Complex.log (n + c)) :=
-  (hasDerivAt_lerchSeries_z hz s c).deriv
+  (hasDerivAt_lerchSeries_left hz s c).deriv
 
 /-- For all `s, c : ℂ`, `w ↦ lerchSeries w s c` is holomorphic on the open unit disc. -/
-theorem differentiableOn_lerchSeries_z (s c : ℂ) :
+theorem differentiableOn_lerchSeries_left (s c : ℂ) :
     DifferentiableOn ℂ (fun w => lerchSeries w s c) (ball 0 1) := fun _ hz =>
-  (hasDerivAt_lerchSeries_z (mem_ball_zero_iff.mp hz) s c).differentiableAt
+  (hasDerivAt_lerchSeries_left (mem_ball_zero_iff.mp hz) s c).differentiableAt
     |>.differentiableWithinAt
 
 /-- Lowering differential relation `(z ∂_z + c) Φ(z, s, c) = Φ(z, s - 1, c)` on `‖z‖ < 1` whenever
 `(n : ℂ) + c ≠ 0` for every `n : ℕ`. -/
-theorem mul_deriv_lerchSeries_z_add_mul {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
+theorem mul_deriv_lerchSeries_left_add_mul {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
     (hc : ∀ n : ℕ, (n : ℂ) + c ≠ 0) :
     z * deriv (fun w => lerchSeries w s c) z + c * lerchSeries z s c =
       lerchSeries z (s - 1) c := by
@@ -389,13 +389,13 @@ theorem mul_deriv_lerchSeries_z_add_mul {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {
   have hfun : (fun n : ℕ => z * ((n : ℂ) * z ^ (n - 1) * Complex.exp (-s * Complex.log (n + c)))) =
       fun n : ℕ => z ^ n * Complex.exp (-(s - 1) * Complex.log (n + c)) -
         c * (z ^ n * Complex.exp (-s * Complex.log (n + c))) := funext hterm
-  rw [deriv_lerchSeries_z hz s c, ← tsum_mul_left, lerchSeries_def z s c, ← tsum_mul_left, hfun,
+  rw [deriv_lerchSeries_left hz s c, ← tsum_mul_left, lerchSeries_def z s c, ← tsum_mul_left, hfun,
     ← (hs1.sub hs2).tsum_add hs2]
   simp [lerchSeries_def]
 
 /-- On `‖z‖ < 1`, `w ↦ lerchSeries z w c` is entire and may be differentiated term-by-term in `s`
 for all `c : ℂ`. -/
-theorem hasDerivAt_lerchSeries_s {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
+theorem hasDerivAt_lerchSeries_middle {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
     HasDerivAt (fun w => lerchSeries z w c)
       (∑' n : ℕ, -Complex.log (n + c) * z ^ n * Complex.exp (-s * Complex.log (n + c))) s := by
   obtain ⟨u, hu, hle⟩ := exists_summable_norm_log_pow_lerchSeries_term_le_fixed_right
@@ -414,17 +414,17 @@ theorem hasDerivAt_lerchSeries_s {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
   exact hd.congr_of_eventuallyEq (Eventually.of_forall fun w => (lerchSeries_def z w c).symm)
 
 /-- Termwise `s`-derivative of `lerchSeries` on `‖z‖ < 1`. -/
-theorem deriv_lerchSeries_s {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
+theorem deriv_lerchSeries_middle {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
     deriv (fun w => lerchSeries z w c) s =
       ∑' n : ℕ, -Complex.log (n + c) * z ^ n * Complex.exp (-s * Complex.log (n + c)) :=
-  (hasDerivAt_lerchSeries_s hz s c).deriv
+  (hasDerivAt_lerchSeries_middle hz s c).deriv
 
 /-- For `‖z‖ < 1` and any `c : ℂ`, `s ↦ lerchSeries z s c` is entire on `ℂ`. -/
-theorem differentiable_lerchSeries_s {z : ℂ} (hz : ‖z‖ < 1) (c : ℂ) :
+theorem differentiable_lerchSeries_middle {z : ℂ} (hz : ‖z‖ < 1) (c : ℂ) :
     Differentiable ℂ (fun s => lerchSeries z s c) := fun s =>
-  (hasDerivAt_lerchSeries_s hz s c).differentiableAt
+  (hasDerivAt_lerchSeries_middle hz s c).differentiableAt
 
-private theorem differentiableAt_log_pow_lerchSeries_term_c (n ds : ℕ) (s : ℂ) {c : ℂ}
+private theorem differentiableAt_log_pow_lerchSeries_term_right (n ds : ℕ) (s : ℂ) {c : ℂ}
     (hc : c ∈ Complex.slitPlane) :
     DifferentiableAt ℂ
       (fun c' : ℂ => (-Complex.log (n + c')) ^ ds * Complex.exp (-s * Complex.log (n + c')))
@@ -435,7 +435,7 @@ private theorem differentiableAt_log_pow_lerchSeries_term_c (n ds : ℕ) (s : �
 
 /-- Raising relation in `c`: for `‖z‖ < 1` and `c ∈ Complex.slitPlane`,
 `∂_c Φ(z, s, c) = -s * Φ(z, s + 1, c)`. -/
-theorem hasDerivAt_lerchSeries_c {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
+theorem hasDerivAt_lerchSeries_right {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
     (hc : c ∈ Complex.slitPlane) :
     HasDerivAt (fun w => lerchSeries z s w) (-s * lerchSeries z (s + 1) c) c := by
   obtain ⟨δ, hδ, hcb⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
@@ -449,7 +449,7 @@ theorem hasDerivAt_lerchSeries_c {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ
     (fun p hp n => slitPlane_ne_zero (forall_natCast_add_mem_slitPlane_iff.mpr (hcb hp.2.2) n))
   let F : ℕ → ℂ → ℂ := fun n w => z ^ n * Complex.exp (-s * Complex.log (n + w))
   have hFo : ∀ n, DifferentiableOn ℂ (F n) (ball c δ) := fun n w hw => by
-    simpa [F] using ((differentiableAt_log_pow_lerchSeries_term_c n 0 s
+    simpa [F] using ((differentiableAt_log_pow_lerchSeries_term_right n 0 s
       (hcb (ball_subset_closedBall hw))).const_mul (z ^ n)).differentiableWithinAt
   have hd := Complex.hasDerivAt_tsum_of_summable_norm hu hFo isOpen_ball
     (fun n w hw => hle n (s, z, w) ⟨rfl, rfl, ball_subset_closedBall hw⟩) (mem_ball_self hδ)
@@ -468,15 +468,15 @@ theorem hasDerivAt_lerchSeries_c {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ
   exact hd.congr_of_eventuallyEq (Eventually.of_forall fun w => (lerchSeries_def z s w).symm)
 
 /-- Derivative form of the raising relation `∂_c Φ(z, s, c) = -s * Φ(z, s + 1, c)`. -/
-theorem deriv_lerchSeries_c {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
+theorem deriv_lerchSeries_right {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
     (hc : c ∈ Complex.slitPlane) :
     deriv (fun w => lerchSeries z s w) c = -s * lerchSeries z (s + 1) c :=
-  (hasDerivAt_lerchSeries_c hz s hc).deriv
+  (hasDerivAt_lerchSeries_right hz s hc).deriv
 
 /-- For `‖z‖ < 1` and any `s : ℂ`, `c ↦ lerchSeries z s c` is holomorphic on `Complex.slitPlane`. -/
-theorem differentiableOn_lerchSeries_c {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) :
+theorem differentiableOn_lerchSeries_right {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) :
     DifferentiableOn ℂ (fun w => lerchSeries z s w) Complex.slitPlane := fun _ hc =>
-  (hasDerivAt_lerchSeries_c hz s hc).differentiableAt.differentiableWithinAt
+  (hasDerivAt_lerchSeries_right hz s hc).differentiableAt.differentiableWithinAt
 
 /-- `lerchSeries` is jointly analytic in `(s, z, c)` on
 `{p : ℂ × ℂ × ℂ | ‖p.2.1‖ < 1 ∧ p.2.2 ∈ Complex.slitPlane}`. -/
@@ -568,7 +568,7 @@ private theorem norm_mul_iteratedDeriv_right_lerchSeries_term_le (n ds dc : ℕ)
       Complex.exp (-s * Complex.log (n + c))) c₀‖ ≤ dc.factorial * B / R ^ dc := by
   let g : ℂ → ℂ := fun c => (-Complex.log (n + c)) ^ ds * Complex.exp (-s * Complex.log (n + c))
   have hg_diff : DifferentiableOn ℂ (fun c' => z' ^ n * g c') (closedBall c₀ R) := fun c' hc' =>
-    ((differentiableAt_log_pow_lerchSeries_term_c n ds s (hcs c' hc')).const_mul
+    ((differentiableAt_log_pow_lerchSeries_term_right n ds s (hcs c' hc')).const_mul
       (z' ^ n)).differentiableWithinAt
   rw [← iteratedDeriv_const_mul_field (z' ^ n) g]
   exact Complex.norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le dc hR
@@ -615,7 +615,7 @@ theorem _root_.IsCompact.exists_summable_norm_iteratedDeriv_lerchSeries_term_le
           (by fun_prop : Differentiable ℂ (fun z' : ℂ => z' ^ n * W)).diffContOnCl hc_bound
     _ = (dz.factorial / R ^ dz) * (dc.factorial / R ^ dc) * v n := by ring
 
-private theorem iteratedDeriv_lerchSeries_s_z_eq_tsum {s₀ z₀ : ℂ} (hz : ‖z₀‖ < 1)
+private theorem iteratedDeriv_lerchSeries_middle_left_eq_tsum {s₀ z₀ : ℂ} (hz : ‖z₀‖ < 1)
     (c : ℂ) (dz ds : ℕ) :
     iteratedDeriv dz (fun z => iteratedDeriv ds (fun s => lerchSeries z s c) s₀) z₀ =
       ∑' n : ℕ, iteratedDeriv dz (fun z =>
@@ -667,7 +667,7 @@ theorem iteratedDeriv_lerchSeries_eq_tsum {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1
           p.2.1) p.2.2 := by
   obtain ⟨δ, hδ, hcb⟩ :=
     Metric.nhds_basis_closedBall.mem_iff.mp (Complex.isOpen_slitPlane.mem_nhds hc)
-  simp_rw [iteratedDeriv_lerchSeries_s_z_eq_tsum hz _ dz ds]
+  simp_rw [iteratedDeriv_lerchSeries_middle_left_eq_tsum hz _ dz ds]
   obtain ⟨u, hu, hle⟩ :=
     (isCompact_singleton.prod
       (isCompact_singleton.prod
@@ -679,7 +679,7 @@ theorem iteratedDeriv_lerchSeries_eq_tsum {p : ℂ × ℂ × ℂ} (hz : ‖p.2.1
         fun s => Complex.exp (-Complex.log (n + c'') * s) := funext fun s => by ring_nf
     simp_rw [iteratedDeriv_const_mul_field, hfun, congrFun (iteratedDeriv_cexp_const_mul ds _) p.1,
       iteratedDeriv_mul_const_field, mul_comm (-Complex.log _) p.1, mul_neg, ← neg_mul]
-    exact ((differentiableAt_log_pow_lerchSeries_term_c n ds p.1
+    exact ((differentiableAt_log_pow_lerchSeries_term_right n ds p.1
       (hcb (ball_subset_closedBall hc'))).const_mul _).differentiableWithinAt
   · simpa using hle n (p.1, p.2.1, c') ⟨rfl, rfl, ball_subset_closedBall hc'⟩
 

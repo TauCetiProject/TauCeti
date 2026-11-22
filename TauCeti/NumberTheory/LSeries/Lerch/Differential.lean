@@ -26,7 +26,7 @@ Iterating `z ∂_z + c` on `Φ(z, 0, c) = (1 - z)⁻¹` yields rational values
 
 ## Main declarations
 
-* `TauCeti.mul_deriv_deriv_lerchSeries_c_add_mul`: the Lerch PDE
+* `TauCeti.mul_deriv_deriv_lerchSeries_right_add_mul`: the Lerch PDE
   `(z ∂_z + c) ∂_c Φ(z, s, c) = -s Φ(z, s, c)`.
 * `TauCeti.lerchSeries_neg_nat_eq_iterate`, `TauCeti.lerchSeries_neg_nat_eq_div`,
   `TauCeti.lerchSeries_neg_one`:
@@ -54,7 +54,7 @@ namespace TauCeti
 /-- Coupling the raising derivative in `c` with the lowering operator `z ∂_z + c` yields the
 second-order Lerch partial differential equation `(z ∂_z + c) ∂_c Φ(z, s, c) = -s Φ(z, s, c)` on
 `‖z‖ < 1` and `c ∈ Complex.slitPlane`. -/
-theorem mul_deriv_deriv_lerchSeries_c_add_mul {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
+theorem mul_deriv_deriv_lerchSeries_right_add_mul {z : ℂ} (hz : ‖z‖ < 1) (s : ℂ) {c : ℂ}
     (hc : c ∈ Complex.slitPlane) :
     z * deriv (fun w => deriv (fun u => lerchSeries w s u) c) z +
         c * deriv (fun u => lerchSeries z s u) c =
@@ -62,11 +62,11 @@ theorem mul_deriv_deriv_lerchSeries_c_add_mul {z : ℂ} (hz : ‖z‖ < 1) (s : 
   have hloc : (fun w => deriv (fun u => lerchSeries w s u) c) =ᶠ[𝓝 z]
       fun w => -s * lerchSeries w (s + 1) c := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.mpr hz)] with w hw
-    exact deriv_lerchSeries_c (mem_ball_zero_iff.mp hw) s hc
+    exact deriv_lerchSeries_right (mem_ball_zero_iff.mp hw) s hc
   rw [hloc.deriv_eq,
-    deriv_const_mul _ (hasDerivAt_lerchSeries_z hz (s + 1) c).differentiableAt,
-    deriv_lerchSeries_c hz s hc]
-  have hlow := mul_deriv_lerchSeries_z_add_mul hz (s + 1) fun n =>
+    deriv_const_mul _ (hasDerivAt_lerchSeries_left hz (s + 1) c).differentiableAt,
+    deriv_lerchSeries_right hz s hc]
+  have hlow := mul_deriv_lerchSeries_left_add_mul hz (s + 1) fun n =>
     Complex.slitPlane_ne_zero (ofReal_add_mem_slitPlane hc (Nat.cast_nonneg n))
   rw [add_sub_cancel_right] at hlow
   linear_combination -s * hlow
@@ -89,7 +89,7 @@ theorem lerchSeries_neg_nat_eq_iterate (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c
       filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.mpr hz)] with w hw
       exact (ih (mem_ball_zero_iff.mp hw)).symm
     have hcast : -(m : ℂ) - 1 = -((m + 1 : ℕ) : ℂ) := by push_cast; ring
-    rw [hloc.deriv_eq, ← ih hz, mul_deriv_lerchSeries_z_add_mul hz (-(m : ℂ)) hc, hcast]
+    rw [hloc.deriv_eq, ← ih hz, mul_deriv_lerchSeries_left_add_mul hz (-(m : ℂ)) hc, hcast]
 
 /-- Rational formula for `Φ(z, -m, c)` on `‖z‖ < 1` whenever `(n : ℂ) + c ≠ 0` for all `n : ℕ`. -/
 theorem lerchSeries_neg_nat_eq_div (m : ℕ) {z : ℂ} (hz : ‖z‖ < 1) {c : ℂ}
