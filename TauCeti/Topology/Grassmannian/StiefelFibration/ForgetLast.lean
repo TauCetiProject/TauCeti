@@ -130,8 +130,8 @@ any finite index type `M` of `N - 1` cube directions. -/
 theorem nontrivial_homotopyGroup_oneFrame {k : ℕ} {M : Type*} [Finite M] (hM : Nat.card M = k + 2)
     (b : finiteOrthonormalFrame ℝ 1 (k + 3)) :
     Nontrivial (HomotopyGroup M (finiteOrthonormalFrame ℝ 1 (k + 3)) b) := by
-  have := nontrivial_homotopyGroup_sphere (n := k) (by simp) (sphereHomeomorph (k + 3) b)
-  exact ((HomotopyGroup.homeomorphEquiv (sphereHomeomorph (k + 3)) b).trans
+  have := nontrivial_homotopyGroup_sphere (n := k) (by simp) (sphereHomeomorph ℝ (k + 3) b)
+  exact ((HomotopyGroup.homeomorphEquiv (sphereHomeomorph ℝ (k + 3)) b).trans
     (HomotopyGroup.congrEquiv (Finite.equivFinOfCardEq hM))).nontrivial
 
 /-- For `r < N`, the Stiefel manifold `V_r(ℝ^N)` is path-connected. -/
