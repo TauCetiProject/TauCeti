@@ -202,12 +202,31 @@ def horseshoeShortComplex : ShortComplex (CochainComplex C ℕ) :=
   ShortComplex.mk (I₁.horseshoeInl I₃ hS) (I₁.horseshoeSnd I₃ hS)
     (I₁.horseshoeInl_comp_horseshoeSnd I₃ hS)
 
-/-- In each degree, `I₁ ⟶ I₂ ⟶ I₃` is the split short exact sequence `I₁ⁿ ⟶ I₁ⁿ ⊞ I₃ⁿ ⟶ I₃ⁿ`. -/
+/-- In each degree, `I₁ ⟶ I₂ ⟶ I₃` is the split short exact sequence `I₁ⁿ ⟶ I₁ⁿ ⊞ I₃ⁿ ⟶ I₃ⁿ`, whose
+retraction and section are `biprod.fst` and `biprod.inr`
+(`CategoryTheory.InjectiveResolution.horseshoeSplitting_r` and
+`CategoryTheory.InjectiveResolution.horseshoeSplitting_s`). -/
 def horseshoeSplitting (n : ℕ) :
     ((I₁.horseshoeShortComplex I₃ hS).map (HomologicalComplex.eval C _ n)).Splitting :=
   -- the maps in degree `n` are the biproduct maps by `horseshoeInl_f` and `horseshoeSnd_f`, which
   -- hold by definition
   ShortComplex.Splitting.ofHasBinaryBiproduct _ _
+
+/-- The retraction of the degreewise splitting of `I₁ ⟶ I₂ ⟶ I₃` is the first projection. -/
+@[simp]
+lemma horseshoeSplitting_r (n : ℕ) :
+    (I₁.horseshoeSplitting I₃ hS n).r = biprod.fst := by
+  -- the body is not exposed, so the projection of `ofHasBinaryBiproduct` is reached by unfolding
+  unfold horseshoeSplitting
+  rfl
+
+/-- The section of the degreewise splitting of `I₁ ⟶ I₂ ⟶ I₃` is the second inclusion. -/
+@[simp]
+lemma horseshoeSplitting_s (n : ℕ) :
+    (I₁.horseshoeSplitting I₃ hS n).s = biprod.inr := by
+  -- the body is not exposed, so the projection of `ofHasBinaryBiproduct` is reached by unfolding
+  unfold horseshoeSplitting
+  rfl
 
 /-- The sequence `I₁ ⟶ I₂ ⟶ I₃` of horseshoe complexes is short exact. -/
 lemma horseshoeShortComplex_shortExact : (I₁.horseshoeShortComplex I₃ hS).ShortExact :=
