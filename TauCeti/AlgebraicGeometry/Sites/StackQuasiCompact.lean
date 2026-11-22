@@ -76,9 +76,10 @@ private lemma isPrestackFor_pullback₂_of_isAffine
   have hqc : ∀ j, AlgebraicGeometry.QuasiCompact ((𝒰.pullback₂ h).f j) :=
     Cover.quasiCompact_pullback₂ 𝒰 h haff
   let _ : QuasiCompactCover (𝒰.pullback₂ h).toPreZeroHypercover := .of_finite
-  rw [← Cover.ofQuasiCompactCover_presieve₀ (𝒰.pullback₂ h)]
-  exact haff_case A (.ofQuasiCompactCover (𝒰.pullback₂ h))
-    ⟨Cover.isAffine_ofQuasiCompactCover _ haff', Cover.finite_ofQuasiCompactCover _⟩
+  simpa only [Cover.ofQuasiCompactCover_toPreZeroHypercover] using
+    haff_case A (.ofQuasiCompactCover (𝒰.pullback₂ h))
+      ⟨by rw [Cover.ofQuasiCompactCover_toPreZeroHypercover]; exact haff',
+        by rw [Cover.ofQuasiCompactCover_toPreZeroHypercover]; exact hfin⟩
 
 private lemma exists_specMap_sigma_sieve {P : MorphismProperty Scheme.{u}}
     [IsZariskiLocalAtSource P] {R : CommRingCat.{u}}
@@ -122,8 +123,7 @@ theorem isPrestack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤�
       rw [Precoverage.ZeroHypercover.sieve_generate_pullback₂, IsPrestackFor_generate_iff]
       exact this _ (𝒰.pullback₂ h) hV
     refine IsPrestackFor.of_pullback T.affineOneHypercover (fun i ↦ ?_) (fun i j k _ _ _ _ h ↦ ?_)
-    · exact hpull (T.affineOneHypercover.f i)
-        ⟨T.affineOpenCover.X i, AffineOpenCover.openCover_X T.affineOpenCover i⟩
+    · exact hpull (T.affineOneHypercover.f i) (T.exists_spec_affineOneHypercover_X i)
     · exact (hpull (T.affineOneHypercover.p₁ k ≫ T.affineOneHypercover.f i)
         (T.exists_spec_affineOneHypercover_Y k)).hom_ext h
   obtain ⟨R, rfl⟩ := hT
@@ -132,24 +132,27 @@ theorem isPrestack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤�
     have hpull {V : Scheme.{u}} (h : V ⟶ Spec R) (hV : ∃ A : CommRingCat.{u}, V = Spec A) :
         F.IsPrestackFor ((Sieve.ofArrows 𝒱.cover.X 𝒱.cover.f).pullback h).arrows := by
       obtain ⟨A, rfl⟩ := hV
-      have _ : Finite 𝒱.cover.I₀ := AffineCover.finite_cover 𝒱
+      have _ : Finite 𝒱.cover.I₀ := by rw [AffineCover.cover_I₀]; exact hfin
       have hs : (Sieve.ofArrows 𝒱.cover.X 𝒱.cover.f).pullback h =
           Sieve.generate (𝒱.cover.pullback₂ h).presieve₀ := by
         simpa only [Sieve.ofArrows, PreZeroHypercover.presieve₀] using
           Precoverage.ZeroHypercover.sieve_generate_pullback₂ 𝒱.cover h
       rw [hs, IsPrestackFor_generate_iff]
       exact isPrestackFor_pullback₂_of_isAffine this 𝒱.cover
-        (AffineCover.isAffine_cover 𝒱) h
+        (fun _ ↦ inferInstanceAs (IsAffine (Spec _))) h
     rw [← IsPrestackFor_generate_iff]
     refine ((IsPrestackFor_generate_iff F _).2
       (this R (.ofQuasiCompactCover 𝒱.cover)
-        ⟨AffineCover.isAffine_ofQuasiCompactCover 𝒱,
-          AffineCover.finite_ofQuasiCompactCover 𝒱⟩)).of_le'
+        ⟨by
+            rw [Cover.ofQuasiCompactCover_toPreZeroHypercover]
+            exact fun _ ↦ inferInstanceAs (IsAffine (Spec _)),
+          by
+            rw [Cover.ofQuasiCompactCover_toPreZeroHypercover, AffineCover.cover_I₀]
+            exact hfin⟩)).of_le'
       f.sieve₀_le_sieve₀ fun V g _ M N φ ψ h ↦ ?_
     refine (F.isPrestackFor (Presieve.ofArrows V.affineCover.X V.affineCover.f)
       V.affineCover.mem_grothendieckTopology).hom_ext fun Z _ ⟨i⟩ ↦ ?_
-    refine (hpull (V.affineCover.f i ≫ g)
-      ⟨V.affineOpenCover.X i, AffineOpenCover.openCover_X V.affineOpenCover i⟩).hom_ext
+    refine (hpull (V.affineCover.f i ≫ g) (V.exists_spec_affineCover_X i)).hom_ext
       fun W s hs ↦ ?_
     rw [Sieve.pullback_comp] at hs
     simpa using h _ hs
@@ -183,13 +186,17 @@ theorem isStack_propQCTopology_iff (F : LocallyDiscrete Scheme.{u}ᵒᵖ ⥤ᵖ 
       (zariskiTopology_le_propQCTopology _ T.affineCover.mem_grothendieckTopology)
       (F.isStackFor _ (by simpa using T.affineCover.mem_grothendieckTopology)) fun a ↦ ?_
     rw [← Precoverage.ZeroHypercover.presieve₀_pullback₂_eq_ofArrows]
-    exact this _ (𝒰.pullback₂ (T.affineCover.f a))
-      ⟨T.affineOpenCover.X a, AffineOpenCover.openCover_X T.affineOpenCover a⟩
+    exact this _ (𝒰.pullback₂ (T.affineCover.f a)) (T.exists_spec_affineCover_X a)
   obtain ⟨R, rfl⟩ := hT
   wlog h𝒰 : (∀ i, IsAffine (𝒰.X i)) ∧ Finite 𝒰.I₀ generalizing R 𝒰
   · obtain ⟨𝒱, f, hfin, _⟩ := QuasiCompactCover.exists_hom 𝒰.forgetQc
     have h𝒱 := this R (.ofQuasiCompactCover 𝒱.cover)
-      ⟨AffineCover.isAffine_ofQuasiCompactCover 𝒱, AffineCover.finite_ofQuasiCompactCover 𝒱⟩
+      ⟨by
+          rw [Cover.ofQuasiCompactCover_toPreZeroHypercover]
+          exact fun _ ↦ inferInstanceAs (IsAffine (Spec _)),
+        by
+          rw [Cover.ofQuasiCompactCover_toPreZeroHypercover, AffineCover.cover_I₀]
+          exact hfin⟩
     rw [← IsStackFor_generate_iff] at h𝒱 ⊢
     exact h𝒱.of_le' F 𝒱.cover.mem_propQCTopology f.sieve₀_le_sieve₀
   obtain ⟨S, φ, hP, hsurj, hsieve⟩ := exists_specMap_sigma_sieve 𝒰 h𝒰.1 h𝒰.2

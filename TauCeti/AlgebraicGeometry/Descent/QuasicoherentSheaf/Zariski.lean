@@ -70,10 +70,7 @@ private def liftDatumIso (D : qcohPseudofunctor.DescentData p) (M : Quasicoheren
     (by
       intro Y q i j a b ha hb
       apply ObjectProperty.hom_ext
-      have h := e.hom.comm q a b ha hb
-      rw [← Pseudofunctor.DescentData.isoApp_hom e i,
-        ← Pseudofunctor.DescentData.isoApp_hom e j] at h
-      exact h)
+      exact Pseudofunctor.DescentData.isoApp_hom_comm e q a b ha hb)
 
 -- These typed presentations keep pullback coherence in the native module categories.
 -- Repeatedly unfolding the Cat-valued presentations in the comparison proofs is expensive.

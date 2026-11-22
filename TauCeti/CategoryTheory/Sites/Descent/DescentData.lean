@@ -17,10 +17,10 @@ morphisms `D.hom q f₁ f₂ hf₁ hf₂` carry the common composite `q : Y ⟶ 
 (`DescentData.hom_congr`), states the cocycle condition `DescentData.hom_comp` for two morphisms
 whose common composites are only propositionally equal (`DescentData.hom_comp_hom`), extracts
 component isomorphisms from an isomorphism of descent data (`DescentData.isoApp`,
-`DescentData.isoApp_isoMk`), and expresses transition maps and compatibility squares of
-`toDescentData` and `pullFunctor` in terms of `Pseudofunctor.compIso` and flexible factorizations
-(`DescentData.toDescentData_obj_hom`, `DescentData.hom_toDescentData_obj_iff`,
-`DescentData.pullFunctor_obj_hom_eq`).
+`DescentData.isoApp_hom_comm`, `DescentData.isoApp_isoMk`), and expresses transition maps and
+compatibility squares of `toDescentData` and `pullFunctor` in terms of `Pseudofunctor.compIso`
+and flexible factorizations (`DescentData.toDescentData_obj_hom`,
+`DescentData.hom_toDescentData_obj_iff`, `DescentData.pullFunctor_obj_hom_eq`).
 -/
 
 public section
@@ -56,6 +56,15 @@ lemma isoApp_hom {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) (i : ι) :
 lemma isoApp_inv {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) (i : ι) :
     (isoApp e i).inv = e.inv.hom i :=
   (rfl)
+
+/-- The component morphisms `(isoApp e i).hom` commute with the descent-data transition maps. -/
+@[reassoc]
+lemma isoApp_hom_comm {D₁ D₂ : F.DescentData f} (e : D₁ ≅ D₂) ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄
+    (f₁ : Y ⟶ X i₁) (f₂ : Y ⟶ X i₂) (hf₁ : f₁ ≫ f i₁ = q := by cat_disch)
+    (hf₂ : f₂ ≫ f i₂ = q := by cat_disch) :
+    (F.map f₁.op.toLoc).toFunctor.map (isoApp e i₁).hom ≫ D₂.hom q f₁ f₂ =
+      D₁.hom q f₁ f₂ ≫ (F.map f₂.op.toLoc).toFunctor.map (isoApp e i₂).hom := by
+  simpa only [isoApp_hom] using e.hom.comm q f₁ f₂ hf₁ hf₂
 
 /-- Extracting the `i`-th component isomorphism from `DescentData.isoMk e comm` recovers `e i`. -/
 @[simp]

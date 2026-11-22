@@ -119,12 +119,6 @@ private def αAppIso (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫
       (F.map (𝟙 (X j k)).op.toLoc).toFunctor.obj (D.obj ⟨j, k⟩) :=
   DescentData.isoApp (α j) k
 
-private lemma αAppIso_hom (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
-    (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j) (j : κ) (k : ι j) :
-    (αAppIso D M α j k).hom = (α j).hom.hom k :=
-  DescentData.isoApp_hom (α j) k
-
 /-- The component isomorphism `(u j k)^* (M j) ≅ D.obj ⟨j, k⟩` obtained from `αAppIso` and
 `F.idIso`. -/
 private def αIso (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
@@ -223,7 +217,7 @@ private lemma pullHom_localTrans (D : F.DescentData (fun jk : Σ j, ι j ↦ u j
   dsimp only [localTrans]
   rw [pullHom_comp _ _ g (g ≫ ra₁) (g ≫ b₁) (g ≫ ra₂),
     pullHom_comp _ _ g (g ≫ b₁) (g ≫ b₂) (g ≫ ra₂)]
-  erw [pullHom_pullHom, pullHom_pullHom]
+  simp only [pullHom_pullHom]
   congr 2
   exact D.pullHom_hom g rq (g ≫ rq) rfl (i₁ := ⟨j₁, k₁⟩) (i₂ := ⟨j₂, k₂⟩)
     b₁ b₂ (by rw [← Category.assoc, hb₁, hra₁]) (by rw [← Category.assoc, hb₂, hra₂])
@@ -273,10 +267,7 @@ private lemma αIso_comm (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2
       (F.compIso (u j k₂).op b₂.op (r ≫ a).op (by rw [← op_comp, hb₂]) (M j)).hom ≫
         (F.map b₂.op.toLoc).toFunctor.map (αAppIso D M α j k₂).hom :=
     (DescentData.hom_toDescentData_obj_iff (F := F) (f := u j) (r ≫ a) b₁ b₂ hb₁ hb₂
-      _ _ _).1 (by
-        have h := (α j).hom.comm (r ≫ a) b₁ b₂ hb₁ hb₂
-        rw [← αAppIso_hom, ← αAppIso_hom] at h
-        exact h)
+      _ _ _).1 (DescentData.isoApp_hom_comm (α j) (r ≫ a) b₁ b₂ hb₁ hb₂)
   rw [restrictDatum_hom D ha r b₁ b₂ hb₁ hb₂] at hcomm
   rw [αIso_hom, αIso_hom, Functor.map_comp, Functor.map_comp, Category.assoc,
     ← cancel_mono ((F.map b₂.op.toLoc).toFunctor.map (F.idIso (D.obj ⟨j, k₂⟩)).inv)]
@@ -458,15 +449,6 @@ private noncomputable def βIso (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y
     (F.map (p j).op.toLoc).toFunctor.obj N ≅ M j :=
   DescentData.isoApp β j
 
-private lemma βIso_hom (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
-    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
-    (M : ∀ j, F.obj (.mk (op (Y j))))
-    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
-    (N : F.obj (.mk (op S)))
-    (β : (F.toDescentData p).obj N ≅ gluedDatum hu D M α) (j : κ) :
-    (βIso hu D M α N β j).hom = β.hom.hom j :=
-  DescentData.isoApp_hom β j
-
 /-- The component isomorphism `(u ≫ p)^* N ≅ D.obj jk` for `descendIso`. -/
 private noncomputable def descendComponentIso
     (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
@@ -507,6 +489,33 @@ private lemma descendIso_component_eq (hu : ∀ j, Sieve.ofArrows (X j) (u j) �
     ← F.compIso_hom_naturality_assoc (u jk.1 jk.2).op f.op (f ≫ u jk.1 jk.2).op
       op_comp.symm (βIso hu D M α N β jk.1).hom]
 
+/-- Transition compatibility for `βIso` evaluated on factored morphisms `f₁ ≫ u` and `f₂ ≫ u`. -/
+@[reassoc]
+private lemma βIso_comm (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
+    (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
+    (M : ∀ j, F.obj (.mk (op (Y j))))
+    (α : ∀ j, (F.toDescentData (u j)).obj (M j) ≅ restrictDatum D j)
+    (N : F.obj (.mk (op S)))
+    (β : (F.toDescentData p).obj N ≅ gluedDatum hu D M α)
+    {W : C} (q : W ⟶ S) {jk₁ jk₂ : Σ j, ι j}
+    (f₁ : W ⟶ X jk₁.1 jk₁.2) (f₂ : W ⟶ X jk₂.1 jk₂.2)
+    (hf₁ : f₁ ≫ u jk₁.1 jk₁.2 ≫ p jk₁.1 = q) (hf₂ : f₂ ≫ u jk₂.1 jk₂.2 ≫ p jk₂.1 = q) :
+    (F.compIso (p jk₁.1).op (f₁ ≫ u jk₁.1 jk₁.2).op q.op
+          (by rw [← op_comp, Category.assoc, hf₁]) N).hom ≫
+        (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₁.1).hom ≫
+        localTrans D M α (by rw [Category.assoc, hf₁]) (by rw [Category.assoc, hf₂])
+          f₁ f₂ rfl rfl =
+      (F.compIso (p jk₂.1).op (f₂ ≫ u jk₂.1 jk₂.2).op q.op
+          (by rw [← op_comp, Category.assoc, hf₂]) N).hom ≫
+        (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₂.1).hom := by
+  refine (DescentData.hom_toDescentData_obj_iff (F := F) (f := p) q
+    (f₁ ≫ u jk₁.1 jk₁.2) (f₂ ≫ u jk₂.1 jk₂.2)
+    (by rw [Category.assoc, hf₁]) (by rw [Category.assoc, hf₂]) _ _ _).1 ?_
+  have h := DescentData.isoApp_hom_comm β q (f₁ ≫ u jk₁.1 jk₁.2) (f₂ ≫ u jk₂.1 jk₂.2)
+    (by rw [Category.assoc, hf₁]) (by rw [Category.assoc, hf₂])
+  rw [gluedDatum_hom, gluedHom_comp hu D M α q f₁ f₂ hf₁ hf₂] at h
+  exact h
+
 /-- Component-wise transition compatibility for `descendIso`. -/
 private lemma descendIso_comm (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j))
     (D : F.DescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1))
@@ -521,52 +530,33 @@ private lemma descendIso_comm (hu : ∀ j, Sieve.ofArrows (X j) (u j) ∈ J (Y j
       D.hom q (i₁ := jk₁) (i₂ := jk₂) f₁ f₂ hf₁ hf₂ =
     ((F.toDescentData (fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1)).obj N).hom q f₁ f₂ hf₁ hf₂ ≫
       (F.map f₂.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₂).hom := by
-  have ha₁ : (f₁ ≫ u jk₁.1 jk₁.2) ≫ p jk₁.1 = q := by rw [Category.assoc, hf₁]
-  have ha₂ : (f₂ ≫ u jk₂.1 jk₂.2) ≫ p jk₂.1 = q := by rw [Category.assoc, hf₂]
-  have hβ : (F.compIso (p jk₁.1).op (f₁ ≫ u jk₁.1 jk₁.2).op q.op
-          (by rw [← op_comp, ha₁]) N).hom ≫
-        (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₁.1).hom ≫
-        localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl =
-      (F.compIso (p jk₂.1).op (f₂ ≫ u jk₂.1 jk₂.2).op q.op
-          (by rw [← op_comp, ha₂]) N).hom ≫
-        (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₂.1).hom := by
-    refine (DescentData.hom_toDescentData_obj_iff (F := F) (f := p) q
-      (f₁ ≫ u jk₁.1 jk₁.2) (f₂ ≫ u jk₂.1 jk₂.2) ha₁ ha₂ _ _ _).1 ?_
-    have h := β.hom.comm q (f₁ ≫ u jk₁.1 jk₁.2) (f₂ ≫ u jk₂.1 jk₂.2) ha₁ ha₂
-    rw [gluedDatum_hom, gluedHom_comp hu D M α q f₁ f₂ hf₁ hf₂, ← βIso_hom, ← βIso_hom] at h
-    exact h
-  have hgoal : (F.compIso (u jk₁.1 jk₁.2 ≫ p jk₁.1).op f₁.op q.op
-          (by rw [← op_comp, hf₁]) N).hom ≫
+  refine (DescentData.hom_toDescentData_obj_iff (F := F)
+    (f := fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1) q f₁ f₂ hf₁ hf₂ _ _ _).2 ?_
+  calc
+    (F.compIso (u jk₁.1 jk₁.2 ≫ p jk₁.1).op f₁.op q.op (by rw [← op_comp, hf₁]) N).hom ≫
         (F.map f₁.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₁).hom ≫
-        D.hom q (i₁ := jk₁) (i₂ := jk₂) f₁ f₂ hf₁ hf₂ =
-      (F.compIso (u jk₂.1 jk₂.2 ≫ p jk₂.1).op f₂.op q.op
-          (by rw [← op_comp, hf₂]) N).hom ≫
-        (F.map f₂.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₂).hom := by
-    calc
-      (F.compIso (u jk₁.1 jk₁.2 ≫ p jk₁.1).op f₁.op q.op (by rw [← op_comp, hf₁]) N).hom ≫
-          (F.map f₁.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₁).hom ≫
-          D.hom q (i₁ := jk₁) (i₂ := jk₂) f₁ f₂ hf₁ hf₂
-        = (F.compIso (p jk₁.1).op (f₁ ≫ u jk₁.1 jk₁.2).op q.op
-              (by rw [← op_comp, ha₁]) N).hom ≫
-            (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₁.1).hom ≫
-            localTrans D M α ha₁ ha₂ f₁ f₂ rfl rfl ≫
-            (F.compIso (u jk₂.1 jk₂.2).op f₂.op (f₂ ≫ u jk₂.1 jk₂.2).op
-              op_comp.symm (M jk₂.1)).hom ≫
-            (F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).hom := by
-          rw [descendIso_component_eq_assoc hu D M α N β q jk₁ f₁ hf₁,
-            ← localTrans_comp_αIso D M α ha₁ ha₂ f₁ f₂ rfl rfl]
-      _ = (F.compIso (p jk₂.1).op (f₂ ≫ u jk₂.1 jk₂.2).op q.op
-              (by rw [← op_comp, ha₂]) N).hom ≫
-            (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₂.1).hom ≫
-            (F.compIso (u jk₂.1 jk₂.2).op f₂.op (f₂ ≫ u jk₂.1 jk₂.2).op
-              op_comp.symm (M jk₂.1)).hom ≫
-            (F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).hom := by
-          rw [reassoc_of% hβ]
-      _ = (F.compIso (u jk₂.1 jk₂.2 ≫ p jk₂.1).op f₂.op q.op (by rw [← op_comp, hf₂]) N).hom ≫
-            (F.map f₂.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₂).hom := by
-          rw [descendIso_component_eq hu D M α N β q jk₂ f₂ hf₂]
-  exact (DescentData.hom_toDescentData_obj_iff (F := F)
-    (f := fun jk : Σ j, ι j ↦ u jk.1 jk.2 ≫ p jk.1) q f₁ f₂ hf₁ hf₂ _ _ _).2 hgoal
+        D.hom q (i₁ := jk₁) (i₂ := jk₂) f₁ f₂ hf₁ hf₂
+      = (F.compIso (p jk₁.1).op (f₁ ≫ u jk₁.1 jk₁.2).op q.op
+            (by rw [← op_comp, Category.assoc, hf₁]) N).hom ≫
+          (F.map (f₁ ≫ u jk₁.1 jk₁.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₁.1).hom ≫
+          localTrans D M α (by rw [Category.assoc, hf₁]) (by rw [Category.assoc, hf₂])
+            f₁ f₂ rfl rfl ≫
+          (F.compIso (u jk₂.1 jk₂.2).op f₂.op (f₂ ≫ u jk₂.1 jk₂.2).op
+            op_comp.symm (M jk₂.1)).hom ≫
+          (F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).hom := by
+        rw [descendIso_component_eq_assoc hu D M α N β q jk₁ f₁ hf₁,
+          ← localTrans_comp_αIso D M α (by rw [Category.assoc, hf₁]) (by rw [Category.assoc, hf₂])
+            f₁ f₂ rfl rfl]
+    _ = (F.compIso (p jk₂.1).op (f₂ ≫ u jk₂.1 jk₂.2).op q.op
+            (by rw [← op_comp, Category.assoc, hf₂]) N).hom ≫
+          (F.map (f₂ ≫ u jk₂.1 jk₂.2).op.toLoc).toFunctor.map (βIso hu D M α N β jk₂.1).hom ≫
+          (F.compIso (u jk₂.1 jk₂.2).op f₂.op (f₂ ≫ u jk₂.1 jk₂.2).op
+            op_comp.symm (M jk₂.1)).hom ≫
+          (F.map f₂.op.toLoc).toFunctor.map (αIso D M α jk₂.1 jk₂.2).hom := by
+        rw [βIso_comm_assoc hu D M α N β q f₁ f₂ hf₁ hf₂]
+    _ = (F.compIso (u jk₂.1 jk₂.2 ≫ p jk₂.1).op f₂.op q.op (by rw [← op_comp, hf₂]) N).hom ≫
+          (F.map f₂.op.toLoc).toFunctor.map (descendComponentIso hu D M α N β jk₂).hom := by
+        rw [descendIso_component_eq hu D M α N β q jk₂ f₂ hf₂]
 
 /-- Combining the descent isomorphism `β : toDescentData p N ≅ gluedDatum ...` with the local
 isomorphisms `α j : toDescentData (u j) (M j) ≅ restrictDatum D j` produces an isomorphism
