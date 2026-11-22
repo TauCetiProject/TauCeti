@@ -17,8 +17,10 @@ public import TauCeti.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
 
 The identification of singular simplices with continuous maps from standard simplices commutes
 with continuous maps, which act by postcomposition; in particular, so does the identification of
-points with singular zero-simplices. Faces of singular simplices obtained by precomposition with
-affine simplices are also expressed in terms of their vertex maps.
+points with singular zero-simplices. A face of the singular simplex of a map is the singular
+simplex of any map agreeing with it on the facet (`TauCeti.TopCat.δ_toSSetObjEquiv_symm_eq`), and
+faces of singular simplices obtained by precomposition with affine simplices are expressed in
+terms of their vertex maps.
 This transfers naturality of simplicial vertex classes to singular homology, giving naturality
 of the basepoint section of the augmentation in `TauCeti.singularHomology₀Section_naturality`.
 Along an inducing map, a singular simplex of the target is induced from the source exactly when
@@ -79,6 +81,18 @@ lemma toSSet_map_app_toSSetObjEquiv_symm {X Y : TopCat.{u}} (f : X ⟶ Y) {n : S
     (g : C(StdSimplex ℝ (Fin (n.unop.len + 1)), X)) :
     (TopCat.toSSet.map f).app n ((X.toSSetObjEquiv n).symm g) =
       (Y.toSSetObjEquiv n).symm ((ConcreteCategory.hom f).comp g) := rfl
+
+/-- The `i`-th face of the singular simplex of a map `f` out of a standard simplex is the singular
+simplex of any map `g` agreeing with `f` on the `i`-th facet. -/
+lemma δ_toSSetObjEquiv_symm_eq {X : TopCat.{u}} {n : ℕ} (f : C(StdSimplex ℝ (Fin (n + 2)), X))
+    (i : Fin (n + 2)) (g : C(StdSimplex ℝ (Fin (n + 1)), X))
+    (h : ∀ z, f (StdSimplex.map i.succAbove z) = g z) :
+    (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋n + 1⦌)).symm f) =
+      (X.toSSetObjEquiv (.op ⦋n⦌)).symm g := by
+  apply (X.toSSetObjEquiv _).injective
+  ext z
+  rw [TopCat.toSSetObjEquiv_δ_apply, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+  exact h z
 
 /-- Precomposing a singular simplex with the affine simplex with vertices `v`, and then with
 the inclusion of a facet, is precomposing it with the affine simplex with the restricted vertices.

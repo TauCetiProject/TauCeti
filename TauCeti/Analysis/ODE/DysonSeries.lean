@@ -33,7 +33,7 @@ The coefficient `p` need not be bounded on the whole line.
 
 Existence on the whole line cannot be taken from `TauCeti.timeDependentFlow`, whose suspended
 field must be globally Lipschitz, nor from the Carathéodory solutions of
-`TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard`, which live on one compact interval;
+`TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard`, which live on one compact interval;
 the series also supplies the explicit expansion. Uniqueness is
 `Continuous.eq_of_hasDerivAt_clm_apply`.
 
@@ -77,6 +77,8 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
+* `TauCeti.commute_dysonSeries`, `TauCeti.commute_dysonSeriesLeft`: an element commuting with
+  every value of `p` commutes with both Dyson series of `p`.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 * `TauCeti.exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm`,
@@ -314,6 +316,16 @@ theorem eq_mul_dysonSeries (hp : Continuous p) {f : ℝ → B}
   rw [mul_assoc]
   exact (hasDerivAt_dysonSeries hp t).const_mul (f 0)
 
+/-- An element commuting with every value of a continuous path `p` commutes with its Dyson
+series: `a Γ` and `Γ a` both solve `X' = X p` with initial value `a`. -/
+theorem commute_dysonSeries (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s)) (t : ℝ) :
+    Commute a (dysonSeries p t) :=
+  congrFun (eq_of_hasDerivAt_mul hp (f := fun s => a * dysonSeries p s)
+    (g := fun s => dysonSeries p s * a)
+    (fun s => by simpa only [mul_assoc] using (hasDerivAt_dysonSeries hp s).const_mul a)
+    (fun s => ((hasDerivAt_dysonSeries hp s).mul_const a).congr_deriv (by
+      rw [mul_assoc, mul_assoc, (ha s).eq])) (t₀ := 0) (by simp)) t
+
 section Star
 
 variable [StarRing B] [ContinuousStar B]
@@ -444,6 +456,15 @@ series of `-p`. -/
 theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeriesLeft p t) :=
   ⟨⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩,
     rfl⟩
+
+/-- An element commuting with every value of a continuous path `p` commutes with its left Dyson
+series. This is `TauCeti.commute_dysonSeries` in the opposite algebra. -/
+theorem commute_dysonSeriesLeft (hp : Continuous p) {a : B} (ha : ∀ s, Commute a (p s))
+    (t : ℝ) : Commute a (dysonSeriesLeft p t) := by
+  have h := commute_dysonSeries (p := fun s => MulOpposite.op (p s))
+    (MulOpposite.continuous_op.comp hp) (a := MulOpposite.op a) (fun s => (ha s).op) t
+  rw [← op_dysonSeriesLeft] at h
+  exact h.unop
 
 /-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
 theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :

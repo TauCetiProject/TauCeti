@@ -122,24 +122,17 @@ variable (a : StdSimplex ℝ (Fin 2))
 
 end FaceWeights
 
-variable (R) in
-/-- The chain of a singular `2`-simplex given as a continuous map from the standard simplex. -/
-private abbrev chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) : ((singularChains R).obj X).X 2 :=
-  simplexChain ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) 1
-
 private lemma δ_toSSetObjEquiv_symm (f : C(StdSimplex ℝ (Fin 3), X)) (i : Fin 3)
     (g : C(I, X)) (h : f.comp (face i) = g.comp toI) :
-    (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) = simplex₁ g := by
-  apply (X.toSSetObjEquiv _).injective
-  ext w
-  rw [TopCat.toSSetObjEquiv_δ_apply, toSSetObjEquiv_simplex₁, Equiv.apply_symm_apply]
-  exact congr($h w)
+    (TopCat.toSSet.obj X).δ i ((X.toSSetObjEquiv (.op ⦋2⦌)).symm f) = simplex₁ g :=
+  (δ_toSSetObjEquiv_symm_eq f i _ fun w ↦ congr($h w)).trans
+    ((X.toSSetObjEquiv _).symm_apply_eq.2 (toSSetObjEquiv_simplex₁ g).symm)
 
-private lemma d_chain₂ (f : C(StdSimplex ℝ (Fin 3), X)) (g₀ g₁ g₂ : C(I, X))
+private lemma d_simplexMapChain (f : C(StdSimplex ℝ (Fin 3), X)) (g₀ g₁ g₂ : C(I, X))
     (h₀ : f.comp (face 0) = g₀.comp toI)
     (h₁ : f.comp (face 1) = g₁.comp toI)
     (h₂ : f.comp (face 2) = g₂.comp toI) :
-    ((singularChains R).obj X).d 2 1 (chain₂ R f) =
+    ((singularChains R).obj X).d 2 1 (simplexMapChain R f) =
       pathChain R g₀ - pathChain R g₁ + pathChain R g₂ := by
   rw [singularChains_d_simplexChain (n := 1), Fin.sum_univ_three,
     δ_toSSetObjEquiv_symm f 0 g₀ h₀, δ_toSSetObjEquiv_symm f 1 g₁ h₁,
@@ -163,8 +156,8 @@ variable (R) in
 /-- The chain of a constant map is a boundary. -/
 lemma pathChain_const_mem_boundaries₁ (p : X) :
     pathChain R (ContinuousMap.const I p) ∈ boundaries₁ R X :=
-  mem_boundaries₁ (chain₂ R (ContinuousMap.const _ p)) (by
-    rw [d_chain₂ _ (.const I p) (.const I p) (.const I p) rfl rfl rfl]
+  mem_boundaries₁ (simplexMapChain R (ContinuousMap.const _ p)) (by
+    rw [d_simplexMapChain _ (.const I p) (.const I p) (.const I p) rfl rfl rfl]
     abel)
 
 /-- The affine projection of the standard `2`-simplex onto the unit interval sending the vertices
@@ -183,8 +176,8 @@ lemma pathChain_add_sub_trans_mem_boundaries₁ {a b c : X} (γ : Path a b) (δ 
     pathChain R γ.toContinuousMap + pathChain R δ.toContinuousMap -
       pathChain R (γ.trans δ).toContinuousMap ∈
       boundaries₁ R X := by
-  refine mem_boundaries₁ (chain₂ R ((γ.trans δ).toContinuousMap.comp concatProj)) ?_
-  rw [d_chain₂ _ δ.toContinuousMap (γ.trans δ).toContinuousMap γ.toContinuousMap]
+  refine mem_boundaries₁ (simplexMapChain R ((γ.trans δ).toContinuousMap.comp concatProj)) ?_
+  rw [d_simplexMapChain _ δ.toContinuousMap (γ.trans δ).toContinuousMap γ.toContinuousMap]
   · abel
   · ext a
     exact Path.trans_apply_of_eq_two_mul_sub_one γ δ _
@@ -195,20 +188,6 @@ lemma pathChain_add_sub_trans_mem_boundaries₁ {a b c : X} (γ : Path a b) (δ 
     exact Path.trans_apply_of_eq_two_mul γ δ _
       (by simp [concatProj, StdSimplex.homeomorphI_apply_eq_mk]; ring)
 
-/-- The weight of the last vertex of the standard `2`-simplex, as a point of the unit
-interval. -/
-private def lastWeight : C(StdSimplex ℝ (Fin 3), I) :=
-  ⟨fun w ↦ ⟨w.weights 2, w.weights_nonneg 2, w.weights_apply_le_one 2⟩,
-    (StdSimplex.continuous_weights_apply ℝ 2).subtype_mk _⟩
-
-/-- The sum of the weights of the last two vertices of the standard `2`-simplex, as a point of
-the unit interval. -/
-private def lastTwoWeights : C(StdSimplex ℝ (Fin 3), I) :=
-  ⟨fun w ↦ ⟨w.weights 1 + w.weights 2,
-    add_nonneg (w.weights_nonneg 1) (w.weights_nonneg 2), w.weights_one_add_weights_two_le_one⟩,
-    (by fun_prop :
-      Continuous fun w : StdSimplex ℝ (Fin 3) ↦ w.weights 1 + w.weights 2).subtype_mk _⟩
-
 variable (R) in
 /-- The chains of homotopic paths differ by a boundary. -/
 lemma pathChain_sub_mem_boundaries₁_of_homotopy {a b : X} {γ γ' : Path a b}
@@ -217,26 +196,30 @@ lemma pathChain_sub_mem_boundaries₁_of_homotopy {a b : X} {γ γ' : Path a b}
   let D : C(I, X) := F.toContinuousMap.comp ⟨fun t ↦ (t, t), by fun_prop⟩
   have h₁ : pathChain R (.const I b) - pathChain R D + pathChain R γ.toContinuousMap ∈
       boundaries₁ R X := by
-    refine mem_boundaries₁
-      (chain₂ R (F.toContinuousMap.comp (lastWeight.prodMk lastTwoWeights))) ?_
-    rw [d_chain₂ _ (.const I b) D γ.toContinuousMap]
+    refine mem_boundaries₁ (simplexMapChain R (F.toContinuousMap.comp
+      ((StdSimplex.weightI 2).prodMk StdSimplex.weightsOneAddTwoI))) ?_
+    rw [d_simplexMapChain _ (.const I b) D γ.toContinuousMap]
     · ext x
-      simp [lastWeight, lastTwoWeights]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk]
     · ext x
-      simp [lastWeight, lastTwoWeights, StdSimplex.homeomorphI_apply_eq_mk, D]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
+        StdSimplex.homeomorphI_apply_eq_mk, D]
     · ext x
-      simp [lastWeight, lastTwoWeights, StdSimplex.homeomorphI_apply_eq_mk]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
+        StdSimplex.homeomorphI_apply_eq_mk]
   have h₂ : pathChain R γ'.toContinuousMap - pathChain R D + pathChain R (.const I a) ∈
       boundaries₁ R X := by
-    refine mem_boundaries₁
-      (chain₂ R (F.toContinuousMap.comp (lastTwoWeights.prodMk lastWeight))) ?_
-    rw [d_chain₂ _ γ'.toContinuousMap D (.const I a)]
+    refine mem_boundaries₁ (simplexMapChain R (F.toContinuousMap.comp
+      (StdSimplex.weightsOneAddTwoI.prodMk (StdSimplex.weightI 2)))) ?_
+    rw [d_simplexMapChain _ γ'.toContinuousMap D (.const I a)]
     · ext x
-      simp [lastWeight, lastTwoWeights, StdSimplex.homeomorphI_apply_eq_mk]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
+        StdSimplex.homeomorphI_apply_eq_mk]
     · ext x
-      simp [lastWeight, lastTwoWeights, StdSimplex.homeomorphI_apply_eq_mk, D]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk,
+        StdSimplex.homeomorphI_apply_eq_mk, D]
     · ext x
-      simp [lastWeight, lastTwoWeights]
+      simp [StdSimplex.weightI_apply_eq_mk, StdSimplex.weightsOneAddTwoI_apply_eq_mk]
   have := sub_mem (add_mem (sub_mem h₁ h₂) (pathChain_const_mem_boundaries₁ R a))
     (pathChain_const_mem_boundaries₁ R b)
   convert this using 1
