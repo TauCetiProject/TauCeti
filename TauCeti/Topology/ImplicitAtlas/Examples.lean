@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ImplicitAtlas.DeformationSpace
+public import TauCeti.Topology.ImplicitAtlas.Boundary
 public import Mathlib.Geometry.Manifold.ChartedSpace
 import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.Geometry.Manifold.Boundary.Charts
+import TauCeti.Geometry.Manifold.Boundary.Invariance
+import TauCeti.Topology.Homeomorph.Prod
 
 /-!
 # Examples of implicit atlases
@@ -18,7 +22,14 @@ for the virtual fundamental class.
 * **The manifold atlas** (`TauCeti.ImplicitAtlas.ofChartedSpace`). A Hausdorff space charted on
   `ℝⁿ` is an implicit atlas of virtual dimension `n` with an empty index set: the only thickening
   is `X_∅ = X`, it is regular everywhere, and its charts give the product model. In particular
-  the regular locus of an atlas is part of its data and may be all of `X`.
+  the regular locus of an atlas is part of its data and may be all of `X`. Everything except the
+  charts is `TauCeti.ImplicitAtlas.Core.ofIsEmpty`, shared with the atlas with boundary below.
+* **The manifold atlas with boundary** (`TauCeti.ImplicitAtlasWithBoundary.ofChartedSpace`). A
+  Hausdorff space charted on the half-space `EuclideanHalfSpace (n + 1)`, such as the interval
+  `[0, 1]`, is an implicit atlas with boundary of virtual dimension `n + 1` with an empty index set,
+  whose boundary is its manifold boundary. Every chart is a half-space chart, in which the
+  boundary is the hyperplane `x₀ = 0` (`ModelWithCorners.mem_boundary_euclideanHalfSpace_iff`).
+  Its restriction to the boundary is an implicit atlas of virtual dimension `n` on the boundary.
 * **The atlas `s(x) = xᵐ` on a point** (`TauCeti.ImplicitAtlas.powAtlas`, Pardon, Example 2.3.2).
   The point `X = {0}` of virtual dimension `0`, with one index `α`, trivial group `Γ_α`, obstruction
   space `E_α = ℝ`, thickening `X_α = ℝ` and Kuranishi map `s_α(x) = xᵐ`, `m ≥ 1`. The regular locus
@@ -61,10 +72,11 @@ variable {A : Type*} [IsEmpty A] [DecidableEq A] (Γ : A → Type*) [∀ α, Gro
   (ρ : ∀ α, Representation ℝ (Γ α) (E α)) (n : ℕ) (X : Type*) [TopologicalSpace X] [T2Space X]
   [ChartedSpace (EuclideanSpace ℝ (Fin n)) X]
 
-/-- **The manifold atlas.** A Hausdorff space charted on `ℝⁿ` is an implicit atlas of virtual
-dimension `n` with an empty index set, whose only thickening `X_∅ = X` is regular everywhere. -/
-noncomputable def ofChartedSpace :
-    ImplicitAtlas Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X n where
+/-- With an empty index set, a Hausdorff space `X` carries all the data and axioms of an implicit
+atlas except the local product model: its only thickening is `X_∅ = X`, regular everywhere, and its
+footprint maps are inclusions. The manifold atlases `TauCeti.ImplicitAtlas.ofChartedSpace` and
+`TauCeti.ImplicitAtlasWithBoundary.ofChartedSpace` extend it by their charts. -/
+def Core.ofIsEmpty : ImplicitAtlas.Core Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X where
   baseHomeomorph := Homeomorph.refl X
   kuranishi _ α _ := (IsEmpty.false α.val).elim
   continuous_kuranishi _ α := (IsEmpty.false α.val).elim
@@ -94,13 +106,24 @@ noncomputable def ofChartedSpace :
     ⟨fun h ↦ ⟨1, rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
   mem_regLocus_of_footprintMap_mem _ _ _ _ _ := mem_univ _
   eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.val).elim
+  exists_footprintMap_eq y :=
+    ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
+
+/-- The regular locus of `TauCeti.ImplicitAtlas.Core.ofIsEmpty` is the whole space. -/
+@[simp]
+theorem Core.regLocus_ofIsEmpty (I : Finset A) : (Core.ofIsEmpty Γ E ρ X).regLocus I = univ :=
+  (rfl)
+
+/-- **The manifold atlas.** A Hausdorff space charted on `ℝⁿ` is an implicit atlas of virtual
+dimension `n` with an empty index set, whose only thickening `X_∅ = X` is regular everywhere. -/
+noncomputable def ofChartedSpace :
+    ImplicitAtlas Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X n where
+  toCore := Core.ofIsEmpty Γ E ρ X
   exists_openPartialHomeomorph I J _ x _ := by
     have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
     refine ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
       (chartAt (EuclideanSpace ℝ (Fin n)) x.val).transHomeomorph (Homeomorph.prodUnique _ _).symm,
       by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.val).elim⟩
-  exists_footprintMap_eq y :=
-    ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
 
 /-- The regular locus of the manifold atlas is the whole space. -/
 @[simp]
@@ -114,6 +137,61 @@ theorem footprint_ofChartedSpace (I : Finset A) : (ofChartedSpace Γ E ρ n X).f
     ⟨⟨y, by simp⟩, mem_univ _, rfl⟩
 
 end ChartedSpace
+
+end TauCeti.ImplicitAtlas
+
+/-! ### The manifold atlas with boundary -/
+
+namespace TauCeti.ImplicitAtlasWithBoundary
+
+section ChartedSpace
+
+open scoped Manifold
+
+variable {A : Type*} [IsEmpty A] [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)]
+  [∀ α, Finite (Γ α)] (E : A → Type*) [∀ α, NormedAddCommGroup (E α)]
+  [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)]
+  (ρ : ∀ α, Representation ℝ (Γ α) (E α)) (n : ℕ) (M : Type*) [TopologicalSpace M] [T2Space M]
+  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
+
+/-- **The manifold atlas with boundary.** A Hausdorff space charted on the half-space
+`EuclideanHalfSpace (n + 1)` is an implicit atlas with boundary of virtual dimension `n + 1`, whose
+boundary is its manifold boundary, with an empty index set. Its only thickening `X_∅ = M` is
+regular everywhere, and every chart is a half-space chart. -/
+noncomputable def ofChartedSpace :
+    ImplicitAtlasWithBoundary Γ E ρ (fun _ ↦ M) (fun _ ↦ 1) M ((𝓡∂ (n + 1)).boundary M)
+      (n + 1 : ℕ) where
+  toCore := ImplicitAtlas.Core.ofIsEmpty Γ E ρ M
+  boundary _ := (𝓡∂ (n + 1)).boundary M
+  isClosed_boundary _ := (𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional M
+  act_mem_boundary _ _ _ h := h
+  boundary_empty := (rfl)
+  footprintMap_mem_boundary_iff _ _ _ _ := Iff.rfl
+  exists_openPartialHomeomorph I J _ x _ := by
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
+    refine Or.inr ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
+      (chartAt (EuclideanHalfSpace (n + 1)) x.val).transHomeomorph (Homeomorph.prodUnique _ _).symm,
+      by simp, mem_boundary_iff_transHomeomorph_prodUnique _,
+      fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.val).elim⟩
+
+/-- The boundaries of the thickenings of the manifold atlas with boundary are the manifold
+boundary. -/
+@[simp]
+theorem boundary_ofChartedSpace (I : Finset A) :
+    (ofChartedSpace Γ E ρ n M).boundary I = (𝓡∂ (n + 1)).boundary M :=
+  (rfl)
+
+/-- The regular locus of the manifold atlas with boundary is the whole space. -/
+@[simp]
+theorem regLocus_ofChartedSpace (I : Finset A) :
+    (ofChartedSpace Γ E ρ n M).regLocus I = univ :=
+  (rfl)
+
+end ChartedSpace
+
+end TauCeti.ImplicitAtlasWithBoundary
+
+namespace TauCeti.ImplicitAtlas
 
 /-! ### The atlas `s(x) = xᵐ` on a point -/
 

@@ -273,9 +273,8 @@ theorem nonempty_algHom_of_bijective_reducedMap [HenselianRing S J]
     (hC : Function.Bijective (reducedMap J C)) : Nonempty (C →ₐ[S] S) := by
   have hJ : J ≤ Ideal.jacobson ⊥ := by
     simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))
-  obtain ⟨C', s, hfg, hsC', hspan, hZ⟩ :=
+  obtain ⟨C', s, _, hsC', hspan, hZ⟩ :=
     Algebra.QuasiFinite.exists_fg_subalgebra_and_span_eq_top (R := S) (A := C)
-  have : Module.Finite S C' := ⟨(Submodule.fg_top _).mpr hfg⟩
   obtain ⟨γ, hγ1, hγs, hP⟩ := exists_mul_sub_smul_mem J hC.2 C' s hsC' hspan hZ
   obtain ⟨e, he, heγ, hse⟩ := exists_isIdempotentElem_smul_eq_mul J hC.1 C' hγ1 hP
   refine nonempty_algHom_of_isIdempotentElem J hJ hC.1 (he.map C'.val) ?_
