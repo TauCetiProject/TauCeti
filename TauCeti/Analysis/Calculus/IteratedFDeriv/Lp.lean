@@ -13,7 +13,6 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
-import TauCeti.Topology.MetricSpace.Thickening
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
@@ -28,10 +27,14 @@ with its preimage under `e`, works against any additive Haar measure on a finite
 real normed space, and requires no differentiability of the function. Only the derivative of
 the composite must be a.e. strongly measurable on the preimage.
 
-For a finite-dimensional real normed space it also records the consequence for second derivatives
-of a `C²` function on a thickening: the `L²` norm of `D²u` on a thickening of a bounded set is
-finite (`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top`), and `D²(u ∘ e)` on
-the preimage thickening is controlled by `D²u` through the ellipticity constants of `e`
+For a finite-dimensional real normed space it also records finiteness and change-of-variables
+bounds for iterated derivatives of a `Cᵏ` function on bounded sets. The `Lᵖ` norm of `Dᵏu` on a
+bounded measurable set whose closure lies where `u` is `Cᵏ` is finite
+(`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_ne_top_of_closure_subset`), in particular the `L²`
+norm of `D²u` on a thickening of a bounded set
+(`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top`). For any measurable set
+`T`, the `L²` norm of `D²(u ∘ e)` on a subset of `e ⁻¹' T` is controlled by that of `D²u` on `T`,
+through the ellipticity constants of `e`
 (`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_comp_le`).
 
 On a finite-dimensional inner product space with an additive Haar measure, the `Lᵖ` norm of the
@@ -85,6 +88,16 @@ section Thickening
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E)
 
+/-- The `Lᵖ` norm of `Dᵏu` on a bounded measurable set `T` is finite when `u` is `Cᵏ` on an open
+set containing the closure of `T`. -/
+theorem eLpNorm_iteratedFDeriv_ne_top_of_closure_subset [IsFiniteMeasureOnCompacts μ]
+    {U T : Set E} {u : E → ℝ} {k : ℕ} (p : ℝ≥0∞) (hU : IsOpen U) (hu : ContDiffOn ℝ k u U)
+    (hT : Bornology.IsBounded T) (hTm : MeasurableSet T) (hTU : closure T ⊆ U) :
+    eLpNorm (iteratedFDeriv ℝ k u) p (μ.restrict T) ≠ ∞ :=
+  (((ContinuousOn.continuousOn_iteratedFDeriv hu hU le_rfl).mono
+    hTU).memLp_restrict_of_subset_isCompact hT.isCompact_closure hTm subset_closure
+      p).eLpNorm_ne_top
+
 /-- The `L²` norm of `D²u` on the open `R`-thickening of a bounded set `S` is finite when `u` is
 `C²` on an open set containing the closed `R`-thickening. -/
 theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top [IsFiniteMeasureOnCompacts μ]
@@ -92,30 +105,22 @@ theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top [IsFiniteMeasureOnCompacts 
     (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
     (hSU : cthickening R S ⊆ U) :
     eLpNorm (iteratedFDeriv ℝ 2 u) 2 (μ.restrict (thickening R S)) ≠ ∞ :=
-  (((ContinuousOn.continuousOn_iteratedFDeriv hu hU le_rfl).mono
-    ((closure_thickening_subset_cthickening R S).trans hSU)).memLp_restrict_of_subset_isCompact
-      hS.thickening.isCompact_closure isOpen_thickening.measurableSet subset_closure
-        2).eLpNorm_ne_top
+  eLpNorm_iteratedFDeriv_ne_top_of_closure_subset μ 2 hU hu hS.thickening
+    isOpen_thickening.measurableSet ((closure_thickening_subset_cthickening R S).trans hSU)
 
-/-- The `L²` norm of `D²(u ∘ e)` on the `R / √Λ`-thickening of `e ⁻¹' S` is at most
-`Λ λ^{-d/4}` times the `L²` norm of `D²u` on the `R`-thickening of `S`, where `d` is the dimension
-of `E`. -/
+/-- Let `e` be a linear automorphism with `‖e ξ‖ ≤ √Λ ‖ξ‖` and `‖e⁻¹‖ ≤ 1 / √λ`, and let `u` be
+`C²` on an open set containing a measurable set `T` on which `D²u` is in `L²`. Then on every
+`T' ⊆ e ⁻¹' T` the `L²` norm of `D²(u ∘ e)` is at most `Λ λ^{-d/4}` times the `L²` norm of `D²u`
+on `T`, where `d` is the dimension of `E`. -/
 theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le [μ.IsAddHaarMeasure]
-    {e : E ≃L[ℝ] E} {lam Lam R : ℝ} {U S : Set E} {u : E → ℝ} (hlam : 0 < lam) (hLam : 0 < Lam)
+    {e : E ≃L[ℝ] E} {lam Lam : ℝ} {U T T' : Set E} {u : E → ℝ} (hlam : 0 < lam) (hLam : 0 < Lam)
     (he' : ∀ ξ, ‖e ξ‖ ≤ √Lam * ‖ξ‖) (hesn : ‖(e.symm : E →L[ℝ] E)‖ ≤ (√lam)⁻¹)
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
-    (hSU : cthickening R S ⊆ U) :
-    (eLpNorm (iteratedFDeriv ℝ 2 (u ∘ e)) 2
-        (μ.restrict (thickening (R / √Lam) (e ⁻¹' S)))).toReal ≤
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hT : MeasurableSet T) (hTU : T ⊆ U)
+    (hT' : T' ⊆ e ⁻¹' T) (hfin : eLpNorm (iteratedFDeriv ℝ 2 u) 2 (μ.restrict T) ≠ ∞) :
+    (eLpNorm (iteratedFDeriv ℝ 2 (u ∘ e)) 2 (μ.restrict T')).toReal ≤
       Lam * lam ^ (-((Module.finrank ℝ E : ℝ) / 4)) *
-        (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (μ.restrict (thickening R S))).toReal := by
+        (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (μ.restrict T)).toReal := by
   -- `D²(u ∘ e) = D²u ∘ e (e, e)` and `|det e⁻¹| ≤ ‖e⁻¹‖^d ≤ λ^{-d/2}`.
-  have hlip : LipschitzWith (√Lam).toNNReal e := LipschitzWith.of_dist_le_mul fun y y' => by
-    rw [Real.coe_toNNReal _ (Real.sqrt_nonneg _), dist_eq_norm, dist_eq_norm, ← map_sub]
-    exact he' _
-  have hthick : thickening (R / √Lam) (e ⁻¹' S) ⊆ e ⁻¹' thickening R S := by
-    simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
-      hlip.thickening_preimage_subset_preimage_thickening (R := R) S
   have hU' : IsOpen (e ⁻¹' U) := hU.preimage e.continuous
   have hv : ContDiffOn ℝ 2 (u ∘ e) (e ⁻¹' U) :=
     hu.comp (e : E →L[ℝ] E).contDiff.contDiffOn (mapsTo_preimage _ _)
@@ -125,15 +130,12 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le [μ.IsAddHaarMeasure]
     refine h2.trans ((pow_le_pow_left₀ (norm_nonneg _) hesn _).trans_eq ?_)
     rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hlam.le, ← Real.rpow_natCast, ← Real.rpow_mul hlam.le]
     ring_nf
-  have hT : MeasurableSet (thickening R S) := isOpen_thickening.measurableSet
-  have hL2 : eLpNorm (iteratedFDeriv ℝ 2 (u ∘ e)) 2
-        (μ.restrict (thickening (R / √Lam) (e ⁻¹' S))) ≤
+  have hL2 : eLpNorm (iteratedFDeriv ℝ 2 (u ∘ e)) 2 (μ.restrict T') ≤
       ENNReal.ofReal (Lam * lam ^ (-((Module.finrank ℝ E : ℝ) / 4))) *
-        eLpNorm (iteratedFDeriv ℝ 2 u) 2 (μ.restrict (thickening R S)) := by
-    have hcont : ContinuousOn (iteratedFDeriv ℝ 2 (u ∘ e)) (e ⁻¹' thickening R S) :=
-      (ContinuousOn.continuousOn_iteratedFDeriv hv hU' le_rfl).mono
-        (preimage_mono ((thickening_subset_cthickening R S).trans hSU))
-    refine (eLpNorm_mono_measure _ (Measure.restrict_mono hthick le_rfl)).trans
+        eLpNorm (iteratedFDeriv ℝ 2 u) 2 (μ.restrict T) := by
+    have hcont : ContinuousOn (iteratedFDeriv ℝ 2 (u ∘ e)) (e ⁻¹' T) :=
+      (ContinuousOn.continuousOn_iteratedFDeriv hv hU' le_rfl).mono (preimage_mono hTU)
+    refine (eLpNorm_mono_measure _ (Measure.restrict_mono hT' le_rfl)).trans
       ((e.eLpNorm_iteratedFDeriv_comp_right_restrict_preimage_le μ u 2 2
         (hcont.aestronglyMeasurable (hT.preimage e.continuous.measurable))).trans ?_)
     rw [ENNReal.ofReal_mul hLam.le, mul_assoc]
@@ -148,8 +150,7 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le [μ.IsAddHaarMeasure]
       rw [← Real.rpow_mul hlam.le]
       norm_num
       ring_nf
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (eLpNorm_iteratedFDeriv_two_thickening_ne_top μ hU hu hS hSU)) hL2).trans_eq ?_
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hfin) hL2).trans_eq ?_
   rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
 
 end Thickening

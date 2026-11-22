@@ -58,7 +58,8 @@ for the statements here.
   `ξ` and continuous `η`, the weak equation with `DJ = fderiv ℝ J` is the classical equation
   `∂_s ξ + J ∂_t ξ + S ξ = η` at every point of `Ω`.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
-  `DJ · e` of the coefficient are locally `Lᵖ`.
+  `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.add_zeroth`
+  changes the zeroth-order coefficient by a locally `Lᵖ` field.
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
   restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
   (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
@@ -250,6 +251,13 @@ membership from `DJ`. -/
 theorem IsSobolevCRCoefficients.memLpLoc_deriv_apply
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (e : ℂ) : MemLpLoc p Ω (fun z => DJ z e) :=
   hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
+
+omit [CompleteSpace V] in
+/-- Adding a locally `Lᵖ` field to the zeroth-order coefficient preserves Sobolev coefficients. -/
+theorem IsSobolevCRCoefficients.add_zeroth (hc : IsSobolevCRCoefficients p Ω J DJ S)
+    {A : ℂ → V →L[ℝ] V} (hA : MemLpLoc p Ω A) :
+    IsSobolevCRCoefficients p Ω J DJ (fun z => S z + A z) :=
+  ⟨hc.hasWeakFDerivOn, hc.memLpLoc_coeff, hc.memLpLoc_deriv, hc.memLpLoc_zeroth.add hA⟩
 
 omit [CompleteSpace V] in
 /-- The four terms of the pairing `⟪D* φ, ξ⟫` (see `TauCeti.inner_crFormalAdjoint`) are
