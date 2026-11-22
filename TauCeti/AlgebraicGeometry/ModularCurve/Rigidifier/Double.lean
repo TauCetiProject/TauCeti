@@ -56,8 +56,8 @@ theorem doubleRepresentableBy_homEquiv {X : EllObj B}
       ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).1,
         ((R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V))).2,
           Q.map f.op (D.universal V))) := by
-  rw [doubleRepresentableBy, homEquiv_ofIso, Iso.trans_hom, NatTrans.comp_app,
-    types_comp_apply, Functor.Monoidal.associator_hom_app_apply,
+  rw [doubleRepresentableBy, Functor.RepresentableBy.ofIso_homEquiv_apply, Iso.trans_hom,
+    NatTrans.comp_app, types_comp_apply, Functor.Monoidal.associator_hom_app_apply,
     Functor.Monoidal.braiding_hom_app_apply, tensorRepresentableBy_homEquiv]
 
 /-- The second projection from the scheme of two rigidifications: forget the original
