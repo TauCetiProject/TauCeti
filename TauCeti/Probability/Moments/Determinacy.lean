@@ -8,6 +8,8 @@ module
 public import Mathlib.Probability.Moments.ComplexMGF
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Analysis.Analytic.Order
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
+import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.Probability.Moments.Basic
 
 /-!
@@ -62,6 +64,15 @@ moment-generating function takes on an arbitrarily small neighbourhood of the or
   compactly supported measures.
 * `TauCeti.charFun_eq_of_mgf_eq` and `TauCeti.Measure.ext_of_mgf`: the same two conclusions from an
   equality of moment-generating functions near `0` instead of an equality of moments.
+* `TauCeti.integrable_exp_mul_abs_of_integral_pow_le`: a measure whose even moments are finite
+  and dominated by those of a measure with a finite exponential moment `∫ e^{a|x|}` has that
+  exponential moment too.
+* `MeasureTheory.Measure.IsMomentDeterminate`: a measure on `ℝ` with finite moments that is the
+  only measure with these moments. This is the hypothesis on the limit in the method of moments.
+* `MeasureTheory.Measure.IsMomentDeterminate.of_integrable_exp_mul_abs` and
+  `MeasureTheory.Measure.IsMomentDeterminate.of_isCompact`: a finite exponential moment, in
+  particular compact support, makes a measure moment-determinate among *all* measures with finite
+  moments, not only among those with exponential moments.
 -/
 
 public section
@@ -253,4 +264,121 @@ theorem Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp
     (zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp hμ)
     (zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp hν) hmom
 
+/-! ### Exponential moments from even moments -/
+
+/-- The series `cosh y = ∑ₙ y²ⁿ / (2n)!` integrated termwise:
+`∫⁻ cosh (a x) dρ = ∑ₙ a²ⁿ / (2n)! · ∫⁻ x²ⁿ dρ` for every measure `ρ`. -/
+private theorem lintegral_ofReal_cosh_mul_eq_tsum (ρ : Measure ℝ) (a : ℝ) :
+    ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂ρ =
+      ∑' n : ℕ, ENNReal.ofReal (a ^ (2 * n) / (Nat.factorial (2 * n) : ℝ)) *
+        ∫⁻ x, ENNReal.ofReal (x ^ (2 * n)) ∂ρ := by
+  have hcoef (n : ℕ) : 0 ≤ a ^ (2 * n) / (Nat.factorial (2 * n) : ℝ) :=
+    div_nonneg ((even_two_mul n).pow_nonneg a) (Nat.cast_nonneg _)
+  calc ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂ρ
+      = ∫⁻ x, ∑' n : ℕ, ENNReal.ofReal (a ^ (2 * n) / (Nat.factorial (2 * n) : ℝ)) *
+          ENNReal.ofReal (x ^ (2 * n)) ∂ρ := by
+        refine lintegral_congr fun x ↦ ?_
+        rw [Real.cosh_eq_tsum, ENNReal.ofReal_tsum_of_nonneg
+          (fun n ↦ div_nonneg ((even_two_mul n).pow_nonneg _) (Nat.cast_nonneg _))
+          (Real.hasSum_cosh _).summable]
+        refine tsum_congr fun n ↦ ?_
+        rw [← ENNReal.ofReal_mul (hcoef n), mul_pow, div_mul_eq_mul_div, mul_comm (a ^ (2 * n))]
+    _ = ∑' n : ℕ, ∫⁻ x, ENNReal.ofReal (a ^ (2 * n) / (Nat.factorial (2 * n) : ℝ)) *
+          ENNReal.ofReal (x ^ (2 * n)) ∂ρ :=
+        lintegral_tsum fun n ↦ by fun_prop
+    _ = _ := tsum_congr fun n ↦ lintegral_const_mul _ (by fun_prop)
+
+/-- **Exponential moments from dominated even moments.** If `e^{a|x|}` is integrable against `μ`,
+it is integrable against every measure `ν` whose even moments are finite and at most those of
+`μ`. -/
+theorem integrable_exp_mul_abs_of_integral_pow_le {a : ℝ}
+    (hμ : Integrable (fun x ↦ Real.exp (a * |x|)) μ)
+    (hν : ∀ n : ℕ, Integrable (fun x : ℝ ↦ x ^ (2 * n)) ν)
+    (hle : ∀ n : ℕ, ∫ x, x ^ (2 * n) ∂ν ≤ ∫ x, x ^ (2 * n) ∂μ) :
+    Integrable (fun x ↦ Real.exp (a * |x|)) ν := by
+  have : IsFiniteMeasure ν := by simpa [integrable_const_iff] using hν 0
+  rcases lt_or_ge a 0 with ha | ha
+  · -- For `a < 0` the integrand is at most `1`.
+    refine (integrable_const (1 : ℝ)).mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_)
+    rw [Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_le_one_iff]
+    exact mul_nonpos_of_nonpos_of_nonneg ha.le (abs_nonneg x)
+  have hpow (ρ : Measure ℝ) (n : ℕ) : 0 ≤ᵐ[ρ] fun x : ℝ ↦ x ^ (2 * n) :=
+    ae_of_all _ fun x ↦ (even_two_mul n).pow_nonneg x
+  -- Termwise comparison of the `cosh` series.
+  have hcosh : ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂ν ≤
+      ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂μ := by
+    rw [lintegral_ofReal_cosh_mul_eq_tsum, lintegral_ofReal_cosh_mul_eq_tsum]
+    refine tsum_le_tsum fun n ↦ mul_le_mul_right ?_ _
+    rw [← ofReal_integral_eq_lintegral_ofReal (hν n) (hpow ν n)]
+    refine (ENNReal.ofReal_le_ofReal (hle n)).trans ?_
+    rw [integral_eq_lintegral_of_nonneg_ae (hpow μ n) (by fun_prop)]
+    exact ENNReal.ofReal_toReal_le
+  -- `e^{a|x|} ≤ 2 cosh (a x)` and `cosh (a x) ≤ e^{a|x|}`, since `a |x| = |a x|`.
+  have habs (x : ℝ) : a * |x| = |a * x| := by rw [abs_mul, abs_of_nonneg ha]
+  have hexp (x : ℝ) : Real.exp (a * |x|) ≤ 2 * Real.cosh (a * x) := by
+    rw [Real.cosh_eq, mul_div_cancel₀ _ two_ne_zero, habs]
+    exact Real.exp_abs_le _
+  have hcosh_le (x : ℝ) : Real.cosh (a * x) ≤ Real.exp (a * |x|) := by
+    rw [← Real.cosh_abs, ← habs, Real.cosh_eq]
+    linarith [Real.exp_le_exp.2 (neg_le_self (mul_nonneg ha (abs_nonneg x)))]
+  refine ⟨by fun_prop, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x ↦ (Real.exp_pos _).le)]
+  calc ∫⁻ x, ENNReal.ofReal (Real.exp (a * |x|)) ∂ν
+      ≤ ∫⁻ x, 2 * ENNReal.ofReal (Real.cosh (a * x)) ∂ν := by
+        refine lintegral_mono fun x ↦ ?_
+        rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul zero_le_two]
+        exact ENNReal.ofReal_le_ofReal (hexp x)
+    _ = 2 * ∫⁻ x, ENNReal.ofReal (Real.cosh (a * x)) ∂ν := lintegral_const_mul _ (by fun_prop)
+    _ ≤ 2 * ∫⁻ x, ENNReal.ofReal (Real.exp (a * |x|)) ∂μ := by
+        gcongr 2 * ?_
+        exact hcosh.trans (lintegral_mono fun x ↦ ENNReal.ofReal_le_ofReal (hcosh_le x))
+    _ < ⊤ := ENNReal.mul_lt_top ENNReal.ofNat_lt_top hμ.lintegral_lt_top
+
 end TauCeti
+
+/-! ### Moment-determinate measures -/
+
+namespace MeasureTheory.Measure
+
+/-- A measure `μ` on `ℝ` is *moment-determinate* if all of its polynomial moments `∫ xⁿ dμ` are
+finite and `μ` is the only measure on `ℝ` with these moments: every measure `ν` with finite
+moments `∫ xⁿ dν = ∫ xⁿ dμ` is `μ`. Taking `n = 0` shows that such `ν` are finite.
+
+This is the hypothesis on the limit in the method of moments. It holds when `μ` has a finite
+exponential moment (`IsMomentDeterminate.of_integrable_exp_mul_abs`), in particular for
+compactly supported and Gaussian laws, and it fails for the log-normal law. -/
+structure IsMomentDeterminate (μ : Measure ℝ) : Prop where
+  /-- Every polynomial moment of `μ` is finite. -/
+  integrable_pow (n : ℕ) : Integrable (fun x : ℝ ↦ x ^ n) μ
+  /-- A measure whose polynomial moments are finite and equal to those of `μ` is `μ`. -/
+  eq_of_forall_integral_pow_eq {ν : Measure ℝ} (hν : ∀ n : ℕ, Integrable (fun x : ℝ ↦ x ^ n) ν)
+    (h : ∀ n : ℕ, ∫ x, x ^ n ∂ν = ∫ x, x ^ n ∂μ) : ν = μ
+
+namespace IsMomentDeterminate
+
+/-- **A finite exponential moment gives moment determinacy.** If `∫ e^{a|x|} dμ` is finite for
+some `a > 0`, then `μ` is determined by its moments among all measures with finite moments. -/
+theorem of_integrable_exp_mul_abs {μ : Measure ℝ} {a : ℝ} (ha : 0 < a)
+    (h : Integrable (fun x ↦ Real.exp (a * |x|)) μ) : μ.IsMomentDeterminate where
+  integrable_pow n := by
+    simpa using ProbabilityTheory.integrable_pow_of_mem_interior_integrableExpSet
+      (TauCeti.zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp ⟨a, ha, h⟩) n
+  eq_of_forall_integral_pow_eq hν hmom :=
+    (TauCeti.Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp ⟨a, ha, h⟩
+      ⟨a, ha, TauCeti.integrable_exp_mul_abs_of_integral_pow_le h (fun n ↦ hν (2 * n))
+        fun n ↦ (hmom (2 * n)).le⟩ fun n ↦ (hmom n).symm).symm
+
+/-- **Compactly supported finite measures are moment-determinate.** A finite measure on `ℝ`
+that is concentrated on a compact set is determined by its moments among all measures with
+finite moments. -/
+theorem of_isCompact {μ : Measure ℝ} [IsFiniteMeasure μ] {K : Set ℝ} (hK : IsCompact K)
+    (hμK : μ Kᶜ = 0) : μ.IsMomentDeterminate := by
+  obtain ⟨R, hR⟩ := hK.isBounded.exists_norm_le
+  refine of_integrable_exp_mul_abs one_pos (Integrable.of_bound (by fun_prop) (Real.exp R) ?_)
+  filter_upwards [mem_ae_iff.2 hμK] with x hx
+  rw [Real.norm_of_nonneg (Real.exp_pos _).le, one_mul, Real.exp_le_exp]
+  exact hR x hx
+
+end IsMomentDeterminate
+
+end MeasureTheory.Measure

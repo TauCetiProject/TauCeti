@@ -23,6 +23,8 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
   integrable when every monomial is;
 * `integrable_pow_of_ae_abs_le` — every monomial is integrable against a finite measure
   concentrated on a bounded interval, so such measures satisfy the moment hypothesis;
+* `integrable_pow_of_integrable_pow_two_mul` — against a finite measure, an integrable even power
+  `x²ᵏ` makes every monomial of degree at most `2k` integrable;
 * `abs_integral_eval_sub_le` — a polynomial that approximates a bounded continuous function within
   `δ` on `[-M, M]` has integral within `δ` of that of the function, against a probability measure
   concentrated on `[-R, R]` with `R ≤ M`;
@@ -82,6 +84,16 @@ theorem integrable_pow_of_ae_abs_le [IsFiniteMeasure μ] {R : ℝ}
     filter_upwards [h] with x hx
     rw [norm_pow, Real.norm_eq_abs]
     exact pow_le_pow_left₀ (abs_nonneg x) hx n
+
+/-- Against a finite measure, an integrable even power `x²ᵏ` makes every lower power `xⁿ`,
+`n ≤ 2k`, integrable, since `|x|ⁿ ≤ 1 + x²ᵏ`. -/
+theorem integrable_pow_of_integrable_pow_two_mul [IsFiniteMeasure μ] {k n : ℕ} (hn : n ≤ 2 * k)
+    (h : Integrable (fun x : ℝ => x ^ (2 * k)) μ) : Integrable (fun x : ℝ => x ^ n) μ := by
+  refine ((integrable_const 1).add h).mono' (by fun_prop) (ae_of_all _ fun x => ?_)
+  rw [norm_pow, Real.norm_eq_abs, Pi.add_apply, ← (even_two_mul k).pow_abs]
+  rcases le_total |x| 1 with hx | hx
+  · linarith [pow_le_one₀ (abs_nonneg x) hx (n := n), pow_nonneg (abs_nonneg x) (2 * k)]
+  · linarith [pow_le_pow_right₀ hx hn]
 
 /-- A real polynomial is in `L²` against any measure all of whose polynomial moments are finite.
 The square of a polynomial is again a polynomial, hence integrable by
