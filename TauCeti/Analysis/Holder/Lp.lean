@@ -282,7 +282,7 @@ theorem setIntegral_norm_sub_sq_le (hG : HolderOnWith K α G s) (hsr : s ⊆ bal
   have hbd : ∀ x ∈ s, ‖‖G x - G y‖ ^ 2‖ ≤ ((K : ℝ) * (2 * r) ^ (α : ℝ)) ^ 2 := fun x hx => by
     rw [norm_pow, norm_norm, ← dist_eq_norm]
     refine pow_le_pow_left₀ dist_nonneg ((hG.dist_le hx hy).trans
-      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg ?_ α.2) K.2)) 2
+      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg ?_ α.property) K.property)) 2
     linarith [dist_triangle_right x y x₀, mem_ball.1 (hsr hx), mem_ball.1 (hsr hy)]
   have hs : mu s < ⊤ := (measure_mono hsr).trans_lt measure_ball_lt_top
   have hvol : mu.real s ≤ r ^ finrank ℝ E * mu.real (ball (0 : E) 1) := by

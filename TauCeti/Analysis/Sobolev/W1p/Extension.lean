@@ -53,9 +53,6 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 * `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
   extension preserves the norms of both components.
 * `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
-* `TauCeti.W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule`: if `u` vanishes off `S` and `w`
-  has the boundary values of `u` on `Ω ⊆ S`, then `u` minus the zero extension of `u - w` vanishes
-  off `S` and restricts to `w` on `Ω`.
 * `TauCeti.W1p0.value_restrictL_extendByZeroL_ae`,
   `TauCeti.W1p0.gradient_restrictL_extendByZeroL_ae`: restricting the extension to `Ω'` to another
   open set `V ⊆ Ω'` gives `1_Ω u` and `1_Ω ∇u` on `V`.
@@ -65,6 +62,9 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
   components of the extension are almost everywhere the indicators of those of `u`.
 * `TauCeti.W1p0.value_extendByZeroL_top_ae`, `TauCeti.W1p0.gradient_extendByZeroL_top_ae`: the
   same identities for the whole-space extension, almost everywhere for `mu` itself.
+* `TauCeti.W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule`: if `u` vanishes off `S` and `w`
+  has the boundary values of `u` on `Ω ⊆ S`, then `u` minus the zero extension of `u - w` vanishes
+  off `S` and restricts to `w` on `Ω`.
 * `TauCeti.W1p0.dense_iUnion_range_extendByZeroL`: for a directed family of open sets covering
   `Ω`, the zero extensions of their `W^{1,p}_0` functions are dense in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
@@ -332,29 +332,6 @@ theorem W1p0.restrictL_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omeg
     rw [W1p0.value_extendByZeroL]
     exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _)))
 
-/-- **Gluing a function with prescribed boundary values into one vanishing off a set.** Let
-`Ω ⊆ Ω' ⊆ Ω''` be open with `Ω ⊆ S`, let `u ∈ W^{1,p}(Ω'')` vanish almost everywhere on `Ω'` off
-`S`, and let `w ∈ W^{1,p}(Ω)` have the boundary values of `u`, `u - w ∈ W^{1,p}_0(Ω)`. Then `u`
-minus the zero extension of `u - w` is an element `W ∈ W^{1,p}(Ω')` that vanishes almost
-everywhere off `S` and restricts to `w` on `Ω`. -/
-theorem W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule (hsub : Omega ≤ Omega')
-    (hsub' : Omega' ≤ Omega'') {S : Set E} (hS : (Omega : Set E) ⊆ S) {u : W1p mu Omega'' p}
-    (hu : ∀ᵐ x ∂mu.restrict Omega', x ∉ S → W1p.value u x = 0) {w : W1p mu Omega p}
-    (huw : W1p.restrictL (hsub.trans hsub') u - w ∈ w1p0Submodule mu Omega p) :
-    ∃ W : W1p mu Omega' p, (∀ᵐ x ∂mu.restrict Omega', x ∉ S → W1p.value W x = 0) ∧
-      W1p.restrictL hsub W = w := by
-  obtain ⟨v, hv⟩ : ∃ v : W1p0 mu Omega p,
-      (v : W1p mu Omega p) = W1p.restrictL (hsub.trans hsub') u - w :=
-    ⟨⟨_, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huw⟩, rfl⟩
-  refine ⟨W1p.restrictL hsub' u - (W1p0.extendByZeroL hsub v : W1p mu Omega' p), ?_, ?_⟩
-  · filter_upwards [W1p.value_sub_ae (W1p.restrictL hsub' u)
-      (W1p0.extendByZeroL hsub v : W1p mu Omega' p), W1p.value_restrictL_ae hsub' u,
-      W1p0.value_extendByZeroL_ae hsub v, hu]
-      with x h1 h2 h3 h4 hx
-    rw [h1, Pi.sub_apply, h2, h3, Set.indicator_of_notMem fun hxΩ => hx (hS hxΩ), h4 hx,
-      sub_zero]
-  · rw [map_sub, W1p.restrictL_restrictL, W1p0.restrictL_extendByZeroL, hv, sub_sub_cancel]
-
 /-- **Restricting a zero extension to another open set.** For `u ∈ W^{1,p}_0(Ω)`, `Ω ⊆ Ω'` and an
 open `V ⊆ Ω'`, the restriction to `V` of the zero extension of `u` to `Ω'` has, almost everywhere
 on `V`, the zero extension `1_Ω u` of the value of `u` as its value. -/
@@ -428,6 +405,29 @@ theorem W1p0.gradient_extendByZeroL_top_ae (u : W1p0 mu Omega p) :
     (W1p.gradient (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) : E → E) =ᵐ[mu]
       (Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p) : E → E) := by
   simpa only [Opens.coe_top, Measure.restrict_univ] using W1p0.gradient_extendByZeroL_ae le_top u
+
+/-- **Gluing a function with prescribed boundary values into one vanishing off a set.** Let
+`Ω ⊆ Ω' ⊆ Ω''` be open with `Ω ⊆ S`, let `u ∈ W^{1,p}(Ω'')` vanish almost everywhere on `Ω'` off
+`S`, and let `w ∈ W^{1,p}(Ω)` have the boundary values of `u`, `u - w ∈ W^{1,p}_0(Ω)`. Then `u`
+minus the zero extension of `u - w` is an element `W ∈ W^{1,p}(Ω')` that vanishes almost
+everywhere off `S` and restricts to `w` on `Ω`. -/
+theorem W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule (hsub : Omega ≤ Omega')
+    (hsub' : Omega' ≤ Omega'') {S : Set E} (hS : (Omega : Set E) ⊆ S) {u : W1p mu Omega'' p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega', x ∉ S → W1p.value u x = 0) {w : W1p mu Omega p}
+    (huw : W1p.restrictL (hsub.trans hsub') u - w ∈ w1p0Submodule mu Omega p) :
+    ∃ W : W1p mu Omega' p, (∀ᵐ x ∂mu.restrict Omega', x ∉ S → W1p.value W x = 0) ∧
+      W1p.restrictL hsub W = w := by
+  obtain ⟨v, hv⟩ : ∃ v : W1p0 mu Omega p,
+      (v : W1p mu Omega p) = W1p.restrictL (hsub.trans hsub') u - w :=
+    ⟨⟨_, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huw⟩, rfl⟩
+  refine ⟨W1p.restrictL hsub' u - (W1p0.extendByZeroL hsub v : W1p mu Omega' p), ?_, ?_⟩
+  · filter_upwards [W1p.value_sub_ae (W1p.restrictL hsub' u)
+      (W1p0.extendByZeroL hsub v : W1p mu Omega' p), W1p.value_restrictL_ae hsub' u,
+      W1p0.value_extendByZeroL_ae hsub v, hu]
+      with x h1 h2 h3 h4 hx
+    rw [h1, Pi.sub_apply, h2, h3, Set.indicator_of_notMem fun hxΩ => hx (hS hxΩ), h4 hx,
+      sub_zero]
+  · rw [map_sub, W1p.restrictL_restrictL, W1p0.restrictL_extendByZeroL, hv, sub_sub_cancel]
 
 /-- **Zero extensions from an exhaustion are dense.** If a directed family of open sets `U k ⊆ Ω`
 covers `Ω`, then the zero extensions to `Ω` of the functions of `W^{1,p}_0(U k)`, over all `k`, are

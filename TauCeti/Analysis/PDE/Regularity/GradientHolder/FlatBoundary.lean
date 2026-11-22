@@ -190,7 +190,7 @@ private theorem exists_memLp_sub_norm_toLp_sq_le {a : ℝ}
     fun x hx => by
       rw [← dist_eq_norm]
       refine (hGΩ.dist_le hx hy).trans (mul_le_mul_of_nonneg_left
-        (Real.rpow_le_rpow dist_nonneg ?_ α.2) K.2)
+        (Real.rpow_le_rpow dist_nonneg ?_ α.property) K.property)
       linarith [dist_triangle_right x y x₀, mem_ball.1 (hΩr hx), mem_ball.1 (hΩr hy)]
   have hGc : MemLp (fun x => G x - G y) 2 (volume.restrict Ω) :=
     MemLp.of_bound (((hGΩ.continuousOn hα).aestronglyMeasurable hΩm).sub
