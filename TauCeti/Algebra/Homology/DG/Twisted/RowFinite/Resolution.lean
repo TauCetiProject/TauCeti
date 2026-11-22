@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Basic
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Tower
+public import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Semi-free resolutions of differential graded left modules
@@ -21,7 +22,9 @@ attach one free generator `e` for every homogeneous **relative cycle** `(c, w)` 
 generator `e` has degree `n` and differential `c`, and is sent to `w`; this is a chain map
 because `ε c = dN w`. The resolution is the union of the stages. Its generators are the pairs
 `(k, (c, w))` of a stage `k` and a relative cycle of that stage; the row of a generator only
-involves generators of earlier stages, so the row relation is well-founded.
+involves generators of earlier stages, so the row relation is well-founded. The stages and their
+union are the tower of cell attachments `TauCeti.RowFiniteAugmentedModule.tower`, whose step
+attaches all the homogeneous relative cycles of the current stage.
 
 The construction has a single characteristic property
 (`TauCeti.exists_semifreeResolution_m_eq`): every homogeneous relative cycle `(c, w)` of the
@@ -81,29 +84,10 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 
 /-! ### The stages of the construction -/
 
-/-- A stage of the construction: a row-finite twisted module with a degree-preserving chain map
-to `N`, given on the generators. -/
-private structure ResolutionStage where
-  /-- The generators. -/
-  P : Type (max uA uN)
-  /-- The indices of the generators. -/
-  ind : P → ℤ
-  /-- The rows of the generators. -/
-  m : RowFiniteTwistingCocycle 𝒜 d P ind
-  /-- The images of the generators. -/
-  ε : P → N
-  /-- The images of the generators have the degrees of the generators. -/
-  ε_mem : ∀ x, ε x ∈ 𝒩 (-ind x)
-  /-- The map given by the images of the generators is a chain map. -/
-  ε_m : ∀ x, linearCombination A ε (m.m x) = dN (ε x)
-
-namespace ResolutionStage
-
-variable {𝒜 d 𝒩 dN}
-
 /-- A homogeneous relative cycle `(c, w)` of the chain map of a stage: a cycle `c` of total degree
 `n + 1` and an element `w` of degree `n` with `ε c = dN w`. -/
-private structure Cycle (S : ResolutionStage 𝒜 d 𝒩 dN) where
+private structure ResolutionCycle
+    (S : RowFiniteAugmentedModule.{uR, uA, uN, max uA uN} 𝒜 d 𝒩 dN) where
   /-- The degree of `w`. -/
   n : ℤ
   /-- The cycle of the free module. -/
@@ -117,235 +101,73 @@ private structure Cycle (S : ResolutionStage 𝒜 d 𝒩 dN) where
   /-- `c` is a cycle. -/
   c_cycle : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) S.m.m c = 0
   /-- `w` bounds the image of `c`. -/
-  ε_c : linearCombination A S.ε c = dN w
+  ε_c : linearCombination A S.g c = dN w
 
-variable (𝒜 d 𝒩 dN) in
-/-- The stage with no generators. -/
-private def zero : ResolutionStage 𝒜 d 𝒩 dN where
-  P := PEmpty
-  ind := PEmpty.elim
-  m := 0
-  ε := PEmpty.elim
-  ε_mem := nofun
-  ε_m := nofun
-
-/-- The next stage: one free generator is attached along every homogeneous relative cycle, with
-differential its cycle and image its element of `N`. -/
-private def succ (S : ResolutionStage 𝒜 d 𝒩 dN) : ResolutionStage 𝒜 d 𝒩 dN where
-  P := S.P ⊕ S.Cycle
-  ind := Sum.elim S.ind fun t ↦ -t.n
-  m := S.m.attach (fun t ↦ t.c)
-    (fun t y ↦ by
-      convert (mem_rowFiniteTotalGrading_iff 𝒜 S.ind).mp t.c_mem y using 2
-      ring)
-    fun t ↦ t.c_cycle
-  ε := Sum.elim S.ε fun t ↦ t.w
-  ε_mem := by
-    rintro (x | t)
-    · exact S.ε_mem x
-    · simpa using t.w_mem
-  ε_m := by
-    rintro (x | t)
-    · simpa [linearCombination_mapDomain] using S.ε_m x
-    · simpa [linearCombination_mapDomain] using t.ε_c
-
-end ResolutionStage
+/-- The step of the construction: one free generator is attached along every homogeneous relative
+cycle, with differential its cycle and image its element of `N`. -/
+private def resolutionStep (_ : ℕ) (S : RowFiniteAugmentedModule.{uR, uA, uN, max uA uN} 𝒜 d 𝒩 dN) :
+    S.Attachment fun t : ResolutionCycle 𝒜 d 𝒩 dN S ↦ -t.n where
+  a t := t.c
+  ha t y := by
+    convert (mem_rowFiniteTotalGrading_iff 𝒜 S.ind).mp t.c_mem y using 2
+    ring
+  hca t := t.c_cycle
+  c t := t.w
+  c_mem t := by simpa using t.w_mem
+  g_a t := t.ε_c
 
 /-- The stages of the construction, each obtained from the previous one by attaching generators
 along all of its homogeneous relative cycles. -/
-private def resolutionStage : ℕ → ResolutionStage 𝒜 d 𝒩 dN
-  | 0 => .zero 𝒜 d 𝒩 dN
-  | k + 1 => (resolutionStage k).succ
-
-variable {𝒜 d 𝒩 dN}
-
-private theorem resolutionStage_succ_m_inl (k : ℕ) (x : (resolutionStage 𝒜 d 𝒩 dN k).P) :
-    (resolutionStage 𝒜 d 𝒩 dN (k + 1)).m.m (.inl x) =
-      mapDomain Sum.inl ((resolutionStage 𝒜 d 𝒩 dN k).m.m x) :=
-  RowFiniteTwistingCocycle.attach_m_inl _ _ _ x
-
-private theorem resolutionStage_succ_m_inr (k : ℕ) (t : (resolutionStage 𝒜 d 𝒩 dN k).Cycle) :
-    (resolutionStage 𝒜 d 𝒩 dN (k + 1)).m.m (.inr t) = mapDomain Sum.inl t.c :=
-  RowFiniteTwistingCocycle.attach_m_inr _ _ _ t
-
-variable (𝒜 d 𝒩 dN)
+private abbrev resolutionStage (k : ℕ) :
+    RowFiniteAugmentedModule.{uR, uA, uN, max uA uN} 𝒜 d 𝒩 dN :=
+  RowFiniteAugmentedModule.tower (resolutionStep 𝒜 d 𝒩 dN) k
 
 /-! ### The resolution -/
 
 /-- The generators of the semi-free resolution: a generator is a stage `k` together with a
 homogeneous relative cycle of the chain map of that stage, along which it is attached. -/
 def semifreeResolutionGenerator : Type (max uA uN) :=
-  Σ k, (resolutionStage 𝒜 d 𝒩 dN k).Cycle
+  Σ k, ResolutionCycle 𝒜 d 𝒩 dN (resolutionStage 𝒜 d 𝒩 dN k)
 
 /-- The index of a generator of the semi-free resolution: the generator attached along a relative
 cycle `(c, w)` with `w` of degree `n` has index `-n`, so that it lies in degree `n`. -/
 def semifreeResolutionIndex (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN) : ℤ :=
   -x.2.n
 
-variable {𝒜 d 𝒩 dN}
-
-/-- The generators of a stage, among the generators of the resolution. -/
-private def stageEmb :
-    (k : ℕ) → (resolutionStage 𝒜 d 𝒩 dN k).P → semifreeResolutionGenerator 𝒜 d 𝒩 dN
-  | 0 => PEmpty.elim
-  | k + 1 => Sum.elim (stageEmb k) fun t ↦ ⟨k, t⟩
-
-/-- The generators of a stage `k` were attached at stages before `k`. -/
-private theorem fst_stageEmb_lt : ∀ (k : ℕ) (x : (resolutionStage 𝒜 d 𝒩 dN k).P),
-    (stageEmb k x).1 < k
-  | 0, x => x.elim
-  | k + 1, .inl x => (fst_stageEmb_lt k x).trans (Nat.lt_succ_self k)
-  | k + 1, .inr _ => Nat.lt_succ_self k
-
-private theorem stageEmb_injective :
-    ∀ k : ℕ, Function.Injective (stageEmb (𝒜 := 𝒜) (d := d) (𝒩 := 𝒩) (dN := dN) k)
-  | 0 => fun x ↦ x.elim
-  | k + 1 => by
-    rintro (x | t) (y | t') h
-    · exact congrArg Sum.inl (stageEmb_injective k h)
-    · exact absurd (congrArg Sigma.fst h) (fst_stageEmb_lt k x).ne
-    · exact absurd (congrArg Sigma.fst h) (fst_stageEmb_lt k y).ne'
-    · cases h
-      rfl
-
-/-- Every generator attached before stage `k` is a generator of stage `k`. -/
-private theorem mem_range_stageEmb : ∀ (k : ℕ) (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN),
-    x.1 < k → x ∈ Set.range (stageEmb k)
-  | 0, _, hx => absurd hx (Nat.not_lt_zero _)
-  | k + 1, ⟨j, t⟩, hx => by
-    rcases (Nat.lt_succ_iff_lt_or_eq.mp hx) with hj | rfl
-    · obtain ⟨y, hy⟩ := mem_range_stageEmb k ⟨j, t⟩ hj
-      exact ⟨.inl y, hy⟩
-    · exact ⟨.inr t, rfl⟩
-
-private theorem semifreeResolutionIndex_stageEmb :
-    ∀ (k : ℕ) (x : (resolutionStage 𝒜 d 𝒩 dN k).P),
-      semifreeResolutionIndex 𝒜 d 𝒩 dN (stageEmb k x) = (resolutionStage 𝒜 d 𝒩 dN k).ind x
-  | 0, x => x.elim
-  | k + 1, .inl x => semifreeResolutionIndex_stageEmb k x
-  | _ + 1, .inr _ => rfl
-
-/-- The rows of the generators of the resolution, before the twisting equation is proved: the
-generator attached along `(c, w)` at stage `k` has row `c`, relabelled into the resolution. -/
-private def semifreeResolutionRow (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN) :
-    semifreeResolutionGenerator 𝒜 d 𝒩 dN →₀ A :=
-  mapDomain (stageEmb x.1) x.2.c
-
-/-- Relabelling the rows of a stage gives the rows of the resolution. -/
-private theorem semifreeResolutionRow_stageEmb :
-    ∀ (k : ℕ) (x : (resolutionStage 𝒜 d 𝒩 dN k).P),
-      semifreeResolutionRow (stageEmb k x) =
-        mapDomain (stageEmb k) ((resolutionStage 𝒜 d 𝒩 dN k).m.m x)
-  | 0, x => x.elim
-  -- The generators of stage `k + 1` are those of stage `k`, sent along `stageEmb k`, and the
-  -- new ones; `stageEmb (k + 1) ∘ Sum.inl` is `stageEmb k` by definition, so the composite
-  -- relabelling `mapDomain_comp` closes both cases up to unfolding.
-  | k + 1, .inl x => by
-    refine (semifreeResolutionRow_stageEmb k x).trans ?_
-    rw [resolutionStage_succ_m_inl]
-    exact mapDomain_comp (v := (resolutionStage 𝒜 d 𝒩 dN k).m.m x) (f := Sum.inl)
-      (g := stageEmb (k + 1))
-  | k + 1, .inr t => by
-    rw [resolutionStage_succ_m_inr]
-    exact mapDomain_comp (v := t.c) (f := Sum.inl) (g := stageEmb (k + 1))
-
-/-- The differential of the resolution restricts to the differential of each stage. -/
-private theorem rowFiniteTwistedDifferential_mapDomain_stageEmb (k : ℕ)
-    (f : (resolutionStage 𝒜 d 𝒩 dN k).P →₀ A) :
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) semifreeResolutionRow
-        (mapDomain (stageEmb k) f) =
-      mapDomain (stageEmb k)
-        (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (resolutionStage 𝒜 d 𝒩 dN k).m.m f) :=
-  rowFiniteTwistedDifferential_mapDomain _ _ (semifreeResolutionRow_stageEmb k) f
-
-/-- The row of a generator has the total degree of a differential. -/
-private theorem semifreeResolutionRow_mem_graded (x y : semifreeResolutionGenerator 𝒜 d 𝒩 dN) :
-    semifreeResolutionRow x y ∈
-      𝒜 (semifreeResolutionIndex 𝒜 d 𝒩 dN y - semifreeResolutionIndex 𝒜 d 𝒩 dN x + 1) := by
-  have h := (mem_rowFiniteTotalGrading_iff 𝒜 _).mp
-    ((mapDomain_mem_rowFiniteTotalGrading_iff 𝒜 _ (stageEmb_injective x.1)
-      (semifreeResolutionIndex_stageEmb x.1)).mpr x.2.c_mem) y
-  rw [semifreeResolutionRow]
-  convert h using 2
-  simp only [semifreeResolutionIndex]
-  ring
-
-variable (𝒜 d 𝒩 dN) in
 /-- **The semi-free resolution** of `N`: the twisting cocycle on the generators of all stages, in
 which the generator attached along a relative cycle `(c, w)` has row `c`. -/
 def semifreeResolution :
     RowFiniteTwistingCocycle 𝒜 d (semifreeResolutionGenerator 𝒜 d 𝒩 dN)
-      (semifreeResolutionIndex 𝒜 d 𝒩 dN) where
-  m := semifreeResolutionRow
-  mem_graded := semifreeResolutionRow_mem_graded
-  twisting x := by
-    refine (mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero _
-      (semifreeResolutionRow_mem_graded x)).mpr ?_
-    rw [semifreeResolutionRow, rowFiniteTwistedDifferential_mapDomain_stageEmb, x.2.c_cycle,
-      mapDomain_zero]
+      (semifreeResolutionIndex 𝒜 d 𝒩 dN) :=
+  RowFiniteAugmentedModule.towerCocycle (resolutionStep 𝒜 d 𝒩 dN)
 
-variable (𝒜 d 𝒩 dN) in
 /-- The augmentation of the semi-free resolution: the generator attached along a relative cycle
 `(c, w)` is sent to `w`. -/
-def semifreeResolutionAugmentation (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN) : N :=
-  x.2.w
+def semifreeResolutionAugmentation : semifreeResolutionGenerator 𝒜 d 𝒩 dN → N :=
+  RowFiniteAugmentedModule.towerAugmentation (resolutionStep 𝒜 d 𝒩 dN)
 
-private theorem semifreeResolutionAugmentation_stageEmb :
-    ∀ (k : ℕ) (x : (resolutionStage 𝒜 d 𝒩 dN k).P),
-      semifreeResolutionAugmentation 𝒜 d 𝒩 dN (stageEmb k x) = (resolutionStage 𝒜 d 𝒩 dN k).ε x
-  | 0, x => x.elim
-  | k + 1, .inl x => semifreeResolutionAugmentation_stageEmb k x
-  | _ + 1, .inr _ => rfl
-
-private theorem linearCombination_semifreeResolutionAugmentation_mapDomain (k : ℕ)
-    (f : (resolutionStage 𝒜 d 𝒩 dN k).P →₀ A) :
-    linearCombination A (semifreeResolutionAugmentation 𝒜 d 𝒩 dN) (mapDomain (stageEmb k) f) =
-      linearCombination A (resolutionStage 𝒜 d 𝒩 dN k).ε f := by
-  rw [linearCombination_mapDomain, Function.comp_def]
-  simp only [semifreeResolutionAugmentation_stageEmb]
+variable {𝒜 d 𝒩 dN}
 
 /-! ### The characteristic property and its consequences -/
-
-/-- The row of the generator attached along `(c, w)` is `c`, relabelled into the resolution. -/
-private theorem semifreeResolution_m (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN) :
-    (semifreeResolution 𝒜 d 𝒩 dN).m x = mapDomain (stageEmb x.1) x.2.c :=
-  (rfl)
 
 /-- **The resolution is semi-free**: the row of a generator only involves generators attached at
 earlier stages, so the relation `y ∈ (m x).support` is well-founded. -/
 theorem wellFounded_mem_support_semifreeResolution :
-    WellFounded fun y x ↦ y ∈ ((semifreeResolution 𝒜 d 𝒩 dN).m x).support := by
-  classical
-  refine Subrelation.wf (r := InvImage (· < ·) Sigma.fst)
-    (fun {y x : semifreeResolutionGenerator 𝒜 d 𝒩 dN} hy ↦ ?_) (InvImage.wf _ wellFounded_lt)
-  rw [semifreeResolution_m] at hy
-  obtain ⟨y', -, rfl⟩ := Finset.mem_image.mp (mapDomain_support hy)
-  exact fst_stageEmb_lt x.1 y'
+    WellFounded fun y x ↦ y ∈ ((semifreeResolution 𝒜 d 𝒩 dN).m x).support :=
+  RowFiniteAugmentedModule.wellFounded_mem_support_towerCocycle (resolutionStep 𝒜 d 𝒩 dN)
 
 /-- The augmentation preserves degrees: a generator of index `i` is sent to degree `-i`. -/
 theorem semifreeResolutionAugmentation_mem (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN) :
-    semifreeResolutionAugmentation 𝒜 d 𝒩 dN x ∈ 𝒩 (-semifreeResolutionIndex 𝒜 d 𝒩 dN x) := by
-  rw [semifreeResolutionAugmentation, semifreeResolutionIndex, neg_neg]
-  exact x.2.w_mem
+    semifreeResolutionAugmentation 𝒜 d 𝒩 dN x ∈ 𝒩 (-semifreeResolutionIndex 𝒜 d 𝒩 dN x) :=
+  RowFiniteAugmentedModule.towerAugmentation_mem (resolutionStep 𝒜 d 𝒩 dN) x
 
 /-- **The augmentation is a chain map**, on the generators: the image of the row of a generator
 is the differential of its image. -/
 theorem linearCombination_semifreeResolutionAugmentation_m
     (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN) :
     linearCombination A (semifreeResolutionAugmentation 𝒜 d 𝒩 dN)
-      ((semifreeResolution 𝒜 d 𝒩 dN).m x) = dN (semifreeResolutionAugmentation 𝒜 d 𝒩 dN x) := by
-  rw [semifreeResolution_m, linearCombination_semifreeResolutionAugmentation_mapDomain]
-  exact x.2.ε_c
-
-/-- Every vector of the resolution comes from some stage. -/
-private theorem exists_eq_mapDomain_stageEmb (f : semifreeResolutionGenerator 𝒜 d 𝒩 dN →₀ A) :
-    ∃ (k : ℕ) (f' : (resolutionStage 𝒜 d 𝒩 dN k).P →₀ A), mapDomain (stageEmb k) f' = f := by
-  classical
-  refine ⟨f.support.sup fun x ↦ x.1 + 1,
-    (mem_range_mapDomain_iff _ (stageEmb_injective _) f).mpr fun x hx ↦ ?_⟩
-  by_contra hfx
-  exact hx (mem_range_stageEmb _ x (Nat.lt_of_succ_le
-    (Finset.le_sup (f := fun x ↦ x.1 + 1) (mem_support_iff.mpr hfx))))
+      ((semifreeResolution 𝒜 d 𝒩 dN).m x) = dN (semifreeResolutionAugmentation 𝒜 d 𝒩 dN x) :=
+  RowFiniteAugmentedModule.linearCombination_towerAugmentation_m (resolutionStep 𝒜 d 𝒩 dN) x
 
 /-- **The characteristic property of the resolution**: every homogeneous relative cycle of the
 augmentation, a cycle `c` of total degree `n + 1` and an element `w` of degree `n` with
@@ -357,14 +179,22 @@ theorem exists_semifreeResolution_m_eq {n : ℤ} {c : semifreeResolutionGenerato
     (hcw : linearCombination A (semifreeResolutionAugmentation 𝒜 d 𝒩 dN) c = dN w) :
     ∃ x, semifreeResolutionIndex 𝒜 d 𝒩 dN x = -n ∧ (semifreeResolution 𝒜 d 𝒩 dN).m x = c ∧
       semifreeResolutionAugmentation 𝒜 d 𝒩 dN x = w := by
-  obtain ⟨k, c', rfl⟩ := exists_eq_mapDomain_stageEmb c
-  refine ⟨⟨k, ⟨n, c', w, ?_, hw, ?_, ?_⟩⟩, rfl, rfl, rfl⟩
-  · exact (mapDomain_mem_rowFiniteTotalGrading_iff 𝒜 _ (stageEmb_injective k)
-      (semifreeResolutionIndex_stageEmb k)).mp hc
-  · apply mapDomain_injective (stageEmb_injective k)
-    rw [← rowFiniteTwistedDifferential_mapDomain_stageEmb, mapDomain_zero]
-    exact hdc
-  · rwa [← linearCombination_semifreeResolutionAugmentation_mapDomain]
+  classical
+  -- `semifreeResolution` is by definition the union `towerCocycle` of the tower of stages.
+  -- `c` involves finitely many generators, so it comes from some stage `k`.
+  obtain ⟨k, hk⟩ := exists_mem_supported_lt (R := A) Sigma.fst c
+  obtain ⟨c', rfl⟩ :=
+    RowFiniteAugmentedModule.exists_mapDomain_towerOf_eq (resolutionStep 𝒜 d 𝒩 dN) hk
+  refine ⟨⟨k, ⟨n, c', w, ?_, hw, ?_, ?_⟩⟩, rfl,
+    RowFiniteAugmentedModule.towerCocycle_m (resolutionStep 𝒜 d 𝒩 dN) _,
+    RowFiniteAugmentedModule.towerAugmentation_mk (resolutionStep 𝒜 d 𝒩 dN) _ _⟩
+  · exact (mapDomain_mem_rowFiniteTotalGrading_iff 𝒜 _
+      (RowFiniteAugmentedModule.towerOf_injective _ k)
+      (RowFiniteAugmentedModule.indQ_towerOf _ k)).mp hc
+  · exact (RowFiniteAugmentedModule.rowFiniteTwistedDifferential_towerCocycle_mapDomain_eq_zero_iff
+      _ k c').mp hdc
+  · rw [← RowFiniteAugmentedModule.linearCombination_towerAugmentation_mapDomain]
+    exact hcw
 
 variable [IsScalarTower R A N] [SetLike.GradedSMul 𝒜 𝒩] [DirectSum.Decomposition 𝒩]
   {hA : IsDGAlgebra 𝒜 d}

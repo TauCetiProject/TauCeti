@@ -26,11 +26,12 @@ of its argument it is the singular integral operator with kernel
 
 (`TauCeti.rieszKernel`, `TauCeti.rieszConst`). If `f ∈ L²` vanishes off a compact set `s`, then
 `R_v f (x) = ∫ K_v(x - y) f(y) dy` for almost every `x ∉ s`
-(`TauCeti.ae_rieszTransform_eq_integral`). The kernel satisfies the standard size and smoothness
-estimates `|K_v(z)| ≤ c_n ‖v‖ ‖z‖⁻ⁿ` and `|K_v(a) - K_v(b)| ≤ C ‖v‖ ‖a - b‖ ‖b‖⁻ⁿ⁻¹` for
-`2 ‖a - b‖ < ‖b‖`, so `R_v` is a Calderón–Zygmund operator
-(`TauCeti.hasStandardKernel_rieszTransform`) and in particular of weak type `(1, 1)`
-(`TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le`). In dimension one,
+(`TauCeti.ae_rieszTransform_eq_integral`); for `x ∉ s` this kernel integral converges
+absolutely (`TauCeti.integrable_rieszKernel_sub_smul_of_notMem`). The kernel satisfies the
+standard size and smoothness estimates `|K_v(z)| ≤ c_n ‖v‖ ‖z‖⁻ⁿ` and
+`|K_v(a) - K_v(b)| ≤ C ‖v‖ ‖a - b‖ ‖b‖⁻ⁿ⁻¹` for `2 ‖a - b‖ < ‖b‖`, so `R_v` is a
+Calderón–Zygmund operator (`TauCeti.hasStandardKernel_rieszTransform`) and in particular of weak
+type `(1, 1)` (`TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le`). In dimension one,
 `K_1(z) = 1 / (π z)` is the kernel of the Hilbert transform.
 
 ## The argument
@@ -135,6 +136,29 @@ theorem abs_rieszKernel_le (v z : E) :
         gcongr
         exact abs_real_inner_le_norm _ _
     _ = _ := by ring
+
+/-- **The kernel integral converges off a compact support.** If `f ∈ Lᵖ`, `1 ≤ p`, vanishes
+almost everywhere off a compact set `s`, then for every `x ∉ s` the function
+`y ↦ K_v(x - y) f(y)` is integrable. -/
+theorem integrable_rieszKernel_sub_smul_of_notMem [MeasurableSpace E] [BorelSpace E]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure E}
+    [IsFiniteMeasureOnCompacts μ] (v : E) {p : ℝ≥0∞} (hp : 1 ≤ p) {f : E → G}
+    (hf : MemLp f p μ) {s : Set E} (hs : IsCompact s) (hf0 : ∀ᵐ y ∂μ, y ∉ s → f y = 0)
+    {x : E} (hx : x ∉ s) :
+    Integrable (fun y ↦ rieszKernel v (x - y) • f y) μ := by
+  -- `x` lies at a positive distance `δ` from `s`, so the kernel is bounded on `x - s`.
+  obtain ⟨δ, hδ, hball⟩ := isOpen_iff.1 hs.isClosed.isOpen_compl x hx
+  refine (integrable_smul_and_norm_integral_smul_le (hs.measure_lt_top (μ := μ)).ne
+    (k := fun y ↦ rieszKernel v (x - y)) (B := rieszConst E * ‖v‖ / δ ^ finrank ℝ E)
+    (by positivity [rieszConst_nonneg E])
+    ((measurable_rieszKernel v).comp (continuous_sub_left x).measurable).aestronglyMeasurable
+    (ae_restrict_of_forall_mem hs.measurableSet fun y hy ↦ ?_) hp hf hf0).1
+  rw [Real.norm_eq_abs]
+  refine (abs_rieszKernel_le v _).trans (div_le_div_of_nonneg_left
+    (mul_nonneg (rieszConst_nonneg E) (norm_nonneg _)) (by positivity)
+    (pow_le_pow_left₀ hδ.le ?_ _))
+  rw [← dist_eq_norm]
+  exact not_lt.1 fun h ↦ hball (mem_ball'.2 h) hy
 
 /-- The two first-order terms of the increment `⟪a, v⟫ / ‖a‖ ^ m - ⟪b, v⟫ / ‖b‖ ^ m`. -/
 private theorem rieszKernel_sub_eq (v : E) {a b : E} (ha : a ≠ 0) (hb : b ≠ 0) :

@@ -34,7 +34,8 @@ The file also records the exponential identities that are specific to matrices: 
 laws `exp A * exp (-A) = 1` and `exp (-A) * exp A = 1`, together with their forms against an
 arbitrary factor, for an arbitrary matrix over any complete normed entry ring; the invariance of
 the trace under conjugation by the two exponential weights in either order, which needs
-commutative entries; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
+commutative entries; the entrywise effect of conjugating by the exponential line of a real
+diagonal matrix; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
 Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`, and the
 criterion `det (exp K) = 1 ↔ trace K = 0`. Differentiating entrywise at `t = 0`, the entries of
 the exponential line `t ↦ exp (t • X)` determine those of `X`.
@@ -73,6 +74,8 @@ exponentials whenever all their powers agree at those entries.
   exponential weights preserves the trace, in both orientations.
 * `Matrix.hasDerivAt_exp_smul_transpose_mul_mul_exp_smul`: the derivative of the congruence curve
   `s ↦ (exp (s • A))ᵀ * J * exp (s • A)`.
+* `Matrix.exp_neg_smul_diagonal_mul_mul_exp_smul_diagonal_apply`: conjugating by the exponential
+  line of a real diagonal matrix `diagonal d` multiplies entry `(i, j)` by `e^{t (d j - d i)}`.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
@@ -327,6 +330,18 @@ theorem hasDerivAt_exp_smul_transpose_mul_mul_exp_smul
   exact (hleft.fun_mul hright).congr_deriv (by simp only [mul_add, add_mul, mul_assoc]; rfl)
 
 end CommutativeEntries
+
+/-- Conjugating by the exponential line of a real diagonal matrix rescales each entry: entry
+`(i, j)` of `exp (-t • diagonal d) * B * exp (t • diagonal d)` is `e^{t (d j - d i)} * B i j`. -/
+theorem exp_neg_smul_diagonal_mul_mul_exp_smul_diagonal_apply (d : m → ℝ) (B : Matrix m m ℝ)
+    (t : ℝ) (i j : m) :
+    (exp ((-t) • diagonal d) * B * exp (t • diagonal d)) i j =
+      Real.exp (t * (d j - d i)) * B i j := by
+  simp only [← diagonal_smul, exp_diagonal, diagonal_mul, mul_diagonal, Pi.coe_exp,
+    Pi.smul_apply, smul_eq_mul, ← Real.exp_eq_exp_ℝ]
+  rw [mul_comm, ← mul_assoc, ← Real.exp_add]
+  congr 2
+  ring
 
 namespace IsHermitian
 

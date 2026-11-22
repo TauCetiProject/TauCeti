@@ -154,15 +154,10 @@ theorem iIndepFun.hasLaw_sum_geometricMeasure {ι : Type*} [Fintype ι]
         rw [negativeBinomialMeasure_zero hpR p.property.2]
         exact hasLaw_dirac_of_ae_eq (Filter.Eventually.of_forall fun _ => rfl)
     | @insert i s hi ih =>
-        let _ : IsProbabilityMeasure (negativeBinomialMeasure 1 p) :=
-          isProbabilityMeasure_negativeBinomialMeasure zero_le_one hpR p.property.2
-        let _ : IsProbabilityMeasure (negativeBinomialMeasure (s.card : ℝ) p) :=
-          isProbabilityMeasure_negativeBinomialMeasure (Nat.cast_nonneg _) hpR p.property.2
         have hadd :=
           (hindep.indepFun_finsetSum_of_notMem₀
-            (fun j => (hlaw j).aemeasurable) hi).symm.hasLaw_add (hone i) ih
-        rw [negativeBinomialMeasure_conv_negativeBinomialMeasure zero_le_one
-          (Nat.cast_nonneg s.card)] at hadd
+            (fun j => (hlaw j).aemeasurable) hi).symm.hasLaw_add_negativeBinomialMeasure
+            (hone i) ih
         simpa only [Finset.sum_insert hi, Finset.card_insert_of_notMem hi, Nat.cast_add,
           Nat.cast_one, add_comm] using hadd
   have hX : (fun ω => ∑ i, X i ω) = ∑ i, X i := by

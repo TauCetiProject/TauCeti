@@ -82,6 +82,9 @@ function by a function of temperate growth multiplies the function pointwise
 * `MeasureTheory.Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le`: the product with
   a function `g` of temperate growth bounded by `G` is an `Lᵖ` function of norm at most
   `G ‖u‖_p`.
+* `MeasureTheory.Lp.toTemperedDistribution_eq_smulLeftCLM_iff`: an `Lᵖ` function `w` is the
+  product of the tempered distribution of `u` with a function `g` of temperate growth exactly
+  when `w = g • u` almost everywhere, even for unbounded `g`.
 * `ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`: an operator
   `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 * `BoundedContinuousFunction.toTemperedDistribution_toLpTop_injective`: for a measure positive on
@@ -238,6 +241,23 @@ theorem exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le {μ : Measure E
     (Lp.norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
   rw [Lp.norm_toLp g hmem, eLpNorm_exponent_top hmeas]
   exact ENNReal.toReal_le_of_le_ofReal hG0 (eLpNormEssSup_le_of_ae_bound (ae_of_all _ hG))
+
+/-- The tempered distribution of an `Lᵖ` function `w` is the product of the tempered distribution
+of an `L^q` function `u` with a function `g` of temperate growth exactly when `w = g • u` almost
+everywhere. The product `g • u` need not lie in any `Lᵖ` space a priori. -/
+theorem toTemperedDistribution_eq_smulLeftCLM_iff {μ : Measure E} [μ.HasTemperateGrowth]
+    {p q : ENNReal} [Fact (1 ≤ p)] [hq : Fact (1 ≤ q)] {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (w : Lp F p μ) (u : Lp F q μ) :
+    (w : 𝓢'(E, F)) = TemperedDistribution.smulLeftCLM F g (u : 𝓢'(E, F)) ↔
+      w =ᵐ[μ] fun x ↦ g x • u x := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
+  refine ⟨fun h ↦ ae_eq_of_toTemperedDistribution_apply_eq w
+    (((Lp.memLp u).locallyIntegrable hq.out).continuous_smul hg.1.continuous) fun φ ↦ ?_,
+    fun h ↦ ?_⟩
+  · rw [h, smulLeftCLM_toTemperedDistribution_apply hg]
+  · ext φ
+    rw [smulLeftCLM_toTemperedDistribution_apply hg, Lp.toTemperedDistribution_apply]
+    exact integral_congr_ae (h.mono fun x hx ↦ by simp only [hx])
 
 omit [FiniteDimensional ℝ E] in
 /-- Applying a continuous linear map `L` to the values of an `Lᵖ` function `u` applies `L` to the
