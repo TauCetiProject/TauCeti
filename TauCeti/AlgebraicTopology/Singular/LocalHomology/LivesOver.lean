@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
@@ -70,6 +70,17 @@ needed for the statements below.
   exactly the nonzero ones (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_id_iff`).
   This is the remark following the source's Definition 2.3: for trivial coefficients these are
   the nonzero multiples of the fundamental class.
+* **Fundamental classes with coefficients.** With nontrivial coefficients, a fundamental class
+  (`TauCeti.IsFundamentalClass`) of an `n`-manifold lives over the fundamental class for its
+  identity (`TauCeti.IsFundamentalClass.livesOverFundamentalClass_id`), and a class whose image is a
+  fundamental class lives over the fundamental class
+  (`TauCeti.IsFundamentalClass.livesOverFundamentalClass_of_homologyMap`). No orientation enters:
+  with coefficients in `ZMod 2`, every compact manifold has a fundamental class
+  (`TauCeti.existsUnique_isFundamentalClass_of_subsingleton_units`), and the hypothesis that
+  `(p ∘ φ)_*[S]` is the fundamental class of `M` is the mod `2` degree hypothesis of the source's
+  Theorem 5.15. Over a division ring, on a connected manifold, the classes of `Hₙ(M)` living over
+  the fundamental class for the identity are the nonzero ones
+  (`TauCeti.livesOverFundamentalClass_id_iff_ne_zero`).
 * **Classes of nonzero degree.** If `α ∈ Hₙ(E; ℤ)` satisfies `p_* α = d • [M]` with `d ≠ 0`, then
   `α` lives over the fundamental class at every point
   (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_of_homologyMap_eq_zsmul`). In
@@ -80,6 +91,10 @@ needed for the statements below.
   `s` of `p` the class `s_*[M]` lives over the fundamental class
   (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_mapFundamentalClass_of_section`), as
   for the constant spheres in the evaluation fibration `Map(S², Q) → Q` of the source's §6.3.
+* **Removing the part carried by a section.** For a section `s` of `p`, the class
+  `α - s_* p_* α` has image zero in `Hₖ(M)` (`TauCeti.homologyMap_sub_homologyMap_section`), and
+  its localization at the fibre over `b` is that of `α` minus the image under `s` of the local
+  homology class of `p_* α` at `b` (`TauCeti.fiberLocalization_sub_homologyMap_section`).
 
 ## References
 
@@ -183,6 +198,19 @@ theorem livesOverFundamentalClass_iff (p : E → M) (b : M) {k : ℕ}
     LivesOverFundamentalClass R p b α ↔ (fiberLocalization R p b k).hom α ≠ 0 :=
   Iff.rfl
 
+/-- For the identity of `M`, the localization at the fibre over `b` is the map
+`Hₖ(M) → Hₖ(M, M ∖ {b})` to the local homology at `b`. -/
+theorem fiberLocalization_id_apply [TopologicalSpace M] (b : M) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology R k : ModuleCat.{w} Λ)) :
+    (fiberLocalization R (id : M → M) b k).hom μ = singularHomologyToLocalHomology R b k μ := by
+  rw [fiberLocalization_id]
+  -- After this rewrite the composite lands in `localHomology R {b} k` while the goal expects
+  -- `localHomology R (id ⁻¹' {b}) k`. The two agree only after unfolding `id ⁻¹' {b}`, so the
+  -- goal is not type-correct at reducible transparency and `rw` cannot match `comp_apply` or
+  -- `singularHomologyToLocalHomology_apply`; `erw` matches up to this unfolding.
+  erw [ModuleCat.comp_apply]
+  erw [← singularHomologyToLocalHomology_apply]
+
 /-- Living over the fundamental class only depends on the fibre: for maps `p : E → M` and
 `p' : E → M'` with `p⁻¹(b) = p'⁻¹(b')`, a class lives over the fundamental class at `b` for `p`
 exactly when it does at `b'` for `p'`. -/
@@ -245,8 +273,7 @@ theorem livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id (σ : C(E, E')) 
   -- `τ_* σ_* α = α`, so `α` is the image of `σ_* α` under a map over `M`.
   have key : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom τ)) R k).hom
       ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k).hom α) = α := by
-    simp [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
-      ← TopCat.ofHom_comp, hτ]
+    simp [← ContinuousMap.homologyMap_comp_apply, hτ]
   exact LivesOverFundamentalClass.of_homologyMap R τ h' (by rwa [key])
 
 /-- **Living over the fundamental class does not depend on the coefficients up to
@@ -269,7 +296,91 @@ theorem livesOverFundamentalClass_homologyMap_coefficient_iff {R' : ModuleCat.{w
   rw [livesOverFundamentalClass_iff, livesOverFundamentalClass_iff, hc]
   exact (map_ne_zero_iff _ hinj)
 
+section Section
+
+variable [TopologicalSpace M] (p : C(E, M)) (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M)
+include hs
+
+/-- **Removing the part of a class carried by a section.** For a section `s` of `p : E → M`, the
+class `α - s_* p_* α` has image zero in `Hₖ(M)`. -/
+theorem homologyMap_sub_homologyMap_section {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
+        (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom
+          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) = 0 := by
+  rw [map_sub, ← ContinuousMap.homologyMap_comp_apply, hs]
+  simp
+
+/-- **Localizing a class with the part carried by a section removed.** For a section `s` of
+`p : E → M`, the localization at the fibre over `b` of `α - s_* p_* α` is that of `α` minus the
+image under `s` of the local homology class of `p_* α` at `b`. -/
+theorem fiberLocalization_sub_homologyMap_section (b : M) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    (fiberLocalization R p b k).hom
+        (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom
+          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) =
+      (fiberLocalization R p b k).hom α -
+        (localHomologyMap R s
+            (by rw [← preimage_comp, ← ContinuousMap.coe_comp, hs, ContinuousMap.coe_id]) k).hom
+          ((fiberLocalization R id b k).hom
+            ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) := by
+  rw [map_sub, ← ModuleCat.comp_apply (fiberLocalization R id b k),
+    ← homologyMap_comp_fiberLocalization R s (p := id) (p' := p)
+      (by rw [← ContinuousMap.coe_comp, hs, ContinuousMap.coe_id]) b k, ModuleCat.comp_apply]
+
+end Section
+
 end LivesOver
+
+section FundamentalClass
+
+variable {Λ : Type*} [Ring Λ] {N : ModuleCat.{w} Λ} {E M V : Type w} [TopologicalSpace E]
+  [TopologicalSpace M] [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  [ChartedSpace V M] {n : ℕ} (hn : Module.finrank ℝ V = n)
+
+include hn in
+/-- **A fundamental class lives over itself.** On an `n`-manifold `M`, with nontrivial
+coefficients, a fundamental class of `Hₙ(M; N)` lives over the fundamental class at every point,
+for the identity of `M`: its localization at `b` is its image in the local homology
+`Hₙ(M, M ∖ {b}; N)`, which generates that nontrivial module. No orientation is involved, so with
+coefficients in `ZMod 2` this applies to every compact manifold. -/
+theorem IsFundamentalClass.livesOverFundamentalClass_id [Nontrivial N]
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} Λ)}
+    (hμ : IsFundamentalClass μ) (b : M) : LivesOverFundamentalClass N id b μ := by
+  have : T1Space M := ChartedSpace.t1Space V M
+  rw [livesOverFundamentalClass_iff, fiberLocalization_id_apply]
+  exact hμ.singularHomologyToLocalHomology_ne_zero hn b
+
+include hn in
+/-- **Classes over a fundamental class live over the fundamental class.** Let `p : E → M` be a map
+to an `n`-manifold and let `α ∈ Hₙ(E; N)`, with nontrivial coefficients, be such that `p_* α` is a
+fundamental class of `M`. Then `α` lives over the fundamental class of `M` at every point. With
+coefficients in `ZMod 2`, this is the mod `2` degree hypothesis of
+Barraud–Damian–Humilière–Oancea, Theorem 5.15, stated homologically. -/
+theorem IsFundamentalClass.livesOverFundamentalClass_of_homologyMap [Nontrivial N]
+    (p : C(E, M)) {α : ((TopCat.toSSet.obj (TopCat.of E)).homology N n : ModuleCat.{w} Λ)}
+    (hα : IsFundamentalClass ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) N n).hom α))
+    (b : M) : LivesOverFundamentalClass N p b α :=
+  LivesOverFundamentalClass.of_homologyMap_proj N p (hα.livesOverFundamentalClass_id hn b)
+
+include hn in
+/-- **The trivial fibration over a field.** On a connected `n`-manifold, with coefficients in a
+division ring `K`, a class of `Hₙ(M; K)` lives over the fundamental class at a point, for the
+identity of `M`, exactly when it is nonzero. No orientation is needed; with coefficients in
+`ZMod 2` this is the remark following Barraud–Damian–Humilière–Oancea, Definition 2.3, for every
+compact connected manifold. A noncompact connected manifold has no nonzero such class. -/
+theorem livesOverFundamentalClass_id_iff_ne_zero [T2Space M] [ConnectedSpace M]
+    {K : Type w} [DivisionRing K] (b : M)
+    (γ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of K K) n : ModuleCat.{w} K)) :
+    LivesOverFundamentalClass (ModuleCat.of K K) id b γ ↔ γ ≠ 0 := by
+  refine ⟨fun h hγ ↦ not_livesOverFundamentalClass_zero (ModuleCat.of K K) id b n (hγ ▸ h),
+    fun hγ ↦ ?_⟩
+  -- A nonzero class of `Hₙ(M; K)` forces the connected manifold `M` to be compact.
+  have : CompactSpace M := compactSpace_of_nontrivial_singularHomology (ModuleCat.of K K) hn le_rfl
+    (h := ⟨⟨γ, 0, hγ⟩⟩)
+  exact ((isFundamentalClass_iff_ne_zero hn γ).2 hγ).livesOverFundamentalClass_id hn b
+
+end FundamentalClass
 
 section Cross
 
@@ -447,13 +558,7 @@ local orientation `o b`. -/
 theorem fiberLocalization_id_fundamentalClass (b : M) :
     (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) id b n).hom (o.fundamentalClass hn) =
       (o b).val := by
-  rw [fiberLocalization_id]
-  -- After this rewrite the composite lands in `localHomology R {b} n` while the goal expects
-  -- `localHomology R (id ⁻¹' {b}) n`. The two agree only after unfolding `id ⁻¹' {b}`, so the
-  -- goal is not type-correct at reducible transparency and `rw` cannot match `comp_apply` or
-  -- `singularHomologyToLocalHomology_apply`; `erw` matches up to this unfolding.
-  erw [ModuleCat.comp_apply]
-  erw [← singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_fundamentalClass]
+  rw [fiberLocalization_id_apply, singularHomologyToLocalHomology_fundamentalClass]
 
 include hn in
 /-- **Multiples of the fundamental class.** For the identity of a compact oriented manifold, the
@@ -473,8 +578,8 @@ include hn in
 /-- The fundamental class of a compact oriented manifold lives over itself at every point. -/
 @[simp]
 theorem livesOverFundamentalClass_id_fundamentalClass (b : M) :
-    LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) id b (o.fundamentalClass hn) := by
-  simpa using (o.livesOverFundamentalClass_id_zsmul_fundamentalClass_iff hn b 1).2 one_ne_zero
+    LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) id b (o.fundamentalClass hn) :=
+  (o.isFundamentalClass_fundamentalClass hn).livesOverFundamentalClass_id hn b
 
 include o hn in
 /-- **The trivial fibration** (the remark after Barraud–Damian–Humilière–Oancea, Definition 2.3).

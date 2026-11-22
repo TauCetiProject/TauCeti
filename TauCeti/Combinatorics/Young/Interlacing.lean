@@ -242,7 +242,7 @@ carries an entry at most `n`, so column strictness makes the entry of the cell d
 smaller than `n`, and that cell is therefore small: this is the inequality `μᵢ₊₁ ≤ νᵢ`. -/
 theorem interlacedBy_restrictShape (T : BoundedSSYT (n + 1) μ) :
     YoungDiagram.InterlacedBy μ (restrictShape T) :=
-  fun i => ⟨YoungDiagram.le_rowLen_of_forall_mem fun j hj => by
+  fun i => ⟨YoungDiagram.le_rowLen_iff_forall_mem.mpr fun j hj => by
       have hc : ((i + 1, j) : ℕ × ℕ) ∈ μ := _root_.YoungDiagram.mem_iff_lt_rowLen.mpr hj
       have hlt : T.val i j < T.val (i + 1) j := T.val.col_strict (Nat.lt_succ_self i) hc
       have hbound : T.val (i + 1) j < n + 1 := entry_lt T hc
