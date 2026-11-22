@@ -22,7 +22,8 @@ nonzerodivisor hypothesis is made: `A` may have `p`-torsion and zero divisors. T
   distinguished multiple `y ξ` of an element `ξ ∈ ker θ` forces `y` to be a unit and `ξ` to be
   distinguished (`WittVector.isDistinguished_mul_iff_of_coeff_zero_mem_jacobson`). As `ker θ` is
   principal and contains a distinguished element, an element of `ker θ` generates it exactly when
-  it is distinguished.
+  it is distinguished. A generator `ξ = [ξ₀] + p u` then has `(ξ₀)♯ = -p θ(u)`, a unit multiple of
+  `p`, so `A♭` is `(ξ₀)`-adically complete and `ξ` is a nonzerodivisor of `W(A♭)`.
 * **The tilt modulo `t`.** Let `t : A♭` with `t♯ ∣ p`, and let `g = [g₀] + p u` be a distinguished
   generator of `ker θ`. Comparing Witt coordinates modulo `t` in `p = z g + [t] w` shows `t ∣ g₀`.
   Hence `ker θ = (p + [t] α)` for some `α` and `ker θ + ([t]) = (p, [t])`, so
@@ -52,6 +53,12 @@ nonzerodivisor hypothesis is made: `A` may have `p`-torsion and zero divisors. T
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.span_singleton_eq_span_singleton_iff_untilt`: for
   `s♯ ∣ p` and `t♯ ∣ p`, `(s) = (t)` in `A♭` if and only if `(s♯) = (t♯)` in `A`.
 * `PreTilt.quotientSpanEquiv`: for `t♯ ∣ p`, the sharp map induces `A♭ ⧸ (t) ≃+* A ⧸ (t♯)`.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.associated_untilt_coeff_zero`: for a generator `g` of
+  `ker θ`, `(g₀)♯` is a unit multiple of `p`.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.isAdicComplete_span_coeff_zero`: for a generator `g` of
+  `ker θ`, `A♭` is `(g₀)`-adically complete.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.mem_nonZeroDivisors_of_ker_fontaineTheta_eq_span`: every
+  generator of `ker θ` is a nonzerodivisor of `W(A♭)`.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.frobeniusModPow_injective`,
   `TauCeti.Perfectoid.IsIntegralPerfectoid.frobeniusModPow_bijective`: for `π ^ p ∣ p` with `A`
   `π`-adically complete, relative Frobenius `A ⧸ π → A ⧸ π ^ p` is bijective.
@@ -66,6 +73,7 @@ nonzerodivisor hypothesis is made: `A` may have `p`-torsion and zero divisors. T
 public section
 
 open Ideal WittVector
+open scoped nonZeroDivisors
 
 namespace TauCeti.Perfectoid.IsIntegralPerfectoid
 
@@ -236,6 +244,45 @@ theorem span_singleton_eq_span_singleton_iff_untilt {s t : PreTilt A p}
     span {s} = span {t} ↔ span {s.untilt} = span {t.untilt} := by
   simp only [le_antisymm_iff, span_singleton_le_span_singleton, dvd_iff_untilt_dvd hs,
     dvd_iff_untilt_dvd ht]
+
+/-- **The sharp of `p♭` is a unit multiple of `p`.** If `g` generates `ker θ`, then `(g₀)♯` is
+associated to `p`: writing the distinguished generator as `g = [g₀] + p u` with `u` a unit,
+`0 = θ(g) = (g₀)♯ + p θ(u)`. So `g₀` is a choice of `p♭`. -/
+theorem associated_untilt_coeff_zero {g : WittVector p (PreTilt A p)}
+    (hg : RingHom.ker (fontaineTheta A p) = span {g}) :
+    Associated (g.coeff 0).untilt (p : A) := by
+  have hgk : g ∈ RingHom.ker (fontaineTheta A p) := hg ▸ mem_span_singleton_self g
+  obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp
+    ((ker_fontaineTheta_eq_span_iff_isDistinguished hgk).mp hg)
+  have h := RingHom.mem_ker.mp hgk
+  rw [hu, map_add, map_mul, map_natCast, fontaineTheta_teichmuller] at h
+  have hθu : IsUnit (fontaineTheta A p u) := u.isUnit.map _
+  refine Associated.symm ⟨-hθu.unit, ?_⟩
+  rw [Units.val_neg, hθu.unit_spec]
+  linear_combination -h
+
+/-- **The tilt is complete for the zeroth Witt coordinate of a generator of `ker θ`.** If `g`
+generates `ker θ`, then `A♭` is `(g₀)`-adically complete and separated: `(g₀)♯` is a unit multiple
+of `p` (`associated_untilt_coeff_zero`; Česnavičius–Scholze, *Purity for flat cohomology*,
+§2.1.2). -/
+theorem isAdicComplete_span_coeff_zero {g : WittVector p (PreTilt A p)}
+    (hg : RingHom.ker (fontaineTheta A p) = span {g}) :
+    IsAdicComplete (span {g.coeff 0}) (PreTilt A p) := by
+  have h := associated_untilt_coeff_zero hg
+  have : IsAdicComplete (span {(g.coeff 0).untilt}) A := by
+    obtain ⟨u, hu⟩ := h
+    rw [← span_singleton_mul_right_unit u.isUnit, hu]
+    infer_instance
+  exact PreTilt.isAdicComplete_span_singleton h.dvd
+
+/-- **Generators of `ker θ` are nonzerodivisors** (Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge
+theory*, Lemma 3.10 and Remark 3.11). For an integral perfectoid ring `A`, possibly with
+`p`-torsion, every generator of `ker θ` is a nonzerodivisor of `W(A♭)`. -/
+theorem mem_nonZeroDivisors_of_ker_fontaineTheta_eq_span {g : WittVector p (PreTilt A p)}
+    (hg : RingHom.ker (fontaineTheta A p) = span {g}) : g ∈ (WittVector p (PreTilt A p))⁰ := by
+  have := isAdicComplete_span_coeff_zero hg
+  exact ((ker_fontaineTheta_eq_span_iff_isDistinguished (hg ▸ mem_span_singleton_self g)).mp
+    hg).mem_nonZeroDivisors (le_radical (mem_span_singleton_self _))
 
 end Tilt
 
