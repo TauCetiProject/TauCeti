@@ -70,6 +70,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
   lies in the normal subgroup.
 * `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
+* `QuotientGroup.image_mk_eq_univ_iff`: a set `K` meets every left coset of `Γ` exactly when
+  `K * Γ = G`.
 -/
 
 public section
@@ -344,3 +346,19 @@ theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
 attribute [to_additive existing] QuotientGroup.congr_mk
 
 end TauCeti
+
+namespace QuotientGroup
+
+open Set
+
+variable {G : Type*} [Group G] {Γ : Subgroup G}
+
+/-- A set `K` meets every left coset of `Γ` exactly when `K * Γ = G`. -/
+theorem image_mk_eq_univ_iff {K : Set G} :
+    ((↑) '' K : Set (G ⧸ Γ)) = univ ↔ K * (Γ : Set G) = univ := by
+  rw [← preimage_image_mk_eq_mul]
+  refine ⟨fun h ↦ by rw [h, preimage_univ], fun h ↦ eq_univ_of_forall fun x ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := mk_surjective x
+  exact (h ▸ mem_univ g : g ∈ _)
+
+end QuotientGroup
