@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
@@ -54,6 +55,7 @@ sides of either limit being `0` at the poles `s = -k`. The second limit is the a
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
+* `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
@@ -180,6 +182,12 @@ theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
   | succ n ih =>
     rw [Finset.prod_range_succ, mul_right_comm, ih, Nat.cast_succ, ← add_assoc,
       Gamma_add_one (by positivity), mul_comm]
+
+/-- The real Gamma function is at most `1` on `[1, 2]`: it is convex there, with
+`Γ 1 = Γ 2 = 1`. -/
+theorem Gamma_le_one_of_mem_Icc {s : ℝ} (hs : s ∈ Set.Icc (1 : ℝ) 2) : Gamma s ≤ 1 := by
+  simpa [Gamma_one, Gamma_two] using
+    convexOn_Gamma.le_max_of_mem_Icc (by norm_num : (1 : ℝ) ∈ Set.Ioi 0) (by norm_num) hs
 
 /-- The half-integer value `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`, the factorial form of
 `Real.Gamma_nat_add_half`, obtained from Legendre's duplication formula at `n + 1 / 2`. -/
