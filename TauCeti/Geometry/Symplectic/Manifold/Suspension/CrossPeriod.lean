@@ -72,7 +72,7 @@ No compactness of `M` and no nondegeneracy of `σ` is needed.
   on such cross products the periods of `Ω` and of `ds ∧ dt` agree.
 * `SmoothMappingTorus.closedFormHomologyPeriod_suspensionClosedForm_orbitTorusHomologyClass`: the
   class of the orbit torus over a closed orbit of period `d` has `Ω`-period `d`.
-* `SmoothMappingTorus.closedFormHomologyPeriod_verticalForm_orbitTorusHomologyClass`: it has
+* `SmoothMappingTorus.closedFormHomologyPeriod_verticalForm_orbitTorusHomologyClass_eq_zero`: it has
   `ω_v`-period `0`.
 
 ## References
@@ -192,7 +192,7 @@ variable {d : ℕ} {x : M} (hx : Function.IsPeriodicPt φ d x)
 
 /-- **The vertical form has zero period on the class of an orbit torus.** -/
 @[simp]
-theorem closedFormHomologyPeriod_verticalForm_orbitTorusHomologyClass (hσc : σ.IsClosed) :
+theorem closedFormHomologyPeriod_verticalForm_orbitTorusHomologyClass_eq_zero (hσc : σ.IsClosed) :
     closedFormHomologyPeriod (verticalForm hσ hσc) (orbitTorusHomologyClass hx) = 0 := by
   rw [orbitTorusHomologyClass_def]
   exact closedFormHomologyPeriod_verticalForm_singularHomologyCrossBilinear_eq_zero hσc rfl

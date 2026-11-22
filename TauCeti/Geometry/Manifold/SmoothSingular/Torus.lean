@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.AddCircle
 public import TauCeti.Geometry.Manifold.SmoothSingular.Period
-import TauCeti.LinearAlgebra.Determinant.Prod
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.MeasureTheory.Integral.FullSimplex
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -68,28 +68,6 @@ namespace TauCeti
 
 section Simplex
 
-/-- On `Δ²`, the degeneracy `s₁ : Δ² → Δ¹` is the coordinate `y₀ + y₁` of the unit interval. -/
-private theorem homeomorphI_map_predAbove_one (y : fullSimplex 2) :
-    (StdSimplex.homeomorphI (StdSimplex.map (Fin.predAbove 1) (fullSimplexEquivStdSimplex 2 y)) :
-      ℝ) = y.val 0 + y.val 1 := by
-  have h₁ : (fullSimplexEquivStdSimplex 2 y).weights 1 = y.val 0 :=
-    fullSimplexEquivStdSimplex_weights_succ y 0
-  have h₂ : (fullSimplexEquivStdSimplex 2 y).weights 2 = y.val 1 :=
-    fullSimplexEquivStdSimplex_weights_succ y 1
-  rw [StdSimplex.homeomorphI_apply_coe, StdSimplex.weights_map]
-  simp [Finsupp.mapDomain, Finsupp.sum_fintype, Fin.sum_univ_three, h₁, h₂,
-    show Fin.predAbove (1 : Fin 2) (1 : Fin 3) = 1 from rfl,
-    show Fin.predAbove (1 : Fin 2) (2 : Fin 3) = 1 from rfl]
-
-/-- On `Δ²`, the degeneracy `s₀ : Δ² → Δ¹` is the coordinate `y₁` of the unit interval. -/
-private theorem homeomorphI_map_predAbove_zero (y : fullSimplex 2) :
-    (StdSimplex.homeomorphI (StdSimplex.map (Fin.predAbove 0) (fullSimplexEquivStdSimplex 2 y)) :
-      ℝ) = y.val 1 := by
-  have h₂ : (fullSimplexEquivStdSimplex 2 y).weights 2 = y.val 1 :=
-    fullSimplexEquivStdSimplex_weights_succ y 1
-  rw [StdSimplex.homeomorphI_apply_coe, StdSimplex.weights_map]
-  simp [Finsupp.mapDomain, Finsupp.sum_fintype, Fin.sum_univ_three, h₂]
-
 variable (p q : ℝ)
 
 /-- The linear map `y ↦ ((y₀ + y₁) p, y₁ q)`, which parametrizes the first simplex of the torus
@@ -112,6 +90,31 @@ private theorem upperMap_apply (y : EuclideanSpace ℝ (Fin 2)) :
     upperMap p q y = (p * y 1, q * (y 0 + y 1)) :=
   (rfl)
 
+/-- The degeneracy `s₁ c_p` of the circuit simplex of `ℝ / pℤ`, read on `Δ²`, is
+`y ↦ [(y₀ + y₁) p]`. -/
+private theorem toSSetObjEquiv_σ_one_circuitSimplex (y : fullSimplex 2) :
+    (TopCat.of (AddCircle p)).toSSetObjEquiv _
+        ((TopCat.toSSet.obj _).σ 1 (AddCircle.circuitSimplex p)) (fullSimplexEquivStdSimplex 2 y) =
+      ((p * (y.val 0 + y.val 1) : ℝ) : AddCircle p) := by
+  rw [TopCat.toSSetObjEquiv_σ_apply, AddCircle.circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁,
+    ContinuousMap.comp_apply, Path.coe_toContinuousMap, AddCircle.zsmulLoop_zero_apply_eq_coe,
+    Int.cast_one, one_mul]
+  -- The vertex map of `s₁` is `Fin.predAbove 1` on `Fin (1 + 1 + 1)`, the `Fin 3` of the lemma.
+  exact congrArg (fun t : ℝ ↦ ((p * t : ℝ) : AddCircle p))
+    (homeomorphI_map_predAbove_one_fullSimplexEquivStdSimplex_coe y)
+
+/-- The degeneracy `s₀ c_p` of the circuit simplex of `ℝ / pℤ`, read on `Δ²`, is `y ↦ [y₁ p]`. -/
+private theorem toSSetObjEquiv_σ_zero_circuitSimplex (y : fullSimplex 2) :
+    (TopCat.of (AddCircle p)).toSSetObjEquiv _
+        ((TopCat.toSSet.obj _).σ 0 (AddCircle.circuitSimplex p)) (fullSimplexEquivStdSimplex 2 y) =
+      ((p * y.val 1 : ℝ) : AddCircle p) := by
+  rw [TopCat.toSSetObjEquiv_σ_apply, AddCircle.circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁,
+    ContinuousMap.comp_apply, Path.coe_toContinuousMap, AddCircle.zsmulLoop_zero_apply_eq_coe,
+    Int.cast_one, one_mul]
+  -- As above, for `Fin.predAbove 0`.
+  exact congrArg (fun t : ℝ ↦ ((p * t : ℝ) : AddCircle p))
+    (homeomorphI_map_predAbove_zero_fullSimplexEquivStdSimplex_coe y)
+
 /-- The first simplex `(s₁ c_p, s₀ c_q)` of the shuffle product of the circuit simplices, read on
 `Δ²`, is `y ↦ ([(y₀ + y₁) p], [y₁ q])`. -/
 private theorem toSSetObjEquiv_lower (y : fullSimplex 2) :
@@ -123,26 +126,10 @@ private theorem toSSetObjEquiv_lower (y : fullSimplex 2) :
             (TopCat.toSSet.obj (TopCat.of (AddCircle p)) ⊗
               TopCat.toSSet.obj (TopCat.of (AddCircle q))) _⦋2⦌))
         (fullSimplexEquivStdSimplex 2 y) =
-      Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) (lowerMap p q y) := by
-  refine (TopCat.toSSetObjEquiv_μ_apply (X := TopCat.of (AddCircle p))
-    (Y := TopCat.of (AddCircle q)) _ _ (fullSimplexEquivStdSimplex 2 y)).trans ?_
-  refine Prod.ext ((TopCat.toSSetObjEquiv_σ_apply _ 1 _).trans ?_)
-    ((TopCat.toSSetObjEquiv_σ_apply _ 0 _).trans ?_)
-  · rw [lowerMap_apply, Prod.map_fst, AddCircle.circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁,
-      ContinuousMap.comp_apply]
-    simp only [Path.coe_toContinuousMap, AddCircle.zsmulLoop_zero_apply_eq_coe]
-    -- The coercion of the parametrization of `Δ¹` by the unit interval is not in the form of the
-    -- helper lemma, which is stated for its real value.
-    erw [homeomorphI_map_predAbove_one]
-    push_cast
-    ring_nf
-  · rw [lowerMap_apply, Prod.map_snd, AddCircle.circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁,
-      ContinuousMap.comp_apply]
-    simp only [Path.coe_toContinuousMap, AddCircle.zsmulLoop_zero_apply_eq_coe]
-    -- As above, for the second circle.
-    erw [homeomorphI_map_predAbove_zero]
-    push_cast
-    ring_nf
+      Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) (lowerMap p q y) :=
+  (TopCat.toSSetObjEquiv_μ_apply (X := TopCat.of (AddCircle p)) (Y := TopCat.of (AddCircle q)) _ _
+    (fullSimplexEquivStdSimplex 2 y)).trans
+    (Prod.ext (toSSetObjEquiv_σ_one_circuitSimplex p y) (toSSetObjEquiv_σ_zero_circuitSimplex q y))
 
 /-- The second simplex `(s₀ c_p, s₁ c_q)` of the shuffle product of the circuit simplices, read on
 `Δ²`, is `y ↦ ([y₁ p], [(y₀ + y₁) q])`. -/
@@ -155,25 +142,10 @@ private theorem toSSetObjEquiv_upper (y : fullSimplex 2) :
             (TopCat.toSSet.obj (TopCat.of (AddCircle p)) ⊗
               TopCat.toSSet.obj (TopCat.of (AddCircle q))) _⦋2⦌))
         (fullSimplexEquivStdSimplex 2 y) =
-      Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) (upperMap p q y) := by
-  refine (TopCat.toSSetObjEquiv_μ_apply (X := TopCat.of (AddCircle p))
-    (Y := TopCat.of (AddCircle q)) _ _ (fullSimplexEquivStdSimplex 2 y)).trans ?_
-  refine Prod.ext ((TopCat.toSSetObjEquiv_σ_apply _ 0 _).trans ?_)
-    ((TopCat.toSSetObjEquiv_σ_apply _ 1 _).trans ?_)
-  · rw [upperMap_apply, Prod.map_fst, AddCircle.circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁,
-      ContinuousMap.comp_apply]
-    simp only [Path.coe_toContinuousMap, AddCircle.zsmulLoop_zero_apply_eq_coe]
-    -- As in `toSSetObjEquiv_lower`.
-    erw [homeomorphI_map_predAbove_zero]
-    push_cast
-    ring_nf
-  · rw [upperMap_apply, Prod.map_snd, AddCircle.circuitSimplex_def, TopCat.toSSetObjEquiv_simplex₁,
-      ContinuousMap.comp_apply]
-    simp only [Path.coe_toContinuousMap, AddCircle.zsmulLoop_zero_apply_eq_coe]
-    -- As in `toSSetObjEquiv_lower`.
-    erw [homeomorphI_map_predAbove_one]
-    push_cast
-    ring_nf
+      Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) (upperMap p q y) :=
+  (TopCat.toSSetObjEquiv_μ_apply (X := TopCat.of (AddCircle p)) (Y := TopCat.of (AddCircle q)) _ _
+    (fullSimplexEquivStdSimplex 2 y)).trans
+    (Prod.ext (toSSetObjEquiv_σ_zero_circuitSimplex p y) (toSSetObjEquiv_σ_one_circuitSimplex q y))
 
 end Simplex
 
@@ -238,10 +210,16 @@ private theorem integral_torusSimplex
       ![A (EuclideanSpace.single 0 1), A (EuclideanSpace.single 1 1)] := by
     ext i : 1
     fin_cases i <;> exact hD _
-  rw [hv]
+  have hb : ⇑(Module.Basis.finTwoProd ℝ) = ![((1 : ℝ), (0 : ℝ)), (0, 1)] := by
+    ext i : 1
+    fin_cases i <;> simp
+  have hdet (v w : ℝ × ℝ) : (Module.Basis.finTwoProd ℝ).det ![v, w] = v.1 * w.2 - v.2 * w.1 := by
+    simp [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, mul_comm]
   -- The tangent spaces of the torus are `ℝ × ℝ`, where a two-form is its value on the standard
   -- frame times the determinant.
-  exact (φ _).toAlternatingMap.apply_eq_mul_apply_finTwoProd _ _
+  rw [hv]
+  exact ((φ _).apply_eq_det_mul (Module.Basis.finTwoProd ℝ) _).trans
+    (congrArg₂ (· * ·) (hdet _ _) (congrArg (φ _) hb))
 
 end Integral
 
@@ -281,13 +259,13 @@ private theorem chainComplexMap_ι_f_smoothTorusChain :
 inclusion of smooth chains is injective. -/
 private theorem d_smoothTorusChain :
     (((smoothSingularSubcomplex (𝓘(ℝ).prod 𝓘(ℝ)) (AddCircle p × AddCircle q) : SSet).chainComplex
-      (ModuleCat.of ℤ ℤ)).d 2 1).hom (smoothTorusChain p q) = 0 := by
-  apply (ModuleCat.mono_iff_injective
-    ((SSet.chainComplexMap (smoothSingularSubcomplex (𝓘(ℝ).prod 𝓘(ℝ))
-      (AddCircle p × AddCircle q)).ι (ModuleCat.of ℤ ℤ)).f 1)).1 inferInstance
-  rw [map_zero, ← ModuleCat.comp_apply, ← HomologicalComplex.Hom.comm, ModuleCat.comp_apply,
-    chainComplexMap_ι_f_smoothTorusChain]
-  exact singularChains_d_shuffleChainOneOne_circuitSimplex p q
+      (ModuleCat.of ℤ ℤ)).d 2 1).hom (smoothTorusChain p q) = 0 :=
+  HomologicalComplex.d_apply_eq_zero_of_d_f_apply_eq_zero
+    (SSet.chainComplexMap (smoothSingularSubcomplex (𝓘(ℝ).prod 𝓘(ℝ))
+      (AddCircle p × AddCircle q)).ι (ModuleCat.of ℤ ℤ))
+    (by
+      rw [chainComplexMap_ι_f_smoothTorusChain]
+      exact singularChains_d_shuffleChainOneOne_circuitSimplex p q)
 
 /-- The class of the smooth torus cycle in smooth singular homology. -/
 private def smoothTorusClass : ((smoothSingularSubcomplex (𝓘(ℝ).prod 𝓘(ℝ))

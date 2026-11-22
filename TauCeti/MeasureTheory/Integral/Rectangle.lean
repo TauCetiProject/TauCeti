@@ -245,8 +245,8 @@ theorem setIntegral_Icc_mul_prod_Icc_mul_eq (f : ℝ × ℝ → E) {p q : ℝ} (
     simp [L, abs_of_pos (mul_pos hp hq)]
   rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul volume
     (measurableSet_Icc.prod measurableSet_Icc) (fun z _ ↦ L.hasFDerivAt.hasFDerivWithinAt) hinj f,
-    hdet, integral_smul]
-  rfl
+    hdet, integral_smul, hL]
+  simp only [Prod.map]
 
 /-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
 pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`
