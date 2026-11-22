@@ -94,6 +94,8 @@ topology, not on the chosen ideal of definition.
   laws.
 * `TauCeti.AdicRing.CompletedAway.nonempty_algHom_iff`: there is an `A`-algebra homomorphism
   `A_{f} → A_{g}` if and only if `g` lies in the radical of `f A + I`.
+* `TauCeti.AdicRing.CompletedAway.algebraMap_bijective_of_isUnit`: when `f` is a unit in `A`,
+  the canonical map `A → A_{f}` is bijective.
 
 ## References
 
@@ -624,6 +626,27 @@ theorem isHomeomorph_idealEquiv :
   · rfl
 
 end IdealIndependence
+
+/-- When `f` is a unit in `A`, the canonical map `A → A_{f}` into the completed localisation is
+bijective. -/
+theorem algebraMap_bijective_of_isUnit {A : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] {f : A} (hf : IsUnit f) :
+    Function.Bijective (algebraMap A (CompletedAway A f)) := by
+  let eAway : A ≃ₐ[A] Localization.Away f :=
+    IsLocalization.atUnits A (Submonoid.powers f) fun _ ⟨n, hn⟩ ↦ hn ▸ hf.pow n
+  have he : (eAway.toRingEquiv : A →+* Localization.Away f) = algebraMap A _ :=
+    RingHom.ext eAway.commutes
+  have : IsAdicComplete ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)))
+      (Localization.Away f) :=
+    congrArg (IsAdicRing.ideal A).map he ▸
+      (IsAdicComplete.congr_ringEquiv (IsAdicRing.ideal A) eAway.toRingEquiv).mpr
+        (IsAdicRing.ideal_spec A).2.2
+  have h1 : Function.Bijective (algebraMap (Localization.Away f) (CompletedAway A f)) := by
+    convert (CompletedAway.equivAdicCompletion A f).symm.bijective.comp
+      (AdicCompletion.of_bijective _ _)
+    exact funext fun y ↦ ((CompletedAway.equivAdicCompletion A f).symm.commutes y).symm
+  convert h1.comp (bijective_algebraMap_of_linearEquiv eAway.toLinearEquiv)
+  exact funext (IsScalarTower.algebraMap_apply A (Localization.Away f) (CompletedAway A f))
 
 end CompletedAway
 

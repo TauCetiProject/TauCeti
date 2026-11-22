@@ -51,9 +51,6 @@ scalar `a ≠ 1` only when `n ≠ 0`.
 * `RingHom.toIntAlgHom_id`, `RingHom.toIntAlgHom_comp`: `RingHom.toIntAlgHom` is functorial.
 * `RingHom.toIntAlgHom_toRingHom`, `AlgHom.toRingHom_toIntAlgHom`: it is inverse to
   `AlgHom.toRingHom` in both directions.
-* `RingHom.toIntAlgHom'`: packages a ring homomorphism `R →+* S` as a `ℤ`-algebra homomorphism for
-  arbitrary `[Algebra ℤ R] [Algebra ℤ S]` instances, together with its evaluation, coercion, and
-  functoriality simp lemmas.
 * `AlgHom.units_map_units_map_algebraMap`: an algebra homomorphism sends the image of a unit of
   the base ring to the image of the same unit.
 * `AlgHom.ker_isMaximal`: the kernel of an augmentation `H →ₐ[k] k` to a field is a maximal
@@ -151,45 +148,6 @@ theorem AlgHom.toRingHom_toIntAlgHom (φ : R →ₐ[ℤ] S) : (φ : R →+* S).t
   AlgHom.ext fun _ ↦ rfl
 
 end ToIntAlgHom
-
-section ToIntAlgHom'
-
-variable {R S T : Type*} [Semiring R] [Semiring S] [Semiring T]
-  [Algebra ℤ R] [Algebra ℤ S] [Algebra ℤ T]
-
-/-- Package a ring homomorphism `f : R →+* S` as a `ℤ`-algebra homomorphism for arbitrary
-`[Algebra ℤ R] [Algebra ℤ S]` instances (unlike `RingHom.toIntAlgHom`, which fixes
-`Ring.toIntAlgebra`). -/
-@[expose] def RingHom.toIntAlgHom' (f : R →+* S) : R →ₐ[ℤ] S where
-  __ := f
-  commutes' n := RingHom.congr_fun (RingHom.ext_int (f.comp (algebraMap ℤ R)) (algebraMap ℤ S)) n
-
-/-- Evaluating `f.toIntAlgHom'` applies `f`. -/
-@[simp]
-theorem RingHom.toIntAlgHom'_apply (f : R →+* S) (x : R) : f.toIntAlgHom' x = f x := rfl
-
-/-- The underlying ring homomorphism of `f.toIntAlgHom'` is `f`. -/
-@[simp]
-theorem RingHom.toIntAlgHom'_toRingHom (f : R →+* S) : (f.toIntAlgHom' : R →+* S) = f := rfl
-
-/-- `RingHom.toIntAlgHom'` sends the identity ring homomorphism to the identity `ℤ`-algebra
-homomorphism. -/
-@[simp]
-theorem RingHom.toIntAlgHom'_id : (RingHom.id R).toIntAlgHom' = AlgHom.id ℤ R :=
-  AlgHom.ext fun _ ↦ rfl
-
-/-- `RingHom.toIntAlgHom'` preserves composition. -/
-@[simp]
-theorem RingHom.toIntAlgHom'_comp (f : S →+* T) (g : R →+* S) :
-    (f.comp g).toIntAlgHom' = f.toIntAlgHom'.comp g.toIntAlgHom' :=
-  AlgHom.ext fun _ ↦ rfl
-
-/-- Reading a `ℤ`-algebra homomorphism as a ring homomorphism and back recovers it. -/
-@[simp]
-theorem AlgHom.toRingHom_toIntAlgHom' (φ : R →ₐ[ℤ] S) : (φ : R →+* S).toIntAlgHom' = φ :=
-  AlgHom.ext fun _ ↦ rfl
-
-end ToIntAlgHom'
 
 /-! ### Images of units of the base ring -/
 
