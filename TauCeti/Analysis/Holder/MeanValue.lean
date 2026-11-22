@@ -267,7 +267,8 @@ theorem holderOnWith_ball_of_norm_fderiv_le {g : E → F} {x₀ : E} {R : ℝ} {
     (hN : ∀ x ∈ ball x₀ R, ‖fderiv ℝ g x‖ ≤ N) :
     HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g (ball x₀ R) :=
   (convex_ball x₀ R).holderOnWith_of_norm_fderiv_le hα
-    (fun _ hx _ hy => edist_le_two_mul_of_mem_ball hx hy)
+    (fun _ hx _ hy => edist_le_two_mul_of_mem_closedBall (ball_subset_closedBall hx)
+      (ball_subset_closedBall hy))
     (fun _ hx => hg.differentiableAt (isOpen_ball.mem_nhds hx)) hN
 
 /-- The derivative of a `C²` function on the ball `B_R`, with second derivative bounded by `N`
@@ -279,7 +280,8 @@ theorem holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le {g : E → F} {x�
     (hN : ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ 2 g x‖ ≤ N) :
     HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α (fderiv ℝ g) (ball x₀ R) :=
   (convex_ball x₀ R).holderOnWith_fderiv_of_norm_iteratedFDeriv_two_le hα
-    (fun _ hx _ hy => edist_le_two_mul_of_mem_ball hx hy) isOpen_ball subset_rfl hg hN
+    (fun _ hx _ hy => edist_le_two_mul_of_mem_closedBall (ball_subset_closedBall hx)
+      (ball_subset_closedBall hy)) isOpen_ball subset_rfl hg hN
 
 /-- The near-diagonal case of `holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow`: if
 `‖x - y‖ ≤ ‖x‖ / 2`, the segment from `x` to `y` stays at distance at least `‖x - y‖` from `0`,

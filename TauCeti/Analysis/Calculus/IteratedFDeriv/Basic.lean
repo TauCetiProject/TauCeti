@@ -30,7 +30,9 @@ curried bilinear maps, with the left currying of the one- and two-variable inver
 (`TauCeti.curryLeft_continuousMultilinearCurryFin1_symm`,
 `TauCeti.curryLeft_continuousMultilinearCurryFin2_symm`), and the corresponding exact comparison
 for differences of second derivatives, which transfers Hölder bounds between the two forms of the
-second derivative (`TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two`). The same holds
+second derivative (`TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two`), and which bounds
+each Hessian entry `D²f(x) v w` on vectors of norm at most one by `‖D²f(x)‖`
+(`TauCeti.norm_fderiv_fderiv_apply_le`). The same holds
 for the second iterated derivative of the `k`-th iterated derivative and the `(k + 2)`-th iterated
 derivative (`TauCeti.holderOnWith_iteratedFDeriv_two_iteratedFDeriv_iff`).
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
@@ -144,6 +146,14 @@ theorem norm_fderiv_fderiv_sub (f : E → F) (x y : E) :
   rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two f x,
     ← continuousMultilinearCurryFin2_iteratedFDeriv_two f y, ← LinearIsometryEquiv.map_sub,
     LinearIsometryEquiv.norm_map]
+
+/-- The Hessian entry `D²u(x) v w` of `u` on vectors `v`, `w` of norm at most one has norm at most
+`‖D²u(x)‖`, without differentiability assumptions. -/
+theorem norm_fderiv_fderiv_apply_le (u : E → F) {v w : E} (hv : ‖v‖ ≤ 1) (hw : ‖w‖ ≤ 1)
+    (x : E) : ‖fderiv 𝕜 (fderiv 𝕜 u) x v w‖ ≤ ‖iteratedFDeriv 𝕜 2 u x‖ := by
+  refine ((fderiv 𝕜 (fderiv 𝕜 u) x).le_opNorm₂ v w).trans ?_
+  rw [mul_assoc, ← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
+  exact mul_le_of_le_one_right (norm_nonneg _) ((mul_le_of_le_one_left (norm_nonneg w) hv).trans hw)
 
 /-- The curried second Fréchet derivative is `r`-Hölder with constant `C` on a set exactly when
 the second iterated derivative is, without differentiability assumptions: the two differ by the

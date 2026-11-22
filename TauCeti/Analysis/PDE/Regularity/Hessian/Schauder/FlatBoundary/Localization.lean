@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary.Vari
 import TauCeti.Analysis.Calculus.BumpFunction.HolderCutoff
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
-import TauCeti.Analysis.Calculus.IteratedFDeriv.OrthonormalBasis
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
@@ -283,7 +282,8 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {ν x₀ : E} {c
   have hsub' : ball x₀ R ∩ Ho ⊆ closedBall x₀ R ∩ Hc :=
     inter_subset_inter ball_subset_closedBall hHo
   obtain ⟨hHu, hHdu⟩ := hconv.holderOnWith_and_holderOnWith_fderiv_apply_of_norm_le
-    (D := (2 * R).toNNReal) hα1 (fun _ hx _ hy => edist_le_two_mul_of_mem_ball hx.1 hy.1) hU hUs
+    (D := (2 * R).toNNReal) hα1 (fun _ hx _ hy => edist_le_two_mul_of_mem_closedBall
+      (ball_subset_closedBall hx.1) (ball_subset_closedBall hy.1)) hU hUs
     hu hN1 hN2
   have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ Hc) :
       |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
@@ -291,8 +291,8 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {ν x₀ : E} {c
       (hN1 x hx)
   have hd2u (i j : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R ∩ Hc) :
       |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
-    simpa using (norm_fderiv_fderiv_apply_orthonormalBasis_le u (EuclideanSpace.basisFun _ ℝ) i j
-      x).trans (hN2 x hx)
+    simpa using (norm_fderiv_fderiv_apply_le u (v := EuclideanSpace.single i 1)
+      (w := EuclideanSpace.single j 1) (by simp) (by simp) x).trans (hN2 x hx)
   have htU {t : Set E} (ht : t ⊆ Hc) : t ∩ tsupport ζ ⊆ U := fun x hx => hUs ⟨hζs hx.2, ht hx.1⟩
   have hWH := holderOnWith_fderiv_fderiv_cutoff_mul hU hζ.contDiffOn hζs (htU subset_rfl) hZ0 hZ1
     hZ2 hu hN0 hdu hd2u hHu (fun i => hHdu _ (by simp)) fun i j => by

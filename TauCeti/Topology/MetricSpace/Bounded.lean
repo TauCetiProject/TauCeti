@@ -13,8 +13,8 @@ public import Mathlib.Topology.MetricSpace.Bounded
 A closed ball of radius `r` has extended diameter at most `2 r`
 (`Metric.ediam_closedBall_le`). This is the extended-diameter counterpart of Mathlib's
 `Metric.diam_closedBall`, stated for every real radius: a ball of negative radius is empty. So any
-two points of an open ball of radius `r` are at extended distance at most `2 r`
-(`Metric.edist_le_two_mul_of_mem_ball`), the form in which Hölder bounds on balls are stated.
+two points of a closed ball of radius `r` are at extended distance at most `2 r`
+(`Metric.edist_le_two_mul_of_mem_closedBall`), the form in which Hölder bounds on balls are stated.
 
 Any two points of a bounded set are within its diameter (`Metric.edist_le_diam_of_mem`), and in
 a bounded space any two points are within the diameter of the whole space
@@ -46,11 +46,10 @@ theorem ediam_closedBall_le (x : X) (r : ℝ) :
   ediam_le_of_forall_dist_le fun y hy z hz => (dist_triangle_right y z x).trans <| by
     linarith [mem_closedBall.1 hy, mem_closedBall.1 hz]
 
-/-- Any two points of an open ball of radius `r` are at extended distance at most `2 r`. -/
-theorem edist_le_two_mul_of_mem_ball {x y z : X} {r : ℝ} (hx : x ∈ ball z r) (hy : y ∈ ball z r) :
-    edist x y ≤ ENNReal.ofReal (2 * r) :=
-  (edist_le_ediam_of_mem (ball_subset_closedBall hx) (ball_subset_closedBall hy)).trans
-    (ediam_closedBall_le z r)
+/-- Any two points of a closed ball of radius `r` are at extended distance at most `2 r`. -/
+theorem edist_le_two_mul_of_mem_closedBall {x y z : X} {r : ℝ} (hx : x ∈ closedBall z r)
+    (hy : y ∈ closedBall z r) : edist x y ≤ ENNReal.ofReal (2 * r) :=
+  (edist_le_ediam_of_mem hx hy).trans (ediam_closedBall_le z r)
 
 /-- Any two points of a bounded set are within its diameter. -/
 theorem edist_le_diam_of_mem {s : Set X} (hs : Bornology.IsBounded s) {x y : X} (hx : x ∈ s)
