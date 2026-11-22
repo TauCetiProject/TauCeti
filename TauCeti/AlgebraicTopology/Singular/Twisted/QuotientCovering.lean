@@ -41,10 +41,7 @@ and a quasi-isomorphism between `ℕ`-graded complexes of projectives is a chain
 (`ChainComplex.quasiIso_iff_of_projective`), which every additive functor preserves. So an
 equivariant quasi-isomorphism `C(E, E₀; k) ⟶ K` to a complex of projective representations
 identifies the relative twisted homology `Hₙ(B, A; L_D)` with the homology of `(D ⊗ K)_G`
-(`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`). This is the descent step of the
-equivariant chain-level proof of the Thom isomorphism with local coefficients (Milnor–Stasheff,
-§10), whose equivariant input, for the orientation double cover of a real vector bundle, is the cap
-product with an anti-invariant Thom cocycle of the oriented pull-back of the bundle to the cover.
+(`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`).
 
 ## Main definitions
 
@@ -57,8 +54,6 @@ product with an anti-invariant Thom cocycle of the oriented pull-back of the bun
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Sections II.4 and III.1.
-* J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
-  Princeton, 1974, §10 and §12.
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 3.H.
 -/
 
@@ -78,14 +73,6 @@ variable (P' : TopPair.{u}) {P : TopPair.{u}} {k : Type u} [CommRing k] {G : Typ
   (hP : ∀ (g : G) x, P'.map (g • x) = g • P'.map x)
 
 variable (k) (D : Rep.{u} k G)
-
-/-- The relative twisted chains of `(B, A)` are the cokernel of the inclusion of the twisted chains
-of `A`, with the relative quotient map as the cokernel map. -/
-private def isColimitCokernelCoforkTwistedChainComplexπ {k : Type u} [CommRing k]
-    (L : LocalCoefficientSystem.{u, u, u} k P.fst) :
-    IsColimit (CokernelCofork.ofπ (P.twistedChainComplexπ L)
-      (P.twistedChainComplexMap_comp_twistedChainComplexπ L)) :=
-  P.cokernelCoforkTwistedChainComplex_def L ▸ P.isColimitCokernelCoforkTwistedChainComplex L
 
 /-- The comparison of the restriction of `L_D` to the subspace with the local system associated to
 `D` on the subspace, as an isomorphism of twisted chain complexes. -/
@@ -117,7 +104,7 @@ private theorem coinvariantsTensor_map_comp_coinvariantsTensorSingularChainsRepI
   refine Eq.trans ?_
     ((IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality_over hsnd
       hfst k (φ := MonoidHom.id G) P'.map hP P.map (Hom.w φ) (𝟙 D)).trans ?_)
-  · rw [singularChainsRepι_eq]
+  · rw [singularChainsRepι_def]
     exact congrArg (· ≫ _) (MonoidHom.coinvariantsTensorChainMap_id (A := D) _).symm
   · rw [IsQuotientCoveringMap.associatedTwistedChainMap_def, Iso.trans_hom, Category.assoc,
       subspaceTwistedChainComplexIso, asIso_hom]
@@ -141,7 +128,7 @@ def coinvariantsTensorSingularChainsRepIsoTwisted :
       (coinvariantsTensor_map_comp_coinvariantsTensorSingularChainsRepIsoTwisted_hom P' k hfst hsnd
         hP D) ≪≫
     (cokernelIsCokernel _).coconePointUniqueUpToIso
-      (isColimitCokernelCoforkTwistedChainComplexπ (hfst.associatedLocalSystem k D))
+      (P.isColimitCokernelCoforkTwistedChainComplexπ (hfst.associatedLocalSystem k D))
 
 /-- The relative identification is the absolute identification for `E ⟶ B`, read through the
 quotient maps from the chains of `E` and of `B`. -/
@@ -171,10 +158,10 @@ theorem singularChainsRepπ_coinvariantsTensorSingularChainsRepIsoTwisted_hom :
   have h₃ : cokernel.π (LocalCoefficientSystem.twistedChainComplexMap P.map
         (hfst.associatedLocalSystem k D)) ≫
       ((cokernelIsCokernel _).coconePointUniqueUpToIso
-        (isColimitCokernelCoforkTwistedChainComplexπ (hfst.associatedLocalSystem k D))).hom =
+        (P.isColimitCokernelCoforkTwistedChainComplexπ (hfst.associatedLocalSystem k D))).hom =
         P.twistedChainComplexπ (hfst.associatedLocalSystem k D) :=
     IsColimit.comp_coconePointUniqueUpToIso_hom (cokernelIsCokernel _)
-      (isColimitCokernelCoforkTwistedChainComplexπ (hfst.associatedLocalSystem k D))
+      (P.isColimitCokernelCoforkTwistedChainComplexπ (hfst.associatedLocalSystem k D))
         WalkingParallelPair.one
   rw [coinvariantsTensorSingularChainsRepIsoTwisted, Iso.trans_hom, Iso.trans_hom, reassoc_of% h₁,
     cokernel.mapIso_hom, cokernel.π_desc_assoc, Category.assoc, h₃]

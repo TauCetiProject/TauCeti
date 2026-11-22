@@ -70,22 +70,6 @@ section Retraction
 variable {G}
 
 omit [MulAction G P.fst] [MulAction G P.snd] in
-/-- If the embedding of a pair of `G`-spaces is equivariant, the action of `G` on the singular
-simplices of the ambient space commutes with pushing simplices forward along the embedding. -/
-theorem toSSet_map_map_app_smul {P : TopPair.{u}} [MulAction G P.fst] [MulAction G P.snd]
-    [ContinuousConstSMul G P.fst] [ContinuousConstSMul G P.snd]
-    (hP : ∀ (g : G) x, P.map (g • x) = g • P.map x) {n : SimplexCategoryᵒᵖ} (g : G)
-    (τ : (_root_.TopCat.toSSet.obj P.snd).obj n) :
-    (_root_.TopCat.toSSet.map P.map).app n (g • τ) =
-      g • (_root_.TopCat.toSSet.map P.map).app n τ := by
-  have h : _root_.TopCat.ofHom ⟨(g • · : P.snd → P.snd), continuous_const_smul g⟩ ≫ P.map =
-      P.map ≫ _root_.TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩ :=
-    ConcreteCategory.hom_ext _ _ (hP g)
-  rw [TauCeti.TopCat.toSSetObj_smul_def, TauCeti.TopCat.toSSetObj_smul_def, ← types_comp_apply
-    ((_root_.TopCat.toSSet.map _).app n) ((_root_.TopCat.toSSet.map _).app n), ← NatTrans.comp_app,
-    ← Functor.map_comp, h, Functor.map_comp, NatTrans.comp_app, types_comp_apply]
-
-omit [MulAction G P.fst] [MulAction G P.snd] in
 open Classical in
 /-- The retraction of the singular chains of the ambient space of a pair onto those of the
 subspace: it keeps the simplices lying in the subspace and kills the others. -/
@@ -127,7 +111,7 @@ def singularChainsRepι :
 /-- The inclusion of the chains of the subspace is the equivariant push-forward along the
 embedding, read as a chain map into the restriction of the equivariant chains along the identity
 of `G`. -/
-theorem singularChainsRepι_eq :
+theorem singularChainsRepι_def :
     P.singularChainsRepι k G hP = singularChainsRepResMap k (φ := MonoidHom.id G) P.map hP :=
   (rfl)
 
@@ -146,13 +130,15 @@ private def chainsRetractionRep (n : ℕ) :
         simp only [LinearMap.comp_apply, singularChainsRepresentation_simplexChain]
         by_cases hσ : σ ∈ Set.range ((_root_.TopCat.toSSet.map P.map).app _)
         · obtain ⟨τ, rfl⟩ := hσ
-          rw [← toSSet_map_map_app_smul hP, chainsRetraction_simplexChain_of_mem,
-            chainsRetraction_simplexChain_of_mem, singularChainsRepresentation_simplexChain]
+          rw [← MonoidHom.id_apply G g, ← TopCat.toSSet_map_app_smul P.map hP,
+            chainsRetraction_simplexChain_of_mem, chainsRetraction_simplexChain_of_mem,
+            singularChainsRepresentation_simplexChain, MonoidHom.id_apply]
         · -- A translate of a simplex leaving the subspace leaves it too.
           have hgσ : g • σ ∉ Set.range ((_root_.TopCat.toSSet.map P.map).app _) := by
             rintro ⟨τ, hτ⟩
             refine hσ ⟨g⁻¹ • τ, ?_⟩
-            rw [toSSet_map_map_app_smul hP, hτ, inv_smul_smul]
+            rw [TopCat.toSSet_map_app_smul (φ := MonoidHom.id G) P.map hP, hτ, MonoidHom.id_apply,
+              inv_smul_smul]
           rw [chainsRetraction_simplexChain_of_notMem P k hσ,
             chainsRetraction_simplexChain_of_notMem P k hgσ, map_zero] }
 
@@ -211,7 +197,7 @@ instance projective_singularChainsRep_X [IsCancelSMul G P.fst] (n : ℕ) :
   have : Projective b.pt :=
     inferInstanceAs (Projective ((TauCeti.singularChainsRep k P.fst G).X n))
   have : Projective (cokernel ((P.singularChainsRepι k G hP).f n)) :=
-    (Retract.mk b.inr b.snd b.inr_snd).projective
+    b.retract_right.projective
   exact Projective.of_iso (PreservesCokernel.iso (HomologicalComplex.eval _ _ n) _).symm this
 
 end TopPair
