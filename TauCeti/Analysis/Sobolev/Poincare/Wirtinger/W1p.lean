@@ -39,6 +39,8 @@ on `p`, the case `p = ∞` follows by applying the finite case at exponents `q <
 ## Main declarations
 
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`: the inequality on `W^{1,p}(Ω)`.
+* `TauCeti.W1p.setAverage_norm_sub_setAverage_le_of_convex`: the mean oscillation of `u` over
+  `Ω`, by Hölder's inequality.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball`: the constant on a ball of radius `R`
   is `2 ^ (n + 1) * R`.
 * `TauCeti.W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset`: the same bound in `L²`,
@@ -47,6 +49,8 @@ on `p`, the case `p = ∞` follows by applying the finite case at exponents `q <
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
   function with vanishing weak gradient is almost everywhere constant.
+* `TauCeti.W1p.eq_zero_of_gradient_eq_zero`: for `p < ∞`, a Sobolev function on the whole of a
+  nontrivial space with vanishing weak gradient is zero.
 * `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected `Ω`, a Sobolev
   function whose weak gradient agrees almost everywhere with `∇ q` for a `C¹` function `q` equals
   `q + c` almost everywhere.
@@ -122,6 +126,49 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex
   rw [Lp.eNorm_def]
   exact le_of_tendsto_of_tendsto tendsto_eLpNorm_atTop
     (ENNReal.Tendsto.const_mul tendsto_eLpNorm_atTop (Or.inr ENNReal.ofReal_ne_top)) hle
+
+/-- **The mean oscillation of a `W^{1,p}` function on a bounded convex domain.**  Let `Ω` be a
+bounded convex open set of positive measure in a finite-dimensional real inner product space of
+dimension `n`.  For `1 ≤ p ≤ ∞`, the mean over `Ω` of `|u - ⨍_Ω u|` is at most
+`μ(B(0, 1)) * (diam Ω) ^ (n + 1) * μ(Ω) ^ (-(1 + 1 / p))` times the `Lᵖ` norm of the weak gradient
+of `u ∈ W^{1,p}(Ω)`.  This is `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` with
+`S = Ω`, combined with Hölder's inequality. -/
+theorem W1p.setAverage_norm_sub_setAverage_le_of_convex
+    (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
+    (hOmega : mu Omega ≠ 0) (u : W1p mu Omega p) :
+    ⨍ y in Omega, ‖W1p.value u y - ⨍ z in Omega, W1p.value u z ∂mu‖ ∂mu ≤
+      mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) *
+        mu.real Omega ^ (-(1 + 1 / p.toReal)) * ‖W1p.gradient u‖ := by
+  set g : E → ℝ := fun y ↦ W1p.value u y - ⨍ z in Omega, W1p.value u z ∂mu
+  set m := mu.real Omega
+  set K := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
+  have hfin : mu Omega ≠ ∞ := hb.measure_lt_top.ne
+  have hm : 0 < m := ENNReal.toReal_pos hOmega hfin
+  have hK : 0 ≤ K := by positivity
+  have : IsFiniteMeasure (mu.restrict Omega) := isFiniteMeasure_restrict.2 hfin
+  -- The Poincaré–Wirtinger inequality in `Lᵖ(Ω)`.
+  have hP : eLpNorm g p (mu.restrict Omega) ≤ ENNReal.ofReal (K / m) * ‖W1p.gradient u‖ₑ :=
+    W1p.eLpNorm_value_sub_setAverage_le_of_convex hconv hb subset_rfl hOmega u
+  have hPr : (eLpNorm g p (mu.restrict Omega)).toReal ≤ K / m * ‖W1p.gradient u‖ := by
+    have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) hP
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (div_nonneg hK hm.le), toReal_eNorm] at this
+  -- Hölder's inequality: `‖g‖_{L¹(Ω)} ≤ μ(Ω)^(1 - 1/p) ‖g‖_{Lᵖ(Ω)}`.
+  have hg : MemLp g p (mu.restrict Omega) := (Lp.memLp (W1p.value u)).sub (memLp_const _)
+  have hint := hg.integral_norm_le_mul_eLpNorm (Fact.out : 1 ≤ p)
+  rw [Measure.restrict_apply_univ, ← ENNReal.toReal_rpow, ← measureReal_def] at hint
+  rw [setAverage_eq, smul_eq_mul]
+  calc m⁻¹ * ∫ y in Omega, ‖g y‖ ∂mu
+      ≤ m⁻¹ * (m ^ (1 - 1 / p.toReal) * (K / m * ‖W1p.gradient u‖)) := by
+        gcongr
+        exact hint.trans (by gcongr)
+    _ = K * m ^ (-(1 + 1 / p.toReal)) * ‖W1p.gradient u‖ := by
+        have h : m ^ (-(1 + 1 / p.toReal)) =
+            m ^ (-1 : ℝ) * m ^ (-1 : ℝ) * m ^ (1 - 1 / p.toReal) := by
+          rw [← Real.rpow_add hm, ← Real.rpow_add hm]
+          congr 1
+          ring
+        rw [h, Real.rpow_neg_one]
+        ring
 
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of
@@ -255,6 +302,26 @@ theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
     ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
   refine (W1p.hasWeakFDerivOn u).exists_ae_eq_const_of_deriv_ae_eq_zero hconn ?_
   filter_upwards [(Lp.ext_iff.1 hu).trans (Lp.coeFn_zero _ _ _)] with x hx
+  simp [hx]
+
+/-- **A Sobolev function on the whole space with vanishing gradient is zero.** For `p < ∞` and a
+nontrivial space `E`, if the weak gradient of `u ∈ W^{1,p}(E)` vanishes, then `u = 0`: it is
+almost everywhere constant, and the only constant in `Lᵖ(E)` is zero, since `E` has infinite
+measure. -/
+theorem W1p.eq_zero_of_gradient_eq_zero [Nontrivial E] (hp : p ≠ ∞) {u : W1p mu ⊤ p}
+    (hu : W1p.gradient u = 0) : u = 0 := by
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+    (by simpa using isPreconnected_univ) hu
+  simp only [Opens.coe_top, Measure.restrict_univ] at hc
+  have hc0 : c = 0 := by
+    refine ((memLp_const_iff (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hp).1
+      ((W1p.memLp_value u).ae_eq hc)).resolve_right ?_
+    rw [measure_univ_of_isAddLeftInvariant]
+    exact lt_irrefl _
+  subst hc0
+  refine W1p.ext_value (Lp.ext ?_)
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  filter_upwards [hc] with x hx
   simp [hx]
 
 /-- **Integration up to a constant on a preconnected domain.** If `Ω` is preconnected and the weak
