@@ -145,10 +145,9 @@ theorem isKazhdanPair_map_mulEquiv_iff {G' : Type w} [Group G'] {Λ : Subgroup �
       rw [Subgroup.map_map]
       simp
     have hF : (F.map e.toEquiv.toEmbedding).image e.symm.toMonoidHom = F := by
-      ext g
-      simp only [Finset.mem_image, Finset.mem_map, Equiv.coe_toEmbedding, MulEquiv.coe_toMonoidHom]
-      exact ⟨by rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩; simpa using ha,
-        fun hg ↦ ⟨e g, ⟨g, hg, rfl⟩, e.symm_apply_apply g⟩⟩
+      change (F.map e.toEquiv.toEmbedding).image e.symm.toEquiv.toEmbedding = F
+      rw [← Finset.map_eq_image, Finset.map_map]
+      simp
     rwa [hΛ, hF] at h'
   · simpa [Finset.map_eq_image] using h.map e.toMonoidHom
 

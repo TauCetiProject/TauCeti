@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Hull
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
-import Mathlib.Analysis.Convex.Topology
+import Mathlib.Analysis.InnerProductSpace.Convex
 
 /-!
 # The Alaoglu–Birkhoff orbit projection for unitary representations
@@ -18,11 +16,11 @@ For a unitary representation `ρ` of a monoid `M` on a Hilbert space `V` and a v
 closed convex hull of the orbit `{ρ m v | m : M}` contains a unique element of minimal norm, and
 that element is the orthogonal projection of `v` onto the subspace `ρ.invariants` of fixed vectors.
 
-Minimality in norm forces invariance under every `ρ m` by the parallelogram law, since `ρ m`
-preserves norms and maps the closed convex hull of the orbit into itself. On the other hand, for
-every invariant vector `u` and every `m : M` one has `⟪u, v - ρ m v⟫ = 0`, so `v - z` is orthogonal
-to `ρ.invariants` for every `z` in the closed convex hull; the unique invariant element in the
-closed convex hull is therefore `ρ.invariants.starProjection v`.
+Minimality in norm forces invariance under every `ρ m` by strict convexity, since `ρ m` preserves
+norms and maps the closed convex hull of the orbit into itself. On the other hand, for every
+invariant vector `u` and every `m : M` one has `⟪u, v - ρ m v⟫ = 0`, so `v - z` is orthogonal to
+`ρ.invariants` for every `z` in the closed convex hull; the unique invariant element in the closed
+convex hull is therefore `ρ.invariants.starProjection v`.
 
 In particular, if every element of `M` moves `v` by at most `ε`, the closed ball around `v` of
 radius `ε` contains the orbit and hence its closed convex hull, so
@@ -62,11 +60,8 @@ private theorem mapsTo_closedConvexHull_orbit (ρ : ContRepresentation 𝕜 M V)
     Set.MapsTo (ρ m) (closedConvexHull ℝ (Set.range fun n : M ↦ ρ n v))
       (closedConvexHull ℝ (Set.range fun n : M ↦ ρ n v)) := by
   let C := closedConvexHull ℝ (Set.range fun n : M ↦ ρ n v)
-  have hconv : Convex ℝ (ρ m ⁻¹' C) := by
-    intro x hx y hy a b ha hb hab
-    rw [Set.mem_preimage, map_add, ← algebraMap_smul 𝕜 a, ← algebraMap_smul 𝕜 b, map_smul, map_smul,
-      algebraMap_smul, algebraMap_smul]
-    exact convex_closedConvexHull hx hy ha hb hab
+  have hconv : Convex ℝ (ρ m ⁻¹' C) :=
+    convex_closedConvexHull.linear_preimage ((ρ m).toLinearMap.restrictScalars ℝ)
   have hclosed : IsClosed (ρ m ⁻¹' C) := isClosed_closedConvexHull.preimage (ρ m).continuous
   refine closedConvexHull_min ?_ hconv hclosed
   rintro _ ⟨n, rfl⟩
@@ -79,14 +74,9 @@ private theorem sub_mem_invariants_orthogonal_of_mem_closedConvexHull (hρ : ρ.
   let S : Set V := {z | v - z ∈ ρ.invariantsᗮ}
   have hclosed : IsClosed S :=
     (Submodule.isClosed_orthogonal _).preimage (continuous_const.sub continuous_id)
-  have hconv : Convex ℝ S := by
-    intro x hx y hy a b _ _ hab
-    have hlin : v - (a • x + b • y) = a • (v - x) + b • (v - y) := by
-      calc v - (a • x + b • y)
-          = (a + b) • v - (a • x + b • y) := by rw [hab, one_smul]
-        _ = a • (v - x) + b • (v - y) := by rw [add_smul, smul_sub, smul_sub]; abel
-    rw [Set.mem_ofPred_eq, hlin, ← algebraMap_smul 𝕜 a, ← algebraMap_smul 𝕜 b]
-    exact ρ.invariantsᗮ.add_mem (ρ.invariantsᗮ.smul_mem _ hx) (ρ.invariantsᗮ.smul_mem _ hy)
+  have hconv : Convex ℝ S :=
+    (ρ.invariantsᗮ.restrictScalars ℝ).convex.affine_preimage
+      (AffineEquiv.constVSub ℝ v).toAffineMap
   refine closedConvexHull_min ?_ hconv hclosed
   rintro _ ⟨m, rfl⟩
   rw [Set.mem_ofPred_eq, Submodule.mem_orthogonal]
@@ -105,13 +95,13 @@ theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ 
   let C := closedConvexHull ℝ (Set.range fun m : M ↦ ρ m v)
   have hCne : C.Nonempty := ⟨v, subset_closedConvexHull ⟨1, by simp⟩⟩
   have hCconv : Convex ℝ C := convex_closedConvexHull
+  have hsmul (r : ℝ) (z : V) :
+      @HSMul.hSMul ℝ V V (@instHSMul ℝ V (InnerProductSpace.rclikeToReal 𝕜 V).toSMul) r z =
+        r • z := algebraMap_smul 𝕜 r z
   -- Pass `InnerProductSpace.rclikeToReal 𝕜 V` explicitly rather than as a local instance so its
   -- restricted `NormedSpace ℝ V` does not clash with the caller's `[NormedSpace ℝ V]`.
   have hCconv_r : @Convex ℝ V _ _ _ (InnerProductSpace.rclikeToReal 𝕜 V).toSMul C := by
     intro x hx y hy a b ha hb hab
-    have hsmul (r : ℝ) (z : V) :
-        @HSMul.hSMul ℝ V V (@instHSMul ℝ V (InnerProductSpace.rclikeToReal 𝕜 V).toSMul) r z =
-          r • z := algebraMap_smul 𝕜 r z
     simpa only [hsmul] using hCconv hx hy ha hb hab
   obtain ⟨w, hwC, hwmin⟩ :=
     @exists_norm_eq_iInf_of_complete_convex V _ (InnerProductSpace.rclikeToReal 𝕜 V)
@@ -121,24 +111,23 @@ theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ 
       rw [hwmin]
       exact ciInf_le ⟨0, Set.forall_mem_range.2 fun _ ↦ norm_nonneg _⟩ (⟨z, hz⟩ : C)
     simpa using h0
-  -- Minimal norm in `C` forces `ρ m w = w` by the parallelogram law.
+  -- Minimal norm in `C` forces `ρ m w = w` by strict convexity.
   have hwinv : w ∈ ρ.invariants := by
     intro m
+    by_contra hne
     have hmw : ρ m w ∈ C := mapsTo_closedConvexHull_orbit ρ v m hwC
-    have hmid : (2 : ℝ)⁻¹ • w + (2 : ℝ)⁻¹ • ρ m w ∈ C :=
-      hCconv hwC hmw (by positivity) (by positivity) (by ring)
-    have hmid_norm : 2 * ‖w‖ ≤ ‖w + ρ m w‖ := by
-      calc 2 * ‖w‖
-          ≤ 2 * ‖(2 : ℝ)⁻¹ • w + (2 : ℝ)⁻¹ • ρ m w‖ :=
-            mul_le_mul_of_nonneg_left (hle _ hmid) zero_le_two
-        _ = ‖(2 : ℝ) • ((2 : ℝ)⁻¹ • (w + ρ m w))‖ := by
-            rw [← smul_add, norm_smul (2 : ℝ), Real.norm_of_nonneg zero_le_two]
-        _ = ‖w + ρ m w‖ := by rw [smul_smul]; norm_num
-    have hpar := parallelogram_law_with_norm 𝕜 (ρ m w) w
-    rw [hρ.norm_map, add_comm (ρ m w) w] at hpar
-    have hsq : ‖ρ m w - w‖ ^ 2 ≤ 0 := by
-      nlinarith [pow_le_pow_left₀ (by positivity) hmid_norm 2]
-    exact sub_eq_zero.mp (norm_eq_zero.mp (sq_eq_zero_iff.mp (le_antisymm hsq (sq_nonneg _))))
+    have hmid : (1 / 2 : ℝ) • w + (1 / 2 : ℝ) • ρ m w ∈ C :=
+      hCconv hwC hmw (by positivity) (by positivity) (by norm_num)
+    let hU : UniformConvexSpace V :=
+      @InnerProductSpace.toUniformConvexSpace V _ (InnerProductSpace.rclikeToReal 𝕜 V)
+    let hS := @UniformConvexSpace.toStrictConvexSpace V _
+      (InnerProductSpace.rclikeToReal 𝕜 V).toNormedSpace hU
+    have hlt :=
+      @norm_combo_lt_of_ne V _ (InnerProductSpace.rclikeToReal 𝕜 V).toNormedSpace hS
+        w (ρ m w) (1 / 2) (1 / 2) ‖w‖ le_rfl (hρ.norm_map m w).le (Ne.symm hne)
+        (by norm_num) (by norm_num) (by norm_num)
+    rw [hsmul, hsmul] at hlt
+    exact (hlt.trans_le (hle _ hmid)).false
   have heq : ρ.invariants.starProjection v = w :=
     Submodule.eq_starProjection_of_mem_orthogonal hwinv
       (hρ.sub_mem_invariants_orthogonal_of_mem_closedConvexHull v w hwC)

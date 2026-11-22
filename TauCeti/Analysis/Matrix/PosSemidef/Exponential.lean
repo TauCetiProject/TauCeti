@@ -22,10 +22,6 @@ semidefinite kernels.
 
 * `Matrix.PosSemidef.map_cexp`: the entrywise exponential of a positive-semidefinite kernel is
   positive semidefinite.
-* `TauCeti.posSemidef_cexp_sum_sub`, `TauCeti.posSemidef_cexp_of_hasSum_sub`,
-  `TauCeti.posSemidef_cexp_tsum_sub`: the entrywise exponential of a finite sum or pointwise
-  convergent series of positive-semidefinite complex kernels shifted by real constants is positive
-  semidefinite.
 
 ## References
 
@@ -53,46 +49,3 @@ theorem PosSemidef.map_cexp {K : Matrix n n ℂ} (hK : K.PosSemidef) :
   exact hK.hadamard_pow k
 
 end Matrix
-
-namespace TauCeti
-
-open Filter
-
-/-- The entrywise exponential of a finite sum of positive-semidefinite complex kernels shifted by
-real constants `c i` is positive semidefinite. -/
-theorem posSemidef_cexp_sum_sub {ι n : Type*} {s : Finset ι} {K : ι → Matrix n n ℂ}
-    (hK : ∀ i ∈ s, (K i).PosSemidef) (c : ι → ℝ) :
-    (Matrix.of fun a b : n ↦ Complex.exp (∑ i ∈ s, (K i a b - (c i : ℂ)))).PosSemidef := by
-  have hS : (∑ i ∈ s, K i).PosSemidef := Matrix.posSemidef_sum s hK
-  have hc : (0 : ℂ) ≤ (Real.exp (-∑ i ∈ s, c i) : ℂ) := by
-    exact_mod_cast (Real.exp_pos _).le
-  refine (congrArg Matrix.PosSemidef ?_).mp (hS.map_cexp.smul hc)
-  ext a b
-  simp only [Matrix.smul_apply, Matrix.map_apply, Matrix.sum_apply, Matrix.of_apply,
-    smul_eq_mul, Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_sum, ← Complex.exp_add]
-  congr 1
-  rw [Finset.sum_sub_distrib, add_comm, sub_eq_add_neg]
-
-/-- The entrywise exponential of the pointwise limit of a series of positive-semidefinite complex
-kernels shifted by real constants `c i` is positive semidefinite, for any nontrivial summation
-filter `L`. -/
-theorem posSemidef_cexp_of_hasSum_sub {ι n : Type*} {L : SummationFilter ι} [L.NeBot]
-    {K : ι → Matrix n n ℂ} (hK : ∀ i, (K i).PosSemidef) {c : ι → ℝ} {S : Matrix n n ℂ}
-    (hS : ∀ a b, HasSum (fun i ↦ K i a b - (c i : ℂ)) (S a b) L) :
-    (S.map Complex.exp).PosSemidef :=
-  isClosed_setOfPred_posSemidef.mem_of_tendsto
-    (f := fun s : Finset ι ↦
-      Matrix.of fun a b : n ↦ Complex.exp (∑ i ∈ s, (K i a b - (c i : ℂ))))
-    (tendsto_pi_nhds.mpr fun a ↦ tendsto_pi_nhds.mpr fun b ↦
-      Complex.continuous_exp.continuousAt.tendsto.comp (hS a b))
-    (Eventually.of_forall fun _ ↦ posSemidef_cexp_sum_sub (fun i _ ↦ hK i) c)
-
-/-- The entrywise exponential of a pointwise summable series of positive-semidefinite complex
-kernels shifted by real constants `c i` is positive semidefinite. -/
-theorem posSemidef_cexp_tsum_sub {ι n : Type*} {K : ι → Matrix n n ℂ}
-    (hK : ∀ i, (K i).PosSemidef) {c : ι → ℝ}
-    (hsumm : ∀ a b, Summable fun i ↦ K i a b - (c i : ℂ)) :
-    (Matrix.of fun a b : n ↦ Complex.exp (∑' i, (K i a b - (c i : ℂ)))).PosSemidef :=
-  posSemidef_cexp_of_hasSum_sub hK fun a b ↦ (hsumm a b).hasSum
-
-end TauCeti

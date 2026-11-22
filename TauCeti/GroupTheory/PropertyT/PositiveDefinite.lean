@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
-import TauCeti.Analysis.Matrix.PosSemidef.Exponential
+import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
 import TauCeti.GroupTheory.PositiveDefinite.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Metric
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvex
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
+import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
 # Quantitative and positive-definite characterizations of relative property (T)
@@ -223,13 +224,23 @@ private theorem posSemidef_approx_of_tendstoUniformlyOn {Λ : Subgroup Γ}
           TendstoUniformlyOn φ 1 l Λ) :
     PosSemidefApprox Λ := by
   classical
-  refine posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion (l := atTop)
-    (fun i : Finset Γ × ℕ ↦ i.1) (fun i ↦ 1 / (i.2 + 1 : ℝ))
-    (fun _ ↦ Nat.one_div_pos_of_nat)
-    (fun g ↦ Filter.eventually_atTop.mpr ⟨({g}, 0), fun i hi ↦ hi.1 (Finset.mem_singleton_self g)⟩)
-    (tendsto_one_div_add_atTop_nhds_zero_nat.comp
-      (Filter.tendsto_atTop_atTop.mpr fun n ↦ ⟨(∅, n), fun _ hi ↦ hi.2⟩))
-    (hunif (Finset Γ × ℕ) atTop)
+  by_contra hnot
+  unfold PosSemidefApprox at hnot
+  push Not at hnot
+  obtain ⟨ε₀, hε₀, hbad⟩ := hnot
+  let p (φ : Γ → ℂ) : Prop :=
+    (Matrix.of fun a b : Γ ↦ φ (a⁻¹ * b)).PosSemidef ∧ φ 1 = 1 ∧ ∃ h ∈ Λ, ε₀ ≤ ‖φ h - 1‖
+  obtain ⟨φ, hp, hpt⟩ := TauCeti.exists_net_tendsto_of_forall_finset_dist_lt
+    (p := p) (F := fun g (φ : Γ → ℂ) ↦ φ g) (x := fun _ ↦ (1 : ℂ)) fun s δ hδ ↦ by
+      obtain ⟨φ, hpd, h1, hF, h, hΛ, hge⟩ := hbad s δ hδ
+      exact ⟨φ, ⟨hpd, h1, h, hΛ, hge⟩, fun g hg ↦ by simpa [dist_eq_norm] using hF g hg⟩
+  have hu := Metric.tendstoUniformlyOn_iff.mp
+    (hunif (Finset Γ × ℕ) atTop φ (fun i ↦ (hp i).1) (fun i ↦ (hp i).2.1) hpt) ε₀ hε₀
+  obtain ⟨i, hi⟩ := hu.exists
+  obtain ⟨h, hΛ, hge⟩ := (hp i).2.2
+  have hlt : ‖φ i h - 1‖ < ε₀ := by
+    simpa only [Pi.one_apply, dist_eq_norm, norm_sub_rev] using hi h hΛ
+  exact (not_lt_of_ge hge) hlt
 
 /-- When `Γ` is countable, sequential uniform convergence on `Λ` already implies quantitative
 positive-definite approximation on `Λ`. -/
@@ -381,24 +392,59 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
       exact half_lt_self hr)
   let Φ (g : Γ) : ℂ := Complex.exp (-(t : ℂ) * ψ g)
   have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef := by
-    let K (k : ℕ) : Matrix Γ Γ ℂ :=
-      ((t * (k + 1 : ℝ) : ℝ) : ℂ) • Matrix.of fun a b : Γ ↦ φ k (a⁻¹ * b)
-    have hK (k : ℕ) : (K k).PosSemidef :=
-      (hpd k).smul (by exact_mod_cast mul_nonneg ht.le (by positivity : (0 : ℝ) ≤ k + 1))
-    let c (k : ℕ) : ℝ := t * (k + 1 : ℝ)
-    have hterm (a b : Γ) (k : ℕ) :
-        -(t : ℂ) * (((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b))) = K k a b - (c k : ℂ) := by
-      simp only [K, c, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, Complex.ofReal_mul]
-      ring
-    have hsumm' (a b : Γ) : Summable fun k : ℕ ↦ K k a b - (c k : ℂ) :=
-      ((hsumm (a⁻¹ * b)).mul_left (-(t : ℂ))).congr (hterm a b)
-    have htsum_eq (a b : Γ) :
-        -(t : ℂ) * ψ (a⁻¹ * b) = ∑' k : ℕ, (K k a b - (c k : ℂ)) := by
-      rw [show -(t : ℂ) * ψ (a⁻¹ * b) =
-          ∑' k : ℕ, -(t : ℂ) * (((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b))) from
-        tsum_mul_left.symm]
-      exact tsum_congr (hterm a b)
-    simpa only [Φ, htsum_eq] using TauCeti.posSemidef_cexp_tsum_sub hK hsumm'
+    let Ψ : Matrix Γ Γ ℂ := Matrix.of fun a b : Γ ↦ ψ (a⁻¹ * b)
+    have hΨ : Ψ.CondNegSemidef := by
+      refine Matrix.condNegSemidef_iff_finite_sum.{0, v, 0}.mpr
+        ⟨fun a b ↦ ?_, fun {ι} _ v x hx ↦ ?_⟩
+      · have hconj (k : ℕ) :
+            star (((k + 1 : ℝ) : ℂ) * (1 - φ k (a⁻¹ * b))) =
+              ((k + 1 : ℝ) : ℂ) * (1 - φ k (b⁻¹ * a)) := by
+          have hinv : star (φ k (a⁻¹ * b)) = φ k (b⁻¹ * a) := by
+            simpa [mul_inv_rev] using ((hpd k).isHermitian.apply_inv_eq_star (a⁻¹ * b)).symm
+          simp [hinv]
+        dsimp only [Ψ, Matrix.of_apply, ψ]
+        rw [Complex.star_def, ← Complex.conjCLE_apply, ContinuousLinearEquiv.map_tsum]
+        exact tsum_congr fun k ↦ by rw [Complex.conjCLE_apply, ← Complex.star_def, hconj k]
+      · have hzero : ∑ i, ∑ j, star (x i) * x j = 0 := by
+          rw [← Finset.sum_mul_sum, hx, mul_zero]
+        have hterm_nonpos (k : ℕ) :
+            ∑ i, ∑ j, star (x i) * (((k + 1 : ℝ) : ℂ) * (1 - φ k ((v i)⁻¹ * v j))) * x j ≤ 0 := by
+          have hrw :
+              ∑ i, ∑ j, star (x i) * (((k + 1 : ℝ) : ℂ) * (1 - φ k ((v i)⁻¹ * v j))) * x j =
+                -((k + 1 : ℝ) : ℂ) * ∑ i, ∑ j, star (x i) * φ k ((v i)⁻¹ * v j) * x j := by
+            have h1 :
+                ∑ i, ∑ j, star (x i) * (((k + 1 : ℝ) : ℂ) * (1 - φ k ((v i)⁻¹ * v j))) * x j =
+                  ((k + 1 : ℝ) : ℂ) * (∑ i, ∑ j, star (x i) * x j -
+                    ∑ i, ∑ j, star (x i) * φ k ((v i)⁻¹ * v j) * x j) := by
+              simp only [Finset.mul_sum, ← Finset.sum_sub_distrib]
+              refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+            rw [h1, hzero, zero_sub, mul_neg, neg_mul]
+          rw [hrw, neg_mul]
+          exact neg_nonpos.mpr (mul_nonneg (by exact_mod_cast (by positivity : (0 : ℝ) ≤ k + 1))
+            ((TauCeti.posSemidef_iff_finite_sum.mp (hpd k)).2 v x))
+        have hhasSum : HasSum (fun k : ℕ ↦
+              ∑ i, ∑ j, star (x i) * (((k + 1 : ℝ) : ℂ) * (1 - φ k ((v i)⁻¹ * v j))) * x j)
+            (∑ i, ∑ j, star (x i) * Ψ (v i) (v j) * x j) := by
+          refine hasSum_sum fun i _ ↦ hasSum_sum fun j _ ↦ ?_
+          simpa [Ψ, ψ, mul_assoc] using
+            ((hsumm ((v i)⁻¹ * v j)).hasSum.mul_left (star (x i))).mul_right (x j)
+        have hre : (∑ i, ∑ j, star (x i) * Ψ (v i) (v j) * x j).re ≤ 0 :=
+          le_of_tendsto (Complex.reCLM.continuous.tendsto _ |>.comp hhasSum)
+            (Eventually.of_forall fun s ↦ by
+              dsimp only [Function.comp_apply]
+              rw [map_sum]
+              exact Finset.sum_nonpos fun k _ ↦
+                neg_nonneg.mp (Complex.nonneg_iff.mp (neg_nonneg.mpr (hterm_nonpos k))).1)
+        have him : (∑ i, ∑ j, star (x i) * Ψ (v i) (v j) * x j).im = 0 :=
+          tendsto_nhds_unique (Complex.imCLM.continuous.tendsto _ |>.comp hhasSum)
+            (tendsto_const_nhds.congr fun s ↦ by
+              dsimp only [Function.comp_apply]
+              rw [map_sum]
+              exact (Finset.sum_eq_zero fun k _ ↦ by
+                simpa using (Complex.nonneg_iff.mp (neg_nonneg.mpr (hterm_nonpos k))).2).symm)
+        exact neg_nonneg.mp (Complex.nonneg_iff.mpr ⟨neg_nonneg.mpr hre, by
+          rw [Complex.neg_im, him, neg_zero]⟩)
+    simpa [Φ, Ψ] using hΨ.posSemidef_cexp_neg_mul ht.le
   have hΦ1 : Φ 1 = 1 := by simp [Φ, ψ, h1]
   obtain ⟨v, hv0, hvΛ⟩ := (isKazhdanPair_def Λ F₀ δ₀).mp hK
     hΦ.gnsSpace hΦ.gnsRepresentation hΦ.isUnitary_gnsRepresentation

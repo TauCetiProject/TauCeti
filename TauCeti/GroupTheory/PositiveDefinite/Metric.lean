@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 
 /-!
