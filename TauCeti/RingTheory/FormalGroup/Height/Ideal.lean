@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.QuotSMulTop
 
 /-!
@@ -134,8 +135,7 @@ theorem coeff_nsmulSeries_mem_heightIdeal {n k : ℕ} (hk : k < p ^ n) :
 when the `p`-series of the base change of `F` along `φ` vanishes to order `pⁿ`. -/
 theorem heightIdeal_le_ker_iff {n : ℕ} (φ : R →+* S) :
     F.heightIdeal p n ≤ RingHom.ker φ ↔ ((p ^ n : ℕ) : ℕ∞) ≤ ((F.map φ).nsmulSeries p).order := by
-  simp only [heightIdeal_le_iff, RingHom.mem_ker, PowerSeries.nat_le_order_iff,
-    coeff_nsmulSeries_map]
+  rw [heightIdeal, PowerSeries.span_coeff_le_ker_iff, map_nsmulSeries]
 
 /-- The height ideal `I_n(F)` vanishes exactly when `[p]_F` vanishes to order `pⁿ`. -/
 theorem heightIdeal_eq_bot_iff {n : ℕ} :

@@ -10,13 +10,12 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfin
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Separability
 public import TauCeti.RingTheory.FormalGroup.ZSMul
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import Mathlib.RingTheory.Nilpotent.Lemmas
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Multiplicative
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Hom
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FormalSeries.Order
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.RingTheory.PowerSeries.Order
 
@@ -33,17 +32,20 @@ for general Weierstrass curves:
   (`TauCeti.Isogeny.formalSeries_mulByIntIsogeny`) and its order of vanishing with the inseparable
   degree (`TauCeti.Isogeny.order_formalSeries`) gives `ord [n]_Ê = deg_i [n]`
   (`WeierstrassCurve.order_zsmulSeries_formalGroup_of_ne_zero`,
-  `WeierstrassCurve.order_nsmulSeries_formalGroup_of_ne_zero`). Reducing modulo a maximal ideal
-  shows `[n]_Ê ≠ 0` over any nontrivial commutative ring
-  (`WeierstrassCurve.zsmulSeries_formalGroup_ne_zero`,
-  `WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`).
-* For a nodal Weierstrass curve over a field (`Δ = 0` and `c₄ ≠ 0`) and `m ≠ 0`, `[m]_Ê` has order
-  at most `m` (`WeierstrassCurve.order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero`).
+  `WeierstrassCurve.order_nsmulSeries_formalGroup_of_ne_zero`).
+* Over an arbitrary commutative ring `R`, whenever `IsNilpotent W.Δ` and `¬ IsNilpotent W.c₄` (so
+  at least one residue-field fiber is nodal) and `m ≠ 0`, `[m]_Ê` has order at most `m`
+  (`WeierstrassCurve.order_nsmulSeries_formalGroup_le_of_isNilpotent_Δ_of_not_isNilpotent_c₄`), and
+  in particular over any reduced commutative ring whenever `Δ = 0` and `c₄ ≠ 0`
+  (`WeierstrassCurve.order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero`).
 * Over an arbitrary commutative ring `R`, whenever `¬ IsNilpotent W.c₄ ∨ ¬ IsNilpotent W.Δ` (so at
   least one residue-field fiber is smooth or nodal) and `m ≠ 0`, `[m]_Ê` has order at most `m²`
   (`WeierstrassCurve.order_nsmulSeries_formalGroup_le_sq_of_not_isNilpotent`), and in particular
   over any reduced commutative ring whenever `W.c₄ ≠ 0 ∨ W.Δ ≠ 0`
-  (`WeierstrassCurve.order_nsmulSeries_formalGroup_le_sq`).
+  (`WeierstrassCurve.order_nsmulSeries_formalGroup_le_sq`). From this, `[n]_Ê ≠ 0` for every
+  elliptic curve over a nontrivial commutative ring and `n ≠ 0`
+  (`WeierstrassCurve.nsmulSeries_formalGroup_ne_zero`,
+  `WeierstrassCurve.zsmulSeries_formalGroup_ne_zero`).
 * Over a reduced commutative ring `R`, if `Δ = 0`, `c₄ = 0`, and `(m : R) = 0`, then `[m]_Ê = 0`
   (`WeierstrassCurve.nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero`).
 
@@ -75,37 +77,7 @@ theorem order_nsmulSeries_formalGroup_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
       (mulByIntIsogenyOfNeZero W.toAffine (n := n) (mod_cast hn)).inseparableDegree := by
   rw [← formalSeries_mulByIntIsogenyOfNeZero_natCast W hn, order_formalSeries]
 
-private theorem zsmulSeries_formalGroup_ne_zero_of_field {n : ℤ} (hn : n ≠ 0) :
-    (formalGroup W).zsmulSeries n ≠ 0 := by
-  rw [← (formalSeries_mulByIntIsogeny W _ :
-      (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries = _)]
-  exact (mulByIntIsogenyOfNeZero W.toAffine hn).formalSeries_ne_zero
-
 end Field
-
-section NontrivialRing
-
-variable {R : Type*} [CommRing R] [Nontrivial R] (W : WeierstrassCurve R) [W.IsElliptic]
-
-/-- **For `n ≠ 0` (`n : ℤ`), multiplication by `n` on the formal group of an elliptic curve over a
-nontrivial commutative ring is nonzero.** -/
-theorem zsmulSeries_formalGroup_ne_zero {n : ℤ} (hn : n ≠ 0) :
-    (formalGroup W).zsmulSeries n ≠ 0 := by
-  obtain ⟨𝔪, h𝔪⟩ := Ideal.exists_maximal R
-  let _ : Field (R ⧸ 𝔪) := Ideal.Quotient.field 𝔪
-  set π := Ideal.Quotient.mk 𝔪
-  intro h0
-  apply zsmulSeries_formalGroup_ne_zero_of_field (W.map π) hn
-  rw [map_formalGroup, ← FormalGroup.map_zsmulSeries, h0, map_zero]
-
-/-- **For `n ≠ 0` (`n : ℕ`), multiplication by `n` on the formal group of an elliptic curve over a
-nontrivial commutative ring is nonzero.** -/
-theorem nsmulSeries_formalGroup_ne_zero {n : ℕ} (hn : n ≠ 0) :
-    (formalGroup W).nsmulSeries n ≠ 0 := by
-  rw [← FormalGroup.zsmulSeries_natCast]
-  exact W.zsmulSeries_formalGroup_ne_zero (mod_cast hn)
-
-end NontrivialRing
 
 section OrderBounds
 
@@ -141,8 +113,8 @@ private theorem exists_order_nsmulSeries_formalGroup_eq_of_Δ_eq_zero {K : Type*
 
 /-- Over a field, for a nodal Weierstrass curve (`Δ = 0` and `c₄ ≠ 0`) and `m ≠ 0`, the series
 `[m]_Ê` has order at most `m`. -/
-theorem order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero {K : Type*} [Field K]
-    (W : WeierstrassCurve K) {m : ℕ} (hm : m ≠ 0) (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) :
+private theorem order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero_field {K : Type*}
+    [Field K] (W : WeierstrassCurve K) {m : ℕ} (hm : m ≠ 0) (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) :
     ((formalGroup W).nsmulSeries m).order ≤ m := by
   obtain ⟨a, ha, hord⟩ := W.exists_order_nsmulSeries_formalGroup_eq_of_Δ_eq_zero hΔ m
   have ha0 : a ≠ 0 := by
@@ -165,7 +137,7 @@ private theorem order_nsmulSeries_formalGroup_le_sq_field {K : Type*} [Field K]
     (W : WeierstrassCurve K) {m : ℕ} (hm : m ≠ 0) (h : W.c₄ ≠ 0 ∨ W.Δ ≠ 0) :
     ((formalGroup W).nsmulSeries m).order ≤ (m ^ 2 : ℕ) := by
   by_cases hΔ : W.Δ = 0
-  · exact (W.order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero hm hΔ
+  · exact (W.order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero_field hm hΔ
       (h.resolve_right (not_not.mpr hΔ))).trans
       (by exact_mod_cast Nat.le_self_pow (by decide) m)
   · have : W.IsElliptic := W.isElliptic_iff.mpr (isUnit_iff_ne_zero.mpr hΔ)
@@ -194,10 +166,42 @@ private theorem nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero_fi
     FormalGroup.nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C, hm', map_zero, zero_mul,
     PowerSeries.order_zero]
 
-private theorem ker_algebraMap_comp_mk {R : Type*} [CommRing R] (P : Ideal R) :
-    RingHom.ker ((algebraMap (R ⧸ P) (FractionRing (R ⧸ P))).comp (Ideal.Quotient.mk P)) = P := by
-  rw [RingHom.ker_comp_of_injective _ (IsFractionRing.injective (R ⧸ P) (FractionRing (R ⧸ P))),
-    Ideal.mk_ker]
+/-- **Nodal order bound for `[m]_Ê` under non-nilpotency**: over any commutative ring `R`, if
+`IsNilpotent W.Δ`, `¬ IsNilpotent W.c₄` (so at least one residue-field fiber is nodal), and
+`m ≠ 0`, then the multiplication-by-`m` series has order at most `m`. -/
+theorem order_nsmulSeries_formalGroup_le_of_isNilpotent_Δ_of_not_isNilpotent_c₄ {R : Type*}
+    [CommRing R] (W : WeierstrassCurve R) {m : ℕ} (hm : m ≠ 0) (hΔ : IsNilpotent W.Δ)
+    (hc₄ : ¬ IsNilpotent W.c₄) :
+    ((formalGroup W).nsmulSeries m).order ≤ m := by
+  have ⟨P, hP, hc₄P⟩ : ∃ P : Ideal R, P.IsPrime ∧ W.c₄ ∉ P := by
+    by_contra hall
+    push Not at hall
+    exact hc₄ (nilpotent_iff_mem_prime.mpr hall)
+  let _ : P.IsPrime := hP
+  let f := algebraMap R P.ResidueField
+  have hΔf : (W.map f).Δ = 0 := by
+    rw [map_Δ, Ideal.algebraMap_residueField_eq_zero]
+    exact nilpotent_iff_mem_prime.mp hΔ P hP
+  have hc₄f : (W.map f).c₄ ≠ 0 := by
+    rw [map_c₄, ne_eq, Ideal.algebraMap_residueField_eq_zero]
+    exact hc₄P
+  calc
+    ((formalGroup W).nsmulSeries m).order
+      ≤ (PowerSeries.map f ((formalGroup W).nsmulSeries m)).order := PowerSeries.le_order_map f
+    _ = ((formalGroup (W.map f)).nsmulSeries m).order := by
+        rw [FormalGroup.map_nsmulSeries, ← map_formalGroup]
+    _ ≤ m := order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero_field (W.map f) hm
+        hΔf hc₄f
+
+/-- **Nodal order bound for `[m]_Ê` over reduced rings**: over a reduced commutative ring, for a
+nodal Weierstrass curve (`Δ = 0` and `c₄ ≠ 0`) and `m ≠ 0`, the series `[m]_Ê` has order at most
+`m`. -/
+theorem order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero {R : Type*} [CommRing R]
+    [IsReduced R] (W : WeierstrassCurve R) {m : ℕ} (hm : m ≠ 0) (hΔ : W.Δ = 0)
+    (hc₄ : W.c₄ ≠ 0) :
+    ((formalGroup W).nsmulSeries m).order ≤ m :=
+  W.order_nsmulSeries_formalGroup_le_of_isNilpotent_Δ_of_not_isNilpotent_c₄ hm
+    (by simp [hΔ]) (by simpa using hc₄)
 
 /-- **Order bound for `[m]_Ê` under non-nilpotency**: over any commutative ring `R`, if
 `¬ IsNilpotent W.c₄ ∨ ¬ IsNilpotent W.Δ` (so at least one residue-field fiber is smooth or nodal)
@@ -205,20 +209,15 @@ and `m ≠ 0`, then the multiplication-by-`m` series has order at most `m²`. -/
 theorem order_nsmulSeries_formalGroup_le_sq_of_not_isNilpotent {R : Type*} [CommRing R]
     (W : WeierstrassCurve R) {m : ℕ} (hm : m ≠ 0) (h : ¬ IsNilpotent W.c₄ ∨ ¬ IsNilpotent W.Δ) :
     ((formalGroup W).nsmulSeries m).order ≤ (m ^ 2 : ℕ) := by
-  have hex : ∃ P : Ideal R, P.IsPrime ∧ (W.c₄ ∉ P ∨ W.Δ ∉ P) := by
+  have ⟨P, hP, hPmem⟩ : ∃ P : Ideal R, P.IsPrime ∧ (W.c₄ ∉ P ∨ W.Δ ∉ P) := by
     by_contra hall
     push Not at hall
-    have hnil (x : R) (hx : ∀ P : Ideal R, P.IsPrime → x ∈ P) : IsNilpotent x := by
-      rw [← mem_nilradical, nilradical_eq_sInf]
-      exact Ideal.mem_sInf.mpr fun P hP ↦ hx P hP
-    exact h.elim (fun hc₄ ↦ hc₄ (hnil _ fun P hP ↦ (hall P hP).1))
-      (fun hΔ ↦ hΔ (hnil _ fun P hP ↦ (hall P hP).2))
-  obtain ⟨P, hP, hPmem⟩ := hex
+    exact h.elim (fun hc₄ ↦ hc₄ (nilpotent_iff_mem_prime.mpr fun P hP ↦ (hall P hP).1))
+      (fun hΔ ↦ hΔ (nilpotent_iff_mem_prime.mpr fun P hP ↦ (hall P hP).2))
   let _ : P.IsPrime := hP
-  let f : R →+* FractionRing (R ⧸ P) :=
-    (algebraMap (R ⧸ P) (FractionRing (R ⧸ P))).comp (Ideal.Quotient.mk P)
+  let f := algebraMap R P.ResidueField
   have hf_ne {x : R} (hx : x ∉ P) : f x ≠ 0 := by
-    rwa [ne_eq, ← RingHom.mem_ker, ker_algebraMap_comp_mk P]
+    rwa [ne_eq, Ideal.algebraMap_residueField_eq_zero]
   have hmap : (W.map f).c₄ ≠ 0 ∨ (W.map f).Δ ≠ 0 :=
     hPmem.imp (fun hc₄ ↦ by rw [map_c₄]; exact hf_ne hc₄) (fun hΔ ↦ by rw [map_Δ]; exact hf_ne hΔ)
   calc
@@ -244,20 +243,46 @@ theorem nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero {R : Type*
     (hm : (m : R) = 0) : (formalGroup W).nsmulSeries m = 0 := by
   ext k
   rw [map_zero]
-  suffices PowerSeries.coeff k ((formalGroup W).nsmulSeries m) ∈ nilradical R by
-    rwa [nilradical_eq_zero, Ideal.zero_eq_bot, Ideal.mem_bot] at this
-  rw [nilradical_eq_sInf, Ideal.mem_sInf]
+  suffices IsNilpotent (PowerSeries.coeff k ((formalGroup W).nsmulSeries m)) from this.eq_zero
+  rw [nilpotent_iff_mem_prime]
   intro P hP
   let _ : P.IsPrime := hP
-  let f : R →+* FractionRing (R ⧸ P) :=
-    (algebraMap (R ⧸ P) (FractionRing (R ⧸ P))).comp (Ideal.Quotient.mk P)
+  let f := algebraMap R P.ResidueField
   have hz := nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero_field (W.map f)
     (by simp [hΔ]) (by simp [hc₄]) (by rw [← map_natCast f, hm, map_zero])
   have hk : f (PowerSeries.coeff k ((formalGroup W).nsmulSeries m)) = 0 := by
     rw [← FormalGroup.coeff_nsmulSeries_map, ← map_formalGroup, hz, map_zero]
-  exact ker_algebraMap_comp_mk P ▸ RingHom.mem_ker.mpr hk
+  exact Ideal.algebraMap_residueField_eq_zero.mp hk
 
 end OrderBounds
+
+section NontrivialRing
+
+variable {R : Type*} [CommRing R] [Nontrivial R] (W : WeierstrassCurve R) [W.IsElliptic]
+
+/-- **For `n ≠ 0` (`n : ℕ`), multiplication by `n` on the formal group of an elliptic curve over a
+nontrivial commutative ring is nonzero.** -/
+theorem nsmulSeries_formalGroup_ne_zero {n : ℕ} (hn : n ≠ 0) :
+    (formalGroup W).nsmulSeries n ≠ 0 := by
+  have hle := W.order_nsmulSeries_formalGroup_le_sq_of_not_isNilpotent hn
+    (Or.inr W.isUnit_Δ.not_isNilpotent)
+  intro h0
+  simp [h0] at hle
+
+/-- **For `n ≠ 0` (`n : ℤ`), multiplication by `n` on the formal group of an elliptic curve over a
+nontrivial commutative ring is nonzero.** -/
+theorem zsmulSeries_formalGroup_ne_zero {n : ℤ} (hn : n ≠ 0) :
+    (formalGroup W).zsmulSeries n ≠ 0 := by
+  intro h0
+  have hord : ((formalGroup W).nsmulSeries n.natAbs).order = ⊤ := by
+    rcases Int.natAbs_eq n with h | h
+    · rw [← FormalGroup.zsmulSeries_natCast, ← h, h0, PowerSeries.order_zero]
+    · rw [← FormalGroup.zsmulSeries_natCast, ← FormalGroup.order_zsmulSeries_neg, ← h, h0,
+        PowerSeries.order_zero]
+  exact W.nsmulSeries_formalGroup_ne_zero (Int.natAbs_ne_zero.mpr hn)
+    (PowerSeries.order_eq_top.mp hord)
+
+end NontrivialRing
 
 end WeierstrassCurve
 

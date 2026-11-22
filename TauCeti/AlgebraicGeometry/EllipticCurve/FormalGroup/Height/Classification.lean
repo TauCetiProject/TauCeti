@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular
-import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # Classification of Weierstrass formal group heights at every prime
@@ -26,11 +25,11 @@ this file classifies the height of `Ê` for every Weierstrass curve, smooth or s
 * If `W` is cuspidal (`Δ = 0` and `c₄ = 0`), then `Ê` has height `⊤` whenever `(p : K) = 0`.
 * At `p = 0` (in characteristic zero), `[0]_Ê = 0`, so every Weierstrass curve has height `⊤`.
 
-In any characteristic `p` (prime or zero), `Ê` has height `1`, `2`, or `⊤`. In prime characteristic
-`p`, `Ê` has height at most `2` iff `c₄ ≠ 0 ∨ Δ ≠ 0` (smooth or nodal), height `2` iff
-`Δ ≠ 0 ∧ coeff (p - 1) ω = 0`, and infinite height iff `Δ = 0 ∧ c₄ = 0` (more generally,
-`height p Ê = ⊤ ↔ Δ = 0 ∧ c₄ = 0` whenever `p ≠ 0` and `(p : K) = 0`). For any `p ≠ 0` over any
-field, a smooth or nodal curve has finite `p`-height.
+In any characteristic `p` (prime or zero), `Ê` has height `1`, `2`, or `⊤`, and `Ê` has height `2`
+iff `Δ ≠ 0 ∧ coeff (p - 1) ω = 0` (at `p = 0`, neither side holds). In prime characteristic `p`,
+`Ê` has height at most `2` iff `c₄ ≠ 0 ∨ Δ ≠ 0` (smooth or nodal), and infinite height iff
+`Δ = 0 ∧ c₄ = 0` (more generally, `height p Ê = ⊤ ↔ Δ = 0 ∧ c₄ = 0` whenever `p ≠ 0` and
+`(p : K) = 0`). For any `p ≠ 0` over any field, a smooth or nodal curve has finite `p`-height.
 
 ## Strategy
 
@@ -48,8 +47,8 @@ hence height `⊤`.
 ## Main results
 
 * `WeierstrassCurve.height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero`:
-  an elliptic curve in prime characteristic `p` has formal group of height `2` exactly when its
-  Hasse invariant vanishes.
+  an elliptic curve in characteristic `p` (prime or zero) has formal group of height `2` exactly
+  when `coeff (p - 1) ω` vanishes.
 * `WeierstrassCurve.height_formalGroup_ne_top_of_c₄_ne_zero_or_Δ_ne_zero`: for any `p ≠ 0` over
   any field, a smooth or nodal Weierstrass curve has finite formal-group height.
 * `WeierstrassCurve.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero`: nodal cubics in prime
@@ -63,8 +62,9 @@ hence height `⊤`.
   for a singular Weierstrass curve in prime characteristic `p`, height `1`, nonzero Hasse invariant,
   and `c₄ ≠ 0` coincide.
 * `WeierstrassCurve.height_formalGroup_eq_two_iff` and
-  `WeierstrassCurve.height_formalGroup_le_two_iff`: exact characterizations of height `2` and
-  height at most `2` for arbitrary Weierstrass curves over a field of prime characteristic `p`.
+  `WeierstrassCurve.height_formalGroup_le_two_iff`: exact characterizations of height `2` (in prime
+  or zero characteristic) and height at most `2` (in prime characteristic) for arbitrary Weierstrass
+  curves over a field.
 * `WeierstrassCurve.height_formalGroup_eq_one_or_eq_two_or_eq_top`: trichotomy `(1, 2, ⊤)` in any
   characteristic `p` (where at `p = 0` every curve has height `⊤`).
 
@@ -79,12 +79,11 @@ namespace WeierstrassCurve
 
 section Elliptic
 
-variable {K : Type*} [Field K] {p : ℕ} [Fact p.Prime] [CharP K p]
-  (W : WeierstrassCurve K) [W.IsElliptic]
+variable {K : Type*} [Field K] {p : ℕ} [CharP K p] (W : WeierstrassCurve K) [W.IsElliptic]
 
-/-- **Height two from the Hasse invariant**: in prime characteristic `p`, an elliptic curve has
-formal group of height `2` exactly when the coefficient of `Tᵖ⁻¹` in the invariant differential of
-its formal group vanishes. -/
+/-- **Height two from the Hasse invariant**: in characteristic `p` (prime or zero), an elliptic
+curve has formal group of height `2` exactly when the coefficient of `T ^ (p - 1)` in the
+invariant differential of its formal group vanishes. -/
 theorem height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero :
     (formalGroup W).height p = 2 ↔
       PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
@@ -182,30 +181,33 @@ theorem height_formalGroup_eq_one_or_eq_two_or_eq_top :
     · push Not at h
       exact Or.inr (Or.inr
         (W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero h.2 h.1 (CharP.cast_eq_zero K p)))
-  · exact Or.inr (Or.inr (((formalGroup W).height_eq_top_iff).mpr (by simp)))
+  · simp
 
-/-- **Characterization of formal-group height `2`.** Over a field of prime characteristic `p`,
-a Weierstrass curve has formal group of height `2` exactly when it is elliptic (`Δ ≠ 0`) and its
-Hasse invariant vanishes. -/
-theorem height_formalGroup_eq_two_iff [Fact p.Prime] :
+/-- **Characterization of formal-group height `2`.** Over a field of characteristic `p` (prime or
+zero), a Weierstrass curve has formal group of height `2` exactly when it is elliptic (`Δ ≠ 0`) and
+the coefficient of `T ^ (p - 1)` in its invariant differential vanishes. -/
+theorem height_formalGroup_eq_two_iff :
     (formalGroup W).height p = 2 ↔
       W.Δ ≠ 0 ∧ PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential = 0 := by
-  constructor
-  · intro h
-    have hΔ : W.Δ ≠ 0 := by
-      intro hΔ0
-      by_cases hc₄ : W.c₄ = 0
-      · rw [W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero hΔ0 hc₄
-          (CharP.cast_eq_zero K p)] at h
-        exact ENat.natCast_ne_top 2 h.symm
-      · rw [W.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero hΔ0 hc₄] at h
-        exact absurd h (by decide)
-    have : W.IsElliptic := W.isElliptic_iff.mpr (isUnit_iff_ne_zero.mpr hΔ)
-    exact ⟨hΔ,
-      W.height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero.mp h⟩
-  · rintro ⟨hΔ, hH⟩
-    have : W.IsElliptic := W.isElliptic_iff.mpr (isUnit_iff_ne_zero.mpr hΔ)
-    exact W.height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero.mpr hH
+  rcases CharP.char_is_prime_or_zero K p with hp | rfl
+  · have : Fact p.Prime := ⟨hp⟩
+    constructor
+    · intro h
+      have hΔ : W.Δ ≠ 0 := by
+        intro hΔ0
+        by_cases hc₄ : W.c₄ = 0
+        · rw [W.height_formalGroup_eq_top_of_Δ_eq_zero_of_c₄_eq_zero hΔ0 hc₄
+            (CharP.cast_eq_zero K p)] at h
+          exact ENat.natCast_ne_top 2 h.symm
+        · rw [W.height_formalGroup_eq_one_of_Δ_eq_zero_of_c₄_ne_zero hΔ0 hc₄] at h
+          exact absurd h (by decide)
+      have : W.IsElliptic := W.isElliptic_iff.mpr (isUnit_iff_ne_zero.mpr hΔ)
+      exact ⟨hΔ,
+        W.height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero.mp h⟩
+    · rintro ⟨hΔ, hH⟩
+      have : W.IsElliptic := W.isElliptic_iff.mpr (isUnit_iff_ne_zero.mpr hΔ)
+      exact W.height_formalGroup_eq_two_iff_coeff_invariantDifferential_formalGroup_eq_zero.mpr hH
+  · simp
 
 /-- **Characterization of formal-group height at most `2`.** Over a field of prime characteristic
 `p`, a Weierstrass curve has formal group of height at most `2` exactly when it is smooth or nodal
