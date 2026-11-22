@@ -32,8 +32,9 @@ On a functional `w` of degree `n`, an element `a` of `Aᵖ` and a form `φ` on `
 operator `T` of `w` satisfies
 `φ (T a) = (-1)^(p + n) w (a ⊗ φ)`
 (`TauCeti.linearDualXEquiv_linearHomComplexTensorDualIso_hom_f_apply`); the sign is the sign of
-`j` in degree `p + n`, and it is what makes `T` a morphism of complexes. Degree-zero cocycles
-are morphisms of complexes, so a chain map `A ⊗ B∨ ⟶ R[0]` is read as a chain map `A ⟶ B`
+`j` in degree `p + n`, and it is what makes `w ↦ T` commute with the differentials, so that
+`linearHomComplexTensorDualIso` is an isomorphism of complexes. Degree-zero cocycles are morphisms
+of complexes, so a chain map `A ⊗ B∨ ⟶ R[0]` is read as a chain map `A ⟶ B`
 (`TauCeti.linearHomComplexTensorDualHomEquiv`).
 
 **Through the dual of a tensor product.** The other reading inverts the comparison
@@ -70,31 +71,6 @@ namespace TauCeti
 universe v
 
 variable {R : Type v} [CommRing R]
-
-/-- On the degree-`0` summand `R ⊗ R` of `R[0] ⊗ R[0]`, the left unitor of cochain complexes is
-the multiplication of `R`, after identifying the degree-`0` term of `R[0]` with `R`. -/
-private lemma leftUnitor_hom_f_zero_ιTensorObj_tmul
-    (u w : (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)).X 0) :
-    ((λ_ (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))).hom.f 0).hom
-        ((HomologicalComplex.ιTensorObj (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) (𝟙_ _) 0 0 0
-          (zero_add 0)).hom (u ⊗ₜ w)) =
-      (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom u • w := by
-  set e := HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))
-  have hu : u = e.hom.hom u • e.inv.hom 1 := by
-    rw [← map_smul, smul_eq_mul, mul_one]
-    exact (congrArg (fun φ => φ.hom u) e.hom_inv_id).symm
-  have hw : (HomologicalComplex.ιTensorObj (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) (𝟙_ _) 0 0 0
-      (zero_add 0)).hom (e.inv.hom 1 ⊗ₜ w) =
-        ((λ_ (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))).inv.f 0).hom w := by
-    rw [HomologicalComplex.leftUnitor_inv_f]
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
-      ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
-      ModuleCat.MonoidalCategory.whiskerRight_apply]
-    -- `ConcreteCategory.hom` and `ModuleCat.Hom.hom` agree on `ModuleCat`.
-    rfl
-  conv_lhs => rw [hu, ← TensorProduct.smul_tmul', map_smul, map_smul, hw]
-  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, Iso.inv_hom_id,
-    HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
 
 section DualDistrib
 
@@ -227,40 +203,31 @@ theorem linearDualXEquiv_linearHomComplexTensorDualIso_hom_f_apply {n p q : ℤ}
           rfl).hom a) =
       (p + n).negOnePow • linearDualXEquiv (A ⊗ linearDual R B) (by omega : p + q + n = 0) w
         ((HomologicalComplex.ιTensorObj A (linearDual R B) p q (p + q) rfl).hom (a ⊗ₜ φ)) := by
-  -- The bidual map sends `T a` back to the curried functional `φ ↦ w (a ⊗ φ)`.
-  have hb : ((bidualHom B).f (p + n)).hom
-      (((((linearHomComplexTensorDualIso R A B).hom.f n).hom w : Cochain A B n).v p (p + n)
-        rfl).hom a) =
-        ((Cochain.curry (w : Cochain (A ⊗ linearDual R B) (𝟙_ _) n)).v p (p + n) rfl).hom a := by
-    rw [linearHomComplexTensorDualIso_hom, HomologicalComplex.comp_f, ModuleCat.hom_comp,
-      LinearMap.comp_apply, linearHomComplexCurryIso_hom_f_apply, linearHomComplexPostcomp_f_apply,
-      Cochain.comp_zero_cochain_v, Cochain.ofHom_v, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      Category.assoc, ← HomologicalComplex.comp_f, IsIso.inv_hom_id, HomologicalComplex.id_f,
-      Category.comp_id]
-  have h := linearDualXEquiv_bidualHom_f_apply (K := B) (by omega : q + (p + n) = 0)
-    (((((linearHomComplexTensorDualIso R A B).hom.f n).hom w : Cochain A B n).v p (p + n)
-        rfl).hom a) φ
-  rw [hb, linearDualXEquiv_apply, Cochain.toSingleEquiv_apply, ModuleCat.hom_comp,
-    LinearMap.comp_apply, Cochain.curry_v_hom_apply_v_hom_apply _ rfl a _ φ rfl] at h
-  rw [← smul_left_cancel_iff (p + n).negOnePow, ← h, smul_smul, Int.units_mul_self, one_smul,
+  -- `T a` is the inverse of the bidual map applied to the curried functional `φ ↦ w (a ⊗ φ)`.
+  rw [linearHomComplexTensorDualIso_hom, HomologicalComplex.comp_f, ModuleCat.hom_comp,
+    LinearMap.comp_apply, linearHomComplexCurryIso_hom_f_apply, linearHomComplexPostcomp_f_apply,
+    Cochain.comp_zero_cochain_v, Cochain.ofHom_v, ModuleCat.hom_comp, LinearMap.comp_apply,
+    linearDualXEquiv_inv_bidualHom_f_apply, linearDualXEquiv_apply, Cochain.toSingleEquiv_apply,
+    ModuleCat.hom_comp, LinearMap.comp_apply, Cochain.curry_v_hom_apply_v_hom_apply _ rfl a _ φ rfl,
     linearDualXEquiv_apply, Cochain.toSingleEquiv_apply, ModuleCat.hom_comp, LinearMap.comp_apply]
 
 /-- **The functional of an operator.** The functional `w` of an operator `T` of degree `n` from
 `A` to `B` takes the value `w (a ⊗ φ) = (-1)^(p + n) φ (T a)` on `a` in `Aᵖ` and a form `φ` on
 `B^(p + n)`. -/
+@[simp]
 theorem linearDualXEquiv_linearHomComplexTensorDualIso_inv_f_apply {n p q : ℤ} (hpq : p + n + q = 0)
     (T : (linearHomComplex R A B).X n) (a : A.X p) (φ : (linearDual R B).X q) :
-    linearDualXEquiv (A ⊗ linearDual R B) (by omega : p + q + n = 0)
+    (dsimp% only [linearHomComplex_X]
+      linearDualXEquiv (A ⊗ linearDual R B) (by omega : p + q + n = 0)
         (((linearHomComplexTensorDualIso R A B).inv.f n).hom T)
-        ((HomologicalComplex.ιTensorObj A (linearDual R B) p q (p + q) rfl).hom (a ⊗ₜ φ)) =
+        ((HomologicalComplex.ιTensorObj A (linearDual R B) p q (p + q) rfl).hom (a ⊗ₜ φ))) =
       (p + n).negOnePow •
         linearDualXEquiv B hpq φ (((T : Cochain A B n).v p (p + n) rfl).hom a) := by
   have := linearDualXEquiv_linearHomComplexTensorDualIso_hom_f_apply hpq
     (((linearHomComplexTensorDualIso R A B).inv.f n).hom T) a φ
   have hT : ((linearHomComplexTensorDualIso R A B).hom.f n).hom
-      (((linearHomComplexTensorDualIso R A B).inv.f n).hom T) = T := by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, Iso.inv_hom_id,
-      HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
+      (((linearHomComplexTensorDualIso R A B).inv.f n).hom T) = T :=
+    Iso.inv_hom_id_apply (HomologicalComplex.Hom.isoApp (linearHomComplexTensorDualIso R A B) n) T
   rw [hT] at this
   rw [this, smul_smul, Int.units_mul_self, one_smul]
 
@@ -312,8 +279,16 @@ theorem linearHomComplexTensorDualHomEquiv_apply (F : A ⊗ linearDual R B ⟶ �
       linearHomComplexHomEquiv A (linearDual R B) (𝟙_ _) F ≫ inv (bidualHom B) := by
   simp [linearHomComplexTensorDualHomEquiv]
 
+/-- `TauCeti.linearHomComplexTensorDualHomEquiv` sends a chain map `T : A ⟶ B` back to the
+uncurried form of `T` followed by the bidual map. -/
+theorem linearHomComplexTensorDualHomEquiv_symm_apply (T : A ⟶ B) :
+    (linearHomComplexTensorDualHomEquiv R A B).symm T =
+      (linearHomComplexHomEquiv A (linearDual R B) (𝟙_ _)).symm (T ≫ bidualHom B) := by
+  simp [linearHomComplexTensorDualHomEquiv]
+
 /-- The chain map `T` read from a chain map `F : A ⊗ B∨ ⟶ R[0]` satisfies
 `φ (T a) = (-1)^p F (a ⊗ φ)` for `a` in `Aᵖ` and a form `φ` on `Bᵖ`, of degree `-p`. -/
+@[simp]
 theorem linearDualXEquiv_linearHomComplexTensorDualHomEquiv_f_apply
     (F : A ⊗ linearDual R B ⟶ 𝟙_ _) {p : ℤ} (a : A.X p) (φ : (linearDual R B).X (-p)) :
     linearDualXEquiv B (add_neg_cancel p) φ
@@ -321,18 +296,26 @@ theorem linearDualXEquiv_linearHomComplexTensorDualHomEquiv_f_apply
       p.negOnePow • (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom
         ((F.f 0).hom ((HomologicalComplex.ιTensorObj A (linearDual R B) p (-p) 0
           (add_neg_cancel p)).hom (a ⊗ₜ φ))) := by
-  have hb : ((bidualHom B).f p).hom (((linearHomComplexTensorDualHomEquiv R A B F).f p).hom a) =
-      ((linearHomComplexHomEquiv A (linearDual R B) (𝟙_ _) F).f p).hom a := by
-    rw [linearHomComplexTensorDualHomEquiv_apply, HomologicalComplex.comp_f, ModuleCat.hom_comp,
-      LinearMap.comp_apply, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      ← HomologicalComplex.comp_f,
-      IsIso.inv_hom_id, HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
-  have h := linearDualXEquiv_bidualHom_f_apply (K := B) (neg_add_cancel p)
-    (((linearHomComplexTensorDualHomEquiv R A B F).f p).hom a) φ
-  rw [hb, linearDualXEquiv_apply, Cochain.toSingleEquiv_apply, ModuleCat.hom_comp,
-    LinearMap.comp_apply] at h
-  rw [← smul_left_cancel_iff p.negOnePow, ← h, smul_smul, Int.units_mul_self, one_smul]
+  rw [linearHomComplexTensorDualHomEquiv_apply, HomologicalComplex.comp_f, ModuleCat.hom_comp,
+    LinearMap.comp_apply, linearDualXEquiv_inv_bidualHom_f_apply, linearDualXEquiv_apply,
+    Cochain.toSingleEquiv_apply, ModuleCat.hom_comp, LinearMap.comp_apply]
   exact congrArg _ (linearHomComplexHomEquiv_f_hom_apply_v_hom_apply F a (neg_add_cancel p) φ)
+
+/-- The chain map `F : A ⊗ B∨ ⟶ R[0]` of a chain map `T : A ⟶ B` takes the value
+`F (a ⊗ φ) = (-1)^p φ (T a)` on `a` in `Aᵖ` and a form `φ` on `Bᵖ`, of degree `-p`. -/
+@[simp]
+theorem singleObjXSelf_hom_linearHomComplexTensorDualHomEquiv_symm_f_apply (T : A ⟶ B) {p : ℤ}
+    (a : A.X p) (φ : (linearDual R B).X (-p)) :
+    (dsimp% only [linearHomComplex_X]
+      (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom
+        ((((linearHomComplexTensorDualHomEquiv R A B).symm T).f 0).hom
+          ((HomologicalComplex.ιTensorObj A (linearDual R B) p (-p) 0
+            (add_neg_cancel p)).hom (a ⊗ₜ φ)))) =
+      p.negOnePow • linearDualXEquiv B (add_neg_cancel p) φ ((T.f p).hom a) := by
+  have := linearDualXEquiv_linearHomComplexTensorDualHomEquiv_f_apply
+    ((linearHomComplexTensorDualHomEquiv R A B).symm T) a φ
+  rw [Equiv.apply_symm_apply] at this
+  rw [this, smul_smul, Int.units_mul_self, one_smul]
 
 end TensorDual
 
