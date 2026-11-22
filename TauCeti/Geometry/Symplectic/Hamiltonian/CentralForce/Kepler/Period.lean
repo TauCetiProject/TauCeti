@@ -39,8 +39,8 @@ and conservation of energy, the linear equation `z' = i (c / (m a r)) z`. So
 `r = a (1 - e cos ψ)`,  `⟪q, p⟫ = c e sin ψ`.
 
 The number `e` is the eccentricity `‖A‖ / (m κ)` of the orbit, for the Runge–Lenz vector `A`; it
-is less than one because the angular momentum of a noncolliding bound motion does not vanish
-(`TauCeti.centralForceHamiltonian_kepler_nonneg_of_forall_hasDerivAt`). Differentiating gives
+is less than one because a global noncolliding motion in the attractive Kepler potential has
+nonzero angular momentum (`TauCeti.sq_sub_inner_sq_ne_zero_of_hasDerivAt`). Differentiating gives
 **Kepler's equation**
 
 `ψ - e sin ψ = n t + c₀`, with mean motion `n = √(κ / (m a³))`.
@@ -384,10 +384,10 @@ section Hamiltonian
 
 variable [FiniteDimensional ℝ V] {γ : ℝ → V × V}
 
-/-- A Kepler motion of energy `-κ / (2a)`, `a > 0`, which is defined for all time and avoids the
+/-- A Kepler motion of energy `-κ / (2a)` which is defined for all time and avoids the
 centre solves Newton's equations `q' = p / m`, `p' = -(κ / r³) q`, conserves its energy, and has
 nonzero angular momentum. -/
-private theorem kepler_newton (hm : 0 < m) (hκ : 0 < κ) (ha : 0 < a)
+private theorem kepler_newton (hm : 0 < m) (hκ : 0 < κ)
     (hγ : ∀ t, HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
       (centralForceHamiltonian m fun r ↦ -κ / r) (γ t)) t)
     (hq : ∀ t, (γ t).1 ≠ 0)
@@ -410,16 +410,15 @@ private theorem kepler_newton (hm : 0 < m) (hκ : 0 < κ) (ha : 0 < a)
   · have := hEt t
     rw [← Prod.mk.eta (p := γ t), centralForceHamiltonian_apply] at this
     linear_combination this
-  -- A noncolliding motion with zero angular momentum has nonnegative energy.
-  have hcs : ⟪(γ 0).1, (γ 0).2⟫_ℝ ^ 2 ≤ ‖(γ 0).1‖ ^ 2 * ‖(γ 0).2‖ ^ 2 := by
-    rw [← mul_pow, ← sq_abs]
-    exact pow_le_pow_left₀ (abs_nonneg _) (abs_real_inner_le_norm _ _) 2
-  refine lt_of_le_of_ne (sub_nonneg.2 hcs) fun h ↦ ?_
-  have h0 := centralForceHamiltonian_kepler_nonneg_of_forall_hasDerivAt hm hκ (a := 0)
-    (fun t _ ↦ hγ t) (fun t _ ↦ hq t) h.symm
-  rw [hE] at h0
-  have : 0 < κ / (2 * a) := by positivity
-  linarith [neg_div (2 * a) κ]
+  -- A global noncolliding motion in the attractive Kepler potential has nonzero angular momentum.
+  have hattr (t : ℝ) : 0 < deriv (fun r ↦ -κ / r) ‖(γ t).1‖ := by
+    rw [(hU t).deriv]
+    exact div_pos hκ (pow_pos (norm_pos_iff.2 (hq t)) 2)
+  refine lt_of_le_of_ne ?_ (sq_sub_inner_sq_ne_zero_of_hasDerivAt hm hγ hq
+    (fun t ↦ (hU t).differentiableAt) hattr 0).symm
+  have := real_inner_mul_inner_self_le (γ 0).1 (γ 0).2
+  rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq] at this
+  linear_combination this
 
 /-- **Kepler's equation.** Let `m, κ, a > 0` and let `γ = (q, p)` be a motion of the Kepler
 problem, a solution of Hamilton's equations for `H(q, p) = ‖p‖² / (2m) - κ / ‖q‖` defined for all
@@ -445,7 +444,7 @@ theorem exists_eccentricAnomaly_of_forall_hasDerivAt_kepler (hm : 0 < m) (hκ : 
       (γ t).1 = (cos (ψ t) - e) • P + sin (ψ t) • Q ∧
       (γ t).2 = (m * √(κ / (m * a ^ 3)) / (1 - e * cos (ψ t))) •
         (cos (ψ t) • Q - sin (ψ t) • P) := by
-  obtain ⟨hq', hp', hE', hℓ⟩ := kepler_newton hm hκ ha hγ hq hE
+  obtain ⟨hq', hp', hE', hℓ⟩ := kepler_newton hm hκ hγ hq hE
   obtain ⟨e', he'0, he'1, he'2, h⟩ := exists_eccentricAnomaly_kepler hm hκ ha hq' hp' hq hE' hℓ
   -- Both `e` and `e'` are nonnegative, with `(m κ e)² = ‖A‖² = (m κ e')²`.
   have hA := norm_rungeLenz_sq hm.ne' κ (hq 0)
@@ -476,18 +475,18 @@ theorem periodic_of_forall_hasDerivAt_kepler (hm : 0 < m) (hκ : 0 < κ) (ha : 0
     (hq : ∀ t, (γ t).1 ≠ 0)
     (hE : centralForceHamiltonian m (fun r ↦ -κ / r) (γ 0) = -κ / (2 * a)) :
     Function.Periodic γ (2 * π * √(m / κ) * a ^ (3 / 2 : ℝ)) := by
-  obtain ⟨hq', hp', hE', hℓ⟩ := kepler_newton hm hκ ha hγ hq hE
+  obtain ⟨hq', hp', hE', hℓ⟩ := kepler_newton hm hκ hγ hq hE
   obtain ⟨e, he0, he1, -, ψ, c₀, P, Q, h⟩ :=
     exists_eccentricAnomaly_kepler hm hκ ha hq' hp' hq hE' hℓ
   set n := √(κ / (m * a ^ 3))
   set T := 2 * π * √(m / κ) * a ^ (3 / 2 : ℝ)
   -- The mean motion `n` advances by `2π` over the period: `n T = 2π`.
   have hnT : n * T = 2 * π := by
-    have h32 : a ^ (3 / 2 : ℝ) = a * √a := by
-      rw [show (3 / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add ha, rpow_one, sqrt_eq_rpow]
+    have h32 : a ^ (3 / 2 : ℝ) = √(a ^ 3) := by
+      rw [sqrt_eq_rpow, ← rpow_natCast, ← rpow_mul ha.le]
+      norm_num
     have hT : √(κ / (m * a ^ 3)) * (√(m / κ) * a ^ (3 / 2 : ℝ)) = 1 := by
-      rw [h32, ← mul_assoc, mul_left_comm, ← sqrt_mul (by positivity), ← sqrt_mul (by positivity),
-        show κ / (m * a ^ 3) * (m / κ) * a = (a⁻¹) ^ 2 by field_simp, sqrt_sq (by positivity)]
+      rw [h32, ← mul_assoc, ← sqrt_mul (by positivity), ← sqrt_mul (by positivity), sqrt_eq_one]
       field_simp
     linear_combination (2 * π) * hT
   -- `x ↦ x - e sin x` is strictly increasing, since `e < 1`.
