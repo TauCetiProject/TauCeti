@@ -250,7 +250,7 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq_iff
     ⟨_, diffContOnCl_unitDiscRiemannHilbertSolution (hs.comp_injective Nat.cast_injective),
       fun w hw ↦ unitDiscRiemannHilbertSolution_sub_zpow_mul_conj hφ hs hb hvan hw⟩⟩
   have hc : Continuous fun x : AddCircle (2 * π) ↦ h (toCircle x) := by
-    refine hh.continuousOn.comp_continuous (continuous_subtype_val.comp continuous_toCircle)
+    refine hh.continuousOn.comp_continuous (continuous_subtypeVal.comp continuous_toCircle)
       fun x ↦ ?_
     rw [closure_ball 0 one_ne_zero]
     exact sphere_subset_closedBall (coe_toCircle_mem_sphere x)

@@ -30,9 +30,13 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti.EisensteinSeries.nonempty_gammaSet_iff_coprime_val`.
 * `IsCoprime.exists_int_lifts` — a *pair* of coprime residues mod `d` lifts to a coprime pair
   of integers. Ported from the AINTLIB `LeanModularForms` project
-  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
+  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumers are the
   strong approximation theorem `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective` in
-  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
+  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`,
+  `TauCeti.gamma1CuspLabel_surjective` in
+  `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Gamma1.lean`, and
+  `TauCeti.EisensteinSeries.nonempty_gammaSet_intCast_iff` in
+  `TauCeti/NumberTheory/ModularForms/EisensteinSeries/GammaSet.lean`.
 * `ZMod.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
   stays lowered after restricting to a multiple of its modulus.
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
@@ -44,6 +48,17 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `n d`, for every `n ≠ 0`. Its consumers move a diamond label across `diag(1, n)` in
   `TauCeti/NumberTheory/HeckeRing/GL2/Gamma1/CoprimeCosets.lean` and
   `TauCeti/NumberTheory/HeckeRing/GL2/Gamma1/CoprimeMul.lean`.
+* `IsCoprime.exists_isCoprime_sub_mul` — if the integers `a` and `c` are coprime, some translate
+  `a - i c` is coprime to a prescribed integer `l ≠ 0`; it is
+  `ZMod.exists_isCoprime_mul_intCast_eq` at the modulus `|l|`, read at the class of `a` modulo
+  `|c|`. Its consumer is the `T`-factorisation of `Γ₀(N / l)`,
+  `TauCeti.exists_eq_T_zpow_mul_conjScale_mul_T_zpow`, in
+  `TauCeti/NumberTheory/ModularForms/Degeneracy.lean`. The statement is `exists_shift_isCoprime`
+  (:430) of the AINTLIB `LeanModularForms` project
+  (`LeanModularForms/HeckeRIngs/GL2/LevelRaise.lean`, Chris Birkbeck, Apache-2.0,
+  <https://github.com/CBirkbeck/AINTLIB> @ `2baa76f742bdb4fb8ee323fabba41203bd390e08`); the source
+  proves it through a product of primes of `l` (`primeProductCoprime` and two supports), which is
+  not ported.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
@@ -74,6 +89,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.unitOfIsCoprime_div_eq_iff` — two quotients `a / b` and `a' / b'` of integer
   units modulo `n` agree exactly when `n ∣ a b' - a' b`. Its consumer is the cusp label of
   `Γ₀(N)` in `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Count.lean`.
+* `ZMod.mul_val_inv_modEq_one` — for `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of
+  `m` modulo `n`, as a `Nat.ModEq`. Its consumer is the distribution relation for `1 - ζ` in
+  `TauCeti/NumberTheory/Cyclotomic/DistributionRelation.lean`.
 -/
 
 public section
@@ -84,7 +102,7 @@ variable {d : ℕ}
 what consumers of `Nat.Coprime` want; `ZMod.isUnit_intCast_iff_isCoprime` states the same
 equivalence with `IsCoprime` over `ℤ` on the right, in the opposite argument order. -/
 theorem Int.isUnit_intCast_iff_gcd_eq_one {a : ℤ} :
-    IsUnit ((a : ℤ) : ZMod d) ↔ Int.gcd a d = 1 :=
+    IsUnit (a : ZMod d) ↔ Int.gcd a d = 1 :=
   (ZMod.isUnit_intCast_iff_isCoprime _ _).trans
     (isCoprime_comm.trans Int.isCoprime_iff_gcd_eq_one)
 
@@ -104,6 +122,13 @@ theorem ZMod.natAbs_cast (x : ZMod d) : (ZMod.cast x : ℤ).natAbs = x.val := by
     -- `Int.natAbs`
     rfl
   · rw [ZMod.cast_eq_val, Int.natAbs_natCast]
+
+/-- For `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of `m` modulo `n`: the
+`Nat.ModEq` form of Mathlib's `ZMod.mul_val_inv`. -/
+theorem ZMod.mul_val_inv_modEq_one {m n : ℕ} (h : m.Coprime n) :
+    m * ((m : ZMod n)⁻¹).val ≡ 1 [MOD n] := by
+  rw [← ZMod.natCast_eq_natCast_iff, Nat.cast_mul, Nat.cast_one]
+  exact ZMod.mul_val_inv h
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
     (hac : IsCoprime (a₁ : ZMod d) (c₁ : ZMod d)) :
@@ -216,6 +241,21 @@ theorem ZMod.exists_isCoprime_mul_intCast_eq (n : ℕ) [NeZero n] (u : (ZMod d)�
       ZMod.cast_eq_val] at this
     rw [Int.cast_natCast]
     exact this
+
+/-- **A coprime shift.** If `a` and `c` are coprime integers, then some translate `a - i * c` is
+coprime to a prescribed nonzero integer `l`: an integer `t` lifting the unit `a` modulo `|c|` and
+coprime to `|l| * |c|` (`ZMod.exists_isCoprime_mul_intCast_eq`) is such a translate. The
+hypothesis `l ≠ 0` is needed: for `a = 2`, `c = 5` and `l = 0` no `2 - 5 i` is a unit. -/
+theorem IsCoprime.exists_isCoprime_sub_mul {a c l : ℤ} (hac : IsCoprime a c) (hl : l ≠ 0) :
+    ∃ i : ℤ, IsCoprime (a - i * c) l := by
+  have : NeZero l.natAbs := ⟨Int.natAbs_ne_zero.mpr hl⟩
+  obtain ⟨t, ht, hta⟩ := ZMod.exists_isCoprime_mul_intCast_eq l.natAbs
+    (ZMod.unitOfIsCoprime a (by rw [Int.natCast_natAbs]; exact hac.abs_right))
+  rw [ZMod.coe_unitOfIsCoprime, ZMod.intCast_eq_intCast_iff_dvd_sub, Int.natAbs_dvd] at hta
+  obtain ⟨i, hi⟩ := hta
+  refine ⟨i, ?_⟩
+  rw [show a - i * c = t by linear_combination hi, ← IsCoprime.abs_right_iff, ← Int.natCast_natAbs]
+  exact (Nat.cast_mul (α := ℤ) l.natAbs c.natAbs ▸ ht).of_mul_right_left
 
 -- Deliberately not `@[simp]`: the right-hand side needs coprimality proofs for `m` and `n`
 -- separately, which `simp` cannot synthesise from the left-hand side, so Mathlib's `simpNF`

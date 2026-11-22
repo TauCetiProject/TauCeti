@@ -44,7 +44,7 @@ which lifts the pointwise `(0,1)`-projection
 * `TauCeti.zeroOneSobolevSections A μ p k`: the `(0,1)`-forms in `W^{k,p}` of `V`-valued
   one-forms.
 * `TauCeti.zeroOnePartSobolevL`: the continuous `(0,1)`-projection onto it.
-* `TauCeti.zeroOneLowerOrderL`: the inclusion of order `k + 1` into order `k`.
+* `TauCeti.zeroOneLowerOrdersL`: the inclusion of order `k + d` into order `k`.
 
 ## Main results
 
@@ -52,6 +52,10 @@ which lifts the pointwise `(0,1)`-projection
   `TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart`: on the image of a chart, a one-form is a
   `(0,1)`-form exactly when its reading is complex antilinear, and its `(0,1)`-part is read as the
   complex antilinear part of its reading.
+* `TauCeti.FiniteBundleAtlas.sectionChartData_coordChange_tangentHom_apply`,
+  `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_coordChangeL_comp`: on an overlap, the chart
+  data of one-forms change chart by `η ↦ g ∘ η ∘ dτ`, which commutes with taking the complex
+  antilinear part.
 * `TauCeti.mem_zeroOneSobolevSections_iff`: membership is complex antilinearity of the chart data
   almost everywhere.
 * `TauCeti.mem_zeroOneSobolevSections_iff_isZeroOneForm`: an element whose chart data are the
@@ -68,8 +72,11 @@ which lifts the pointwise `(0,1)`-projection
   `(0,1)`-projection of one-forms.
 * `TauCeti.mem_zeroOneSobolevSections_of_isZeroOneForm`: an element whose chart data are the
   readings of a `(0,1)`-form, for instance of a smooth one, is a Sobolev `(0,1)`-form.
-* `TauCeti.zeroOneLowerOrderL_zeroOnePartSobolevL`: the projection commutes with lowering the
-  order.
+* `TauCeti.zeroOneLowerOrdersL_zeroOnePartSobolevL`:
+  the projection commutes with lowering the order.
+* `TauCeti.zeroOneLowerOrdersL_zero`, `TauCeti.zeroOneLowerOrdersL_zeroOneLowerOrdersL`,
+  `TauCeti.zeroOneLowerOrdersL_injective`: identity, transitivity and injectivity of the order
+  inclusions.
 
 ## References
 
@@ -134,6 +141,93 @@ theorem isZeroOneForm_iff_coord_tangentHom (i : Fin A.n)
   exact isZeroOneForm_iff_inCoordinates
     (inTangentCoordinates_ofComplexManifold (A.dom_subset_chart_source i (A.symm_mem_dom hy)))
     (A.dom_subset_baseSet i (A.symm_mem_dom hy))
+
+section TangentHom
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  (A : FiniteBundleAtlas ℂ M F V)
+
+/-- The chart images of the section chart data of `V`-valued one-forms are those of `A`. -/
+theorem sectionChartData_image_tangentHom (i : Fin A.n) :
+    (A.tangentHom.sectionChartData.image i : Set ℂ) = A.image i :=
+  congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom A i))
+
+/-- The chart overlaps of the section chart data of `V`-valued one-forms are those of `A`. -/
+theorem sectionChartData_overlap_tangentHom (i i' : Fin A.n) :
+    A.tangentHom.sectionChartData.overlap i i' = A.overlap i i' :=
+  (A.tangentHom.sectionChartData_overlap i i').trans (overlap_tangentHom A i i')
+
+/-- On an overlap, the chart transitions of the section chart data of `V`-valued one-forms are
+those of `A`. -/
+theorem sectionChartData_transition_tangentHom {i i' : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.overlap i i') :
+    A.tangentHom.sectionChartData.transition i i' y = A.transition i i' y :=
+  (A.tangentHom.sectionChartData_transition_of_mem (by rwa [overlap_tangentHom])).trans
+    (congrFun (transition_tangentHom A i i') y)
+
+/-- Almost everywhere on a chart image of the section chart data of one-forms is almost everywhere
+on the corresponding chart image of `A`. -/
+theorem ae_image_tangentHom_iff (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Prop} :
+    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet,
+    ae_restrict_iff' (A.tangentHom.sectionChartData.image i).isOpen.measurableSet,
+    sectionChartData_image_tangentHom]
+
+/-- Almost everywhere on an overlap of the section chart data of one-forms is almost everywhere
+on the corresponding overlap of `A`. -/
+theorem ae_overlap_tangentHom_iff (μ : Measure ℂ) (i i' : Fin A.n) {P : ℂ → Prop} :
+    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y := by
+  rw [sectionChartData_overlap_tangentHom]
+
+/-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
+one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/
+theorem sectionChartData_coordChange_tangentHom_apply {i i' : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.overlap i i') (η : ℂ →L[ℝ] F) :
+    A.tangentHom.sectionChartData.coordChange i i' y η =
+      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+        (η.comp (fderiv ℝ (A.transition i i') y)) := by
+  have hy' : y ∈ A.tangentHom.overlap i i' := by rwa [overlap_tangentHom]
+  have hτ : A.tangentHom.transition i i' y ∈ A.tangentHom.image i := by
+    rw [transition_tangentHom, image_tangentHom]
+    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  have h := A.tangentHom.coord_eq_coordChange (fun x ↦ (A.tangentHom.triv i).symm x η) hy'
+  rw [A.tangentHom.coord_triv_symm η hτ, A.coord_tangentHom_eq_coordChange _ hy,
+    ← transition_tangentHom, A.tangentHom.coord_triv_symm η hτ, transition_tangentHom] at h
+  rw [A.tangentHom.sectionChartData_coordChange_of_mem hy']
+  exact h.symm
+
+variable [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℂ F V]
+
+/-- On the overlap of charts `i` and `i'`, the complex antilinear part commutes with the
+coordinate change of one-forms: `∂bar (g ∘ L ∘ dτ) = g ∘ ∂bar L ∘ dτ`, since both the coordinate
+change `g` of the complex vector bundle `V` and the derivative of the holomorphic chart transition
+`τ` are complex linear. -/
+theorem complexAntilinearPartL_coordChangeL_comp {i i' : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.overlap i i') (L : ℂ →L[ℝ] F) :
+    complexAntilinearPartL (((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) :
+        F →L[ℝ] F).comp (L.comp (fderiv ℝ (A.transition i i') y))) =
+      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+        ((complexAntilinearPartL L).comp (fderiv ℝ (A.transition i i') y)) := by
+  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
+  have hτ : A.transition i i' y ∈ A.tangentHom.image i := by
+    rw [image_tangentHom]
+    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  set θ : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x := fun x ↦ (A.tangentHom.triv i).symm x L
+  have h₁ := A.coord_tangentHom_eq_coordChange θ hy
+  have h₂ := A.coord_tangentHom_eq_coordChange
+    (fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x)) hy
+  rw [A.coord_tangentHom_zeroOnePart, A.coord_tangentHom_zeroOnePart, h₁,
+    A.tangentHom.coord_triv_symm L hτ] at h₂
+  exact h₂
+
+end TangentHom
 
 end FiniteBundleAtlas
 
@@ -245,8 +339,7 @@ variable (A μ p k) in
 /-- The `(0,1)`-projection on `W^{k,p}` of `V`-valued one-forms, as an endomorphism. -/
 private def zeroOnePartEnd :
     SobolevSection A.tangentHom μ p k →L[ℝ] SobolevSection A.tangentHom μ p k :=
-  haveI (x : M) : ContinuousSMul ℂ (V x) :=
-    (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
+  haveI : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   SectionChartData.constMapL μ p k complexAntilinearPartL
     (fun θ x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x)) fun i θ y hy ↦ by
       rw [A.tangentHom.sectionChartData_coord_of_mem _ hy,
@@ -351,14 +444,14 @@ theorem chartValueL_zeroOnePartSobolevL_ae_coord {w : SobolevSection A.tangentHo
 @[simp]
 theorem zeroOnePartSobolevL_coe (w : zeroOneSobolevSections A μ p k) :
     zeroOnePartSobolevL A μ p k w = w :=
-  Subtype.ext (zeroOnePartEnd_of_mem w.2)
+  Subtype.ext (zeroOnePartEnd_of_mem w.property)
 
 /-- An element of `W^{k,p}` of `V`-valued one-forms is fixed by the `(0,1)`-projection exactly when
 it is a `(0,1)`-form. -/
 theorem coe_zeroOnePartSobolevL_eq_self_iff {w : SobolevSection A.tangentHom μ p k} :
     (zeroOnePartSobolevL A μ p k w : SobolevSection A.tangentHom μ p k) = w ↔
       w ∈ zeroOneSobolevSections A μ p k :=
-  ⟨fun h ↦ h ▸ (zeroOnePartSobolevL A μ p k w).2, zeroOnePartEnd_of_mem⟩
+  ⟨fun h ↦ h ▸ (zeroOnePartSobolevL A μ p k w).property, zeroOnePartEnd_of_mem⟩
 
 /-- The `(0,1)`-projection is onto the `(0,1)`-forms. -/
 theorem zeroOnePartSobolevL_surjective : Function.Surjective (zeroOnePartSobolevL A μ p k) :=
@@ -372,35 +465,84 @@ theorem closedComplemented_zeroOneSobolevSections :
 
 /-! ### Lowering the order -/
 
-/-- Forgetting the highest derivative of a `(0,1)`-form gives a `(0,1)`-form. -/
-theorem lowerOrderL_mem_zeroOneSobolevSections {w : SobolevSection A.tangentHom μ p (k + 1)}
-    (hw : w ∈ zeroOneSobolevSections A μ p (k + 1)) :
-    A.tangentHom.sectionChartData.lowerOrderL μ p k w ∈ zeroOneSobolevSections A μ p k := by
+/-- Forgetting derivatives preserves the native `(0,1)` condition. -/
+theorem lowerOrdersL_mem_zeroOneSobolevSections (d : ℕ)
+    {w : SobolevSection A.tangentHom μ p (k + d)}
+    (hw : w ∈ zeroOneSobolevSections A μ p (k + d)) :
+    A.tangentHom.sectionChartData.lowerOrdersL μ p k d w ∈ zeroOneSobolevSections A μ p k := by
   rw [mem_zeroOneSobolevSections_iff] at hw ⊢
   intro i
-  rw [SectionChartData.chartValueL_coe_lowerOrderL]
+  rw [SectionChartData.chartValueL_lowerOrdersL]
   exact hw i
 
 variable (A μ p k) in
-/-- The continuous inclusion of the `(0,1)`-forms of order `k + 1` into those of order `k`. -/
-def zeroOneLowerOrderL :
-    zeroOneSobolevSections A μ p (k + 1) →L[ℝ] zeroOneSobolevSections A μ p k :=
-  ((A.tangentHom.sectionChartData.lowerOrderL μ p k).comp
-    (zeroOneSobolevSections A μ p (k + 1)).subtypeL).codRestrict _
-      fun w ↦ lowerOrderL_mem_zeroOneSobolevSections w.2
+/-- The continuous inclusion of native `(0,1)`-forms from order `k + d` to order `k`. -/
+def zeroOneLowerOrdersL (d : ℕ) :
+    zeroOneSobolevSections A μ p (k + d) →L[ℝ] zeroOneSobolevSections A μ p k :=
+  (A.tangentHom.sectionChartData.lowerOrdersL μ p k d).restrict
+    (fun _ hw ↦ lowerOrdersL_mem_zeroOneSobolevSections d hw)
 
-/-- The inclusion of `(0,1)`-forms forgets the highest derivative. -/
+/-- As a function, the native order inclusion is the restriction of the canonical order map. -/
+theorem coeFn_zeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
+    ⇑(zeroOneLowerOrdersL A μ p k d) =
+      Set.codRestrict
+        (⇑(A.tangentHom.sectionChartData.lowerOrdersL μ p k d) ∘
+          ⇑(zeroOneSobolevSections A μ p (k + d)).subtypeL)
+        (zeroOneSobolevSections A μ p k)
+        (fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections d w.property) := by
+  rfl
+
+/-- The inclusion acts by the canonical order inclusion on the underlying one-form. -/
 @[simp]
-theorem coe_zeroOneLowerOrderL (w : zeroOneSobolevSections A μ p (k + 1)) :
-    (zeroOneLowerOrderL A μ p k w : SobolevSection A.tangentHom μ p k) =
-      A.tangentHom.sectionChartData.lowerOrderL μ p k w :=
-  ContinuousLinearMap.coe_codRestrict_apply _ _ _ _
+theorem coe_zeroOneLowerOrdersL (d : ℕ) (w : zeroOneSobolevSections A μ p (k + d)) :
+    (zeroOneLowerOrdersL A μ p k d w : SobolevSection A.tangentHom μ p k) =
+      A.tangentHom.sectionChartData.lowerOrdersL μ p k d w :=
+  ContinuousLinearMap.coe_restrict_apply _ _
 
-/-- The `(0,1)`-projection commutes with forgetting the highest derivative. -/
-theorem zeroOneLowerOrderL_zeroOnePartSobolevL (w : SobolevSection A.tangentHom μ p (k + 1)) :
-    zeroOneLowerOrderL A μ p k (zeroOnePartSobolevL A μ p (k + 1) w) =
-      zeroOnePartSobolevL A μ p k (A.tangentHom.sectionChartData.lowerOrderL μ p k w) :=
-  Subtype.ext (SectionChartData.lowerOrderL_constMapL μ p k _ w)
+/-- Forgetting zero derivatives is the identity. -/
+@[simp]
+theorem zeroOneLowerOrdersL_zero (w : zeroOneSobolevSections A μ p k) :
+    zeroOneLowerOrdersL A μ p k 0 w = w :=
+  Subtype.ext <| by simp only [coe_zeroOneLowerOrdersL, SectionChartData.lowerOrdersL_zero]
+
+/-- Coercion to one-forms commutes with equality transport of the Sobolev order. -/
+@[simp]
+theorem coe_zeroOneSobolevSections_eqRec {a b : ℕ} (h : a = b)
+    (w : zeroOneSobolevSections A μ p a) :
+    ((h ▸ w : zeroOneSobolevSections A μ p b) : SobolevSection A.tangentHom μ p b) =
+      h ▸ (w : SobolevSection A.tangentHom μ p a) := by
+  subst b
+  rfl
+
+/-- Native order inclusions compose, with the source order reassociated by `Nat.add_assoc`. -/
+@[simp]
+theorem zeroOneLowerOrdersL_zeroOneLowerOrdersL (d e : ℕ)
+    (w : zeroOneSobolevSections A μ p ((k + d) + e)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOneLowerOrdersL A μ p (k + d) e w) =
+      zeroOneLowerOrdersL A μ p k (d + e) ((Nat.add_assoc k d e) ▸ w) := by
+  apply Subtype.ext
+  simpa only [coe_zeroOneLowerOrdersL, coe_zeroOneSobolevSections_eqRec] using
+    A.tangentHom.sectionChartData.lowerOrdersL_lowerOrdersL μ p k d e
+      (w : SobolevSection A.tangentHom μ p ((k + d) + e))
+
+/-- Forgetting `d + 1` derivatives first forgets the highest derivative. -/
+theorem zeroOneLowerOrdersL_succ (d : ℕ) :
+    zeroOneLowerOrdersL A μ p k (d + 1) =
+      (zeroOneLowerOrdersL A μ p k d).comp (zeroOneLowerOrdersL A μ p (k + d) 1) :=
+  ContinuousLinearMap.ext fun w ↦ (zeroOneLowerOrdersL_zeroOneLowerOrdersL d 1 w).symm
+
+/-- The native order inclusion is injective. -/
+theorem zeroOneLowerOrdersL_injective (d : ℕ) :
+    Function.Injective (zeroOneLowerOrdersL A μ p k d) := fun w w' hw ↦
+  Subtype.ext <| A.tangentHom.sectionChartData.lowerOrdersL_injective μ p k d <| by
+    rw [← coe_zeroOneLowerOrdersL, hw, coe_zeroOneLowerOrdersL]
+
+/-- The native `(0,1)` projection commutes with forgetting derivatives. -/
+theorem zeroOneLowerOrdersL_zeroOnePartSobolevL (d : ℕ)
+    (w : SobolevSection A.tangentHom μ p (k + d)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOnePartSobolevL A μ p (k + d) w) =
+      zeroOnePartSobolevL A μ p k (A.tangentHom.sectionChartData.lowerOrdersL μ p k d w) :=
+  Subtype.ext (A.tangentHom.sectionChartData.lowerOrdersL_constMapL μ p k d _ w)
 
 end ZeroOne
 

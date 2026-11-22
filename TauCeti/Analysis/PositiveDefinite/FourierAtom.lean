@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
@@ -14,6 +13,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
@@ -33,6 +34,8 @@ It uses Mathlib's `2π` Fourier convention.
   the spatial variable.
 * `TauCeti.norm_iteratedFDeriv_fourierAtom_le`: the `k`-th derivative of the Fourier atom at
   frequency `q` has norm at most `(2π ‖q‖) ^ k`.
+* `TauCeti.norm_iteratedFDeriv_one_sub_fourierAtom_le`: for `‖q‖ ≤ 1`, the derivatives of
+  `1 - fourierAtom q` at `v` are `O((1 + ‖v‖) ‖q‖)`.
 * `TauCeti.contDiff_tsum_smul_fourierAtom`: a series of Fourier atoms with coefficients decaying
   faster than every power of the frequency is smooth.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
@@ -110,9 +113,10 @@ theorem fourierAtom_sub (q v w : V) :
 /-- The spatial subtraction kernel supplied by a Fourier atom is positive definite. -/
 theorem posSemidef_fourierAtom (q : V) :
     Matrix.PosSemidef fun v w : V => fourierAtom q (v - w) := by
-  simp_rw [fourierAtom_sub]
-  simpa only [RCLike.star_def] using posSemidef_rankOne
-    (fun v : V => Complex.exp (2 * ((Real.pi : ℝ) : ℂ) * Complex.I * ((inner ℝ v q : ℝ) : ℂ)))
+  refine (congrArg Matrix.PosSemidef ?_).mp (Matrix.posSemidef_vecMulVec_star_self
+    fun v : V => Complex.exp (2 * ((Real.pi : ℝ) : ℂ) * Complex.I * ((inner ℝ v q : ℝ) : ℂ)))
+  ext v w
+  rw [Matrix.vecMulVec_apply, Pi.star_apply, RCLike.star_def, ← fourierAtom_sub]
 
 /-- Fourier atoms take values on the unit circle.
 
@@ -136,11 +140,8 @@ variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] {n : WithT
 
 /-- Fourier atoms are jointly smooth in the frequency and the spatial variable. -/
 theorem contDiff_uncurry_fourierAtom : ContDiff ℝ n (Function.uncurry (fourierAtom (V := W))) := by
-  simp_rw [Function.uncurry_def, fourierAtom_eq_fourierChar, Real.fourierChar_apply]
-  exact Complex.contDiff_exp.comp
-    ((Complex.ofRealCLM.contDiff.comp
-      (contDiff_const.mul (contDiff_inner.comp (contDiff_snd.prodMk contDiff_fst)).neg)).mul
-        contDiff_const)
+  simp_rw [Function.uncurry_def, fourierAtom_eq_fourierChar]
+  exact (contDiff_inner.comp (contDiff_snd.prodMk contDiff_fst)).neg.fourierChar
 
 /-- Fourier atoms are smooth in the spatial variable. -/
 theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) :=
@@ -172,6 +173,46 @@ theorem norm_iteratedFDeriv_fourierAtom_le (q v : W) (k : ℕ) :
   refine (ℓ.norm_iteratedFDeriv_cexp_comp_le k v).trans ?_
   rw [hv, one_mul]
   gcongr
+
+/-- For a frequency `q` of norm at most `1`, the `k`-th derivative of `1 - fourierAtom q` at `v`
+has norm at most `(2π) ^ (k + 1) (1 + ‖v‖) ‖q‖`: the atom is `1` at `q = 0`, uniformly on bounded
+sets of `v` together with all its derivatives. -/
+theorem norm_iteratedFDeriv_one_sub_fourierAtom_le {q : W} (hq : ‖q‖ ≤ 1) (v : W) (k : ℕ) :
+    ‖iteratedFDeriv ℝ k (fun w ↦ 1 - fourierAtom q w) v‖ ≤
+      (2 * Real.pi) ^ (k + 1) * (1 + ‖v‖) * ‖q‖ := by
+  rcases k with _ | k
+  · -- `‖1 - exp (-2πi ⟪v, q⟫)‖ ≤ 2π |⟪v, q⟫|`.
+    rw [norm_iteratedFDeriv_zero, norm_sub_rev, fourierAtom_apply]
+    have harg : -2 * ((Real.pi : ℝ) : ℂ) * I * ((inner ℝ v q : ℝ) : ℂ) =
+        I * ((-(2 * Real.pi * inner ℝ v q) : ℝ) : ℂ) := by push_cast; ring
+    rw [harg]
+    refine Real.norm_exp_I_mul_ofReal_sub_one_le.trans ?_
+    rw [Real.norm_eq_abs, abs_neg, abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 2 * Real.pi)]
+    calc 2 * Real.pi * |inner ℝ v q| ≤ 2 * Real.pi * (‖v‖ * ‖q‖) := by
+          gcongr; exact abs_real_inner_le_norm v q
+      _ ≤ 2 * Real.pi * ((1 + ‖v‖) * ‖q‖) := by
+          gcongr
+          linarith
+      _ = (2 * Real.pi) ^ (0 + 1) * (1 + ‖v‖) * ‖q‖ := by ring
+  · -- The derivatives of positive order are those of `-fourierAtom q`.
+    have hderiv : iteratedFDeriv ℝ (k + 1) (fun w ↦ 1 - fourierAtom q w) v =
+        -iteratedFDeriv ℝ (k + 1) (fourierAtom q) v := by
+      rw [fun_iteratedFDeriv_sub_apply contDiffAt_const (contDiff_fourierAtom q).contDiffAt,
+        iteratedFDeriv_const_of_ne (Nat.succ_ne_zero k)]
+      simp
+    have h2π : 1 ≤ 2 * Real.pi := by linarith [Real.two_le_pi]
+    rw [hderiv, norm_neg]
+    calc ‖iteratedFDeriv ℝ (k + 1) (fourierAtom q) v‖ ≤ (2 * Real.pi * ‖q‖) ^ (k + 1) :=
+          norm_iteratedFDeriv_fourierAtom_le q v _
+      _ = (2 * Real.pi) ^ (k + 1) * ‖q‖ ^ (k + 1) := mul_pow _ _ _
+      _ ≤ (2 * Real.pi) ^ (k + 1) * ‖q‖ := by
+          gcongr
+          exact pow_le_of_le_one (norm_nonneg _) hq (Nat.succ_ne_zero k)
+      _ ≤ (2 * Real.pi) ^ (k + 1) * (2 * Real.pi * (1 + ‖v‖) * ‖q‖) := by
+          have h : 1 ≤ 2 * Real.pi * (1 + ‖v‖) := by nlinarith [norm_nonneg v]
+          gcongr
+          exact le_mul_of_one_le_left (norm_nonneg q) h
+      _ = _ := by ring
 
 open scoped ContDiff in
 /-- A series `v ↦ ∑ i, b i • fourierAtom (q i) v` of Fourier atoms is smooth when its coefficients

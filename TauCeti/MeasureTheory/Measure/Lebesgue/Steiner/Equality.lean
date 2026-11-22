@@ -382,7 +382,7 @@ theorem mul_perimeter_steinerSymmetrization_add_four_mul_sq_le
         {y : H | ε < v y})) atTop (𝓝 0)}
     have hbad0 : volume bad = 0 := ae_iff.1 hlevel_ae
     obtain ⟨ε, hεI, hεgood⟩ : (Ioo (0 : ℝ) (1 / ((k : ℝ) + 1)) \ bad).Nonempty :=
-      Set.nonempty_iff_ne_empty.2 fun hempty ↦ by
+      Set.ne_empty_iff_nonempty.1 fun hempty ↦ by
         have h0 := measure_mono_null (Set.sdiff_eq_empty.1 hempty) hbad0
         rw [Real.volume_Ioo, sub_zero] at h0
         exact (ENNReal.ofReal_pos.2 (by positivity)).ne' h0

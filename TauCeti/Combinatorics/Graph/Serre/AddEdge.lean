@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Logic.Equiv.Option
 import Mathlib.SetTheory.Cardinal.NatCard
@@ -23,7 +23,11 @@ Conversely, for a dart `d` of `Γ` the graph `Γ.deleteEdge d` has the vertices 
 of `Γ` other than `d` and its reverse. The two operations are inverse to each other: deleting the
 adjoined edge of `Γ.addEdge x y` gives back `Γ` (`SerreGraph.deleteEdgeAddEdgeEquiv`), and adjoining
 an edge from the source to the target of `d` to `Γ.deleteEdge d` gives back `Γ`
-(`SerreGraph.deleteEdgeSumEquiv`), compatibly with sources and reversals.
+(`SerreGraph.deleteEdgeSumEquiv`), compatibly with sources and reversals; these are isomorphisms
+of Serre graphs (`SerreGraph.deleteEdgeAddEdgeIso`, `SerreGraph.addEdgeDeleteEdgeIso`). Deleting an
+edge whose two ends stay joined keeps any two joined vertices joined
+(`SerreGraph.nonempty_deleteEdge_path`), so it keeps a connected graph connected
+(`SerreGraph.Connected.deleteEdge`).
 
 These are the changes of one-skeleton made by cutting a face of a polygonal complex along a new
 side, and by merging two faces along a common side.
@@ -38,6 +42,8 @@ side, and by merging two faces along a common side.
 * `TauCeti.SerreGraph.deleteEdgeGeomEdgeEquiv`: its geometric edges are the other geometric edges.
 * `TauCeti.SerreGraph.deleteEdgeSumEquiv`, `TauCeti.SerreGraph.deleteEdgeAddEdgeEquiv`: deleting an
   edge and adjoining it back, or adjoining an edge and deleting it, gives back the darts.
+* `TauCeti.SerreGraph.addEdgeDeleteEdgeIso`, `TauCeti.SerreGraph.deleteEdgeAddEdgeIso`: the
+  corresponding isomorphisms of Serre graphs.
 
 ## Main results
 
@@ -46,6 +52,10 @@ side, and by merging two faces along a common side.
 * `TauCeti.SerreGraph.card_addEdge_geomEdge`: the new graph has one more geometric edge.
 * `TauCeti.SerreGraph.card_deleteEdge_geomEdge_add_one`: deleting an edge removes one geometric
   edge.
+* `TauCeti.SerreGraph.nonempty_deleteEdge_path`: deleting an edge whose ends stay joined keeps two
+  joined vertices joined.
+* `TauCeti.SerreGraph.Connected.deleteEdge`: deleting an edge whose ends stay joined keeps a
+  connected graph connected.
 -/
 
 public section
@@ -91,6 +101,15 @@ theorem addEdge_src_inr_false : (Γ.addEdge x y).src (.inr false) = y := (rfl)
 @[simp] theorem addEdge_tgt_inr_true : (Γ.addEdge x y).tgt (.inr true) = y := (rfl)
 
 @[simp] theorem addEdge_tgt_inr_false : (Γ.addEdge x y).tgt (.inr false) = x := (rfl)
+
+/-- Adjoining a loop to a graph all of whose darts are loops gives a graph all of whose darts are
+loops. For instance, adjoining a loop to a graph without edges gives a one-petal rose together with
+isolated vertices. -/
+theorem addEdge_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) (e : (Γ.addEdge x x).E) :
+    (Γ.addEdge x x).src e = (Γ.addEdge x x).tgt e := by
+  rcases e with e | b
+  · exact h e
+  · cases b <;> rfl
 
 variable (Γ x y)
 
@@ -170,7 +189,8 @@ abbrev deleteEdge (d : Γ.E) : SerreGraph.{u, v} :=
 /-- The geometric edges of `Γ.deleteEdge d` are those of `Γ` other than the edge of `d`. -/
 noncomputable def deleteEdgeGeomEdgeEquiv (d : Γ.E) :
     (Γ.deleteEdge d).GeomEdge ≃ {q : Γ.GeomEdge // q ≠ Γ.toGeomEdge d} := by
-  refine Equiv.ofBijective (GeomEdge.lift _ (fun e => ⟨Γ.toGeomEdge e.1, e.2⟩) fun e => by simp)
+  refine Equiv.ofBijective (GeomEdge.lift _ (fun e => ⟨Γ.toGeomEdge e.val,
+      e.property⟩) fun e => by simp)
     ⟨fun q q' hq => ?_, fun ⟨q, hq⟩ => ?_⟩
   · obtain ⟨e, rfl⟩ := (Γ.deleteEdge d).toGeomEdge_surjective q
     obtain ⟨e', rfl⟩ := (Γ.deleteEdge d).toGeomEdge_surjective q'
@@ -182,8 +202,42 @@ noncomputable def deleteEdgeGeomEdgeEquiv (d : Γ.E) :
 
 @[simp] theorem coe_deleteEdgeGeomEdgeEquiv_toGeomEdge (d : Γ.E) (e : (Γ.deleteEdge d).E) :
     (Γ.deleteEdgeGeomEdgeEquiv d ((Γ.deleteEdge d).toGeomEdge e) : Γ.GeomEdge) =
-      Γ.toGeomEdge e.1 :=
+      Γ.toGeomEdge e.val :=
   congrArg Subtype.val (GeomEdge.lift_toGeomEdge ..)
+
+/-- Deleting an edge of a graph with finitely many geometric edges leaves finitely many geometric
+edges. -/
+instance [Finite Γ.GeomEdge] (d : Γ.E) : Finite (Γ.deleteEdge d).GeomEdge :=
+  .of_equiv _ (Γ.deleteEdgeGeomEdgeEquiv d).symm
+
+variable {Γ} in
+/-- Two vertices joined by a path stay joined after deleting the edge of `d`, when the target of
+`d` is joined to its source by a path avoiding that edge. -/
+theorem nonempty_deleteEdge_path {d : Γ.E}
+    (hd : Nonempty ((Γ.deleteEdge d).Path (Γ.tgt d) (Γ.src d))) {a b : Γ.V} (p : Γ.Path a b) :
+    Nonempty ((Γ.deleteEdge d).Path a b) := by
+  refine nonempty_path_of_path (Γ := Γ) (Δ := Γ.deleteEdge d) id (fun e => ?_) p
+  by_cases he : Γ.toGeomEdge d = Γ.toGeomEdge e
+  · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 he with rfl | rfl
+    · exact hd.map Quiver.Path.reverse
+    · rwa [src_rev, tgt_rev]
+  · exact ⟨((Γ.deleteEdge d).dart ⟨e, Ne.symm he⟩).toPath⟩
+
+variable {Γ} in
+/-- Deleting the edge of `d` from a preconnected graph leaves it preconnected when the target of
+`d` is joined to its source by a path avoiding that edge. -/
+theorem Preconnected.deleteEdge {d : Γ.E} (h : Γ.Preconnected)
+    (hd : Nonempty ((Γ.deleteEdge d).Path (Γ.tgt d) (Γ.src d))) :
+    (Γ.deleteEdge d).Preconnected :=
+  (Γ.deleteEdge d).preconnected_iff.2 fun a b =>
+    (Γ.preconnected_iff.1 h a b).elim (nonempty_deleteEdge_path hd)
+
+variable {Γ} in
+/-- Deleting the edge of `d` from a connected graph leaves it connected when the target of `d` is
+joined to its source by a path avoiding that edge. -/
+theorem Connected.deleteEdge {d : Γ.E} (h : Γ.Connected)
+    (hd : Nonempty ((Γ.deleteEdge d).Path (Γ.tgt d) (Γ.src d))) : (Γ.deleteEdge d).Connected :=
+  (Γ.deleteEdge d).connected_iff.2 ⟨(Γ.connected_iff.1 h).1, (Γ.connected_iff.1 h).2.deleteEdge hd⟩
 
 /-- Deleting an edge removes one geometric edge. -/
 theorem card_deleteEdge_geomEdge_add_one [Finite Γ.GeomEdge] (d : Γ.E) :
@@ -201,7 +255,7 @@ noncomputable def deleteEdgeSumEquiv (d : Γ.E) : (Γ.deleteEdge d).E ⊕ Bool �
     ⟨Subtype.val_injective.sumElim (fun b b' h => ?_) fun e b h => ?_, fun e => ?_⟩
   · cases b <;> cases b' <;>
       first | rfl | exact absurd h (Γ.rev_ne d) | exact absurd h.symm (Γ.rev_ne d)
-  · exact e.2 (by cases b <;> simp [h])
+  · exact e.property (by cases b <;> simp [h])
   · by_cases he : Γ.toGeomEdge e = Γ.toGeomEdge d
     · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 he with rfl | rfl
       exacts [⟨.inr true, rfl⟩, ⟨.inr false, by simp⟩]
@@ -210,7 +264,7 @@ noncomputable def deleteEdgeSumEquiv (d : Γ.E) : (Γ.deleteEdge d).E ⊕ Bool �
 variable {Γ}
 
 @[simp] theorem deleteEdgeSumEquiv_inl (d : Γ.E) (e : (Γ.deleteEdge d).E) :
-    Γ.deleteEdgeSumEquiv d (.inl e) = e.1 :=
+    Γ.deleteEdgeSumEquiv d (.inl e) = e.val :=
   (rfl)
 
 @[simp] theorem deleteEdgeSumEquiv_inr (d : Γ.E) (b : Bool) :
@@ -236,6 +290,24 @@ theorem src_deleteEdgeSumEquiv {d : Γ.E} {x y : Γ.V} (hx : x = Γ.src d) (hy :
   · exact (Γ.src_rev d).trans hy.symm
   · exact hx.symm
 
+variable (Γ) in
+/-- Adjoining an edge from the source to the target of `d` back to `Γ.deleteEdge d` gives back
+`Γ`, by the identity on vertices and `SerreGraph.deleteEdgeSumEquiv` on darts. -/
+noncomputable def addEdgeDeleteEdgeIso {d : Γ.E} {x y : Γ.V} (hx : x = Γ.src d) (hy : y = Γ.tgt d) :
+    ((Γ.deleteEdge d).addEdge x y).Iso Γ where
+  equivV := .refl _
+  equivE := Γ.deleteEdgeSumEquiv d
+  map_src := src_deleteEdgeSumEquiv hx hy
+  map_rev := deleteEdgeSumEquiv_rev d x y
+
+@[simp] theorem addEdgeDeleteEdgeIso_equivV {d : Γ.E} {x y : Γ.V} (hx : x = Γ.src d)
+    (hy : y = Γ.tgt d) : (Γ.addEdgeDeleteEdgeIso hx hy).equivV = .refl _ :=
+  (rfl)
+
+@[simp] theorem addEdgeDeleteEdgeIso_equivE {d : Γ.E} {x y : Γ.V} (hx : x = Γ.src d)
+    (hy : y = Γ.tgt d) : (Γ.addEdgeDeleteEdgeIso hx hy).equivE = Γ.deleteEdgeSumEquiv d :=
+  (rfl)
+
 variable {x y}
 
 variable (Γ) in
@@ -243,7 +315,7 @@ variable (Γ) in
 darts of `Γ`. -/
 def deleteEdgeAddEdgeEquiv {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b) :
     ((Γ.addEdge x y).deleteEdge d).E ≃ Γ.E where
-  toFun e := e.1.getLeft <| by
+  toFun e := e.val.getLeft <| by
     obtain ⟨_ | b', he⟩ := e
     · rfl
     · subst hd
@@ -254,11 +326,11 @@ def deleteEdgeAddEdgeEquiv {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b)
 
 @[simp] theorem inl_deleteEdgeAddEdgeEquiv {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b)
     (e : ((Γ.addEdge x y).deleteEdge d).E) :
-    (.inl (Γ.deleteEdgeAddEdgeEquiv hd e) : Γ.E ⊕ Bool) = e.1 :=
+    (.inl (Γ.deleteEdgeAddEdgeEquiv hd e) : Γ.E ⊕ Bool) = e.val :=
   Sum.inl_getLeft _ _
 
 @[simp] theorem coe_deleteEdgeAddEdgeEquiv_symm {d : (Γ.addEdge x y).E} {b : Bool}
-    (hd : d = .inr b) (e : Γ.E) : ((Γ.deleteEdgeAddEdgeEquiv hd).symm e).1 = .inl e :=
+    (hd : d = .inr b) (e : Γ.E) : ((Γ.deleteEdgeAddEdgeEquiv hd).symm e).val = .inl e :=
   (rfl)
 
 /-- Deleting the adjoined edge gives back the sources of `Γ`. -/
@@ -275,6 +347,24 @@ theorem deleteEdgeAddEdgeEquiv_rev {d : (Γ.addEdge x y).E} {b : Bool} (hd : d =
   apply Sum.inl_injective
   rw [inl_deleteEdgeAddEdgeEquiv, restrict_rev_val, ← inl_deleteEdgeAddEdgeEquiv hd e,
     addEdge_rev_inl]
+
+variable (Γ) in
+/-- Deleting the adjoined edge of `Γ.addEdge x y`, given by either of its darts, gives back `Γ`, by
+the identity on vertices and `SerreGraph.deleteEdgeAddEdgeEquiv` on darts. -/
+def deleteEdgeAddEdgeIso {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b) :
+    ((Γ.addEdge x y).deleteEdge d).Iso Γ where
+  equivV := .refl _
+  equivE := Γ.deleteEdgeAddEdgeEquiv hd
+  map_src := src_deleteEdgeAddEdgeEquiv hd
+  map_rev := deleteEdgeAddEdgeEquiv_rev hd
+
+@[simp] theorem deleteEdgeAddEdgeIso_equivV {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b) :
+    (Γ.deleteEdgeAddEdgeIso hd).equivV = .refl _ :=
+  (rfl)
+
+@[simp] theorem deleteEdgeAddEdgeIso_equivE {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b) :
+    (Γ.deleteEdgeAddEdgeIso hd).equivE = Γ.deleteEdgeAddEdgeEquiv hd :=
+  (rfl)
 
 end SerreGraph
 

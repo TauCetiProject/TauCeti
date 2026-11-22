@@ -66,7 +66,7 @@ theorem UniversallyInjective.of_comp_surjective {Z : Scheme.{u}} (f : X ⟶ Y) (
     ((IsPullback.of_hasPullback i₁ f).paste_horiz H)
   have hs : Surjective (pullback.fst i₁ f) :=
     MorphismProperty.of_isPullback (IsPullback.of_hasPullback i₁ f).flip ‹_›
-  exact Function.Injective.of_comp_right (f := g'.base) (g := (pullback.fst i₁ f).base) this hs.1
+  exact Function.Injective.of_comp_right (f := g'.base) (g := (pullback.fst i₁ f).base) this hs.surj
 
 end AlgebraicGeometry
 

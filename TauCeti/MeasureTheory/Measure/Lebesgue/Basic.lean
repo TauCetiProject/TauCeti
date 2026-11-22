@@ -13,7 +13,10 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 Replacing two subsets of the real line by open centered intervals of the same respective
 volumes can only decrease the volume of their one-sided difference. The inequality uses
 Mathlib's extended-radius balls and `Real.volume_eball`, and allows zero and infinite volumes.
-It supplies the sectionwise contraction inequality for Steiner symmetrization.
+It supplies the sectionwise contraction inequality for Steiner symmetrization. The annulus
+between two concentric open intervals of radii `0 ≤ r ≤ R` has length `2 (R - r)`
+(`TauCeti.volume_ball_sdiff_ball`), so that between radii `r` and `2r` has length `2r`
+(`TauCeti.volume_ball_two_mul_sdiff_ball`).
 
 An order-connected subset of the real line of positive finite volume agrees almost everywhere
 with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): finite volume
@@ -28,6 +31,10 @@ preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
 
 The Lebesgue measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of
 their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
+
+Cutting a closed box `Set.Icc a b` in `ι → ℝ` along coordinate `k` at `t` produces two almost-
+everywhere disjoint sub-boxes (`TauCeti.aeDisjoint_Icc_update`), as their intersection lies in a
+coordinate hyperplane of measure zero.
 -/
 
 public section
@@ -101,6 +108,23 @@ theorem volume_eball_ofReal_symmDiff_le (a b : ℝ) :
   rw [symmDiff_comm, abs_sub_comm]
   exact hle (le_max_right _ _) hba
 
+/-- The annulus between two concentric open intervals of radii `0 ≤ r ≤ R` has length
+`2 (R - r)`. -/
+theorem volume_ball_sdiff_ball {r R : ℝ} (hr : 0 ≤ r) (hrR : r ≤ R) (x : ℝ) :
+    volume (Metric.ball x R \ Metric.ball x r) = ENNReal.ofReal (2 * (R - r)) := by
+  rw [measure_sdiff (Metric.ball_subset_ball hrR) measurableSet_ball.nullMeasurableSet
+    measure_ball_lt_top.ne, Real.volume_ball, Real.volume_ball,
+    ← ENNReal.ofReal_sub _ (by positivity), mul_sub]
+
+/-- The annulus between the open intervals of radii `r` and `2r` about a point has length `2r`. -/
+theorem volume_ball_two_mul_sdiff_ball (r x : ℝ) :
+    volume (Metric.ball x (2 * r) \ Metric.ball x r) = ENNReal.ofReal (2 * r) := by
+  rcases le_or_gt 0 r with hr | hr
+  · rw [volume_ball_sdiff_ball hr (by linarith)]
+    ring_nf
+  · rw [Metric.ball_eq_empty.2 (by linarith), empty_sdiff, measure_empty,
+      ENNReal.ofReal_of_nonpos (by linarith)]
+
 /-- A permutation of the coordinates combined with sign changes, `x ↦ fun i => c i * x (e i)`
 with `|c i| = 1`, preserves Lebesgue measure on `ι → ℝ`. -/
 theorem volume_preserving_signedPerm {ι : Type*} [Fintype ι] (e : Equiv.Perm ι) (c : ι → ℝ)
@@ -123,6 +147,20 @@ theorem volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι
     ENNReal.ofReal_sum_of_nonneg fun i _ ↦ sub_nonneg.2 min_le_max]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Real.volume_uIoc, ← max_sub_min_eq_abs', max_comm, min_comm]
+
+/-- The two sub-boxes obtained by splitting `Set.Icc a b` along coordinate `k` at `t` meet in the
+hyperplane slice `x k = t` of Lebesgue measure zero, hence are almost-everywhere disjoint. -/
+theorem aeDisjoint_Icc_update {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (a b : ι → ℝ) (k : ι) (t : ℝ) :
+    AEDisjoint volume (Icc a (Function.update b k t)) (Icc (Function.update a k t) b) := by
+  have hsub : Icc a (Function.update b k t) ∩ Icc (Function.update a k t) b ⊆
+      Icc (Function.update a k t) (Function.update b k t) := by
+    rintro x ⟨⟨_, hx₁⟩, ⟨hx₂, _⟩⟩
+    exact ⟨hx₂, hx₁⟩
+  have hzero : volume (Icc (Function.update a k t) (Function.update b k t)) = 0 := by
+    rw [Real.volume_Icc_pi]
+    exact Finset.prod_eq_zero (Finset.mem_univ k) (by simp)
+  exact measure_mono_null hsub hzero
 
 end TauCeti
 

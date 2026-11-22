@@ -219,6 +219,83 @@ theorem mulSub_pow_apply (N : ℕ) (c : FormalDistribution M) (m n : ℤ) :
     rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_neg_distrib]
     abel
 
+/-- Applying an additive group homomorphism coefficientwise commutes with `(z - w)^N`. -/
+theorem mulSub_pow_comp {M' : Type*} [AddCommGroup M'] (φ : M →+ M')
+    (c : FormalDistribution M) (N : ℕ) (m n : ℤ) :
+    (mulSub ^ N) (fun x y ↦ φ (c x y)) m n = φ ((mulSub ^ N) c m n) := by
+  induction N generalizing m n with
+  | zero => rfl
+  | succ N ih =>
+    rw [pow_succ', pow_succ', AddMonoid.End.coe_mul, AddMonoid.End.coe_mul,
+      Function.comp_apply, Function.comp_apply, mulSub_apply, mulSub_apply, ih, ih, map_sub]
+
+/-- Reindex a binomial `(z - w)^N` sum over `antidiagonal N` to `Finset.range (N + 1)` by the
+second index `j`, rewriting `N.choose (N - j)` as `Ring.choose (N : ℤ) j`. -/
+theorem sum_antidiagonal_choose_eq_sum_range_succ_left (N : ℕ) (c : FormalDistribution M)
+    (m n : ℤ) :
+    ∑ ij ∈ Finset.HasAntidiagonal.antidiagonal N,
+        N.choose ij.1 • (-1 : ℤ) ^ ij.2 • c (m + ij.1) (n + ij.2) =
+      ∑ j ∈ Finset.range (N + 1), (-1 : ℤ) ^ j • Ring.choose (N : ℤ) j •
+        c (m + N - j) (n + j) := by
+  rw [← Finset.Nat.sum_antidiagonal_swap]
+  simp only [Prod.fst_swap, Prod.snd_swap]
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+    (fun j i ↦ N.choose i • (-1 : ℤ) ^ j • c (m + i) (n + j))]
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  have hjN : j ≤ N := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+  have hidx : m + ((N - j : ℕ) : ℤ) = m + (N : ℤ) - j := by omega
+  rw [Nat.choose_symm hjN, hidx, Ring.choose_natCast, ← natCast_zsmul, smul_comm]
+
+/-- Reindex a binomial `(z - w)^N` sum over `antidiagonal N` to `Finset.range (N + 1)` by the
+first index `i`, pulling out `Int.negOnePow N` via `(-1) ^ (N - i) = (-1) ^ N * (-1) ^ i`. -/
+theorem sum_antidiagonal_choose_eq_sum_range_succ_right (N : ℕ) (c : FormalDistribution M)
+    (m n : ℤ) :
+    ∑ ij ∈ Finset.HasAntidiagonal.antidiagonal N,
+        N.choose ij.1 • (-1 : ℤ) ^ ij.2 • c (m + ij.1) (n + ij.2) =
+      ∑ i ∈ Finset.range (N + 1), (-1 : ℤ) ^ i • Ring.choose (N : ℤ) i •
+        Int.negOnePow (N : ℤ) • c (m + i) (N + n - i) := by
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+    (fun i j ↦ N.choose i • (-1 : ℤ) ^ j • c (m + i) (n + j))]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hiN : i ≤ N := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+  have hidx : n + ((N - i : ℕ) : ℤ) = (N : ℤ) + n - i := by omega
+  rw [hidx, Ring.choose_natCast, ← natCast_zsmul, Units.smul_def,
+    ← Int.coe_negOnePow_natCast (N - i), Nat.cast_sub hiN, Int.negOnePow_sub, Units.val_mul,
+    Int.coe_negOnePow_natCast, Int.coe_negOnePow_natCast]
+  module
+
+/-- Reindex a binomial `(z - w)^N` sum over `antidiagonal N` to `Finset.range K` by the second
+index when `c (m + N - j) (n + j) = 0` for `K ≤ j`. -/
+theorem sum_antidiagonal_choose_eq_sum_range_left (N : ℕ) (c : FormalDistribution M)
+    (m n : ℤ) {K : ℕ} (hc : ∀ j : ℕ, K ≤ j → c (m + N - j) (n + j) = 0) :
+    ∑ ij ∈ Finset.HasAntidiagonal.antidiagonal N,
+        N.choose ij.1 • (-1 : ℤ) ^ ij.2 • c (m + ij.1) (n + ij.2) =
+      ∑ j ∈ Finset.range K, (-1 : ℤ) ^ j • Ring.choose (N : ℤ) j •
+        c (m + N - j) (n + j) := by
+  rw [sum_antidiagonal_choose_eq_sum_range_succ_left]
+  rcases le_or_gt (N + 1) K with hNK | hKN
+  · exact Finset.sum_subset (Finset.range_mono hNK) fun j _ hj ↦ by
+      simp [Ring.choose_natCast,
+        Nat.choose_eq_zero_of_lt (show N < j by simp only [Finset.mem_range] at hj; omega)]
+  · exact (Finset.sum_subset (Finset.range_mono hKN.le) fun j _ hj ↦ by
+      simp [hc j (by simp only [Finset.mem_range] at hj; omega)]).symm
+
+/-- Reindex a binomial `(z - w)^N` sum over `antidiagonal N` to `Finset.range K` by the first
+index when `c (m + i) (N + n - i) = 0` for `K ≤ i`. -/
+theorem sum_antidiagonal_choose_eq_sum_range_right (N : ℕ) (c : FormalDistribution M)
+    (m n : ℤ) {K : ℕ} (hc : ∀ i : ℕ, K ≤ i → c (m + i) (N + n - i) = 0) :
+    ∑ ij ∈ Finset.HasAntidiagonal.antidiagonal N,
+        N.choose ij.1 • (-1 : ℤ) ^ ij.2 • c (m + ij.1) (n + ij.2) =
+      ∑ i ∈ Finset.range K, (-1 : ℤ) ^ i • Ring.choose (N : ℤ) i •
+        Int.negOnePow (N : ℤ) • c (m + i) (N + n - i) := by
+  rw [sum_antidiagonal_choose_eq_sum_range_succ_right]
+  rcases le_or_gt (N + 1) K with hNK | hKN
+  · exact Finset.sum_subset (Finset.range_mono hNK) fun i _ hi ↦ by
+      simp [Ring.choose_natCast,
+        Nat.choose_eq_zero_of_lt (show N < i by simp only [Finset.mem_range] at hi; omega)]
+  · exact (Finset.sum_subset (Finset.range_mono hKN.le) fun i _ hi ↦ by
+      simp [hc i (by simp only [Finset.mem_range] at hi; omega)]).symm
+
 end FormalDistribution
 
 end TauCeti

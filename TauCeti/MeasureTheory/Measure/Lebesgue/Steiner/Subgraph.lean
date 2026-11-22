@@ -201,8 +201,8 @@ theorem perimeter_setOf_abs_inner_lt_div_two_le (e : E) (he : ‖e‖ = 1)
             simp only [add_apply, ContinuousLinearMap.comp_apply, smul_apply, innerSL_apply_apply,
               orthogonalLineEquiv_apply, hqyt, InnerProductSpace.toDual_apply_apply, inner_add_left,
               inner_add_right, inner_smul_left, inner_smul_right,
-              Submodule.mem_orthogonal_singleton_iff_inner_left.mp v.2,
-              Submodule.mem_orthogonal_singleton_iff_inner_right.mp y_z.2,
+              Submodule.mem_orthogonal_singleton_iff_inner_left.mp v.property,
+              Submodule.mem_orthogonal_singleton_iff_inner_right.mp y_z.property,
               real_inner_self_eq_norm_sq, he, smul_eq_mul, starRingEnd_apply, star_trivial,
               mul_zero, add_zero, zero_add, one_pow, mul_one, hv_apply]
             ring
