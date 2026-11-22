@@ -48,7 +48,7 @@ case, the Lie polynomial in the free Lie algebra on two generators over any comm
 ## Main statements
 
 * `TauCeti.LieAlgebra.add_pow_eq_jacobson`: **Jacobson's formula**,
-  `(a + b) ^ p = a ^ p + b ^ p + jacobson p a b` in a ring of prime characteristic `p`.
+  `(a + b) ^ p = a ^ p + b ^ p + jacobson p a b` in a ring of exponential characteristic `p`.
 * `LieHom.map_jacobson`, `TauCeti.LieAlgebra.lift_jacobsonLie`: `Λ_p` is natural for Lie algebra
   morphisms, and is the value of the Lie polynomial `jacobsonLie R p`.
 * `TauCeti.LieAlgebra.jacobson_eq_zero_of_lie_eq_zero`: `Λ_p(x, y) = 0` when `⁅x, y⁆ = 0`.
@@ -339,6 +339,7 @@ private theorem coeff_pow_succ_eq (p : ℕ) [hp : Fact p.Prime] [CharP A p] (a b
     (hj : j < p - 1) :
     ((C a * X + C b) ^ p).coeff (j + 1) =
       ((j + 1 : ZMod p)⁻¹).val • jacobsonCoeff a b (p - 1) j := by
+  have : ExpChar A p := ExpChar.prime hp.out
   have hder : ((C a * X + C b) ^ p).coeff (j + 1) * ((j + 1 : ℕ) : A) =
       jacobsonCoeff a b (p - 1) j := by
     rw [← coeff_ad_pow_apply, ad_pow_sub_one_apply p, Nat.cast_succ, ← coeff_derivative,
@@ -349,28 +350,31 @@ private theorem coeff_pow_succ_eq (p : ℕ) [hp : Fact p.Prime] [CharP A p] (a b
       (Nat.coprime_comm.1 (Nat.coprime_of_lt_prime (n := j + 1) (by omega) (by omega) hp.out))
   rw [nsmul_eq_mul, ← hder, Nat.cast_comm, mul_assoc, hinv, mul_one]
 
-/-- **Jacobson's formula.**  In a ring of prime characteristic `p`,
+/-- **Jacobson's formula.**  In a ring of exponential characteristic `p`,
 `(a + b) ^ p = a ^ p + b ^ p + Λ_p(a, b)` for the ring commutator. -/
-theorem add_pow_eq_jacobson (p : ℕ) [hp : Fact p.Prime] [CharP A p] (a b : A) :
+theorem add_pow_eq_jacobson (p : ℕ) [hp : ExpChar A p] (a b : A) :
     (a + b) ^ p = a ^ p + b ^ p + jacobson p a b := by
-  have hlin : (C a * X + C b).natDegree ≤ 1 := natDegree_linear_le
-  have hdeg : ((C a * X + C b) ^ p).natDegree < p + 1 :=
-    (natDegree_pow_le.trans (Nat.mul_le_mul_left p hlin)).trans_lt (by omega)
-  -- Evaluating at `t = 1`, which is central, gives the sum of the coefficients.
-  have hsum : (a + b) ^ p = ∑ i ∈ range (p + 1), ((C a * X + C b) ^ p).coeff i := by
-    let φ := eval₂RingHom' (RingHom.id A) 1 fun _ ↦ Commute.one_right _
-    have hφ : φ (C a * X + C b) = a + b := by simp [φ]
-    rw [← hφ, ← map_pow]
-    simp [φ, eval₂_eq_sum_range' _ hdeg]
-  have h0 : ((C a * X + C b) ^ p).coeff 0 = b ^ p := by
-    rw [← constantCoeff_apply, map_pow]
-    simp
-  have htop : ((C a * X + C b) ^ p).coeff p = a ^ p := by
-    simpa using coeff_pow_of_natDegree_le (m := p) hlin
-  obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, (Nat.sub_add_cancel hp.out.one_le).symm⟩
-  rw [hsum, sum_range_succ, sum_range_succ', h0, htop, jacobson_def, Nat.add_sub_cancel,
-    sum_congr rfl fun j hj ↦ coeff_pow_succ_eq (q + 1) a b (by simpa using hj)]
-  ac_rfl
+  obtain _ | ⟨hprime⟩ := hp
+  · simp
+  · have : Fact p.Prime := ⟨hprime⟩
+    have hlin : (C a * X + C b).natDegree ≤ 1 := natDegree_linear_le
+    have hdeg : ((C a * X + C b) ^ p).natDegree < p + 1 :=
+      (natDegree_pow_le.trans (Nat.mul_le_mul_left p hlin)).trans_lt (by omega)
+    -- Evaluating at `t = 1`, which is central, gives the sum of the coefficients.
+    have hsum : (a + b) ^ p = ∑ i ∈ range (p + 1), ((C a * X + C b) ^ p).coeff i := by
+      let φ := eval₂RingHom' (RingHom.id A) 1 fun _ ↦ Commute.one_right _
+      have hφ : φ (C a * X + C b) = a + b := by simp [φ]
+      rw [← hφ, ← map_pow]
+      simp [φ, eval₂_eq_sum_range' _ hdeg]
+    have h0 : ((C a * X + C b) ^ p).coeff 0 = b ^ p := by
+      rw [← constantCoeff_apply, map_pow]
+      simp
+    have htop : ((C a * X + C b) ^ p).coeff p = a ^ p := by
+      simpa using coeff_pow_of_natDegree_le (m := p) hlin
+    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, (Nat.sub_add_cancel hprime.one_le).symm⟩
+    rw [hsum, sum_range_succ, sum_range_succ', h0, htop, jacobson_def, Nat.add_sub_cancel,
+      sum_congr rfl fun j hj ↦ coeff_pow_succ_eq (q + 1) a b (by simpa using hj)]
+    ac_rfl
 
 /-- For odd `p`, `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀ ≠ 0` for the matrix units of `2 × 2` matrices over
 `ZMod p`: their `p`-th powers vanish while `(E₀₁ + E₁₀) ^ p = E₀₁ + E₁₀`, so the Frobenius of a
@@ -379,6 +383,7 @@ is needed. -/
 theorem jacobson_single_single (p : ℕ) [Fact p.Prime] (hp : p ≠ 2) :
     jacobson p (Matrix.single (0 : Fin 2) (1 : Fin 2) (1 : ZMod p)) (Matrix.single 1 0 1) =
       Matrix.single 0 1 1 + Matrix.single 1 0 1 := by
+  have : ExpChar (Matrix (Fin 2) (Fin 2) (ZMod p)) p := ExpChar.prime Fact.out
   set a : Matrix (Fin 2) (Fin 2) (ZMod p) := Matrix.single 0 1 1
   set b : Matrix (Fin 2) (Fin 2) (ZMod p) := Matrix.single 1 0 1
   have ha : a ^ 2 = 0 := by simp [a, sq]

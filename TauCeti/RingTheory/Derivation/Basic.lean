@@ -188,6 +188,16 @@ namespace Derivation
 
 section Rescale
 
+/-!
+### Triangular rescaling expansion
+
+The coefficients `hochschildCoeff` and the triangular expansion
+`iterate_smul_eq_sum_hochschildCoeff` generalize the rescaling expansion introduced for Wronskians
+in `TauCeti/RingTheory/Derivation/Wronskian/Rescale.lean` (after D. M. Goldschmidt, *Algebraic
+Functions and Projective Curves*, GTM 215, Springer, 2003), allowing an arbitrary target
+derivation over independent scalars `S` intertwined via a ring homomorphism `f`.
+-/
+
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 /-- Recursive coefficients `P n k` in the triangular expansion
@@ -240,9 +250,9 @@ private theorem map_hochschildCoeff_zero (D : Derivation R A A) (a : A) (n : ℕ
   | succ m => exact map_zero D
 
 /-- Universal triangular expansion of `(f a • E)^[n] y` along any ring homomorphism
-`f : A →+* B` and derivation `E : Derivation R B B` intertwining `D` via `f`. -/
-theorem iterate_smul_eq_sum_hochschildCoeff {B : Type*} [CommSemiring B] [Algebra R B]
-    (D : Derivation R A A) (E : Derivation R B B) (f : A →+* B)
+`f : A →+* B` and derivation `E : Derivation S B B` intertwining `D` via `f`. -/
+theorem iterate_smul_eq_sum_hochschildCoeff {S B : Type*} [CommSemiring S] [CommSemiring B]
+    [Algebra S B] (D : Derivation R A A) (E : Derivation S B B) (f : A →+* B)
     (hf : ∀ x : A, E (f x) = f (D x)) (a : A) :
     ∀ (n : ℕ) (y : B),
       (⇑(f a • E))^[n] y =

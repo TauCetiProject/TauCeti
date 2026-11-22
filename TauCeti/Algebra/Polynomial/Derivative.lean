@@ -10,7 +10,10 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Algebra.Polynomial.FieldDivision
+import Mathlib.RingTheory.PolynomialAlgebra
 import TauCeti.Data.Nat.Factorial.NatCast
+import TauCeti.RingTheory.Derivation.BaseChange
+import TauCeti.RingTheory.Derivation.Basic
 
 /-!
 # Polynomial derivatives
@@ -28,7 +31,8 @@ simple root of `p` need not be a root of `p.derivative`; together with the roots
 `p.derivative.roots` and the distinct roots of `p`.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
-and every scalar multiple of it is locally nilpotent.
+and every scalar multiple of it is locally nilpotent. Any derivation `D` of `A` also acts
+coefficientwise on `A[X]` (`Derivation.coeffDer`).
 
 For a polynomial `p` with coefficients in an `R`-algebra `S`, possibly noncommutative, evaluating
 `p′` at the central element `algebraMap R S t` expands as a sum of the coefficients of `p`
@@ -358,3 +362,57 @@ theorem derivative_pow_eq_sum {R : Type*} [Semiring R] (f : R[X]) (n : ℕ) :
     rw [mul_assoc, ← pow_succ, show n - 1 - k + 1 = n - k by grind]
 
 end Polynomial
+
+namespace Derivation
+
+section CoeffDer
+
+open Polynomial
+
+variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+
+/-- The `R`-derivation on `A[X]` obtained by applying `D : Derivation R A A` coefficientwise.
+Defined by transporting the scalar extension `D.baseChange R[X]` along
+`R[X] ⊗[R] A ≃ₐ[R] A ⊗[R] R[X] ≃ₐ[R] A[X]`; this is the semiring analogue of Mathlib's
+`Derivation.mapCoeffs` with target `A[X]`. -/
+noncomputable def coeffDer (D : Derivation R A A) : Derivation R A[X] A[X] :=
+  ((D.baseChange R[X]).restrictScalars R).conjAlgEquiv
+    ((Algebra.TensorProduct.comm R R[X] A).trans (polyEquivTensor R A).symm)
+
+/-- Applying `D.coeffDer` to a monomial differentiates its coefficient. -/
+@[simp]
+theorem coeffDer_monomial (D : Derivation R A A) (n : ℕ) (a : A) :
+    D.coeffDer (monomial n a) = monomial n (D a) := by
+  have hpoly : polyEquivTensor R A (monomial n a) = a ⊗ₜ[R] (X ^ n) := by
+    rw [polyEquivTensor_apply, eval₂_monomial, AlgHom.coe_toRingHom,
+      Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.tmul_pow, one_pow,
+      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+  rw [coeffDer, conjAlgEquiv_apply, AlgEquiv.trans_apply, AlgEquiv.symm_trans_apply,
+    AlgEquiv.symm_symm, hpoly, Algebra.TensorProduct.comm_symm_tmul,
+    Derivation.restrictScalars_apply, Derivation.baseChange_tmul,
+    Algebra.TensorProduct.comm_tmul, polyEquivTensor_symm_apply_tmul_eq_smul, Polynomial.map_pow,
+    Polynomial.map_X, ← C_mul_X_pow_eq_monomial, Algebra.smul_def, Polynomial.algebraMap_eq]
+
+/-- Applying `D.coeffDer` to a constant polynomial `C a` gives `C (D a)`. -/
+@[simp]
+theorem coeffDer_C (D : Derivation R A A) (a : A) : D.coeffDer (C a) = C (D a) := by
+  simp [← monomial_zero_left]
+
+/-- `D.coeffDer` kills the indeterminate `X`. -/
+@[simp]
+theorem coeffDer_X (D : Derivation R A A) : D.coeffDer (X : A[X]) = 0 := by
+  simp [← monomial_one_one_eq_X]
+
+/-- Each coefficient of `D.coeffDer f` is `D` applied to the corresponding coefficient of `f`. -/
+@[simp]
+theorem coeff_coeffDer (D : Derivation R A A) (f : A[X]) (k : ℕ) :
+    (D.coeffDer f).coeff k = D (f.coeff k) := by
+  induction f using Polynomial.induction_on' with
+  | add p q hp hq => simp [hp, hq]
+  | monomial n a =>
+    simp only [coeffDer_monomial, coeff_monomial, Finsupp.single_apply]
+    split_ifs <;> simp
+
+end CoeffDer
+
+end Derivation

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Nat.Choose.Dvd
+import Mathlib.Data.Nat.Prime.Factorial
 
 /-!
 # Natural casts and `p`-power maps in exponential characteristic `p`
@@ -20,7 +21,8 @@ vanish among the primes, so there are arbitrarily large primes with nonzero cast
 prime to the characteristic of a nontrivial ring is nonzero. In characteristic a prime `p`, the
 binomial coefficient `(p - 1).choose k` is `(-1) ^ k` for `k ≤ p - 1`. In characteristic `p`, the
 natural-number representative of the inverse of `m` modulo `p` inverts the cast of `m` when `m` is
-prime to `p`.
+prime to `p`, making `m` (and `m!` for `m < p` when `p` is prime) a unit in any semiring of
+characteristic `p`.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -41,6 +43,10 @@ law.
   characteristic `p`.
 * `TauCeti.natCast_mul_natCast_val_inv_eq_one`: `m * (m⁻¹ : ZMod p).val = 1` in characteristic
   `p` when `m` is prime to `p`.
+* `TauCeti.isUnit_natCast_of_coprime`: `(m : R)` is a unit in characteristic `p` when `m` is
+  prime to `p`.
+* `TauCeti.isUnit_natCast_factorial_of_lt`: `(m ! : R)` is a unit in prime characteristic `p`
+  for `m < p`.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
 -/
 
@@ -108,6 +114,24 @@ theorem natCast_mul_natCast_val_inv_eq_one {R : Type*} [NonAssocSemiring R] (p :
   rw [← Nat.cast_mul, ← Nat.cast_one]
   exact CharP.natCast_eq_natCast' R p
     ((ZMod.natCast_eq_natCast_iff _ _ _).1 (by push_cast; exact ZMod.mul_val_inv hm))
+
+/-- In characteristic `p`, any natural number coprime to `p` casts to a unit in a semiring. -/
+theorem isUnit_natCast_of_coprime {R : Type*} [Semiring R] (p : ℕ) [CharP R p] {m : ℕ}
+    (hm : m.Coprime p) : IsUnit (m : R) := by
+  have hr : (m : R) * ((m⁻¹ : ZMod p).val : R) = 1 :=
+    natCast_mul_natCast_val_inv_eq_one p hm
+  have hl : ((m⁻¹ : ZMod p).val : R) * (m : R) = 1 := by
+    rw [← Nat.cast_mul, mul_comm, Nat.cast_mul]
+    exact hr
+  exact ⟨⟨(m : R), ((m⁻¹ : ZMod p).val : R), hr, hl⟩, rfl⟩
+
+open scoped Nat in
+/-- In prime characteristic `p`, `(m ! : R)` is a unit in any semiring `R` for every `m < p`. -/
+theorem isUnit_natCast_factorial_of_lt {R : Type*} [Semiring R] (p : ℕ) [hp : Fact p.Prime]
+    [CharP R p] {m : ℕ} (hmp : m < p) : IsUnit (m ! : R) :=
+  isUnit_natCast_of_coprime p <| by
+    rw [Nat.coprime_comm, hp.out.coprime_iff_not_dvd, hp.out.dvd_factorial]
+    omega
 
 variable {R : Type*} [Ring R] (p n : ℕ) [ExpChar R p]
 
