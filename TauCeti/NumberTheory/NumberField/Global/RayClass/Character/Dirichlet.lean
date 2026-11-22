@@ -359,14 +359,6 @@ theorem toDirichletCharacter_ratModulus_natCast (m : ℕ) :
     η.toDirichletCharacter m = ratDirichletEquiv n hn η m := by
   simpa only [Int.cast_natCast] using toDirichletCharacter_ratModulus_intCast η (m : ℤ)
 
-theorem toDirichletCharacter_ratDirichletEquiv_symm_intCast (χ : DirichletCharacter ℂ n) (m : ℤ) :
-    ((ratDirichletEquiv n hn).symm χ).toDirichletCharacter m = χ m := by
-  rw [toDirichletCharacter_ratModulus_intCast, MulEquiv.apply_symm_apply]
-
-theorem toDirichletCharacter_ratDirichletEquiv_symm_natCast (χ : DirichletCharacter ℂ n) (m : ℕ) :
-    ((ratDirichletEquiv n hn).symm χ).toDirichletCharacter m = χ m := by
-  rw [toDirichletCharacter_ratModulus_natCast, MulEquiv.apply_symm_apply]
-
 /-- **The conductor of `ψ.toDirichletCharacter` is the absolute norm of the finite part of
 `ψ.conductor`**, for every modulus `𝔪` of `ℚ`. -/
 @[simp]

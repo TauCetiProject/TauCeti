@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Dirichlet
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
@@ -116,6 +115,6 @@ theorem LSeries_ratDirichletEquiv_symm {n : ℕ} (hn : n ≠ 0) (χ : DirichletC
   rw [LSeries_toUnitaryIdealWeight_eq]
   apply LSeries_congr
   intro m _
-  exact toDirichletCharacter_ratDirichletEquiv_symm_natCast χ m
+  simp only [toDirichletCharacter_ratModulus_natCast, MulEquiv.apply_symm_apply]
 
 end TauCeti.GlobalNumberFields.RayClassCharacter

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.EulerCorrection.Basic
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 
 /-!
 # Presented Hecke L-functions of ray class characters

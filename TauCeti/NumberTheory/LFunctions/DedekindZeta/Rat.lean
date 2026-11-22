@@ -8,8 +8,6 @@ module
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
-import Mathlib.NumberTheory.LSeries.Dirichlet
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!

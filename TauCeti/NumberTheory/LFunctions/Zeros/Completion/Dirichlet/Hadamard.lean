@@ -360,7 +360,7 @@ theorem tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction_add
           (1 / (s - ρ)).re =
       (logDeriv χ.LFunction s).re + Real.log N / 2 + (logDeriv χ.gammaFactor s).re := by
   have hΛ : (dirichletData χ hχ).entireCompletion s ≠ 0 :=
-    (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hs).not.mpr hL
+    (dirichletData_entireCompletion_eq_zero_iff χ hχ hs).not.mpr hL
   rw [← re_logDeriv_dirichletData_entireCompletion_eq_tsum χ hχ hΛ,
     χ.re_logDeriv_dirichletData_entireCompletion hχ hne hs hL]
   ring
@@ -420,7 +420,7 @@ theorem one_div_sub_le_re_logDeriv_LFunction_add {N : ℕ} [NeZero N] (χ : Diri
     1 / (σ - β) ≤ (logDeriv χ.LFunction σ).re + Real.log N / 2 + TauCeti.gammaLogDerivBound := by
   have hβre : 0 < ((β : ℂ)).re := by simpa using hβ
   have hΛβ : (dirichletData χ hχ).entireCompletion β = 0 :=
-    (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hβre).mpr hzero
+    (dirichletData_entireCompletion_eq_zero_iff χ hχ hβre).mpr hzero
   have hβ1 : β < 1 := by
     simpa using (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hΛβ).2
   have hσβ : 0 < σ - β := by linarith [hσ.1]
@@ -507,7 +507,7 @@ theorem re_logDeriv_LFunction_add_eq_tsum (hχ : χ.IsPrimitive) (hne : χ ≠ 1
     (logDeriv χ.LFunction s).re + Real.log N / 2 + (logDeriv χ.gammaFactor s).re =
       ∑' ρ : ℂ, (analyticOrderNatAt χ.completedLFunction ρ : ℝ) * (1 / (s - ρ)).re := by
   have hΛ : (dirichletData χ hχ).entireCompletion s ≠ 0 :=
-    (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hs).not.mpr hL
+    (dirichletData_entireCompletion_eq_zero_iff χ hχ hs).not.mpr hL
   have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hs hL
   rw [TauCeti.LFunctions.re_logDeriv_dirichletData_entireCompletion χ hχ hΛ] at hlog
   simp_rw [← analyticOrderNatAt_dirichletData_entireCompletion χ hχ hne]
@@ -544,7 +544,7 @@ theorem re_one_div_sub_le_re_logDeriv_LFunction_add_gammaFactor (hχ : χ.IsPrim
   have hspos : 0 < s.re := by linarith
   have hL : χ.LFunction s ≠ 0 := χ.LFunction_ne_zero_of_one_le_re (.inl hne) hs
   have hΛ0 : (dirichletData χ hχ).entireCompletion ρ = 0 :=
-    (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hρ).mpr hz
+    (dirichletData_entireCompletion_eq_zero_iff χ hχ hρ).mpr hz
   have hle := re_one_div_sub_le_re_logDeriv_dirichletData_entireCompletion χ hχ hΛ0 hs
   have hlog := χ.re_logDeriv_dirichletData_entireCompletion hχ hne hspos hL
   linarith

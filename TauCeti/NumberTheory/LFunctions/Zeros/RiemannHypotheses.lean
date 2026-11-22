@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.CriticalLine
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
 
 /-!
 # The extended and generalized Riemann hypotheses over a number field

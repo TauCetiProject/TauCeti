@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 
 /-!
 # Trivial Hecke L-functions and the continued Dedekind zeta function

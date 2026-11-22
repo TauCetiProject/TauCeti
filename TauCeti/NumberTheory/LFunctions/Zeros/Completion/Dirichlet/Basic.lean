@@ -149,12 +149,18 @@ theorem analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction
 
 /-- The entire completion and ordinary L-function have the same zeros
 on the positive half-plane. -/
-theorem dirichletData_entireCompletion_eq_zero_iff (hne : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
+theorem dirichletData_entireCompletion_eq_zero_iff {s : ℂ} (hs : 0 < s.re) :
     (dirichletData χ hχ).entireCompletion s = 0 ↔ χ.LFunction s = 0 := by
-  have ha := (dirichletData_hasMeromorphicContinuation χ hχ).analyticAt_entireCompletion s
-  rw [← ha.analyticOrderAt_ne_zero,
-    analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs,
-    ((DirichletCharacter.differentiable_LFunction hne).analyticAt s).analyticOrderAt_ne_zero]
+  by_cases h1 : s ≠ 1 ∨ χ ≠ 1
+  · have ha := (dirichletData_hasMeromorphicContinuation χ hχ).analyticAt_entireCompletion s
+    rw [← ha.analyticOrderAt_ne_zero,
+      analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs,
+      (χ.analyticAt_LFunction h1).analyticOrderAt_ne_zero]
+  · push Not at h1
+    rcases h1 with ⟨rfl, rfl⟩
+    have hN : N = 1 := hχ.eq_one_iff.mp rfl
+    subst hN
+    simp [dirichletData_modOne, DirichletCharacter.LFunction_modOne_eq, riemannZeta_one_ne_zero]
 
 /-- Every primitive Dirichlet entire completion is nonzero at the origin,
 as required by Hadamard factorization. -/
@@ -166,7 +172,7 @@ theorem dirichletData_entireCompletion_zero_ne_zero :
   · have hne : χ ≠ 1 := mt hχ.eq_one_iff.mp hN
     have h1 : (dirichletData χ hχ).entireCompletion 1 ≠ 0 := fun hz ↦
       DirichletCharacter.LFunction_apply_one_ne_zero hne
-        ((dirichletData_entireCompletion_eq_zero_iff χ hχ hne (s := 1) (by norm_num)).mp hz)
+        ((dirichletData_entireCompletion_eq_zero_iff χ hχ (s := 1) (by norm_num)).mp hz)
     have h01 := (dirichletData_hasFunctionalEquation χ hχ).entireCompletion_eq_zero_iff_one_sub_conj
       (dirichletData_hasMeromorphicContinuation χ hχ) 0
     exact h01.not.mp (by simpa using h1)

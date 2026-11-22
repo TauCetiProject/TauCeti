@@ -196,20 +196,15 @@ theorem zeroCount_dirichletData_entireCompletion_eq_LFunction {R : Set ℂ}
     (hR : ∀ s ∈ R, 0 < s.re) :
     zeroCount (dirichletData χ hχ).entireCompletion Set.univ R =
       zeroCount χ.LFunction Set.univ R := by
-  refine zeroCount_congr_divisor fun s hs ↦ ?_
-  by_cases h1 : s ≠ 1 ∨ χ ≠ 1
-  · rw [divisor_dirichletData_entireCompletion_eq_LFunction χ hχ (hR s hs) h1]
-  · push Not at h1
-    rcases h1 with ⟨rfl, rfl⟩
-    have hN : N = 1 := hχ.eq_one_iff.mp rfl
+  rcases eq_or_ne χ 1 with rfl | hne
+  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
     subst hN
-    rw [toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt 1 hχ (hR 1 hs),
-      DirichletCharacter.LFunction_modOne_eq, divisor_riemannZeta_one,
-      analyticOrderNatAt, analyticOrderAt_of_not_analyticAt fun ha ↦ ?_]
-    · simp
-    · have hm : ((0 : ℤ) : WithTop ℤ) ≤ (-1 : ℤ) :=
-        meromorphicOrderAt_riemannZeta_one ▸ ha.meromorphicOrderAt_nonneg
-      exact absurd (WithTop.coe_le_coe.mp hm) (by omega)
+    rw [dirichletData_modOne, riemannZetaData_entireCompletion,
+      DirichletCharacter.LFunction_modOne_eq]
+    exact zeroCount_zetaEntireCompletion_eq_riemannZeta hR
+  · exact zeroCount_congr_divisor fun s hs ↦
+      congrArg Int.toNat
+        (divisor_dirichletData_entireCompletion_eq_LFunction χ hχ (hR s hs) (.inr hne))
 
 /-- On any region `R`, the zero count of a primitive Dirichlet entire completion is the zero count
 of its ordinary L-function on the intersection of `R` with the open critical strip: every zero of

@@ -112,32 +112,23 @@ modulus `(χ.conductor)` without the real place. -/
 theorem conductor_ofDirichletCharacter_of_even {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
     (hχ : χ.Even) :
     (ofDirichletCharacter χ).conductor = ratFiniteModulus χ.conductor (conductor_ne_zero χ) := by
-  let η := (ratDirichletEquiv N (NeZero.ne N)).symm χ
-  have hη : changeLevel (dvd_of_eq (absNorm_ratModulus_finitePart N (NeZero.ne N)))
-      η.toDirichletCharacter = χ := by
-    rw [RayClassCharacter.changeLevel_toDirichletCharacter_ratModulus, MulEquiv.apply_symm_apply]
-  have hcond : η.toDirichletCharacter.conductor = χ.conductor := by
-    simpa only [conductor_changeLevel] using congrArg DirichletCharacter.conductor hη
-  have heven : η.toDirichletCharacter.Even := by
-    rwa [← even_changeLevel_iff (dvd_of_eq (absNorm_ratModulus_finitePart N (NeZero.ne N))), hη]
-  simpa only [ofDirichletCharacter_def, conductor_of, hcond] using
-    RayClassCharacter.conductor_eq_ratFiniteModulus_of_even η heven
+  rw [ofDirichletCharacter_def, conductor_of]
+  have hinf : ((ratDirichletEquiv N (NeZero.ne N)).symm χ).conductor.infinitePart = ∅ := by
+    rwa [RayClassCharacter.conductor_infinitePart_eq_empty_iff_even, MulEquiv.apply_symm_apply]
+  simpa only [RayClassCharacter.absNorm_conductor_finitePart, MulEquiv.apply_symm_apply] using
+    eq_ratFiniteModulus_of_infinitePart_eq_empty hinf
 
 /-- For an odd Dirichlet character `χ`, the conductor of `ofDirichletCharacter χ` is the modulus
 `(χ.conductor)·∞` including the real place. -/
 theorem conductor_ofDirichletCharacter_of_not_even {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
     (hχ : ¬ χ.Even) :
     (ofDirichletCharacter χ).conductor = ratModulus χ.conductor (conductor_ne_zero χ) := by
-  let η := (ratDirichletEquiv N (NeZero.ne N)).symm χ
-  have hη : changeLevel (dvd_of_eq (absNorm_ratModulus_finitePart N (NeZero.ne N)))
-      η.toDirichletCharacter = χ := by
-    rw [RayClassCharacter.changeLevel_toDirichletCharacter_ratModulus, MulEquiv.apply_symm_apply]
-  have hcond : η.toDirichletCharacter.conductor = χ.conductor := by
-    simpa only [conductor_changeLevel] using congrArg DirichletCharacter.conductor hη
-  have hodd : ¬ η.toDirichletCharacter.Even := by
-    rwa [← even_changeLevel_iff (dvd_of_eq (absNorm_ratModulus_finitePart N (NeZero.ne N))), hη]
-  simpa only [ofDirichletCharacter_def, conductor_of, hcond] using
-    RayClassCharacter.conductor_eq_ratModulus_of_not_even η hodd
+  rw [ofDirichletCharacter_def, conductor_of]
+  have hinf : ((ratDirichletEquiv N (NeZero.ne N)).symm χ).conductor.infinitePart ≠ ∅ := by
+    rwa [ne_eq, RayClassCharacter.conductor_infinitePart_eq_empty_iff_even,
+      MulEquiv.apply_symm_apply]
+  simpa only [RayClassCharacter.absNorm_conductor_finitePart, MulEquiv.apply_symm_apply] using
+    eq_ratModulus_of_infinitePart_ne_empty hinf
 
 @[simp]
 theorem ofDirichletCharacter_toDirichletCharacter {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) :
