@@ -274,10 +274,10 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J
         ‖w‖ ≤ K * G * max 1 R ^ M * (∏ i, ‖m i‖) * ‖f‖ := by
   induction M with
   | zero =>
-    refine ⟨J, zero_le_one.trans hJ, fun {p} _ {Φ} hΦ hΨ hdet _ {g G} hg hgG R _ f _ m ↦ ?_⟩
+    refine ⟨J, zero_le_one.trans hJ, fun {p} _ {Φ} hΦ hΨ hdet _ {g G} _ hgG R _ f _ m ↦ ?_⟩
     obtain ⟨v, hv, hvn⟩ := exists_compCLM_eq_and_norm_le (F := F) hΦ hΨ hJ hdet f
-    obtain ⟨w, hw, hwn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hg
-      (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2 v
+    obtain ⟨w, hw, hwn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le
+      (.of_forall (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2) v
     refine ⟨w, by rw [LineDeriv.iteratedLineDerivOp_fin_zero, hv, hw], ?_⟩
     have hG := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).1
     calc ‖w‖ ≤ G * (J * ‖f‖) := hwn.trans (by gcongr)
@@ -285,20 +285,21 @@ private theorem exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le {J
   | succ M ih => exact exists_iteratedLineDerivOp_smulLeftCLM_compCLM_eq_and_norm_le_succ L ih
 
 /-- There is `K`, depending only on the bump `φ` and on `J`, such that for `J⁻¹ ≤ |det DΦ|`, a
-function `g` of temperate growth bounded by `G` and `f ∈ Lᵖ`, every block `Δⱼ (g Φ^* f)` is an `Lᵖ`
-function of norm at most `K G ‖f‖_p`. -/
+function `g` bounded by `G` and `f ∈ Lᵖ`, every block `Δⱼ (g Φ^* f)` is an `Lᵖ` function of norm at
+most `K G ‖f‖_p`. -/
 private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_norm_le
     (φ : ContDiffBump (0 : E)) {J : ℝ} (hJ : 1 ≤ J) :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
       (hΨ : (Φ.symm : E → E).HasTemperateGrowth), (∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det|) →
-      ∀ {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth → (∀ x, ‖g x‖ ≤ G) →
+      ∀ {g : E → ℂ} {G : ℝ}, (∀ x, ‖g x‖ ≤ G) →
       ∀ (j : ℕ) (f : Lp F p (volume : Measure E)), ∃ v : Lp F p (volume : Measure E),
         littlewoodPaleyBlock F φ j (smulLeftCLM F g (compCLM F Φ hΦ hΨ (f : 𝓢'(E, F)))) = v ∧
         ‖v‖ ≤ K * G * ‖f‖ := by
   obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
-  refine ⟨max CΔ 0 * J, by positivity, fun {p} _ {Φ} hΦ hΨ hdet {g G} hg hgG j f ↦ ?_⟩
+  refine ⟨max CΔ 0 * J, by positivity, fun {p} _ {Φ} hΦ hΨ hdet {g G} hgG j f ↦ ?_⟩
   obtain ⟨u, hu, hun⟩ := exists_compCLM_eq_and_norm_le (F := F) hΦ hΨ hJ hdet f
-  obtain ⟨h, hh, hhn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hg hgG u
+  obtain ⟨h, hh, hhn⟩ :=
+    Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le (.of_forall hgG) u
   obtain ⟨w, hw, hwn⟩ := hΔ j h
   refine ⟨w, by rw [hu, hh, hw], ?_⟩
   have hG : 0 ≤ G := (norm_nonneg _).trans (hgG 0)
@@ -337,7 +338,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
     fun {p} _ {Φ} hΦ hΨ hdet hΦL {g G} hg hgG {j k} hkj f hf ↦ ?_⟩
   obtain ⟨j, rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
-  obtain ⟨w, hw, -⟩ := h₀ hΦ hΨ hdet hg hg₀ (j + 1) f
+  obtain ⟨w, hw, -⟩ := h₀ hΦ hΨ hdet hg₀ (j + 1) f
   refine ⟨w, hw, ?_⟩
   have hmax : max 1 (2 ^ k * φ.rOut) ≤ 2 ^ k * max 1 φ.rOut := by
     have h1 : (1 : ℝ) ≤ 2 ^ k := one_le_pow₀ one_le_two
@@ -508,8 +509,8 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
     exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_norm_le (F := F) φ hJ
   induction M with
   | zero =>
-    refine ⟨K₀, hK₀, fun {p} _ {Φ} hΦ hΨ hdet _ _ {g G} hg hgG j R _ f _ ↦ ?_⟩
-    obtain ⟨w, hw, hwn⟩ := h₀ hΦ hΨ hdet hg (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2 j f
+    refine ⟨K₀, hK₀, fun {p} _ {Φ} hΦ hΨ hdet _ _ {g G} _ hgG j R _ f _ ↦ ?_⟩
+    obtain ⟨w, hw, hwn⟩ := h₀ hΦ hΨ hdet (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG).2 j f
     exact ⟨w, hw, by simpa using hwn⟩
   | succ M ih =>
     exact exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_annulus_succ φ L B ih
@@ -554,7 +555,7 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
   obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le φ
     (fun T ↦ smulLeftCLM F g (compCLM F Φ hΦ hΨ T)) (mul_nonneg hK₀ hG) (mul_nonneg hK₁ hG)
-    (mul_nonneg hK₂ hG) (fun k _ f _ ↦ h₀ hΦ hΨ hdet hg hg₀ k f)
+    (mul_nonneg hK₂ hG) (fun k _ f _ ↦ h₀ hΦ hΨ hdet hg₀ k f)
     (fun hkj u f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f
       (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ _ u))
     (fun j k u f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j (R := 2 ^ k * φ.rIn) (by positivity) f (by

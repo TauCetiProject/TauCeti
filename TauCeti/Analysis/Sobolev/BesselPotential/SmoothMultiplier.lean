@@ -55,8 +55,8 @@ up to order `k` and `f ∈ H^{k,p}`, while `∂_v f ∈ H^{k,p}`. Going down, a 
 
 ## Main results
 
-* `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_le`: a bounded function of temperate
-  growth multiplies `H^{0,p}` into itself, for every `1 ≤ p ≤ ∞`.
+* `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_le`: an essentially bounded function
+  multiplies `H^{0,p}` into itself, for every `1 ≤ p ≤ ∞`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`: a function of temperate
   growth with bounded derivatives up to order `k` multiplies `H^{k,p}` into itself, for
   `1 < p < ∞`.
@@ -94,13 +94,14 @@ open scoped SchwartzMap LineDeriv ENNReal
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **A bounded multiplier acts on `H^{0,p} = Lᵖ`.** If `g` has temperate growth and is bounded,
-then `g f ∈ H^{0,p}` for every `f ∈ H^{0,p}`. -/
-theorem MemSobolev.smulLeftCLM_of_norm_le [NormedSpace ℂ F] [CompleteSpace F] {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) {C : ℝ} (hC : ∀ x, ‖g x‖ ≤ C) {f : 𝓢'(E, F)}
-    (hf : MemSobolev 0 p f) : MemSobolev 0 p (smulLeftCLM F g f) := by
+/-- **A bounded multiplier acts on `H^{0,p} = Lᵖ`.** If `g` is bounded almost everywhere, then
+`g f ∈ H^{0,p}` for every `f ∈ H^{0,p}`. If `g` does not have temperate growth, `g f` is the junk
+value `0`. -/
+theorem MemSobolev.smulLeftCLM_of_norm_le [NormedSpace ℂ F] [CompleteSpace F] {g : E → ℂ} {C : ℝ}
+    (hC : ∀ᵐ x, ‖g x‖ ≤ C) {f : 𝓢'(E, F)} (hf : MemSobolev 0 p f) :
+    MemSobolev 0 p (smulLeftCLM F g f) := by
   obtain ⟨f', rfl⟩ := memSobolev_zero_iff.1 hf
-  obtain ⟨v, hv, -⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hg hC f'
+  obtain ⟨v, hv, -⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hC f'
   rw [hv]
   exact memSobolev_zero_iff.2 ⟨_, rfl⟩
 
@@ -136,13 +137,13 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : 
   | zero =>
     obtain ⟨C, hC⟩ := hbd 0 le_rfl
     rw [Nat.cast_zero] at hf ⊢
-    exact hf.smulLeftCLM_of_norm_le hg (C := C) (fun x ↦ by simpa using hC x)
+    exact hf.smulLeftCLM_of_norm_le (C := C) (.of_forall fun x ↦ by simpa using hC x)
   | succ k ih =>
     rw [Nat.cast_succ] at hf ⊢
     have hf' := (memSobolev_natCast_add_one_iff hp hp_top).1 hf
     refine (memSobolev_natCast_add_one_iff hp hp_top).2 ⟨?_, fun v ↦ ?_⟩
     · obtain ⟨C, hC⟩ := hbd 0 (by omega)
-      exact hf'.1.smulLeftCLM_of_norm_le hg (C := C) (fun x ↦ by simpa using hC x)
+      exact hf'.1.smulLeftCLM_of_norm_le (C := C) (.of_forall fun x ↦ by simpa using hC x)
     -- `∂_v (g f) = (∂_v g) f + g ∂_v f`, and `∂_v g` has bounded derivatives up to order `k`.
     rw [lineDerivOp_smulLeftCLM hg]
     exact (ih (hg.fderiv_apply v) (hg.1.exists_bound_iteratedFDeriv_fderiv_apply (by simp) hbd v)
@@ -167,7 +168,7 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_to
   | zero =>
     obtain ⟨C, hC⟩ := hbd 0 le_rfl
     rw [Nat.cast_zero, neg_zero] at hf ⊢
-    exact hf.smulLeftCLM_of_norm_le hg (C := C) (fun x ↦ by simpa using hC x)
+    exact hf.smulLeftCLM_of_norm_le (C := C) (.of_forall fun x ↦ by simpa using hC x)
   | succ k ih =>
     have hk : -((k + 1 : ℕ) : ℝ) = -k - 1 := by push_cast; ring
     rw [hk] at hf ⊢
