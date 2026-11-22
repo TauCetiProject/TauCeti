@@ -36,8 +36,9 @@ and agrees almost everywhere with a smooth function. The equation is imposed in 
 distributions on `U`, and `D f` is the image of `f ∈ H^{1,3}` under the bounded operator
 `Op(c) : H^{1,3} → H^{0,3}` (`TauCeti.Symbol.quantizeBesselPotentialSpace`).
 
-The exponent `3` is critical: it is below the dimension, so `W^{1,3}(ℝ⁴)` is not an algebra and
-`Q (f, f)` is a priori only an `L^{3/2}` function. The proof is a bootstrap with the exponents
+The exponent `3` is below the dimension, so `W^{1,3}(ℝ⁴)` is not an algebra and `Q (f, f)` is a
+priori only an `L^{3/2}` function. It is still subcritical for this equation (the critical space is
+`W^{1,2}(ℝ⁴) ⊆ L^4`), so the Sobolev embedding into `L^{12}` starts a bootstrap with the exponents
 `3 → 12 → 6`:
 
 * the Sobolev embedding `H^{1,3}(ℝ⁴) ⊆ L^{12}` (`1 / 12 = 1 / 3 - 1 / 4`,
@@ -55,7 +56,7 @@ The exponent `3` is critical: it is below the dimension, so `W^{1,3}(ℝ⁴)` is
 
 Passing from the equation, an identity in `H^{0,3}`, to the regularity theorem on `H^{s,6}` uses
 that `Op(c)` acts compatibly on the two scales
-(`TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr_of_lt`).
+(`TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr_exponent`).
 
 ## References
 
@@ -117,8 +118,8 @@ private theorem toDistr_quantize_smulLeft_eq (hc : c.HasCompactSpatialSupport)
         (6 : ℝ≥0) hf6.toBesselPotentialSpace).toDistr =
       smulLeftCLM W (χ : CoordinateSpace 4 → ℂ) (q : 𝓢'(CoordinateSpace 4, W)) := by
   rw [toDistr_quantizeBesselPotentialSpace_smulLeft _ χ.hasTemperateGrowth hc 0 (by norm_num)
-    ENNReal.coe_ne_top, ← toDistr_quantizeBesselPotentialSpace_congr_of_lt rfl hc hc
-      (by norm_num : (1 : ℝ≥0) < 3) (by norm_num : (3 : ℝ≥0) < 6)
+    ENNReal.coe_ne_top, ← toDistr_quantizeBesselPotentialSpace_congr_exponent rfl hc hc
+      (by norm_num : (1 : ℝ≥0) < 3) (by norm_num : (1 : ℝ≥0) < 6)
       (u := hf.toBesselPotentialSpace)
       (by rw [MemSobolev.toBesselPotentialSpace_toDistr,
         MemSobolev.toBesselPotentialSpace_toDistr])]
@@ -185,7 +186,8 @@ private theorem memSobolev_bilin (hU : IsOpen U)
   obtain ⟨y, hy⟩ := memSobolev_zero_iff.1 ((hk ψ hψ hψU).of_le (Nat.cast_nonneg k))
   have hyS := hk ψ hψ hψU
   rw [hy] at hyS
-  obtain ⟨w, hw, hwS⟩ := hyS.exists_memSobolev_bilin (by norm_num) (by simp; norm_num) hk0 Q hyS
+  obtain ⟨w, hw, hwS⟩ := hyS.exists_memSobolev_bilin (by norm_num)
+    (by rw [finrank_euclideanSpace_fin]; norm_num) hk0 Q hyS
   convert hwS.smulLeftCLM_schwartzMap (by norm_num) ENNReal.coe_ne_top χ using 1
   -- Near the support of `χ`, `ψ = 1`, so `χ Q (y, y) = χ Q (f, f)`.
   have hyf := (Lp.toTemperedDistribution_eq_smulLeftCLM_iff ψ.hasTemperateGrowth y f).1 hy.symm

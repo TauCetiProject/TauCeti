@@ -87,8 +87,8 @@ derivatives of `a` of order up to `n + 1`, through Mihlin's condition.
   of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
 * `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr`: the operators for different orders
   `s` and for symbols with the same coefficient agree as maps of tempered distributions;
-  `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr_of_lt` is the same for different
-  exponents `p < q`, through the Sobolev embedding `H^{s,p} ⊆ H^{s - δ,q}`.
+  `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_congr_exponent` is the same for different
+  exponents `p` and `q`, through the Sobolev embedding `H^{s,p} ⊆ H^{s - δ,q}` for `p < q`.
 * `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_smulLeft`: the symbol `ψ(x) a(x, ξ)`
   quantizes to `ψ Op(a)`.
 * `TauCeti.Symbol.toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id`: the symbol `φ(x)`
@@ -876,10 +876,8 @@ theorem toDistr_quantizeBesselPotentialSpace_sharp {U : Type*} [NormedAddCommGro
     simp [hp, hp_top, hq]
   simpa using congrArg (fun T ↦ T u) key
 
-/-- **Compatibility of the extensions for different exponents.** For `1 < p < q < ∞` in positive
-dimension, the operators `Op(a)` on `H^{s,p}` and `Op(b)` on `H^{t,q}`, for symbols with the same
-coefficient, agree on any `u ∈ H^{s,p}` and `v ∈ H^{t,q}` with the same tempered distribution. -/
-theorem toDistr_quantizeBesselPotentialSpace_congr_of_lt [NeZero n] {b : Symbol n V W m'}
+/-- The case `p < q` of `toDistr_quantizeBesselPotentialSpace_congr_exponent`. -/
+private theorem toDistr_quantizeBesselPotentialSpace_congr_of_lt [NeZero n] {b : Symbol n V W m'}
     (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
     (hb : b.HasCompactSpatialSupport) {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
     [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < p) (hpq : p < q) {s t : ℝ}
@@ -901,7 +899,7 @@ theorem toDistr_quantizeBesselPotentialSpace_congr_of_lt [NeZero n] {b : Symbol 
     ring
   have hq : 1 < q := hp.trans hpq
   set ι := (BesselPotentialSpace.sobolevEmbedding (CoordinateSpace n) V (s - δ) hδ hp hpq').comp
-    (BesselPotentialSpace.inclusion (s := s) (p := p) (r := s - δ + δ) (by ring_nf; rfl))
+    (BesselPotentialSpace.inclusion (s := s) (p := p) (r := s - δ + δ) (sub_add_cancel s δ).le)
   have hι (w : H^{s, p}(CoordinateSpace n, V)) : (ι w).toDistr = w.toDistr := by
     simp [ι]
   have key : BesselPotentialSpace.toDistrCLM _ W _ _ ∘L a.quantizeBesselPotentialSpace ha s p =
@@ -918,6 +916,22 @@ theorem toDistr_quantizeBesselPotentialSpace_congr_of_lt [NeZero n] {b : Symbol 
   rw [hu]
   exact toDistr_quantizeBesselPotentialSpace_congr hab ha hb (mod_cast hq) ENNReal.coe_ne_top
     ((hι u).trans huv)
+
+/-- **Compatibility of the extensions for different exponents.** For `1 < p, q < ∞` in positive
+dimension, the operators `Op(a)` on `H^{s,p}` and `Op(b)` on `H^{t,q}`, for symbols with the same
+coefficient, agree on any `u ∈ H^{s,p}` and `v ∈ H^{t,q}` with the same tempered distribution. -/
+theorem toDistr_quantizeBesselPotentialSpace_congr_exponent [NeZero n] {b : Symbol n V W m'}
+    (hab : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) {p q : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
+    [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < p) (hq : 1 < q) {s t : ℝ}
+    {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, q}(CoordinateSpace n, V)}
+    (huv : u.toDistr = v.toDistr) :
+    (a.quantizeBesselPotentialSpace ha s p u).toDistr =
+      (b.quantizeBesselPotentialSpace hb t q v).toDistr := by
+  rcases lt_trichotomy p q with hpq | rfl | hqp
+  · exact toDistr_quantizeBesselPotentialSpace_congr_of_lt hab ha hb hp hpq huv
+  · exact toDistr_quantizeBesselPotentialSpace_congr hab ha hb (mod_cast hp) ENNReal.coe_ne_top huv
+  · exact (toDistr_quantizeBesselPotentialSpace_congr_of_lt hab.symm hb ha hq hqp huv.symm).symm
 
 /-- **Spatial cutoffs.** For a smooth function `ψ` of temperate growth, the symbol `ψ(x) a(x, ξ)`
 (`TauCeti.Symbol.smulLeft`) quantizes on `H^{s,p}` to `ψ` times the quantization of `a`. -/
