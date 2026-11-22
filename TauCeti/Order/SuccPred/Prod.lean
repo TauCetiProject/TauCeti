@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Prod
 public import Mathlib.Algebra.Order.Group.Synonym
 public import Mathlib.Order.Prod.Lex.Basic
 public import Mathlib.Order.SuccPred.Basic
+import Mathlib.Algebra.Order.Group.Equiv
 
 /-!
 # Successors and predecessors in lexicographic products
@@ -101,12 +102,6 @@ theorem nsmul_succ_zero_lt_toLex_of_pos {α β : Type*} [AddMonoid α] [Preorder
     (b : β) (n : ℕ) :
     n • succ (0 : α ×ₗ β) < toLex (a, b) := by
   refine Prod.Lex.lt_iff.2 (.inl ?_)
-  have hfst : (ofLex (n • succ (0 : α ×ₗ β))).1 = 0 := by
-    induction n with
-    | zero => simp only [zero_nsmul, ofLex_zero, Prod.fst_zero]
-    | succ n ih =>
-      simp only [succ_nsmul, ofLex_add, Prod.fst_add, Prod.Lex.ofLex_succ, ofLex_zero,
-        Prod.fst_zero, ih, add_zero]
-  simpa [hfst] using ha
+  simpa [← coe_ofLexAddEquiv (α × β), ← AddMonoidHom.coe_fst, map_nsmul] using ha
 
 end TauCeti.Order
