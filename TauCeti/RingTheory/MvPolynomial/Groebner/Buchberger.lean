@@ -121,7 +121,8 @@ private theorem IsRemainder.mem_degreeSpan {f : MvPolynomial σ R} (h : m.IsRema
   rcases eq_or_ne (b : MvPolynomial σ R) 0 with hb | hb
   · simp [hb]
   rw [smul_eq_mul, ← hV]
-  refine degreeSpan_mono (Set.Iic_subset_Iic.2 ?_) (mul_mem_degreeSpan (mem_degreeSpan_self b.2) _)
+  refine degreeSpan_mono (Set.Iic_subset_Iic.2 ?_) (mul_mem_degreeSpan
+      (mem_degreeSpan_self b.property) _)
   rw [add_comm]
   exact (toWithBotSyn_withBotDegree_add_le_iff hb hg hf).1 (hdeg b)
 

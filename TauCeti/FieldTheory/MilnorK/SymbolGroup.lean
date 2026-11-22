@@ -197,9 +197,9 @@ pairings `Rˣ → Rˣ → A`. -/
 def liftEquiv : (SymbolGroup R →ₗ[ℤ] A) ≃ {c : Rˣ → Rˣ → A // IsSteinbergPairing c} where
   toFun f :=
     ⟨fun a b ↦ f (symbol a b), isSteinbergPairing_symbol.comp_addMonoidHom f.toAddMonoidHom⟩
-  invFun c := lift c.1 c.2
+  invFun c := lift c.val c.property
   left_inv _ := linearMap_ext fun a b ↦ lift_symbol _ _ a b
-  right_inv c := Subtype.ext <| funext fun a ↦ funext fun b ↦ lift_symbol c.1 c.2 a b
+  right_inv c := Subtype.ext <| funext fun a ↦ funext fun b ↦ lift_symbol c.val c.property a b
 
 end Universal
 

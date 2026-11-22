@@ -197,11 +197,10 @@ coaction. -/
 theorem assoc_comp_rTensor_map_counit_comp_cofreeCoact (δ : Y →ₗ[R] C ⊗[R] Y)
     (b : C →ₗ[R] C') :
     (TensorProduct.assoc R C' Y E).toLinearMap ∘ₗ
-        (TensorProduct.map b ((TensorProduct.rid R Y).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := E)).lTensor Y) ∘ₗ leftCoactRTensor E δ).rTensor E ∘ₗ
+        (TensorProduct.map b (cofreeCounit R E Y) ∘ₗ leftCoactRTensor E δ).rTensor E ∘ₗ
           cofreeCoact R E Y =
       b.rTensor (Y ⊗[R] E) ∘ₗ leftCoactRTensor E δ := by
-  rw [assoc_comp_rTensor_comp_cofreeCoact, rTensor_rid_comp_lTensor_counit_comp_cofreeCoact,
+  rw [assoc_comp_rTensor_comp_cofreeCoact, rTensor_cofreeCounit_comp_cofreeCoact,
     ← LinearMap.rTensor_def]
 
 end Bicomodule

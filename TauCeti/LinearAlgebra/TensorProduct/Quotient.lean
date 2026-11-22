@@ -56,6 +56,10 @@ relations, for instance the rationalisation of a module over an integral group r
 
 ## Main results
 
+* `TensorProduct.quotientScalarEquiv`: compare tensor products over `R / I` and `R` when
+  both factors carry the quotient action, with pure-tensor and naturality laws.
+* `TensorProduct.quotient_tensor_bijective` and `TensorProduct.quotient_map_tensor_bijective`:
+  tensoring a quotient map is bijective when the quotient ideal kills the other factor.
 * `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
 * `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
   `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
@@ -465,7 +469,7 @@ theorem baseChange_mkQ_bijective {r : R} (hr : algebraMap R A r = 0) :
   let p := r • (⊤ : Submodule R M)
   have hzero : lTensor A p.subtype = 0 := by
     ext a v
-    obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.2
+    obtain ⟨w, -, hw⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp v.property
     simp [← hw, smul_tmul', Algebra.smul_def, hr]
   rw [baseChange_eq_lTensor]
   exact ⟨(injective_iff_eq_zero_of_exact
@@ -494,3 +498,117 @@ theorem finite_baseChange_of_finite_quotSMulTop (k : Type*) [Ring k] (ℓ : ℕ)
   QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
 
 end TauCeti
+
+namespace TensorProduct
+
+open LinearMap
+
+variable {R S M : Type*} [CommRing R] [CommRing S] [Algebra R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+
+/-- Tensoring the quotient by `I M` is bijective if `I` annihilates the other factor. -/
+theorem quotient_tensor_bijective (I : Ideal R)
+    {N : Type*} [AddCommGroup N] [Module R N]
+    (hN : ∀ r ∈ I, ∀ n : N, r • n = 0) :
+    Function.Bijective ((I • (⊤ : Submodule R M)).mkQ.rTensor N) := by
+  refine ⟨?_, LinearMap.rTensor_surjective _ (Submodule.mkQ_surjective _)⟩
+  rw [injective_iff_map_eq_zero]
+  intro t ht
+  obtain ⟨u, rfl⟩ := (_root_.rTensor_exact N
+    (LinearMap.exact_subtype_mkQ (I • (⊤ : Submodule R M)))
+    (Submodule.mkQ_surjective _) t).mp ht
+  clear ht
+  induction u with
+  | add u v hu hv => simp only [map_add, hu, hv, add_zero]
+  | tmul m n =>
+    obtain ⟨m, hm⟩ := m
+    simp only [LinearMap.rTensor_tmul, Submodule.subtype_apply]
+    induction hm using Submodule.smul_induction_on' with
+    | smul r hr m _ => rw [TensorProduct.smul_tmul, hN r hr n, tmul_zero]
+    | add m _ n _ hm hn => rw [TensorProduct.add_tmul, hm, hn, add_zero]
+
+/-- Tensoring the quotient by `I S M` is bijective if `I` annihilates the other factor. -/
+theorem quotient_map_tensor_bijective (p : Ideal R)
+    {N : Type*} [AddCommGroup N] [Module R N]
+    (hN : ∀ r ∈ p, ∀ n : N, r • n = 0) :
+    Function.Bijective
+      (((p.map (algebraMap R S) • (⊤ : Submodule S M)).mkQ.restrictScalars R).rTensor N) := by
+  let P := p.map (algebraMap R S) • (⊤ : Submodule S M)
+  have hP : P.restrictScalars R = p • (⊤ : Submodule R M) := by
+    simp only [P, Ideal.smul_restrictScalars, Submodule.restrictScalars_top]
+  let e : (M ⧸ p • (⊤ : Submodule R M)) ≃ₗ[R] M ⧸ P :=
+    Submodule.quotEquivOfEq _ _ hP.symm ≪≫ₗ
+      Submodule.Quotient.restrictScalarsEquiv R P
+  have heq : (P.mkQ.restrictScalars R).rTensor N = e.toLinearMap.rTensor N ∘ₗ
+      (p • (⊤ : Submodule R M)).mkQ.rTensor N := by
+    rw [← LinearMap.rTensor_comp]
+    exact congrArg (LinearMap.rTensor N) (LinearMap.ext fun m ↦ by
+      simp only [e, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+        LinearEquiv.coe_coe, LinearEquiv.trans_apply, Submodule.mkQ_apply,
+        Submodule.quotEquivOfEq_mk, Submodule.Quotient.restrictScalarsEquiv_mk])
+  rw [heq, LinearMap.coe_comp]
+  exact (LinearEquiv.bijective (e.rTensor N)).comp (quotient_tensor_bijective p hN)
+
+end TensorProduct
+
+namespace TensorProduct
+
+section QuotientScalars
+
+variable {R : Type*} [CommRing R] (I : Ideal R)
+
+/-- If `R ⧸ I` acts on both factors compatibly with `R`, tensoring over the quotient or over
+`R` gives canonically isomorphic `R`-modules. The equivalence preserves pure tensors. -/
+noncomputable def quotientScalarEquiv
+    (M N : Type*) [AddCommGroup M] [Module R M] [Module (R ⧸ I) M]
+    [IsScalarTower R (R ⧸ I) M] [AddCommGroup N] [Module R N] [Module (R ⧸ I) N]
+    [IsScalarTower R (R ⧸ I) N] : M ⊗[R ⧸ I] N ≃ₗ[R] M ⊗[R] N := by
+  have : CompatibleSMul R (R ⧸ I) M N :=
+    CompatibleSMul.of_algebraMap_surjective _ _ Ideal.Quotient.mk_surjective
+  exact equivOfCompatibleSMul R (R ⧸ I) R M N
+
+variable {M M' N N' : Type*}
+  [AddCommGroup M] [Module R M] [Module (R ⧸ I) M] [IsScalarTower R (R ⧸ I) M]
+  [AddCommGroup M'] [Module R M'] [Module (R ⧸ I) M'] [IsScalarTower R (R ⧸ I) M']
+  [AddCommGroup N] [Module R N] [Module (R ⧸ I) N] [IsScalarTower R (R ⧸ I) N]
+  [AddCommGroup N'] [Module R N'] [Module (R ⧸ I) N'] [IsScalarTower R (R ⧸ I) N']
+
+/-- The quotient-scalar comparison sends a pure tensor to the same pure tensor. -/
+@[simp]
+theorem quotientScalarEquiv_tmul (m : M) (n : N) :
+    quotientScalarEquiv I M N (m ⊗ₜ[R ⧸ I] n) = m ⊗ₜ[R] n := (rfl)
+
+/-- The inverse quotient-scalar comparison preserves pure tensors. -/
+@[simp]
+theorem quotientScalarEquiv_symm_tmul (m : M) (n : N) :
+    (quotientScalarEquiv I M N).symm (m ⊗ₜ[R] n) = m ⊗ₜ[R ⧸ I] n := by
+  apply (quotientScalarEquiv I M N).injective
+  simp only [LinearEquiv.apply_symm_apply, quotientScalarEquiv_tmul]
+
+/-- Changing from quotient scalars to base scalars commutes with tensoring two linear maps. -/
+theorem quotientScalarEquiv_map (f : M →ₗ[R ⧸ I] M') (g : N →ₗ[R ⧸ I] N')
+    (t : M ⊗[R ⧸ I] N) :
+    quotientScalarEquiv I M' N' (TensorProduct.map f g t) =
+      TensorProduct.map (f.restrictScalars R) (g.restrictScalars R)
+        (quotientScalarEquiv I M N t) := by
+  induction t with
+  | add s t hs ht => simp only [map_add, hs, ht]
+  | tmul m n => simp only [map_tmul, quotientScalarEquiv_tmul, LinearMap.restrictScalars_apply]
+
+/-- Changing from quotient scalars to base scalars commutes with tensoring a map on the right. -/
+theorem quotientScalarEquiv_lTensor (f : N →ₗ[R ⧸ I] N') (t : M ⊗[R ⧸ I] N) :
+    quotientScalarEquiv I M N' (f.lTensor M t) =
+      (f.restrictScalars R).lTensor M (quotientScalarEquiv I M N t) := by
+  simpa only [LinearMap.lTensor_def, LinearMap.restrictScalars_id] using
+    quotientScalarEquiv_map I (LinearMap.id : M →ₗ[R ⧸ I] M) f t
+
+/-- Changing from quotient scalars to base scalars commutes with tensoring a map on the left. -/
+theorem quotientScalarEquiv_rTensor (f : M →ₗ[R ⧸ I] M') (t : M ⊗[R ⧸ I] N) :
+    quotientScalarEquiv I M' N (f.rTensor N t) =
+      (f.restrictScalars R).rTensor N (quotientScalarEquiv I M N t) := by
+  simpa only [LinearMap.rTensor_def, LinearMap.restrictScalars_id] using
+    quotientScalarEquiv_map I f (LinearMap.id : N →ₗ[R ⧸ I] N) t
+
+end QuotientScalars
+
+end TensorProduct

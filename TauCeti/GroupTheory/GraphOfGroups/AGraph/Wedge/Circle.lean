@@ -97,7 +97,7 @@ private def get (t : IndexedPath 𝔸 x y n) (k : ℕ) : Σ c, 𝔸.vertexGroup 
   if hk : k < n then ⟨_, t.lab ⟨k, hk⟩⟩ else if k = n then ⟨_, t.lastLab⟩ else ⟨y, t.endLab⟩
 
 private theorem get_castSucc (t : IndexedPath 𝔸 x y n) (j : Fin n) : t.get j = ⟨_, t.lab j⟩ :=
-  dite_eq_left j.2
+  dite_eq_left j.isLt
 
 private theorem get_self (t : IndexedPath 𝔸 x y n) : t.get n = ⟨_, t.lastLab⟩ :=
   (dite_eq_right (lt_irrefl n)).trans (ite_eq_left rfl)
@@ -176,7 +176,7 @@ private theorem length_darts_pre (t : IndexedPath 𝔸 x y n) (k : Fin (n + 1)) 
 /-- The darts of the initial segment of length `k` are `e_0, …, e_{k-1}`. -/
 private theorem getElem?_darts_pre (t : IndexedPath 𝔸 x y n) (k : Fin (n + 1)) (j : Fin n)
     (hj : (j : ℕ) < k) :
-    (SerreGraph.Path.darts Γ (t.pre k).edgePath)[(j : ℕ)]? = some (t.dt j).1 := by
+    (SerreGraph.Path.darts Γ (t.pre k).edgePath)[(j : ℕ)]? = some (t.dt j).val := by
   induction k using Fin.induction with
   | zero => exact absurd hj (Nat.not_lt_zero _)
   | succ k ih =>
@@ -191,7 +191,7 @@ private theorem getElem?_darts_pre (t : IndexedPath 𝔸 x y n) (k : Fin (n + 1)
 /-- The darts of the path spelled by an indexed path are `e_0, …, e_n`. -/
 private theorem getElem?_darts_toPath (t : IndexedPath 𝔸 x y n) (k : Fin (n + 1)) :
     (SerreGraph.Path.darts Γ t.toPath.edgePath)[(k : ℕ)]? =
-      some (Fin.lastCases (motive := fun _ => Γ.E) t.lastDart.1 (fun j => (t.dt j).1) k) := by
+      some (Fin.lastCases (motive := fun _ => Γ.E) t.lastDart.val (fun j => (t.dt j).val) k) := by
   rw [toPath, Path.edgePath_cons_vertex, Path.edgePath_cons_dart, Path.edgePath_cons_vertex,
     SerreGraph.Path.darts_cons]
   cases k using Fin.lastCases with
@@ -201,8 +201,8 @@ private theorem getElem?_darts_toPath (t : IndexedPath 𝔸 x y n) (k : Fin (n +
     rfl
   | cast j =>
     rw [Fin.lastCases_castSucc, Fin.val_castSucc,
-      List.getElem?_append_left (by rw [length_darts_pre]; exact j.2),
-      getElem?_darts_pre t _ j (by rw [Fin.val_last]; exact j.2)]
+      List.getElem?_append_left (by rw [length_darts_pre]; exact j.isLt),
+      getElem?_darts_pre t _ j (by rw [Fin.val_last]; exact j.isLt)]
 
 /-- The edge path of `prepend p t` is that of `p` followed by that of `t`. -/
 private theorem edgePath_toPath_prepend (p : 𝔸.AlternatingPath x z) (t : IndexedPath 𝔸 z y n) :
@@ -260,7 +260,7 @@ variable {n : ι → ℕ}
 private theorem labelα_rev_circleWedge_none (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
     (K : Subgroup (𝔸.vertexGroup v₀)) (i : ι) :
     (circleWedge t K).labelα ((circleWedge t K).graph.rev (⟨i, none⟩, true)) =
-      MulEquiv.cast (M := 𝔸.vertexGroup) ((t i).lastDart.2.2.symm.trans (Γ.src_rev _).symm :
+      MulEquiv.cast (M := 𝔸.vertexGroup) ((t i).lastDart.property.2.symm.trans (Γ.src_rev _).symm :
         v₀ = Γ.src ((circleWedge t K).typ.mapE ((circleWedge t K).graph.rev (⟨i, none⟩, true))))
         (t i).endLab⁻¹ :=
   rfl
@@ -281,14 +281,14 @@ at position `0`, and the end of the first `k` edges of the circle, the target of
 `wedgeDart p i (k - 1)`, at a position `k ≠ 0`. -/
 noncomputable def wedgeVertex (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
     (k : Fin (p i).length) : (wedge p).graph.V :=
-  wedgePos _ i (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2).symm k)
+  wedgePos _ i (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property).symm k)
 
 /-- The edge from position `k` to position `k + 1` of the circle of a path `p i` of positive
 length, the last one back to the base vertex. Its type is the `(k + 1)`-th dart of `p i`. -/
 noncomputable def wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
     (k : Fin (p i).length) : (wedge p).graph.E :=
   (⟨i, Fin.lastCases none some
-    (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2).symm k)⟩, true)
+    (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property).symm k)⟩, true)
 
 /-- The loop at the base vertex of the wedge around the circle of a path `p i` of positive
 length. -/
@@ -298,16 +298,18 @@ def wedgeLoop (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).lengt
 
 /-- The positions of a circle, read on its indexed path. -/
 private theorem wedgeVertex_cast (p : ι → 𝔸.AlternatingPath v₀ v₀)
-    (i : {i // (p i).length ≠ 0}) (k : Fin ((IndexedPath.ofAlternatingPath (p i) i.2).1 + 1)) :
-    wedgeVertex p i (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2) k) =
+    (i : {i // (p i).length ≠ 0}) (k : Fin ((IndexedPath.ofAlternatingPath
+        (p i) i.property).1 + 1)) :
+    wedgeVertex p i (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property) k) =
       wedgePos _ i k := by
   simp only [wedgeVertex, Fin.cast_cast, Fin.cast_eq_self]
   rfl
 
 /-- The edges of a circle before the last one, read on its indexed path. -/
 private theorem wedgeDart_cast_castSucc (p : ι → 𝔸.AlternatingPath v₀ v₀)
-    (i : {i // (p i).length ≠ 0}) (j : Fin (IndexedPath.ofAlternatingPath (p i) i.2).1) :
-    wedgeDart p i (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2) j.castSucc) =
+    (i : {i // (p i).length ≠ 0}) (j : Fin (IndexedPath.ofAlternatingPath (p i) i.property).1) :
+    wedgeDart p i (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property) j.castSucc)
+        =
       (⟨i, some j⟩, true) := by
   simp only [wedgeDart, Fin.cast_cast, Fin.cast_eq_self, Fin.lastCases_castSucc]
   rfl
@@ -315,7 +317,7 @@ private theorem wedgeDart_cast_castSucc (p : ι → 𝔸.AlternatingPath v₀ v�
 /-- The last edge of a circle, read on its indexed path. -/
 private theorem wedgeDart_cast_last (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) :
-    wedgeDart p i (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)
+    wedgeDart p i (Fin.cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)
       (Fin.last _)) = (⟨i, none⟩, true) := by
   simp only [wedgeDart, Fin.cast_cast, Fin.cast_eq_self, Fin.lastCases_last]
   rfl
@@ -325,7 +327,8 @@ private theorem wedgeDart_cast_last (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) (k : Fin (p i).length) :
     wedgeVertex p i k = (wedge p).base ↔ (k : ℕ) = 0 := by
   obtain ⟨k, rfl⟩ :=
-    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)).surjective k
+    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)).surjective
+        k
   rw [wedgeVertex_cast]
   cases k using Fin.cases <;> simp [wedgePos, wedge]
 
@@ -339,7 +342,8 @@ private theorem wedgeDart_cast_last (p : ι → 𝔸.AlternatingPath v₀ v₀)
 @[simp] theorem src_wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
     (k : Fin (p i).length) : (wedge p).graph.src (wedgeDart p i k) = wedgeVertex p i k := by
   obtain ⟨k, rfl⟩ :=
-    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)).surjective k
+    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)).surjective
+        k
   rw [wedgeVertex_cast]
   cases k using Fin.lastCases with
   | last => rw [wedgeDart_cast_last]; rfl
@@ -350,7 +354,7 @@ position `k + 1`. -/
 theorem tgt_wedgeDart_of_lt (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
     {k : Fin (p i).length} (hk : (k : ℕ) + 1 < (p i).length) :
     (wedge p).graph.tgt (wedgeDart p i k) = wedgeVertex p i ⟨k + 1, hk⟩ := by
-  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
+  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property
   obtain ⟨k, rfl⟩ := (Fin.rightInverse_cast h).surjective k
   cases k using Fin.lastCases with
   | last => simp only [Fin.val_cast, Fin.val_last] at hk; omega
@@ -363,7 +367,7 @@ theorem tgt_wedgeDart_of_lt (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i 
 theorem tgt_wedgeDart_of_add_one_eq (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) {k : Fin (p i).length} (hk : (k : ℕ) + 1 = (p i).length) :
     (wedge p).graph.tgt (wedgeDart p i k) = (wedge p).base := by
-  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
+  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property
   obtain ⟨k, rfl⟩ := (Fin.rightInverse_cast h).surjective k
   cases k using Fin.lastCases with
   | last => rw [wedgeDart_cast_last]; rfl
@@ -372,7 +376,7 @@ theorem tgt_wedgeDart_of_add_one_eq (p : ι → 𝔸.AlternatingPath v₀ v₀)
 /-- Every dart of the wedge is an edge of a circle or the reverse of one. -/
 theorem exists_eq_wedgeDart_or_eq_rev (p : ι → 𝔸.AlternatingPath v₀ v₀) (f : (wedge p).graph.E) :
     ∃ i k, f = wedgeDart p i k ∨ f = (wedge p).graph.rev (wedgeDart p i k) := by
-  have h (i : {i // (p i).length ≠ 0}) := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
+  have h (i : {i // (p i).length ≠ 0}) := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property
   obtain ⟨⟨i, _ | j⟩, b⟩ := f
   · refine ⟨i, Fin.cast (h i) (Fin.last _), ?_⟩
     rw [wedgeDart_cast_last]
@@ -399,7 +403,7 @@ theorem grp_wedgeVertex_of_ne_zero (p : ι → 𝔸.AlternatingPath v₀ v₀) (
 theorem labelω_wedgeDart_of_lt (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
     {k : Fin (p i).length} (hk : (k : ℕ) + 1 < (p i).length) :
     (wedge p).labelω (wedgeDart p i k) = 1 := by
-  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
+  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property
   obtain ⟨k, rfl⟩ := (Fin.rightInverse_cast h).surjective k
   cases k using Fin.lastCases with
   | last => simp only [Fin.val_cast, Fin.val_last] at hk; omega
@@ -413,7 +417,7 @@ the class of `p i`. -/
 theorem π₁Hom_mk_wedgeLoop (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) : (wedge p).π₁Hom (π₁.mk (wedgeLoop p i)) = π₁.mk (p i).toPath :=
   (π₁Hom_mk_circleLoop _ _ i).trans
-    (π₁.mk_eq_mk_iff.2 (IndexedPath.toPath_ofAlternatingPath_homotopic _ i.2))
+    (π₁.mk_eq_mk_iff.2 (IndexedPath.toPath_ofAlternatingPath_homotopic _ i.property))
 
 /-- The vertex at position `0` of a circle is the base vertex. -/
 @[simp] theorem wedgeVertex_zero (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
@@ -425,17 +429,19 @@ private theorem vertexPos_wedgeVertex (p : ι → 𝔸.AlternatingPath v₀ v₀
     (i : {i // (p i).length ≠ 0}) (k : Fin (p i).length) :
     vertexPos _ (wedgeVertex p i k) = k := by
   obtain ⟨k, rfl⟩ :=
-    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)).surjective k
+    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)).surjective
+        k
   rw [wedgeVertex_cast]
   exact vertexPos_wedgePos
-    (fun c : {i // (p i).length ≠ 0} => (IndexedPath.ofAlternatingPath (p c) c.2).1) i k
+    (fun c : {i // (p i).length ≠ 0} => (IndexedPath.ofAlternatingPath (p c) c.property).1) i k
 
 /-- The vertex at a position `k ≠ 0` of the circle of `p i` lies on that circle. -/
 private theorem map_fst_wedgeVertex (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) {k : Fin (p i).length} (hk : (k : ℕ) ≠ 0) :
     Option.map Sigma.fst (wedgeVertex p i k) = some i := by
   obtain ⟨k, rfl⟩ :=
-    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)).surjective k
+    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)).surjective
+        k
   rw [wedgeVertex_cast]
   cases k using Fin.cases with
   | zero => exact absurd rfl hk
@@ -463,7 +469,8 @@ private theorem dartPos_wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) (k : Fin (p i).length) :
     dartPos _ (wedgeDart p i k).1 = k := by
   obtain ⟨k, rfl⟩ :=
-    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)).surjective k
+    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)).surjective
+        k
   cases k using Fin.lastCases with
   | last => rw [wedgeDart_cast_last]; rfl
   | cast j => rw [wedgeDart_cast_castSucc]; rfl
@@ -503,7 +510,7 @@ private theorem edgePath_circlePath_zero (p : ι → 𝔸.AlternatingPath v₀ v
 /-- The edge path of the path to position `k + 1` of a circle is that of the path to position `k`
 followed by the dart `⟨i, some k⟩`. -/
 private theorem edgePath_circlePath_succ (p : ι → 𝔸.AlternatingPath v₀ v₀)
-    (i : {i // (p i).length ≠ 0}) (k : Fin (IndexedPath.ofAlternatingPath (p i) i.2).1) :
+    (i : {i // (p i).length ≠ 0}) (k : Fin (IndexedPath.ofAlternatingPath (p i) i.property).1) :
     (circlePath (wedgeCircles p) (wedgeGroup p) i k.succ).edgePath =
       Quiver.Path.cons (V := (wedge p).graph.V)
         (circlePath (wedgeCircles p) (wedgeGroup p) i k.castSucc).edgePath
@@ -525,7 +532,8 @@ private theorem edgePath_wedgeLoop (p : ι → 𝔸.AlternatingPath v₀ v₀)
 
 /-- The darts along the circle of `p i` up to position `k` are its first `k` darts. -/
 private theorem darts_edgePath_circlePath (p : ι → 𝔸.AlternatingPath v₀ v₀)
-    (i : {i // (p i).length ≠ 0}) (k : Fin ((IndexedPath.ofAlternatingPath (p i) i.2).1 + 1)) :
+    (i : {i // (p i).length ≠ 0}) (k : Fin ((IndexedPath.ofAlternatingPath
+        (p i) i.property).1 + 1)) :
     SerreGraph.Path.darts (wedge p).graph
       (circlePath (wedgeCircles p) (wedgeGroup p) i k).edgePath =
         (List.ofFn fun j => ((⟨i, some j⟩, true) : (wedge p).graph.E)).take k := by
@@ -538,13 +546,14 @@ private theorem darts_edgePath_circlePath (p : ι → 𝔸.AlternatingPath v₀ 
     refine ((congrArg (SerreGraph.Path.darts (wedge p).graph)
       (edgePath_circlePath_succ p i k)).trans (SerreGraph.Path.darts_cons _ _ _)).trans ?_
     rw [ih, Fin.val_succ, List.take_add_one, Fin.val_castSucc, List.getElem?_ofFn,
-      dite_eq_left k.2, Option.toList_some]
+      dite_eq_left k.isLt, Option.toList_some]
     -- The dart `⟨i, some k⟩`, read through the quiver of the wedge, is `⟨i, some k⟩`.
     exact congrArg (HAppend.hAppend _) (congrArg (fun f => [f]) (SerreGraph.dart_val _ _))
 
 /-- The path along the circle of `p i` is read from its darts. -/
 private theorem mapPath_edgePath_circlePath (p : ι → 𝔸.AlternatingPath v₀ v₀)
-    (i : {i // (p i).length ≠ 0}) (k : Fin ((IndexedPath.ofAlternatingPath (p i) i.2).1 + 1)) :
+    (i : {i // (p i).length ≠ 0}) (k : Fin ((IndexedPath.ofAlternatingPath
+        (p i) i.property).1 + 1)) :
     (dartPrefunctor (wedge p).toGraphOfGroups).mapPath
       (circlePath (wedgeCircles p) (wedgeGroup p) i k).edgePath =
         circlePath (wedgeCircles p) (wedgeGroup p) i k := by
@@ -562,7 +571,7 @@ private theorem mapPath_edgePath_circlePath (p : ι → 𝔸.AlternatingPath v�
 @[simp] theorem darts_edgePath_wedgeLoop (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) :
     SerreGraph.Path.darts _ (wedgeLoop p i).edgePath = List.ofFn (wedgeDart p i) := by
-  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
+  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property
   refine ((congrArg (SerreGraph.Path.darts (wedge p).graph) (edgePath_wedgeLoop p i)).trans
     ((SerreGraph.Path.darts_cons _ _ _).trans
       (congrArg (· ++ _) (darts_edgePath_circlePath p i _)))).trans ?_
@@ -600,9 +609,10 @@ theorem typ_mapE_wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i /
     (wedge p).typ.mapE (wedgeDart p i k) =
       (SerreGraph.Path.darts Γ (p i).toPath.edgePath)[(k : ℕ)]'(by simp) := by
   obtain ⟨k, rfl⟩ :=
-    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)).surjective k
+    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)).surjective
+        k
   rw [← Option.some_inj, ← List.getElem?_eq_getElem,
-    ← IndexedPath.edgePath_toPath_ofAlternatingPath (p i) i.2, Fin.val_cast,
+    ← IndexedPath.edgePath_toPath_ofAlternatingPath (p i) i.property, Fin.val_cast,
     IndexedPath.getElem?_darts_toPath]
   cases k using Fin.lastCases with
   | last => rw [wedgeDart_cast_last, Fin.lastCases_last]; rfl
@@ -613,11 +623,12 @@ theorem typ_mapE_wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i /
     (i : {i // (p i).length ≠ 0}) (k : Fin (p i).length) :
     (wedge p).typ.mapV (wedgeVertex p i k) = (p i).vertex k := by
   obtain ⟨k, rfl⟩ :=
-    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)).surjective k
+    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)).surjective
+        k
   rw [wedgeVertex_cast]
   -- The type of the vertex at position `k` is `c_k`, by definition of `wedge` and `wedgeTyp`.
   exact (wedgeTyp_wedgePos (wedgeCircles p) i k).trans ((IndexedPath.fst_get _ k).symm.trans
-    (congrArg Sigma.fst (IndexedPath.get_ofAlternatingPath (p i) i.2 k)))
+    (congrArg Sigma.fst (IndexedPath.get_ofAlternatingPath (p i) i.property k)))
 
 /-- The start label of the edge at position `k` of the circle of `p i`, read in the vertex group of
 the vertex `c_k` of `p i`, is the element `g_k` of `p i`. -/
@@ -627,9 +638,10 @@ theorem cast_labelα_wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : 
       ((congrArg _ (src_wedgeDart p i k)).trans (typ_mapV_wedgeVertex p i k)))
         ((wedge p).labelα (wedgeDart p i k)) = (p i).elem k := by
   obtain ⟨k, rfl⟩ :=
-    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2)).surjective k
+    (Fin.rightInverse_cast (IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property)).surjective
+        k
   apply cast_eq_of_sigma_eq
-  rw [Fin.val_cast, ← IndexedPath.get_ofAlternatingPath (p i) i.2]
+  rw [Fin.val_cast, ← IndexedPath.get_ofAlternatingPath (p i) i.property]
   -- The start labels of the edges are the transported elements of the indexed path, by
   -- definition of `wedgeLabel`.
   cases k using Fin.lastCases with
@@ -645,7 +657,7 @@ theorem cast_labelω_wedgeDart_of_add_one_eq (p : ι → 𝔸.AlternatingPath v�
     MulEquiv.cast (M := 𝔸.vertexGroup)
       (by rw [SerreGraph.Hom.map_tgt, tgt_wedgeDart_of_add_one_eq p i hk, typ_base])
       ((wedge p).labelω (wedgeDart p i k)) = (p i).last := by
-  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
+  have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.property
   obtain ⟨k, rfl⟩ := (Fin.rightInverse_cast h).surjective k
   apply cast_eq_of_sigma_eq
   cases k using Fin.lastCases with
@@ -662,7 +674,7 @@ theorem isFinite_wedge_iff (p : ι → 𝔸.AlternatingPath v₀ v₀) :
     (wedge p).IsFinite ↔ Finite {i // (p i).length ≠ 0} ∧ (wedgeGroup p).FG := by
   refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨_, h⟩ => ?_⟩
   · have := h.finite_E
-    exact Finite.of_injective (fun i => wedgeDart p i ⟨0, Nat.pos_of_ne_zero i.2⟩)
+    exact Finite.of_injective (fun i => wedgeDart p i ⟨0, Nat.pos_of_ne_zero i.property⟩)
       fun _ _ hi => ((wedgeDart_eq_wedgeDart_iff p).1 hi).1
   · rw [← map_grp_wedge_base]
     have : Group.FG ((wedge p).grp (wedge p).base) := (Group.fg_iff_subgroup_fg _).2 (h.fg _)

@@ -6,11 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
+public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.LinearAlgebra.Span.Basic
 
 /-!
-# Faithful actions on spanning invariant subsets
+# Faithful actions on invariant subsets
+
+Restricting a faithful action to an invariant subset need not stay faithful. This file records
+two cases in which it does.
+
+The stabilizer of a point `a` in a faithful group action acts faithfully on the complement of
+`a`, Mathlib's `SubMulAction.ofStabilizer`: its elements are determined by their values away from
+`a`, since they all fix `a`.
 
 An additive action commuting with scalar multiplication is determined on the span of an
 invariant subset. Consequently, restricting a faithful action to a spanning invariant subset
@@ -20,6 +28,18 @@ remains faithful. The acting type needs no monoid structure.
 public section
 
 namespace SubMulAction
+
+/-- The stabilizer of a point in a faithful group action acts faithfully on the complement of
+that point. -/
+instance ofStabilizer.faithfulSMul {G α : Type*} [Group G] [MulAction G α] [FaithfulSMul G α]
+    (a : α) : FaithfulSMul (MulAction.stabilizer G a) (ofStabilizer G a) where
+  eq_of_smul_eq_smul {g h} hgh := by
+    refine Subtype.ext (eq_of_smul_eq_smul (α := α) fun x ↦ ?_)
+    by_cases hx : x = a
+    · rw [hx, MulAction.mem_stabilizer_iff.mp g.property, MulAction.mem_stabilizer_iff.mp
+        h.property]
+    · simpa only [val_smul, MulAction.subgroup_smul_def] using
+        congrArg Subtype.val (hgh ⟨x, (mem_ofStabilizer_iff G a).mpr hx⟩)
 
 variable {G R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   [DistribSMul G M] [SMulCommClass G R M] [FaithfulSMul G M]

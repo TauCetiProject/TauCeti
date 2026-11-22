@@ -15,6 +15,9 @@ On nonempty spaces its cover characterization uses `n + 1` categorical opens; in
 contractible space has normalized category zero. Homotopy equivalences preserve this invariant.
 The definition is totalized to zero on empty spaces, whose unnormalized count remains zero:
 the formula recovering the unnormalized count by adding one requires nonemptiness.
+The normalization also breaks additivity: the unnormalized count of a disjoint union `X ⊕ Y` is
+the sum of the counts of `X` and `Y`, so for nonempty `X` and `Y` the normalized category of
+`X ⊕ Y` exceeds the sum of theirs by one (`TauCeti.normalizedLSCategory_sum`).
 
 Compact locally contractible spaces have finite normalized category, by finiteness of the
 categorical-cover count established in `TauCeti.Topology.Homotopy.LusternikSchnirelmann.Basic`.
@@ -114,6 +117,17 @@ with infinity retained for infinite spaces. -/
 theorem normalizedLSCategory_of_discreteTopology [DiscreteTopology X] :
     normalizedLSCategory X = (univ : Set X).encard - 1 := by
   rw [normalizedLSCategory_def, lsCategoryCount_eq_encard]
+
+/-- **Normalized category is not additive.** For nonempty `X` and `Y`, the normalized category of
+`X ⊕ Y` is one more than the sum of the normalized categories of `X` and `Y`, because each summand
+needs its own categorical open sets while the normalization subtracts one only once. -/
+@[simp]
+theorem normalizedLSCategory_sum [Nonempty X] [Nonempty Y] :
+    normalizedLSCategory (X ⊕ Y) = normalizedLSCategory X + normalizedLSCategory Y + 1 := by
+  rw [normalizedLSCategory_def, lsCategoryCount_univ_sum,
+    lsCategoryCount_univ_eq_normalizedLSCategory_add_one X,
+    lsCategoryCount_univ_eq_normalizedLSCategory_add_one Y, ← add_assoc,
+    (ENat.addLECancellable_of_ne_top ENat.one_ne_top).add_tsub_cancel_right, add_right_comm]
 
 end TauCeti
 

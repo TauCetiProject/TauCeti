@@ -8,7 +8,6 @@ name: Daily full lint
 # to repair; TauCetiWorker's `lint-repair` stage adapts TauCeti/ until it is green, and it merges
 # through the normal review and merge queue, like the daily Mathlib bump (update.yml). While a
 # repair PR is open, later runs comment the current violations on it instead of opening another.
-# stuck_alerts.py raises a Zulip alert when a repair PR stays open too long.
 
 on:
   schedule:
@@ -56,10 +55,9 @@ jobs:
           fetch-depth: 100
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)

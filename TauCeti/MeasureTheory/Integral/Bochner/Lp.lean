@@ -14,28 +14,56 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 /-!
 # Integrating representatives of Lᵖ curves
 
-On a finite sample measure, an integrable curve in `Lp E p`, with `1 ≤ p ≤ ∞` and
+On a σ-finite sample measure, an integrable curve in `Lp E p`, with `1 ≤ p ≤ ∞` and
 Banach codomain `E`, can be integrated samplewise whenever its representatives are jointly
 almost everywhere strongly measurable. The resulting ordinary integral represents the
 Bochner integral in `Lp E p`. This connects mean-square process integrals to ordinary
-time integrals, without treating point evaluation as a continuous functional on `Lᵖ`.
+time integrals, and `Lᵖ`-valued integrals of evolution semigroups on `ℝⁿ` to pointwise
+integrals, without treating point evaluation as a continuous functional on `Lᵖ`. On a finite
+sample measure the representatives are moreover jointly integrable.
 -/
 
 public section
 
-open MeasureTheory
-open scoped ENNReal
+open Filter MeasureTheory
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
+/-- Testing against a bounded measurable multiplier preserves convergence of the
+integrals along an `L¹`-convergent family. -/
+theorem tendsto_integral_mul_of_tendsto_eLpNorm {α : Type*} [MeasurableSpace α]
+    {ι : Type*} {l : Filter ι} {ν : Measure α} {u : ι → α → ℝ} {v f : α → ℝ}
+    (hu : ∀ᶠ i in l, Integrable (u i) ν)
+    (hv : Integrable v ν) (hf : AEStronglyMeasurable f ν) {B : ℝ} (hB : ∀ᵐ x ∂ν, ‖f x‖ ≤ B)
+    (h : Tendsto (fun n ↦ eLpNorm (u n - v) 1 ν) l (𝓝 0)) :
+    Tendsto (fun n ↦ ∫ x, f x * u n x ∂ν) l (𝓝 (∫ x, f x * v x ∂ν)) := by
+  have hF : ∀ᶠ i in l, Integrable (fun x ↦ f x * u i x) ν :=
+    hu.mono fun _ hi ↦ hi.bdd_mul hf hB
+  have hG : Integrable (fun x ↦ f x * v x) ν := hv.bdd_mul hf hB
+  refine tendsto_integral_of_L1' _ hF ?_
+  have hmul := ENNReal.Tendsto.const_mul (a := ENNReal.ofReal B) h (Or.inr ENNReal.ofReal_ne_top)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa only [mul_zero] using hmul)
+    (Eventually.of_forall fun _ ↦ bot_le) ?_
+  filter_upwards [hu, hF] with i hi hiF
+  rw [eLpNorm_one_eq_lintegral_eNorm (hiF.sub hG).aestronglyMeasurable,
+    eLpNorm_one_eq_lintegral_eNorm (hi.sub hv).aestronglyMeasurable,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  apply lintegral_mono_ae
+  filter_upwards [hB] with x hx
+  simp only [Pi.sub_apply, ← mul_sub, eNorm_mul]
+  gcongr
+  exact (Real.eNorm_eq_ofReal_abs _).le.trans (ENNReal.ofReal_le_ofReal hx)
+
 variable {α Ω : Type*} [MeasurableSpace α] [MeasurableSpace Ω]
-  {μ : Measure α} {P : Measure Ω} [IsFiniteMeasure P]
+  {μ : Measure α} {P : Measure Ω}
   {E : Type*} [NormedAddCommGroup E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {F : α → Lp E p P} {X : α → Ω → E}
 
 /-- Jointly measurable representatives of an integrable Lᵖ curve, with `1 ≤ p ≤ ∞`,
 are integrable on the product of the parameter measure and a finite sample measure. -/
-theorem Integrable.integrable_uncurry_of_ae_eq_Lp (hF : Integrable F μ)
+theorem Integrable.integrable_uncurry_of_ae_eq_Lp [IsFiniteMeasure P] (hF : Integrable F μ)
     (hX : AEStronglyMeasurable (Function.uncurry X) (μ.prod P))
     (heq : ∀ᵐ t ∂μ, ⇑(F t) =ᵐ[P] X t) :
     Integrable (Function.uncurry X) (μ.prod P) := by
@@ -53,9 +81,9 @@ theorem Integrable.integrable_uncurry_of_ae_eq_Lp (hF : Integrable F μ)
 
 variable [SFinite μ] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- The ordinary samplewise integral of jointly measurable representatives of an
-integrable Lᵖ curve, with `1 ≤ p ≤ ∞`, represents its Lᵖ-valued Bochner integral. -/
-theorem Integrable.coeFn_integral_Lp (hF : Integrable F μ)
+/-- The case of a finite sample measure of `MeasureTheory.Integrable.coeFn_integral_Lp`. -/
+private theorem Integrable.coeFn_integral_Lp_of_isFiniteMeasure [IsFiniteMeasure P]
+    (hF : Integrable F μ)
     (hX : AEStronglyMeasurable (Function.uncurry X) (μ.prod P))
     (heq : ∀ᵐ t ∂μ, ⇑(F t) =ᵐ[P] X t) :
     ⇑(∫ t, F t ∂μ) =ᵐ[P] fun ω ↦ ∫ t, X t ω ∂μ := by
@@ -81,5 +109,23 @@ theorem Integrable.coeFn_integral_Lp (hF : Integrable F μ)
   filter_upwards [heq] with t ht
   rw [hL]
   exact integral_congr_ae (ae_restrict_of_ae ht)
+
+/-- The ordinary samplewise integral of jointly measurable representatives of an
+integrable Lᵖ curve, with `1 ≤ p ≤ ∞`, represents its Lᵖ-valued Bochner integral, on a
+σ-finite sample measure. -/
+theorem Integrable.coeFn_integral_Lp [SigmaFinite P] (hF : Integrable F μ)
+    (hX : AEStronglyMeasurable (Function.uncurry X) (μ.prod P))
+    (heq : ∀ᵐ t ∂μ, ⇑(F t) =ᵐ[P] X t) :
+    ⇑(∫ t, F t ∂μ) =ᵐ[P] fun ω ↦ ∫ t, X t ω ∂μ := by
+  -- On a set `s` of finite measure, restrict the curve to `Lp E p (P.restrict s)`.
+  refine ae_of_forall_measure_lt_top_ae_restrict _ fun s _ hs ↦ ?_
+  have _ : IsFiniteMeasure (P.restrict s) := isFiniteMeasure_restrict.2 hs.ne
+  set R := LpToLpRestrictCLM Ω E ℝ P p s
+  have h := (R.integrable_comp hF).coeFn_integral_Lp_of_isFiniteMeasure
+    (hX.mono_measure (Measure.prod_mono le_rfl Measure.restrict_le_self)) <| by
+      filter_upwards [heq] with t ht
+      exact (LpToLpRestrictCLM_coeFn ℝ s (F t)).trans (ae_restrict_of_ae ht)
+  rw [R.integral_comp_comm hF] at h
+  exact (LpToLpRestrictCLM_coeFn ℝ s _).symm.trans h
 
 end MeasureTheory
