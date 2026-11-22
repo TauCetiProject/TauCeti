@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.ModularForms.Cusps.Weight.One
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.Parity
 import TauCeti.NumberTheory.ModularForms.SturmBound
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # The weight-one cusp–Eisenstein decomposition with nebentypus
@@ -298,9 +299,9 @@ private theorem constantTermAt_lowerUnipotent_charE1MFRaise {u v N : ℕ} [NeZer
             (π * cot (π * (j.val / (u * v))))) * profile φ ψ t c := by
   rw [constantTermAt_charE1MFRaise ψ φ hψ hφ htuv]
   have h10 : (lowerUnipotent c) 1 0 = c := by
-    simp [lowerUnipotent, Matrix.SpecialLinearGroup.transvection_coe]
+    simp [lowerUnipotent]
   have h00 : (lowerUnipotent c) 0 0 = 1 := by
-    simp [lowerUnipotent, Matrix.SpecialLinearGroup.transvection_coe]
+    simp [lowerUnipotent]
   simp only [h10, h00, mul_one, Int.gcd_natCast_natCast, ← Int.natCast_div,
     Int.natCast_dvd_natCast, Int.cast_natCast, Int.cast_neg, profile]
   have hφ1 (x : ZMod v) : φ x = φ (-1) * φ (-x) := by

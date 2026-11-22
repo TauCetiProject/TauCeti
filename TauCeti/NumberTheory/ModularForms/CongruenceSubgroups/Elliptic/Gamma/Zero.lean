@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.QuadraticCongruence
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # The elliptic points of `Γ₀(N)`
@@ -104,7 +105,7 @@ private def lowerRep (x : ZMod N) : SL(2, ℤ) :=
   Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (x.cast : ℤ)
 
 private theorem isRatio_lowerRep (x : ZMod N) : IsRatio x (lowerRep x) := by
-  simp [IsRatio, lowerRep, transvection_coe]
+  simp [IsRatio, lowerRep]
 
 /-- Matrices with the same residue give the same `Γ₀(N)`-orbit. -/
 private theorem quotientMk_eq_of_isRatio (z₀ : ℍ) {x : ZMod N} {γ γ' : SL(2, ℤ)}

@@ -20,6 +20,7 @@ import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # Congruence subgroups: the pair `Γ₁(N) ⊴ Γ₀(N)`, the index of `Γ₀(N)`, and the level
@@ -771,21 +772,20 @@ private def lowerTriRep (k : ℕ) (c : Fin p) : SL(2, ℤ) :=
 private lemma lowerTriRep_mem_Gamma0 (k : ℕ) (c : Fin p) :
     lowerTriRep p k c ∈ Gamma0 (p ^ k) := by
   rw [Gamma0_mem]
-  simp [lowerTriRep, transvection_coe, ← Nat.cast_pow, -Int.natCast_pow]
+  simp [lowerTriRep, ← Nat.cast_pow, -Int.natCast_pow]
 
 private lemma lowerTriRep_diff_entry (k : ℕ) (c₁ c₂ : Fin p) :
     ((lowerTriRep p k c₁)⁻¹ * lowerTriRep p k c₂).val 1 0 =
     ((c₂ : ℤ) - (c₁ : ℤ)) * (p : ℤ) ^ k := by
-  simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [inv_apply_one_zero, inv_apply_one_one]
-  simp [lowerTriRep, transvection_coe]
+  rw [lowerTriRep, lowerTriRep, Matrix.SpecialLinearGroup.transvection_inv,
+    ← Matrix.SpecialLinearGroup.transvection_add]
+  simp
   ring
 
 private lemma lowerTriRep_inv_mul_10 (k : ℕ) (c : Fin p) (σ : SL(2, ℤ)) :
     ((lowerTriRep p k c)⁻¹ * σ).val 1 0 = σ.val 1 0 - (c : ℤ) * (p : ℤ) ^ k * σ.val 0 0 := by
-  simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [inv_apply_one_zero, inv_apply_one_one]
-  simp [lowerTriRep, transvection_coe]
+  rw [lowerTriRep, Matrix.SpecialLinearGroup.transvection_inv]
+  simp [Matrix.mul_apply, Fin.sum_univ_two]
   ring
 
 private def relindexRep (k : ℕ) (c : Fin p) : ↥(Gamma0 (p ^ k)) :=
