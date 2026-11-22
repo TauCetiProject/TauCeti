@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Analysis.Normed.Operator.CompactFamily
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.Exponential
@@ -83,6 +84,12 @@ one-parameter automorphism groups of C⋆-algebras.
   of a path of complex-linear maps and its inverse are complex linear.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
+* `TauCeti.exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm`,
+  `TauCeti.exists_forall_norm_le_mul_norm_add_integral_norm`: on `[0, d]` such a solution stays
+  within `C ∫₀ᵈ ‖f‖` of `t ↦ Γ t (w 0)`, hence `‖w t‖ ≤ C (‖w 0‖ + ∫₀ᵈ ‖f‖)`.
+* `TauCeti.exists_forall_norm_le_mul_integral_norm_of_norm_le`: if `w 0` is bounded by the
+  deviation `w d - Γ d (w 0)`, then `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` on `[0, d]`; boundary value problems and
+  twisted periodic problems both reduce to this.
 
 ## References
 
@@ -635,6 +642,73 @@ theorem det_one_sub_dysonSeriesLeft_mul_sub_mul_mul {J D M : ℝ → X →L[ℝ]
       ContinuousLinearMap.toLinearMap_one]
   rw [h, ContinuousLinearMap.toLinearMap_mul, ContinuousLinearMap.toLinearMap_mul, map_mul, map_mul,
     mul_right_comm, ← map_mul, hj, map_one, one_mul]
+
+/-- **The deviation from the homogeneous solution.** For `d ≥ 0` there is a constant `C ≥ 0`
+such that every solution of `w' = M w + f` with `f` continuous stays within `C ∫₀ᵈ ‖f‖` of the
+solution `t ↦ Ψ(t) (w 0)` of `w' = M w` on `[0, d]`, where `Ψ = dysonSeriesLeft M`. -/
+theorem exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm {M : ℝ → X →L[ℝ] X}
+    (hM : Continuous M) (d : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
+      ∀ t ∈ Icc 0 d, ‖w t - dysonSeriesLeft M t (w 0)‖ ≤ C * ∫ s in 0..d, ‖f s‖ := by
+  obtain ⟨A, hA0, hA⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := d)).exists_forall_norm_apply_le_mul_norm
+      (continuous_dysonSeriesLeft hM).continuousOn
+  obtain ⟨B, hB0, hB⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := d)).exists_forall_norm_apply_le_mul_norm
+      (continuous_dysonSeries hM.neg).continuousOn
+  refine ⟨A * B, mul_nonneg hA0 hB0, fun w f hf hw t ht ↦ ?_⟩
+  -- By variation of constants, `w t - Ψ(t) (w 0) = Ψ(t) (∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`.
+  rw [eq_dysonSeriesLeft_apply_add_integral hM hf hw t, map_add, add_sub_cancel_left]
+  calc _ ≤ A * ‖∫ s in 0..t, dysonSeries (-M) s (f s)‖ := hA t ht _
+    _ ≤ A * ∫ s in 0..t, B * ‖f s‖ :=
+        mul_le_mul_of_nonneg_left (norm_integral_le_of_norm_le ht.1
+          (Filter.Eventually.of_forall fun s hs ↦ hB s ⟨hs.1.le, hs.2.trans ht.2⟩ _)
+          ((continuous_const.mul hf.norm).intervalIntegrable _ _)) hA0
+    _ = A * B * ∫ s in 0..t, ‖f s‖ := by rw [integral_const_mul]; ring
+    _ ≤ A * B * ∫ s in 0..d, ‖f s‖ := mul_le_mul_of_nonneg_left (integral_mono_interval
+        le_rfl ht.1 ht.2 (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _)
+        (hf.norm.intervalIntegrable _ _)) (mul_nonneg hA0 hB0)
+
+/-- **A bound by the initial value and the forcing.** For `d ≥ 0` there is a constant `C ≥ 0`
+such that every solution of `w' = M w + f` with `f` continuous satisfies
+`‖w t‖ ≤ C (‖w 0‖ + ∫₀ᵈ ‖f‖)` on `[0, d]`. -/
+theorem exists_forall_norm_le_mul_norm_add_integral_norm {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    (d : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
+      ∀ t ∈ Icc 0 d, ‖w t‖ ≤ C * (‖w 0‖ + ∫ s in 0..d, ‖f s‖) := by
+  obtain ⟨A, hA0, hA⟩ :=
+    (isCompact_Icc (a := (0 : ℝ)) (b := d)).exists_forall_norm_apply_le_mul_norm
+      (continuous_dysonSeriesLeft hM).continuousOn
+  obtain ⟨C, -, hdev⟩ := exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm hM d
+  refine ⟨max A C, le_max_of_le_left hA0, fun w f hf hw t ht ↦ ?_⟩
+  have hI : 0 ≤ ∫ s in 0..d, ‖f s‖ :=
+    intervalIntegral.integral_nonneg (le_trans ht.1 ht.2) fun _ _ ↦ norm_nonneg _
+  calc ‖w t‖ ≤ ‖dysonSeriesLeft M t (w 0)‖ + ‖w t - dysonSeriesLeft M t (w 0)‖ :=
+        norm_le_insert' _ _
+    _ ≤ max A C * ‖w 0‖ + max A C * ∫ s in 0..d, ‖f s‖ :=
+        add_le_add ((hA t ht (w 0)).trans (by gcongr; exact le_max_left _ _))
+          ((hdev hf hw t ht).trans (by gcongr; exact le_max_right _ _))
+    _ = max A C * (‖w 0‖ + ∫ s in 0..d, ‖f s‖) := by ring
+
+/-- **An a priori estimate from a bound on the initial value.** Let `Ψ = dysonSeriesLeft M`,
+`d ≥ 0` and `K ≥ 0`. There is a constant `C ≥ 0` such that every solution of `w' = M w + f`, with
+`f` continuous and `‖w 0‖ ≤ K ‖w d - Ψ(d) (w 0)‖`, satisfies `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` on `[0, d]`.
+A boundary condition which determines `w 0` from the deviation `w d - Ψ(d) (w 0)` thus gives an
+a priori estimate. -/
+theorem exists_forall_norm_le_mul_integral_norm_of_norm_le {M : ℝ → X →L[ℝ] X}
+    (hM : Continuous M) {d : ℝ} (hd : 0 ≤ d) {K : ℝ} (hK : 0 ≤ K) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
+      ‖w 0‖ ≤ K * ‖w d - dysonSeriesLeft M d (w 0)‖ →
+        ∀ t ∈ Icc 0 d, ‖w t‖ ≤ C * ∫ s in 0..d, ‖f s‖ := by
+  obtain ⟨C, hC, hdev⟩ := exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm hM d
+  obtain ⟨B, hB, hle⟩ := exists_forall_norm_le_mul_norm_add_integral_norm hM d
+  refine ⟨B * (K * C + 1), mul_nonneg hB (add_nonneg (mul_nonneg hK hC) zero_le_one),
+    fun w f hf hw h0 t ht ↦ ?_⟩
+  have h0' : ‖w 0‖ ≤ K * (C * ∫ s in 0..d, ‖f s‖) :=
+    h0.trans (mul_le_mul_of_nonneg_left (hdev hf hw d ⟨hd, le_rfl⟩) hK)
+  calc ‖w t‖ ≤ B * (‖w 0‖ + ∫ s in 0..d, ‖f s‖) := hle hf hw t ht
+    _ ≤ B * (K * (C * ∫ s in 0..d, ‖f s‖) + ∫ s in 0..d, ‖f s‖) := by gcongr
+    _ = B * (K * C + 1) * ∫ s in 0..d, ‖f s‖ := by ring
 
 section Complex
 
