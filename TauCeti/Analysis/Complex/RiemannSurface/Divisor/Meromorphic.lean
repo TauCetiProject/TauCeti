@@ -180,18 +180,19 @@ theorem _root_.TauCeti.RiemannSurface.MeromorphicFunction.exists_order_eq_neg_of
   refine ⟨f, ?_, hfE⟩
   -- The bounds of `L(D)` and `L(D + [x])` differ only at `x`, so `f` violates the first there,
   -- which pins its order at `x` to `-(D(x) + 1)`.
-  -- Restate the bounds through `WeilDivisor.coeff`, whose `@[simp]` lemmas compute them.
   have hyE := hfE y
-  simp only [E, ← WeilDivisor.coeff.eq_1, WeilDivisor.coeff_add] at hy hyE ⊢
+  simp only [E, Finsupp.add_apply] at hyE
   rcases eq_or_ne y x with rfl | hyx
-  · rw [WeilDivisor.coeff_ofPoint_self] at hyE
+  · have hp : WeilDivisor.ofPoint y y = 1 := WeilDivisor.coeff_ofPoint_self y
+    rw [hp] at hyE
     induction h : MeromorphicFunction.order y f using WithTop.recTopCoe with
     | top => rw [h] at hy; exact absurd hy not_top_lt
     | coe n =>
       rw [h] at hy hyE
       norm_cast at hy hyE ⊢
       omega
-  · exact absurd hy (not_lt.mpr (by simpa [hyx] using hyE))
+  · have hp : WeilDivisor.ofPoint x y = 0 := WeilDivisor.coeff_ofPoint_of_ne hyx
+    exact absurd hy (not_lt.mpr (by simpa [hp] using hyE))
 
 /-- A section space of dimension greater than one contains a section whose meromorphic
 image is not constant. No effectiveness assumption on the divisor is needed. -/

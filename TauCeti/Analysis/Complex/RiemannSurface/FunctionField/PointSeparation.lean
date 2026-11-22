@@ -84,8 +84,11 @@ theorem eventually_exists_order_eq_neg (x : X) :
     (divisorSheafSectionsEquiv _ ⊤).finrank_eq] at hj
   obtain ⟨f, hfx, hf⟩ :=
     exists_order_eq_neg_of_finrank_lt (D := j • WeilDivisor.ofPoint x) (x := x) (by omega)
-  refine ⟨f, by simp [hfx, ← WeilDivisor.coeff.eq_1], fun y hy ↦ ?_⟩
-  simpa [← WeilDivisor.coeff.eq_1, hy] using hf y
+  -- The values of `ofPoint x`, read off its `WeilDivisor.coeff` lemmas.
+  have hpx : WeilDivisor.ofPoint x x = 1 := WeilDivisor.coeff_ofPoint_self x
+  refine ⟨f, by simp [hfx, hpx], fun y hy ↦ ?_⟩
+  have hpy : WeilDivisor.ofPoint x y = 0 := WeilDivisor.coeff_ofPoint_of_ne hy
+  simpa [hpy] using hf y
 
 /-- **Meromorphic functions separate points.** On a compact connected Riemann surface with
 finite-dimensional `H¹(X, 𝒪)`, every point `x` is the only pole of some meromorphic function. -/
@@ -107,8 +110,8 @@ theorem order_surjective (x : X) : Function.Surjective (order (X := X) x) := by
   obtain ⟨f, hf, -⟩ := hN N le_rfl
   obtain ⟨g, hg, -⟩ := hN (N + 1) N.le_succ
   have ht : order x (f / g) = 1 := by
-    rw [AddValuation.map_div, hf, hg, ← WithTop.LinearOrderedAddCommGroup.coe_sub,
-      ← WithTop.coe_one, WithTop.coe_inj]
+    rw [AddValuation.map_div, hf, hg]
+    norm_cast
     omega
   intro n
   induction n using WithTop.recTopCoe with
