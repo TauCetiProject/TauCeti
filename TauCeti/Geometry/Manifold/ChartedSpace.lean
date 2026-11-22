@@ -33,7 +33,6 @@ charted space, second countability.
   representative of `k` composed with the representative of `φ`.
 * `ChartedSpace.perfectSpace`: a charted space over a space without isolated points has no
   isolated points.
-* `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
 * `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space over a second-countable
   model space is second countable.
 -/
@@ -50,9 +49,8 @@ variable {H H' X Y : Type*} [TopologicalSpace H] [TopologicalSpace H'] [Topologi
 /-- The inverse of the chart at `x` maps punctured neighbourhoods of `chartAt H x x` into
 punctured neighbourhoods of `x`. -/
 theorem tendsto_chartAt_symm_nhdsNE (x : X) :
-    Tendsto (chartAt H x).symm (𝓝[≠] (chartAt H x x)) (𝓝[≠] x) := by
-  simpa [(chartAt H x).left_inv (mem_chart_source H x)] using
-    (chartAt H x).symm.tendsto_nhdsNE ((chartAt H x).map_source (mem_chart_source H x))
+    Tendsto (chartAt H x).symm (𝓝[≠] (chartAt H x x)) (𝓝[≠] x) :=
+  (chartAt H x).tendsto_symm_nhdsNE (mem_chart_source H x)
 
 /-- The chart at `x` maps punctured neighbourhoods of `x` into punctured neighbourhoods of
 `chartAt H x x`. -/
@@ -105,15 +103,6 @@ end TauCeti
 theorem ChartedSpace.perfectSpace {H X : Type*} [TopologicalSpace H] [PerfectSpace H]
     [TopologicalSpace X] [ChartedSpace H X] : PerfectSpace X :=
   perfectSpace_iff_forall_not_isolated.2 fun x ↦ (chartAt H x).nhdsNE_neBot (mem_chart_source H x)
-
-/-- A nonempty charted space over a space without isolated points is nontrivial: its points are
-not isolated, so the punctured neighbourhoods of any point contain a second point. -/
-theorem ChartedSpace.nontrivial {H X : Type*} [TopologicalSpace H] [PerfectSpace H]
-    [TopologicalSpace X] [ChartedSpace H X] [Nonempty X] : Nontrivial X := by
-  have := ChartedSpace.perfectSpace (H := H) (X := X)
-  obtain ⟨x⟩ := ‹Nonempty X›
-  obtain ⟨y, hy⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {x}ᶜ ∈ 𝓝[≠] x)
-  exact ⟨⟨y, x, hy⟩⟩
 
 /-- A Lindelöf charted space over a second-countable model space is second countable. -/
 theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace H]
