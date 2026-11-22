@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Operator.Basic
 
@@ -79,11 +80,15 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
+* `TauCeti.laplacian_smul_comp_smul_right`: the rescaling `c⁻² f(c ·)` has Laplacian
+  `(Δ f)(c ·)`.
 * `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a bilinear map, as a continuous linear
   functional.
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
+* `TauCeti.laplacian_fun_sum`: the Laplacian of a finite sum of `C²` functions is the sum of
+  their Laplacians.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
   differences are bounded by `dim E` times the second derivative and its differences;
   `TauCeti.norm_laplacian_le_norm_iteratedFDeriv_two` states the first bound with the second
@@ -94,6 +99,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   directional derivatives along an orthonormal basis.
 * `TauCeti.laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I`: its planar form in
   the orthonormal directions `1` and `I`.
+* `OrthonormalBasis.norm_gradient_fderiv_sub_le_of_laplacian`: the gradient of `∂_{b₀} f` moves
+  by at most `|Δf x - Δf y| + 2n D` when those of the `n` other `∂_{bᵢ} f` move by at most `D`.
 * `ContDiffAt.laplacian_fderiv`, `ContDiff.laplacian_iteratedFDeriv`: `Δ (Df) = D (Δ f)` and
   `Δ (Dⁿ f) = Dⁿ (Δ f)`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
@@ -169,6 +176,13 @@ theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
       ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (iteratedFDeriv ℝ 2 f x) := by
   simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
 
+/-- The Laplacian at `x` of a finite sum of functions that are `C²` at `x` is the sum of their
+Laplacians. -/
+theorem laplacian_fun_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
+    (hf : ∀ i ∈ s, ContDiffAt ℝ 2 (f i) x) :
+    Δ (fun y ↦ ∑ i ∈ s, f i y) x = ∑ i ∈ s, Δ (f i) x := by
+  simp only [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_fun_sum_apply hf, map_sum]
+
 /-- The Laplacian is bounded by the dimension times the second Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
 theorem norm_laplacian_le (f : E → F) (x : E) :
@@ -228,6 +242,57 @@ theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [iteratedFDeriv_two_apply, fderiv_clm_apply hf (differentiableAt_const _)]
   simp
+
+open Gradient in
+/-- **The normal second derivatives from the Laplacian.** For an orthonormal basis `(bᵢ)` and a
+function `u` that is `C²` near `x` and `y`, the gradient of the derivative of `u` along `b₀` moves
+from `x` to `y` by at most `|Δu x - Δu y| + 2n D`, if the gradients of the derivatives along the
+remaining `n` basis vectors move by at most `D`. The derivative along `b₀` of `∂_{bᵢ}u` is that of
+`∂_{b₀}u` along `bᵢ`, and `∂²_{b₀}u = Δu - ∑_{i ≠ 0} ∂²_{bᵢ}u`. -/
+theorem _root_.OrthonormalBasis.norm_gradient_fderiv_sub_le_of_laplacian {n : ℕ}
+    (b : OrthonormalBasis (Fin (n + 1)) ℝ E) {u : E → ℝ} {x y : E} (hx : ContDiffAt ℝ 2 u x)
+    (hy : ContDiffAt ℝ 2 u y) {D : ℝ}
+    (htan : ∀ i : Fin n, ‖∇ (fun z => fderiv ℝ u z (b i.succ)) x -
+      ∇ (fun z => fderiv ℝ u z (b i.succ)) y‖ ≤ D) :
+    ‖∇ (fun z => fderiv ℝ u z (b 0)) x - ∇ (fun z => fderiv ℝ u z (b 0)) y‖ ≤
+      |Δ u x - Δ u y| + 2 * n * D := by
+  -- Coordinates of the gradient of `∂ᵥu` are second derivatives, which are symmetric.
+  have hin : ∀ {z}, ContDiffAt ℝ 2 u z → ∀ v w : E,
+      ⟪w, ∇ (fun y => fderiv ℝ u y v) z⟫_ℝ = fderiv ℝ (fderiv ℝ u) z w v := fun hz v w => by
+    rw [real_inner_comm, inner_gradient_left, fderiv_clm_apply_const_apply
+      ((hz.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero)]
+  have hsymm : ∀ {z}, ContDiffAt ℝ 2 u z → ∀ v w : E,
+      fderiv ℝ (fderiv ℝ u) z v w = fderiv ℝ (fderiv ℝ u) z w v :=
+    fun hz v w => hz.isSymmSndFDerivAt (by simp) v w
+  have hΔ : ∀ z, Δ u z = fderiv ℝ (fderiv ℝ u) z (b 0) (b 0) +
+      ∑ i : Fin n, fderiv ℝ (fderiv ℝ u) z (b i.succ) (b i.succ) := fun z => by
+    rw [laplacian_eq_iteratedFDeriv_orthonormalBasis u b]
+    simp [Fin.sum_univ_succ, iteratedFDeriv_two_apply]
+  set v := ∇ (fun z => fderiv ℝ u z (b 0)) x - ∇ (fun z => fderiv ℝ u z (b 0)) y
+  -- The tangential coordinates of `v` are controlled by `D`.
+  have hcoord : ∀ i : Fin n, |⟪b i.succ, v⟫_ℝ| ≤ D := fun i => by
+    rw [inner_sub_right, hin hx, hin hy, hsymm hx, hsymm hy, ← hin hx, ← hin hy, ← inner_sub_right]
+    exact (abs_real_inner_le_norm _ _).trans (by rw [b.orthonormal.1, one_mul]; exact htan i)
+  -- The normal coordinate comes from the equation.
+  have hnormal : |⟪b 0, v⟫_ℝ| ≤ |Δ u x - Δ u y| + n * D := by
+    have h : ⟪b 0, v⟫_ℝ = (Δ u x - Δ u y) - ∑ i : Fin n, ⟪b i.succ,
+        ∇ (fun z => fderiv ℝ u z (b i.succ)) x - ∇ (fun z => fderiv ℝ u z (b i.succ)) y⟫_ℝ := by
+      simp only [v, inner_sub_right, hin hx, hin hy, hΔ x, hΔ y, Finset.sum_sub_distrib]
+      ring
+    rw [h]
+    refine (abs_sub _ _).trans (add_le_add le_rfl ((Finset.abs_sum_le_sum_abs _ _).trans ?_))
+    refine (Finset.sum_le_sum fun i _ => (abs_real_inner_le_norm _ _).trans ?_).trans_eq
+      (b := ∑ _i : Fin n, D) (by simp)
+    rw [b.orthonormal.1, one_mul]
+    exact htan i
+  calc ‖v‖ = ‖∑ j, ⟪b j, v⟫_ℝ • b j‖ := by rw [b.sum_repr' v]
+    _ ≤ ∑ j, |⟪b j, v⟫_ℝ| := (norm_sum_le _ _).trans_eq (by simp [norm_smul, b.orthonormal.1])
+    _ ≤ (|Δ u x - Δ u y| + n * D) + ∑ _i : Fin n, D := by
+        rw [Fin.sum_univ_succ]
+        exact add_le_add hnormal (Finset.sum_le_sum fun i _ => hcoord i)
+    _ = |Δ u x - Δ u y| + 2 * n * D := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
 
 open Complex in
 /-- The Laplacian on the complex plane is the sum of the second directional derivatives in the
@@ -431,6 +496,16 @@ theorem laplacian_comp_smul_right (c : ℝ) (f : E → F) :
     -- `map_smul_univ` then pulls the two scalar factors out of the bilinear map.
     change M (fun j => c • v j) = c ^ 2 • M v
     simpa [M, v, pow_two] using M.map_smul_univ (fun _ : Fin 2 => c) v
+
+/-- **Scale-invariant rescaling.** The rescaling `c⁻² f(c ·)` of a function `f` that is `C²` at
+`c • x` has Laplacian `(Δ f)(c • x)` at `x`. -/
+theorem laplacian_smul_comp_smul_right {f : E → F} {c : ℝ} (hc : c ≠ 0) {x : E}
+    (hf : ContDiffAt ℝ 2 f (c • x)) :
+    Δ ((c ^ 2)⁻¹ • fun y ↦ f (c • y)) x = Δ f (c • x) := by
+  have hcomp : ContDiffAt ℝ 2 (fun y ↦ f (c • y)) x :=
+    hf.comp x (contDiff_const_smul c).contDiffAt
+  rw [laplacian_smul _ hcomp, laplacian_comp_smul_right, smul_smul,
+    inv_mul_cancel₀ (pow_ne_zero 2 hc), one_smul]
 
 /-- **Scaling law for the Laplacian under a homothety.**
 
