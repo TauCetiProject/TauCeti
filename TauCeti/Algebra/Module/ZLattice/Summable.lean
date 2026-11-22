@@ -8,7 +8,8 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Summable
 import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 import TauCeti.Analysis.Normed.Group.Int
-import TauCeti.Analysis.PSeries
+import TauCeti.Analysis.SpecialFunctions.Pow.Summable
+import TauCeti.LinearAlgebra.Basis.RestrictScalars
 import TauCeti.Topology.DiscreteSubset
 
 /-!
@@ -24,6 +25,11 @@ power, and `‖x + v‖ → ∞` along the cofinite filter of `L` because `L` is
 
 This is the majorant behind the convergence of the theta series of a lattice, a sum of
 `exp (π i ‖x + v‖² τ)` over `L` whose terms have norm `exp (-π ‖x + v‖² im τ)`.
+
+Mathlib's `ZLattice.summable_norm_rpow` (`∑ ℓ ∈ L, ‖ℓ‖ ^ r` converges for `r < -rank L`) is the
+common source of the power bounds below: shifting the base by one keeps the sum convergent
+(`ZLattice.summable_one_add_norm_rpow`), and the bounds over the integer vectors are read off the
+standard lattice.
 
 For a finite index type `d`, the integer vectors `d → ℤ` are the standard lattice
 `ℤ^d ⊆ ℝ^d`, so summability over them is summability over that lattice
@@ -92,11 +98,14 @@ theorem summable_exp_neg_mul_norm_add_sq {c : ℝ} (hc : 0 < c) (x : E) :
   simpa [Function.comp_def, sub_neg_eq_add, add_comm] using key
 
 /-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ r` is
-summable for every real `r < -rank L`. -/
+summable for every real `r < -rank L`. This shifts the base of Mathlib's
+`ZLattice.summable_norm_rpow` by one (`Summable.const_add_rpow`). -/
 theorem summable_one_add_norm_rpow (r : ℝ) (hr : r < -Module.finrank ℤ L) :
-    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ r :=
-  (summable_norm_rpow L r hr).const_add_rpow (hr.le.trans (neg_nonpos.2 (Nat.cast_nonneg _)))
-    ((eventually_cofinite_ne 0).mono fun ℓ hℓ ↦ by simpa using hℓ) 1
+    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ r := by
+  have h := (summable_norm_rpow L r hr).const_add_rpow
+    (hr.le.trans (neg_nonpos.2 (Nat.cast_nonneg _)))
+    ((eventually_cofinite_ne 0).mono fun ℓ hℓ ↦ norm_pos_iff.2 hℓ) 1
+  simpa only [Submodule.norm_coe] using h
 
 /-- On a discrete subgroup `L` of a finite-dimensional real normed space, `((1 + ‖ℓ‖) ^ r)⁻¹` is
 summable as soon as the natural number `r` exceeds the rank of `L`. -/
@@ -124,17 +133,21 @@ namespace TauCeti
 
 /-- For a finite index type `d`, through `n ↦ (fun i ↦ (n i : ℝ))`, the integer vectors `d → ℤ`
 are the standard lattice `ℤ^d ⊆ ℝ^d`, the `ℤ`-span of the standard basis. So a function on `d → ℝ`
-is summable over the integer vectors exactly when it is summable over that lattice. -/
+is summable over the integer vectors exactly when it is summable over that lattice. The
+equivalence is the coordinate map of the integral basis `Module.Basis.restrictScalars ℤ` of the
+standard basis (`Module.Basis.coe_restrictScalars_equivFun_symm`). -/
 theorem summable_pi_int_iff_summable_span {d : Type*} [Finite d] {α : Type*} [AddCommMonoid α]
     [TopologicalSpace α] {f : (d → ℝ) → α} :
     (Summable fun n : d → ℤ ↦ f fun i ↦ (n i : ℝ)) ↔
       Summable fun ℓ : Submodule.span ℤ (Set.range (Pi.basisFun ℝ d)) ↦ f ℓ := by
-  set e := ((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun
-  rw [← e.symm.toEquiv.summable_iff]
-  refine iff_of_eq (congrArg Summable (funext fun n ↦ congrArg f (funext fun i ↦ ?_)))
-  have h := (Pi.basisFun ℝ d).restrictScalars_repr_apply ℤ (e.symm n) i
-  rw [← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply, Pi.basisFun_repr] at h
-  simpa using h
+  -- The lattice vector with coordinates `n` is the real vector `fun i ↦ (n i : ℝ)`.
+  have hcoe (n : d → ℤ) :
+      (((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun.symm n : d → ℝ) = fun i ↦ (n i : ℝ) := by
+    rw [Module.Basis.coe_restrictScalars_equivFun_symm, Pi.basisFun_equivFun,
+      LinearEquiv.refl_symm, LinearEquiv.refl_apply]
+    simp only [eq_intCast]
+  rw [← ((Pi.basisFun ℝ d).restrictScalars ℤ).equivFun.symm.toEquiv.summable_iff]
+  simp only [Function.comp_def, LinearEquiv.coe_toEquiv, hcoe]
 
 /-- The sup norms of the integer vectors `n : d → ℤ` satisfy `∑ n, ‖n‖ ^ r < ∞` when
 `r < -card d`. Here `‖0‖ ^ r = 0`. -/
@@ -142,6 +155,7 @@ theorem summable_pi_int_norm_rpow {d : Type*} [Fintype d] (r : ℝ) (hr : r < -F
     Summable fun n : d → ℤ ↦ ‖n‖ ^ r := by
   have hL := ZLattice.summable_norm_rpow (Submodule.span ℤ (Set.range (Pi.basisFun ℝ d))) r
     (by rwa [ZLattice.rank ℝ, Module.finrank_fintype_fun_eq_card])
+  simp only [← Submodule.norm_coe] at hL
   simpa only [pi_norm_intCast_real] using
     (summable_pi_int_iff_summable_span (f := fun x ↦ ‖x‖ ^ r)).2 hL
 

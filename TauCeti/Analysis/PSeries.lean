@@ -11,6 +11,7 @@ public import TauCeti.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.NumberTheory.ZetaValues
 
@@ -30,9 +31,9 @@ term is `0`, by the junk value of `0 ^ (-t)`.
 
 The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`, and the summability over `ℤ` of
 the shifted weights `(1 + |n|) ^ r` for `r < -1`, the form in which the `p`-series enters
-weighted sequence spaces. That shift is an instance of a general comparison: shifting a base
-that is positive outside a finite set by a constant keeps a summable family of nonpositive powers
-summable.
+weighted sequence spaces. That shift is an instance of the general comparison
+`Summable.const_add_rpow`: shifting a base that is positive outside a finite set by a constant
+keeps a summable family of nonpositive powers summable.
 
 A weighted family of radii with finite sublevel sets also has summable reciprocal powers
 when its weighted counts grow at a smaller exponent. The proof partitions the radii into
@@ -42,8 +43,6 @@ dyadic annuli and compares their contributions with a geometric series.
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
 * `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
-* `Summable.const_add_rpow` — if `∑ a i ^ r` converges for `r ≤ 0` and `a` is positive
-  outside a finite set, so does `∑ (c + a i) ^ r` for every real `c`.
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
 * `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
   when sublevel counts grow at a smaller exponent.
@@ -87,30 +86,6 @@ theorem hasSum_int_inv_sq : HasSum (fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) (Real.
   convert HasSum.of_nat_of_neg (f := fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) h h' using 1
   simp only [Int.cast_zero, zero_pow two_ne_zero, inv_zero, sub_zero]
   ring
-
-/-- **Shifted bases keep nonpositive powers summable.** If `a i ^ r` is summable for some `r ≤ 0`
-and `a` is positive outside a finite set (eventually positive along the cofinite filter), then
-`(c + a i) ^ r` is summable for every real `c`. -/
-theorem _root_.Summable.const_add_rpow {ι : Type*} {a : ι → ℝ} {r : ℝ}
-    (h : Summable fun i ↦ a i ^ r) (hr : r ≤ 0) (ha : ∀ᶠ i in Filter.cofinite, 0 < a i)
-    (c : ℝ) : Summable fun i ↦ (c + a i) ^ r := by
-  rcases hr.eq_or_lt with rfl | hr
-  · simpa only [Real.rpow_zero] using h
-  -- Summability forces `a i ^ r → 0⁺`, so `a i = (a i ^ r) ^ r⁻¹ → ∞` as `r⁻¹ < 0`.
-  have htop : Filter.Tendsto a Filter.cofinite Filter.atTop := by
-    have h0 : Filter.Tendsto (fun i ↦ a i ^ r) Filter.cofinite (nhdsWithin 0 (Set.Ioi 0)) :=
-      tendsto_nhdsWithin_iff.2 ⟨h.tendsto_cofinite_zero,
-        ha.mono fun i hi ↦ Real.rpow_pos_of_pos hi r⟩
-    refine ((tendsto_rpow_neg_nhdsGT_zero (inv_lt_zero.2 hr)).comp h0).congr' ?_
-    filter_upwards [ha] with i hi
-    exact Real.rpow_rpow_inv hi.le hr.ne
-  -- So `c + a i ~ a i`, hence `(c + a i) ^ r =Θ a i ^ r`.
-  have hequiv : Asymptotics.IsEquivalent Filter.cofinite (fun i ↦ c + a i) a :=
-    Asymptotics.IsEquivalent.refl.const_add_of_norm_tendsto_atTop
-      (tendsto_norm_atTop_atTop.comp htop)
-  refine summable_of_isBigO h (hequiv.isTheta.rpow ?_ (ha.mono fun i hi ↦ hi.le)).1
-  filter_upwards [htop.eventually_ge_atTop (-c)] with i hi
-  exact neg_le_iff_add_nonneg'.1 hi
 
 /-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
 theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :

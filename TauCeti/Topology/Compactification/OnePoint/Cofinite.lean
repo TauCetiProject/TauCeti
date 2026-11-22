@@ -44,9 +44,11 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] {s : Set X} {a : X}
 removed. -/
 theorem discreteTopology_diff_singleton
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) : DiscreteTopology ↥(s \ {a}) :=
-  discreteTopology_iff_isOpen_singleton.mpr fun x ↦
-    (h.comp (inclusion_injective sdiff_subset).tendsto_cofinite).isOpen_singleton_of_cofinite
-      continuous_subtypeVal.continuousAt x.property.2
+  discreteTopology_iff_isOpen_singleton.mpr fun x ↦ by
+    -- The inclusion of `s \ {a}` into `X` factors through `s`, so it also tends to `a`.
+    have h' := h.comp (inclusion_injective (sdiff_subset (t := {a}))).tendsto_cofinite
+    rw [val_comp_inclusion] at h'
+    exact h'.isOpen_singleton_of_cofinite continuous_subtypeVal.continuousAt x.property.2
 
 /-- **A set converging to `a` along the cofinite filter, with `a` added, is the one-point
 compactification of its complement of `a`**: the homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` that is
