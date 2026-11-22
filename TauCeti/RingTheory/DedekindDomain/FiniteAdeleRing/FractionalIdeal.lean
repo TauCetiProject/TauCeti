@@ -46,11 +46,15 @@ theorem mem_finiteAdelicIdeal_iff {I : (FractionalIdeal R⁰ K)ˣ}
   refine ⟨fun hx ↦ hx t ht, fun hx s hs ↦ ?_⟩
   have hu : s⁻¹ * t ∈ integralUnits R K := by
     rw [← ker_toFractionalIdeal, MonoidHom.mem_ker, map_mul, map_inv, hs, ht, inv_mul_cancel]
-  have hint : (↑(s⁻¹ * t) : 𝔸ᶠ[R, K]) ∈ integralAdeles R K := by
-    rw [integralUnits_eq_units_integralAdeles, Submonoid.mem_units_iff] at hu
-    exact hu.1
+  have hint := (mem_integralUnits_iff_val_mem_and_inv_mem.mp hu).1
   convert mul_mem hint hx using 1
   simp only [Units.val_mul, mul_assoc, ← mul_assoc (t : 𝔸ᶠ[R, K]), Units.mul_inv, one_mul]
+
+/-- A finite idele belongs to the adelic extension of the fractional ideal it represents. -/
+theorem coe_mem_finiteAdelicIdeal (t : 𝔸ᶠ[R, K]ˣ) :
+    (t : 𝔸ᶠ[R, K]) ∈ finiteAdelicIdeal (toFractionalIdeal t) := by
+  rw [mem_finiteAdelicIdeal_iff t rfl, Units.inv_mul]
+  exact one_mem _
 
 /-- The unit ideal extends to the ring of integral finite adeles. -/
 @[simp]
