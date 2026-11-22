@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.Integral
-public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral
+public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
