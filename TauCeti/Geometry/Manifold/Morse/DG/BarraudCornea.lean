@@ -36,14 +36,16 @@ spaces of trajectories into the Moore loops at `y₀`
 (`TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation`), multiplicative along the concatenation of
 broken trajectories (`TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation_morseRecordsConcat`).
 
-Every twisting chain system on the compactified spaces of trajectories, in particular a representing
-chain system of fundamental chains relative to the boundary, is therefore carried to a twisting
-cocycle with values in the chains `C^□_*(Ω_{y₀} Y; R)` on the Moore loop space
-(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`): this is the Barraud–Cornea cocycle, whose
-entry at `(x, y)` is the push-forward of the chain of `L(x, y)` along the evaluation into loops
-(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`). Barraud, Damian, Humilière and Oancea
+Every twisting chain system on the compactified spaces of trajectories is therefore carried to a
+twisting cocycle with values in the chains `C^□_*(Ω_{y₀} Y; R)` on the Moore loop space
+(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`), whose entry at `(x, y)` is the
+push-forward of the chain of `L(x, y)` along the evaluation into loops
+(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`). The representing chain systems of
+fundamental chains relative to the boundary, which the cocycle of Barraud and Cornea is built from,
+live on the trajectory spaces with boundary of the next section, where the same construction gives
+`TauCeti.IsAdaptedPseudoGradient.morseTwistingCocycle`. Barraud, Damian, Humilière and Oancea
 define the Morse complex of `f` with coefficients in a DG local system on `Y` as the twisted complex
-of this cocycle.
+of that cocycle.
 
 The levels `c` only need to avoid the critical values and to be dense between any two of them. Since
 a Morse function on a compact manifold has finitely many critical values, the inclusion of the set
@@ -54,8 +56,8 @@ of regular values into `ℝ` is such a family.
 Two representing chain systems are joined by a homotopy
 (`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`) when the composition maps are
 associative and land in the boundary of the target space, and the maps
-`H_{ind x - ind y - 1}(M x y) → H_{ind x - ind y - 1}(M x y, A x y)` are injective (its hypothesis
-`hinj`, not yet established for these spaces). The space `L(x, x)` of records from a
+`H_{ind x - ind y - 1}(M x y) → H_{ind x - ind y - 1}(M x y, A x y)` are injective whenever
+`ind y < ind x` (its hypothesis `hinj`). The space `L(x, x)` of records from a
 critical point to itself is the single empty record, and concatenation with it is the identity of
 `L(x, y)`, which does not land in the boundary. The **trajectory space**
 (`TauCeti.IsAdaptedPseudoGradient.morseTrajectorySpace`) is therefore `L(x, y)` for `x ≠ y` and
@@ -93,8 +95,8 @@ push-forwards of its chains along the restriction of `morseLoopEvaluation`.
   trajectory is its Moore path mapped by `θ`.
 * `TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation_morseRecordsConcat`: the evaluation into
   loops takes concatenation of broken trajectories to the product of Moore loops.
-* `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`: the entries of the Barraud–Cornea
-  cocycle.
+* `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`: the entries of the twisting cocycle of a
+  twisting chain system on the compactified spaces of trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.morseTrajectoryComp_assoc`,
   `TauCeti.IsAdaptedPseudoGradient.morseTrajectoryComp_mem_morseTrajectoryBoundary`: the composition
   maps of the trajectory spaces are associative and land in the boundary.
@@ -176,8 +178,8 @@ theorem value_lt_of_mem_morseTrajectorySpace {x y : M} {w : c ⁻¹' Ioo (f y) (
 variable {x z y : M}
 
 /-- **Concatenation of broken trajectories at `z`** on the trajectory spaces: the restriction of
-`TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`. It needs no level of `c` to be the level of
-`z`, which holds when `z` is a critical point and the levels are regular values. -/
+`TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`. It requires that no level of `c` is the level
+`f z`, which holds when `z` is a critical point and the levels are regular values. -/
 noncomputable def morseTrajectoryConcat (hz : ∀ i, c i ≠ f z) :
     C(hX.morseTrajectorySpace c x z × hX.morseTrajectorySpace c z y,
       hX.morseTrajectorySpace c x y) where
@@ -315,8 +317,9 @@ variable {R : Type*} [CommRing R] [Fintype (criticalPoints 𝓘(ℝ, E) f)]
 trajectories between the critical points of `f`, graded by `ind`, with composition maps the
 concatenation of broken trajectories: the push-forwards of its chains along the evaluation into
 the Moore loops at `y₀` form a twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `ind` is the Morse
-index, `S` is a representing chain system and `θ : M → M` is homotopic to the identity, this is the
-twisting cocycle of Barraud and Cornea. -/
+index and `θ : M → M` is homotopic to the identity, it has the form of the twisting cocycle of
+Barraud and Cornea, whose representing chain systems live on the trajectory spaces with boundary
+(`TauCeti.IsAdaptedPseudoGradient.morseTwistingCocycle`). -/
 noncomputable def barraudCorneaCocycle
     (S : TwistingChainSystem ind
       (fun x y z ↦ hX.morseRecordsConcat (p := x) (q := y) (r := z) fun i ↦ hc i y) R) :
