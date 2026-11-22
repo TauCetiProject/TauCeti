@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -19,6 +20,7 @@ import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Sobolev.BesselPotential.SobolevEmbedding
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -93,7 +95,12 @@ All in the namespace `TauCeti.Symbol`:
   raising the order of the symbol and with the inclusions `H^{s,p} ⊆ H^{r,p}`.
 * `HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr`: the operators for
   different orders `s` and for symbols with the same coefficient agree as maps of tempered
-  distributions.
+  distributions;
+  `HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent` is the same
+  for different exponents `p` and `q`, through the Sobolev embedding `H^{s,p} ⊆ H^{s - δ,q}` for
+  `p < q`.
+* `HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_smulLeft`: the symbol
+  `ψ(x) a(x, ξ)` quantizes to `ψ Op(a)`.
 * `toDistr_quantizeUniformBesselPotentialSpace_ofSpatial_smul_id`: the symbol `φ(x)` quantizes to
   multiplication by `φ`.
 * `toDistr_quantizeUniformBesselPotentialSpace_sharp`: `Op(a # b) = Op(a) ∘ Op(b)`.
@@ -812,6 +819,95 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_sharp {U : Type*} [NormedAdd
     refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
     simp [hp, hp_top, ha, hb, ha.sharp hb, hq]
   simpa using congrArg (fun T ↦ T u) key
+
+/-- The case `p < q` of
+`HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent`. -/
+private theorem HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr_of_lt
+    [NeZero n] {b : Symbol n V W m'} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (hab : a.coefficient = b.coefficient) {p q : ℝ≥0}
+    [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < p) (hpq : p < q) {s t : ℝ}
+    {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, q}(CoordinateSpace n, V)}
+    (huv : u.toDistr = v.toDistr) :
+    (a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr =
+      (b.quantizeUniformBesselPotentialSpace hb.isUniform t q v).toDistr := by
+  -- The Sobolev embedding `H^{s,p} ⊆ H^{s - δ,q}`, `δ = n (1 / p - 1 / q)`, keeps the tempered
+  -- distribution and commutes with `Op(a)`, since both sides agree on Schwartz functions.
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans hp
+  set δ : ℝ := n * ((p : ℝ)⁻¹ - (q : ℝ)⁻¹)
+  have hδ : 0 < δ := mul_pos (by exact_mod_cast Nat.pos_of_neZero n)
+    (sub_pos.2 (inv_strictAnti₀ hp0 (by exact_mod_cast hpq)))
+  have hpq' : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - δ / Module.finrank ℝ (CoordinateSpace n) := by
+    have hn : (n : ℝ) ≠ 0 := by exact_mod_cast NeZero.ne n
+    rw [finrank_euclideanSpace_fin]
+    simp only [δ]
+    field_simp
+    ring
+  have hq : 1 < q := hp.trans hpq
+  set ι := (BesselPotentialSpace.sobolevEmbedding (CoordinateSpace n) V (s - δ) hδ hp hpq').comp
+    (BesselPotentialSpace.inclusion (s := s) (p := p) (r := s - δ + δ) (sub_add_cancel s δ).le)
+  have hι (w : H^{s, p}(CoordinateSpace n, V)) : (ι w).toDistr = w.toDistr := by
+    simp [ι]
+  have key : BesselPotentialSpace.toDistrCLM _ W _ _ ∘L
+        a.quantizeUniformBesselPotentialSpace ha.isUniform s p =
+      BesselPotentialSpace.toDistrCLM _ W _ _ ∘L
+        a.quantizeUniformBesselPotentialSpace ha.isUniform (s - δ) q ∘L ι := by
+    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.coe_ne_top fun w ↦ ?_
+    have hw : ι (toBesselPotentialSpaceCLM s p w) = toBesselPotentialSpaceCLM (s - δ) q w :=
+      BesselPotentialSpace.ext (by rw [hι]; simp)
+    simp [hw, ha.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM _ (mod_cast hp)
+      ENNReal.coe_ne_top, ha.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM _
+      (mod_cast hq) ENNReal.coe_ne_top]
+  have hu := congr($key u)
+  simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply] at hu
+  rw [hu]
+  exact ha.toDistr_quantizeUniformBesselPotentialSpace_congr hb hab (mod_cast hq)
+    ENNReal.coe_ne_top ((hι u).trans huv)
+
+/-- **Compatibility of the extensions for different exponents.** For `1 < p, q < ∞` in positive
+dimension, the operators `Op(a)` on `H^{s,p}` and `Op(b)` on `H^{t,q}`, for symbols with the same
+coefficient, agree on any `u ∈ H^{s,p}` and `v ∈ H^{t,q}` with the same tempered distribution. -/
+theorem HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_congr_exponent
+    [NeZero n] {b : Symbol n V W m'} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (hab : a.coefficient = b.coefficient) {p q : ℝ≥0}
+    [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))] (hp : 1 < p) (hq : 1 < q) {s t : ℝ}
+    {u : H^{s, p}(CoordinateSpace n, V)} {v : H^{t, q}(CoordinateSpace n, V)}
+    (huv : u.toDistr = v.toDistr) :
+    (a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr =
+      (b.quantizeUniformBesselPotentialSpace hb.isUniform t q v).toDistr := by
+  rcases lt_trichotomy p q with hpq | rfl | hqp
+  · exact ha.toDistr_quantizeUniformBesselPotentialSpace_congr_of_lt hb hab hp hpq huv
+  · exact ha.toDistr_quantizeUniformBesselPotentialSpace_congr hb hab (mod_cast hp)
+      ENNReal.coe_ne_top huv
+  · exact (hb.toDistr_quantizeUniformBesselPotentialSpace_congr_of_lt ha hab.symm hq hqp
+      huv.symm).symm
+
+/-- **Spatial cutoffs.** For a smooth function `ψ` of temperate growth, the symbol `ψ(x) a(x, ξ)`
+(`TauCeti.Symbol.smulLeft`) quantizes on `H^{s,p}` to `ψ` times the quantization of `a`. -/
+theorem HasCompactSpatialSupport.toDistr_quantizeUniformBesselPotentialSpace_smulLeft
+    (ha : a.HasCompactSpatialSupport) {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψt : ψ.HasTemperateGrowth) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (u : H^{s, p}(CoordinateSpace n, V)) :
+    ((smulLeft hψ a).quantizeUniformBesselPotentialSpace (ha.smulLeft hψ).isUniform s p u).toDistr =
+      TemperedDistribution.smulLeftCLM W ψ
+        (a.quantizeUniformBesselPotentialSpace ha.isUniform s p u).toDistr := by
+  have hq : quantizeUniformCLM _ (ha.smulLeft hψ).isUniform =
+      (SchwartzMap.smulLeftCLM W ψ).comp (quantizeUniformCLM a ha.isUniform) := by
+    ext v x
+    rw [quantizeUniformCLM_apply, ContinuousLinearMap.comp_apply,
+      SchwartzMap.smulLeftCLM_apply_apply hψt, quantizeUniformCLM_apply,
+      quantizeSchwartzValue_congr_left (b := ψ x • a.coefficient) (fun ξ ↦ by simp),
+      quantizeSchwartzValue_smul_left]
+  have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
+        (smulLeft hψ a).quantizeUniformBesselPotentialSpace (ha.smulLeft hψ).isUniform s p =
+      TemperedDistribution.smulLeftCLM W ψ ∘L BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
+        a.quantizeUniformBesselPotentialSpace ha.isUniform s p := by
+    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
+    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
+      (ha.smulLeft hψ).quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s hp hp_top,
+      ha.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM s hp hp_top, hq,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+    exact (TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq _).symm
+  simpa using congr($key u)
 
 end Operator
 

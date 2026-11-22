@@ -89,7 +89,7 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.Floer
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure jetOperator_jetLp_ae_eq)
 
 section General
 
