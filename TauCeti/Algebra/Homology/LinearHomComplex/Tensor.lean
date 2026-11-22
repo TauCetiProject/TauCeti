@@ -529,7 +529,7 @@ lemma ι_linearHomComplexDualDistrib_tmul (A B : CochainComplex (ModuleCat.{v} R
           i j n h ≫ (linearHomComplexDualDistrib R A B).f n) (g ⊗ₜ f)) =
       (g.dualDistrib f n h : ModuleCat.of R (Cochain (A ⊗ B) (𝟙_ _) n)) := by
   rw [linearHomComplexDualDistrib_def, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    ι_koszulBraiding_hom_assoc, koszulBraidingSummand_def, Linear.units_smul_comp, Category.assoc,
+    ι_koszulBraiding_hom_assoc, Linear.units_smul_comp, Category.assoc,
     Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply]
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply]
   rw [ModuleCat.MonoidalCategory.braiding_hom_apply, ι_linearHomComplexTensor_tmul,

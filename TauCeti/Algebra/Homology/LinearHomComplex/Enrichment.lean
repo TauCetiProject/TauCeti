@@ -90,7 +90,7 @@ lemma ι_linearHomComplexEnrichedComp (F G K : CochainComplex C ℤ) (p q j : �
         ((β_ ((linearHomComplex R F G).X p) ((linearHomComplex R G K).X q)).hom ≫
           cochainCompTensor R F G K q p j (by dsimp at h ⊢; omega)) := by
   rw [linearHomComplexEnrichedComp_def, HomologicalComplex.comp_f, ← Category.assoc,
-    braiding_eq_koszulBraiding, ι_koszulBraiding_hom, koszulBraidingSummand_def,
+    braiding_eq_koszulBraiding, ι_koszulBraiding_hom,
     Linear.units_smul_comp, Category.assoc, ι_linearHomComplexComp]
 
 /-- On a pure tensor, the signed closed-composition expression after the module braiding is

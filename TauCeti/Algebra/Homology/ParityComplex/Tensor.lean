@@ -192,7 +192,6 @@ theorem ιTensorObj_superBraiding_hom_f (τ τ' : ZMod 2) (K L : CochainComplex 
           (L.X r ◁ (K.scaleDifferentialXIso (fun _ ↦ (-1 : ℤˣ) ^ τ') p).inv) ≫
           HomologicalComplex.ιTensorObj L (K.signedDifferential τ') r p n (by omega)) := by
   simp only [superBraiding, braiding_eq_koszulBraiding, ι_koszulBraiding_hom_assoc,
-    koszulBraidingSummand_def,
     ιTensorObj_superTensorObjIsoTensorObj_hom_f_assoc,
     ιTensorObj_superTensorObjIsoTensorObj_inv_f, HomologicalComplex.zsmul_f_apply,
     HomologicalComplex.comp_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,

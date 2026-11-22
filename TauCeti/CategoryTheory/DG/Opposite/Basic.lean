@@ -70,7 +70,7 @@ theorem dgCompMap_op (X Y Z : C) (p q n : ℤ)
   rw [dgCompMap_def, CategoryTheory.eComp_op_eq, HomologicalComplex.comp_f,
     ← Category.assoc]
   simp only [dgHomComplex_op]
-  rw [braiding_eq_koszulBraiding, ι_koszulBraiding_hom, koszulBraidingSummand_def,
+  rw [braiding_eq_koszulBraiding, ι_koszulBraiding_hom,
     Linear.units_smul_comp, Category.assoc, dgCompMap_def]
 
 /-- Composition in the opposite DG category reverses the factors and contributes the Koszul
