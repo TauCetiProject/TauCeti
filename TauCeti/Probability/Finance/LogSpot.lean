@@ -20,19 +20,19 @@ equation
 `C_t + σ² s² / 2 C_ss + r (s C_s - C) = 0`.
 
 Its spatial operator degenerates at `s = 0` and has coefficients growing with `s`. In the
-log-spot variable `y = log s`, with `C(s, t) = u(log s, t)`, it becomes
+In the log-spot variable `y = log s`, with `C(s, t) = u(log s, t)` and `a = σ² / 2`, it becomes
 
-`u_t + σ² / 2 u_yy + (r - σ² / 2) u_y - r u = 0`,
+`u_t + a u_yy + (r - a) u_y - r u = 0`,
 
-an equation on the whole line with diffusion `σ² / 2`, drift `r - σ² / 2` (the risk-neutral
+an equation on the whole line with diffusion `a = σ² / 2`, drift `r - a` (the risk-neutral
 drift of the log-spot) and potential `-r`. These coefficients are bounded whenever `σ` and `r`
 are. The equation is backward parabolic, and whole-space parabolic existence and uniqueness
 theory applies to it, only under further hypotheses that this file does not impose: uniform
 ellipticity (`σ²` bounded below by a positive constant) and the regularity of the coefficients
 (for instance Hölder continuity) required by the existence theorem used. The identities proved
 here need neither: they are pointwise, assume only local differentiability of the price, and hold
-for arbitrary real `σ` and `r` (including `σ = 0`), which may be the values `σ(s, t)` and `r(t)`
-of a local volatility and a time-dependent rate at the point under consideration.
+for arbitrary real `a` and `r` (including `a = 0`), which may be the values `σ(s, t)² / 2` and
+`r(t)` of a local half-variance and a time-dependent rate at the point under consideration.
 
 Both directions of the change of variables are stated: `TauCeti.Finance.pde_comp_log` transports a
 function of the log-spot to a function of the spot, and `TauCeti.Finance.pde_comp_exp` a function
@@ -45,9 +45,9 @@ function `u` with `u / (1 + exp y)` bounded. The logarithm of the weight `1 + ex
 Hölder continuous derivatives of every positive order: they are the derivatives of the sigmoid
 (`Real.iteratedDeriv_succ_log_one_add_exp`, `Real.memHolder_iteratedDeriv_sigmoid`).
 Dividing by this weight conjugates the log-spot operator to one with bounded coefficients: with
-`a = σ² / 2` and the sigmoid `p = e^y / (1 + e^y)`, the function `w = u / (1 + e^y)` satisfies
-`w_t + a w_yy + (r + a (2 p - 1)) w_y - r (1 - p) w = 0` exactly when `u` solves the log-spot
-equation (`TauCeti.Finance.pde_comp_exp_div_one_add_exp`).
+the half-variance `a` (such as `σ² / 2`) and the sigmoid `p = e^y / (1 + e^y)`, the function
+`w = u / (1 + e^y)` satisfies `w_t + a w_yy + (r + a (2 p - 1)) w_y - r (1 - p) w = 0` exactly
+when `u` solves the log-spot equation (`TauCeti.Finance.pde_comp_exp_div_one_add_exp`).
 
 ## Main declarations
 
@@ -73,32 +73,32 @@ namespace TauCeti.Finance
 variable {s y : ℝ}
 
 /-- **The pricing equation in log-spot coordinates.** For `C(s, t) = u(log s, t)` at a spot
-`s ≠ 0`, the pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` equals the log-spot operator
-`u_t + σ² / 2 u_yy + (r - σ² / 2) u_y - r u` at `y = log s`. The volatility `σ` and the rate `r`
-are arbitrary reals, so they may be the values of a local volatility and a time-dependent rate at
-`(s, t)`. -/
-theorem pde_comp_log {u : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
+`s ≠ 0`, the pricing operator `C_t + a s² C_ss + r (s C_s - C)` equals the log-spot operator
+`u_t + a u_yy + (r - a) u_y - r u` at `y = log s`. The half-variance `a` (for instance `σ² / 2`)
+and the rate `r` are arbitrary reals, so they may be the values of a local half-variance and a
+time-dependent rate at `(s, t)`. -/
+theorem pde_comp_log {u : ℝ → ℝ → ℝ} {t : ℝ} (a r : ℝ)
     (hu' : DifferentiableAt ℝ (deriv fun y => u y t) (log s)) (hs : s ≠ 0) :
     deriv (fun t' => u (log s) t') t +
-        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => u (log x) t) s +
+        a * s ^ 2 * deriv (deriv fun x => u (log x) t) s +
         r * (s * deriv (fun x => u (log x) t) s - u (log s) t) =
-      deriv (fun t' => u (log s) t') t + σ ^ 2 / 2 * deriv (deriv fun y => u y t) (log s) +
-        (r - σ ^ 2 / 2) * deriv (fun y => u y t) (log s) - r * u (log s) t := by
+      deriv (fun t' => u (log s) t') t + a * deriv (deriv fun y => u y t) (log s) +
+        (r - a) * deriv (fun y => u y t) (log s) - r * u (log s) t := by
   have h₁ := mul_deriv_comp_log (v := fun y => u y t) hs
   have h₂ := sq_mul_deriv_deriv_comp_log (v := fun y => u y t) hu' hs
-  linear_combination σ ^ 2 / 2 * h₂ + r * h₁
+  linear_combination a * h₂ + r * h₁
 
 /-- **The pricing equation in log-spot coordinates.** For a function `C(s, t)` of the spot and
-`u(y, t) = C(e^y, t)`, the log-spot operator `u_t + σ² / 2 u_yy + (r - σ² / 2) u_y - r u` at `y`
-equals the pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` at the spot `s = e^y`. The
-volatility `σ` and the rate `r` are arbitrary reals, so they may be the values of a local
-volatility and a time-dependent rate at `(e^y, t)`. -/
-theorem pde_comp_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
+`u(y, t) = C(e^y, t)`, the log-spot operator `u_t + a u_yy + (r - a) u_y - r u` at `y` equals the
+pricing operator `C_t + a s² C_ss + r (s C_s - C)` at the spot `s = e^y`. The half-variance `a`
+(for instance `σ² / 2`) and the rate `r` are arbitrary reals, so they may be the values of a local
+half-variance and a time-dependent rate at `(e^y, t)`. -/
+theorem pde_comp_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (a r : ℝ)
     (hC' : DifferentiableAt ℝ (deriv fun x => C x t) (exp y)) :
-    deriv (fun t' => C (exp y) t') t + σ ^ 2 / 2 * deriv (deriv fun y => C (exp y) t) y +
-        (r - σ ^ 2 / 2) * deriv (fun y => C (exp y) t) y - r * C (exp y) t =
+    deriv (fun t' => C (exp y) t') t + a * deriv (deriv fun y => C (exp y) t) y +
+        (r - a) * deriv (fun y => C (exp y) t) y - r * C (exp y) t =
       deriv (fun t' => C (exp y) t') t +
-        σ ^ 2 * exp y ^ 2 / 2 * deriv (deriv fun x => C x t) (exp y) +
+        a * exp y ^ 2 * deriv (deriv fun x => C x t) (exp y) +
         r * (exp y * deriv (fun x => C x t) (exp y) - C (exp y) t) := by
   rw [deriv_deriv_comp_exp (f := fun x => C x t) hC', deriv_comp_exp (f := fun x => C x t),
     smul_eq_mul]
@@ -107,20 +107,19 @@ theorem pde_comp_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
 /-- **The pricing equation in weighted log-spot coordinates.** For a function `C(s, t)` of the
 spot, differentiable in the spot near `e^y` with spot derivative differentiable at `e^y`, and
 `w(y, t) = C(e^y, t) / (1 + e^y)`, the operator
-`w_t + a w_yy + (r + a (e^y - 1) / (e^y + 1)) w_y - r / (1 + e^y) w` with `a = σ² / 2` at `y`
-equals the pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` at the spot `s = e^y`, divided
-by the weight `1 + e^y`. The coefficients of the weighted operator are bounded whenever `σ` and
-`r` are. -/
-theorem pde_comp_exp_div_one_add_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
+`w_t + a w_yy + (r + a (e^y - 1) / (e^y + 1)) w_y - r / (1 + e^y) w` at `y` equals the pricing
+operator `C_t + a s² C_ss + r (s C_s - C)` at the spot `s = e^y`, divided by the weight `1 + e^y`.
+The half-variance `a` (for instance `σ² / 2`) and the rate `r` are arbitrary reals. -/
+theorem pde_comp_exp_div_one_add_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (a r : ℝ)
     (hC : ∀ᶠ x in 𝓝 (exp y), DifferentiableAt ℝ (fun x => C x t) x)
     (hC' : DifferentiableAt ℝ (deriv fun x => C x t) (exp y)) :
     deriv (fun t' => C (exp y) t' / (1 + exp y)) t +
-        σ ^ 2 / 2 * deriv (deriv fun y => C (exp y) t / (1 + exp y)) y +
-        (r + σ ^ 2 / 2 * ((exp y - 1) / (exp y + 1))) *
+        a * deriv (deriv fun y => C (exp y) t / (1 + exp y)) y +
+        (r + a * ((exp y - 1) / (exp y + 1))) *
           deriv (fun y => C (exp y) t / (1 + exp y)) y -
         r / (1 + exp y) * (C (exp y) t / (1 + exp y)) =
       (deriv (fun t' => C (exp y) t') t +
-          σ ^ 2 * exp y ^ 2 / 2 * deriv (deriv fun x => C x t) (exp y) +
+          a * exp y ^ 2 * deriv (deriv fun x => C x t) (exp y) +
           r * (exp y * deriv (fun x => C x t) (exp y) - C (exp y) t)) /
         (1 + exp y) := by
   set w : ℝ → ℝ := fun y => C (exp y) t / (1 + exp y)
@@ -162,7 +161,7 @@ theorem pde_comp_exp_div_one_add_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r :
     rw [hg'.deriv_eq]
     exact (((hasDerivAt_exp y).mul hwd.self_of_nhds.hasDerivAt).add
       ((hψd y).mul hwd'.hasDerivAt)).deriv
-  rw [← pde_comp_exp σ r hC', hg'', hg'.self_of_nhds, deriv_div_const]
+  rw [← pde_comp_exp a r hC', hg'', hg'.self_of_nhds, deriv_div_const]
   have hwy : C (exp y) t = (1 + exp y) * w y := congrFun hgw y
   rw [hwy]
   have h1 : exp y + 1 ≠ 0 := by rw [add_comm]; exact hψ y

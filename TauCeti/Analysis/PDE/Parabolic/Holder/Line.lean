@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
 import TauCeti.Analysis.Matrix.QuadraticBounds
+import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.PDE.Parabolic.Holder.CompSpatial
@@ -66,13 +67,8 @@ section Transport
 variable {a b : ℝ} {hab : a < b}
 
 /-- The isometric coordinate `x ↦ x 0` of `ℝ¹ = EuclideanSpace ℝ (Fin 1)`. -/
-private def coord : EuclideanSpace ℝ (Fin 1) ≃ₗᵢ[ℝ] ℝ :=
-  { (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).toLinearEquiv with
-    norm_map' x := by
-      simp [EuclideanSpace.norm_eq, Real.sqrt_sq_eq_abs] }
-
-private theorem coord_single (i : Fin 1) : coord (EuclideanSpace.single i 1) = 1 := by
-  simp [coord, Subsingleton.elim i default]
+private abbrev coord : EuclideanSpace ℝ (Fin 1) ≃ₗᵢ[ℝ] ℝ :=
+  PiLp.equivOfUniqueLIE 2 ℝ fun _ : Fin 1 ↦ ℝ
 
 /-- The scalar field `p ↦ A (x₀ p, t) w` on the slab over `ℝ¹`, for a coefficient field `A` on the
 slab over the line and a fixed argument `w`. -/
@@ -116,7 +112,9 @@ private theorem evalCoord_ellipticity
       (Matrix.of fun _ _ : Fin 1 ↦
         evalCoord A (ContinuousLinearMap.mul ℝ ℝ) p).toQuadraticForm' ξ := by
   simpa only [Matrix.of_apply, evalCoord_apply] using
-    Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique (hA (slabSpaceMap coord p)) ξ
+    (Matrix.of fun _ _ : Fin 1 ↦
+      evalCoord A (ContinuousLinearMap.mul ℝ ℝ) p).mul_norm_sq_le_toQuadraticForm'_of_unique
+      (by simpa only [Matrix.of_apply, evalCoord_apply] using hA (slabSpaceMap coord p)) ξ
 
 /-- **The spatial part on the line is the Euclidean spatial operator on `ℝ¹`.** -/
 private theorem spatialOperatorL_compSpatialLIE_coord (hα : α ≤ 1)
@@ -152,9 +150,9 @@ private theorem spatialOperatorL_compSpatialLIE_coord (hα : α ≤ 1)
     compSpatialLIE_apply, spatialSecondFDerivL_compSpatialL, spatialFDerivL_compSpatialL,
     compSpatialL_apply, LinearIsometry.coe_toContinuousLinearMap,
     LinearIsometryEquiv.coe_toLinearIsometry, ContinuousLinearMap.bilinearComp_apply,
-    ContinuousLinearMap.comp_apply, coord_single, Finset.univ_unique, Finset.sum_singleton,
-    HolderSpace.compIsometryEquivLIE_apply, slabSpaceIsometryEquiv_apply,
-    LinearIsometryEquiv.coe_toIsometryEquiv, hA, hB, hC]
+    ContinuousLinearMap.comp_apply, EuclideanSpace.single, PiLp.equivOfUniqueLIE_single,
+    Finset.univ_unique, Finset.sum_singleton, HolderSpace.compIsometryEquivLIE_apply,
+    slabSpaceIsometryEquiv_apply, LinearIsometryEquiv.coe_toIsometryEquiv, hA, hB, hC]
   ring
 
 /-- **The forward operator on the line is the Euclidean operator on `ℝ¹`.** -/
@@ -239,30 +237,6 @@ theorem isInvertible_parabolicOperatorL_prod_spatialTraceL_real (hα₀ : 0 < α
   rw [← Bijective.of_comp_iff' Ψ.bijective, ← hcomp]
   exact hE.comp (compSpatialLIE α ℝ hT coord).bijective
 
-/-- **The terminal-value problem on the line is well posed.** For `0 < α < 1`, a slab
-`ℝ × [t₀, t₁]` and coefficient fields `A`, `B`, `C` in `C_b^{α,α/2}` with
-`lam ≤ A p (h, k ↦ h k)` and `0 < lam`, the terminal-data map
-`u ↦ (∂ₜu + A·D_x²u + B·D_xu + C·u, u(·, t₁))` is an isomorphism of Banach spaces from
-`C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
-theorem isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real (hα₀ : 0 < α)
-    (hα₁ : α < 1) {t₀ t₁ : ℝ} (ht : t₀ < t₁)
-    {A : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ)}
-    (B : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
-    (C : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ)) {lam : ℝ} (hlam : 0 < lam)
-    (hA : ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
-    ((backwardParabolicOperatorL (ht := ht) hα₁.le A B C).prod
-      (spatialTraceL (F := ℝ) ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
-  -- Reversing time about `t₁` turns the problem into a forward one on `ℝ × [0, t₁ - t₀]`.
-  obtain ⟨T, h₁⟩ : ∃ T : ℝ≥0, (T : ℝ) = t₁ - t₀ :=
-    ⟨(t₁ - t₀).toNNReal, Real.coe_toNNReal _ (sub_nonneg.2 ht.le)⟩
-  have h₀ : (0 : ℝ) = t₁ - t₁ := (sub_self _).symm
-  rw [ContinuousLinearMap.isInvertible_iff_bijective,
-    bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (hab := ht) (T := t₁) (ha := h₀)
-      (hb := h₁), initialDataL_def]
-  have hT : (0 : ℝ) < T := h₁ ▸ sub_pos.2 ht
-  exact (isInvertible_parabolicOperatorL_prod_spatialTraceL_real hα₀ hα₁ hT _ _ hlam
-    fun p ↦ by simpa only [HolderSpace.compLipschitzL_apply] using hA _).bijective
-
 /-! ### The terminal-data isomorphism and uniform estimates on the line -/
 
 /-- **The terminal-data isomorphism on the line.** For `0 < α < 1`, `t₀ < t₁`, and coefficient
@@ -277,11 +251,15 @@ def realTerminalDataCLE {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (h
     (hA : ∃ lam : ℝ, 0 < lam ∧ ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
     ParabolicC2HolderSpace α ℝ ℝ ht ≃L[ℝ]
       HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ :=
-  have hbij := hA.elim fun _ h ↦
-    (isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real
-      hα₀ hα₁ ht B C h.1 h.2).bijective
-  ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
-    (LinearMap.range_eq_top.2 hbij.2)
+  let eSol := compSpatialLIE α ℝ ht coord
+  let eEuclidean := euclideanTerminalDataCLE hα₀ hα₁ ht
+    (fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
+    (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1)
+    (hA.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, evalCoord_ellipticity h⟩)
+  let eData := (HolderSpace.compIsometryEquivLIE α ℝ
+    (slabSpaceIsometryEquiv (a := t₀) (b := t₁) coord.toIsometryEquiv)).prodCongr
+    (CkHolderSpace.compLinearLIE (k := 2) (α := α) (F := ℝ) coord)
+  eSol.toContinuousLinearEquiv.trans (eEuclidean.trans eData.symm.toContinuousLinearEquiv)
 
 section RealTerminalDataCLE
 
@@ -297,7 +275,13 @@ its terminal trace `u(·, t₁)`. -/
 theorem realTerminalDataCLE_apply (u : ParabolicC2HolderSpace α ℝ ℝ ht) :
     realTerminalDataCLE hα₀ hα₁ ht A B C hA u =
       (backwardParabolicOperatorL hα₁.le A B C u, u.spatialTrace ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
-  simp [realTerminalDataCLE, spatialTraceL_apply]
+  apply Prod.ext
+  · ext p
+    simp [realTerminalDataCLE, -compSpatialLIE_apply,
+      euclideanBackwardParabolicOperatorL_compSpatialLIE_coord]
+  · ext x
+    simp [realTerminalDataCLE, compSpatialLIE_apply, spatialTrace_compSpatialL,
+      CkHolderSpace.compLinearLIE_apply]
 
 /-- The solution of the terminal-value problem on the line with forcing `f` and terminal datum `g`
 has backward forcing `f`. -/
@@ -332,6 +316,25 @@ theorem realTerminalDataCLE_symm_apply_slabMk_right
 
 end RealTerminalDataCLE
 
+/-- **The terminal-value problem on the line is well posed.** For `0 < α < 1`, a slab
+`ℝ × [t₀, t₁]` and coefficient fields `A`, `B`, `C` in `C_b^{α,α/2}` with
+`lam ≤ A p (h, k ↦ h k)` and `0 < lam`, the terminal-data map
+`u ↦ (∂ₜu + A·D_x²u + B·D_xu + C·u, u(·, t₁))` is an isomorphism of Banach spaces from
+`C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
+theorem isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real (hα₀ : 0 < α)
+    (hα₁ : α < 1) {t₀ t₁ : ℝ} (ht : t₀ < t₁)
+    {A : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ)}
+    (B : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
+    (C : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ)) {lam : ℝ} (hlam : 0 < lam)
+    (hA : ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ)) :
+    ((backwardParabolicOperatorL (ht := ht) hα₁.le A B C).prod
+      (spatialTraceL (F := ℝ) ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
+  have heq : (backwardParabolicOperatorL (ht := ht) hα₁.le A B C).prod
+        (spatialTraceL (F := ℝ) ⟨t₁, right_mem_Icc.2 ht.le⟩) =
+      (realTerminalDataCLE hα₀ hα₁ ht A B C ⟨lam, hlam, hA⟩).toContinuousLinearMap :=
+    ContinuousLinearMap.ext fun u ↦ by simp [spatialTraceL_apply]
+  exact heq ▸ ContinuousLinearMap.isInvertible_equiv
+
 /-- Conjugacy between the line solution operator and the `ℝ¹` Euclidean solution operator. -/
 private theorem realTerminalDataCLE_symm_eq {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
     (A : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
@@ -349,24 +352,7 @@ private theorem realTerminalDataCLE_symm_eq {t₀ t₁ : ℝ} (hα₀ : 0 < α) 
           (hA.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, evalCoord_ellipticity h⟩)).symm.toContinuousLinearMap ∘L
         (eData : _ →L[ℝ] _) := by
   intro eData
-  refine ContinuousLinearMap.ext fun d ↦ ?_
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_coe]
-  apply (compSpatialLIE α ℝ ht coord).injective
-  rw [LinearIsometryEquiv.apply_symm_apply]
-  apply (euclideanTerminalDataCLE hα₀ hα₁ ht
-    (fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
-    (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1)
-    (hA.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, evalCoord_ellipticity h⟩)).injective
-  rw [ContinuousLinearEquiv.apply_symm_apply, euclideanTerminalDataCLE_apply]
-  refine Prod.ext ?_ ?_
-  · rw [euclideanBackwardParabolicOperatorL_compSpatialLIE_coord,
-      backwardParabolicOperatorL_realTerminalDataCLE_symm_apply]
-    simp [eData]
-  · rw [compSpatialLIE_apply, spatialTrace_compSpatialL,
-      spatialTrace_realTerminalDataCLE_symm_apply]
-    ext x
-    simp [eData]
+  exact ContinuousLinearMap.ext fun d ↦ by simp [realTerminalDataCLE, eData]
 
 /-- **Uniform Schauder estimate for the terminal-value problem on the line.** For `0 < α < 1`,
 an ellipticity constant `lam > 0`, a bound `K` on the Hölder norms of the coefficients and a bound

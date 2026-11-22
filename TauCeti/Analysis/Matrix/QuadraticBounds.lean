@@ -63,7 +63,8 @@ theorem Matrix.toQuadraticForm'_eq_mul_norm_sq_of_unique {ι : Type*} [Fintype �
 /-- On a one-dimensional Euclidean space indexed by a unique type `ι`, a lower bound
 `δ ≤ A default default` on the sole entry gives `δ * ‖ξ‖² ≤ A.toQuadraticForm' ξ`. -/
 theorem Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [Unique ι] {A : Matrix ι ι ℝ} {δ : ℝ} (hA : δ ≤ A default default) (ξ : EuclideanSpace ℝ ι) :
+    [Unique ι] (A : Matrix ι ι ℝ) {δ : ℝ} (hA : δ ≤ A default default)
+    (ξ : EuclideanSpace ℝ ι) :
     δ * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ := by
   rw [A.toQuadraticForm'_eq_mul_norm_sq_of_unique ξ]
   exact mul_le_mul_of_nonneg_right hA (sq_nonneg _)

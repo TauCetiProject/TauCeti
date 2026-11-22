@@ -298,14 +298,6 @@ theorem differentiableAt_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace �
     DifferentiableAt ℝ (weightedLogSpotPrice u s) t :=
   (hasDerivAt_weightedLogSpotPrice_time u s ht').differentiableAt
 
-/-- At an interior time `t ∈ (a, b)`, the ordinary time derivative of `weightedLogSpotPrice u s`
-equals `(1 + s) ∂ₜu(log s, t)`. -/
-theorem deriv_weightedLogSpotPrice_time (u : ParabolicC2HolderSpace α ℝ ℝ hab) (s : ℝ)
-    {t : ℝ} (ht' : t ∈ Ioo a b) :
-    deriv (weightedLogSpotPrice u s) t =
-      (1 + s) * timeDerivL u (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) :=
-  (hasDerivAt_weightedLogSpotPrice_time u s ht').deriv
-
 /-- Terminal data in weighted log-spot coordinates become the specified payoff. -/
 theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     {h : ℝ → ℝ}
@@ -316,15 +308,15 @@ theorem weightedLogSpotPrice_terminal (u : ParabolicC2HolderSpace α ℝ ℝ hab
 
 /-- The financial pricing operator is the bounded weighted log-spot operator multiplied by
 `1+s`. Time differentiation is within the closed slab, so the identity uses the recorded
-derivative fields even at endpoints. Rate and volatility values are arbitrary. -/
+derivative fields even at endpoints. Rate and half-variance values are arbitrary. -/
 theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
-    {s : ℝ} (hs : 0 < s) (t : Icc a b) (σ r : ℝ) :
+    {s : ℝ} (hs : 0 < s) (t : Icc a b) (a₀ r : ℝ) :
     derivWithin (weightedLogSpotPrice u s) (Icc a b) t +
-        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => weightedLogSpotPrice u x t) s +
+        a₀ * s ^ 2 * deriv (deriv fun x => weightedLogSpotPrice u x t) s +
         r * (s * deriv (fun x => weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
       (1 + s) * (timeDerivL u (slabMk (log s) t) +
-        σ ^ 2 / 2 * spatialSecondFDerivL u (slabMk (log s) t) 1 1 +
-        (r + σ ^ 2 / 2 * ((s - 1) / (s + 1))) *
+        a₀ * spatialSecondFDerivL u (slabMk (log s) t) 1 1 +
+        (r + a₀ * ((s - 1) / (s + 1))) *
           spatialFDerivL u (slabMk (log s) t) 1 -
         r / (1 + s) * u (slabMk (log s) t)) := by
   have hC := contDiffOn_weightedLogSpotPrice u t
@@ -332,7 +324,7 @@ theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
   -- Freeze time: the existing identity supplies the spatial operator without imposing
   -- ordinary time differentiability on the clamped extension at the slab endpoints.
   have h := pde_comp_exp_div_one_add_exp
-    (C := fun x _ => weightedLogSpotPrice u x t) (y := log s) (t := (t : ℝ)) σ r
+    (C := fun x _ => weightedLogSpotPrice u x t) (y := log s) (t := (t : ℝ)) a₀ r
     (by
       rw [exp_log hs]
       filter_upwards [Ioi_mem_nhds hs] with x hx

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sigmoid
-public import Mathlib.Topology.MetricSpace.HolderNorm
 public import TauCeti.Analysis.Holder.Normed
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.MeanValue

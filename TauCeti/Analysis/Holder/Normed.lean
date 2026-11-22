@@ -118,6 +118,19 @@ theorem ofBoundedContinuousFunction_toBoundedContinuousFunction (f : HolderSpace
     ofBoundedContinuousFunction f.toBoundedContinuousFunction f.memHolder = f :=
   (rfl)
 
+/-- A `γ`-Hölder function on a compact metric space (`0 < γ`), as a bounded `γ`-Hölder
+function. -/
+def ofHolderWithOfCompact [CompactSpace X] (hγ : 0 < α) (g : X → Y) {H : ℝ≥0}
+    (hg : HolderWith H α g) : HolderSpace α X Y :=
+  ofBoundedContinuousFunction (BoundedContinuousFunction.mkOfCompact ⟨g, hg.continuous hγ⟩) <|
+    HolderWith.memHolder (C := H) fun x y ↦ by
+      simpa only [BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk] using hg x y
+
+/-- Evaluation of `ofHolderWithOfCompact` at a point of the domain. -/
+@[simp]
+theorem ofHolderWithOfCompact_apply [CompactSpace X] (hγ : 0 < α) (g : X → Y) {H : ℝ≥0}
+    (hg : HolderWith H α g) (x : X) : ofHolderWithOfCompact hγ g hg x = g x := (rfl)
+
 /-- Two Hölder-space elements are equal when they agree pointwise. -/
 @[ext]
 theorem ext {f g : HolderSpace α X Y} (h : ∀ x, f x = g x) : f = g := by
@@ -322,6 +335,13 @@ theorem norm_le_of_norm_le_of_holderWith {f : HolderSpace α X Y} {M : ℝ} {K :
   gcongr
   · exact (BoundedContinuousFunction.norm_le hM0).mpr fun x ↦ by simpa using hM x
   · simpa using hK.nnholderNorm_le
+
+/-- A function bounded by `M` and `α`-Hölder with constant `H` on a compact space has
+Hölder-space norm at most `M + H`. -/
+theorem norm_ofHolderWithOfCompact_le [CompactSpace X] (hα : 0 < α) (g : X → Y) {H : ℝ≥0}
+    (hg : HolderWith H α g) {M : ℝ} (hM0 : 0 ≤ M) (hM : ∀ x, ‖g x‖ ≤ M) :
+    ‖ofHolderWithOfCompact hα g hg‖ ≤ M + H :=
+  norm_le_of_norm_le_of_holderWith hM0 hM hg
 
 /-- Evaluation has operator norm at most one. -/
 theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 :=

@@ -282,16 +282,28 @@ variable (α F hab) in
 Its inverse is the change of variables by `e⁻¹`. -/
 def compSpatialLIE (e : E ≃ₗᵢ[ℝ] E') :
     ParabolicC2HolderSpace α E' F hab ≃ₗᵢ[ℝ] ParabolicC2HolderSpace α E F hab :=
+  have he : (e.toContinuousLinearEquiv : E →L[ℝ] E') =
+      e.toLinearIsometry.toContinuousLinearMap :=
+    ContinuousLinearMap.ext fun _ ↦ rfl
+  have he' : (e.toContinuousLinearEquiv.symm : E' →L[ℝ] E) =
+      e.symm.toLinearIsometry.toContinuousLinearMap :=
+    ContinuousLinearMap.ext fun _ ↦ rfl
   LinearIsometryEquiv.ofBounds
     (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv
     (fun u ↦ by
-      convert norm_compSpatialL_apply_le_of_norm_le_one
-        e.toLinearIsometry.norm_toContinuousLinearMap_le u
-      rfl)
+      have hu : (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv u =
+          compSpatialL α F hab e.toLinearIsometry.toContinuousLinearMap u := by
+        rw [ContinuousLinearEquiv.coe_toLinearEquiv, compSpatialCLE_apply, he]
+      rw [hu]
+      simpa only [norm_eq] using norm_compSpatialL_apply_le_of_norm_le_one
+        e.toLinearIsometry.norm_toContinuousLinearMap_le u)
     (fun v ↦ by
-      convert norm_compSpatialL_apply_le_of_norm_le_one
-        e.symm.toLinearIsometry.norm_toContinuousLinearMap_le v
-      rfl)
+      have hv : (compSpatialCLE α F hab e.toContinuousLinearEquiv).toLinearEquiv.symm v =
+          compSpatialL α F hab e.symm.toLinearIsometry.toContinuousLinearMap v := by
+        rw [ContinuousLinearEquiv.coe_symm_toLinearEquiv, compSpatialCLE_symm_apply, he']
+      rw [hv]
+      simpa only [norm_eq] using norm_compSpatialL_apply_le_of_norm_le_one
+        e.symm.toLinearIsometry.norm_toContinuousLinearMap_le v)
 
 /-- Applying `compSpatialLIE` agrees with `compSpatialL` on the underlying continuous linear
 map. -/

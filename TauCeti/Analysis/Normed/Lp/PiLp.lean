@@ -41,8 +41,9 @@ Reindexing the coordinates along the identity bijection is the identity.
 Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
 
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
-continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
-and coordinatewise submodule restriction `LinearIsometryEquiv.submodulePiLp`.
+continuous coordinate inclusion `PiLp.singleCLM`), the singleton coordinate isometry
+`PiLp.equivOfUniqueLIE`, the power identity `PiLp.norm_rpow_eq_sum`, and coordinatewise submodule
+restriction `LinearIsometryEquiv.submodulePiLp`.
 
 ## Source
 
@@ -157,6 +158,68 @@ variable {p E}
     singleLI (𝕜 := 𝕜) p E i v = single p i v := by simp [singleLI]
 
 end SingleLI
+
+section EquivOfUniqueLIE
+
+variable [Unique ι]
+
+/-- Isometric refinement of `PiLp.equivOfUnique` for a singleton index type and `1 ≤ p`. -/
+noncomputable def equivOfUniqueLIE (p : ℝ≥0∞) (𝕜 : Type*) (E : ι → Type*)
+    [Fact (1 ≤ p)] [Semiring 𝕜] [∀ i, SeminormedAddCommGroup (E i)]
+    [∀ i, Module 𝕜 (E i)] :
+    PiLp p E ≃ₗᵢ[𝕜] E default where
+  toLinearEquiv := (equivOfUnique p 𝕜 E).toLinearEquiv
+  norm_map' x := norm_apply_eq_norm (zero_lt_one.trans_le Fact.out).ne' x default
+
+section
+
+variable {𝕜 : Type*} [Fact (1 ≤ p)] [Semiring 𝕜] [∀ i, Module 𝕜 (E i)]
+
+/-- `PiLp.equivOfUniqueLIE` evaluates at the unique coordinate `default`. -/
+@[simp]
+theorem equivOfUniqueLIE_apply (x : PiLp p E) :
+    equivOfUniqueLIE p 𝕜 E x = x default := (rfl)
+
+/-- The continuous linear equivalence underlying `PiLp.equivOfUniqueLIE` is `PiLp.equivOfUnique`. -/
+@[simp]
+theorem toContinuousLinearEquiv_equivOfUniqueLIE :
+    (equivOfUniqueLIE p 𝕜 E).toContinuousLinearEquiv = equivOfUnique p 𝕜 E := by
+  ext x
+  rfl
+
+/-- Applying the inverse of `PiLp.equivOfUniqueLIE` at the unique coordinate `default` returns its
+argument. -/
+@[simp]
+theorem equivOfUniqueLIE_symm_apply_default (y : E default) :
+    (equivOfUniqueLIE p 𝕜 E).symm y default = y :=
+  (equivOfUniqueLIE p 𝕜 E).apply_symm_apply y
+
+/-- Applying `PiLp.equivOfUniqueLIE` to the default basis vector `PiLp.single p default y`
+returns `y`. -/
+theorem equivOfUniqueLIE_single_default [DecidableEq ι] (y : E default) :
+    equivOfUniqueLIE p 𝕜 E (single p default y) = y := by
+  simp
+
+end
+
+/-- For a constant family `fun _ ↦ F`, `PiLp.equivOfUniqueLIE` evaluates `PiLp.single p i y` to
+`y` for every coordinate index `i`. -/
+theorem equivOfUniqueLIE_single [DecidableEq ι] {𝕜 F : Type*} [Fact (1 ≤ p)]
+    [Semiring 𝕜] [SeminormedAddCommGroup F] [Module 𝕜 F] (i : ι) (y : F) :
+    equivOfUniqueLIE p 𝕜 (fun _ : ι ↦ F) (single p i y) = y := by
+  rw [Subsingleton.elim i default]
+  exact equivOfUniqueLIE_single_default (E := fun _ : ι ↦ F) y
+
+/-- For a constant family `fun _ ↦ F`, the inverse of `PiLp.equivOfUniqueLIE` has constant
+coordinate `y` at every index `i`. -/
+@[simp]
+theorem equivOfUniqueLIE_symm_apply_const {𝕜 F : Type*} [Fact (1 ≤ p)]
+    [Semiring 𝕜] [SeminormedAddCommGroup F] [Module 𝕜 F] (y : F) (i : ι) :
+    (equivOfUniqueLIE p 𝕜 (fun _ : ι ↦ F)).symm y i = y := by
+  rw [Subsingleton.elim i default]
+  exact equivOfUniqueLIE_symm_apply_default (E := fun _ : ι ↦ F) y
+
+end EquivOfUniqueLIE
 
 /-- The sum of coordinate norms of a vector is at most `√(card ι)` times its `L²` norm. -/
 theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
