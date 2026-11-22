@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Elementary
+public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.Lp.Iterated
@@ -28,7 +29,11 @@ holdings are Cauchy in `L²(P)` at every time.
 
 Heights need only be square integrable and measurable at their left endpoints.
 The grid may be empty or have repeated dates; Brownian path regularity and usual
-conditions on the filtration are not needed.
+conditions on the filtration are not needed. Left-measurable `L²` heights for an `SFinite`
+measure `P` (or bounded left-measurable heights for a finite measure `P`) on any finite
+deterministic grid give a `TauCeti.BrownianIntegrable` holding without a monotonicity assumption
+on the grid (`TauCeti.BrownianIntegrable.simpleHolding`,
+`TauCeti.BrownianIntegrable.simpleHolding_of_bdd`).
 
 ## References
 
@@ -131,3 +136,34 @@ theorem lintegral_enorm_sq_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
   simp only [Function.uncurry_def]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
+
+namespace TauCeti.BrownianIntegrable
+
+open MeasureTheory
+
+/-- Left-measurable `L²` heights on any finite deterministic grid produce an integrand in the
+expected-square-energy domain `BrownianIntegrable ℱ P`, for any `SFinite` measure `P` and with no
+monotonicity assumption on the grid. -/
+theorem simpleHolding {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
+    {P : Measure Ω} [SFinite P] {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (ha₂ : ∀ j < n, MemLp (a j) 2 P) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) where
+  isStronglyPredictable := Finance.isStronglyPredictable_simpleHolding ha
+  memLp T := by
+    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
+    exact (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
+      (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)
+
+/-- Bounded left-measurable heights on any finite deterministic grid produce an integrand in
+`BrownianIntegrable ℱ P` on a finite measure space `P`. -/
+theorem simpleHolding_of_bdd {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
+    {P : Measure Ω} [IsFiniteMeasure P] {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C, ∀ ω, ‖a j ω‖ ≤ C) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
+  simpleHolding ha fun j hj ↦
+    let ⟨C, hC⟩ := hb j hj
+    MemLp.of_bound ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (.of_forall hC)
+
+end TauCeti.BrownianIntegrable

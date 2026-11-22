@@ -30,6 +30,7 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
   `a ≤ b + c`.
+* `ENNReal.tendsto_inv_natCast_add_nhds_zero`: `((k : ℝ≥0∞) + c)⁻¹` converges to `0` as `k → ∞`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
 * `Continuous.ennreal_toReal`: a continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous
@@ -105,6 +106,12 @@ theorem _root_.ENNReal.le_add_of_forall_one_lt_le_add_mul {a b c : ℝ≥0∞}
   have hlim : Filter.Tendsto (fun t : ℝ≥0 => b + t * c) (𝓝[>] 1) (𝓝 (b + c)) := by
     simpa using tendsto_const_nhds.add (ENNReal.Tendsto.mul_const h1 (Or.inr hc))
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall h)
+
+/-- For any `c : ℝ≥0∞`, `((k : ℝ≥0∞) + c)⁻¹` converges to `0` as `k → ∞`. -/
+protected theorem _root_.ENNReal.tendsto_inv_natCast_add_nhds_zero (c : ℝ≥0∞) :
+    Filter.Tendsto (fun k : ℕ ↦ ((k : ℝ≥0∞) + c)⁻¹) Filter.atTop (𝓝 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ENNReal.tendsto_inv_nat_nhds_zero
+    (fun _ ↦ zero_le) fun _ ↦ ENNReal.inv_le_inv.mpr le_self_add
 
 /-- The cost truncated at `M` on a rectangle `K ×ˢ L` and equal to `M` off it varies by at most `η`
 between points with the same labels. Here the labels `p` and `q` determine membership in `K` and

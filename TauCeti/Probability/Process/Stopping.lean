@@ -23,8 +23,9 @@ their stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
-Pathwise set membership up to the random time also passes to the stopped process, and almost-sure
-stage agreements along random times diverging to `⊤` converge in measure to the unstopped slice
+Pathwise set membership up to the random time also passes to the stopped process, and, under a
+finite measure, almost-sure agreements with almost-everywhere strongly measurable stage variables
+along random times diverging to `⊤` converge in measure to the unstopped slice
 (`MeasureTheory.tendstoInMeasure_of_stoppedProcess_ae_eq`). Under a finite measure, truncating an
 almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields an
 integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).

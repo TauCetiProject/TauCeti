@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.Order.Cadlag
+public import TauCeti.Topology.Instances.NNReal.Dyadic.Grid
 import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
@@ -157,20 +158,6 @@ theorem tendsto_dyadicCeilTime (u : WithTop ℝ≥0) :
       ((WithTop.continuous_coe.tendsto u).comp hu)
       (fun n => le_dyadicCeilTime n u) (fun n => (dyadicCeilTime_lt n u).le)
 
-/-- The nonnegative dyadic grid of mesh `2⁻ⁿ`. -/
-def dyadicGrid (n k : ℕ) : ℝ≥0 := (k : ℝ≥0) / 2 ^ n
-
-/-- Explicit formula for the dyadic grid of mesh `2⁻ⁿ`. -/
-theorem dyadicGrid_def (n k : ℕ) : dyadicGrid n k = (k : ℝ≥0) / 2 ^ n := by rw [dyadicGrid]
-
-/-- The dyadic grid of mesh `2⁻ⁿ` starts at zero. -/
-@[simp]
-theorem dyadicGrid_zero (n : ℕ) : dyadicGrid n 0 = 0 := by simp [dyadicGrid]
-
-/-- The dyadic grid of mesh `2⁻ⁿ` is strictly increasing. -/
-theorem strictMono_dyadicGrid (n : ℕ) : StrictMono (dyadicGrid n) :=
-  fun _ _ hij => div_lt_div_of_pos_right (Nat.cast_lt.mpr hij) (by positivity)
-
 /-- Every rounded random time has countable range, even if the original time does not. -/
 theorem countable_range_dyadicCeilTime {Ω : Type*} (τ : Ω → WithTop ℝ≥0) (n : ℕ) :
     (range fun ω => dyadicCeilTime n (τ ω)).Countable := by
@@ -182,7 +169,7 @@ theorem countable_range_dyadicCeilTime {Ω : Type*} (τ : Ω → WithTop ℝ≥0
   | top => simp
   | coe t =>
     rw [dyadicCeilTime_coe]
-    exact mem_insert_of_mem _ ⟨_, rfl⟩
+    exact mem_insert_of_mem _ ⟨⌈t * 2 ^ n⌉₊, by simp only [dyadicGrid_def]⟩
 
 /-- Clipping the upward dyadic approximation of any random time at a deterministic horizon `T`
 leaves only finitely many values in `ℝ≥0`. -/
@@ -203,7 +190,7 @@ theorem finite_range_untopA_min_dyadicCeilTime {Ω : Type*}
       rw [dyadicCeilTime_coe] at hgt ⊢
       rw [min_eq_right hgt.le, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
       exact ⟨⌈u * 2 ^ n⌉₊, Nat.lt_ceil.mpr ((div_lt_iff₀ (by positivity)).mp
-        (WithTop.coe_lt_coe.mp hgt)), rfl⟩
+        (WithTop.coe_lt_coe.mp hgt)), dyadicGrid_def n _⟩
 
 /-- Rounding cannot turn a finite time into infinity. -/
 @[simp]

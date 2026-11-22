@@ -274,19 +274,6 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
 
-/-- Scaling a strategy pointwise by a sample-space factor scales its gains at each sample point. -/
-theorem simpleGains_mul_left (τ : ℕ → ι) (n : ℕ) (ξ : Ω → ℝ) (a : ℕ → Ω → ℝ)
-    (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
-    simpleGains τ n (fun i ω ↦ ξ ω * a i ω) X t ω = ξ ω * simpleGains τ n a X t ω :=
-  simpleGains_smul τ n (ξ ω) a X t ω
-
-/-- Scaling a strategy pointwise by a sample-space factor scales its holding at each sample
-point. -/
-theorem simpleHolding_mul_left (τ : ℕ → ι) (n : ℕ) (ξ : Ω → ℝ) (a : ℕ → Ω → ℝ)
-    (t : ι) (ω : Ω) :
-    simpleHolding τ n (fun i ω ↦ ξ ω * a i ω) t ω = ξ ω * simpleHolding τ n a t ω :=
-  simpleHolding_smul τ n (ξ ω) a t ω
-
 /-- Shifting every grid date up to `max (τ i) u` and scaling heights by `ξ` restricts
 `simpleHolding` to `(u, ∞)` and multiplies by `ξ` pointwise. -/
 theorem simpleHolding_max_eq (u : ι) (ξ : Ω → ℝ) (s : ι) (ω : Ω) :

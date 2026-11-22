@@ -14,6 +14,7 @@ import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.Probability.Finance.SimpleStrategy.Stopping
 import TauCeti.Probability.Process.StoppedValue
 import TauCeti.Probability.Process.Stopping
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Optional stopping and stochastic-interval restriction for the Brownian Itô integral
@@ -53,9 +54,6 @@ namespace TauCeti.Probability.IsItoIntegral
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {P : Measure Ω} {W H I J : ℝ≥0 → Ω → ℝ} {σ : Ω → WithTop ℝ≥0}
 
-private theorem tendsto_inv_add_one : Tendsto (fun k : ℕ ↦ ((k : ℝ≥0∞) + 1)⁻¹) atTop (𝓝 0) := by
-  simpa [Function.comp_def] using ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)
-
 private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
     (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {T : ℝ≥0} (k : ℕ)
@@ -79,59 +77,10 @@ private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
   have hgains_s {s : ℝ≥0} (hs : s ∈ S) :
       TendstoInMeasure P (fun m ↦ Finance.simpleGains (τ₀ m) (n m) (a m) W s) atTop (I s) :=
     hI.tendstoInMeasure_simpleGains hW hτ₀ ha fun ε hε ↦
-      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (henergy ε hε)
-        (fun _ ↦ zero_le) fun m ↦ measure_mono fun ω hω ↦ by
-          simp only [Set.mem_ofPred_eq] at hω ⊢
-          refine hω.trans ?_
-          rw [← min_eq_left (hsT hs), ← timeMeasure_restrict T s]
-          exact lintegral_mono' Measure.restrict_le_self le_rfl
+      MeasureTheory.tendsto_measure_lintegral_mono (timeMeasure_mono (hsT hs)) henergy hε
   exact fun ε hε ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa using tendsto_finsetSum S fun s hs ↦ hgains_s hs ε hε) (fun _ ↦ zero_le) fun m ↦
     (measure_mono fun ω hω ↦ mem_biUnion (hrange ω) hω).trans (measure_biUnion_finset_le S _)
-
-private theorem tendsto_measure_lintegral_ite_le_dyadicCeilTime_sub_sq [IsFiniteMeasure P]
-    (hH : LocallyBrownianIntegrable ℱ P H) (hσ : IsStoppingTime ℱ σ) (T : ℝ≥0)
-    (ε : ℝ≥0∞) (hε : 0 < ε) :
-    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s,
-      ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
-        if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2
-      ∂timeMeasure T}) atTop (𝓝 0) := by
-  let D (k : ℕ) (ω : Ω) : ℝ≥0∞ := ∫⁻ s,
-    ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
-      if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2 ∂timeMeasure T
-  have hdiff_m (k : ℕ) : Measurable (Function.uncurry fun (s : ℝ≥0) ω ↦
-      ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
-        if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2) :=
-    (((hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable.sub
-      (hH.ite_le hσ).isStronglyPredictable).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2
-  have hmem : ∀ᵐ ω ∂P, ∀ᶠ k in atTop, ω ∈ {ω | ε ≤ D k ω} ↔ ω ∈ (∅ : Set Ω) := by
-    filter_upwards [hH.ae_memLp] with ω hω
-    have hT : MemLp (fun s ↦ H s ω) 2 (timeMeasure T) := by
-      simpa only [NNReal.comap_volume_restrict_Ioc, timeMeasure_def] using hω T
-    have hdom (k : ℕ) (s : ℝ≥0) :
-        ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
-          if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2 ≤ ‖H s ω‖ₑ ^ 2 := by
-      by_cases hs : (s : WithTop ℝ≥0) ≤ σ ω
-      · rw [ite_eq_left (hs.trans (le_dyadicCeilTime k (σ ω))), ite_eq_left hs]; simp
-      · rw [ite_eq_right hs, sub_zero]; split_ifs <;> simp
-    have hpt (s : ℝ≥0) : Tendsto (fun k ↦
-        ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
-          if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2) atTop (𝓝 0) := by
-      by_cases hs : (s : WithTop ℝ≥0) ≤ σ ω
-      · refine tendsto_const_nhds.congr fun k ↦ ?_
-        rw [ite_eq_left (hs.trans (le_dyadicCeilTime k (σ ω))), ite_eq_left hs]; simp
-      · refine tendsto_const_nhds.congr' <|
-          ((tendsto_dyadicCeilTime (σ ω)).eventually (eventually_lt_nhds (lt_of_not_ge hs))).mono
-            fun k hk ↦ by dsimp only; rw [ite_eq_right hk.not_ge, ite_eq_right hs]; simp
-    have hD0 : Tendsto (fun k ↦ D k ω) atTop (𝓝 0) := by
-      simpa [D] using tendsto_lintegral_of_dominated_convergence (fun s ↦ ‖H s ω‖ₑ ^ 2)
-        (fun k ↦ (hdiff_m k).comp (measurable_id.prodMk measurable_const))
-        (fun k ↦ .of_forall (hdom k))
-        ((AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top
-          hT.aestronglyMeasurable).mp hT).ne (.of_forall hpt)
-    exact (hD0.eventually (eventually_lt_nhds hε)).mono fun _ hk ↦ by simp [hk.not_ge]
-  simpa using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop MeasurableSet.empty
-    (fun k ↦ measurableSet_le measurable_const (hdiff_m k).lintegral_prod_left') hmem
 
 private theorem tendstoInMeasure_stoppedProcess_diag
     (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -167,8 +116,10 @@ private theorem tendstoInMeasure_stoppedProcess_diag
   have hdiff : TendstoInMeasure P
       (fun k ω ↦ Finance.simpleGains (γ k) (N k) (c k) W T ω -
         MeasureTheory.stoppedProcess I (fun ω ↦ dyadicCeilTime k (σ ω)) T ω) atTop 0 :=
-    tendstoInMeasure_of_tendsto_measure_rate_lt_edist tendsto_inv_add_one <|
-      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds tendsto_inv_add_one
+    tendstoInMeasure_of_tendsto_measure_rate_lt_edist
+      (ENNReal.tendsto_inv_natCast_add_nhds_zero 1) <|
+      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+        (ENNReal.tendsto_inv_natCast_add_nhds_zero 1)
         (fun _ ↦ zero_le) fun k ↦ (measure_mono fun ω hω ↦ by
           simp only [Set.mem_ofPred_eq, Pi.zero_apply, hgains_eq k ω, eDist_eq_eNorm_sub,
             sub_zero] at hω ⊢
@@ -196,8 +147,9 @@ private theorem tendsto_measure_lintegral_stoppedProcess_diag [IsFiniteMeasure P
       ‖Finance.simpleHolding (γ k) (N k) (c k) s ω -
         if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0‖ₑ ^ 2
       ∂timeMeasure T}) atTop (𝓝 0) :=
-    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds tendsto_inv_add_one
-      (.of_forall fun _ ↦ zero_le) ((tendsto_inv_add_one.eventually_lt_const hδ).mono fun k hk ↦
+    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+      (ENNReal.tendsto_inv_natCast_add_nhds_zero 1) (.of_forall fun _ ↦ zero_le)
+      (((ENNReal.tendsto_inv_natCast_add_nhds_zero 1).eventually_lt_const hδ).mono fun k hk ↦
         (measure_mono fun ω hω ↦ (hk.le.trans hω).trans <| lintegral_mono_ae
           ((ae_mem_Ioc_timeMeasure T).mono fun s hs ↦ by
             rw [hhold k s hs ω]; split_ifs <;> simp)).trans (hm_hold k).le)
@@ -207,7 +159,7 @@ private theorem tendsto_measure_lintegral_stoppedProcess_diag [IsFiniteMeasure P
       (hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable).mono
         ℱ.predictable_le_prod).measurable.comp
           (measurable_id.prodMk measurable_const) |>.eNorm.pow_const 2).aemeasurable)
-    he₁ (tendsto_measure_lintegral_ite_le_dyadicCeilTime_sub_sq hH hσ T) hε
+    he₁ (hH.tendsto_measure_lintegral_ite_le_dyadicCeilTime_sub_sq hσ T) hε
 
 /-- **Optional stopping for the continuous Brownian Itô integral**: stopping `I` at a stopping time
 `σ` yields an Itô integral of `H · 1_{[0, σ]}`, without path continuity of `W` or moment bounds. -/

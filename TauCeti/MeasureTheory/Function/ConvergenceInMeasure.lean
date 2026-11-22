@@ -53,10 +53,10 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
 * `MeasureTheory.tendsto_measure_ge_of_ne_top`, `tendsto_measure_ge_of_ae_eventually_le`,
-  `tendsto_measure_lintegral_enorm_sq_bdd_mul`, `tendsto_measure_lintegral_enorm_add_sq`,
-  `tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm`: `ℝ≥0∞` threshold reduction,
-  finite-measure transfer, and convergence in measure of slice square lower integrals
-  `y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ`.
+  `tendsto_measure_lintegral_mono`, `tendsto_measure_lintegral_enorm_sq_bdd_mul`,
+  `tendsto_measure_lintegral_enorm_add_sq`, `tendsto_measure_lintegral_enorm_sq_of_tendsto_eLpNorm`:
+  `ℝ≥0∞` threshold reduction, finite-measure transfer, inner-measure monotonicity transfer, and
+  convergence in measure of slice square lower integrals `y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ`.
 * `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
   can be checked on a family of metric-valued tests inducing the topology, even when the
   measure spaces vary with the index.
@@ -579,6 +579,18 @@ theorem tendsto_measure_ge_of_ae_eventually_le {α ι : Type*} {mα : Measurable
     (by simpa only [add_zero] using hlim.add hB) (fun _ ↦ zero_le) fun i ↦
     (measure_mono fun x hx ↦ by simp only [B, Set.mem_union, Set.mem_sdiff]; tauto).trans
       (measure_union_le _ _)
+
+/-- Monotonicity in the inner measure transfers convergence to `0` in `ν`-measure of lower
+integrals `y ↦ ∫⁻ x, f i x y ∂μ₂` to any dominated inner measure `μ₁ ≤ μ₂`, with no
+measurability or finiteness assumptions. -/
+theorem tendsto_measure_lintegral_mono {α β ι : Type*}
+    [MeasurableSpace α] [MeasurableSpace β] {μ₁ μ₂ : Measure α} {ν : Measure β}
+    (hμ : μ₁ ≤ μ₂) {l : Filter ι} {f : ι → α → β → ℝ≥0∞}
+    (he : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, f i x y ∂μ₂}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, f i x y ∂μ₁}) l (𝓝 0) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (he ε hε)
+    (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ hω ↦ hω.trans (lintegral_mono' hμ le_rfl)
 
 /-- If `‖f i x y‖ₑ ≤ ‖ξ y‖ₑ * ‖g i x y‖ₑ` with `ξ` uniformly norm-bounded and the slice square
 lower integrals `y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` converge to `0` in `ν`-measure along `l`, then so

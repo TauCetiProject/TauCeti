@@ -166,6 +166,16 @@ theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
   refine ⟨hH.isStronglyPredictable.indicator hA, fun T ↦ ?_⟩
   exact (hH.memLp T).indicator (ℱ.predictable_le_prod A hA).nullMeasurableSet
 
+/-- Restricting an integrand to `(s, ∞)` preserves finite expected square energy. -/
+theorem BrownianIntegrable.indicator_Ioi (hH : BrownianIntegrable ℱ P H) (s : ℝ≥0) :
+    BrownianIntegrable ℱ P (fun u ω ↦ (Ioi s).indicator (H · ω) u) := by
+  have heq : (fun u ω ↦ (Ioi s).indicator (H · ω) u) =
+      fun u ω ↦ ((Ioi s ×ˢ (univ : Set Ω)).indicator (Function.uncurry H)) (u, ω) := by
+    ext u ω
+    by_cases hu : s < u <;> simp [hu]
+  rw [heq]
+  exact hH.indicator (measurableSet_predictable_Ioi_prod (i := s) MeasurableSet.univ)
+
 /-- Restriction to a predictable set preserves finite pathwise square energy. -/
 theorem LocallyBrownianIntegrable.indicator (hH : LocallyBrownianIntegrable ℱ P H)
     {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :

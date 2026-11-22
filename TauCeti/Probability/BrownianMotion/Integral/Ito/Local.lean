@@ -14,6 +14,7 @@ import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Process.Patching
 import TauCeti.Probability.Process.Stopping
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Local-martingale property and localized Brownian Itô integration
@@ -134,13 +135,11 @@ private theorem isItoIntegral_of_stopped_stages
       ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P T (hHs k).isStronglyPredictable
         ((hHs k).memLp_timeMeasure T) (ENNReal.inv_pos.mpr (by simp [ENNReal.natCast_ne_top] :
           ((k : ℝ≥0∞) + 1) ≠ ∞))
-    have htend : Tendsto (fun k : ℕ ↦ ((k : ℝ≥0∞) + 1)⁻¹) atTop (𝓝 0) := by
-      simpa [Function.comp_def] using
-        ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)
     have hl2_hold : Tendsto (fun k ↦ eLpNorm
         (fun p ↦ Finance.simpleHolding (γ k) (n k) (a k) p.1 p.2 - H_stage k p.1 p.2) 2
           ((Probability.timeMeasure T).prod P)) atTop (𝓝 0) :=
-      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds htend
+      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+        (ENNReal.tendsto_inv_natCast_add_nhds_zero 1)
         (fun _ ↦ zero_le) fun k ↦ (herr k).le
     have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
       MemLp.of_bound ((ha k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k) (.of_forall (hb k j hj))

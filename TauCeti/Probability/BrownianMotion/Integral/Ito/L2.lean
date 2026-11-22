@@ -168,14 +168,12 @@ theorem toLp_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
       hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) :=
   Lp.ext ((hI.memLp hW hH T).coeFn_toLp.trans (hI.ae_eq_l2Integral hW hH T))
 
-private theorem brownianIntegrable_indicator_Ioi (hH : BrownianIntegrable ℱ P H) (s : ℝ≥0) :
-    BrownianIntegrable ℱ P (fun u ω ↦ (Ioi s).indicator (H · ω) u) := by
-  have heq : (fun u ω ↦ (Ioi s).indicator (H · ω) u) =
-      fun u ω ↦ ((Ioi s ×ˢ (univ : Set Ω)).indicator (Function.uncurry H)) (u, ω) := by
-    ext u ω
-    by_cases hu : s < u <;> simp [hu]
-  rw [heq]
-  exact hH.indicator (measurableSet_predictable_Ioi_prod (i := s) MeasurableSet.univ)
+private theorem indicator_Ioi_ae_eq_indicator_Ioc (H : ℝ≥0 → Ω → ℝ) (s t : ℝ≥0) :
+    (fun p : ℝ≥0 × Ω ↦ (Ioi s).indicator (H · p.2) p.1) =ᵐ[(timeMeasure t).prod P]
+      fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (H · p.2) p.1 := by
+  filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure t)
+    (ν := P)).ae (ae_mem_Ioc_timeMeasure t)] with p hp
+  by_cases hps : s < p.1 <;> simp [hps, hp.2]
 
 /-- **`(s, t]`-increment `L²`-seminorm Itô isometry**: for `s ≤ t`, `eLpNorm (I t - I s) 2 P` equals
 the `L²((timeMeasure t).prod P)` seminorm of `H · 1_{(s, t]}`, without path continuity of `W`. -/
@@ -188,11 +186,8 @@ theorem eLpNorm_sub_eq (hW : IsFilteredPreBrownianReal ℱ W P)
   have hsub : eLpNorm (I t - I s) 2 P =
       eLpNorm (fun p : ℝ≥0 × Ω ↦ (Ioi s).indicator (H · p.2) p.1) 2 ((timeMeasure t).prod P) := by
     simpa only [Pi.sub_def, Function.uncurry_def, min_eq_left hst] using
-      (hI.indicator_Ioi hW s).eLpNorm_eq hW (brownianIntegrable_indicator_Ioi hH s) t
-  refine hsub.trans (eLpNorm_congr_ae ?_)
-  filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure t)
-    (ν := P)).ae (ae_mem_Ioc_timeMeasure t)] with p hp
-  by_cases hps : s < p.1 <;> simp [hps, hp.2]
+      (hI.indicator_Ioi hW s).eLpNorm_eq hW (hH.indicator_Ioi s) t
+  exact hsub.trans (eLpNorm_congr_ae (indicator_Ioi_ae_eq_indicator_Ioc H s t))
 
 /-- The `L²(P)` distance between the elementary gains of a left-measurable `L²` simple strategy on
 a nondecreasing grid and an Itô integral of `K` equals the `L²((timeMeasure T).prod P)` distance
@@ -293,11 +288,9 @@ theorem integral_sub_sq (hW : IsFilteredPreBrownianReal ℱ W P)
   have heq : ∫ ω, (I t ω - I s ω) ^ 2 ∂P =
       ∫ p, (Ioi s).indicator (H · p.2) p.1 ^ 2 ∂(timeMeasure t).prod P := by
     simpa only [min_eq_left hst] using
-      (hI.indicator_Ioi hW s).integral_sq hW (brownianIntegrable_indicator_Ioi hH s) t
-  refine heq.trans (integral_congr_ae ?_)
-  filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure t)
-    (ν := P)).ae (ae_mem_Ioc_timeMeasure t)] with p hp
-  by_cases hps : s < p.1 <;> simp [hps, hp.2]
+      (hI.indicator_Ioi hW s).integral_sq hW (hH.indicator_Ioi s) t
+  exact heq.trans (integral_congr_ae
+    ((indicator_Ioi_ae_eq_indicator_Ioc H s t).mono fun _ hp ↦ congrArg (· ^ 2) hp))
 
 end Probability.IsItoIntegral
 

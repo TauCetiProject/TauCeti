@@ -349,9 +349,16 @@ theorem bdd_mul (hI : IsItoIntegral ℱ P W H I) {ξ : Ω → ℝ}
     fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_enorm_sq_bdd_mul
       (μ := timeMeasure t) (ν := P) hCξ henergy (fun k s ω ↦ ?_) hε,
     (hgains.bdd_smul hCξ).congr (fun k ↦ .of_forall fun ω ↦ by
-      simpa only [smul_eq_mul] using
-        (Finance.simpleGains_mul_left (τ k) (n k) ξ (a k) W t ω).symm) .rfl⟩
-  rw [Finance.simpleHolding_mul_left, ← mul_sub, eNorm_mul]
+      -- Both sides evaluate `ξ` only at `ω`.
+      have hG : Finance.simpleGains (τ k) (n k) (ξ ω • a k) W t ω =
+          Finance.simpleGains (τ k) (n k) (fun i ω' ↦ ξ ω' * a k i ω') W t ω := by
+        simp only [Finance.simpleGains_def, Pi.smul_apply, smul_eq_mul]
+      rw [← hG, Finance.simpleGains_smul, smul_eq_mul]) .rfl⟩
+  -- Both sides evaluate the height only at `ω`.
+  have hH : Finance.simpleHolding (τ k) (n k) (fun i ω' ↦ ξ ω' * a k i ω') s ω =
+      Finance.simpleHolding (τ k) (n k) (ξ ω • a k) s ω := by
+    simp only [Finance.simpleHolding_def, Pi.smul_apply, smul_eq_mul]
+  rw [hH, Finance.simpleHolding_smul, ← mul_sub, eNorm_mul]
 
 /-- Scaling an integrand by a constant scales its Itô integral. -/
 theorem smul (hI : IsItoIntegral ℱ P W H I) (c : ℝ) :
@@ -470,12 +477,7 @@ theorem indicator_Ioi_bdd_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     hI.ae_continuous.mono fun _ hω ↦ by fun_prop, fun t ↦ ?_⟩
   obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
   have hgains_min := hI.tendstoInMeasure_simpleGains (t := min u t) hW hτ ha fun ε hε ↦
-    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (henergy ε hε)
-      (fun _ ↦ zero_le) fun k ↦ measure_mono fun ω hω ↦ by
-        simp only [Set.mem_ofPred_eq] at hω ⊢
-        refine hω.trans ?_
-        rw [← timeMeasure_restrict t u]
-        exact lintegral_mono' Measure.restrict_le_self le_rfl
+    MeasureTheory.tendsto_measure_lintegral_mono (timeMeasure_mono (min_le_right u t)) henergy hε
   refine ⟨n, fun k i ↦ max (τ k i) u, fun k i ω ↦ ξ ω * a k i ω,
     fun k _ hi _ hj hij ↦ max_le_max_right u (hτ k hi hj hij),
     fun k i hi ↦ (hξ.mono (ℱ.mono (le_max_right _ _))).mul

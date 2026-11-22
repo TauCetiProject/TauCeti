@@ -13,10 +13,11 @@ import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 /-!
 # Dyadic stopping of simple trading strategies
 
-Stopping a left-measurable simple strategy at `dyadicCeilTime k ∘ τ` up to horizon `T` produces a
-left-measurable simple strategy on a strictly increasing deterministic grid starting at `0`, with
-holding `1_{t ≤ dyadicCeilTime k (τ ω)}` times the original holding on `(0, T]` and gains equal to
-`stoppedProcess (simpleGains σ n a X) (dyadicCeilTime k ∘ τ) s` for all `s ≤ T`.
+Stopping a left-measurable simple strategy on a nondecreasing grid at `dyadicCeilTime k ∘ τ` up to
+horizon `T` produces a left-measurable simple strategy on a strictly increasing deterministic grid
+starting at `0`, with holding `1_{t ≤ dyadicCeilTime k (τ ω)}` times the original holding on
+`(0, T]` and gains equal to `stoppedProcess (simpleGains σ n a X) (dyadicCeilTime k ∘ τ) s` for
+all `s ≤ T`.
 
 ## Main results
 
@@ -116,11 +117,11 @@ private theorem simpleGains_dyadicStopHeight {G : ℝ≥0 → Ω → ℝ} {T s :
       rw [dyadicStopHeight, if_congr hiff rfl rfl]
       by_cases hjr : j < r <;> simp [hjr, f]
 
-/-- Stopping a left-measurable simple strategy at the dyadic ceiling `dyadicCeilTime k ∘ τ` of a
-stopping time `τ` up to horizon `T` is represented on `(0, T]` by one strictly increasing
-deterministic grid starting at `0`, with left-measurable heights bounded pathwise by
-`⌈T * 2 ^ k⌉₊ * ∑ i ∈ range n, ‖a i ω‖` and gains at every `s ≤ T` equal to the stopped gains
-against any price path `X`. -/
+/-- Stopping a left-measurable simple strategy on a nondecreasing grid at the dyadic ceiling
+`dyadicCeilTime k ∘ τ` of a stopping time `τ` up to horizon `T` is represented on `(0, T]` by one
+strictly increasing deterministic grid starting at `0`, with left-measurable heights bounded
+pathwise by `⌈T * 2 ^ k⌉₊ * ∑ i ∈ range n, ‖a i ω‖` and gains at every `s ≤ T` equal to the
+stopped gains against any price path `X`. -/
 theorem exists_simpleHolding_simpleGains_dyadicCeilTime
     (hτ : IsStoppingTime ℱ τ) (k : ℕ) (T : ℝ≥0) {n : ℕ} {σ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
     (hσ : MonotoneOn σ (Iic n)) (ha : ∀ i < n, StronglyMeasurable[ℱ (σ i)] (a i)) :
