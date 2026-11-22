@@ -187,9 +187,7 @@ theorem homConstEquiv_comp_const_map {B : C} (f : mk Y ⟶ const.obj A) (h : A �
     homConstEquiv Y B (f ≫ const.map h) =
       colimMap (Functor.whiskerLeft Y.op (yoneda.map h)) (homConstEquiv Y A f) := by
   obtain ⟨i, g, rfl⟩ := exists_π_comp_const_map_eq Y f
-  rw [Category.assoc, ← const.map_comp, homConstEquiv_π_comp_const_map,
-    homConstEquiv_π_comp_const_map, ← ConcreteCategory.comp_apply, ι_colimMap]
-  simp
+  simp [← Functor.map_comp]
 
 /-- Precomposition with the pro-morphism induced by `a : Y' ⟶ Y` acts on stage representatives
 by precomposition with the components of `a`. -/
@@ -197,9 +195,7 @@ theorem homConstEquiv_lim_map_comp {Y' : I ⥤ C} (a : Y' ⟶ Y) (f : mk Y ⟶ c
     homConstEquiv Y' A (lim.map a ≫ f) =
       colimMap (Functor.whiskerRight (NatTrans.op a) (yoneda.obj A)) (homConstEquiv Y A f) := by
   obtain ⟨i, g, rfl⟩ := exists_π_comp_const_map_eq Y f
-  rw [lim_map_π_assoc, ← const.map_comp, homConstEquiv_π_comp_const_map,
-    homConstEquiv_π_comp_const_map, ← ConcreteCategory.comp_apply, ι_colimMap]
-  simp
+  simp [← Functor.map_comp]
 
 end Const
 
@@ -228,6 +224,12 @@ private theorem homLimitIso_hom_π (j : J) :
 private def homIso : (mk Y ⟶ mk Z) ≅ limit (homStage Y Z ⋙ colim) :=
   homLimitIso Y Z ≪≫ Limits.lim.mapIso (homConstNatIso Y Z)
 
+private theorem homIso_hom_π (j : J) :
+    (homIso Y Z).hom ≫ limit.π (homStage Y Z ⋙ colim) j =
+      (coyoneda.obj (op (mk Y))).map (π Z j) ≫ (homConstNatIso Y Z).hom.app j := by
+  simp only [homIso, Iso.trans_hom, Functor.mapIso_hom, Category.assoc, lim_map, limMap_π]
+  exact homLimitIso_hom_π_assoc Y Z j _
+
 /-- Morphisms of pro-objects are given by the double-limit formula
 `Hom(mk Y, mk Z) ≃ lim_j colim_i Hom(Y_i, Z_j)`. -/
 def homEquiv : (mk Y ⟶ mk Z) ≃ limit (homStage Y Z ⋙ colim) :=
@@ -237,12 +239,8 @@ def homEquiv : (mk Y ⟶ mk Z) ≃ limit (homStage Y Z ⋙ colim) :=
 @[simp]
 theorem homEquiv_π_apply (f : mk Y ⟶ mk Z) (j : J) :
     dsimp% limit.π (homStage Y Z ⋙ colim) j (homEquiv Y Z f) =
-      homConstEquiv Y (Z.obj j) (f ≫ π Z j) := by
-  have h : (homIso Y Z).hom ≫ limit.π (homStage Y Z ⋙ colim) j =
-      (coyoneda.obj (op (mk Y))).map (π Z j) ≫ (homConstNatIso Y Z).hom.app j := by
-    rw [homIso, Iso.trans_hom, Category.assoc, Functor.mapIso_hom, lim_map, limMap_π,
-      homLimitIso_hom_π_assoc]
-  exact ConcreteCategory.congr_hom h f
+      homConstEquiv Y (Z.obj j) (f ≫ π Z j) :=
+  ConcreteCategory.congr_hom (homIso_hom_π Y Z j) f
 
 /-- The `j`-th coordinate of `homEquiv Y Z f` is represented by a stage map `g : Y.obj i ⟶ Z.obj j`
 exactly when `g` represents `f` at the stage `j` of `mk Z`. -/
@@ -275,14 +273,17 @@ theorem homEquiv_naturality (a : Y' ⟶ Y) (f : mk Y ⟶ mk Z) (b : Z ⟶ Z') :
     homEquiv Y' Z' (lim.map a ≫ f ≫ lim.map b) =
       limMap (Functor.whiskerRight (homStageMap a b) colim) (homEquiv Y Z f) := by
   refine Types.limit_ext _ _ _ fun j ↦ ?_
-  rw [limMap_π_apply, homEquiv_π_apply, homEquiv_π_apply, Category.assoc, Category.assoc,
-    lim_map_π, ← Category.assoc f, ← Category.assoc, homConstEquiv_comp_const_map,
-    homConstEquiv_lim_map_comp, ← ConcreteCategory.comp_apply, Functor.whiskerRight_app,
-    ← colim_map, ← colim_map, ← Functor.map_comp]
-  congr 3
-  ext i h
-  -- Stagewise the two sides are `(a.app i ≫ h) ≫ b.app j` and `a.app i ≫ h ≫ b.app j`.
-  exact Category.assoc _ _ _
+  -- Stagewise, `homStageMap a b` is postcomposition with `b.app j` followed by precomposition
+  -- with `a`.
+  have hab : colimMap ((homStageMap a b).app j) =
+      colimMap (Functor.whiskerLeft Y.op (yoneda.map (b.app j))) ≫
+        colimMap (Functor.whiskerRight (NatTrans.op a) (yoneda.obj (Z'.obj j))) :=
+    colim.map_comp _ _
+  have h := homConstEquiv_lim_map_comp Y a ((f ≫ π Z j) ≫ const.map (b.app j))
+  rw [homConstEquiv_comp_const_map, ← ConcreteCategory.comp_apply, ← hab] at h
+  simp only [Functor.comp_obj, colim_obj, limMap_π_apply, homEquiv_π_apply, Category.assoc,
+    lim_map_π, Functor.whiskerRight_app, colim_map] at h ⊢
+  exact h
 
 end Naturality
 
