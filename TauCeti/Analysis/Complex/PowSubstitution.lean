@@ -48,9 +48,12 @@ of a branch through a degree-`m` substitution lies in `L^{p_m}`
 multiplies the exponent, the margin survives exactly when `K (m² - 1) < m²`
 (`TauCeti.mul_two_add_two_div_mul_one_sub_inv_lt_two_iff`).
 
-The branch `u` is only assumed real differentiable, so the statements apply to holomorphic
-branches and equally to the root branches of real Cauchy–Riemann equations parametrized after a
-power substitution, as in `TauCeti.exists_root_branches_hasWeakConjWirtingerDerivOn`.
+The branch `u` is only assumed real differentiable, so the statements are not limited to
+holomorphic branches. The root branches of real Cauchy–Riemann equations parametrized after the
+substitution `y = x + ζ ^ m!` in `TauCeti.exists_root_branches_hasWeakConjWirtingerDerivOn` are
+continuously real differentiable away from `ζ = 0`, so they meet the differentiability hypothesis
+on sheets `s` avoiding `0`, with `d = m!`; the bounds on `‖du‖` that the margin also needs are not
+supplied there and must be established separately.
 
 ## References
 
