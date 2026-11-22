@@ -64,7 +64,6 @@ lemma scalarQuotientCohomologyTower_obj (n : ℕ) :
   (rfl)
 
 /-- Transitions on formal cohomology are induced by reduction of quotient sheaves. -/
-@[simp]
 lemma scalarQuotientCohomologyTower_transition (n : ℕ) :
     (M.scalarQuotientCohomologyTower f i).transition n =
       cohomologyMapLinear (M.scalarPowerQuotientTransition f
@@ -73,7 +72,6 @@ lemma scalarQuotientCohomologyTower_transition (n : ℕ) :
   rfl
 
 /-- Composite transitions are induced by reduction between the corresponding power quotients. -/
-@[simp]
 lemma scalarQuotientCohomologyTower_transitionOfLE {m n : ℕ} (h : m ≤ n) :
     (M.scalarQuotientCohomologyTower f i).transitionOfLE h =
       cohomologyMapLinear (M.scalarPowerQuotientTransition f
@@ -110,16 +108,7 @@ def cohomologyReductionToQuotient :
   NatTrans.ofOpSequence (fun n ↦ ModuleCat.ofHom <|
     quotientsLift _ _ n
       (cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ (n + 1)))) i)
-      (by
-        rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
-        intro x hx
-        obtain ⟨a, _, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-        have hs : cohomologyMapLinear (M.globalSectionsSmul (f ^ (n + 1))) i a =
-            f ^ (n + 1) • a := by
-          rw [coe_cohomologyMapLinear]
-          exact cohomologyMap_globalSectionsSmul_apply M i _ a
-        rw [LinearMap.mem_ker, ← hs, ← LinearMap.comp_apply, ← cohomologyMapLinear_comp,
-          cokernel.condition, cohomologyMapLinear_zero, LinearMap.zero_apply])) (fun n ↦ by
+      (M.pow_smul_le_ker_cohomologyMapLinear_scalarPowerQuotient f i (n + 1))) (fun n ↦ by
         ext x
         simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
           quotientsLift_quotientsπ]
@@ -137,16 +126,6 @@ lemma cohomologyReductionToQuotient_app_reductionπ (n : ℕ) (x : Cohomology M 
   exact quotientsLift_quotientsπ _ _ _ _ _ _
 
 variable [Mono (M.globalSectionsSmul f)]
-
-/-- Reduction to a power quotient has kernel exactly `fⁿ Hⁱ(X, M)` when `f` acts
-injectively on the sheaf. -/
-lemma ker_cohomologyMapLinear_scalarPowerQuotient (n : ℕ) :
-    LinearMap.ker (cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ n))) i) =
-      Ideal.span {f} ^ n • (⊤ : Submodule Γ(X, ⊤) (Cohomology M i)) := by
-  rw [(M.exact_smul_cohomologyMapLinear (f ^ n) i).linearMap_ker_eq,
-    Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
-  ext x
-  simp [LinearMap.mem_range, Submodule.mem_smul_pointwise_iff_exists]
 
 /-- Reduction of cohomology embeds into the cohomology of the quotient sheaf. -/
 lemma cohomologyReductionToQuotient_app_injective (n : ℕ) :

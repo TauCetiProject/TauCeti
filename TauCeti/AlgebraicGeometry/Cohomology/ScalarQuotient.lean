@@ -45,6 +45,22 @@ universe u
 namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}} (M : X.Modules) (f : Γ(X, ⊤))
+
+/-- Reduction to a power quotient kills `fⁿ Hⁱ(X, M)`, without regularity of `f` on the sheaf. -/
+lemma pow_smul_le_ker_cohomologyMapLinear_scalarPowerQuotient (i n : ℕ) :
+    Ideal.span {f} ^ n • (⊤ : Submodule Γ(X, ⊤) (Cohomology M i)) ≤
+      LinearMap.ker (cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ n))) i) := by
+  rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
+  intro x hx
+  obtain ⟨a, _, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
+  have hcomp :
+      (cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ n))) i).comp
+        (cohomologyMapLinear (M.globalSectionsSmul (f ^ n)) i) = 0 := by
+    rw [← cohomologyMapLinear_comp, cokernel.condition, cohomologyMapLinear_zero]
+  apply LinearMap.mem_ker.mpr
+  simpa only [LinearMap.comp_apply, LinearMap.zero_apply, cohomologyMapLinear_apply,
+    cohomology_smul] using LinearMap.congr_fun hcomp a
+
 variable [Mono (M.globalSectionsSmul f)]
 
 /-- The connecting map for `0 → M → M → M/fM → 0`, linear over global functions. -/
@@ -71,6 +87,16 @@ theorem exact_smul_cohomologyMapLinear (i : ℕ) :
   rw [hs, coe_cohomologyMapLinear]
   exact exact_cohomologyMap_cohomologyMap
     (TauCeti.cokernelSequence_shortExact (M.globalSectionsSmul f)) i
+
+/-- Reduction to a power quotient has kernel exactly `fⁿ Hⁱ(X, M)` when `f` acts
+injectively on the sheaf. -/
+lemma ker_cohomologyMapLinear_scalarPowerQuotient (i n : ℕ) :
+    LinearMap.ker (cohomologyMapLinear (cokernel.π (M.globalSectionsSmul (f ^ n))) i) =
+      Ideal.span {f} ^ n • (⊤ : Submodule Γ(X, ⊤) (Cohomology M i)) := by
+  rw [(M.exact_smul_cohomologyMapLinear (f ^ n) i).linearMap_ker_eq,
+    Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
+  ext x
+  simp [LinearMap.mem_range, Submodule.mem_smul_pointwise_iff_exists]
 
 /-- A class on `M/fM` has zero boundary exactly when it lifts to a class on `M`. -/
 theorem exact_cohomologyMapLinear_scalarδ (i : ℕ) :
