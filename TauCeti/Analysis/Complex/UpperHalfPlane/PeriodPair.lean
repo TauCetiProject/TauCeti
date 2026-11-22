@@ -53,7 +53,8 @@ becomes a series of cotangents,
 `ζ(x; ℤ z + ℤ) = ∑_m (π cot (π (x - m z)) + π cot (π m z) + x P(m z))` for `x ∉ ℤ z + ℤ`.
 
 Finally, `ℂˣ` acts on period pairs by rescaling, `c • (ω₁, ω₂) = (c ω₁, c ω₂)`, with lattice `c Λ`;
-this multiplies the lattice sums `G n` by `c⁻ⁿ`, `℘(c z)` by `c⁻²` and `℘'(c z)` by `c⁻³`, and
+this multiplies the lattice sums `G n` by `c⁻ⁿ`, `℘(c z)` by `c⁻²`, `℘'(c z)` by `c⁻³` and
+`ζ(c z)` by `c⁻¹`, and
 every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-plane.
 
 ## Main definitions
@@ -103,6 +104,8 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `PeriodPair.G_smul`, `PeriodPair.g₂_smul`, `PeriodPair.g₃_smul`,
   `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`: rescaling the lattice by
   `c` rescales `G n` by `c⁻ⁿ`, `℘` by `c⁻²` and `℘'` by `c⁻³`.
+* `PeriodPair.weierstrassZeta_smul`, `PeriodPair.quasiPeriod_smul`: rescaling the lattice by `c`
+  rescales `ζ` and the quasi-periods by `c⁻¹`.
 * `PeriodPair.G_eq_of_lattice_eq`, `PeriodPair.weierstrassP_eq_of_lattice_eq`,
   `PeriodPair.derivWeierstrassP_eq_of_lattice_eq`: the lattice sums, `℘` and `℘'` depend only on
   the lattice.
@@ -893,6 +896,23 @@ lemma derivWeierstrassP_smul (z : ℂ) : ℘'[c • L] (c * z) = ℘'[L] z / (c 
   simp only [LinearEquiv.coe_toEquiv, coe_latticeSMulEquiv, ← mul_sub, mul_pow, div_eq_mul_inv,
     mul_inv]
   ring
+
+/-- `ζ(c z; c Λ) = c⁻¹ ζ(z; Λ)`. -/
+@[simp]
+lemma weierstrassZeta_smul (z : ℂ) :
+    (c • L).weierstrassZeta (c * z) = L.weierstrassZeta z / c := by
+  refine ((c • L).hasSum_weierstrassZeta (c * z)).unique ?_
+  rw [← (L.latticeSMulEquiv c).toEquiv.hasSum_iff]
+  refine ((L.hasSum_weierstrassZeta z).div_const c).congr_fun fun l ↦ ?_
+  simp only [Function.comp_apply, LinearEquiv.coe_toEquiv, coe_latticeSMulEquiv, ← mul_sub,
+    mul_pow]
+  field_simp
+
+/-- The quasi-period of `c l` in `c Λ` is `c⁻¹` times that of `l` in `Λ`. -/
+@[simp]
+lemma quasiPeriod_smul (l : L.lattice) :
+    (c • L).quasiPeriod (L.latticeSMulEquiv c l) = L.quasiPeriod l / c := by
+  rw [← weierstrassZeta_coe, coe_latticeSMulEquiv, weierstrassZeta_smul, weierstrassZeta_coe]
 
 /-- The lattice sums `G n` depend only on the lattice, not on the chosen basis. -/
 lemma G_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) : L.G = L'.G := by
