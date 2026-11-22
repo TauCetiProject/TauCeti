@@ -351,13 +351,8 @@ variable (I F V r) in
 /-- The `r`-jet of the zero section is zero. -/
 @[simp]
 theorem jet_zero (x : M) : jet I F r (0 : ∀ x, V x) x = 0 := by
-  have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
-  have h : FirstJetBundle.localRep I F (0 : ∀ x, V x) x =ᶠ[𝓝 (extChartAt I x x)] 0 := by
-    filter_upwards [FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hx
-      (mem_chart_source H x)] with z hz
-    rw [FirstJetBundle.localRep_apply]
-    exact ((trivializationAt F V x).linear 𝕜 ((FirstJetBundle.mem_baseSet_iff F V).1 hz).1).map_zero
-  rw [jet_eq_symmetrizeJets_of_eventuallyEq h]
+  rw [jet_eq_symmetrizeJets_of_eventuallyEq
+    (FirstJetBundle.localRep_zero_eventuallyEq I F (FirstJetBundle.mem_baseSet_self F V x))]
   simp only [iteratedFDeriv_zero, Pi.zero_apply]
   -- `symmetrizeJets` is linear, with values in the model fibre of `JetBundle I F V r`.
   exact map_zero (symmetrizeJets 𝕜 E F r)
@@ -368,14 +363,7 @@ theorem jet_add {s t : ∀ x, V x} {x : M}
     (ht : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (t x)) x) :
     jet I F r (s + t) x = jet I F r s x + jet I F r t x := by
   have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
-  have h : FirstJetBundle.localRep I F (s + t) x =ᶠ[𝓝 (extChartAt I x x)]
-      FirstJetBundle.localRep I F s x + FirstJetBundle.localRep I F t x := by
-    filter_upwards [FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hx
-      (mem_chart_source H x)] with z hz
-    simp only [FirstJetBundle.localRep_apply, Pi.add_apply]
-    exact ((trivializationAt F V x).linear 𝕜 ((FirstJetBundle.mem_baseSet_iff F V).1 hz).1).map_add
-      _ _
-  rw [jet_eq_symmetrizeJets_of_eventuallyEq h]
+  rw [jet_eq_symmetrizeJets_of_eventuallyEq (FirstJetBundle.localRep_add_eventuallyEq I F s t hx)]
   refine (congrArg (symmetrizeJets 𝕜 E F r) (funext fun k ↦ ?_)).trans (map_add _ _ _)
   have hk : (k.val : ℕ∞ω) ≤ r := by exact_mod_cast k.is_le
   exact iteratedFDeriv_add_apply ((contDiffAt_localRep I F hs hx).of_le hk)
@@ -386,14 +374,8 @@ theorem jet_smul (c : 𝕜) {s : ∀ x, V x} {x : M}
     (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (s x)) x) :
     jet I F r (c • s) x = c • jet I F r s x := by
   have hx := FirstJetBundle.mem_baseSet_self (H := H) F V x
-  have h : FirstJetBundle.localRep I F (c • s) x =ᶠ[𝓝 (extChartAt I x x)]
-      c • FirstJetBundle.localRep I F s x := by
-    filter_upwards [FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hx
-      (mem_chart_source H x)] with z hz
-    simp only [FirstJetBundle.localRep_apply, Pi.smul_apply]
-    exact ((trivializationAt F V x).linear 𝕜 ((FirstJetBundle.mem_baseSet_iff F V).1 hz).1).map_smul
-      _ _
-  rw [jet_eq_symmetrizeJets_of_eventuallyEq h]
+  rw [jet_eq_symmetrizeJets_of_eventuallyEq
+    (FirstJetBundle.localRep_const_smul_eventuallyEq I F c s hx)]
   refine (congrArg (symmetrizeJets 𝕜 E F r) (funext fun k ↦ ?_)).trans (map_smul _ c _)
   exact iteratedFDeriv_const_smul_apply
     ((contDiffAt_localRep I F hs hx).of_le (by exact_mod_cast k.is_le))

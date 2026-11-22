@@ -22,8 +22,9 @@ finite sums `∑ fᵢ sᵢ` with each `fᵢ` a finite sum of products of `r + 1`
 at `x`. For `V` of finite rank, a smooth section lies in `I_x ^ (r + 1) Γ(V)` exactly when its
 `r`-jet `jʳs(x)` (`TauCeti.JetBundle.jet`) vanishes. Every `r`-jet at `x` is the jet of a global
 smooth section, so the `r`-jet at `x` is a surjective linear map from `Γ(V)` onto the fibre of the
-jet bundle `JᵣV` at `x` with kernel `I_x ^ (r + 1) Γ(V)`. This is the analogue for `r`-jets of the
-identification of `Γ(V) / I_x Γ(V)` with the fibre `V_x` (`TauCeti.smoothSectionFiberEquiv`).
+jet bundle `JᵣV` at `x` with kernel `I_x ^ (r + 1) Γ(V)`, identifying `Γ(V) / I_x ^ (r + 1) Γ(V)`
+with that fibre (`TauCeti.JetBundle.smoothSectionJetEquiv`). This is the analogue for `r`-jets of
+the identification of `Γ(V) / I_x Γ(V)` with the fibre `V_x` (`TauCeti.smoothSectionFiberEquiv`).
 
 This is the bridge between the algebraic, Grothendieck description of differential operators
 between modules of sections, through iterated commutators with multiplication operators, and the
@@ -39,6 +40,8 @@ geometric one through jets: an operator of order at most `r` kills `I_x ^ (r + 1
 * `TauCeti.JetBundle.jetLinearMap`: the `r`-jet at `x` as a real-linear map on smooth sections.
 * `TauCeti.JetBundle.ker_jetLinearMap`, `TauCeti.JetBundle.jetLinearMap_surjective`: its kernel is
   `I_x ^ (r + 1) Γ(V)`, and it is onto the fibre of `JᵣV` at `x`.
+* `TauCeti.JetBundle.smoothSectionJetEquiv`: the induced real-linear equivalence
+  `Γ(V) / I_x ^ (r + 1) Γ(V) ≃ (JᵣV)_x`.
 
 ## References
 
@@ -90,13 +93,10 @@ private theorem jet_smul_eq_zero {x : M} {f : C^∞⟮I, M; ℝ⟯}
   let L : ℝ →L[ℝ] F →L[ℝ] F := (ContinuousLinearMap.id ℝ ℝ).smulRight (ContinuousLinearMap.id ℝ F)
   have hloc : FirstJetBundle.localRep I F (f • t : Cₛ^∞⟮I; F, V⟯) x =ᶠ[𝓝 (extChartAt I x x)]
       fun z ↦ (L ∘ g) z (FirstJetBundle.localRep I F t x z) := by
-    filter_upwards [FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hx
-      (mem_chart_source H x)] with z hz
-    simp only [FirstJetBundle.localRep_apply, ContMDiffSection.smul_apply, Function.comp_apply,
-      L, g, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
-      smul_apply]
-    exact ((trivializationAt F V x).linear ℝ
-      ((FirstJetBundle.mem_baseSet_iff F V).1 hz).1).map_smul _ _
+    rw [show ⇑(f • t : Cₛ^∞⟮I; F, V⟯) = fun y ↦ f y • t y from
+      funext (ContMDiffSection.smul_apply f t)]
+    exact (FirstJetBundle.localRep_smul_eventuallyEq I F f t hx).mono fun z hz ↦ hz.trans (by
+      simp [L, g])
   rw [(hloc.iteratedFDeriv ℝ k).eq_of_nhds]
   -- `L ∘ g` vanishes to order `r + 1` at the image of `x`, since `f ∈ I_x ^ (r + 1)`.
   refine iteratedFDeriv_clm_apply_eq_zero_of_lt_add (L.contDiff.contDiffAt.comp _ hg)
@@ -187,6 +187,33 @@ theorem jetLinearMap_surjective (x : M) : Function.Surjective (jetLinearMap I F 
       (FirstJetBundle.isOpen_baseSet F V x).mem_nhds (FirstJetBundle.mem_baseSet_self F V x)) hs
   rw [nhdsSet_singleton] at hts
   exact ⟨t, (jet_congr_of_eventuallyEq hts).trans hsA⟩
+
+variable (I F V r) in
+/-- **The fibre of the jet bundle is the module of sections modulo a power of the vanishing
+ideal.** For a smooth real vector bundle `V` of finite rank over a finite-dimensional Hausdorff
+manifold, the `r`-jet at `x` induces a real-linear equivalence
+`Γ(V) / I_x ^ (r + 1) Γ(V) ≃ (JᵣV)_x`, the analogue for `r`-jets of
+`TauCeti.smoothSectionFiberEquiv`. -/
+def smoothSectionJetEquiv [FiniteDimensional ℝ F] (x : M) :
+    (Cₛ^∞⟮I; F, V⟯ ⧸ smoothVanishingIdeal I x ^ (r + 1) •
+      (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯)) ≃ₗ[ℝ] JetBundle I F V r x :=
+  (Submodule.Quotient.restrictScalarsEquiv ℝ _).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (ker_jetLinearMap x).symm ≪≫ₗ
+    (jetLinearMap I F V r x).quotKerEquivOfSurjective (jetLinearMap_surjective x)
+
+/-- The equivalence `Γ(V) / I_x ^ (r + 1) Γ(V) ≃ (JᵣV)_x` sends the class of a section to its
+`r`-jet at `x`. -/
+@[simp]
+theorem smoothSectionJetEquiv_mk [FiniteDimensional ℝ F] (x : M) (s : Cₛ^∞⟮I; F, V⟯) :
+    smoothSectionJetEquiv I F V r x (Submodule.Quotient.mk s) = jet I F r s x := by
+  simp [smoothSectionJetEquiv]
+
+/-- The inverse of `Γ(V) / I_x ^ (r + 1) Γ(V) ≃ (JᵣV)_x` sends the `r`-jet of a section at `x` to
+its class. -/
+@[simp]
+theorem smoothSectionJetEquiv_symm_apply [FiniteDimensional ℝ F] (x : M) (s : Cₛ^∞⟮I; F, V⟯) :
+    (smoothSectionJetEquiv I F V r x).symm (jet I F r s x) = Submodule.Quotient.mk s := by
+  rw [LinearEquiv.symm_apply_eq, smoothSectionJetEquiv_mk]
 
 end JetBundle
 
