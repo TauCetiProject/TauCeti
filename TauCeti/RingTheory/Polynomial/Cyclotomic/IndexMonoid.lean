@@ -43,6 +43,8 @@ of `∏ n ∈ s, cyclotomic n R` are already cofinal.
 * `TauCeti.cycloIndex_le_iff`: the universal property of the generated submonoid.
 * `TauCeti.mem_cycloIndex_iff`: the indices are the finite products of cyclotomic powers of
   orders in `S`.
+* `TauCeti.exists_finite_subset_mem_cycloIndex`: every index already lies in `cycloIndex R U` for
+  a finite subset `U` of `S`.
 * `TauCeti.monic_of_mem_cycloIndex`: every index is monic.
 * `TauCeti.cycloIndex_monotone`, `TauCeti.map_cycloIndex`: monotonicity in `S` and transport along a
   coefficient ring homomorphism.
@@ -174,6 +176,13 @@ theorem mem_cycloIndex_iff :
         fun _ _ _ ↦ pow_add _ _ _).symm
   · rintro ⟨e, he, rfl⟩
     exact Submonoid.prod_mem _ fun n hn ↦ cyclotomic_pow_mem_cycloIndex (he hn) _
+
+/-- Every index involves only finitely many orders: it lies in `cycloIndex R U` for some finite
+subset `U` of `S`. -/
+theorem exists_finite_subset_mem_cycloIndex (hf : f ∈ cycloIndex R S) :
+    ∃ U ⊆ S, U.Finite ∧ f ∈ cycloIndex R U := by
+  obtain ⟨e, he, rfl⟩ := mem_cycloIndex_iff.mp hf
+  exact ⟨e.support, he, e.support.finite_toSet, mem_cycloIndex_iff.mpr ⟨e, subset_rfl, rfl⟩⟩
 
 variable (R) in
 /-- The `N`-th member `∏_{n ∈ S, 1 ≤ n ≤ N} cyclotomic n R ^ N` of the countable cofinal chain of
