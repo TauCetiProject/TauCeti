@@ -18,6 +18,13 @@ containing the trajectory of `x` from time `0` to time `t`, the same holds for a
 and times near `(t, x)`, because the trajectories of nearby points stay in `U` for nearby times
 (`TauCeti.eventually_flowOf_eq_of_eqOn`).
 
+The same argument compares flows across a map. If `f` carries `v` to a field `X` on another
+manifold, `df_y (v y) = X (f y)`, at the points `y` of an open set containing the trajectory of `x`
+from time `0` to time `t`, then near `(t, x)` the map `f` carries the trajectories of `v` to those
+of `X` (`TauCeti.eventually_apply_flowOf_of_mfderiv_eq`). The map need only be defined and related
+near the trajectory, so it can be the inverse of a chart, reading a flow on a manifold through a
+flow on the model space.
+
 These statements are what makes compactly supported perturbations of a vector field local. The
 local objects built from the flow near a trajectory segment depend only on the field near it:
 hitting times and transitions (`TauCeti.flowHittingTime_eventuallyEq_of_eqOn` and
@@ -36,6 +43,10 @@ transitions whose last leg runs where the fields agree
   and on a neighbourhood of `(t, x)`.
 * `TauCeti.mfderiv_flowOf_add_eq_of_eqOn`: after reaching the trajectory at time `τ`, the flow of
   `w` continues as the flow of `v`, and the derivatives of the time maps compose accordingly.
+* `TauCeti.exists_Ioo_eventually_forall_mem_flowDomain_flowOf_mem`: the trajectories of points
+  near `x` follow that of `x` into an open set containing its segment from time `0` to `t`.
+* `TauCeti.eventually_apply_flowOf_of_mfderiv_eq`: a map relating two fields near a trajectory
+  segment carries the trajectories of the first to those of the second near that segment.
 
 ## References
 
@@ -75,19 +86,19 @@ theorem flowOf_eq_of_forall_mem_Ioo (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : Ta
   rw [flowOf_apply]
   exact hγ.eqOn_maximalIntegralCurve hw h0 (flowOf_zero v x) ht
 
-section Flow
+section Tube
 
 variable [CompleteSpace E]
-  (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-  (hw : CMDiff 1 (fun y ↦ (⟨y, w y⟩ : TangentBundle I M))) (hU : IsOpen U) (hvw : EqOn w v U)
-include hv hw hU hvw
 
-/-- **Flows of fields agreeing on an open set.** Let `w` agree with `v` on an open set `U`
-containing the trajectory of `x` under `v` from time `0` to time `t`. Then, for all initial points
-and times near `(t, x)`, the flow of `w` is defined and equals the flow of `v`. -/
-theorem eventually_flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
-    (htU : MapsTo (fun s ↦ flowOf v s x) (uIcc 0 t) U) :
-    ∀ᶠ y in 𝓝 (t, x), y ∈ flowDomain w ∧ flowOf w y.1 y.2 = flowOf v y.1 y.2 := by
+/-- **Nearby trajectories follow a trajectory segment.** If the trajectory of `x` under a `C¹`
+field `v` from time `0` to time `t` lies in an open set `U`, there is an open interval `Ioo a b`
+containing `0` and `t` such that, for every initial point `y` near `x`, the trajectory of `y` is
+defined at all times of `Ioo a b` and stays in `U`. -/
+theorem exists_Ioo_eventually_forall_mem_flowDomain_flowOf_mem
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hU : IsOpen U)
+    (ht : (t, x) ∈ flowDomain v) (htU : MapsTo (fun s ↦ flowOf v s x) (uIcc 0 t) U) :
+    ∃ a b : ℝ, (0 : ℝ) ∈ Ioo a b ∧ t ∈ Ioo a b ∧
+      ∀ᶠ y in 𝓝 x, ∀ s ∈ Ioo a b, (s, y) ∈ flowDomain v ∧ flowOf v s y ∈ U := by
   -- The pairs whose `v`-trajectory point lies in `U` form an open set containing the segment
   -- `uIcc 0 t × {x}`; a product neighbourhood of the segment inside it contains a product of an
   -- open interval around `uIcc 0 t` and a neighbourhood of `x`.
@@ -113,13 +124,30 @@ theorem eventually_flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
     rcases le_or_gt s (0 ⊔ t) with hs₂ | hs₂
     · exact hKu ⟨hs₁.le, hs₂⟩
     · exact hbu ⟨hs₂.le, hs.2⟩
-  have h0 : (0 : ℝ) ∈ Ioo a b := ⟨ha.trans_le inf_le_left, le_sup_left.trans_lt hb⟩
-  have htab : t ∈ Ioo a b := ⟨ha.trans_le inf_le_right, le_sup_right.trans_lt hb⟩
-  filter_upwards [prod_mem_nhds (isOpen_Ioo.mem_nhds htab) (hV.mem_nhds (hxV rfl))]
-    with y ⟨hy₁, hy₂⟩
-  have hO' : ∀ s ∈ Ioo a b, (s, y.2) ∈ O := fun s hs ↦ huV ⟨hab hs, hy₂⟩
-  exact flowOf_eq_of_forall_mem_Ioo hv hw h0 (fun s hs ↦ (hO' s hs).1)
-    (fun s hs ↦ hvw (hO' s hs).2) hy₁
+  refine ⟨a, b, ⟨ha.trans_le inf_le_left, le_sup_left.trans_lt hb⟩,
+    ⟨ha.trans_le inf_le_right, le_sup_right.trans_lt hb⟩, ?_⟩
+  filter_upwards [hV.mem_nhds (hxV rfl)] with y hy s hs
+  exact huV ⟨hab hs, hy⟩
+
+end Tube
+
+section Flow
+
+variable [CompleteSpace E]
+  (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+  (hw : CMDiff 1 (fun y ↦ (⟨y, w y⟩ : TangentBundle I M))) (hU : IsOpen U) (hvw : EqOn w v U)
+include hv hw hU hvw
+
+/-- **Flows of fields agreeing on an open set.** Let `w` agree with `v` on an open set `U`
+containing the trajectory of `x` under `v` from time `0` to time `t`. Then, for all initial points
+and times near `(t, x)`, the flow of `w` is defined and equals the flow of `v`. -/
+theorem eventually_flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
+    (htU : MapsTo (fun s ↦ flowOf v s x) (uIcc 0 t) U) :
+    ∀ᶠ y in 𝓝 (t, x), y ∈ flowDomain w ∧ flowOf w y.1 y.2 = flowOf v y.1 y.2 := by
+  obtain ⟨a, b, h0, htab, hV⟩ := exists_Ioo_eventually_forall_mem_flowDomain_flowOf_mem hv hU ht htU
+  filter_upwards [prod_mem_nhds (isOpen_Ioo.mem_nhds htab) hV] with y ⟨hy₁, hy₂⟩
+  exact flowOf_eq_of_forall_mem_Ioo hv hw h0 (fun s hs ↦ (hy₂ s hs).1)
+    (fun s hs ↦ hvw (hy₂ s hs).2) hy₁
 
 /-- Let `w` agree with `v` on an open set `U` containing the trajectory of `x` under `v` from
 time `0` to time `t`. Then the flow of `w` is defined at `(t, x)` and equals the flow of `v`. -/
@@ -154,5 +182,41 @@ theorem mfderiv_flowOf_add_eq_of_eqOn {τ : ℝ} {p : M} (hτ : (τ, p) ∈ flow
   rfl
 
 end Flow
+
+section Related
+
+variable [CompleteSpace E] {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+  [T2Space M'] [IsManifold I' 1 M'] [BoundarylessManifold I' M'] {f : M → M'}
+  {X : (y : M') → TangentSpace I' y}
+
+/-- **Flows of fields related near a trajectory.** Let `f : M → M'` be differentiable on an open
+set `U` and carry `v` to `X` there, `df_y (v y) = X (f y)` for `y ∈ U`. If the trajectory of `x`
+under `v` from time `0` to time `t` lies in `U`, then for all initial points and times `(s, y)`
+near `(t, x)` the flow of `X` is defined at `(s, f y)` and `f` carries the trajectory of `y` to
+it: `f (flowOf v s y) = flowOf X s (f y)`. Neither `f` nor the fields need be defined or related
+outside `U`; for instance `f` can be the inverse of a chart, relating a field on the model space
+to one on a manifold near a segment of a trajectory. -/
+theorem eventually_apply_flowOf_of_mfderiv_eq
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (hX : CMDiff 1 (fun y ↦ (⟨y, X y⟩ : TangentBundle I' M'))) (hU : IsOpen U)
+    (hf : ∀ y ∈ U, MDifferentiableAt I I' f y) (hvX : ∀ y ∈ U, mfderiv I I' f y (v y) = X (f y))
+    (ht : (t, x) ∈ flowDomain v) (htU : MapsTo (fun s ↦ flowOf v s x) (uIcc 0 t) U) :
+    ∀ᶠ y in 𝓝 (t, x),
+      (y.1, f y.2) ∈ flowDomain X ∧ f (flowOf v y.1 y.2) = flowOf X y.1 (f y.2) := by
+  obtain ⟨a, b, h0, htab, hV⟩ := exists_Ioo_eventually_forall_mem_flowDomain_flowOf_mem hv hU ht htU
+  filter_upwards [prod_mem_nhds (isOpen_Ioo.mem_nhds htab) hV] with y ⟨hy₁, hy₂⟩
+  -- On `Ioo a b` the trajectory of `y.2` runs in `U`, so `f` carries it to an integral curve of
+  -- `X` through `f y.2`, which is the maximal one there by uniqueness.
+  have hγ : IsMIntegralCurveOn (f ∘ fun s ↦ flowOf v s y.2) X (Ioo a b) :=
+    ((isMIntegralCurveOn_flowOf hv y.2).mono fun s hs ↦ (hy₂ s hs).1).map_of_mfderiv_eq
+      (fun s hs ↦ hf _ (hy₂ s hs).2) fun s hs ↦ hvX _ (hy₂ s hs).2
+  have hγ0 : (f ∘ fun s ↦ flowOf v s y.2) 0 = f y.2 := by
+    rw [comp_apply, flowOf_zero]
+  refine ⟨mem_flowDomain.mpr (hγ.subset_maximalIntegralCurveInterval h0 hγ0 hy₁), ?_⟩
+  rw [flowOf_apply X]
+  exact (hγ.eqOn_maximalIntegralCurve hX h0 hγ0 hy₁).symm
+
+end Related
 
 end TauCeti
