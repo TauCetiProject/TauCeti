@@ -53,11 +53,9 @@ theorem condDistrib_ae_eq_comp {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω �
   -- `X` is `condDistrib Y X μ ⊗ₖ condDistrib Z (X, Y) μ` (by `compProd_map_condDistrib` for
   -- `(X, Y)` and for `((X, Y), Z)`), and its second marginal is the right-hand side.
   have hassoc : (μ.map fun ω ↦ ((X ω, Y ω), Z ω)).map MeasurableEquiv.prodAssoc =
-      μ.map fun ω ↦ (X ω, (Y ω, Z ω)) := by
-    -- the coordinate identity: `prodAssoc` sends `((x, y), z)` to `(x, (y, z))`
-    have hpt (ω : Ω) : MeasurableEquiv.prodAssoc ((X ω, Y ω), Z ω) = (X ω, (Y ω, Z ω)) := rfl
-    rw [AEMeasurable.map_map_of_aemeasurable (by fun_prop) (by fun_prop)]
-    exact Measure.map_congr (ae_of_all _ fun ω ↦ hpt ω)
+      μ.map fun ω ↦ (X ω, (Y ω, Z ω)) :=
+    AEMeasurable.map_map_of_aemeasurable MeasurableEquiv.prodAssoc.measurable.aemeasurable
+      ((hX.prodMk hY).prodMk hZ)
   have hjoint : HasCondDistrib (fun ω ↦ (Y ω, Z ω)) X
       (condDistrib Y X μ ⊗ₖ condDistrib Z (fun ω ↦ (X ω, Y ω)) μ) μ :=
     ⟨by fun_prop, by rw [← Measure.compProd_assoc', compProd_map_condDistrib hX hY,
