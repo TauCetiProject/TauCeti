@@ -330,13 +330,11 @@ theorem finiteDimensional_range_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
       exact (linearIndependent_single_one (ι := ι) (𝕜 := 𝕜) (p := p)).comp
         Subtype.val Subtype.val_injective
     exact Module.Finite.not_linearIndependent_of_infinite _ hv
-  · have heq : diagonalCLM (p := p) d = diagonalTruncation (p := p) d hfin.toFinset := by
-      ext x i
-      simp only [diagonalCLM_apply, diagonalTruncation_apply, Set.Finite.mem_toFinset,
-        Set.mem_ofPred_eq]
-      split_ifs with hi
-      · rfl
-      · simp [not_not.1 hi]
+  · have heq : diagonalCLM (p := p) d = diagonalTruncation (p := p) d hfin.toFinset :=
+      sub_eq_zero.mp <| norm_le_zero_iff.mp <|
+        norm_diagonalCLM_sub_diagonalTruncation_le d hfin.toFinset le_rfl fun i hi ↦ by
+          simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_not] at hi
+          simp [hi]
     rw [heq]
     exact Module.rank_lt_aleph0_iff.mp
       ((rank_diagonalTruncation_le (p := p) d hfin.toFinset).trans_lt Cardinal.natCast_lt_aleph0)

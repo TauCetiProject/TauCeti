@@ -20,11 +20,14 @@ variational argument localizes to closed norm balls, which are weakly closed ove
 (`TauCeti.isClosed_toWeakSpace_closedBall`) and on which a compact operator `J` is weak-to-norm
 continuous (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`).
 
-This file provides the global weak lower semicontinuity input for compactly perturbed energies
-(`IsCompactOperator.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn`): if
-`E₀` is weakly lower semicontinuous on `S`, `J : V →L[𝕜] F` is compact, `g : F → β` is lower
-semicontinuous on `J '' S`, and `u ↦ E₀ u + g (J u)` has bounded sublevels on `S`, then
-`u ↦ E₀ u + g (J u)` is globally weakly lower semicontinuous on `S`.
+This file provides weak lower semicontinuity inputs for compactly perturbed energies:
+* `IsCompactOperator.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded`: if `E₀` is
+  weakly lower semicontinuous on a norm-bounded set `S`, `J : V →L[𝕜] F` is compact, and
+  `g : F → β` is lower semicontinuous on `J '' S`, then `u ↦ E₀ u + g (J u)` is weakly lower
+  semicontinuous on `S`.
+* `IsCompactOperator.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn`:
+  over `ℝ` or `ℂ`, if `u ↦ E₀ u + g (J u)` additionally has bounded sublevels on `S`, then it is
+  globally weakly lower semicontinuous on `S`.
 
 Together with bounded-ball constraint weak closedness
 (`IsCompactOperator.isClosed_toWeakSpace_inter_preimage_inter_closedBall` in
@@ -43,9 +46,38 @@ direct-method theorems in `TauCeti.Analysis.Variational.DirectMethod` (such as
 
 public section
 
-open Set
+open Bornology Set
 
 namespace IsCompactOperator
+
+section BoundedPerturbation
+
+variable {𝕜 V F β : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [TopologicalSpace F] [AddCommMonoid F] [Module 𝕜 F] [ContinuousConstSMul 𝕜 F]
+  [T2Space (WeakSpace 𝕜 F)]
+  [AddCommMonoid β] [LinearOrder β] [IsOrderedAddMonoid β]
+  [TopologicalSpace β] [OrderTopology β] [ContinuousAdd β]
+  {J : V →L[𝕜] F}
+
+/-- **Weak lower semicontinuity of a compact perturbation on a bounded set.** If `E₀` is weakly
+lower semicontinuous on a norm-bounded set `S`, `J : V →L[𝕜] F` is compact, and `g : F → β` is
+lower semicontinuous on `J '' S`, then `u ↦ E₀ u + g (J u)` is weakly lower semicontinuous on
+`S`. -/
+theorem lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded
+    (hJ : IsCompactOperator J) {S : Set V} (hS : IsBounded S) {E₀ : V → β} {g : F → β}
+    (hE₀ : LowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E₀ ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' S))
+    (hg : LowerSemicontinuousOn g (J '' S)) :
+    LowerSemicontinuousOn
+      (fun w : WeakSpace 𝕜 V ↦
+        E₀ ((toWeakSpace 𝕜 V).symm w) + g (J ((toWeakSpace 𝕜 V).symm w)))
+      (toWeakSpace 𝕜 V '' S) := by
+  refine hE₀.add (hg.comp (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hS) ?_)
+  rw [mapsTo_image_iff]
+  simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using mapsTo_image J S
+
+end BoundedPerturbation
 
 section CompactPerturbation
 
@@ -70,13 +102,10 @@ theorem lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn
     LowerSemicontinuousOn
       (fun w : WeakSpace 𝕜 V ↦
         E₀ ((toWeakSpace 𝕜 V).symm w) + g (J ((toWeakSpace 𝕜 V).symm w)))
-      (toWeakSpace 𝕜 V '' S) := by
-  refine TauCeti.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn hb
-    fun B hBS hB ↦ (hE₀.mono (image_mono hBS)).add
-      ((hg.mono (image_mono hBS)).comp
-        (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hB) ?_)
-  rw [mapsTo_image_iff]
-  simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using mapsTo_image J B
+      (toWeakSpace 𝕜 V '' S) :=
+  TauCeti.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn hb
+    fun _ hBS hB ↦ hJ.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded hB
+      (hE₀.mono (image_mono hBS)) (hg.mono (image_mono hBS))
 
 end CompactPerturbation
 

@@ -14,6 +14,7 @@ import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
+import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
 
 /-!
 # Weakly compact operators
@@ -162,11 +163,9 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 /-- The identity of a normed space is weakly compact iff the space is reflexive. -/
 theorem isWeaklyCompact_id_iff :
     (ContinuousLinearMap.id 𝕜 F).IsWeaklyCompact ↔ Surjective (inclusionInDoubleDual 𝕜 F) := by
-  let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
-  let : IsScalarTower ℝ 𝕜 F := .of_algebraMap_smul fun _ _ ↦ rfl
   rw [TauCeti.surjective_inclusionInDoubleDual_iff_isCompact_toWeakSpace_closedBall,
-    isWeaklyCompact_def, coe_id', image_id, ← (convex_closedBall (0 : F) 1).toWeakSpace_closure 𝕜,
-    closure_closedBall]
+    isWeaklyCompact_def, coe_id', image_id,
+    (TauCeti.isClosed_toWeakSpace_closedBall (𝕜 := 𝕜) (0 : F) 1).closure_eq]
 
 /-- On an infinite-dimensional reflexive space, the identity is weakly compact but not compact.
 Thus weak compactness of operators is strictly weaker than compactness. -/

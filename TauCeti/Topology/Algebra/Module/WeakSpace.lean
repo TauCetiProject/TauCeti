@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.Topology.Sequences
+import Mathlib.RingTheory.Finiteness.Cofinite
 import TauCeti.Topology.Sequences.Basic
 
 /-!
@@ -19,8 +20,7 @@ weak convergence be used without unfolding the definition of `WeakSpace` as a `W
 No injectivity of the duality pairing is needed, since the weak topology is induced by the
 evaluations. Sequential closedness of an image `toWeakSpace 𝕜 E '' s` likewise translates directly
 to closure of `s` under limits of weakly convergent sequences
-(`TauCeti.isSeqClosed_toWeakSpace_image_iff`), and intersections with preimages transport into
-`WeakSpace 𝕜 E` via `TauCeti.image_toWeakSpace_inter_preimage`.
+(`TauCeti.isSeqClosed_toWeakSpace_image_iff`).
 
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
@@ -45,14 +45,6 @@ namespace TauCeti
 
 variable {𝕜 E : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
   [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
-
-/-- Transporting an intersection `S ∩ J ⁻¹' C` into `WeakSpace 𝕜 E` yields the intersection of
-`toWeakSpace 𝕜 E '' S` with the preimage of `C` under `w ↦ J ((toWeakSpace 𝕜 E).symm w)`. -/
-theorem image_toWeakSpace_inter_preimage {F : Type*} (J : E → F) (S : Set E) (C : Set F) :
-    toWeakSpace 𝕜 E '' (S ∩ J ⁻¹' C) =
-      toWeakSpace 𝕜 E '' S ∩
-        (fun w : WeakSpace 𝕜 E ↦ J ((toWeakSpace 𝕜 E).symm w)) ⁻¹' C := by
-  simp only [(toWeakSpace 𝕜 E).image_eq_preimage_symm, preimage_inter, preimage_preimage]
 
 /-- A family converges weakly exactly when its values under every continuous linear functional
 converge. -/
@@ -100,10 +92,7 @@ theorem exists_submodule_finiteDimensional_quotient_forall_toWeakSpace_add_mem_o
   rw [nhds_pi, Filter.mem_pi'] at hW
   obtain ⟨I, t, ht, hIW⟩ := hW
   let Φ : E →ₗ[𝕜] (I → 𝕜) := LinearMap.pi fun i : I ↦ (i.val : StrongDual 𝕜 E).toLinearMap
-  refine ⟨LinearMap.ker Φ,
-    FiniteDimensional.of_injective ((LinearMap.ker Φ).liftQ Φ le_rfl)
-      (LinearMap.ker_eq_bot.1 (Submodule.ker_liftQ_eq_bot _ _ le_rfl le_rfl)),
-    fun v hv ↦ ?_⟩
+  refine ⟨LinearMap.ker Φ, Submodule.CoFG.ker Φ, fun v hv ↦ ?_⟩
   have hmem : eval (x + v) ∈ W := hIW fun f hf ↦ by
     have hfv : f v = 0 := congrFun (LinearMap.mem_ker.1 hv) ⟨f, hf⟩
     simpa only [eval, map_add, hfv, add_zero] using mem_of_mem_nhds (ht f)
@@ -119,11 +108,11 @@ theorem _root_.LinearMap.exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of
     (L : E →ₗ[𝕜] F) (hL : ¬ FiniteDimensional 𝕜 (LinearMap.range L)) {x : E}
     {U : Set (WeakSpace 𝕜 E)} (hU : U ∈ 𝓝 (toWeakSpace 𝕜 E x)) :
     ∃ v : E, L v ≠ 0 ∧ ∀ c : 𝕜, toWeakSpace 𝕜 E (x + c • v) ∈ U := by
-  obtain ⟨K, _, hKU⟩ :=
+  obtain ⟨K, hK, hKU⟩ :=
     exists_submodule_finiteDimensional_quotient_forall_toWeakSpace_add_mem_of_mem_nhds hU
-  have hnotle : ¬ K ≤ LinearMap.ker L := fun hle ↦ by
-    have : FiniteDimensional 𝕜 (LinearMap.range (K.liftQ L hle)) := Module.Finite.range _
-    exact hL (Submodule.range_liftQ K L hle ▸ this)
+  have hnotle : ¬ K ≤ LinearMap.ker L := fun hle ↦
+    hL (Module.Finite.iff_fg.mpr
+      (Submodule.range_fg_iff_ker_cofg.mpr (Submodule.CoFG.of_le hle hK)))
   obtain ⟨v, hvK, hv_not_ker⟩ := IsConcreteLE.not_le_iff_exists.1 hnotle
   exact ⟨v, LinearMap.mem_ker.not.1 hv_not_ker, fun c ↦ hKU (c • v) (K.smul_mem c hvK)⟩
 

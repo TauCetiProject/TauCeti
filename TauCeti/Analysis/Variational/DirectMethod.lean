@@ -61,7 +61,9 @@ theorem isClosed_toWeakSpace_sublevel {β : Type*} [LinearOrder β] {E : V → �
       (toWeakSpace 𝕜 V '' S))
     (b : β) :
     IsClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
-  rw [show {u ∈ S | E u ≤ b} = S ∩ E ⁻¹' Iic b from rfl, image_toWeakSpace_inter_preimage]
+  rw [show {u ∈ S | E u ≤ b} = S ∩ toWeakSpace 𝕜 V ⁻¹'
+      ((fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b) from rfl,
+    image_inter_preimage]
   exact hE.isClosed_inter_preimage_Iic hS b
 
 /-- A weakly lower semicontinuous energy with a nonempty weakly compact sublevel attains its
@@ -75,7 +77,8 @@ theorem exists_isMinOn_of_isCompact_toWeakSpace_sublevel {β : Type*} [LinearOrd
     ∃ u ∈ S, IsMinOn E S u := by
   have heq : {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} =
       toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} :=
-    (image_toWeakSpace_inter_preimage E S (Iic b)).symm
+    (image_inter_preimage (toWeakSpace 𝕜 V) S
+      ((fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u)) ⁻¹' Iic b)).symm
   obtain ⟨w, hw, hmin⟩ :=
     hE.exists_isMinOn_of_isCompact_sublevel (heq ▸ hne.image _) (heq ▸ hcpt)
   obtain ⟨u, hu, rfl⟩ := hw

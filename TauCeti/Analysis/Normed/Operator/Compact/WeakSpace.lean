@@ -131,7 +131,9 @@ operator is weakly closed. -/
 theorem isClosed_toWeakSpace_inter_preimage_of_isVonNBounded (hJ : IsCompactOperator J)
     {B : Set V} (hB : IsVonNBounded 𝕜 B) (hBc : IsClosed (toWeakSpace 𝕜 V '' B)) {C : Set F}
     (hC : IsClosed C) : IsClosed (toWeakSpace 𝕜 V '' (B ∩ J ⁻¹' C)) := by
-  rw [TauCeti.image_toWeakSpace_inter_preimage]
+  rw [show J ⁻¹' C = toWeakSpace 𝕜 V ⁻¹'
+      ((fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) ⁻¹' C) from rfl,
+    Set.image_inter_preimage]
   exact (hJ.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded hB).preimage_isClosed_of_isClosed
     hBc hC
 
@@ -185,13 +187,12 @@ theorem isCompact_toWeakSpace_inter_preimage_of_isCompact (hJ : IsCompactOperato
     (hS_bdd : IsBounded S) (hS_cpt : IsCompact (toWeakSpace 𝕜 V '' S)) {C : Set F}
     (hC : IsClosed C) :
     IsCompact (toWeakSpace 𝕜 V '' (S ∩ J ⁻¹' C)) := by
-  have : CompactSpace (toWeakSpace 𝕜 V '' S) := isCompact_iff_compactSpace.1 hS_cpt
-  have hcont : Continuous ((toWeakSpace 𝕜 V '' S).domRestrict
-      fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z)) :=
-    continuousOn_iff_continuous_domRestrict.1
-      (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hS_bdd)
-  rw [TauCeti.image_toWeakSpace_inter_preimage, ← Subtype.image_preimage_val]
-  exact (hC.preimage hcont).isCompact.image continuous_subtypeVal
+  obtain ⟨t, ht, hteq⟩ :=
+    continuousOn_iff_isClosed.mp (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hS_bdd) C hC
+  rw [show J ⁻¹' C = toWeakSpace 𝕜 V ⁻¹'
+      ((fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) ⁻¹' C) from rfl,
+    Set.image_inter_preimage, inter_comm, hteq, inter_comm]
+  exact hS_cpt.inter_right ht
 
 /-- In a reflexive seminormed space over a proper nontrivially normed field, if `S ⊆ V` is
 norm-bounded and weakly closed, `J : V →L[𝕜] F` is compact, and `C ⊆ F` is closed, then

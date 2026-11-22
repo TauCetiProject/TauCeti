@@ -255,9 +255,9 @@ theorem isCompact_toWeakSpace_sublevel_of_isSeqClosed
     (b : β) (hb : IsBounded {u ∈ S | E u ≤ b}) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
   have heq : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} =
-      {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} := by
-    ext w
-    simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, mem_preimage, mem_ofPred_eq]
+      {w ∈ toWeakSpace 𝕜 V '' S | E ((toWeakSpace 𝕜 V).symm w) ≤ b} :=
+    image_inter_preimage (toWeakSpace 𝕜 V) S
+      ((fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w)) ⁻¹' Iic b)
   have hseq : IsSeqClosed (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}) := by
     rw [heq]
     exact hE.isSeqClosed_sublevel hS b
@@ -309,11 +309,10 @@ theorem isCompact_toWeakSpace_minimizers_of_isSeqClosed_of_isBounded
     (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
       (toWeakSpace 𝕜 V '' S))
     (hb : IsBounded {u ∈ S | IsMinOn E S u}) :
-    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) := by
-  obtain hempty | ⟨u, hu, hmin⟩ := {u ∈ S | IsMinOn E S u}.eq_empty_or_nonempty
-  · simp [hempty]
-  · rw [hmin.minimizers_eq_sublevel hu] at hb ⊢
-    exact isCompact_toWeakSpace_sublevel_of_isSeqClosed hV hS hE (E u) hb
+    IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
+  isCompact_toWeakSpace_minimizers_of_isCompact_sublevel fun u hu hmin ↦
+    isCompact_toWeakSpace_sublevel_of_isSeqClosed hV hS hE (E u)
+      (hmin.minimizers_eq_sublevel hu ▸ hb)
 
 /-- For a sequentially weakly lower semicontinuous energy with bounded sublevels on a sequentially
 weakly closed set in a reflexive normed space, the set of minimizers is weakly compact. -/
