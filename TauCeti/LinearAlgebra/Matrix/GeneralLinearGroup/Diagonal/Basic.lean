@@ -83,6 +83,7 @@ element (`TauCeti.diagGL_const`).
   centralizer is the whole group.
 * `TauCeti.diagGL_const` and `TauCeti.notMem_range_scalar_diagGL`: the diagonal embedding sends a
   constant family to the corresponding scalar element, and it is scalar *only* there.
+* `TauCeti.diagGL_const_mul`: scaling all diagonal entries by `a` multiplies by the scalar `a`.
 
 ## References
 
@@ -138,6 +139,13 @@ scalar exactly on the constant families. -/
 theorem diagGL_const (a : kˣ) :
     diagGL (fun _ : ι => a) = Matrix.GeneralLinearGroup.scalar ι a :=
   Units.ext <| by rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
+
+/-- Multiplying every diagonal entry by the same unit `a` multiplies the diagonal element by the
+scalar element `a`. -/
+theorem diagGL_const_mul (a : kˣ) (t : ι → kˣ) :
+    diagGL (fun i => a * t i) = Matrix.GeneralLinearGroup.scalar ι a * diagGL t := by
+  rw [← diagGL_const, ← map_mul]
+  rfl
 
 /-- An invertible diagonal matrix with two distinct diagonal entries is not scalar. -/
 theorem notMem_range_scalar_diagGL {t : ι → kˣ} {i j : ι} (ht : t i ≠ t j) :
