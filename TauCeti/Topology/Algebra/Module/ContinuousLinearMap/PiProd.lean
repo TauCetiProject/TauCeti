@@ -60,8 +60,8 @@ theorem exists_pi_update_equiv {ι R : Type*} [DecidableEq ι] [Ring R] [Topolog
     (α : (ι → R) →L[R] R) (i : ι) (hα : IsUnit (α (Pi.single i 1)))
     (hcont : Continuous fun x : R ↦ x * -↑hα.unit⁻¹) :
     ∃ e : (ι → R) ≃L[R] (ι → R),
-      (e : (ι → R) →L[R] (ι → R)) = pi fun m : ι ↦ if m = i then α else proj m := by
-  set f : (ι → R) →L[R] (ι → R) := pi fun m : ι ↦ if m = i then α else proj m
+      (e : (ι → R) →L[R] (ι → R)) = pi (Function.update (fun m : ι ↦ proj m) i α) := by
+  set f : (ι → R) →L[R] (ι → R) := pi (Function.update (fun m : ι ↦ proj m) i α)
   have hf (v : ι → R) : f v = Function.update v i (α v) :=
     Function.eq_update_iff.2 ⟨by simp [f, pi_apply], fun m hm ↦ by simp [f, pi_apply, hm]⟩
   -- The update is the dilatransvection `v ↦ v + (α v - v i) • Pi.single i 1`, whose
@@ -71,8 +71,9 @@ theorem exists_pi_update_equiv {ι R : Type*} [DecidableEq ι] [Ring R] [Topolog
     simpa using hα
   set e := LinearEquiv.dilatransvection h
   have he (v : ι → R) : e v = f v := by
-    rw [hf, LinearEquiv.dilatransvection.apply, Function.eq_update_iff]
-    exact ⟨by simp, fun m hm ↦ by simp [hm]⟩
+    rw [hf, LinearEquiv.dilatransvection.apply, Pi.update_eq_sub_add_single, ← Pi.single_smul',
+      smul_eq_mul, mul_one, LinearMap.sub_apply, coe_coe, LinearMap.proj_apply, Pi.single_sub]
+    abel
   -- With `d` the inverse of the coefficient, setting the coordinate `i` of `u` to `s * -d`
   -- lowers the value of `α` at `u` with that coordinate zeroed by `s`.
   set d : R := ↑hα.unit⁻¹

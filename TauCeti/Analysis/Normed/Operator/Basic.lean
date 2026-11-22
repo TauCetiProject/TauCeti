@@ -33,9 +33,9 @@ In particular, it supplies the common continuity step for
 uniform pointwise bound `‖T i x‖ ≤ C * ‖x‖` (`AddMonoidHomClass.tendsto_apply_of_eventually_bound`).
 Consequently a strongly continuous family of such maps `T a` sends a continuous function `f` to
 the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
-`AddMonoidHomClass.continuous_apply_of_bound`). Operators whose norms tend to zero eventually map
-any ball about `0` into any neighbourhood of `0`
-(`ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm`).
+`AddMonoidHomClass.continuous_apply_of_bound`). Continuous semilinear maps over an isometric scalar
+homomorphism whose operator norms tend to zero eventually map any bounded set into any
+neighbourhood of `0` (`ContinuousLinearMap.eventually_mapsTo_of_tendsto_opNorm`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -74,9 +74,10 @@ function near that point only up to constant factors (`TauCeti.isTheta_clm_apply
 and a family continuous and invertible on a compact set does so uniformly there
 (`TauCeti.exists_norm_clm_apply_le_and_norm_le_of_isUnit`).
 
-For a sequence `A` of continuous semilinear maps and a sequence `v` of vectors, the weighted norm
-of the finite Cauchy product `∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by
-the Cauchy product of the weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
+For a sequence `A` of continuous semilinear maps over a common isometric scalar homomorphism and a
+sequence `v` of vectors, the weighted norm of the finite Cauchy product
+`∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by the Cauchy product of the
+weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
 (`TauCeti.norm_sum_range_clm_apply_mul_pow_le`).
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
@@ -236,20 +237,22 @@ variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [Nontrivially
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
   {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] {ι : Type*} {l : Filter ι} {T : ι → E →SL[σ] F}
 
-/-- If `T i` is eventually uniformly bounded, `T i z` tends to `w`, and `g i` tends to `z`, then
-the moving evaluations `T i (g i)` tend to `w`. -/
+/-- For a family of continuous semilinear maps `T i : E →SL[σ] F` over an isometric scalar
+homomorphism `σ`, if `T i` is eventually uniformly bounded, `T i z` tends to `w`, and `g i` tends
+to `z`, then the moving evaluations `T i (g i)` tend to `w`. -/
 theorem tendsto_apply_of_eventually_norm_le {C : ℝ} {g : ι → E} {z : E} {w : F}
     (hT : ∀ᶠ i in l, ‖T i‖ ≤ C) (hz : Tendsto (fun i => T i z) l (𝓝 w))
     (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) :=
   AddMonoidHomClass.tendsto_apply_of_eventually_bound
     (hT.mono fun i hi => (T i).le_of_opNorm_le hi) hz hg
 
-/-- If the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the ball of radius `R`
-about `0` into any prescribed neighbourhood of `0`. -/
-theorem eventually_mapsTo_ball_of_tendsto_opNorm (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0))
-    {V : Set F} (hV : V ∈ 𝓝 0) (R : ℝ) : ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V :=
+/-- For a family of continuous semilinear maps `T i : E →SL[σ] F` over an isometric scalar
+homomorphism `σ`, if the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the
+bounded set `s` into any prescribed neighbourhood of `0`. -/
+theorem eventually_mapsTo_of_tendsto_opNorm (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {s : Set E}
+    (hs : Bornology.IsBounded s) {V : Set F} (hV : V ∈ 𝓝 0) : ∀ᶠ i in l, Set.MapsTo (T i) s V :=
   (tendsto_zero_iff_norm_tendsto_zero.mpr hT).eventually
-    (eventually_nhds_zero_mapsTo (NormedSpace.isVonNBounded_ball 𝕜 E R) hV)
+    (eventually_nhds_zero_mapsTo ((NormedSpace.isVonNBounded_iff 𝕜).2 hs) hV)
 
 end SemilinearFamily
 
@@ -654,7 +657,7 @@ theorem exists_norm_clm_apply_le_and_norm_le_of_isUnit {S : Set α} (hS : IsComp
 end
 
 /-- Weighted norm bound for the Cauchy product `∑_{k=0}^n A_{n-k}(v_k)` of a sequence of continuous
-semilinear maps and a sequence of vectors. -/
+semilinear maps over a common isometric scalar homomorphism and a sequence of vectors. -/
 theorem norm_sum_range_clm_apply_mul_pow_le
     {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
     [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]

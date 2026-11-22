@@ -32,10 +32,10 @@ constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ +
 nonlinear terms of an equation that is quadratic in its unknown.
 
 For a continuous map of two variables, semilinear in each argument with respect to isometric
-scalar homomorphisms (for instance sesquilinear), the diagonal sum `∑ i ∈ s, A (v i) (v i)` along
-vectors of norm at most one, such as an orthonormal family, is bounded by `#s * ‖A‖`
-(`ContinuousLinearMap.norm_sum_apply_apply_le`), and every value satisfies the Young-type bound
-`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
+scalar homomorphisms (for instance sesquilinear), the sum `∑ i ∈ s, A (u i) (v i)` along vectors
+`u i` and `v i` of norm at most one, such as an orthonormal family taken twice, is bounded by
+`#s * ‖A‖` (`ContinuousLinearMap.norm_sum_apply_apply_le`), and every value satisfies the
+Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
 Pulling back along continuous linear equivalences keeps a bilinear map `B₀ : V →L V' →L G`
@@ -299,16 +299,17 @@ variable {𝕜 𝕜₂ 𝕜₃ E F G : Type*} [NontriviallyNormedField 𝕜] [No
   [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] [SeminormedAddCommGroup G] [NormedSpace 𝕜₃ G]
   {σ₁₃ : 𝕜 →+* 𝕜₃} [RingHomIsometric σ₁₃]
 
-/-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous map `A`, semilinear in each argument
-with respect to isometric scalar homomorphisms (for instance sesquilinear), along vectors of norm
-at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the diagonal sum by
-the dimension times `‖A‖`. -/
-theorem norm_sum_apply_apply_le {τ : 𝕜 →+* 𝕜₃} [RingHomIsometric τ] {ι : Type*} (s : Finset ι)
-    (A : E →SL[σ₁₃] E →SL[τ] G) {v : ι → E} (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) :
-    ‖∑ i ∈ s, A (v i) (v i)‖ ≤ s.card * ‖A‖ := by
+/-- The sum `∑ i ∈ s, A (u i) (v i)` of a continuous map `A`, semilinear in each argument with
+respect to isometric scalar homomorphisms (for instance sesquilinear), along vectors `u i` and
+`v i` of norm at most one is bounded by `#s * ‖A‖`. Taking `u = v` an orthonormal basis bounds the
+diagonal sum by the dimension times `‖A‖`. -/
+theorem norm_sum_apply_apply_le {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₂₃] {ι : Type*}
+    (s : Finset ι) (A : E →SL[σ₁₃] F →SL[σ₂₃] G) {u : ι → E} {v : ι → F}
+    (hu : ∀ i ∈ s, ‖u i‖ ≤ 1) (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) :
+    ‖∑ i ∈ s, A (u i) (v i)‖ ≤ s.card * ‖A‖ := by
   refine (norm_sum_le _ _).trans <|
     (Finset.sum_le_card_nsmul _ _ _ fun i hi ↦ ?_).trans_eq (nsmul_eq_mul _ _)
-  simpa only [mul_one] using A.le_of_opNorm₂_le_of_le le_rfl (hv i hi) (hv i hi)
+  simpa only [mul_one] using A.le_of_opNorm₂_le_of_le le_rfl (hu i hi) (hv i hi)
 
 /-- A Young-type bound for a continuous map `B` of two variables, semilinear in each argument with
 respect to isometric scalar homomorphisms: for every `c > 0`,

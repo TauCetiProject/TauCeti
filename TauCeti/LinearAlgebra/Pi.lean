@@ -31,9 +31,10 @@ product.
 A nonzero semilinear map `f : (ι → R) →ₛₗ[σ] M` on a finite product is nonzero at some coordinate
 vector. Setting one coordinate of its argument to `t` adds `σ t` times its value at that coordinate
 vector to its value with the coordinate zeroed. Hence, over a semiring with left-cancellative
-addition, replacing one coordinate by a linear functional is injective if the coefficient of the
-functional at that coordinate is right-regular. These coordinate arguments are adapted from
-[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+addition, replacing the coordinate `i` of `v` by the value `f v` of a semilinear functional
+`f : (ι → R) →ₛₗ[τ] R` is injective if `t ↦ τ t * f (Pi.single i 1)` is injective, for a linear
+functional if its coefficient `f (Pi.single i 1)` is right-regular. These coordinate arguments are
+adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean), commit
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
 `formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
 `Sard/CoordinateChange.lean`.
@@ -96,7 +97,9 @@ weights.
   coordinate `i` of `x` to `t` adds `σ t` times the value at `Pi.single i 1` to the value at `x`
   with that coordinate zeroed.
 * `LinearMap.pi_update_injective`: over a semiring with left-cancellative addition, replacing one
-  coordinate by a linear functional is injective if its coefficient there is right-regular.
+  coordinate `i` of `v` by the value of a semilinear functional `f : (ι → R) →ₛₗ[τ] R` is
+  injective if `t ↦ τ t * f (Pi.single i 1)` is injective; for a linear functional, if the
+  coefficient `f (Pi.single i 1)` is right-regular.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -485,20 +488,22 @@ public theorem apply_update_eq_add_smul (f : (ι → R) →ₛₗ[σ] M) (x : ι
     simpa [hsingle] using Function.update_add x 0 i 0 t
   simp [hsplit]
 
-/-- Over a semiring with left-cancellative addition, replacing the coordinate `i` by a linear
-functional `f` is injective when the coefficient `f (Pi.single i 1)` is right-regular. -/
-public theorem pi_update_injective [IsLeftCancelAdd R] (f : (ι → R) →ₗ[R] R) (i : ι)
-    (hf : IsRightRegular (f (Pi.single i 1))) :
-    Function.Injective (pi fun m : ι ↦ if m = i then f else proj m) := by
+/-- Over a semiring with left-cancellative addition, replacing the coordinate `i` of `v` by the
+value `f v` of a semilinear functional `f : (ι → R) →ₛₗ[τ] R` is injective when `t ↦ τ t * c` is
+injective, where `c = f (Pi.single i 1)`. For a linear functional this says that `c` is
+right-regular. -/
+public theorem pi_update_injective [IsLeftCancelAdd R] {τ : R →+* R} (f : (ι → R) →ₛₗ[τ] R)
+    (i : ι) (hf : Function.Injective fun t ↦ τ t * f (Pi.single i 1)) :
+    Function.Injective fun v ↦ Function.update v i (f v) := by
   intro v w h
-  have hoff (m : ι) (hm : m ≠ i) : v m = w m := by simpa [pi_apply, hm] using congrFun h m
+  have hoff (m : ι) (hm : m ≠ i) : v m = w m := by
+    simpa [Function.update_of_ne hm] using congrFun h m
   have hrest : Function.update v i 0 = Function.update w i 0 :=
     Function.update_eq_iff.2 ⟨by simp, fun m hm ↦ by simp [hm, hoff m hm]⟩
   -- Split off the coordinate `i` on both sides of `f v = f w` and cancel the common summand.
-  have hsplit (x : ι → R) : f x = f (Function.update x i 0) + x i * f (Pi.single i 1) := by
-    simpa only [Function.update_eq_self, RingHom.id_apply, smul_eq_mul] using
-      apply_update_eq_add_smul f x i (x i)
-  have hfvw : f v = f w := by simpa [pi_apply] using congrFun h i
+  have hsplit (x : ι → R) : f x = f (Function.update x i 0) + τ (x i) * f (Pi.single i 1) := by
+    simpa only [Function.update_eq_self, smul_eq_mul] using apply_update_eq_add_smul f x i (x i)
+  have hfvw : f v = f w := by simpa using congrFun h i
   rw [hsplit v, hsplit w, hrest] at hfvw
   exact (Function.update_eq_self i v).symm.trans <|
     Function.update_eq_iff.2 ⟨hf (add_left_cancel hfvw), hoff⟩

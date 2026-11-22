@@ -68,9 +68,7 @@ theorem exists_graph {k : ℕ} (hk : 1 ≤ k) {w : (Fin (n + 1) → ℝ) → ℝ
   have hΦd : HasFDerivAt (fun x => Function.update x i (w x))
       (Le : (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ)) x₀ := by
     rw [hLecoe]
-    convert (hdiff x₀).hasFDerivAt.update_self i using 1
-    ext v m
-    by_cases hm : m = i <;> simp [ContinuousLinearMap.pi_apply, hm]
+    exact (hdiff x₀).hasFDerivAt.update_self i
   set ψ : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) := hΦc.localInverse hΦd hkne
   have hψc : ContDiffAt ℝ k ψ (Function.update x₀ i (w x₀)) := hΦc.to_localInverse hΦd hkne
   have hleft : ∀ᶠ x in 𝓝 x₀, ψ (Function.update x i (w x)) = x :=
