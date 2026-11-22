@@ -34,6 +34,9 @@ along the filter `atBot ×ˢ ⊤`.
   the constant end, the value of `u` at each point is the limit `x`
   (`Function.Periodic.eq_of_tendsto_atBot`). So if `u` is not invariant under all time rotations,
   each of its periods has zero `s`-component (`Function.Periodic.fst_eq_zero_of_tendsto_atBot`).
+  Pointwise limits along a single slice give the same conclusion at each point of it: a period
+  `(c, 0)` with `c ≠ 0` forces the value there to be one of the two limits
+  (`Function.Periodic.eq_or_eq_of_tendsto_atBot_of_tendsto_atTop`).
 * If `u` is continuous, `1`-periodic in `t` and not invariant under all time rotations, its time
   periods are the multiples of `1 / n` for some `n ≥ 1`
   (`Function.Periodic.exists_periods_translationFlow_eq_zmultiples_inv`): modulo `1`, the
@@ -58,6 +61,8 @@ stabilizers. Only continuity is used; no equation is involved.
   times `t` with `Function.Periodic u (t • v)`.
 * `Function.Periodic.eq_of_tendsto_atBot`: a map on `ℝ × Y` with a constant end at `-∞` and a
   period with nonzero first component is constant.
+* `Function.Periodic.eq_or_eq_of_tendsto_atBot_of_tendsto_atTop`: a point on a slice with limits
+  at both ends, for a period `(c, 0)` with `c ≠ 0`, takes one of the two limit values.
 * `Function.Periodic.exists_periods_translationFlow_eq_zmultiples_inv`: the time-rotation periods
   of a cylinder which is not time-invariant are `(1 / n) ℤ`.
 * `Function.Periodic.exists_periodic_iff_of_tendsto_atBot`: the periods of a cylinder with a
@@ -105,6 +110,23 @@ theorem eq_of_tendsto_atBot (h : Periodic u c) (hc : c.1 ≠ 0)
   simp only [Prod.fst_add, Prod.smul_fst, nsmul_eq_mul]
   exact tendsto_atBot_add_const_left _ _
     (Tendsto.atTop_mul_const_of_neg hd₀ tendsto_natCast_atTop_atTop)
+
+/-- **A period along the first coordinate meets an end.** If `u : ℝ × Y → X` has the period
+`(d, 0)` with `d ≠ 0`, and on the slice of `z` the map `s ↦ u (s, z.2)` tends to `a` as `s → -∞` and
+to `b` as `s → +∞`, then `u z = a` or `u z = b`: translating `z` by multiples of `d` along its slice
+runs into one of the ends. -/
+theorem eq_or_eq_of_tendsto_atBot_of_tendsto_atTop {d : ℝ} (h : Periodic u (d, 0)) (hd : d ≠ 0)
+    {z : ℝ × Y} {a b : X} (ha : Tendsto (fun s ↦ u (s, z.2)) atBot (𝓝 a))
+    (hb : Tendsto (fun s ↦ u (s, z.2)) atTop (𝓝 b)) : u z = a ∨ u z = b := by
+  have hend {l : Filter ℝ} {x : X} (hx : Tendsto (fun s ↦ u (s, z.2)) l (𝓝 x))
+      (hl : Tendsto (fun n : ℕ ↦ z.1 + n * d) atTop l) : u z = x :=
+    h.eq_of_tendsto_of_tendsto_add_nsmul (l := l.map fun s ↦ (s, z.2)) (tendsto_map'_iff.2 hx)
+      ((tendsto_map.comp hl).congr fun n ↦ by ext <;> simp)
+  rcases hd.lt_or_gt with hd | hd
+  · exact .inl (hend ha (tendsto_atBot_add_const_left _ _
+      (tendsto_natCast_atTop_atTop.atTop_mul_const_of_neg hd)))
+  · exact .inr (hend hb (tendsto_atTop_add_const_left _ _
+      (tendsto_natCast_atTop_atTop.atTop_mul_const hd)))
 
 /-- For a map with a constant end at `-∞` which is not invariant under every translation `(0, θ)`
 of the second coordinate, every period has zero first component. -/
