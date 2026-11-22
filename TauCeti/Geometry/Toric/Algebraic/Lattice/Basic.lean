@@ -473,6 +473,7 @@ theorem dualBasis_apply_apply [DecidableEq κ] (b : Basis κ ℤ N) (j k : κ) :
 
 /-- A functional on `V` is determined by its values on an integral basis `b`: it is the
 combination of the dual basis of `b` with these values as coefficients. -/
+@[simp]
 theorem sum_apply_mul_dualBasis_apply [Fintype κ] (b : Basis κ ℤ N) (x : StrongDual ℝ V) (z : V) :
     ∑ j, x (i (b j)) * h.dualBasis b j z = x z := by
   conv_rhs => rw [← (h.dualBasis b).sum_repr x]
@@ -480,6 +481,7 @@ theorem sum_apply_mul_dualBasis_apply [Fintype κ] (b : Basis κ ℤ N) (x : Str
 
 /-- A vector of `V` is the combination of the lattice vectors `i (b j)` with its values on the
 dual basis of `b` as coefficients. -/
+@[simp]
 theorem sum_dualBasis_apply_smul [Fintype κ] (b : Basis κ ℤ N) (z : V) :
     ∑ j, h.dualBasis b j z • i (b j) = z := by
   have := h.finiteDimensional

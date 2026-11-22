@@ -109,6 +109,14 @@ private theorem eventually_add_smul_mem
   simp only [add_apply, smul_apply, smul_eq_mul]
   nlinarith [hw n hn, mem_Ioi.1 ht0]
 
+/-- From a corner `v` of `Δ`, the segment in any direction `w` that is nonnegative on the normals
+of the corner stays in `Δ` for some positive time. -/
+private theorem exists_pos_add_smul_mem
+    (hloc : ∀ᶠ y in 𝓝 v, y ∈ Δ ↔ ∀ n ∈ s, v (i n) ≤ y (i n)) {w : StrongDual ℝ V}
+    (hw : ∀ n ∈ s, 0 ≤ w (i n)) : ∃ t : ℝ, 0 < t ∧ v + t • w ∈ Δ := by
+  obtain ⟨t, htΔ, ht0⟩ := ((eventually_add_smul_mem hloc hw).and self_mem_nhdsWithin).exists
+  exact ⟨t, ht0, htΔ⟩
+
 /-- The normals of a corner, a `ℤ`-basis of the lattice, are finitely many and index a basis of
 `N`. -/
 private theorem finite_and_exists_basis (hi : IsIntegralLattice i) (hli : LinearIndepOn ℤ id s)
@@ -159,11 +167,11 @@ include hloc hn
 `n` lies in the cone of the normals of the corner at `v`: its coordinates `⟨e_m, n⟩` along the
 edge directions `e_m` are nonnegative, since the edges stay in `Δ` near `v`. -/
 private theorem dualBasis_apply_nonneg_of_forall_le (m : s) : 0 ≤ hi.dualBasis b m (i n) := by
-  obtain ⟨t, htΔ, ht0⟩ := ((eventually_add_smul_mem hloc
-    fun k hk ↦ dualBasis_apply_nonneg hi hb m hk).and self_mem_nhdsWithin).exists
+  obtain ⟨t, ht0, htΔ⟩ :=
+    exists_pos_add_smul_mem hloc fun k hk ↦ dualBasis_apply_nonneg hi hb m hk
   have h := hn _ htΔ
   simp only [add_apply, smul_apply, smul_eq_mul] at h
-  nlinarith [mem_Ioi.1 ht0]
+  nlinarith
 
 include hΔ hv in
 /-- **Faces of a valid inequality at a corner.** On the face where a valid inequality
@@ -215,8 +223,8 @@ private theorem mem_of_apply_eq {v v' : StrongDual ℝ V} (hv : v ∈ Δ.extreme
   -- A normal `m` at `v` along which `n` has a positive coordinate is killed by every edge
   -- direction at `v'` other than the one dual to `n`: the edge from `v'` lies in the face of `n`.
   have hedge (m : s v) (hm : 0 < w m (i n)) (l : s v') (hl : l ≠ ⟨n, hn⟩) : w' l (i m) = 0 := by
-    obtain ⟨ε, hεΔ, hε0⟩ := ((eventually_add_smul_mem hloc'
-      fun k hk ↦ dualBasis_apply_nonneg hi hb' l hk).and self_mem_nhdsWithin).exists
+    obtain ⟨ε, hε0, hεΔ⟩ :=
+      exists_pos_add_smul_mem hloc' fun k hk ↦ dualBasis_apply_nonneg hi hb' l hk
     have hεn : (v' + ε • w' l) (i n) = v (i n) := by
       have h : w' l (i n) = 0 := by
         simpa [Ne.symm hl] using dualBasis_apply_of_basis hi hb' l ⟨n, hn⟩
@@ -224,7 +232,7 @@ private theorem mem_of_apply_eq {v v' : StrongDual ℝ V} (hv : v ∈ Δ.extreme
     have h₁ := apply_eq_of_dualBasis_apply_pos hi hb hΔ hvΔ hloc hle hεΔ hεn m hm
     have h₂ := apply_eq_of_dualBasis_apply_pos hi hb hΔ hvΔ hloc hle hv'Δ hvn.symm m hm
     simp only [add_apply, smul_apply, smul_eq_mul, h₂] at h₁
-    exact (mul_eq_zero.1 (by linarith)).resolve_left (mem_Ioi.1 hε0).ne'
+    exact (mul_eq_zero.1 (by linarith)).resolve_left hε0.ne'
   -- Some coordinate of `n` is positive, since `n ≠ 0`.
   have hprim : IsPrimitive n := by simpa [hb'] using b'.isPrimitive ⟨n, hn⟩
   obtain ⟨m, hm⟩ := exists_dualBasis_apply_pos hi
@@ -266,14 +274,14 @@ private theorem facetPolyhedron_eq (hne : Δ.Nonempty) (hc : IsCompact Δ) :
   by_contra hxΔ
   obtain ⟨f, r, hfx, hfΔ⟩ := geometric_hahn_banach_point_closed hΔ hc.isClosed hxΔ
   obtain ⟨v, hv, hmin⟩ := hc.exists_mem_extremePoints_isMinOn hne f
-  obtain ⟨t, htΔ, ht0⟩ := ((eventually_add_smul_mem (hs v hv).2.2 (w := x - v) fun n hn ↦ by
+  obtain ⟨t, ht0, htΔ⟩ := exists_pos_add_smul_mem (hs v hv).2.2 (w := x - v) fun n hn ↦ by
     obtain ⟨j, rfl, hcj⟩ := hsurj v hv n hn
     rw [sub_apply, sub_nonneg, ← hcj]
-    exact mem_facetPolyhedron.1 hx j).and self_mem_nhdsWithin).exists
+    exact mem_facetPolyhedron.1 hx j
   have h := isMinOn_iff.1 hmin _ htΔ
   have hfv := hfΔ v (extremePoints_subset hv)
   simp only [map_add, map_smul, map_sub, smul_eq_mul] at h
-  nlinarith [mem_Ioi.1 ht0]
+  nlinarith
 
 omit hsurj in
 /-- The inequalities active at a vertex `v` are those of the corner at `v`. -/
@@ -323,14 +331,15 @@ private theorem exists_activeSet_eq_singleton [Finite ι]
   have hvP : v ∈ facetPolyhedron i u c := hP ▸ extremePoints_subset hv
   -- For small `t`, the point `v + t σ` lies in `Δ` and strictly inside every facet inactive at `v`.
   have hslack : ∀ᶠ t in 𝓝[>] (0 : ℝ), ∀ j' : ι, j' ∉ activeSet (facetPairing i u) c v →
-      c j' < (v + t • σ) (i (u j')) := by
+      c j' < v (i (u j')) + t * σ (i (u j')) := by
     rw [eventually_all]
     intro j'
     by_cases hj' : j' ∈ activeSet (facetPairing i u) c v
     · exact Eventually.of_forall fun _ h ↦ (h hj').elim
     have hlt : c j' < v (i (u j')) := (mem_facetPolyhedron.1 hvP j').lt_of_ne fun h ↦
       hj' (by rw [mem_activeSet, facetPairing_apply]; exact h.symm)
-    have hcont : Tendsto (fun t : ℝ ↦ (v + t • σ) (i (u j'))) (𝓝[>] 0) (𝓝 (v (i (u j')))) :=
+    have hcont : Tendsto (fun t : ℝ ↦ v (i (u j')) + t * σ (i (u j'))) (𝓝[>] 0)
+        (𝓝 (v (i (u j')))) :=
       (Continuous.tendsto' (by fun_prop) 0 _ (by simp)).mono_left nhdsWithin_le_nhds
     exact (hcont.eventually (lt_mem_nhds hlt)).mono fun _ h _ ↦ h
   obtain ⟨t, ⟨htΔ, hts⟩, ht0⟩ := (((eventually_add_smul_mem hloc (w := σ) fun n hn ↦ by
@@ -348,7 +357,7 @@ private theorem exists_activeSet_eq_singleton [Finite ι]
       · have hu : u j' = u j := congrArg Subtype.val hk
         exact hinj j' j hu (by rw [hc', hcj, hu])
       · exact absurd h (by linarith [mem_Ioi.1 ht0])
-    · exact absurd (by rw [add_apply, smul_apply, smul_eq_mul]; exact h) (hts j' hj').ne'
+    · exact absurd h (hts j' hj').ne'
   · rintro rfl
     have hσk : σ (i (u j')) = 0 := by simpa using hσ k
     rw [hσk, mul_zero, add_zero, hcj]
