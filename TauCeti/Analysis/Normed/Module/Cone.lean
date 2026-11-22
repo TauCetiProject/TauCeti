@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -39,6 +40,11 @@ these cones cover the nonzero vectors of the closed cone, by compactness of the 
 is how conditions imposed direction by direction combine into one condition on a whole closed
 cone of frequencies.
 
+Applying a linear automorphism `B`, the image of a smaller cone also separates: there are an open
+cone `Γ'` around `B η₀` and `c > 0` such that `B ζ` is at distance at least `c (‖ξ‖ + ‖ζ‖)` from
+every `ξ ∈ Γ'` whenever `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`. This is how a cone in which a localized Fourier
+transform decays is transported along the transposed derivative of a change of variables.
+
 ## Main results
 
 * `IsOpen.exists_cone_exists_smul_mem`: the open cone over an open set containing `ξ`.
@@ -46,6 +52,8 @@ cone of frequencies.
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `IsOpen.exists_isOpen_cone_subset_isClosed_cone`: an open cone `Γ` containing `ξ` contains the
   nonzero elements of a closed cone `F` which contains an open cone `Γ'` containing `ξ`.
+* `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
+  around `B η₀` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` for `ξ ∈ Γ'` and `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
   coefficients, bounded by a weighted `ℓ¹` norm of the coefficients.
@@ -174,6 +182,86 @@ theorem exists_isOpen_cone_subset_isClosed_cone {Γ : Set E} (hΓ : IsOpen Γ)
   · rwa [mem_ofPred_eq, NormedSpace.normalize_smul_of_pos ht]
   · rw [mem_preimage, NormedSpace.normalize_smul_of_pos ht]
     exact hη.2
+
+/-- If `ζ` is at distance more than `c₂ ‖ν‖` from `ν`, with `0 < c₂ ≤ 1`, then `B ζ` is at
+distance at least a fixed multiple of `‖B ν‖ + ‖ζ‖` from `B ν`. -/
+private theorem mul_add_le_norm_sub_of_mul_lt_norm_sub (B : E ≃L[ℝ] E) {c₂ : ℝ} (hc₂ : 0 < c₂)
+    (hc₂1 : c₂ ≤ 1) {ν ζ : E} (hfar : c₂ * ‖ν‖ < ‖ζ - ν‖) :
+    c₂ / (3 * (1 + ‖(B : E →L[ℝ] E)‖) * (1 + ‖(B.symm : E →L[ℝ] E)‖)) * (‖B ν‖ + ‖ζ‖) ≤
+      ‖B ζ - B ν‖ := by
+  set M := ‖(B : E →L[ℝ] E)‖
+  set M' := ‖(B.symm : E →L[ℝ] E)‖
+  have hM : 0 ≤ M := norm_nonneg _
+  have hM' : 0 ≤ M' := norm_nonneg _
+  have hξν : ‖B ν‖ ≤ M * ‖ν‖ := (B : E →L[ℝ] E).le_opNorm ν
+  have hζν : ‖ζ - ν‖ ≤ M' * ‖B ζ - B ν‖ := by
+    have h : B.symm (B ζ - B ν) = ζ - ν := by simp
+    rw [← h]
+    exact (B.symm : E →L[ℝ] E).le_opNorm _
+  have hζ' : ‖ζ‖ ≤ ‖ζ - ν‖ + ‖ν‖ := by simpa using norm_add_le (ζ - ν) ν
+  have h1 : c₂ * ‖B ν‖ ≤ M * ‖ζ - ν‖ :=
+    calc c₂ * ‖B ν‖ ≤ c₂ * (M * ‖ν‖) := mul_le_mul_of_nonneg_left hξν hc₂.le
+      _ = M * (c₂ * ‖ν‖) := by ring
+      _ ≤ M * ‖ζ - ν‖ := mul_le_mul_of_nonneg_left hfar.le hM
+  have h2 : c₂ * ‖ζ‖ ≤ 2 * ‖ζ - ν‖ := by nlinarith [norm_nonneg (ζ - ν)]
+  have hsum : c₂ * (‖B ν‖ + ‖ζ‖) ≤ 3 * (1 + M) * ‖ζ - ν‖ := by
+    nlinarith [h1, h2, norm_nonneg (ζ - ν)]
+  calc c₂ / (3 * (1 + M) * (1 + M')) * (‖B ν‖ + ‖ζ‖)
+      ≤ 3 * (1 + M) * ‖ζ - ν‖ / (3 * (1 + M) * (1 + M')) := by
+        rw [div_mul_eq_mul_div]
+        gcongr
+    _ = ‖ζ - ν‖ / (1 + M') := by field_simp
+    _ ≤ ‖B ζ - B ν‖ := by
+        rw [div_le_iff₀ (by positivity)]
+        nlinarith [norm_nonneg (B ζ - B ν)]
+
+/-- If `ζ` is small compared with `ξ`, `‖ζ‖ < c ‖ξ‖` with `4 c (1 + ‖B‖) ≤ 1`, then
+`c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖`. -/
+private theorem mul_add_le_norm_sub_of_norm_lt (B : E →L[ℝ] E) {c : ℝ} (hc : 0 < c)
+    (hcB : c * (4 * (1 + ‖B‖)) ≤ 1) {ξ ζ : E} (hζ : ‖ζ‖ < c * ‖ξ‖) :
+    c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖ := by
+  have hM : 0 ≤ ‖B‖ := norm_nonneg _
+  have hBζ : ‖B ζ‖ ≤ ‖B‖ * ‖ζ‖ := B.le_opNorm ζ
+  have htri : ‖ξ‖ ≤ ‖B ζ - ξ‖ + ‖B ζ‖ := by
+    have h := norm_le_norm_add_norm_sub' ξ (B ζ)
+    rw [norm_sub_rev] at h
+    linarith
+  have h1 : ‖B‖ * ‖ζ‖ ≤ ‖B‖ * (c * ‖ξ‖) := mul_le_mul_of_nonneg_left hζ.le hM
+  have h2 : c * ‖ζ‖ ≤ c * (c * ‖ξ‖) := mul_le_mul_of_nonneg_left hζ.le hc.le
+  have hcoef : c + c * c + ‖B‖ * c ≤ 1 := by nlinarith
+  have hX : (c + c * c + ‖B‖ * c) * ‖ξ‖ ≤ ‖ξ‖ := by
+    simpa using mul_le_mul_of_nonneg_right hcoef (norm_nonneg ξ)
+  nlinarith [h1, h2, hX, htri, hBζ]
+
+/-- **Separation from a cone.** Let `Γ` be an open set closed under multiplication by positive
+reals, `η₀ ∈ Γ`, and `B` a continuous linear automorphism. There are an open set `Γ'` closed under
+multiplication by positive reals with `B η₀ ∈ Γ'` and `c > 0` such that for every `ξ ∈ Γ'` and
+every `ζ` which lies outside `Γ`, or is small compared with `ξ`, the vector `B ζ` is far from `ξ`:
+`c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` whenever `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`. -/
+theorem exists_cone_mul_add_le_norm_sub {Γ : Set E} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) {η₀ : E} (hη₀ : η₀ ∈ Γ) (B : E ≃L[ℝ] E) :
+    ∃ Γ' : Set E, IsOpen Γ' ∧ B η₀ ∈ Γ' ∧ (∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ', t • ξ ∈ Γ') ∧
+      ∃ c > 0, ∀ ξ ∈ Γ', ∀ ζ, (ζ ∉ Γ ∨ ‖ζ‖ < c * ‖ξ‖) → c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖ := by
+  obtain ⟨Γ'', hΓ'', hη₀'', hcone'', c₁, hc₁, hball⟩ := hΓ.exists_cone_closedBall_subset hcone hη₀
+  set M := ‖(B : E →L[ℝ] E)‖
+  set c₂ := min c₁ 1
+  have hc₂ : 0 < c₂ := lt_min hc₁ one_pos
+  set c := min (c₂ / (3 * (1 + M) * (1 + ‖(B.symm : E →L[ℝ] E)‖))) (1 / (4 * (1 + M)))
+  have hc : 0 < c := lt_min (by positivity) (by positivity)
+  refine ⟨B.symm ⁻¹' Γ'', hΓ''.preimage B.symm.continuous, by simpa using hη₀'',
+    fun t ht ξ hξ ↦ by simpa using hcone'' t ht _ hξ, c, hc, fun ξ hξ ζ hζ ↦ ?_⟩
+  rcases hζ with hζ | hζ
+  · -- `ζ` lies outside the ball of radius `c₁ ‖B⁻¹ ξ‖ ≥ c₂ ‖B⁻¹ ξ‖` about `B⁻¹ ξ`.
+    have hfar : c₂ * ‖B.symm ξ‖ < ‖ζ - B.symm ξ‖ := by
+      by_contra h
+      refine hζ (hball _ hξ (mem_closedBall.2 ?_))
+      rw [dist_eq_norm]
+      exact (not_lt.1 h).trans (by gcongr; exact min_le_left _ _)
+    have h := mul_add_le_norm_sub_of_mul_lt_norm_sub B hc₂ (min_le_right _ _) hfar
+    rw [B.apply_symm_apply] at h
+    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (by positivity)).trans h
+  · have hcB : c ≤ 1 / (4 * (1 + M)) := min_le_right _ _
+    exact mul_add_le_norm_sub_of_norm_lt _ hc ((le_div_iff₀ (by positivity)).1 hcB) hζ
 
 end IsOpen
 

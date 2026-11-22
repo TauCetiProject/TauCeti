@@ -83,6 +83,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   support of the Fourier transform.
 * `SchwartzMap.fourier_compSubConstCLM_apply`, `SchwartzMap.support_fourier_compSubConstCLM`:
   translation multiplies the Fourier transform by a phase and keeps its support.
+* `SchwartzMap.fourierMultiplierCLM_compSubConstCLM`: Fourier multipliers commute with
+  translations.
 * `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply`: composition with a linear isometry
   equivalence commutes with the Fourier transform, `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
@@ -371,6 +373,19 @@ theorem support_fourier_compSubConstCLM (u : 𝓢(E, F)) (a : E) :
       Function.support ⇑(𝓕 u : 𝓢(E, F)) := by
   rw [fourier_coe, fourier_coe, funext (compSubConstCLM_apply u a),
     TauCeti.support_fourier_comp_sub_const]
+
+/-- **Fourier multipliers commute with translations**: the multiplier with a temperate-growth
+symbol `g` of the translate `u (· - a)` is the translate of the multiplier of `u`. -/
+theorem fourierMultiplierCLM_compSubConstCLM [CompleteSpace F] {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (u : 𝓢(E, F)) (a : E) :
+    fourierMultiplierCLM F g (u.compSubConstCLM ℂ a) =
+      (fourierMultiplierCLM F g u).compSubConstCLM ℂ a := by
+  have hinv (v : 𝓢(E, F)) : 𝓕⁻ (𝓕 v : 𝓢(E, F)) = v := fourierInv_fourier_eq v
+  rw [← hinv ((fourierMultiplierCLM F g u).compSubConstCLM ℂ a), fourierMultiplierCLM_apply]
+  congr 1
+  ext ξ
+  rw [smulLeftCLM_apply_apply hg, fourier_compSubConstCLM_apply, fourier_compSubConstCLM_apply,
+    fourierMultiplierCLM_apply, fourier_fourierInv_eq, smulLeftCLM_apply_apply hg, smul_comm]
 
 /-- The Fourier transform commutes with composition by a linear isometry equivalence:
 `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`. -/
