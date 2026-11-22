@@ -77,6 +77,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.norm_mul_zpow_neg_valuation`: `‖x p ^ (-v(x))‖ = 1` for nonzero `x : ℚ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
+* `Padic.norm_unitPart`, `Padic.eq_zpow_valuation_mul_unitPart`: the unit part of a nonzero
+  `x : ℚ_[p]` has norm one, and every `x` is `p ^ v(x)` times its unit part.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
   valuation.
 * `Padic.valuation_p_pow_mul_intCast`: the valuation of `p ^ n m`, for an integer `m` prime to
@@ -88,6 +90,9 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   profinite group.
 
 ## Main definitions
+
+* `Padic.unitPart x`: the unit part `x p ^ (-v(x))` of `x : ℚ_[p]` as a `p`-adic integer, extended
+  by `0` at `x = 0`.
 
 * `PadicInt.unitsPowCharacter p k`: the continuous character `u ↦ u ^ k` of `ℤ_[p]ˣ`.
   It is nontrivial for `k > 0` (`PadicInt.unitsPowCharacter_ne_one`).
@@ -362,6 +367,30 @@ theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   refine ⟨PadicInt.mkUnits (norm_mul_zpow_neg_valuation hx), ?_⟩
   rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, _root_.zpow_zero, mul_one]
+
+/-- The unit part `x p ^ (-v(x))` of `x : ℚ_[p]`, as a `p`-adic integer, extended by `0` at
+`x = 0`. On nonzero `x` it is the unit `TauCeti.padicUnitPart p x` of `ℤ_[p]`; this total version
+is the one to use when `x` may vanish. -/
+noncomputable def unitPart (x : ℚ_[p]) : ℤ_[p] :=
+  ⟨x * (p : ℚ_[p]) ^ (-x.valuation), by
+    by_cases hx : x = 0
+    · simp [hx]
+    · exact (norm_mul_zpow_neg_valuation hx).le⟩
+
+@[simp]
+theorem coe_unitPart (x : ℚ_[p]) :
+    (unitPart x : ℚ_[p]) = x * (p : ℚ_[p]) ^ (-x.valuation) :=
+  (rfl)
+
+/-- The unit part of a nonzero `p`-adic number has norm one. -/
+theorem norm_unitPart {x : ℚ_[p]} (hx : x ≠ 0) : ‖unitPart x‖ = 1 := by
+  rw [PadicInt.norm_def, coe_unitPart, norm_mul_zpow_neg_valuation hx]
+
+/-- Every `p`-adic number is `p ^ v(x)` times its unit part (both sides vanish at `x = 0`). -/
+theorem eq_zpow_valuation_mul_unitPart (x : ℚ_[p]) :
+    x = (p : ℚ_[p]) ^ x.valuation * (unitPart x : ℚ_[p]) := by
+  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rw [coe_unitPart, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, _root_.zpow_zero, mul_one]
 
 /-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/
 theorem valuation_p_zpow_mul (α : ℤ) {x : ℚ_[p]} (hx : x ≠ 0) :

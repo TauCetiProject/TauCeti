@@ -14,8 +14,10 @@ public import Mathlib.Analysis.Complex.Norm
 A certified numerical computation never treats an approximate value as exact. Every real number
 `t` it uses comes with a closed rational interval `[l, u]` satisfying `l ≤ t ≤ u`, and every
 complex number `z` with a rational box: a pair of closed rational intervals containing `Re z` and
-`Im z`. Every check made on such an enclosure (its width, its precision, membership of a rational,
-a bound for the square of the modulus) is then a comparison of rational numbers. This is how
+`Im z`. Every check made on the rational data of such an enclosure (its width, its precision,
+membership of a rational, a bound for the square of the modulus) is then a comparison of rational
+numbers; only the proof that the interval or box contains the enclosed number is a statement about
+that number itself. This is how
 explicit bounds for linear forms in logarithms and the lattice reductions built on them are
 turned into rigorous statements about real and complex numbers.
 
@@ -33,13 +35,14 @@ An enclosure of width zero, on the other hand, determines the enclosed number
 * `TauCeti.ComplexEnclosure z`: real enclosures of the real and imaginary parts of `z`.
 * `TauCeti.ComplexEnclosure.box`, `TauCeti.ComplexEnclosure.width`,
   `TauCeti.ComplexEnclosure.HasPrecision`, `TauCeti.ComplexEnclosure.normSqBound`: the rational
-  box of a complex enclosure, its error bound, its absolute precision and a rational upper bound
-  for `|z|²`.
+  box of a complex enclosure, its coordinatewise error bound (bounding the errors of the real and
+  imaginary parts separately), its absolute precision and a rational upper bound for `|z|²`.
 
 ## Main results
 
-* `TauCeti.RealEnclosure.abs_sub_le_length`: every rational `q` in the interval satisfies
-  `|t - q| ≤ width`.
+* `TauCeti.RealEnclosure.abs_sub_le_length`: every real `u` between the endpoints satisfies
+  `|t - u| ≤ width`; `TauCeti.RealEnclosure.abs_sub_ratCast_le_length` is the case of a rational
+  `q` in the interval.
 * `TauCeti.RealEnclosure.ofRat`, `TauCeti.RealEnclosure.ofLE`: the degenerate enclosure `[q, q]`
   of a rational `q`, and the enlargement of an enclosure to a larger interval.
 * `TauCeti.ComplexEnclosure.normSq_le_normSqBound`:
@@ -77,19 +80,23 @@ variable {t : ℝ}
 theorem mem_Icc (E : RealEnclosure t) : t ∈ Set.Icc (E.interval.fst : ℝ) E.interval.snd :=
   ⟨E.fst_le, E.le_snd⟩
 
+/-- Every real number `u` between the endpoints of the interval approximates the enclosed number
+up to the width of the interval. -/
+theorem abs_sub_le_length (E : RealEnclosure t) {u : ℝ}
+    (hu : u ∈ Set.Icc (E.interval.fst : ℝ) E.interval.snd) : |t - u| ≤ E.interval.length := by
+  rw [NonemptyInterval.length, Rat.cast_sub]
+  exact abs_sub_le_of_le_of_le E.fst_le E.le_snd hu.1 hu.2
+
 /-- Every rational number `q` of the interval approximates the enclosed number up to the width
 of the interval. -/
-theorem abs_sub_le_length (E : RealEnclosure t) {q : ℚ} (hq : q ∈ E.interval) :
-    |t - q| ≤ E.interval.length := by
-  have h₁ : (E.interval.fst : ℝ) ≤ q := by exact_mod_cast hq.1
-  have h₂ : (q : ℝ) ≤ E.interval.snd := by exact_mod_cast hq.2
-  rw [NonemptyInterval.length, Rat.cast_sub]
-  exact abs_sub_le_of_le_of_le E.fst_le E.le_snd h₁ h₂
+theorem abs_sub_ratCast_le_length (E : RealEnclosure t) {q : ℚ} (hq : q ∈ E.interval) :
+    |t - q| ≤ E.interval.length :=
+  E.abs_sub_le_length ⟨by exact_mod_cast hq.1, by exact_mod_cast hq.2⟩
 
 /-- The enclosed number is within the width of the interval of its lower endpoint. -/
 theorem abs_sub_fst_le_length (E : RealEnclosure t) :
     |t - E.interval.fst| ≤ E.interval.length :=
-  E.abs_sub_le_length ⟨le_rfl, E.interval.fst_le_snd⟩
+  E.abs_sub_ratCast_le_length ⟨le_rfl, E.interval.fst_le_snd⟩
 
 /-- An enclosure of width zero determines the enclosed number: it is the common endpoint. -/
 theorem eq_of_length_eq_zero (E : RealEnclosure t) (h : E.interval.length = 0) :
@@ -143,12 +150,18 @@ theorem HasPrecision.mono {E : RealEnclosure t} {m n : ℕ} (h : E.HasPrecision 
     (hmn : m ≤ n) : E.HasPrecision m :=
   h.trans (inv_anti₀ (by positivity) (pow_le_pow_right₀ one_le_two hmn))
 
+/-- At absolute precision `n`, every real number between the endpoints of the interval
+approximates the enclosed number up to `2⁻ⁿ`. -/
+theorem HasPrecision.abs_sub_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecision n) {u : ℝ}
+    (hu : u ∈ Set.Icc (E.interval.fst : ℝ) E.interval.snd) : |t - u| ≤ ((2 : ℝ) ^ n)⁻¹ :=
+  (E.abs_sub_le_length hu).trans <| by
+    simpa using (Rat.cast_le (K := ℝ)).mpr ((E.hasPrecision_iff n).mp h)
+
 /-- At absolute precision `n`, every rational number of the interval approximates the enclosed
 number up to `2⁻ⁿ`. -/
-theorem HasPrecision.abs_sub_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecision n) {q : ℚ}
-    (hq : q ∈ E.interval) : |t - q| ≤ ((2 : ℝ) ^ n)⁻¹ :=
-  (E.abs_sub_le_length hq).trans <| by
-    simpa using (Rat.cast_le (K := ℝ)).mpr ((E.hasPrecision_iff n).mp h)
+theorem HasPrecision.abs_sub_ratCast_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecision n)
+    {q : ℚ} (hq : q ∈ E.interval) : |t - q| ≤ ((2 : ℝ) ^ n)⁻¹ :=
+  h.abs_sub_le ⟨by exact_mod_cast hq.1, by exact_mod_cast hq.2⟩
 
 /-- The degenerate enclosure of a rational number has every absolute precision. -/
 @[simp]
@@ -182,7 +195,9 @@ def box (E : ComplexEnclosure z) : Set ℂ :=
 theorem self_mem_box (E : ComplexEnclosure z) : z ∈ E.box :=
   mem_reProdIm.mpr ⟨E.re.mem_Icc, E.im.mem_Icc⟩
 
-/-- The error bound of a complex enclosure: the larger of the widths of its two intervals. -/
+/-- The coordinatewise error bound of a complex enclosure: the larger of the widths of its two
+intervals. It bounds the errors of the real and of the imaginary part separately, not the modulus
+of the error. -/
 def width (E : ComplexEnclosure z) : ℚ :=
   max E.re.interval.length E.im.interval.length
 
@@ -211,7 +226,8 @@ theorem hasPrecision_iff (E : ComplexEnclosure z) (n : ℕ) :
     E.HasPrecision n ↔ E.re.HasPrecision n ∧ E.im.HasPrecision n :=
   Iff.rfl
 
-/-- Absolute precision `n` of a complex enclosure means that its error bound is at most `2⁻ⁿ`. -/
+/-- Absolute precision `n` of a complex enclosure means that its coordinatewise error bound is at
+most `2⁻ⁿ`. -/
 theorem hasPrecision_iff_width_le (E : ComplexEnclosure z) (n : ℕ) :
     E.HasPrecision n ↔ E.width ≤ ((2 : ℚ) ^ n)⁻¹ := by
   rw [hasPrecision_iff, width_def, max_le_iff, RealEnclosure.hasPrecision_iff,
