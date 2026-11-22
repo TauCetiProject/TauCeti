@@ -174,8 +174,9 @@ theorem exists_occurrence_enumeration_of_cover
   refine ⟨e, he, fun μ hμ hfin => ?_, fun μ hnot n => ?_⟩
   · have hmem : μ ∈ S := ⟨hμ, hfin⟩
     simpa only [clean, ite_eq_left hmem] using hrec μ
-  · have hzero : (0 : Measure X) = Measure.sum fun k => (e μ k).elim 0 Measure.dirac := by
-      simpa only [clean, ite_eq_right (show μ ∉ S from hnot)] using hrec μ
+  · have hnmem : μ ∉ S := by simpa only [S, mem_ofPred_eq] using hnot
+    have hzero : (0 : Measure X) = Measure.sum fun k => (e μ k).elim 0 Measure.dirac := by
+      simpa only [clean, ite_eq_right hnmem] using hrec μ
     have hsum := Measure.sum_eq_zero.mp hzero.symm n
     cases h : e μ n with
     | none => rfl

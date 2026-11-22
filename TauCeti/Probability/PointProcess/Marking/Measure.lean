@@ -78,16 +78,6 @@ def markingOfCover {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n))
   (κ.optionalTupleMarking ℕ).comap
     (coverEnumeration hs hcover) (measurable_coverEnumeration hs hcover)
 
-private theorem markingOfCover_eq_comap {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n))
-    (hcover : ⋃ n, s n = univ) :
-    κ.markingOfCover hs hcover =
-      (κ.optionalTupleMarking ℕ).comap
-        (coverEnumeration hs hcover) (measurable_coverEnumeration hs hcover) := rfl
-
-private theorem markingOfCover_apply {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n))
-    (hcover : ⋃ n, s n = univ) (μ : Measure X) :
-    κ.markingOfCover hs hcover μ = κ.optionalTupleMarking ℕ (coverEnumeration hs hcover μ) := rfl
-
 /-- Every `Kernel.markingOfCover` is the comap of `Kernel.optionalTupleMarking ℕ` along a
 measurable occurrence enumeration that reconstructs every integer-valued measure finite on the
 cover. -/
@@ -98,13 +88,12 @@ theorem exists_enumeration_markingOfCover {s : ℕ → Set X}
         μ = Measure.sum fun n => (e μ n).elim 0 Measure.dirac) ∧
       κ.markingOfCover hs hcover = (κ.optionalTupleMarking ℕ).comap e he :=
   ⟨coverEnumeration hs hcover, measurable_coverEnumeration hs hcover,
-    fun _ hμ hfin => eq_sum_coverEnumeration hs hcover hμ hfin,
-    κ.markingOfCover_eq_comap hs hcover⟩
+    fun _ hμ hfin => eq_sum_coverEnumeration hs hcover hμ hfin, rfl⟩
 
 /-- Independent marking of measures is a Markov kernel. -/
 instance {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = univ) :
     IsMarkovKernel (κ.markingOfCover hs hcover) := by
-  rw [κ.markingOfCover_eq_comap hs hcover]
+  unfold markingOfCover
   infer_instance
 
 /-- On any measure finite on the cover admitting a countable optional occurrence enumeration,
@@ -149,7 +138,8 @@ theorem markingOfCover_eq_dirac_zero_of_not_isIntegerValued_and_forall_ne_top {s
     κ.markingOfCover hs hcover μ = Measure.dirac 0 := by
   have hnone : coverEnumeration hs hcover μ = fun _ => none :=
     funext (coverEnumeration_eq_none hs hcover hnot)
-  rw [κ.markingOfCover_apply hs hcover, hnone, κ.optionalTupleMarking_none ℕ]
+  unfold markingOfCover
+  rw [Kernel.comap_apply, hnone, κ.optionalTupleMarking_none ℕ]
 
 /-- Marking the zero measure gives the point mass at the zero measure. -/
 @[simp]

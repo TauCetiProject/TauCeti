@@ -84,22 +84,24 @@ theorem IsPoissonRandomMeasure.map_fst_restrict_univ_prod_compProd [SFinite Λ] 
 /-- Selecting the first atom `a` from a Poisson random measure with Bernoulli kernel intensity
 `Λ ⊗ₘ Kernel.bernoulli a b hp` (with `a ≠ b`) weights `Λ` by `p`. -/
 theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli_left [SFinite Λ]
-    [MeasurableSingletonClass E] {a b : E} (hab : a ≠ b) {p : X → unitInterval} {hp : Measurable p}
+    {a b : E} (ha : MeasurableSet ({a} : Set E)) (hab : a ≠ b)
+    {p : X → unitInterval} {hp : Measurable p}
     (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ Kernel.bernoulli a b hp)) :
     IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {a})).map Prod.fst)
       (Λ.withDensity fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞)) := by
-  simpa only [Kernel.bernoulli_apply_singleton_left hab] using
-    hM.map_fst_restrict_univ_prod_compProd (measurableSet_singleton a)
+  simpa only [Kernel.bernoulli_apply_singleton_left ha hab] using
+    hM.map_fst_restrict_univ_prod_compProd ha
 
 /-- Selecting the second atom `b` from a Poisson random measure with Bernoulli kernel intensity
 `Λ ⊗ₘ Kernel.bernoulli a b hp` (with `a ≠ b`) weights `Λ` by `unitInterval.symm ∘ p`. -/
 theorem IsPoissonRandomMeasure.acceptance_compProd_bernoulli_right [SFinite Λ]
-    [MeasurableSingletonClass E] {a b : E} (hab : a ≠ b) {p : X → unitInterval} {hp : Measurable p}
+    {a b : E} (hb : MeasurableSet ({b} : Set E)) (hab : a ≠ b)
+    {p : X → unitInterval} {hp : Measurable p}
     (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ Kernel.bernoulli a b hp)) :
     IsPoissonRandomMeasure P (fun ω ↦ ((M ω).restrict (univ ×ˢ {b})).map Prod.fst)
       (Λ.withDensity fun x ↦ (unitInterval.toNNReal (unitInterval.symm (p x)) : ℝ≥0∞)) := by
-  simpa only [Kernel.bernoulli_apply_singleton_right hab] using
-    hM.map_fst_restrict_univ_prod_compProd (measurableSet_singleton b)
+  simpa only [Kernel.bernoulli_apply_singleton_right hb hab] using
+    hM.map_fst_restrict_univ_prod_compProd hb
 
 /-- Selecting colour `b : Bool` from a Poisson random measure with Boolean Bernoulli kernel
 intensity `Λ ⊗ₘ Kernel.bernoulli true false hp` weights `Λ` by `p` (for `true`) or

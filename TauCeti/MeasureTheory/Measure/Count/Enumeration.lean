@@ -18,7 +18,7 @@ locations, and countability ensures that equal extended multiplicities give equi
 fibers, even when those fibers are infinite. Repeated locations and empty index types are
 allowed. This permits constructions on enumerated occurrences to descend to measures.
 
-This file also records `Measure.sum_elim_dirac_eq_sum_isSome` for restricting optional
+This file also records `Measure.sum_elim_zero_eq_sum_isSome` for restricting optional
 enumerations `ι → Option X` to their present (`isSome`) indices.
 -/
 
@@ -29,20 +29,21 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
-/-- Summing optional Dirac occurrences agrees with summing the Dirac occurrences over the
+/-- Summing `Option.elim 0 f` over an optional family agrees with summing `f` over the
 present (`isSome`) indices. -/
-theorem sum_elim_dirac_eq_sum_isSome {ι X : Type*} [MeasurableSpace X] (x : ι → Option X) :
-    (Measure.sum fun i => (x i).elim 0 Measure.dirac) =
-      Measure.sum fun i : {i : ι // (x i).isSome} => Measure.dirac ((x i.val).get i.property) := by
+theorem sum_elim_zero_eq_sum_isSome {ι X Y : Type*} [MeasurableSpace Y]
+    (x : ι → Option X) (f : X → Measure Y) :
+    (Measure.sum fun i => (x i).elim 0 f) =
+      Measure.sum fun i : {i : ι // (x i).isSome} => f ((x i.val).get i.property) := by
   classical
-  have hfun : (fun i => (x i).elim (0 : Measure X) Measure.dirac) =
+  have hfun : (fun i => (x i).elim (0 : Measure Y) f) =
       Function.extend Subtype.val
-        (fun i : {i : ι // (x i).isSome} => Measure.dirac ((x i.val).get i.property)) 0 := by
+        (fun i : {i : ι // (x i).isSome} => f ((x i.val).get i.property)) 0 := by
     funext i
     by_cases hi : (x i).isSome
     · obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp hi
       simpa [ha] using (Subtype.val_injective.extend_apply
-        (fun j : {j : ι // (x j).isSome} => Measure.dirac ((x j.val).get j.property))
+        (fun j : {j : ι // (x j).isSome} => f ((x j.val).get j.property))
         0 ⟨i, hi⟩).symm
     · have hnot : i ∉ Set.range (Subtype.val : {j : ι // (x j).isSome} → ι) := by
         rintro ⟨⟨j, hj⟩, rfl⟩

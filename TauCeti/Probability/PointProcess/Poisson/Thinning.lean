@@ -157,8 +157,8 @@ theorem ae_map_fst_restrict_singleton_and_nat_count_eq_zero_of_const_bernoulliMe
     (∀ᵐ ω ∂P, ((M ω).restrict (univ ×ˢ {b})).map Prod.fst = 0) ∧
     (∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ {b})).toNNReal⌋₊ = 0) := by
   apply hM.ae_map_fst_restrict_univ_prod_and_nat_count_eq_zero
-  rw [Measure.prod_prod, smul_apply, smul_eq_mul, bernoulliMeasure_apply_singleton_bool,
-    mul_right_comm, ← ENNReal.coe_mul, hzero, ENNReal.coe_zero, zero_mul]
+  rw [Measure.prod_prod, smul_apply, smul_eq_mul, bernoulliMeasure_apply_singleton_bool]
+  rcases mul_eq_zero.mp hzero with h | h <;> simp [h]
 
 end BernoulliBoundary
 
@@ -194,10 +194,12 @@ theorem exists_independent_temporal_thinning [IsLocallyFiniteMeasure Λ]
   let P' : Measure (Ω × Measure (ℝ≥0 × Bool)) := P ⊗ₘ (κ.marking.comap N h.measurable)
   have hmp : MeasurePreserving Prod.fst P' P :=
     ⟨measurable_fst, Measure.fst_compProd P (κ.marking.comap N h.measurable)⟩
+  have hfin : ∀ n, Λ (compactCovering ℝ≥0 n) < ∞ :=
+    fun n => (isCompact_compactCovering ℝ≥0 n).measure_lt_top
   have hM : IsPoissonRandomMeasure P' Prod.snd (Λ ⊗ₘ κ) :=
-    h.isPoissonRandomMeasure_compProd_marking
+    h.isPoissonRandomMeasure_compProd_marking hfin
   have hproj : ∀ᵐ q ∂P', q.2.map Prod.fst = N q.1 :=
-    h.ae_map_fst_compProd_marking
+    h.ae_map_fst_compProd_marking hfin
   obtain ⟨hind, htrue, hfalse, hadd⟩ :=
     hM.indepFun_and_isPoissonRandomMeasure_of_compProd_bernoulli hproj
   have hcount : ∀ᵐ q ∂P', ∀ t : ℝ≥0,
@@ -425,11 +427,13 @@ theorem IsPoissonRandomMeasure.exists_bernoulli_thinning_of_measurable
   obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := exists_bool_thinning hN (Kernel.bernoulli true false hp)
   have htrue : (fun x ↦ Kernel.bernoulli true false hp x {true}) =
       fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞) :=
-    funext fun x ↦ Kernel.bernoulli_apply_singleton_left (by decide) hp x
+    funext fun x ↦
+      Kernel.bernoulli_apply_singleton_left (measurableSet_singleton true) (by decide) hp x
   have hfalse : (fun x ↦ Kernel.bernoulli true false hp x {false}) =
       fun x ↦ ((1 - unitInterval.toNNReal (p x) : ℝ≥0) : ℝ≥0∞) :=
     funext fun x ↦ by
-      rw [Kernel.bernoulli_apply_singleton_right (by decide) hp x, unitInterval.toNNReal_symm]
+      rw [Kernel.bernoulli_apply_singleton_right (measurableSet_singleton false) (by decide) hp x,
+        unitInterval.toNNReal_symm]
   exact ⟨η, hη, htrue ▸ h₁, hfalse ▸ h₂, hind, hadd⟩
 
 /-- **Constant-probability Bernoulli thinning of an uncoloured Poisson random measure**, including

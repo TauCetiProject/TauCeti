@@ -76,23 +76,23 @@ theorem bernoulli_const {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
     (a b : E) (p : unitInterval) :
     Kernel.bernoulli a b (p := fun _ : X => p) measurable_const =
       Kernel.const X (bernoulliMeasure a b p) := by
-  ext x s _
-  rfl
+  ext x
+  rw [bernoulli_apply, Kernel.const_apply]
 
 /-- Evaluating `Kernel.bernoulli a b hp` at `{a}` when `a ≠ b` gives `p x`. -/
 theorem bernoulli_apply_singleton_left {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
-    [MeasurableSingletonClass E] {a b : E} (hab : a ≠ b) {p : X → unitInterval}
+    {a b : E} (ha : MeasurableSet ({a} : Set E)) (hab : a ≠ b) {p : X → unitInterval}
     (hp : Measurable p) (x : X) :
     Kernel.bernoulli a b hp x {a} = (unitInterval.toNNReal (p x) : ENNReal) :=
-  bernoulliMeasure_apply_of_mem_of_notMem (p x) (measurableSet_singleton a) rfl hab.symm
+  bernoulliMeasure_apply_of_mem_of_notMem (p x) ha rfl hab.symm
 
 /-- Evaluating `Kernel.bernoulli a b hp` at `{b}` when `a ≠ b` gives `1 - p x`
 (`unitInterval.symm (p x)`). -/
 theorem bernoulli_apply_singleton_right {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
-    [MeasurableSingletonClass E] {a b : E} (hab : a ≠ b) {p : X → unitInterval}
+    {a b : E} (hb : MeasurableSet ({b} : Set E)) (hab : a ≠ b) {p : X → unitInterval}
     (hp : Measurable p) (x : X) :
     Kernel.bernoulli a b hp x {b} = (unitInterval.toNNReal (unitInterval.symm (p x)) : ENNReal) :=
-  bernoulliMeasure_apply_of_notMem_of_mem (p x) (measurableSet_singleton b) hab rfl
+  bernoulliMeasure_apply_of_notMem_of_mem (p x) hb hab rfl
 
 /-- Evaluating the Boolean Bernoulli kernel `Kernel.bernoulli true false hp` at `{b}` gives
 `p x` for `b = true` and `unitInterval.symm (p x)` for `b = false`. -/
@@ -102,8 +102,8 @@ theorem bernoulli_apply_singleton_bool {X : Type*} [MeasurableSpace X]
       (unitInterval.toNNReal (if b then p x else unitInterval.symm (p x)) : ENNReal) := by
   cases b
   · simp only [Bool.false_eq_true, ↓reduceIte]
-    exact bernoulli_apply_singleton_right (by decide) hp x
+    exact bernoulli_apply_singleton_right (measurableSet_singleton false) (by decide) hp x
   · simp only [↓reduceIte]
-    exact bernoulli_apply_singleton_left (by decide) hp x
+    exact bernoulli_apply_singleton_left (measurableSet_singleton true) (by decide) hp x
 
 end ProbabilityTheory.Kernel

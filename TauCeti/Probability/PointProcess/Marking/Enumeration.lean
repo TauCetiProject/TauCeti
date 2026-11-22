@@ -65,7 +65,7 @@ theorem optionalTupleMarking_eq_tupleMarking_isSome {ι : Type*} [Countable ι]
       κ.tupleMarking {i : ι // (x i).isSome} (fun i => (x i.val).get i.property) := by
   rw [← optionalTupleMarking_some]
   exact κ.optionalTupleMarking_eq_of_sum_elim_dirac_eq (by
-    simpa only [Option.elim_some] using Measure.sum_elim_dirac_eq_sum_isSome x)
+    simpa only [Option.elim_some] using Measure.sum_elim_zero_eq_sum_isSome x Measure.dirac)
 
 /-- Marked optional-tuple laws agree if and only if the counting measures of their present entries
 agree. -/
