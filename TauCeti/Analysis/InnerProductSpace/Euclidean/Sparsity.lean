@@ -39,9 +39,11 @@ approximation of `x` (Foucart–Rauhut, Def 2.2).
   norms equals `σₛ(x)₁`.
 * `EuclideanSpace.bestSparseL1Error_eq_restrictedL1Norm_compl`: if `S` is a set of `s` largest
   coordinates of `|x|`, then `σₛ(x)₁` is the restricted norm of `x` on `Sᶜ`.
-* `EuclideanSpace.exists_bestSparseL1Error_eq`: the infimum defining `σₛ(x)₁` is attained.
+* `EuclideanSpace.exists_bestSparseL1Error_eq_restrictedL1Norm_sub`: the infimum defining
+  `σₛ(x)₁` is attained.
 * `EuclideanSpace.bestSparseL1Error_eq_zero_iff`: `σₛ(x)₁ = 0` iff `x` is `s`-sparse.
-* `EuclideanSpace.bestSparseL1Error_right_antitone`, `EuclideanSpace.bestSparseL1Error_le`,
+* `EuclideanSpace.bestSparseL1Error_right_antitone`,
+  `EuclideanSpace.bestSparseL1Error_le_restrictedL1Norm_univ`,
   `EuclideanSpace.bestSparseL1Error_zero`: `σₛ(x)₁` is antitone in `s`, at most `‖x‖₁`, and
   equal to `‖x‖₁` for `s = 0`.
 
@@ -84,6 +86,29 @@ theorem restrictedL1Norm_empty (x : EuclideanSpace ℝ ι) : x.restrictedL1Norm 
 @[simp]
 theorem restrictedL1Norm_zero (S : Finset ι) : (0 : EuclideanSpace ℝ ι).restrictedL1Norm S = 0 := by
   simp [restrictedL1Norm_def]
+
+/-- The restricted `ℓ¹` norm on a single coordinate is its absolute value. -/
+@[simp]
+theorem restrictedL1Norm_singleton (x : EuclideanSpace ℝ ι) (j : ι) :
+    x.restrictedL1Norm {j} = |x j| := by
+  simp [restrictedL1Norm_def]
+
+/-- The restricted `ℓ¹` norm is invariant under negation. -/
+@[simp]
+theorem restrictedL1Norm_neg (x : EuclideanSpace ℝ ι) (S : Finset ι) :
+    (-x).restrictedL1Norm S = x.restrictedL1Norm S := by
+  simp [restrictedL1Norm_def]
+
+/-- The restricted `ℓ¹` norm on `S` vanishes iff every coordinate in `S` vanishes. -/
+theorem restrictedL1Norm_eq_zero_iff {x : EuclideanSpace ℝ ι} {S : Finset ι} :
+    x.restrictedL1Norm S = 0 ↔ ∀ j ∈ S, x j = 0 := by
+  rw [restrictedL1Norm_def, sum_eq_zero_iff_of_nonneg fun _ _ ↦ abs_nonneg _]
+  simp only [abs_eq_zero]
+
+/-- The restricted `ℓ¹` norm on a disjoint union is the sum of the restricted norms. -/
+theorem restrictedL1Norm_union [DecidableEq ι] (x : EuclideanSpace ℝ ι) {S T : Finset ι}
+    (h : Disjoint S T) : x.restrictedL1Norm (S ∪ T) = x.restrictedL1Norm S + x.restrictedL1Norm T :=
+  sum_union h
 
 /-- The restricted `ℓ¹` norm is nonnegative. -/
 theorem restrictedL1Norm_nonneg (x : EuclideanSpace ℝ ι) (S : Finset ι) :
@@ -224,8 +249,7 @@ theorem le_bestSparseL1Error_iff [DecidableEq ι] (x : EuclideanSpace ℝ ι) {s
   · obtain ⟨y, hy, hxy⟩ :=
       x.exists_hammingNorm_le_card_and_restrictedL1Norm_sub_eq_restrictedL1Norm_compl T
     exact (hc y (hy.trans hT)).trans_eq hxy
-  · -- The Hamming bound on `y` is a bound on the number of its nonzero coordinates.
-    change #{j | y j ≠ 0} ≤ s at hy
+  · rw [hammingNorm] at hy
     exact (hc _ hy).trans
       (x.restrictedL1Norm_compl_le_restrictedL1Norm_sub fun j hj ↦ by simpa using hj)
 
@@ -242,7 +266,7 @@ theorem bestSparseL1Error_nonneg (x : EuclideanSpace ℝ ι) (s : ℕ) :
   exact x.le_bestSparseL1Error_iff.2 fun T _ ↦ x.restrictedL1Norm_nonneg _
 
 /-- `σₛ(x)₁` is at most the `ℓ¹` norm of `x`. -/
-theorem bestSparseL1Error_le (x : EuclideanSpace ℝ ι) (s : ℕ) :
+theorem bestSparseL1Error_le_restrictedL1Norm_univ (x : EuclideanSpace ℝ ι) (s : ℕ) :
     x.bestSparseL1Error s ≤ x.restrictedL1Norm univ := by
   classical
   simpa using x.bestSparseL1Error_le_restrictedL1Norm_compl (T := ∅) (Nat.zero_le s)
@@ -266,7 +290,7 @@ theorem exists_restrictedL1Norm_compl_eq_bestSparseL1Error [DecidableEq ι]
   exact x.le_bestSparseL1Error_iff.2 fun T' hT' ↦ hmin T' (by simpa using hT')
 
 /-- The infimum defining `σₛ(x)₁` is attained at an `s`-sparse vector. -/
-theorem exists_bestSparseL1Error_eq (x : EuclideanSpace ℝ ι) (s : ℕ) :
+theorem exists_bestSparseL1Error_eq_restrictedL1Norm_sub (x : EuclideanSpace ℝ ι) (s : ℕ) :
     ∃ y : EuclideanSpace ℝ ι, hammingNorm (WithLp.ofLp y) ≤ s ∧
       x.bestSparseL1Error s = (x - y).restrictedL1Norm univ := by
   classical
@@ -292,7 +316,8 @@ theorem bestSparseL1Error_eq_restrictedL1Norm_compl [DecidableEq ι] (x : Euclid
 theorem bestSparseL1Error_zero (x : EuclideanSpace ℝ ι) :
     x.bestSparseL1Error 0 = x.restrictedL1Norm univ := by
   classical
-  refine le_antisymm (x.bestSparseL1Error_le 0) (x.le_bestSparseL1Error_iff.2 fun T hT ↦ ?_)
+  refine le_antisymm (x.bestSparseL1Error_le_restrictedL1Norm_univ 0)
+    (x.le_bestSparseL1Error_iff.2 fun T hT ↦ ?_)
   rw [card_eq_zero.1 (Nat.le_zero.1 hT), compl_empty]
 
 /-- `σₛ(x)₁ = 0` iff `x` is `s`-sparse. -/
@@ -303,18 +328,14 @@ theorem bestSparseL1Error_eq_zero_iff (x : EuclideanSpace ℝ ι) {s : ℕ} :
   constructor
   · intro h
     obtain ⟨T, hTs, hT⟩ := x.exists_restrictedL1Norm_compl_eq_bestSparseL1Error s
-    rw [h, restrictedL1Norm_def, sum_eq_zero_iff_of_nonneg fun _ _ ↦ abs_nonneg _] at hT
+    rw [h, restrictedL1Norm_eq_zero_iff] at hT
     rw [hammingNorm]
     refine le_trans (card_le_card fun j hj ↦ ?_) hTs
     by_contra hjT
     simp_all
   · intro h
-    refine le_antisymm ?_ (x.bestSparseL1Error_nonneg s)
-    -- The Hamming bound on `x` is a bound on the number of its nonzero coordinates.
-    change #{j | x j ≠ 0} ≤ s at h
-    have hzero : x.restrictedL1Norm ({j | x j ≠ 0} : Finset ι)ᶜ = 0 := by
-      rw [restrictedL1Norm_def]
-      exact sum_eq_zero fun j hj ↦ by simpa using hj
-    exact hzero ▸ x.bestSparseL1Error_le_restrictedL1Norm_compl h
+    have hle := x.bestSparseL1Error_le_restrictedL1Norm_sub h
+    rw [sub_self, restrictedL1Norm_zero] at hle
+    exact le_antisymm hle (x.bestSparseL1Error_nonneg s)
 
 end EuclideanSpace

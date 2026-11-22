@@ -18,7 +18,7 @@ on `f` only up to `μ`-null sets for every `c`, the zero scale included, where b
 
 ## Main results
 
-* `TauCeti.smul_comp_smul_ae_eq`: if `f =ᵐ[μ] g`, then
+* `MeasureTheory.Measure.smul_comp_smul_ae_eq`: if `f =ᵐ[μ] g`, then
   `(fun x ↦ c • f (c • x)) =ᵐ[μ] fun x ↦ c • g (c • x)` for every real `c`.
 * `TauCeti.inv_mul_comp_div_ae_eq`: the real-line form for the rescaling `t ↦ h⁻¹ f(t / h)` of a
   density by a bandwidth `h`.
@@ -28,7 +28,7 @@ public section
 
 open MeasureTheory
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [AddCommMonoid F] [Module ℝ F]
@@ -40,15 +40,19 @@ theorem smul_comp_smul_ae_eq (μ : Measure E) [μ.IsAddHaarMeasure] {f g : E →
     (hfg : f =ᵐ[μ] g) (c : ℝ) : (fun x ↦ c • f (c • x)) =ᵐ[μ] fun x ↦ c • g (c • x) := by
   rcases eq_or_ne c 0 with rfl | hc
   · simp
-  filter_upwards [(Measure.quasiMeasurePreserving_smul μ hc).ae_eq_comp hfg] with x hx
+  filter_upwards [(quasiMeasurePreserving_smul μ hc).ae_eq_comp hfg] with x hx
   rw [Function.comp_apply, Function.comp_apply] at hx
   rw [hx]
+
+end MeasureTheory.Measure
+
+namespace TauCeti
 
 /-- If two real functions agree Lebesgue-almost everywhere, so do their rescalings
 `t ↦ h⁻¹ f(t / h)`, for every real `h`. For `h = 0` both rescalings are zero. -/
 theorem inv_mul_comp_div_ae_eq {f g : ℝ → ℝ} (hfg : f =ᵐ[volume] g) (h : ℝ) :
     (fun t ↦ h⁻¹ * f (t / h)) =ᵐ[volume] fun t ↦ h⁻¹ * g (t / h) := by
-  filter_upwards [smul_comp_smul_ae_eq volume hfg h⁻¹] with t ht
+  filter_upwards [volume.smul_comp_smul_ae_eq hfg h⁻¹] with t ht
   simpa only [smul_eq_mul, div_eq_inv_mul] using ht
 
 end TauCeti

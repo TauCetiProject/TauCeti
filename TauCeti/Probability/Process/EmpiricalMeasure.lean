@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Group.Convolution
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Probability.UniformOn
+import Mathlib.MeasureTheory.Group.LIntegral
 
 /-!
 # Empirical measures of finite families and sequences
@@ -27,7 +29,9 @@ measure, and the sequence form as a specialization, so they can never drift apar
 The API covers evaluation, integration, pushforward, continuity, measurability and finite support.
 Values are counted with multiplicity: the empirical measure depends only on the multiset of values,
 so it is invariant under reindexing. The empirical measure of a concatenation is the average of the
-empirical measures of its pieces weighted by their sizes. The finite-population form is used by
+empirical measures of its pieces weighted by their sizes. On an additive group with an
+invariant measure `μ`, the convolution of the empirical measure with `μ.withDensity g` has density
+the average of the translates of `g` by the sample points. The finite-population form is used by
 quantitative sampling arguments and, applied to eigenvalues, defines empirical spectral measures of
 matrices. The sequence form is the process-level input to the empirical-measure form of de
 Finetti's theorem.
@@ -222,6 +226,51 @@ theorem continuous_empiricalFiniteMeasure [TopologicalSpace α] [OpensMeasurable
     ((Fintype.card κ : ℝ)⁻¹)
 
 end FiniteFamily
+
+section Convolution
+
+open Finset
+
+variable {κ G : Type*} [Fintype κ] [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G]
+  [MeasurableNeg G] {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant]
+
+/-- The convolution identity of `empiricalFiniteMeasure_conv_withDensity` for a measurable
+density. -/
+private theorem empiricalFiniteMeasure_conv_withDensity_of_measurable (x : κ → G)
+    {g : G → ℝ≥0∞} (hg : Measurable g) :
+    (empiricalFiniteMeasure x : Measure G) ∗ μ.withDensity g =
+      μ.withDensity fun t ↦ ∑ i, ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * g (t - x i) := by
+  refine Measure.ext_of_lintegral _ fun f hf ↦ ?_
+  rw [Measure.lintegral_conv hf, lintegral_empiricalFiniteMeasure
+      (f := fun y ↦ ∫⁻ z, f (y + z) ∂μ.withDensity g)
+      (hf.comp measurable_add).lintegral_prod_right',
+    lintegral_withDensity_eq_lintegral_mul _ (by fun_prop) hf]
+  simp only [Pi.mul_apply, sum_mul]
+  rw [lintegral_finsetSum _ fun i _ ↦ by fun_prop, mul_sum]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [lintegral_withDensity_eq_lintegral_mul _ hg (by fun_prop)]
+  simp_rw [mul_assoc]
+  rw [lintegral_const_mul _ (by fun_prop)]
+  congr 1
+  rw [← lintegral_add_left_eq_self (fun t ↦ g (t - x i) * f t) (x i)]
+  simp
+
+/-- The convolution of the empirical measure of `x` with `μ.withDensity g`, for an invariant
+measure `μ` on an additive group and an almost everywhere measurable density `g`, has density the
+average `(card κ)⁻¹ ∑ᵢ g (t - xᵢ)` of the translates of `g` by the sample points. -/
+theorem empiricalFiniteMeasure_conv_withDensity (x : κ → G) {g : G → ℝ≥0∞}
+    (hg : AEMeasurable g μ) :
+    (empiricalFiniteMeasure x : Measure G) ∗ μ.withDensity g =
+      μ.withDensity fun t ↦ ∑ i, ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * g (t - x i) := by
+  rw [withDensity_congr_ae hg.ae_eq_mk,
+    empiricalFiniteMeasure_conv_withDensity_of_measurable x hg.measurable_mk]
+  refine withDensity_congr_ae ?_
+  have hi (i : κ) : (fun t ↦ hg.mk g (t - x i)) =ᵐ[μ] fun t ↦ g (t - x i) :=
+    (measurePreserving_sub_right μ (x i)).quasiMeasurePreserving.ae_eq_comp hg.ae_eq_mk.symm
+  filter_upwards [ae_all_iff.2 hi] with t ht
+  simp only [ht]
+
+end Convolution
 
 section FinitePopulation
 

@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 import Mathlib.Algebra.Order.BigOperators.Expect
 import Mathlib.MeasureTheory.Group.Integral
-import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Haar.Rescale
 
@@ -52,15 +51,13 @@ are probability laws (the empirical distribution of the sample convolved with th
   `TauCeti.integral_finiteKernelDensityEstimator`: for an integrable kernel the estimator is
   integrable, and for `h > 0` and a nonempty sample it integrates to `∫ K`.
 * `TauCeti.measurable_finiteKernelDensityEstimator_comp`,
-  `TauCeti.measurable_kernelDensityEstimator`: for a measurable kernel, the map
-  `ω ↦ fₙ(t ω)` is measurable on `Ω` when the sample, the bandwidth (in the finite form) and the
-  evaluation point `t ω` are measurable in `ω`. Joint measurability on a product `Ω × ℝ` is the
-  special case of the projections `ω ↦ ω.1` and `t = Prod.snd`.
+  `TauCeti.measurable_kernelDensityEstimator_comp`: for a measurable kernel, the map
+  `ω ↦ fₙ(t ω)` is measurable on `Ω` when the sample (its first `n` terms in the sequence form),
+  the bandwidth (in the finite form) and the evaluation point `t ω` are measurable in `ω`. Joint
+  measurability on a product `Ω × ℝ` is the special case of the projections `ω ↦ ω.1` and
+  `t = Prod.snd`.
 * `TauCeti.aemeasurable_finiteKernelDensityEstimator`: for an almost everywhere measurable kernel
   the estimator is almost everywhere measurable.
-* `TauCeti.Probability.empiricalFiniteMeasure_conv_withDensity`: the convolution of the empirical
-  measure of `x` with `volume.withDensity g` has density the average of the translates
-  `g (t - xᵢ)`.
 * `TauCeti.conv_withDensity_eq_withDensity_finiteKernelDensityEstimator`: for an almost everywhere
   nonnegative, almost everywhere measurable kernel, the empirical measure convolved with
   `volume.withDensity (ENNReal.ofReal ∘ K_h)` is `volume.withDensity (ENNReal.ofReal ∘ fₙ)`; for
@@ -83,32 +80,6 @@ open MeasureTheory Finset
 open scoped ENNReal
 
 namespace TauCeti
-
-namespace Probability
-
-variable {κ : Type*} [Fintype κ]
-
-/-- The convolution of the empirical measure of `x` with `volume.withDensity g` has density the
-average `(card κ)⁻¹ ∑ᵢ g (t - xᵢ)` of the translates of `g` by the sample points. -/
-theorem empiricalFiniteMeasure_conv_withDensity (x : κ → ℝ) {g : ℝ → ℝ≥0∞} (hg : Measurable g) :
-    (empiricalFiniteMeasure x : Measure ℝ) ∗ volume.withDensity g =
-      volume.withDensity fun t ↦ ∑ i, ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * g (t - x i) := by
-  refine Measure.ext_of_lintegral _ fun f hf ↦ ?_
-  rw [Measure.lintegral_conv hf, lintegral_empiricalFiniteMeasure
-      (f := fun y ↦ ∫⁻ z, f (y + z) ∂volume.withDensity g)
-      (hf.comp measurable_add).lintegral_prod_right',
-    lintegral_withDensity_eq_lintegral_mul _ (by fun_prop) hf]
-  simp only [Pi.mul_apply, sum_mul]
-  rw [lintegral_finsetSum _ fun i _ ↦ by fun_prop, mul_sum]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [lintegral_withDensity_eq_lintegral_mul _ hg (by fun_prop)]
-  simp_rw [mul_assoc]
-  rw [lintegral_const_mul _ (by fun_prop)]
-  congr 1
-  rw [← lintegral_add_left_eq_self (fun t ↦ g (t - x i) * f t) (x i)]
-  simp
-
-end Probability
 
 variable {κ : Type*} [Fintype κ]
 
@@ -191,16 +162,24 @@ theorem measurable_finiteKernelDensityEstimator {K : ℝ → ℝ} (hK : Measurab
   measurable_finiteKernelDensityEstimator_comp (x := fun _ ↦ x) hK measurable_const
     (fun _ ↦ measurable_const) measurable_id
 
-/-- For a measurable kernel and measurable observations, the kernel density estimator of a
-sequence evaluated at `t ω` is measurable in `ω` when the evaluation point `t ω` is. -/
+/-- For a measurable kernel and measurable first `n` observations, the kernel density estimator
+of a sequence evaluated at `t ω` is measurable in `ω` when the evaluation point `t ω` is. -/
 @[fun_prop]
-theorem measurable_kernelDensityEstimator {Ω : Type*} [MeasurableSpace Ω] {K : ℝ → ℝ}
-    (hK : Measurable K) (h : ℕ → ℝ) {X : ℕ → Ω → ℝ} (hX : ∀ i, Measurable (X i)) (n : ℕ)
+theorem measurable_kernelDensityEstimator_comp {Ω : Type*} [MeasurableSpace Ω] {K : ℝ → ℝ}
+    (hK : Measurable K) (h : ℕ → ℝ) {X : ℕ → Ω → ℝ} {n : ℕ} (hX : ∀ i < n, Measurable (X i))
     {t : Ω → ℝ} (ht : Measurable t) :
     Measurable fun ω ↦ kernelDensityEstimator K h X n ω (t ω) := by
   simp_rw [kernelDensityEstimator_def]
   exact measurable_finiteKernelDensityEstimator_comp (x := fun ω (i : Fin n) ↦ X i ω) hK
-    measurable_const (fun i ↦ hX i) ht
+    measurable_const (fun i ↦ hX i i.isLt) ht
+
+/-- For a measurable kernel, the kernel density estimator of a sequence is measurable in `t`. -/
+@[fun_prop]
+theorem measurable_kernelDensityEstimator {Ω : Type*} {K : ℝ → ℝ} (hK : Measurable K)
+    (h : ℕ → ℝ) (X : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
+    Measurable (kernelDensityEstimator K h X n ω) := by
+  rw [funext (kernelDensityEstimator_def K h X n ω)]
+  exact measurable_finiteKernelDensityEstimator hK (h n) _
 
 /-- If two kernels agree Lebesgue-almost everywhere, so do their kernel density estimators. -/
 theorem finiteKernelDensityEstimator_congr_ae {K K' : ℝ → ℝ} (hKK' : K =ᵐ[volume] K') (h : ℝ)
@@ -219,8 +198,8 @@ theorem aemeasurable_finiteKernelDensityEstimator {K : ℝ → ℝ} (hK : AEMeas
   ⟨_, measurable_finiteKernelDensityEstimator hK.measurable_mk h x,
     finiteKernelDensityEstimator_congr_ae hK.ae_eq_mk h x⟩
 
-/-- For an almost everywhere measurable kernel and measurable observations, the kernel density
-estimator of a sequence is almost everywhere measurable in `t`. -/
+/-- For an almost everywhere measurable kernel, the kernel density estimator of a sequence is
+almost everywhere measurable in `t`. -/
 theorem aemeasurable_kernelDensityEstimator {Ω : Type*} {K : ℝ → ℝ} (hK : AEMeasurable K volume)
     (h : ℕ → ℝ) (X : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
     AEMeasurable (kernelDensityEstimator K h X n ω) volume :=
@@ -231,6 +210,14 @@ nonnegative. -/
 theorem finiteKernelDensityEstimator_nonneg {K : ℝ → ℝ} (hK : ∀ u, 0 ≤ K u) {h : ℝ}
     (hh : 0 ≤ h) (x : κ → ℝ) (t : ℝ) : 0 ≤ finiteKernelDensityEstimator K h x t :=
   expect_nonneg fun _ _ ↦ mul_nonneg (inv_nonneg.2 hh) (hK _)
+
+/-- The kernel density estimator of a sequence, for a nonnegative kernel and a nonnegative
+bandwidth `h n`, is nonnegative. -/
+theorem kernelDensityEstimator_nonneg {Ω : Type*} {K : ℝ → ℝ} (hK : ∀ u, 0 ≤ K u) {h : ℕ → ℝ}
+    (X : ℕ → Ω → ℝ) {n : ℕ} (hh : 0 ≤ h n) (ω : Ω) (t : ℝ) :
+    0 ≤ kernelDensityEstimator K h X n ω t := by
+  rw [kernelDensityEstimator_def]
+  exact finiteKernelDensityEstimator_nonneg hK hh _ t
 
 /-- The kernel density estimator of a Lebesgue-almost everywhere nonnegative kernel with a
 nonnegative bandwidth is almost everywhere nonnegative. -/
@@ -286,32 +273,6 @@ theorem integral_kernelDensityEstimator {Ω : Type*} {K : ℝ → ℝ} (hK : Int
   have : NeZero n := ⟨hn⟩
   exact integral_finiteKernelDensityEstimator hK hh _
 
-/-- The convolution identity of `conv_withDensity_eq_withDensity_finiteKernelDensityEstimator`
-for an everywhere nonnegative measurable kernel. -/
-private theorem conv_withDensity_eq_withDensity_finiteKernelDensityEstimator_of_measurable
-    {K : ℝ → ℝ} (hK : ∀ u, 0 ≤ K u) (hKm : Measurable K) (h : ℝ) (x : κ → ℝ) :
-    (Probability.empiricalFiniteMeasure x : Measure ℝ) ∗
-        volume.withDensity (fun t ↦ ENNReal.ofReal (h⁻¹ * K (t / h))) =
-      volume.withDensity fun t ↦ ENNReal.ofReal (finiteKernelDensityEstimator K h x t) := by
-  rcases isEmpty_or_nonempty κ with hκ | hκ
-  · simp
-  rcases lt_or_ge h 0 with hneg | hh
-  · -- For a negative bandwidth both densities are nonpositive, so both measures vanish.
-    have hzero : ∀ t, h⁻¹ * K (t / h) ≤ 0 := fun t ↦
-      mul_nonpos_of_nonpos_of_nonneg (inv_nonpos.2 hneg.le) (hK _)
-    have hzero' : ∀ t, finiteKernelDensityEstimator K h x t ≤ 0 := fun t ↦
-      (expect_le_expect fun i _ ↦ hzero (t - x i)).trans_eq (expect_const_zero _)
-    simp [ENNReal.ofReal_of_nonpos (hzero _), ENNReal.ofReal_of_nonpos (hzero' _)]
-  rw [Probability.empiricalFiniteMeasure_conv_withDensity x (by fun_prop)]
-  congr 1
-  funext t
-  -- The estimator is the empirical average of the translates of `K_h`.
-  have hn : (0 : ℝ) < Fintype.card κ := Nat.cast_pos.2 Fintype.card_pos
-  rw [finiteKernelDensityEstimator_eq_mul_sum, mul_inv, mul_assoc, mul_sum,
-    ENNReal.ofReal_mul (inv_nonneg.2 hn.le),
-    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ mul_nonneg (inv_nonneg.2 hh) (hK _),
-    ENNReal.ofReal_inv_of_pos hn, ENNReal.ofReal_natCast, mul_sum]
-
 /-- For a Lebesgue-almost everywhere nonnegative, almost everywhere measurable kernel `K` and any
 bandwidth `h`, the convolution of the empirical measure of `x` with
 `volume.withDensity (ENNReal.ofReal ∘ K_h)`, `K_h(t) = h⁻¹ K(t / h)`, is `volume.withDensity` of
@@ -338,7 +299,26 @@ theorem conv_withDensity_eq_withDensity_finiteKernelDensityEstimator {K : ℝ �
     withDensity_congr_ae ((finiteKernelDensityEstimator_congr_ae hKK' h x).mono fun _ ht ↦
       congrArg ENNReal.ofReal ht)
   rw [e₁, e₂]
-  exact conv_withDensity_eq_withDensity_finiteKernelDensityEstimator_of_measurable
-    (fun _ ↦ le_max_right _ _) (hKm.measurable_mk.max measurable_const) h x
+  have hK' (u : ℝ) : 0 ≤ K' u := le_max_right _ _
+  rcases isEmpty_or_nonempty κ with hκ | hκ
+  · simp
+  rcases lt_or_ge h 0 with hneg | hh
+  · -- For a negative bandwidth both densities are nonpositive, so both measures vanish.
+    have hzero : ∀ t, h⁻¹ * K' (t / h) ≤ 0 := fun t ↦
+      mul_nonpos_of_nonpos_of_nonneg (inv_nonpos.2 hneg.le) (hK' _)
+    have hzero' : ∀ t, finiteKernelDensityEstimator K' h x t ≤ 0 := fun t ↦
+      (expect_le_expect fun i _ ↦ hzero (t - x i)).trans_eq (expect_const_zero _)
+    simp [ENNReal.ofReal_of_nonpos (hzero _), ENNReal.ofReal_of_nonpos (hzero' _)]
+  have hK'm : Measurable K' := hKm.measurable_mk.max measurable_const
+  rw [Probability.empiricalFiniteMeasure_conv_withDensity x
+    (by fun_prop : Measurable _).aemeasurable]
+  congr 1
+  funext t
+  -- The estimator is the empirical average of the translates of `K'_h`.
+  have hn : (0 : ℝ) < Fintype.card κ := Nat.cast_pos.2 Fintype.card_pos
+  rw [finiteKernelDensityEstimator_eq_mul_sum, mul_inv, mul_assoc, mul_sum,
+    ENNReal.ofReal_mul (inv_nonneg.2 hn.le),
+    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ mul_nonneg (inv_nonneg.2 hh) (hK' _),
+    ENNReal.ofReal_inv_of_pos hn, ENNReal.ofReal_natCast, mul_sum]
 
 end TauCeti
