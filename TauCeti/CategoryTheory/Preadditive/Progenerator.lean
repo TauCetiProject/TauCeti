@@ -28,7 +28,7 @@ Every projective additive generator is a progenerator, and the two notions coinc
 object of `C` is projective. Like additive generators, progenerators are preserved by isomorphisms,
 by adding projective direct summands, by positive finite powers, and by equivalences of categories.
 In an abelian category, `Hom(P, -)` identifies `C` with the finitely presented right
-`End P`-modules (`TauCeti.CategoryTheory.Abelian.Progenerator`).
+`End P`-modules (`TauCeti.CategoryTheory.Abelian.Progenerator.Basic`).
 
 ## Main definitions
 

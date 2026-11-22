@@ -62,6 +62,8 @@ between the dependent product and the biproduct in `S.FullSubcategory`.
   `ModuleCat.biprod_inl_fst_add_inr_snd_apply`: the binary biproduct projections and inclusions on
   elements.
 * `CategoryTheory.ObjectProperty.biproductObjIsoPi_inv_comp_π`,
+  `CategoryTheory.ObjectProperty.biproductObjIsoPi_hom_comp_proj`,
+  `CategoryTheory.ObjectProperty.biproductObjIsoPi_hom_apply`,
   `CategoryTheory.ObjectProperty.epi_homMk_biproductObjIsoPi_comp`, and
   `CategoryTheory.ObjectProperty.surjective_biproductObjIsoPi_inv_comp`: projection compatibility
   and epi/surjectivity transfer for finite biproducts in a full subcategory of `ModuleCat R`.
@@ -234,6 +236,25 @@ theorem biproductObjIsoPi_inv_comp_π {J : Type} [Finite J] (f : J → S.FullSub
   simp only [biproductObjIsoPi, Iso.trans_inv, Category.assoc]
   rw [← ι_map, h]
   exact ModuleCat.biproductIsoPi_inv_comp_π (fun j ↦ (f j).obj) j
+
+/-- The `j`-th coordinate of the forward map of `biproductObjIsoPi` is the `j`-th biproduct
+projection. -/
+@[reassoc (attr := simp)]
+theorem biproductObjIsoPi_hom_comp_proj {J : Type} [Finite J] (f : J → S.FullSubcategory)
+    [HasBiproduct f] (j : J) :
+    (S.biproductObjIsoPi f).hom ≫
+        ModuleCat.ofHom (LinearMap.proj j : (∀ j, (f j).obj) →ₗ[R] (f j).obj) =
+      (biproduct.π f j).hom := by
+  rw [← S.biproductObjIsoPi_inv_comp_π f j, Iso.hom_inv_id_assoc]
+
+/-- The `j`-th coordinate of `biproductObjIsoPi` applied to an element is the `j`-th biproduct
+projection. -/
+@[simp]
+theorem biproductObjIsoPi_hom_apply {J : Type} [Finite J] (f : J → S.FullSubcategory)
+    [HasBiproduct f] (x : (⨁ f).obj) (j : J) :
+    (S.biproductObjIsoPi f).hom x j = (biproduct.π f j).hom x := by
+  simpa [-biproductObjIsoPi_hom_comp_proj] using
+    ConcreteCategory.congr_hom (S.biproductObjIsoPi_hom_comp_proj f j) x
 
 /-- A surjective linear map from the product `∀ j, (f j).obj` to `X.obj` induces an epimorphism
 `(⨁ f) ⟶ X` in `S.FullSubcategory`. -/

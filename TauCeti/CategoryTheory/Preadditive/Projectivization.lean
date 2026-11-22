@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 public import TauCeti.CategoryTheory.Functor.MapBijective
-public import TauCeti.CategoryTheory.ObjectProperty.Retract
-public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 public import TauCeti.CategoryTheory.Preadditive.Progenerator
 public import TauCeti.CategoryTheory.Preadditive.Yoneda
 
@@ -269,6 +266,12 @@ noncomputable def projectiveEquivalenceCompιIso (hP : IsProgenerator P)
     hP.projectiveEquivalence.functor ⋙ (finiteProjectiveModules (End P)ᵐᵒᵖ).ι ≅
       (isProjective C).ι ⋙ preadditiveCoyonedaObj P :=
   NatIso.ofComponents (fun _ ↦ Iso.refl _)
+
+instance additive_projectiveEquivalence_functor (hP : IsProgenerator P) [IsIdempotentComplete C] :
+    hP.projectiveEquivalence.functor.Additive :=
+  have : (hP.projectiveEquivalence.functor ⋙ (finiteProjectiveModules (End P)ᵐᵒᵖ).ι).Additive :=
+    Functor.additive_of_iso hP.projectiveEquivalenceCompιIso.symm
+  Functor.additive_of_comp_faithful _ (finiteProjectiveModules (End P)ᵐᵒᵖ).ι
 
 /-- The underlying module of `hP.projectiveEquivalence.functor.obj X` is
 `(preadditiveCoyonedaObj P).obj X.obj`. -/

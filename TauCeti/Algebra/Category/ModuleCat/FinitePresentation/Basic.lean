@@ -5,24 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
-public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.RestrictedYoneda
+public import TauCeti.CategoryTheory.ObjectProperty.Presented
 
 import TauCeti.Algebra.Module.FinitePresentation
 
 /-!
-# Finitely presented modules as finitely presented functors
+# Finitely presented modules
 
 For a ring `R`, a module is finitely presented exactly when it is the cokernel of a morphism between
-finitely generated projective modules. So the Yoneda description of the finitely presented functors
-on a category of projective objects identifies the finitely presented `R`-modules with
-`mod (proj R)`, the finitely presented functors on the category of finitely generated projective
-`R`-modules. Evaluating the functor attached to a module at the regular module `R` recovers the
-underlying abelian group of the module.
+finitely generated projective modules (`TauCeti.presented_finiteProjectiveModules`).
 
 Over any ring `R`, the object property `TauCeti.finitePresentationModules R` contains the zero
 module and is closed under finite products, cokernels and retracts; over a left Noetherian ring it
@@ -37,10 +32,6 @@ into `ModuleCat R` preserves epimorphisms, and projective objects of
   `ModuleCat R`.
 * `TauCeti.finitePresentationModulesRegular`: the regular module `R`, as an object of
   `(finitePresentationModules R).FullSubcategory`.
-* `TauCeti.finitePresentationEquivalenceMod`: the equivalence between the finitely presented
-  `R`-modules and `mod (proj R)`.
-* `TauCeti.finitePresentationEquivalenceModCompEvaluationIso`: the composite of this equivalence
-  with evaluation at `R` is the underlying abelian group of a module.
 
 ## Main results
 
@@ -206,35 +197,5 @@ theorem projective_finitePresentationModules_iff
 
 instance : Projective (finitePresentationModulesRegular R) :=
   (projective_finitePresentationModules_iff R _).mpr (inferInstanceAs (Module.Projective R R))
-
-/-! ### Equivalence with `mod (proj R)` -/
-
-/-- **The finitely presented modules are `mod (proj R)`.** The functor `M ↦ (-, M)|_{proj R}` is an
-equivalence from the finitely presented `R`-modules to the finitely presented functors on the
-finitely generated projective `R`-modules. -/
-noncomputable def finitePresentationEquivalenceMod :
-    (finitePresentationModules R).FullSubcategory ≌
-      (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory :=
-  ObjectProperty.equivalenceMod (finiteProjectiveModules_le_categoryTheory_isProjective R)
-    (presented_finiteProjectiveModules R).symm
-
-/-- The functor of `finitePresentationEquivalenceMod` is `M ↦ (-, M)|_{proj R}`. -/
-noncomputable def finitePresentationEquivalenceModCompιIso :
-    (finitePresentationEquivalenceMod R).functor ⋙ (isFinitelyPresentedFunctor _).ι ≅
-      (finitePresentationModules R).ι ⋙ (finiteProjectiveModules R).restrictedPreadditiveYoneda :=
-  ObjectProperty.equivalenceModCompιIso _ _
-
-/-- The functor attached to a finitely presented `R`-module `M` takes the value `(R, M)` at the
-regular module, and `(R, M)` is the underlying abelian group of `M`, naturally in `M`. -/
-noncomputable def finitePresentationEquivalenceModCompEvaluationIso :
-    ((finitePresentationEquivalenceMod R).functor ⋙ (isFinitelyPresentedFunctor _).ι) ⋙
-        (evaluation _ _).obj (op (finiteProjectiveModulesRegular R)) ≅
-      (finitePresentationModules R).ι ⋙ forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u} :=
-  Functor.isoWhiskerRight (finitePresentationEquivalenceModCompιIso R) _ ≪≫
-    NatIso.ofComponents (fun M ↦ (ModuleCat.homAddEquiv.trans
-      (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv).toAddCommGrpIso) fun {M N} f ↦ by
-      ext (g : ModuleCat.of R R ⟶ M.obj)
-      -- Both sides are `f (g 1)`.
-      rfl
 
 end TauCeti

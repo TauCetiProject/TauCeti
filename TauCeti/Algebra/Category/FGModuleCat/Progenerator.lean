@@ -19,8 +19,8 @@ A finitely generated projective `R`-module `P` that is a module-theoretic genera
 (`Module.Projective R P`) and a module-theoretic generator (`FGModuleCat.isProgenerator_iff`).
 This specializes `TauCeti.Algebra.Category.ModuleCat.Progenerator` to `ModuleCat.isFG R` and
 bridges the categorical progenerator API of `TauCeti.CategoryTheory.Preadditive.Progenerator` and
-`TauCeti.CategoryTheory.Abelian.Progenerator` with the module-theoretic progenerator and Morita API
-of `TauCeti.Algebra.Module.Generator` and `TauCeti.RingTheory.Morita.Progenerator`.
+`TauCeti.CategoryTheory.Abelian.Progenerator.Basic` with the module-theoretic progenerator and
+Morita API of `TauCeti.Algebra.Module.Generator` and `TauCeti.RingTheory.Morita.Progenerator`.
 
 In particular, over any ring `R`, the regular module `R`, any positive finite free module
 `Fin n → R`, and `R × R` are progenerators of `FGModuleCat R`.

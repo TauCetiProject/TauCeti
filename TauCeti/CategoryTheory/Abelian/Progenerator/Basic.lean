@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Basic
-public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Coherent
-public import TauCeti.CategoryTheory.ObjectProperty.Presented
-public import TauCeti.CategoryTheory.Preadditive.Progenerator
+public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic
 public import TauCeti.CategoryTheory.Preadditive.Projectivization
 
 /-!
@@ -39,9 +37,9 @@ Passing to cokernels extends `Hom(P, -)` to an equivalence on all of `C`:
 Thus `Hom(P, -)` restricts to an additive equivalence
 `TauCeti.IsProgenerator.progeneratorEquivalence` between `C` and
 `(TauCeti.finitePresentationModules (End P)ᵐᵒᵖ).FullSubcategory`, extending
-`TauCeti.projectivizationFunctor P` on `add P`. Because `C` has kernels, the equivalent category of
-finitely presented `Γᵐᵒᵖ`-modules also has kernels, so `(End P)ᵐᵒᵖ` is automatically left coherent
-(`TauCeti.IsProgenerator.isCoherentRing_end_mulOpposite`).
+`TauCeti.projectivizationFunctor P` on `add P` and `TauCeti.IsProgenerator.projectiveEquivalence`
+on `proj C`. Coherence of `(End P)ᵐᵒᵖ` is deduced in
+`TauCeti.CategoryTheory.Abelian.Progenerator.Coherent`.
 
 ## Main definitions
 
@@ -51,6 +49,8 @@ finitely presented `Γᵐᵒᵖ`-modules also has kernels, so `(End P)ᵐᵒᵖ`
   finitely presented `(End P)ᵐᵒᵖ`-modules.
 * `TauCeti.IsProgenerator.additiveClosureCompProgeneratorFunctorIso`: compatibility of
   `progeneratorFunctor` with `TauCeti.projectivizationFunctor P` on `add P`.
+* `TauCeti.IsProgenerator.isProjectiveCompProgeneratorEquivalenceFunctorIso`: compatibility of
+  `progeneratorEquivalence` with `TauCeti.IsProgenerator.projectiveEquivalence` on `proj C`.
 
 ## Main results
 
@@ -61,8 +61,6 @@ finitely presented `Γᵐᵒᵖ`-modules also has kernels, so `(End P)ᵐᵒᵖ`
   `TauCeti.IsProgenerator.finitePresentationModules_le_essImage`: well-definedness, full
   faithfulness, and essential surjectivity of `Hom(P, -)` onto finitely presented right
   `End P`-modules.
-* `TauCeti.IsProgenerator.isCoherentRing_end_mulOpposite`: for any progenerator `P` of an abelian
-  category, `(End P)ᵐᵒᵖ` is left coherent.
 
 ## References
 
@@ -160,7 +158,7 @@ theorem finitePresentationModules_le_essImage (hP : IsProgenerator P) :
     cokernel.mapIso _ α e₀ e₁ hu' ≪≫
     (colimit.isColimit _).coconePointUniqueUpToIso hc
 
-/-! ### The progenerator equivalence and coherence of `(End P)ᵐᵒᵖ` -/
+/-! ### The progenerator equivalence -/
 
 /-- For a progenerator `P` of an abelian category `C`, `Hom(P, -)` as a functor from `C` to the
 finitely presented `(End P)ᵐᵒᵖ`-modules. -/
@@ -231,6 +229,27 @@ theorem progeneratorEquivalence_functor (hP : IsProgenerator P) :
     hP.progeneratorEquivalence.functor = hP.progeneratorFunctor :=
   (rfl)
 
+/-- The underlying module of `hP.progeneratorEquivalence.functor.obj X` is
+`(preadditiveCoyonedaObj P).obj X`. -/
+theorem progeneratorEquivalence_functor_obj_obj (hP : IsProgenerator P) (X : C) :
+    (hP.progeneratorEquivalence.functor.obj X).obj = (preadditiveCoyonedaObj P).obj X :=
+  (rfl)
+
+/-- The action of `hP.progeneratorEquivalence.functor` on morphisms agrees with `Hom(P, -)` up
+to the definitional identification of objects. -/
+theorem progeneratorEquivalence_functor_map_hom (hP : IsProgenerator P) {X Y : C} (f : X ⟶ Y) :
+    (hP.progeneratorEquivalence.functor.map f).hom =
+      eqToHom (hP.progeneratorEquivalence_functor_obj_obj X) ≫
+        (preadditiveCoyonedaObj P).map f ≫
+        eqToHom (hP.progeneratorEquivalence_functor_obj_obj Y).symm :=
+  hP.progeneratorFunctor_map_hom f
+
+instance additive_progeneratorEquivalence_functor (hP : IsProgenerator P) :
+    hP.progeneratorEquivalence.functor.Additive where
+  map_add := by
+    rw [hP.progeneratorEquivalence_functor]
+    exact hP.additive_progeneratorFunctor.map_add
+
 /-- On `add P`, `hP.progeneratorFunctor` restricts to `TauCeti.projectivizationFunctor P` followed
 by the inclusion of finitely generated projective modules into finitely presented modules. -/
 noncomputable def additiveClosureCompProgeneratorFunctorIso (hP : IsProgenerator P) :
@@ -253,12 +272,33 @@ theorem additiveClosureCompProgeneratorFunctorIso_inv_app (hP : IsProgenerator P
       eqToHom (hP.progeneratorFunctor_obj_obj X.obj).symm :=
   (rfl)
 
-/-- **Coherence of the endomorphism ring of a progenerator.** If `P` is a progenerator of an abelian
-category `C`, then `(End P)ᵐᵒᵖ` is left coherent: the full subcategory of finitely presented
-`(End P)ᵐᵒᵖ`-modules is equivalent to `C` and therefore has kernels. -/
-theorem isCoherentRing_end_mulOpposite (hP : IsProgenerator P) : IsCoherentRing (End P)ᵐᵒᵖ := by
-  have : HasEqualizers (finitePresentationModules (End P)ᵐᵒᵖ).FullSubcategory :=
-    Adjunction.hasLimitsOfShape_of_equivalence hP.progeneratorEquivalence.inverse
-  exact hasKernels_finitePresentationModules_iff_isCoherentRing.mp inferInstance
+/-- On `proj C`, `hP.progeneratorEquivalence.functor` restricts to
+`hP.projectiveEquivalence.functor` followed by the inclusion of finitely generated projective
+modules into finitely presented modules. -/
+noncomputable def isProjectiveCompProgeneratorEquivalenceFunctorIso (hP : IsProgenerator P) :
+    (isProjective C).ι ⋙ hP.progeneratorEquivalence.functor ≅
+      hP.projectiveEquivalence.functor ⋙
+        ObjectProperty.ιOfLE (finiteProjectiveModules_le_finitePresentationModules (End P)ᵐᵒᵖ) :=
+  NatIso.ofComponents
+    (fun X ↦ ObjectProperty.isoMk _ (eqToIso (by simp)))
+    fun {X Y} f ↦ ObjectProperty.hom_ext _ <| by
+      simp only [Functor.comp_map, ObjectProperty.ι_map, ObjectProperty.ιOfLE_map]
+      dsimp
+      rw [progeneratorEquivalence_functor_map_hom, projectiveEquivalence_functor_map_hom]
+      simp [-preadditiveCoyonedaObj_map, Category.assoc]
+
+@[simp]
+theorem isProjectiveCompProgeneratorEquivalenceFunctorIso_hom_app (hP : IsProgenerator P)
+    (X : (isProjective C).FullSubcategory) :
+    (hP.isProjectiveCompProgeneratorEquivalenceFunctorIso.hom.app X).hom =
+      eqToHom (by simp) :=
+  (rfl)
+
+@[simp]
+theorem isProjectiveCompProgeneratorEquivalenceFunctorIso_inv_app (hP : IsProgenerator P)
+    (X : (isProjective C).FullSubcategory) :
+    (hP.isProjectiveCompProgeneratorEquivalenceFunctorIso.inv.app X).hom =
+      eqToHom (by simp) :=
+  (rfl)
 
 end TauCeti.IsProgenerator

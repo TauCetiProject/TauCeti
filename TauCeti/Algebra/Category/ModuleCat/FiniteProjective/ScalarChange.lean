@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.BalancedExtension
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 

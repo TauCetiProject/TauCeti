@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.RingTheory.TensorProduct.Finite
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 
 /-!
 # Tensor products and duals of finite projective modules
@@ -20,9 +20,10 @@ dualization is a contravariant endofunctor of this subcategory, and the evaluati
 each module with its double dual. These constructions provide the affine tensor and dual
 operations to be compared with finite locally free sheaves on a scheme.
 
-The object property `finiteProjectiveModules` is defined in the Cartan-map development. This
-file uses that same property, so the affine vector-bundle category and the category used for
-algebraic `K₀` have the same objects and morphisms.
+The object property `finiteProjectiveModules` is defined in
+`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic`. This file uses that same property, so
+the affine vector-bundle category and the category used for algebraic `K₀` have the same objects
+and morphisms.
 -/
 
 public section

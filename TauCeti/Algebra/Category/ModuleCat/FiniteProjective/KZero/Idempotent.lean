@@ -503,7 +503,8 @@ theorem kZeroEquiv_of_mk_one (m : ℕ) :
   rw [kZeroEquiv_of_mk _ ⟨ModuleCat.of Rᵐᵒᵖ (Fin m → Rᵐᵒᵖ),
     finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
     (L.trans (LinearEquiv.ofTop _ htop).symm)]
-  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _) (.refl _ _)
+  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _)
+    (eqToIso (finiteProjectiveModulesRegular_obj Rᵐᵒᵖ)).toLinearEquiv
 
 /-- **Every class in `K₀(R)` is `[eRⁿ] - m[R]`.** Every element of `K₀(R)` is the difference of
 the class of the image of an idempotent matrix `e` acting on column vectors and the class of a

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 public import TauCeti.Algebra.Module.Projective.FreeComplement
 public import TauCeti.Algebra.Module.StableEquivalent
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split

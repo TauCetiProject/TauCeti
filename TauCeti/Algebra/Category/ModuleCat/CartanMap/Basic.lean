@@ -6,10 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
-public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
-public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
@@ -58,8 +54,6 @@ Artinian ring, in the indecomposable-projective and simple bases.
 ## Main definitions
 
 * `ModuleCat.isFG` and `TauCeti.finiteProjectiveModules`: the two object properties.
-* `TauCeti.finiteProjectiveModulesRegular`: the regular module `R`, as a finitely generated
-  projective `R`-module.
 * `TauCeti.finiteModulesExactStructure`, `TauCeti.finiteProjectiveModulesExactStructure` and
   `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on them, and on
   the modules admitting finite resolutions by finitely generated projectives, by the canonical
@@ -128,15 +122,6 @@ open CategoryTheory CategoryTheory.Limits
 universe u v
 
 variable (R : Type u) [Ring R]
-
-/-! ### Essential smallness -/
-
-instance : ObjectProperty.EssentiallySmall.{u} (ModuleCat.isFG.{u} R) :=
-  (ObjectProperty.exists_equivalence_iff _).1
-    ⟨_, _, ⟨equivSmallModel.{u} (FGModuleCat.{u} R)⟩⟩
-
-instance : ObjectProperty.EssentiallySmall.{u} (finiteProjectiveModules R) :=
-  ObjectProperty.EssentiallySmall.of_le (finiteProjectiveModules_le_finiteModules R)
 
 /-! ### The two exact structures -/
 

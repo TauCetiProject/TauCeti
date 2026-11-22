@@ -108,7 +108,9 @@ module. -/
 theorem of_finiteProjectiveModulesRegular_matrix :
     SplitK0.of.{u} (finiteProjectiveModulesRegular (Matrix ι ι R)) =
       Fintype.card ι • SplitK0.of.{u} (matrixColumn R ι) := by
-  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ ↦ matrixColumn R ι) (Matrix.linearEquivPi ι R),
+  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ ↦ matrixColumn R ι)
+      ((eqToIso (finiteProjectiveModulesRegular_obj (Matrix ι ι R))).toLinearEquiv.trans
+        (Matrix.linearEquivPi ι R)),
     Finset.sum_const, Finset.card_univ]
 
 /-! ### The Morita isomorphism -/
@@ -141,8 +143,12 @@ theorem matrixK0Equiv_of (M : (finiteProjectiveModules R).FullSubcategory)
 @[simp]
 theorem matrixK0Equiv_of_finiteProjectiveModulesRegular :
     matrixK0Equiv R ι (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) =
-      SplitK0.of.{u} (matrixColumn R ι) :=
-  matrixK0Equiv_of R ι _ _ (.refl _ _)
+      SplitK0.of.{u} (matrixColumn R ι) := by
+  let Rreg : (finiteProjectiveModules R).FullSubcategory :=
+    ⟨ModuleCat.of R R, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+  rw [SplitK0.of_congr.{u} (Y := Rreg)
+    (ObjectProperty.isoMk _ (eqToIso (finiteProjectiveModulesRegular_obj R)))]
+  exact matrixK0Equiv_of R ι Rreg (matrixColumn R ι) (.refl _ _)
 
 /-- The inverse Morita isomorphism sends the class of the column module to `[R]`. -/
 @[simp]
