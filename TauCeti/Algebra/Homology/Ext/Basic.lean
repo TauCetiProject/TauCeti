@@ -27,6 +27,9 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   (`TauCeti.ext_addEquiv₀_mk₀_comp` and `TauCeti.ext_addEquiv₀_comp_mk₀`);
 * the vanishing of `Extⁿ(X, Y)` when either of the two objects is a zero object, and its transport
   along an isomorphism of the first argument (`TauCeti.ext_eq_zero_of_iso`);
+* precomposition with a morphism that factors through a projective object kills `Extⁿ⁺¹`
+  (`TauCeti.ext_mk₀_comp_eq_zero_of_projective`), so `r` annihilates `Extⁿ⁺¹(X, Z)` when
+  `r • 𝟙 X` factors through a projective object (`TauCeti.ext_smul_eq_zero_of_projective`);
 * short exact cokernel sequences, the cokernel sequence of the chosen embedding into an injective
   object with the morphisms of such sequences extending a given morphism
   (`TauCeti.injectiveCokernelSequenceMap`), and a dimension-shift criterion for vanishing of the
@@ -148,6 +151,26 @@ theorem subsingleton_ext_of_isZero_right (X : C) (hY : IsZero Y) (n : ℕ) :
     Subsingleton (Ext.{w} X Y n) := by
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
   rw [← Ext.comp_mk₀_id x, hY.eq_of_src (𝟙 Y) 0, Ext.mk₀_zero, Ext.comp_zero]
+
+/-! ### Morphisms factoring through a projective object -/
+
+/-- Precomposition with a morphism `f ≫ g` that factors through a projective object `P` kills
+`Ext` in positive degree, since `Extⁿ⁺¹(P, Z) = 0`. -/
+theorem ext_mk₀_comp_eq_zero_of_projective {P Z : C} [Projective P] (f : X ⟶ P) (g : P ⟶ Y)
+    {n : ℕ} (x : Ext.{w} Y Z (n + 1)) :
+    (Ext.mk₀ (f ≫ g)).comp x (zero_add _) = 0 := by
+  rw [← Ext.mk₀_comp_mk₀_assoc, Ext.eq_zero_of_projective ((Ext.mk₀ g).comp x _), Ext.comp_zero]
+
+/-- If `r • 𝟙 X` factors through a projective object, then `r` annihilates `Extⁿ⁺¹(X, Z)`. For
+modules over a ring this applies when a submodule annihilated by `r` has projective quotient,
+for instance to an abelian group whose torsion has exponent `r` and whose torsion-free quotient
+is free. -/
+theorem ext_smul_eq_zero_of_projective (R : Type t) [Ring R] [Linear R C] {P Z : C}
+    [Projective P] {r : R} (f : X ⟶ P) (g : P ⟶ X) (hfg : f ≫ g = r • 𝟙 X) {n : ℕ}
+    (x : Ext.{w} X Z (n + 1)) :
+    r • x = 0 := by
+  rw [← ext_mk₀_comp_eq_zero_of_projective f g x, hfg, Ext.mk₀_smul, Ext.smul_comp,
+    Ext.mk₀_id_comp]
 
 /-! ### Dimension shifting along an injective embedding -/
 

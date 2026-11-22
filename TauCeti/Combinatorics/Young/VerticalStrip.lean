@@ -112,7 +112,7 @@ theorem isVerticalStrip_iff_interlacedBy_transpose :
   rw [isVerticalStrip_iff, interlacedBy_iff]
   constructor
   · intro h i
-    refine ⟨le_rowLen_of_forall_mem fun a ha => ?_, ?_⟩
+    refine ⟨le_rowLen_iff_forall_mem.mpr fun a ha => ?_, ?_⟩
     · -- A cell of `μ` in column `i + 1` sits in a row whose `ν`-part already reaches column `i`.
       rw [rowLen_transpose] at ha
       have hμa := _root_.YoungDiagram.mem_iff_lt_rowLen.mp

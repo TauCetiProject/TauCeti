@@ -14,6 +14,7 @@ import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Multiplication
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -26,7 +27,8 @@ operator
 `T_m f = 𝓕⁻ (m • 𝓕 f)`
 
 on `L²(E, F)`, where `𝓕 = MeasureTheory.Lp.fourierTransformₗᵢ` is the Fourier transform on `L²`.
-By Plancherel's theorem it is bounded, with `‖T_m‖ ≤ ‖m‖_∞`.
+By Plancherel's theorem it is conjugate to multiplication by `m`, so it is bounded with
+`‖T_m‖ = ‖m‖_∞` (for nonzero `F`).
 
 Mathlib defines Fourier multipliers on Schwartz functions and on tempered distributions
 (`SchwartzMap.fourierMultiplierCLM`, `TemperedDistribution.fourierMultiplierCLM`), but they are
@@ -46,7 +48,8 @@ defined, it agrees with Mathlib's multipliers.
   `MeasureTheory.Lp.eq_fourierMultiplierCLM_iff`, which characterizes `T_m` by it.
 * `MeasureTheory.Lp.norm_fourierMultiplierCLM_le`: the bound `‖T_m‖ ≤ ‖m‖_∞`, and
   `MeasureTheory.Lp.norm_fourierMultiplierCLM_toLp_le`: `‖T_m‖ ≤ C` for a symbol given by a
-  function bounded by `C` almost everywhere.
+  function bounded by `C` almost everywhere, and `MeasureTheory.Lp.norm_fourierMultiplierCLM`:
+  the equality `‖T_m‖ = ‖m‖_∞` for nonzero `F`.
 * `MeasureTheory.Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM`: `T_{m₁} ∘ T_{m₂} =
   T_{m₁ m₂}`, with linearity in the symbol and `T_c = c • id` for a constant symbol.
 * `MeasureTheory.Lp.adjoint_fourierMultiplierCLM`: the adjoint of `T_m` is `T_{star m}`, so a
@@ -168,6 +171,19 @@ theorem norm_fourierMultiplierCLM_toLp_le {g : E → ℂ} (hg : MemLp g ∞ volu
   (norm_fourierMultiplierCLM_le _).trans (Lp.norm_top_le_of_ae_bound hC
     (by filter_upwards [hg.coeFn_toLp, h] with ξ hξ hξ'; rwa [hξ]))
 
+/-- The `L²` operator norm of the multiplier with symbol `m` is exactly `‖m‖_∞`, for nonzero
+`F`. -/
+@[simp]
+theorem norm_fourierMultiplierCLM [Nontrivial F] : ‖fourierMultiplierCLM (E := E) F m‖ = ‖m‖ := by
+  refine (norm_fourierMultiplierCLM_le m).antisymm ?_
+  -- By Plancherel, `T_m` is conjugate to multiplication by `m`, whose norm is `‖m‖_∞`.
+  rw [← norm_multiplicationOperator (E := F) (p := 2) m]
+  refine opNorm_le_bound _ (norm_nonneg (fourierMultiplierCLM F m)) fun g ↦ ?_
+  -- Test `T_m` on the inverse Fourier transform of `g`, which has the same norm as `g`.
+  have h := (fourierMultiplierCLM F m).le_opNorm (𝓕⁻ g)
+  rwa [← norm_fourier_eq (fourierMultiplierCLM F m (𝓕⁻ g)), fourier_fourierMultiplierCLM,
+    ← norm_fourier_eq (𝓕⁻ g), fourier_fourierInv_eq, ← multiplicationOperator_apply] at h
+
 /-! ### Dependence on the symbol -/
 
 @[simp]
@@ -217,7 +233,9 @@ theorem fourierMultiplierCLM_compL_fourierMultiplierCLM :
     coeFn_lpSMul (r := 2) m₂ (𝓕 f),
     coeFn_lpSMul (r := 2) (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) (𝓕 f),
     coeFn_lpSMul (r := ∞) m₁ m₂] with x h₁ h₂ h₃ h₄
-  simp [h₁, h₂, h₃, h₄, smul_smul]
+  -- With the `L^∞` algebra instances in scope, `smul_eq_mul` and `Lp.smul_eq_mul` would rewrite
+  -- the Hölder product `m₁ • m₂` to `m₁ * m₂`, so `h₃` and `h₄` would no longer match.
+  simp [h₁, h₂, h₃, h₄, smul_smul, -smul_eq_mul, -Lp.smul_eq_mul]
 
 theorem fourierMultiplierCLM_fourierMultiplierCLM_apply :
     fourierMultiplierCLM F m₁ (fourierMultiplierCLM F m₂ f) =
