@@ -267,8 +267,8 @@ theorem volume_carrier_inter_strip (h₀ : P.vertex 0 = .inr ∞) {i : Fin n} (h
   have hv' := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi'
   have hlt := P.re_toComplex_vertex_lt_of_vertex_zero h₀ hi hi'
   -- both vertices lie on the semicircle, so their real parts lie in `[m - ρ, m + ρ]`
-  have hre₁ := Complex.re_mem_Icc_of_normSq_sub_le hρ.le hi₁.le
-  have hre₂ := Complex.re_mem_Icc_of_normSq_sub_le hρ.le hi₂.le
+  have hre₁ := Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hi₁.le
+  have hre₂ := Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hi₂.le
   rw [Complex.ofReal_re] at hre₁ hre₂
   rw [heq, volume_idealRegionAbove hρ hre₁.1 hre₂.2,
     vertexAngle_infty_of_re_lt hρ hv hv' hi₁ hi₂ hlt,

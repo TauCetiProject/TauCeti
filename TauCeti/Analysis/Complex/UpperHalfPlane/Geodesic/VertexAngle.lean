@@ -251,13 +251,6 @@ private theorem exists_vertexAngle_inl_infty_eq {A : ℍ} {q : ℍ ⊕ OnePoint 
       geodesicAngle_def, hv, velocity_def, smulDeriv_toPoint, Real.exp_zero, Complex.ofReal_one,
       mul_one, ← Complex.real_smul, InnerProductGeometry.angle_smul_left_of_pos _ _ A.im_pos]
 
-/-- A real point `x` on the circle of centre `m` and radius `ρ ≥ 0` in `ℂ` lies on the sphere of
-centre `m` and radius `ρ` in `ℝ`, since the inclusion `ℝ → ℂ` is an isometry. -/
-private theorem mem_sphere_of_normSq_sub_eq {x m ρ : ℝ} (hρ : 0 ≤ ρ)
-    (h : Complex.normSq ((x : ℂ) - m) = ρ ^ 2) : x ∈ Metric.sphere m ρ := by
-  rw [Metric.mem_sphere, ← Complex.isometry_ofReal.dist_eq, dist_eq_norm, Complex.norm_def, h,
-    Real.sqrt_sq hρ]
-
 /-- **The angle at the left vertex of a triangle with an ideal vertex at `∞`.** If `p` and `q`
 lie on the semicircle of centre `m` and radius `ρ` (or are among its ideal endpoints), with `p` to
 the left of `q`, the angle at `p` between the upward vertical and the direction to `q` is
@@ -280,9 +273,9 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     -- `m - ρ`, since it lies to the left of `q`, whose real part is at most `m + ρ`
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
     rw [toComplex_inr_coe] at hpm hpq ⊢
-    have hx := mem_sphere_of_normSq_sub_eq hρ.le hpm
+    have hx := Complex.mem_sphere_of_normSq_sub_eq hρ.le hpm
     simp only [Real.sphere_eq_pair m hρ.le, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
-    have hxρ := hpq.trans_le (Complex.re_mem_Icc_of_normSq_sub_le hρ.le hqm.le).2
+    have hxρ := hpq.trans_le (Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hqm.le).2
     simp only [Complex.ofReal_re] at hxρ
     rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero, hx.resolve_right hxρ.ne,
       sub_sub_cancel_left, neg_div, div_self hρ.ne', Real.arccos_neg_one]
@@ -309,9 +302,9 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     -- `m + ρ`, since it lies to the right of `p`, whose real part is at least `m - ρ`
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
     rw [toComplex_inr_coe] at hqm hpq ⊢
-    have hx := mem_sphere_of_normSq_sub_eq hρ.le hqm
+    have hx := Complex.mem_sphere_of_normSq_sub_eq hρ.le hqm
     simp only [Real.sphere_eq_pair m hρ.le, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
-    have hxρ := (Complex.re_mem_Icc_of_normSq_sub_le hρ.le hpm.le).1.trans_lt hpq
+    have hxρ := (Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hpm.le).1.trans_lt hpq
     simp only [Complex.ofReal_re] at hxρ
     rw [Complex.ofReal_re, vertexAngle_inr, hx.resolve_left hxρ.ne', add_sub_cancel_left,
       div_self hρ.ne', Real.arccos_one]
@@ -366,7 +359,7 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
     rw [hCre, hCim, ← hA₂]
     linarith [mul_lt_mul'' h₁ h₁ A.im_pos.le A.im_pos.le]
   · -- `D` is on the first circle, to the left of `A`, like `p`
-    exact Complex.lt_normSq_sub_of_normSq_eq (by rw [hA₁, hA₂, sub_self, sub_self])
+    exact Complex.lt_normSq_sub_of_normSq_sub_sub_eq _ (by rw [hA₁, hA₂, sub_self, sub_self])
       (by linarith) hDm.ge hpA (by rwa [coe_re])
   · rw [← hgC, mem_leftHalfPlane_iff, re_toPoint_inv_smul]
     exact div_neg_of_neg_of_pos (sub_neg.2 hDA) A.im_pos
