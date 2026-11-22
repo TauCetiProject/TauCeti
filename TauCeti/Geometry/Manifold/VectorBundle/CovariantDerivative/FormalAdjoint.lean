@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
 # The formal adjoint of a connection
@@ -137,9 +138,8 @@ theorem formalAdjoint_eq_zero_of_not_mdifferentiableAt {x : M}
 @[simp]
 theorem formalAdjoint_zero (x : M) :
     cov.formalAdjoint covT (0 : Π x : M, TangentSpace I x →L[ℝ] V x) x = 0 := by
-  rw [formalAdjoint_eq_sum cov covT _ x (stdOrthonormalBasis ℝ (TangentSpace I x)),
-    (covT.hom cov).isCovariantDerivativeOnUniv.zero]
-  simp
+  rw [formalAdjoint_def, (covT.hom cov).isCovariantDerivativeOnUniv.zero, map_zero, map_zero,
+    neg_zero]
 
 /-- The formal adjoint is additive on one-forms differentiable at the point. -/
 theorem formalAdjoint_add {β : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M}
@@ -148,10 +148,8 @@ theorem formalAdjoint_add {β : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M
     (hβ : MDiffAt
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (β y)) x) :
     cov.formalAdjoint covT (α + β) x = cov.formalAdjoint covT α x + cov.formalAdjoint covT β x := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  simp only [formalAdjoint_eq_sum cov covT _ x b,
-    (covT.hom cov).isCovariantDerivativeOnUniv.add hα hβ, add_apply,
-    Finset.sum_add_distrib, neg_add]
+  simp only [formalAdjoint_def, (covT.hom cov).isCovariantDerivativeOnUniv.add hα hβ, map_add,
+    neg_add]
 
 /-- The formal adjoint commutes with multiplication of the one-form by a constant. -/
 @[simp]
@@ -159,10 +157,8 @@ theorem formalAdjoint_const_smul (c : ℝ) (x : M) :
     cov.formalAdjoint covT (c • α) x = c • cov.formalAdjoint covT α x := by
   by_cases hα : MDiffAt
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (α y)) x
-  · set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-    simp only [formalAdjoint_eq_sum cov covT _ x b,
-      (covT.hom cov).isCovariantDerivativeOnUniv.smul_const c hα, smul_apply,
-      ← Finset.smul_sum, smul_neg]
+  · simp only [formalAdjoint_def, (covT.hom cov).isCovariantDerivativeOnUniv.smul_const c hα,
+      map_smul, smul_neg]
   · rcases eq_or_ne c 0 with rfl | hc
     · simp
     · have hcα : ¬MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
@@ -197,16 +193,17 @@ theorem formalAdjoint_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x)
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (α y)) x) :
     cov.formalAdjoint covT (f • α) x =
       f x • cov.formalAdjoint covT α x - α x (TauCeti.Manifold.mgradient I f x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  -- `∑ᵢ df(eᵢ) α(eᵢ) = α(grad f)`, since `grad f = ∑ᵢ df(eᵢ) eᵢ`.
-  have hgrad : ∑ i, d% f x (b i) • α x (b i) = α x (TauCeti.Manifold.mgradient I f x) := by
-    conv_rhs => rw [← b.sum_repr' (TauCeti.Manifold.mgradient I f x)]
-    simp only [map_sum, map_smul, TauCeti.Manifold.inner_mgradient_right]
-  simp only [formalAdjoint_eq_sum cov covT _ x b,
-    (covT.hom cov).isCovariantDerivativeOnUniv.leibniz hα hf, add_apply,
-    smul_apply, ContinuousLinearMap.smulRight_apply, Finset.sum_add_distrib,
-    ← Finset.smul_sum, hgrad]
-  module
+  -- The Leibniz term is the rank-one map `(v, w) ↦ ⟪grad f, v⟫ • α w`, whose trace is
+  -- `α (grad f)`.
+  have hdf : ((d% f x : TangentSpace I x →L[ℝ] ℝ) : TangentSpace I x →ₗ[ℝ] ℝ) =
+      innerₗ (TangentSpace I x) (TauCeti.Manifold.mgradient I f x) :=
+    LinearMap.ext fun w ↦ by
+      rw [ContinuousLinearMap.coe_coe, innerₗ_apply_apply, TauCeti.Manifold.inner_mgradient]
+  rw [formalAdjoint_def, formalAdjoint_def,
+    (covT.hom cov).isCovariantDerivativeOnUniv.leibniz hα hf, map_add, map_smul,
+    ContinuousLinearMap.toLinearMap₁₂_smulRight, hdf, map_add, map_smul,
+    LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe, neg_add,
+    smul_neg, sub_eq_add_neg]
 
 variable [T2Space M] [ContMDiffCovariantDerivative cov ∞] {σ : Π x : M, V x}
 
@@ -215,9 +212,9 @@ variable [T2Space M] [ContMDiffCovariantDerivative cov ∞] {σ : Π x : M, V x}
 theorem roughLaplacian_eq_formalAdjoint (hσ : CMDiff ∞ (T% σ)) :
     cov.roughLaplacian covT σ = cov.formalAdjoint covT (cov σ) := by
   funext x
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  simp only [roughLaplacian_eq_sum cov covT σ x b, formalAdjoint_eq_sum cov covT _ x b,
-    secondCovariantDerivative_eq_hom_apply cov covT hσ]
+  rw [roughLaplacian_def, formalAdjoint_def]
+  congr 2
+  exact LinearMap.ext₂ (secondCovariantDerivative_eq_hom_apply cov covT hσ x)
 
 end Definition
 

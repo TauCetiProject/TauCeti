@@ -112,8 +112,7 @@ theorem hasDerivWithinAt_chartVolumeDensity (α : M) (hx : x ∈ (chartAt H α).
     have hb (i) : b i = e i := (chartLocalFrame_apply_of_mem_chart_source α hx i).symm
     have hgram : Matrix.gram ℝ b = G t := by
       rw [hGt]
-      ext i j
-      rw [Matrix.gram_apply, chartGramMatrix_apply, hb, hb]
+      simpa using Riemannian.Tensor.gram_basisAt_finBasis_reindex (I := I) (Equiv.refl _) α hx'
     have hmat : LinearMap.BilinForm.toMatrix b h = G' := by
       ext i j
       simp only [LinearMap.BilinForm.toMatrix_apply, hb, G', Matrix.of_apply]

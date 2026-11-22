@@ -162,6 +162,7 @@ theorem metricTrace_innerₗ_smulRight (u : W) (A : W →ₗ[ℝ] N) :
 
 /-- The metric trace of the bilinear map `(v, w) ↦ C v (⟪u, w⟫ • p)` is `C u p`: contracting a
 bilinear map `C` against the rank-one map `w ↦ ⟪u, w⟫ • p` evaluates `C` at `u`. -/
+@[simp]
 theorem metricTrace_compl₂_innerₗ_smulRight {P : Type*} [AddCommMonoid P] [Module ℝ P]
     (C : W →ₗ[ℝ] P →ₗ[ℝ] N) (u : W) (p : P) :
     metricTrace (C.compl₂ ((innerₗ W u).smulRight p)) = C u p := by

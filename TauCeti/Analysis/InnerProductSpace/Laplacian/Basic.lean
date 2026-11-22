@@ -18,6 +18,7 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
@@ -201,8 +202,8 @@ representative of `f`. -/
     traceL (f.smulRight A) = A ((InnerProductSpace.toDual ℝ E).symm f) := by
   -- The functional `f` is the inner product with its Riesz representative.
   have hf : innerₗ E ((InnerProductSpace.toDual ℝ E).symm f) = (f : E →ₗ[ℝ] ℝ) :=
-    LinearMap.ext fun v ↦ by
-      rw [innerₗ_apply_apply, InnerProductSpace.toDual_symm_apply, ContinuousLinearMap.coe_coe]
+    (LinearMap.congr_fun toLinearMap₁₂_innerSL _).symm.trans
+      (congrArg ContinuousLinearMap.toLinearMap (InnerProductSpace.innerSL_toDual_symm f))
   rw [ContinuousLinearMap.traceL_apply_eq_metricTrace, ContinuousLinearMap.toLinearMap₁₂_smulRight,
     ← hf, LinearMap.BilinMap.metricTrace_innerₗ_smulRight, ContinuousLinearMap.coe_coe]
 

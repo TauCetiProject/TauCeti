@@ -58,8 +58,8 @@ equations. None of these hypotheses is used by the first-order calculus of this 
   such as the chirality of an even-dimensional Clifford module, this gives `D γ = -γ D`.
 * **Change of connection.** Adding to `∇` a one-form `A` with values in the endomorphisms of `V`
   adds the term of order zero `∑ᵢ c(eᵢ) A(eᵢ)`, the metric trace of `(u, w) ↦ c(u) A(w)`, to `D`
-  (`diracOperator_addOneForm`). When `A(w) σ = θ(w) L σ` at `x` for a real one-form `θ` and an
-  endomorphism `L`, this term is `c(θ♯) L σ`
+  (`diracOperator_addOneForm`). When `A(w) σ = θ(w) v` at `x` for a real one-form `θ` and a
+  vector `v` of the fibre, this term is `c(θ♯) v`
   (`diracOperator_addOneForm_of_forall_apply_eq`). For the spin connection of `A + a`, with `a`
   an imaginary one-form on the determinant line, `∇_{A + a} = ∇_A + a / 2`, so this is the law
   `D_{A + a} = D_A + c(a) / 2`. More generally, if `A_x(σ_x) = ⟪u, ·⟫ v`, the change is `c(u) v`
@@ -187,10 +187,14 @@ For a gauge transformation `u` commuting with `c` and the transformed connection
 theorem diracOperator_eq_apply_of_eq_comp (cov' : _root_.CovariantDerivative I F V) {x : M}
     (g : V x →L[ℝ] V x) (hg : ∀ v, g ∘L c x v = c x v ∘L g) (h : cov' τ x = g ∘L cov σ x) :
     cov'.diracOperator c τ x = g (cov.diracOperator c σ x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [diracOperator_eq_sum cov' c τ x b, diracOperator_eq_sum cov c σ x b, h, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  exact (DFunLike.congr_fun (hg (b i)) (cov σ x (b i))).symm
+  rw [diracOperator_def, diracOperator_def, ← ContinuousLinearMap.coe_coe g,
+    ← LinearMap.BilinMap.metricTrace_compr₂]
+  congr 1
+  refine LinearMap.ext₂ fun u w ↦ ?_
+  simp only [LinearMap.compl₂_apply, LinearMap.compr₂_apply,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ContinuousLinearMap.coe_coe, h,
+    ContinuousLinearMap.comp_apply]
+  exact (DFunLike.congr_fun (hg u) (cov σ x w)).symm
 
 /-! ### The Leibniz rule and the principal symbol -/
 
@@ -286,16 +290,16 @@ theorem diracOperator_addOneForm_of_apply_eq_inner_smul
     ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-- **Change of connection by a scalar one-form.** If the endomorphism-valued one-form `A` acts on
-`σ` at `x` as `A(w)(σ_x) = θ(w) L(σ_x)`, for a real covector `θ` and an endomorphism `L` of the
-fibre, then adding `A` to `∇` adds `c(θ♯) L σ` to the Dirac operator at `x`, where `θ♯` is the
-metric dual of `θ`. For the spin connection of a unitary connection on the determinant line,
-changing the connection by an imaginary one-form `a = i θ` changes the spin connection by
-`a / 2`, that is `L = i / 2`, and this is the law `D_{A + a} = D_A + c(a) / 2`. -/
+`σ` at `x` as `A(w)(σ_x) = θ(w) v`, for a real covector `θ` and a vector `v` of the fibre, then
+adding `A` to `∇` adds `c(θ♯) v` to the Dirac operator at `x`, where `θ♯` is the metric dual of
+`θ`. For the spin connection of a unitary connection on the determinant line, changing the
+connection by an imaginary one-form `a = i θ` changes the spin connection by `a / 2`, that is
+`v = (i / 2) σ_x`, and this is the law `D_{A + a} = D_A + c(a) / 2`. -/
 theorem diracOperator_addOneForm_of_forall_apply_eq [IsManifold I 1 M]
     (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) (σ : Π y : M, V y) {x : M}
-    (θ : TangentSpace I x →L[ℝ] ℝ) (L : V x →L[ℝ] V x) (hA : ∀ w, A x (σ x) w = θ w • L (σ x)) :
+    (θ : TangentSpace I x →L[ℝ] ℝ) (v : V x) (hA : ∀ w, A x (σ x) w = θ w • v) :
     (cov.addOneForm A).diracOperator c σ x =
-      cov.diracOperator c σ x + c x (Riemannian.Tensor.rieszDual x θ) (L (σ x)) :=
+      cov.diracOperator c σ x + c x (Riemannian.Tensor.rieszDual x θ) v :=
   cov.diracOperator_addOneForm_of_apply_eq_inner_smul c A fun w ↦ by
     rw [hA, Riemannian.Tensor.inner_rieszDual]
 
@@ -311,9 +315,12 @@ theorem apply_diracOperator_eq_neg_smul {x : M} (γ : Module.End ℝ (V x)) (a :
     (hc : ∀ (v : TangentSpace I x) (s : V x), γ (c x v s) = -c x v (γ s))
     (hσ : ∀ w, γ (cov σ x w) = a • cov σ x w) :
     γ (cov.diracOperator c σ x) = -(a • cov.diracOperator c σ x) := by
-  rw [diracOperator_eq_sum cov c σ x (stdOrthonormalBasis ℝ (TangentSpace I x)), map_sum,
-    Finset.smul_sum, ← Finset.sum_neg_distrib]
-  simp only [hc, hσ, map_smul]
+  rw [diracOperator_def, ← LinearMap.BilinMap.metricTrace_compr₂, ← neg_smul, ← map_smul]
+  congr 1
+  refine LinearMap.ext₂ fun u w ↦ ?_
+  simp only [LinearMap.compr₂_apply, LinearMap.compl₂_apply, LinearMap.neg_apply,
+    LinearMap.smul_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+    ContinuousLinearMap.coe_coe, hc, hσ, map_smul, neg_smul]
 
 /-! ### Naturality between bundles -/
 
@@ -338,9 +345,11 @@ theorem diracOperator_linearMap_apply {x : M}
     (hc : ∀ (v : TangentSpace I x) (s : V x), L x (c x v s) = cW x v (L x s))
     (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
     covW.diracOperator cW (fun y ↦ L y (σ y)) x = L x (cov.diracOperator c σ x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [diracOperator_eq_sum covW cW _ x b, diracOperator_eq_sum cov c _ x b, map_sum]
-  simp only [hL, hc]
+  rw [diracOperator_def, diracOperator_def, ← LinearMap.BilinMap.metricTrace_compr₂]
+  congr 1
+  refine LinearMap.ext₂ fun u w ↦ ?_
+  simp only [LinearMap.compl₂_apply, LinearMap.compr₂_apply,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ContinuousLinearMap.coe_coe, hL, hc]
 
 /-- **Anti-naturality of the Dirac operator.** If the fibrewise linear map `L` anticommutes with
 the Clifford multiplications at `x`, `L c_V(v) = -c_W(v) L`, and intertwines the connections along
@@ -351,10 +360,12 @@ theorem diracOperator_linearMap_apply_eq_neg {x : M}
     (hc : ∀ (v : TangentSpace I x) (s : V x), L x (c x v s) = -cW x v (L x s))
     (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
     covW.diracOperator cW (fun y ↦ L y (σ y)) x = -L x (cov.diracOperator c σ x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [diracOperator_eq_sum covW cW _ x b, diracOperator_eq_sum cov c _ x b, map_sum,
-    ← Finset.sum_neg_distrib]
-  simp only [hL, hc, neg_neg]
+  rw [diracOperator_def, diracOperator_def, ← LinearMap.BilinMap.metricTrace_compr₂, ← map_neg]
+  congr 1
+  refine LinearMap.ext₂ fun u w ↦ ?_
+  simp only [LinearMap.compl₂_apply, LinearMap.compr₂_apply, LinearMap.neg_apply,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, ContinuousLinearMap.coe_coe, hL, hc,
+    neg_neg]
 
 end Naturality
 

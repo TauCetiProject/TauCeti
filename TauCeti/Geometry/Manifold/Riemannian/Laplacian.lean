@@ -631,6 +631,24 @@ theorem hessian_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
   rw [← I.hessianForm_apply, I.hessianForm_neg_of_mdifferentiableAt_mgradient hf, neg_apply,
     neg_apply, I.hessianForm_apply]
 
+/-- The Hessian form respects subtraction at `x` when both functions are differentiable near `x`
+and their gradients are differentiable at `x`. -/
+theorem _root_.ModelWithCorners.hessianForm_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M} (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
+    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
+    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (f - g) x = I.hessianForm f x - I.hessianForm g x := by
+  have hg'' : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, mgradient I (-g) y⟩ : TangentBundle I M)) x := by
+    simpa only [mgradient_neg, Pi.neg_apply] using mdifferentiableAt_neg_section hg'
+  -- Instance search for `AddGroup` on the continuous bilinear forms on `T_x M` times out; supply it
+  -- from their `AddCommGroup` instance.
+  let _ : AddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) := inferInstance
+  rw [sub_eq_add_neg f g, I.hessianForm_add_of_mdifferentiableAt_mgradient hf
+    (hg.mono fun _ hy ↦ hy.neg) hf' hg'', I.hessianForm_neg_of_mdifferentiableAt_mgradient hg',
+    ← sub_eq_add_neg]
+
 /-- The Hessian respects subtraction at `x` when both functions are differentiable near `x` and
 their gradients are differentiable at `x`. -/
 theorem hessian_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
@@ -640,25 +658,8 @@ theorem hessian_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
     (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x)
     (v w : TangentSpace I x) :
     hessian I (f - g) x v w = hessian I f x v w - hessian I g x v w := by
-  have hneg : mgradient I (-g) = -mgradient I g := funext fun _ ↦ mgradient_neg
-  have hg'' : MDifferentiableAt I I.tangent
-      (fun y ↦ (⟨y, mgradient I (-g) y⟩ : TangentBundle I M)) x := by
-    rw [hneg]
-    exact mdifferentiableAt_neg_section hg'
-  rw [sub_eq_add_neg, hessian_add_of_mdifferentiableAt_mgradient I hf (hg.mono fun _ hy ↦ hy.neg)
-    hf' hg'', hessian_neg_of_mdifferentiableAt_mgradient I hg', sub_eq_add_neg]
-
-/-- The Hessian form respects subtraction at `x` when both functions are differentiable near `x`
-and their gradients are differentiable at `x`. -/
-theorem _root_.ModelWithCorners.hessianForm_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ}
-    {x : M} (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
-    (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
-    (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
-    (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
-    I.hessianForm (f - g) x = I.hessianForm f x - I.hessianForm g x :=
-  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
-    rw [sub_apply, sub_apply, I.hessianForm_apply, I.hessianForm_apply, I.hessianForm_apply,
-      hessian_sub_of_mdifferentiableAt_mgradient I hf hg hf' hg']
+  rw [← I.hessianForm_apply, I.hessianForm_sub_of_mdifferentiableAt_mgradient hf hg hf' hg',
+    sub_apply, sub_apply, I.hessianForm_apply, I.hessianForm_apply]
 
 /-- The Hessian form of a function that is `C²` at `x` is symmetric. -/
 theorem _root_.ModelWithCorners.flip_hessianForm {f : M → ℝ} {x : M}
@@ -822,8 +823,11 @@ differentiable. -/
 theorem laplaceBeltrami_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
     (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
     laplaceBeltrami I (-f) x = -laplaceBeltrami I f x := by
-  rw [← neg_one_smul ℝ f, laplaceBeltrami_smul_of_mdifferentiableAt_mgradient I (-1) hf,
-    neg_one_mul]
+  -- Instance search for `AddGroup` on the continuous bilinear forms on `T_x M` times out; supply it
+  -- from their `AddCommGroup` instance.
+  let _ : AddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) := inferInstance
+  simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_neg_of_mdifferentiableAt_mgradient hf, map_neg]
 
 /-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
 theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
@@ -838,12 +842,11 @@ theorem laplaceBeltrami_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x 
     (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
     (hg' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x) :
     laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x := by
-  have hg'' : MDifferentiableAt I I.tangent
-      (fun y ↦ (⟨y, mgradient I (-g) y⟩ : TangentBundle I M)) x := by
-    simpa only [mgradient_neg, Pi.neg_apply] using mdifferentiableAt_neg_section hg'
-  rw [sub_eq_add_neg, laplaceBeltrami_add_of_mdifferentiableAt_mgradient I hf
-    (hg.mono fun _ hy ↦ hy.neg) hf' hg'', laplaceBeltrami_neg_of_mdifferentiableAt_mgradient I hg',
-    sub_eq_add_neg]
+  -- Instance search for `AddGroup` on the continuous bilinear forms on `T_x M` times out; supply it
+  -- from their `AddCommGroup` instance.
+  let _ : AddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) := inferInstance
+  simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
+    I.hessianForm_sub_of_mdifferentiableAt_mgradient hf hg hf' hg', map_sub]
 
 /-- The Laplace–Beltrami operator is additive with respect to subtraction of `C²` functions. -/
 theorem laplaceBeltrami_sub {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
