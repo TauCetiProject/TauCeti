@@ -21,6 +21,8 @@ and powers of a scalar acting invertibly on `M` act invertibly. For instance, th
 
 * `IsUnit.algebraMap_of_dvd`: a divisor of a scalar mapping to a unit maps to a unit.
 * `IsUnit.algebraMap_powers`: the powers of a scalar mapping to a unit map to units.
+* `IsUnit.val_unit_zpow_eq_mul_algebraMap_pow_of_le`: for a scalar `a` mapping to a unit and
+  integers `m ≤ n`, the power `a ^ n` in `A` is `a ^ m` times the image of `a ^ (n - m)`.
 -/
 
 public section
@@ -41,5 +43,14 @@ theorem algebraMap_powers {a : R} (h : IsUnit (algebraMap R A a)) (x : Submonoid
     IsUnit (algebraMap R A x) := by
   obtain ⟨_, k, rfl⟩ := x
   simpa using h.pow k
+
+/-- For a scalar `a` mapping to a unit of an `R`-algebra and integers `m ≤ n`, the integer power
+`a ^ n` of that unit is `a ^ m` times the image of the natural power `a ^ (n - m)`. -/
+theorem val_unit_zpow_eq_mul_algebraMap_pow_of_le {a : R} (h : IsUnit (algebraMap R A a))
+    {m n : ℤ} (hmn : m ≤ n) :
+    ((h.unit ^ n : Aˣ) : A) = (h.unit ^ m : Aˣ) * algebraMap R A (a ^ (n - m).toNat) := by
+  have hn : n = m + ((n - m).toNat : ℕ) := by omega
+  conv_lhs => rw [hn, zpow_add, zpow_natCast]
+  simp
 
 end IsUnit
