@@ -56,6 +56,8 @@ consequence `IsCompactOperator.exists_dist_lt_of_norm_le`.
 * `IsCompactOperator.isClosed_range_one_sub`: `range (1 - K)` is closed; neither `X` nor `𝕜` need
   be complete.
 * `IsCompactOperator.isClosed_range_pow_one_sub`: `range ((1 - K) ^ n)` is closed.
+* `IsCompactOperator.exists_eq_succ_of_chain`: a decreasing chain of subspaces, each closed in
+  the previous one, on which `1 - K` steps down the chain, stabilises.
 * `IsCompactOperator.finiteDimensional_quotient_range_one_sub`: `X ⧸ range (1 - K)` is
   finite dimensional.
 
@@ -159,11 +161,13 @@ theorem _root_.IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker (hK : Is
   rw [hy0, norm_zero] at hyge
   exact hyge.not_gt (by positivity)
 
-/-- A decreasing chain of closed subspaces stable under `1 - K`, in the sense that `1 - K` carries
-the `n`-th one into the `(n + 1)`-st, cannot be strictly decreasing. -/
-private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompactOperator K)
-    {V : ℕ → Submodule 𝕜 X}
-    (hmono : ∀ n, V (n + 1) ≤ V n) (hclosed : ∀ n, IsClosed ((V n : Set X)))
+/-- A decreasing chain of subspaces, each closed in the previous one and stable under `1 - K` in
+the sense that `1 - K` carries the `n`-th one into the `(n + 1)`-st, cannot be strictly decreasing.
+For a chain of closed subspaces `hV : ∀ n, IsClosed (V n : Set X)`, the closedness hypothesis is
+`fun n ↦ (hV (n + 1)).preimage continuous_subtypeVal`. -/
+theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompactOperator K)
+    {V : ℕ → Submodule 𝕜 X} (hmono : ∀ n, V (n + 1) ≤ V n)
+    (hclosed : ∀ n, IsClosed (((↑) : V n → X) ⁻¹' V (n + 1)))
     (hstep : ∀ n, ∀ x ∈ V n, x - K x ∈ V (n + 1)) :
     ∃ p, V (p + 1) = V p := by
   by_contra! hcon
@@ -171,8 +175,7 @@ private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompact
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   -- Riesz's lemma gives a bounded sequence whose images under `K` stay `1` apart.
   choose f hfmem hfnorm hfsep using fun n =>
-    riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖)
-      ((hclosed (n + 1)).preimage continuous_subtypeVal) ((hmono n).lt_of_ne (hcon n))
+    riesz_lemma_of_norm_lt_of_lt hc (lt_add_one ‖c‖) (hclosed n) ((hmono n).lt_of_ne (hcon n))
   have key : ∀ m n : ℕ, m < n → 1 ≤ ‖K (f m) - K (f n)‖ := by
     intro m n hmn
     have hy : (f m - K (f m)) + f n - (f n - K (f n)) ∈ V (m + 1) :=
@@ -205,10 +208,12 @@ theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub
     (hK : IsCompactOperator K) :
     ∃ p : ℕ, LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ (p + 1)) =
       LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ p) := by
-  refine IsCompactOperator.exists_eq_succ_of_chain hK (fun n ↦ ?_)
-    (hK.isClosed_range_pow_one_sub) ?_
+  refine IsCompactOperator.exists_eq_succ_of_chain hK
+    (V := fun n ↦ LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n)) (fun n ↦ ?_)
+    (fun n ↦ ?_) ?_
   · rw [pow_succ, Module.End.mul_eq_comp]
     exact LinearMap.range_comp_le_range _ _
+  · exact (hK.isClosed_range_pow_one_sub (n + 1)).preimage continuous_subtypeVal
   · intro n x hx
     obtain ⟨z, rfl⟩ := hx
     refine ⟨z, ?_⟩

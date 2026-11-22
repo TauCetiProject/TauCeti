@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.Normed.Group.Quotient
 public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
-public import TauCeti.Analysis.Normed.Module.RieszLemma
+public import TauCeti.Analysis.Normed.Group.RieszLemma
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Span.Basic
