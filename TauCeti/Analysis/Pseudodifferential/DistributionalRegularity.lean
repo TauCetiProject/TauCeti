@@ -228,6 +228,34 @@ private theorem sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered
     smulLeftCLM_iteratedLineDerivOp_cutoffTempered T fun x hx ↦ h x (hψi hx)]
   simp [ψi, cutoffTempered_smulLeftCLM]
 
+/-- The operator `P = ∑ i ∈ t, c i g i ∂^(m i)` with coefficients cut off by `ψ`: its coefficients
+`c i (g i ψ)` are smooth and compactly supported, and where `ψ = 1` and the coefficients of `b`
+are those of `P` near the support of `φ`, its symbol agrees with that of `b` there. -/
+private theorem exists_cutoff_coefficient_eq (hg : ∀ i, ContDiff ℝ ∞ (g i)) {M : ℕ}
+    (hk : ∀ i ∈ t, k i ≤ M) (ψ : 𝓓(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)}
+    {b : ι → CoordinateSpace n → ℂ →L[ℂ] ℂ} (hb : ∀ i ∈ t, ContDiff ℝ ∞ (b i))
+    (hbψ : ∀ᶠ y in 𝓝ˢ (tsupport φ),
+      ψ y = 1 ∧ ∀ i, b i y = (c i * g i y) • ContinuousLinearMap.id ℂ ℂ) :
+    ∃ hβ : ∀ i ∈ t, ContDiff ℝ ∞ fun y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y,
+      (∀ i ∈ t, HasCompactSupport fun y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y) ∧
+      (ClassicalSymbol.ofDifferentialSymbol M t m
+        (fun i y ↦ (c i * TestFunction.smulLeftCLM (hg i) ψ y) • ContinuousLinearMap.id ℂ ℂ)
+        (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.HasCompactSpatialSupport ∧
+      ∀ᶠ y in 𝓝ˢ (tsupport φ), ∀ ξ,
+        (ClassicalSymbol.ofDifferentialSymbol M t m
+          (fun i y ↦ (c i * TestFunction.smulLeftCLM (hg i) ψ y) • ContinuousLinearMap.id ℂ ℂ)
+          (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.coefficient (y, ξ) =
+        (ClassicalSymbol.ofDifferentialSymbol M t m b hb hk).toSymbol.coefficient (y, ξ) := by
+  have hβc (i : ι) (_ : i ∈ t) :
+      HasCompactSupport fun y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y :=
+    (TestFunction.smulLeftCLM (hg i) ψ).hasCompactSupport.mul_left
+  refine ⟨fun i _ ↦ contDiff_const.mul (TestFunction.smulLeftCLM (hg i) ψ).contDiff, hβc,
+    ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m _ _ hk
+      fun i hi ↦ (hβc i hi).smul_right, ?_⟩
+  filter_upwards [hbψ] with y ⟨hψy, hby⟩ ξ
+  simp only [ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
+    hby, TestFunction.smulLeftCLM_apply, hψy, Complex.real_smul, mul_one]
+
 /-- The analytic core of elliptic regularity: given cutoffs `χ = 1` on the supports of `ψ` and
 `φ`, and a symbol elliptic above some radius whose coefficients are those of `P` where `ψ = 1`
 near the support of `φ`, `ψ P T ∈ H^{s,p}` implies `φ T ∈ H^{s + M,p}`, for `1 < p < ∞`. -/
@@ -245,11 +273,7 @@ private theorem memSobolev_cutoffTempered_of_isEllipticAbove {p : ℝ≥0∞} [F
   -- `u = χ T` has finite order on the `Lᵖ` scale.
   obtain ⟨r, hr⟩ := T.exists_memSobolev_cutoffTempered_of_one_lt hp hp_top χ
   -- The operator with coefficients cut off by `ψ`, acting on `u`.
-  set β : ι → CoordinateSpace n → ℂ := fun i y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y
-  have hβ (i : ι) (_ : i ∈ t) : ContDiff ℝ ∞ (β i) :=
-    contDiff_const.mul (TestFunction.smulLeftCLM (hg i) ψ).contDiff
-  have hβc (i : ι) (_ : i ∈ t) : HasCompactSupport (β i) :=
-    (TestFunction.smulLeftCLM (hg i) ψ).hasCompactSupport.mul_left
+  obtain ⟨hβ, hβc, hc, hcoef⟩ := exists_cutoff_coefficient_eq hg hk ψ hb hbψ
   have hu := ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id M t
     m hk hβ hβc _ hp hp_top hr.toBesselPotentialSpace
   rw [hr.toBesselPotentialSpace_toDistr, sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered hg T
@@ -258,15 +282,8 @@ private theorem memSobolev_cutoffTempered_of_isEllipticAbove {p : ℝ≥0∞} [F
   have hφS : (φS : CoordinateSpace n → ℂ) = φ :=
     funext (φ.hasCompactSupport.toSchwartzMap_toFun φ.contDiff)
   have hreg := hR.memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace
-    (hφS ▸ φ.hasCompactSupport)
-    (ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m
-      (fun i x ↦ β i x • ContinuousLinearMap.id ℂ ℂ) (fun i hi ↦ (hβ i hi).smul contDiff_const)
-      hk fun i hi ↦ (hβc i hi).smul_right) (by
-    rw [hφS]
-    filter_upwards [hbψ] with y ⟨hψy, hby⟩ ξ
-    simp only [ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
-      hby, β, TestFunction.smulLeftCLM_apply, hψy, Complex.real_smul, mul_one])
-    hp hp_top (s := s) hr.toBesselPotentialSpace (by rw [hu]; exact hPψ)
+    (hφS ▸ φ.hasCompactSupport) hc (by rwa [hφS]) hp hp_top (s := s) hr.toBesselPotentialSpace
+    (by rw [hu]; exact hPψ)
   rwa [hφS, hr.toBesselPotentialSpace_toDistr, smulLeftCLM_cutoffTempered T hχφ] at hreg
 
 /-- The cutoffs of the regularity argument at a point `x` where `P = ∑ i ∈ t, c i g i ∂^(m i)` is
@@ -414,14 +431,7 @@ private theorem memBesov_cutoffTempered_of_isEllipticAbove
     (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q)).ne' T χ
   obtain ⟨r₂, hr₂⟩ := T.exists_memSobolev_cutoffTempered χ
   -- The operator with coefficients cut off by `ψ`, acting on `u`, is `ψ P T`.
-  set β : ι → CoordinateSpace n → ℂ := fun i y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y
-  have hβ (i : ι) (_ : i ∈ t) : ContDiff ℝ ∞ (β i) :=
-    contDiff_const.mul (TestFunction.smulLeftCLM (hg i) ψ).contDiff
-  have hβc (i : ι) (_ : i ∈ t) : HasCompactSupport (β i) :=
-    (TestFunction.smulLeftCLM (hg i) ψ).hasCompactSupport.mul_left
-  have hc := ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m
-    (fun i x ↦ β i x • ContinuousLinearMap.id ℂ ℂ) (fun i hi ↦ (hβ i hi).smul contDiff_const)
-    hk fun i hi ↦ (hβc i hi).smul_right
+  obtain ⟨hβ, hβc, hc, hcoef⟩ := exists_cutoff_coefficient_eq hg hk ψ hb hbψ
   have hu := ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol M t m hk
     (fun i hi ↦ (hβc i hi).hasTemperateGrowth (hβ i hi)) hc r₂ hr₂.toBesselPotentialSpace
   rw [Symbol.toDistr_quantizeSobolev, hr₂.toBesselPotentialSpace_toDistr,
@@ -431,12 +441,7 @@ private theorem memBesov_cutoffTempered_of_isEllipticAbove
     funext (φ.hasCompactSupport.toSchwartzMap_toFun φ.contDiff)
   obtain ⟨_, hab, -⟩ := hR.exists_isAsymptoticSum_sharpTerm
   have hreg := Symbol.memBesov_smulLeftCLM_of_memBesov_quantizeTempered hab
-    (hφS ▸ φ.hasCompactSupport) hc (by
-    rw [hφS]
-    filter_upwards [hbψ] with y ⟨hψy, hby⟩ ξ
-    simp only [ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
-      hby, β, TestFunction.smulLeftCLM_apply, hψy, Complex.real_smul, mul_one]) hr
-    (by rw [hu]; exact hPψ)
+    (hφS ▸ φ.hasCompactSupport) hc (by rwa [hφS]) hr (by rw [hu]; exact hPψ)
   rwa [hφS, smulLeftCLM_cutoffTempered T hχφ] at hreg
 
 /-- **Interior elliptic regularity for differential operators on Besov spaces.** Let

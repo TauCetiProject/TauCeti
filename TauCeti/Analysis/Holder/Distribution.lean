@@ -13,6 +13,8 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
+import TauCeti.Analysis.Holder.CompLinear
+import TauCeti.Analysis.Holder.Inclusion
 import TauCeti.Analysis.Holder.Localization
 
 /-!
@@ -52,7 +54,11 @@ The argument for the identification:
   `Distribution.isLocallyCkHolderAt_iff`, `Distribution.IsLocallyCkHolderAt.mem` and
   `Distribution.isOpen_setOf_isLocallyCkHolderAt`; every bounded `C^{k,α}` function is one
   (`Distribution.isLocallyCkHolderAt_ofFun`), and it suffices that `T` is a `C^{k,α}` function on
-  a convex neighbourhood of `x` (`Distribution.IsLocallyCkHolderAt.of_contDiffOn`).
+  a convex neighbourhood of `x` (`Distribution.IsLocallyCkHolderAt.of_contDiffOn`). The notion is
+  stable under the linear operations (`Distribution.isLocallyCkHolderAt_zero_iff`,
+  `Distribution.IsLocallyCkHolderAt.smul`, `Distribution.IsLocallyCkHolderAt.add`,
+  `Distribution.IsLocallyCkHolderAt.sub`) and lowering the regularity
+  (`Distribution.IsLocallyCkHolderAt.mono_exponent`, `Distribution.IsLocallyCkHolderAt.mono`).
 * `Distribution.isLocallyMemBesovAt_iff_isLocallyCkHolderAt`: for `0 < α < 1`, being `C^{k,α}`
   near `x` is being `B^{k+α}_{∞,∞}` near `x`. The direction
   `Distribution.IsLocallyCkHolderAt.isLocallyMemBesovAt` holds for every `α`, and
@@ -113,6 +119,66 @@ theorem isLocallyCkHolderAt_ofFun (f : CkHolderSpace k α E ℂ) (hx : x ∈ Ω)
     (ofFun Ω f volume ⊤).IsLocallyCkHolderAt k α x :=
   ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, f, fun _ _ ↦
     ofFun_apply (f.contDiff.continuous.locallyIntegrable.locallyIntegrableOn _)⟩
+
+/-- The zero distribution is `C^{k,α}` near every point of its domain. -/
+@[simp]
+theorem isLocallyCkHolderAt_zero_iff : (0 : 𝓓'(Ω, ℂ)).IsLocallyCkHolderAt k α x ↔ x ∈ Ω :=
+  ⟨IsLocallyCkHolderAt.mem, fun hx ↦ ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, 0, fun ψ _ ↦ by simp⟩⟩
+
+/-- A scalar multiple of a distribution `C^{k,α}` near `x` is `C^{k,α}` near `x`. -/
+theorem IsLocallyCkHolderAt.smul (h : T.IsLocallyCkHolderAt k α x) (c : ℂ) :
+    (c • T).IsLocallyCkHolderAt k α x :=
+  let ⟨U, hU, hUΩ, f, hT⟩ := h
+  ⟨U, hU, hUΩ, CkHolderSpace.compLeftL (ContinuousLinearMap.mul ℝ ℂ c) f, fun ψ hψ ↦ by
+    rw [smul_apply, hT ψ hψ, ← integral_smul]
+    refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
+    simp [Complex.real_smul, mul_left_comm]⟩
+
+/-- A nonzero scalar multiple of `T` is `C^{k,α}` near `x` exactly when `T` is. -/
+theorem isLocallyCkHolderAt_smul_iff {c : ℂ} (hc : c ≠ 0) :
+    (c • T).IsLocallyCkHolderAt k α x ↔ T.IsLocallyCkHolderAt k α x :=
+  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using h.smul c⁻¹, fun h ↦ h.smul c⟩
+
+/-- The negative of `T` is `C^{k,α}` near `x` exactly when `T` is. -/
+@[simp]
+theorem isLocallyCkHolderAt_neg_iff :
+    (-T).IsLocallyCkHolderAt k α x ↔ T.IsLocallyCkHolderAt k α x := by
+  rw [← neg_one_smul ℂ T, isLocallyCkHolderAt_smul_iff (neg_ne_zero.2 one_ne_zero)]
+
+/-- The sum of two distributions `C^{k,α}` near `x` is `C^{k,α}` near `x`. -/
+theorem IsLocallyCkHolderAt.add {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyCkHolderAt k α x)
+    (hT : T.IsLocallyCkHolderAt k α x) : (S + T).IsLocallyCkHolderAt k α x :=
+  let ⟨U, hU, hUΩ, f, hSU⟩ := hS
+  let ⟨V, hV, _, g, hTV⟩ := hT
+  ⟨U ∩ V, inter_mem hU hV, inter_subset_left.trans hUΩ, f + g, fun ψ hψ ↦ by
+    have hi (f : CkHolderSpace k α E ℂ) : Integrable fun y ↦ ψ y • f y :=
+      (ψ.contDiff.continuous.smul f.contDiff.continuous).integrable_of_hasCompactSupport
+        ψ.hasCompactSupport.smul_right
+    rw [add_apply, hSU ψ (hψ.trans inter_subset_left),
+      hTV ψ (hψ.trans inter_subset_right), ← integral_add (hi f) (hi g)]
+    simp [smul_add]⟩
+
+/-- The difference of two distributions `C^{k,α}` near `x` is `C^{k,α}` near `x`. -/
+theorem IsLocallyCkHolderAt.sub {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyCkHolderAt k α x)
+    (hT : T.IsLocallyCkHolderAt k α x) : (S - T).IsLocallyCkHolderAt k α x := by
+  rw [sub_eq_add_neg]
+  exact hS.add (isLocallyCkHolderAt_neg_iff.2 hT)
+
+/-- **Monotonicity in the exponent.** Being `C^{k,α}` near a point implies being `C^{k,β}` there
+for `β ≤ α`. -/
+theorem IsLocallyCkHolderAt.mono_exponent (h : T.IsLocallyCkHolderAt k α x) {β : ℝ≥0}
+    (hβ : β ≤ α) : T.IsLocallyCkHolderAt k β x :=
+  let ⟨U, hU, hUΩ, f, hT⟩ := h
+  ⟨U, hU, hUΩ, CkHolderSpace.inclusionL hβ f, fun ψ hψ ↦ by simpa using hT ψ hψ⟩
+
+/-- **Monotonicity.** Being `C^{k,α}` near a point implies being `C^{j,β}` there for `j ≤ k`,
+`β ≤ α` and `β ≤ 1`. -/
+theorem IsLocallyCkHolderAt.mono (h : T.IsLocallyCkHolderAt k α x) {j : ℕ} {β : ℝ≥0}
+    (hj : j ≤ k) (hβ : β ≤ α) (hβ1 : β ≤ 1) : T.IsLocallyCkHolderAt j β x :=
+  let ⟨U, hU, hUΩ, f, hT⟩ := h.mono_exponent hβ
+  ⟨U, hU, hUΩ, CkHolderSpace.ofContDiff f (f.contDiff.of_le (by exact_mod_cast hj))
+    (fun i hi ↦ ⟨‖f‖, f.norm_iteratedFDeriv_apply_le (hi.trans hj)⟩)
+    (f.holderWith_iteratedFDeriv_of_le hβ1 hj).memHolder, fun ψ hψ ↦ by simpa using hT ψ hψ⟩
 
 /-- **Local data suffice.** Let `s ⊆ Ω` be an open convex neighbourhood of `x` and `α ≤ 1`. If `T`
 is integration on `s` against a function `f` that is `C^k` on `s`, with derivatives through order
