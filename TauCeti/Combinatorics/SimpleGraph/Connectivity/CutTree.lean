@@ -96,12 +96,14 @@ theorem reachable_deleteEdges_iff_simpleGraph_edgeReachability
     exact_mod_cast Iff.rfl
 
 /-- The global edge connectivity of a finite simple graph with at least two vertices is the
-minimum weight of an edge in any unit flow-equivalent tree. -/
+minimum weight of an edge in any unit flow-equivalent tree. The witness includes the
+minimum-weight certificate. -/
 theorem exists_edge_simpleGraph_edgeConnectivity_eq_weight [Nontrivial V]
     (hT : IsFlowEquivalentTree G.unitCutCapacity T w) :
-    ∃ u v, T.Adj u v ∧ G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  obtain ⟨u, v, huv, hmin⟩ := hT.exists_edge_weight_le_pairMinimumValue
-  refine ⟨u, v, huv, le_antisymm ?_ ?_⟩
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
+  obtain ⟨u, v, huv, hmin, hpair⟩ := hT.exists_edge_weight_le_pairMinimumValue
+  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
   · calc
       G.edgeConnectivity ≤ G.edgeReachability u v := G.edgeConnectivity_le_edgeReachability u v
       _ = ((TauCeti.TerminalCut.pairMinimumValue G.unitCutCapacity u v : ℕ) : ℕ∞) :=
@@ -114,7 +116,7 @@ theorem exists_edge_simpleGraph_edgeConnectivity_eq_weight [Nontrivial V]
       rw [G.edgeReachability_self]
       exact le_top
     · rw [G.edgeReachability_eq_pairMinimumValue_unitCutCapacity hxy]
-      exact_mod_cast hmin x y hxy
+      exact_mod_cast hpair x y hxy
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 

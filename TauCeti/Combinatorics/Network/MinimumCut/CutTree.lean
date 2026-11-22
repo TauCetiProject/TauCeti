@@ -109,16 +109,18 @@ theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t :
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact ⟨e, p.edges_subset_edgeSet he, hwe ▸ pairMinimumValue_le f hs ht⟩
 
-/-- Some tree edge has weight at most every minimum cut value between distinct vertices. -/
+/-- Some minimum-weight tree edge has weight at most every minimum cut value between distinct
+vertices. -/
 theorem exists_edge_weight_le_pairMinimumValue [Nontrivial V]
     (hT : IsFlowEquivalentTree f T w) :
-    ∃ u v, T.Adj u v ∧ ∀ s t, s ≠ t → w s(u, v) ≤ pairMinimumValue f s t := by
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      ∀ s t, s ≠ t → w s(u, v) ≤ pairMinimumValue f s t := by
   have hTne : T ≠ ⊥ := by
     intro h
     rw [h] at hT
     exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
   obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
-  refine ⟨u, v, huv, fun s t hst ↦ ?_⟩
+  refine ⟨u, v, huv, hmin, fun s t hst ↦ ?_⟩
   obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe

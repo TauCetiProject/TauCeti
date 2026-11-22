@@ -148,11 +148,7 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
       G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  have hTne : T ≠ ⊥ := by
-    intro h
-    rw [h] at hT
-    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
-  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  obtain ⟨u, v, huv, hmin, hpair⟩ := hT.exists_edge_weight_le_pairMinimumValue
   refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
   · calc
       G.edgeConnectivity ≤ G.edgeReachability u v :=
@@ -170,10 +166,8 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
       subst y
       rw [G.edgeReachability_self hx]
       exact le_top
-    · obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path sx sy
-      obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hxy hp
-      rw [G.edgeReachability_eq_pairMinimumValue hxy]
-      exact_mod_cast (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
+    · rw [G.edgeReachability_eq_pairMinimumValue hxy]
+      exact_mod_cast hpair sx sy hxy
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 

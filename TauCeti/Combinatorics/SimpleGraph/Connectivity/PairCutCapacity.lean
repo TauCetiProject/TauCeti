@@ -66,6 +66,17 @@ theorem pairCutCapacity_def [Fintype V] [AddCommMonoid K]
   intro p _
   by_cases hp : p.Crosses (S : Set V) <;> simp [hp]
 
+/-- The capacity of the empty cut is zero. -/
+@[simp]
+theorem pairCutCapacity_empty [Fintype V] [AddCommMonoid K] (c : Sym2 V → K) :
+    pairCutCapacity c ∅ = 0 := by
+  classical
+  rw [pairCutCapacity]
+  apply sum_eq_zero
+  intro p _
+  induction p using Sym2.inductionOn with
+  | _ x y => simp
+
 /-- Pair cut capacity is unchanged when the two sides of the cut are exchanged. -/
 @[simp]
 theorem pairCutCapacity_compl [Fintype V] [DecidableEq V] [AddCommMonoid K]
@@ -73,6 +84,13 @@ theorem pairCutCapacity_compl [Fintype V] [DecidableEq V] [AddCommMonoid K]
     pairCutCapacity c Sᶜ = pairCutCapacity c S := by
   classical
   simp only [pairCutCapacity, Finset.coe_compl, Sym2.crosses_compl]
+
+/-- The capacity of the universal cut is zero. -/
+@[simp]
+theorem pairCutCapacity_univ [Fintype V] [AddCommMonoid K] (c : Sym2 V → K) :
+    pairCutCapacity c univ = 0 := by
+  classical
+  rw [← compl_empty, pairCutCapacity_compl, pairCutCapacity_empty]
 
 /-- The cut function of weights nonnegative on pairs of distinct vertices is submodular.
 Diagonal weights are unrestricted. Together with `pairCutCapacity_compl`, this makes it a symmetric
@@ -179,27 +197,13 @@ theorem unitCutCapacity_def [Fintype V] (G : SimpleGraph V) (S : Finset V) :
 @[simp]
 theorem unitCutCapacity_empty [Fintype V] (G : SimpleGraph V) :
     G.unitCutCapacity ∅ = 0 := by
-  classical
-  rw [unitCutCapacity_def, TauCeti.pairCutCapacity]
-  apply sum_eq_zero
-  intro p _
-  have hp : ¬p.Crosses (∅ : Set V) := by
-    induction p using Sym2.inductionOn with
-    | _ x y => simp
-  simp [hp]
+  rw [unitCutCapacity_def, TauCeti.pairCutCapacity_empty]
 
 /-- The universal cut has unit capacity zero. -/
 @[simp]
 theorem unitCutCapacity_univ [Fintype V] (G : SimpleGraph V) :
     G.unitCutCapacity Finset.univ = 0 := by
-  classical
-  rw [unitCutCapacity_def, TauCeti.pairCutCapacity]
-  apply sum_eq_zero
-  intro p _
-  have hp : ¬p.Crosses (Set.univ : Set V) := by
-    induction p using Sym2.inductionOn with
-    | _ x y => simp
-  simp [hp]
+  rw [unitCutCapacity_def, TauCeti.pairCutCapacity_univ]
 
 /-- Exchanging the two sides of a cut does not change its unit capacity. -/
 @[simp]
