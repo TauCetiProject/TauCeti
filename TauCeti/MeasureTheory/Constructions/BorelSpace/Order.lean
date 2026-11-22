@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
+import Mathlib.Order.Cofinal
+
 /-!
 # Measurability and measure extensionality on ordered Borel spaces
 
@@ -54,18 +56,20 @@ end TauCeti
 namespace MeasureTheory.Measure
 
 /-- Two measures finite on initial intervals are equal if they agree on all initial intervals.
-Unlike `Measure.ext_of_Iic`, this does not require finite total mass. -/
+Unlike `Measure.ext_of_Iic`, this does not require finite total mass. The proof follows Mathlib's
+`Measure.ext_of_Ico'`: the intervals `Iic a` with `a` in a countable dense set form a countable
+cover of `α` by sets of finite mass, so `Measure.ext_of_generateFrom_of_cover_subset` applies. -/
 theorem ext_of_Iic' {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
     [SecondCountableTopology α] [LinearOrder α] [OrderTopology α] [BorelSpace α]
     (μ ν : Measure α) (hμ : ∀ a, μ (Iic a) ≠ ∞)
     (h : ∀ a, μ (Iic a) = ν (Iic a)) : μ = ν := by
   obtain ⟨s, hs, hd, -, htop⟩ := exists_countable_dense_bot_top α
-  refine ext_of_generateFrom_of_cover_subset (T := Iic '' s)
+  -- The intervals `Iic a` with `a` in the countable dense set `s` cover `α`, since `s` is
+  -- cofinal.
+  exact ext_of_generateFrom_of_cover_subset (T := Iic '' s)
     (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic α)) isPiSystem_Iic
-    (image_subset_range _ _) (hs.image _) (sUnion_eq_univ_iff.2 fun x => ?_)
+    (image_subset_range _ _) (hs.image _)
+    ((sUnion_image _ _).trans (isCofinal_iff_iUnion_Iic_eq_univ.1 (hd.exists_ge' htop)))
     (forall_mem_image.2 fun a _ => hμ a) (forall_mem_range.2 h)
-  -- The intervals `Iic a` with `a` in the countable dense set `s` cover `α`.
-  obtain ⟨a, ha, hxa⟩ := hd.exists_ge' htop x
-  exact ⟨Iic a, mem_image_of_mem _ ha, hxa⟩
 
 end MeasureTheory.Measure
