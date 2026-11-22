@@ -214,14 +214,6 @@ theorem QuadraticMap.Represents.baseChange {Q : QuadraticForm R M} {a : R}
   obtain ⟨v, hv⟩ := h
   exact ⟨1 ⊗ₜ v, by simp [hv, Algebra.smul_def]⟩
 
-/-- If some vector has a unit quadratic value, then so does some vector after base change: the
-value at `1 ⊗ₜ v` is the image of the value at `v`. -/
-theorem QuadraticForm.exists_isUnit_baseChange_apply (A : Type uA) [CommRing A] [Algebra R A]
-    {Q : QuadraticForm R M} (hQ : ∃ v, IsUnit (Q v)) :
-    ∃ w, IsUnit (Q.baseChange A w) := by
-  obtain ⟨v, hv⟩ := hQ
-  exact ⟨1 ⊗ₜ v, by simpa [Algebra.smul_def] using hv.map (algebraMap R A)⟩
-
 namespace QuadraticForm
 
 /-- Extending scalars evaluates a quadratic form at `1 ⊗ₜ v` by applying the algebra map to

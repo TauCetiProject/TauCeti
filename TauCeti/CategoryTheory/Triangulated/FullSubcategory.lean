@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Triangulated.Subcategory
+import TauCeti.CategoryTheory.Triangulated.Biproduct
 
 /-!
 # Distinguished triangles of triangulated subcategories
@@ -71,21 +72,8 @@ theorem prop_biprod_obj₂_of_distTriang [P.IsTriangulatedClosed₂] [P.IsClosed
     {T₁ T₂ : Triangle C} (hT₁ : T₁ ∈ distTriang C) (hT₂ : T₂ ∈ distTriang C)
     (h₁ : P (T₁.obj₁ ⊞ T₂.obj₁)) (h₃ : P (T₁.obj₃ ⊞ T₂.obj₃)) :
     P (T₁.obj₂ ⊞ T₂.obj₂) := by
-  let F : WalkingPair → Triangle C := fun
-    | .left => T₁
-    | .right => T₂
-  have hF : productTriangle F ∈ distTriang C :=
-    productTriangle_distinguished F fun j => by cases j <;> assumption
-  let iso : ∀ f : WalkingPair → C, (∏ᶜ f) ≅ f .left ⊞ f .right := fun f =>
-    (HasLimit.isoOfNatIso (diagramIsoPair (Discrete.functor f))).trans (biprod.isoProd _ _).symm
-  let e₁ : (productTriangle F).obj₁ ≅ T₁.obj₁ ⊞ T₂.obj₁ :=
-    eqToIso (productTriangle_obj₁ F) ≪≫ iso fun j => (F j).obj₁
-  let e₂ : (productTriangle F).obj₂ ≅ T₁.obj₂ ⊞ T₂.obj₂ :=
-    eqToIso (productTriangle_obj₂ F) ≪≫ iso fun j => (F j).obj₂
-  let e₃ : (productTriangle F).obj₃ ≅ T₁.obj₃ ⊞ T₂.obj₃ :=
-    eqToIso (productTriangle_obj₃ F) ≪≫ iso fun j => (F j).obj₃
-  have hobj₁ : P (productTriangle F).obj₁ := P.prop_of_iso e₁.symm h₁
-  have hobj₃ : P (productTriangle F).obj₃ := P.prop_of_iso e₃.symm h₃
-  exact P.prop_of_iso e₂ (P.ext_of_isTriangulatedClosed₂ _ hF hobj₁ hobj₃)
+  obtain ⟨T, hT, ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ := Pretriangulated.exists_distTriang_iso_biprod T₁ T₂ hT₁ hT₂
+  exact P.prop_of_iso e₂ (P.ext_of_isTriangulatedClosed₂ _ hT
+    (P.prop_of_iso e₁.symm h₁) (P.prop_of_iso e₃.symm h₃))
 
 end CategoryTheory.ObjectProperty

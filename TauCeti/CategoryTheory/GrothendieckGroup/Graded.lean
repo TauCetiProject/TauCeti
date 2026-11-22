@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Graded.Basic
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
-public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated.Basic
+public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 import Mathlib.Algebra.Ring.Periodic
 
 /-!

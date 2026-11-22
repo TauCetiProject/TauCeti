@@ -13,6 +13,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Measure.Restrict
+import TauCeti.MeasureTheory.Function.ZeroAtInftyRepresentative
 
 /-!
 # Paths in `W^{1,p}(ℝ, F)` are continuous and vanish at infinity
@@ -184,38 +185,26 @@ private theorem exists_zeroAtInftyContinuousMap_ae_eq (hp : p ≠ ∞) :
       (fun a b ↦ (hloc.integrableOn_isCompact isCompact_uIcc).intervalIntegrable) 0
   exact ⟨⟨⟨_, hv⟩, tendsto_cocompact_of_ae_eq hp hv hc⟩, hc⟩
 
-private theorem eq_of_prev_ae_eq {g g' : C₀(ℝ, F)} (hg : ⇑(prev _ u) =ᵐ[volume] g)
-    (hg' : ⇑(prev _ u) =ᵐ[volume] g') : g = g' :=
-  ZeroAtInftyContinuousMap.ext <| congrFun <|
-    (Continuous.ae_eq_iff_eq volume g.continuous g'.continuous).mp (hg.symm.trans hg')
-
 /-- The continuous representative, as a linear map. -/
 private def toZeroAtInftyₗ (hp : p ≠ ∞) :
     WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
-      →ₗ[ℝ] C₀(ℝ, F) where
-  toFun u := (exists_zeroAtInftyContinuousMap_ae_eq u hp).choose
-  map_add' u w := by
-    refine eq_of_prev_ae_eq (u := u + w)
-      (exists_zeroAtInftyContinuousMap_ae_eq (u + w) hp).choose_spec ?_
-    rw [prev_add, FunLike.coe_add]
-    exact ((Lp.coeFn_add (prev _ u) (prev _ w)).filter_mono
-      Measure.ae_le_ae_restrict_coe_opens_top).trans
-      ((exists_zeroAtInftyContinuousMap_ae_eq u hp).choose_spec.add
-      (exists_zeroAtInftyContinuousMap_ae_eq w hp).choose_spec)
-  map_smul' c u := by
-    refine eq_of_prev_ae_eq (u := c • u)
-      (exists_zeroAtInftyContinuousMap_ae_eq (c • u) hp).choose_spec ?_
-    rw [prev_smul, FunLike.coe_smul]
-    exact ((Lp.coeFn_smul c (prev _ u)).filter_mono
-      Measure.ae_le_ae_restrict_coe_opens_top).trans
-      ((exists_zeroAtInftyContinuousMap_ae_eq u hp).choose_spec.const_smul c)
+      →ₗ[ℝ] C₀(ℝ, F) :=
+  zeroAtInftyRepresentativeₗ (fun u ↦ exists_zeroAtInftyContinuousMap_ae_eq u hp)
+    (fun u w ↦ by
+      rw [prev_add]
+      exact (Lp.coeFn_add (prev _ u) (prev _ w)).filter_mono
+        Measure.ae_le_ae_restrict_coe_opens_top)
+    (fun c u ↦ by
+      rw [prev_smul]
+      exact (Lp.coeFn_smul c (prev _ u)).filter_mono
+        Measure.ae_le_ae_restrict_coe_opens_top)
 
 private theorem prev_ae_eq_toZeroAtInftyₗ (hp : p ≠ ∞)
     (u : WeakDerivStep volume ⊤ p
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ⇑(prev _ u) =ᵐ[volume] toZeroAtInftyₗ hp u :=
-  (exists_zeroAtInftyContinuousMap_ae_eq u hp).choose_spec
+  ae_eq_zeroAtInftyRepresentativeₗ (fun u ↦ exists_zeroAtInftyContinuousMap_ae_eq u hp) _ _ u
 
 /-- **The Sobolev embedding on the line.** For `1 ≤ p < ∞`, the map sending a path in
 `W^{1,p}(ℝ, F)` to its continuous representative is a bounded linear map into the space
@@ -244,8 +233,7 @@ theorem toZeroAtInfty_eq_iff (hp : p ≠ ∞)
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
     (g : C₀(ℝ, F)) :
     toZeroAtInfty hp u = g ↔ ⇑(prev _ u) =ᵐ[volume] g :=
-  ⟨fun h ↦ h ▸ prev_ae_eq_toZeroAtInfty hp u,
-    fun h ↦ eq_of_prev_ae_eq (prev_ae_eq_toZeroAtInfty hp u) h⟩
+  zeroAtInftyRepresentativeₗ_eq_iff (fun u ↦ exists_zeroAtInftyContinuousMap_ae_eq u hp) _ _ u g
 
 /-- A continuous function agreeing almost everywhere with a path is the value of its embedding. -/
 theorem coe_toZeroAtInfty_eq_of_ae_eq (hp : p ≠ ∞) (hv : Continuous v)

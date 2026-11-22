@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.Embedding.StupidTrunc
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedComplex
-public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated.Basic
+public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 
 /-!

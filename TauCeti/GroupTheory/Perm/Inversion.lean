@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.GroupTheory.Perm.Fin
+public import TauCeti.Data.Fin.Sum
 public import TauCeti.Data.Finset.Inversions
 
 import TauCeti.Data.Fin.Basic
@@ -31,6 +32,8 @@ rotating index blocks.
   `(-1)` to the number of its inversions `Finset.univ.inversions σ`.
 * `Fin.sign_revPerm`: reversing `Fin n` has sign `(-1) ^ n.choose 2`.
 * `TauCeti.sign_shuffle`: the sign of a shuffle permutation is a power of `-1`.
+* `TauCeti.sign_finSumFinEquivInterleave`: the perfect shuffle of `Fin (n + n)`, which interleaves
+  its two halves, has sign `(-1) ^ n.choose 2`.
 * `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
 * `Equiv.Perm.blockPerm` and `Equiv.Perm.sign_blockPerm`: the permutation of consecutive blocks of
@@ -126,12 +129,8 @@ inversion. -/
 @[simp]
 theorem _root_.Fin.sign_revPerm (n : ℕ) :
     Equiv.Perm.sign (Fin.revPerm : Equiv.Perm (Fin n)) = (-1) ^ n.choose 2 := by
-  have h : (Finset.univ.filter fun p : Fin n × Fin n =>
-      p.1 < p.2 ∧ Fin.revPerm p.2 < Fin.revPerm p.1) =
-      Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 :=
-    Finset.filter_congr fun p _ => by simp
-  rw [sign_eq_neg_one_pow_card_inversion, Finset.inversions_univ, h,
-    Fintype.card_product_filter_lt, Fintype.card_fin]
+  rw [sign_eq_neg_one_pow_card_inversion]
+  exact congrArg _ (Finset.card_univ_inversions_rev n)
 
 private lemma card_inversion_finAddFlip_trans_finCongr (m n : ℕ) :
     (Finset.univ.filter fun p : Fin (m + n) × Fin (m + n) =>
@@ -233,6 +232,27 @@ theorem sign_shuffle {m : ℕ} (h : k + m = n) (e : Fin k ⊕ Fin m ≃ Fin n)
   simp [prod_ite, prod_pow_eq_pow_sum]
 
 end
+
+/-- The perfect shuffle of `Fin (n + n)`, sending the `i`-th index of the first half to position
+`2 i` and the `i`-th index of the second half to position `2 i + 1`, has sign
+`(-1) ^ n.choose 2`. -/
+theorem sign_finSumFinEquivInterleave (n : ℕ) :
+    Equiv.Perm.sign (finSumFinEquiv.symm.trans (finSumFinEquivInterleave n)) =
+      (-1) ^ n.choose 2 := by
+  have h := sign_shuffle (k := n) (m := n) (n := n + n) rfl (finSumFinEquivInterleave n)
+    (fun i j hij ↦ by
+      have : (i : ℕ) < j := hij
+      simp only [Function.comp_apply, Fin.lt_def, val_finSumFinEquivInterleave_inl]
+      omega)
+    (fun i j hij ↦ by
+      have : (i : ℕ) < j := hij
+      simp only [Function.comp_apply, Fin.lt_def, val_finSumFinEquivInterleave_inr]
+      omega)
+  simp only [finCongr_refl, Equiv.trans_refl] at h
+  rw [h]
+  simp only [val_finSumFinEquivInterleave_inl, ← Finset.mul_sum, Fin.sum_val_eq_choose_two]
+  -- `(-1) ^ (2 s + s) = ((-1) ^ 3) ^ s = (-1) ^ s`.
+  rw [← add_one_mul, pow_mul, Odd.neg_one_pow (by decide)]
 
 /-- Reindexing a signed sum over permutations by `τ ↦ c.permCongr τ * B` contributes the sign of
 `B`. -/

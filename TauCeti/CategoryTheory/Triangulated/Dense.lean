@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.ObjectProperty.StableClasses
 public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
-import TauCeti.CategoryTheory.Triangulated.Split
+import TauCeti.CategoryTheory.Triangulated.Biproduct
 
 /-!
 # Dense triangulated subcategories and stable object classes
@@ -63,9 +63,7 @@ variable {C : Type u} [Category.{v} C] [HasZeroObject C] [HasShift C ℤ] [Pread
 extension-closed subcategory `P` stable under `⟦1⟧`, then `X ⊞ X⟦1⟧` belongs to `P`. -/
 theorem prop_biprod_shift_one_of_retractClosure {X : C} (hX : P.retractClosure X) :
     P (X ⊞ X⟦(1 : ℤ)⟧) := by
-  obtain ⟨A₀, hA₀, ⟨r⟩⟩ := (P.prop_retractClosure_iff X).1 hX
-  obtain ⟨Z, e, -⟩ := Pretriangulated.exists_iso_biprod_of_mono r.i
-  have hXZ : P (X ⊞ Z) := P.prop_of_iso e hA₀
+  obtain ⟨Z, hXZ⟩ := (P.prop_retractClosure_iff_exists_biprod X).1 hX
   let : PreservesBinaryBiproducts (shiftFunctor C (1 : ℤ)) :=
     preservesBinaryBiproducts_of_preservesBinaryProducts _
   have hXZ₁ : P (X⟦(1 : ℤ)⟧ ⊞ Z⟦(1 : ℤ)⟧) :=
