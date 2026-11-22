@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
@@ -44,7 +45,7 @@ it still requires `0 ≤ β ≤ 1` and `0 ≤ K`.
 
 * `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt`:
   `‖u b - u a‖ ≤ D |b - a| max (a ^ (β - 1)) (b ^ (β - 1))` for `0 < a` and `0 < b` when
-  `u` has derivative `u' r` within `[[a, b]]` with `‖u' r‖ ≤ D r ^ (β - 1)` at every
+  `u` has derivative `f' r` within `[[a, b]]` with `‖f' r‖ ≤ D r ^ (β - 1)` at every
   `r ∈ [[a, b]]`.
 * `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_neg_right`: `dist x y ≤ K |b - a| (-a) ^ (β - 1)`
   for `a < 0`, `0 ≤ β ≤ 1` and `0 ≤ K`, when `dist x y = 0` if `b ≤ 0` and
@@ -99,8 +100,10 @@ theorem dist_le_mul_abs_sub_mul_rpow_of_neg_right {X : Type*} [PseudoMetricSpace
     positivity
   have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) :=
     calc b ^ β ≤ (b - a) ^ β := rpow_le_rpow hb.le (by linarith) hβ₀
-      _ ≤ (-a) ^ (β - 1) * (b - a) ^ (1 : ℝ) :=
-          rpow_le_rpow_sub_mul_rpow_of_exponent_le (b - a) hd (by linarith) (by linarith)
+      _ ≤ (-a) ^ (β - 1) * (b - a) ^ (1 : ℝ) := by
+          simpa only [← rpow_neg_eq_inv_rpow, neg_neg, neg_sub_neg, neg_sub] using
+            rpow_le_rpow_sub_mul_rpow (inv_pos.2 (by linarith : 0 < b - a))
+              (inv_anti₀ hd (by linarith)) (neg_le_neg (by linarith : β ≤ 1))
       _ = |b - a| * (-a) ^ (β - 1) := by
           rw [rpow_one, abs_of_pos (by linarith), mul_comm]
   exact (hpos hb).trans (by gcongr)

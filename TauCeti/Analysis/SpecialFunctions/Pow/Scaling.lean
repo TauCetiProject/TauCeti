@@ -28,16 +28,16 @@ comparisons of powers of two comparable quantities, such as a time and a time st
   ball of radius `R` in dimension `d`, equals `R^d (R^a Q)²` and bounds `c² R^{d+2a}` for
   `0 ≤ c ≤ Q`. So for `b ≤ a` and `R^{a-b} c ≤ Q`, a quantity `r^{2a} c² r^d` of order
   `r^{d+2a}` is at most `(R^{d/2+b} Q)² (r / R)^{d+2b}`.
-* A power of `u ≥ a > 0` with a smaller exponent `s ≤ t` is at most `a ^ (s - t)` times the
-  power with exponent `t`, which raises the exponent on `(a, ∞)`.
 * For `0 ≤ p` and `0 ≤ h`, a nonnegative quantity `r ≤ A h` has `r ^ p ≤ A ^ p h ^ p`. This is
   how, in a temporal Hölder estimate with exponent `p`, a time at most `A` times the time step `h`
   is bounded by a multiple of `h ^ p`. Consequently, if two points `x` and `y` of a pseudometric
   space lie within `c t ^ p` and `c t' ^ p` of a common point, with `0 ≤ c`, `0 ≤ p`,
   `0 ≤ t ≤ A h` and `0 ≤ t' ≤ h`, then `dist x y ≤ (A ^ p + 1) c h ^ p`.
 * For every real exponent `s`, a quantity `x` with `a y ≤ x ≤ b y`, `0 < a` and `0 ≤ y` has
-  `x ^ s ≤ max (a ^ s) (b ^ s) y ^ s`: the factor is `b ^ s` for `s ≥ 0` and `a ^ s` for `s ≤ 0`.
-  At `y = 1` this bounds a power on an interval `[a, b]` by its larger endpoint value.
+  `x ^ s ≤ max (a ^ s) (b ^ s) y ^ s`. For `0 < y`, so that `a ≤ b`, the factor is `b ^ s` for
+  `s ≥ 0` and `a ^ s` for `s ≤ 0`; for `y = 0` the hypotheses force `x = 0`, and `b` is
+  unconstrained. At `y = 1` this bounds a power on an interval `[a, b]` by its larger endpoint
+  value.
 -/
 
 public section
@@ -130,14 +130,6 @@ theorem rpow_mul_mul_rpow_le_rpow_div_two_add_mul_sq_mul_rpow {r R c Q a b d : �
   exact (rpow_mul_mul_rpow_le_mul_rpow_of_le hr hrR hba).trans (mul_le_mul_of_nonneg_right
     (sq_mul_rpow_add_two_mul_le hR (mul_nonneg (rpow_nonneg hR.le _) hc) hcQ) (by positivity))
 
-/-- For `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t`. -/
-theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le (u : ℝ) {a s t : ℝ} (ha : 0 < a) (hau : a ≤ u)
-    (hst : s ≤ t) : u ^ s ≤ a ^ (s - t) * u ^ t :=
-  calc u ^ s = u ^ (s - t) * u ^ t := by rw [← rpow_add (ha.trans_le hau), sub_add_cancel]
-    _ ≤ a ^ (s - t) * u ^ t :=
-      mul_le_mul_of_nonneg_right (rpow_le_rpow_of_nonpos ha hau (sub_nonpos.2 hst))
-        (rpow_nonneg (ha.le.trans hau) t)
-
 /-- For `0 ≤ p` and `0 ≤ h`, a nonnegative quantity at most `A h` has `p`-th power at most
 `A ^ p h ^ p`. -/
 theorem rpow_le_rpow_mul_rpow_of_le_mul (r : ℝ) {A h p : ℝ} (hr : 0 ≤ r) (hh : 0 ≤ h)
@@ -152,8 +144,9 @@ theorem rpow_le_rpow_mul_rpow_of_le_mul (r : ℝ) {A h p : ℝ} (hr : 0 ≤ r) (
   · simp [zero_rpow hp.ne']
 
 /-- Powers of comparable quantities are comparable: if `a y ≤ x ≤ b y` with `0 < a` and
-`0 ≤ y`, then `x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s` for every real exponent `s`. The maximum is
-`b ^ s` for `s ≥ 0` and `a ^ s` for `s ≤ 0`. -/
+`0 ≤ y`, then `x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s` for every real exponent `s`. For `0 < y` the
+hypotheses give `a ≤ b`, so the maximum is `b ^ s` for `s ≥ 0` and `a ^ s` for `s ≤ 0`. For
+`y = 0` they force `x = 0` and leave `b` unconstrained. -/
 theorem rpow_le_max_mul_rpow {a b x y : ℝ} (ha : 0 < a) (hy : 0 ≤ y) (hax : a * y ≤ x)
     (hxb : x ≤ b * y) (s : ℝ) : x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s := by
   rcases hy.eq_or_lt with rfl | hy
