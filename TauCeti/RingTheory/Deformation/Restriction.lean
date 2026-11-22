@@ -54,7 +54,7 @@ public section
 
 open CategoryTheory Matrix
 
-universe u v w w' x
+universe u v w w' w'' x
 
 namespace TauCeti.Deformation
 
@@ -63,6 +63,7 @@ open ArtinLocalAlg
 variable {Λ : Type u} [CommRing Λ] {k : Type v} [Field k] [Algebra Λ k]
   {n : Type x} [Fintype n] [DecidableEq n]
   {G : Type w} [Monoid G] [TopologicalSpace G] {H : Type w'} [Monoid H] [TopologicalSpace H]
+  {H' : Type w''} [Monoid H'] [TopologicalSpace H']
   {ρbar : G →* GL n k} {A B : ArtinLocalAlg Λ k}
 
 namespace Lift
@@ -77,6 +78,15 @@ def restrict (ι : H →ₜ* G) (ρ : Lift ρbar A) : Lift (ρbar.comp (ι : H �
 @[simp]
 theorem restrict_apply (ι : H →ₜ* G) (ρ : Lift ρbar A) (h : H) : ρ.restrict ι h = ρ (ι h) :=
   (rfl)
+
+/-- Restriction along the identity is the identity. -/
+theorem restrict_id (ρ : Lift ρbar A) : ρ.restrict (ContinuousMonoidHom.id G) = ρ :=
+  ext fun _ ↦ rfl
+
+/-- Restricting along `ι` and then along `ι'` is restricting along `ι ∘ ι'`. -/
+theorem restrict_restrict (ι : H →ₜ* G) (ι' : H' →ₜ* H) (ρ : Lift ρbar A) :
+    (ρ.restrict ι).restrict ι' = ρ.restrict (ι.comp ι') :=
+  ext fun _ ↦ rfl
 
 /-- Restriction commutes with pushforward along a morphism of `C_Λ`. -/
 theorem restrict_map (ι : H →ₜ* G) (f : A ⟶ B) (ρ : Lift ρbar A) :
@@ -139,6 +149,19 @@ def restrict (ι : H →ₜ* G) : StrictClass ρbar A → StrictClass (ρbar.com
 @[simp]
 theorem restrict_mk (ι : H →ₜ* G) (ρ : Lift ρbar A) : (mk ρ).restrict ι = mk (ρ.restrict ι) :=
   lift_mk _ _ ρ
+
+/-- Restriction of strict classes along the identity is the identity. -/
+theorem restrict_id (c : StrictClass ρbar A) : c.restrict (ContinuousMonoidHom.id G) = c := by
+  obtain ⟨ρ, rfl⟩ := mk_surjective c
+  rw [restrict_mk]
+  rfl
+
+/-- Restricting strict classes along `ι` and then along `ι'` is restricting along `ι ∘ ι'`. -/
+theorem restrict_restrict (ι : H →ₜ* G) (ι' : H' →ₜ* H) (c : StrictClass ρbar A) :
+    (c.restrict ι).restrict ι' = c.restrict (ι.comp ι') := by
+  obtain ⟨ρ, rfl⟩ := mk_surjective c
+  rw [restrict_mk, restrict_mk, restrict_mk]
+  rfl
 
 /-- The strict class of a framed restricted lift is the restriction of the strict class of the
 underlying lift: the frame only selects a representative. -/

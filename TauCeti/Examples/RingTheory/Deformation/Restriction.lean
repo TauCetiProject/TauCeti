@@ -30,9 +30,8 @@ variable {Λ : Type*} [CommRing Λ] {k : Type*} [Field k] [Algebra Λ k]
   {ρbar : G →* GL n k} {A : ArtinLocalAlg Λ k}
 
 /-- Restriction along the identity is the identity. -/
-example (ρ : Lift ρbar A) : ⇑(ρ.restrict (ContinuousMonoidHom.id G)) = ⇑ρ := by
-  ext1 g
-  simp
+example (ρ : Lift ρbar A) : ρ.restrict (ContinuousMonoidHom.id G) = ρ :=
+  ρ.restrict_id
 
 /-- The framed restricted lift does not see simultaneous strict conjugation of the lift and its
 frame. -/
