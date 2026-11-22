@@ -42,6 +42,8 @@ This file supplements Mathlib's basic API for moments and moment-generating func
   independent variables from coordinatewise exponential bounds.
 * `TauCeti.ofReal_mgf_sub_integral_le_lintegral`: symmetrization by Jensen's inequality, the
   moment-generating function of `f - 𝔼 f` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`.
+* `TauCeti.memLp_exp_of_integrable_exp_mul`: if `exp (p Z)` is integrable for some `p > 0`, then
+  `exp Z` lies in `Lᵖ`.
 * `TauCeti.integrable_exp_mul_sum_of_integrable_exp_mul`: by Hölder's inequality,
   `exp (t ∑ i ∈ s, X i)` is integrable when each `exp (p i t X i)` is, for exponents with
   `∑ i ∈ s, (p i)⁻¹ = 1`, without independence.
@@ -176,8 +178,9 @@ section AddBounds
 
 open Real
 
-/-- If `exp (p Z)` is integrable for some `p > 0`, then `exp Z` lies in `Lᵖ`. -/
-private lemma memLp_exp_of_integrable_exp_mul {Z : Ω → ℝ} {p : ℝ} (hp : 0 < p)
+/-- If `exp (p Z)` is integrable for some `p > 0`, then `exp Z` lies in `Lᵖ`. The measure need not
+be finite. -/
+theorem memLp_exp_of_integrable_exp_mul {Z : Ω → ℝ} {p : ℝ} (hp : 0 < p)
     (hZ : Integrable (fun ω ↦ exp (p * Z ω)) μ) :
     MemLp (fun ω ↦ exp (Z ω)) (ENNReal.ofReal p) μ := by
   have hmeas : AEStronglyMeasurable (fun ω ↦ exp (Z ω)) μ :=
