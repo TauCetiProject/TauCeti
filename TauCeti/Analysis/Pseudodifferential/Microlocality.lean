@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Tempered
+public import TauCeti.Analysis.Distribution.WaveFrontSet.VectorValued
 public import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
@@ -15,6 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Sobolev
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.MeasureTheory.Integral.ConicDecay
 
 /-!
@@ -28,8 +29,19 @@ the Bessel-potential space `H^t`. This file proves that the pseudodifferential o
 
 (`TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset`), where both sides are wave
 front sets of the restrictions of tempered distributions to distributions on `ℝⁿ`
-(`TemperedDistribution.toDistribution`). Projecting to positions, `Op(a)` does not enlarge the
-singular support (`TauCeti.Symbol.singularSupport_toDistribution_quantizeSobolev_subset`).
+(`TemperedDistribution.toDistribution`).
+
+The same holds for a symbol `a` with values in `V →L[ℂ] W`, for a finite-dimensional complex
+inner product space `V`, acting on `v ∈ H^t(ℝⁿ; V)`
+(`TauCeti.Symbol.vectorWaveFrontSet_toDistribution_quantizeSobolev_subset`), for the wave front
+set of vector-valued distributions, the union of the wave front sets of the components
+(`Distribution.vectorWaveFrontSet`). This is the form in which operators between vector bundles
+appear in local frames. The component of `Op(a) v` along a functional `ℓ` on `W` is
+`∑ⱼ Op(ℓ ∘ a ∘ e_j) (c_j v)` for a basis `(e_j)` of `V` with coordinate functionals `(c_j)`
+(`TauCeti.Symbol.quantizeSobolev_map`,
+`BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord`), so the scalar statement applies to each
+term. Projecting to positions, `Op(a)` does not enlarge the singular support when `W` is
+finite-dimensional as well (`TauCeti.Symbol.singularSupport_toDistribution_quantizeSobolev_subset`).
 
 The wave front set of `Op(a) v` also avoids every covector near which `a` vanishes conically at
 large frequencies: if `a(x, ξ) = 0` for `x` in a neighbourhood `U` of `x₀` and `ξ` of norm at least
@@ -75,8 +87,10 @@ decays rapidly on a smaller cone whatever the regularity of `v`.
   Fourier transform of `Op(b) (χ v)`.
 * `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset`: **microlocality**,
   `WF(Op(a) v) ⊆ WF(v)`.
+* `TauCeti.Symbol.vectorWaveFrontSet_toDistribution_quantizeSobolev_subset`: microlocality for
+  matrix-valued symbols.
 * `TauCeti.Symbol.singularSupport_toDistribution_quantizeSobolev_subset`: the singular support of
-  `Op(a) v` lies in that of `v`.
+  `Op(a) v` lies in that of `v`, for matrix-valued symbols between finite-dimensional spaces.
 * `TauCeti.Symbol.notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero`,
   `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset_diff`: **`Op(a)` is smoothing
   where `a` vanishes conically**, `WF(Op(a) v) ⊆ WF(v) \ (U × Γ)`.
@@ -628,16 +642,89 @@ theorem waveFrontSet_toDistribution_quantizeSobolev_inter_eq {c : Symbol n ℂ �
     (subset_inter (waveFrontSet_toDistribution_inter_subset_quantizeSobolev hc t v hU hΓ hcone hcΓ)
       inter_subset_right)
 
-omit hb in
-/-- **Pseudodifferential operators do not enlarge the singular support.** For a scalar symbol `a`
-with compact spatial support and every `v ∈ H^t`, the singular support of `Op(a) v` is contained in
-the singular support of `v`. -/
-theorem singularSupport_toDistribution_quantizeSobolev_subset {a : Symbol n ℂ ℂ m}
-    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) :
+end Symbol
+
+/-! ### Matrix-valued symbols
+
+A symbol with values in `V →L[ℂ] W` acts on `V`-valued distributions, whose wave front set is the
+union of the wave front sets of their components (`Distribution.vectorWaveFrontSet`). The
+component of `Op(a) v` along a functional `ℓ` on `W` is a finite sum of scalar operators applied to
+the coordinates of `v` in a basis `(e_j)` of `V`: with dual basis `(c_j)`,
+`ℓ ∘ Op(a) = ∑ⱼ Op(ℓ ∘ a ∘ e_j) ∘ c_j`. -/
+
+namespace Symbol
+
+variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W]
+
+/-- The map `T ↦ ℓ ∘ T ∘ e` of coefficients, sending an operator `V →L[ℂ] W` to the scalar entry
+determined by a vector `e ∈ V` and a functional `ℓ` on `W`. -/
+private def entryMap (ℓ : W →L[ℂ] ℂ) (e : V) : (V →L[ℂ] W) →L[ℝ] (ℂ →L[ℂ] ℂ) :=
+  ((ContinuousLinearMap.compL ℂ ℂ W ℂ ℓ).comp
+    ((ContinuousLinearMap.compL ℂ ℂ V W).flip (ContinuousLinearMap.toSpanSingleton ℂ e))
+    ).restrictScalars ℝ
+
+private theorem entryMap_apply (ℓ : W →L[ℂ] ℂ) (e : V) (T : V →L[ℂ] W) :
+    entryMap ℓ e T = ℓ ∘L T ∘L ContinuousLinearMap.toSpanSingleton ℂ e :=
+  (rfl)
+
+variable [CompleteSpace V] [FiniteDimensional ℂ V] [CompleteSpace W]
+
+/-- **Components of a matrix-valued quantization.** For a functional `ℓ` on `W` and a basis
+`(e_j)` of `V` with dual basis `(c_j)`, the component `ℓ ∘ Op(a)` of the quantization of a symbol
+`a` with values in `V →L[ℂ] W` is the sum over `j` of the scalar quantizations of the entries
+`ℓ ∘ a ∘ e_j`, applied to the coordinates `c_j v`. -/
+private theorem postcomp_comp_quantizeSobolev {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ V)
+    (ℓ : W →L[ℂ] ℂ) (t : ℝ) :
+    BesselPotentialSpace.postcomp _ _ 2 ℓ ∘L a.quantizeSobolev ha t =
+      ∑ j, (a.map (entryMap ℓ (b j))).quantizeSobolev (ha.map _) t ∘L
+        BesselPotentialSpace.postcomp _ t 2 (b.coord j).toContinuousLinearMap := by
+  ext1 v
+  simp only [_root_.sum_apply, ContinuousLinearMap.comp_apply,
+    quantizeSobolev_map ha ℓ _ (entryMap_apply ℓ _), ← map_sum,
+    BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord]
+
+/-- **Microlocality of matrix-valued pseudodifferential operators.** Let `a` be a symbol of order
+`m` with values in `V →L[ℂ] W` and compact spatial support, where `V` is finite-dimensional. For
+every `v ∈ H^t(ℝⁿ; V)`, the wave front set of `Op(a) v` is contained in that of `v`:
+`WF(Op(a) v) ⊆ WF(v)`, for the wave front sets of vector-valued distributions. -/
+theorem vectorWaveFrontSet_toDistribution_quantizeSobolev_subset {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, V)) :
+    (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).vectorWaveFrontSet ⊆
+      (toDistribution ⊤ v.toDistr).vectorWaveFrontSet := by
+  let b := Module.finBasis ℂ V
+  intro p hp
+  obtain ⟨ℓ, hp⟩ := mem_vectorWaveFrontSet_iff.1 hp
+  -- The component of `Op(a) v` along `ℓ` is a sum of scalar quantizations of components of `v`.
+  have hℓ : mapCLM (ℓ.restrictScalars ℝ) (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr) =
+      ∑ j, toDistribution ⊤ ((a.map (entryMap ℓ (b j))).quantizeSobolev (ha.map _) t
+        (BesselPotentialSpace.postcomp _ t 2 (b.coord j).toContinuousLinearMap v)
+        ).toDistr := by
+    have h := congrArg (fun T ↦ toDistribution ⊤ (BesselPotentialSpace.toDistrCLM _ _ _ 2 (T v)))
+      (postcomp_comp_quantizeSobolev ha b ℓ t)
+    simp only [_root_.sum_apply, map_sum, ContinuousLinearMap.comp_apply,
+      BesselPotentialSpace.toDistrCLM_apply] at h
+    rw [← h, BesselPotentialSpace.toDistribution_toDistr_postcomp]
+  rw [hℓ] at hp
+  obtain ⟨j, -, hj⟩ := mem_iUnion₂.1 (waveFrontSet_sum_subset _ _ hp)
+  refine waveFrontSet_mapCLM_subset_vectorWaveFrontSet
+    (b.coord j).toContinuousLinearMap _ ?_
+  -- The coordinates of `v` have wave front sets inside that of `v`.
+  rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp]
+  exact waveFrontSet_toDistribution_quantizeSobolev_subset _ t _ hj
+
+/-- **Pseudodifferential operators do not enlarge the singular support.** For a symbol `a` with
+values in `V →L[ℂ] W` between finite-dimensional spaces and compact spatial support, and every
+`v ∈ H^t(ℝⁿ; V)`, the singular support of `Op(a) v` is contained in the singular support of
+`v`. -/
+theorem singularSupport_toDistribution_quantizeSobolev_subset [FiniteDimensional ℂ W]
+    {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ)
+    (v : H^{t}(CoordinateSpace n, V)) :
     (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).singularSupport ⊆
       (toDistribution ⊤ v.toDistr).singularSupport := by
-  rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet]
-  exact image_mono (waveFrontSet_toDistribution_quantizeSobolev_subset ha t v)
+  rw [← fst_image_vectorWaveFrontSet, ← fst_image_vectorWaveFrontSet]
+  exact image_mono (vectorWaveFrontSet_toDistribution_quantizeSobolev_subset ha t v)
 
 end Symbol
 

@@ -10,7 +10,8 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
 public import TauCeti.Analysis.Sobolev.GraphStep.Coordinates
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
+public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # The cokernel of the trajectory operator
@@ -57,6 +58,8 @@ to prove that `D_A` is Fredholm when the limits of `A` at `±∞` are hyperbolic
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator`: for
   a continuous family, a path orthogonal to the range of `D_A` is almost everywhere a classical
   solution of the adjoint equation `w' = A† w`.
+* `TauCeti.WeakDerivStep.squareIntegrableSolutions_neg_adjoint_eq_bot_of_surjective`: when `D_A`
+  is onto, the adjoint equation `w' = A† w` has no nonzero square-integrable solution.
 
 ## References
 
@@ -319,13 +322,29 @@ theorem exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator (hA
   obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
   obtain ⟨z, hz, hzv⟩ := orthogonal_range_trajectoryOperator_le_map_ker
     (ae_eq_adjoint_of_ae_eq hAL hBL) hv
-  have hadj : Continuous fun s ↦ ContinuousLinearMap.adjoint (A s) :=
-    (ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous.comp hA
-  obtain ⟨w, hw, hzw⟩ := exists_hasDerivAt_of_trajectoryOperator_eq_zero hadj.neg
+  obtain ⟨w, hw, hzw⟩ := exists_hasDerivAt_of_trajectoryOperator_eq_zero hA.clm_adjoint.neg
     ((Lp.coeFn_neg BL).trans (hBL.mono fun s hs ↦ by simp [hs])) (LinearMap.mem_ker.1 hz)
   refine ⟨w, fun s ↦ by simpa using hw s, ?_⟩
   rw [← hzv, ContinuousLinearMap.coe_coe, prevL_apply]
   exact hzw
+
+/-- **An onto trajectory operator has no square-integrable adjoint solutions.** If the trajectory
+operator `D_A u = u' + A u` of a continuous family on a finite-dimensional space maps
+`W^{1,2}(ℝ, E)` onto `L²(ℝ, E)`, then the adjoint equation `v' = A(s)† v` has no nonzero
+square-integrable solution: such a solution would be orthogonal to the range of `D_A`. -/
+theorem squareIntegrableSolutions_neg_adjoint_eq_bot_of_surjective [FiniteDimensional ℝ E]
+    (hA : Continuous A) {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (hsurj : Function.Surjective (trajectoryOperator (p := 2) AL)) :
+    squareIntegrableSolutions (fun s ↦ -ContinuousLinearMap.adjoint (A s)) = ⊥ := by
+  obtain ⟨AL', hAL'⟩ := exists_ae_eq_adjoint AL hAL
+  rw [← ker_trajectoryOperator_eq_bot_iff (A := fun s ↦ -ContinuousLinearMap.adjoint (A s))
+    hA.clm_adjoint.neg (-AL')
+    ((Lp.coeFn_neg AL').trans (hAL'.mono fun s hs ↦ by simp [hs]))]
+  refine (surjective_trajectoryOperator_iff_ker_neg_eq_bot (ae_eq_adjoint_of_ae_eq hAL hAL') ?_).1
+    hsurj
+  rw [LinearMap.range_eq_top.2 hsurj]
+  exact isClosed_univ
 
 /-- **The trajectory operator of a coercive symmetric family is onto.** If a `C¹` family of
 symmetric operators on a finite-dimensional space satisfies `α ‖v‖ ≤ ‖A s v‖` and
