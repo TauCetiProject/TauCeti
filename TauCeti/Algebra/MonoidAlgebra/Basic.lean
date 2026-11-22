@@ -20,8 +20,8 @@ none of the further theory built on it.
 
 ## Main results
 
-* `TauCeti.single_sub_one_ne_zero`: over a nontrivial ring, the difference `single g 1 - 1`
-  between the basis element at `g` and the unit is nonzero when `g ≠ 1`.
+* `TauCeti.single_sub_one_ne_zero_iff`: over a nontrivial ring, the difference `single g 1 - 1`
+  between the basis element at `g` and the unit is nonzero exactly when `g ≠ 1`.
 * `MonoidAlgebra.coeff_one_mul_comm`: the coefficient at the identity of `xy` equals
   that of `yx` in the monoid algebra of a Dedekind-finite monoid (for instance a group) over a
   commutative semiring.
@@ -101,12 +101,10 @@ end Semiring
 variable {R : Type*} [Ring R] {G : Type*} [One G]
 
 /-- Over a nontrivial ring, the difference `single g 1 - 1` between the basis element at `g` and the
-unit is nonzero when `g ≠ 1`. -/
-theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
-    MonoidAlgebra.single g (1 : R) - 1 ≠ 0 := by
-  rw [sub_ne_zero, MonoidAlgebra.one_def]
-  intro h
-  exact hg (MonoidAlgebra.single_left_injective one_ne_zero h)
+unit is nonzero exactly when `g ≠ 1`. -/
+theorem single_sub_one_ne_zero_iff [Nontrivial R] {g : G} :
+    MonoidAlgebra.single g (1 : R) - 1 ≠ 0 ↔ g ≠ 1 := by
+  rw [sub_ne_zero, MonoidAlgebra.one_def, (MonoidAlgebra.single_left_injective one_ne_zero).ne_iff]
 
 namespace MonoidAlgebra
 

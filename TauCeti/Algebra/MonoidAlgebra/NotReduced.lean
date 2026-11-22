@@ -21,9 +21,9 @@ reduced whenever `R` has prime characteristic `p` and `G` has a nontrivial eleme
 
 The mechanism is the freshman's dream: if `g ≠ 1` with `g ^ p = 1`, then in characteristic `p`
 the group-like element `single g 1` and the identity `1 = single 1 1` satisfy
-`(single g 1 - 1) ^ p = single (g ^ p) 1 - 1 = single 1 1 - 1 = 0` by `sub_pow_char`, while
-`single g 1 - 1 ≠ 0` by `TauCeti.single_sub_one_ne_zero`. So `single g 1 - 1` is a nonzero
-nilpotent and `R[G]` is not reduced.
+`(single g 1 - 1) ^ p = single (g ^ p) 1 - 1 = single 1 1 - 1 = 0`, while `single g 1 - 1 ≠ 0`
+by `TauCeti.single_sub_one_ne_zero_iff`. So `single g 1 - 1` is a nonzero nilpotent and `R[G]`
+is not reduced. The coefficient ring need not be commutative.
 
 ## Main declarations
 
@@ -37,27 +37,27 @@ nilpotent and `R[G]` is not reduced.
 
 ## References
 
-The freshman's-dream identity `(x - y) ^ p = x ^ p - y ^ p` in characteristic `p` is Mathlib's
-`sub_pow_char`; the monomial power law `single m r ^ n = single (m ^ n) (r ^ n)` is Mathlib's
+The freshman's-dream identity `(x - y) ^ p = x ^ p - y ^ p` in characteristic `p`, for commuting
+`x` and `y`, is Mathlib's `sub_pow_char_of_commute`; it applies because `single g 1` commutes
+with `1`. The monomial power law `single m r ^ n = single (m ^ n) (r ^ n)` is Mathlib's
 `MonoidAlgebra.single_pow`.
 The characteristic of the monoid algebra is transported from that of `R` along the injective
-`algebraMap` (`charP_of_injective_algebraMap` with `FaithfulSMul.algebraMap_injective`).
+ring homomorphism `MonoidAlgebra.singleOneRingHom` (`charP_of_injective_ringHom`).
 -/
 
 public section
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] {G : Type*} [Monoid G]
+variable {R : Type*} [Ring R] {G : Type*} [Monoid G]
 variable (p : ℕ) [hp : Fact p.Prime] [CharP R p]
 
 /-- In characteristic `p`, the `p`-th power of `single g 1 - 1` vanishes when `g ^ p = 1`. -/
 theorem single_sub_one_pow_eq_zero {g : G} (hgp : g ^ p = 1) :
     (MonoidAlgebra.single g (1 : R) - 1) ^ p = 0 := by
-  have : Nonempty G := ⟨1⟩
   have : CharP (MonoidAlgebra R G) p :=
-    charP_of_injective_algebraMap
-      (FaithfulSMul.algebraMap_injective R (MonoidAlgebra R G)) p
+    charP_of_injective_ringHom (f := MonoidAlgebra.singleOneRingHom)
+      MonoidAlgebra.single_right_injective p
   rw [sub_pow_char_of_commute p (Commute.one_right _), MonoidAlgebra.single_pow,
     one_pow, hgp, one_pow,
     ← MonoidAlgebra.one_def, sub_self]
@@ -76,7 +76,7 @@ theorem not_isReduced_monoidAlgebra {g : G} (hg : g ≠ 1) (hgp : g ^ p = 1) :
   intro h
   have := h
   have : Nontrivial R := CharP.nontrivial_of_char_ne_one hp.out.ne_one
-  exact single_sub_one_ne_zero hg
+  exact single_sub_one_ne_zero_iff.mpr hg
     (isNilpotent_iff_eq_zero.mp (isNilpotent_single_sub_one (R := R) p hgp))
 
 /-- If the order of a finite group vanishes in a field, its group algebra is

@@ -283,7 +283,8 @@ theorem isPGroup_of_isLocalRing (hp : ¬IsUnit (p : R)) [IsLocalRing (MonoidAlge
     rw [← RingHom.comp_apply, augmentation_comp_mapDomainRingHom]
     simp [GroupAlgebra.average, Algebra.smul_def, Finset.card_univ]
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self e with he' | he'
-  · refine single_sub_one_ne_zero (R := R) (g := h) (fun h1 ↦ ?_) (he'.mul_right_eq_zero.mp he)
+  · refine (single_sub_one_ne_zero_iff (R := R) (g := h)).mpr (fun h1 ↦ ?_)
+      (he'.mul_right_eq_zero.mp he)
     rw [h1, orderOf_one] at horder
     exact hqprime.one_lt.ne horder
   · simpa [haug] using he'.map (augmentation R G)

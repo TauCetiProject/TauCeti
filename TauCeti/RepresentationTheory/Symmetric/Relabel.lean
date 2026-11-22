@@ -191,8 +191,7 @@ theorem spechtIdealRelabelEquiv_symm_apply_coe (y : spechtIdeal t) :
     ((spechtIdealRelabelEquiv σ t).symm y : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) =
       (y : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card))) * MonoidAlgebra.single σ⁻¹ 1 := by
   rw [spechtIdealRelabelEquiv, LinearEquiv.ofSubmodules_symm_apply,
-    Units.symm_mulRightLinearEquiv_apply, ← map_inv,
-    MonoidAlgebra.coe_unitsSingle, Prod.snd_inv, Prod.fst_inv, inv_one, Units.val_one,
+    Units.symm_mulRightLinearEquiv_apply, MonoidAlgebra.coe_inv_unitsSingle, inv_one, Units.val_one,
     Units.val_inv_eq_inv_val, val_toUnits_apply]
 
 /-- Right multiplication by `σ` is an isomorphism of representations from `ℚ[Sₙ] c_{σt}` to
