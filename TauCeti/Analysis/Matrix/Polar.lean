@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.Analysis.Matrix.Rpow
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 
 /-!
@@ -17,8 +17,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 Over `𝕜 = ℝ` or `ℂ`, every invertible matrix `A : GL n 𝕜` factors uniquely as `A = P U` with `P`
 positive definite and `U` unitary (orthogonal when `𝕜 = ℝ`): `P = √(A Aᴴ)` is the square root of
 the continuous functional calculus and `U = Units.polarUnitary A`. This file specializes the
-polar decomposition of invertible elements of
-`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar.lean` to matrices, where the
+polar decomposition of invertible elements in
+`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar/Basic.lean`
+to matrices, where the
 positive factor is positive definite, and computes the determinants of both factors:
 `det P = ‖det A‖` and `det U = det A / ‖det A‖`.
 

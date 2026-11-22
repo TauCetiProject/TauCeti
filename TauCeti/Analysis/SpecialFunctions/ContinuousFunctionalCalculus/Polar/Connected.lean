@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Connected.PathConnected
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 public import TauCeti.Topology.Algebra.Star.Unitary
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.StrictPositivityPath
 import TauCeti.Topology.Algebra.Group.Units

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Order
 import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Exponential
 import TauCeti.MeasureTheory.Function.BoundedBorel.Exponential
@@ -244,6 +243,7 @@ theorem norm_borelPathToOne_sub_one_le (u : unitary (H →L[ℂ] H)) (t : I) :
     ‖((borelPathToOne u t : unitary (H →L[ℂ] H)) - 1 : H →L[ℂ] H)‖ ≤
       ‖(u - 1 : H →L[ℂ] H)‖ := by
   have ht : ‖(t : ℝ) • borelArg u‖ ≤ ‖borelArg u‖ := by
+    change ‖(t : ℝ) • (borelArg u : H →L[ℂ] H)‖ ≤ ‖(borelArg u : H →L[ℂ] H)‖
     rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg t.property.left]
     exact mul_le_of_le_one_left (norm_nonneg _) t.property.right
   have hsq : ‖(selfAdjoint.expUnitary ((t : ℝ) • borelArg u) - 1 : H →L[ℂ] H)‖ ^ 2 =

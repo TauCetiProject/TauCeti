@@ -25,7 +25,7 @@ Smoothness is for the native manifold structure on units of the matrix algebra, 
 Euclidean operator norm, which induces the usual matrix topology. It follows from the smooth
 positive-definite logarithm in `TauCeti.Analysis.Matrix.Exponential.Log` and the identity
 `P ^ s = exp (s • log P)`. The factorization and equivariance use `Units.polarUnitary` and the
-uniqueness API in `TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar`.
+uniqueness API in `TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic`.
 
 ## References
 

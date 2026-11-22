@@ -7,17 +7,17 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Unitary
 public import TauCeti.Analysis.InnerProductSpace.Modulus
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Connected
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Connected
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Norm-path-connectedness of `GL(H)` and invertible Hilbert-space operators
 
 This file combines the continuous-functional-calculus polar homotopy for units
-(`TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Connected`) with Putnam–Wintner
-unitary Borel logarithms (`TauCeti.Analysis.InnerProductSpace.BorelCalculus.Unitary`) to establish
-norm-path-connectedness of the general linear group `(H →L[ℂ] H)ˣ` and rectangular invertible
-operator spaces `{A : E →L[ℂ] F // A.IsInvertible}` over `ℂ`, with no separability or
+(`TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Connected`) with
+Putnam–Wintner unitary Borel logarithms (`TauCeti.Analysis.InnerProductSpace.BorelCalculus.Unitary`)
+to establish norm-path-connectedness of the general linear group `(H →L[ℂ] H)ˣ` and rectangular
+invertible operator spaces `{A : E →L[ℂ] F // A.IsInvertible}` over `ℂ`, with no separability or
 finite-dimensionality assumptions.
 
 ## Main declarations
