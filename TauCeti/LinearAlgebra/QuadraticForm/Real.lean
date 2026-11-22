@@ -239,10 +239,7 @@ private theorem equivalent_weightedSumSquares_of_ncard_fiber_eq (u : ι → Sign
     exact h s
   let σ : ι ≃ ι' := Equiv.ofFiberEquiv hfiber
   have hσ : ∀ i, u' (σ i) = u i := fun i ↦ Equiv.ofFiberEquiv_map hfiber i
-  have hcomp : (fun i' ↦ ((u' i' : ℝ))) ∘ σ = fun i ↦ ((u i : ℝ)) := by
-    funext i
-    exact congrArg (fun s : SignType ↦ ((s : ℝ))) (hσ i)
-  exact equivalent_weightedSumSquares_of_comp_eq σ hcomp
+  exact equivalent_weightedSumSquares_of_comp_eq σ fun i ↦ by rw [hσ i]
 
 end Fibers
 
@@ -384,7 +381,8 @@ theorem equivalent_weightedSumSquares_ite_lt_sigNeg (Q : _root_.QuadraticForm �
     | right j => simp [e]
   refine (equivalent_realSignatureForm Q hQ).trans ?_
   rw [realSignatureForm_def]
-  exact (equivalent_weightedSumSquares_of_comp_eq e hweight).symm
+  exact (equivalent_weightedSumSquares_of_comp_eq e fun i ↦
+    congrArg (· • (1 : ℝ)) (congrFun hweight i)).symm
 
 /-- Every signature `(p, n - p)` with `p ≤ n` is the signature of a regular quadratic form on the
 coordinate space `ℝⁿ`: the normal form `realSignatureForm p (n - p)` transported along a bijection
@@ -397,7 +395,7 @@ theorem exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq {n p : ℕ} (h : p ≤ 
   obtain ⟨f⟩ : (weightedSumSquares ℝ ((Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) ∘ e)).Equivalent
       (realSignatureForm p (n - p)) := by
     rw [realSignatureForm_def]
-    exact equivalent_weightedSumSquares_of_comp_eq e rfl
+    exact equivalent_weightedSumSquares_of_comp_eq e fun _ ↦ rfl
   exact ⟨_, f.nondegenerate_iff.mpr (nondegenerate_realSignatureForm p (n - p)),
     by rw [Equivalent.sigPos_eq ⟨f⟩, sigPos_realSignatureForm],
     by rw [Equivalent.sigNeg_eq ⟨f⟩, sigNeg_realSignatureForm]⟩
