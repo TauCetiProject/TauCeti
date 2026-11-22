@@ -80,7 +80,7 @@ fibre. On `1 < s`, it is supplied directly by
 `TauCeti.summable_absNorm_rpow_subtype_of_one_lt (frobeniusPrimeSet K L C) hs`. -/
 theorem sum_primeIdealZetaSum_frobeniusPrimeSet
     (hsum : ∀ C : ConjClasses (L ≃ₐ[K] L),
-      Summable fun 𝔭 : frobeniusPrimeSet K L C ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+      Summable fun 𝔭 : frobeniusPrimeSet K L C ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     ∑ C : ConjClasses (L ≃ₐ[K] L), (frobeniusPrimeSet K L C).primeIdealZetaSum s =
       (↑(ramifiedPrimes K L) : Set (HeightOneSpectrum (𝓞 K)))ᶜ.primeIdealZetaSum s := by
   have hcov : (↑(ramifiedPrimes K L) : Set (HeightOneSpectrum (𝓞 K)))ᶜ =
@@ -97,7 +97,7 @@ variable (K L) in
 fibres differ by at most `#(ramifiedPrimes K L)` — a bound uniform in `s`. -/
 theorem abs_primeIdealZetaSum_sub_sum_primeIdealZetaSum_frobeniusPrimeSet_le (hs : 0 ≤ s)
     (hsum : ∀ C : ConjClasses (L ≃ₐ[K] L),
-      Summable fun 𝔭 : frobeniusPrimeSet K L C ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s)) :
+      Summable fun 𝔭 : frobeniusPrimeSet K L C ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s)) :
     |(Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum s -
         ∑ C : ConjClasses (L ≃ₐ[K] L), (frobeniusPrimeSet K L C).primeIdealZetaSum s| ≤
       (ramifiedPrimes K L).card := by

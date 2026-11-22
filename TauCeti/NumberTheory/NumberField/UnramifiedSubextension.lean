@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.NumberTheory.NumberField.AlgEquiv
+import TauCeti.RingTheory.Unramified.AlgEquiv
 import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
 
@@ -48,7 +48,7 @@ omit [NumberField K] in
 `σ L` exactly when it is unramified in `L`. -/
 theorem isUnramifiedIn_map_iff (L : IntermediateField K Ω) (σ : Ω →ₐ[K] Ω) (p : Ideal (𝓞 K)) :
     Algebra.IsUnramifiedIn (𝓞 (L.map σ)) p ↔ Algebra.IsUnramifiedIn (𝓞 L) p :=
-  (L.equivMap σ).isUnramifiedIn_iff p |>.symm
+  (NumberField.RingOfIntegers.mapAlgEquiv (L.equivMap σ)).isUnramifiedIn_iff p |>.symm
 
 /-- Unramifiedness in a compositum, inside a Galois extension `Ω / K`: the three fields are compared
 inside the normal closure of `L₁ ⊔ L₂`, a finite Galois extension of `K`, where unramifiedness is

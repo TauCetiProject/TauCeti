@@ -87,7 +87,7 @@ theorem auxiliaryKummerIdeleSubgroup_le_range_ideleNormMap_of_ramifiedSupport {n
     (hn : Monoid.exponent Gal(L/K) ∣ n) (S T : Finset (HeightOneSpectrum (𝓞 K)))
     (hT : ∀ v ∈ T, v ∉ S →
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1)
+      Module.finrank (v.adicCompletion K) (w.val.adicCompletion L) = 1)
     (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
     auxiliaryKummerIdeleSubgroup S T n ≤
       (GlobalNumberFields.ideleNormMap K L).toMonoidHom.range := by
@@ -104,7 +104,7 @@ theorem auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap_of_ramified
     (hn : Monoid.exponent Gal(L/K) ∣ n) (S T : Finset (HeightOneSpectrum (𝓞 K)))
     (hT : ∀ v ∈ T, v ∉ S →
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1)
+      Module.finrank (v.adicCompletion K) (w.val.adicCompletion L) = 1)
     (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
     auxiliaryKummerIdeleClassSubgroup S T n ≤
       (GlobalNumberFields.ideleClassNormMap K L :
@@ -124,7 +124,7 @@ theorem index_range_ideleClassNormMap_dvd_index_auxiliaryKummerIdeleClassSubgrou
     (hn : Monoid.exponent Gal(L/K) ∣ n) (S T : Finset (HeightOneSpectrum (𝓞 K)))
     (hT : ∀ v ∈ T, v ∉ S →
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1)
+      Module.finrank (v.adicCompletion K) (w.val.adicCompletion L) = 1)
     (hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S) :
     (GlobalNumberFields.ideleClassNormMap K L :
         IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.index ∣
@@ -158,10 +158,10 @@ theorem ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit
     (hΔS : ∀ v ∈ S, ∀ a ∈ Δ, ∃ c : v.adicCompletion K, c ^ n = algebraMap K _ a)
     (hΔinf : ∀ w : InfinitePlace K, ∀ a ∈ Δ, ∃ c : w.Completion, c ^ n = algebraMap K _ a)
     {m : ℕ} (hm : Module.finrank K (kummerField E n Δ) ∣ m)
-    (hT : ∀ y : (v : T) → (v.1.adicCompletion K)ˣ,
-      (∀ v, Valued.v (y v : v.1.adicCompletion K) = 1) →
+    (hT : ∀ y : (v : T) → (v.val.adicCompletion K)ˣ,
+      (∀ v, Valued.v (y v : v.val.adicCompletion K) = 1) →
       ∃ u ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K, ∀ v : T,
-        (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
+        (Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
           (powMonoidHom m).range) :
     Function.Surjective (ideleClassNormMap K (kummerField E n Δ)) := by
   classical
@@ -205,7 +205,8 @@ theorem ideleClassNormMap_kummerField_surjective (S : Finset (HeightOneSpectrum 
     (mem_auxiliaryKummerIdeleSubgroup_iff S ∅ n _).mp (hΔ a ha)
   refine ideleClassNormMap_kummerField_surjective_of_forall_exists_mem_unit S ∅
     hcl hnS (fun a ha ↦ ?_) (fun v hv a ha ↦ ?_)
-    (fun w a ha ↦ ?_) dvd_rfl fun _ _ ↦ ⟨1, one_mem _, fun v ↦ (Finset.notMem_empty _ v.2).elim⟩
+    (fun w a ha ↦ ?_) dvd_rfl fun _ _ ↦ ⟨1, one_mem _, fun v ↦
+        (Finset.notMem_empty _ v.property).elim⟩
   · rw [Finset.coe_empty, Set.union_empty,
       ← IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := 𝓞 K)]
     exact fun v hvS ↦ (hmem a ha).2.2 v hvS (by simp)

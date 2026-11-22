@@ -78,7 +78,7 @@ private def DegreeGE (w : σ → ℤ) (g : ι → ℤ) (a : ℤ) (z : ι →₀ 
 private theorem DegreeGE.sub {a : ℤ} {z z' : ι →₀ MvPolynomial σ R} (hz : DegreeGE w g a z)
     (hz' : DegreeGE w g a z') : DegreeGE w g a (z - z') := by
   intro i e he
-  rw [Finsupp.sub_apply, coeff_sub] at he
+  rw [Finsupp.sub_apply, AddMonoidAlgebra.coeff_sub_apply] at he
   by_cases h : (z i).coeff e = 0
   · exact hz' i e fun h' ↦ he (by rw [h, h', sub_zero])
   · exact hz i e h
@@ -186,7 +186,7 @@ private theorem exists_sub_apply_mem_pow_idealOfVars
     · exact absurd rfl he
   · rw [mem_pow_idealOfVars_iff']
     intro e he
-    rw [Finsupp.sub_apply, coeff_sub]
+    rw [Finsupp.sub_apply, AddMonoidAlgebra.coeff_sub_apply]
     rcases Nat.lt_succ_iff_lt_or_eq.mp he with he | he
     · rw [(mem_pow_idealOfVars_iff' k _).mp (hzk j) e he,
         (mem_pow_idealOfVars_iff' k _).mp (hdyk j) e he, sub_zero]
