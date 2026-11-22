@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.Derivation.Basic
+import Mathlib.RingTheory.MvPolynomial.EulerIdentity
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Chain rule for derivations on evaluated multivariate polynomials
@@ -17,19 +21,27 @@ evaluated at a point `t : σ → A` satisfies the multivariable chain rule
 `D (F.eval t) = (∑ e ∈ F.support, D (F.coeff e) * ∏ j, t j ^ e j) +`
 `  ∑ j, (pderiv j F).eval t * D (t j)`,
 
-differentiating both the coefficients of `F` and the coordinate entries `t j`.
+differentiating both the coefficients of `F` and the coordinate entries `t j`. When `A` is local
+and `t` lies in its maximal ideal `𝔪`, this computes the leading term modulo `𝔪 ^ (n + 1)` of
+`D (F(t))` for a homogeneous form `F` of degree `n + 1` whenever `D` is dual modulo `𝔪` to
+coordinate `i`.
 
 ## Main results
 
 * `Derivation.apply_eval_monomial`: chain rule on an evaluated monomial.
 * `Derivation.apply_eval_mvPolynomial`: chain rule on an evaluated multivariate polynomial.
+* `Derivation.apply_eval_sub_pderiv_mul_mem_pow_succ`: leading-term congruence modulo
+  `𝔪 ^ (n + 1)` for a derivation dual modulo `𝔪` to coordinate `i` acting on a degree-`(n + 1)`
+  homogeneous form.
 -/
 
 public section
 
 namespace Derivation
 
-open MvPolynomial
+open IsLocalRing MvPolynomial
+
+section ChainRule
 
 variable {k A σ : Type*} [CommSemiring k] [CommSemiring A] [Algebra k A] [Fintype σ]
 
@@ -73,5 +85,36 @@ theorem apply_eval_mvPolynomial (D : Derivation k A A) (F : MvPolynomial σ A) (
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← Finset.sum_mul, ← map_sum, ← map_sum, ← F.as_sum]
+
+end ChainRule
+
+/-- A derivation `D` of a local `k`-algebra `A` that is dual modulo `𝔪` to coordinate `i` of
+`t : σ → A` (up to `s : A`) acts on a degree-`(n + 1)` homogeneous form `F(t)` as
+`(pderiv i F).eval t * s` modulo `𝔪 ^ (n + 1)`. -/
+theorem apply_eval_sub_pderiv_mul_mem_pow_succ {k A σ : Type*} [CommRing k] [CommRing A]
+    [Algebra k A] [IsLocalRing A] [Finite σ] [DecidableEq σ]
+    (D : Derivation k A A) {t : σ → A} (htmem : ∀ j, t j ∈ maximalIdeal A) {n : ℕ}
+    {F : MvPolynomial σ A} (hF : F.IsHomogeneous (n + 1)) {i : σ} {s : A}
+    (hDt : ∀ j : σ, residue A (D (t j)) = if j = i then residue A s else 0) :
+    D (F.eval t) - (pderiv i F).eval t * s ∈ maximalIdeal A ^ (n + 1) := by
+  have := Fintype.ofFinite σ
+  have hcoeff_mem :
+      (∑ e ∈ F.support, D (F.coeff e) * ∏ j, t j ^ e j) ∈ maximalIdeal A ^ (n + 1) :=
+    Ideal.sum_mem _ fun e he ↦ Ideal.mul_mem_left _ _ (hF.prod_pow_mem_pow htmem he)
+  have hderiv_mem (j : σ) : (pderiv j F).eval t ∈ maximalIdeal A ^ n :=
+    hF.pderiv.eval_mem_pow htmem
+  have htail_mem :
+      (∑ j, (pderiv j F).eval t * D (t j)) - (pderiv i F).eval t * s ∈
+        maximalIdeal A ^ (n + 1) := by
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i), add_sub_right_comm, ← mul_sub]
+    refine Ideal.add_mem _ ?_ (Ideal.sum_mem _ fun j hj ↦ ?_)
+    · rw [pow_succ]
+      refine Ideal.mul_mem_mul (hderiv_mem i) ((residue_eq_zero_iff _).mp ?_)
+      simp [hDt i]
+    · rw [pow_succ]
+      refine Ideal.mul_mem_mul (hderiv_mem j) ((residue_eq_zero_iff _).mp ?_)
+      simp [hDt j, Finset.ne_of_mem_erase hj]
+  rw [D.apply_eval_mvPolynomial F t, add_sub_assoc]
+  exact Ideal.add_mem _ hcoeff_mem htail_mem
 
 end Derivation

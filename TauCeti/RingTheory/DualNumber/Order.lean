@@ -23,6 +23,7 @@ namespace DualNumber
 open IsLocalRing
 
 /-- On the dual numbers `k[ε] / (ε²)` over a field `k`, the maximal ideal has local order `1`. -/
+@[simp]
 theorem localOrder_maximalIdeal {k : Type*} [Field k] :
     (maximalIdeal (DualNumber k)).localOrder = 1 := by
   refine le_antisymm (le_of_not_gt fun hlt ↦ ?_) ?_

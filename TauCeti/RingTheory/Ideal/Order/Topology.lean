@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.Ideal.Order.Basic
+import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
 # Local order at the closed point of a local ring
@@ -27,13 +28,10 @@ open IsLocalRing
 @[simp]
 theorem orderAt_closedPoint {R : Type*} [CommRing R] [IsLocalRing R] (I : Ideal R) :
     I.orderAt (IsLocalRing.closedPoint R) = I.localOrder := by
-  let e : R ≃ₐ[R] Localization.AtPrime (IsLocalRing.closedPoint R).asIdeal :=
-    IsLocalization.atUnits R (IsLocalRing.closedPoint R).asIdeal.primeCompl
-      fun x hx ↦ notMem_maximalIdeal.mp hx
-  have he : (e.toRingEquiv : R →+* Localization.AtPrime (IsLocalRing.closedPoint R).asIdeal) =
-      algebraMap R _ :=
-    RingHom.ext e.commutes
-  rw [orderAt_def, ← he]
+  let e := IsLocalRing.algEquivLocalizationAtMaximalIdeal R R
+  have he : (e.toRingEquiv : R →+* Localization.AtPrime (maximalIdeal R)) = algebraMap R _ :=
+    RingHom.ext (IsLocalRing.algEquivLocalizationAtMaximalIdeal_apply R R)
+  rw [orderAt_def, closedPoint, ← he]
   exact localOrder_map_equiv I e.toRingEquiv
 
 end Ideal

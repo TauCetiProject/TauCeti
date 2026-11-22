@@ -19,6 +19,7 @@ public section
 namespace DualNumber
 
 /-- Over a field `k`, the square of the maximal ideal of the dual numbers `k[ε]` is zero. -/
+@[simp]
 theorem maximalIdeal_sq_eq_bot {k : Type*} [Field k] :
     IsLocalRing.maximalIdeal (DualNumber k) ^ 2 = ⊥ := by
   rw [maximalIdeal_eq_span_singleton_eps, Ideal.span_singleton_pow, sq, eps_mul_eps,

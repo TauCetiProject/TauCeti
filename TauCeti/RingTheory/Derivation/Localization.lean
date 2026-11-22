@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Localization.Module
 public import TauCeti.RingTheory.Derivation.Ideal
-public import TauCeti.RingTheory.Ideal.Order.Basic
 
 /-!
 # Derivations of a localization
@@ -24,16 +23,18 @@ Existence goes through Kähler differentials: `Ω[T⁄R]` is the localization of
 (`KaehlerDifferential.isLocalizedModule_map`), so the `A`-linear map `Ω[A⁄R] → N` classifying a
 derivation of `A` extends to a `T`-linear map `Ω[T⁄R] → N`.
 
+Extending global derivations unconditionally shows that the pushforward of a derivation ideal into
+a localization is contained in the derivation ideal of the pushforward
+(`Ideal.map_derivationIdeal_le`), with no finiteness hypothesis.
+
 Conversely, when `Ω[R⁄k]` is finitely presented over `R`, for any `k`-derivation `D` of a
 localization `A` of `R` at `S` there exist `s ∈ S` and a global `k`-derivation `δ` of `R` such that
 the extension of `δ` to `A` equals `algebraMap R A s • D`: lifting `Ω[R⁄k] →ₗ[R] A` via
 `Module.FinitePresentation.exists_lift_of_isLocalizedModule` produces an `R`-linear map
 `Ω[R⁄k] →ₗ[R] R` matching `s • D` on `R`, and uniqueness on localizations
 (`IsLocalization.eq_of_leibniz`) identifies the extension of `δ` with `algebraMap R A s • D` on
-`A`. Consequently, taking derivation ideals commutes with localization
-(`Ideal.map_derivationIdeal`), and over commutative rings `k` and `R` every derivation lowers
-ideal order at a prime by at most one (`Ideal.orderAt_le_orderAt_derivationIdeal_add_one`), in every
-characteristic and with no regularity or finiteness hypothesis.
+`A`. Under the same finite-presentation hypothesis on `Ω[R⁄k]`, taking derivation ideals therefore
+commutes with localization (`Ideal.map_derivationIdeal`).
 
 ## Main declarations
 
@@ -41,13 +42,11 @@ characteristic and with no regularity or finiteness hypothesis.
   the image of `A` are equal;
 * `Derivation.extendOfIsLocalization`: the extension of a derivation of `A` to `T`, with
   `Derivation.extendOfIsLocalization_algebraMap` stating that it extends;
-* `Derivation.exists_extendOfIsLocalization_eq_smul`: for every derivation `D` of a localization
-  `A` of `R`, there exist `s ∈ S` and a global derivation `δ` of `R` whose extension to `A` equals
-  `algebraMap R A s • D`;
-* `Ideal.map_derivationIdeal_le`, `Ideal.map_derivationIdeal`: compatibility of derivation ideals
-  with localization;
-* `Ideal.orderAt_le_orderAt_derivationIdeal_add_one`: over commutative rings, derivations lower
-  ideal order at any prime by at most one;
+* `Derivation.exists_extendOfIsLocalization_eq_smul`: when `Ω[R⁄k]` is finitely presented over
+  `R`, for every derivation `D` of a localization `A` of `R`, there exist `s ∈ S` and a global
+  derivation `δ` of `R` whose extension to `A` equals `algebraMap R A s • D`;
+* `Ideal.map_derivationIdeal_le`, `Ideal.map_derivationIdeal`: unconditional inclusion and
+  (under `[Module.FinitePresentation R Ω[R⁄k]]`) equality for derivation ideals under localization;
 * `Derivation.algebraMap_notMem_maximalIdeal_sq`: if `D f ∉ Q` for a prime `Q` of `A`, then the
   image of `f` in `A_Q` does not lie in the square of its maximal ideal.
 -/
@@ -142,7 +141,13 @@ theorem exists_extendOfIsLocalization_eq_smul {k R A : Type*} [CommRing k] [Comm
   simp only [extendOfIsLocalization_algebraMap, coe_comp, LinearMap.comp_apply,
     FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
   calc
-    algebraMap R A (δ r) = ((Algebra.linearMap R A).comp g) (KaehlerDifferential.D k R r) := rfl
+    algebraMap R A (δ r)
+        = Algebra.linearMap R A (δ r) := (Algebra.linearMap_apply R A (δ r)).symm
+    _ = Algebra.linearMap R A (g (KaehlerDifferential.D k R r)) := by
+      dsimp only [δ]
+      rw [coe_comp, LinearMap.comp_apply, coeFn_coe, LinearMap.coe_restrictScalars]
+    _ = ((Algebra.linearMap R A).comp g) (KaehlerDifferential.D k R r) :=
+      (LinearMap.comp_apply _ _ _).symm
     _ = algebraMap R A s * f (KaehlerDifferential.D k R r) := by
       simpa [Submonoid.smul_def, Algebra.smul_def] using
         LinearMap.congr_fun hg (KaehlerDifferential.D k R r)
@@ -190,24 +195,5 @@ theorem map_derivationIdeal (k : Type*) {R A : Type*} [CommRing k] [CommRing R] 
     refine (Ideal.mul_unit_mem_iff_mem _ (IsLocalization.map_units A s)).mp ?_
     rw [mul_comm, hD]
     exact Ideal.mem_map_of_mem _ (Ideal.apply_mem_derivationIdeal k δ hr)
-
-/-- At any prime of a commutative `k`-algebra `R` over a commutative ring `k`, the derivation
-ideal lowers ideal order by at most one. -/
-theorem orderAt_le_orderAt_derivationIdeal_add_one (k : Type*) [CommRing k] {R : Type*}
-    [CommRing R] [Algebra k R] (I : Ideal R) (p : PrimeSpectrum R) :
-    I.orderAt p ≤ (I.derivationIdeal k).orderAt p + 1 := by
-  refine ENat.forall_natCast_le_iff_le.mp fun m hm ↦ ?_
-  cases m with
-  | zero => simp
-  | succ n =>
-    rw [natCast_le_orderAt_iff] at hm
-    have hle : (I.derivationIdeal k).map (algebraMap R (Localization.AtPrime p.asIdeal)) ≤
-        IsLocalRing.maximalIdeal (Localization.AtPrime p.asIdeal) ^ n :=
-      (map_derivationIdeal_le k p.asIdeal.primeCompl I).trans
-        (derivationIdeal_le_pow_of_le_pow_succ k hm)
-    have hn : (n : ℕ∞) ≤ (I.derivationIdeal k).orderAt p :=
-      (natCast_le_orderAt_iff _ p n).mpr hle
-    push_cast
-    gcongr
 
 end Ideal

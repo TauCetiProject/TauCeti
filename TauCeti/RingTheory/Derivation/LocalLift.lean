@@ -61,7 +61,7 @@ theorem exists_derivation_residue_eq {k R A : Type*} [CommRing k] [CommRing R] [
   let ψ : Ω[A⁄k] →ₗ[A] κ := (φ.restrictScalars A).comp (TensorProduct.mk A κ Ω[A⁄k] 1)
   have hsurj : Function.Surjective (Algebra.linearMap A κ) := fun y ↦ by
     obtain ⟨a, rfl⟩ := residue_surjective (R := A) y
-    exact ⟨a, rfl⟩
+    exact ⟨a, by rw [Algebra.linearMap_apply, ResidueField.algebraMap_eq]⟩
   obtain ⟨fA, hfA⟩ := Module.projective_lifting_property (Algebra.linearMap A κ) ψ hsurj
   let D : Derivation k A A := fA.compDer (KaehlerDifferential.D k A)
   obtain ⟨s, δ, hδ⟩ := exists_extendOfIsLocalization_eq_smul S D

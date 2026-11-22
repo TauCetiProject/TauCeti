@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.DualNumber.Order
 public import TauCeti.RingTheory.Ideal.Order.Topology
 public import TauCeti.RingTheory.MarkedIdeal.Basic
-import Mathlib.RingTheory.Nilpotent.Lemmas
 
 /-!
 # Examples of affine ideal order and marked ideals
@@ -89,7 +88,7 @@ example :
   have h1 : M.cosupport = ∅ := by
     ext p
     rw [mem_cosupport_iff, hprime p, Ideal.orderAt_closedPoint]
-    simp [M, DualNumber.localOrder_maximalIdeal]
+    simp [M]
   have h2 : (M.pow 2).cosupport = Set.univ :=
     cosupport_eq_univ_of_ideal_eq_bot (by rw [pow_ideal, DualNumber.maximalIdeal_sq_eq_bot])
   refine ⟨h1, h2, ?_⟩

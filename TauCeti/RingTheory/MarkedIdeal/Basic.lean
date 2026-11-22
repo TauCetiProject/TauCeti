@@ -209,6 +209,7 @@ theorem cosupport_subset_cosupport_pow : P.cosupport ⊆ (P.pow k).cosupport := 
 
 /-- At a prime whose local ring has an associated graded ring without zero divisors, for instance a
 prime with regular localization, rescaling does not change membership in the cosupport. -/
+@[simp high]
 theorem mem_cosupport_pow_iff (p : PrimeSpectrum R)
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     p ∈ (P.pow k).cosupport ↔ p ∈ P.cosupport := by
@@ -299,6 +300,7 @@ theorem cosupport_inter_subset_cosupport_sum :
 /-- At a prime whose local ring has an associated graded ring without zero divisors, for instance a
 prime with regular localization, the prime lies in the cosupport of a marked sum exactly when it
 lies in both cosupports. -/
+@[simp high]
 theorem mem_cosupport_sum_iff (p : PrimeSpectrum R)
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     p ∈ (P.sum Q).cosupport ↔ p ∈ P.cosupport ∧ p ∈ Q.cosupport := by
