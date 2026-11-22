@@ -191,27 +191,30 @@ private noncomputable def idealCorrespondence {A : Type*} [Ring A] (I : TwoSided
   have hc : I.ringCon = c := by
     ext a b
     exact (TwoSidedIdeal.rel_iff I a b).trans TwoSidedIdeal.quotientRel_def.symm
-  let e₁ : Set.Ici I ≃o Set.Ici c :=
-    { toFun := fun J ↦ ⟨J.val.ringCon, hc ▸ TwoSidedIdeal.ringCon_le_iff.mp J.property⟩
-      invFun := fun d ↦ ⟨TwoSidedIdeal.ofRingCon d.val,
-        TwoSidedIdeal.ringCon_le_iff.mpr (hc.symm ▸ d.property)⟩
-      left_inv := fun _ ↦ Subtype.ext rfl
-      right_inv := fun _ ↦ Subtype.ext rfl
-      map_rel_iff' := TwoSidedIdeal.ringCon_le_iff.symm }
-  e₁.trans (RingCon.correspondence.trans TwoSidedIdeal.orderIsoRingCon.symm)
+  (TwoSidedIdeal.orderIsoRingCon.Ici I).trans
+    ((Set.orderIsoOfEq _ _ (congrArg Set.Ici hc)).trans
+      (RingCon.correspondence.trans TwoSidedIdeal.orderIsoRingCon.symm))
 
 private theorem idealCorrespondence_symm_coe {A : Type*} [Ring A] (I : TwoSidedIdeal A)
     (J : TwoSidedIdeal (A ⧸ I)) :
     (((idealCorrespondence I).symm J : Set.Ici I).val : Set A) =
       TwoSidedIdeal.Quotient.mk I ⁻¹' (J : Set (A ⧸ I)) := by
+  have hval : ((idealCorrespondence I).symm J).val = J.comap (TwoSidedIdeal.Quotient.mk I) := by
+    ext a
+    -- Unfolding `OrderIso.Ici`, `Set.orderIsoOfEq`, and `RingCon.correspondence` reduces
+    -- ideal membership to `J.ringCon` on `(Quotient.ringCon I).mk'`.
+    have ha : ((TwoSidedIdeal.Quotient.ringCon I).mk' a : A ⧸ I) =
+        TwoSidedIdeal.Quotient.mk I a :=
+      TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk I a
+    have h0 : ((TwoSidedIdeal.Quotient.ringCon I).mk' 0 : A ⧸ I) = 0 :=
+      (TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk I 0).trans
+        (map_zero (TwoSidedIdeal.Quotient.mk I))
+    change J.ringCon ((TwoSidedIdeal.Quotient.ringCon I).mk' a)
+        ((TwoSidedIdeal.Quotient.ringCon I).mk' 0) ↔ a ∈ J.comap (TwoSidedIdeal.Quotient.mk I)
+    rw [ha, h0, TwoSidedIdeal.mem_comap, TwoSidedIdeal.mem_iff]
+    exact Iff.rfl
   ext a
-  have ha : ((TwoSidedIdeal.Quotient.ringCon I).mk' a : A ⧸ I) =
-      TwoSidedIdeal.Quotient.mk I a :=
-    TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk I a
-  have h0 : ((TwoSidedIdeal.Quotient.ringCon I).mk' 0 : A ⧸ I) = 0 :=
-    (TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk I 0).trans
-      (map_zero (TwoSidedIdeal.Quotient.mk I))
-  exact (iff_of_eq (congrArg (J.ringCon · _) ha)).trans (iff_of_eq (congrArg (J.ringCon _) h0))
+  rw [hval, SetLike.mem_coe, TwoSidedIdeal.mem_comap, Set.mem_preimage, SetLike.mem_coe]
 
 /-- On a separable complex Hilbert space `H`, every closed two-sided ideal of `CalkinAlgebra H` is
 `⊥` or `⊤`. -/

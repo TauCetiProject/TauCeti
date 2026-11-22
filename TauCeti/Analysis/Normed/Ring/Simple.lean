@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
-import TauCeti.RingTheory.TwoSidedIdeal.Operations
 
 /-!
 # Closed two-sided ideals and simplicity in normed rings
@@ -61,8 +60,9 @@ theorem topologicalClosure_ne_top {I : TwoSidedIdeal R} (hI : I ≠ ⊤) :
     rw [Ideal.coe_closure, I.coe_asIdeal, I.coe_topologicalClosure]
   have hcl : I.asIdeal.closure = I.topologicalClosure.asIdeal :=
     SetLike.coe_injective (hset.trans I.topologicalClosure.coe_asIdeal.symm)
-  rw [ne_eq, ← asIdeal_eq_top_iff, ← hcl]
-  exact I.asIdeal.closure_ne_top ((asIdeal_eq_top_iff I).not.mpr hI)
+  rw [ne_eq, ← one_mem_iff, ← mem_asIdeal, ← hcl, ← Ideal.ne_top_iff_one]
+  exact I.asIdeal.closure_ne_top
+    ((Ideal.ne_top_iff_one _).mpr (by rwa [mem_asIdeal, one_mem_iff]))
 
 /-- A maximal two-sided ideal in a normed ring with summable geometric series equals its
 topological closure. -/

@@ -266,13 +266,12 @@ theorem linearIndependent_single {κ : ι → Type*} (v : ∀ i, κ i → E i)
 /-- The scalar coordinate vectors in `lp` are linearly independent. -/
 theorem linearIndependent_single_one :
     LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (1 : 𝕜)) := by
-  apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype
-  have hcoe : (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype ∘
-      (fun i : ι ↦ lp.single p i (1 : 𝕜)) = fun i ↦ Pi.single i (1 : 𝕜) := by
-    funext i
-    exact lp.coeFn_single p i 1
-  rw [hcoe]
-  exact Pi.linearIndependent_single_one ι 𝕜
+  have h1 : (fun _ : Unit ↦ (1 : 𝕜)) = Module.Basis.singleton Unit 𝕜 :=
+    funext fun u ↦ (Module.Basis.singleton_apply Unit 𝕜 u).symm
+  rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+  exact linearIndependent_single (E := fun _ : ι ↦ 𝕜) (p := p)
+    (fun _ (_ : Unit) ↦ (1 : 𝕜))
+    fun _ ↦ h1 ▸ (Module.Basis.singleton Unit 𝕜).linearIndependent
 
 /-- A vector in the span of a family of single-coordinate vectors vanishes outside their indices. -/
 theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {v : ∀ j, E (f j)}
@@ -305,12 +304,22 @@ theorem sum_single_apply_eq_zero_of_forall_ne {κ : Type*} {s : Finset κ} {g : 
   exact Finset.sum_eq_zero fun i hi ↦ lp.single_apply_ne p (g i) (v i) (hk i hi)
 
 omit [DecidableEq ι] in
+private theorem not_finite_of_forall_linearIndependent [Infinite ι] [StrongRankCondition 𝕜]
+    (v : ∀ i, E i) (hv : ∀ i, LinearIndependent 𝕜 fun _ : Unit ↦ v i) :
+    ¬ Module.Finite 𝕜 (lp E p) := fun _ ↦ by
+  classical
+  have hli : LinearIndependent 𝕜 fun i : ι ↦ lp.single p i (v i) := by
+    rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+    exact linearIndependent_single (fun i (_ : Unit) ↦ v i) hv
+  exact Module.Finite.not_linearIndependent_of_infinite _ hli
+
+omit [DecidableEq ι] in
 /-- For an infinite index type, the scalar sequence space `lp` is not a finite module. -/
 theorem not_finite [Infinite ι] [StrongRankCondition 𝕜] :
-    ¬ Module.Finite 𝕜 (lp (fun _ : ι ↦ 𝕜) p) := fun _ ↦ by
-  classical
-  exact Module.Finite.not_linearIndependent_of_infinite _
-    (linearIndependent_single_one (ι := ι) (𝕜 := 𝕜) (p := p))
+    ¬ Module.Finite 𝕜 (lp (fun _ : ι ↦ 𝕜) p) :=
+  not_finite_of_forall_linearIndependent (fun _ ↦ (1 : 𝕜)) fun _ ↦
+    (funext fun u ↦ (Module.Basis.singleton_apply Unit 𝕜 u).symm) ▸
+      (Module.Basis.singleton Unit 𝕜).linearIndependent
 
 end Single
 
@@ -319,14 +328,9 @@ for every exponent `p`. -/
 theorem not_finiteDimensional {𝕜 ι : Type*} {E : ι → Type*} [NormedDivisionRing 𝕜]
     [∀ i, NormedAddCommGroup (E i)] [∀ i, Module 𝕜 (E i)] [∀ i, IsBoundedSMul 𝕜 (E i)]
     [∀ i, Nontrivial (E i)] {p : ℝ≥0∞} [Infinite ι] :
-    ¬ FiniteDimensional 𝕜 (lp E p) := fun _ ↦ by
-  classical
+    ¬ FiniteDimensional 𝕜 (lp E p) := by
   choose v hv using fun i ↦ exists_ne (0 : E i)
-  have hli : LinearIndependent 𝕜 fun i : ι ↦ lp.single p i (v i) := by
-    rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
-    exact linearIndependent_single (fun i (_ : Unit) ↦ v i) fun i ↦
-      linearIndependent_unique_iff.mpr (hv i)
-  exact Module.Finite.not_linearIndependent_of_infinite _ hli
+  exact not_finite_of_forall_linearIndependent v fun i ↦ linearIndependent_unique_iff.mpr (hv i)
 
 /-- Evaluating a single-coordinate vector at its own coordinate is the identity continuous linear
 map. -/

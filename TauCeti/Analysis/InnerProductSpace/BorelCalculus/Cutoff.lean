@@ -46,7 +46,6 @@ two-sided ideal `I`, some spectral cutoff `a.spectralCutoff ε` (`ε > 0`) also 
 public noncomputable section
 
 open Filter TauCeti Topology
-open scoped ComplexConjugate
 
 namespace ContinuousLinearMap
 
@@ -97,34 +96,34 @@ theorem spectralCutoff_zero (a : H →L[ℂ] H) [IsStarNormal a] :
 theorem spectralCutoff_mem_twoSidedIdeal (a : H →L[ℂ] H) [IsStarNormal a]
     {I : TwoSidedIdeal (H →L[ℂ] H)} (ha : a ∈ I) {ε : ℝ} (hε : 0 < ε) :
     a.spectralCutoff ε ∈ I := by
-  -- On `{z ∈ spectrum ℂ a | ε ≤ ‖z‖}`, `1 = z * (conj z * (max (ε ^ 2) (‖z‖ ^ 2))⁻¹)`.
+  -- Truncating `z ↦ z⁻¹` at `ε⁻¹` retains `z⁻¹` on `ε ≤ ‖z‖` and vanishes on `0 < ‖z‖ < ε`.
   let B : Set (spectrum ℂ a) := {z : spectrum ℂ a | ε ≤ ‖(z : ℂ)‖}
   have hB : MeasurableSet B := measurableSet_spectralCutoffSet a ε
-  let invMap : C(spectrum ℂ a, ℂ) :=
-    ⟨fun z ↦ conj (z : ℂ) * ((max (ε ^ 2) (‖(z : ℂ)‖ ^ 2) : ℝ) : ℂ)⁻¹, by
-      refine (Complex.continuous_conj.comp continuous_subtypeVal).mul ?_
-      refine Continuous.inv₀ ?_ fun _ ↦ Complex.ofReal_ne_zero.mpr ?_
-      · exact Complex.continuous_ofReal.comp
-          (continuous_const.max ((continuous_norm.comp continuous_subtypeVal).pow 2))
-      · positivity⟩
   let g : BoundedBorelFunction (spectrum ℂ a) :=
-    BoundedBorelFunction.indicator B hB (BoundedBorelFunction.ofContinuousMap invMap)
+    BoundedBorelFunction.truncate (fun z : spectrum ℂ a ↦ (z : ℂ)⁻¹)
+      continuous_subtypeVal.measurable.inv ε⁻¹
   let idSym : BoundedBorelFunction (spectrum ℂ a) :=
     BoundedBorelFunction.ofContinuousMap ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))
   have hprod : idSym * g = BoundedBorelFunction.indicator B hB 1 := by
     ext z
     simp only [idSym, g, BoundedBorelFunction.mul_apply, BoundedBorelFunction.indicator_apply,
-      BoundedBorelFunction.ofContinuousMap_apply, ContinuousMap.restrict_apply,
-      ContinuousMap.id_apply]
+      BoundedBorelFunction.truncate_apply, BoundedBorelFunction.ofContinuousMap_apply,
+      ContinuousMap.restrict_apply, ContinuousMap.id_apply]
     by_cases hz : z ∈ B
-    · have hle : ε ^ 2 ≤ ‖(z : ℂ)‖ ^ 2 := pow_le_pow_left₀ hε.le hz 2
-      have hne : ((‖(z : ℂ)‖ : ℂ) ^ 2) ≠ 0 :=
-        pow_ne_zero 2 (Complex.ofReal_ne_zero.mpr (hε.trans_le hz).ne')
-      rw [Set.indicator_of_mem hz, Set.indicator_of_mem hz,
-        BoundedBorelFunction.ofContinuousMap_apply, BoundedBorelFunction.one_apply]
-      simp only [invMap, ContinuousMap.coe_mk, max_eq_right hle, Complex.ofReal_pow]
-      rw [← mul_assoc, Complex.mul_conj', mul_inv_cancel₀ hne]
-    · rw [Set.indicator_of_notMem hz, Set.indicator_of_notMem hz, mul_zero]
+    · have hnorm_pos : 0 < ‖(z : ℂ)‖ := hε.trans_le hz
+      have hle : z ∈ {y : spectrum ℂ a | ‖(y : ℂ)⁻¹‖ ≤ ε⁻¹} := by
+        rw [Set.mem_ofPred_eq, norm_inv]
+        exact (inv_le_inv₀ hnorm_pos hε).mpr hz
+      rw [Set.indicator_of_mem hle, Set.indicator_of_mem hz,
+        BoundedBorelFunction.one_apply, mul_inv_cancel₀ (norm_pos_iff.mp hnorm_pos)]
+    · have hlt : ‖(z : ℂ)‖ < ε := not_le.mp hz
+      rw [Set.indicator_of_notMem hz]
+      rcases eq_or_ne (z : ℂ) 0 with hz0 | hz0
+      · rw [hz0, zero_mul]
+      · have hgt : z ∉ {y : spectrum ℂ a | ‖(y : ℂ)⁻¹‖ ≤ ε⁻¹} := by
+          rw [Set.mem_ofPred_eq, norm_inv, not_le]
+          exact (inv_lt_inv₀ hε (norm_pos_iff.mpr hz0)).mpr hlt
+        rw [Set.indicator_of_notMem hgt, mul_zero]
   have heq : a.spectralCutoff ε = a * a.borelCalculus g := by
     rw [spectralCutoff_eq_spectralPVM_proj a ε hB, ← a.borelCalculus_indicator hB, ← hprod, map_mul,
       a.borelCalculus_restrict_id]
