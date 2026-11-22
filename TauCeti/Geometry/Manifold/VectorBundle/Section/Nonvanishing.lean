@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Topology.VectorBundle.Riemannian
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 /-!
 # Nowhere-zero C^n sections from continuous ones
@@ -18,7 +19,8 @@ Let `V` be a real `C^n` vector bundle, `n ≤ ∞`, over a Hausdorff σ-compact 
 modelled on a finite-dimensional space, possibly with boundary or corners. A section continuous
 and nowhere zero on a closed set `D` gives a global `C^n` section nowhere zero on `D`.
 With a continuous fibrewise inner product, the section can instead be chosen to have positive
-inner product with the original section on `D`.
+inner product with the original section on `D`. In a line bundle it can be chosen to be a positive
+multiple of the original section on `D`.
 
 These results upgrade sections obtained topologically on closed domains, without requiring a
 manifold structure on the domain. In a smooth bundle the resulting section is smooth and nowhere
@@ -33,8 +35,13 @@ Hahn–Banach separation, `exists_dual_vector`.
   and nowhere zero on a closed set `D`, some `C^n` section `t` has `0 < ⟪s x, t x⟫` on `D`.
 * `TauCeti.exists_contMDiffSection_forall_mem_ne_zero_of_continuousOn`: some global `C^n`
   section is nowhere zero on `D`, without any metric assumption.
+* `TauCeti.exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos`: a `C^n` section `ℓ` of the
+  dual bundle positive on some section over `D` is positive on a global `C^n` section over `D`.
 * `TauCeti.exists_contMDiffSection_forall_inner_pos_of_continuous`,
   `TauCeti.exists_contMDiffSection_forall_ne_zero_of_continuous`: the case `D = univ`.
+* `TauCeti.exists_contMDiffSection_forall_mem_exists_pos_smul_of_continuousOn`,
+  `TauCeti.exists_contMDiffSection_forall_exists_pos_smul_of_continuous`: in a line bundle, some
+  `C^n` section is a positive multiple of `s` on `D`.
 
 ## References
 
@@ -131,17 +138,12 @@ private theorem exists_contMDiffSection_forall_mem_apply_pos_of_continuousOn
       (contMDiff_zeroSection ℝ (fun x ↦ StrongDual ℝ (V x))).contMDiffOn,
       fun _ hy hyD ↦ (hy hyD).elim⟩
 
-/-- A section of `V` which is continuous and nowhere zero on a closed set `D` gives a global
-`C^n` section nowhere zero on `D`. No fibrewise metric is required. -/
-theorem exists_contMDiffSection_forall_mem_ne_zero_of_continuousOn {D : Set M} (hD : IsClosed D)
-    {s : Π x, V x} (hs : ContinuousOn (fun x ↦ TotalSpace.mk' F x (s x)) D)
-    (hne : ∀ x ∈ D, s x ≠ 0) :
-    ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x ∈ D, t x ≠ 0 := by
-  obtain ⟨ℓ, hℓ⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_continuousOn
-    (I := I) (n := n) hD hs hne
-  suffices ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x ∈ D, 0 < ℓ x (t x) by
-    obtain ⟨t, ht⟩ := this
-    exact ⟨t, fun x hx h ↦ by simpa [h] using ht x hx⟩
+/-- A `C^n` section `ℓ` of the dual bundle which is positive on some section `s` over a closed set
+`D` is positive on a global `C^n` section over `D`. No continuity of `s` is required. -/
+theorem exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos {D : Set M} (hD : IsClosed D)
+    {s : Π x, V x} {ℓ : Cₛ^n⟮I; StrongDual ℝ F, fun x ↦ StrongDual ℝ (V x)⟯}
+    (hℓ : ∀ x ∈ D, 0 < ℓ x (s x)) :
+    ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x ∈ D, 0 < ℓ x (t x) := by
   refine exists_contMDiffSection_forall_mem_convex_of_local I V
     (fun x ↦ {v | x ∈ D → 0 < ℓ x v}) (fun x ↦ ?_) fun x₀ ↦ ?_
   · by_cases hx : x ∈ D
@@ -160,12 +162,52 @@ theorem exists_contMDiffSection_forall_mem_ne_zero_of_continuousOn {D : Set M} (
   · exact ⟨Dᶜ, hD.isOpen_compl.mem_nhds hx₀, fun _ ↦ 0,
       (contMDiff_zeroSection ℝ V).contMDiffOn, fun _ hy hyD ↦ (hy hyD).elim⟩
 
+/-- A section of `V` which is continuous and nowhere zero on a closed set `D` gives a global
+`C^n` section nowhere zero on `D`. No fibrewise metric is required. -/
+theorem exists_contMDiffSection_forall_mem_ne_zero_of_continuousOn {D : Set M} (hD : IsClosed D)
+    {s : Π x, V x} (hs : ContinuousOn (fun x ↦ TotalSpace.mk' F x (s x)) D)
+    (hne : ∀ x ∈ D, s x ≠ 0) :
+    ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x ∈ D, t x ≠ 0 := by
+  obtain ⟨ℓ, hℓ⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_continuousOn
+    (I := I) (n := n) hD hs hne
+  obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos hD hℓ
+  exact ⟨t, fun x hx h ↦ by simpa [h] using ht x hx⟩
+
 /-- A continuous nowhere-zero section `s` of `V` gives a global nowhere-zero `C^n` section. -/
 theorem exists_contMDiffSection_forall_ne_zero_of_continuous {s : Π x, V x}
     (hs : Continuous (fun x ↦ TotalSpace.mk' F x (s x))) (hne : ∀ x, s x ≠ 0) :
     ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x, t x ≠ 0 := by
   obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_ne_zero_of_continuousOn
     (I := I) (n := n) isClosed_univ hs.continuousOn fun x _ ↦ hne x
+  exact ⟨t, fun x ↦ ht x (mem_univ x)⟩
+
+/-- **A continuous nowhere-zero section of a line bundle is a positive multiple of a `C^n`
+one.** Let `V` be a `C^n` line bundle, that is, with one-dimensional model fibre `F`. A section `s`
+which is continuous and nowhere zero on a closed set `D` has a global `C^n` section `t` with `t x` a
+positive multiple of `s x` at every point of `D`. -/
+theorem exists_contMDiffSection_forall_mem_exists_pos_smul_of_continuousOn
+    (hF : Module.finrank ℝ F = 1) {D : Set M} (hD : IsClosed D) {s : Π x, V x}
+    (hs : ContinuousOn (fun x ↦ TotalSpace.mk' F x (s x)) D) (hne : ∀ x ∈ D, s x ≠ 0) :
+    ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x ∈ D, ∃ c : ℝ, 0 < c ∧ t x = c • s x := by
+  obtain ⟨ℓ, hℓ⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_continuousOn
+    (I := I) (n := n) hD hs hne
+  obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_apply_pos_of_apply_pos hD hℓ
+  refine ⟨t, fun x hx ↦ ?_⟩
+  -- The fibre `V x` is a line, so `t x` is a multiple `c • s x`, and `ℓ x` is positive on both.
+  have hV : Module.finrank ℝ (V x) = 1 := (VectorBundle.finrank_eq ℝ F V x).trans hF
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' (s x) (hne x hx)).1 hV (t x)
+  have hpos := ht x hx
+  rw [← hc, map_smul, smul_eq_mul] at hpos
+  exact ⟨c, pos_of_mul_pos_left hpos (hℓ x hx).le, hc.symm⟩
+
+/-- A continuous nowhere-zero section `s` of a `C^n` line bundle is, at every point, a positive
+multiple of a global `C^n` section. -/
+theorem exists_contMDiffSection_forall_exists_pos_smul_of_continuous
+    (hF : Module.finrank ℝ F = 1) {s : Π x, V x}
+    (hs : Continuous (fun x ↦ TotalSpace.mk' F x (s x))) (hne : ∀ x, s x ≠ 0) :
+    ∃ t : Cₛ^n⟮I; F, V⟯, ∀ x, ∃ c : ℝ, 0 < c ∧ t x = c • s x := by
+  obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_mem_exists_pos_smul_of_continuousOn
+    (I := I) (n := n) hF isClosed_univ hs.continuousOn fun x _ ↦ hne x
   exact ⟨t, fun x ↦ ht x (mem_univ x)⟩
 
 end TauCeti

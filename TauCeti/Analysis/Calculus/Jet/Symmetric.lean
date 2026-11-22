@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.Jet.HigherOrder
 public import TauCeti.Analysis.Calculus.Jet.LinearCoordChange
+public import TauCeti.Topology.Algebra.Module.Multilinear.Symmetrize
 
 /-!
 # Symmetric jets and their coordinate changes
@@ -19,11 +21,13 @@ This subspace is the fibre of the bundle of `r`-jets of a vector bundle.
 The coordinate change of jets `TauCeti.linearJetCoordChange` is defined on all tuples, but its
 identity law only holds on symmetric ones. Over a field of characteristic zero, taking the jet
 at `0` of the Taylor polynomial at `0` is a continuous linear projection onto the symmetric
-jets, the symmetrization `TauCeti.symmetrizeJets`. Composing with it gives the coordinate change
-of symmetric jets `TauCeti.symmetricJetCoordChange`, an operator on the symmetric jets which is
-defined for all coordinate maps. When the coordinate maps are smooth enough it is the restriction
-of `linearJetCoordChange`, and it then satisfies the identity and cocycle laws on the nose, so it
-can serve as the transition function of a vector bundle.
+jets, the symmetrization `TauCeti.symmetrizeJets`, which averages each component over the
+permutations of its arguments (`TauCeti.toJets_symmetrizeJets_apply`). Composing with it gives
+the coordinate change of symmetric jets `TauCeti.symmetricJetCoordChange`, an operator on the
+symmetric jets which is defined for all coordinate maps. When the coordinate maps are smooth
+enough it is the restriction of `linearJetCoordChange`, and it then satisfies the identity and
+cocycle laws on the nose, so it can serve as the transition function of a vector bundle. It
+commutes with the truncation of symmetric jets to lower order.
 
 ## Main declarations
 
@@ -32,13 +36,16 @@ can serve as the transition function of a vector bundle.
 * `TauCeti.iteratedFDeriv_mem_symmetricJets`: jets of `C^r` maps are symmetric.
 * `TauCeti.symmetrizeJets`: the continuous linear projection onto the symmetric jets
   (`TauCeti.symmetrizeJets_of_mem`), which fixes jets of maps
-  (`TauCeti.toJets_symmetrizeJets_iteratedFDeriv`).
+  (`TauCeti.toJets_symmetrizeJets_iteratedFDeriv`) and symmetrizes each component
+  (`TauCeti.toJets_symmetrizeJets_apply`).
 * `TauCeti.symmetricJetCoordChange`: the coordinate change of symmetric jets, with its
   identity and cocycle laws `TauCeti.symmetricJetCoordChange_id` and
   `TauCeti.symmetricJetCoordChange_comp`, its action on jets of maps
   `TauCeti.toJets_symmetricJetCoordChange_iteratedFDeriv`, its dependence on germs only
   `TauCeti.symmetricJetCoordChange_congr`, and its smoothness
-  `ContDiffOn.symmetricJetCoordChange`.
+  `ContDiffAt.symmetricJetCoordChange` and `ContDiffOn.symmetricJetCoordChange`.
+* `TauCeti.SymmetricJet.truncate`: truncation of symmetric jets to lower order, which commutes
+  with coordinate changes (`TauCeti.SymmetricJet.truncate_symmetricJetCoordChange`).
 
 ## Implementation notes
 
@@ -211,6 +218,27 @@ theorem symmetrizeJets_comp_toJets [CharZero 𝕜] :
   ext1 A
   simp
 
+/-- **The symmetrization averages each component.** Over a field of characteristic zero, the
+component of order `i` of the symmetrization of a tuple `A` is the average
+`ContinuousMultilinearMap.symmetrize` of `A i` over the permutations of its arguments. -/
+theorem toJets_symmetrizeJets_apply [CharZero 𝕜] (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
+    (i : Fin (r + 1)) :
+    toJets 𝕜 E F r (symmetrizeJets 𝕜 E F r A) i =
+      ContinuousMultilinearMap.symmetrize 𝕜 (Fin i.val) E F (A i) := by
+  set B : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F :=
+    fun i ↦ ContinuousMultilinearMap.symmetrize 𝕜 (Fin i.val) E F (A i)
+  have hB : B ∈ symmetricJets 𝕜 E F r := mem_symmetricJets.2 fun i v σ ↦
+    ContinuousMultilinearMap.symmetrize_apply_comp_perm (A i) v σ
+  -- The Taylor polynomials of `A` and `B` only see the diagonal values, on which they agree.
+  have hpoly : finiteJetPolynomial r B 0 = finiteJetPolynomial r A 0 := by
+    funext y
+    simp only [finiteJetPolynomial_apply, B,
+      ContinuousMultilinearMap.symmetrize_apply_const]
+  have hAB : toJets 𝕜 E F r (symmetrizeJets 𝕜 E F r A) =
+      toJets 𝕜 E F r (symmetrizeJets 𝕜 E F r B) := by
+    rw [toJets_symmetrizeJets, toJets_symmetrizeJets, hpoly]
+  rw [hAB, symmetrizeJets_of_mem hB, toJets_mk]
+
 /-- **Symmetrizing the jet of a map does nothing.** If `f` is `C^n` at `x` with
 `minSmoothness 𝕜 r ≤ n` (`C^r` over `ℝ` or `ℂ`, analytic otherwise), the symmetrization of its
 `r`-jet at `x` has the same tuple. -/
@@ -294,9 +322,83 @@ theorem toJets_symmetricJetCoordChange_iteratedFDeriv [CharZero 𝕜] {n : ℕ�
   rw [toJets_symmetricJetCoordChange hh hg hn, toJets_mk]
   exact linearJetCoordChange_iteratedFDeriv hs hn (hh.of_le hr) (hg.of_le hr)
 
+/-! ### Truncation of symmetric jets -/
+
+namespace SymmetricJet
+
+variable {r' : ℕ}
+
+variable (𝕜 E F) in
+/-- The **truncation** of symmetric `r`-jets to order `r' ≤ r`, forgetting the components of
+order greater than `r'`: the truncation `TauCeti.jetTruncate` of their tuples
+(`TauCeti.SymmetricJet.toJets_truncate`). -/
+def truncate (hr : r' ≤ r) : SymmetricJet 𝕜 E F r →L[𝕜] SymmetricJet 𝕜 E F r' :=
+  (ContinuousLinearMap.pi fun i : Fin (r' + 1) ↦
+    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun i : Fin (r + 1) ↦ E [×i.val]→L[𝕜] F)
+      (i.castLE (Nat.add_le_add_right hr 1))).comp (toJets 𝕜 E F r)).codRestrict
+    (symmetricJets 𝕜 E F r') fun A ↦ mem_symmetricJets.2 fun i v σ ↦
+      mem_symmetricJets.1 (toJets_mem A) (i.castLE (Nat.add_le_add_right hr 1)) v σ
+
+/-- The tuple of a truncated jet is the truncation of its tuple. -/
+@[simp]
+theorem toJets_truncate (hr : r' ≤ r) (A : SymmetricJet 𝕜 E F r) :
+    toJets 𝕜 E F r' (truncate 𝕜 E F hr A) = jetTruncate hr (toJets 𝕜 E F r A) :=
+  funext fun i ↦ (jetTruncate_apply hr _ i).symm
+
+/-- Truncating to the same order is the identity. -/
+@[simp]
+theorem truncate_rfl : truncate 𝕜 E F (le_refl r) = ContinuousLinearMap.id 𝕜 _ := by
+  ext1 A
+  exact toJets_injective ((toJets_truncate _ A).trans (jetTruncate_refl r _))
+
+/-- Truncations compose. -/
+@[simp]
+theorem truncate_comp_truncate {r'' : ℕ} (hr' : r'' ≤ r') (hr : r' ≤ r) :
+    truncate 𝕜 E F hr' ∘L truncate 𝕜 E F hr = truncate 𝕜 E F (hr'.trans hr) := by
+  ext1 A
+  refine toJets_injective ?_
+  simp only [ContinuousLinearMap.comp_apply, toJets_truncate, jetTruncate_trans]
+
+/-- Truncation commutes with the symmetrization. -/
+theorem truncate_symmetrizeJets (hr : r' ≤ r) (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
+    truncate 𝕜 E F hr (symmetrizeJets 𝕜 E F r A) =
+      symmetrizeJets 𝕜 E F r' (jetTruncate hr A) := by
+  refine toJets_injective ?_
+  rw [toJets_truncate, toJets_symmetrizeJets_eq_linearJetCoordChange,
+    toJets_symmetrizeJets_eq_linearJetCoordChange, funext (jetTruncate_apply hr _),
+    funext (jetTruncate_apply hr A)]
+  exact linearJetCoordChange_truncate hr contDiffAt_id contDiffAt_const A
+
+/-- **Truncation commutes with coordinate changes** of symmetric jets, where the coordinate maps
+are `C^r'`. -/
+theorem truncate_symmetricJetCoordChange (hr : r' ≤ r) {h : E' → E} {g : E' → F →L[𝕜] G}
+    {x : E'} (hh : ContDiffAt 𝕜 r' h x) (hg : ContDiffAt 𝕜 r' g x) (A : SymmetricJet 𝕜 E F r) :
+    truncate 𝕜 E' G hr (symmetricJetCoordChange r h g x A) =
+      symmetricJetCoordChange r' h g x (truncate 𝕜 E F hr A) := by
+  rw [symmetricJetCoordChange_apply, truncate_symmetrizeJets, symmetricJetCoordChange_apply,
+    toJets_truncate, funext (jetTruncate_apply hr (linearJetCoordChange r h g x _)),
+    funext (jetTruncate_apply hr (toJets 𝕜 E F r A))]
+  exact congrArg _ (linearJetCoordChange_truncate hr hh hg _)
+
+end SymmetricJet
+
 end TauCeti
 
 open TauCeti
+
+/-- **Smoothness of coordinate changes of symmetric jets.** If the coordinate maps `h` and `g` are
+`C^n` at `x₀`, then the coordinate change of symmetric `r`-jets is `C^m` at `x₀` as a continuous
+linear map, provided `m + r ≤ n`. -/
+theorem ContDiffAt.symmetricJetCoordChange {r : ℕ} {h : E' → E} {g : E' → F →L[𝕜] G} {x₀ : E'}
+    {n m : ℕ∞ω} (hh : ContDiffAt 𝕜 n h x₀) (hg : ContDiffAt 𝕜 n g x₀) (hmn : m + r ≤ n) :
+    ContDiffAt 𝕜 m (symmetricJetCoordChange r h g) x₀ := by
+  -- By definition, `symmetricJetCoordChange r h g x` is this composite (with `∘L` associating to
+  -- the right), so the goal changes by unfolding it.
+  change ContDiffAt 𝕜 m (fun x ↦ symmetrizeJets 𝕜 E' G r ∘L
+    (TauCeti.linearJetCoordChange r h g x ∘L SymmetricJet.toJets 𝕜 E F r)) x₀
+  -- Composing with the symmetrization and the inclusion is continuous linear in the operator.
+  exact (contDiff_const.clm_comp (contDiff_id.clm_comp contDiff_const)).contDiffAt.comp x₀
+    (hh.linearJetCoordChange hg hmn)
 
 /-- **Smoothness of coordinate changes of symmetric jets on open sets.** If the coordinate maps
 `h` and `g` are `C^n` on an open set `u`, such as a chart overlap, then the coordinate change of
