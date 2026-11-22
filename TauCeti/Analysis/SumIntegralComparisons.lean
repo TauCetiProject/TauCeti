@@ -17,8 +17,10 @@ size times the value at zero. Consequently both sums converge to the integral as
 tends to zero through positive values, even on the unbounded interval and without continuity.
 These estimates allow step-function approximations in convolution limit theorems.
 Finite uniform-mesh sums also bracket the integral on `[0, δ * N]`, including zero mesh,
-and their gap vanishes under refinement of a fixed interval. A nonnegative decreasing
-integrable function on the positive half-line vanishes at infinity.
+and their gap vanishes under refinement of a fixed interval. For a decreasing or increasing
+function on `[x₀, x₀ + a]` with `a` a natural number, the sum of its values at the right
+endpoints of the unit cells differs from its integral by at most `|f x₀ - f (x₀ + a)|`.
+A nonnegative decreasing integrable function on the positive half-line vanishes at infinity.
 
 The proofs use Mathlib's integral test (`AntitoneOn.summable_of_integrableOn_Ioi_zero`,
 `AntitoneOn.tsum_add_one_le_integral`, and `AntitoneOn.integral_le_tsum`) after dilation,
@@ -188,4 +190,24 @@ theorem tendsto_zero_of_integrableOn_Ioi (hf : AntitoneOn f (Ici 0))
     filter_upwards [eventually_ge_atTop (n : ℝ)] with x hx
     exact (hf (Nat.cast_nonneg n) ((Nat.cast_nonneg n).trans hx) hx).trans_lt hn'
 
+/-- The sum of a decreasing function at the right endpoints of the unit cells of
+`[x₀, x₀ + a]` differs from its integral by at most `f x₀ - f (x₀ + a)`. -/
+theorem abs_sum_range_sub_integral_le {x₀ : ℝ} {a : ℕ} (hf : AntitoneOn f (Icc x₀ (x₀ + a))) :
+    |∑ i ∈ Finset.range a, f (x₀ + ↑(i + 1)) - ∫ x in x₀..x₀ + a, f x| ≤
+      f x₀ - f (x₀ + a) := by
+  have htel := Finset.sum_range_sub' (fun i : ℕ => f (x₀ + i)) a
+  rw [Finset.sum_sub_distrib, Nat.cast_zero, add_zero] at htel
+  rw [abs_le]
+  constructor <;> linarith [hf.integral_le_sum, hf.sum_le_integral]
+
 end AntitoneOn
+
+/-- The sum of an increasing function at the right endpoints of the unit cells of
+`[x₀, x₀ + a]` differs from its integral by at most `f (x₀ + a) - f x₀`. -/
+theorem MonotoneOn.abs_sum_range_sub_integral_le {f : ℝ → ℝ} {x₀ : ℝ} {a : ℕ}
+    (hf : MonotoneOn f (Icc x₀ (x₀ + a))) :
+    |∑ i ∈ Finset.range a, f (x₀ + ↑(i + 1)) - ∫ x in x₀..x₀ + a, f x| ≤
+      f (x₀ + a) - f x₀ := by
+  have h := hf.neg.abs_sum_range_sub_integral_le
+  rwa [Finset.sum_neg_distrib, intervalIntegral.integral_neg, neg_sub_neg, abs_sub_comm,
+    sub_neg_eq_add, neg_add_eq_sub] at h

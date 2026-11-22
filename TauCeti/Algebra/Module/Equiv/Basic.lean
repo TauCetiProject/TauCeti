@@ -27,10 +27,10 @@ For coordinate transport, forgetting linearity gives the corresponding additive 
 equivalence, with the same direction on coordinates. A commutative square of linear maps with
 isomorphisms on its vertical sides transports the ranges of precomposition on hom spaces.
 Conjugating an endomorphism by a semilinear equivalence commutes with powers, moves its kernel
-by the equivalence, and preserves the square-zero property, the conjugate being characterized by
-the equivalence intertwining the two endomorphisms. Finally, any semilinear map or equivalence
-along a ring homomorphism that commutes with the `R`-algebra structure maps restricts to an
-`R`-linear map or equivalence.
+and its range by the equivalence, and preserves the square-zero property, the conjugate being
+characterized by the equivalence intertwining the two endomorphisms. Finally, any semilinear map
+or equivalence along a ring homomorphism that commutes with the `R`-algebra structure maps
+restricts to an `R`-linear map or equivalence.
 
 ## Main definitions
 
@@ -321,6 +321,12 @@ theorem conj_pow (e : M ≃ₛₗ[σ] N) (f : Module.End R M) (k : ℕ) :
 theorem ker_conj (e : M ≃ₛₗ[σ] N) (f : Module.End R M) :
     LinearMap.ker (e.conj f) = (LinearMap.ker f).map (e : M →ₛₗ[σ] N) :=
   (map_ker_of_intertwine e f (e.conj f) fun d => by simp).symm
+
+/-- Conjugation by a semilinear equivalence `e` carries the range of `f` to its image under `e`. -/
+@[simp]
+theorem range_conj (e : M ≃ₛₗ[σ] N) (f : Module.End R M) :
+    LinearMap.range (e.conj f) = (LinearMap.range f).map (e : M →ₛₗ[σ] N) :=
+  (map_range_of_intertwine e f (e.conj f) fun d => by simp).symm
 
 end Conj
 

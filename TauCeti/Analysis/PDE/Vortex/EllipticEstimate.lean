@@ -33,7 +33,7 @@ bounded maps. By regularity, the coordinates of `y` lie in the range of the inje
 
 The main application is to the weak right inverse `Q` of `L_x` at a plane vortex `x` with
 `|α| → 1`: `Q f` is the weak solution of `L_x y = f` orthogonal to the weak kernel
-(`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`). With `ρ(z) = √(1 + |z|²)` and
+(`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`). With `ρ(z) = √(1 + |z|²)` and
 `|c| < 1/2`, the field `Y = exp(c ρ) Q f` is a weak solution of `L_x Y = exp(c ρ) f + A Y`, where
 `A = expWeightCoeff c` is the commutator of `L_x` with the weight
 (`integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq`), and its `L²` norm is bounded by
@@ -340,7 +340,7 @@ solution of the plane vortex equations with `|α| → 1` at infinity whose coord
 derivatives through order `k`, let `ρ(z) = √(1 + |z|²)` and `|c| < 1/2`. There is a constant `K`
 with the following property. Let `y` be the square-integrable weak solution of `L_x y = f`
 orthogonal to the weak kernel of `L_x`, that is the value at `f` of the weak right inverse `Q` of
-`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`. If the coordinates of
+`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`. If the coordinates of
 `exp(c ρ) f` are given by `v : Fin 4 → H^k(ℂ)`, then those of `exp(c ρ) y` are given by some
 `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖v‖`. That is,
 

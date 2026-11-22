@@ -49,8 +49,6 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 
 public section
 
-namespace TauCeti
-
 universe uR uι uM uN uP
 
 namespace LinearMap
@@ -253,5 +251,3 @@ theorem IsHomogeneous.reindex {f : M →ₗ[R] N} {𝒜 : ι → σM} {ℬ : ι 
 end Reindex
 
 end LinearMap
-
-end TauCeti

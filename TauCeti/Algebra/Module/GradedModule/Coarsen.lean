@@ -44,8 +44,8 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
   original components in each fibre.
 * `TauCeti.mem_coarsenGrading_iff`: an element lies in the coarsened piece of degree `k` exactly
   when its components outside the fibre over `k` vanish.
-* `TauCeti.LinearMap.IsHomogeneous.coarsenGrading` and
-  `TauCeti.LinearMap.IsHomogeneous.coarsenGrading_zero`: homogeneity of linear maps under
+* `LinearMap.IsHomogeneous.coarsenGrading` and
+  `LinearMap.IsHomogeneous.coarsenGrading_zero`: homogeneity of linear maps under
   coarsened gradings.
 * `TauCeti.coarsenGrading_fst` and `TauCeti.coarsenGrading_snd`: coarsening a product-indexed
   grading along a coordinate projection takes the supremum over the other coordinate.
@@ -287,7 +287,7 @@ variable {N : Type*} [AddCommMonoid N] [Module R N] [AddMonoid ι] [AddMonoid κ
 
 /-- A linear map that is homogeneous of degree `q` for two gradings is homogeneous of degree
 `f q` for the gradings coarsened along an additive homomorphism `f`. -/
-theorem LinearMap.IsHomogeneous.coarsenGrading {F : Type*} [FunLike F ι κ]
+theorem _root_.LinearMap.IsHomogeneous.coarsenGrading {F : Type*} [FunLike F ι κ]
     [AddHomClass F ι κ] {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
     {𝒩 : ι → Submodule R N} {q : ι} (hg : LinearMap.IsHomogeneous g ℳ 𝒩 q) (f : F) :
     LinearMap.IsHomogeneous g (TauCeti.coarsenGrading ℳ f) (TauCeti.coarsenGrading 𝒩 f) (f q) :=
@@ -300,7 +300,7 @@ theorem LinearMap.IsHomogeneous.coarsenGrading {F : Type*} [FunLike F ι κ]
 
 /-- A degree-zero homogeneous linear map remains homogeneous of degree zero after coarsening along
 any map `f : ι → κ` of index types. -/
-theorem LinearMap.IsHomogeneous.coarsenGrading_zero {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+theorem _root_.LinearMap.IsHomogeneous.coarsenGrading_zero {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
     {𝒩 : ι → Submodule R N} (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) (f : ι → κ) :
     LinearMap.IsHomogeneous g (TauCeti.coarsenGrading ℳ f) (TauCeti.coarsenGrading 𝒩 f) 0 :=
   LinearMap.isHomogeneous_def.2 fun k x hx ↦ by
@@ -335,7 +335,7 @@ theorem mem_parityGrading_of_mem {ℳ : ℤ → Submodule R M} {n : ℤ} {x : M}
 
 /-- A degree-zero homogeneous linear map between integer-graded modules is also homogeneous of
 degree zero for their parity gradings. -/
-theorem LinearMap.IsHomogeneous.parityGrading_zero {N : Type*} [AddCommMonoid N] [Module R N]
+theorem _root_.LinearMap.IsHomogeneous.parityGrading_zero {N : Type*} [AddCommMonoid N] [Module R N]
     {g : M →ₗ[R] N} {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
     (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) :
     LinearMap.IsHomogeneous g (parityGrading ℳ) (parityGrading 𝒩) 0 :=
@@ -540,7 +540,7 @@ variable {N : Type*} [AddCommMonoid N] [Module R N]
 
 /-- A linear map that is homogeneous of degree `q` between internally graded modules is homogeneous
 of degree `f q` between their coarsenings along an additive homomorphism `f`. -/
-theorem LinearMap.IsHomogeneous.coarsen {F : Type*} [DecidableEq ι] [DecidableEq κ]
+theorem _root_.LinearMap.IsHomogeneous.coarsen {F : Type*} [DecidableEq ι] [DecidableEq κ]
     [AddMonoid ι] [AddMonoid κ] [FunLike F ι κ] [AddHomClass F ι κ] {g : M →ₗ[R] N}
     {G : InternalGrading R M ι} {H : InternalGrading R N ι} {q : ι}
     (hg : LinearMap.IsHomogeneous g G.piece H.piece q) (f : F) :
@@ -549,7 +549,7 @@ theorem LinearMap.IsHomogeneous.coarsen {F : Type*} [DecidableEq ι] [DecidableE
 
 /-- A degree-zero homogeneous linear map between internally graded modules remains homogeneous of
 degree zero after coarsening along any map `f : ι → κ` of index types. -/
-theorem LinearMap.IsHomogeneous.coarsen_zero [DecidableEq ι] [DecidableEq κ]
+theorem _root_.LinearMap.IsHomogeneous.coarsen_zero [DecidableEq ι] [DecidableEq κ]
     [AddMonoid ι] [AddMonoid κ] {g : M →ₗ[R] N}
     {G : InternalGrading R M ι} {H : InternalGrading R N ι}
     (hg : LinearMap.IsHomogeneous g G.piece H.piece 0) (f : ι → κ) :
@@ -558,7 +558,7 @@ theorem LinearMap.IsHomogeneous.coarsen_zero [DecidableEq ι] [DecidableEq κ]
 
 /-- A linear map that is homogeneous of integer degree `q` between internally graded modules is
 homogeneous of parity `q mod 2` between their parity gradings. -/
-theorem LinearMap.IsHomogeneous.parity {g : M →ₗ[R] N}
+theorem _root_.LinearMap.IsHomogeneous.parity {g : M →ₗ[R] N}
     {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ} {q : ℤ}
     (hg : LinearMap.IsHomogeneous g G.piece H.piece q) :
     LinearMap.IsHomogeneous g G.parity.piece H.parity.piece q :=
