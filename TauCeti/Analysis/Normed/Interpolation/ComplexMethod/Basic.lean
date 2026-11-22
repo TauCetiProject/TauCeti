@@ -695,6 +695,45 @@ theorem norm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : �
       _ = ‖toSum u‖ := by simp [x, norm_refl_sumSpaceEmbed]
   · simp [eq_zero_of_notMem hθ u]
 
+/-- For `0 ≤ θ ≤ 1`, the complex interpolation space `[X, X]_θ` of the constant couple `refl ℂ X`
+is canonically linearly isometric to `X`, packaging the diagonal inverse and isometry argument of
+`ComplexMethodSpace.norm_refl`. -/
+def reflEquiv {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
+    (refl ℂ X).ComplexMethodSpace θ ≃ₗᵢ[ℂ] X where
+  toFun u := (refl ℂ X).sumSpaceEmbed (toSum u)
+  invFun x := ofInter θ
+    ⟨(x, x), (refl ℂ X).mem_inter_iff.2 (by dsimp only; rw [refl_embed₀, refl_embed₁])⟩
+  map_add' u v := by simp
+  map_smul' c u := by simp
+  left_inv u := by
+    dsimp only
+    apply toSum_injective
+    rw [toSum_ofInter hθ, interFst_apply]
+    exact refl_fstToSum_sumSpaceEmbed (toSum u)
+  right_inv x := by
+    dsimp only
+    simp [toSum_ofInter hθ]
+  norm_map' u := (norm_refl_sumSpaceEmbed (toSum u)).trans (norm_refl u).symm
+
+@[simp]
+theorem reflEquiv_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (u : (refl ℂ X).ComplexMethodSpace θ) :
+    reflEquiv hθ u = (refl ℂ X).sumSpaceEmbed (toSum u) :=
+  (rfl)
+
+@[simp]
+theorem reflEquiv_symm_apply {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (x : X) :
+    (reflEquiv hθ).symm x = ofInter θ
+      ⟨(x, x), (refl ℂ X).mem_inter_iff.2 (by dsimp only; rw [refl_embed₀, refl_embed₁])⟩ :=
+  (rfl)
+
+/-- `reflEquiv.symm` lifts `x : X` over `fstToSum x` in the sum space of `refl ℂ X`. -/
+theorem toSum_reflEquiv_symm {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
+    (hθ : θ ∈ Icc 0 1) (x : X) :
+    toSum ((reflEquiv hθ).symm x) = (refl ℂ X).fstToSum x := by
+  rw [reflEquiv_symm_apply, toSum_ofInter hθ, interFst_apply]
+
 end ComplexMethodSpace
 
 end Inter
@@ -705,20 +744,28 @@ section ScaleFactor
 
 /-- The factor `M₀ ^ (z - 1) * M₁ ^ (-z)`, of modulus `1 / M₀` on the line `re z = 0` and
 `1 / M₁` on the line `re z = 1`. -/
-private def scaleFactor (M₀ M₁ : ℝ) (z : ℂ) : ℂ :=
+def scaleFactor (M₀ M₁ : ℝ) (z : ℂ) : ℂ :=
   exp ((z - 1) * Real.log M₀ - z * Real.log M₁)
+
+/-- Formula for `scaleFactor M₀ M₁ z`. -/
+theorem scaleFactor_def (M₀ M₁ : ℝ) (z : ℂ) :
+    scaleFactor M₀ M₁ z = exp ((z - 1) * Real.log M₀ - z * Real.log M₁) := by
+  rw [scaleFactor]
 
 variable {M₀ M₁ : ℝ}
 
-private theorem differentiable_scaleFactor (M₀ M₁ : ℝ) : Differentiable ℂ (scaleFactor M₀ M₁) := by
+/-- `scaleFactor M₀ M₁` is entire on `ℂ`. -/
+theorem differentiable_scaleFactor (M₀ M₁ : ℝ) : Differentiable ℂ (scaleFactor M₀ M₁) := by
   unfold scaleFactor
   fun_prop
 
-private theorem norm_scaleFactor (z : ℂ) :
+/-- The modulus of `scaleFactor M₀ M₁ z` depends only on `z.re`. -/
+theorem norm_scaleFactor (z : ℂ) :
     ‖scaleFactor M₀ M₁ z‖ = Real.exp ((z.re - 1) * Real.log M₀ - z.re * Real.log M₁) := by
   simp [scaleFactor, norm_exp]
 
-private theorem norm_scaleFactor_le {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
+/-- Uniform bound for `scaleFactor M₀ M₁` on the closed unit strip `0 ≤ re z ≤ 1`. -/
+theorem norm_scaleFactor_le {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
     ‖scaleFactor M₀ M₁ z‖ ≤ Real.exp (|Real.log M₀| + |Real.log M₁|) := by
   rw [norm_scaleFactor]
   refine Real.exp_le_exp.2 ?_
@@ -727,15 +774,18 @@ private theorem norm_scaleFactor_le {z : ℂ} (hz : z ∈ verticalClosedStrip 0 
     neg_abs_le (Real.log M₁), le_abs_self (Real.log M₁), abs_nonneg (Real.log M₀),
     abs_nonneg (Real.log M₁)]
 
-private theorem norm_scaleFactor_mul_I (hM₀ : 0 < M₀) (t : ℝ) :
+/-- On the left boundary `re z = 0`, `‖scaleFactor M₀ M₁ (t * I)‖ = M₀⁻¹` for `M₀ > 0`. -/
+theorem norm_scaleFactor_mul_I (hM₀ : 0 < M₀) (t : ℝ) :
     ‖scaleFactor M₀ M₁ (t * I)‖ = M₀⁻¹ := by
   simp [norm_scaleFactor, Real.exp_neg, Real.exp_log hM₀]
 
-private theorem norm_scaleFactor_one_add_mul_I (hM₁ : 0 < M₁) (t : ℝ) :
+/-- On the right boundary `re z = 1`, `‖scaleFactor M₀ M₁ (1 + t * I)‖ = M₁⁻¹` for `M₁ > 0`. -/
+theorem norm_scaleFactor_one_add_mul_I (hM₁ : 0 < M₁) (t : ℝ) :
     ‖scaleFactor M₀ M₁ (1 + t * I)‖ = M₁⁻¹ := by
   simp [norm_scaleFactor, Real.exp_neg, Real.exp_log hM₁]
 
-private theorem norm_scaleFactor_mul_rpow (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (θ : ℝ) :
+/-- At `θ : ℝ`, `‖scaleFactor M₀ M₁ θ‖ * (M₀ ^ (1 - θ) * M₁ ^ θ) = 1` for `M₀, M₁ > 0`. -/
+theorem norm_scaleFactor_mul_rpow (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (θ : ℝ) :
     ‖scaleFactor M₀ M₁ θ‖ * (M₀ ^ (1 - θ) * M₁ ^ θ) = 1 := by
   rw [norm_scaleFactor, Real.rpow_def_of_pos hM₀, Real.rpow_def_of_pos hM₁, ← Real.exp_add,
     ← Real.exp_add, ← Real.exp_zero]
@@ -1019,6 +1069,71 @@ theorem opNorm_analyticFamilyMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (
     ‖analyticFamilyMap θ hT‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity)
     (norm_analyticFamilyMap_le hT hθ hM₀ hM₁ h₀ h₁)
+
+/-- Multiplying an admissible trace pair by a bounded `DiffContOnCl` scalar function `c` on the
+open unit strip produces an admissible trace pair whose boundary traces are `c • g` on the two
+vertical lines and whose quotient class at `θ ∈ [0, 1]` is `c θ • mk θ g`. -/
+theorem exists_stripTraces_smul_of_diffContOnCl (g : C.stripTraces) {c : ℂ → ℂ}
+    (hc : DiffContOnCl ℂ c (verticalStrip 0 1)) {K : ℝ}
+    (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) :
+    ∃ g' : C.stripTraces,
+      (∀ t : ℝ, (g' : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t =
+        c (t * I) • (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t) ∧
+      (∀ t : ℝ, (g' : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t =
+        c (1 + t * I) • (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t) ∧
+      ∀ ⦃θ : ℝ⦄, θ ∈ Icc 0 1 → mk θ g' = c θ • mk θ g := by
+  have hcl {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) : z ∈ closure (verticalStrip 0 1) := by
+    rw [verticalStrip, closure_preimage_re, closure_Ioo zero_ne_one]
+    exact hz
+  have hT : IsBoundedAnalyticFamily
+      (fun z => c z • ContinuousLinearMap.id ℂ C.SumSpace)
+      (fun t => c (t * I) • ContinuousLinearMap.id ℂ X₀)
+      (fun t => c (1 + t * I) • ContinuousLinearMap.id ℂ X₁) :=
+    { differentiableOn :=
+        (ContinuousLinearMap.toSpanSingleton ℂ (ContinuousLinearMap.id ℂ C.SumSpace)).differentiable
+          |>.comp_differentiableOn hc.differentiableOn
+      continuousOn_apply := fun _ =>
+        (hc.continuousOn.mono fun _ => hcl).smul continuousOn_const
+      exists_norm_le := ⟨max K 0, fun z hz =>
+        ContinuousLinearMap.opNorm_le_bound _ (le_max_right K 0) fun x => by
+          simpa [norm_smul] using mul_le_mul_of_nonneg_right
+            ((hK z hz).trans (le_max_left _ _)) (norm_nonneg x)⟩
+      continuous_fst := fun _ =>
+        (hc.continuousOn.comp_continuous (by fun_prop) fun t =>
+          hcl (by simp [verticalClosedStrip])).smul continuous_const
+      continuous_snd := fun _ =>
+        (hc.continuousOn.comp_continuous (by fun_prop) fun t =>
+          hcl (by simp [verticalClosedStrip])).smul continuous_const
+      exists_norm_fst_le := ⟨max K 0, fun t =>
+        ContinuousLinearMap.opNorm_le_bound _ (le_max_right K 0) fun x => by
+          simpa [norm_smul] using mul_le_mul_of_nonneg_right
+            ((hK _ (by simp [verticalClosedStrip])).trans (le_max_left _ _)) (norm_nonneg x)⟩
+      exists_norm_snd_le := ⟨max K 0, fun t =>
+        ContinuousLinearMap.opNorm_le_bound _ (le_max_right K 0) fun x => by
+          simpa [norm_smul] using mul_le_mul_of_nonneg_right
+            ((hK _ (by simp [verticalClosedStrip])).trans (le_max_left _ _)) (norm_nonneg x)⟩
+      apply_mul_I := fun _ _ => by simp
+      apply_one_add_mul_I := fun _ _ => by simp }
+  refine ⟨hT.stripTracesMap g,
+    fun t => by simp,
+    fun t => by simp,
+    fun θ _ => toSum_injective ?_⟩
+  rw [toSum_mk, map_smul, toSum_mk, hT.stripEval_stripTracesMap]
+  simp
+
+/-- Multiplying an admissible trace pair by a bounded holomorphic scalar function `c` on the strip
+scales `mk θ g` by `c θ` and bounds its norm by the boundary suprema of `c • g`. -/
+theorem norm_smul_mk_le_of_diffContOnCl {θ : ℝ} (hθ : θ ∈ Icc 0 1) (g : C.stripTraces)
+    {c : ℂ → ℂ} (hc : DiffContOnCl ℂ c (verticalStrip 0 1))
+    {K B : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) (hB : 0 ≤ B)
+    (hb₀ : ∀ t : ℝ, ‖c (t * I) • g.val.1 t‖ ≤ B)
+    (hb₁ : ∀ t : ℝ, ‖c (1 + t * I) • g.val.2 t‖ ≤ B) :
+    ‖c θ‖ * ‖mk θ g‖ ≤ B := by
+  obtain ⟨g', hg₀', hg₁', heq⟩ := exists_stripTraces_smul_of_diffContOnCl g hc hK
+  rw [← norm_smul, ← heq hθ]
+  refine ((norm_mk_le g').trans_eq (Submodule.norm_coe g').symm).trans (max_le ?_ ?_)
+  · exact (ZeroAtInftyContinuousMap.norm_le hB).2 fun t => by rw [hg₀']; exact hb₀ t
+  · exact (ZeroAtInftyContinuousMap.norm_le hB).2 fun t => by rw [hg₁']; exact hb₁ t
 
 end ComplexMethodSpace
 

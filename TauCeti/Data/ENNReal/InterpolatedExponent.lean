@@ -24,6 +24,7 @@ Marcinkiewicz). This file records its elementary arithmetic.
 
 * `TauCeti.inv_eq_ofReal_of_inv_eq`: `1 / s` is the real convex combination of `1 / s₀` and
   `1 / s₁`.
+* `TauCeti.one_sub_mul_toReal_inv_add`: `(1 - θ) * (s / s₀) + θ * (s / s₁) = 1`.
 * `TauCeti.mem_uIcc_of_inv_eq`: `s` lies between `s₀` and `s₁`.
 * `TauCeti.exists_inv_eq_of_mem_Ioo`: conversely, every `s` strictly between `s₀` and `s₁` is
   interpolated with some `0 < θ < 1`.
@@ -53,6 +54,25 @@ theorem inv_eq_ofReal_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
   rw [ENNReal.ofReal_add (mul_nonneg hθ1 ENNReal.toReal_nonneg)
     (mul_nonneg hθ.1 ENNReal.toReal_nonneg), ENNReal.ofReal_mul hθ1, ENNReal.ofReal_mul hθ.1,
     ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
+
+/-- For an interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁` with `0 ≤ θ ≤ 1`, `s₀, s₁ ≠ 0`,
+and `s ≠ ∞`, the normalized real weights `(1 - θ) * (s / s₀)` and `θ * (s / s₁)` sum to `1`. -/
+theorem one_sub_mul_toReal_inv_add (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hs_top : s ≠ ∞)
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
+    (1 - θ) * (s.toReal * (s₀⁻¹).toReal) + θ * (s.toReal * (s₁⁻¹).toReal) = 1 := by
+  have hinv : s⁻¹ = ENNReal.ofReal ((1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal) :=
+    inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs
+  have hs0 : s ≠ 0 := ENNReal.inv_ne_top.1 (hinv ▸ ENNReal.ofReal_ne_top)
+  have hs_pos : 0 < s.toReal := ENNReal.toReal_pos hs0 hs_top
+  have htr : s⁻¹.toReal = (1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal := by
+    rw [hinv, ENNReal.toReal_ofReal (add_nonneg
+      (mul_nonneg (sub_nonneg.2 hθ.2) ENNReal.toReal_nonneg)
+      (mul_nonneg hθ.1 ENNReal.toReal_nonneg))]
+  calc (1 - θ) * (s.toReal * (s₀⁻¹).toReal) + θ * (s.toReal * (s₁⁻¹).toReal)
+      = s.toReal * ((1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal) := by ring
+    _ = s.toReal * s.toReal⁻¹ := by rw [← ENNReal.toReal_inv, htr]
+    _ = 1 := mul_inv_cancel₀ hs_pos.ne'
 
 /-- An interpolated exponent lies between the two endpoint exponents. -/
 theorem mem_uIcc_of_inv_eq (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
