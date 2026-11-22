@@ -39,6 +39,7 @@ commutation of two insertions, dual to Mathlib's `Fin.removeNth_removeNth_eq_swa
 * `TauCeti.SingularCube.point`: the `0`-cube at a point.
 * `TauCeti.SingularCube.face`: the face of a cube in a coordinate, at a parameter `t ∈ I`.
 * `TauCeti.SingularCube.degeneracy`: the cube obtained by forgetting a coordinate.
+* `TauCeti.SingularCube.squareSwap`: the transposition of the two coordinates of the square.
 * `TauCeti.SingularCube.IsDegenerateAt`, `TauCeti.SingularCube.IsDegenerate`: degeneracy at a
   coordinate, and degeneracy.
 
@@ -46,6 +47,8 @@ commutation of two insertions, dual to Mathlib's `Fin.removeNth_removeNth_eq_swa
 
 * `TauCeti.SingularCube.face_face`: the cubical identity.
 * `TauCeti.SingularCube.face_degeneracy_self`: a degeneracy followed by the matching face.
+* `TauCeti.SingularCube.face_comp_squareSwap`: the faces of a transposed square are those of the
+  square in the exchanged direction.
 * `TauCeti.SingularCube.isDegenerate_iff_exists_eq_degeneracy`: degeneracies exhaust the
   degenerate cubes.
 * `TauCeti.SingularCube.isDegenerateAt_iff`, `TauCeti.SingularCube.isDegenerate_iff`,
@@ -137,6 +140,26 @@ theorem face_comp {n : ℕ} (i : Fin (n + 1)) (t : I) (f : C(X, Y)) (c : Singula
     face i t (f.comp c) = f.comp (face i t c) := by
   ext x
   simp
+
+/-- The transposition `(s, t) ↦ (t, s)` of the two coordinates of the square `I²`, as a singular
+`2`-cube of `I²`. -/
+def squareSwap : SingularCube (Fin 2 → I) 2 :=
+  ⟨fun z ↦ z ∘ Equiv.swap 0 1, by fun_prop⟩
+
+@[simp]
+theorem squareSwap_apply (z : Fin 2 → I) : squareSwap z = z ∘ Equiv.swap 0 1 :=
+  (rfl)
+
+/-- The faces of a transposed square are the faces of the square in the exchanged direction. -/
+theorem face_comp_squareSwap (c : SingularCube X 2) (i : Fin 2) (t : I) :
+    face i t (c.comp squareSwap) = face (Equiv.swap 0 1 i) t c := by
+  ext y
+  rw [face_apply, face_apply, ContinuousMap.comp_apply, squareSwap_apply]
+  congr 1
+  funext j
+  revert i j
+  simp only [Fin.forall_fin_two]
+  exact ⟨⟨rfl, rfl⟩, rfl, rfl⟩
 
 /-- A cube composed with the face inclusion `face i t id` of the standard cube is its face. -/
 theorem comp_face_id {n : ℕ} (c : SingularCube X (n + 1)) (i : Fin (n + 1)) (t : I) :

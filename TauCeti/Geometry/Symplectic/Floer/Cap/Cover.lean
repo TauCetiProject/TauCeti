@@ -52,7 +52,7 @@ The cap classes of a contractible loop are also a `Γ`-torsor
 (`TauCeti.Floer.SphericalCapClass.instAddTorsor`), where `Γ` acts by gluing spheres at the centre
 of a cap. The two actions agree on spheres: a class `a ∈ π₂(X, x)`, read as a loop of based loops
 at the constant loop, has period class the class of `a` in `Γ`
-(`TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_freeLoopHomotopyGroupHom`).
+(`SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_contractibleLoopHomotopyGroupHom`).
 The identification of the fibre over a loop based at `x` with its cap classes is not constructed
 here.
 
@@ -77,8 +77,8 @@ here.
   number.
 * `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective`: the period
   homomorphism is onto for a path-connected `X`.
-* `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_freeLoopHomotopyGroupHom`:
-  the period class of a sphere, read as a loop of based loops, is its class in the period group.
+* `SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_contractibleLoopHomotopyGroupHom`: the
+  period class of a sphere, read as a loop of based loops, is its class in the period group.
 * `TauCeti.Floer.isCoveringMap_capCoverProj`, `TauCeti.Floer.isRegular_capCoverProj`: the cap
   cover is a covering space, regular over a path-connected `X`.
 * `TauCeti.Floer.ofContractibleLoopsHomotopyGroup_vadd_mk`: the period class of a loop of
@@ -179,19 +179,21 @@ theorem ofContractibleLoopsHomotopyGroup_surjective [PathConnectedSpace X] (x : 
 
 /-- **The period class of a sphere read as a loop of contractible loops is its class in the
 period group.** A class `a ∈ π₂(X, x)` is a loop at the constant loop of based loops at `x`
-(`TauCeti.freeLoopHomotopyGroupHom`), hence of contractible free loops; its period class is the
-class of the sphere `a`, since the torus it sweeps out has the Hurewicz class of `a`
+(`TauCeti.contractibleLoopHomotopyGroupHom`), hence of contractible free loops; its period class is
+the class of the sphere `a`, since the torus it sweeps out has the Hurewicz class of `a`
 (`TauCeti.freeLoopTorusClassHom_freeLoopHomotopyGroupHom`). Gluing a sphere at the centre of a cap
 is transport around such a loop, so this compares the two actions of `Γ`: on cap classes and on the
 fibres of the cap cover. -/
 @[simp]
-theorem ofContractibleLoopsHomotopyGroup_freeLoopHomotopyGroupHom (x : X)
+theorem ofContractibleLoopsHomotopyGroup_contractibleLoopHomotopyGroupHom (x : X)
     (a : HomotopyGroup (Fin 2) X x) :
-    ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul
-        ((contractibleLoopsHomotopyGroupMulEquiv x).symm (freeLoopHomotopyGroupHom x 0 a))) =
+    ofContractibleLoopsHomotopyGroup ω c x
+        (Additive.ofMul (contractibleLoopHomotopyGroupHom x 0 a)) =
       ofHomotopyGroup ω c x (Additive.ofMul a) := by
   refine PeriodGroup.ext ?_ ?_ <;>
-    simp [freeLoopTorusClassHom_freeLoopHomotopyGroupHom]
+    simp only [area_ofContractibleLoopsHomotopyGroup, chern_ofContractibleLoopsHomotopyGroup,
+      toMul_ofMul, contractibleLoopsHomotopyGroupMulEquiv_contractibleLoopHomotopyGroupHom,
+      freeLoopTorusClassHom_freeLoopHomotopyGroupHom, area_ofHomotopyGroup, chern_ofHomotopyGroup]
 
 end TauCeti.Floer.SphericalPeriodGroup
 

@@ -42,6 +42,8 @@ inverse.
 * `TauCeti.CubicalChain.boundary_mem_degenerate`: the boundary of a degenerate chain is degenerate.
 * `TauCeti.CubicalChain.degenerate_zero`: there are no degenerate `0`-chains.
 * `TauCeti.NormalizedCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on normalized chains.
+* `TauCeti.NormalizedCubicalChain.boundary_ofCube_comp_squareSwap`: transposing a square negates
+  its boundary.
 * `TauCeti.NormalizedCubicalChain.map_boundary` and
   `TauCeti.NormalizedCubicalChain.map_boundary_apply`: the boundary is natural.
 * `TauCeti.NormalizedCubicalChain.map_injective`: injective continuous maps induce injective
@@ -305,6 +307,17 @@ theorem boundary_ofCube {n : ℕ} (c : SingularCube X (n + 1)) :
         (ofCube X R (SingularCube.face i 0 c) - ofCube X R (SingularCube.face i 1 c)) := by
   rw [ofCube_def, boundary_mk, CubicalChain.boundary_single_one, CubicalChain.boundaryCube_def]
   simp only [ofCube_def, ← Submodule.mkQ_apply, map_sum, map_smul, map_sub]
+
+/-- The boundary of a transposed square is minus the boundary of the square. -/
+theorem boundary_ofCube_comp_squareSwap (c : SingularCube X 2) :
+    boundary X R 1 (ofCube X R (c.comp SingularCube.squareSwap)) =
+      -boundary X R 1 (ofCube X R c) := by
+  rw [boundary_ofCube, boundary_ofCube, Fin.sum_univ_two, Fin.sum_univ_two,
+    SingularCube.face_comp_squareSwap, SingularCube.face_comp_squareSwap,
+    SingularCube.face_comp_squareSwap, SingularCube.face_comp_squareSwap, Equiv.swap_apply_left,
+    Equiv.swap_apply_right]
+  simp only [Fin.isValue, Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_smul]
+  abel
 
 /-- Normalized cubical chains pushed forward along a continuous map. -/
 def map (f : C(X, Y)) (n : ℕ) : NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain Y R n :=

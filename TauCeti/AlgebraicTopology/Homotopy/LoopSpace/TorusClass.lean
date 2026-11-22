@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FreeLoop
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Complex
 
-import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.CubicalSign
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Sign
 
 /-!
 # Torus classes of loops of free loops
@@ -584,15 +584,12 @@ theorem freeLoopTorusClassHom_freeLoopHomotopyGroupHom (x : Q) (a : HomotopyGrou
     rw [GenLoop.freeLoopTorus_apply, GenLoop.congr_apply, GenLoop.genLoopLoopHomeomorph_apply]
     simp only [Λ, GenLoop.map_apply, ContinuousMap.coe_mk, basedMapCircleOneHomeomorphPath_apply]
     -- the family coordinate of the transposed square is `z 1` and its loop coordinate `z 0`
-    congr 3
-    funext i
-    rw [Subsingleton.elim i 0]
-    rfl
+    simp [Fin.fin_one_eq_zero]
   rw [HomotopyGroup.map_mk, freeLoopTorusClassHom_apply, HomotopyGroup.map_mk,
     HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
   refine (congrArg (singularCubicalHomologyIso ℤ (TopCat.of Q) 2).inv.hom
     (cubicalFreeLoopTorusClassHom_eq_cubicalHurewicz ℤ Λ hΛ)).trans
-      (Eq.trans ?_ ((GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul ℤ G).symm.trans
+      (Eq.trans ?_ ((GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz ℤ G).symm.trans
         (hurewiczIntHom_mk G).symm))
   rw [hG, GenLoop.cubicalHurewicz_congr_swap, map_neg,
     show (-1 : ℤ) ^ (1 * (1 + 1) / 2) = -1 by norm_num, neg_one_smul]

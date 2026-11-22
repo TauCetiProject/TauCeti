@@ -20,15 +20,15 @@ cube of `Iⁿ⁺¹` has coordinate `(-1)^(n(n+1)/2)` against the selected genera
 
 `hurewicz p = (-1)^(n(n+1)/2) • cubicalHurewicz p`
 
-(`GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul`, and
-`HomotopyGroup.hurewicz_hom_one_eq_neg_one_pow_smul` on homotopy classes). In degree `m = n + 1`
-the two maps agree when `m ≡ 0, 1 mod 4` and differ by a sign when `m ≡ 2, 3 mod 4`; in particular
-they differ by a sign on `π₂`.
+(`GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz`, and
+`HomotopyGroup.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz` on homotopy classes). In degree
+`m = n + 1` the two maps agree when `m ≡ 0, 1 mod 4` and differ by a sign when `m ≡ 2, 3 mod 4`; in
+particular they differ by a sign on `π₂`.
 
 Transposing the two coordinates of a generalized loop of `X` in dimension two negates its cubical
-Hurewicz class (`GenLoop.cubicalHurewicz_congr_swap`). At the level of chains, the faces of the
-transposed square are those of the square with the two coordinate directions exchanged, so the
-boundary of the transposed square is minus the boundary of the square. On the cube pair
+Hurewicz class (`GenLoop.cubicalHurewicz_congr_swap`). At the level of chains, the boundary of the
+transposed square is minus the boundary of the square
+(`TauCeti.NormalizedCubicalChain.boundary_ofCube_comp_squareSwap`). On the cube pair
 `(I², ∂I²)` the connecting morphism to `H₁(∂I²)` is injective, so the transposed identity square is
 minus the identity square in relative homology, and every generalized loop is the image of these
 two under its map of pairs.
@@ -39,9 +39,9 @@ of the corresponding double loop, whose first coordinate is the family parameter
 
 ## Main results
 
-* `GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul`,
-  `HomotopyGroup.hurewicz_hom_one_eq_neg_one_pow_smul`: the Hurewicz class is `(-1)^(n(n+1)/2)`
-  times the cubical Hurewicz class, read in simplicial singular homology.
+* `GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz`,
+  `HomotopyGroup.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz`: the Hurewicz class is
+  `(-1)^(n(n+1)/2)` times the cubical Hurewicz class, read in simplicial singular homology.
 * `GenLoop.cubicalHurewicz_congr_swap`: transposing the coordinates of a generalized loop in
   dimension two negates its cubical Hurewicz class.
 
@@ -73,7 +73,8 @@ variable (k : Type u) [Ring k] {X : Type u} [TopologicalSpace X] {x : X}
 /-- **The Hurewicz class is `(-1)^(n(n+1)/2)` times the cubical Hurewicz class.** Over every ring
 `k`, the Hurewicz class of a generalized loop `p : (Iⁿ⁺¹, ∂Iⁿ⁺¹) → (X, x)` is `(-1)^(n(n+1)/2)`
 times its cubical Hurewicz class, read in simplicial singular homology. -/
-theorem hurewicz_hom_one_eq_neg_one_pow_smul {n : ℕ} (p : Ω^ (Fin (n + 1)) X x) :
+theorem hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz {n : ℕ}
+    (p : Ω^ (Fin (n + 1)) X x) :
     (GenLoop.hurewicz (ModuleCat.of k k) p).hom 1 =
       (-1 : k) ^ (n * (n + 1) / 2) •
         (singularCubicalHomologyIso k (TopCat.of X) (n + 1)).inv (GenLoop.cubicalHurewicz k p) := by
@@ -93,8 +94,10 @@ theorem hurewicz_hom_one_eq_neg_one_pow_smul {n : ℕ} (p : Ω^ (Fin (n + 1)) X 
     · exact congrArg (ε • ·) hdef
     · exact (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
         (singularHomologyIsoOfSubsetSingleton_hom (ModuleCat.of k k) n x)) _).symm
-  exact (by rw [hεε, one_smul] : _ = (ε * ε) • (GenLoop.hurewicz (ModuleCat.of k k) p).hom 1).trans
-    ((mul_smul ε ε _).trans (congrArg (ε • ·) h2))
+  -- multiply `h2` by `ε` and use `ε * ε = 1`
+  have h3 := congrArg (ε • ·) h2
+  simp only [smul_smul, hεε, one_smul] at h3
+  exact h3
 
 end GenLoop
 
@@ -108,13 +111,14 @@ variable (k : Type u) [Ring k] {X : Type u} [TopologicalSpace X] {x : X}
 the Hurewicz class of `a ∈ πₙ₊₁(X, x)` is `(-1)^(n(n+1)/2)` times its cubical Hurewicz class, read
 in simplicial singular homology. This determines the universal sign of
 `HomotopyGroup.exists_hurewicz_eq_units_smul_cubicalHurewicz`. -/
-theorem hurewicz_hom_one_eq_neg_one_pow_smul (n : ℕ) (a : HomotopyGroup (Fin (n + 1)) X x) :
+theorem hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz (n : ℕ)
+    (a : HomotopyGroup (Fin (n + 1)) X x) :
     (hurewicz (ModuleCat.of k k) n a).hom 1 =
       (-1 : k) ^ (n * (n + 1) / 2) •
         (singularCubicalHomologyIso k (TopCat.of X) (n + 1)).inv (cubicalHurewicz k n a) :=
   Quotient.inductionOn a fun p ↦ by
     rw [hurewicz_mk, cubicalHurewicz_mk]
-    exact GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul k p
+    exact GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz k p
 
 end HomotopyGroup
 
@@ -122,41 +126,15 @@ end HomotopyGroup
 
 namespace TauCeti
 
-/-- The transposition of the two coordinates of the square `I²`. -/
-private def squareSwap : C(I^(Fin 2), I^(Fin 2)) :=
-  ⟨fun z ↦ z ∘ Equiv.swap 0 1, by fun_prop⟩
-
-/-- The faces of a transposed square are the faces of the square in the exchanged direction. -/
-private theorem face_comp_squareSwap {X : Type*} [TopologicalSpace X] (c : SingularCube X 2)
-    (i : Fin 2) (t : I) :
-    SingularCube.face i t (c.comp squareSwap) = SingularCube.face (Equiv.swap 0 1 i) t c := by
-  ext y
-  rw [SingularCube.face_apply, SingularCube.face_apply, ContinuousMap.comp_apply]
-  congr 1
-  funext j
-  fin_cases i <;> fin_cases j <;> rfl
-
-/-- The boundary of a transposed square is minus the boundary of the square. -/
-private theorem boundary_ofCube_comp_squareSwap {X : Type*} [TopologicalSpace X]
-    (R : Type*) [Ring R] (c : SingularCube X 2) :
-    NormalizedCubicalChain.boundary X R 1
-        (NormalizedCubicalChain.ofCube X R (c.comp squareSwap)) =
-      -NormalizedCubicalChain.boundary X R 1 (NormalizedCubicalChain.ofCube X R c) := by
-  rw [NormalizedCubicalChain.boundary_ofCube, NormalizedCubicalChain.boundary_ofCube,
-    Fin.sum_univ_two, Fin.sum_univ_two, face_comp_squareSwap, face_comp_squareSwap,
-    face_comp_squareSwap, face_comp_squareSwap, Equiv.swap_apply_left, Equiv.swap_apply_right]
-  simp only [Fin.isValue, Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_smul]
-  abel
-
 /-- The transposed identity square of the cube pair `(I², ∂I²)`. -/
 private def cubeSwap : SingularCube (cubeBoundaryPair.{u} 2).fst 2 :=
-  (upCube.{u} 2 : SingularCube (cubeBoundaryPair.{u} 2).fst 2).comp squareSwap
+  (upCube.{u} 2 : SingularCube (cubeBoundaryPair.{u} 2).fst 2).comp SingularCube.squareSwap
 
 private theorem mapsTo_cubeSwap_boundary :
     MapsTo (cubeSwap.{u}) (Cube.boundary (Fin 2)) (range (cubeBoundaryPair.{u} 2).map) := by
   rintro z ⟨i, hi⟩
-  refine ⟨⟨ULift.up (squareSwap z), ⟨Equiv.swap 0 1 i, ?_⟩⟩, rfl⟩
-  simpa [squareSwap] using hi
+  refine ⟨⟨ULift.up (SingularCube.squareSwap z), ⟨Equiv.swap 0 1 i, ?_⟩⟩, rfl⟩
+  simpa using hi
 
 variable (k : Type u) [Ring k]
 
@@ -180,7 +158,7 @@ private theorem homologyπ_cubicalCycleOfCube_cubeSwap :
     (cubeBoundaryPair.{u} 2).isEmbedding_map.injective 1
   refine ((TopPair.map_cubicalBoundaryChainOfCube k _ _).trans ?_).trans
     (LinearMap.map_neg _ _).symm
-  exact (boundary_ofCube_comp_squareSwap k _).trans
+  exact (NormalizedCubicalChain.boundary_ofCube_comp_squareSwap k _).trans
     (congrArg Neg.neg (TopPair.map_cubicalBoundaryChainOfCube k _ _).symm)
 
 end TauCeti
@@ -200,11 +178,10 @@ private theorem toCubeBoundaryPairHom_congr_swap (p : Ω^ (Fin 2) X x) :
   ext z
   refine (toCubeBoundaryPairHom_fst_apply _ z).trans ?_
   -- the ambient map of a composite of maps of pairs is the composite of the ambient maps
-  rw [show TopPair.Hom.fst (cubeBoundaryPairHom cubeSwap mapsTo_cubeSwap_boundary ≫
-      toCubeBoundaryPairHom p) = TopPair.Hom.fst (cubeBoundaryPairHom cubeSwap
-        mapsTo_cubeSwap_boundary) ≫ TopPair.Hom.fst (toCubeBoundaryPairHom p) from rfl,
-    ConcreteCategory.comp_apply, cubeBoundaryPairHom_fst_apply, toCubeBoundaryPairHom_fst_apply]
-  rfl
+  rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply, cubeBoundaryPairHom_fst_apply,
+    toCubeBoundaryPairHom_fst_apply, GenLoop.congr_apply]
+  -- `cubeSwap` is `squareSwap` followed by `upCube = ULift.up`
+  exact congrArg p (SingularCube.squareSwap_apply z.down).symm
 
 /-- **Transposing the coordinates of a square negates its cubical Hurewicz class**: for a
 generalized loop `p : (I², ∂I²) → (X, x)`, the cubical Hurewicz class of `(s, t) ↦ p (t, s)` is
@@ -232,6 +209,9 @@ theorem cubicalHurewicz_congr_swap (p : Ω^ (Fin 2) X x) :
     rw [← singularHomologyIsoOfSubsetSingleton_hom]
     exact (singularHomologyIsoOfSubsetSingleton (ModuleCat.of k k) 1 x).toLinearEquiv.injective
   apply hπ
+  -- `singularHomologyπ` and the comparison isomorphism commute with negation. The homology of `X`
+  -- and the homology of the ambient space of `(X, {x})` agree only up to unfolding, so `rw` and
+  -- `simp` cannot rewrite under these maps and the step is taken in term mode
   exact hq.symm.trans ((map_neg _ _).symm.trans (congrArg _ (map_neg _ _).symm))
 
 end GenLoop
