@@ -18,13 +18,13 @@ of non-wandering points and proves its basic properties.
 
 ## Main definitions
 
-* `nonwanderingSet f`: the set of non-wandering points of `f`.
+* `TauCeti.nonwanderingSet f`: the set of non-wandering points of `f`.
 
 ## Main results
 
-* `isClosed_nonwanderingSet`: the non-wandering set is closed.
+* `TauCeti.isClosed_nonwanderingSet`: the non-wandering set is closed.
 * `Function.IsPeriodicPt.mem_nonwanderingSet`: every periodic point is non-wandering.
-* `mapsTo_nonwanderingSet`: a continuous map sends the non-wandering set into itself;
+* `Continuous.mapsTo_nonwanderingSet`: a continuous map sends the non-wandering set into itself;
   `Homeomorph.image_nonwanderingSet`: a homeomorphism maps it onto itself.
 * `Homeomorph.nonwanderingSet_symm`: a homeomorphism and its inverse have the same non-wandering
   set.
@@ -32,8 +32,8 @@ of non-wandering points and proves its basic properties.
   `MeasureTheory.MeasurePreserving.nonwanderingSet_eq_univ`: if `f` is conservative for a measure
   that is positive on nonempty open sets, for instance if it preserves a finite measure of full
   support, every point is non-wandering (topological Poincaré recurrence).
-* `nonwanderingSet_eq_univ_of_dense`: if every point of a dense set is non-wandering, so is every
-  point.
+* `TauCeti.nonwanderingSet_eq_univ_of_dense`: if every point of a dense set is non-wandering, so
+  is every point.
 
 ## References
 
@@ -47,6 +47,8 @@ open Set Filter Function MeasureTheory
 open scoped Topology
 
 variable {X : Type*} [TopologicalSpace X] {f g : X → X} {x : X} {s : Set X}
+
+namespace TauCeti
 
 /-- The non-wandering set of a self-map `f` of a topological space: the points `x` such that every
 neighbourhood `U` of `x` meets its image `f^[n] '' U` under some iterate with `n ≥ 1`. -/
@@ -96,6 +98,10 @@ theorem nonwanderingSet_eq_univ_of_dense (hs : Dense s) (h : s ⊆ nonwanderingS
     nonwanderingSet f = univ :=
   univ_subset_iff.1 (hs.closure_eq ▸ closure_subset_nonwanderingSet h)
 
+end TauCeti
+
+open TauCeti
+
 /-- Every periodic point is non-wandering. -/
 theorem Function.IsPeriodicPt.mem_nonwanderingSet {n : ℕ} (hx : IsPeriodicPt f n x)
     (hn : 0 < n) : x ∈ nonwanderingSet f :=
@@ -106,17 +112,8 @@ theorem Function.IsFixedPt.mem_nonwanderingSet (hx : IsFixedPt f x) :
     x ∈ nonwanderingSet f :=
   (hx.isPeriodicPt 1).mem_nonwanderingSet one_pos
 
-/-- The periodic points of `f` are non-wandering. -/
-theorem periodicPts_subset_nonwanderingSet : periodicPts f ⊆ nonwanderingSet f :=
-  fun _ ⟨_, hn, hx⟩ ↦ hx.mem_nonwanderingSet hn
-
-/-- Every point is non-wandering for the identity map. -/
-@[simp]
-theorem nonwanderingSet_id : nonwanderingSet (id : X → X) = univ :=
-  eq_univ_of_forall fun _ ↦ (isFixedPt_id _).mem_nonwanderingSet
-
 /-- A continuous map sends its non-wandering set into itself. -/
-theorem mapsTo_nonwanderingSet (hf : Continuous f) :
+theorem Continuous.mapsTo_nonwanderingSet (hf : Continuous f) :
     MapsTo f (nonwanderingSet f) (nonwanderingSet f) := by
   intro x hx
   rw [mem_nonwanderingSet_iff_exists_iterate_mem] at hx ⊢
@@ -127,7 +124,7 @@ theorem mapsTo_nonwanderingSet (hf : Continuous f) :
   exact hny
 
 /-- If `g` is a left inverse of `f`, every non-wandering point of `f` is non-wandering for `g`. -/
-theorem nonwanderingSet_subset_of_leftInverse (h : LeftInverse g f) :
+theorem Function.LeftInverse.nonwanderingSet_subset (h : LeftInverse g f) :
     nonwanderingSet f ⊆ nonwanderingSet g := by
   intro x hx
   rw [mem_nonwanderingSet_iff_exists_iterate_mem] at hx ⊢
@@ -135,21 +132,34 @@ theorem nonwanderingSet_subset_of_leftInverse (h : LeftInverse g f) :
   obtain ⟨n, hn, y, hy, hny⟩ := hx U hU
   exact ⟨n, hn, f^[n] y, hny, by rwa [(h.iterate n) y]⟩
 
+namespace TauCeti
+
+/-- The periodic points of `f` are non-wandering. -/
+theorem periodicPts_subset_nonwanderingSet : periodicPts f ⊆ nonwanderingSet f :=
+  fun _ ⟨_, hn, hx⟩ ↦ hx.mem_nonwanderingSet hn
+
+/-- Every point is non-wandering for the identity map. -/
+@[simp]
+theorem nonwanderingSet_id : nonwanderingSet (id : X → X) = univ :=
+  eq_univ_of_forall fun _ ↦ (isFixedPt_id _).mem_nonwanderingSet
+
+end TauCeti
+
 namespace Homeomorph
 
 /-- A homeomorphism and its inverse have the same non-wandering set. -/
 @[simp]
 theorem nonwanderingSet_symm (e : X ≃ₜ X) : nonwanderingSet e.symm = nonwanderingSet e :=
-  (nonwanderingSet_subset_of_leftInverse e.left_inv).antisymm
-    (nonwanderingSet_subset_of_leftInverse e.right_inv) |>.symm
+  e.left_inv.nonwanderingSet_subset.antisymm
+    e.right_inv.nonwanderingSet_subset |>.symm
 
 /-- A homeomorphism maps its non-wandering set onto itself. -/
 @[simp]
 theorem image_nonwanderingSet (e : X ≃ₜ X) : e '' nonwanderingSet e = nonwanderingSet e := by
-  refine (mapsTo_nonwanderingSet e.continuous).image_subset.antisymm fun x hx ↦ ?_
+  refine e.continuous.mapsTo_nonwanderingSet.image_subset.antisymm fun x hx ↦ ?_
   refine ⟨e.symm x, ?_, e.apply_symm_apply x⟩
   rw [← nonwanderingSet_symm] at hx ⊢
-  exact mapsTo_nonwanderingSet e.symm.continuous hx
+  exact e.symm.continuous.mapsTo_nonwanderingSet hx
 
 /-- The preimage of the non-wandering set under the homeomorphism is the set itself. -/
 @[simp]
