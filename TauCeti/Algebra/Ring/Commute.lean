@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Group.Action.Defs
-public import Mathlib.Algebra.Module.BigOperators
+public import Mathlib.Algebra.Module.Defs
 public import Mathlib.Algebra.Ring.Commute
-import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.RingTheory.Ideal.Basic
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -20,9 +20,9 @@ compatibly with the multiplication. For an operator `u`, `1 - a • u` is the op
 generalised kernel at a zero `a` of the Fredholm determinant of `u` carries the Riesz projector.
 
 Each member of a pairwise commuting finite family commutes with the family's sum, so it preserves
-the eigenvalue equations of that sum. Commuting elements annihilating a vector of a module in
-degrees `r₁` and `r₀` have sum and difference annihilating it in every degree `k` with
-`r₁ + r₀ ≤ k + 1`.
+the eigenvalue equations of that sum. Commuting elements of a semiring annihilating a vector of a
+module in degrees `r₁` and `r₀` have sum annihilating it in every degree `k` with
+`r₁ + r₀ ≤ k + 1`; over a ring, so does their difference.
 
 The product of two elements which anticommute with `b` commutes with `b`.
 
@@ -46,8 +46,8 @@ A square-zero differential commutes with any element `e` satisfying a homotopy i
   for `k < h`, with `dⱼ = 0` for `j < h`.
 * `Commute.add_pow_smul_eq_zero_of_add_le_succ_of_pow_smul_eq_zero`,
   `Commute.sub_pow_smul_eq_zero_of_add_le_succ_of_pow_smul_eq_zero`: nilpotent action of `x + y`
-  and `x - y` at each degree `k` with `r₁ + r₀ ≤ k + 1` when commuting `x`, `y` kill `u` at
-  degrees `r₁`, `r₀`.
+  (`x`, `y` in a semiring) and of `x - y` (`x`, `y` in a ring) at each degree `k` with
+  `r₁ + r₀ ≤ k + 1` when commuting `x`, `y` kill a vector `u` of a module at degrees `r₁`, `r₀`.
 * `TauCeti.commute_of_sq_zero_of_homotopy`: commutation of a square-zero differential with its
   homotopy projector.
 * `TauCeti.commute_mul_of_mul_eq_neg_mul`: a product of two elements anticommuting with `b`
@@ -102,16 +102,9 @@ then `(x + y) ^ k • u = 0` whenever `r₁ + r₀ ≤ k + 1`. This is the point
 `Commute.add_pow_eq_zero_of_add_le_succ_of_pow_eq_zero`. -/
 theorem add_pow_smul_eq_zero_of_add_le_succ_of_pow_smul_eq_zero [Semiring A] [Module A M]
     (hxy : Commute x y) (hx : x ^ r₁ • u = 0) (hy : y ^ r₀ • u = 0) (hk : r₁ + r₀ ≤ k + 1) :
-    (x + y) ^ k • u = 0 := by
-  rw [hxy.add_pow', Finset.sum_smul]
-  refine Finset.sum_eq_zero fun ij hij ↦ ?_
-  rw [smul_assoc]
-  -- Each term `x ^ i * y ^ j` has `i ≥ r₁` or `j ≥ r₀`, so it ends in `x ^ r₁` or `y ^ r₀`.
-  rcases le_or_gt r₁ ij.1 with h₁ | h₁
-  · rw [(hxy.pow_pow ij.1 ij.2).eq, ← pow_sub_mul_pow x h₁, ← mul_assoc, mul_smul, hx, smul_zero,
-      smul_zero]
-  · have h₂ : r₀ ≤ ij.2 := by have := Finset.mem_antidiagonal.1 hij; omega
-    rw [← pow_sub_mul_pow y h₂, ← mul_assoc, mul_smul, hy, smul_zero, smul_zero]
+    (x + y) ^ k • u = 0 :=
+  -- The scalars killing `u` form the left ideal `ker (a ↦ a • u)`, i.e. `Ideal.torsionOf A M u`.
+  Ideal.add_pow_mem_of_pow_mem_of_le_of_commute (LinearMap.toSpanSingleton A M u).ker hx hy hk hxy
 
 /-- If commuting elements `x` and `y` of a ring satisfy `x ^ r₁ • u = 0` and `y ^ r₀ • u = 0`,
 then `(x - y) ^ k • u = 0` whenever `r₁ + r₀ ≤ k + 1`. -/
