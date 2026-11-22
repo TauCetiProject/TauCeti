@@ -219,10 +219,11 @@ end BadClass
 /-- **Point configurations in a good class are good cycles.** Let `s` be a set of candidate
 images such that compatible images meet nonnegatively, the generic points on each image `c` cut
 its virtual dimension down to a nonnegative dimension, `2 |pts c| ≤ d(c)`, and every image of
-negative square is exceptional, as `TauCeti.mem_exceptionalImages_of_apply_self_neg` gives for a
-generic `J`. If `A` is good and the number of points is `d(A) / 2`, the components of a point
-configuration in class `A` form a good cycle. The structure theorem for good cycles then makes
-them homologically disjoint and assigns each point to exactly one of them. -/
+negative square is exceptional; `TauCeti.mem_exceptionalImages_of_apply_self_neg` gives this for
+candidates already known to be embedded spheres satisfying the regular-simple-curve bounds. If
+`A` is good and the number of points is `d(A) / 2`, the components of a point configuration in
+class `A` form a good cycle. The structure theorem for good cycles then makes them homologically
+disjoint and assigns each point to exactly one of them. -/
 theorem isGoodCycle_of_mem_pointConfigurations_of_isGoodClass {P : Type*} [Fintype P]
     {pts : Set X → Finset P} {r : Set X → Set X → Prop} {s : Set (Set X)} {l : Set X →₀ ℕ}
     (hint : ∀ c ∈ s, ∀ d ∈ s, r c d →
