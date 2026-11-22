@@ -37,6 +37,8 @@ representative formula pairs it with the class of the constant function `1` to g
 
 * `TauCeti.integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms`: on a boundaryless
   manifold, the exterior derivative of a compactly supported form integrates to zero.
+* `TauCeti.integralTopForm_eq_zero_of_mem_exactForms`: on a compact boundaryless manifold, every
+  exact top form integrates to zero.
 * `TauCeti.integralTopForm_add_of_mem_compactlySupportedForms` and
   `TauCeti.integralTopForm_sub_of_mem_compactlySupportedForms`: the integral is additive on
   compactly supported smooth top forms.
@@ -100,6 +102,14 @@ theorem integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms
     rw [mextDerivₗ_apply]
     exact integralTopForm_mextDeriv_eq_zero o (β.isSmoothForm.of_le (by simp))
       ((mem_compactlySupportedForms I).mp hβ)
+
+/-- **Stokes' theorem on a closed manifold**: on a compact oriented boundaryless manifold, every
+exact top form integrates to zero. -/
+theorem integralTopForm_eq_zero_of_mem_exactForms [CompactSpace M]
+    (o : Manifold.Orientation I M (Fin n)) {φ : SmoothForm I M ℝ n}
+    (hφ : φ ∈ exactForms I M n) : integralTopForm o φ.val = 0 :=
+  integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
+    ((exactCompactlySupportedForms_eq_exactForms I n).ge hφ)
 
 omit [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
 /-- The integral is additive on compactly supported smooth top forms. -/

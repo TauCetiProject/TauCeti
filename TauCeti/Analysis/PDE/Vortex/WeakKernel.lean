@@ -119,6 +119,14 @@ def weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
   (Submodule.span ℝ {g | ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η ∧
     HasCompactSupport η ∧ (g : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] gaugeFixedAdjoint x η})ᗮ
 
+/-- The defining formula of the weak kernel. -/
+theorem weakGaugeFixedKernel_def (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    weakGaugeFixedKernel x =
+      (Submodule.span ℝ {g : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) |
+        ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η ∧ HasCompactSupport η ∧
+          (g : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] gaugeFixedAdjoint x η})ᗮ :=
+  (rfl)
+
 /-- The weak kernel of `L_x` is a closed subspace of `L²(ℂ; ℝ⁴)`. -/
 theorem isClosed_weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     IsClosed
