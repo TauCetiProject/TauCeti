@@ -195,7 +195,7 @@ lemma vertexEquiv_simplicialNerveMap_app {D : Type u} [Category.{v} D] [Simplici
     (F : EnrichedFunctor SSet.{v} C D) (x : (SimplicialNerve C) _⦋0⦌) :
     vertexEquiv D ((simplicialNerveMap F).app (op ⦋0⦌) x) = F.obj (vertexEquiv C x) := by
   rw [vertexEquiv_apply, vertexEquiv_apply, simplicialNerveMap_app]
-  rfl
+  exact EnrichedFunctor.comp_obj _ _ _ _
 
 /-- The edge of the simplicial nerve given by a morphism of the underlying category. -/
 def edgeMk {x y : C} (f : x ⟶ y) :

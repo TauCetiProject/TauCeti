@@ -26,6 +26,8 @@ functors along an enriched functor that is an isomorphism on every hom object.
   enriched identities and composition with `eqToHom` transports on hom objects.
 * `CategoryTheory.EnrichedFunctor.map_comp_eqToHom`: compatibility of `F.map` with `eqToHom`
   transports on hom objects.
+* `CategoryTheory.EnrichedFunctor.lift_obj`, `CategoryTheory.EnrichedFunctor.lift_map`:
+  object and hom-map computation rules for `lift`.
 * `CategoryTheory.EnrichedFunctor.lift_comp`, `CategoryTheory.EnrichedFunctor.lift_unique`:
   postcomposing `lift` with `F` recovers `G`, and `lift` is the unique lift with the prescribed
   object map.
@@ -103,6 +105,17 @@ lemma lift_obj (F : EnrichedFunctor V C D) [∀ a b : C, IsIso (F.map a b)]
     (a : A) :
     (lift F G obj hobj).obj a = obj a :=
   (rfl)
+
+/-- The lifted enriched functor acts on hom objects by composing `G.map`, equality transport along
+`hobj`, and the inverse of `F.map`, up to the object identification `lift_obj`. -/
+@[simp, reassoc]
+lemma lift_map (F : EnrichedFunctor V C D) [∀ a b : C, IsIso (F.map a b)]
+    (G : EnrichedFunctor V A D) (obj : A → C) (hobj : ∀ a : A, F.obj (obj a) = G.obj a)
+    (i j : A) :
+    (lift F G obj hobj).map i j =
+      G.map i j ≫ eqToHom (by rw [hobj i, hobj j]) ≫ inv (F.map (obj i) (obj j)) ≫
+        eqToHom (by rw [lift_obj, lift_obj]) := by
+  simp [lift]
 
 /-- Postcomposing `lift F G obj hobj` with `F` recovers `G`. -/
 @[simp]

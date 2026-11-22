@@ -77,7 +77,7 @@ private noncomputable def liftCoreId (A B : SpacesΔ.{u}) :
 
 @[reassoc]
 private lemma liftCoreId_ι (A B : SpacesΔ.{u}) :
-    liftCoreId A B ≫ (sHom A.obj B.obj).core.ι = 𝟙 (sHom A.obj B.obj) :=
+    liftCoreId A B ≫ (sHom A.obj B.obj).core.ι = 𝟙 (sHom A B) :=
   Subcomplex.lift_ι _ _
 
 /-- The canonical simplicial functor from `SpacesΔ` to `CatInftyΔ`, viewing each Kan complex as a
@@ -87,17 +87,20 @@ noncomputable def toCatInftyΔ : EnrichedFunctor SSet.{u} SpacesΔ.{u} CatInfty�
   map A B := liftCoreId A B
   map_id A := by
     rw [← cancel_mono (Subcomplex.ι _)]
-    simp only [Category.assoc, liftCoreId_ι, ObjectProperty.FullSubcategory.eId_eq]
-    rw [CoreEnriched.eId_ι]
-    exact Category.comp_id _
+    have hId : eId SSet (CoreEnriched.of A.obj) ≫ (sHom A.obj A.obj).core.ι = eId SSet A.obj :=
+      CoreEnriched.eId_ι _
+    simp only [Category.assoc, liftCoreId_ι, ObjectProperty.FullSubcategory.eId_eq, hId,
+      Category.comp_id]
   map_comp A B C := by
     rw [← cancel_mono (Subcomplex.ι _)]
-    simp only [Category.assoc, liftCoreId_ι, ObjectProperty.FullSubcategory.eComp_eq]
-    rw [CoreEnriched.eComp_ι, tensorHom_comp_tensorHom_assoc]
-    simp only [liftCoreId_ι]
-    exact (Category.comp_id _).trans
-      ((congrArg (· ≫ eComp SSet A.obj B.obj C.obj) (id_tensorHom_id _ _)).trans
-        (Category.id_comp _)).symm
+    have hComp :
+        eComp SSet (CoreEnriched.of A.obj) (CoreEnriched.of B.obj) (CoreEnriched.of C.obj) ≫
+            (sHom A.obj C.obj).core.ι =
+          ((sHom A.obj B.obj).core.ι ⊗ₘ (sHom B.obj C.obj).core.ι) ≫
+            eComp SSet A.obj B.obj C.obj :=
+      CoreEnriched.eComp_ι _ _ _
+    simp only [Category.assoc, liftCoreId_ι, ObjectProperty.FullSubcategory.eComp_eq, hComp,
+      tensorHom_comp_tensorHom_assoc, id_tensorHom_id, Category.comp_id, Category.id_comp]
 
 /-- `SpacesΔ.toCatInftyΔ` sends a Kan complex `A` to `CoreEnriched.of A.obj` in `CatInftyΔ`. -/
 @[simp]
@@ -114,54 +117,44 @@ lemma toCatInftyΔ_obj_toSSet (A : SpacesΔ.{u}) :
 lemma toCatInftyΔ_obj_injective : Function.Injective toCatInftyΔ.{u}.obj :=
   fun _ _ h ↦ ObjectProperty.FullSubcategory.ext (congrArg (fun X ↦ X.obj.toSSet) h)
 
-/-- The underlying function complexes of `toCatInftyΔ.obj A` and `toCatInftyΔ.obj B` coincide
-with `Fun(A, B)`. -/
+/-- The mapping simplicial sets of `SpacesΔ.toCatInftyΔ` coincide with the cores of the
+underlying function complexes. -/
 lemma toCatInftyΔ_sHom_eq (A B : SpacesΔ.{u}) :
-    sHom (toCatInftyΔ.obj A).obj.toSSet (toCatInftyΔ.obj B).obj.toSSet = sHom A.obj B.obj :=
-  congrArg₂ sHom (toCatInftyΔ_obj_toSSet A) (toCatInftyΔ_obj_toSSet B)
+    sHom (toCatInftyΔ.obj A) (toCatInftyΔ.obj B) = ((sHom A.obj B.obj).core : SSet.{u}) :=
+  congrArg (fun X : SSet.{u} ↦ (X.core : SSet.{u}))
+    (congrArg₂ sHom (toCatInftyΔ_obj_toSSet A) (toCatInftyΔ_obj_toSSet B))
 
-private lemma toCatInftyΔ_map_ι_eq (A B : SpacesΔ.{u}) :
-    toCatInftyΔ.map A B ≫
-        (sHom (toCatInftyΔ.obj A).obj.toSSet (toCatInftyΔ.obj B).obj.toSSet).core.ι =
-      liftCoreId A B ≫ (sHom A.obj B.obj).core.ι :=
-  rfl
+private lemma toCatInftyΔ_map_eq (A B : SpacesΔ.{u}) :
+    toCatInftyΔ.map A B = liftCoreId A B ≫ eqToHom (toCatInftyΔ_sHom_eq A B).symm := by
+  simp [toCatInftyΔ]
 
-/-- Composing `toCatInftyΔ.map A B` with the core inclusion gives the identity on `Fun(A, B)`, up
-to the object identification `toCatInftyΔ_obj_toSSet`. -/
+/-- Composing `toCatInftyΔ.map A B` with the core inclusion on `Fun(A, B)` gives the identity on
+`Fun(A, B)`. -/
 @[reassoc (attr := simp)]
 lemma toCatInftyΔ_map_ι (A B : SpacesΔ.{u}) :
-    toCatInftyΔ.map A B ≫
-        (sHom (toCatInftyΔ.obj A).obj.toSSet (toCatInftyΔ.obj B).obj.toSSet).core.ι =
-      eqToHom (toCatInftyΔ_sHom_eq A B).symm := by
-  rw [toCatInftyΔ_map_ι_eq, liftCoreId_ι]
-  exact (eqToHom_refl _ _).symm
+    toCatInftyΔ.map A B ≫ eqToHom (toCatInftyΔ_sHom_eq A B) ≫ (sHom A.obj B.obj).core.ι =
+      𝟙 (sHom A B) := by
+  rw [toCatInftyΔ_map_eq, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    liftCoreId_ι]
 
-/-- Composing the core inclusion with `toCatInftyΔ.map A B` gives the identity on
-`Fun(A, B)^≃`. -/
+/-- Composing the core inclusion on `Fun(A, B)` with `toCatInftyΔ.map A B` gives the identity on
+the mapping simplicial set of `CatInftyΔ`. -/
 @[reassoc (attr := simp)]
 lemma ι_toCatInftyΔ_map (A B : SpacesΔ.{u}) :
-    (sHom (toCatInftyΔ.obj A).obj.toSSet (toCatInftyΔ.obj B).obj.toSSet).core.ι ≫
-        eqToHom (toCatInftyΔ_sHom_eq A B) ≫ toCatInftyΔ.map A B =
-      𝟙 ((sHom (toCatInftyΔ.obj A).obj.toSSet (toCatInftyΔ.obj B).obj.toSSet).core :
-        SSet.{u}) := by
-  rw [← cancel_mono (Subcomplex.ι _)]
-  simp
+    eqToHom (toCatInftyΔ_sHom_eq A B) ≫ (sHom A.obj B.obj).core.ι ≫ toCatInftyΔ.map A B =
+      𝟙 (sHom (toCatInftyΔ.obj A) (toCatInftyΔ.obj B)) := by
+  rw [toCatInftyΔ_map_eq]
+  have h : (sHom A.obj B.obj).core.ι ≫ liftCoreId A B =
+      𝟙 ((sHom A.obj B.obj).core : SSet.{u}) := by
+    rw [← cancel_mono (sHom A.obj B.obj).core.ι, Category.assoc, liftCoreId_ι]
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+  rw [reassoc_of% h, eqToHom_trans, eqToHom_refl]
 
 /-- The simplicial functor `SpacesΔ.toCatInftyΔ` induces isomorphisms on all mapping simplicial
 sets. -/
-instance isIso_toCatInftyΔ_map (A B : SpacesΔ.{u}) : IsIso (toCatInftyΔ.map A B) := by
-  have : IsIso (sHom (toCatInftyΔ.obj A).obj.toSSet
-      (toCatInftyΔ.obj B).obj.toSSet).core.ι := by
-    have := B.property
-    rw [toCatInftyΔ_obj_toSSet, toCatInftyΔ_obj_toSSet, core_sHom_eq_top,
-      ← Subcomplex.topIso_hom]
-    infer_instance
-  have : IsIso (toCatInftyΔ.map A B ≫
-      (sHom (toCatInftyΔ.obj A).obj.toSSet (toCatInftyΔ.obj B).obj.toSSet).core.ι) := by
-    rw [toCatInftyΔ_map_ι]
-    infer_instance
-  exact IsIso.of_isIso_comp_right (toCatInftyΔ.map A B)
-    (sHom (toCatInftyΔ.obj A).obj.toSSet (toCatInftyΔ.obj B).obj.toSSet).core.ι
+instance isIso_toCatInftyΔ_map (A B : SpacesΔ.{u}) : IsIso (toCatInftyΔ.map A B) :=
+  ⟨⟨eqToHom (toCatInftyΔ_sHom_eq A B) ≫ (sHom A.obj B.obj).core.ι,
+    toCatInftyΔ_map_ι A B, ι_toCatInftyΔ_map A B⟩⟩
 
 end SpacesΔ
 
@@ -216,8 +209,7 @@ lemma range_spacesToCatInfty :
       catInfty.{u}.fullEnhancedSubcategory
         fun x ↦ KanComplex (SimplicialNerve.vertexEquiv CatInftyΔ.{u} x).obj.toSSet :=
   SimplicialNerve.range_simplicialNerveMap SpacesΔ.toCatInftyΔ.{u}
-    SpacesΔ.toCatInftyΔ_obj_injective (fun A ↦ KanComplex A.obj.toSSet)
-    kanComplex_iff_mem_range_toCatInftyΔ
+    (fun A ↦ KanComplex A.obj.toSSet) kanComplex_iff_mem_range_toCatInftyΔ
 
 /-- The inclusion `Spaces ⟶ Cat∞` is a monomorphism of simplicial sets. -/
 instance mono_spacesToCatInfty : Mono spacesToCatInfty.{u} := by
