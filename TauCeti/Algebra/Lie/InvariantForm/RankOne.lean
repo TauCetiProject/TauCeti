@@ -128,10 +128,9 @@ theorem exists_injective_lieHom_soThree_of_lie_eq_smul (B : LinearMap.BilinForm 
       soThreeLieHom_soThreeEquiv_single 1⟩, ?_⟩
   · -- Rescaling the orthogonal triple `x, y, Z` keeps it orthogonal.
     have hO := hB.iIsOrtho_of_lie_eq_smul hBs hα hx
-    refine linearIndependent_of_iIsOrtho (B := B) (fun i j hij ↦ ?_) fun i ↦ ?_
-    · have h : B (![x, y, Z] i) (![x, y, Z] j) = 0 := hO hij
+    refine linearIndependent_of_iIsOrtho (B := B) (iIsOrtho_def.mpr fun i j hij ↦ ?_) fun i ↦ ?_
+    · have h : B (![x, y, Z] i) (![x, y, Z] j) = 0 := iIsOrtho_def.mp hO i j hij
       have hc (k : Fin 3) : a k = ![s⁻¹, s⁻¹, μ⁻¹] k • ![x, y, Z] k := by fin_cases k <;> rfl
-      change B (a i) (a j) = 0
       simp only [hc, map_smul, LinearMap.smul_apply, h, smul_zero]
     have hi : a i ≠ 0 := by fin_cases i <;> simp [ha, hx0, hy0, hZ0, hs0.ne', hμpos.ne']
     simpa using (hBp _ hi).ne'

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Basic
-public import Mathlib.RingTheory.Noetherian.Defs
+
+import Mathlib.LinearAlgebra.Span.Defs
+import Mathlib.Order.Zorn
 
 /-!
 # Maximal commutative subspaces of a Lie algebra
@@ -17,7 +19,7 @@ Lie algebra of a compact Lie group these are the Lie algebras of the maximal tor
 
 ## Main results
 
-* `TauCeti.exists_maximal_commuting_submodule`: a Noetherian Lie algebra has a maximal commutative
+* `TauCeti.exists_maximal_commuting_submodule`: every Lie algebra has a maximal commutative
   subspace.
 -/
 
@@ -27,13 +29,20 @@ namespace TauCeti
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- **A Noetherian Lie algebra has a maximal commutative subspace** `t`: the elements of `t`
-commute with each other, and every element commuting with all of `t` lies in `t`. -/
-theorem exists_maximal_commuting_submodule [IsNoetherian R L] :
+/-- **Every Lie algebra has a maximal commutative subspace** `t`: the elements of `t` commute with
+each other, and every element commuting with all of `t` lies in `t`. -/
+theorem exists_maximal_commuting_submodule :
     ∃ t : Submodule R L, (∀ a ∈ t, ∀ b ∈ t, ⁅a, b⁆ = 0) ∧
       ∀ z : L, (∀ H : t, ⁅(H : L), z⁆ = 0) → z ∈ t := by
-  obtain ⟨t, ht, hmax⟩ := set_has_maximal_iff_noetherian.mpr ‹_›
-    {t : Submodule R L | ∀ a ∈ t, ∀ b ∈ t, ⁅a, b⁆ = 0} ⟨⊥, by simp⟩
+  -- Zorn's lemma: the union of a chain of commutative subspaces is commutative.
+  obtain ⟨t, -, ht, hmax⟩ := zorn_le_nonempty₀
+    {t : Submodule R L | ∀ a ∈ t, ∀ b ∈ t, ⁅a, b⁆ = 0} (fun c hcs hc y hy ↦ by
+      refine ⟨sSup c, fun a ha b hb ↦ ?_, fun _ ↦ le_sSup⟩
+      obtain ⟨p, hp, hap⟩ := (Submodule.mem_sSup_of_directed ⟨y, hy⟩ hc.directedOn).mp ha
+      obtain ⟨q, hq, hbq⟩ := (Submodule.mem_sSup_of_directed ⟨y, hy⟩ hc.directedOn).mp hb
+      rcases hc.total hp hq with hpq | hqp
+      · exact hcs hq a (hpq hap) b hbq
+      · exact hcs hp a hap b (hqp hbq)) ⊥ (by simp)
   refine ⟨t, ht, fun z hz ↦ ?_⟩
   -- Adding an element `z` commuting with `t` keeps the subspace commutative.
   have hc : ∀ a ∈ t ⊔ R ∙ z, ∀ b ∈ t ⊔ R ∙ z, ⁅a, b⁆ = 0 := by
@@ -44,8 +53,6 @@ theorem exists_maximal_commuting_submodule [IsNoetherian R L] :
     obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.mp hd
     have hbz : ⁅z, b⁆ = 0 := by rw [← lie_skew, hz ⟨b, hb₁⟩, neg_zero]
     simp [ht a ha₁ b hb₁, hz ⟨a, ha₁⟩, hbz]
-  by_contra hzt
-  exact hmax _ hc (lt_of_le_of_ne le_sup_left fun h ↦
-    hzt (h ▸ Submodule.mem_sup_right (Submodule.mem_span_singleton_self z)))
+  exact hmax hc le_sup_left (Submodule.mem_sup_right (Submodule.mem_span_singleton_self z))
 
 end TauCeti
