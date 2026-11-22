@@ -126,8 +126,6 @@ polynomial in the Morse inequalities.
   ending above all values of `f`.
 * `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`: the same cut indexed by
   `ℕ`, at regular values.
-* `TauCeti.IsMorse.exists_regular_sublevel_partition`: on a compact manifold, regular values
-  cutting the values of a Morse function into bands with at most one critical value each.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.criticalCount_eq_zero_iff`,
   `TauCeti.natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
@@ -996,23 +994,6 @@ theorem IsMorse.exists_isCriticalBandCut [IsManifold I 1 M] [CompactSpace M] (hf
     ∃ a : ℤ → ℝ, IsCriticalBandCut I f a ∧ (∃ q₀, ∀ x, a q₀ < f x) ∧ ∃ q₁, ∀ x, f x ≤ a q₁ :=
   exists_isCriticalBandCut_of_finite_image_criticalPoints hf.contMDiff.continuous
     (hf.finite_criticalPoints.image f)
-
-/-- **A regular partition of the values of a Morse function.** For a Morse function `f` on a
-compact manifold, there are regular values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with `s 0 < f ≤ s (N + 1)`
-on `M`, such that each band `f⁻¹[s j, s (j + 1)]` contains at most one critical value. This is a
-special case of `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`. -/
-theorem IsMorse.exists_regular_sublevel_partition [IsManifold I 1 M] [CompactSpace M]
-    (hf : IsMorse I f) :
-    ∃ (s : ℕ → ℝ) (N : ℕ), Monotone s ∧ (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
-      (∀ j ≤ N + 1, IsRegularValue I 𝓘(ℝ) f (s j)) ∧
-      ∀ j ≤ N, ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
-        f x ∈ Icc (s j) (s (j + 1)) → f y ∈ Icc (s j) (s (j + 1)) → f x = f y := by
-  obtain ⟨s, N, hs, h0, hN, hband, hreg⟩ :=
-    exists_monotone_isCriticalBand_of_finite_image_criticalPoints hf.contMDiff.continuous
-      (hf.finite_criticalPoints.image f)
-  refine ⟨s, N, hs, h0, hN, fun j _ ↦ hreg j, fun j _ x hx y hy hxj hyj ↦ ?_⟩
-  obtain ⟨c, -, hc⟩ := (hband j).exists_mem_Ioo_forall_eq
-  exact (hc x hx hxj).trans (hc y hy hyj).symm
 
 /-! ### Counting critical points -/
 
