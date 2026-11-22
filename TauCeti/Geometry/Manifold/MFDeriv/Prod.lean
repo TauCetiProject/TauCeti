@@ -70,6 +70,8 @@ fields on a product manifold.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
 * `MDifferentiableAt.curry_left` and `MDifferentiableAt.curry_right`: a curried function
   differentiable jointly is differentiable in each variable separately.
+* `MDifferentiableAt.mfderiv_uncurry_apply_zero_mk`: the differential of an uncurried family on
+  a vertical vector `(0, v)` is the differential of the member of the family on `v`.
 
 * `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
   differential of a coordinate of a map into a product.
@@ -530,6 +532,14 @@ theorem MDifferentiableAt.curry_right
     (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) :
     MDifferentiableAt I' J (fun y ↦ f x y) y :=
   hf.comp (f := fun y' : M' ↦ (x, y')) y (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
+
+/-- The differential of an uncurried family `(x, y) ↦ f x y` on a vertical tangent vector `(0, v)`
+is the differential of the member `f x` on `v`. -/
+theorem MDifferentiableAt.mfderiv_uncurry_apply_zero_mk
+    (hf : MDifferentiableAt (I.prod I') J (Function.uncurry f) (x, y)) (v : TangentSpace I' y) :
+    mfderiv (I.prod I') J (Function.uncurry f) (x, y) (0, v) = mfderiv I' J (f x) y v :=
+  -- The product rule, whose first summand vanishes at the zero vector.
+  (mfderiv_prod_eq_add_apply hf).trans ((congrArg (· + _) (map_zero _)).trans (zero_add _))
 
 end Curry
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.OpenSet
 public import TauCeti.Analysis.Holder.Two
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -31,6 +32,8 @@ which for `α ≤ 1` is `‖sin‖_∞ = 1` when `f = sin` on `ℝ`.
 
 * `TauCeti.CkHolderSpace.equivHolderSpace`: the isometric identification of
   `CkHolderSpace 0 α E F` with `HolderSpace α E F`.
+* `TauCeti.CkHolderSpaceOn.equivHolderSpace`: the isometric identification of
+  `CkHolderSpaceOn 0 α Ω F` with `HolderSpace α Ω F`.
 * `TauCeti.CkHolderSpace.equivC1HolderSpace`: the identification of `CkHolderSpace 1 α E F` with
   `C1HolderSpace α E F`, with the norm identity `CkHolderSpace.norm_eq_norm_add_norm_fderiv` and
   the bounds `‖e f‖ ≤ ‖f‖ ≤ 2 ‖e f‖`.
@@ -368,5 +371,86 @@ theorem norm_le_three_mul_norm_equivC2HolderSpace (f : CkHolderSpace 2 α E F) :
   exact h
 
 end CkHolderSpace
+
+namespace CkHolderSpaceOn
+
+open TopologicalSpace
+open scoped NNReal BoundedContinuousFunction
+
+universe u v
+
+variable {α : ℝ≥0} {E : Type u} {F : Type v}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+private def toHolderSpace (f : CkHolderSpaceOn 0 α Ω F) : HolderSpace α Ω F :=
+  HolderSpace.compLeftL
+    (continuousMultilinearCurryFin0 ℝ E F).toLinearIsometry.toContinuousLinearMap
+    f.iteratedFDerivHolder
+
+private def ofHolderSpace (g : HolderSpace α Ω F) : CkHolderSpaceOn 0 α Ω F :=
+  ofContDiffOn (Function.extend Subtype.val g 0)
+    (contDiffOn_zero.mpr (continuousOn_iff_continuous_domRestrict.mpr (by
+      convert g.continuous using 1
+      ext x
+      exact Subtype.val_injective.extend_apply g 0 x)))
+    (fun i hi ↦ ⟨‖g‖, fun x ↦ by
+      obtain rfl : i = 0 := by omega
+      rw [_root_.norm_iteratedFDeriv_zero, Subtype.val_injective.extend_apply]
+      exact g.norm_apply_le x⟩) <| by
+    obtain ⟨C, hC⟩ := g.memHolder
+    rw [HolderSpace.coe_toBoundedContinuousFunction] at hC
+    refine ⟨C, fun x y ↦ ?_⟩
+    simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply,
+      Subtype.val_injective.extend_apply, LinearIsometryEquiv.edist_map]
+    exact hC x y
+
+private theorem toHolderSpace_apply (f : CkHolderSpaceOn 0 α Ω F) (x : Ω) :
+    toHolderSpace f x = f x := by
+  simp only [toHolderSpace, HolderSpace.compLeftL_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometryEquiv.coe_toLinearIsometry]
+  have h0 : f.iteratedFDerivHolder x = f.iteratedFDeriv (Fin.last 0) x := by
+    rw [← HolderSpace.coe_toBoundedContinuousFunction,
+      toBoundedContinuousFunction_iteratedFDerivHolder]
+  have h1 : f.iteratedFDeriv (Fin.last 0) x = _root_.iteratedFDeriv ℝ 0 f.extend x :=
+    (f.iteratedFDeriv_eq f.extend_apply 0 x).symm
+  rw [h0, h1, iteratedFDeriv_zero_eq_comp, Function.comp_apply,
+    LinearIsometryEquiv.apply_symm_apply, f.extend_apply]
+
+private theorem ofHolderSpace_apply (g : HolderSpace α Ω F) (x : Ω) :
+    ofHolderSpace g x = g x :=
+  (ofContDiffOn_apply ..).trans (Subtype.val_injective.extend_apply g 0 x)
+
+private theorem norm_toHolderSpace (f : CkHolderSpaceOn 0 α Ω F) : ‖toHolderSpace f‖ = ‖f‖ := by
+  rw [toHolderSpace, HolderSpace.norm_compLeftL_linearIsometry, HolderSpace.norm_def,
+    toBoundedContinuousFunction_iteratedFDerivHolder, norm_eq, Fin.sum_univ_one]
+  exact congrArg (· + _) (congrArg (fun i : Fin 1 ↦ ‖f.iteratedFDeriv i‖) (Fin.eq_zero _))
+
+/-- At order `k = 0`, `CkHolderSpaceOn 0 α Ω F` is linearly isometric to `HolderSpace α Ω F`. -/
+def equivHolderSpace : CkHolderSpaceOn 0 α Ω F ≃ₗᵢ[ℝ] HolderSpace α Ω F where
+  toFun := toHolderSpace
+  invFun := ofHolderSpace
+  left_inv f := ext fun x ↦ (ofHolderSpace_apply _ x).trans (toHolderSpace_apply f x)
+  right_inv g := HolderSpace.ext fun x ↦ (toHolderSpace_apply _ x).trans (ofHolderSpace_apply g x)
+  map_add' f g := HolderSpace.ext fun x ↦ by
+    simp only [toHolderSpace_apply, coe_add, Pi.add_apply, HolderSpace.add_apply]
+  map_smul' c f := HolderSpace.ext fun x ↦ by
+    simp only [toHolderSpace_apply, coe_smul, Pi.smul_apply, RingHom.id_apply,
+      HolderSpace.smul_apply]
+  norm_map' := norm_toHolderSpace
+
+/-- The linear isometry `equivHolderSpace` preserves pointwise values on `Ω`. -/
+@[simp]
+theorem equivHolderSpace_apply (f : CkHolderSpaceOn 0 α Ω F) (x : Ω) :
+    equivHolderSpace f x = f x :=
+  toHolderSpace_apply f x
+
+/-- The inverse of `equivHolderSpace` preserves pointwise values on `Ω`. -/
+@[simp]
+theorem equivHolderSpace_symm_apply (g : HolderSpace α Ω F) (x : Ω) :
+    equivHolderSpace.symm g x = g x :=
+  ofHolderSpace_apply g x
+
+end CkHolderSpaceOn
 
 end TauCeti

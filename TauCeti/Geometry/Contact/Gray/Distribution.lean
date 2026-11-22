@@ -111,6 +111,20 @@ theorem mpullback_inclusion (hα : IsLocalContactFormFamily ξ U α t₀) (h : V
     simp only [Submodule.mem_comap, ContinuousLinearMap.coe_coe]
     rw [mfderiv_subtype_val_inclusion_apply]
 
+/-- The slice at time `t` of a local defining family near `t` is a contact form. -/
+theorem isContactForm (hα : IsLocalContactFormFamily ξ U α t₀) :
+    (SmoothForm.mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm :=
+  hα.self_of_nhds.1
+
+/-- The kernel of the slice at time `t` of a local defining family near `t` is the hyperplane
+`ξ_t`, the tangent spaces of `U` being those of `M`. -/
+theorem mem_kerDistribution_iff (hα : IsLocalContactFormFamily ξ U α t₀) {z : U}
+    {v : TangentSpace I z} :
+    v ∈ (SmoothForm.mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution
+        z ↔ v ∈ ξ t₀ z := by
+  rw [hα.self_of_nhds.2 z, Submodule.mem_comap]
+  exact Iff.of_eq (congrArg (· ∈ ξ t₀ z) (Manifold.mfderiv_subtype_val_apply z v))
+
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
 
 /-- **Local Gray vector fields agree.** Two local defining families of `ξ_t` near `t₀` have the same
@@ -179,6 +193,16 @@ theorem IsLocalContactFormFamily.distributionGrayVectorField_eq [FiniteDimension
     ⟨U, hx, α, hα⟩
   rw [distributionGrayVectorField, dite_eq_left_of_eq_true (eq_true h)]
   exact hα.mfderiv_grayVectorField_eq h.choose_spec.choose_spec.choose_spec hx _
+
+/-- On the open set of a local defining family near `t`, the Gray vector field of the family is the
+Gray vector field of the contact structures, the tangent spaces of `U` being those of `M`. -/
+theorem IsLocalContactFormFamily.grayVectorField_eq_distributionGrayVectorField
+    [FiniteDimensional ℝ E] [I.Boundaryless] {U : Opens M}
+    {α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × U) ℝ 1} {t : ℝ} (hα : IsLocalContactFormFamily ξ U α t)
+    (z : U) : α.grayVectorField t z = distributionGrayVectorField ξ t z := by
+  have h := hα.distributionGrayVectorField_eq z.property
+  rw [Manifold.mfderiv_subtype_val_apply] at h
+  exact h.symm
 
 namespace IsContactDistributionFamily
 
