@@ -7,8 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Clopen
 public import TauCeti.NumberTheory.Padics.Measure.Units.Basic
-import TauCeti.NumberTheory.Padics.Basic
-import TauCeti.NumberTheory.Padics.Measure.Dirac
 
 /-!
 # Coefficient extension on the p-adic unit group
@@ -62,20 +60,5 @@ theorem extendCoefficients_eq_restrictUnits_map {O K : Type*} [CommRing O] [Topo
     extendCoefficients j hj μ =
       restrictUnits (extendCoefficients j hj (map ⟨Units.val, Units.continuous_val⟩ μ)) := by
   rw [← extendCoefficients_restrictUnits, restrictUnits_map_unitsVal]
-
-section Examples
-
--- Scaling the unit Dirac measure by the inverse of p puts its norm above one.
-example :
-    ¬∃ μ : D(ℤ_[p]ˣ, ℤ_[p]),
-      extendCoefficients PadicInt.Coe.ringHom PadicInt.norm_coe_ringHom_le_one μ =
-        (p : ℚ_[p])⁻¹ • dirac ℚ_[p] (1 : ℤ_[p]ˣ) := by
-  rw [← AddMonoidHom.mem_range, mem_range_extendCoefficients_iff _
-    PadicInt.isEmbedding_coe_ringHom PadicInt.closedBall_subset_range_coe_ringHom]
-  simp only [map_smul, norm_smul, TauCeti.AbstractMeasure.norm_dirac, norm_inv, Padic.norm_p,
-    mul_one, inv_inv, not_le]
-  exact_mod_cast (Fact.out : p.Prime).one_lt
-
-end Examples
 
 end AbstractMeasure

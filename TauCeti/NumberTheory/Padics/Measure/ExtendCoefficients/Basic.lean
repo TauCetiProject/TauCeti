@@ -7,12 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Topology.ContinuousMap.Compact
-public import Mathlib.Topology.DiscreteQuotient
 public import TauCeti.NumberTheory.Padics.Measure.CoefficientRestriction
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.Analysis.Normed.Operator.Extend
-import TauCeti.Topology.ContinuousMap.LocallyConstant
 import TauCeti.Topology.DiscreteQuotient
 
 /-!
@@ -285,9 +283,11 @@ theorem _root_.RingHom.extendCoefficients_eq_of_bound {B' : ℝ} (hj' : ∀ a, �
     extendCoefficients (X := X) j hj = extendCoefficients j hj' := by
   apply AddMonoidHom.ext
   intro μ
-  apply finiteProjection_ext
-  intro q
-  simp only [finiteProjection_extendCoefficients]
+  apply toCLMEquiv.injective
+  rw [toCLMEquiv_extendCoefficients, toCLMEquiv_extendCoefficients]
+  exact LinearMap.extendOfBound_eq_of_bound (locallyConstantIntegral j μ)
+    (LocallyConstant.toContinuousMapLinearMap K) B B'
+    (norm_locallyConstantIntegral_le j μ hj) (norm_locallyConstantIntegral_le j μ hj')
 
 /-- Integrating a function that factors through a finite discrete quotient against
 `extendCoefficients j hj μ` is the finite sum of its values against the coefficients of `μ`
@@ -436,21 +436,13 @@ end TopologicalRing
 
 section OperatorNorm
 
-variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] {K O : Type*}
-  [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K] [CommRing O]
-  [TopologicalSpace O] [IsTopologicalRing O] (j : O →+* K)
+variable [CompactSpace X] {K O : Type*} [NontriviallyNormedField K] [CommRing O]
+  [TopologicalSpace O] [IsTopologicalRing O] {j : O →+* K}
 
-/-- The extension of coefficients has operator norm bounded by the uniform coefficient bound. -/
-theorem norm_toCLMEquiv_extendCoefficients_le {B : ℝ} (hj : ∀ a, ‖j a‖ ≤ B) (μ : D(X, O)) :
-    ‖toCLMEquiv (extendCoefficients j hj μ)‖ ≤ B :=
-  ContinuousLinearMap.opNorm_le_bound _ ((norm_nonneg _).trans (hj 0)) fun f ↦ by
-    rw [coe_toCLMEquiv]
-    exact norm_extendCoefficients_apply_le μ j hj f
+section CoefficientRestriction
 
 variable (hj : ∀ a, ‖j a‖ ≤ 1)
-variable {j}
 
-omit [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K] in
 include hj in
 /-- If `j` is a topological embedding onto the closed unit ball of `K`, a `K`-valued measure `ν` of
 norm at most `1` sends the test functions `j ∘ f` into the image of `j`, and the preimages form an
@@ -464,29 +456,6 @@ theorem exists_apply_comp_eq_of_norm_le_one (hje : Topology.IsEmbedding j)
   have hf : ‖J.comp f‖ ≤ 1 := (ContinuousMap.norm_le _ zero_le_one).mpr fun x ↦ hj (f x)
   exact ((toCLMEquiv ν).le_of_opNorm_le_of_le hν hf).trans_eq (one_mul 1)
 
-/-- **The dual unit ball.** If `j` is a topological embedding onto the closed unit ball of `K`,
-the extensions of coefficients of `O`-valued measures are exactly the `K`-valued measures of
-operator norm at most `1`. -/
-theorem mem_range_extendCoefficients_iff (hje : Topology.IsEmbedding j)
-    (hjr : Metric.closedBall 0 1 ⊆ Set.range j) {ν : D(X, K)} :
-    ν ∈ (extendCoefficients j hj).range ↔ ‖toCLMEquiv ν‖ ≤ 1 := by
-  refine ⟨?_, fun hν ↦ ?_⟩
-  · rintro ⟨μ, rfl⟩
-    exact norm_toCLMEquiv_extendCoefficients_le j hj μ
-  · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
-    exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
-
-/-- A measure lies in the closed dual unit ball exactly when it has a unique preimage under
-coefficient extension along the closed-unit-ball embedding. -/
-theorem existsUnique_extendCoefficients_eq_iff_norm_le_one (ν : D(X, K))
-    (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hje : Topology.IsEmbedding j)
-    (hjr : Metric.closedBall 0 1 ⊆ Set.range j) :
-    (∃! μ : D(X, O), extendCoefficients j hj μ = ν) ↔ ‖toCLMEquiv ν‖ ≤ 1 := by
-  let := hje.t2Space
-  rw [(extendCoefficients_injective j hj hje.injective).existsUnique_iff_exists]
-  exact mem_range_extendCoefficients_iff hj hje hjr
-
-omit [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K] in
 include hj in
 /-- If `j` is a topological embedding onto the closed unit ball of `K`, a `K`-valued measure `ν`
 has operator norm at most `1` exactly when there is a unique `O`-valued measure `μ` with
@@ -531,6 +500,43 @@ theorem existsUnique_apply_comp_eq_iff_norm_le_one (hje : Topology.IsEmbedding j
     rwa [inv_mul_le_iff₀ (norm_pos_iff.2 h0), mul_one] at this
   · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
     exact ⟨μ, hμ, fun μ' hμ' ↦ ext fun f ↦ hje.injective ((hμ' f).symm.trans (hμ f))⟩
+
+end CoefficientRestriction
+
+variable [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K] [IsUltrametricDist K]
+  (j)
+
+/-- The extension of coefficients has operator norm bounded by the uniform coefficient bound. -/
+theorem norm_toCLMEquiv_extendCoefficients_le {B : ℝ} (hj : ∀ a, ‖j a‖ ≤ B) (μ : D(X, O)) :
+    ‖toCLMEquiv (extendCoefficients j hj μ)‖ ≤ B :=
+  ContinuousLinearMap.opNorm_le_bound _ ((norm_nonneg _).trans (hj 0)) fun f ↦ by
+    rw [coe_toCLMEquiv]
+    exact norm_extendCoefficients_apply_le μ j hj f
+
+variable (hj : ∀ a, ‖j a‖ ≤ 1)
+variable {j}
+
+/-- **The dual unit ball.** If `j` is a topological embedding onto the closed unit ball of `K`,
+the extensions of coefficients of `O`-valued measures are exactly the `K`-valued measures of
+operator norm at most `1`. -/
+theorem mem_range_extendCoefficients_iff (hje : Topology.IsEmbedding j)
+    (hjr : Metric.closedBall 0 1 ⊆ Set.range j) {ν : D(X, K)} :
+    ν ∈ (extendCoefficients j hj).range ↔ ‖toCLMEquiv ν‖ ≤ 1 := by
+  refine ⟨?_, fun hν ↦ ?_⟩
+  · rintro ⟨μ, rfl⟩
+    exact norm_toCLMEquiv_extendCoefficients_le j hj μ
+  · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
+    exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
+
+/-- A measure lies in the closed dual unit ball exactly when it has a unique preimage under
+coefficient extension along the closed-unit-ball embedding. -/
+theorem existsUnique_extendCoefficients_eq_iff_norm_le_one (ν : D(X, K))
+    (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hje : Topology.IsEmbedding j)
+    (hjr : Metric.closedBall 0 1 ⊆ Set.range j) :
+    (∃! μ : D(X, O), extendCoefficients j hj μ = ν) ↔ ‖toCLMEquiv ν‖ ≤ 1 := by
+  let := hje.t2Space
+  rw [(extendCoefficients_injective j hj hje.injective).existsUnique_iff_exists]
+  exact mem_range_extendCoefficients_iff hj hje hjr
 
 end OperatorNorm
 

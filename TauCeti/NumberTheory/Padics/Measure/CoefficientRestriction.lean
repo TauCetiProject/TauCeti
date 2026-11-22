@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Measure.Basic
-import Mathlib.Algebra.Module.Submodule.Equiv
 import Mathlib.Topology.Algebra.Algebra
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 

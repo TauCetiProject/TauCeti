@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.NumberTheory.Padics.ProperSpace
+import TauCeti.NumberTheory.Padics.Basic
+import TauCeti.NumberTheory.Padics.Measure.Dirac
 import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.BaseChange
 import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Clopen
 import TauCeti.NumberTheory.Padics.Measure.IntegralUnitBall
+import TauCeti.NumberTheory.Padics.Measure.Units.Basic
 
 /-!
 # Arithmetic examples of coefficient extension
 
-These examples compute extensions of integral Dirac measures, their restrictions on a two-point
-space, and the coefficient extension, character evaluation, and Amice transform of pure tensors.
+These examples compute extensions of integral Dirac measures and their restrictions on a two-point
+space, exhibit a rational unit measure outside the integral range, and compute coefficient
+extension, character evaluation, and the Amice transform of pure tensors.
 
 For the Amice-transform identity, use `ext n <;> simp` to simplify each power series coefficient.
 This uses `AbstractMeasure.amiceTransform_extendScalars` and
@@ -57,14 +60,23 @@ example :
         (extendCoefficients PadicInt.Coe.ringHom (by simpa using PadicInt.norm_le_one)
           (2 • dirac ℤ_[p] (0 : Fin 2) - 3 • dirac ℤ_[p] 1)) =
       2 • dirac ℚ_[p] ⟨0, by simp⟩ := by
-  dsimp only
-  let s : Clopens (Fin 2) := ⟨{0}, isClopen_discrete {0}⟩
-  change restrictClopen s _ = _
+  intro s
   have h0 : (0 : Fin 2) ∈ s := by simp [s]
   have h1 : (1 : Fin 2) ∉ s := by simp [s]
   rw [← extendCoefficients_restrictClopen]
   simp only [map_sub, map_nsmul, restrictClopen_dirac_mem s h0,
     restrictClopen_dirac_not_mem s h1, nsmul_zero, sub_zero, extendCoefficients_dirac]
+
+-- Scaling the unit Dirac measure by the inverse of p puts its norm above one.
+example :
+    ¬∃ μ : D(ℤ_[p]ˣ, ℤ_[p]),
+      extendCoefficients PadicInt.Coe.ringHom PadicInt.norm_coe_ringHom_le_one μ =
+        (p : ℚ_[p])⁻¹ • dirac ℚ_[p] (1 : ℤ_[p]ˣ) := by
+  rw [← AddMonoidHom.mem_range, mem_range_extendCoefficients_iff _
+    PadicInt.isEmbedding_coe_ringHom TauCeti.range_padicInt_coe_ringHom.superset]
+  simp only [map_smul, norm_smul, TauCeti.AbstractMeasure.norm_dirac, norm_inv, Padic.norm_p,
+    mul_one, inv_inv, not_le]
+  exact_mod_cast (Fact.out : p.Prime).one_lt
 
 variable {O : Type*} [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
   [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]

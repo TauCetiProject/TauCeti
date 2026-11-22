@@ -27,7 +27,10 @@ For a measure `μ` on `ℤ_p`, the measure `φ μ` is the pushforward of `μ` al
 The second test function is continuous because `pℤ_p` is clopen; it is
 `χ * (f ∘ PadicInt.divideByP p)`, where `χ` is the characteristic function of `pℤ_p`. There is no
 averaging factor `p⁻¹`. These are the operators of the Cartier decomposition of measures: `ψ` is a
-left inverse of `φ`, and `φ ψ` is restriction to `pℤ_p`, so `1 - φ ψ` is restriction to `ℤ_pˣ`.
+left inverse of `φ`, and `φ ψ` is the ambient projector onto measures supported on `pℤ_p`.
+Its complement `1 - φ ψ` is the ambient unit-support projector `unitRestriction`: its values
+remain measures on `ℤ_p`. The intrinsic restriction `restrictUnits` returns a measure
+on the unit group `ℤ_pˣ`.
 Since `φ` is injective, the second identity alone determines `ψ`. On Amice transforms `φ` is the
 substitution `T ↦ (1 + T) ^ p - 1`, the coefficientwise form of
 `(1 + T) ^ (p x) = ((1 + T) ^ p) ^ x`.
@@ -35,7 +38,7 @@ substitution `T ↦ (1 + T) ^ p - 1`, the coefficientwise form of
 The algebraic statements are made on `D(ℤ_p, R)` for a topological commutative ring `R`.
 The Amice-transform substitution formula for `φ` also uses an `ℤ_p`-algebra structure on `R`
 with continuous scalar action. The series operator `psiSeries`, its left-inverse formula, and
-the series projector formula for restriction to units use the integral Amice equivalence and
+the series formula for the ambient unit-support projector use the integral Amice equivalence and
 are stated only for coefficients in `ℤ_p`.
 Over a nontrivially normed field, `φ` preserves and `ψ` does not increase the continuous-dual
 norm.
@@ -52,12 +55,12 @@ norm.
   substitution `T ↦ (1 + T) ^ m - 1` on Amice transforms.
 * `AbstractMeasure.amiceTransform_phiMeasure`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`.
 * `TauCeti.psiSeries_phi`: series psi is a left inverse of Frobenius substitution.
-* `AbstractMeasure.amiceTransform_unitRestriction`: restriction to the units is the series
+* `AbstractMeasure.amiceTransform_unitRestriction`: the ambient unit-support projector is the series
   projector `F ↦ F - (psiSeries p F).subst ((1 + X) ^ p - 1)`.
 * `AbstractMeasure.psiMeasure_phiMeasure`: `ψ (φ μ) = μ`.
 * `AbstractMeasure.phiMeasure_psiMeasure`: `φ (ψ μ)` is the restriction of `μ` to `pℤ_p`.
-* `AbstractMeasure.unitRestriction_eq_id_sub_phiMeasure_comp_psiMeasure`: `1 - φ ψ` is restriction
-  to `ℤ_pˣ`.
+* `AbstractMeasure.unitRestriction_eq_id_sub_phiMeasure_comp_psiMeasure`: `1 - φ ψ` is the ambient
+  unit-support projector on measures on `ℤ_p`.
 * `AbstractMeasure.existsUnique_psiMeasure`: `ψ` is the unique linear map with `φ ψ` the
   restriction to `pℤ_p`.
 * `AbstractMeasure.norm_toCLMEquiv_phiMeasure`, `AbstractMeasure.norm_toCLMEquiv_psiMeasure_le`:
@@ -208,7 +211,8 @@ theorem phiMeasure_injective : Function.Injective (phiMeasure : D(ℤ_[p], R) �
 theorem psiMeasure_surjective : Function.Surjective (psiMeasure : D(ℤ_[p], R) → D(ℤ_[p], R)) :=
   Function.LeftInverse.surjective psiMeasure_phiMeasure
 
-/-- `1 - φ ψ` is the restriction to `ℤ_pˣ`. -/
+/-- `1 - φ ψ` is the ambient unit-support projector on measures on `ℤ_p`.
+The intrinsic restriction `restrictUnits` returns measures on `ℤ_pˣ`. -/
 theorem unitRestriction_eq_id_sub_phiMeasure_comp_psiMeasure :
     unitRestriction (p := p) (R := R) = LinearMap.id - phiMeasure ∘ₗ psiMeasure := by
   rw [phiMeasure_comp_psiMeasure, unitRestriction_eq_sub]
@@ -431,7 +435,9 @@ end TauCeti
 
 namespace AbstractMeasure
 
-/-- Restriction to the units is the unit projector on integral Amice transforms. -/
+/-- The ambient unit-support projector on measures on `ℤ_p` corresponds to the unit projector
+on integral Amice transforms. The intrinsic restriction `restrictUnits` takes values in measures
+on the unit group. -/
 theorem amiceTransform_unitRestriction (μ : D(ℤ_[p], ℤ_[p])) :
     (unitRestriction μ).amiceTransform =
       μ.amiceTransform - (TauCeti.psiSeries p μ.amiceTransform).subst ((1 + X) ^ p - 1) := by

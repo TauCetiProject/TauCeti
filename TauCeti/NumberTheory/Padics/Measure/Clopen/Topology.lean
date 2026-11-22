@@ -14,7 +14,9 @@ import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 
 Restriction to a clopen subset and inclusion pushforward are continuous for both the weak
 and strong topologies on abstract measures. Inclusion is a closed embedding, and the algebraic
-clopen decomposition is a homeomorphism in either topology. For measures with values in a
+clopen decomposition is a homeomorphism in either topology, for arbitrary `X`. The strong topology
+is the topology of bounded convergence on continuous linear maps; on compact `X` it agrees with
+the continuous-dual operator-norm topology. For compact `X` and measures with values in a
 seminormed module over a field, restriction contracts the continuous-dual operator norm and
 inclusion preserves it exactly.
 
@@ -149,8 +151,10 @@ theorem isClosedEmbedding_map_subtype_strong (s : Clopens X) :
     (subtypeVal (s : Set X)).continuous_abstractMeasure_map_strong
 
 /-- The clopen decomposition is a homeomorphism for the strong measure topologies and their
-product topology. No completeness or ultrametricity of the coefficients is required. -/
-theorem isHomeomorph_clopenDecomposition_strong [CompactSpace X] (s : Clopens X) :
+product topology, for arbitrary `X`. The strong topology is that of bounded convergence on
+continuous linear maps and agrees with the operator-norm topology when `X` is compact.
+No completeness or ultrametricity of the coefficients is required. -/
+theorem isHomeomorph_clopenDecomposition_strong (s : Clopens X) :
     @IsHomeomorph _ _ (StrongTopology (X := X) (R := R) (E := E))
       (@instTopologicalSpaceProd _ _ (StrongTopology (X := s) (R := R) (E := E))
         (StrongTopology (X := ↥sᶜ) (R := R) (E := E))) (clopenDecomposition s) := by
@@ -162,8 +166,8 @@ theorem isHomeomorph_clopenDecomposition_strong [CompactSpace X] (s : Clopens X)
   · exact ((continuous_restrictClopen_strong s).prodMk
       (continuous_restrictClopen_strong sᶜ)).congr fun μ ↦ (clopenDecomposition_apply s μ).symm
   · -- StrongTopology is the continuous-dual topology, so addition of measures is continuous.
-    let : ContinuousAdd (AbstractMeasure X R E) :=
-      inferInstanceAs (ContinuousAdd (C(X, R) →L[R] E))
+    let : IsTopologicalAddGroup (AbstractMeasure X R E) :=
+      ContinuousLinearMap.isTopologicalAddGroup
     exact (((subtypeVal (s : Set X)).continuous_abstractMeasure_map_strong.comp continuous_fst).add
       ((subtypeVal ((sᶜ : Clopens X) : Set X)).continuous_abstractMeasure_map_strong.comp
         continuous_snd)).congr fun μ ↦ (clopenDecomposition_symm_apply s μ).symm
