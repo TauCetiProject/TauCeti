@@ -42,6 +42,8 @@ to be the set of roots of a subgroup of `U⁺` normalized by the torus.
 * `TauCeti.ncard_inversions_inv` and `TauCeti.ncard_inversions_ofIdx_mul`: the inversion count is
   invariant under inversion, and left multiplication by a reflection corresponds to right
   multiplication on the inverse.
+* `TauCeti.ncard_setOf_isPos_and_coroot'_smul_ne_zero`: the number of positive roots not
+  orthogonal to a weight is invariant under the Weyl group.
 * `TauCeti.inversionsFinset`: the inversion set as a finset. Sums and products over it and over
   its complement in the positive roots are reindexed along `w` by
   `TauCeti.sum_inversionsFinset_comp_neg_weylGroupToPerm` and
@@ -221,6 +223,33 @@ theorem ncard_inversions_ofIdx_mul (i : ι) :
       (inversions P b (w⁻¹ * RootPairing.weylGroup.ofIdx P i)).ncard := by
   rw [← ncard_inversions_inv P b (w⁻¹ * RootPairing.weylGroup.ofIdx P i), mul_inv_rev,
     RootPairing.weylGroup.ofIdx_inv_eq, inv_inv]
+
+/-! ### Positive roots not orthogonal to a weight -/
+
+section NotOrthogonal
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι]
+
+/-- **The number of positive roots not orthogonal to a weight is invariant under the Weyl group.**
+For a dominant weight this is the number of positive roots outside the root subsystem of its
+stabilizer, and so it is the same at every point of its orbit. -/
+theorem ncard_setOf_isPos_and_coroot'_smul_ne_zero (x : M) :
+    {i | b.IsPos i ∧ P.coroot' i (w • x) ≠ 0}.ncard =
+      {i | b.IsPos i ∧ P.coroot' i x ≠ 0}.ncard := by
+  rw [ncard_setOf_isPos_and_coroot'_ne_zero_eq_ncard_setOf_coroot'_neg,
+    ncard_setOf_isPos_and_coroot'_ne_zero_eq_ncard_setOf_coroot'_neg]
+  -- `w` carries the roots pairing negatively with `x` onto those pairing negatively with `w x`.
+  refine ncard_congr (fun i _ ↦ P.weylGroupToPerm w⁻¹ i) (fun i hi ↦ ?_)
+    (fun _ _ _ _ h ↦ (P.weylGroupToPerm w⁻¹).injective h) (fun j hj ↦ ?_)
+  · rw [mem_ofPred_eq, ← RootPairing.coroot'_weylGroupToPerm_smul P w⁻¹ i (w • x),
+      inv_smul_smul] at hi
+    exact hi
+  · refine ⟨P.weylGroupToPerm w j, ?_, ?_⟩
+    · rw [mem_ofPred_eq, RootPairing.coroot'_weylGroupToPerm_smul]
+      exact hj
+    · simp [map_inv]
+
+end NotOrthogonal
 
 /-! ### The inversion set as a finset -/
 

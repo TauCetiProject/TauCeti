@@ -79,14 +79,14 @@ theorem hasDirichletDensity_zero_of_eventually_le {C : ℝ}
 then `S` has Dirichlet density zero: for `s ≥ 1` every term `N(𝔭) ^ (-s)` is at most `N(𝔭)⁻¹`,
 so the partial sums stay bounded as `s → 1⁺`. -/
 theorem hasDirichletDensity_zero_of_summable
-    (h : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-1 : ℝ)) :
+    (h : Summable fun 𝔭 : S ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-1 : ℝ)) :
     S.HasDirichletDensity 0 := by
   refine hasDirichletDensity_zero_of_eventually_le (C := S.primeIdealZetaSum 1) ?_
   filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
-  have hle : ∀ 𝔭 : S, (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) ≤
-      (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-1 : ℝ) := fun 𝔭 ↦
+  have hle : ∀ 𝔭 : S, (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s) ≤
+      (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-1 : ℝ) := fun 𝔭 ↦
     Real.rpow_le_rpow_of_exponent_le (one_le_absNorm_real_of_nonZeroDivisors
-      ⟨𝔭.1.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.1.ne_bot⟩) (by linarith)
+      ⟨𝔭.val.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.val.ne_bot⟩) (by linarith)
   rw [primeIdealZetaSum_def, primeIdealZetaSum_def]
   exact (h.of_nonneg_of_le (fun _ ↦ by positivity) hle).tsum_le_tsum hle h
 

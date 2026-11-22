@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Regular
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 
 /-!
 # Continuous functions are a.e. strongly measurable for inner regular measures
@@ -41,6 +42,10 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 * `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`: a continuous family of
   continuous linear maps `g` applied to an a.e. finitely strongly measurable `f`, for instance an
   `Lᵖ` function with `p < ∞`, is a.e. strongly measurable.
+* `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous`: a separately
+  continuous zero-preserving family `g : α → γ → β` applied to an a.e. finitely strongly
+  measurable `f : α → γ` is a.e. strongly measurable, covering point-norm continuous group actions
+  without operator-norm continuity.
 -/
 
 public section
@@ -125,3 +130,20 @@ theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply {�
       (AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
         hf.ae_eq_mk⟩))
     fun x hx ↦ by simp [hx]
+
+/-- A separately continuous zero-preserving family `g : α → γ → β` applied to an a.e. finitely
+strongly measurable function `f : α → γ` is a.e. strongly measurable, for a measure that is inner
+regular with respect to compact sets on sets of finite measure. Unlike
+`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`, `x ↦ g x` need only be
+pointwise continuous rather than norm-continuous. -/
+theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous {γ : Type*}
+    [TopologicalSpace γ] [T2Space γ] [Zero γ] [Zero β] {f : α → γ}
+    (hf : AEFinStronglyMeasurable f μ) {g : α → γ → β} (hg₁ : ∀ y, Continuous fun x ↦ g x y)
+    (hg₂ : ∀ x, Continuous fun y ↦ g x y) (hg₀ : ∀ x, g x 0 = 0) :
+    AEStronglyMeasurable (fun x ↦ g x (f x)) μ :=
+  hf.aestronglyMeasurable_of_restrict
+    ((AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
+      hf.ae_eq_mk⟩).apply_of_forall_of_continuousAt
+      (fun y ↦ (hg₁ y).aestronglyMeasurable_of_sigmaFinite)
+      (.of_forall fun x ↦ (hg₂ x).continuousAt))
+    fun x hx ↦ by simp [hx, hg₀]

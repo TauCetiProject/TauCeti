@@ -43,6 +43,8 @@ isometrically. Such a pair exists for a suitable `v`:
   subspace preserving the forms extends to a symplectomorphism.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism_extend_linearEquiv`: the same for a linear
   isomorphism between two subspaces.
+* `TauCeti.SymplecticForm.exists_isSymplectomorphism_extend_of_injective`: the same for a subspace
+  parametrized by an injective linear map.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism_apply_eq`: a linear symplectomorphism matches
   any two pairs `(q, p)` and `(q', p')` with `ω₁(q, p) = 1 = ω₂(q', p')`.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism`: two symplectic vector spaces of the same
@@ -93,9 +95,9 @@ private lemma map_radical_eq (hiso : ∀ x y : g.domain, ω₂ (g x) (g y) = ω�
     refine ⟨⟨s, rfl⟩, mem_orthogonal_iff.2 ?_⟩
     rintro _ ⟨t, rfl⟩
     rw [LinearPMap.toFun_eq_coe, hiso]
-    exact mem_orthogonal_iff.1 hs t t.2
+    exact mem_orthogonal_iff.1 hs t t.property
   · rintro ⟨⟨s, rfl⟩, hw⟩
-    refine ⟨s, ⟨s.2, mem_orthogonal_iff.2 fun y hy => ?_⟩, rfl⟩
+    refine ⟨s, ⟨s.property, mem_orthogonal_iff.2 fun y hy => ?_⟩, rfl⟩
     rw [← hiso ⟨y, hy⟩ s]
     exact mem_orthogonal_iff.1 hw _ (LinearMap.mem_range_self g.toFun _)
 
@@ -141,12 +143,12 @@ private lemma exists_extension_pair [FiniteDimensional ℝ V] [FiniteDimensional
         rw [← hs₀, LinearPMap.toFun_eq_coe, hiso]
       simp only [map_sub]
       exact sub_eq_zero.2 (h₁.symm.trans h₂)
-    simpa using add_mem (hco hmem) s₀.2
+    simpa using add_mem (hco hmem) s₀.property
   · obtain ⟨v, hv, hvS⟩ := IsConcreteLE.not_le_iff_exists.1 hco
     obtain ⟨v', hv', hv'T⟩ := IsConcreteLE.not_le_iff_exists.1
       (mt (orthogonal_domain_le g hdim hinj hiso) hco)
     exact ⟨v, hvS, v', hv'T, fun s => (mem_orthogonal_iff.1 hv' _
-      (LinearMap.mem_range_self g.toFun s)).trans (mem_orthogonal_iff.1 hv _ s.2).symm⟩
+      (LinearMap.mem_range_self g.toFun s)).trans (mem_orthogonal_iff.1 hv _ s.property).symm⟩
 
 /-- Extending a form-preserving partial map by `v ↦ v'`, where `v'` has the pairings with the
 image prescribed by `v`, again preserves the forms. -/
@@ -196,8 +198,8 @@ private theorem exists_extend_aux [FiniteDimensional ℝ V] [FiniteDimensional �
     obtain ⟨e, he, hext⟩ := ih _ (by omega) _ rfl
       (LinearPMap.supSpanSingleton_injective hinj hv hv')
       (supSpanSingleton_isometry g hiso hv hpair)
-    exact ⟨e, he, fun x => (hext ⟨x, Submodule.mem_sup_left x.2⟩).trans
-      (LinearPMap.supSpanSingleton_apply_mk_of_mem g v' hv x.2)⟩
+    exact ⟨e, he, fun x => (hext ⟨x, Submodule.mem_sup_left x.property⟩).trans
+      (LinearPMap.supSpanSingleton_apply_mk_of_mem g v' hv x.property)⟩
 
 /-- **Witt's extension theorem** for symplectic vector spaces. Between two finite-dimensional
 symplectic vector spaces of the same dimension, an injective linear map from an arbitrary subspace
@@ -222,6 +224,23 @@ theorem exists_isSymplectomorphism_extend_linearEquiv [FiniteDimensional ℝ V]
     (T.subtype ∘ₗ f.toLinearMap) (T.injective_subtype.comp f.injective)
     fun x y => by simpa using hω x y
   exact ⟨e, he, fun x => by simpa using hext x⟩
+
+/-- **Witt's extension theorem**, for a subspace given as the image of an injective linear map
+`g : X → V`: if `f : X → W` is injective and `ω₂(f x, f y) = ω₁(g x, g y)`, then some linear
+symplectomorphism `e` satisfies `e ∘ g = f`. -/
+theorem exists_isSymplectomorphism_extend_of_injective [FiniteDimensional ℝ V]
+    [FiniteDimensional ℝ W] (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W)
+    (hdim : finrank ℝ V = finrank ℝ W) {X : Type*} [AddCommGroup X] [Module ℝ X]
+    {g : X →ₗ[ℝ] V} {f : X →ₗ[ℝ] W} (hg : Function.Injective g) (hf : Function.Injective f)
+    (hω : ∀ x y, ω₂ (f x) (f y) = ω₁ (g x) (g y)) :
+    ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω₁ ω₂ e ∧ ∀ x, e (g x) = f x := by
+  let φ := LinearEquiv.ofInjective g hg
+  obtain ⟨e, he, hext⟩ := exists_isSymplectomorphism_extend ω₁ ω₂ hdim
+    (f ∘ₗ φ.symm.toLinearMap) (hf.comp φ.symm.injective) fun x y => by
+      obtain ⟨x, rfl⟩ := φ.surjective x
+      obtain ⟨y, rfl⟩ := φ.surjective y
+      simpa [φ] using hω x y
+  exact ⟨e, he, fun x => by simpa [φ] using hext (φ x)⟩
 
 /-- If `ω₁(q, p) = 1` and `ω₂(q', p') = 1` in two symplectic vector spaces of the same finite
 dimension, some linear symplectomorphism sends `q` to `q'` and `p` to `p'`. This is Witt's
