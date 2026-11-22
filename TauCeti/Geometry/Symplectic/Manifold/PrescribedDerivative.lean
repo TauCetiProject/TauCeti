@@ -278,8 +278,6 @@ theorem exists_diffeomorph_opens_mfderiv_eq_iff (i : SmoothEmbedding J I ∞ Q M
   have hU₀ : Nonempty U₀ := ⟨⟨i q₀, (hφ q₀).1⟩⟩
   have hU₁ : Nonempty U₁ := ⟨φ ⟨i q₀, (hφ q₀).1⟩⟩
   let Ψ := φ.toPartialDiffeomorph.liftOpens hU₀ hU₁
-  have hΨ : Ψ ∘ Subtype.val = Subtype.val ∘ φ := funext fun x ↦ by
-    simp [Ψ, PartialDiffeomorph.liftOpens_apply_coe]
   have hsrc : range i ⊆ Ψ.source := by
     rintro _ ⟨q, rfl⟩
     rw [PartialDiffeomorph.liftOpens_source]
@@ -287,12 +285,15 @@ theorem exists_diffeomorph_opens_mfderiv_eq_iff (i : SmoothEmbedding J I ∞ Q M
   have hval (q : Q) : Ψ (i q) = g q := by
     obtain ⟨h, hφq, -⟩ := hφ q
     rw [← hφq]
-    exact congrFun hΨ ⟨i q, h⟩
+    simpa only [Diffeomorph.toPartialDiffeomorph_toPartialEquiv, Equiv.toPartialEquiv_apply,
+      Diffeomorph.coe_toEquiv] using
+      φ.toPartialDiffeomorph.liftOpens_apply_coe hU₀ hU₁ ⟨i q, h⟩
   have hd (q : Q) : mfderiv I K Ψ (i q) = A q := by
     obtain ⟨h, -, hdφ⟩ := hφ q
     ext v
-    exact (Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := φ) (A := Ψ) hΨ.symm v).symm.trans
-      (hdφ v)
+    have hv := φ.toPartialDiffeomorph.mfderiv_liftOpens_apply_coe hU₀ hU₁ ⟨i q, h⟩ v
+    rw [Diffeomorph.toPartialDiffeomorph_toPartialEquiv] at hv
+    exact hv.trans (hdφ v)
   -- `Ψ` carries `σ` to `θ` on its source, in particular along `i(Q)`.
   have hAσ (q : Q) (v w : TangentSpace I (i q)) :
       SmoothBundleForm.eval₂ σ (g q) (A q v) (A q w) = SmoothBundleForm.eval₂ θ (i q) v w := by

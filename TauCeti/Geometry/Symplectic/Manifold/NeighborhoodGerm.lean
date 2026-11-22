@@ -148,8 +148,6 @@ theorem isSymplecticMapOn_toPartialDiffeomorph_liftOpens {U : Opens M} {V : Open
       SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal θ) :
     θ.IsSymplecticMapOn σ (φ.toPartialDiffeomorph.liftOpens hU hV)
       (φ.toPartialDiffeomorph.liftOpens hU hV).source := by
-  have hΨ : ⇑(φ.toPartialDiffeomorph.liftOpens hU hV) ∘ Subtype.val = Subtype.val ∘ φ :=
-    funext fun z ↦ by simp [PartialDiffeomorph.liftOpens_apply_coe]
   -- `φ` carries `σ` to `θ` on every tangent space of `U`.
   have hφσ (z : U) (v w : TangentSpace I z) :
       SmoothBundleForm.eval₂ σ (φ z : N) (mfderiv I J φ z v) (mfderiv I J φ z w) =
@@ -159,13 +157,13 @@ theorem isSymplecticMapOn_toPartialDiffeomorph_liftOpens {U : Opens M} {V : Open
   refine SmoothTwoForm.isSymplecticMapOn_iff.2 fun x hx v w ↦ ?_
   rw [PartialDiffeomorph.liftOpens_source] at hx
   obtain ⟨z, -, rfl⟩ := hx
-  -- The lift has the value and the differential of `φ` at `z`.
-  have hd (u : TangentSpace I (z : M)) :
-      mfderiv I J (φ.toPartialDiffeomorph.liftOpens hU hV) z u = mfderiv I J φ z u :=
-    (Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := φ) hΨ.symm u).symm
-  rw [hd, hd, PartialDiffeomorph.liftOpens_apply_coe, toPartialDiffeomorph_toPartialEquiv]
+  -- The lift has the value and the differential of `φ` at `z`. The tangent spaces of `M` at `z`
+  -- and of `U` at `z`, and those of `N` and `V` at `φ z`, are all the model spaces, so `hφσ`
+  -- applies to `v` and `w` as they are.
+  rw [PartialDiffeomorph.mfderiv_liftOpens_apply_coe,
+    PartialDiffeomorph.mfderiv_liftOpens_apply_coe, PartialDiffeomorph.liftOpens_apply_coe,
+    toPartialDiffeomorph_toPartialEquiv]
   exact hφσ z v w
-
 
 end Diffeomorph
 
