@@ -262,7 +262,7 @@ private theorem finSumPerm_finRotate_apply_natAdd :
 
 /-- The rotation of the marked block in the coordinates of the pattern, transported to the
 component positions, is the block rotation. -/
-theorem permCongr_finSumPerm_finRotate :
+private theorem permCongr_finSumPerm_finRotate :
     (finCongr (by decide : 1 + 3 + 1 = a5FourthD4.components.length)).permCongr
         (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1) =
       a5FourthD4BlockRotation := by

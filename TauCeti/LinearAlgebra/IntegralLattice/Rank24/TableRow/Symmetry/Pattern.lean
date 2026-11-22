@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4.CyclicSymmetry
 
+import TauCeti.GroupTheory.Perm.PermCongr
+
 /-!
 # Faithful action of the glue-pattern symmetries across all 23 rootful Niemeier rows
 
@@ -66,18 +68,6 @@ private def classifyA5FourthD4GluePattern {p : GluePattern}
     rcases hp' with ⟨rfl, rfl, rfl⟩
     exact PSum.inr rfl
 
-/-- Transporting a permutation of `[2(024)0]` along `length_eq_of_mem_gluePatterns` leaves it
-unchanged on `Fin 5`. -/
-private theorem permCongr_cyclic_a5FourthD4
-    (hp : GluePattern.cyclic [2] [0, 2, 4] [0] ∈ a5FourthD4.gluePatterns)
-    (σ : Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length)) :
-    (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr σ =
-      (σ : Equiv.Perm (Fin a5FourthD4.components.length)) := by
-  have h (σ' : Equiv.Perm (Fin 5)) :
-      (finCongr (rfl : 5 = 5)).permCongr σ' = σ' := by
-    rw [finCongr_refl, Equiv.permCongr_def, Equiv.refl_symm, Equiv.refl_trans, Equiv.trans_refl]
-  exact h σ
-
 /-- **Every table pattern of every rootful Niemeier row acts on the lattice of its row**: by pure
 component permutation (`patternIsometryHom`) on the 22 rows other than `A₅⁴ D₄`, and by the
 coupled triality action (`a5FourthD4CyclicSymmetryHom`) on `A₅⁴ D₄`. -/
@@ -129,10 +119,14 @@ theorem forall_permCongr_mem_glueSymmetries_iff {r : RootfulNiemeierType} :
   refine ⟨fun h ↦ ?_, fun hr p hp g hg ↦ mem_glueSymmetries_of_mem_symmetries hr hp hg⟩
   rintro rfl
   refine a5FourthD4BlockRotation_notMem_glueSymmetries ?_
-  have hmem := h _ cyclic_mem_gluePatterns_a5FourthD4
-    (a5FourthD4BlockRotation : Equiv.Perm (Fin 5)) a5FourthD4BlockRotation_mem_symmetries
-  exact (permCongr_cyclic_a5FourthD4 cyclic_mem_gluePatterns_a5FourthD4
-    (a5FourthD4BlockRotation : Equiv.Perm (Fin 5))) ▸ hmem
+  have hmem : a5FourthD4BlockRotation ∈
+      (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries.map
+        (finCongr (length_eq_of_mem_gluePatterns
+          cyclic_mem_gluePatterns_a5FourthD4)).permCongrHom.toMonoidHom := by
+    rw [map_symmetries_cyclic_a5FourthD4]
+    exact Subgroup.mem_zpowers _
+  obtain ⟨g, hg, hgf⟩ := Subgroup.mem_map.mp hmem
+  exact hgf ▸ h _ cyclic_mem_gluePatterns_a5FourthD4 g hg
 
 /-- Every indicated pattern symmetry of `A₅⁴ D₄` acts on the component positions as a power
 `a5FourthD4BlockRotation ^ k` (`k < 3`) and on `niemeierA5FourthD4` as the matching power
@@ -154,7 +148,8 @@ theorem exists_coupledPatternIsometryHom_a5FourthD4_eq_pow {p : GluePattern}
     rcases h with rfl
     obtain ⟨k, hk, hgk, hact⟩ := exists_a5FourthD4CyclicSymmetryHom_eq_pow g
     refine ⟨k, hk, ?_, ?_⟩
-    · exact (permCongr_cyclic_a5FourthD4 hp g.val).trans hgk
+    · exact ((congrArg (·.permCongr (g.val : Equiv.Perm (Fin 5)))
+        (finCongr_refl (rfl : 5 = 5))).trans (Equiv.refl_permCongr _)).trans hgk
     · rw [coupledPatternIsometryHom_a5FourthD4_cyclic, hact]
 
 /-- Every pattern symmetry of `A₅⁴ D₄` acts on `niemeierA5FourthD4` with determinant `1`. -/

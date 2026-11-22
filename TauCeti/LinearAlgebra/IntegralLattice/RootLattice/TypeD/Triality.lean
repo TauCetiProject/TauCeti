@@ -491,18 +491,6 @@ theorem glueLabelEquiv_symm_typeD4GlueAlphabetTriality (x : (D 4).glueAlphabet h
   rw [typeD4GlueAlphabetTriality, glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv,
     Equiv.symm_apply_apply, Equiv.symm_apply_apply]
 
-/-- Applying `typeD4GlueAlphabetTriality` three times returns its input. -/
-@[simp]
-theorem typeD4GlueAlphabetTriality_apply_apply_apply (x : (D 4).glueAlphabet ht) :
-    typeD4GlueAlphabetTriality ht
-        (typeD4GlueAlphabetTriality ht (typeD4GlueAlphabetTriality ht x)) = x := by
-  have h3 := glueAlphabetIsometryOfIsometry_pow_apply (valid_D.mpr le_rfl) (typeD4Triality ht) 3 x
-  rw [typeD4Triality_pow_three, glueAlphabetIsometryOfIsometry_one] at h3
-  change x = (((typeD4GlueAlphabetTriality ht : (D 4).glueAlphabet ht ≃ₗ[ℤ]
-      (D 4).glueAlphabet ht) ^ 3) x) at h3
-  rw [pow_succ, pow_succ, pow_one, mul_apply_eq_comp, mul_apply_eq_comp] at h3
-  exact h3.symm
-
 variable (hv : (D 4).Valid) {F : Type*} [Field F] [Finite F] (hF : Nat.card F = 4) {ω : F}
   (hω : ω ^ 2 + ω + 1 = 0)
 

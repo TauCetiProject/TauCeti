@@ -28,6 +28,7 @@ the acting group: an action of `G` on `α` and the action of the subgroup
 ## Main results
 
 * `Equiv.map_permCongrHom_le_alternatingGroup_iff`: transport preserves evenness.
+* `Equiv.refl_permCongr`: transporting a permutation along `Equiv.refl` leaves it unchanged.
 * `Equiv.conj_eq_permCongrHom`: conjugation by a permutation is transport along that
   permutation.
 * `Equiv.isPretransitive_map_permCongrHom_iff`: transport preserves transitivity.
@@ -48,6 +49,11 @@ open Equiv MulAction
 namespace Equiv
 
 variable {α β : Type*}
+
+/-- Transporting a permutation along `Equiv.refl` leaves it unchanged. -/
+theorem refl_permCongr (σ : Perm α) : (Equiv.refl α).permCongr σ = σ := by
+  ext x
+  simp
 
 /-- Conjugation by a permutation is the transport automorphism induced by that permutation. -/
 theorem conj_eq_permCongrHom (τ : Perm α) : MulAut.conj τ = τ.permCongrHom := by
