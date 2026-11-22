@@ -24,9 +24,9 @@ base has no integral fundamental class, only the twisted class `[M]_or ∈ Hₙ(
 (`TauCeti.Manifold.OrientationCover.twistedFundamentalClass`), so the total space carries the
 pulled-back coefficients `K = p*or_M`. For a Serre fibration and a pulled-back system the relative
 group is the shifted homology of the fibre, by the twisted shriek map of the inclusion of `b`
-(`TauCeti.TopCat.livesOverFundamentalClass_iff_twistedHomologyComplFiberIso_hom_ne_zero`). As for
-constant coefficients (`TauCeti.LivesOverFundamentalClass`), the relative group is used in the
-definition because it does not depend on a chart at `b`.
+(`LocalCoefficientSystem.livesOverFundamentalClass_iff_twistedHomologyComplFiberIso_hom_ne_zero`).
+As for constant coefficients (`TauCeti.LivesOverFundamentalClass`), the relative group is used in
+the definition because it does not depend on a chart at `b`.
 
 * **Naturality** (the topological form of the source's Proposition 2.12, with coefficients). A map
   `σ : E → E'` over `M`, that is with `p' ∘ σ = p`, is a map of pairs
