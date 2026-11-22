@@ -5,17 +5,20 @@ Authors: Riccardo Brasca
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Curvature.Ricci.Continuity
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Topology.VectorBundle.Riemannian.Comparison
 
 /-!
-# Uniform positive Ricci bounds on compact manifolds
+# Uniform positive Ricci bounds on compact sets
 
-A continuous positive-definite Ricci tensor has a uniform positive lower bound on a compact
-Riemannian manifold. The native Ricci tensor is read as a section of the bilinear-form bundle,
-so the compact-bundle coercivity theorem applies directly.
+A continuous positive-definite Ricci tensor has a uniform positive lower bound on each compact
+set of a Riemannian manifold. The bound supplies the uniform Ricci hypothesis in Bonnet–Myers;
+the global consequences of that theorem are outside this module.
+
+This proof originated in
+[`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/dc053c9/ForTauCeti/Geometry/Manifold/Riemannian/Curvature/Ricci/UniformPositive.lean).
 -/
 
 public noncomputable section
@@ -28,15 +31,16 @@ namespace TauCeti.Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [CompactSpace M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- Compactness turns a pointwise positive Ricci tensor into a uniform bound
-`k ‖v‖² ≤ Ric(v,v)` with `k > 0`. -/
-theorem exists_pos_mul_norm_sq_le_ricciTensor_of_compactSpace
-    (hpos : ∀ (x : M) (v : TangentSpace I x), v ≠ 0 →
+/-- A compact set with positive Ricci tensor has a uniform bound
+`k ‖v‖² ≤ Ric(v,v)` with `k > 0` over that set. -/
+theorem exists_pos_mul_norm_sq_le_ricciTensor_on_compact
+    {K : Set M} (hK : IsCompact K)
+    (hpos : ∀ (x : M), x ∈ K → ∀ (v : TangentSpace I x), v ≠ 0 →
       0 < (leviCivitaConnection I M).ricciTensor x v v) :
-    ∃ k > 0, ∀ (x : M) (v : TangentSpace I x),
+    ∃ k > 0, ∀ (x : M), x ∈ K → ∀ (v : TangentSpace I x),
       k * ‖v‖ ^ 2 ≤ (leviCivitaConnection I M).ricciTensor x v v := by
   let : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
@@ -45,10 +49,23 @@ theorem exists_pos_mul_norm_sq_le_ricciTensor_of_compactSpace
       TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x
         ((leviCivitaConnection I M).ricciTensor x).toContinuousBilinearMap) :=
-    continuous_leviCivita_ricciTensor (I := I) (M := M)
-  obtain ⟨k, hk, hle⟩ := isCompact_univ.exists_pos_forall_mul_norm_sq_le_bundle
+    (CovariantDerivative.contMDiff_ricciTensor
+      (I := I) (M := M) (leviCivitaConnection I M)).continuous
+  obtain ⟨k, hk, hle⟩ := hK.exists_pos_forall_mul_norm_sq_le_bundle
     (b := id) hcont.continuousOn
-      (fun x _ v hv ↦ hpos x v hv)
+      (fun x hx v hv ↦ by
+        simpa only [LinearMap.toContinuousBilinearMap_apply] using hpos x hx v hv)
+  exact ⟨k, hk, fun x hx v ↦ by
+    simpa only [LinearMap.toContinuousBilinearMap_apply] using hle x hx v⟩
+
+/-- Pointwise positive Ricci curvature on a compact manifold has a uniform positive bound. -/
+theorem exists_pos_mul_norm_sq_le_ricciTensor_of_compactSpace [CompactSpace M]
+    (hpos : ∀ (x : M) (v : TangentSpace I x), v ≠ 0 →
+      0 < (leviCivitaConnection I M).ricciTensor x v v) :
+    ∃ k > 0, ∀ (x : M) (v : TangentSpace I x),
+      k * ‖v‖ ^ 2 ≤ (leviCivitaConnection I M).ricciTensor x v v := by
+  obtain ⟨k, hk, hle⟩ := exists_pos_mul_norm_sq_le_ricciTensor_on_compact
+    (I := I) (M := M) isCompact_univ (fun x _ v hv ↦ hpos x v hv)
   exact ⟨k, hk, fun x v ↦ hle x (mem_univ x) v⟩
 
 end TauCeti.Manifold
