@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Topology.Category.TopCat.Pushout
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import TauCeti.AlgebraicTopology.Disk
 
 /-!
@@ -50,6 +51,8 @@ are reindexed to the standard discs by relabelling the coordinates
 * `TauCeti.IsMorse.exists_isPushout_sublevel_handles`: **Milnor's handle attachment theorem** in
   pushout form, for a Morse function with a compact band around a critical value, with one handle
   of index `λ` at each critical point of index `λ` on the level.
+* `TauCeti.IsMorse.exists_isPushout_sublevel_handle`: the theorem at a level with a single critical
+  point, with a single handle attached.
 
 ## References
 
@@ -297,6 +300,40 @@ theorem IsMorse.exists_isPushout_sublevel_handles (hf : IsMorse I f) {δ : ℝ} 
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
       (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
     fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx.1, hband hx⟩, (hψp _).1⟩⟩
+
+/-- **Milnor's handle attachment theorem at a level with one critical point** (Milnor, Theorem 3.2).
+If the only critical point of the Morse function `f` on the level `f⁻¹(c)` is `p`, of index `k` and
+coindex `l = m - k`, then the coproducts of `TauCeti.IsMorse.exists_isPushout_sublevel_handles`
+have the single summand `p`: for some width `0 < ε ≤ δ`, the sublevel `M_{c+ε}` is the pushout of
+`M_{c-ε}` and the one handle `𝔻 k × 𝔻 l` along a closed embedding
+`α : ∂𝔻 k × 𝔻 l → M_{c-ε}` into the level `f⁻¹(c - ε)`. The level `f⁻¹(c + ε)` consists of the
+image of the top `𝔻 k × ∂𝔻 l` of the handle and of the points of `f⁻¹(c - ε)` off the attaching
+region. -/
+theorem IsMorse.exists_isPushout_sublevel_handle (hf : IsMorse I f) {δ : ℝ} (hδ : 0 < δ)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) {p : M}
+    (hp : criticalPoints I f ∩ f ⁻¹' {c} = {p}) {k l : ℕ} (hk : manifoldMorseIndex I f p = k)
+    (hl : Module.finrank ℝ E - k = l) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
+      ∃ (α : TopCat.of (TopCat.diskBoundary.{u} k × TopCat.disk.{u} l) ⟶
+          TopCat.of {x | f x ≤ c - ε})
+        (χ : TopCat.of (TopCat.disk.{u} k × TopCat.disk.{u} l) ⟶ TopCat.of {x | f x ≤ c + ε})
+        (j : TopCat.of {x | f x ≤ c - ε} ⟶ TopCat.of {x | f x ≤ c + ε}),
+        IsPushout α (TopCat.ofHom ((TopCat.diskBoundaryInclusion k).hom.prodMap
+          (ContinuousMap.id _))) j χ ∧
+        IsClosedEmbedding α ∧ (∀ s, f (α s : M) = c - ε) ∧
+        (∀ w, f (χ w : M) = c + ε ↔ w.2 ∈ range (TopCat.diskBoundaryInclusion l)) ∧
+        ∀ x, x ∉ range α → (f (j x : M) = c + ε ↔ f (x : M) = c - ε) := by
+  subst hk hl
+  obtain ⟨ε, hε, hεδ, α, χ, j, hpush, hemb, -, hlev, htop, hj⟩ :=
+    hf.exists_isPushout_sublevel_handles hδ hcompact
+  -- The critical points on the level form a one-point type, whose point is `p`.
+  let _ : Unique ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
+    { default := ⟨p, by simp [hp]⟩
+      uniq := fun q ↦ Subtype.ext (by simpa [hp] using q.property) }
+  refine ⟨ε, hε, hεδ, α default, χ default, j, hpush.of_iso (coproductUniqueIso _) (Iso.refl _)
+    (coproductUniqueIso _) (Iso.refl _) ?_ ?_ ?_ ?_, hemb default, hlev default, htop default,
+    fun x hx ↦ hj x fun q ↦ Subsingleton.elim q default ▸ hx⟩
+  all_goals rw [← Iso.inv_comp_eq]; simp
 
 end HandlePushout
 

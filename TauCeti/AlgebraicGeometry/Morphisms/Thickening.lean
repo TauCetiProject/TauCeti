@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 import Mathlib.RingTheory.Ideal.Quotient.PowTransition
 
@@ -50,6 +51,9 @@ module of homomorphisms into `I`.
   `TauCeti.AlgebraicGeometry.IsFirstOrderThickening.inclusion_pow_succ`: for ideal sheaves
   `I ≤ J`, the inclusion `V(J) ⟶ V(I)` is a first-order thickening if and only if `J ^ 2 ≤ I`,
   which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
+* `TauCeti.AlgebraicGeometry.IsThickening.ker_le_ker`: a morphism from a reduced scheme kills the
+  ideal sheaf of a thickening of its target, so it lifts along the thickening; the reduction
+  `X.nilradical.subscheme ⟶ X` is a thickening.
 * Thickenings contain the isomorphisms and are stable under composition and base change;
   first-order thickenings contain the isomorphisms, respect isomorphisms and are stable under base
   change.
@@ -138,6 +142,15 @@ instance (priority := 100) isUniversalHomeomorphism (i : Z ⟶ X) [IsThickening 
     IsUniversalHomeomorphism i :=
   (isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective i).2
     ⟨inferInstance, inferInstance, inferInstance⟩
+
+/-- The reduction `X.nilradical.subscheme ⟶ X` is a thickening. -/
+instance subschemeι_nilradical (X : Scheme.{u}) : IsThickening X.nilradical.subschemeι :=
+  (isThickening_iff_ker_le_nilradical _).2 (Scheme.IdealSheafData.ker_subschemeι _).le
+
+/-- A morphism from a reduced scheme kills the ideal sheaf of every thickening of its target, so it
+lifts along the thickening (`IsClosedImmersion.lift`). -/
+theorem ker_le_ker (i : Z ⟶ X) [IsThickening i] (f : Y ⟶ X) [IsReduced Y] : i.ker ≤ f.ker :=
+  ((isThickening_iff_ker_le_nilradical i).1 ‹_›).trans f.nilradical_le_ker
 
 /-- For a surjective ring map `φ : R ⟶ S`, the closed immersion `Spec S ⟶ Spec R` is a thickening
 if and only if the kernel of `φ` is a nil ideal. -/

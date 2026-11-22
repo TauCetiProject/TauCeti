@@ -561,6 +561,25 @@ theorem sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top (hf : AEMeasurable f �
       exact Set.mem_iUnion.2
         ⟨n, Set.mem_union_left _ ((ENNReal.inv_le_inv' le_self_add).trans hn.le)⟩
 
+/-- A positive power of `f` vanishes off `{f > 0}`, so restricting `μ` to `{f > 0}` changes none
+of its set integrals. With `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top` this
+reduces estimates for `f` in `Lᵖ` to a σ-finite measure. -/
+theorem setLIntegral_rpow_restrict_pos (hf : Measurable f) {r : ℝ} (hr : 0 < r) (S : Set α) :
+    ∫⁻ x in S, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x in S, f x ^ r ∂μ := by
+  have hpos : MeasurableSet {x | 0 < f x} := measurableSet_lt measurable_const hf
+  have hsupp : Function.support (fun x => f x ^ r) ⊆ {x | 0 < f x} := by
+    refine Function.support_subset_iff'.2 fun x hx => ?_
+    have hx0 : f x = 0 := by simpa [Set.mem_ofPred, nonpos_iff_eq_zero] using hx
+    simp [hx0, ENNReal.zero_rpow_of_pos hr]
+  rw [Measure.restrict_restrict' hpos, Set.inter_comm, ← Measure.restrict_restrict hpos]
+  exact setLIntegral_eq_of_support_subset hsupp
+
+/-- The whole-space case of `TauCeti.setLIntegral_rpow_restrict_pos`: restricting `μ` to
+`{f > 0}` does not change the integral of a positive power of `f`. -/
+theorem lintegral_rpow_restrict_pos (hf : Measurable f) {r : ℝ} (hr : 0 < r) :
+    ∫⁻ x, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x, f x ^ r ∂μ := by
+  simpa using setLIntegral_rpow_restrict_pos hf hr univ
+
 variable {β : Type*} [MeasurableSpace β]
 
 /-- **The layer cake formula** for an `ℝ≥0∞`-valued function: for `0 < p`,
