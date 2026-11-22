@@ -37,17 +37,21 @@ The proofs apply the persistence of nondegenerate fixed points of
 when `f` and `g` are `C¹`-close on `U`
 (`IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`).
 
-Since finitely many conditions of this kind hold together for small enough perturbations, the same
-holds for all periods up to a cutoff `N` at once
+Since finitely many conditions of this kind hold together for small enough perturbations, the
+nondegeneracy, the number and the signed count of the points of period `k` in `K` are preserved
+for all periods `1 ≤ k ≤ N` up to a cutoff `N` at once
 (`IsCompact.exists_pos_forall_mem_Icc_isNondegenerateFixedPt_iterate`,
+`IsCompact.exists_pos_forall_mem_Icc_ncard_fixedPoints_iterate_inter_eq`,
 `IsCompact.exists_pos_forall_mem_Icc_finsum_sign_det_iterate_eq`). The first statement says that
 the maps all of whose periodic points of period at most `N` in `K` are nondegenerate form a
 `C¹`-open set, as a Baire argument making the periodic points of an area-preserving surface map
 nondegenerate up to a period cutoff requires: once a localized perturbation has made the periodic
 points of some period nondegenerate, every later perturbation small enough in `C¹` keeps them so.
-The signed counts `∑ sign det (1 - D(f^[k]))`, `1 ≤ k ≤ N`, are the coefficients of the logarithmic
-derivative of the dynamical zeta function of `f` through order `N`; the second statement says that
-their contributions from `K` do not depend on the perturbation, among small nondegenerate ones.
+The signed counts `∑ sign det (1 - D(f^[k]))`, `1 ≤ k ≤ N`, are the contributions from `K` to the
+Lefschetz numbers of the iterates of `f`, which are the coefficients of the logarithmic derivative
+of the Lefschetz zeta function of `f`; the unsigned counts play the same role for the Artin–Mazur
+zeta function. The last two statements say that these contributions through order `N` do not
+depend on the perturbation, among small nondegenerate ones.
 
 ## Main results
 
@@ -59,8 +63,9 @@ their contributions from `K` do not depend on the perturbation, among small nond
   `IsCompact.exists_pos_forall_finsum_sign_det_iterate_eq`: their number and signed count are
   unchanged.
 * `IsCompact.exists_pos_forall_mem_Icc_isNondegenerateFixedPt_iterate`,
-  `IsCompact.exists_pos_forall_mem_Icc_finsum_sign_det_iterate_eq`: the same for all periods
-  `1 ≤ k ≤ N` at once.
+  `IsCompact.exists_pos_forall_mem_Icc_ncard_fixedPoints_iterate_inter_eq`,
+  `IsCompact.exists_pos_forall_mem_Icc_finsum_sign_det_iterate_eq`: nondegeneracy, number and
+  signed count for all periods `1 ≤ k ≤ N` at once.
 
 ## References
 
@@ -83,6 +88,22 @@ open TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → E} {K U : Set E} {k N : ℕ}
 
+omit [FiniteDimensional ℝ E] in
+/-- A conclusion about the maps that are `C¹`-close to `f^[k]` on `K` holds for the iterates
+`g^[k]` of the maps `g` that are `C¹`-close enough to `f` on a neighbourhood `U` of the first `k`
+points of the orbits of the points of `K`. -/
+private theorem exists_pos_forall_iterate_of_exists_pos (hK : IsCompact K)
+    (hf : ∀ j < k, ∀ x ∈ K, ContDiffAt ℝ 1 f (f^[j] x)) (hU : U ∈ 𝓝ˢ (⋃ j < k, f^[j] '' K))
+    {P : (E → E) → Prop}
+    (h : ∃ ε > 0, ∀ g : E → E, (∀ x ∈ K, DifferentiableAt ℝ g x) →
+      (∀ x ∈ K, ‖g x - f^[k] x‖ ≤ ε) → (∀ x ∈ K, ‖fderiv ℝ g x - fderiv ℝ f^[k] x‖ ≤ ε) → P g) :
+    ∃ δ > 0, ∀ g : E → E, (∀ y ∈ U, DifferentiableAt ℝ g y) → (∀ y ∈ U, ‖g y - f y‖ ≤ δ) →
+      (∀ y ∈ U, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) → P g^[k] := by
+  obtain ⟨ε, hε, hP⟩ := h
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le hf hε hU
+  exact ⟨δ, hδ, fun g hg₁ hg₂ hg₃ ↦ hP g^[k] (fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).1)
+    (fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).2.1) fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).2.2⟩
+
 /-- **Nondegeneracy of the periodic points of period `k` in a compact set persists under small `C¹`
 perturbations.**
 
@@ -100,12 +121,10 @@ theorem exists_pos_forall_isNondegenerateFixedPt_iterate (hK : IsCompact K)
       ∀ x ∈ K, IsFixedPt g^[k] x → IsNondegenerateFixedPt 𝓘(ℝ, E) g^[k] x := by
   have hfk (x : E) (hx : x ∈ K) : ContDiffAt ℝ 1 f^[k] x :=
     contDiffAt_iterate fun j hj ↦ hf j hj x hx
-  obtain ⟨ε, hε, hg⟩ := hK.exists_pos_forall_isNondegenerateFixedPt
-    (fun x hx ↦ (hfk x hx).continuousAt.continuousWithinAt)
-    (fun x hx ↦ ((hfk x hx).continuousAt_fderiv one_ne_zero).continuousWithinAt) hnd
-  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le hf hε hU
-  exact ⟨δ, hδ, fun g hg₁ hg₂ hg₃ ↦ hg g^[k] (fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).1)
-    (fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).2.1) fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).2.2⟩
+  exact hK.exists_pos_forall_iterate_of_exists_pos hf hU <|
+    hK.exists_pos_forall_isNondegenerateFixedPt
+      (fun x hx ↦ (hfk x hx).continuousAt.continuousWithinAt)
+      (fun x hx ↦ ((hfk x hx).continuousAt_fderiv one_ne_zero).continuousWithinAt) hnd
 
 /-- **The periodic points of period `k` in a compact set persist under small `C¹` perturbations,
 with their signs.**
@@ -131,12 +150,10 @@ theorem exists_pos_forall_exists_bijOn_fixedPoints_iterate_inter (hK : IsCompact
             SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ f^[k] x : E →ₗ[ℝ] E))) := by
   have hfk (x : E) (hx : x ∈ K) : ContDiffAt ℝ 1 f^[k] x :=
     contDiffAt_iterate fun j hj ↦ hf j hj x hx
-  obtain ⟨η, hη, hg⟩ := hK.exists_pos_forall_exists_bijOn_fixedPoints_inter
-    (fun x hx ↦ (hfk x hx).continuousAt.continuousWithinAt)
-    (fun x hx _ ↦ (hfk x hx).continuousAt_fderiv one_ne_zero) hnd hint hε
-  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le hf hη hU
-  exact ⟨δ, hδ, fun g hg₁ hg₂ hg₃ ↦ hg g^[k] (fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).1)
-    (fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).2.1) fun x hx ↦ (h g hg₁ hg₂ hg₃ x hx).2.2⟩
+  exact hK.exists_pos_forall_iterate_of_exists_pos hf hU <|
+    hK.exists_pos_forall_exists_bijOn_fixedPoints_inter
+      (fun x hx ↦ (hfk x hx).continuousAt.continuousWithinAt)
+      (fun x hx _ ↦ (hfk x hx).continuousAt_fderiv one_ne_zero) hnd hint hε
 
 /-- **The number of periodic points of period `k` in a compact set is stable under small `C¹`
 perturbations.**
@@ -200,6 +217,18 @@ private theorem eventually_nhdsGT_of_exists_pos {P : (E → E) → Prop}
   filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' g hg₁ hg₂ hg₃
   exact h g hg₁ (fun y hy ↦ (hg₂ y hy).trans hδ'.2.le) fun y hy ↦ (hg₃ y hy).trans hδ'.2.le
 
+omit [FiniteDimensional ℝ E] in
+/-- Finitely many conclusions about the perturbations `g` of `f` that are `δ`-close in `C¹` on `U`,
+each of which holds for some `δ > 0`, hold together for some `δ > 0`. -/
+private theorem exists_pos_forall_mem_finset {s : Finset ℕ} {P : ℕ → (E → E) → Prop}
+    (h : ∀ k ∈ s, ∃ δ > 0, ∀ g : E → E, (∀ y ∈ U, DifferentiableAt ℝ g y) →
+      (∀ y ∈ U, ‖g y - f y‖ ≤ δ) → (∀ y ∈ U, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) → P k g) :
+    ∃ δ > 0, ∀ g : E → E, (∀ y ∈ U, DifferentiableAt ℝ g y) → (∀ y ∈ U, ‖g y - f y‖ ≤ δ) →
+      (∀ y ∈ U, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) → ∀ k ∈ s, P k g := by
+  obtain ⟨δ, hδ, hδ₀⟩ := (((eventually_all_finset s).2 fun k hk ↦
+    eventually_nhdsGT_of_exists_pos (h k hk)).and self_mem_nhdsWithin).exists
+  exact ⟨δ, hδ₀, fun g hg₁ hg₂ hg₃ k hk ↦ hδ k hk g hg₁ hg₂ hg₃⟩
+
 /-- **Nondegeneracy of all periodic points of period at most `N` in a compact set persists under
 small `C¹` perturbations.**
 
@@ -218,16 +247,10 @@ theorem exists_pos_forall_mem_Icc_isNondegenerateFixedPt_iterate (hK : IsCompact
     ∃ δ > 0, ∀ g : E → E, (∀ y ∈ U, DifferentiableAt ℝ g y) → (∀ y ∈ U, ‖g y - f y‖ ≤ δ) →
       (∀ y ∈ U, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) →
       ∀ k ∈ Finset.Icc 1 N, ∀ x ∈ K, IsFixedPt g^[k] x →
-        IsNondegenerateFixedPt 𝓘(ℝ, E) g^[k] x := by
-  have h : ∀ k ∈ Finset.Icc 1 N, ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : E → E,
-      (∀ y ∈ U, DifferentiableAt ℝ g y) → (∀ y ∈ U, ‖g y - f y‖ ≤ δ) →
-      (∀ y ∈ U, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) →
-      ∀ x ∈ K, IsFixedPt g^[k] x → IsNondegenerateFixedPt 𝓘(ℝ, E) g^[k] x := fun k hk ↦
-    have hkN := (Finset.mem_Icc.1 hk).2
-    eventually_nhdsGT_of_exists_pos <| hK.exists_pos_forall_isNondegenerateFixedPt_iterate
-      (fun j hj ↦ hf j (by omega)) (hnd k hk) (nhdsSet_iUnion_iterate_image_mono hkN hU)
-  obtain ⟨δ, hδ, hδ₀⟩ := (((eventually_all_finset _).2 h).and self_mem_nhdsWithin).exists
-  exact ⟨δ, hδ₀, fun g hg₁ hg₂ hg₃ k hk ↦ hδ k hk g hg₁ hg₂ hg₃⟩
+        IsNondegenerateFixedPt 𝓘(ℝ, E) g^[k] x :=
+  exists_pos_forall_mem_finset fun k hk ↦ hK.exists_pos_forall_isNondegenerateFixedPt_iterate
+    (fun j hj ↦ hf j (hj.trans_le (Finset.mem_Icc.1 hk).2)) (hnd k hk)
+    (nhdsSet_iUnion_iterate_image_mono (Finset.mem_Icc.1 hk).2 hU)
 
 /-- **The signed counts of the periodic points of all periods at most `N` in a compact set are
 stable under small `C¹` perturbations.**
@@ -251,20 +274,28 @@ theorem exists_pos_forall_mem_Icc_finsum_sign_det_iterate_eq (hK : IsCompact K)
             (SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ g^[k] y : E →ₗ[ℝ] E))) : ℤ) =
           ∑ᶠ x ∈ fixedPoints f^[k] ∩ K,
             (SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ f^[k] x : E →ₗ[ℝ] E))) :
-              ℤ) := by
-  have h : ∀ k ∈ Finset.Icc 1 N, ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : E → E,
-      (∀ y ∈ U, DifferentiableAt ℝ g y) → (∀ y ∈ U, ‖g y - f y‖ ≤ δ) →
+              ℤ) :=
+  exists_pos_forall_mem_finset fun k hk ↦ hK.exists_pos_forall_finsum_sign_det_iterate_eq
+    (fun j hj ↦ hf j (hj.trans_le (Finset.mem_Icc.1 hk).2)) (hnd k hk) (hint k hk)
+    (nhdsSet_iUnion_iterate_image_mono (Finset.mem_Icc.1 hk).2 hU)
+
+/-- **The numbers of periodic points of all periods at most `N` in a compact set are stable under
+small `C¹` perturbations.**
+
+Under the hypotheses of `IsCompact.exists_pos_forall_mem_Icc_finsum_sign_det_iterate_eq`, every map
+`g` that is `C¹`-close to `f` on `U` has, for every `1 ≤ k ≤ N`, as many points of period `k` in `K`
+as `f`. -/
+theorem exists_pos_forall_mem_Icc_ncard_fixedPoints_iterate_inter_eq (hK : IsCompact K)
+    (hf : ∀ j < N, ∀ x ∈ K, ContDiffAt ℝ 1 f (f^[j] x))
+    (hnd : ∀ k ∈ Finset.Icc 1 N, ∀ x ∈ K, IsFixedPt f^[k] x →
+      IsNondegenerateFixedPt 𝓘(ℝ, E) f^[k] x)
+    (hint : ∀ k ∈ Finset.Icc 1 N, ∀ x ∈ K, IsFixedPt f^[k] x → x ∈ interior K)
+    (hU : U ∈ 𝓝ˢ (⋃ j < N, f^[j] '' K)) :
+    ∃ δ > 0, ∀ g : E → E, (∀ y ∈ U, DifferentiableAt ℝ g y) → (∀ y ∈ U, ‖g y - f y‖ ≤ δ) →
       (∀ y ∈ U, ‖fderiv ℝ g y - fderiv ℝ f y‖ ≤ δ) →
-      ∑ᶠ y ∈ fixedPoints g^[k] ∩ K,
-          (SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ g^[k] y : E →ₗ[ℝ] E))) : ℤ) =
-        ∑ᶠ x ∈ fixedPoints f^[k] ∩ K,
-          (SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ f^[k] x : E →ₗ[ℝ] E))) :
-            ℤ) := fun k hk ↦
-    have hkN := (Finset.mem_Icc.1 hk).2
-    eventually_nhdsGT_of_exists_pos <| hK.exists_pos_forall_finsum_sign_det_iterate_eq
-      (fun j hj ↦ hf j (by omega)) (hnd k hk) (hint k hk)
-      (nhdsSet_iUnion_iterate_image_mono hkN hU)
-  obtain ⟨δ, hδ, hδ₀⟩ := (((eventually_all_finset _).2 h).and self_mem_nhdsWithin).exists
-  exact ⟨δ, hδ₀, fun g hg₁ hg₂ hg₃ k hk ↦ hδ k hk g hg₁ hg₂ hg₃⟩
+      ∀ k ∈ Finset.Icc 1 N, (fixedPoints g^[k] ∩ K).ncard = (fixedPoints f^[k] ∩ K).ncard :=
+  exists_pos_forall_mem_finset fun k hk ↦ hK.exists_pos_forall_ncard_fixedPoints_iterate_inter_eq
+    (fun j hj ↦ hf j (hj.trans_le (Finset.mem_Icc.1 hk).2)) (hnd k hk) (hint k hk)
+    (nhdsSet_iUnion_iterate_image_mono (Finset.mem_Icc.1 hk).2 hU)
 
 end IsCompact
