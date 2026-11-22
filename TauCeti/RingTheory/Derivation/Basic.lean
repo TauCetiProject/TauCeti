@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.Data.Nat.Choose.Sum
@@ -16,7 +17,8 @@ A derivation vanishes on the image `(n : A)` of a natural number (`Derivation.ma
 numeric literal `(OfNat.ofNat n : A)` with `2 ≤ n` is not syntactically such a cast, so `simp`
 does not apply that lemma to it. This file adds the literal form `Derivation.map_ofNat`, so that
 `simp` differentiates polynomial expressions with numeric coefficients, for instance partial
-derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`.
+derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`. In characteristic `p`, any derivation also
+annihilates `p`-th powers (`Derivation.map_pow_eq_zero_of_charP`).
 
 A derivation differentiates a finite product termwise: `D (∏ i ∈ s, f i)` is the sum over
 `j ∈ s` of `D (f j)` times the product of the other factors. In particular, a derivation `δ`
@@ -42,6 +44,8 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
+* `Derivation.map_pow_eq_zero_of_charP`: in characteristic `p`, any derivation vanishes on `p`-th
+  powers.
 * `Derivation.leibniz_prod`: the Leibniz rule for finite products.
 * `Derivation.apply_prod_pow_of_apply_eq`: a derivation dual to the `i`-th coordinate
   differentiates a monomial in the coordinates by lowering its `i`-th exponent.
@@ -68,6 +72,10 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M] [Al
 @[simp]
 theorem map_ofNat (n : ℕ) [n.AtLeastTwo] : D (no_index (OfNat.ofNat n : A)) = 0 := by
   rw [← Nat.cast_ofNat, map_natCast]
+
+/-- In characteristic `p`, any derivation annihilates `p`-th powers. -/
+theorem map_pow_eq_zero_of_charP {p : ℕ} [CharP A p] (x : A) : D (x ^ p) = 0 := by
+  rw [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul A, CharP.cast_eq_zero, zero_smul]
 
 /-- **Leibniz rule for finite products**: `D (∏ i ∈ s, f i)` is the sum over `j ∈ s` of
 `D (f j)` times the product of the other factors. -/

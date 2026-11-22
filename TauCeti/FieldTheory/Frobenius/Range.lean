@@ -24,8 +24,6 @@ This distinguishes an isomorphism of abstract fields preserving the constant sub
   over perfect constants and the field isomorphism `F ≃+* F^{p^n}`.
 * `TauCeti.algebraMap_mem_fieldRange_frobenius_of_perfectRing`: the image of a perfect ring in a
   field of exponential characteristic `p` lies in `k ^ p`.
-* `TauCeti.intCast_mem_fieldRange_frobenius`: the image of `ℤ` in a field of exponential
-  characteristic `p` lies in `k ^ p`.
 
 ## References
 
@@ -111,10 +109,5 @@ theorem algebraMap_mem_fieldRange_frobenius_of_perfectRing (p : ℕ) {R k : Type
     algebraMap R k r ∈ (frobenius k p).fieldRange := by
   obtain ⟨s, rfl⟩ := (PerfectRing.bijective_frobenius (R := R) (p := p)).2 r
   exact ⟨algebraMap R k s, by rw [frobenius_def, map_pow]⟩
-
-/-- The image of `ℤ` in any field `k` of exponential characteristic `p` lies in `k ^ p`. -/
-theorem intCast_mem_fieldRange_frobenius (p : ℕ) {k : Type*} [Field k] [ExpChar k p] (n : ℤ) :
-    algebraMap ℤ k n ∈ (frobenius k p).fieldRange :=
-  ⟨algebraMap ℤ k n, by rw [eq_intCast, map_intCast]⟩
 
 end TauCeti

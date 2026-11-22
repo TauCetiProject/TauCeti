@@ -7,15 +7,21 @@ module
 
 public import Mathlib.RingTheory.Derivation.Basic
 public import TauCeti.FieldTheory.Frobenius.PBasis
+public import TauCeti.RingTheory.Derivation.Frobenius
+import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 
 /-!
-# Coordinate derivations of a `p`-basis
+# Derivations and `p`-bases
 
 Given a `p`-basis `b : ι → k` of a field `k` of prime characteristic `p`, the `p`-monomials
 `∏ i, b i ^ (e i : ℕ)` (`e : ι →₀ Fin p`) form a basis of `k` over `k ^ p`. Differentiating
-each `p`-monomial in the `j`-th variable by sending `∏ i, b i ^ (e i : ℕ)` to
-`(e j : k) * ∏ i, b i ^ (e i - δ_{ij} : ℕ)` defines a `k ^ p`-derivation `hb.coordDerivation j`
+each `p`-monomial in the `j`-th variable—returning `0` when `e j = 0`, and otherwise decrementing
+that exponent and multiplying by its original value to give
+`(e j : k) * ∏ i, b i ^ (e i - δ_{ij} : ℕ)`—defines a `k ^ p`-derivation `hb.coordDerivation j`
 satisfying `hb.coordDerivation j (b j) = 1` and `hb.coordDerivation j (b i) = 0` for `i ≠ j`.
+
+Conversely, any `R`-derivation out of `k` maps `k ^ p(range b)` into the `k`-span of its values
+on `b`, and two `R`-derivations out of `k` agreeing on a `p`-basis are equal.
 
 ## Main definitions
 
@@ -24,6 +30,10 @@ satisfying `hb.coordDerivation j (b j) = 1` and `hb.coordDerivation j (b i) = 0`
 
 ## Main results
 
+* `Derivation.map_mem_span_of_mem_adjoin`: derivatives on `k ^ p(range b)` lie in the `k`-span of
+  the derivatives of `b`.
+* `TauCeti.IsPBasis.derivation_ext`: two `R`-derivations out of `k` into a `k`-module that agree
+  on a `p`-basis are equal.
 * `TauCeti.IsPBasis.coordDerivation_apply_pMonomial`: evaluation of `coordDerivation` on a
   `p`-monomial.
 * `TauCeti.IsPBasis.coordDerivation_apply_self`: `hb.coordDerivation j (b j) = 1`.
@@ -100,14 +110,15 @@ private theorem coordDerivationLinear_leibniz {b : ι → k} (hb : IsPBasis p b)
     exact coordDerivationLinear_leibniz_pMonomial hb j e e'
   exact LinearMap.congr_fun (LinearMap.congr_fun heq x) y
 
-/-- The `j`-th coordinate `k ^ p`-derivation associated to a `p`-basis `b : ι → k`, sending each
-`p`-monomial `∏ i, b i ^ (e i)` to `(e j : k) * ∏ i, b i ^ (e i - δ_{ij})`. -/
+/-- The `j`-th coordinate `k ^ p`-derivation associated to a `p`-basis `b : ι → k`, returning `0`
+on `∏ i, b i ^ (e i)` when `e j = 0`, and otherwise decrementing the `j`-th exponent and
+multiplying by its original value `(e j : k) * ∏ i, b i ^ (e i - δ_{ij})`. -/
 def IsPBasis.coordDerivation {b : ι → k} (hb : IsPBasis p b) (j : ι) :
     Derivation (frobenius k p).fieldRange k k :=
   Derivation.mk' (coordDerivationLinear hb j) (coordDerivationLinear_leibniz hb j)
 
-/-- Evaluating `IsPBasis.coordDerivation` on a `p`-monomial decrements the `j`-th exponent and
-multiplies by its original value. -/
+/-- Evaluating `IsPBasis.coordDerivation` on a `p`-monomial returns `0` when `e j = 0`, and
+otherwise decrements the `j`-th exponent and multiplies by its original value. -/
 theorem IsPBasis.coordDerivation_apply_pMonomial {b : ι → k} (hb : IsPBasis p b) (j : ι)
     (e : ι →₀ Fin p) :
     hb.coordDerivation j (pMonomial p b e) =
@@ -131,6 +142,62 @@ theorem IsPBasis.coordDerivation_apply_ne {b : ι → k} (hb : IsPBasis p b) {i 
   simpa [Finsupp.single_apply, hij] using h
 
 end CoordDerivation
+
+section Ext
+
+variable {p : ℕ} [Fact p.Prime] {R k : Type*} [CommSemiring R] [Field k] [ExpChar k p]
+  [Algebra R k] {ι : Type*}
+
+/-- For any family `b : ι → k` and any `R`-derivation `d : Derivation R k M` into a `k`-module,
+every element of the intermediate field `k ^ p(range b)` has derivative in the `k`-linear span of
+`{d (b i)}`. -/
+theorem _root_.Derivation.map_mem_span_of_mem_adjoin {M : Type*} [AddCommMonoid M] [Module R M]
+    [Module k M] (d : Derivation R k M) (b : ι → k) {x : k}
+    (hx : x ∈ IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b)) :
+    d x ∈ Submodule.span k (Set.range fun i ↦ d (b i)) := by
+  set S : Submodule k M := Submodule.span k (Set.range fun i ↦ d (b i))
+  rw [← IntermediateField.mem_toSubalgebra, ← Subalgebra.mem_toSubmodule,
+    ← span_range_pMonomial_eq_adjoin] at hx
+  induction hx using Submodule.span_induction with
+  | mem u hu =>
+    obtain ⟨e, rfl⟩ := hu
+    rw [pMonomial_def, Finsupp.prod]
+    induction e.support using Finset.cons_induction with
+    | empty => simp
+    | cons i s hi ih =>
+      rw [Finset.prod_cons, d.leibniz]
+      refine S.add_mem (S.smul_mem _ ih) (S.smul_mem _ ?_)
+      rw [d.leibniz_pow, ← Nat.cast_smul_eq_nsmul k]
+      exact S.smul_mem _ (S.smul_mem _ (Submodule.subset_span ⟨i, rfl⟩))
+  | zero => simp
+  | add u v _ _ hu hv => rw [map_add]; exact S.add_mem hu hv
+  | smul c u _ hu =>
+    rw [Subfield.smul_def, smul_eq_mul, d.leibniz,
+      d.map_eq_zero_of_mem_fieldRange_frobenius c.property, smul_zero, add_zero]
+    exact S.smul_mem (c : k) hu
+
+/-- Two `R`-derivations out of `k` into a `k`-module that agree on a `p`-basis `b` are equal. -/
+theorem IsPBasis.derivation_ext {b : ι → k} (hb : IsPBasis p b) {M : Type*} [AddCommMonoid M]
+    [Module R M] [Module k M] {d₁ d₂ : Derivation R k M} (h : ∀ i, d₁ (b i) = d₂ (b i)) :
+    d₁ = d₂ := by
+  have : IsScalarTower (frobenius k p).fieldRange k M :=
+    ⟨fun c x m ↦ by rw [Subfield.smul_def, Subfield.smul_def, smul_eq_mul, smul_smul]⟩
+  let d₁' : Derivation (frobenius k p).fieldRange k M :=
+    d₁.ofMapAlgebraMap fun c ↦ d₁.map_eq_zero_of_mem_fieldRange_frobenius c.property
+  let d₂' : Derivation (frobenius k p).fieldRange k M :=
+    d₂.ofMapAlgebraMap fun c ↦ d₂.map_eq_zero_of_mem_fieldRange_frobenius c.property
+  have hadj : Algebra.adjoin (frobenius k p).fieldRange (Set.range b) = ⊤ := by
+    rw [← IntermediateField.adjoin_toSubalgebra_of_isAlgebraic fun x _ ↦
+      (IsIntegral.of_pow (Fact.out : p.Prime).pos
+        (isIntegral_algebraMap
+          (x := (⟨x ^ p, x, frobenius_def ..⟩ : (frobenius k p).fieldRange)))).isAlgebraic,
+      hb.adjoin_eq_top, IntermediateField.top_toSubalgebra]
+  have heq : d₁' = d₂' :=
+    Derivation.ext_of_adjoin_eq_top (Set.range b) hadj (by rintro _ ⟨i, rfl⟩; simp [d₁', d₂', h i])
+  ext x
+  simpa [d₁', d₂'] using congrArg (fun d : Derivation (frobenius k p).fieldRange k M ↦ d x) heq
+
+end Ext
 
 end TauCeti
 
