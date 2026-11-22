@@ -117,15 +117,11 @@ private theorem norm_familyDomainTrajectoryOperator_sub_domainTrajectoryOperator
     {u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)}
     (hu : ∀ᵐ s ∂volume, s ∉ S → prev (ι.compLpL 2 μ₀) u s = 0) :
     ‖familyDomainTrajectoryOperator ι A u - domainTrajectoryOperator ι A₀ u‖ ≤ δ * ‖u‖ := by
-  rw [← familyDomainTrajectoryOperator_toLp_const, ← sub_apply, familyDomainTrajectoryOperator_sub,
-    ContinuousLinearMap.comp_apply, prevL_apply]
   refine (Lp.norm_le_mul_norm_of_ae_le_mul (g := prev (ι.compLpL 2 μ₀) u) ?_).trans
     (mul_le_mul_of_nonneg_left (norm_prev_le _ u) hδ)
-  filter_upwards [Lp.operatorMultiplication_ae (A - (memLp_top_const (μ := μ₀) A₀).toLp _)
-      (prev (ι.compLpL 2 μ₀) u), Lp.coeFn_sub A ((memLp_top_const (μ := μ₀) A₀).toLp _),
-    (memLp_top_const (μ := μ₀) A₀).coeFn_toLp, ae_restrict_of_ae hA, ae_restrict_of_ae hu]
-    with s hM hsub hc hAs hus
-  rw [hM, hsub, Pi.sub_apply, hc]
+  filter_upwards [familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι A A₀ u,
+    ae_restrict_of_ae hA, ae_restrict_of_ae hu] with s hM hAs hus
+  rw [hM]
   by_cases hs : s ∈ S
   · exact ((A s - A₀).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hAs hs) (norm_nonneg _))
   · rw [hus hs]; simp

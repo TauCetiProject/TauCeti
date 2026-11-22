@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Calculus.MeanValue
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Normed.Affine.Convex
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
@@ -47,11 +49,26 @@ the remainder `φ (x + h • e) - φ x - h • φ' x` is `O(|h| ^ (1 + r))`.
 * `TauCeti.holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow`: a function vanishing at `0`
   with weighted bounds `‖f z‖ ≤ A ‖z‖ ^ α` and `‖Df z‖ ≤ B ‖z‖ ^ (α - 1)` on a punctured ball is
   `α`-Hölder on the ball.
+* `TauCeti.holderOnWith_ball_of_norm_fderiv_le_mul_rpow`: the lemma of Hardy and Littlewood. On a
+  ball `B_R(x₀)`, a derivative that may blow up at the boundary, but no faster than
+  `M (R - ‖x - x₀‖)^(α - 1)` with `0 < α ≤ 1`, still makes the function `α`-Hölder on `B_R(x₀)`,
+  with constant `(3 + 2 / α) M`. Two points at distance `δ` are first moved along rays to the
+  ball of radius `R - δ`, which costs `(M / α) δ^α` each since the radial integral of the bound
+  converges, and are then joined inside that smaller ball, where the derivative is at most
+  `M δ^(α - 1)`. This reads Hölder continuity of a holomorphic function on a disc off the growth
+  of its derivative.
 * `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
 * `HolderWith.norm_sub_sub_smul_le_of_hasLineDerivAt`: the first-order Taylor estimate along a line
   for a function whose line derivative is Hölder.
 * `ContDiffOn.exists_holderOnWith_comp`: a map `C¹` on a compact convex set, after a Hölder map
   with values in that set, is Hölder with the same exponent.
+
+## References
+
+* G. H. Hardy and J. E. Littlewood, *Some properties of fractional integrals. II*, Math. Z. **34**
+  (1932), 403–439.
+* P. L. Duren, *Theory of Hᵖ Spaces*, Academic Press, 1970, Chapter 5 (Hölder continuity from the
+  growth of the derivative).
 -/
 
 public section
@@ -289,6 +306,170 @@ theorem holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow {f : E → F} {
     calc ‖f x - f y‖ ≤ ‖f x‖ + ‖f y‖ := norm_sub_le _ _
       _ ≤ A * ‖x‖ ^ (α : ℝ) + A * ‖y‖ ^ (α : ℝ) := add_le_add (hfA x hx) (hfA y hy)
       _ ≤ (B + 4 * A) * ‖x - y‖ ^ (α : ℝ) := by nlinarith
+
+/-- The comparison function of the radial estimate: for `s < R` and `α ≠ 0`, the derivative of
+`s ↦ (M / α) (A - (R - s)^α)` is `M (R - s)^(α - 1)`. -/
+private theorem hasDerivAt_div_mul_sub_rpow {M α R s : ℝ} (A : ℝ) (hα : α ≠ 0) (hs : s < R) :
+    HasDerivAt (fun s ↦ M / α * (A - (R - s) ^ α)) (M * (R - s) ^ (α - 1)) s := by
+  have h := (((hasDerivAt_id' s).const_sub R).rpow_const (p := α) (Or.inl (by
+    linarith))).const_sub A |>.const_mul (M / α)
+  convert h using 1
+  field_simp
+
+/-- Along a ray from the centre of the ball `B_R(x₀)`, a function whose derivative is at most
+`M (R - dist x x₀)^(α - 1)` moves by at most `(M / α) (R - ρ)^α` between the point at distance `ρ`
+from the centre and the point `z`, since the bound integrates to `(M / α) (R - s)^α`. -/
+private theorem norm_sub_le_of_norm_fderiv_le_mul_rpow_of_mem_ball {g : E → F} {x₀ z : E}
+    {R ρ : ℝ} {M α : ℝ≥0} (hα : 0 < α) (hα1 : α ≤ 1) (hg : DifferentiableOn ℝ g (ball x₀ R))
+    (hM : ∀ x ∈ ball x₀ R, ‖fderiv ℝ g x‖ ≤ M * (R - dist x x₀) ^ ((α : ℝ) - 1))
+    (hz : z ∈ ball x₀ R) (hρ0 : 0 ≤ ρ) (hρ : ρ ≤ dist z x₀) :
+    ‖g z - g (x₀ + (ρ / dist z x₀) • (z - x₀))‖ ≤ M / α * (R - ρ) ^ (α : ℝ) := by
+  set d := dist z x₀
+  have hdR : d < R := mem_ball.1 hz
+  have hα0 : (α : ℝ) ≠ 0 := by exact_mod_cast hα.ne'
+  -- The ray `γ s = x₀ + s • u` reaches `z` at `s = d` and stays within distance `s` of `x₀`.
+  set u : E := d⁻¹ • (z - x₀)
+  set γ : ℝ → E := fun s ↦ x₀ + s • u
+  have hu : ‖u‖ ≤ 1 := by
+    rw [norm_smul, norm_inv, Real.norm_of_nonneg dist_nonneg, ← dist_eq_norm]
+    exact inv_mul_le_one
+  have hγd : γ d = z := by
+    rcases eq_or_ne d 0 with h | h
+    · simp [γ, u, h, dist_eq_zero.1 h]
+    · simp [γ, u, smul_smul, mul_inv_cancel₀ h]
+  have hγρ : γ ρ = x₀ + (ρ / d) • (z - x₀) := by simp [γ, u, smul_smul, div_eq_mul_inv]
+  have hγdist {s : ℝ} (hs : 0 ≤ s) : dist (γ s) x₀ ≤ s := by
+    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hs]
+    exact mul_le_of_le_one_right hs hu
+  have hγball {s : ℝ} (hs : s ∈ Icc ρ d) (hs0 : 0 ≤ s) : γ s ∈ ball x₀ R :=
+    mem_ball.2 ((hγdist hs0).trans_lt (hs.2.trans_lt hdR))
+  have hderiv (s : ℝ) (hs : s ∈ Icc ρ d) :
+      HasDerivAt (fun s ↦ g (γ s)) (fderiv ℝ g (γ s) u) s := by
+    have hγ : HasDerivAt γ u s :=
+      (((hasDerivAt_id s).smul_const u).const_add x₀).congr_deriv (one_smul ℝ u)
+    exact ((hg.differentiableAt (isOpen_ball.mem_nhds (hγball hs (hρ0.trans hs.1)))).hasFDerivAt
+      ).comp_hasDerivAt s hγ
+  -- Compare `g ∘ γ - g (γ ρ)` with `B s = (M / α) ((R - ρ)^α - (R - s)^α)`.
+  have hB (s : ℝ) (hs : s < R) := hasDerivAt_div_mul_sub_rpow (M := M) ((R - ρ) ^ (α : ℝ)) hα0 hs
+  have key := image_norm_le_of_norm_deriv_right_le_deriv_boundary'
+    (f := fun s ↦ g (γ s) - g (γ ρ)) (a := ρ) (b := d)
+    (f' := fun s ↦ fderiv ℝ g (γ s) u)
+    (B := fun s ↦ M / α * ((R - ρ) ^ (α : ℝ) - (R - s) ^ (α : ℝ)))
+    (B' := fun s ↦ M * (R - s) ^ ((α : ℝ) - 1))
+    (fun s hs ↦ ((hderiv s hs).continuousAt.sub continuousAt_const).continuousWithinAt)
+    (fun s hs ↦ ((hderiv s (Ico_subset_Icc_self hs)).sub_const _).hasDerivWithinAt)
+    (by simp) (fun s hs ↦ (hB s (hs.2.trans_lt hdR)).continuousAt.continuousWithinAt)
+    (fun s hs ↦ (hB s (hs.2.trans hdR)).hasDerivWithinAt) (fun s hs ↦ ?_)
+    (right_mem_Icc.2 hρ)
+  · rw [hγd, hγρ] at key
+    exact key.trans (mul_le_mul_of_nonneg_left
+      (sub_le_self _ (Real.rpow_nonneg (by linarith) _)) (by positivity))
+  · have hs0 : 0 ≤ s := hρ0.trans hs.1
+    have hsR : s < R := hs.2.trans hdR
+    calc ‖fderiv ℝ g (γ s) u‖ ≤ ‖fderiv ℝ g (γ s)‖ * ‖u‖ := (fderiv ℝ g (γ s)).le_opNorm u
+      _ ≤ ‖fderiv ℝ g (γ s)‖ := mul_le_of_le_one_right (norm_nonneg _) hu
+      _ ≤ M * (R - dist (γ s) x₀) ^ ((α : ℝ) - 1) := hM _ (hγball (Ico_subset_Icc_self hs) hs0)
+      _ ≤ M * (R - s) ^ ((α : ℝ) - 1) := by
+        gcongr ?_ * ?_
+        exact Real.rpow_le_rpow_of_nonpos (by linarith) (by linarith [hγdist hs0])
+          (by linarith [show (α : ℝ) ≤ 1 by exact_mod_cast hα1])
+
+/-- Under the derivative bound `M (R - dist x x₀)^(α - 1)` on `B_R(x₀)`, every point `z` of the
+ball has a point `z'` of the smaller closed ball `closedBall x₀ ρ`, for `0 ≤ ρ ≤ R`, within
+distance `R - ρ` of `z` and with `‖g z - g z'‖ ≤ (M / α) (R - ρ)^α`: the point `z` itself if it
+already lies there, and otherwise the point at distance `ρ` from `x₀` on the ray through `z`. -/
+private theorem exists_mem_closedBall_norm_sub_le_of_norm_fderiv_le_mul_rpow {g : E → F}
+    {x₀ z : E} {R ρ : ℝ} {M α : ℝ≥0} (hα : 0 < α) (hα1 : α ≤ 1)
+    (hg : DifferentiableOn ℝ g (ball x₀ R))
+    (hM : ∀ x ∈ ball x₀ R, ‖fderiv ℝ g x‖ ≤ M * (R - dist x x₀) ^ ((α : ℝ) - 1))
+    (hz : z ∈ ball x₀ R) (hρ0 : 0 ≤ ρ) (hρR : ρ ≤ R) :
+    ∃ z' ∈ closedBall x₀ ρ, dist z z' ≤ R - ρ ∧ ‖g z - g z'‖ ≤ M / α * (R - ρ) ^ (α : ℝ) := by
+  have hdR : dist z x₀ < R := mem_ball.1 hz
+  by_cases h : dist z x₀ ≤ ρ
+  · exact ⟨z, mem_closedBall.2 h, by simpa using hρR, by
+      simpa using mul_nonneg (by positivity : (0 : ℝ) ≤ M / α)
+        (Real.rpow_nonneg (sub_nonneg.2 hρR) _)⟩
+  push Not at h
+  have hd0 : dist z x₀ ≠ 0 := (hρ0.trans_lt h).ne'
+  refine ⟨x₀ + (ρ / dist z x₀) • (z - x₀), ?_, ?_,
+    norm_sub_le_of_norm_fderiv_le_mul_rpow_of_mem_ball hα hα1 hg hM hz hρ0 h.le⟩
+  · rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, ← dist_eq_norm,
+      Real.norm_of_nonneg (div_nonneg hρ0 dist_nonneg), div_mul_cancel₀ _ hd0]
+  · have : z - (x₀ + (ρ / dist z x₀) • (z - x₀)) = (1 - ρ / dist z x₀) • (z - x₀) := by
+      rw [sub_smul, one_smul]; abel
+    rw [dist_eq_norm, this, norm_smul, Real.norm_of_nonneg (by
+      rw [sub_nonneg, div_le_one (hρ0.trans_lt h)]; exact h.le), ← dist_eq_norm, sub_mul,
+      one_mul, div_mul_cancel₀ _ hd0]
+    linarith
+
+/-- Under the derivative bound `M (R - dist x x₀)^(α - 1)` on `B_R(x₀)`, with `α ≤ 1`, the
+function is `M δ^(α - 1)`-Lipschitz on the closed ball of radius `R - δ`, for `δ > 0`. -/
+private theorem norm_sub_le_of_mem_closedBall_of_norm_fderiv_le_mul_rpow {g : E → F}
+    {x₀ w₁ w₂ : E} {R δ : ℝ} {M α : ℝ≥0} (hα1 : α ≤ 1) (hg : DifferentiableOn ℝ g (ball x₀ R))
+    (hM : ∀ x ∈ ball x₀ R, ‖fderiv ℝ g x‖ ≤ M * (R - dist x x₀) ^ ((α : ℝ) - 1)) (hδ : 0 < δ)
+    (hw₁ : w₁ ∈ closedBall x₀ (R - δ)) (hw₂ : w₂ ∈ closedBall x₀ (R - δ)) :
+    ‖g w₂ - g w₁‖ ≤ M * δ ^ ((α : ℝ) - 1) * ‖w₂ - w₁‖ := by
+  have hsub : closedBall x₀ (R - δ) ⊆ ball x₀ R := closedBall_subset_ball (by linarith)
+  refine (convex_closedBall x₀ (R - δ)).norm_image_sub_le_of_norm_fderiv_le
+    (fun w hw ↦ hg.differentiableAt (isOpen_ball.mem_nhds (hsub hw))) (fun w hw ↦ ?_) hw₁ hw₂
+  refine (hM w (hsub hw)).trans (mul_le_mul_of_nonneg_left ?_ M.coe_nonneg)
+  exact Real.rpow_le_rpow_of_nonpos hδ (by linarith [mem_closedBall.1 hw])
+    (by linarith [show (α : ℝ) ≤ 1 by exact_mod_cast hα1])
+
+/-- **The lemma of Hardy and Littlewood.** A function differentiable on the ball `B_R(x₀)` whose
+derivative grows at most like `M (R - dist x x₀)^(α - 1)` towards the boundary, with
+`0 < α ≤ 1`, is `α`-Hölder on `B_R(x₀)` with constant `(3 + 2 / α) M`. For instance, a
+holomorphic function on the unit disc with `|f'(z)| ≤ M (1 - |z|)^(α - 1)` is `α`-Hölder there. -/
+theorem holderOnWith_ball_of_norm_fderiv_le_mul_rpow {g : E → F} {x₀ : E} {R : ℝ}
+    {M α : ℝ≥0} (hα : 0 < α) (hα1 : α ≤ 1) (hg : DifferentiableOn ℝ g (ball x₀ R))
+    (hM : ∀ x ∈ ball x₀ R, ‖fderiv ℝ g x‖ ≤ M * (R - dist x x₀) ^ ((α : ℝ) - 1)) :
+    HolderOnWith ((3 + 2 / α) * M) α g (ball x₀ R) := by
+  refine HolderOnWith.of_dist_le fun z₁ hz₁ z₂ hz₂ ↦ ?_
+  set δ := dist z₁ z₂
+  have hR : 0 < R := pos_of_mem_ball hz₁
+  have hMα : (0 : ℝ) ≤ M / α := by positivity
+  have hC : (((3 + 2 / α) * M : ℝ≥0) : ℝ) = 3 * M + 2 * (M / α) := by push_cast; ring
+  rw [hC, dist_eq_norm]
+  rcases eq_or_lt_of_le (dist_nonneg : 0 ≤ δ) with hδ | hδ
+  · obtain rfl : z₁ = z₂ := dist_eq_zero.1 hδ.symm
+    rw [sub_self, norm_zero]
+    positivity
+  rcases le_or_gt R δ with hRδ | hδR
+  · -- Far apart: compare both points with the centre `x₀`.
+    obtain ⟨z₁', hz₁', -, h₁⟩ :=
+      exists_mem_closedBall_norm_sub_le_of_norm_fderiv_le_mul_rpow hα hα1 hg hM hz₁ le_rfl hR.le
+    obtain ⟨z₂', hz₂', -, h₂⟩ :=
+      exists_mem_closedBall_norm_sub_le_of_norm_fderiv_le_mul_rpow hα hα1 hg hM hz₂ le_rfl hR.le
+    rw [closedBall_zero, mem_singleton_iff] at hz₁' hz₂'
+    rw [hz₁', sub_zero] at h₁
+    rw [hz₂', sub_zero] at h₂
+    have hpow : R ^ (α : ℝ) ≤ δ ^ (α : ℝ) := Real.rpow_le_rpow hR.le hRδ α.coe_nonneg
+    calc ‖g z₁ - g z₂‖ ≤ ‖g z₁ - g x₀‖ + ‖g z₂ - g x₀‖ := by
+          rw [norm_sub_rev (g z₂)]; exact norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ ≤ M / α * R ^ (α : ℝ) + M / α * R ^ (α : ℝ) := add_le_add h₁ h₂
+      _ ≤ (3 * M + 2 * (M / α)) * δ ^ (α : ℝ) := by
+        nlinarith [mul_le_mul_of_nonneg_left hpow hMα, Real.rpow_nonneg hδ.le (α : ℝ),
+          M.coe_nonneg]
+  · -- Nearby: move both points to the closed ball of radius `R - δ` and join them there.
+    obtain ⟨z₁', hz₁', hd₁, h₁⟩ := exists_mem_closedBall_norm_sub_le_of_norm_fderiv_le_mul_rpow
+      hα hα1 hg hM hz₁ (sub_nonneg.2 hδR.le) (sub_le_self _ hδ.le)
+    obtain ⟨z₂', hz₂', hd₂, h₂⟩ := exists_mem_closedBall_norm_sub_le_of_norm_fderiv_le_mul_rpow
+      hα hα1 hg hM hz₂ (sub_nonneg.2 hδR.le) (sub_le_self _ hδ.le)
+    rw [sub_sub_cancel] at hd₁ hd₂ h₁ h₂
+    have hmid := norm_sub_le_of_mem_closedBall_of_norm_fderiv_le_mul_rpow hα1 hg hM hδ hz₁' hz₂'
+    have hd : ‖z₂' - z₁'‖ ≤ 3 * δ := by
+      rw [← dist_eq_norm]
+      linarith [dist_triangle4 z₂' z₂ z₁ z₁', dist_comm z₂' z₂, dist_comm z₂ z₁]
+    have hpow : δ ^ ((α : ℝ) - 1) * δ = δ ^ (α : ℝ) := by
+      rw [Real.rpow_sub_one hδ.ne', div_mul_cancel₀ _ hδ.ne']
+    calc ‖g z₁ - g z₂‖ ≤ ‖g z₁ - g z₁'‖ + ‖g z₂' - g z₁'‖ + ‖g z₂ - g z₂'‖ := by
+          rw [norm_sub_rev (g z₂') (g z₁'), norm_sub_rev (g z₂) (g z₂')]
+          linarith [norm_sub_le_norm_sub_add_norm_sub (g z₁) (g z₁') (g z₂),
+            norm_sub_le_norm_sub_add_norm_sub (g z₁') (g z₂') (g z₂)]
+      _ ≤ M / α * δ ^ (α : ℝ) + M * δ ^ ((α : ℝ) - 1) * (3 * δ) + M / α * δ ^ (α : ℝ) := by
+          gcongr
+          exact hmid.trans (mul_le_mul_of_nonneg_left hd (by positivity))
+      _ = (3 * M + 2 * (M / α)) * δ ^ (α : ℝ) := by rw [← hpow]; ring
 
 end TauCeti
 
