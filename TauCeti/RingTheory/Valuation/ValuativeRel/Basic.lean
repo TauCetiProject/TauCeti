@@ -82,10 +82,8 @@ the shape of the ordered-group lemma `inv_mul_le_iff_le_mul`. -/
 @[simp]
 theorem inv_mul_vle_iff_vle_mul (ϖ : Aˣ) {a b : A} :
     (ϖ⁻¹ : Aˣ) * a ≤ᵥ b ↔ a ≤ᵥ (ϖ : A) * b := by
-  -- multiply `a ≤ᵥ ϖ * b` by `ϖ⁻¹`, which is nonzero for `≤ᵥ`, and cancel `ϖ⁻¹ * ϖ`
-  rw [← ValuativeRel.mul_vle_mul_iff_right (z := (ϖ : A) * b)
-    (ValuativeRel.not_vle.mp (TauCeti.ValuativeRel.not_vle_zero_of_isUnit ϖ⁻¹.isUnit)),
-    ϖ.inv_mul_cancel_left]
+  -- the case `ϖ⁻¹` of `Units.vle_inv_mul_iff_mul_vle`, read backwards
+  simpa only [inv_inv] using (vle_inv_mul_iff_mul_vle ϖ⁻¹ (a := a) (b := b)).symm
 
 /-- For a unit `ϖ`, `1 ≤ᵥ ϖ⁻¹ * a` exactly when `ϖ ≤ᵥ a`: the case `1` of
 `Units.vle_inv_mul_iff_mul_vle`, and the unit analogue of Mathlib's
