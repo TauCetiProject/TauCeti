@@ -55,6 +55,14 @@ theorem sum_rankOne_ιMulti_two (b : OrthonormalBasis ι ℝ E) :
   simp_rw [← mul_sum, hp, ← sum_mul, hp]
   ring
 
+/-- Every bivector equals half the sum of its inner products against all ordered basis wedges
+`b i ∧ b j`. -/
+theorem sum_inner_smul_ιMulti_two (b : OrthonormalBasis ι ℝ E) (η : ⋀[ℝ]^2 E) :
+    (∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], η⟫ • ιMulti ℝ 2 ![b i, b j]) = (2 : ℝ) • η := by
+  simpa only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
+    InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] using
+    LinearMap.congr_fun b.sum_rankOne_ιMulti_two η
+
 /-- The sum of the diagonal coefficients of an endomorphism against all ordered basis wedges
 is twice its trace. In contrast, the increasing wedges form an orthonormal basis and count
 each diagonal coefficient once. -/

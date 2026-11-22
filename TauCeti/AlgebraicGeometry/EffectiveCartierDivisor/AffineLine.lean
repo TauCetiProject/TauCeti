@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.IsAdjoinRoot
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.Ideal
 
 /-!

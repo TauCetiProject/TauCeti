@@ -236,12 +236,18 @@ theorem algebraicCurvatureSubmodule_eq_bot_of_finrank_le_one (hdim : Module.finr
   (Submodule.eq_bot_iff _).mpr fun _ hr ↦
     (mem_algebraicCurvatureSubmodule.mp hr).eq_zero_of_finrank_le_one hdim
 
-private def fourTensorOfExteriorBilin (B : BilinForm ℝ (⋀[ℝ]^2 V)) : FourTensor V :=
-  ofLinearMap₄ <| MultilinearMap.toBilinMap
+/-- The four-tensor `(u, v, z, w) ↦ B (u ∧ v) (z ∧ w)` associated to a bilinear form `B` on
+`⋀[ℝ]^2 V`. -/
+def fourTensorOfExteriorBilin : BilinForm ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor V where
+  toFun B := ofLinearMap₄ <| MultilinearMap.toBilinMap
     ((TauCeti.BilinForm.ofExteriorSquareDual.comp B).compMultilinearMap
       (exteriorPower.ιMulti ℝ 2).toMultilinearMap)
+  map_add' _ _ := ext_vec fun _ _ _ _ ↦ by simp
+  map_smul' _ _ := ext_vec fun _ _ _ _ ↦ by simp
 
-private theorem fourTensorOfExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
+/-- Evaluation of `fourTensorOfExteriorBilin` on four vectors via pure wedges. -/
+@[simp]
+theorem fourTensorOfExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
     fourTensorOfExteriorBilin B ![u, v, z, w] =
       B (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) := by
   simp [fourTensorOfExteriorBilin]

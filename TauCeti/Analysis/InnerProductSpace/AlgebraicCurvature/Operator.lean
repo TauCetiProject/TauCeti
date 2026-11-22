@@ -46,12 +46,12 @@ maps are two-sided inverses.
 * `TauCeti.FourTensor.ofExteriorEnd_swap_pairs_iff`: pair interchange of `ofExteriorEnd T` is
   equivalent to symmetry of `T`.
 * `TauCeti.FourTensor.isAlgebraicCurvature_ofExteriorEnd_iff`: `ofExteriorEnd T` is an algebraic
-  curvature tensor iff `T` is symmetric and satisfies the first Bianchi identity on pure wedges.
+  curvature tensor iff `IsAlgebraicCurvatureEndomorphism T`.
 * `TauCeti.FourTensor.curvatureEndomorphism_ofExteriorEnd` and
   `TauCeti.FourTensor.ofExteriorEnd_curvatureEndomorphism_of_antisymm`: inverse relations on
   pair-antisymmetric four-tensors.
-* `TauCeti.FourTensor.ofExteriorEnd_compContinuousLinearMap_linearIsometryEquiv`: equivariance
-  under linear isometric equivalences.
+* `LinearIsometryEquiv.ofExteriorEnd_compContinuousLinearMap`: equivariance under linear isometric
+  equivalences.
 * `TauCeti.FourTensor.scalar_ofExteriorEnd`: `scalar (ofExteriorEnd T) = 2 * trace T`.
 
 ## References
@@ -72,39 +72,17 @@ namespace TauCeti.FourTensor
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- The curried four-linear map `(u, v, z, w) ↦ ⟪T (u ∧ v), z ∧ w⟫` associated to an endomorphism
-`T` of `⋀[ℝ]^2 V`. -/
-private def ofExteriorEndLinear (T : Module.End ℝ (⋀[ℝ]^2 V)) :
-    V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ
-    (fun u v ↦ LinearMap.mk₂ ℝ
-      (fun z w ↦ ⟪T (ιMulti ℝ 2 ![u, v]), ιMulti ℝ 2 ![z, w]⟫)
-      (fun _ _ _ ↦ by rw [ιMulti_two_add_left, inner_add_right])
-      (fun _ _ _ ↦ by rw [ιMulti_two_smul_left, real_inner_smul_right, smul_eq_mul])
-      (fun _ _ _ ↦ by rw [ιMulti_two_add_right, inner_add_right])
-      (fun _ _ _ ↦ by rw [ιMulti_two_smul_right, real_inner_smul_right, smul_eq_mul]))
-    (fun _ _ _ ↦ by ext _ _; simp only [LinearMap.mk₂_apply, LinearMap.add_apply,
-      ιMulti_two_add_left, map_add, inner_add_left])
-    (fun _ _ _ ↦ by ext _ _; simp only [LinearMap.mk₂_apply, LinearMap.smul_apply, smul_eq_mul,
-      ιMulti_two_smul_left, map_smul, real_inner_smul_left])
-    (fun _ _ _ ↦ by ext _ _; simp only [LinearMap.mk₂_apply, LinearMap.add_apply,
-      ιMulti_two_add_right, map_add, inner_add_left])
-    (fun _ _ _ ↦ by ext _ _; simp only [LinearMap.mk₂_apply, LinearMap.smul_apply, smul_eq_mul,
-      ιMulti_two_smul_right, map_smul, real_inner_smul_left])
-
 /-- The four-tensor `(u, v, z, w) ↦ ⟪T (u ∧ v), z ∧ w⟫` associated to an endomorphism `T` of the
 exterior square `⋀[ℝ]^2 V`. With this convention the identity on `⋀[ℝ]^2 V` maps to
 `constantCurvature V`. -/
-def ofExteriorEnd : Module.End ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor V where
-  toFun T := ofLinearMap₄ (ofExteriorEndLinear T)
-  map_add' _ _ := by ext _; simp [ofExteriorEndLinear, inner_add_left]
-  map_smul' _ _ := by ext _; simp [ofExteriorEndLinear, real_inner_smul_left]
+def ofExteriorEnd : Module.End ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor V :=
+  fourTensorOfExteriorBilin.comp TauCeti.bilinFormToEnd.symm.toLinearMap
 
 /-- Evaluation of the four-tensor associated to an endomorphism of `⋀[ℝ]^2 V`. -/
 @[simp]
 theorem ofExteriorEnd_apply (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
     ofExteriorEnd T ![u, v, z, w] = ⟪T (ιMulti ℝ 2 ![u, v]), ιMulti ℝ 2 ![z, w]⟫ := by
-  simp [ofExteriorEnd, ofExteriorEndLinear]
+  simp [ofExteriorEnd]
 
 /-- An endomorphism of `⋀[ℝ]^2 V` is uniquely determined by its four-tensor. -/
 theorem ofExteriorEnd_injective : Function.Injective (ofExteriorEnd (V := V)) := by
@@ -144,45 +122,22 @@ theorem ofExteriorEnd_swap_pairs_iff (T : Module.End ℝ (⋀[ℝ]^2 V)) :
   refine ⟨fun h a b ↦ ?_, fun h u v z w ↦ by
     simp only [ofExteriorEnd_apply]; rw [h, real_inner_comm]⟩
   have hbil : (innerₗ (⋀[ℝ]^2 V)).compl₁₂ T LinearMap.id = (innerₗ (⋀[ℝ]^2 V)).compl₂ T :=
-    exteriorPower.linearMap_ext (AlternatingMap.ext fun u ↦
-      exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦ by
-        have hu : u = ![u 0, u 1] := (FinVec.etaExpand_eq u).symm
-        have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-        simp only [LinearMap.compAlternatingMap_apply, LinearMap.compl₁₂_apply,
-          LinearMap.compl₂_apply, LinearMap.id_apply, innerₗ_apply_apply]
-        rw [hu, hv, real_inner_comm (T (ιMulti ℝ 2 ![v 0, v 1]))]
-        simpa only [ofExteriorEnd_apply] using h (u 0) (u 1) (v 0) (v 1)))
+    exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
+      exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.compl₂_apply, LinearMap.id_apply,
+          innerₗ_apply_apply]
+        rw [real_inner_comm (T (ιMulti ℝ 2 ![z, w]))]
+        simpa only [ofExteriorEnd_apply] using h u v z w
   simpa using LinearMap.congr_fun₂ hbil a b
 
-/-- `ofExteriorEnd T` is an algebraic curvature tensor iff `T` is symmetric and satisfies the first
-Bianchi identity on pure bivectors. -/
+/-- `ofExteriorEnd T` is an algebraic curvature tensor iff `IsAlgebraicCurvatureEndomorphism T`. -/
 theorem isAlgebraicCurvature_ofExteriorEnd_iff (T : Module.End ℝ (⋀[ℝ]^2 V)) :
-    IsAlgebraicCurvature (ofExteriorEnd T) ↔
-      T.IsSymmetric ∧
-        ∀ u v z w,
-          ⟪T (ιMulti ℝ 2 ![u, v]), ιMulti ℝ 2 ![z, w]⟫ +
-          ⟪T (ιMulti ℝ 2 ![v, z]), ιMulti ℝ 2 ![u, w]⟫ +
-          ⟪T (ιMulti ℝ 2 ![z, u]), ιMulti ℝ 2 ![v, w]⟫ = 0 := by
-  refine ⟨fun h ↦ ⟨(ofExteriorEnd_swap_pairs_iff T).mp h.swap_pairs, fun u v z w ↦ by
+    IsAlgebraicCurvature (ofExteriorEnd T) ↔ IsAlgebraicCurvatureEndomorphism T :=
+  ⟨fun h ↦ ⟨(ofExteriorEnd_swap_pairs_iff T).mp h.swap_pairs, fun u v z w ↦ by
       simpa only [ofExteriorEnd_apply] using h.cyclic_eq_zero u v z w⟩,
-    fun ⟨hsym, hcyc⟩ ↦ ⟨ofExteriorEnd_antisymm_first T, ofExteriorEnd_antisymm_last T,
-      (ofExteriorEnd_swap_pairs_iff T).mpr hsym, fun u v z w ↦ by
-        simpa only [ofExteriorEnd_apply] using hcyc u v z w⟩⟩
-
-/-- Pulling back `ofExteriorEnd T` along a linear isometric equivalence conjugates `T` by the
-induced exterior-square isometry. -/
-theorem ofExteriorEnd_compContinuousLinearMap_linearIsometryEquiv {W : Type*}
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-    (e : W ≃ₗᵢ[ℝ] V) (T : Module.End ℝ (⋀[ℝ]^2 V)) :
-    (ofExteriorEnd T).compContinuousLinearMap (fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
-      ofExteriorEnd
-        ((exteriorPower.map 2 e.symm.toLinearMap) ∘ₗ T ∘ₗ
-          (exteriorPower.map 2 e.toLinearMap)) := by
-  refine ext_vec fun u v z w ↦ ?_
-  rw [compContinuousLinearMap_apply_vec, ofExteriorEnd_apply, ofExteriorEnd_apply,
-    exteriorPower.inner_conj_map]
-  simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
-    map_apply_ιMulti_two, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+   fun h ↦ ⟨ofExteriorEnd_antisymm_first T, ofExteriorEnd_antisymm_last T,
+     (ofExteriorEnd_swap_pairs_iff T).mpr h.isSymmetric, fun u v z w ↦ by
+       simpa only [ofExteriorEnd_apply] using h.cyclic_eq_zero u v z w⟩⟩
 
 /-- `curvatureEndomorphism` is a left inverse to `ofExteriorEnd`. -/
 @[simp]
@@ -241,3 +196,25 @@ theorem IsAlgebraicCurvature.curvatureEndomorphism_eq_iff {r : FourTensor V}
   curvatureEndomorphism_eq_iff_of_antisymm hr.antisymm_first hr.antisymm_last T
 
 end TauCeti.FourTensor
+
+namespace LinearIsometryEquiv
+
+open exteriorPower TauCeti.FourTensor
+
+/-- Pulling back `ofExteriorEnd T` along a linear isometric equivalence conjugates `T` by the
+induced exterior-square isometry. -/
+theorem ofExteriorEnd_compContinuousLinearMap {V W : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
+    (e : W ≃ₗᵢ[ℝ] V) (T : Module.End ℝ (⋀[ℝ]^2 V)) :
+    (ofExteriorEnd T).compContinuousLinearMap (fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
+      ofExteriorEnd
+        ((exteriorPower.map 2 e.symm.toLinearMap) ∘ₗ T ∘ₗ
+          (exteriorPower.map 2 e.toLinearMap)) := by
+  refine ext_vec fun u v z w ↦ ?_
+  rw [compContinuousLinearMap_apply_vec, ofExteriorEnd_apply, ofExteriorEnd_apply,
+    e.inner_conj_map]
+  simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
+    map_apply_ιMulti_two, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+
+end LinearIsometryEquiv

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
 # Metric index raising of bilinear forms to endomorphisms
@@ -33,6 +34,7 @@ endomorphism `B♯` satisfying `⟪B♯ u, v⟫ = B u v`, inverse to metric lowe
   `TauCeti.bilinFormToEnd_innerₗ`: pairing and inverse laws.
 * `TauCeti.isSymmetric_bilinFormToEnd_iff`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
   `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`,
+  `LinearIsometry.bilinFormTrace_comp_adjoint`,
   `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`, and
   `LinearIsometryEquiv.comp_bilinFormToEnd_of_eq`: symmetry, trace, pullback, and equivariance.
 -/
@@ -147,3 +149,26 @@ theorem comp_bilinFormToEnd_of_eq {F : Type*} [NormedAddCommGroup F]
   exact e.comp_bilinFormToEnd_compl₁₂ B₂
 
 end LinearIsometryEquiv
+
+namespace LinearIsometry
+
+open TauCeti
+
+/-- Pulling back a bilinear form along the adjoint of a linear isometry preserves its metric
+trace. -/
+theorem bilinFormTrace_comp_adjoint {W V : Type*} [NormedAddCommGroup W]
+    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] (f : W →ₗᵢ[ℝ] V) (B : BilinForm ℝ W) :
+    bilinFormTrace
+        (B.comp (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap
+          (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap) =
+      bilinFormTrace B := by
+  rw [bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ V),
+    bilinFormTrace_eq_sum B (stdOrthonormalBasis ℝ W)]
+  simp only [LinearMap.BilinForm.comp_apply, ContinuousLinearMap.coe_coe,
+    ← B.inner_bilinFormToEnd_left]
+  exact (stdOrthonormalBasis ℝ V).sum_inner_comp_eq_of_inner_eq (stdOrthonormalBasis ℝ W)
+    (fun x y ↦ by rw [ContinuousLinearMap.adjoint_inner_left]; rfl)
+    (fun x y ↦ f.inner_map_map x y) (bilinFormToEnd B) LinearMap.id
+
+end LinearIsometry

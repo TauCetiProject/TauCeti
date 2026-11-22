@@ -30,29 +30,27 @@ and establish the polarized and quadratic bivector-operator identities
 `ofExteriorEnd (A ∘ₗ B + B ∘ₗ A + 2 • sharpBilin A B)`,
 `Q(ofExteriorEnd A) = ofExteriorEnd (2 • (A * A + sharp A))`, and
 `curvatureEndomorphism (Q(r)) = 2 • (R² + R#)` for every symmetric endomorphism `A` of `⋀[ℝ]^2 V`
-and every algebraic curvature tensor `r`. As an immediate check on rank-one bivector curvature
-tensors `bivectorSq e₁ e₂`, `Q(bivectorSq e₁ e₂) = 2 • bivectorSq e₁ e₂` for an orthonormal pair
-`e₁, e₂` (the curvature tensor of `S² × ℝ^(n - 2)`).
+and every algebraic curvature tensor `r`, together with the rank-one operator characterization
+`curvatureEndomorphism (planeCurvature u v) = rankOne ℝ (u ∧ v) (u ∧ v)`.
 
 ## Main definitions
 
 * `TauCeti.FourTensor.sharpBilin` and `TauCeti.FourTensor.sharp`: Hamilton's Lie-algebraic `#`
   product on `Module.End ℝ (⋀[ℝ]^2 V)`.
-* `TauCeti.FourTensor.bivectorSq`: the rank-one algebraic curvature tensor `(e₁ ∧ e₂) ⊗ (e₁ ∧ e₂)`.
 
 ## Main statements
 
-* `TauCeti.FourTensor.inner_sharpBilin_orthonormalBasis`: basis formula for `sharpBilin`.
-* `TauCeti.FourTensor.isSymmetric_sharpBilin` and `TauCeti.FourTensor.isSymmetric_sharp`:
-  preservation of symmetry.
+* `OrthonormalBasis.inner_sharpBilin`: basis formula for `sharpBilin`.
+* `LinearMap.IsSymmetric.sharpBilin` and `LinearMap.IsSymmetric.sharp`: preservation of symmetry.
 * `TauCeti.FourTensor.sharp_one`: `sharp (1 : Module.End ℝ (⋀[ℝ]^2 V)) = (dim V - 2) • 1`.
 * `TauCeti.FourTensor.reactionBilinear_ofExteriorEnd`,
   `TauCeti.FourTensor.reactionTensor_ofExteriorEnd`,
   `TauCeti.FourTensor.curvatureEndomorphism_reactionTensor`, and
   `TauCeti.FourTensor.IsAlgebraicCurvature.curvatureEndomorphism_reactionTensor`: the operator
   identity `Q(R) = 2 (R² + R#)`.
-* `TauCeti.FourTensor.reactionTensor_bivectorSq` and
-  `TauCeti.FourTensor.reactionTensor_bivectorSq_of_orthonormal`: the `S² × ℝ^(n - 2)` check.
+* `TauCeti.FourTensor.planeCurvature_eq_ofExteriorEnd` and
+  `TauCeti.FourTensor.curvatureEndomorphism_planeCurvature`: the bivector rank-one operator
+  characterization of `planeCurvature u v`.
 
 ## References
 
@@ -194,7 +192,7 @@ private theorem inner_sharpBilin_eq_sharpVal (A B : Module.End ℝ (⋀[ℝ]^2 V
   simp [sharpBilin, sharpForm]
 
 /-- Evaluation of `sharpBilin A B` in any orthonormal basis of `⋀[ℝ]^2 V`. -/
-theorem inner_sharpBilin_orthonormalBasis {ι : Type*} [Fintype ι]
+theorem _root_.OrthonormalBasis.inner_sharpBilin {ι : Type*} [Fintype ι]
     (e : OrthonormalBasis ι ℝ (⋀[ℝ]^2 V)) (A B : Module.End ℝ (⋀[ℝ]^2 V)) (ξ η : ⋀[ℝ]^2 V) :
     ⟪sharpBilin A B ξ, η⟫ =
       (1 / 2 : ℝ) * ∑ α, ∑ β,
@@ -205,7 +203,7 @@ theorem inner_sharpBilin_orthonormalBasis {ι : Type*} [Fintype ι]
 theorem sharpBilin_comm (A B : Module.End ℝ (⋀[ℝ]^2 V)) : sharpBilin A B = sharpBilin B A := by
   let e := stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)
   refine LinearMap.ext fun ξ ↦ ext_inner_right ℝ fun η ↦ ?_
-  rw [inner_sharpBilin_orthonormalBasis e, inner_sharpBilin_orthonormalBasis e]
+  rw [e.inner_sharpBilin, e.inner_sharpBilin]
   congr 1; rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun α _ ↦ Finset.sum_congr rfl fun β _ ↦ by
     rw [twoVectorBracket_swap (B (e α)) (A (e β)), twoVectorBracket_swap (e α) (e β),
@@ -232,11 +230,17 @@ theorem sharp_smul (c : ℝ) (A : Module.End ℝ (⋀[ℝ]^2 V)) :
     sharp (c • A) = (c ^ 2) • sharp A := by
   simp only [sharp, map_smul, LinearMap.smul_apply, smul_smul, sq]
 
+/-- Quadratic expansion of `sharp` on a sum of endomorphisms. -/
+theorem sharp_add (A B : Module.End ℝ (⋀[ℝ]^2 V)) :
+    sharp (A + B) = sharp A + (2 : ℝ) • sharpBilin A B + sharp B := by
+  simp only [sharp, map_add, LinearMap.add_apply, sharpBilin_comm B A, two_smul]
+  abel
+
 /-- Every rank-one operator `ξ ↦ ⟪α, ξ⟫ • α` on `⋀[ℝ]^2 V` has vanishing `#`-square. -/
 theorem sharp_rankOne_self (α : ⋀[ℝ]^2 V) :
     sharp (InnerProductSpace.rankOne ℝ α α).toLinearMap = 0 := by
   refine LinearMap.ext fun ξ ↦ ext_inner_right ℝ fun η ↦ ?_
-  rw [← sharpBilin_self, inner_sharpBilin_orthonormalBasis (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V))]
+  rw [← sharpBilin_self, (stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)).inner_sharpBilin]
   simp [InnerProductSpace.rankOne_apply]
 
 private theorem sharpBilin_sum_expand {ι : Type*} [Fintype ι]
@@ -255,35 +259,30 @@ private theorem sharpBilin_sum_expand {ι : Type*} [Fintype ι]
   exact Finset.sum_congr rfl fun δ _ ↦ by ring
 
 /-- The `#` product of two symmetric endomorphisms of `⋀[ℝ]^2 V` is symmetric. -/
-theorem isSymmetric_sharpBilin {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric)
-    (hB : B.IsSymmetric) : (sharpBilin A B).IsSymmetric := by
+theorem _root_.LinearMap.IsSymmetric.sharpBilin {A B : Module.End ℝ (⋀[ℝ]^2 V)}
+    (hA : A.IsSymmetric) (hB : B.IsSymmetric) : (sharpBilin A B).IsSymmetric := by
   let e := stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)
   intro ξ η
-  rw [real_inner_comm (sharpBilin A B η) ξ, inner_sharpBilin_orthonormalBasis e,
-    inner_sharpBilin_orthonormalBasis e]
+  rw [real_inner_comm (FourTensor.sharpBilin A B η) ξ, e.inner_sharpBilin, e.inner_sharpBilin]
   congr 1
   rw [sharpBilin_sum_expand e A B ξ η, sharpBilin_sum_expand e A B η ξ]
-  have hsym (α β γ δ) :
-      ⟪e γ, A (e α)⟫ * ⟪e δ, B (e β)⟫ *
-        ⟪twoVectorBracket (e γ) (e δ), ξ⟫ * ⟪twoVectorBracket (e α) (e β), η⟫ =
-      ⟪e α, A (e γ)⟫ * ⟪e β, B (e δ)⟫ *
-        ⟪twoVectorBracket (e α) (e β), η⟫ * ⟪twoVectorBracket (e γ) (e δ), ξ⟫ := by
-    rw [← hA (e γ) (e α), real_inner_comm (A (e γ)), ← hB (e δ) (e β),
-      real_inner_comm (B (e δ))]; ring
-  simp_rw [hsym]
-  trans ∑ α, ∑ γ, ∑ β, ∑ δ, ⟪e α, A (e γ)⟫ * ⟪e β, B (e δ)⟫ *
-      ⟪twoVectorBracket (e α) (e β), η⟫ * ⟪twoVectorBracket (e γ) (e δ), ξ⟫
-  · exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm
-  trans ∑ γ, ∑ α, ∑ δ, ∑ β, ⟪e α, A (e γ)⟫ * ⟪e β, B (e δ)⟫ *
-      ⟪twoVectorBracket (e α) (e β), η⟫ * ⟪twoVectorBracket (e γ) (e δ), ξ⟫
-  · rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm
-  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm
+  simp only [← Fintype.sum_prod_type']
+  let ι := Fin (Module.finrank ℝ (⋀[ℝ]^2 V))
+  let swapPairs : (ι × ι × ι × ι) ≃ (ι × ι × ι × ι) :=
+    { toFun := fun ⟨α, β, γ, δ⟩ ↦ ⟨γ, δ, α, β⟩
+      invFun := fun ⟨γ, δ, α, β⟩ ↦ ⟨α, β, γ, δ⟩
+      left_inv := fun ⟨_, _, _, _⟩ ↦ rfl
+      right_inv := fun ⟨_, _, _, _⟩ ↦ rfl }
+  refine Fintype.sum_equiv swapPairs _ _ fun ⟨α, β, γ, δ⟩ ↦ ?_
+  simp only [swapPairs, Equiv.coe_fn_mk]
+  rw [← hA (e γ) (e α), real_inner_comm (A (e γ)),
+    ← hB (e δ) (e β), real_inner_comm (B (e δ))]
+  ring
 
 /-- The `#`-square of a symmetric endomorphism of `⋀[ℝ]^2 V` is symmetric. -/
-theorem isSymmetric_sharp {A : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric) :
+theorem _root_.LinearMap.IsSymmetric.sharp {A : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric) :
     (sharp A).IsSymmetric :=
-  isSymmetric_sharpBilin hA hA
+  hA.sharpBilin hA
 
 /-! ### The bivector-operator identity `Q(R) = 2(R² + R#)` -/
 
@@ -293,11 +292,6 @@ private theorem sum_inner_twoVectorBracket_contract {ι : Type*} [Fintype ι]
       ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j])) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
         (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫)) =
       4 * ⟪twoVectorBracket (A x) (B y), ξ⟫ := by
-  have hrepr (η : ⋀[ℝ]^2 V) :
-      ∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], η⟫ • ιMulti ℝ 2 ![b i, b j] = (2 : ℝ) • η := by
-    simpa only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
-      InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] using
-      LinearMap.congr_fun b.sum_rankOne_ιMulti_two η
   have hlhs :
       ⟪twoVectorBracket (A (∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], x⟫ • ιMulti ℝ 2 ![b i, b j]))
           (B (∑ k, ∑ l, ⟪ιMulti ℝ 2 ![b k, b l], y⟫ • ιMulti ℝ 2 ![b k, b l])), ξ⟫ =
@@ -308,14 +302,24 @@ private theorem sum_inner_twoVectorBracket_contract {ι : Type*} [Fintype ι]
       real_inner_smul_left, Finset.mul_sum]
     exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
       Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-  have hswap2 (f : ι → ι → ι → ι → ℝ) :
-      (∑ i, ∑ j, ∑ k, ∑ l, f i j k l) = ∑ k, ∑ l, ∑ i, ∑ j, f i j k l := by
-    have h1 (i) : (∑ j, ∑ k, ∑ l, f i j k l) = ∑ k, ∑ j, ∑ l, f i j k l := Finset.sum_comm
-    have h2 (i k) : (∑ j, ∑ l, f i j k l) = ∑ l, ∑ j, f i j k l := Finset.sum_comm
-    have h3 (k) : (∑ i, ∑ l, ∑ j, f i j k l) = ∑ l, ∑ i, ∑ j, f i j k l := Finset.sum_comm
-    simp_rw [h1, h2]; rw [Finset.sum_comm]; simp_rw [h3]
-  rw [hswap2, ← hlhs, hrepr x, hrepr y, map_smul, map_smul, map_smul, LinearMap.smul_apply,
-    map_smul, real_inner_smul_left, real_inner_smul_left]; ring
+  have hswap :
+      (∑ i, ∑ j, ∑ k, ∑ l,
+        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j])) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
+          (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫)) =
+      ∑ k, ∑ l, ∑ i, ∑ j,
+        ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j])) (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
+          (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫) := by
+    let swapPairs : (ι × ι × ι × ι) ≃ (ι × ι × ι × ι) :=
+      { toFun := fun ⟨i, j, k, l⟩ ↦ ⟨k, l, i, j⟩
+        invFun := fun ⟨k, l, i, j⟩ ↦ ⟨i, j, k, l⟩
+        left_inv := fun ⟨_, _, _, _⟩ ↦ rfl
+        right_inv := fun ⟨_, _, _, _⟩ ↦ rfl }
+    simp only [← Fintype.sum_prod_type']
+    exact Fintype.sum_equiv swapPairs _ _ fun _ ↦ rfl
+  rw [hswap, ← hlhs, b.sum_inner_smul_ιMulti_two x, b.sum_inner_smul_ιMulti_two y, map_smul,
+    map_smul, map_smul, LinearMap.smul_apply, map_smul, real_inner_smul_left,
+    real_inner_smul_left]
+  ring
 
 /-- Reduction of `2 * ⟪sharpBilin A B ξ, z ∧ w⟫` to a single basis sum over `V`. -/
 private theorem two_mul_inner_sharpBilin_ιMulti_right {ι : Type*} [Fintype ι]
@@ -330,14 +334,33 @@ private theorem two_mul_inner_sharpBilin_ιMulti_right {ι : Type*} [Fintype ι]
             ιMulti ℝ 2 ![z, w]⟫) =
       ∑ q, (4 * ⟪twoVectorBracket (A (ιMulti ℝ 2 ![w, b q])) (B (ιMulti ℝ 2 ![b q, z])), ξ⟫ -
         4 * ⟪twoVectorBracket (A (ιMulti ℝ 2 ![z, b q])) (B (ιMulti ℝ 2 ![b q, w])), ξ⟫) := by
-    simp_rw [inner_twoVectorBracket_ιMulti_orthonormalBasis b, Finset.mul_sum, mul_sub]
-    have hcomm (f : ι → ι → ι → ι → ι → ℝ) :
-        (∑ i, ∑ j, ∑ k, ∑ l, ∑ q, f i j k l q) = ∑ q, ∑ i, ∑ j, ∑ k, ∑ l, f i j k l q := by
-      have h1 (i j k) : (∑ l, ∑ q, f i j k l q) = ∑ q, ∑ l, f i j k l q := Finset.sum_comm
-      have h2 (i j) : (∑ k, ∑ q, ∑ l, f i j k l q) = ∑ q, ∑ k, ∑ l, f i j k l q := Finset.sum_comm
-      have h3 (i) : (∑ j, ∑ q, ∑ k, ∑ l, f i j k l q) = ∑ q, ∑ j, ∑ k, ∑ l, f i j k l q :=
-        Finset.sum_comm
-      simp_rw [h1, h2, h3]; exact Finset.sum_comm
+    simp_rw [b.inner_twoVectorBracket_ιMulti, Finset.mul_sum, mul_sub]
+    have hcomm :
+        (∑ i, ∑ j, ∑ k, ∑ l, ∑ q,
+          (⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j]))
+              (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
+            (⟪ιMulti ℝ 2 ![b i, b j], ιMulti ℝ 2 ![w, b q]⟫ *
+              ⟪ιMulti ℝ 2 ![b k, b l], ιMulti ℝ 2 ![b q, z]⟫) -
+          ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j]))
+              (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
+            (⟪ιMulti ℝ 2 ![b i, b j], ιMulti ℝ 2 ![z, b q]⟫ *
+              ⟪ιMulti ℝ 2 ![b k, b l], ιMulti ℝ 2 ![b q, w]⟫))) =
+        ∑ q, ∑ i, ∑ j, ∑ k, ∑ l,
+          (⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j]))
+              (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
+            (⟪ιMulti ℝ 2 ![b i, b j], ιMulti ℝ 2 ![w, b q]⟫ *
+              ⟪ιMulti ℝ 2 ![b k, b l], ιMulti ℝ 2 ![b q, z]⟫) -
+          ⟪twoVectorBracket (A (ιMulti ℝ 2 ![b i, b j]))
+              (B (ιMulti ℝ 2 ![b k, b l])), ξ⟫ *
+            (⟪ιMulti ℝ 2 ![b i, b j], ιMulti ℝ 2 ![z, b q]⟫ *
+              ⟪ιMulti ℝ 2 ![b k, b l], ιMulti ℝ 2 ![b q, w]⟫)) := by
+      let rot : (ι × ι × ι × ι × ι) ≃ (ι × ι × ι × ι × ι) :=
+        { toFun := fun ⟨i, j, k, l, q⟩ ↦ ⟨q, i, j, k, l⟩
+          invFun := fun ⟨q, i, j, k, l⟩ ↦ ⟨i, j, k, l, q⟩
+          left_inv := fun ⟨_, _, _, _, _⟩ ↦ rfl
+          right_inv := fun ⟨_, _, _, _, _⟩ ↦ rfl }
+      simp only [← Fintype.sum_prod_type']
+      exact Fintype.sum_equiv rot _ _ fun _ ↦ rfl
     rw [hcomm]
     refine Finset.sum_congr rfl fun q _ ↦ ?_
     simp only [Finset.sum_sub_distrib, sum_inner_twoVectorBracket_contract b A B ξ]
@@ -354,7 +377,7 @@ private theorem two_mul_inner_sharpBilin_ιMulti {ι : Type*} [Fintype ι]
       ((∑ p, ∑ q, ofExteriorEnd A ![u, b p, w, b q] * ofExteriorEnd B ![v, b p, z, b q]) +
         (∑ p, ∑ q, ofExteriorEnd B ![u, b p, w, b q] * ofExteriorEnd A ![v, b p, z, b q])) := by
   rw [two_mul_inner_sharpBilin_ιMulti_right b]
-  simp_rw [inner_twoVectorBracket_ιMulti_orthonormalBasis b, ofExteriorEnd_apply]
+  simp_rw [b.inner_twoVectorBracket_ιMulti, ofExteriorEnd_apply]
   have hA' (x y s t : V) :
       ⟪A (ιMulti ℝ 2 ![x, y]), ιMulti ℝ 2 ![s, t]⟫ =
         ⟪A (ιMulti ℝ 2 ![s, t]), ιMulti ℝ 2 ![x, y]⟫ := by rw [hA, real_inner_comm]
@@ -379,13 +402,8 @@ theorem reactionBilinear_ofExteriorEnd {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA
   have hcomp (S T : Module.End ℝ (⋀[ℝ]^2 V)) (hS : S.IsSymmetric) (u v z w : V) :
       2 * ⟪(S ∘ₗ T) (ιMulti ℝ 2 ![u, v]), ιMulti ℝ 2 ![z, w]⟫ =
         ∑ p, ∑ q, ofExteriorEnd T ![u, v, b p, b q] * ofExteriorEnd S ![z, w, b p, b q] := by
-    have hrepr :
-        ∑ p, ∑ q, ⟪ιMulti ℝ 2 ![b p, b q], T (ιMulti ℝ 2 ![u, v])⟫ • ιMulti ℝ 2 ![b p, b q] =
-          (2 : ℝ) • T (ιMulti ℝ 2 ![u, v]) := by
-      simpa only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
-        InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] using
-        LinearMap.congr_fun b.sum_rankOne_ιMulti_two (T (ιMulti ℝ 2 ![u, v]))
-    rw [LinearMap.comp_apply, hS, ← real_inner_smul_left, ← hrepr, sum_inner]
+    rw [LinearMap.comp_apply, hS, ← real_inner_smul_left,
+      ← b.sum_inner_smul_ιMulti_two (T (ιMulti ℝ 2 ![u, v])), sum_inner]
     simp only [sum_inner, real_inner_smul_left, ofExteriorEnd_apply]
     exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by
       rw [real_inner_comm (T _), real_inner_comm (S _)]
@@ -460,61 +478,24 @@ theorem sharp_one :
   refine LinearMap.ext fun x ↦ ?_
   simp only [LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self, sub_smul, one_smul]
 
-/-- The rank-one algebraic curvature tensor `(e₁ ∧ e₂) ⊗ (e₁ ∧ e₂)` associated to a pair of vectors
-`e₁, e₂ : V`. For an orthonormal pair `e₁, e₂`, this is the curvature four-tensor of the product
-`S² × ℝ^(dim V - 2)`. -/
-def bivectorSq (e₁ e₂ : V) : FourTensor V :=
-  ofExteriorEnd
-    (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![e₁, e₂]) (ιMulti ℝ 2 ![e₁, e₂])).toLinearMap
-
-/-- Evaluation of `bivectorSq e₁ e₂`. -/
-@[simp]
-theorem bivectorSq_apply (e₁ e₂ u v z w : V) :
-    bivectorSq e₁ e₂ ![u, v, z, w] =
-      (⟪e₁, u⟫ * ⟪e₂, v⟫ - ⟪e₁, v⟫ * ⟪e₂, u⟫) *
-        (⟪e₁, z⟫ * ⟪e₂, w⟫ - ⟪e₁, w⟫ * ⟪e₂, z⟫) := by
-  rw [bivectorSq, ofExteriorEnd_apply, ContinuousLinearMap.coe_coe,
+/-- The rank-one plane curvature tensor `planeCurvature u v` is the four-tensor associated to
+the rank-one operator `(u ∧ v) ⊗ (u ∧ v)` on `⋀[ℝ]^2 V`. -/
+theorem planeCurvature_eq_ofExteriorEnd (u v : V) :
+    planeCurvature u v =
+      ofExteriorEnd
+        (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![u, v])
+          (ιMulti ℝ 2 ![u, v])).toLinearMap := by
+  refine ext_vec fun a b c d ↦ ?_
+  rw [planeCurvature_apply, ofExteriorEnd_apply, ContinuousLinearMap.coe_coe,
     InnerProductSpace.rankOne_apply, real_inner_smul_left, inner_ιMulti_two, inner_ιMulti_two]
 
-/-- For every pair `e₁, e₂ : V`, `bivectorSq e₁ e₂` is an algebraic curvature tensor (the first
-Bianchi identity holds by the Plücker relation). -/
-theorem isAlgebraicCurvature_bivectorSq (e₁ e₂ : V) :
-    IsAlgebraicCurvature (bivectorSq e₁ e₂) := by
-  rw [bivectorSq, isAlgebraicCurvature_ofExteriorEnd_iff]
-  refine ⟨InnerProductSpace.isSymmetric_rankOne_self _, fun _ _ _ _ ↦ ?_⟩
-  simp only [ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply,
-    real_inner_smul_left, inner_ιMulti_two]; ring
-
-/-- The reaction tensor of `bivectorSq e₁ e₂` is
-`2 (‖e₁‖² ‖e₂‖² - ⟪e₁, e₂⟫²) • bivectorSq e₁ e₂`. -/
-theorem reactionTensor_bivectorSq (e₁ e₂ : V) :
-    reactionTensor (bivectorSq e₁ e₂) =
-      (2 * constantCurvature V ![e₁, e₂, e₁, e₂]) • bivectorSq e₁ e₂ := by
-  set α := ιMulti ℝ 2 ![e₁, e₂]
-  set T := (InnerProductSpace.rankOne ℝ α α).toLinearMap
-  have hTsym : T.IsSymmetric := InnerProductSpace.isSymmetric_rankOne_self α
-  have hTsq : T * T = constantCurvature V ![e₁, e₂, e₁, e₂] • T := by
-    have hcomp := congrArg ContinuousLinearMap.toLinearMap
-      (InnerProductSpace.rankOne_comp_rankOne (𝕜 := ℝ) α α α α)
-    simpa only [T, α, Module.End.mul_eq_comp, ContinuousLinearMap.toLinearMap_comp,
-      ContinuousLinearMap.toLinearMap_smul, inner_ιMulti_two, constantCurvature_apply] using hcomp
-  rw [bivectorSq, reactionTensor_ofExteriorEnd hTsym, hTsq, sharp_rankOne_self α, add_zero,
-    smul_smul, map_smul]
-
-/-- For an orthonormal pair `e₁, e₂`, `Q(bivectorSq e₁ e₂) = 2 • bivectorSq e₁ e₂` (the
-`S² × ℝ^(dim V - 2)` check). -/
-theorem reactionTensor_bivectorSq_of_orthonormal {e₁ e₂ : V} (h : Orthonormal ℝ ![e₁, e₂]) :
-    reactionTensor (bivectorSq e₁ e₂) = (2 : ℝ) • bivectorSq e₁ e₂ := by
-  have h1 : ‖e₁‖ = 1 := by simpa only [Matrix.cons_val_zero] using h.1 0
-  have h2 : ‖e₂‖ = 1 := by simpa only [Matrix.cons_val_one, Matrix.cons_val_fin_one] using h.1 1
-  have h12 : ⟪e₁, e₂⟫ = 0 := by
-    have hne : (0 : Fin 2) ≠ 1 := by decide
-    simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] using h.2 hne
-  have h21 : ⟪e₂, e₁⟫ = 0 := by
-    have hne : (1 : Fin 2) ≠ 0 := by decide
-    simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] using h.2 hne
-  rw [reactionTensor_bivectorSq, constantCurvature_apply,
-    real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, h1, h2, h12, h21]
-  norm_num
+/-- The bivector endomorphism of `planeCurvature u v` is the rank-one operator
+`ξ ↦ ⟪u ∧ v, ξ⟫ • (u ∧ v)`. -/
+@[simp]
+theorem curvatureEndomorphism_planeCurvature (u v : V) :
+    curvatureEndomorphism (planeCurvature u v) =
+      (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![u, v])
+        (ιMulti ℝ 2 ![u, v])).toLinearMap := by
+  rw [planeCurvature_eq_ofExteriorEnd, curvatureEndomorphism_ofExteriorEnd]
 
 end TauCeti.FourTensor
