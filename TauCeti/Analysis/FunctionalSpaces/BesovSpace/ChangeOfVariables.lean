@@ -19,6 +19,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
@@ -100,7 +101,7 @@ namespace TauCeti
 
 open TemperedDistribution
 
-omit [MeasurableSpace E] [BorelSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem norm_iteratedFDeriv_repr_fderiv_comp_le {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ E) {Φ Ψ : E → E} (hΦ : ContDiff ℝ ∞ Φ) (hΨ : ContDiff ℝ ∞ Ψ) {M : ℕ}
     {L : ℝ} (hΦL : ∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L)
@@ -109,22 +110,13 @@ private theorem norm_iteratedFDeriv_repr_fderiv_comp_le {ι : Type*} [Fintype ι
       (fun x ↦ ((b.toBasis.repr (fderiv ℝ Ψ (Φ x) v) i : ℝ) : ℂ)) x‖ ≤
         M.factorial * (L * ‖v‖) * max 1 L ^ M := by
   intro n hn x
-  have hd : ContDiff ℝ ∞ (fun y ↦ ((b.toBasis.repr (fderiv ℝ Ψ y v) i : ℝ) : ℂ)) := by
-    have : ContDiff ℝ ∞ (fun y ↦ fderiv ℝ Ψ y v) :=
-      (hΨ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
-    exact (Complex.ofRealCLM.contDiff.comp
-      ((b.toBasis.coord i).toContinuousLinearMap.contDiff)).comp this
-  have hc (n : ℕ) (hn : n ≤ M) (y : E) :
-      ‖iteratedFDeriv ℝ n (fun x ↦ ((b.toBasis.repr (fderiv ℝ Ψ x v) i : ℝ) : ℂ)) y‖ ≤ L * ‖v‖ :=
-    (hΨ.norm_iteratedFDeriv_basis_repr_fderiv_apply_le (mod_cast le_top) b v i y).trans
-      (mul_le_mul_of_nonneg_right (hΨL (n + 1) (by omega) (by omega) y) (norm_nonneg v))
-  have hL0 : 0 ≤ L * ‖v‖ := (norm_nonneg _).trans (hc 0 (Nat.zero_le _) x)
-  refine (norm_iteratedFDeriv_comp_le (g := fun y ↦ ((b.toBasis.repr (fderiv ℝ Ψ y v) i : ℝ) : ℂ))
-    hd hΦ (mod_cast le_top) x (fun k hk ↦ hc k (hk.trans hn) (Φ x))
-    (fun k hk₁ hk₂ ↦ ((hΦL k hk₁ (hk₂.trans hn) x).trans (le_max_right 1 L)).trans
-      (le_self_pow₀ (le_max_left 1 L) (by omega)))).trans ?_
-  gcongr
-  exact le_max_left 1 L
+  obtain ⟨A, hA, hAy⟩ := b.exists_clm_norm_le_one_and_repr_eq i
+  have hL0 : 0 ≤ L * ‖v‖ :=
+    mul_nonneg ((norm_nonneg _).trans (hΨL 1 le_rfl (by omega) x)) (norm_nonneg v)
+  simp only [hAy]
+  refine (hΨ.norm_iteratedFDeriv_clm_fderiv_comp_apply_le hΦ (by simp) A hΦL hΨL v n hn x).trans ?_
+  gcongr _ * ?_ * _
+  exact mul_le_of_le_one_left hL0 hA
 
 /-- The pullback of an `Lᵖ` function, with the `p`-independent bound `J` for `J⁻¹ ≤ |det DΦ|`. -/
 private theorem exists_compCLM_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E}
@@ -157,10 +149,11 @@ private theorem hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_mul_le {�
           2 ^ M * (L * ‖w‖ * G) := by
   have hc : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x w) i : ℝ) : ℂ)).HasTemperateGrowth :=
     hΦ.basis_repr_fderiv_apply b.toBasis w i
-  exact ⟨hc.mul hg, (hc.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
-    (hg.1.of_le (mod_cast le_top)) (fun n hn x ↦
+  exact ⟨hc.mul hg, fun n hn x ↦ (hc.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
+    (hg.1.of_le (mod_cast le_top)) (fun n hn ↦
       (hΦ.1.norm_iteratedFDeriv_basis_repr_fderiv_apply_le (mod_cast le_top) b w i x).trans
-        (mul_le_mul_of_nonneg_right (hΦL (n + 1) (by omega) (by omega) x) (norm_nonneg w))) hgG⟩
+        (mul_le_mul_of_nonneg_right (hΦL (n + 1) (by omega) (by omega) x) (norm_nonneg w)))
+    (fun n hn ↦ hgG n hn x) n hn⟩
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- One derivative of `g Φ^* T`, by the Leibniz rule and the chain rule:
@@ -361,7 +354,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
   · rw [div_pow, pow_succ, mul_pow, mul_pow, mul_pow]
     field_simp
 
-omit [MeasurableSpace E] [BorelSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The coefficients `dₗ` of `DΦ⁻¹(Φ x) v = ∑ₗ dₗ(x) bₗ`, multiplied by a function `g` of temperate
 growth, have temperate growth, and the derivatives of `dₗ g` of order at most `M` are bounded in
 terms of those of `Φ`, `Φ⁻¹` and `g`. -/
@@ -378,9 +371,10 @@ private theorem hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_comp_mul_
           2 ^ M * (M.factorial * (L * ‖v‖) * max 1 L ^ M * G) := by
   have hd : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)).HasTemperateGrowth :=
     (hΨ.basis_repr_fderiv_apply b.toBasis v l).comp hΦ
-  exact ⟨hd.mul hg, (hd.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
-    (hg.1.of_le (mod_cast le_top)) (norm_iteratedFDeriv_repr_fderiv_comp_le b hΦ.1 hΨ.1 hΦL hΨL v l)
-    hgG⟩
+  exact ⟨hd.mul hg, fun n hn x ↦ (hd.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
+    (hg.1.of_le (mod_cast le_top))
+    (fun n hn ↦ norm_iteratedFDeriv_repr_fderiv_comp_le b hΦ.1 hΨ.1 hΦL hΨL v l n hn x)
+    (fun n hn ↦ hgG n hn x) n hn⟩
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] in
@@ -390,29 +384,6 @@ private theorem norm_sub_le_add_one_mul {X : Type*} [SeminormedAddCommGroup X] {
     {a t Q h : ℝ} (ht : 1 ≤ t) (hQh : 0 ≤ Q * h) (hy : ‖y‖ ≤ a * t * (Q * h))
     (hz : ‖z‖ ≤ Q * h) : ‖y - z‖ ≤ (a + 1) * t * (Q * h) :=
   (norm_sub_le _ _).trans (by nlinarith)
-
-omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
-/-- The chain rule for `Φ⁻¹` and the Leibniz rule move a derivative off `T`:
-`g Φ^* (∂_v T) = ∑ₗ (∂_{bₗ} (dₗ g Φ^* T) - ∂_{bₗ} (dₗ g) Φ^* T)`, where
-`DΦ⁻¹(Φ x) v = ∑ₗ dₗ(x) bₗ`. -/
-private theorem smulLeftCLM_compCLM_lineDerivOp {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
-    (hΨ : (Φ.symm : E → E).HasTemperateGrowth) {g : E → ℂ} (hg : g.HasTemperateGrowth)
-    (T : 𝓢'(E, F)) (v : E) :
-    smulLeftCLM F g (compCLM F Φ hΦ hΨ (∂_{v} T)) = ∑ l,
-      (∂_{b l} (smulLeftCLM F
-          ((fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)) * g)
-          (compCLM F Φ hΦ hΨ T)) -
-        smulLeftCLM F (fun x ↦ fderiv ℝ
-          ((fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)) * g) x (b l))
-          (compCLM F Φ hΦ hΨ T)) := by
-  rw [compCLM_lineDerivOp b.toBasis hΦ hΨ, map_sum]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
-  have hd : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)).HasTemperateGrowth :=
-    (hΨ.basis_repr_fderiv_apply b.toBasis v l).comp hΦ
-  rw [smulLeftCLM_smulLeftCLM_apply hd hg, lineDerivOp_smulLeftCLM (hd.mul hg),
-    OrthonormalBasis.coe_toBasis]
-  abel
 
 /-- The inductive step of
 `exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_annulus`. On the annulus,
@@ -480,7 +451,8 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
     j hR (h i) (hh i).1
   refine ⟨∑ i, ∑ l, (y' i l - z i l), ?_, ?_⟩
   · rw [hfh, map_sum, map_sum, map_sum]
-    simp_rw [smulLeftCLM_compCLM_lineDerivOp b hΦ hΨ hg, map_sum, map_sub,
+    simp_rw [smulLeftCLM_compCLM_lineDerivOp b.toBasis hΦ hΨ hg, OrthonormalBasis.coe_toBasis,
+      map_sum, map_sub,
       littlewoodPaleyBlock_lineDerivOp, hy, hy', hz, Lp.toTemperedDistribution_sum,
       Lp.toTemperedDistribution_sub]
   · -- Each term is at most `(CB φ.rOut + 1) 2^j Q ‖hᵢ‖`, and `‖hᵢ‖ ≤ Crep R⁻¹ ‖f‖`.
@@ -580,11 +552,15 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
     Φ.inv_max_one_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp))
       (hΨ.1.differentiable (by simp)) fun y ↦ by simpa using hΨL 1 le_rfl (by omega) y
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
-  obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus φ
+  obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le φ
     (fun T ↦ smulLeftCLM F g (compCLM F Φ hΦ hΨ T)) (mul_nonneg hK₀ hG) (mul_nonneg hK₁ hG)
-    (mul_nonneg hK₂ hG) (fun j f ↦ h₀ hΦ hΨ hdet hg hg₀ j f)
-    (fun hkj f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f hf)
-    (fun j _ hR f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j hR f hf) j k u f hf
+    (mul_nonneg hK₂ hG) (fun k _ f _ ↦ h₀ hΦ hΨ hdet hg hg₀ k f)
+    (fun hkj u f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f
+      (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ _ u))
+    (fun j k u f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j (R := 2 ^ k * φ.rIn) (by positivity) f (by
+      rw [φ.two_mul_rOut_div_rIn_mul, ← hf]
+      simpa only [Set.compl_sdiff, Set.union_comm] using
+        isVanishingOn_fourier_littlewoodPaleyBlock_succ φ k u)) j k u f hf
   exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 
 /-- **Off-diagonal decay of a pullback between Littlewood–Paley blocks.** Let `M` be a natural

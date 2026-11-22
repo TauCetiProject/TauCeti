@@ -41,6 +41,8 @@ measures on a Polish space, a weakly convergent sequence is tight.
 * `TauCeti.exists_subseq_tendsto_integral_of_iSup_measure_ne_top`: vague compactness, a sequence
   of measures with uniformly bounded masses on every compact set of a locally compact, σ-compact,
   metrizable space has a subsequence converging vaguely to a locally finite measure.
+* `IsCompact.exists_compactlySupported_measure_le_integral_le`: a compactly supported cutoff
+  whose integral lies between the masses of a compact set and of an open neighbourhood of it.
 * `IsCompact.measure_le_of_tendsto_integral`: compact-set mass bounds inherited from open
   neighbourhood bounds under convergence against compactly supported continuous functions.
 * `TauCeti.isTightMeasureSet_range_of_tendsto`: a weakly convergent sequence of probability
@@ -356,6 +358,24 @@ theorem exists_subseq_tendsto_integral_of_iSup_measure_ne_top [LocallyCompactSpa
     exact (htail _ N (fun k hk ↦ disjoint_compl_right_iff_subset.2
       (K.subset (Nat.succ_le_of_lt hk))) n).trans hN.le
 
+omit [T2Space α] [BorelSpace α] in
+open scoped CompactlySupported in
+/-- A compactly supported continuous function whose integral against every measure lies between
+the mass of a compact set `K` and the mass of an open neighbourhood `U` of `K`; the lower bound
+needs the measure to be finite on compact sets. -/
+theorem _root_.IsCompact.exists_compactlySupported_measure_le_integral_le [R1Space α]
+    [LocallyCompactSpace α] [OpensMeasurableSpace α] {K U : Set α} (hK : IsCompact K)
+    (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ f : C_c(α, ℝ), (∀ (ρ : Measure α) [IsFiniteMeasureOnCompacts ρ],
+      ρ K ≤ ENNReal.ofReal (∫ x, f x ∂ρ)) ∧
+      ∀ ρ : Measure α, ENNReal.ofReal (∫ x, f x ∂ρ) ≤ ρ U := by
+  obtain ⟨f, hf1, hfc, hfU, hfr⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen hK hU hKU
+  refine ⟨⟨f, hfc⟩, fun ρ _ ↦ ?_, fun ρ ↦ ?_⟩
+  · exact (CompactlySupportedContinuousMap.integrable ⟨f, hfc⟩).measure_le_integral
+      (ae_of_all _ fun x ↦ (hfr x).1) fun _ hx ↦ (hf1 hx).ge
+  · exact integral_le_measure (fun x _ ↦ (hfr x).2) fun x hx ↦
+      (image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfU h)).le
+
 open scoped CompactlySupported in
 /-- Under convergence against compactly supported continuous functions, a mass bound on an
 open neighbourhood passes to the measure of a compact subset for the limiting measure. -/
@@ -366,15 +386,9 @@ theorem _root_.IsCompact.measure_le_of_tendsto_integral [LocallyCompactSpace α]
     (hbound : ∀ᶠ i in l, σ i V ≤ C)
     (hlim : ∀ f : C_c(α, ℝ), Tendsto (fun i => ∫ x, f x ∂σ i) l
       (𝓝 (∫ x, f x ∂μ))) : μ K ≤ C := by
-  obtain ⟨f, hfK, hfc, hfV, hfr⟩ :=
-    exists_continuousMap_one_of_isCompact_subset_isOpen hK hV hKV
-  let g : C_c(α, ℝ) := ⟨f, hfc⟩
-  refine (g.integrable.measure_le_integral (ae_of_all _ fun x => (hfr x).1)
-    (fun x hx => (hfK hx).ge)).trans ?_
-  apply le_of_tendsto ((ENNReal.continuous_ofReal.tendsto _).comp (hlim g))
-  filter_upwards [hbound] with i hi
-  refine (integral_le_measure (fun x _ => (hfr x).2) fun x hx => ?_).trans hi
-  exact le_of_eq (image_eq_zero_of_notMem_tsupport fun h => hx (hfV h))
+  obtain ⟨f, hfK, hfV⟩ := hK.exists_compactlySupported_measure_le_integral_le hV hKV
+  exact (hfK μ).trans (le_of_tendsto ((ENNReal.continuous_ofReal.tendsto _).comp (hlim f))
+    (hbound.mono fun i hi ↦ (hfV (σ i)).trans hi))
 
 section ProbabilityMeasure
 

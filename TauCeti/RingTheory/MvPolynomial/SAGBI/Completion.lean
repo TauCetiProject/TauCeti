@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Directed
+public import Mathlib.RingTheory.Adjoin.FG
 public import TauCeti.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Finite
@@ -13,58 +15,68 @@ import Mathlib.Basic.Finite.Sum
 /-!
 # Certified SAGBI completion and termination
 
-Let `m` be a monomial order on `σ →₀ ℕ` and `k` a field. Unlike Buchberger completion for ideals
-(`MonomialOrder.exists_sPolynomialStep_completion`), SAGBI completion for subalgebras faces two
-structural subtleties:
+Let `m` be a monomial order on `σ →₀ ℕ` and `k` a field. SAGBI completion enlarges a generating
+set or family of a subalgebra `A = k[G]` until it becomes a SAGBI basis of `A`. Unlike Buchberger
+completion for ideals (`MonomialOrder.exists_sPolynomialStep_completion`), SAGBI completion for
+subalgebras faces two structural subtleties:
 
-1. Adjoining a nonzero subduction remainder `r` of an element `aeval b P` normalizes `r` to
-   `m.monicNormalize r = C (m.leadingCoeff r)⁻¹ * r` and records the scalar `m.leadingCoeff r`
-   (and its inverse) in the presentation maps relating the old and enlarged generator families.
+1. Adjoining a nonzero subduction remainder `r` of an element `f` (such as `aeval b P`) normalizes
+   `r` to `m.monicNormalize r = C (m.leadingCoeff r)⁻¹ * r` and records the scalar
+   `m.leadingCoeff r` (and its inverse) in the presentation maps relating the old and enlarged
+   generator families (`MonomialOrder.IsSubduction.monicNormalize_eq_aeval`,
+   `MonomialOrder.subductionRetract`, `MonomialOrder.subductionLiftExpr`).
 2. Submonoids of `σ →₀ ℕ` need not satisfy the ascending chain condition (it can fail even for
    two variables), so strictly enlarging the leading-term algebra at each step does not by itself
    force termination—even when the full initial algebra is finitely generated, an unfair selection
    of relations could neglect a needed generator forever, and without finite generation of the
-   initial algebra completion may run forever even on a finitely generated subalgebra.
+   initial algebra completion may run forever even on a finitely generated subalgebra (see
+   `TauCeti.RingTheory.MvPolynomial.SAGBI.RobbianoSweedler` for the formalized `k[x + y, xy, xy^2]`
+   counterexample).
 
-This file develops the presentation maps of subduction-remainder adjunction, defines fair SAGBI
-completion sequences (`MonomialOrder.IsFairSAGBISequence`), proves that every fair completion
-sequence exhausts `m.leadingExponents` and `m.initialAlgebra` unconditionally and terminates at a
-SAGBI basis whenever the initial algebra is finitely generated, constructs a concrete certified
-batch completion sequence equipped with surjective presentation retractions from any finite monic
-family, and deduces the existence of a finite monic SAGBI basis with a surjective presentation
-homomorphism for any finite nonzero family whose generated subalgebra has finitely generated
-leading-exponent monoid.
+This file provides two complementary formalizations of SAGBI completion:
 
-## Main definitions and results
+* **Single-step set completion** (`MonomialOrder.SubductionStep`): each step subducts a polynomial
+  `f` by the current generating set `G` and adjoins `m.monicNormalize r` if `r ≠ 0`, preserving
+  `k[G]`, strictly enlarging the leading-term algebra on nontrivial adjunction, and yielding a
+  bounded expression for `f`. Under fairness on binomial generating families of the stage toric
+  ideals, the union of stages is a SAGBI basis
+  (`MonomialOrder.isSAGBIBasis_iUnion_of_subductionStep`), and under
+  `(m.initialAlgebra (Algebra.adjoin k (G 0))).FG` some finite stage stabilizes at a SAGBI basis
+  (`MonomialOrder.exists_isSAGBIBasis_of_subductionStep`).
+* **Presentation-tracked and batch completion** (`MonomialOrder.subductionRetract`,
+  `MonomialOrder.IsFairSAGBISequence`, `MonomialOrder.sagbiCompletionFamily`): develops the
+  `k`-algebra presentation retractions across normalized remainder adjunctions, proves unconditional
+  exhaustion of leading exponents and initial algebras and finite-stage termination for general
+  fair indexed completion sequences (allowing batch adjunction of multiple remainders), constructs
+  the concrete batch completion sequence `MonomialOrder.sagbiCompletionFamily` with surjective
+  presentation retractions `MonomialOrder.sagbiCompletionRetract`, and deduces existence of a
+  finite monic SAGBI basis with a surjective presentation homomorphism
+  (`MonomialOrder.exists_finite_monic_isSAGBIBasis_of_fg`).
 
-* `MonomialOrder.subductionRetract` and `MonomialOrder.subductionLiftExpr`: the `k`-algebra
-  retraction sending each adjoined normalized-remainder variable `X (.inr l)` to
-  `C (m.leadingCoeff (r l))⁻¹ * (P l - Q l)`, and the corresponding scalar-retaining lift
-  expression `rename Sum.inl (Q l) + C (m.leadingCoeff (r l)) * X (.inr l)`.
-* `MonomialOrder.aeval_comp_subductionRetract`,
+## Main results
+
+* `MonomialOrder.exists_subductionStep`, `MonomialOrder.SubductionStep.adjoin_eq`,
+  `MonomialOrder.SubductionStep.adjoin_leadingTerm_lt`, and
+  `MonomialOrder.SubductionStep.exists_aeval_eq`: existence and properties of single-element
+  subduction completion steps.
+* `MonomialOrder.isSAGBIBasis_iUnion_of_subductionStep` and
+  `MonomialOrder.exists_isSAGBIBasis_of_subductionStep`: convergence and finite-stage
+  stabilization for fair runs of `SubductionStep`.
+* `MonomialOrder.subductionRetract`, `MonomialOrder.subductionLiftExpr`,
+  `MonomialOrder.aeval_comp_subductionRetract`,
   `MonomialOrder.ker_subductionRetract_eq_span_of_ne_zero`, and
   `MonomialOrder.ker_aeval_sumElim_monicNormalize`: factorization of evaluation and presentation
   kernels across normalized remainder adjunction.
-* `MonomialOrder.IsFairSAGBISequence`: a monotone sequence of monic families generating the same
-  subalgebra in which every stage's toric ideal has a binomial generating set whose members are
-  all subducted at some stage `N ≥ n`, with only nonzero remainders required to appear (as
-  `m.monicNormalize r`) at or after that processing stage (`M ≥ N`).
-* `MonomialOrder.IsFairSAGBISequence.iSup_closure_degree_eq_leadingExponents` and
-  `MonomialOrder.IsFairSAGBISequence.iSup_adjoin_leadingTerm_eq_initialAlgebra`: any fair
-  completion sequence exhausts the leading exponents and initial algebra.
-* `MonomialOrder.IsFairSAGBISequence.exists_isSAGBIBasis_of_fg` and
-  `MonomialOrder.IsFairSAGBISequence.exists_isSAGBIBasis_iff_fg_leadingExponents`: finite-stage
-  termination under finite generation of the initial algebra, and equivalence for sequences of
-  finite families.
+* `MonomialOrder.IsFairSAGBISequence.iSup_closure_degree_eq_leadingExponents`,
+  `MonomialOrder.IsFairSAGBISequence.iSup_adjoin_leadingTerm_eq_initialAlgebra`,
+  `MonomialOrder.IsFairSAGBISequence.exists_isSAGBIBasis_of_fg`, and
+  `MonomialOrder.IsFairSAGBISequence.exists_isSAGBIBasis_iff_fg_leadingExponents`: exhaustion
+  and termination for fair indexed completion sequences.
 * `MonomialOrder.sagbiCompletionFamily`, `MonomialOrder.sagbiCompletionRetract`,
-  `MonomialOrder.exists_sagbiCompletion_succ`, and
-  `MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`: concrete certified batch completion
-  with stage-zero and successor characterizations and surjective presentation retractions starting
-  from a finite monic family.
-* `MonomialOrder.exists_finite_monic_isSAGBIBasis_of_fg`: every finite nonzero family whose
-  generated subalgebra has finitely generated leading-exponent monoid admits a finite monic SAGBI
-  basis together with a surjective presentation homomorphism relating the evaluation maps and
-  kernels.
+  `MonomialOrder.exists_sagbiCompletion_succ`,
+  `MonomialOrder.isFairSAGBISequence_sagbiCompletionFamily`, and
+  `MonomialOrder.exists_finite_monic_isSAGBIBasis_of_fg`: concrete certified batch completion and
+  presentation-compatible finite monic SAGBI bases.
 
 ## References
 
@@ -80,9 +92,275 @@ leading-exponent monoid.
 
 public section
 
+namespace MonomialOrder
+
 open MvPolynomial
 
-namespace MonomialOrder
+section SingleStep
+
+variable {σ k : Type*} [Field k] {m : MonomialOrder σ}
+
+variable (m) in
+/-- A step of SAGBI completion processing `f`: subduct `f` by the members of `G`, and adjoin the
+monic normalization of the remainder `r` if `r ≠ 0`. The new set `H` is the first argument. -/
+def SubductionStep (f : MvPolynomial σ k) (H G : Set (MvPolynomial σ k)) : Prop :=
+  ∃ (Q : MvPolynomial G k) (r : MvPolynomial σ k),
+    m.IsSubduction ((↑) : G → MvPolynomial σ k) f Q r ∧
+      (r = 0 ∧ H = G ∨ r ≠ 0 ∧ H = insert (m.monicNormalize r) G)
+
+/-- The subduction and adjunction certificate of a completion step. -/
+theorem subductionStep_iff {f : MvPolynomial σ k} {H G : Set (MvPolynomial σ k)} :
+    m.SubductionStep f H G ↔
+      ∃ (Q : MvPolynomial G k) (r : MvPolynomial σ k),
+        m.IsSubduction ((↑) : G → MvPolynomial σ k) f Q r ∧
+          (r = 0 ∧ H = G ∨ r ≠ 0 ∧ H = insert (m.monicNormalize r) G) :=
+  Iff.rfl
+
+namespace SubductionStep
+
+variable {f : MvPolynomial σ k} {G H : Set (MvPolynomial σ k)}
+
+/-- A subduction with zero remainder gives a completion step which adjoins nothing. -/
+theorem of_remainder_eq_zero {Q : MvPolynomial G k}
+    (h : m.IsSubduction ((↑) : G → MvPolynomial σ k) f Q 0) : m.SubductionStep f G G :=
+  ⟨Q, 0, h, Or.inl ⟨rfl, rfl⟩⟩
+
+/-- A subduction with nonzero remainder `r` gives a completion step which adjoins the monic
+normalization of `r`. -/
+theorem of_remainder_ne_zero {Q : MvPolynomial G k} {r : MvPolynomial σ k}
+    (h : m.IsSubduction ((↑) : G → MvPolynomial σ k) f Q r) (hr : r ≠ 0) :
+    m.SubductionStep f (insert (m.monicNormalize r) G) G :=
+  ⟨Q, r, h, Or.inr ⟨hr, rfl⟩⟩
+
+end SubductionStep
+
+/-- Every polynomial can be processed by a completion step, provided the current generators are
+nonzero. -/
+theorem exists_subductionStep {G : Set (MvPolynomial σ k)} (hG : ∀ g ∈ G, g ≠ 0)
+    (f : MvPolynomial σ k) : ∃ H, m.SubductionStep f H G := by
+  classical
+  obtain ⟨Q, r, h⟩ := m.exists_isSubduction (b := ((↑) : G → MvPolynomial σ k))
+    (fun g ↦ hG g g.property) f
+  by_cases hr : r = 0
+  · exact ⟨G, .of_remainder_eq_zero (hr ▸ h)⟩
+  · exact ⟨_, .of_remainder_ne_zero h hr⟩
+
+/-- Renaming the generators along an inclusion of generating sets preserves the leading-exponent
+combination of a monomial. -/
+private theorem linearCombination_mapDomain_inclusion {s t : Set (MvPolynomial σ k)}
+    (hst : s ⊆ t) (w : s →₀ ℕ) :
+    Finsupp.linearCombination ℕ (fun g : t ↦ m.degree g.val) (w.mapDomain (Set.inclusion hst)) =
+      Finsupp.linearCombination ℕ (fun g : s ↦ m.degree g.val) w := by
+  -- `rw` closes the goal since `(Set.inclusion hst g).1 = g.1` holds by `Set.coe_inclusion`,
+  -- which is reducible-defeq.
+  rw [Finsupp.linearCombination_mapDomain, Function.comp_def]
+
+/-- Renaming the generators along an inclusion of generating sets preserves the substituted
+value of a polynomial. -/
+private theorem aeval_coe_rename_inclusion {s t : Set (MvPolynomial σ k)} (hst : s ⊆ t)
+    (P : MvPolynomial s k) :
+    aeval ((↑) : t → MvPolynomial σ k) (rename (Set.inclusion hst) P) =
+      aeval ((↑) : s → MvPolynomial σ k) P := by
+  rw [aeval_rename, Set.val_comp_inclusion]
+
+/-- Renaming the generators along an inclusion of generating sets preserves the substituted
+value of a polynomial and the leading exponents of its substituted monomials. -/
+private theorem aeval_rename_inclusion {s t : Set (MvPolynomial σ k)} (hst : s ⊆ t)
+    (P : MvPolynomial s k) {p : (σ →₀ ℕ) → Prop}
+    (hP : ∀ w ∈ P.support, p (Finsupp.linearCombination ℕ (fun g : s ↦ m.degree g.val) w)) :
+    aeval ((↑) : t → MvPolynomial σ k) (rename (Set.inclusion hst) P) =
+        aeval ((↑) : s → MvPolynomial σ k) P ∧
+      ∀ w ∈ (rename (Set.inclusion hst) P).support,
+        p (Finsupp.linearCombination ℕ (fun g : t ↦ m.degree g.val) w) := by
+  classical
+  refine ⟨aeval_coe_rename_inclusion hst P, fun w hw ↦ ?_⟩
+  rw [support_rename_of_injective (Set.inclusion_injective hst), Finset.mem_image] at hw
+  obtain ⟨w, hw, rfl⟩ := hw
+  rw [linearCombination_mapDomain_inclusion]
+  exact hP w hw
+
+namespace SubductionStep
+
+variable {f : MvPolynomial σ k} {G H : Set (MvPolynomial σ k)}
+
+/-- A completion step only adds generators. -/
+theorem subset (h : m.SubductionStep f H G) : G ⊆ H := by
+  obtain ⟨_, _, _, ⟨-, rfl⟩ | ⟨-, rfl⟩⟩ := h
+  · exact subset_rfl
+  · exact Set.subset_insert _ _
+
+/-- Processing an element of the generated algebra does not change that algebra. -/
+theorem adjoin_eq (h : m.SubductionStep f H G) (hf : f ∈ Algebra.adjoin k G) :
+    Algebra.adjoin k H = Algebra.adjoin k G := by
+  obtain ⟨_, _, hs, ⟨-, rfl⟩ | ⟨-, rfl⟩⟩ := h
+  · rfl
+  · simpa only [Subtype.range_coe] using
+      hs.adjoin_insert_monicNormalize (by simpa only [Subtype.range_coe] using hf)
+
+/-- A completion step keeps a set of generators monic. -/
+theorem monic (h : m.SubductionStep f H G) (hG : ∀ g ∈ G, m.Monic g) :
+    ∀ g ∈ H, m.Monic g := by
+  obtain ⟨_, _, _, ⟨-, rfl⟩ | ⟨hr, rfl⟩⟩ := h
+  · exact hG
+  · exact Set.forall_mem_insert.2 ⟨monic_monicNormalize hr, hG⟩
+
+/-- A completion step which adjoins a generator strictly enlarges the algebra generated by the
+leading terms. -/
+theorem adjoin_leadingTerm_lt (h : m.SubductionStep f H G) (hHG : H ≠ G) :
+    Algebra.adjoin k (m.leadingTerm '' G) < Algebra.adjoin k (m.leadingTerm '' H) := by
+  obtain ⟨_, _, hs, ⟨-, rfl⟩ | ⟨hr, rfl⟩⟩ := h
+  · exact absurd rfl hHG
+  · simpa only [Subtype.range_coe] using hs.adjoin_leadingTerm_lt hr
+
+/-- Processing an element of `A` by a SAGBI basis of `A` adjoins nothing. -/
+theorem eq_of_isSAGBIBasis (h : m.SubductionStep f H G) {A : Subalgebra k (MvPolynomial σ k)}
+    (hG : m.IsSAGBIBasis G A) (hf : f ∈ A) : H = G := by
+  obtain ⟨_, _, hs, ⟨-, rfl⟩ | ⟨hr, -⟩⟩ := h
+  · rfl
+  · exact absurd (hs.remainder_eq_zero (by rwa [Subtype.range_coe]) hf) hr
+
+/-- After it is processed, `f` has an expression in the new generators all of whose substituted
+monomials have leading exponent at most that of `f`. -/
+theorem exists_aeval_eq (h : m.SubductionStep f H G) :
+    ∃ P : MvPolynomial H k, aeval ((↑) : H → MvPolynomial σ k) P = f ∧
+      ∀ w ∈ P.support,
+        Finsupp.linearCombination ℕ (fun g : H ↦ m.degree g.val) w ≼[m] m.degree f := by
+  classical
+  obtain ⟨Q, r, hs, ⟨rfl, rfl⟩ | ⟨-, rfl⟩⟩ := h
+  · exact ⟨Q, by simpa using hs.eq_aeval_add.symm, hs.support_le⟩
+  set g := m.monicNormalize r
+  obtain ⟨hQ, hQs⟩ := aeval_rename_inclusion (m := m) (Set.subset_insert g G) Q
+    (p := (· ≼[m] m.degree f)) hs.support_le
+  refine ⟨rename (Set.inclusion (Set.subset_insert g G)) Q +
+    monomial (Finsupp.single ⟨g, Set.mem_insert g G⟩ 1) (m.leadingCoeff r), ?_, ?_⟩
+  · simp [hQ, aeval_monomial, g, C_leadingCoeff_mul_monicNormalize, hs.eq_aeval_add]
+  · intro w hw
+    rcases Finset.mem_union.1 (support_add hw) with hw | hw
+    · exact hQs w hw
+    · rw [Finset.mem_singleton.1 (support_monomial_subset hw), Finsupp.linearCombination_single,
+        one_smul, degree_monicNormalize]
+      exact hs.degree_le
+
+end SubductionStep
+
+section Run
+
+variable {G : ℕ → Set (MvPolynomial σ k)} {f : ℕ → MvPolynomial σ k}
+
+private theorem monotone_of_subductionStep
+    (hstep : ∀ n, m.SubductionStep (f n) (G (n + 1)) (G n)) : Monotone G :=
+  monotone_nat_of_le_succ fun n ↦ (hstep n).subset
+
+private theorem adjoin_eq_of_subductionStep
+    (hstep : ∀ n, m.SubductionStep (f n) (G (n + 1)) (G n))
+    (hf : ∀ n, f n ∈ Algebra.adjoin k (G n)) (n : ℕ) :
+    Algebra.adjoin k (G n) = Algebra.adjoin k (G 0) := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [(hstep n).adjoin_eq (hf n), ih]
+
+private theorem monic_of_subductionStep
+    (hstep : ∀ n, m.SubductionStep (f n) (G (n + 1)) (G n)) (hG : ∀ g ∈ G 0, m.Monic g)
+    (n : ℕ) : ∀ g ∈ G n, m.Monic g := by
+  induction n with
+  | zero => exact hG
+  | succ n ih => exact (hstep n).monic ih
+
+private theorem adjoin_iUnion_eq_of_subductionStep
+    (hstep : ∀ n, m.SubductionStep (f n) (G (n + 1)) (G n))
+    (hf : ∀ n, f n ∈ Algebra.adjoin k (G n)) :
+    Algebra.adjoin k (⋃ n, G n) = Algebra.adjoin k (G 0) :=
+  le_antisymm (Algebra.adjoin_le (Set.iUnion_subset fun n ↦
+      adjoin_eq_of_subductionStep hstep hf n ▸ Algebra.subset_adjoin))
+    (Algebra.adjoin_mono (Set.subset_iUnion G 0))
+
+/-- **Fair SAGBI completion converges.** Consider a run of completion steps
+`G (n + 1)` from `G n` processing `f n ∈ k[G n]`, starting from monic generators. Suppose that,
+for each stage `n`, binomials `Y^(u n j) - Y^(v n j)` generate the toric ideal of the leading
+exponents of `G n`, and that the image of each of them in `k[G n]` is processed at some stage.
+Then the union of all stages is a SAGBI basis of `k[G 0]`. -/
+theorem isSAGBIBasis_iUnion_of_subductionStep
+    (hstep : ∀ n, m.SubductionStep (f n) (G (n + 1)) (G n))
+    (hf : ∀ n, f n ∈ Algebra.adjoin k (G n)) (hG : ∀ g ∈ G 0, m.Monic g)
+    {J : ℕ → Type*} {u v : ∀ n, J n → G n →₀ ℕ}
+    (hJ : ∀ n, TauCeti.toricIdeal k (fun g : G n ↦ m.degree g.val) =
+      Ideal.span (Set.range fun j ↦ monomial (u n j) (1 : k) - monomial (v n j) 1))
+    (hfair : ∀ n j, ∃ N, f N =
+      aeval ((↑) : G n → MvPolynomial σ k) (monomial (u n j) (1 : k) - monomial (v n j) 1)) :
+    m.IsSAGBIBasis (⋃ n, G n) (Algebra.adjoin k (G 0)) := by
+  classical
+  have hmonic := monic_of_subductionStep hstep hG
+  have hc (g : ↥(⋃ n, G n)) : m.Monic g.val := by
+    obtain ⟨n, hn⟩ := Set.mem_iUnion.1 g.property
+    exact hmonic n _ hn
+  have hcrit := isSAGBIBasis_range_iff_forall_exists_aeval_eq (m := m)
+    (c := ((↑) : ↥(⋃ n, G n) → MvPolynomial σ k)) hc
+    (TauCeti.toricIdeal_iUnion_eq_span (a := m.degree)
+      (monotone_of_subductionStep hstep).directed_le hJ)
+  rw [Subtype.range_coe, adjoin_iUnion_eq_of_subductionStep hstep hf] at hcrit
+  refine hcrit.2 fun ⟨n, j⟩ ↦ ?_
+  dsimp only
+  rw [linearCombination_mapDomain_inclusion, ← rename_monomial, ← rename_monomial, ← map_sub,
+    aeval_coe_rename_inclusion]
+  rcases m.aeval_monomial_sub_monomial_eq_zero_or_degree_lt
+      (b := ((↑) : G n → MvPolynomial σ k)) (fun g : G n ↦ hmonic n g.val g.property) _ _
+      (TauCeti.linearCombination_eq_of_toricIdeal_eq_span (hJ n) j)
+    with hz | hlt
+  · exact ⟨0, by rw [hz, map_zero], by simp⟩
+  · -- The relation was processed at stage `N`, giving a bounded expression in `G (N + 1)`.
+    obtain ⟨N, hN⟩ := hfair n j
+    obtain ⟨P, hP, hPs⟩ := (hstep N).exists_aeval_eq
+    rw [hN] at hP hPs
+    obtain ⟨hPe, hPs'⟩ := aeval_rename_inclusion (m := m) (Set.subset_iUnion G (N + 1)) P
+      (p := (· ≺[m] Finsupp.linearCombination ℕ (fun g : G n ↦ m.degree g.val) (u n j)))
+      fun w hw ↦ (hPs w hw).trans_lt hlt
+    exact ⟨_, hPe.trans hP, hPs'⟩
+
+/-- **Termination of SAGBI completion.** Under the hypotheses of
+`MonomialOrder.isSAGBIBasis_iUnion_of_subductionStep`, if the initial algebra of `k[G 0]` is
+finitely generated, then some stage `G N` is a SAGBI basis of `k[G 0]`, and every later step
+adjoins nothing. -/
+theorem exists_isSAGBIBasis_of_subductionStep
+    (hstep : ∀ n, m.SubductionStep (f n) (G (n + 1)) (G n))
+    (hf : ∀ n, f n ∈ Algebra.adjoin k (G n)) (hG : ∀ g ∈ G 0, m.Monic g)
+    {J : ℕ → Type*} {u v : ∀ n, J n → G n →₀ ℕ}
+    (hJ : ∀ n, TauCeti.toricIdeal k (fun g : G n ↦ m.degree g.val) =
+      Ideal.span (Set.range fun j ↦ monomial (u n j) (1 : k) - monomial (v n j) 1))
+    (hfair : ∀ n j, ∃ N, f N =
+      aeval ((↑) : G n → MvPolynomial σ k) (monomial (u n j) (1 : k) - monomial (v n j) 1))
+    (hfg : (m.initialAlgebra (Algebra.adjoin k (G 0))).FG) :
+    ∃ N, m.IsSAGBIBasis (G N) (Algebra.adjoin k (G 0)) ∧ ∀ n, N ≤ n → G n = G N := by
+  classical
+  have hmono := monotone_of_subductionStep hstep
+  have hA := adjoin_eq_of_subductionStep hstep hf
+  have hB := isSAGBIBasis_iUnion_of_subductionStep hstep hf hG hJ hfair
+  -- Each of finitely many generators of the initial algebra lies in the algebra of leading
+  -- terms of some stage.
+  obtain ⟨t, ht⟩ := hfg
+  have hdir : Directed (· ≤ ·) fun n ↦ Algebra.adjoin k (m.leadingTerm '' G n) :=
+    Monotone.directed_le fun _ _ hab ↦ Algebra.adjoin_mono (Set.image_mono (hmono hab))
+  have hmem (x : MvPolynomial σ k) (hx : x ∈ t) :
+      ∃ n, x ∈ Algebra.adjoin k (m.leadingTerm '' G n) := by
+    have hx' : x ∈ m.initialAlgebra (Algebra.adjoin k (G 0)) := ht ▸ Algebra.subset_adjoin hx
+    rw [← hB.adjoin_leadingTerm, Set.image_iUnion, Algebra.adjoin_iUnion, ← SetLike.mem_coe,
+      Subalgebra.coe_iSup_of_directed hdir] at hx'
+    exact Set.mem_iUnion.1 hx'
+  choose! n hn using hmem
+  have hsub (i : ℕ) : G i ⊆ Algebra.adjoin k (G 0) := hA i ▸ Algebra.subset_adjoin
+  have hN : m.IsSAGBIBasis (G (t.sup n)) (Algebra.adjoin k (G 0)) := by
+    refine isSAGBIBasis_iff_initialAlgebra_le.2
+      ⟨hsub _, ht ▸ Algebra.adjoin_le fun x hx ↦ ?_⟩
+    exact Algebra.adjoin_mono (Set.image_mono (hmono (Finset.le_sup hx))) (hn x hx)
+  refine ⟨t.sup n, hN, fun i hi ↦ ?_⟩
+  induction i, hi using Nat.le_induction with
+  | base => rfl
+  | succ i hi ih =>
+    rw [(hstep i).eq_of_isSAGBIBasis (hN.mono (hmono hi) (hsub i))
+      (hA i ▸ hf i), ih]
+
+end Run
+
+end SingleStep
 
 section SubductionRetract
 
@@ -373,8 +651,7 @@ private theorem exists_stage_aeval_eq_support_lt (h : m.IsFairSAGBISequence c)
         Finsupp.linearCombination ℕ a p.val.1 := by
     obtain ⟨N, -, M, hNM, Q, r, hs, hr⟩ := hfair p.val p.property
     have huv : Finsupp.linearCombination ℕ a p.val.1 = Finsupp.linearCombination ℕ a p.val.2 :=
-      (TauCeti.monomial_sub_monomial_mem_toricIdeal_iff (R := k)).1
-        (hS ▸ Ideal.subset_span ⟨p.val, p.property, rfl⟩)
+      TauCeti.linearCombination_eq_of_toricIdeal_eq_span hS' p
     obtain ⟨Q', hQ'c, hQ'lt⟩ := h.exists_aeval_eq_support_lt_of_isSubduction hNM huv hs hr
     exact ⟨M, Q', hQ'c, hQ'lt⟩
   choose Mfn Qfn hQfnc hQfnlt using hsub
