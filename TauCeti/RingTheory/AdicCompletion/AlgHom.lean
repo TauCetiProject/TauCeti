@@ -26,10 +26,10 @@ send `G` into `J` are congruent modulo every power `J ^ n`, hence equal.
 ## Main definitions and results
 
 * `AdicCompletion.factor_evalₐ`: the projections `evalₐ I n` are compatible with the transition
-  maps `S ⧸ I ^ n → S ⧸ I ^ m`.
+  maps `S ⧸ I ^ n → S ⧸ I ^ m`; in terms of representatives, `AdicCompletion.evalₐ_eq_mk_of_le`.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
-  `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`, and the functoriality laws
-  `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
+  `AdicCompletion.evalₐ_mapₐ`, `AdicCompletion.mapₐ_of`, `AdicCompletion.mapₐ_congr`, and the
+  functoriality laws `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
 * `AdicCompletion.mapₐ_injective` and `AdicCompletion.mapₐ_bijective`: the map of completions is
   injective, resp. bijective, when all the maps `S ⧸ I ^ n → S' ⧸ I' ^ n` are. For instance a
   ring whose quotients by the powers of `I` agree with those of an `I'`-adically complete ring
@@ -57,6 +57,12 @@ theorem factor_evalₐ {m n : ℕ} (hle : m ≤ n) (x : AdicCompletion I S) :
     Ideal.Quotient.factor (Ideal.pow_le_pow_right hle) (evalₐ I n x) = evalₐ I m x := by
   obtain ⟨c, rfl⟩ := mk_surjective I S x
   simp [AdicCompletion.Ideal.mk_eq_mk I hle]
+
+/-- If the projection of `x` to `S ⧸ I ^ n` is the class of `a`, then so is its projection to
+`S ⧸ I ^ m` for every `m ≤ n`. -/
+theorem evalₐ_eq_mk_of_le {m n : ℕ} (hle : m ≤ n) {x : AdicCompletion I S} {a : S}
+    (h : evalₐ I n x = Ideal.Quotient.mk _ a) : evalₐ I m x = Ideal.Quotient.mk _ a := by
+  rw [← factor_evalₐ hle x, h, Ideal.Quotient.factor_mk]
 
 private theorem mapₐ_aux (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) {m n : ℕ} (hle : m ≤ n) :
     (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right hle)).comp
@@ -94,6 +100,18 @@ theorem evalₐ_mapₐ (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) (n : ℕ) (x
 theorem mapₐ_of (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) (x : S) :
     mapₐ f hf (of I S x) = of I' S' (f x) :=
   ext_evalₐ fun n ↦ by simp
+
+omit [CommRing R] [Algebra R S] [Algebra R S'] in
+/-- Pointwise-equal algebra homomorphisms (possibly over distinct base rings `R₁` and `R₂`) induce
+the same map on adic completions. -/
+theorem mapₐ_congr {R₁ R₂ : Type*} [CommRing R₁] [CommRing R₂] [Algebra R₁ S] [Algebra R₁ S']
+    [Algebra R₂ S] [Algebra R₂ S'] {f₁ : S →ₐ[R₁] S'} {f₂ : S →ₐ[R₂] S'}
+    {hf₁ : I ≤ I'.comap f₁} {hf₂ : I ≤ I'.comap f₂} (h : ∀ s, f₁ s = f₂ s)
+    (x : AdicCompletion I S) :
+    mapₐ f₁ hf₁ x = mapₐ f₂ hf₂ x :=
+  ext_evalₐ fun n ↦ by
+    obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (evalₐ I n x)
+    simp [← hs, h s]
 
 /-- The map of completions is injective if every map `S ⧸ I ^ n → S' ⧸ I' ^ n` induced by `f` is
 injective. -/

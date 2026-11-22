@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.CauchyKernel
 import TauCeti.Analysis.Complex.Pompeiu.Parameter
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -18,7 +17,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 The Cauchy transform gives a right inverse for `bar∂` on compactly supported `Cⁿ`
 functions into a complex Banach space, for `n ≥ 1`. Cutting off the source inside an
-open disc gives a solution on any smaller closed disc, hence near any specified point of an open
+open set gives a solution on any compact subset, hence near any specified point of an open
 domain, with the same regularity.
 This supplies integrating factors for scalar Cauchy–Riemann equations.
 
@@ -36,6 +35,8 @@ dependence on some of the other variables and holomorphic dependence on the rest
 
 ## Main results
 
+* `IsCompact.exists_contDiff_conjWirtingerDeriv_apply_one_eq`: a solution of `bar∂ g = f` on a
+  compact subset of the domain of `f`.
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eventually_eq`: a local solution of
   `bar∂ g = f` near a point of the domain of `f`.
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eventually_eq_with_param`: local
@@ -69,27 +70,19 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport {f 
   ⟨cauchyTransform f, hfc.contDiff_cauchyTransform hf,
     hfc.conjWirtingerDeriv_cauchyTransform (hf.of_le (by exact_mod_cast hn))⟩
 
-/-- A `Cⁿ` source on an open disc `ball c R`, for `n ≥ 1`, admits a global `Cⁿ` function whose
-`bar∂` agrees with the source on any smaller closed disc `closedBall c r`, `0 < r < R`. -/
-theorem exists_contDiff_conjWirtingerDeriv_apply_one_eq_on_closedBall {f : ℂ → W} {c : ℂ}
-    {r R : ℝ} (hn : 1 ≤ n) (hf : ContDiffOn ℝ n f (Metric.ball c R)) (hr : 0 < r) (hrR : r < R) :
-    ∃ g : ℂ → W, ContDiff ℝ n g ∧ ∀ z ∈ Metric.closedBall c r, conjWirtingerDeriv g z 1 = f z := by
-  let χ : ContDiffBump c := ⟨r, (r + R) / 2, hr, by linarith⟩
-  have hs : tsupport χ ⊆ Metric.ball c R := by
-    rw [χ.tsupport_eq]
-    exact Metric.closedBall_subset_ball (by dsimp [χ]; linarith)
-  have hcut : ContDiff ℝ n (fun w ↦ χ w • f w) := by
-    apply contDiff_iff_contDiffAt.mpr
-    intro w
-    by_cases hw : w ∈ tsupport χ
-    · exact (χ.contDiff (n := n)).contDiffAt.smul
-        ((hf w (hs hw)).contDiffAt (Metric.isOpen_ball.mem_nhds (hs hw)))
-    · apply (contDiffAt_const (c := (0 : W))).congr_of_eventuallyEq
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.mp hw] with y hy
-      simp [hy]
-  obtain ⟨g, hg, heq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport
-    hn hcut χ.hasCompactSupport.smul_right
-  exact ⟨g, hg, fun z hz ↦ by rw [heq, χ.one_of_mem_closedBall hz, one_smul]⟩
+/-- A `Cⁿ` source on an open set `U ⊆ ℂ`, for `n ≥ 1`, admits a global `Cⁿ` function whose `bar∂`
+agrees with the source on any compact subset `K ⊆ U`. -/
+theorem _root_.IsCompact.exists_contDiff_conjWirtingerDeriv_apply_one_eq {f : ℂ → W}
+    {K U : Set ℂ} (hK : IsCompact K) (hn : 1 ≤ n) (hU : IsOpen U) (hKU : K ⊆ U)
+    (hf : ContDiffOn ℝ n f U) :
+    ∃ g : ℂ → W, ContDiff ℝ n g ∧ ∀ z ∈ K, conjWirtingerDeriv g z 1 = f z := by
+  obtain ⟨χ, hχ, -, hχK, hχc, hχU⟩ := hK.exists_contDiff_cutoff hU hKU
+  obtain ⟨g, hg, heq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport hn
+    (hf.contDiff_smul_of_tsupport_subset hU (hχ.of_le (by exact_mod_cast le_top)).contDiffOn hχU)
+    hχc.smul_right
+  refine ⟨g, hg, fun z hz ↦ ?_⟩
+  have hχz : χ z = 1 := interior_subset (hχK hz)
+  rw [heq, hχz, one_smul]
 
 /-- A `Cⁿ` source on an open domain, for `n ≥ 1`, admits a global `Cⁿ` function whose
 `bar∂` agrees with the source near any specified point of the domain. -/
@@ -97,8 +90,9 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_one_eventually_eq {f : ℂ → 
     (hn : 1 ≤ n) (hU : IsOpen U) (hf : ContDiffOn ℝ n f U) {z : ℂ} (hz : z ∈ U) :
     ∃ g : ℂ → W, ContDiff ℝ n g ∧ ∀ᶠ w in 𝓝 z, conjWirtingerDeriv g w 1 = f w := by
   obtain ⟨r, hr, hsub⟩ := Metric.mem_nhds_iff.mp (hU.mem_nhds hz)
-  obtain ⟨g, hg, heq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq_on_closedBall hn
-    (hf.mono hsub) (half_pos hr) (half_lt_self hr)
+  obtain ⟨g, hg, heq⟩ :=
+    (isCompact_closedBall z (r / 2)).exists_contDiff_conjWirtingerDeriv_apply_one_eq hn hU
+      ((Metric.closedBall_subset_ball (half_lt_self hr)).trans hsub) hf
   exact ⟨g, hg, eventually_of_mem (Metric.closedBall_mem_nhds z (half_pos hr)) heq⟩
 
 /-! ### Local solutions of `bar∂ u = f` with parameters -/

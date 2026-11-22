@@ -35,6 +35,8 @@ dimension `2l + 1` (type `Bₗ`).
 
 ## Main results
 
+* `TauCeti.SpinPolarizationData.ext_of_lineCoordinate`: polarization data are determined by their
+  three summands and the remainder coordinate.
 * `TauCeti.SpinPolarizationData.polar_W_eq_zero` and
   `TauCeti.SpinPolarizationData.polar_W'_eq_zero`: the polar form vanishes on each isotropic
   summand.
@@ -162,6 +164,26 @@ theorem pairing_separatingRight {K : Type u} [CommRing K] {V : Type v}
   apply P.pairingEquiv.injective
   ext x
   simp only [P.pairingEquiv_apply, hy x, map_zero, LinearMap.zero_apply]
+
+/-- **Polarization data are determined by their summands and remainder coordinate.** The
+decomposition and pairing equivalences are forced by their defining equations, so two
+polarizations with the same three summands agree once their remainder coordinates do. The
+coordinate itself is not forced by the summands: its negative is again a remainder coordinate. -/
+theorem ext_of_lineCoordinate {K : Type u} [CommRing K] {V : Type v}
+    [AddCommGroup V] [Module K V] {Q : QuadraticForm K V} {P P' : SpinPolarizationData Q}
+    (hW : P.W = P'.W) (hW' : P.W' = P'.W') (hline : P.line = P'.line)
+    (hcoord : ∀ z : P.line, P'.lineCoordinate ⟨z, hline ▸ z.property⟩ = P.lineCoordinate z) :
+    P = P' := by
+  revert hW hW' hline hcoord
+  obtain ⟨W, W', line, d, hd, -, -, p, hp, -, c, -, -, -, -⟩ := P
+  obtain ⟨_, _, _, d', hd', -, -, p', hp', -, c', -, -, -, -⟩ := P'
+  intro hW hW' hline hcoord
+  dsimp only at hW hW' hline hcoord
+  subst hW hW' hline
+  obtain rfl : d = d' := LinearEquiv.ext fun x ↦ by rw [hd, hd']
+  obtain rfl : p = p' := LinearEquiv.ext fun y ↦ LinearMap.ext fun x ↦ by rw [hp, hp']
+  obtain rfl : c = c' := LinearMap.ext fun z ↦ (hcoord z).symm
+  rfl
 
 section Isotropic
 
