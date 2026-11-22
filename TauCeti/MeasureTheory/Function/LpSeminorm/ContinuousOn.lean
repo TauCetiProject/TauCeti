@@ -23,6 +23,9 @@ of `Continuous.memLp_top_of_hasCompactSupport`.
 When `μ` is finite on compact sets and concentrated a.e. on `s`, `f` lies in every `Lᵖ(μ)`
 (`ContinuousOn.memLp_of_subset_isCompact_of_ae_mem`, `ContinuousOn.memLp_of_isCompact_support`).
 
+Without compactness, a function continuous on a measurable set `s` and bounded there lies in
+`L^∞(μ.restrict s)` (`ContinuousOn.memLp_top_restrict_of_bound`).
+
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
 (`MeasureTheory.MemLp.clm_comp_of_continuousOn`, Hölder's inequality
@@ -71,6 +74,13 @@ theorem ContinuousOn.memLp_of_isCompact_support {f : X → E} {μ : Measure X}
     [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞} (hf : ContinuousOn f μ.support)
     (hK : IsCompact μ.support) (hμ : μ.support ∈ ae μ) : MemLp f p μ :=
   hf.memLp_of_subset_isCompact_of_ae_mem hK Measure.isClosed_support.measurableSet .rfl hμ
+
+/-- A function continuous and bounded on a measurable set `s` is essentially bounded on `s`. -/
+theorem ContinuousOn.memLp_top_restrict_of_bound [SecondCountableTopologyEither X E] {f : X → E}
+    {s : Set X} {μ : Measure X} (hf : ContinuousOn f s) (hs : MeasurableSet s) (C : ℝ)
+    (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : MemLp f ∞ (μ.restrict s) :=
+  memLp_top_of_bound_eNorm (hf.aestronglyMeasurable hs) C.toNNReal <| (ae_restrict_iff' hs).2 <|
+    .of_forall fun x hx ↦ (ofReal_norm (f x)).symm.trans_le (ENNReal.ofReal_le_ofReal (hC x hx))
 
 omit [OpensMeasurableSpace X] in
 /-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous

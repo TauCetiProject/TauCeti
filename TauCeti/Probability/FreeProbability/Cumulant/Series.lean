@@ -276,6 +276,15 @@ theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [
   rw [card_univ, Fintype.card_fin] at ha hb
   rw [coeff_momentSeries, coeff_momentSeries, ha, hb, h]
 
+/-- For a normalised `φ`, the free cumulant series of `1` is `1 + X`. -/
+@[simp]
+theorem freeCumulantSeries_one (hφ : φ 1 = 1) :
+    freeCumulantSeries φ (1 : A) = 1 + X := by
+  refine (eq_freeCumulantSeries_of_subst_eq (1 : A) hφ ?_).symm
+  have hX : HasSubst (X * momentSeries φ (1 : A)) := .of_constantCoeff_zero' (by simp)
+  rw [subst_add hX, subst_one, subst_X hX]
+  ext (_ | n) <;> simp [hφ, coeff_succ_X_mul]
+
 end Monoid
 
 /-- Mapping the free cumulant series by a ring homomorphism gives that of `g ∘ φ`. -/
