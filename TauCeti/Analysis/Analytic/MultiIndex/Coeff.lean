@@ -317,7 +317,14 @@ theorem hasSum_monomial_shift_single {𝕜 ι F : Type*} [CommMonoid 𝕜] [Fint
   · have hi : α i < m := by
       by_contra! hmi
       rw [hrange] at hα
-      exact hα (update_le_iff.2 ⟨hmi, fun j _ ↦ Nat.zero_le (α j)⟩)
+      have hle : Pi.single i m ≤ α := by
+        intro j
+        by_cases hji : j = i
+        · subst j
+          simpa only [Pi.single_eq_same] using hmi
+        · rw [Pi.single_eq_of_ne hji]
+          exact Nat.zero_le (α j)
+      exact hα hle
     simp [hzero α hi]
   · refine (h.const_smul (y i ^ m)).congr_fun fun α ↦ ?_
     have hs : ∏ j, y j ^ s j = y i ^ m := Fintype.prod_pow_pi_single y i m

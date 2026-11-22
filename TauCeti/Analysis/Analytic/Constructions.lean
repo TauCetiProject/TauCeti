@@ -24,9 +24,8 @@ Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analy
 `ζ ↦ Sum.elim x (fun _ ↦ ζ)` fixing the first block (`TauCeti.analyticAt_sumElim_const`).
 An updated finite family is analytic within a set exactly when its replacement and its retained
 components are analytic there (`TauCeti.analyticWithinAt_update_iff`), with the analogous pointwise
-criterion `TauCeti.analyticAt_update_iff`. In particular, replacing one component of an analytic
-family by another analytic function preserves analyticity within a set, at a point, or near a set
-(`AnalyticWithinAt.update`, `AnalyticAt.update`, `AnalyticOnNhd.update`).
+criterion `TauCeti.analyticAt_update_iff`. The component replacement rules are
+`AnalyticWithinAt.update`, `AnalyticAt.update`, `AnalyticOn.update`, and `AnalyticOnNhd.update`.
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`), and
@@ -128,6 +127,13 @@ theorem AnalyticAt.update (hf : AnalyticAt 𝕜 f x) (hg : AnalyticAt 𝕜 g x) 
     AnalyticAt 𝕜 (fun z ↦ Function.update (f z) i (g z)) x := by
   simpa only [analyticWithinAt_univ] using
     (hf.analyticWithinAt (s := Set.univ)).update hg.analyticWithinAt
+
+/-- Updating one component of a finite family analytic on `s` by a function analytic on `s`
+preserves analyticity on `s`. -/
+protected theorem AnalyticOn.update {s : Set E} (hf : AnalyticOn 𝕜 f s)
+    (hg : AnalyticOn 𝕜 g s) :
+    AnalyticOn 𝕜 (fun z ↦ Function.update (f z) i (g z)) s :=
+  fun z hz ↦ (hf z hz).update (hg z hz)
 
 /-- Updating one component of a finite family analytic near `s` by a function analytic near `s`
 preserves analyticity near `s`. -/

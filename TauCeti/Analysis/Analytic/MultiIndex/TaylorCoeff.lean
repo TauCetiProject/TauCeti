@@ -46,8 +46,8 @@ not.
 * `AnalyticAt.exists_hasSum_mvTaylorCoeff` and `TauCeti.mvTaylorCoeff_eq_of_hasSum`: local
   normally convergent multi-index expansion on a polydisc and characterization of Taylor
   coefficients by such an expansion.
-* `AnalyticAt.mvTaylorCoeff_comp_update_same`: for a function analytic at `x`, fixing a
-  coordinate at `x` retains exactly the coefficients with exponent zero in that coordinate.
+* `AnalyticAt.mvTaylorCoeff_comp_update`: fixing a coordinate at any value retains exactly the
+  coefficients with exponent zero in that coordinate, based at the updated center.
 * `TauCeti.mvTaylorCoeff_prod_pow_smul`, `TauCeti.mvTaylorCoeff_prod_pow`,
   `TauCeti.mvTaylorCoeff_prod_sub_pow_smul`, `TauCeti.mvTaylorCoeff_prod_sub_pow`, and
   `TauCeti.mvTaylorCoeff_apply`: Taylor coefficients of monomials and coordinate projections.
@@ -379,14 +379,14 @@ theorem mvTaylorCoeff_eq_of_hasSum {f : (ι → 𝕜) → F} {x : ι → 𝕜}
   obtain ⟨p, hp, hpc⟩ := exists_hasFPowerSeriesOnBall_of_hasSum hρ hsum h
   rw [hp.mvTaylorCoeff_eq, hpc]
 
-/-- For a function analytic at `x`, fixing a coordinate at its value at `x` keeps precisely the
-Taylor coefficients whose exponent in that coordinate is zero. -/
+/-- Fixing a coordinate at `ζ` keeps precisely the Taylor coefficients at the updated center
+whose exponent in that coordinate is zero. Analyticity is needed only at the updated center. -/
 @[simp]
-theorem _root_.AnalyticAt.mvTaylorCoeff_comp_update_same [DecidableEq ι]
-    {f : (ι → 𝕜) → F} {x : ι → 𝕜} (hf : AnalyticAt 𝕜 f x) (i : ι)
-    (α : ι → ℕ) :
-    TauCeti.mvTaylorCoeff (fun z ↦ f (Function.update z i (x i))) x α =
-      if α i = 0 then TauCeti.mvTaylorCoeff f x α else 0 := by
+theorem _root_.AnalyticAt.mvTaylorCoeff_comp_update [DecidableEq ι]
+    {f : (ι → 𝕜) → F} {x : ι → 𝕜} {i : ι} {ζ : 𝕜}
+    (hf : AnalyticAt 𝕜 f (Function.update x i ζ)) (α : ι → ℕ) :
+    TauCeti.mvTaylorCoeff (fun z ↦ f (Function.update z i ζ)) x α =
+      if α i = 0 then TauCeti.mvTaylorCoeff f (Function.update x i ζ) α else 0 := by
   obtain ⟨r, hr, hc, hsum⟩ := hf.exists_hasSum_mvTaylorCoeff
   apply TauCeti.mvTaylorCoeff_eq_of_hasSum hr (ρ := r) ?_ ?_ α
   · refine Summable.of_nonneg_of_le (fun _ ↦ by positivity) (fun β ↦ ?_) hc
@@ -397,9 +397,9 @@ theorem _root_.AnalyticAt.mvTaylorCoeff_comp_update_same [DecidableEq ι]
       simp_rw [Function.apply_update (fun _ (v : 𝕜) ↦ ‖v‖), norm_zero]
       exact (Function.forall_update_iff (fun j ↦ ‖y j‖) (fun _ n ↦ n ≤ ‖y‖)).2
         ⟨norm_nonneg y, fun j _ ↦ norm_le_pi_norm y j⟩
-    have hupdate : x + Function.update y i 0 = Function.update (x + y) i (x i) := by
-      simpa only [add_zero, Function.update_eq_self] using
-        (Function.update_add x y i (x i) 0).symm
+    have hupdate : Function.update x i ζ + Function.update y i 0 =
+        Function.update (x + y) i ζ := by
+      simpa only [add_zero] using (Function.update_add x y i ζ 0).symm
     rw [← hupdate]
     refine (hsum _ (hnorm.trans_lt hy)).congr_fun fun β ↦ ?_
     simp_rw [Function.apply_update (fun j (v : 𝕜) ↦ v ^ β j)]
