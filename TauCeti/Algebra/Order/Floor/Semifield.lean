@@ -43,7 +43,8 @@ a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 
 * `TauCeti.card_biUnion_Ico_ceil_div_le`: the union of these index sets over `k` intervals has at
   most `(∑ᵢ (tᵢ - sᵢ)) / τ + k` elements.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
-* `TauCeti.mem_Ico_floor_mul`: `t ∈ [⌊t / τ⌋₊ τ, (⌊t / τ⌋₊ + 1) τ)` for `τ > 0` and `t ≥ 0`.
+* `TauCeti.mem_Ico_floor_div_mul`: `t ∈ [⌊t / τ⌋₊ τ, (⌊t / τ⌋₊ + 1) τ)` for `τ > 0` and `t ≥ 0`.
+* `TauCeti.iUnion_Icc_natCast_mul`: `(⋃ n : ℕ, [n τ, (n + 1) τ]) = [0, ∞)` for `τ > 0`.
 * `TauCeti.ceil_eq_floor_or_add_one`: `⌈x⌉₊ = ⌊x⌋₊ ∨ ⌈x⌉₊ = ⌊x⌋₊ + 1`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
@@ -103,10 +104,18 @@ theorem mem_Ico_ceil_div_iff (hτ : 0 < τ) {n : ℕ} :
 
 /-- For a step `τ > 0` and `t ≥ 0`, `t` lies in the step interval
 `[⌊t / τ⌋₊ τ, (⌊t / τ⌋₊ + 1) τ)`. -/
-theorem mem_Ico_floor_mul (hτ : 0 < τ) (ht : 0 ≤ t) :
+theorem mem_Ico_floor_div_mul (hτ : 0 < τ) (ht : 0 ≤ t) :
     t ∈ Set.Ico ((⌊t / τ⌋₊ : K) * τ) (((⌊t / τ⌋₊ : K) + 1) * τ) :=
   ⟨(le_div_iff₀ hτ).1 (Nat.floor_le (div_nonneg ht hτ.le)),
     (div_lt_iff₀ hτ).1 (Nat.lt_floor_add_one _)⟩
+
+/-- For a step `τ > 0`, the closed intervals `[n τ, (n + 1) τ]` (`n : ℕ`) cover `[0, ∞)`. -/
+theorem iUnion_Icc_natCast_mul (hτ : 0 < τ) :
+    (⋃ n : ℕ, Set.Icc ((n : K) * τ) (((n : K) + 1) * τ)) = Set.Ici 0 := by
+  ext t
+  simp only [Set.mem_iUnion, Set.mem_Icc, Set.mem_Ici]
+  exact ⟨fun ⟨n, h1, _⟩ ↦ (mul_nonneg n.cast_nonneg hτ.le).trans h1,
+    fun ht ↦ ⟨⌊t / τ⌋₊, Set.Ico_subset_Icc_self (mem_Ico_floor_div_mul hτ ht)⟩⟩
 
 /-- The natural ceiling `⌈x⌉₊` equals either `⌊x⌋₊` or `⌊x⌋₊ + 1`. -/
 theorem ceil_eq_floor_or_add_one {R : Type*} [Semiring R] [LinearOrder R] [FloorSemiring R]

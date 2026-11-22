@@ -13,6 +13,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Piecewise gluing and linear/bilinear interpolation on uniform grids
@@ -122,24 +123,11 @@ theorem piecewiseStep_eq_of_mem_Icc {α : Type*} {τ : ℝ} (hτ : 0 < τ) {g : 
 theorem piecewiseStep_eventuallyEq_nhdsWithin_Ici {α : Type*} {τ : ℝ} (hτ : 0 < τ)
     (g : ℕ → ℝ → α) {t : ℝ} (ht : 0 ≤ t) :
     piecewiseStep τ g =ᶠ[𝓝[Ici t] t] g ⌊t / τ⌋₊ := by
-  have hmem : t ∈ Ico ((⌊t / τ⌋₊ : ℝ) * τ) (((⌊t / τ⌋₊ : ℝ) + 1) * τ) := mem_Ico_floor_mul hτ ht
+  have hmem : t ∈ Ico ((⌊t / τ⌋₊ : ℝ) * τ) (((⌊t / τ⌋₊ : ℝ) + 1) * τ) :=
+    mem_Ico_floor_div_mul hτ ht
   filter_upwards [mem_nhdsWithin.2 ⟨Iio (((⌊t / τ⌋₊ : ℝ) + 1) * τ), isOpen_Iio, hmem.2,
     Subset.rfl⟩] with s hs
   exact piecewiseStep_eq_of_mem_Ico hτ g ⌊t / τ⌋₊ ⟨hmem.1.trans hs.2, hs.1⟩
-
-private theorem locallyFinite_Icc_natCast_mul {τ : ℝ} (hτ : 0 < τ) :
-    LocallyFinite fun n : ℕ ↦ Icc ((n : ℝ) * τ) (((n : ℝ) + 1) * τ) := fun t ↦
-  ⟨Iio (t + τ), Iio_mem_nhds (by linarith), (finite_lt_nat (⌊(t + τ) / τ⌋₊ + 1)).subset
-    fun n ⟨x, hx, hxt⟩ ↦ Nat.cast_lt (α := ℝ).1 <| by
-      push_cast
-      exact ((lt_div_iff₀ hτ).2 (hx.1.trans_lt hxt)).trans (Nat.lt_floor_add_one _)⟩
-
-private theorem iUnion_Icc_natCast_mul {τ : ℝ} (hτ : 0 < τ) :
-    (⋃ n : ℕ, Icc ((n : ℝ) * τ) (((n : ℝ) + 1) * τ)) = Ici 0 := by
-  ext t
-  simp only [mem_iUnion, mem_Icc, mem_Ici]
-  exact ⟨fun ⟨n, h1, _⟩ ↦ (mul_nonneg n.cast_nonneg hτ.le).trans h1,
-    fun ht ↦ ⟨⌊t / τ⌋₊, Ico_subset_Icc_self (mem_Ico_floor_mul hτ ht)⟩⟩
 
 /-- A `piecewiseStep` function whose pieces are continuous on `[n τ, (n + 1) τ]` and match at the
 grid points is continuous on `[0, ∞)`. -/
@@ -189,13 +177,13 @@ theorem stepWeight_natCast_mul {τ : ℝ} (hτ : τ ≠ 0) (n : ℕ) :
 
 /-- At the right endpoint `(n + 1) * τ`, `stepWeight τ n` vanishes. -/
 @[simp]
-theorem stepWeight_add_one_mul (τ : ℝ) (n : ℕ) :
+theorem stepWeight_natCast_add_one_mul_eq_zero (τ : ℝ) (n : ℕ) :
     stepWeight τ n (((n : ℝ) + 1) * τ) = 0 := by
   simp [stepWeight_def]
 
 /-- At `(n + 1) * τ` (with `τ ≠ 0`), the next cell's weight `stepWeight τ (n + 1)` equals `1`. -/
 @[simp]
-theorem stepWeight_succ_mul {τ : ℝ} (hτ : τ ≠ 0) (n : ℕ) :
+theorem stepWeight_succ_natCast_add_one_mul {τ : ℝ} (hτ : τ ≠ 0) (n : ℕ) :
     stepWeight τ (n + 1) (((n : ℝ) + 1) * τ) = 1 := by
   simpa [Nat.cast_add, Nat.cast_one] using stepWeight_natCast_mul hτ (n + 1)
 
@@ -221,7 +209,7 @@ theorem stepWeight_mem_Icc_of_mem_Icc {τ t : ℝ} (hτ : 0 < τ) {n : ℕ}
 /-- For `τ > 0` and `t ≥ 0`, the active cell weight `stepWeight τ ⌊t / τ⌋₊ t` lies in `[0, 1]`. -/
 theorem stepWeight_floor_mem_Icc {τ t : ℝ} (hτ : 0 < τ) (ht : 0 ≤ t) :
     stepWeight τ ⌊t / τ⌋₊ t ∈ Icc (0 : ℝ) 1 :=
-  stepWeight_mem_Icc_of_mem_Icc hτ (Ico_subset_Icc_self (mem_Ico_floor_mul hτ ht))
+  stepWeight_mem_Icc_of_mem_Icc hτ (Ico_subset_Icc_self (mem_Ico_floor_div_mul hτ ht))
 
 /-- `stepWeight τ n` is continuous on `ℝ`. -/
 @[fun_prop]
@@ -598,7 +586,9 @@ theorem hasDerivWithinAt_gridBilinearInterpolant_diag {τ η : ℝ} (hτ : 0 < �
       (Ici t) t := by
   have hdiag : (fun u ↦ gridBilinearInterpolant τ η a u u) =
       piecewiseStep η fun k u ↦ stepWeight η k u • gridLinearInterpolant τ (a · k) u +
-        (1 - stepWeight η k u) • gridLinearInterpolant τ (a · (k + 1)) u := rfl
+        (1 - stepWeight η k u) • gridLinearInterpolant τ (a · (k + 1)) u := by
+    funext u
+    rw [gridBilinearInterpolant_def, gridLinearInterpolant, piecewiseStep_def, piecewiseStep_def]
   rw [hdiag, hasDerivWithinAt_piecewiseStep_iff hη ht]
   have hd1 := ((hasDerivAt_stepWeight η ⌊t / η⌋₊ t).hasDerivWithinAt).smul
     (hasDerivWithinAt_gridLinearInterpolant hτ (a · ⌊t / η⌋₊) ht)

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Analysis.Convex.Function
 public import TauCeti.Analysis.Convex.Sequence.Basic
 import Mathlib.Tactic.Linarith
+import TauCeti.Analysis.Calculus.GridInterpolation
 
 /-!
 # Piecewise-affine interpolation of height sequences
@@ -56,28 +57,30 @@ it is the affine function through `(n, f n)` and `(n + 1, f (n + 1))`. At negati
 arguments it continues the first edge affinely, so only its values on `[0, ∞)` are
 determined by the graph of `f`. -/
 noncomputable def linearInterpolate (f : ℕ → ℝ) (x : ℝ) : ℝ :=
-  f ⌊x⌋₊ + (x - ⌊x⌋₊) * (f (⌊x⌋₊ + 1) - f ⌊x⌋₊)
+  gridLinearInterpolant 1 f x
 
 /-- The interpolation at `x` is computed on the unit interval starting at `⌊x⌋₊`. -/
 theorem linearInterpolate_def (f : ℕ → ℝ) (x : ℝ) :
-    linearInterpolate f x = f ⌊x⌋₊ + (x - ⌊x⌋₊) * (f (⌊x⌋₊ + 1) - f ⌊x⌋₊) := (rfl)
+    linearInterpolate f x = f ⌊x⌋₊ + (x - ⌊x⌋₊) * (f (⌊x⌋₊ + 1) - f ⌊x⌋₊) := by
+  simp only [linearInterpolate, gridLinearInterpolant_def, stepWeight_def, div_one, smul_eq_mul,
+    mul_one]
+  ring
 
 /-- The interpolation recovers the sequence at natural numbers. -/
 @[simp]
 theorem linearInterpolate_natCast (f : ℕ → ℝ) (n : ℕ) : linearInterpolate f n = f n := by
-  simp [linearInterpolate_def]
+  rw [linearInterpolate]
+  simpa only [mul_one] using gridLinearInterpolant_natCast_mul (τ := 1) one_ne_zero f n
 
 /-- On the closed unit interval `[n, n + 1]` the interpolation is the affine function
 through the two endpoint values, including at the right endpoint. -/
 theorem linearInterpolate_of_mem_Icc (f : ℕ → ℝ) {n : ℕ} {x : ℝ}
     (hx : x ∈ Icc (n : ℝ) (n + 1)) :
     linearInterpolate f x = f n + (x - n) * (f (n + 1) - f n) := by
-  rcases hx.2.lt_or_eq with hlt | rfl
-  · rw [linearInterpolate_def,
-      (Nat.floor_eq_iff ((Nat.cast_nonneg n).trans hx.1)).2 ⟨hx.1, hlt⟩]
-  · rw [← Nat.cast_succ, linearInterpolate_natCast]
-    push_cast
-    ring
+  have hx' : x ∈ Icc ((n : ℝ) * 1) (((n : ℝ) + 1) * 1) := by simpa only [mul_one] using hx
+  rw [linearInterpolate, gridLinearInterpolant_eq_of_mem_Icc one_pos f n hx']
+  simp only [stepWeight_def, mul_one, div_one, smul_eq_mul]
+  ring
 
 /-- The interpolation of an affine sequence is the same affine function on all of `ℝ`. -/
 @[simp]

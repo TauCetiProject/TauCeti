@@ -79,6 +79,8 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
 * `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
   it has a first exit time.
+* `TauCeti.locallyFinite_Icc_natCast_mul` — the intervals `[n τ, (n + 1) τ]` (`n : ℕ`) form a
+  locally finite family for `τ > 0`.
 -/
 
 public section
@@ -438,5 +440,16 @@ theorem _root_.ContinuousOn.image_Iio_eq_Ioi_of_tendsto {α β : Type*}
     (hcont : ContinuousOn d (Iio p)) (hpos : ∀ x ∈ Iio p, v < d x)
     (hbot : Tendsto d atBot (𝓝 v)) (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
   ContinuousOn.image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
+
+/-- For `τ > 0` in an Archimedean ordered division semiring with the order topology, the closed
+grid intervals `[n τ, (n + 1) τ]` (`n : ℕ`) form a locally finite family. -/
+theorem locallyFinite_Icc_natCast_mul {K : Type*} [DivisionSemiring K] [LinearOrder K]
+    [IsStrictOrderedRing K] [TopologicalSpace K] [OrderTopology K] [Archimedean K]
+    {τ : K} (hτ : 0 < τ) :
+    LocallyFinite fun n : ℕ ↦ Icc ((n : K) * τ) (((n : K) + 1) * τ) := fun t ↦
+  let ⟨N, hN⟩ := exists_nat_gt ((t + τ) / τ)
+  ⟨Iio (t + τ), Iio_mem_nhds (lt_add_of_pos_right t hτ), (finite_lt_nat N).subset
+    fun _ ⟨_, hx, hxt⟩ ↦
+      Nat.cast_lt (α := K).1 <| ((lt_div_iff₀ hτ).2 (hx.1.trans_lt hxt)).trans hN⟩
 
 end TauCeti
