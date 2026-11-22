@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes.Basic
-public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 
 /-!
 # Barnes's integral for Euler's hypergeometric integral

@@ -98,23 +98,22 @@ two. -/
 theorem morseBoundary_morseBoundary_single_apply (p r : criticalPoints 𝓘(ℝ, E) f) :
     h.morseBoundary hf (h.morseBoundary hf (Finsupp.single p 1)) r =
       ((hX.morseBrokenTrajectorySet p r).ncard : ZMod 2) := by
-  classical
   have := hf.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f)
-  -- Sort the broken trajectories by their intermediate critical point `q`.
-  rw [morseBrokenTrajectorySet, ncard_setOf_and_and_mem_and_mem <|
-      finite_setOf_and_and_mem_and_mem (fun _ ↦ h.finite_morseTrajectorySlice hf)
-        fun _ ↦ h.finite_morseTrajectorySlice hf,
-    Nat.cast_sum, Finset.sum_filter, morseBoundary_apply,
-    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
-  refine Finset.sum_congr rfl fun q _ ↦ ?_
-  rw [morseBoundary_single_apply, one_mul]
-  split_ifs with hind
-  · rw [h.morseBoundaryCoeff_eq_ncard hf hind.1, h.morseBoundaryCoeff_eq_ncard hf hind.2,
-      Nat.cast_mul]
-  · rcases not_and_or.mp hind with hpq | hqr
-    · simp [hpq]
-    · simp [hqr]
+  rw [morseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _, morseBrokenTrajectorySet]
+  -- Sort the broken trajectories by their intermediate critical point `q`. The index conditions
+  -- and slice families are named because unification cannot read them off the finiteness proof.
+  refine (natCast_ncard_setOf_and_and_mem_and_mem
+    (P := fun q : criticalPoints 𝓘(ℝ, E) f ↦
+      manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
+    (Q := fun q ↦ manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
+    (A := (hX.morseTrajectorySlice p ·)) (B := (hX.morseTrajectorySlice · r)) (fun q hind ↦ ?_)
+    (fun q hind ↦ ?_) (fun _ ↦ h.morseBoundaryCoeff_eq_ncard hf)
+    (fun _ ↦ h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf)
+    (h.finite_morseBrokenTrajectorySet hf p r)).symm
+  · rw [morseBoundary_single_apply, one_mul, h.morseBoundaryCoeff_eq_ncard hf hind]
+  · rw [morseBoundary_single_apply, one_mul,
+      h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf hind]
 
 /-- **`∂² = 0` reduces to counting broken trajectories.** The mod-two Morse boundary squares to
 zero exactly when, between any two critical points, the number of broken index-two trajectories

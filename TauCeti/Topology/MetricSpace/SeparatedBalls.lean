@@ -20,8 +20,10 @@ over the roots of a polynomial.
 
 ## Main declarations
 
-* `TauCeti.exists_pos_closedBall_subset_and_lt_dist`: a common radius that is small enough for
+* `TauCeti.eventually_closedBall_subset_and_lt_dist`: every small enough common radius works for
   every centre at once.
+* `TauCeti.exists_pos_closedBall_subset_and_lt_dist`: a positive common radius that is small
+  enough for every centre at once.
 * `TauCeti.eq_of_dist_lt_of_dist_lt`: two such centres within the radius of a common point
   coincide.
 * `TauCeti.mem_and_apply_eq_of_surjOn_of_dist_lt`: a map moving the points of a separated set
@@ -37,19 +39,30 @@ namespace TauCeti
 
 variable {X : Type*} [MetricSpace X]
 
+/-- Around finitely many points, closed balls of every small enough common radius lie in
+prescribed neighbourhoods of their centres and are pairwise far apart: twice the radius is less
+than the distance between any two distinct centres. -/
+theorem eventually_closedBall_subset_and_lt_dist {T : Set X} (hT : T.Finite) {U : X → Set X}
+    (hU : ∀ w ∈ T, U w ∈ 𝓝 w) :
+    ∀ᶠ r in 𝓝 (0 : ℝ), (∀ w ∈ T, closedBall w r ⊆ U w) ∧
+      ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' := by
+  have h1 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, closedBall w r ⊆ U w :=
+    (eventually_all_finite hT).2 fun w hw => eventually_closedBall_subset (hU w hw)
+  have h2 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' :=
+    (eventually_all_finite hT).2 fun w _ => (eventually_all_finite hT).2 fun w' _ =>
+      eventually_imp_distrib_left.2 fun hww =>
+        (eventually_lt_nhds (half_pos (dist_pos.2 hww))).mono fun _ _ => by linarith
+  exact h1.and h2
+
 /-- Around finitely many points, closed balls of a small enough common radius lie in prescribed
 neighbourhoods of their centres and are pairwise far apart: twice the radius is less than the
 distance between any two distinct centres. -/
 theorem exists_pos_closedBall_subset_and_lt_dist {T : Finset X} {U : X → Set X}
     (hU : ∀ w ∈ T, U w ∈ 𝓝 w) :
-    ∃ r > 0, (∀ w ∈ T, closedBall w r ⊆ U w) ∧ ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' := by
-  have h1 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, closedBall w r ⊆ U w :=
-    (eventually_all_finset T).2 fun w hw => eventually_closedBall_subset (hU w hw)
-  have h2 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' :=
-    (eventually_all_finset T).2 fun w _ => (eventually_all_finset T).2 fun w' _ =>
-      eventually_imp_distrib_left.2 fun hww =>
-        (eventually_lt_nhds (half_pos (dist_pos.2 hww))).mono fun _ _ => by linarith
-  exact (eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (h1.and h2))).exists (f := 𝓝[>] 0)
+    ∃ r > 0, (∀ w ∈ T, closedBall w r ⊆ U w) ∧ ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' :=
+  (eventually_mem_nhdsWithin.and
+    (nhdsWithin_le_nhds (eventually_closedBall_subset_and_lt_dist T.finite_toSet hU))).exists
+    (f := 𝓝[>] 0)
 
 /-- Two points that are either equal or more than `2 * r` apart are equal if both lie within `r`
 of a common point. -/

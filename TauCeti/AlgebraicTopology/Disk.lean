@@ -28,7 +28,8 @@ path-connected when the disk has
 dimension at least two, so `TopCat.sphere (n + 1)` is path-connected
 (`TauCeti.TopCat.pathConnectedSpace_sphere`).  The disk is a `T₃` space, in particular Hausdorff,
 so the inclusion of its boundary sphere is a closed embedding
-(`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
+(`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`), and every sphere `TopCat.sphere n` is
+Hausdorff and compact (`TauCeti.TopCat.t2Space_sphere`, `TauCeti.TopCat.compactSpace_sphere`).
 This module also constructs the standard `TopPair` consisting of a disk and its boundary, providing
 the topological input for relative-homology calculations. A map out of the boundary sphere is
 null-homotopic exactly when it extends over the disk
@@ -343,6 +344,14 @@ instance t2Space_diskBoundary (n : ℕ) : T2Space (TopCat.diskBoundary.{u} n) :=
 instance compactSpace_diskBoundary (n : ℕ) : CompactSpace (TopCat.diskBoundary.{u} n) :=
   -- Expose the carrier once here, so consumers need not unfold the `TopCat` wrapper.
   inferInstanceAs (CompactSpace (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
+
+/-- The `n`-sphere is Hausdorff, being the boundary of the `(n + 1)`-disk. -/
+instance t2Space_sphere (n : ℕ) : T2Space (TopCat.sphere.{u} n) :=
+  inferInstanceAs (T2Space (TopCat.diskBoundary.{u} (n + 1)))
+
+/-- The `n`-sphere is compact, being the boundary of the `(n + 1)`-disk. -/
+instance compactSpace_sphere (n : ℕ) : CompactSpace (TopCat.sphere.{u} n) :=
+  inferInstanceAs (CompactSpace (TopCat.diskBoundary.{u} (n + 1)))
 
 /-- **A punctured boundary sphere is contractible**: removing a single point from
 `TopCat.diskBoundary n` leaves a contractible subspace, in every universe and every dimension. -/
