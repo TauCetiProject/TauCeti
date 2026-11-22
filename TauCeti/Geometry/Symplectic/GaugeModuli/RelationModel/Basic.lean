@@ -348,6 +348,7 @@ theorem eq_bot_or_eq_top_of_invariant_relationSet {r : ℕ} {ζ : ℂ}
     (hV : ∀ j, (∀ v ∈ V, Matrix.toLin' ((x j).1 : Matrix (Fin r) (Fin r) ℂ) v ∈ V) ∧
       (∀ v ∈ V, Matrix.toLin' ((x j).2 : Matrix (Fin r) (Fin r) ℂ) v ∈ V)) :
     V = ⊥ ∨ V = ⊤ := by
+  -- Step 1: Promote invariant `SU(r)` elements into `MulAction.stabilizer GL(ℂ^r) V`.
   let toStab (A : Matrix.specialUnitaryGroup (Fin r) ℂ)
       (hA : ∀ v ∈ V, Matrix.toLin' (A : Matrix (Fin r) (Fin r) ℂ) v ∈ V) :
       MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V :=
@@ -356,9 +357,10 @@ theorem eq_bot_or_eq_top_of_invariant_relationSet {r : ℕ} {ζ : ℂ}
       refine Submodule.eq_of_le_of_finrank_eq
         (Submodule.map_le_iff_le_comap.mpr fun v hv => ?_)
         (LinearEquiv.finrank_map_eq (Matrix.SpecialLinearGroup.toLin' (toSL A)) V)
-      change (Matrix.SpecialLinearGroup.toLin' (toSL A)) v ∈ V
-      rw [Matrix.SpecialLinearGroup.toLin'_apply, coe_toSL]
-      exact hA v hv⟩
+      rw [Submodule.mem_comap]
+      simpa [Matrix.SpecialLinearGroup.toLin'_apply] using hA v hv⟩
+  -- Step 2: Form the commutator product `P ∈ stabilizer V`; its restricted determinant is `1`
+  -- because `ℂˣ` is abelian.
   let detRes : MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V →* ℂˣ :=
     LinearEquiv.det.comp (LinearEquiv.restrictSubmodule V)
   let P : MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V :=
@@ -370,33 +372,25 @@ theorem eq_bot_or_eq_top_of_invariant_relationSet {r : ℕ} {ζ : ℂ}
       rw [map_list_prod, List.map_ofFn]
       simp [Function.comp_def, hc]
     simp [hP]
+  -- Step 3: Using `hx`, identify `P` on `ℂ^r` (and hence its restriction to `V`) with `ζ • 1`.
   have hPval : ((P : (Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) : (Fin r → ℂ) →ₗ[ℂ] (Fin r → ℂ)) =
       ζ • 1 := by
     let φ : Matrix.specialUnitaryGroup (Fin r) ℂ →* ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) :=
       Matrix.SpecialLinearGroup.toLin'.comp toSL
     have hsub : (P : (Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) =
         φ (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod := by
-      let stSub := (MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V).subtype
-      change stSub P = _
-      rw [map_list_prod, map_list_prod, List.map_ofFn, List.map_ofFn]
+      rw [← Subgroup.coe_subtype, map_list_prod, map_list_prod, List.map_ofFn, List.map_ofFn]
       exact congrArg List.prod <| congrArg List.ofFn <| funext fun j =>
-        (map_commutatorElement stSub _ _).trans (map_commutatorElement φ _ _).symm
+        (map_commutatorElement _ _ _).trans (map_commutatorElement φ _ _).symm
     rw [hsub]
     refine LinearMap.ext fun v => ?_
-    have hprod : ((φ (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod :
-        (Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) : (Fin r → ℂ) →ₗ[ℂ] (Fin r → ℂ)) v =
-        Matrix.toLin' (((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod :
-          Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) v := by
-      simp [φ, Matrix.SpecialLinearGroup.toLin'_apply]
-    change ((φ (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod :
-        (Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) : (Fin r → ℂ) →ₗ[ℂ] (Fin r → ℂ)) v =
-      (ζ • (1 : (Fin r → ℂ) →ₗ[ℂ] (Fin r → ℂ))) v
-    rw [hprod, mem_relationSet_iff.mp hx]
-    simp
+    simp [φ, Matrix.SpecialLinearGroup.toLin'_apply, mem_relationSet_iff.mp hx]
   have hsmul : (LinearEquiv.restrictSubmodule V P : V →ₗ[ℂ] V) = ζ • 1 := by
     rw [LinearEquiv.toLinearMap_restrictSubmodule]
     simp_rw [hPval]
     exact LinearMap.restrict_smul_one ζ
+  -- Step 4: Taking determinants on `V` gives `ζ ^ dim V = 1`, so `r ∣ dim V`, forcing `V = ⊥` or
+  -- `V = ⊤`.
   have hpow : ζ ^ Module.finrank ℂ V = 1 := by
     dsimp only [detRes] at hdetP
     rw [MonoidHom.comp_apply, LinearEquiv.coe_det, hsmul, LinearMap.det_smul] at hdetP
@@ -557,7 +551,7 @@ empty. -/
 theorem isEmpty_relationModuli_zero {r : ℕ} (hr : 2 ≤ r) {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
     IsEmpty (relationModuli r ζ 0) := by
   have : IsEmpty (relationSet r ζ 0) := isEmpty_relationSet_zero hr hζ
-  exact ⟨fun q => Quotient.inductionOn q fun x => isEmptyElim x⟩
+  infer_instance
 
 /-- When `Fin r` is a subsingleton (`r ≤ 1`), `SU(r)` and `relationSet r ζ g` are subsingletons. -/
 instance instSubsingletonRelationSet {r : ℕ} [Subsingleton (Fin r)] (ζ : ℂ) (g : ℕ) :

@@ -225,6 +225,14 @@ theorem coe_binaryDihedralRotation_pow_self :
     ((binaryDihedralRotation n ^ n : SU2) : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
   rw [← weylElement_inv_sq_eq_binaryDihedralRotation_pow, coe_weylElement_inv_sq]
 
+/-- The rotation generator satisfies `r ^ n ≠ 1` (since `r ^ n = -1`). -/
+theorem binaryDihedralRotation_pow_self_ne_one :
+    binaryDihedralRotation n ^ n ≠ 1 := by
+  intro h
+  have hmat := congr_fun₂ (congrArg Subtype.val h) 0 0
+  rw [coe_binaryDihedralRotation_pow_self] at hmat
+  norm_num at hmat
+
 /-- Conjugation by `s` inverts the rotation generator: `s r s⁻¹ = r⁻¹`. -/
 theorem weylElement_inv_conj_binaryDihedralRotation :
     weylElement⁻¹ * binaryDihedralRotation n * weylElement = (binaryDihedralRotation n)⁻¹ := by

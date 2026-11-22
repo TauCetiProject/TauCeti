@@ -257,14 +257,6 @@ theorem rankTwoPair_mem_relationSet :
       _ = TauCeti.SU2.binaryDihedralRotation 2 ^ 2 := by rw [hconj, sq]
   rw [hcomm, TauCeti.SU2.coe_binaryDihedralRotation_pow_self, neg_one_smul]
 
-/-- The order-4 generator `binaryDihedralRotation 2` does not have square `1`. -/
-private theorem binaryDihedralRotation_two_sq_ne_one :
-    (TauCeti.SU2.binaryDihedralRotation 2 ^ 2 : TauCeti.SU2) ≠ 1 := by
-  intro hsq
-  have hmat := congr_fun₂ (congrArg Subtype.val hsq) 0 0
-  rw [TauCeti.SU2.coe_binaryDihedralRotation_pow_self] at hmat
-  exact absurd hmat (by norm_num)
-
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, the simultaneous `SU(2)`-conjugation action on
 `relationSet 2 1 g` admits non-central stabilizers (for example
 `TauCeti.SU2.binaryDihedralRotation 2` fixes the trivial tuple `1`). -/
@@ -276,7 +268,7 @@ theorem exists_notMem_center_conjAct_smul_eq_self (g : ℕ) :
     Subtype.ext (smul_one _)⟩
   rw [TauCeti.SU2.mem_center_iff]
   intro hmem
-  refine binaryDihedralRotation_two_sq_ne_one ?_
+  refine TauCeti.SU2.binaryDihedralRotation_pow_self_ne_one 2 ?_
   rcases hmem with h | h <;> exact Subtype.ext (by simp [sq, Submonoid.coe_mul, h])
 
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, `g = 1`, the moduli space `relationModuli 2 1 1`
@@ -295,7 +287,7 @@ theorem not_subsingleton_relationModuli_two_one_one : ¬ Subsingleton (relationM
       TauCeti.SU2.binaryDihedralRotation 2 :=
     congrArg Prod.fst (congrFun hu 0)
   rw [smul_one] at h0
-  refine binaryDihedralRotation_two_sq_ne_one ?_
+  refine TauCeti.SU2.binaryDihedralRotation_pow_self_ne_one 2 ?_
   rw [← h0, one_pow]
 
 end RankTwoChecks
