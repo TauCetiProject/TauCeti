@@ -116,27 +116,21 @@ omit [Fintype ι] [FiniteDimensional ℝ F] in
 covering lands, is the Thom pair of the pull-back, through the identity of the total space. -/
 private def preimageThomPairIso :
     TopPair.ofSubset (liftHom F E ι ⁻¹' zeroSectionCompl F E) ≅
-      thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) where
-  hom := TopPair.ofSubsetMap (𝟙 _) fun _ hv ↦
-    preimage_liftHom_zeroSectionCompl (F := F) (E := E) (ι := ι) ▸ hv
-  inv := TopPair.ofSubsetMap (𝟙 _) fun _ hv ↦
-    (preimage_liftHom_zeroSectionCompl (F := F) (E := E) (ι := ι)).symm ▸ hv
-  hom_inv_id := (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ hv ↦ hv)
-    (Category.id_comp _)).trans (TopPair.ofSubsetMap_id _)
-  inv_hom_id := (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ hv ↦ hv)
-    (Category.id_comp _)).trans (TopPair.ofSubsetMap_id _)
+      thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) :=
+  TopPair.ofSubsetIso (Homeomorph.refl _) fun v ↦
+    Set.ext_iff.1 (preimage_liftHom_zeroSectionCompl (F := F) (E := E) (ι := ι)) v
 
 omit [Fintype ι] [FiniteDimensional ℝ F] in
 /-- The underlying map of `preimageThomPairIso` is the identity. -/
 private theorem preimageThomPairIso_hom_fst :
     TopPair.Hom.fst (preimageThomPairIso (F := F) (E := E) (ι := ι)).hom = 𝟙 _ :=
-  TopPair.ofSubsetMap_fst _ _
+  (congrArg TopPair.Hom.fst (TopPair.ofSubsetIso_hom _ _)).trans (TopPair.ofSubsetMap_fst _ _)
 
 omit [Fintype ι] [FiniteDimensional ℝ F] in
 /-- The underlying map of the inverse of `preimageThomPairIso` is the identity. -/
 private theorem preimageThomPairIso_inv_fst :
     TopPair.Hom.fst (preimageThomPairIso (F := F) (E := E) (ι := ι)).inv = 𝟙 _ :=
-  TopPair.ofSubsetMap_fst _ _
+  (congrArg TopPair.Hom.fst (TopPair.ofSubsetIso_inv _ _)).trans (TopPair.ofSubsetMap_fst _ _)
 
 omit [Fintype ι] [FiniteDimensional ℝ F] in
 /-- The map of pairs induced by the covering is `TauCeti.pullbackThomPairMap`, read through
