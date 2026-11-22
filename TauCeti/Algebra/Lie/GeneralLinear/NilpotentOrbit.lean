@@ -88,7 +88,8 @@ theorem finrank_range_ad_sl_add_card_le (hn : (Fintype.card n : K) ≠ 0)
     finrank K (LinearMap.range (ad K (SpecialLinear.sl n K) x)) + Fintype.card n ≤
       Fintype.card n ^ 2 := by
   have h := finrank_range_ad_sl_add_sum_sq_conjugate_parts hn x hx
-  have hle := (jordanPartition (toLinAlgEquiv' (x : Matrix n n K)) hx).conjugate.le_sum_sq_parts
+  have hle :=
+    (jordanPartition (toLinAlgEquiv' (x : Matrix n n K)) hx).conjugate.le_sum_pow_parts two_ne_zero
   have hcard := Module.finrank_fintype_fun_eq_card (R := K) (η := n)
   omega
 

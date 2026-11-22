@@ -126,7 +126,7 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_le
         ((x, 1) : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)) × k)
         (Module.isUnimodular_mk_one x))) + n ≤ n * n := by
   have h := finrank_range_ad_add_sum_sq_conjugate_parts x hx
-  have hle := (End.jordanPartition _ hx).conjugate.le_sum_sq_parts
+  have hle := (End.jordanPartition _ hx).conjugate.le_sum_pow_parts two_ne_zero
   have hcard := finrank_fin_fun k (n := n)
   rw [topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad]
   norm_cast
