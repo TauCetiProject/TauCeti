@@ -17,9 +17,9 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 For a ring `k`, the simplicial singular chain complex with coefficients in `k` is the complex of
 `k`-modules whose `n`-chains are the formal `k`-combinations of singular `n`-simplices.  This file
 gives the element-level interface to it: the chain `simplexChain σ a` of a simplex with a
-coefficient, the extensionality of linear maps out of the chains (and, for integer coefficients,
-of additive maps), the linear map with prescribed values on simplices, the push-forward and the
-boundary of a simplex, the chains of points and paths (`TauCeti.pointChain`,
+coefficient, the extensionality of linear maps out of the chains (and, for coefficients in a ring
+isomorphic to `ℤ`, of additive maps), the linear map with prescribed values on simplices, the
+push-forward and the boundary of a simplex, the chains of points and paths (`TauCeti.pointChain`,
 `TauCeti.pathChain`), and the augmentation, the sum of the coefficients of a `0`-chain, natural
 and vanishing on boundaries.
 
@@ -43,7 +43,8 @@ and vanishing on boundaries.
 * `TauCeti.subsingleton_singularChains_homology_iff_of_isIso`: a homology isomorphism identifies
   the vanishing of the homology of the chains of its source and target.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
-  and additive maps out of the chains with integer coefficients, are determined on simplices.
+  and additive maps out of the chains with coefficients in a ring isomorphic to `ℤ`, are
+  determined on simplices.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
 * `TauCeti.singularAugment_map`, `TauCeti.singularAugment_d`: the augmentation is natural and
   vanishes on boundaries.
@@ -152,20 +153,28 @@ theorem chainsDesc_simplexChain_one {X : TopCat.{u}} {n : ℕ} {V : Type u} [Add
 
 end Singular
 
-/-- Additive maps out of the singular chains with integer coefficients agree when they agree on
-simplices. -/
-theorem singularChains_addMonoidHom_ext {X : TopCat.{0}} {n : ℕ} {V : Type} [AddCommGroup V]
-    {f g : ((singularChains ℤ).obj X).X n →+ V}
-    (h : ∀ s, f (simplexChain s 1) = g (simplexChain s 1)) : f = g :=
-  -- An additive map is linear for the module structure of the chains, which is only
-  -- propositionally equal to `AddCommGroup.toIntModule` (so `AddMonoidHom.toIntLinearMap` does
-  -- not apply).
-  let lin (φ : ((singularChains ℤ).obj X).X n →+ V) : ((singularChains ℤ).obj X).X n →ₗ[ℤ] V :=
-    { toFun := φ
-      map_add' := φ.map_add
-      map_smul' a c := (congrArg φ (int_smul_eq_zsmul _ a c)).trans (map_zsmul φ a c) }
-  AddMonoidHom.ext fun c ↦ LinearMap.congr_fun
-    (singularChains_linearMap_ext (L := lin f) (L' := lin g) h) c
+/-- Additive maps out of the singular chains with coefficients in a ring `R` isomorphic to `ℤ`
+agree when they agree on simplices. -/
+theorem singularChains_addMonoidHom_ext {R : Type u} [Ring R] (e : R ≃+* ℤ) {X : TopCat.{u}}
+    {n : ℕ} {V : Type*} [AddCommGroup V] {f g : ((singularChains R).obj X).X n →+ V}
+    (h : ∀ s, f (simplexChain s 1) = g (simplexChain s 1)) : f = g := by
+  -- Scalars of `R` act on the chains as the integers `e r`.
+  have hsmul (r : R) (c : ((singularChains R).obj X).X n) : r • c = e r • c := by
+    rw [← Int.cast_smul_eq_zsmul R, ← map_intCast e.symm, Int.cast_id, RingEquiv.symm_apply_apply]
+  -- So the chains on which `f` and `g` agree form an `R`-submodule, which contains the simplices.
+  let S : Submodule R (((singularChains R).obj X).X n) :=
+    { carrier := {c | f c = g c}
+      add_mem' := fun ha hb ↦ by
+        simp only [Set.mem_ofPred_eq, map_add] at ha hb ⊢
+        rw [ha, hb]
+      zero_mem' := by simp
+      smul_mem' := fun r {c} hc ↦ by
+        simp only [Set.mem_ofPred_eq] at hc ⊢
+        rw [hsmul, map_zsmul, map_zsmul, hc] }
+  have : S.mkQ = 0 := singularChains_linearMap_ext fun s ↦ by
+    rw [Submodule.mkQ_apply, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
+    exact h s
+  exact AddMonoidHom.ext fun c ↦ (Submodule.Quotient.mk_eq_zero S).1 (LinearMap.congr_fun this c)
 
 /-- The augmentation of the simplicial singular chains: the sum of the coefficients. -/
 def singularAugment (X : TopCat.{u}) : ((singularChains k).obj X).X 0 →ₗ[k] k :=
