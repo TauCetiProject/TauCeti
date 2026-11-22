@@ -215,7 +215,7 @@ private theorem exists_seq_ball_cover {W : Set (U →L[ℝ] V)} (hW : W.Nonempty
       ∀ C ∈ W, ∃ k, dist C (B k) < ρ k := by
   set G := {B : U →L[ℝ] V | Injective B}
   choose ρ hρ K hK using fun B : G =>
-    (B : U →L[ℝ] V).exists_ball_antilipschitzWith_normDet_le B.2 hτ
+    (B : U →L[ℝ] V).exists_ball_antilipschitzWith_normDet_le B.property hτ
   -- For each antilipschitz constant `K` there is a positive precision `δ` for which the factors
   -- `(1 + δ K)ᵐ` and `(1 - δ K)⁻ᵐ` of the linear area bounds are at most `τ`.
   have hδex (K : ℝ≥0) (m : ℕ) : ∃ δ : ℝ≥0, 0 < δ ∧ δ * K < 1 ∧

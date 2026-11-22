@@ -78,7 +78,7 @@ def collapseAction : G →* (T.toSerreGraph.collapse S hS).Aut where
   Aut.collapse_smul_collapseVertex hS (T.action g) _ a
 
 @[simp] theorem collapseAction_smul_val (g : G) (e : (T.toSerreGraph.collapse S hS).E) :
-    (T.collapseAction S hS hG g • e).1 = g • e.1 :=
+    (T.collapseAction S hS hG g • e).val = g • e.val :=
   Aut.collapse_smul_val hS (T.action g) _ e
 
 /-- The collapse of a `G`-tree along a `G`-invariant set of edges, given as a reversal-closed set
@@ -88,7 +88,7 @@ def collapseAction : G →* (T.toSerreGraph.collapse S hS).Aut where
   isTree := T.isTree.collapse S hS
   action := T.collapseAction S hS hG
   action_smul_ne_rev g e h :=
-    T.smul_ne_rev g e.1 ((T.collapseAction_smul_val S hS hG g e).symm.trans (congrArg (·.1) h))
+    T.smul_ne_rev g e.val ((T.collapseAction_smul_val S hS hG g e).symm.trans (congrArg (·.val) h))
 
 /-- The collapse map of a `G`-tree: the equivariant map sending a vertex to its image in the
 collapse. -/
@@ -111,19 +111,19 @@ theorem collapseHom_eq_iff {a b : T.V} :
   collapseVertex_eq_iff hS
 
 @[simp] theorem collapse_src (e : (T.collapse S hS hG).E) :
-    (T.collapse S hS hG).src e = T.collapseHom S hS hG (T.src e.1) :=
+    (T.collapse S hS hG).src e = T.collapseHom S hS hG (T.src e.val) :=
   SerreGraph.collapse_src _ S hS e
 
 @[simp] theorem collapse_tgt (e : (T.collapse S hS hG).E) :
-    (T.collapse S hS hG).tgt e = T.collapseHom S hS hG (T.tgt e.1) :=
+    (T.collapse S hS hG).tgt e = T.collapseHom S hS hG (T.tgt e.val) :=
   SerreGraph.collapse_tgt _ S hS e
 
 @[simp] theorem collapse_rev_val (e : (T.collapse S hS hG).E) :
-    ((T.collapse S hS hG).rev e).1 = T.rev e.1 := (rfl)
+    ((T.collapse S hS hG).rev e).val = T.rev e.val := (rfl)
 
 /-- The action on the darts of the collapse is the action on the darts of the tree. -/
 @[simp] theorem collapse_smul_val (g : G) (e : (T.collapse S hS hG).E) :
-    (g • e).1 = g • e.1 :=
+    (g • e).val = g • e.val :=
   T.collapseAction_smul_val S hS hG g e
 
 /-- A tree dominates each of its collapses. -/
@@ -191,17 +191,17 @@ theorem stabilizer_collapse_vertex (x : (T.collapse S hS hG).V) :
 
 /-- A dart of a collapse has the same stabilizer as in the tree. -/
 @[simp] theorem stabilizer_collapse_dart (e : (T.collapse S hS hG).E) :
-    stabilizer G e = stabilizer G e.1 := by
+    stabilizer G e = stabilizer G e.val := by
   refine Subgroup.ext fun g => ?_
   rw [mem_stabilizer_iff, mem_stabilizer_iff]
-  exact ⟨fun h => (T.collapse_smul_val S hS hG g e).symm.trans (congrArg (·.1) h),
+  exact ⟨fun h => (T.collapse_smul_val S hS hG g e).symm.trans (congrArg (·.val) h),
     fun h => Subtype.ext ((T.collapse_smul_val S hS hG g e).trans h)⟩
 
 variable {T} in
 /-- A collapse of a tree relative to families of subgroups is relative to the same families. -/
 theorem IsRelative.collapse {𝒜 ℋ : Set (Subgroup G)} (h : T.IsRelative 𝒜 ℋ) :
     (T.collapse S hS hG).IsRelative 𝒜 ℋ :=
-  isRelative_iff.mpr ⟨fun e => by rw [stabilizer_collapse_dart]; exact h.stabilizer_mem e.1,
+  isRelative_iff.mpr ⟨fun e => by rw [stabilizer_collapse_dart]; exact h.stabilizer_mem e.val,
     fun _ hH => (T.dominates_collapse S hS hG).isEllipticSubgroup (h.isEllipticSubgroup hH)⟩
 
 /-! ### The extreme collapses -/

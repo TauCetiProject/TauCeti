@@ -173,23 +173,23 @@ def augmentationKerIso :
     (augmentationKerToLeftRegular k G) (by
     ext x
     exact (augmentation_hom_apply k G _).trans
-      (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x).2)
+      (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ x).property)
   have : Mono (augmentationKerToLeftRegular k G) := (Rep.mono_iff_injective _).2 fun x y h ↦
     (RestrictScalars.addEquiv k (MonoidAlgebra k G) _).injective (Subtype.ext h)
-  have : Mono l.1 := mono_of_mono_fac l.2
+  have : Mono l.val := mono_of_mono_fac l.property
   have hy (y : augmentationIdeal k G) :
       (augmentationι k G).hom y ∈ RingHom.ker (MonoidAlgebra.augmentation k G) := by
     rw [RingHom.mem_ker, ← augmentation_hom_apply, ← ConcreteCategory.comp_apply,
       augmentationι_comp_augmentation]
     rfl
-  have : Epi l.1 := (Rep.epi_iff_surjective _).2 fun y ↦
+  have : Epi l.val := (Rep.epi_iff_surjective _).2 fun y ↦
     ⟨(RestrictScalars.addEquiv k (MonoidAlgebra k G)
       (RingHom.ker (MonoidAlgebra.augmentation k G))).symm ⟨_, hy y⟩,
       (Rep.mono_iff_injective (augmentationι k G)).1 inferInstance <|
-        (ConcreteCategory.comp_apply l.1 (augmentationι k G) _).symm.trans
-          (ConcreteCategory.congr_hom l.2 _)⟩
-  have : IsIso l.1 := isIso_of_mono_of_epi _
-  asIso l.1
+        (ConcreteCategory.comp_apply l.val (augmentationι k G) _).symm.trans
+          (ConcreteCategory.congr_hom l.property _)⟩
+  have : IsIso l.val := isIso_of_mono_of_epi _
+  asIso l.val
 
 /-- The augmentation-kernel isomorphism is compatible with the inclusions into the group ring. -/
 @[simp]
@@ -204,11 +204,11 @@ theorem augmentationι_augmentationKerIso_hom_apply
   have hzero : augmentationKerToLeftRegular k G ≫ augmentation k G = 0 := by
     ext y
     exact (augmentation_hom_apply k G _).trans
-      (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ y).2
+      (RestrictScalars.addEquiv k (MonoidAlgebra k G) _ y).property
   have h := (KernelFork.IsLimit.lift' (augmentationιIsKernel k G)
-    (augmentationKerToLeftRegular k G) hzero).2
+    (augmentationKerToLeftRegular k G) hzero).property
   have h' : (KernelFork.IsLimit.lift' (augmentationιIsKernel k G)
-      (augmentationKerToLeftRegular k G) hzero).1 ≫ augmentationι k G =
+      (augmentationKerToLeftRegular k G) hzero).val ≫ augmentationι k G =
       augmentationKerToLeftRegular k G := by
     simpa only [Fork.ι_ofι] using h
   exact (ConcreteCategory.comp_apply _ _ x).symm.trans

@@ -196,10 +196,10 @@ theorem toSimpleGraphWalk_injective_of_pairwise_internallyDisjoint {ι : Type*} 
     {P : ι → G.Walk s t} (hP : ∀ i, (P i).IsPath)
     (hdisj : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j))
     (hst : s ≠ t) (hadj : ¬G.toSimpleGraph.Adj s t) :
-    Function.Injective (fun i ↦ (P i).toSimpleGraphWalk (hP i) s.2 t.2) :=
+    Function.Injective (fun i ↦ (P i).toSimpleGraphWalk (hP i) s.property t.property) :=
   SimpleGraph.Walk.injective_of_pairwise_internallyDisjoint
     (fun i j hij ↦ (internallyDisjoint_toSimpleGraphWalk_iff
-      (P i) (P j) (hP i) (hP j) s.2 t.2).2 (hdisj hij)) hst hadj
+      (P i) (P j) (hP i) (hP j) s.property t.property).2 (hdisj hij)) hst hadj
 
 /-- A finite internally disjoint family between distinct nonadjacent terminals has the same
 number of distinct paths after projection. -/
@@ -208,7 +208,7 @@ theorem card_image_toSimpleGraphWalk_of_pairwise_internallyDisjoint {ι : Type*}
     {P : ι → G.Walk s t} (hP : ∀ i, (P i).IsPath)
     (hdisj : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j))
     (hst : s ≠ t) (hadj : ¬G.toSimpleGraph.Adj s t) :
-    (Finset.univ.image (fun i ↦ (P i).toSimpleGraphWalk (hP i) s.2 t.2)).card =
+    (Finset.univ.image (fun i ↦ (P i).toSimpleGraphWalk (hP i) s.property t.property)).card =
       Fintype.card ι := by
   exact (Finset.card_image_of_injective _
     (toSimpleGraphWalk_injective_of_pairwise_internallyDisjoint hP hdisj hst hadj)).trans
@@ -219,7 +219,8 @@ projection, including when endpoints vary or a member has length zero. -/
 theorem toSimpleGraphWalk_injective_of_pairwise_disjoint_support {ι : Type*} {s t : ι → V(G)}
     {P : ∀ i, G.Walk (s i) (t i)} (hP : ∀ i, (P i).IsPath)
     (hdisj : Pairwise fun i j ↦ (P i).support.Disjoint (P j).support) :
-    Function.Injective (fun i ↦ (⟨s i, t i, (P i).toSimpleGraphWalk (hP i) (s i).2 (t i).2⟩ :
+    Function.Injective (fun i ↦ (⟨s i, t i, (P i).toSimpleGraphWalk (hP i) (s i).property
+        (t i).property⟩ :
       Σ s t : V(G), G.toSimpleGraph.Walk s t)) := by
   intro i j hij
   by_contra hne
@@ -240,7 +241,7 @@ parallel edges in its lift. -/
 @[simp]
 theorem toSimpleGraphWalk_liftToGraph (p : G.toSimpleGraph.Walk s t)
     (hp : p.liftToGraph.IsPath) :
-    p.liftToGraph.toSimpleGraphWalk hp s.2 t.2 = p := by
+    p.liftToGraph.toSimpleGraphWalk hp s.property t.property = p := by
   apply ext_support
   apply List.map_injective_iff.2 Subtype.val_injective
   simp

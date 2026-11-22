@@ -89,7 +89,7 @@ private noncomputable def stableSymmetricMapAux (x : stableSymmetricSubmodule R 
       refine Eq.trans ?_
         (congrArg (MvPolynomial.map f) (aeval_snoc_zero_stableSymmetricProj d x))
       dsimp only
-      rw [aeval_eq_bind₁, aeval_eq_bind₁, map_bind₁]
+      rw [map_aeval_eq_aeval_map_map]
       congr 2
       funext i
       refine Fin.lastCases ?_ (fun i => ?_) i <;> simp⟩
