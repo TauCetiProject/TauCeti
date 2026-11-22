@@ -30,8 +30,8 @@ or `TauCeti.sum_…`.
 `Nat.prod_divisors_filter_dvd` reindexes divisors divisible by a fixed `m ∣ n` as `m` times
 the divisors of `n / m`.
 
-`Nat.prod_divisorsAntidiagonal_ite_dvd` regroups a product over the factor pairs `(a, b)` of `n`,
-restricted to `a ∣ m`, as a product over the divisors of `gcd(m, n)`.
+For `n ≠ 0`, `Nat.prod_divisorsAntidiagonal_ite_dvd` regroups a product over the factor pairs
+`(a, b)` of `n`, restricted to `a ∣ m`, as a product over the divisors of `gcd(m, n)`.
 
 `Int.mem_divisorsAntidiagonal_toNat` and `Int.prodMk_toNat_mem_divisorsAntidiagonal_toNat`
 identify the pairs of `n.toNat.divisorsAntidiagonal`, for an integer `n`, with the factorisations
@@ -48,8 +48,8 @@ product over the divisors of `1, …, N` by divisor: `d` occurs `N / d` times.
 For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
 divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
 
-`TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
-`N.divisors` omitting the unit divisor. `TauCeti.pnatDvdEquivDivisors`,
+For `N ≠ 0`, `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the
+subtype of `N.divisors` omitting the unit divisor. `TauCeti.pnatDvdEquivDivisors`,
 `TauCeti.pnatMulDvdEquivSigma`, and `TauCeti.pnatMulDvdAndEquivSigma` identify positive divisors
 `{M : ℕ+ // (M : ℕ) ∣ N}` with `N.divisors` and positive divisor pairs
 `{p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}` (and its filtered subtypes) with sigma types over
@@ -193,18 +193,19 @@ variable {n : ℤ}
 
 /-- The pairs of `n.toNat.divisorsAntidiagonal` are exactly the pairs of positive integers with
 product `n`. -/
+@[simp high]
 theorem mem_divisorsAntidiagonal_toNat {p : ℕ × ℕ} :
     p ∈ n.toNat.divisorsAntidiagonal ↔ 0 < (p.1 : ℤ) ∧ 0 < (p.2 : ℤ) ∧ (p.1 : ℤ) * p.2 = n := by
-  rw [Nat.mem_divisorsAntidiagonal]
   constructor
-  · rintro ⟨h, h0⟩
-    obtain ⟨h1, h2⟩ := mul_ne_zero_iff.mp (h ▸ h0)
+  · intro hp
+    obtain ⟨h1, h2⟩ := Nat.ne_zero_of_mem_divisorsAntidiagonal hp
+    obtain ⟨h, h0⟩ := Nat.mem_divisorsAntidiagonal.mp hp
     refine ⟨by omega, by omega, ?_⟩
     rw [← Nat.cast_mul, h]
     omega
   · rintro ⟨h1, h2, h⟩
     have hn : 0 < n := h ▸ mul_pos h1 h2
-    refine ⟨?_, by omega⟩
+    refine Nat.mem_divisorsAntidiagonal.mpr ⟨?_, by omega⟩
     exact_mod_cast h.trans (Int.toNat_of_nonneg hn.le).symm
 
 /-- A factorisation `n = u v` into positive integers is the pair `(u.toNat, v.toNat)` of
@@ -360,9 +361,7 @@ theorem prod_pnatMulDvd_eq_prod_pow_card_divisors {A : Type*} [CommMonoid A] (F 
     (∏ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, F p.val.1) =
       ∏ M : {M : ℕ+ // (M : ℕ) ∣ N}, F M.val ^ #(N / M.val).divisors := by
   rw [← (pnatMulDvdEquivSigma N).symm.prod_comp, Fintype.prod_sigma]
-  refine Finset.prod_congr rfl fun M _ ↦ ?_
-  exact (Finset.prod_congr rfl fun d _ ↦
-    congrArg F (fst_val_pnatMulDvdEquivSigma_symm_apply ⟨M, d⟩)).trans (by simp)
+  simp
 
 /-- For `N ≠ 0` and a decidable predicate `P`, the subtype of positive divisor pairs `(M, d)` with
 `d * M ∣ N` and `P (M, d)` is finite. -/
