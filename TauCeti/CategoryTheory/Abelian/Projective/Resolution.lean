@@ -20,10 +20,8 @@ lift of the identity of `X`, so it is homotopic to Mathlib's comparison
 (`CategoryTheory.ProjectiveResolution.homotopyEquivOfComm`).
 
 `ChainComplex.toProjectiveResolution` packages an augmented projective chain complex
-which is exact in positive degrees and exact at its augmentation. Its quasi-isomorphism proof
-is adapted from Mathlib's `CategoryTheory.ProjectiveResolution.of`, by Markus Himmel,
-Kim Morrison, Jakob von Raumer and Joël Riou; the quasi-isomorphism itself, which needs no
-projectivity, is `ChainComplex.quasiIso_toSingle₀Equiv_symm`.
+which is exact in positive degrees and exact at its augmentation. That its augmentation is a
+quasi-isomorphism, which needs no projectivity, is `ChainComplex.quasiIso_toSingle₀Equiv_symm`.
 
 A complex of projectives whose differentials factor through short exact sequences
 `0 ⟶ A (p + 1) ⟶ K.X p ⟶ A p ⟶ 0` is a projective resolution of `A 0`
@@ -90,9 +88,11 @@ def splice : ProjectiveResolution (A 0) :=
     inferInstance (ChainComplex.exact_d_one_zero_of_shortExact ι ε w hS hd)
     (ChainComplex.exactAt_succ_of_shortExact ι ε w hS hd)
 
+/-- The spliced resolution has the given complex `K` as its complex. -/
 @[simp]
 lemma splice_complex : (splice ι ε w hS hd).complex = K := (rfl)
 
+/-- In degree `0`, the augmentation of the spliced resolution is `ε 0`. -/
 @[simp]
 lemma splice_π_f_zero : (splice ι ε w hS hd).π.f 0 = ε 0 :=
   ChainComplex.toSingle₀Equiv_symm_apply_f_zero (ε 0) _
