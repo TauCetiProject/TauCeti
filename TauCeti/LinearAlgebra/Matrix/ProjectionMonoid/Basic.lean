@@ -46,6 +46,7 @@ general: for the bounded operators on an infinite-dimensional separable Hilbert 
 * `TauCeti.ProjectionMonoid.mk_eq_zero_iff`: a projection has class zero exactly when it is zero.
 * `TauCeti.ProjectionMonoid.mk_one`: over a unital star ring, the identity matrix of size `n` has
   class `n • [1]`.
+* `TauCeti.ProjectionMonoid.mk_add_mk_one_sub`: over a ring, `[p] + [1 - p] = [1]`.
 * `TauCeti.ProjectionMonoid.mk_mul_mul_star`: unitary conjugation does not change the class.
 * `TauCeti.ProjectionMonoid.map_id` and `TauCeti.ProjectionMonoid.map_comp`: functoriality.
 
@@ -200,6 +201,14 @@ theorem mk_eq_zero_iff {p : Matrix m m R} (hp : IsStarProjection p) : mk p hp = 
 theorem mk_zero : mk (0 : Matrix m m R) (.zero _) = 0 :=
   (mk_eq_zero_iff _).2 rfl
 
+/-- Over the zero ring every matrix is zero, so `V(R)` has only one element. -/
+instance [Subsingleton R] : Subsingleton (ProjectionMonoid R) where
+  allEq x y := by
+    induction x using ind with | mk _ p hp => ?_
+    induction y using ind with | mk _ q hq => ?_
+    rw [(mk_eq_zero_iff hp).2 (Matrix.ext fun _ _ ↦ Subsingleton.elim _ _),
+      (mk_eq_zero_iff hq).2 (Matrix.ext fun _ _ ↦ Subsingleton.elim _ _)]
+
 /-- The addition of `V(R)`, induced by block sum of representatives. -/
 @[no_expose] noncomputable instance : Add (ProjectionMonoid R) where
   add := Quotient.lift₂
@@ -297,6 +306,14 @@ theorem mk_one {A : Type*} [Semiring A] [StarRing A] [DecidableEq m] :
   rw [reindex_apply, submatrix_one_equiv] at e
   rw [← h]
   exact mk_eq_mk e
+
+/-- Over a ring, the classes of a projection `p` and of its complement `1 - p` add up to the class
+of the identity matrix. -/
+theorem mk_add_mk_one_sub {A : Type*} [Ring A] [StarRing A] [DecidableEq m] {p : Matrix m m A}
+    (hp : IsStarProjection p) :
+    mk p hp + mk (1 - p) hp.one_sub = mk (1 : Matrix m m A) (.one _) := by
+  rw [← mk_fromBlocks]
+  exact mk_eq_mk hp.isMurrayVonNeumannEquivalent_fromBlocks_one_sub
 
 /-- Conjugating a projection by a unitary does not change its class. -/
 @[simp]

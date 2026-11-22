@@ -235,6 +235,16 @@ theorem continuous_coord : Continuous φ.coord := by
   exact φ.coordL.continuous.congr φ.coordL_apply
 
 open Filter in
+/-- The points of the chart source whose coordinates have norm less than `ρ > 0` form a
+neighbourhood of the centre. -/
+theorem eventually_mem_source_norm_coord_lt {ρ : ℝ} (hρ : 0 < ρ) :
+    ∀ᶠ w in 𝓝 x, w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < ρ := by
+  have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) x :=
+    (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
+  filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
+    hcont.eventually (gt_mem_nhds (by simpa [φ.apply_self] using hρ))] with w hw hwρ using ⟨hw, hwρ⟩
+
+open Filter in
 /-- The point with coordinates `w` tends to the centre as `w` tends to `0`. -/
 theorem tendsto_toChart_symm_coord_symm_nhds_zero :
     Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0) (𝓝 x) := by
