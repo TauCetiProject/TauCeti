@@ -144,6 +144,12 @@ private theorem flowAction_single_zero_apply (i : Fin 2) (x : sphericalPendulumP
   rw [Pi.single_zero]
   exact isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowAction_zero_apply _ _ _ x
 
+/-- The flow action preserves each fibre `F⁻¹(h, j)` of the energy–momentum map. -/
+private theorem energyMomentum_flowAction_eq {h j : ℝ} {x : sphericalPendulumPhaseSpace}
+    (hx : sphericalPendulumEnergyMomentum x = (h, j)) (v : Fin 2 → ℝ) :
+    sphericalPendulumEnergyMomentum ((sphericalPendulumFlowAction v).toMul x) = (h, j) := by
+  rw [sphericalPendulumEnergyMomentum_sphericalPendulumFlowAction, hx]
+
 /-- The rotation flow multiplies the horizontal coordinates `x₁ + x₂ i` of positions and momenta
 by `exp (t i)` and fixes their vertical coordinates. -/
 theorem horizontal_eq_exp_mul_and_apply_two_eq_sphericalPendulumFlowAction_single_one (t : ℝ)
@@ -213,10 +219,10 @@ theorem exists_eq_mul_two_pi_of_sphericalPendulumFlowAction_single_one_apply_eq 
   have hQ : ((x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 0 : ℂ) +
       (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 1 * I ≠ 0 := by
     intro hQ
-    have h₀ := congrArg re hQ
-    have h₁ := congrArg im hQ
-    simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
-      add_zero, zero_re, add_im, mul_im, zero_add, zero_im] at h₀ h₁
+    have h₀ : (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 0 = 0 := by
+      simpa using congrArg re hQ
+    have h₁ : (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 1 = 0 := by
+      simpa using congrArg im hQ
     apply hJ
     rw [← Prod.mk.eta (p := (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))),
       sphericalPendulumEnergyMomentum_apply, h₀, h₁]
@@ -242,17 +248,13 @@ theorem sphericalPendulumFlowAction_single_zero_sphericalPendulumPeriod_apply {h
     (sphericalPendulumFlowAction (Pi.single 0 (sphericalPendulumPeriod h j))).toMul x =
       (sphericalPendulumFlowAction (Pi.single 1 (sphericalPendulumRotationAngle h j))).toMul x := by
   have hγ := isMIntegralCurve_sphericalPendulumFlowAction_single_zero x
-  have hF : sphericalPendulumEnergyMomentum
-      ((sphericalPendulumFlowAction (Pi.single 0 0)).toMul x) = (h, j) := by
-    rw [flowAction_single_zero_apply, hx]
+  have hF := energyMomentum_flowAction_eq hx (Pi.single 0 0)
   obtain ⟨t₁, h₁⟩ :=
     exists_apply_two_eq_sphericalPendulumLowerTurningPoint_of_isMIntegralCurve hj hz₀ hV hγ hF
   obtain ⟨t₂, ⟨h₁₂, h₂₃⟩, h₂, h₃, hpos, hneg⟩ :=
     exists_mem_Ioo_apply_two_eq_sphericalPendulumUpperTurningPoint_of_isMIntegralCurve
       hj hz₀ hV hγ hF h₁
-  have hE (u : ℝ) : sphericalPendulumEnergyMomentum
-      ((sphericalPendulumFlowAction (Pi.single 0 u)).toMul x) = (h, j) := by
-    rw [sphericalPendulumEnergyMomentum_sphericalPendulumFlowAction, hx]
+  have hE (u : ℝ) := energyMomentum_flowAction_eq hx (Pi.single 0 u)
   have hret := apply_add_sphericalPendulumPeriod_eq_apply_sphericalPendulumRotationAngle hj hz₀ hV
     h₁₂.le h₂₃.le (hγ.isMIntegralCurveOn _) (hE t₁) h₁ h₂ h₃
     (fun u hu ↦ (snd_two_ne_zero_iff_apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace hj hz₀ hV
@@ -284,9 +286,7 @@ private theorem periodic_heightMomentum {h j z₀ : ℝ} (hj : j ≠ 0) (hz₀ :
       ((sphericalPendulumFlowAction (Pi.single 0 u)).toMul x :
         EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2))
       (sphericalPendulumPeriod h j) := fun u ↦ by
-  have hy : sphericalPendulumEnergyMomentum
-      ((sphericalPendulumFlowAction (Pi.single 0 u)).toMul x) = (h, j) := by
-    rw [sphericalPendulumEnergyMomentum_sphericalPendulumFlowAction, hx]
+  have hy := energyMomentum_flowAction_eq hx (Pi.single 0 u)
   dsimp only
   rw [add_comm, Pi.single_add,
     isSymplectic_sphericalPendulumSymplecticForm.hamiltonianFlowAction_add_apply,
@@ -308,17 +308,14 @@ private theorem injOn_heightMomentum {h j z₀ : ℝ} (hj : j ≠ 0) (hz₀ : z�
         EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2))
       (Ico t₁ (t₁ + sphericalPendulumPeriod h j)) := by
   have hγ := isMIntegralCurve_sphericalPendulumFlowAction_single_zero x
-  have hF : sphericalPendulumEnergyMomentum
-      ((sphericalPendulumFlowAction (Pi.single 0 0)).toMul x) = (h, j) := by
-    rw [flowAction_single_zero_apply, hx]
+  have hF := energyMomentum_flowAction_eq hx (Pi.single 0 0)
   obtain ⟨t₂, -, -, -, hpos, hneg⟩ :=
     exists_mem_Ioo_apply_two_eq_sphericalPendulumUpperTurningPoint_of_isMIntegralCurve
       hj hz₀ hV hγ hF h₁
   have hp₁ : ((sphericalPendulumFlowAction (Pi.single 0 t₁)).toMul x :
       EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 = 0 :=
     not_not.1 fun hp ↦ ((snd_two_ne_zero_iff_apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace hj
-      hz₀ hV (Subtype.prop _) (by rw [sphericalPendulumEnergyMomentum_sphericalPendulumFlowAction,
-        hx])).1 hp).1.ne' h₁
+      hz₀ hV (Subtype.prop _) (energyMomentum_flowAction_eq hx _)).1 hp).1.ne' h₁
   -- Two times `v < w` of the oscillation give different values.
   have hlt (v w : ℝ) (hv : v ∈ Ico t₁ (t₁ + sphericalPendulumPeriod h j))
       (hw : w ∈ Ico t₁ (t₁ + sphericalPendulumPeriod h j)) (hvw : v < w)
@@ -360,9 +357,7 @@ private theorem exists_eq_mul_period {h j z₀ : ℝ} (hj : j ≠ 0) (hz₀ : z�
         (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2)) :
     ∃ m : ℤ, u = m * sphericalPendulumPeriod h j := by
   have hT := sphericalPendulumPeriod_pos hj hz₀ hV
-  have hF : sphericalPendulumEnergyMomentum
-      ((sphericalPendulumFlowAction (Pi.single 0 0)).toMul x) = (h, j) := by
-    rw [flowAction_single_zero_apply, hx]
+  have hF := energyMomentum_flowAction_eq hx (Pi.single 0 0)
   obtain ⟨t₁, h₁⟩ := exists_apply_two_eq_sphericalPendulumLowerTurningPoint_of_isMIntegralCurve
     hj hz₀ hV (isMIntegralCurve_sphericalPendulumFlowAction_single_zero x) hF
   -- Reduce both times modulo the period into one oscillation from the lower turning point.
@@ -415,9 +410,7 @@ theorem hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure {h 
   refine ⟨fun hv ↦ ?_, fun ⟨m, n, hmn⟩ ↦ hmn ▸ add_mem (zsmul_mem h₁ m) (zsmul_mem h₂ n)⟩
   -- The energy component of `v` is a multiple `m T` of the period, since the rotation by `v₁`
   -- fixes the height and the vertical momentum.
-  have hy : sphericalPendulumEnergyMomentum
-      ((sphericalPendulumFlowAction (Pi.single 1 (v 1))).toMul x) = (h, j) := by
-    rw [sphericalPendulumEnergyMomentum_sphericalPendulumFlowAction, hx]
+  have hy := energyMomentum_flowAction_eq hx (Pi.single 1 (v 1))
   obtain ⟨m, hm⟩ := exists_eq_mul_period hj hz₀ hV hy (u := v 0) <| by
     have := (hmem v).1 hv
     rw [sphericalPendulumFlowAction_apply] at this
@@ -436,8 +429,10 @@ theorem hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure {h 
     (by rw [hx]; exact hj) hw
   refine ⟨m, n, ?_⟩
   ext i
-  fin_cases i <;> simp [hm]
-  linarith
+  fin_cases i
+  · simp [hm]
+  · simp
+    linarith
 
 end PeriodLattice
 

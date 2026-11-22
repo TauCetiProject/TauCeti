@@ -44,6 +44,9 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
 * `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_pos`,
   `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_nonpos`: the radicand is positive strictly between the
   turning points and nonpositive elsewhere below the north pole.
+* `TauCeti.three_mul_sphericalPendulumLowerTurningPoint_sq_sub_pos`,
+  `TauCeti.three_mul_sphericalPendulumUpperTurningPoint_sq_sub_neg`: the radicand increases through
+  `z₋` and decreases through `z₊`.
 * `TauCeti.snd_two_ne_zero_iff_apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace`: on the
   fibre, the vertical momentum vanishes exactly at the turning points.
 * `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq`: integrals over `(-1, 1)`
@@ -315,6 +318,46 @@ theorem two_mul_sub_mul_one_sub_sq_sub_sq_nonpos (hj : j ≠ 0) (hz₀ : z₀ �
   · nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hza) (by linarith : (0 : ℝ) ≤ b - z)) hz3.le]
   · have hbz : b ≤ z := not_lt.1 fun hzb ↦ hzab ⟨hza, hzb⟩
     nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hbz) (by linarith : (0 : ℝ) ≤ z - a)) hz3.le]
+
+/-- At the lower turning point `z₋`, half the derivative `3 z² - 2 h z - 1` of the radicand
+`2 (h - z) (1 - z²) - j²` is positive: `3 z₋² - 2 h z₋ - 1 = (z₊ - z₋) (z₃ - z₋)`, where
+`z₃ = h - z₋ - z₊` is the third root. -/
+theorem three_mul_sphericalPendulumLowerTurningPoint_sq_sub_pos (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) :
+    0 < 3 * sphericalPendulumLowerTurningPoint h j ^ 2 -
+      2 * h * sphericalPendulumLowerTurningPoint h j - 1 := by
+  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  -- Comparing coefficients in the factorization.
+  have : 3 * a ^ 2 - 2 * h * a - 1 = (b - a) * (h - a - b - a) := by
+    linear_combination (hfac 1 - hfac (-1)) / 4
+  rw [this]
+  exact mul_pos (by linarith) (by linarith)
+
+/-- At the upper turning point `z₊`, half the derivative `3 z² - 2 h z - 1` of the radicand
+`2 (h - z) (1 - z²) - j²` is negative: `3 z₊² - 2 h z₊ - 1 = -(z₊ - z₋) (z₃ - z₊)`, where
+`z₃ = h - z₋ - z₊` is the third root. -/
+theorem three_mul_sphericalPendulumUpperTurningPoint_sq_sub_neg (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) :
+    3 * sphericalPendulumUpperTurningPoint h j ^ 2 -
+      2 * h * sphericalPendulumUpperTurningPoint h j - 1 < 0 := by
+  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  -- Comparing coefficients in the factorization.
+  have : 3 * b ^ 2 - 2 * h * b - 1 = -((b - a) * (h - a - b - b)) := by
+    linear_combination (hfac 1 - hfac (-1)) / 4
+  rw [this, neg_lt_zero]
+  exact mul_pos (by linarith) (by linarith)
 
 /-- **Height quadratures run between the turning points.** Above the curve of relative equilibria,
 the square root of the radicand `2 (h - z) (1 - z²) - j²` vanishes at every height of `[-1, 1]`

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Motion
 import TauCeti.Analysis.Calculus.Deriv.Slope
+import TauCeti.Topology.Order.IntermediateValue
 
 /-!
 # The oscillation of the height of the spherical pendulum
@@ -48,34 +49,6 @@ open Function Set Filter MeasureTheory
 open scoped Topology Manifold
 
 namespace TauCeti
-
-/-- **The first zero.** A continuous function that is positive just after `a` but not at every
-time after `a` has a first zero after `a`. -/
-private theorem exists_first_zero {f : ℝ → ℝ} {a : ℝ} (hf : Continuous f)
-    (ha : ∀ᶠ x in 𝓝[>] a, 0 < f x) (hne : ∃ b, a < b ∧ f b ≤ 0) :
-    ∃ b, a < b ∧ f b = 0 ∧ ∀ x ∈ Ioo a b, 0 < f x := by
-  obtain ⟨u, hu, hfu⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 ha
-  set c := (a + u) / 2
-  have hac : a < c := by simp only [c]; linarith [mem_Ioi.1 hu]
-  have hcu : c < u := by simp only [c]; linarith [mem_Ioi.1 hu]
-  -- The first time after `c` at which `f ≤ 0`.
-  set S := {t | c ≤ t ∧ f t ≤ 0}
-  have hS : IsClosed S := (isClosed_le continuous_const continuous_id).inter
-    (isClosed_le hf continuous_const)
-  have hbdd : BddBelow S := ⟨c, fun _ ht ↦ ht.1⟩
-  have hSne : S.Nonempty := by
-    obtain ⟨b, hab, hb⟩ := hne
-    refine ⟨b, not_lt.1 fun hbc ↦ ?_, hb⟩
-    exact (hfu ⟨hab, hbc.trans hcu⟩).not_ge hb
-  have hb : sInf S ∈ S := hS.csInf_mem hSne hbdd
-  have hpos : ∀ x ∈ Ioo a (sInf S), 0 < f x := fun x hx ↦ by
-    rcases lt_or_ge x u with hxu | hxu
-    · exact hfu ⟨hx.1, hxu⟩
-    · exact not_le.1 fun hfx ↦ notMem_of_lt_csInf hx.2 hbdd ⟨hcu.le.trans hxu, hfx⟩
-  have hab : a < sInf S := hac.trans_le hb.1
-  have hge : 0 ≤ f (sInf S) := ge_of_tendsto ((hf.tendsto _).mono_left nhdsWithin_le_nhds)
-    (eventually_of_mem (Ioo_mem_nhdsLT hab) fun x hx ↦ (hpos x hx).le)
-  exact ⟨sInf S, hab, le_antisymm hb.2 hge, hpos⟩
 
 section Oscillation
 
@@ -148,42 +121,6 @@ private theorem hasDerivAt_momentum (t : ℝ) :
     hasDerivWithinAt_snd_apply_two_of_isMIntegralCurveOn_sphericalPendulum
       (hγ.isMIntegralCurveOn univ) (mem_univ t)).congr_deriv ?_
   linear_combination (-2 * (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2) * hH
-
-include hj hz₀ hV in
-/-- The vertical momentum increases at the lower turning point: `3 z₋² - 2 h z₋ - 1 > 0`. -/
-private theorem turning_lower_pos :
-    0 < 3 * sphericalPendulumLowerTurningPoint h j ^ 2 -
-      2 * h * sphericalPendulumLowerTurningPoint h j - 1 := by
-  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
-  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
-  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz₀ hV
-  set a := sphericalPendulumLowerTurningPoint h j
-  set b := sphericalPendulumUpperTurningPoint h j
-  -- Comparing coefficients in the factorization, `3 z₋² - 2 h z₋ - 1 = (z₊ - z₋) (z₃ - z₋)`.
-  have : 3 * a ^ 2 - 2 * h * a - 1 = (b - a) * (h - a - b - a) := by
-    linear_combination (hfac 1 - hfac (-1)) / 4
-  rw [this]
-  exact mul_pos (by linarith) (by linarith)
-
-include hj hz₀ hV in
-/-- The vertical momentum decreases at the upper turning point: `3 z₊² - 2 h z₊ - 1 < 0`. -/
-private theorem turning_upper_neg :
-    3 * sphericalPendulumUpperTurningPoint h j ^ 2 -
-      2 * h * sphericalPendulumUpperTurningPoint h j - 1 < 0 := by
-  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
-  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
-  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
-  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
-    hj hz₀ hV
-  set a := sphericalPendulumLowerTurningPoint h j
-  set b := sphericalPendulumUpperTurningPoint h j
-  -- Comparing coefficients in the factorization, `3 z₊² - 2 h z₊ - 1 = -(z₊ - z₋) (z₃ - z₊)`.
-  have : 3 * b ^ 2 - 2 * h * b - 1 = -((b - a) * (h - a - b - b)) := by
-    linear_combination (hfac 1 - hfac (-1)) / 4
-  rw [this, neg_lt_zero]
-  exact mul_pos (by linarith) (by linarith)
 
 include hγ in
 /-- While the vertical momentum is positive, the height of a motion increases strictly. -/
@@ -279,19 +216,25 @@ private theorem exists_next_turning {σ t₁ : ℝ} (hσ : σ ≠ 0)
     ∃ t₂, t₁ < t₂ ∧ (γ t₂ : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 = 0 ∧
       ∀ u ∈ Ioo t₁ t₂, 0 < σ * (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 := by
   have hfd (t : ℝ) := (hasDerivAt_momentum hγ hF t).const_mul σ
-  obtain ⟨t₂, h₁₂, hf₂, hpos⟩ := exists_first_zero
-    (continuous_iff_continuousAt.2 fun t ↦ (hfd t).continuousAt)
+  have hfc : Continuous fun t ↦
+      σ * (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 :=
+    continuous_iff_continuousAt.2 fun t ↦ (hfd t).continuousAt
+  have hL := halfPeriod_nonneg hj hz₀ hV
+  obtain ⟨t₂, ⟨h₁₂, -⟩, hf₂, hpos⟩ := hfc.continuousOn.exists_mem_Ioo_le_and_forall_gt
+    (b := t₁ + 1 + ∫ z in (sphericalPendulumLowerTurningPoint h j)..
+      (sphericalPendulumUpperTurningPoint h j), (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹)
     -- `σ p₃` vanishes at `t₁` with positive derivative, so it is positive right after `t₁`.
     (by simpa [hp₀] using (hfd t₁).hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hd) <| by
     -- Passages are short, so `σ p₃` does not stay positive.
     by_contra! hfpos
-    have := sub_le_integral hj hz₀ hV hγ hF (s := t₁)
-      (t := t₁ + 1 + ∫ z in (sphericalPendulumLowerTurningPoint h j)..
-        (sphericalPendulumUpperTurningPoint h j), (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹)
-      (by linarith [halfPeriod_nonneg hj hz₀ hV])
-      fun w hw ↦ right_ne_zero_of_mul (hfpos w hw.1).ne'
-    linarith [halfPeriod_nonneg hj hz₀ hV]
-  exact ⟨t₂, h₁₂, (mul_eq_zero.1 hf₂).resolve_left hσ, hpos⟩
+    have := sub_le_integral hj hz₀ hV hγ hF (s := t₁) (by linarith)
+      fun w hw ↦ right_ne_zero_of_mul (hfpos w hw).ne'
+    linarith
+  -- `σ p₃` is positive just before `t₂`, so it vanishes at `t₂`.
+  have hge : 0 ≤ σ * (γ t₂ : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 :=
+    ge_of_tendsto ((hfc.tendsto _).mono_left nhdsWithin_le_nhds)
+      (eventually_of_mem (Ioo_mem_nhdsLT h₁₂) fun u hu ↦ (hpos u hu).le)
+  exact ⟨t₂, h₁₂, (mul_eq_zero.1 (le_antisymm hf₂ hge)).resolve_left hσ, hpos⟩
 
 include hj hz₀ hV hγ hF in
 /-- From the lower turning point the height rises to the upper turning point, with positive
@@ -305,7 +248,9 @@ private theorem exists_upper {t₁ : ℝ}
   have hp₁ : (γ t₁ : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 = 0 :=
     not_not.1 fun hp ↦ ((momentum_ne_zero_iff hj hz₀ hV hγ hF t₁).1 hp).1.ne' h₁
   obtain ⟨t₂, h₁₂, hp₂, hpos⟩ := exists_next_turning hj hz₀ hV hγ hF one_ne_zero hp₁
-    (by rw [one_mul, h₁]; exact turning_lower_pos hj hz₀ hV)
+    (by
+      rw [one_mul, h₁]
+      exact three_mul_sphericalPendulumLowerTurningPoint_sq_sub_pos hj hz₀ hV)
   simp only [one_mul] at hpos
   refine ⟨t₂, h₁₂, ?_, hpos⟩
   refine (height_eq_or_eq hj hz₀ hV hγ hF t₂ hp₂).resolve_left fun h₂ ↦ ?_
@@ -325,7 +270,9 @@ private theorem exists_lower {t₂ : ℝ}
   have hp₂ : (γ t₂ : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 = 0 :=
     not_not.1 fun hp ↦ ((momentum_ne_zero_iff hj hz₀ hV hγ hF t₂).1 hp).2.ne h₂
   obtain ⟨t₃, h₂₃, hp₃, hneg⟩ := exists_next_turning hj hz₀ hV hγ hF (neg_ne_zero.2 one_ne_zero)
-    hp₂ (by rw [h₂, neg_one_mul, neg_pos]; exact turning_upper_neg hj hz₀ hV)
+    hp₂ (by
+      rw [h₂, neg_one_mul, neg_pos]
+      exact three_mul_sphericalPendulumUpperTurningPoint_sq_sub_neg hj hz₀ hV)
   simp only [neg_one_mul, neg_pos] at hneg
   refine ⟨t₃, h₂₃, ?_, hneg⟩
   refine (height_eq_or_eq hj hz₀ hV hγ hF t₃ hp₃).resolve_right fun h₃ ↦ ?_
