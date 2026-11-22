@@ -34,10 +34,11 @@ map `g : B →ₐ[R] B'` induces Mathlib's `AlgHom.convPostcomp` on convolution 
 `B'` is a `B`-algebra with a basis over `B`, taking coordinates identifies the convolution
 algebra with coefficients in `B'` with a free module over the one with coefficients in `B`.
 
-Finally, convolution products respect ideal-valued maps: the convolution product of maps with
-values in ideals `I` and `J` of an algebra has values in `I * J`, so the `n`-th convolution
-power of a map with values in `I` has values in `I ^ n`. For a point `x = 1 + D` of an affine
-group with `D` valued in `I`, this controls the binomial expansion of the powers of `x`.
+Finally, convolution products respect submodule-valued maps: the convolution product of maps with
+values in `R`-submodules `M` and `N` of the algebra has values in `M * N`, so the `n`-th
+convolution power of a map with values in `M` has values in `M ^ n`. Applied to an ideal `I`,
+viewed as an `R`-submodule, and a point `x = 1 + D` of an affine group with `D` valued in `I`,
+this controls the binomial expansion of the powers of `x`.
 
 ## Main declarations
 
@@ -61,7 +62,7 @@ group with `D` valued in `I`, this controls the binomial expansion of the powers
   the coefficients, with `Module.Basis.convCoordEquiv_convPostcomp_mul` recording that they are
   linear over the convolution algebra of the smaller coefficient ring.
 * `LinearMap.convMul_apply_mem_mul` and `LinearMap.convPow_apply_mem_pow`: convolution products
-  and powers of ideal-valued maps.
+  and powers of submodule-valued maps.
 -/
 
 public section
@@ -406,7 +407,7 @@ end Basis
 
 end CoefficientChange
 
-section IdealValued
+section SubmoduleValued
 
 open WithConv
 
@@ -415,23 +416,24 @@ namespace LinearMap
 variable {R C A : Type*} [CommSemiring R] [AddCommMonoid C] [Module R C] [Semiring A]
   [Algebra R A]
 
-/-- The convolution product of a linear map with values in an ideal `I` and one with values in an
-ideal `J` has values in `I * J`. -/
-theorem convMul_apply_mem_mul [CoalgebraStruct R C] {I J : Ideal A} {f g : WithConv (C →ₗ[R] A)}
-    (hf : ∀ c, f c ∈ I) (hg : ∀ c, g c ∈ J) (c : C) : (f * g) c ∈ I * J := by
+/-- The convolution product of a linear map with values in a submodule `M` and one with values in
+a submodule `N` has values in `M * N`. -/
+theorem convMul_apply_mem_mul [CoalgebraStruct R C] {M N : Submodule R A}
+    {f g : WithConv (C →ₗ[R] A)} (hf : ∀ c, f c ∈ M) (hg : ∀ c, g c ∈ N) (c : C) :
+    (f * g) c ∈ M * N := by
   rw [convMul_apply]
   induction (CoalgebraStruct.comul c : C ⊗[R] C) with
-  | tmul x y => simpa using Ideal.mul_mem_mul (hf x) (hg y)
+  | tmul x y => simpa using Submodule.mul_mem_mul (hf x) (hg y)
   | add x y hx hy => simpa [map_add] using add_mem hx hy
 
-/-- The `n`-th convolution power of a linear map with values in an ideal `I` has values in
-`I ^ n`. -/
-theorem convPow_apply_mem_pow [_root_.Coalgebra R C] {I : Ideal A} {f : WithConv (C →ₗ[R] A)}
-    (hf : ∀ c, f c ∈ I) (n : ℕ) (c : C) : (f ^ n) c ∈ I ^ n := by
+/-- The `n`-th convolution power of a linear map with values in a submodule `M` has values in
+`M ^ n`. -/
+theorem convPow_apply_mem_pow [_root_.Coalgebra R C] {M : Submodule R A}
+    {f : WithConv (C →ₗ[R] A)} (hf : ∀ c, f c ∈ M) (n : ℕ) (c : C) : (f ^ n) c ∈ M ^ n := by
   induction n generalizing c with
-  | zero => simp [Submodule.pow_zero, Ideal.one_eq_top]
+  | zero => simp
   | succ n ih => simpa [pow_succ, Submodule.pow_succ] using convMul_apply_mem_mul ih hf c
 
 end LinearMap
 
-end IdealValued
+end SubmoduleValued
