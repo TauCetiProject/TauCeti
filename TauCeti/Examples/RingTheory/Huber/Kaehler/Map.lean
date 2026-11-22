@@ -54,7 +54,7 @@ example (x : ideal A B) :
 example (x : ideal A B) :
     mapSemilinear α φ h hc (fromIdeal A B x) =
       fromIdeal A' B' ⟨CompletedTensor.map α φ φ h h hc hc x,
-        ideal_le_comap_map α φ h hc x.2⟩ := by simp
+        ideal_le_comap_map α φ h hc x.property⟩ := by simp
 
 example (b : B) : mapSemilinear α φ h hc (D A B b) = D A' B' (φ b) := by simp
 

@@ -36,7 +36,11 @@ open CategoryTheory
 
 universe v u uk
 
-variable {R : Type u} [Ring R] [Small.{v} R]
+variable {R : Type u} [Ring R]
+
+section Small
+
+variable [Small.{v} R]
 
 /-- A bound on global dimension bounds Ext on any two selected classes of modules.
 No finiteness or Noetherianity assumption is needed for this implication. -/
@@ -62,9 +66,10 @@ theorem globalDimension_le_iff_isExtBoundedOn_isFG [IsNoetherianRing R]
   exact (h.isExtBoundedBy ((ModuleCat.isFG_iff M).2 hM)
     ((ModuleCat.isFG_iff L).2 hL)).subsingleton le_rfl
 
+end Small
+
 variable {k : Type uk} [Field k] [Algebra k R] [Module.Finite k R]
 
-omit [Small.{v} R] in
 /-- Finite global dimension of a finite-dimensional algebra makes every pair of finite
 modules Euler-admissible. This supplies the witness for the module Ext-Euler pairing. -/
 theorem isEulerAdmissibleOn_isFG_of_globalDimension_le {n : ℕ}

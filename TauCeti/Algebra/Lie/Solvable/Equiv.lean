@@ -37,7 +37,7 @@ theorem map_derivedSeries (e : L ≃ₗ⁅R⁆ M) (k : ℕ) :
   rw [LieIdeal.mem_toLieSubalgebra,
     ← LieIdeal.derivedSeries_map_eq (f := e.toLieHom) k e.surjective, LieSubalgebra.mem_map]
   exact ⟨fun ⟨x, hx, hxy⟩ ↦ hxy ▸ LieIdeal.mem_map hx,
-    fun hy ↦ let ⟨x, hx⟩ := LieIdeal.mem_map_of_surjective e.surjective hy; ⟨x, x.2, hx⟩⟩
+    fun hy ↦ let ⟨x, hx⟩ := LieIdeal.mem_map_of_surjective e.surjective hy; ⟨x, x.property, hx⟩⟩
 
 /-- Restriction of a Lie algebra equivalence to the `k`-th term of the derived series. -/
 def restrictDerivedSeries (e : L ≃ₗ⁅R⁆ M) (k : ℕ) :

@@ -60,6 +60,9 @@ namespace Model
 variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
+
+section ProjectiveClosure
+
 variable (M : Type u) [AddCommMonoid M] [Module R M] [Module.Finite R M]
 variable (j : C ⟶ Proj (homogeneousSubmodule K (K ⊗[R] M))) [IsClosedImmersion j]
   (hj : j ≫ projToSpec K (K ⊗[R] M) = toK)
@@ -108,6 +111,8 @@ lemma ker_projectiveClosureι :
 /-- The closure of `C` in `ℙ(M)` is a proper model of `C`. -/
 lemma isProper_projectiveClosure : (projectiveClosure M j hj).IsProper :=
   isProper_closure (toR := projToSpec R M) _ _
+
+end ProjectiveClosure
 
 /-- A closed subscheme `C` of a projective space `ℙ(V)` over `K`, with `V` a finite-dimensional
 `K`-vector space of linear coordinates, has a proper model over `R` which is a closed subscheme of

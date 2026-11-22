@@ -8,16 +8,13 @@ module
 public import TauCeti.Algebra.Lie.CartanInvolution.Reductive
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 public import TauCeti.Algebra.Lie.SpecialLinear.Cartan
-public import TauCeti.Algebra.Lie.Symplectic.Cartan
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
-import TauCeti.Algebra.Lie.Symplectic.Killing
 
 /-!
 # Classical examples of Cartan and reductive Cartan involutions
 
-Certifies negative transpose as a Cartan involution on `sl n R` and `sp l K`
-(`LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution`,
-`LieAlgebra.Symplectic.isCartanInvolution_cartanInvolution`), shows the identity on `sl n R` is
+Certifies negative transpose as a Cartan involution on `sl n K`
+(`LieAlgebra.SpecialLinear.isCartanInvolution_cartanInvolution`), shows the identity on `sl n K` is
 not Cartan for nontrivial `n` (`LieAlgebra.SpecialLinear.not_isCartanInvolution_refl`), and shows
 negative transpose on `gl n K` is a reductive Cartan involution
 (`TauCeti.isReductiveCartanInvolution_negTransposeLieEquiv`) but not a Cartan involution for
@@ -30,62 +27,46 @@ open Matrix LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-section OrderedPID
+section OrderedField
 
-variable {R : Type*} [CommRing R] [IsPrincipalIdealRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 
 namespace LieAlgebra.SpecialLinear
 
-/-- Negative transpose `X ↦ -Xᵀ` is a Cartan involution of the special linear Lie algebra `sl n R`
-over any ordered principal ideal domain `R`. -/
+/-- Negative transpose `X ↦ -Xᵀ` is a Cartan involution of the special linear Lie algebra `sl n K`
+over any ordered field `K`. -/
 @[simp]
 theorem isCartanInvolution_cartanInvolution {n : Type*} [Fintype n] [DecidableEq n] :
-    (cartanInvolution n R).IsCartanInvolution := by
+    (cartanInvolution n K).IsCartanInvolution := by
   rw [LieEquiv.isCartanInvolution_iff]
   exact ⟨cartanInvolution_cartanInvolution,
-    fun _ hX ↦ neg_pos.mpr (killingForm_cartanInvolution_self_neg hX)⟩
+    fun _ hX ↦ killingForm_cartanInvolution_self_neg hX⟩
 
-/-- For nontrivial `n`, the identity is not a Cartan involution of `sl n R` over any ordered
-principal ideal domain `R` (the Killing form is positive on the diagonal matrix `Eᵢᵢ - Eⱼⱼ`). -/
+/-- For nontrivial `n`, the identity is not a Cartan involution of `sl n K` over any ordered field
+`K` (the Killing form is positive on the diagonal matrix `Eᵢᵢ - Eⱼⱼ`). -/
 theorem not_isCartanInvolution_refl {n : Type*} [Fintype n] [DecidableEq n] [Nontrivial n] :
-    ¬ (LieEquiv.refl : sl n R ≃ₗ⁅R⁆ sl n R).IsCartanInvolution := by
-  intro hrefl; obtain ⟨i, j, hij⟩ := exists_pair_ne n; let H : sl n R := singleSubSingle i j 1
+    ¬ (LieEquiv.refl : sl n K ≃ₗ⁅K⁆ sl n K).IsCartanInvolution := by
+  intro hrefl
+  obtain ⟨i, j, hij⟩ := exists_pair_ne n
+  let H : sl n K := singleSubSingle i j 1
   have hHne : H ≠ 0 := fun h0 ↦ by
-    have hval := congrArg (fun M : sl n R ↦ (M : Matrix n n R) i i) h0
+    have hval := congrArg (fun M : sl n K ↦ (M : Matrix n n K) i i) h0
     simp [H, val_singleSubSingle, hij.symm] at hval
-  have hsq : ((H : Matrix n n R) * (H : Matrix n n R)).trace = 2 := by
-    have hmul : (H : Matrix n n R) * (H : Matrix n n R) =
+  have hsq : ((H : Matrix n n K) * (H : Matrix n n K)).trace = 2 := by
+    have hmul : (H : Matrix n n K) * (H : Matrix n n K) =
         Matrix.single i i 1 + Matrix.single j j 1 := by
       simp [H, val_singleSubSingle, sub_mul, mul_sub, Matrix.single_mul_single_same,
         Matrix.single_mul_single_of_ne _ _ _ _ hij,
         Matrix.single_mul_single_of_ne _ _ _ _ hij.symm]
     rw [hmul, Matrix.trace_add, Matrix.trace_single_eq_same, Matrix.trace_single_eq_same,
       one_add_one_eq_two]
-  have hpos : 0 < killingForm R (sl n R) H H := by
+  have hpos : 0 < killingForm K (sl n K) H H := by
     rw [killingForm_apply, hsq]
-    have : (0 : R) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos; positivity
+    have : (0 : K) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos
+    positivity
   exact (LieEquiv.isCartanInvolution_refl_iff.mp hrefl H hHne).not_gt hpos
 
 end LieAlgebra.SpecialLinear
-
-end OrderedPID
-
-section OrderedField
-
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-
-namespace LieAlgebra.Symplectic
-
-/-- Negative transpose `X ↦ -Xᵀ` is a Cartan involution of the symplectic Lie algebra `sp l K`
-over any ordered field `K`. -/
-@[simp]
-theorem isCartanInvolution_cartanInvolution {l : Type*} [Fintype l] [DecidableEq l] :
-    (cartanInvolution l K).IsCartanInvolution := by
-  rw [LieEquiv.isCartanInvolution_iff]
-  exact ⟨cartanInvolution_cartanInvolution,
-    fun _ hX ↦ neg_pos.mpr (killingForm_cartanInvolution_self_neg hX)⟩
-
-end LieAlgebra.Symplectic
 
 namespace TauCeti
 
@@ -104,7 +85,7 @@ theorem isReductiveCartanInvolution_negTransposeLieEquiv {n : Type*} [Fintype n]
       LieEquiv.ofEq (SpecialLinear.sl n K) (derivedSeries K (Matrix n n K) 1).toLieSubalgebra
         (congrArg SetLike.coe (derivedSeries_one_toLieSubalgebra_eq_sl (R := K) (n := n)).symm)
     have he (X : SpecialLinear.sl n K) : (e X : Matrix n n K) = X := LieEquiv.ofEq_apply _ _ _ X
-    exact (SpecialLinear.isCartanInvolution_cartanInvolution (R := K)).of_intertwines e fun X ↦
+    exact (SpecialLinear.isCartanInvolution_cartanInvolution (K := K)).of_intertwines e fun X ↦
       Subtype.ext (by simp [he])
   · have : IsEmpty n := not_nonempty_iff.mp hn
     have : IsLieAbelian (Matrix n n K) := ⟨fun _ _ ↦ Subsingleton.elim _ _⟩
@@ -114,18 +95,18 @@ end TauCeti
 
 end OrderedField
 
-section PartialOrder
+section LinearOrder
 
-variable {R : Type*} [CommRing R] [PartialOrder R] [Nontrivial R]
+variable {K : Type*} [Field K] [LinearOrder K]
 
 namespace TauCeti
 
-/-- For nonempty `n`, negative transpose on `gl n R` is not a Cartan involution in the semisimple
+/-- For nonempty `n`, negative transpose on `gl n K` is not a Cartan involution in the semisimple
 sense, because the scalar matrices form a nontrivial centre. -/
 theorem not_isCartanInvolution_negTransposeLieEquiv {n : Type*} [Fintype n] [DecidableEq n]
-    [Nonempty n] : ¬ (negTransposeLieEquiv n R).IsCartanInvolution :=
-  fun hθ ↦ center_matrix_ne_bot R n hθ.center_eq_bot
+    [Nonempty n] : ¬ (negTransposeLieEquiv n K).IsCartanInvolution :=
+  fun hθ ↦ center_matrix_ne_bot K n hθ.center_eq_bot
 
 end TauCeti
 
-end PartialOrder
+end LinearOrder

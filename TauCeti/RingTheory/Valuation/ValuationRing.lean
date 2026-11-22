@@ -75,16 +75,14 @@ theorem isSquare_one_add_four_mul_iff (h2 : IsRegular (2 : R)) {c : R} :
     · exact h
     -- Otherwise `2 = z * w`, and cancelling `z ^ 2` from `z ^ 2 * (1 + w) = z ^ 2 * w ^ 2 * c`
     -- shows that `w` is a unit.
-    have hz : IsRegular ((y - 1) * w) := hw ▸ h2
-    have hz := hz.of_mul_left
+    have hz : IsRegular (y - 1) := (hw ▸ h2 : IsRegular ((y - 1) * w)).of_mul_left
     have hw' : 1 + w = w * w * c := (hz.mul hz).left <| by
       linear_combination -hy - (y - 1 - ((y - 1) * w + 2) * c) * hw
     have hu : IsUnit w := IsUnit.of_mul_eq_one (w * c - 1) (by linear_combination -hw')
-    exact ⟨↑hu.unit⁻¹, by rw [hw, mul_assoc, IsUnit.mul_val_inv, mul_one]⟩
-  refine ⟨t, (h2.mul h2).left ?_⟩
-  rw [sub_eq_iff_eq_add] at ht
-  rw [ht] at hy
-  linear_combination -hy
+    rw [hw]
+    exact hu.mul_right_dvd.mpr dvd_rfl
+  -- With `y = 1 + 2 * t`, the equation `y * y = 1 + 4 * c` is `4 * (t ^ 2 + t) = 4 * c`.
+  exact ⟨t, (h2.mul h2).left <| by linear_combination -hy - (y + 1 + 2 * t) * ht⟩
 
 section Domination
 
@@ -141,7 +139,7 @@ theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRin
     (k : ℕ) :
     ((↑) : s → A) '' ↑(IsLocalRing.maximalIdeal s ^ k) = (ϖ : A) ^ k • (s : Set A) := by
   rw [hϖ.maximalIdeal_eq_of_preValuationRing]
-  exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.2 k
+  exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.property k
 
 end ValuationRing
 
@@ -161,12 +159,11 @@ theorem le_iff_dvd (v : R →*₀ Γ₀) (hle : ∀ x, v x ≤ 1) (hlt : ∀ x, 
     · exact hyx
     -- `y = x * z`: either `z` is a unit, or `v y = v x * v z < v x` unless `x = 0`.
     by_cases hz : IsUnit z
-    · exact ⟨↑hz.unit⁻¹, by simp [mul_assoc]⟩
+    · exact hz.mul_right_dvd.mpr dvd_rfl
     rcases eq_or_ne (v x) 0 with hx | hx
     · simp [hsupp x hx]
-    rw [map_mul] at h
-    exact absurd h (mul_lt_of_lt_one_right (zero_lt_iff.mpr hx) (hlt z hz)).not_ge
-  · rw [hz, map_mul]
-    exact mul_le_of_le_one_right' (hle z)
+    exact absurd h ((map_mul v x z).trans_lt
+      (mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr hx) (hlt z hz))).not_ge
+  · exact hz ▸ (map_mul v y z).trans_le (mul_le_of_le_one_right' (hle z))
 
 end MonoidWithZeroHom
