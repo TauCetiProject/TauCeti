@@ -58,6 +58,21 @@ def subspaceSystemPullbackIso :
       (LocalCoefficientSystem.pullback g.hom).obj L) (Hom.w f).symm) ≪≫
     (LocalCoefficientSystem.pullbackCompIso (Hom.snd f).hom Q.map.hom).app L
 
+/-- On the fibre over a point `y` of the subspace, `TopPair.subspaceSystemPullbackIso` is the
+identification of the fibres of `L` over the two expressions of the same point of `Q.fst`, the
+image of `y` in `P.fst` followed by `f`, and the image of `y` under `f` followed by the inclusion
+of the subspace of `Q`. -/
+lemma subspaceSystemPullbackIso_hom_app (y : FundamentalGroupoid P.snd) :
+    (subspaceSystemPullbackIso f L).hom.app y =
+      eqToHom (congrArg (fun z : Q.fst ↦ L.obj (FundamentalGroupoid.mk z))
+        (Hom.w_apply f y.as).symm) := by
+  simp only [subspaceSystemPullbackIso, Iso.trans_hom, Iso.symm_hom, eqToIso.hom, NatTrans.comp_app,
+    eqToHom_app, Iso.app_inv, Iso.app_hom, LocalCoefficientSystem.pullbackCompIso_hom_app_app,
+    LocalCoefficientSystem.pullbackCompIso_inv_app_app]
+  -- The identities are stated at the two presentations of the fibres, which agree only up to
+  -- unfolding the fundamental groupoid functors, so they are removed by unification.
+  exact (Category.id_comp _).trans (Category.comp_id _)
+
 /-- The map on twisted chains of the subspaces induced by a map of pairs.  Its source is first
 identified with the pullback of the target subspace system. -/
 def twistedSubspaceChainComplexMap :

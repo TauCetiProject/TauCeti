@@ -64,6 +64,14 @@ def characteristicCellPairMap {n : ℕ} (j : cell C n) :
   TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j ≫
     (sigmaDiskBoundaryPairIso (cell C n) n).hom ≫ characteristicPairMap C n
 
+/-- The characteristic map of one cell is the inclusion of its disk pair into the disjoint union of
+the disk pairs of all `n`-cells, followed by the characteristic map of all `n`-cells. -/
+lemma characteristicCellPairMap_def {n : ℕ} (j : cell C n) :
+    characteristicCellPairMap C j =
+      TopPair.sigmaι (fun _ : cell C n ↦ diskBoundaryPair.{w} n) j ≫
+        (sigmaDiskBoundaryPairIso (cell C n) n).hom ≫ characteristicPairMap C n :=
+  (rfl)
+
 /-- The ambient component of the single-cell pair map is the characteristic map in rescaled
 Euclidean coordinates. -/
 @[simp]

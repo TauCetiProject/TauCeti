@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Basic
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Chains
+public import TauCeti.AlgebraicTopology.Cellular.Boundary
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 
 /-!
 # The cellular chain group with local coefficients is a coproduct of fibres, one per cell
@@ -37,9 +39,21 @@ summand of the cell `j` is the homology of the fibre over its centre. The first 
 spectral sequence is a coproduct of the same fibre homology groups, one per cell
 (`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`).
 
+The coproduct can also be read directly through the characteristic maps, without identifying the
+summands: the maps `Hₙ(Dⁿ, Sⁿ⁻¹; χⱼ*L) ⟶ Hₙ(Xⁿ, Xⁿ⁻¹; L)` induced by the characteristic maps of the
+`n`-cells form a colimit cofan
+(`TauCeti.isColimitCofanTwistedHomologyMapCharacteristicCellPairMap`). In degree zero the disk is a
+point, and the legs are the classes of coefficients over the centres of the `0`-cells
+(`TauCeti.isColimitCofanιTwistedHomology₀ZeroCellCenter`).
+
 ## Main definitions
 
 * `TauCeti.twistedCellularChainGroupIso`: `Hₙ(Xⁿ, Xⁿ⁻¹; L) ≅ ∐ⱼ L(χⱼ(0))`.
+* `TauCeti.isColimitCofanTwistedHomologyMapCharacteristicCellPairMap`: the cellular chain group is
+  the coproduct of the relative homology of the disks of the cells, along the characteristic maps.
+* `TauCeti.zeroCellCenter`: the centre of a `0`-cell, as a point of the `0`-skeleton.
+* `TauCeti.isColimitCofanιTwistedHomology₀ZeroCellCenter`: `H₀(X⁰, X⁻¹; L)` is the coproduct of
+  the fibres of `L` over the centres of the `0`-cells, along the classes of coefficients.
 
 ## Main results
 
@@ -117,5 +131,108 @@ lemma ι_twistedCellularChainGroupIso_inv (n : ℕ) (j : cell C n) :
   congr 2
   rw [colimit.comp_coconePointUniqueUpToIso_inv_assoc]
   rfl
+
+/-! ### The legs of the characteristic maps -/
+
+/-- **The cellular chain group with local coefficients is the coproduct of the contributions of
+the cells.** The characteristic maps `(Dⁿ, Sⁿ⁻¹) ⟶ (Xⁿ, Xⁿ⁻¹)` of the `n`-cells exhibit
+`Hₙ(Xⁿ, Xⁿ⁻¹; L)` as the coproduct of the `Hₙ(Dⁿ, Sⁿ⁻¹; χⱼ*L)`. -/
+def isColimitCofanTwistedHomologyMapCharacteristicCellPairMap (n : ℕ) :
+    IsColimit (Cofan.mk (twistedCellularChainGroup C L n) fun j : cell C n ↦
+      TopPair.twistedHomologyMap (characteristicCellPairMap C j)
+        (skeletonSystem C L (n + 1)) n) := by
+  let g := (sigmaDiskBoundaryPairIso (cell C n) n).hom ≫ characteristicPairMap C n
+  let K := (LocalCoefficientSystem.pullback (TopPair.Hom.fst g).hom).obj
+    (skeletonSystem C L (n + 1))
+  have hg := TopPair.twistedHomologyMap_comp (sigmaDiskBoundaryPairIso (cell C n) n).hom
+    (characteristicPairMap C n) (skeletonSystem C L (n + 1)) n
+  -- The factors are isomorphisms; instance search does not match the intermediate objects, which
+  -- agree only up to unfolding the skeletal pair, so the composite instance is supplied.
+  have : IsIso (TopPair.twistedHomologyMap g (skeletonSystem C L (n + 1)) n) :=
+    hg ▸ @IsIso.comp_isIso _ _ _ _ _ _ _ inferInstance
+      (@IsIso.comp_isIso _ _ _ _ _ _ _ inferInstance
+        (isIso_twistedHomologyMap_characteristicPairMap C n n (skeletonSystem C L (n + 1))))
+  -- The legs of the additivity cofan, precomposed with the identifications of the coefficients.
+  let e : ∀ j : cell C n, (diskBoundaryPair.{w} n).twistedHomology
+      ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (characteristicCellPairMap C j)).hom).obj
+        (skeletonSystem C L (n + 1))) n ≅
+      (diskBoundaryPair.{w} n).twistedHomology
+        ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (TopPair.sigmaι _ j)).hom).obj K) n :=
+    fun j ↦ asIso ((diskBoundaryPair.{w} n).twistedHomologyCoefficientMap
+        (eqToHom (congrArg (fun f : diskBoundaryPair.{w} n ⟶ skeletonPair C n ↦
+          (LocalCoefficientSystem.pullback (TopPair.Hom.fst f).hom).obj
+            (skeletonSystem C L (n + 1))) (characteristicCellPairMap_def C j))) n) ≪≫
+      asIso ((diskBoundaryPair.{w} n).twistedHomologyCoefficientMap
+        (TopPair.fstPullbackCompIso (TopPair.sigmaι _ j) g (skeletonSystem C L (n + 1))).hom n)
+  exact ((IsColimit.precomposeHomEquiv (Discrete.natIso fun j ↦ e j.as) _).symm
+    (TopPair.isColimitCofanTwistedHomology (fun _ : cell C n ↦ diskBoundaryPair.{w} n) K
+      n)).ofIsoColimit
+    (Cofan.ext (c₂ := Cofan.mk (twistedCellularChainGroup C L n) fun j : cell C n ↦
+        TopPair.twistedHomologyMap (characteristicCellPairMap C j) (skeletonSystem C L (n + 1)) n)
+      (asIso (TopPair.twistedHomologyMap g (skeletonSystem C L (n + 1)) n)) fun j ↦ by
+      refine (Category.assoc _ _ _).trans ?_
+      refine (Category.assoc _ _ _).trans ?_
+      refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
+        (TopPair.twistedHomologyMap_comp _ _ _ n).symm)).trans ?_
+      exact (TopPair.twistedHomologyMap_congr _ (characteristicCellPairMap_def C j) n).symm)
+
+/-- On the disk `D⁰`, a point, the class of a coefficient over the centre is an isomorphism onto
+the relative homology `H₀(D⁰, ∅; K)`. -/
+private lemma isIso_ιTwistedHomology₀_comp_twistedHomologyπ_diskBoundaryPair_zero
+    (K : LocalCoefficientSystem.{u, w, max w v} R (diskBoundaryPair.{w} 0).fst) :
+    IsIso (LocalCoefficientSystem.ιTwistedHomology₀ K (diskCenter 0) ≫
+      (diskBoundaryPair.{w} 0).twistedHomologyπ K 0) := by
+  have hterm : IsTerminal (FundamentalGroupoid.mk (diskCenter.{w} 0)) :=
+    IsTerminal.ofUniqueHom (fun x ↦ ⟦PathConnectedSpace.somePath x.as _⟧)
+      fun _ _ ↦ Subsingleton.elim _ _
+  have : IsIso (LocalCoefficientSystem.ιTwistedHomology₀ K (diskCenter 0)) :=
+    (LocalCoefficientSystem.isColimitTwistedHomology₀Cocone K).isIso_ι_app_of_isTerminal _ hterm
+  infer_instance
+
+/-- The centre of a `0`-cell, as a point of the `0`-skeleton. -/
+-- The body is exposed so that the fibres over the centre, read in `X`, are those over `χₖ(0)`.
+@[expose] def zeroCellCenter (k : cell C 0) : skeletonObj C 1 :=
+  ⟨map 0 k 0, map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)⟩
+
+@[simp]
+lemma coe_zeroCellCenter (k : cell C 0) : (zeroCellCenter C k : X) = map 0 k 0 :=
+  (rfl)
+
+/-- The characteristic map of a `0`-cell sends the centre of the disk to the centre of the cell. -/
+lemma characteristicCellPairMap_fst_diskCenter (k : cell C 0) :
+    TopPair.Hom.fst (characteristicCellPairMap C k) (diskCenter 0) = zeroCellCenter C k :=
+  Subtype.ext ((coe_characteristicCellPairMap_fst_apply C k _).trans
+    (congrArg (map 0 k) (Subsingleton.elim _ _)))
+
+/-- **The cellular chain group in degree zero with local coefficients is the coproduct of the
+fibres over the `0`-cells.** The classes of coefficients over the centres of the `0`-cells exhibit
+`H₀(X⁰, X⁻¹; L)` as the coproduct of the fibres of `L` over these centres. -/
+def isColimitCofanιTwistedHomology₀ZeroCellCenter :
+    IsColimit (Cofan.mk (twistedCellularChainGroup C L 0) fun k : cell C 0 ↦
+      LocalCoefficientSystem.ιTwistedHomology₀ (skeletonSystem C L 1) (zeroCellCenter C k) ≫
+        (skeletonPair C 0).twistedHomologyπ (skeletonSystem C L (0 + 1)) 0) := by
+  let e : ∀ k : cell C 0, (skeletonSystem C L 1).obj (FundamentalGroupoid.mk (zeroCellCenter C k)) ≅
+      (diskBoundaryPair.{w} 0).twistedHomology
+        ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (characteristicCellPairMap C k)).hom).obj
+          (skeletonSystem C L (0 + 1))) 0 :=
+    fun k ↦ eqToIso (congrArg (fun z : skeletonObj C 1 ↦
+      (skeletonSystem C L 1).obj (FundamentalGroupoid.mk z))
+        (characteristicCellPairMap_fst_diskCenter C k).symm) ≪≫
+      @asIso _ _ _ _ _ (isIso_ιTwistedHomology₀_comp_twistedHomologyπ_diskBoundaryPair_zero
+        ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (characteristicCellPairMap C k)).hom).obj
+          (skeletonSystem C L (0 + 1))))
+  refine ((IsColimit.precomposeHomEquiv (Discrete.natIso fun k ↦ e k.as) _).symm
+    (isColimitCofanTwistedHomologyMapCharacteristicCellPairMap C L 0)).ofIsoColimit
+    (Cofan.ext (Iso.refl _) fun k ↦ ?_)
+  -- The leg at `k` is the class over the centre of `D⁰` pushed forward by the characteristic map.
+  refine (Category.comp_id _).trans ?_
+  refine (Category.assoc _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+    (TopPair.twistedHomologyπ_naturality (characteristicCellPairMap C k) _ 0).symm))).trans ?_
+  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _)
+    (LocalCoefficientSystem.ιTwistedHomology₀_homologyMap _ _ _)))).trans ?_
+  refine (Category.assoc _ _ _).symm.trans ?_
+  exact congrArg (· ≫ _) (LocalCoefficientSystem.eqToHom_comp_ιTwistedHomology₀ _
+    (characteristicCellPairMap_fst_diskCenter C k).symm)
 
 end TauCeti

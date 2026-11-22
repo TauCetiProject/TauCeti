@@ -39,6 +39,8 @@ system of fibre homology of a fibration over a CW complex, this homology is the 
 * `TauCeti.twistedCellularDifferential C L n`: the connecting morphism of the triple
   `(Xⁿ⁺¹, Xⁿ, Xⁿ⁻¹)`.
 * `TauCeti.twistedCellularChainComplex C L`: the cellular chain complex with coefficients in `L`.
+* `TauCeti.twistedCellularChainComplexHomologyZeroIso C L`: its homology in degree zero is the
+  cokernel of the cellular differential out of the `1`-cells.
 
 ## References
 
@@ -190,5 +192,15 @@ lemma twistedCellularChainComplex_d (n : ℕ) :
   unfold twistedCellularChainComplex
   simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
   exact ChainComplex.of_d _ _ n
+
+/-- The cellular homology in degree zero with local coefficients is the cokernel of the cellular
+differential out of the `1`-cells. -/
+def twistedCellularChainComplexHomologyZeroIso :
+    (twistedCellularChainComplex C L).homology 0 ≅ cokernel (twistedCellularDifferential C L 0) :=
+  (twistedCellularChainComplex C L).isoHomologyι₀ ≪≫
+    ((twistedCellularChainComplex C L).opcyclesIsCokernel 1 0 (by simp)).coconePointUniqueUpToIso
+      (cokernelIsCokernel _) ≪≫
+    cokernelIsoOfEq (twistedCellularChainComplex_d C L 0) ≪≫ cokernelEpiComp _ _ ≪≫
+    cokernelCompIsIso _ _
 
 end TauCeti
