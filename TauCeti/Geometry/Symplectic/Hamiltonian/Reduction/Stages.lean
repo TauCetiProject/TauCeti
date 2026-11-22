@@ -196,9 +196,7 @@ omit [IQ₁.Boundaryless] in
 /-- **Regularity in stages gives regularity of the pair.** Let `c` be a regular value of `μ`, let
 `π₁ : μ⁻¹(c) → Q₁` be a submersion out of the level with its submanifold structure, and let `ν₁` be
 a moment map on `Q₁` with `ν₁ ∘ π₁ = ν ∘ i₁` having `b` as a regular value. Then `(c, b)` is a
-regular value of the moment map `x ↦ (μ x, ν x)` of `G × L`. Given `(α, β)`, pick `v₀` with
-`dμ v₀ = α`, then a tangent vector `u` of `μ⁻¹(c)` with `dν₁ (dπ₁ u) = β - dν v₀`; on it `dμ`
-vanishes and `dν = dν₁ ∘ dπ₁`, so `v₀ + u` maps to `(α, β)`. -/
+regular value of the moment map `x ↦ (μ x, ν x)` of `G × L`. -/
 theorem forall_differential_surjective_prod_of_isSubmersion (hμ : σ.IsEquivariantMomentMap μ)
     (hν : σ.IsEquivariantMomentMap ν) (hsmul : ∀ (g : G × L) (x : M), g • x = g.1 • g.2 • x)
     (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) (hνG : ∀ (g : G) (x : M), ν (g • x) = ν x)
@@ -213,6 +211,9 @@ theorem forall_differential_surjective_prod_of_isSubmersion (hμ : σ.IsEquivari
           Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G IL L (c, b) →
         Surjective ((hμ.prod_of_smul_eq_smul_smul hν hsmul hμL hνG).differential x) := by
   let := hμ.levelSubMulActionChartedSpace c hreg₁ hn₁
+  -- Given `(α, β)`, pick `v₀` with `dμ v₀ = α`, then a tangent vector `u` of `μ⁻¹(c)` with
+  -- `dν₁ (dπ₁ u) = β - dν v₀`; on it `dμ` vanishes and `dν = dν₁ ∘ dπ₁`, so `v₀ + u` maps to
+  -- `(α, β)`.
   intro hπ₁ x hx φ
   rw [(Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G IL L).injective.eq_iff, Prod.mk.injEq] at hx
   have hemb₁ := hμ.isSmoothEmbedding_coe_levelSubMulAction hreg₁ hn₁
@@ -221,9 +222,8 @@ theorem forall_differential_surjective_prod_of_isSubmersion (hμ : σ.IsEquivari
   obtain ⟨v₀, hv₀⟩ := hreg₁ x hx.1 p.1
   obtain ⟨w, hw⟩ := hreg₂ (π₁ x₁) ((congrFun hν₁ x₁).trans hx.2) (p.2 - hν.differential x v₀)
   obtain ⟨u, rfl⟩ := hπ₁.surjective_mfderiv (by simp) x₁ w
-  have hμu : hμ.differential x (mfderiv _ I' Subtype.val x₁ u) = 0 := by
-    rw [← LinearMap.mem_ker, ← hμ.range_mfderiv_coe_levelSubMulAction hreg₁ hn₁ x₁]
-    exact ⟨u, rfl⟩
+  have hμu : hμ.differential x (mfderiv _ I' Subtype.val x₁ u) = 0 :=
+    hμ.differential_mfderiv_coe_levelSubMulAction hreg₁ hn₁ x₁ u
   have hνu : hν.differential x (mfderiv _ I' Subtype.val x₁ u) = p.2 - hν.differential x v₀ := by
     rw [← hw]
     exact (hν.toIsMomentMap.differential_mfderiv_eq_of_comp_eq h₁.toIsMomentMap
@@ -236,9 +236,7 @@ theorem forall_differential_surjective_prod_of_isSubmersion (hμ : σ.IsEquivari
 
 /-- The inclusion `j` of the level of `(μ, ν)` at `(c, b)` into `μ⁻¹(c)` is smooth, and the map
 `z ↦ π₁ z` from the level of `(μ, ν)` to the level of `ν₁` at `b` is smooth with surjective
-differentials. A tangent vector `w` of the level of `ν₁` lifts along `dπ₁` to a
-tangent vector `v` of `μ⁻¹(c)`; then `dμ v = 0` and `dν v = dν₁ (dπ₁ v) = dν₁ w = 0`, so `v` is
-tangent to the level of `(μ, ν)`. -/
+differentials. -/
 private theorem contMDiff_levelProdToLevelSnd (hμ : σ.IsEquivariantMomentMap μ)
     (hν : σ.IsEquivariantMomentMap ν) (hsmul : ∀ (g : G × L) (x : M), g • x = g.1 • g.2 • x)
     (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) (hνG : ∀ (g : G) (x : M), ν (g • x) = ν x)
@@ -288,20 +286,19 @@ private theorem contMDiff_levelProdToLevelSnd (hμ : σ.IsEquivariantMomentMap �
     (hemb₁.isImmersion.mfderiv_injective (by simp) (j z))
     (hemb₂.isImmersion.mfderiv_injective (by simp) (k z)) (hπ₁.surjective_mfderiv (by simp) (j z))
     fun v w hvw ↦ ?_⟩
-  have hμv : hμ.differential (j z) (mfderiv _ I' Subtype.val (j z) v) = 0 := by
-    rw [← LinearMap.mem_ker, ← hμ.range_mfderiv_coe_levelSubMulAction hreg₁ hn₁ (j z)]
-    exact ⟨v, rfl⟩
+  -- A tangent vector `w` of the level of `ν₁` lifts along `dπ₁` to a tangent vector `v` of
+  -- `μ⁻¹(c)`; then `dμ v = 0` and `dν v = dν₁ (dπ₁ v) = dν₁ w = 0`, so `v` is tangent to the level
+  -- of `(μ, ν)`.
+  have hμv : hμ.differential (j z) (mfderiv _ I' Subtype.val (j z) v) = 0 :=
+    hμ.differential_mfderiv_coe_levelSubMulAction hreg₁ hn₁ (j z) v
   have hνv : hν.differential (j z) (mfderiv _ I' Subtype.val (j z) v) = 0 := by
     rw [← hν.toIsMomentMap.differential_mfderiv_eq_of_comp_eq h₁.toIsMomentMap
       (hemb₁.contMDiff.mdifferentiable (by simp)) (hπ₁.contMDiff.mdifferentiable (by simp)) hν₁
-      (j z) v, ← hvw, ← LinearMap.mem_ker,
-      ← h₁.range_mfderiv_coe_levelSubMulAction hreg₂ hn₂ (k z)]
-    exact ⟨w, rfl⟩
-  have hker : H.differential z (mfderiv _ I' Subtype.val (j z) v) = 0 := by
-    rw [IsMomentMap.differential_prod_of_smul_eq_smul_smul hμ.toIsMomentMap hν.toIsMomentMap
-      hsmul, hμv, hνv, Prod.mk_zero_zero, map_zero]
-  rw [← LinearMap.mem_ker, ← H.range_mfderiv_coe_levelSubMulAction hreg hn z] at hker
-  exact hker
+      (j z) v, ← hvw]
+    exact h₁.differential_mfderiv_coe_levelSubMulAction hreg₂ hn₂ (k z) w
+  refine (H.mem_range_mfderiv_coe_levelSubMulAction_iff hreg hn z _).2 ?_
+  rw [IsMomentMap.differential_prod_of_smul_eq_smul_smul hμ.toIsMomentMap hν.toIsMomentMap hsmul,
+    hμv, hνv, Prod.mk_zero_zero, map_zero]
 
 /-- **Reduction in stages for a product group.** Let `G` and `L` act on `(M, σ)` with
 coadjoint-equivariant moment maps `μ` and `ν`, where `μ` is invariant under `L` and `ν` under `G`,

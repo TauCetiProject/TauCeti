@@ -65,6 +65,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `levelSubMulActionChartedSpace`, `isManifold_levelSubMulAction`,
   `isSmoothEmbedding_coe_levelSubMulAction`, `range_mfderiv_coe_levelSubMulAction`: the regular
   level `μ⁻¹(c)`, as a `G_c`-space, is an embedded submanifold with tangent spaces `ker dμ`.
+* `mem_range_mfderiv_coe_levelSubMulAction_iff`, `differential_mfderiv_coe_levelSubMulAction`: a
+  tangent vector of `M` is tangent to the level exactly when `dμ` vanishes on it.
 * `orbitRelQuotientChartedSpace`, `isManifold_orbitRelQuotient`,
   `isSubmersion_quotientMk_levelSubMulAction`: the reduced space `μ⁻¹(c) / G_c` is a smooth
   manifold and the orbit projection is a submersion.
@@ -197,6 +199,24 @@ theorem range_mfderiv_coe_levelSubMulAction (z : h.levelSubMulAction c) :
   rw [← h.coe_comp_levelSubMulActionDiffeomorph hreg hn,
     Diffeomorph.range_mfderiv_comp_diffeomorph _ (by simp)]
   exact h.toIsMomentMap.range_mfderiv_coe_level hreg hn _
+
+/-- **Tangent vectors of a regular level**, for the level as a `G_c`-space: a tangent vector `v` of
+`M` at a point `z` of the level is tangent to the level exactly when `dμ_z v = 0`. -/
+theorem mem_range_mfderiv_coe_levelSubMulAction_iff (z : h.levelSubMulAction c)
+    (v : TangentSpace I' (z : M)) :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    v ∈ LinearMap.range
+        (mfderiv 𝓘(ℝ, Fin n → ℝ) I' (Subtype.val : h.levelSubMulAction c → M) z).toLinearMap ↔
+      h.differential z v = 0 := by
+  rw [h.range_mfderiv_coe_levelSubMulAction hreg hn, LinearMap.mem_ker]
+
+/-- **`dμ` vanishes on a regular level**, for the level as a `G_c`-space: `dμ_z (di u) = 0` for
+every tangent vector `u` of the level at `z`, where `i` is the inclusion. -/
+theorem differential_mfderiv_coe_levelSubMulAction (z : h.levelSubMulAction c) (u : Fin n → ℝ) :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    h.differential z
+      (mfderiv 𝓘(ℝ, Fin n → ℝ) I' (Subtype.val : h.levelSubMulAction c → M) z u) = 0 :=
+  (h.mem_range_mfderiv_coe_levelSubMulAction_iff hreg hn z _).1 ⟨u, rfl⟩
 
 end Level
 
