@@ -9,7 +9,7 @@ public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 import TauCeti.GroupTheory.GroupAction.Closure
-import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.Cycle.Colouring
 import TauCeti.GroupTheory.Perm.ProdCongr
 
 /-!
@@ -42,6 +42,9 @@ permutations of the same type.
   moves a point to another orbit of `σ`.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
+* `Equiv.Perm.card_image_invariantColouringEquiv_le_orbitCount` and
+  `Equiv.Perm.card_image_invariantColouringEquiv_eq_orbitCount_iff`: an invariant colouring uses at
+  most one colour per orbit and attains the bound exactly when its orbit labels are injective.
 * `Equiv.Perm.SameCycle.of_forall_sameCycle_apply`: a permutation moving every point within its
   cycle of `π` has each of its cycles inside a cycle of `π`.
 * `TauCeti.orbitCount_le_card_orbitRelQuotient`: a subgroup of permutations moving every point
@@ -110,6 +113,24 @@ noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
 /-- The orbit count is the cardinality of the type of orbits. -/
 theorem orbitCount_def (σ : Equiv.Perm α) :
     orbitCount σ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) := (rfl)
+
+/-- An invariant colouring uses at most one colour per orbit. -/
+theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_le_orbitCount
+    {ι γ : Type*} [Fintype ι] [DecidableEq γ] (π : Perm ι) (f : Quotient (SameCycle.setoid π) → γ) :
+    (Finset.univ.image (invariantColouringEquiv π f).val).card ≤ orbitCount π := by
+  rw [π.card_image_invariantColouringEquiv, orbitCount_def]
+  exact Finite.card_range_le f
+
+/-- An invariant colouring uses as many colours as there are orbits exactly when its orbit labels
+are injective. -/
+theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_eq_orbitCount_iff
+    {ι γ : Type*} [Fintype ι] [DecidableEq γ] (π : Perm ι) (f : Quotient (SameCycle.setoid π) → γ) :
+    (Finset.univ.image (invariantColouringEquiv π f).val).card = orbitCount π ↔
+      Function.Injective f := by
+  rw [π.card_image_invariantColouringEquiv, orbitCount_def]
+  have h : (Set.univ : Set (Quotient (SameCycle.setoid π))).Finite := Set.finite_univ
+  simpa only [Set.image_univ, Set.injOn_univ, ← Nat.card_coe_set_eq, Nat.card_univ] using
+    Set.ncard_image_iff (f := f) h
 
 /-- Each point of `α` is its own orbit under the identity permutation. -/
 @[simp]

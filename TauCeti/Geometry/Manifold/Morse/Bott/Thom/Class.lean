@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
+public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
+public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.DiscSpherePair
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Homology
 
@@ -22,9 +23,10 @@ Thom pair `(ν⁻, ν⁻₀)`
 and when the band `f⁻¹[a, b]` around the level is compact with all its critical points on `i`, the
 relative homology across the level is that of `(D_ε, S_ε)` for all small `ε > 0`
 (`nonempty_singularHomology_sublevelPair_iso_negativeDiscSpherePair` in
-`TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair`). Below the rank `r` the pair `(D_ε, S_ε)` has no
-homology (`IsCriticalSubmanifold.isZero_singularHomology_negativeDiscSpherePair_of_lt`), since the
-Thom pair has none. This file applies the homology Thom
+`TauCeti.Geometry.Manifold.Morse.Bott.Thom.DiscSpherePair`). Below the rank `r` the pair
+`(D_ε, S_ε)` has no homology
+(`IsCriticalSubmanifold.isZero_singularHomology_negativeDiscSpherePair_of_lt`), since the Thom pair
+has none. This file applies the homology Thom
 isomorphism `Hᵣ₊ₚ(ν⁻, ν⁻₀; K) ≅ Hₚ(S; K)` (`TauCeti.homologyThomIso`) to these pairs:
 
 * given a Thom class `u` of `ν⁻` with coefficients in a commutative ring `K`, the pair `(D_ε, S_ε)`
@@ -47,6 +49,15 @@ orientation local system of `ν⁻`, which an orientation trivializes
 statement fails: for a critical circle of index one whose negative normal bundle is a Möbius line,
 `H₁(D_ε, S_ε; ℤ)` is `ℤ/2`, not `H₀(S¹; ℤ) = ℤ`.
 
+For a nondegenerate critical submanifold with Morse index `r` at every point and a smooth fibre
+metric `g`, the negative normal spaces always have local frames of size `r`
+(`hasLocalSubbundleFrames_negativeNormalSpace` in
+`TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle`), so `ν⁻` is a vector bundle of rank `r`
+with no frames assumed. For this bundle the file names its orientations
+(`NegativeNormalBundleOrientation`) and the existence of a Thom class over `K`
+(`HasNegativeNormalThomClass`), which holds over every commutative ring when `ν⁻` is oriented and
+over `𝔽₂` in any case.
+
 The Thom isomorphism needs the model fibre `Fin r → ℝ` of `ν⁻` in the universe of its base, so in
 all statements below the base `S`, the model space `E` of `M` and the coefficient ring `K` live in
 `Type`, and in the band statements so does `M`.
@@ -63,6 +74,12 @@ In the namespace `TauCeti.SmoothEmbedding.IsCriticalSubmanifold`:
 
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
+* `NegativeNormalBundleOrientation` and `HasNegativeNormalThomClass`: the orientations of the
+  negative normal bundle of a Morse–Bott submanifold, and the existence of a Thom class of it over
+  a commutative ring `K`.
+* `hasNegativeNormalThomClass_of_orientation` and
+  `hasNegativeNormalThomClass_of_subsingleton_units`: such a Thom class exists over every
+  commutative ring when the negative normal bundle is oriented, and over `𝔽₂` in any case.
 * `nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass`: a Thom class of
   `ν⁻` identifies the relative homology `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K)` of a critical band with
   `Hₚ(S; K)`.
@@ -189,6 +206,91 @@ theorem nonempty_singularHomology_negativeDiscSpherePair_iso_singularHomology_of
     hdim hV hε u hu hm
 
 end IsCriticalSubmanifold
+
+/-! ### The Thom class of the negative normal bundle -/
+
+namespace IsNondegenerateCriticalSubmanifold
+
+variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P]
+  [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
+  (hn : (∞ : ℕ∞ω) ≠ 0) (h : i.IsNondegenerateCriticalSubmanifold f)
+  (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+  (g : letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+  (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
+
+/-- **The orientations of the negative normal bundle.** Let `i` be a nondegenerate critical
+submanifold of a smooth function `f`, with Morse index `r` at every point, and let `g` be a smooth
+fibre metric on its normal bundle. The negative normal spaces relative to `g` form a vector bundle
+`ν⁻` of rank `r` (`hasLocalSubbundleFrames_negativeNormalSpace`), and this is the type of
+orientations of `ν⁻`. -/
+abbrev NegativeNormalBundleOrientation :=
+  letI := i.normalSpaceFiberBundle hn hdim
+  letI := i.normalSpaceVectorBundle hn hdim
+  letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  letI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+  haveI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
+  VectorBundleOrientation (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
+    (Fin r)
+
+/-- **The negative normal bundle has a Thom class.** Let `i` be a nondegenerate critical
+submanifold of a smooth function `f`, with Morse index `r` at every point, and let `g` be a smooth
+fibre metric on its normal bundle. This says that the negative normal bundle `ν⁻` relative to `g`,
+a vector bundle of rank `r` (`hasLocalSubbundleFrames_negativeNormalSpace`), has a Thom class with
+coefficients in the commutative ring `K`. -/
+def HasNegativeNormalThomClass (K : Type) [CommRing K] : Prop :=
+  letI := i.normalSpaceFiberBundle hn hdim
+  haveI := i.normalSpaceVectorBundle hn hdim
+  letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  letI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+  ∃ u : (thomPair (Fin r → ℝ) fun s ↦
+      h.negativeNormalSpace hn g.toRiemannianMetric s).singularCohomology
+      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ (Fin r → ℝ)),
+    IsThomClass (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) u
+
+/-- `HasNegativeNormalThomClass` says that the negative normal bundle has a Thom class over `K`. -/
+theorem hasNegativeNormalThomClass_iff (K : Type) [CommRing K] :
+    h.HasNegativeNormalThomClass hn hfs hdim g hr K ↔
+      letI := i.normalSpaceFiberBundle hn hdim
+      haveI := i.normalSpaceVectorBundle hn hdim
+      letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+      letI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+      ∃ u : (thomPair (Fin r → ℝ) fun s ↦
+          h.negativeNormalSpace hn g.toRiemannianMetric s).singularCohomology
+          (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ (Fin r → ℝ)),
+        IsThomClass (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) u :=
+  Iff.rfl
+
+/-- **An oriented negative normal bundle has a Thom class** with coefficients in every commutative
+ring `K` (`TauCeti.VectorBundleOrientation.exists_isThomClass`). -/
+theorem hasNegativeNormalThomClass_of_orientation
+    (o : h.NegativeNormalBundleOrientation hn hfs hdim g hr) (K : Type) [CommRing K] :
+    h.HasNegativeNormalThomClass hn hfs hdim g hr K := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
+  exact VectorBundleOrientation.exists_isThomClass (by simp) o K
+
+/-- **The negative normal bundle has a Thom class mod `2`**, with coefficients in every commutative
+ring `K` whose only unit is `1`, such as `ZMod 2`, with no orientation needed
+(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). -/
+theorem hasNegativeNormalThomClass_of_subsingleton_units (K : Type) [CommRing K]
+    [Subsingleton Kˣ] : h.HasNegativeNormalThomClass hn hfs hdim g hr K := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
+  exact (existsUnique_isThomClass_of_subsingleton_units K).exists
+
+end IsNondegenerateCriticalSubmanifold
 
 /-! ### The homology of a critical band -/
 
