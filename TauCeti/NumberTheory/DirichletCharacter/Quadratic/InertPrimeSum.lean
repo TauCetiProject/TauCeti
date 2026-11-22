@@ -369,8 +369,7 @@ theorem DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le {R : Ty
         (6 * (C : ℝ) * Real.log 4 + 4 * Real.log 4 + 15) := by
   have : NeZero q := ⟨by omega⟩
   have : Nontrivial R := ⟨⟨2, 0, NeZero.ne (2 : R)⟩⟩
-  obtain ⟨d, hd, hd1, hdq_abs, hval⟩ := hprim.exists_squarefree_apply_eq_jacobiSym hquad h1
-  have hdq : d.natAbs ≤ q := Int.ofNat_le.mp (Int.abs_eq_natAbs d ▸ hdq_abs)
+  obtain ⟨d, hd, hd1, hdq, hval⟩ := hprim.exists_squarefree_apply_natCast_eq_jacobiSym hquad h1
   set S_all := (Nat.primesLE (q ^ C)).filter fun p : ℕ ↦ χ (p : ZMod q) = -1
   have hsplit := (Finset.sum_filter_add_sum_filter_not S_all (fun p : ℕ ↦ p ≤ 2 * C)
     (fun p : ℕ ↦ Real.log p / (p : ℝ))).symm

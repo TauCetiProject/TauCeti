@@ -12,6 +12,9 @@ public import TauCeti.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
 /-!
 # Naturality of singular simplices
 
+`TopCat.toSSetObjEquiv_μ_apply` evaluates the native product of singular simplices, and
+`TopCat.toSSetObjEquiv_yonedaEquiv_symm_app` evaluates a classified simplex in every universe.
+
 The identification of singular simplices with continuous maps from standard simplices commutes
 with continuous maps, which act by postcomposition; in particular, so does the identification of
 points with singular zero-simplices. Faces of singular simplices obtained by precomposition with
@@ -373,3 +376,35 @@ lemma mem_range_toSSet_map_app_iff {X Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsIndu
     exact hg t
 
 end Topology.IsInducing
+
+namespace TopCat
+
+open CategoryTheory MonoidalCategory CartesianMonoidalCategory Convexity
+open scoped Simplicial
+
+/-- The singular functor's monoidal map evaluates to the actual pair of simplex values. -/
+@[simp]
+lemma toSSetObjEquiv_μ_apply {X Y : TopCat.{u}} {n : ℕ}
+    (x : (TopCat.toSSet.obj X) _⦋n⦌) (y : (TopCat.toSSet.obj Y) _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    (dsimp% only [Monoidal.tensorObj_obj] (X ⊗ Y).toSSetObjEquiv _
+      ((Functor.LaxMonoidal.μ TopCat.toSSet X Y).app _ (x, y)) w) =
+        (X.toSSetObjEquiv _ x w, Y.toSSetObjEquiv _ y w) := by
+  refine Prod.ext ?_ ?_
+  · exact congrArg (fun f ↦ X.toSSetObjEquiv _ (f.app _ (x, y)) w)
+      (Functor.Monoidal.μ_fst TopCat.toSSet X Y)
+  · exact congrArg (fun f ↦ Y.toSSetObjEquiv _ (f.app _ (x, y)) w)
+      (Functor.Monoidal.μ_snd TopCat.toSSet X Y)
+
+/-- A classified singular simplex evaluates by precomposition with its vertex map. -/
+@[simp]
+lemma toSSetObjEquiv_yonedaEquiv_symm_app {X : TopCat.{u}} {p n : ℕ}
+    (x : (TopCat.toSSet.obj X) _⦋p⦌) (f : (Δ[p] : SSet.{u}) _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    X.toSSetObjEquiv _ ((SSet.yonedaEquiv.symm x).app _ f) w =
+      X.toSSetObjEquiv _ x (w.map (SSet.stdSimplex.objEquiv f)) := by
+  exact (congrArg (fun z : (TopCat.toSSet.obj X) _⦋n⦌ ↦ X.toSSetObjEquiv _ z w)
+    (SSet.yonedaEquiv_symm_app x f)).trans
+      (TopCat.toSSetObjEquiv_naturality_apply (SSet.stdSimplex.objEquiv f) x w)
+
+end TopCat

@@ -24,6 +24,13 @@ and the right side modulo `|D|`. Explicitly, `D` is `N` if `χ (-1) = 1` and `-N
 (including when `2 = 0`, where `χ = 1`, `N = 1`, and `D = 1`). The principal character is included:
 it is primitive only at level `1`, where `D = 1`.
 
+At odd arguments the character of `D` is the Jacobi symbol `(d / ·)` of the squarefree part `d` of
+`D`, the radicand of the quadratic field cut out by `χ`, since `D` is `d` or `4 * d`. So a
+nonprincipal primitive quadratic character of level `N` is `(d / ·)` at every odd natural number,
+for a squarefree integer `d ≠ 1` with `|d| ≤ N`; in particular `χ p = (d / p)` at every odd
+prime `p`. This is the form in which a quadratic character is evaluated through the arithmetic of
+`ℚ(√d)`.
+
 The proof is local. At a prime power `p ^ k`, `k ≠ 0`, a primitive quadratic character is the
 Legendre character modulo `p` (so `k = 1`) when `p` is odd, and `χ₄`, `χ₈` or `χ₈'` (so `k = 2`
 or `k = 3`) when `p = 2`; in each case it is the character of a prime discriminant `p*`, `-4`, `8`
@@ -41,9 +48,9 @@ The results hold for characters with values in any commutative ring.
 * `DirichletCharacter.IsPrimitive.exists_isFundamentalDiscr_apply_eq`: a primitive quadratic
   character of level `N ≠ 0` is the character of a fundamental discriminant of absolute
   value `N`.
-* `DirichletCharacter.IsPrimitive.exists_squarefree_apply_eq_jacobiSym`: for a nonprincipal
-  primitive quadratic character of level `N ≠ 0`, there is a squarefree integer `d ≠ 1` with
-  `|d| ≤ N` such that `χ n = jacobiSym d n` at every odd natural number `n`.
+* `DirichletCharacter.IsPrimitive.exists_squarefree_apply_natCast_eq_jacobiSym`: a nonprincipal
+  primitive quadratic character of level `N ≠ 0` is the Jacobi symbol `(d / ·)` at odd arguments,
+  for a squarefree `d ≠ 1` with `|d| ≤ N`.
 * `DirichletCharacter.eq_conductor_ite_of_forall_isCoprime`: any fundamental discriminant `D` with
   `|D| = χ.conductor` whose character agrees with `χ` on integers prime to `N` equals
   `if χ (-1) = 1 then χ.conductor else -χ.conductor`.
@@ -51,13 +58,14 @@ The results hold for characters with values in any commutative ring.
   `DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`: for a primitive
   quadratic character `χ` of level `N ≠ 0`, that fundamental discriminant is
   `if χ (-1) = 1 then N else -N`.
+* `DirichletCharacter.IsPrimitive.apply_natCast_eq_jacobiSym_squarefreePart`,
+  `DirichletCharacter.IsPrimitive.squarefreePart_ne_one`: `d` is the squarefree part of
+  `if χ (-1) = 1 then N else -N`, and `d ≠ 1` for nonprincipal `χ`.
 
 ## References
 
-* H. Davenport, *Multiplicative Number Theory*, 2nd ed., Graduate Texts in Mathematics 74,
-  Springer, 1980, Chapter 5.
-* H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I. Classical Theory*,
-  Cambridge University Press, 2007, §9.3, pp. 295–297 (Theorem 9.13).
+H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I. Classical Theory*,
+Cambridge University Press, 2007, §9.3, pp. 295–297 (Theorem 9.13).
 -/
 
 public section
@@ -173,35 +181,33 @@ theorem IsPrimitive.exists_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
     fundamentalDiscriminantCharCast_apply,
     fundamentalDiscriminantChar_apply_primeDiscriminant (hP p hp).1]
 
-/-- **Radicand form of the classification of primitive quadratic characters.** For a nonprincipal
-primitive quadratic character `χ` of level `N ≠ 0` over any commutative ring `R`, there is a
-squarefree integer `d ≠ 1` with `|d| ≤ N` such that `χ n = jacobiSym d n` at every odd natural
-number `n`, including integers not coprime to `N`. -/
-theorem IsPrimitive.exists_squarefree_apply_eq_jacobiSym {N : ℕ} [NeZero N]
+/-- A character agreeing with the character of a fundamental discriminant `D` is, at odd natural
+numbers, the Jacobi symbol of the squarefree part of `D`. -/
+private theorem apply_natCast_eq_jacobiSym_squarefreePart_of_forall {N : ℕ}
+    {χ : DirichletCharacter R N} {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (hval : ∀ n : ℤ, χ n = fundamentalDiscriminantCharCast R D hD n) {n : ℕ}
+    (hn : _root_.Odd n) :
+    χ n = jacobiSym (D : ℚ).squarefreePart n := by
+  rw [hD.jacobiSym_squarefreePart hn, ← fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn,
+    ← fundamentalDiscriminantCharCast_apply, ← hval n, Int.cast_natCast]
+
+/-- **Primitive quadratic characters are Jacobi symbols at odd arguments.** A nonprincipal
+primitive quadratic character `χ` of level `N ≠ 0` is the Jacobi symbol `(d / ·)` of a squarefree
+integer `d ≠ 1` with `|d| ≤ N` at every odd natural number; in particular `χ p = (d / p)` at every
+odd prime `p`. Here `d` can be taken to be the squarefree part of the fundamental discriminant of
+`χ`, the radicand of the quadratic field cut out by `χ`; this is
+`DirichletCharacter.IsPrimitive.apply_natCast_eq_jacobiSym_squarefreePart`. -/
+theorem IsPrimitive.exists_squarefree_apply_natCast_eq_jacobiSym {N : ℕ} [NeZero N]
     {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) (h1 : χ ≠ 1) :
-    ∃ d : ℤ, Squarefree d ∧ d ≠ 1 ∧ |d| ≤ N ∧
-      ∀ n : ℕ, _root_.Odd n → χ n = (jacobiSym d n : R) := by
+    ∃ d : ℤ, Squarefree d ∧ d ≠ 1 ∧ d.natAbs ≤ N ∧
+      ∀ n : ℕ, _root_.Odd n → χ n = jacobiSym d n := by
   obtain ⟨D, hD, hDN, hval⟩ := hχ.exists_isFundamentalDiscr_apply_eq hq
-  have hD1 : D ≠ 1 := by
-    rintro rfl
-    obtain rfl : N = 1 := hDN.symm
-    exact h1 (MulChar.ext fun x ↦ by simp [Subsingleton.elim x 1])
-  have hval_odd {n : ℕ} (hn : _root_.Odd n) : χ n = (jacobiSym D n : R) := by
-    have h := hval n
-    rwa [fundamentalDiscriminantCharCast_apply,
-      fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn, Int.cast_natCast] at h
-  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨-, hsf⟩ | ⟨h0, hdsf, hd4⟩
-  · refine ⟨D, hsf, hD1, ?_, fun n hn ↦ hval_odd hn⟩
-    rw [Int.abs_eq_natAbs, hDN]
-  · obtain ⟨d, rfl⟩ : (4 : ℤ) ∣ D := Int.dvd_of_emod_eq_zero h0
-    rw [Int.mul_ediv_cancel_left d (by decide : (4 : ℤ) ≠ 0)] at hdsf hd4
-    refine ⟨d, hdsf, by omega, ?_, fun n hn ↦ ?_⟩
-    · have habs : 4 * d.natAbs = N := by simpa [Int.natAbs_mul] using hDN
-      rw [Int.abs_eq_natAbs]
-      omega
-    · have h4 : (4 : ℤ) * d = 2 ^ 2 * d := by ring
-      have hcop : (2 : ℤ).gcd n = 1 := Nat.coprime_two_left.mpr hn
-      rw [hval_odd hn, h4, jacobiSym.mul_left, jacobiSym.sq_one' hcop, one_mul]
+  refine ⟨_, Rat.squarefree_squarefreePart (by exact_mod_cast hD.ne_zero), ?_,
+    hDN ▸ Rat.natAbs_squarefreePart_intCast_le D,
+    fun n hn ↦ apply_natCast_eq_jacobiSym_squarefreePart_of_forall hD hval hn⟩
+  rw [Ne, hD.squarefreePart_eq_one_iff]
+  rintro rfl
+  exact h1 (level_one' χ hDN.symm)
 
 /-- Any fundamental discriminant `D` with `|D| = χ.conductor` whose character agrees with `χ` at
 every integer prime to the level `N` equals `if χ (-1) = 1 then χ.conductor else -χ.conductor`.
@@ -273,6 +279,24 @@ theorem IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite (hχ : χ.IsPri
     χ n = fundamentalDiscriminantCharCast R _ (hχ.isFundamentalDiscr_ite hq) n := by
   obtain ⟨D, hD, rfl, hval⟩ := hχ.exists_eq_ite_apply_eq hq
   exact hval n
+
+/-- **Primitive quadratic characters are Jacobi symbols of their radicand at odd arguments.**
+A primitive quadratic character `χ` of level `N ≠ 0` is, at every odd natural number, the Jacobi
+symbol `(d / ·)` of the squarefree part `d` of its fundamental discriminant
+`D = if χ (-1) = 1 then N else -N`. -/
+theorem IsPrimitive.apply_natCast_eq_jacobiSym_squarefreePart (hχ : χ.IsPrimitive)
+    (hq : χ.IsQuadratic) {n : ℕ} (hn : _root_.Odd n) :
+    χ n = jacobiSym ((if χ (-1) = 1 then (N : ℤ) else -N : ℤ) : ℚ).squarefreePart n :=
+  apply_natCast_eq_jacobiSym_squarefreePart_of_forall (hχ.isFundamentalDiscr_ite hq)
+    (hχ.apply_eq_fundamentalDiscriminantCharCast_ite hq) hn
+
+/-- The squarefree part of the fundamental discriminant `if χ (-1) = 1 then N else -N` of a
+nonprincipal primitive quadratic character `χ` of level `N ≠ 0` is not `1`. -/
+theorem IsPrimitive.squarefreePart_ne_one (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic)
+    (h1 : χ ≠ 1) : ((if χ (-1) = 1 then (N : ℤ) else -N : ℤ) : ℚ).squarefreePart ≠ 1 := by
+  rw [Ne, (hχ.isFundamentalDiscr_ite hq).squarefreePart_eq_one_iff]
+  intro hD
+  exact h1 (level_one' χ (by split_ifs at hD <;> omega))
 
 end Sign
 

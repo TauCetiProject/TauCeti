@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Bivariate
+public import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
@@ -13,7 +14,8 @@ import Mathlib.Algebra.Polynomial.FieldDivision
 
 Evaluating a bivariate polynomial at a point `(x, y)` is `eval₂` of the evaluation at `x`
 of its coefficients, read at `y`. The bivariate-to-multivariate equivalence also commutes
-with coefficient maps and evaluation.
+with coefficient maps and evaluation. The coefficients of `f(X + Y)` are binomial multiples of
+those of `f`.
 
 Swapping the two indeterminates via `Polynomial.Bivariate.swap` transposes the coefficient table,
 so `(Bivariate.swap Q).natDegree` is the least upper bound on the degrees of the coefficients of
@@ -34,6 +36,8 @@ fiber `X = β`.
   substitutions into `MvPolynomial (Fin 2) R`.
 * `Irreducible.map_evalRingHom_ne_zero`: an irreducible bivariate polynomial of positive outer
   degree over an integral domain does not vanish identically on any vertical fiber.
+* `Polynomial.coeff_coeff_aeval_C_X_add_Y`: the coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is
+  `(a + b).choose b * f_{a+b}`.
 -/
 
 public section
@@ -189,5 +193,17 @@ theorem _root_.Irreducible.map_evalRingHom_ne_zero {R : Type*} [CommRing R] [IsD
       rw [hQR]
       exact natDegree_mul_le.trans (by simp [hR₀])
     omega
+
+/-- The coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is `(a + b).choose b * f_{a+b}`. -/
+@[simp]
+theorem coeff_coeff_aeval_C_X_add_Y {R : Type*} [CommSemiring R] (f : R[X]) (a b : ℕ) :
+    ((aeval (C X + Y : R[X][Y]) f).coeff b).coeff a =
+      ((a + b).choose b : R) * f.coeff (a + b) := by
+  -- `f(X + Y)` is the Taylor expansion of `f(Y)` at `X`, whose coefficients are the Hasse
+  -- derivatives of `f`.
+  have h : aeval (C X + Y : R[X][Y]) f = taylor X (f.map C) := by
+    rw [taylor_apply, comp, eval₂_map, aeval_def, add_comm,
+      IsScalarTower.algebraMap_eq R R[X] R[X][X], algebraMap_eq, algebraMap_eq]
+  rw [h, taylor_coeff, hasseDeriv_map, eval_map, eval₂_C_X, hasseDeriv_coeff]
 
 end Polynomial
