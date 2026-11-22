@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
-public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.Algebra.Polynomial.Reverse
 public import TauCeti.GroupTheory.Perm.Partition

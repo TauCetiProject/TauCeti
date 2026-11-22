@@ -92,7 +92,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
 * `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
   quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
-  (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
+  (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version;
+  `Subgroup.orbitRelQuotientEquiv` (and `AddSubgroup.orbitRelQuotientEquiv`) identifies the
+  `(G ⧸ N)`-orbits on `N`-orbits with the `G`-orbits.
 * `TauCeti.AddAction.orbitRelQuotientEquivMultiplicative` and
   `TauCeti.MulAction.orbitRelQuotientEquivAdditive`: the canonical equivalences of orbit spaces
   identifying an action of `G` with the corresponding action of `Multiplicative G` or `Additive G`.
@@ -972,6 +974,70 @@ instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P
     | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
 
 end MulAction.orbitRel.Quotient
+
+namespace Subgroup
+
+variable {G X : Type*} [Group G] [MulAction G X]
+
+/-- **Orbits of a quotient group on normal-subgroup orbits.** For a normal subgroup `N` of `G`
+acting on `X`, the `(G ⧸ N)`-orbits on the `N`-orbit space identify with the `G`-orbits on `X`. -/
+@[to_additive
+  /-- **Orbits of a quotient group on normal-subgroup orbits.** For a normal additive subgroup `N`
+  of `G` acting on `X`, the `(G ⧸ N)`-orbits on the `N`-orbit space identify with the `G`-orbits on
+  `X`. -/]
+def orbitRelQuotientEquiv (N : Subgroup G) [N.Normal] :
+    MulAction.orbitRel.Quotient (G ⧸ N) (MulAction.orbitRel.Quotient N X) ≃
+      MulAction.orbitRel.Quotient G X where
+  toFun := Quotient.lift
+    (Quotient.lift (fun x ↦ (Quotient.mk'' x : MulAction.orbitRel.Quotient G X))
+      fun _ _ ⟨n, hn⟩ ↦ Quotient.sound' ⟨(n : G), hn⟩)
+    fun ω₁ ω₂ h ↦ by
+      induction ω₁ using Quotient.inductionOn' with | h x =>
+      induction ω₂ using Quotient.inductionOn' with | h y =>
+      obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
+      induction g using QuotientGroup.induction_on with | H g =>
+      rw [MulAction.orbitRel.Quotient.mk_smul_mk] at hg
+      obtain ⟨n, hn⟩ :=
+        MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp (Quotient.exact' hg))
+      exact Quotient.sound' (MulAction.orbitRel_apply.mpr
+        (MulAction.mem_orbit_iff.mpr ⟨(n : G)⁻¹ * g, by
+          rw [mul_smul, inv_smul_eq_iff, ← Subgroup.smul_def, hn]⟩))
+  invFun := Quotient.lift
+    (fun x ↦ Quotient.mk'' (Quotient.mk'' x : MulAction.orbitRel.Quotient N X))
+    fun _ _ h ↦ by
+      obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
+      exact Quotient.sound' (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit_iff.mpr
+        ⟨(g : G ⧸ N), by rw [MulAction.orbitRel.Quotient.mk_smul_mk, hg]⟩))
+  left_inv q := by
+    induction q using Quotient.inductionOn' with | h ω =>
+    induction ω using Quotient.inductionOn' with | h x =>
+    rfl
+  right_inv q := by
+    induction q using Quotient.inductionOn' with | h x =>
+    rfl
+
+/-- `orbitRelQuotientEquiv` sends the `(G ⧸ N)`-orbit of the `N`-orbit of `x` to the `G`-orbit of
+`x`. -/
+@[to_additive (attr := simp)
+  /-- `orbitRelQuotientEquiv` sends the `(G ⧸ N)`-orbit of the `N`-orbit of `x` to the `G`-orbit
+  of `x`. -/]
+theorem orbitRelQuotientEquiv_mk (N : Subgroup G) [N.Normal] (x : X) :
+    orbitRelQuotientEquiv N
+        (Quotient.mk'' (Quotient.mk'' x : MulAction.orbitRel.Quotient N X)) =
+      Quotient.mk'' x :=
+  (rfl)
+
+/-- The inverse of `orbitRelQuotientEquiv` sends the `G`-orbit of `x` to the `(G ⧸ N)`-orbit of
+the `N`-orbit of `x`. -/
+@[to_additive (attr := simp)
+  /-- The inverse of `orbitRelQuotientEquiv` sends the `G`-orbit of `x` to the `(G ⧸ N)`-orbit of
+  the `N`-orbit of `x`. -/]
+theorem orbitRelQuotientEquiv_symm_mk (N : Subgroup G) [N.Normal] (x : X) :
+    (orbitRelQuotientEquiv N).symm (Quotient.mk'' x) =
+      Quotient.mk'' (Quotient.mk'' x : MulAction.orbitRel.Quotient N X) :=
+  (rfl)
+
+end Subgroup
 
 namespace MulActionHom
 

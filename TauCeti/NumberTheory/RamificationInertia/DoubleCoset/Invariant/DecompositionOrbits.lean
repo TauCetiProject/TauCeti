@@ -221,7 +221,7 @@ theorem card_orbit_quotientInertia_coset [Algebra.IsSeparable (A ⧸ Q.under A) 
   have : Finite G := IsGaloisGroup.finite G A B
   have : Nonempty (orbit (Q.inertia (stabilizer G Q)) x) := ⟨⟨x, mem_orbit_self x⟩⟩
   have hpos : 0 < Nat.card (orbit (Q.inertia (stabilizer G Q)) x) := Nat.card_pos
-  have hmul := card_orbit_quotientGroup_mul_card_orbit_normal
+  have hmul := Subgroup.card_orbit_quotientGroup_mul_card_orbit_normal
     (G := stabilizer G Q) (Q.inertia (stabilizer G Q)) x
   rw [card_orbit_inertia_coset p Q H C x] at hpos hmul
   rw [card_orbit_stabilizer_coset p Q H C x, mul_comm] at hmul
@@ -271,14 +271,14 @@ theorem map_card_orbit_quotientInertia_eq_map_inertiaDeg
         (fun 𝔮 : p.primesOver C => 𝔮.val.inertiaDeg A) := by
   let e : orbitRel.Quotient (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
         (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)) ≃ p.primesOver C :=
-    (orbitRel.Quotient.quotientEquiv (Q.inertia (stabilizer G Q))).trans
+    (Subgroup.orbitRelQuotientEquiv (Q.inertia (stabilizer G Q))).trans
       (orbitQuotientEquivPrimesOver p Q H C)
   have hcard : ∀ ω, Nat.card ω.orbit = (e ω).val.inertiaDeg A := by
     intro ω
     refine _root_.Quotient.inductionOn' ω fun ω' => _root_.Quotient.inductionOn' ω' fun x => ?_
     rw [orbitRel.Quotient.orbit_mk]
     dsimp only [e]
-    rw [Equiv.trans_apply, orbitRel.Quotient.quotientEquiv_mk, orbitQuotientEquivPrimesOver_mk]
+    rw [Equiv.trans_apply, Subgroup.orbitRelQuotientEquiv_mk, orbitQuotientEquivPrimesOver_mk]
     exact card_orbit_quotientInertia_coset p Q H C x
   calc (Finset.univ : Finset (orbitRel.Quotient (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
           (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)))).val.map
