@@ -345,7 +345,6 @@ theorem inclusionLp_realSubmoduleCongr {t : ℝ} (hst : s = t) (ht : 0 ≤ t)
   inclusionLp_inclusion hst.ge ht _
 
 /-- `realSubmoduleCongr` does not change the continuous representative. -/
-@[simp]
 theorem continuousRep_realSubmoduleCongr (hs : finrank ℝ E < 2 * s) {t : ℝ} (hst : s = t)
     (ht : 0 ≤ t) (F : realSubmodule E h) :
     continuousRep (realSubmoduleCongr E hst h ht F) = continuousRep F :=
