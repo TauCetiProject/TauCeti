@@ -60,6 +60,8 @@ behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`.
   `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_mul_of_dvd`: specialization to the
   divisors of a fixed nonzero integer `N`.
 * `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
+* `ArithmeticFunction.IsMultiplicative.moebius_sq_mul_nonneg`: `μ(n)² f(n) ≥ 0` for a
+  multiplicative `f` with nonnegative prime values.
 
 ## References
 
@@ -280,5 +282,17 @@ theorem sum_divisors_moebius_sq [Ring R] {n : ℕ} (hn : n ≠ 0) :
   simp_rw [hsq, ← sum_filter, sum_divisors_filter_squarefree hn, sum_const, card_powerset,
     factors_eq]
   simp [cardDistinctFactors_eq_card_primeFactors]
+
+/-! ### Nonnegativity on squarefree integers -/
+
+/-- A multiplicative function with nonnegative prime values is nonnegative on squarefree
+integers, so `μ(n)² f(n) ≥ 0` for every `n`. -/
+theorem IsMultiplicative.moebius_sq_mul_nonneg [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {f : ArithmeticFunction R} (hf : f.IsMultiplicative)
+    (hf0 : ∀ p : ℕ, p.Prime → 0 ≤ f p) (n : ℕ) : 0 ≤ (μ n : R) ^ 2 * f n := by
+  by_cases hn : Squarefree n
+  · rw [← hf.prod_primeFactors hn]
+    exact mul_nonneg (sq_nonneg _) (prod_nonneg fun p hp ↦ hf0 p (prime_of_mem_primeFactors hp))
+  · simp [moebius_eq_zero_of_not_squarefree hn]
 
 end ArithmeticFunction
