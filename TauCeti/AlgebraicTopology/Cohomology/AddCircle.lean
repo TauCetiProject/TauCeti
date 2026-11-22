@@ -97,6 +97,13 @@ cohomology.
 * `AddCircle.singularKronecker_angularClass`: `θ_p` evaluates a class to its winding number.
 * `TopCat.singularCohomologyAddCircleProdSlantEquiv`: the cohomology of `(ℝ / pℤ) × Y`.
 * `TopCat.singularCohomologyMap_snd_add_singularCup_addCircle`: the decomposition of a class.
+* `TopCat.singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero`,
+  `TopCat.singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne`: the
+  classes `pr₂^* b` and, in degree one, `pr₁^* θ_p` in the decomposition.
+* `TopCat.singularCohomologyAddCircleProdBasis`: bases of `Hⁿ⁺¹(Y; M)` and `Hⁿ(Y; M)` give a basis
+  `(pr₂^* b, pr₁^* θ_p ⌣ pr₂^* c)` of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`.
+* `TopCat.singularCohomologyOneAddCircleProdBasis`: for a path-connected `Y`, a basis of
+  `H¹(Y; ℤ)` together with `pr₁^* θ_p` gives a basis of `H¹((ℝ / pℤ) × Y; ℤ)`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_iff`: the classes pulled back from `Y`.
 * `TopCat.mem_range_singularCohomologyMap_snd_addCircle_one_add_of_injective`: classes of degree
   two pulled back after an injective change of coefficients are pulled back.
@@ -310,6 +317,181 @@ lemma singularCohomologyAddCircleProdSlantEquiv_symm_apply (s₀ : AddCircle p) 
       (add_comm 1 n) one_ne_zero (AddCircle.fundamentalClass p) (AddCircle.angularClass p) bc.1 bc.2
     rw [AddCircle.singularKronecker_angularClass_fundamentalClass, one_smul] at h
     exact h.symm
+
+/-- The decomposition of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)` sends the pullback `pr₂^* b` of a class of `Y` to
+`(b, 0)`. -/
+theorem singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero (s₀ : AddCircle p) (n : ℕ)
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :
+    (singularCohomologyAddCircleProdSlantEquiv M Y s₀ n).symm (b, 0) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) b := by
+  rw [singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero, map_zero, add_zero]
+
+/-- The decomposition of `H¹((ℝ / pℤ) × Y; ℤ)` sends the angular class `pr₁^* θ_p` of the circle
+factor to `(0, 1)`, where `1 ∈ H⁰(Y; ℤ)` is the unit class. -/
+theorem singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne
+    (s₀ : AddCircle p) :
+    (singularCohomologyAddCircleProdSlantEquiv (𝟙_ (ModuleCat.{0} ℤ)) Y s₀ 0).symm
+        (0, Y.singularCohomologyZeroOne) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+        (AddCircle.angularClass p) := by
+  rw [singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero]
+  -- `zero_add` is applied to the classes only: rewriting would also reach the degree `0 + 1`.
+  refine (zero_add _).trans ?_
+  rw [TauCeti.singularCohomologyMap_singularCohomologyZeroOne]
+  exact singularCup_singularCohomologyZeroOne_right _ _ _
+
+section Basis
+
+-- Instance search finds `AddCommGroup.toIntModule` on a product of `ℤ`-modules before
+-- `Prod.instModule`, the structure of the product basis `Module.Basis.prod`.
+attribute [local instance 1100] Prod.instModule
+
+/-- **A basis of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`.** For bases `b` of `Hⁿ⁺¹(Y; M)` and `c` of `Hⁿ(Y; M)`,
+the pullbacks `pr₂^* (b i)` and the products `pr₁^* θ_p ⌣ pr₂^* (c j)` with the angular class
+`θ_p` form a basis of `Hⁿ⁺¹((ℝ / pℤ) × Y; M)`, indexed by `ι ⊕ κ`. It is the basis `(b, c)` of
+`Hⁿ⁺¹(Y; M) × Hⁿ(Y; M)` transported along the decomposition
+`TopCat.singularCohomologyAddCircleProdSlantEquiv`. -/
+def singularCohomologyAddCircleProdBasis (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) :
+    Module.Basis (ι ⊕ κ) ℤ
+      ((TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)) :=
+  (b.prod c).map (singularCohomologyAddCircleProdSlantEquiv M Y s₀ n).symm.toIntLinearEquiv
+
+/-- The vector of `TopCat.singularCohomologyAddCircleProdBasis` at `Sum.inl i` is the pullback
+`pr₂^* (b i)`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_inl (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) (i : ι) :
+    singularCohomologyAddCircleProdBasis M Y s₀ n b c (Sum.inl i) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + 1) (b i) := by
+  simp only [singularCohomologyAddCircleProdBasis, Module.Basis.map_apply,
+    Module.Basis.prod_apply, LinearMap.coe_inl, Sum.elim_inl, AddEquiv.coe_toIntLinearEquiv]
+  exact singularCohomologyAddCircleProdSlantEquiv_symm_mk_zero M Y s₀ n (b i)
+
+/-- The vector of `TopCat.singularCohomologyAddCircleProdBasis` at `Sum.inr j` is the product
+`pr₁^* θ_p ⌣ pr₂^* (c j)`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_inr (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n)) (j : κ) :
+    singularCohomologyAddCircleProdBasis M Y s₀ n b c (Sum.inr j) =
+      (TopCat.of (AddCircle p) ⊗ Y).singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ M).hom
+        1 n (n + 1) (add_comm 1 n)
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+          (AddCircle.angularClass p))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n (c j)) := by
+  simp only [singularCohomologyAddCircleProdBasis, Module.Basis.map_apply,
+    Module.Basis.prod_apply, LinearMap.coe_inr, Sum.elim_inr, Function.comp_apply,
+    AddEquiv.coe_toIntLinearEquiv, singularCohomologyAddCircleProdSlantEquiv_symm_apply, map_zero,
+    zero_add]
+
+/-- The coordinate of `φ` at `Sum.inl i` in `TopCat.singularCohomologyAddCircleProdBasis` is the
+coordinate at `i`, in the basis `b`, of the slant product `φ / [s₀]` by the class of `s₀`. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_repr_inl (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1))
+    (i : ι) :
+    (singularCohomologyAddCircleProdBasis M Y s₀ n b c).repr φ (Sum.inl i) =
+      b.repr (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 (n + 1) (n + 1)
+        (zero_add _) (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) s₀ (1 : ℤ)) φ) i := by
+  simp [singularCohomologyAddCircleProdBasis]
+
+/-- The coordinate of `φ` at `Sum.inr j` in `TopCat.singularCohomologyAddCircleProdBasis` is the
+coordinate at `j`, in the basis `c`, of the slant product `φ / [ℝ / pℤ]` by the circuit class. -/
+@[simp]
+lemma singularCohomologyAddCircleProdBasis_repr_inr (s₀ : AddCircle p) (n : ℕ) {ι κ : Type*}
+    (b : Module.Basis ι ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1)))
+    (c : Module.Basis κ ℤ (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M n))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ M (n + 1))
+    (j : κ) :
+    (singularCohomologyAddCircleProdBasis M Y s₀ n b c).repr φ (Sum.inr j) =
+      c.repr (singularSlant ℤ M _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 n (n + 1) (add_comm 1 n)
+        (AddCircle.fundamentalClass p) φ) j := by
+  simp [singularCohomologyAddCircleProdBasis]
+
+/-- **A basis of `H¹((ℝ / pℤ) × Y; ℤ)`.** For a path-connected `Y` and a basis `b` of `H¹(Y; ℤ)`,
+the pullbacks `pr₂^* (b i)` and the angular class `pr₁^* θ_p` of the circle factor form a basis of
+`H¹((ℝ / pℤ) × Y; ℤ)`, indexed by `Option ι`, with `pr₁^* θ_p` at `none`. It is the case `n = 0`
+of `TopCat.singularCohomologyAddCircleProdBasis`, for the basis `1` of `H⁰(Y; ℤ) ≅ ℤ`. -/
+def singularCohomologyOneAddCircleProdBasis [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1)) :
+    Module.Basis (Option ι) ℤ
+      ((TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+        (𝟙_ (ModuleCat.{0} ℤ)) 1) :=
+  (singularCohomologyAddCircleProdBasis _ Y (0 : AddCircle p) 0 b
+      ((Module.Basis.singleton Unit ℤ).map
+        (singularCohomologyZeroEvalEquiv (Classical.arbitrary Y)).symm)).reindex
+    (Equiv.optionEquivSumPUnit.{0} ι).symm
+
+/-- The vector of `TopCat.singularCohomologyOneAddCircleProdBasis` at `none` is the angular class
+`pr₁^* θ_p` of the circle factor. -/
+@[simp]
+lemma singularCohomologyOneAddCircleProdBasis_none [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1)) :
+    singularCohomologyOneAddCircleProdBasis (p := p) Y b none =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) 1
+        (AddCircle.angularClass p) := by
+  -- The basis vector `1` of `ℤ` is sent to the unit class. (The scalar action in
+  -- `singularCohomologyZeroEvalEquiv_symm_apply` is not reducibly the instance `one_smul` finds.)
+  have h₁ : (singularCohomologyZeroEvalEquiv (Classical.arbitrary Y)).symm (1 : ℤ) =
+      Y.singularCohomologyZeroOne := by
+    rw [LinearEquiv.symm_apply_eq, singularCohomologyZeroEvalEquiv_apply,
+      singularCohomologyZeroEval_singularCohomologyZeroOne]
+  simp only [singularCohomologyOneAddCircleProdBasis, singularCohomologyAddCircleProdBasis,
+    Module.Basis.coe_reindex, Equiv.symm_symm, Function.comp_apply,
+    Equiv.optionEquivSumPUnit_none, Module.Basis.map_apply, Module.Basis.prod_apply,
+    LinearMap.coe_inr, Sum.elim_inr, Module.Basis.singleton_apply, AddEquiv.coe_toIntLinearEquiv,
+    h₁]
+  exact singularCohomologyAddCircleProdSlantEquiv_symm_zero_singularCohomologyZeroOne Y
+    (0 : AddCircle p)
+
+/-- The vector of `TopCat.singularCohomologyOneAddCircleProdBasis` at `some i` is the pullback
+`pr₂^* (b i)`. -/
+@[simp]
+lemma singularCohomologyOneAddCircleProdBasis_some [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
+    (i : ι) :
+    singularCohomologyOneAddCircleProdBasis (p := p) Y b (some i) =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) 1 (b i) := by
+  simp [singularCohomologyOneAddCircleProdBasis]
+
+/-- The coordinate of `φ` at `none` in `TopCat.singularCohomologyOneAddCircleProdBasis`, the
+coefficient of the angular class `pr₁^* θ_p`, is the value at any point `y` of the slant product
+`φ / [ℝ / pℤ] ∈ H⁰(Y; ℤ)` by the circuit class. -/
+lemma singularCohomologyOneAddCircleProdBasis_repr_none [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 1) (y : Y) :
+    (singularCohomologyOneAddCircleProdBasis (p := p) Y b).repr φ none =
+      singularCohomologyZeroEval y
+        (singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 1 0 1
+          (add_comm 1 0) (AddCircle.fundamentalClass p) φ) := by
+  simp [singularCohomologyOneAddCircleProdBasis,
+    singularCohomologyZeroEval_eq_of_joined (PathConnectedSpace.joined (Classical.arbitrary Y) y)]
+
+/-- The coordinate of `φ` at `some i` in `TopCat.singularCohomologyOneAddCircleProdBasis` is the
+coordinate at `i`, in the basis `b`, of the slant product `φ / [0]` by the class of `0`. -/
+@[simp]
+lemma singularCohomologyOneAddCircleProdBasis_repr_some [PathConnectedSpace Y] {ι : Type*}
+    (b : Module.Basis ι ℤ
+      (Y.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) 1))
+    (φ : (TopCat.of (AddCircle p) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
+      (𝟙_ (ModuleCat.{0} ℤ)) 1) (i : ι) :
+    (singularCohomologyOneAddCircleProdBasis (p := p) Y b).repr φ (some i) =
+      b.repr (singularSlant ℤ (𝟙_ (ModuleCat.{0} ℤ)) _ Y (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom 0 1 1
+        (zero_add _) (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{0} ℤ)) (0 : AddCircle p)
+          (1 : ℤ)) φ) i := by
+  simp [singularCohomologyOneAddCircleProdBasis]
+
+end Basis
 
 /-- **The decomposition of a class of `(ℝ / pℤ) × Y`**: for `s₀ ∈ ℝ / pℤ`, every
 `φ ∈ Hⁿ⁺¹((ℝ / pℤ) × Y; M)` is `pr₂^* (φ / [s₀]) + pr₁^* θ_p ⌣ pr₂^* (φ / [ℝ / pℤ])`, where `θ_p`
