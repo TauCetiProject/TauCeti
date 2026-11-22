@@ -87,8 +87,6 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
-* `TauCeti.mul_inv_cpow_collect` -- collect principal powers with a shared inverse denominator.
-* `Complex.abs_deriv_smul_cpow_mul_one_add_cpow` -- substitute `u / (1 - u)` in the Beta weight.
 * `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
@@ -577,61 +575,9 @@ theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : 
     inv_cpow_ofReal_nonneg ha.le, inv_cpow _ _ hw, cpow_neg]
   field_simp
 
-/-- Collect three principal powers sharing an inverse denominator, together with a quadratic
-Jacobian denominator. The supplied product equation records the branch condition for the third
-factor; the remaining powers require only that inversion avoids the negative real branch cut. -/
-theorem mul_inv_cpow_collect (p r t : ℂ) {s q : ℂ} (hs : s ≠ 0)
-    (harg : s.arg ≠ Real.pi) (hpow : (q * s⁻¹) ^ t = q ^ t * s⁻¹ ^ t) :
-    s⁻¹ ^ p * s⁻¹ ^ r * (q * s⁻¹) ^ t / s ^ 2 =
-      s ^ (-p - r - t - 2) * q ^ t := by
-  have hinv (e : ℂ) : s⁻¹ ^ e = s ^ (-e) := by
-    rw [inv_cpow s e harg, cpow_neg]
-  have hsq : (s ^ 2)⁻¹ = s ^ (-2 : ℂ) := by rw [cpow_neg]; norm_num
-  calc
-    _ = (s ^ (-p) * s ^ (-r) * s ^ (-t) * s ^ (-2 : ℂ)) * q ^ t := by
-      rw [hpow, hinv p, hinv r, hinv t, div_eq_mul_inv, hsq]
-      ring
-    _ = _ := by
-      rw [← cpow_add (-p) (-r) hs, ← cpow_add (-p + -r) (-t) hs,
-        ← cpow_add (-p + -r + -t) (-2) hs]
-      simp only [sub_eq_add_neg]
-
 end TauCeti
 
 namespace Complex
-
-/-- Under the chart `u ↦ u / (1 - u)` of `(0, 1)` onto `(0, ∞)`, the Mellin integrand of
-`(1 + t)^{-a}` at `s` becomes the integrand of the Beta integral with parameters `s` and
-`a - s`. -/
-theorem abs_deriv_smul_cpow_mul_one_add_cpow (s a : ℂ) {u : ℝ} (hu : u ∈ Set.Ioo 0 1) :
-    |((1 - u) ^ 2)⁻¹| • (((u / (1 - u) : ℝ) : ℂ) ^ (s - 1) • (1 + ((u / (1 - u) : ℝ) : ℂ)) ^ (-a)) =
-      (u : ℂ) ^ (s - 1) * (1 - (u : ℂ)) ^ (a - s - 1) := by
-  obtain ⟨hu0, hu1⟩ := hu
-  have h1u : 0 < 1 - u := by linarith
-  -- every power below has a positive real base, so it is `exp (Real.log x * w)`
-  have hexp {x : ℝ} (hx : 0 < x) (w : ℂ) : (x : ℂ) ^ w = cexp (Real.log x * w) := by
-    rw [cpow_def_of_ne_zero (ofReal_ne_zero.mpr hx.ne'), ofReal_log hx.le]
-  have hbase : 1 + ((u / (1 - u) : ℝ) : ℂ) = (((1 - u)⁻¹ : ℝ) : ℂ) := by
-    have hr : 1 + u / (1 - u) = (1 - u)⁻¹ := by field_simp; ring
-    rw [← hr]
-    push_cast
-    ring
-  have hsub : (1 - (u : ℂ)) = ((1 - u : ℝ) : ℂ) := by push_cast; ring
-  have hfac : ((|((1 - u) ^ 2)⁻¹| : ℝ) : ℂ) = cexp (-(2 * Real.log (1 - u))) := by
-    have hr : |((1 - u) ^ 2)⁻¹| = Real.exp (-(2 * Real.log (1 - u))) := by
-      rw [abs_of_nonneg (by positivity), Real.exp_neg,
-        show 2 * Real.log (1 - u) = Real.log ((1 - u) ^ 2) by rw [Real.log_pow]; norm_num,
-        Real.exp_log (by positivity)]
-    rw [hr, ofReal_exp]
-    push_cast
-    ring_nf
-  rw [real_smul, smul_eq_mul, hbase, hsub, hfac,
-    hexp (div_pos hu0 h1u), hexp (inv_pos.mpr h1u), hexp hu0, hexp h1u,
-    Real.log_div hu0.ne' h1u.ne',
-    Real.log_inv, ← Complex.exp_add, ← Complex.exp_add, ← Complex.exp_add]
-  congr 1
-  push_cast
-  ring
 
 /-- An exponential based at a principal logarithm splits into a principal power and the
 exponential of the remaining summand. -/

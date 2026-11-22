@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Algebra.Ring.Hom.Defs
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Ring
 import TauCeti.Data.Rat.NumDenDvd
 

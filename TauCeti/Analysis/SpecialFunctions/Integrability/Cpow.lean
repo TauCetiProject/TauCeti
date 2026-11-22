@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
-import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!

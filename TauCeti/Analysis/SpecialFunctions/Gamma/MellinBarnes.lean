@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Beta.Substitution
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Prod
 
@@ -83,12 +84,6 @@ transform of `t ↦ (1 + t)^{-a}` converges at `s` and equals `Γ(s) Γ(a - s) /
 theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
     HasMellin (fun t : ℝ ↦ (1 + (t : ℂ)) ^ (-a)) s (Gamma s * Gamma (a - s) / Gamma a) := by
   have has : 0 < (a - s).re := by simpa using hsa
-  have hweight (u : ℝ) (hu : u ∈ Ioo 0 1) :
-      ((1 - u) ^ 2)⁻¹ •
-        (((u / (1 - u) : ℝ) : ℂ) ^ (s - 1) • (1 + ((u / (1 - u) : ℝ) : ℂ)) ^ (-a)) =
-      (u : ℂ) ^ (s - 1) * (1 - (u : ℂ)) ^ (a - s - 1) := by
-    simpa only [abs_of_nonneg (inv_nonneg.mpr (sq_nonneg (1 - u)))] using
-      abs_deriv_smul_cpow_mul_one_add_cpow s a hu
   -- the Beta integrand on `(0, 1)`, as an integrable function on `Ioo 0 1`
   have hbeta : IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) * (1 - (u : ℂ)) ^ (a - s - 1))
       (Ioo 0 1) := by
@@ -101,12 +96,14 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
       (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • (1 + (t : ℂ)) ^ (-a))
       (ρ := 0) zero_lt_one).2
     simpa only [zero_div] using
-      hchart (hbeta.congr_fun (fun u hu ↦ (hweight u hu).symm) measurableSet_Ioo)
+      hchart (hbeta.congr_fun
+        (fun u hu ↦ (inv_sq_smul_div_cpow_smul_one_add_cpow s a hu).symm) measurableSet_Ioo)
   · rw [mellin]
     have hchart := TauCeti.integral_Ioi_eq_integral_div_one_sub
       (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • (1 + (t : ℂ)) ^ (-a)) (ρ := 0) zero_lt_one
     simp only [zero_div] at hchart
-    rw [hchart, setIntegral_congr_fun measurableSet_Ioo hweight,
+    rw [hchart, setIntegral_congr_fun measurableSet_Ioo
+      (fun u hu ↦ inv_sq_smul_div_cpow_smul_one_add_cpow s a hu),
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
 

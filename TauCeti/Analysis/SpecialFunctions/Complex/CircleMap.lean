@@ -20,6 +20,8 @@ import TauCeti.Analysis.Complex.SlitPlane
   from `c`.
 * `TauCeti.re_one_sub_mul_circleMap_pos`: a scaled circle subtracted from `1` lies in the right
   half-plane when its radius after scaling is less than `1`.
+* `TauCeti.one_sub_mul_circleMap_ne_zero`: a scaled circle subtracted from `1` avoids zero
+  whenever its radius after scaling differs from `1`.
 * `TauCeti.circleMap_norm_arg`, `TauCeti.circleMap_norm_sub_arg_sub`: polar coordinates about
   `c`, so every point `w` is `circleMap c ‖w - c‖ (arg (w - c))`.
 * `TauCeti.hasDerivAt_circleMap_radius`: along the ray at angle `θ`, the radius derivative of
@@ -50,6 +52,14 @@ theorem re_one_sub_mul_circleMap_pos {z : ℂ} {ρ : ℝ} (hzρ : ‖z‖ * |ρ|
     0 < (1 - z * circleMap 0 ρ θ).re := by
   apply re_pos_of_norm_sub_one_lt_one
   simpa [norm_mul, norm_circleMap_zero] using hzρ
+
+/-- Subtracting a point of the scaled circle `z * circleMap 0 ρ θ` from `1` gives a nonzero
+point whenever the scaled radius differs from `1`. -/
+theorem one_sub_mul_circleMap_ne_zero {z : ℂ} {ρ : ℝ} (hzρ : ‖z‖ * |ρ| ≠ 1) (θ : ℝ) :
+    1 - z * circleMap 0 ρ θ ≠ 0 := by
+  intro heq
+  have hn := congrArg norm (sub_eq_zero.mp heq)
+  exact hzρ (by simpa [norm_mul, norm_circleMap_zero] using hn.symm)
 
 /-- Polar coordinates about `c`: the point at radius `‖w‖` and angle `arg w` about `c` is
 `c + w`. -/

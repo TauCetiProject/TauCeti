@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
-import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex

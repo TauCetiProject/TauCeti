@@ -11,6 +11,7 @@ import TauCeti.Algebra.Order.Field.Basic
 import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Integral
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.Analysis.SpecialFunctions.Beta.Substitution
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
@@ -22,7 +23,9 @@ The change of variables `v = u / (1 - u)` carries the loop based at `1` in DLMF 
 to the loop based at infinity in DLMF 15.6.3. The circular part is parametrized by the
 image of `u = ρ exp (iθ)`, and its power of `v` uses continuation of the logarithm.
 At `θ = π` the image lies at `-ρ / (1 + ρ)` between `-1` and `0`. The continued
-argument of `v` there is `π`, and the argument of `1 + v` is zero.
+argument of `v` there is `π`, and the argument of `1 + v` is zero. At angle zero,
+the circular integrand matches the ray kernel times the contour derivative.
+The one-turn law gives the phase on the outgoing ray.
 
 The Möbius substitution maps the `(0+)` contour to the contour based at infinity; their
 integral values agree for `0 < ρ < 1` and `‖z‖ * ρ < 1`. With an integrable tail the value
@@ -72,6 +75,23 @@ theorem hypergeometricLoopInfinityCircle_apply (a b c z : ℂ) (ρ θ : ℝ) :
         (1 + v) ^ (a - c) * (1 + v - z * v) ^ (-a) * (I * u / (1 - u) ^ 2) := by
   simp only [hypergeometricLoopInfinityCircle, deriv_circleMap, circleMap_zero, mul_comm I]
 
+/-- At angle zero, the circular integrand is the principal ray kernel at the joining point
+times the derivative of the Möbius image. -/
+theorem hypergeometricLoopInfinityCircle_angle_zero (a b c z : ℂ) {ρ : ℝ}
+    (hρ : 0 < ρ) (hρ1 : ρ < 1) :
+    hypergeometricLoopInfinityCircle a b c z ρ 0 =
+      hypergeometricLoopInfinityRay a b c z (ρ / (1 - ρ)) * (I * ρ / (1 - ρ) ^ 2) := by
+  have hs : 0 < 1 - ρ := sub_pos.mpr hρ1
+  have hv : 0 < ρ / (1 - ρ) := div_pos hρ hs
+  rw [hypergeometricLoopInfinityCircle_apply, hypergeometricLoopInfinityRay_def]
+  simp only [ofReal_zero, zero_mul, exp_zero, mul_one, add_zero]
+  push_cast
+  have hlog : (Real.log ρ : ℂ) - log (1 - (ρ : ℂ)) =
+      log ((ρ : ℂ) / (1 - (ρ : ℂ))) := by
+    rw [← ofReal_one, ← ofReal_sub, ← ofReal_div, ← ofReal_log hv.le, ← ofReal_log hs.le,
+      Real.log_div hρ.ne' hs.ne', ofReal_sub]
+  rw [hlog, ← cpow_def_of_ne_zero (by exact_mod_cast hv.ne')]
+
 /-- After one counterclockwise turn, the circular integrand acquires the outgoing-ray phase. -/
 theorem hypergeometricLoopInfinityCircle_add_two_pi (a b c z : ℂ) (ρ θ : ℝ) :
     hypergeometricLoopInfinityCircle a b c z ρ (θ + 2 * π) =
@@ -103,14 +123,21 @@ theorem hypergeometricLoopInfinity_def (a b c z : ℂ) (ρ : ℝ) :
         (∫ v : ℝ in Ioi (ρ / (1 - ρ)), hypergeometricLoopInfinityRay a b c z v) +
       ∫ θ : ℝ in 0..(2 * π), hypergeometricLoopInfinityCircle a b c z ρ θ := (rfl)
 
-private theorem infinityCircle_cpow_collect (a b c : ℂ) {s q : ℂ} (hs : s ≠ 0)
+private theorem inv_cpow_mul_inv_cpow_mul_div_sq_eq_sub_cpow (a b c : ℂ) {s q : ℂ} (hs : s ≠ 0)
     (harg : s.arg ≠ Real.pi)
     (hpow : (q * s⁻¹) ^ (-a) = q ^ (-a) * s⁻¹ ^ (-a)) :
     s⁻¹ ^ (b - 1) * s⁻¹ ^ (a - c) * (q * s⁻¹) ^ (-a) / s ^ 2 =
       s ^ (c - b - 1) * q ^ (-a) := by
-  have hexponent : -(b - 1) - (a - c) - -a - 2 = c - b - 1 := by ring
-  simpa only [hexponent] using
-    TauCeti.mul_inv_cpow_collect (b - 1) (a - c) (-a) hs harg hpow
+  have hinv (e : ℂ) : s⁻¹ ^ e = s ^ (-e) := by rw [inv_cpow s e harg, cpow_neg]
+  have hsq : (s ^ 2)⁻¹ = s ^ (-2 : ℂ) := by rw [cpow_neg]; norm_num
+  calc
+    _ = (s ^ (-(b - 1)) * s ^ (-(a - c)) * s ^ a * s ^ (-2 : ℂ)) * q ^ (-a) := by
+      rw [hpow, hinv (b - 1), hinv (a - c), hinv (-a), neg_neg, div_eq_mul_inv, hsq]
+      ring
+    _ = _ := by
+      rw [← cpow_add _ _ hs, ← cpow_add _ _ hs, ← cpow_add _ _ hs]
+      congr 2
+      ring
 
 /-- Under the Möbius substitution, the infinity-ray kernel times its real Jacobian
 is the unnormalized Euler integrand on `0 < u < 1`. The identity holds pointwise for any `z`. -/
@@ -134,11 +161,9 @@ theorem hypergeometricLoopInfinityRay_pullback (a b c z : ℂ) {u : ℝ} (hu : 0
     rw [← cpow_add _ _ (by exact_mod_cast hv.ne')]
     congr 1
     ring
-  have hb := abs_deriv_smul_cpow_mul_one_add_cpow b c ⟨hu, hu1⟩
-  rw [abs_of_nonneg (by positivity), smul_eq_mul, real_smul] at hb
-  change (((1 - u) ^ 2)⁻¹ : ℝ) •
-    ((v : ℂ) ^ (b - 1) * (1 + (v : ℂ)) ^ (a - c) *
-      (1 + (v : ℂ) - z * v) ^ (-a)) = _
+  have hb := inv_sq_smul_div_cpow_smul_one_add_cpow b c ⟨hu, hu1⟩
+  rw [smul_eq_mul, real_smul] at hb
+  rw [hypergeometricLoopInfinityRay_def, show u / (1 - u) = v from rfl]
   rw [hpow, real_smul]
   calc
     _ = ((((1 - u) ^ 2)⁻¹ : ℝ) : ℂ) *
@@ -146,7 +171,8 @@ theorem hypergeometricLoopInfinityRay_pullback (a b c z : ℂ) {u : ℝ} (hu : 0
           (1 + (v : ℂ)) ^ (-a))) * (1 - z * u) ^ (-a) := by ring
     _ = _ := by rw [hc, hb]
 
-/-- The continued circular kernel pulls back to the circular kernel of the `(0+)` loop.
+/-- Pullback of the angle-parametrized integrands of the infinity and `(0+)` loops,
+with the corresponding contour derivative included on each side.
 The slit-plane hypothesis fixes the principal logarithm of `1 - circleMap 0 ρ θ`.
 The pointwise argument-sum hypothesis permits splitting the principal power of
 `(1 - z * u) / (1 - u)`. -/
@@ -165,7 +191,7 @@ theorem hypergeometricLoopInfinityCircle_pullback (a b c z : ℂ) {ρ : ℝ} (h�
   have hs0 : 1 - u ≠ 0 := slitPlane_ne_zero hs
   have h1 := TauCeti.one_add_div_one_sub hs0
   have h2 := TauCeti.one_add_div_one_sub_sub_mul_div_one_sub hs0 z
-  have ht := infinityCircle_cpow_collect a b c hs0 (slitPlane_arg_ne_pi hs)
+  have ht := inv_cpow_mul_inv_cpow_mul_div_sq_eq_sub_cpow a b c hs0 (slitPlane_arg_ne_pi hs)
     (mul_cpow hq (-a))
   have he := exp_log_add_mul (ofReal_ne_zero.mpr hρ.ne') (θ * I) (b - 1)
   rw [← ofReal_log hρ.le] at he
@@ -241,40 +267,28 @@ theorem integrableOn_hypergeometricLoopInfinityRay (a b c z : ℂ) (hbc : b.re <
   exact (intervalIntegrable_iff_integrableOn_Ioo_of_le hρ1.le).mp
     (intervalIntegrable_eulerIntegrand_right a hbc hz hρ hρ1.le)
 
-private theorem infinityCircle_denominators_ne_zero (z : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1)
-    (hzρ : ‖z‖ * ρ ≠ 1) (θ : ℝ) :
-    1 - circleMap 0 ρ θ ≠ 0 ∧
-      1 + circleMap 0 ρ θ / (1 - circleMap 0 ρ θ) -
-        z * (circleMap 0 ρ θ / (1 - circleMap 0 ρ θ)) ≠ 0 := by
-  have hs := TauCeti.re_one_sub_mul_circleMap_pos (z := 1) (ρ := ρ)
-    (by simpa [abs_of_pos hρ] using hρ1) θ
-  have hs0 : 1 - circleMap 0 ρ θ ≠ 0 := ne_zero_of_re_pos (by simpa using hs)
-  have hq0 : 1 - z * circleMap 0 ρ θ ≠ 0 := by
-    intro heq
-    have hn := congrArg norm (sub_eq_zero.mp heq)
-    exact hzρ (by simpa [norm_mul, norm_circleMap_zero, abs_of_pos hρ] using hn.symm)
-  refine ⟨hs0, ?_⟩
-  rw [TauCeti.one_add_div_one_sub_sub_mul_div_one_sub hs0 z]
-  exact mul_ne_zero hq0 (inv_ne_zero hs0)
-
-/-- The circular kernel is integrable whenever `0 < ρ < 1` and `‖z‖ * ρ ≠ 1`.
-The latter condition prevents zeros of its affine factors. Principal powers can jump across
-branch cuts, but their norms are bounded by continuous functions on any compact angle interval. -/
+/-- For `0 < ρ < 1`, the derivative-weighted circular integrand is integrable on every
+finite angle interval on which the affine factor `1 - z * circleMap 0 ρ θ` has no zeros.
+Principal powers can jump across branch cuts, but their norms are bounded on such intervals. -/
 theorem intervalIntegrable_hypergeometricLoopInfinityCircle (a b c z : ℂ) {ρ : ℝ}
-    (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ ≠ 1) (α β : ℝ) :
+    (hρ : 0 < ρ) (hρ1 : ρ < 1) (α β : ℝ)
+    (hq : ∀ θ ∈ uIcc α β, 1 - z * circleMap 0 ρ θ ≠ 0) :
     IntervalIntegrable (hypergeometricLoopInfinityCircle a b c z ρ)
       volume α β := by
   let u := circleMap 0 ρ
   let v := fun θ => u θ / (1 - u θ)
   let g := fun θ => 1 + v θ - z * v θ
   have hu : Continuous u := continuous_circleMap 0 ρ
-  have hs (θ : ℝ) : 1 - u θ ≠ 0 := (infinityCircle_denominators_ne_zero z hρ hρ1 hzρ θ).1
-  have hv : Continuous v := hu.div (continuous_const.sub hu) hs
-  have hg : Continuous g := (continuous_const.add hv).sub (continuous_const.mul hv)
-  have hg0 (θ : ℝ) : g θ ≠ 0 := (infinityCircle_denominators_ne_zero z hρ hρ1 hzρ θ).2
   have hhalf (θ : ℝ) : 0 < (1 - u θ).re := by
     simpa [u] using TauCeti.re_one_sub_mul_circleMap_pos (z := 1) (ρ := ρ)
       (by simpa [abs_of_pos hρ] using hρ1) θ
+  have hs (θ : ℝ) : 1 - u θ ≠ 0 := ne_zero_of_re_pos (hhalf θ)
+  have hv : Continuous v := hu.div (continuous_const.sub hu) hs
+  have hg : Continuous g := (continuous_const.add hv).sub (continuous_const.mul hv)
+  have hg0 (θ : ℝ) (hθ : θ ∈ uIcc α β) : g θ ≠ 0 := by
+    dsimp [g, v]
+    rw [TauCeti.one_add_div_one_sub_sub_mul_div_one_sub (hs θ) z]
+    exact mul_ne_zero (hq θ hθ) (inv_ne_zero (hs θ))
   have hinv (θ : ℝ) : 1 + v θ = (1 - u θ)⁻¹ :=
     TauCeti.one_add_div_one_sub (hs θ)
   have hlog : Continuous (fun θ => log (1 - u θ)) :=
@@ -294,13 +308,20 @@ theorem intervalIntegrable_hypergeometricLoopInfinityCircle (a b c z : ℂ) {ρ 
     · exact (continuous_const.mul hu).div ((continuous_const.sub hu).pow 2)
         (fun θ => pow_ne_zero _ (hs θ))
   have hint : IntervalIntegrable (fun θ => h θ * g θ ^ (-a)) volume α β :=
-    TauCeti.intervalIntegrable_mul_cpow_of_ne_zero hh.continuousOn hg.continuousOn
-      (fun θ _ => hg0 θ) (-a)
+    TauCeti.intervalIntegrable_mul_cpow_of_ne_zero hh.continuousOn hg.continuousOn hg0 (-a)
   refine hint.congr fun θ _ => ?_
   rw [hypergeometricLoopInfinityCircle_apply]
   dsimp [h, g, v, u]
   simp only [circleMap_zero]
   ring
+
+/-- For `0 < ρ < 1` and `‖z‖ * ρ ≠ 1`, the circular integrand is integrable on every
+finite angle interval. -/
+theorem intervalIntegrable_hypergeometricLoopInfinityCircle_of_norm_mul_ne_one
+    (a b c z : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : ‖z‖ * ρ ≠ 1) (α β : ℝ) :
+    IntervalIntegrable (hypergeometricLoopInfinityCircle a b c z ρ) volume α β :=
+  intervalIntegrable_hypergeometricLoopInfinityCircle a b c z hρ hρ1 α β fun θ _ =>
+    TauCeti.one_sub_mul_circleMap_ne_zero (by simpa only [abs_of_pos hρ] using hzρ) θ
 
 /-- The Möbius substitution `v = u / (1 - u)` identifies the loop based at infinity
 with the `(0+)` loop. It requires `0 < ρ < 1` and `‖z‖ * ρ < 1` to control the contour
