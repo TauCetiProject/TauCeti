@@ -10,7 +10,6 @@ public import Mathlib.Data.Finset.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Order.Preorder.Finite
@@ -49,8 +48,6 @@ of a quotient chart in the free proper quotient theorem.
 * `MulAction.selfEquivOrbitsQuotientProd_symm_apply`: the inverse of the orbit decomposition of a
   free action evaluated at `(q, g)` is `g • q.out`.
 * `MulAction.injOn_smul_univ_prod_iff`: injectivity of `(g, s) ↦ g • σ s` on a tube `G × U`.
-* `Subgroup.isCancelSMul_quotient_iff`: `K` acts freely on `G ⧸ H` if and only if no nonidentity
-  element of `K` has a conjugate in `H`.
 
 ## References
 
@@ -164,29 +161,3 @@ theorem injOn_smul_univ_prod_iff {S : Type*} {σ : S → X} {U : Set S} :
     rw [hmem]
 
 end MulAction
-
-namespace Subgroup
-
-variable {G : Type*} [Group G]
-
-/-- A subgroup `K` acts freely by left multiplication on the coset space `G ⧸ H` if and only if `K`
-meets every conjugate of `H` trivially. -/
-theorem isCancelSMul_quotient_iff {H K : Subgroup G} :
-    IsCancelSMul K (G ⧸ H) ↔ ∀ k ∈ K, ∀ g : G, g⁻¹ * k * g ∈ H → k = 1 := by
-  rw [isCancelSMul_iff_stabilizer_eq_bot, QuotientGroup.mk_surjective.forall]
-  refine ⟨fun h k hk g hmem ↦ ?_, fun h g ↦ ?_⟩
-  · have hbot := h g
-    rw [← MulAction.stabilizer_subgroupOf, show (g : G ⧸ H) = g • ((1 : G) : G ⧸ H) by simp,
-      MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulAction.stabilizer_quotient,
-      Subgroup.eq_bot_iff_forall] at hbot
-    exact congrArg Subtype.val (hbot ⟨k, hk⟩ (by
-      rw [Subgroup.mem_subgroupOf, Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
-      exact hmem))
-  · rw [← MulAction.stabilizer_subgroupOf, show (g : G ⧸ H) = g • ((1 : G) : G ⧸ H) by simp,
-      MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulAction.stabilizer_quotient,
-      Subgroup.eq_bot_iff_forall]
-    rintro ⟨k, hk⟩ hmem
-    rw [Subgroup.mem_subgroupOf, Subgroup.mem_map_equiv, MulAut.conj_symm_apply] at hmem
-    exact Subtype.ext (h k hk g hmem)
-
-end Subgroup

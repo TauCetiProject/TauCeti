@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Torsion
-import TauCeti.GroupTheory.GroupAction.Free
 import TauCeti.GroupTheory.Index.CosetAction
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Divisibility of the index of a torsion-free subgroup by orders of torsion elements

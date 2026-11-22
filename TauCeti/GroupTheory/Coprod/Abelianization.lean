@@ -30,8 +30,7 @@ inverse multiplies the maps induced on abelianizations by `inl` and `inr`.
 
 * `Group.Abelianization.coprodMulEquiv_of_inl`, `Group.Abelianization.coprodMulEquiv_of_inr`:
   values of `coprodMulEquiv` on classes of elements from the two factors.
-* `Group.Abelianization.coprodMulEquiv_symm_apply`, `Group.Abelianization.coprodMulEquiv_symm_of`:
-  formulas for `coprodMulEquiv.symm`.
+* `Group.Abelianization.coprodMulEquiv_symm_apply`: formula for `coprodMulEquiv.symm`.
 * `Group.Abelianization.natCard_coprod`: the cardinality of `Group.Abelianization (G ∗ H)` is the
   product of the cardinalities of `Group.Abelianization G` and `Group.Abelianization H`.
 -/
@@ -78,11 +77,6 @@ theorem coprodMulEquiv_of_inr (h : H) :
 theorem coprodMulEquiv_symm_apply (p : Group.Abelianization G × Group.Abelianization H) :
     coprodMulEquiv.symm p = map Monoid.Coprod.inl p.1 * map Monoid.Coprod.inr p.2 :=
   (rfl)
-
-theorem coprodMulEquiv_symm_of (g : G) (h : H) :
-    coprodMulEquiv.symm (of g, of h) =
-      of (Monoid.Coprod.inl g * Monoid.Coprod.inr h : G ∗ H) := by
-  simp
 
 /-- The cardinality of the abelianization of a free product `G ∗ H` is the product of the
 cardinalities of the abelianizations of `G` and `H`. -/

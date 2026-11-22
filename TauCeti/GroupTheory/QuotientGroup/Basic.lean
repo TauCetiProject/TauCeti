@@ -45,6 +45,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   in `K`.
 * `TauCeti.smul_quotientGroup_mk_eq_self_iff`: `g` fixes the coset `sH` exactly when `s⁻¹ g s`
   lies in `H`.
+* `Subgroup.isCancelSMul_quotient_iff`: `K` acts freely on `G ⧸ H` if and only if no nonidentity
+  element of `K` has a conjugate in `H`.
 * `Subgroup.natCard_mul_natCard_fixedBy`: the elements conjugating `g` into `H` number
   `|H| * |(G ⧸ H)^g|`.
 * `Subgroup.natCard_stabilizer_mul_natCard_mem_carrier`: counted by the conjugate they produce,
@@ -118,6 +120,17 @@ theorem smul_quotientGroup_mk_eq_self_iff (H : Subgroup G) (g s : G) :
   rw [← mem_stabilizer_iff, stabilizer_quotientGroup_mk,
     Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv, MulAut.smul_def, MulAut.conj_apply]
   simp
+
+/-- A subgroup `K` acts freely by left multiplication on the coset space `G ⧸ H` if and only if `K`
+meets every conjugate of `H` trivially. -/
+theorem _root_.Subgroup.isCancelSMul_quotient_iff {H K : Subgroup G} :
+    IsCancelSMul K (G ⧸ H) ↔ ∀ k ∈ K, ∀ g : G, g⁻¹ * k * g ∈ H → k = 1 := by
+  rw [isCancelSMul_iff_eq_one_of_smul_eq]
+  refine ⟨fun h k hk g hmem ↦ ?_, fun h ⟨k, hk⟩ q hq ↦ ?_⟩
+  · exact congrArg Subtype.val
+      (h ⟨k, hk⟩ (g : G ⧸ H) ((smul_quotientGroup_mk_eq_self_iff H k g).mpr hmem))
+  · obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+    exact Subtype.ext (h k hk g ((smul_quotientGroup_mk_eq_self_iff H k g).mp hq))
 
 /-- The size of the orbit of `sH` under a subgroup `K` is the relative index of `H` in the
 conjugate of `K` by `s⁻¹`. -/

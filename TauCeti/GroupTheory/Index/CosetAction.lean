@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Index
 import TauCeti.GroupTheory.GroupAction.Free
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Index divisibility from coset actions

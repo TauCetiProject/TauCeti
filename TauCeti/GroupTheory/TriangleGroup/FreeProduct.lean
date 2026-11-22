@@ -191,34 +191,12 @@ theorem orderOf_z_zero {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) : orderOf (z a 
 
 /-! ### Abelianization -/
 
-/-- **Multiplicative abelianization of `Δ(a, b, 0)`.** The abelianization is isomorphic to
-`Multiplicative (ZMod a) × Multiplicative (ZMod b)`, sending the class of `x` to `(ofAdd 1, 1)` and
-that of `y` to `(1, ofAdd 1)`. -/
-def abelianizationMulEquivProd (a b : ℕ) :
+private def abelianizationMulEquivProd (a b : ℕ) :
     Group.Abelianization (TriangleGroup a b 0) ≃*
       Multiplicative (ZMod a) × Multiplicative (ZMod b) :=
   ((equivCoprod a b).abelianizationCongr.trans Group.Abelianization.coprodMulEquiv).trans
     (MulEquiv.prodCongr Group.Abelianization.equivOfComm.symm
       Group.Abelianization.equivOfComm.symm)
-
-@[simp]
-theorem abelianizationMulEquivProd_of_x (a b : ℕ) :
-    abelianizationMulEquivProd a b (Group.Abelianization.of (x a b 0)) = (.ofAdd 1, 1) := by
-  simp [abelianizationMulEquivProd]
-  rfl
-
-@[simp]
-theorem abelianizationMulEquivProd_of_y (a b : ℕ) :
-    abelianizationMulEquivProd a b (Group.Abelianization.of (y a b 0)) = (1, .ofAdd 1) := by
-  simp [abelianizationMulEquivProd]
-  rfl
-
-@[simp]
-theorem abelianizationMulEquivProd_of_z (a b : ℕ) :
-    abelianizationMulEquivProd a b (Group.Abelianization.of (z a b 0)) =
-      ((.ofAdd 1)⁻¹, (.ofAdd 1)⁻¹) := by
-  simp [abelianizationMulEquivProd]
-  rfl
 
 /-- **Additive abelianization of `Δ(a, b, 0)`.** Written additively, the abelianization of
 `TriangleGroup a b 0` is isomorphic to `ZMod a × ZMod b`, sending `x` to `(1, 0)`, `y` to `(0, 1)`
@@ -232,17 +210,17 @@ def abelianizationAddEquivProd (a b : ℕ) :
 @[simp]
 theorem abelianizationAddEquivProd_ofMul_of_x (a b : ℕ) :
     abelianizationAddEquivProd a b (.ofMul (Group.Abelianization.of (x a b 0))) = (1, 0) := by
-  simp [abelianizationAddEquivProd]
+  simp [abelianizationAddEquivProd, abelianizationMulEquivProd, MulEquiv.prodCongr]
 
 @[simp]
 theorem abelianizationAddEquivProd_ofMul_of_y (a b : ℕ) :
     abelianizationAddEquivProd a b (.ofMul (Group.Abelianization.of (y a b 0))) = (0, 1) := by
-  simp [abelianizationAddEquivProd]
+  simp [abelianizationAddEquivProd, abelianizationMulEquivProd, MulEquiv.prodCongr]
 
 @[simp]
 theorem abelianizationAddEquivProd_ofMul_of_z (a b : ℕ) :
     abelianizationAddEquivProd a b (.ofMul (Group.Abelianization.of (z a b 0))) = (-1, -1) := by
-  simp [abelianizationAddEquivProd]
+  simp [abelianizationAddEquivProd, abelianizationMulEquivProd, MulEquiv.prodCongr]
 
 /-- The cardinality of the abelianization of `Δ(a, b, 0)` is `a * b`. -/
 @[simp]
@@ -254,24 +232,17 @@ theorem natCard_abelianization (a b : ℕ) :
 
 /-! ### Torsion classification and index divisibility -/
 
-private theorem equivCoprod_x_zpow (a b : ℕ) (k : ℤ) :
-    equivCoprod a b (x a b 0 ^ k) = Monoid.Coprod.inl (.ofAdd (k : ZMod a)) :=
-  ((equivCoprod a b).symm_apply_eq.mp (equivCoprod_symm_inl_ofAdd_intCast a b k)).symm
-
-private theorem equivCoprod_y_zpow (a b : ℕ) (k : ℤ) :
-    equivCoprod a b (y a b 0 ^ k) = Monoid.Coprod.inr (.ofAdd (k : ZMod b)) :=
-  ((equivCoprod a b).symm_apply_eq.mp (equivCoprod_symm_inr_ofAdd_intCast a b k)).symm
-
 /-- An element of `Δ(a, b, 0)` has finite order if and only if it is conjugate to a finite-order
 integer power of `x a b 0` or `y a b 0`. -/
 theorem isOfFinOrder_iff {a b : ℕ} {g : TriangleGroup a b 0} :
     IsOfFinOrder g ↔
       (∃ k : ℤ, IsOfFinOrder (x a b 0 ^ k) ∧ IsConj g (x a b 0 ^ k)) ∨
         (∃ k : ℤ, IsOfFinOrder (y a b 0 ^ k) ∧ IsConj g (y a b 0 ^ k)) := by
-  rw [← (equivCoprod a b).injective.isOfFinOrder_iff (f := (equivCoprod a b).toMonoidHom),
-    MulEquiv.coe_toMonoidHom, Monoid.Coprod.isOfFinOrder_iff]
-  refine ⟨?_, ?_⟩
-  · rintro (⟨u, hu, hconj⟩ | ⟨v, hv, hconj⟩)
+  refine ⟨fun hg ↦ ?_, ?_⟩
+  · have hg' : IsOfFinOrder (equivCoprod a b g) :=
+      (equivCoprod a b).toMonoidHom.isOfFinOrder hg
+    rw [Monoid.Coprod.isOfFinOrder_iff] at hg'
+    rcases hg' with ⟨u, hu, hconj⟩ | ⟨v, hv, hconj⟩
     · obtain ⟨k, hk⟩ := ZMod.intCast_surjective u.toAdd
       have hu' : u = .ofAdd (k : ZMod a) := by rw [hk, ofAdd_toAdd]
       subst hu'
@@ -293,20 +264,8 @@ theorem isOfFinOrder_iff {a b : ℕ} {g : TriangleGroup a b 0} :
         exact (equivCoprod a b).symm.toMonoidHom.isOfFinOrder ((inrHom a b).isOfFinOrder hv)
       exact Or.inr ⟨k, hfin, hc⟩
   · rintro (⟨k, hfin, hconj⟩ | ⟨k, hfin, hconj⟩)
-    · refine Or.inl ⟨.ofAdd (k : ZMod a), ?_, ?_⟩
-      · have h2 : IsOfFinOrder (equivCoprod a b (x a b 0 ^ k)) :=
-          (equivCoprod a b).toMonoidHom.isOfFinOrder hfin
-        rw [equivCoprod_x_zpow] at h2
-        exact (Monoid.Coprod.inl_injective.isOfFinOrder_iff (f := inlHom a b)).mp h2
-      · have hc := (equivCoprod a b).toMonoidHom.map_isConj hconj
-        rwa [MulEquiv.coe_toMonoidHom, equivCoprod_x_zpow] at hc
-    · refine Or.inr ⟨.ofAdd (k : ZMod b), ?_, ?_⟩
-      · have h2 : IsOfFinOrder (equivCoprod a b (y a b 0 ^ k)) :=
-          (equivCoprod a b).toMonoidHom.isOfFinOrder hfin
-        rw [equivCoprod_y_zpow] at h2
-        exact (Monoid.Coprod.inr_injective.isOfFinOrder_iff (f := inrHom a b)).mp h2
-      · have hc := (equivCoprod a b).toMonoidHom.map_isConj hconj
-        rwa [MulEquiv.coe_toMonoidHom, equivCoprod_y_zpow] at hc
+    · exact hconj.symm.isOfFinOrder hfin
+    · exact hconj.symm.isOfFinOrder hfin
 
 /-- When `a` and `b` are nonzero, an element of `Δ(a, b, 0)` has finite order if and only if it is
 conjugate to `x a b 0 ^ k` for some `k < a` or to `y a b 0 ^ k` for some `k < b`. -/

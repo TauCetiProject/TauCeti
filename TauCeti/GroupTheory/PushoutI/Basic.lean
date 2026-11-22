@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.Subgroup.Centralizer
-import Mathlib.Algebra.Group.ULift
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.GroupTheory.SpecificGroups.Dihedral
 import TauCeti.Algebra.Group.Subgroup.ZPowers
