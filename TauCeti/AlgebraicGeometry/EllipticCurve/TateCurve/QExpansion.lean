@@ -636,10 +636,10 @@ theorem adjoinC₄C₆ΔToModularForms_eq_of {k : ℕ} {f : MvPolynomial Coeff �
       DirectSum.of (ModularForm 𝒮ℒ) (k : ℤ)
         (integralModularFormToModularForm k
           ⟨f, TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mpr hf⟩) := by
-  refine ModularForm.qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL ?_
-  rw [← AlgHom.coe_toRingHom, ModularForm.qExpansionAlgHom_toRingHom,
-    qExpansionRingHom_adjoinC₄C₆ΔToModularForms, ModularForm.qExpansionRingHom_apply,
-    qExpansion_integralModularFormToModularForm]
+  have hinj := ModularForm.qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL
+  rw [← AlgHom.coe_toRingHom, ModularForm.qExpansionAlgHom_toRingHom] at hinj
+  refine hinj ?_
+  simp [qExpansion_integralModularFormToModularForm]
 
 private noncomputable def complexAdjoinToModularForms :
     (ℂ ⊗[ℤ] Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) →ₐ[ℂ]
