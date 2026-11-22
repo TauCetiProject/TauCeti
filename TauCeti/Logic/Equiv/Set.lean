@@ -25,7 +25,7 @@ of `f` (`Equiv.ofInjectiveSumCompl`).
 
 Two injective maps `f : α → γ` and `g : β → γ` with equal ranges induce a canonical equivalence
 `α ≃ β` (`Equiv.ofRangeEq`), intertwining `g` and `f` (`Equiv.apply_ofRangeEq` and
-`Equiv.apply_ofRangeEq_symm`).
+`Equiv.apply_ofRangeEq_symm`), uniquely characterized by `Equiv.eq_ofRangeEq_iff`.
 -/
 
 public section
@@ -104,5 +104,40 @@ theorem apply_ofRangeEq_symm {α β : Sort*} {γ : Type*} {f : α → γ} {g : �
     f ((ofRangeEq hf hg h).symm y) = g y := by
   simp only [ofRangeEq, symm_trans_apply, symm_symm,
     apply_ofInjective_symm, Set.equivOfEq_symm_apply, ofInjective_apply]
+
+/-- An equivalence `e : α ≃ β` equals `Equiv.ofRangeEq hf hg h` if and only if it intertwines
+`g` and `f`, i.e. `g ∘ e = f`. -/
+theorem eq_ofRangeEq_iff {α β : Sort*} {γ : Type*} {f : α → γ} {g : β → γ}
+    (hf : f.Injective) (hg : g.Injective) (h : Set.range f = Set.range g) (e : α ≃ β) :
+    e = ofRangeEq hf hg h ↔ g ∘ e = f := by
+  refine ⟨fun he ↦ ?_, fun he ↦ ?_⟩
+  · subst he
+    exact funext (apply_ofRangeEq hf hg h)
+  · ext x
+    exact hg ((congrFun he x).trans (apply_ofRangeEq hf hg h x).symm)
+
+/-- Comparing an injective map with itself gives the identity equivalence. -/
+@[simp]
+theorem ofRangeEq_self {α : Sort*} {γ : Type*} {f : α → γ}
+    (hf : f.Injective) (h : Set.range f = Set.range f := rfl) :
+    ofRangeEq hf hf h = Equiv.refl α :=
+  ((eq_ofRangeEq_iff hf hf h (.refl α)).2 rfl).symm
+
+/-- The inverse of `Equiv.ofRangeEq hf hg h` is `Equiv.ofRangeEq hg hf h.symm`. -/
+@[simp]
+theorem ofRangeEq_symm {α β : Sort*} {γ : Type*} {f : α → γ} {g : β → γ}
+    (hf : f.Injective) (hg : g.Injective) (h : Set.range f = Set.range g) :
+    (ofRangeEq hf hg h).symm = ofRangeEq hg hf h.symm :=
+  (eq_ofRangeEq_iff hg hf h.symm _).2 (funext (apply_ofRangeEq_symm hf hg h))
+
+/-- Composing two canonical equal-range equivalences gives the direct equal-range equivalence. -/
+@[simp]
+theorem ofRangeEq_trans {α β δ : Sort*} {γ : Type*} {f : α → γ} {g : β → γ} {k : δ → γ}
+    (hf : f.Injective) (hg : g.Injective) (hk : k.Injective)
+    (h₁ : Set.range f = Set.range g) (h₂ : Set.range g = Set.range k) :
+    (ofRangeEq hf hg h₁).trans (ofRangeEq hg hk h₂) = ofRangeEq hf hk (h₁.trans h₂) := by
+  rw [eq_ofRangeEq_iff]
+  funext x
+  simp only [Function.comp_apply, trans_apply, apply_ofRangeEq]
 
 end Equiv

@@ -246,6 +246,23 @@ theorem eq_diffeomorphOfRangeEq_iff {f : M → N'} {g : N → N'}
     exact hg.isEmbedding.injective
       ((congrFun he x).trans (hf.apply_diffeomorphOfRangeEq hg h x).symm)
 
+/-- Comparing a smooth embedding with itself gives the identity diffeomorphism. -/
+@[simp]
+theorem diffeomorphOfRangeEq_self {f : M → N'}
+    (hf : Manifold.IsSmoothEmbedding I J' n f) (h : Set.range f = Set.range f := rfl) :
+    hf.diffeomorphOfRangeEq hf h = _root_.Diffeomorph.refl I M n :=
+  ((hf.eq_diffeomorphOfRangeEq_iff hf h (_root_.Diffeomorph.refl I M n)).2 rfl).symm
+
+/-- The inverse of `hf.diffeomorphOfRangeEq hg h` is `hg.diffeomorphOfRangeEq hf h.symm`. -/
+@[simp]
+theorem diffeomorphOfRangeEq_symm {f : M → N'} {g : N → N'}
+    (hf : Manifold.IsSmoothEmbedding I J' n f)
+    (hg : Manifold.IsSmoothEmbedding J J' n g)
+    (h : Set.range f = Set.range g) :
+    (hf.diffeomorphOfRangeEq hg h).symm = hg.diffeomorphOfRangeEq hf h.symm :=
+  (hg.eq_diffeomorphOfRangeEq_iff hf h.symm _).2
+    (funext (hf.apply_diffeomorphOfRangeEq_symm hg h))
+
 /-- Composing two canonical equal-range comparisons gives the direct equal-range comparison. -/
 @[simp]
 theorem diffeomorphOfRangeEq_trans
@@ -504,8 +521,10 @@ theorem apply_diffeomorphOfRangeEq
     g (f.diffeomorphOfRangeEq g h x) = f x :=
   f.isSmoothEmbedding.apply_diffeomorphOfRangeEq g.isSmoothEmbedding h x
 
-/-- Applying `f` after the inverse of `f.diffeomorphOfRangeEq g h` recovers `g`. -/
-@[simp]
+/-- Applying `f` after the inverse of `f.diffeomorphOfRangeEq g h` recovers `g`.
+
+Not a `simp` lemma: `diffeomorphOfRangeEq_symm` and `apply_diffeomorphOfRangeEq` already
+rewrite the left-hand side to `g y`. -/
 theorem apply_diffeomorphOfRangeEq_symm
     (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
     (h : Set.range f = Set.range g) (y : N) :
@@ -519,6 +538,21 @@ theorem eq_diffeomorphOfRangeEq_iff
     (h : Set.range f = Set.range g) (e : M ≃ₘ^n⟮I, J⟯ N) :
     e = f.diffeomorphOfRangeEq g h ↔ ⇑g ∘ ⇑e = ⇑f :=
   f.isSmoothEmbedding.eq_diffeomorphOfRangeEq_iff g.isSmoothEmbedding h e
+
+/-- Comparing a bundled smooth embedding with itself gives the identity diffeomorphism. -/
+@[simp]
+theorem diffeomorphOfRangeEq_self
+    (f : SmoothEmbedding I J' n M N') (h : Set.range f = Set.range f := rfl) :
+    f.diffeomorphOfRangeEq f h = _root_.Diffeomorph.refl I M n :=
+  f.isSmoothEmbedding.diffeomorphOfRangeEq_self h
+
+/-- The inverse of `f.diffeomorphOfRangeEq g h` is `g.diffeomorphOfRangeEq f h.symm`. -/
+@[simp]
+theorem diffeomorphOfRangeEq_symm
+    (f : SmoothEmbedding I J' n M N') (g : SmoothEmbedding J J' n N N')
+    (h : Set.range f = Set.range g) :
+    (f.diffeomorphOfRangeEq g h).symm = g.diffeomorphOfRangeEq f h.symm :=
+  f.isSmoothEmbedding.diffeomorphOfRangeEq_symm g.isSmoothEmbedding h
 
 /-- Composing two canonical equal-range comparisons gives the direct equal-range comparison. -/
 @[simp]
