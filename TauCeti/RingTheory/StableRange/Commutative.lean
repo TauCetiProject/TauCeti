@@ -110,28 +110,25 @@ theorem hasStableRangeLE_succ_of_forall_ne_zero {s : ℕ}
   set x : R := a 0 + L * c₀
   have hx : x ≠ 0 := by
     by_cases h0 : a 0 = 0 <;> simp [x, c₀, h0, hL]
-  set π := Ideal.Quotient.mk (Ideal.span {x}) with hπ
-  have hπx : π x = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self x)
-  -- Modulo `x`, the row `(a₁, …, aₛ₊₁)` is unimodular.
+  let π := Ideal.Quotient.mk (Ideal.span {x})
+  have hπx : π (a 0) + π L * π c₀ = 0 := by
+    simpa only [x, map_add, map_mul] using Ideal.Quotient.mk_singleton_self x
+  -- Modulo `x`, the row `(a₁, …, aₛ₊₁)` is unimodular: it is `π hab` minus `π b₀` times `π x`.
   have hsum : ∑ k : Fin (s + 1), π (a k.succ) *
       (π (b k.succ) - if k = Fin.last s then π (c₀ * b 0) else 0) = 1 := by
-    have hπa0 : π (a 0) = -(π L * π c₀) := by
-      rw [eq_neg_iff_add_eq_zero, ← map_mul, ← map_add]
-      exact hπx
-    have := congrArg π hab
-    rw [map_one, map_sum, Fin.sum_univ_succ, map_mul, hπa0] at this
+    have h1 := congrArg π hab
+    rw [map_sum, Fin.sum_univ_succ] at h1
+    simp only [map_mul, map_one] at h1
     simp only [mul_sub, Finset.sum_sub_distrib, mul_ite, mul_zero, Finset.sum_ite_eq',
       Finset.mem_univ, ite_true, Fin.succ_last, map_mul]
-    rw [← this]
-    simp only [L, map_mul]
-    ring
+    linear_combination h1 - π (b 0) * hπx
   obtain ⟨c', d', hcd'⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp (h x hx) _ _ hsum
   choose c hc using fun j ↦ Ideal.Quotient.mk_surjective (c' j)
   choose d hd using fun j ↦ Ideal.Quotient.mk_surjective (d' j)
   -- Lift the shortened row and correct the defect, a multiple of `x`.
   have hmem : ∑ j : Fin s, (a j.castSucc.succ + L * c j) * d j - 1 ∈ Ideal.span {x} := by
-    rw [← Ideal.Quotient.eq_zero_iff_mem, ← hπ, map_sub, map_one, sub_eq_zero, ← hcd', map_sum]
-    simp only [map_mul, map_add, hπ, hc, hd, L, Fin.succ_last, Nat.succ_eq_add_one]
+    refine Ideal.Quotient.eq_zero_iff_mem.mp ?_
+    simpa [π, hc, hd, sub_eq_zero] using hcd'
   obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp hmem
   refine ⟨Fin.cons c₀ c, Fin.cons (-r) d, ?_⟩
   rw [Fin.sum_univ_succ]
