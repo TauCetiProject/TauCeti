@@ -17,11 +17,11 @@ import TauCeti.Analysis.Matrix.EuclideanLin
 
 The symbol `diag(z, conj z)` on the circle has determinant one. Its block Toeplitz operator is
 `S ⊕ S†`, Fredholm of index zero, but it kills the constant vector in its second component.
-Every pure finite section is singular for the same reason.
+Compression to the first `n + 1` full blocks is singular for the same reason.
 
 This is the standard block-symbol obstruction to extending scalar Toeplitz invertibility
-criteria to matrix symbols using only determinant winding. The scalar shift, backward shift
-and Fredholm indices identify this operator with the direct sum of opposite scalar shifts.
+criteria to matrix symbols using only determinant winding. The forward and backward shift
+coordinate actions identify the direct sum; the two scalar Fredholm indices cancel.
 
 ## References
 
@@ -56,7 +56,7 @@ theorem matrixSymbol_apply (t : UnitAddCircle) :
 /-- The determinant of the opposite-shift symbol is identically one. -/
 @[simp] theorem det_matrixSymbol (t : UnitAddCircle) : (matrixSymbol t).det = 1 := by
   rw [matrixSymbol_apply, Matrix.det_diagonal, Fin.prod_univ_two]
-  change fourier 1 t * fourier (-1) t = 1
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [← fourier_add]
   simp
 
@@ -82,63 +82,80 @@ theorem blockSymbolEntry_symbol (i j : Fin 2) :
     blockSymbolEntry 2 i j symbol = ContinuousMap.toLp ∞
       (AddCircle.haarAddCircle (T := 1)) ℂ
       (⟨fun t => matrixSymbol t i j, by fun_prop⟩ : C(UnitAddCircle, ℂ)) := by
-  rw [symbol, blockSymbolEntry_toLp]
-  congr 1
-  ext t
-  exact congrFun (Matrix.mulVec_single_one (matrixSymbol t) j) i
+  exact blockSymbolEntry_toLp_matrix matrixSymbol i j
+
+/-- The opposite-shift symbol is diagonal, with Fourier modes indexed by its two rows. -/
+theorem blockSymbolEntry_eq (i j : Fin 2) :
+    blockSymbolEntry 2 i j symbol =
+      if i = j then fourierLp (T := 1) ∞ (![1, -1] i) else 0 := by
+  rw [blockSymbolEntry_symbol]
+  have h : (⟨fun t => matrixSymbol t i j, by fun_prop⟩ : C(UnitAddCircle, ℂ)) =
+      if i = j then fourier (![1, -1] i) else 0 := by
+    by_cases hij : i = j
+    · subst j
+      rw [ite_eq_left rfl]
+      ext t
+      simp only [ContinuousMap.coe_mk, matrixSymbol_apply, Matrix.diagonal_apply_eq]
+      fin_cases i <;> rfl
+    · rw [ite_eq_right hij]
+      ext t
+      simp only [ContinuousMap.coe_mk, ContinuousMap.zero_apply, matrixSymbol_apply,
+        Matrix.diagonal_apply_ne _ hij]
+  rw [h]
+  split_ifs <;> simp [fourierLp]
 
 /-- The first diagonal entry is the forward Fourier mode. -/
 @[simp] theorem blockSymbolEntry_zero_zero :
     blockSymbolEntry 2 0 0 symbol = fourierLp (T := 1) ∞ 1 := by
-  rw [blockSymbolEntry_symbol]
-  congr 1
+  simp [blockSymbolEntry_eq]
 
 /-- The second diagonal entry is the backward Fourier mode. -/
 @[simp] theorem blockSymbolEntry_one_one :
     blockSymbolEntry 2 1 1 symbol = fourierLp (T := 1) ∞ (-1) := by
-  rw [blockSymbolEntry_symbol]
-  congr 1
+  simp [blockSymbolEntry_eq]
 
 /-- The upper off-diagonal entry vanishes. -/
 @[simp] theorem blockSymbolEntry_zero_one : blockSymbolEntry 2 0 1 symbol = 0 := by
-  rw [blockSymbolEntry_symbol]
-  have h : (⟨fun t => matrixSymbol t 0 1, by fun_prop⟩ : C(UnitAddCircle, ℂ)) = 0 := by
-    ext t
-    simp [matrixSymbol_apply]
-  rw [h, map_zero]
+  simp [blockSymbolEntry_eq]
 
 /-- The lower off-diagonal entry vanishes. -/
 @[simp] theorem blockSymbolEntry_one_zero : blockSymbolEntry 2 1 0 symbol = 0 := by
-  rw [blockSymbolEntry_symbol]
-  have h : (⟨fun t => matrixSymbol t 1 0, by fun_prop⟩ : C(UnitAddCircle, ℂ)) = 0 := by
-    ext t
-    simp [matrixSymbol_apply]
-  rw [h, map_zero]
+  simp [blockSymbolEntry_eq]
 
-private def split : BlockHardySpace 2 ≃L[ℂ] HardySpace × HardySpace :=
-  (PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 => HardySpace)).trans
-    (ContinuousLinearEquiv.finTwoArrow ℂ HardySpace)
+/-- Coordinatewise, the opposite-shift block operator applies the corresponding scalar shift. -/
+theorem apply_coordinate (f : BlockHardySpace 2) (i : Fin 2) :
+    blockToeplitz 2 symbol f i = toeplitz (fourierLp (T := 1) ∞ (![1, -1] i)) (f i) := by
+  rw [blockToeplitz_apply_of_row_offDiagonal_eq_zero]
+  · simp [blockSymbolEntry_eq]
+  · intro j hji
+    simp [blockSymbolEntry_eq, Ne.symm hji]
 
 /-- The first coordinate is the forward shift. -/
 @[simp] theorem apply_zero (f : BlockHardySpace 2) :
     blockToeplitz 2 symbol f 0 = toeplitz (fourierLp (T := 1) ∞ 1) (f 0) := by
-  simp [blockToeplitz_apply_apply, Fin.sum_univ_two]
+  simpa using apply_coordinate f 0
 
 /-- The second coordinate is the backward shift. -/
 @[simp] theorem apply_one (f : BlockHardySpace 2) :
     blockToeplitz 2 symbol f 1 = toeplitz (fourierLp (T := 1) ∞ (-1)) (f 1) := by
-  simp [blockToeplitz_apply_apply, Fin.sum_univ_two]
+  simpa using apply_coordinate f 1
 
-private theorem conjugate :
-    blockToeplitz 2 symbol = split.symm.toContinuousLinearMap ∘L
+/-- The block operator is the direct sum of the forward and backward scalar shifts. -/
+theorem conjugate :
+    blockToeplitz 2 symbol = ((PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 => HardySpace)).trans
+      (ContinuousLinearEquiv.finTwoArrow ℂ HardySpace)).symm.toContinuousLinearMap ∘L
       (toeplitz (fourierLp (T := 1) ∞ 1)).prodMap
-        (toeplitz (fourierLp (T := 1) ∞ (-1))) ∘L split.toContinuousLinearMap := by
+        (toeplitz (fourierLp (T := 1) ∞ (-1))) ∘L
+        ((PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 => HardySpace)).trans
+      (ContinuousLinearEquiv.finTwoArrow ℂ HardySpace)).toContinuousLinearMap := by
   ext f i
-  fin_cases i <;> simp [split, apply_zero, apply_one]
+  fin_cases i <;> simp [apply_zero, apply_one]
 
 /-- The opposite-shift block Toeplitz operator is Fredholm. -/
 theorem isFredholm : ContinuousLinearMap.IsFredholm (blockToeplitz 2 symbol) := by
   rw [conjugate]
+  let split := ((PiLp.continuousLinearEquiv 2 ℂ (fun _ : Fin 2 => HardySpace)).trans
+      (ContinuousLinearEquiv.finTwoArrow ℂ HardySpace))
   exact ((isFredholm_toeplitz_fourierLp 1).prodMap
     (isFredholm_toeplitz_fourierLp (-1))).equiv_comp split.symm |>.comp_equiv split
 
@@ -160,28 +177,36 @@ theorem index_eq_zero : ContinuousLinearMap.index (blockToeplitz 2 symbol) = 0 :
   norm_num [index_toeplitz_fourierLp]
 
 /-- The operator annihilates the constant mode in its second component. -/
-@[simp] theorem apply_second_constant :
-    blockToeplitz 2 symbol (PiLp.single 2 1 (hardyBasis 0)) = 0 := by
+theorem apply_second_constant :
+    blockToeplitz 2 symbol (blockHardyBasis 2 (0, 1)) = 0 := by
+  rw [blockHardyBasis_apply]
   ext i
   fin_cases i <;> simp [apply_zero, apply_one]
-
-private theorem apply_basis_second_constant :
-    blockToeplitz 2 symbol (blockHardyBasis 2 (0, 1)) = 0 := by
-  rw [blockHardyBasis_apply, apply_second_constant]
 
 /-- The operator is not invertible even though its Fredholm index is zero. -/
 theorem not_isUnit : ¬ IsUnit (blockToeplitz 2 symbol) := by
   intro h
   have hi := ContinuousLinearMap.isUnit_iff_bijective.mp h |>.1
-  have hz := hi (apply_basis_second_constant.trans (map_zero _).symm)
+  have hz := hi (apply_second_constant.trans (map_zero _).symm)
   exact (blockHardyBasis 2).orthonormal.ne_zero (0, 1) hz
 
-/-- Every pure finite block section has a zero column, hence determinant zero. -/
+/-- Compression to the first `n + 1` full blocks has determinant zero. -/
 @[simp] theorem det_sectionMatrix (n : ℕ) :
     (blockFiniteSectionMatrix (blockToeplitz 2 symbol) n).det = 0 := by
   apply Matrix.det_eq_zero_of_column_eq_zero (⟨0, by omega⟩, 1)
   intro i
-  rw [blockFiniteSectionMatrix_apply, apply_basis_second_constant, inner_zero_right]
+  rw [blockFiniteSectionMatrix_apply, apply_second_constant, inner_zero_right]
+
+/-- The native finite section at every leading full-block cutoff is noninvertible. -/
+theorem not_isUnit_finiteSection (n : ℕ) :
+    ¬IsUnit ((blockToeplitz 2 symbol).finiteSection (blockHardyBasisNat 2) ((n + 1) * 2 - 1)) := by
+  intro h
+  have hm : IsUnit ((Matrix.toEuclideanCLM (𝕜 := ℂ)).symm
+      ((blockToeplitz 2 symbol).finiteSection (blockHardyBasisNat 2) ((n + 1) * 2 - 1))) :=
+    h.map (Matrix.toEuclideanCLM (𝕜 := ℂ) (n := Fin ((n + 1) * 2 - 1 + 1))).symm
+  have hd := (Matrix.isUnit_iff_isUnit_det _).1 hm
+  rw [← reindex_blockFiniteSectionMatrix _ n, Matrix.det_reindex_self, det_sectionMatrix] at hd
+  exact not_isUnit_zero hd
 
 end ToeplitzOppositeShifts
 end TauCeti

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Algebra.Star.Module
+public import Mathlib.Topology.Algebra.Star
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
@@ -18,6 +20,9 @@ import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
 # Finite-dimensional topological vector spaces
+
+A compatible star operation on a finite-dimensional Hausdorff topological vector space over a
+complete trivially starred field is continuous (`FiniteDimensional.continuousStar`).
 
 The linear-map conversion API preserves composition and recovers a continuous linear map after
 forgetting continuity. `LinearMap.toContinuousLinearMap_coe` only needs finite dimension on the
@@ -63,6 +68,9 @@ The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
 `Module.Basis.equivFun_symm_apply`.
+A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
+bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
+of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
 
 A closed subspace `S` of finite codimension has a topological complement inside every dense
 subspace `D`: `Submodule.exists_le_isTopCompl_of_dense`. Consequently `S ⊔ D` is the whole space
@@ -76,12 +84,31 @@ vector space is surjective, since its range is finite-dimensional and therefore 
 topological `K`-algebra, this makes `A ⧸ (J ∩ A) → B ⧸ J` bijective whenever `B ⧸ J` is Hausdorff
 and `A ⧸ (J ∩ A)` is finite over `K`: `Ideal.quotientMapₐ_bijective_of_denseRange`.
 
+A linear map `Λ` vanishing on the kernel of a continuous linear map `J` into a finite-dimensional
+Hausdorff topological vector space is continuous, since it factors through the finite-dimensional
+range of `J`: `LinearMap.continuous_of_ker_le_ker`. No topological assumption on the domain is
+needed.
+
 An injective continuous affine map with finite-dimensional domain is a closed embedding, hence
 proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine companion of Mathlib's
 `LinearMap.isClosedEmbedding_of_injective`.
+
+Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over a
+complete nontrivially normed field `𝕜` is by continuous maps:
+`FiniteDimensional.continuousConstSMul`. This is not an instance, since the field cannot be inferred
+from the action.
 -/
 
 public section
+
+/-- A star operation compatible with a finite-dimensional Hausdorff topological vector space over
+a complete trivially starred field is continuous, since it is linear. -/
+theorem FiniteDimensional.continuousStar (𝕜 E : Type*) [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [StarRing 𝕜] [TrivialStar 𝕜] [AddCommGroup E] [Module 𝕜 E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
+    [FiniteDimensional 𝕜 E] [StarAddMonoid E] [StarModule 𝕜 E] : ContinuousStar E :=
+  ⟨LinearMap.continuous_of_finiteDimensional (𝕜 := 𝕜)
+    { starLinearEquiv 𝕜 (A := E) with map_smul' := fun r x ↦ by simp }⟩
 
 namespace LinearMap
 
@@ -138,6 +165,14 @@ theorem toContinuousLinearMap_apply (f : E →ₗ[𝕜] E) (v : E) :
   rfl
 
 end Module.End
+
+/-- Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over
+a complete nontrivially normed field `𝕜` is by continuous maps. -/
+theorem FiniteDimensional.continuousConstSMul (𝕜 G E : Type*) [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] [DistribSMul G E]
+    [SMulCommClass G 𝕜 E] : ContinuousConstSMul G E :=
+  ⟨fun g ↦ (DistribSMul.toLinearMap 𝕜 E g).continuous_of_finiteDimensional⟩
 
 namespace MultilinearMap
 
@@ -282,6 +317,29 @@ vector `x` to the linear combination `∑ i, x i • v i`. -/
 
 end Module.Basis
 
+namespace ContinuousLinearMap
+
+variable {R F G H : Type*} [CommSemiring R]
+  [AddCommMonoid F] [Module R F] [TopologicalSpace F]
+  [AddCommMonoid G] [Module R G] [TopologicalSpace G] [ContinuousAdd G] [ContinuousConstSMul R G]
+  [AddCommMonoid H] [Module R H] [TopologicalSpace H] [ContinuousAdd H] [ContinuousConstSMul R H]
+
+/-- The composition `S ∘ T` expanded in the products `b l ∘ a k` of a finite basis `b` of
+`G →L[R] H` and a finite basis `a` of `F →L[R] G`, with the products of the coordinates of `S` and
+`T` as coefficients. -/
+theorem comp_eq_sum_coord {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (a : Module.Basis κ R (F →L[R] G)) (b : Module.Basis ι R (G →L[R] H)) (S : G →L[R] H)
+    (T : F →L[R] G) :
+    S.comp T = ∑ lk : ι × κ, (b.coord lk.1 S * a.coord lk.2 T) • (b lk.1).comp (a lk.2) := by
+  ext v
+  conv_lhs => rw [← a.sum_repr T, ← b.sum_repr S]
+  simp only [comp_apply, sum_apply, smul_apply, map_sum, map_smul, Finset.smul_sum, smul_smul,
+    Fintype.sum_prod_type, Module.Basis.coord_apply]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]
+
+end ContinuousLinearMap
+
 namespace Submodule
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
@@ -340,6 +398,33 @@ theorem surjective_of_denseRange {f : E →ₗ[𝕜] F} (hf : DenseRange f) :
     Function.Surjective f := fun y ↦
   LinearMap.mem_range.mp <| (LinearMap.range f).isClosed_of_finiteDimensional.closure_subset_iff.mpr
     (LinearMap.coe_range f).ge (hf y)
+
+end LinearMap
+
+namespace LinearMap
+
+variable {𝕜 X F G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup X] [Module 𝕜 X] [TopologicalSpace X]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module 𝕜 F]
+  [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
+  [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G] [Module 𝕜 G]
+  [ContinuousSMul 𝕜 G]
+
+/-- **A linear map vanishing on the kernel of a continuous finite-rank map is continuous.** If
+`J` is continuous into a finite-dimensional Hausdorff topological vector space and `Λ` vanishes on
+the kernel of `J`, then `Λ` factors through the finite-dimensional range of `J`, hence is
+continuous. -/
+theorem continuous_of_ker_le_ker {J : X →ₗ[𝕜] F} {Λ : X →ₗ[𝕜] G} (hJ : Continuous J)
+    (h : ker J ≤ ker Λ) : Continuous Λ := by
+  let L : range J →ₗ[𝕜] G := (ker J).liftQ Λ h ∘ₗ J.quotKerEquivRange.symm.toLinearMap
+  have hΛ : ⇑Λ = L ∘ J.rangeRestrict := by
+    ext x
+    have hx : J.quotKerEquivRange.symm (J.rangeRestrict x) = Submodule.Quotient.mk x := by
+      rw [LinearEquiv.symm_apply_eq]
+      exact Subtype.ext (J.quotKerEquivRange_apply_mk x).symm
+    simp [L, hx]
+  rw [hΛ]
+  exact L.continuous_of_finiteDimensional.comp (hJ.subtype_mk _)
 
 end LinearMap
 

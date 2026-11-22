@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Amplification
 public import TauCeti.Analysis.Normed.Lp.Interchange
 public import TauCeti.MeasureTheory.Function.Lp.PiLp
 import Mathlib.LinearAlgebra.Matrix.StdBasis
+public import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 import TauCeti.Topology.Algebra.Module.Span
@@ -329,6 +330,16 @@ def blockHardyBasis (r : ℕ) : HilbertBasis (ℕ × Fin r) ℂ (BlockHardySpace
     blockHardyBasis r p = PiLp.single 2 p.2 (hardyBasis p.1) :=
   congrFun (HilbertBasis.coe_mkOfOrthogonalEqBot _ _) p
 
+/-- Enumerate the block Hardy basis by increasing position, then coordinate within the block. -/
+def blockHardyBasisNat (r : ℕ) [NeZero r] : HilbertBasis ℕ ℂ (BlockHardySpace r) :=
+  (blockHardyBasis r).reindex (Nat.divModEquiv r).symm
+
+/-- Block order sends position `k` and coordinate `i` to `k * r + i`. -/
+@[simp] theorem blockHardyBasisNat_apply (r : ℕ) [NeZero r] (k : ℕ) (i : Fin r) :
+    blockHardyBasisNat r (k * r + i) = blockHardyBasis r (k, i) := by
+  rw [blockHardyBasisNat, HilbertBasis.reindex_apply]
+  exact congrArg (blockHardyBasis r) ((Nat.divModEquiv r).apply_symm_apply (k, i))
+
 /-- Coordinate representation in `blockHardyBasis r` evaluates coordinatewise via `hardyBasis`. -/
 @[simp] theorem blockHardyBasis_repr {r : ℕ} (f : BlockHardySpace r) (p : ℕ × Fin r) :
     (blockHardyBasis r).repr f p = hardyBasis.repr (f p.2) p.1 := by
@@ -517,6 +528,19 @@ theorem blockSymbolEntry_smul_one {r : ℕ} (a : Lp ℂ ∞ (haarAddCircle (T :=
     ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := ℂ) (haarAddCircle (T := 1))
       ⟨fun x ↦ F x (EuclideanSpace.single j 1) i, by fun_prop⟩] with x h₁ h₂ h₃
   rw [h₁, h₂, h₃]; simp
+
+/-- The scalar entry of a continuous matrix symbol agrees with its entrywise `L∞` class. -/
+theorem blockSymbolEntry_toLp_matrix {r : ℕ}
+    (F : C(UnitAddCircle, Matrix (Fin r) (Fin r) ℂ)) (i j : Fin r) :
+    blockSymbolEntry r i j (ContinuousMap.toLp ∞ (haarAddCircle (T := 1)) ℂ
+      ⟨fun t => Matrix.toEuclideanCLM (𝕜 := ℂ) (F t),
+        Matrix.continuous_toEuclideanCLM.comp F.continuous⟩) =
+      ContinuousMap.toLp ∞ (haarAddCircle (T := 1)) ℂ
+        (⟨fun t => F t i j, by fun_prop⟩ : C(UnitAddCircle, ℂ)) := by
+  rw [blockSymbolEntry_toLp]
+  congr 1
+  ext t
+  exact congrFun (Matrix.mulVec_single_one (F t) j) i
 
 /-- Entry `(i, j)` of `star A` is `star` of entry `(j, i)` of `A`. -/
 @[simp] theorem blockSymbolEntry_star {r : ℕ} (A : BlockSymbol r) (i j : Fin r) :

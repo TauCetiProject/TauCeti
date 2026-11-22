@@ -26,7 +26,9 @@ differential and smoothness on a neighbourhood give Mathlib's submersion normal 
 can be chosen uniformly as `Fin (dim E - dim F) → 𝕜`, even when the source is empty. Consequently
 a smooth map is a submersion exactly when its differentials split. No separation or countability
 hypothesis on either manifold is needed. These comparisons allow constructions using submersion
-charts to be applied to maps specified by their differentials.
+charts to be applied to maps specified by their differentials. In particular, a map between
+finite-dimensional normed spaces that is `C¹` with surjective Fréchet derivative at a point has the
+normal form there.
 
 The normal-form construction uses `ContinuousLinearMap.implicitCoordEquiv` to identify the source
 model with the target model times the derivative kernel, then applies the manifold inverse function
@@ -300,5 +302,33 @@ theorem submersion_iff_split_mfderiv (hf : ContMDiff I J n f) (hn : 1 ≤ n) :
     (fun x ↦ (isRegularPoint_iff.mp (isDiffSubmersionAt_iff_isRegularPoint.mp (h x))))).isSubmersion
 
 end NormalForm
+
+section NormedSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : ℕ∞ω} {f : E → F} {x : E}
+
+/-- A map between finite-dimensional real or complex normed spaces that is `C^n`, `1 ≤ n`, on an
+open neighbourhood of `x` and has surjective derivative at `x` has the submersion normal form at
+`x`. The target is finite-dimensional as a quotient of the source. -/
+theorem _root_.ContDiffOn.isSubmersionAt_of_surjective_fderiv {U : Set E}
+    (hf : ContDiffOn 𝕜 n f U) (hU : IsOpen U) (hxU : x ∈ U) (hn : 1 ≤ n)
+    (hs : Surjective (fderiv 𝕜 f x)) : IsSubmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f x := by
+  have : FiniteDimensional 𝕜 F := Module.Finite.of_surjective (fderiv 𝕜 f x : E →ₗ[𝕜] F) hs
+  exact (ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv
+    (contMDiffOn_iff_contDiffOn.2 hf) hU hxU hn
+    (isRegularPoint_iff.1 (isRegularPoint_iff_surjective_fderiv.2 hs))).isSubmersionAt
+
+/-- A map between finite-dimensional real or complex normed spaces that is `C¹` at `x` and has
+surjective derivative at `x` is a `C¹` submersion at `x`. -/
+theorem _root_.ContDiffAt.isSubmersionAt_of_surjective_fderiv (hf : ContDiffAt 𝕜 1 f x)
+    (hs : Surjective (fderiv 𝕜 f x)) : IsSubmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) 1 f x := by
+  obtain ⟨u, hu, hfu⟩ := hf.contDiffOn le_rfl (by simp)
+  obtain ⟨U, hUu, hU, hxU⟩ := mem_nhds_iff.1 hu
+  exact (hfu.mono hUu).isSubmersionAt_of_surjective_fderiv hU hxU le_rfl hs
+
+end NormedSpace
 
 end TauCeti

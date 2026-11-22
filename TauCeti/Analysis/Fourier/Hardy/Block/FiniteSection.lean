@@ -6,6 +6,8 @@ Authors: Jon Crall, OpenAI gpt-6.1-sol
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.Block.Basic
+import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 public import TauCeti.Analysis.InnerProductSpace.Compression
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basic
 
@@ -15,6 +17,14 @@ public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basi
 Compression to the first `n + 1` block positions, with matrix coordinates indexed by
 `Fin (n + 1) × Fin r`. For positive block size, flattening these coordinates in block order
 identifies this matrix with the ordinary Hilbert-basis finite section.
+
+## Provenance
+
+Generalizes the example compression matrix from the Kitware DKPS donor
+`ForTauCeti/Analysis/Fourier/Hardy/OppositeShifts.lean` at
+[d1c0bf02e](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/d1c0bf02e/ForTauCeti/Analysis/Fourier/Hardy/OppositeShifts.lean).
+The generalization uses native orthonormal synthesis, operator compression and
+Hilbert-basis finite sections. Jon Crall / OpenAI gpt-6.1-sol, Kitware 2026, Apache-2.0.
 -/
 
 public noncomputable section
@@ -25,22 +35,38 @@ namespace TauCeti
 
 /-- Include the first `n + 1` block Hardy positions. -/
 def blockFiniteInclusion (r n : ℕ) :
-    EuclideanSpace ℂ (Fin (n + 1) × Fin r) →L[ℂ] BlockHardySpace r :=
-  ((EuclideanSpace.basisFun (Fin (n + 1) × Fin r) ℂ).toBasis.constr ℂ
-    (fun i => blockHardyBasis r (i.1, i.2))).toContinuousLinearMap
+    EuclideanSpace ℂ (Fin (n + 1) × Fin r) →ₗᵢ[ℂ] BlockHardySpace r :=
+  ((blockHardyBasis r).orthonormal.comp (fun i : Fin (n + 1) × Fin r => (i.1.val, i.2))
+    (by
+      intro i j h
+      exact Prod.ext (Fin.ext (congrArg (fun p : ℕ × Fin r => p.1) h))
+        (congrArg (fun p : ℕ × Fin r => p.2) h))).synthesisMapIsometry
+
+/-- The inclusion is the finite expansion in the selected block basis vectors. -/
+theorem blockFiniteInclusion_apply (r n : ℕ)
+    (x : EuclideanSpace ℂ (Fin (n + 1) × Fin r)) :
+    blockFiniteInclusion r n x = ∑ i, x i • blockHardyBasis r (i.1, i.2) :=
+  Orthonormal.synthesisMapIsometry_apply _ x
 
 /-- A coordinate unit vector includes as the corresponding block Hardy basis vector. -/
 @[simp] theorem blockFiniteInclusion_single (r n : ℕ) (i : Fin (n + 1) × Fin r) :
     blockFiniteInclusion r n (EuclideanSpace.single i 1) =
       blockHardyBasis r (i.1, i.2) := by
-  rw [← EuclideanSpace.basisFun_apply]
-  exact Module.Basis.constr_basis _ ℂ _ i
+  rw [blockFiniteInclusion, Orthonormal.synthesisMapIsometry_single, one_smul, Function.comp_apply]
 
 /-- Matrix of compression to the first `n + 1` block positions. -/
 def blockFiniteSectionMatrix {r : ℕ}
     (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
     Matrix (Fin (n + 1) × Fin r) (Fin (n + 1) × Fin r) ℂ :=
-  (Matrix.toEuclideanCLM (𝕜 := ℂ)).symm (T.compression (blockFiniteInclusion r n))
+  (Matrix.toEuclideanCLM (𝕜 := ℂ)).symm
+    (T.compression (blockFiniteInclusion r n).toContinuousLinearMap)
+
+/-- Converting the finite block matrix to an operator gives its defining compression. -/
+@[simp] theorem toEuclideanCLM_blockFiniteSectionMatrix {r : ℕ}
+    (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
+    Matrix.toEuclideanCLM (𝕜 := ℂ) (blockFiniteSectionMatrix T n) =
+      T.compression (blockFiniteInclusion r n).toContinuousLinearMap :=
+  (Matrix.toEuclideanCLM (𝕜 := ℂ)).apply_symm_apply _
 
 /-- Entries of a finite block section are the operator's block Hardy coefficients. -/
 @[simp] theorem blockFiniteSectionMatrix_apply {r : ℕ}
@@ -48,25 +74,12 @@ def blockFiniteSectionMatrix {r : ℕ}
     (i j : Fin (n + 1) × Fin r) :
     blockFiniteSectionMatrix T n i j =
       ⟪blockHardyBasis r (i.1, i.2), T (blockHardyBasis r (j.1, j.2))⟫_ℂ := by
-  have h := T.inner_compression_apply (blockFiniteInclusion r n)
-    (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  rw [blockFiniteInclusion_single, blockFiniteInclusion_single] at h
-  change LinearMap.toMatrixOrthonormal
-    (EuclideanSpace.basisFun (Fin (n + 1) × Fin r) ℂ)
-    (T.compression (blockFiniteInclusion r n)).toLinearMap i j = _
-  rw [LinearMap.toMatrixOrthonormal_apply_apply, EuclideanSpace.basisFun_apply,
-    EuclideanSpace.basisFun_apply]
-  exact h
-
-/-- Enumerate the block Hardy basis by increasing position, then coordinate within the block. -/
-def blockHardyBasisNat (r : ℕ) [NeZero r] : HilbertBasis ℕ ℂ (BlockHardySpace r) :=
-  (blockHardyBasis r).reindex (Nat.divModEquiv r).symm
-
-/-- Block order sends position `k` and coordinate `i` to `k * r + i`. -/
-@[simp] theorem blockHardyBasisNat_apply (r : ℕ) [NeZero r] (k : ℕ) (i : Fin r) :
-    blockHardyBasisNat r (k * r + i) = blockHardyBasis r (k, i) := by
-  rw [blockHardyBasisNat, HilbertBasis.reindex_apply]
-  exact congrArg (blockHardyBasis r) ((Nat.divModEquiv r).apply_symm_apply (k, i))
+  rw [blockFiniteSectionMatrix, Matrix.toEuclideanCLM_symm_apply_single]
+  simpa only [EuclideanSpace.inner_single_left, map_one, one_mul,
+    LinearIsometry.coe_toContinuousLinearMap,
+    blockFiniteInclusion_single] using T.inner_compression_apply
+      (blockFiniteInclusion r n).toContinuousLinearMap
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
 
 /-- Reindex the first `n + 1` full blocks as the first `(n + 1) * r` scalar coordinates. -/
 def blockFiniteSectionIndexEquiv (r n : ℕ) [NeZero r] :
@@ -74,6 +87,13 @@ def blockFiniteSectionIndexEquiv (r n : ℕ) [NeZero r] :
   finProdFinEquiv.trans (finCongr (Nat.sub_add_cancel (by
     have := NeZero.pos r
     exact Nat.one_le_iff_ne_zero.mpr (Nat.mul_ne_zero (by omega) (by omega)))).symm)
+
+/-- Flattening lists coordinates in increasing block position, then within the block. -/
+@[simp] theorem blockFiniteSectionIndexEquiv_val (r n : ℕ) [NeZero r]
+    (p : Fin (n + 1) × Fin r) :
+    (blockFiniteSectionIndexEquiv r n p).val = p.1.val * r + p.2.val := by
+  change p.2.val + r * p.1.val = _
+  ac_rfl
 
 /-- Flattening block coordinates gives the matrix of the native Hilbert-basis finite section. -/
 theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
@@ -90,17 +110,11 @@ theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
     blockFiniteSectionMatrix_apply]
   have h := T.finiteSection_single_apply (blockHardyBasisNat r) ((n + 1) * r - 1)
     (blockFiniteSectionIndexEquiv r n i) (blockFiniteSectionIndexEquiv r n j)
-  change _ = LinearMap.toMatrixOrthonormal
-    (EuclideanSpace.basisFun (Fin ((n + 1) * r - 1 + 1)) ℂ)
-    (T.finiteSection (blockHardyBasisNat r) ((n + 1) * r - 1)).toLinearMap _ _
-  rw [LinearMap.toMatrixOrthonormal_apply_apply, EuclideanSpace.basisFun_apply,
-    EuclideanSpace.basisFun_apply, EuclideanSpace.inner_single_left]
+  rw [Matrix.toEuclideanCLM_symm_apply_single]
   have hb (p : Fin (n + 1) × Fin r) :
       blockHardyBasisNat r (blockFiniteSectionIndexEquiv r n p) =
         blockHardyBasis r (p.1, p.2) := by
-    change blockHardyBasisNat r (p.2.val + r * p.1.val) = _
-    rw [Nat.add_comm, Nat.mul_comm r p.1.val, blockHardyBasisNat_apply]
-  simpa only [hb, map_one, one_mul, EuclideanSpace.single, ContinuousLinearMap.coe_coe]
-    using h.symm
+    rw [blockFiniteSectionIndexEquiv_val, blockHardyBasisNat_apply]
+  simpa only [hb, EuclideanSpace.single] using h.symm
 
 end TauCeti
