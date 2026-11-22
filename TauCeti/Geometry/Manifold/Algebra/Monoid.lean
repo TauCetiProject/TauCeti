@@ -50,6 +50,9 @@ def id : ContMDiffMonoidMorphism I I n G G where
 @[to_additive (attr := simp)]
 theorem coe_id : ⇑(id (n := n) (I := I) (G := G)) = _root_.id := (rfl)
 
+@[to_additive (attr := simp)]
+theorem coe_one : ⇑(1 : ContMDiffMonoidMorphism I I' n G G') = fun _ ↦ 1 := (rfl)
+
 /-- The first projection as a smooth monoid morphism. -/
 @[to_additive /-- The first projection as a smooth additive monoid morphism. -/]
 def fst : ContMDiffMonoidMorphism (I.prod I') I n (G × G') G where

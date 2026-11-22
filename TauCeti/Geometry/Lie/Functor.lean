@@ -235,8 +235,7 @@ theorem lieMap_one [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] :
   refine EquivLike.injective (leftInvariantDerivationLieEquivGroupLieAlgebra
     (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))) ?_
   rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap, zero_apply, map_zero]
-  have h1 : ⇑(1 : ContMDiffMonoidMorphism I I' ∞ G G') = fun _ ↦ (1 : G') := (rfl)
-  rw [h1, mfderiv_const, zero_apply]
+  rw [ContMDiffMonoidMorphism.coe_one, mfderiv_const, zero_apply]
 
 /-- The Lie map of a composite is the composite of the two Lie maps. -/
 @[simp]
