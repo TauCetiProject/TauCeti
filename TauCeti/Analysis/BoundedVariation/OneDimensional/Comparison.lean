@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.OneDimensional.Basic
 public import TauCeti.Analysis.BoundedVariation.VariationMeasure
 import Mathlib.Analysis.BoundedVariation
-import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
+import TauCeti.Analysis.BoundedVariation.OneDimensional.LebesguePoints
 import TauCeti.MeasureTheory.Covering.DensityTheorem
 
 /-!

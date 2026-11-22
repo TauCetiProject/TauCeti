@@ -5,42 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
+import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
-import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.BoundedVariation.Isometry
+import TauCeti.Analysis.BoundedVariation.OneDimensional.LebesguePoints
 import TauCeti.Analysis.BoundedVariation.VariationMeasure
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension
-import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
-# Variation and perimeter on the real line
+# Perimeter on the real line
 
-On the real line the variational total variation `|Du|(Ω)` bounds the classical variation of
-the Lebesgue values of `u`. If `x₀ ≤ x₁ ≤ ⋯ ≤ xₘ` are Lebesgue points of `u` with values
-`v₀, …, vₘ`, in the sense that the mean oscillation `⨍_{B(xᵢ, r)} |u - vᵢ|` tends to zero, and
-`[x₀, xₘ] ⊆ Ω`, then
-
-`∑ᵢ |vᵢ₊₁ - vᵢ| ≤ |Du|(Ω)`
-
-(`TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn`). The test function is a combination
-`∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` of smooth steps `ψ = Real.smoothTransition`
-with signs `εᵢ = sign (vᵢ - vᵢ₊₁)`. Since the steps decrease along the points, the
-combination is bounded by the telescoping sum `ψ (c (y - x₀)) - ψ (c (y - xₘ)) ≤ 1`. Its
-derivative is a combination of approximate identities concentrating to the right of the
-points, so its pairing with `u` converges to `∑ᵢ |vᵢ₊₁ - vᵢ|` as `c → ∞`.
-
-For the indicator of a set `s`, almost every point is a Lebesgue point with value `0` or `1`.
-Counting alternations between points of `s` and of its complement gives the sharp
-one-dimensional isoperimetric inequality and its rigidity:
+Using the Lebesgue-point variation bounds from
+`TauCeti.Analysis.BoundedVariation.OneDimensional.LebesguePoints` (for Lebesgue points whose
+joining closed interval lies in `Ω`), almost every point of a measurable set `s` is a Lebesgue
+point of its indicator with value `0` or `1`. Counting alternations between points of `s` and of
+its complement gives the sharp one-dimensional isoperimetric inequality and its rigidity:
 
 * a null-measurable `s ⊆ ℝ` of positive finite measure has perimeter at least `2`
   (`TauCeti.Real.two_le_perimeter`);
@@ -65,9 +51,6 @@ perimeter agrees almost everywhere on a sufficiently small ball around each poin
 
 ## Main results
 
-* `TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn` and
-  `TauCeti.Real.ofReal_abs_sub_le_totalVariationOn`: the variation of `u` along Lebesgue points in
-  `Ω` (and between any two Lebesgue points) is at most `|Du|(Ω)`.
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
   `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
 * `TauCeti.Real.measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one`: a null-measurable
@@ -86,194 +69,10 @@ perimeter agrees almost everywhere on a sufficiently small ball around each poin
 
 public section
 
-open Filter Set MeasureTheory Metric TopologicalSpace TestFunction LineDeriv
-open scoped Topology ENNReal Distributions BoundedContinuousFunction
+open Filter Set MeasureTheory Metric TopologicalSpace
+open scoped Topology ENNReal
 
 namespace TauCeti.Real
-
-/-- The combination `∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` of smooth steps at monotone
-points, with coefficients of absolute value at most one, is bounded by one. -/
-private theorem abs_sum_mul_smoothTransition_sub_le {m : ℕ} {x : Fin (m + 1) → ℝ}
-    (hx : Monotone x) {ε : Fin m → ℝ} (hε : ∀ i, |ε i| ≤ 1) {c : ℝ} (hc : 0 ≤ c) (y : ℝ) :
-    |∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
-      Real.smoothTransition (c * (y - x i.succ)))| ≤ 1 := by
-  -- The steps decrease along the monotone points and telescope.
-  have hd (i : Fin m) : 0 ≤ Real.smoothTransition (c * (y - x i.castSucc)) -
-      Real.smoothTransition (c * (y - x i.succ)) :=
-    sub_nonneg.2 (Real.smoothTransition.monotone (by gcongr; exact hx (Fin.castSucc_le_succ i)))
-  calc _ ≤ ∑ i : Fin m, |ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
-        Real.smoothTransition (c * (y - x i.succ)))| := Finset.abs_sum_le_sum_abs _ _
-    _ ≤ ∑ i : Fin m, (Real.smoothTransition (c * (y - x i.castSucc)) -
-        Real.smoothTransition (c * (y - x i.succ))) := by
-      refine Finset.sum_le_sum fun i _ => ?_
-      rw [abs_mul, abs_of_nonneg (hd i)]
-      exact mul_le_of_le_one_left (hd i) (hε i)
-    _ = Real.smoothTransition (c * (y - x 0)) -
-        Real.smoothTransition (c * (y - x (Fin.last m))) :=
-      Fin.sum_univ_castSucc_sub_succ fun i => Real.smoothTransition (c * (y - x i))
-    _ ≤ 1 := by
-      linarith [Real.smoothTransition.le_one (c * (y - x 0)),
-        Real.smoothTransition.nonneg (c * (y - x (Fin.last m)))]
-
-/-- The combination of smooth steps at monotone points `x₀ ≤ ⋯ ≤ xₘ`, each rising on
-`[xᵢ, xᵢ + c⁻¹]`, vanishes outside `[x₀, xₘ + c⁻¹]`. -/
-private theorem sum_mul_smoothTransition_sub_eq_zero {m : ℕ} {x : Fin (m + 1) → ℝ}
-    (hx : Monotone x) (ε : Fin m → ℝ) {c : ℝ} (hc : 0 < c) {y : ℝ}
-    (hy : y ∉ Icc (x 0) (x (Fin.last m) + c⁻¹)) :
-    ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
-      Real.smoothTransition (c * (y - x i.succ))) = 0 := by
-  refine Finset.sum_eq_zero fun i _ => ?_
-  rcases not_and_or.1 hy with hy | hy
-  · -- Left of every point all steps are `0`.
-    have h (j) : Real.smoothTransition (c * (y - x j)) = 0 :=
-      Real.smoothTransition.zero_of_nonpos
-        (mul_nonpos_of_nonneg_of_nonpos hc.le (by linarith [hx (Fin.zero_le j)]))
-    simp [h]
-  · -- Right of every transition all steps are `1`.
-    have h (j) : Real.smoothTransition (c * (y - x j)) = 1 := by
-      refine Real.smoothTransition.one_of_one_le ?_
-      calc (1 : ℝ) = c * c⁻¹ := (mul_inv_cancel₀ hc.ne').symm
-        _ ≤ c * (y - x j) := by gcongr; linarith [hx (Fin.le_last j)]
-    simp [h]
-
-/-- The derivative of the smooth-step combination
-`∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))`. -/
-private theorem hasDerivAt_sum_mul_smoothTransition_sub {m : ℕ} (ε : Fin m → ℝ)
-    (x : Fin (m + 1) → ℝ) {c : ℝ} (y : ℝ) :
-    HasDerivAt (fun y => ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
-      Real.smoothTransition (c * (y - x i.succ))))
-      (∑ i : Fin m, ε i * (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
-        c * deriv Real.smoothTransition (c * (y - x i.succ)))) y := by
-  have hstep (p y : ℝ) : HasDerivAt (fun y => Real.smoothTransition (c * (y - p)))
-      (c * deriv Real.smoothTransition (c * (y - p))) y :=
-    (((hasDerivAt_id y).sub_const p).const_mul c).smoothTransition.congr_deriv
-      (by rw [id, mul_one, mul_comm])
-  exact HasDerivAt.fun_sum fun i _ => ((hstep _ y).sub (hstep _ y)).const_mul (ε i)
-
-/-- The smooth-step combination `∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` is smooth. -/
-private theorem contDiff_sum_mul_smoothTransition_sub {m : ℕ} {c : ℝ} (ε : Fin m → ℝ)
-    (x : Fin (m + 1) → ℝ) :
-    ContDiff ℝ (⊤ : ℕ∞) fun y => ∑ i : Fin m, ε i *
-      (Real.smoothTransition (c * (y - x i.castSucc)) -
-        Real.smoothTransition (c * (y - x i.succ))) := by
-  have hstep (p : ℝ) : ContDiff ℝ (⊤ : ℕ∞) fun y => Real.smoothTransition (c * (y - p)) :=
-    Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_id.sub contDiff_const))
-  exact ContDiff.sum fun i _ => contDiff_const.mul ((hstep _).sub (hstep _))
-
-/-- **The smooth-step test function.** For monotone points `x₀ ≤ ⋯ ≤ xₘ` with
-`[x₀, xₘ + c⁻¹] ⊆ Ω` and coefficients `|εᵢ| ≤ 1`, the combination
-`∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` is a test function on `Ω` of sup norm at most one.
-Its derivative pairs with `u` to the corresponding combination of the kernel pairings
-`∫ c ψ'(c (y - xᵢ)) u y dy`, which is therefore at most `|Du|(Ω)`. -/
-private theorem ofReal_sum_mul_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ} {m : ℕ}
-    {x : Fin (m + 1) → ℝ} (hx : Monotone x) {ε : Fin m → ℝ} (hε : ∀ i, |ε i| ≤ 1) {c : ℝ}
-    (hc : 0 < c) (hΩ : Icc (x 0) (x (Fin.last m) + c⁻¹) ⊆ Ω)
-    (hu : ∀ i, IntegrableOn u (closedBall (x i) c⁻¹)) :
-    ENNReal.ofReal (∑ i : Fin m, ε i *
-      ((∫ y, c * deriv Real.smoothTransition (c * (y - x i.castSucc)) * u y) -
-        ∫ y, c * deriv Real.smoothTransition (c * (y - x i.succ)) * u y)) ≤
-      totalVariationOn volume Ω u := by
-  have hkint (i) : Integrable fun y => c * deriv Real.smoothTransition (c * (y - x i)) * u y := by
-    simpa only [smul_eq_mul] using
-      Real.smoothTransition.integrable_mul_deriv_mul_sub_smul hc (hu i)
-  set I : ℝ → ℝ := fun p => ∫ y, c * deriv Real.smoothTransition (c * (y - p)) * u y
-  set g : ℝ → ℝ := fun y => ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
-    Real.smoothTransition (c * (y - x i.succ)))
-  have hgd (y) : HasDerivAt g _ y := hasDerivAt_sum_mul_smoothTransition_sub (c := c) ε x y
-  have hgsmooth : ContDiff ℝ (⊤ : ℕ∞) g := contDiff_sum_mul_smoothTransition_sub ε x
-  have hg0 (y) (hy : y ∉ Icc (x 0) (x (Fin.last m) + c⁻¹)) : g y = 0 :=
-    sum_mul_smoothTransition_sub_eq_zero hx ε hc hy
-  have hts : tsupport g ⊆ Ω :=
-    (isClosed_Icc.closure_subset_iff.2 (Function.support_subset_iff'.2 hg0)).trans hΩ
-  let T : 𝓓(Ω, ℝ) := ⟨g, hgsmooth, HasCompactSupport.intro isCompact_Icc hg0, hts⟩
-  -- Its derivative pairs with `u` to the combination of the kernel pairings.
-  have hpair : ∫ y, ∂_{(1 : ℝ)} T y * u y =
-      ∑ i : Fin m, ε i * (I (x i.castSucc) - I (x i.succ)) := by
-    have hT (y) : ∂_{(1 : ℝ)} T y = ∑ i : Fin m, ε i *
-        (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
-          c * deriv Real.smoothTransition (c * (y - x i.succ))) := by
-      rw [lineDerivOp_one_apply_eq_deriv, coe_mk, (hgd y).deriv]
-    simp_rw [hT, Finset.sum_mul, mul_assoc, sub_mul]
-    rw [integral_finsetSum _ fun i _ => ?_]
-    · refine Finset.sum_congr rfl fun i _ => ?_
-      rw [integral_const_mul, integral_sub (hkint _) (hkint _)]
-    · exact ((hkint _).sub (hkint _)).const_mul _
-  have hTnorm : ‖(T : ℝ →ᵇ ℝ)‖ₑ ≤ 1 := by
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_one.2 ((BoundedContinuousFunction.norm_le zero_le_one).2
-      (abs_sum_mul_smoothTransition_sub_le hx hε hc.le))
-  rw [← hpair]
-  calc ENNReal.ofReal (∫ y, ∂_{(1 : ℝ)} T y * u y)
-      ≤ ENNReal.ofReal |∫ y, ∂_{(1 : ℝ)} T y * u y| := ENNReal.ofReal_le_ofReal (le_abs_self _)
-    _ ≤ ‖(1 : ℝ)‖ₑ * ‖(T : ℝ →ᵇ ℝ)‖ₑ * totalVariationOn volume Ω u :=
-        ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn T 1
-    _ ≤ totalVariationOn volume Ω u := by
-        rw [eNorm_one, one_mul]
-        exact mul_le_of_le_one_left zero_le hTnorm
-
-/-- **The variation along Lebesgue points is bounded by the total variation.** Let
-`x₀ ≤ x₁ ≤ ⋯ ≤ xₘ` be points with `[x₀, xₘ] ⊆ Ω` at which `u` has Lebesgue values `vᵢ`, that
-is, the mean oscillation `⨍_{B(xᵢ, r)} |u - vᵢ|` tends to zero as `r → 0`. Then
-`∑ᵢ |vᵢ₊₁ - vᵢ| ≤ |Du|(Ω)`. -/
-theorem ofReal_sum_abs_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ}
-    (hu : LocallyIntegrableOn u Ω) {m : ℕ} {x v : Fin (m + 1) → ℝ} (hx : Monotone x)
-    (hΩ : Icc (x 0) (x (Fin.last m)) ⊆ Ω)
-    (hv : ∀ i, Tendsto (fun r => ⨍ y in closedBall (x i) r, ‖u y - v i‖) (𝓝[>] 0) (𝓝 0)) :
-    ENNReal.ofReal (∑ i : Fin m, |v i.succ - v i.castSucc|) ≤ totalVariationOn volume Ω u := by
-  set K := Icc (x 0) (x (Fin.last m))
-  have hxK (i) : x i ∈ K := ⟨hx (Fin.zero_le i), hx (Fin.le_last i)⟩
-  obtain ⟨δ, hδ, hδΩ⟩ := isCompact_Icc.exists_cthickening_subset_open Ω.isOpen hΩ
-  have huL : IntegrableOn u (cthickening δ K) :=
-    hu.integrableOn_compact_subset hδΩ isCompact_Icc.cthickening
-  -- The signs `ε i` are chosen so that `ε i (v i - v (i + 1)) = |v (i + 1) - v i|`.
-  set ε : Fin m → ℝ := fun i => SignType.sign (v i.castSucc - v i.succ)
-  have hε (i) : |ε i| ≤ 1 := by
-    simp only [ε]
-    cases SignType.sign (v i.castSucc - v i.succ) <;> simp
-  -- The pairings of `u` with the rescaled kernels `c ψ'(c (y - p))` converge to the values.
-  set I : ℝ → ℝ → ℝ := fun c p => ∫ y, c * deriv Real.smoothTransition (c * (y - p)) * u y
-  have hlim : Tendsto (fun c => ∑ i : Fin m, ε i * (I c (x i.castSucc) - I c (x i.succ))) atTop
-      (𝓝 (∑ i : Fin m, |v i.succ - v i.castSucc|)) := by
-    have hI (i) : Tendsto (fun c => I c (x i)) atTop (𝓝 (v i)) := by
-      simpa only [smul_eq_mul] using
-        Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul ⟨cthickening δ K,
-          mem_of_superset (closedBall_mem_nhds _ hδ) (closedBall_subset_cthickening (hxK i) δ),
-          huL⟩ (hv i)
-    refine tendsto_finsetSum _ fun i _ => ?_
-    rw [abs_sub_comm, ← self_mul_sign, mul_comm]
-    exact ((hI _).sub (hI _)).const_mul _
-  -- For large `c` each combination is bounded by the smooth-step test function.
-  refine le_of_tendsto (ENNReal.tendsto_ofReal hlim) ?_
-  filter_upwards [eventually_gt_atTop δ⁻¹] with c hc
-  have hc0 : 0 < c := lt_trans (inv_pos.2 hδ) hc
-  have hball (p) (hp : p ∈ K) : closedBall p c⁻¹ ⊆ cthickening δ K :=
-    (closedBall_subset_closedBall (inv_lt_of_inv_lt₀ hδ hc).le).trans
-      (closedBall_subset_cthickening hp δ)
-  refine ofReal_sum_mul_sub_le_totalVariationOn hx hε hc0 (fun y hy => hδΩ ?_)
-    fun i => huL.mono_set (hball _ (hxK i))
-  rcases le_total y (x (Fin.last m)) with h | h
-  · exact self_subset_cthickening K ⟨hy.1, h⟩
-  · refine hball _ (hxK (Fin.last m)) ?_
-    rw [Real.closedBall_eq_Icc]
-    exact ⟨by linarith [inv_pos.2 hc0], hy.2⟩
-
-/-- **Two-point variation bound along Lebesgue points.** If `u` is locally integrable on `Ω` and
-has Lebesgue values `v₀` at `x₀` and `v₁` at `x₁`, with `[x₀, x₁] ⊆ Ω` (regardless of order),
-then `|v₁ - v₀| ≤ |Du|(Ω)`. -/
-theorem ofReal_abs_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ}
-    (hu : LocallyIntegrableOn u Ω) {x₀ x₁ v₀ v₁ : ℝ}
-    (hΩ : uIcc x₀ x₁ ⊆ Ω)
-    (hv₀ : Tendsto (fun r => ⨍ y in closedBall x₀ r, ‖u y - v₀‖) (𝓝[>] 0) (𝓝 0))
-    (hv₁ : Tendsto (fun r => ⨍ y in closedBall x₁ r, ‖u y - v₁‖) (𝓝[>] 0) (𝓝 0)) :
-    ENNReal.ofReal |v₁ - v₀| ≤ totalVariationOn volume Ω u := by
-  wlog hle : x₀ ≤ x₁ generalizing x₀ x₁ v₀ v₁
-  · rw [abs_sub_comm]
-    exact this (uIcc_comm x₀ x₁ ▸ hΩ) hv₁ hv₀ (le_of_not_ge hle)
-  have h := ofReal_sum_abs_sub_le_totalVariationOn hu (x := ![x₀, x₁]) (v := ![v₀, v₁])
-    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; exact hle)
-    (by simpa [uIcc_of_le hle] using hΩ)
-    fun i => by fin_cases i <;> assumption
-  simpa [Fin.sum_univ_succ] using h
 
 /-- Monotone Lebesgue points of the indicator of a measurable set `s` bound its perimeter from
 below by the number of alternations between `s` and its complement. -/
@@ -380,8 +179,9 @@ theorem perimeter_Ioo {a b : ℝ} (hab : a < b) : perimeter volume ⊤ (Ioo a b)
   rw [perimeter_def, totalVariationOn_le_iff]
   intro φ hφ
   have hdiff : Differentiable ℝ φ := φ.contDiff.differentiable (by simp)
-  have hint : ∫ x, divergenceCLM φ x * (Ioo a b).indicator 1 x = φ b - φ a := by
-    simp_rw [divergenceCLM_apply_eq_deriv, ← indicator_mul_right, Pi.one_apply, mul_one]
+  have hint : ∫ x, TestFunction.divergenceCLM φ x * (Ioo a b).indicator 1 x = φ b - φ a := by
+    simp_rw [TestFunction.divergenceCLM_apply_eq_deriv, ← indicator_mul_right, Pi.one_apply,
+      mul_one]
     rw [integral_indicator measurableSet_Ioo, ← integral_Ioc_eq_integral_Ioo,
       ← intervalIntegral.integral_of_le hab.le, intervalIntegral.integral_deriv_eq_sub
         (fun x _ => hdiff x) ((φ.contDiff.continuous_deriv (by simp)).intervalIntegrable _ _)]
@@ -511,8 +311,9 @@ private theorem measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero (e : E ≃�
   have hI : ball (e x) r ∩ Iio (e x) = I := by
     rw [Real.ball_eq_Ioo, Set.Ioo_inter_Iio, min_eq_right (le_add_of_nonneg_right hr.le)]
   have hpre : e ⁻¹' I = ball x r ∩ {y | e y < e x} := by
-    rw [← hI, preimage_inter, e.preimage_ball, e.symm_apply_apply]
-    rfl
+    rw [← hI]
+    ext y
+    simp only [mem_preimage, mem_inter_iff, mem_ball, e.dist_map, mem_Iio, Set.mem_ofPred_eq]
   have hmaps : MapsTo e.symm (⟨I, isOpen_Ioo⟩ : Opens ℝ)
       (⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ : Opens E) := fun t ht => by
     have hmem : e.symm t ∈ ball x r ∩ {y | e y < e x} := by
@@ -582,8 +383,10 @@ private theorem ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves (e : E ≃ₗᵢ
   rcases hL with hL0 | hL1 <;> rcases hR with hR0 | hR1
   · exact .inl (ae_eq_empty.2 (hnull e hL0 hR0))
   · refine .inr (.inr (hstep (e.trans (LinearIsometryEquiv.neg ℝ)) ?_ ?_))
-    · simpa [neg_lt_neg_iff] using hR1
-    · simpa [neg_lt_neg_iff] using hL0
+    · simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg,
+        neg_lt_neg_iff] using hR1
+    · simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg,
+        neg_lt_neg_iff] using hL0
   · exact .inr (.inr (hstep e hL1 hR0))
   · exact .inr (.inl (ae_eq_univ.2 (hnull e
       (by simpa [sdiff_eq_compl_inter, inter_comm] using hL1)

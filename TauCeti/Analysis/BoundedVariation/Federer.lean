@@ -10,21 +10,19 @@ public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.BlowUp
 import TauCeti.Analysis.BoundedVariation.EssentialBoundary
-import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
-import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
-# Federer's `0`–`1/2`–`1` density theorem and finite-perimeter specializations
+# Federer's `0`–`1/2`–`1` density theorem
 
 Let `E` be a finite-dimensional real inner product space of dimension `n` carrying an additive Haar
-measure `μ`, and let `s` be a set of locally finite perimeter in an open set `Ω ⊆ E`. By
+measure `μ`, and let `s` be a set of locally finite perimeter in an open set `Ω ⊆ E`. Here `n - 1`
+denotes truncated natural subtraction (so `0 - 1 = 0` when `n = 0`, where `μHE[0]` is
+zero-dimensional Hausdorff / counting measure). By
 `TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`, the essential boundary `∂ᵉs ∩ Ω` agrees
 `μHE[n - 1]`-almost everywhere with the reduced boundary `∂*s`, where `s` has density `1 / 2`
 (`TauCeti.hasDensityAt_of_mem_reducedBoundary`). This file deduces:
 
-* raw Hausdorff measure `μH[n - 1]` and finite-perimeter / whole-space specializations of
-  `TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`;
 * `TauCeti.ae_hasDensityAt_of_mem_essentialBoundary`: `μHE[n - 1]`-almost every point of
   `∂ᵉs ∩ Ω` has density `1 / 2`;
 * `TauCeti.ae_hasDensityAt_zero_or_one_half_or_one` (and its finite-perimeter specializations):
@@ -54,51 +52,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {s : Set E}
 
-/-- **Federer's structure theorem, null-difference form (raw Hausdorff measure).** For a set `s` of
-locally finite perimeter in an open set `Ω` against an additive Haar measure `μ`, the part of the
-essential boundary in `Ω` outside the reduced boundary is `μH[n - 1]`-null (`n = dim E`). -/
-theorem hausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
-    μH[((finrank ℝ E - 1 : ℕ) : ℝ)]
-      ((essentialBoundary μ s ∩ Ω) \ reducedBoundary μ Ω s) = 0 :=
-  Measure.euclideanHausdorffMeasure_eq_zero_iff.1
-    (euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero hu hfin)
-
-/-- **Federer's structure theorem (raw Hausdorff measure).** For a set `s` of locally finite
-perimeter in an open set `Ω` against an additive Haar measure `μ`, `∂ᵉs ∩ Ω` agrees
-`μH[n - 1]`-almost everywhere with `∂*s` (`n = dim E`). -/
-theorem essentialBoundary_inter_ae_eq_reducedBoundary_hausdorffMeasure
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
-    (essentialBoundary μ s ∩ Ω : Set E) =ᵐ[μH[((finrank ℝ E - 1 : ℕ) : ℝ)]]
-      reducedBoundary μ Ω s :=
-  ae_eq_set.2
-    ⟨hausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero hu hfin, by
-      rw [sdiff_eq_empty.2 (subset_inter reducedBoundary_subset_essentialBoundary
-        reducedBoundary_subset), measure_empty]⟩
-
-/-- **Federer's structure theorem** for a set of finite perimeter in `Ω`: if `s` is null-measurable
-on `Ω` and `P(s; Ω) ≠ ∞`, then `∂ᵉs ∩ Ω =ᵐ[μHE[n - 1]] ∂*s` (`n = dim E`). -/
-theorem essentialBoundary_inter_ae_eq_reducedBoundary_of_perimeter_ne_top
-    (hs : NullMeasurableSet s (μ.restrict Ω)) (hP : perimeter μ Ω s ≠ ∞) :
-    (essentialBoundary μ s ∩ Ω : Set E) =ᵐ[μHE[finrank ℝ E - 1]] reducedBoundary μ Ω s :=
-  essentialBoundary_inter_ae_eq_reducedBoundary (locallyIntegrableOn_indicator_const hs 1)
-    fun _ _ hKΩ => ⟨Ω, hKΩ, by rwa [← perimeter_def]⟩
-
-/-- **Federer's structure theorem** for a set of finite perimeter in the whole space: if `s` is
-null-measurable and `P(s; ⊤) ≠ ∞`, then `∂ᵉs =ᵐ[μHE[n - 1]] ∂*s` (`n = dim E`). -/
-theorem essentialBoundary_ae_eq_reducedBoundary_top_of_perimeter_ne_top
-    (hs : NullMeasurableSet s μ) (hP : perimeter μ ⊤ s ≠ ∞) :
-    essentialBoundary μ s =ᵐ[μHE[finrank ℝ E - 1]] reducedBoundary μ ⊤ s := by
-  simpa using essentialBoundary_inter_ae_eq_reducedBoundary_of_perimeter_ne_top
-    (Ω := ⊤) (hs.mono Measure.restrict_le_self) hP
-
 /-- **Density one half almost everywhere on the essential boundary.** For a set `s` of locally
 finite perimeter in `Ω` against an additive Haar measure `μ`, `s` has density `1 / 2` at
-`μHE[n - 1]`-almost every point of `∂ᵉs ∩ Ω` (`n = dim E`). -/
+`μHE[n - 1]`-almost every point of `∂ᵉs ∩ Ω`, where `n = dim E` and `n - 1` is truncated natural
+subtraction (so `0 - 1 = 0` when `n = 0`). -/
 theorem ae_hasDensityAt_of_mem_essentialBoundary
     (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
@@ -110,7 +67,8 @@ theorem ae_hasDensityAt_of_mem_essentialBoundary
 
 /-- **Federer's `0`–`1/2`–`1` density theorem.** For a set `s` of locally finite perimeter in an
 open set `Ω` against an additive Haar measure `μ`, at `μHE[n - 1]`-almost every point of `Ω` the set
-`s` has density `0`, `1 / 2`, or `1` (`n = dim E`). -/
+`s` has density `0`, `1 / 2`, or `1`, where `n = dim E` and `n - 1` is truncated natural subtraction
+(so `0 - 1 = 0` when `n = 0`). -/
 theorem ae_hasDensityAt_zero_or_one_half_or_one
     (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
@@ -127,7 +85,8 @@ theorem ae_hasDensityAt_zero_or_one_half_or_one
 
 /-- **Federer's `0`–`1/2`–`1` density theorem** for a set of finite perimeter in `Ω`: if `s` is
 null-measurable on `Ω` and `P(s; Ω) ≠ ∞`, then at `μHE[n - 1]`-almost every `x ∈ Ω` the set `s`
-has density `0`, `1 / 2`, or `1`. -/
+has density `0`, `1 / 2`, or `1`, where `n = dim E` and `n - 1` is truncated natural subtraction (so
+`0 - 1 = 0` when `n = 0`). -/
 theorem ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_ne_top
     (hs : NullMeasurableSet s (μ.restrict Ω)) (hP : perimeter μ Ω s ≠ ∞) :
     ∀ᵐ x ∂μHE[finrank ℝ E - 1], x ∈ Ω →
@@ -137,7 +96,8 @@ theorem ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_ne_top
 
 /-- **Federer's `0`–`1/2`–`1` density theorem** for a set of finite perimeter in the whole space:
 if `s` is null-measurable and `P(s; ⊤) ≠ ∞`, then at `μHE[n - 1]`-almost every `x : E` the set `s`
-has density `0`, `1 / 2`, or `1`. -/
+has density `0`, `1 / 2`, or `1`, where `n = dim E` and `n - 1` is truncated natural subtraction (so
+`0 - 1 = 0` when `n = 0`). -/
 theorem ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_top_ne_top
     (hs : NullMeasurableSet s μ) (hP : perimeter μ ⊤ s ≠ ∞) :
     ∀ᵐ x ∂μHE[finrank ℝ E - 1],

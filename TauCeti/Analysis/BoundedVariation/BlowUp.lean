@@ -41,9 +41,9 @@ that the distributional derivative of `χ_{s_{x,r}}` points in the direction `-�
 vanishes in the limit. In dimension at least two these combine into the **blow-up theorem** of De
 Giorgi's structure theorem: the blow-ups converge locally in measure to the half-space
 `{y | ⟪y, ν⟫ < 0}`, and consequently (together with the one-dimensional case) `s` has density one
-half at `x` in every dimension. The perimeters of the
-blow-ups in the unit ball converge to that of the half-space, which gives the density of the
-perimeter measure `|Dχ_s|` at `x`.
+half at `x` in every dimension. Also in dimension at least two, the perimeters of the blow-ups in
+the unit ball converge to that of the half-space, which gives the density of the perimeter measure
+`|Dχ_s|` at `x`.
 
 * The scaling identities `TauCeti.perimeter_ball_zero_preimage_add_smul` and
   `MeasureTheory.Measure.addHaar_preimage_add_smul_inter_ball`, proved with the other dilation
@@ -773,7 +773,10 @@ theorem hasDensityAt_of_mem_reducedBoundary
   · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (Nat.lt_succ_iff.1 hn) with h0 | h1
     · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
       simp at hx
-    · exact hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one h1 hx
+    · obtain ⟨r, hr, _, ν, hν, hsH⟩ := exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary h1 hx
+      have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+      rw [hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) hsH]
+      exact hasDensityAt_setOf_inner_lt hν0 rfl
   · exact hasDensityAt_of_mem_reducedBoundary_of_two_le hn hx
 
 /-! ### The density of the perimeter measure at the reduced boundary -/

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
-import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 
 /-!
@@ -33,10 +33,9 @@ or `1` at `x`, so `x` belongs neither to `∂*s` nor to `∂ᵉs`. In the third 
 `{x}` (hence `x ∈ ∂*s` by `TauCeti.ae_mem_reducedBoundary`) and `s` has density `1 / 2` at `x`
 (hence `x ∈ ∂ᵉs`). Thus:
 
-* every point of `∂*s` has density `1 / 2`
-  (`TauCeti.hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one`);
-* `∂*s ⊆ ∂ᵉs` without any finite-perimeter hypothesis
-  (`TauCeti.reducedBoundary_subset_essentialBoundary_of_finrank_le_one`);
+* around every point of `∂*s` in dimension `1`, `s` agrees `μ`-almost everywhere on a small ball
+  with a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}`
+  (`TauCeti.exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary`);
 * when `s` has locally finite perimeter in `Ω`, `∂*s = Ω ∩ ∂ᵉs` literally as sets
   (`TauCeti.reducedBoundary_eq_inter_essentialBoundary_of_finrank_le_one`).
 
@@ -112,24 +111,35 @@ private theorem mem_reducedBoundary_of_ae_eq_setOf_inner_lt_of_finrank_eq_one
     fun y hy => (em ((y : E) = x)).imp (fun heq => Subtype.ext heq) fun hne => ⟨hy, hne⟩
   exact hlamB (measure_mono_null hcov (measure_union_null hatom hlam0))
 
-/-- **Points of the reduced boundary have density one half in dimension one.** Against an additive
-Haar measure on a one-dimensional real inner product space, every point of `∂*s` has density
-`1 / 2`. -/
-theorem hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one (hn : finrank ℝ E = 1)
-    (hx : x ∈ reducedBoundary μ Ω s) : HasDensityAt μ s x (1 / 2) := by
+/-- **Local half-line characterization of the reduced boundary in dimension one.** Against an
+additive Haar measure on a one-dimensional real inner product space, around every point `x` of the
+reduced boundary of `s` in `Ω`, `s` agrees `μ`-almost everywhere on some small ball inside `Ω` with
+a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` (`‖ν‖ = 1`). -/
+theorem exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary (hn : finrank ℝ E = 1)
+    (hx : x ∈ reducedBoundary μ Ω s) :
+    ∃ r > 0, ball x r ⊆ Ω ∧ ∃ ν : E, ‖ν‖ = 1 ∧
+      s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
   obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  obtain ⟨r, hr, _, hcases⟩ :=
+  obtain ⟨r, hr, hrΩ, hcases⟩ :=
     exists_ae_eq_empty_or_univ_or_setOf_inner_lt_of_finrank_eq_one hn hu hfin
       (reducedBoundary_subset hx)
   rcases hcases with he | hu' | ⟨ν, hν, hsH⟩
   · exact (perimeter_ball_ne_zero hx hr (by rw [perimeter_congr_ae he, perimeter_empty])).elim
   · exact (perimeter_ball_ne_zero hx hr (by rw [perimeter_congr_ae hu', perimeter_univ])).elim
-  · have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
-    rw [hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) hsH]
-    exact hasDensityAt_setOf_inner_lt hν0 rfl
+  · exact ⟨r, hr, hrΩ, ν, hν, hsH⟩
+
+/-- **Points of the reduced boundary have density one half in dimension one.** Against an additive
+Haar measure on a one-dimensional real inner product space, every point of `∂*s` has density
+`1 / 2`. -/
+private theorem hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one (hn : finrank ℝ E = 1)
+    (hx : x ∈ reducedBoundary μ Ω s) : HasDensityAt μ s x (1 / 2) := by
+  obtain ⟨r, hr, _, ν, hν, hsH⟩ := exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary hn hx
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  rw [hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) hsH]
+  exact hasDensityAt_setOf_inner_lt hν0 rfl
 
 /-- **The reduced boundary lies in the essential boundary in dimension at most one.** -/
-theorem reducedBoundary_subset_essentialBoundary_of_finrank_le_one (hn : finrank ℝ E ≤ 1) :
+private theorem reducedBoundary_subset_essentialBoundary_of_finrank_le_one (hn : finrank ℝ E ≤ 1) :
     reducedBoundary μ Ω s ⊆ essentialBoundary μ s := by
   rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hn with h0 | h1
   · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0

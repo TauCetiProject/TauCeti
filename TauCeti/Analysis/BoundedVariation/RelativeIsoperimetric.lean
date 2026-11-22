@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
-public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.Poincare
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -41,8 +40,6 @@ inequality.
   inequality in a ball.
 * `TauCeti.exists_min_div_closedBall_rpow_le_mul_perimeter_div`: the normalized closed-ball form
   in terms of `P(s; ball x r) / r ^ (n - 1)`.
-* `TauCeti.notMem_essentialBoundary_of_tendsto_perimeter_ball_div`: vanishing `(n - 1)`-dimensional
-  perimeter density at `x ∈ Ω` excludes `x` from the essential boundary `∂ᵉs`.
 
 ## References
 
@@ -62,6 +59,11 @@ open scoped ENNReal Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private lemma one_sub_inv_finrank_pos (hn : 2 ≤ finrank ℝ E) :
+    0 < 1 - (finrank ℝ E : ℝ)⁻¹ :=
+  sub_pos.2 (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
 
 /-- On the part `t ∩ B` of a ball `B ⊆ Ω` where the indicator of `s` takes a value `b` at distance
 at least `1/2` from its mean over `B`, the localized Poincaré–Wirtinger inequality gives
@@ -114,8 +116,7 @@ theorem min_measure_inter_measure_sdiff_rpow_le_perimeter (hn : 2 ≤ finrank �
     min (μ (s ∩ ball c r)) (μ (ball c r \ s)) ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) *
         perimeter μ Ω s := by
-  have hexp : 0 < 1 - (finrank ℝ E : ℝ)⁻¹ :=
-    sub_pos.2 (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
+  have hexp : 0 < 1 - (finrank ℝ E : ℝ)⁻¹ := one_sub_inv_finrank_pos hn
   rcases le_or_gt r 0 with hr | hr
   · simp [ball_eq_empty.2 hr, ENNReal.zero_rpow_of_pos hexp]
   -- The indicator deviates from its mean `a` over the ball by at least `1/2` on `s ∩ B` or on
@@ -158,7 +159,7 @@ theorem exists_min_div_closedBall_rpow_le_mul_perimeter_div (hn : 2 ≤ finrank 
     fun {s x r} hr hs => ?_⟩
   set n := finrank ℝ E with hn_eq
   set q : ℝ := 1 - (n : ℝ)⁻¹
-  have hq : 0 < q := sub_pos.2 (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
+  have hq : 0 < q := one_sub_inv_finrank_pos hn
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (zero_lt_two.trans_le hn)
   have hmin : min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) ^ q ≤
       ENNReal.ofReal (2 ^ (n + 1) / μ.real (ball 0 1) ^ (n : ℝ)⁻¹) *
@@ -168,11 +169,18 @@ theorem exists_min_div_closedBall_rpow_le_mul_perimeter_div (hn : 2 ≤ finrank 
     exact min_measure_inter_measure_sdiff_rpow_le_perimeter hn hs
       (Ω := ⟨ball x r, isOpen_ball⟩) subset_rfl
   have hexp : (n : ℝ) * q = ((n - 1 : ℕ) : ℝ) := by
-    rw [Nat.cast_sub (one_le_two.trans hn), Nat.cast_one, mul_sub, mul_one,
-      mul_inv_cancel₀ (by positivity)]
+    have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast (zero_lt_two.trans_le hn).ne'
+    rw [Nat.cast_sub (one_le_two.trans hn), Nat.cast_one]
+    dsimp only [q]
+    field_simp
+  have hrpow_real : (r ^ n) ^ q = r ^ (n - 1) := by
+    calc (r ^ n) ^ q = (r ^ (n : ℝ)) ^ q := by rw [Real.rpow_natCast]
+      _ = r ^ ((n : ℝ) * q) := (Real.rpow_mul hr.le _ _).symm
+      _ = r ^ ((n - 1 : ℕ) : ℝ) := by rw [hexp]
+      _ = r ^ (n - 1) := Real.rpow_natCast r (n - 1)
   have hrpow : ENNReal.ofReal (r ^ n) ^ q = ENNReal.ofReal r ^ (n - 1) := by
-    rw [ENNReal.ofReal_rpow_of_pos (pow_pos hr n), ← Real.rpow_natCast r n,
-      ← Real.rpow_mul hr.le, hexp, Real.rpow_natCast, ENNReal.ofReal_pow hr.le]
+    rw [ENNReal.ofReal_rpow_of_nonneg (pow_nonneg hr.le n) hq.le, hrpow_real,
+      ENNReal.ofReal_pow hr.le]
   have hden : μ (closedBall x r) ^ q =
       ENNReal.ofReal r ^ (n - 1) * μ (ball (0 : E) 1) ^ q := by
     rw [Measure.addHaar_closedBall μ x hr.le, ← hn_eq, ENNReal.mul_rpow_of_nonneg _ _ hq.le, hrpow]
@@ -183,33 +191,5 @@ theorem exists_min_div_closedBall_rpow_le_mul_perimeter_div (hn : 2 ≤ finrank 
   simp only [normalizedRelativeIsoperimetricConst, div_eq_mul_inv,
     ENNReal.mul_inv (.inr hωqt) (.inl (ENNReal.pow_ne_top ENNReal.ofReal_ne_top))]
   ring
-
-/-- In dimension `n ≥ 2`, if `s` is null-measurable on `Ω`, `x ∈ Ω`, and
-`P(s; ball x r) / r ^ (n - 1) → 0` as `r → 0⁺`, then `x ∉ ∂ᵉs`. -/
-theorem notMem_essentialBoundary_of_tendsto_perimeter_ball_div (hn : 2 ≤ finrank ℝ E)
-    {s : Set E} {x : E} (hs : NullMeasurableSet s (μ.restrict Ω)) (hx : x ∈ Ω)
-    (hP : Tendsto (fun r => perimeter μ ⟨ball x r, isOpen_ball⟩ s /
-        ENNReal.ofReal r ^ (finrank ℝ E - 1)) (𝓝[>] 0) (𝓝 0)) :
-    x ∉ essentialBoundary μ s := by
-  set n := finrank ℝ E
-  set q : ℝ := 1 - (n : ℝ)⁻¹
-  have hq : 0 < q := sub_pos.2 (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
-  obtain ⟨C, hC, hbound⟩ := exists_min_div_closedBall_rpow_le_mul_perimeter_div hn μ
-  set f : ℝ → ℝ≥0∞ := fun r =>
-    min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)
-  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds hx)
-  have hCP : Tendsto (fun r => C * (perimeter μ ⟨ball x r, isOpen_ball⟩ s /
-      ENNReal.ofReal r ^ (n - 1))) (𝓝[>] 0) (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul hP (.inr hC)
-  have hfq : Tendsto (fun r => f r ^ q) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hCP
-      (.of_forall fun _ => zero_le) (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr =>
-        hbound hr.1 (hs.mono (Measure.restrict_mono ((ball_subset_ball hr.2.le).trans hεΩ) le_rfl)))
-  refine notMem_essentialBoundary_of_tendsto_min_div ?_
-  have hf := ((ENNReal.continuous_rpow_const (y := q⁻¹)).tendsto 0).comp hfq
-  rw [ENNReal.zero_rpow_of_pos (inv_pos.2 hq)] at hf
-  exact hf.congr fun r => by
-    dsimp only [Function.comp_apply]
-    rw [← ENNReal.rpow_mul, mul_inv_cancel₀ hq.ne', ENNReal.rpow_one]
 
 end TauCeti

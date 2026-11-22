@@ -945,11 +945,14 @@ theorem continuousOn_addHaar_real_inter_closedBall (x : E) (s : Set E) :
 `r ↦ μ (s ∩ closedBall x r)` is continuous on `[0, ∞)` for every set `s` (no measurability is
 needed). -/
 theorem continuousOn_addHaar_inter_closedBall (x : E) (s : Set E) :
-    ContinuousOn (fun r => μ (s ∩ closedBall x r)) (Set.Ici 0) :=
-  (ENNReal.continuous_ofReal.comp_continuousOn
-    (μ.continuousOn_addHaar_real_inter_closedBall x s)).congr fun _ _ =>
-      (ofReal_measureReal
-        (measure_ne_top_of_subset Set.inter_subset_right measure_closedBall_lt_top.ne)).symm
+    ContinuousOn (fun r => μ (s ∩ closedBall x r)) (Set.Ici 0) := by
+  refine μ.continuousOn_inter_closedBall x s (fun _ _ => measure_closedBall_lt_top.ne) ?_
+  have hg : ContinuousOn (fun r : ℝ => ENNReal.ofReal (r ^ finrank ℝ E * μ.real (ball 0 1)))
+      (Set.Ici 0) :=
+    (ENNReal.continuous_ofReal.comp ((continuous_pow _).mul continuous_const)).continuousOn
+  exact hg.congr fun r hr => by
+    dsimp only
+    rw [← μ.addHaar_real_closedBall x hr, ofReal_measureReal measure_closedBall_lt_top.ne]
 
 end ClosedBallContinuity
 

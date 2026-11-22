@@ -169,25 +169,18 @@ theorem tendsto_totalVariationOn_ball_sdiff_singleton (hu : LocallyIntegrableOn 
     Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x δ)
       (by rwa [Subtype.range_coe])
   let x' : Ω := ⟨x, hx⟩
-  let lam' := lam.restrict {x'}ᶜ
-  have hfinB : ∃ R > 0, lam' (Metric.ball x' R) ≠ ⊤ := by
+  have hfinB : ∃ R > 0, lam (Metric.ball x' R \ {x'}) ≠ ⊤ := by
     refine ⟨δ, hδ, ne_top_of_le_ne_top (hK.measure_lt_top (μ := lam)).ne ?_⟩
-    exact (Measure.restrict_apply_le _ _).trans
-      (measure_mono (preimage_mono Metric.ball_subset_closedBall))
-  have hlim := tendsto_measure_ball_nhdsGT_zero hfinB
-  have hx' : lam' {x'} = 0 := by
-    rw [Measure.restrict_apply (measurableSet_singleton _), inter_compl_self, measure_empty]
-  rw [hx'] at hlim
-  refine hlim.congr' (eventually_of_mem (Ioo_mem_nhdsGT hδ) fun r ⟨_, hrδ⟩ => ?_)
+    exact measure_mono (sdiff_subset.trans (preimage_mono Metric.ball_subset_closedBall))
+  refine (tendsto_measure_ball_sdiff_singleton_nhdsGT_zero hfinB).congr'
+    (eventually_of_mem (Ioo_mem_nhdsGT hδ) fun r ⟨_, hrδ⟩ => ?_)
   have hrΩ : Metric.ball x r \ {x} ⊆ Ω :=
     sdiff_subset.trans ((Metric.ball_subset_closedBall.trans
       (Metric.closedBall_subset_closedBall hrδ.le)).trans hδΩ)
-  have hlam : lam' (Metric.ball x' r) = lam (((↑) : Ω → E) ⁻¹' (Metric.ball x r \ {x})) := by
-    rw [Measure.restrict_apply measurableSet_ball]
-    congr 1
+  have hpre : Metric.ball x' r \ {x'} = ((↑) : Ω → E) ⁻¹' (Metric.ball x r \ {x}) := by
     ext y
-    simp [x', Subtype.dist_eq, Subtype.ext_iff, sdiff_eq_compl_inter, inter_comm]
-  exact hlam.trans <| by
+    simp [x', Subtype.dist_eq, Subtype.ext_iff]
+  exact (congrArg lam hpre).trans <| by
     simpa only [Opens.coe_mk] using variationMeasure_preimage_coe hu hfin
       (U := ⟨Metric.ball x r \ {x}, Metric.isOpen_ball.sdiff isClosed_singleton⟩) hrΩ
 

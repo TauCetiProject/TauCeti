@@ -17,7 +17,8 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Isodiametric
 
 Mathlib's Euclidean Hausdorff measure `μHE[d]` is the raw Hausdorff measure `μH[d]` rescaled by
 the constant that makes it agree with Lebesgue measure on `d`-dimensional Euclidean space. This
-constant is positive and finite, so the two normalizations have the same null sets and the same
+constant is positive and finite, so the two normalizations have the same null sets, the same
+almost-everywhere filter (`MeasureTheory.Measure.ae_euclideanHausdorffMeasure`), and the same
 sets of finite measure, and lower Lebesgue integrals pull out this finite scalar factor
 (`TauCeti.lintegral_euclideanHausdorffMeasure`); statements of either kind may be proved with
 either normalization. Since `μHE[finrank ℝ E]` is Lebesgue volume on a finite-dimensional real
@@ -100,6 +101,14 @@ theorem euclideanHausdorffMeasure_eq_zero_iff {d : ℕ} {s : Set X} :
   rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul, mul_eq_zero,
     ENNReal.coe_eq_zero,
     or_iff_right (addHaarScalarFactor_volume_hausdorffMeasure_ne_zero d)]
+
+/-- The Euclidean Hausdorff measure `μHE[d]` and the raw Hausdorff measure `μH[d]` have the same
+almost-everywhere filter. -/
+@[simp]
+theorem ae_euclideanHausdorffMeasure {d : ℕ} :
+    ae (μHE[d] : Measure X) = ae (μH[(d : ℝ)] : Measure X) := by
+  rw [euclideanHausdorffMeasure_def,
+    ae_smul_measure_eq (addHaarScalarFactor_volume_hausdorffMeasure_ne_zero d)]
 
 /-- A set has finite Euclidean Hausdorff measure `μHE[d]` if and only if it has finite raw
 Hausdorff measure `μH[d]`. -/

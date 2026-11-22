@@ -604,25 +604,30 @@ theorem hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn {ε : ℝ} (
       (measureReal_mono inter_subset_right (hfin r hr)) hb0.le⟩
     rw [← add_div, one_le_div hb0]
     exact hle
+  have hf_toReal (r : ℝ) : (μ (s ∩ closedBall x r) / μ (closedBall x r)).toReal = f r := by
+    rw [ENNReal.toReal_div, ← measureReal_def, ← measureReal_def]
+  have hg_toReal (r : ℝ) : (μ (closedBall x r \ s) / μ (closedBall x r)).toReal = g r := by
+    rw [ENNReal.toReal_div, ← measureReal_def, ← measureReal_def]
   have hmin : Tendsto (fun r => min (f r) (g r)) (𝓝[>] 0) (𝓝 0) := by
     refine ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h).congr'
       (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_)
-    dsimp only [Function.comp_apply, f, g, b]
     have hfin₁ : μ (s ∩ closedBall x r) ≠ ∞ :=
       measure_ne_top_of_subset inter_subset_right (hfin r hr)
     have hfin₂ : μ (closedBall x r \ s) ≠ ∞ :=
       measure_ne_top_of_subset sdiff_subset (hfin r hr)
-    rw [ENNReal.toReal_div, ENNReal.toReal_min hfin₁ hfin₂, ← measureReal_def, ← measureReal_def,
-      ← measureReal_def, min_div_div_right measureReal_nonneg]
+    have hdiv : min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) =
+        min (μ (s ∩ closedBall x r) / μ (closedBall x r))
+          (μ (closedBall x r \ s) / μ (closedBall x r)) :=
+      Monotone.map_min (fun _ _ h => ENNReal.div_le_div_right h _)
+    rw [Function.comp_apply, hdiv, ENNReal.toReal_min (ENNReal.div_ne_top hfin₁ (hpos r hr))
+      (ENNReal.div_ne_top hfin₂ (hpos r hr)), hf_toReal, hg_toReal]
   have hconv {c : ℝ} (hc : Tendsto f (𝓝[>] 0) (𝓝 c)) :
       HasDensityAt μ s x (ENNReal.ofReal c) := by
     refine hasDensityAt_iff.2 ((ENNReal.tendsto_ofReal hc).congr'
       (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_))
-    dsimp only [f, b]
     have hfin₁ : μ (s ∩ closedBall x r) ≠ ∞ :=
       measure_ne_top_of_subset inter_subset_right (hfin r hr)
-    rw [measureReal_def, measureReal_def, ← ENNReal.toReal_div,
-      ENNReal.ofReal_toReal (ENNReal.div_ne_top hfin₁ (hpos r hr))]
+    rw [← hf_toReal r, ENNReal.ofReal_toReal (ENNReal.div_ne_top hfin₁ (hpos r hr))]
   have hdich := hf_cont.tendsto_zero_or_tendsto_of_tendsto_min hε
     (eventually_of_mem (Ioo_mem_nhdsGT hε) fun _ hr => (hsum hr).1)
     (eventually_of_mem (Ioo_mem_nhdsGT hε) fun _ hr => (hsum hr).2) hmin
@@ -788,9 +793,14 @@ theorem hasDensityAt_zero_or_one_of_tendsto_min_div
 theorem notMem_essentialBoundary_of_tendsto_min_div
     (h : Tendsto (fun r =>
       min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0)) :
-    x ∉ essentialBoundary μ s := by
-  rw [mem_essentialBoundary, not_and_or, not_not, not_not]
-  exact (hasDensityAt_zero_or_one_of_tendsto_min_div h).symm
+    x ∉ essentialBoundary μ s :=
+  notMem_essentialBoundary_of_tendsto_min_div_of_continuousOn one_pos
+    (fun _ hr => (measure_closedBall_pos μ x hr.1).ne')
+    (fun _ _ => measure_closedBall_lt_top.ne)
+    (((μ.continuousOn_addHaar_inter_closedBall x univ).mono
+        (Ioo_subset_Ico_self.trans Ico_subset_Ici_self)).congr
+      fun _ _ => congrArg (μ ·) (univ_inter _).symm)
+    h
 
 /-- **Points of the essential boundary are balanced at arbitrarily small scales.** Against an
 additive Haar measure, at a point `x` of the essential boundary of any set `s`, there is `a > 0`
@@ -800,55 +810,27 @@ theorem exists_pos_frequently_ofReal_mul_measure_closedBall_le (hx : x ∈ essen
     ∃ a > 0, ∃ᶠ r in 𝓝[>] 0,
       ENNReal.ofReal a * μ (closedBall x r) ≤ μ (s ∩ closedBall x r) ∧
         ENNReal.ofReal a * μ (closedBall x r) ≤ μ (closedBall x r \ s) := by
-  set N : ℝ → ℝ := fun r => μ.real (s ∩ closedBall x r)
-  set D : ℝ → ℝ := fun r => μ.real (closedBall x r)
-  have hD0 {r : ℝ} (hr : 0 < r) : 0 < D r :=
-    ENNReal.toReal_pos (measure_closedBall_pos μ x hr).ne' measure_closedBall_lt_top.ne
-  have hNfin (r : ℝ) : μ (s ∩ closedBall x r) ≠ ∞ :=
-    measure_ne_top_of_subset inter_subset_right measure_closedBall_lt_top.ne
-  -- The proportion `ψ r` of `s` in `closedBall x r` depends continuously on `r > 0`, since `D r` is
-  -- a multiple of `r ^ n`.
-  set ψ : ℝ → ℝ := fun r => N r / D r
-  have hDcont {r : ℝ} (hr : 0 < r) : ContinuousAt D r := by
-    refine ((continuous_pow (Module.finrank ℝ E)).mul
-      (continuous_const (y := μ.real (ball (0 : E) 1)))).continuousAt.congr ?_
-    filter_upwards [Ioi_mem_nhds hr] with ρ hρ
-    exact (Measure.addHaar_real_closedBall μ x (le_of_lt hρ)).symm
-  have hcont : ContinuousOn ψ (Ioi 0) := fun r hr =>
-    ((continuousAt_measureReal_inter_closedBall μ s (hDcont hr)).div (hDcont hr)
-      (hD0 hr).ne').continuousWithinAt
-  have hψ : ∀ᶠ r in 𝓝[>] 0, ψ r ∈ Icc 0 1 := Eventually.of_forall fun r =>
-    ⟨div_nonneg measureReal_nonneg measureReal_nonneg, div_le_one_of_le₀
-      (measureReal_mono inter_subset_right measure_closedBall_lt_top.ne) measureReal_nonneg⟩
-  -- The proportion in `ℝ≥0∞` used by `HasDensityAt` is eventually `ENNReal.ofReal ∘ ψ`.
-  have heq : (fun r => ENNReal.ofReal (ψ r)) =ᶠ[𝓝[>] 0]
-      fun r => μ (s ∩ closedBall x r) / μ (closedBall x r) := by
-    filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
-    rw [ENNReal.ofReal_div_of_pos (hD0 hr), ofReal_measureReal (hNfin r),
-      ofReal_measureReal measure_closedBall_lt_top.ne]
-  have hlim {d : ℝ} (h : Tendsto ψ (𝓝[>] 0) (𝓝 d)) : HasDensityAt μ s x (ENNReal.ofReal d) :=
-    (ENNReal.tendsto_ofReal h).congr' heq
-  rw [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior] at hx
-  obtain ⟨c, d, hc, hd, hfreq⟩ := hcont.exists_frequently_mem_Icc_of_not_tendsto hψ
-    (fun h => hx.2 (by simpa using hlim h)) (fun h => hx.1 (by simpa using hlim h))
-  refine ⟨min c (1 - d), lt_min hc (sub_pos.2 hd),
-    (hfreq.and_eventually self_mem_nhdsWithin).mono fun r ⟨⟨h₁, h₂⟩, hr⟩ => ?_⟩
-  have hr : 0 < r := hr
-  rw [le_div_iff₀ (hD0 hr)] at h₁
-  rw [div_le_iff₀ (hD0 hr)] at h₂
-  have hB : μ (closedBall x r) = ENNReal.ofReal (D r) :=
-    (ofReal_measureReal measure_closedBall_lt_top.ne).symm
-  rw [hB, ← ENNReal.ofReal_mul (le_min hc.le (sub_pos.2 hd).le)]
-  constructor
-  · rw [← ofReal_measureReal (hNfin r)]
-    exact ENNReal.ofReal_le_ofReal
-      ((mul_le_mul_of_nonneg_right (min_le_left _ _) (hD0 hr).le).trans h₁)
-  · rw [← ofReal_measureReal (measure_ne_top_of_subset sdiff_subset measure_closedBall_lt_top.ne),
-      ← sdiff_inter_self_eq_sdiff]
-    refine ENNReal.ofReal_le_ofReal (le_trans ?_ (le_measureReal_sdiff (hNfin r)))
-    have := min_le_right c (1 - d)
-    have := (hD0 hr).le
-    nlinarith
+  have hnot : ¬Tendsto (fun r =>
+      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0) :=
+    fun h => notMem_essentialBoundary_of_tendsto_min_div h hx
+  rw [ENNReal.tendsto_nhds_zero] at hnot
+  push Not at hnot
+  obtain ⟨ε, hεpos, hfreq⟩ := hnot
+  have hle1 (r : ℝ) :
+      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) ≤ 1 := by
+    refine ENNReal.div_le_of_le_mul ?_
+    rw [one_mul]
+    exact (min_le_left _ _).trans (measure_mono inter_subset_right)
+  have hεlt : ε < 1 := by
+    obtain ⟨r, hr⟩ := hfreq.exists
+    exact hr.trans_le (hle1 r)
+  have hεtop : ε ≠ ∞ := hεlt.trans_le le_top |>.ne
+  refine ⟨ε.toReal, ENNReal.toReal_pos hεpos.ne' hεtop,
+    (hfreq.and_eventually self_mem_nhdsWithin).mono fun r ⟨hrε, (hr0 : 0 < r)⟩ => ?_⟩
+  rw [ENNReal.ofReal_toReal hεtop]
+  have hle := (ENNReal.le_div_iff_mul_le (.inl (measure_closedBall_pos μ x hr0).ne')
+    (.inl measure_closedBall_lt_top.ne)).1 hrε.le
+  exact ⟨hle.trans (min_le_left _ _), hle.trans (min_le_right _ _)⟩
 
 end AddHaar
 

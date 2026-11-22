@@ -23,7 +23,9 @@ basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. In finite dim
 moreover a perfect pairing (`TauCeti.bijective_innerₗ`), as Mathlib's `exteriorPower.hodgeStar`
 requires of its bilinear form. Its pullback along an injective linear map, such as the metric
 induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
-is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`).
+is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`). In a one-dimensional
+inner product space over `𝕜`, pairing with a nonzero vector is injective in the left argument
+(`TauCeti.inner_left_injective_of_finrank_eq_one`).
 
 The dual basis of a basis `b` for the inner product pairs with a vector to give its coordinates
 in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained from `b` by the inverse of the Gram
@@ -73,6 +75,19 @@ theorem eq_of_forall_inner_comp {V : Type*} [AddCommGroup V] [Module ℝ V] {L :
   rw [← sub_eq_zero]
   refine (nondegenerate_inner_comp hL).1 _ fun w ↦ ?_
   simp [H]
+
+open scoped InnerProductSpace in
+/-- In a one-dimensional inner product space, the inner product against a nonzero vector is
+injective in the left argument. -/
+theorem inner_left_injective_of_finrank_eq_one {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (hn : Module.finrank 𝕜 F = 1) {ν : F} (hν : ν ≠ 0) :
+    Function.Injective (fun x => ⟪x, ν⟫_𝕜) := by
+  intro x y h
+  dsimp only at h
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' ν hν).1 hn (x - y)
+  have h0 : ⟪c • ν, ν⟫_𝕜 = 0 := by rw [hc, inner_sub_left, h, sub_self]
+  rw [inner_smul_left, mul_eq_zero, map_eq_zero, inner_self_eq_zero] at h0
+  exact sub_eq_zero.1 (hc ▸ (h0.resolve_right hν).symm ▸ zero_smul 𝕜 ν)
 
 end TauCeti
 

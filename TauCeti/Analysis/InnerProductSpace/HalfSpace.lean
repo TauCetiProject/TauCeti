@@ -20,10 +20,8 @@ closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν�
 half-space `{z | c ≤ ⟪z, ν⟫}`, the open ball of radius `ρ` about `x + (ρ / ‖ν‖) ν` lies in the
 open half-space `{z | c < ⟪z, ν⟫}` (`TauCeti.ball_add_smul_subset_setOf_lt_inner`). The projection
 `z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}` and does not increase
-norms. In a one-dimensional inner product space, the inner product against a nonzero vector is
-injective in the left argument (`TauCeti.inner_left_injective_of_finrank_eq_one`).
-Relative to an orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part
-along the projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
+norms. Relative to an orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a
+part along the projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
 where it is positive is a half-space.
 -/
@@ -119,18 +117,6 @@ theorem norm_sub_div_norm_sq_smul_self_le {E : Type*} [NormedAddCommGroup E]
   simp only [RCLike.ofReal_real_eq_id, id_eq] at h
   rw [real_inner_comm, ← h, ← Submodule.starProjection_orthogonal_val]
   exact Submodule.norm_starProjection_apply_le _ z
-
-/-- In a one-dimensional inner product space, the inner product against a nonzero vector is
-injective in the left argument. -/
-theorem inner_left_injective_of_finrank_eq_one {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] (hn : Module.finrank 𝕜 E = 1) {ν : E} (hν : ν ≠ 0) :
-    Function.Injective (fun x => ⟪x, ν⟫_𝕜) := by
-  intro x y h
-  dsimp only at h
-  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' ν hν).1 hn (x - y)
-  have h0 : ⟪c • ν, ν⟫_𝕜 = 0 := by rw [hc, inner_sub_left, h, sub_self]
-  rw [inner_smul_left, mul_eq_zero, map_eq_zero, inner_self_eq_zero] at h0
-  exact sub_eq_zero.1 (hc ▸ (h0.resolve_right hν).symm ▸ zero_smul 𝕜 ν)
 
 end TauCeti
 
