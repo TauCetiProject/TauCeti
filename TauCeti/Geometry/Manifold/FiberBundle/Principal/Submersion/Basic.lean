@@ -40,17 +40,20 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
    over `B`.
 2. **Finite-dimensional `C^n` criterion (`1 ≤ n`, over `𝕜`):** injectivity of `d(g ↦ op g • x)_1`
    and `P → finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the vertical-range condition by
-   rank-nullity (`ker_le_range_of_finrank_eq`), and `contMDiffOn_sectionCoord_of_finrank_eq` gives
-   local `C^n` smoothness of `sectionCoord`.
+   rank-nullity (`ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq`), and
+   `contMDiffOn_sectionCoord_of_finrank_eq` gives local `C^n` smoothness of `sectionCoord`.
 
 ## Main definitions and results
 
 * `TauCeti.PrincipalBundle.range_mfderiv_op_smul_one_le_ker`,
   `range_mfderiv_op_smul_one_eq_ker_of_finrank_eq`,
-  `isRegularValue_of_isRegularPoint_of_orbit_eq_fiber`: vertical tangent and regularity lemmas.
-* `TauCeti.PrincipalBundle.isLocalDiffeomorphOn_op_smul_section`, `contMDiffOn_sectionCoord`,
-  `actionTrivializationOfContMDiffSection`: action sweep local diffeomorphism and `C^n` section
-  coordinates.
+  `isRegularValue_of_isRegularPoint_of_orbit_eq_fiber`,
+  `isRegularPoint_of_contMDiffOn_section`: vertical tangent and regularity lemmas.
+* `TauCeti.PrincipalBundle.contMDiffOn_op_smul_section`,
+  `isLocalDiffeomorphOn_op_smul_section`, `contMDiffOn_sectionCoord`,
+  `actionTrivializationOfContMDiffSection`,
+  `actionTrivializationOfContMDiffSection_coordChange`: action sweep local diffeomorphism and `C^n`
+  section coordinates.
 * `TauCeti.PrincipalBundle.fiberBundleOfSubmersion`,
   `mem_trivializationAtlas_fiberBundleOfSubmersion_iff`, `principalBundleOfSubmersion`,
   `contMDiffFiberBundleOfSubmersion`, `diffeomorphManifoldTotalSpaceOfSubmersion`: Banach `C^n`
@@ -59,8 +62,8 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
   `contMDiffWithinAt_actionDivision`, `contMDiffAt_actionDivision`, `contMDiffOn_actionDivision`,
   `contMDiff_actionDivision`: `C^n` regularity of `actionDivision` for a `C^n` Lie group `G`.
 * `TauCeti.PrincipalBundle.contMDiffOn_sectionCoord_of_finrank_eq`,
-  `ker_le_range_of_finrank_eq`: finite-dimensional `C^n` section smoothness and vertical-range
-  reduction.
+  `ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq`: finite-dimensional `C^n` section
+  smoothness and vertical-range reduction.
 
 ## References
 
@@ -79,6 +82,9 @@ open Bundle Filter Function Manifold Module MulOpposite Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.PrincipalBundle
+
+private theorem ne_zero_of_one_le {n : ℕ∞ω} (hn : 1 ≤ n) : n ≠ 0 := by
+  rintro rfl; simp at hn
 
 section ManifoldBase
 
@@ -148,6 +154,25 @@ theorem isRegularValue_of_isRegularPoint_of_orbit_eq_fiber {p : P → B} {x : P}
 
 end VerticalTangent
 
+section SectionRegularity
+
+variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+
+/-- If `s : B → P` is a `C^n` local section (`n ≠ 0`) of `p : P → B` on an open neighbourhood `U`
+of `b` and `p` is `C^n` at `s b`, then `s b` is a regular point of `p`. -/
+theorem isRegularPoint_of_contMDiffOn_section {n : ℕ∞ω} (hn : n ≠ 0) {p : P → B}
+    {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
+    (hs : ∀ b' ∈ U, p (s b') = b') {b : B} (hb : b ∈ U)
+    (hp : ContMDiffAt IP IB n p (s b)) :
+    IsRegularPoint IP IB p (s b) :=
+  isRegularPoint_iff.2 (surjective_mfderiv_of_eventuallyEq_id (hp.mdifferentiableAt hn)
+    ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn)
+    (eventually_of_mem (hU.mem_nhds hb) hs))
+
+end SectionRegularity
+
 /-- If `p : P → B` is continuous and admits a local section `σ` over an open neighbourhood `U` of
 `p (f₁ x₀)` whose `sectionCoord` is `C^n` on `p ⁻¹' U`, then `x ↦ actionDivision horbit (hf x)` is
 `C^n` within `s` at `x₀` for any `f₁, f₂ : M → P` that are `C^n` within `s` at `x₀` and satisfy
@@ -195,7 +220,9 @@ variable [BoundarylessManifold IP P] [ContMDiffMul IG n G]
 
 omit [CompleteSpace EP] [IsManifold IP n P] [BoundarylessManifold IP P]
   [CompleteSpace EB] [IsManifold IB n B] [CompleteSpace EG] [ContMDiffMul IG n G] in
-private theorem contMDiffOn_op_smul_section
+/-- Action sweep `(b, g) ↦ op g • s b` of a `C^n` local section `s` over `U ⊆ B` under a jointly
+`C^n` right `G`-action is `C^n` on `U ×ˢ univ`. -/
+theorem contMDiffOn_op_smul_section
     (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
     {U : Set B} {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U) :
     ContMDiffOn (IB.prod IG) IP n (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ) :=
@@ -215,7 +242,7 @@ private theorem bijective_mfderiv_op_smul_section_one {U : Set B} (hU : IsOpen U
     (hinj : Injective (mfderiv IG IP (fun g : G ↦ op g • s b) 1))
     (hker : (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
     Bijective (mfderiv (IB.prod IG) IP (fun q : B × G ↦ op q.2 • s q.1) (b, 1)) := by
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hn0 : n ≠ 0 := ne_zero_of_one_le hn
   let Ψ : B × G → P := fun q ↦ op q.2 • s q.1
   have hΨ_diff : MDifferentiableAt (IB.prod IG) IP Ψ (b, 1) :=
     ((contMDiffOn_op_smul_section hsmul hs_smooth).contMDiffAt
@@ -256,7 +283,7 @@ theorem isLocalDiffeomorphOn_op_smul_section {U : Set B} (hU : IsOpen U) {s : B 
     (hker : ∀ b ∈ U,
       (mfderiv IP IB p (s b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s b) 1).range) :
     IsLocalDiffeomorphOn (IB.prod IG) IP n (fun q : B × G ↦ op q.2 • s q.1) (U ×ˢ univ) := by
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hn0 : n ≠ 0 := ne_zero_of_one_le hn
   have : IsManifold IP 1 P := .of_le hn; have : IsManifold IB 1 B := .of_le hn
   have : IsManifold IG 1 G := .of_le hn
   set Ψ : B × G → P := fun q ↦ op q.2 • s q.1
@@ -268,9 +295,8 @@ theorem isLocalDiffeomorphOn_op_smul_section {U : Set B} (hU : IsOpen U) {s : B 
       (LinearMap.ker_eq_bot_of_injective hbij.1) (LinearMap.range_eq_top_of_surjective _ hbij.2)
     have hbI : IB.IsInteriorPoint b := hs b hb ▸
       ((hp (s b)).mdifferentiableAt hn0).isInteriorPoint_of_surjective_mfderiv
-        (surjective_mfderiv_of_eventuallyEq_id ((hp (s b)).mdifferentiableAt hn0)
-          ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0)
-          (eventually_of_mem (hU.mem_nhds hb) hs))
+        (isRegularPoint_iff.1
+          (isRegularPoint_of_contMDiffOn_section hn0 hU hs_smooth hs hb (hp (s b))))
         BoundarylessManifold.isInteriorPoint
     have hb1I : (IB.prod IG).IsInteriorPoint (b, (1 : G)) :=
       (IB.interior_prod (J := IG) (M := B) (N := G)).ge
@@ -366,6 +392,30 @@ theorem baseSet_actionTrivializationOfContMDiffSection :
 
 end ActionTriv
 
+/-- Coordinate change between two `actionTrivializationOfContMDiffSection` trivializations. -/
+theorem actionTrivializationOfContMDiffSection_coordChange
+    (hfree : ∀ (x : P) (g : G), op g • x = x → g = 1)
+    (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
+    {U₁ : Set B} (hU₁ : IsOpen U₁) {s₁ : B → P} (hs₁_smooth : ContMDiffOn IB IP n s₁ U₁)
+    (hs₁ : ∀ b ∈ U₁, p (s₁ b) = b)
+    (hinj₁ : ∀ b ∈ U₁, Injective (mfderiv IG IP (fun g : G ↦ op g • s₁ b) 1))
+    (hker₁ : ∀ b ∈ U₁,
+      (mfderiv IP IB p (s₁ b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s₁ b) 1).range)
+    {U₂ : Set B} (hU₂ : IsOpen U₂) {s₂ : B → P} (hs₂_smooth : ContMDiffOn IB IP n s₂ U₂)
+    (hs₂ : ∀ b ∈ U₂, p (s₂ b) = b)
+    (hinj₂ : ∀ b ∈ U₂, Injective (mfderiv IG IP (fun g : G ↦ op g • s₂ b) 1))
+    (hker₂ : ∀ b ∈ U₂,
+      (mfderiv IP IB p (s₂ b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • s₂ b) 1).range)
+    (b : B) (g : G) :
+    (actionTrivializationOfContMDiffSection hn hsmul hp hfree horbit hU₁ hs₁_smooth hs₁ hinj₁
+      hker₁).coordChange
+      (actionTrivializationOfContMDiffSection hn hsmul hp hfree horbit hU₂ hs₂_smooth hs₂ hinj₂
+        hker₂) b g =
+      sectionCoord horbit hs₂ (op g • s₁ b) := by
+  simp only [Trivialization.coordChange,
+    actionTrivializationOfContMDiffSection_symm_apply,
+    actionTrivializationOfContMDiffSection_apply]
+
 end LocalSection
 
 section Submersion
@@ -456,9 +506,17 @@ theorem contMDiffFiberBundleOfSubmersion :
   rcases (hatlas e₂).1 he₂.out with ⟨U₂, hU₂, s₂, hs₂_smooth, hs₂, rfl⟩
   have hcoord₂ := contMDiffOn_sectionCoord hn hsmul hsub.contMDiff horbit hU₂ hs₂_smooth hs₂
     (fun b _ ↦ hfree (s₂ b)) (fun b _ ↦ hinj (s₂ b)) (fun b _ ↦ hker (s₂ b))
-  refine (hcoord₂.comp (hs₁_smooth.mono (by simp)) fun b hb ↦ ?_).congr fun b _ ↦ ?_
-  · simp at hb; simpa [hs₁ b hb.1] using hb.2
-  · rw [Trivialization.projectionFiber_coordChange]; simp [Trivialization.coordChange]
+  refine (hcoord₂.comp (hs₁_smooth.mono ?_) fun b hb ↦ ?_).congr fun b _ ↦ ?_
+  · simp only [Trivialization.projectionFiber_baseSet,
+      baseSet_actionTrivializationOfContMDiffSection]
+    exact inter_subset_left
+  · simp only [mem_inter_iff, Trivialization.projectionFiber_baseSet,
+      baseSet_actionTrivializationOfContMDiffSection] at hb
+    have hmem : p (s₁ b) ∈ U₂ := (hs₁ b hb.1).symm ▸ hb.2
+    exact Set.mem_preimage.2 hmem
+  · rw [Trivialization.projectionFiber_coordChange,
+      actionTrivializationOfContMDiffSection_coordChange, op_one, one_smul]
+    exact Function.comp_apply.symm
 
 private theorem exists_section_trivializationAt (b : B) :
     letI := fiberBundleOfSubmersion hn hsmul hsub hsurj hfree horbit hinj hker
@@ -659,13 +717,9 @@ theorem contMDiffOn_sectionCoord_of_finrank_eq [BoundarylessManifold IP P] (hn :
     ContMDiffOn IP IG n (sectionCoord horbit hs) (p ⁻¹' U) := by
   have := FiniteDimensional.completeSpace 𝕜 EP; have := FiniteDimensional.completeSpace 𝕜 EB
   have := FiniteDimensional.completeSpace 𝕜 EG
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
   exact contMDiffOn_sectionCoord hn hsmul hp horbit hU hs_smooth hs hfree hinj fun b hb ↦
     (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
-      (isRegularPoint_iff.2
-        (surjective_mfderiv_of_eventuallyEq_id ((hp (s b)).mdifferentiableAt hn0)
-          ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn0)
-          (eventually_of_mem (hU.mem_nhds hb) hs)))
+      (isRegularPoint_of_contMDiffOn_section (ne_zero_of_one_le hn) hU hs_smooth hs hb (hp (s b)))
       (fun g ↦ map_op_smul_of_orbit_iff horbit g (s b)) (hinj b hb) (hdim b hb)).ge
 
 omit [IP.Boundaryless] [IsManifold IP n P] [FiniteDimensional 𝕜 EB] [IsManifold IB n B]
@@ -673,15 +727,14 @@ omit [IP.Boundaryless] [IsManifold IP n P] [FiniteDimensional 𝕜 EB] [IsManifo
 /-- In finite dimensions over `𝕜`, if `p : P → B` is a `C^n` submersion (`1 ≤ n`), the right
 `G`-orbits equal the fibres of `p`, `d(g ↦ op g • x)_1` is injective, and
 `finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG`, then `ker (dp_x) ≤ range (d(g ↦ op g • x)_1)`. -/
-theorem ker_le_range_of_finrank_eq (hn : 1 ≤ n)
+theorem ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq (hn : 1 ≤ n)
     {p : P → B} (hsub : IsSubmersion IP IB n p)
     (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
     (hinj : ∀ x : P, Injective (mfderiv IG IP (fun g : G ↦ op g • x) 1))
     (hdim : P → finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG) (x : P) :
     (mfderiv IP IB p x).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • x) 1).range :=
-  have hn0 : n ≠ 0 := fun h ↦ by rw [h] at hn; simp at hn
   (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
-    (isRegularPoint_iff.2 (hsub.surjective_mfderiv hn0 x))
+    (isRegularPoint_iff.2 (hsub.surjective_mfderiv (ne_zero_of_one_le hn) x))
     (fun g ↦ map_op_smul_of_orbit_iff horbit g x) (hinj x) (hdim x)).ge
 
 end FiniteDimensional

@@ -113,7 +113,9 @@ intertwining `proj` with another projection `proj' : Z' → B`. -/
   open_baseSet := t.open_baseSet
   source_eq := by
     ext p
-    exact (t.compHomeomorph h).mem_source.trans (by simp only [Function.comp_apply, hproj p]; rfl)
+    -- `(t.compHomeomorph h).baseSet` is definitionally `t.baseSet`.
+    exact (t.compHomeomorph h).mem_source.trans
+      (by simp only [Function.comp_apply, hproj p, mem_preimage]; rfl)
   target_eq := (t.compHomeomorph h).target_eq
   proj_toFun p hp := ((t.compHomeomorph h).proj_toFun p hp).trans (hproj p)
 
