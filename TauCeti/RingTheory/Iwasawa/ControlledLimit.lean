@@ -31,9 +31,9 @@ import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 # Closed-ideal Fitting continuity and square presentation lifting over `O⟦X⟧`
 
 Let `p` be a prime and `O` a commutative module-finite `ℤ_[p]`-algebra (for instance a finite free
-`ℤ_[p]`-algebra, possibly non-local or nonreduced, such as `ℤ₂[C₂]` or a dual-number order). Set
-`R = O⟦X⟧`, and consider the Iwasawa tower ideals `I_n = ((1 + X) ^ pⁿ - 1)` and joint ideals
-`J_{a,n} = (p^a, (1 + X) ^ pⁿ - 1)`.
+`ℤ_[p]`-algebra, possibly non-local, nonreduced, or not a DVR, such as `ℤ₂ × ℤ₂`, `ℤ₂[C₂]`, or a
+dual-number order). Set `R = O⟦X⟧`, and consider the Iwasawa tower ideals
+`I_n = ((1 + X) ^ pⁿ - 1)` and joint ideals `J_{a,n} = (p^a, (1 + X) ^ pⁿ - 1)`.
 
 ## Cofinality and closed-ideal detection
 
@@ -839,7 +839,7 @@ end SquarePresentationLift
 
 section ProjectiveDimension
 
-universe u
+universe u v
 
 /-- **Regular Fitting element implies injectivity and `pd ≤ 1` for lifted presentations.** Under
 the cofinal tower-quotient hypothesis over a commutative module-finite `ℤ_[p]`-algebra `O`, if
@@ -847,8 +847,8 @@ the cofinal tower-quotient hypothesis over a commutative module-finite `ℤ_[p]`
 `d ∈ nonZeroDivisors O⟦X⟧`), then `M` has projective dimension at most one and admits a quadratic
 presentation `P` with `Fitt₀(M) = (det P.rel)`, regular determinant, and injective relation map. -/
 theorem controlledSquare_hasProjectiveDimensionLE_one {p : ℕ} [Fact p.Prime] {O : Type u}
-    [CommRing O] [Algebra ℤ_[p] O] [Module.Finite ℤ_[p] O] {M : Type u} [AddCommGroup M]
-    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
+    [CommRing O] [Algebra ℤ_[p] O] [Module.Finite ℤ_[p] O] {M : Type v} [AddCommGroup M]
+    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] [Small.{v} O⟦X⟧]
     (hcof : ∀ N : ℕ, ∃ n : ℕ, N ≤ n ∧
       TauCeti.IsQuadraticallyPresented (O⟦X⟧ ⧸ towerIdeal p O n)
         (M ⧸ (towerIdeal p O n • (⊤ : Submodule O⟦X⟧ M))))
@@ -914,7 +914,8 @@ example {O : Type*} [CommRing O] :
         (Module.Basis.singleton (Fin 1) O⟦X⟧)).rel.det = 0 from Matrix.det_zero (n := Fin 1),
       Ideal.span_singleton_zero]
 
--- Non-local / nonreduced finite `ℤ_[2]`-algebras: `ℤ₂[C₂]` and `DualNumber ℤ_[2]`.
+-- Local non-DVR (`ℤ₂[C₂]`), nonreduced (`DualNumber ℤ_[2]`), and non-local (`ℤ_[2] × ℤ_[2]`)
+-- finite `ℤ_[2]`-algebras.
 example : Module.Finite ℤ_[2] (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2))) :=
   Module.Finite.of_basis (MonoidAlgebra.basis (Multiplicative (ZMod 2)) ℤ_[2])
 
@@ -926,6 +927,12 @@ example : (C (DualNumber.eps : DualNumber ℤ_[2]) : (DualNumber ℤ_[2])⟦X⟧
   refine ⟨fun h ↦ hne (C_injective (by simpa using h)), fun hreg ↦ hne <| C_injective <| by
     simpa using (mem_nonZeroDivisors_iff.mp hreg).1 _ (by
       rw [← map_mul, DualNumber.eps_mul_eps, map_zero])⟩
+
+example : Module.Finite ℤ_[2] (ℤ_[2] × ℤ_[2]) ∧ ¬ IsLocalRing (ℤ_[2] × ℤ_[2]) := by
+  refine ⟨inferInstance, fun h ↦ ?_⟩
+  rcases IsLocalRing.isUnit_or_isUnit_one_sub_self (R := ℤ_[2] × ℤ_[2]) (1, 0) with hu | hu
+  · exact not_isUnit_zero (Prod.isUnit_iff.mp hu).2
+  · exact not_isUnit_zero (M₀ := ℤ_[2]) (by simpa using (Prod.isUnit_iff.mp hu).1)
 
 end Examples
 

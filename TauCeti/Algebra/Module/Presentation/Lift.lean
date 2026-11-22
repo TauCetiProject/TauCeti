@@ -96,6 +96,8 @@ namespace TauCeti
 
 section RegularityAndPadding
 
+universe u v
+
 variable {R N : Type*} [CommRing R] [AddCommGroup N] [Module R N]
 
 /-- Extract a `QuadraticPresentation` witness from `IsQuadraticallyPresented`. -/
@@ -115,15 +117,31 @@ theorem injective_toLin'_of_det_mem_nonZeroDivisors (P : QuadraticPresentation R
 /-- If the determinant of the relation matrix of a quadratic presentation is a non-zero-divisor,
 then the presented module has projective dimension at most one. -/
 theorem hasProjectiveDimensionLE_one_of_det_mem_nonZeroDivisors {R : Type u} [CommRing R]
-    {N : Type u} [AddCommGroup N] [Module R N] (P : QuadraticPresentation R N)
+    {N : Type v} [AddCommGroup N] [Module R N] [Small.{v} R] (P : QuadraticPresentation R N)
     (hdet : P.rel.det ∈ nonZeroDivisors R) :
     HasProjectiveDimensionLE (ModuleCat.of R N) 1 := by
-  rw [P.gen.hasProjectiveDimensionLE_succ_iff_ker P.gen_surjective 0,
+  let e := Shrink.linearEquiv.{v} R (Fin P.size → R)
+  let g : Shrink.{v} (Fin P.size → R) →ₗ[R] N := P.gen.comp e.toLinearMap
+  have : Module.Projective R (Shrink.{v} (Fin P.size → R)) := Module.Projective.of_equiv e.symm
+  rw [g.hasProjectiveDimensionLE_succ_iff_ker (P.gen_surjective.comp e.surjective) 0,
     ← projective_iff_hasProjectiveDimensionLE_zero, ← IsProjective.iff_projective]
-  exact Module.Projective.of_equiv <|
-    (LinearEquiv.ofInjective (Matrix.toLin' P.rel)
-      (P.injective_toLin'_of_det_mem_nonZeroDivisors hdet)).trans
-      (LinearEquiv.ofEq _ _ P.range_rel_eq_ker)
+  let φ : (Fin P.size → R) →ₗ[R] Shrink.{v} (Fin P.size → R) :=
+    e.symm.toLinearMap.comp (Matrix.toLin' P.rel)
+  have hφ_inj : Function.Injective φ :=
+    e.symm.injective.comp (P.injective_toLin'_of_det_mem_nonZeroDivisors hdet)
+  have hrange : LinearMap.range φ = LinearMap.ker g := by
+    ext x
+    simp only [LinearMap.mem_range, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.mem_ker,
+      φ, g]
+    constructor
+    · rintro ⟨y, rfl⟩
+      rw [e.apply_symm_apply]
+      exact LinearMap.mem_ker.mp (P.range_rel_eq_ker ▸ LinearMap.mem_range_self _ y)
+    · intro hx
+      obtain ⟨y, hy⟩ := P.range_rel_eq_ker.symm ▸ (LinearMap.mem_ker.mpr hx)
+      exact ⟨y, by rw [hy, e.symm_apply_apply]⟩
+  exact Module.Projective.of_equiv ((LinearEquiv.ofInjective φ hφ_inj).trans
+    (LinearEquiv.ofEq _ _ hrange))
 
 /-- If the zeroth Fitting ideal of a quadratically presented module contains a non-zero-divisor,
 then the relation determinant is itself a non-zero-divisor (since it divides every element of
@@ -206,7 +224,7 @@ end QuadraticPresentation
 /-- A quadratically presented module whose zeroth Fitting ideal contains a non-zero-divisor has
 projective dimension at most one. -/
 theorem IsQuadraticallyPresented.hasProjectiveDimensionLE_one_of_mem_fittingIdeal {R : Type u}
-    [CommRing R] {N : Type u} [AddCommGroup N] [Module R N] [Module.Finite R N]
+    [CommRing R] {N : Type v} [AddCommGroup N] [Module R N] [Module.Finite R N] [Small.{v} R]
     (h : IsQuadraticallyPresented R N) {d : R} (hd : d ∈ fittingIdeal R N 0)
     (hreg : d ∈ nonZeroDivisors R) :
     HasProjectiveDimensionLE (ModuleCat.of R N) 1 := by
