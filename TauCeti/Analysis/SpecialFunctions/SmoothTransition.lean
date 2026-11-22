@@ -108,6 +108,8 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `TauCeti.neckCutoff`: the cutoff `s ↦ ψ (1 + a s)`, equal to `1` where `0 ≤ a s` and to `0` where
   `1 + a s ≤ 0`, with derivative at most `|a|` times a bound for `ψ'`. These cutoffs splice
   right inverses along a neck of length `2 R`, with slope `O(1 / R)`.
+* `TauCeti.neckCutoff_neg_two_div_eq_one`, `TauCeti.neckCutoff_neg_two_div_eq_zero` and their
+  `two_div` counterparts: where the neck cutoffs for `a = ∓ 2 / R` equal `1` and vanish.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`, positive on `(-∞, b)` when `v > 0`.
 * `TauCeti.exists_contDiff_plateau`: a smooth function with values in `[0, 1]`, vanishing outside
@@ -740,6 +742,26 @@ theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
 /-- The neck cutoff is `0` where `1 + a s ≤ 0`. -/
 theorem neckCutoff_eq_zero {a s : ℝ} (h : 1 + a * s ≤ 0) : neckCutoff a s = 0 :=
   Real.smoothTransition.zero_of_nonpos h
+
+/-- The left neck cutoff `neckCutoff (-(2 / R))` is `1` on `(-∞, 0]`. -/
+theorem neckCutoff_neg_two_div_eq_one {R s : ℝ} (hR : 0 ≤ R) (hs : s ≤ 0) :
+    neckCutoff (-(2 / R)) s = 1 :=
+  neckCutoff_eq_one (mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.2 (by positivity)) hs)
+
+/-- The right neck cutoff `neckCutoff (2 / R)` is `1` on `[0, ∞)`. -/
+theorem neckCutoff_two_div_eq_one {R s : ℝ} (hR : 0 ≤ R) (hs : 0 ≤ s) :
+    neckCutoff (2 / R) s = 1 :=
+  neckCutoff_eq_one (mul_nonneg (by positivity) hs)
+
+/-- The left neck cutoff `neckCutoff (-(2 / R))` vanishes on `[R / 2, ∞)`. -/
+theorem neckCutoff_neg_two_div_eq_zero {R s : ℝ} (hR : 0 < R) (hs : R / 2 ≤ s) :
+    neckCutoff (-(2 / R)) s = 0 :=
+  neckCutoff_eq_zero (by field_simp; linarith)
+
+/-- The right neck cutoff `neckCutoff (2 / R)` vanishes on `(-∞, -(R / 2)]`. -/
+theorem neckCutoff_two_div_eq_zero {R s : ℝ} (hR : 0 < R) (hs : s ≤ -(R / 2)) :
+    neckCutoff (2 / R) s = 0 :=
+  neckCutoff_eq_zero (by field_simp; linarith)
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
 antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. When `v > 0` it is

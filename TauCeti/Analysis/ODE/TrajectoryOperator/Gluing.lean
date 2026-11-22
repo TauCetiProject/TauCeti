@@ -120,15 +120,6 @@ private theorem exists_norm_fderiv_neckCutoff_le (a : ℝ) :
     rw [← norm_deriv_eq_norm_fderiv]
     exact abs_deriv_neckCutoff_le hL a x⟩
 
-private theorem neckCutoff_left_eq_one {R : ℝ} (hR : 0 < R) :
-    ∀ s ∈ Iio (0 : ℝ), neckCutoff (-(2 / R)) s = 1 := fun s hs ↦
-  neckCutoff_eq_one (mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.2 (by positivity))
-    (mem_Iio.1 hs).le)
-
-private theorem neckCutoff_right_eq_one {R : ℝ} (hR : 0 < R) :
-    ∀ s ∈ (Iio (0 : ℝ))ᶜ, neckCutoff (2 / R) s = 1 := fun s hs ↦
-  neckCutoff_eq_one (mul_nonneg (by positivity) (not_lt.1 hs))
-
 /-! ### The error on the neck -/
 
 /-- Two operators within `ε` of `A` are within `2 ε` of each other. -/
@@ -173,9 +164,7 @@ private theorem ae_neck_bound_left {A : F →L[ℝ] F} {A₁ A₂ : ℝ → F �
     rw [gluedCoeff_of_nonneg _ _ _ h0]
     exact norm_sub_le_of_dist_lt (hT₂ _ (by linarith)) (hT₁ _ (by linarith))
   · left
-    refine neckCutoff_eq_zero ?_
-    rw [neg_mul, div_mul_eq_mul_div, ← sub_eq_add_neg, sub_nonpos, le_div_iff₀ hR]
-    linarith
+    exact neckCutoff_neg_two_div_eq_zero hR hR2
 
 /-- The error weight of the right piece is small: on `[0, ∞)` the glued coefficient is `A₂(· - R)`
 exactly, on `(-R/2, 0)` both coefficients are close to `A`, and below `-R/2` the cutoff
@@ -203,9 +192,7 @@ private theorem ae_neck_bound_right {A : F →L[ℝ] F} {A₁ A₂ : ℝ → F �
     rw [gluedCoeff_of_neg _ _ _ h0]
     exact norm_sub_le_of_dist_lt (hT₁ _ (by linarith)) (hT₂ _ (by linarith))
   · left
-    refine neckCutoff_eq_zero ?_
-    rw [div_mul_eq_mul_div, ← le_neg_iff_add_nonpos_left, div_le_iff₀ hR]
-    linarith
+    exact neckCutoff_two_div_eq_zero hR hR2
 
 variable [CompleteSpace F]
 
@@ -448,11 +435,11 @@ private theorem norm_trajectoryOperator_splicedInverse_sub_le {A : F →L[ℝ] F
     add_nonneg (mul_nonneg (by positivity) ((norm_nonneg _).trans (hL 0))) (by positivity)
   have e₁ := norm_trajectoryOperator_piece_sub_le (contDiffOn_neckCutoff _)
     (exists_norm_neckCutoff_le _) (exists_norm_fderiv_neckCutoff_le _) R measurableSet_Iio
-    (neckCutoff_left_eq_one hR) hA₁L hδ0 (ae_neck_bound_left hε hT₁ hT₂ hR hRT₁ hRT₂ hL hAL)
-    Q₁ hQ₁ f
+    (fun s hs ↦ neckCutoff_neg_two_div_eq_one hR.le (mem_Iio.1 hs).le) hA₁L hδ0
+    (ae_neck_bound_left hε hT₁ hT₂ hR hRT₁ hRT₂ hL hAL) Q₁ hQ₁ f
   have e₂ := norm_trajectoryOperator_piece_sub_le (contDiffOn_neckCutoff _)
     (exists_norm_neckCutoff_le _) (exists_norm_fderiv_neckCutoff_le _) (-R)
-    measurableSet_Iio.compl (neckCutoff_right_eq_one hR) hA₂L hδ0
+    measurableSet_Iio.compl (fun s hs ↦ neckCutoff_two_div_eq_one hR.le (not_lt.1 hs)) hA₂L hδ0
     (ae_neck_bound_right hε hT₁ hT₂ hR hRT₁ hRT₂ hL hAL) Q₂ hQ₂ f
   have hsplit := Lp.multiplicationOperator_linftyIndicator_add_compl (s := Iio (0 : ℝ))
     measurableSet_Iio f

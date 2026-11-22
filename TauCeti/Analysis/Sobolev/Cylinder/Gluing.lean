@@ -241,9 +241,7 @@ private theorem ae_neck_bound_left {M₁ M₂ : ℝ × ℝ → V × V × V →L[
     positivity
   have hs : z.1 < R / 2 := by
     by_contra h
-    refine hβ (neckCutoff_eq_zero ?_)
-    rw [neg_mul, div_mul_eq_mul_div, ← sub_eq_add_neg, sub_nonpos, le_div_iff₀ hR]
-    linarith
+    exact hβ (neckCutoff_neg_two_div_eq_zero hR (not_lt.1 h))
   rw [uncurry_gluedCoeff_of_nonneg _ _ _ h0]
   have e₁ : z + (R, 0) = (z.1 + R, z.2) := by ext <;> simp
   have e₂ : z + (-R, 0) = (z.1 + -R, z.2) := by ext <;> simp
@@ -268,9 +266,7 @@ private theorem ae_neck_bound_right {M₁ M₂ : ℝ × ℝ → V × V × V →L
     positivity
   have hs : -(R / 2) < z.1 := by
     by_contra h
-    refine hβ (neckCutoff_eq_zero ?_)
-    rw [div_mul_eq_mul_div, ← le_neg_iff_add_nonpos_left, div_le_iff₀ hR]
-    linarith
+    exact hβ (neckCutoff_two_div_eq_zero hR (not_lt.1 h))
   rw [uncurry_gluedCoeff_of_neg _ _ _ h0]
   have e₁ : z + (R, 0) = (z.1 + R, z.2) := by ext <;> simp
   have e₂ : z + (-R, 0) = (z.1 + -R, z.2) := by ext <;> simp
@@ -341,10 +337,10 @@ private theorem exists_splicedInverse {G N₁ N₂ : ℝ × ℝ → V × V × V 
     ring
   · refine ContinuousLinearMap.opNorm_le_bound _ (mul_nonneg hδ (by positivity)) fun η ↦ ?_
     have e₁ := norm_jetOperator_cutoffL_apply_sub_le hG hN₁ hc₁ (abs_neckCutoff_le_one _) hd₁' hS
-      (fun z hz ↦ neckCutoff_eq_one (mul_nonneg_of_nonpos_of_nonpos
-        (neg_nonpos.2 hR2.le) (le_of_lt hz))) hB hB0 hd₁ hε hGN₁ hQ₁ η
+      (fun z hz ↦ neckCutoff_neg_two_div_eq_one hR.le (le_of_lt hz)) hB hB0 hd₁ hε hGN₁
+      hQ₁ η
     have e₂ := norm_jetOperator_cutoffL_apply_sub_le hG hN₂ hc₂ (abs_neckCutoff_le_one _) hd₂'
-      hS.compl (fun z hz ↦ neckCutoff_eq_one (mul_nonneg hR2.le (not_lt.1 hz))) hB hB0 hd₂ hε
+      hS.compl (fun z hz ↦ neckCutoff_two_div_eq_one hR.le (not_lt.1 hz)) hB hB0 hd₂ hε
       hGN₂ hQ₂ η
     simp only [sub_apply, ContinuousLinearMap.comp_apply, add_apply, Submodule.subtypeL_apply,
       map_add, ContinuousLinearMap.id_apply]
