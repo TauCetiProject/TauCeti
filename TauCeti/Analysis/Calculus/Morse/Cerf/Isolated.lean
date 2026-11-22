@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Cerf
 -- Private: used only inside proofs.
 import TauCeti.Analysis.Calculus.ContDiff.Prod
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.Normed.Operator.Splitting.Bordered
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
