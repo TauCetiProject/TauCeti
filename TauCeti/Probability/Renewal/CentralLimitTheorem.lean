@@ -305,6 +305,7 @@ private theorem tendstoInDistribution_neg_arrival_sub_div
     Finset.sum_const, Finset.card_range, nsmul_eq_mul]
   ring
 
+omit [IsProbabilityMeasure P] in
 /-- **Pointwise CDF convergence in the renewal central limit theorem.** For i.i.d. nonnegative
 increments with nonzero variance, the cumulative distribution function of the standardized renewal
 count at `x` converges to `cdf (gaussianReal 0 1) x` as `t → ∞` in `ℝ≥0`. -/
@@ -319,6 +320,7 @@ theorem tendsto_cdf_renewalCountNat_sub_div
           ((renewalCountNat T t ω : ℝ) - (t : ℝ) / μ) / (σ * √((t : ℝ) / μ ^ 3))) x)
       atTop (𝓝 (cdf (gaussianReal 0 1) x)) := by
   intro μ σ
+  have := hindep.isProbabilityMeasure
   have hμ : 0 < μ := integral_pos_of_nonneg_ae_of_variance_ne_zero
     (hid 0).aemeasurable_fst.coe_nnreal_real.aestronglyMeasurable
     (.of_forall fun ω ↦ (T 0 ω).coe_nonneg) hvar
