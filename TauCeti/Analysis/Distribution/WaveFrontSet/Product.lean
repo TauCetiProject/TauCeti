@@ -24,7 +24,8 @@ covector `(x, -ξ)` of the wave front set of `T`. The reason is the convolution 
 support of `φ`, that of `T` away from the directions of `WF(T)`, and the condition says that in
 every direction `η` one of the two factors `S (φ e_η)` and `T (φ e_(-η))` decays rapidly.
 
-This file constructs the product `φ² S T` of the cut-off distributions. Write
+This file constructs the product `φ² S T` of the cut-off distributions and glues these into the
+product `S T` on `Ω`. Write
 `NoOppositeCovectorsOn S T K` (`Distribution.NoOppositeCovectorsOn`) when there are no covectors
 `(x, ξ)` of `WF(S)` and `(y, -ξ)` of `WF(T)` over points `x, y ∈ K`. If this holds over the support
 of `φ`, then `Distribution.cutoffProduct S T φ h` is the distribution
@@ -584,14 +585,14 @@ theorem cutoffProduct_apply_of_apply_eq_integral_left {U : Set E} (hU : IsOpen U
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- If `S` and `T` have no opposite covectors over the support of `φ ⊇ supp g`, then
-`S (φ e_η) T (g e_(ζ - η))` decays rapidly in `η` and grows at most polynomially in `ζ`:
-`T (g e_(ζ - η))` is `T` applied to the modulated cutoff `(g e_ζ) e_(-η)`, whose derivatives grow
-polynomially in `ζ`, and the decay of `NoOppositeCovectorsOn.exists_forall_one_add_norm_pow_mul_le`
-is uniform over such cutoffs. -/
+`S (φ e_η) T (g e_(ζ - η))` decays rapidly in `η` and grows at most polynomially in `ζ`. -/
 private theorem NoOppositeCovectorsOn.exists_one_add_norm_pow_mul_localFourier_sub_le
     {φ g : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ)) (hg : tsupport g ⊆ tsupport φ)
     (N : ℕ) : ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ ζ η : E,
       (1 + ‖η‖) ^ N * (‖S.localFourier φ η‖ * ‖T.localFourier g (ζ - η)‖) ≤ C * (1 + ‖ζ‖) ^ r := by
+  -- `T (g e_(ζ - η))` is `T` applied to the modulated cutoff `(g e_ζ) e_(-η)`, whose derivatives
+  -- grow polynomially in `ζ`, and the decay of
+  -- `NoOppositeCovectorsOn.exists_forall_one_add_norm_pow_mul_le` is uniform over such cutoffs.
   obtain ⟨r, C, hC0, hC⟩ := h.exists_forall_one_add_norm_pow_mul_le N
   obtain ⟨A, hA0, hA⟩ := exists_forall_norm_iteratedFDeriv_bilinLeftCLM_fourierAtom_le g r
   refine ⟨r, C * A * (2 * Real.pi) ^ r, by positivity, fun ζ η ↦ ?_⟩
@@ -611,13 +612,14 @@ private theorem NoOppositeCovectorsOn.exists_one_add_norm_pow_mul_localFourier_s
     _ = C * A * (2 * Real.pi) ^ r * (1 + ‖ζ‖) ^ r := by ring
 
 /-- The integrand of `NoOppositeCovectorsOn.integral_localFourier_mul_localFourier_neg_eq`, as a
-function of `(ζ, η)`, is integrable: the decay of the Schwartz function `b` in `ζ` beats the
-polynomial growth of `S (φ e_η) T (g e_(ζ - η))`, which decays rapidly in `η`. -/
+function of `(ζ, η)`, is integrable for every Schwartz function `b`. -/
 private theorem NoOppositeCovectorsOn.integrable_mul_localFourier_mul_localFourier
     {φ g : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ)) (hg : tsupport g ⊆ tsupport φ)
     (b : 𝓢(E, ℂ)) :
     Integrable (fun p : E × E ↦
       b p.1 * (S.localFourier φ p.2 * T.localFourier g (p.1 - p.2))) (volume.prod volume) := by
+  -- The decay of the Schwartz function `b` in `ζ` beats the polynomial growth of
+  -- `S (φ e_η) T (g e_(ζ - η))` in `ζ`, which decays rapidly in `η`.
   set d := finrank ℝ E + 1
   obtain ⟨r, C, hC0, hC⟩ := h.exists_one_add_norm_pow_mul_localFourier_sub_le hg d
   set M := 2 ^ (r + d) * (Finset.Iic (r + d, 0)).sup
@@ -657,15 +659,15 @@ function, then
 
 `∫ S (a φ e_η) T (g e_(-η)) dη = ∫ S (φ e_η) T (a g e_(-η)) dη`.
 
-Both sides are the pairing of `φ S` with `g T` multiplied by `a`, formally `∫ a φ g S T`. The proof
-writes `a` as the Fourier integral of `𝓕⁻ a` (`integral_fourierInv_mul_localFourier_add`) on
-either side and exchanges the order of integration. -/
+Both sides are the pairing of `φ S` with `g T` multiplied by `a`, formally `∫ a φ g S T`. -/
 theorem NoOppositeCovectorsOn.integral_localFourier_mul_localFourier_neg_eq
     {φ g φa ga : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ))
     (hg : tsupport g ⊆ tsupport φ) (a : 𝓢(E, ℂ)) (hφa : ∀ x, φa x = a x * φ x)
     (hga : ∀ x, ga x = a x * g x) :
     ∫ η, S.localFourier φa η * T.localFourier g (-η) =
       ∫ η, S.localFourier φ η * T.localFourier ga (-η) := by
+  -- Write `a` as the Fourier integral of `𝓕⁻ a` (`integral_fourierInv_mul_localFourier_add`) on
+  -- either side and exchange the order of integration.
   set F : E × E → ℂ := fun p ↦
     𝓕⁻ a p.1 * (S.localFourier φ p.2 * T.localFourier g (p.1 - p.2))
   have hF : Integrable F (volume.prod volume) :=
