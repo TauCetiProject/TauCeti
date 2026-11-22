@@ -9,12 +9,13 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Dynamics.Billiard.NextCollision
+public import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.InnerProductSpace.TwoDim
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 
@@ -40,8 +41,9 @@ This file defines the carrier `TauCeti.ConvexTable k ℓ` and its first properti
   the parameter is a table (`ConvexTable.shift`), and so is the image under a rigid motion
   `z ↦ az + b` with `|a| = 1` (`ConvexTable.rigidMotion`), while the reversed parametrisation
   `s ↦ γ(-s)` never is (`ConvexTable.coe_ne_comp_neg`): the orientation is part of the carrier;
-* the circle `s ↦ R exp(is/R)` of radius `R > 0` is a table of class `C^∞` and perimeter `2πR`
-  (`ConvexTable.circle`), with `τ(s) × (γ(t) - γ(s)) = R(1 - cos((t - s)/R))`.
+* the circle `s ↦ R exp(is/R)` of radius `R > 0`, Mathlib's `circleMap 0 R` parametrized by
+  arclength, is a table of class `C^∞` and perimeter `2πR` (`ConvexTable.circle`), with
+  `τ(s) × (γ(t) - γ(s)) = R(1 - cos((t - s)/R))`.
 
 ## References
 
@@ -85,7 +87,7 @@ namespace ConvexTable
 
 variable {k : ℕ∞} {ℓ : ℝ} [Fact (0 < ℓ)] (γ : ConvexTable k ℓ)
 
-instance : CoeFun (ConvexTable k ℓ) fun _ ↦ ℝ → ℂ :=
+instance instCoeFun : CoeFun (ConvexTable k ℓ) fun _ ↦ ℝ → ℂ :=
   ⟨toFun⟩
 
 /-- A table is determined by its parametrisation. -/
@@ -122,7 +124,7 @@ theorem apply_eq_apply_iff {s t : ℝ} : γ t = γ s ↔ ∃ m : ℤ, t - s = m 
   refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ ↦ ?_⟩
   · by_contra! hne
     simpa [h] using γ.left_of_tangent s t hne
-  · rw [show t = s + m * ℓ by linarith]
+  · rw [eq_add_of_sub_eq' hm]
     exact (γ.periodic.int_mul m) s
 
 /-- The parametrisation is injective on every half-open interval of length `ℓ`. -/
@@ -179,7 +181,7 @@ theorem coe_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) : ⇑(γ.ofLE hj hj
 
 /-- Changing the regularity to itself does nothing. -/
 @[simp, grind =]
-theorem ofLE_self (hk : 1 ≤ k) (hkk : k ≤ k) : γ.ofLE hk hkk = γ :=
+theorem ofLE_self : γ.ofLE γ.one_le le_rfl = γ :=
   ext fun _ ↦ rfl
 
 /-- Changing the regularity twice is changing it once. -/
@@ -240,6 +242,10 @@ theorem shift_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) (c : ℝ) :
     (γ.ofLE hj hjk).shift c = (γ.shift c).ofLE hj hjk :=
   ext fun _ ↦ rfl
 
+private theorem deriv_mul_add (a b : ℂ) (s : ℝ) :
+    deriv (fun s ↦ a * γ s + b) s = a * deriv γ s := by
+  rw [deriv_add_const, deriv_const_mul_field]
+
 /-- The image of a table under the rigid motion `z ↦ a z + b`, a rotation by `a` with `|a| = 1`
 followed by a translation by `b`. -/
 def rigidMotion (a : Circle) (b : ℂ) : ConvexTable k ℓ where
@@ -247,18 +253,14 @@ def rigidMotion (a : Circle) (b : ℂ) : ConvexTable k ℓ where
   one_le := γ.one_le
   contDiff := (contDiff_const.mul γ.contDiff).add contDiff_const
   periodic s := by simp
-  norm_deriv s := by
-    rw [deriv_add_const, deriv_const_mul _ (γ.differentiable s), norm_mul, Circle.norm_coe,
-      γ.norm_deriv, one_mul]
+  norm_deriv s := by simp [γ.deriv_mul_add]
   left_of_tangent s t h := by
-    have hd : deriv (fun s ↦ (a : ℂ) * γ s + b) s = a * deriv γ s := by
-      rw [deriv_add_const, deriv_const_mul _ (γ.differentiable s)]
-    have ha : conj (a : ℂ) * a = 1 := by
-      rw [← Complex.normSq_eq_conj_mul_self, Complex.normSq_eq_norm_sq, Circle.norm_coe]
-      simp
-    rw [hd, map_mul, add_sub_add_right_eq_sub, ← mul_sub,
-      show conj (a : ℂ) * conj (deriv γ s) * (a * (γ t - γ s)) =
-        conj (a : ℂ) * a * (conj (deriv γ s) * (γ t - γ s)) by ring, ha, one_mul]
+    have ha : conj (a : ℂ) * a = 1 := by simp [← Complex.normSq_eq_conj_mul_self]
+    have hprod : conj ((a : ℂ) * deriv γ s) * ((a : ℂ) * γ t + b - ((a : ℂ) * γ s + b)) =
+        conj (deriv γ s) * (γ t - γ s) := by
+      rw [map_mul]
+      linear_combination (conj (deriv γ s) * (γ t - γ s)) * ha
+    rw [γ.deriv_mul_add, hprod]
     exact γ.left_of_tangent s t h
 
 @[simp, grind =]
@@ -272,7 +274,7 @@ theorem coe_rigidMotion (a : Circle) (b : ℂ) : ⇑(γ.rigidMotion a b) = fun s
 @[simp, grind =]
 theorem deriv_rigidMotion (a : Circle) (b : ℂ) (s : ℝ) :
     deriv (γ.rigidMotion a b) s = a * deriv γ s := by
-  rw [coe_rigidMotion, deriv_add_const, deriv_const_mul _ (γ.differentiable s)]
+  rw [coe_rigidMotion, γ.deriv_mul_add]
 
 /-- The identity motion does nothing. -/
 @[simp, grind =]
@@ -301,44 +303,24 @@ theorem coe_ne_comp_neg {j : ℕ∞} {ℓ' : ℝ} [Fact (0 < ℓ')] (δ : Convex
 
 /-! ### The circle -/
 
-private theorem hasDerivAt_mul_exp_div_mul_I {R : ℝ} (hR : R ≠ 0) (s : ℝ) :
-    HasDerivAt (fun s : ℝ ↦ (R : ℂ) * exp (↑(s / R) * I)) (I * exp (↑(s / R) * I)) s := by
-  have h := ((((hasDerivAt_id s).div_const R).ofReal_comp).mul_const I).cexp.const_mul (R : ℂ)
-  simp only [id] at h
-  refine h.congr_deriv ?_
-  have : (R : ℂ) ≠ 0 := ofReal_ne_zero.2 hR
-  push_cast
-  field_simp
-
-private theorem im_conj_mul_sub_exp_aux (R s t : ℝ) :
-    (conj (I * exp (↑(s / R) * I)) * (R * exp (↑(t / R) * I) - R * exp (↑(s / R) * I))).im =
-      R * (1 - Real.cos ((t - s) / R)) := by
-  simp only [map_mul, conj_I, ← exp_conj, conj_ofReal, mul_neg, ← neg_mul, ← ofReal_neg, mul_im,
-    mul_re, sub_im, sub_re, neg_re, neg_im, I_re, I_im, ofReal_re, ofReal_im,
-    exp_ofReal_mul_I_re, exp_ofReal_mul_I_im]
-  rw [sub_div, Real.cos_sub, Real.cos_neg, Real.sin_neg]
-  linear_combination R * Real.sin_sq_add_cos_sq (s / R)
-
 private theorem pos_of_two_pi_mul_pos {R : ℝ} (h : 0 < 2 * π * R) : 0 < R :=
   pos_of_mul_pos_right h Real.two_pi_pos.le
 
 /-- The positively oriented circle `s ↦ R exp(is/R)` of radius `R > 0`, of perimeter `2πR`, is a
-table of class `C^∞`: its unit tangent is `τ(s) = i exp(is/R)` (`ConvexTable.deriv_circle`) and
+table of class `C^∞`: it is Mathlib's `circleMap 0 R` parametrized by arclength, its unit tangent
+is `τ(s) = i exp(is/R)` (`ConvexTable.deriv_circle`), and
 `τ(s) × (γ(t) - γ(s)) = R(1 - cos((t - s)/R))` (`ConvexTable.im_conj_deriv_circle_mul_sub`). -/
 def circle (R : ℝ) [Fact (0 < 2 * π * R)] : ConvexTable ⊤ (2 * π * R) where
-  toFun s := R * exp (↑(s / R) * I)
+  toFun s := circleMap 0 R (s / R)
   one_le := le_top
-  contDiff := contDiff_const.mul <| contDiff_exp.comp <|
-    (ofRealCLM.contDiff.comp (contDiff_id.div_const R)).mul contDiff_const
-  periodic s := by
-    simp only [ofReal_div, ofReal_add, ofReal_mul, ofReal_ofNat]
-    exact congrArg ((R : ℂ) * ·) (exp_mul_I_periodic.div_const (R : ℂ) s)
+  contDiff := (contDiff_circleMap 0 R).comp (contDiff_id.div_const R)
+  periodic := (periodic_circleMap 0 R).div_const R
   norm_deriv s := by
     have hR := (pos_of_two_pi_mul_pos (Fact.out : 0 < 2 * π * R)).ne'
-    rw [(hasDerivAt_mul_exp_div_mul_I hR s).deriv, norm_mul, norm_I, one_mul, norm_exp_ofReal_mul_I]
+    simp [(hasDerivAt_circleMap_div 0 hR s).deriv]
   left_of_tangent s t h := by
     have hR := pos_of_two_pi_mul_pos (Fact.out : 0 < 2 * π * R)
-    rw [(hasDerivAt_mul_exp_div_mul_I hR.ne' s).deriv, im_conj_mul_sub_exp_aux]
+    rw [(hasDerivAt_circleMap_div 0 hR.ne' s).deriv, im_conj_mul_I_mul_circleMap_div_sub]
     refine mul_pos hR (sub_pos.2 (lt_of_le_of_ne (Real.cos_le_one _) fun h1 ↦ ?_))
     obtain ⟨n, hn⟩ := (Real.cos_eq_one_iff _).1 h1
     exact h n (by field_simp at hn; linarith)
@@ -346,15 +328,15 @@ def circle (R : ℝ) [Fact (0 < 2 * π * R)] : ConvexTable ⊤ (2 * π * R) wher
 variable (R : ℝ) [Fact (0 < 2 * π * R)]
 
 @[simp, grind =]
-theorem circle_apply (s : ℝ) : circle R s = R * exp (↑(s / R) * I) :=
+theorem circle_apply (s : ℝ) : circle R s = circleMap 0 R (s / R) :=
   (rfl)
 
-/-- The circle `s ↦ R exp(is/R)` has derivative `i exp(is/R)`. -/
-theorem hasDerivAt_circle (s : ℝ) : HasDerivAt (circle R) (I * exp (↑(s / R) * I)) s :=
-  hasDerivAt_mul_exp_div_mul_I (pos_of_two_pi_mul_pos Fact.out).ne' s
+/-- The circle `s ↦ R exp(is/R)` has unit velocity `exp(is/R) i`. -/
+theorem hasDerivAt_circle (s : ℝ) : HasDerivAt (circle R) (circleMap 0 1 (s / R) * I) s :=
+  hasDerivAt_circleMap_div 0 (pos_of_two_pi_mul_pos Fact.out).ne' s
 
 @[simp, grind =]
-theorem deriv_circle (s : ℝ) : deriv (circle R) s = I * exp (↑(s / R) * I) :=
+theorem deriv_circle (s : ℝ) : deriv (circle R) s = circleMap 0 1 (s / R) * I :=
   (hasDerivAt_circle R s).deriv
 
 /-- On the circle of radius `R` the defining quantity of a table is `R(1 - cos((t - s)/R))`, equal
@@ -362,7 +344,7 @@ to `2R` at `t - s = πR`. -/
 theorem im_conj_deriv_circle_mul_sub (s t : ℝ) :
     (conj (deriv (circle R) s) * (circle R t - circle R s)).im =
       R * (1 - Real.cos ((t - s) / R)) := by
-  rw [deriv_circle, circle_apply, circle_apply, im_conj_mul_sub_exp_aux]
+  rw [deriv_circle, circle_apply, circle_apply, im_conj_mul_I_mul_circleMap_div_sub]
 
 end ConvexTable
 

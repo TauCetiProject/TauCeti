@@ -34,6 +34,8 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
   punctured disc of radius `R`.
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
   `s ↦ c + R e^{i s / R}`, has unit velocity `e^{i s / R} i`.
+* `TauCeti.im_conj_mul_I_mul_circleMap_div_sub`: along the arclength circle of radius `R`, the
+  unit velocity at `s` crossed with the chord to `t` is `R (1 - cos ((t - s) / R))`.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
 -/
 
@@ -123,6 +125,20 @@ theorem hasDerivAt_circleMap_div (c : ℂ) {R : ℝ} (hR : R ≠ 0) (s : ℝ) :
   rw [circleMap_zero, circleMap_zero, real_smul]
   push_cast
   field_simp [ofReal_ne_zero.2 hR]
+
+/-- Along the circle of radius `R` about `c` parametrized by arclength, the cross product
+`Im(conj τ · (γ(t) - γ(s)))` of the unit velocity `τ = e^{i s / R} i` at `s` with the chord from
+`γ(s)` to `γ(t)` is `R (1 - cos ((t - s) / R))`. -/
+theorem im_conj_mul_I_mul_circleMap_div_sub (c : ℂ) (R s t : ℝ) :
+    (starRingEnd ℂ (circleMap 0 1 (s / R) * I) *
+        (circleMap c R (t / R) - circleMap c R (s / R))).im =
+      R * (1 - Real.cos ((t - s) / R)) := by
+  simp only [circleMap, zero_add, ofReal_one, one_mul, add_sub_add_left_eq_sub, map_mul, conj_I,
+    ← exp_conj, map_mul, conj_ofReal, mul_neg, ← neg_mul, ← ofReal_neg, mul_im, mul_re, sub_im,
+    sub_re, neg_re, neg_im, I_re, I_im, ofReal_re, ofReal_im, exp_ofReal_mul_I_re,
+    exp_ofReal_mul_I_im]
+  rw [sub_div, Real.cos_sub, Real.cos_neg, Real.sin_neg]
+  linear_combination R * Real.sin_sq_add_cos_sq (s / R)
 
 /-- The integer powers `θ ↦ (R e^{iθ}) ^ k = R ^ k e^{ikθ}` of a circle about the origin are
 smooth. -/
