@@ -100,11 +100,18 @@ theorem endBandCoord_mem (q : Puncture) (z : ℝ × ℝ) :
     endBandCoord q z ∈ (univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1 :=
   ⟨mem_univ _, Int.fract_nonneg _, Int.fract_lt_one _⟩
 
+/-- A map of period one in the angular coordinate is unchanged by integer shifts of it. -/
+theorem apply_add_intCast_of_periodic {α : Type*} {ξ : ℝ × ℝ → α}
+    (hξp : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (ζ : ℝ × ℝ) (k : ℤ) :
+    ξ (ζ + (0, (k : ℝ))) = ξ ζ := by
+  have hp : Periodic (fun t ↦ ξ (ζ.1, t)) 1 := hξp ζ.1
+  rw [show ζ + (0, (k : ℝ)) = (ζ.1, ζ.2 + k) by ext <;> simp]
+  simpa using hp.int_mul k ζ.2
+
 /-- The positive end chart is unchanged by integer shifts of the angular coordinate. -/
 theorem positiveEndChart_add_intCast (q : Puncture) (s t : ℝ) (k : ℤ) :
     positiveEndChart q (s, t + k) = positiveEndChart q (s, t) := by
-  have hp : Periodic (fun t ↦ positiveEndChart q (s, t)) 1 := positiveEndChart_add_one q s
-  simpa using hp.int_mul k t
+  simpa using apply_add_intCast_of_periodic (positiveEndChart_add_one q) (s, t) k
 
 /-- Away from the center of the end, the positive end chart inverts the band coordinates. -/
 theorem positiveEndChart_endBandCoord (q : Puncture) {z : ℝ × ℝ}
@@ -474,14 +481,6 @@ theorem endTransferCoeff_apply (q : Puncture) (β : ℝ × ℝ → ℝ) (ζ : �
           (β (positiveEndChart q ζ) * (fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 /
             positiveEndChartScale q ζ) • v.2.2) := by
   refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [endTransferCoeff]
-
-/-- A map of period one in the angular coordinate is unchanged by integer shifts of it. -/
-theorem apply_add_intCast_of_periodic {α : Type*} {ξ : ℝ × ℝ → α}
-    (hξp : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (ζ : ℝ × ℝ) (k : ℤ) :
-    ξ (ζ + (0, (k : ℝ))) = ξ ζ := by
-  have hp : Periodic (fun t ↦ ξ (ζ.1, t)) 1 := hξp ζ.1
-  rw [show ζ + (0, (k : ℝ)) = (ζ.1, ζ.2 + k) by ext <;> simp]
-  simpa using hp.int_mul k ζ.2
 
 /-- A map of period one in the angular coordinate, read in the positive end coordinates of an end
 and then in its positive end chart, is the map itself. -/
@@ -862,15 +861,6 @@ theorem endTransfer_mem_H1 (q : Puncture) {β : ℝ × ℝ → ℝ} (hβ : ContD
     ⟨_, endTransferSection_mem_testSection q hβ hβS ξ.property,
       endTransfer_jetLp_ae_eq q (hβ.of_le one_le_two) hN ξ⟩)
 
-/-- An essentially bounded function is almost everywhere bounded. -/
-private theorem exists_ae_norm_le_of_memLp_top {α E : Type*} [MeasurableSpace α] {μ : Measure α}
-    [NormedAddCommGroup E] {f : α → E} (hf : MemLp f ∞ μ) : ∃ C, ∀ᵐ x ∂μ, ‖f x‖ ≤ C := by
-  have he := eLpNorm_exponent_top (μ := μ) hf.aestronglyMeasurable
-  refine ⟨(eLpNorm f ∞ μ).toReal, ?_⟩
-  filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with x hx
-  rw [← he] at hx
-  simpa using ENNReal.toReal_mono hf.ne hx
-
 /-- **First-order operators read along an end chart.** A first-order operator on `S` with an
 essentially bounded coefficient field `M` on conformal jets, applied to the transfer of an `L²` jet
 `f` along the end chart of `q`, is the transfer, by the `L²` isometry, of the first-order operator
@@ -887,12 +877,14 @@ theorem jetOperator_endTransfer {W : Type*} [NormedAddCommGroup W] [NormedSpace 
         (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f) := by
   have hMφ : MemLp (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) ∞
       StripSobolev.stripMeasure := by
-    obtain ⟨CM, hCM⟩ := exists_ae_norm_le_of_memLp_top hM
-    obtain ⟨CN, hCN⟩ := exists_ae_norm_le_of_memLp_top hN
+    have hCM := ae_le_lpNorm_exponent_top hM
+    have hCN := ae_le_lpNorm_exponent_top hN
     refine memLp_top_of_bound
       ((ContinuousLinearMap.compL ℝ (V × V × V) (V × V × V) W).aestronglyMeasurable_comp₂
       (hM.aestronglyMeasurable.comp_quasiMeasurePreserving
-        (quasiMeasurePreserving_positiveEndChart q)) hN.aestronglyMeasurable) (CM * CN) ?_
+        (quasiMeasurePreserving_positiveEndChart q)) hN.aestronglyMeasurable)
+      (lpNorm M ∞ (volume.restrict thricePuncturedSphereReal) *
+        lpNorm (endTransferCoeff (V := V) q β) ∞ StripSobolev.stripMeasure) ?_
     filter_upwards [(quasiMeasurePreserving_positiveEndChart q).ae hCM, hCN] with ζ h₁ h₂
     exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
       (mul_le_mul h₁ h₂ (norm_nonneg _) ((norm_nonneg _).trans h₁))
