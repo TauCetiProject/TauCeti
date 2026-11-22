@@ -52,8 +52,9 @@ case.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
   passes to subrepresentations and quotients, and equivalent representations are smooth together
   (`Representation.Equiv.isSmooth_iff`).
-* `Representation.IsSmooth.comp`: smoothness passes to the restriction along a continuous
-  homomorphism, in particular to subgroups.
+* `Representation.IsSmooth.comp`, `Representation.isSmooth_ofQuotient_iff`: smoothness passes
+  to the restriction along a continuous homomorphism (in particular to subgroups), and descends
+  iff it holds on `G ⧸ S` for a trivially acting normal subgroup `S`.
 * `Representation.isSmooth_ofMulAction_iff`: over a nontrivial semiring, the permutation
   representation on `A[X]` is smooth exactly when every point of `X` has an open stabilizer, as
   for `X = G ⧸ U` with `U` open (`Representation.isSmooth_ofMulAction_quotient`).
@@ -138,16 +139,24 @@ theorem IsSmooth.comp [IsSmooth ρ] {H : Type*} [Group H] [TopologicalSpace H] {
 instance [IsSmooth ρ] (H : Subgroup G) : IsSmooth (ρ.comp H.subtype) :=
   IsSmooth.comp continuous_subtypeVal
 
-/-- Descending a smooth representation to `G ⧸ S` along a normal subgroup `S` acting trivially
-yields a smooth representation of `G ⧸ S` in the quotient topology. -/
-instance instIsSmoothOfQuotient [IsSmooth ρ] (S : Subgroup G) [S.Normal]
-    [IsTrivial (ρ.comp S.subtype)] : IsSmooth (ρ.ofQuotient S) where
-  isOpen_stabilizer v := by
-    rw [← (QuotientGroup.isQuotientMap_mk S).isOpen_preimage]
+/-- A representation trivial on a normal subgroup `S` is smooth on `G ⧸ S` (in the quotient
+topology) if and only if it is smooth on `G`. -/
+theorem isSmooth_ofQuotient_iff (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp S.subtype)] :
+    IsSmooth (ρ.ofQuotient S) ↔ IsSmooth ρ := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ⟨fun v ↦ ?_⟩⟩
+  · rw [← ρ.ofQuotient_comp_mk' S]
+    exact IsSmooth.comp QuotientGroup.continuous_mk
+  · rw [← (QuotientGroup.isQuotientMap_mk S).isOpen_preimage]
     change IsOpen
       ((((ρ.ofQuotient S).stabilizer v).comap (QuotientGroup.mk' S) : Subgroup G) : Set G)
     rw [comap_mk'_stabilizer_ofQuotient]
     exact IsSmooth.isOpen_stabilizer v
+
+/-- Descending a smooth representation to `G ⧸ S` along a normal subgroup `S` acting trivially
+yields a smooth representation of `G ⧸ S` in the quotient topology. -/
+instance instIsSmoothOfQuotient [IsSmooth ρ] (S : Subgroup G) [S.Normal]
+    [IsTrivial (ρ.comp S.subtype)] : IsSmooth (ρ.ofQuotient S) :=
+  (isSmooth_ofQuotient_iff S).2 ‹_›
 
 /-- The binary product of two smooth representations is smooth. -/
 instance instIsSmoothProd [IsSmooth ρ] [IsSmooth σ] : IsSmooth (ρ.prod σ) where
@@ -472,8 +481,7 @@ variable {A G V : Type*} [Ring A] [Group G] [TopologicalSpace G] [SeparatelyCont
 /-- A quotient of a smooth representation by an invariant submodule is smooth. -/
 instance [IsSmooth ρ] (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
     IsSmooth (ρ.quotient W le_comap) :=
-  IsSmooth.of_surjective (σ := ρ.quotient W le_comap)
-    ⟨W.mkQ, fun _ ↦ rfl⟩ W.mkQ_surjective
+  IsSmooth.of_surjective (ρ.mkQ W le_comap) (by simpa only [coe_mkQ] using W.mkQ_surjective)
 
 /-- The quotient of a smooth representation by a subrepresentation is smooth. -/
 instance [IsSmooth ρ] (ρ' : Subrepresentation ρ) : IsSmooth ρ'.quotient :=
@@ -542,15 +550,6 @@ theorem smoothVectors_leftRegular_eq_bot [SeparatelyContinuousMul G] [T1Space G]
   have hfin : (H : Set G).Finite := finite_stabilizer_leftRegular hf0
   exact hG (discreteTopology_of_isOpen_singleton_one
     (isOpen_singleton_of_finite_mem_nhds 1 ((mem_smoothVectors_iff.1 hf).mem_nhds H.one_mem) hfin))
-
-omit [TopologicalSpace G] in
-private theorem stabilizer_pi_ofMulAction_quotient_basepoint [Nontrivial A] {ι : Type*}
-    (H : ι → Subgroup G) :
-    (Representation.pi fun i ↦ ofMulAction A G (G ⧸ H i)).stabilizer
-        (fun i ↦ MonoidAlgebra.single ((1 : G) : G ⧸ H i) (1 : A)) =
-      ⨅ i, H i := by
-  simp only [stabilizer_pi, stabilizer_ofMulAction_single _ one_ne_zero,
-    MulAction.stabilizer_quotient]
 
 /-- In a product `∏ i, A[G ⧸ H i]` of coset permutation representations over a nontrivial
 semiring `A`, if `⨅ i, H i` is not open in `G`, then the family of basepoints

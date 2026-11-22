@@ -26,12 +26,13 @@ and conjugation by group elements. This file supplies structural identities need
 and subset stabilizers across standard constructions on representations:
 
 * subrepresentations (`Subrepresentation.stabilizer_toRepresentation`), injective intertwining maps
-  (`Representation.IntertwiningMap.stabilizer_apply_of_injective`), and equivalences
-  (`Representation.Equiv.stabilizer_apply`);
+  (`Representation.IntertwiningMap.stabilizer_apply_of_injective`), equivalences
+  (`Representation.Equiv.stabilizer_apply`), and quotients (`Representation.mkQ`,
+  `Subrepresentation.le_stabilizer_quotient_mk`);
 * restriction along a group homomorphism (`Representation.stabilizer_comp` and
   `Representation.map_stabilizer_comp_of_surjective`), trivial and subsingleton representations,
-  binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`),
-  and quotients (`Subrepresentation.le_stabilizer_quotient_mk`);
+  binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`,
+  `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
   `Representation.finite_stabilizer_leftRegular`) and trivial subgroup restrictions
   (`Representation.isTrivial_comp_subtype_iff` and
@@ -56,12 +57,19 @@ characteristic restrictions), the pointwise stabilizer `⨅ w ∈ U, ρ.stabiliz
 equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via subspace avoidance
 (`Submodule.exists_forall_notMem_of_forall_ne_top`).
 
+## Main definitions
+
+* `Representation.mkQ`: quotient projection `V →ₗ[A] V ⧸ W` by an invariant submodule, as an
+  intertwining map.
+* `Representation.orbitMap`: the orbit map `G ⧸ ρ.stabilizer v → V`.
+
 ## Main results
 
 * `Subrepresentation.stabilizer_toRepresentation`
 * `Representation.IntertwiningMap.stabilizer_apply_of_injective`
 * `Representation.Equiv.stabilizer_apply`
-* `Representation.stabilizer_prod` and `Representation.stabilizer_pi`
+* `Representation.stabilizer_prod`, `Representation.stabilizer_pi`, and
+  `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`
 * `Subrepresentation.le_stabilizer_quotient_mk`
 * `Representation.stabilizer_ofMulAction_single` and `Representation.finite_stabilizer_leftRegular`
 * `Representation.isTrivial_comp_subtype_iff` and
@@ -87,6 +95,37 @@ public section
 
 open scoped MonoidAlgebra Pointwise
 
+namespace Representation
+
+section Quotient
+
+variable {A G V : Type*} [Ring A] [Monoid G] [AddCommGroup V] [Module A V]
+
+/-- The quotient projection `V →ₗ[A] V ⧸ W` by an invariant submodule, bundled as an intertwining
+map `ρ → ρ.quotient W le_comap`. -/
+def mkQ (ρ : Representation A G V) (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
+    ρ.IntertwiningMap (ρ.quotient W le_comap) where
+  toLinearMap := W.mkQ
+  isIntertwining' _ := rfl
+
+/-- The quotient intertwining map acts as `Submodule.mkQ`. -/
+@[simp]
+theorem coe_mkQ (ρ : Representation A G V) (W : Submodule A V)
+    (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
+    ⇑(ρ.mkQ W le_comap) = W.mkQ :=
+  (rfl)
+
+/-- The linear map underlying `Representation.mkQ` is `Submodule.mkQ`. -/
+@[simp]
+theorem toLinearMap_mkQ (ρ : Representation A G V) (W : Submodule A V)
+    (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
+    (ρ.mkQ W le_comap).toLinearMap = W.mkQ :=
+  (rfl)
+
+end Quotient
+
+end Representation
+
 namespace Subrepresentation
 
 /-- The stabilizer of a vector of a subrepresentation is its stabilizer in the ambient
@@ -103,7 +142,8 @@ theorem stabilizer_toRepresentation {A G V : Type*} [Semiring A] [Group G]
 theorem le_stabilizer_quotient_mk {A G V : Type*} [Ring A] [Group G]
     [AddCommGroup V] [Module A V] {ρ : Representation A G V} (S : Subrepresentation ρ) (v : V) :
     ρ.stabilizer v ≤ S.quotient.stabilizer (Submodule.Quotient.mk v) :=
-  Representation.IntertwiningMap.stabilizer_le (ρ' := S.quotient) ⟨S.toSubmodule.mkQ, fun _ ↦ rfl⟩ v
+  Representation.IntertwiningMap.stabilizer_le
+    (ρ.mkQ S.toSubmodule fun g _ hw ↦ S.apply_mem_toSubmodule g hw) v
 
 end Subrepresentation
 
@@ -185,6 +225,16 @@ theorem stabilizer_ofMulAction_single (x : X) {r : A} (hr : r ≠ 0) :
   ext g
   rw [mem_stabilizer, ofMulAction_single, MonoidAlgebra.single_left_inj hr,
     MulAction.mem_stabilizer_iff]
+
+/-- The stabilizer of the family of basepoint cosets `fun i ↦ single ↑1 1` in the product
+`∏ i, A[G ⧸ H i]` of coset permutation representations over a nontrivial semiring is `⨅ i, H i`. -/
+theorem stabilizer_pi_ofMulAction_quotient_basepoint [Nontrivial A] {ι : Type*}
+    (H : ι → Subgroup G) :
+    (Representation.pi fun i ↦ ofMulAction A G (G ⧸ H i)).stabilizer
+        (fun i ↦ MonoidAlgebra.single ((1 : G) : G ⧸ H i) (1 : A)) =
+      ⨅ i, H i := by
+  simp only [stabilizer_pi, stabilizer_ofMulAction_single _ one_ne_zero,
+    MulAction.stabilizer_quotient]
 
 end MulAction
 

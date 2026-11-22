@@ -16,7 +16,6 @@ import TauCeti.NumberTheory.Padics.QuotientTower
 import TauCeti.RepresentationTheory.Quotient
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
-import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Examples of smooth representations
@@ -83,9 +82,7 @@ example :
   have hnotOpen : ¬ IsOpen (((⨅ n, H n : Subgroup (Multiplicative ℤ_[p])) :
       Set (Multiplicative ℤ_[p]))) := by
     rw [(TauCeti.FiniteQuotientTower.padicTower p).iInf_ker_eq_bot]
-    exact fun h1 ↦
-      not_discreteTopology_of_compactSpace_of_infinite (Multiplicative ℤ_[p])
-        (discreteTopology_of_isOpen_singleton_one h1)
+    simpa using PadicInt.not_isOpen_singleton_one_multiplicative (p := p)
   exact ⟨not_isSmooth_pi_ofMulAction_quotient hnotOpen,
     notMem_smoothVectors_pi_ofMulAction_quotient hnotOpen⟩
 
