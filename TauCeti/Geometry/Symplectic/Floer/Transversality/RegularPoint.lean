@@ -342,7 +342,7 @@ point `z` of a nonempty open set `W` has a partner `s ≠ z.1` on its slice, `u(
 there are a nonempty open set `U`, a compact set `D` on which `∂ₛu ≠ 0` and
 `(s, t) ↦ (u(s, t), t)` is injective, and `ε > 0` such that every point of `U` has a partner in `D`
 at distance at least `ε` on its slice. -/
-private theorem exists_isCompact_forall_exists_slicePartner (hu : ContDiff ℝ 1 u)
+private theorem exists_isCompact_forall_exists_slice_eq (hu : ContDiff ℝ 1 u)
     (hcrit : {w : ℝ × ℝ | fderiv ℝ u w stdComplexLineReal = 0}.Countable) {W : Set (ℝ × ℝ)}
     (hW : IsOpen W) (hne : W.Nonempty) (hpart : ∀ z ∈ W, ∃ s ≠ z.1, u (s, z.2) = u z) :
     ∃ U D : Set (ℝ × ℝ), ∃ ε : ℝ, IsOpen U ∧ U.Nonempty ∧ IsCompact D ∧
@@ -363,7 +363,7 @@ private theorem exists_isCompact_forall_exists_slicePartner (hu : ContDiff ℝ 1
   have hF : ∀ i, IsClosed (F i) := by
     rintro (⟨b, m⟩ | c)
     · by_cases hg : Good (closure b.val)
-      · simpa [F, S, hg] using isClosed_setOf_exists_slicePartner hu.continuous hg.1 _
+      · simpa [F, S, hg] using isClosed_setOf_exists_slice_eq hu.continuous hg.1 _
       · simp [F, hg]
     · exact (isClosed_eq continuous_snd continuous_const).inter
         (isClosed_eq hu.continuous continuous_const)
@@ -398,7 +398,7 @@ private theorem exists_isCompact_forall_exists_slicePartner (hu : ContDiff ℝ 1
 `C²` Hamiltonian `H`. Suppose that on a nonempty open set `U` every point has a partner in a compact
 set `D`, at distance at least `ε > 0` on its slice, where `∂ₛu ≠ 0` on `D` and
 `(s, t) ↦ (u(s, t), t)` is injective on `D`. Then `u` has a period `(c, 0)` with `c ≠ 0`. -/
-private theorem exists_ne_zero_periodic_of_forall_exists_slicePartner
+private theorem exists_ne_zero_periodic_of_forall_exists_slice_eq
     (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2))
     (hJJ : ∀ z, J z.2 (u z) ∘L J z.2 (u z) = -ContinuousLinearMap.id ℝ V)
     (hH : ContDiff ℝ 2 (uncurry H)) (hu : ContDiff ℝ 1 u)
@@ -417,7 +417,7 @@ private theorem exists_ne_zero_periodic_of_forall_exists_slicePartner
     eventually_of_mem (hU.mem_nhds hz₀) fun z hz ↦ (hφ z hz).2.2
   have hdiff (z : ℝ × ℝ) (hz : z ∈ U) : DifferentiableAt ℝ φ z :=
     differentiableAt_of_eventually_comp_eq
-      (continuousAt_of_forall_slicePartner hu.continuous hD hinj hU
+      (continuousAt_of_forall_slice_eq hu.continuous hD hinj hU
         (fun z hz ↦ ⟨(hφ z hz).1, (hφ z hz).2.2⟩) hz)
       (hu.differentiable one_ne_zero z)
       hu.contDiffAt (hDs _ (hφ z hz).1) (heq z hz)
@@ -496,9 +496,9 @@ theorem dense_regularPoints (hJ : ContDiff ℝ 1 (fun p : ℝ × V ↦ J p.1 p.2
     by_contra! h
     exact hreg ⟨z, hzU, hzG.1, hzG.2.1, hzG.2.2, fun s hs ↦ by_contra fun hsz ↦ h s hsz hs⟩
   obtain ⟨U₀, D, ε, hU₀, hU₀ne, hD, hDs, hinj, hε, hpart₀⟩ :=
-    exists_isCompact_forall_exists_slicePartner (hu.of_le (by norm_num)) hcrit (hU.inter hGo)
+    exists_isCompact_forall_exists_slice_eq (hu.of_le (by norm_num)) hcrit (hU.inter hGo)
       ⟨z₀, hz₀U, hz₀G⟩ hpart
-  obtain ⟨c, hc, hper⟩ := exists_ne_zero_periodic_of_forall_exists_slicePartner hJ hJJ hH
+  obtain ⟨c, hc, hper⟩ := exists_ne_zero_periodic_of_forall_exists_slice_eq hJ hJJ hH
     (hu.of_le (by norm_num)) hF hU₀ hU₀ne hD hDs hinj hε hpart₀
   -- A period `(c, 0)` with `c ≠ 0` moves `z₀` to an end, where `u` is an asymptotic orbit.
   have hslice : Periodic (fun s ↦ u (s, z₀.2)) c := fun s ↦ by simpa using hper (s, z₀.2)
