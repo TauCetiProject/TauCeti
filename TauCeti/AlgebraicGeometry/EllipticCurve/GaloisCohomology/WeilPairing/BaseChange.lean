@@ -90,7 +90,7 @@ theorem brBaseChange_torsionWeilBrauerPairing
       (W⁄L).torsionWeilBrauerPairing m (by simpa using hm.map (algebraMap K L))
         (W.torsionRes τ m a) (W.torsionRes τ m b) := by
   rw [torsionWeilBrauerPairing_apply, torsionWeilBrauerPairing_apply,
-    brBaseChange_h2MuToBr_muNRepH2Equiv m τ, torsionH1WeilPairing_torsionRes]
+    brBaseChange_h2MuToBr_galRepOfZModModuleH2Equiv m τ, torsionH1WeilPairing_torsionRes]
 
 end WeierstrassCurve
 
@@ -132,7 +132,7 @@ private theorem kerWeilBrauerPairing_eq_explicitCup11
       unitsRepH2Equiv K (explicitCup11 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
         (ofIsogeny φ.dual).KerCoeff (UnitsCoeff K) (φ.kerCoeffUnitsPairing hn)
         continuous_of_discreteTopology (φ.kerCoeffUnitsPairing_smul hn) a b) := by
-  rw [kerWeilBrauerPairing_apply, h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2,
+  rw [kerWeilBrauerPairing_apply, h2MuToBr_galRepOfZModModuleH2Equiv_eq_explicitCoeff2,
     kerH1WeilPairing_eq_explicitCup11]
   congr 1
   simpa only [explicitCoeff1_id, AddMonoidHom.id_apply] using

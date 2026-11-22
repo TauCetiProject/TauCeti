@@ -37,7 +37,7 @@ Composing it with the Kummer isomorphism gives `kummerEquiv : Fˣ ⧸ (Fˣ)ⁿ �
 for `n` invertible in `F`, and `kummerClass` is the Kummer class of a unit in this carrier. It is
 the transport of the Kummer map `TauCeti.kummerMap`, not a second Kummer cocycle, and is
 represented by `g ↦ g α / α` for any `n`th root `α` of the unit
-(`kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`).
+(`kummerClass_eq_galRepOfZModModuleH1Equiv_kummerCocycleClass`).
 The degree-two comparison gives
 `galRepOfZModModuleH2Equiv n F (KummerCoeff F n) : H²(Gal(Fˢ/F), μₙ) ≃+ H²(G_F, muNRep n F)` in
 the same way.
@@ -88,8 +88,8 @@ corresponding cardinality equality.
   contains a primitive `n`th root of unity.
 * `TauCeti.ClassFieldTheory.baer_muNRep`: `muNRep n F` is an injective `ZMod n`-module when `n` is
   invertible in `F`.
-* `TauCeti.ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerCocycleClass`: the Kummer class of
-  `a` is the transported class of `g ↦ g α / α`, for any `n`th root `α` of `a`.
+* `TauCeti.ClassFieldTheory.kummerClass_eq_galRepOfZModModuleH1Equiv_kummerCocycleClass`: the
+  Kummer class of `a` is the transported class of `g ↦ g α / α`, for any `n`th root `α` of `a`.
 * `TauCeti.ClassFieldTheory.kummerClass_eq_zero_iff`: the Kummer class of `a` vanishes exactly
   when `a` is an `n`th power.
 * `TauCeti.ClassFieldTheory.kummerClass_surjective`: every class of `H¹(G_F, muNRep n F)` is a
@@ -147,7 +147,7 @@ theorem baer_muNRep (hn : IsUnit (n : F)) : Module.Baer (ZMod n) (muNRep n F).V 
     ((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm.trans (kummerCoeffAddEquivZMod hn))
 
 /-- An element of `μₙ` is determined by the root of unity of `Fˢ` that it represents. -/
-theorem coe_kummerCoeffEquivMuNRep_symm_injective :
+theorem coe_galRepOfZModModuleEquiv_symm_injective :
     Function.Injective fun x : (muNRep n F).V ↦
       ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm x).toMul : (SeparableClosure F)ˣ) :
         SeparableClosure F) :=
@@ -156,7 +156,7 @@ theorem coe_kummerCoeffEquivMuNRep_symm_injective :
 
 variable {n F} in
 /-- The root of unity represented by `i • x` is the `i`th power of the root represented by `x`. -/
-theorem coe_kummerCoeffEquivMuNRep_symm_zsmul (x : (muNRep n F).V) (i : ℤ) :
+theorem coe_galRepOfZModModuleEquiv_symm_zsmul (x : (muNRep n F).V) (i : ℤ) :
     ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm (i • x)).toMul :
         (SeparableClosure F)ˣ) : SeparableClosure F) =
       ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm x).toMul :
@@ -197,7 +197,7 @@ theorem kummerEquiv_ofMul_mk (hn : IsUnit (n : F)) (a : Fˣ) :
 
 /-- **The Kummer class is the transported Kummer map**: it is `TauCeti.kummerMap` read through
 `galRepOfZModModuleH1Equiv n F (KummerCoeff F n)`. -/
-theorem kummerClass_eq_muNRepH1Equiv_kummerMap (hn : IsUnit (n : F)) (a : Fˣ) :
+theorem kummerClass_eq_galRepOfZModModuleH1Equiv_kummerMap (hn : IsUnit (n : F)) (a : Fˣ) :
     kummerClass F hn a =
       galRepOfZModModuleH1Equiv n F (KummerCoeff F n)
         (Multiplicative.toAdd (kummerMap F n hn a)) := by
@@ -205,12 +205,12 @@ theorem kummerClass_eq_muNRepH1Equiv_kummerMap (hn : IsUnit (n : F)) (a : Fˣ) :
 
 /-- **The Kummer class of `a` is represented by `g ↦ g α / α`**, transported to `muNRep n F`, for
 any `n`th root `α` of `a` in `Fˢ`. -/
-theorem kummerClass_eq_muNRepH1Equiv_kummerCocycleClass (hn : IsUnit (n : F)) {a : Fˣ}
+theorem kummerClass_eq_galRepOfZModModuleH1Equiv_kummerCocycleClass (hn : IsUnit (n : F)) {a : Fˣ}
     {α : (SeparableClosure F)ˣ}
     (hα : α ^ n = Units.map (algebraMap F (SeparableClosure F)).toMonoidHom a) :
     kummerClass F hn a =
       galRepOfZModModuleH1Equiv n F (KummerCoeff F n) (kummerCocycleClass hα) := by
-  rw [kummerClass_eq_muNRepH1Equiv_kummerMap, kummerMap_eq_kummerCocycleClass hn hα]
+  rw [kummerClass_eq_galRepOfZModModuleH1Equiv_kummerMap, kummerMap_eq_kummerCocycleClass hn hα]
 
 /-- The Kummer class of `1` is zero. -/
 @[simp]
@@ -292,7 +292,7 @@ attribute [local instance] continuousSMul_trivialFp
 
 /-- **The coefficient identification `μₙ ≃ ℤ/n` of a primitive root**: a primitive `n`th root of
 unity `ζ ∈ F` identifies `μₙ` with the trivial coefficients `ℤ/n`, sending `ζ ^ i` to the class
-of `i` (`coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast`). It is equivariant
+of `i` (`coe_galRepOfZModModuleEquiv_symm_muNRepEquivTrivialFp_symm_natCast`). It is equivariant
 (`muNRepEquivTrivialFp_smul`) because `G_F` fixes `ζ` and hence acts trivially on `μₙ`. -/
 def muNRepEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
     (muNRep n F).V ≃+ (trivialFp n (Field.absoluteGaloisGroup F)).V :=
@@ -306,7 +306,7 @@ def muNRepEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
 
 /-- The coefficient identification of a primitive root `ζ` sends `ζ ^ i` to the class of `i`:
 read back in `μₙ(Fˢ)`, the class of `i` is the image of `ζ ^ i`. -/
-theorem coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast {ζ : F}
+theorem coe_galRepOfZModModuleEquiv_symm_muNRepEquivTrivialFp_symm_natCast {ζ : F}
     (hζ : IsPrimitiveRoot ζ n) (i : ℕ) :
     ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm ((muNRepEquivTrivialFp n F hζ).symm
         ((trivialFpEquiv n _).symm (i : ZMod n)))).toMul : (SeparableClosure F)ˣ) :
@@ -346,12 +346,12 @@ theorem muNRepEquivZMod_generator (ζ : F) (hζ : IsPrimitiveRoot ζ n) :
 variable {n F} in
 /-- The chosen generator `muNRepGenerator ζ hζ` of `μₙ` represents the root `ζ` of `Fˢ`. -/
 @[simp]
-theorem coe_kummerCoeffEquivMuNRep_symm_muNRepGenerator {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+theorem coe_galRepOfZModModuleEquiv_symm_muNRepGenerator {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
     ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm (muNRepGenerator ζ hζ)).toMul :
         (SeparableClosure F)ˣ) : SeparableClosure F) = algebraMap F (SeparableClosure F) ζ := by
   rw [muNRepGenerator, muNRepEquivZMod_symm_apply]
   simpa only [Nat.cast_one, pow_one] using
-    coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ 1
+    coe_galRepOfZModModuleEquiv_symm_muNRepEquivTrivialFp_symm_natCast n F hζ 1
 
 variable {n F} in
 /-- Every element of `μₙ` is its chosen-root coordinate times the chosen generator. -/
@@ -366,9 +366,9 @@ variable {n F} in
 `ζ`. -/
 theorem muNRepGenerator_pow {ζ : F} (hζ : IsPrimitiveRoot ζ n) {k : ℕ}
     (hζk : IsPrimitiveRoot (ζ ^ k) n) : muNRepGenerator (ζ ^ k) hζk = k • muNRepGenerator ζ hζ := by
-  apply coe_kummerCoeffEquivMuNRep_symm_injective n F
-  simp only [coe_kummerCoeffEquivMuNRep_symm_muNRepGenerator, ← natCast_zsmul,
-    coe_kummerCoeffEquivMuNRep_symm_zsmul, map_pow, zpow_natCast]
+  apply coe_galRepOfZModModuleEquiv_symm_injective n F
+  simp only [coe_galRepOfZModModuleEquiv_symm_muNRepGenerator, ← natCast_zsmul,
+    coe_galRepOfZModModuleEquiv_symm_zsmul, map_pow, zpow_natCast]
 
 variable {n F} in
 /-- **The chosen-root coordinate under a change of root**: if `ζ ^ k` is also a primitive root,

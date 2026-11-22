@@ -91,9 +91,10 @@ private theorem exists_h2MuToBr_cup_kummerClass
       ∀ g k, (W : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) (g, k) =
         kummerCoeffIncl K n (kummerCoeffPairing P (kummerCocycle hα g)
           (g • kummerCocycle hβ k)) := by
-  rw [kummerClass_eq_muNRepH1Equiv_kummerCocycleClass K hn hα,
-    kummerClass_eq_muNRepH1Equiv_kummerCocycleClass K hn hβ, cup_muNRepH1Equiv,
-    h2MuToBr_muNRepH2Equiv, h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
+  rw [kummerClass_eq_galRepOfZModModuleH1Equiv_kummerCocycleClass K hn hα,
+    kummerClass_eq_galRepOfZModModuleH1Equiv_kummerCocycleClass K hn hβ,
+    cup_galRepOfZModModuleH1Equiv, h2MuToBr_galRepOfZModModuleH2Equiv,
+    h2KummerToUnits_explicitH2AddEquivContinuousCohomology,
     AddEquiv.symm_apply_apply, kummerCocycleClass_def, kummerCocycleClass_def,
     QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, explicitCup11_mk, explicitCoeff2_mk]
   refine ⟨_, rfl, fun g k ↦ ?_⟩

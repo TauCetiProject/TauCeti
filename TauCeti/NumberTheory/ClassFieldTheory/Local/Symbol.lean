@@ -38,7 +38,7 @@ every coefficient pairing, in particular at the pairing of a primitive root
 The explicit computation goes through `kummerCoeffPairing P`, the pairing `P` read on the Kummer
 coefficients `TauCeti.KummerCoeff F n` of `Gal(Fˢ/F)`: on classes transported by
 `galRepOfZModModuleH1Equiv`, the cup product along `P` is the transported explicit cup product along
-`kummerCoeffPairing P` (`cup_muNRepH1Equiv`).
+`kummerCoeffPairing P` (`cup_galRepOfZModModuleH1Equiv`).
 
 ## Main definitions
 
@@ -53,8 +53,8 @@ coefficients `TauCeti.KummerCoeff F n` of `Gal(Fˢ/F)`: on classes transported b
 
 * `TauCeti.ClassFieldTheory.kummerCoeffPairing_smul`: `kummerCoeffPairing P` is equivariant for
   `Gal(Fˢ/F)`.
-* `TauCeti.ClassFieldTheory.cup_muNRepH1Equiv`: the cup product along `P` of transported classes
-  is the transported explicit cup product along `kummerCoeffPairing P`.
+* `TauCeti.ClassFieldTheory.cup_galRepOfZModModuleH1Equiv`: the cup product along `P` of
+  transported classes is the transported explicit cup product along `kummerCoeffPairing P`.
 * `TauCeti.ClassFieldTheory.kummerCupPairing_bil`: the pairing is scalar multiplication by the
   chosen-root coordinate.
 * `TauCeti.ClassFieldTheory.kummerCupPairing_bil_apply`: the pairing sends `(ζ ^ i, y)` to `i • y`.
@@ -101,8 +101,8 @@ variable (P : TopPairing (muNRep n F) (muNRep n F) (muNRep n F))
 
 /-- The coefficient pairing `P` on `muNRep n F`, read on the Kummer coefficients
 `TauCeti.KummerCoeff F n` through the dictionary `galRepOfZModModuleEquiv`
-(`kummerCoeffEquivMuNRep_kummerCoeffPairing`). It is the pairing along which cup products on
-`muNRep n F` are computed on explicit cocycles of `Gal(Fˢ/F)` (`cup_muNRepH1Equiv`). -/
+(`galRepOfZModModuleEquiv_kummerCoeffPairing`). It is the pairing along which cup products on
+`muNRep n F` are computed on explicit cocycles of `Gal(Fˢ/F)` (`cup_galRepOfZModModuleH1Equiv`). -/
 def kummerCoeffPairing : KummerCoeff F n →+ KummerCoeff F n →+ KummerCoeff F n :=
   (((LinearMap.toAddMonoidHom'.comp P.bil.toAddMonoidHom).compl₂
       (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom).compr₂
@@ -110,7 +110,7 @@ def kummerCoeffPairing : KummerCoeff F n →+ KummerCoeff F n →+ KummerCoeff F
     (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toAddMonoidHom
 
 /-- `kummerCoeffPairing P` is `P` under the dictionary `galRepOfZModModuleEquiv`. -/
-theorem kummerCoeffEquivMuNRep_kummerCoeffPairing (x y : KummerCoeff F n) :
+theorem galRepOfZModModuleEquiv_kummerCoeffPairing (x y : KummerCoeff F n) :
     galRepOfZModModuleEquiv n F (KummerCoeff F n) (kummerCoeffPairing P x y) =
       P.bil (galRepOfZModModuleEquiv n F (KummerCoeff F n) x)
         (galRepOfZModModuleEquiv n F (KummerCoeff F n) y) := by
@@ -121,14 +121,14 @@ theorem kummerCoeffPairing_smul (g : AbsoluteGaloisGroup F) (x y : KummerCoeff F
     kummerCoeffPairing P (g • x) (g • y) = g • kummerCoeffPairing P x y := by
   obtain ⟨g, rfl⟩ := (absoluteGaloisGroupRestrictEquiv F).surjective g
   refine (galRepOfZModModuleEquiv n F (KummerCoeff F n)).injective ?_
-  rw [kummerCoeffEquivMuNRep_kummerCoeffPairing, galRepOfZModModuleEquiv_smul,
+  rw [galRepOfZModModuleEquiv_kummerCoeffPairing, galRepOfZModModuleEquiv_smul,
     galRepOfZModModuleEquiv_smul, galRepOfZModModuleEquiv_smul, P.equivariant,
-    kummerCoeffEquivMuNRep_kummerCoeffPairing]
+    galRepOfZModModuleEquiv_kummerCoeffPairing]
 
 /-- **The cup product along `P` on explicit cocycles**: the cup product along `P` of classes
 transported by `galRepOfZModModuleH1Equiv` is the transport by `galRepOfZModModuleH2Equiv` of
 their explicit cup product along `kummerCoeffPairing P`. -/
-theorem cup_muNRepH1Equiv (x y : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
+theorem cup_galRepOfZModModuleH1Equiv (x y : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
     P.cup 1 1 (galRepOfZModModuleH1Equiv n F (KummerCoeff F n) x)
         (galRepOfZModModuleH1Equiv n F (KummerCoeff F n) y) =
       galRepOfZModModuleH2Equiv n F (KummerCoeff F n) (explicitCup11 (AbsoluteGaloisGroup F)
@@ -140,7 +140,7 @@ theorem cup_muNRepH1Equiv (x y : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
     galRepOfZModModuleH2Equiv_apply]
   exact congrArg _ (explicitMap2_explicitCup11 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     continuous_of_discreteTopology continuous_of_discreteTopology continuous_of_discreteTopology
-    _ _ _ (kummerCoeffEquivMuNRep_kummerCoeffPairing P) x y).symm
+    _ _ _ (galRepOfZModModuleEquiv_kummerCoeffPairing P) x y).symm
 
 end Transport
 
@@ -150,8 +150,10 @@ of the Kummer classes of `a` and `b` vanishes. -/
 theorem cup_kummerClass_eq_zero_of_add_eq_one
     (P : TopPairing (muNRep n F) (muNRep n F) (muNRep n F)) (hn : IsUnit (n : F)) {a b : Fˣ}
     (hab : (a : F) + b = 1) : P.cup 1 1 (kummerClass F hn a) (kummerClass F hn b) = 0 := by
-  rw [kummerClass_eq_muNRepH1Equiv_kummerMap, kummerClass_eq_muNRepH1Equiv_kummerMap,
-    cup_muNRepH1Equiv, explicitCup11_kummerMap_eq_zero_of_add_eq_one _ _ hn hab, map_zero]
+  rw [kummerClass_eq_galRepOfZModModuleH1Equiv_kummerMap,
+    kummerClass_eq_galRepOfZModModuleH1Equiv_kummerMap,
+    cup_galRepOfZModModuleH1Equiv, explicitCup11_kummerMap_eq_zero_of_add_eq_one _ _ hn hab,
+    map_zero]
 
 /-! ### Exponents of roots of unity with respect to a primitive root -/
 
@@ -268,7 +270,7 @@ theorem kummerCoeffPairing_kummerCupPairing_of_eq_pow {x : KummerCoeff F n} {i :
       algebraMap F (SeparableClosure F) ζ ^ i) (y : KummerCoeff F n) :
     kummerCoeffPairing (kummerCupPairing ζ hζ) x y = i • y := by
   apply (galRepOfZModModuleEquiv n F (KummerCoeff F n)).injective
-  rw [kummerCoeffEquivMuNRep_kummerCoeffPairing, map_zsmul]
+  rw [galRepOfZModModuleEquiv_kummerCoeffPairing, map_zsmul]
   exact kummerCupPairing_bil_apply ζ hζ (by simpa only [AddEquiv.symm_apply_apply] using hx) _
 
 /-- The Kummer coefficient pairing is scalar multiplication by the chosen-root coordinate. -/
@@ -277,7 +279,7 @@ theorem kummerCupPairing_bil (x y : (muNRep n F).V) :
     (kummerCupPairing ζ hζ).bil x y = muNRepEquivZMod ζ hζ x • y := by
   obtain ⟨c, rfl⟩ := (muNRepEquivZMod ζ hζ).symm.surjective x
   obtain ⟨i, rfl⟩ := ZMod.natCast_zmod_surjective c
-  have hx := coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ i
+  have hx := coe_galRepOfZModModuleEquiv_symm_muNRepEquivTrivialFp_symm_natCast n F hζ i
   rw [← muNRepEquivZMod_symm_apply] at hx
   have h := kummerCupPairing_bil_apply ζ hζ
     (x := (muNRepEquivZMod ζ hζ).symm (i : ZMod n))

@@ -189,7 +189,7 @@ theorem selmerGroup_le_unramifiedOutsideKerCohomology {S : Set (HeightOneSpectru
   have : Finite (R ⧸ v.asIdeal) := hfinite v hv
   obtain ⟨_, _⟩ := hgood v hv
   exact φ.kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup τ v
-    (v.residueField_natCast_ne_zero_of_not_mem (hS v hv)) hc
+    (v.residueField_natCast_ne_zero_of_notMem (hS v hv)) hc
 
 /-- **Presentation of `Sel_φ` relative to an exceptional set `S` over a Dedekind domain whose
 height-one primes outside `S` have finite residue fields.** If both displayed base-changed

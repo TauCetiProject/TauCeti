@@ -131,7 +131,7 @@ theorem kummerContraction_generator_tmul_generator :
 
 /-- **The root contraction on roots of unity**: if `x` and `y` represent the roots `ζ ^ i` and
 `ζ ^ j` of `Fˢ`, then their contraction represents `ζ ^ (i j)`. -/
-theorem coe_kummerCoeffEquivMuNRep_symm_kummerContraction_tmul {x y : (muNRep n F).V} {i j : ℤ}
+theorem coe_galRepOfZModModuleEquiv_symm_kummerContraction_tmul {x y : (muNRep n F).V} {i j : ℤ}
     (hx : ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm x).toMul :
       (SeparableClosure F)ˣ) : SeparableClosure F) = algebraMap F (SeparableClosure F) ζ ^ i)
     (hy : ((((galRepOfZModModuleEquiv n F (KummerCoeff F n)).symm y).toMul :
@@ -140,7 +140,7 @@ theorem coe_kummerCoeffEquivMuNRep_symm_kummerContraction_tmul {x y : (muNRep n 
       (kummerContraction ζ hζ (x ⊗ₜ y))).toMul : (SeparableClosure F)ˣ) : SeparableClosure F) =
       algebraMap F (SeparableClosure F) ζ ^ (i * j) := by
   rw [kummerContraction_tmul, kummerCupPairing_bil_apply ζ hζ hx,
-    coe_kummerCoeffEquivMuNRep_symm_zsmul, hy, ← zpow_mul,
+    coe_galRepOfZModModuleEquiv_symm_zsmul, hy, ← zpow_mul,
     mul_comm]
 
 /-- **The root contraction is equivariant for the diagonal Galois action** on `μₙ ⊗ μₙ`. -/

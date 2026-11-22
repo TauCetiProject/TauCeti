@@ -118,8 +118,7 @@ theorem smul_pointCoeff_eq_self_of_mem_inertiaSubgroup [DecidableEq K]
     (hm : (m : 𝓀[K]) ≠ 0) {P : W.toAffine.Point} {Q : W.PointCoeff}
     (hQ : m • Q = W.basePointCoeff P) {σ : Gal(AlgebraicClosure K/K)}
     (hσ : σ ∈ inertiaSubgroup K) : absoluteGaloisGroupRestrictEquiv K σ • Q = Q := by
-  cases Subsingleton.elim ‹DecidableEq K› (fun a b ↦ Classical.propDecidable (a = b))
-  classical
+  let := Classical.decEq (AlgebraicClosure K)
   let i : SeparableClosure K →ₐ[K] AlgebraicClosure K :=
     (separableClosure K (AlgebraicClosure K)).val
   have hfix : Affine.Point.map σ.toAlgHom
@@ -238,10 +237,10 @@ and `m ∉ u`, then `im(δ_m : E(F_u) → H¹(G_{F_u}, E[m])) = H¹_ur(G_{F_u}, 
 theorem range_kummerMap_eq_unramifiedTorsionCohomology
     (hm : (m : A) ∉ u.asIdeal) :
     (V.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero
-      (u.residueField_natCast_ne_zero_of_not_mem (K := F) hm)).isUnit).range =
+      (u.residueField_natCast_ne_zero_of_notMem (K := F) hm)).isUnit).range =
       V.unramifiedTorsionCohomology m :=
   V.range_kummerMap_eq_unramifiedTorsionCohomology_of_localField m
-    (u.residueField_natCast_ne_zero_of_not_mem hm)
+    (u.residueField_natCast_ne_zero_of_notMem hm)
 
 end AdicCompletion
 
@@ -331,7 +330,7 @@ theorem selmerGroup_le_unramifiedOutsideTorsionCohomology
   intro v hv
   obtain ⟨_, _⟩ := hgood v hv
   exact W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v
-    (v.residueField_natCast_ne_zero_of_not_mem (hS v hv)) hc
+    (v.residueField_natCast_ne_zero_of_notMem (hS v hv)) hc
 
 end Dedekind
 

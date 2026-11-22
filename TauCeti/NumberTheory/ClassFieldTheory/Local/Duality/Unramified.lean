@@ -119,10 +119,8 @@ theorem natCard_unramifiedH1_mul_internalHom_eq_natCard_H1 (hpn : ¬ p ∣ n)
         Nat.card (unramifiedH1 K
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) =
       Nat.card (H1 (AbsoluteGaloisGroup K) M) := by
-  have hn0 : n ≠ 0 := by rintro rfl; exact hpn (dvd_zero p)
-  have : NeZero n := ⟨hn0⟩
-  have := FinitePadicExtension.charZero K p
-  have hn : IsUnit (n : K) := (Nat.cast_ne_zero.mpr hn0).isUnit
+  have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
+  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
   rw [natCard_unramifiedH1_eq_natCard_H0, natCard_unramifiedH1_eq_natCard_H0,
     ← natCard_H2_eq_natCard_H0_internalHom hn M hM,
     natCard_H1_eq_natCard_H0_mul_natCard_H2_of_not_dvd_exponent p hpn M hM]
@@ -138,10 +136,8 @@ theorem unramifiedH1_eq_ker_compl₂_dualityMap1 (hpn : ¬ p ∣ n)
       ((dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)).compl₂
         (unramifiedH1 K
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))).subtype).ker := by
-  have hn0 : n ≠ 0 := by rintro rfl; exact hpn (dvd_zero p)
-  have : NeZero n := ⟨hn0⟩
-  have := FinitePadicExtension.charZero K p
-  have hn : IsUnit (n : K) := (Nat.cast_ne_zero.mpr hn0).isUnit
+  have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
+  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
   have hM' : ∀ φ : InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n), n • φ = 0 :=
     InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H1 (AbsoluteGaloisGroup K)
@@ -165,10 +161,8 @@ theorem unramifiedH1_internalHom_eq_ker_flip_compl₂_dualityMap1 (hpn : ¬ p �
     unramifiedH1 K (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n)) =
       ((dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)).flip.compl₂
         (unramifiedH1 K M).subtype).ker := by
-  have hn0 : n ≠ 0 := by rintro rfl; exact hpn (dvd_zero p)
-  have : NeZero n := ⟨hn0⟩
-  have := FinitePadicExtension.charZero K p
-  have hn : IsUnit (n : K) := (Nat.cast_ne_zero.mpr hn0).isUnit
+  have hn := FinitePadicExtension.isUnit_natCast_of_not_dvd K p hpn
+  have : NeZero n := NeZero.of_neZero_natCast K (h := ⟨hn.ne_zero⟩)
   have hM' : ∀ φ : InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n), n • φ = 0 :=
     InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H1 (AbsoluteGaloisGroup K)

@@ -34,6 +34,8 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 ## Main results
 
 * `TauCeti.FinitePadicExtension.charZero`: a finite extension of `ℚ_[p]` has characteristic zero.
+* `TauCeti.FinitePadicExtension.isUnit_natCast_of_not_dvd`: a natural number not divisible by
+  `p` is a unit in a finite extension of `ℚ_[p]`.
 * `TauCeti.absoluteRamificationIndex_pos`: the absolute ramification index is positive.
 * `TauCeti.absoluteRamificationIndex_eq_natCastValuation`: the absolute ramification index is
   the normalized valuation of `p` in `K`.
@@ -104,6 +106,13 @@ instance neZero_natCast (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace
     NeZero (p : K) :=
   have := charZero K p
   ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
+
+/-- A natural number not divisible by `p` is a unit in a finite extension of `ℚ_[p]`. -/
+theorem isUnit_natCast_of_not_dvd (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p]
+    {n : ℕ} (hpn : ¬ p ∣ n) : IsUnit (n : K) :=
+  have := charZero K p
+  (Nat.cast_ne_zero.mpr fun (h : n = 0) ↦ hpn (h ▸ dvd_zero p)).isUnit
 
 end FinitePadicExtension
 

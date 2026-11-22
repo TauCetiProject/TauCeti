@@ -42,14 +42,15 @@ variable (n : ℕ) (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
 /-- Base change commutes with the inclusion of roots-of-unity cohomology into the Brauer group,
 read on the explicit roots-of-unity model. -/
-theorem brBaseChange_h2MuToBr_muNRepH2Equiv
+theorem brBaseChange_h2MuToBr_galRepOfZModModuleH2Equiv
     (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
     brBaseChange K L (h2MuToBr n K (galRepOfZModModuleH2Equiv n K (KummerCoeff K n) x)) =
       h2MuToBr n L (galRepOfZModModuleH2Equiv n L (KummerCoeff L n)
         (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
           (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
           continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ) x)) := by
-  rw [h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2, h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2,
+  rw [h2MuToBr_galRepOfZModModuleH2Equiv_eq_explicitCoeff2,
+    h2MuToBr_galRepOfZModModuleH2Equiv_eq_explicitCoeff2,
     brBaseChange_apply K L τ, AddEquiv.symm_apply_apply]
   apply congrArg (unitsRepH2Equiv L)
   -- Use composition as a term to preserve the equivariance proofs of the bundled inclusions.
@@ -104,9 +105,9 @@ theorem brBaseChange_kummerBrauerClass (a b : Kˣ) :
         (hζ.map_of_injective (algebraMap K L).injective)
         (Units.map (algebraMap K L : K →* L) a) (Units.map (algebraMap K L : K →* L) b) := by
   let τ : SeparableClosure K →ₐ[K] SeparableClosure L := IsSepClosed.lift
-  simp only [kummerBrauerClass_def, kummerClass_eq_muNRepH1Equiv_kummerMap,
-    cup_muNRepH1Equiv]
-  rw [brBaseChange_h2MuToBr_muNRepH2Equiv n τ]
+  simp only [kummerBrauerClass_def, kummerClass_eq_galRepOfZModModuleH1Equiv_kummerMap,
+    cup_galRepOfZModModuleH1Equiv]
+  rw [brBaseChange_h2MuToBr_galRepOfZModModuleH2Equiv n τ]
   rw [explicitMap2_explicitCup11
     (G := AbsoluteGaloisGroup K) (M := KummerCoeff K n) (N := KummerCoeff K n)
     (P := KummerCoeff K n) (H := AbsoluteGaloisGroup L) (M' := KummerCoeff L n)

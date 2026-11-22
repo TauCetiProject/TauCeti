@@ -53,6 +53,6 @@ theorem exists_finset_torsionRes_mem_unramifiedTorsionCohomology
   refine ⟨T, hST, fun c hc v hv => ?_⟩
   obtain ⟨_, _⟩ := hgood v hv
   exact W.torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup τ v
-    (v.residueField_natCast_ne_zero_of_not_mem (hprime v hv)) hc
+    (v.residueField_natCast_ne_zero_of_notMem (hprime v hv)) hc
 
 end TauCeti
