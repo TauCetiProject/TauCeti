@@ -50,17 +50,6 @@ namespace ContMDiffSection
 
 variable {n : ℕ∞ω}
 
-/-- If the base `finrank` does not exceed the fibre `finrank`, the positive-part Smale
-threshold is bounded by any differentiability order at least one. No finite-dimensionality
-assumption is needed for this numerical bound. -/
-theorem toNat_sub_add_one_le_of_finrank_le
-    {X F : Type*} [AddCommMonoid X] [Module ℝ X] [AddCommMonoid F] [Module ℝ F]
-    (h : finrank ℝ X ≤ finrank ℝ F) (hn : 1 ≤ n) :
-    (((finrank ℝ X : ℤ) - finrank ℝ F).toNat + 1 : ℕ) ≤ n := by
-  have hi : (finrank ℝ X : ℤ) - finrank ℝ F ≤ 0 :=
-    sub_nonpos.mpr (by exact_mod_cast h)
-  simpa only [Int.toNat_of_nonpos hi, zero_add, Nat.cast_one] using hn
-
 section AffineFamily
 
 variable {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
@@ -245,7 +234,8 @@ theorem mem_residual_setOf_affineFamily_ne_zero
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (pos_of_gt hdim)
   let : IsManifold 𝓘(ℝ, X) 1 M := IsManifold.of_le (n := n) hn
   filter_upwards [mem_residual_setOf_isRegular_affineFamily s₀ s hspan
-    (toNat_sub_add_one_le_of_finrank_le hdim.le hn)] with a ha
+    (TauCeti.toNat_add_one_le_of_nonpos
+      (sub_nonpos.mpr (by exact_mod_cast hdim.le)) hn)] with a ha
   apply (TauCeti.isRegularSectionParameter_iff_forall_ne_zero_of_index_neg ?_).mp ha
   intro x _
   rw [TauCeti.index_sectionLinearization_of_finiteDimensional]
@@ -281,7 +271,8 @@ theorem mem_residual_setOf_regular_and_finite_zero_affineFamily
   have := finiteDimensional_of_span s hspan
   let : IsManifold 𝓘(ℝ, X) 1 M := IsManifold.of_le (n := n) hn
   filter_upwards [mem_residual_setOf_isRegular_affineFamily s₀ s hspan
-    (toNat_sub_add_one_le_of_finrank_le hdim.le hn)] with a ha
+    (TauCeti.toNat_add_one_le_of_nonpos
+      (sub_nonpos.mpr (by exact_mod_cast hdim.le)) hn)] with a ha
   refine ⟨ha, TauCeti.finite_sectionZero_of_contMDiff (I := 𝓘(ℝ, X))
     (ENat.one_le_iff_ne_zero_withTop.mp hn)
     (affineFamily s₀ s a).contMDiff ?_
