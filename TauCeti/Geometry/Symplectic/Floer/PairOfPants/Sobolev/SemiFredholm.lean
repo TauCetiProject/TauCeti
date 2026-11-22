@@ -140,7 +140,7 @@ theorem exists_forall_setIntegral_le_mul_sum_setIntegral_sobolevDensity_add {T :
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (isWeight_cylindricalWeight.continuousOn.mono
     (preimage_truncation_subset_thricePuncturedSphereReal T))
   have hBK (z : ℝ × ℝ) (hz : z ∈ K) : cylindricalWeight z ≤ |B| :=
-    (le_abs_self _).trans ((hB z hz).trans (le_abs_self B))
+    (Real.le_norm_self _).trans ((hB z hz).trans (le_abs_self B))
   refine ⟨20 * π ^ 2 + |B| + 1, by positivity, fun ξ hξ hξc hξS ↦ ?_⟩
   set f : ℝ × ℝ → ℝ := fun z ↦ cylindricalWeight z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
     ‖fderiv ℝ ξ z (0, 1)‖ ^ 2
