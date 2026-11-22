@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Polar.Det
 public import TauCeti.Geometry.Manifold.Morse.Cell.InnerDisc
 public import TauCeti.Geometry.Manifold.Morse.Cell.NegativeDisc
 public import TauCeti.Geometry.Manifold.Morse.Cell.Width
+public import TauCeti.Topology.Homotopy.Sigma
 
 /-!
 # Comparing the characteristic maps of two Morse charts
@@ -71,6 +72,19 @@ critical-free band (`TauCeti.exists_sublevelDeformation`), this gives `α₁ ≃
 (`TauCeti.exists_homotopic_retraction_comp_morseAttachingMap_polarFactor`), with the same polar
 factor `h`, which does not depend on the widths.
 
+Several critical points on the level `c` have their cells attached at once, along the map
+`α : ⨆ᵢ ∂D^{k i} → M_{c-ε}` out of the coproduct of the boundary spheres induced by the attaching
+maps of the charts, as in `TauCeti.morseCellAttachment`. For two families of charts `ψ₀ i` and
+`ψ₁ i`, at widths `ε₀` and `ε₁`, the comparisons at unequal widths hold for these simultaneous
+attaching maps, with the coproduct `⨆ᵢ hᵢ` of the polar factors of the individual transitions:
+`α₁ ≃ r ∘ α₀ ∘ ⨆ᵢ hᵢ` when `ε₀ ≤ ε₁`
+(`TauCeti.exists_homotopic_sigmaDesc_morseAttachingMap_retraction_comp_polarFactor`) and
+`r ∘ α₁ ≃ α₀ ∘ ⨆ᵢ hᵢ` when `ε₁ ≤ ε₀`
+(`TauCeti.exists_homotopic_retraction_comp_sigmaDesc_morseAttachingMap_polarFactor`). Maps out of
+a coproduct in `TopCat` are homotopic as soon as their restrictions to the summands are
+(`TauCeti.TopCat.homotopic_of_homotopic_ι_comp`), so these follow from the comparisons for one
+critical point.
+
 ## Main results
 
 * `TauCeti.exists_homotopy_morseCharacteristicMap_polarFactor`: the characteristic map of `ψ₁` is
@@ -88,6 +102,11 @@ factor `h`, which does not depend on the widths.
 * `TauCeti.homotopic_morseAttachingMap_retraction_comp_of_det_pos`,
   `TauCeti.homotopic_retraction_comp_morseAttachingMap_of_det_pos`: at unequal widths, when the
   negative block preserves orientation, the polar factor can be dropped.
+* `TauCeti.exists_homotopic_sigmaDesc_morseAttachingMap_retraction_comp_polarFactor`,
+  `TauCeti.exists_homotopic_retraction_comp_sigmaDesc_morseAttachingMap_polarFactor`,
+  `TauCeti.homotopic_sigmaDesc_morseAttachingMap_retraction_comp_of_det_pos`,
+  `TauCeti.homotopic_retraction_comp_sigmaDesc_morseAttachingMap_of_det_pos`: the same comparisons
+  at unequal widths for the simultaneous attaching maps of several critical points on one level.
 
 ## References
 
@@ -101,7 +120,7 @@ noncomputable section
 
 universe u
 
-open Set Metric Topology unitInterval CategoryTheory
+open Set Metric Topology unitInterval CategoryTheory Limits
 open LinearIsometry (piLpExtendByZero)
 open scoped ContDiff Manifold
 
@@ -515,6 +534,170 @@ theorem homotopic_retraction_comp_morseAttachingMap_of_det_pos (hf : ContMDiff I
   exact ((ContinuousMap.Homotopic.refl r).comp (homotopic_morseAttachingMap_of_det_pos hf ψ₀ ψ₁ hk
     h₁ hball₀' hball₁ hf₀ hf₁ hp hT hcompact hreg hdet)).trans
     (ψ₀.homotopic_morseAttachingMap_comp_retraction hk h₁.le hε hball₀ hf₀ r hr)
+
+/-! ### Several critical points at unequal levels
+
+When several critical points lie on the level `c`, each carries two charts `ψ₀ i` and `ψ₁ i`, and
+their cells are attached at once along the map `⨆ᵢ ∂D^{k i} → M_{c-ε}` out of the coproduct of the
+boundary spheres induced by the attaching maps of the charts, as in `TauCeti.morseCellAttachment`.
+The comparisons above then hold for these simultaneous attaching maps, with the coproduct
+`⨆ᵢ gᵢ` of the polar factors of the individual transitions, labelled by the critical points. -/
+
+/-- **Simultaneous attaching maps of two families of Morse charts at unequal levels, lower level
+for the first family.** For `i` in an index type `ι`, let `ψ₀ i` and `ψ₁ i` be charts with a common
+centre in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`, with `0 < ε₀ ≤ ε₁`, such that the
+target of `ψ₀ i` contains the closed ball of radius `√ε₀` and that of `ψ₁ i` the closed ball of
+radius `√ε₁`, and whose transition `ψ₀ i ∘ (ψ₁ i)⁻¹` is differentiable at the origin. Suppose that
+`f⁻¹[c - ε₀, c]` is compact and that `f` has no critical point with value in `[c - ε₀, c)`, and let
+`r` be any retraction of `M_{c-ε₀}` onto `M_{c-ε₁}`. Let `g i` be the polar factor of the negative
+block of the derivative of the transition `ψ₀ i ∘ (ψ₁ i)⁻¹` at the origin. Then the attaching map
+`α₁ : ⨆ᵢ ∂D^{k i} → M_{c-ε₁}` of the charts `ψ₁ i` at width `ε₁` is homotopic to
+`r ∘ α₀ ∘ ⨆ᵢ g i`, where `α₀` is the attaching map of the charts `ψ₀ i` at width `ε₀`. -/
+theorem exists_homotopic_sigmaDesc_morseAttachingMap_retraction_comp_polarFactor
+    (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f) {ι : Type u}
+    (ψ₀ ψ₁ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
+    (hk : ∀ i, k i ≤ n) (h₀ : 0 < ε₀) (hε : ε₀ ≤ ε₁)
+    (hball₀ : ∀ i, closedBall 0 √ε₀ ⊆ (ψ₀ i).target)
+    (hball₁ : ∀ i, closedBall 0 √ε₁ ⊆ (ψ₁ i).target)
+    (hf₀ : ∀ i, ∀ y ∈ (ψ₀ i).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ₀ i y j ^ 2)
+    (hf₁ : ∀ i, ∀ y ∈ (ψ₁ i).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ₁ i y j ^ 2)
+    (hp : ∀ i, (ψ₀ i).symm 0 = (ψ₁ i).symm 0)
+    (hT : ∀ i, DifferentiableAt ℝ (fun z ↦ ψ₀ i ((ψ₁ i).symm z)) 0)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε₀) c))
+    (hreg : ∀ x, c - ε₀ ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (r : C({x : M | f x ≤ c - ε₀}, {x : M | f x ≤ c - ε₁}))
+    (hr : ∀ x, r (sublevelInclusion f (c - ε₁) (c - ε₀) (sub_le_sub_left hε c) x) = x) :
+    ∃ g : ∀ i, EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i)),
+      (∀ i, ⇑(g i) = (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap ∘L
+        fderiv ℝ (fun z ↦ ψ₀ i ((ψ₁ i).symm z)) 0 ∘L
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap).polarFactor) ∧
+      (Sigma.desc fun i ↦
+          (ψ₁ i).morseAttachingMap (hk i) (h₀.le.trans hε) (hball₁ i) (hf₁ i)).hom.Homotopic
+        (r.comp (Limits.Sigma.map (fun i ↦ (g i).diskBoundaryMap) ≫
+          Sigma.desc fun i ↦ (ψ₀ i).morseAttachingMap (hk i) h₀.le (hball₀ i) (hf₀ i)).hom) := by
+  choose g hg hα using fun i ↦ exists_homotopic_morseAttachingMap_retraction_comp_polarFactor hf
+    (ψ₀ i) (ψ₁ i) (hk i) h₀ hε (hball₀ i) (hball₁ i) (hf₀ i) (hf₁ i) (hp i) (hT i) hcompact hreg
+    r hr
+  refine ⟨g, hg, ?_⟩
+  rw [← TopCat.hom_ofHom r, ← TopCat.hom_comp]
+  exact TopCat.homotopic_of_homotopic_ι_comp fun i ↦ by simpa using hα i
+
+/-- **Simultaneous attaching maps of two families of Morse charts at unequal levels, lower level
+for the second family.** This is the counterpart of
+`TauCeti.exists_homotopic_sigmaDesc_morseAttachingMap_retraction_comp_polarFactor` for
+`0 < ε₁ ≤ ε₀`, where now the target of each `ψ₀ i` contains the closed ball of radius `√ε₀` and
+that of each `ψ₁ i` the closed ball of radius `√ε₁`. Suppose that `f⁻¹[c - ε₁, c]` is compact and
+that `f` has no critical point with value in `[c - ε₁, c)`, and let `r` be any retraction of
+`M_{c-ε₁}` onto `M_{c-ε₀}`. Then `r ∘ α₁` is homotopic to `α₀ ∘ ⨆ᵢ g i`, where
+`α₁ : ⨆ᵢ ∂D^{k i} → M_{c-ε₁}` is the attaching map of the charts `ψ₁ i` at width `ε₁`, `α₀` that of
+the charts `ψ₀ i` at width `ε₀`, and `g i` the polar factor of the negative block of the derivative
+of the transition `ψ₀ i ∘ (ψ₁ i)⁻¹` at the origin. -/
+theorem exists_homotopic_retraction_comp_sigmaDesc_morseAttachingMap_polarFactor
+    (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f) {ι : Type u}
+    (ψ₀ ψ₁ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
+    (hk : ∀ i, k i ≤ n) (h₁ : 0 < ε₁) (hε : ε₁ ≤ ε₀)
+    (hball₀ : ∀ i, closedBall 0 √ε₀ ⊆ (ψ₀ i).target)
+    (hball₁ : ∀ i, closedBall 0 √ε₁ ⊆ (ψ₁ i).target)
+    (hf₀ : ∀ i, ∀ y ∈ (ψ₀ i).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ₀ i y j ^ 2)
+    (hf₁ : ∀ i, ∀ y ∈ (ψ₁ i).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ₁ i y j ^ 2)
+    (hp : ∀ i, (ψ₀ i).symm 0 = (ψ₁ i).symm 0)
+    (hT : ∀ i, DifferentiableAt ℝ (fun z ↦ ψ₀ i ((ψ₁ i).symm z)) 0)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε₁) c))
+    (hreg : ∀ x, c - ε₁ ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (r : C({x : M | f x ≤ c - ε₁}, {x : M | f x ≤ c - ε₀}))
+    (hr : ∀ x, r (sublevelInclusion f (c - ε₀) (c - ε₁) (sub_le_sub_left hε c) x) = x) :
+    ∃ g : ∀ i, EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i)),
+      (∀ i, ⇑(g i) = (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap ∘L
+        fderiv ℝ (fun z ↦ ψ₀ i ((ψ₁ i).symm z)) 0 ∘L
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap).polarFactor) ∧
+      (r.comp (Sigma.desc fun i ↦
+          (ψ₁ i).morseAttachingMap (hk i) h₁.le (hball₁ i) (hf₁ i)).hom).Homotopic
+        (Limits.Sigma.map (fun i ↦ (g i).diskBoundaryMap) ≫ Sigma.desc fun i ↦
+          (ψ₀ i).morseAttachingMap (hk i) (h₁.le.trans hε) (hball₀ i) (hf₀ i)).hom := by
+  choose g hg hα using fun i ↦ exists_homotopic_retraction_comp_morseAttachingMap_polarFactor hf
+    (ψ₀ i) (ψ₁ i) (hk i) h₁ hε (hball₀ i) (hball₁ i) (hf₀ i) (hf₁ i) (hp i) (hT i) hcompact hreg
+    r hr
+  refine ⟨g, hg, ?_⟩
+  rw [← TopCat.hom_ofHom r, ← TopCat.hom_comp]
+  exact TopCat.homotopic_of_homotopic_ι_comp fun i ↦ by simpa using hα i
+
+/-- **Orientation-compatible families of Morse charts have homotopic simultaneous attaching maps at
+unequal levels, lower level for the first family.** Under the hypotheses of
+`TauCeti.exists_homotopic_sigmaDesc_morseAttachingMap_retraction_comp_polarFactor`, if for every
+`i` the negative block of the derivative of the transition `ψ₀ i ∘ (ψ₁ i)⁻¹` at the origin has
+positive determinant, then the attaching map `α₁ : ⨆ᵢ ∂D^{k i} → M_{c-ε₁}` of the charts `ψ₁ i` at
+width `ε₁` is homotopic to `r ∘ α₀`, where `α₀` is the attaching map of the charts `ψ₀ i` at width
+`ε₀ ≤ ε₁` and `r` is any retraction of `M_{c-ε₀}` onto `M_{c-ε₁}`. -/
+theorem homotopic_sigmaDesc_morseAttachingMap_retraction_comp_of_det_pos
+    (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f) {ι : Type u}
+    (ψ₀ ψ₁ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
+    (hk : ∀ i, k i ≤ n) (h₀ : 0 < ε₀) (hε : ε₀ ≤ ε₁)
+    (hball₀ : ∀ i, closedBall 0 √ε₀ ⊆ (ψ₀ i).target)
+    (hball₁ : ∀ i, closedBall 0 √ε₁ ⊆ (ψ₁ i).target)
+    (hf₀ : ∀ i, ∀ y ∈ (ψ₀ i).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ₀ i y j ^ 2)
+    (hf₁ : ∀ i, ∀ y ∈ (ψ₁ i).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ₁ i y j ^ 2)
+    (hp : ∀ i, (ψ₀ i).symm 0 = (ψ₁ i).symm 0)
+    (hT : ∀ i, DifferentiableAt ℝ (fun z ↦ ψ₀ i ((ψ₁ i).symm z)) 0)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε₀) c))
+    (hreg : ∀ x, c - ε₀ ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (r : C({x : M | f x ≤ c - ε₀}, {x : M | f x ≤ c - ε₁}))
+    (hr : ∀ x, r (sublevelInclusion f (c - ε₁) (c - ε₀) (sub_le_sub_left hε c) x) = x)
+    (hdet : ∀ i, 0 < (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap ∘L
+        fderiv ℝ (fun z ↦ ψ₀ i ((ψ₁ i).symm z)) 0 ∘L
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap).det) :
+    (Sigma.desc fun i ↦
+        (ψ₁ i).morseAttachingMap (hk i) (h₀.le.trans hε) (hball₁ i) (hf₁ i)).hom.Homotopic
+      (r.comp (Sigma.desc fun i ↦
+        (ψ₀ i).morseAttachingMap (hk i) h₀.le (hball₀ i) (hf₀ i)).hom) := by
+  rw [← TopCat.hom_ofHom r, ← TopCat.hom_comp]
+  exact TopCat.homotopic_of_homotopic_ι_comp fun i ↦ by
+    simpa using homotopic_morseAttachingMap_retraction_comp_of_det_pos hf (ψ₀ i) (ψ₁ i) (hk i) h₀
+      hε (hball₀ i) (hball₁ i) (hf₀ i) (hf₁ i) (hp i) (hT i) hcompact hreg r hr (hdet i)
+
+/-- **Orientation-compatible families of Morse charts have homotopic simultaneous attaching maps at
+unequal levels, lower level for the second family.** Under the hypotheses of
+`TauCeti.exists_homotopic_retraction_comp_sigmaDesc_morseAttachingMap_polarFactor`, if for every
+`i` the negative block of the derivative of the transition `ψ₀ i ∘ (ψ₁ i)⁻¹` at the origin has
+positive determinant, then `r ∘ α₁` is homotopic to `α₀`, where `α₁ : ⨆ᵢ ∂D^{k i} → M_{c-ε₁}` is
+the attaching map of the charts `ψ₁ i` at width `ε₁`, `α₀` that of the charts `ψ₀ i` at width
+`ε₀ ≥ ε₁`, and `r` is any retraction of `M_{c-ε₁}` onto `M_{c-ε₀}`. -/
+theorem homotopic_retraction_comp_sigmaDesc_morseAttachingMap_of_det_pos
+    (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f) {ι : Type u}
+    (ψ₀ ψ₁ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
+    (hk : ∀ i, k i ≤ n) (h₁ : 0 < ε₁) (hε : ε₁ ≤ ε₀)
+    (hball₀ : ∀ i, closedBall 0 √ε₀ ⊆ (ψ₀ i).target)
+    (hball₁ : ∀ i, closedBall 0 √ε₁ ⊆ (ψ₁ i).target)
+    (hf₀ : ∀ i, ∀ y ∈ (ψ₀ i).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ₀ i y j ^ 2)
+    (hf₁ : ∀ i, ∀ y ∈ (ψ₁ i).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ₁ i y j ^ 2)
+    (hp : ∀ i, (ψ₀ i).symm 0 = (ψ₁ i).symm 0)
+    (hT : ∀ i, DifferentiableAt ℝ (fun z ↦ ψ₀ i ((ψ₁ i).symm z)) 0)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε₁) c))
+    (hreg : ∀ x, c - ε₁ ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (r : C({x : M | f x ≤ c - ε₁}, {x : M | f x ≤ c - ε₀}))
+    (hr : ∀ x, r (sublevelInclusion f (c - ε₀) (c - ε₁) (sub_le_sub_left hε c) x) = x)
+    (hdet : ∀ i, 0 < (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap ∘L
+        fderiv ℝ (fun z ↦ ψ₀ i ((ψ₁ i).symm z)) 0 ∘L
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap).det) :
+    (r.comp (Sigma.desc fun i ↦
+        (ψ₁ i).morseAttachingMap (hk i) h₁.le (hball₁ i) (hf₁ i)).hom).Homotopic
+      (Sigma.desc fun i ↦
+        (ψ₀ i).morseAttachingMap (hk i) (h₁.le.trans hε) (hball₀ i) (hf₀ i)).hom := by
+  rw [← TopCat.hom_ofHom r, ← TopCat.hom_comp]
+  exact TopCat.homotopic_of_homotopic_ι_comp fun i ↦ by
+    simpa using homotopic_retraction_comp_morseAttachingMap_of_det_pos hf (ψ₀ i) (ψ₁ i) (hk i) h₁
+      hε (hball₀ i) (hball₁ i) (hf₀ i) (hf₁ i) (hp i) (hT i) hcompact hreg r hr (hdet i)
 
 end UnequalLevels
 

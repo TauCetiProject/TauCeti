@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.ContinuousMap.Sigma
 public import Mathlib.Topology.Homotopy.Path
 import Mathlib.Topology.Homeomorph.Lemmas
@@ -37,6 +38,7 @@ need.
   same for path homotopy classes.
 * `ContinuousMap.Homotopy.sigma` and `ContinuousMap.Homotopic.sigma`: homotopies of the summands of
   a map out of a disjoint union glue to a homotopy of the map.
+* `TauCeti.TopCat.homotopic_of_homotopic_ι_comp`: the same for maps out of a coproduct in `TopCat`.
 -/
 
 public section
@@ -115,3 +117,31 @@ theorem Homotopic.sigma (h : ∀ i, (f i).Homotopic (g i)) :
   ⟨Homotopy.sigma fun i ↦ (h i).some⟩
 
 end ContinuousMap
+
+namespace TauCeti.TopCat
+
+open CategoryTheory Limits
+
+universe u
+
+/-- **Maps out of a coproduct in `TopCat` are homotopic if their restrictions to the summands
+are.** If `Sigma.ι X i ≫ φ` and `Sigma.ι X i ≫ ψ` are homotopic for every `i`, then so are
+`φ, ψ : ∐ X ⟶ Y`. -/
+theorem homotopic_of_homotopic_ι_comp {ι : Type u} {X : ι → TopCat.{u}} {Y : TopCat.{u}}
+    {φ ψ : ∐ X ⟶ Y}
+    (h : ∀ i, (Sigma.ι X i ≫ φ).hom.Homotopic (Sigma.ι X i ≫ ψ).hom) :
+    φ.hom.Homotopic ψ.hom := by
+  -- Read through `TopCat.sigmaIsoSigma`, a map out of the coproduct is the map out of the
+  -- disjoint union given by its restrictions to the summands.
+  have key (χ : ∐ X ⟶ Y) : χ.hom = (ContinuousMap.sigma fun i ↦ (Sigma.ι X i ≫ χ).hom).comp
+      (TopCat.sigmaIsoSigma X).hom.hom := by
+    ext x
+    have hx : x = (TopCat.sigmaIsoSigma X).inv ((TopCat.sigmaIsoSigma X).hom x) := by simp
+    generalize (TopCat.sigmaIsoSigma X).hom x = s at hx
+    obtain ⟨i, y⟩ := s
+    subst hx
+    simpa using congrArg χ.hom (TopCat.sigmaIsoSigma_inv_apply X i y)
+  rw [key φ, key ψ]
+  exact (ContinuousMap.Homotopic.sigma h).comp (ContinuousMap.Homotopic.refl _)
+
+end TauCeti.TopCat
