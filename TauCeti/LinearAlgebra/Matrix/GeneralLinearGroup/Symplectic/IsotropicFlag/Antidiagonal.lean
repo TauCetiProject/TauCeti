@@ -69,7 +69,7 @@ Everything holds over an arbitrary commutative ring, including characteristic `2
 * `TauCeti.GLSymplecticFin.mem_iff_JAntidiag`: membership in `GLSymplecticFin` is preservation of
   `Q` after the flag-order reindexing.
 * `TauCeti.neg_J_submatrix_isotropicBlockEquiv` and
-  `TauCeti.toMatrix_mul_JAntidiag_mul_transpose_isotropicBlock`: the Gram matrix of the
+  `TauCeti.toMatrix_mul_JAntidiag_mul_transpose_isotropicBlockEquiv`: the Gram matrix of the
   reordered basis is `J_(r,s)`, in sum coordinates and as `Cᵀ Q C` in `Fin (m + m)` coordinates.
 
 ## References
@@ -91,7 +91,7 @@ variable (m : ℕ) (R : Type*) [CommRing R]
 
 /-- The **antidiagonal alternating form** `[[0, H], [-H, 0]]` on `Fin (m + m)`, where `H` is the
 `m × m` matrix with ones on its antidiagonal. With `u_i = e_i` and `f_i = e_(2m-1-i)` it pairs
-`u_i` with `f_j` to `δ_ij` (`TauCeti.JAntidiag_castAdd_addNat`). -/
+`u_i` with `f_j` to `δ_ij` (`TauCeti.JAntidiag_castAdd_rev_addNat`). -/
 def JAntidiag : Matrix (Fin (m + m)) (Fin (m + m)) R :=
   (fromBlocks 0 (of fun i j : Fin m ↦ if i = j.rev then 1 else 0)
     (-of fun i j : Fin m ↦ if i = j.rev then 1 else 0) 0).submatrix
@@ -113,6 +113,16 @@ theorem antidiagEquiv_inl (i : Fin m) : antidiagEquiv m (Sum.inl i) = i.castAdd 
 theorem antidiagEquiv_inr (i : Fin m) : antidiagEquiv m (Sum.inr i) = i.rev.addNat m := by
   simp [antidiagEquiv, Fin.natAdd_eq_addNat]
 
+@[simp]
+theorem antidiagEquiv_symm_castAdd (i : Fin m) :
+    (antidiagEquiv m).symm (i.castAdd m) = Sum.inl i := by
+  rw [Equiv.symm_apply_eq, antidiagEquiv_inl]
+
+@[simp]
+theorem antidiagEquiv_symm_addNat (i : Fin m) :
+    (antidiagEquiv m).symm (i.addNat m) = Sum.inr i.rev := by
+  rw [Equiv.symm_apply_eq, antidiagEquiv_inr, Fin.rev_rev]
+
 /-- The self-dual flag order undoes the reversal in `antidiagEquiv`. -/
 @[simp]
 theorem flagOrder_antidiagEquiv (x : Fin m ⊕ Fin m) :
@@ -129,17 +139,25 @@ theorem JAntidiag_addNat_addNat (i j : Fin m) :
     JAntidiag m R (i.addNat m) (j.addNat m) = 0 := by
   simp [JAntidiag, ← Fin.natAdd_eq_addNat]
 
-/-- `Q(u_i, f_j) = δ_ij`. -/
 @[simp]
 theorem JAntidiag_castAdd_addNat (i j : Fin m) :
-    JAntidiag m R (i.castAdd m) (j.rev.addNat m) = if i = j then 1 else 0 := by
+    JAntidiag m R (i.castAdd m) (j.addNat m) = if i = j.rev then 1 else 0 := by
   simp [JAntidiag, ← Fin.natAdd_eq_addNat]
 
-/-- `Q(f_i, u_j) = -δ_ij`. -/
 @[simp]
 theorem JAntidiag_addNat_castAdd (i j : Fin m) :
-    JAntidiag m R (i.rev.addNat m) (j.castAdd m) = -if i = j then 1 else 0 := by
+    JAntidiag m R (i.addNat m) (j.castAdd m) = -if i = j.rev then 1 else 0 := by
   simp [JAntidiag, ← Fin.natAdd_eq_addNat]
+
+/-- `Q(u_i, f_j) = δ_ij`. -/
+theorem JAntidiag_castAdd_rev_addNat (i j : Fin m) :
+    JAntidiag m R (i.castAdd m) (j.rev.addNat m) = if i = j then 1 else 0 := by
+  simp
+
+/-- `Q(f_i, u_j) = -δ_ij`. -/
+theorem JAntidiag_rev_addNat_castAdd (i j : Fin m) :
+    JAntidiag m R (i.rev.addNat m) (j.castAdd m) = -if i = j then 1 else 0 := by
+  simp [Fin.rev_eq_iff]
 
 /-- **The antidiagonal form is `-Matrix.J` in Mathlib's coordinates.** Reindexed by
 `antidiagEquiv`, which sends `inl i` to `u_i` and `inr i` to `f_i`, the form `Q` becomes `-J`:
@@ -303,7 +321,7 @@ theorem JAntidiag_submatrix_isotropicBlockEquiv :
 antidiagonal basis vectors `u_0, …, u_(r-1); u_r, …, u_(m-1), f_r, …, f_(m-1); f_0, …, f_(r-1)`.
 Then `Cᵀ Q C = P Q Pᵀ` is the block form `[[0, 0, 1], [0, J₀, 0], [-1, 0, 0]]` with
 `J₀ = [[0, 1], [-1, 0]]`. -/
-theorem toMatrix_mul_JAntidiag_mul_transpose_isotropicBlock :
+theorem toMatrix_mul_JAntidiag_mul_transpose_isotropicBlockEquiv :
     (((isotropicBlockEquiv r s).trans (antidiagEquiv (r + s))).toPEquiv.toMatrix :
         Matrix (Fin r ⊕ (Fin s ⊕ Fin s) ⊕ Fin r) (Fin ((r + s) + (r + s))) R) *
         JAntidiag (r + s) R *
