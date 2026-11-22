@@ -63,7 +63,11 @@ Finally, any linear map intertwining two endomorphisms intertwines their Riesz�
 and complementary inverses for the same polynomial `Q`, so every bounded operator commuting with
 `u` commutes with `E` and preserves both spectral summands
 (`ContinuousLinearMap.IsRieszColemanProjection.semiconj`,
-`ContinuousLinearMap.IsRieszColemanProjection.commute_of_commute`).
+`ContinuousLinearMap.IsRieszColemanProjection.commute_of_commute`), and ring homomorphisms
+between endomorphism algebras matching reversed-polynomial evaluation and closure membership
+transport Riesz–Coleman projections and their complementary inverses
+(`ContinuousLinearMap.IsRieszColemanProjection.map`,
+`ContinuousLinearMap.IsRieszColemanProjection.inverse_map`).
 
 ## Main definitions
 
@@ -551,6 +555,47 @@ theorem commute_inverse_of_commute (hE : IsRieszColemanProjection u Q E) {g : M 
 end IsRieszColemanProjection
 
 end Intertwining
+
+section Map
+
+variable {R₁ R₂ : Type*} [NormedCommRing R₁] [TauCeti.NormedRing.IsTate R₁]
+  [NormedCommRing R₂] [TauCeti.NormedRing.IsTate R₂]
+  {M₁ M₂ : Type*} [SeminormedAddCommGroup M₁] [Module R₁ M₁] [IsBoundedSMul R₁ M₁]
+  [SeminormedAddCommGroup M₂] [Module R₂ M₂] [IsBoundedSMul R₂ M₂]
+
+/-- **Transport of Riesz–Coleman projections along a ring homomorphism.** If `Φ` is a ring
+homomorphism between endomorphism algebras matching `Q'*(Φ u) = Φ (Q*(u))` and preserving the
+operator-norm closure of polynomials in `u`, then `Φ E` is a Riesz–Coleman projection of `Φ u` for
+`Q'`. -/
+theorem IsRieszColemanProjection.map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ →L[R₂] M₂))
+    {u E : M₁ →L[R₁] M₁} {Q : R₁[X]} {Q' : R₂[X]}
+    (hE : IsRieszColemanProjection u Q E)
+    (haeval : Polynomial.aeval (Φ u) Q'.reverse = Φ (Polynomial.aeval u Q.reverse))
+    (hclosure : ∀ {v : M₁ →L[R₁] M₁},
+      v ∈ closure (Algebra.adjoin R₁ {u} : Set (M₁ →L[R₁] M₁)) →
+      Φ v ∈ closure (Algebra.adjoin R₂ {Φ u} : Set (M₂ →L[R₂] M₂))) :
+    IsRieszColemanProjection (Φ u) Q' (Φ E) :=
+  ⟨hE.isIdempotentElem.map Φ, hE.commute.map Φ, hclosure hE.mem_closure_adjoin,
+    by rw [haeval, ← map_mul, hE.aeval_reverse_mul_eq_zero, map_zero],
+    TauCeti.exists_complementaryInverse_map Φ haeval.symm hE.exists_inverse hclosure⟩
+
+/-- **Transport of the complementary inverse along a ring homomorphism.** Under the hypotheses of
+`IsRieszColemanProjection.map`, the complementary inverse of the transported projection `Φ E` is
+`Φ hE.inverse`. -/
+theorem IsRieszColemanProjection.inverse_map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ →L[R₂] M₂))
+    {u E : M₁ →L[R₁] M₁} {Q : R₁[X]} {Q' : R₂[X]}
+    (hE : IsRieszColemanProjection u Q E)
+    (haeval : Polynomial.aeval (Φ u) Q'.reverse = Φ (Polynomial.aeval u Q.reverse))
+    (hclosure : ∀ {v : M₁ →L[R₁] M₁},
+      v ∈ closure (Algebra.adjoin R₁ {u} : Set (M₁ →L[R₁] M₁)) →
+      Φ v ∈ closure (Algebra.adjoin R₂ {Φ u} : Set (M₂ →L[R₂] M₂))) :
+    (hE.map Φ haeval hclosure).inverse = Φ hE.inverse := by
+  have hinv := TauCeti.map_complementaryInverse Φ haeval.symm
+    hE.aeval_reverse_mul_inverse hE.inverse_mul_aeval_reverse
+    hE.mul_inverse_eq_zero hE.inverse_mul_eq_zero
+  exact ((hE.map Φ haeval hclosure).eq_inverse hinv.1 hinv.2.2.1).symm
+
+end Map
 
 section Retract
 

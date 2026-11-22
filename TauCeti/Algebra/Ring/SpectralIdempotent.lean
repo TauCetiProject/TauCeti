@@ -37,6 +37,8 @@ invertible modulo each of them (`C * wᵢ = wᵢ * C = 1 - Eᵢ`), are equal
 * `IsIdempotentElem.one_sub_eq_pow_mul_pow`: if `C ^ h * E = 0` and `C * w = w * C = 1 - E` for an
   idempotent `E`, then `1 - E = C ^ h * w ^ h`.
 * `IsIdempotentElem.eq_of_pow_mul_eq_zero`: uniqueness of the splitting.
+* `TauCeti.map_complementaryInverse`, `TauCeti.exists_complementaryInverse_map`: transport of a
+  complementary inverse along a ring homomorphism.
 
 ## References
 
@@ -161,3 +163,28 @@ theorem eq_of_pow_mul_eq_zero {E₁ E₂ w₁ w₂ : A} (he₁ : IsIdempotentEle
   rw [h₂, ← h₁]
 
 end IsIdempotentElem
+
+namespace TauCeti
+
+/-- Transporting a complementary inverse along a ring homomorphism `Φ`. -/
+theorem map_complementaryInverse {A B : Type*} [Ring A] [Ring B] (Φ : A →+* B)
+    {C E w : A} {C' : B} (hC : Φ C = C')
+    (hw₁ : C * w = 1 - E) (hw₂ : w * C = 1 - E) (hw₃ : E * w = 0) (hw₄ : w * E = 0) :
+    C' * Φ w = 1 - Φ E ∧ Φ w * C' = 1 - Φ E ∧ Φ E * Φ w = 0 ∧ Φ w * Φ E = 0 :=
+  ⟨by rw [← hC, ← map_mul, hw₁, map_sub, map_one],
+   by rw [← hC, ← map_mul, hw₂, map_sub, map_one],
+   by rw [← map_mul, hw₃, map_zero],
+   by rw [← map_mul, hw₄, map_zero]⟩
+
+/-- Transporting an existential complementary inverse with a side predicate along a ring
+homomorphism `Φ`. -/
+theorem exists_complementaryInverse_map {A B : Type*} [Ring A] [Ring B] (Φ : A →+* B)
+    {C E : A} {C' : B} (hC : Φ C = C') {P : A → Prop} {Q : B → Prop}
+    (hw : ∃ w : A, C * w = 1 - E ∧ w * C = 1 - E ∧ E * w = 0 ∧ w * E = 0 ∧ P w)
+    (hPQ : ∀ {v : A}, P v → Q (Φ v)) :
+    ∃ w' : B, C' * w' = 1 - Φ E ∧ w' * C' = 1 - Φ E ∧ Φ E * w' = 0 ∧ w' * Φ E = 0 ∧ Q w' := by
+  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hwP⟩ := hw
+  have h := map_complementaryInverse Φ hC hw₁ hw₂ hw₃ hw₄
+  exact ⟨Φ w, h.1, h.2.1, h.2.2.1, h.2.2.2, hPQ hwP⟩
+
+end TauCeti

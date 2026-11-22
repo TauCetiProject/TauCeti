@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Coprime
 public import TauCeti.RingTheory.Huber.BanachModule.ZeroAtInfty
+import TauCeti.Algebra.Ring.SpectralIdempotent
 
 /-!
 # Completed-tensor base change of `(Pr)` modules, Fredholm series and Riesz projections
@@ -487,9 +488,7 @@ theorem IsPrCompact.isUnit_aeval_reverse_completedBaseChange
     [IsUltrametricDist R] [CompleteSpace R] [ContinuousConstSMul R M₁] [ContinuousConstSMul S N₁]
     {u : M₁ →L[R] M₁} (hu : u.IsPrCompact) (α : S ⊗̂[R] M₁ ≃L[S] N₁)
     {Q : R[X]} (hQ : IsUnit Q.leadingCoeff)
-    (hcop : IsCoprime
-      (⟨Q, PowerSeries.IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ :
-        PowerSeries.IsEntire.subring R)
+    (hcop : IsCoprime (PowerSeries.IsEntire.polynomialHom Q)
       ⟨u.charPowerSeries, PowerSeries.IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩) :
     IsUnit (Polynomial.aeval (u.completedBaseChange α α)
       (Polynomial.map (algebraMap R S) Q).reverse) := by
@@ -547,17 +546,11 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
   let Φ := completedBaseChangeRingHom α
   have h1sub : Φ (1 - a • u) = 1 - algebraMap R S a • u.completedBaseChange α α := by
     simp [Φ, completedBaseChangeRingHom]
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  refine ⟨by simpa [IsIdempotentElem, Φ] using congrArg Φ hE.isIdempotentElem.eq,
-    by simpa [Commute, SemiconjBy, Φ] using congrArg Φ hE.commute.eq,
+  exact ⟨hE.isIdempotentElem.map Φ, hE.commute.map Φ,
     completedBaseChange_mem_closure_adjoin hS hM α hE.mem_closure_adjoin,
     by simpa [Φ, map_mul, map_pow, h1sub] using congrArg Φ hE.pow_mul_eq_zero,
-    ⟨w.completedBaseChange α α,
-      by simpa [Φ, map_mul, map_sub, map_one, h1sub] using congrArg Φ hw₁,
-      by simpa [Φ, map_mul, map_sub, map_one, h1sub] using congrArg Φ hw₂,
-      by simpa [Φ, map_mul] using congrArg Φ hw₃,
-      by simpa [Φ, map_mul] using congrArg Φ hw₄,
-      completedBaseChange_mem_closure_adjoin hS hM α hw⟩⟩
+    TauCeti.exists_complementaryInverse_map Φ h1sub hE.exists_inverse
+      (fun hw ↦ completedBaseChange_mem_closure_adjoin hS hM α hw)⟩
 
 end PrTransport
 

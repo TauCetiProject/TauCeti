@@ -26,7 +26,9 @@ splits as `P(u) e + P(0) • (1 - e)` or `P(u) (1 - e) + P(0) • e`
 (`Polynomial.aeval_mul_of_isIdempotentElem`, `Polynomial.aeval_mul_one_sub_of_isIdempotentElem`).
 
 A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
-`A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
+`A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`), and evaluating
+`1 - C c * P` at `u` recovers `c • P(u)` via `1 - (1 - C c * P)(u)`
+(`Polynomial.one_sub_aeval_one_sub_C_mul`).
 -/
 
 public section
@@ -95,5 +97,11 @@ theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A
   by_contra ha0
   exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
     (hdvd _ (by rwa [aeval_C]))
+
+/-- Evaluating `1 - C c * P` at `u` satisfies `1 - aeval u (1 - C c * P) = c • aeval u P`. -/
+theorem one_sub_aeval_one_sub_C_mul {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+    (u : A) (c : R) (P : R[X]) :
+    1 - aeval u (1 - C c * P) = c • aeval u P := by
+  simp [Algebra.algebraMap_eq_smul_one]
 
 end Polynomial

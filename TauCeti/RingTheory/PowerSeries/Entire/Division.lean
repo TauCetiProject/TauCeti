@@ -670,9 +670,9 @@ theorem IsEntire.mkAdjoinRoot_apply (hp : p.Monic) (F : IsEntire.subring R) :
 
 /-- On polynomials, reduction modulo `p` is `AdjoinRoot.mk p`. -/
 theorem IsEntire.mkAdjoinRoot_coe (hp : p.Monic) (g : Polynomial R) :
-    IsEntire.mkAdjoinRoot hp ⟨g, IsEntire.mem_subring.mpr (isEntire_coe g)⟩ =
-      AdjoinRoot.mk p g := by
-  rw [IsEntire.mkAdjoinRoot_apply, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic]
+    IsEntire.mkAdjoinRoot hp (IsEntire.polynomialHom g) = AdjoinRoot.mk p g := by
+  rw [IsEntire.mkAdjoinRoot_apply, IsEntire.coe_polynomialHom, modByMonic_coe _ hp,
+    AdjoinRoot.mk_modByMonic]
 
 /-- Reduction of entire series modulo `p` is surjective: polynomials already reach every class. -/
 theorem IsEntire.mkAdjoinRoot_surjective (hp : p.Monic) :
@@ -794,8 +794,7 @@ theorem eq_of_coe_mul_eq_coe_mul_of_isEntire {Q : Polynomial R} {S S' : R⟦X⟧
 with invertible leading coefficient in the subring of entire power series is equivalent to ordinary
 polynomial divisibility `Q ∣ P`. -/
 theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
-    (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
-      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ ↔ Q ∣ P := by
+    IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P ↔ Q ∣ P := by
   refine ⟨?_, ?_⟩
   · set c := Ring.inverse Q.leadingCoeff
     have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
@@ -804,7 +803,8 @@ theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
     rintro ⟨⟨G, hG⟩, hPG⟩
     replace hG : G.IsEntire := IsEntire.mem_subring.mp hG
     have hPG' : (P : R⟦X⟧) = (Q₁ : R⟦X⟧) * (PowerSeries.C Q.leadingCoeff * G) := by
-      have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * G := congrArg Subtype.val hPG
+      have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * G := by
+        simpa only [Subring.coe_mul, IsEntire.coe_polynomialHom] using congrArg Subtype.val hPG
       have h2 : (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff = (Q : R⟦X⟧) := by
         calc (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff
             = PowerSeries.C (c * Q.leadingCoeff) * (Q : R⟦X⟧) := by
@@ -818,14 +818,13 @@ theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
       Polynomial.coe_inj.mp (by rw [Polynomial.coe_mul, hdiv, ← hPG'])
     exact ⟨Polynomial.C c * (P /ₘ Q₁), by simpa only [Q₁, mul_assoc, mul_left_comm] using hPK⟩
   · rintro ⟨K, rfl⟩
-    exact ⟨⟨K, IsEntire.mem_subring.mpr (isEntire_coe K)⟩, Subtype.ext (Polynomial.coe_mul Q K)⟩
+    exact ⟨IsEntire.polynomialHom K, map_mul IsEntire.polynomialHom Q K⟩
 
 /-- Over a complete ultrametric norm-one ring, if `Q` has invertible leading coefficient, `Q`
 divides `P` in the subring of entire power series, `P.natDegree ≤ Q.natDegree`, and `P` and `Q`
 share a left-regular coefficient `P.coeff k = Q.coeff k`, then `P = Q`. -/
 theorem eq_of_coe_dvd_of_natDegree_le {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff)
-    (hdvd : (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
-      ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩)
+    (hdvd : IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P)
     (hdeg : P.natDegree ≤ Q.natDegree) {k : ℕ} (hQk : IsLeftRegular (Q.coeff k))
     (hk : P.coeff k = Q.coeff k) :
     P = Q :=
