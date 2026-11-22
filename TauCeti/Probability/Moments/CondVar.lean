@@ -8,7 +8,6 @@ module
 public import Mathlib.Probability.CondVar
 
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Indicator
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
 /-!
@@ -52,8 +51,7 @@ variable {Ω : Type*} {m m₁ m₂ m₀ : MeasurableSpace Ω} {μ : Measure[m₀
 
 /-- The conditional variance of a square-integrable `X` is the conditional second moment minus the
 square of the conditional mean, `μ`-almost everywhere, for an arbitrary measure `μ`. This is
-Mathlib's `condVar_ae_eq_condExp_sq_sub_sq_condExp` without its finiteness assumption on `μ`,
-obtained from it on the finite-measure restrictions to the spanning sets of `μ.trim hm`. -/
+Mathlib's `condVar_ae_eq_condExp_sq_sub_sq_condExp` without its finiteness assumption on `μ`. -/
 theorem condVar_ae_eq_condExp_sq_sub_sq_condExp' (hm : m ≤ m₀) (hX : MemLp X 2 μ) :
     Var[X; μ | m] =ᵐ[μ] μ[X ^ 2 | m] - μ[X | m] ^ 2 := by
   by_cases hσ : SigmaFinite (μ.trim hm); swap
@@ -85,7 +83,7 @@ variance given `m₁` of the conditional expectation given `m₂`. The measure `
 
 With `m₂` the complete-data and `m₁` the observed-data σ-algebra of a missing-data model, this is
 the variance decomposition of Little and Rubin, *Statistical Analysis with Missing Data*, 3rd ed.,
-equations (10.9)–(10.10), p. 233; the Lean proof does not follow theirs. -/
+equations (10.9)–(10.10), p. 233. -/
 theorem condVar_ae_eq_condExp_condVar_add_condVar_condExp
     (h₁₂ : m₁ ≤ m₂) (h₂₀ : m₂ ≤ m₀) (hX : MemLp X 2 μ) :
     Var[X; μ | m₁] =ᵐ[μ] μ[Var[X; μ | m₂] | m₁] + Var[μ[X | m₂]; μ | m₁] := by

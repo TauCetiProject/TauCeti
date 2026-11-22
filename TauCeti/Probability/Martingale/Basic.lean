@@ -231,8 +231,8 @@ theorem Martingale.condExp_sq (hY : Martingale Y ℱ μ) {i j : ι}
     exact condExp_congr_ae (hc.mono fun ω hω ↦ by simp [hω])
   filter_upwards [ProbabilityTheory.condVar_ae_eq_condExp_sq_sub_sq_condExp' (ℱ.le i) hj, hvar, hc]
     with ω h₁ h₂ h₃
-  change μ[Y j ^ 2 | ℱ i] ω = _
   simp only [Pi.sub_apply, Pi.pow_apply] at h₁
+  rw [Pi.pow_def] at h₁
   rw [← h₂, h₁, h₃]
   ring
 
