@@ -105,20 +105,6 @@ theorem stoppedProcess_accumulatedEnergy_energyLocalizer_le (C : ℝ≥0) (t : �
   exact (μ.continuous_accumulatedEnergy_finiteEnergyCutoff H ω).le_of_le_hittingAfter_Ici
     (a := 0) bot_le (by simp) (by simpa only [energyLocalizer_def] using hs)
 
-/-- Stopping an integrand at any random time equates its `(0, T]` square-energy integral with the
-stopped accumulated energy at `T` under any atomless time measure. -/
-theorem setLIntegral_enorm_sq_ite_le_eq_stoppedProcess_accumulatedEnergy
-    (τ : Ω → WithTop ℝ≥0) (T : ℝ≥0) (ω : Ω) :
-    (∫⁻ t in Ioc 0 T, ‖if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0‖ₑ ^ 2 ∂μ) =
-      stoppedProcess (μ.accumulatedEnergy H) τ T ω := by
-  have hclock : (fun u ω ↦ ∫⁻ s in Ioc 0 u, ‖H s ω‖ₑ ^ 2 ∂μ) = μ.accumulatedEnergy H := by
-    funext u ω
-    exact (μ.accumulatedEnergy_eq_setLIntegral_Ioc _ u ω).symm
-  have heq := TauCeti.setLIntegral_ite_le_eq_stoppedProcess
-    (fun t ω ↦ ‖H t ω‖ₑ ^ 2) τ μ 0 T ω
-  rw [hclock] at heq
-  simpa only [apply_ite, eNorm_zero, ite_pow, zero_pow (by norm_num : 2 ≠ 0)] using heq
-
 /-- Stopping the repaired integrand at its closed-level energy hit bounds its square energy
 on every finite horizon. The bound is pathwise and uses no measurability assumptions. -/
 theorem setLIntegral_enorm_sq_ite_le_energyLocalizer_le (C : ℝ≥0) (T : ℝ≥0) (ω : Ω) :

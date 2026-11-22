@@ -10,7 +10,6 @@ public import Mathlib.Probability.Process.Indistinguishable
 public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
-public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.Topology.Instances.NNReal.Lemmas
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
@@ -19,7 +18,6 @@ import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.ContinuousAE
-import TauCeti.Probability.Process.Predictable.Basic
 
 /-!
 # Itô integrals against Brownian motion: definition, algebra, and uniqueness
@@ -323,6 +321,7 @@ theorem mono_filtration {𝒢 : Filtration ℝ≥0 mΩ} (hI : IsItoIntegral ℱ 
     exact ⟨n, τ, a, hτ, fun k j hj ↦ (ha k j hj).mono (h _), henergy, hlim⟩
 
 /-- The zero process is an Itô integral of the zero integrand against any integrator. -/
+@[simp]
 theorem zero (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W : ℝ≥0 → Ω → ℝ) :
     IsItoIntegral ℱ P W 0 0 where
   isStronglyPredictable := stronglyMeasurable_zero

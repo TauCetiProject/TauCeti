@@ -31,7 +31,11 @@ right-continuous at the finite stopped time
 finite-measure assumption.
 
 Stopped-value convergence is asserted only at finite times: the native value at infinity
-is a fallback, not a terminal path limit.
+is a fallback, not a terminal path limit. For a finite horizon `T`, clipping the dyadic
+grid at `⌈T * 2 ^ n⌉₊` gives cell events measurable at the clipped left endpoints
+(`MeasureTheory.IsStoppingTime.measurableSet_gt_dyadicCeilTime`) and a telescoping
+stopped-increment formula (`TauCeti.sum_indicator_stopped_sub_eq_stoppedProcess`) for any
+process starting at zero.
 
 ## References
 
@@ -235,6 +239,75 @@ theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E
       (τ := fun ω => min (t : WithTop ℝ≥0) (τ ω)) (ω := ω) hfinite hmin
       (Eventually.of_forall fun n => min_le_min_left _ (le_dyadicCeilTime n _)) hX
 
+/-- Any dyadic index strictly below `⌈T * 2 ^ m⌉₊` gives a grid point strictly before `T`. -/
+theorem dyadic_div_lt_of_lt_ceil {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ m⌉₊) :
+    (k : ℝ≥0) / 2 ^ m < T :=
+  (div_lt_iff₀ (by positivity)).mpr (Nat.lt_ceil.mp hk)
+
+/-- Clipping a dyadic grid point strictly below `⌈T * 2 ^ m⌉₊` at `T` leaves it unchanged. -/
+theorem min_dyadic_div_eq_left {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ m⌉₊) :
+    min ((k : ℝ≥0) / 2 ^ m) T = (k : ℝ≥0) / 2 ^ m :=
+  min_eq_left (dyadic_div_lt_of_lt_ceil hk).le
+
+/-- The terminal clipped dyadic grid point at `⌈T * 2 ^ m⌉₊` equals the horizon `T`. -/
+theorem min_dyadic_ceil_div_eq_right (m : ℕ) (T : ℝ≥0) :
+    min ((⌈T * 2 ^ m⌉₊ : ℝ≥0) / 2 ^ m) T = T :=
+  min_eq_right ((le_div_iff₀ (by positivity)).mpr (Nat.le_ceil _))
+
+/-- On a path where `I 0 ω = 0`, summing the clipped dyadic increments over cells whose left
+endpoint lies strictly below `dyadicCeilTime m (τ ω)` equals the stopped value
+`stoppedProcess I (fun ω' ↦ dyadicCeilTime m (τ ω')) T ω`. -/
+theorem sum_indicator_stopped_sub_eq_stoppedProcess {Ω E : Type*} [AddCommGroup E]
+    (I : ℝ≥0 → Ω → E) (τ : Ω → WithTop ℝ≥0) (m : ℕ) (T : ℝ≥0) (ω : Ω) (hI0 : I 0 ω = 0) :
+    let t : ℕ → ℝ≥0 := fun k ↦ min ((k : ℝ≥0) / 2 ^ m) T
+    let A : ℕ → Set Ω := fun k ↦
+      {ω' | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime m (τ ω')}
+    (∑ k ∈ Finset.range ⌈T * 2 ^ m⌉₊,
+      (A k).indicator (fun ω' ↦ I (t (k + 1)) ω' - I (t k) ω') ω) =
+      stoppedProcess I (fun ω' ↦ dyadicCeilTime m (τ ω')) T ω := by
+  intro t A
+  let σ : Ω → WithTop ℝ≥0 := fun ω' ↦ dyadicCeilTime m (τ ω')
+  let d : ℕ → ℝ≥0 := fun k ↦ (k : ℝ≥0) / 2 ^ m
+  let N : ℕ := ⌈T * 2 ^ m⌉₊
+  have h2pos : (0 : ℝ≥0) < 2 ^ m := by positivity
+  have ht0 : t 0 = 0 := by simp [t]
+  have htN : t N = T := min_dyadic_ceil_div_eq_right m T
+  rcases le_or_gt (T : WithTop ℝ≥0) (σ ω) with hTσ | hTσ
+  · have hsum : (∑ k ∈ Finset.range N,
+          (A k).indicator (fun ω' ↦ I (t (k + 1)) ω' - I (t k) ω') ω) =
+        ∑ k ∈ Finset.range N, (I (t (k + 1)) ω - I (t k) ω) :=
+      Finset.sum_congr rfl fun k hk ↦ indicator_of_mem
+        ((WithTop.coe_lt_coe.mpr (dyadic_div_lt_of_lt_ceil (Finset.mem_range.mp hk))).trans_le hTσ)
+        _
+    rw [hsum, Finset.sum_range_sub (fun k ↦ I (t k) ω) N, htN, ht0, hI0,
+      sub_zero, stoppedProcess_eq_of_le hTσ]
+  · cases hτω : τ ω with
+    | top => simp only [σ, hτω, dyadicCeilTime_top] at hTσ; exact (not_top_lt hTσ).elim
+    | coe v =>
+      let q : ℕ := ⌈v * 2 ^ m⌉₊
+      have hdyad : σ ω = ((d q : ℝ≥0) : WithTop ℝ≥0) := by
+        dsimp only [σ, d, q]; rw [hτω, dyadicCeilTime_coe]
+      have hqN : q < N :=
+        Nat.lt_ceil.mpr ((div_lt_iff₀ h2pos).mp (WithTop.coe_lt_coe.mp (hdyad ▸ hTσ)))
+      have hsum : (∑ k ∈ Finset.range N,
+            (A k).indicator (fun ω' ↦ I (t (k + 1)) ω' - I (t k) ω') ω) =
+          ∑ k ∈ Finset.range q, (I (t (k + 1)) ω - I (t k) ω) := by
+        dsimp only [σ] at hdyad
+        rw [← Finset.sum_subset (Finset.range_mono hqN.le)]
+        · exact Finset.sum_congr rfl fun k hk ↦ indicator_of_mem (by
+            dsimp only [A]
+            rw [mem_ofPred_eq, hdyad, WithTop.coe_lt_coe]
+            exact div_lt_div_of_pos_right (Nat.cast_lt.mpr (Finset.mem_range.mp hk)) h2pos) _
+        · exact fun k _ hk ↦ indicator_of_notMem (fun h ↦ hk <| Finset.mem_range.mpr <| by
+            dsimp only [A] at h
+            rwa [mem_ofPred_eq, hdyad, WithTop.coe_lt_coe,
+              div_lt_div_iff_of_pos_right h2pos, Nat.cast_lt] at h) _
+      have htq : t q = d q := min_dyadic_div_eq_left hqN
+      have huntop : (σ ω).untopA = d q := by
+        rw [hdyad]; exact WithTop.untopD_coe _ _
+      rw [hsum, Finset.sum_range_sub (fun k ↦ I (t k) ω) q, htq, ht0, hI0, sub_zero,
+        stoppedProcess_eq_of_ge hTσ.le, huntop]
+
 end TauCeti
 
 namespace MeasureTheory.IsStoppingTime
@@ -250,6 +323,16 @@ theorem dyadicCeilTime (hτ : IsStoppingTime ℱ τ) (n : ℕ) :
   exact ℱ.mono (by
     rw [div_le_iff₀ (by positivity)]
     exact Nat.floor_le (by positivity)) _ (hτ _)
+
+/-- For any dyadic cell index strictly below `⌈T * 2 ^ m⌉₊`, the event that
+`dyadicCeilTime m τ` strictly exceeds the left endpoint is measurable at the clipped left
+endpoint `min (k / 2 ^ m) T`. -/
+theorem measurableSet_gt_dyadicCeilTime (hτ : IsStoppingTime ℱ τ)
+    (m : ℕ) {T : ℝ≥0} {k : ℕ} (hk : k < ⌈T * 2 ^ m⌉₊) :
+    MeasurableSet[ℱ (min ((k : ℝ≥0) / 2 ^ m) T)]
+      {ω | (((k : ℝ≥0) / 2 ^ m : ℝ≥0) : WithTop ℝ≥0) < TauCeti.dyadicCeilTime m (τ ω)} := by
+  rw [TauCeti.min_dyadic_div_eq_left hk]
+  simpa only [compl_ofPred, not_le] using (hτ.dyadicCeilTime m ((k : ℝ≥0) / 2 ^ m)).compl
 
 /-- At any stopping time `τ` on a raw filtration indexed by `ℝ≥0`, the restarted increment path
 `t ↦ stoppedValue X (fun ω' ↦ τ ω' + t) ω - stoppedValue X τ ω` of an almost-surely

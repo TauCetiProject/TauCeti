@@ -19,7 +19,9 @@ import TauCeti.Probability.Martingale.ContinuousLimit
 # The finite-horizon predictable L² Brownian integral
 
 For a Brownian motion relative to an arbitrary filtration, construct the terminal integral
-as a real linear isometry from predictable time-product L² into sample-space L².
+as a real linear isometry from predictable time-product L² into sample-space L²,
+identifying the `L²(P)` distance between two terminal integrals with the `L²` distance between
+their predictable integrands (`eLpNorm_l2Integral_sub`).
 On a predictable rectangle `(s,t] × A` its value is `1_A (W_t − W_s)`, with clipping at
 the declared horizon. The map is uniquely determined by these elementary values.
 Linearity and the isometry are supplied by the bundled map, not separate operations on
@@ -266,6 +268,28 @@ theorem integral_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥
   have h := congrArg (fun J : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ] ℝ ↦ J f) hz
   simpa only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
     innerSL_apply_apply, one, L2.inner_indicatorConstLp_one, setIntegral_univ, zero_apply] using h
+
+/-- The `L²(P)` distance between two terminal `L²` Brownian integrals equals the `L²` distance
+between their predictable integrands for Lebesgue time on `(0, T]` times `P`. -/
+theorem eLpNorm_l2Integral_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥0) {H₁ H₂ : ℝ≥0 × Ω → ℝ}
+    (hH₁p : StronglyMeasurable[ℱ.predictable] H₁)
+    (hH₂p : StronglyMeasurable[ℱ.predictable] H₂)
+    (hH₁m : MemLp H₁ 2 (ℱ.predictableMeasure P T))
+    (hH₂m : MemLp H₂ 2 (ℱ.predictableMeasure P T)) :
+    eLpNorm (fun ω ↦ hW.l2Integral T (hH₁m.toLp H₁) ω - hW.l2Integral T (hH₂m.toLp H₂) ω) 2 P =
+      eLpNorm (H₁ - H₂) 2 ((timeMeasure T).prod P) := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  calc eLpNorm (fun ω ↦ hW.l2Integral T (hH₁m.toLp H₁) ω - hW.l2Integral T (hH₂m.toLp H₂) ω) 2 P
+      = edist (hW.l2Integral T (hH₁m.toLp H₁)) (hW.l2Integral T (hH₂m.toLp H₂)) := by
+        rw [Lp.edist_def, Pi.sub_def]
+    _ = eLpNorm (⇑(hH₁m.toLp H₁) - ⇑(hH₂m.toLp H₂)) 2 (ℱ.predictableMeasure P T) := by
+        rw [(hW.l2Integral T).isometry.edist_eq, Lp.edist_def]
+    _ = eLpNorm (H₁ - H₂) 2 (ℱ.predictableMeasure P T) :=
+        eLpNorm_congr_ae (hH₁m.coeFn_toLp.sub hH₂m.coeFn_toLp)
+    _ = eLpNorm (H₁ - H₂) 2 ((timeMeasure T).prod P) := by
+        rw [ℱ.predictableMeasure_def]
+        exact eLpNorm_trim ℱ.predictable_le_prod (hH₁p.sub hH₂p)
 
 /-! ## Continuous martingale realization -/
 

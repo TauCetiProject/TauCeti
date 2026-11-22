@@ -63,6 +63,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   term tending to zero for every `δ > 0` tends to zero.
 * `TauCeti.tendsto_measure_lt_of_tendstoInMeasure`: real functions tending to zero in measure
   have upper tails of measure tending to zero.
+* `TauCeti.tendsto_measure_of_subset_union`: sets eventually covered by a null set and two
+  halves of measure at most `δ i / 2 → 0` have measure tending to zero.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
@@ -198,6 +200,25 @@ theorem tendsto_measure_lt_of_tendstoInMeasure {f : ι → α → ℝ}
     (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by
       simp only [Set.mem_ofPred_eq] at hx ⊢
       exact hx.le.trans (le_abs_self _)
+
+/-- If `A i` is eventually covered by a null set `N` together with `B i ∪ C i`, where both
+`μ (B i)` and `μ (C i)` are eventually at most `δ i / 2` for some `δ i → 0` along `l`,
+then `μ (A i)` tends to zero along `l`. -/
+theorem tendsto_measure_of_subset_union {δ : ι → ℝ≥0∞}
+    (hδ : Tendsto δ l (𝓝 0)) {N : Set α} (hN : μ N = 0)
+    {A B C : ι → Set α}
+    (hB : ∀ᶠ i in l, μ (B i) ≤ δ i / 2) (hC : ∀ᶠ i in l, μ (C i) ≤ δ i / 2)
+    (hsub : ∀ᶠ i in l, A i ⊆ N ∪ (B i ∪ C i)) :
+    Tendsto (fun i ↦ μ (A i)) l (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hδ
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hB, hC, hsub] with i hiB hiC hisub
+  calc μ (A i) ≤ μ N + (μ (B i) + μ (C i)) :=
+        (measure_mono hisub).trans ((measure_union_le _ _).trans
+          (add_le_add le_rfl (measure_union_le _ _)))
+    _ ≤ 0 + (δ i / 2 + δ i / 2) := by
+        rw [hN]; exact add_le_add le_rfl (add_le_add hiB hiC)
+    _ = δ i := by rw [zero_add, ENNReal.add_halves]
 
 end TauCeti
 

@@ -254,10 +254,11 @@ theorem tendsto_measure_le_lintegral_enorm_sq_of_add {ι E : Type*} [SeminormedA
 is at most the `L¹(μ ⊗ ν)` seminorm of `Function.uncurry f`. -/
 theorem eLpNorm_integral_le_eLpNorm_prod [SFinite μ] [SFinite ν] {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → β → E}
-    (hsec : AEStronglyMeasurable (fun y ↦ ∫ x, f x y ∂μ) ν)
     (hprod : AEStronglyMeasurable (Function.uncurry f) (μ.prod ν)) :
     eLpNorm (fun y ↦ ∫ x, f x y ∂μ) 1 ν ≤
       eLpNorm (Function.uncurry f) 1 (μ.prod ν) := by
+  have hsec : AEStronglyMeasurable (fun y ↦ ∫ x, f x y ∂μ) ν :=
+    hprod.prod_swap.integral_prod_right'
   rw [eLpNorm_one_eq_lintegral_eNorm hsec, eLpNorm_one_eq_lintegral_eNorm hprod,
     lintegral_prod_symm _ hprod.eNorm]
   exact lintegral_mono fun y ↦ eNorm_integral_le_lintegral_eNorm _
@@ -270,7 +271,6 @@ theorem eLpNorm_integral_sub_integral_le_eLpNorm_prod [SFinite μ] [SFinite ν] 
     [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : α → β → E}
     (hf : ∀ᵐ y ∂ν, Integrable (fun x ↦ f x y) μ)
     (hg : ∀ᵐ y ∂ν, Integrable (fun x ↦ g x y) μ)
-    (hsec : AEStronglyMeasurable (fun y ↦ (∫ x, f x y ∂μ) - ∫ x, g x y ∂μ) ν)
     (hprod : AEStronglyMeasurable (fun p : α × β ↦ f p.1 p.2 - g p.1 p.2) (μ.prod ν)) :
     eLpNorm (fun y ↦ (∫ x, f x y ∂μ) - ∫ x, g x y ∂μ) 1 ν ≤
       eLpNorm (fun p : α × β ↦ f p.1 p.2 - g p.1 p.2) 1 (μ.prod ν) := by
@@ -278,7 +278,7 @@ theorem eLpNorm_integral_sub_integral_le_eLpNorm_prod [SFinite μ] [SFinite ν] 
       fun y ↦ ∫ x, (f x y - g x y) ∂μ :=
     hf.mp (hg.mono fun y hgy hfy ↦ (integral_sub hfy hgy).symm)
   rw [eLpNorm_congr_ae hae]
-  exact eLpNorm_integral_le_eLpNorm_prod (hsec.congr hae) hprod
+  exact eLpNorm_integral_le_eLpNorm_prod hprod
 
 /-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
 is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every

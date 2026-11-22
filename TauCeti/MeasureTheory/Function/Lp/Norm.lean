@@ -412,18 +412,6 @@ theorem MemLp.norm_toLp_sq {alpha F : Type*} [MeasurableSpace alpha] {m : Measur
   rw [hx]
 
 /-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
-square of the real part of its `L²` seminorm. Both sides vanish when the function is not square
-integrable. -/
-theorem integral_norm_sq_eq_toReal_eLpNorm_sq {alpha F : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
-    ∫ x, ‖f x‖ ^ 2 ∂m = (eLpNorm f 2 m).toReal ^ 2 := by
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _) (hf.norm.pow 2),
-    ← ENNReal.toReal_pow, TauCeti.eLpNorm_two_sq_eq_lintegral hf]
-  congr 1
-  refine lintegral_congr fun x ↦ ?_
-  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-
-/-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
 real part of the lower integral of its squared extended norm. -/
 theorem integral_norm_sq_eq_toReal_lintegral_enorm {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
@@ -432,6 +420,15 @@ theorem integral_norm_sq_eq_toReal_lintegral_enorm {alpha F : Type*} [Measurable
   congr 1
   refine lintegral_congr fun x ↦ ?_
   rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
+/-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
+square of the real part of its `L²` seminorm. Both sides vanish when the function is not square
+integrable. -/
+theorem integral_norm_sq_eq_toReal_eLpNorm_sq {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
+    ∫ x, ‖f x‖ ^ 2 ∂m = (eLpNorm f 2 m).toReal ^ 2 := by
+  rw [integral_norm_sq_eq_toReal_lintegral_enorm hf, ← ENNReal.toReal_pow,
+    TauCeti.eLpNorm_two_sq_eq_lintegral hf]
 
 /-- The integral of the square of an a.e. strongly measurable real-valued function is the real
 part of the lower integral of its squared extended norm. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Stopping
+public import Mathlib.Probability.Process.Indistinguishable
 
 /-!
 # Stopping times and stopped paths
@@ -21,9 +22,11 @@ local-martingale arguments retain the continuity or right continuity of their na
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
 Pathwise set membership up to the random time also passes to the stopped process. Neither
-fact requires a stopping-time or measurability assumption. Under a finite measure, truncating an
-almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields an
-integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
+fact requires a stopping-time or measurability assumption. Stopping also preserves
+indistinguishability (`ProbabilityTheory.Indistinguishable.stoppedProcess`). Under a finite
+measure, truncating an almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic
+bound `T : ℝ≥0` yields an integrable finite approximation
+(`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
@@ -151,3 +154,17 @@ theorem integrable_untopA_const_min {Ω : Type*} {_ : MeasurableSpace Ω} {P : M
       exact WithTop.untopA_le (min_le_left _ _))
 
 end MeasureTheory
+
+namespace ProbabilityTheory.Indistinguishable
+
+open MeasureTheory
+
+/-- Stopping preserves indistinguishability of processes at any random time. -/
+theorem stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
+    (hXY : X ≡ᵐ[P] Y) (τ : Ω → WithTop ι) :
+    MeasureTheory.stoppedProcess X τ ≡ᵐ[P] MeasureTheory.stoppedProcess Y τ := by
+  filter_upwards [hXY] with ω hω t
+  simp only [MeasureTheory.stoppedProcess_eq_stoppedValue_apply, MeasureTheory.stoppedValue, hω]
+
+end ProbabilityTheory.Indistinguishable

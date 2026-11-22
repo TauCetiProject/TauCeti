@@ -22,6 +22,8 @@ everywhere measurable, and the integrals may be infinite.
   intermediate function, integrated against an arbitrary measure.
 * `TauCeti.lintegral_enorm_add_sq_le_two_mul`: the squared triangle inequality for addition,
   integrated against an arbitrary measure.
+* `TauCeti.ae_eq_iff_lintegral_enorm_sub_sq_eq_zero`: characterization of almost-everywhere
+  equality by vanishing lower square energy.
 -/
 
 public section
@@ -55,5 +57,14 @@ theorem lintegral_enorm_add_sq_le_two_mul {f g : α → E}
   simpa only [Pi.zero_apply, Pi.neg_apply, sub_neg_eq_add, sub_zero, eNorm_neg] using
     lintegral_enorm_sub_sq_le_two_mul (μ := μ) (f := f) (g := -g) (h := 0)
       (by simpa only [Pi.zero_apply, sub_zero] using hf)
+
+/-- Two functions agree almost everywhere on an arbitrary measure space if and only if the lower
+integral of their squared extended norm difference vanishes. -/
+theorem ae_eq_iff_lintegral_enorm_sub_sq_eq_zero {E : Type*} [NormedAddCommGroup E]
+    {f g : α → E} (hfg : AEMeasurable (fun x ↦ ‖f x - g x‖ₑ ^ 2) μ) :
+    f =ᵐ[μ] g ↔ ∫⁻ x, ‖f x - g x‖ₑ ^ 2 ∂μ = 0 := by
+  rw [lintegral_eq_zero_iff' hfg]
+  simp only [Filter.EventuallyEq, Pi.zero_apply,
+    pow_eq_zero_iff (by norm_num : 2 ≠ 0), eNorm_eq_zero, sub_eq_zero]
 
 end TauCeti

@@ -34,6 +34,8 @@ integrals of arbitrary ambient-product-measurable functions.
 The horizon operators `predictableMeasureExtendLp` and `predictableMeasureRestrictLp`
 transport native predictable `Lᵖ` classes without exposing measure-equality casts. Extension
 by zero is an isometry; restriction is a contraction and is a left inverse to extension.
+Restricting a predictable `Lᵖ` class to a rectangle `(a,b]` splits into the difference of
+two horizon truncations (`indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub`).
 The extension construction transports `TauCeti.extendByZeroLpₗᵢ` together with its
 representative identity, and its API follows the deterministic `timeMeasureExtendLp` API.
 
@@ -397,6 +399,38 @@ theorem coeFn_predictableMeasureExtendLp_predictableMeasureRestrictLp (hST : S �
       =ᵐ[ℱ.predictableMeasure P T] (Ioc 0 S ×ˢ univ).indicator f :=
   ℱ.coeFn_predictableMeasureExtendLp_of_ae_eq P (𝕜 := 𝕜) hST
     (ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := 𝕜) hST f)
+
+/-- Restricting a predictable `Lᵖ` class to an interval `(a,b]` equals the difference of the
+zero-extensions of its horizon restrictions to `b` and `a`. -/
+theorem indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub
+    (f : Lp E p (ℱ.predictableMeasure P T)) {a b : ℝ≥0} (hab : a ≤ b) (hbT : b ≤ T) :
+    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+    ((Lp.memLp f).indicator (measurableSet_predictable_Ioc_prod a b
+      (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).toLp
+        ((Ioc a b ×ˢ univ).indicator f) =
+      ℱ.predictableMeasureExtendLp P 𝕜 hbT (ℱ.predictableMeasureRestrictLp P 𝕜 hbT f) -
+        ℱ.predictableMeasureExtendLp P 𝕜 (hab.trans hbT)
+          (ℱ.predictableMeasureRestrictLp P 𝕜 (hab.trans hbT) f) := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  have hdiff : (Ioc 0 b ×ˢ (univ : Set Ω)) \ (Ioc 0 a ×ˢ (univ : Set Ω)) =
+      Ioc a b ×ˢ (univ : Set Ω) := by
+    ext ⟨s, ω⟩
+    simp only [Set.mem_sdiff, mem_prod, mem_Ioc, mem_univ, and_true, not_and, not_le]
+    exact ⟨fun ⟨hs, hnot⟩ ↦ ⟨hnot hs.1, hs.2⟩,
+      fun ⟨has, hsb⟩ ↦ ⟨⟨zero_le.trans_lt has, hsb⟩, fun _ ↦ has⟩⟩
+  have hsub : Ioc 0 a ×ˢ (univ : Set Ω) ⊆ Ioc 0 b ×ˢ (univ : Set Ω) :=
+    prod_mono_left (Ioc_subset_Ioc_right hab)
+  apply Lp.ext
+  filter_upwards [((Lp.memLp f).indicator (measurableSet_predictable_Ioc_prod a b
+      (𝓕 := ℱ) MeasurableSet.univ).nullMeasurableSet).coeFn_toLp,
+    Lp.coeFn_sub
+      (ℱ.predictableMeasureExtendLp P 𝕜 hbT (ℱ.predictableMeasureRestrictLp P 𝕜 hbT f))
+      (ℱ.predictableMeasureExtendLp P 𝕜 (hab.trans hbT)
+        (ℱ.predictableMeasureRestrictLp P 𝕜 (hab.trans hbT) f)),
+    ℱ.coeFn_predictableMeasureExtendLp_predictableMeasureRestrictLp P (𝕜 := 𝕜) hbT f,
+    ℱ.coeFn_predictableMeasureExtendLp_predictableMeasureRestrictLp P (𝕜 := 𝕜)
+      (hab.trans hbT) f] with p hp hsub_ae hpb hpa
+  rw [hp, hsub_ae, Pi.sub_apply, hpb, hpa, ← Pi.sub_apply, ← indicator_sdiff hsub, hdiff]
 
 /-- Restriction preserves finite-mass indicator classes. -/
 @[simp]

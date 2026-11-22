@@ -11,7 +11,9 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 public import Mathlib.MeasureTheory.Measure.Prod
+public import Mathlib.Probability.Process.Stopping
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Probability.Process.StochasticInterval
 
 /-!
 # Predictable accumulated energy and finite-energy cutoffs
@@ -23,10 +25,13 @@ filtration are required.
 
 For a predictable process `H` valued in a normed additive commutative group, this makes the
 set where its accumulated square energy is finite predictable. Cutting `H` off on the complement
-therefore preserves predictability, and changes no values up to a horizon with finite square
-energy. Its accumulated energy is continuous, even on paths with immediate right-hand
-explosion of the original energy. The lower integral retains infinite energy instead of the
-fallback zero of a nonintegrable Bochner integral.
+therefore preserves predictability, and changes no values or accumulated energies up to a
+horizon with finite square energy. Its accumulated energy is continuous, even on paths with
+immediate right-hand explosion of the original energy. Stopping `H` at an arbitrary random time
+identifies the stopped cutoff's `(0, T]` square energy with the stopped accumulated energy
+(`MeasureTheory.Measure.setLIntegral_enorm_sq_ite_le_eq_stoppedProcess_accumulatedEnergy`).
+The lower integral retains infinite energy instead of the fallback zero of a nonintegrable
+Bochner integral.
 
 The results allow any s-finite atomless time measure; for Brownian integration use
 Lebesgue measure pulled back from `ℝ` to `ℝ≥0`. The closed initial segment can be replaced
@@ -66,6 +71,21 @@ theorem accumulatedEnergy_eq_setLIntegral_Ioc (μ : Measure ℝ≥0) [NullSingle
     simpa only [← bot_eq_zero, Icc_bot] using
       (Ioc_ae_eq_Icc (μ := μ) (a := 0) (b := t)).symm
   simp only [accumulatedEnergy_def, Measure.restrict_congr_set heq]
+
+/-- Stopping an integrand at any random time equates its `(0, T]` square-energy integral with the
+stopped accumulated energy at `T` under any atomless time measure. -/
+theorem setLIntegral_enorm_sq_ite_le_eq_stoppedProcess_accumulatedEnergy
+    (μ : Measure ℝ≥0) [NullSingletonClass μ] (H : ℝ≥0 → Ω → E)
+    (τ : Ω → WithTop ℝ≥0) (T : ℝ≥0) (ω : Ω) :
+    (∫⁻ t in Ioc 0 T, ‖if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0‖ₑ ^ 2 ∂μ) =
+      stoppedProcess (μ.accumulatedEnergy H) τ T ω := by
+  have hclock : (fun u ω ↦ ∫⁻ s in Ioc 0 u, ‖H s ω‖ₑ ^ 2 ∂μ) = μ.accumulatedEnergy H := by
+    funext u ω
+    exact (μ.accumulatedEnergy_eq_setLIntegral_Ioc _ u ω).symm
+  have heq := TauCeti.setLIntegral_ite_le_eq_stoppedProcess
+    (fun t ω ↦ ‖H t ω‖ₑ ^ 2) τ μ 0 T ω
+  rw [hclock] at heq
+  simpa only [apply_ite, eNorm_zero, ite_pow, zero_pow (by norm_num : 2 ≠ 0)] using heq
 
 /-- Accumulated square energy is nondecreasing on every path. -/
 theorem monotone_accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) (ω : Ω) :
@@ -135,6 +155,17 @@ theorem accumulatedEnergy_finiteEnergyCutoff_le (μ : Measure ℝ≥0)
   intro s
   simp only [finiteEnergyCutoff_def]
   split_ifs <;> simp
+
+/-- Up to any horizon with finite original accumulated energy, the finite-energy cutoff has the
+same accumulated energy as the original integrand. -/
+theorem accumulatedEnergy_finiteEnergyCutoff_of_lt_top (μ : Measure ℝ≥0) [NullSingletonClass μ]
+    {H : ℝ≥0 → Ω → E} {t : ℝ≥0} {ω : Ω} (h : μ.accumulatedEnergy H t ω < ∞) :
+    μ.accumulatedEnergy (μ.finiteEnergyCutoff H) t ω = μ.accumulatedEnergy H t ω := by
+  rw [μ.accumulatedEnergy_eq_setLIntegral_Ioc _ t ω, μ.accumulatedEnergy_eq_setLIntegral_Ioc H t ω]
+  exact setLIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by
+    have hfe := μ.finiteEnergyCutoff_eqOn h hs.2
+    dsimp only at hfe
+    rw [hfe]
 
 end MeasureTheory.Measure
 
