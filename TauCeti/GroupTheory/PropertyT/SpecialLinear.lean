@@ -114,12 +114,12 @@ def torusAngle (x : AddCircle (1 : ℝ)) : ℝ :=
   (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2) x : ℝ)
 
 theorem measurable_torusAngle : Measurable torusAngle :=
-  measurable_subtype_coe.comp (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2)).measurable
+  measurable_subtypeVal.comp (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2)).measurable
 
 theorem torusAngle_mem_Ico (x : AddCircle (1 : ℝ)) :
     torusAngle x ∈ Ico (-1 / 2 : ℝ) (1 / 2) := by
   unfold torusAngle
-  have hx := (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2) x).2
+  have hx := (AddCircle.measurableEquivIco (1 : ℝ) (-1 / 2) x).property
   exact ⟨hx.1, by linarith [hx.2]⟩
 
 theorem abs_torusAngle_le (x : AddCircle (1 : ℝ)) : |torusAngle x| ≤ 1 / 2 := by
@@ -242,7 +242,7 @@ theorem exists_pos_le_norm_toCircle_sub_one_sq {δ : ℝ} (hδ : 0 < δ) (hδ2 :
   have hK_nonempty : K.Nonempty := ⟨δ, Or.inr ⟨le_rfl, hδ2⟩⟩
   let φ : ℝ → ℝ := fun t ↦ ‖(AddCircle.toCircle (t : AddCircle (1 : ℝ)) : ℂ) - 1‖ ^ 2
   have hcont : Continuous φ :=
-    (((continuous_subtype_val.comp
+    (((continuous_subtypeVal.comp
       (AddCircle.continuous_toCircle.comp (AddCircle.continuous_mk' (1 : ℝ)))).sub
         continuous_const).norm).pow 2
   obtain ⟨t₀, ht₀K, ht₀min⟩ := hK_compact.exists_isMinOn hK_nonempty hcont.continuousOn

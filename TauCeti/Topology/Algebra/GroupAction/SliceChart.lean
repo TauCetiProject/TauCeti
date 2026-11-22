@@ -59,16 +59,16 @@ theorem isOpenEmbedding_smul_slice (hU : IsOpen U)
     (hloc : IsLocalHomeomorphOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
     IsOpenEmbedding fun p : G × U ↦ p.1 • σ p.2 := by
   -- The restriction is the slice map composed with the inclusion `G × U → G × S`.
-  have hmaps : ∀ p : G × U, (p.1, (p.2 : S)) ∈ univ ×ˢ U := fun p ↦ ⟨mem_univ _, p.2.2⟩
+  have hmaps : ∀ p : G × U, (p.1, (p.2 : S)) ∈ univ ×ˢ U := fun p ↦ ⟨mem_univ _, p.2.property⟩
   refine isOpenEmbedding_iff_continuous_injective_isOpenMap.2 ⟨?_, ?_, fun W hW ↦ ?_⟩
   · exact hloc.continuousOn.comp_continuous
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)) hmaps
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)) hmaps
   · intro p q hpq
     have h1 := hinj (hmaps p) (hmaps q) hpq
     exact Prod.ext (Prod.ext_iff.1 h1).1 (Subtype.ext (Prod.ext_iff.1 h1).2)
   · -- An open subset of `G × U` is open in `G × S`, and the slice map is open on `univ ×ˢ U`.
     have hW' : IsOpen (Prod.map id ((↑) : U → S) '' W) :=
-      (IsOpenMap.id.prodMap hU.isOpenMap_subtype_val) W hW
+      (IsOpenMap.id.prodMap hU.isOpenMap_subtypeVal) W hW
     have h1 := (hloc.mono (image_subset_iff.2 fun p _ ↦ hmaps p)).isOpen_image hW'
     rwa [image_image] at h1
 
@@ -88,10 +88,10 @@ theorem isOpenEmbedding_quotientMk_slice (hU : IsOpen U)
     simpa only [one_smul] using h1
   refine isOpenEmbedding_iff_continuous_injective_isOpenMap.2 ⟨?_, ?_, fun W hW ↦ ?_⟩
   · exact continuous_quot_mk.comp hσ.domRestrict
-  · exact fun s s' hss' ↦ Subtype.ext (injOn_quotientMk_slice hinj s.2 s'.2 hss')
+  · exact fun s s' hss' ↦ Subtype.ext (injOn_quotientMk_slice hinj s.property s'.property hss')
   · -- The orbits through the image of `W` pull back to the image of the open set `G × W` under
     -- the slice map.
-    have hT : IsOpen (((↑) : U → S) '' W) := hU.isOpenMap_subtype_val W hW
+    have hT : IsOpen (((↑) : U → S) '' W) := hU.isOpenMap_subtypeVal W hW
     have hpre : Quotient.mk (MulAction.orbitRel G X) ⁻¹'
         ((fun s : U ↦ Quotient.mk (MulAction.orbitRel G X) (σ s)) '' W) =
         (fun p : G × S ↦ p.1 • σ p.2) '' (univ ×ˢ (((↑) : U → S) '' W)) := by

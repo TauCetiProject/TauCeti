@@ -147,7 +147,7 @@ theorem heatCauchyPotential_eq_convolution (g : E → F) {t : ℝ} (ht : 0 < t) 
     (fun y => heatKernel 1 y • g (x - √t • y)) hst.le
   simp only [smul_inv_smul₀ hst.ne'] at hsub
   simp_rw [convolution_def, ContinuousLinearMap.lsmul_apply,
-    heatKernel_eq_mul_heatKernel_one_smul ht, mul_smul]
+    heatKernel_eq_mul_heatKernel_one_smul ht.le, mul_smul]
   rw [integral_smul, hsub, smul_smul, ← mul_pow, inv_mul_cancel₀ hst.ne', one_pow, one_smul,
     heatCauchyPotential_def]
 
@@ -478,9 +478,8 @@ theorem exists_norm_laplacian_heatCauchyPotential_le :
   have hexp : ((α : ℝ) - (2 : ℕ)) / 2 = α / 2 - 1 := by push_cast; ring
   rw [hexp] at h3
   rw [heatCauchyPotential_eq_convolution_fun g ht]
-  refine (norm_laplacian_le _ x).trans ?_
-  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-  calc n * ‖iteratedFDeriv ℝ (1 + 1) (heatKernel t ⋆ g) x‖ ≤
+  refine (norm_laplacian_le_norm_iteratedFDeriv_two _ x).trans ?_
+  calc n * ‖iteratedFDeriv ℝ 2 (heatKernel t ⋆ g) x‖ ≤
         n * (H * (C₂ * t ^ ((α : ℝ) / 2 - 1))) :=
         mul_le_mul_of_nonneg_left (h2.trans h3) hn
     _ = n * C₂ * H * t ^ ((α : ℝ) / 2 - 1) := by ring

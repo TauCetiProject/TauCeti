@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Vertex.VertexOperator
+public import TauCeti.Algebra.Vertex.Derivative
 public import Mathlib.Algebra.BigOperators.Finprod
 
 /-!
@@ -18,7 +18,8 @@ nonnegative modes on the right. For fields `A` and `B`, its normalized coefficie
                  ∑ᶠ i : ℕ, B[[n-i-1]] (A[[i]] v)`.
 
 Both sums are finite on each vector, though generally not finite as sums of endomorphisms.
-We prove that these coefficients again define a field, without assuming mutual locality.
+We prove that these coefficients again define a field, without assuming mutual locality, and that
+formal differentiation is a derivation of normal ordering (`VertexOperator.derivative_normalOrder`).
 This is the binary operation needed to form quadratic current fields.
 
 ## References
@@ -269,5 +270,58 @@ theorem normalOrder_sum_right {ι : Type*} (A : VertexOperator R V) (s : Finset 
     (B : ι → VertexOperator R V) :
     normalOrder A (∑ i ∈ s, B i) = ∑ i ∈ s, normalOrder A (B i) :=
   map_sum (normalOrderₗ A) B s
+
+/-- Formal differentiation is a derivation of normal ordering:
+`∂(:AB:) = :(∂A)B: + :A(∂B):`. -/
+theorem derivative_normalOrder (A B : VertexOperator R V) :
+    derivative (normalOrder A B) =
+      normalOrder (derivative A) B + normalOrder A (derivative B) := by
+  refine ext_ncoeff fun m ↦ LinearMap.ext fun v ↦ ?_
+  obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_apply_eq_zero v
+  obtain ⟨Q, hQ⟩ := A.exists_forall_ncoeff_apply_eq_zero v
+  let K := max P Q + m.natAbs + 2
+  have hBm1 (i : ℕ) (hi : K ≤ i) : (B[[m - 1 + i]]) v = 0 := hP _ (by omega)
+  have hBm (i : ℕ) (hi : K ≤ i) : (B[[m + i]]) v = 0 := hP _ (by omega)
+  have hA0 (i : ℕ) (hi : K ≤ i) : (A[[(i : ℤ)]]) v = 0 := hQ _ (by omega)
+  have hAdB (i : ℕ) (hi : K ≤ i) : ((derivative B)[[m + i]]) v = 0 := by
+    rw [ncoeff_derivative, LinearMap.smul_apply, show m + (i : ℤ) - 1 = m - 1 + i by omega,
+      hBm1 i hi, smul_zero]
+  have hdA (i : ℕ) (hi : K + 1 ≤ i) : ((derivative A)[[(i : ℤ)]]) v = 0 := by
+    rw [ncoeff_derivative, LinearMap.smul_apply, show (i : ℤ) - 1 = ((i - 1 : ℕ) : ℤ) by omega,
+      hA0 (i - 1) (by omega), smul_zero]
+  rw [ncoeff_derivative, ncoeff_normalOrder, LinearMap.smul_apply, map_add, Pi.add_apply,
+    LinearMap.add_apply, ncoeff_normalOrder, ncoeff_normalOrder,
+    normalOrderCoeff_eq_sum A B (m - 1) v (P := K + 1) (Q := K)
+      (fun i hi ↦ hBm1 i (by omega)) hA0,
+    normalOrderCoeff_eq_sum (derivative A) B m v hBm hdA,
+    normalOrderCoeff_eq_sum A (derivative B) m v (P := K + 1) (Q := K)
+      (fun i hi ↦ hAdB i (by omega)) hA0,
+    smul_add, add_add_add_comm]
+  congr 1
+  · -- Negative modes of `A` on the left: shift the `(∂A)` sum by `1` and combine with `(∂B)`.
+    rw [sum_range_succ' _ K,
+      sum_range_succ' (fun j ↦ (A[[-(j : ℤ) - 1]]) (((derivative B)[[m + j]]) v)) K]
+    simp only [Nat.cast_zero, add_zero, neg_zero, zero_sub, ncoeff_derivative,
+      LinearMap.smul_apply, map_zsmul, smul_add, smul_sum]
+    rw [← add_assoc, ← sum_add_distrib]
+    congr 1
+    refine sum_congr rfl fun i _ ↦ ?_
+    have h₁ : -(-(i : ℤ) - 1) = (i : ℤ) + 1 := by omega
+    have h₂ : -(i : ℤ) - 1 - 1 = -((i + 1 : ℕ) : ℤ) - 1 := by push_cast; omega
+    have h₃ : m + (i : ℤ) = m - 1 + ((i + 1 : ℕ) : ℤ) := by push_cast; omega
+    have h₄ : m + ((i + 1 : ℕ) : ℤ) - 1 = m - 1 + ((i + 1 : ℕ) : ℤ) := by push_cast; omega
+    rw [h₁, h₂, h₃, h₄, ← add_zsmul]
+    exact congrArg (· • (A[[-((i + 1 : ℕ) : ℤ) - 1]]) ((B[[m - 1 + (i + 1 : ℕ)]]) v))
+      (by push_cast; omega)
+  · -- Nonnegative modes of `A` on the right: drop the `i = 0` term of `(∂A)` and combine.
+    rw [sum_range_succ' _ K]
+    simp only [Nat.cast_zero, neg_zero, zero_smul, LinearMap.zero_apply, map_zero, add_zero,
+      ncoeff_derivative, LinearMap.smul_apply, map_zsmul, smul_sum, ← sum_add_distrib]
+    refine sum_congr rfl fun i _ ↦ ?_
+    have h₁ : ((i + 1 : ℕ) : ℤ) - 1 = (i : ℤ) := by push_cast; omega
+    have h₂ : m - ((i + 1 : ℕ) : ℤ) - 1 = m - 1 - i - 1 := by push_cast; omega
+    have h₃ : m - (i : ℤ) - 1 - 1 = m - 1 - i - 1 := by omega
+    rw [h₁, h₂, h₃, ← add_zsmul]
+    exact congrArg (· • (B[[m - 1 - i - 1]]) ((A[[(i : ℤ)]]) v)) (by push_cast; omega)
 
 end VertexOperator

@@ -89,7 +89,7 @@ section Local
 
 variable {A : Type w} [CommRing A] [Algebra R A] (s : Set A) (hs : Ideal.span s = ⊤)
   {B : s → Type w} [∀ r, CommRing (B r)] [∀ r, Algebra R (B r)] [∀ r, Algebra A (B r)]
-  [∀ r, IsScalarTower R A (B r)] [∀ r : s, IsLocalization.Away r.1 (B r)]
+  [∀ r, IsScalarTower R A (B r)] [∀ r : s, IsLocalization.Away r.val (B r)]
 
 include hs
 
@@ -106,7 +106,7 @@ theorem eq_of_isLocalized_span {N N' : G(k, A ⊗[R] M; A)}
   intro N N' h x hx
   refine Submodule.mem_of_span_eq_top_of_smul_pow_mem _ s hs x fun r ↦ ?_
   have hx' := rTensor_mem_map (IsScalarTower.toAlgHom R A (B r)) hx
-  rw [h r, rTensor_mem_map_iff (.powers r.1)] at hx'
+  rw [h r, rTensor_mem_map_iff (.powers r.val)] at hx'
   obtain ⟨_, ⟨n, rfl⟩, hn⟩ := hx'
   exact ⟨n, hn⟩
 
@@ -135,7 +135,7 @@ private theorem mem_glueSubmodule_iff {x : A ⊗[R] M} :
   simp only [glueSubmodule, Submodule.mem_iInf, Submodule.mem_comap,
     Submodule.restrictScalars_mem, AlgebraTensorModule.rTensor_linearMap_apply]
 
-variable [∀ r : s, IsLocalization.Away r.1 (B r)]
+variable [∀ r : s, IsLocalization.Away r.val (B r)]
 
 /-- Under the compatibility hypothesis, if the image of `x` in `B r ⊗[R] M` lies in `N r`, then
 for every `r'` some power of `r` moves the image of `x` in `B r' ⊗[R] M` into `N r'`. -/
@@ -146,7 +146,7 @@ private theorem exists_pow_smul_rTensor_mem
     {r : s} {x : A ⊗[R] M}
     (hx : (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x ∈ (N r).toSubmodule)
     (r' : s) : ∃ n : ℕ, (IsScalarTower.toAlgHom R A (B r')).toLinearMap.rTensor M
-      (r.1 ^ n • x) ∈ (N r').toSubmodule := by
+      (r.val ^ n • x) ∈ (N r').toSubmodule := by
   have hx' := rTensor_mem_map
     ((Algebra.TensorProduct.includeRight : B r →ₐ[A] B r' ⊗[A] B r).restrictScalars R) hx
   -- on the overlap `B r' ⊗[A] B r`, the two images of `x` agree
@@ -164,7 +164,7 @@ private theorem exists_pow_smul_rTensor_mem
       IsScalarTower.toAlgHom R (B r') (B r' ⊗[A] B r) :=
     AlgHom.ext fun _ ↦ by simp
   rw [hover, ← hN r' r, hincl,
-    rTensor_mem_map_iff (Algebra.algebraMapSubmonoid (B r') (.powers r.1))] at hx'
+    rTensor_mem_map_iff (Algebra.algebraMapSubmonoid (B r') (.powers r.val))] at hx'
   obtain ⟨_, ⟨_, ⟨n, rfl⟩, rfl⟩, hn⟩ := hx'
   refine ⟨n, ?_⟩
   rwa [AlgHom.rTensor_toLinearMap_apply_smul, IsScalarTower.toAlgHom_apply]
@@ -177,24 +177,24 @@ private theorem rTensor_mem_iff_exists_pow_smul_mem (hs : Ideal.span s = ⊤)
         (N r'))
     (r : s) (x : A ⊗[R] M) :
     (IsScalarTower.toAlgHom R A (B r)).toLinearMap.rTensor M x ∈ (N r).toSubmodule ↔
-      ∃ n : ℕ, r.1 ^ n • x ∈ glueSubmodule N := by
+      ∃ n : ℕ, r.val ^ n • x ∈ glueSubmodule N := by
   refine ⟨fun hx ↦ ?_, fun ⟨n, hn⟩ ↦ ?_⟩
   · -- a single power of `r` works for every `r'` in a finite subcover `t ⊆ s`
     obtain ⟨t, hts, ht⟩ := (Ideal.span_eq_top_iff_finite s).mp hs
-    choose n hn using fun r' : t ↦ exists_pow_smul_rTensor_mem N hN hx ⟨r'.1, hts r'.2⟩
+    choose n hn using fun r' : t ↦ exists_pow_smul_rTensor_mem N hN hx ⟨r'.val, hts r'.property⟩
     obtain ⟨n₀, hn₀⟩ := Finite.exists_le n
     refine ⟨n₀, (mem_glueSubmodule_iff N).mpr fun r'' ↦ ?_⟩
     -- and then for every `r'' ∈ s`, since the `r' ∈ t` generate the unit ideal
     refine Submodule.mem_of_span_eq_top_of_smul_pow_mem
       (((N r'').toSubmodule.restrictScalars A).comap
         (AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r'')))) _ ht _ fun r' ↦ ?_
-    refine exists_pow_smul_rTensor_mem N hN (r := ⟨r'.1, hts r'.2⟩) ?_ r''
+    refine exists_pow_smul_rTensor_mem N hN (r := ⟨r'.val, hts r'.property⟩) ?_ r''
     rw [← Nat.sub_add_cancel (hn₀ r'), pow_add, mul_smul, AlgHom.rTensor_toLinearMap_apply_smul]
     exact Submodule.smul_mem _ _ (hn r')
   · have := (mem_glueSubmodule_iff N).mp hn r
     rw [AlgHom.rTensor_toLinearMap_apply_smul, IsScalarTower.toAlgHom_apply,
       algebraMap_smul] at this
-    exact (IsLocalization.smul_mem_iff (S := .powers r.1) (s := ⟨r.1 ^ n, n, rfl⟩)).mp this
+    exact (IsLocalization.smul_mem_iff (S := .powers r.val) (s := ⟨r.val ^ n, n, rfl⟩)).mp this
 
 /-- Under the compatibility hypothesis, the base change of `glueSubmodule N` to `B r` is `N r`. -/
 private theorem ker_baseChangeMkQ_glueSubmodule (hs : Ideal.span s = ⊤)
@@ -205,10 +205,10 @@ private theorem ker_baseChangeMkQ_glueSubmodule (hs : Ideal.span s = ⊤)
   let g := AlgebraTensorModule.rTensor R M (Algebra.linearMap A (B r))
   ext z
   -- write `z = g x / t`; membership of `z` in a `B r`-submodule is membership of `g x`
-  obtain ⟨⟨x, t⟩, rfl⟩ := IsLocalizedModule.mk'_surjective (.powers r.1) g z
+  obtain ⟨⟨x, t⟩, rfl⟩ := IsLocalizedModule.mk'_surjective (.powers r.val) g z
   rw [Function.uncurry_apply_pair, IsLocalizedModule.mk'_mem_iff, IsLocalizedModule.mk'_mem_iff,
     AlgebraTensorModule.rTensor_linearMap_apply,
-    rTensor_mem_ker_baseChangeMkQ_iff (.powers r.1), rTensor_mem_iff_exists_pow_smul_mem N hs hN]
+    rTensor_mem_ker_baseChangeMkQ_iff (.powers r.val), rTensor_mem_iff_exists_pow_smul_mem N hs hN]
   simp [Submonoid.mem_powers_iff]
 
 variable (s) in
@@ -240,18 +240,18 @@ theorem exists_map_eq_of_isLocalized_span (hs : Ideal.span s = ⊤)
     refine Module.flat_of_isLocalized_span A Q s hs (fun r ↦ B r ⊗[A] Q)
       (fun r ↦ TensorProduct.mk A (B r) Q 1) fun r ↦ ?_
     have := hproj r
-    have : Module.Flat A (B r) := IsLocalization.flat (B r) (.powers r.1)
+    have : Module.Flat A (B r) := IsLocalization.flat (B r) (.powers r.val)
     exact Module.Flat.trans A (B r) (B r ⊗[A] Q)
   refine ⟨{ toSubmodule := glueSubmodule N
             finite_quotient := inferInstance
             projective_quotient := Module.Flat.projective_of_finitePresentation
             rankAtStalk_eq := fun p ↦ ?_ }, fun r ↦ ?_⟩
   · -- the rank of `Q` at `p` is read off a localization `B r` with `r ∉ p`
-    obtain ⟨r, hr⟩ : ∃ r : s, r.1 ∉ p.asIdeal := by
+    obtain ⟨r, hr⟩ : ∃ r : s, r.val ∉ p.asIdeal := by
       by_contra! h
       exact p.isPrime.ne_top (eq_top_iff.mpr (hs ▸ Ideal.span_le.mpr fun x hx ↦ h ⟨x, hx⟩))
     obtain ⟨q, rfl⟩ : p ∈ Set.range (PrimeSpectrum.comap (algebraMap A (B r))) := by
-      rw [PrimeSpectrum.localization_away_comap_range (B r) r.1]
+      rw [PrimeSpectrum.localization_away_comap_range (B r) r.val]
       exact hr
     rw [← rankAtStalk_baseChange, ← rankAtStalk_eq_of_equiv (e r)]
     exact (N r).rankAtStalk_eq q
