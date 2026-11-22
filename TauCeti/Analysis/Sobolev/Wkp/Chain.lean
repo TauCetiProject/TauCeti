@@ -19,7 +19,8 @@ record norms: the fields of the extracted chain have `Lᵖ` norms at most the no
 and the assembled element has norm at most the sum of the `Lᵖ` norms of the value and the fields.
 Any weak derivative chain of the value of an element of `Wkp` agrees with the recorded derivatives,
 and its fields are bounded in `Lᵖ` by the graph norm, so that they converge in `Lᵖ` when the
-elements of `Wkp` converge.
+elements of `Wkp` converge. Conversely, the graph norm is at most the sum of the `Lᵖ` norms of the
+value and of the fields of any such chain.
 
 ## Main declarations
 
@@ -30,6 +31,8 @@ elements of `Wkp` converge.
 * `TauCeti.Wkp.ae_eq_iteratedGradient_and_eLpNorm_le_of_chain`: a weak derivative chain of the
   value of an element of `Wkp` recovers its highest recorded derivative, with `Lᵖ` bounds by the
   graph norm.
+* `TauCeti.Wkp.norm_le_norm_value_add_sum_eLpNorm_of_chain`: conversely, the graph norm is at
+  most the sum of the `Lᵖ` norms of the value and of the fields of a weak derivative chain.
 * `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto_of_chain`: convergence in `Wkp` gives `Lᵖ`
   convergence of the fields of weak derivative chains of the values.
 
@@ -190,6 +193,29 @@ theorem ae_eq_iteratedGradient_and_eLpNorm_le_of_chain :
     · obtain ⟨hm, hle⟩ := hb i (by omega)
       exact ⟨hm, hle.trans (ENNReal.ofReal_le_ofReal (norm_lowerOrder_le _ y))⟩
     · exact memLp_and_eLpNorm_le_of_ae_eq_iteratedGradient hGn1
+
+/-- **The graph norm from a weak derivative chain.** Let `y ∈ W^{n+1,p}(Ω)` and let
+`G 0, …, G n` be a chain of iterated weak gradients on `Ω` of a representative `f` of the value of
+`y`. Then `‖y‖` is at most the `Lᵖ` norm of the value plus the sum of the `Lᵖ` norms of the
+`G i`. -/
+theorem norm_le_norm_value_add_sum_eLpNorm_of_chain :
+    ∀ (n : ℕ) (y : Wkp mu Omega p (n + 1)) {f : E → ℝ} {G : (i : ℕ) → E → IteratedGradient E i},
+    value (n + 1) y =ᵐ[mu.restrict Omega] f →
+    HasWeakFDerivOn mu Omega f (fun x => innerSL ℝ (G 0 x)) →
+    (∀ i < n, HasWeakFDerivOn mu Omega (G i) (G (i + 1))) →
+    ‖y‖ ≤ ‖value (n + 1) y‖ +
+      ∑ i ∈ Finset.range (n + 1), (eLpNorm (G i) p (mu.restrict Omega)).toReal
+  | 0, y, f, G, hy, h0, hG => by
+    have hG0 := (ae_eq_iteratedGradient_and_eLpNorm_le_of_chain 0 y hy h0 hG).1
+    rw [Finset.sum_range_one, eLpNorm_congr_ae hG0, ← Lp.norm_def, value_succ, value_zero]
+    exact norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 y
+  | n + 1, y, f, G, hy, h0, hG => by
+    have ih := norm_le_norm_value_add_sum_eLpNorm_of_chain n (lowerOrder (n + 1) y)
+      (by rwa [← value_succ]) h0 fun i hi => hG i (by omega)
+    have hGn1 := (ae_eq_iteratedGradient_and_eLpNorm_le_of_chain (n + 1) y hy h0 hG).1
+    have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient (n + 1) y
+    rw [Finset.sum_range_succ, eLpNorm_congr_ae hGn1, ← Lp.norm_def, value_succ]
+    linarith
 
 /-- **Convergence of weak derivative chains.** Let `y a → w` in `W^{n+1,p}(Ω)` along a filter `l`,
 with values representing `f a` and `g` almost everywhere on `Ω`, and let `G a` and `H` be chains of

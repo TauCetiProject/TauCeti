@@ -37,6 +37,8 @@ components.
   sheaves is quasicoherent;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_isClosedUnderColimitsOfShape`: quasicoherence
   is closed under small colimits;
+* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_containsZero`: the zero sheaf is
+  quasicoherent;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.hasBinaryBiproducts`: quasicoherent sheaves have
   binary biproducts;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_sigma`: a small coproduct of quasicoherent
@@ -120,6 +122,14 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_isClosedUnderCo
     (X : Scheme.{u}) :
     (SheafOfModules.isQuasicoherent X.ringCatSheaf).IsClosedUnderColimitsOfShape J where
   colimitsOfShape_le _ := fun ⟨h⟩ ↦ isQuasicoherent_of_isColimit h.prop_diag_obj h.isColimit
+
+/-- The zero sheaf of modules on any scheme is quasicoherent: it is the colimit of the empty
+diagram. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_containsZero (X : Scheme.{u}) :
+    (SheafOfModules.isQuasicoherent X.ringCatSheaf).ContainsZero where
+  exists_zero := ⟨⊥_ X.Modules, initialIsInitial.isZero,
+    isQuasicoherent_of_isColimit (K := Functor.empty X.Modules) (c := asEmptyCocone _)
+      (fun j ↦ j.as.elim) initialIsInitial⟩
 
 /-- Quasicoherent sheaves are closed under binary coproducts in `X.Modules`, so the preadditive
 category `QuasicoherentSheaf X` has binary biproducts. -/
