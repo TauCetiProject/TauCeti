@@ -94,6 +94,24 @@ theorem thresholdComponentMk_eq_iff (f : Finset V → K)
       s = t ∨ k ≤ pairMinimumValue f s t :=
   Quotient.eq'
 
+/-- Every threshold component has a vertex representative. -/
+theorem thresholdComponentMk_surjective (f : Finset V → K)
+    (hsymm : ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s) (k : K) :
+    Function.Surjective (thresholdComponentMk f hsymm k) :=
+  Quotient.exists_rep
+
+namespace ThresholdComponent
+
+/-- To prove a property of every threshold component, it suffices to prove it on the component
+of each vertex. -/
+@[elab_as_elim]
+protected theorem ind {motive : ThresholdComponent f hsymm k → Prop}
+    (h : ∀ v, motive (thresholdComponentMk f hsymm k v))
+    (c : ThresholdComponent f hsymm k) : motive c :=
+  Quotient.ind h c
+
+end ThresholdComponent
+
 namespace IsFlowEquivalentTree
 
 /-- Threshold relatedness is precisely reachability after deleting the tree edges lighter than
@@ -109,15 +127,13 @@ theorem pairMinimumValue_symmetric (hT : IsFlowEquivalentTree f T w) :
   by_cases hst : s = t
   · subst t
     rfl
-  · apply le_antisymm
-    · have hreach :=
+  · have hle : ∀ s t, s ≠ t → pairMinimumValue f s t ≤ pairMinimumValue f t s := by
+      intro s t hst
+      have hreach :=
         (hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).2 (Or.inr le_rfl)
       exact ((hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).1 hreach.symm).resolve_left
         (Ne.symm hst)
-    · have hreach :=
-        (hT.reachable_deleteEdges_iff (pairMinimumValue f t s)).2 (Or.inr le_rfl)
-      exact ((hT.reachable_deleteEdges_iff (pairMinimumValue f t s)).1 hreach.symm).resolve_left
-        hst
+    exact le_antisymm (hle s t hst) (hle t s (Ne.symm hst))
 
 /-- Threshold classes are canonically the connected components of the threshold graph. -/
 def thresholdComponentEquiv (hT : IsFlowEquivalentTree f T w) (k : K) :
@@ -133,10 +149,9 @@ theorem thresholdComponentEquiv_apply_mk (hT : IsFlowEquivalentTree f T w) (k : 
     hT.thresholdComponentEquiv k
         (thresholdComponentMk f hT.pairMinimumValue_symmetric k v) =
       (T.deleteEdges {e | w e < k}).connectedComponentMk v := by
-  exact Quotient.congr_mk
-    (ra := thresholdSetoid f hT.pairMinimumValue_symmetric k)
-    (rb := (T.deleteEdges {e | w e < k}).reachableSetoid) (Equiv.refl V)
-    (fun s t ↦ hT.thresholdRelated_iff_reachable k s t) v
+  -- `Quotient.congrRight`, `thresholdComponentMk`, and `connectedComponentMk` all compute on
+  -- quotient representatives.
+  rfl
 
 @[simp]
 theorem thresholdComponentEquiv_symm_apply_mk
@@ -154,8 +169,7 @@ theorem connectedComponentMk_threshold_eq_iff
     (T.deleteEdges {e | w e < k}).connectedComponentMk s =
         (T.deleteEdges {e | w e < k}).connectedComponentMk t ↔
       s = t ∨ k ≤ pairMinimumValue f s t := by
-  rw [ConnectedComponent.eq, ← hT.thresholdRelated_iff_reachable]
-  rfl
+  rw [ConnectedComponent.eq, hT.reachable_deleteEdges_iff]
 
 /-- Membership in the threshold component of `s` is governed by the threshold minimum-cut
 relation. -/
