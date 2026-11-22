@@ -496,28 +496,23 @@ theorem _root_.IntermediateField.lintegral_rootCount_eisensteinBox {n j : ℕ}
       else 0 := by
   split_ifs with hj
   · subst hj
-    have hind : (eisensteinBox K n L.wildExponent).indicator
-        (fun a ↦ (L.rootCount a : ℝ≥0∞)) =
-        (eisensteinSet K n).indicator (fun a ↦ (L.rootCount a : ℝ≥0∞)) := by
-      ext a
-      by_cases hb : a ∈ eisensteinBox K n L.wildExponent
-      · rw [Set.indicator_of_mem hb,
-          Set.indicator_of_mem (eisensteinBox_subset_eisensteinSet K n _ hb)]
-      · rw [Set.indicator_of_notMem hb]
-        by_cases he : a ∈ eisensteinSet K n
-        · rw [Set.indicator_of_mem he, L.rootCount_eq_zero_of_notMem_eisensteinBox hL he hb,
-            Nat.cast_zero]
-        · rw [Set.indicator_of_notMem he]
-    rw [← lintegral_indicator measurableSet_eisensteinBox, hind,
-      lintegral_indicator measurableSet_eisensteinSet, L.lintegral_rootCount hL μ hμ,
-      ← IntermediateField.wildExponent_add_eq_discriminantExponent_add_one hL, add_comm]
-  · have hzero : ∀ a ∈ eisensteinBox K n j, (L.rootCount a : ℝ≥0∞) = 0 := fun a ha ↦ by
-      have hnot : a ∉ eisensteinBox K n L.wildExponent := fun ha' ↦
-        Set.disjoint_left.mp
-          (pairwiseDisjoint_eisensteinBox K n (Set.mem_univ j) (Set.mem_univ _) (Ne.symm hj)) ha ha'
-      rw [L.rootCount_eq_zero_of_notMem_eisensteinBox hL
-        (eisensteinBox_subset_eisensteinSet K n j ha) hnot, Nat.cast_zero]
-    rw [setLIntegral_congr_fun measurableSet_eisensteinBox hzero, lintegral_zero]
+    have hsplit := lintegral_inter_add_sdiff (μ := μ)
+      (fun a ↦ (L.rootCount a : ℝ≥0∞)) (eisensteinSet K n)
+      (measurableSet_eisensteinBox (j := L.wildExponent))
+    have hsdiff : ∫⁻ a in eisensteinSet K n \ eisensteinBox K n L.wildExponent,
+        (L.rootCount a : ℝ≥0∞) ∂μ = 0 :=
+      setLIntegral_eq_zero (measurableSet_eisensteinSet.diff measurableSet_eisensteinBox)
+        fun a ⟨ha, hb⟩ ↦ by simp [L.rootCount_eq_zero_of_notMem_eisensteinBox hL ha hb]
+    rw [Set.inter_eq_right.mpr (eisensteinBox_subset_eisensteinSet K n _), hsdiff, add_zero,
+      L.lintegral_rootCount hL μ hμ,
+      ← IntermediateField.wildExponent_add_eq_discriminantExponent_add_one hL, add_comm] at hsplit
+    exact hsplit
+  · refine setLIntegral_eq_zero measurableSet_eisensteinBox fun a ha ↦ ?_
+    have hnot : a ∉ eisensteinBox K n L.wildExponent := fun ha' ↦
+      Set.disjoint_left.mp
+        (pairwiseDisjoint_eisensteinBox K n (Set.mem_univ j) (Set.mem_univ _) (Ne.symm hj)) ha ha'
+    simp [L.rootCount_eq_zero_of_notMem_eisensteinBox hL
+      (eisensteinBox_subset_eisensteinSet K n j ha) hnot]
 
 end LocalField
 

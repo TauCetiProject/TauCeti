@@ -315,22 +315,25 @@ theorem natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCoun
     ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℚ) =
       krasnerCount K n j := by
   by_cases hadm : IsOreAdmissible K n j
-  · have hR := natCast_ncard_wildExponent_eq_div_pow_real hadm
+  · have hQ := congrArg (Nat.cast (R := ℚ))
+      (ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow (K := K) hadm)
     have hn := hadm.pos
-    have hq0_rat : (Nat.card 𝓀[K] : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-    have hq0 : (Nat.card 𝓀[K] : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-    apply Rat.cast_injective (α := ℝ)
-    rw [krasnerCount_of_isOreAdmissible hadm, zpow_sub₀ hq0_rat, zpow_natCast, zpow_natCast]
-    have hexp : n + j = (n + j - 1) + 1 := by omega
-    rw [hexp, pow_succ, pow_add, pow_one] at hR
-    split_ifs at hR ⊢
-    · push_cast
-      field_simp at hR ⊢
-      linear_combination hR
-    · push_cast
-      rw [inv_eq_one_div]
-      field_simp at hR ⊢
-      linear_combination hR
+    have hq0 : (Nat.card 𝓀[K] : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+    have hpow0 :
+        (Nat.card 𝓀[K] : ℚ) ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) ≠ 0 :=
+      pow_ne_zero _ hq0
+    push_cast at hQ
+    rw [Nat.cast_sub Finite.one_lt_card.le, Nat.cast_one] at hQ
+    have hnum : (Nat.card 𝓀[K] : ℚ) ^ (n + j) =
+        (Nat.card 𝓀[K] : ℚ) ^ (n + j - 1) * (Nat.card 𝓀[K] : ℚ) := by
+      rw [← pow_succ, Nat.sub_add_cancel (by omega)]
+    have hden : (Nat.card 𝓀[K] : ℚ) ^ (2 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) =
+        (Nat.card 𝓀[K] : ℚ) ^ (∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
+          (Nat.card 𝓀[K] : ℚ) ^ 2 := by
+      rw [add_comm, pow_add]
+    rw [eq_div_of_mul_eq hpow0 hQ, krasnerCount_of_isOreAdmissible hadm, zpow_sub₀ hq0,
+      zpow_natCast, zpow_natCast, hnum, hden]
+    split_ifs <;> field_simp
   · rw [krasnerCount_of_not_isOreAdmissible hadm,
       setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm,
       Set.ncard_empty, Nat.cast_zero]
@@ -378,29 +381,22 @@ theorem tsum_ncard_wildExponent_div_natCard_residueField_pow (n : ℕ) :
 /-- Real `HasSum` consistency of `krasnerCount` with Serre's first mass formula. -/
 theorem hasSum_krasnerCount_div_natCard_residueField_pow (n : ℕ) :
     HasSum (fun j : ℕ ↦ (krasnerCount K n j : ℝ) / (Nat.card 𝓀[K] : ℝ) ^ j) n := by
-  let term : ℕ → ℝ≥0 := fun j ↦
-    ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0) /
-      (Nat.card 𝓀[K] : ℝ≥0) ^ j
-  have hcoe (j : ℕ) :
-      (term j : ℝ≥0∞) =
-        ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) /
-          (Nat.card 𝓀[K] : ℝ≥0∞) ^ j := by
-    simp [term, ENNReal.coe_div (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))]
-  have htsum : ∑' j : ℕ, (term j : ℝ≥0∞) = ((n : ℝ≥0) : ℝ≥0∞) := by
-    rw [tsum_congr hcoe, tsum_ncard_wildExponent_div_natCard_residueField_pow,
-      ENNReal.coe_natCast]
-  have hnn : HasSum term (n : ℝ≥0) := by
-    rwa [← ENNReal.hasSum_coe, CompleteLattice.summable.hasSum_iff]
-  have hreal := NNReal.hasSum_coe.mpr hnn
-  rw [NNReal.coe_natCast] at hreal
+  let f : ℕ → ℝ≥0∞ := fun j ↦
+    ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) /
+      (Nat.card 𝓀[K] : ℝ≥0∞) ^ j
+  have htsum : ∑' j : ℕ, f j = n := tsum_ncard_wildExponent_div_natCard_residueField_pow n
+  have hsum_ne_top : ∑' j : ℕ, f j ≠ ⊤ := htsum ▸ ENNReal.natCast_ne_top n
+  have hf_ne_top : ∀ j, f j ≠ ⊤ := fun j ↦
+    ENNReal.div_ne_top (ENNReal.natCast_ne_top _)
+      (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
+  have hreal := ENNReal.hasSum_toReal hsum_ne_top
+  rw [← ENNReal.tsum_toReal_eq hf_ne_top, htsum, ENNReal.toReal_natCast] at hreal
   refine hreal.congr_fun fun j ↦ ?_
   have hkr : (krasnerCount K n j : ℝ) =
       ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ) := by
     exact_mod_cast
       (natCast_ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCount (K := K) n j).symm
-  dsimp only [term]
-  push_cast
-  rw [hkr]
+  simp [f, ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_natCast, hkr]
 
 /-- For a set of representatives `R` of `σ_K(n)`, each wild-exponent stratum `{M ∈ R | c(M) = j}`
 is finite. -/
