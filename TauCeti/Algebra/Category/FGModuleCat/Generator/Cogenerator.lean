@@ -14,6 +14,7 @@ public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.FGModuleCat.Injective
+import TauCeti.Algebra.Category.FGModuleCat.Projectivization
 import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.RingTheory.Artinian.Subalgebra
 
@@ -249,8 +250,8 @@ theorem _root_.FGModuleCat.injective_end_of_isCoseparator (R : Type u) [CommRing
   have : Injective X := FGModuleCat.injective_of_moduleInjective X
   -- As a finitely generated injective object, `X` lies in `add M`; so `D_C M` is projective as a
   -- right module over `End M` (a left module over its opposite).
-  have := FGModuleCat.projective_end_op_matlisDual_of_additiveClosure (R := C)
-    (FGModuleCat.additiveClosure_of_isCoseparator_of_injective hM X) e
+  have := (FGModuleCat.finite_projective_end_op_matlisDual_of_additiveClosure (R := C)
+    (FGModuleCat.additiveClosure_of_isCoseparator_of_injective hM X) e).2
   exact moduleInjective_of_projective_op_matlisDual hf.length_quotient_linearMap_eq_one
     (isFiniteLength_of_finite_trans C A M.obj)
 

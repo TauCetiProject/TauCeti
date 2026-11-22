@@ -243,6 +243,14 @@ theorem mapOp_comp {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module Aᵐ�
   ext
   simp
 
+/-- The right action of the endomorphism ring `Module.End Aᵐᵒᵖ N` of a right module on `D_R N` is
+dualization of endomorphisms. This is not a simp lemma, since `end_op_smul_eq_map` rewrites the
+same action to `MatlisDual.map` over `Aᵐᵒᵖ`. -/
+theorem end_op_smul_eq_mapOp (γ : (Module.End Aᵐᵒᵖ N)ᵐᵒᵖ) (φ : MatlisDual R E N) :
+    γ • φ = mapOp (A := A) γ.unop φ := by
+  ext
+  simp
+
 /-- An isomorphism of right modules dualizes to an isomorphism of left modules. The two modules may
 carry any `R`-module structures compatible with the `A`-action. -/
 def congrOp (e : N ≃ₗ[Aᵐᵒᵖ] N') : MatlisDual R E N' ≃ₗ[A] MatlisDual R E N :=
@@ -544,7 +552,7 @@ theorem moduleInjective_of_projective_op_matlisDual [Module A N] [IsScalarTower 
   (((MatlisDual.evalEquiv (A := A) hE hN).restrictScalars R).trans
     (equivLinearMap R E _)).moduleInjective_of_dual_projective fun a x φ ↦ by simp
 
-attribute [local instance] opOpModule isScalarTower_opOpModule RingHomInvPair.of_ringEquiv in
+attribute [local instance] RingHomInvPair.of_ringEquiv in
 /-- **A right module with projective dual is injective.** If `E` is injective and
 `Hom_R(R ⧸ 𝔪, E)` has length one for every maximal ideal `𝔪` of `R`, then a right `A`-module `N`
 of finite length over `R` whose dual `D_R N` is a projective left `A`-module is an injective right
@@ -553,11 +561,14 @@ theorem moduleInjective_op_of_projective_matlisDual [Module Aᵐᵒᵖ N] [IsSca
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
     (hN : IsFiniteLength R N) [Module.Projective A (MatlisDual R E N)] :
     Module.Injective Aᵐᵒᵖ N :=
-  -- By biduality `N` is the dual of the projective left module `D_R N`, an `Aᵐᵒᵖᵐᵒᵖ`-module.
-  have : Module.Projective Aᵐᵒᵖᵐᵒᵖ (MatlisDual R E N) := .of_equiv (opOpSemilinearEquiv (A := A))
-  (((MatlisDual.evalEquivOp (A := A) hE hN).restrictScalars R).trans
-    (equivLinearMap R E _)).moduleInjective_of_dual_projective (A := Aᵐᵒᵖ)
-    fun a x φ ↦ (smul_apply a.unop φ x).symm
+  -- This is the left-module case over `Aᵐᵒᵖ`: the action of `Aᵐᵒᵖᵐᵒᵖ` on `D_R N` is that of `A`
+  -- through `RingEquiv.opOp A`.
+  let e : MatlisDual R E N ≃ₛₗ[RingHomClass.toRingHom (RingEquiv.opOp A)] MatlisDual R E N :=
+    { Equiv.refl _ with
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ MatlisDual.ext fun _ ↦ by simp }
+  have : Module.Projective Aᵐᵒᵖᵐᵒᵖ (MatlisDual R E N) := .of_equiv e
+  moduleInjective_of_projective_op_matlisDual (A := Aᵐᵒᵖ) hE hN
 
 end Biduality
 

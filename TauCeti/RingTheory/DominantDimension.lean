@@ -125,9 +125,17 @@ theorem two_le_dominantDimension_end_of_projective_of_injective {A : Type u} [Ri
       Injective (ModuleCat.of (Module.End A M) (Fin k → M)) :=
     ⟨(IsProjective.iff_projective _).1 inferInstance,
       Module.injective_object_of_injective_module _ _⟩
+  -- The first map of `S` is precomposition with `q` followed by `Hom_A(Aⁿ, M) ≅ Mⁿ`; it is
+  -- injective since `q` is surjective.
+  have hf : ⇑S.f.hom = ⇑(e n) ∘ fun g : Module.End A M ↦ g ∘ₗ q := by
+    ext g : 1
+    simp [S, LinearMap.lcomp_apply']
+  have hmono : Mono S.f := (ModuleCat.mono_iff_injective _).2 <| by
+    change Function.Injective S.f.hom
+    rw [hf]
+    exact (e n).injective.comp hq.injective_linearMapComp_right
   rw [dominantDimension_eq_dominantDimension_of]
-  exact CategoryTheory.two_le_dominantDimension_iff.2 ⟨_, _, S.f, S.g, S.zero,
-    (ModuleCat.mono_iff_injective _).2 ((e n).injective.comp hq.injective_linearMapComp_right),
+  exact CategoryTheory.two_le_dominantDimension_iff.2 ⟨_, _, S.f, S.g, S.zero, hmono,
     ModuleCat.shortComplexOfConj_exact _ _ _ _ _ hex, hM n, hM m⟩
 
 /-- **Müller's criterion, forward direction, for a generator.** Let `M` be a finitely presented

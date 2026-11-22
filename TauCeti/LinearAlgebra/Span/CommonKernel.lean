@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Span.Basic
 
-import Mathlib.RingTheory.Artinian.Module
+import TauCeti.RingTheory.Artinian.Module
 
 /-!
 # Common kernels of functionals with values in a subring
@@ -79,15 +79,7 @@ theorem iInf_ker_eq_span_inter (hL : ∀ r ∈ R, ∀ v ∈ L, r • v ∈ L)
   classical
   refine le_antisymm ?_ (span_le.mpr Set.inter_subset_right)
   -- A finite subfamily already cuts out the common kernel.
-  obtain ⟨_, ⟨s, rfl⟩, hs⟩ := IsArtinian.set_has_minimal
-    (Set.range fun s : Finset ι ↦ ⨅ i ∈ s, LinearMap.ker (φ i)) ⟨_, ⟨∅, rfl⟩⟩
-  have hseq : ⨅ i ∈ s, LinearMap.ker (φ i) = ⨅ i, LinearMap.ker (φ i) := by
-    refine le_antisymm (le_iInf fun j ↦ ?_) (le_iInf₂ fun i _ ↦ iInf_le _ i)
-    by_contra hj
-    refine hs _ ⟨insert j s, rfl⟩ (lt_of_le_of_ne (le_iInf₂ fun i hi ↦ ?_) fun h ↦ hj ?_)
-    · exact iInf₂_le i (Finset.mem_insert_of_mem hi)
-    · have h' : ⨅ i ∈ insert j s, LinearMap.ker (φ i) = ⨅ i ∈ s, LinearMap.ker (φ i) := h
-      exact h' ▸ iInf₂_le j (Finset.mem_insert_self j s)
+  obtain ⟨s, hseq⟩ := IsArtinian.exists_finset_iInf_eq fun i ↦ LinearMap.ker (φ i)
   have key (t : Finset ι) : ⨅ i ∈ t, LinearMap.ker (φ i) ≤
       span K ((L : Set V) ∩ ↑(⨅ i ∈ t, LinearMap.ker (φ i))) := by
     induction t using Finset.induction_on with

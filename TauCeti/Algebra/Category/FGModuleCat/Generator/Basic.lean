@@ -13,9 +13,10 @@ public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 -- Private: the comparison of separators with generators in `ModuleCat R`, and the regular module
--- as a projective object of `FGModuleCat R`.
+-- as a projective object of `FGModuleCat R`, and finite intersections in Artinian modules.
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.Generator
+import TauCeti.RingTheory.Artinian.Module
 
 /-!
 # Separators of finitely generated modules
@@ -146,16 +147,12 @@ theorem _root_.FGModuleCat.additiveClosure_of_isCoseparator_of_injective {M : FG
       obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hy
       simp [i, hx]
     simpa [i] using congr(($hi).hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩)
-  -- By the minimal condition, the kernels of finitely many of them already meet in zero.
-  obtain ⟨_, ⟨F, rfl⟩, hF⟩ := IsArtinian.set_has_minimal
-    (Set.range fun F : Finset (I ⟶ M) ↦ ⨅ g ∈ F, LinearMap.ker g.hom.hom) ⟨_, ∅, rfl⟩
+  -- As `I` is Artinian, the kernels of finitely many of them already meet in zero.
+  obtain ⟨F, hF⟩ := IsArtinian.exists_finset_iInf_eq fun g : I ⟶ M ↦ LinearMap.ker g.hom.hom
   have hF' (x : I.obj) (hx : ∀ g ∈ F, g.hom.hom x = 0) : x = 0 := hker x fun g ↦ by
-    -- Minimality: adding the kernel of `g` does not shrink the intersection.
-    have h := hF _ ⟨insert g F, rfl⟩
-    simp only [Finset.iInf_insert] at h
-    have hK : ⨅ g ∈ F, LinearMap.ker g.hom.hom ≤ LinearMap.ker g.hom.hom :=
-      not_not.1 (inf_lt_right.not.1 h)
-    exact hK (by simpa [Submodule.mem_iInf] using hx)
+    have hx' : x ∈ ⨅ g ∈ F, LinearMap.ker g.hom.hom := by simpa [Submodule.mem_iInf] using hx
+    rw [hF] at hx'
+    exact (Submodule.mem_iInf _).1 hx' g
   -- So `I` embeds into a finite sum of copies of `M`, and the embedding splits.
   let ι : I ⟶ ⨁ fun _ : Fin F.card ↦ M := biproduct.lift fun j ↦ F.equivFin.symm j
   have : Mono ι := Preadditive.mono_of_cancel_zero ι fun {Z} h hh ↦ by
