@@ -170,7 +170,7 @@ def degreeQuotientLift {M N : GradedModuleCat.{v} 𝒜} (p : ℤ)
     ext x
     exact M.offDegreeSpan_le_ker p hN f x.property
   exact (Limits.CokernelCofork.IsColimit.desc'
-    (cokernelIsColimit (M.offDegreeι p)) f hf).1
+    (cokernelIsColimit (M.offDegreeι p)) f hf).val
 
 /-- Composing the canonical lift with the quotient projection recovers the original map. -/
 @[reassoc (attr := simp)]

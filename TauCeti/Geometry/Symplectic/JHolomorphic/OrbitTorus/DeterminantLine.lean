@@ -101,8 +101,8 @@ def orbitTorusOperatorₗ (p q : ℝ × ℝ) (ε₁ ε₂ : ℝ) :
     doublyTwistedContDiff ℝ V 2 p q ε₁ ε₂ →ₗ[ℝ] ℝ × ℝ → V where
   toFun u := orbitTorusOperator J₀ S u
   map_add' u v := funext fun z => orbitTorusOperator_add
-    ((mem_doublyTwistedContDiff.1 u.2).1.differentiable two_ne_zero z)
-    ((mem_doublyTwistedContDiff.1 v.2).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 u.property).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 v.property).1.differentiable two_ne_zero z)
   map_smul' c _ := orbitTorusOperator_smul c
 
 variable (J₀ S) in
@@ -111,8 +111,8 @@ def orbitTorusAdjointₗ (p q : ℝ × ℝ) (ε₁ ε₂ : ℝ) :
     doublyTwistedContDiff ℝ V 2 p q ε₁ ε₂ →ₗ[ℝ] ℝ × ℝ → V where
   toFun u := orbitTorusAdjoint J₀ S u
   map_add' u v := funext fun z => orbitTorusAdjoint_add
-    ((mem_doublyTwistedContDiff.1 u.2).1.differentiable two_ne_zero z)
-    ((mem_doublyTwistedContDiff.1 v.2).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 u.property).1.differentiable two_ne_zero z)
+    ((mem_doublyTwistedContDiff.1 v.property).1.differentiable two_ne_zero z)
   map_smul' c _ := orbitTorusAdjoint_smul c
 
 @[simp]
@@ -172,9 +172,9 @@ theorem ker_orbitTorusOperatorₗ_eq_bot (hℓ : 0 < ℓ) (hd : 0 < d)
     LinearMap.ker (orbitTorusOperatorₗ J₀ S ((k : ℝ) * ℓ, 0) ((a : ℝ) * ℓ, (n : ℝ) * d) (-1) ε₂) =
       ⊥ := by
   refine eq_bot_iff.2 fun u hu => ?_
-  obtain ⟨hs, ht⟩ := twists_of_mem u.2
+  obtain ⟨hs, ht⟩ := twists_of_mem u.property
   have h := eq_one_or_eq_zero_of_orbitTorusOperator_eq_zero hℓ hd hJ₀ hS hScont
-    (mem_doublyTwistedContDiff.1 u.2).1 (by norm_num) hε₂ hk hn hs ht
+    (mem_doublyTwistedContDiff.1 u.property).1 (by norm_num) hε₂ hk hn hs ht
     (mem_ker_orbitTorusOperatorₗ.1 hu)
   rw [Submodule.mem_bot]
   exact Subtype.ext (h.resolve_left (by norm_num))
@@ -187,17 +187,17 @@ private def kerOrbitTorusAdjointEquivReflect (hε₁ : ε₁ ^ 2 = 1) (k n : ℕ
         (orbitTorusAdjointₗ J₀ S ((k : ℝ) * ℓ, 0) ((a : ℝ) * ℓ, (n : ℝ) * d) ε₁ ε₂) ≃ₗ[ℝ]
       LinearMap.ker
         (orbitTorusOperatorₗ J₀ S ((k : ℝ) * ℓ, 0) (((-a : ℤ) : ℝ) * ℓ, (n : ℝ) * d) ε₁ ε₂) where
-  toFun u := ⟨⟨fun w => (u : ℝ × ℝ → V) (-w.1, w.2), reflect_mem hε₁ u.1.2⟩,
+  toFun u := ⟨⟨fun w => (u : ℝ × ℝ → V) (-w.1, w.2), reflect_mem hε₁ u.val.property⟩,
     mem_ker_orbitTorusOperatorₗ.2 fun z => by
       rw [orbitTorusOperator_comp_neg_fst]
-      exact mem_ker_orbitTorusAdjointₗ.1 u.2 _⟩
+      exact mem_ker_orbitTorusAdjointₗ.1 u.property _⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun u := ⟨⟨fun w => (u : ℝ × ℝ → V) (-w.1, w.2), by
-      simpa only [neg_neg] using reflect_mem hε₁ u.1.2⟩,
+      simpa only [neg_neg] using reflect_mem hε₁ u.val.property⟩,
     mem_ker_orbitTorusAdjointₗ.2 fun z => by
       rw [orbitTorusAdjoint_comp_neg_fst]
-      exact mem_ker_orbitTorusOperatorₗ.1 u.2 _⟩
+      exact mem_ker_orbitTorusOperatorₗ.1 u.property _⟩
   left_inv u := by ext; simp
   right_inv u := by ext; simp
 
@@ -214,7 +214,7 @@ theorem ker_orbitTorusAdjointₗ_eq_bot (hℓ : 0 < ℓ) (hd : 0 < d)
   set e := kerOrbitTorusAdjointEquivReflect (J₀ := J₀) (S := S) (ℓ := ℓ) (d := d) (ε₁ := -1)
     (ε₂ := ε₂) (by norm_num) k n a
   have h0 : e ⟨u, hu⟩ = 0 := Subtype.ext <| (Submodule.eq_bot_iff _).1
-    (ker_orbitTorusOperatorₗ_eq_bot hℓ hd hJ₀ hS hScont hε₂ hk hn (-a)) _ (e ⟨u, hu⟩).2
+    (ker_orbitTorusOperatorₗ_eq_bot hℓ hd hJ₀ hS hScont hε₂ hk hn (-a)) _ (e ⟨u, hu⟩).property
   simpa using congrArg Subtype.val (e.injective (h0.trans e.map_zero.symm))
 
 section Complete
@@ -275,18 +275,18 @@ def kerOrbitTorusOperatorEquiv (hℓ : 0 < ℓ) (hd : 0 < d) (hJ₀ : ∀ x y, �
         (orbitTorusOperatorₗ J₀ S ((k : ℝ) * ℓ, 0) ((a : ℝ) * ℓ, (n : ℝ) * d) 1 ε₂) ≃ₗ[ℝ]
       LinearMap.ker
         (ε₂ • 1 - ((dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n : V →L[ℝ] V) : V →ₗ[ℝ] V)) where
-  toFun u := ⟨u.1.1 0, (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn
-    u.1.2 (mem_ker_orbitTorusOperatorₗ.1 u.2)).2⟩
+  toFun u := ⟨u.val.val 0, (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn
+    u.val.property (mem_ker_orbitTorusOperatorₗ.1 u.property)).2⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   invFun v :=
-    ⟨⟨propagatorField J₀ S v, propagatorField_mem hS1 hper k a v.2⟩,
+    ⟨⟨propagatorField J₀ S v, propagatorField_mem hS1 hper k a v.property⟩,
       mem_ker_orbitTorusOperatorₗ.2
         (orbitTorusOperator_dysonSeriesLeft_apply_eq_zero hJ₀sq hS1.continuous v)⟩
   left_inv u := by
     ext1; ext1
-    exact (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn u.1.2
-      (mem_ker_orbitTorusOperatorₗ.1 u.2)).1.symm
+    exact (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn u.val.property
+      (mem_ker_orbitTorusOperatorₗ.1 u.property)).1.symm
   right_inv v := by ext; simp [propagatorField, dysonSeriesLeft_zero]
 
 /-- **The kernel of `D†` is the eigenspace of the return map.** On maps periodic along `(k ℓ, 0)`

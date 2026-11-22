@@ -349,14 +349,14 @@ isomorphic to the finite coproduct `∐_{p ∈ [a₁, b₁]} E^p ⊗ F^{n - p}`.
 private def tensorObjXIsoCoproduct {X : Scheme.{u}} (E F : CochainComplex X.Modules ℤ)
     (a₁ b₁ n : ℤ) [E.IsStrictlyGE a₁] [E.IsStrictlyLE b₁] :
     (HomologicalComplex.tensorObj E F).X n ≅
-      ∐ (fun p : Finset.Icc a₁ b₁ ↦ E.X p.1 ⊗ F.X (n - p.1)) where
+      ∐ (fun p : Finset.Icc a₁ b₁ ↦ E.X p.val ⊗ F.X (n - p.val)) where
   hom := mapBifunctorDesc fun i j hij ↦
     if hi : i ∈ Finset.Icc a₁ b₁ then
       (𝟙 (E.X i) ⊗ₘ (F.XIsoOfEq (show j = n - i by
         have hij' : i + j = n := hij
-        omega)).hom) ≫ Sigma.ι (fun p : Finset.Icc a₁ b₁ ↦ E.X p.1 ⊗ F.X (n - p.1)) ⟨i, hi⟩
+        omega)).hom) ≫ Sigma.ι (fun p : Finset.Icc a₁ b₁ ↦ E.X p.val ⊗ F.X (n - p.val)) ⟨i, hi⟩
     else 0
-  inv := Sigma.desc fun p : Finset.Icc a₁ b₁ ↦ ιTensorObj E F p.1 (n - p.1) n (by omega)
+  inv := Sigma.desc fun p : Finset.Icc a₁ b₁ ↦ ιTensorObj E F p.val (n - p.val) n (by omega)
   hom_inv_id := by
     refine mapBifunctor.hom_ext fun i j hij ↦ ?_
     have hij' : i + j = n := hij
@@ -382,7 +382,7 @@ theorem isStrictlyPerfect_tensorObj {X : Scheme.{u}} {E F : CochainComplex X.Mod
     isStrictlyPerfect X (HomologicalComplex.tensorObj E F) := by
   refine ⟨bounded_tensorObj hE.1 hF.1, fun n ↦ ?_⟩
   obtain ⟨a₁, b₁, ha₁, hb₁⟩ := (CochainComplex.bounded_iff _ E).mp hE.1
-  let f : Finset.Icc a₁ b₁ → X.Modules := fun p ↦ E.X p.1 ⊗ F.X (n - p.1)
+  let f : Finset.Icc a₁ b₁ → X.Modules := fun p ↦ E.X p.val ⊗ F.X (n - p.val)
   have : HasFiniteBiproducts X.Modules := HasFiniteBiproducts.of_hasFiniteProducts
   have : HasBiproductsOfShape (Finset.Icc a₁ b₁) X.Modules := hasBiproductsOfShape_finite X.Modules
   let e : (HomologicalComplex.tensorObj E F).X n ≅ ∏ᶜ f :=
@@ -390,7 +390,7 @@ theorem isStrictlyPerfect_tensorObj {X : Scheme.{u}} {E F : CochainComplex X.Mod
       biproduct.isoProduct f
   refine (isFiniteLocallyFree X).prop_of_iso e.symm ?_
   exact (isFiniteLocallyFree X).prop_pi f fun p ↦
-    (isFiniteLocallyFree X).prop_tensor (hE.2 p.1) (hF.2 (n - p.1))
+    (isFiniteLocallyFree X).prop_tensor (hE.2 p.val) (hF.2 (n - p.val))
 
 /-- Every strictly perfect complex of `𝒪_X`-modules is K-flat: its terms are finite locally free,
 hence flat (`isRightAdjoint_tensorLeft_of_isLocallyFree`), and it is bounded. -/

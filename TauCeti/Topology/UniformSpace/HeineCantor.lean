@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.UniformSpace.HeineCantor
+public import Mathlib.Topology.MetricSpace.Pseudo.Constructions
 
 /-!
 # Uniform convergence of jointly continuous families on compact sets
@@ -21,12 +22,18 @@ Joint continuity is only needed along the limiting fibre: if `Φ` is jointly con
 point of `{q} × k`, then `Φ p` tends to `Φ q` uniformly on `k` as `p` tends to `q`
 (`IsCompact.tendstoUniformlyOn_of_continuousAt`). Nothing is assumed about `Φ` at other parameters.
 
+In metric form, a function `f` of `(p, y)` that is continuous at the points `(p, x p)` of a graph
+over a compact set `K` is uniformly continuous there: `f (p, y)` is close to `f (p, x p)` whenever
+`p ∈ K` and `y` is close to `x p`, uniformly in `p` (`IsCompact.exists_pos_forall_dist_lt`).
+
 ## Main results
 
 * `Continuous.tendstoUniformlyOn_of_tendsto`: uniform convergence on compact sets along any
   convergent parameter family, for a jointly continuous family.
 * `IsCompact.tendstoUniformlyOn_of_continuousAt`: uniform convergence on a compact set as the
   parameter tends to `q`, for a family jointly continuous at every point of the fibre over `q`.
+* `IsCompact.exists_pos_forall_dist_lt`: uniform continuity in the fibre direction at a graph over
+  a compact set.
 -/
 
 public section
@@ -66,5 +73,23 @@ theorem tendstoUniformlyOn_of_continuousAt {α β γ : Type*} [TopologicalSpace 
       (continuousAt_const.prodMk continuousAt_snd)
   filter_upwards [hq (mem_nhds_left _ hv), hΦ x hx (mem_nhds_left _ hv)] with z h₁ h₂
   exact hvu (SetRel.prodMk_mem_comp (hvsymm h₁) h₂)
+
+/-- **Uniform continuity at a graph over a compact set.** Let `x` be continuous on a compact set
+`K`, and let `f` be continuous at every point `(p, x p)` with `p ∈ K`. For every `ε > 0` there is
+`δ > 0` such that `f (p, y)` is within `ε` of `f (p, x p)` for every `p ∈ K` and every `y` within
+`δ` of `x p`. -/
+theorem exists_pos_forall_dist_lt {α β γ : Type*} [PseudoMetricSpace α] [PseudoMetricSpace β]
+    [PseudoMetricSpace γ] {K : Set α} (hK : IsCompact K) {x : α → β} (hx : ContinuousOn x K)
+    {f : α × β → γ} (hf : ∀ p ∈ K, ContinuousAt f (p, x p)) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ p ∈ K, ∀ y, dist y (x p) < δ → dist (f (p, y)) (f (p, x p)) < ε := by
+  have hQ : IsCompact ((fun p ↦ (p, x p)) '' K) :=
+    hK.image_of_continuousOn ((continuousOn_id' K).prodMk hx)
+  obtain ⟨δ, hδ, h⟩ := Metric.mem_uniformity_dist.1 (hQ.uniformContinuousAt_of_continuousAt f
+    (by rintro _ ⟨p, hp, rfl⟩; exact hf p hp) (Metric.dist_mem_uniformity hε))
+  refine ⟨δ, hδ, fun p hp y hy ↦ ?_⟩
+  have hd : dist (p, x p) (p, y) < δ := by
+    rwa [Prod.dist_eq, dist_self, max_eq_right dist_nonneg, dist_comm]
+  rw [dist_comm]
+  exact h hd (mem_image_of_mem _ hp)
 
 end IsCompact

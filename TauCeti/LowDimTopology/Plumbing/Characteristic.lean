@@ -119,7 +119,7 @@ private theorem adjacency_sum_cast_zmod_two_eq_zero (x : V → ℤ) :
     (∑ i, ∑ j, ((if P.toSimpleGraph.Adj i j then x i * x j else 0 : ℤ) : ZMod 2)) = 0 := by
   classical
   let f : {p : V × V // P.toSimpleGraph.Adj p.1 p.2} → ZMod 2 :=
-    fun p => (x p.1.1 : ZMod 2) * (x p.1.2 : ZMod 2)
+    fun p => (x p.val.1 : ZMod 2) * (x p.val.2 : ZMod 2)
   -- Reindex the iterated sum over `i` then `j` as a single sum over the pair `(i, j) : V × V`.
   have hpair :
       (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then
@@ -141,13 +141,13 @@ private theorem adjacency_sum_cast_zmod_two_eq_zero (x : V → ℤ) :
   -- Adjacency is symmetric, so `(i, j) ↦ (j, i)` is a fixed-point-free involution on adjacent
   -- pairs; it pairs `f` with itself, and `a + a = 0` in `ZMod 2`.
   exact Finset.sum_involution (s := Finset.univ) (f := f)
-    (fun p _ => ⟨(p.1.2, p.1.1), p.2.symm⟩)
+    (fun p _ => ⟨(p.val.2, p.val.1), p.property.symm⟩)
     (fun p _ => by
       dsimp [f]
       rw [mul_comm]
       exact CharTwo.add_self_eq_zero _)
     (fun p _ _ h => by
-      exact p.2.ne (Prod.ext_iff.mp (Subtype.ext_iff.mp h)).2)
+      exact p.property.ne (Prod.ext_iff.mp (Subtype.ext_iff.mp h)).2)
     (fun _ _ => Finset.mem_univ _) (fun p _ => by
       ext <;> rfl)
 

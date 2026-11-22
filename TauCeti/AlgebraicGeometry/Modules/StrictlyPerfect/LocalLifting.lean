@@ -498,15 +498,15 @@ private lemma exists_lift_homotopy_of_homotopy_comp_inr {C : Type*} [Category* C
   let z : Cochain P (CochainComplex.mappingCone φ) (-1) := Cochain.ofHomotopy H
   have hz : δ (-1) 0 z = Cochain.ofHom (α ≫ CochainComplex.mappingCone.inr φ) := by
     simp [z]
-  have hδβ : δ 0 1 (z.comp (CochainComplex.mappingCone.fst φ).1 (neg_add_cancel 1)) = 0 := by
-    rw [δ_comp z (CochainComplex.mappingCone.fst φ).1 (neg_add_cancel 1) 0 2 1
+  have hδβ : δ 0 1 (z.comp (CochainComplex.mappingCone.fst φ).val (neg_add_cancel 1)) = 0 := by
+    rw [δ_comp z (CochainComplex.mappingCone.fst φ).val (neg_add_cancel 1) 0 2 1
       (zero_add 1) (neg_add_cancel 1) rfl]
     simp [hz]
   let β : P ⟶ M := Cocycle.homOf
-    (Cocycle.mk (z.comp (CochainComplex.mappingCone.fst φ).1 (neg_add_cancel 1)) 1
+    (Cocycle.mk (z.comp (CochainComplex.mappingCone.fst φ).val (neg_add_cancel 1)) 1
       (zero_add 1) hδβ)
   have hβ_ofHom : Cochain.ofHom β =
-      z.comp (CochainComplex.mappingCone.fst φ).1 (neg_add_cancel 1) := by
+      z.comp (CochainComplex.mappingCone.fst φ).val (neg_add_cancel 1) := by
     simp [β]
   let h : Cochain P N (-1) := z.comp (CochainComplex.mappingCone.snd φ) (add_zero (-1))
   have hinr_snd : (Cochain.ofHom (α ≫ CochainComplex.mappingCone.inr φ)).comp
@@ -518,7 +518,7 @@ private lemma exists_lift_homotopy_of_homotopy_comp_inr {C : Type*} [Category* C
       rw [δ_comp_zero_cochain z (CochainComplex.mappingCone.snd φ) 0 (neg_add_cancel 1),
         CochainComplex.mappingCone.δ_snd, hz, Cochain.comp_neg, hinr_snd,
         ← Cochain.comp_assoc_of_third_is_zero_cochain z
-          (CochainComplex.mappingCone.fst φ).1 (Cochain.ofHom φ) (neg_add_cancel 1),
+          (CochainComplex.mappingCone.fst φ).val (Cochain.ofHom φ) (neg_add_cancel 1),
         ← hβ_ofHom, ← Cochain.ofHom_comp]
     rw [hδh]
     abel
@@ -600,7 +600,7 @@ private lemma exists_acyclic_factorization_of_homotopy_comp_zero {C : Type*} [Ca
     (H : Homotopy (f ≫ s) 0) :
     ∃ (A : CochainComplex C ℤ), A.Acyclic ∧ ∃ (γ : P ⟶ A) (p : A ⟶ M), γ ≫ p = f := by
   have heq : δ (-1) 0 (-Cochain.ofHomotopy H) +
-      (Cocycle.ofHom f).1.comp (Cochain.ofHom s) (add_zero 0) = 0 := by
+      (Cocycle.ofHom f).val.comp (Cochain.ofHom s) (add_zero 0) = 0 := by
     simp [Cochain.ofHom_comp]
   let γ₀ : Cocycle P (CochainComplex.mappingCone s) (-1) :=
     CochainComplex.mappingCone.liftCocycle s (Cocycle.ofHom f) (-Cochain.ofHomotopy H)
@@ -614,13 +614,13 @@ private lemma exists_acyclic_factorization_of_homotopy_comp_zero {C : Type*} [Ca
       ((CochainComplex.quasiIso_iff_acyclic_mappingCone s).mp inferInstance),
     γ, p, ?_⟩
   refine HomologicalComplex.hom_ext _ _ fun i ↦ ?_
-  have hγ : γ.f i = -(γ₀.1.v i (i - 1) (by omega) ≫
+  have hγ : γ.f i = -(γ₀.val.v i (i - 1) (by omega) ≫
       ((CochainComplex.mappingCone s).shiftFunctorObjXIso (-1) i (i - 1) (by omega)).inv) := by
     simp only [γ, HomologicalComplex.neg_f_apply, Cocycle.equivHomShift_symm_apply,
       Cocycle.homOf_f, Cocycle.rightShift_coe]
     rw [Cochain.rightShift_v _ (-1) 0 (zero_add (-1)) i i (add_zero i) (i - 1) (by omega)]
   have hp : p.f i = -(((CochainComplex.mappingCone s).shiftFunctorObjXIso (-1) i (i - 1)
-      (by omega)).hom ≫ (CochainComplex.mappingCone.fst s).1.v (i - 1) i (by omega)) := by
+      (by omega)).hom ≫ (CochainComplex.mappingCone.fst s).val.v (i - 1) i (by omega)) := by
     simp only [p, Cocycle.equivHomShift'_symm_apply, Cocycle.homOf_f, Cocycle.leftShift_coe]
     rw [Cochain.leftShift_v _ (-1) 0 (add_neg_cancel 1) i i (add_zero i) (i - 1) (by omega)]
     have hsign : ((-1 : ℤ) * 0 + (-1 : ℤ) * (-1 - 1) / 2).negOnePow = -1 := by decide

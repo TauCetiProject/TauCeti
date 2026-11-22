@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
 import Mathlib.Probability.Independence.Process.Basic
 
 /-!
-# Independence of the two halves of an independent family of pairs
+# Independence of coordinate families and product laws
 
 Let `(Xᵢ, Yᵢ)` be an independent family of pairs of random variables, and suppose that
 within each pair `Xᵢ` and `Yᵢ` are independent. Then the whole family `(Xᵢ)ᵢ` is independent of
@@ -21,9 +22,14 @@ of the `Xᵢ` and the `Yᵢ`, and Mathlib's `MeasureTheory.measurePreserving_arr
 rearranges it into the product of the two coordinate laws. Mathlib's
 `ProbabilityTheory.IndepFun.process_indepFun_process₀` reduces an arbitrary family to finite ones.
 
+Conversely, whenever a measurable equivalence `e : E ≃ᵐ (∀ i, α i)` over a finite index type
+pushes a measure `μ` forward to a product of probability measures `Measure.pi ν`, having law `μ`
+is equivalent to the `e`-coordinates being mutually independent with marginal laws `ν i`.
+
 ## Main results
 
 * `ProbabilityTheory.iIndepFun.indepFun_pi_of_indepFun`
+* `TauCeti.Probability.hasLaw_iff_iIndepFun_of_map_eq_pi`
 -/
 
 public section
@@ -69,7 +75,37 @@ theorem iIndepFun.indepFun_pi_of_indepFun {X : ι → Ω → α} {Y : ι → Ω 
   refine IndepFun.process_indepFun_process₀ hX hY fun I J ↦ ?_
   have hK := iIndepFun.indepFun_pi_of_indepFun_of_finite (ι := ↥(I ∪ J)) (fun i ↦ hX i)
     (fun i ↦ hY i) (h.precomp Subtype.val_injective) fun i ↦ hXY i
-  exact hK.comp (φ := fun x (i : I) ↦ x ⟨i, Finset.mem_union_left J i.2⟩)
-    (ψ := fun y (j : J) ↦ y ⟨j, Finset.mem_union_right I j.2⟩) (by fun_prop) (by fun_prop)
+  exact hK.comp (φ := fun x (i : I) ↦ x ⟨i, Finset.mem_union_left J i.property⟩)
+    (ψ := fun y (j : J) ↦ y ⟨j, Finset.mem_union_right I j.property⟩) (by fun_prop) (by fun_prop)
 
 end ProbabilityTheory
+
+namespace TauCeti.Probability
+
+open ProbabilityTheory
+
+/-- **Product-law equivalence through a measurable coordinate equivalence.** If a measurable
+equivalence `e : E ≃ᵐ (∀ i, α i)` over a finite index type `ι` pushes a measure `μ` forward to a
+product of probability measures `Measure.pi ν`, then a random variable `H` on a probability space
+has law `μ` if and only if its coordinates `i ↦ e (H ·) i` are mutually independent with marginal
+laws `ν i`. -/
+theorem hasLaw_iff_iIndepFun_of_map_eq_pi {Ω E ι : Type*} {α : ι → Type*}
+    [MeasurableSpace Ω] [MeasurableSpace E] [Fintype ι] [∀ i, MeasurableSpace (α i)]
+    {P : Measure Ω} [IsProbabilityMeasure P] {μ : Measure E} {ν : ∀ i, Measure (α i)}
+    [∀ i, IsProbabilityMeasure (ν i)] (e : E ≃ᵐ (∀ i, α i)) (hμ : μ.map e = Measure.pi ν)
+    {H : Ω → E} :
+    HasLaw H μ P ↔
+      iIndepFun (fun i ω ↦ e (H ω) i) P ∧ ∀ i, HasLaw (fun ω ↦ e (H ω) i) (ν i) P := by
+  have he : HasLaw H μ P ↔ HasLaw (fun ω ↦ e (H ω)) (Measure.pi ν) P := by
+    rw [← hμ]
+    refine ⟨fun h ↦ HasLaw.comp ⟨e.measurable.aemeasurable, rfl⟩ h, fun h ↦ ?_⟩
+    have hinv : HasLaw e.symm μ (μ.map e) := ⟨e.symm.measurable.aemeasurable, by
+      rw [Measure.map_map e.symm.measurable e.measurable]; simp⟩
+    simpa [Function.comp_def] using hinv.comp h
+  rw [he]
+  refine ⟨fun h ↦ ?_, fun ⟨hind, hc⟩ ↦ hind.hasLaw_pi hc⟩
+  have hc : ∀ i, HasLaw (fun ω ↦ e (H ω) i) (ν i) P := fun i ↦
+    HasLaw.comp ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval ν i).map_eq⟩ h
+  exact ⟨(iIndepFun_iff_hasLaw_pi_pi hc).2 h, hc⟩
+
+end TauCeti.Probability

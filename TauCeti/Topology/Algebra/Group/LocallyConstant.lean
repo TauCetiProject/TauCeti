@@ -23,7 +23,9 @@ the neighbourhood on which it is constant depends on the point. On a *compact* g
 dependence disappears: there is a single open subgroup `V` with `f (x * v) = f x` for **every**
 `x : G` and every `v : V`. This file records that subgroup,
 `TauCeti.rightTranslationStabilizer f`, and its openness,
-`TauCeti.isOpen_rightTranslationStabilizer`.
+`TauCeti.isOpen_rightTranslationStabilizer`. The same holds on any topological group for a
+locally constant function with compact support, which vanishes off a compact set
+(`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`).
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
 *discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
@@ -39,8 +41,6 @@ The uniformity statement itself needs only a compact *set* `K ⊆ G` and continu
 chosen point; no associativity, identity or inverse is needed.
 
 `IsLocallyConstant.exists_isOpen_forall_mul_right_eq` specializes to a compact space.
-`IsLocallyConstant.exists_isOpen_translate₂` and `IsLocallyConstant.exists_isOpen_translate₃` give
-uniformity for the families `(y, y * g)` and `(y, y * g, y * g * h)` used in cochain constructions.
 -/
 
 public section
@@ -95,27 +95,6 @@ theorem exists_isOpen_forall_mul_right_eq [CompactSpace G]
     ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x : G, f (x * σ p) = f (x * σ p₀) := by
   simpa using exists_isOpen_forall_mem_mul_right_eq hf isCompact_univ p₀ hσ
 
-/-- A locally constant function `N : G × G → A`, evaluated along `(y, y * g)`, is locally
-constant in `g`, uniformly in `y`, on a compact space with continuous multiplication. -/
-theorem exists_isOpen_translate₂ [CompactSpace G]
-    {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
-    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
-  simpa using (hN.comp_continuous
-    (continuous_fst.prodMk (continuous_fst.mul continuous_snd))).exists_isOpen_forall_mem_eq
-    isCompact_univ g₀
-
-/-- A locally constant function `Q : G × G × G → A`, evaluated along
-`(y, y * g, y * g * h)`, is locally constant in `(g, h)`, uniformly in `y`, on a compact space
-with continuous multiplication. -/
-theorem exists_isOpen_translate₃ [CompactSpace G]
-    {Q : G × G × G → A} (hQ : IsLocallyConstant Q) (q₀ : G × G) :
-    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
-      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
-  simpa using (hQ.comp_continuous (continuous_fst.prodMk
-    ((continuous_fst.mul (continuous_fst.comp continuous_snd)).prodMk
-      ((continuous_fst.mul (continuous_fst.comp continuous_snd)).mul
-        (continuous_snd.comp continuous_snd))))).exists_isOpen_forall_mem_eq isCompact_univ q₀
-
 end IsLocallyConstant
 
 namespace TauCeti
@@ -148,6 +127,25 @@ theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
   refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hVopen.mem_nhds hV1)
     fun g hg x => ?_)
   simpa using hV g hg x
+
+/-- A locally constant function with compact support on a topological group is *uniformly*
+locally constant: its right-translation stabilizer is an open subgroup. The group need not be
+compact, since the function vanishes off its compact support. -/
+theorem isOpen_rightTranslationStabilizer_of_hasCompactSupport [TopologicalSpace G]
+    [IsTopologicalGroup G] [Zero A] {f : G → A} (hf : IsLocallyConstant f)
+    (hfc : HasCompactSupport f) : IsOpen (rightTranslationStabilizer f : Set G) := by
+  -- Uniform local constancy on the compact support, near `1`.
+  obtain ⟨V, hVopen, hV1, hV⟩ :=
+    hf.exists_isOpen_forall_mem_mul_right_eq hfc.isCompact (1 : G) continuous_id.continuousAt
+  have hVn : V ∈ nhds (1 : G) := hVopen.mem_nhds hV1
+  refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (Filter.inter_mem hVn
+    (inv_mem_nhds_one G hVn)) fun g hg x => ?_)
+  -- If `x` or `x * g` lies in the support, translate from that point; otherwise both values vanish.
+  by_cases hx : x ∈ tsupport f
+  · simpa using hV g hg.1 x hx
+  by_cases hxg : x * g ∈ tsupport f
+  · simpa using (hV g⁻¹ hg.2 (x * g) hxg).symm
+  rw [image_eq_zero_of_notMem_tsupport hx, image_eq_zero_of_notMem_tsupport hxg]
 
 end TauCeti
 

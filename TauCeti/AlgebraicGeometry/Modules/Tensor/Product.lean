@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Evaluation
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # The tensor product of `𝒪ₓ`-modules on a scheme
@@ -26,15 +27,20 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   `TauCeti.SheafOfModules.monoidalCategory` and `TauCeti.SheafOfModules.symmetricCategory`;
 * `AlgebraicGeometry.Scheme.Modules.instMonoidalClosed` makes tensoring an `𝒪ₓ`-module on
   the left adjoint to its internal Hom functor;
-* `AlgebraicGeometry.Scheme.Modules.instMonoidalPreadditive` makes the tensor product preadditive
-  in each variable;
+* `AlgebraicGeometry.Scheme.Modules.instMonoidalPreadditive`: the tensor product of
+  `𝒪ₓ`-modules is additive in each variable;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_tensorObj` and
   `AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent`: tensor products of
   quasi-coherent `𝒪ₓ`-modules are quasi-coherent, so quasi-coherence is a monoidal property of
   `𝒪ₓ`-modules;
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_unit` and
   `TauCeti.AlgebraicGeometry.isQuasicoherent_structureSheaf`: the structure sheaf, viewed as a
-  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation.
+  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation;
+* `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_tensorPow`: tensor powers of a quasi-coherent
+  `𝒪ₓ`-module are quasi-coherent;
+* `AlgebraicGeometry.Scheme.Modules.sectionsFunctor` and
+  `AlgebraicGeometry.Scheme.Modules.sectionsFunctorAdditive`: sections over an open as a lax
+  braided monoidal, additive functor `X.Modules ⥤ ModuleCat Γ(X, U)`.
 
 -/
 
@@ -77,7 +83,8 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalClosed :
     MonoidalClosed X.Modules :=
   SheafOfModules.monoidalClosed X.sheaf
 
-/-- The tensor product of `𝒪ₓ`-modules is preadditive in each variable. -/
+/-- The tensor product of `𝒪ₓ`-modules is additive in each variable, since tensoring with a fixed
+`𝒪ₓ`-module is a left adjoint. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalPreadditive :
     MonoidalPreadditive X.Modules :=
   SheafOfModules.monoidalPreadditive X.sheaf
@@ -108,6 +115,14 @@ instance AlgebraicGeometry.isQuasicoherent_structureSheaf :
   AlgebraicGeometry.isQuasicoherent_unit X
 
 variable {X} in
+/-- The tensor powers of a quasi-coherent `𝒪_X`-module are quasi-coherent. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_tensorPow (L : X.Modules)
+    [L.IsQuasicoherent] (n : ℕ) : (tensorPow L n).IsQuasicoherent := by
+  induction n with
+  | zero => exact inferInstanceAs (𝟙_ X.Modules).IsQuasicoherent
+  | succ n ih => exact inferInstanceAs (L ⊗ tensorPow L n).IsQuasicoherent
+
+variable {X} in
 /-- The sections over an open `U` of `𝒪ₓ`-modules, as a functor to `Γ(X, U)`-modules. It is the
 evaluation at `U` of the underlying presheaves of modules, and it is lax braided monoidal: its
 tensor map `Γ(M, U) ⊗[Γ(X, U)] Γ(N, U) ⟶ Γ(M ⊗ N, U)` is induced by the unit of sheafification
@@ -117,6 +132,12 @@ def _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor (U : X.Opens) :
     X.Modules ⥤ ModuleCat.{v} Γ(X, U) :=
   (_root_.SheafOfModules.forget _ : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf) ⋙
     PresheafOfModulesOfCommRing.evaluation (Opposite.op U)
+
+variable {X} in
+/-- Taking sections over an open subset is an additive functor (and in particular preserves zero
+morphisms). -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorAdditive (U : X.Opens) :
+    (Scheme.Modules.sectionsFunctor U).Additive where
 
 variable {X} in
 /-- Sections over an open are lax braided monoidal, as the composite of the lax braided inclusion
