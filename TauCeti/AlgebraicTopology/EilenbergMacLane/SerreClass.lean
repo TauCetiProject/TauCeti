@@ -28,6 +28,10 @@ This is the input on Eilenberg--Mac Lane spaces of Serre's Hurewicz theorem modu
 
 ## Main results
 
+* `CategoryTheory.ObjectProperty.SatisfiesEilenbergMacLaneAxiom`: Serre's axiom on
+  Eilenberg--Mac Lane spaces through a given degree, the hypothesis on the class in Serre's
+  Hurewicz theorem modulo a class, unfolded by
+  `CategoryTheory.ObjectProperty.satisfiesEilenbergMacLaneAxiom_iff`.
 * `TauCeti.IsEilenbergMacLaneSpace.prop_singularHomology_of_one`: for a Serre class closed under
   direct sums, Serre's axiom for `K(G, 1)` spaces gives it for all `K(G, n)` spaces.
 
@@ -43,6 +47,38 @@ public section
 noncomputable section
 
 open CategoryTheory Limits AlgebraicTopology
+
+namespace CategoryTheory.ObjectProperty
+
+/-- **Serre's axiom on Eilenberg--Mac Lane spaces through degree `k`**, in the form taken by
+Serre's Hurewicz theorem modulo `P`: for every `G ∈ P` and `m ≥ 1` there is a property `Q ≤ P`
+of `ℤ`-modules, closed under isomorphisms and direct sums and containing zero, which contains
+the integral homology in degrees `1, …, k` of every `K(G, m)` space. -/
+def SatisfiesEilenbergMacLaneAxiom (P : ObjectProperty (ModuleCat.{0} ℤ)) (k : ℕ) : Prop :=
+  ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) → ∀ m : ℕ,
+    ∃ Q : ObjectProperty (ModuleCat.{0} ℤ), Q ≤ P ∧ Q.IsClosedUnderIsomorphisms ∧
+      Q.ContainsZero ∧ (∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)) ∧
+      ∀ (Z : Type) [TopologicalSpace Z] (z : Z), TauCeti.IsEilenbergMacLaneSpace G (m + 1) Z z →
+        ∀ q, q ≠ 0 → q ≤ k →
+          Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
+            (TopCat.of Z))
+
+/-- Unfolding `ObjectProperty.SatisfiesEilenbergMacLaneAxiom`: the class `P` satisfies Serre's
+axiom through degree `k` exactly when every `G ∈ P` and `m` admit a property `Q ≤ P`, closed
+under isomorphisms and direct sums and containing zero, which contains the integral homology in
+degrees `1, …, k` of every `K(G, m + 1)` space. -/
+theorem satisfiesEilenbergMacLaneAxiom_iff (P : ObjectProperty (ModuleCat.{0} ℤ)) (k : ℕ) :
+    P.SatisfiesEilenbergMacLaneAxiom k ↔
+      ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) → ∀ m : ℕ,
+        ∃ Q : ObjectProperty (ModuleCat.{0} ℤ), Q ≤ P ∧ Q.IsClosedUnderIsomorphisms ∧
+          Q.ContainsZero ∧ (∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)) ∧
+          ∀ (Z : Type) [TopologicalSpace Z] (z : Z),
+            TauCeti.IsEilenbergMacLaneSpace G (m + 1) Z z → ∀ q, q ≠ 0 → q ≤ k →
+              Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
+                (TopCat.of Z)) :=
+  Iff.rfl
+
+end CategoryTheory.ObjectProperty
 
 namespace TauCeti
 

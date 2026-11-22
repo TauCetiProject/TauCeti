@@ -104,9 +104,8 @@ private theorem regularValue_coordinate (hm : 1 ≤ m) (hf : ContMDiff I J m f)
   have hm0 : m ≠ 0 := ENat.one_le_iff_ne_zero_withTop.mp hm
   have hi := isLocalDiffeomorph_subtype_val (I := I) (n := m) (U := domain hf φ) x
   have hφ := φ.isLocalDiffeomorphAt J 𝓘(ℝ, F) m x.property
-  exact IsRegularPoint.comp (isRegularPoint_iff.2 (hφ.isInvertible_mfderiv hm0).surjective)
-    ((hreg.isRegularPoint ((coordinate_eq_iff hf φ hc x).1 hx)).comp
-      (isRegularPoint_iff.2 (hi.isInvertible_mfderiv hm0).surjective))
+  exact IsRegularPoint.comp (p := x) (hφ.isRegularPoint hm0)
+    ((hreg.isRegularPoint ((coordinate_eq_iff hf φ hc x).1 hx)).comp (hi.isRegularPoint hm0))
 
 variable [I.Boundaryless] [IsManifold I m M]
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]

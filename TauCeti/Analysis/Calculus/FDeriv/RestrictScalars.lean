@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Analysis.Calculus.FDeriv.Affine
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The derivative under restriction of scalars
@@ -17,7 +21,9 @@ range, and one is injective exactly when the other is. For a holomorphic map, th
 commutes with multiplication by `I`, the real tangent space is the complex tangent space, and the
 map is a real immersion at a point exactly when it is a complex one. For a holomorphic function
 of one variable, the real derivative is multiplication by the complex derivative, so the two have
-the same norm.
+the same norm. An affine automorphism of a finite-dimensional space over `𝕜'` has, over `𝕜`, the
+invertible derivative given by its linear part; for instance, the automorphism `z ↦ a z + b` of
+`ℂ` with `a ≠ 0` has an invertible real derivative.
 
 ## Main results
 
@@ -29,6 +35,8 @@ the same norm.
 * `DifferentiableAt.range_fderiv_restrictScalars`: the range of the derivative does not depend
   on the field of scalars.
 * `DifferentiableAt.injective_fderiv_restrictScalars_iff`: neither does its injectivity.
+* `AffineEquiv.hasFDerivAt_restrictScalars`: the derivative over `𝕜` of an affine automorphism over
+  `𝕜'` is its linear part.
 -/
 
 public section
@@ -75,5 +83,18 @@ theorem _root_.DifferentiableAt.injective_fderiv_restrictScalars_iff
     (hi : DifferentiableAt 𝕜' i x) :
     Function.Injective (fderiv 𝕜 i x) ↔ Function.Injective (fderiv 𝕜' i x) := by
   rw [hi.fderiv_restrictScalars 𝕜, ContinuousLinearMap.coe_restrictScalars']
+
+/-- An affine automorphism `f` of a finite-dimensional space over `𝕜'` has, over `𝕜`, the
+invertible derivative given by its linear part. For instance, an affine automorphism of `ℂ` has an
+invertible real derivative. -/
+theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars [CompleteSpace 𝕜'] [FiniteDimensional 𝕜' V]
+    (f : V ≃ᵃ[𝕜'] V) (x : V) :
+    HasFDerivAt f ((f.linear.toContinuousLinearEquiv.restrictScalars 𝕜 : V ≃L[𝕜] V) :
+      V →L[𝕜] V) x := by
+  have h := (ContinuousAffineMap.hasFDerivAt
+    (f := f.toContinuousAffineEquiv.toContinuousAffineMap) (x := x)).restrictScalars 𝕜
+  rw [ContinuousAffineEquiv.coe_toContinuousAffineMap, AffineEquiv.coe_toContinuousAffineEquiv]
+    at h
+  exact h.congr_fderiv (by ext; simp [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap])
 
 end TauCeti
