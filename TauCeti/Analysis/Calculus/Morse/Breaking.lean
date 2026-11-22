@@ -45,9 +45,10 @@ unstable sets.
   and its time reversal
   `TauCeti.IsNondegenerateCriticalPoint.eventually_exists_mem_closure_unstableSet_inter_stableSet`:
   limits of trajectories break at a nondegenerate critical point.
-* `TauCeti.exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet` and its time
-  reversal `TauCeti.exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet`: when
-  every forward orbit in the stable-set closure (resp. every backward orbit in the unstable-set
+* `TauCeti.exists_isNondegenerateCriticalPoint_of_mem_closure_stableSet_inter_stableSet` and
+  its time reversal
+  `TauCeti.exists_isNondegenerateCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet`:
+  when every forward orbit in the stable-set closure (resp. every backward orbit in the unstable-set
   closure) converges to a nondegenerate critical point, the break produces a connecting orbit to
   (resp. from) another nondegenerate critical point.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_isChain_of_mem_closure_stableSet_inter_stableSet`
@@ -185,7 +186,7 @@ variable {K : ℝ≥0}
 every forward orbit in that closure converges to a nondegenerate critical point, then there is a
 nonconstant connecting orbit from `x` to another nondegenerate critical point `a`, with a point in
 the closure of `Wˢ(q)`. -/
-theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
+theorem exists_isNondegenerateCriticalPoint_of_mem_closure_stableSet_inter_stableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfd : Differentiable ℝ f)
     (hf : LipschitzWith K (∇ f)) {q y : E} (hqx : q ≠ x)
     (hy : y ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
@@ -217,8 +218,8 @@ theorem exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
 every backward orbit in that closure converges to a nondegenerate critical point, then there is a
 nonconstant connecting orbit from another nondegenerate critical point `a` to `x`, with a point in
 the closure of `Wᵘ(p)`. This is the time-reversed counterpart of
-`exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet`. -/
-theorem exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
+`exists_isNondegenerateCriticalPoint_of_mem_closure_stableSet_inter_stableSet`. -/
+theorem exists_isNondegenerateCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
     (hx : IsNondegenerateCriticalPoint f x) (hfd : Differentiable ℝ f)
     (hf : LipschitzWith K (∇ f)) {p y : E} (hpx : p ≠ x)
     (hy : y ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
@@ -287,7 +288,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
         intro x hxn hx hqx hy
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
-          exists_nextCriticalPoint_of_mem_closure_stableSet_inter_stableSet
+          exists_isNondegenerateCriticalPoint_of_mem_closure_stableSet_inter_stableSet
             hx (hfs.differentiable (by norm_num)) hf hqx hy hconv
         have hdrop := htr.morseIndex_lt hx ha hfs hax.symm hzq.2 hza
         have hedge : x ≠ a ∧
@@ -371,7 +372,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
         intro x hxn hx hpx hy
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzp, hza⟩ :=
-          exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
+          exists_isNondegenerateCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet
             hx (hfs.differentiable (by norm_num)) hf hpx hy hconv
         have hxa := htr.morseIndex_lt ha hx hfs hax hza hzp.2
         have hcodim : d - morseIndex f a < d - morseIndex f x := by

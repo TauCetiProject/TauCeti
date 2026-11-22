@@ -205,7 +205,7 @@ theorem value_lt_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact_suble
   have hφ := isNegativeGradient_negativeGradientFlow f hf
   have hd : Differentiable ℝ f := hfs.differentiable (by norm_num)
   obtain ⟨b, z, -, hba, hz, hzb⟩ :=
-    exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet ha hd hf hpa hy
+    exists_isNondegenerateCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet ha hd hf hpa hy
       fun hz ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel hfs hf hM
         hcompact hz
   have hbp : f b ≤ f p :=
