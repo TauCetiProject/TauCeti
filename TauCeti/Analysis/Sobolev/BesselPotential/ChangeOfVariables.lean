@@ -19,6 +19,7 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.Sobolev.BesselPotential.Adjoint
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
+import TauCeti.Analysis.Sobolev.BesselPotential.OrderInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Function.L2Space
@@ -39,17 +40,18 @@ which has the same real elements by Calderón's theorem
 (`MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`), and on which precomposition is
 the bounded operator `TauCeti.Wkp.compL`.
 
-## Pullback of distributions at every integer order, `1 < p < ∞`
+## Pullback of distributions at every real order, `1 < p < ∞`
 
-For tempered distributions with values in a complex Hilbert space and every integer order `k`,
+For tempered distributions with values in a complex Hilbert space and every real order `s`,
 positive or negative, the pullback `Φ^*` (`TemperedDistribution.compCLM`) along a bijection `Φ`
-such that `Φ` and `Φ⁻¹` have temperate growth and bounded derivatives of orders `1` to `|k| + 1`
-preserves `H^{k,p}`, and restricts to an isomorphism of `H^{k,p}` with inverse the pullback along
-`Φ⁻¹`.
-These are the coordinate changes that make the integer-order Sobolev norms of sections of a vector
-bundle independent of the chart. Each step of the proof is an induction on `k`, starting from
-`H^{0,p} = Lᵖ`, which `Φ^*` preserves because the Jacobian of `Φ` is bounded below in terms of
-`DΦ⁻¹` (`TemperedDistribution.exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
+such that `Φ` and `Φ⁻¹` have temperate growth and bounded derivatives of orders `1` to
+`⌈|s|⌉ + 1` preserves `H^{s,p}`, and restricts to an isomorphism of `H^{s,p}` with inverse the
+pullback along `Φ⁻¹`.
+These are the coordinate changes that make the Sobolev norms of sections of a vector bundle
+independent of the chart. The integer orders `k` come first. Each step of the proof is an
+induction on `k`, starting from `H^{0,p} = Lᵖ`, which `Φ^*` preserves because the Jacobian of `Φ`
+is bounded below in terms of `DΦ⁻¹`
+(`TemperedDistribution.exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
 
 * Going up, a distribution lies in `H^{k+1,p}` exactly when it lies in `Lᵖ` and its directional
   derivatives lie in `H^{k,p}` (`TemperedDistribution.memSobolev_natCast_add_one_iff`). By the
@@ -63,18 +65,25 @@ bundle independent of the chart. Each step of the proof is an induction on `k`, 
   `cᵢⱼ ∂ⱼ (Φ^* wᵢ) = ∂ⱼ (cᵢⱼ Φ^* wᵢ) - (∂ⱼ cᵢⱼ) Φ^* wᵢ` puts `Φ^* T` in the same form
   (`TemperedDistribution.compCLM_lineDerivOp_eq_sum_sub`).
 
+A real order `s` that is not an integer lies between `⌊s⌋` and `⌊s⌋ + 1`, and `H^{s,p}` is the
+complex interpolation space `[H^{⌊s⌋,p}, H^{⌊s⌋+1,p}]_θ` with `θ = s - ⌊s⌋`
+(`TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodContinuousLinearEquiv`). A continuous
+linear map of tempered distributions preserving both endpoint spaces therefore preserves
+`H^{s,p}` (`TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`).
+
 ## Every real order, `p = 2`
 
 Let `φ` be a bijection of `E` such that `φ` and `φ⁻¹` have temperate growth and bounded
 derivatives of every positive order, for instance an affine automorphism. The pullback of tempered
 distributions `TemperedDistribution.compCLM` along `φ` preserves the Hilbert-space-valued
 Bessel-potential space `H^s = H^{s,2}` for every real `s`, negative orders included
-(`TemperedDistribution.MemSobolev.compCLM`), and restricts to a continuous linear automorphism of
-`H^s` with inverse the pullback along `φ⁻¹` (`BesselPotentialSpace.compEquiv`). This is the
-whole-space coordinate-change estimate behind the localization of the Sobolev scale to charts.
+(`TemperedDistribution.MemSobolev.compCLM`, the case `p = 2` of the above), and restricts to a
+continuous linear automorphism of `H^s` with inverse the pullback along `φ⁻¹`
+(`BesselPotentialSpace.compEquiv`). This is the whole-space coordinate-change estimate behind the
+localization of the Sobolev scale to charts.
 
-The bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` is first proved on Schwartz functions
-(`SchwartzMap.hasSobolevExtension_compCLM`), in three steps.
+On the Hilbert scale the bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` on Schwartz functions
+(`SchwartzMap.hasSobolevExtension_compCLM`) also has a direct proof, in three steps.
 
 * **Nonnegative integer orders**, by induction. At order `0` it is the `L²` bound for precomposition
   with a map whose Jacobian determinant is bounded away from zero
@@ -93,9 +102,6 @@ The bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` is first proved on Schwartz
 * **Real orders**, by complex interpolation of the Hilbert scale between `⌊s⌋` and `⌊s⌋ + 1`
   (`SchwartzMap.HasSobolevExtension.interpolate`).
 
-Density of Schwartz functions then extends the bound to `H^s`, and the extension agrees with the
-pullback of tempered distributions.
-
 ## Main results
 
 * `TemperedDistribution.comp_mem_realSobolevFunctions_natCast`: precomposition with a change of
@@ -109,7 +115,9 @@ pullback of tempered distributions.
   `TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le_neg` and
   `TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le_intCast`: the pullback
   preserves `H^{k,p}`, `H^{-k,p}` and `H^{k,p}` for `k ∈ ℤ`, for `1 < p < ∞`.
-* `BesselPotentialSpace.compCLE`: the pullback as an isomorphism of `H^{k,p}`, `k ∈ ℤ`, with
+* `TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le_real`: the pullback preserves
+  `H^{s,p}` for every real `s`, for `1 < p < ∞`.
+* `BesselPotentialSpace.compCLE`: the pullback as an isomorphism of `H^{s,p}`, `s ∈ ℝ`, with
   inverse the pullback along `Φ⁻¹` (`BesselPotentialSpace.compCLE_symm`); on Schwartz functions it
   is composition with `Φ` (`BesselPotentialSpace.compCLE_toBesselPotentialSpaceCLM`).
 * `TemperedDistribution.MemSobolev.compCLM`: the pullback preserves `H^s`.
@@ -319,6 +327,68 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_intCast (hp : 1 < p) (hp_to
   · push_cast at hT ⊢
     exact hT.compCLM_of_norm_iteratedFDeriv_le_neg hp hp_top hΦ hΨ (by simpa using hΦb)
       (by simpa using hΨb)
+
+/-- For a real number `s` that is not an integer, the integer orders `⌊s⌋` and `⌊s⌋ + 1` between
+which `s` lies have absolute values at most `⌈|s|⌉`. -/
+private theorem natAbs_floor_le_natCeil_abs {s : ℝ} (hs : Int.fract s ≠ 0) :
+    (⌊s⌋).natAbs ≤ ⌈|s|⌉₊ ∧ (⌊s⌋ + 1).natAbs ≤ ⌈|s|⌉₊ := by
+  have h₁ := Int.floor_le s
+  have h₂ := Int.lt_floor_add_one s
+  have h₃ : (⌊s⌋ : ℝ) ≠ s := fun h ↦ hs (by rw [Int.fract, h, sub_self])
+  have h₄ := Nat.le_ceil |s|
+  have h₅ := Nat.ceil_lt_add_one (abs_nonneg s)
+  rcases le_or_gt 0 s with h | h
+  · rw [abs_of_nonneg h] at h₄ h₅ ⊢
+    have h₆ : ⌊s⌋ < (⌈s⌉₊ : ℤ) := by
+      exact_mod_cast lt_of_lt_of_le (lt_of_le_of_ne h₁ h₃) h₄
+    have h₇ : 0 ≤ ⌊s⌋ := Int.floor_nonneg.2 h
+    omega
+  · rw [abs_of_neg h] at h₄ h₅ ⊢
+    have h₆ : -⌊s⌋ - 1 < (⌈-s⌉₊ : ℤ) := by
+      have : -(⌊s⌋ : ℝ) - 1 < ⌈-s⌉₊ := by linarith
+      exact_mod_cast this
+    have h₇ : (⌈-s⌉₊ : ℤ) < -⌊s⌋ + 1 := by
+      have : (⌈-s⌉₊ : ℝ) < -⌊s⌋ + 1 := by linarith
+      exact_mod_cast this
+    have h₈ : ⌊s⌋ < 0 := Int.floor_lt.2 (by simpa using h)
+    omega
+
+/-- **Pullback on `H^{s,p}` for every real `s`.** Let `1 < p < ∞` and let `Φ` be a bijection such
+that `Φ` and `Φ⁻¹` have temperate growth, the derivatives of `Φ` of orders `1` to `⌈|s|⌉` are
+bounded and those of `Φ⁻¹` of orders `1` to `⌈|s|⌉ + 1` are bounded. Then `Φ^* T ∈ H^{s,p}` for
+every `T ∈ H^{s,p}`. -/
+theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_real (hp : 1 < p) (hp_top : p ≠ ∞)
+    {s : ℝ} {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
+    (hΨ : (Φ.symm : E → E).HasTemperateGrowth)
+    (hΦb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C)
+    {T : 𝓢'(E, F)} (hT : MemSobolev s p T) : MemSobolev s p (compCLM F Φ hΦ hΨ T) := by
+  rcases eq_or_ne (Int.fract s) 0 with hs | hs
+  · -- An integer order `s = ⌊s⌋`, for which `⌈|s|⌉ = |⌊s⌋|`.
+    have hk : (⌊s⌋ : ℝ) = s := (sub_eq_zero.1 ((Int.self_sub_floor s).trans hs)).symm
+    have hc : ⌈|((⌊s⌋ : ℤ) : ℝ)|⌉₊ = (⌊s⌋).natAbs := by
+      rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast, Nat.ceil_natCast]
+    rw [hk] at hc
+    rw [← hk] at hT ⊢
+    exact hT.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ (hc ▸ hΦb) (hc ▸ hΨb)
+  -- Otherwise interpolate between the integer orders `⌊s⌋` and `⌊s⌋ + 1`.
+  obtain ⟨h₀, h₁⟩ := natAbs_floor_le_natCeil_abs hs
+  have hθ : s = (1 - Int.fract s) * ((⌊s⌋ : ℤ) : ℝ) + Int.fract s * ((⌊s⌋ + 1 : ℤ) : ℝ) := by
+    rw [← Int.self_sub_floor]
+    push_cast
+    ring
+  have hθ' : Int.fract s ∈ Set.Ioo (0 : ℝ) 1 :=
+    ⟨(Int.fract_nonneg s).lt_of_ne' hs, Int.fract_lt_one s⟩
+  have hp' :
+      p⁻¹ = ENNReal.ofReal (1 - Int.fract s) * p⁻¹ + ENNReal.ofReal (Int.fract s) * p⁻¹ := by
+    rw [← add_mul, ← ENNReal.ofReal_add (by linarith [hθ'.2]) hθ'.1.le, sub_add_cancel,
+      ENNReal.ofReal_one, one_mul]
+  rw [hθ] at hT ⊢
+  exact MemSobolev.map_of_memSobolev_of_memSobolev hp hp_top hp hp_top hθ' hp' _
+    (fun _ hu ↦ hu.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ
+      (fun n hn₁ hn₂ ↦ hΦb n hn₁ (hn₂.trans h₀)) (fun n hn₁ hn₂ ↦ hΨb n hn₁ (by omega)))
+    (fun _ hu ↦ hu.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ
+      (fun n hn₁ hn₂ ↦ hΦb n hn₁ (hn₂.trans h₁)) (fun n hn₁ hn₂ ↦ hΨb n hn₁ (by omega))) hT
 
 end Pullback
 
@@ -543,23 +613,10 @@ theorem MemSobolev.compCLM (hφ : (φ : E → E).HasTemperateGrowth)
     (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
     (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) {s : ℝ} {u : 𝓢'(E, F)}
-    (hu : MemSobolev s 2 u) : MemSobolev s 2 (TemperedDistribution.compCLM F φ hφ hψ u) := by
-  -- The extension `S` of `u ↦ u ∘ φ` from Schwartz functions to `H^s`.
-  obtain ⟨S, hS⟩ := SchwartzMap.hasSobolevExtension_iff.1
-    (SchwartzMap.hasSobolevExtension_compCLM (F := F) hφ hψ hb hb' s)
-  have hdense := SchwartzMap.denseRange_toBesselPotentialSpaceCLM (E := E) (F := F) s (p := 2)
-    ENNReal.ofNat_ne_top
-  -- It is the pullback of tempered distributions, by density of Schwartz functions.
-  have hS' (f : H^{s}(E, F)) :
-      (S f).toDistr = TemperedDistribution.compCLM F φ hφ hψ f.toDistr := by
-    refine hdense.induction_on f (isClosed_eq
-      (BesselPotentialSpace.continuous_toDistr.comp S.continuous)
-      ((TemperedDistribution.compCLM F φ hφ hψ).continuous.comp
-        BesselPotentialSpace.continuous_toDistr)) fun v ↦ ?_
-    rw [← ContinuousLinearMap.comp_apply S, hS, ContinuousLinearMap.comp_apply]
-    simp [compCLM_toTemperedDistributionCLM]
-  have h := (S hu.toBesselPotentialSpace).memSobolev_toDistr
-  rwa [hS', hu.toBesselPotentialSpace_toDistr] at h
+    (hu : MemSobolev s 2 u) : MemSobolev s 2 (TemperedDistribution.compCLM F φ hφ hψ u) :=
+  hu.compCLM_of_norm_iteratedFDeriv_le_real ENNReal.one_lt_two ENNReal.ofNat_ne_top hφ hψ
+    (fun n hn _ ↦ Nat.sub_add_cancel hn ▸ hb (n - 1))
+    (fun n hn _ ↦ Nat.sub_add_cancel hn ▸ hb' (n - 1))
 
 end TemperedDistribution
 
@@ -653,49 +710,49 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductS
   [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 variable (F) in
-/-- **Pullback by a diffeomorphism with bounded derivatives**, as an isomorphism of `H^{k,p}` for
-an integer order `k` and `1 < p < ∞`. Here `Φ` is a bijection such that `Φ` and `Φ⁻¹` have
-temperate growth and bounded derivatives of orders `1` to `|k| + 1`. It acts on the underlying
+/-- **Pullback by a diffeomorphism with bounded derivatives**, as an isomorphism of `H^{s,p}` for
+a real order `s` and `1 < p < ∞`. Here `Φ` is a bijection such that `Φ` and `Φ⁻¹` have temperate
+growth and bounded derivatives of orders `1` to `⌈|s|⌉ + 1`. It acts on the underlying
 tempered distributions by the pullback `TemperedDistribution.compCLM`
 (`BesselPotentialSpace.toDistr_compCLE`), and its inverse is the pullback along `Φ⁻¹`
 (`BesselPotentialSpace.compCLE_symm`). -/
-def compCLE (hp : 1 < p) (hp_top : p ≠ ∞) (k : ℤ) (Φ : E ≃ E)
+def compCLE (hp : 1 < p) (hp_top : p ≠ ∞) (s : ℝ) (Φ : E ≃ E)
     (hΦ : (Φ : E → E).HasTemperateGrowth) (hΨ : (Φ.symm : E → E).HasTemperateGrowth)
-    (hΦb : ∀ n, 1 ≤ n → n ≤ k.natAbs + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
-    (hΨb : ∀ n, 1 ≤ n → n ≤ k.natAbs + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C) :
-    H^{k, p}(E, F) ≃L[ℂ] H^{k, p}(E, F) :=
+    (hΦb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C) :
+    H^{s, p}(E, F) ≃L[ℂ] H^{s, p}(E, F) :=
   .ofContinuousLinearMap
     (mapCLM (TemperedDistribution.compCLM F Φ hΦ hΨ) fun u ↦
-      u.memSobolev_toDistr.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ
+      u.memSobolev_toDistr.compCLM_of_norm_iteratedFDeriv_le_real hp hp_top hΦ hΨ
         (fun n h₁ h₂ ↦ hΦb n h₁ (by omega)) hΨb)
     (mapCLM (TemperedDistribution.compCLM F Φ.symm hΨ hΦ) fun u ↦
-      u.memSobolev_toDistr.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΨ hΦ
+      u.memSobolev_toDistr.compCLM_of_norm_iteratedFDeriv_le_real hp hp_top hΨ hΦ
         (fun n h₁ h₂ ↦ hΨb n h₁ (by omega)) hΦb)
     (ContinuousLinearMap.ext fun u ↦ ext (by simp)) (ContinuousLinearMap.ext fun u ↦ ext (by simp))
 
-variable {hp : 1 < p} {hp_top : p ≠ ∞} {k : ℤ} {Φ : E ≃ E} {hΦ : (Φ : E → E).HasTemperateGrowth}
+variable {hp : 1 < p} {hp_top : p ≠ ∞} {s : ℝ} {Φ : E ≃ E} {hΦ : (Φ : E → E).HasTemperateGrowth}
   {hΨ : (Φ.symm : E → E).HasTemperateGrowth}
-  {hΦb : ∀ n, 1 ≤ n → n ≤ k.natAbs + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C}
-  {hΨb : ∀ n, 1 ≤ n → n ≤ k.natAbs + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C}
+  {hΦb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C}
+  {hΨb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C}
 
 @[simp]
-theorem toDistr_compCLE (u : H^{k, p}(E, F)) :
-    (compCLE F hp hp_top k Φ hΦ hΨ hΦb hΨb u).toDistr =
+theorem toDistr_compCLE (u : H^{s, p}(E, F)) :
+    (compCLE F hp hp_top s Φ hΦ hΨ hΦb hΨb u).toDistr =
       TemperedDistribution.compCLM F Φ hΦ hΨ u.toDistr :=
   toDistr_mapCLM _ _ u
 
 /-- The inverse of the pullback along `Φ` is the pullback along `Φ⁻¹`. -/
 @[simp]
 theorem compCLE_symm :
-    (compCLE F hp hp_top k Φ hΦ hΨ hΦb hΨb).symm = compCLE F hp hp_top k Φ.symm hΨ hΦ hΨb hΦb :=
+    (compCLE F hp hp_top s Φ hΦ hΨ hΦb hΨb).symm = compCLE F hp hp_top s Φ.symm hΨ hΦ hΨb hΦb :=
   ContinuousLinearEquiv.ext <| funext fun u ↦
     (ContinuousLinearEquiv.symm_apply_eq _).2 (ext (by simp))
 
 /-- On Schwartz functions the pullback is composition with `Φ`. -/
 @[simp]
 theorem compCLE_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
-    compCLE F hp hp_top k Φ hΦ hΨ hΦb hΨb (SchwartzMap.toBesselPotentialSpaceCLM k p u) =
-      SchwartzMap.toBesselPotentialSpaceCLM k p
+    compCLE F hp hp_top s Φ hΦ hΨ hΦb hΨb (SchwartzMap.toBesselPotentialSpaceCLM s p u) =
+      SchwartzMap.toBesselPotentialSpaceCLM s p
         (SchwartzMap.compCLM ℂ hΦ (hΨ.exists_norm_le_of_leftInverse Φ.left_inv) u) :=
   ext (by simp)
 
