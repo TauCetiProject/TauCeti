@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic
 public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 public import TauCeti.Analysis.ODE.EnergyEstimate.Cokernel
 public import TauCeti.Analysis.ODE.EnergyEstimate.Global
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit
 import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 
@@ -176,7 +177,7 @@ theorem finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm
     hAL).completeSpace_coe
   -- The coefficient `-A†` of `D_{-A†}` is continuous and represented a.e. by `-BL`.
   obtain ⟨BL, hadj, hnegBL⟩ := exists_ae_eq_adjoint_and_neg_ae_eq_neg_adjoint AL hAL
-  have := finiteDimensional_ker_trajectoryOperator (continuous_neg_adjoint hA) (-BL) hnegBL
+  have := finiteDimensional_ker_trajectoryOperator hA.clm_adjoint.neg (-BL) hnegBL
   -- The orthogonal complement of the range lies in the image of the kernel of `D_{-A†}`.
   have : FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).rangeᗮ :=
     Submodule.finiteDimensional_of_le (orthogonal_range_trajectoryOperator_le_map_ker hadj)

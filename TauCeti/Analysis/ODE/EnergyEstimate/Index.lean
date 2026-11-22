@@ -16,6 +16,7 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.ExpDecay
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Inertia
 
 /-!
@@ -250,9 +251,9 @@ theorem index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range (hA : 
         Module.finrank ℝ
           (squareIntegrableSolutions fun s ↦ -ContinuousLinearMap.adjoint (A s)) := by
   obtain ⟨BL, hadj, hneg⟩ := exists_ae_eq_adjoint_and_neg_ae_eq_neg_adjoint AL hAL
+  have hA' : Continuous fun s ↦ -ContinuousLinearMap.adjoint (A s) := hA.clm_adjoint.neg
   rw [index_trajectoryOperator_of_isClosed_range hadj hclosed,
-    finrank_ker_trajectoryOperator hA AL hAL,
-    finrank_ker_trajectoryOperator (continuous_neg_adjoint hA) (-BL) hneg]
+    finrank_ker_trajectoryOperator hA AL hAL, finrank_ker_trajectoryOperator hA' (-BL) hneg]
 
 /-- **The index of the trajectory operator with hyperbolic limits counts square-integrable
 solutions.** For a continuous family `A` of operators on a finite-dimensional real inner product
@@ -635,13 +636,11 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   set W := Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)
   set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
   have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ :=
-    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero (LinearMap.ker_eq_bot.2
-      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-        (le_inv_mul_iff₀ hα).2 (hplus v)))).symm
+    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero
+      (ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le hα hplus)).symm
   have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ :=
-    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero (LinearMap.ker_eq_bot.2
-      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-        (le_inv_mul_iff₀ hα).2 (hminus v)))).symm
+    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero
+      (ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le hα hminus)).symm
   rw [hW, hU, Submodule.inf_orthogonal]
   have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
   have h2 := (W ⊔ U).finrank_add_finrank_orthogonal

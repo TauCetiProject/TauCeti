@@ -111,7 +111,7 @@ theorem peterWeylTraceRep_apply (h : IsIrrepSkeleton models) (p : G × G)
     peterWeylTraceRep h p a i = peterWeylMatrixRep (models i) p (a i) := by
   let b : lp (fun i => EuclideanSpace 𝕜 (Fin (models i).dim × Fin (models i).dim)) 2 :=
     ⟨fun i => peterWeylMatrixRep (models i) p (a i), Memℓp.of_norm (by
-      simpa only [(isUnitary_peterWeylMatrixRep _).norm_map] using a.2.norm)⟩
+      simpa only [(isUnitary_peterWeylMatrixRep _).norm_map] using a.property.norm)⟩
   have ha := (isHilbertSum_traceCoeffBlock h).hasSum_linearIsometryEquiv_symm a
   have hb := (isHilbertSum_traceCoeffBlock h).hasSum_linearIsometryEquiv_symm b
   have hab : biRegularLp 𝕜 G p ((peterWeylTraceEquiv h).symm a) =

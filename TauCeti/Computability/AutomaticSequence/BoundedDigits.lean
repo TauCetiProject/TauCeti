@@ -53,26 +53,26 @@ it moves to the kernel element `n ↦ g (k * n + (c + e) % k)` and to the carry 
 private def carryDFAO (hk : 2 ≤ k) (a : ℕ → Δ) (d : ℕ) :
     DFAO (Fin (d + 1)) (kernel k a × Fin (d + 1)) Δ where
   step q e :=
-    (⟨fun n ↦ q.1.1 (k * n + (q.2 + e : ℕ) % k),
-        kernel_subset q.1.2 (apply_mul_add_mem_kernel (Nat.mod_lt _ (by omega)))⟩,
+    (⟨fun n ↦ q.1.val (k * n + (q.2 + e : ℕ) % k),
+        kernel_subset q.1.property (apply_mul_add_mem_kernel (Nat.mod_lt _ (by omega)))⟩,
       ⟨(q.2 + e : ℕ) / k, Nat.lt_succ_of_le <| Nat.div_le_of_le_mul <| by
         have := Nat.mul_le_mul_right d hk
         omega⟩)
   start := (⟨a, self_mem_kernel k a⟩, 0)
-  output q := q.1.1 q.2
+  output q := q.1.val q.2
 
 /-- From the state `(g, c)`, after reading the word `w` of length `L` and value `V` the carry
 automaton is in a state `(g', c')` with `g' (n + c') = g (k ^ L * n + V + c)` for every `n`. -/
 private theorem carryDFAO_evalFrom (hk : 2 ≤ k) (g : kernel k a) (c : Fin (d + 1))
     (w : List (Fin (d + 1))) (n : ℕ) :
-    ((carryDFAO hk a d).evalFrom (g, c) w).1.1 (n + ((carryDFAO hk a d).evalFrom (g, c) w).2) =
-      g.1 (k ^ w.length * n + Nat.ofDigits k (w.map Fin.val) + c) := by
+    ((carryDFAO hk a d).evalFrom (g, c) w).1.val (n + ((carryDFAO hk a d).evalFrom (g, c) w).2) =
+      g.val (k ^ w.length * n + Nat.ofDigits k (w.map Fin.val) + c) := by
   induction w generalizing g c with
   | nil => simp
   | cons e w ih =>
     rw [DFAO.evalFrom_cons, ih]
     simp only [carryDFAO, List.length_cons, List.map_cons, Nat.ofDigits_cons]
-    refine congrArg g.1 ?_
+    refine congrArg g.val ?_
     rw [pow_succ]
     linear_combination Nat.div_add_mod (c + e : ℕ) k
 

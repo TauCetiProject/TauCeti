@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.ODE.DysonSeries
 import TauCeti.Analysis.ODE.ScalarLinear
@@ -317,7 +318,7 @@ private theorem squareIntegrableSolutionsOn_Iio_eq_top {B : ℝ → E →L[ℝ] 
       (integrableOn_exp_mul_Iic two_pos (-1)).const_mul _
     refine hi.congr_fun (fun τ hτ ↦ ?_) measurableSet_Iic
     have he : Real.exp (1 * (τ - -1)) ^ 2 = Real.exp 2 * Real.exp (2 * τ) := by
-      rw [← Real.exp_add, ← Real.exp_nat_mul]
+      rw [← Real.exp_add, ← Real.exp_natCast_mul]
       congr 1
       push_cast
       ring
@@ -371,7 +372,7 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspac
   have h := finrank_sub_finrank_leftCap hA hsym (by simp) hS hc hplus htop
   set B := leftCap A (-1)
   have hB : Continuous B := continuous_leftCap hA _
-  have hBadj := WeakDerivStep.continuous_neg_adjoint hB
+  have hBadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (B τ) := hB.clm_adjoint.neg
   -- At `-∞`, where `B = -1`, every solution of `v' + B v = 0` decays and no nonzero solution of
   -- the adjoint equation does.
   have hU : squareIntegrableSolutionsOn B (Iio 0) = ⊤ :=
@@ -409,8 +410,8 @@ theorem finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi
   have h := finrank_sub_finrank_leftCap hA hsym (by simp) hS hc hplus htop
   set B := leftCap A 1
   have hB : Continuous B := continuous_leftCap hA _
-  have hBadj := WeakDerivStep.continuous_neg_adjoint hB
-  have hAadj := WeakDerivStep.continuous_neg_adjoint hA
+  have hBadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (B τ) := hB.clm_adjoint.neg
+  have hAadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (A τ) := hA.clm_adjoint.neg
   -- At `-∞`, where `B = 1`, every solution of the adjoint equation decays and no nonzero solution
   -- of `v' + B v = 0` does.
   have hU' : squareIntegrableSolutionsOn (fun τ ↦ -ContinuousLinearMap.adjoint (B τ)) (Iio 0) =
@@ -571,7 +572,7 @@ theorem squareIntegrableSolutions_neg_adjoint_eq_orthogonal_sup (hA : Continuous
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
     squareIntegrableSolutions (fun τ ↦ -ContinuousLinearMap.adjoint (A τ)) =
       (squareIntegrableSolutionsOn A (Iio 0) ⊔ squareIntegrableSolutionsOn A (Ioi 0))ᗮ := by
-  have hAadj := WeakDerivStep.continuous_neg_adjoint hA
+  have hAadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (A τ) := hA.clm_adjoint.neg
   rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hAadj,
     squareIntegrableSolutionsOn_neg_adjoint_Iio_eq_orthogonal hA hminus hbot,
     squareIntegrableSolutionsOn_neg_adjoint_Ioi_eq_orthogonal hA hplus htop,
@@ -590,11 +591,11 @@ theorem WeakDerivStep.surjective_trajectoryOperator_iff_sup_eq_top (hA : Continu
     Function.Surjective (WeakDerivStep.trajectoryOperator (p := 2) AL) ↔
       squareIntegrableSolutionsOn A (Iio 0) ⊔ squareIntegrableSolutionsOn A (Ioi 0) = ⊤ := by
   obtain ⟨BL, hadj, hneg⟩ := WeakDerivStep.exists_ae_eq_adjoint_and_neg_ae_eq_neg_adjoint AL hAL
+  have hAadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (A τ) := hA.clm_adjoint.neg
   rw [WeakDerivStep.surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj
       (WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot
         htop AL hAL),
-    WeakDerivStep.ker_trajectoryOperator_eq_bot_iff (WeakDerivStep.continuous_neg_adjoint hA)
-      (-BL) hneg,
+    WeakDerivStep.ker_trajectoryOperator_eq_bot_iff hAadj (-BL) hneg,
     squareIntegrableSolutions_neg_adjoint_eq_orthogonal_sup hA hminus hplus hbot htop,
     Submodule.orthogonal_eq_bot_iff]
 
