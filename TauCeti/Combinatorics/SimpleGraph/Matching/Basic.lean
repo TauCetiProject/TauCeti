@@ -29,9 +29,9 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
   finite side `L` (`SimpleGraph.Subgraph.IsMatching.verts_superset_iff_encard_edgeSet_eq`,
   `SimpleGraph.Subgraph.IsMatching.verts_superset_iff_ncard_edgeSet_eq`).
 * The matching number `SimpleGraph.matchingNum G : ℕ∞` is the supremum of `M.edgeSet.encard` over
-  all matchings `M : G.Subgraph`. Whenever `G.matchingNum ≠ ⊤` (in particular, when `V` or
-  `G.edgeSet` is finite), it is attained by a maximal matching (`SimpleGraph.matchingNum_exists`,
-  `SimpleGraph.exists_maximal_isMatching`), and every simple graph satisfies
+  all matchings `M : G.Subgraph`. Every simple graph admits a maximal matching
+  (`SimpleGraph.exists_maximal_isMatching`) and a matching attaining `G.matchingNum`
+  (`SimpleGraph.matchingNum_exists`), and every simple graph satisfies
   `G.matchingNum ≤ G.vertexCoverNum` and `G.vertexCoverNum ≤ 2 * G.matchingNum`.
 * A subgraph `M` is a *maximum matching* (`SimpleGraph.Subgraph.IsMaximumMatching M`) if it is a
   matching whose edge set has `encard` at least that of every matching of `G`. Unconditionally, a
@@ -57,8 +57,8 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
 * `SimpleGraph.Subgraph.IsMatching.encard_verts_inter_left`,
   `SimpleGraph.Subgraph.IsMatching.verts_superset_iff_encard_edgeSet_eq`: matched-side edge
   counting and saturation in bipartite graphs.
-* `SimpleGraph.matchingNum_exists`: every simple graph with finite matching number has a matching
-  attaining `G.matchingNum`.
+* `SimpleGraph.exists_maximal_isMatching`: every simple graph has a maximal matching.
+* `SimpleGraph.matchingNum_exists`: every simple graph has a matching attaining `G.matchingNum`.
 * `SimpleGraph.matchingNum_le_vertexCoverNum`,
   `SimpleGraph.vertexCoverNum_le_two_mul_matchingNum`: general two-sided bounds between the
   matching number and the vertex cover number.
@@ -191,7 +191,8 @@ theorem IsMatching.two_mul_encard_edgeSet_le_card (hM : M.IsMatching) :
 theorem IsMatching.finite_verts_iff (hM : M.IsMatching) : M.verts.Finite ↔ M.edgeSet.Finite := by
   have hsup : M.spanningCoe.support = M.verts := by
     ext v
-    simp [SimpleGraph.mem_support, ← hM.support_eq_verts, Subgraph.mem_support]
+    simp only [SimpleGraph.mem_support, Subgraph.spanningCoe_adj, ← Subgraph.mem_support,
+      hM.support_eq_verts]
   rw [← hsup, ← Subgraph.edgeSet_spanningCoe M]
   exact M.spanningCoe.finite_edgeSet_iff_finite_support.symm
 
@@ -386,7 +387,7 @@ theorem matchingNum_le_vertexCoverNum (G : SimpleGraph V) :
   exact matchingNum_le_iff.2 fun M hM ↦ hCnum ▸ hM.encard_edgeSet_le_encard_of_isVertexCover hC
 
 /-- Every simple graph with finite matching number has a matching attaining `G.matchingNum`. -/
-theorem matchingNum_exists (hfin : G.matchingNum ≠ ⊤) :
+private theorem matchingNum_exists_of_ne_top (hfin : G.matchingNum ≠ ⊤) :
     ∃ M : G.Subgraph, M.IsMatching ∧ M.edgeSet.encard = G.matchingNum := by
   have : Nonempty {M : G.Subgraph // M.IsMatching} := ⟨⟨⊥, Subgraph.isMatching_bot⟩⟩
   have hsup : (⨆ M : {M : G.Subgraph // M.IsMatching}, M.val.edgeSet.encard) = G.matchingNum := by
@@ -406,21 +407,26 @@ theorem Subgraph.IsMatching.maximal_of_encard_edgeSet_eq_matchingNum {M : G.Subg
   have hlt_encard : M.edgeSet.encard < M'.edgeSet.encard := hMfin.encard_lt_encard hssub
   exact (hlt_encard.trans_le (hM'.encard_edgeSet_le_matchingNum.trans_eq heq.symm)).false
 
-/-- Every simple graph with finite matching number has a maximal matching. -/
-theorem exists_maximal_isMatching (hfin : G.matchingNum ≠ ⊤) :
+/-- Every simple graph has a maximal matching. -/
+theorem exists_maximal_isMatching (G : SimpleGraph V) :
     ∃ M : G.Subgraph, Maximal Subgraph.IsMatching M :=
-  let ⟨M, hM, hMcard⟩ := G.matchingNum_exists hfin
-  ⟨M, hM.maximal_of_encard_edgeSet_eq_matchingNum hfin hMcard⟩
+  zorn_le₀ {M : G.Subgraph | M.IsMatching} fun c hc hchain ↦ by
+    refine ⟨sSup c, fun v hv ↦ ?_, fun _ hz ↦ le_sSup hz⟩
+    obtain ⟨M, hMc, hvM⟩ := by simpa [Subgraph.verts_sSup] using hv
+    obtain ⟨w, hvw, -⟩ := hc hMc hvM
+    refine ⟨w, Subgraph.sSup_adj.mpr ⟨M, hMc, hvw⟩, fun y hy ↦ ?_⟩
+    obtain ⟨M', hMc', hyM'⟩ := Subgraph.sSup_adj.mp hy
+    rcases hchain.total hMc hMc' with hle | hle
+    · exact (hc hMc').eq_of_adj_left hyM' (hle.2 hvw)
+    · exact (hc hMc).eq_of_adj_left (hle.2 hyM') hvw
 
 /-- The vertex cover number of any simple graph is at most twice its matching number. -/
 theorem vertexCoverNum_le_two_mul_matchingNum (G : SimpleGraph V) :
     G.vertexCoverNum ≤ 2 * G.matchingNum := by
-  rcases eq_or_ne G.matchingNum ⊤ with htop | hfin
-  · simp [htop]
-  · obtain ⟨M, hMmax⟩ := G.exists_maximal_isMatching hfin
-    obtain ⟨hM, hcov⟩ := Subgraph.maximal_isMatching_iff.1 hMmax
-    exact hcov.vertexCoverNum_le.trans <|
-      hM.encard_verts.trans_le (mul_le_mul_right hM.encard_edgeSet_le_matchingNum 2)
+  obtain ⟨M, hMmax⟩ := G.exists_maximal_isMatching
+  obtain ⟨hM, hcov⟩ := Subgraph.maximal_isMatching_iff.1 hMmax
+  exact hcov.vertexCoverNum_le.trans <|
+    hM.encard_verts.trans_le (mul_le_mul_right hM.encard_edgeSet_le_matchingNum 2)
 
 /-- A matching whose edge count equals the size of some vertex cover attains `G.matchingNum`. -/
 theorem Subgraph.IsMatching.encard_edgeSet_eq_matchingNum_of_isVertexCover
@@ -669,15 +675,7 @@ theorem Iso.isMaximumMatching_map (f : G ≃g H) (M : G.Subgraph) :
 theorem exists_isMaximumMatching (G : SimpleGraph V) :
     ∃ M : G.Subgraph, M.IsMaximumMatching := by
   rcases eq_or_ne G.matchingNum ⊤ with htop | hfin
-  · obtain ⟨M, hMmax⟩ := zorn_le₀ {M : G.Subgraph | M.IsMatching} fun c hc hchain ↦ by
-      refine ⟨sSup c, fun v hv ↦ ?_, fun _ hz ↦ le_sSup hz⟩
-      obtain ⟨M, hMc, hvM⟩ := by simpa [Subgraph.verts_sSup] using hv
-      obtain ⟨w, hvw, -⟩ := hc hMc hvM
-      refine ⟨w, Subgraph.sSup_adj.mpr ⟨M, hMc, hvw⟩, fun y hy ↦ ?_⟩
-      obtain ⟨M', hMc', hyM'⟩ := Subgraph.sSup_adj.mp hy
-      rcases hchain.total hMc hMc' with hle | hle
-      · exact (hc hMc').eq_of_adj_left hyM' (hle.2 hvw)
-      · exact (hc hMc).eq_of_adj_left (hle.2 hyM') hvw
+  · obtain ⟨M, hMmax⟩ := G.exists_maximal_isMatching
     obtain ⟨hM, hcov⟩ := Subgraph.maximal_isMatching_iff.mp hMmax
     refine ⟨M, Subgraph.isMaximumMatching_iff_encard_edgeSet_eq.mpr ⟨hM, ?_⟩⟩
     rw [htop]
@@ -687,8 +685,14 @@ theorem exists_isMaximumMatching (G : SimpleGraph V) :
     have hlt : G.matchingNum < ⊤ :=
       (G.matchingNum_le_vertexCoverNum.trans hcov.vertexCoverNum_le).trans_lt hVfin.encard_lt_top
     exact hlt.ne htop
-  · obtain ⟨M, hM, hMeq⟩ := matchingNum_exists hfin
+  · obtain ⟨M, hM, hMeq⟩ := matchingNum_exists_of_ne_top hfin
     exact ⟨M, Subgraph.isMaximumMatching_iff_encard_edgeSet_eq.mpr ⟨hM, hMeq⟩⟩
+
+/-- Every simple graph has a matching attaining `G.matchingNum`, even when `G.matchingNum = ⊤`. -/
+theorem matchingNum_exists (G : SimpleGraph V) :
+    ∃ M : G.Subgraph, M.IsMatching ∧ M.edgeSet.encard = G.matchingNum :=
+  let ⟨M, hM⟩ := G.exists_isMaximumMatching
+  ⟨M, hM.isMatching, hM.encard_edgeSet_eq⟩
 
 /-! ### Weak duality and optimality certificates -/
 

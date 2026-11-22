@@ -43,8 +43,8 @@ usage of either side by edge multiplicities equals their sum.
 * `SimpleGraph.isBipartition_ofSimpleGraph_iff`: covering bipartitions of
   `Graph.ofSimpleGraph H` are precisely bipartitions of `H` whose two sides cover every vertex.
 * `SimpleGraph.IsBipartiteWith.exists_isBipartition_ofSimpleGraph`: on a finite vertex type, any
-  bipartition of `H` extends to a covering bipartition of `Graph.ofSimpleGraph H`, keeping the left
-  side fixed and enlarging the right side to cover the remaining vertices.
+  bipartition `(s, t)` of `H` extends to a covering bipartition of `Graph.ofSimpleGraph H` with
+  left side `s` and right side `sᶜ`.
 * `SimpleGraph.isBipartite_iff_exists_isBipartition_ofSimpleGraph`: on a finite vertex type,
   bipartite simple graphs are precisely those whose associated multigraph admits a covering
   bipartition.
@@ -429,32 +429,27 @@ theorem isBipartition_ofSimpleGraph_iff (H : SimpleGraph α)
         exact Or.inr ⟨Subtype.ext hxx' ▸ hx'R, Subtype.ext hyy' ▸ hy'L⟩
 
 /-- On a finite vertex type, any bipartition `(s, t)` of a simple graph extends to a covering
-bipartition `(L, R)` of `Graph.ofSimpleGraph H` with left side `s` and right side containing `t`. -/
+bipartition `(L, R)` of `Graph.ofSimpleGraph H` with left side `s` and right side `sᶜ`
+(which contains `t`). -/
 theorem IsBipartiteWith.exists_isBipartition_ofSimpleGraph [Finite α] {H : SimpleGraph α}
     {s t : Set α} (h : H.IsBipartiteWith s t) :
     ∃ L R : Finset V(Graph.ofSimpleGraph H),
       (Graph.ofSimpleGraph H).IsBipartition L R ∧
         Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) = s ∧
-        t ⊆ Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) := by
+        Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = sᶜ := by
   classical
   let _ : Fintype V(Graph.ofSimpleGraph H) := Fintype.ofFinite _
-  let L : Finset V(Graph.ofSimpleGraph H) := Finset.univ.filter fun x ↦ x.val ∈ s
+  have hsurj : Function.Surjective (Subtype.val : V(Graph.ofSimpleGraph H) → α) :=
+    fun x ↦ ⟨⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩, rfl⟩
+  let L : Finset V(Graph.ofSimpleGraph H) :=
+    (Set.toFinite (Subtype.val ⁻¹' s : Set V(Graph.ofSimpleGraph H))).toFinset
   let R : Finset V(Graph.ofSimpleGraph H) := Lᶜ
   have hL : Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) = s := by
-    change Subtype.val '' ((Finset.univ.filter fun x : V(Graph.ofSimpleGraph H) ↦ x.val ∈ s :
-        Finset V(Graph.ofSimpleGraph H)) : Set V(Graph.ofSimpleGraph H)) = s
-    rw [Finset.coe_filter_univ]
-    exact Set.image_preimage_eq s (Equiv.Set.univ α).surjective
+    rw [Set.Finite.coe_toFinset, Set.image_preimage_eq s hsurj]
   have hR : Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = sᶜ := by
-    have hbij : Function.Bijective (Subtype.val : V(Graph.ofSimpleGraph H) → α) :=
-      ⟨Subtype.val_injective, (Equiv.Set.univ α).surjective⟩
-    change Subtype.val '' ((Lᶜ : Finset V(Graph.ofSimpleGraph H)) :
-        Set V(Graph.ofSimpleGraph H)) = sᶜ
-    rw [Finset.coe_compl, Set.image_compl_eq hbij, hL]
-  refine ⟨L, R, (isBipartition_ofSimpleGraph_iff H L R).2 ⟨hL ▸ hR ▸ h.compl_right, ?_⟩, hL, ?_⟩
-  · rw [hL, hR, Set.union_compl_self]
-  · rw [hR]
-    exact h.disjoint.subset_compl_left
+    rw [Finset.coe_compl, Set.image_compl_eq ⟨Subtype.val_injective, hsurj⟩, hL]
+  refine ⟨L, R, (isBipartition_ofSimpleGraph_iff H L R).2 ⟨hL ▸ hR ▸ h.compl_right, ?_⟩, hL, hR⟩
+  rw [hL, hR, Set.union_compl_self]
 
 /-- A finite bipartite simple graph admits a displayed bipartition of its associated
 edge-labelled multigraph. -/

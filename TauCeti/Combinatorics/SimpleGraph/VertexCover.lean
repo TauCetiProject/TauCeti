@@ -29,6 +29,7 @@ comparison by `Set.ncard`.
 * `SimpleGraph.isMinimumVertexCover_iff_encard_eq`: a vertex cover is minimum if and only if its
   `encard` equals `G.vertexCoverNum`.
 * `SimpleGraph.exists_isMinimumVertexCover`: every simple graph has a minimum vertex cover.
+* `SimpleGraph.IsMinimumVertexCover.minimal`: every finite minimum vertex cover is minimal.
 * `SimpleGraph.Iso.isMinimumVertexCover_preimage_iff` and
   `SimpleGraph.Iso.isMinimumVertexCover_image_iff`: graph isomorphisms preserve minimum vertex
   covers.
@@ -68,6 +69,11 @@ theorem IsMinimumVertexCover.isVertexCover (hc : G.IsMinimumVertexCover c) : G.I
 theorem IsMinimumVertexCover.encard_le (hc : G.IsMinimumVertexCover c) (hc' : G.IsVertexCover c') :
     c.encard ≤ c'.encard :=
   hc.2 hc'
+
+/-- A finite minimum vertex cover is a minimal vertex cover. -/
+theorem IsMinimumVertexCover.minimal (hc : G.IsMinimumVertexCover c) (hfin : c.Finite) :
+    Minimal G.IsVertexCover c :=
+  ⟨hc.1, fun _ hc' hsub ↦ ((hfin.subset hsub).eq_of_subset_of_encard_le hsub (hc.encard_le hc')).ge⟩
 
 /-- A vertex cover is minimum if and only if its `Set.encard` equals the vertex cover number. -/
 theorem isMinimumVertexCover_iff_encard_eq :
@@ -126,8 +132,7 @@ theorem Iso.isMinimumVertexCover_preimage_iff (f : G ≃g H) {c : Set W} :
     G.IsMinimumVertexCover (f ⁻¹' c) ↔ H.IsMinimumVertexCover c := by
   rw [isMinimumVertexCover_iff_encard_eq, isMinimumVertexCover_iff_encard_eq,
     isVertexCover_preimage_iso, vertexCoverNum_congr f,
-    ← Set.image_eq_preimage_of_inverse f.apply_symm_apply f.symm_apply_apply,
-    f.symm.injective.encard_image]
+    Set.encard_preimage_of_bijective f.bijective c]
 
 /-- Mapping a vertex set along a graph isomorphism preserves minimum vertex covers. -/
 @[simp]
