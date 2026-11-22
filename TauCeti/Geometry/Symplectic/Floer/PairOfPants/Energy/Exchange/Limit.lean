@@ -152,7 +152,9 @@ theorem IsNondegenerate.integrableOn_hamiltonianCurvature_exchangePerturbation
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
       z (u z)) thricePuncturedSphereReal := by
-  have hK (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :=
+  have hK (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
+      ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+        (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v) (z, x) :=
     (contMDiffOn_uncurry_exchangePerturbation hH hHs c v).contMDiffAt
       ((isOpen_thricePuncturedSphereReal.prod isOpen_univ).mem_nhds ⟨hz, mem_univ x⟩)
   exact ⟨(hω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal (hK 1)
