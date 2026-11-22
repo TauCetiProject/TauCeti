@@ -28,6 +28,8 @@ with `B` and `e⁻¹` intertwines `B` with `A`.
 * `LinearPMap.isClosed_conj_iff`, `LinearPMap.isClosable_conj_iff` and
   `LinearPMap.closure_conj`: closedness, closability and closures.
 * `LinearPMap.dense_conj_domain_iff` and `LinearPMap.HasCore.conj`: dense domains and cores.
+* `LinearPMap.conj_mem_domain` and `LinearPMap.conj_apply_comp_conj`: transporting domain
+  preservation and operator application under `e ∘L T ∘L e⁻¹`.
 * `LinearPMap.conj_eq_iff_intertwines`: the intertwining characterisation.
 
 ## References
@@ -59,6 +61,37 @@ theorem dense_conj_domain_iff :
     Dense ((A.conj (e : E ≃ₗ[R] F)).domain : Set F) ↔ Dense (A.domain : Set E) := by
   rw [conj_domain, Submodule.map_coe]
   exact e.toHomeomorph.isDenseEmbedding.dense_image
+
+/-- If `T : E →L[R] E` preserves the domain of `A`, then `e ∘L T ∘L e⁻¹` preserves the domain of
+`A.conj e`. -/
+theorem conj_mem_domain (A : E →ₗ.[R] E) {T : E →L[R] E}
+    (hT : ∀ {x : E}, x ∈ A.domain → T x ∈ A.domain) {y : F}
+    (hy : y ∈ (A.conj (e : E ≃ₗ[R] F)).domain) :
+    ((e : E →L[R] F) ∘L T ∘L (e.symm : F →L[R] E)) y ∈ (A.conj (e : E ≃ₗ[R] F)).domain := by
+  rw [mem_conj_domain_iff] at hy ⊢
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ← ContinuousLinearEquiv.coe_toLinearEquiv]
+  rw [LinearEquiv.symm_apply_apply]
+  rw [← ContinuousLinearEquiv.toLinearEquiv_symm, ContinuousLinearEquiv.coe_toLinearEquiv] at hy
+  exact hT hy
+
+/-- Evaluating `A.conj e` on `(e ∘L T ∘L e⁻¹) y` applies `e` to `A (T (e⁻¹ y))`. -/
+theorem conj_apply_comp_conj (A : E →ₗ.[R] E) {T : E →L[R] E}
+    (hT : ∀ {x : E}, x ∈ A.domain → T x ∈ A.domain)
+    (y : (A.conj (e : E ≃ₗ[R] F)).domain) :
+    A.conj (e : E ≃ₗ[R] F)
+        ⟨((e : E →L[R] F) ∘L T ∘L (e.symm : F →L[R] E)) y,
+          conj_mem_domain e A hT y.property⟩ =
+      e (A ⟨T (e.symm y), hT (mem_conj_domain_iff.1 y.property)⟩) := by
+  let x : A.domain := ⟨T (e.symm y), hT (mem_conj_domain_iff.1 y.property)⟩
+  have hmem := map_mem_conj_domain (A := A) (e := (e : E ≃ₗ[R] F)) x
+  have hdom : (⟨((e : E →L[R] F) ∘L T ∘L (e.symm : F →L[R] E)) y,
+      conj_mem_domain e A hT y.property⟩ : (A.conj (e : E ≃ₗ[R] F)).domain) =
+      ⟨(e : E ≃ₗ[R] F) x, hmem⟩ :=
+    Subtype.ext (by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+        ContinuousLinearEquiv.coe_toLinearEquiv, x])
+  rw [hdom, conj_apply_map, ContinuousLinearEquiv.coe_toLinearEquiv]
 
 /-! ### Intertwining -/
 

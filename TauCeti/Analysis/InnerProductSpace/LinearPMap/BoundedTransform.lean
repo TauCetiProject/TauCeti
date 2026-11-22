@@ -6,20 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.EigenCalculus
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Sylvester
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.InvSqrtAdd
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # The bounded transform and Baaj–Julg commutator theorem
 
 For a self-adjoint `A : H →ₗ.[ℂ] H` with compact resolvent, the **bounded transform**
 `F_A = A (1 + A²)⁻¹/²` (`LinearPMap.boundedTransform`) is a self-adjoint contraction satisfying
-`1 - F_A² = (1 + A²)⁻¹`. Whenever `T : H →L[ℂ] H` preserves `D(A)` with bounded commutator
-`[A, T] = C` on `D(A)`, `[F_A, T]` is compact with `‖[F_A, T]‖ ≤ (5 / 4) ‖C‖`.
+`1 - F_A² = (1 + A²)⁻¹`. Whenever `T : H →L[ℂ] H` solves a domain-aware Sylvester equation
+`SylvesterEquation A A T C` (`[A, T] = C` on `D(A)`), `[F_A, T]` is compact with
+`‖[F_A, T]‖ ≤ (5 / 4) ‖C‖`.
 
 ## Main definitions & results
 
@@ -38,7 +39,7 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Set Topology
+open Filter MeasureTheory Set TauCeti Topology
 open scoped ENNReal InnerProductSpace lp
 
 namespace LinearPMap
@@ -55,15 +56,43 @@ private theorem norm_div_sqrt_one_add_sq_le_one (t : ℝ) :
   simpa only [Complex.norm_real, Real.norm_eq_abs, add_comm 1 (t ^ 2)] using
     Real.abs_div_sqrt_sq_add_le_one zero_le_one t
 
+private def boundedTransformSymbol : BoundedBorelFunction ℝ :=
+  BoundedBorelFunction.ofFunction (fun t ↦ ((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ))
+    (Continuous.measurable <| by fun_prop (disch := intro t; positivity))
+    ⟨1, zero_le_one, norm_div_sqrt_one_add_sq_le_one⟩
+
+private theorem norm_boundedTransformSymbol_le (t : ℝ) :
+    ‖boundedTransformSymbol t‖ ≤ 1 := by
+  simpa only [boundedTransformSymbol, BoundedBorelFunction.ofFunction_apply] using
+    norm_div_sqrt_one_add_sq_le_one t
+
+private theorem norm_inv_one_add_sq_le_one (t : ℝ) :
+    ‖(((1 + t ^ 2)⁻¹ : ℝ) : ℂ)‖ ≤ 1 := by
+  rw [Complex.norm_real, Real.norm_eq_abs, abs_inv, abs_of_pos (by positivity)]
+  exact inv_le_one_of_one_le₀ (by nlinarith)
+
+private def invOneAddSqSymbol : BoundedBorelFunction ℝ :=
+  BoundedBorelFunction.ofFunction (fun t ↦ (((1 + t ^ 2)⁻¹ : ℝ) : ℂ))
+    (Continuous.measurable <| by fun_prop (disch := intro t; positivity))
+    ⟨1, zero_le_one, norm_inv_one_add_sq_le_one⟩
+
+private theorem norm_invOneAddSqSymbol_le (t : ℝ) :
+    ‖invOneAddSqSymbol t‖ ≤ 1 := by
+  simpa only [invOneAddSqSymbol, BoundedBorelFunction.ofFunction_apply] using
+    norm_inv_one_add_sq_le_one t
+
 /-- The **bounded transform** (or Woronowicz–Baaj–Julg transform) `F_A = A (1 + A²)⁻¹/²` of a
 self-adjoint operator `A` with compact resolvent, defined via the bounded eigenbasis functional
 calculus of `t ↦ t / √(1 + t²)`. -/
 def boundedTransform (A : H →ₗ.[ℂ] H) (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
     H →L[ℂ] H :=
-  A.boundedEigenCalculus hA h (fun t ↦ ((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ))
-    ⟨1, norm_div_sqrt_one_add_sq_le_one⟩
+  A.boundedEigenCalculus hA h boundedTransformSymbol ⟨1, norm_boundedTransformSymbol_le⟩
 
 variable (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent)
+
+private theorem boundedTransform_eq_integral :
+    A.boundedTransform hA h = (A.spectralPVM hA).integral boundedTransformSymbol :=
+  A.boundedEigenCalculus_eq_integral hA h boundedTransformSymbol ⟨1, norm_boundedTransformSymbol_le⟩
 
 /-- In any orthonormal eigenbasis of `A`, the bounded transform acts diagonally by
 `λᵢ / √(1 + λᵢ²)`. -/
@@ -71,18 +100,24 @@ theorem boundedTransform_eq_diagonal {ι : Type*} (b : HilbertBasis ι ℂ H) {l
     (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : ℂ) • b i)
     (m : ℓ^∞(ι, ℂ)) (hm : ∀ i, m i = ((lam i / Real.sqrt (1 + lam i ^ 2) : ℝ) : ℂ)) :
     A.boundedTransform hA h = b.diagonal m :=
-  A.boundedEigenCalculus_eq_diagonal hA h b hb _ _ m hm
+  A.boundedEigenCalculus_eq_diagonal hA h b hb _ _ m fun i ↦ by
+    simpa only [boundedTransformSymbol, BoundedBorelFunction.ofFunction_apply] using hm i
 
 /-- On an eigenvector of `A` with real eigenvalue `r`, the bounded transform multiplies by
 `r / √(1 + r²)`. -/
 theorem boundedTransform_apply_of_apply_eq_smul (x : A.domain) {r : ℝ}
     (hx : A x = (r : ℂ) • (x : H)) :
-    A.boundedTransform hA h x = ((r / Real.sqrt (1 + r ^ 2) : ℝ) : ℂ) • (x : H) :=
-  A.boundedEigenCalculus_apply_of_apply_eq_smul hA h _ x hx
+    A.boundedTransform hA h x = ((r / Real.sqrt (1 + r ^ 2) : ℝ) : ℂ) • (x : H) := by
+  rw [boundedTransform, A.boundedEigenCalculus_apply_of_apply_eq_smul hA h
+      ⟨1, norm_boundedTransformSymbol_le⟩ x hx,
+    boundedTransformSymbol, BoundedBorelFunction.ofFunction_apply]
 
 /-- The bounded transform is self-adjoint. -/
-theorem isSelfAdjoint_boundedTransform : IsSelfAdjoint (A.boundedTransform hA h) :=
-  A.isSelfAdjoint_boundedEigenCalculus hA h _ fun _ ↦ by simp
+theorem isSelfAdjoint_boundedTransform : IsSelfAdjoint (A.boundedTransform hA h) := by
+  rw [IsSelfAdjoint, boundedTransform_eq_integral, ← map_star]
+  congr 1
+  ext t
+  simp [boundedTransformSymbol]
 
 /-- The star of the bounded transform is itself. -/
 @[simp]
@@ -90,8 +125,9 @@ theorem star_boundedTransform : star (A.boundedTransform hA h) = A.boundedTransf
   (A.isSelfAdjoint_boundedTransform hA h).star_eq
 
 /-- The bounded transform is a contraction: `‖A (1 + A²)⁻¹/²‖ ≤ 1`. -/
-theorem norm_boundedTransform_le_one : ‖A.boundedTransform hA h‖ ≤ 1 :=
-  A.norm_boundedEigenCalculus_le hA h _ zero_le_one norm_div_sqrt_one_add_sq_le_one
+theorem norm_boundedTransform_le_one : ‖A.boundedTransform hA h‖ ≤ 1 := by
+  rw [boundedTransform_eq_integral]
+  exact (A.spectralPVM hA).norm_integral_le zero_le_one norm_boundedTransformSymbol_le
 
 private theorem inv_one_add_sq_add_boundedTransform_sq (t : ℝ) :
     (((1 + t ^ 2)⁻¹ : ℝ) : ℂ) +
@@ -105,23 +141,21 @@ private theorem inv_one_add_sq_add_boundedTransform_sq (t : ℝ) :
 /-- **`1 - F_A² = (1 + A²)⁻¹`.** -/
 theorem one_sub_boundedTransform_mul_self :
     1 - A.boundedTransform hA h * A.boundedTransform hA h = A.invOneAddSq := by
-  have hinv_bdd : ∃ C, ∀ t : ℝ, ‖(((1 + t ^ 2)⁻¹ : ℝ) : ℂ)‖ ≤ C := ⟨1, fun t ↦ by
-    rw [Complex.norm_real, Real.norm_eq_abs, abs_inv, abs_of_pos (by positivity)]
-    exact inv_le_one_of_one_le₀ (by nlinarith)⟩
-  have hsq_bdd : ∃ C, ∀ t : ℝ,
-      ‖((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ) * ((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ)‖ ≤ C :=
-    ⟨1, fun t ↦ by
-      simpa [norm_mul] using mul_le_mul (norm_div_sqrt_one_add_sq_le_one t)
-        (norm_div_sqrt_one_add_sq_le_one t) (norm_nonneg _) zero_le_one⟩
-  have hsum_bdd : ∃ C, ∀ t : ℝ, ‖(((1 + t ^ 2)⁻¹ : ℝ) : ℂ) +
-      ((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ) * ((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ)‖ ≤ C :=
-    ⟨1, fun t ↦ by rw [inv_one_add_sq_add_boundedTransform_sq]; simp⟩
-  rw [← A.boundedEigenCalculus_invOneAddSq hA h hinv_bdd, sub_eq_iff_eq_add, boundedTransform,
-    ← A.boundedEigenCalculus_mul hA h _ _ hsq_bdd,
-    ← A.boundedEigenCalculus_add hA h hinv_bdd hsq_bdd hsum_bdd,
-    ← A.boundedEigenCalculus_one hA h ⟨1, fun _ ↦ by simp⟩]
-  exact A.boundedEigenCalculus_congr hA h _ _ fun t ↦
-    (inv_one_add_sq_add_boundedTransform_sq t).symm
+  have hinv_fn : (invOneAddSqSymbol : ℝ → ℂ) = fun t ↦ (((1 + t ^ 2)⁻¹ : ℝ) : ℂ) := by
+    ext t
+    simp [invOneAddSqSymbol]
+  have hinv_int : (A.spectralPVM hA).integral invOneAddSqSymbol = A.invOneAddSq := by
+    rw [← A.boundedEigenCalculus_eq_integral hA h invOneAddSqSymbol ⟨1, norm_invOneAddSqSymbol_le⟩]
+    simp_rw [hinv_fn]
+    exact A.boundedEigenCalculus_invOneAddSq hA h ⟨1, norm_inv_one_add_sq_le_one⟩
+  rw [boundedTransform_eq_integral, ← hinv_int, ← map_mul, ← map_one (A.spectralPVM hA).integral,
+    ← _root_.map_sub (A.spectralPVM hA).integral]
+  congr 1
+  ext t
+  simp only [BoundedBorelFunction.sub_apply, BoundedBorelFunction.one_apply,
+    BoundedBorelFunction.mul_apply, boundedTransformSymbol, invOneAddSqSymbol,
+    BoundedBorelFunction.ofFunction_apply]
+  exact sub_eq_iff_eq_add.2 (inv_one_add_sq_add_boundedTransform_sq t).symm
 
 /-- **`F_A² - 1 = -(1 + A²)⁻¹`.** -/
 theorem boundedTransform_mul_self_sub_one :
@@ -147,332 +181,327 @@ theorem mul_boundedTransform_of_anticommute {γ : H →L[ℂ] H}
     (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
     (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩) :
     γ * A.boundedTransform hA h = -(A.boundedTransform hA h * γ) :=
-  A.mul_boundedEigenCalculus_of_anticommute hA h hγdom hγA _ fun t ↦ by simp [neg_div]
+  A.mul_boundedEigenCalculus_of_anticommute hA h hγdom hγA _ fun t ↦ by
+    simp [boundedTransformSymbol, neg_div]
 
 /-! ### The Baaj–Julg commutator theorem -/
 
-private theorem norm_inv_one_add_max_add_sq_le (r t : ℝ) :
-    ‖(((1 + max r 0 + t ^ 2)⁻¹ : ℝ) : ℂ)‖ ≤ (1 + max r 0)⁻¹ := by
-  rw [Complex.norm_real, Real.norm_eq_abs, abs_inv, abs_of_pos (by positivity)]
-  exact inv_anti₀ (by linarith [le_max_right r 0]) (by linarith [sq_nonneg t])
+private def bjShift (r : ℝ) : ℝ := Real.sqrt (1 + max r 0)
 
-private theorem norm_div_one_add_max_add_sq_le (r t : ℝ) :
-    ‖((t / (1 + max r 0 + t ^ 2) : ℝ) : ℂ)‖ ≤ (2 * Real.sqrt (1 + max r 0))⁻¹ := by
-  have ha : 0 < 1 + max r 0 := by linarith [le_max_right r 0]
-  have hd : 0 < 1 + max r 0 + t ^ 2 := by positivity
-  have h2 : 0 < 2 * Real.sqrt (1 + max r 0) := by positivity
-  have hsq : 2 * Real.sqrt (1 + max r 0) * |t| ≤ 1 + max r 0 + t ^ 2 := by
-    have h1 := Real.sq_sqrt ha.le
-    nlinarith [sq_abs t, sq_nonneg (Real.sqrt (1 + max r 0) - |t|)]
-  rw [Complex.norm_real, Real.norm_eq_abs, abs_div, abs_of_pos hd, div_le_iff₀ hd,
-    ← mul_le_mul_iff_right₀ h2, ← mul_assoc, mul_inv_cancel₀ h2.ne', one_mul]
-  exact hsq
+private theorem one_le_bjShift (r : ℝ) : 1 ≤ bjShift r :=
+  Real.one_le_sqrt.2 (by linarith [le_max_right r 0])
 
-private theorem norm_div_one_add_max_sub_le (r₁ r₂ t : ℝ) :
-    ‖((t / (1 + max r₁ 0 + t ^ 2) : ℝ) : ℂ) +
-      (-1 : ℂ) * ((t / (1 + max r₂ 0 + t ^ 2) : ℝ) : ℂ)‖ ≤ |r₁ - r₂| := by
-  have hd1 : 0 < 1 + max r₁ 0 + t ^ 2 := by linarith [le_max_right r₁ 0, sq_nonneg t]
-  have hd2 : 0 < 1 + max r₂ 0 + t ^ 2 := by linarith [le_max_right r₂ 0, sq_nonneg t]
-  have hdiff : ((t / (1 + max r₁ 0 + t ^ 2) : ℝ) : ℂ) +
-      (-1 : ℂ) * ((t / (1 + max r₂ 0 + t ^ 2) : ℝ) : ℂ) =
-      (((t * (max r₂ 0 - max r₁ 0)) /
-        ((1 + max r₁ 0 + t ^ 2) * (1 + max r₂ 0 + t ^ 2)) : ℝ) : ℂ) := by
-    exact_mod_cast (by field_simp; ring :
-      t / (1 + max r₁ 0 + t ^ 2) + (-1) * (t / (1 + max r₂ 0 + t ^ 2)) =
-        t * (max r₂ 0 - max r₁ 0) / ((1 + max r₁ 0 + t ^ 2) * (1 + max r₂ 0 + t ^ 2)))
-  rw [hdiff, Complex.norm_real, Real.norm_eq_abs, abs_div, abs_mul,
-    abs_of_pos (mul_pos hd1 hd2), div_le_iff₀ (mul_pos hd1 hd2)]
-  have ht_le : |t| ≤ 1 + max r₁ 0 + t ^ 2 := by
-    nlinarith [sq_nonneg (|t| - 1), sq_abs t, le_max_right r₁ 0]
-  have h1_le : 1 ≤ 1 + max r₂ 0 + t ^ 2 := by nlinarith [le_max_right r₂ 0]
-  have hmax : |max r₂ 0 - max r₁ 0| ≤ |r₁ - r₂| := by
-    rw [abs_sub_comm]; exact abs_max_sub_max_le_abs r₁ r₂ 0
-  calc |t| * |max r₂ 0 - max r₁ 0|
-      ≤ (1 + max r₁ 0 + t ^ 2) * |r₁ - r₂| := mul_le_mul ht_le hmax (abs_nonneg _) hd1.le
-    _ = |r₁ - r₂| * ((1 + max r₁ 0 + t ^ 2) * 1) := by ring
-    _ ≤ |r₁ - r₂| * ((1 + max r₁ 0 + t ^ 2) * (1 + max r₂ 0 + t ^ 2)) := by gcongr
+private theorem bjShift_pos (r : ℝ) : 0 < bjShift r :=
+  zero_lt_one.trans_le (one_le_bjShift r)
 
-private def bjRes (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) (r : ℝ) : H →L[ℂ] H :=
-  A.boundedEigenCalculus hA h (fun t ↦ (((1 + max r 0 + t ^ 2)⁻¹ : ℝ) : ℂ))
-    ⟨(1 + max r 0)⁻¹, norm_inv_one_add_max_add_sq_le r⟩
+private theorem sq_bjShift (r : ℝ) : bjShift r ^ 2 = 1 + max r 0 :=
+  Real.sq_sqrt (by linarith [le_max_right r 0])
 
-private def bjMulRes (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) (r : ℝ) : H →L[ℂ] H :=
-  A.boundedEigenCalculus hA h (fun t ↦ ((t / (1 + max r 0 + t ^ 2) : ℝ) : ℂ))
-    ⟨(2 * Real.sqrt (1 + max r 0))⁻¹, norm_div_one_add_max_add_sq_le r⟩
+private theorem continuous_bjShift : Continuous bjShift :=
+  Real.continuous_sqrt.comp (continuous_const.add (continuous_id.max continuous_const))
 
-private theorem bjRes_apply_basis {ι : Type*} {b : HilbertBasis ι ℂ H} {lam : ι → ℝ}
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : ℂ) • b i)
-    {r : ℝ} (hr : 0 ≤ r) (k : ι) :
-    bjRes hA h r (b k) = (((1 + r + lam k ^ 2)⁻¹ : ℝ) : ℂ) • b k := by
-  obtain ⟨hk, hAk⟩ := hb k
-  simpa only [bjRes, max_eq_left hr] using A.boundedEigenCalculus_apply_of_apply_eq_smul hA h
-    ⟨(1 + max r 0)⁻¹, norm_inv_one_add_max_add_sq_le r⟩ ⟨b k, hk⟩ hAk
+private def bjMulRes (A : H →ₗ.[ℂ] H) (r : ℝ) : H →L[ℂ] H :=
+  -(2 : ℂ)⁻¹ • (A.resolvent (Complex.I * bjShift r) + A.resolvent (-Complex.I * bjShift r))
 
-private theorem bjMulRes_apply_basis {ι : Type*} {b : HilbertBasis ι ℂ H} {lam : ι → ℝ}
-    (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : ℂ) • b i)
-    {r : ℝ} (hr : 0 ≤ r) (k : ι) :
-    bjMulRes hA h r (b k) = ((lam k / (1 + r + lam k ^ 2) : ℝ) : ℂ) • b k := by
-  obtain ⟨hk, hAk⟩ := hb k
-  simpa only [bjMulRes, max_eq_left hr] using A.boundedEigenCalculus_apply_of_apply_eq_smul hA h
-    ⟨(2 * Real.sqrt (1 + max r 0))⁻¹, norm_div_one_add_max_add_sq_le r⟩ ⟨b k, hk⟩ hAk
+private theorem mem_resolventSet_I_bjShift (hA : IsSelfAdjoint A) (r : ℝ) :
+    Complex.I * bjShift r ∈ A.resolventSet :=
+  hA.mem_resolventSet_I_mul (bjShift_pos r).ne'
 
-private theorem isCompactOperator_bjMulRes (r : ℝ) : IsCompactOperator (bjMulRes hA h r) := by
-  refine A.isCompactOperator_boundedEigenCalculus hA h _ ?_
-  rw [tendsto_zero_iff_norm_tendsto_zero, Metric.tendsto_nhds]
-  intro ε hε
-  rw [Filter.Eventually, Filter.mem_cocompact]
-  refine ⟨Metric.closedBall 0 ε⁻¹, isCompact_closedBall 0 ε⁻¹, fun t ht ↦ ?_⟩
-  simp only [Set.mem_compl_iff, Metric.mem_closedBall, Real.dist_eq, sub_zero, not_le] at ht
-  have hd : 0 < 1 + max r 0 + t ^ 2 := by positivity
-  have ht0 : 0 < |t| := (inv_pos.2 hε).trans ht
-  rw [Set.mem_ofPred_eq, Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _), Complex.norm_real,
-    Real.norm_eq_abs, abs_div, abs_of_pos hd]
-  calc |t| / (1 + max r 0 + t ^ 2)
-      < |t| / t ^ 2 := by
-        gcongr; exacts [by rw [← sq_abs]; positivity, by linarith [le_max_right r 0]]
-    _ = |t|⁻¹ := by rw [← sq_abs t, sq, div_mul_cancel_left₀ ht0.ne']
-    _ < ε := (inv_lt_comm₀ ht0 hε).2 ht
+private theorem mem_resolventSet_neg_I_bjShift (hA : IsSelfAdjoint A) (r : ℝ) :
+    -Complex.I * bjShift r ∈ A.resolventSet := by
+  rw [neg_mul, ← mul_neg, ← Complex.ofReal_neg]
+  exact hA.mem_resolventSet_I_mul (neg_ne_zero.2 (bjShift_pos r).ne')
 
-private theorem continuous_bjMulRes : Continuous (bjMulRes hA h) := by
-  refine LipschitzWith.continuous (K := 1) fun r₁ r₂ ↦ ?_
-  rw [ENNReal.coe_one, one_mul, edist_dist, edist_dist, ENNReal.ofReal_le_ofReal_iff dist_nonneg,
-    dist_eq_norm, Real.dist_eq]
-  have hneg : ∃ C, ∀ t : ℝ, ‖(-1 : ℂ) * ((t / (1 + max r₂ 0 + t ^ 2) : ℝ) : ℂ)‖ ≤ C :=
-    ⟨_, fun t ↦ by simpa using norm_div_one_add_max_add_sq_le r₂ t⟩
-  rw [bjMulRes, bjMulRes, sub_eq_add_neg, ← neg_one_smul ℂ,
-    ← A.boundedEigenCalculus_smul hA h (-1) _ hneg,
-    ← A.boundedEigenCalculus_add hA h _ hneg ⟨|r₁ - r₂|, norm_div_one_add_max_sub_le r₁ r₂⟩]
-  exact A.norm_boundedEigenCalculus_le hA h _ (abs_nonneg _) (norm_div_one_add_max_sub_le r₁ r₂)
+private theorem adjoint_resolvent_I_bjShift (hA : IsSelfAdjoint A) (r : ℝ) :
+    (A.resolvent (Complex.I * bjShift r)).adjoint = A.resolvent (-Complex.I * bjShift r) := by
+  rw [hA.adjoint_resolvent (mem_resolventSet_I_bjShift hA r), map_mul, Complex.conj_I,
+    Complex.conj_ofReal]
 
-private theorem inner_commutator_basis (hA : IsSelfAdjoint A) {ι : Type*} {b : HilbertBasis ι ℂ H}
+private theorem isSelfAdjoint_bjMulRes (hA : IsSelfAdjoint A) (r : ℝ) :
+    IsSelfAdjoint (bjMulRes A r) := by
+  have hadj2 : (A.resolvent (-Complex.I * bjShift r)).adjoint =
+      A.resolvent (Complex.I * bjShift r) := by
+    rw [← adjoint_resolvent_I_bjShift hA r, ContinuousLinearMap.adjoint_adjoint]
+  rw [bjMulRes, ContinuousLinearMap.isSelfAdjoint_iff', ContinuousLinearMap.adjoint.map_smulₛₗ,
+    _root_.map_add ContinuousLinearMap.adjoint, adjoint_resolvent_I_bjShift hA r, hadj2, add_comm]
+  congr 1
+  simp [Complex.ext_iff]
+
+private theorem bjMulRes_apply_basis (hA : IsSelfAdjoint A) {ι : Type*} {b : HilbertBasis ι ℂ H}
     {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : ℂ) • b i)
-    {T C : H →L[ℂ] H} (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) (i j : ι) :
-    ⟪b i, C (b j)⟫_ℂ = ((lam i - lam j : ℝ) : ℂ) * ⟪b i, T (b j)⟫_ℂ := by
-  obtain ⟨hi, hAi⟩ := hb i
-  obtain ⟨hj, hAj⟩ := hb j
-  rw [← hC ⟨b j, hj⟩, inner_sub_right, hAj, _root_.map_smul, inner_smul_right,
-    ← hA.isFormalAdjoint ⟨b i, hi⟩ ⟨T (b j), hTdom _ hj⟩, hAi, inner_smul_left]
-  simp only [Complex.conj_ofReal, Complex.ofReal_sub]; ring
+    {r : ℝ} (hr : 0 ≤ r) (k : ι) :
+    bjMulRes A r (b k) = ((lam k / (1 + r + lam k ^ 2) : ℝ) : ℂ) • b k := by
+  obtain ⟨hk, hAk⟩ := hb k
+  have h1 := resolvent_apply_of_apply_eq_smul (mem_resolventSet_I_bjShift hA r) ⟨b k, hk⟩ hAk
+  have h2 := resolvent_apply_of_apply_eq_smul (mem_resolventSet_neg_I_bjShift hA r) ⟨b k, hk⟩ hAk
+  rw [bjMulRes, _root_.smul_apply, _root_.add_apply, h1, h2, ← add_smul, smul_smul]
+  congr 1
+  set s : ℝ := bjShift r
+  have hs0 : s ≠ 0 := (bjShift_pos r).ne'
+  have hs2 : s ^ 2 = 1 + r := by rw [sq_bjShift, max_eq_left hr]
+  have hpos1 : Complex.I * (s : ℂ) - (lam k : ℂ) ≠ 0 :=
+    fun heq ↦ hs0 (by simpa using congrArg Complex.im heq)
+  have hpos2 : -Complex.I * (s : ℂ) - (lam k : ℂ) ≠ 0 :=
+    fun heq ↦ hs0 (by simpa using congrArg Complex.im heq)
+  have hs2c : (s : ℂ) ^ 2 = ((1 + r : ℝ) : ℂ) := by exact_mod_cast hs2
+  have hprod : (Complex.I * (s : ℂ) - (lam k : ℂ)) * (-Complex.I * (s : ℂ) - (lam k : ℂ)) =
+      ((1 + r + lam k ^ 2 : ℝ) : ℂ) := by
+    calc (Complex.I * (s : ℂ) - (lam k : ℂ)) * (-Complex.I * (s : ℂ) - (lam k : ℂ))
+        = (lam k : ℂ) ^ 2 - (Complex.I ^ 2) * (s : ℂ) ^ 2 := by ring
+      _ = (lam k : ℂ) ^ 2 + (s : ℂ) ^ 2 := by rw [Complex.I_sq]; ring
+      _ = ((1 + r + lam k ^ 2 : ℝ) : ℂ) := by rw [hs2c]; push_cast; ring
+  rw [inv_add_inv hpos1 hpos2, hprod]
+  push_cast
+  have _ : (1 : ℝ) + r + lam k ^ 2 ≠ 0 := by positivity
+  field_simp
+  ring
 
-private theorem inner_selfAdjoint_diag_commutator {ι : Type*} (b : HilbertBasis ι ℂ H)
-    {P T : H →L[ℂ] H} (hP : IsSelfAdjoint P) {g : ι → ℝ} (hPg : ∀ k, P (b k) = (g k : ℂ) • b k)
-    (i j : ι) :
-    ⟪b i, (P * T - T * P) (b j)⟫_ℂ = ((g i - g j : ℝ) : ℂ) * ⟪b i, T (b j)⟫_ℂ := by
-  have hPadj : P.adjoint = P := (ContinuousLinearMap.star_eq_adjoint _).symm.trans hP.star_eq
-  simp only [_root_.sub_apply, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-    inner_sub_right]
-  rw [← ContinuousLinearMap.adjoint_inner_left P, hPadj, hPg i, hPg j, inner_smul_left,
-    _root_.map_smul, inner_smul_right]
-  simp only [Complex.conj_ofReal, Complex.ofReal_sub]; ring
+private theorem isCompactOperator_bjMulRes (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent)
+    (r : ℝ) : IsCompactOperator ⇑(bjMulRes A r) := by
+  rw [bjMulRes, FunLike.coe_smul, FunLike.coe_add]
+  have hc1 := (hA.hasCompactResolvent_iff_isCompactOperator_resolvent
+    (z := Complex.I * bjShift r) (by simp [(bjShift_pos r).ne'])).1 h
+  have hc2 := (hA.hasCompactResolvent_iff_isCompactOperator_resolvent
+    (z := -Complex.I * bjShift r) (by simp [(bjShift_pos r).ne'])).1 h
+  exact (compactOperator (RingHom.id ℂ) H H).smul_mem _
+    ((compactOperator (RingHom.id ℂ) H H).add_mem hc1 hc2)
 
-private theorem inner_selfAdjoint_diag_sandwich {ι : Type*} (b : HilbertBasis ι ℂ H)
-    {P C : H →L[ℂ] H} (hP : IsSelfAdjoint P) {g : ι → ℝ} (hPg : ∀ k, P (b k) = (g k : ℂ) • b k)
-    (i j : ι) :
-    ⟪b i, (P * C * P) (b j)⟫_ℂ = ((g i * g j : ℝ) : ℂ) * ⟪b i, C (b j)⟫_ℂ := by
-  have hPadj : P.adjoint = P := (ContinuousLinearMap.star_eq_adjoint _).symm.trans hP.star_eq
-  simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply]
-  rw [← ContinuousLinearMap.adjoint_inner_left P, hPadj, hPg i, hPg j, inner_smul_left,
-    _root_.map_smul, inner_smul_right]
-  simp only [Complex.conj_ofReal, Complex.ofReal_mul]; ring
+private theorem norm_resolvent_I_mul_sub_le (hA : IsSelfAdjoint A) {t₁ t₂ : ℝ}
+    (ht₁ : 1 ≤ t₁) (ht₂ : 1 ≤ t₂) :
+    ‖A.resolvent (Complex.I * t₁) - A.resolvent (Complex.I * t₂)‖ ≤ ‖t₁ - t₂‖ := by
+  have h1 := hA.mem_resolventSet_I_mul (zero_lt_one.trans_le ht₁).ne'
+  have h2 := hA.mem_resolventSet_I_mul (zero_lt_one.trans_le ht₂).ne'
+  rw [resolvent_sub_resolvent h1 h2, norm_smul]
+  have hsub : ‖Complex.I * (t₂ : ℂ) - Complex.I * (t₁ : ℂ)‖ = ‖t₁ - t₂‖ := by
+    rw [← mul_sub, norm_mul, Complex.norm_I, one_mul, ← Complex.ofReal_sub, Complex.norm_real,
+      norm_sub_rev]
+  have hn1 : ‖A.resolvent (Complex.I * t₁)‖ ≤ 1 := by
+    refine (hA.norm_resolvent_I_mul_le (zero_lt_one.trans_le ht₁).ne').trans ?_
+    rw [abs_of_pos (zero_lt_one.trans_le ht₁)]
+    exact inv_le_one_of_one_le₀ ht₁
+  have hn2 : ‖A.resolvent (Complex.I * t₂)‖ ≤ 1 := by
+    refine (hA.norm_resolvent_I_mul_le (zero_lt_one.trans_le ht₂).ne').trans ?_
+    rw [abs_of_pos (zero_lt_one.trans_le ht₂)]
+    exact inv_le_one_of_one_le₀ ht₂
+  calc ‖Complex.I * (t₂ : ℂ) - Complex.I * (t₁ : ℂ)‖ *
+          ‖A.resolvent (Complex.I * t₁) ∘L A.resolvent (Complex.I * t₂)‖
+      ≤ ‖t₁ - t₂‖ * (‖A.resolvent (Complex.I * t₁)‖ * ‖A.resolvent (Complex.I * t₂)‖) := by
+        rw [hsub]; gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ ‖t₁ - t₂‖ * (1 * 1) := by gcongr
+    _ = ‖t₁ - t₂‖ := by ring
 
-private theorem bjMulRes_commutator {T C : H →L[ℂ] H}
-    (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) {r : ℝ} (hr : 0 ≤ r) :
-    bjMulRes hA h r * T - T * bjMulRes hA h r =
-      ((1 + r : ℝ) : ℂ) • (bjRes hA h r * C * bjRes hA h r) -
-        bjMulRes hA h r * C * bjMulRes hA h r := by
-  obtain ⟨_, b, lam, hb⟩ := hA.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent h
-  have hQ_sa : IsSelfAdjoint (bjMulRes hA h r) :=
-    A.isSelfAdjoint_boundedEigenCalculus hA h _ fun _ ↦ by simp
-  have hR_sa : IsSelfAdjoint (bjRes hA h r) :=
-    A.isSelfAdjoint_boundedEigenCalculus hA h _ fun _ ↦ by simp
-  refine b.ext_inner_apply b fun i j ↦ ?_
-  rw [inner_selfAdjoint_diag_commutator b hQ_sa (bjMulRes_apply_basis hA h hb hr) i j]
-  simp only [_root_.sub_apply, _root_.smul_apply, inner_sub_right, inner_smul_right,
-    inner_selfAdjoint_diag_sandwich b hR_sa (bjRes_apply_basis hA h hb hr) i j,
-    inner_selfAdjoint_diag_sandwich b hQ_sa (bjMulRes_apply_basis hA h hb hr) i j,
-    inner_commutator_basis hA hb hTdom hC i j]
-  have hd₁ : (1 : ℝ) + r + lam i ^ 2 ≠ 0 := by positivity
-  have hd₂ : (1 : ℝ) + r + lam j ^ 2 ≠ 0 := by positivity
-  have hidC : ((lam i / (1 + r + lam i ^ 2) - lam j / (1 + r + lam j ^ 2) : ℝ) : ℂ) =
-      ((1 + r : ℝ) : ℂ) * (((1 + r + lam i ^ 2)⁻¹ * (1 + r + lam j ^ 2)⁻¹ : ℝ) : ℂ) *
-          ((lam i - lam j : ℝ) : ℂ) -
-        (((lam i / (1 + r + lam i ^ 2)) * (lam j / (1 + r + lam j ^ 2)) : ℝ) : ℂ) *
-          ((lam i - lam j : ℝ) : ℂ) := by
-    exact_mod_cast (by field_simp; ring :
-      lam i / (1 + r + lam i ^ 2) - lam j / (1 + r + lam j ^ 2) =
-        (1 + r) * ((1 + r + lam i ^ 2)⁻¹ * (1 + r + lam j ^ 2)⁻¹) * (lam i - lam j) -
-          (lam i / (1 + r + lam i ^ 2)) * (lam j / (1 + r + lam j ^ 2)) * (lam i - lam j))
-  rw [hidC]; ring
+private theorem continuous_bjMulRes (hA : IsSelfAdjoint A) : Continuous (bjMulRes A) := by
+  have hcont_pos : Continuous fun r ↦ A.resolvent (Complex.I * bjShift r) := by
+    have hon : ContinuousOn (fun t : ℝ ↦ A.resolvent (Complex.I * t)) (Ici 1) := by
+      rw [Metric.continuousOn_iff]
+      intro t ht ε hε
+      refine ⟨ε, hε, fun t' ht' htt' ↦ ?_⟩
+      rw [dist_eq_norm] at htt' ⊢
+      exact (norm_resolvent_I_mul_sub_le hA ht' ht).trans_lt htt'
+    exact hon.comp_continuous continuous_bjShift one_le_bjShift
+  have hcont_neg : Continuous fun r ↦ A.resolvent (-Complex.I * bjShift r) := by
+    have hfun : (fun r ↦ A.resolvent (-Complex.I * bjShift r)) =
+        fun r ↦ ContinuousLinearMap.adjoint (A.resolvent (Complex.I * bjShift r)) := by
+      ext1 r
+      exact (adjoint_resolvent_I_bjShift hA r).symm
+    rw [hfun]
+    exact ContinuousLinearMap.adjoint.continuous.comp hcont_pos
+  unfold bjMulRes
+  exact (continuous_const (y := -(2 : ℂ)⁻¹)).smul (hcont_pos.add hcont_neg)
 
-private theorem norm_bjMulRes_commutator_le {T C : H →L[ℂ] H}
-    (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) {r : ℝ} (hr : 0 ≤ r) :
-    ‖bjMulRes hA h r * T - T * bjMulRes hA h r‖ ≤ (5 / 4 : ℝ) * ‖C‖ * (1 + r)⁻¹ := by
-  rw [bjMulRes_commutator hA h hTdom hC hr]
-  have h1r : 0 < 1 + r := by linarith
-  have hR : ‖bjRes hA h r‖ ≤ (1 + r)⁻¹ := by
-    simpa only [bjRes, max_eq_left hr] using A.norm_boundedEigenCalculus_le hA h
-      ⟨_, norm_inv_one_add_max_add_sq_le r⟩ (by positivity) (norm_inv_one_add_max_add_sq_le r)
-  have hQ : ‖bjMulRes hA h r‖ ≤ (2 * Real.sqrt (1 + r))⁻¹ := by
-    simpa only [bjMulRes, max_eq_left hr] using A.norm_boundedEigenCalculus_le hA h
-      ⟨_, norm_div_one_add_max_add_sq_le r⟩ (by positivity) (norm_div_one_add_max_add_sq_le r)
-  have hterm1 : ‖((1 + r : ℝ) : ℂ) • (bjRes hA h r * C * bjRes hA h r)‖ ≤ ‖C‖ * (1 + r)⁻¹ := by
-    rw [norm_smul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos h1r]
-    calc (1 + r) * ‖bjRes hA h r * C * bjRes hA h r‖
-        ≤ (1 + r) * (‖bjRes hA h r‖ * ‖C‖ * ‖bjRes hA h r‖) := by
-          gcongr; exact norm_mul₃_le
-      _ ≤ (1 + r) * ((1 + r)⁻¹ * ‖C‖ * (1 + r)⁻¹) := by gcongr
-      _ = ‖C‖ * (1 + r)⁻¹ := by field_simp
-  have hterm2 : ‖bjMulRes hA h r * C * bjMulRes hA h r‖ ≤ (1 / 4 : ℝ) * ‖C‖ * (1 + r)⁻¹ := by
-    have hs0 : Real.sqrt (1 + r) ≠ 0 := (Real.sqrt_pos.2 h1r).ne'
-    calc ‖bjMulRes hA h r * C * bjMulRes hA h r‖
-        ≤ ‖bjMulRes hA h r‖ * ‖C‖ * ‖bjMulRes hA h r‖ := norm_mul₃_le
-      _ ≤ (2 * Real.sqrt (1 + r))⁻¹ * ‖C‖ * (2 * Real.sqrt (1 + r))⁻¹ := by gcongr
-      _ = (1 / 4 : ℝ) * ‖C‖ * (1 + r)⁻¹ := by
-          field_simp; rw [Real.sq_sqrt h1r.le]; ring
-  calc ‖((1 + r : ℝ) : ℂ) • (bjRes hA h r * C * bjRes hA h r) -
-          bjMulRes hA h r * C * bjMulRes hA h r‖
-      ≤ _ := norm_sub_le _ _
-    _ ≤ ‖C‖ * (1 + r)⁻¹ + (1 / 4 : ℝ) * ‖C‖ * (1 + r)⁻¹ := add_le_add hterm1 hterm2
-    _ = (5 / 4 : ℝ) * ‖C‖ * (1 + r)⁻¹ := by ring
+omit [CompleteSpace H] in
+private theorem resolvent_mul_sub_mul_resolvent {T C : H →L[ℂ] H}
+    (hTC : SylvesterEquation A A T C) {z : ℂ} (hz : z ∈ A.resolventSet) :
+    A.resolvent z * T - T * A.resolvent z = A.resolvent z * C * A.resolvent z := by
+  ext y
+  simp only [_root_.sub_apply, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply]
+  have hmem : A.resolvent z y ∈ A.domain := resolvent_mem_domain hz y
+  have hTmem : T (A.resolvent z y) ∈ A.domain := hTC.mapsTo_domain ⟨A.resolvent z y, hmem⟩
+  have hstep : z • T (A.resolvent z y) - A ⟨T (A.resolvent z y), hTmem⟩ =
+      T y - C (A.resolvent z y) := by
+    have hC := hTC.equation ⟨A.resolvent z y, hmem⟩
+    have hR := smul_sub_apply_resolvent hz y
+    dsimp only at hC
+    calc z • T (A.resolvent z y) - A ⟨T (A.resolvent z y), hTmem⟩
+        = (z • T (A.resolvent z y) - T (A ⟨A.resolvent z y, hmem⟩)) - C (A.resolvent z y) := by
+            rw [← hC]; abel
+      _ = T (z • A.resolvent z y - A ⟨A.resolvent z y, hmem⟩) - C (A.resolvent z y) := by
+            rw [T.map_sub, ContinuousLinearMap.map_smul]
+      _ = T y - C (A.resolvent z y) := by rw [hR]
+  have happ := congrArg (A.resolvent z) hstep
+  rw [resolvent_smul_sub_apply hz ⟨T (A.resolvent z y), hTmem⟩, (A.resolvent z).map_sub] at happ
+  exact sub_eq_iff_eq_add'.2 (eq_add_of_sub_eq happ.symm)
 
-private def bjIntegrand (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) (T : H →L[ℂ] H)
-    (r : ℝ) : H →L[ℂ] H :=
-  (Real.pi⁻¹ * (Real.sqrt r)⁻¹ : ℝ) • (bjMulRes hA h r * T - T * bjMulRes hA h r)
+private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L[ℂ] H}
+    (hTC : SylvesterEquation A A T C) {r : ℝ} (hr : 0 ≤ r) :
+    ‖bjMulRes A r * T - T * bjMulRes A r‖ ≤ ‖C‖ * (1 + r)⁻¹ := by
+  have hcomm : bjMulRes A r * T - T * bjMulRes A r =
+      -(2 : ℂ)⁻¹ • (A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r) +
+        A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)) := by
+    rw [bjMulRes, smul_mul_assoc, mul_smul_comm, ← smul_sub, add_mul, mul_add, add_sub_add_comm,
+      resolvent_mul_sub_mul_resolvent hTC (mem_resolventSet_I_bjShift hA r),
+      resolvent_mul_sub_mul_resolvent hTC (mem_resolventSet_neg_I_bjShift hA r)]
+  have hs0 : bjShift r ≠ 0 := (bjShift_pos r).ne'
+  have hs2 : bjShift r ^ 2 = 1 + r := by rw [sq_bjShift, max_eq_left hr]
+  have hn_pos : ‖A.resolvent (Complex.I * bjShift r)‖ ≤ (bjShift r)⁻¹ := by
+    simpa only [abs_of_pos (bjShift_pos r)] using hA.norm_resolvent_I_mul_le hs0
+  have hn_neg : ‖A.resolvent (-Complex.I * bjShift r)‖ ≤ (bjShift r)⁻¹ := by
+    simpa only [← adjoint_resolvent_I_bjShift hA r, ContinuousLinearMap.adjoint.norm_map] using
+      hn_pos
+  have hterm_pos :
+      ‖A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r)‖ ≤
+        ‖C‖ * (1 + r)⁻¹ := by
+    calc ‖A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r)‖
+        ≤ ‖A.resolvent (Complex.I * bjShift r)‖ * ‖C‖ * ‖A.resolvent (Complex.I * bjShift r)‖ :=
+          norm_mul₃_le
+      _ ≤ (bjShift r)⁻¹ * ‖C‖ * (bjShift r)⁻¹ := by
+          gcongr; exact mul_nonneg (inv_nonneg.2 (bjShift_pos r).le) (norm_nonneg C)
+      _ = ‖C‖ * (bjShift r ^ 2)⁻¹ := by ring
+      _ = ‖C‖ * (1 + r)⁻¹ := by rw [hs2]
+  have hterm_neg :
+      ‖A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)‖ ≤
+        ‖C‖ * (1 + r)⁻¹ := by
+    calc ‖A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)‖
+        ≤ ‖A.resolvent (-Complex.I * bjShift r)‖ * ‖C‖ *
+            ‖A.resolvent (-Complex.I * bjShift r)‖ := norm_mul₃_le
+      _ ≤ (bjShift r)⁻¹ * ‖C‖ * (bjShift r)⁻¹ := by
+          gcongr; exact mul_nonneg (inv_nonneg.2 (bjShift_pos r).le) (norm_nonneg C)
+      _ = ‖C‖ * (bjShift r ^ 2)⁻¹ := by ring
+      _ = ‖C‖ * (1 + r)⁻¹ := by rw [hs2]
+  rw [hcomm, norm_smul, norm_neg, norm_inv, Complex.norm_ofNat]
+  calc (2 : ℝ)⁻¹ *
+          ‖A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r) +
+            A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)‖
+      ≤ (2 : ℝ)⁻¹ * (‖C‖ * (1 + r)⁻¹ + ‖C‖ * (1 + r)⁻¹) := by
+        gcongr; exact (norm_add_le _ _).trans (add_le_add hterm_pos hterm_neg)
+    _ = ‖C‖ * (1 + r)⁻¹ := by ring
 
-private theorem continuousOn_bjIntegrand (T : H →L[ℂ] H) :
-    ContinuousOn (bjIntegrand hA h T) (Ioi 0) :=
+private def bjIntegrand (A : H →ₗ.[ℂ] H) (T : H →L[ℂ] H) (r : ℝ) : H →L[ℂ] H :=
+  (Real.pi⁻¹ * (Real.sqrt r)⁻¹ : ℝ) • (bjMulRes A r * T - T * bjMulRes A r)
+
+private theorem continuousOn_bjIntegrand (hA : IsSelfAdjoint A) (T : H →L[ℂ] H) :
+    ContinuousOn (bjIntegrand A T) (Ioi 0) :=
   (continuousOn_const.mul (ContinuousOn.inv₀ Real.continuous_sqrt.continuousOn
     fun _ hr ↦ (Real.sqrt_pos.2 hr).ne')).smul
-    (((continuous_bjMulRes hA h).mul continuous_const).sub
-      (continuous_const.mul (continuous_bjMulRes hA h))).continuousOn
+    (((continuous_bjMulRes hA).mul continuous_const).sub
+      (continuous_const.mul (continuous_bjMulRes hA))).continuousOn
 
-private theorem norm_bjIntegrand_le {T C : H →L[ℂ] H}
-    (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) {r : ℝ} (hr : 0 < r) :
-    ‖bjIntegrand hA h T r‖ ≤ (5 / 4 * Real.pi⁻¹ * ‖C‖) * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹) := by
-  rw [bjIntegrand, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-  calc Real.pi⁻¹ * (Real.sqrt r)⁻¹ * ‖bjMulRes hA h r * T - T * bjMulRes hA h r‖
-      ≤ Real.pi⁻¹ * (Real.sqrt r)⁻¹ * ((5 / 4 : ℝ) * ‖C‖ * (1 + r)⁻¹) := by
-        gcongr; exact norm_bjMulRes_commutator_le hA h hTdom hC hr.le
-    _ = 5 / 4 * Real.pi⁻¹ * ‖C‖ * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹) := by ring
+private def bjMajorant (c r : ℝ) : ℝ :=
+  (Real.pi⁻¹ * c) * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹)
 
-private theorem integrableOn_bjIntegrand {T C : H →L[ℂ] H}
-    (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) :
-    IntegrableOn (bjIntegrand hA h T) (Ioi 0) := by
-  have hdom : IntegrableOn
-      (fun r : ℝ ↦ (5 / 4 * Real.pi⁻¹ * ‖C‖) * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹)) (Ioi 0) :=
-    (TauCeti.integrableOn_Ioi_inv_sqrt_mul_inv_add zero_lt_one).const_mul _
-  refine hdom.mono' ((continuousOn_bjIntegrand hA h T).aestronglyMeasurable measurableSet_Ioi) ?_
+private theorem integrableOn_bjMajorant (c : ℝ) : IntegrableOn (bjMajorant c) (Ioi 0) :=
+  (TauCeti.integrableOn_Ioi_inv_sqrt_mul_inv_add zero_lt_one).const_mul _
+
+private theorem integral_bjMajorant (c : ℝ) :
+    ∫ r in Ioi (0 : ℝ), bjMajorant c r = c := by
+  have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
+  simp only [bjMajorant, integral_const_mul,
+    TauCeti.integral_Ioi_inv_sqrt_mul_inv_add zero_lt_one, Real.sqrt_one, div_one]
+  field_simp
+
+private theorem norm_bjIntegrand_le (hA : IsSelfAdjoint A) {T C : H →L[ℂ] H}
+    (hTC : SylvesterEquation A A T C) {r : ℝ} (hr : 0 < r) :
+    ‖bjIntegrand A T r‖ ≤ bjMajorant ‖C‖ r := by
+  rw [bjIntegrand, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity), bjMajorant]
+  calc Real.pi⁻¹ * (Real.sqrt r)⁻¹ * ‖bjMulRes A r * T - T * bjMulRes A r‖
+      ≤ Real.pi⁻¹ * (Real.sqrt r)⁻¹ * (‖C‖ * (1 + r)⁻¹) := by
+        gcongr; exact norm_bjMulRes_commutator_le hA hTC hr.le
+    _ = Real.pi⁻¹ * ‖C‖ * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹) := by ring
+
+private theorem integrableOn_bjIntegrand (hA : IsSelfAdjoint A) {T C : H →L[ℂ] H}
+    (hTC : SylvesterEquation A A T C) :
+    IntegrableOn (bjIntegrand A T) (Ioi 0) := by
+  refine (integrableOn_bjMajorant ‖C‖).mono'
+    ((continuousOn_bjIntegrand hA T).aestronglyMeasurable measurableSet_Ioi) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with r hr
-  exact norm_bjIntegrand_le hA h hTdom hC hr
+  exact norm_bjIntegrand_le hA hTC hr
 
-private noncomputable def bjKernel (μ r : ℝ) : ℂ :=
-  ((Real.pi⁻¹ * (μ * ((Real.sqrt r)⁻¹ * (1 + μ ^ 2 + r)⁻¹)) : ℝ) : ℂ)
+private def bjKernelReal (μ r : ℝ) : ℝ :=
+  Real.pi⁻¹ * (μ * ((Real.sqrt r)⁻¹ * (1 + μ ^ 2 + r)⁻¹))
+
+private def bjKernel (μ r : ℝ) : ℂ :=
+  Complex.ofRealCLM (bjKernelReal μ r)
+
+private theorem integrableOn_bjKernelReal (μ : ℝ) : IntegrableOn (bjKernelReal μ) (Ioi 0) :=
+  ((TauCeti.integrableOn_Ioi_inv_sqrt_mul_inv_add (a := 1 + μ ^ 2)
+    (by positivity)).const_mul μ).const_mul Real.pi⁻¹
 
 private theorem integrableOn_bjKernel (μ : ℝ) : IntegrableOn (bjKernel μ) (Ioi 0) :=
-  Complex.ofRealCLM.integrable_comp
-    (((TauCeti.integrableOn_Ioi_inv_sqrt_mul_inv_add (a := 1 + μ ^ 2)
-      (by positivity)).const_mul μ).const_mul Real.pi⁻¹)
+  Complex.ofRealCLM.integrable_comp (integrableOn_bjKernelReal μ)
 
 private theorem integral_bjKernel (μ : ℝ) :
     ∫ r in Ioi (0 : ℝ), bjKernel μ r = ((μ / Real.sqrt (1 + μ ^ 2) : ℝ) : ℂ) := by
-  change ∫ r in Ioi (0 : ℝ), Complex.ofRealCLM
-    (Real.pi⁻¹ * (μ * ((Real.sqrt r)⁻¹ * (1 + μ ^ 2 + r)⁻¹))) =
-      Complex.ofRealCLM (μ / Real.sqrt (1 + μ ^ 2))
-  rw [Complex.ofRealCLM.integral_comp_comm
-    (((TauCeti.integrableOn_Ioi_inv_sqrt_mul_inv_add (a := 1 + μ ^ 2)
-      (by positivity)).const_mul μ).const_mul Real.pi⁻¹),
-    integral_const_mul, integral_const_mul,
-    TauCeti.integral_Ioi_inv_sqrt_mul_inv_add (by positivity)]
+  rw [show (∫ r in Ioi (0 : ℝ), bjKernel μ r) =
+      Complex.ofRealCLM (∫ r in Ioi (0 : ℝ), bjKernelReal μ r) from
+      Complex.ofRealCLM.integral_comp_comm (integrableOn_bjKernelReal μ),
+    Complex.ofRealCLM_apply]
   congr 1
+  rw [show (∫ r in Ioi (0 : ℝ), bjKernelReal μ r) =
+      Real.pi⁻¹ * (μ * ∫ r in Ioi (0 : ℝ), (Real.sqrt r)⁻¹ * (1 + μ ^ 2 + r)⁻¹) from by
+        simp only [bjKernelReal, integral_const_mul],
+    TauCeti.integral_Ioi_inv_sqrt_mul_inv_add (a := 1 + μ ^ 2) (by positivity)]
   have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
   field_simp
 
 private theorem commutator_boundedTransform_eq_integral {T C : H →L[ℂ] H}
-    (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) :
+    (hTC : SylvesterEquation A A T C) :
     A.boundedTransform hA h * T - T * A.boundedTransform hA h =
-      ∫ r in Ioi (0 : ℝ), bjIntegrand hA h T r := by
+      ∫ r in Ioi (0 : ℝ), bjIntegrand A T r := by
   obtain ⟨_, b, lam, hb⟩ := hA.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent h
-  have hint := integrableOn_bjIntegrand hA h hTdom hC
+  have hint := integrableOn_bjIntegrand hA hTC
   refine b.ext_inner_apply b fun i j ↦ ?_
   have hF_eig (k) : A.boundedTransform hA h (b k) =
       ((lam k / Real.sqrt (1 + lam k ^ 2) : ℝ) : ℂ) • b k :=
     A.boundedTransform_apply_of_apply_eq_smul hA h ⟨_, (hb k).1⟩ (hb k).2
-  have hQ_sa (r : ℝ) : IsSelfAdjoint (bjMulRes hA h r) :=
-    A.isSelfAdjoint_boundedEigenCalculus hA h _ fun _ ↦ by simp
-  have hL_comm : ⟪b i, (∫ r in Ioi (0 : ℝ), bjIntegrand hA h T r) (b j)⟫_ℂ =
-      ∫ r in Ioi (0 : ℝ), ⟪b i, bjIntegrand hA h T r (b j)⟫_ℂ :=
+  have hL_comm : ⟪b i, (∫ r in Ioi (0 : ℝ), bjIntegrand A T r) (b j)⟫_ℂ =
+      ∫ r in Ioi (0 : ℝ), ⟪b i, bjIntegrand A T r (b j)⟫_ℂ :=
     (((innerSL ℂ (b i)).comp (ContinuousLinearMap.apply ℂ H (b j))).integral_comp_comm hint).symm
-  have hinner (r : ℝ) (hr : 0 < r) : ⟪b i, bjIntegrand hA h T r (b j)⟫_ℂ =
+  have hinner (r : ℝ) (hr : 0 < r) : ⟪b i, bjIntegrand A T r (b j)⟫_ℂ =
       (bjKernel (lam i) r - bjKernel (lam j) r) * ⟪b i, T (b j)⟫_ℂ := by
     rw [bjIntegrand, _root_.smul_apply, ← Complex.coe_smul, inner_smul_right,
-      inner_selfAdjoint_diag_commutator b (hQ_sa r) (bjMulRes_apply_basis hA h hb hr.le) i j,
-      bjKernel, bjKernel, add_right_comm 1 r (lam i ^ 2), add_right_comm 1 r (lam j ^ 2),
-      div_eq_mul_inv, div_eq_mul_inv]
+      b.inner_selfAdjoint_diag_commutator (isSelfAdjoint_bjMulRes hA r)
+        (g := fun k ↦ lam k / (1 + r + lam k ^ 2)) (bjMulRes_apply_basis hA hb hr.le) i j]
+    simp only [bjKernel, bjKernelReal, Complex.ofRealCLM_apply, RCLike.ofReal_sub,
+      Complex.coe_algebraMap, add_right_comm 1 r]
     push_cast; ring
-  rw [inner_selfAdjoint_diag_commutator b (A.isSelfAdjoint_boundedTransform hA h) hF_eig i j,
+  rw [b.inner_selfAdjoint_diag_commutator (A.isSelfAdjoint_boundedTransform hA h)
+      (g := fun k ↦ lam k / Real.sqrt (1 + lam k ^ 2)) hF_eig i j,
     hL_comm, setIntegral_congr_fun measurableSet_Ioi hinner, integral_mul_const,
     integral_sub (integrableOn_bjKernel (lam i)) (integrableOn_bjKernel (lam j)),
-    integral_bjKernel, integral_bjKernel]
-  push_cast; ring
+    integral_bjKernel, integral_bjKernel, RCLike.ofReal_sub]
+  simp only [RCLike.ofReal_div, Complex.ofReal_div]
+  rfl
 
-private theorem integral_mem_of_isClosed {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [CompleteSpace E] {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    {K : Submodule ℂ E} (hK : _root_.IsClosed (K : Set E)) {f : α → E}
-    (hf : Integrable f μ) (hmem : ∀ᵐ a ∂μ, f a ∈ K) :
-    ∫ a, f a ∂μ ∈ K := by
-  have : _root_.IsClosed (K : Set E) := hK
-  rw [← Submodule.Quotient.mk_eq_zero]
-  change K.mkQL (∫ a, f a ∂μ) = 0
-  rw [← K.mkQL.integral_comp_comm hf]
-  refine integral_eq_zero_of_ae ?_
-  filter_upwards [hmem] with a ha
-  change Submodule.Quotient.mk (f a) = 0
-  rwa [Submodule.Quotient.mk_eq_zero]
-
-/-- **Baaj–Julg compactness theorem.** If a bounded operator `T` preserves the domain of `A` and
-has bounded commutator `[A, T]` on `D(A)`, then `[F_A, T]` is a compact operator. -/
+/-- **Baaj–Julg compactness theorem.** If `T` and `C` satisfy the domain-aware Sylvester equation
+`A T - T A = C`, then `[F_A, T]` is a compact operator. -/
 theorem isCompactOperator_commutator_boundedTransform {T C : H →L[ℂ] H}
-    (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) :
+    (hTC : SylvesterEquation A A T C) :
     IsCompactOperator ⇑(A.boundedTransform hA h * T - T * A.boundedTransform hA h) := by
-  rw [commutator_boundedTransform_eq_integral hA h hTdom hC]
-  refine integral_mem_of_isClosed (K := compactOperator (RingHom.id ℂ) H H)
-    isClosed_setOfPred_isCompactOperator (integrableOn_bjIntegrand hA h hTdom hC)
+  rw [commutator_boundedTransform_eq_integral hA h hTC]
+  refine MeasureTheory.integral_mem_of_isClosed (K := compactOperator (RingHom.id ℂ) H H)
+    isClosed_setOfPred_isCompactOperator (integrableOn_bjIntegrand hA hTC)
     (Filter.Eventually.of_forall fun r ↦ ?_)
-  have hcomm : IsCompactOperator ⇑(bjMulRes hA h r * T - T * bjMulRes hA h r) := by
+  have hcomm : IsCompactOperator ⇑(bjMulRes A r * T - T * bjMulRes A r) := by
     rw [FunLike.coe_sub]
     exact ((isCompactOperator_bjMulRes hA h r).mul_right T).sub
       ((isCompactOperator_bjMulRes hA h r).mul_left T)
   rw [bjIntegrand, ← Complex.coe_smul]
   exact (compactOperator (RingHom.id ℂ) H H).smul_mem _ hcomm
 
-/-- **Baaj–Julg norm estimate.** If a bounded operator `T` preserves the domain of `A` and
-`[A, T] = C` on `D(A)` for a bounded operator `C`, then `‖[F_A, T]‖ ≤ (5 / 4) ‖C‖`. -/
+/-- **Baaj–Julg norm estimate.** If `T` and `C` satisfy the domain-aware Sylvester equation
+`A T - T A = C`, then `‖[F_A, T]‖ ≤ (5 / 4) ‖C‖`. -/
 theorem norm_commutator_boundedTransform_le {T C : H →L[ℂ] H}
-    (hTdom : ∀ x ∈ A.domain, T x ∈ A.domain)
-    (hC : ∀ x : A.domain, A ⟨T x, hTdom x x.property⟩ - T (A x) = C x) :
+    (hTC : SylvesterEquation A A T C) :
     ‖A.boundedTransform hA h * T - T * A.boundedTransform hA h‖ ≤ 5 / 4 * ‖C‖ := by
-  rw [commutator_boundedTransform_eq_integral hA h hTdom hC]
-  have hint := integrableOn_bjIntegrand hA h hTdom hC
-  have hdom : IntegrableOn
-      (fun r : ℝ ↦ (5 / 4 * Real.pi⁻¹ * ‖C‖) * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹)) (Ioi 0) :=
-    (TauCeti.integrableOn_Ioi_inv_sqrt_mul_inv_add zero_lt_one).const_mul _
-  calc ‖∫ r in Ioi (0 : ℝ), bjIntegrand hA h T r‖
-      ≤ ∫ r in Ioi (0 : ℝ), ‖bjIntegrand hA h T r‖ := norm_integral_le_integral_norm _
-    _ ≤ ∫ r in Ioi (0 : ℝ), (5 / 4 * Real.pi⁻¹ * ‖C‖) * ((Real.sqrt r)⁻¹ * (1 + r)⁻¹) :=
-        setIntegral_mono_on hint.norm hdom measurableSet_Ioi fun _ hr ↦
-          norm_bjIntegrand_le hA h hTdom hC hr
-    _ = 5 / 4 * Real.pi⁻¹ * ‖C‖ * (Real.pi / Real.sqrt 1) := by
-        rw [integral_const_mul, TauCeti.integral_Ioi_inv_sqrt_mul_inv_add zero_lt_one]
-    _ = 5 / 4 * ‖C‖ := by
-        have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
-        rw [Real.sqrt_one, div_one]; field_simp
+  rw [commutator_boundedTransform_eq_integral hA h hTC]
+  have hint := integrableOn_bjIntegrand hA hTC
+  calc ‖∫ r in Ioi (0 : ℝ), bjIntegrand A T r‖
+      ≤ ∫ r in Ioi (0 : ℝ), ‖bjIntegrand A T r‖ := norm_integral_le_integral_norm _
+    _ ≤ ∫ r in Ioi (0 : ℝ), bjMajorant ‖C‖ r :=
+        setIntegral_mono_on hint.norm (integrableOn_bjMajorant ‖C‖) measurableSet_Ioi fun _ hr ↦
+          norm_bjIntegrand_le hA hTC hr
+    _ = ‖C‖ := integral_bjMajorant ‖C‖
+    _ ≤ 5 / 4 * ‖C‖ := by linarith [norm_nonneg C]
 
 end BoundedTransform
 

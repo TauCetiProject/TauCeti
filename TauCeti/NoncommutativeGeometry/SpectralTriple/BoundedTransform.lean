@@ -35,7 +35,7 @@ public section
 
 noncomputable section
 
-open scoped ComplexStarModule ENNReal lp
+open scoped ComplexStarModule
 
 namespace TauCeti
 
@@ -50,70 +50,22 @@ variable (S : SpectralTriple A H)
 
 /-- The **bounded transform** (or Woronowicz–Baaj–Julg transform) `F_D = D (1 + D²)⁻¹/²` of the
 Dirac operator of a spectral triple. -/
-def boundedTransform : H →L[ℂ] H :=
+abbrev boundedTransform : H →L[ℂ] H :=
   S.operator.boundedTransform S.isSelfAdjoint_operator S.hasCompactResolvent_operator
-
-/-- In any orthonormal eigenbasis of `D`, the bounded transform acts diagonally by
-`λᵢ / √(1 + λᵢ²)`. -/
-theorem boundedTransform_eq_diagonal {ι : Type*} (b : HilbertBasis ι ℂ H) {lam : ι → ℝ}
-    (hb : ∀ i, ∃ hi : b i ∈ S.operator.domain, S.operator ⟨b i, hi⟩ = (lam i : ℂ) • b i)
-    (m : ℓ^∞(ι, ℂ)) (hm : ∀ i, m i = ((lam i / Real.sqrt (1 + lam i ^ 2) : ℝ) : ℂ)) :
-    S.boundedTransform = b.diagonal m :=
-  S.operator.boundedTransform_eq_diagonal S.isSelfAdjoint_operator S.hasCompactResolvent_operator
-    b hb m hm
-
-/-- On an eigenvector of `D` with real eigenvalue `r`, the bounded transform multiplies by
-`r / √(1 + r²)`. -/
-theorem boundedTransform_apply_of_apply_eq_smul (x : S.operator.domain) {r : ℝ}
-    (hx : S.operator x = (r : ℂ) • (x : H)) :
-    S.boundedTransform x = ((r / Real.sqrt (1 + r ^ 2) : ℝ) : ℂ) • (x : H) :=
-  S.operator.boundedTransform_apply_of_apply_eq_smul S.isSelfAdjoint_operator
-    S.hasCompactResolvent_operator x hx
-
-/-- The bounded transform of a spectral triple is self-adjoint. -/
-theorem isSelfAdjoint_boundedTransform : IsSelfAdjoint S.boundedTransform :=
-  S.operator.isSelfAdjoint_boundedTransform S.isSelfAdjoint_operator S.hasCompactResolvent_operator
-
-/-- The adjoint of the bounded transform is itself. -/
-@[simp]
-theorem star_boundedTransform : star S.boundedTransform = S.boundedTransform :=
-  S.isSelfAdjoint_boundedTransform.star_eq
-
-/-- The bounded transform is a contraction: `‖F_D‖ ≤ 1`. -/
-theorem norm_boundedTransform_le_one : ‖S.boundedTransform‖ ≤ 1 :=
-  S.operator.norm_boundedTransform_le_one S.isSelfAdjoint_operator S.hasCompactResolvent_operator
-
-/-- **`1 - F_D² = (1 + D²)⁻¹`.** -/
-theorem one_sub_boundedTransform_mul_self :
-    1 - S.boundedTransform * S.boundedTransform = S.operator.invOneAddSq :=
-  S.operator.one_sub_boundedTransform_mul_self S.isSelfAdjoint_operator
-    S.hasCompactResolvent_operator
-
-/-- **`F_D² - 1 = -(1 + D²)⁻¹`.** -/
-theorem boundedTransform_mul_self_sub_one :
-    S.boundedTransform * S.boundedTransform - 1 = -S.operator.invOneAddSq :=
-  S.operator.boundedTransform_mul_self_sub_one S.isSelfAdjoint_operator
-    S.hasCompactResolvent_operator
-
-/-- The defect `F_D² - 1` of the bounded transform is compact. -/
-theorem isCompactOperator_boundedTransform_mul_self_sub_one :
-    IsCompactOperator ⇑(S.boundedTransform * S.boundedTransform - 1) :=
-  S.operator.isCompactOperator_boundedTransform_mul_self_sub_one S.isSelfAdjoint_operator
-    S.hasCompactResolvent_operator
 
 /-- **Baaj–Julg compactness theorem for spectral triples.** For every `a : A`, the commutator
 `[F_D, π(a)]` is a compact operator. -/
 theorem isCompactOperator_commutator_boundedTransform (a : A) :
     IsCompactOperator ⇑(S.boundedTransform * S.rep a - S.rep a * S.boundedTransform) :=
   S.operator.isCompactOperator_commutator_boundedTransform S.isSelfAdjoint_operator
-    S.hasCompactResolvent_operator (fun _ hx ↦ S.rep_mem_domain a hx) (S.commutator_apply_domain a)
+    S.hasCompactResolvent_operator (S.sylvesterEquation_commutator a)
 
 /-- **Baaj–Julg norm estimate for spectral triples.** For every `a : A`,
 `‖[F_D, π(a)]‖ ≤ (5 / 4) ‖[D, π(a)]‖`. -/
 theorem norm_commutator_boundedTransform_le (a : A) :
     ‖S.boundedTransform * S.rep a - S.rep a * S.boundedTransform‖ ≤ 5 / 4 * ‖S.commutator a‖ :=
   S.operator.norm_commutator_boundedTransform_le S.isSelfAdjoint_operator
-    S.hasCompactResolvent_operator (fun _ hx ↦ S.rep_mem_domain a hx) (S.commutator_apply_domain a)
+    S.hasCompactResolvent_operator (S.sylvesterEquation_commutator a)
 
 /-- Unitary transport commutes with the bounded transform. -/
 @[simp]
@@ -138,10 +90,12 @@ spectral triple `(A, H, D)` via its bounded transform `F_D = D (1 + D²)⁻¹/²
 def toFredholmModule : FredholmModule A H where
   rep := S.rep.toNonUnitalStarAlgHom
   operator := S.boundedTransform
-  isSelfAdjoint_operator := S.isSelfAdjoint_boundedTransform
+  isSelfAdjoint_operator := S.operator.isSelfAdjoint_boundedTransform
+    S.isSelfAdjoint_operator S.hasCompactResolvent_operator
   isCompactOperator_commutator := S.isCompactOperator_commutator_boundedTransform
   isCompactOperator_mul_self_sub_one_mul a :=
-    S.isCompactOperator_boundedTransform_mul_self_sub_one.mul_right (S.rep a)
+    (S.operator.isCompactOperator_boundedTransform_mul_self_sub_one S.isSelfAdjoint_operator
+      S.hasCompactResolvent_operator).mul_right (S.rep a)
 
 @[simp]
 theorem toFredholmModule_rep : S.toFredholmModule.rep = S.rep.toNonUnitalStarAlgHom :=
@@ -178,7 +132,8 @@ theorem grading_mul_boundedTransform :
 
 /-- The grading of an even spectral triple commutes with `(1 + D²)⁻¹`. -/
 theorem commute_grading_invOneAddSq : Commute S.grading S.operator.invOneAddSq := by
-  rw [← S.one_sub_boundedTransform_mul_self]
+  rw [← S.operator.one_sub_boundedTransform_mul_self S.isSelfAdjoint_operator
+    S.hasCompactResolvent_operator]
   have h : S.boundedTransform * S.grading = -(S.grading * S.boundedTransform) := by
     rw [S.grading_mul_boundedTransform, neg_neg]
   exact (Commute.one_right _).sub_right (TauCeti.commute_mul_of_mul_eq_neg_mul h h).symm

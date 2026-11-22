@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.InnerProductSpace.l2Space
-import Mathlib.Analysis.RCLike.Lemmas
-import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Topology.Algebra.InfiniteSum.Defs
 
 /-!
@@ -18,8 +16,7 @@ This file transfers orthogonality to every vector of a subspace from orthogonali
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
-A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and is separable whenever
-the basis index type is countable (`HilbertBasis.separableSpace`).
+A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
 
 It also expands the value of a continuous semilinear map in a Hilbert basis: the series
 `∑ᵢ σ ⟪bᵢ, x⟫ • T bᵢ` converges to `T x` (`HilbertBasis.hasSum_inner_smul_apply`). A continuous
@@ -53,15 +50,6 @@ variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductS
 /-- A space with a Hilbert basis is complete, being isometric to `ℓ²`. -/
 theorem completeSpace (b : HilbertBasis ι 𝕜 E) : CompleteSpace E :=
   b.repr.toIsometryEquiv.completeSpace
-
-/-- A Hilbert space with a countable Hilbert basis is separable, being homeomorphic to `ℓ²` on a
-countable index type. -/
-theorem separableSpace [Countable ι] (b : HilbertBasis ι 𝕜 E) :
-    TopologicalSpace.SeparableSpace E := by
-  have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
-  have : TopologicalSpace.SeparableSpace (lp (fun _ : ι ↦ 𝕜) 2) :=
-    lp.separableSpace (by norm_num)
-  exact b.repr.symm.surjective.denseRange.separableSpace b.repr.symm.continuous
 
 /-- Two continuous semilinear maps from `E` to a module with a Hausdorff topology, with the same
 scalar homomorphism `σ`, agree when they agree on every vector of a Hilbert basis of `E`. -/

@@ -23,6 +23,10 @@ does for multilinear maps.
 Applying a continuous linear map `L` to a function multiplies the integral of its squared norm by
 at most `‖L‖²` (`ContinuousLinearMap.integral_norm_apply_sq_le`), as for the energy of a map
 composed with a linear change of coordinates.
+
+The Bochner integral of an integrable function taking values almost everywhere in a closed
+submodule `K` belongs to `K` (`MeasureTheory.integral_mem_of_isClosed`), proved by passing the
+quotient projection `K.mkQL` under the integral.
 -/
 
 public section
@@ -76,3 +80,22 @@ theorem integral_apply {φ : X → E [⋀^ι]→L[𝕜] F} (hφ : Integrable φ 
     (toContinuousMultilinearMapCLM 𝕜)).integral_comp_comm hφ).symm
 
 end ContinuousAlternatingMap
+
+namespace MeasureTheory
+
+/-- The Bochner integral of an integrable function taking values almost everywhere in a closed
+submodule `K` lies in `K`. -/
+theorem integral_mem_of_isClosed {E 𝕜 : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedSpace 𝕜 E] [CompleteSpace E] {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {K : Submodule 𝕜 E} (hK : _root_.IsClosed (K : Set E)) {f : α → E}
+    (hf : Integrable f μ) (hmem : ∀ᵐ a ∂μ, f a ∈ K) :
+    ∫ a, f a ∂μ ∈ K := by
+  have : _root_.IsClosed (K : Set E) := hK
+  have hmk_eq_zero (x : E) : K.mkQL x = 0 ↔ x ∈ K := by
+    rw [Submodule.mkQL_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+  rw [← hmk_eq_zero, ← K.mkQL.integral_comp_comm hf]
+  refine integral_eq_zero_of_ae ?_
+  filter_upwards [hmem] with a ha
+  exact (hmk_eq_zero (f a)).2 ha
+
+end MeasureTheory

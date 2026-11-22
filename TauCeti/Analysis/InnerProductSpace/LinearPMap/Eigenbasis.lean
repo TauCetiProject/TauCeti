@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
+public import Mathlib.Order.Northcott
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CompactResolvent
 public import TauCeti.LinearAlgebra.LinearPMap.Restrict
-import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Cutoff
 
 /-!
@@ -47,6 +48,9 @@ in `TauCeti.Analysis.InnerProductSpace.Spectrum`.
   operator with compact resolvent has a Hilbert basis of eigenvectors with real eigenvalues.
 * `IsSelfAdjoint.separableSpace_of_hasCompactResolvent`: a complex Hilbert space admitting a
   self-adjoint operator with compact resolvent is separable.
+* `LinearPMap.HasCompactResolvent.northcott_abs_of_eigenbasis` and
+  `LinearPMap.HasCompactResolvent.countable_of_eigenbasis`: Northcott property of `|λᵢ|` and
+  countability of the eigenbasis index type.
 
 ## References
 
@@ -110,7 +114,30 @@ theorem IsFormalAdjoint.exists_hilbertBasis_forall_apply_eq_smul_of_orthogonalFa
 
 end LinearPMap
 
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+
+/-- The absolute values of the real eigenvalues in an orthonormal eigenbasis of an operator with
+compact resolvent satisfy the Northcott property. -/
+theorem LinearPMap.HasCompactResolvent.northcott_abs_of_eigenbasis
+    {A : H →ₗ.[ℂ] H} (h : A.HasCompactResolvent) {ι : Type*} (b : HilbertBasis ι ℂ H)
+    {lam : ι → ℝ} (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : ℂ) • b k) :
+    Northcott fun k ↦ |lam k| := by
+  simpa only [Complex.norm_real, Real.norm_eq_abs] using
+    h.northcott_norm_of_orthonormal b.orthonormal hb
+
+/-- Any index type of an orthonormal eigenbasis of an operator with compact resolvent is
+countable. -/
+theorem LinearPMap.HasCompactResolvent.countable_of_eigenbasis
+    {A : H →ₗ.[ℂ] H} (h : A.HasCompactResolvent) {ι : Type*} (b : HilbertBasis ι ℂ H)
+    {lam : ι → ℝ} (hb : ∀ k, ∃ hk : b k ∈ A.domain, A ⟨b k, hk⟩ = (lam k : ℂ) • b k) :
+    Countable ι := by
+  have hN := h.northcott_abs_of_eigenbasis b hb
+  have huniv : (Set.univ : Set ι) = ⋃ n : ℕ, {k | |lam k| ≤ (n : ℝ)} := by
+    ext k; simp [exists_nat_ge]
+  rw [← Set.countable_univ_iff, huniv]
+  exact Set.countable_iUnion fun n ↦ (hN.finite_le (n : ℝ)).countable
+
+variable [CompleteSpace H]
 
 open LinearPMap in
 /-- **Orthonormal eigenbasis of a self-adjoint operator with compact resolvent.** A self-adjoint
@@ -145,12 +172,5 @@ theorem IsSelfAdjoint.separableSpace_of_hasCompactResolvent
     {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
     TopologicalSpace.SeparableSpace H := by
   obtain ⟨κ, b, lam, hb⟩ := hA.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent h
-  have hN : Northcott fun k ↦ |lam k| := by
-    simpa only [Complex.norm_real, Real.norm_eq_abs] using
-      h.northcott_norm_of_orthonormal b.orthonormal hb
-  have huniv : (Set.univ : Set κ) = ⋃ n : ℕ, {k | |lam k| ≤ (n : ℝ)} := by
-    ext k; simp [exists_nat_ge]
-  have : Countable κ := by
-    rw [← Set.countable_univ_iff, huniv]
-    exact Set.countable_iUnion fun n ↦ (hN.finite_le (n : ℝ)).countable
-  exact b.separableSpace
+  have : Countable κ := h.countable_of_eigenbasis b hb
+  exact b.separableSpace_iff_countable.2 ‹_›

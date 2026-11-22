@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
-public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Conj
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.OneAddSq
 
 /-!
@@ -39,8 +38,6 @@ each of these finite-dimensional invariant subspaces in
   has compact resolvent exactly when its resolvent at a given nonreal point is compact.
 * `IsSelfAdjoint.hasCompactResolvent_iff_isCompactOperator_resolvent_neg_neg`: the same for the
   inverse `(D - z)⁻¹`.
-* `LinearPMap.hasCompactResolvent_conj_iff`: conjugation by a continuous linear equivalence
-  preserves compact resolvent.
 * `IsSelfAdjoint.hasCompactResolvent_toPMap_top_iff`: a bounded self-adjoint operator on a
   complex Hilbert space has compact resolvent if and only if the Hilbert space is
   finite-dimensional.
@@ -100,29 +97,6 @@ theorem _root_.LinearPMap.HasCompactResolvent.hasOrthogonalProjection_ker {F : T
   infer_instance
 
 end RCLike
-
-section Conj
-
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {A : E →ₗ.[𝕜] E}
-
-private theorem hasCompactResolvent_conj (e : E ≃L[𝕜] F) (h : A.HasCompactResolvent) :
-    (A.conj (e : E ≃ₗ[𝕜] F)).HasCompactResolvent := by
-  obtain ⟨z, hz, hc⟩ := hasCompactResolvent_def.1 h
-  refine hasCompactResolvent_def.2 ⟨z, (resolventSet_conj e A).symm ▸ hz, ?_⟩
-  rw [resolvent_conj e hz, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
-  exact (hc.comp_clm _).clm_comp _
-
-/-- Conjugation by a continuous linear equivalence preserves compact resolvent. -/
-@[simp]
-theorem _root_.LinearPMap.hasCompactResolvent_conj_iff (e : E ≃L[𝕜] F) :
-    (A.conj (e : E ≃ₗ[𝕜] F)).HasCompactResolvent ↔ A.HasCompactResolvent :=
-  ⟨fun h ↦ by
-    have h' := hasCompactResolvent_conj e.symm h
-    rwa [ContinuousLinearEquiv.toLinearEquiv_symm, conj_conj_symm] at h',
-    hasCompactResolvent_conj e⟩
-
-end Conj
 
 section Complex
 

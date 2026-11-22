@@ -44,6 +44,8 @@ the diagonal operators in the Fourier basis.
 * `HilbertBasis.isCompactOperator_diagonal_iff`: a diagonal operator is compact iff its entries
   tend to `0` along `cofinite`.
 * `HilbertBasis.tendsto_diagonal_apply`: strong continuity in the entries.
+* `HilbertBasis.inner_selfAdjoint_diag_commutator`: matrix coefficients of `[P, T]` in an
+  eigenbasis of `P`.
 -/
 
 public section
@@ -213,5 +215,20 @@ theorem tendsto_diagonal_apply {α : Type*} {l : Filter α} {m : α → ℓ^∞(
   simp_rw [← hsq] at hlim
   have := hlim.sqrt
   simpa [Real.sqrt_sq (norm_nonneg _)] using this
+
+/-- Matrix coefficients of the commutator `[P, T]` in a Hilbert basis `b` of eigenvectors of a
+self-adjoint bounded operator `P` with real eigenvalues `g`:
+`⟪b i, (P * T - T * P) (b j)⟫_𝕜 = ((g i - g j : ℝ) : 𝕜) * ⟪b i, T (b j)⟫_𝕜`. -/
+theorem inner_selfAdjoint_diag_commutator [CompleteSpace E]
+    {P T : E →L[𝕜] E} (hP : IsSelfAdjoint P) {g : ι → ℝ} (hPg : ∀ k, P (b k) = (g k : 𝕜) • b k)
+    (i j : ι) :
+    ⟪b i, (P * T - T * P) (b j)⟫_𝕜 = ((g i - g j : ℝ) : 𝕜) * ⟪b i, T (b j)⟫_𝕜 := by
+  have hPadj : P.adjoint = P := (ContinuousLinearMap.star_eq_adjoint _).symm.trans hP.star_eq
+  simp only [_root_.sub_apply, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
+    inner_sub_right]
+  rw [← ContinuousLinearMap.adjoint_inner_left P, hPadj, hPg i, hPg j, inner_smul_left,
+    _root_.map_smul, inner_smul_right]
+  simp only [RCLike.conj_ofReal, RCLike.ofReal_sub]
+  ring
 
 end HilbertBasis
