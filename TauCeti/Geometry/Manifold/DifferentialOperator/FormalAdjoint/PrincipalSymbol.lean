@@ -97,10 +97,10 @@ theorem IsFormalAdjoint.inner_sectionPrincipalSymbol_apply
   have hQ : sectionPrincipalSymbol I hx Q (mvfderiv I f x) =
       (-1 : ℝ) ^ m • sectionPrincipalSymbol I hx Q (mvfderiv I (-f : C^∞⟮I, M; ℝ⟯) x) := by
     rw [ContMDiffMap.coe_neg, mvfderiv_neg, ← neg_one_smul ℝ (mvfderiv I f x),
-      sectionPrincipalSymbol_smul_covector, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow,
-      one_smul]
+      sectionPrincipalSymbol_smul_covector, smul_smul]
+    simp [← mul_pow]
   rw [hQ, LinearMap.smul_apply, real_inner_smul_right, sectionPrincipalSymbol_mvfderiv,
-    sectionPrincipalSymbol_mvfderiv, real_inner_smul_left, real_inner_smul_right, hC, ← mul_assoc,
-    ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+    sectionPrincipalSymbol_mvfderiv, real_inner_smul_left, real_inner_smul_right, hC]
+  simp [← mul_assoc, ← mul_pow]
 
 end LinearMap
