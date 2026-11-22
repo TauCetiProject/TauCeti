@@ -15,6 +15,7 @@ import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Depressed
 import TauCeti.Algebra.Polynomial.Derivative
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
@@ -55,8 +56,8 @@ Mathlib's `HenselianRing.is_henselian` for the pair `(R⟦t⟧, (t))`, which is 
 ## Main results
 
 * `Polynomial.Monic.exists_monic_mul_eq_of_isCoprime`: existence of the lifted factorization.
-* `Polynomial.Monic.coeff_swapPowerSeries_eq_of_mul_eq`: the coefficient recursion, computing the
-  `tᵏ`-coefficients of the factors by Bézout and division from those of lower order.
+* `Polynomial.Monic.coeff_swapPowerSeries_eq_and_eq_of_mul_eq`: the coefficient recursion,
+  computing the `tᵏ`-coefficients of the factors by Bézout and division from those of lower order.
 * `Polynomial.Monic.coeff_swapPowerSeries_eq_and_eq_of_coeff_mul_eq`: the factors modulo `tⁿ⁺¹`
   depend only on the product modulo `tⁿ⁺¹`.
 * `Polynomial.Monic.eq_and_eq_of_mul_eq_mul_of_isCoprime`: uniqueness of the lifted
@@ -241,7 +242,7 @@ modulo `t`. For `k ≠ 0` write `Gᵢ`, `Hᵢ` and `Pᵢ` for the `tⁱ`-coeffic
 `c = Pₖ - Σ_{0 < i < k} Gᵢ * H_{k - i}`. Then `Gₖ` is the remainder of `v * c` on division by
 `g`, and `Hₖ = u * c + h * ((v * c) /ₘ g)`. So the factors are determined one power of `t` at a
 time by `P`, the reductions and the Bézout coefficients. -/
-theorem Monic.coeff_swapPowerSeries_eq_of_mul_eq {G H P : R⟦X⟧[X]} (hG : G.Monic)
+theorem Monic.coeff_swapPowerSeries_eq_and_eq_of_mul_eq {G H P : R⟦X⟧[X]} (hG : G.Monic)
     (hGH : G * H = P) {u v : R[X]}
     (huv : u * G.map PowerSeries.constantCoeff + v * H.map PowerSeries.constantCoeff = 1) {k : ℕ}
     (hk : k ≠ 0) :
@@ -261,14 +262,8 @@ theorem Monic.coeff_swapPowerSeries_eq_of_mul_eq {G H P : R⟦X⟧[X]} (hG : G.M
         H.map PowerSeries.constantCoeff * PowerSeries.coeff k (swapPowerSeries G) +
         ∑ i ∈ Finset.Ioo 0 k, PowerSeries.coeff i (swapPowerSeries G) *
           PowerSeries.coeff (k - i) (swapPowerSeries H) := by
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
-    rw [← hGH, map_mul, PowerSeries.coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun i j ↦ PowerSeries.coeff i (swapPowerSeries G) *
-        PowerSeries.coeff j (swapPowerSeries H)), Finset.sum_range_succ,
-      Finset.sum_range_succ', ← Finset.Ico_add_one_left_eq_Ioo, Finset.sum_Ico_eq_sum_range]
-    simp only [Nat.sub_self, Nat.sub_zero, zero_add, Nat.add_sub_cancel, Nat.add_sub_add_right,
-      PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_swapPowerSeries, add_comm 1]
-    ring
+    rw [← hGH, map_mul, PowerSeries.coeff_mul_of_ne_zero _ _ hk, constantCoeff_swapPowerSeries,
+      constantCoeff_swapPowerSeries, mul_comm (PowerSeries.coeff k _)]
   simp only [c, hsplit, add_sub_cancel_right]
 
 /-- **The lifted factors modulo `tⁿ⁺¹` depend only on the product modulo `tⁿ⁺¹`.** Let `G` and
@@ -296,9 +291,9 @@ theorem Monic.coeff_swapPowerSeries_eq_and_eq_of_coeff_mul_eq {G G' H H' : R⟦X
     rcases eq_or_ne i 0 with rfl | hi0
     · simp only [PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_swapPowerSeries]
       exact ⟨hGG', hHH'⟩
-    obtain ⟨hG₁, hH₁⟩ := hG.coeff_swapPowerSeries_eq_of_mul_eq rfl huv hi0
-    obtain ⟨hG₂, hH₂⟩ := hG'.coeff_swapPowerSeries_eq_of_mul_eq (H := H') rfl (u := u) (v := v)
-      (by rwa [← hGG', ← hHH']) hi0
+    obtain ⟨hG₁, hH₁⟩ := hG.coeff_swapPowerSeries_eq_and_eq_of_mul_eq rfl huv hi0
+    obtain ⟨hG₂, hH₂⟩ := hG'.coeff_swapPowerSeries_eq_and_eq_of_mul_eq (H := H') rfl (u := u)
+      (v := v) (by rwa [← hGG', ← hHH']) hi0
     -- The error terms agree: they involve `P` up to `tⁱ` and the factors below `tⁱ`.
     have hc : PowerSeries.coeff i (swapPowerSeries (G * H)) - ∑ j ∈ Finset.Ioo 0 i,
         PowerSeries.coeff j (swapPowerSeries G) * PowerSeries.coeff (i - j) (swapPowerSeries H) =
@@ -434,9 +429,7 @@ theorem IsRoot.coeff_mul_eval_derivative_eq_neg_coeff_eval_trunc {P : R⟦X⟧[X
       PowerSeries.X ^ k * (K * w ^ 2)) = 0 := by
     linear_combination -hK
   have hcoeff := congrArg (PowerSeries.coeff k) hK'
-  rw [map_add, PowerSeries.coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self,
-    PowerSeries.coeff_zero_eq_constantCoeff_apply, map_add, map_mul, map_mul, map_pow,
-    PowerSeries.constantCoeff_X, zero_pow hk, zero_mul, add_zero, hw₀, map_zero] at hcoeff
+  simp [PowerSeries.coeff_X_pow_mul', zero_pow hk, hw₀] at hcoeff
   rw [derivative_map, ← hx₀, eval_map_apply]
   linear_combination hcoeff
 
