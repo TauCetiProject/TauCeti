@@ -5,42 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Alternating.Curry
-public import Mathlib.Analysis.Normed.Operator.Mul
-public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
-public import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
-public import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Assoc
-import Mathlib.Geometry.Manifold.BumpFunction
+public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
-import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Exterior algebra and tensoriality of alternating bundle sections
+# Exterior algebra and wedge regularity of alternating bundle sections
 
 Sections of the continuous-alternating-map bundle `x ↦ W x [⋀^Fin k]→L[ℝ] V x` on an arbitrary
 vector bundle `W` carry `ContMDiffSection.interior`, `ContMDiffSection.pairedWedge`,
-`ContMDiffSection.wedge`, and the empty-arity identification
-`ContMDiffSection.alternatingIsEmptyEquiv`. The coordinate formula
-`TauCeti.inCoordinates_pairedWedge` and regularity lemmas
+`ContMDiffSection.wedge`, `ContMDiffSection.toAlternatingMap`, and the empty-arity identification
+`ContMDiffSection.alternatingIsEmptyEquiv`. The regularity lemmas
 `ContMDiffWithinAt.pairedWedge_section` (and its `At`/`On`/global variants) factor out and
 generalize the paired-wedge regularity proofs of
 `TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle` (`inCoordinates_bundleWedgeWith`,
 `ContMDiffWithinAt.bundleWedgeWith_form`), built over `ContinuousAlternatingMap.pairedWedge` and
 `ContinuousAlternatingMap.pairedWedgeCLM`.
-
-Over a finite-dimensional Hausdorff smooth manifold and a finite-rank smooth domain bundle `W`,
-`C^∞(M, ℝ)`-multilinear alternating maps on sections are pointwise by
-`AlternatingMap.contMDiffSection_eval_congr`, and pointwise evaluation identifies smooth sections
-of `Alt^ι(W, V)` `C^∞(M, ℝ)`-linearly with `Γ(W) [⋀^ι]→ₗ[C^∞(M, ℝ)] Γ(V)`
-(`ContMDiffSection.alternatingEquiv`, `ContMDiffSection.scalarAlternatingEquiv`).
 
 ## References
 
@@ -58,75 +39,6 @@ noncomputable section
 
 open Bundle Filter Set
 open scoped Bundle ContDiff Manifold Topology
-
-namespace TauCeti
-
-section Coordinates
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {FW FV : Type*}
-  [NormedAddCommGroup FW] [NormedSpace 𝕜 FW] [NormedAddCommGroup FV] [NormedSpace 𝕜 FV]
-  {M : Type*} [TopologicalSpace M] {W V : M → Type*}
-  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle 𝕜 FW W]
-  [TopologicalSpace (TotalSpace FV V)] [FiberBundle FV V] [VectorBundle 𝕜 FV V]
-  [∀ x, ContinuousAdd (V x)] [∀ x, ContinuousConstSMul 𝕜 (V x)]
-
-/-- Coordinate expression of `φ.curryLeftTopological w` in a domain trivialization. -/
-theorem inCoordinates_curryLeftTopological {k : ℕ} {x₀ y : M}
-    (w : W y) (φ : W y [⋀^Fin (k + 1)]→L[𝕜] V y)
-    (hy : y ∈ (trivializationAt FW W x₀).baseSet) :
-    ContinuousAlternatingMap.inCoordinates FW FV x₀ y x₀ y (φ.curryLeftTopological w) =
-      (ContinuousAlternatingMap.inCoordinates FW FV x₀ y x₀ y φ).curryLeft
-        ((trivializationAt FW W x₀ ⟨y, w⟩).2) := by
-  ext v; simp only [ContinuousAlternatingMap.inCoordinates,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousAlternatingMap.curryLeftTopological_apply_apply,
-    ContinuousAlternatingMap.curryLeft_apply_apply, Function.comp_apply]
-  congr 2; funext i; refine Fin.cases ?_ (fun _ ↦ rfl) i
-  simp only [Function.comp_apply, Matrix.cons_val_zero, Trivialization.symmL_apply _ hy,
-    (trivializationAt FW W x₀).symm_apply_apply_mk hy]
-end Coordinates
-
-section PairedWedgeCoordinates
-variable {FW F₁ F₂ F₃ M : Type*} [TopologicalSpace M]
-  [NormedAddCommGroup FW] [NormedSpace ℝ FW] [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
-  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
-  {W V₁ V₂ V₃ : M → Type*}
-  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
-  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
-  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℝ (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
-  [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle ℝ FW W]
-  [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
-  [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
-  [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle ℝ F₃ V₃]
-  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
-
-/-- Coordinate expression of a fibrewise paired wedge in valid coefficient trivializations. -/
-theorem inCoordinates_pairedWedge {k l : ℕ} {x₀ y : M}
-    (μ : V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y) (hμ : Continuous (Function.uncurry fun a b ↦ μ a b))
-    (φ : W y [⋀^Fin k]→L[ℝ] V₁ y) (ψ : W y [⋀^Fin l]→L[ℝ] V₂ y)
-    (h₁ : y ∈ (trivializationAt F₁ V₁ x₀).baseSet) (h₂ : y ∈ (trivializationAt F₂ V₂ x₀).baseSet)
-    (h₃ : y ∈ (trivializationAt F₃ V₃ x₀).baseSet) :
-    ContinuousAlternatingMap.inCoordinates FW F₃ x₀ y x₀ y
-        (ContinuousAlternatingMap.pairedWedge μ hμ φ ψ) =
-      ContinuousAlternatingMap.pairedWedgeCLM
-        (ContinuousLinearMap.inCoordinates F₁ V₁ (F₂ →L[ℝ] F₃)
-          (fun z ↦ V₂ z →L[ℝ] V₃ z) x₀ y x₀ y μ)
-        (ContinuousAlternatingMap.inCoordinates FW F₁ x₀ y x₀ y φ)
-        (ContinuousAlternatingMap.inCoordinates FW F₂ x₀ y x₀ y ψ) := by
-  ext v; simp only [ContinuousAlternatingMap.pairedWedgeCLM_apply,
-    ContinuousAlternatingMap.inCoordinates, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_apply,
-    ContinuousAlternatingMap.pairedWedge_apply, map_smul, map_sum]
-  congr 2; funext σ
-  rw [ContinuousLinearMap.map_smul_of_tower, inCoordinates_apply_eq₂ h₁ h₂ h₃]
-  simp only [Trivialization.continuousLinearMapAt_apply, Trivialization.symm_linearMapAt _ h₁,
-    Trivialization.symm_linearMapAt _ h₂, Function.comp_def]
-end PairedWedgeCoordinates
-
-end TauCeti
 
 section GeneralField
 variable {𝕜 E H M FW FV : Type*} [NontriviallyNormedField 𝕜]
@@ -170,32 +82,32 @@ theorem _root_.ContMDiffWithinAt.curryLeftTopological_section
 
 theorem _root_.ContMDiffAt.curryLeftTopological_section
     {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiffAt n (T% s) x)
-    (hφ : ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV)
-        (E := fun z ↦ W z [⋀^Fin (k + 1)]→L[𝕜] V z) y (φ y)) x) :
-    ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV)
-        (E := fun z ↦ W z [⋀^Fin k]→L[𝕜] V z) y ((φ y).curryLeftTopological (s y))) x :=
+    (hφ : ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) (E := fun z ↦ W z [⋀^Fin (k + 1)]→L[𝕜] V z)
+        y (φ y)) x) :
+    ContMDiffAt I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV) (E := fun z ↦ W z [⋀^Fin k]→L[𝕜] V z)
+        y ((φ y).curryLeftTopological (s y))) x :=
   ContMDiffWithinAt.curryLeftTopological_section hs hφ
 
 theorem _root_.ContMDiffOn.curryLeftTopological_section
     {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiff[u] n (T% s))
-    (hφ : ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV)
-        (E := fun z ↦ W z [⋀^Fin (k + 1)]→L[𝕜] V z) y (φ y)) u) :
-    ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV)
-        (E := fun z ↦ W z [⋀^Fin k]→L[𝕜] V z) y ((φ y).curryLeftTopological (s y))) u :=
+    (hφ : ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) (E := fun z ↦ W z [⋀^Fin (k + 1)]→L[𝕜] V z)
+        y (φ y)) u) :
+    ContMDiffOn I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV) (E := fun z ↦ W z [⋀^Fin k]→L[𝕜] V z)
+        y ((φ y).curryLeftTopological (s y))) u :=
   fun y hy ↦ (hs y hy).curryLeftTopological_section (hφ y hy)
 
 theorem _root_.ContMDiff.curryLeftTopological_section
     {s : ∀ y, W y} {φ : ∀ y, W y [⋀^Fin (k + 1)]→L[𝕜] V y} (hs : CMDiff n (T% s))
-    (hφ : ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV)
-        (E := fun z ↦ W z [⋀^Fin (k + 1)]→L[𝕜] V z) y (φ y))) :
-    ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV)
-        (E := fun z ↦ W z [⋀^Fin k]→L[𝕜] V z) y ((φ y).curryLeftTopological (s y))) :=
+    (hφ : ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin (k + 1)]→L[𝕜] FV)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin (k + 1)]→L[𝕜] FV) (E := fun z ↦ W z [⋀^Fin (k + 1)]→L[𝕜] V z)
+        y (φ y))) :
+    ContMDiff I (I.prod 𝓘(𝕜, FW [⋀^Fin k]→L[𝕜] FV)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin k]→L[𝕜] FV) (E := fun z ↦ W z [⋀^Fin k]→L[𝕜] V z)
+        y ((φ y).curryLeftTopological (s y))) :=
   fun y ↦ (hs y).curryLeftTopological_section (hφ y)
 end CurryRegularity
 
@@ -219,8 +131,7 @@ theorem interior_eq_curryLeftTopological {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
 
 @[simp] theorem interior_apply {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 1)]→L[𝕜] FV, fun x ↦ W x [⋀^Fin (k + 1)]→L[𝕜] V x⟯)
-    (x : M) (v : Fin k → W x) :
-    interior s φ x v = φ x (Matrix.vecCons (s x) v) := by
+    (x : M) (v : Fin k → W x) : interior s φ x v = φ x (Matrix.vecCons (s x) v) := by
   rw [interior_eq_curryLeftTopological, ContinuousAlternatingMap.curryLeftTopological_apply_apply]
 
 @[simp] theorem interior_self {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
@@ -276,9 +187,8 @@ def toAlternatingMap {ι : Type*} [Fintype ι]
     ext x; exact (φ x).map_eq_zero_of_eq (fun r ↦ s r x) (congr_arg (· x) hij) hne
 
 @[simp] theorem toAlternatingMap_apply {ι : Type*} [Fintype ι]
-    (φ : Cₛ^n⟮I; FW [⋀^ι]→L[𝕜] FV, fun x ↦ W x [⋀^ι]→L[𝕜] V x⟯)
-    (s : ι → Cₛ^n⟮I; FW, W⟯) (x : M) :
-    toAlternatingMap φ s x = φ x (fun i ↦ s i x) := (rfl)
+    (φ : Cₛ^n⟮I; FW [⋀^ι]→L[𝕜] FV, fun x ↦ W x [⋀^ι]→L[𝕜] V x⟯) (s : ι → Cₛ^n⟮I; FW, W⟯)
+    (x : M) : toAlternatingMap φ s x = φ x (fun i ↦ s i x) := (rfl)
 
 /-- Pointwise evaluation intertwines `interior` with `AlternatingMap.curryLeft`. -/
 @[simp] theorem toAlternatingMap_interior {k : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
@@ -381,109 +291,48 @@ theorem _root_.ContMDiffWithinAt.pairedWedge_section {μ : ∀ y, V₁ y →L[�
 
 theorem _root_.ContMDiffAt.pairedWedge_section {μ : ∀ y, V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y}
     (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
-    (hpair : ContMDiffAt I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-        (E := fun z ↦ V₁ z →L[ℝ] V₂ z →L[ℝ] V₃ z) y (μ y)) x)
+    (hpair : ContMDiffAt I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n (fun y ↦
+      TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) (E := fun z ↦ V₁ z →L[ℝ] V₂ z →L[ℝ] V₃ z) y (μ y)) x)
     {φ : ∀ y, W y [⋀^Fin k]→L[ℝ] V₁ y} {ψ : ∀ y, W y [⋀^Fin l]→L[ℝ] V₂ y}
-    (hφ : ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin k]→L[ℝ] F₁)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁)
-        (E := fun z ↦ W z [⋀^Fin k]→L[ℝ] V₁ z) y (φ y)) x)
-    (hψ : ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂)
-        (E := fun z ↦ W z [⋀^Fin l]→L[ℝ] V₂ z) y (ψ y)) x) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃)
-        (E := fun z ↦ W z [⋀^Fin (k + l)]→L[ℝ] V₃ z) y
+    (hφ : ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin k]→L[ℝ] F₁)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁) (E := fun z ↦ W z [⋀^Fin k]→L[ℝ] V₁ z) y (φ y)) x)
+    (hψ : ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂) (E := fun z ↦ W z [⋀^Fin l]→L[ℝ] V₂ z) y (ψ y)) x) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃) (E := fun z ↦ W z [⋀^Fin (k + l)]→L[ℝ] V₃ z) y
         (ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y))) x :=
   ContMDiffWithinAt.pairedWedge_section hμ hpair hφ hψ
 
 theorem _root_.ContMDiffOn.pairedWedge_section {μ : ∀ y, V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y}
     (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
-    (hpair : ContMDiffOn I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-        (E := fun z ↦ V₁ z →L[ℝ] V₂ z →L[ℝ] V₃ z) y (μ y)) u)
+    (hpair : ContMDiffOn I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n (fun y ↦
+      TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) (E := fun z ↦ V₁ z →L[ℝ] V₂ z →L[ℝ] V₃ z) y (μ y)) u)
     {φ : ∀ y, W y [⋀^Fin k]→L[ℝ] V₁ y} {ψ : ∀ y, W y [⋀^Fin l]→L[ℝ] V₂ y}
-    (hφ : ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin k]→L[ℝ] F₁)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁)
-        (E := fun z ↦ W z [⋀^Fin k]→L[ℝ] V₁ z) y (φ y)) u)
-    (hψ : ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂)
-        (E := fun z ↦ W z [⋀^Fin l]→L[ℝ] V₂ z) y (ψ y)) u) :
-    ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃)
-        (E := fun z ↦ W z [⋀^Fin (k + l)]→L[ℝ] V₃ z) y
+    (hφ : ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin k]→L[ℝ] F₁)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁) (E := fun z ↦ W z [⋀^Fin k]→L[ℝ] V₁ z) y (φ y)) u)
+    (hψ : ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂) (E := fun z ↦ W z [⋀^Fin l]→L[ℝ] V₂ z) y (ψ y)) u) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃) (E := fun z ↦ W z [⋀^Fin (k + l)]→L[ℝ] V₃ z) y
         (ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y))) u :=
   fun y hy ↦ ContMDiffWithinAt.pairedWedge_section hμ (hpair y hy) (hφ y hy) (hψ y hy)
 
 theorem _root_.ContMDiff.pairedWedge_section {μ : ∀ y, V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y}
     (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
-    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃)
-        (E := fun z ↦ V₁ z →L[ℝ] V₂ z →L[ℝ] V₃ z) y (μ y)))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n (fun y ↦
+      TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) (E := fun z ↦ V₁ z →L[ℝ] V₂ z →L[ℝ] V₃ z) y (μ y)))
     {φ : ∀ y, W y [⋀^Fin k]→L[ℝ] V₁ y} {ψ : ∀ y, W y [⋀^Fin l]→L[ℝ] V₂ y}
-    (hφ : ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin k]→L[ℝ] F₁)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁)
-        (E := fun z ↦ W z [⋀^Fin k]→L[ℝ] V₁ z) y (φ y)))
-    (hψ : ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂)
-        (E := fun z ↦ W z [⋀^Fin l]→L[ℝ] V₂ z) y (ψ y))) :
-    ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n
-      (fun y ↦ TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃)
-        (E := fun z ↦ W z [⋀^Fin (k + l)]→L[ℝ] V₃ z) y
+    (hφ : ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin k]→L[ℝ] F₁)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin k]→L[ℝ] F₁) (E := fun z ↦ W z [⋀^Fin k]→L[ℝ] V₁ z) y (φ y)))
+    (hψ : ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin l]→L[ℝ] F₂)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin l]→L[ℝ] F₂) (E := fun z ↦ W z [⋀^Fin l]→L[ℝ] V₂ z) y (ψ y))) :
+    ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^Fin (k + l)]→L[ℝ] F₃)) n (fun y ↦
+      TotalSpace.mk' (FW [⋀^Fin (k + l)]→L[ℝ] F₃) (E := fun z ↦ W z [⋀^Fin (k + l)]→L[ℝ] V₃ z) y
         (ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y))) :=
   fun y ↦ ContMDiffAt.pairedWedge_section hμ (hpair y) (hφ y) (hψ y)
-end PairedWedgeRegularity
-
-namespace ContMDiffSection
-
-section ExtOfInterior
-variable {E H M FW FV : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [IsManifold I ∞ M] [NormedAddCommGroup FW] [NormedSpace ℝ FW]
-  [NormedAddCommGroup FV] [NormedSpace ℝ FV] {W V : M → Type*}
-  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle ℝ FW W]
-  [TopologicalSpace (TotalSpace FV V)] [FiberBundle FV V] [VectorBundle ℝ FV V]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  {n : ℕ∞ω} [ENat.LEInfty n] [ContMDiffVectorBundle n FW W I]
-
-/-- Positive-degree alternating sections on `W` are determined by their interior products with
-global `C^n` sections of `W`. -/
-theorem ext_of_interior {k : ℕ}
-    {φ ψ : Cₛ^n⟮I; FW [⋀^Fin (k + 1)]→L[ℝ] FV, fun x ↦ W x [⋀^Fin (k + 1)]→L[ℝ] V x⟯}
-    (h : ∀ s : Cₛ^n⟮I; FW, W⟯, interior s φ = interior s ψ) : φ = ψ := by
-  ext x v
-  obtain ⟨s, hsx⟩ := evalLinearMap_surjective (I := I) (F := FW) n (V := W) x (v 0)
-  have hcons : Matrix.vecCons (s x) (Fin.tail v) = v := by
-    rw [evalLinearMap_apply] at hsx; rw [hsx]; exact Matrix.cons_head_tail v
-  simpa only [interior_apply, hcons] using congr($(h s) x (Fin.tail v))
-end ExtOfInterior
-
-section Wedge
-variable {E H M FW : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup FW] [NormedSpace ℝ FW] {W : M → Type*}
-  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-  [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle ℝ FW W] {n : ℕ∞ω}
-
-section Paired
-variable {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
-  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
-  {V₁ V₂ V₃ : M → Type*}
-  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
-  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
-  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℝ (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
-  [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
-  [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
-  [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle ℝ F₃ V₃]
-  [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)]
-  [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
-  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
 
 /-- Fibrewise paired wedge on sections of `Alt^•(W, Vᵢ)` along a `C^n` pairing section `μ`. -/
-def pairedWedge {k l : ℕ}
+def _root_.ContMDiffSection.pairedWedge
     (μ : Cₛ^n⟮I; F₁ →L[ℝ] F₂ →L[ℝ] F₃, fun x ↦ V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x⟯)
     (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b)) :
     Cₛ^n⟮I; FW [⋀^Fin k]→L[ℝ] F₁, fun x ↦ W x [⋀^Fin k]→L[ℝ] V₁ x⟯ →ₗ[C^n⟮I, M; ℝ⟯]
@@ -495,23 +344,32 @@ def pairedWedge {k l : ℕ}
     (fun _ _ _ ↦ by ext y v; simp) (fun _ _ _ ↦ by ext y v; simp)
     (fun _ _ _ ↦ by ext y v; simp) (fun _ _ _ ↦ by ext y v; simp)
 
-@[simp] theorem pairedWedge_apply {k l : ℕ}
+@[simp] theorem _root_.ContMDiffSection.pairedWedge_apply
     (μ : Cₛ^n⟮I; F₁ →L[ℝ] F₂ →L[ℝ] F₃, fun x ↦ V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x⟯)
     (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
     (φ : Cₛ^n⟮I; FW [⋀^Fin k]→L[ℝ] F₁, fun x ↦ W x [⋀^Fin k]→L[ℝ] V₁ x⟯)
     (ψ : Cₛ^n⟮I; FW [⋀^Fin l]→L[ℝ] F₂, fun x ↦ W x [⋀^Fin l]→L[ℝ] V₂ x⟯) (y : M) :
-    pairedWedge μ hμ φ ψ y = ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y) := by
-  rw [pairedWedge, LinearMap.mk₂_apply, coeFn_mk]
-end Paired
+    ContMDiffSection.pairedWedge μ hμ φ ψ y =
+      ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y) := by
+  rw [ContMDiffSection.pairedWedge, LinearMap.mk₂_apply, ContMDiffSection.coeFn_mk]
+end PairedWedgeRegularity
+
+namespace ContMDiffSection
+
+section Wedge
+variable {E H M FW : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup FW] [NormedSpace ℝ FW] {W : M → Type*}
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle ℝ FW W] {n : ℕ∞ω}
 
 /-- `C^n(M, ℝ)`-bilinear scalar wedge product on alternating bundle sections valued in `ℝ`. -/
 def wedge {k l : ℕ} :
     Cₛ^n⟮I; FW [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin k]→L[ℝ] ℝ⟯ →ₗ[C^n⟮I, M; ℝ⟯]
       Cₛ^n⟮I; FW [⋀^Fin l]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin l]→L[ℝ] ℝ⟯ →ₗ[C^n⟮I, M; ℝ⟯]
         Cₛ^n⟮I; FW [⋀^Fin (k + l)]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin (k + l)]→L[ℝ] ℝ⟯ :=
-  pairedWedge (F₁ := ℝ) (F₂ := ℝ) (F₃ := ℝ)
-    (V₁ := Bundle.Trivial M ℝ) (V₂ := Bundle.Trivial M ℝ) (V₃ := Bundle.Trivial M ℝ)
-    ⟨fun _ ↦ ContinuousLinearMap.mul ℝ ℝ,
+  pairedWedge (F₁ := ℝ) (F₂ := ℝ) (F₃ := ℝ) (V₁ := Bundle.Trivial M ℝ) (V₂ := Bundle.Trivial M ℝ)
+    (V₃ := Bundle.Trivial M ℝ) ⟨fun _ ↦ ContinuousLinearMap.mul ℝ ℝ,
       TauCeti.contMDiff_const_bundlePairing (ContinuousLinearMap.mul ℝ ℝ)⟩
     (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂)
 
@@ -519,7 +377,7 @@ theorem wedge_apply' {k l : ℕ}
     (φ : Cₛ^n⟮I; FW [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin k]→L[ℝ] ℝ⟯)
     (ψ : Cₛ^n⟮I; FW [⋀^Fin l]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin l]→L[ℝ] ℝ⟯) (y : M) :
     wedge φ ψ y = ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ y) (ψ y) := by
+      (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ y) (ψ y) := by
   simp only [wedge, pairedWedge_apply, coeFn_mk]
 
 theorem wedge_apply {k l : ℕ}
@@ -629,185 +487,5 @@ theorem interior_wedge {k l : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
   ext x v; rw [interior_wedge_apply, coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
     alternating_cast_apply, coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
 end Wedge
-
-section RealManifold
-variable {E H M FW : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [IsManifold I ∞ M] [NormedAddCommGroup FW] [NormedSpace ℝ FW] [FiniteDimensional ℝ FW]
-  {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-  [TopologicalSpace (TotalSpace FW W)] [FiberBundle FW W] [VectorBundle ℝ FW W]
-  [ContMDiffVectorBundle ∞ FW W I]
-
-section Tensoriality
-variable {FV : Type*} [NormedAddCommGroup FV] [NormedSpace ℝ FV] {V : M → Type*}
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [TopologicalSpace (TotalSpace FV V)] [FiberBundle FV V] [VectorBundle ℝ FV V]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-
-private def liftSection (x : M) (w : W x) : Cₛ^∞⟮I; FW, W⟯ :=
-  Classical.choose (evalLinearMap_surjective (I := I) (F := FW) ∞ (V := W) x w)
-
-omit [FiniteDimensional ℝ FW] in
-private lemma liftSection_apply (x : M) (w : W x) : liftSection (I := I) (FW := FW) x w x = w := by
-  rw [liftSection]; simpa only [evalLinearMap_apply] using
-    Classical.choose_spec (evalLinearMap_surjective (I := I) (F := FW) ∞ (V := W) x w)
-
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
-private lemma fiberAlternatingMap_update {ι : Type*} [Finite ι] [instDec : DecidableEq ι]
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯)
-    (x : M) (w : ι → W x) (i : ι) (t : Cₛ^∞⟮I; FW, W⟯) (u : W x) (ht : t x = u) :
-    Φ (fun r ↦ liftSection x (Function.update w i u r)) x =
-      Φ (Function.update (fun r ↦ liftSection x (w r)) i t) x := by
-  let _ := Fintype.ofFinite ι
-  exact Φ.contMDiffSection_eval_congr x fun r ↦ by
-    by_cases hr : r = i <;> simp [hr, liftSection_apply, ht]
-
-section FixedIndex
-variable {ι : Type*} [Fintype ι]
-
-private def fiberAlternatingMap
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) (x : M) : W x [⋀^ι]→ₗ[ℝ] V x where
-  toFun w := Φ (fun i ↦ liftSection x (w i)) x
-  map_update_add' := by
-    intro inst w i u₁ u₂
-    have hU := fiberAlternatingMap_update (instDec := inst) Φ x w i
-    rw [hU (liftSection x u₁ + liftSection x u₂) (u₁ + u₂) (by simp [liftSection_apply]),
-      hU (liftSection x u₁) u₁ (liftSection_apply x u₁),
-      hU (liftSection x u₂) u₂ (liftSection_apply x u₂)]
-    exact congr_arg (· x)
-      (Φ.map_update_add (fun r ↦ liftSection x (w r)) i (liftSection x u₁) (liftSection x u₂))
-  map_update_smul' := by
-    intro inst w i c u
-    have hU := fiberAlternatingMap_update (instDec := inst) Φ x w i
-    rw [hU (algebraMap ℝ C^∞⟮I, M; ℝ⟯ c • liftSection x u) (c • u) (by simp [liftSection_apply]),
-      hU (liftSection x u) u (liftSection_apply x u)]
-    simpa only [RingHom.id_apply, smul_apply, ContMDiffMap.algebraMap_apply,
-      Algebra.algebraMap_self] using congr_arg (· x)
-      (Φ.map_update_smul (fun r ↦ liftSection x (w r)) i (algebraMap ℝ C^∞⟮I, M; ℝ⟯ c)
-        (liftSection x u))
-  map_eq_zero_of_eq' w i j hij hne := by
-    classical
-    let s : ι → Cₛ^∞⟮I; FW, W⟯ :=
-      Function.update (fun r ↦ liftSection x (w r)) j (liftSection x (w i))
-    rw [Φ.contMDiffSection_eval_congr x (s' := s) fun r ↦ by
-      by_cases hr : r = j <;> simp [s, hr, hij, liftSection_apply]]
-    exact congr_arg (· x) (Φ.map_eq_zero_of_eq s (by simp [s, hne]) hne)
-
-private def fiberContinuousAlternatingMap
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) (x : M) : W x [⋀^ι]→L[ℝ] V x :=
-  let eW := VectorBundle.continuousLinearEquivAt ℝ FW W x
-  (AlternatingMap.toContinuousAlternatingMap
-    ((fiberAlternatingMap Φ x).compLinearMap eW.symm.toLinearMap)).compContinuousLinearMap
-      (eW : W x →L[ℝ] FW)
-
-private lemma fiberContinuousAlternatingMap_apply
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) (x : M) (w : ι → W x) :
-    fiberContinuousAlternatingMap Φ x w = Φ (fun i ↦ liftSection x (w i)) x := by
-  simp only [fiberContinuousAlternatingMap, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    AlternatingMap.coe_toContinuousAlternatingMap, AlternatingMap.compLinearMap_apply,
-    Function.comp_apply, ContinuousLinearEquiv.coe_coe, LinearEquiv.coe_coe, fiberAlternatingMap,
-    AlternatingMap.coe_mk, MultilinearMap.coe_mk]
-  exact congr_arg (Φ · x) <| funext fun i ↦ congr_arg (liftSection x) <|
-    (VectorBundle.continuousLinearEquivAt ℝ FW W x).symm_apply_apply (w i)
-
-private lemma fiberContinuousAlternatingMap_apply_sections
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯)
-    (s : ι → Cₛ^∞⟮I; FW, W⟯) (x : M) :
-    fiberContinuousAlternatingMap Φ x (fun i ↦ s i x) = Φ s x := by
-  rw [fiberContinuousAlternatingMap_apply]
-  exact Φ.contMDiffSection_eval_congr x fun i ↦ liftSection_apply x (s i x)
-
-private lemma contMDiff_fiberContinuousAlternatingMap
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) :
-    ContMDiff I (I.prod 𝓘(ℝ, FW [⋀^ι]→L[ℝ] FV)) ∞
-      (fun y ↦ TotalSpace.mk' (FW [⋀^ι]→L[ℝ] FV)
-        (E := fun z ↦ W z [⋀^ι]→L[ℝ] V z) y (fiberContinuousAlternatingMap Φ y)) := by
-  intro x₀; rw [contMDiffAt_continuousAlternatingMap_bundle]
-  refine ⟨contMDiffAt_id, TauCeti.contMDiffAt_continuousAlternatingMap_apply.mpr fun v ↦ ?_⟩
-  set eW := trivializationAt FW W x₀ with heW
-  have hnhds : eW.baseSet ∈ 𝓝 x₀ :=
-    eW.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt FW W x₀)
-  obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
-  let s : ι → Cₛ^∞⟮I; FW, W⟯ := fun i ↦
-    ⟨(ρ : M → ℝ) • fun y ↦ eW.symm y (v i),
-      ρ.contMDiff.contMDiffOn.smul_section_of_tsupport eW.open_baseSet hρ
-        (TauCeti.Manifold.contMDiffOn_symm_baseSet (v i))⟩
-  set eV := trivializationAt FV V x₀ with heV
-  have hΦs : ContMDiffAt I 𝓘(ℝ, FV) ∞ (fun y ↦ (eV ⟨y, Φ s y⟩).2) x₀ :=
-    (contMDiffAt_totalSpace_iff.mp ((Φ s).contMDiff x₀)).2
-  refine hΦs.congr_of_eventuallyEq ?_
-  filter_upwards [ρ.eventuallyEq_one, hnhds,
-    eV.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt FV V x₀)] with y hρ1 hyW hyV
-  have hs_eq : (fun i ↦ eW.symmL ℝ y (v i)) = fun i ↦ s i y := by
-    funext i; simp [s, hρ1, Trivialization.symmL_apply _ hyW]
-  rw [ContinuousAlternatingMap.inCoordinates]
-  simp only [ContinuousLinearMap.compContinuousAlternatingMap_coe,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def, ← heW, ← heV,
-    hs_eq, fiberContinuousAlternatingMap_apply_sections,
-    eV.continuousLinearMapAt_apply_of_mem ℝ hyV]
-
-/-- Smooth sections of `x ↦ W x [⋀^ι]→L[ℝ] V x` are `C^∞(M, ℝ)`-linearly equivalent to alternating
-`C^∞(M, ℝ)`-multilinear maps `Γ(W) [⋀^ι]→ₗ[C^∞(M, ℝ)] Γ(V)`. -/
-def alternatingEquiv :
-    Cₛ^∞⟮I; FW [⋀^ι]→L[ℝ] FV, fun x ↦ W x [⋀^ι]→L[ℝ] V x⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯]
-      (Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) where
-  toFun := toAlternatingMap
-  invFun Φ := ⟨fiberContinuousAlternatingMap Φ, contMDiff_fiberContinuousAlternatingMap Φ⟩
-  left_inv φ := by ext x w; simp [fiberContinuousAlternatingMap_apply, liftSection_apply]
-  right_inv Φ := by
-    ext s x; rw [toAlternatingMap_apply]; exact fiberContinuousAlternatingMap_apply_sections Φ s x
-  map_add' _ _ := by ext s x; simp
-  map_smul' _ _ := by ext s x; simp
-
-@[simp] theorem alternatingEquiv_apply
-    (φ : Cₛ^∞⟮I; FW [⋀^ι]→L[ℝ] FV, fun x ↦ W x [⋀^ι]→L[ℝ] V x⟯)
-    (s : ι → Cₛ^∞⟮I; FW, W⟯) (x : M) : alternatingEquiv φ s x = φ x (fun i ↦ s i x) := (rfl)
-@[simp] theorem alternatingEquiv_symm_apply_sections
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯)
-    (s : ι → Cₛ^∞⟮I; FW, W⟯) (x : M) : (alternatingEquiv.symm Φ) x (fun i ↦ s i x) = Φ s x := by
-  rw [alternatingEquiv]; exact fiberContinuousAlternatingMap_apply_sections Φ s x
-end FixedIndex
-
-@[simp] theorem alternatingEquiv_interior {k : ℕ} (s : Cₛ^∞⟮I; FW, W⟯)
-    (φ : Cₛ^∞⟮I; FW [⋀^Fin (k + 1)]→L[ℝ] FV, fun x ↦ W x [⋀^Fin (k + 1)]→L[ℝ] V x⟯) :
-    alternatingEquiv (interior s φ) = (alternatingEquiv φ).curryLeft s :=
-  toAlternatingMap_interior s φ
-@[simp] theorem alternatingEquiv_symm_curryLeft {k : ℕ} (s : Cₛ^∞⟮I; FW, W⟯)
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^Fin (k + 1)]→ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; FV, V⟯) :
-    alternatingEquiv.symm (Φ.curryLeft s) = interior s (alternatingEquiv.symm Φ) := by
-  apply alternatingEquiv.injective; simp
-end Tensoriality
-
-section ScalarTensoriality
-/-- Scalar-valued smooth alternating bundle sections on `W` are `C^∞(M, ℝ)`-linearly equivalent to
-`Γ(W) [⋀^ι]→ₗ[C^∞(M, ℝ)] C^∞(M, ℝ)`. -/
-def scalarAlternatingEquiv {ι : Type*} [Fintype ι] :
-    Cₛ^∞⟮I; FW [⋀^ι]→L[ℝ] ℝ, fun x ↦ W x [⋀^ι]→L[ℝ] ℝ⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯]
-      (Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) :=
-  (alternatingEquiv (FV := ℝ) (V := Bundle.Trivial M ℝ)).trans
-    trivialEquiv.alternatingMapCongrRight
-
-@[simp] theorem scalarAlternatingEquiv_apply {ι : Type*} [Fintype ι]
-    (φ : Cₛ^∞⟮I; FW [⋀^ι]→L[ℝ] ℝ, fun x ↦ W x [⋀^ι]→L[ℝ] ℝ⟯)
-    (s : ι → Cₛ^∞⟮I; FW, W⟯) (x : M) :
-    scalarAlternatingEquiv φ s x = φ x (fun i ↦ s i x) := by rw [scalarAlternatingEquiv]; simp
-@[simp] theorem scalarAlternatingEquiv_symm_apply_sections {ι : Type*} [Fintype ι]
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^ι]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯)
-    (s : ι → Cₛ^∞⟮I; FW, W⟯) (x : M) :
-    (scalarAlternatingEquiv.symm Φ) x (fun i ↦ s i x) = Φ s x := by
-  rw [scalarAlternatingEquiv]; simp
-
-@[simp] theorem scalarAlternatingEquiv_interior {k : ℕ} (s : Cₛ^∞⟮I; FW, W⟯)
-    (φ : Cₛ^∞⟮I; FW [⋀^Fin (k + 1)]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin (k + 1)]→L[ℝ] ℝ⟯) :
-    scalarAlternatingEquiv (interior s φ) = (scalarAlternatingEquiv φ).curryLeft s := by
-  simp only [scalarAlternatingEquiv, LinearEquiv.trans_apply, alternatingEquiv_interior]
-  ext t x; simp
-@[simp] theorem scalarAlternatingEquiv_symm_curryLeft {k : ℕ} (s : Cₛ^∞⟮I; FW, W⟯)
-    (Φ : Cₛ^∞⟮I; FW, W⟯ [⋀^Fin (k + 1)]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) :
-    scalarAlternatingEquiv.symm (Φ.curryLeft s) = interior s (scalarAlternatingEquiv.symm Φ) := by
-  apply scalarAlternatingEquiv.injective; simp
-end ScalarTensoriality
-end RealManifold
 
 end ContMDiffSection

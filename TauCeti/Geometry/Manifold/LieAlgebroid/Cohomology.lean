@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.LieRinehartAlgebra.Cohomology
-public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating
-import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
+public import TauCeti.Geometry.Manifold.LieAlgebroid.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Tensoriality
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # The Chevalley–Eilenberg complex of a Lie algebroid
@@ -19,8 +19,7 @@ degree-`k` cochains `A.Cochain k` are smooth sections of `x ↦ V x [⋀^Fin k]�
 `A.cochainAlternatingEquiv`, `A.Cochain k` identifies with `C^∞(M, ℝ)`-multilinear alternating forms
 on the Lie–Rinehart algebra `(ℝ, C^∞⟮I, M; ℝ⟯, A.Sections)`. Transporting `lieDeriv` and `d` yields
 `A.lieDeriv`, `A.extDeriv`, the Chevalley–Eilenberg formula, `d_A ∘ d_A = 0`, `A.cochainComplex`,
-`A.cohomology`, Cartan's calculus, the graded Leibniz rule on `ContMDiffSection.wedge`, and
-comparison with the de Rham differential on `LieAlgebroid.tangent I M`.
+`A.cohomology`, Cartan's calculus, and the graded Leibniz rule on `ContMDiffSection.wedge`.
 
 ## References
 
@@ -55,8 +54,8 @@ def cochainZeroEquiv (A : LieAlgebroid I F V) : A.Cochain 0 ≃ₗ[C^∞⟮I, M;
 
 @[simp] theorem cochainZeroEquiv_apply (A : LieAlgebroid I F V) (η : A.Cochain 0) (x : M) :
     A.cochainZeroEquiv η x = η x 0 := by simp [cochainZeroEquiv]
-@[simp] theorem cochainZeroEquiv_symm_apply (A : LieAlgebroid I F V) (f : C^∞⟮I, M; ℝ⟯)
-    (x : M) (v : Fin 0 → V x) : A.cochainZeroEquiv.symm f x v = f x := by simp [cochainZeroEquiv]
+@[simp] theorem cochainZeroEquiv_symm_apply (A : LieAlgebroid I F V) (f : C^∞⟮I, M; ℝ⟯) (x : M)
+    (v : Fin 0 → V x) : A.cochainZeroEquiv.symm f x v = f x := by simp [cochainZeroEquiv]
 
 private lemma cochainZeroEquiv_eq (A : LieAlgebroid I F V) (ξ : A.Cochain 0) :
     ContMDiffSection.trivialEquiv (ContMDiffSection.alternatingIsEmptyEquiv ξ) =
@@ -83,8 +82,7 @@ def cochainAlternatingEquiv (k : ℕ) :
     (x : M) : A.cochainAlternatingEquiv k η s x = η x (fun i ↦ A.sectionsEquiv (s i) x) := by
   simp [cochainAlternatingEquiv, AlternatingMap.domLCongr]
 @[simp] theorem cochainAlternatingEquiv_symm_apply_sections {k : ℕ}
-    (Φ : A.Sections [⋀^Fin k]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯)
-    (s : Fin k → Cₛ^∞⟮I; F, V⟯) (x : M) :
+    (Φ : A.Sections [⋀^Fin k]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯) (s : Fin k → Cₛ^∞⟮I; F, V⟯) (x : M) :
     (A.cochainAlternatingEquiv k).symm Φ x (fun i ↦ s i x) =
       Φ (fun i ↦ A.sectionsEquiv.symm (s i)) x := by
   simp [cochainAlternatingEquiv, AlternatingMap.domLCongr]
@@ -275,32 +273,26 @@ theorem extDeriv_one_apply_sections (α : A.Cochain 1) (a b : Cₛ^∞⟮I; F, V
 
 /-- Cartan's magic formula written for `L_a η = ι_a (d_A η) + d_A (ι_a η)`. -/
 theorem lieDeriv_eq_interior_extDeriv_add {k : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain (k + 1)) :
-    A.lieDeriv a η =
-      ContMDiffSection.interior a (A.extDeriv (k + 1) η) +
-        A.extDeriv k (ContMDiffSection.interior a η) := by
+    A.lieDeriv a η = ContMDiffSection.interior a (A.extDeriv (k + 1) η) +
+      A.extDeriv k (ContMDiffSection.interior a η) := by
   rw [A.interior_extDeriv_succ, sub_add_cancel]
-
-omit [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F]
-  [ContMDiffVectorBundle ∞ F V I] in
-private lemma sectionsEquiv_symm_bracket (a b : Cₛ^∞⟮I; F, V⟯) :
-    A.sectionsEquiv.symm (A.bracket a b) = ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ :=
-  A.sectionsEquiv.injective (by simp)
 
 /-- Commutator of Lie derivative and interior product: `ι_b (L_a η) = L_a (ι_b η) - ι_{[a,b]} η`. -/
 theorem interior_lieDeriv {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain (k + 1)) :
     ContMDiffSection.interior b (A.lieDeriv a η) =
-      A.lieDeriv a (ContMDiffSection.interior b η) -
-        ContMDiffSection.interior (A.bracket a b) η :=
+      A.lieDeriv a (ContMDiffSection.interior b η) - ContMDiffSection.interior (A.bracket a b) η :=
   (A.cochainAlternatingEquiv k).injective <| by
-    simp [map_sub, A.sectionsEquiv_symm_bracket,
-      TauCeti.LieRinehartAlgebra.Cohomology.curryLeft_lieDeriv]
+    have hbr : A.sectionsEquiv.symm (A.bracket a b) =
+        ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ := A.sectionsEquiv.injective (by simp)
+    simp [map_sub, hbr, TauCeti.LieRinehartAlgebra.Cohomology.curryLeft_lieDeriv]
 
 /-- The Lie derivative is a Lie algebra representation: `L_{[a, b]} = L_a ∘ L_b - L_b ∘ L_a`. -/
 theorem lieDeriv_bracket {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain k) :
-    A.lieDeriv (A.bracket a b) η =
-      A.lieDeriv a (A.lieDeriv b η) - A.lieDeriv b (A.lieDeriv a η) :=
+    A.lieDeriv (A.bracket a b) η = A.lieDeriv a (A.lieDeriv b η) - A.lieDeriv b (A.lieDeriv a η) :=
   (A.cochainAlternatingEquiv k).injective <| by
-    simp [map_sub, A.sectionsEquiv_symm_bracket, TauCeti.LieRinehartAlgebra.Cohomology.lieDeriv_lie]
+    have hbr : A.sectionsEquiv.symm (A.bracket a b) =
+        ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ := A.sectionsEquiv.injective (by simp)
+    simp [map_sub, hbr, TauCeti.LieRinehartAlgebra.Cohomology.lieDeriv_lie]
 
 /-- The Lie derivative commutes with the Chevalley–Eilenberg differential:
 `L_a (d_A η) = d_A (L_a η)`. -/
@@ -311,8 +303,7 @@ theorem lieDeriv_bracket {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (η : A.Cochain
 /-- The Lie derivative is an ungraded derivation of `ContMDiffSection.wedge`. -/
 theorem lieDeriv_wedge {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : A.Cochain k) (ψ : A.Cochain l) :
     A.lieDeriv a (ContMDiffSection.wedge φ ψ) =
-      ContMDiffSection.wedge (A.lieDeriv a φ) ψ +
-        ContMDiffSection.wedge φ (A.lieDeriv a ψ) := by
+      ContMDiffSection.wedge (A.lieDeriv a φ) ψ + ContMDiffSection.wedge φ (A.lieDeriv a ψ) := by
   obtain ⟨n, hn⟩ : ∃ n, k + l = n := ⟨k + l, rfl⟩
   induction n using Nat.strong_induction_on generalizing k l with
   | ind n ih =>
@@ -362,21 +353,18 @@ theorem extDeriv_smul {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain k) :
 /-- Pointwise scalar derivation rule for `A.extDeriv` in terms of `ContMDiffSection.wedge`. -/
 theorem extDeriv_smul_apply {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain k) (x : M)
     (v : Fin (k + 1) → V x) :
-    (A.extDeriv k (f • η)) x v =
-      ContMDiffSection.wedge (A.extDeriv 0 (A.cochainZeroEquiv.symm f)) η x
-          (v ∘ Fin.cast (Nat.add_comm 1 k)) + f x * (A.extDeriv k η) x v := by
+    (A.extDeriv k (f • η)) x v = ContMDiffSection.wedge (A.extDeriv 0 (A.cochainZeroEquiv.symm f))
+      η x (v ∘ Fin.cast (Nat.add_comm 1 k)) + f x * (A.extDeriv k η) x v := by
   rw [A.extDeriv_smul, ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
     ContMDiffSection.alternating_cast_apply, ContMDiffSection.smul_apply,
     ContinuousAlternatingMap.smul_apply, smul_eq_mul]
 
 private lemma extDeriv_wedge_zero_left {l : ℕ} (φ : A.Cochain 0) (ψ : A.Cochain l) :
     A.extDeriv (0 + l) (ContMDiffSection.wedge φ ψ) =
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
-        (show 0 + 1 + l = 0 + l + 1 by omega)
+      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) (show 0 + 1 + l = 0 + l + 1 by omega)
         (ContMDiffSection.wedge (A.extDeriv 0 φ) ψ) +
         (-1 : ℝ) ^ 0 • LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
-          (show 0 + (l + 1) = 0 + l + 1 by omega)
-          (ContMDiffSection.wedge φ (A.extDeriv l ψ)) := by
+          (show 0 + (l + 1) = 0 + l + 1 by omega) (ContMDiffSection.wedge φ (A.extDeriv l ψ)) := by
   simp only [ContMDiffSection.wedge_zero_left, A.cochainZeroEquiv_eq, A.extDeriv_cast,
     A.extDeriv_smul, LinearEquiv.symm_apply_apply, map_add, pow_zero, one_smul]
   simp only [LinearEquiv.cast_apply, cast_cast]
@@ -400,12 +388,10 @@ private lemma extDeriv_wedge_zero_right {k : ℕ} (φ : A.Cochain (k + 1)) (ψ :
 /-- **Graded Leibniz rule** for `A.extDeriv` with respect to `ContMDiffSection.wedge`. -/
 theorem extDeriv_wedge {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) :
     A.extDeriv (k + l) (ContMDiffSection.wedge φ ψ) =
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
-        (show k + 1 + l = k + l + 1 by omega)
+      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) (show k + 1 + l = k + l + 1 by omega)
         (ContMDiffSection.wedge (A.extDeriv k φ) ψ) +
         (-1 : ℝ) ^ k • LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
-          (show k + (l + 1) = k + l + 1 by omega)
-          (ContMDiffSection.wedge φ (A.extDeriv l ψ)) := by
+          (show k + (l + 1) = k + l + 1 by omega) (ContMDiffSection.wedge φ (A.extDeriv l ψ)) := by
   obtain ⟨n, hn⟩ : ∃ n, k + l = n := ⟨k + l, rfl⟩
   induction n using Nat.strong_induction_on generalizing k l with
   | ind n ih =>
@@ -444,66 +430,5 @@ theorem extDeriv_wedge_apply {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l)
     ContMDiffSection.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
     ContMDiffSection.alternating_cast_apply, ContMDiffSection.alternating_cast_apply]
 end Complex
-
-section TangentComparison
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [T2Space M] [IsManifold I ∞ M]
-
-omit [T2Space M] in
-/-- Smooth differential `k`-forms identify `ℝ`-linearly with degree-`k` cochains of
-`LieAlgebroid.tangent I M`. -/
-def tangentCochainEquiv (k : ℕ) : SmoothForm I M ℝ k ≃ₗ[ℝ] (tangent I M).Cochain k where
-  toFun := SmoothForm.toContMDiffSection
-  invFun := SmoothForm.ofContMDiffSection
-  left_inv := SmoothForm.ofContMDiffSection_toContMDiffSection
-  right_inv := SmoothForm.toContMDiffSection_ofContMDiffSection
-  map_add' := SmoothForm.add_toContMDiffSection
-  map_smul' _ _ := by simp
-
-omit [T2Space M] in
-@[simp] theorem tangentCochainEquiv_apply {k : ℕ} (φ : SmoothForm I M ℝ k) :
-    tangentCochainEquiv k φ = φ.toContMDiffSection := (rfl)
-omit [T2Space M] in
-@[simp] theorem tangentCochainEquiv_symm_apply {k : ℕ} (η : (tangent I M).Cochain k) :
-    (tangentCochainEquiv k).symm η = SmoothForm.ofContMDiffSection η := (rfl)
-
-/-- On `LieAlgebroid.tangent I M`, `extDeriv` agrees with the de Rham exterior derivative
-`TauCeti.mextDerivₗ`. -/
-theorem tangent_extDeriv_toContMDiffSection {k : ℕ} (φ : SmoothForm I M ℝ k) :
-    (tangent I M).extDeriv k φ.toContMDiffSection = (mextDerivₗ I k φ).toContMDiffSection := by
-  ext x v
-  choose V hV using fun i ↦ ContMDiffSection.evalLinearMap_surjective (I := I) (F := E) ∞
-    (V := (TangentSpace I : M → Type _)) x (v i)
-  have hv : (fun i ↦ V i x) = v := funext fun i ↦ by
-    simpa only [ContMDiffSection.evalLinearMap_apply] using hV i
-  rw [← hv]; cases k with
-  | zero =>
-    have htup : (fun i : Fin 1 ↦ V i x) = ![V 0 x] := funext fun i ↦ by fin_cases i; rfl
-    rw [htup, (tangent I M).extDeriv_zero_apply_section, anchorDeriv_apply, tangent_anchor_apply,
-      SmoothForm.toContMDiffSection_apply, mextDerivₗ_zero_apply]
-    congr 2; ext y; simp
-  | succ k =>
-    rw [(tangent I M).extDeriv_succ_apply_sections,
-      (mextDerivₗ I (k + 1) φ).toContMDiffSection_apply x, mextDerivₗ_apply,
-      TauCeti.mextDeriv_apply_vectorField (φ.mdifferentiableAt x)
-        (fun i ↦ (V i).contMDiff.mdifferentiableAt (by simp)),
-      sub_eq_add_neg, ← Finset.sum_neg_distrib]
-    congr 1
-    · refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [anchorDeriv_apply, tangent_anchor_apply]; congr 3; ext y
-      simp only [ContMDiffSection.scalarAlternatingEquiv_apply, SmoothForm.toContMDiffSection_apply]
-      congr 1
-    · refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [← Finset.sum_neg_distrib]; refine Finset.sum_congr rfl fun j _ ↦ ?_
-      rw [φ.toContMDiffSection_apply x, tangent_bracket_apply, pow_succ, mul_neg, mul_one, neg_smul]
-
-/-- `tangentCochainEquiv` intertwines the de Rham exterior derivative `TauCeti.mextDerivₗ` with
-`extDeriv` on `LieAlgebroid.tangent I M`. -/
-theorem extDeriv_tangentCochainEquiv {k : ℕ} (φ : SmoothForm I M ℝ k) :
-    (tangent I M).extDeriv k (tangentCochainEquiv k φ) =
-      tangentCochainEquiv (k + 1) (mextDerivₗ I k φ) :=
-  tangent_extDeriv_toContMDiffSection φ
-end TangentComparison
 
 end TauCeti.LieAlgebroid

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Cohomology
+public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Alternating.Extension
 import TauCeti.Geometry.Manifold.VectorField.Derivation
 
 /-!
@@ -46,8 +48,7 @@ private def realFieldCoord (u : VFℝ) : C∞ℝ :=
 @[simp] private theorem realFieldCoord_apply (u : VFℝ) (x : ℝ) :
     realFieldCoord u x = NormedSpace.fromTangentSpace x (u x) := (rfl)
 
-private theorem eq_realFieldCoord_smul (u : VFℝ) :
-    u = realFieldCoord u • realUnitVectorField := by
+private theorem eq_realFieldCoord_smul (u : VFℝ) : u = realFieldCoord u • realUnitVectorField := by
   ext x; apply (NormedSpace.fromTangentSpace x).injective
   simp [ContMDiffSection.smul_apply, realUnitVectorField_apply]
 
@@ -93,9 +94,8 @@ def scaledTangentReal : LieAlgebroid 𝓘(ℝ, ℝ) ℝ (TangentSpace 𝓘(ℝ, 
     ContMDiffMap.coeFn_mk, id_eq, FunLike.coe_smul, Pi.smul_apply, tangent_anchor_apply]
 
 /-- The Lie bracket of `scaledTangentReal` rescales the vector-field Lie bracket by `x`. -/
-theorem scaledTangentReal_bracket (u v : VFℝ) :
-    scaledTangentReal.bracket u v = (ContMDiffMap.id : C∞ℝ) • (tangent 𝓘(ℝ, ℝ) ℝ).bracket u v := by
-  simp [scaledTangentReal]
+theorem scaledTangentReal_bracket (u v : VFℝ) : scaledTangentReal.bracket u v =
+    (ContMDiffMap.id : C∞ℝ) • (tangent 𝓘(ℝ, ℝ) ℝ).bracket u v := by simp [scaledTangentReal]
 
 @[simp] theorem scaledTangentReal_bracket_apply (u v : VFℝ) (x : ℝ) :
     scaledTangentReal.bracket u v x = x • mlieBracket 𝓘(ℝ, ℝ) u v x := by

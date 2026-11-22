@@ -77,28 +77,20 @@ def lieDeriv {ι : Type*} [Fintype ι] [inst₀ : DecidableEq ι] :
   toFun x :=
     { toFun ω :=
         { toFun := ⇑⁅x, ω.restrictScalars R⁆
-          map_update_add' := by
-            intro inst m i x₁ y; obtain rfl : inst = inst₀ := Subsingleton.elim _ _
+          map_update_add' := fun {inst} m i x₁ y ↦ by
+            obtain rfl : inst = inst₀ := Subsingleton.elim _ _
             exact ⁅x, ω.restrictScalars R⁆.map_update_add m i x₁ y
-          map_update_smul' := by
-            intro inst v i a y; obtain rfl : inst = inst₀ := Subsingleton.elim _ _
+          map_update_smul' := fun {inst} v i a y ↦ by
+            obtain rfl : inst = inst₀ := Subsingleton.elim _ _
             exact lie_restrictScalars_update_smul R x ω v i a y
           map_eq_zero_of_eq' := ⁅x, ω.restrictScalars R⁆.map_eq_zero_of_eq }
-      map_add' _ _ := by
-        ext v; simp only [AlternatingMap.coe_mk, MultilinearMap.coe_mk, add_apply,
-          restrictScalars_add, lie_add]
+      map_add' _ _ := by ext v; simp [add_apply, restrictScalars_add, lie_add]
       map_smul' c ω := by
         ext v; simp only [AlternatingMap.coe_mk, MultilinearMap.coe_mk, smul_apply,
           restrictScalars_smul, RingHom.id_apply]
         exact congr($(lie_smul c x (ω.restrictScalars R)) v) }
-  map_add' x y := by
-    ext ω v; simp only [LinearMap.coe_mk, AddHom.coe_mk, AlternatingMap.coe_mk,
-      MultilinearMap.coe_mk, LinearMap.add_apply, add_apply]
-    exact congr($(add_lie x y (ω.restrictScalars R)) v)
-  map_smul' c x := by
-    ext ω v; simp only [LinearMap.coe_mk, AddHom.coe_mk, AlternatingMap.coe_mk,
-      MultilinearMap.coe_mk, LinearMap.smul_apply, smul_apply, RingHom.id_apply]
-    exact congr($(smul_lie c x (ω.restrictScalars R)) v)
+  map_add' x y := by ext ω v; exact congr($(add_lie x y (ω.restrictScalars R)) v)
+  map_smul' c x := by ext ω v; exact congr($(smul_lie c x (ω.restrictScalars R)) v)
 
 @[simp] theorem restrictScalars_lieDeriv {ι : Type*} [Fintype ι] [DecidableEq ι]
     (x : L) (ω : L [⋀^ι]→ₗ[A] A) :
