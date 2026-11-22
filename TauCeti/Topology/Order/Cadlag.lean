@@ -22,10 +22,11 @@ and stopping any càdlàg path at a deterministic horizon preserves the càdlàg
 If a function converges from the right at `x` in a regular space, its strict left limit
 `Function.leftLim` also converges from the right to the same limit
 (`Filter.Tendsto.leftLim_nhdsGT`), and in particular for a càdlàg path it converges to `f x`
-(`IsCadlag.tendsto_nhdsGT_leftLim`). Consequently, the first time at which a càdlàg path or its left
-limit enters a closed set is attained whenever such a time exists and is bounded below
-(`IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag`). In a complete linear order with closed lower
-rays, strict left limits on `(-∞, T]` never exceed the supremum of values on `(-∞, T]`
+(`IsCadlag.tendsto_nhdsGT_leftLim`). Consequently, the first time at which a path or its left
+limit enters a closed set is attained whenever the path is right-continuous at that infimum and the
+entry set is nonempty and bounded below
+(`IsClosed.csInf_mem_or_leftLim_mem_of_continuousWithinAt`). In a complete linear order with closed
+lower rays, strict left limits on `(-∞, T]` never exceed the supremum of values on `(-∞, T]`
 (`TauCeti.leftLim_le_biSup_Iic`). On a compact initial interval `[⊥, T]`, crossing a level `ε`
 in value or left limit for a càdlàg function into a complete linear order with the order topology
 is equivalent to the supremum of values up to `T` reaching `ε`
@@ -206,13 +207,15 @@ theorem exists_le_or_le_leftLim_iff_le_biSup {X α : Type*}
 
 end IsCadlag
 
-/-- For a càdlàg path into a regular space and a closed set `C`, the infimum of times at which
-either the path or its strict left limit lies in `C` belongs to that same set whenever it is
-nonempty and bounded below. -/
-theorem IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag {X Y : Type*}
+/-- For a path into a regular space that is right-continuous at the infimum `s` of times at which
+either the path or its strict left limit lies in a closed set `C`, `s` itself belongs to that entry
+set whenever it is nonempty and bounded below. -/
+theorem IsClosed.csInf_mem_or_leftLim_mem_of_continuousWithinAt {X Y : Type*}
     [ConditionallyCompleteLinearOrder X] [TopologicalSpace X] [OrderTopology X]
     [TopologicalSpace Y] [RegularSpace Y] {C : Set Y} (hC : IsClosed C) {f : X → Y}
-    (hf : IsCadlag f) (hne : {t | f t ∈ C ∨ f.leftLim t ∈ C}.Nonempty)
+    (hf : ContinuousWithinAt f (Ioi (sInf {t | f t ∈ C ∨ f.leftLim t ∈ C}))
+      (sInf {t | f t ∈ C ∨ f.leftLim t ∈ C}))
+    (hne : {t | f t ∈ C ∨ f.leftLim t ∈ C}.Nonempty)
     (hbdd : BddBelow {t | f t ∈ C ∨ f.leftLim t ∈ C}) :
     f (sInf {t | f t ∈ C ∨ f.leftLim t ∈ C}) ∈ C ∨
       f.leftLim (sInf {t | f t ∈ C ∨ f.leftLim t ∈ C}) ∈ C := by
@@ -231,8 +234,8 @@ theorem IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag {X Y : Type*}
       le_of_not_gt fun hxu => hu ⟨hlt_all hx, hxu⟩
     exact not_le_of_gt hsu (le_csInf hne hub)
   · have hmem : {r | r ∉ A} ∈ 𝓝[>] s := by
-      have h1 := (hf.isRightContinuous s).eventually (hC.isOpen_compl.mem_nhds hfs)
-      have h2 := (hf.tendsto_nhdsGT_leftLim s).eventually (hC.isOpen_compl.mem_nhds hfs)
+      have h1 := hf.eventually (hC.isOpen_compl.mem_nhds hfs)
+      have h2 := hf.tendsto.leftLim_nhdsGT.eventually (hC.isOpen_compl.mem_nhds hfs)
       filter_upwards [h1, h2] with r hr1 hr2 hrA
       exact hrA.elim hr1 hr2
     obtain ⟨u, hsu, hu⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' hsx₀).mp hmem
@@ -426,8 +429,9 @@ theorem mem_of_oscillationExitAfter_eq_coe {f : X → E} (hf : IsCadlag f) {ε :
   have hmem : sInf A ∈ A := by
     dsimp only [A]
     rw [hA_eq]
-    exact isClosed_Ici.csInf_mem_or_leftLim_mem_of_isCadlag
-      (TauCeti.isCadlag_stoppedDist hf u) (hA_eq ▸ hne) ⟨⊥, fun _ _ => bot_le⟩
+    exact isClosed_Ici.csInf_mem_or_leftLim_mem_of_continuousWithinAt
+      ((TauCeti.isCadlag_stoppedDist hf u).isRightContinuous _) (hA_eq ▸ hne)
+      ⟨⊥, fun _ _ => bot_le⟩
   exact hs_eq ▸ hmem
 
 /-- After any finite time `u`, the next `ε`-oscillation exit (`ε > 0`) of a càdlàg path occurs
