@@ -50,20 +50,36 @@ theorem disjoint_range_rootSubgroupPoints_map_conj_weylElement_borelSubgroup :
     Disjoint (D.rootSubgroupPoints (t.simpleIndex ht i) A).range
       ((D.borelSubgroup A).map
         (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1)).toMonoidHom) := by
-  apply Subgroup.disjoint_def.mpr
-  rintro _ ⟨u, rfl⟩ hb
-  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply] at hb
+  refine (D.disjoint_positivePoints_inf_map_negativePoints_map_borelSubgroup A
+    (D.weylElement (t.simpleIndex ht i) A 1)).mono_left ?_
+  rintro _ ⟨u, rfl⟩
+  refine ⟨D.rootSubgroupPoints_mem_positivePoints A
+    (support_subset_posRoots _ _ (t.simpleIndex_mem_support i)) u, Subgroup.mem_map_equiv.mpr ?_⟩
+  rw [MulAut.conj_symm_apply]
   let n := D.weylElement (t.simpleIndex ht i) A 1
-  have hnn : n * n ∈ D.borelSubgroup A := by
+  have hconj :=
+    D.weylElement_conj_rootSubgroupPoints i (t.simpleIndex ht i) A (Multiplicative.toAdd u)
+  have hnn : n * n = D.torusPoints A (D.simpleCorootParameter i A (-1)) := by
     rw [D.weylElement_mul_self, D.simpleCorootPoints_eq_torusPoints]
-    exact D.range_torusPoints_le_borelSubgroup A ⟨_, rfl⟩
-  apply (D.weylElement_conj_rootSubgroupPoints_simpleIndex_mem_borelSubgroup_iff A i u).mp
-  have he : n * D.rootSubgroupPoints (t.simpleIndex ht i) A u * n⁻¹ =
-      (n * n) * (n⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) A u * n) *
-        (n * n)⁻¹ := by group
-  rw [he]
-  exact (D.borelSubgroup A).mul_mem ((D.borelSubgroup A).mul_mem hnn hb)
-    ((D.borelSubgroup A).inv_mem hnn)
+  have hinv : n⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) A u * n =
+      D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹ *
+        (n * D.rootSubgroupPoints (t.simpleIndex ht i) A
+          (Multiplicative.ofAdd (Multiplicative.toAdd u)) * n⁻¹) *
+        (D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹)⁻¹ := by
+    change n⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) A u * n =
+      D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹ *
+        (n * D.rootSubgroupPoints (t.simpleIndex ht i) A u * n⁻¹) *
+        (D.torusPoints A (D.simpleCorootParameter i A (-1))⁻¹)⁻¹
+    rw [map_inv, ← hnn]
+    group
+  have hneg : (t.simplyConnectedRootDatum ht).reflectionPerm
+      (t.simpleIndex ht i) (t.simpleIndex ht i) ∈
+      negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    rw [← t.reflectionPerm_rationalRootSystem ht]
+    exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots _ _ _).mpr
+      (support_subset_posRoots _ _ (t.simpleIndex_mem_support i))
+  rw [hinv, hconj, D.torusPoints_conj_rootSubgroupPoints]
+  exact D.rootSubgroupPoints_mem_negativePoints A hneg _
 
 /-- Over every commutative ring, the simple Bruhat cell has unique root-group and right
 Borel factors. The root factor is an element, not a chosen additive parameter. -/

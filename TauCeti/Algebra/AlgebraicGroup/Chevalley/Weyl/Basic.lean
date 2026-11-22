@@ -69,7 +69,7 @@ theorem torusPoints_mem_weylSubgroup (A : Type v) [CommRing A] (s : Fin t.rank �
   Subgroup.subset_closure (Or.inl ⟨s, rfl⟩)
 
 /-- Each pinned simple Weyl representative belongs to the Weyl subgroup. -/
-theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) :
+theorem weylElement_simpleIndex_one_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) :
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
 
@@ -92,7 +92,7 @@ theorem weylSubgroup_le_comap (A : Type*) [CommRing A] {B : Type*} [CommRing B]
   · rw [SetLike.mem_coe, Subgroup.mem_comap, D.map_torusPoints]
     exact D.torusPoints_mem_weylSubgroup B _
   · rw [SetLike.mem_coe, Subgroup.mem_comap, D.map_weylElement_one]
-    exact D.weylElement_mem_weylSubgroup B i
+    exact D.weylElement_simpleIndex_one_mem_weylSubgroup B i
 
 /-- The homomorphism of Weyl subgroups induced by scalar extension. -/
 noncomputable def weylSubgroupMap (A : Type*) [CommRing A] {B : Type*} [CommRing B]
@@ -127,8 +127,10 @@ theorem weylSubgroupMap_torusPoints (A : Type*) [CommRing A] {B : Type*} [CommRi
 theorem weylSubgroupMap_weylElement (A : Type*) [CommRing A] {B : Type*} [CommRing B]
     (f : A →+* B) (i : Fin t.rank) :
     D.weylSubgroupMap A f
-        ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ =
-      ⟨D.weylElement (t.simpleIndex ht i) B 1, D.weylElement_mem_weylSubgroup B i⟩ := by
+        ⟨D.weylElement (t.simpleIndex ht i) A 1,
+          D.weylElement_simpleIndex_one_mem_weylSubgroup A i⟩ =
+      ⟨D.weylElement (t.simpleIndex ht i) B 1,
+        D.weylElement_simpleIndex_one_mem_weylSubgroup B i⟩ := by
   apply Subtype.ext
   simp only [D.coe_weylSubgroupMap, D.map_weylElement_one]
 
@@ -366,14 +368,14 @@ theorem weylProjection_torusPoints (k : Type v) [Field k]
         (fun j => Units.map (algebraMap k (AlgebraicClosure k) : k →* AlgebraicClosure k) (s j))))
 
 /-- Each pinned simple Weyl representative projects to the corresponding simple reflection. -/
--- Concrete rank and root-count equations can normalize the dependent indices before matching.
-@[simp↓]
-theorem weylProjection_weylElement (k : Type v) [Field k] (i : Fin t.rank) :
+theorem weylProjection_weylElement_simpleIndex_one (k : Type v) [Field k] (i : Fin t.rank) :
     D.weylProjection k
-        ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩ =
+        ⟨D.weylElement (t.simpleIndex ht i) k 1,
+          D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩ =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) :=
   D.realizesWeyl_unique
-    (D.exists_realizesWeyl_algebraicClosure k (D.weylElement_mem_weylSubgroup k i)).choose_spec
+    (D.exists_realizesWeyl_algebraicClosure k
+      (D.weylElement_simpleIndex_one_mem_weylSubgroup k i)).choose_spec
     (by simpa only [RealizesWeyl, map_weylElement, map_one] using
       D.weylElement_conj_weightTorus (AlgebraicClosure k) i)
 
@@ -392,8 +394,9 @@ private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one_field
   have hw : D.weylElement (t.simpleIndex ht i) k 1 = 1 := by
     simp only [D.weylElement_def, inv_one, Units.val_one, hx, hy, one_mul]
   have hsub : (⟨D.weylElement (t.simpleIndex ht i) k 1,
-      D.weylElement_mem_weylSubgroup k i⟩ : D.weylSubgroup k) = 1 := Subtype.ext hw
-  have hproj := D.weylProjection_weylElement k i
+      D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩ : D.weylSubgroup k) = 1 :=
+    Subtype.ext hw
+  have hproj := D.weylProjection_weylElement_simpleIndex_one k i
   rw [hsub, map_one] at hproj
   exact RootPairing.weylGroup.ofIdx_ne_one (t.simplyConnectedRootDatum ht)
     (t.simpleIndex ht i) hproj.symm
@@ -442,7 +445,8 @@ theorem weylProjection_surjective (k : Type v) [Field k] :
     | cons i l ih =>
       obtain ⟨g, hg⟩ := ih
       exact ⟨⟨D.weylElement (t.simpleIndex ht i) k 1,
-        D.weylElement_mem_weylSubgroup k i⟩ * g, by simp [hg]⟩
+        D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩ * g,
+        by simp [D.weylProjection_weylElement_simpleIndex_one, hg]⟩
   intro w
   obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
   exact hword l

@@ -136,36 +136,26 @@ theorem mem_positivePoints_iff_exists_mul_of_subset
   constructor
   · -- Enumerate `S` before `posRoots \ S` so ordered collection splits the product.
     intro hg
-    let S₁ : Finset PositiveRoot := Finset.univ.filter (fun γ : PositiveRoot => γ.val ∈ S)
-    let S₂ : Finset PositiveRoot := Finset.univ.filter (fun γ : PositiveRoot => γ.val ∉ S)
-    let l₁ := S₁.toList
-    let l₂ := S₂.toList
-    have hl : (l₁ ++ l₂).Nodup := by
-      rw [List.nodup_append]
-      refine ⟨S₁.nodup_toList, S₂.nodup_toList, fun x hx₁ y hy₂ hxy => ?_⟩
-      subst hxy
-      rw [Finset.mem_toList, Finset.mem_filter] at hx₁ hy₂
-      exact hy₂.2 hx₁.2
-    have hcover : ∀ γ : PositiveRoot, γ ∈ l₁ ++ l₂ := by
-      intro γ
-      simp only [List.mem_append, l₁, l₂, Finset.mem_toList, S₁, S₂, Finset.mem_filter,
-        Finset.mem_univ, true_and]
-      exact em (γ.val ∈ S)
+    let p : PositiveRoot → Bool := fun γ => decide (γ.val ∈ S)
+    let l₁ := (Finset.univ : Finset PositiveRoot).toList.filter p
+    let l₂ := (Finset.univ : Finset PositiveRoot).toList.filter (fun γ => !p γ)
+    have hperm := List.filter_append_perm p (Finset.univ : Finset PositiveRoot).toList
+    have hl : (l₁ ++ l₂).Nodup := hperm.nodup_iff.mpr Finset.univ.nodup_toList
+    have hcover : ∀ γ : PositiveRoot, γ ∈ l₁ ++ l₂ :=
+      fun γ => hperm.mem_iff.mpr (Finset.mem_toList.mpr (Finset.mem_univ γ))
     obtain ⟨u, rfl⟩ := (D.mem_positivePoints_iff_exists_prod A hl hcover g).mp hg
     rw [List.map_append, List.prod_append]
     refine ⟨_, Subgroup.list_prod_mem _ ?_, _, Subgroup.list_prod_mem _ ?_, rfl⟩
     · intro x hx
-      rw [List.mem_map] at hx
-      obtain ⟨γ, hγ, rfl⟩ := hx
-      rw [Finset.mem_toList, Finset.mem_filter] at hγ
+      obtain ⟨γ, hγ, rfl⟩ := List.mem_map.mp hx
+      have hγS : γ.val ∈ S := of_decide_eq_true (List.mem_filter.mp hγ).2
       exact le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range)
-        γ.val hγ.2 ⟨ofAdd (u γ), rfl⟩
+        γ.val hγS ⟨ofAdd (u γ), rfl⟩
     · intro x hx
-      rw [List.mem_map] at hx
-      obtain ⟨γ, hγ, rfl⟩ := hx
-      rw [Finset.mem_toList, Finset.mem_filter] at hγ
+      obtain ⟨γ, hγ, rfl⟩ := List.mem_map.mp hx
+      have hγS : γ.val ∉ S := of_decide_eq_false (by simpa [p] using (List.mem_filter.mp hγ).2)
       exact le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range)
-        γ.val ⟨γ.property, hγ.2⟩ ⟨ofAdd (u γ), rfl⟩
+        γ.val ⟨γ.property, hγS⟩ ⟨ofAdd (u γ), rfl⟩
   · -- Conversely, both root-subgroup joins lie inside `positivePoints`.
     rintro ⟨u₁, hu₁, u₂, hu₂, rfl⟩
     rw [D.positivePoints_eq_iSup A]

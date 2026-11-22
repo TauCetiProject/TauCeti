@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Positive
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
@@ -56,7 +57,7 @@ theorem list_prod_map_weylElement_mem_weylSubgroup (l : List (Fin t.rank)) :
   apply Subgroup.list_prod_mem
   intro x hx
   obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
-  exact D.weylElement_mem_weylSubgroup A i
+  exact D.weylElement_simpleIndex_one_mem_weylSubgroup A i
 
 /-- Every element of `D.weylSubgroup A` is a positive word in the pinned simple Weyl
 representatives followed by a point of the actual torus, over every commutative ring. -/
@@ -173,19 +174,12 @@ theorem positivePoints_inf_weylSubgroup_eq_bot :
   rcases subsingleton_or_nontrivial A with _ | _
   · exact Subtype.ext (Units.ext (Matrix.ext fun _ _ => Subsingleton.elim _ _))
   · obtain ⟨l, s, hls⟩ := (D.mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints A).mp huW
-    -- Conjugate the positive factor across the torus point so the Weyl word has block LDU form.
-    let u' : D.points A := D.torusPoints A s * u * (D.torusPoints A s)⁻¹
-    have hu'P : u' ∈ D.positivePoints A :=
-      (Subgroup.mem_normalizer_iff.mp
-        (D.range_torusPoints_le_normalizer_positivePoints A ⟨s, rfl⟩) u).mp huP
-    have hwprod' :
-        (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
-          D.torusPoints A s⁻¹ * u' := by
-      rw [eq_mul_inv_of_mul_eq hls, (D.torusPoints A).map_inv]
-      dsimp only [u']
-      group
-    have hl : t.geckWeylWordProd ht l = 1 :=
-      D.geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive A hu'P hwprod'
+    have hlB : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈
+        D.borelSubgroup A := by
+      rw [eq_mul_inv_of_mul_eq hls]
+      exact mul_mem (D.positivePoints_le_borelSubgroup A huP)
+        (inv_mem (D.range_torusPoints_le_borelSubgroup A ⟨s, rfl⟩))
+    have hl := D.geckWeylWordProd_eq_one_of_mem_borelSubgroup A l hlB
     have huT : u ∈ (D.torusPoints A).range := by
       rw [← hls]
       exact mul_mem
@@ -270,12 +264,14 @@ theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
     | cons i m ih =>
       have hsplit : (⟨((i :: m).map fun j => D.weylElement (t.simpleIndex ht j) K 1).prod,
           D.list_prod_map_weylElement_mem_weylSubgroup K (i :: m)⟩ : D.weylSubgroup K) =
-          ⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩ *
+          ⟨D.weylElement (t.simpleIndex ht i) K 1,
+            D.weylElement_simpleIndex_one_mem_weylSubgroup K i⟩ *
             ⟨(m.map fun j => D.weylElement (t.simpleIndex ht j) K 1).prod,
               D.list_prod_map_weylElement_mem_weylSubgroup K m⟩ := by
         ext
         simp only [List.map_cons, List.prod_cons, Subgroup.coe_mul]
-      rw [hsplit, map_mul, D.weylProjection_weylElement K i, ih, geckWeylWordProd_cons]
+      rw [hsplit, map_mul, D.weylProjection_weylElement_simpleIndex_one K i, ih,
+        geckWeylWordProd_cons]
   -- Split the `D.weylSubgroup K` subtype into the word product and torus factor by comparing
   -- their underlying elements in `D.points K`.
   have hmul : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod *

@@ -212,31 +212,9 @@ theorem disjoint_positivePoints_inf_map_negativePoints_map_borelSubgroup
     (n : D.points A) :
     Disjoint
       (D.positivePoints A ⊓ (D.negativePoints A).map (MulAut.conj n).toMonoidHom)
-      ((D.borelSubgroup A).map (MulAut.conj n).toMonoidHom) := by
-  rw [disjoint_iff, inf_assoc]
-  refine le_bot_iff.mp (inf_le_right.trans_eq ?_)
-  rw [← Subgroup.map_inf_eq _ _ _ (MulAut.conj n).injective, D.borelSubgroup_def,
-    D.negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot, Subgroup.map_bot]
-
-/-- **Uniqueness in Steinberg's Bruhat normal form over an arbitrary commutative ring.** For
-any datum point `n : D.points A`, if `u₁, u₂ ∈ U(A) ∩ n U⁻(A) n⁻¹` and
-`b₁, b₂ ∈ B(A)` satisfy `u₁ * n * b₁ = u₂ * n * b₂`, then `u₁ = u₂` and
-`b₁ = b₂`. -/
-theorem eq_and_eq_of_mem_positivePoints_inf_map_negativePoints_of_mem_borelSubgroup_of_mul_mul_eq
-    (n : D.points A) {u₁ u₂ b₁ b₂ : D.points A}
-    (hu₁ : u₁ ∈ D.positivePoints A ⊓ (D.negativePoints A).map (MulAut.conj n).toMonoidHom)
-    (hu₂ : u₂ ∈ D.positivePoints A ⊓ (D.negativePoints A).map (MulAut.conj n).toMonoidHom)
-    (hb₁ : b₁ ∈ D.borelSubgroup A) (hb₂ : b₂ ∈ D.borelSubgroup A)
-    (heq : u₁ * n * b₁ = u₂ * n * b₂) :
-    u₁ = u₂ ∧ b₁ = b₂ := by
-  have hinj := Subgroup.mul_mul_injective_of_disjoint
-    (D.positivePoints A ⊓ (D.negativePoints A).map (MulAut.conj n).toMonoidHom)
-    (D.borelSubgroup A)
-    (D.disjoint_positivePoints_inf_map_negativePoints_map_borelSubgroup A n)
-  have hpair := hinj
-    (a₁ := (⟨u₁, hu₁⟩, ⟨b₁, hb₁⟩))
-    (a₂ := (⟨u₂, hu₂⟩, ⟨b₂, hb₂⟩)) heq
-  exact ⟨congrArg (Subtype.val ∘ Prod.fst) hpair, congrArg (Subtype.val ∘ Prod.snd) hpair⟩
+      ((D.borelSubgroup A).map (MulAut.conj n).toMonoidHom) :=
+  (Subgroup.disjoint_map (MulAut.conj n).injective
+    (disjoint_iff.mpr (D.negativePoints_inf_borelSubgroup_eq_bot A))).mono_left inf_le_right
 
 /-- A negative root element belongs to the positive Borel-type subgroup exactly when it is
 the identity. This does not assume that the root parameter is injective. -/

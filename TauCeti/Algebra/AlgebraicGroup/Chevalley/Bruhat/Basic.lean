@@ -102,7 +102,8 @@ theorem bruhatCell_ofIdx_simpleIndex (i : Fin t.rank) :
         (RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) =
       DoubleCoset.doubleCoset (D.weylElement (t.simpleIndex ht i) K 1)
         (D.borelSubgroup K) (D.borelSubgroup K) :=
-  D.bruhatCell_eq_doubleCoset_of_weylProjection_eq K (D.weylProjection_weylElement K i)
+  D.bruhatCell_eq_doubleCoset_of_weylProjection_eq K
+    (D.weylProjection_weylElement_simpleIndex_one K i)
 
 /-- Every element of the Bruhat cell `B n B` factors as `u * n * b` with `u ∈ D.positivePoints K`
 and `b ∈ D.borelSubgroup K`. -/
@@ -245,10 +246,11 @@ theorem bruhatCell_ofIdx_mul_eq_of_mem_posRoots
         (t.simpleIndex ht i) * w) := by
   obtain ⟨n, rfl⟩ := D.weylProjection_surjective K w
   have hr : D.weylProjection K
-      (⟨D.weylElement (t.simpleIndex ht i) K 1, D.weylElement_mem_weylSubgroup K i⟩ * n) =
+      (⟨D.weylElement (t.simpleIndex ht i) K 1,
+        D.weylElement_simpleIndex_one_mem_weylSubgroup K i⟩ * n) =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) *
         D.weylProjection K n := by
-    rw [map_mul, D.weylProjection_weylElement K i]
+    rw [map_mul, D.weylProjection_weylElement_simpleIndex_one K i]
   rw [D.bruhatCell_ofIdx_simpleIndex K i, D.bruhatCell_weylProjection K n, ← hr,
     D.bruhatCell_weylProjection K]
   exact D.doubleCoset_weylElement_mul_eq_of_mem_posRoots K i n hw

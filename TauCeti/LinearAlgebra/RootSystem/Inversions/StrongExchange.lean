@@ -67,14 +67,14 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
   [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
 
-/-- **The strong exchange condition.** If the word `l` spells a Weyl-group element sending the
-positive root `αₖ` to a negative root, then the word `l` with the reflection `sₖ` appended is
-spelled by `l` with one of its letters deleted. The root `αₖ` is an arbitrary positive root, not
-necessarily a simple one, and the shorter word is a subword of `l`. -/
-theorem exists_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
+/-- **Strong exchange with crossing suffix.** In the setting of
+`TauCeti.exists_wordProd_eraseIdx_eq_mul_ofIdx`, the deleted letter `l[j]` is the simple root
+through which the suffix `l.drop (j + 1)` carries `αₖ`. -/
+theorem exists_wordProd_eraseIdx_eq_mul_ofIdx_and_drop {k : ι} (hk : b.IsPos k)
     (l : List b.support) (h : ¬ b.IsPos (P.weylGroupToPerm (wordProd P b l) k)) :
-    ∃ j < l.length,
-      wordProd P b (l.eraseIdx j) = wordProd P b l * RootPairing.weylGroup.ofIdx P k := by
+    ∃ (j : ℕ) (hj : j < l.length),
+      P.weylGroupToPerm (wordProd P b (l.drop (j + 1))) k = (l[j] : ι) ∧
+        wordProd P b (l.eraseIdx j) = wordProd P b l * RootPairing.weylGroup.ofIdx P k := by
   induction l with
   | nil =>
     exact absurd (by simpa using hk) h
@@ -82,20 +82,31 @@ theorem exists_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
     rw [wordProd_cons, RootPairing.weylGroupToPerm_ofIdx_mul_apply] at h
     by_cases hpos : b.IsPos (P.weylGroupToPerm (wordProd P b l) k)
     · -- The shorter word keeps `αₖ` positive, so the image is the simple root `αⱼ` itself.
-      refine ⟨0, by simp, ?_⟩
       have hkey : P.weylGroupToPerm (wordProd P b l) k = (j : ι) := by
         by_contra hne
         have hmem : P.weylGroupToPerm (wordProd P b l) k ∈ posRoots P b \ {(j : ι)} :=
           ⟨(mem_posRoots P b _).mpr hpos, by simpa using hne⟩
         exact h ((mem_posRoots P b _).mp
           ((reflectionPerm_mem_posRoots_diff_singleton_iff P b j.property _).mpr hmem).1)
+      refine ⟨0, by simp, by simpa using hkey, ?_⟩
       rw [List.eraseIdx_cons_zero, wordProd_cons, ← hkey,
         RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
         inv_mul_cancel_right, mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, mul_one]
     · -- The shorter word already makes `αₖ` negative, so a letter is deleted from it.
-      obtain ⟨j', hj', hl'⟩ := ih hpos
-      refine ⟨j' + 1, by simpa using hj', ?_⟩
+      obtain ⟨j', hj', hdrop, hl'⟩ := ih hpos
+      refine ⟨j' + 1, by simpa using hj', by simpa using hdrop, ?_⟩
       rw [List.eraseIdx_cons_succ, wordProd_cons, hl', wordProd_cons, mul_assoc]
+
+/-- **The strong exchange condition.** If the word `l` spells a Weyl-group element sending the
+positive root `αₖ` to a negative root, then the word `l` with the reflection `sₖ` appended is
+spelled by `l` with one of its letters deleted. The root `αₖ` is an arbitrary positive root, not
+necessarily a simple one, and the shorter word is a subword of `l`. -/
+theorem exists_wordProd_eraseIdx_eq_mul_ofIdx {k : ι} (hk : b.IsPos k)
+    (l : List b.support) (h : ¬ b.IsPos (P.weylGroupToPerm (wordProd P b l) k)) :
+    ∃ j < l.length,
+      wordProd P b (l.eraseIdx j) = wordProd P b l * RootPairing.weylGroup.ofIdx P k :=
+  let ⟨j, hj, _, hprod⟩ := exists_wordProd_eraseIdx_eq_mul_ofIdx_and_drop P b hk l h
+  ⟨j, hj, hprod⟩
 
 variable {P b}
 

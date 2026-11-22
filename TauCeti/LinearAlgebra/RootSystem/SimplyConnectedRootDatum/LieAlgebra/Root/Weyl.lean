@@ -159,22 +159,6 @@ theorem eq_chevalleyWeylSign_iff {α β : Fin t.numRoots} {ε : ℤˣ} :
     smul_eq_zero, Int.cast_eq_zero, sub_eq_zero, Units.val_inj] at h
   exact (h.resolve_right (t.isSl2Triple_chevalleySystem ht _).e_ne_zero).symm
 
-/-- The Chevalley involution commutes with every Weyl automorphism of the named Chevalley system,
-since it exchanges `e_α` with `-e_{-α}`. -/
-theorem chevalleyInvolution_weylAut (α : Fin t.numRoots) (z : t.lieAlgebra ht) :
-    t.chevalleyInvolution ht
-        (weylAut (t.isSl2Triple_chevalleySystem ht α)
-          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
-          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero z) =
-      weylAut (t.isSl2Triple_chevalleySystem ht α)
-        (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
-        (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
-        (t.chevalleyInvolution ht z) :=
-  (t.chevalleyInvolution ht).toLieHom.map_weylAut (t.isSl2Triple_chevalleySystem ht α)
-    (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
-    (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
-    (t.chevalleyInvolution_chevalleySystem ht α) (by simp) z
-
 /-- **A Weyl automorphism has the same sign at opposite roots**, since it commutes with the
 Chevalley involution. -/
 -- Concrete Dynkin-type rules rewrite `t.simplyConnectedRootDatum ht` inside the argument first.
@@ -190,8 +174,14 @@ Chevalley involution. -/
         ((t.simplyConnectedRootDatum ht).reflectionPerm α β) :=
     (RootPairing.Equiv.reflection
       (t.simplyConnectedRootDatum ht) α).toHom.indexEquiv_reflectionPerm β β
-  have H := congrArg (t.chevalleyInvolution ht) (t.weylAut_chevalleySystem ht α β)
-  simpa only [t.chevalleyInvolution_weylAut ht α, chevalleyInvolution_chevalleySystem,
+  have hinv := (t.chevalleyInvolution ht).toLieHom.map_weylAut
+    (t.isSl2Triple_chevalleySystem ht α)
+    (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+    (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+    (t.chevalleyInvolution_chevalleySystem ht α) (by simp)
+    (t.chevalleySystem ht β)
+  have H := congrArg (t.chevalleyInvolution ht).toLieHom (t.weylAut_chevalleySystem ht α β)
+  simpa only [hinv, LieEquiv.coe_toLieHom, chevalleyInvolution_chevalleySystem,
     map_neg, map_zsmul, smul_neg, neg_inj, hp] using H
 
 /-! ## The Weyl automorphisms of the simple roots -/
