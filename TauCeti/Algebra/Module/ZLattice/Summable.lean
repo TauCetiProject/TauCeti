@@ -25,11 +25,11 @@ power, and `‖x + v‖ → ∞` along the cofinite filter of `L` because `L` is
 This is the majorant behind the convergence of the theta series of a lattice, a sum of
 `exp (π i ‖x + v‖² τ)` over `L` whose terms have norm `exp (-π ‖x + v‖² im τ)`.
 
-The integer vectors `d → ℤ` are the standard lattice `ℤ^d ⊆ ℝ^d`, so summability over them is
-summability over that lattice (`TauCeti.summable_pi_int_iff_summable_span`). Read with the sup norm
-on `d → ℤ`, the power sum `∑ n, ‖n‖ ^ r` converges for `r < -card d`
-(`TauCeti.summable_pi_int_norm_rpow`). This is the majorant used to sum Fourier coefficients on the
-torus `(ℝ / ℤ)^d`.
+For a finite index type `d`, the integer vectors `d → ℤ` are the standard lattice
+`ℤ^d ⊆ ℝ^d`, so summability over them is summability over that lattice
+(`TauCeti.summable_pi_int_iff_summable_span`). Read with the sup norm on `d → ℤ`, the power sum
+`∑ n, ‖n‖ ^ r` converges for `r < -card d` (`TauCeti.summable_pi_int_norm_rpow`). This is the
+majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
 
 ## Main statements
 
@@ -39,15 +39,16 @@ torus `(ℝ / ℤ)^d`.
   of a normed group over which some function `v ↦ exp (-c ‖x + v‖²)`, `c : ℝ`, is summable is
   discrete.
 * `ZLattice.summable_one_add_norm_rpow`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ r` converges for real
-  `r < -rank L`; `ZLattice.summable_one_add_norm_pow_inv` is the case of a natural exponent `-r`.
+  `r < -rank L`; `ZLattice.summable_one_add_norm_pow_inv` specialises it to `r = -k` for a natural
+  number `k` exceeding the rank, written `((1 + ‖ℓ‖) ^ k)⁻¹`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm_of_decay`: a function decaying faster than every
   power of `1 + ‖x‖` is summable along `L` against every power of `1 + ‖ℓ‖`.
-* `TauCeti.summable_pi_int_iff_summable_span`: summability over `d → ℤ` is summability over the
-  standard lattice `ℤ^d ⊆ ℝ^d`.
+* `TauCeti.summable_pi_int_iff_summable_span`: for a finite index type `d`, summability over
+  `d → ℤ` is summability over the standard lattice `ℤ^d ⊆ ℝ^d`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
 * `TauCeti.summable_pi_int_one_add_norm_rpow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ r` converges for real
-  `r < -card d`; `TauCeti.summable_pi_int_one_add_norm_pow_inv` is the case of a natural exponent
-  `-r`.
+  `r < -card d`; `TauCeti.summable_pi_int_one_add_norm_pow_inv` specialises it to `r = -k` for a
+  natural number `k` exceeding `card d`, written `((1 + ‖n‖) ^ k)⁻¹`.
 -/
 
 public section
@@ -97,7 +98,7 @@ theorem summable_one_add_norm_rpow (r : ℝ) (hr : r < -Module.finrank ℤ L) :
   (summable_norm_rpow L r hr).const_add_rpow (hr.le.trans (neg_nonpos.2 (Nat.cast_nonneg _)))
     ((eventually_cofinite_ne 0).mono fun ℓ hℓ ↦ by simpa using hℓ) 1
 
-/-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ (-r)` is
+/-- On a discrete subgroup `L` of a finite-dimensional real normed space, `((1 + ‖ℓ‖) ^ r)⁻¹` is
 summable as soon as the natural number `r` exceeds the rank of `L`. -/
 theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : Module.finrank ℤ L < r) :
     Summable fun ℓ : L ↦ ((1 + ‖(ℓ : E)‖) ^ r)⁻¹ :=
@@ -121,9 +122,9 @@ end ZLattice
 
 namespace TauCeti
 
-/-- Through `n ↦ (fun i ↦ (n i : ℝ))`, the integer vectors `d → ℤ` are the standard lattice
-`ℤ^d ⊆ ℝ^d`, the `ℤ`-span of the standard basis. So a function on `d → ℝ` is summable over the
-integer vectors exactly when it is summable over that lattice. -/
+/-- For a finite index type `d`, through `n ↦ (fun i ↦ (n i : ℝ))`, the integer vectors `d → ℤ`
+are the standard lattice `ℤ^d ⊆ ℝ^d`, the `ℤ`-span of the standard basis. So a function on `d → ℝ`
+is summable over the integer vectors exactly when it is summable over that lattice. -/
 theorem summable_pi_int_iff_summable_span {d : Type*} [Finite d] {α : Type*} [AddCommMonoid α]
     [TopologicalSpace α] {f : (d → ℝ) → α} :
     (Summable fun n : d → ℤ ↦ f fun i ↦ (n i : ℝ)) ↔
@@ -154,7 +155,7 @@ theorem summable_pi_int_one_add_norm_rpow {d : Type*} [Fintype d] (r : ℝ)
   simpa only [pi_norm_intCast_real] using
     (summable_pi_int_iff_summable_span (f := fun x ↦ (1 + ‖x‖) ^ r)).2 hL
 
-/-- The series `∑ n, (1 + ‖n‖) ^ (-r)` over the integer vectors `n : d → ℤ`, with the sup norm,
+/-- The series `∑ n, ((1 + ‖n‖) ^ r)⁻¹` over the integer vectors `n : d → ℤ`, with the sup norm,
 converges once the natural number `r` exceeds `card d`. -/
 theorem summable_pi_int_one_add_norm_pow_inv {d : Type*} [Fintype d] {r : ℕ}
     (hr : Fintype.card d < r) : Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ r)⁻¹ :=
