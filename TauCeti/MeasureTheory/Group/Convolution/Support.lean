@@ -35,6 +35,9 @@ continuous functions as the product of their `L¹` seminorms without σ-finitene
   `G × G`.
 * `TauCeti.hasCompactSupport_integral_of_inv_mul_mem`: the parametric integral is compactly
   supported.
+* `TauCeti.continuous_integral_mul_inv_mul`, `TauCeti.integrable_integral_mul_inv_mul`, and
+  `TauCeti.integral_integral_mul_inv_mul`: continuity, integrability against `ν`, and iterated
+  integral identity for `s ↦ ∫ r, u r * v (r⁻¹ * s) ∂μ` with real-valued factors.
 * `TauCeti.continuous_integral_norm_mul_inv_mul`, `TauCeti.integrable_integral_norm_mul_inv_mul`,
   and `TauCeti.lintegral_eNorm_mul_inv_mul_eq_ofReal_integral`: continuity, integrability
   against `ν`, and `ℝ≥0∞` conversion of `s ↦ ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ`.
@@ -104,6 +107,60 @@ theorem hasCompactSupport_integral_of_inv_mul_mem [NormedSpace ℝ E] [Measurabl
 
 end Normed
 
+section Real
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- For continuous `u v : G → ℝ` with `u` compactly supported, the parametric convolution
+`s ↦ ∫ r, u r * v (r⁻¹ * s) ∂μ` is continuous against any measure finite on compact sets. -/
+theorem continuous_integral_mul_inv_mul [MeasurableSpace G] [OpensMeasurableSpace G]
+    (μ : Measure G) [IsFiniteMeasureOnCompacts μ] {u v : G → ℝ}
+    (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v) :
+    Continuous fun s => ∫ r, u r * v (r⁻¹ * s) ∂μ := by
+  refine continuous_integral_of_compact_support μ huc ?_ fun _ _ hsr =>
+    subset_tsupport _ (mem_support.2 fun hr => hsr (by simp [hr]))
+  rw [uncurry_def]
+  fun_prop
+
+/-- For compactly supported continuous `u v : G → ℝ`, the parametric convolution
+`s ↦ ∫ r, u r * v (r⁻¹ * s) ∂μ` is integrable against any measure `ν` finite on compact sets,
+whenever `μ` is also finite on compact sets. -/
+theorem integrable_integral_mul_inv_mul [MeasurableSpace G] [OpensMeasurableSpace G]
+    (μ ν : Measure G) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν]
+    {u v : G → ℝ} (hu : Continuous u) (huc : HasCompactSupport u)
+    (hv : Continuous v) (hvc : HasCompactSupport v) :
+    Integrable (fun s => ∫ r, u r * v (r⁻¹ * s) ∂μ) ν :=
+  (continuous_integral_mul_inv_mul μ hu huc hv).integrable_of_hasCompactSupport
+    (hasCompactSupport_integral_of_inv_mul_mem μ huc hvc fun _ _ hsr =>
+      mem_tsupport_and_inv_mul_mem_tsupport hsr
+        (by intro hu0; simp [hu0]) (by intro hv0; simp [hv0]))
+
+/-- Against measures `μ` and `ν` finite on compact sets with `ν` left-invariant (with no
+σ-finiteness assumption), two compactly supported continuous functions `u v : G → ℝ` satisfy
+`∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂ν = (∫ r, u r ∂μ) * ∫ s, v s ∂ν`. -/
+theorem integral_integral_mul_inv_mul [MeasurableSpace G] [OpensMeasurableSpace G]
+    [MeasurableMul G] (μ ν : Measure G) [IsFiniteMeasureOnCompacts μ]
+    [IsFiniteMeasureOnCompacts ν] [ν.IsMulLeftInvariant] {u v : G → ℝ}
+    (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v)
+    (hvc : HasCompactSupport v) :
+    (∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂ν) = (∫ r, u r ∂μ) * ∫ s, v s ∂ν := by
+  have hcont : Continuous (uncurry fun s r => u r * v (r⁻¹ * s)) := by
+    rw [uncurry_def]; fun_prop
+  have hsupp : HasCompactSupport (uncurry fun s r => u r * v (r⁻¹ * s)) :=
+    hasCompactSupport_uncurry_of_inv_mul_mem (F := fun s r => u r * v (r⁻¹ * s))
+      huc hvc fun _ _ hsr =>
+        mem_tsupport_and_inv_mul_mem_tsupport hsr
+          (by intro hu0; simp [hu0]) (by intro hv0; simp [hv0])
+  calc (∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂ν)
+      = ∫ r, ∫ s, u r * v (r⁻¹ * s) ∂ν ∂μ :=
+        integral_integral_swap_of_hasCompactSupport hcont hsupp
+    _ = ∫ r, u r * ∫ s, v s ∂ν ∂μ := by
+        congr 1 with r
+        rw [integral_const_mul, integral_mul_left_eq_self v r⁻¹]
+    _ = (∫ r, u r ∂μ) * ∫ s, v s ∂ν := integral_mul_const _ _
+
+end Real
+
 section Seminormed
 
 variable {G E₁ E₂ : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -115,11 +172,8 @@ finite on compact sets. -/
 theorem continuous_integral_norm_mul_inv_mul [MeasurableSpace G] [OpensMeasurableSpace G]
     (μ : Measure G) [IsFiniteMeasureOnCompacts μ] {u : G → E₁} {v : G → E₂}
     (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v) :
-    Continuous fun s => ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ := by
-  refine continuous_integral_of_compact_support μ huc ?_ fun _ _ hsr =>
-    subset_tsupport _ (mem_support.2 fun hr => hsr (by simp [hr]))
-  rw [uncurry_def]
-  fun_prop
+    Continuous fun s => ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ :=
+  continuous_integral_mul_inv_mul μ hu.norm (huc.comp_left norm_zero) hv.norm
 
 /-- For compactly supported continuous `u : G → E₁` and `v : G → E₂`, the scalar parametric
 convolution `s ↦ ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ` is integrable against any measure `ν` finite on
@@ -129,10 +183,8 @@ theorem integrable_integral_norm_mul_inv_mul [MeasurableSpace G] [OpensMeasurabl
     {u : G → E₁} {v : G → E₂} (hu : Continuous u) (huc : HasCompactSupport u)
     (hv : Continuous v) (hvc : HasCompactSupport v) :
     Integrable (fun s => ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ) ν :=
-  (continuous_integral_norm_mul_inv_mul μ hu huc hv).integrable_of_hasCompactSupport
-    (hasCompactSupport_integral_of_inv_mul_mem μ huc hvc fun _ _ hsr =>
-      mem_tsupport_and_inv_mul_mem_tsupport hsr
-        (by intro hu0; simp [hu0]) (by intro hv0; simp [hv0]))
+  integrable_integral_mul_inv_mul μ ν hu.norm (huc.comp_left norm_zero) hv.norm
+    (hvc.comp_left norm_zero)
 
 /-- For continuous `u : G → E₁` with compact support and continuous `v : G → E₂`, the lower
 Lebesgue parametric convolution `∫⁻ r, ‖u r‖ₑ * ‖v (r⁻¹ * s)‖ₑ ∂μ` equals `ENNReal.ofReal` of the
@@ -159,21 +211,9 @@ theorem integral_integral_norm_mul_inv_mul [MeasurableSpace G] [OpensMeasurableS
     [IsFiniteMeasureOnCompacts ν] [ν.IsMulLeftInvariant] {u : G → E₁} {v : G → E₂}
     (hu : Continuous u) (huc : HasCompactSupport u) (hv : Continuous v)
     (hvc : HasCompactSupport v) :
-    (∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂ν) = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂ν := by
-  have hcont : Continuous (uncurry fun s r => ‖u r‖ * ‖v (r⁻¹ * s)‖) := by
-    rw [uncurry_def]; fun_prop
-  have hsupp : HasCompactSupport (uncurry fun s r => ‖u r‖ * ‖v (r⁻¹ * s)‖) :=
-    hasCompactSupport_uncurry_of_inv_mul_mem (F := fun s r => ‖u r‖ * ‖v (r⁻¹ * s)‖)
-      huc hvc fun _ _ hsr =>
-        mem_tsupport_and_inv_mul_mem_tsupport hsr
-          (by intro hu0; simp [hu0]) (by intro hv0; simp [hv0])
-  calc (∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂ν)
-      = ∫ r, ∫ s, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂ν ∂μ :=
-        integral_integral_swap_of_hasCompactSupport hcont hsupp
-    _ = ∫ r, ‖u r‖ * ∫ s, ‖v s‖ ∂ν ∂μ := by
-        congr 1 with r
-        rw [integral_const_mul, integral_mul_left_eq_self (fun s => ‖v s‖) r⁻¹]
-    _ = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂ν := integral_mul_const _ _
+    (∫ s, ∫ r, ‖u r‖ * ‖v (r⁻¹ * s)‖ ∂μ ∂ν) = (∫ r, ‖u r‖ ∂μ) * ∫ s, ‖v s‖ ∂ν :=
+  integral_integral_mul_inv_mul μ ν hu.norm (huc.comp_left norm_zero) hv.norm
+    (hvc.comp_left norm_zero)
 
 omit [Group G] [IsTopologicalGroup G] in
 private theorem ofReal_integral_norm {E : Type*} [SeminormedAddCommGroup E]

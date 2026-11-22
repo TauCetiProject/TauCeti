@@ -49,9 +49,10 @@ measures need not have full support.
   Hilbert-space integrand `g ↦ P.coefficient (f g) (P.group g v)` is Bochner integrable.
 * `CovariantRepresentation.integratedOperatorBochnerL1`: the contractive continuous linear map
   `Lp A 1 μ →L[ℂ] (H →L[ℂ] H)` given by the vector integral.
-* `CovariantRepresentation.exists_integratedOperator`: every Bochner-integrable `f : G → A` has a
-  bounded integrated operator `T` with `T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ` and
-  `‖T‖ ≤ ∫ g, ‖f g‖ ∂μ`.
+* `CovariantRepresentation.norm_integratedOperatorBochnerL1_toL1_le`,
+  `CovariantRepresentation.exists_integratedOperator`: for every Bochner-integrable `f : G → A`,
+  `P.integratedOperatorBochnerL1 μ (hf.toL1 f)` has operator norm at most `∫ g, ‖f g‖ ∂μ` and
+  evaluates as `ξ ↦ ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ`.
 * `CovariantRepresentation.integratedOperatorBochnerL1_compLp_mul`,
   `CovariantRepresentation.integratedOperatorBochnerL1_translateLp`,
   `CovariantRepresentation.integratedOperatorBochnerL1_convolutionL1`: left coefficient covariance,
@@ -169,18 +170,25 @@ theorem norm_integratedOperatorBochnerL1_le (μ : Measure G) [μ.InnerRegularCom
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f => by
     simpa only [one_mul] using P.norm_integratedOperatorBochnerL1_apply_le f
 
+/-- For any Bochner-integrable coefficient function `f : G → A`, the operator norm of
+`P.integratedOperatorBochnerL1 μ (hf.toL1 f)` is bounded by `∫ s, ‖f s‖ ∂μ`. -/
+theorem norm_integratedOperatorBochnerL1_toL1_le {μ : Measure G} [μ.InnerRegularCompactLTTop]
+    {f : G → A} (hf : Integrable f μ) :
+    ‖P.integratedOperatorBochnerL1 μ (hf.toL1 f)‖ ≤ ∫ s, ‖f s‖ ∂μ := by
+  refine (P.norm_integratedOperatorBochnerL1_apply_le (hf.toL1 f)).trans_eq ?_
+  rw [L1.norm_eq_integral_norm]
+  exact integral_congr_ae (hf.coeFn_toL1.fun_comp norm)
+
 /-- **Integrated operator of an integrable coefficient function**: for every Bochner-integrable
 `f : G → A`, the vector integrals `ξ ↦ ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ` assemble to a
 bounded operator on `H` of norm at most `∫ g, ‖f g‖ ∂μ`. -/
 theorem exists_integratedOperator (μ : Measure G) [μ.InnerRegularCompactLTTop]
     (f : G → A) (hf : Integrable f μ) :
     ∃ T : H →L[ℂ] H,
-      (∀ ξ, T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ) ∧ ‖T‖ ≤ ∫ g, ‖f g‖ ∂μ := by
-  refine ⟨P.integratedOperatorBochnerL1 μ (hf.toL1 f),
-    P.integratedOperatorBochnerL1_toL1_apply hf, ?_⟩
-  refine (P.norm_integratedOperatorBochnerL1_apply_le (hf.toL1 f)).trans_eq ?_
-  rw [L1.norm_eq_integral_norm]
-  exact integral_congr_ae (hf.coeFn_toL1.fun_comp norm)
+      (∀ ξ, T ξ = ∫ g, P.coefficient (f g) (P.group g ξ) ∂μ) ∧ ‖T‖ ≤ ∫ g, ‖f g‖ ∂μ :=
+  ⟨P.integratedOperatorBochnerL1 μ (hf.toL1 f),
+    P.integratedOperatorBochnerL1_toL1_apply hf,
+    P.norm_integratedOperatorBochnerL1_toL1_le hf⟩
 
 /-- Matrix coefficients of `P.integratedOperatorBochnerL1 μ f` are integrals of orbit matrix
 coefficients. -/

@@ -140,10 +140,8 @@ the operator norm of the integrated form of a norm-summable `f : G → A` is bou
 theorem norm_integratedOperatorBochnerL1_count_toL1_le {f : G → A}
     (hf : Summable fun s => ‖f s‖) :
     ‖P.integratedOperatorBochnerL1 Measure.count ((integrable_count_iff.mpr hf).toL1 f)‖ ≤
-      ∑' s, ‖f s‖ := by
-  refine (P.norm_integratedOperatorBochnerL1_apply_le _).trans_eq ?_
-  rw [L1.norm_eq_integral_norm]
-  exact (integral_congr_ae ((integrable_count_iff.mpr hf).coeFn_toL1.fun_comp norm)).trans
+      ∑' s, ‖f s‖ :=
+  (P.norm_integratedOperatorBochnerL1_toL1_le (integrable_count_iff.mpr hf)).trans_eq
     (integral_count_eq_tsum (integrable_count_iff.mpr hf).norm)
 
 end Count
