@@ -27,6 +27,8 @@ scalar functions recover both functions as differentiable.
   derivative is surjective.
 * `TauCeti.surjective_fderiv_iff_ne_zero_of_finrank_eq_one`: for a map into a one-dimensional
   space, surjectivity of `fderiv` is equivalent to `fderiv ≠ 0`.
+* `TauCeti.setOf_differentiableAt_and_surjective_fderiv_eq_setOf_fderiv_ne_zero_of_finrank_eq_one`:
+  the regular set of a map into a one-dimensional space equals `{x | fderiv 𝕜 f x ≠ 0}`.
 * `TauCeti.differentiableAt_and_of_differentiableAt_comb`: if two combinations `a F + b G` and
   `c F + d G` with `a d - b c ≠ 0` are differentiable at a point, so are `F` and `G`.
 * `Asymptotics.IsBigO.hasFDerivWithinAt_zero`, `Asymptotics.IsBigO.hasFDerivAt_zero`: a function
@@ -71,6 +73,17 @@ theorem surjective_fderiv_iff_ne_zero_of_finrank_eq_one (hF : Module.finrank �
   obtain ⟨y, hy⟩ := exists_ne (0 : F)
   obtain ⟨v, hv⟩ := hsurj y
   exact hy (by simpa [hzero] using hv.symm)
+
+/-- For a map into a one-dimensional space, the set of regular points where `f` is differentiable
+with surjective derivative equals `{x | fderiv 𝕜 f x ≠ 0}`. -/
+theorem setOf_differentiableAt_and_surjective_fderiv_eq_setOf_fderiv_ne_zero_of_finrank_eq_one
+    (hF : Module.finrank 𝕜 F = 1) (f : E → F) :
+    {x | DifferentiableAt 𝕜 f x ∧ Function.Surjective (fderiv 𝕜 f x)} =
+      {x | fderiv 𝕜 f x ≠ 0} := by
+  ext x
+  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq,
+    surjective_fderiv_iff_ne_zero_of_finrank_eq_one hF]
+  exact ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨differentiableAt_of_fderiv_ne_zero h, h⟩⟩
 
 end Topological
 

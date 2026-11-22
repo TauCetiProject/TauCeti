@@ -73,13 +73,12 @@ private theorem exists_inverse_bubbleRadialWeight {n : ℕ} (hn : 0 < n) :
       ge_of_tendsto hG_top <| eventually_of_mem (Ici_mem_atTop (s + 1)) fun t (ht : s + 1 ≤ t) ↦
         hG_mono.monotoneOn (mem_Ici.2 (by linarith)) (mem_Ici.2 (by linarith)) ht
   have hG_image : G '' Ioi 0 = Ioo 0 I₀ := by
-    refine Subset.antisymm ?_ fun y hy ↦ ?_
+    refine Subset.antisymm ?_ ?_
     · rintro _ ⟨s, hs : 0 < s, rfl⟩
       exact ⟨hG0 ▸ hG_mono (mem_Ici.2 le_rfl) (mem_Ici.2 hs.le) hs, hG_lt_top s hs.le⟩
-    · obtain ⟨M, hM⟩ := (hG_top.eventually (lt_mem_nhds hy.2)).exists_forall_of_atTop
-      obtain ⟨s, hs, hGs⟩ := intermediate_value_Icc (by positivity : 0 ≤ max M 1)
-        hG_cont.continuousOn ⟨hG0.symm ▸ hy.1.le, (hM (max M 1) (le_max_left M 1)).le⟩
-      exact ⟨s, lt_of_le_of_ne hs.1 fun h0 ↦ hy.1.ne (hG0.symm.trans (h0 ▸ hGs)), hGs⟩
+    · exact isPreconnected_Ioi.intermediate_value_Ioo
+        (le_principal_iff.2 self_mem_nhdsWithin) (le_principal_iff.2 (Ioi_mem_atTop 0))
+        hG_cont.continuousOn (hG0 ▸ (hG_cont.tendsto 0).mono_left nhdsWithin_le_nhds) hG_top
   let e : Ioi (0 : ℝ) ≃o Ioo 0 I₀ :=
     ((hG_mono.mono Ioi_subset_Ici_self).orderIso).trans (Set.orderIsoOfEq _ _ hG_image)
   let Ginv : ℝ → ℝ := fun y ↦ if h : y ∈ Ioo 0 I₀ then (e.symm ⟨y, h⟩ : ℝ) else 0

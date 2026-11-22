@@ -235,11 +235,11 @@ private theorem norm_lp_criticalExponent_sq (hn : 2 < finrank ℝ E)
     ‖w‖ ^ 2 =
       (∫ x, |w x| ^ criticalExponent (finrank ℝ E)) ^ (2 / criticalExponent (finrank ℝ E)) := by
   have hpₙ : 0 < criticalExponent (finrank ℝ E) := criticalExponent_pos hn
-  have hLp := Lp.norm_eq_integral_norm_rpow_inv
+  have hLp := Lp.integral_norm_rpow_eq_norm_rpow
     (ENNReal.ofReal_pos.mpr hpₙ).ne' ENNReal.ofReal_ne_top w
   simp only [ENNReal.toReal_ofReal hpₙ.le, Opens.coe_top, setIntegral_univ, Real.norm_eq_abs] at hLp
-  rw [hLp, ← Real.rpow_two,
-    ← Real.rpow_mul (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _), inv_mul_eq_div]
+  rw [hLp, ← Real.rpow_mul (Lp.norm_def w ▸ ENNReal.toReal_nonneg),
+    mul_div_cancel₀ _ hpₙ.ne', Real.rpow_two]
 
 /-- **The sharp Euclidean Sobolev inequality on `D^{1,2}_0(E)`**, in norm form. -/
 theorem sphereYamabeConstant_mul_norm_sobolevEmbeddingL_sq_le_conformalCoefficient_mul_norm_sq

@@ -85,14 +85,12 @@ private theorem ae_fiber_bounds_toReal_schwarzRearrangement
     ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv hfin,
     hh.ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_neg_deriv hfin]
     with t hcritt hregh hregv hperh hperv hdisth hdistv ht
-  have hreg_eq (w : E → ℝ) :
-      {x | DifferentiableAt ℝ w x ∧ Surjective (fderiv ℝ w x)} = {x | fderiv ℝ w x ≠ 0} := by
-    ext x
-    rw [mem_ofPred_eq, mem_ofPred_eq,
-      surjective_fderiv_iff_ne_zero_of_finrank_eq_one (finrank_self ℝ)]
-    exact ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨differentiableAt_of_fderiv_ne_zero h, h⟩⟩
-  rw [finrank_self, univ_inter, univ_inter, hreg_eq h] at hregh
-  rw [finrank_self, univ_inter, univ_inter, hreg_eq v] at hregv
+  rw [finrank_self, univ_inter, univ_inter,
+    setOf_differentiableAt_and_surjective_fderiv_eq_setOf_fderiv_ne_zero_of_finrank_eq_one
+      (finrank_self ℝ) h] at hregh
+  rw [finrank_self, univ_inter, univ_inter,
+    setOf_differentiableAt_and_surjective_fderiv_eq_setOf_fderiv_ne_zero_of_finrank_eq_one
+      (finrank_self ℝ) v] at hregv
   refine ⟨hcritt, ?_, hdistv ht ▸ hdisth ht, (hdistv ht) ▸ ENNReal.ofReal_lt_top⟩
   have hmeas_v : μHE[finrank ℝ E - 1] ({x | fderiv ℝ v x ≠ 0} ∩ v ⁻¹' {t}) =
       μHE[finrank ℝ E - 1] (v ⁻¹' {t}) := by
@@ -115,7 +113,6 @@ private theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonn
       ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) := by
   set f : E → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (h y)
   set v : E → ℝ := fun x ↦ (schwarzRearrangement volume f x).toReal
-  have hv_lip : LipschitzWith K v := lipschitzWith_toReal_schwarzRearrangement volume hh
   have hv_ne_top := schwarzRearrangement_ofReal_ne_top volume hh zero_le_one (hfin 1 zero_lt_one)
   have hΦ_cont : ContinuousOn Φ (Ici 0) := hΦ.continuousOn_Ici_of_monotoneOn hΦm
   have hco_h := lintegral_map_norm_fderiv_eq_setLIntegral_Ioi hh0
@@ -123,10 +120,6 @@ private theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonn
   rw [lintegral_map_norm_fderiv_eq_setLIntegral_Ioi (fun _ ↦ ENNReal.toReal_nonneg)
     (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) hΦ_cont v) hΦ0, hco_h]
   set R_v := {x : E | fderiv ℝ v x ≠ 0}; set R_h := {x : E | fderiv ℝ h x ≠ 0}
-  have hRv_m : MeasurableSet R_v :=
-    (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ v)
-  have hRh_m : MeasurableSet R_h :=
-    (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
   have hrad (x y : E) (hxy : ‖x‖ = ‖y‖) : v x = v y :=
     congrArg ENNReal.toReal (schwarzRearrangement_eq_of_norm_eq volume f hxy)
   have hanti (x y : E) (hxy : ‖x‖ ≤ ‖y‖) : v y ≤ v x :=
@@ -136,10 +129,12 @@ private theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonn
   filter_upwards [ae_fiber_bounds_toReal_schwarzRearrangement hh hfin] with t hfib ht
   obtain ⟨hcritt, hperim_le, hinv_le, hinv_fin⟩ := hfib ht
   set S_v := R_v ∩ v ⁻¹' {t}; set S_h := R_h ∩ h ⁻¹' {t}
-  have hSv_m : MeasurableSet S_v :=
-    hRv_m.inter (isClosed_singleton.preimage hv_lip.continuous).measurableSet
-  have hSh_m : MeasurableSet S_h :=
-    hRh_m.inter (isClosed_singleton.preimage hh.continuous).measurableSet
+  have hSv_m : MeasurableSet S_v := by
+    dsimp only [S_v, R_v]; rw [inter_comm]
+    exact TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero (measurableSet_singleton t)
+  have hSh_m : MeasurableSet S_h := by
+    dsimp only [S_h, R_h]; rw [inter_comm]
+    exact TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero (measurableSet_singleton t)
   have hSh_fin : μH S_h < ∞ :=
     calc μH S_h = ∫⁻ _ in S_h, 1 ∂μH := (setLIntegral_one _).symm
       _ ≤ ∫⁻ x in S_h, (K : ℝ≥0∞) * ‖fderiv ℝ h x‖ₑ⁻¹ ∂μH :=
