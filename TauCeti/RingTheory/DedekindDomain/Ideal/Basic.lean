@@ -537,6 +537,34 @@ theorem exists_eq_prod_pow (hI : I ≠ ⊥) :
   exact ⟨hfin.toFinset, fun 𝔭 ↦ (Associates.mk 𝔭.asIdeal).count (Associates.mk I).factors,
     by rw [← hprod]; exact (Ideal.finprod_heightOneSpectrum_factorization hI0).symm⟩
 
+/-- The `P`-adic multiplicity of a finite product of prime powers `∏ Q ∈ S, Q ^ e Q` at a
+prime `P ∈ S` is `e P`. -/
+theorem emultiplicity_finsetProd_pow {S : Finset (HeightOneSpectrum R)}
+    {e : HeightOneSpectrum R → ℕ} {P : HeightOneSpectrum R} (hPS : P ∈ S) :
+    emultiplicity P.asIdeal (∏ Q ∈ S, Q.asIdeal ^ e Q) = e P := by
+  classical
+  rw [Finset.emultiplicity_prod P.prime]
+  refine (Finset.sum_eq_single_of_mem P hPS fun Q _ hQP ↦ ?_).trans
+    (emultiplicity_pow_self_of_prime P.prime (e P))
+  rw [emultiplicity_pow P.prime,
+    emultiplicity_eq_zero_of_irreducible_ne P.prime.irreducible Q.prime.irreducible
+      (fun h ↦ hQP (HeightOneSpectrum.asIdeal_injective h.symm)),
+    mul_zero]
+
+/-- A prime-power factorization `∏ Q ∈ S, Q ^ e Q` is a square ideal only if every exponent `e P`
+for `P ∈ S` is even. -/
+theorem even_of_sq_eq_prod_pow {S : Finset (HeightOneSpectrum R)}
+    {e : HeightOneSpectrum R → ℕ} {B : Ideal R}
+    (hB : B ^ 2 = ∏ Q ∈ S, Q.asIdeal ^ e Q) {P : HeightOneSpectrum R} (hPS : P ∈ S) :
+    Even (e P) := by
+  have hem : (2 : ℕ∞) * emultiplicity P.asIdeal B = e P := by
+    rw [← Nat.cast_ofNat, ← emultiplicity_pow P.prime, hB, emultiplicity_finsetProd_pow hPS]
+  have hne : emultiplicity P.asIdeal B ≠ ⊤ := by
+    intro htop
+    simp [htop, ENat.mul_top] at hem
+  lift emultiplicity P.asIdeal B to ℕ using hne with m
+  exact ⟨m, by rw [← two_mul]; exact_mod_cast hem.symm⟩
+
 /-- **Splitting off one allowed prime.** An ideal all of whose prime factors lie in `insert 𝔭 S`
 is a power of `𝔭` times an ideal all of whose prime factors lie in `S`. -/
 theorem IsPrimeTo.exists_eq_pow_mul {𝔭 : HeightOneSpectrum R} (h : IsPrimeTo I (insert 𝔭 S)ᶜ) :

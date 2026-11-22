@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import Mathlib.NumberTheory.LSeries.Convolution
 
 /-!
 # Absolute convergence of ideal convolution
@@ -98,5 +100,61 @@ theorem idealAbscissaOfAbsConv_convolution_le (f g : IdealArithmeticFunction K) 
     summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K
       (by simpa using (le_max_right ..).trans_lt hx)
   simpa using idealAbscissaOfAbsConv_le K (summable_idealTerm_convolution hf hg)
+
+/-! ### Norm-regrouped convolution series -/
+
+/-- Ideal convolution preserves absolute convergence of the norm-regrouped Dirichlet series at
+every common point of absolute convergence of its factors. -/
+theorem LSeriesSummable_normCoeff_convolution {f g : IdealArithmeticFunction K} {s : ℂ}
+    (hf : LSeriesSummable (normCoeff K f) s) (hg : LSeriesSummable (normCoeff K g) s) :
+    LSeriesSummable (normCoeff K (f.convolution g)) s := by
+  rw [normCoeff_convolution]
+  exact ArithmeticFunction.LSeriesSummable_mul hf hg
+
+/-- The norm-regrouped Dirichlet series of a convolution is the product of the two
+norm-regrouped Dirichlet series wherever both converge absolutely. -/
+theorem LSeries_normCoeff_convolution {f g : IdealArithmeticFunction K} {s : ℂ}
+    (hf : LSeriesSummable (normCoeff K f) s) (hg : LSeriesSummable (normCoeff K g) s) :
+    LSeries (normCoeff K (f.convolution g)) s =
+      LSeries (normCoeff K f) s * LSeries (normCoeff K g) s := by
+  rw [normCoeff_convolution, ArithmeticFunction.LSeries_mul' hf hg]
+
+/-- The norm-regrouped abscissa of absolute convergence of a convolution is at most the maximum
+of the two original norm-regrouped abscissae. -/
+theorem abscissaOfAbsConv_normCoeff_convolution_le (f g : IdealArithmeticFunction K) :
+    LSeries.abscissaOfAbsConv (normCoeff K (f.convolution g)) ≤
+      max (LSeries.abscissaOfAbsConv (normCoeff K f))
+        (LSeries.abscissaOfAbsConv (normCoeff K g)) := by
+  refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable' fun y hy ↦ ?_
+  have hf : LSeriesSummable (normCoeff K f) y :=
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa using (le_max_left ..).trans_lt hy)
+  have hg : LSeriesSummable (normCoeff K g) y :=
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa using (le_max_right ..).trans_lt hy)
+  exact LSeriesSummable_normCoeff_convolution hf hg
+
+/-- **Product identity on `Re s > 1`.** Whenever the regrouped `L`-series of `f` converges
+absolutely at `s` with `1 < Re s`, the regrouped `L`-series of `1 * f` is `ζ_K(s) L(f, s)`. -/
+theorem LSeries_normCoeff_convolution_one_eq_dedekindZeta_mul {f : IdealArithmeticFunction K}
+    {s : ℂ} (hs : 1 < s.re) (hf : LSeriesSummable (normCoeff K f) s) :
+    LSeries (normCoeff K (IdealArithmeticFunction.convolution 1 f)) s =
+      NumberField.dedekindZeta K s * LSeries (normCoeff K f) s := by
+  rw [LSeries_normCoeff_convolution ((LSeriesSummable_normCoeff_one_iff K).mpr hs) hf,
+    dedekindZeta_eq_LSeries_normCoeff_one]
+
+/-- The Dirichlet series of `1 * f` converges absolutely on `Re s > 1` whenever `f` is uniformly
+bounded on nonzero ideals. -/
+theorem LSeriesSummable_normCoeff_convolution_one_of_bounded {f : IdealArithmeticFunction K} {C : ℝ}
+    (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesSummable (normCoeff K (IdealArithmeticFunction.convolution 1 f)) s :=
+  LSeriesSummable_normCoeff_convolution ((LSeriesSummable_normCoeff_one_iff K).mpr hs)
+    (LSeriesSummable_normCoeff K (summable_idealTerm_of_bounded_of_one_lt_re hf hs))
+
+/-- The abscissa of absolute convergence of `1 * f` is at most `1` whenever `f` is uniformly
+bounded on nonzero ideals. -/
+theorem abscissaOfAbsConv_normCoeff_convolution_one_le_one_of_bounded
+    {f : IdealArithmeticFunction K} {C : ℝ} (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) :
+    LSeries.abscissaOfAbsConv (normCoeff K (IdealArithmeticFunction.convolution 1 f)) ≤ 1 :=
+  LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun _ hy ↦
+    LSeriesSummable_normCoeff_convolution_one_of_bounded hf (by simpa using hy)
 
 end TauCeti

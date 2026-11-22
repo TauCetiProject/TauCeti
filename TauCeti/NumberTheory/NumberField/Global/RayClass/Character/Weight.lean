@@ -226,4 +226,29 @@ theorem toUnitaryIdealWeight_injective :
   apply toMultiplicativeIdealWeight_injective
   simpa only [← val_toUnitaryIdealWeight] using congrArg Subtype.val h
 
+/-- A ray class character has ideal weight trivial on its good ideals if and only if `χ = 1`. -/
+theorem isTrivialOnGood_iff_eq_one (χ : RayClassCharacter 𝔪) :
+    χ.toMultiplicativeIdealWeight.IsTrivialOnGood ↔ χ = 1 := by
+  constructor
+  · intro h
+    apply toMultiplicativeIdealWeight_injective
+    ext I
+    by_cases hI : Ideal.IsPrimeTo I 𝔪.support
+    · have hgood : χ.toMultiplicativeIdealWeight.IsGood I := by
+        rwa [TauCeti.MultiplicativeIdealWeight.IsGood, badPrimes_toMultiplicativeIdealWeight]
+      rw [h.apply_eq_one hgood, toMultiplicativeIdealWeight_one,
+        TauCeti.MultiplicativeIdealWeight.ofBadPrimes_apply]
+      simp [hI]
+    · rw [toMultiplicativeIdealWeight_apply_of_not_isPrimeTo χ hI,
+        toMultiplicativeIdealWeight_apply_of_not_isPrimeTo 1 hI]
+  · rintro rfl
+    rw [toMultiplicativeIdealWeight_one]
+    exact TauCeti.MultiplicativeIdealWeight.isTrivialOnGood_ofBadPrimes 𝔪.support.finite_toSet
+
+/-- A ray class character has squared ideal weight trivial on its good ideals if and only if
+`χ ^ 2 = 1` in the character group. -/
+theorem isTrivialOnGood_sq_iff_sq_eq_one (χ : RayClassCharacter 𝔪) :
+    (χ.toMultiplicativeIdealWeight ^ 2).IsTrivialOnGood ↔ χ ^ 2 = 1 := by
+  rw [sq, sq, ← toMultiplicativeIdealWeight_mul, isTrivialOnGood_iff_eq_one]
+
 end TauCeti.GlobalNumberFields.RayClassCharacter

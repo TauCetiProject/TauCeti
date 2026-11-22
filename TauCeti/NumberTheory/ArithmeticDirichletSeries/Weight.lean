@@ -624,6 +624,62 @@ theorem IsNormTwistOnGood.pow {χ : MultiplicativeIdealWeight K} {u : ℝ}
     rw [pow_succ, Nat.cast_succ, add_one_mul]
     exact ih.mul h
 
+/-- A weight has pointwise square trivial on its good ideals exactly when it takes values in
+`{1, -1}` on its good ideals. -/
+theorem isTrivialOnGood_sq_iff {χ : MultiplicativeIdealWeight K} :
+    (χ ^ 2).IsTrivialOnGood ↔ ∀ I : Ideal (𝓞 K), χ.IsGood I → χ I = 1 ∨ χ I = -1 := by
+  constructor
+  · intro h I hI
+    have hI2 : (χ ^ 2).IsGood I := by simpa [IsGood, badPrimes_pow _ two_ne_zero] using hI
+    have h1 : (χ ^ 2) I = 1 := h.apply_eq_one hI2
+    rwa [pow_apply _ two_ne_zero, sq_eq_one_iff] at h1
+  · intro h
+    have heq : χ ^ 2 = ofBadPrimes χ.badPrimes χ.finite_badPrimes := by
+      ext I
+      rw [pow_apply _ two_ne_zero, ofBadPrimes_apply]
+      by_cases hI : χ.IsGood I
+      · have hI' : I.IsPrimeTo χ.badPrimes := hI
+        rw [ite_eq_left hI', sq_eq_one_iff]
+        exact h I hI
+      · have hI' : ¬ I.IsPrimeTo χ.badPrimes := hI
+        rw [(χ.apply_eq_zero_iff_not_isGood I).mpr hI, zero_pow two_ne_zero, ite_eq_right hI']
+    rw [heq]
+    exact isTrivialOnGood_ofBadPrimes χ.finite_badPrimes
+
+/-- A weight has pointwise square trivial on its good ideals exactly when every good height-one
+prime takes value `1` or `-1`. -/
+theorem isTrivialOnGood_sq_iff_prime {χ : MultiplicativeIdealWeight K} :
+    (χ ^ 2).IsTrivialOnGood ↔
+      ∀ P : HeightOneSpectrum (𝓞 K), P ∉ χ.badPrimes → χ P.asIdeal = 1 ∨ χ P.asIdeal = -1 := by
+  rw [isTrivialOnGood_sq_iff]
+  refine ⟨fun h P hP ↦ h P.asIdeal (Ideal.isPrimeTo_asIdeal_iff.mpr hP), fun h I hI ↦ ?_⟩
+  refine hI.induction_on (Or.inl χ.apply_top) fun P J hP _ ih ↦ ?_
+  rw [_root_.map_mul]
+  rcases h P hP with hP1 | hP1 <;> rcases ih with hJ1 | hJ1 <;> simp [hP1, hJ1]
+
+/-- A weight whose pointwise square is trivial on its good ideals takes every ideal to `0`, `1`,
+or `-1`. -/
+theorem apply_eq_zero_or_one_or_neg_one_of_isTrivialOnGood_sq {χ : MultiplicativeIdealWeight K}
+    (hχ : (χ ^ 2).IsTrivialOnGood) (I : Ideal (𝓞 K)) :
+    χ I = 0 ∨ χ I = 1 ∨ χ I = -1 := by
+  by_cases hI : χ.IsGood I
+  · exact Or.inr (isTrivialOnGood_sq_iff.mp hχ I hI)
+  · exact Or.inl ((χ.apply_eq_zero_iff_not_isGood I).mpr hI)
+
+/-- **Untwisting a norm-twisted-square weight.** If `χ ^ 2` agrees with `I ↦ N(I) ^ (u * I)` on
+its good ideals, then twisting `χ` by `N(I) ^ (-(u / 2) * I)` produces a weight whose square is
+trivial on its good ideals. -/
+theorem isTrivialOnGood_sq_normTwist_of_isNormTwistOnGood_sq {χ : MultiplicativeIdealWeight K}
+    {u : ℝ} (hχ : (χ ^ 2).IsNormTwistOnGood u) :
+    (normTwist (((u / 2 : ℝ) : ℂ) * Complex.I) χ ^ 2).IsTrivialOnGood := by
+  rw [normTwist_pow, ← isNormTwistOnGood_zero_iff]
+  have hcast : ((2 : ℕ) : ℂ) * (((u / 2 : ℝ) : ℂ) * Complex.I) =
+      -(((-u : ℝ) : ℂ) * Complex.I) := by
+    push_cast
+    ring
+  rw [hcast]
+  simpa using hχ.normTwist (-u)
+
 end Operations
 
 /-!
@@ -873,6 +929,47 @@ theorem MultiplicativeIdealWeight.IsTrivialOnGood.norm_apply_le_one
     {χ : MultiplicativeIdealWeight K} (h : χ.IsTrivialOnGood) {I : Ideal (𝓞 K)} : ‖χ I‖ ≤ 1 :=
   UnitaryIdealWeight.norm_le_one
     ⟨χ, fun _ h𝔭 ↦ by rw [h.apply_eq_one (Ideal.isPrimeTo_asIdeal_iff.mpr h𝔭), norm_one]⟩ I
+
+namespace MultiplicativeIdealWeight
+
+/-- A weight whose square is a purely imaginary norm twist on its good ideals has modulus `1` on
+every good ideal. -/
+theorem norm_apply_eq_one_of_isNormTwistOnGood_sq {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (hχ : (χ ^ 2).IsNormTwistOnGood u) {I : Ideal (𝓞 K)} (hI : χ.IsGood I) : ‖χ I‖ = 1 := by
+  have hI' : I.IsPrimeTo χ.badPrimes := hI
+  have hN : 0 < Ideal.absNorm I :=
+    Nat.pos_of_ne_zero (Ideal.absNorm_eq_zero_iff.not.mpr hI.ne_bot)
+  have hval : (χ ^ 2) I = (Ideal.absNorm I : ℂ) ^ ((u : ℂ) * Complex.I) := by
+    have heq := congrArg (fun w : MultiplicativeIdealWeight K ↦ w I) (hχ.eq_normTwist rfl)
+    simpa [normTwist_apply, ofBadPrimes_apply, hI', badPrimes_pow _ two_ne_zero] using heq
+  have hsq : ‖χ I‖ ^ 2 = 1 := by
+    rw [← norm_pow, ← pow_apply _ two_ne_zero, hval, Complex.norm_natCast_cpow_of_pos hN]
+    simp
+  nlinarith [norm_nonneg (χ I)]
+
+/-- Package a multiplicative ideal weight whose square is a purely imaginary norm twist on its good
+ideals as a `UnitaryIdealWeight`. -/
+def unitaryOfIsNormTwistOnGoodSq {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (hχ : (χ ^ 2).IsNormTwistOnGood u) : UnitaryIdealWeight K :=
+  ⟨χ, fun _ hP ↦ norm_apply_eq_one_of_isNormTwistOnGood_sq hχ (Ideal.isPrimeTo_asIdeal_iff.mpr hP)⟩
+
+@[simp]
+theorem val_unitaryOfIsNormTwistOnGoodSq {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (hχ : (χ ^ 2).IsNormTwistOnGood u) : (unitaryOfIsNormTwistOnGoodSq hχ).1 = χ := (rfl)
+
+/-- A weight whose square is a purely imaginary norm twist on its good ideals is bounded in modulus
+by `1` on every ideal. -/
+theorem norm_apply_le_one_of_isNormTwistOnGood_sq {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (hχ : (χ ^ 2).IsNormTwistOnGood u) (I : Ideal (𝓞 K)) : ‖χ I‖ ≤ 1 :=
+  (unitaryOfIsNormTwistOnGoodSq hχ).norm_le_one I
+
+/-- A weight whose square is trivial on its good ideals is bounded in modulus by `1` on every
+ideal. -/
+theorem norm_apply_le_one_of_isTrivialOnGood_sq {χ : MultiplicativeIdealWeight K}
+    (hχ : (χ ^ 2).IsTrivialOnGood) (I : Ideal (𝓞 K)) : ‖χ I‖ ≤ 1 :=
+  norm_apply_le_one_of_isNormTwistOnGood_sq ((isNormTwistOnGood_zero_iff _).mpr hχ) I
+
+end MultiplicativeIdealWeight
 
 namespace UnitaryIdealWeight
 

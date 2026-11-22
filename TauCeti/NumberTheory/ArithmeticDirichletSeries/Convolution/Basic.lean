@@ -9,7 +9,9 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Basic
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Finite
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.RingTheory.Ideal.Operations
+import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 
 /-!
 # Ideal convolution of ideal arithmetic functions
@@ -385,6 +387,48 @@ theorem convolution_one_one_ne_mul :
     rw [← convolution_one_one_apply, hcontra]
     simp
   exact absurd (by exact_mod_cast hcard) (Ideal.one_lt_card_divisorsAntidiagonal hAne).ne'
+
+/-- At a prime power, ideal convolution is the Cauchy product of the prime-power values. -/
+theorem convolution_primeIdealPow (f g : IdealArithmeticFunction K)
+    (P : _root_.IsDedekindDomain.HeightOneSpectrum (𝓞 K)) (n : ℕ) :
+    convolution f g (P.primeIdealPow n) =
+      ∑ e ∈ Finset.antidiagonal n, f (P.primeIdealPow e.1) * g (P.primeIdealPow e.2) := by
+  rw [convolution_apply]
+  symm
+  refine Finset.sum_nbij (fun e : ℕ × ℕ ↦ (P.primeIdealPow e.1, P.primeIdealPow e.2))
+    ?_ ?_ ?_ (fun _ _ ↦ rfl)
+  · intro e he
+    rw [Finset.mem_antidiagonal] at he
+    apply TauCeti.Ideal.mem_divisorsAntidiagonal.mpr
+    apply Subtype.ext
+    simp only [Submonoid.coe_mul, _root_.IsDedekindDomain.HeightOneSpectrum.coe_primeIdealPow,
+      ← pow_add, he]
+  · intro e _ e' _ he
+    exact Prod.ext (P.primeIdealPow_injective (congrArg Prod.fst he))
+      (P.primeIdealPow_injective (congrArg Prod.snd he))
+  · intro q hq
+    have hprime : Prime P.asIdeal := _root_.Ideal.prime_of_isPrime P.ne_bot P.isPrime
+    obtain ⟨i, _, hi⟩ := (dvd_prime_pow hprime n).mp
+      (by simpa only [_root_.IsDedekindDomain.HeightOneSpectrum.coe_primeIdealPow] using
+        TauCeti.Ideal.fst_dvd_of_mem_divisorsAntidiagonal hq)
+    obtain ⟨j, _, hj⟩ := (dvd_prime_pow hprime n).mp
+      (by simpa only [_root_.IsDedekindDomain.HeightOneSpectrum.coe_primeIdealPow] using
+        TauCeti.Ideal.snd_dvd_of_mem_divisorsAntidiagonal hq)
+    have hi' : q.1 = P.primeIdealPow i := by
+      apply Subtype.ext
+      simpa only [_root_.IsDedekindDomain.HeightOneSpectrum.coe_primeIdealPow] using
+        associated_iff_eq.mp hi
+    have hj' : q.2 = P.primeIdealPow j := by
+      apply Subtype.ext
+      simpa only [_root_.IsDedekindDomain.HeightOneSpectrum.coe_primeIdealPow] using
+        associated_iff_eq.mp hj
+    have hij : i + j = n := by
+      apply P.primeIdealPow_injective
+      apply Subtype.ext
+      have h := congrArg Subtype.val (TauCeti.Ideal.mem_divisorsAntidiagonal.mp hq)
+      simpa only [hi', hj', Submonoid.coe_mul,
+        _root_.IsDedekindDomain.HeightOneSpectrum.coe_primeIdealPow, ← pow_add] using h
+    exact ⟨(i, j), Finset.mem_antidiagonal.mpr hij, Prod.ext hi'.symm hj'.symm⟩
 
 end IdealArithmeticFunction
 

@@ -571,4 +571,24 @@ theorem analyticOnNhd_dedekindZeta :
   exact (LSeries_analyticOnNhd _).mono fun s (hs : 1 < s.re) ↦ by
     simpa [abscissaOfAbsConv_dedekindZetaCoeff] using EReal.coe_lt_coe_iff.mpr hs
 
+/-- Norm-regrouped `L`-series summability on `Re s > 1` for a weight whose square is a purely
+imaginary norm twist on its good ideals. -/
+theorem MultiplicativeIdealWeight.LSeriesSummable_normCoeff_of_isNormTwistOnGood_sq
+    {K : Type*} [Field K] [NumberField K] {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (hχ : (χ ^ 2).IsNormTwistOnGood u) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesSummable (normCoeff K χ.toIdealArithmeticFunction) s :=
+  LSeriesSummable_normCoeff K <| by
+    simpa [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val] using
+      summable_idealTerm_of_unitary_of_one_lt_re
+        (MultiplicativeIdealWeight.unitaryOfIsNormTwistOnGoodSq hχ) hs
+
+/-- Norm-regrouped `L`-series summability on `Re s > 1` for a weight whose square is trivial on its
+good ideals. -/
+theorem MultiplicativeIdealWeight.LSeriesSummable_normCoeff_of_isTrivialOnGood_sq
+    {K : Type*} [Field K] [NumberField K] {χ : MultiplicativeIdealWeight K}
+    (hχ : (χ ^ 2).IsTrivialOnGood) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesSummable (normCoeff K χ.toIdealArithmeticFunction) s :=
+  MultiplicativeIdealWeight.LSeriesSummable_normCoeff_of_isNormTwistOnGood_sq
+    ((MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr hχ) hs
+
 end TauCeti
