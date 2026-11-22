@@ -231,8 +231,8 @@ theorem exists_sublevelHomotopyEquiv (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a
       ∀ x : {x | f x ≤ a}, (e x : M) = x := by
   obtain ⟨r, hr, ⟨F⟩⟩ := exists_sublevelDeformation hf hab hcompact hreg
   rw [sublevelInclusion_eq_inclusion] at hr F
-  exact ⟨.ofRetraction _ r hr F.toHomotopy,
-    ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply _ _ _ _⟩
+  exact ⟨.ofDeformationRetraction (.inclusion _) r hr (ContinuousMap.HomotopicRel.homotopic ⟨F⟩),
+    fun _ ↦ by simp⟩
 
 /-- **Retractions across a band without critical points are unique up to homotopy.** Under the
 hypotheses of `TauCeti.exists_sublevelDeformation`, any two retractions of `{f ≤ b}` onto
