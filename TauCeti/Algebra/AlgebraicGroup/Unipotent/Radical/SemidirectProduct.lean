@@ -23,8 +23,9 @@ R_u(G) ⋊ T ≅ G.
 This is the semidirect-product half of the structure theorem for smooth connected solvable
 groups over an algebraically closed field, `G = G_u ⋊ T` for a maximal torus `T` (Milne,
 Theorem 16.33(d)): it reduces that decomposition to the statement that `T` maps isomorphically
-onto the torus `G ⧸ G_u`
-(`TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical`).
+onto the quotient `G ⧸ G_u`, which is a torus
+(`TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical`). That `T` maps
+isomorphically onto it is not yet proved; here it is a hypothesis.
 
 The proof applies the split-extension criterion
 `TauCeti.CommHopfAlgCat.isIso_productMapOfNormal_of_isIso` to the quotient map, whose kernel is

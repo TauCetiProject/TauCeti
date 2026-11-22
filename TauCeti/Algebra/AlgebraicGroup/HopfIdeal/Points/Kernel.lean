@@ -26,6 +26,9 @@ functors.
   property.
 * `TauCeti.CommHopfAlgCat.quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor`: the
   same property as an equality of subgroups of points.
+* `TauCeti.CommHopfAlgCat.mapDomain_quotientPointsHom_kernelHopfIdeal`,
+  `TauCeti.CommHopfAlgCat.mapDomain_quotientPointsHom_eq_one`: a morphism kills the points of the
+  closed subgroup cut out by its kernel Hopf ideal.
 -/
 
 public section
@@ -87,6 +90,24 @@ theorem quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor (f : H �
     BialgHom.mapDomain (A := A) f.hom g = 1
   rw [BialgHom.mapDomain_apply]
   exact (mapPointsFunctor_app_eq_one_iff f A g).symm
+
+/-- A morphism `f` kills the points of the closed subgroup cut out by its kernel Hopf ideal. -/
+theorem mapDomain_quotientPointsHom_kernelHopfIdeal (f : H ⟶ K) (A : CommAlgCat.{w} R)
+    (u : HopfAlgebra.points (R := R)
+      (H := _root_.CommHopfAlgCat.quotient K (kernelHopfIdeal f)) A) :
+    BialgHom.mapDomain (A := A) f.hom (quotientPointsHom K (kernelHopfIdeal f) A u) = 1 := by
+  rw [BialgHom.mapDomain_apply]
+  exact (mapPointsFunctor_app_eq_one_iff f A _).mpr
+    (quotientPointsHom_mem_quotientPointsSubgroup K _ A u)
+
+/-- A morphism `f` with kernel Hopf ideal `I` kills the points of the closed subgroup cut out by
+`I`. -/
+theorem mapDomain_quotientPointsHom_eq_one {I : HopfIdeal R K} (f : H ⟶ K)
+    (hf : kernelHopfIdeal f = I) (A : CommAlgCat.{w} R)
+    (u : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient K I) A) :
+    BialgHom.mapDomain (A := A) f.hom (quotientPointsHom K I A u) = 1 := by
+  subst hf
+  exact mapDomain_quotientPointsHom_kernelHopfIdeal f A u
 
 end CommHopfAlgCat
 
