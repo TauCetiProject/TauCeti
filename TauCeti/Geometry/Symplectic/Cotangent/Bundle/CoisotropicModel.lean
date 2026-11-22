@@ -7,9 +7,14 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Isotropic
 public import TauCeti.Geometry.Symplectic.Lagrangian.CoisotropicModel
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Symplectic.Manifold.Opens
+import TauCeti.Geometry.Manifold.Distribution.Complement
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
+import TauCeti.Geometry.Manifold.TwoForm.Kernel
 import TauCeti.Topology.VectorBundle.Hom
 
 /-!
@@ -56,11 +61,19 @@ coisotropic embedding theorem.
   For a closed `σ` and the canonical bundle structure on the annihilators of a smooth
   distribution, `Ω` is a symplectic form there
   (`TauCeti.CotangentBundle.exists_opens_isSymplectic_mpullback_coisotropicModelForm`).
+* **Gotay's coisotropic embedding theorem.** If `σ` is closed and its kernels have constant
+  dimension, a smooth complement `D` of its kernel distribution exists
+  (`TauCeti.IsContMDiffDistribution.exists_isCompl`), so on a Hausdorff σ-compact boundaryless
+  manifold the model applies with no choice supplied: the zero section is a coisotropic embedding
+  of `Q` into an open neighbourhood on which `Ω` is symplectic, pulling `Ω` back to `σ`
+  (`TauCeti.CotangentBundle.exists_isCoisotropicEmbedding_coisotropicModelForm`). Every
+  presymplectic manifold is therefore an embedded coisotropic submanifold of a symplectic
+  manifold, with the induced form.
 
-Apart from the last statement, the results hold for any smooth vector bundle structure on the
+Apart from the last two statements, the results hold for any smooth vector bundle structure on the
 annihilators, with model fibre `F`, for which the inclusion into `T*Q` is smooth. This keeps the
 local bundle instances of `TauCeti.IsContMDiffDistribution.annihilatorFiberBundle` out of the
-statements; the last statement instantiates them.
+statements; the last two statements instantiate them.
 
 ## References
 
@@ -319,5 +332,80 @@ theorem exists_opens_isSymplectic_mpullback_coisotropicModelForm [FiniteDimensio
   obtain ⟨U, hζU, hU⟩ := exists_opens_isNondegenerate_mpullback_coisotropicModelForm σ
     (hC.contMDiff_annihilatorInclusion hk) hσC
   exact ⟨U, hζU, ((isClosed_coisotropicModelForm_iff σ _).mpr hσ).mpullback _ _, hU⟩
+
+section Existence
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space Q] [SigmaCompactSpace Q]
+
+/-- **Gotay's coisotropic embedding theorem.** Let `σ` be a closed two-form on a Hausdorff
+σ-compact boundaryless manifold `Q`, whose kernels all have dimension `r`, and let
+`k + r = dim Q`. Then there is a smooth distribution `D` of rank `k` complementary to the kernels of
+`σ`, and an open neighbourhood `U` of the zero section of its annihilator bundle `D⁰ ≅ (ker σ)*`,
+of rank `r`, on which the coisotropic model form is symplectic. The zero section, as a map
+`z : Q → U`, is a coisotropic embedding and pulls the model form back to `σ`. So every
+presymplectic manifold is an embedded coisotropic submanifold of a symplectic manifold, with the
+presymplectic form induced from the ambient one. -/
+theorem exists_isCoisotropicEmbedding_coisotropicModelForm {k r : ℕ} (hσ : σ.IsClosed)
+    (hr : ∀ q, finrank ℝ (LinearMap.ker (σ.bilinFormAt q)) = r) (hk : k + r = finrank ℝ E) :
+    ∃ (D : Π x : Q, Submodule ℝ (TangentSpace I x)) (hD : IsContMDiffDistribution I ∞ k D),
+      (∀ q, IsCompl (D q) (LinearMap.ker (σ.bilinFormAt q))) ∧
+      -- `∞ + 1` is definitionally `∞` in `WithTop ℕ∞`, so the smooth structure is reused as is.
+      haveI : IsManifold I (∞ + 1) Q := ‹IsManifold I ∞ Q›
+      letI := hD.annihilatorFiberBundle hk
+      letI := hD.annihilatorVectorBundle hk
+      letI := hD.annihilatorContMDiffVectorBundle hk
+      ∃ (U : TopologicalSpace.Opens (TotalSpace (Fin r → ℝ) fun x ↦ annihilatorSpace I D x))
+        (hU : SmoothTwoForm.IsSymplectic (SmoothForm.mpullback (Subtype.val : U → _)
+          contMDiff_subtypeVal (coisotropicModelForm σ (hD.contMDiff_annihilatorInclusion hk))))
+        (z : Q → U) (hz : ContMDiff I (I.prod 𝓘(ℝ, Fin r → ℝ)) ∞ z),
+        (∀ q, (z q : TotalSpace (Fin r → ℝ) fun x ↦ annihilatorSpace I D x) =
+          zeroSection (Fin r → ℝ) (fun x ↦ annihilatorSpace I D x) q) ∧
+        hU.isNondegenerate.IsCoisotropicEmbedding I z ∧
+        SmoothForm.mpullback z hz (SmoothForm.mpullback (Subtype.val : U → _)
+          contMDiff_subtypeVal (coisotropicModelForm σ (hD.contMDiff_annihilatorInclusion hk))) =
+          σ := by
+  have : IsManifold I (∞ + 1) Q := ‹IsManifold I ∞ Q›
+  -- A smooth complement `D` of the kernel distribution of `σ`.
+  obtain ⟨D, hD, hDK⟩ :=
+    (SmoothForm.isContMDiffDistribution_ker_bilinFormAt (n := ∞) σ hr).exists_isCompl
+  obtain rfl : finrank ℝ E - r = k := by omega
+  refine ⟨D, hD, fun q ↦ (hDK q).symm, ?_⟩
+  let := hD.annihilatorFiberBundle hk
+  let := hD.annihilatorVectorBundle hk
+  let := hD.annihilatorContMDiffVectorBundle hk
+  set hι := hD.contMDiff_annihilatorInclusion hk
+  obtain ⟨U, hζU, hU⟩ :=
+    exists_opens_isSymplectic_mpullback_coisotropicModelForm σ hσ hD hk fun q ↦ (hDK q).symm
+  -- The zero section is a smooth embedding, with the projection as a smooth left inverse.
+  let ζ := zeroSection (Fin r → ℝ) (fun x ↦ annihilatorSpace I D x)
+  have hζ : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, Fin r → ℝ)) ∞ ζ :=
+    (contMDiff_zeroSection ℝ _).isSmoothEmbedding_of_leftInverse (by simp)
+      ((Bundle.contMDiff_proj (n := ∞) _).of_le (by simp)) fun q ↦ by simp
+  let z : Q → U := fun q ↦ ⟨ζ q, hζU q⟩
+  have hz : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, Fin r → ℝ)) ∞ z :=
+    TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 hζ
+  refine ⟨U, hU, z, hz.contMDiff, fun q ↦ rfl,
+    (SmoothTwoForm.IsNondegenerate.isCoisotropicEmbedding_iff_of_isSmoothEmbedding hz).2 <|
+      (hU.isNondegenerate.isCoisotropicMap_iff (J := I) (f := z)).2 fun q ↦
+        SymplecticForm.isCoisotropic_iff.2 fun w hw ↦ ?_, ?_⟩
+  · -- A vector orthogonal to the tangent space of the zero section is tangent to it along the
+    -- kernel of `σ`, by the coisotropy of the model.
+    have hw' : ∀ v, SmoothBundleForm.eval₂ (coisotropicModelForm σ hι) (ζ q)
+        (mfderiv I (I.prod 𝓘(ℝ, Fin r → ℝ)) ζ q v) w = 0 := fun v ↦ by
+      have h := (SymplecticForm.mem_orthogonal_iff.1 hw) _ ⟨v, rfl⟩
+      rw [SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply, SmoothForm.eval₂_mpullback,
+        Manifold.mfderiv_subtype_val_apply, Manifold.mfderiv_subtype_val_apply,
+        ContinuousLinearMap.coe_coe, ← Manifold.mfderiv_subtype_val_comp_apply (f := z)] at h
+      -- `Subtype.val ∘ z` is `ζ` by definition of `z`.
+      exact h
+    obtain ⟨v, -, rfl⟩ :=
+      (forall_eval₂_coisotropicModelForm_mfderiv_zeroSection_eq_zero_iff σ hι q
+        (hDK q).symm w).1 hw'
+    -- As above, `Subtype.val ∘ z` is `ζ` by definition of `z`.
+    exact ⟨v, by rw [ContinuousLinearMap.coe_coe, ← Manifold.mfderiv_subtype_val_comp_apply]; rfl⟩
+  · rw [SmoothForm.mpullback_mpullback]
+    exact mpullback_zeroSection_coisotropicModelForm σ hι
+
+end Existence
 
 end TauCeti.CotangentBundle
