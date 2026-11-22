@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
-public import TauCeti.RingTheory.Huber.Restricted.Comparison
+public import TauCeti.RingTheory.Huber.Restricted.Comparison.Eval
 
 /-!
 # Normed evaluation on the closed polydisc
@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.Huber.Restricted.Comparison
 This file compares Wedhorn's evaluation homomorphism `TauCeti.ValuationSpectrum.evalAtHom` on the
 unit Tate algebra `A⟨T₁, …, Tₖ⟩` with the normed restricted evaluation
 `MvPowerSeries.restrictedEval₂` by specializing the Huber evaluation comparison in
-`TauCeti.RingTheory.Huber.Restricted.Comparison`, and transfers the Gauss-norm bound,
+`TauCeti.RingTheory.Huber.Restricted.Comparison.Eval`, and transfers the Gauss-norm bound,
 ultrametric Lipschitz estimate, and continuity in the evaluation argument to `evalAtHom`.
 
 ## Main results

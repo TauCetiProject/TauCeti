@@ -7,10 +7,10 @@ module
 
 public import TauCeti.RingTheory.AdicRing.Basic
 public import TauCeti.RingTheory.Huber.Restricted.Adic
+public import TauCeti.RingTheory.Huber.Restricted.Comparison.Eval
 public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 public import TauCeti.RingTheory.Huber.Restricted.Reduction
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Reduction
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
 
@@ -21,8 +21,9 @@ The unit-radius Gauss comparison identifies the Huber and normed restricted-seri
 
 1. **Cross-carrier comparisons (`TauCeti.Huber`)**, before and after completion (completeness of the
    source ring is needed only on the completed Huber side): continuous and bounded coefficient maps,
-   norm-bounded and power-bounded evaluations, open-ideal reductions, and `(I·R[X])`-adic
-   inverse-limit presentations.
+   norm-bounded evaluations (in `TauCeti.RingTheory.Huber.Restricted.Comparison.Eval`) and
+   power-bounded evaluations, open-ideal reductions, and `(I·R[X])`-adic inverse-limit
+   presentations.
 2. **Gauss-normed carrier (`TauCeti.MvPowerSeries`)**: over an `I`-adic normed ring (`I.FG`),
    `R⟨X₁, …, Xₖ⟩` has the `(I·R⟨X⟩)`-adic topology with quotients `(R ⧸ Iᵐ)[X]` (`m : ℕ`); when `R`
    is complete, `R⟨X⟩ ≃ₐ[R] AdicCompletion (I.map C) R[X]` (homeomorphic) and `R⟨X⟩` is noetherian
@@ -37,7 +38,6 @@ The unit-radius Gauss comparison identifies the Huber and normed restricted-seri
 * `restrictedMvPowerSeriesGaussEquiv_weightedMap_of_continuous`,
   `restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_of_continuous`,
   `weightedEvalHom_eq_restrictedLift`,
-  `norm_weightedEvalHom_sub_le`,
   `restrictedReduction_eq_isRestrictedSubringReduction`,
   `isAdic_map_algebraMap_isRestricted_subring`, and
   `isNoetherianRing_isRestricted_subring_of_isAdic`.
@@ -124,105 +124,6 @@ theorem norm_restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_l
   exact norm_restrictedMap_le φ hφ _
 
 end Coefficients
-
-section Evaluation
-
-variable [CompleteSpace S] {a : Fin k → S}
-  (hφc : ContinuousAt φ 0) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
-  (ha : ∀ i, ‖a i‖ ≤ 1)
-  (hb : IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set R)) a)
-
-/-- Huber evaluation and bounded normed evaluation agree under the Gauss comparison. The
-power-boundedness witness may be any witness, not just the one supplied by the norm bounds. -/
-theorem weightedEvalHom_eq_restrictedEval₂OfBound
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-      isWeightFamily_one_weight) :
-    weightedEvalHom isWeightFamily_one_weight hφc hb f =
-      φ.restrictedEval₂OfBound a hφ ha (restrictedMvPowerSeriesGaussEquiv f) := by
-  rw [coe_weightedEvalHom, RingHom.restrictedEval₂OfBound_apply,
-    coe_restrictedMvPowerSeriesGaussEquiv]
-
-include hφ ha in
-/-- Huber evaluation obeys the coefficient-map bound, measured in the Gauss norm. -/
-theorem norm_weightedEvalHom_le
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-      isWeightFamily_one_weight) :
-    ‖weightedEvalHom isWeightFamily_one_weight hφc hb f‖ ≤
-      C * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
-  rw [weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha hb]
-  exact φ.norm_restrictedEval₂OfBound_le a hφ ha _
-
-variable [CompleteSpace R]
-
-/-- Evaluation on the completed Huber algebra is normed evaluation through the completed Gauss
-comparison. This identifies the extensions on every element, not just on polynomials. -/
-theorem weightedEvalHomCompletion_eq_restrictedEval₂OfBound
-    (f : restrictedMvPowerSeriesCompletion k R) :
-    weightedEvalHomCompletion isWeightFamily_one_weight hφc hb f =
-      φ.restrictedEval₂OfBound a hφ ha (restrictedMvPowerSeriesCompletionGaussEquiv f) := by
-  refine UniformSpace.Completion.induction_on f (isClosed_eq
-    (continuous_weightedEvalHomCompletion _ _ _)
-    ((φ.continuous_restrictedEval₂OfBound a hφ ha).comp
-      continuous_restrictedMvPowerSeriesCompletionGaussEquiv)) ?_
-  intro g
-  rw [weightedEvalHomCompletion_coe, restrictedMvPowerSeriesCompletionGaussEquiv_coe,
-    weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha hb]
-
-include hφ ha in
-/-- Completed Huber evaluation has the coefficient homomorphism's bound in the Gauss norm
-transported by the completed comparison. -/
-theorem norm_weightedEvalHomCompletion_le (f : restrictedMvPowerSeriesCompletion k R) :
-    ‖weightedEvalHomCompletion isWeightFamily_one_weight hφc hb f‖ ≤
-      C * ‖restrictedMvPowerSeriesCompletionGaussEquiv f‖ := by
-  rw [weightedEvalHomCompletion_eq_restrictedEval₂OfBound hφc hφ ha hb]
-  exact φ.norm_restrictedEval₂OfBound_le a hφ ha _
-
-end Evaluation
-
-section EvaluationPerturbation
-
-variable [CompleteSpace S]
-
-/-- **Ultrametric perturbation bound for Huber evaluation.** If `a` and `b` satisfy
-`‖a i‖ ≤ 1`, `‖b i‖ ≤ 1`, and `‖a i - b i‖ ≤ δ` for every `i`, then
-`‖f(a) - f(b)‖ ≤ δ * C * ‖f‖`. -/
-theorem norm_weightedEvalHom_sub_le
-    (hφc : ContinuousAt φ 0) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
-    {a b : Fin k → S} (ha : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, ‖b i‖ ≤ 1)
-    (ha_bd : IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set R)) a)
-    (hb_bd : IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set R)) b)
-    {δ : ℝ} (hδ : 0 ≤ δ) (hab : ∀ i, ‖a i - b i‖ ≤ δ)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-      isWeightFamily_one_weight) :
-    ‖weightedEvalHom isWeightFamily_one_weight hφc ha_bd f -
-      weightedEvalHom isWeightFamily_one_weight hφc hb_bd f‖ ≤
-      δ * C * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
-  rw [weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha ha_bd f,
-    weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ hb hb_bd f]
-  have heq (x : Fin k → S) (hx : ∀ i, ‖x i‖ ≤ 1) :
-      φ.restrictedEval₂OfBound x hφ hx (restrictedMvPowerSeriesGaussEquiv f) =
-        MvPowerSeries.restrictedEval₂ (RingHom.id S) x (fun _ ↦ le_rfl) hx
-          (TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f)) := by
-    simp only [RingHom.restrictedEval₂OfBound_apply, MvPowerSeries.restrictedEval₂_apply,
-      weightedEval_def, weightedEvalTerm_def, TauCeti.MvPowerSeries.coe_restrictedMap,
-      MvPowerSeries.coeff_map, RingHom.id_apply]
-  rw [heq a ha, heq b hb]
-  have hsub := MvPowerSeries.norm_restrictedEval₂_sub_le (RingHom.id S) (fun _ ↦ le_rfl) ha hb hδ
-    (fun i ↦ by simpa using hab i)
-    (TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f))
-  have hmap : ‖TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f)‖ ≤
-      C * ‖restrictedMvPowerSeriesGaussEquiv f‖ :=
-    TauCeti.MvPowerSeries.norm_restrictedMap_le φ hφ _
-  calc ‖MvPowerSeries.restrictedEval₂ (RingHom.id S) a (fun _ ↦ le_rfl) ha
-          (TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f)) -
-        MvPowerSeries.restrictedEval₂ (RingHom.id S) b (fun _ ↦ le_rfl) hb
-          (TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f))‖
-      ≤ δ * ‖TauCeti.MvPowerSeries.restrictedMap φ hφ (restrictedMvPowerSeriesGaussEquiv f)‖ :=
-        hsub
-    _ ≤ δ * (C * ‖restrictedMvPowerSeriesGaussEquiv f‖) := mul_le_mul_of_nonneg_left hmap hδ
-    _ = δ * C * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by ring
-
-end EvaluationPerturbation
 
 local notation:max "WSub" k:max R:max =>
   weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight
