@@ -155,9 +155,11 @@ private theorem energyFormH1_restrictL_eq_sub_of_holderOnWith
   exact (forall_energyFormH1_restrictL_eq_inner_add_inner hB hcoeff hu hGc hf v).trans
     (inner_toLp_add_inner_toLp_eq_sub hGc hf _)
 
-/-- Under the hypotheses of `energyFormH1_restrictL_eq_sub_of_holderOnWith`, the restriction of `u`
-to `B` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` on `B`, tested against test functions on `B`. -/
-private theorem energyFormH1_restrictL_ofTestFunctionₗ_of_holderOnWith
+/-- **Restricting a weak solution.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on
+`Ω`, tested against test functions. On an open `B ⊆ Ω` inside a ball `B(x₀, ρ)` on which `a` and `G`
+are `α`-Hölder, with `a` uniformly elliptic on `B` and `f ∈ L²(B)`, the restriction of `u` to `B`
+solves the same equation on `B`, tested against test functions on `B`. -/
+theorem energyFormH1_restrictL_ofTestFunctionₗ_of_holderOnWith
     {Omega B : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hB : B ≤ Omega)
     {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ : ℝ}
     (hBρ : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball x₀ ρ)
