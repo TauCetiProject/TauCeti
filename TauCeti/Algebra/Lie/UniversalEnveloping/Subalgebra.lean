@@ -162,7 +162,7 @@ theorem envelopingSubalgebra_eq_range_map (A : LieSubalgebra R L) :
   obtain ⟨w, rfl⟩ := (AlgHom.mem_range _).mp hu
   clear hu
   induction w using induction_ι with
-  | ι x => rw [map_ι]; exact ι_mem_envelopingSubalgebra R x.2
+  | ι x => rw [map_ι]; exact ι_mem_envelopingSubalgebra R x.property
   | algebraMap r => rw [AlgHom.commutes]; exact Subalgebra.algebraMap_mem _ r
   | add a b ha hb => rw [map_add]; exact add_mem ha hb
   | mul a b ha hb => rw [map_mul]; exact mul_mem ha hb

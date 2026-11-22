@@ -69,8 +69,8 @@ finitely many height-one primes of `A`. -/
 theorem eventually_baseChange_eq (hΛ : IsOrder F Λ) (hΓ : IsOrder F Γ) :
     ∀ᶠ v : HeightOneSpectrum A in Filter.cofinite,
       Λ.baseChange (v.adicCompletionIntegers F) = Γ.baseChange (v.adicCompletionIntegers F) := by
-  have hΛ' := isOrder_iff_isLattice.1 hΛ
-  have hΓ' := isOrder_iff_isLattice.1 hΓ
+  have hΛ' := isOrder_iff_isFullLattice.1 hΛ
+  have hΓ' := isOrder_iff_isFullLattice.1 hΓ
   filter_upwards [eventually_baseChange_le hΛ'.fg hΓ'.span_eq_top,
     eventually_baseChange_le hΓ'.fg hΛ'.span_eq_top] with v h₁ h₂
   refine Subalgebra.toSubmodule_injective ?_

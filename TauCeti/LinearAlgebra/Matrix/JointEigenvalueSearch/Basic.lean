@@ -36,7 +36,7 @@ open Matrix
 
 universe u
 
-variable {F : Type u} [Field F] [Fintype F] [DecidableEq F]
+variable {F : Type u} [Field F] [DecidableEq F]
 variable {m n : ℕ}
 
 /-- The rectangular matrix formed by stacking the systems
@@ -93,7 +93,6 @@ with no unfolding needed. -/
     (a : Fin m → F) : List (Fin n → F) :=
   kernelBasis (jointEigenspaceMatrix A a)
 
-omit [Fintype F] in
 /-- Every vector returned by `TauCeti.jointEigenspaceBasis` satisfies all the eigenvector
 equations. -/
 theorem mulVec_eq_smul_of_mem_jointEigenspaceBasis
@@ -102,7 +101,6 @@ theorem mulVec_eq_smul_of_mem_jointEigenspaceBasis
   rw [← jointEigenspaceMatrix_mulVec_eq_zero_iff A a v]
   exact mulVec_eq_zero_of_mem_kernelBasis _ hv
 
-omit [Fintype F] in
 /-- The computed basis spans the common eigenspace: a vector lies in its span exactly when it
 satisfies every eigenvector equation. -/
 theorem mem_span_jointEigenspaceBasis
@@ -112,7 +110,6 @@ theorem mem_span_jointEigenspaceBasis
   rw [jointEigenspaceBasis, span_kernelBasis, LinearMap.mem_ker, Matrix.mulVecLin_apply,
     jointEigenspaceMatrix_mulVec_eq_zero_iff]
 
-omit [Fintype F] in
 /-- The number of computed basis vectors is the nullity of the stacked system. Comparing this
 length with `1` is the executable test that Dixon--Schneider refinement has reached a
 one-dimensional common eigenspace. -/
@@ -121,7 +118,6 @@ theorem length_jointEigenspaceBasis
     (jointEigenspaceBasis A a).length = n - (jointEigenspaceMatrix A a).rank :=
   length_kernelBasis _
 
-omit [Fintype F] in
 /-- The common-eigenspace basis is nonempty exactly when the eigenvalue tuple has a nonzero
 common eigenvector. -/
 theorem jointEigenspaceBasis_ne_nil_iff
@@ -141,7 +137,6 @@ theorem jointEigenspaceBasis_ne_nil_iff
 
 /-! ## Left-eigenvector characterizations -/
 
-omit [Fintype F] in
 /-- Every vector returned for the transposed family is a left eigenvector of every original
 matrix. -/
 theorem vecMul_eq_smul_of_mem_jointEigenspaceBasis_transpose
@@ -151,7 +146,6 @@ theorem vecMul_eq_smul_of_mem_jointEigenspaceBasis_transpose
   simpa [Matrix.mulVec_transpose] using
     mulVec_eq_smul_of_mem_jointEigenspaceBasis (A := fun i => (A i)ᵀ) (a := a) hv i
 
-omit [Fintype F] in
 /-- The common-eigenspace basis for the transposed family is nonempty exactly when the tuple
 admits a nonzero common eigenrow. -/
 theorem jointEigenspaceBasis_transpose_ne_nil_iff

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.RCLike.Extend
-public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.Calculus.DerivativeTest
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.SecondDerivative
@@ -15,6 +14,7 @@ public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Complex.LeviForm
 
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+import TauCeti.Topology.MetricSpace.ContinuousRadius
 
 /-!
 # The Levi form of a real function on a complex vector space
@@ -169,12 +169,8 @@ theorem leviForm_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) : leviForm f x =
 /-- **The sum rule.** -/
 theorem leviForm_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
     leviForm (f + g) x = leviForm f x + leviForm g x := by
-  have h2 (v w : V) : fderiv ℝ (fderiv ℝ (f + g)) x v w =
-      fderiv ℝ (fderiv ℝ f) x v w + fderiv ℝ (fderiv ℝ g) x v w := by
-    simpa [iteratedFDeriv_two_apply] using
-      congr($(iteratedFDeriv_add_apply (i := 2) hf hg) ![v, w])
   ext v w
-  apply Complex.ext <;> simp [h2] <;> ring
+  apply Complex.ext <;> simp [fderiv_fderiv_add hf hg] <;> ring
 
 /-- Negating a function negates its Levi form. -/
 @[simp]
@@ -405,22 +401,12 @@ theorem exists_continuousOn_pos_forall_re_leviForm_pos [FiniteDimensional ℂ V]
   simp only [leviForm_def] at hpos ⊢
   set S := {B : V →L[ℝ] V →L[ℝ] ℝ | ∀ v, v ≠ 0 → 0 < (B.toBilinForm.leviForm v v).re}
   have hS : IsOpen S := isOpen_setOf_forall_re_leviForm_toBilinForm_pos
-  have hmem (x : V) : x ∈ U → fderiv ℝ (fderiv ℝ f) x ∈ S := hpos x
-  rcases Sᶜ.eq_empty_or_nonempty with hempty | hne
-  · -- Every form has positive definite Levi form, so any tolerance works.
-    refine ⟨fun _ ↦ 1, continuousOn_const, fun _ _ ↦ one_pos, fun g x _ _ ↦ ?_⟩
-    have h : fderiv ℝ (fderiv ℝ g) x ∈ S := by simp [compl_empty_iff.1 hempty]
-    exact h
-  -- Take the distance from the second derivative of `f` to the closed complement of `S`.
-  refine ⟨fun x ↦ infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ,
-    (continuous_infDist_pt _).comp_continuousOn hf,
-    fun x hx ↦ (hS.isClosed_compl.notMem_iff_infDist_pos hne).1 (not_not.2 (hmem x hx)),
-    fun g x _ hlt ↦ ?_⟩
-  have hdist : dist (fderiv ℝ (fderiv ℝ f) x) (fderiv ℝ (fderiv ℝ g) x) <
-      infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ :=
-    (dist_comm _ _).trans_lt
-      ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)
-  exact not_not.1 (notMem_of_dist_lt_infDist hdist)
+  -- A margin of the open set `S` along the second derivative of `f`.
+  obtain ⟨ε, hε, -, hεpos, hεS⟩ :=
+    hS.exists_continuousOn_forall_dist_lt (G := fun x ↦ fderiv ℝ (fderiv ℝ f) x) hf
+  exact ⟨ε, hε, fun x hx ↦ hεpos x (hpos x hx), fun g x _ hlt ↦
+    hεS x (fderiv ℝ (fderiv ℝ g) x)
+      ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)⟩
 
 /-! ### Inertia of a Levi-flat function -/
 

@@ -260,7 +260,7 @@ instance : (isFinitelyPresentedFunctor C).IsClosedUnderBinaryCoproducts where
     refine (isFinitelyPresentedFunctor C).prop_of_iso ?_
       ((p.prop_diag_obj (.mk .left)).biprod (p.prop_diag_obj (.mk .right)))
     exact IsColimit.coconePointUniqueUpToIso (BinaryBiproduct.isColimit _ _)
-      ((IsColimit.precomposeHomEquiv (diagramIsoPair p.diag).symm _).2 p.isColimit)
+      ((IsColimit.precomposeHomEquiv (diagramIsoPair p.diag).symm _).invFun p.isColimit)
 
 instance : (isFinitelyPresentedFunctor C).IsClosedUnderBinaryProducts where
   limitsOfShape_le := by
@@ -268,7 +268,7 @@ instance : (isFinitelyPresentedFunctor C).IsClosedUnderBinaryProducts where
     refine (isFinitelyPresentedFunctor C).prop_of_iso ?_
       ((p.prop_diag_obj (.mk .left)).biprod (p.prop_diag_obj (.mk .right)))
     exact IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit _ _)
-      ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit)
+      ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).invFun p.isLimit)
 
 instance [Nonempty C] : (isFinitelyPresentedFunctor C).IsClosedUnderFiniteCoproducts := .mk'
 

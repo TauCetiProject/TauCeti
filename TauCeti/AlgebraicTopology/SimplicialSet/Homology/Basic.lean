@@ -68,6 +68,10 @@ lemma ιChainComplex_chainComplexFunctor_map_app_f (f : R ⟶ R') {n : ℕ} (x :
   dsimp [chainComplexFunctor, ιChainComplex, chainComplex]
   simp
 
+/-- The identity of a simplicial set induces the identity chain map. -/
+lemma chainComplexMap_id (X : SSet.{w}) (R : C) : chainComplexMap (𝟙 X) R = 𝟙 _ :=
+  CategoryTheory.Functor.map_id _ _
+
 /-- The degreewise components of the chain maps induced by maps of simplicial sets compose like
 the maps themselves. -/
 @[reassoc]
@@ -94,6 +98,15 @@ lemma ιChainComplex_map {m n : ℕ} (x : X _⦋n⦌) (f : ⦋m⦌ ⟶ ⦋n⦌) 
         (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj X).map f.op =
       X.ιChainComplex (X.map f.op x) := by
   simp [ιChainComplex]
+
+/-- A morphism out of the simplicial `n`-chains of `Y` vanishes on the chains pushed forward along
+a map `f : X ⟶ Y` exactly when it vanishes on the summand of every simplex in the image of `f`. -/
+lemma chainComplexMap_f_comp_eq_zero_iff {Y : SSet.{w}} (f : X ⟶ Y) (R : C) {n : ℕ} {T : C}
+    (c : (Y.chainComplex R).X n ⟶ T) :
+    (chainComplexMap f R).f n ≫ c = 0 ↔ ∀ x : X _⦋n⦌, Y.ιChainComplex (f.app _ x) ≫ c = 0 := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ chainComplex_hom_ext fun x ↦ ?_⟩
+  · rw [← ι_chainComplexMap_f_assoc, h, comp_zero]
+  · rw [ι_chainComplexMap_f_assoc, h, comp_zero]
 
 end
 

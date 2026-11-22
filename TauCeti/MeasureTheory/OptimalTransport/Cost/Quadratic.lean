@@ -143,7 +143,7 @@ namespace TauCeti
 /-! ### Second moments and correlation -/
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
-  [OpensMeasurableSpace (E × E)] {μ ν : Measure E} {σ : Measure (E × E)}
+  {μ ν : Measure E} {σ : Measure (E × E)}
 
 /-- Against a coupling of two measures with finite second moments, the correlation
 `⟪x, y⟫` is integrable. -/
@@ -154,7 +154,9 @@ theorem IsCoupling.integrable_inner (hσ : IsCoupling σ μ ν) (hμ : MemLp id 
   have hν2 : Integrable (fun y : E => ‖y‖ ^ 2) ν :=
     (memLp_two_iff_integrable_sq_norm hν.aestronglyMeasurable).1 hν
   refine ((hσ.integrable_comp_fst hμ2).add (hσ.integrable_comp_snd hν2)).mono'
-    (continuous_fst.inner continuous_snd).aestronglyMeasurable (.of_forall fun z => ?_)
+    ((hμ.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_fst).inner
+      (hν.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_snd))
+    (.of_forall fun z => ?_)
   simp only [Pi.add_apply, Real.norm_eq_abs]
   nlinarith [abs_real_inner_le_norm z.1 z.2, sq_nonneg (‖z.1‖ - ‖z.2‖)]
 
@@ -212,11 +214,18 @@ theorem _root_.ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two {α : Type
     ∫⁻ ω, ENNReal.ofReal (‖s ω - U ω‖ ^ 2 / 2) ∂m =
       ENNReal.ofReal ((∫ x, ‖x‖ ^ 2 ∂μ + ∫ y, ‖y‖ ^ 2 ∂ν) / 2 - ∫ ω, ⟪s ω, U ω⟫ ∂m) := by
   have hpair := hs.aemeasurable.prodMk hU.aemeasurable
-  refine (lintegral_map' continuous_ofReal_norm_sub_sq_div_two.measurable.aemeasurable
-    hpair).symm.trans ?_
-  rw [(isCoupling_map_prodMk_of_aemeasurable hs.aemeasurable hU.aemeasurable hs.map_eq
-      hU.map_eq).lintegral_norm_sub_sq_div_two hμ hν,
-    integral_map hpair (continuous_fst.inner continuous_snd).aestronglyMeasurable]
+  have hσ := isCoupling_map_prodMk_of_aemeasurable hs.aemeasurable hU.aemeasurable hs.map_eq
+    hU.map_eq
+  -- Measurability on `E × E` comes from the marginals, pulled back along the projections.
+  have h₁ : AEStronglyMeasurable (fun z : E × E => z.1) (m.map fun ω => (s ω, U ω)) :=
+    hμ.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_fst
+  have h₂ : AEStronglyMeasurable (fun z : E × E => z.2) (m.map fun ω => (s ω, U ω)) :=
+    hν.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_snd
+  have hcost : AEMeasurable (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      (m.map fun ω => (s ω, U ω)) :=
+    (continuous_ofReal_norm_sub_sq_div_two.comp_aestronglyMeasurable (h₁.prodMk h₂)).aemeasurable
+  refine (lintegral_map' hcost hpair).symm.trans ?_
+  rw [hσ.lintegral_norm_sub_sq_div_two hμ hν, integral_map hpair (h₁.inner h₂)]
 
 end TauCeti
 

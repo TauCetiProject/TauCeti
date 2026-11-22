@@ -40,6 +40,9 @@ by pre-composition.
 * `CommHopfAlgCat.coe_ofIso`, `CommHopfAlgCat.coe_ofIso_symm`: the bialgebra equivalence of an
   isomorphism has the forward morphism as its underlying bialgebra morphism, and the inverse
   morphism as that of its inverse.
+* `TauCeti.CommHopfAlgCat.hom_id_eq_bialgHom_id`: the underlying bialgebra morphism of the identity
+  in `CommHopfAlgCat` is `BialgHom.id`.
+* `CommHopfAlgCat.autToAlgEquiv`: the group homomorphism `Aut H →* (H ≃ₐ[R] H)`.
 
 ## See also
 
@@ -131,6 +134,27 @@ has the inverse morphism of the isomorphism as its underlying bialgebra morphism
 theorem coe_ofIso_symm {H K : _root_.CommHopfAlgCat.{u} R} (e : H ≅ K) :
     (((_root_.CommHopfAlgCat.ofIso e).symm : K ≃ₐc[R] H) : K →ₐc[R] H) = e.inv.hom :=
   BialgHom.ext (_root_.CommHopfAlgCat.ofIso_symm_apply e)
+
+/-- The underlying bialgebra morphism of the identity in `CommHopfAlgCat R` is `BialgHom.id`.
+This complements Mathlib's `CommHopfAlgCat.hom_id`, which states the `AlgHom` equality. -/
+@[simp]
+theorem hom_id_eq_bialgHom_id {H : _root_.CommHopfAlgCat.{v} R} :
+    (𝟙 H : H ⟶ H).hom = BialgHom.id R H :=
+  rfl
+
+/-- Viewing a Hopf-algebra automorphism `e : Aut H` as an `R`-algebra equivalence `H ≃ₐ[R] H` is a
+group homomorphism. -/
+noncomputable def _root_.CommHopfAlgCat.autToAlgEquiv (H : _root_.CommHopfAlgCat.{v} R) :
+    Aut H →* (H ≃ₐ[R] H) where
+  toFun e := (_root_.CommHopfAlgCat.ofIso e.asIso).toAlgEquiv
+  map_one' := by ext x; simp [_root_.CommHopfAlgCat.ofIso_apply]
+  map_mul' _ _ := by ext x; simp [_root_.CommHopfAlgCat.ofIso_apply]
+
+/-- `autToAlgEquiv H e` acts on elements by `e.asIso.hom.hom`. -/
+@[simp]
+theorem _root_.CommHopfAlgCat.autToAlgEquiv_apply (H : _root_.CommHopfAlgCat.{v} R) (e : Aut H)
+    (x : H) : _root_.CommHopfAlgCat.autToAlgEquiv H e x = e.asIso.hom.hom x := by
+  simp [_root_.CommHopfAlgCat.autToAlgEquiv, _root_.CommHopfAlgCat.ofIso_apply]
 
 /-- A morphism represented by a commutative Hopf-algebra morphism preserves the group-object
 multiplication. -/

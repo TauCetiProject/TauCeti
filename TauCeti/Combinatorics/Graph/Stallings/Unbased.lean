@@ -17,7 +17,8 @@ This file provides the two operations needed to compare labelled graphs up to su
 * `StallingsGraph.withBase`: the same labelled graph with another base vertex;
 * `StallingsGraph.UnbasedIso`: isomorphisms of labelled graphs that need not preserve the base
   vertex. Such an isomorphism identifies the subgroup accepted at each vertex with the subgroup
-  accepted at its image (`StallingsGraph.UnbasedIso.subgroup_eq`).
+  accepted at its image (`StallingsGraph.UnbasedIso.subgroup_eq`), and preserves degrees
+  (`StallingsGraph.UnbasedIso.degree_vertexEquiv`).
 
 ## References
 
@@ -173,6 +174,16 @@ theorem toGraphHom_mapV_injective (f : UnbasedIso S T) : Function.Injective f.to
 /-- The dart map of an unbased isomorphism is injective. -/
 theorem toGraphHom_mapE_injective (f : UnbasedIso S T) : Function.Injective f.toGraphHom.mapE :=
   f.dartEquiv.injective
+
+/-- An unbased isomorphism of labelled graphs preserves degrees. -/
+@[simp] theorem degree_vertexEquiv (f : UnbasedIso S T) (a : S.graph.V) :
+    T.graph.degree (f.vertexEquiv a) = S.graph.degree a :=
+  (f.toIso a).degree_vertexEquiv a
+
+/-- An unbased isomorphism of labelled graphs preserves degrees, read through its inverse. -/
+@[simp] theorem degree_vertexEquiv_symm (f : UnbasedIso S T) (b : T.graph.V) :
+    S.graph.degree (f.vertexEquiv.symm b) = T.graph.degree b := by
+  rw [← f.degree_vertexEquiv, Equiv.apply_symm_apply]
 
 /-- The identity unbased isomorphism. -/
 def refl (S : StallingsGraph α) : UnbasedIso S S where
