@@ -13,20 +13,14 @@ import Mathlib.Algebra.Prime.Lemmas
 
 In a cancellative commutative monoid with zero, divisibility by a finite product of prime powers
 is completely described without assuming unique factorization: every divisor of `∏ i ∈ s, p i ^ n i`
-with each `p i` prime is associated to a subproduct `∏ i ∈ s, p i ^ k i` with `k i ≤ n i`. When
-the primes `p i` are pairwise non-associated, the exponent `k i` is uniquely determined as the
-largest power of `p i` dividing the product.
+with each `p i` prime is associated to a subproduct `∏ i ∈ s, p i ^ k i` with `k i ≤ n i`.
 
 ## Main results
 
 * `Prime.exists_eq_pow_mul_of_dvd_pow_mul`: a divisor of `p ^ n * b` splits as `p ^ k * q'` with
   `k ≤ n` and `q' ∣ b`.
-* `Prime.pow_dvd_finsetProd_pow_iff`: if `p i` is prime and divides no other `p j`, then
-  `p i ^ k ∣ ∏ j ∈ s, p j ^ e j` if and only if `k ≤ e i`.
 * `TauCeti.dvd_finsetProd_prime_pow_iff`: `q ∣ ∏ i ∈ s, p i ^ n i` if and only if `q` is
   associated to `∏ i ∈ s, p i ^ k i` for some `k` with `k i ≤ n i` on `s`.
-* `TauCeti.associated_finsetProd_prime_pow_iff`: products of powers of pairwise non-associated
-  primes are associated if and only if their exponents agree on `s`.
 -/
 
 public section
@@ -48,19 +42,6 @@ theorem exists_eq_pow_mul_of_dvd_pow_mul {p q b : M} (hp : Prime p) {n : ℕ}
       exact ⟨k + 1, Nat.succ_le_succ hk, q', hq', by rw [pow_succ', mul_assoc]⟩
     · obtain ⟨k, hk, q', hq', rfl⟩ := ih hno
       exact ⟨k, Nat.le_succ_of_le hk, q', hq', rfl⟩
-
-/-- If `p i` is prime and divides no other `p j` for `j ∈ s`, then `p i ^ k` divides
-`∏ j ∈ s, p j ^ e j` if and only if `k ≤ e i`. -/
-theorem pow_dvd_finsetProd_pow_iff {ι : Type*} {s : Finset ι} {p : ι → M} {i : ι}
-    (hp : Prime (p i)) (hi : i ∈ s) (hndvd : ∀ j ∈ s, j ≠ i → ¬ p i ∣ p j) (e : ι → ℕ)
-    {k : ℕ} : p i ^ k ∣ ∏ j ∈ s, p j ^ e j ↔ k ≤ e i := by
-  classical
-  rw [← Finset.mul_prod_erase s (fun j ↦ p j ^ e j) hi]
-  have hnot : ¬ p i ∣ ∏ j ∈ s.erase i, p j ^ e j :=
-    hp.not_dvd_finsetProd fun j hj ↦ mt hp.dvd_of_dvd_pow
-      (hndvd j (Finset.mem_of_mem_erase hj) (Finset.ne_of_mem_erase hj))
-  refine ⟨fun h ↦ ?_, fun hk ↦ (pow_dvd_pow _ hk).trans (dvd_mul_right _ _)⟩
-  exact (pow_dvd_pow_iff hp.ne_zero hp.not_isUnit).mp (hp.pow_dvd_of_dvd_mul_right k hnot h)
 
 end Prime
 
@@ -92,22 +73,5 @@ theorem dvd_finsetProd_prime_pow_iff {ι : Type*} {s : Finset ι} {p : ι → M}
         Finset.prod_congr rfl fun i hi ↦ by
           rw [Function.update_of_ne (ne_of_mem_of_not_mem hi has)]]
       exact hassoc.mul_left _
-
-/-- Two products of powers of pairwise non-associated primes are associated if and only if their
-exponents coincide on `s`. -/
-theorem associated_finsetProd_prime_pow_iff {ι : Type*} {s : Finset ι} {p : ι → M}
-    (hp : ∀ i ∈ s, Prime (p i))
-    (hpair : (s : Set ι).Pairwise fun i j ↦ ¬ Associated (p i) (p j)) {k₁ k₂ : ι → ℕ} :
-    Associated (∏ i ∈ s, p i ^ k₁ i) (∏ i ∈ s, p i ^ k₂ i) ↔ ∀ i ∈ s, k₁ i = k₂ i := by
-  refine ⟨fun h i hi ↦ ?_, fun h ↦ by rw [Finset.prod_congr rfl fun i hi ↦ by rw [h i hi]]⟩
-  have hndvd : ∀ j ∈ s, j ≠ i → ¬ p i ∣ p j := fun j hj hne hdvd ↦
-    hpair hi hj hne.symm ((hp i hi).associated_of_dvd (hp j hj) hdvd)
-  have h12 : k₁ i ≤ k₂ i :=
-    ((hp i hi).pow_dvd_finsetProd_pow_iff hi hndvd k₂).mp
-      ((Finset.dvd_prod_of_mem (fun j ↦ p j ^ k₁ j) hi).trans h.dvd)
-  have h21 : k₂ i ≤ k₁ i :=
-    ((hp i hi).pow_dvd_finsetProd_pow_iff hi hndvd k₁).mp
-      ((Finset.dvd_prod_of_mem (fun j ↦ p j ^ k₂ j) hi).trans h.symm.dvd)
-  exact le_antisymm h12 h21
 
 end TauCeti

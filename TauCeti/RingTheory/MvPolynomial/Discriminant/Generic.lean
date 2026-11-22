@@ -8,7 +8,8 @@ module
 public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Alternant
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
-import Mathlib.Algebra.MvPolynomial.Division
+import Mathlib.Algebra.MvPolynomial.Equiv
+import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import TauCeti.RingTheory.MvPolynomial.Prime
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
@@ -148,30 +149,24 @@ theorem map_freeMonic_vietaAlgHom (R : Type*) [CommRing R] (m : ℕ) :
     (Polynomial.freeMonic R m).map (vietaAlgHom R m).toRingHom =
       ∏ j : Fin m, (Polynomial.X - Polynomial.C (X j)) := by
   nontriviality R
-  have hmon : (∏ j : Fin m, (Polynomial.X - Polynomial.C (X j : MvPolynomial (Fin m) R))).Monic :=
-    Polynomial.monic_prod_X_sub_C _ _
-  have hdeg :
-      (∏ j : Fin m, (Polynomial.X - Polynomial.C (X j : MvPolynomial (Fin m) R))).natDegree = m :=
-    by simp [Polynomial.natDegree_finsetProd_X_sub_C_eq_card]
-  refine AddMonoidAlgebra.ext (Finsupp.ext fun k ↦ ?_)
-  rw [Polynomial.coeff_map, Polynomial.coeff_freeMonic]
-  split_ifs with hlt heq
-  · simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, vietaAlgHom_X]
+  let P : Polynomial (MvPolynomial (Fin m) R) := ∏ j : Fin m, (Polynomial.X - Polynomial.C (X j))
+  have hmon : P.Monic := Polynomial.monic_prod_X_sub_C _ _
+  have hdeg : P.natDegree = m := by simp [P, Polynomial.natDegree_finsetProd_X_sub_C_eq_card]
+  let p : Polynomial.MonicDegreeEq (MvPolynomial (Fin m) R) m :=
+    Polynomial.MonicDegreeEq.mk P hmon hdeg
+  have hsymm : (MvPolynomial.mapEquivMonic R (MvPolynomial (Fin m) R) m).symm p =
+      vietaAlgHom R m := by
+    refine algHom_ext fun i ↦ ?_
+    simp only [MvPolynomial.mapEquivMonic, Equiv.coe_fn_symm_mk, aeval_X, vietaAlgHom_X, p,
+      Polynomial.MonicDegreeEq.mk_coe, P]
     have hvieta := aeval_esymm_eq_coeff_prod_X_sub_C (R := R)
-      (X : Fin m → MvPolynomial (Fin m) R) (k := m - k) (by simp)
+      (X : Fin m → MvPolynomial (Fin m) R) (k := m - (i : ℕ)) (by simp)
     simp only [aeval_X_left, AlgHom.id_apply, Fintype.card_fin] at hvieta
-    rw [hvieta, Nat.sub_sub_self hlt.le, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
+    rw [hvieta, Nat.sub_sub_self i.isLt.le, ← mul_assoc, ← pow_add, ← two_mul, pow_mul]
     simp
-  · have hlead :
-        (∏ j : Fin m, (Polynomial.X - Polynomial.C (X j : MvPolynomial (Fin m) R))).coeff m = 1 :=
-      by
-        have h := hmon.leadingCoeff
-        rw [Polynomial.leadingCoeff, hdeg] at h
-        exact h
-    rw [heq, map_one, hlead]
-  · rw [map_zero, Polynomial.coeff_eq_zero_of_natDegree_lt]
-    rw [hdeg]
-    omega
+  have h := congrArg (fun f ↦ (MvPolynomial.mapEquivMonic R (MvPolynomial (Fin m) R) m f).1) hsymm
+  rw [(MvPolynomial.mapEquivMonic R (MvPolynomial (Fin m) R) m).apply_symm_apply p] at h
+  exact h.symm
 
 /-- Applying `vietaAlgHom R m` to the discriminant of `Polynomial.freeMonic R m` yields the square
 of the Vandermonde alternant. -/
@@ -242,91 +237,55 @@ private theorem alternant_fin_val_eq_prod_pairs (R : Type*) [CommRing R] (m : �
   · intro _ _
     rfl
 
-/-- For any two strictly ordered pairs in `Fin m`, some permutation maps one to the other. -/
-private theorem exists_perm_map_pair {m : ℕ} {p q : Fin m × Fin m} (hp : p.1 < p.2)
-    (hq : q.1 < q.2) : ∃ τ : Equiv.Perm (Fin m), τ p.1 = q.1 ∧ τ p.2 = q.2 := by
-  let τ₁ : Equiv.Perm (Fin m) := Equiv.swap p.1 q.1
-  let τ : Equiv.Perm (Fin m) := Equiv.swap (τ₁ p.2) q.2 * τ₁
-  refine ⟨τ, ?_, by simp [τ]⟩
-  have hne : τ₁ p.2 ≠ q.1 := fun h ↦
-    hp.ne' (τ₁.injective (h.trans (Equiv.swap_apply_left p.1 q.1).symm))
-  simp [τ, τ₁, Equiv.swap_apply_of_ne_of_ne hne.symm hq.ne]
-
-private theorem X_dvd_of_aeval_update_zero {σ R : Type*} [CommRing R] [DecidableEq σ] {j : σ}
-    {p : MvPolynomial σ R}
-    (h : aeval (Function.update (X : σ → MvPolynomial σ R) j 0) p = 0) : X j ∣ p := by
-  rw [X_dvd_iff_modMonomial_eq_zero]
-  set r : MvPolynomial σ R := p.modMonomial (Finsupp.single j 1)
-  have hsum : X j * (p.divMonomial (Finsupp.single j 1)) + r = p :=
-    divMonomial_add_modMonomial_single p j
-  let φ : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
-    aeval (Function.update (X : σ → MvPolynomial σ R) j 0)
-  have hφ_p : φ p = φ r := by
-    have h1 := congrArg φ hsum
-    simpa [φ] using h1.symm
-  have hφ_r : φ r = r := by
-    conv_lhs => rw [r.as_sum, map_sum]
-    conv_rhs => rw [r.as_sum]
-    refine Finset.sum_congr rfl fun d hd ↦ ?_
-    have hd_j : d j = 0 := by
-      by_contra hne
-      have hle : Finsupp.single j 1 ≤ d :=
-        Finsupp.single_le_iff.mpr (Nat.one_le_iff_ne_zero.mpr hne)
-      have hzero : r.coeff d = 0 := coeff_modMonomial_of_le p hle
-      exact (mem_support_iff.mp hd) hzero
-    rw [aeval_monomial, algebraMap_eq, monomial_eq]
-    congr 1
-    refine Finset.prod_congr rfl fun k hk ↦ ?_
-    have hkj : k ≠ j := fun hkeq ↦ (Finsupp.mem_support_iff.mp hk) (hkeq ▸ hd_j)
-    dsimp only
-    rw [Function.update_of_ne hkj]
-  rw [← hφ_r, ← hφ_p]
-  exact h
-
 private theorem X_sub_X_dvd_of_aeval_update {σ R : Type*} [CommRing R] [DecidableEq σ]
     {i j : σ} (hij : i ≠ j) {p : MvPolynomial σ R}
     (h : aeval (Function.update (X : σ → MvPolynomial σ R) j (X i)) p = 0) :
     X j - X i ∣ p := by
-  let e := shearXEquiv R hij
-  have hcomp : (aeval (Function.update (X : σ → MvPolynomial σ R) j 0)).comp e.toAlgHom =
-      aeval (Function.update (X : σ → MvPolynomial σ R) j (X i)) := by
-    ext k
-    rcases eq_or_ne k j with rfl | hkj
-    · simp [e, hij]
-    · simp [e, hkj]
-  have he0 : aeval (Function.update (X : σ → MvPolynomial σ R) j 0) (e p) = 0 := by
-    simpa [AlgHom.comp_apply] using (AlgHom.congr_fun hcomp p).trans h
-  have hdvd : X j ∣ e p := X_dvd_of_aeval_update_zero he0
-  have hdvd' := map_dvd e.symm.toRingHom hdvd
-  simpa [e] using hdvd'
+  let e : MvPolynomial σ R ≃ₐ[R] Polynomial (MvPolynomial {b : σ // b ≠ j} R) :=
+    (renameEquiv R (Equiv.optionSubtypeNe j).symm).trans
+      (optionEquivLeft R {b : σ // b ≠ j})
+  let i' : {b : σ // b ≠ j} := ⟨i, hij⟩
+  have he_sub : e (X j - X i) = Polynomial.X - Polynomial.C (X i') := by
+    simp [e, i', hij]
+  have hcomp : (rename (Subtype.val : {b : σ // b ≠ j} → σ)).toRingHom.comp
+      ((Polynomial.evalRingHom (X i')).comp e.toRingHom) =
+      (aeval (Function.update (X : σ → MvPolynomial σ R) j (X i))).toRingHom := by
+    refine MvPolynomial.ringHom_ext (fun r ↦ ?_) (fun k ↦ ?_)
+    · simp [e]
+    · rcases eq_or_ne k j with rfl | hkj
+      · simp [e, i']
+      · simp [e, hkj]
+  have hisRoot : (e p).IsRoot (X i') := by
+    rw [Polynomial.IsRoot.def]
+    apply rename_injective (R := R) (Subtype.val : {b : σ // b ≠ j} → σ) Subtype.val_injective
+    rw [map_zero]
+    simpa [RingHom.comp_apply] using (RingHom.congr_fun hcomp p).trans h
+  have hdvd : Polynomial.X - Polynomial.C (X i') ∣ e p :=
+    Polynomial.dvd_iff_isRoot.mpr hisRoot
+  rw [← he_sub] at hdvd
+  simpa using map_dvd e.symm.toRingHom hdvd
 
 private theorem prod_X_sub_X_dvd_of_forall_dvd {R : Type*} [CommRing R] [IsDomain R] {m : ℕ}
     (s : Finset (Fin m × Fin m)) (hs : ∀ p ∈ s, p.1 < p.2) {h : MvPolynomial (Fin m) R}
     (hdvd : ∀ p ∈ s, (X p.2 - X p.1 : MvPolynomial (Fin m) R) ∣ h) :
     (∏ p ∈ s, (X p.2 - X p.1 : MvPolynomial (Fin m) R)) ∣ h := by
   classical
-  induction s using Finset.induction with
-  | empty => simp
-  | insert a s has ih =>
-    rw [Finset.prod_insert has]
-    have ha_lt : a.1 < a.2 := hs a (Finset.mem_insert_self a s)
-    have ha_prime : Prime (X a.2 - X a.1 : MvPolynomial (Fin m) R) := prime_X_sub_X ha_lt.ne
-    obtain ⟨q, hq⟩ := ih (fun p hp ↦ hs p (Finset.mem_insert_of_mem hp))
-      (fun p hp ↦ hdvd p (Finset.mem_insert_of_mem hp))
-    have ha_dvd : (X a.2 - X a.1 : MvPolynomial (Fin m) R) ∣
-        (∏ p ∈ s, (X p.2 - X p.1)) * q := hq ▸ hdvd a (Finset.mem_insert_self a s)
-    rcases ha_prime.dvd_or_dvd ha_dvd with hprod | haq
-    · obtain ⟨p, hp, hap⟩ := (ha_prime.dvd_finsetProd_iff _).mp hprod
-      have hp_lt : p.1 < p.2 := hs p (Finset.mem_insert_of_mem hp)
-      have hpa : p ≠ a := fun hpeq ↦ has (hpeq ▸ hp)
-      have hna : ¬ Associated (X a.2 - X a.1 : MvPolynomial (Fin m) R) (X p.2 - X p.1) :=
-        not_associated_X_sub_X
-          (not_and_or.mp fun h ↦ hpa (Prod.ext h.1 h.2))
-          (not_and_or.mp fun h ↦ lt_asymm ha_lt (h.2 ▸ h.1 ▸ hp_lt))
-          hp_lt.ne
-      exact (hna (ha_prime.associated_of_dvd (prime_X_sub_X hp_lt.ne) hap)).elim
-    · obtain ⟨q', rfl⟩ := haq
-      exact ⟨q', by rw [hq]; ring⟩
+  refine Multiset.prod_primes_dvd h ?_ ?_ fun a ↦ ?_
+  · rintro _ hp
+    obtain ⟨p, hp', rfl⟩ := Multiset.mem_map.mp hp
+    exact prime_X_sub_X (hs p hp').ne
+  · rintro _ hp
+    obtain ⟨p, hp', rfl⟩ := Multiset.mem_map.mp hp
+    exact hdvd p hp'
+  · rw [Multiset.countP_map]
+    change (s.filter fun p ↦ Associated a (X p.2 - X p.1 : MvPolynomial (Fin m) R)).card ≤ 1
+    refine Finset.card_le_one.mpr fun p hp q hq ↦ ?_
+    simp only [mem_filter] at hp hq
+    by_contra hpq
+    exact not_associated_X_sub_X (i := p.1) (j := p.2) (i' := q.1) (j' := q.2)
+      (not_and_or.mp fun h ↦ hpq (Prod.ext h.1.symm h.2.symm))
+      (not_and_or.mp fun h ↦ lt_asymm (hs p hp.1) (h.1 ▸ h.2 ▸ hs q hq.1))
+      (hs q hq.1).ne (hp.2.symm.trans hq.2)
 
 private theorem discr_freeMonic_dvd_of_X_sub_X_dvd_vieta {R : Type*} [CommRing R] [IsDomain R]
     (h2 : (2 : R) ≠ 0) {m : ℕ} (hm : 2 ≤ m) {f : MvPolynomial (Fin m) R}
@@ -340,8 +299,10 @@ private theorem discr_freeMonic_dvd_of_X_sub_X_dvd_vieta {R : Type*} [CommRing R
     alternant_ne_zero_of_injective Fin.val_injective
   have hdvd_pairs : ∀ p ∈ pairs, (X p.2 - X p.1 : MvPolynomial (Fin m) R) ∣ vietaAlgHom R m f := by
     intro p hp
-    obtain ⟨τ, hτ1, hτ2⟩ := exists_perm_map_pair (p := (⟨0, by omega⟩, ⟨1, by omega⟩))
-      (by simp) (hpairs_lt p hp)
+    obtain ⟨τ, hτ1, hτ2⟩ :=
+      MulAction.is_two_pretransitive_iff.mp (Equiv.Perm.isMultiplyPretransitive (Fin m) 2)
+        (show (⟨0, by omega⟩ : Fin m) ≠ ⟨1, by omega⟩ by simp) (hpairs_lt p hp).ne
+    simp only [Equiv.Perm.smul_def] at hτ1 hτ2
     have h1 := map_dvd (rename (R := R) τ) hdvd
     rwa [rename_vietaAlgHom, map_sub, rename_X, rename_X, hτ1, hτ2] at h1
   obtain ⟨h, hh⟩ := halt ▸ prod_X_sub_X_dvd_of_forall_dvd pairs hpairs_lt hdvd_pairs

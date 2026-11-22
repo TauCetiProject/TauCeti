@@ -79,19 +79,44 @@ attribute [local instance] MvPolynomial.WeightedHomogeneousSubmodule.gradedMonoi
 
 section Depressed
 
+/-- The substitution mapping coefficient variables of `Polynomial.freeMonic R m` to those of
+`genericDepressed R m` (sending the subleading coefficient to `0`). -/
+private noncomputable def depressedSubst (R : Type*) [CommRing R] (m : ℕ) :
+    MvPolynomial (Fin m) R →ₐ[R] MvPolynomial (Fin (m - 1)) R :=
+  aeval fun i : Fin m ↦
+    if h : (i : ℕ) + 2 ≤ m then X ⟨m - 2 - (i : ℕ), by omega⟩ else 0
+
 /-- The generic depressed monic polynomial of degree `m`,
 `X ^ m + a₂ * X ^ (m - 2) + ⋯ + aₘ`, where `X i` (`i : Fin (m - 1)`) represents `a_{i + 2}`. -/
-noncomputable def genericDepressed (R : Type*) [CommSemiring R] (m : ℕ) :
+noncomputable def genericDepressed (R : Type*) [CommRing R] (m : ℕ) :
     Polynomial (MvPolynomial (Fin (m - 1)) R) :=
-  Polynomial.X ^ m +
-    ∑ i : Fin (m - 1), Polynomial.C (X i) * Polynomial.X ^ (m - (i.val + 2))
+  (Polynomial.freeMonic R m).map (depressedSubst R m).toRingHom
 
 /-- Explicit expansion of `genericDepressed R m` as a sum of monomials. -/
-theorem genericDepressed_eq (R : Type*) [CommSemiring R] (m : ℕ) :
+theorem genericDepressed_eq (R : Type*) [CommRing R] (m : ℕ) :
     genericDepressed R m =
       Polynomial.X ^ m +
-        ∑ i : Fin (m - 1), Polynomial.C (X i) * Polynomial.X ^ (m - (i.val + 2)) :=
-  (rfl)
+        ∑ i : Fin (m - 1), Polynomial.C (X i) * Polynomial.X ^ (m - (i.val + 2)) := by
+  rw [genericDepressed, Polynomial.freeMonic, Polynomial.map_add, Polynomial.map_pow,
+    Polynomial.map_X, Polynomial.map_sum]
+  congr 1
+  rcases m with _ | _ | m
+  · simp
+  · simp [depressedSubst]
+  · simp only [Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow, Polynomial.map_X,
+      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, depressedSubst, aeval_X]
+    rw [Fin.sum_univ_castSucc]
+    have hlast : ¬ (Fin.last (m + 1) : ℕ) + 2 ≤ m + 2 := by simp
+    rw [dite_eq_right hlast, Polynomial.C_0, zero_mul, add_zero]
+    refine Finset.sum_bij (fun j _ ↦ j.rev) (fun _ _ ↦ mem_univ _)
+      (fun _ _ _ _ h ↦ Fin.rev_injective h)
+      (fun j _ ↦ ⟨j.rev, mem_univ _, Fin.rev_rev j⟩) (fun j _ ↦ ?_)
+    have hj : (j.castSucc : ℕ) + 2 ≤ m + 2 := by simp; omega
+    rw [dite_eq_left hj]
+    congr 1
+    · refine congrArg Polynomial.C (congrArg X ?_)
+      ext; simp [Fin.val_rev]
+    · congr 1; simp [Fin.val_rev]; omega
 
 /-- The weight of the variable `a_{i + 2}` (`X i`) in `genericDepressed R m` is `i + 2`. -/
 def depressedWeight (m : ℕ) : Fin (m - 1) → ℤ := fun i ↦ (i.val : ℤ) + 2
@@ -113,55 +138,48 @@ theorem depressedDiscr_eq (R : Type*) [CommRing R] (m : ℕ) :
 
 /-- The `k`-th coefficient of `genericDepressed R m` is `X (m - 2 - k)` for `k + 2 ≤ m`, `1` for
 `k = m`, and `0` otherwise. -/
-theorem coeff_genericDepressed (R : Type*) [CommSemiring R] (m k : ℕ) :
+theorem coeff_genericDepressed (R : Type*) [CommRing R] (m k : ℕ) :
     (genericDepressed R m).coeff k =
       if h : k + 2 ≤ m then X ⟨m - 2 - k, by omega⟩ else if k = m then 1 else 0 := by
-  simp only [genericDepressed, Polynomial.coeff_add, Polynomial.coeff_X_pow,
-    Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, mul_ite, mul_one, mul_zero]
-  by_cases hlt : k + 2 ≤ m
-  · have hkm : k ≠ m := by omega
-    rw [dite_eq_left hlt, ite_eq_right hkm, zero_add,
-      Finset.sum_eq_single (⟨m - 2 - k, by omega⟩ : Fin (m - 1))]
-    · rw [ite_eq_left (by dsimp; omega)]
-    · intro i _ hne
-      refine ite_eq_right fun heq' ↦ hne ?_
-      ext
-      dsimp
-      omega
-    · intro hmem
-      exact (hmem (mem_univ _)).elim
-  · rw [dite_eq_right hlt, Finset.sum_eq_zero fun i _ ↦ ite_eq_right (by omega), add_zero]
+  rw [genericDepressed, Polynomial.coeff_map, Polynomial.coeff_freeMonic]
+  by_cases hlt : k < m
+  · rw [dite_eq_left hlt]
+    simp [depressedSubst, hlt.ne]
+  · rw [dite_eq_right hlt]
+    by_cases heq : k = m
+    · subst heq; simp
+    · have h2 : ¬ k + 2 ≤ m := by omega
+      simp [h2, heq]
 
-/-- Over a nontrivial semiring, `genericDepressed R m` has degree `m`. -/
+/-- Over a nontrivial ring, `genericDepressed R m` has degree `m`. -/
 @[simp]
-theorem degree_genericDepressed (R : Type*) [CommSemiring R] [Nontrivial R] (m : ℕ) :
+theorem degree_genericDepressed (R : Type*) [CommRing R] [Nontrivial R] (m : ℕ) :
     (genericDepressed R m).degree = m :=
-  Polynomial.degree_eq_of_le_of_coeff_ne_zero
-    ((Polynomial.degree_le_iff_coeff_zero _ _).mpr fun k hk ↦ by
-      have hgt : m < k := WithBot.coe_lt_coe.mp hk
-      have hlt : ¬ k + 2 ≤ m := by omega
-      simp [coeff_genericDepressed, hlt, hgt.ne'])
-    (by simp [coeff_genericDepressed])
+  ((Polynomial.monic_freeMonic R m).degree_map _).trans (Polynomial.degree_freeMonic R m)
 
-/-- Over a nontrivial semiring, `genericDepressed R m` has `natDegree` equal to `m`. -/
+/-- Over a nontrivial ring, `genericDepressed R m` has `natDegree` equal to `m`. -/
 @[simp]
-theorem natDegree_genericDepressed (R : Type*) [CommSemiring R] [Nontrivial R] (m : ℕ) :
+theorem natDegree_genericDepressed (R : Type*) [CommRing R] [Nontrivial R] (m : ℕ) :
     (genericDepressed R m).natDegree = m :=
-  Polynomial.natDegree_eq_of_degree_eq_some (degree_genericDepressed R m)
+  ((Polynomial.monic_freeMonic R m).natDegree_map _).trans (Polynomial.natDegree_freeMonic R m)
 
-/-- The generic depressed polynomial `genericDepressed R m` is monic over any commutative
-semiring. -/
-theorem monic_genericDepressed (R : Type*) [CommSemiring R] (m : ℕ) :
-    (genericDepressed R m).Monic := by
-  nontriviality R
-  rw [Polynomial.Monic, Polynomial.leadingCoeff, natDegree_genericDepressed, coeff_genericDepressed]
-  simp
+/-- The generic depressed polynomial `genericDepressed R m` is monic over any commutative ring. -/
+theorem monic_genericDepressed (R : Type*) [CommRing R] (m : ℕ) :
+    (genericDepressed R m).Monic :=
+  (Polynomial.monic_freeMonic R m).map _
 
 /-- Forming `genericDepressed` commutes with base change along any ring homomorphism. -/
 @[simp]
-theorem map_map_genericDepressed {R S : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
+theorem map_map_genericDepressed {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
     (m : ℕ) : (genericDepressed R m).map (MvPolynomial.map f) = genericDepressed S m := by
-  simp [genericDepressed, Polynomial.map_sum]
+  simp only [genericDepressed, Polynomial.map_map]
+  rw [← Polynomial.map_map_freeMonic R S m f, Polynomial.map_map]
+  congr 1
+  refine MvPolynomial.ringHom_ext (fun r ↦ ?_) (fun i ↦ ?_)
+  · simp
+  · simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, depressedSubst,
+      aeval_X, map_X]
+    split_ifs <;> simp
 
 /-- Forming `depressedDiscr` commutes with base change along any ring homomorphism. -/
 @[simp]
@@ -175,34 +193,20 @@ theorem map_depressedDiscr {R S : Type*} [CommRing R] [CommRing S] (f : R →+* 
 theorem depressedDiscr_mem (R : Type*) [CommRing R] (m : ℕ) :
     depressedDiscr R m ∈
       weightedHomogeneousSubmodule R (depressedWeight m) ((m : ℤ) * (m - 1)) := by
-  let g : Fin m → MvPolynomial (Fin (m - 1)) R :=
-    fun i ↦ if h : (i : ℕ) + 2 ≤ m then X ⟨m - 2 - (i : ℕ), by omega⟩ else 0
-  have hmap : (Polynomial.freeMonic R m).map (aeval g).toRingHom = genericDepressed R m := by
-    refine AddMonoidAlgebra.ext (Finsupp.ext fun k ↦ ?_)
-    rw [Polynomial.coeff_map, Polynomial.coeff_freeMonic, coeff_genericDepressed]
-    by_cases hlt : k + 2 ≤ m
-    · have hkm : k < m := by omega
-      simp [g, hlt, hkm]
-    · by_cases hlt' : k < m
-      · have hne : k ≠ m := hlt'.ne
-        simp [g, hlt, hlt', hne]
-      · by_cases heq : k = m
-        · subst heq
-          simp
-        · simp [hlt, hlt', heq]
-  have hdiscr : aeval g (Polynomial.freeMonic R m).discr = depressedDiscr R m := by
-    have h := (Polynomial.monic_freeMonic R m).discr_map (aeval g).toRingHom
-    rw [hmap] at h
-    exact h.symm
-  have hg : ∀ i : Fin m, (g i).IsWeightedHomogeneous (depressedWeight m) (freeMonicWeight m i) := by
+  have hdiscr : depressedSubst R m (Polynomial.freeMonic R m).discr = depressedDiscr R m :=
+    ((Polynomial.monic_freeMonic R m).discr_map (depressedSubst R m).toRingHom).symm
+  have hg : ∀ i : Fin m,
+      (if h : (i : ℕ) + 2 ≤ m then X ⟨m - 2 - (i : ℕ), by omega⟩
+        else (0 : MvPolynomial (Fin (m - 1)) R)).IsWeightedHomogeneous
+        (depressedWeight m) (freeMonicWeight m i) := by
     intro i
-    dsimp only [g]
     split_ifs with h
     · convert isWeightedHomogeneous_X R (depressedWeight m) ⟨m - 2 - (i : ℕ), by omega⟩
       simp only [depressedWeight, freeMonicWeight_apply]
       omega
     · exact isWeightedHomogeneous_zero R (depressedWeight m) _
   rw [mem_weightedHomogeneousSubmodule, ← hdiscr]
+  dsimp only [depressedSubst]
   exact ((mem_weightedHomogeneousSubmodule ..).mp
     (discr_freeMonic_mem_weightedHomogeneousSubmodule R m)).aeval hg
 
@@ -293,9 +297,8 @@ private theorem map_embeddedDepressed_tschirnhausToDepressed (R : Type*) [CommRi
   · rw [dite_eq_right h1]
     by_cases h2 : k = m
     · have hlead : (Polynomial.taylor (-s) F).coeff m = 1 := by
-        have h := Polynomial.leadingCoeff_taylor (-s) F
-        rw [Polynomial.leadingCoeff, Polynomial.natDegree_taylor, hF_deg, hF_mon.leadingCoeff] at h
-        exact h
+        simpa [hF_deg, hF_mon.leadingCoeff] using
+          Polynomial.coeff_taylor_natDegree (r := -s) (f := F)
       rw [h2, ite_eq_left rfl, map_one, hshift, hlead]
     · rw [ite_eq_right h2, map_zero, hshift]
       by_cases hkm1 : k = m - 1
@@ -330,18 +333,23 @@ private theorem map_freeMonic_tschirnhausFromDepressed (R : Type*) [CommRing R] 
   have hG_mon : G.Monic := (monic_genericDepressed R m).map _
   have hG_deg : G.natDegree = m := by
     dsimp only [G, embeddedDepressed]
-    rw [(monic_genericDepressed R m).natDegree_map]
-    exact natDegree_genericDepressed R m
-  have hshift : G.comp (Polynomial.X + Polynomial.C s) = Polynomial.taylor s G :=
-    (Polynomial.taylor_apply s G).symm
-  refine AddMonoidAlgebra.ext (Finsupp.ext fun k ↦ ?_)
-  rw [Polynomial.coeff_map, Polynomial.coeff_freeMonic]
-  by_cases h1 : k < m
-  · rw [dite_eq_left h1]
-    by_cases hlt : k + 2 ≤ m
-    · simp [tschirnhausFromDepressed, hlt]
-    · have hk : k = m - 1 := by omega
-      subst hk
+    rw [(monic_genericDepressed R m).natDegree_map, natDegree_genericDepressed R m]
+  let Q := G.comp (Polynomial.X + Polynomial.C s)
+  have hshift : Q = Polynomial.taylor s G := (Polynomial.taylor_apply s G).symm
+  have hQ_mon : Q.Monic := hG_mon.comp (Polynomial.monic_X_add_C s) (by simp)
+  have hQ_deg : Q.natDegree = m := by rw [hshift, Polynomial.natDegree_taylor, hG_deg]
+  let q : Polynomial.MonicDegreeEq (MvPolynomial (Fin m) R) m :=
+    Polynomial.MonicDegreeEq.mk Q hQ_mon hQ_deg
+  have hsymm : (MvPolynomial.mapEquivMonic R (MvPolynomial (Fin m) R) m).symm q =
+      tschirnhausFromDepressed R hm hmR := by
+    refine algHom_ext fun i ↦ ?_
+    simp only [MvPolynomial.mapEquivMonic, Equiv.coe_fn_symm_mk, aeval_X, q,
+      Polynomial.MonicDegreeEq.mk_coe, tschirnhausFromDepressed]
+    by_cases hlt : (i : ℕ) + 2 ≤ m
+    · simp [Q, G, s, hlt]
+    · have hi : (i : ℕ) = m - 1 := by omega
+      have hfin : i = ⟨m - 1, by omega⟩ := Fin.ext hi
+      rw [ite_eq_right hlt, hfin]
       have hnext := Polynomial.nextCoeff_taylor G s
       have hpos1 : 0 < (Polynomial.taylor s G).natDegree := by
         rw [Polynomial.natDegree_taylor, hG_deg]
@@ -354,28 +362,18 @@ private theorem map_freeMonic_tschirnhausFromDepressed (R : Type*) [CommRing R] 
         rw [coeff_map_rename_genericDepressed R hm, dite_eq_right (by omega),
           ite_eq_right (by omega)]
       rw [hGcoeff, zero_add] at hnext
-      have hnot : ¬ m - 1 + 2 ≤ m := by omega
-      have hX : (tschirnhausFromDepressed R hm hmR).toRingHom (X ⟨m - 1, h1⟩) =
-          X ⟨m - 1, h1⟩ := by
-        simp [tschirnhausFromDepressed, hnot]
-      rw [hshift, hnext, hX]
+      rw [hshift, hnext]
+      let i₁ : Fin m := ⟨m - 1, by omega⟩
+      change (m : MvPolynomial (Fin m) R) * s = X i₁
       calc
-        (X ⟨m - 1, h1⟩ : MvPolynomial (Fin m) R)
-          = ((m : MvPolynomial (Fin m) R) * C ((hmR.unit⁻¹ : Rˣ) : R)) *
-              X ⟨m - 1, h1⟩ := by rw [natCast_mul_C_inv_eq_one hmR, one_mul]
-        _ = (m : MvPolynomial (Fin m) R) * s := by
-              dsimp [s, tschirnhausShift]
-              ring
-  · rw [dite_eq_right h1]
-    by_cases h2 : k = m
-    · have hlead : (Polynomial.taylor s G).coeff m = 1 := by
-        have h := Polynomial.leadingCoeff_taylor s G
-        rw [Polynomial.leadingCoeff, Polynomial.natDegree_taylor, hG_deg, hG_mon.leadingCoeff] at h
-        exact h
-      rw [h2, ite_eq_left rfl, map_one, hshift, hlead]
-    · rw [ite_eq_right h2, map_zero, hshift, Polynomial.coeff_eq_zero_of_natDegree_lt]
-      rw [Polynomial.natDegree_taylor, hG_deg]
-      omega
+        (m : MvPolynomial (Fin m) R) * s
+          = ((m : MvPolynomial (Fin m) R) * C ((hmR.unit⁻¹ : Rˣ) : R)) * X i₁ := by
+                dsimp [s, tschirnhausShift, i₁]
+                ring
+        _ = X i₁ := by rw [natCast_mul_C_inv_eq_one hmR, one_mul]
+  have h := congrArg (fun f ↦ (MvPolynomial.mapEquivMonic R (MvPolynomial (Fin m) R) m f).1) hsymm
+  rw [(MvPolynomial.mapEquivMonic R (MvPolynomial (Fin m) R) m).apply_symm_apply q] at h
+  exact h.symm
 
 /-- **The Tschirnhaus automorphism.** Whenever `m ≥ 2` is invertible in `R`, shifting the root
 coordinate by `a₁ / m` defines an `R`-algebra automorphism of `MvPolynomial (Fin m) R` taking the
@@ -541,7 +539,7 @@ private theorem depressedDiscr_coeff_single_eq (R : Type*) [CommRing R] {m : ℕ
       (Polynomial.X ^ m + Polynomial.X : Polynomial R).discr := by
     rw [depressedDiscr, ← (monic_genericDepressed R m).discr_map (eval v)]
     congr 1
-    rw [genericDepressed, Polynomial.map_add, Polynomial.map_pow, Polynomial.map_X,
+    rw [genericDepressed_eq, Polynomial.map_add, Polynomial.map_pow, Polynomial.map_X,
       Polynomial.map_sum, Finset.sum_eq_single i₀]
     · simp only [Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow, Polynomial.map_X,
         eval_X, v, Pi.single_eq_same, map_one, one_mul, i₀]
@@ -551,17 +549,6 @@ private theorem depressedDiscr_coeff_single_eq (R : Type*) [CommRing R] {m : ℕ
     · intro hi0
       exact (hi0 (mem_univ i₀)).elim
   rw [← heval_sum, heval_discr, discr_X_pow_add_X R hm]
-
-private theorem eq_zero_of_mul_eq_zero_of_coeff_gt_zero_of_isUnit {B : Type*} [CommRing B]
-    {P Q : Polynomial B} {m : ℕ} (hgt : ∀ k > m, P.coeff k = 0) (hu : IsUnit (P.coeff m))
-    (hPQ : P * Q = 0) : Q = 0 := by
-  by_contra hQ
-  have hlc : Q.coeff Q.natDegree ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr hQ
-  have hcoeff : (P * Q).coeff (m + Q.natDegree) = P.coeff m * Q.coeff Q.natDegree :=
-    Polynomial.coeff_mul_add_eq_of_natDegree_le
-      (Polynomial.natDegree_le_iff_coeff_eq_zero.mpr hgt) le_rfl
-  rw [hPQ, Polynomial.coeff_zero] at hcoeff
-  exact hlc (hu.mul_right_eq_zero.mp hcoeff.symm)
 
 private theorem depressedDiscr_dvd_of_C_pow_mul_dvd {R : Type*} [CommRing R] [IsDomain R]
     {m : ℕ} (hm : 3 ≤ m) (hmR : (m : R) ≠ 0) {f : MvPolynomial (Fin (m - 1)) R}
@@ -699,8 +686,18 @@ private theorem depressedDiscr_dvd_of_C_pow_mul_dvd {R : Type*} [CommRing R] [Is
       exact (isUnit_one.neg.pow _).map C
     have heq0 : e (depressedDiscr A m) * e (MvPolynomial.map π q) = 0 := by
       rw [← map_mul, hq0, map_zero]
-    have hmapq : MvPolynomial.map π q = 0 :=
-      e.injective (by simpa using eq_zero_of_mul_eq_zero_of_coeff_gt_zero_of_isUnit hgt hunit heq0)
+    have hmapq : MvPolynomial.map π q = 0 := by
+      by_cases hnt : Nontrivial A
+      · have hdeg : (e (depressedDiscr A m)).natDegree = m :=
+          Polynomial.natDegree_eq_of_le_of_coeff_ne_zero
+            (Polynomial.natDegree_le_iff_coeff_eq_zero.mpr hgt) hunit.ne_zero
+        have hlc_unit : IsUnit (e (depressedDiscr A m)).leadingCoeff := by
+          rw [Polynomial.leadingCoeff, hdeg]
+          exact hunit
+        exact e.injective
+          ((Polynomial.isUnit_leadingCoeff_mul_right_eq_zero_iff hlc_unit).mp heq0)
+      · rw [not_nontrivial_iff_subsingleton] at hnt
+        exact Subsingleton.elim _ _
     have hr : ∀ r' : R, π r' = 0 ↔ (m : R) ∣ r' := fun r' ↦
       (Ideal.Quotient.eq_zero_iff_mem (I := I)).trans Ideal.mem_span_singleton
     obtain ⟨q', hq_eq⟩ := (MvPolynomial.C_dvd_iff_map_hom_eq_zero π (m : R) hr q).mpr hmapq
