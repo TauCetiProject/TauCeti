@@ -45,13 +45,8 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 /-- Every Brownian increment has zero third moment. -/
 @[simp] theorem integral_cube_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
     ∫ ω, (B t ω - B s ω) ^ 3 ∂P = 0 := by
-  have h := TauCeti.Probability.centralMoment_id_two_mul_add_one_gaussianReal
-    0 (nndist (t : ℝ) (s : ℝ)) 1
-  simp only [centralMoment, integral_id_gaussianReal, Pi.pow_apply, Pi.sub_apply,
-    id_eq, sub_zero] at h
-  norm_num at h
-  simpa using ((hB.hasLaw_sub t s).integral_comp
-    (f := fun x : ℝ => x ^ 3) (by fun_prop)).trans h
+  simpa using ((hB.hasLaw_sub t s).integral_comp (f := fun x : ℝ => x ^ 3) (by fun_prop)).trans
+    (by simpa using TauCeti.Probability.integral_sub_pow_two_mul_add_one_gaussianReal 0 _ 1)
 
 /-- The sixth moment of a Brownian increment of length `t - s` is `15 (t - s)³`. -/
 theorem integral_pow_six_sub (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
