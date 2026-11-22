@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.SmoothAbs
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.MeasureTheory.Integral.ContinuousMap

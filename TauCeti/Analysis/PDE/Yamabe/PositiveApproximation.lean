@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.LowerBound
 import Mathlib.Topology.Order.DenselyOrdered
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Geometry.Manifold.ContMDiff.Sqrt
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -73,14 +74,8 @@ private theorem regularized_energy_le (hn : 2 < finrank ℝ E) {u : M → ℝ}
   have hgrad (x : M) : ‖mgradient I (fun y ↦ Real.sqrt (u y ^ 2 + ε)) x‖ ^ 2 ≤
       ‖mgradient I u x‖ ^ 2 := by
     have hx : 0 < u x ^ 2 + ε := by positivity
-    have hd : HasDerivAt (fun t : ℝ ↦ Real.sqrt (t ^ 2 + ε))
-        (u x / Real.sqrt (u x ^ 2 + ε)) (u x) := by
-      convert (Real.hasDerivAt_sqrt hx.ne').comp (u x)
-        ((hasDerivAt_pow 2 (u x)).add_const ε) using 1
-      · funext t
-        simp
-      · ring
-    have hg := mgradient_comp_hasDerivAt hd (hu.mdifferentiableAt one_ne_zero)
+    have hg := mgradient_comp_hasDerivAt (Real.hasDerivAt_sqrt_sq_add (u x) hx.ne')
+      (hu.mdifferentiableAt one_ne_zero)
     simp only [Function.comp_def] at hg
     rw [hg, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
     have hs := Real.sq_sqrt hx.le

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Real powers
@@ -559,7 +560,7 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
       simpa only [Nat.cast_ofNat, mul_comm] using rpow_mul_natCast hd.le β 2
     rwa [hp, ← mul_pow] at h
   have h' : d * x ≤ sqrt B * d ^ β := (le_sqrt_of_sq_le hsq).trans_eq
-    (by rw [sqrt_mul' _ (sq_nonneg _), sqrt_sq (rpow_nonneg hd.le β)])
+    (by rw [sqrt_mul_sq, abs_of_nonneg (rpow_nonneg hd.le β)])
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
 

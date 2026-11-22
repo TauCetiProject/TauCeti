@@ -62,7 +62,7 @@ theorem contDiff_smoothAbs {η : ℝ} (hη : η ≠ 0) {n : WithTop ℕ∞} : Co
 /-- For `η ≠ 0`, the derivative of `smoothAbs η` at `t` is `t / √(t² + η²)`. -/
 theorem hasDerivAt_smoothAbs {η : ℝ} (hη : η ≠ 0) (t : ℝ) :
     HasDerivAt (smoothAbs η) (t / √(t ^ 2 + η ^ 2)) t := by
-  have h := (Real.hasDerivAt_sqrt_sq_add (p := η ^ 2) (t := t) (by positivity)).sub_const η
+  have h := (Real.hasDerivAt_sqrt_sq_add (p := η ^ 2) t (by positivity)).sub_const η
   convert h using 1
   ext x
   rw [smoothAbs]
