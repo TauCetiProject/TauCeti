@@ -53,6 +53,10 @@ dynamical zeta function; that series identity is
 * `Matrix.neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one`,
   `LinearMap.neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one`: if `1 - A ^ 2` is
   invertible, `(-1) ^ (i₊ + i₋) = (-1) ^ (n + i₀)`.
+* `Matrix.neg_one_pow_card_filter_lt_neg_one_of_det_pos`,
+  `LinearMap.neg_one_pow_card_filter_lt_neg_one_of_det_pos`: if `0 < det A` and `1 + A` is
+  invertible, the numbers of real eigenvalues in `(-∞, -1)` and in `(-1, 0)` have the same parity.
+  For a symplectic `A` this lets `i₋` be read off from the eigenvalues in `(-1, 0)`.
 
 ## References
 
@@ -175,6 +179,41 @@ theorem neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one (A : Matrix n 
   rw [pow_add, pow_add (-1 : SignType), ← neg_one_pow_card_roots_charpoly A, hroots, mul_assoc,
     hsq, mul_one]
 
+/-- If `0 < det A` for a real square matrix `A` and `1 + A` is invertible, the numbers of real
+characteristic roots of `A` in `(-∞, -1)` and in `(-1, 0)`, counted with algebraic multiplicity,
+have the same parity: a positive determinant forces an even number of negative real roots. -/
+theorem neg_one_pow_card_filter_lt_neg_one_of_det_pos (A : Matrix n n ℝ) (hA : 0 < A.det)
+    (h : (1 + A).det ≠ 0) :
+    (-1 : SignType) ^ (A.charpoly.roots.filter (· < -1)).card =
+      (-1) ^ (A.charpoly.roots.filter (· ∈ Set.Ioo (-1) 0)).card := by
+  have hX : (aeval A (X : ℝ[X])).det ≠ 0 := by rw [aeval_X]; exact hA.ne'
+  have h1X : (aeval A (1 + X : ℝ[X])).det ≠ 0 := by simpa using h
+  -- The sign of a real root `x ≠ 0, -1` records whether it lies in `(-∞, -1)` or `(-1, 0)`.
+  have hsign : A.charpoly.roots.map (fun x ↦ SignType.sign (eval x X)) =
+      A.charpoly.roots.map fun x ↦
+        (if x < -1 then -1 else 1) * (if x ∈ Set.Ioo (-1) 0 then -1 else 1) := by
+    refine Multiset.map_congr rfl fun x hx ↦ ?_
+    have h0 : x ≠ 0 := by simpa using eval_ne_zero_of_det_aeval_ne_zero A _ hX hx
+    have h1 : x ≠ -1 := by
+      rintro rfl
+      simpa using eval_ne_zero_of_det_aeval_ne_zero A _ h1X hx
+    rw [eval_X]
+    rcases h0.lt_or_gt with hx0 | hx0
+    · rcases h1.lt_or_gt with hx1 | hx1 <;> simp [hx0, hx1, hx1.not_gt]
+    · simp [hx0, hx0.not_gt, (by linarith : ¬ x < -1)]
+  have hdet := sign_det_aeval A X hX
+  rw [aeval_X, sign_pos hA, hsign, Multiset.prod_map_mul, Multiset.prod_map_ite_one,
+    Multiset.prod_map_ite_one] at hdet
+  have hsq (m : ℕ) : (-1 : SignType) ^ m * (-1) ^ m = 1 := by
+    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
+  calc (-1 : SignType) ^ (A.charpoly.roots.filter (· < -1)).card
+      = (-1) ^ (A.charpoly.roots.filter (· < -1)).card *
+          ((-1) ^ (A.charpoly.roots.filter (· < -1)).card *
+            (-1) ^ (A.charpoly.roots.filter (· ∈ Set.Ioo (-1) 0)).card) := by
+        rw [← hdet, mul_one]
+    _ = (-1) ^ (A.charpoly.roots.filter (· ∈ Set.Ioo (-1) 0)).card := by
+        rw [← mul_assoc, hsq, one_mul]
+
 end Matrix
 
 namespace LinearMap
@@ -226,5 +265,18 @@ theorem neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one (f : Module.En
   rw [← det_toMatrix b, hmat] at h
   have := (toMatrix b b f).neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one h
   rwa [charpoly_toMatrix f b, Fintype.card_fin] at this
+
+/-- If `0 < det f` for an endomorphism `f` of a finite-dimensional real vector space and `1 + f`
+is invertible, the numbers of real roots of the characteristic polynomial of `f` in `(-∞, -1)`
+and in `(-1, 0)`, counted with multiplicity, have the same parity. -/
+theorem neg_one_pow_card_filter_lt_neg_one_of_det_pos (f : Module.End ℝ V) (hf : 0 < f.det)
+    (h : (1 + f).det ≠ 0) :
+    (-1 : SignType) ^ (f.charpoly.roots.filter (· < -1)).card =
+      (-1) ^ (f.charpoly.roots.filter (· ∈ Set.Ioo (-1) 0)).card := by
+  let b := Module.finBasis ℝ V
+  rw [← det_toMatrix b] at hf h
+  rw [map_add, toMatrix_one] at h
+  rw [← charpoly_toMatrix f b]
+  exact (toMatrix b b f).neg_one_pow_card_filter_lt_neg_one_of_det_pos hf h
 
 end LinearMap
