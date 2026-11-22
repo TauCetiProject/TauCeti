@@ -343,12 +343,6 @@ theorem letter_comp_map (g : M →ₗ[R] N) :
       LinearEquiv.coe_coe, PiTensorProduct.map_tprod, TauCeti.TensorPower.oneEquiv_tprod]
   exact LinearMap.congr_fun h _
 
-/-- Applying `letter` to a letterwise-mapped word applies the map to its letter. -/
-@[simp]
-theorem letter_map (g : M →ₗ[R] N) (w : ReducedTensorWords R M) :
-    letter R N (ReducedTensorWords.map (R := R) g w) = g (letter R M w) :=
-  LinearMap.congr_fun (letter_comp_map g) w
-
 end Map
 
 end ReducedTensorWords

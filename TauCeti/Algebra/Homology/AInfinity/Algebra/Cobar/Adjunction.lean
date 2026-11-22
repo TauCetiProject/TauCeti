@@ -56,6 +56,7 @@ noncomputable def cobarBarCounit :
 
 /-- Under `cobarBarHomEquiv`, the identity `A∞` morphism of `B` corresponds to
 `cobarBarCounit`. -/
+@[simp]
 theorem cobarBarHomEquiv_id :
     hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra.cobarBarHomEquiv hB
       (AInfinityHom.id hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) = hB.cobarBarCounit :=
@@ -105,7 +106,8 @@ theorem cobarBarCounit_comp_cobarBarMap_toAInfinityHom {A : Type uA} [Ring A] [A
       ψ.comp hA.cobarBarCounit := by
   rw [hB.cobarBarCounit_comp_cobarBarMap,
     ← AInfinityHom.comp_id ψ.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom,
-    hA.toIsNonUnitalDGAlgebra.toAInfinityAlgebra.cobarBarHomEquiv_comp_left ψ, cobarBarCounit]
+    hA.toIsNonUnitalDGAlgebra.toAInfinityAlgebra.cobarBarHomEquiv_comp_left ψ,
+    cobarBarHomEquiv_id]
 
 end IsDGAlgebra
 
