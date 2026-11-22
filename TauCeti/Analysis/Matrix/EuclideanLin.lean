@@ -51,8 +51,9 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
 * `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the quadratic form of `A` at a vector extended
   by zero is the quadratic form of the principal submatrix at the original vector;
 
-* `Matrix.re_inner_toEuclideanLin_diagonal_apply_self` — the quadratic form of `diag(w)` is
-  `x ↦ ∑ᵢ |xᵢ|² wᵢ`;
+* `Matrix.inner_toEuclideanLin_diagonal_apply_self` — the quadratic form of `diag(w)`, for real
+  weights `w`, is the real number `∑ᵢ |xᵢ|² wᵢ` (its real part:
+  `Matrix.re_inner_toEuclideanLin_diagonal_apply_self`);
 * `Matrix.dotProduct_mulVec_eq_inner_toEuclideanLin` — over the reals, the coordinate quadratic
   form `xᵀ A x` is `⟪x, A x⟫`;
 * `Matrix.exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner` — the values of the quadratic
@@ -145,16 +146,22 @@ theorem inner_toEuclideanLin_piLpExtendByZero (A : Matrix κ κ 𝕜) (f : ι �
     LinearIsometry.sum_mul_piLpExtendByZero, hmul]
   simp [mulVec, dotProduct]
 
-/-- The quadratic form of the diagonal operator `diag(w)` on Euclidean space is
+/-- The quadratic form of the diagonal operator `diag(w)` of real weights on Euclidean space is
+`x ↦ ∑ᵢ |xᵢ|² wᵢ`, a real number. -/
+theorem inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : EuclideanSpace 𝕜 ι) :
+    ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) x, x⟫_𝕜 = ((∑ i, ‖x i‖ ^ 2 * w i : ℝ) : 𝕜) := by
+  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, RCLike.inner_apply', map_mul,
+    RCLike.conj_ofReal, RCLike.ofReal_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [mul_assoc, RCLike.conj_mul]
+  push_cast
+  ring
+
+/-- The real part of the quadratic form of the diagonal operator `diag(w)` of real weights is
 `x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
 theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ) (x : EuclideanSpace 𝕜 ι) :
     RCLike.re ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) x, x⟫_𝕜 = ∑ i, ‖x i‖ ^ 2 * w i := by
-  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, map_sum, RCLike.inner_apply',
-    map_mul, RCLike.conj_ofReal]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [mul_assoc, RCLike.conj_mul]
-  norm_cast
-  simp [mul_comm]
+  rw [inner_toEuclideanLin_diagonal_apply_self, RCLike.ofReal_re]
 
 /-- Over the reals, the coordinate quadratic form `xᵀ A x` is the inner product `⟪x, A x⟫` on
 Euclidean space. -/
