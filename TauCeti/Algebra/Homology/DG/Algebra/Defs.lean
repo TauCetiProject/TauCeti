@@ -90,7 +90,7 @@ The next lemma uses only the graded Leibniz rule, and not that `d` raises degree
 to zero.  It is stated with that rule as a hypothesis so that differential graded algebras and the
 curved differential graded algebras of `TauCeti.Algebra.Homology.Curved.Algebra.Defs` share one
 proof.  The corresponding consequence of the degree law alone, that `d` commutes with homogeneous
-projections up to the degree shift, is `TauCeti.LinearMap.IsHomogeneous.map_decompose`.
+projections up to the degree shift, is `LinearMap.IsHomogeneous.map_decompose`.
 -/
 
 variable {ι A σ F : Type*} [DecidableEq ι] [NonUnitalNonAssocRing A]
