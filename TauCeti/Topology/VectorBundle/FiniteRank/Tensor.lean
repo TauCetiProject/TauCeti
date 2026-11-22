@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
+public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
 public import TauCeti.Analysis.Normed.Operator.Kronecker
 
 /-!

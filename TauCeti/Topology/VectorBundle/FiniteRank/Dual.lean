@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
+public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
+public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 public import TauCeti.Analysis.Normed.Operator.PiTranspose
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor

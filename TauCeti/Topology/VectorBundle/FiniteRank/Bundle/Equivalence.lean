@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.Equiv.ULift
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Preadditive
 public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Basic
 public import TauCeti.Topology.VectorBundle.Transport

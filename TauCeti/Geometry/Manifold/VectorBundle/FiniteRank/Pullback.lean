@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
+public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.WhitneySum
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Biproduct
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Dual
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback

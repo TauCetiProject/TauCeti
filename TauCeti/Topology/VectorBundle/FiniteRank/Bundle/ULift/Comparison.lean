@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Equivalence
-public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ULift
+public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ULift.Basic
 
 /-!
 # Comparison of universe lifting with the atlas equivalence

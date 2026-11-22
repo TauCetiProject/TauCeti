@@ -10,7 +10,8 @@ public import TauCeti.Topology.Algebra.Module.Equiv.Fin
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 import TauCeti.Topology.VectorBundle.Core.Congr
 import TauCeti.Topology.VectorBundle.Core.LocallyConstant
-import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
+import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
+import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
 import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 import Mathlib.Logic.Equiv.Fin.Basic
 

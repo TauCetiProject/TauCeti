@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Preadditive
-public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
+public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
 
 /-!
 # Chart-operator encoding and isomorphism criterion for bundle atlases
