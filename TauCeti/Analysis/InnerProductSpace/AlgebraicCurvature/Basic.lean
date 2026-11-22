@@ -562,22 +562,28 @@ trace over its first and third arguments. In an orthonormal basis it is
 `∑ᵢ r(eᵢ, u, eᵢ, v)`, see `TauCeti.FourTensor.ricci_apply_orthonormalBasis`. -/
 def ricci : FourTensor V →ₗ[ℝ] BilinForm ℝ V where
   toFun r := LinearMap.mk₂ ℝ (fun u v ↦ LinearMap.BilinMap.metricTrace (ricciSlice r u v))
-    (fun _ _ _ ↦ by rw [← map_add]; congr 1; ext; exact apply_add_second ..)
-    (fun _ _ _ ↦ by rw [← map_smul]; congr 1; ext; exact apply_smul_second ..)
-    (fun _ _ _ ↦ by rw [← map_add]; congr 1; ext; exact apply_add_fourth ..)
-    (fun _ _ _ ↦ by rw [← map_smul]; congr 1; ext; exact apply_smul_fourth ..)
+    (fun _ _ _ ↦ by
+      rw [← map_add]; congr 1; ext
+      simp only [ricciSlice_apply, LinearMap.add_apply, apply_add_second])
+    (fun _ _ _ ↦ by
+      rw [← map_smul]; congr 1; ext
+      simp only [ricciSlice_apply, LinearMap.smul_apply, apply_smul_second, smul_eq_mul])
+    (fun _ _ _ ↦ by
+      rw [← map_add]; congr 1; ext
+      simp only [ricciSlice_apply, LinearMap.add_apply, apply_add_fourth])
+    (fun _ _ _ ↦ by
+      rw [← map_smul]; congr 1; ext
+      simp only [ricciSlice_apply, LinearMap.smul_apply, apply_smul_fourth, smul_eq_mul])
   map_add' r q := by
     ext u v
-    simp only [LinearMap.mk₂_apply, LinearMap.add_apply]
-    rw [← map_add]
-    -- `ricciSlice` is additive in the tensor by its definition.
-    rfl
+    have h : ricciSlice (r + q) u v = ricciSlice r u v + ricciSlice q u v := by
+      ext; simp only [ricciSlice_apply, LinearMap.add_apply, _root_.add_apply]
+    simp only [LinearMap.mk₂_apply, LinearMap.add_apply, h, map_add]
   map_smul' c r := by
     ext u v
-    simp only [LinearMap.mk₂_apply, LinearMap.smul_apply, RingHom.id_apply]
-    rw [← map_smul]
-    -- `ricciSlice` is homogeneous in the tensor by its definition.
-    rfl
+    have h : ricciSlice (c • r) u v = c • ricciSlice r u v := by
+      ext; simp only [ricciSlice_apply, LinearMap.smul_apply, _root_.smul_apply]
+    simp only [LinearMap.mk₂_apply, LinearMap.smul_apply, RingHom.id_apply, h, map_smul]
 
 /-- The Ricci contraction is the metric trace of the slice `(x, y) ↦ r(x, u, y, v)`. -/
 theorem ricci_apply (r : FourTensor V) (u v : V) :

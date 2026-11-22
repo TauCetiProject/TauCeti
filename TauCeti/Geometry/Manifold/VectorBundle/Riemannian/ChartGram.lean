@@ -443,18 +443,14 @@ theorem sum_inner_chartDualFrame_smul (α : M) {y : M} (hy : y ∈ (chartAt H α
 
 /-- On the chart domain, the sum `∑ᵢ B(Fᵢ, Dᵢ)` over the chart-local frame `Fᵢ` at `α` and its
 metric-dual frame `Dᵢ` is the metric trace `∑ₖ B(eₖ, eₖ)` of `B` in any orthonormal basis `eₖ`. The
-bilinear map `B` takes values in any real topological vector space, such as a fibre of a vector
-bundle. -/
+bilinear map `B` takes values in any real vector space, such as a fibre of a vector bundle. -/
 theorem sum_apply_chartDualFrame_eq_sum (α : M) {y : M} (hy : y ∈ (chartAt H α).source)
-    {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W] [IsTopologicalAddGroup W]
-    [ContinuousSMul ℝ W] (B : TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] W)
+    {N : Type*} [AddCommMonoid N] [Module ℝ N] (B : LinearMap.BilinMap ℝ (TangentSpace I y) N)
     {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ (TangentSpace I y)) :
     ∑ i, B (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) =
       ∑ k, B (e k) (e k) := by
   -- Both sums are the metric trace of `B`.
-  simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] using
-    (metricTrace_eq_sum_chartDualFrame α hy B.toLinearMap₁₂).symm.trans
-      (LinearMap.BilinMap.metricTrace_eq_sum _ e)
+  rw [← metricTrace_eq_sum_chartDualFrame α hy B, LinearMap.BilinMap.metricTrace_eq_sum _ e]
 
 section Smooth
 

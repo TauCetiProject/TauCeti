@@ -107,11 +107,21 @@ def vectorFormInner (B : LinearMap.BilinForm ℝ V) (k : ℕ) :
     LinearMap.BilinForm ℝ (⋀[ℝ]^k E →ₗ[ℝ] V) :=
   LinearMap.mk₂ ℝ (fun F G ↦ BilinMap.metricTrace (B.compl₁₂ F G))
     (fun _ _ _ ↦ by
-      simp [BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ _), Finset.sum_add_distrib])
-    (fun _ _ _ ↦ by simp [BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ _), Finset.mul_sum])
+      rw [← map_add]
+      exact congrArg _ <| LinearMap.ext₂ fun _ _ ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.add_apply, map_add])
     (fun _ _ _ ↦ by
-      simp [BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ _), Finset.sum_add_distrib])
-    (fun _ _ _ ↦ by simp [BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ _), Finset.mul_sum])
+      rw [← map_smul]
+      exact congrArg _ <| LinearMap.ext₂ fun _ _ ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, map_smul])
+    (fun _ _ _ ↦ by
+      rw [← map_add]
+      exact congrArg _ <| LinearMap.ext₂ fun _ _ ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.add_apply, map_add])
+    (fun _ _ _ ↦ by
+      rw [← map_smul]
+      exact congrArg _ <| LinearMap.ext₂ fun _ _ ↦ by
+        simp only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, map_smul])
 
 variable {B : LinearMap.BilinForm ℝ V} {k : ℕ}
 

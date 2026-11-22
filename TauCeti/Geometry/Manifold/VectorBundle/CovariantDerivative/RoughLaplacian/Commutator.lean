@@ -163,7 +163,8 @@ theorem covariantDerivative_roughLaplacian_eq_sum
     hcov.sum_apply_chartDualFrame_cancel x (covT.hom cov (cov σ) x) v hU hF hD
   have htr : ∑ i, covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (Fr i x) (Du i x) =
       ∑ i, covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (b i) (b i) :=
-    sum_apply_chartDualFrame_eq_sum x (mem_chart_source H x) _ b
+    sum_apply_chartDualFrame_eq_sum x (mem_chart_source H x)
+      (covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v).toLinearMap₁₂ b
   simp only [neg_apply, sum_apply, hexp, Finset.sum_add_distrib]
   rw [hcancel, add_neg_cancel_right, htr]
 
