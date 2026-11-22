@@ -115,7 +115,8 @@ theorem hasMFDerivWithinAt_totalSpace_iff :
   refine (Filter.EventuallyEq.hasFDerivWithinAt_iff hfun hx).trans ?_
   -- `tangentSpaceCastModel` is the identity of the model spaces, so the derivative of the pair is
   -- the pair of the derivatives of its components, as in `HasMFDerivWithinAt.prodMk`.
-  exact ⟨fun h ↦ ⟨h.fst, h.snd⟩, fun h ↦ h.1.prodMk h.2⟩
+  exact ⟨fun h ↦ ⟨h.fst.congr_fderiv (ContinuousLinearMap.fst_comp_prod _ _),
+    h.snd.congr_fderiv (ContinuousLinearMap.snd_comp_prod _ _)⟩, fun h ↦ h.1.prodMk h.2⟩
 
 /-- The unrestricted case of `TauCeti.Manifold.hasMFDerivWithinAt_totalSpace_iff`. -/
 theorem hasMFDerivAt_totalSpace_iff :
