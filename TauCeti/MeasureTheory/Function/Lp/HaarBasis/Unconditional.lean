@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Module.Bases.Unconditional
 public import TauCeti.Analysis.SpecialFunctions.Pow.Burkholder
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.HaarBasis.L2
 import TauCeti.MeasureTheory.Function.Lp.Norm

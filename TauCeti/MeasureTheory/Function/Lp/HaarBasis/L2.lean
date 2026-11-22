@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 
@@ -50,18 +49,37 @@ theorem inner_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (j k : ℕ) :
     rw [integral_haarFun_mul_self, RCLike.ofReal_inv, RCLike.ofReal_natCast]
   · simp [hjk]
 
--- Not `@[simp]`: `haarBasis_apply` and `inner_self_eq_norm_sq_to_K` simplify the LHS.
+-- Not `@[simp]`: `haarBasis_apply` and `inner_self_eq_norm_sq_to_K` simplify the LHS;
+-- see `eLpNorm_ofReal_haarFun_two_sq` for the normalized `simp` rule.
 /-- Diagonal inner product of a Haar basis vector in `L²([0, 1]; 𝕜)`. -/
 theorem inner_haarBasis_two_self (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
     ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top j⟫_𝕜 =
       ((2 ^ Nat.log 2 j : ℕ) : 𝕜)⁻¹ := by
   rw [inner_haarBasis_two, ite_eq_left rfl]
 
--- Not `@[simp]`: `haarBasis_apply` simplifies the LHS.
+/-- Normalized `simp` form of `inner_haarBasis_two_self`: the squared `L²` norm of the `𝕜`-valued
+Haar function `haarFun j` equals `2 ^ (-⌊log₂ j⌋)`. -/
+@[simp]
+theorem eLpNorm_ofReal_haarFun_two_sq (𝕜 : Type*) [RCLike 𝕜] (j : ℕ) :
+    ((eLpNorm (fun x => (haarFun j x : 𝕜)) 2 (volume : Measure I)).toReal : 𝕜) ^ 2 =
+      ((2 ^ Nat.log 2 j : ℕ) : 𝕜)⁻¹ := by
+  simpa using inner_haarBasis_two_self 𝕜 j
+
+-- Not `@[simp]`: `haarBasis_apply` simplifies the LHS; see `inner_toLp_ofReal_haarFun_of_ne` for
+-- the normalized `simp` rule.
 /-- Distinct Haar basis vectors are orthogonal in `L²([0, 1]; 𝕜)`. -/
 theorem inner_haarBasis_two_of_ne (𝕜 : Type*) [RCLike 𝕜] {j k : ℕ} (hjk : j ≠ k) :
     ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
   rw [inner_haarBasis_two, ite_eq_right hjk]
+
+/-- Normalized `simp` form of `inner_haarBasis_two_of_ne`: distinct `L²` representatives of the
+`𝕜`-valued Haar functions are orthogonal. -/
+@[simp]
+theorem inner_toLp_ofReal_haarFun_of_ne (𝕜 : Type*) [RCLike 𝕜] {j k : ℕ} (hjk : j ≠ k)
+    {hj : MemLp (fun x => (haarFun j x : 𝕜)) 2 (volume : Measure I)}
+    {hk : MemLp (fun x => (haarFun k x : 𝕜)) 2 (volume : Measure I)} :
+    ⟪hj.toLp (fun x => (haarFun j x : 𝕜)), hk.toLp (fun x => (haarFun k x : 𝕜))⟫_𝕜 = 0 := by
+  simpa using inner_haarBasis_two_of_ne 𝕜 hjk
 
 /-- **Parseval's identity for finite Haar sums in `L²([0, 1]; 𝕜)`.** -/
 theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜) (A : Finset ℕ) :
