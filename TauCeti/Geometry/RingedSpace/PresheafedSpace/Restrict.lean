@@ -33,7 +33,8 @@ of Mathlib's `AlgebraicGeometry.Scheme.homOfLE`.
 * `AlgebraicGeometry.PresheafedSpace.pullback_comp_iff_restrictHomOfLE`: pullback vs intersection
   compatibility.
 * `AlgebraicGeometry.PresheafedSpace.ofRestrict_c_app_le`,
-  `restrictTopSectionsIso_hom_c_app_top_of_fac`: section-restriction and factorization rules.
+  `c_app_comp_homOfLE_of_eq`, `restrictTopSectionsIso_hom_c_app_top_of_fac`: section-restriction,
+  congruence, and factorization rules.
 -/
 
 public section
@@ -222,6 +223,15 @@ theorem restrictTopSectionsIso_hom_restrictHomOfLE_c_app_top {V W : Opens X} (h 
     exact congrArg (_ ≫ Z.presheaf.map ·) (Subsingleton.elim _ _)
   erw [Category.assoc, hnat, X.ofRestrict_c_app_le_assoc hUW]; rfl
 
+/-- Equal morphisms of presheafed spaces induce equal maps after restricting to a common open `V`
+of the source. -/
+@[reassoc] theorem c_app_comp_homOfLE_of_eq {X Y : PresheafedSpace.{v, u, w} C}
+    {k₁ k₂ : X ⟶ Y} (hk : k₁ = k₂) {W : Opens Y} {V : Opens X}
+    (h₁ : V ≤ (Opens.map k₁.base).obj W) (h₂ : V ≤ (Opens.map k₂.base).obj W) :
+    k₁.c.app (op W) ≫ X.presheaf.map (homOfLE h₁).op =
+      k₂.c.app (op W) ≫ X.presheaf.map (homOfLE h₂).op := by
+  subst hk; rfl
+
 /-- Compatibility of `restrictTopSectionsIso` with factorizations `l ≫ Y|_V = h ≫ X|_U ≫ f`
 for opens `V ≤ W` and `U ≤ f⁻¹ W`. -/
 @[reassoc] theorem restrictTopSectionsIso_hom_c_app_top_of_fac_le
@@ -233,11 +243,8 @@ for opens `V ≤ W` and `U ≤ f⁻¹ W`. -/
         (l.c.app (op ⊤) : _ ⟶ Z.presheaf.obj (op ⊤)) =
       f.c.app (op W) ≫ X.presheaf.map (homOfLE hUW).op ≫ (X.restrictTopSectionsIso U).hom ≫
         (h.c.app (op ⊤) : _ ⟶ Z.presheaf.obj (op ⊤)) := by
-  have hmid {k₁ k₂ : Z ⟶ Y} (hk : k₁ = k₂) (h₁ : (⊤ : Opens _) ≤ (Opens.map k₁.base).obj W)
-      (h₂) : k₁.c.app (op W) ≫ Z.presheaf.map (homOfLE h₁).op =
-        k₂.c.app (op W) ≫ Z.presheaf.map (homOfLE h₂).op := by subst hk; rfl
   rw [← comp_ofRestrict_c_app_le hVW l (fun z _ ↦ hVW (l.base z).2),
-    hmid (hfac.trans (Category.assoc _ _ _).symm)
+    c_app_comp_homOfLE_of_eq (hfac.trans (Category.assoc _ _ _).symm)
       (fun z _ ↦ hVW (l.base z).2) (fun z _ ↦ hUW (h.base z).2)]
   erw [Category.assoc, comp_ofRestrict_c_app_le hUW h _]; rfl
 

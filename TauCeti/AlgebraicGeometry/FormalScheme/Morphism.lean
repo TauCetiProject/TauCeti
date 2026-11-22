@@ -31,7 +31,7 @@ variable (X : FormalScheme.{u})
 noncomputable def restrictHomOfLE {V W : Opens X} (h : V ≤ W) : X.restrict V ⟶ X.restrict W :=
   InducedCategory.homMk (X.toLocallyRingedSpace.restrictHomOfLE h)
 
-theorem forgetToLocallyRingedSpace_map_restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
+@[simp] theorem forgetToLocallyRingedSpace_map_restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
     forgetToLocallyRingedSpace.map (X.restrictHomOfLE h) =
       X.toLocallyRingedSpace.restrictHomOfLE h := (rfl)
 @[reassoc (attr := simp)] theorem restrictHomOfLE_ofRestrict {V W : Opens X} (h : V ≤ W) :

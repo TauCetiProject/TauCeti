@@ -387,6 +387,14 @@ affine formal opens `U ≤ W` (EGA I, Ch. I, 10.4.5). -/
   ⨅ (U : Opens X) (hU : X.IsAffineOpen U) (hUW : U ≤ W),
     TopologicalSpace.induced (X.presheaf.map (homOfLE hUW).op) (X.sectionsTopology U hU)
 
+/-- `X.openSectionsTopology W` is the infimum over affine formal opens `U ≤ W` of the topologies
+induced from `X.sectionsTopology U hU` along restriction. -/
+theorem openSectionsTopology_def (X : FormalScheme.{u}) (W : Opens X) :
+    X.openSectionsTopology W =
+      ⨅ (U : Opens X) (hU : X.IsAffineOpen U) (hUW : U ≤ W),
+        TopologicalSpace.induced (X.presheaf.map (homOfLE hUW).op) (X.sectionsTopology U hU) := by
+  rfl
+
 /-- Continuity into `X.openSectionsTopology W` is tested on affine formal opens `U ≤ W`. -/
 theorem continuous_iff_openSectionsTopology {T : Type*} [TopologicalSpace T] (X : FormalScheme.{u})
     (W : Opens X) (g : T → X.presheaf.obj (op W)) :
@@ -466,11 +474,9 @@ private theorem sectionsTopology_basicOpen_le (f : A) :
     have hpre' : (⊤ : Opens _) ≤ (Opens.map (e.inv ≫
         (Spf A).ofRestrict (U : Opens (Spf A).toTopCat).isOpenEmbedding).base).obj U :=
       (Spf.restrictBasicOpenIso_inv_ofRestrict f).symm ▸ hpre.ge
-    have hsub {k₁ k₂ : Spf B ⟶ Spf A} (hk : k₁ = k₂)
-        (h₁ : (⊤ : Opens _) ≤ (Opens.map k₁.base).obj U) (h₂) : k₁.c.app (op U) ≫
-          (Spf B).presheaf.map (homOfLE h₁).op = k₂.c.app (op U) ≫
-          (Spf B).presheaf.map (homOfLE h₂).op := by subst hk; rfl
-    erw [← hsub (Spf.restrictBasicOpenIso_inv_ofRestrict f) hpre' hpre.ge,
+    erw [← PresheafedSpace.c_app_comp_homOfLE_of_eq
+        (congrArg LocallyRingedSpace.Hom.toHom (Spf.restrictBasicOpenIso_inv_ofRestrict f))
+        hpre' hpre.ge,
       PresheafedSpace.comp_ofRestrict_c_app_le (le_refl U) e.inv.toHom hpre',
       TopCat.Presheaf.map_eq_id, Category.id_comp]
     exact (Iso.eq_comp_inv (Spf.topSectionsIso B)).mpr (Category.assoc _ _ _)

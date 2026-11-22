@@ -37,6 +37,13 @@ noncomputable def topSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsAdicRing A] : (Spf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A :=
   have := (IsAdicRing.ideal_spec A).2.2; globalSectionsIso (IsAdicRing.ideal_spec A).2.1
 
+/-- `topSectionsIso A` is `globalSectionsIso` at the chosen ideal of definition of `A`. -/
+theorem topSectionsIso_def (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    have := (IsAdicRing.ideal_spec A).2.2
+    topSectionsIso A = globalSectionsIso (IsAdicRing.ideal_spec A).2.1 := by
+  rfl
+
 /-- `topSectionsIso A` is a homeomorphism from `(Γ(⊤, O_{Spf A}), quotientSectionsTopology _ ⊤)`
 onto `A` (EGA I, Ch. I, 10.1.3). -/
 theorem isHomeomorph_topSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
@@ -278,6 +285,7 @@ instance (R : isAdicRing.{u}.FullSubcategory) : IsAdicRing R.obj := R.property
 
 /-- `Spf` as a contravariant functor from complete separated adic rings of finite ideal type
 (`isAdicRing.FullSubcategory`) to locally ringed spaces (EGA I, Ch. I, 10.2.2). -/
+-- Expose so `functor.obj R` reduces to `Spf R.unop.obj` in the exported type of `functor_map`.
 @[expose] noncomputable def functor :
     (isAdicRing.{u}.FullSubcategory)ᵒᵖ ⥤ LocallyRingedSpace.{u} where
   obj R := Spf R.unop.obj; map φ := map φ.unop.hom.1 φ.unop.hom.2
