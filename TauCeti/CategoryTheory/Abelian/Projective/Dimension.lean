@@ -27,7 +27,7 @@ A morphism `f` of projective objects shifts dimension by two between its kernel 
 
 If a morphism `g : X ⟶ Y` has projective kernel and projective target, and its cokernel has
 projective dimension at most one, for instance in a hereditary abelian category, then `X` is
-projective (`CategoryTheory.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one`).
+projective (`Quiver.Hom.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one`).
 
 The chosen projective presentation `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of an object is short exact
 (`CategoryTheory.Projective.kernelShortComplex_shortExact`).
@@ -67,9 +67,9 @@ theorem projectiveDimension_le_projectiveDimension_iff {D : Type*} [Category* D]
 /-- If `g : X ⟶ Y` has projective kernel and projective target, and its cokernel has projective
 dimension at most one (for instance in an abelian category of projective dimension at most one),
 then `X` is projective. -/
-theorem projective_of_projective_kernel_of_hasProjectiveDimensionLE_one {X Y : C} (g : X ⟶ Y)
-    [Projective (kernel g)] [Projective Y] [HasProjectiveDimensionLE (cokernel g) 1] :
-    Projective X := by
+theorem _root_.Quiver.Hom.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one
+    {X Y : C} (g : X ⟶ Y) [Projective (kernel g)] [Projective Y]
+    [HasProjectiveDimensionLE (cokernel g) 1] : Projective X := by
   -- The image of `g` is a subobject of `Y` with quotient the cokernel of `g`, so it is projective,
   -- and `X` is an extension of it by `kernel g`.
   have : Projective (image g) := projective_iff_hasProjectiveDimensionLT_one.mpr
@@ -86,7 +86,7 @@ at most one. -/
 theorem projective_of_mono_of_hasProjectiveDimensionLE_one {X Y : C} (f : X ⟶ Y)
     [Mono f] [Projective Y] [HasProjectiveDimensionLE (cokernel f) 1] : Projective X :=
   have : Projective (kernel f) := (isZero_kernel_of_mono f).projective
-  projective_of_projective_kernel_of_hasProjectiveDimensionLE_one f
+  f.projective_of_projective_kernel_of_hasProjectiveDimensionLE_one
 
 /-- **Dimension shifting along a morphism of projectives.** For a morphism `f : P ⟶ Q` of
 projective objects, the exact sequence `0 ⟶ ker f ⟶ P ⟶ Q ⟶ coker f ⟶ 0` lowers the projective
