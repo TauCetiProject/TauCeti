@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 
 This file collects general results about `iteratedDeriv`:
 
+* `TauCeti.iteratedDeriv_iteratedDeriv`: iterated derivatives compose additively.
 * `TauCeti.contDiff_of_finite_derivative_tower` and `TauCeti.contDiff_of_derivative_tower`: a
   finite or infinite sequence of functions linked by ordinary derivatives gives a `C^m` or smooth
   initial function.
@@ -36,6 +37,11 @@ namespace TauCeti
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The `n`-th derivative of the `k`-th derivative is the `(n + k)`-th derivative. -/
+theorem iteratedDeriv_iteratedDeriv (n k : ℕ) (f : 𝕜 → E) :
+    iteratedDeriv n (iteratedDeriv k f) = iteratedDeriv (n + k) f := by
+  simp only [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
 
 /-- A finite tower of functions up to order `m` with successive ordinary derivatives and
 continuous top level gives a `C^m` zeroth function. -/

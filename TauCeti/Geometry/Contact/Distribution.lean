@@ -264,6 +264,18 @@ theorem SmoothForm.IsContactForm.isContactDistribution_kerDistribution [ENat.LEI
     IsContactDistribution I n α.kerDistribution :=
   isContactForm_iff_isContactDistribution_kerDistribution.1 hα
 
+/-- **Global contact forms of a contact structure are its nowhere-vanishing defining forms.** A
+smooth one-form is a contact form with kernel the contact structure `D` exactly when it vanishes
+nowhere and has kernel `D`. -/
+theorem IsContactDistribution.isContactForm_and_kerDistribution_eq_iff [ENat.LEInfty n]
+    [IsManifold I (n + 1) M] (hD : IsContactDistribution I n D) {α : SmoothForm I M ℝ 1} :
+    α.IsContactForm ∧ α.kerDistribution = D ↔ ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x := by
+  refine ⟨fun ⟨hα, hαD⟩ x ↦ ⟨hα.apply_ne_zero x, ?_⟩, fun h ↦ ?_⟩
+  · rw [← SmoothForm.kerDistribution_eq_ker, hαD]
+  · have hαD : α.kerDistribution = D :=
+      funext fun x ↦ (SmoothForm.kerDistribution_eq_ker α x).trans (h x).2
+    exact ⟨SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hαD ▸ hD), hαD⟩
+
 omit [CompleteSpace E] [FiniteDimensional ℝ E] in
 /-- The linear symplectic form on the contact hyperplane `α.kerDistribution x` induced by `dα_x`:
 `(v, w) ↦ dα_x(v, w)`. -/

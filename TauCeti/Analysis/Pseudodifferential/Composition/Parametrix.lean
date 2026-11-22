@@ -562,16 +562,13 @@ theorem isSmoothing_sharp_sub_ofSpatial {a : Symbol n V W m} {b : Symbol n W V (
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hab N
   -- `q # p - ψ = (q # p - ∑_{k < N} sharpTerm q p k) - ψ (1 - ∑_{k < N} sharpTerm b a k)`.
   refine ⟨inclusion (m := -m + m - N) (by linarith) (q.sharpRemainder p hp N) -
-    inclusion (m := 0 + (-m + m - N)) (by linarith)
-      ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)).comp r),
-    ?_⟩
+    inclusion (by linarith) (smulLeft hψ r), ?_⟩
   funext ⟨x, ξ⟩
   have hr' := congrFun hr (x, ξ)
   simp only [Pi.sub_apply, Finset.sum_apply, coefficient_inclusion, coefficient_const] at hr'
-  simp only [coefficient_sub, coefficient_inclusion, coefficient_sharpRemainder, coefficient_comp,
-    coefficient_ofSpatial, Pi.sub_apply, Finset.sum_apply,
-    coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hq hpa, ← hr',
-    ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp, smul_sub, Finset.smul_sum]
+  simp only [coefficient_sub, coefficient_inclusion, coefficient_sharpRemainder,
+    coefficient_smulLeft, coefficient_ofSpatial, Pi.sub_apply, Finset.sum_apply,
+    coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hq hpa, ← hr', smul_sub, Finset.smul_sum]
   abel
 
 end Parametrix
