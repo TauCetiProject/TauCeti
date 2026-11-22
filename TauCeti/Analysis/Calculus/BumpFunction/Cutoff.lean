@@ -929,18 +929,18 @@ theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M 
   have hR0 : 0 ≤ R := by linarith [norm_nonneg x]
   rcases hR0.eq_or_lt with rfl | hR
   · -- `R = 0`: the cutoff is `1` at the origin and `0` elsewhere, so it has no derivative there
-    refine (div_zero M ▸ (mul_zero A ▸ ?_))
+    rw [div_zero, mul_zero]
     have hx0 : x = 0 := norm_le_zero_iff.1 (by linarith)
     subst hx0
     have : fderiv ℝ χ 0 = 0 := by
       rcases subsingleton_or_nontrivial E with hE | hE
-      · exact ContinuousLinearMap.ext fun v ↦ by rw [Subsingleton.elim v 0, map_zero]; rfl
+      · exact ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]
       · refine fderiv_zero_of_not_differentiableAt fun hd ↦ ?_
         have h1 : Filter.Tendsto χ (𝓝[≠] (0 : E)) (𝓝 (χ 0)) :=
           hd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
         have h0 : Filter.Tendsto χ (𝓝[≠] (0 : E)) (𝓝 0) :=
           tendsto_const_nhds.congr' <| eventually_nhdsWithin_of_forall fun y hy ↦
-            (hχ0 y (by have : y ≠ 0 := hy; simpa using this)).symm
+            (hχ0 y (by simpa using mem_compl_singleton_iff.1 hy)).symm
         have := tendsto_nhds_unique h1 h0
         simp [hχ1 0 (mem_closedBall_self le_rfl)] at this
     simp [this]
