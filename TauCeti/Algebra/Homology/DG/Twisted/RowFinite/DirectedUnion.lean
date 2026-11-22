@@ -87,16 +87,10 @@ theorem quasiIso_of_forall_quasiIso_of_injective {ι : Type uι}
   set g : P →₀ M := (mP.coefficientCochainComplexXEquiv M.isDGRightModule n x : P →₀ M)
   set k : Q →₀ M := (mQ.coefficientCochainComplexXEquiv M.isDGRightModule p y : Q →₀ M)
   obtain ⟨i, hi⟩ := hN (g.support.image g ∪ k.support.image k)
-  have hg (z : P) : g z ∈ Set.range (j i) := by
-    by_cases hz : z ∈ g.support
-    · exact hi _ (Finset.mem_union_left _ (Finset.mem_image_of_mem g hz))
-    · exact ⟨0, by rw [map_zero, Finsupp.notMem_support_iff.1 hz]⟩
-  have hk (z : Q) : k z ∈ Set.range (j i) := by
-    by_cases hz : z ∈ k.support
-    · exact hi _ (Finset.mem_union_right _ (Finset.mem_image_of_mem k hz))
-    · exact ⟨0, by rw [map_zero, Finsupp.notMem_support_iff.1 hz]⟩
-  exact ⟨i, mP.exists_coefficientCochainComplexMap_f_eq _ _ (hj i) x hg,
-    mQ.exists_coefficientCochainComplexMap_f_eq _ _ (hj i) y hk⟩
+  exact ⟨i, mP.exists_coefficientCochainComplexMap_f_eq _ _ (hj i) x fun z hz ↦
+      hi _ (Finset.mem_union_left _ (Finset.mem_image_of_mem g hz)),
+    mQ.exists_coefficientCochainComplexMap_f_eq _ _ (hj i) y fun z hz ↦
+      hi _ (Finset.mem_union_right _ (Finset.mem_image_of_mem k hz))⟩
 
 variable (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥)
 
@@ -126,7 +120,7 @@ include h𝒜 in
 algebra concentrated in nonpositive cohomological degrees, a natural transformation `α` between the
 twisted-complex functors of two row-finite twisting cocycles which is a quasi-isomorphism on every
 DG right module whose cohomology vanishes above some degree is a quasi-isomorphism on every DG
-right module: apply it to the canonical truncations. -/
+right module. -/
 theorem quasiIso_app_of_forall_cohomologyGrading_eq_bot
     (α : mP.coefficientFunctor.{uR, uA, uM} hA ⟶ mQ.coefficientFunctor hA)
     (hα : ∀ N : DGRightModuleCat.{uR, uA, uM} hA,

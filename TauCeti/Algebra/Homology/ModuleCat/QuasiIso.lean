@@ -134,9 +134,7 @@ element of `K` and every element of `L` lie in the images of `a i` and `b i` for
 `i`, as for the inclusions of a directed family of subcomplexes exhausting `K` and `L`, then `φ`
 is a quasi-isomorphism.
 
-This is the commutation of homology with such directed unions, stated on elements: a cycle of `L`
-and a primitive of the image of a cycle of `K` are each seen at one stage, where `φ' i` already
-inverts them. No colimit cocone of complexes has to be constructed. -/
+This is the commutation of homology with such directed unions, stated on elements. -/
 theorem moduleCat_quasiIso_of_forall_exists {ι' : Type*} (φ : K ⟶ L)
     {K' L' : ι' → HomologicalComplex (ModuleCat R) c} (φ' : ∀ i, K' i ⟶ L' i)
     (hφ' : ∀ i, QuasiIso (φ' i)) (a : ∀ i, K' i ⟶ K) (b : ∀ i, L' i ⟶ L)

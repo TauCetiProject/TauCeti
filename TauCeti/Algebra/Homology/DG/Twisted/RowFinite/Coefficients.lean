@@ -392,28 +392,27 @@ theorem injective_coefficientCochainComplexMap_f {f : DGRightModuleHom hM hN}
   apply Finsupp.mapRange_injective _ (map_zero f) hf
   simpa using congrArg (fun z ↦ (m.coefficientCochainComplexXEquiv hN n z : P →₀ N)) hxy
 
-/-- **Lifting coefficient vectors along an injective morphism.** A coefficient vector all of whose
-coefficients lie in the image of an injective morphism `f` of DG right modules is the image of a
-coefficient vector of the same total degree under the coefficient map of `f`. -/
+/-- **Lifting coefficient vectors along an injective morphism.** A coefficient vector whose
+coefficients on its support lie in the image of an injective morphism `f` of DG right modules is
+the image of a coefficient vector of the same total degree under the coefficient map of `f`. -/
 theorem exists_coefficientCochainComplexMap_f_eq {f : DGRightModuleHom hM hN}
     (hf : Function.Injective f) {n : ℤ} (x : (m.coefficientCochainComplex hN).X n)
-    (hx : ∀ z, (m.coefficientCochainComplexXEquiv hN n x : P →₀ N) z ∈ Set.range f) :
+    (hx : ∀ z ∈ (m.coefficientCochainComplexXEquiv hN n x : P →₀ N).support,
+      (m.coefficientCochainComplexXEquiv hN n x : P →₀ N) z ∈ Set.range f) :
     ∃ x', (m.coefficientCochainComplexMap hM hN f).f n x' = x := by
   obtain ⟨g, hg⟩ : (m.coefficientCochainComplexXEquiv hN n x : P →₀ N) ∈
       Set.range (Finsupp.mapRange f (map_zero f)) := by
     rw [Finsupp.range_mapRange]
-    exact hx
-  -- The coefficients of the preimage `g` have the right degrees, since `f` reflects degrees.
-  have hfh : LinearMap.IsHomogeneous (f.toLinearMap.restrictScalars R) ℳ 𝒩 0 :=
-    LinearMap.isHomogeneous_def.2 fun _ _ hy ↦ by rw [add_zero]; exact f.map_mem' hy
-  have hgdeg : g ∈ rowFiniteTotalGrading ℳ ind n := by
-    rw [mem_rowFiniteTotalGrading_iff]
     intro z
-    refine hfh.mem_of_injective hf ?_
-    rw [add_zero]
-    convert (mem_rowFiniteTotalGrading_iff 𝒩 ind).1
-      (m.coefficientCochainComplexXEquiv hN n x).property z using 1
-    exact DFunLike.congr_fun hg z
+    by_cases hz : z ∈ (m.coefficientCochainComplexXEquiv hN n x : P →₀ N).support
+    · exact hx z hz
+    · exact ⟨0, by rw [map_zero, Finsupp.notMem_support_iff.1 hz]⟩
+  -- The preimage `g` has the right total degree, since applying `f` to every coefficient
+  -- reflects degrees.
+  have hgdeg : g ∈ rowFiniteTotalGrading ℳ ind n :=
+    f.isHomogeneous_mapRange.mem_of_injective (Finsupp.mapRange_injective _ (map_zero f) hf)
+      (by rw [add_zero, Finsupp.mapRange.linearMap_apply]
+          exact hg ▸ (m.coefficientCochainComplexXEquiv hN n x).property)
   refine ⟨(m.coefficientCochainComplexXEquiv hM n).symm ⟨g, hgdeg⟩,
     (m.coefficientCochainComplexXEquiv hN n).injective (Subtype.ext ?_)⟩
   simpa using hg
