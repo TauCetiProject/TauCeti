@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
-public import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Analysis.ODE.Wronskian
 
@@ -36,7 +35,7 @@ power product `z^{−c} (1 − z)^{c−a−b−1}`, and two Wronskians with each
 * `TauCeti.hasDerivAt_wronskian_of_hypergeometricEquation`: Abel's identity.
 * `TauCeti.exists_wronskian_eq_mul_cpow_of_hypergeometricEquation`: the Wronskian is a constant
   multiple of `z^{−c} (1 − z)^{c−a−b−1}` on a connected open set in the cut plane.
-* `TauCeti.exists_eq_add_of_hypergeometricEquation`: the span criterion.
+* `TauCeti.exists_eq_mul_add_mul_of_hypergeometricEquation`: the span criterion.
 
 ## References
 
@@ -52,16 +51,14 @@ namespace TauCeti
 
 variable {a b c : ℂ} {U : Set ℂ}
 
-/-- **Abel's identity** for the hypergeometric equation (DLMF 15.10.1): if `f` and `g` solve
-15.10.1 on an open set `U`, then at every `z ∈ U` with `z ≠ 0, 1` the Wronskian
-`𝒲{f, g} = f g′ − f′ g` has derivative `−((c − (a + b + 1) z)/(z (1 − z))) 𝒲{f, g}`. -/
+/-- **Abel's identity** for the hypergeometric equation (DLMF 15.10.1): if `f` and `g` are
+holomorphic on an open set `U` and solve 15.10.1 at a point `z ∈ U` with `z ≠ 0, 1`, then the
+Wronskian `𝒲{f, g} = f g′ − f′ g` has derivative `−((c − (a + b + 1) z)/(z (1 − z))) 𝒲{f, g}`. -/
 theorem hasDerivAt_wronskian_of_hypergeometricEquation {f g : ℂ → ℂ} (hU : IsOpen U)
     (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U)
-    (hf' : ∀ z ∈ U, z * (1 - z) * deriv (deriv f) z + (c - (a + b + 1) * z) * deriv f z -
-      a * b * f z = 0)
-    (hg' : ∀ z ∈ U, z * (1 - z) * deriv (deriv g) z + (c - (a + b + 1) * z) * deriv g z -
-      a * b * g z = 0)
-    {z : ℂ} (hz : z ∈ U) (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) :
+    {z : ℂ} (hz : z ∈ U) (hz₀ : z ≠ 0) (hz₁ : z ≠ 1)
+    (hf' : z * (1 - z) * deriv (deriv f) z + (c - (a + b + 1) * z) * deriv f z - a * b * f z = 0)
+    (hg' : z * (1 - z) * deriv (deriv g) z + (c - (a + b + 1) * z) * deriv g z - a * b * g z = 0) :
     HasDerivAt (fun ζ => f ζ * deriv g ζ - deriv f ζ * g ζ)
       (-((c - (a + b + 1) * z) / (z * (1 - z))) * (f z * deriv g z - deriv f z * g z)) z := by
   -- Holomorphic on an open set, `f` and `g` are analytic at `z`, and so are their derivatives.
@@ -73,9 +70,9 @@ theorem hasDerivAt_wronskian_of_hypergeometricEquation {f g : ℂ → ℂ} (hU :
     hfa.differentiableAt.hasDerivAt hfa.deriv.differentiableAt.hasDerivAt
     hga.differentiableAt.hasDerivAt hga.deriv.differentiableAt.hasDerivAt ?_ ?_
   · field_simp
-    linear_combination hf' z hz
+    linear_combination hf'
   · field_simp
-    linear_combination hg' z hz
+    linear_combination hg'
 
 /-- The power product `z^{−c} (1 − z)^{c−a−b−1}` satisfies `y′ = −p y` with the coefficient
 `p = (c − (a + b + 1) z)/(z (1 − z))` of 15.10.1, where `z` and `1 − z` lie in the slit plane. -/
@@ -116,15 +113,15 @@ theorem exists_wronskian_eq_mul_cpow_of_hypergeometricEquation {f g : ℂ → �
       (hUs z hz).2).differentiableAt.differentiableWithinAt))
     (fun z hz => mul_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero (hUs z hz).1)))
       (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero (hUs z hz).2))))
-    (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation hU hf hg hf' hg' hz.1
-      (hne z hz.1).1 (hne z hz.1).2)
+    (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation hU hf hg hz.1
+      (hne z hz.1).1 (hne z hz.1).2 (hf' z hz.1) (hg' z hz.1))
     (fun z hz => hasDerivAt_cpow_mul_one_sub_cpow (hUs z hz.1).1 (hUs z hz.1).2)
   exact ⟨C, fun z hz => (hC z hz).trans (mul_assoc _ _ _).symm⟩
 
 /-- **The span criterion** for the hypergeometric equation: if `f₁` and `f₂` solve 15.10.1 on a
 connected open set `U`, and `𝒲{f₁, f₂}` has no zero on `U`, then every solution `w` on `U` is
 `A f₁ + B f₂` with constants `A`, `B`. The set `U` may contain the singular points `0` and `1`. -/
-theorem exists_eq_add_of_hypergeometricEquation {f₁ f₂ w : ℂ → ℂ} (hU : IsOpen U)
+theorem exists_eq_mul_add_mul_of_hypergeometricEquation {f₁ f₂ w : ℂ → ℂ} (hU : IsOpen U)
     (hUc : IsPreconnected U)
     (hf₁ : DifferentiableOn ℂ f₁ U) (hf₂ : DifferentiableOn ℂ f₂ U)
     (hw : DifferentiableOn ℂ w U)
@@ -151,10 +148,10 @@ theorem exists_eq_add_of_hypergeometricEquation {f₁ f₂ w : ℂ → ℂ} (hU 
     exists_eq_const_mul_of_hasDerivAt_mul hU hUc hS
       ((hg₁.mul (hg₂.deriv hU)).sub ((hg₁.deriv hU).mul hg₂))
       ((hf₁.mul (hf₂.deriv hU)).sub ((hf₁.deriv hU).mul hf₂)) hW
-      (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation hU hg₁ hg₂ hg₁' hg₂' hz.1
-        hz.2.1 hz.2.2)
-      (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation hU hf₁ hf₂ hf₁' hf₂' hz.1
-        hz.2.1 hz.2.2)
+      (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation hU hg₁ hg₂ hz.1
+        hz.2.1 hz.2.2 (hg₁' z hz.1) (hg₂' z hz.1))
+      (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation hU hf₁ hf₂ hz.1
+        hz.2.1 hz.2.2 (hf₁' z hz.1) (hf₂' z hz.1))
   obtain ⟨A, hA⟩ := hratio hw hf₂ hw' hf₂'
   obtain ⟨B, hB⟩ := hratio hf₁ hw hf₁' hw'
   refine ⟨A, B, fun z hz => ?_⟩
