@@ -215,6 +215,31 @@ theorem measurable_occurrenceGap (n : ℕ) :
       measurable_const
       ((measurable_occurrenceTime (n + 1)).sub (measurable_occurrenceTime n))
 
+/-- Restricting to a closed observation window retains exactly the interarrival gaps whose
+cumulative mass threshold is already met on `[0, b]`, setting all subsequent gaps to `∞`.
+No finiteness assumption is required, including when `μ (Iic b) = ∞` or `μ` explodes immediately
+after `b`. -/
+theorem occurrenceGap_restrict_Iic_eq_ite (μ : Measure ℝ≥0) (b : ℝ≥0) (n : ℕ) :
+    (μ.restrict (Iic b)).occurrenceGap n =
+      if (n + 1 : ℝ≥0∞) ≤ μ (Iic b) then μ.occurrenceGap n else ∞ := by
+  by_cases h : (n + 1 : ℝ≥0∞) ≤ μ (Iic b)
+  · rw [ite_eq_left h]
+    cases n with
+    | zero =>
+      rw [occurrenceGap_zero, occurrenceGap_zero, occurrenceTime_restrict_Iic_eq_ite, ite_eq_left h]
+    | succ n =>
+      have hn : (n + 1 : ℝ≥0∞) ≤ μ (Iic b) := le_trans (by simp) h
+      have ht_res : (μ.restrict (Iic b)).occurrenceTime n = μ.occurrenceTime n := by
+        rw [occurrenceTime_restrict_Iic_eq_ite, ite_eq_left hn]
+      have htsucc_res :
+          (μ.restrict (Iic b)).occurrenceTime (n + 1) = μ.occurrenceTime (n + 1) := by
+        rw [occurrenceTime_restrict_Iic_eq_ite, ite_eq_left h]
+      have ht_ne : μ.occurrenceTime n ≠ ∞ :=
+        ne_top_of_le_ne_top ENNReal.coe_ne_top (μ.occurrenceTime_le_of_le hn)
+      rw [occurrenceGap_succ, occurrenceGap_succ, ht_res, htsucc_res, ite_eq_right ht_ne]
+  · rw [ite_eq_right h, occurrenceGap_eq_top_iff, occurrenceTime_restrict_Iic_eq_ite,
+      ite_eq_right h]
+
 /-- Restricting to a closed observation window retains exactly the interarrival gaps of
 occurrences in `[0, b]`, setting all subsequent gaps to `∞`, whenever the measure is finite on
 some larger closed window. No global local finiteness is required. -/
@@ -222,22 +247,8 @@ theorem occurrenceGap_restrict_Iic_of_measure_Iic_ne_top (μ : Measure ℝ≥0)
     (b : ℝ≥0) (n : ℕ) (hfin : ∃ s > b, μ (Iic s) ≠ ∞) :
     (μ.restrict (Iic b)).occurrenceGap n =
       if μ.occurrenceTime n ≤ b then μ.occurrenceGap n else ∞ := by
-  cases n with
-  | zero =>
-    simp [occurrenceGap_zero, occurrenceTime_restrict_Iic_of_measure_Iic_ne_top μ b 0 hfin]
-  | succ n =>
-    rw [occurrenceGap_succ, occurrenceTime_restrict_Iic_of_measure_Iic_ne_top μ b n hfin,
-      occurrenceTime_restrict_Iic_of_measure_Iic_ne_top μ b (n + 1) hfin]
-    by_cases h : μ.occurrenceTime (n + 1) ≤ b
-    · have hn_le : μ.occurrenceTime n ≤ b :=
-        (μ.monotone_occurrenceTime (Nat.le_succ n)).trans h
-      have hn_ne : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn_le
-      simp [h, hn_le, hn_ne, occurrenceGap_succ]
-    · simp only [h, ↓reduceIte]
-      by_cases hn_le : μ.occurrenceTime n ≤ b
-      · have hn_ne : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn_le
-        simp [hn_le, hn_ne]
-      · simp [hn_le]
+  simp only [occurrenceGap_restrict_Iic_eq_ite,
+    occurrenceTime_le_iff_of_measure_Iic_ne_top μ n b hfin]
 
 /-- Restricting to a closed observation window retains exactly the interarrival gaps of
 occurrences in `[0, b]`; all subsequent gaps become infinite. -/
@@ -269,17 +280,19 @@ theorem IsIntegerValued.occurrenceGap_inj [IsLocallyFiniteMeasure ν]
     μ.occurrenceGap = ν.occurrenceGap ↔ μ = ν := by
   rw [occurrenceGap_eq_iff_occurrenceTime_eq, hμ.occurrenceTime_inj hν]
 
+/-- For a locally finite counting measure, the initial gap exceeds `s` exactly when `[0, s]`
+contains no occurrences. -/
+theorem IsIntegerValued.lt_occurrenceGap_zero_iff (hμ : μ.IsIntegerValued) (s : ℝ≥0) :
+    (s : ℝ≥0∞) < μ.occurrenceGap 0 ↔ μ (Iic s) = 0 := by
+  rw [occurrenceGap_zero, ← not_le, μ.occurrenceTime_le_iff 0 s, Nat.cast_zero, zero_add]
+  exact ⟨fun h => by_contra fun hne => h (hμ.one_le_apply hne), fun h => by simp [h]⟩
+
 /-- For a locally finite counting measure, the first gap is positive if and only if there is
 no occurrence at zero. Empty configurations satisfy both sides. -/
 theorem IsIntegerValued.occurrenceGap_zero_pos_iff (hμ : μ.IsIntegerValued) :
     0 < μ.occurrenceGap 0 ↔ μ {0} = 0 := by
-  have hIic : Iic (0 : ℝ≥0) = {0} := by
-    ext x
-    simp
-  rw [occurrenceGap_zero, ← not_le, ← ENNReal.coe_zero,
-    μ.occurrenceTime_le_iff 0 0, hIic, Nat.cast_zero, zero_add]
-  exact ⟨fun h => by_contra fun hne => h (hμ.one_le_apply hne),
-    fun h => by simp [h]⟩
+  have hIic : Iic (0 : ℝ≥0) = {0} := by rw [← bot_eq_zero, Iic_bot]
+  simpa only [ENNReal.coe_zero, hIic] using hμ.lt_occurrenceGap_zero_iff 0
 
 /-- For a locally finite counting measure, simplicity (every singleton has mass at most one)
 is equivalent to positivity of every interarrival gap after the first. Finite configurations
@@ -311,16 +324,6 @@ theorem IsIntegerValued.forall_singleton_le_one_iff_forall_occurrenceGap_succ_po
       simp [P, hn]
     · push Not at hex
       simp [P, hex]
-
-/-- For a locally finite counting measure, the initial gap exceeds `s` exactly when `[0, s]`
-contains no occurrences. -/
-theorem IsIntegerValued.lt_occurrenceGap_zero_iff (hμ : μ.IsIntegerValued) (s : ℝ≥0) :
-    (s : ℝ≥0∞) < μ.occurrenceGap 0 ↔ μ (Iic s) = 0 := by
-  rw [occurrenceGap_zero, ← not_le, μ.occurrenceTime_le_iff 0 s, Nat.cast_zero, zero_add, not_le]
-  obtain ⟨k, hk⟩ := hμ.exists_eq_natCast measurableSet_Iic (measure_Iic_lt_top (μ := μ))
-  rw [hk]
-  norm_cast
-  omega
 
 /-- After a simple finite occurrence `n`, gap `n + 1` exceeds `s` exactly when the window
 `(T_n, T_n + s]` is empty. This includes the case where occurrence `n + 1` is infinite. -/

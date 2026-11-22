@@ -132,6 +132,13 @@ theorem isLocallyFiniteMeasure_renewalArrivalMeasure_iff (ω : Ω) :
     isLocallyFiniteMeasure_occurrenceTimeMeasure_iff, ENNReal.tendsto_coe_nhds_top]
   exact Filter.tendsto_add_atTop_iff_nat (f := fun n => arrival T n ω) 1
 
+/-- On a nonexplosive path, counting arrivals on `[0, t]` recovers the cast natural renewal
+count, including at zero. -/
+theorem renewalArrivalMeasure_Iic_eq_renewalCountNat {ω : Ω}
+    (hω : Tendsto (fun n => arrival T n ω) atTop atTop) (t : ℝ≥0) :
+    renewalArrivalMeasure T ω (Iic t) = (renewalCountNat T t ω : ℝ≥0∞) := by
+  rw [renewalArrivalMeasure_Iic, natCast_renewalCountNat hω]
+
 /-- A positive first increment rules out any arrival at zero; later increments may vanish. -/
 theorem renewalArrivalMeasure_singleton_zero {ω : Ω} (hT : 0 < T 0 ω) :
     renewalArrivalMeasure T ω {0} = 0 := by
@@ -151,6 +158,13 @@ theorem renewalArrivalMeasure_Ioc {ω : Ω} (hT : 0 < T 0 ω) (t : ℝ≥0) :
   rw [← bot_eq_zero,
     measure_Ioc_bot_eq_measure_Iic (renewalArrivalMeasure_singleton_zero T hT),
     renewalArrivalMeasure_Iic]
+
+/-- On a nonexplosive path with a positive first increment, counting arrivals on `(0, t]`
+recovers the cast natural renewal count. -/
+theorem renewalArrivalMeasure_Ioc_eq_renewalCountNat {ω : Ω}
+    (hω : Tendsto (fun n => arrival T n ω) atTop atTop) (hT : 0 < T 0 ω) (t : ℝ≥0) :
+    renewalArrivalMeasure T ω (Ioc 0 t) = (renewalCountNat T t ω : ℝ≥0∞) := by
+  rw [renewalArrivalMeasure_Ioc T hT, natCast_renewalCountNat hω]
 
 /-- Positive increments after the first give singleton masses at most one: there are no
 coincident arrivals. The first increment may vanish, and no nonexplosion assumption is needed. -/
@@ -236,9 +250,8 @@ theorem ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure {r : ℝ≥0}
     (hlaw : ∀ n, HasLaw (fun ω => (T n ω : ℝ)) (expMeasure r) P) :
     ∀ᵐ ω ∂P, ∀ t, renewalArrivalMeasure T ω (Ioc 0 t) = (renewalCountNat T t ω : ℝ≥0∞) := by
   filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hindep hlaw,
-    ae_pos_of_hasLaw_expMeasure (hlaw 0)] with ω hω hpos
-  intro t
-  rw [renewalArrivalMeasure_Ioc T (by exact_mod_cast hpos), natCast_renewalCountNat hω]
+    ae_pos_of_hasLaw_expMeasure (hlaw 0)] with ω hω hpos t
+  exact renewalArrivalMeasure_Ioc_eq_renewalCountNat T hω (by exact_mod_cast hpos) t
 
 /-- The natural counts of exponential renewal arrivals on `(0,t]` have the Poisson law.
 Taking the natural floor of the real mass only changes the count on a null set. -/
@@ -298,14 +311,12 @@ theorem apply_Iic_eq_renewalCountNat_toNNReal_occurrenceGap {μ : Measure ℝ≥
     μ (Iic t) =
       (renewalCountNat (fun n (ν : Measure ℝ≥0) => (ν.occurrenceGap n).toNNReal) t μ : ℝ≥0∞) := by
   have heq := eq_renewalArrivalMeasure_toNNReal_occurrenceGap hμ hfin
-  have hlf : IsLocallyFiniteMeasure
-      (renewalArrivalMeasure (fun n (ν : Measure ℝ≥0) => (ν.occurrenceGap n).toNNReal) μ) :=
-    heq ▸ inferInstance
   have htend : Tendsto
       (fun n => arrival (fun i (ν : Measure ℝ≥0) => (ν.occurrenceGap i).toNNReal) n μ)
       atTop atTop :=
-    (isLocallyFiniteMeasure_renewalArrivalMeasure_iff _ μ).mp hlf
-  rw [apply_Iic_eq_renewalCount_toNNReal_occurrenceGap hμ hfin t, ← natCast_renewalCountNat htend]
+    (isLocallyFiniteMeasure_renewalArrivalMeasure_iff _ μ).mp (heq ▸ inferInstance)
+  conv_lhs => rw [heq]
+  exact renewalArrivalMeasure_Iic_eq_renewalCountNat _ htend t
 
 end OccurrenceGap
 

@@ -140,6 +140,28 @@ theorem isLocallyFiniteMeasure_iff_tendsto_occurrenceTime (μ : Measure ℝ≥0)
     IsLocallyFiniteMeasure μ ↔ Tendsto μ.occurrenceTime atTop (𝓝 ∞) :=
   ⟨fun _ => μ.tendsto_occurrenceTime_nhds_top, isLocallyFiniteMeasure_of_tendsto_occurrenceTime⟩
 
+/-- Restricting to a closed observation window retains exactly the occurrences whose cumulative
+mass threshold is already met on that window, setting all subsequent occurrence times to `∞`.
+No finiteness assumption is required, including when `μ (Iic b) = ∞` or `μ` explodes immediately
+after `b`. -/
+theorem occurrenceTime_restrict_Iic_eq_ite (μ : Measure ℝ≥0) (b : ℝ≥0) (n : ℕ) :
+    (μ.restrict (Iic b)).occurrenceTime n =
+      if (n + 1 : ℝ≥0∞) ≤ μ (Iic b) then μ.occurrenceTime n else ∞ := by
+  by_cases h : (n + 1 : ℝ≥0∞) ≤ μ (Iic b)
+  · simp only [h, ↓reduceIte]
+    refine le_antisymm ?_ (occurrenceTime_antitone Measure.restrict_le_self n)
+    simp only [occurrenceTime_def, le_iInf_iff]
+    intro t ht
+    rcases le_total t b with htb | hbt
+    · refine iInf_le_of_le t (iInf_le_of_le ?_ le_rfl)
+      rwa [Measure.restrict_apply measurableSet_Iic, Iic_inter_Iic, min_eq_left htb]
+    · refine iInf_le_of_le b (iInf_le_of_le ?_ (by exact_mod_cast hbt))
+      rwa [Measure.restrict_apply measurableSet_Iic, inter_self]
+  · simp only [h, ↓reduceIte, occurrenceTime_eq_top_iff]
+    intro t
+    rw [Measure.restrict_apply measurableSet_Iic, Iic_inter_Iic]
+    exact lt_of_le_of_lt (measure_mono (Iic_subset_Iic.2 (min_le_right t b))) (lt_of_not_ge h)
+
 /-- Restricting to a closed observation window retains exactly the occurrences in that window,
 setting all subsequent occurrence times to `∞`, whenever the measure is finite on some larger
 closed window. No global local finiteness is required. -/
@@ -147,21 +169,8 @@ theorem occurrenceTime_restrict_Iic_of_measure_Iic_ne_top (μ : Measure ℝ≥0)
     (b : ℝ≥0) (n : ℕ) (hfin : ∃ s > b, μ (Iic s) ≠ ∞) :
     (μ.restrict (Iic b)).occurrenceTime n =
       if μ.occurrenceTime n ≤ b then μ.occurrenceTime n else ∞ := by
-  obtain ⟨s₀, hs₀, hμs₀⟩ := hfin
-  have hμb : μ (Iic b) ≠ ∞ :=
-    ne_top_of_le_ne_top hμs₀ (measure_mono (Iic_subset_Iic.2 hs₀.le))
-  have hres (u : ℝ≥0) : (μ.restrict (Iic b)) (Iic u) ≠ ∞ := by
-    rw [Measure.restrict_apply measurableSet_Iic]
-    exact ne_top_of_le_ne_top hμb (measure_mono inter_subset_right)
-  apply ENNReal.eq_of_forall_le_nnreal_iff
-  intro t
-  rw [occurrenceTime_le_iff_of_measure_Iic_ne_top _ n t ⟨t + 1, lt_add_one t, hres _⟩,
-    Measure.restrict_apply measurableSet_Iic, Iic_inter_Iic,
-    ← occurrenceTime_le_iff_of_measure_Iic_ne_top _ n (min t b)
-      ⟨s₀, (min_le_right t b).trans_lt hs₀, hμs₀⟩]
-  by_cases h : μ.occurrenceTime n ≤ b
-  · simp [h, ENNReal.coe_min, le_min_iff]
-  · simp [h, ENNReal.coe_min, le_min_iff]
+  simp only [occurrenceTime_restrict_Iic_eq_ite,
+    occurrenceTime_le_iff_of_measure_Iic_ne_top μ n b hfin]
 
 /-- Restricting to a closed observation window retains exactly the occurrences in
 that window; all subsequent occurrence times become infinite. -/

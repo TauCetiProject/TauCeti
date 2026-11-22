@@ -291,12 +291,12 @@ theorem ae_forall_Ioc_eq_renewalCountNat_toNNReal_occurrenceGap
       (renewalCountNat (fun n ω' ↦ ((M ω').occurrenceGap n).toNNReal) t ω : ℝ≥0∞) := by
   filter_upwards [h.ae_isLocallyFiniteMeasure,
     h.ae_eq_renewalArrivalMeasure_occurrenceGap hr,
-    h.ae_forall_Ioc_eq_renewalCount_toNNReal_occurrenceGap hr] with ω hlf heq hcount t
-  have hlf' : IsLocallyFiniteMeasure
-      (renewalArrivalMeasure (fun n ω' ↦ ((M ω').occurrenceGap n).toNNReal) ω) :=
-    heq ▸ hlf
-  have htend := (isLocallyFiniteMeasure_renewalArrivalMeasure_iff _ ω).mp hlf'
-  rw [hcount t, ← natCast_renewalCountNat htend]
+    h.ae_forall_occurrenceGap_pos_lt_top hr] with ω hlf heq hposfin t
+  have hpos0 : 0 < ((M ω).occurrenceGap 0).toNNReal :=
+    ENNReal.toNNReal_pos (hposfin 0).1.ne' (hposfin 0).2.ne
+  have htend := (isLocallyFiniteMeasure_renewalArrivalMeasure_iff _ ω).mp (heq ▸ hlf)
+  rw [heq]
+  exact renewalArrivalMeasure_Ioc_eq_renewalCountNat _ htend hpos0 t
 
 /-- For a positive-rate homogeneous Poisson random measure on `ℝ≥0`, almost surely and
 simultaneously at all times `t`, the natural floor of the real count on `(0, t]` equals the
