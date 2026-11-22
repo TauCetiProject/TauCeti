@@ -29,14 +29,16 @@ three-primes problem is `∑_q μ(q) c_q(N) / φ(q)³`.
   `∑_{d ∣ q} c_d(n) = q · 1_{q ∣ n}`.
 * `TauCeti.ramanujanSum_eq_sum_divisors`: Möbius inversion of the previous identity,
   `c_q(n) = ∑_{d ∣ q, d ∣ n} d μ(q/d)`; in particular `c_q(n)` is an integer
-  (`TauCeti.ramanujanSum_eq_intCast_sum_divisors`).
+  (`TauCeti.ramanujanSum_eq_intCast_sum_divisors`), so its imaginary part vanishes
+  (`TauCeti.ramanujanSum_im`).
 * `TauCeti.ramanujanSum_mul`: `c_q(n)` is multiplicative in `q`.
 * `TauCeti.ramanujanSum_zero_right`, `TauCeti.ramanujanSum_of_gcd_eq_one`: `c_q(0) = φ(q)`, and
   `c_q(n) = μ(q)` when `gcd(n, q) = 1`.
 * `TauCeti.ramanujanSum_prime_pow_succ`, `TauCeti.ramanujanSum_prime`,
   `TauCeti.ramanujanSum_prime_pow_eq_zero`: the values at prime powers; `c_p(n)` is `p - 1` or
   `-1` according as `p ∣ n`, and `c_{p^k}(n) = 0` for `k ≥ 2` and `p ∤ n`.
-* `TauCeti.norm_ramanujanSum_le`: `|c_q(n)| ≤ gcd(n, q)`.
+* `TauCeti.norm_ramanujanSum_le`, `TauCeti.norm_ramanujanSum_le_totient`: `|c_q(n)| ≤ gcd(n, q)`
+  and `|c_q(n)| ≤ φ(q)`.
 
 The sum is over `Finset.range q`, so `c_0(n) = 0`; every statement holds for all `q : ℕ`.
 
@@ -192,6 +194,11 @@ theorem ramanujanSum_eq_intCast_sum_divisors (q : ℕ) (n : ℤ) :
       ((∑ d ∈ q.divisors with ((d : ℕ) : ℤ) ∣ n, (d : ℤ) * μ (q / d) : ℤ) : ℂ) := by
   exact_mod_cast ramanujanSum_eq_sum_divisors q n
 
+/-- `c_q(n)` is real. -/
+@[simp]
+theorem ramanujanSum_im (q : ℕ) (n : ℤ) : (ramanujanSum q n).im = 0 := by
+  rw [ramanujanSum_eq_intCast_sum_divisors, Complex.intCast_im]
+
 /-- `c_q(-n) = c_q(n)`. -/
 @[simp]
 theorem ramanujanSum_neg (q : ℕ) (n : ℤ) : ramanujanSum q (-n) = ramanujanSum q n := by
@@ -302,6 +309,14 @@ theorem norm_ramanujanSum_le (q : ℕ) (n : ℤ) : ‖ramanujanSum q n‖ ≤ In
       simpa only [Int.gcd_def, Int.natAbs_natCast] using Nat.Coprime.gcd_mul _ hab
     rw [ramanujanSum_mul hab, norm_mul, hgcd, Nat.cast_mul]
     exact mul_le_mul ha hb (norm_nonneg _) (Nat.cast_nonneg _)
+
+/-- `|c_q(n)| ≤ φ(q)`: `c_q(n)` is a sum of `φ(q)` complex numbers of absolute value `1`. -/
+theorem norm_ramanujanSum_le_totient (q : ℕ) (n : ℤ) : ‖ramanujanSum q n‖ ≤ q.totient := by
+  rw [ramanujanSum_def, Nat.totient]
+  refine (norm_sum_le _ _).trans (le_of_eq ?_)
+  rw [Finset.sum_congr rfl fun b _ => ?_, Finset.sum_const, nsmul_eq_mul, mul_one]
+  rw [show 2 * π * I * ((b * n / q : ℝ) : ℂ) = ((2 * π * (b * n / q) : ℝ) : ℂ) * I by
+    push_cast; ring, Complex.norm_exp_ofReal_mul_I]
 
 /-! ### Examples -/
 
