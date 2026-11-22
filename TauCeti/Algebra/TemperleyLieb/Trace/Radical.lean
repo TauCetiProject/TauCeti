@@ -23,10 +23,9 @@ These are the negligible projections killed in the positive Jones quotients.
 The radical and quotient trace are the general constructions `LinearMap.traceRadical`
 and `LinearMap.quotientTrace`; this file supplies the `IsMarkovTrace.traceRadical` and
 `IsMarkovTrace.Quotient` shorthands together with their tower-specific properties.
-The strand maps `quotientStrandIncl` start at one strand, as does `TemperleyLieb.strandIncl`,
-while `traceRadical_le_comap_strandInclAll` descends at every `n ≥ 0` and
-`comap_traceRadical_strandInclAll` extends the exact radical pullback to `n = 0` whenever
-multiplication by `δ` is injective (requiring no hypothesis at successor levels).
+The strand maps `quotientStrandIncl` are defined at every `n ≥ 0` via `strandInclAll`, and are
+injective at every successor level `n + 1` and at level `0` whenever multiplication by `δ` is
+injective.
 
 ## References
 
@@ -61,11 +60,10 @@ abbrev Quotient (n : ℕ) := TemperleyLieb R δ n ⧸ htr.traceRadical n
 /-- Strand inclusion pulls back the trace radical exactly, even at zero loop parameter. -/
 @[simp]
 theorem comap_traceRadical_strandIncl (n : ℕ) :
-    Ideal.comap (strandIncl (R := R) (δ := δ) (n := n))
-      ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) =
-        (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) := by
+    Ideal.comap (strandIncl (R := R) (δ := δ) (n := n)) (htr.traceRadical (n + 2)) =
+      htr.traceRadical (n + 1) := by
   ext x
-  simp only [Ideal.mem_comap, LinearMap.mem_traceRadical]
+  simp only [Ideal.mem_comap, mem_traceRadical_iff]
   constructor
   · intro hx y
     have hz := hx (strandIncl y * e δ (Fin.last n))
@@ -122,41 +120,39 @@ theorem comap_traceRadical_strandInclAll (n : ℕ)
 
 /-- Strand inclusion preserves and reflects trace-radical membership. -/
 theorem strandIncl_mem_traceRadical_iff {n : ℕ} (x : TemperleyLieb R δ (n + 1)) :
-    strandIncl x ∈ (tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)) ↔
-      x ∈ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) := by
+    strandIncl x ∈ htr.traceRadical (n + 2) ↔ x ∈ htr.traceRadical (n + 1) := by
   rw [← Ideal.mem_comap, htr.comap_traceRadical_strandIncl]
 
-/-- The strand map on the quotients by the multiplication-pairing radicals.
+/-- Unital algebra strand map `htr.Quotient n →ₐ[R] htr.Quotient (n + 1)` (`n ≥ 0`),
+injective at every successor level `n + 1` and at level `0` whenever `(δ * ·)` is injective.
 These are algebraic quotients; no norm or star structure is asserted here. -/
-def quotientStrandIncl (n : ℕ) :
-    TemperleyLieb R δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) →ₐ[R]
-      TemperleyLieb R δ (n + 2) ⧸ (tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)) :=
-  Ideal.quotientMapₐ _ strandIncl (htr.comap_traceRadical_strandIncl n).ge
+def quotientStrandIncl (n : ℕ) : htr.Quotient n →ₐ[R] htr.Quotient (n + 1) :=
+  Ideal.quotientMapₐ (htr.traceRadical (n + 1)) (strandInclAll n)
+    (htr.traceRadical_le_comap_strandInclAll n)
 
-/-- The induced strand map is computed by including any representative. -/
+/-- The induced strand map is computed by applying `strandInclAll` to any representative. -/
 @[simp]
-theorem quotientStrandIncl_mk (n : ℕ) (x : TemperleyLieb R δ (n + 1)) :
-    htr.quotientStrandIncl n
-      (Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) x) =
-        Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)))
-          (strandIncl x) := by
-  exact Ideal.quotient_map_mkₐ _ _ _
+theorem quotientStrandIncl_mk (n : ℕ) (x : TemperleyLieb R δ n) :
+    htr.quotientStrandIncl n (Ideal.Quotient.mk (htr.traceRadical n) x) =
+      Ideal.Quotient.mk (htr.traceRadical (n + 1)) (strandInclAll n x) :=
+  Ideal.quotient_map_mkₐ _ _ _
 
-/-- All strand maps between trace-radical quotients are injective. -/
-theorem quotientStrandIncl_injective (n : ℕ) :
+/-- The strand map between trace-radical quotients is injective at every successor level, and at
+level `0` whenever multiplication by `δ` is injective. -/
+theorem quotientStrandIncl_injective (n : ℕ) (hδ : n = 0 → Function.Injective (δ * ·)) :
     Function.Injective (htr.quotientStrandIncl n) :=
-  Ideal.quotientMap_injective' (H := (htr.comap_traceRadical_strandIncl n).ge)
-    (htr.comap_traceRadical_strandIncl n).le
+  Ideal.quotientMap_injective' (H := htr.traceRadical_le_comap_strandInclAll n)
+    (htr.comap_traceRadical_strandInclAll n hδ).le
 
 /-- The quotient traces retain the unnormalized strand-inclusion factor `δ`. -/
 @[simp]
-theorem quotientTrace_quotientStrandIncl (n : ℕ)
-    (x : TemperleyLieb R δ (n + 1) ⧸
-      (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    (tr (n + 2)).quotientTrace (htr.map_mul_comm (n + 2)) (htr.quotientStrandIncl n x) =
-      δ * (tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1)) x := by
+theorem quotientTrace_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
+    (tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1)) (htr.quotientStrandIncl n x) =
+      δ * (tr n).quotientTrace (htr.map_mul_comm n) x := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp only [htr.quotientStrandIncl_mk, LinearMap.quotientTrace_mk, htr.map_strandIncl]
+  rw [htr.quotientStrandIncl_mk]
+  exact (LinearMap.quotientTrace_mk _ _ _).trans <| (htr.map_strandInclAll n _).trans <|
+    congrArg (δ * ·) (LinearMap.quotientTrace_mk _ _ _).symm
 
 /-- A Jones–Wenzl projection is negligible exactly when its next quantum integer vanishes.
 No invertibility assumption is imposed on that next quantum integer. -/

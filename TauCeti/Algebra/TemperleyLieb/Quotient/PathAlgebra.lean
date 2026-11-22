@@ -142,12 +142,6 @@ theorem walkExtend_apply_snoc (X : PathAlgebra K G v₀ n) {u₁ u₂ v : V}
     walkExtend G v₀ X ⟨v, hv⟩ (p.snoc h) (q.snoc h) =
       X ⟨u, (G.mem_walkEndpoints_iff v₀).2 ⟨p⟩⟩ p q := by
   rw [walkExtend_apply_snoc, dite_eq_left rfl, EndpointWalk.cast_rfl]
-omit [DecidableEq V] [LocallyFinite G] in
-variable {G v₀} in
-private theorem penultimate_eq_of_coe_init_eq {u v : V} {x : G.EndpointWalk v₀ (n + 1) v}
-    {p : G.EndpointWalk v₀ n u} (hx : (x.init : Fin (n + 1) → V) = p) :
-    x (Fin.last n).castSucc = u := by
-  simpa [EndpointWalk.coe_init, p.apply_last_eq] using congrFun hx (Fin.last n)
 /-- Entries of `walkExtend` applied to a single matrix unit `blockSingle u p₁ p₂ c`. -/
 theorem walkExtend_blockSingle_apply (u : G.walkEndpoints v₀ n) (p₁ p₂ : G.EndpointWalk v₀ n u.val)
     (c : K) (s : G.walkEndpoints v₀ (n + 1)) (w y : G.EndpointWalk v₀ (n + 1) s.val) :
@@ -159,9 +153,11 @@ theorem walkExtend_blockSingle_apply (u : G.walkEndpoints v₀ n) (p₁ p₂ : G
     · subst hwu; rw [PathAlgebra.blockSingle_apply_same, Matrix.single_apply]
       simp only [← DFunLike.coe_injective.eq_iff, EndpointWalk.coe_cast, eq_comm]
     · rw [PathAlgebra.blockSingle_apply_of_ne (fun h ↦ hwu (congrArg Subtype.val h).symm),
-        Matrix.zero_apply, ite_eq_right fun h ↦ hwu (penultimate_eq_of_coe_init_eq h.1).symm]
+        Matrix.zero_apply,
+        ite_eq_right fun h ↦ hwu (EndpointWalk.penultimate_eq_of_coe_init_eq h.1).symm]
   · rw [dite_eq_right hwy, ite_eq_right fun h ↦
-      hwy ((penultimate_eq_of_coe_init_eq h.1).trans (penultimate_eq_of_coe_init_eq h.2).symm)]
+      hwy ((EndpointWalk.penultimate_eq_of_coe_init_eq h.1).trans
+        (EndpointWalk.penultimate_eq_of_coe_init_eq h.2).symm)]
 /-- The extension homomorphism `walkExtend` preserves the blockwise conjugate-transpose adjoint. -/
 @[simp] theorem walkExtend_star [StarRing K] (X : PathAlgebra K G v₀ n) :
     walkExtend G v₀ (star X) = star (walkExtend G v₀ X) := funext fun _ ↦ by
@@ -169,6 +165,12 @@ theorem walkExtend_blockSingle_apply (u : G.walkEndpoints v₀ n) (p₁ p₂ : G
 /-- One-step `⋆`-algebra extension homomorphism (injective without reachable dead ends). -/
 def walkStarExtend [StarRing K] : PathAlgebra K G v₀ n →⋆ₐ[K] PathAlgebra K G v₀ (n + 1) :=
   { walkExtend G v₀ with map_star' := walkExtend_star G v₀ }
+/-- Forgetting the star structure on `walkStarExtend` recovers `walkExtend`. -/
+@[simp] theorem walkStarExtend_toAlgHom [StarRing K] :
+    (walkStarExtend G v₀ (K := K) (n := n)).toAlgHom = walkExtend G v₀ := (rfl)
+/-- Evaluating `walkStarExtend` agrees with `walkExtend`. -/
+@[simp] theorem walkStarExtend_apply [StarRing K] (X : PathAlgebra K G v₀ n) :
+    walkStarExtend G v₀ X = walkExtend G v₀ X := (rfl)
 end Extend
 section WalkTraceBasic
 variable {K : Type*} [Field K] {V : Type*} (G : SimpleGraph V) [DecidableEq V]
@@ -572,8 +574,8 @@ private theorem walkExtend_blockSingle_mul_apply {m : ℕ} (u : G.walkEndpoints 
           simpa [EndpointWalk.coe_init] using hy'.2), zero_mul])
       (fun hm ↦ (hm (Finset.mem_univ _)).elim), ite_eq_left ⟨h.1, by ext; simp⟩, one_mul]
   · exact Finset.sum_eq_zero fun y _ ↦ by
-      rw [ite_eq_right fun ⟨hw, hy⟩ ↦ h ⟨hw, penultimate_eq_of_coe_init_eq hy ▸ y.adj_init_last⟩,
-        zero_mul]
+      rw [ite_eq_right fun ⟨hw, hy⟩ ↦
+        h ⟨hw, EndpointWalk.penultimate_eq_of_coe_init_eq hy ▸ y.adj_init_last⟩, zero_mul]
 /-- Right multiplication by `walkExtend (blockSingle u p₁ p₂ 1)` isolates `p₁.snoc`. -/
 private theorem mul_walkExtend_blockSingle_apply {m : ℕ} (X : PathAlgebra K G v₀ (m + 1))
     (u : G.walkEndpoints v₀ m) (p₁ p₂ : G.EndpointWalk v₀ m u.val)
@@ -588,8 +590,8 @@ private theorem mul_walkExtend_blockSingle_apply {m : ℕ} (X : PathAlgebra K G 
           simpa [EndpointWalk.coe_init] using hy'.1), mul_zero])
       (fun hm ↦ (hm (Finset.mem_univ _)).elim), ite_eq_left ⟨by ext; simp, h.1⟩, mul_one]
   · exact Finset.sum_eq_zero fun y _ ↦ by
-      rw [ite_eq_right fun ⟨hy, hz⟩ ↦ h ⟨hz, penultimate_eq_of_coe_init_eq hy ▸ y.adj_init_last⟩,
-        mul_zero]
+      rw [ite_eq_right fun ⟨hy, hz⟩ ↦
+        h ⟨hz, EndpointWalk.penultimate_eq_of_coe_init_eq hy ▸ y.adj_init_last⟩, mul_zero]
 /-- Sandwiching the last `walkGenerator` between extended matrix units gives a nonzero multiple of
 `blockSingle t p q 1` whenever `t` is reachable in `m` steps. -/
 private theorem walkExtend_blockSingle_mul_walkGenerator_mul_walkExtend_blockSingle

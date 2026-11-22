@@ -89,21 +89,22 @@ variable {δ : ℝ} (hδ : δ ∈ jonesLoopParameters)
 theorem markov_check_one_unit :
     htr.positiveQuotientTrace hδ 2 (htr.jonesProjection 0) = 1 ∧
       htr.normalizedQuotientTrace hδ 2 (htr.jonesProjection 0) = (δ : ℂ)⁻¹ ^ 2 := by
-  have h1 := htr.positiveQuotientTrace_jonesStrandIncl_mul_jonesProjection hδ (1 : htr.Quotient 1)
+  have h1 := htr.positiveQuotientTrace_quotientStrandIncl_mul_jonesProjection hδ
+    (1 : htr.Quotient 1)
   rw [map_one, one_mul, htr.positiveQuotientTrace_one, pow_one,
-    inv_mul_cancel₀ (IsMarkovTrace.isUnit_of_mem_jonesLoopParameters hδ).ne_zero] at h1
+    inv_mul_cancel₀ (isUnit_of_mem_jonesLoopParameters hδ).ne_zero] at h1
   exact ⟨h1, by rw [htr.normalizedQuotientTrace_apply, h1, mul_one]⟩
 /-- Unnormalized and normalized Markov trace values of `e_0 * p_1` on `3` strands. -/
 theorem markov_check_two_generator :
     let x : htr.Quotient 2 := Ideal.Quotient.mk (htr.traceRadical 2) (e (δ : ℂ) 0)
-    htr.positiveQuotientTrace hδ 3 (htr.jonesStrandIncl 2 x * htr.jonesProjection 1) = 1 ∧
-      htr.normalizedQuotientTrace hδ 3 (htr.jonesStrandIncl 2 x * htr.jonesProjection 1) =
+    htr.positiveQuotientTrace hδ 3 (htr.quotientStrandIncl 2 x * htr.jonesProjection 1) = 1 ∧
+      htr.normalizedQuotientTrace hδ 3 (htr.quotientStrandIncl 2 x * htr.jonesProjection 1) =
         (δ : ℂ)⁻¹ ^ 3 := by
-  intro x; have h1 := htr.positiveQuotientTrace_jonesStrandIncl_mul_jonesProjection hδ x
+  intro x; have h1 := htr.positiveQuotientTrace_quotientStrandIncl_mul_jonesProjection hδ x
   have he : tr 2 (e (δ : ℂ) 0) = (δ : ℂ) := by
     simpa [htr.map_one] using htr.map_strandIncl_mul_e_last 0 1
   rw [htr.positiveQuotientTrace_mk, he,
-    inv_mul_cancel₀ (IsMarkovTrace.isUnit_of_mem_jonesLoopParameters hδ).ne_zero] at h1
+    inv_mul_cancel₀ (isUnit_of_mem_jonesLoopParameters hδ).ne_zero] at h1
   exact ⟨h1, by rw [htr.normalizedQuotientTrace_apply, h1, mul_one]⟩
 end MarkovChecks
 end TauCeti.TemperleyLieb.QuotientExamples

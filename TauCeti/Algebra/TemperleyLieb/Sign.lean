@@ -615,25 +615,38 @@ theorem quotientSignEquiv_symm_mk (n : ℕ) (x : TemperleyLieb R (-δ) n) :
           ((signEquiv δ n).symm x) := by
   rw [quotientSignEquiv, Ideal.quotientEquivAlg_symm, Ideal.quotientEquivAlg_mk]
 
-/-- The quotient sign isomorphisms commute with the injective strand maps `quotientStrandIncl`
+/-- The quotient sign isomorphisms commute with the strand maps `quotientStrandIncl`
 between trace-radical quotients. -/
 @[simp]
-theorem quotientSignEquiv_quotientStrandIncl (n : ℕ)
-    (x : TemperleyLieb R δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    htr.quotientSignEquiv htr' (n + 2) (htr.quotientStrandIncl n x) =
-      htr'.quotientStrandIncl n (htr.quotientSignEquiv htr' (n + 1) x) := by
+theorem quotientSignEquiv_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
+    htr.quotientSignEquiv htr' (n + 1) (htr.quotientStrandIncl n x) =
+      htr'.quotientStrandIncl n (htr.quotientSignEquiv htr' n x) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp
+  cases n with
+  | zero =>
+    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes]
+    erw [AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
+    rfl
+  | succ n =>
+    rw [htr.quotientStrandIncl_mk, strandInclAll_succ]
+    change htr.quotientSignEquiv htr' (n + 2)
+        (Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) (strandIncl x)) =
+      htr'.quotientStrandIncl (n + 1) (htr.quotientSignEquiv htr' (n + 1)
+        (Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) x))
+    rw [htr.quotientSignEquiv_mk, htr.quotientSignEquiv_mk]
+    change Ideal.Quotient.mk (htr'.traceRadical (n + 2)) (signEquiv δ (n + 2) (strandIncl x)) =
+      htr'.quotientStrandIncl (n + 1)
+        (Ideal.Quotient.mk (htr'.traceRadical (n + 1)) (signEquiv δ (n + 1) x))
+    simp
 
 /-- The inverse quotient sign isomorphisms commute with `quotientStrandIncl`. -/
 @[simp]
-theorem quotientSignEquiv_symm_quotientStrandIncl (n : ℕ)
-    (x : TemperleyLieb R (-δ) (n + 1) ⧸
-      (tr' (n + 1)).traceRadical (htr'.map_mul_comm (n + 1))) :
-    (htr.quotientSignEquiv htr' (n + 2)).symm (htr'.quotientStrandIncl n x) =
-      htr.quotientStrandIncl n ((htr.quotientSignEquiv htr' (n + 1)).symm x) := by
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp
+theorem quotientSignEquiv_symm_quotientStrandIncl (n : ℕ) (x : htr'.Quotient n) :
+    (htr.quotientSignEquiv htr' (n + 1)).symm (htr'.quotientStrandIncl n x) =
+      htr.quotientStrandIncl n ((htr.quotientSignEquiv htr' n).symm x) :=
+  (htr.quotientSignEquiv htr' (n + 1)).injective (by
+    erw [htr.quotientSignEquiv_quotientStrandIncl, AlgEquiv.apply_symm_apply,
+      AlgEquiv.apply_symm_apply])
 
 /-- On the trace-radical quotients, `quotientSignEquiv` multiplies `quotientTrace` by `(-1) ^ n`. -/
 @[simp]
@@ -749,15 +762,29 @@ theorem quotientSignEquivOfAddEqZero_mk (n : ℕ) (x : TemperleyLieb R δ n) :
         (signEquivOfAddEqZero h n x) := by
   rw [quotientSignEquivOfAddEqZero, Ideal.quotientEquivAlg_mk]
 
-/-- `quotientSignEquivOfAddEqZero` intertwines the quotient strand inclusions
-`quotientStrandIncl`. -/
+/-- `quotientSignEquivOfAddEqZero` intertwines the quotient strand maps `quotientStrandIncl`. -/
 @[simp]
-theorem quotientSignEquivOfAddEqZero_quotientStrandIncl (n : ℕ)
-    (q : TemperleyLieb R δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    htr.quotientSignEquivOfAddEqZero htr' h (n + 2) (htr.quotientStrandIncl n q) =
-      htr'.quotientStrandIncl n (htr.quotientSignEquivOfAddEqZero htr' h (n + 1) q) := by
+theorem quotientSignEquivOfAddEqZero_quotientStrandIncl (n : ℕ) (q : htr.Quotient n) :
+    htr.quotientSignEquivOfAddEqZero htr' h (n + 1) (htr.quotientStrandIncl n q) =
+      htr'.quotientStrandIncl n (htr.quotientSignEquivOfAddEqZero htr' h n q) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp
+  cases n with
+  | zero =>
+    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes]
+    erw [AlgEquiv.commutes, AlgEquiv.commutes, AlgHom.commutes]
+    rfl
+  | succ n =>
+    rw [htr.quotientStrandIncl_mk, strandInclAll_succ]
+    change htr.quotientSignEquivOfAddEqZero htr' h (n + 2)
+        (Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) (strandIncl x)) =
+      htr'.quotientStrandIncl (n + 1) (htr.quotientSignEquivOfAddEqZero htr' h (n + 1)
+        (Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) x))
+    rw [htr.quotientSignEquivOfAddEqZero_mk, htr.quotientSignEquivOfAddEqZero_mk]
+    change Ideal.Quotient.mk (htr'.traceRadical (n + 2))
+        (signEquivOfAddEqZero h (n + 2) (strandIncl x)) =
+      htr'.quotientStrandIncl (n + 1)
+        (Ideal.Quotient.mk (htr'.traceRadical (n + 1)) (signEquivOfAddEqZero h (n + 1) x))
+    simp
 
 /-- `quotientSignEquivOfAddEqZero` scales `quotientTrace` by `(-1) ^ n`. -/
 @[simp]

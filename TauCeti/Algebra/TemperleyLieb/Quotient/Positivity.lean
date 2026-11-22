@@ -162,21 +162,9 @@ def quotientPathAlgebraEquiv (n : ℕ) : htr.Quotient n ≃⋆ₐ[ℂ] PathAlgeb
   exact (htr.eq_walkTrace_comp_walkRep G v₀ hr hδ n _).symm.trans
     (LinearMap.quotientTrace_mk _ _ _).symm
 /-- `quotientPathAlgebraEquiv` intertwines `quotientStrandIncl` with `walkExtend`. -/
-theorem quotientPathAlgebraEquiv_quotientStrandIncl {n : ℕ} (x : htr.Quotient (n + 1)) :
-    htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 2) (htr.quotientStrandIncl n x) =
-      walkExtend G v₀ (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 1) x) := by
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  -- `htr.quotientStrandIncl_mk` is stated using `(tr _).traceRadical (htr.map_mul_comm _)`,
-  -- which is definitionally equal to `htr.traceRadical _`, so `rw` does not match syntactically.
-  rw [quotientPathAlgebraEquiv_mk]
-  exact (congrArg (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 2))
-    (htr.quotientStrandIncl_mk n a)).trans <|
-    (htr.quotientPathAlgebraEquiv_mk G v₀ hr hrs hδ hf hf₀ hadj (strandIncl a)).trans
-      (walkRep_strandIncl hr hδ a)
-/-- `quotientPathAlgebraEquiv` intertwines `quotientStrandStarAlgHom` with `walkExtend`. -/
-theorem quotientPathAlgebraEquiv_quotientStrandStarAlgHom (n : ℕ) (x : htr.Quotient n) :
+theorem quotientPathAlgebraEquiv_quotientStrandIncl (n : ℕ) (x : htr.Quotient n) :
     htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 1)
-      (htr.quotientStrandStarAlgHom n x) =
+      (htr.quotientStrandIncl n x) =
       walkExtend G v₀ (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj n x) := by
   obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x; simp
 omit [DecidableRel G.Adj] in
@@ -274,6 +262,20 @@ theorem positiveQuotientTrace_mul_comm {n : ℕ} (x y : htr.Quotient n) :
 @[simp] theorem nullSubmodule_positiveQuotientTrace (n : ℕ) :
     (htr.positiveQuotientTrace hδ n).nullSubmodule = ⊥ :=
   (htr.positiveFunctional hδ n).nullSubmodule_quotientTrace (htr.map_mul_comm n)
+/-- `positiveQuotientTrace` agrees with the algebraic `quotientTrace` of `tr n`. -/
+theorem positiveQuotientTrace_eq_quotientTrace (n : ℕ) (x : htr.Quotient n) :
+    htr.positiveQuotientTrace hδ n x = (tr n).quotientTrace (htr.map_mul_comm n) x := by
+  obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x
+  exact (htr.positiveQuotientTrace_mk hδ _).trans (LinearMap.quotientTrace_mk _ _ _).symm
+/-- Separation principle for `positiveQuotientTrace`: elements with equal pairings against all
+elements are equal. -/
+theorem eq_of_forall_positiveQuotientTrace_mul_eq {n : ℕ} {a b : htr.Quotient n}
+    (h : ∀ x, htr.positiveQuotientTrace hδ n (x * a) = htr.positiveQuotientTrace hδ n (x * b)) :
+    a = b := by
+  have hmem : a - b ∈ (htr.positiveQuotientTrace hδ n).nullSubmodule :=
+    ((htr.positiveQuotientTrace hδ n).mem_nullSubmodule_iff_apply_star_mul_self_eq_zero _).2 <| by
+      rw [mul_sub, map_sub, h, sub_self]
+  rwa [htr.nullSubmodule_positiveQuotientTrace hδ n, Submodule.mem_bot, sub_eq_zero] at hmem
 include hδ in
 /-- For `δ ∈ jonesLoopParameters`, `htr.Quotient n` is finite-dimensional over `ℂ`. -/
 theorem finiteDimensional_quotient (n : ℕ) : FiniteDimensional ℂ (htr.Quotient n) := by

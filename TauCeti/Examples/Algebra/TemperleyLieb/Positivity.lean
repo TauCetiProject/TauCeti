@@ -280,24 +280,24 @@ example [Fact (IsSelfAdjoint (√2 : ℂ))]
 -- `IsMarkovTrace.quotientStrandIncl`, and is faithful across module boundaries.
 example {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ ∈ jonesLoopParameters)
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
-    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ)
-    (x : TemperleyLieb ℂ (δ : ℂ) (n + 1) ⧸
-      (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    letI := htr.isStar_traceRadical (n + 1)
-    letI := htr.isStar_traceRadical (n + 2)
-    htr.quotientStarPositiveFunctional hδ (n + 2) (htr.quotientStrandIncl n x) =
-        (δ : ℂ) * htr.quotientStarPositiveFunctional hδ (n + 1) x ∧
-      (htr.quotientStarPositiveFunctional hδ (n + 1)).nullSubmodule = ⊥ ∧
-      (htr.quotientStarPositiveFunctional hδ (n + 1) (star x * x) = 0 ↔ x = 0) ∧
-      (htr.starPositiveFunctional hδ (n + 1)).toLinearMap.traceRadical
-          (htr.starPositiveFunctional_mul_comm hδ (n + 1)) =
-        (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) := by
-  have := htr.isStar_traceRadical (n + 1)
-  have := htr.isStar_traceRadical (n + 2)
-  refine ⟨?_, htr.nullSubmodule_quotientStarPositiveFunctional hδ (n + 1),
-    htr.quotientStarPositiveFunctional_star_mul_self_eq_zero_iff hδ (n + 1) x,
-    htr.traceRadical_starPositiveFunctional hδ (n + 1)⟩
-  rw [htr.quotientStarPositiveFunctional_apply, htr.quotientStarPositiveFunctional_apply,
+    (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (n : ℕ) (x : htr.Quotient n) :
+    letI : ((tr n).traceRadical (htr.map_mul_comm n)).IsStar := htr.isStar_traceRadical n
+    letI : ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))).IsStar :=
+      htr.isStar_traceRadical (n + 1)
+    htr.quotientStarPositiveFunctional hδ (n + 1) (htr.quotientStrandIncl n x) =
+        (δ : ℂ) * htr.quotientStarPositiveFunctional hδ n x ∧
+      (htr.quotientStarPositiveFunctional hδ n).nullSubmodule = ⊥ ∧
+      (htr.quotientStarPositiveFunctional hδ n (star x * x) = 0 ↔ x = 0) ∧
+      (htr.starPositiveFunctional hδ n).toLinearMap.traceRadical
+          (htr.starPositiveFunctional_mul_comm hδ n) =
+        htr.traceRadical n := by
+  have : ((tr n).traceRadical (htr.map_mul_comm n)).IsStar := htr.isStar_traceRadical n
+  have : ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))).IsStar :=
+    htr.isStar_traceRadical (n + 1)
+  refine ⟨?_, htr.nullSubmodule_quotientStarPositiveFunctional hδ n,
+    htr.quotientStarPositiveFunctional_star_mul_self_eq_zero_iff hδ n x,
+    htr.traceRadical_starPositiveFunctional hδ n⟩
+  erw [htr.quotientStarPositiveFunctional_apply, htr.quotientStarPositiveFunctional_apply,
     htr.quotientTrace_quotientStrandIncl]
 
 -- At `δ = 1` (`m = 3`), `f₂ = 1 - e 0` belongs to the trace radical on two strands, whereas it does

@@ -160,6 +160,11 @@ theorem one_le_of_mem_jonesLoopParameters {δ : ℝ} (h : δ ∈ jonesLoopParame
 theorem pos_of_mem_jonesLoopParameters {δ : ℝ} (h : δ ∈ jonesLoopParameters) : 0 < δ :=
   lt_of_lt_of_le zero_lt_one (one_le_of_mem_jonesLoopParameters h)
 
+/-- Every admissible loop parameter is a unit in `ℂ`. -/
+theorem isUnit_of_mem_jonesLoopParameters {δ : ℝ} (hδ : δ ∈ jonesLoopParameters) :
+    IsUnit (δ : ℂ) :=
+  (Complex.ofReal_ne_zero.2 (pos_of_mem_jonesLoopParameters hδ).ne').isUnit
+
 /-- No real number strictly below `1` is an admissible loop parameter. -/
 theorem notMem_jonesLoopParameters_of_lt_one {δ : ℝ} (h : δ < 1) : δ ∉ jonesLoopParameters :=
   fun hJ ↦ h.not_ge (one_le_of_mem_jonesLoopParameters hJ)

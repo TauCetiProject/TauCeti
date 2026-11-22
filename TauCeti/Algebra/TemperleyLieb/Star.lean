@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.SelfAdjoint
-public import Mathlib.Algebra.Star.StarAlgHom
 public import TauCeti.Algebra.TemperleyLieb.Basic
 
 /-!
@@ -180,15 +179,6 @@ theorem strandInclAll_star (n : ℕ) (x : TemperleyLieb R δ n) :
   cases n with
   | zero => rw [eq_algebraMap_aug_zero x]; simp [Algebra.algebraMap_eq_smul_one]
   | succ _ => rw [strandInclAll_succ, strandIncl_star]
-
-/-- `strandInclAll` bundled as a `⋆`-algebra homomorphism at every level `n ≥ 0`. -/
-def strandInclStarAlgHom (n : ℕ) : TemperleyLieb R δ n →⋆ₐ[R] TemperleyLieb R δ (n + 1) :=
-  { strandInclAll n with map_star' := strandInclAll_star n }
-
-/-- Applying `strandInclStarAlgHom` agrees with `strandInclAll`. -/
-@[simp]
-theorem strandInclStarAlgHom_apply (n : ℕ) (x : TemperleyLieb R δ n) :
-    strandInclStarAlgHom n x = strandInclAll n x := (rfl)
 
 /-- The augmentation conjugates: on at most one strand, where the algebra is the base ring, the
 analytic adjoint is the star of `R`. -/

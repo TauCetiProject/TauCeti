@@ -429,13 +429,22 @@ theorem quotientEvenCliffordEquiv_mk
 `quotientStrandIncl` with the even Clifford coordinate inclusion `evenCliffordIncl`. -/
 @[simp]
 theorem quotientEvenCliffordEquiv_quotientStrandIncl
-    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ)
-    (q : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) (n + 1) ⧸
-      (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    htr.quotientEvenCliffordEquiv (n + 2) (htr.quotientStrandIncl n q) =
-      evenCliffordIncl (n + 1) (htr.quotientEvenCliffordEquiv (n + 1) q) := by
+    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ) (q : htr.Quotient n) :
+    htr.quotientEvenCliffordEquiv (n + 1) (htr.quotientStrandIncl n q) =
+      evenCliffordIncl n (htr.quotientEvenCliffordEquiv n q) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-  simp
+  cases n with
+  | zero =>
+    rw [eq_algebraMap_aug_zero x, Ideal.Quotient.mk_algebraMap, AlgHom.commutes]
+    erw [AlgEquiv.commutes, AlgEquiv.commutes]
+    rw [AlgHom.commutes]
+  | succ n =>
+    rw [htr.quotientStrandIncl_mk, strandInclAll_succ]
+    change htr.quotientEvenCliffordEquiv (n + 2)
+        (Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2))) (strandIncl x)) =
+      evenCliffordIncl (n + 1) (htr.quotientEvenCliffordEquiv (n + 1)
+        (Ideal.Quotient.mk ((tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) x))
+    simp
 
 /-- `(quotientEvenCliffordEquiv m).symm` maps `evenCliffordHom m x` back to the quotient class
 of `x`. -/
@@ -451,11 +460,12 @@ theorem quotientEvenCliffordEquiv_symm_evenCliffordHom
 `quotientStrandIncl`. -/
 @[simp]
 theorem quotientEvenCliffordEquiv_symm_evenCliffordIncl
-    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ)
-    (y : EvenClifford (n + 1)) :
-    (htr.quotientEvenCliffordEquiv (n + 2)).symm (evenCliffordIncl (n + 1) y) =
-      htr.quotientStrandIncl n ((htr.quotientEvenCliffordEquiv (n + 1)).symm y) :=
-  (htr.quotientEvenCliffordEquiv (n + 2)).injective (by simp)
+    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ) (y : EvenClifford n) :
+    (htr.quotientEvenCliffordEquiv (n + 1)).symm (evenCliffordIncl n y) =
+      htr.quotientStrandIncl n ((htr.quotientEvenCliffordEquiv n).symm y) :=
+  (htr.quotientEvenCliffordEquiv (n + 1)).injective (by
+    erw [AlgEquiv.apply_symm_apply, htr.quotientEvenCliffordEquiv_quotientStrandIncl,
+      AlgEquiv.apply_symm_apply])
 
 /-- The induced trace on the `m`-strand Temperley–Lieb quotient at `δ = √2` is `(√2 : ℂ) ^ m` times
 `CliffordAlgebra.scalarTrace` under `quotientEvenCliffordEquiv`. -/

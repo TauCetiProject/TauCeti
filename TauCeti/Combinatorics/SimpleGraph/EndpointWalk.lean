@@ -78,6 +78,12 @@ theorem adj_init_last (w : G.EndpointWalk v₀ (m + 1) v) : G.Adj (w (Fin.last m
 theorem eq_of_coe_init_eq {w₁ w₂ : G.EndpointWalk v₀ (m + 1) v} (h : ⇑w₁.init = ⇑w₂.init) :
     w₁ = w₂ :=
   ext fun i ↦ Fin.lastCases (w₁.apply_last_eq.trans w₂.apply_last_eq.symm) (congrFun h) i
+/-- If the `init` of an `(m + 1)`-step walk agrees pointwise with an `m`-step walk ending at `u`,
+then its penultimate vertex is `u`. -/
+theorem penultimate_eq_of_coe_init_eq {x : G.EndpointWalk v₀ (m + 1) v}
+    {p : G.EndpointWalk v₀ m u} (hx : (x.init : Fin (m + 1) → V) = p) :
+    x (Fin.last m).castSucc = u := by
+  simpa [coe_init, p.apply_last_eq] using congrFun hx (Fin.last m)
 /-- Update an interior position `b` whose neighbours `a, c` carry the same vertex. -/
 def update (w : G.EndpointWalk v₀ m v) {a b c : Fin (m + 1)} (hab : a.val + 1 = b.val)
     (hbc : b.val + 1 = c.val) (hac : w a = w c) {x : V} (hx : G.Adj (w a) x) :
