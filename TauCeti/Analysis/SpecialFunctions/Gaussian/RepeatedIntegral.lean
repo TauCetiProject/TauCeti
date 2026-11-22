@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 
-import Mathlib.MeasureTheory.Integral.Gamma
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Deriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 
@@ -454,23 +454,19 @@ theorem iteratedDeriv_exp_mul_re_repeatedGaussianIntegral (n k : ℕ) :
 theorem repeatedGaussianIntegral_zero_right (n : ℕ) :
     repeatedGaussianIntegral n 0 =
       ((2 : ℝ) ^ (((n : ℝ) - 1) / 2) * Real.Gamma ((n + 1) / 2) / n ! : ℝ) := by
-  have h := _root_.integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := n) (b := 1 / 2)
-    (by norm_num) (by have := n.cast_nonneg (α := ℝ); linarith) (by norm_num)
-  -- The prefactor `(1/2)^{-(n+1)/2} · (1/2)` of the Gaussian moment integral is `2^{(n-1)/2}`.
-  have h2 : (1 / 2 : ℝ) ^ (-((n : ℝ) + 1) / 2) * (1 / 2) = (2 : ℝ) ^ (((n : ℝ) - 1) / 2) :=
-    calc (1 / 2 : ℝ) ^ (-((n : ℝ) + 1) / 2) * (1 / 2)
-        = (2 : ℝ) ^ (((n : ℝ) + 1) / 2) * (2 : ℝ) ^ (-1 : ℝ) := by
-          rw [one_div, Real.inv_rpow zero_le_two, ← Real.rpow_neg zero_le_two, neg_div, neg_neg,
-            Real.rpow_neg_one]
-      _ = (2 : ℝ) ^ (((n : ℝ) - 1) / 2) := by
-          rw [← Real.rpow_add two_pos]
-          ring_nf
-  rw [← Complex.ofReal_zero, repeatedGaussianIntegral_ofReal, ← h2, ← h, ← integral_div]
+  have h := TauCeti.integral_Ioi_pow_mul_exp_neg_mul_sq (b := 1 / 2) (by norm_num) n
+  -- The prefactor `1 / (2 · (1/2)^{(n+1)/2})` of the Gaussian moment integral is `2^{(n-1)/2}`.
+  have h2 : ((2 : ℝ) ^ (((n : ℝ) - 1) / 2)) = (2 * (1 / 2 : ℝ) ^ (((n : ℝ) + 1) / 2))⁻¹ := by
+    rw [one_div, Real.inv_rpow zero_le_two, mul_inv, inv_inv, ← Real.rpow_neg_one 2,
+      ← Real.rpow_add two_pos]
+    ring_nf
+  rw [← Complex.ofReal_zero, repeatedGaussianIntegral_ofReal, h2, ← div_eq_inv_mul, ← h,
+    ← integral_div]
   congr 1
   refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
   -- Match the exponent `-(1 / 2) t²` of the Gaussian moment integral.
   have ht : -((0 + t) ^ 2) / 2 = -(1 / 2) * t ^ 2 := by ring
-  rw [Real.rpow_natCast, Real.rpow_two, ht]
+  rw [ht]
   ring
 
 /-- Reality and positivity of `Hh_n(x)` for real `x`. -/
