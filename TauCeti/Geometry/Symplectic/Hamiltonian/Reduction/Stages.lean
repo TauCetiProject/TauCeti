@@ -223,12 +223,13 @@ theorem forall_differential_surjective_prod_of_isSubmersion (hμ : σ.IsEquivari
   obtain ⟨w, hw⟩ := hreg₂ (π₁ x₁) ((congrFun hν₁ x₁).trans hx.2) (p.2 - hν.differential x v₀)
   obtain ⟨u, rfl⟩ := hπ₁.surjective_mfderiv (by simp) x₁ w
   have hμu : hμ.differential x (mfderiv _ I' Subtype.val x₁ u) = 0 :=
-    hμ.differential_mfderiv_coe_levelSubMulAction hreg₁ hn₁ x₁ u
+    hμ.toIsMomentMap.differential_mfderiv_eq_zero
+      (fun y ↦ hμ.mem_levelSubMulAction.1 y.property) x₁ u
   have hνu : hν.differential x (mfderiv _ I' Subtype.val x₁ u) = p.2 - hν.differential x v₀ := by
     rw [← hw]
-    exact (hν.toIsMomentMap.differential_mfderiv_eq_of_comp_eq h₁.toIsMomentMap
-      (hemb₁.contMDiff.mdifferentiable (by simp)) (hπ₁.contMDiff.mdifferentiable (by simp)) hν₁
-      x₁ u).symm
+    exact (hν.toIsMomentMap.differential_mfderiv_eq_of_comp_eq h₁.toIsMomentMap hν₁ x₁
+      (hemb₁.contMDiff.mdifferentiableAt (by simp)) ((hπ₁.contMDiff x₁).mdifferentiableAt (by simp))
+      u).symm
   refine ⟨v₀ + mfderiv _ I' Subtype.val x₁ u, ?_⟩
   rw [IsMomentMap.differential_prod_of_smul_eq_smul_smul hμ.toIsMomentMap hν.toIsMomentMap hsmul,
     map_add, map_add, hv₀, hμu, hνu, add_zero, add_sub_cancel, Prod.mk.eta,
@@ -290,13 +291,15 @@ private theorem contMDiff_levelProdToLevelSnd (hμ : σ.IsEquivariantMomentMap �
   -- `μ⁻¹(c)`; then `dμ v = 0` and `dν v = dν₁ (dπ₁ v) = dν₁ w = 0`, so `v` is tangent to the level
   -- of `(μ, ν)`.
   have hμv : hμ.differential (j z) (mfderiv _ I' Subtype.val (j z) v) = 0 :=
-    hμ.differential_mfderiv_coe_levelSubMulAction hreg₁ hn₁ (j z) v
+    hμ.toIsMomentMap.differential_mfderiv_eq_zero
+      (fun y ↦ hμ.mem_levelSubMulAction.1 y.property) (j z) v
   have hνv : hν.differential (j z) (mfderiv _ I' Subtype.val (j z) v) = 0 := by
-    rw [← hν.toIsMomentMap.differential_mfderiv_eq_of_comp_eq h₁.toIsMomentMap
-      (hemb₁.contMDiff.mdifferentiable (by simp)) (hπ₁.contMDiff.mdifferentiable (by simp)) hν₁
-      (j z) v, ← hvw]
-    exact h₁.differential_mfderiv_coe_levelSubMulAction hreg₂ hn₂ (k z) w
-  refine (H.mem_range_mfderiv_coe_levelSubMulAction_iff hreg hn z _).2 ?_
+    rw [← hν.toIsMomentMap.differential_mfderiv_eq_of_comp_eq h₁.toIsMomentMap hν₁ (j z)
+      (hemb₁.contMDiff.mdifferentiableAt (by simp)) ((hπ₁.contMDiff (j z)).mdifferentiableAt
+      (by simp)) v, ← hvw]
+    exact h₁.toIsMomentMap.differential_mfderiv_eq_zero
+      (fun y ↦ h₁.mem_levelSubMulAction.1 y.property) (k z) w
+  refine (H.range_mfderiv_coe_levelSubMulAction hreg hn z).ge (LinearMap.mem_ker.2 ?_)
   rw [IsMomentMap.differential_prod_of_smul_eq_smul_smul hμ.toIsMomentMap hν.toIsMomentMap hsmul,
     hμv, hνv, Prod.mk_zero_zero, map_zero]
 

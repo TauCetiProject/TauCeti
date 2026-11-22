@@ -171,15 +171,15 @@ with `ν' ∘ p = ν ∘ i`, then their differentials agree along `Z`:
 map of a symmetry descended to a reduced space, this computes the differential of the reduced
 moment map. -/
 theorem differential_mfderiv_eq_of_comp_eq (hν : σ.IsMomentMap a ν) (hν' : η.IsMomentMap b ν')
-    (hi : MDifferentiable I₀ I i) (hp : MDifferentiable I₀ J p) (hνν' : ν' ∘ p = ν ∘ i) (z : Z)
-    (v : TangentSpace I₀ z) :
+    (hνν' : ν' ∘ p = ν ∘ i) (z : Z) (hi : MDifferentiableAt I₀ I i z)
+    (hp : MDifferentiableAt I₀ J p z) (v : TangentSpace I₀ z) :
     hν'.differential (p z) (mfderiv I₀ J p z v) = hν.differential (i z) (mfderiv I₀ I i z v) := by
   ext ξ
   have hcomp : (fun q ↦ ν' q ξ) ∘ p = (fun x ↦ ν x ξ) ∘ i :=
-    funext fun z ↦ congrArg (· ξ) (congrFun hνν' z)
+    funext fun y ↦ congrArg (· ξ) (congrFun hνν' y)
   rw [differential_apply, differential_apply,
-    ← mvfderiv_comp_apply z (hν'.mdifferentiableAt ξ (p z)) (hp z), hcomp,
-    mvfderiv_comp_apply z (hν.mdifferentiableAt ξ (i z)) (hi z)]
+    ← mvfderiv_comp_apply z (hν'.mdifferentiableAt ξ (p z)) hp, hcomp,
+    mvfderiv_comp_apply z (hν.mdifferentiableAt ξ (i z)) hi]
 
 /-- **The reduced moment map.** Let `p^* η = i^* σ`, where `p` is a surjective smooth submersion
 out of a boundaryless manifold, let `ν` be a moment map of an infinitesimal action `a` on `M`, and
