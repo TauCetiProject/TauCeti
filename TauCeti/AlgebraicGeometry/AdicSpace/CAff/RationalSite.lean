@@ -459,44 +459,35 @@ def rationalCoverage : Coverage (CAff.{u}ᵒᵖ) where
   pullback := by
     rintro U V f R ⟨ι, _, T, s, hcov, rfl⟩
     let X₀ := unop U; let Y₀ := unop V; let ψ : X₀ ⟶ Y₀ := f.unop
-    have hpoint : ∀ w : ↥(ValuationSpectrum.spa Y₀.pair.plus),
-        ∃ (i : ι) (T' : Finset Y₀.ring) (s' : Y₀.ring),
-          IsOpen (Ideal.span (T' : Set Y₀.ring) : Set Y₀.ring) ∧
-          w ∈ Subtype.val ⁻¹' rationalSubset Y₀.pair.plus T' s' ∧
-          (Subtype.val ⁻¹' rationalSubset Y₀.pair.plus T' s' :
-            Set ↥(ValuationSpectrum.spa Y₀.pair.plus)) ⊆
-            ψ.spaComap ⁻¹' (Subtype.val ⁻¹' rationalSubset X₀.pair.plus (T i) (s i)) := fun w ↦ by
-      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hcov.iUnion_eq_univ ▸ Set.mem_univ (ψ.spaComap w))
-      have hopen : IsOpen (ψ.spaComap ⁻¹'
-          (Subtype.val ⁻¹' rationalSubset X₀.pair.plus (T i) (s i))) :=
-        (isOpen_val_preimage_rationalSubset X₀.pair.plus (T i) (s i)).preimage ψ.continuous_spaComap
-      obtain ⟨W, hW_mem, hwW, hW_sub⟩ :=
-        (isTopologicalBasis_spaRationalFamily Y₀.pair.plus).mem_nhds_iff.mp (hopen.mem_nhds hi)
-      obtain ⟨T', s', hT', rfl⟩ := mem_spaRationalFamily_iff.mp hW_mem
-      exact ⟨i, T', s', hT', hwW, hW_sub⟩
-    choose idx T' s' hT' hw_mem hsub using hpoint
-    obtain ⟨F, hF⟩ := isCompact_univ.elim_finite_subcover
-      (fun w ↦ (Subtype.val ⁻¹' rationalSubset Y₀.pair.plus (T' w) (s' w) :
-        Set ↥(ValuationSpectrum.spa Y₀.pair.plus)))
-      (fun w ↦ isOpen_val_preimage_rationalSubset Y₀.pair.plus (T' w) (s' w))
-      (fun w _ ↦ Set.mem_iUnion.mpr ⟨w, hw_mem w⟩)
-    have hcovY : IsRationalCovering Y₀ (fun k : ↥F ↦ T' k.1) (fun k : ↥F ↦ s' k.1) :=
-      { isOpen_span := fun k ↦ hT' k.1
+    obtain ⟨𝒲, h𝒲_rat, h𝒲_fin, h𝒲_sub, h𝒲_cov⟩ :=
+      exists_finite_spaRationalFamily_refinement (univ_mem_spaRationalFamily Y₀.pair.plus)
+        (fun i ↦ ψ.spaComap ⁻¹'
+          (Subtype.val ⁻¹' rationalSubset X₀.pair.plus (T i) (s i)))
+        (fun i ↦ (isOpen_val_preimage_rationalSubset X₀.pair.plus (T i) (s i)).preimage
+          ψ.continuous_spaComap)
+        (fun w _ ↦ by
+          obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hcov.iUnion_eq_univ ▸ Set.mem_univ (ψ.spaComap w))
+          exact Set.mem_iUnion.mpr ⟨i, hi⟩)
+    have : Finite ↥𝒲 := h𝒲_fin.to_subtype
+    choose idx hsub using fun k : ↥𝒲 ↦ h𝒲_sub k.1 k.2
+    choose T' s' hT' hW_eq using fun k : ↥𝒲 ↦ mem_spaRationalFamily_iff.mp (h𝒲_rat k.2)
+    have hcovY : IsRationalCovering Y₀ T' s' :=
+      { isOpen_span := hT'
         iUnion_eq_univ := Set.eq_univ_of_forall fun w ↦ by
-          obtain ⟨y, hy, hwy⟩ := Set.mem_iUnion₂.mp (hF (Set.mem_univ w))
-          exact Set.mem_iUnion.mpr ⟨⟨y, hy⟩, hwy⟩ }
-    refine ⟨Y₀.rationalCoverPresieve (fun k : ↥F ↦ T' k.1) (fun k : ↥F ↦ s' k.1)
-      hcovY.isOpen_span, ⟨↥F, inferInstance, _, _, hcovY, rfl⟩, fun Z g hg ↦ ?_⟩
+          obtain ⟨W, hW, hwW⟩ := Set.mem_sUnion.mp (h𝒲_cov (Set.mem_univ w))
+          exact Set.mem_iUnion.mpr ⟨⟨W, hW⟩, hW_eq ⟨W, hW⟩ ▸ hwW⟩ }
+    refine ⟨Y₀.rationalCoverPresieve T' s' hcovY.isOpen_span,
+      ⟨↥𝒲, inferInstance, T', s', hcovY, rfl⟩, fun Z g hg ↦ ?_⟩
     obtain ⟨k, rfl, rfl⟩ := mem_rationalCoverPresieve_iff.mp hg
-    let φX := X₀.rationalLocalizationHom (T (idx k.1)) (s (idx k.1)) (hcov.isOpen_span (idx k.1))
-    let φY := Y₀.rationalLocalizationHom (T' k.1) (s' k.1) (hcovY.isOpen_span k)
-    obtain ⟨χ, hχ, -⟩ := (isRationalLocalization_rationalLocalizationHom X₀ (T (idx k.1))
-      (s (idx k.1)) (hcov.isOpen_span (idx k.1))).existsUnique_factorization (ψ ≫ φY) fun u ↦ by
+    let φX := X₀.rationalLocalizationHom (T (idx k)) (s (idx k)) (hcov.isOpen_span (idx k))
+    let φY := Y₀.rationalLocalizationHom (T' k) (s' k) (hcovY.isOpen_span k)
+    obtain ⟨χ, hχ, -⟩ := (isRationalLocalization_rationalLocalizationHom X₀ (T (idx k))
+      (s (idx k)) (hcov.isOpen_span (idx k))).existsUnique_factorization (ψ ≫ φY) fun u ↦ by
       rw [comp_spaComap]
-      exact hsub k.1
+      exact hsub k (hW_eq k ▸
         ((isRationalLocalization_rationalLocalizationHom Y₀ _ _
-          (hcovY.isOpen_span k)).mapsTo_spaComap u)
-    exact ⟨_, χ.op, φX.op, rationalCoverPresieve_mk (idx k.1), by
+          (hcovY.isOpen_span k)).mapsTo_spaComap u))
+    exact ⟨_, χ.op, φX.op, rationalCoverPresieve_mk (idx k), by
       rw [eqToHom_refl, Category.id_comp, ← op_comp, hχ, op_comp]; rfl⟩
 
 /-- Membership in `CAff.rationalCoverage (op X)`: a presieve belongs to the rational coverage on
@@ -555,15 +546,6 @@ theorem bot_mem_ratTopology_iff (X : CAff.{u}) :
     Sieve.ext fun _ _ ↦
       ⟨fun ⟨_, _, _, hg, _⟩ ↦ PEmpty.elim (mem_rationalCoverPresieve_iff.mp hg).choose, False.elim⟩
   exact hgen ▸ Coverage.Saturate.of (op X) _ ⟨PEmpty.{u + 1}, inferInstance, _, _, hcov, rfl⟩
-
-/-- A `Type*`-valued presheaf on `CAff.{u}ᵒᵖ` is a sheaf for `CAff.ratTopology` if and only if it
-satisfies `Presieve.IsSheafFor` for every rational covering presieve on every `X : CAff.{u}`. -/
-theorem isSheaf_ratTopology_iff (F : (CAff.{u}ᵒᵖ)ᵒᵖ ⥤ Type*) :
-    Presieve.IsSheaf ratTopology F ↔
-      ∀ (X : CAff.{u}) ⦃R : Presieve (op X)⦄, R ∈ rationalCoverage (op X) →
-        Presieve.IsSheafFor F R := by
-  rw [ratTopology, Presieve.isSheaf_coverage]
-  exact ⟨fun h X R hR ↦ h R hR, fun h U R hR ↦ h (unop U) hR⟩
 
 /-! ### Comparison with the adic-spectrum structure presheaf -/
 
@@ -682,13 +664,9 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
         (presentationLimitMap (P := P) h₁₂).hom.1
           ((presentationLimitMap (P := P) h₂₃).hom.1 z) := by
     rw [← presentationLimitMap_comp (P := P) h₂₃ h₁₂]; rfl
-  have hoverlap (i j : ι) :
-      ∃ (T' : Finset Y.ring) (s' : Y.ring),
-        IsOpen (Ideal.span (T' : Set Y.ring) : Set Y.ring) ∧
-        U i ⊓ U j = spaBasicOpen Y.pair.plus T' s' :=
-    mem_spaRationalOpens_iff_exists_spaBasicOpen.mp <|
-      inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens (hT i))
-        (spaBasicOpen_mem_spaRationalOpens (hT j))
+  choose T' s' hT' hUij using fun i j ↦ mem_spaRationalOpens_iff_exists_spaBasicOpen.mp <|
+    inf_mem_spaRationalOpens (spaBasicOpen_mem_spaRationalOpens (hT i))
+      (spaBasicOpen_mem_spaRationalOpens (hT j))
   -- Compatibility equivalence between `CAffᵒᵖ` arrows and `U i ⊓ U j` restrictions.
   have hcompat_iff (x : ∀ i, presentationLimit (P := P) Y.pair.plus (U i)) :
       Presieve.Arrows.Compatible globalSections
@@ -696,65 +674,59 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
         (fun i ↦ ePiece i (x i)) ↔
       ∀ i j, (presentationLimitMap (P := P) (inf_le_left : U i ⊓ U j ≤ U i)).hom.1 (x i) =
         (presentationLimitMap (P := P) (inf_le_right : U i ⊓ U j ≤ U j)).hom.1 (x j) := by
+    let r₁ (i j : ι) := rationalLocalizationRestrict (hT i) (hT' i j)
+      (spaBasicOpen_le_spaBasicOpen_iff.mp ((hUij i j).symm.le.trans inf_le_left))
+    let r₂ (i j : ι) := rationalLocalizationRestrict (hT j) (hT' i j)
+      (spaBasicOpen_le_spaBasicOpen_iff.mp ((hUij i j).symm.le.trans inf_le_right))
+    have hr₁ (i j : ι) := rationalLocalizationHom_comp_rationalLocalizationRestrict (hT i)
+      (hT' i j) (spaBasicOpen_le_spaBasicOpen_iff.mp ((hUij i j).symm.le.trans inf_le_left))
+    have hr₂ (i j : ι) := rationalLocalizationHom_comp_rationalLocalizationRestrict (hT j)
+      (hT' i j) (spaBasicOpen_le_spaBasicOpen_iff.mp ((hUij i j).symm.le.trans inf_le_right))
     refine ⟨fun hcompat i j ↦ ?_, fun hcompat i j Z g₁ g₂ hg ↦ ?_⟩
-    · obtain ⟨T', s', hT', hUij⟩ := hoverlap i j
-      let r₁ := rationalLocalizationRestrict (hT i) hT'
-        (spaBasicOpen_le_spaBasicOpen_iff.mp (hUij.symm.le.trans inf_le_left))
-      let r₂ := rationalLocalizationRestrict (hT j) hT'
-        (spaBasicOpen_le_spaBasicOpen_iff.mp (hUij.symm.le.trans inf_le_right))
-      have hr₁ := rationalLocalizationHom_comp_rationalLocalizationRestrict (hT i) hT'
-        (spaBasicOpen_le_spaBasicOpen_iff.mp (hUij.symm.le.trans inf_le_left))
-      have hr₂ := rationalLocalizationHom_comp_rationalLocalizationRestrict (hT j) hT'
-        (spaBasicOpen_le_spaBasicOpen_iff.mp (hUij.symm.le.trans inf_le_right))
-      let q : Presentation P :=
-        ⟨T', s', hasDenominatorPower_of_isOpen_span P T' s' (Localization.Away s') hT'⟩
-      have heval : r₁.toRingHom (ePiece i (x i)) = r₂.toRingHom (ePiece j (x j)) :=
-        hcompat i j (op (Y.rationalLocalization T' s' hT')) r₁.op r₂.op
-          (by rw [← op_comp, ← op_comp, hr₁, hr₂])
-      rw [hoverlap_hom hT' (hUij.symm.le.trans inf_le_left) (x i),
-        hoverlap_hom hT' (hUij.symm.le.trans inf_le_right) (x j)] at heval
+    · let q : Presentation P :=
+        ⟨T' i j, s' i j,
+          hasDenominatorPower_of_isOpen_span P (T' i j) (s' i j) (Localization.Away (s' i j))
+            (hT' i j)⟩
+      have heval : (r₁ i j).toRingHom (ePiece i (x i)) = (r₂ i j).toRingHom (ePiece j (x j)) :=
+        hcompat i j (op (Y.rationalLocalization (T' i j) (s' i j) (hT' i j)))
+          (r₁ i j).op (r₂ i j).op (by rw [← op_comp, ← op_comp, hr₁ i j, hr₂ i j])
+      rw [hoverlap_hom (hT' i j) ((hUij i j).symm.le.trans inf_le_left) (x i),
+        hoverlap_hom (hT' i j) ((hUij i j).symm.le.trans inf_le_right) (x j)] at heval
       have hinj := (bijective_presentationLimitRationalIso_hom (P := P) Y.pair.plus
-        hAplus q hT').injective heval
-      rw [hmap_comp hUij.symm.le inf_le_left, hmap_comp hUij.symm.le inf_le_right] at hinj
-      have _ : IsIso (presentationLimitMap (P := P) hUij.symm.le) :=
-        ⟨presentationLimitMap (P := P) hUij.le,
+        hAplus q (hT' i j)).injective heval
+      rw [hmap_comp (hUij i j).symm.le inf_le_left,
+        hmap_comp (hUij i j).symm.le inf_le_right] at hinj
+      have _ : IsIso (presentationLimitMap (P := P) (hUij i j).symm.le) :=
+        ⟨presentationLimitMap (P := P) (hUij i j).le,
           by rw [presentationLimitMap_comp, presentationLimitMap_refl],
           by rw [presentationLimitMap_comp, presentationLimitMap_refl]⟩
       exact (ConcreteCategory.bijective_of_isIso
         (TopCommRingCat.isCompleteSeparated.ι.map
-          (presentationLimitMap (P := P) hUij.symm.le))).injective hinj
+          (presentationLimitMap (P := P) (hUij i j).symm.le))).injective hinj
     · rcases Z with ⟨Z⟩
-      obtain ⟨T', s', hT', hUij⟩ := hoverlap i j
-      let r₁ := rationalLocalizationRestrict (hT i) hT'
-        (spaBasicOpen_le_spaBasicOpen_iff.mp (hUij.symm.le.trans inf_le_left))
-      let r₂ := rationalLocalizationRestrict (hT j) hT'
-        (spaBasicOpen_le_spaBasicOpen_iff.mp (hUij.symm.le.trans inf_le_right))
-      have hr₁ := rationalLocalizationHom_comp_rationalLocalizationRestrict (hT i) hT'
-        (spaBasicOpen_le_spaBasicOpen_iff.mp (hUij.symm.le.trans inf_le_left))
-      have hr₂ := rationalLocalizationHom_comp_rationalLocalizationRestrict (hT j) hT'
-        (spaBasicOpen_le_spaBasicOpen_iff.mp (hUij.symm.le.trans inf_le_right))
       let h₁ := g₁.unop; let h₂ := g₂.unop
       have hcomm : Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁ =
           Y.rationalLocalizationHom (T j) (s j) (hT j) ≫ h₂ := Quiver.Hom.op_inj hg
       have hφi := isRationalLocalization_rationalLocalizationHom Y (T i) (s i) (hT i)
       have hφj := isRationalLocalization_rationalLocalizationHom Y (T j) (s j) (hT j)
-      obtain ⟨χ, hχ, -⟩ := (isRationalLocalization_rationalLocalizationHom Y T' s'
-          hT').existsUnique_factorization (Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁)
-        fun w ↦ mem_spaBasicOpen.mp <| hUij ▸ ⟨by
+      obtain ⟨χ, hχ, -⟩ := (isRationalLocalization_rationalLocalizationHom Y (T' i j) (s' i j)
+          (hT' i j)).existsUnique_factorization (Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁)
+        fun w ↦ mem_spaBasicOpen.mp <| hUij i j ▸ ⟨by
           rw [comp_spaComap]; exact mem_spaBasicOpen.mpr (hφi.mapsTo_spaComap _),
         by rw [hcomm, comp_spaComap]; exact mem_spaBasicOpen.mpr (hφj.mapsTo_spaComap _)⟩
-      have hh₁ : r₁ ≫ χ = h₁ := (hφi.existsUnique_factorization _ fun w ↦ by
+      have hh₁ : r₁ i j ≫ χ = h₁ := (hφi.existsUnique_factorization _ fun w ↦ by
         rw [comp_spaComap]; exact hφi.mapsTo_spaComap _).unique
-          (by rw [← Category.assoc, hr₁, hχ]) rfl
-      have hh₂ : r₂ ≫ χ = h₂ := (hφj.existsUnique_factorization _ fun w ↦ by
+          (by rw [← Category.assoc, hr₁ i j, hχ]) rfl
+      have hh₂ : r₂ i j ≫ χ = h₂ := (hφj.existsUnique_factorization _ fun w ↦ by
         rw [comp_spaComap]; exact hφj.mapsTo_spaComap _).unique
-          (by rw [← Category.assoc, hr₂, hχ, hcomm]) rfl
+          (by rw [← Category.assoc, hr₂ i j, hχ, hcomm]) rfl
       have heq : h₁.toRingHom (ePiece i (x i)) = h₂.toRingHom (ePiece j (x j)) := by
         rw [← hh₁, ← hh₂, comp_toRingHom, comp_toRingHom, RingHom.comp_apply, RingHom.comp_apply]
         refine congrArg χ.toRingHom ?_
-        rw [hoverlap_hom hT' (hUij.symm.le.trans inf_le_left) (x i),
-          hoverlap_hom hT' (hUij.symm.le.trans inf_le_right) (x j),
-          hmap_comp hUij.symm.le inf_le_left, hmap_comp hUij.symm.le inf_le_right, hcompat i j]
+        rw [hoverlap_hom (hT' i j) ((hUij i j).symm.le.trans inf_le_left) (x i),
+          hoverlap_hom (hT' i j) ((hUij i j).symm.le.trans inf_le_right) (x j),
+          hmap_comp (hUij i j).symm.le inf_le_left,
+          hmap_comp (hUij i j).symm.le inf_le_right, hcompat i j]
       -- `globalSections` is `@[expose]`, so `globalSections.obj (op (op Z))` is definitionally
       -- `Z.ring` (`globalSections_obj`) and `globalSections.map g.op` is `g.unop.toRingHom`
       -- (`globalSections_map_apply`).

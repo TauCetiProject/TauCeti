@@ -85,10 +85,7 @@ private noncomputable def rationalLimitRingIso (hAplus : ∀ ⦃a⦄, a ∈ Aplu
       (presentationLimit (P := P) Aplus U).obj ≅
         TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  have hex : ∃ (T : Finset A) (s : A),
-      IsOpen (Ideal.span (T : Set A) : Set A) ∧ U = spaBasicOpen Aplus T s := by
-    obtain ⟨T, s, hT, hUT⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hU)
-    exact ⟨T, s, hT, Opens.ext (hUT.trans (Set.ext fun _ ↦ mem_spaBasicOpen.symm))⟩
+  have hex := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hU
   let T := hex.choose
   let s := hex.choose_spec.choose
   have hT : IsOpen (Ideal.span (T : Set A) : Set A) := hex.choose_spec.choose_spec.1
