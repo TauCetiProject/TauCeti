@@ -85,10 +85,6 @@ lemma exists_mem_range_iff {x : X} : (∃ i, x ∈ Set.range (𝒮.hom i)) ↔ x
 lemma range_subset (i : 𝒮.ι) : Set.range (𝒮.hom i) ⊆ U :=
   fun _ hx ↦ 𝒮.exists_mem_range_iff.1 ⟨i, hx⟩
 
-/-- The pieces of a stratification are locally closed in `X`. -/
-lemma isLocallyClosed_range (i : 𝒮.ι) : IsLocallyClosed (Set.range (𝒮.hom i)) :=
-  (𝒮.hom i).isLocallyClosed_range
-
 /-- Every point of `U` lies in exactly one piece of a stratification of `U`. -/
 lemma existsUnique_mem_range {x : X} (hx : x ∈ U) : ∃! i, x ∈ Set.range (𝒮.hom i) := by
   obtain ⟨i, hi⟩ := 𝒮.exists_mem_range_iff.2 hx
