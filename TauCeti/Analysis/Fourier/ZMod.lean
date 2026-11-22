@@ -37,10 +37,8 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
   `ZMod.val_div_natCast_mem_Icc`: `j.val / N` lies in `[0, 1]`.
 * `ZMod.ite_mod_eq_sum_fourier`: indicator of a residue class modulo `q > 0` as a finite Fourier sum
   of rational twists.
-* `ZMod.tendsto_cesaro_ite_mod_of_fourier`: vanishing of rational Fourier twists modulo `q` implies
-  vanishing of the masked Cesàro average on a residue class `r < q`.
 * `ZMod.sum_fourier_div_eq`, `ZMod.sum_fourier_div_eq_zero`: evaluation of
-  `∑ j < M, fourier k (j / M)` for any `M ≠ 0` and vanishing when `0 < |k| < M`.
+  `∑ j < M, fourier k (j / M)` for any `M ≠ 0` and vanishing when `(k : ZMod M) ≠ 0`.
 * `ZMod.dft_comp_natCast_val`: the transform of a function of the reduction modulo `v ∣ N`.
 * `ZMod.dft_apply_mem`: the transform of an `R`-valued function is `R`-valued when `R` contains
   the `N`-th roots of unity.
@@ -103,36 +101,6 @@ theorem ite_mod_eq_sum_fourier {q r : ℕ} [NeZero q] (hr : r < q) (i : ℕ) :
   rw [mul_comm, fourier_natCast_div_eq_stdAddChar, Int.cast_natCast, natCast_zmod_val,
     mul_comm (a : ZMod q)]
 
-/-- Vanishing of rational Fourier twists modulo `q` implies vanishing on the residue class `r < q`
-for any complex sequence `b : ℕ → ℂ`. -/
-theorem tendsto_cesaro_ite_mod_of_fourier {b : ℕ → ℂ} {q r : ℕ} [NeZero q] (hr : r < q)
-    (h : ∀ a : ℤ, Filter.Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ *
-        ∑ i ∈ Finset.range (n + 1), b i * fourier a (((i : ℝ) / q : ℝ) : UnitAddCircle))
-      Filter.atTop (nhds 0)) :
-    Filter.Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ •
-        ∑ i ∈ Finset.range (n + 1), if i % q = r then b i else 0) Filter.atTop (nhds (0 : ℂ)) := by
-  have hsum : Filter.Tendsto (fun n : ℕ ↦ (q : ℂ)⁻¹ * ∑ a : ZMod q,
-      stdAddChar (-((r : ZMod q) * a)) * (((n + 1 : ℕ) : ℂ)⁻¹ * ∑ i ∈ Finset.range (n + 1),
-        b i * fourier (a.val : ℤ) (((i : ℝ) / q : ℝ) : UnitAddCircle))) Filter.atTop (nhds 0) := by
-    have hsum' := (tendsto_const_nhds (x := (q : ℂ)⁻¹)).mul (tendsto_finsetSum Finset.univ fun a _ ↦
-      by simpa only [mul_zero] using
-        (tendsto_const_nhds (x := stdAddChar (-((r : ZMod q) * a)))).mul (h (a.val : ℤ)))
-    rwa [Finset.sum_const_zero, mul_zero] at hsum'
-  refine hsum.congr fun n ↦ ?_
-  have hterm (i : ℕ) : (if i % q = r then b i else 0) =
-      (q : ℂ)⁻¹ * ∑ a : ZMod q, stdAddChar (-((r : ZMod q) * a)) *
-        (b i * fourier (a.val : ℤ) (((i : ℝ) / q : ℝ) : UnitAddCircle)) := by
-    rw [(by split_ifs <;> simp :
-      (if i % q = r then b i else 0) = (if i % q = r then (1 : ℂ) else 0) * b i),
-      ite_mod_eq_sum_fourier hr i, mul_assoc, Finset.sum_mul]
-    exact congrArg ((q : ℂ)⁻¹ * ·) (Finset.sum_congr rfl fun _ _ ↦ by ring)
-  simp_rw [hterm, Complex.real_smul, ← Finset.mul_sum]
-  rw [Finset.sum_comm (s := Finset.range (n + 1)) (t := Finset.univ), mul_left_comm _ (q : ℂ)⁻¹]
-  simp only [Nat.cast_add, Nat.cast_one, Complex.ofReal_inv, Complex.ofReal_add,
-    Complex.ofReal_natCast, Complex.ofReal_one]
-  congr 1; rw [Finset.mul_sum]
-  exact Finset.sum_congr rfl fun a _ ↦ by rw [← Finset.mul_sum, mul_left_comm]
-
 /-- Sum of an `M`-th root of unity over `0, …, M - 1` equals `M` when `M ∣ k` and `0` otherwise. -/
 theorem sum_fourier_div_eq (k : ℤ) (M : ℕ) [NeZero M] :
     ∑ j ∈ Finset.range M, fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) =
@@ -144,14 +112,10 @@ theorem sum_fourier_div_eq (k : ℤ) (M : ℕ) [NeZero M] :
     AddChar.sum_mulShift (k : ZMod M) (isPrimitive_stdAddChar M), ZMod.card M]
   split_ifs <;> simp
 
-/-- Sum of a nontrivial `M`-th root of unity over `0, …, M - 1` vanishes when `0 < |k| < M`. -/
-theorem sum_fourier_div_eq_zero {k : ℤ} {M : ℕ} (hk : k ≠ 0) (hM : k.natAbs < M) :
+/-- Sum of a nontrivial `M`-th root of unity over `0, …, M - 1` vanishes when `M ∤ k`. -/
+theorem sum_fourier_div_eq_zero {k : ℤ} {M : ℕ} [NeZero M] (hk : (k : ZMod M) ≠ 0) :
     ∑ j ∈ Finset.range M, fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) = 0 := by
-  have : NeZero M := ⟨(Nat.zero_lt_of_lt hM).ne'⟩
-  rw [sum_fourier_div_eq, ite_eq_right fun h0 ↦ ?_]
-  rw [intCast_zmod_eq_zero_iff_dvd] at h0
-  exact False.elim (Nat.not_lt.mpr (Nat.le_of_dvd (Int.natAbs_pos.mpr hk)
-    (Int.natCast_dvd.mp h0)) hM)
+  rw [sum_fourier_div_eq, ite_eq_right fun h0 ↦ absurd h0 hk]
 
 /-- **The Fourier transform of a function of the reduction modulo a divisor.** For `v ∣ N` and
 `L = N / v`, the discrete Fourier transform modulo `N` of `j ↦ f (j mod v)` is `L • 𝓕 f m` at

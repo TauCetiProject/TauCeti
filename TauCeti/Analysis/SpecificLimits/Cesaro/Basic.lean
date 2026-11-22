@@ -14,37 +14,16 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 # Cesàro averages under shifts, finite modifications, and residue decompositions
 
 * `TauCeti.tendsto_natCast_add_div_add_one`: limit `((n : ℝ) + c) / ((n : ℝ) + 1) → 1`.
-* `TauCeti.inv_natCast_smul_sum_const`: the normalized average of a constant over `m ≠ 0` terms.
 * `TauCeti.tendsto_add_sub_div_div_succ`: residue-count density `((n + q - r) / q) / (n + 1) → q⁻¹`.
-* `Finset.sum_range_add_one_eq_sum_mod`: exact residue-class decomposition of `∑ i < n + 1, f i`.
-* `TauCeti.tendsto_cesaro_congr_of_eventuallyEq`: finite-modification invariance.
-* `TauCeti.tendsto_cesaro_comp_add_iff`: index-shift invariance.
-* `TauCeti.tendsto_cesaro_of_forall_mod`: residue-class decomposition modulo `q > 0`.
-* `TauCeti.tendsto_cesaro_mul_add_of_ite_mod`: masked single-residue average to progression average.
+* `TauCeti.tendsto_cesaro_congr_of_eventuallyEq`, `TauCeti.tendsto_cesaro_comp_add_iff`:
+  finite-modification and index-shift invariance.
+* `TauCeti.tendsto_cesaro_of_forall_mod`, `TauCeti.tendsto_cesaro_mul_add_of_ite_mod`:
+  residue-class decompositions modulo `q > 0`.
 -/
 
 public section
 
 open Filter Finset Topology
-
-/-- Splitting `∑ i ∈ range (n + 1), f i` into residue classes modulo `q > 0`. -/
-theorem Finset.sum_range_add_one_eq_sum_mod {M : Type*} [AddCommMonoid M]
-    (f : ℕ → M) {q : ℕ} (hq : 0 < q) (n : ℕ) :
-    (∑ r ∈ range q, ∑ m ∈ range ((n + q - r) / q), f (q * m + r)) =
-      ∑ i ∈ range (n + 1), f i := by
-  rw [sum_sigma' (range q) (fun r ↦ range ((n + q - r) / q)) (fun r m ↦ f (q * m + r))]
-  refine sum_nbij' (fun p : Σ _ : ℕ, ℕ ↦ q * p.2 + p.1) (fun i ↦ ⟨i % q, i / q⟩)
-    (fun p hp ↦ ?_) (fun i hi ↦ ?_) (fun p hp ↦ ?_) (fun i _ ↦ Nat.div_add_mod i q)
-    (fun _ _ ↦ rfl)
-  · simp only [mem_sigma, mem_range] at hp ⊢
-    have hlt : p.2 + 1 ≤ (n + q - p.1) / q := hp.2
-    rw [Nat.le_div_iff_mul_le hq, Nat.succ_mul, Nat.mul_comm p.2 q] at hlt; omega
-  · simp only [mem_sigma, mem_range] at hi ⊢; refine ⟨Nat.mod_lt i hq, ?_⟩
-    rw [← Nat.succ_le_iff, Nat.le_div_iff_mul_le hq, Nat.succ_mul, Nat.mul_comm (i / q) q]
-    have hdm := Nat.div_add_mod i q; omega
-  · simp only [mem_sigma, mem_range] at hp
-    exact Sigma.ext (by rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hp.1])
-      (heq_of_eq (by dsimp; rw [Nat.mul_add_div hq, Nat.div_eq_of_lt hp.1, add_zero]))
 
 namespace TauCeti
 
@@ -54,14 +33,7 @@ theorem tendsto_natCast_add_div_add_one (c : ℝ) :
   simpa [add_comm c, add_comm (1 : ℝ), one_mul] using
     tendsto_add_mul_div_add_mul_atTop_nhds c 1 1 (one_ne_zero : (1 : ℝ) ≠ 0)
 
-/-- The normalized average of a constant over `m ≠ 0` terms equals that constant. -/
-theorem inv_natCast_smul_sum_const {𝕜 E : Type*} [DivisionSemiring 𝕜] [CharZero 𝕜]
-    [AddCommMonoid E] [Module 𝕜 E] {m : ℕ} (hm : m ≠ 0) (c : E) :
-    ((m : 𝕜)⁻¹ • ∑ _i ∈ range m, c) = c := by
-  rw [sum_const, card_range, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
-    inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hm), one_smul]
-
-/-- For `q > 0`, `((n + q - r) / q) / (n + 1)` converges to `q⁻¹` for every `r < q`. -/
+/-- For `q > 0` and `r < q`, `((n + q - r) / q) / (n + 1)` converges to `q⁻¹`. -/
 theorem tendsto_add_sub_div_div_succ {q r : ℕ} (hq : 0 < q) (hr : r < q) :
     Tendsto (fun n : ℕ ↦ (((n + q - r) / q : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ))
       atTop (𝓝 (q : ℝ)⁻¹) := by
@@ -82,18 +54,17 @@ theorem tendsto_add_sub_div_div_succ {q r : ℕ} (hq : 0 < q) (hr : r < q) :
       exact_mod_cast Nat.div_add_mod (n + q - r) q
     rw [Nat.cast_add, Nat.cast_mul, Nat.cast_sub (by omega), Nat.cast_add] at hnat
   · have hmod_le : (((n + q - r) % q : ℕ) : ℝ) ≤ q := by exact_mod_cast (Nat.mod_lt _ hq).le
-    rw [(by field_simp; push_cast; ring :
-        1 - (r + 1 : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹ = ((n : ℝ) - r) / ((n + 1 : ℕ) : ℝ)),
-      inv_mul_eq_div, div_div, div_le_div_iff₀ (by positivity) (by positivity)]; nlinarith
-  · rw [(by field_simp; push_cast; ring :
-        1 + ((q : ℝ) - 1) * ((n + 1 : ℕ) : ℝ)⁻¹ = ((n : ℝ) + q) / ((n + 1 : ℕ) : ℝ)),
-      inv_mul_eq_div, div_div, div_le_div_iff₀ (by positivity) (by positivity)]
+    rw [(by field_simp; push_cast; ring : 1 - (r + 1 : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹ =
+        ((n : ℝ) - r) / ((n + 1 : ℕ) : ℝ)), inv_mul_eq_div, div_div,
+      div_le_div_iff₀ (by positivity) (by positivity)]; nlinarith
+  · rw [(by field_simp; push_cast; ring : 1 + ((q : ℝ) - 1) * ((n + 1 : ℕ) : ℝ)⁻¹ =
+        ((n : ℝ) + q) / ((n + 1 : ℕ) : ℝ)), inv_mul_eq_div, div_div,
+      div_le_div_iff₀ (by positivity) (by positivity)]
     nlinarith [Nat.cast_nonneg (α := ℝ) ((n + q - r) % q), Nat.cast_nonneg (α := ℝ) r]
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Changing finitely many terms of a sequence does not change the convergence or value of its
-Cesàro averages. -/
+/-- Changing finitely many terms does not alter convergence or limit of Cesàro averages. -/
 theorem tendsto_cesaro_congr_of_eventuallyEq {f g : ℕ → E} {L : E} (hfg : f =ᶠ[atTop] g) :
     Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i) atTop (𝓝 L) ↔
       Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), g i) atTop (𝓝 L) := by
@@ -109,8 +80,7 @@ theorem tendsto_cesaro_congr_of_eventuallyEq {f g : ℕ → E} {L : E} (hfg : f 
       add_zero]
   exact ⟨fun hf ↦ by simpa using hf.sub hdiff, fun hg ↦ by simpa using hdiff.add hg⟩
 
-/-- Shifting the index of a sequence by a fixed offset `m` does not change the convergence or value
-of its Cesàro averages. -/
+/-- Shifting the index of a sequence by `m` preserves Cesàro limits. -/
 theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
     Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f (i + m)) atTop (𝓝 L) ↔
       Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i) atTop (𝓝 L) := by
@@ -141,8 +111,8 @@ theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
     rw [smul_smul, div_eq_mul_inv, mul_right_comm, mul_inv_cancel₀ (by positivity), one_mul,
       ← hsum n, smul_add, add_sub_cancel_right]; push_cast; rfl
 
-/-- If a sequence has Cesàro limits along every residue class modulo `q > 0`, then its Cesàro
-averages converge to the average of those limits. -/
+/-- If a sequence has Cesàro limits along every residue class modulo `q > 0`, its Cesàro averages
+converge to the average of those limits. -/
 theorem tendsto_cesaro_of_forall_mod {f : ℕ → E} {q : ℕ} (hq : 0 < q) {L : ℕ → E}
     (hL : ∀ r < q, Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ •
       ∑ i ∈ range (n + 1), f (q * i + r)) atTop (𝓝 (L r))) :
@@ -157,8 +127,7 @@ theorem tendsto_cesaro_of_forall_mod {f : ℕ → E} {q : ℕ} (hq : 0 < q) {L :
       have hrq : r < q := mem_range.mp hr
       exact (tendsto_add_sub_div_div_succ hq hrq).smul ((hL r hrq).comp
         (tendsto_atTop_atTop.mpr fun b ↦ ⟨q * (b + 1), fun n hn ↦ by
-          have hle : b + 1 ≤ (n + q - r) / q := by
-            rw [Nat.le_div_iff_mul_le hq, Nat.mul_comm]; omega
+          have : b + 1 ≤ (n + q - r) / q := by rw [Nat.le_div_iff_mul_le hq, Nat.mul_comm]; omega
           omega⟩))
   rw [← smul_sum] at hsum; refine hsum.congr' ?_
   filter_upwards [eventually_ge_atTop q] with n hn
@@ -169,9 +138,8 @@ theorem tendsto_cesaro_of_forall_mod {f : ℕ → E} {q : ℕ} (hq : 0 < q) {L :
   field_simp [(by exact_mod_cast (by omega : (n + q - r) / q ≠ 0) :
     (((n + q - r) / q : ℕ) : ℝ) ≠ 0)]
 
-/-- If the Cesàro average of a sequence masked to a single residue class `r mod q` (`0 ≤ r < q`)
-converges to `L`, then the Cesàro average along the progression `i ↦ q * i + r` converges to
-`q • L`. -/
+/-- If the masked Cesàro average on `i % q = r` (`r < q`) converges to `L`, then the progression
+`i ↦ q * i + r` has Cesàro limit `q • L`. -/
 theorem tendsto_cesaro_mul_add_of_ite_mod {f : ℕ → E} {q r : ℕ} (hq : 0 < q) (hr : r < q) {L : E}
     (h : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ •
       ∑ i ∈ range (n + 1), if i % q = r then f i else 0) atTop (𝓝 L)) :

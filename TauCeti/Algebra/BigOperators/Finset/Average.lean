@@ -27,6 +27,7 @@ This identity is useful for second-moment calculations without any independence 
 
 * `Finset.invOf_card_smul_sum_const`: `⅟#s • ∑ _i ∈ s, v = v`.
 * `Fintype.invOf_card_smul_sum_const`: the same over all of a finite type.
+* `TauCeti.inv_natCast_smul_sum_const`: the normalized average of a constant over `m ≠ 0` terms.
 * `TauCeti.average_sub_sq_eq_sum_sum`: the squared deviation as a double sum.
 -/
 
@@ -47,6 +48,13 @@ theorem Fintype.invOf_card_smul_sum_const [Fintype ι] [Invertible (Fintype.card
   rw [Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul R, invOf_smul_smul]
 
 namespace TauCeti
+
+/-- The normalized average of a constant over `m ≠ 0` terms equals that constant. -/
+theorem inv_natCast_smul_sum_const {𝕜 E : Type*} [DivisionSemiring 𝕜] [CharZero 𝕜]
+    [AddCommMonoid E] [Module 𝕜 E] {m : ℕ} (hm : m ≠ 0) (c : E) :
+    ((m : 𝕜)⁻¹ • ∑ _i ∈ Finset.range m, c) = c := by
+  rw [Finset.sum_const, Finset.card_range, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
+    inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hm), one_smul]
 
 /-- **The squared deviation of an average, as a double sum.** For a nonempty finite index set `s`,
 the square of `(#s)⁻¹ * ∑ i ∈ s, a i - b` is `(#s)⁻¹ ^ 2` times the double sum of

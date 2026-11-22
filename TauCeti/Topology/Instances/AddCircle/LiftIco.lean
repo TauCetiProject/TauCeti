@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Topology.Instances.AddCircle.Real
 
 /-!
@@ -36,7 +35,8 @@ theorem liftIco_coe_apply_of_mem_Icc (hf : f a = f (a + p)) {x : 𝕜} (hx : x �
     liftIco p a f x = f x := by
   rcases hx.2.lt_or_eq with h | rfl
   · exact liftIco_coe_apply ⟨hx.1, h⟩
-  · rw [← liftIoc_eq_liftIco hf]; exact liftIoc_coe_apply ⟨lt_add_of_pos_right a hp.out, le_rfl⟩
+  · rw [← liftIoc_eq_liftIco hf]
+    exact liftIoc_coe_apply ⟨lt_add_of_pos_right a hp.out, le_rfl⟩
 
 /-- The range of the lift of `f` to `AddCircle p` is the image of `[a, a + p)` under `f`. -/
 @[simp] theorem range_liftIco : range (liftIco p a f) = f '' Ico a (a + p) := by
@@ -45,14 +45,13 @@ theorem liftIco_coe_apply_of_mem_Icc (hf : f a = f (a + p)) {x : 𝕜} (hx : x �
 
 /-- The lift of `f` to `AddCircle p` is injective exactly when `f` is injective on the
 fundamental interval `[a, a + p)`. -/
-@[simp] theorem injective_liftIco_iff : Injective (liftIco p a f) ↔ InjOn f (Ico a (a + p)) :=
-  ((equivIco p a).injective_comp _).trans Set.injOn_iff_injective.symm
+@[simp] theorem injective_liftIco_iff : Injective (liftIco p a f) ↔ InjOn f (Ico a (a + p)) := by
+  exact ((equivIco p a).injective_comp _).trans Set.injOn_iff_injective.symm
 
-/-- For `c ≤ a` and `b ≤ c + T`, the frontier of the chart preimage of `[a, b)` in `AddCircle T`
+/-- For `c ≤ a` and `b ≤ c + T`, the frontier of the preimage of `[a, b)` under `equivIco T c`
 is contained in `{(a : AddCircle T), (b : AddCircle T)}`. -/
 theorem frontier_preimage_equivIco_Ico_subset {T c a b : ℝ} [Fact (0 < T)] (hc : c ≤ a)
-    (hb : b ≤ c + T) :
-    frontier ((fun θ : AddCircle T ↦ (equivIco T c θ : ℝ)) ⁻¹' Ico a b) ⊆
+    (hb : b ≤ c + T) : frontier ((fun θ : AddCircle T ↦ (equivIco T c θ : ℝ)) ⁻¹' Ico a b) ⊆
       {(a : AddCircle T), (b : AddCircle T)} := by
   set E : Set (AddCircle T) := (fun θ : AddCircle T ↦ (equivIco T c θ : ℝ)) ⁻¹' Ico a b
   have hE : E = ((↑) : ℝ → AddCircle T) '' Ico a b := by
@@ -71,6 +70,6 @@ theorem frontier_preimage_equivIco_Ico_subset {T c a b : ℝ} [Fact (0 < T)] (hc
   have hy_not : y ∉ Ioo a b := fun hyo ↦ hx.2 (hint ⟨y, hyo, rfl⟩)
   rcases eq_or_lt_of_le hy.1 with rfl | hlt
   · simp
-  · have hyb : y = b := le_antisymm hy.2 (not_lt.mp fun h ↦ hy_not ⟨hlt, h⟩); simp [hyb]
+  · simp [le_antisymm hy.2 (not_lt.mp fun h ↦ hy_not ⟨hlt, h⟩)]
 
 end AddCircle

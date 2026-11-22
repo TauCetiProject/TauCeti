@@ -26,7 +26,8 @@ There is one construction, not three: the probability measures are *defined* fro
 measure, and the sequence form as a specialization, so they can never drift apart.
 
 The API covers evaluation (including visit frequencies via `empiricalMeasure_real_eq_frequency`),
-integration (including continuous `𝕜`-valued test functions via `integral_empiricalMeasure_rclike`),
+integration (including strongly measurable `𝕜`-valued test functions via
+`integral_empiricalMeasure_rclike`),
 pushforward, continuity, measurability and finite support. Values are counted with multiplicity:
 the empirical measure depends only on the multiset of values, so it is invariant under reindexing.
 The empirical measure of a concatenation is the average of the empirical measures of its pieces
@@ -440,14 +441,14 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
   rw [empiricalMeasure, integral_empiricalMeasureOfFintype hf, Fintype.card_fin,
     Fin.sum_univ_eq_sum_range (fun i => f (x i))]
 
-/-- Integrating a continuous `𝕜`-valued function (`[RCLike 𝕜]`) against the empirical probability
-measure produces its successor-indexed Cesàro average. -/
-theorem integral_empiricalMeasure_rclike {X 𝕜 : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] [RCLike 𝕜] (x : ℕ → X) (f : C(X, 𝕜)) (n : ℕ) :
-    ∫ y, f y ∂(empiricalMeasure x n : Measure X) =
+/-- Integrating a strongly measurable `𝕜`-valued function (`[RCLike 𝕜]`) against the empirical
+probability measure produces its successor-indexed Cesàro average. -/
+theorem integral_empiricalMeasure_rclike {𝕜 : Type*} [RCLike 𝕜] {x : ℕ → α} {f : α → 𝕜}
+    (hf : StronglyMeasurable f) (n : ℕ) :
+    ∫ y, f y ∂(empiricalMeasure x n : Measure α) =
       ((n + 1 : ℕ) : 𝕜)⁻¹ * ∑ i ∈ Finset.range (n + 1), f (x i) := by
   have := FiniteDimensional.proper ℝ 𝕜
-  rw [integral_empiricalMeasure f.continuous.stronglyMeasurable, RCLike.real_smul_eq_coe_mul,
+  rw [integral_empiricalMeasure hf, RCLike.real_smul_eq_coe_mul,
     RCLike.ofReal_inv, RCLike.ofReal_natCast]
 
 /-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/

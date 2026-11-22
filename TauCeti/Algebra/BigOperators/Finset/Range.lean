@@ -10,8 +10,10 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Algebra.Defs
 import Mathlib.Algebra.Algebra.Basic
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
 
@@ -89,6 +91,7 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   with common difference `2` is `J (D + J)`.
 * `Finset.sum_range_min_add_one_sub_two_mul`: the Clebsch–Gordan dimension count
   `∑_{k ≤ min m n} (m + n - 2k + 1) = (m + 1)(n + 1)`.
+* `Finset.sum_range_add_one_eq_sum_mod`: exact residue-class decomposition of `∑ i < n + 1, f i`.
 -/
 
 public section
@@ -693,5 +696,40 @@ theorem sum_range_succ_sum_range_succ_comm {M : Type*} [AddCommMonoid M] (n : �
         sum_range_diag_flip (n + 1) fun k j => f (k + j) k
     _ = _ := sum_congr rfl fun k hk => by
         rw [Nat.sub_add_comm (mem_range_succ_iff.mp hk)]
+
+/-- Splitting `∑ i ∈ range (n + 1), f i` into residue classes modulo `q > 0`. -/
+theorem sum_range_add_one_eq_sum_mod {M : Type*} [AddCommMonoid M]
+    (f : ℕ → M) {q : ℕ} (hq : 0 < q) (n : ℕ) :
+    (∑ r ∈ range q, ∑ m ∈ range ((n + q - r) / q), f (q * m + r)) =
+      ∑ i ∈ range (n + 1), f i := by
+  have : NeZero q := ⟨hq.ne'⟩
+  let e : (Σ _ : Fin q, ℕ) ≃ ℕ × Fin q :=
+    (Equiv.sigmaEquivProd (Fin q) ℕ).trans (Equiv.prodComm (Fin q) ℕ)
+  have himg : (univ.sigma fun r : Fin q ↦ range ((n + q - r) / q)).map e.toEmbedding =
+      (range (n + 1)).map (Nat.divModEquiv q).toEmbedding := by
+    ext ⟨m, r⟩
+    simp only [mem_map, mem_sigma, mem_univ, true_and, Equiv.coe_toEmbedding, mem_range, e,
+      Equiv.trans_apply, Equiv.sigmaEquivProd_apply, Equiv.prodComm_apply, Prod.swap_prod_mk,
+      Prod.mk.injEq, Sigma.exists]
+    constructor
+    · rintro ⟨r', m', hm', rfl, rfl⟩
+      rw [← Nat.succ_le_iff, Nat.le_div_iff_mul_le hq, Nat.succ_mul] at hm'; have := r'.isLt
+      refine ⟨m' * q + r', by omega, ?_⟩
+      rw [← (Nat.divModEquiv q).eq_symm_apply, Nat.divModEquiv_symm_apply]
+    · rintro ⟨i, hi, hiq⟩
+      have hi' : i = m * q + r := by simpa [Nat.divModEquiv_symm_apply] using
+        ((Nat.divModEquiv q).symm_apply_eq.mpr hiq.symm).symm
+      subst hi'; refine ⟨r, m, ?_, rfl, rfl⟩
+      rw [← Nat.succ_le_iff, Nat.le_div_iff_mul_le hq, Nat.succ_mul]; have := r.isLt; omega
+  have hmap : ∑ p ∈ (univ.sigma fun r : Fin q ↦ range ((n + q - r) / q)).map e.toEmbedding,
+      f (q * p.1 + p.2) = ∑ r ∈ range q, ∑ m ∈ range ((n + q - r) / q), f (q * m + r) := by
+    rw [sum_map]; simp only [Equiv.coe_toEmbedding, e, Equiv.trans_apply,
+      Equiv.sigmaEquivProd_apply, Equiv.prodComm_apply, Prod.swap_prod_mk]
+    rw [← sum_sigma' (f := fun (r : Fin q) m ↦ f (q * m + r)),
+      ← Fin.sum_univ_eq_sum_range (fun r ↦ ∑ m ∈ range ((n + q - r) / q), f (q * m + r)) q]
+  rw [← hmap, himg, sum_map]
+  exact sum_congr rfl fun i _ ↦ by
+    simpa [mul_comm q, Nat.divModEquiv_symm_apply] using
+      congrArg f ((Nat.divModEquiv q).symm_apply_apply i)
 
 end Finset

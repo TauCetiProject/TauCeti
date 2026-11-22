@@ -38,8 +38,8 @@ theorem tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top (𝕜 : Type*
     {S : Set C(X, 𝕜)} (hS : (Submodule.span 𝕜 S).topologicalClosure = ⊤) :
     Tendsto μs L (𝓝 μ) ↔ ∀ f ∈ S,
       Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure X)) L (𝓝 (∫ x, f x ∂(μ : Measure X))) := by
-  refine ⟨fun h f _ ↦
-    (tendsto_iff_forall_integral_rclike_tendsto 𝕜).1 h (.mkOfCompact f), fun h ↦ ?_⟩
+  refine ⟨fun h f _ ↦ (tendsto_iff_forall_integral_rclike_tendsto 𝕜).1 h (.mkOfCompact f),
+    fun h ↦ ?_⟩
   have hint (f : C(X, 𝕜)) (ρ : ProbabilityMeasure X) : Integrable (fun x ↦ f x) (ρ : Measure X) :=
     Integrable.of_bound f.continuous.aestronglyMeasurable ‖f‖ (ae_of_all _ f.norm_coe_le_norm)
   have hLip (ρ : ProbabilityMeasure X) :
@@ -54,15 +54,14 @@ theorem tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top (𝕜 : Type*
     { carrier := {f | Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure X)) L
         (𝓝 (∫ x, f x ∂(μ : Measure X)))}
       zero_mem' := by simpa using (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (0 : 𝕜)) L (𝓝 0))
-      add_mem' := fun {f g} hf hg ↦ (by
+      add_mem' := fun {f g} hf hg ↦ by
         simpa only [mem_ofPred_eq, ContinuousMap.coe_add, Pi.add_apply,
-          integral_add (hint f _) (hint g _)] using hf.add hg)
-      smul_mem' := fun c {f} hf ↦ (by
-        simpa only [mem_ofPred_eq, ContinuousMap.coe_smul, Pi.smul_apply,
-          integral_smul] using hf.const_smul c) }
-  have hclosed : IsClosed (M : Set C(X, 𝕜)) :=
-    (LipschitzWith.uniformEquicontinuous _ 1 fun i ↦ hLip (μs i)).equicontinuous
-      |>.isClosed_setOfPred_tendsto (hLip μ).continuous
+          integral_add (hint f _) (hint g _)] using hf.add hg
+      smul_mem' := fun c {f} hf ↦ by
+        simpa only [mem_ofPred_eq, ContinuousMap.coe_smul, Pi.smul_apply, integral_smul] using
+          hf.const_smul c }
+  have hclosed : IsClosed (M : Set C(X, 𝕜)) := (LipschitzWith.uniformEquicontinuous _ 1
+    fun i ↦ hLip (μs i)).equicontinuous.isClosed_setOfPred_tendsto (hLip μ).continuous
   have htop : (⊤ : Submodule 𝕜 C(X, 𝕜)) ≤ M :=
     hS ▸ (Submodule.span 𝕜 S).topologicalClosure_minimal (Submodule.span_le.mpr h) hclosed
   exact (tendsto_iff_forall_integral_rclike_tendsto 𝕜).2 fun f ↦ htop Submodule.mem_top

@@ -33,34 +33,29 @@ variable {G : Type*} [AddCommGroup G]
 group. -/
 theorem poly_sub_shift (s h : ℕ) (α : ℕ → G) (n : ℕ) :
     (∑ j ∈ range (s + 1), (n + h) ^ j • α j) - ∑ j ∈ range (s + 1), n ^ j • α j =
-      ∑ r ∈ range s, n ^ r •
-        ∑ j ∈ Ico (r + 1) (s + 1), (h ^ (j - r) * j.choose r) • α j := by
+      ∑ r ∈ range s, n ^ r • ∑ j ∈ Ico (r + 1) (s + 1), (h ^ (j - r) * j.choose r) • α j := by
   rw [← sum_sub_distrib]
   simp_rw [(fun j : ℕ ↦ by
     rw [add_pow, sum_range_succ, Nat.sub_self, pow_zero, mul_one, Nat.choose_self, Nat.cast_one,
       mul_one, add_nsmul, add_sub_cancel_right, sum_smul]
     exact sum_congr rfl fun r _ ↦ by rw [Nat.cast_id, mul_assoc, mul_nsmul'] :
     ∀ j : ℕ, (n + h) ^ j • α j - n ^ j • α j =
-      ∑ r ∈ range j, n ^ r • ((h ^ (j - r) * j.choose r) • α j))]
-  simp_rw [← Nat.Ico_zero_eq_range]
+      ∑ r ∈ range j, n ^ r • ((h ^ (j - r) * j.choose r) • α j)), ← Nat.Ico_zero_eq_range]
   rw [(sum_Ico_Ico_comm' 0 (s + 1) fun r j ↦ n ^ r • ((h ^ (j - r) * j.choose r) • α j)).symm]
-  simp_rw [Nat.Ico_zero_eq_range]
-  rw [sum_range_succ, Ico_self, sum_empty, add_zero]
+  simp_rw [Nat.Ico_zero_eq_range]; rw [sum_range_succ, Ico_self, sum_empty, add_zero]
   exact sum_congr rfl fun r _ ↦ smul_sum.symm
 
 /-- Affine reparametrization of an integer-indexed polynomial in an additive abelian group. -/
 theorem poly_comp_affine_int (s : ℕ) (c : ℕ → G) (Q R n : ℤ) :
-    ∑ j ∈ range (s + 1), (Q * n + R) ^ j • c j =
-      ∑ t ∈ range (s + 1), n ^ t •
-        ∑ j ∈ Ico t (s + 1), (Q ^ t * R ^ (j - t) * (j.choose t : ℤ)) • c j := by
+    ∑ j ∈ range (s + 1), (Q * n + R) ^ j • c j = ∑ t ∈ range (s + 1), n ^ t •
+      ∑ j ∈ Ico t (s + 1), (Q ^ t * R ^ (j - t) * (j.choose t : ℤ)) • c j := by
   simp_rw [(fun j : ℕ ↦ by
     rw [add_pow, sum_smul]
     exact sum_congr rfl fun t _ ↦ by rw [mul_pow, ← mul_zsmul]; congr 1; ring :
     ∀ j : ℕ, (Q * n + R) ^ j • c j =
       ∑ t ∈ range (j + 1), n ^ t • ((Q ^ t * R ^ (j - t) * (j.choose t : ℤ)) • c j)),
     ← Nat.Ico_zero_eq_range]
-  rw [(sum_Ico_Ico_comm 0 (s + 1) _).symm]
-  simp_rw [Nat.Ico_zero_eq_range]
+  rw [(sum_Ico_Ico_comm 0 (s + 1) _).symm]; simp_rw [Nat.Ico_zero_eq_range]
   exact sum_congr rfl fun t _ ↦ smul_sum.symm
 
 /-- Passing to a step `q : ℤ` annihilating all high-degree torsion coefficients `c j`
@@ -68,9 +63,8 @@ theorem poly_comp_affine_int (s : ℕ) (c : ℕ → G) (Q R n : ℤ) :
 polynomial to a degree-`j₀` polynomial with leading coefficient `q ^ j₀ • c j₀`. -/
 theorem poly_comp_affine_kill_high {s j₀ : ℕ} (hj₀_ge : 1 ≤ j₀) (hj₀_le : j₀ ≤ s) (c : ℕ → G)
     {q : ℤ} (hqkill : ∀ j ∈ Ioc j₀ s, q • c j = 0) (r : ℤ) :
-    ∃ γ : ℕ → G, γ j₀ = q ^ j₀ • c j₀ ∧
-      ∀ n : ℤ, ∑ j ∈ range (s + 1), (q * n + r) ^ j • c j =
-        ∑ t ∈ range (j₀ + 1), n ^ t • γ t := by
+    ∃ γ : ℕ → G, γ j₀ = q ^ j₀ • c j₀ ∧ ∀ n : ℤ,
+      ∑ j ∈ range (s + 1), (q * n + r) ^ j • c j = ∑ t ∈ range (j₀ + 1), n ^ t • γ t := by
   let γ : ℕ → G := fun t ↦ ∑ j ∈ Ico t (s + 1), (q ^ t * r ^ (j - t) * (j.choose t : ℤ)) • c j
   have hkill (t j : ℕ) (ht : 1 ≤ t) (hj : j ∈ Ioc j₀ s) :
       (q ^ t * r ^ (j - t) * (j.choose t : ℤ)) • c j = 0 := by

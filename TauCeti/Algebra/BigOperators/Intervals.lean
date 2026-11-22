@@ -9,7 +9,9 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Group.Nat.Even
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Int.Interval
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Order.SuccPred.Int
 import Mathlib.Tactic.Abel
@@ -265,14 +267,17 @@ theorem sum_range_sum_range_eq_diag_add_Ico {M : Type*} [AddCommMonoid M] (H : �
     ∑ h₁ ∈ range H, ∑ h₂ ∈ range H, S h₁ h₂ =
       (∑ h₁ ∈ range H, S h₁ h₁) +
         ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + S h₂ h₁) := by
-  rw [sum_congr rfl fun h₁ hh₁ ↦ (by
-    rw [← sum_range_add_sum_Ico _ (mem_range.mp hh₁), sum_range_succ]; abel :
-    ∑ h₂ ∈ range H, S h₁ h₂ =
-      S h₁ h₁ + (∑ h₂ ∈ range h₁, S h₁ h₂) + ∑ h₂ ∈ Ico (h₁ + 1) H, S h₁ h₂),
-    sum_add_distrib, sum_add_distrib, add_assoc]
-  congr 1; simp_rw [← Nat.Ico_zero_eq_range]
-  rw [(sum_Ico_Ico_comm' 0 H fun h₂ h₁ ↦ S h₁ h₂).symm]
-  simp_rw [Nat.Ico_zero_eq_range, ← sum_add_distrib]
-  exact sum_congr rfl fun _ _ ↦ sum_congr rfl fun _ _ ↦ add_comm _ _
+  simp_rw [← Fin.sum_univ_eq_sum_range]
+  have hsplit : ∑ i : Fin H, ∑ j : Fin H, S i j =
+      (∑ i : Fin H, S i i) + ∑ i : Fin H, ∑ j ∈ {i}ᶜ, S i j := by
+    simp_rw [fun i : Fin H ↦ Fintype.sum_eq_add_sum_compl i (S i ·), sum_add_distrib]
+  rw [hsplit, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i : Fin H ↦ S i j)]
+  congr 1
+  refine sum_congr rfl fun i _ ↦ ?_
+  refine sum_bij' (fun (j : Fin H) _ ↦ (j : ℕ))
+    (fun j hj ↦ ⟨j, (mem_Ico.mp hj).2⟩) (fun j hj ↦ ?_) (fun j hj ↦ ?_)
+    (fun _ _ ↦ Fin.eta _ _) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+  · rw [mem_Ioi] at hj; exact mem_Ico.mpr ⟨hj, j.isLt⟩
+  · rw [mem_Ico] at hj; exact mem_Ioi.mpr hj.1
 
 end Finset

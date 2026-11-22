@@ -12,13 +12,9 @@ import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.DenseSpan
 /-!
 # Fourier criteria for weak convergence on circles and tori
 
-Applying Stone–Weierstrass density of trigonometric polynomials (`span_fourier_closure_eq_top` on
-`AddCircle T` and `UnitAddTorus.span_mFourier_closure_eq_top` on `UnitAddTorus d`) to the compact
-dense-span criteria in `TauCeti.MeasureTheory.Measure.ProbabilityMeasure.DenseSpan`, probability
-measures on an additive circle or unit torus converge weakly exactly when all their integer Fourier
-moments converge. In particular, convergence to Haar probability is equivalent to vanishing of every
-nonzero Fourier moment, and a probability measure on a circle or torus is determined by its Fourier
-moments.
+Applying Stone–Weierstrass density of trigonometric polynomials (`span_fourier_closure_eq_top`,
+`UnitAddTorus.span_mFourier_closure_eq_top`) to `DenseSpan`, probability measures on `AddCircle T`
+or `UnitAddTorus d` converge weakly iff all Fourier moments converge, and are determined by them.
 -/
 
 public section
@@ -34,8 +30,7 @@ section AddCircle
 variable {T : ℝ} [Fact (0 < T)] {ι : Type*} {L : Filter ι}
   {μs : ι → ProbabilityMeasure (AddCircle T)} {μ : ProbabilityMeasure (AddCircle T)}
 
-/-- Weak convergence of circle probability measures is equivalent to convergence of all
-integer Fourier moments. -/
+/-- Weak convergence of circle probability measures iff convergence of all Fourier moments. -/
 theorem tendsto_iff_forall_integral_fourier_tendsto :
     Tendsto μs L (𝓝 μ) ↔ ∀ n : ℤ,
       Tendsto (fun i ↦ ∫ x, fourier n x ∂(μs i : Measure (AddCircle T))) L
@@ -43,8 +38,8 @@ theorem tendsto_iff_forall_integral_fourier_tendsto :
   rw [tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top ℂ (span_fourier_closure_eq_top)]
   simp
 
-/-- Circle probability measures tend weakly to Haar probability exactly when every nonzero
-integer Fourier moment tends to zero. -/
+/-- Circle probability measures tend weakly to Haar probability iff every nonzero Fourier moment
+tends to zero. -/
 theorem tendsto_haarAddCircle_iff :
     Tendsto μs L (𝓝 AddCircle.haarAddCircle.toProbabilityMeasure) ↔ ∀ n : ℤ, n ≠ 0 →
       Tendsto (fun i ↦ ∫ x, fourier n x ∂(μs i : Measure (AddCircle T))) L (𝓝 0) := by
@@ -62,8 +57,7 @@ theorem tendsto_haarAddCircle_iff :
 /-- A probability measure on an additive circle is determined by its integer Fourier moments. -/
 theorem ext_of_forall_integral_fourier_eq {ν : ProbabilityMeasure (AddCircle T)}
     (h : ∀ n : ℤ, ∫ x, fourier n x ∂(μ : Measure (AddCircle T)) =
-      ∫ x, fourier n x ∂(ν : Measure (AddCircle T))) :
-    μ = ν :=
+      ∫ x, fourier n x ∂(ν : Measure (AddCircle T))) : μ = ν :=
   ext_of_forall_integral_eq_of_span_closure_eq_top ℂ span_fourier_closure_eq_top (by simpa using h)
 
 end AddCircle
@@ -73,23 +67,19 @@ section UnitAddTorus
 variable {d : Type*} [Fintype d] {ι : Type*} {L : Filter ι}
   {μs : ι → ProbabilityMeasure (UnitAddTorus d)} {μ : ProbabilityMeasure (UnitAddTorus d)}
 
-/-- Weak convergence of probability measures on `UnitAddTorus d` is equivalent to convergence of all
-integer Fourier moments. -/
+/-- Weak convergence on `UnitAddTorus d` iff convergence of all integer Fourier moments. -/
 theorem tendsto_iff_forall_integral_mFourier_tendsto :
     Tendsto μs L (𝓝 μ) ↔ ∀ k : d → ℤ,
       Tendsto (fun i ↦ ∫ x, UnitAddTorus.mFourier k x ∂(μs i : Measure (UnitAddTorus d))) L
         (𝓝 (∫ x, UnitAddTorus.mFourier k x ∂(μ : Measure (UnitAddTorus d)))) := by
   rw [tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top ℂ
-    UnitAddTorus.span_mFourier_closure_eq_top]
-  simp
+    UnitAddTorus.span_mFourier_closure_eq_top]; simp
 
-/-- Probability measures on `UnitAddTorus d` tend weakly to Haar probability (`volume`) exactly
-when every nonzero integer Fourier moment tends to zero. -/
+/-- Measures on `UnitAddTorus d` tend weakly to Haar (`volume`) iff nonzero Fourier moments → 0. -/
 theorem tendsto_volume_unitAddTorus_iff :
-    Tendsto μs L (𝓝 (volume : Measure (UnitAddTorus d)).toProbabilityMeasure) ↔
-      ∀ k : d → ℤ, k ≠ 0 →
-        Tendsto (fun i ↦ ∫ x, UnitAddTorus.mFourier k x ∂(μs i : Measure (UnitAddTorus d))) L
-          (𝓝 0) := by
+    Tendsto μs L (𝓝 (volume : Measure (UnitAddTorus d)).toProbabilityMeasure) ↔ ∀ k : d → ℤ,
+      k ≠ 0 → Tendsto (fun i ↦ ∫ x, UnitAddTorus.mFourier k x ∂(μs i : Measure (UnitAddTorus d)))
+        L (𝓝 0) := by
   rw [tendsto_iff_forall_integral_mFourier_tendsto]
   simp only [Measure.coe_toProbabilityMeasure, TauCeti.UnitAddTorus.integral_mFourier]
   refine ⟨fun h k hk ↦ by simpa [hk] using h k, fun h k ↦ ?_⟩
@@ -101,8 +91,7 @@ theorem tendsto_volume_unitAddTorus_iff :
 /-- A probability measure on `UnitAddTorus d` is determined by its integer Fourier moments. -/
 theorem ext_of_forall_integral_mFourier_eq {ν : ProbabilityMeasure (UnitAddTorus d)}
     (h : ∀ k : d → ℤ, ∫ x, UnitAddTorus.mFourier k x ∂(μ : Measure (UnitAddTorus d)) =
-      ∫ x, UnitAddTorus.mFourier k x ∂(ν : Measure (UnitAddTorus d))) :
-    μ = ν :=
+      ∫ x, UnitAddTorus.mFourier k x ∂(ν : Measure (UnitAddTorus d))) : μ = ν :=
   ext_of_forall_integral_eq_of_span_closure_eq_top ℂ UnitAddTorus.span_mFourier_closure_eq_top
     (by simpa using h)
 
