@@ -155,28 +155,8 @@ private theorem contDiff_iteratedDeriv_borelRemainder (χ : FrequencyCutoff (Coo
     {t : ℕ → ℝ} (ht : ∀ k : ℕ, (k : ℝ) + 1 ≤ t k) (a : ∀ k, WeakParameterSymbol n R V W d (m k))
     (N i : ℕ) {r : ℂ} (hr : r ∈ R) :
     ContDiff ℝ ∞ fun p => iteratedDeriv i (borelRemainder χ t a N p) r := by
-  refine contDiff_iff_contDiffAt.2 fun p₀ => ?_
-  obtain ⟨J, hJ⟩ := exists_nat_gt ‖p₀.2‖
-  have hs : ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n =>
-      ∑ k ∈ range J, χ ((t k)⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r -
-        ∑ k ∈ range N, iteratedDeriv i ((a k).coefficient p) r :=
-    (ContDiff.sum fun k _ => ((χ.contDiff (n := ⊤)).comp
-      (contDiff_snd.const_smul (t k)⁻¹)).smul ((a k).contDiff_iteratedDeriv i r hr)).sub
-      (ContDiff.sum fun k _ => (a k).contDiff_iteratedDeriv i r hr)
-  refine hs.contDiffAt.congr_of_eventuallyEq ?_
-  filter_upwards [(isOpen_lt continuous_snd.norm continuous_const).mem_nhds hJ] with p hp
-  exact iteratedDeriv_borelRemainder χ ht a N hp i hr
-
-/-- The `i`-th parameter derivatives `∂_r^i a(·, ·, r)`, `r ∈ R`, as a family of symbols of order
-`m₀ + d i` over `R`, whose estimates on compact sets hold uniformly in `r`. -/
-private theorem exists_bound_iteratedDerivSymbol {m₀ : ℝ} (a : WeakParameterSymbol n R V W d m₀)
-    (i : ℕ) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (s s' : List (Fin n)) :
-    ∃ D, 0 ≤ D ∧ ∀ r : R, ∀ x ∈ K, ∀ ξ,
-      ‖mixedDeriv s s' (a.iteratedDerivSymbol i r.property).coefficient x ξ‖ ≤
-        D * (1 + ‖ξ‖ ^ 2) ^ ((m₀ + d * i - s'.length) / 2) :=
-  (a.exists_bound K hK i s s').imp fun _ hD => ⟨hD.1, fun r x hx ξ => by
-    simpa only [← funext (coefficient_iteratedDerivSymbol a i r.property)] using
-      hD.2 x hx ξ r r.property⟩
+  rw [iteratedDeriv_borelRemainder_eq_borelSum_sub χ ht a N i hr]
+  exact (Symbol.contDiff_borelSum χ ht _).sub (Symbol.contDiff_sum_coefficient _ _)
 
 /-- For each `k` there is a radius `t ≥ k + 1` making the cut-off parameter derivatives
 `χ(ξ / t) ∂_r^i aₖ`, `i ≤ k`, at most `2^{-k}` in the estimates of order `mₖ + d i + 1` for the
@@ -187,39 +167,20 @@ private theorem exists_radius (χ : FrequencyCutoff (CoordinateSpace n))
       ∀ r ∈ R, ∀ x ∈ closedBall (0 : CoordinateSpace n) k, ∀ ξ,
         ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r) x ξ‖ ≤
           (1 / 2) ^ k * (1 + ‖ξ‖ ^ 2) ^ ((m k + d * i + 1 - β.length) / 2) := by
-  have key (i : ℕ) (α β : List (Fin n)) : ∀ᶠ t : ℝ in atTop, ∀ r ∈ R,
-      ∀ x ∈ closedBall (0 : CoordinateSpace n) k, ∀ ξ,
-        ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r) x ξ‖ ≤
-          (1 / 2) ^ k * (1 + ‖ξ‖ ^ 2) ^ ((m k + d * i + 1 - β.length) / 2) := by
-    obtain ⟨C, -, hC⟩ := Symbol.exists_norm_mixedDeriv_cutoff_smul_le_of_forall χ
-      (fun r : R => (a k).iteratedDerivSymbol i r.property) α β
-      ((a k).exists_bound_iteratedDerivSymbol i (isCompact_closedBall 0 k) α)
-    filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop (C * 2 ^ k)]
-      with t ht1 htC r hr x hx ξ
-    have ht0 : 0 < t := one_pos.trans_le ht1
-    have h := hC t ht1 (m k + d * i + 1) (by linarith) ⟨r, hr⟩ x hx ξ
-    simp only [coefficient_iteratedDerivSymbol] at h
-    rw [show m k + d * i - (m k + d * i + 1) = -1 by ring] at h
-    refine h.trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
-    rw [Real.rpow_neg_one, ← div_eq_mul_inv, div_le_iff₀ ht0]
-    calc C = (1 / 2) ^ k * (C * 2 ^ k) := by
-          rw [one_div, inv_pow]
-          field_simp
-      _ ≤ (1 / 2) ^ k * t := by gcongr
   have hfin : ∀ᶠ t : ℝ in atTop, ∀ i ∈ range (k + 1), ∀ α ∈ {l : List (Fin n) | l.length ≤ k},
-      ∀ β ∈ {l : List (Fin n) | l.length ≤ k}, ∀ r ∈ R,
+      ∀ β ∈ {l : List (Fin n) | l.length ≤ k}, ∀ r : R,
         ∀ x ∈ closedBall (0 : CoordinateSpace n) k, ∀ ξ,
           ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • iteratedDeriv i ((a k).coefficient p) r)
             x ξ‖ ≤ (1 / 2) ^ k * (1 + ‖ξ‖ ^ 2) ^ ((m k + d * i + 1 - β.length) / 2) := by
     rw [eventually_all_finset]
     intro i _
-    rw [eventually_all_finite (List.finite_length_le _ k)]
-    intro α _
-    rw [eventually_all_finite (List.finite_length_le _ k)]
-    intro β _
-    exact key i α β
+    simpa only [coefficient_iteratedDerivSymbol] using
+      Symbol.eventually_norm_mixedDeriv_cutoff_smul_le_of_forall χ
+        (fun r : R => (a k).iteratedDerivSymbol i r.property) k
+        ((a k).exists_bound_iteratedDerivSymbol i (isCompact_closedBall 0 k))
   obtain ⟨t, ht, ht'⟩ := ((eventually_ge_atTop ((k : ℝ) + 1)).and hfin).exists
-  exact ⟨t, ht, fun i hi α β hα hβ => ht' i (mem_range.2 (Nat.lt_succ_of_le hi)) α hα β hβ⟩
+  exact ⟨t, ht, fun i hi α β hα hβ r hr =>
+    ht' i (mem_range.2 (Nat.lt_succ_of_le hi)) α hα β hβ ⟨r, hr⟩⟩
 
 /-- Radii `tₖ` for which the cut-off parameter derivatives `χ(ξ / tₖ) ∂_r^i aₖ`, `i ≤ k`, are at
 most `2^{-k}` in the estimates of order `mₖ + d i + 1` for the derivatives of length at most `k` on

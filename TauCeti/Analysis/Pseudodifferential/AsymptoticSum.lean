@@ -79,7 +79,11 @@ homogeneous symbols of degrees `m - j`.
   `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_sub_le_of_forall`: the estimates of the cut-off
   terms `χ(ξ / t) a_τ(x, ξ)` and of the removed cutoffs `(χ(ξ / t) - 1) a_τ(x, ξ)` of a family of
   symbols with estimates uniform in `τ`, uniformly in `τ`.
-* `TauCeti.Symbol.borelSum`: the Borel sum `∑ⱼ χ(ξ / tⱼ) aⱼ(x, ξ)`;
+* `TauCeti.Symbol.eventually_norm_mixedDeriv_cutoff_smul_le_of_forall`: for large `t` the cut-off
+  terms `χ(ξ / t) a_τ(x, ξ)` of such a family are at most `2^{-j}` in the estimates of order
+  `μ + 1` for the derivatives of length at most `j`, uniformly in `τ`.
+* `TauCeti.Symbol.borelSum`: the Borel sum `∑ⱼ χ(ξ / tⱼ) aⱼ(x, ξ)`, smooth by
+  `TauCeti.Symbol.contDiff_borelSum`;
   `TauCeti.Symbol.exists_norm_mixedDeriv_borelSum_sub_le_of_forall` estimates its remainders for
   families of symbols, uniformly in the family parameter.
 * `TauCeti.Symbol.IsAsymptoticSum`: `b` is an asymptotic sum of the symbols `aⱼ`.
@@ -276,6 +280,35 @@ theorem exists_norm_mixedDeriv_cutoff_smul_sub_le_of_forall
   gcongr
   exact le_max_left _ _
 
+/-- **Small cut-off terms of families.** Let `a` be a family of symbols of order `μ` whose
+derivatives `∂_x^α ∂_ξ^w a_τ` satisfy the estimates of order `μ` on a set `K` of positions,
+uniformly in `τ`. Then for large `t` the cut-off terms `χ(ξ / t) a_τ(x, ξ)` are at most `2^{-j}`
+in the estimates of order `μ + 1` for the derivatives of length at most `j` on `K`, uniformly in
+`τ`. -/
+theorem eventually_norm_mixedDeriv_cutoff_smul_le_of_forall
+    (χ : FrequencyCutoff (CoordinateSpace n)) {T : Type*} {μ : ℝ} (a : T → Symbol n V W μ)
+    {K : Set (CoordinateSpace n)} (j : ℕ)
+    (ha : ∀ α w : List (Fin n), ∃ D, 0 ≤ D ∧ ∀ τ, ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α w (a τ).coefficient x ξ‖ ≤ D * (1 + ‖ξ‖ ^ 2) ^ ((μ - w.length) / 2)) :
+    ∀ᶠ t : ℝ in atTop, ∀ α ∈ {l : List (Fin n) | l.length ≤ j},
+      ∀ β ∈ {l : List (Fin n) | l.length ≤ j}, ∀ τ, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • (a τ).coefficient p) x ξ‖ ≤
+          (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((μ + 1 - β.length) / 2) := by
+  rw [eventually_all_finite (List.finite_length_le _ j)]
+  intro α _
+  rw [eventually_all_finite (List.finite_length_le _ j)]
+  intro β _
+  -- The cut-off terms satisfy the estimates of order `μ + 1` with constants `C t⁻¹`.
+  obtain ⟨C, -, hC⟩ := exists_norm_mixedDeriv_cutoff_smul_le_of_forall χ a α β (ha α)
+  filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop (C * 2 ^ j)] with t ht1 htC τ x hx ξ
+  refine (hC t ht1 (μ + 1) (by linarith) τ x hx ξ).trans ?_
+  gcongr
+  -- `C t⁻¹ ≤ 2^{-j}` for `t ≥ C 2^j`.
+  rw [show μ - (μ + 1) = -1 by ring, Real.rpow_neg_one, ← div_eq_mul_inv,
+    div_le_iff₀ (one_pos.trans_le ht1)]
+  calc C = (1 / 2) ^ j * (C * 2 ^ j) := by rw [mul_left_comm, ← mul_pow]; norm_num
+    _ ≤ (1 / 2) ^ j * t := by gcongr
+
 /-- For large `t`, the cut-off terms `χ(ξ / t) a_τ(x, ξ)` of a continuous family `a` of symbols of
 order `μ` over a compact space of parameters `τ` are at most `2^{-j}` in the estimates of order
 `μ + 1` for the derivatives of length at most `j` on the ball of radius `j`, uniformly in `τ`. -/
@@ -286,10 +319,6 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
       ∀ β ∈ {l : List (Fin n) | l.length ≤ j}, ∀ τ, ∀ x ∈ closedBall (0 : CoordinateSpace n) j,
         ∀ ξ, ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • (a τ).coefficient p) x ξ‖ ≤
           (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((μ + 1 - β.length) / 2) := by
-  rw [eventually_all_finite (List.finite_length_le _ j)]
-  intro α _
-  rw [eventually_all_finite (List.finite_length_le _ j)]
-  intro β _
   let K : Compacts (CoordinateSpace n) := ⟨closedBall 0 j, isCompact_closedBall 0 j⟩
   -- The seminorms of the family are bounded, since the parameter space is compact.
   choose M hM using fun s s' : List (Fin n) => isCompact_univ.exists_bound_of_continuousOn
@@ -298,19 +327,10 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
     have h := hM s s' τ (mem_univ τ)
     rw [Function.comp_apply, seminormFamily_apply] at h
     exact (Real.le_norm_self _).trans h
-  -- The cut-off terms satisfy the estimates of order `μ + 1` with constants `C t⁻¹`.
-  obtain ⟨C, -, hC⟩ := exists_norm_mixedDeriv_cutoff_smul_le_of_forall χ a α β fun w =>
-    ⟨max (M α w) 0, le_max_right _ _, fun τ x hx ξ => (le_seminorm K α w (a τ) hx ξ).trans
-      (mul_le_mul_of_nonneg_right ((hM' α w τ).trans (le_max_left _ _))
+  exact eventually_norm_mixedDeriv_cutoff_smul_le_of_forall χ a (K := K) j fun s s' =>
+    ⟨max (M s s') 0, le_max_right _ _, fun τ x hx ξ => (le_seminorm K s s' (a τ) hx ξ).trans
+      (mul_le_mul_of_nonneg_right ((hM' s s' τ).trans (le_max_left _ _))
         (rpow_weight_pos ξ _).le)⟩
-  filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop (C * 2 ^ j)] with t ht1 htC τ x hx ξ
-  refine (hC t ht1 (μ + 1) (by linarith) τ x hx ξ).trans ?_
-  gcongr
-  -- `C t⁻¹ ≤ 2^{-j}` for `t ≥ C 2^j`.
-  rw [show μ - (μ + 1) = -1 by ring, Real.rpow_neg_one, ← div_eq_mul_inv,
-    div_le_iff₀ (one_pos.trans_le ht1)]
-  calc C = (1 / 2) ^ j * (C * 2 ^ j) := by rw [mul_left_comm, ← mul_pow]; norm_num
-    _ ≤ (1 / 2) ^ j * t := by gcongr
 
 /-- With radii `tⱼ ≥ j + 1`, only the terms with `j < J` of a cut-off series `∑ⱼ χ(ξ / tⱼ) fⱼ` can
 be nonzero at frequencies `‖ξ‖ < J`. -/
@@ -348,7 +368,7 @@ private theorem borelSum_eventuallyEq (χ : FrequencyCutoff (CoordinateSpace n))
   rw [borelSum_eq_sum χ ht a hp, Finset.sum_apply]
 
 /-- The Borel sum is smooth, since near each point it is a finite sum of smooth terms. -/
-private theorem contDiff_borelSum (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℕ → ℝ}
+theorem contDiff_borelSum (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℕ → ℝ}
     (ht : ∀ j : ℕ, (j : ℝ) + 1 ≤ t j) {m : ℕ → ℝ} (a : ∀ j, Symbol n V W (m j)) :
     ContDiff ℝ ∞ (borelSum χ t a) := by
   refine contDiff_iff_contDiffAt.2 fun p₀ => ?_
@@ -857,20 +877,10 @@ private theorem IsUniform.eventually_norm_mixedDeriv_cutoff_smul_le {μ : ℝ}
     ∀ᶠ t : ℝ in atTop, ∀ α ∈ {l : List (Fin n) | l.length ≤ j},
       ∀ β ∈ {l : List (Fin n) | l.length ≤ j}, ∀ x ∈ (univ : Set (CoordinateSpace n)), ∀ ξ,
         ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖ ≤
-          (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((μ + 1 - β.length) / 2) := by
-  rw [eventually_all_finite (List.finite_length_le _ j)]
-  intro α _
-  rw [eventually_all_finite (List.finite_length_le _ j)]
-  intro β _
-  obtain ⟨C, -, hC⟩ := ha.exists_norm_mixedDeriv_cutoff_smul_le χ α β
-  filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop (C * 2 ^ j)] with t ht1 htC x _ ξ
-  refine (hC t ht1 (μ + 1) (by linarith) x ξ).trans ?_
-  gcongr
-  -- `C t⁻¹ ≤ 2^{-j}` for `t ≥ C 2^j`.
-  rw [show μ - (μ + 1) = -1 by ring, Real.rpow_neg_one, ← div_eq_mul_inv,
-    div_le_iff₀ (one_pos.trans_le ht1)]
-  calc C = (1 / 2) ^ j * (C * 2 ^ j) := by rw [mul_left_comm, ← mul_pow]; norm_num
-    _ ≤ (1 / 2) ^ j * t := by gcongr
+          (1 / 2) ^ j * (1 + ‖ξ‖ ^ 2) ^ ((μ + 1 - β.length) / 2) :=
+  (eventually_norm_mixedDeriv_cutoff_smul_le_of_forall χ (fun _ : Unit => a) (K := univ) j
+    fun α w => (isUniform_iff.1 ha α w).imp fun _ hD => ⟨hD.1, fun _ x _ ξ => hD.2 x ξ⟩).mono
+      fun _ h α hα β hβ => h α hα β hβ ()
 
 /-- A symbol `b` of order `m₀` is an *asymptotic sum with uniform remainders*, `b ∼ ∑ⱼ aⱼ`, of
 symbols `aⱼ` of orders `mⱼ` if for every `N` the remainder `b - ∑_{j < N} aⱼ` is a symbol of order
