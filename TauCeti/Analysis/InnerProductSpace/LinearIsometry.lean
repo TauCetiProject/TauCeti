@@ -74,6 +74,9 @@ diffeomorphisms.
   isometries of a finite-dimensional space form a smooth family.
 * `TauCeti.orthogonalLineEquiv_symm_fst_eq_orthogonalProjectionOnto`: the transverse inverse
   coordinate in `orthogonalLineEquiv` equals the orthogonal projection onto `(ℝ ∙ e)ᗮ`.
+* `HasCompactSupport.isCompact_fst_image_tsupport_orthogonalLineEquiv`: the transverse
+  projection of the topological support of a compactly supported function is compact, and the
+  function vanishes along every line outside it.
 -/
 
 public section
@@ -358,6 +361,19 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
     ⟪e, (y : E) + t • e⟫ = t := by
   rw [← orthogonalLineEquiv_apply e he, ← orthogonalLineEquiv_symm_snd e he,
     ContinuousLinearEquiv.symm_apply_apply]
+
+/-- For a compactly supported function `f : E → F`, the transverse projection of `tsupport f`
+under `orthogonalLineEquiv e he` is compact, and `f` vanishes uniformly along every line outside
+it. -/
+theorem _root_.HasCompactSupport.isCompact_fst_image_tsupport_orthogonalLineEquiv
+    {F : Type*} [Zero F] {f : E → F} (hf : HasCompactSupport f) (e : E) (he : ‖e‖ = 1) :
+    IsCompact (Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport f)) ∧
+      ∀ {y : (ℝ ∙ e)ᗮ},
+        y ∉ Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport f) →
+        ∀ t : ℝ, f ((y : E) + t • e) = 0 :=
+  ⟨(hf.isCompact.image (orthogonalLineEquiv e he).symm.continuous).image continuous_fst,
+    fun hy t => image_eq_zero_of_notMem_tsupport fun h => hy ⟨_, ⟨_, h, rfl⟩, by
+      rw [← orthogonalLineEquiv_apply e he _ t, ContinuousLinearEquiv.symm_apply_apply]⟩⟩
 
 end TauCeti
 
