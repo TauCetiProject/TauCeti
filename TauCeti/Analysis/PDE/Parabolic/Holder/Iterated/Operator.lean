@@ -380,25 +380,7 @@ theorem equivHolderSpace_parabolicOperatorL (hα : α ≤ 1)
       ParabolicC2HolderSpace.parabolicOperatorL hα (equivHolderSpace A) (equivHolderSpace B)
         (equivHolderSpace C) (equivParabolicC2HolderSpace u) := by
   refine HolderSpace.ext fun p ↦ ?_
-  obtain ⟨x, t, rfl⟩ : ∃ x t, p = slabMk x t := ⟨_, _, (slabMk_space_slabTime p).symm⟩
-  have hslice : (fun y ↦ equivParabolicC2HolderSpace u (slabMk y t)) = fun y ↦ u (slabMk y t) :=
-    funext fun y ↦ equivParabolicC2HolderSpace_apply u _
-  -- The time derivative, the gradient and the Hessian of the order-two map at `(x, t)` are the
-  -- derivatives of the time slices of `u`, which `parabolicOperatorL_slabMk` uses.
-  have htime : ParabolicC2HolderSpace.timeDerivL (equivParabolicC2HolderSpace u) (slabMk x t) =
-      derivWithin (ParabolicC2HolderSpace.timeExtension hab.le u x) (Icc a b) t := by
-    rw [← ParabolicC2HolderSpace.derivWithin_eq]
-    simp only [ParabolicC2HolderSpace.timeExtension_def, equivParabolicC2HolderSpace_apply]
-  have hgrad : ParabolicC2HolderSpace.spatialFDerivL (equivParabolicC2HolderSpace u) (slabMk x t) =
-      fderiv ℝ (fun y ↦ u (slabMk y t)) x := by
-    rw [← ParabolicC2HolderSpace.fderiv_eq, hslice]
-  have hhess :
-      ParabolicC2HolderSpace.spatialSecondFDerivL (equivParabolicC2HolderSpace u) (slabMk x t) =
-        fderiv ℝ (fderiv ℝ fun y ↦ u (slabMk y t)) x := by
-    rw [← ParabolicC2HolderSpace.fderiv_fderiv_eq, hslice]
-  simp only [equivHolderSpace_apply, parabolicOperatorL_slabMk,
-    ParabolicC2HolderSpace.parabolicOperatorL_apply, htime, hgrad, hhess,
-    equivParabolicC2HolderSpace_apply]
+  simp [ParabolicC2HolderSpace.parabolicOperatorL_apply]
 
 end ParabolicCkHolderSpace
 

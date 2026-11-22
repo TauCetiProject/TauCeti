@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
 
 /-!
 # Constant maps in the parabolic Hölder spaces of every order
@@ -28,6 +28,8 @@ functional on Hessians, as for the constant maps `TauCeti.HolderSpace.const` of 
   `TauCeti.ParabolicCkHolderSpace.mixedDerivL_zero_zero_const_apply`,
   `TauCeti.ParabolicCkHolderSpace.mixedDerivL_succ_const` and
   `TauCeti.ParabolicCkHolderSpace.mixedDerivL_const_succ`: its values and its fields.
+* `TauCeti.ParabolicCkHolderSpace.timeDerivL_const` and
+  `TauCeti.ParabolicCkHolderSpace.spatialFDerivL_const`: its derivatives vanish.
 * `TauCeti.ParabolicCkHolderSpace.norm_const_le`: the bound `‖const c‖ ≤ 2 ‖c‖`.
 -/
 
@@ -113,6 +115,7 @@ theorem const_apply (c : F) (p : slab (E := E) a b) :
   simp
 
 /-- The field `D_t^0 D_x^0` of a constant map is the constant, read as a `0`-multilinear map. -/
+@[simp]
 theorem mixedDerivL_zero_zero_const_apply (c : F) (p : slab (E := E) a b) :
     mixedDerivL 0 0 (const c : ParabolicCkHolderSpace k α E F hab) p =
       (continuousMultilinearCurryFin0 ℝ E F).symm c := by
@@ -133,6 +136,20 @@ theorem mixedDerivL_const_succ (c : F) (r m : ℕ) :
   by_cases h : 2 * r + (m + 1) ≤ k
   · rw [const, mixedDerivL_mk _ _ _ _ h, constField_succ_right]
   · rw [mixedDerivL_of_lt (by omega), _root_.zero_apply]
+
+/-- The time derivative of a constant map vanishes. -/
+@[simp]
+theorem timeDerivL_const (c : F) :
+    timeDerivL k α E F hab (const c) = 0 := by
+  ext p
+  simp [timeDerivL_apply, mixedDerivL_succ_const c 0 0]
+
+/-- The spatial derivative of a constant map vanishes. -/
+@[simp]
+theorem spatialFDerivL_const (c : F) :
+    spatialFDerivL k α E F hab (const c) = 0 := by
+  ext p
+  simp [spatialFDerivL_apply, mixedDerivL_const_succ c 0 0]
 
 /-- A constant map has norm at most twice the norm of its value, uniformly in `k`. The factor `2`
 is needed only for `k ≤ 1`, where the norm counts the supremum of the value once as a bounded field

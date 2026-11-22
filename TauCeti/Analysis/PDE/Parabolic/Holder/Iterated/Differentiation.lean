@@ -443,7 +443,7 @@ theorem spatialFDerivL_spatialFDerivL_apply (u : ParabolicCkHolderSpace (k + 2) 
   simp only [ContinuousMultilinearMap.curryRight_apply]
   congr 1
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- The time slices of `u` have Fréchet derivative `D_x u`. -/
 theorem hasSpatialFDerivAt (u : ParabolicCkHolderSpace (k + 1) α E F hab) (t : Icc a b)

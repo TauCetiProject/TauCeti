@@ -41,6 +41,9 @@ are one-sided at the endpoints of the slab.
 * `TauCeti.ParabolicCkHolderSpace.heatSolutionL`: the solution operator, the sum of the Duhamel
   and Cauchy potentials.
 * `TauCeti.ParabolicCkHolderSpace.heatInitialDataL_heatSolutionL`: existence.
+* `ParabolicCkHolderSpace.heatInitialDataL_equivParabolicC2HolderSpace_inclusionOfLEL_fst_apply`:
+  the forcing of the order-`k` data operator is that of `TauCeti.heatInitialDataL`, on the
+  order-two map with the same values.
 * `TauCeti.ParabolicCkHolderSpace.heatInitialDataL_injective`: uniqueness.
 * `TauCeti.ParabolicCkHolderSpace.heatInitialDataCLE`,
   `TauCeti.ParabolicCkHolderSpace.isInvertible_heatInitialDataL` and
@@ -177,10 +180,12 @@ private theorem equivParabolicC2HolderSpace_inclusionOfLEL_apply {E F : Type*}
     equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) u) q = u q := by
   rw [equivParabolicC2HolderSpace_apply, inclusionOfLEL_apply]
 
-/-- The heat equation's forcing of the order-two map with the same values as `u` is the forcing
-of `u`. -/
-private theorem heatInitialDataL_inclusionOfLEL_fst {E F : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+/-- **Agreement with order two.** The forcing `∂ₜu - Δu` computed by the order-two data operator
+`TauCeti.heatInitialDataL`, on the order-two map with the same values as `u`, is the forcing
+computed by the order-`k` data operator. -/
+theorem heatInitialDataL_equivParabolicC2HolderSpace_inclusionOfLEL_fst_apply {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F]
+    [NormedSpace ℝ F]
     (hα : α ≤ 1) (u : ParabolicCkHolderSpace (k + 2) α E F hT) (p : slab (E := E) 0 T) :
     (TauCeti.heatInitialDataL hα hT
         (equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) u))).1 p =
@@ -200,7 +205,8 @@ theorem heatInitialDataL_injective (hα : α ≤ 1) :
   have h2 : equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) u) =
       equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) v) := by
     refine TauCeti.heatInitialDataL_injective hα (Prod.ext (HolderSpace.ext fun p ↦ ?_) ?_)
-    · rw [heatInitialDataL_inclusionOfLEL_fst, heatInitialDataL_inclusionOfLEL_fst, huv.1]
+    · rw [heatInitialDataL_equivParabolicC2HolderSpace_inclusionOfLEL_fst_apply,
+        heatInitialDataL_equivParabolicC2HolderSpace_inclusionOfLEL_fst_apply, huv.1]
     · refine CkHolderSpace.ext fun x ↦ ?_
       simpa [ParabolicC2HolderSpace.spatialTrace_apply] using congrArg (· x) huv.2
   refine ParabolicCkHolderSpace.ext fun p ↦ ?_
@@ -240,6 +246,7 @@ theorem heatInitialDataCLE_symm_apply (hα₀ : 0 < α) (hα₁ : α < 1)
     heatInitialDataL_heatSolutionL]
 
 /-- The heat data operator of order `k` is invertible for `0 < α < 1`. -/
+@[simp]
 theorem isInvertible_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
     (heatInitialDataL k (E := EuclideanSpace ℝ ι) (F := ℝ) hα₁.le hT).IsInvertible :=
   ⟨heatInitialDataCLE hα₀ hα₁ hT, ContinuousLinearMap.ext (heatInitialDataCLE_apply hα₀ hα₁)⟩
