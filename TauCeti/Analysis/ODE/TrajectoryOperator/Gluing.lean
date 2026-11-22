@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Gluing.Coefficient
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 public import TauCeti.Analysis.Sobolev.GraphStep.Translation
@@ -22,8 +23,8 @@ negative end of `A₂` along a neck of length `2 R` gives the coefficient
 
 `A_R(s) = A₁(s + R)` for `s < 0`, and `A_R(s) = A₂(s - R)` for `s ≥ 0`
 
-(`TauCeti.gluedCoeff`). Near `-R` the glued operator `D_{A_R}` is `D_{A₁}` translated by `-R`, and
-near `R` it is `D_{A₂}` translated by `R`.
+(`TauCeti.gluedCoeff`). Near `-R` the glued operator `D_{A_R}` is `D_{A₁}` recentred at `-R`, its
+coefficient being `A₁(· + R)`, and near `R` it is `D_{A₂}` recentred at `R`.
 
 The main theorem
 (`TauCeti.WeakDerivStep.exists_forall_ge_exists_rightInverse_trajectoryOperator_gluedCoeff`) is

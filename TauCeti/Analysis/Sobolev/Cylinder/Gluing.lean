@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Gluing.Coefficient
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Normed.Operator.Surjective

@@ -75,10 +75,11 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   (`TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL`), by Rellich's theorem and
   `TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`.
   The estimate is stated in the form proved for the linearized Floer operator in
-  `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`. Translation in `s` commutes with the
-  operator, the coefficient field being translated too
-  (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so its right inverses on `W^{1,2}`
-  translate with the same norm (`TauCeti.CylinderSobolev.exists_rightInverse_jetOperator_comp_add`).
+  `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+* **Translation in `s`.** Translation in `s` commutes with a first-order operator, the coefficient
+  field being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so its right
+  inverses on `W^{1,2}` translate with the same norm
+  (`TauCeti.CylinderSobolev.exists_rightInverse_jetOperator_comp_add`).
 * **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
   strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
   `‖x‖ ≤ K ‖D x‖` on `H1`
