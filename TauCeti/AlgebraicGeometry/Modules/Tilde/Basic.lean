@@ -10,20 +10,20 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
-public import TauCeti.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.AlgebraicGeometry.Modules.AffineSheaf
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
-import Mathlib.CategoryTheory.Abelian.ShortExact
 
 /-!
 # Exactness and base change of the sheaf associated with a module
 
-The functor `M ↦ M~` from `R`-modules to `𝒪_{Spec R}`-modules is additive and exact, as is the
-forgetful functor `modulesSpecToSheaf` from `𝒪_{Spec R}`-modules to sheaves of `R`-modules on
-`Spec R`. `tilde.functor R` preserves finite colimits as a left adjoint of the global-section
-functor, and it preserves monomorphisms because a section of `M~` over an open subset `U` is a
-family of elements of the localizations `M_p`, `p ∈ U`, that is locally a fraction, and
-localization preserves injectivity.
+The functor `M ↦ M~` from `R`-modules to `𝒪_{Spec R}`-modules is additive and exact, and
+composing with `modulesSpecToSheaf`
+(`TauCeti.AlgebraicGeometry.Modules.AffineSheaf`) gives the exact functor
+`tildeSheafFunctor R` into sheaves of `R`-modules on `Spec R`. `tilde.functor R` preserves finite
+colimits as a left adjoint of the global-section functor, and it preserves monomorphisms because a
+section of `M~` over an open subset `U` is a family of elements of the localizations `M_p`,
+`p ∈ U`, that is locally a fraction, and localization preserves injectivity.
 
 For a ring map `φ : R ⟶ S` and an `R`-module `M`, the pullback of the quasi-coherent sheaf `M~`
 along `Spec φ : Spec S ⟶ Spec R` is the sheaf associated with the base change `S ⊗_R M`:
@@ -52,13 +52,6 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
   and preserves finite limits, hence (with its preservation of colimits) short exact sequences;
 * `TauCeti.AlgebraicGeometry.subsingleton_tilde_basicOpen_of_smul_eq_zero`: the sections of
   `M~` over `D(f)` vanish when `f` annihilates `M`;
-* `TauCeti.AlgebraicGeometry.modulesSpecToSheafCompForgetIso`: forgetting `R`-module structures
-  after `modulesSpecToSheaf` recovers `Scheme.Modules.toSheaf`;
-* `TauCeti.AlgebraicGeometry.additive_modulesSpecToSheaf`,
-  `TauCeti.AlgebraicGeometry.shortExact_map_modulesSpecToSheaf`,
-  `TauCeti.AlgebraicGeometry.preservesFiniteLimits_modulesSpecToSheaf`, and
-  `TauCeti.AlgebraicGeometry.preservesFiniteColimits_modulesSpecToSheaf`: additivity and exactness
-  of `modulesSpecToSheaf`;
 * `TauCeti.AlgebraicGeometry.tildeSheafFunctor`: the exact composite functor `M ↦ M~` from
   `ModuleCat R` to sheaves of `R`-modules on `Spec R`;
 * `Scheme.Modules.tildeKernelIso`: the affine computation of ambient kernels of morphisms
@@ -198,67 +191,6 @@ theorem subsingleton_tilde_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R} (f : 
 /-- The functor `M ↦ M~` is additive. -/
 instance additive_tildeFunctor : (tilde.functor R).Additive :=
   Functor.additive_of_preserves_binary_products _
-
-/-- `modulesSpecToSheaf` is additive: addition of module-sheaf morphisms is sectionwise. -/
-instance additive_modulesSpecToSheaf : (modulesSpecToSheaf (R := R)).Additive where
-  map_add {_ _ _ _} := by
-    ext
-    rfl
-
-/-- Forgetting `R`-module structures after `modulesSpecToSheaf` recovers
-`Scheme.Modules.toSheaf`. -/
-def modulesSpecToSheafCompForgetIso (R : CommRingCat.{u}) :
-    modulesSpecToSheaf (R := R) ⋙
-        sheafCompose (Opens.grothendieckTopology (Spec R))
-          (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) ≅
-      Scheme.Modules.toSheaf (Spec R) :=
-  NatIso.ofComponents
-    (fun _ ↦ ObjectProperty.isoMk _ (NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl))
-    fun _ ↦ by ext; rfl
-
-/-- `modulesSpecToSheafCompForgetIso` is the identity on sections over each open set. -/
-@[simp]
-lemma modulesSpecToSheafCompForgetIso_hom_app_apply (N : (Spec R).Modules)
-    (U : (TopologicalSpace.Opens (Spec R))ᵒᵖ)
-    (x : ((modulesSpecToSheaf (R := R)).obj N).obj.obj U) :
-    dsimp% only [sheafCompose_obj_obj, CategoryTheory.Functor.comp_obj, ModuleCat.forget₂_obj]
-    (((modulesSpecToSheafCompForgetIso R).hom.app N).hom.app U x = x) :=
-  (rfl)
-
-/-- The inverse of `modulesSpecToSheafCompForgetIso` is the identity on sections over each open
-set. -/
-@[simp]
-lemma modulesSpecToSheafCompForgetIso_inv_app_apply (N : (Spec R).Modules)
-    (U : (TopologicalSpace.Opens (Spec R))ᵒᵖ)
-    (x : ((Scheme.Modules.toSheaf (Spec R)).obj N).obj.obj U) :
-    dsimp% only [sheafCompose_obj_obj, CategoryTheory.Functor.comp_obj, ModuleCat.forget₂_obj]
-    (((modulesSpecToSheafCompForgetIso R).inv.app N).hom.app U x = x) :=
-  (rfl)
-
-/-- `modulesSpecToSheaf` preserves short exact sequences, checked on underlying abelian sheaves. -/
-theorem shortExact_map_modulesSpecToSheaf {S : ShortComplex (Spec R).Modules} (hS : S.ShortExact) :
-    (S.map (modulesSpecToSheaf (R := R))).ShortExact := by
-  apply CategoryTheory.ShortExact.reflects_shortExact_of_faithful
-    (sheafCompose (Opens.grothendieckTopology (Spec R))
-      (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}))
-  rw [← ShortComplex.map_comp]
-  exact (ShortComplex.shortExact_iff_of_iso
-    (S.mapNatIso (modulesSpecToSheafCompForgetIso R).symm)).2
-      (Scheme.Modules.shortExact_map_toSheaf hS)
-
-/-- `modulesSpecToSheaf` preserves finite limits. -/
-instance preservesFiniteLimits_modulesSpecToSheaf :
-    PreservesFiniteLimits (modulesSpecToSheaf (R := R)) := by
-  rw [Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono]
-  exact fun _ hS ↦ ⟨(shortExact_map_modulesSpecToSheaf hS).exact,
-    (shortExact_map_modulesSpecToSheaf hS).mono_f⟩
-
-/-- `modulesSpecToSheaf` preserves finite colimits. -/
-instance preservesFiniteColimits_modulesSpecToSheaf :
-    PreservesFiniteColimits (modulesSpecToSheaf (R := R)) := by
-  rw [Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi]
-  exact fun _ hS ↦ ⟨(shortExact_map_modulesSpecToSheaf hS).exact,
-    (shortExact_map_modulesSpecToSheaf hS).epi_g⟩
 
 /-- The functor `M ↦ M~` from `R`-modules to sheaves of `R`-modules on `Spec R`. -/
 abbrev tildeSheafFunctor (R : CommRingCat.{u}) :

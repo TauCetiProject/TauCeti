@@ -37,7 +37,9 @@ resolution.
 The augmentation of an injective resolution `I` of `Z` is also available as
 `CategoryTheory.InjectiveResolution.ι₀ I : Z ⟶ I⁰`, whose source is `Z` itself rather than the
 degree `0` object of the single complex on `Z`, so that it composes with morphisms out of `Z`
-without unfolding the single complex. For a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0` with `I`
+without unfolding the single complex. Applying an additive functor `H` to `I` gives an augmented
+complex `H(Z)[0] ⟶ H(I.cocomplex)` (`CategoryTheory.InjectiveResolution.mapι`), which is a
+quasi-isomorphism whenever `H` is exact. For a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0` with `I`
 injective, an injective resolution `R` of `Q` extends to the injective resolution
 `X ⟶ I ⟶ R⁰ ⟶ R¹ ⟶ ⋯` of `X` (`CategoryTheory.InjectiveResolution.ofShortExact`).
 -/
@@ -330,6 +332,37 @@ lemma exactAt_succ_map (n : ℕ) :
     ((I.exact_succ n).map G)
 
 end Map
+
+section Mapι
+
+variable {D : Type u'} [Category.{v'} D] [Abelian D]
+
+/-- Applying an additive functor `H : C ⥤ D` to an injective resolution `I` of `W` produces the
+augmented cochain complex `H(W)[0] ⟶ H(I.cocomplex)`. When `H` is exact (`H.PreservesHomology`),
+this augmentation is a quasi-isomorphism. -/
+def mapι {W : C} (I : InjectiveResolution W) (H : C ⥤ D) [H.Additive] :
+    (single₀ D).obj (H.obj W) ⟶ (H.mapHomologicalComplex _).obj I.cocomplex :=
+  (HomologicalComplex.singleMapHomologicalComplex H (ComplexShape.up ℕ) 0).inv.app W ≫
+    (H.mapHomologicalComplex _).map I.ι
+
+instance {W : C} (I : InjectiveResolution W) (H : C ⥤ D) [H.Additive] [H.PreservesHomology] :
+    QuasiIso (I.mapι H) := by
+  dsimp only [mapι]
+  infer_instance
+
+/-- `InjectiveResolution.mapι` commutes with chain maps lifting a morphism `f : W ⟶ W'`. -/
+@[reassoc]
+lemma mapι_naturality {W W' : C} (f : W ⟶ W') (I : InjectiveResolution W)
+    (J : InjectiveResolution W') (φ : I.cocomplex ⟶ J.cocomplex)
+    (hφ : I.ι ≫ φ = (single₀ C).map f ≫ J.ι) (H : C ⥤ D) [H.Additive] :
+    I.mapι H ≫ (H.mapHomologicalComplex _).map φ =
+      (single₀ D).map (H.map f) ≫ J.mapι H := by
+  dsimp only [mapι]
+  rw [Category.assoc, ← Functor.map_comp, hφ, Functor.map_comp]
+  exact ((HomologicalComplex.singleMapHomologicalComplex H
+    (ComplexShape.up ℕ) 0).inv.naturality_assoc f _).symm
+
+end Mapι
 
 end CategoryTheory.InjectiveResolution
 

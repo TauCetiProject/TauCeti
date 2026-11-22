@@ -381,42 +381,6 @@ lemma rightDerivedIsoOfResolution_app (K : C ⥤ CochainComplex C ℕ)
 
 end CategoryTheory.Functor
 
-namespace CategoryTheory.InjectiveResolution
-
-open CochainComplex
-
-universe v₀ u₀
-
-variable {C₀ : Type u₀} [Category.{v₀} C₀] [Abelian C₀]
-  {C : Type u₁} [Category.{v₁} C] [Abelian C]
-
-/-- Applying an additive functor `H : C₀ ⥤ C` to an injective resolution `I` of `W` produces the
-augmented cochain complex `H(W)[0] ⟶ H(I.cocomplex)`. When `H` is exact (`H.PreservesHomology`),
-this augmentation is a quasi-isomorphism. -/
-noncomputable def mapι {W : C₀} (I : InjectiveResolution W) (H : C₀ ⥤ C) [H.Additive] :
-    (single₀ C).obj (H.obj W) ⟶ (H.mapHomologicalComplex _).obj I.cocomplex :=
-  (HomologicalComplex.singleMapHomologicalComplex H (ComplexShape.up ℕ) 0).inv.app W ≫
-    (H.mapHomologicalComplex _).map I.ι
-
-instance {W : C₀} (I : InjectiveResolution W) (H : C₀ ⥤ C) [H.Additive] [H.PreservesHomology] :
-    QuasiIso (I.mapι H) := by
-  dsimp only [mapι]
-  infer_instance
-
-/-- `InjectiveResolution.mapι` commutes with chain maps lifting a morphism `f : W ⟶ W'`. -/
-@[reassoc]
-lemma mapι_naturality {W W' : C₀} (f : W ⟶ W') (I : InjectiveResolution W)
-    (J : InjectiveResolution W') (φ : I.cocomplex ⟶ J.cocomplex)
-    (hφ : I.ι ≫ φ = (single₀ C₀).map f ≫ J.ι) (H : C₀ ⥤ C) [H.Additive] :
-    I.mapι H ≫ (H.mapHomologicalComplex _).map φ =
-      (single₀ C).map (H.map f) ≫ J.mapι H := by
-  dsimp only [mapι]
-  rw [Category.assoc, ← Functor.map_comp, hφ, Functor.map_comp]
-  exact ((HomologicalComplex.singleMapHomologicalComplex H
-    (ComplexShape.up ℕ) 0).inv.naturality_assoc f _).symm
-
-end CategoryTheory.InjectiveResolution
-
 namespace CategoryTheory.Functor
 
 open CochainComplex

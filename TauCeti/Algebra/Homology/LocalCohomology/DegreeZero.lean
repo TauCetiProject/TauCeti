@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Homology.LocalCohomology
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.Algebra.Category.ModuleCat.PrimaryComponent
 public import TauCeti.CategoryTheory.Abelian.Ext
 import TauCeti.Algebra.Module.Torsion.QuotientLinearMap
 
@@ -27,12 +28,21 @@ On the term of index `n` of the colimit it identifies `Ext⁰(R ⧸ Jⁿ, M)` wi
 quotient maps `R ⧸ Jⁿ⁺¹ ⟶ R ⧸ Jⁿ`, which send `1` to `1`. Evaluation at `1` identifies
 `Hom(R ⧸ Jⁿ, M)` with the annihilator of `Jⁿ` in `M` (`Ideal.quotientLinearMapEquivTorsionBySet`),
 and the colimit is filtered, so the induced map is injective with image the union of these
-annihilators.
+annihilators. Bundling this functorially yields the natural isomorphism
+`localCohomology.degreeZeroIsoPrimaryComponentFunctor J :
+  localCohomology J 0 ≅ J.primaryComponentFunctor`,
+and hence `localCohomology.colimitLinearCoyonedaIsoPrimaryComponentFunctor J`.
 
 ## Main definitions
 
 * `localCohomology.degreeZeroToModule J M`: the canonical map `H⁰_J(M) ⟶ M`, natural in `M`
   (`localCohomology.degreeZeroToModule_naturality`).
+* `localCohomology.degreeZeroEquivPrimaryComponent J M`: the `R`-linear equivalence
+  `H⁰_J(M) ≃ₗ[R] J.primaryComponent M`.
+* `localCohomology.degreeZeroIsoPrimaryComponentFunctor J`: the natural isomorphism
+  `localCohomology J 0 ≅ J.primaryComponentFunctor`.
+* `localCohomology.colimitLinearCoyonedaIsoPrimaryComponentFunctor J`: the natural isomorphism
+  `colimit_n Hom_R(R ⧸ Jⁿ, -) ≅ J.primaryComponentFunctor`.
 
 ## Main results
 
@@ -57,7 +67,11 @@ open CategoryTheory Limits Opposite
 
 namespace localCohomology
 
-variable {R : Type u} [CommRing R] (J : Ideal R) (M : ModuleCat.{u} R)
+variable {R : Type u} [CommRing R] (J : Ideal R)
+
+section ModuleLevel
+
+variable (M : ModuleCat.{u} R)
 
 section EvalOne
 
@@ -237,5 +251,66 @@ component of `M`. -/
 theorem range_hom_degreeZeroToModule :
     LinearMap.range (degreeZeroToModule J M).hom = Ideal.primaryComponent M J :=
   SetLike.coe_injective ((LinearMap.coe_range _).trans (range_degreeZeroToModule J M))
+
+end ModuleLevel
+
+/-- In degree zero, `degreeZeroToModule` restricts on its image to an `R`-linear equivalence
+`H⁰_J(M) ≃ₗ[R] Γ_J(M)`. -/
+noncomputable def degreeZeroEquivPrimaryComponent (M : ModuleCat.{u} R) :
+    (localCohomology J 0).obj M ≃ₗ[R] J.primaryComponent M :=
+  (LinearEquiv.ofInjective (degreeZeroToModule J M).hom (degreeZeroToModule_injective J M)).trans
+    (LinearEquiv.ofEq _ _ (range_hom_degreeZeroToModule J M))
+
+@[simp]
+lemma coe_degreeZeroEquivPrimaryComponent_apply (M : ModuleCat.{u} R)
+    (x : (localCohomology J 0).obj M) :
+    (degreeZeroEquivPrimaryComponent J M x : M) = degreeZeroToModule J M x :=
+  (rfl)
+
+/-- The natural isomorphism `localCohomology J 0 ≅ J.primaryComponentFunctor` in degree zero. -/
+noncomputable def degreeZeroIsoPrimaryComponentFunctor :
+    localCohomology J 0 ≅ J.primaryComponentFunctor :=
+  NatIso.ofComponents
+    (fun M ↦ (degreeZeroEquivPrimaryComponent J M).toModuleIso ≪≫
+      (J.primaryComponentFunctorObjIso M).symm)
+    fun {M N} f ↦ by
+      rw [← cancel_mono (J.primaryComponentFunctorι.app N)]
+      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom,
+        Ideal.primaryComponentFunctorObjIso_inv_comp_ι_app,
+        J.primaryComponentFunctorι.naturality, Functor.id_map,
+        Ideal.primaryComponentFunctorObjIso_inv_comp_ι_app_assoc]
+      ext x
+      exact ConcreteCategory.congr_hom (degreeZeroToModule_naturality J f) x
+
+/-- Composing `degreeZeroIsoPrimaryComponentFunctor` with the submodule inclusion `Γ_J ↪ 𝟭`
+recovers `degreeZeroToModule`. -/
+@[reassoc (attr := simp)]
+lemma degreeZeroIsoPrimaryComponentFunctor_hom_comp_ι :
+    (degreeZeroIsoPrimaryComponentFunctor J).hom ≫ J.primaryComponentFunctorι =
+      { app M := degreeZeroToModule J M
+        naturality _ _ f := degreeZeroToModule_naturality J f } := by
+  ext M x
+  simp [degreeZeroIsoPrimaryComponentFunctor]
+
+/-- In degree zero, the diagram `t ↦ Ext⁰_R(R ⧸ J^t, -)` is naturally isomorphic to
+`t ↦ Hom_R(R ⧸ J^t, -)` via `CategoryTheory.extZeroIso`. -/
+private noncomputable def diagramZeroIsoLinearCoyoneda :
+    diagram (idealPowersDiagram J) 0 ≅
+      (ringModIdeals (idealPowersDiagram J)).op ⋙ linearCoyoneda R (ModuleCat.{u} R) :=
+  NatIso.ofComponents
+    (fun _ ↦ NatIso.ofComponents (fun M ↦ extZeroIso _ M)
+      fun g ↦ extZeroIso_hom_naturality_right _ g)
+    fun w ↦ by
+      ext M x
+      exact ConcreteCategory.congr_hom (extZeroIso_hom_naturality_left
+        ((ringModIdeals (idealPowersDiagram J)).map w.unop) M) x
+
+/-- The filtered colimit of `Hom_R(R ⧸ J^n, -)` is naturally isomorphic to the `J`-power torsion
+functor `Γ_J`. -/
+noncomputable def colimitLinearCoyonedaIsoPrimaryComponentFunctor :
+    colimit ((ringModIdeals (idealPowersDiagram J)).op ⋙ linearCoyoneda R (ModuleCat.{u} R)) ≅
+      J.primaryComponentFunctor :=
+  (HasColimit.isoOfNatIso (diagramZeroIsoLinearCoyoneda J)).symm ≪≫
+    degreeZeroIsoPrimaryComponentFunctor J
 
 end localCohomology

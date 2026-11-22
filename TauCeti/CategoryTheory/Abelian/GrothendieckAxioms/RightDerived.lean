@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.RightDerived
-public import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import TauCeti.CategoryTheory.Abelian.RightDerived
+public import TauCeti.CategoryTheory.Preadditive.FunctorCategory
 
 /-!
 # Exact colimits of functors commute with right derived functors
@@ -41,7 +40,6 @@ and `HomologicalComplex.homologyFunctor D (ComplexShape.up ℕ) q` preserves col
 
 ## Main results
 
-* `CategoryTheory.Limits.additive_colimit`: a colimit of additive functors is additive.
 * `CategoryTheory.Limits.isIso_colimitRightDerivedComparison`: `colimitRightDerivedComparison G q`
   is an isomorphism when `D` has exact colimits of shape `T`.
 
@@ -62,32 +60,6 @@ open CategoryTheory Limits
 namespace CategoryTheory.Limits
 
 universe w w' v₁ v₂ u₁ u₂
-
-section AdditiveColimit
-
-variable {T : Type w} [Category.{w'} T]
-  {C : Type u₁} [Category.{v₁} C] [Preadditive C]
-  {D : Type u₂} [Category.{v₂} D] [Preadditive D]
-
-/-- Precomposing a diagram of additive functors with `F : T ⥤ A` produces a diagram of additive
-functors. -/
-lemma _root_.CategoryTheory.Functor.comp_obj_additive {A : Type*} [Category* A]
-    (F : T ⥤ A) (G : A ⥤ C ⥤ D) [∀ a, (G.obj a).Additive] (t : T) :
-    ((F ⋙ G).obj t).Additive :=
-  inferInstanceAs ((G.obj (F.obj t)).Additive)
-
-variable [HasColimitsOfShape T D]
-
-/-- A colimit of additive functors into a category with colimits of shape `T` is additive, since
-colimits in `C ⥤ D` are computed pointwise. -/
-instance additive_colimit (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive] :
-    (colimit G).Additive where
-  map_add {X Y f g} := by
-    ext t
-    simp only [Preadditive.comp_add, ← NatTrans.naturality, (G.obj t).map_add,
-      Preadditive.add_comp]
-
-end AdditiveColimit
 
 section RightDerived
 
