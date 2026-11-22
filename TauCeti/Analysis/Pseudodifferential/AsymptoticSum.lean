@@ -75,6 +75,8 @@ homogeneous symbols of degrees `m - j`.
 
 * `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off symbols
   `χ(ξ / t) a(x, ξ)`, uniform in `t ≥ 1`.
+* `TauCeti.Symbol.dilatedCutoff`: the dilated cutoff `χ(ξ / t) id` as a symbol of order `0`;
+  composing with it gives `χ(ξ / t) a(x, ξ)` (`TauCeti.Symbol.coefficient_dilatedCutoff_comp`).
 * `TauCeti.Symbol.IsAsymptoticSum`: `b` is an asymptotic sum of the symbols `aⱼ`.
 * `TauCeti.Symbol.IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub`: asymptotic sums are unique
   modulo smoothing symbols.
@@ -205,7 +207,7 @@ theorem IsUniform.exists_norm_mixedDeriv_cutoff_smul_le {a : Symbol n V W m} (ha
 
 /-- The dilated cutoff `χ(ξ / t)`, `t ≥ 1`, as the scalar symbol `χ(ξ / t) id` of order `0`.
 Composing with it cuts a symbol off below the frequency radius `t`. -/
-private def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) :
+def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) :
     Symbol n W W 0 where
   coefficient p :=
     χ (t⁻¹ • p.2) • (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient p
@@ -215,10 +217,19 @@ private def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (
       |>.exists_norm_mixedDeriv_cutoff_smul_le χ hK α β
     exact ⟨C, hC0, fun x hx ξ => by simpa using hC t ht 0 le_rfl x hx ξ⟩
 
-private theorem coefficient_dilatedCutoff_comp (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
+/-- The coefficient of the dilated cutoff is `χ(ξ / t) id`. -/
+@[simp]
+theorem coefficient_dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
+    (ht : 1 ≤ t) : (dilatedCutoff (W := W) χ ht).coefficient =
+      fun p => χ (t⁻¹ • p.2) • ContinuousLinearMap.id ℂ W :=
+  funext fun p => by simp [dilatedCutoff]
+
+/-- Composing with the dilated cutoff `χ(ξ / t) id` multiplies a symbol by `χ(ξ / t)`. -/
+@[simp]
+theorem coefficient_dilatedCutoff_comp (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
     (ht : 1 ≤ t) {μ : ℝ} (a : Symbol n V W μ) :
     ((dilatedCutoff χ ht).comp a).coefficient = fun p => χ (t⁻¹ • p.2) • a.coefficient p :=
-  funext fun p => by simp [dilatedCutoff]
+  funext fun p => by simp
 
 /-- For large `t`, the cut-off terms `χ(ξ / t) a_τ(x, ξ)` of a continuous family `a` of symbols of
 order `μ` over a compact space of parameters `τ` are at most `2^{-j}` in the estimates of order
@@ -795,7 +806,7 @@ private theorem isUniform_dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n
   obtain ⟨C, hC0, hC⟩ :=
     (isUniform_const (n := n) (ContinuousLinearMap.id ℂ W)).exists_norm_mixedDeriv_cutoff_smul_le
       χ α β
-  exact ⟨C, hC0, fun x ξ => by simpa [dilatedCutoff] using hC t ht 0 le_rfl x ξ⟩
+  exact ⟨C, hC0, fun x ξ => by simpa using hC t ht 0 le_rfl x ξ⟩
 
 /-- For `t ≥ 1`, the removed cutoff `(χ(ξ / t) - 1) a(x, ξ)` of a uniform symbol `a` is a uniform
 symbol of every order `μ'`: it vanishes for `‖ξ‖ ≥ 2t`. -/
@@ -806,10 +817,10 @@ private theorem IsUniform.exists_isUniform_cutoff_smul_sub {μ : ℝ} {a : Symbo
   obtain ⟨E, hE, hEc⟩ := isUniformlySmoothing_iff.1 ((((isUniform_dilatedCutoff χ ht).sub
     (isUniform_const (ContinuousLinearMap.id ℂ W))).isUniformlySmoothing_of_coefficient_eq_zero
       (2 * t) fun x ξ hξ => by
-        simp [dilatedCutoff, χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]).comp_right ha) μ'
+        simp [χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]).comp_right ha) μ'
   refine ⟨E, hE, ?_⟩
   funext p
-  simp [hEc, dilatedCutoff]
+  simp [hEc]
 
 /-- For large `t`, the cut-off term `χ(ξ / t) a(x, ξ)` of a uniform symbol `a` of order `μ` is at
 most `2^{-j}` in the estimates of order `μ + 1` for the derivatives of length at most `j`, at

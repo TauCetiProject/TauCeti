@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.CoboundedImage
 
@@ -19,7 +20,9 @@ Let `Γ` be an open subset of a real normed space which is closed under multipli
 reals, such as an open cone of frequencies in microlocal analysis. Every `ξ ∈ Γ` lies in a smaller
 open cone `Γ'` which stays inside `Γ` after perturbations proportional to the size of the
 frequency: for some `c > 0`, the closed ball of radius `c ‖η‖` about every `η ∈ Γ'` lies in `Γ`.
-Take `Γ'` to be the cone over a small ball about `ξ`.
+Take `Γ'` to be the cone over a small ball about `ξ`. Such a `Γ'` can also be chosen inside a
+closed cone `F` whose nonzero elements lie in `Γ`: the cones over a small open and the
+concentric closed ball of directions.
 
 This is the geometric input to the localization of rapid decay in cones. If `F` grows at most
 polynomially and decays rapidly on `Γ`, and the coefficients `a i` decay rapidly in `‖v i‖`, then
@@ -52,6 +55,8 @@ transform decays is transported along the transposed derivative of a change of v
 * `IsOpen.exists_cone_exists_smul_mem`: the open cone over an open set containing `ξ`.
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
+* `IsOpen.exists_isOpen_cone_subset_isClosed_cone`: an open cone `Γ` containing `ξ` contains the
+  nonzero elements of a closed cone `F` which contains an open cone `Γ'` containing `ξ`.
 * `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
   around `B η₀` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` for `ξ ∈ Γ'` and `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
@@ -147,6 +152,45 @@ theorem exists_cone_closedBall_subset {Γ : Set E} (hΓ : IsOpen Γ)
           _ = r / 2 := hr'
       _ = r := add_halves r
   simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htζ
+
+/-- **A closed cone between two open cones.** If `Γ` is open, closed under multiplication by
+positive reals and contains `ξ`, there are a closed cone `F`, whose nonzero elements lie in `Γ`,
+and an open cone `Γ' ⊆ F` containing `ξ`. For `ξ ≠ 0` these are the cones over the closed and the
+open ball of directions of a small radius about the direction of `ξ`. -/
+theorem exists_isOpen_cone_subset_isClosed_cone {Γ : Set E} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) {ξ : E} (hξ : ξ ∈ Γ) :
+    ∃ F Γ' : Set E, IsClosed F ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ F, t • η ∈ F) ∧
+      (∀ η ∈ F, η ≠ 0 → η ∈ Γ) ∧ IsOpen Γ' ∧ ξ ∈ Γ' ∧
+        (∀ t : ℝ, 0 < t → ∀ η ∈ Γ', t • η ∈ Γ') ∧ Γ' ⊆ F := by
+  have hdir (η : E) (hη : η ≠ 0) (h : NormedSpace.normalize η ∈ Γ) : η ∈ Γ := by
+    simpa [NormedSpace.norm_smul_normalize] using hcone ‖η‖ (norm_pos_iff.2 hη) _ h
+  by_cases hξ0 : ξ = 0
+  · -- An open cone containing `0` contains every vector.
+    subst hξ0
+    obtain ⟨r, hr, hball⟩ := isOpen_iff.1 hΓ 0 hξ
+    refine ⟨univ, univ, isClosed_univ, fun _ _ _ _ ↦ mem_univ _, fun η _ hη ↦ hdir η hη ?_,
+      isOpen_univ, mem_univ _, fun _ _ _ _ ↦ mem_univ _, subset_rfl⟩
+    simpa [smul_smul, hr.ne'] using hcone (2 / r) (by positivity) _
+      (hball (mem_ball_zero_iff.2 (show ‖(r / 2) • NormedSpace.normalize η‖ < r by
+        rw [norm_smul, NormedSpace.norm_normalize_eq_one_iff.2 hη,
+          Real.norm_of_nonneg (half_pos hr).le]
+        linarith)))
+  obtain ⟨ε, hε, hεΓ⟩ := isOpen_iff.1 hΓ (NormedSpace.normalize ξ)
+    (hcone _ (inv_pos.2 (norm_pos_iff.2 hξ0)) ξ hξ)
+  refine ⟨{η | η = 0 ∨ NormedSpace.normalize η ∈ closedBall (NormedSpace.normalize ξ) (ε / 2)},
+    {η | η ≠ 0} ∩ NormedSpace.normalize ⁻¹' ball (NormedSpace.normalize ξ) (ε / 2),
+    NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem isClosed_closedBall,
+    fun t ht η hη ↦ hη.imp (fun h ↦ by simp [h]) fun h ↦ ?_,
+    fun η hη hη0 ↦ hdir η hη0
+      (hεΓ (closedBall_subset_ball (half_lt_self hε) (hη.resolve_left hη0))),
+    ContinuousOn.isOpen_inter_preimage
+      (fun x hx ↦ ContinuousAt.continuousWithinAt (Filter.tendsto_id.normalize hx)) isOpen_ne
+      isOpen_ball,
+    ⟨hξ0, mem_ball_self (half_pos hε)⟩, fun t ht η hη ↦ ⟨smul_ne_zero ht.ne' hη.1, ?_⟩,
+    fun η hη ↦ Or.inr (ball_subset_closedBall hη.2)⟩
+  · rwa [mem_ofPred_eq, NormedSpace.normalize_smul_of_pos ht]
+  · rw [mem_preimage, NormedSpace.normalize_smul_of_pos ht]
+    exact hη.2
 
 /-- If `ζ` is at distance more than `c₂ ‖ν‖` from `ν`, with `0 < c₂ ≤ 1`, then `B ζ` is at
 distance at least a fixed multiple of `‖B ν‖ + ‖ζ‖` from `B ν`. -/
