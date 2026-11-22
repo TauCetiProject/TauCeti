@@ -53,20 +53,6 @@ open Complex hiding exp continuous_exp log
 
 namespace Complex
 
-/-- The Mellin–Barnes integral of `(1 + u)^{-a}` read along the line `t = σ + i y` with `σ < 0`:
-`∫ Γ(a + t) Γ(-t) u^t dy = 2π Γ(a) (1 + u)^{-a}` for `u > 0` and `-σ < Re a`. -/
-private lemma integral_Gamma_add_mul_Gamma_neg_mul_cpow {a : ℂ} {σ : ℝ} (hσ : σ < 0)
-    (hσa : -σ < a.re) {u : ℝ} (hu : 0 < u) :
-    ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (u : ℂ) ^ (σ + y * I) =
-      2 * π * (Gamma a * (1 + (u : ℂ)) ^ (-a)) := by
-  rw [← integral_cpow_neg_mul_Gamma_mul_Gamma_sub (neg_pos.mpr hσ) hσa hu,
-    ← integral_neg_eq_self]
-  congr 1
-  ext y
-  have h : (σ : ℂ) + ((-y : ℝ) : ℂ) * I = -(((-σ : ℝ) : ℂ) + y * I) := by push_cast; ring
-  rw [h, neg_neg, ← sub_eq_add_neg]
-  ring
-
 /-- Along the line `t = σ + i y` with `σ < 0` and `-σ < Re a`, the product `Γ(a + t) Γ(-t) x^t`
 is integrable for `x > 0`: `Γ(a + t) Γ(-t)` is `Γ(s) Γ(a - s)` at `s = -t` and `‖x^t‖ = x^σ`. -/
 private lemma verticalIntegrable_Gamma_add_mul_Gamma_neg_mul_cpow {a : ℂ} {σ x : ℝ} (hσ : σ < 0)
@@ -176,8 +162,16 @@ theorem eulerIntegral_neg_eq_mellinBarnes {a b c : ℂ} {σ x : ℝ} (hσ : σ <
         show b + (σ + y * I) - 1 = b - 1 + (σ + y * I) by ring, cpow_add _ _ hr0]
       ring
     simp_rw [hsplit]
-    rw [integral_const_mul, integral_Gamma_add_mul_Gamma_neg_mul_cpow hσ hσa
-      (mul_pos hx hr.1), show (1 - (-x : ℂ) * r) = 1 + ((x * r : ℝ) : ℂ) by push_cast; ring]
+    have hmb := integral_Gamma_add_mul_Gamma_neg_mul_cpow hσ (neg_lt.mp hσa)
+      (ofReal_mem_slitPlane.mpr (mul_pos hx hr.1))
+    rw [integral_const_mul,
+      show (2 * π * Gamma a)⁻¹ * ((r : ℂ) ^ (b - 1) * (1 - (r : ℂ)) ^ (c - b - 1) *
+          ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+            ((x * r : ℝ) : ℂ) ^ (σ + y * I)) =
+        (Gamma a)⁻¹ * ((r : ℂ) ^ (b - 1) * (1 - (r : ℂ)) ^ (c - b - 1) *
+          ((2 * π : ℂ)⁻¹ * ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
+            ((x * r : ℝ) : ℂ) ^ (σ + y * I))) by ring,
+      hmb, show (1 - (-x : ℂ) * r) = 1 + ((x * r : ℝ) : ℂ) by push_cast; ring]
     field_simp
   rw [eulerIntegral_def, intervalIntegral.integral_of_le zero_le_one,
     setIntegral_congr_fun measurableSet_Ioc hinner, integral_const_mul,
