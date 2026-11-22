@@ -48,10 +48,8 @@ namespace TauCeti.FourTensor
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- An endomorphism of `⋀[ℝ]^2 V` is uniquely determined by its four-tensor. -/
-theorem ofExteriorEnd_injective : Function.Injective (ofExteriorEnd (V := V)) := by
-  intro S T h
-  refine exteriorPower.linearMap_ext_inner_ιMulti_two fun u v z w ↦ ?_
-  simpa only [ofExteriorEnd_apply] using DFunLike.congr_fun h ![u, v, z, w]
+theorem ofExteriorEnd_injective : Function.Injective (ofExteriorEnd (V := V)) :=
+  Function.LeftInverse.injective curvatureEndomorphism_ofExteriorEnd
 
 /-- The four-tensor of an endomorphism of `⋀[ℝ]^2 V` vanishes iff the endomorphism does. -/
 @[simp]
@@ -63,9 +61,8 @@ theorem ofExteriorEnd_eq_zero_iff {T : Module.End ℝ (⋀[ℝ]^2 V)} :
 @[simp]
 theorem ofExteriorEnd_one :
     ofExteriorEnd (1 : Module.End ℝ (⋀[ℝ]^2 V)) = constantCurvature V := by
-  refine ext_vec fun u v z w ↦ ?_
-  rw [ofExteriorEnd_apply, constantCurvature_apply]
-  simpa using inner_ιMulti_two u v z w
+  simpa only [curvatureEndomorphism_constantCurvature, Module.End.one_eq_id] using
+    (isAlgebraicCurvature_constantCurvature (V := V)).ofExteriorEnd_curvatureEndomorphism
 
 /-- The scalar contraction of `ofExteriorEnd T` is twice the trace of `T` on `⋀[ℝ]^2 V`. -/
 @[simp]
@@ -112,7 +109,7 @@ theorem ofExteriorEnd_compContinuousLinearMap {V W : Type*}
           (exteriorPower.map 2 e.toLinearMap)) := by
   refine ext_vec fun u v z w ↦ ?_
   rw [compContinuousLinearMap_apply_vec, ofExteriorEnd_apply, ofExteriorEnd_apply,
-    e.inner_conj_map]
+    e.inner_conj_exteriorPowerMap]
   simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
     map_apply_ιMulti_two, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
 

@@ -87,11 +87,25 @@ theorem sum_inner_ιMulti_two_eq_two_mul_trace (b : OrthonormalBasis ι ℝ E)
 
 /-- The sum of the diagonal values of a bilinear form on `⋀² E` against all ordered basis wedges
 is twice its metric trace. -/
-theorem sum_bilinForm_ιMulti_two (b : OrthonormalBasis ι ℝ E)
+theorem sum_bilinForm_ιMulti_two_eq_two_mul_bilinFormTrace (b : OrthonormalBasis ι ℝ E)
     (B : LinearMap.BilinForm ℝ (⋀[ℝ]^2 E)) :
     (∑ i, ∑ j, B (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b i, b j])) =
       2 * TauCeti.bilinFormTrace B := by
   simp_rw [← B.inner_bilinFormToEnd_left]
   rw [b.sum_inner_ιMulti_two_eq_two_mul_trace, B.trace_bilinFormToEnd]
+
+/-- Contracting two linear functionals on `⋀² E` against an orthonormal basis `e` of `⋀² E`
+equals half the sum of their products over all ordered wedges `b i ∧ b j` of an orthonormal basis
+`b` of `E`. -/
+theorem sum_apply_mul_eq_half_sum_ιMulti {ι' : Type*} [Fintype ι']
+    (e : OrthonormalBasis ι' ℝ (⋀[ℝ]^2 E)) (b : OrthonormalBasis ι ℝ E)
+    (f g : ⋀[ℝ]^2 E →ₗ[ℝ] ℝ) :
+    (∑ α, f (e α) * g (e α)) =
+      (1 / 2 : ℝ) * ∑ i, ∑ j, f (ιMulti ℝ 2 ![b i, b j]) * g (ιMulti ℝ 2 ![b i, b j]) := by
+  have h2 := b.sum_bilinForm_ιMulti_two_eq_two_mul_bilinFormTrace ((LinearMap.mul ℝ ℝ).compl₁₂ f g)
+  rw [TauCeti.bilinFormTrace_eq_sum _ e] at h2
+  simp only [LinearMap.compl₁₂_apply, LinearMap.mul_apply'] at h2
+  rw [h2]
+  ring
 
 end OrthonormalBasis

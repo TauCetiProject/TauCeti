@@ -252,14 +252,40 @@ theorem fourTensorOfExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v 
       B (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) := by
   simp [fourTensorOfExteriorBilin]
 
-private theorem isBivectorSymmetric_fourTensorOfExteriorBilin
-    (B : LinearMap.BilinForm.symmSubmodule ℝ (⋀[ℝ]^2 V)) :
-    IsBivectorSymmetric (fourTensorOfExteriorBilin B.val) := by
-  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
-    simp only [fourTensorOfExteriorBilin_apply]
-  · rw [exteriorPower.ιMulti_two_swap v u, map_neg, LinearMap.neg_apply]
-  · rw [exteriorPower.ιMulti_two_swap w z, map_neg]
-  · exact (LinearMap.BilinForm.mem_symmSubmodule.mp B.property).eq _ _
+/-- The four-tensor associated to a bilinear form on `⋀[ℝ]^2 V` is antisymmetric in its
+first pair. -/
+theorem fourTensorOfExteriorBilin_antisymm_first (B : BilinForm ℝ (⋀[ℝ]^2 V))
+    (u v z w : V) :
+    fourTensorOfExteriorBilin B ![u, v, z, w] =
+      -fourTensorOfExteriorBilin B ![v, u, z, w] := by
+  simp only [fourTensorOfExteriorBilin_apply]
+  rw [exteriorPower.ιMulti_two_swap v u, map_neg, LinearMap.neg_apply]
+
+/-- The four-tensor associated to a bilinear form on `⋀[ℝ]^2 V` is antisymmetric in its
+last pair. -/
+theorem fourTensorOfExteriorBilin_antisymm_last (B : BilinForm ℝ (⋀[ℝ]^2 V))
+    (u v z w : V) :
+    fourTensorOfExteriorBilin B ![u, v, z, w] =
+      -fourTensorOfExteriorBilin B ![u, v, w, z] := by
+  simp only [fourTensorOfExteriorBilin_apply]
+  rw [exteriorPower.ιMulti_two_swap w z, map_neg]
+
+/-- `fourTensorOfExteriorBilin B` is bivector-symmetric iff `B` is symmetric. -/
+@[simp]
+theorem isBivectorSymmetric_fourTensorOfExteriorBilin_iff (B : BilinForm ℝ (⋀[ℝ]^2 V)) :
+    IsBivectorSymmetric (fourTensorOfExteriorBilin B) ↔ B.IsSymm := by
+  refine ⟨fun h ↦ ⟨fun x y ↦ ?_⟩, fun h ↦
+    ⟨fourTensorOfExteriorBilin_antisymm_first B, fourTensorOfExteriorBilin_antisymm_last B,
+      fun u v z w ↦ by simpa only [fourTensorOfExteriorBilin_apply] using h.eq _ _⟩⟩
+  have hbil : B = B.flip :=
+    exteriorPower.linearMap_ext (AlternatingMap.ext fun p ↦
+      exteriorPower.linearMap_ext (AlternatingMap.ext fun q ↦ by
+        simp only [LinearMap.compAlternatingMap_apply, LinearMap.BilinForm.flip_apply]
+        rw [show p = ![p 0, p 1] from funext fun i ↦ by fin_cases i <;> rfl,
+          show q = ![q 0, q 1] from funext fun i ↦ by fin_cases i <;> rfl]
+        simpa only [fourTensorOfExteriorBilin_apply] using
+          h.swap_pairs (p 0) (p 1) (q 0) (q 1)))
+  exact LinearMap.congr_fun₂ hbil x y
 
 /-- Linear equivalence from `bivectorSymmetricSubmodule V` to symmetric forms on `⋀[ℝ]^2 V`. -/
 def bivectorSymmetricEquivSymmBilin :
@@ -267,7 +293,9 @@ def bivectorSymmetricEquivSymmBilin :
   toFun r := ⟨exteriorBilinOfBivectorSymmetric r,
     LinearMap.BilinForm.mem_symmSubmodule.mpr (isSymm_exteriorBilinOfBivectorSymmetric r)⟩
   invFun B := ⟨fourTensorOfExteriorBilin B.val,
-    mem_bivectorSymmetricSubmodule.mpr (isBivectorSymmetric_fourTensorOfExteriorBilin B)⟩
+    mem_bivectorSymmetricSubmodule.mpr
+      ((isBivectorSymmetric_fourTensorOfExteriorBilin_iff B.val).mpr
+        (LinearMap.BilinForm.mem_symmSubmodule.mp B.property))⟩
   map_add' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by
     simp [exteriorBilinOfBivectorSymmetric, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
   map_smul' _ _ := Subtype.ext <| (LinearMap.exteriorSquareBilinear_eq_iff ..).mpr fun _ _ ↦ by

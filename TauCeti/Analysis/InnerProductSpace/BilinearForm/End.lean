@@ -10,7 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
-import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
 # Metric index raising of bilinear forms to endomorphisms
@@ -163,12 +162,10 @@ theorem bilinFormTrace_comp_adjoint {W V : Type*} [NormedAddCommGroup W]
         (B.comp (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap
           (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap) =
       bilinFormTrace B := by
-  rw [bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ V),
-    bilinFormTrace_eq_sum B (stdOrthonormalBasis ℝ W)]
-  simp only [LinearMap.BilinForm.comp_apply, ContinuousLinearMap.coe_coe,
-    ← B.inner_bilinFormToEnd_left]
-  exact (stdOrthonormalBasis ℝ V).sum_inner_comp_eq_of_inner_eq (stdOrthonormalBasis ℝ W)
-    (fun x y ↦ by rw [ContinuousLinearMap.adjoint_inner_left]; rfl)
-    (fun x y ↦ f.inner_map_map x y) (bilinFormToEnd B) LinearMap.id
+  rw [← LinearMap.BilinForm.trace_bilinFormToEnd, ← B.trace_bilinFormToEnd,
+    LinearMap.BilinForm.comp, B.bilinFormToEnd_compl₁₂,
+    ← ContinuousLinearMap.adjoint_toLinearMap, LinearMap.adjoint_adjoint,
+    ← LinearMap.comp_assoc, LinearMap.trace_comp_cycle',
+    f.toLinearMap_toContinuousLinearMap, f.adjoint_comp_self', LinearMap.id_comp]
 
 end LinearIsometry
