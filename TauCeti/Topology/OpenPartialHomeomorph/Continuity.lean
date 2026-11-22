@@ -17,9 +17,11 @@ neighbourhood of its image. Being injective there, it maps the punctured neighbo
 point of its source onto that of the image (`OpenPartialHomeomorph.map_nhdsNE_eq`, with the
 one-sided form `OpenPartialHomeomorph.tendsto_nhdsNE`). So a point of the source is not isolated
 as soon as its image is not (`OpenPartialHomeomorph.nhdsNE_neBot`). For instance, no point in the
-source of a chart into a nontrivially normed field is isolated. Eventual constancy of a map `f` near
-`x` is likewise detected by its chart representative `e' ∘ f ∘ e.symm` near `e x`
-(`OpenPartialHomeomorph.not_eventuallyConst_comp_symm`).
+source of a chart into a nontrivially normed field is isolated. A function `k` has a limit along
+the punctured neighbourhoods of `x` exactly when its representative `k ∘ e.symm` has the same
+limit along those of `e x` (`OpenPartialHomeomorph.tendsto_comp_symm_nhdsNE_iff`). Eventual
+constancy of a map `f` near `x` is likewise detected by its chart representative
+`e' ∘ f ∘ e.symm` near `e x` (`OpenPartialHomeomorph.not_eventuallyConst_comp_symm`).
 
 A function continuous on the target that is constant on the target off a compact subset of it,
 read through the open partial homeomorphism on its source and extended by that constant, is
@@ -74,6 +76,16 @@ theorem nhdsNE_neBot (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.sourc
     [(𝓝[≠] (e x)).NeBot] : (𝓝[≠] x).NeBot := by
   rw [← map_neBot_iff e, e.map_nhdsNE_eq hx]
   infer_instance
+
+/-- A function `k` tends to `l` along the punctured neighbourhoods of a point `x` of the source of
+`e` exactly when its representative `k ∘ e.symm` does along the punctured neighbourhoods of
+`e x`. -/
+theorem tendsto_comp_symm_nhdsNE_iff (e : OpenPartialHomeomorph X Y) {x : X} (hx : x ∈ e.source)
+    {α : Type*} {k : X → α} {l : Filter α} :
+    Tendsto (k ∘ e.symm) (𝓝[≠] (e x)) l ↔ Tendsto k (𝓝[≠] x) l := by
+  rw [← e.map_nhdsNE_eq hx, tendsto_map'_iff]
+  exact tendsto_congr' <| ((e.eventually_left_inverse hx).filter_mono nhdsWithin_le_nhds).mono
+    fun y hy ↦ congrArg k hy
 
 /-- A function `g` that is continuous on the target of `e` and equal to `c` at the points of the
 target off a compact subset `K` of the target, read through `e` on its source and extended by `c`,
