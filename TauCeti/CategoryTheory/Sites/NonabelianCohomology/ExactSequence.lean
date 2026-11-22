@@ -89,20 +89,20 @@ private def reduction (u : P.sheaf ⟶ (Torsor.trivial Q).sheaf)
       u.hom.app U (b • p) = π.hom.app U b • u.hom.app U p) : Torsor A where
   sheaf := ⟨(fibreSubfunctor u).toFunctor, isSheaf_fibreSubfunctor u⟩
   mulAction U :=
-    { smul a p := ⟨i.hom.app U a • p.1, by
+    { smul a p := ⟨i.hom.app U a • p.val, by
         rw [mem_fibreSubfunctor_iff, hu, trivial_smul, hE.app_app_eq_one,
-          (mem_fibreSubfunctor_iff u p.1).1 p.2, mul_one]⟩
-      one_smul p := Subtype.ext ((congrArg (· • p.1) (map_one _)).trans (one_smul _ _))
-      mul_smul a a' p := Subtype.ext ((congrArg (· • p.1) (map_mul _ a a')).trans
+          (mem_fibreSubfunctor_iff u p.val).1 p.property, mul_one]⟩
+      one_smul p := Subtype.ext ((congrArg (· • p.val) (map_one _)).trans (one_smul _ _))
+      mul_smul a a' p := Subtype.ext ((congrArg (· • p.val) (map_mul _ a a')).trans
         (mul_smul _ _ _)) }
-  map_smul U V f a p := Subtype.ext ((P.map_smul f _ p.1).trans
-    (congrArg (· • P.sheaf.obj.map f p.1) (NatTrans.naturality_apply i.hom f a).symm))
+  map_smul U V f a p := Subtype.ext ((P.map_smul f _ p.val).trans
+    (congrArg (· • P.sheaf.obj.map f p.val) (NatTrans.naturality_apply i.hom f a).symm))
   coversTop X := by
     have := hE.isLocallySurjective
     refine J.transitive (P.coversTop X) _ fun V f ⟨j, ⟨g⟩⟩ ↦ ?_
     -- Over `V` the torsor `P` has a section `p`. Locally `(u p)⁻¹ = π b` for a section `b` of
     -- `B`, and then `b • p` lies in the fibre over `1`.
-    let p := P.sheaf.obj.map g.op j.2.some
+    let p := P.sheaf.obj.map g.op j.property.some
     let q₀ : Q.obj.obj (op V) := u.hom.app (op V) p
     refine J.superset_covering ?_ (Presheaf.imageSieve_mem J π.hom q₀⁻¹)
     rintro W h ⟨b, hb⟩
@@ -114,14 +114,14 @@ private def reduction (u : P.sheaf ⟶ (Torsor.trivial Q).sheaf)
   bijective U := by
     refine ⟨fun ⟨a, p⟩ ⟨a', p'⟩ h ↦ ?_, fun ⟨p, p'⟩ ↦ ?_⟩
     · obtain ⟨h₁, rfl⟩ := Prod.ext_iff.1 h
-      exact Prod.ext (hE.injective U (P.smul_left_injective p.1 (congrArg Subtype.val h₁))) rfl
-    · obtain ⟨b, hb⟩ := MulAction.exists_smul_eq (B.obj.obj U) p'.1 p.1
+      exact Prod.ext (hE.injective U (P.smul_left_injective p.val (congrArg Subtype.val h₁))) rfl
+    · obtain ⟨b, hb⟩ := MulAction.exists_smul_eq (B.obj.obj U) p'.val p.val
       -- `u p = π b * u p'`, and `u p = u p' = 1`, so `π b = 1` and `b` comes from `A`.
       have hπb : π.hom.app U b = 1 := by
-        have h := (hu U b p'.1).symm.trans (congrArg (u.hom.app U) hb)
-        rw [(mem_fibreSubfunctor_iff u p.1).1 p.2] at h
+        have h := (hu U b p'.val).symm.trans (congrArg (u.hom.app U) hb)
+        rw [(mem_fibreSubfunctor_iff u p.val).1 p.property] at h
         exact (mul_one _).symm.trans ((congrArg (π.hom.app U b * ·)
-          ((mem_fibreSubfunctor_iff u p'.1).1 p'.2).symm).trans h)
+          ((mem_fibreSubfunctor_iff u p'.val).1 p'.property).symm).trans h)
       obtain ⟨a, rfl⟩ := hE.exists_app_eq hπb
       exact ⟨(a, p'), Prod.ext (Subtype.ext hb) rfl⟩
 

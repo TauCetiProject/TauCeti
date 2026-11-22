@@ -24,6 +24,9 @@ proper involution makes both annihilators zero (`TauCeti.faithfulSMul_mulOpposit
 and `TauCeti.faithfulSMul_of_isProperStar`). For regular normed algebras
 (`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric,
 so limits in `A` may be computed in `𝓜(𝕜, A)` (`DoubleCentralizer.tendsto_coe_iff`).
+For complex C⋆-algebras, unitary multipliers act isometrically on `A`
+(`DoubleCentralizer.norm_unitary_fst`, `DoubleCentralizer.norm_unitary_snd`) and have norm at most
+`1` (`DoubleCentralizer.norm_coe_unitary_le_one`).
 
 A bounded operator `L` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y` is the left
 centralizer of the multiplier `DoubleCentralizer.ofAdjoint L L'`, whose right centralizer is
@@ -124,10 +127,60 @@ theorem tendsto_coe_iff {ι : Type*} {l : Filter ι} {f : ι → A} {a : A} :
 
 end RegularNormedAlgebra
 
+section UnitalRegularNormedAlgebra
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+  [RegularNormedAlgebra 𝕜 A]
+
+variable (𝕜 A) in
+/-- For a unital regular normed algebra `A` (including every unital C⋆-algebra), the canonical
+inclusion `A → 𝓜(𝕜, A)` is a linear isometric equivalence with inverse `m ↦ m.fst 1`. -/
+def ofUnitalLinearIsometryEquiv : A ≃ₗᵢ[𝕜] 𝓜(𝕜, A) where
+  toFun a := a
+  invFun m := m.fst 1
+  left_inv a := by simp
+  right_inv := coe_fst_one
+  map_add' := coe_add
+  map_smul' := coe_smul
+  norm_map' := norm_coe
+
+@[simp] theorem ofUnitalLinearIsometryEquiv_apply (a : A) :
+    ofUnitalLinearIsometryEquiv 𝕜 A a = a := (rfl)
+
+@[simp] theorem ofUnitalLinearIsometryEquiv_symm_apply (m : 𝓜(𝕜, A)) :
+    (ofUnitalLinearIsometryEquiv 𝕜 A).symm m = m.fst 1 := (rfl)
+
+end UnitalRegularNormedAlgebra
+
 section CStarAlgebra
 
 variable {A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
   [NonUnitalCStarAlgebra C]
+
+/-- The left centralizer of a unitary multiplier preserves the norm on `A`. -/
+@[simp]
+theorem norm_unitary_fst (u : unitary 𝓜(ℂ, A)) (a : A) : ‖(u : 𝓜(ℂ, A)).fst a‖ = ‖a‖ := by
+  rw [← norm_coe (𝕜 := ℂ), ← mul_coe_eq_coe_fst, CStarRing.norm_coe_unitary_mul, norm_coe]
+
+/-- The right centralizer of a unitary multiplier preserves the norm on `A`. -/
+@[simp]
+theorem norm_unitary_snd (u : unitary 𝓜(ℂ, A)) (a : A) : ‖(u : 𝓜(ℂ, A)).snd a‖ = ‖a‖ := by
+  rw [← norm_coe (𝕜 := ℂ), ← coe_mul_eq_coe_snd, CStarRing.norm_mul_coe_unitary, norm_coe]
+
+/-- The left centralizer of a unitary multiplier has operator norm at most `1`, including when `A`
+is the zero algebra. -/
+theorem norm_unitary_fst_le_one (u : unitary 𝓜(ℂ, A)) : ‖(u : 𝓜(ℂ, A)).fst‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a => by simp
+
+/-- The right centralizer of a unitary multiplier has operator norm at most `1`, including when `A`
+is the zero algebra. -/
+theorem norm_unitary_snd_le_one (u : unitary 𝓜(ℂ, A)) : ‖(u : 𝓜(ℂ, A)).snd‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a => by simp
+
+/-- Every unitary multiplier has norm at most `1`, including when `A` is the zero algebra. -/
+theorem norm_coe_unitary_le_one (u : unitary 𝓜(ℂ, A)) : ‖(u : 𝓜(ℂ, A))‖ ≤ 1 := by
+  rw [← norm_fst]
+  exact norm_unitary_fst_le_one u
 
 /-- The multiplier `(e ∘ L ∘ e⁻¹, e ∘ R ∘ e⁻¹)` obtained by transporting `(L, R)` along `e`. -/
 private def conj (e : A ≃⋆ₐ[ℂ] B) (m : 𝓜(ℂ, A)) : 𝓜(ℂ, B) where

@@ -67,12 +67,13 @@ theorem ValidLieTypeIndex.isCharacterMap_geckFrobenius (d : ValidLieTypeIndex) :
 Frobenius of the Geck carrier**, the pinned graph automorphism of the index's diagram permutation
 after the `q`-power Frobenius. -/
 theorem GraphTwistedIndex.isCharacterMap_geckTwistedFrobenius (d : GraphTwistedIndex) :
-    IsCharacterMap d.1.geckWeightTorus
-      (d.1.dynkinType.geckTwistedFrobenius d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry
-        d.1.characteristic d.1.fieldExponent d.1.Closure)
+    IsCharacterMap d.val.geckWeightTorus
+      (d.val.dynkinType.geckTwistedFrobenius d.val.dynkinType_valid
+          d.diagramPerm_mem_diagramSymmetry
+        d.val.characteristic d.val.fieldExponent d.val.Closure)
       d.datumSteinberg.weightMap := by
-  rw [datumSteinberg_weightMap, d.1.fieldOrder_eq_characteristic_pow, LinearMap.comp_smul,
+  rw [datumSteinberg_weightMap, d.val.fieldOrder_eq_characteristic_pow, LinearMap.comp_smul,
     LinearMap.comp_id, ValidLieTypeIndex.geckWeightTorus_def, datumGraphAut_def]
-  exact d.1.dynkinType.isCharacterMap_geckTwistedFrobenius d.1.dynkinType_valid _ _ _ _
+  exact d.val.dynkinType.isCharacterMap_geckTwistedFrobenius d.val.dynkinType_valid _ _ _ _
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PushforwardContinuous
 public import Mathlib.CategoryTheory.Sites.SheafHom
 public import Mathlib.CategoryTheory.Sites.Subsheaf
+public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
 /-!
 # The sheaf of linear morphisms
@@ -231,5 +232,136 @@ theorem linearHomSectionsEquiv_symm_apply (φ : M ⟶ N) (U : Cᵒᵖ) :
     ((linearHomSectionsEquiv M N).symm φ).val U =
       (linearHomObjEquiv M N U.unop).symm (φ.over U.unop) :=
   (rfl)
+
+end SheafOfModules
+
+namespace SheafOfModules
+
+section OpenCoverGluing
+
+universe u₀ v₀ w₀ w₁
+
+variable {X : TopCat.{u₀}} {R : TopCat.Sheaf RingCat.{w₀} X}
+  (M N : SheafOfModules.{w₁} R) {ι : Type v₀} (U : ι → TopologicalSpace.Opens X)
+  (hU : ⨆ i, U i = ⊤) (φ : ∀ i, M.over (U i) ⟶ N.over (U i))
+  (hφ : ∀ i j (V : TopologicalSpace.Opens X) (hi : V ≤ U i) (hj : V ≤ U j)
+    (m : M.val.obj (op V)),
+      (φ i).val.app (op (Over.mk (homOfLE hi))) m =
+        (φ j).val.app (op (Over.mk (homOfLE hj))) m)
+
+private def localHomSection (i : ι) : (M.val.linearHom N).obj.obj (op (U i)) :=
+  (M.linearHomObjEquiv N (U i)).symm (φ i)
+
+include hφ in
+private lemma localHomSection_compatible :
+    TopCat.Presheaf.IsCompatible (M.val.linearHom N).obj U
+      (localHomSection M N U φ) := by
+  intro i j
+  apply (M.linearHomObjEquiv N (U i ⊓ U j)).injective
+  ext V m
+  rcases V with ⟨V, ⟨⟨⟩⟩, hV⟩
+  -- Unpacking the slice object is the remaining definitional reduction from the public
+  -- Hom-section evaluation law to its component at `Over.mk hV`.
+  change (M.linearHomObjEquiv N (U i ⊓ U j)
+      ((M.val.linearHom N).obj.map (homOfLE inf_le_left).op
+        (localHomSection M N U φ i))).val.app (op (Over.mk hV)) m = _
+  refine (SheafOfModules.linearHomObjEquiv_map_app M N (homOfLE inf_le_left)
+    hV (localHomSection M N U φ i) m).trans ?_
+  refine Eq.trans ?_ (SheafOfModules.linearHomObjEquiv_map_app M N
+    (homOfLE inf_le_right) hV (localHomSection M N U φ j) m).symm
+  have hi : hV ≫ homOfLE inf_le_left =
+      homOfLE (hV.le.trans inf_le_left) := Subsingleton.elim _ _
+  have hj : hV ≫ homOfLE inf_le_right =
+      homOfLE (hV.le.trans inf_le_right) := Subsingleton.elim _ _
+  rw [hi, hj]
+  simp only [localHomSection, Equiv.apply_symm_apply]
+  -- Each restricted module has the same value on `V`; only its slice index differs.
+  change (φ i).val.app (op (Over.mk (homOfLE (hV.le.trans inf_le_left)))) m =
+    (φ j).val.app (op (Over.mk (homOfLE (hV.le.trans inf_le_right)))) m
+  exact hφ i j V (hV.le.trans inf_le_left) (hV.le.trans inf_le_right) m
+
+include hU hφ in
+private lemma gluingExists : ∃! s : (M.val.linearHom N).obj.obj (op ⊤),
+    ∀ i, (M.val.linearHom N).obj.map (homOfLE (show U i ≤ ⊤ from le_top)).op s =
+      localHomSection M N U φ i :=
+  TopCat.Sheaf.existsUnique_gluing' (M.val.linearHom N) U ⊤
+    (fun _ ↦ homOfLE le_top) (fun x _ ↦ by
+      obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp (hU.ge (Set.mem_univ x))
+      exact TopologicalSpace.Opens.mem_iSup.mpr ⟨i, hi⟩)
+    (localHomSection M N U φ) (localHomSection_compatible M N U φ hφ)
+
+private def gluedHomTop : (M.val.linearHom N).obj.obj (op ⊤) :=
+  Classical.choose (gluingExists M N U hU φ hφ)
+
+/-- Glue compatible morphisms of module sheaves on an open cover. -/
+def glueOfOpenCover : M ⟶ N :=
+  M.linearHomSectionsEquiv N
+    ⟨fun V ↦ (M.val.linearHom N).obj.map V.unop.leTop.op (gluedHomTop M N U hU φ hφ),
+      fun {V W} f ↦ by
+        rw [← Functor.map_comp_apply]
+        rfl⟩
+
+private lemma gluedHomTop_restrict (i : ι) :
+    (M.val.linearHom N).obj.map (homOfLE (show U i ≤ ⊤ from le_top)).op
+      (gluedHomTop M N U hU φ hφ) = localHomSection M N U φ i := by
+  exact (Classical.choose_spec (gluingExists M N U hU φ hφ)).1 i
+
+/-- The glued morphism agrees with each local morphism on every smaller open. -/
+lemma glueOfOpenCover_app (i : ι) (V : TopologicalSpace.Opens X) (hi : V ≤ U i)
+    (m : M.val.obj (op V)) :
+    (glueOfOpenCover M N U hU φ hφ).val.app (op V) m =
+      (φ i).val.app (op (Over.mk (homOfLE hi))) m := by
+  have hsec : (M.val.linearHom N).obj.map V.leTop.op (gluedHomTop M N U hU φ hφ) =
+      (M.val.linearHom N).obj.map (homOfLE hi).op (localHomSection M N U φ i) := by
+    rw [← gluedHomTop_restrict M N U hU φ hφ i, ← Functor.map_comp_apply]
+    rfl
+  rw [glueOfOpenCover, linearHomSectionsEquiv_app]
+  dsimp only
+  rw [hsec]
+  exact (SheafOfModules.linearHomObjEquiv_map_app M N (homOfLE hi) (𝟙 V)
+    (localHomSection M N U φ i) m).trans (by
+      simp only [localHomSection, Equiv.apply_symm_apply]
+      -- The two slice objects differ by the identity-composition presentation of their arrow.
+      change (φ i).val.app (op (Over.mk (𝟙 V ≫ homOfLE hi))) m = _
+      erw [Category.id_comp])
+
+/-- A morphism agreeing with the prescribed local morphisms is the glued morphism. -/
+lemma glueOfOpenCover_unique (ψ : M ⟶ N)
+    (hψ : ∀ i (V : TopologicalSpace.Opens X) (hi : V ≤ U i) (m : M.val.obj (op V)),
+      ψ.val.app (op V) m = (φ i).val.app (op (Over.mk (homOfLE hi))) m) :
+    ψ = glueOfOpenCover M N U hU φ hφ := by
+  have htop : ((M.linearHomSectionsEquiv N).symm ψ).val (op ⊤) =
+      gluedHomTop M N U hU φ hφ := by
+    apply (Classical.choose_spec (gluingExists M N U hU φ hφ)).2
+    intro i
+    apply (M.linearHomObjEquiv N (U i)).injective
+    ext V m
+    rcases V with ⟨V, ⟨⟨⟩⟩, hV⟩
+    -- The inverse global equivalence attaches the restriction of `ψ` to the top slice.
+    -- Its restriction along `hV` is evaluated through the public local Hom map law.
+    change (M.linearHomObjEquiv N (U i)
+        ((M.val.linearHom N).obj.map (homOfLE (show U i ≤ ⊤ from le_top)).op
+          (((M.linearHomSectionsEquiv N).symm ψ).val (op ⊤)))).val.app
+            (op (Over.mk hV)) m = _
+    refine (linearHomObjEquiv_map_app M N (homOfLE (show U i ≤ ⊤ from le_top))
+      hV (((M.linearHomSectionsEquiv N).symm ψ).val (op ⊤)) m).trans ?_
+    simp only [linearHomSectionsEquiv_symm_apply, localHomSection, Equiv.apply_symm_apply]
+    -- Restriction of a module morphism retains its component at the underlying open `V`.
+    change ψ.val.app (op V) m = (φ i).val.app (op (Over.mk hV)) m
+    exact hψ i V hV.le m
+  apply (M.linearHomSectionsEquiv N).symm.injective
+  apply Subtype.ext
+  funext V
+  calc
+    ((M.linearHomSectionsEquiv N).symm ψ).val V =
+        (M.val.linearHom N).obj.map V.unop.leTop.op
+          (((M.linearHomSectionsEquiv N).symm ψ).val (op ⊤)) :=
+      (((M.linearHomSectionsEquiv N).symm ψ).property V.unop.leTop.op).symm
+    _ = (M.val.linearHom N).obj.map V.unop.leTop.op (gluedHomTop M N U hU φ hφ) :=
+      congrArg _ htop
+    _ = ((M.linearHomSectionsEquiv N).symm (glueOfOpenCover M N U hU φ hφ)).val V := by
+      rw [glueOfOpenCover, Equiv.symm_apply_apply]
+
+end OpenCoverGluing
 
 end SheafOfModules

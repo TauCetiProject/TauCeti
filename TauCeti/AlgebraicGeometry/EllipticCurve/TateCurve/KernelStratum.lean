@@ -158,11 +158,11 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
   have : CompleteSpace S := (IsUltrametricDist.isClosed_ball (1 : K) 1).completeSpace_coe
   have : Nonempty S := ⟨⟨c, hmem.mpr hc⟩⟩
   have hne (v : S) : (v : K) ≠ 0 := fun h ↦ by
-    have := hmem.mp v.2
+    have := hmem.mp v.property
     rw [h, sub_zero, norm_one] at this
     exact lt_irrefl _ this
   let U : S → Kˣ := fun v ↦ Units.mk0 v (hne v)
-  have hU (v : S) : ‖1 - ((U v : Kˣ) : K)‖ < 1 := hmem.mp v.2
+  have hU (v : S) : ‖1 - ((U v : Kˣ) : K)‖ < 1 := hmem.mp v.property
   -- the step stays in the ball: it moves by less than one from `c`, which lies in the ball
   have hstep (v : S) : kernelStep q (U v) c ∈ S := by
     refine hmem.mpr ?_
