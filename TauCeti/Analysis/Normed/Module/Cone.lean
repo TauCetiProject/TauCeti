@@ -54,6 +54,8 @@ transform decays is transported along the transposed derivative of a change of v
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
   around `B η₀` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` for `ξ ∈ Γ'` and `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`.
+* `TauCeti.mem_of_mem_closure_of_forall_closedBall_subset`: the nonzero points of the closure of
+  such a `Γ'` still lie in `Γ`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
   coefficients, bounded by a weighted `ℓ¹` norm of the coefficients.
@@ -233,6 +235,22 @@ end IsOpen
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E]
+
+/-- If the closed ball of radius `c ‖η‖` about every point `η` of `Γ'` lies in `Γ`, then so does
+every nonzero point of the closure of `Γ'`. For an open cone `Γ'` as in
+`IsOpen.exists_cone_closedBall_subset`, the closure of `Γ'` is a closed cone whose nonzero points
+lie in `Γ`. -/
+theorem mem_of_mem_closure_of_forall_closedBall_subset {Γ Γ' : Set E} {c : ℝ} (hc : 0 < c)
+    (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ) {ξ : E} (hξ : ξ ∈ closure Γ') (hξ0 : ξ ≠ 0) :
+    ξ ∈ Γ := by
+  obtain ⟨η, hη, hξη⟩ := Metric.mem_closure_iff.1 hξ (c * ‖ξ‖ / (1 + c)) (by positivity)
+  refine hΓ' η hη (mem_closedBall.2 ?_)
+  -- `dist ξ η (1 + c) < c ‖ξ‖ ≤ c (‖η‖ + dist ξ η)`.
+  have hnorm : ‖ξ‖ ≤ ‖η‖ + dist ξ η := by
+    rw [dist_eq_norm]
+    exact norm_le_norm_add_norm_sub' ξ η
+  rw [lt_div_iff₀ (by positivity)] at hξη
+  nlinarith
 
 /-- **A translate by a small shift.** If `‖v‖ ≤ c ‖η‖` with `c ≤ 1 / 2` and the closed ball of
 radius `c ‖η‖` about `η` lies in a set `Γ` on which `(1 + ‖ζ‖) ^ n ‖F ζ‖ ≤ C₁`, then
