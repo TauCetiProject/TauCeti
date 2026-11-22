@@ -24,8 +24,11 @@ namespace HahnSeries
 
 /-- Scaling the coefficient of a Hahn monomial scales the whole monomial. -/
 theorem single_smul {Γ R V : Type*} [PartialOrder Γ] [Zero V] [SMulZeroClass R V]
-    (a : Γ) (r : R) (v : V) : single a (r • v) = r • single a v :=
-  (HahnSeries.map_single (a := a) (r := v) (SMulZeroClass.toZeroHom V r)).symm
+    (a : Γ) (r : R) (v : V) : single a (r • v) = r • single a v := by
+  ext b
+  rcases eq_or_ne b a with rfl | h
+  · simp only [coeff_smul, coeff_single_same]
+  · simp only [coeff_smul, coeff_single_of_ne h, smul_zero]
 
 variable {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [AddCommMonoid V] [Module R V]
 

@@ -309,7 +309,8 @@ theorem coordinateEnvelopingAut_homothety_normalOrderedSummand
     simp only [map_mul, coordinateEnvelopingAut_homothety_envelopingι,
       smul_mul_smul, hu, hu']
 
-/-- A formal homothety scales the convergent normally ordered sum at any cut by its total mode.
+/-- The formal homothety `t ↦ u t` scales the convergent normally ordered sum at any cut by `u ^ n`,
+where `n` is the total mode.
 This applies to any Lie algebra over the field and at every central value. -/
 theorem coordinateCompletedEnvelopingAut_homothety_tsum_normalOrderedSummand
     (u : Kˣ) (p n : ℤ) (x y : L) :
