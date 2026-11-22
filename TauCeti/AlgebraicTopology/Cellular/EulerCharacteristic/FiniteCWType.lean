@@ -22,7 +22,8 @@ CW type.
 * `TauCeti.finite_singularHomology_of_finiteCWType` and
   `TauCeti.eventually_isZero_singularHomology_of_finiteCWType`: the singular homology of a space of
   finite CW type is finitely generated in every degree over a noetherian ring, and vanishes in all
-  large degrees.
+  large degrees; over a field it is finite-dimensional
+  (`TauCeti.finiteDimensional_singularChains_homology`).
 * `TauCeti.eulerChar X`: the Euler characteristic of a space `X` of finite CW type, the
   alternating cell count of a finite CW complex homotopy equivalent to `X`.
 * `TauCeti.eulerChar_eq_cwEulerChar`: **independence of the model**; every finite CW complex
@@ -107,6 +108,14 @@ theorem eventually_isZero_singularHomology_of_finiteCWType :
       (e.singularHomologyIso M n)
 
 end Finiteness
+
+/-- Over a field, the singular homology of a space of finite CW type is finite-dimensional in
+every degree. -/
+instance finiteDimensional_singularChains_homology (X : Type w) [TopologicalSpace X]
+    [FiniteCWType X] (k : Type w) [Field k] (n : ℕ) :
+    FiniteDimensional k (((singularChains k).obj (TopCat.of X)).homology n) := by
+  rw [← singularHomologyFunctor_obj_obj]
+  exact finite_singularHomology_of_finiteCWType X (ModuleCat.of k k) n
 
 /-- Some finite CW complex homotopy equivalent to `X` has alternating cell count equal to a given
 integer. -/

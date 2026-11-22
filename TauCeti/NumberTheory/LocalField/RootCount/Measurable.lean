@@ -106,7 +106,7 @@ theorem isCompact_setOf_le_card_aroots (n k : ℕ) :
         (continuous_pi fun j ↦ hφ.comp ((continuous_apply j).comp continuous_snd))
   -- `C` is closed in a compact space, and the set of the statement is its image.
   convert hC.isCompact.image (f := fun z i ↦ (z.2 i : K)) (continuous_pi fun i ↦
-    continuous_subtype_val.comp ((continuous_apply i).comp continuous_snd)) using 1
+    continuous_subtypeVal.comp ((continuous_apply i).comp continuous_snd)) using 1
   have hfac (α : Fin n → 𝒪[K]) := Monic.le_card_roots_iff_exists_prod_mul_monicOfCoeff_eq (k := k)
     ((monic_monicOfCoeff α).map φ) (by rw [(monic_monicOfCoeff α).natDegree_map,
       natDegree_monicOfCoeff])
@@ -119,7 +119,7 @@ theorem isCompact_setOf_le_card_aroots (n k : ℕ) :
     obtain ⟨x, b, h⟩ := (hfac α).1 hcard
     exact ⟨((x, b), α), h, rfl⟩
   · rintro ⟨⟨⟨x, b⟩, α⟩, h, rfl⟩
-    refine ⟨mem_integerBox.2 fun i ↦ (α i).2, ?_⟩
+    refine ⟨mem_integerBox.2 fun i ↦ (α i).property, ?_⟩
     rw [card_aroots_monicOfCoeff_coe]
     exact (hfac α).2 ⟨x, b, h⟩
 

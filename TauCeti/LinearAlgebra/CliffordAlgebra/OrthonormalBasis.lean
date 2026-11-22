@@ -42,6 +42,8 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
+* `CliffordAlgebra.sum_sum_smul_ι_mul_ι_of_symm`: for a symmetric family of scalars `mᵢⱼ`,
+  `∑ᵢⱼ mᵢⱼ c(eᵢ) c(eⱼ) = -∑ᵢ mᵢᵢ`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
 ## References
@@ -135,6 +137,30 @@ theorem _root_.QuadraticMap.polar_eq_neg_two_inner (u v : V) :
 theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
     ι Q u * ι Q v + ι Q v * ι Q u = algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪u, v⟫) := by
   rw [ι_mul_ι_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
+
+/-- **The Clifford contraction of a symmetric matrix**: for `Q v = -‖v‖²`, an orthonormal basis
+`(eᵢ)` and a symmetric family of scalars `mᵢⱼ`, the contraction `∑ᵢⱼ mᵢⱼ c(eᵢ) c(eⱼ)` is the
+scalar `-∑ᵢ mᵢᵢ`: the antisymmetric parts of the products `c(eᵢ) c(eⱼ)` cancel in pairs. -/
+theorem sum_sum_smul_ι_mul_ι_of_symm {I : Type*} [Fintype I] (b : OrthonormalBasis I ℝ V)
+    {m : I → I → ℝ} (hm : ∀ i j, m i j = m j i) :
+    ∑ i, ∑ j, m i j • (ι Q (b i) * ι Q (b j)) = algebraMap ℝ (CliffordAlgebra Q) (-∑ i, m i i) := by
+  classical
+  have h2 : (2 : ℝ) • ∑ i, ∑ j, m i j • (ι Q (b i) * ι Q (b j)) =
+      (2 : ℝ) • algebraMap ℝ (CliffordAlgebra Q) (-∑ i, m i i) := by
+    calc (2 : ℝ) • ∑ i, ∑ j, m i j • (ι Q (b i) * ι Q (b j))
+        = ∑ i, ∑ j, m i j • (ι Q (b i) * ι Q (b j)) +
+            ∑ i, ∑ j, m i j • (ι Q (b j) * ι Q (b i)) := by
+          rw [two_smul]
+          congr 1
+          rw [Finset.sum_comm]
+          simp_rw [hm]
+      _ = ∑ i, ∑ j, m i j • algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪b i, b j⟫) := by
+          simp_rw [← Finset.sum_add_distrib, ← smul_add, ι_mul_ι_add_swap_eq_neg_two_inner hQ]
+      _ = (2 : ℝ) • algebraMap ℝ (CliffordAlgebra Q) (-∑ i, m i i) := by
+          simp_rw [b.inner_eq_ite, Algebra.smul_def, ← map_mul, ← map_sum]
+          congr 1
+          simp [Finset.mul_sum, mul_comm]
+  exact smul_right_injective _ two_ne_zero h2
 
 /-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
 theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :

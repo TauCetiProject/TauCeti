@@ -157,8 +157,8 @@ theorem nonempty_linearEquiv_of_trace_eq [CharZero k]
     exact Nat.eq_of_mul_eq_mul_right hd (Nat.cast_injective heq)
   · -- If `S` occurs in neither module, both counts vanish.
     push Not at hS
-    have : IsEmpty {i // Nonempty (S ≃ₗ[A] P i)} := ⟨fun i => (hS.1 i.1).false i.2.some⟩
-    have : IsEmpty {j // Nonempty (S ≃ₗ[A] Q j)} := ⟨fun j => (hS.2 j.1).false j.2.some⟩
+    have : IsEmpty {i // Nonempty (S ≃ₗ[A] P i)} := ⟨fun i => (hS.1 i.val).false i.property.some⟩
+    have : IsEmpty {j // Nonempty (S ≃ₗ[A] Q j)} := ⟨fun j => (hS.2 j.val).false j.property.some⟩
     rw [Nat.card_of_isEmpty, Nat.card_of_isEmpty]
 
 end Trace

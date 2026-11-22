@@ -107,23 +107,23 @@ instance instNormedSpace : NormedSpace ℝ (C1HolderSpace α E F) := by
   unfold C1HolderSpace
   infer_instance
 
-private abbrev toJet (f : C1HolderSpace α E F) : C1HolderJet α E F := f.1
+private abbrev toJet (f : C1HolderSpace α E F) : C1HolderJet α E F := f.val
 
 private theorem norm_toJet (f : C1HolderSpace α E F) : ‖toJet f‖ = ‖f‖ :=
   Submodule.norm_coe f
 
 /-- A bounded `C^{1,α}` element coerces to its underlying function from `E` to `F`. -/
 instance instCoeFun : CoeFun (C1HolderSpace α E F) fun _ ↦ E → F :=
-  ⟨fun f ↦ f.1.1⟩
+  ⟨fun f ↦ f.val.1⟩
 
 attribute [irreducible] instCoeFun
 
 /-- The underlying bounded continuous function of a bounded `C^{1,α}` map. -/
-def toBoundedContinuousFunction (f : C1HolderSpace α E F) : E →ᵇ F := f.1.1
+def toBoundedContinuousFunction (f : C1HolderSpace α E F) : E →ᵇ F := f.val.1
 
 /-- The Fréchet derivative, as a bounded globally Hölder function with values in continuous
 linear maps. -/
-def fderiv (f : C1HolderSpace α E F) : HolderSpace α E (E →L[ℝ] F) := f.1.2
+def fderiv (f : C1HolderSpace α E F) : HolderSpace α E (E →L[ℝ] F) := f.val.2
 
 private theorem toBoundedContinuousFunction_eq_fst (f : C1HolderSpace α E F) :
     toBoundedContinuousFunction f = (toJet f).1 := rfl
@@ -174,7 +174,7 @@ theorem hasFDerivAt (f : C1HolderSpace α E F) (x : E) :
     HasFDerivAt (f : E → F) (fderiv f x) x :=
   by
     rw [instCoeFun, fderiv]
-    exact f.2 x
+    exact f.property x
 
 /-- The derivative accessor agrees with Mathlib's `fderiv`. -/
 @[simp]

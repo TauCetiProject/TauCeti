@@ -436,7 +436,7 @@ theorem _root_.TauCeti.ineffectiveKernel_eq_top_iff_stabilizer_eq_germKernel [To
       (h ⟨g, hg⟩),
     fun h g ↦
       (stabilizerMulEquivAutOfFullyFaithful_mem_ineffectiveKernel_iff hs hι hobj hy (hσ _)).mpr
-        (h g.2)⟩
+        (h g.property)⟩
 
 end Chart
 

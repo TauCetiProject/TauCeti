@@ -18,7 +18,7 @@ linear isometry of `T_x M` leaving every ball about the origin invariant
 (`TauCeti.mfderiv_smul_image_ball_of_smul_eq`), and isometries intertwine exponential maps:
 `exp_x (d(a •)_x v) = a • exp_x v` (`TauCeti.riemannianExp_mfderiv_smul_of_smul_eq`), so `a`
 leaves `exp_x '' ball 0 r` invariant (`TauCeti.smul_riemannianExp_image_ball_of_smul_eq`). These
-lemmas, and their versions without a fixed point, live in the `Isometry.Tangent` and
+lemmas, and their versions without a fixed point, live in the `Isometry.Tangent.Basic` and
 `Isometry.Exponential` modules.
 
 This file adds the inverse chart. On a normal domain `U` at `x` mapped into itself by `d(a •)_x`,

@@ -73,7 +73,7 @@ rows have weight one. The row of a dart `d` has the ratio from the return edge `
 chosen edge at its base `d.snd`. -/
 def skewZigzagPairingWeight : ZigzagBasisIndex G → kˣ
   | .inl _ => 1
-  | .inr (.inl d) => c.ratio d.symm.adj (t d.snd).2
+  | .inr (.inl d) => c.ratio d.symm.adj (t d.snd).property
   | .inr (.inr _) => 1
 
 @[simp]
@@ -83,7 +83,7 @@ theorem skewZigzagPairingWeight_inl (i : V) :
 @[simp]
 theorem skewZigzagPairingWeight_inr_inl (d : G.Dart) :
     skewZigzagPairingWeight k G c t (.inr (.inl d)) =
-      c.ratio d.symm.adj (t d.snd).2 := (rfl)
+      c.ratio d.symm.adj (t d.snd).property := (rfl)
 
 @[simp]
 theorem skewZigzagPairingWeight_inr_inr (i : V) :
@@ -133,10 +133,10 @@ backtrack at the same vertex. -/
 @[simp]
 theorem skewZigzagTrace_skewZigzagVolume {i : V} (e : {j : V // G.Adj i j}) :
     skewZigzagTrace k G c t (skewZigzagVolume k G c e) =
-      (c.ratio e.2 (t i).2 : k) := by
-  have he := skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume k G c e e.2
+      (c.ratio e.property (t i).property : k) := by
+  have he := skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume k G c e e.property
   rw [c.ratio_self, Units.val_one, one_smul] at he
-  rw [← he, skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume k G c (t i) e.2, map_smul,
+  rw [← he, skewZigzagMk_backtrackElem_eq_smul_skewZigzagVolume k G c (t i) e.property, map_smul,
     skewZigzagTrace_skewZigzagVolume_chosen]
   exact mul_one _
 
@@ -228,8 +228,8 @@ the Frobenius property of the trace normalized by the chosen incident edges. -/
 instance skewZigzagTracePairing_isPerfPair :
     (skewZigzagTracePairing k G c t).IsPerfPair := by
   classical
-  let _ := moduleFinite_skewZigzagQuotient k G c fun i => ⟨_, (t i).2⟩
-  let _ := moduleFree_skewZigzagQuotient k G c fun i => ⟨_, (t i).2⟩
+  let _ := moduleFinite_skewZigzagQuotient k G c fun i => ⟨_, (t i).property⟩
+  let _ := moduleFree_skewZigzagQuotient k G c fun i => ⟨_, (t i).property⟩
   let _ : Finite G.Dart :=
     Finite.of_injective _ (SimpleGraph.Dart.toProd_injective (G := G))
   let B := skewZigzagBasis k G c t
@@ -268,7 +268,7 @@ symmetric and all other products have zero trace. -/
 theorem skewZigzagTracePairing_isSymm_iff :
     (skewZigzagTracePairing k G c t).IsSymm ↔
       ∀ d : G.Dart,
-        c.ratio d.symm.adj (t d.snd).2 = c.ratio d.adj (t d.fst).2 := by
+        c.ratio d.symm.adj (t d.snd).property = c.ratio d.adj (t d.fst).property := by
   constructor
   · intro h d
     have hd := h.eq
@@ -297,7 +297,7 @@ theorem skewZigzagTracePairing_isSymm_iff :
         -- `rfl`; the right-hand weight is therefore already the one `h d` speaks about. A
         -- `rw [SimpleGraph.Dart.symm_symm]` is not available here because the adjacency argument
         -- of `ratio` is indexed by the dart, so the rewrite motive is not type-correct.
-        change c.ratio d.symm.adj (t d.snd).2 = c.ratio d.adj (t d.fst).2
+        change c.ratio d.symm.adj (t d.snd).property = c.ratio d.adj (t d.fst).property
         exact h d
       · rw [zigzagDualIndex_inr_inr, skewZigzagPairingWeight_inr_inr,
           skewZigzagPairingWeight_inl]
@@ -320,7 +320,7 @@ theorem skewZigzagTrace_mul_comm_iff :
     (∀ x y : skewZigzagQuotient k G c,
       skewZigzagTrace k G c t (x * y) = skewZigzagTrace k G c t (y * x)) ↔
       ∀ d : G.Dart,
-        c.ratio d.symm.adj (t d.snd).2 = c.ratio d.adj (t d.fst).2 := by
+        c.ratio d.symm.adj (t d.snd).property = c.ratio d.adj (t d.fst).property := by
   rw [← skewZigzagTracePairing_isSymm_iff]
   constructor
   · exact fun h ↦ ⟨fun x y ↦ h x y⟩
@@ -329,14 +329,14 @@ theorem skewZigzagTrace_mul_comm_iff :
 /-- If opposite darts have equal pairing weights, the skew-zigzag trace pairing is symmetric. -/
 theorem skewZigzagTracePairing_isSymm
     (h : ∀ d : G.Dart,
-      c.ratio d.symm.adj (t d.snd).2 = c.ratio d.adj (t d.fst).2) :
+      c.ratio d.symm.adj (t d.snd).property = c.ratio d.adj (t d.fst).property) :
     (skewZigzagTracePairing k G c t).IsSymm :=
   (skewZigzagTracePairing_isSymm_iff k G c t).2 h
 
 /-- If opposite darts have equal pairing weights, the normalized functional is a trace. -/
 theorem skewZigzagTrace_mul_comm
     (h : ∀ d : G.Dart,
-      c.ratio d.symm.adj (t d.snd).2 = c.ratio d.adj (t d.fst).2)
+      c.ratio d.symm.adj (t d.snd).property = c.ratio d.adj (t d.fst).property)
     (x y : skewZigzagQuotient k G c) :
     skewZigzagTrace k G c t (x * y) = skewZigzagTrace k G c t (y * x) :=
   (skewZigzagTrace_mul_comm_iff k G c t).2 h x y

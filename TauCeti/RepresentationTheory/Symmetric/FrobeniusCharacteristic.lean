@@ -54,6 +54,8 @@ inverse directly, without passing through the orthogonality relations.
 * `TauCeti.psumPart_eq_sum_spechtCharValue_smul_schurPoly`: **Frobenius's formula**
   `p_ρ = ∑_λ χ^λ(ρ) s_λ`.
 * `TauCeti.sum_spechtChar_smul_psumPart`: **its inverse**, `∑_π χ^μ(π) p_{ρ(π)} = n! s_μ`.
+* `TauCeti.sum_characterPairing_smul_schurPoly`: the cycle-type formula in every alphabet,
+  `∑_μ ⟨χ^μ, f⟩ s_μ = (1 / n!) ∑_π f(π) p_{ρ(π)}`.
 * `TauCeti.frobeniusCharacteristic_eq_sum_psumPart`: **the cycle-type formula** for the
   Frobenius characteristic.
 * `TauCeti.hallInner_psumPart_schurPolyBasis`: for the Hall inner product `TauCeti.hallInner`,
@@ -106,20 +108,20 @@ theorem schurPolyBasis_repr_frobeniusCharacteristic (h : n ≤ Fintype.card σ)
     (f : ClassFunction ℂ (Equiv.Perm (Fin n)))
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     (schurPolyBasis σ ℂ n).repr (frobeniusCharacteristic σ n h f) μ =
-      ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ.1).ρ) f := by
+      ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ.val).ρ) f := by
   let e := partitionEquivSchurIndex σ n h
-  have hμ : e μ.1 = μ := by
+  have hμ : e μ.val = μ := by
     apply Subtype.ext
-    exact partitionEquivSchurIndex_apply σ n h μ.1
+    exact partitionEquivSchurIndex_apply σ n h μ.val
   conv_lhs => rw [← hμ]
   rw [frobeniusCharacteristic]
   have hrepr := Module.Basis.repr_reindex_apply (schurPolyBasis σ ℂ n)
-    ((spechtCharacterBasis n).equiv (schurPolyBasis σ ℂ n) e f) e.symm μ.1
+    ((spechtCharacterBasis n).equiv (schurPolyBasis σ ℂ n) e f) e.symm μ.val
   simp only [Equiv.symm_symm] at hrepr
   rw [← hrepr]
   rw [← Module.Basis.map_equiv (spechtCharacterBasis n) (schurPolyBasis σ ℂ n) e]
   simp only [Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]
-  exact spechtCharacterBasis_repr f μ.1
+  exact spechtCharacterBasis_repr f μ.val
 
 /-- The Schur coefficient of a class function under the Frobenius characteristic is its
 character pairing with the corresponding Specht character. This gives an explicit formula for
@@ -212,8 +214,39 @@ end Formula
 
 /-! ### The cycle-type formula -/
 
-open Equiv MvPolynomial in
-variable (σ) in
+section CycleType
+
+open Equiv MvPolynomial
+
+variable (σ)
+
+/-- **The cycle-type formula in every alphabet**: weighting the Schur polynomials by the character
+pairings of a class function `f` of `Sₙ` gives `(1 / n!) ∑_{π ∈ Sₙ} f(π) p_{ρ(π)}`. There is no
+condition on the number of letters; when there are at least `n`, the left side is the Frobenius
+characteristic of `f` (`TauCeti.frobeniusCharacteristic_eq_sum_psumPart`). -/
+theorem sum_characterPairing_smul_schurPoly (f : ClassFunction ℂ (Perm (Fin n))) :
+    ∑ μ : n.Partition,
+        ClassFunction.characterPairing (ClassFunction.ofCharacter (spechtModuleℂ μ).ρ) f •
+          schurPoly σ ℂ μ =
+      (n.factorial : ℂ)⁻¹ •
+        ∑ π : Perm (Fin n), (f : Perm (Fin n) → ℂ) π • psumPart σ ℂ π.partition := by
+  -- both sides are linear in `f`, and they agree on the basis of Specht characters
+  let L : ClassFunction ℂ (Perm (Fin n)) →ₗ[ℂ] MvPolynomial σ ℂ :=
+    (n.factorial : ℂ)⁻¹ • (Fintype.linearCombination ℂ fun π : Perm (Fin n) =>
+      psumPart σ ℂ π.partition) ∘ₗ (ClassFunction ℂ (Perm (Fin n))).subtype
+  have hL : (spechtCharacterBasis n).constr ℂ (schurPoly σ ℂ) = L := by
+    refine (spechtCharacterBasis n).ext fun μ => ?_
+    have hfac : (n.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
+    rw [Module.Basis.constr_basis]
+    simp only [LinearMap.comp_apply, Submodule.subtype_apply, spechtCharacterBasis_apply, L,
+      LinearMap.smul_apply, Fintype.linearCombination_apply, ClassFunction.ofCharacter_apply,
+      FDRep.character_ρ, character_spechtModuleℂ_intCast, Int.cast_smul_eq_zsmul,
+      sum_spechtChar_smul_psumPart, ← Nat.cast_smul_eq_nsmul ℂ, smul_smul, inv_mul_cancel₀ hfac,
+      one_smul]
+  simpa only [Module.Basis.constr_apply_fintype, Module.Basis.equivFun_apply,
+    spechtCharacterBasis_repr, L, LinearMap.smul_apply, LinearMap.comp_apply,
+    Submodule.subtype_apply, Fintype.linearCombination_apply] using congr($hL f)
+
 /-- **The cycle-type formula for the Frobenius characteristic**: the Frobenius characteristic of a
 class function `f` of `Sₙ` is `(1 / n!) ∑_{π ∈ Sₙ} f(π) p_{ρ(π)}`, the average of the power-sum
 products over the cycle types weighted by `f`. -/
@@ -223,20 +256,9 @@ theorem frobeniusCharacteristic_eq_sum_psumPart (h : n ≤ Fintype.card σ)
       MvPolynomial σ ℂ) =
       (n.factorial : ℂ)⁻¹ •
         ∑ π : Perm (Fin n), (f : Perm (Fin n) → ℂ) π • psumPart σ ℂ π.partition := by
-  -- both sides are linear in `f`, and they agree on the basis of Specht characters
-  let L : ClassFunction ℂ (Perm (Fin n)) →ₗ[ℂ] MvPolynomial σ ℂ :=
-    (n.factorial : ℂ)⁻¹ • (Fintype.linearCombination ℂ fun π : Perm (Fin n) =>
-      psumPart σ ℂ π.partition) ∘ₗ (ClassFunction ℂ (Perm (Fin n))).subtype
-  have hL : (symmetricHomogeneousSubmodule σ ℂ n).subtype ∘ₗ
-      (frobeniusCharacteristic σ n h).toLinearMap = L := by
-    refine (spechtCharacterBasis n).ext fun μ => ?_
-    have hfac : (n.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Submodule.subtype_apply,
-      spechtCharacterBasis_apply, frobeniusCharacteristic_spechtCharacter, L, LinearMap.smul_apply,
-      Fintype.linearCombination_apply, ClassFunction.ofCharacter_apply, FDRep.character_ρ,
-      character_spechtModuleℂ_intCast, Int.cast_smul_eq_zsmul, sum_spechtChar_smul_psumPart,
-      ← Nat.cast_smul_eq_nsmul ℂ, smul_smul, inv_mul_cancel₀ hfac, one_smul]
-  exact congr($hL f)
+  rw [frobeniusCharacteristic_apply, sum_characterPairing_smul_schurPoly]
+
+end CycleType
 
 /-! ### The Hall inner product -/
 
@@ -253,7 +275,7 @@ the Hall inner product, over every commutative ring.  This is Frobenius's formul
 theorem hallInner_psumPart_schurPolyBasis (ρ : n.Partition)
     (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
     hallInner σ R n ⟨psumPart σ R ρ, psumPart_mem_symmetricHomogeneousSubmodule R ρ⟩
-      (schurPolyBasis σ R n μ) = spechtCharValue μ.1 ρ := by
+      (schurPolyBasis σ R n μ) = spechtCharValue μ.val ρ := by
   rw [hallInner_schurPolyBasis_right]
   refine schurPolyBasis_repr_of_coe_eq_sum (c := fun l => (spechtCharValue l ρ : R)) ?_ μ
   simp only [Int.cast_smul_eq_zsmul]
@@ -274,7 +296,7 @@ theorem hallInner_psumPart (h : n ≤ Fintype.card σ) (ρ ρ' : n.Partition) :
   rw [hallInner_apply]
   simp only [← hallInner_schurPolyBasis_right, hallInner_psumPart_schurPolyBasis]
   rw [Fintype.sum_equiv (Equiv.subtypeUnivEquiv hcard)
-    (fun μ => (spechtCharValue μ.1 ρ : R) * spechtCharValue μ.1 ρ')
+    (fun μ => (spechtCharValue μ.val ρ : R) * spechtCharValue μ.val ρ')
     (fun μ => (spechtCharValue μ ρ : R) * spechtCharValue μ ρ') fun _ => rfl]
   have hc := congrArg (Int.cast : ℤ → R) (symmetricCharacterTable_column_orthogonality ρ ρ')
   push_cast [symmetricCharacterTable_apply] at hc
