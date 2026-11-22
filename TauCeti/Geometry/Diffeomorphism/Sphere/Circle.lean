@@ -12,7 +12,6 @@ import TauCeti.Geometry.Diffeomorphism.Diffeotopy.AddCircle
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Path
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Circle
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
-import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # The path components of the diffeomorphism group of the circle

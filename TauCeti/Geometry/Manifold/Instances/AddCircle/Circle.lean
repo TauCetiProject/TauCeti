@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import TauCeti.Geometry.Sphere.Circle
 import TauCeti.Geometry.Diffeomorphism.Sphere
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -188,5 +189,26 @@ theorem coe_diffeomorphSphere_mk (n : ℕ∞ω) (t : ℝ) :
   · simpa only [Complex.orthonormalBasisOneI_repr_apply, Fin.mk_one, Matrix.cons_val_one,
       Matrix.cons_val_fin_one]
       using Complex.exp_ofReal_mul_I_im _
+
+/-- The underlying homeomorphism of `diffeomorphSphere p n` is `AddCircle.homeomorphCircle`
+followed by the inverse of the identification `TauCeti.EuclideanSpace.sphereHomeomorphCircle` of
+the unit circle of `ℝ²` with `Circle`. -/
+@[simp]
+theorem toHomeomorph_diffeomorphSphere (n : ℕ∞ω) :
+    (diffeomorphSphere p n).toHomeomorph = (homeomorphCircle (Fact.out : 0 < p).ne').trans
+      TauCeti.EuclideanSpace.sphereHomeomorphCircle.symm :=
+  Homeomorph.ext fun θ ↦ Subtype.ext <| by
+    rw [Diffeomorph.coe_toHomeomorph, coe_diffeomorphSphere_apply, Homeomorph.trans_apply,
+      TauCeti.EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply, homeomorphCircle_apply]
+
+/-- The inverse of `diffeomorphSphere p n` sends a point of the unit circle of `ℝ²` to the class
+whose image under `toCircle` is the corresponding point of `Circle`. -/
+@[simp]
+theorem diffeomorphSphere_symm_apply (n : ℕ∞ω)
+    (x : Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) :
+    (diffeomorphSphere p n).symm x = (homeomorphCircle (Fact.out : 0 < p).ne').symm
+      (TauCeti.EuclideanSpace.sphereHomeomorphCircle x) := by
+  rw [← Diffeomorph.coe_toHomeomorph, Diffeomorph.symm_toHomeomorph,
+    toHomeomorph_diffeomorphSphere, Homeomorph.symm_trans_apply, Homeomorph.symm_symm]
 
 end AddCircle

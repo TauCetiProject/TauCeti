@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Smale
-import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Topology.Homotopy.Path
 import TauCeti.Geometry.Diffeomorphism.Sphere.Isotopy
 
