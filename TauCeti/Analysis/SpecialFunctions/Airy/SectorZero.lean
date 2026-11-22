@@ -30,7 +30,8 @@ every `airySectorZero f k` is such a zero, preceded by exactly `k − 1` others
 (`TauCeti.airySectorZero_spec`), and for `k ≥ 1` the zeros are listed in increasing order
 (`TauCeti.strictMonoOn_toLex_airySectorZero`), so with nondecreasing moduli
 (`TauCeti.monotoneOn_norm_airySectorZero`). The finiteness hypothesis holds for every entire `f`
-with `f 0 ≠ 0` (`TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`), such as `Bi` and `Bi′`.
+that is not identically zero (`TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`), such as `Bi`
+and `Bi′`.
 
 ## Main definitions
 
@@ -43,8 +44,8 @@ with `f 0 ≠ 0` (`TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`), such a
 * `TauCeti.airySectorZero_spec`: `airySectorZero f k` is attained.
 * `TauCeti.strictMonoOn_toLex_airySectorZero`, `TauCeti.monotoneOn_norm_airySectorZero`: the zeros
   are listed in increasing order, with nondecreasing moduli.
-* `TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`: an entire `f` with `f 0 ≠ 0`, such as
-  `Bi` or `Bi′`, has finitely many zeros in the sector in each closed disc about `0`.
+* `TauCeti.finite_setOf_airySector_eq_zero_and_norm_le`: an entire `f` that is not identically
+  zero, such as `Bi` or `Bi′`, has finitely many zeros in the sector in each closed disc about `0`.
 
 ## References
 
@@ -81,6 +82,10 @@ theorem airySectorZero_def (f : ℂ → ℂ) (k : ℕ) :
 /-- The zeros of `f` in the sector `π/3 < ph z < π/2`. -/
 private def sectorZeros (f : ℂ → ℂ) : Set ℂ := {z | π / 3 < arg z ∧ arg z < π / 2 ∧ f z = 0}
 
+private theorem mem_sectorZeros {f : ℂ → ℂ} {z : ℂ} :
+    z ∈ sectorZeros f ↔ π / 3 < arg z ∧ arg z < π / 2 ∧ f z = 0 :=
+  Iff.rfl
+
 private theorem toLex_norm_arg_lt_iff {w z : ℂ} :
     toLex (‖w‖, arg w) < toLex (‖z‖, arg z) ↔ ‖w‖ < ‖z‖ ∨ (‖w‖ = ‖z‖ ∧ arg w < arg z) :=
   Prod.Lex.toLex_lt_toLex
@@ -101,8 +106,7 @@ private theorem airySectorZero_eq_epsilon (f : ℂ → ℂ) (k : ℕ) :
     airySectorZero f k = Classical.epsilon fun z : ℂ =>
       z ∈ sectorZeros f ∧
         {w ∈ sectorZeros f | toLex (‖w‖, arg w) < toLex (‖z‖, arg z)}.ncard = k - 1 := by
-  simp only [airySectorZero, setOf_precedes_eq]
-  rfl
+  simp only [airySectorZero, setOf_precedes_eq, mem_sectorZeros]
 
 private theorem finite_sep_toLex_norm_arg_lt {f : ℂ → ℂ}
     (hfin : ∀ R, {z | (π / 3 < arg z ∧ arg z < π / 2 ∧ f z = 0) ∧ ‖z‖ ≤ R}.Finite) (z : ℂ) :
@@ -132,9 +136,10 @@ theorem airySectorZero_eq {f : ℂ → ℂ}
       (‖w‖ < ‖z‖ ∨ (‖w‖ = ‖z‖ ∧ arg w < arg z))}.ncard = k - 1) :
     airySectorZero f k = z := by
   rw [setOf_precedes_eq] at hk
-  obtain ⟨hmem, hcard⟩ := airySectorZero_mem hz hk
+  obtain ⟨hmem, hcard⟩ := airySectorZero_mem (mem_sectorZeros.2 hz) hk
   exact (injective_toLex_norm_arg.injOn.injOn_ncard_sep_lt
-    fun a _ => finite_sep_toLex_norm_arg_lt hfin a) hmem hz (hcard.trans hk.symm)
+    fun a _ => finite_sep_toLex_norm_arg_lt hfin a) hmem (mem_sectorZeros.2 hz)
+    (hcard.trans hk.symm)
 
 /-- **Every zero is listed.** If `f` has only finitely many zeros in `π/3 < ph z < π/2` in each
 closed disc about `0`, then every zero of `f` in the sector is `airySectorZero f k` for some
@@ -158,7 +163,7 @@ theorem airySectorZero_spec {f : ℂ → ℂ}
           (‖w‖ = ‖airySectorZero f k‖ ∧ arg w < arg (airySectorZero f k)))}.ncard = k - 1 := by
   obtain ⟨z, hz, hk⟩ := Infinite.exists_mem_ncard_sep_lt_eq (s := sectorZeros f) hinf
     injective_toLex_norm_arg.injOn (fun a _ => finite_sep_toLex_norm_arg_lt hfin a) (k - 1)
-  rw [setOf_precedes_eq]
+  rw [setOf_precedes_eq, ← mem_sectorZeros]
   exact airySectorZero_mem hz hk
 
 /-- **The zeros are listed in increasing order.** If `f` has infinitely many zeros in
@@ -193,13 +198,13 @@ theorem monotoneOn_norm_airySectorZero {f : ℂ → ℂ}
     MonotoneOn (fun k => ‖airySectorZero f k‖) (Ici 1) := fun _ hj _ hk hjk =>
   Prod.Lex.monotone_fst _ _ ((strictMonoOn_toLex_airySectorZero hfin hinf).monotoneOn hj hk hjk)
 
-/-- An entire function `f` with `f 0 ≠ 0` has only finitely many zeros in `π/3 < ph z < π/2` in
-each closed disc about `0`. This applies to `Bi` and `Bi′` (`TauCeti.airyBi_zero_ne_zero`,
-`TauCeti.deriv_airyBi_zero_ne_zero`). -/
+/-- An entire function `f` that is not identically zero has only finitely many zeros in
+`π/3 < ph z < π/2` in each closed disc about `0`. This applies to `Bi` and `Bi′`, which are nonzero
+at `0` (`TauCeti.airyBi_zero_ne_zero`, `TauCeti.deriv_airyBi_zero_ne_zero`). -/
 theorem finite_setOf_airySector_eq_zero_and_norm_le {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f univ)
-    (h0 : f 0 ≠ 0) (R : ℝ) :
+    {z₀ : ℂ} (h₀ : f z₀ ≠ 0) (R : ℝ) :
     {z | (π / 3 < arg z ∧ arg z < π / 2 ∧ f z = 0) ∧ ‖z‖ ≤ R}.Finite := by
-  refine (hf.finite_setOf_mem_and_eq_zero_of_isCompact isPreconnected_univ (mem_univ 0) h0
+  refine (hf.finite_setOf_mem_and_eq_zero_of_isCompact isPreconnected_univ (mem_univ z₀) h₀
     (isCompact_closedBall 0 R) (subset_univ _)).subset fun z hz => ⟨?_, hz.1.2.2⟩
   simpa using hz.2
 
