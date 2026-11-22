@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Topology.Sheaves.SheafCondition.Sites
-import TauCeti.AlgebraicGeometry.AdicSpace.CAff.RationalSite
+import TauCeti.AlgebraicGeometry.AdicSpace.CAff.AffineLine
+import TauCeti.AlgebraicGeometry.AdicSpace.CAff.StructurePresheaf
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.PadicInt
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.OpenMapping
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.StableUniform
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglyNoetherian
+import TauCeti.CategoryTheory.Sites.IsSheafForTrans
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.Huber.Padic.TateAlgebra
-import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Tests for `CAff`, the rational-covering site, and `OpenMapping`
@@ -153,10 +154,7 @@ example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopolo
   subst hcov
   rw [Presieve.isSheafFor_iff_generate]
   refine hset.isSheafFor _ ?_
-  convert TopCat.Presheaf.presieveOfCovering.mem_grothendieckTopology (X := TopCat.of _) V
-  funext Z f
-  exact propext ⟨fun ⟨k⟩ ↦ ⟨k, rfl⟩,
-    fun ⟨k, hk⟩ ↦ by subst hk; rw [Subsingleton.elim f (homOfLE (le_iSup V k))]; exact .mk k⟩
+  exact TauCeti.TopologicalSpace.Opens.sieve_ofArrows_mem_grothendieckTopology _ le_rfl
 
 /-! ### Sharpness non-examples on `(ℤ_p, ℤ_p)` -/
 
@@ -183,9 +181,7 @@ example (p : ℕ) [Fact p.Prime] :
       ((mem_rationalSubset_iff _ {1} 1 w.val).mp hw1).2.2⟩
   · have hopen : IsOpen ({0} : Set ℤ_[p]) := by
       simpa only [Finset.coe_empty, Ideal.span_empty, Submodule.bot_coe] using h.isOpen_span
-    have : (𝓝[≠] (0 : ℤ_[p])).NeBot :=
-      (_root_.PadicInt.isOpenEmbedding_coe.toOpenPartialHomeomorph _).nhdsNE_neBot trivial
-    exact not_isOpen_singleton (0 : ℤ_[p]) hopen
+    exact _root_.PadicInt.not_isOpen_singleton_zero hopen
 
 /-- *isRationalLocalization_mapsTo_sharp*: on `Zp = (ℤ_[p], ℤ_[p])`, `(T, s) = ({1}, p)` has open
 span `Ideal.span {1} = ⊤`, yet `¬ IsRationalLocalization (𝟙 Zp) {1} p` because the non-analytic
@@ -235,19 +231,13 @@ example (p : ℕ) [Fact p.Prime] :
         exact (mem_rationalSubset_iff _ ∅ 1 v.val).mpr
           ⟨v.property, fun t ht ↦ absurd ht (Finset.notMem_empty t),
             ((mem_rationalSubset_iff _ {1} 1 v.val).mp hv1).2.2⟩⟩ }
-  have : (𝓝[≠] (0 : ℤ_[p])).NeBot :=
-    (_root_.PadicInt.isOpenEmbedding_coe.toOpenPartialHomeomorph _).nhdsNE_neBot trivial
   refine ⟨ψ, hcovZ, rfl, fun hadic ↦ ?_, fun hcovZp ↦ ?_, ?_⟩
-  · have hopen_bot : IsOpen (Ideal.span (ψ.toRingHom ''
-        (((⊥ : Ideal (discrete ℤ).ring) : Set (discrete ℤ).ring))) : Set ℤ_[p]) :=
-      hadic.isOpen_map (isOpen_discrete _)
-    rw [Submodule.bot_coe, Set.image_singleton, map_zero,
-      Ideal.span_singleton_eq_bot.mpr rfl, Submodule.bot_coe] at hopen_bot
-    exact not_isOpen_singleton (0 : ℤ_[p]) hopen_bot
-  · have hopen_emp : IsOpen (Ideal.span ((∅ : Finset ℤ_[p]) : Set ℤ_[p]) : Set ℤ_[p]) :=
-      hcovZp.isOpen_span ()
-    rw [Finset.coe_empty, Ideal.span_empty, Submodule.bot_coe] at hopen_emp
-    exact not_isOpen_singleton (0 : ℤ_[p]) hopen_emp
+  · exact _root_.PadicInt.not_isOpen_singleton_zero <|
+      (discreteTopology_iff_isOpen_singleton_zero (G := ℤ_[p])).mp
+        (IsAdicHom.of_discrete_iff.mp hadic)
+  · have hopen_emp : IsOpen ({0} : Set ℤ_[p]) := by
+      simpa only [Finset.coe_empty, Ideal.span_empty, Submodule.bot_coe] using hcovZp.isOpen_span ()
+    exact _root_.PadicInt.not_isOpen_singleton_zero hopen_emp
   · exact ratTopology.pullback_stable ψ.op (generate_rationalCoverPresieve_mem_ratTopology hcovZ)
 
 end TauCeti.CAff

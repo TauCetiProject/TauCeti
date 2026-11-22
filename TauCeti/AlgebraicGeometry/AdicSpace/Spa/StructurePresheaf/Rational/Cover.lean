@@ -213,41 +213,10 @@ theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
         (presentationLimitPresheaf P Aplus ⋙ G)) :
     Presieve.IsSheaf
       ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
-      ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙ G) := by
+      ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙ G) :=
   have : IsHuberRing A := ⟨⟨P⟩⟩
-  intro W S hS
-  obtain ⟨ι, U, π, rfl⟩ := S.exists_eq_ofArrows
-  rw [Functor.mem_restrictedTopology_iff, Sieve.functorPushforward_ofArrows] at hS
-  have hcov : ⨆ i, (U i).val = W.val := by
-    apply le_antisymm (iSup_le fun i ↦ (π i).hom.le)
-    intro x hx
-    obtain ⟨V, f, hf, hxV⟩ := hS x hx
-    obtain ⟨V', g, f', hf', rfl⟩ := hf
-    obtain ⟨i⟩ := hf'
-    exact Opens.mem_iSup.mpr ⟨i, g.le hxV⟩
-  have hrat := hrat W.property (fun i ↦ (U i).property) hcov
-  have hπ (i : ι) : (rationalOpensFunctor Aplus).map (π i) =
-      homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov) := Subsingleton.elim _ _
-  rw [← Presieve.isSheafFor_iff_generate, Presieve.isSheafFor_arrows_iff]
-  rw [Presieve.isSheafFor_arrows_iff] at hrat
-  intro x hx
-  -- Intersections of rational opens are rational, so compatibility on the basis supplies the
-  -- pairwise-intersection compatibility required in the ambient category of opens.
-  have hcompat : Presieve.Arrows.Compatible (presentationLimitPresheaf P Aplus ⋙ G)
-      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov)) x := by
-    apply (Presieve.Arrows.compatible_homOfLE_iff _ _).mpr
-    intro i j
-    let V : spaRationalOpens Aplus :=
-      ⟨(U i).val ⊓ (U j).val, inf_mem_spaRationalOpens (U i).property (U j).property⟩
-    exact hx i j V (InducedCategory.homMk (homOfLE inf_le_left))
-      (InducedCategory.homMk (homOfLE inf_le_right)) (Subsingleton.elim _ _)
-  obtain ⟨a, ha, hu⟩ := hrat x hcompat
-  refine ⟨a, ?_, ?_⟩
-  · intro i
-    simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using ha i
-  · intro b hb
-    exact hu b fun i ↦ by
-      simpa only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op, hπ] using hb i
+  isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows Aplus
+    (presentationLimitPresheaf P Aplus ⋙ G) hrat
 
 end BasisSheaf
 

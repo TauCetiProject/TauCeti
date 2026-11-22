@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.OpenEmbedding
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Localization
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.KanExtension
 
+import Mathlib.Topology.Sheaves.SheafCondition.Sites
+
 /-!
 # The structure presheaf on a rational subset is the structure presheaf of `A⟨T/s⟩`
 
@@ -56,6 +58,9 @@ the stalk valuations, it makes the rational subset `U` an open affinoid subspace
   `TauCeti.ValuationSpectrum.presentationLimitPresheafLocIso_hom_app` : the presheaf isomorphism,
   followed by restriction to a rational open, is the rational-level identification; on a rational
   open it is that identification.
+* `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_completionLocalization` : if the
+  structure presheaf of `Spa(A, A⁺)` is a sheaf and `T` spans an open ideal, then the structure
+  presheaf of `Spa(A⟨T/s⟩, A_U⁺)` is a sheaf.
 
 ## References
 
@@ -70,6 +75,8 @@ open CategoryTheory CategoryTheory.Limits Opposite Topology TopologicalSpace Tau
 namespace TauCeti.ValuationSpectrum
 
 universe v
+
+section
 
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   (P : PairOfDefinition A) (Aplus : Subring A) (T : Finset A) (s : A)
@@ -610,6 +617,36 @@ theorem presentationLimitPresheafLocIso_hom_app :
   rw [comp_eqToHom_iff] at this
   simp only [presentationLimitPresheafLocIso, NatIso.ofComponents_hom_app]
   rw [this, Category.assoc]
+
+end
+
+/-- **Rational localisation preserves the sheaf condition**: if the structure presheaf of
+`Spa(A, A⁺)` is a sheaf and `T` spans an open ideal, then the structure presheaf of
+`Spa(A⟨T/s⟩, A_U⁺)` is a sheaf. By Wedhorn's Remark 8.4
+(`presentationLimitPresheafLocIso`), `𝒪_U` is isomorphic to the restriction of `𝒪_X` along the
+open embedding `j : Spa(A⟨T/s⟩, A_U⁺) → Spa(A, A⁺)`, and the restriction of a sheaf along an
+open embedding is a sheaf. -/
+theorem isSheaf_presentationLimitPresheaf_completionLocalization {A : Type v} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (hP : P.ringOfDefinition ≤ Aplus)
+    (T : Finset A) (s : A) (S : Type v) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    (hs : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    Presheaf.IsSheaf
+      (Opens.grothendieckTopology ↥(spa (completedPlusSubring P Aplus T s S hden)))
+      (presentationLimitPresheaf (completionLocalization P T s S hden)
+        (completedPlusSubring P Aplus T s S hden)) :=
+  letI := locUniformSpace P T s S hden
+  letI := isUniformAddGroup_locUniformSpace P T s S hden
+  letI := isTopologicalRing_locUniformSpace P T s S hden
+  TopCat.Presheaf.isSheaf_of_iso
+    (presentationLimitPresheafLocIso P Aplus T s S hden hAplus hP hT)
+    (TopCat.Presheaf.isSheaf_of_isOpenEmbedding
+      (isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden) hs)
 
 end TauCeti.ValuationSpectrum
 

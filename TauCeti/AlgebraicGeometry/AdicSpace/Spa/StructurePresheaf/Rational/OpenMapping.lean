@@ -8,16 +8,12 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.SheafCriterion
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic
 
-import Mathlib.CategoryTheory.Sites.Coverage
 import Mathlib.Topology.Metrizable.CompletelyMetrizable
-import Mathlib.Topology.Sheaves.SheafCondition.Sites
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafFor
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.KanExtension
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Cover
-import TauCeti.CategoryTheory.Sites.IsSheafFor
+import TauCeti.CategoryTheory.Sites.IsSheafForTrans
 import TauCeti.RingTheory.Huber.OpenMapping
-import TauCeti.Topology.Category.TopCommRingCat.CompleteSeparated.Limits
 import TauCeti.Topology.Category.TopCommRingCat.Sheaf
 import TauCeti.Topology.Homeomorph.Inducing
 
@@ -219,42 +215,6 @@ theorem isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens
   exact ePi.isInducing.of_comp_iff.mp <|
     (funext hcomm : (L : B → N) ∘ eW = ePi ∘ r) ▸ hL_emb.isInducing.comp eW.isInducing
 
-omit [IsTateRing A] in
-/-- Compactness of rational opens upgrades set-level gluing from finite rational covers of rational
-opens to arbitrary rational covers of rational opens. -/
-private theorem isSheafFor_spaRationalOpens_of_finite
-    (hfin : ∀ {W : Opens ↥(spa Aplus)} {κ : Type v} [Finite κ] {V : κ → Opens ↥(spa Aplus)},
-      W ∈ spaRationalOpens Aplus → (∀ k, V k ∈ spaRationalOpens Aplus) →
-      ∀ hcov : ⨆ k, V k = W,
-      (Presieve.ofArrows V fun k ↦ homOfLE ((le_iSup V k).trans_eq hcov)).IsSheafFor
-        (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-          forget _root_.TopCommRingCat))
-    {W : Opens ↥(spa Aplus)} (hW : W ∈ spaRationalOpens Aplus) {ι : Type v}
-    {U : ι → Opens ↥(spa Aplus)} (hU : ∀ i, U i ∈ spaRationalOpens Aplus)
-    (hcov : ⨆ i, U i = W) :
-    (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
-      (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-        forget _root_.TopCommRingCat) := by
-  have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens hW hcov
-  have hcovUi (i : ι) : (⨆ k : ↥I, U i ⊓ U k.val) = U i := by
-    refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun x hx ↦ ?_
-    obtain ⟨k, hxk⟩ := Opens.mem_iSup.mp (hcovI ▸ ((le_iSup U i).trans_eq hcov) hx)
-    exact Opens.mem_iSup.mpr ⟨k, hx, hxk⟩
-  refine Presieve.isSheafFor_ofArrows_of_factorsThru _
-    (fun i ↦ Presieve.ofArrows (fun k : ↥I ↦ U i ⊓ U k.val)
-      fun k ↦ homOfLE ((le_iSup (fun k : ↥I ↦ U i ⊓ U k.val) k).trans_eq (hcovUi i)))
-    (fun i ↦ (hfin (V := fun k : ↥I ↦ U i ⊓ U k.val) (hU i)
-      (fun k ↦ inf_mem_spaRationalOpens (hU i) (hU k.val)) (hcovUi i)).isSeparatedFor)
-    (S := Presieve.ofArrows (fun k : ↥I ↦ U k.val)
-      fun k ↦ homOfLE ((le_iSup (fun k : ↥I ↦ U k.val) k).trans_eq hcovI))
-    (hfin (V := fun k : ↥I ↦ U k.val) hW (fun k ↦ hU k.val) hcovI)
-    (fun V g ⟨k⟩ ↦ ⟨U k.val, 𝟙 _, homOfLE ((le_iSup U k.val).trans_eq hcov),
-      Presieve.ofArrows.mk k.val, Category.id_comp _⟩)
-    (fun i Z g ⟨k⟩ ↦ ⟨U k.val, homOfLE inf_le_right,
-      homOfLE ((le_iSup (fun k : ↥I ↦ U k.val) k).trans_eq hcovI), Presieve.ofArrows.mk k,
-      Subsingleton.elim _ _⟩)
-
 /-- **Topological sheafhood from finite rational covers of rational opens.** Over a Tate ring `A`
 with `A⁺ ⊆ A°`, if the presheaf of sets underlying `presentationLimitPresheaf P Aplus` satisfies
 the sheaf condition for every finite rational cover of every rational open, then
@@ -273,9 +233,10 @@ theorem isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
   refine isSheaf_presentationLimitPresheaf_of_isSheaf_rational <|
     Presheaf.isSheaf_of_isSheaf_comp _ _ TopCommRingCat.isCompleteSeparated.ι fun E ↦ ?_
-  refine isSheaf_rational_comp_of_isSheafFor_ofArrows P
-    (TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)) fun {W} {ι} {U} hW hU hcov ↦ ?_
-  have hSet := isSheafFor_spaRationalOpens_of_finite P hfin hW hU hcov
+  refine isSheaf_restrictedTopology_rationalOpens_of_isSheafFor_ofArrows Aplus
+    (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+      coyoneda.obj (op E)) fun {W} {ι} {U} hW hU hcov ↦ ?_
+  have hSet := isSheafFor_spaRationalOpens_of_finite Aplus hfin hW hU hcov
   obtain ⟨I, hcovI⟩ := exists_finite_subcover_spaRationalOpens hW hcov
   have hIndI := (isInducing_restrictionMap_iff_isInducing_presentationLimitMap P
     (fun k : ↥I ↦ (le_iSup (fun k : ↥I ↦ U k.val) k).trans_eq hcovI)).mpr
@@ -308,13 +269,9 @@ theorem isSheaf_presentationLimitPresheaf_iff_isSheaf_forget
     (TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) h, fun h ↦ ?_⟩
   refine isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens P hAplus
     fun {W} {κ} _ {V} _ _ hcov ↦ ?_
-  subst hcov
   rw [Presieve.isSheafFor_iff_generate]
-  refine h.isSheafFor _ ?_
-  convert TopCat.Presheaf.presieveOfCovering.mem_grothendieckTopology (X := TopCat.of _) V
-  funext Z f
-  exact propext ⟨fun ⟨k⟩ ↦ ⟨k, rfl⟩,
-    fun ⟨k, hk⟩ ↦ by subst hk; rw [Subsingleton.elim f (homOfLE (le_iSup V k))]; exact .mk k⟩
+  exact h.isSheafFor _
+    (TauCeti.TopologicalSpace.Opens.sieve_ofArrows_mem_grothendieckTopology _ hcov.ge)
 
 end TauCeti.ValuationSpectrum
 
