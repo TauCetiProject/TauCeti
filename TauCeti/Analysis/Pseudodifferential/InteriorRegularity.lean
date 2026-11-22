@@ -267,7 +267,7 @@ private theorem exists_toDistr_quantizeUniformBesselPotentialSpace_localize
         (c.quantizeUniformBesselPotentialSpace hc.isUniform r p u)).toDistr -
         smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr := by
     rw [hRc.toDistr_quantizeUniformBesselPotentialSpace_congr (hqc.sub hψs') hR hp hp_top rfl,
-      hqc.quantizeUniformBesselPotentialSpace_sub hψs' (hqc.sub hψs') r hp hp_top,
+      hqc.quantizeUniformBesselPotentialSpace_sub hψs' r hp hp_top,
       _root_.sub_apply,
       BesselPotentialSpace.toDistr_sub,
       toDistr_quantizeUniformBesselPotentialSpace_sharp hq hc r hp hp_top,

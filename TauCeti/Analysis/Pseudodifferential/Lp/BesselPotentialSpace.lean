@@ -51,6 +51,8 @@ functions.
 
 * `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`: the operator
   `H^{s,p} → H^{s - m,p}` extends `Op(a)` from Schwartz functions.
+* `TauCeti.Symbol.IsUniform.hasBesselPotentialSpaceExtension`: equivalently, `a` has the extension
+  property `TauCeti.Symbol.HasBesselPotentialSpaceExtension`, from which the lemmas below follow.
 * `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_add`,
   `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_smul` and their consequences: the operator is
   linear in the symbol.
@@ -117,42 +119,46 @@ theorem quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM (ha : a.Is
   obtain ⟨C, hC⟩ := ha.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
   exact quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM_of_norm_le ha hp_top hC u
 
+/-- For `1 < p < ∞`, a uniform symbol between complex Hilbert spaces has the extension property
+`TauCeti.Symbol.HasBesselPotentialSpaceExtension`. -/
+theorem IsUniform.hasBesselPotentialSpaceExtension (ha : a.IsUniform) (hp : 1 < p)
+    (hp_top : p ≠ ∞) : a.HasBesselPotentialSpaceExtension ha p :=
+  hasBesselPotentialSpaceExtension_iff.2 fun s ↦
+    quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM ha s hp hp_top
+
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is additive in the symbol. -/
 theorem quantizeUniformBesselPotentialSpace_add {b : Symbol n V W m} (ha : a.IsUniform)
     (hb : b.IsUniform) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ ∞) :
     (a + b).quantizeUniformBesselPotentialSpace (ha.add hb) s p =
       a.quantizeUniformBesselPotentialSpace ha s p +
-        b.quantizeUniformBesselPotentialSpace hb s p := by
-  refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, quantizeUniformCLM_add ha hb]
+        b.quantizeUniformBesselPotentialSpace hb s p :=
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_add
+    (hb.hasBesselPotentialSpaceExtension hp hp_top)
+    ((ha.add hb).hasBesselPotentialSpaceExtension hp hp_top) s hp_top
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` is homogeneous in the symbol. -/
 theorem quantizeUniformBesselPotentialSpace_smul (ha : a.IsUniform) (c : ℂ) (s : ℝ) (hp : 1 < p)
     (hp_top : p ≠ ∞) :
     (c • a).quantizeUniformBesselPotentialSpace (ha.smul c) s p =
-      c • a.quantizeUniformBesselPotentialSpace ha s p := by
-  refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, quantizeUniformCLM_smul ha]
+      c • a.quantizeUniformBesselPotentialSpace ha s p :=
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_smul c
+    ((ha.smul c).hasBesselPotentialSpaceExtension hp hp_top) s hp_top
 
 /-- The zero symbol quantizes to the zero operator `H^{s,p} → H^{s - m,p}`. -/
 @[simp]
 theorem quantizeUniformBesselPotentialSpace_zero (h : (0 : Symbol n V W m).IsUniform) (s : ℝ)
     (hp : 1 < p) (hp_top : p ≠ ∞) :
-    (0 : Symbol n V W m).quantizeUniformBesselPotentialSpace h s p = 0 := by
-  refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top]
+    (0 : Symbol n V W m).quantizeUniformBesselPotentialSpace h s p = 0 :=
+  (h.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_zero s hp_top
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes the negated symbol to the negated
 operator. -/
 theorem quantizeUniformBesselPotentialSpace_neg (ha : a.IsUniform) (s : ℝ) (hp : 1 < p)
     (hp_top : p ≠ ∞) :
     (-a).quantizeUniformBesselPotentialSpace ha.neg s p =
-      -a.quantizeUniformBesselPotentialSpace ha s p := by
-  have hq : quantizeUniformCLM (-a) ha.neg = -quantizeUniformCLM a ha := by
-    rw [quantizeUniformCLM_congr ha.neg (ha.smul (-1)) (by simp), quantizeUniformCLM_smul,
-      neg_one_smul]
-  refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, hq]
+      -a.quantizeUniformBesselPotentialSpace ha s p :=
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_neg
+    (ha.neg.hasBesselPotentialSpaceExtension hp hp_top) s hp_top
 
 /-- The operator `Op(a) : H^{s,p} → H^{s - m,p}` takes differences of symbols to differences of
 operators. -/
@@ -160,9 +166,10 @@ theorem quantizeUniformBesselPotentialSpace_sub {b : Symbol n V W m} (ha : a.IsU
     (hb : b.IsUniform) (s : ℝ) (hp : 1 < p) (hp_top : p ≠ ∞) :
     (a - b).quantizeUniformBesselPotentialSpace (ha.sub hb) s p =
       a.quantizeUniformBesselPotentialSpace ha s p -
-        b.quantizeUniformBesselPotentialSpace hb s p := by
-  rw [eq_sub_iff_add_eq, ← quantizeUniformBesselPotentialSpace_add (ha.sub hb) hb s hp hp_top]
-  simp_rw [sub_add_cancel]
+        b.quantizeUniformBesselPotentialSpace hb s p :=
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_sub
+    (hb.hasBesselPotentialSpaceExtension hp hp_top)
+    ((ha.sub hb).hasBesselPotentialSpaceExtension hp hp_top) s hp_top
 
 /-- **Changing the order of the symbol.** Let `1 < p < ∞`. Viewing a symbol of order `m` as a
 symbol of order `m' ≥ m` gives the operator `H^{s,p} → H^{s - m,p}` followed by the inclusion
@@ -171,10 +178,9 @@ theorem quantizeUniformBesselPotentialSpace_inclusion (h : m ≤ m') (ha : a.IsU
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     (inclusion h a).quantizeUniformBesselPotentialSpace (ha.inclusion h) s p =
       BesselPotentialSpace.inclusion (by linarith) ∘L
-        a.quantizeUniformBesselPotentialSpace ha s p := by
-  refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-    quantizeUniformCLM_inclusion ha h]
+        a.quantizeUniformBesselPotentialSpace ha s p :=
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_inclusion h
+    ((ha.inclusion h).hasBesselPotentialSpaceExtension hp hp_top) s hp_top
 
 /-- **Changing the Sobolev order.** Let `1 < p < ∞`. The operators
 `Op(a) : H^{s,p} → H^{s - m,p}` for the different orders `s` are compatible with the inclusions
@@ -183,9 +189,9 @@ theorem quantizeUniformBesselPotentialSpace_comp_inclusion (ha : a.IsUniform) {r
     (h : r ≤ s) (hp : 1 < p) (hp_top : p ≠ ∞) :
     a.quantizeUniformBesselPotentialSpace ha r p ∘L BesselPotentialSpace.inclusion h =
       BesselPotentialSpace.inclusion (by linarith) ∘L
-        a.quantizeUniformBesselPotentialSpace ha s p := by
-  refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun u ↦ ?_
-  simp [hp, hp_top, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
+        a.quantizeUniformBesselPotentialSpace ha s p :=
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).quantizeUniformBesselPotentialSpace_comp_inclusion
+    h hp_top
 
 /-- **Compatibility of the extensions.** The operator `Op(a) : H^{s,p} → H^{s - m,p}` only depends
 on the coefficient of `a` and on the tempered distribution of its argument: uniform symbols `a`
@@ -197,9 +203,8 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_congr {b : Symbol n V W m'}
     {v : H^{t, p}(CoordinateSpace n, V)} (huv : u.toDistr = v.toDistr) :
     (a.quantizeUniformBesselPotentialSpace ha s p u).toDistr =
       (b.quantizeUniformBesselPotentialSpace hb t p v).toDistr :=
-  toDistr_apply_congr_of_comp_eq hp_top (A := quantizeUniformCLM a ha)
-    (ContinuousLinearMap.ext fun u ↦ by simp [hp, hp_top])
-    (ContinuousLinearMap.ext fun u ↦ by simp [hp, hp_top, quantizeUniformCLM_congr ha hb hab]) huv
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).toDistr_quantizeUniformBesselPotentialSpace_congr
+    (hb.hasBesselPotentialSpaceExtension hp hp_top) hab hp_top huv
 
 /-- **Composition of uniform quantizations on `H^{s,p}`.** Let `1 < p < ∞`. If the uniform symbol
 `c` of order `m''` quantizes to the composition `Op(a) ∘ Op(b)` of uniform symbols of orders `m'`
@@ -213,15 +218,10 @@ theorem toDistr_quantizeUniformBesselPotentialSpace_comp {U : Type*} [NormedAddC
     (hp : 1 < p) (hp_top : p ≠ ∞) (u : H^{s, p}(CoordinateSpace n, V)) :
     (c.quantizeUniformBesselPotentialSpace hc s p u).toDistr =
       (a.quantizeUniformBesselPotentialSpace ha (s - m) p
-        (b.quantizeUniformBesselPotentialSpace hb s p u)).toDistr := by
-  have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
-        c.quantizeUniformBesselPotentialSpace hc s p =
-      BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
-        a.quantizeUniformBesselPotentialSpace ha (s - m) p ∘L
-          b.quantizeUniformBesselPotentialSpace hb s p := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun v ↦ ?_
-    simp [hp, hp_top, ← habc]
-  simpa using congrArg (fun T ↦ T u) key
+        (b.quantizeUniformBesselPotentialSpace hb s p u)).toDistr :=
+  (ha.hasBesselPotentialSpaceExtension hp hp_top).toDistr_quantizeUniformBesselPotentialSpace_comp
+    (hb.hasBesselPotentialSpaceExtension hp hp_top) (hc.hasBesselPotentialSpaceExtension hp hp_top)
+    habc s hp_top u
 
 open scoped ContDiff in
 /-- **Multiplication operators.** Let `1 < p < ∞` and let `V` and `W` be finite-dimensional. For a
