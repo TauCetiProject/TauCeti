@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import TauCeti.Geometry.Diffeomorphism.Sphere
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
@@ -21,7 +22,9 @@ are local real lifts (`AddCircle.instIsManifold`), and `Circle` carries Mathlib'
 structure as the unit sphere of `ℂ`, modelled on `EuclideanSpace ℝ (Fin 1)`. This file shows that
 the two smooth structures agree: `toCircle` is an analytic diffeomorphism
 (`AddCircle.diffeomorphCircle p n : AddCircle p ≃ₘ^n⟮𝓘(ℝ), 𝓡 1⟯ Circle`, for every smoothness
-exponent `n`).
+exponent `n`). Followed by the standard coordinates `ℂ ≅ ℝ²`, it identifies `AddCircle p` with
+the unit circle of the Euclidean plane (`AddCircle.diffeomorphSphere`), the case `n = 1` of the
+spheres `Sⁿ = sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1`.
 
 Composed with the quotient map `ℝ → AddCircle p`, the map `toCircle` is the rescaled standard
 parametrization `t ↦ exp (2π i t / p)` of the circle (`AddCircle.toCircle_apply_mk`). This
@@ -38,6 +41,8 @@ circle be compared, which is done in `TauCeti.Geometry.Manifold.DeRham.Circle`.
 * `AddCircle.contMDiff_toCircle`: `toCircle` is `C^n` for every `n`.
 * `AddCircle.diffeomorphCircle p n`: `toCircle` as a `C^n` diffeomorphism
   `AddCircle p ≃ₘ^n⟮𝓘(ℝ), 𝓡 1⟯ Circle`.
+* `AddCircle.diffeomorphSphere p n`: the `C^n` diffeomorphism from `AddCircle p` to the unit circle
+  of `ℝ²` sending the class of `t` to `(cos (2π t / p), sin (2π t / p))`.
 
 ## References
 
@@ -147,5 +152,41 @@ theorem diffeomorphCircle_apply_mk (n : ℕ∞ω) (t : ℝ) :
 @[simp]
 theorem toHomeomorph_diffeomorphCircle (n : ℕ∞ω) :
     (diffeomorphCircle p n).toHomeomorph = homeomorphCircle (Fact.out : 0 < p).ne' := (rfl)
+
+attribute [local instance] finrank_euclideanSpace_fin_succ_fact
+
+/-- The **identification of `AddCircle p` with the unit circle of `ℝ²`**, as a `C^n`
+diffeomorphism: `AddCircle.diffeomorphCircle` followed by the standard coordinates
+`z ↦ (re z, im z)` of `ℂ`, so the class of `t` goes to `(cos (2π t / p), sin (2π t / p))`
+(`AddCircle.coe_diffeomorphSphere_mk`). -/
+def diffeomorphSphere (n : ℕ∞ω) :
+    AddCircle p ≃ₘ^n⟮𝓘(ℝ), 𝓡 1⟯ Metric.sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 :=
+  -- `Circle` is by definition the unit sphere of `ℂ`, with the same smooth structure, as in
+  -- `TauCeti.EuclideanSpace.sphereIsometryEquivCircle`.
+  (diffeomorphCircle p n).trans (Complex.orthonormalBasisOneI.repr.unitSphereDiffeomorph n)
+
+/-- The diffeomorphism `diffeomorphSphere p n` sends `θ` to the coordinates of `toCircle θ ∈ ℂ`. -/
+@[simp]
+theorem coe_diffeomorphSphere_apply (n : ℕ∞ω) (θ : AddCircle p) :
+    (diffeomorphSphere p n θ : EuclideanSpace ℝ (Fin 2)) =
+      Complex.orthonormalBasisOneI.repr (toCircle θ : ℂ) := by
+  rw [← coe_diffeomorphCircle p n]
+  -- The value of the composite is that of the linear isometry at `diffeomorphCircle p n θ`, read
+  -- in `ℂ` through the identification of `Circle` with the unit sphere of `ℂ`.
+  exact LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply (n := 1) (k := 1) (m := n) _ _
+
+/-- The diffeomorphism `diffeomorphSphere p n` sends the class of `t` to
+`(cos (2π t / p), sin (2π t / p))`. -/
+theorem coe_diffeomorphSphere_mk (n : ℕ∞ω) (t : ℝ) :
+    (diffeomorphSphere p n t : EuclideanSpace ℝ (Fin 2)) =
+      !₂[Real.cos (2 * π / p * t), Real.sin (2 * π / p * t)] := by
+  rw [coe_diffeomorphSphere_apply, toCircle_apply_mk, Circle.coe_exp]
+  ext i
+  fin_cases i
+  · simpa only [Complex.orthonormalBasisOneI_repr_apply, Fin.zero_eta, Matrix.cons_val_zero]
+      using Complex.exp_ofReal_mul_I_re _
+  · simpa only [Complex.orthonormalBasisOneI_repr_apply, Fin.mk_one, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one]
+      using Complex.exp_ofReal_mul_I_im _
 
 end AddCircle

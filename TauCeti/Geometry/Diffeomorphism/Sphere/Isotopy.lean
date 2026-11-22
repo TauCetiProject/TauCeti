@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 import Mathlib.Algebra.Category.ModuleCat.Abelian
 import Mathlib.Algebra.Category.ModuleCat.Colimits
+import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.AlgebraicTopology.Singular.Sphere
 import TauCeti.Geometry.Diffeomorphism.Evaluation
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
@@ -24,7 +25,10 @@ is a homotopy of maps, because evaluation is continuous for the weak Whitney top
 orthogonal transformation acts on the reduced homology `Hₙ(Sⁿ; ℤ) ≅ ℤ` by the sign of its
 determinant; conversely matrices of equal determinant are joined in the orthogonal group
 (`TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq`). In particular a reflection of `Sⁿ` is not
-isotopic to the identity, and `Diff(Sⁿ)` is never path-connected.
+isotopic to the identity, and `Diff(Sⁿ)` is never path-connected. It has exactly two path
+components precisely when every diffeomorphism of `Sⁿ` is isotopic to an orthogonal one, which
+is Cerf's theorem for `n = 3` (`TauCeti.cerfTheorem_iff_natCard_zerothHomotopy_eq_two`) and holds
+for the circle (`TauCeti.natCard_zerothHomotopy_diff_circle`).
 
 ## Main results
 
@@ -36,6 +40,9 @@ isotopic to the identity, and `Diff(Sⁿ)` is never path-connected.
   transformation of determinant `-1` is not isotopic to the identity.
 * `TauCeti.not_pathConnectedSpace_diff_sphere`: the diffeomorphism group of a sphere is not
   path-connected.
+* `TauCeti.forall_exists_joined_orthogonalToDiffSphere_iff_natCard_zerothHomotopy_eq_two`: every
+  diffeomorphism of `Sⁿ` is isotopic to an orthogonal one exactly when `Diff(Sⁿ)` has two path
+  components.
 -/
 
 public section
@@ -108,5 +115,47 @@ theorem not_pathConnectedSpace_diff_sphere :
     ¬ PathConnectedSpace (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :=
   fun h ↦ not_joined_one_orthogonalToDiffSphere_of_det_eq_neg_one
     (det_orthogonalDiagonalReflection ℝ 0) (h.joined _ _)
+
+/-- The class in `π₀ Diff(Sⁿ)` of the diffeomorphism induced by an orthogonal transformation is
+that of the identity or that of the reflection `TauCeti.orthogonalDiagonalReflection ℝ 0`. -/
+private lemma joined_orthogonalToDiffSphere_one_or_reflection
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
+    Joined 1 (orthogonalToDiffSphere n m A) ∨
+      Joined (orthogonalToDiffSphere n m (orthogonalDiagonalReflection ℝ 0))
+        (orthogonalToDiffSphere n m A) := by
+  rw [← map_one (orthogonalToDiffSphere n m), joined_orthogonalToDiffSphere_iff,
+    joined_orthogonalToDiffSphere_iff, det_orthogonalDiagonalReflection]
+  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;> simp [hA]
+
+/-- **Isotopy classes of sphere diffeomorphisms as a count of path components.** Every `C^m`
+diffeomorphism of `Sⁿ` is joined, in the weak Whitney topology, to the restriction of an
+orthogonal transformation of `ℝⁿ⁺¹` exactly when `Diff(Sⁿ)` has two path components: those of
+the identity and of a reflection. -/
+theorem forall_exists_joined_orthogonalToDiffSphere_iff_natCard_zerothHomotopy_eq_two :
+    (∀ f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m,
+        ∃ A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ, Joined (orthogonalToDiffSphere n m A) f) ↔
+      Nat.card (ZerothHomotopy
+        (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m)) = 2 := by
+  set ρ := orthogonalToDiffSphere n m (orthogonalDiagonalReflection ℝ 0)
+  have hmk : ∀ f g : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m,
+      ZerothHomotopy.mk f = ZerothHomotopy.mk g ↔ Joined f g := fun _ _ ↦ Quotient.eq
+  have hρ : ZerothHomotopy.mk ρ ≠ ZerothHomotopy.mk 1 := fun h ↦
+    not_joined_one_orthogonalToDiffSphere_of_det_eq_neg_one
+      (det_orthogonalDiagonalReflection ℝ 0) ((hmk _ _).1 h).symm
+  rw [Nat.card_eq_two_iff' (ZerothHomotopy.mk 1)]
+  constructor
+  · -- Every class is that of the identity or of the reflection.
+    refine fun h ↦ ⟨ZerothHomotopy.mk ρ, hρ, fun c hc ↦ ?_⟩
+    induction c with | mk f => ?_
+    obtain ⟨A, hA⟩ := h f
+    rcases joined_orthogonalToDiffSphere_one_or_reflection A with h1 | h1
+    · exact (hc ((hmk _ _).2 (h1.trans hA).symm)).elim
+    · exact ((hmk _ _).2 (h1.trans hA)).symm
+  · -- Conversely, a class other than that of the identity is that of the reflection.
+    rintro ⟨c, -, hc⟩ f
+    by_cases hf : ZerothHomotopy.mk f = ZerothHomotopy.mk 1
+    · exact ⟨1, by rw [map_one]; exact ((hmk _ _).1 hf).symm⟩
+    · refine ⟨orthogonalDiagonalReflection ℝ 0, (hmk _ _).1 ?_⟩
+      exact (hc _ hρ).trans (hc _ hf).symm
 
 end TauCeti
