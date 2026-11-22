@@ -32,11 +32,20 @@ For Fredholm operators this is the composition law of determinant lines: orienta
 determinant lines of `f` and `g` orient the determinant line of `g ∘ f`, for instance when an
 operator is composed with a change of trivialization.
 
+The composition law is natural: for isomorphisms of the three spaces commuting with the maps, it
+intertwines the transports of determinant lines along the commuting squares
+(`LinearMap.detLineCompEquiv_detLineCongr`). So the identification of `det (g ∘ f)` with
+`det f ⊗ det g` does not depend on the trivializations in which `f` and `g` are written. This
+follows from the naturality of the six-term isomorphism (`TauCeti.detLineSixTermEquiv_congr`),
+since the isomorphisms induced on kernels and cokernels commute with the maps of the
+kernel–cokernel sequences.
+
 ## Main declarations
 
 * `LinearMap.detLineCompEquiv`: the isomorphism `det (g ∘ f) ≃ det f ⊗ det g`.
 * `LinearMap.detLineCompEquiv_def`: it is the six-term isomorphism of that sequence.
 * `LinearMap.detLineCompEquiv_tmul`: its value on exterior products.
+* `LinearMap.detLineCompEquiv_detLineCongr`: its naturality for isomorphisms of the three spaces.
 
 ## References
 
@@ -109,5 +118,78 @@ theorem detLineCompEquiv_tmul (u : Fin (finrank K (ker f)) → ker f)
     f.detLineCompEquiv g (β ⊗ₜ φ) = φ ε • ((exteriorPower.ιMulti K _ u ⊗ₜ ψ) ⊗ₜ (γ ⊗ₜ χ)) :=
   have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) := Module.Finite.quotient_range_comp f g
   TauCeti.detLineSixTermEquiv_tmul _ _ _ _ _ _ u v w x y hβ hγ hδ hε φ hψ hχ
+
+section Naturality
+
+variable {M' N' P' : Type*} [AddCommGroup M'] [Module K M'] [AddCommGroup N'] [Module K N']
+  [AddCommGroup P'] [Module K P'] {f' : M' →ₗ[K] N'} {g' : N' →ₗ[K] P'}
+  [FiniteDimensional K (ker f')] [FiniteDimensional K (ker g')]
+  [FiniteDimensional K (N' ⧸ range f')] [FiniteDimensional K (P' ⧸ range g')]
+  (eM : M ≃ₗ[K] M') (eN : N ≃ₗ[K] N') (eP : P ≃ₗ[K] P')
+
+/-- **Naturality of the composition law of determinant lines.** Let `f' ∘ eM = eN ∘ f` and
+`g' ∘ eN = eP ∘ g` be commuting squares with `eM`, `eN` and `eP` linear isomorphisms. Then the
+isomorphisms `det (g ∘ f) ≃ det f ⊗ det g` and `det (g' ∘ f') ≃ det f' ⊗ det g'`
+(`LinearMap.detLineCompEquiv`) are intertwined by the transports of determinant lines along the
+squares (`LinearMap.detLineCongr`): along the pasted square `(g' ∘ f') ∘ eM = eP ∘ (g ∘ f)` on
+the left, and along the two squares on the right. For instance, the composition law of operators
+expressed in two trivializations of the bundles involved gives the same identification of
+determinant lines. -/
+theorem detLineCompEquiv_detLineCongr (hf : f' ∘ₗ eM.toLinearMap = eN.toLinearMap ∘ₗ f)
+    (hg : g' ∘ₗ eN.toLinearMap = eP.toLinearMap ∘ₗ g) (x : (g ∘ₗ f).detLine) :
+    f'.detLineCompEquiv g' ((g ∘ₗ f).detLineCongr eM eP
+        (by rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]) x) =
+      TensorProduct.congr (f.detLineCongr eM eN hf) (g.detLineCongr eN eP hg)
+        (f.detLineCompEquiv g x) := by
+  have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) := Module.Finite.quotient_range_comp f g
+  have : FiniteDimensional K (P' ⧸ range (g' ∘ₗ f')) := Module.Finite.quotient_range_comp f' g'
+  have hgf : (g' ∘ₗ f') ∘ₗ eM.toLinearMap = eP.toLinearMap ∘ₗ (g ∘ₗ f) := by
+    rw [comp_assoc, hf, ← comp_assoc, hg, comp_assoc]
+  -- The six isomorphisms of the kernel–cokernel sequences, as in `LinearMap.detLineCongr`.
+  let e₁ := eM.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq eM.surjective eN.injective hf)
+  let e₂ := eM.ofSubmodules _ _
+    ((g ∘ₗ f).map_ker_eq_ker_of_comp_eq eM.surjective eP.injective hgf)
+  let e₃ := eN.ofSubmodules _ _ (g.map_ker_eq_ker_of_comp_eq eN.surjective eP.injective hg)
+  let e₄ := Submodule.Quotient.equiv _ _ eN (f.map_range_eq_range_of_comp_eq eM.surjective hf)
+  let e₅ := Submodule.Quotient.equiv _ _ eP
+    ((g ∘ₗ f).map_range_eq_range_of_comp_eq eM.surjective hgf)
+  let e₆ := Submodule.Quotient.equiv _ _ eP (g.map_range_eq_range_of_comp_eq eN.surjective hg)
+  -- They commute with the maps of the two sequences.
+  have h₁ : Submodule.inclusion (ker_le_ker_comp f' g') ∘ₗ e₁.toLinearMap =
+      e₂.toLinearMap ∘ₗ Submodule.inclusion (ker_le_ker_comp f g) := by
+    ext
+    simp [e₁, e₂, LinearEquiv.ofSubmodules_apply]
+  have h₂ : f'.kerCompToKer g' ∘ₗ e₂.toLinearMap = e₃.toLinearMap ∘ₗ f.kerCompToKer g := by
+    ext z
+    simp only [e₂, e₃, comp_apply, LinearEquiv.coe_coe, coe_kerCompToKer_apply,
+      LinearEquiv.ofSubmodules_apply]
+    exact LinearMap.congr_fun hf (z : M)
+  have h₃ : f'.kerToCoker g' ∘ₗ e₃.toLinearMap = e₄.toLinearMap ∘ₗ f.kerToCoker g := by
+    ext
+    simp [e₃, e₄, kerToCoker_apply]
+  have h₄ : f'.cokerToCokerComp g' ∘ₗ e₄.toLinearMap =
+      e₅.toLinearMap ∘ₗ f.cokerToCokerComp g := by
+    refine Submodule.linearMap_qext _ (LinearMap.ext fun y ↦ ?_)
+    simp only [e₄, e₅, comp_apply, Submodule.mkQ_apply, LinearEquiv.coe_coe,
+      Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, cokerToCokerComp_mk]
+    exact congrArg Submodule.Quotient.mk (LinearMap.congr_fun hg y)
+  have h₅ : Submodule.factor (range_comp_le_range f' g') ∘ₗ e₅.toLinearMap =
+      e₆.toLinearMap ∘ₗ Submodule.factor (range_comp_le_range f g) := by
+    refine Submodule.linearMap_qext _ (LinearMap.ext fun y ↦ ?_)
+    simp [e₅, e₆]
+  -- Written through these isomorphisms, the three transports are those of
+  -- `TauCeti.detLineSixTermEquiv_congr`, and `LinearMap.detLineCompEquiv` is by definition the
+  -- six-term isomorphism (`LinearMap.detLineCompEquiv_def`).
+  rw [detLineCompEquiv_def f g, detLineCompEquiv_def f' g']
+  simp only [detLineCongr_eq_congr]
+  exact TauCeti.detLineSixTermEquiv_congr (Submodule.inclusion_injective (ker_le_ker_comp f g))
+    (f.exact_inclusion_kerCompToKer g) (f.exact_kerCompToKer_kerToCoker g)
+    (f.exact_kerToCoker_cokerToCokerComp g) (f.exact_cokerToCokerComp_factor g)
+    (Submodule.factor_surjective _) (Submodule.inclusion_injective (ker_le_ker_comp f' g'))
+    (f'.exact_inclusion_kerCompToKer g') (f'.exact_kerCompToKer_kerToCoker g')
+    (f'.exact_kerToCoker_cokerToCokerComp g') (f'.exact_cokerToCokerComp_factor g')
+    (Submodule.factor_surjective _) e₁ e₂ e₃ e₄ e₅ e₆ h₁ h₂ h₃ h₄ h₅ x
+
+end Naturality
 
 end LinearMap

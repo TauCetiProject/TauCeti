@@ -28,15 +28,20 @@ indexed by.
 * `TopologicalSpace.Opens.exists_le_preimage_coe_eq` : every open subset of an open set `Ω`,
   viewed as a subspace, is the trace of an open set contained in `Ω`.
 * `TopologicalSpace.Opens.exists_between_and_isCompact_closure` : in a locally compact regular
-  space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`.
+  space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`;
+  `TopologicalSpace.Opens.exists_mem_and_isCompact_closure` is the case of a point.
 * `TopologicalSpace.Opens.le_iSup_iff_subset_iUnion` : an open set lies below the supremum of a
   family of open sets exactly when their underlying sets cover it.
+* `TopologicalSpace.Opens.isEmpty_of_iSup_eq_top` : an empty family of open sets covers only the
+  empty space.
 * `TopologicalSpace.Opens.instLocallyCompactSpace` : an open subset of a locally compact space is
   locally compact.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
   σ-compact.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
   open set has a neighbourhood inside it which is a finite union of basis members.
+* `IsCompact.preimage_val_of_pairwise_disjoint` : a compact set covered by pairwise disjoint open
+  sets has compact preimage in each of them.
 -/
 
 public section
@@ -90,11 +95,26 @@ theorem exists_between_and_isCompact_closure [LocallyCompactSpace X] [RegularSpa
   obtain ⟨V, hVo, hKV, hVU, hVc⟩ := exists_open_between_and_isCompact_closure hK U.isOpen hKU
   exact ⟨⟨V, hVo⟩, hKV, hVU, hVc⟩
 
+/-- In a locally compact regular space, every point `x` of an open set `U` lies in an open set
+whose closure is compact and contained in `U`. This is the case `K = {x}` of
+`TopologicalSpace.Opens.exists_between_and_isCompact_closure`. -/
+theorem exists_mem_and_isCompact_closure [LocallyCompactSpace X] [RegularSpace X] {x : X}
+    {U : Opens X} (hx : x ∈ U) :
+    ∃ V : Opens X, x ∈ V ∧ closure (V : Set X) ⊆ U ∧ IsCompact (closure (V : Set X)) := by
+  obtain ⟨V, hxV, hVU, hVc⟩ :=
+    exists_between_and_isCompact_closure isCompact_singleton (Set.singleton_subset_iff.2 hx)
+  exact ⟨V, hxV rfl, hVU, hVc⟩
+
 /-- An open set lies below the supremum of a family of open sets exactly when their underlying
 sets cover it. -/
 theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X} :
     U ≤ ⨆ i, V i ↔ (U : Set X) ⊆ ⋃ i, (V i : Set X) := by
   rw [← SetLike.coe_subset_coe, coe_iSup]
+
+/-- An empty family of open sets covers only the empty space. -/
+theorem isEmpty_of_iSup_eq_top {ι : Sort*} [IsEmpty ι] {U : ι → Opens X}
+    (hcover : ⨆ i, U i = ⊤) : IsEmpty X :=
+  ⟨fun x ↦ isEmptyElim (Opens.mem_iSup.1 (hcover ▸ Opens.mem_top x)).choose⟩
 
 /-- An open subset of a locally compact space is locally compact. -/
 instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : LocallyCompactSpace U :=
@@ -135,5 +155,33 @@ theorem exists_finset_sup_le_of_isCompact (hB : Opens.IsBasis B) {K : Set X}
       exact W.property.2
 
 end TopologicalSpace.Opens.IsBasis
+
+open Set in
+/-- A compact set covered by pairwise disjoint open sets meets each of them in a compact set, so
+its preimage in each of them is compact. -/
+theorem IsCompact.preimage_val_of_pairwise_disjoint {X ι : Type*} [TopologicalSpace X]
+    {U : ι → TopologicalSpace.Opens X} {A : Set X} (hA : IsCompact A)
+    (hU : Pairwise fun i k ↦ Disjoint (U i : Set X) (U k)) (hAU : A ⊆ ⋃ i, (U i : Set X))
+    (i : ι) : IsCompact ((Subtype.val : U i → X) ⁻¹' A) := by
+  -- `A ∩ U i` is the closed subset of `A` missing the other open sets.
+  have hAi : A ∩ U i = A ∩ (⋃ (k : ι) (_ : k ≠ i), (U k : Set X))ᶜ := by
+    ext x
+    simp only [mem_inter_iff, mem_compl_iff, mem_iUnion, not_exists, SetLike.mem_coe]
+    refine and_congr_right fun hx ↦ ⟨fun hxi k hki hxk ↦ disjoint_left.1 (hU hki) hxk hxi,
+      fun h ↦ ?_⟩
+    obtain ⟨k, hxk⟩ := mem_iUnion.1 (hAU hx)
+    by_cases hki : k = i
+    · exact hki ▸ hxk
+    · exact (h k hki hxk).elim
+  have hc : IsCompact (A ∩ U i) := by
+    rw [hAi]
+    exact hA.inter_right
+      (isOpen_iUnion fun k ↦ isOpen_iUnion fun _ ↦ (U k).isOpen).isClosed_compl
+  have hpre : (Subtype.val : U i → X) ⁻¹' A = Subtype.val ⁻¹' (A ∩ U i) := by
+    ext x
+    simp
+  rw [hpre]
+  exact ((U i).isOpenEmbedding'.isInducing.isCompact_preimage_iff
+    fun x (hx : x ∈ A ∩ U i) ↦ ⟨⟨x, hx.2⟩, rfl⟩).2 hc
 
 end

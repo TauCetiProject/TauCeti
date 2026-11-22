@@ -169,6 +169,18 @@ variable {𝕜 : Type*} [NormedField 𝕜] {m m' n n' : ℕ}
   apply (ContinuousLinearEquiv.finProdCLM 𝕜 m' n').injective
   simp
 
+@[simp] theorem smul_homCoordConj (c : 𝕜) (S : (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜))
+    (R : (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) :
+    homCoordConj (c • S) R = c • homCoordConj S R := by
+  refine ContinuousLinearMap.ext fun v ↦ (ContinuousLinearEquiv.finProdCLM 𝕜 m' n').injective ?_
+  simp
+
+@[simp] theorem homCoordConj_smul (c : 𝕜) (S : (Fin m' → 𝕜) →L[𝕜] (Fin m → 𝕜))
+    (R : (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜)) :
+    homCoordConj S (c • R) = c • homCoordConj S R := by
+  refine ContinuousLinearMap.ext fun v ↦ (ContinuousLinearEquiv.finProdCLM 𝕜 m' n').injective ?_
+  simp [smul_comp]
+
 end ContinuousLinearMap
 
 section HomCoordConjContinuity

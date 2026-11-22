@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
@@ -22,13 +23,29 @@ condition controls each individual variance. Only almost-everywhere measurabilit
 For functions in `Lᵖ`, with finite positive `p` and values in a seminormed group, cutting off
 values above increasing real norm levels makes the integral of the `p`-th power of the error
 norm tend to zero. This supplies bounded approximations without requiring the underlying measure
-to be finite.
+to be finite. For `p = 2` this says that the discarded second absolute moment
+`E[‖X‖²; R < ‖X‖]` tends to zero as the cutoff `R` tends to infinity
+(`MeasureTheory.MemLp.tendsto_integral_indicator_norm_sq`). The cut-off function is bounded by
+the level itself (`TauCeti.norm_indicator_setOf_norm_le_le`), and is measurable when the original
+function is (`Measurable.indicator_setOf_norm_le`).
+
+The integral of a norm cutoff also tends to the original integral for any integrable function
+(`MeasureTheory.Integrable.tendsto_integral_ite_norm_le`).
 -/
 
 public section
 
-open Set
-open scoped ENNReal Topology
+open Set Filter
+open scoped ENNReal Topology NNReal
+
+namespace TauCeti
+
+/-- Keeping a function only where its norm is at most `R ≥ 0` gives values of norm at most `R`. -/
+theorem norm_indicator_setOf_norm_le_le {α E : Type*} [SeminormedAddGroup E] (f : α → E)
+    {R : ℝ} (hR : 0 ≤ R) (a : α) : ‖{x | ‖f x‖ ≤ R}.indicator f a‖ ≤ R := by
+  by_cases h : ‖f a‖ ≤ R <;> simp [indicator, h, hR]
+
+end TauCeti
 
 namespace MeasureTheory
 
@@ -68,6 +85,28 @@ theorem AEStronglyMeasurable.ite_norm_le
     AEStronglyMeasurable (fun x ↦ if ‖f x‖ ≤ R then f x else 0) P := by
   exact (hf.indicator₀ (hf.norm.nullMeasurableSet_le aestronglyMeasurable_const)).congr
     (Filter.Eventually.of_forall fun x ↦ Set.indicator_apply _ _ x)
+
+/-- Keeping a measurable function only where its norm is at most a real level `R` gives a
+measurable function. -/
+theorem _root_.Measurable.indicator_setOf_norm_le
+    {E : Type*} [SeminormedAddGroup E] [MeasurableSpace E] [OpensMeasurableSpace E] {f : Ω → E}
+    (hf : Measurable f) (R : ℝ) :
+    Measurable ({x | ‖f x‖ ≤ R}.indicator f) :=
+  hf.indicator (measurableSet_le (continuous_norm.measurable.comp hf) measurable_const)
+
+/-- The integrals of the norm cutoffs of an integrable function converge to its integral
+as the cutoff radius tends to infinity. -/
+theorem Integrable.tendsto_integral_ite_norm_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : Ω → E} (hf : Integrable f P) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫ x, (if ‖f x‖ ≤ R then f x else 0) ∂P) Filter.atTop
+      (𝓝 (∫ x, f x ∂P)) := by
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖f x‖)
+    (.of_forall fun R ↦ hf.aestronglyMeasurable.ite_norm_le R)
+    (.of_forall fun R ↦ .of_forall fun x ↦ ?_) hf.norm (.of_forall fun x ↦ ?_)
+  · split_ifs <;> simp
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Filter.eventually_ge_atTop ‖f x‖] with R hR
+    simp [hR]
 
 /-- Cutting off an `Lᵖ` function at a real norm level preserves `Lᵖ` membership,
 including for infinite measures and arbitrary exponents. -/
@@ -126,5 +165,16 @@ theorem MemLp.tendsto_integral_norm_ite_sub_rpow
     rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) ENNReal.toReal_nonneg, ofReal_norm]
   · exact (Real.continuous_rpow_const ENNReal.toReal_nonneg).comp_aestronglyMeasurable
       ((hf.aestronglyMeasurable.ite_norm_le R).sub hf.aestronglyMeasurable).norm
+
+/-- The discarded second moment tends to zero for a square-integrable variable. -/
+theorem MemLp.tendsto_integral_indicator_norm_sq {E : Type*} [SeminormedAddCommGroup E]
+    {X : Ω → E} (hX : MemLp X 2 P) :
+    Tendsto (fun R : ℝ≥0 ↦
+      ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P)
+      atTop (𝓝 0) := by
+  refine ((hX.tendsto_integral_norm_ite_sub_rpow two_ne_zero ENNReal.ofNat_ne_top).comp
+    (NNReal.tendsto_coe_atTop.mpr tendsto_id)).congr fun R ↦
+      integral_congr_ae (.of_forall fun ω ↦ ?_)
+  by_cases h : ‖X ω‖ ≤ R <;> simp [h, not_lt.mpr, not_le.mp]
 
 end MeasureTheory

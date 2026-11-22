@@ -47,7 +47,7 @@ reflecting root. The construction is independent of any choice of an enumeration
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 16.1 and 26.3.
 
 The ordered-pair construction and its proof plan are adapted from the formal template in
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`.
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic`.
 
 This is the coordinate-lattice construction used by the diagonal-torus root datum of `GL_n`.
 -/

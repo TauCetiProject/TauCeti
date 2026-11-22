@@ -47,27 +47,24 @@ universe u v
 namespace CliffordAlgebra
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
-  (Q : QuadraticForm R M) [Invertible (2 : R)]
+  (Q : QuadraticForm R M)
 
 /-- The linear map into the even Clifford algebra obtained by multiplying a generating vector on
 the right by another generating vector. -/
 def rightIotaEven (e : M) : M →ₗ[R] even Q :=
   (even.ι Q).bilin.flip e
 
-omit [Invertible (2 : R)] in
 /-- Evaluating `rightIotaEven` gives the canonical bilinear generator of the even algebra. -/
 @[simp]
 theorem rightIotaEven_apply (e m : M) :
     rightIotaEven Q e m = (even.ι Q).bilin m e :=
   by simp only [rightIotaEven, LinearMap.flip_apply]
 
-omit [Invertible (2 : R)] in
 /-- The ambient Clifford value of `rightIotaEven`. -/
 theorem coe_rightIotaEven (e m : M) :
     (rightIotaEven Q e m : CliffordAlgebra Q) = ι Q m * ι Q e :=
   by rfl
 
-omit [Invertible (2 : R)] in
 /-- Coercing a canonical bilinear generator of the even algebra gives the product of its two
 Clifford generators. -/
 @[simp]
@@ -76,7 +73,6 @@ theorem coe_even_ι_bilin (m e : M) :
   rw [← rightIotaEven_apply Q e m]
   exact coe_rightIotaEven Q e m
 
-omit [Invertible (2 : R)] in
 /-- The Clifford relation for the even generators: `ι(m) ι(e) + ι(e) ι(m)` is the polar form of
 `Q` at `m` and `e`. -/
 theorem even_ι_bilin_add_swap (m e : M) :
@@ -86,7 +82,6 @@ theorem even_ι_bilin_add_swap (m e : M) :
     rw [Subalgebra.coe_add, Subalgebra.coe_algebraMap, coe_even_ι_bilin, coe_even_ι_bilin,
       ι_mul_ι_add_swap])
 
-omit [Invertible (2 : R)] in
 private theorem iota_sq_neg_one (e : M) (he : Q e = -1) :
     ι Q e * ι Q e = -1 := by
   rw [ι_sq_scalar, he, map_neg, map_one]
@@ -101,7 +96,6 @@ private noncomputable def conjugateNegativeIota
     (e : M) (he : Q e = -1) : CliffordAlgebra Q ≃ₐ[R] CliffordAlgebra Q :=
   MulSemiringAction.toAlgEquiv R _ (ConjAct.toConjAct (negativeIotaUnit Q e he))
 
-omit [Invertible (2 : R)] in
 private theorem conjugateNegativeIota_apply (e : M) (he : Q e = -1)
     (x : CliffordAlgebra Q) :
     conjugateNegativeIota Q e he x = (-ι Q e * x) * ι Q e := by
@@ -126,7 +120,6 @@ noncomputable def conjugateNegativeIotaEven (e : M) (he : Q e = -1) :
     (x : CliffordAlgebra Q) y)
   commutes' r := Subtype.ext (AlgEquiv.commutes (conjugateNegativeIota Q e he) r)
 
-omit [Invertible (2 : R)] in
 /-- The ambient Clifford value of conjugation by `-ι(e)` on the even subalgebra. -/
 @[simp]
 theorem coe_conjugateNegativeIotaEven (e : M) (he : Q e = -1) (x : even Q) :
@@ -136,7 +129,6 @@ theorem coe_conjugateNegativeIotaEven (e : M) (he : Q e = -1) (x : even Q) :
 
 variable {Q}
 
-omit [Invertible (2 : R)] in
 /-- The square of the even bivector of two orthogonal vectors is the scalar `-Q x * Q y`. -/
 @[simp] theorem even_ι_bilin_mul_self_of_isOrtho {x y : M} (h : Q.IsOrtho x y) :
     (even.ι Q).bilin x y * (even.ι Q).bilin x y = algebraMap R (even Q) (-(Q x * Q y)) := by
@@ -144,7 +136,6 @@ omit [Invertible (2 : R)] in
   rw [Subalgebra.coe_mul, coe_even_ι_bilin, ι_mul_ι_mul_self_of_isOrtho h]
   simp
 
-omit [Invertible (2 : R)] in
 /-- The even bivectors `x y` and `x z` anticommute when `x, y, z` are pairwise orthogonal. -/
 theorem even_ι_bilin_comm_of_isOrtho {x y z : M}
     (h01 : Q.IsOrtho x y) (h02 : Q.IsOrtho x z) (h12 : Q.IsOrtho y z) :
@@ -164,7 +155,6 @@ theorem even_ι_bilin_comm_of_isOrtho {x y z : M}
     _ = _ := by
       rw [← mul_ι_mul_ι_mul_comm_of_isOrtho (ι Q x) h01.symm (ι Q z)]
 
-omit [Invertible (2 : R)] in
 /-- On a product of `2k` vectors, `evenEquivEvenNeg` is the same product in the Clifford algebra of
 `-Q`, multiplied by `(-1) ^ k`. -/
 theorem coe_evenEquivEvenNeg_prod_map_ι :
