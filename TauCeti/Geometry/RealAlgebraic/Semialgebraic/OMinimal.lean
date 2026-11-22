@@ -123,13 +123,9 @@ theorem isSemialgebraic_fin_one_iff {s : Set (Fin 1 → R)} :
   obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
   -- Write each `p i` as a univariate polynomial `q i`, and let `Z` be their roots.
   obtain ⟨q, hq⟩ : ∃ q : Fin m → Polynomial R, ∀ i (x : Fin 1 → R),
-      eval x (p i) = (q i).eval (x 0) := by
-    refine ⟨fun i => aeval (fun _ => Polynomial.X) (p i), fun i x => ?_⟩
-    rw [← Polynomial.coe_aeval_eq_eval, ← AlgHom.comp_apply, comp_aeval]
-    simp only [Polynomial.aeval_X, aeval_eq_eval₂Hom, Algebra.algebraMap_self]
-    congr
-    funext j
-    rw [Subsingleton.elim j 0]
+      eval x (p i) = (q i).eval (x 0) :=
+    ⟨fun i => uniqueAlgEquiv R (Fin 1) (p i), fun i x => by
+      simpa using (eval₂_uniqueAlgEquiv (f := p i) (φ := RingHom.id R) (a := x)).symm⟩
   let Z : Finset R := Finset.univ.biUnion fun i => (q i).roots.toFinset
   -- On an interval meeting no root, the signs of the `p i` are constant.
   have hsign {t u : R} (htu : ∀ z ∈ Z, z ∉ Icc (min t u) (max t u)) (i : Fin m) :
@@ -145,8 +141,7 @@ theorem isSemialgebraic_fin_one_iff {s : Set (Fin 1 → R)} :
   set s := {x : Fin 1 → R | Φ fun i => SignType.sign (eval x (p i))}
   have hconst (t : R) : (fun _ => t : Fin 1 → R) ∈ s ↔ Φ fun i => SignType.sign ((q i).eval t) := by
     simp [s, hq]
-  have hx (x : Fin 1 → R) : (fun _ => x 0 : Fin 1 → R) = x :=
-    funext fun j => by rw [Subsingleton.elim j 0]
+  have hx (x : Fin 1 → R) : (fun _ => x 0 : Fin 1 → R) = x := funext (Fin.forall_fin_one.2 rfl)
   refine ⟨Z.filter fun t => (fun _ => t : Fin 1 → R) ∈ s,
     ((insert ⊥ (Z.image (↑))) ×ˢ (insert ⊤ (Z.image (↑)))).filter fun p =>
       ∀ t : R, p.1 < t → (t : WithTop R) < p.2 → (fun _ => t : Fin 1 → R) ∈ s, ?_⟩
