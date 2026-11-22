@@ -44,7 +44,8 @@ character are different representations on the same line, with no nonzero equiva
   composition, `TauCeti.SemilinearRep.Hom.ofLinearMap` for sources with the module topology, the
   kernel and image representations `TauCeti.SemilinearRep.Hom.kerRep` and
   `TauCeti.SemilinearRep.Hom.rangeRep`, the lift `TauCeti.SemilinearRep.Hom.kerLift` into a kernel,
-  and the maps `TauCeti.SemilinearRep.Hom.prod` and `TauCeti.SemilinearRep.Hom.pi` into products.
+  the maps `TauCeti.SemilinearRep.Hom.prod` and `TauCeti.SemilinearRep.Hom.pi` into products, and
+  the copairing `TauCeti.SemilinearRep.Hom.coprod` out of a direct sum.
 
 ## Main results
 
@@ -400,6 +401,14 @@ theorem comp_assoc {W₄ : Type*} [AddCommMonoid W₄] [Module B W₄] [Topologi
     (f''.comp f').comp f = f''.comp (f'.comp f) :=
   ext fun _ => rfl
 
+/-- The zero morphism. -/
+instance : Zero (Hom ρ₁ ρ₂) :=
+  ⟨⟨0, fun g w => by simp⟩⟩
+
+@[simp]
+theorem zero_apply (w : W₁) : (0 : Hom ρ₁ ρ₂) w = 0 :=
+  (rfl)
+
 /-- The kernel of a morphism is stable under `G`. -/
 theorem act_mem_ker (f : Hom ρ₁ ρ₂) (g : G) {w : W₁}
     (hw : w ∈ LinearMap.ker (f : W₁ →ₗ[B] W₂)) :
@@ -565,7 +574,43 @@ theorem fst_comp_prod (f : Hom σ ρ₁) (f' : Hom σ ρ₂) : (fst ρ₁ ρ₂)
 theorem snd_comp_prod (f : Hom σ ρ₁) (f' : Hom σ ρ₂) : (snd ρ₁ ρ₂).comp (f.prod f') = f' :=
   Hom.ext fun _ => rfl
 
+/-- **The universal property of the direct sum as a coproduct**: two morphisms into `σ` copair to
+the morphism `(w₁, w₂) ↦ f w₁ + f' w₂` out of the direct sum. -/
+def Hom.coprod [ContinuousAdd W] (f : Hom ρ₁ σ) (f' : Hom ρ₂ σ) : Hom (ρ₁.prod ρ₂) σ :=
+  ⟨f.toContinuousLinearMap.coprod f'.toContinuousLinearMap, fun g w => by simp⟩
+
+@[simp]
+theorem Hom.coprod_apply [ContinuousAdd W] (f : Hom ρ₁ σ) (f' : Hom ρ₂ σ) (w : W₁ × W₂) :
+    f.coprod f' w = f w.1 + f' w.2 :=
+  (rfl)
+
+@[simp]
+theorem coprod_comp_inl [ContinuousAdd W] (f : Hom ρ₁ σ) (f' : Hom ρ₂ σ) :
+    (f.coprod f').comp (inl ρ₁ ρ₂) = f :=
+  Hom.ext fun _ => by simp
+
+@[simp]
+theorem coprod_comp_inr [ContinuousAdd W] (f : Hom ρ₁ σ) (f' : Hom ρ₂ σ) :
+    (f.coprod f').comp (inr ρ₁ ρ₂) = f' :=
+  Hom.ext fun _ => by simp
+
 end HomProd
+
+@[simp]
+theorem fst_comp_inl : (fst ρ₁ ρ₂).comp (inl ρ₁ ρ₂) = Hom.id ρ₁ :=
+  Hom.ext fun _ => rfl
+
+@[simp]
+theorem snd_comp_inr : (snd ρ₁ ρ₂).comp (inr ρ₁ ρ₂) = Hom.id ρ₂ :=
+  Hom.ext fun _ => rfl
+
+@[simp]
+theorem fst_comp_inr : (fst ρ₁ ρ₂).comp (inr ρ₁ ρ₂) = 0 :=
+  Hom.ext fun _ => rfl
+
+@[simp]
+theorem snd_comp_inl : (snd ρ₁ ρ₂).comp (inl ρ₁ ρ₂) = 0 :=
+  Hom.ext fun _ => rfl
 
 variable {ι : Type*} {V : ι → Type*} [∀ i, AddCommMonoid (V i)] [∀ i, Module B (V i)]
   [∀ i, TopologicalSpace (V i)] (ρ : ∀ i, SemilinearRep G B (V i))
@@ -587,6 +632,10 @@ def single [DecidableEq ι] (i : ι) : Hom (ρ i) (pi ρ) :=
 @[simp]
 theorem single_apply [DecidableEq ι] (i : ι) (w : V i) : single ρ i w = Pi.single i w :=
   (rfl)
+
+@[simp]
+theorem proj_comp_single [DecidableEq ι] (i : ι) : (proj ρ i).comp (single ρ i) = Hom.id (ρ i) :=
+  Hom.ext fun _ => by simp
 
 section HomPi
 
