@@ -104,8 +104,7 @@ theorem Wkp.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
     (u : Wkp mu Omega p 2) :
     ContinuousOn (preciseRepresentative mu (Wkp.value 2 u)) Omega := by
   intro x hx
-  obtain ⟨V, hxV, hVΩ, hVc⟩ :=
-    Opens.exists_between_and_isCompact_closure isCompact_singleton (singleton_subset_iff.2 hx)
+  obtain ⟨V, hxV, hVΩ, hVc⟩ := Opens.exists_mem_and_isCompact_closure hx
   -- On `V`, `u` is a `W^{1,n+1}` function, to which Morrey's embedding applies.
   have : Fact (1 ≤ ((finrank ℝ E + 1 : ℝ≥0) : ℝ≥0∞)) := ⟨by simp⟩
   obtain ⟨w, hw⟩ := Wkp.exists_w1p_value_ae_eq_of_isCompact_closure hp u hVc hVΩ
@@ -115,7 +114,7 @@ theorem Wkp.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
     fun z hz => preciseRepresentative_congr_ae_nhds (V.isOpen.mem_nhds hz) hw
   exact (((W1p.continuousOn_preciseRepresentative
     (by exact_mod_cast lt_add_one (finrank ℝ E)) w).congr heq.symm).continuousAt
-    (V.isOpen.mem_nhds (hxV rfl))).continuousWithinAt
+    (V.isOpen.mem_nhds hxV)).continuousWithinAt
 
 /-- If `u ∈ W^{2,p}(Ω)` with `n ≤ p` satisfies `u ≤ g` almost everywhere on an open subset `U ⊆ Ω`
 and `g` is continuous on `U`, then its precise representative satisfies `u* ≤ g` everywhere on

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
@@ -61,6 +62,13 @@ theorem `TauCeti.Wkp.dense_contDiffOn_representatives`.
   ball inside the domain of a Sobolev function of possibly higher integrability.
 * `TauCeti.W1p.memLp_value_of_convex_of_isBounded_of_finrank_le`: for `n ≤ p₀`, a `W^{1,p₀}(Ω)`
   function lies in `L^q(U)` for every finite `q` on every bounded convex open subset `U ⊆ Ω`.
+* `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset`: the same with the averages written
+  as norms, `‖u - u_B‖_{Lˢ(B)} ≤ K t μ(B)^(-δ) ‖∇u‖_{L^q(B)}`, with the constant
+  `K = TauCeti.sobolevPoincareConst n δ`.
+* `TauCeti.W1p.eLpNorm_sub_setAverage_le_of_ae_eq`: the same for functions agreeing almost
+  everywhere on the ball with the value and the gradient of a Sobolev function.
+* `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_memLp`: the same on the balls inside a ball on
+  which the value and the gradient lie in `Lᵖ`, with the gain from `L^q` to `Lᵖ`.
 
 ## References
 
@@ -426,6 +434,125 @@ theorem W1p.memLp_value_of_convex_of_isBounded_of_finrank_le
   have hval : W1p.value uV =ᵐ[mu.restrict U] W1p.value u :=
     (W1p.coeFn_value_ofExponentLE _ _).eventuallyEq.trans (W1p.value_restrictL_ae hV u)
   exact (huV.mono_exponent hqq').ae_eq hval
+
+/-- The constant `2ⁿ / n · ((1 - δ) / (1/n - δ)) ^ (1 - δ)` of the Sobolev–Poincaré inequality on a
+ball in dimension `n`, where `δ = 1/p - 1/q` is the gap between the exponents
+(`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset`). -/
+def sobolevPoincareConst (n : ℕ) (δ : ℝ) : ℝ :=
+  2 ^ n / n * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ)
+
+/-- The defining formula of the Sobolev–Poincaré constant. -/
+theorem sobolevPoincareConst_def (n : ℕ) (δ : ℝ) :
+    sobolevPoincareConst n δ = 2 ^ n / n * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) :=
+  (rfl)
+
+/-- The Sobolev–Poincaré constant is nonnegative in the admissible range `δ < 1/n`. -/
+theorem sobolevPoincareConst_nonneg {n : ℕ} {δ : ℝ} (hδn : δ < (n : ℝ)⁻¹) :
+    0 ≤ sobolevPoincareConst n δ :=
+  mul_nonneg (by positivity) (Real.rpow_nonneg (div_nonneg
+    (by linarith [hδn.trans_le (Nat.cast_inv_le_one n)]) (sub_nonneg.2 hδn.le)) _)
+
+/-- **The Sobolev–Poincaré inequality on a ball, in norms.** Let `n ≥ 1` be the dimension, let
+`1 ≤ q ≤ s < ∞` with `δ = 1/q - 1/s < 1/n`, and let `q ≤ p₀`. If `u ∈ W^{1,p₀}(Omega)` and
+`B = B(x₀, t) ⊆ Omega`, then
+
+`‖u - u_B‖_{Lˢ(B)} ≤ K t mu(B)^(-δ) ‖∇u‖_{L^q(B)}`,
+
+with `K = TauCeti.sobolevPoincareConst n δ = 2ⁿ / n · ((1 - δ) / (1/n - δ)) ^ (1 - δ)` depending
+only on `n`, `q` and `s`. This is
+`TauCeti.W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset` with the averages
+written as norms. -/
+theorem W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset [Nontrivial E] {p₀ q : ℝ≥0∞}
+    [Fact (1 ≤ p₀)] [Fact (1 ≤ q)] (hq : q ≠ ⊤) (hqp₀ : q ≤ p₀) {s : ℝ≥0} (hqs : q ≤ s) {δ : ℝ}
+    (hδ : q.toReal⁻¹ - (s : ℝ)⁻¹ = δ) (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {x₀ : E} {t : ℝ}
+    (ht : 0 < t) (hball : ball x₀ t ⊆ (Omega : Set E)) (u : W1p mu Omega p₀) :
+    eLpNorm (fun x => W1p.value u x - ⨍ y in ball x₀ t, W1p.value u y ∂mu) s
+        (mu.restrict (ball x₀ t)) ≤
+      ENNReal.ofReal (sobolevPoincareConst (finrank ℝ E) δ * t) *
+        mu (ball x₀ t) ^ (-δ) * eLpNorm (W1p.gradient u) q (mu.restrict (ball x₀ t)) := by
+  set B := ball x₀ t
+  set K := ENNReal.ofReal (sobolevPoincareConst (finrank ℝ E) δ * t)
+  have hq0 : q ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ q)).ne'
+  have hs0 : (s : ℝ≥0∞) ≠ 0 := ne_bot_of_le_ne_bot hq0 hqs
+  have hB0 : mu B ≠ 0 := (measure_ball_pos mu x₀ ht).ne'
+  have hBt : mu B ≠ ⊤ := measure_ball_lt_top.ne
+  have hSP := W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset hq hqp₀ ht
+    hball hqs hδ hδn u
+  have hs' : ((s : ℝ≥0∞)).toReal = s := ENNReal.coe_toReal s
+  have hle : mu.restrict B ≤ mu.restrict (Omega : Set E) := Measure.restrict_mono hball le_rfl
+  rw [← hs', laverage_rpow_enorm_rpow_inv_eq hs0 ENNReal.coe_ne_top
+      (f := fun x => W1p.value u x - ⨍ y in B, W1p.value u y ∂mu)
+      (((Lp.aestronglyMeasurable _).mono_measure hle).sub aestronglyMeasurable_const),
+    laverage_rpow_enorm_rpow_inv_eq hq0 hq ((Lp.aestronglyMeasurable _).mono_measure hle), hs',
+    Measure.restrict_apply_univ, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul,
+    ← ENNReal.rpow_neg, ← ENNReal.rpow_neg, ← sobolevPoincareConst_def] at hSP
+  -- Multiply by `mu(B)^(1/s)`.
+  have hcancel : mu B ^ (s : ℝ)⁻¹ * mu B ^ (-(s : ℝ)⁻¹) = 1 := by
+    rw [← ENNReal.rpow_add _ _ hB0 hBt, add_neg_cancel, ENNReal.rpow_zero]
+  calc eLpNorm (fun x => W1p.value u x - ⨍ y in B, W1p.value u y ∂mu) s (mu.restrict B)
+      = mu B ^ (s : ℝ)⁻¹ * (mu B ^ (-(s : ℝ)⁻¹) *
+          eLpNorm (fun x => W1p.value u x - ⨍ y in B, W1p.value u y ∂mu) s (mu.restrict B)) := by
+        rw [← mul_assoc, hcancel, one_mul]
+    _ ≤ mu B ^ (s : ℝ)⁻¹ * (K * (mu B ^ (-q.toReal⁻¹) *
+          eLpNorm (W1p.gradient u) q (mu.restrict B))) := by gcongr
+    _ = K * (mu B ^ ((s : ℝ)⁻¹ + -q.toReal⁻¹)) * eLpNorm (W1p.gradient u) q (mu.restrict B) := by
+        rw [ENNReal.rpow_add _ _ hB0 hBt]
+        ring
+    _ = _ := by rw [← hδ]; ring_nf
+
+/-- **The Sobolev–Poincaré inequality on a ball, in norms, for representatives.** If `f` and `g`
+agree almost everywhere on `B = B(x₀, t) ⊆ Omega` with the value and the gradient of
+`u ∈ W^{1,p₀}(Omega)`, then `‖f - f_B‖_{Lˢ(B)} ≤ K t mu(B)^(-δ) ‖g‖_{L^q(B)}`, as in
+`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset`. -/
+theorem W1p.eLpNorm_sub_setAverage_le_of_ae_eq [Nontrivial E] {p₀ q : ℝ≥0∞}
+    [Fact (1 ≤ p₀)] [Fact (1 ≤ q)] (hq : q ≠ ⊤) (hqp₀ : q ≤ p₀) {s : ℝ≥0} (hqs : q ≤ s) {δ : ℝ}
+    (hδ : q.toReal⁻¹ - (s : ℝ)⁻¹ = δ) (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {x₀ : E} {t : ℝ}
+    (ht : 0 < t) (hball : ball x₀ t ⊆ (Omega : Set E)) (u : W1p mu Omega p₀) {f : E → ℝ}
+    {g : E → E} (hf : f =ᵐ[mu.restrict (ball x₀ t)] W1p.value u)
+    (hg : g =ᵐ[mu.restrict (ball x₀ t)] W1p.gradient u) :
+    eLpNorm (fun x => f x - ⨍ y in ball x₀ t, f y ∂mu) s (mu.restrict (ball x₀ t)) ≤
+      ENNReal.ofReal (sobolevPoincareConst (finrank ℝ E) δ * t) *
+        mu (ball x₀ t) ^ (-δ) * eLpNorm g q (mu.restrict (ball x₀ t)) := by
+  have havg : ⨍ y in ball x₀ t, f y ∂mu = ⨍ y in ball x₀ t, W1p.value u y ∂mu := average_congr hf
+  have h1 : (fun x => f x - ⨍ y in ball x₀ t, f y ∂mu) =ᵐ[mu.restrict (ball x₀ t)]
+      fun x => W1p.value u x - ⨍ y in ball x₀ t, W1p.value u y ∂mu :=
+    hf.mono fun x hx => by simp only [hx, havg]
+  rw [eLpNorm_congr_ae h1, eLpNorm_congr_ae hg]
+  exact W1p.eLpNorm_value_sub_setAverage_le_of_ball_subset hq hqp₀ hqs hδ hδn ht hball u
+
+/-- **The Sobolev–Poincaré inequality on balls inside a ball of higher integrability.** If
+`u ∈ W^{1,p₀}(Omega)` has value and gradient in `Lᵖ(B(x₀, R))`, `p < ∞`, with
+`B(x₀, R) ⊆ Omega`, then on every concentric ball `B_t`, `0 < t ≤ R`, and for `q ≤ p` with
+`δ = 1/q - 1/p < 1/n`,
+
+`‖u - u_{B_t}‖_{Lᵖ(B_t)} ≤ K t mu(B_t)^(-δ) ‖∇u‖_{L^q(B_t)}`,
+
+with `K = TauCeti.sobolevPoincareConst n δ`. -/
+theorem W1p.eLpNorm_value_sub_setAverage_le_of_memLp [Nontrivial E] {p₀ q : ℝ≥0∞}
+    [Fact (1 ≤ p₀)] [Fact (1 ≤ q)] (u : W1p mu Omega p₀) {x₀ : E} {R : ℝ}
+    (hball : ball x₀ R ⊆ (Omega : Set E)) (hp : p ≠ ⊤) (hqp : q ≤ p)
+    (hv : MemLp (W1p.value u) p (mu.restrict (ball x₀ R)))
+    (hg : MemLp (W1p.gradient u) p (mu.restrict (ball x₀ R))) {δ : ℝ}
+    (hδ : q.toReal⁻¹ - p.toReal⁻¹ = δ) (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {t : ℝ} (ht : 0 < t)
+    (htR : t ≤ R) :
+    eLpNorm (fun x => W1p.value u x - ⨍ y in ball x₀ t, W1p.value u y ∂mu) p
+        (mu.restrict (ball x₀ t)) ≤
+      ENNReal.ofReal (sobolevPoincareConst (finrank ℝ E) δ * t) *
+        mu (ball x₀ t) ^ (-δ) * eLpNorm (W1p.gradient u) q (mu.restrict (ball x₀ t)) := by
+  set BR : Opens E := ⟨ball x₀ R, isOpen_ball⟩
+  have hg' : MemLp (fun x => innerSL ℝ (W1p.gradient u x)) p (mu.restrict (BR : Set E)) :=
+    hg.of_le ((innerSL ℝ).continuous.comp_aestronglyMeasurable hg.aestronglyMeasurable)
+      (ae_of_all _ fun x => by simp)
+  obtain ⟨uR, hvR, hgR⟩ := W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn hv hg'
+    ((W1p.hasWeakFDerivOn u).mono hball)
+  have hle : mu.restrict (ball x₀ t) ≤ mu.restrict (ball x₀ R) :=
+    Measure.restrict_mono (ball_subset_ball htR) le_rfl
+  have hpN : ((p.toNNReal : ℝ≥0) : ℝ≥0∞) = p := ENNReal.coe_toNNReal hp
+  have h := W1p.eLpNorm_sub_setAverage_le_of_ae_eq (s := p.toNNReal) (ne_top_of_le_ne_top hp hqp)
+    hqp (by rw [hpN]; exact hqp) (by rw [ENNReal.coe_toNNReal_eq_toReal]; exact hδ) hδn ht
+    (ball_subset_ball htR) uR (ae_mono hle hvR.symm)
+    (ae_mono hle (hgR.trans (ae_of_all _ fun x => InnerProductSpace.toDual_symm_innerSL _)).symm)
+  rwa [hpN] at h
 
 end W1p
 
