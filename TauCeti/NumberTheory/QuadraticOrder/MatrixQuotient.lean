@@ -29,7 +29,7 @@ When `discr a b < -4`, the only integral units of `ℤ[ω]` are `±1`
 (`units_eq_one_or_neg_one_of_discr_lt_neg_four`), so `unitPeriodMatrixSubgroup a b N` collapses to
 the scalar sign subgroup `Subgroup.zpowers (-1)` (`unitPeriodMatrixSubgroup_eq_zpowers_neg_one`).
 For the level-`2` specializations (including the Gaussian and Eisenstein exceptions), see
-`TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two`; for the level-`3` unipotent coset
+`TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two.Quotient`; for the level-`3` unipotent coset
 representatives over `(a, b) = (0, 0)` in `ZMod 3`, see
 `TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Three`.
 

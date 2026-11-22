@@ -62,6 +62,8 @@ equivalent to a nonarchimedean absolute value.
   `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`) and
   `NumberField.IsTotallyReal.of_zero_lt_discr` read the signature off the sign of the
   discriminant in low degree.
+* `NumberField.discr_lt_zero_of_isTotallyComplex`: an imaginary quadratic field has negative
+  discriminant.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
   degree less the real places counts the complex places, for any number field.
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
@@ -277,6 +279,13 @@ theorem InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero (hd : discr K < 0)
 theorem IsTotallyReal.of_zero_lt_discr (hd : 0 < discr K) (hK : Module.finrank ℚ K < 4) :
     IsTotallyReal K :=
   nrComplexPlaces_eq_zero_iff.mp (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)
+
+/-- Every imaginary quadratic field has negative discriminant (`discr K ≤ -3`). -/
+theorem discr_lt_zero_of_isTotallyComplex [IsTotallyComplex K] (hK : Module.finrank ℚ K = 2) :
+    discr K < 0 :=
+  Int.sign_eq_neg_one_iff_neg.mp (by
+    rw [NumberField.sign_discr, InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two hK,
+      pow_one])
 
 end NumberField
 

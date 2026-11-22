@@ -8,9 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
-public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
-import Mathlib.NumberTheory.NumberField.Discriminant.Basic
-import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
 
 /-!
 # The infinite places of a quadratic field `ℚ(√d)`
@@ -25,10 +22,6 @@ embeddings fixed on `ℚ(θ)` to be real. Combining them,
 when `d < 0`, both for a presented field and for the model `QuadraticAlgebra ℚ a 0` of a nonsquare
 rational `a`.
 
-For an imaginary quadratic field, `NumberField.sign_discr` gives `discr K < 0`, and combined with
-Stickelberger's congruence `discr K ≡ 0, 1 (mod 4)` this shows `discr K < -4` holds precisely away
-from `-4` and `-3`.
-
 ## Main results
 
 * `NumberField.isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg`.
@@ -39,10 +32,6 @@ from `-4` and `-3`.
   quadratic field has a presentation with negative squarefree radicand.
 * `QuadraticAlgebra.isTotallyComplex_iff`: `QuadraticAlgebra ℚ a 0` is totally complex exactly
   when `a < 0`.
-* `TauCeti.NumberField.discr_lt_zero_of_isTotallyComplex`: an imaginary quadratic field has
-  negative discriminant.
-* `TauCeti.NumberField.discr_lt_neg_four_iff`: for an imaginary quadratic field, `discr K < -4`
-  iff `discr K ≠ -4 ∧ discr K ≠ -3`.
 -/
 
 public section
@@ -101,23 +90,3 @@ when `a` is negative. -/
   exact isTotallyComplex_iff_neg_of_sq_ratCast hω adjoin_omega_eq_top
 
 end QuadraticAlgebra
-
-namespace TauCeti.NumberField
-
-/-- Every imaginary quadratic field has negative discriminant (`discr K ≤ -3`). -/
-theorem discr_lt_zero_of_isTotallyComplex {K : Type*} [Field K] [NumberField K]
-    [IsTotallyComplex K] (hK : Module.finrank ℚ K = 2) : discr K < 0 := by
-  have hnr : InfinitePlace.nrComplexPlaces K = 1 := by
-    have := IsTotallyComplex.finrank K
-    omega
-  exact Int.sign_eq_neg_one_iff_neg.mp (by rw [NumberField.sign_discr, hnr, pow_one])
-
-/-- For an imaginary quadratic field, `discr K < -4` holds precisely away from `-4` and `-3`. -/
-theorem discr_lt_neg_four_iff {K : Type*} [Field K] [NumberField K]
-    [IsTotallyComplex K] (hK : Module.finrank ℚ K = 2) :
-    discr K < -4 ↔ discr K ≠ -4 ∧ discr K ≠ -3 := by
-  have hlt := discr_lt_zero_of_isTotallyComplex hK
-  have h4 := discr_emod_four_eq_zero_or_one K
-  omega
-
-end TauCeti.NumberField
