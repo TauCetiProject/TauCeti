@@ -23,9 +23,16 @@ Symmetrically, `(Aut X)ᵐᵒᵖ` acts on `X ≅ Y` by precomposition, `op σ �
 commutes with the action of `Aut Y` and is also simply transitive
 (`CategoryTheory.Iso.existsUnique_op_smul_eq`).
 
+Both actions are free (`CategoryTheory.Aut.instIsCancelSMulIso`,
+`CategoryTheory.Aut.instIsCancelSMulOpIso`), and they are compatible with the groupoid
+operations: `Iso.refl`, `Iso.symm` and `Iso.trans` (`CategoryTheory.Aut.smul_iso_symm`,
+`CategoryTheory.Aut.trans_smul_iso`, and their precomposition counterparts).
+
 Conjugation by an isomorphism `e : X ≅ Y`, which identifies `Aut X` with `Aut Y`, is compatible
 with these actions: `e.conjAut σ` acts on `e` as `σ` acts on `e` by precomposition
-(`CategoryTheory.Iso.conjAut_smul`).
+(`CategoryTheory.Iso.conjAut_smul`), and conjugation by a translate of `e` is conjugation by `e`
+composed with an inner automorphism (`CategoryTheory.Iso.conjAut_smul_iso`,
+`CategoryTheory.Iso.conjAut_op_smul_iso`).
 
 For the geometric fibre functors of a Galois category, these isomorphisms are the paths between
 base points, and these are the simply transitive actions of the fundamental groups at the two
@@ -81,6 +88,25 @@ instance instMulActionIso : MulAction (Aut Y) (X ≅ Y) where
   one_smul e := by ext; simp
   mul_smul σ τ e := by ext; simp
 
+/-- The action of `Aut Y` on `X ≅ Y` by postcomposition is free. -/
+instance instIsCancelSMulIso : IsCancelSMul (Aut Y) (X ≅ Y) where
+  left_cancel' σ e₁ e₂ h := by
+    ext
+    exact (cancel_mono σ.asIso.hom).1 (by simpa using congrArg Iso.hom h)
+  right_cancel' σ τ e h := by
+    ext1
+    ext
+    exact (cancel_epi e.hom).1 (by simpa using congrArg Iso.hom h)
+
+@[simp]
+theorem smul_iso_refl (σ : Aut Y) : σ • Iso.refl Y = σ.asIso := by
+  ext; simp
+
+@[simp]
+theorem trans_smul_iso {Z : C} (e : X ≅ Y) (σ : Aut Z) (f : Y ≅ Z) :
+    e ≪≫ (σ • f) = σ • (e ≪≫ f) := by
+  ext; simp
+
 /-- The automorphism `e₁ /ₛ e₂` of `Y` carrying `e₂` to `e₁`, namely `e₂.symm ≪≫ e₁`. -/
 instance instSDivIso : SDiv (Aut Y) (X ≅ Y) where
   sdiv e₁ e₂ := .of (e₂.symm ≪≫ e₁)
@@ -116,7 +142,7 @@ instance instTorsorIso [Nonempty (X ≅ Y)] : Torsor (Aut Y) (X ≅ Y) where
   sdiv_smul' := Iso.sdiv_smul
   smul_sdiv' := smul_sdiv_iso
 
-instance : MulAction.IsPretransitive (Aut Y) (X ≅ Y) :=
+instance instIsPretransitiveIso : MulAction.IsPretransitive (Aut Y) (X ≅ Y) :=
   ⟨fun e₁ e₂ ↦ ⟨e₂ /ₛ e₁, e₂.sdiv_smul e₁⟩⟩
 
 /-! ### Precomposition by `Aut X` -/
@@ -142,13 +168,49 @@ instance instMulActionOpIso : MulAction (Aut X)ᵐᵒᵖ (X ≅ Y) where
   one_smul e := by ext; simp
   mul_smul σ τ e := by ext; simp
 
-instance : SMulCommClass (Aut Y) (Aut X)ᵐᵒᵖ (X ≅ Y) where
+/-- The action of `(Aut X)ᵐᵒᵖ` on `X ≅ Y` by precomposition is free. -/
+instance instIsCancelSMulOpIso : IsCancelSMul (Aut X)ᵐᵒᵖ (X ≅ Y) where
+  left_cancel' σ e₁ e₂ h := by
+    ext
+    exact (cancel_epi σ.unop.asIso.hom).1 (by simpa using congrArg Iso.hom h)
+  right_cancel' σ τ e h := by
+    apply MulOpposite.unop_injective
+    ext1
+    ext
+    exact (cancel_mono e.hom).1 (by simpa using congrArg Iso.hom h)
+
+@[simp]
+theorem op_smul_iso_refl (σ : (Aut X)ᵐᵒᵖ) : σ • Iso.refl X = σ.unop.asIso := by
+  ext; simp
+
+@[simp]
+theorem op_smul_iso_trans {Z : C} (σ : (Aut X)ᵐᵒᵖ) (e : X ≅ Y) (f : Y ≅ Z) :
+    (σ • e) ≪≫ f = σ • (e ≪≫ f) := by
+  ext; simp
+
+/-- Taking inverses exchanges postcomposition by `σ` with precomposition by `σ⁻¹`. -/
+@[simp]
+theorem smul_iso_symm (σ : Aut Y) (e : X ≅ Y) :
+    (σ • e).symm = MulOpposite.op σ⁻¹ • e.symm := by
+  ext; simp
+
+/-- Taking inverses exchanges precomposition by `σ` with postcomposition by `σ⁻¹`. -/
+@[simp]
+theorem op_smul_iso_symm (σ : (Aut X)ᵐᵒᵖ) (e : X ≅ Y) : (σ • e).symm = σ.unop⁻¹ • e.symm := by
+  ext; simp
+
+/-- Postcomposing `e` with an automorphism of `Y` is precomposing `f` with it. -/
+theorem smul_iso_trans {Z : C} (σ : Aut Y) (e : X ≅ Y) (f : Y ≅ Z) :
+    (σ • e) ≪≫ f = e ≪≫ (MulOpposite.op σ • f) := by
+  ext; simp
+
+instance instSMulCommClassIso : SMulCommClass (Aut Y) (Aut X)ᵐᵒᵖ (X ≅ Y) where
   smul_comm σ τ e := by ext; simp
 
-instance : SMulCommClass (Aut X)ᵐᵒᵖ (Aut Y) (X ≅ Y) :=
+instance instSMulCommClassOpIso : SMulCommClass (Aut X)ᵐᵒᵖ (Aut Y) (X ≅ Y) :=
   .symm _ _ _
 
-instance : MulAction.IsPretransitive (Aut X)ᵐᵒᵖ (X ≅ Y) :=
+instance instIsPretransitiveOpIso : MulAction.IsPretransitive (Aut X)ᵐᵒᵖ (X ≅ Y) :=
   ⟨fun e₁ e₂ ↦ ⟨.op (.of (e₂ ≪≫ e₁.symm)), by ext; simp⟩⟩
 
 end Aut
@@ -174,6 +236,20 @@ theorem existsUnique_op_smul_eq (e₁ e₂ : X ≅ Y) :
 `e.conjAut σ` of `Y` acts on `e` by postcomposition as the automorphism `σ` of `X` acts on `e` by
 precomposition. -/
 theorem conjAut_smul (e : X ≅ Y) (σ : Aut X) : e.conjAut σ • e = MulOpposite.op σ • e := by
+  ext
+  simp [Iso.conjAut_apply]
+
+/-- Conjugation by `σ • e` is conjugation by `e` followed by conjugation by `σ` in `Aut Y`. -/
+theorem conjAut_smul_iso (σ : Aut Y) (e : X ≅ Y) (τ : Aut X) :
+    (σ • e).conjAut τ = σ * e.conjAut τ * σ⁻¹ := by
+  ext1
+  ext
+  simp [Iso.conjAut_apply]
+
+/-- Conjugation by `op σ • e` is conjugation by `σ` in `Aut X` followed by conjugation by `e`. -/
+theorem conjAut_op_smul_iso (σ : Aut X) (e : X ≅ Y) (τ : Aut X) :
+    (MulOpposite.op σ • e).conjAut τ = e.conjAut (σ * τ * σ⁻¹) := by
+  ext1
   ext
   simp [Iso.conjAut_apply]
 
