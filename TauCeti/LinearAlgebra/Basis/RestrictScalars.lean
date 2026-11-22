@@ -34,6 +34,7 @@ variable {ι R S M : Type*} [Finite ι] [CommRing R] [IsDomain R] [Ring S] [Nont
 
 /-- The `b`-coordinates of the vector with coordinates `n` in `b.restrictScalars R` are the
 images `algebraMap R S (n i)` of its coordinates. -/
+@[simp]
 theorem repr_restrictScalars_equivFun_symm (n : ι → R) (i : ι) :
     b.repr ((b.restrictScalars R).equivFun.symm n : M) i = algebraMap R S (n i) := by
   rw [← b.restrictScalars_repr_apply R, ← equivFun_apply, LinearEquiv.apply_symm_apply]
