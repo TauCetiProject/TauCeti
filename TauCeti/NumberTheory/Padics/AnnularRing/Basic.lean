@@ -139,8 +139,8 @@ private theorem tendsto_min_add_min_add_min (m : ℤ) :
 theorem summable_coeff_mul_coeff (x y : AnnularRing p) (m : ℤ) :
     Summable fun i ↦ x.coeff i * y.coeff (m - i) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    tendsto_zero_of_norm_le_zpow (one_lt_p (p := p)) (fun i ↦ norm_coeff_mul_coeff_le x y i (m - i))
-      (tendsto_min_add_min m)
+    tendsto_zero_of_norm_le_zpow (one_lt_p (p := p))
+      (fun i ↦ norm_coeff_mul_coeff_le x y i (m - i)) (tendsto_min_add_min m)
 
 /-- The double convolution series `∑_{i, j} d_i e_j f_{m - i - j}` of three elements converges. -/
 theorem summable_coeff_mul_coeff_mul_coeff (x y z : AnnularRing p) (m : ℤ) :

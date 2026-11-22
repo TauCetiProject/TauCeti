@@ -70,9 +70,8 @@ theorem toMvPowerSeries_single (m : M) (φ : MvPowerSeries σ A) :
   simp [toMvPowerSeries_single, ← one_def]
 
 /-- On `single 1 φ`, `toMvPowerSeries` agrees with `MvPowerSeries.map singleOneRingHom`. -/
-theorem toMvPowerSeries_single_one (φ : MvPowerSeries σ A) :
-    toMvPowerSeries R σ A M (single 1 φ) =
-      MvPowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ := by
+theorem toMvPowerSeries_single_one (φ : MvPowerSeries σ A) : toMvPowerSeries R σ A M (single 1 φ) =
+    MvPowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ := by
   rw [toMvPowerSeries_single, ← one_def, map_one, mul_one]
 
 /-- `toMvPowerSeries` is injective for any monoid `M`: elements are determined by coefficients. -/
@@ -100,14 +99,13 @@ theorem map_singleOneRingHom_dvd_toMvPowerSeries_iff (φ : MvPowerSeries σ A)
 /-- When `M` is finite, `toMvPowerSeries` is surjective, since every series in `A[M]` has finitely
 many `M`-coordinates and reassembles into an element of `(MvPowerSeries σ A)[M]`. -/
 theorem toMvPowerSeries_surjective [Finite M] : Function.Surjective (toMvPowerSeries R σ A M) :=
-  fun ψ ↦
-    let f : M → MvPowerSeries σ A := fun m d ↦ (MvPowerSeries.coeff d ψ).coeff m
-    ⟨ofCoeff (Finsupp.equivFunOnFinite.symm f),
-      MvPowerSeries.ext fun d ↦ MonoidAlgebra.coeff_injective (Finsupp.ext fun m ↦ by
+  fun ψ ↦ let f : M → MvPowerSeries σ A := fun m d ↦ (MvPowerSeries.coeff d ψ).coeff m
+    ⟨ofCoeff (Finsupp.equivFunOnFinite.symm f), MvPowerSeries.ext fun d ↦
+      MonoidAlgebra.coeff_injective (Finsupp.ext fun m ↦ by
         rw [coeff_coeff_toMvPowerSeries, coeff_ofCoeff]
-        have hf := congr_arg (MvPowerSeries.coeff d)
-          (congr_fun (Finsupp.equivFunOnFinite.apply_symm_apply f) m)
-        simpa [f, MvPowerSeries.coeff_apply] using hf.trans (MvPowerSeries.coeff_apply (f m) d))⟩
+        simpa [f, MvPowerSeries.coeff_apply] using (congr_arg (MvPowerSeries.coeff d)
+          (congr_fun (Finsupp.equivFunOnFinite.apply_symm_apply f) m)).trans
+          (MvPowerSeries.coeff_apply (f m) d))⟩
 
 /-- For a finite monoid `M`, `(MvPowerSeries σ A)[M] ≃ₐ[R] MvPowerSeries σ (A[M])`. -/
 noncomputable def mvPowerSeriesAlgEquiv [Finite M] :

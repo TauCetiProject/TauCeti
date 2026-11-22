@@ -146,7 +146,14 @@ end TauCeti
 
 namespace MonoidAlgebra
 
-variable {R : Type*} [CommSemiring R] {G : Type*} [Group G]
+variable {R : Type*} [CommSemiring R] {M : Type*}
+
+/-- The scalar embedding `singleOneRingHom : R →+* R[M]` agrees with `algebraMap R R[M]`. -/
+theorem singleOneRingHom_eq_algebraMap [Monoid M] :
+    (singleOneRingHom : R →+* MonoidAlgebra R M) = algebraMap R (MonoidAlgebra R M) :=
+  RingHom.ext fun _ ↦ by simp
+
+variable {G : Type*} [Group G]
 
 /-- The coefficient at the identity is symmetric under swapping the factors in a group algebra
 over a commutative semiring. -/

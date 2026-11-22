@@ -34,6 +34,7 @@ a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with 
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
+* `TauCeti.exists_zpow_neg_lt`: for `1 < b` and `0 < ε` there is `n : ℕ` with `b ^ (-n) < ε`.
 -/
 
 public section
@@ -76,6 +77,13 @@ theorem exists_nat_ge_and_div_le {δ : K} (hδ : 0 < δ) (n₀ : ℕ) :
         one_div_le_one_div_of_le (Nat.cast_pos.2 hNpos) (le_add_of_nonneg_right zero_le_one)
     _ ≤ 2 * ((n₀ + 1 : ℕ) : K) / N := by gcongr; norm_cast; omega
     _ ≤ δ := h2.le
+
+/-- For `1 < b` and `0 < ε` in an Archimedean ordered semifield, `b ^ (-n) < ε` for some
+`n : ℕ`. -/
+theorem exists_zpow_neg_lt [ExistsAddOfLE K] {b ε : K} (hb : 1 < b) (hε : 0 < ε) :
+    ∃ n : ℕ, b ^ (-(n : ℤ)) < ε := by
+  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hε (inv_lt_one_of_one_lt₀ hb)
+  exact ⟨n, by simpa [zpow_neg, zpow_natCast, inv_pow] using hn⟩
 
 section Field
 

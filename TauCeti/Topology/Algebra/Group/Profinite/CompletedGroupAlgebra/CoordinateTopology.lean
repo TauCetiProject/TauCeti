@@ -57,8 +57,12 @@ theorem continuous_prodPowerSeriesCoordinate :
     let l : MonoidAlgebra ℤ_[p] C →ₗ[ℤ_[p]] ℤ_[p] :=
       (Finsupp.lapply c).comp (MonoidAlgebra.coeffLinearEquiv ℤ_[p]).toLinearMap
     have hl (a : MonoidAlgebra ℤ_[p] C) : l a = a.coeff c := rfl
-    simpa only [s, PowerSeries.coeff, MonoidAlgebra.coeff_coeff_mvPowerSeriesAlgEquiv_symm,
-      ContinuousAt, Function.comp_def, hl] using
+    have hcoeff (ψ' : PowerSeries (MonoidAlgebra ℤ_[p] C)) :
+        PowerSeries.coeff n ((s ψ').coeff c) = l (PowerSeries.coeff n ψ') := by
+      rw [hl, ← PowerSeries.coeff_coeToMvPowerSeries (R := ℤ_[p]) n,
+        MonoidAlgebra.coeff_coeff_mvPowerSeriesAlgEquiv_symm,
+        PowerSeries.coeff_coeToMvPowerSeries]
+    simpa only [s, ContinuousAt, Function.comp_def, hcoeff] using
       ((IsModuleTopology.continuous_of_linearMap l).comp
         (PowerSeries.WithPiTopology.continuous_coeff (MonoidAlgebra ℤ_[p] C) n)).continuousAt
   have hs (ψ : PowerSeries (MonoidAlgebra ℤ_[p] C)) :

@@ -39,10 +39,6 @@ namespace MonoidAlgebra
 section Semiring
 variable {A : Type*} [CommSemiring A] {M : Type*} [Monoid M]
 
-private theorem singleOneRingHom_eq_algebraMap :
-    (singleOneRingHom : A →+* MonoidAlgebra A M) = algebraMap A (MonoidAlgebra A M) :=
-  RingHom.ext fun _ ↦ by simp
-
 /-- An element of `A[M]` lies in `I.map singleOneRingHom` iff every coefficient lies in `I`. -/
 @[simp] theorem mem_map_singleOneRingHom_iff {I : Ideal A} {x : MonoidAlgebra A M} :
     x ∈ Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I ↔ ∀ m, x.coeff m ∈ I := by
@@ -54,7 +50,7 @@ two-sided ideal of `A[M]` even when `M` is non-commutative, because the elements
 in `A[M]`. -/
 instance instIsTwoSidedMapSingleOneRingHom (I : Ideal A) :
     (Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I).IsTwoSided :=
-  singleOneRingHom_eq_algebraMap (A := A) (M := M) ▸ Ideal.instIsTwoSidedMapAlgebraMap I
+  singleOneRingHom_eq_algebraMap (R := A) (M := M) ▸ Ideal.instIsTwoSidedMapAlgebraMap I
 end Semiring
 
 section CommRing
@@ -63,18 +59,16 @@ variable (R : Type*) [CommSemiring R] {A : Type*} [CommRing A] [Algebra R A]
 
 /-- The kernel of coefficientwise reduction `A[M] →+* (A ⧸ I)[M]` is the pushforward ideal
 `I.map singleOneRingHom`. -/
-theorem ker_mapRingHom_quotientMk :
-    RingHom.ker (mapRingHom M (Ideal.Quotient.mk I)) =
-      Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I := by
+theorem ker_mapRingHom_quotientMk : RingHom.ker (mapRingHom M (Ideal.Quotient.mk I)) =
+    Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I := by
   ext x; simp only [RingHom.mem_ker, mem_map_singleOneRingHom_iff,
     TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff, Ideal.mk_ker,
     TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff]
 
 /-- The kernel of the `R`-algebra coefficientwise reduction `A[M] →ₐ[R] (A ⧸ I)[M]` is
 `I.map singleOneRingHom`. -/
-theorem ker_mapAlgHom_quotientMk :
-    RingHom.ker (mapAlgHom M (Ideal.Quotient.mkₐ R I)) =
-      Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I := by
+theorem ker_mapAlgHom_quotientMk : RingHom.ker (mapAlgHom M (Ideal.Quotient.mkₐ R I)) =
+    Ideal.map (singleOneRingHom : A →+* MonoidAlgebra A M) I := by
   rw [← RingHom.ker_coe_toRingHom, toRingHom_mapAlgHom, Ideal.Quotient.mkₐ_toRingHom,
     ker_mapRingHom_quotientMk]
 
@@ -90,8 +84,7 @@ noncomputable def quotientAlgEquiv :
     quotientAlgEquiv R M I (Ideal.Quotient.mk _ x) = mapAlgHom M (Ideal.Quotient.mkₐ R I) x := (rfl)
 @[simp] theorem quotientAlgEquiv_symm_single_mk (m : M) (a : A) :
     (quotientAlgEquiv R M I).symm (single m (Ideal.Quotient.mk I a)) =
-      Ideal.Quotient.mk _ (single m a) :=
-  (quotientAlgEquiv R M I).injective (by simp)
+      Ideal.Quotient.mk _ (single m a) := (quotientAlgEquiv R M I).injective (by simp)
 end CommRing
 
 end MonoidAlgebra

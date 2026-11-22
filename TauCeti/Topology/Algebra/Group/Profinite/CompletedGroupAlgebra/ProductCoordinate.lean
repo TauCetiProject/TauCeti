@@ -108,15 +108,17 @@ theorem prodPowerSeriesCoordinate_def :
 @[simp]
 theorem prodPowerSeriesCoordinate_X :
     prodPowerSeriesCoordinate C hΓ hγ PowerSeries.X = of ℤ_[p] (C × Γ) (1, γ) - 1 := by
+  have hfirst : (MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] Unit ℤ_[p] C).symm PowerSeries.X =
+      MonoidAlgebra.single 1 PowerSeries.X := by
+    rw [PowerSeries.X_apply, MonoidAlgebra.mvPowerSeriesAlgEquiv_symm_X, ← PowerSeries.X_apply]
   -- `mapAlgEquiv` is `mapAlgHom` on the underlying map, so Mathlib's `mapAlgHom_single` applies.
   have h : MonoidAlgebra.mapAlgEquiv ℤ_[p] C (powerSeriesCoordinate hΓ hγ)
       (MonoidAlgebra.single 1 PowerSeries.X) =
         MonoidAlgebra.single 1 (powerSeriesCoordinate hΓ hγ PowerSeries.X) :=
     MonoidAlgebra.mapAlgHom_single (powerSeriesCoordinate hΓ hγ).toAlgHom 1 PowerSeries.X
-  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply, PowerSeries.X_apply,
-    MonoidAlgebra.mvPowerSeriesAlgEquiv_symm_X, ← PowerSeries.X_apply, h, powerSeriesCoordinate_X,
-    coe_monoidAlgebraProdEquiv, monoidAlgebraProdHom_single_one, map_sub, map_of, map_one,
-    MonoidHom.inr_apply]
+  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply, hfirst, h,
+    powerSeriesCoordinate_X, coe_monoidAlgebraProdEquiv, monoidAlgebraProdHom_single_one,
+    map_sub, map_of, map_one, MonoidHom.inr_apply]
 
 /-- The coordinate sends `1 + X` to the group element `(1, γ)`. -/
 @[simp]
@@ -130,12 +132,16 @@ theorem prodPowerSeriesCoordinate_one_add_X :
 theorem prodPowerSeriesCoordinate_C_single (c : C) (a : ℤ_[p]) :
     prodPowerSeriesCoordinate C hΓ hγ (PowerSeries.C (MonoidAlgebra.single c a)) =
       algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] (C × Γ)) a * of ℤ_[p] (C × Γ) (c, 1) := by
+  have hfirst : (MonoidAlgebra.mvPowerSeriesAlgEquiv ℤ_[p] Unit ℤ_[p] C).symm
+      (PowerSeries.C (MonoidAlgebra.single c a)) =
+      MonoidAlgebra.single c (PowerSeries.C a) := by
+    rw [PowerSeries.C_apply, MonoidAlgebra.mvPowerSeriesAlgEquiv_symm_C_single,
+      ← PowerSeries.C_apply]
   have h : MonoidAlgebra.mapAlgEquiv ℤ_[p] C (powerSeriesCoordinate hΓ hγ)
       (MonoidAlgebra.single c (PowerSeries.C a)) =
         MonoidAlgebra.single c (powerSeriesCoordinate hΓ hγ (PowerSeries.C a)) :=
     MonoidAlgebra.mapAlgHom_single (powerSeriesCoordinate hΓ hγ).toAlgHom c (PowerSeries.C a)
-  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply, PowerSeries.C_apply,
-    MonoidAlgebra.mvPowerSeriesAlgEquiv_symm_C_single, ← PowerSeries.C_apply, h,
+  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply, hfirst, h,
     PowerSeries.C_eq_algebraMap, AlgEquiv.commutes, coe_monoidAlgebraProdEquiv,
     monoidAlgebraProdHom_single, AlgHom.commutes]
 
