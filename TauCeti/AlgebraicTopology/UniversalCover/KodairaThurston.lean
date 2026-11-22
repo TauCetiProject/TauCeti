@@ -249,7 +249,7 @@ Hurewicz theorem. The class of `deckLoop g` has the coordinates `(x, y, n)` of `
 (`TauCeti.KodairaThurston.firstHomologyAddEquiv_loopClass_deckLoop`). -/
 def firstHomologyAddEquiv :
     ((singularChains ℤ).obj (TopCat.of KodairaThurston)).homology 1 ≃+ ℤ × ℤ × ℤ :=
-  (hurewiczHomologyAddEquiv (X := TopCat.of KodairaThurston) (mk 0)).symm.trans
+  (hurewiczHomologyAddEquiv (X := TopCat.of KodairaThurston) (mk 0) (.refl ℤ)).symm.trans
     (AddEquiv.toMultiplicativeRight.symm
       ((fundamentalGroupMulEquiv (x := mk 0) ⟨0, rfl⟩).abelianizationCongr.trans
         DeckGroup.abelianizationMulEquiv))
@@ -258,10 +258,11 @@ def firstHomologyAddEquiv :
 coordinates `(x, y, n)`, where `g = ((x, y, z), n)`. -/
 theorem firstHomologyAddEquiv_loopClass_deckLoop (g : DeckGroup) :
     firstHomologyAddEquiv
-        (H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston) (deckLoop g))) =
+        (H₁AddEquivHomology ℤ _ (loopClass ℤ (X := TopCat.of KodairaThurston) (deckLoop g))) =
       (g.1.x, g.1.y, g.2.toAdd) := by
   have h := (AddEquiv.symm_apply_eq _).2
-    (hurewiczHomologyAddEquiv_ofMul_of_mk (X := TopCat.of KodairaThurston) (deckLoop g)).symm
+    (hurewiczHomologyAddEquiv_ofMul_of_mk (X := TopCat.of KodairaThurston) (.refl ℤ)
+      (deckLoop g)).symm
   rw [firstHomologyAddEquiv, AddEquiv.trans_apply, h]
   simp [AddEquiv.toMultiplicativeRight, fundamentalGroupMulEquiv_deckLoop]
 
@@ -269,7 +270,7 @@ theorem firstHomologyAddEquiv_loopClass_deckLoop (g : DeckGroup) :
 of the loop covered by the segment from `0` to `(a, b, 0, n)`. -/
 theorem firstHomologyAddEquiv_symm_apply (v : ℤ × ℤ × ℤ) :
     firstHomologyAddEquiv.symm v =
-      H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston)
+      H₁AddEquivHomology ℤ _ (loopClass ℤ (X := TopCat.of KodairaThurston)
         (deckLoop (⟨v.1, v.2.1, 0⟩, .ofAdd v.2.2))) := by
   rw [AddEquiv.symm_apply_eq, firstHomologyAddEquiv_loopClass_deckLoop]
   simp

@@ -113,7 +113,8 @@ private theorem eqOn_preciseRepresentative_gradient_and_norm_le {H U₁ : Opens 
   have hgradr := W1p.gradient_ae_eq_of_contDiffOn _ hd1 hval
   refine ⟨eqOn_preciseRepresentative_of_continuousOn V₁.isOpen
     ((W1p.locallyIntegrableOn_gradient _).mono_set inter_subset_left)
-    ((W1p.gradient_sub_compHyperplaneReflectionL_ae ENNReal.ofNat_ne_top hν hH hU₁ hw₀0).trans
+    ((W1p.gradient_sub_compHyperplaneReflectionL_ae_of_value_ae_eq_zero ENNReal.ofNat_ne_top hν
+        hH hU₁ hw₀0).trans
       ((W1p.gradient_restrictL_ae inf_le_left w₀).symm.trans hgradr))
     ((InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn
       (hd1.continuousOn_fderiv_of_isOpen V₁.isOpen le_rfl)), ?_⟩

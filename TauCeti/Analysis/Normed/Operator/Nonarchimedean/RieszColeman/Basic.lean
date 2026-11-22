@@ -276,6 +276,20 @@ theorem range_aeval_reverse_eq_ker (hE : IsRieszColemanProjection u Q E) :
   rintro ⟨y, rfl⟩
   simpa only [mul_apply_eq_comp, zero_apply] using congr($(hE.mul_aeval_reverse_eq_zero) y)
 
+/-- **Monotonicity in the polynomial.** If the leading coefficient of `Q` is a unit and `Q ∣ Q'`,
+then the range `ker Q*(u)` of a Riesz–Coleman projection of `u` for `Q` lies in the range
+`ker Q'*(u)` of any Riesz–Coleman projection of `u` for `Q'`. -/
+theorem range_le_range_of_dvd {Q' : R[X]} {E' : M →L[R] M} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection u Q' E') (hQ : IsUnit Q.leadingCoeff) (hQQ' : Q ∣ Q') :
+    LinearMap.range (E : M →ₗ[R] M) ≤ LinearMap.range (E' : M →ₗ[R] M) := by
+  obtain ⟨A, rfl⟩ := hQQ'
+  rw [hE.range_eq_ker, hE'.range_eq_ker]
+  rcases eq_or_ne A 0 with rfl | hA
+  · simp
+  rw [reverse_mul (by rwa [Ne, hQ.mul_right_eq_zero, leadingCoeff_eq_zero]), toLinearMap_aeval,
+    toLinearMap_aeval]
+  exact le_sup_left.trans Polynomial.sup_ker_aeval_le_ker_aeval_mul
+
 /-- **Topological decomposition `M = ker Q*(u) ⊕ range Q*(u)`.** -/
 theorem isTopCompl_ker_range_aeval_reverse (hE : IsRieszColemanProjection u Q E) :
     (LinearMap.ker ((Polynomial.aeval u Q.reverse : M →L[R] M) : M →ₗ[R] M)).IsTopCompl

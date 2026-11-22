@@ -122,6 +122,11 @@ theorem sub (hΦ : F.IsSymmetricCocycle Φ) (hΨ : F.IsSymmetricCocycle Ψ) :
     F.IsSymmetricCocycle (Φ - Ψ) := by
   simpa only [sub_eq_add_neg] using hΦ.add hΨ.neg
 
+/-- A finite sum of symmetric 2-cocycles is a symmetric 2-cocycle. -/
+theorem sum {ι : Type*} {s : Finset ι} {Φ : ι → MvPowerSeries (Fin 2) R}
+    (hΦ : ∀ i ∈ s, F.IsSymmetricCocycle (Φ i)) : F.IsSymmetricCocycle (∑ i ∈ s, Φ i) :=
+  Finset.sum_induction Φ F.IsSymmetricCocycle (fun _ _ ↦ add) zero hΦ
+
 /-- **Leading terms of symmetric 2-cocycles.** If a symmetric 2-cocycle `Φ` vanishes below degree
 `n ≠ 0`, its degree-`n` part is a multiple `c C_n` of the Lazard cocycle. -/
 theorem exists_homogeneousComponent_eq_smul_lazardCocycle (hΦ : F.IsSymmetricCocycle Φ) {n : ℕ}
