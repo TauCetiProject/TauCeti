@@ -139,23 +139,21 @@ theorem tendsto_sum_integral_Ico_add_sub {μ : Measure ℝ} [NullSingletonClass 
     Tendsto
       (fun i => ∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + δ₁ i)..((j : ℝ) + 1 - δ₂ i), f x ∂μ)
       l (𝓝 (∫ x in (a : ℝ)..n, f x ∂μ)) := by
-  have hsplit := (sum_integral_adjacent_intervals_Ico_int (μ := μ) han (fun j : ℤ => (j : ℝ))
-    fun j hj => by
-      obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
-      have hsub : uIcc (j : ℝ) ((j + 1 : ℤ) : ℝ) ⊆ uIcc (a : ℝ) (n : ℝ) := by
-        rw [uIcc_of_le (by push_cast; linarith), uIcc_of_le (by exact_mod_cast han)]
-        exact Icc_subset_Icc (by exact_mod_cast hja) (by exact_mod_cast hjn)
-      exact hf.mono_set hsub).symm
-  simp only [Int.cast_add, Int.cast_one] at hsplit
-  rw [hsplit]
-  refine tendsto_finsetSum _ fun j hj => ?_
-  obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
-  have hint_j : IntervalIntegrable f μ (j : ℝ) ((j : ℝ) + 1) := by
+  have hint_unit : ∀ j ∈ Finset.Ico a n, IntervalIntegrable f μ (j : ℝ) ((j : ℝ) + 1) := by
+    intro j hj
+    obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
     have hsub : uIcc (j : ℝ) ((j : ℝ) + 1) ⊆ uIcc (a : ℝ) (n : ℝ) := by
       rw [uIcc_of_le (by linarith : (j : ℝ) ≤ (j : ℝ) + 1), uIcc_of_le (by exact_mod_cast han)]
       exact Icc_subset_Icc (by exact_mod_cast hja) (by exact_mod_cast hjn)
     exact hf.mono_set hsub
-  refine (continuousOn_integral_prod hint_j ((j : ℝ), (j : ℝ) + 1)
+  have hsplit : ∫ x in (a : ℝ)..n, f x ∂μ =
+      ∑ j ∈ Finset.Ico a n, ∫ x in (j : ℝ)..((j : ℝ) + 1), f x ∂μ := by
+    simpa [Int.cast_add, Int.cast_one] using
+      (sum_integral_adjacent_intervals_Ico_int (μ := μ) han (fun j : ℤ => (j : ℝ))
+        fun j hj => by simpa [Int.cast_add, Int.cast_one] using hint_unit j hj).symm
+  rw [hsplit]
+  refine tendsto_finsetSum _ fun j hj => ?_
+  refine (continuousOn_integral_prod (hint_unit j hj) ((j : ℝ), (j : ℝ) + 1)
     ⟨left_mem_uIcc, right_mem_uIcc⟩).tendsto.comp
       (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
         (fun i => ((j : ℝ) + δ₁ i, (j : ℝ) + 1 - δ₂ i)) ?_ ?_)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
@@ -14,6 +15,7 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 import TauCeti.Analysis.Complex.VerticalStrip.Growth
+import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -23,8 +25,8 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 # The Abel–Plana summation formula
 
 For integers `a ≤ n` and a function `f : ℂ → ℂ` holomorphic on the open vertical strip
-`a < Re z < n` and continuous on its closure `a ≤ Re z ≤ n`, with `f(z) = o(e^{2π|Im z|})` as
-`|Im z| → ∞` uniformly in the strip:
+`verticalStrip a n` and continuous on its closure `verticalClosedStrip a n`, with
+`f(z) = o(e^{2π|Im z|})` as `|Im z| → ∞` uniformly in the strip:
 
 * If the two boundary integrands `y ↦ (f(c + iy) - f(c - iy)) / (e^{2πy} - 1)` are integrable on
   `(0, ∞)` at `c = a` and `c = n`, the general complex Abel–Plana formula
@@ -90,22 +92,6 @@ private noncomputable def abelPlanaUpper (f : ℂ → ℂ) (z : ℂ) : ℂ :=
 private theorem neg_two_pi_I_ne_zero : (-2 * π * I : ℂ) ≠ 0 := by
   simp [neg_mul]
 
-/-- `e^{-2πiz} ≠ 1` off the real axis. -/
-private theorem cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
-    cexp (-2 * π * I * z) ≠ 1 := fun h => by
-  obtain ⟨m, rfl⟩ := Complex.exp_neg_two_pi_mul_I_mul_eq_one_iff.mp h
-  exact hz (intCast_im m)
-
-/-- `e^{-2πiz} ≠ 1` whenever `Re z` lies strictly between two consecutive integers. -/
-private theorem cexp_neg_two_pi_I_mul_ne_one_of_re_mem_Ioo {z : ℂ} (j : ℤ)
-    (hz : z.re ∈ Ioo (j : ℝ) (j + 1)) : cexp (-2 * π * I * z) ≠ 1 := fun h => by
-  obtain ⟨m, rfl⟩ := Complex.exp_neg_two_pi_mul_I_mul_eq_one_iff.mp h
-  have h1 : (j : ℝ) < m := by simpa using hz.1
-  have h2 : (m : ℝ) < (j + 1 : ℤ) := by push_cast; simpa using hz.2
-  have : j < m := by exact_mod_cast h1
-  have : m < j + 1 := by exact_mod_cast h2
-  omega
-
 /-- On `(j, j + 1)`, combining `g₊` with the conjugate of `g₊` for `conj ∘ f ∘ conj` gives
 `-f(x)`. -/
 private theorem abelPlanaUpper_add_conj_comp (f : ℂ → ℂ) {x : ℝ} (j : ℤ)
@@ -116,7 +102,7 @@ private theorem abelPlanaUpper_add_conj_comp (f : ℂ → ℂ) {x : ℝ} (j : �
     ← Complex.exp_conj, map_mul, map_neg, Complex.conj_I]
   set w : ℂ := cexp (-2 * π * I * (x : ℂ))
   have hw1 : w - 1 ≠ 0 := sub_ne_zero.mpr
-    (cexp_neg_two_pi_I_mul_ne_one_of_re_mem_Ioo j (by simpa using hx))
+    (Complex.exp_neg_two_pi_mul_I_mul_ne_one_of_re_mem_Ioo j (by simpa using hx))
   have hw1' : 1 - w ≠ 0 := sub_ne_zero.mpr (sub_ne_zero.mp hw1).symm
   have hpos : cexp (-2 * ↑π * -I * ↑x) = w⁻¹ := by rw [← Complex.exp_neg]; congr 1; ring
   rw [hpos]
@@ -140,11 +126,11 @@ private noncomputable def upperLeftCap (f : ℂ → ℂ) (k : ℤ) (ε : ℝ) : 
     I * (∫ y in (0 : ℝ)..ε, abelPlanaUpper f ((k : ℂ) - ε + y * I))
 
 /-- Cauchy's rectangle theorem for `abelPlanaUpper f` on any pole-free subrectangle
-`[x₁, x₂] × [y₁, y₂]` of the strip `a ≤ Re z ≤ n`. -/
+`[x₁, x₂] × [y₁, y₂]` of the strip `verticalClosedStrip a n`. -/
 private theorem cauchy_rect_abelPlanaUpper {f : ℂ → ℂ} {a n : ℤ} {x₁ x₂ y₁ y₂ : ℝ}
     (hx1 : (a : ℝ) ≤ x₁) (hx12 : x₁ ≤ x₂) (hx2 : x₂ ≤ n) (hy12 : y₁ ≤ y₂)
-    (hf : DifferentiableOn ℂ f {z | (a : ℝ) < z.re ∧ z.re < n})
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n})
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a n))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n))
     (hne : ∀ z ∈ Icc x₁ x₂ ×ℂ Icc y₁ y₂, cexp (-2 * π * I * z) ≠ 1) :
     ((∫ x in x₁..x₂, abelPlanaUpper f (x + y₁ * I)) -
       ∫ x in x₁..x₂, abelPlanaUpper f (x + y₂ * I)) +
@@ -177,17 +163,18 @@ private theorem cauchy_rect_abelPlanaUpper {f : ℂ → ℂ} {a n : ℤ} {x₁ x
 
 /-- Continuity of `x ↦ abelPlanaUpper f (x + ε * I)` across `[a, n]` for `ε ≠ 0`. -/
 private theorem continuousOn_abelPlanaUpper_add_mul_I {f : ℂ → ℂ} {a n : ℤ} {ε : ℝ}
-    (hε0 : ε ≠ 0) (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hε0 : ε ≠ 0) (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     ContinuousOn (fun x : ℝ => abelPlanaUpper f (x + ε * I)) (Icc (a : ℝ) n) :=
   (hcont.comp (by fun_prop) fun x hx => ⟨by simp [hx.1], by simp [hx.2]⟩).div (by fun_prop)
-    fun _ _ => sub_ne_zero.mpr (cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero (by simp [hε0]))
+    fun _ _ => sub_ne_zero.mpr
+      (Complex.exp_neg_two_pi_mul_I_mul_ne_one_of_im_ne_zero (by simp [hε0]))
 
 /-- Rewriting a horizontal unit segment `∫_{j}^{j+1} g₊(x + iε) dx` via Cauchy's theorem on the
 pole-free bottom rectangle `[j + ε, j + 1 - ε] × [0, ε]`. -/
 private theorem upper_unit_strip_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
     (hj : j ∈ Finset.Ico a n) (hε0 : 0 < ε) (hε2 : ε < 1 / 2)
-    (hf : DifferentiableOn ℂ f {z | (a : ℝ) < z.re ∧ z.re < n})
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a n))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     ∫ x in (j : ℝ)..(j + 1), abelPlanaUpper f (x + ε * I) =
       (∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), abelPlanaUpper f x) +
         upperRightCap f j ε + upperLeftCap f (j + 1) ε := by
@@ -196,7 +183,7 @@ private theorem upper_unit_strip_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
   have hjn' : (j : ℝ) + 1 ≤ n := by exact_mod_cast hjn
   have hle1 : (j : ℝ) + ε ≤ (j : ℝ) + 1 - ε := by linarith
   have hcauchy := cauchy_rect_abelPlanaUpper (by linarith) hle1 (by linarith) hε0.le hf hcont
-    fun z hz => cexp_neg_two_pi_I_mul_ne_one_of_re_mem_Ioo j
+    fun z hz => Complex.exp_neg_two_pi_mul_I_mul_ne_one_of_re_mem_Ioo j
       ⟨by linarith [hz.1.1], by linarith [hz.1.2]⟩
   simp only [Complex.ofReal_zero, zero_mul, add_zero] at hcauchy
   have hcont_line : ContinuousOn (fun x : ℝ => abelPlanaUpper f (x + ε * I))
@@ -236,8 +223,8 @@ private theorem upper_unit_strip_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
 strips `[j + ε, j + 1 - ε] × [0, ε]`. -/
 private theorem upper_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ}
     (han : a < n) (hε0 : 0 < ε) (hε2 : ε < 1 / 2) (hεT : ε ≤ T)
-    (hf : DifferentiableOn ℂ f {z | (a : ℝ) < z.re ∧ z.re < n})
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a n))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     (∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), abelPlanaUpper f x) +
       (∑ j ∈ Finset.Ico a n, (upperRightCap f j ε + upperLeftCap f (j + 1) ε)) =
       (∫ x in (a : ℝ)..n, abelPlanaUpper f (x + T * I)) +
@@ -245,7 +232,7 @@ private theorem upper_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ}
         I * (∫ y in ε..T, f (n + y * I) / (Real.exp (2 * π * y) - 1)) := by
   have han' : (a : ℝ) ≤ n := by exact_mod_cast han.le
   have hcauchy := cauchy_rect_abelPlanaUpper le_rfl han' le_rfl hεT hf hcont fun z hz =>
-    cexp_neg_two_pi_I_mul_ne_one_of_im_ne_zero (by linarith [hz.2.1])
+    Complex.exp_neg_two_pi_mul_I_mul_ne_one_of_im_ne_zero (by linarith [hz.2.1])
   simp only [Complex.ofReal_intCast] at hcauchy
   have hcont_line := continuousOn_abelPlanaUpper_add_mul_I hε0.ne' hcont
   have hsum_units :
@@ -267,8 +254,7 @@ private theorem upper_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ}
     simpa [Int.cast_add, Int.cast_one] using hsum.symm
   have hvert : ∀ k : ℤ, (∫ y in ε..T, abelPlanaUpper f (k + y * I)) =
       ∫ y in ε..T, f (k + y * I) / (Real.exp (2 * π * y) - 1) :=
-    fun k => integral_congr fun y _ => by
-      dsimp only [abelPlanaUpper]; rw [Complex.exp_neg_two_pi_mul_I_mul_intCast_add_mul_I]
+    fun k => integral_congr fun y _ => by simp [abelPlanaUpper]
   rw [hvert a, hvert n, hsplit, hsum_units] at hcauchy
   linear_combination hcauchy
 
@@ -277,7 +263,8 @@ private theorem upper_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ}
 /-- The top horizontal integral `∫_a^n g₊(x + iT) dx` vanishes as `T → +∞` under `hgrowth`. -/
 private theorem tendsto_integral_abelPlanaUpper_atTop {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
     (hgrowth : Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0)) :
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a n)) (𝓝 0)) :
     Tendsto (fun T : ℝ => ∫ x in (a : ℝ)..n, abelPlanaUpper f (x + T * I)) atTop (𝓝 0) := by
   have han' : (a : ℝ) ≤ n := by exact_mod_cast han
   have hlen_pos : 0 < (n : ℝ) - a + 1 := by linarith
@@ -309,14 +296,12 @@ private theorem tendsto_integral_abelPlanaUpper_atTop {f : ℂ → ℂ} {a n : �
       sub_pos.mpr (Real.one_lt_exp_iff.mpr (by positivity))
     have h1T : 1 - Real.exp (-(2 * π)) ≤ 1 - Real.exp (-(2 * π * T)) :=
       sub_le_sub_left (Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])) 1
-    have hfac : (Real.exp (2 * π * T) - 1) * Real.exp (-(2 * π * T)) =
-        1 - Real.exp (-(2 * π * T)) := by
-      rw [sub_mul, one_mul, ← Real.exp_add, add_neg_cancel, Real.exp_zero]
     rw [abelPlanaUpper, norm_div]
     calc
       ‖f z‖ / ‖cexp (-2 * π * I * z) - 1‖ ≤ ‖f z‖ / (Real.exp (2 * π * T) - 1) := by gcongr
       _ = (‖f z‖ * Real.exp (-(2 * π * T))) / (1 - Real.exp (-(2 * π * T))) := by
-        rw [← hfac, div_mul_eq_div_div_swap, mul_div_cancel_right₀ _ (Real.exp_pos _).ne']
+        rw [Real.exp_sub_one_eq_one_sub_exp_neg_mul (2 * π * T), div_mul_eq_div_div_swap,
+          div_eq_mul_inv ‖f z‖, ← Real.exp_neg]
       _ ≤ (δ * (1 - Real.exp (-(2 * π))) / ((n : ℝ) - a + 1)) / (1 - Real.exp (-(2 * π))) := by
         gcongr
       _ = δ / ((n : ℝ) - a + 1) := by field_simp
@@ -426,17 +411,6 @@ private theorem tendsto_norm_mul_abelPlanaUpper_sub {f : ℂ → ℂ} {S : Set �
   · rw [h0]; field_simp [hw0, hc_ne]
   · field_simp [hw0, hc_ne, h0]
 
-/-- If `0 < ‖w‖ < 1`, `w` cannot be a nonzero integer, so `e^{-2πi(k + w)} ≠ 1`. -/
-private theorem cexp_neg_two_pi_I_mul_int_add_ne_one_of_norm_lt_one (k : ℤ) {w : ℂ}
-    (hw0 : 0 < ‖w‖) (hw1 : ‖w‖ < 1) : cexp (-2 * π * I * ((k : ℂ) + w)) ≠ 1 := by
-  rw [add_comm (k : ℂ), Complex.exp_neg_two_pi_mul_I_mul_add_intCast]
-  intro h
-  obtain ⟨m, rfl⟩ := Complex.exp_neg_two_pi_mul_I_mul_eq_one_iff.mp h
-  rw [Complex.norm_intCast] at hw0 hw1
-  have : (0 : ℤ) < |m| := by exact_mod_cast hw0
-  have : |m| < (1 : ℤ) := by exact_mod_cast hw1
-  omega
-
 /-- Along a family of segments `γ ε : [a₀ ε, b₀ ε] → ℂ` of length `ε` with `ε ≤ ‖γ ε t‖ ≤ 2 * ε`,
 the integral of `abelPlanaUpper f (k + γ ε t)` minus its singular model tends to `0` as `ε → 0⁺`. -/
 private theorem tendsto_integral_abelPlanaUpper_sub_zero {f : ℂ → ℂ} {S : Set ℂ} {k : ℤ}
@@ -464,7 +438,7 @@ private theorem tendsto_integral_abelPlanaUpper_sub_zero {f : ℂ → ℂ} {S : 
     (ContinuousOn.div
       (hcont.comp (continuous_const.add hγ).continuousOn fun t ht => (hsegε t ht).2.2)
       (by fun_prop) fun t ht => sub_ne_zero.mpr
-        (cexp_neg_two_pi_I_mul_int_add_ne_one_of_norm_lt_one k
+        (Complex.exp_neg_two_pi_mul_I_mul_intCast_add_ne_one_of_norm_lt_one k
           (hε.trans_le (hsegε t ht).1) ((hsegε t ht).2.1.trans_lt (by linarith))))
       |>.intervalIntegrable_of_Icc hab
   have hint2 : IntervalIntegrable (fun t : ℝ => f k / (-2 * π * I * γ ε t))
@@ -487,27 +461,38 @@ private theorem tendsto_integral_abelPlanaUpper_sub_zero {f : ℂ → ℂ} {S : 
   rw [hlen, abs_of_pos hε, div_mul_cancel₀ _ hε.ne'] at hle
   exact hle.trans_lt (by linarith)
 
+/-- Norm bounds `ε ≤ ‖w‖ ≤ 2 * ε` for any point `w` on the boundary of `[-ε, ε] × [-ε, ε]`. -/
+private theorem norm_bounds_of_abs_le_and_eq (w : ℂ) (ε : ℝ) (hre : |w.re| ≤ ε)
+    (him : |w.im| ≤ ε) (hside : |w.re| = ε ∨ |w.im| = ε) :
+    ε ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ε := by
+  refine ⟨?_, (Complex.norm_le_abs_re_add_abs_im w).trans (by linarith)⟩
+  rcases hside with h | h
+  · exact h ▸ Complex.abs_re_le_norm w
+  · exact h ▸ Complex.abs_im_le_norm w
+
 /-- Quarter-box limit `upperRightCap f j ε → f j / 4` as `ε → 0⁺` for `j ∈ [a, n)`. -/
 private theorem tendsto_upperRightCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈ Finset.Ico a n)
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     Tendsto (fun ε : ℝ => upperRightCap f j ε) (𝓝[>] 0) (𝓝 (f j / 4)) := by
   obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
   have hja' : (a : ℝ) ≤ j := by exact_mod_cast hja
   have hjn' : (j : ℝ) + 1 ≤ n := by exact_mod_cast hjn
-  have hjS : (j : ℂ) ∈ {z : ℂ | (a : ℝ) ≤ z.re ∧ z.re ≤ n} :=
+  have hjS : (j : ℂ) ∈ Complex.HadamardThreeLines.verticalClosedStrip a n :=
     ⟨by simpa using hja', by simp; linarith⟩
   have hb1 := tendsto_integral_abelPlanaUpper_sub_zero hjS hcont
     (a₀ := fun _ => 0) (b₀ := fun ε => ε) (γ := fun ε t => (t : ℂ) + ε * I) fun ε ⟨hε0, hε1⟩ =>
-      ⟨sub_zero ε, by fun_prop, fun t ht =>
-        ⟨by simpa [abs_of_pos hε0] using Complex.abs_im_le_norm ((t : ℂ) + ε * I),
-         (norm_add_le _ _).trans (by simp [abs_of_nonneg ht.1, abs_of_pos hε0]; linarith [ht.2]),
-         by simp; constructor <;> linarith [ht.1, ht.2]⟩⟩
+      ⟨sub_zero ε, by fun_prop, fun t ht => by
+        obtain ⟨hlo, hhi⟩ := norm_bounds_of_abs_le_and_eq ((t : ℂ) + ε * I) ε
+          (by simp [abs_of_nonneg ht.1, ht.2]) (by simp [abs_of_pos hε0])
+          (Or.inr (by simp [abs_of_pos hε0]))
+        exact ⟨hlo, hhi, ⟨by simp; linarith [ht.1], by simp; linarith [ht.2]⟩⟩⟩
   have hb2 := tendsto_integral_abelPlanaUpper_sub_zero hjS hcont
     (a₀ := fun _ => 0) (b₀ := fun ε => ε) (γ := fun ε y => (ε : ℂ) + y * I) fun ε ⟨hε0, hε1⟩ =>
-      ⟨sub_zero ε, by fun_prop, fun y hy =>
-        ⟨by simpa [abs_of_pos hε0] using Complex.abs_re_le_norm ((ε : ℂ) + y * I),
-         (norm_add_le _ _).trans (by simp [abs_of_pos hε0, abs_of_nonneg hy.1]; linarith [hy.2]),
-         by simp; constructor <;> linarith⟩⟩
+      ⟨sub_zero ε, by fun_prop, fun y hy => by
+        obtain ⟨hlo, hhi⟩ := norm_bounds_of_abs_le_and_eq ((ε : ℂ) + y * I) ε
+          (by simp [abs_of_pos hε0]) (by simp [abs_of_nonneg hy.1, hy.2])
+          (Or.inl (by simp [abs_of_pos hε0]))
+        exact ⟨hlo, hhi, ⟨by simp; linarith, by simp; linarith⟩⟩⟩
   have hcomb := (hb1.sub (hb2.const_mul I)).add_const (f j / 4)
   simp only [mul_zero, sub_self, zero_add] at hcomb
   refine hcomb.congr' ?_
@@ -518,26 +503,28 @@ private theorem tendsto_upperRightCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j �
 
 /-- Quarter-box limit `upperLeftCap f (j + 1) ε → f (j + 1) / 4` as `ε → 0⁺` for `j ∈ [a, n)`. -/
 private theorem tendsto_upperLeftCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈ Finset.Ico a n)
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     Tendsto (fun ε : ℝ => upperLeftCap f (j + 1) ε) (𝓝[>] 0) (𝓝 (f ((j + 1 : ℤ) : ℂ) / 4)) := by
   obtain ⟨hja, hjn⟩ := Finset.mem_Ico.mp hj
   let k : ℤ := j + 1
   have hka' : (a : ℝ) + 1 ≤ k := by dsimp [k]; exact_mod_cast Int.add_le_add_right hja 1
   have hkn' : (k : ℝ) ≤ n := by dsimp [k]; exact_mod_cast hjn
-  have hkS : (k : ℂ) ∈ {z : ℂ | (a : ℝ) ≤ z.re ∧ z.re ≤ n} :=
+  have hkS : (k : ℂ) ∈ Complex.HadamardThreeLines.verticalClosedStrip a n :=
     ⟨by simp; linarith, by simpa using hkn'⟩
   have hb1 := tendsto_integral_abelPlanaUpper_sub_zero hkS hcont
     (a₀ := fun ε => -ε) (b₀ := fun _ => 0) (γ := fun ε t => (t : ℂ) + ε * I) fun ε ⟨hε0, hε1⟩ =>
-      ⟨by ring, by fun_prop, fun t ht =>
-        ⟨by simpa [abs_of_pos hε0] using Complex.abs_im_le_norm ((t : ℂ) + ε * I),
-         (norm_add_le _ _).trans (by simp [abs_of_nonpos ht.2, abs_of_pos hε0]; linarith [ht.1]),
-         by simp; constructor <;> linarith [ht.1, ht.2]⟩⟩
+      ⟨by ring, by fun_prop, fun t ht => by
+        obtain ⟨hlo, hhi⟩ := norm_bounds_of_abs_le_and_eq ((t : ℂ) + ε * I) ε
+          (by simp [abs_of_nonpos ht.2]; linarith [ht.1]) (by simp [abs_of_pos hε0])
+          (Or.inr (by simp [abs_of_pos hε0]))
+        exact ⟨hlo, hhi, ⟨by simp; linarith [ht.1], by simp; linarith [ht.2]⟩⟩⟩
   have hb2 := tendsto_integral_abelPlanaUpper_sub_zero hkS hcont
     (a₀ := fun _ => 0) (b₀ := fun ε => ε) (γ := fun ε y => -(ε : ℂ) + y * I) fun ε ⟨hε0, hε1⟩ =>
-      ⟨sub_zero ε, by fun_prop, fun y hy =>
-        ⟨by simpa [abs_of_pos hε0] using Complex.abs_re_le_norm (-(ε : ℂ) + y * I),
-         (norm_add_le _ _).trans (by simp [abs_of_pos hε0, abs_of_nonneg hy.1]; linarith [hy.2]),
-         by simp; constructor <;> linarith⟩⟩
+      ⟨sub_zero ε, by fun_prop, fun y hy => by
+        obtain ⟨hlo, hhi⟩ := norm_bounds_of_abs_le_and_eq (-(ε : ℂ) + y * I) ε
+          (by simp [abs_of_pos hε0]) (by simp [abs_of_nonneg hy.1, hy.2])
+          (Or.inl (by simp [abs_of_pos hε0]))
+        exact ⟨hlo, hhi, ⟨by simp; linarith, by simp; linarith⟩⟩⟩
   have hcomb := (hb1.add (hb2.const_mul I)).add_const (f k / 4)
   simp only [mul_zero, add_zero, zero_add] at hcomb
   refine hcomb.congr' ?_
@@ -549,7 +536,7 @@ private theorem tendsto_upperLeftCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈
 /-- Shrinking the punctured unit subintervals `[j + ε, j + 1 - ε]` to `[j, j + 1]` recovers
 `- ∫_a^n f` as `ε → 0⁺`. -/
 private theorem tendsto_neg_sum_integral_Ico {f : ℂ → ℂ} {a n : ℤ} (han : a < n)
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     Tendsto
       (fun ε : ℝ => - ∑ j ∈ Finset.Ico a n, ∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), f x)
       (𝓝[>] 0) (𝓝 (- ∫ x in (a : ℝ)..n, f x)) := by
@@ -573,14 +560,16 @@ private noncomputable def schwarzConjFun (f : ℂ → ℂ) (z : ℂ) : ℂ :=
 /-- Combining the upper and conjugated lower quarter-box limits over `j ∈ [a, n)` yields the
 trapezoidal sum `∑_{j=a}^n f(j) - f(a) / 2 - f(n) / 2` as `ε → 0⁺`. -/
 private theorem tendsto_sum_abelPlana_caps {f : ℂ → ℂ} {a n : ℤ} (han : a < n)
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     Tendsto
       (fun ε : ℝ => ∑ j ∈ Finset.Ico a n,
         (upperRightCap f j ε + conj (upperRightCap (schwarzConjFun f) j ε) +
           upperLeftCap f (j + 1) ε + conj (upperLeftCap (schwarzConjFun f) (j + 1) ε)))
       (𝓝[>] 0) (𝓝 ((∑ j ∈ Finset.Icc a n, f j) - f a / 2 - f n / 2)) := by
-  have hcont_conj : ContinuousOn (schwarzConjFun f) {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n} :=
-    continuousOn_conj_conj_of_symmetric (fun _ h => by simpa using h) hcont
+  have hcont_conj : ContinuousOn (schwarzConjFun f)
+      (Complex.HadamardThreeLines.verticalClosedStrip a n) :=
+    continuousOn_conj_conj_of_symmetric
+      (fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h) hcont
   have htrap : ∑ j ∈ Finset.Ico a n, (f j / 2 + f ((j + 1 : ℤ) : ℂ) / 2) =
       (∑ j ∈ Finset.Icc a n, f j) - f a / 2 - f n / 2 := by
     have hsum := Finset.sum_Ico_add_add_endpoints (fun j : ℤ => f j / 2) han.le
@@ -601,33 +590,11 @@ private theorem tendsto_sum_abelPlana_caps {f : ℂ → ℂ} {a n : ℤ} (han : 
     simp only [map_div₀, map_ofNat, map_intCast, starRingEnd_self_apply]; ring
   rwa [hval] at hsum4
 
-private theorem tendsto_schwarzConjFun_growth {f : ℂ → ℂ} {a b : ℝ}
-    (hgrowth : Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0)) :
-    Tendsto (fun z => schwarzConjFun f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
-  have hmap : Tendsto (starRingEnd ℂ)
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b})
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) := by
-    refine tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩
-    · rw [tendsto_comap_iff]
-      have heq : ((fun z : ℂ => |z.im|) ∘ starRingEnd ℂ) = fun z : ℂ => |z.im| := by
-        ext z; simp
-      rw [heq]
-      exact tendsto_comap.mono_left inf_le_left
-    · filter_upwards [mem_inf_of_right (mem_principal_self _)] with z hz
-      simpa using hz
-  have h1 := (Complex.continuous_conj.tendsto 0).comp (hgrowth.comp hmap)
-  simp only [map_zero] at h1
-  refine h1.congr fun z => ?_
-  dsimp only [Function.comp_apply, schwarzConjFun]
-  simp only [map_mul, Complex.conj_ofReal, Complex.conj_im, abs_neg]
-
 /-- Pairing the upper and conjugated lower integrands along a pole-free real segment
 `[j + ε, j + 1 - ε]` yields `- ∫_{j + ε}^{j + 1 - ε} f`. -/
 private theorem real_seg_add_conj_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
     (hj : j ∈ Finset.Ico a n) (hε0 : 0 < ε) (hε2 : ε < 1 / 2)
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     (∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), abelPlanaUpper f x) +
       conj (∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), abelPlanaUpper (schwarzConjFun f) x) =
     - ∫ x in ((j : ℝ) + ε)..((j : ℝ) + 1 - ε), f x := by
@@ -635,17 +602,19 @@ private theorem real_seg_add_conj_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
   have hja' : (a : ℝ) ≤ j := by exact_mod_cast hja
   have hjn' : (j : ℝ) + 1 ≤ n := by exact_mod_cast hjn
   have hle1 : (j : ℝ) + ε ≤ (j : ℝ) + 1 - ε := by linarith
-  have hc : ∀ {g : ℂ → ℂ}, ContinuousOn g {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n} →
+  have hc : ∀ {g : ℂ → ℂ},
+      ContinuousOn g (Complex.HadamardThreeLines.verticalClosedStrip a n) →
       ContinuousOn (fun x : ℝ => abelPlanaUpper g x) (Icc ((j : ℝ) + ε) ((j : ℝ) + 1 - ε)) :=
     fun hg => (hg.comp (by fun_prop) fun x hx =>
       ⟨by simp; linarith [hx.1], by simp; linarith [hx.2]⟩).div (by fun_prop) fun x hx =>
-        sub_ne_zero.mpr (cexp_neg_two_pi_I_mul_ne_one_of_re_mem_Ioo j
+        sub_ne_zero.mpr (Complex.exp_neg_two_pi_mul_I_mul_ne_one_of_re_mem_Ioo j
           ⟨by simp; linarith [hx.1], by simp; linarith [hx.2]⟩)
   have hc1 := (hc hcont).intervalIntegrable_of_Icc (μ := volume) hle1
   have hc2 : IntervalIntegrable
       (fun x : ℝ => conj (abelPlanaUpper (schwarzConjFun f) x)) volume _ _ :=
     (Complex.continuous_conj.comp_continuousOn
-      (hc (continuousOn_conj_conj_of_symmetric (fun _ h => by simpa using h)
+      (hc (continuousOn_conj_conj_of_symmetric
+        (fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h)
         hcont))).intervalIntegrable_of_Icc (μ := volume) hle1
   rw [← intervalIntegral.intervalIntegral_conj, ← intervalIntegral.integral_add hc1 hc2,
     ← intervalIntegral.integral_neg]
@@ -657,7 +626,7 @@ private theorem real_seg_add_conj_eq {f : ℂ → ℂ} {a n j : ℤ} {ε : ℝ}
 `Re z = k`. -/
 private theorem vert_seg_add_conj_eq {f : ℂ → ℂ} {a n k : ℤ} {ε T : ℝ}
     (hε0 : 0 < ε) (hεT : ε ≤ T) (hka : (a : ℝ) ≤ k) (hkn : (k : ℝ) ≤ n)
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     I * (∫ y in ε..T, f (k + y * I) / (Real.exp (2 * π * y) - 1)) +
       (-I) * conj (∫ y in ε..T, schwarzConjFun f (k + y * I) / (Real.exp (2 * π * y) - 1)) =
     I * (∫ y in ε..T, (f (k + y * I) - f (k - y * I)) / (Real.exp (2 * π * y) - 1)) := by
@@ -665,7 +634,8 @@ private theorem vert_seg_add_conj_eq {f : ℂ → ℂ} {a n k : ℤ} {ε T : ℝ
     rw [← Complex.ofReal_one, ← Complex.ofReal_sub]
     exact Complex.ofReal_ne_zero.mpr (sub_ne_zero.mpr
       (Real.one_lt_exp_iff.mpr (mul_pos Real.two_pi_pos (hε0.trans_le hy.1))).ne')
-  have hv : ∀ {g : ℂ → ℂ}, ContinuousOn g {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n} →
+  have hv : ∀ {g : ℂ → ℂ},
+      ContinuousOn g (Complex.HadamardThreeLines.verticalClosedStrip a n) →
       ContinuousOn (fun y : ℝ => g (k + y * I) / (Real.exp (2 * π * y) - 1)) (Icc ε T) :=
     fun hg => (hg.comp (by fun_prop) fun _ _ => ⟨by simp [hka], by simp [hkn]⟩).div
       (by fun_prop) hden_ne
@@ -673,7 +643,8 @@ private theorem vert_seg_add_conj_eq {f : ℂ → ℂ} {a n k : ℤ} {ε T : ℝ
   have hv2 : IntervalIntegrable
       (fun y : ℝ => conj (schwarzConjFun f (k + y * I) / (Real.exp (2 * π * y) - 1))) volume _ _ :=
     (Complex.continuous_conj.comp_continuousOn
-      (hv (continuousOn_conj_conj_of_symmetric (fun _ h => by simpa using h)
+      (hv (continuousOn_conj_conj_of_symmetric
+        (fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h)
         hcont))).intervalIntegrable_of_Icc (μ := volume) hεT
   rw [← intervalIntegral.intervalIntegral_conj, neg_mul, ← sub_eq_add_neg, ← mul_sub,
     ← intervalIntegral.integral_sub hv1 hv2]
@@ -686,8 +657,8 @@ private theorem vert_seg_add_conj_eq {f : ℂ → ℂ} {a n k : ℤ} {ε T : ℝ
 `schwarzConjFun f`. -/
 private theorem combined_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ}
     (han : a < n) (hε0 : 0 < ε) (hε2 : ε < 1 / 2) (hεT : ε ≤ T)
-    (hf : DifferentiableOn ℂ f {z | (a : ℝ) < z.re ∧ z.re < n})
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) :
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a n))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
     (∫ x in (a : ℝ)..n, abelPlanaUpper f (x + T * I)) +
       conj (∫ x in (a : ℝ)..n, abelPlanaUpper (schwarzConjFun f) (x + T * I)) +
       I * (∫ y in ε..T, (f (a + y * I) - f (a - y * I)) / (Real.exp (2 * π * y) - 1)) -
@@ -699,8 +670,10 @@ private theorem combined_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ
   have hu1 := upper_rect_identity han hε0 hε2 hεT hf hcont
   have hu2 := congrArg (starRingEnd ℂ)
     (upper_rect_identity (f := schwarzConjFun f) han hε0 hε2 hεT
-      (differentiableOn_conj_conj_of_symmetric (fun _ h => by simpa using h) hf)
-      (continuousOn_conj_conj_of_symmetric (fun _ h => by simpa using h) hcont))
+      (differentiableOn_conj_conj_of_symmetric
+        (fun _ h => by simpa [Complex.HadamardThreeLines.verticalStrip] using h) hf)
+      (continuousOn_conj_conj_of_symmetric
+        (fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h) hcont))
   simp only [map_add, map_sub, map_sum, map_mul, Complex.conj_I] at hu2
   have hcomb := congrArg₂ (· + ·) hu1 hu2
   have hsum_real :
@@ -727,10 +700,11 @@ private theorem combined_rect_identity {f : ℂ → ℂ} {a n : ℤ} {ε T : ℝ
 /-- Sending `T → +∞` in `combined_rect_identity` at fixed `ε ∈ (0, 1 / 2)`. -/
 private theorem combined_strip_identity {f : ℂ → ℂ} {a n : ℤ} {ε : ℝ}
     (han : a < n) (hε0 : 0 < ε) (hε2 : ε < 1 / 2)
-    (hf : DifferentiableOn ℂ f {z | (a : ℝ) < z.re ∧ z.re < n})
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n})
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a n))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n))
     (hgrowth : Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a n)) (𝓝 0))
     (hinta : IntegrableOn
       (fun y : ℝ => (f (a + y * I) - f (a - y * I)) / (Real.exp (2 * π * y) - 1)) (Ioi 0))
     (hintn : IntegrableOn
@@ -743,7 +717,8 @@ private theorem combined_strip_identity {f : ℂ → ℂ} {a n : ℤ} {ε : ℝ}
       I * (∫ y in Ioi ε, (f (n + y * I) - f (n - y * I)) / (Real.exp (2 * π * y) - 1)) := by
   have hlim_top1 := tendsto_integral_abelPlanaUpper_atTop han.le hgrowth
   have hlim_top2 := (Complex.continuous_conj.tendsto 0).comp
-    (tendsto_integral_abelPlanaUpper_atTop han.le (tendsto_schwarzConjFun_growth hgrowth))
+    (tendsto_integral_abelPlanaUpper_atTop han.le
+      (tendsto_conj_comp_conj_mul_exp_neg_mul_abs_im hgrowth))
   have hlim_va :=
     intervalIntegral_tendsto_integral_Ioi ε (hinta.mono_set (Ioi_subset_Ioi hε0.le)) tendsto_id
   have hlim_vn :=
@@ -755,17 +730,19 @@ private theorem combined_strip_identity {f : ℂ → ℂ} {a n : ℤ} {ε : ℝ}
   exact combined_rect_identity han hε0 hε2 hεT hf hcont
 
 /-- **General complex Abel–Plana summation formula** (Olver, Ch. 8, §3.2, eq. 3.07). For integers
-`a ≤ n` and `f : ℂ → ℂ` holomorphic on `a < Re z < n`, continuous on `a ≤ Re z ≤ n`, satisfying
-`f(z) = o(e^{2π|Im z|})` as `|Im z| → ∞` uniformly in the strip, with
-`(f(c + i y) - f(c - i y)) / (e^{2πy} - 1)` integrable on `(0, ∞)` at `c = a` and `c = n`,
+`a ≤ n` and `f : ℂ → ℂ` holomorphic on `verticalStrip a n`, continuous on
+`verticalClosedStrip a n`, satisfying `f(z) = o(e^{2π|Im z|})` as `|Im z| → ∞` uniformly in the
+strip, with `(f(c + i y) - f(c - i y)) / (e^{2πy} - 1)` integrable on `(0, ∞)` at `c = a` and
+`c = n`,
 `∑_{j=a}^n f(j) = ∫_a^n f + (f(a) + f(n)) / 2
   + i ∫_0^∞ (f(a + iy) - f(a - iy)) / (e^{2πy} - 1) dy
   - i ∫_0^∞ (f(n + iy) - f(n - iy)) / (e^{2πy} - 1) dy`. -/
 theorem sum_Icc_eq_abelPlana_sub {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
-    (hf : DifferentiableOn ℂ f {z | (a : ℝ) < z.re ∧ z.re < n})
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n})
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a n))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n))
     (hgrowth : Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a n)) (𝓝 0))
     (hinta : IntegrableOn
       (fun y : ℝ => (f (a + y * I) - f (a - y * I)) / (Real.exp (2 * π * y) - 1)) (Ioi 0))
     (hintn : IntegrableOn
@@ -789,17 +766,18 @@ theorem sum_Icc_eq_abelPlana_sub {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
   linear_combination tendsto_nhds_unique ((hlim_seg.add hlim_caps).congr' heq_ev) hlim_rhs
 
 /-- **The Abel–Plana formula** (DLMF 2.10.2, exact form). Let `a ≤ n` be integers and let `f` be
-holomorphic on the open strip `a < Re z < n` and continuous on its closure `a ≤ Re z ≤ n`, with
+holomorphic on `verticalStrip a n` and continuous on `verticalClosedStrip a n`, with
 `f(z) = o(e^{2π|Im z|})` uniformly in the strip, `f` real on `[a, n]`, and
 `y ↦ Im f(c + iy) / (e^{2πy} - 1)` integrable on `(0, ∞)` at `c = a` and `c = n`. Then
 `∑_{j=a}^n f(j) = ∫_a^n f + f(a) / 2 + f(n) / 2
   - 2 ∫_0^∞ Im f(a + iy) / (e^{2πy} - 1) dy
   + 2 ∫_0^∞ Im f(n + iy) / (e^{2πy} - 1) dy`. -/
 theorem sum_Icc_eq_abelPlana {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
-    (hf : DifferentiableOn ℂ f {z | (a : ℝ) < z.re ∧ z.re < n})
-    (hcont : ContinuousOn f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n})
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a n))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n))
     (hgrowth : Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a n)) (𝓝 0))
     (hreal : ∀ x : ℝ, (a : ℝ) ≤ x → x ≤ n → (f x).im = 0)
     (hinta : IntegrableOn (fun y : ℝ => (f (a + y * I)).im / (Real.exp (2 * π * y) - 1)) (Ioi 0))
     (hintn : IntegrableOn (fun y : ℝ => (f (n + y * I)).im / (Real.exp (2 * π * y) - 1)) (Ioi 0)) :
@@ -844,15 +822,17 @@ theorem sum_Icc_eq_abelPlana {f : ℂ → ℂ} {a n : ℤ} (han : a ≤ n)
 /-! ### Growth criterion -/
 
 /-- Sufficient growth condition for the Abel–Plana formula: if `‖f z‖ ≤ C * (1 + |z.im|) ^ p *
-exp (c * |z.im|)` holds eventually as `|z.im| → ∞` uniformly on the closed strip `{a ≤ z.re ≤ b}`
+exp (c * |z.im|)` holds eventually as `|z.im| → ∞` uniformly on `verticalClosedStrip a b`
 with `c < 2 * π`, then `f z * exp (-(2 * π * |z.im|)) → 0` as `|z.im| → ∞` uniformly in the
 strip. -/
 theorem tendsto_mul_exp_neg_two_pi_abs_im_of_norm_le {f : ℂ → ℂ} {a b C p c : ℝ}
     (hc : c < 2 * π)
-    (hbound : ∀ᶠ z in comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b},
+    (hbound : ∀ᶠ z in comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b),
       ‖f z‖ ≤ C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) :
     Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) :=
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) :=
   tendsto_mul_exp_neg_mul_abs_im_of_norm_le hc hbound
 
 end TauCeti

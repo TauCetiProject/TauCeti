@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Order.Filter.Defs
 public import Mathlib.Topology.Defs.Filter
@@ -25,7 +26,9 @@ into horizontal ones, so `exp (-I * s)` fails to have vertical-strip growth). Ev
 bounded on each closed vertical strip has it, as does the identity function. Bounds extend to
 degenerate strips, and real exponential functions provide nonconstant examples. Any function with
 vertical-strip growth decays faster than `exp (r * |Im s|)` for every `r > 0` uniformly on closed
-strips (`TauCeti.HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im`). These facts allow
+strips (`TauCeti.HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im`), and this uniform
+exponential decay is preserved by Schwarz conjugation
+(`TauCeti.tendsto_conj_comp_conj_mul_exp_neg_mul_abs_im`). These facts allow
 growth estimates for completed and pole-cleared L-functions to be assembled from their factors.
 -/
 
@@ -291,21 +294,24 @@ theorem not_hasVerticalStripGrowth_cexp_neg_I_mul :
 
 open Filter in
 open scoped Topology in
-/-- Any function bounded eventually for large `|Im z|` on `{a ≤ z.re ≤ b}` by
+/-- Any function bounded eventually for large `|Im z|` on `verticalClosedStrip a b` by
 `C * (1 + |z.im|) ^ p * exp (c * |z.im|)` with `c < r` satisfies
 `f z * exp (-(r * |z.im|)) → 0` as `|z.im| → ∞` uniformly in the strip. -/
 theorem tendsto_mul_exp_neg_mul_abs_im_of_norm_le {f : ℂ → ℂ} {a b C p c r : ℝ}
     (hc : c < r)
-    (hbound : ∀ᶠ z in comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b},
+    (hbound : ∀ᶠ z in comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b),
       ‖f z‖ ≤ C * (1 + |z.im|) ^ p * Real.exp (c * |z.im|)) :
     Tendsto (fun z => f z * Real.exp (-(r * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) := by
   have hd : 0 < r - c := sub_pos.mpr hc
   have hdec : Tendsto (fun t : ℝ => |C| * (t ^ p * Real.exp (-(r - c) * t))) atTop (𝓝 0) := by
     simpa using (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero p (r - c) hd).const_mul |C|
   have hmaj : Tendsto (fun z : ℂ =>
       |C| * ((1 + |z.im|) ^ p * Real.exp (-(r - c) * (1 + |z.im|))) * Real.exp (r - c))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) := by
     simpa [Function.comp_def] using
       (((hdec.comp (tendsto_atTop_add_const_left atTop 1 tendsto_id)).mul_const
         (Real.exp (r - c))).comp (tendsto_comap.mono_left inf_le_left))
@@ -329,20 +335,53 @@ theorem tendsto_mul_exp_neg_mul_abs_im_of_norm_le {f : ℂ → ℂ} {a b C p c r
 open Filter in
 open scoped Topology in
 /-- Any function with `HasVerticalStripGrowth` decays faster than `exp (r * |Im z|)` for any
-positive rate `r > 0`, uniformly on every closed vertical strip `a ≤ z.re ≤ b`. -/
+positive rate `r > 0`, uniformly on every closed vertical strip `verticalClosedStrip a b`. -/
 theorem HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im {f : ℂ → ℂ}
     (hf : HasVerticalStripGrowth f) {r : ℝ} (hr : 0 < r) (a b : ℝ) :
     Tendsto (fun z : ℂ => f z * Real.exp (-(r * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | a ≤ z.re ∧ z.re ≤ b}) (𝓝 0) := by
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) := by
   rcases le_or_gt a b with hab | hab
   · obtain ⟨C, _, p, _, T₀, _, hbound⟩ := hf.exists_bound hab
     refine tendsto_mul_exp_neg_mul_abs_im_of_norm_le (C := C) (p := p) hr ?_
     rw [eventually_inf_principal, eventually_comap, eventually_atTop]
     refine ⟨T₀, fun t ht z hzt hz => ?_⟩
     simpa only [zero_mul, Real.exp_zero, mul_one] using hbound z hz (hzt ▸ ht)
-  · have hemp : {z : ℂ | a ≤ z.re ∧ z.re ≤ b} = ∅ := by
-      ext z; simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_and, not_le]
+  · have hemp : Complex.HadamardThreeLines.verticalClosedStrip a b = ∅ := by
+      ext z
+      simp only [Complex.HadamardThreeLines.verticalClosedStrip, Set.mem_preimage, Set.mem_Icc,
+        Set.mem_empty_iff_false, iff_false, not_and, not_le]
       intro h; linarith
     simp [hemp]
+
+open Filter in
+open scoped ComplexConjugate Topology in
+/-- Conjugating input and output preserves uniform exponential decay along closed vertical strips:
+if `f z * exp (-(r * |z.im|)) → 0` as `|z.im| → ∞` uniformly on `verticalClosedStrip a b`, then
+the same holds for `fun z => conj (f (conj z))`. -/
+theorem tendsto_conj_comp_conj_mul_exp_neg_mul_abs_im {f : ℂ → ℂ} {a b r : ℝ}
+    (hgrowth : Tendsto (fun z : ℂ => f z * Real.exp (-(r * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0)) :
+    Tendsto (fun z : ℂ => conj (f (conj z)) * Real.exp (-(r * |z.im|)))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) (𝓝 0) := by
+  have hmap : Tendsto (starRingEnd ℂ)
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a b)) := by
+    refine tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩
+    · rw [tendsto_comap_iff]
+      have heq : ((fun z : ℂ => |z.im|) ∘ starRingEnd ℂ) = fun z : ℂ => |z.im| := by
+        ext z; simp
+      rw [heq]
+      exact tendsto_comap.mono_left inf_le_left
+    · filter_upwards [mem_inf_of_right (mem_principal_self _)] with z hz
+      simpa [Complex.HadamardThreeLines.verticalClosedStrip] using hz
+  have h1 := (Complex.continuous_conj.tendsto 0).comp (hgrowth.comp hmap)
+  simp only [map_zero] at h1
+  refine h1.congr fun z => ?_
+  simp only [Function.comp_apply, map_mul, Complex.conj_ofReal, Complex.conj_im, abs_neg]
 
 end TauCeti

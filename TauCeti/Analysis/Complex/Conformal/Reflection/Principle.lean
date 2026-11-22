@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Hadamard
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import TauCeti.Analysis.Complex.Conformal.Removability.Basic
 
@@ -261,29 +262,32 @@ theorem apply_conj_eq_conj_of_real_on_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω)
     simpa only [starRingEnd_self_apply] using h0
 
 /-- **Schwarz reflection symmetry on a closed vertical strip.** If `f` is holomorphic on the open
-strip `a < Re z < b` (`a < b`), continuous on the closed strip `a ≤ Re z ≤ b`, and real on
-`(a, b)`, then `f (conj z) = conj (f z)` throughout the closed strip. -/
+strip `verticalStrip a b` (`a < b`), continuous on the closed strip `verticalClosedStrip a b`, and
+real on `(a, b)`, then `f (conj z) = conj (f z)` throughout `verticalClosedStrip a b`. -/
 theorem apply_conj_eq_conj_of_im_eq_zero_on_strip {a b : ℝ} (hab : a < b)
-    (hf : DifferentiableOn ℂ f {z | a < z.re ∧ z.re < b})
-    (hcont : ContinuousOn f {z | a ≤ z.re ∧ z.re ≤ b})
+    (hf : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a b))
+    (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a b))
     (hreal : ∀ x : ℝ, a < x → x < b → (f x).im = 0)
-    {z : ℂ} (hz : z ∈ {w : ℂ | a ≤ w.re ∧ w.re ≤ b}) :
+    {z : ℂ} (hz : z ∈ Complex.HadamardThreeLines.verticalClosedStrip a b) :
     f (conj z) = conj (f z) := by
-  let Ω : Set ℂ := re ⁻¹' Ioo a b
-  let S : Set ℂ := re ⁻¹' Icc a b
-  have hΩ : EqOn (fun w => f (conj w)) (fun w => conj (f w)) Ω := fun w hw =>
+  have hΩ : EqOn (fun w => f (conj w)) (fun w => conj (f w))
+      (Complex.HadamardThreeLines.verticalStrip a b) := fun w hw =>
     apply_conj_eq_conj_of_real_on_axis (isOpen_Ioo.preimage continuous_re)
       ((convex_Ioo a b).linear_preimage reLm).isPreconnected
-      (fun _ h => by simpa [Ω] using h) (x := (a + b) / 2)
+      (fun _ h => by simpa [Complex.HadamardThreeLines.verticalStrip] using h) (x := (a + b) / 2)
       (by simp; constructor <;> linarith) hf
       (fun u hu hu0 => by
         rw [← re_add_im u, hu0, ofReal_zero, zero_mul, add_zero]
         exact hreal u.re hu.1 hu.2) hw
-  have hSsymm : MapsTo (starRingEnd ℂ) S S := fun _ h => by simpa [S] using h
-  have hS : EqOn (fun w => f (conj w)) (fun w => conj (f w)) S :=
+  have hSsymm : MapsTo (starRingEnd ℂ) (Complex.HadamardThreeLines.verticalClosedStrip a b)
+      (Complex.HadamardThreeLines.verticalClosedStrip a b) :=
+    fun _ h => by simpa [Complex.HadamardThreeLines.verticalClosedStrip] using h
+  have hS : EqOn (fun w => f (conj w)) (fun w => conj (f w))
+      (Complex.HadamardThreeLines.verticalClosedStrip a b) :=
     hΩ.of_subset_closure (hcont.comp continuous_conj.continuousOn hSsymm)
       (continuous_conj.comp_continuousOn hcont) (preimage_mono Ioo_subset_Icc_self) (by
-        rw [closure_preimage_re, closure_Ioo hab.ne])
+        rw [Complex.HadamardThreeLines.verticalStrip,
+          Complex.HadamardThreeLines.verticalClosedStrip, closure_preimage_re, closure_Ioo hab.ne])
   exact hS hz
 
 end TauCeti

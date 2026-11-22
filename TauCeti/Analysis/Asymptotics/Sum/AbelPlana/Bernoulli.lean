@@ -9,27 +9,22 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.NumberTheory.Bernoulli
 public import TauCeti.Analysis.Asymptotics.Sum.AbelPlana.Basic
 
-import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.Taylor
-import Mathlib.Analysis.Complex.RealDeriv
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.Analysis.Calculus.IteratedDeriv.Within
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Growth
 import TauCeti.Analysis.SpecialFunctions.Integrals.BoseEinstein
-import TauCeti.Basic.Complex.Basic
 
 /-!
 # Bernoulli Expansion and Remainder Bound for the Abel–Plana Formula
 
-For `m ≥ 1`, a function `f` that is `(2m)`-times complex continuously differentiable on a closed
-vertical strip `S = {z : ℂ | a ≤ z.re ∧ z.re ≤ b}` (`a < b`) and real-valued on `[a, b]`, and a
-point `c ∈ [a, b]` such that the half-line integrand `y ↦ Im f(c + iy) / (e^{2πy} - 1)` is
-integrable on `(0, ∞)`, expanding `y ↦ Im f(c + iy)` by Taylor's theorem with Lagrange remainder at
-`y = 0` and integrating termwise against `(e^{2πy} - 1)⁻¹` via the Bose–Einstein moments yields the
-higher-order Abel–Plana expansion (DLMF 2.10.2):
+For `m ≥ 1`, a function `f` that is `(2m)`-times complex continuously differentiable on the closed
+vertical strip `Complex.HadamardThreeLines.verticalClosedStrip a b` (`a < b`) and real-valued on
+`[a, b]`, and a point `c ∈ [a, b]` such that the half-line integrand
+`y ↦ Im f(c + iy) / (e^{2πy} - 1)` is integrable on `(0, ∞)`, expanding `y ↦ Im f(c + iy)` by
+Taylor's theorem with Lagrange remainder at `y = 0` and integrating termwise against
+`(e^{2πy} - 1)⁻¹` via the Bose–Einstein moments yields the higher-order Abel–Plana expansion
+(DLMF 2.10.2):
 
 $$2 \int_0^\infty \frac{\operatorname{Im} f(c + iy)}{e^{2\pi y} - 1}\,dy
   = \sum_{s=1}^m \frac{B_{2s}}{(2s)!}\, f^{(2s-1)}(c)
@@ -68,121 +63,6 @@ open scoped Nat Real Topology
 open Complex Filter MeasureTheory Set
 
 namespace TauCeti
-
-/-! ### Taylor–Lagrange expansion along a vertical line -/
-
-/-- The degree-`(2 * m - 1)` Taylor polynomial of `t ↦ Im f(c + i t)` on `[0, y]` collapses to
-the odd-order sum over `Finset.Icc 1 m` when `f` is real on `[a, b]`. -/
-private lemma taylorWithinEval_im_comp {f : ℂ → ℂ} {a b c y : ℝ} {m : ℕ}
-    (hab : a < b) (hc : c ∈ Icc a b) (hm : 1 ≤ m) (hy : 0 < y)
-    (hf : ContDiffOn ℂ (2 * m : ℕ) f (Complex.HadamardThreeLines.verticalClosedStrip a b))
-    (hreal : ∀ x : ℝ, a ≤ x → x ≤ b → (f x).im = 0)
-    (hψ : ContDiff ℝ (2 * m : ℕ) (Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)))
-    (hψ_deriv : ∀ {k : ℕ}, k ≤ 2 * m →
-      iteratedDeriv k (Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)) 0 =
-        (I ^ k * iteratedDerivWithin k f
-          (Complex.HadamardThreeLines.verticalClosedStrip a b) c).im) :
-    taylorWithinEval (Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I))
-        (2 * m - 1) (uIcc 0 y) 0 y =
-      ∑ s ∈ Finset.Icc 1 m,
-        (-1 : ℝ) ^ (s - 1) *
-          (iteratedDerivWithin (2 * s - 1) f
-            (Complex.HadamardThreeLines.verticalClosedStrip a b) c).re *
-          y ^ (2 * s - 1) / (2 * s - 1)! := by
-  let S : Set ℂ := Complex.HadamardThreeLines.verticalClosedStrip a b
-  let ψ : ℝ → ℝ := Complex.imCLM ∘ (f ∘ fun t : ℝ => (c : ℂ) + t • I)
-  have h2m : (2 * m - 1) + 1 = 2 * m := by omega
-  rw [taylor_within_apply, h2m]
-  have hcongr : ∑ k ∈ Finset.range (2 * m),
-        ((k ! : ℝ)⁻¹ * (y - 0) ^ k) • iteratedDerivWithin k ψ (uIcc 0 y) 0 =
-      ∑ k ∈ Finset.range (2 * m),
-        (I ^ k * iteratedDerivWithin k f S c).im * y ^ k / (k ! : ℝ) := by
-    refine Finset.sum_congr rfl fun k hk => ?_
-    have hk_le : k ≤ 2 * m := (Finset.mem_range.mp hk).le
-    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_uIcc hy.ne)
-      (hψ.contDiffAt.of_le (by exact_mod_cast hk_le)) left_mem_uIcc,
-      hψ_deriv hk_le, sub_zero, smul_eq_mul]
-    ring
-  rw [hcongr, Finset.sum_range_two_mul]
-  have heven : ∑ j ∈ Finset.range m,
-      (I ^ (2 * j) * iteratedDerivWithin (2 * j) f S c).im * y ^ (2 * j) / ((2 * j)! : ℝ) =
-      0 := by
-    refine Finset.sum_eq_zero fun j hj => ?_
-    have hj_le : 2 * j ≤ 2 * m := by
-      have := Finset.mem_range.mp hj; omega
-    have him0 : (iteratedDerivWithin (2 * j) f S c).im = 0 :=
-      hf.im_iteratedDerivWithin_verticalClosedStrip_eq_zero hab hc (by exact_mod_cast hj_le)
-        fun x hx => hreal x hx.1 hx.2
-    rw [Complex.I_pow_two_mul j, ← ofReal_one, ← ofReal_neg, ← ofReal_pow, mul_im, ofReal_re,
-      ofReal_im, him0]
-    ring
-  rw [heven, zero_add]
-  refine Finset.sum_nbij' (· + 1) (· - 1)
-    (fun j hj => Finset.mem_Icc.mpr (by have := Finset.mem_range.mp hj; omega))
-    (fun s hs => Finset.mem_range.mpr (by have := Finset.mem_Icc.mp hs; omega))
-    (fun _ _ => by omega) (fun s hs => by have := Finset.mem_Icc.mp hs; omega) fun j _ => ?_
-  have hsub : 2 * (j + 1) - 1 = 2 * j + 1 := by omega
-  rw [hsub, Nat.add_sub_cancel, pow_succ, Complex.I_pow_two_mul j, ← ofReal_one, ← ofReal_neg,
-    ← ofReal_pow, mul_assoc, mul_im, ofReal_re, ofReal_im, I_mul_im, I_mul_re]
-  ring
-
-/-- Pointwise Taylor–Lagrange identity for `Im f(c + y * I)` at `y > 0` when `f` is real on `[a, b]`
-and `1 ≤ m`. -/
-private lemma exists_im_add_mul_I_eq_taylor_odd {f : ℂ → ℂ} {a b c y : ℝ} {m : ℕ}
-    (hab : a < b) (hc : c ∈ Icc a b) (hm : 1 ≤ m) (hy : 0 < y)
-    (hf : ContDiffOn ℂ (2 * m : ℕ) f {z | a ≤ z.re ∧ z.re ≤ b})
-    (hreal : ∀ x : ℝ, a ≤ x → x ≤ b → (f x).im = 0) :
-    ∃ θ ∈ Ioo (0 : ℝ) 1,
-      (f (c + y * I)).im =
-        (∑ s ∈ Finset.Icc 1 m,
-          (-1 : ℝ) ^ (s - 1) *
-            (iteratedDerivWithin (2 * s - 1) f {z | a ≤ z.re ∧ z.re ≤ b} c).re *
-            y ^ (2 * s - 1) / (2 * s - 1)!) +
-        (-1 : ℝ) ^ m *
-          (iteratedDerivWithin (2 * m) f {z | a ≤ z.re ∧ z.re ≤ b}
-            (c + ((θ * y : ℝ) : ℂ) * I)).im *
-          y ^ (2 * m) / (2 * m)! := by
-  rw [← TauCeti.Complex.HadamardThreeLines.verticalClosedStrip_eq_setOf] at hf ⊢
-  let S : Set ℂ := Complex.HadamardThreeLines.verticalClosedStrip a b
-  have huniqS : UniqueDiffOn ℂ S :=
-    TauCeti.Complex.HadamardThreeLines.uniqueDiffOn_verticalClosedStrip hab
-  let γ : ℝ → ℂ := fun t => (c : ℂ) + t • I
-  have hγ_mem : ∀ t : ℝ, γ t ∈ S := fun t => by
-    simp [S, TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff, γ,
-      Complex.real_smul, hc.1, hc.2]
-  have hfγ : ContDiff ℝ (2 * m : ℕ) (f ∘ γ) :=
-    (hf.restrict_scalars ℝ).comp_contDiff (by fun_prop) hγ_mem
-  let ψ : ℝ → ℝ := Complex.imCLM ∘ (f ∘ γ)
-  have hψ : ContDiff ℝ (2 * m : ℕ) ψ := Complex.imCLM.contDiff.comp hfγ
-  -- Line derivatives along `t ↦ c + t * I`.
-  have hψ_deriv : ∀ {k : ℕ}, k ≤ 2 * m → ∀ t : ℝ,
-      iteratedDeriv k ψ t = (I ^ k * iteratedDerivWithin k f S ((c : ℂ) + (t : ℂ) * I)).im := by
-    intro k hk t
-    have hk' : (k : WithTop ℕ∞) ≤ ((2 * m : ℕ) : WithTop ℕ∞) := by exact_mod_cast hk
-    rw [Complex.imCLM.iteratedDeriv_comp_left hfγ.contDiffAt hk']
-    have hline := hf.iteratedDeriv_comp_add_smul huniqS hγ_mem hk' t
-    simpa [γ, S, Function.comp_def, Complex.real_smul, smul_eq_mul] using congrArg Complex.im hline
-  -- Lagrange remainder on `[0, y]`.
-  have h2m : (2 * m - 1) + 1 = 2 * m := by omega
-  have hψ_on : ContDiffOn ℝ (((2 * m - 1 : ℕ) : WithTop ℕ∞) + 1) ψ (uIcc 0 y) := by
-    have h1 : ContDiffOn ℝ (2 * m : ℕ) ψ (uIcc 0 y) := hψ.contDiffOn
-    rwa [← h2m, Nat.cast_add, Nat.cast_one] at h1
-  obtain ⟨ξ, hξ_mem, hξ_eq⟩ := taylor_mean_remainder_lagrange_iteratedDeriv hy.ne hψ_on
-  rw [uIoo_of_lt hy] at hξ_mem
-  refine ⟨ξ / y, ⟨div_pos hξ_mem.1 hy, (div_lt_one hy).mpr hξ_mem.2⟩, ?_⟩
-  have hθy : ξ / y * y = ξ := div_mul_cancel₀ ξ hy.ne'
-  -- Polynomial part (even terms vanish since `f` is real on `[a, b]`).
-  have htaylor := taylorWithinEval_im_comp hab hc hm hy hf hreal hψ fun hk => by
-    simpa only [ofReal_zero, zero_mul, add_zero] using hψ_deriv hk 0
-  -- Remainder part.
-  have hrem : iteratedDeriv ((2 * m - 1) + 1) ψ ξ * (y - 0) ^ ((2 * m - 1) + 1) /
-        ((2 * m - 1) + 1)! =
-      (-1 : ℝ) ^ m * (iteratedDerivWithin (2 * m) f S (c + ((ξ / y * y : ℝ) : ℂ) * I)).im *
-        y ^ (2 * m) / (2 * m)! := by
-    rw [h2m, hψ_deriv le_rfl ξ, hθy, sub_zero, Complex.I_pow_two_mul m, ← ofReal_one,
-      ← ofReal_neg, ← ofReal_pow, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
-  have hψy : ψ y = (f (c + (y : ℂ) * I)).im := by simp [ψ, γ, Complex.real_smul]
-  linarith [hξ_eq, htaylor, hrem, hψy]
 
 /-! ### Main theorems -/
 
@@ -225,37 +105,43 @@ positive Taylor order `2m` so the Lagrange intermediate point lies in `(0, 1)` (
 the unexpanded integral). -/
 theorem exists_two_mul_integral_im_div_exp_two_pi_sub_one_eq {f : ℂ → ℂ} {a b c : ℝ} {m : ℕ}
     (hab : a < b) (hc : c ∈ Icc a b) (hm : 1 ≤ m)
-    (hf : ContDiffOn ℂ (2 * m : ℕ) f {z : ℂ | a ≤ z.re ∧ z.re ≤ b})
+    (hf : ContDiffOn ℂ (2 * m : ℕ) f (Complex.HadamardThreeLines.verticalClosedStrip a b))
     (hreal : ∀ x : ℝ, a ≤ x → x ≤ b → (f x).im = 0)
     (hint : IntegrableOn (fun y : ℝ => (f (c + y * I)).im / (Real.exp (2 * π * y) - 1)) (Ioi 0)) :
     ∃ ϑ : ℝ → ℝ, (∀ y > 0, ϑ y ∈ Ioo (0 : ℝ) 1) ∧
       (∀ y : ℝ, 0 < y → (f (c + y * I)).im =
         (∑ s ∈ Finset.Icc 1 m,
           (-1 : ℝ) ^ (s - 1) *
-            (iteratedDerivWithin (2 * s - 1) f {z | a ≤ z.re ∧ z.re ≤ b} c).re *
+            (iteratedDerivWithin (2 * s - 1) f
+              (Complex.HadamardThreeLines.verticalClosedStrip a b) c).re *
             y ^ (2 * s - 1) / (2 * s - 1)!) +
         (-1 : ℝ) ^ m *
-          (iteratedDerivWithin (2 * m) f {z | a ≤ z.re ∧ z.re ≤ b}
+          (iteratedDerivWithin (2 * m) f
+            (Complex.HadamardThreeLines.verticalClosedStrip a b)
             (c + ((ϑ y * y : ℝ) : ℂ) * I)).im *
           y ^ (2 * m) / (2 * m)!) ∧
       IntegrableOn
         (fun y : ℝ =>
-          (iteratedDerivWithin (2 * m) f {z | a ≤ z.re ∧ z.re ≤ b}
+          (iteratedDerivWithin (2 * m) f
+            (Complex.HadamardThreeLines.verticalClosedStrip a b)
             (c + ((ϑ y * y : ℝ) : ℂ) * I)).im *
             y ^ (2 * m) / (Real.exp (2 * π * y) - 1))
         (Ioi 0) ∧
       2 * (∫ y in Ioi (0 : ℝ), (f (c + y * I)).im / (Real.exp (2 * π * y) - 1)) =
         (∑ s ∈ Finset.Icc 1 m,
           (bernoulli (2 * s) : ℝ) / (2 * s)! *
-            (iteratedDerivWithin (2 * s - 1) f {z | a ≤ z.re ∧ z.re ≤ b} c).re) +
+            (iteratedDerivWithin (2 * s - 1) f
+              (Complex.HadamardThreeLines.verticalClosedStrip a b) c).re) +
         2 * (-1 : ℝ) ^ m / (2 * m)! *
           ∫ y in Ioi (0 : ℝ),
-            (iteratedDerivWithin (2 * m) f {z | a ≤ z.re ∧ z.re ≤ b}
+            (iteratedDerivWithin (2 * m) f
+              (Complex.HadamardThreeLines.verticalClosedStrip a b)
               (c + ((ϑ y * y : ℝ) : ℂ) * I)).im *
               y ^ (2 * m) / (Real.exp (2 * π * y) - 1) := by
   classical
-  let S : Set ℂ := {z : ℂ | a ≤ z.re ∧ z.re ≤ b}
-  have hex := fun (y : ℝ) (hy : 0 < y) => exists_im_add_mul_I_eq_taylor_odd hab hc hm hy hf hreal
+  let S : Set ℂ := Complex.HadamardThreeLines.verticalClosedStrip a b
+  have hex := fun (y : ℝ) (hy : 0 < y) =>
+    exists_im_add_mul_I_eq_taylor_odd hab hc hm hy hf fun x hx => hreal x hx.1 hx.2
   let ϑ : ℝ → ℝ := fun y => if hy : 0 < y then (hex y hy).choose else 1 / 2
   have hϑ_mem : ∀ y > 0, ϑ y ∈ Ioo (0 : ℝ) 1 := fun y hy => by
     simpa [ϑ, hy] using (hex y hy).choose_spec.1
@@ -313,11 +199,11 @@ theorem exists_two_mul_integral_im_div_exp_two_pi_sub_one_eq {f : ℂ → ℂ} {
   · ring
 
 /-- **The Abel–Plana summation formula with Bernoulli expansion** (DLMF 2.10.2). Let `a < n` be
-integers and `1 ≤ m`. If `f` is `C^{2m}` over `ℂ` on `{z | a ≤ Re z ≤ n}`, `f(z) = o(e^{2π|Im z|})`
-uniformly in the strip, `f` is real on `[a, n]`, and `y ↦ Im f(c + iy) / (e^{2πy} - 1)` is
-integrable on `(0, ∞)` at `c = a` and `c = n`, then there exists `ϑ : ℝ → ℝ` with
-`ϑ(y) ∈ (0, 1)` for every `y > 0` satisfying the pointwise Taylor–Lagrange identity for
-`Im f(n + iy)` such that
+integers and `1 ≤ m`. If `f` is `C^{2m}` over `ℂ` on
+`Complex.HadamardThreeLines.verticalClosedStrip a n`, `f(z) = o(e^{2π|Im z|})` uniformly in the
+strip, `f` is real on `[a, n]`, and `y ↦ Im f(c + iy) / (e^{2πy} - 1)` is integrable on `(0, ∞)`
+at `c = a` and `c = n`, then there exists `ϑ : ℝ → ℝ` with `ϑ(y) ∈ (0, 1)` for every `y > 0`
+satisfying the pointwise Taylor–Lagrange identity for `Im f(n + iy)` such that
 `∑_{j=a}^n f(j) = ∫_a^n f + f(a)/2 + f(n)/2
   - 2 ∫_0^∞ Im f(a + iy) / (e^{2πy} - 1) dy
   + ∑_{s=1}^m (B_{2s} / (2s)!) f^{(2s-1)}(n)
@@ -328,9 +214,10 @@ determined at the boundary `z = n`, and `1 ≤ m` gives positive Taylor order `2
 `m = 0`, see `TauCeti.sum_Icc_eq_abelPlana`). -/
 theorem exists_sum_Icc_eq_abelPlana_bernoulli {f : ℂ → ℂ} {a n : ℤ} {m : ℕ}
     (han : a < n) (hm : 1 ≤ m)
-    (hf : ContDiffOn ℂ (2 * m : ℕ) f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n})
+    (hf : ContDiffOn ℂ (2 * m : ℕ) f (Complex.HadamardThreeLines.verticalClosedStrip a n))
     (hgrowth : Tendsto (fun z => f z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0))
+      (comap (fun z : ℂ => |z.im|) atTop ⊓
+        𝓟 (Complex.HadamardThreeLines.verticalClosedStrip a n)) (𝓝 0))
     (hreal : ∀ x : ℝ, (a : ℝ) ≤ x → x ≤ n → (f x).im = 0)
     (hinta : IntegrableOn (fun y : ℝ => (f (a + y * I)).im / (Real.exp (2 * π * y) - 1)) (Ioi 0))
     (hintn : IntegrableOn (fun y : ℝ => (f (n + y * I)).im / (Real.exp (2 * π * y) - 1)) (Ioi 0)) :
@@ -338,15 +225,18 @@ theorem exists_sum_Icc_eq_abelPlana_bernoulli {f : ℂ → ℂ} {a n : ℤ} {m :
       (∀ y : ℝ, 0 < y → (f (n + y * I)).im =
         (∑ s ∈ Finset.Icc 1 m,
           (-1 : ℝ) ^ (s - 1) *
-            (iteratedDerivWithin (2 * s - 1) f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n} n).re *
+            (iteratedDerivWithin (2 * s - 1) f
+              (Complex.HadamardThreeLines.verticalClosedStrip a n) n).re *
             y ^ (2 * s - 1) / (2 * s - 1)!) +
         (-1 : ℝ) ^ m *
-          (iteratedDerivWithin (2 * m) f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}
+          (iteratedDerivWithin (2 * m) f
+            (Complex.HadamardThreeLines.verticalClosedStrip a n)
             (n + ((ϑ y * y : ℝ) : ℂ) * I)).im *
           y ^ (2 * m) / (2 * m)!) ∧
       IntegrableOn
         (fun y : ℝ =>
-          (iteratedDerivWithin (2 * m) f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}
+          (iteratedDerivWithin (2 * m) f
+            (Complex.HadamardThreeLines.verticalClosedStrip a n)
             (n + ((ϑ y * y : ℝ) : ℂ) * I)).im *
             y ^ (2 * m) / (Real.exp (2 * π * y) - 1))
         (Ioi 0) ∧
@@ -355,16 +245,19 @@ theorem exists_sum_Icc_eq_abelPlana_bernoulli {f : ℂ → ℂ} {a n : ℤ} {m :
           2 * ((∫ y in Ioi (0 : ℝ), (f (a + y * I)).im / (Real.exp (2 * π * y) - 1) : ℝ) : ℂ) +
           (∑ s ∈ Finset.Icc 1 m,
             ((bernoulli (2 * s) : ℂ) / (2 * s)!) *
-              iteratedDerivWithin (2 * s - 1) f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n} n) +
+              iteratedDerivWithin (2 * s - 1) f
+                (Complex.HadamardThreeLines.verticalClosedStrip a n) n) +
           (2 * (-1 : ℂ) ^ m / (2 * m)!) *
             ((∫ y in Ioi (0 : ℝ),
-              (iteratedDerivWithin (2 * m) f {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}
+              (iteratedDerivWithin (2 * m) f
+                (Complex.HadamardThreeLines.verticalClosedStrip a n)
                 (n + ((ϑ y * y : ℝ) : ℂ) * I)).im *
                 y ^ (2 * m) / (Real.exp (2 * π * y) - 1) : ℝ) : ℂ) := by
-  let S : Set ℂ := {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}
+  let S : Set ℂ := Complex.HadamardThreeLines.verticalClosedStrip a n
   have han' : (a : ℝ) < n := by exact_mod_cast han
-  have hdiff_open : DifferentiableOn ℂ f {z | (a : ℝ) < z.re ∧ z.re < n} :=
-    (hf.differentiableOn (by simp; omega)).mono fun _ hz => ⟨hz.1.le, hz.2.le⟩
+  have hdiff_open : DifferentiableOn ℂ f (Complex.HadamardThreeLines.verticalStrip a n) :=
+    (hf.differentiableOn (by simp; omega)).mono
+      (TauCeti.Complex.HadamardThreeLines.verticalStrip_subset_verticalClosedStrip a n)
   have hintn' : IntegrableOn
       (fun y : ℝ => (f (((n : ℝ) : ℂ) + y * I)).im / (Real.exp (2 * π * y) - 1)) (Ioi 0) := by
     simpa using hintn
@@ -375,8 +268,6 @@ theorem exists_sum_Icc_eq_abelPlana_bernoulli {f : ℂ → ℂ} {a n : ℤ} {m :
   simp only [ofReal_intCast] at hϑ_eq
   have hcast := congrArg (fun r : ℝ => (r : ℂ)) hϑ_eq
   push_cast at hcast
-  have hfS : ContDiffOn ℂ (2 * m : ℕ) f (Complex.HadamardThreeLines.verticalClosedStrip a n) := by
-    rwa [TauCeti.Complex.HadamardThreeLines.verticalClosedStrip_eq_setOf]
   have hsum_cast :
       (∑ s ∈ Finset.Icc 1 m,
         ((bernoulli (2 * s) : ℂ) / (2 * s)!) *
@@ -384,11 +275,10 @@ theorem exists_sum_Icc_eq_abelPlana_bernoulli {f : ℂ → ℂ} {a n : ℤ} {m :
       ∑ s ∈ Finset.Icc 1 m,
         ((bernoulli (2 * s) : ℂ) / (2 * s)!) * iteratedDerivWithin (2 * s - 1) f S n := by
     refine Finset.sum_congr rfl fun s hs => ?_
-    have him0 : (iteratedDerivWithin (2 * s - 1) f S ((n : ℝ) : ℂ)).im = 0 := by
-      simpa only [S, ← TauCeti.Complex.HadamardThreeLines.verticalClosedStrip_eq_setOf] using
-        hfS.im_iteratedDerivWithin_verticalClosedStrip_eq_zero han' ⟨han'.le, le_rfl⟩
-          (by have := (Finset.mem_Icc.mp hs).2; exact_mod_cast (by omega : 2 * s - 1 ≤ 2 * m))
-          fun x hx => hreal x hx.1 hx.2
+    have him0 : (iteratedDerivWithin (2 * s - 1) f S ((n : ℝ) : ℂ)).im = 0 :=
+      hf.im_iteratedDerivWithin_verticalClosedStrip_eq_zero han' ⟨han'.le, le_rfl⟩
+        (by have := (Finset.mem_Icc.mp hs).2; exact_mod_cast (by omega : 2 * s - 1 ≤ 2 * m))
+        fun x hx => hreal x hx.1 hx.2
     have hre_eq : (((iteratedDerivWithin (2 * s - 1) f S n).re : ℝ) : ℂ) =
         iteratedDerivWithin (2 * s - 1) f S n :=
       Complex.ext rfl (by simpa using him0.symm)
@@ -500,13 +390,11 @@ example {a n : ℤ} (han : a < n) :
     ∑ j ∈ Finset.Icc a n, (j : ℂ) =
       ((n : ℂ) ^ 2 - a ^ 2) / 2 + ((a : ℂ) + n) / 2 := by
   let S : Set ℂ := Complex.HadamardThreeLines.verticalClosedStrip a n
-  have hS_eq : S = {z : ℂ | (a : ℝ) ≤ z.re ∧ z.re ≤ n} :=
-    TauCeti.Complex.HadamardThreeLines.verticalClosedStrip_eq_setOf a n
   have han' : (a : ℝ) < n := by exact_mod_cast han
   have huniq : UniqueDiffOn ℂ S :=
     TauCeti.Complex.HadamardThreeLines.uniqueDiffOn_verticalClosedStrip han'
   have hgrowth : Tendsto (fun z : ℂ => z * Real.exp (-(2 * π * |z.im|)))
-      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 {z | (a : ℝ) ≤ z.re ∧ z.re ≤ n}) (𝓝 0) :=
+      (comap (fun z : ℂ => |z.im|) atTop ⊓ 𝓟 S) (𝓝 0) :=
     hasVerticalStripGrowth_id.tendsto_mul_exp_neg_mul_abs_im Real.two_pi_pos a n
   have hint_k : ∀ k : ℤ,
       IntegrableOn (fun y : ℝ => ((k : ℂ) + y * I).im / (Real.exp (2 * π * y) - 1)) (Ioi 0) :=
@@ -515,22 +403,16 @@ example {a n : ℤ} (han : a < n) :
   obtain ⟨ϑ, hϑ_mem, _, _, hmain⟩ :=
     exists_sum_Icc_eq_abelPlana_bernoulli (f := fun z : ℂ => z) (m := 1) han le_rfl
       contDiff_id.contDiffOn hgrowth (fun _ _ _ => ofReal_im _) (hint_k a) (hint_k n)
-  rw [← hS_eq] at hmain
-  have hd1 : EqOn (iteratedDerivWithin 1 (fun z : ℂ => z) S) (fun _ => 1) S := fun w hw => by
-    rw [iteratedDerivWithin_one]
-    exact (hasDerivWithinAt_id w S).derivWithin (huniq w hw)
-  have hd2 : EqOn (iteratedDerivWithin 2 (fun z : ℂ => z) S) (fun _ => 0) S := fun w hw => by
-    rw [← one_add_one_eq_two, iteratedDerivWithin_succ]
-    exact ((hasDerivWithinAt_const w S (1 : ℂ)).congr hd1 (hd1 hw)).derivWithin (huniq w hw)
   let g : ℂ → ℂ := iteratedDerivWithin 2 (fun z : ℂ => z) S
   have hnS : (n : ℂ) ∈ S :=
-    TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.mpr
-      ⟨by simpa using han'.le, by simp⟩
-  have hg_im : ∀ y t : ℝ, (g (((n : ℝ) : ℂ) + ((t * y : ℝ) : ℂ) * I)).im = 0 := fun y t => by
-    have hzS : (((n : ℝ) : ℂ) + ((t * y : ℝ) : ℂ) * I) ∈ S :=
-      TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.mpr
-        (by simp [han'.le])
-    simpa [g] using congrArg Complex.im (hd2 hzS)
+    TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.mpr ⟨by simp [han'.le], by simp⟩
+  have hd1 : iteratedDerivWithin 1 (fun z : ℂ => z) S n = 1 := by
+    simp [iteratedDerivWithin_fun_id hnS huniq]
+  have hg_im : ∀ u : ℝ, (g (((n : ℝ) : ℂ) + (u : ℂ) * I)).im = 0 := fun u => by
+    have hzS : (((n : ℝ) : ℂ) + (u : ℂ) * I) ∈ S :=
+      TauCeti.Complex.HadamardThreeLines.mem_verticalClosedStrip_iff.mpr (by simp [han'.le])
+    rw [show g (((n : ℝ) : ℂ) + (u : ℂ) * I) = 0 from by
+      dsimp only [g]; rw [iteratedDerivWithin_fun_id hzS huniq]; simp, zero_im]
   have hsup0 : ∀ y : ℝ,
       sSup ((fun t : ℝ => |(g (((n : ℝ) : ℂ) + ((t * y : ℝ) : ℂ) * I)).im|) '' Icc 0 1) = 0 :=
     fun _ => by
@@ -554,7 +436,7 @@ example {a n : ℤ} (han : a < n) :
     rw [bernoulli_eq_bernoulli'_of_ne_one (by decide : 2 ≠ 1), bernoulli'_two]; norm_num
   rw [hmain]
   simp only [Nat.mul_one, Finset.Icc_self, Finset.sum_singleton, Nat.reduceSub]
-  rw [hint_ab, hint_a, hd1 hnS, hb2, hrem0]
+  rw [hint_ab, hint_a, hd1, hb2, hrem0]
   push_cast; norm_num [Nat.factorial]; ring
 
 end Examples

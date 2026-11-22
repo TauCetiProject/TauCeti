@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.NumberTheory.Bernoulli
+public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Gamma
 import Mathlib.NumberTheory.ZetaValues
+import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 
 /-!
 # Bose–Einstein integrals on the positive half-line
@@ -21,7 +23,7 @@ For real parameters `p > 1` and `c > 0`, the Bose–Einstein (or Debye) integral
 leaves an integrable singularity `y ^ (p - 2)`, and at `+∞` because of exponential decay. Expanding
 `1 / (exp (c * y) - 1) = ∑' n : ℕ, exp (-c * (n + 1) * y)` and integrating term-by-term evaluates
 the integral in terms of `Real.Gamma p` and the Hurwitz/Riemann zeta series
-`∑' n : ℕ, 1 / (n + 1) ^ p`.
+`∑' n : ℕ, 1 / (n + 1) ^ p` (as well as `riemannZeta p` after coercion to `ℂ`).
 
 At odd positive integer powers `y ^ (2 * s - 1)` (`p = 2 * s`), Euler's even-zeta identity
 `hasSum_zeta_nat` expresses the integral in closed form through the Bernoulli number
@@ -39,6 +41,8 @@ Abel–Plana summation formula.
   integral as `∑_n Γ(p) / (c * (n + 1)) ^ p`.
 * `TauCeti.integral_Ioi_rpow_div_exp_mul_sub_one`: evaluation as
   `Γ(p) / c ^ p * ∑' n : ℕ, 1 / (n + 1) ^ p`.
+* `TauCeti.ofReal_integral_Ioi_rpow_div_exp_mul_sub_one`: complex-coerced evaluation in terms of
+  `riemannZeta p`.
 * `TauCeti.integral_Ioi_pow_div_exp_mul_sub_one`: closed form at odd integer exponents `2 * s - 1`
   in terms of `bernoulli (2 * s)`.
 * `TauCeti.integral_Ioi_pow_div_exp_two_pi_mul_sub_one` and
@@ -68,14 +72,9 @@ private theorem hasSum_rpow_mul_exp_neg_mul {p c y : ℝ} (hc : 0 < c) (hy : 0 <
   convert (hasSum_geometric_of_lt_one (exp_pos _).le hr1).mul_left
     (y ^ (p - 1) * exp (-(c * y))) using 1
   · ext n; rw [← exp_natCast_mul, mul_assoc (y ^ (p - 1)), ← exp_add]; ring_nf
-  · have : exp (c * y) - 1 ≠ 0 := sub_ne_zero.mpr (one_lt_exp_iff.mpr hcy).ne'
-    have h1 : 1 - exp (-(c * y)) ≠ 0 := sub_ne_zero.mpr hr1.ne'
-    symm
-    rw [mul_inv_eq_iff_eq_mul₀ h1]
-    have hmul : (exp (c * y) - 1) * exp (-(c * y)) = 1 - exp (-(c * y)) := by
-      rw [sub_mul, ← exp_add, add_neg_cancel, exp_zero, one_mul]
-    rw [← hmul]
-    field_simp
+  · symm
+    rw [div_eq_mul_inv, exp_sub_one_eq_one_sub_exp_neg_mul (c * y), mul_inv, ← exp_neg]
+    ring
 
 /-- For `p > 1` and `c > 0`, the Bose–Einstein integrand `y ^ (p - 1) / (exp (c * y) - 1)` is
 integrable on `(0, ∞)`. -/
@@ -108,10 +107,9 @@ theorem integrableOn_rpow_div_exp_mul_sub_one {p c : ℝ} (hp : 1 < p) (hc : 0 <
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with y hy
     have hy0 : 0 < y := zero_lt_one.trans hy
     have hden_ge : (1 - exp (-c)) * exp (c * y) ≤ exp (c * y) - 1 := by
-      have hle : 1 - exp (-c) ≤ 1 - exp (-c * y) :=
-        sub_le_sub_left (exp_le_exp.mpr (by nlinarith [hy.le])) 1
-      refine (mul_le_mul_of_nonneg_right hle (exp_pos _).le).trans_eq ?_
-      rw [sub_mul, one_mul, neg_mul, ← exp_add, neg_add_cancel, exp_zero]
+      rw [exp_sub_one_eq_one_sub_exp_neg_mul (c * y)]
+      gcongr
+      nlinarith [hy.le]
     have hden_pos : 0 < exp (c * y) - 1 := sub_pos.mpr (one_lt_exp_iff.mpr (mul_pos hc hy0))
     rw [Real.norm_eq_abs, abs_of_nonneg (div_nonneg (rpow_nonneg hy0.le _) hden_pos.le)]
     refine (div_le_div_of_nonneg_left (rpow_nonneg hy0.le _) (mul_pos h1exp (exp_pos _))
@@ -168,6 +166,19 @@ theorem integral_Ioi_rpow_div_exp_mul_sub_one {p c : ℝ} (hp : 1 < p) (hc : 0 <
     ext n; rw [mul_rpow hc.le (by positivity)]; ring
   rw [hrewrite] at hsum
   exact hsum.unique (((summable_mul_left_iff hconst).mp hsum.summable).hasSum.mul_left _)
+
+/-- Evaluation of the Bose–Einstein integral coerced to `ℂ` in terms of `riemannZeta p` for real
+`p > 1` and `c > 0`. -/
+theorem ofReal_integral_Ioi_rpow_div_exp_mul_sub_one {p c : ℝ} (hp : 1 < p) (hc : 0 < c) :
+    ((∫ y in Ioi (0 : ℝ), y ^ (p - 1) / (exp (c * y) - 1) : ℝ) : ℂ) =
+      ((Gamma p / c ^ p : ℝ) : ℂ) * riemannZeta p := by
+  have h := congrArg ((↑) : ℝ → ℂ) (integral_Ioi_rpow_div_exp_mul_sub_one hp hc)
+  rw [Complex.ofReal_mul, Complex.ofReal_tsum] at h
+  refine h.trans (congrArg (((Gamma p / c ^ p : ℝ) : ℂ) * ·) ?_)
+  rw [zeta_eq_tsum_one_div_nat_add_one_cpow (by simpa using hp)]
+  refine tsum_congr fun n => ?_
+  have hn : (0 : ℝ) ≤ n + 1 := by positivity
+  simp [Complex.ofReal_cpow hn]
 
 /-- Closed-form evaluation of the odd-moment Bose–Einstein integral: for `s ≥ 1` and `c > 0`,
 `∫ y in Ioi 0, y ^ (2 * s - 1) / (exp (c * y) - 1) =
