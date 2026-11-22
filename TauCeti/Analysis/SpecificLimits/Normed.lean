@@ -21,6 +21,8 @@ index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with 
 terms of positive norm), each term dominates the sum of its predecessors and the partial sums
 diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
 series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
+**Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
+products with a sequence of bounded partial sums have Cauchy partial sums.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -33,6 +35,11 @@ to `z / (1 - z)²`, `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients ar
 
 The geometric weights `(1 - q) qᵏ` sum to `1` and have mean `q / (1 - q)`, so over a normed
 field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`.
+
+Dirichlet's test `Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub` is adapted from the
+lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Hypergeometric/AnalyticProperties.lean`, where it is
+`exists_tendsto_sum_mul_of_bdd_variation`.
 -/
 
 public section
@@ -191,6 +198,27 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
+
+/-- **Dirichlet's test** for coefficients of bounded variation. If `f n → 0`, the series of the
+differences `‖f (n + 1) - f n‖` converges, and the partial sums of `z` are bounded, then the
+partial sums of `∑ f n • z n` form a Cauchy sequence. Mathlib's
+`Monotone.cauchySeq_series_mul_of_tendsto_zero_of_bounded` is the case of a monotone real `f`. -/
+theorem _root_.Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub {R E : Type*}
+    [SeminormedRing R] [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] {f : ℕ → R}
+    {z : ℕ → E} {b : ℝ} (hf0 : Filter.Tendsto f Filter.atTop (nhds 0))
+    (hvar : Summable fun n ↦ ‖f (n + 1) - f n‖) (hzb : ∀ n, ‖∑ i ∈ Finset.range n, z i‖ ≤ b) :
+    CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i • z i := by
+  rw [← cauchySeq_shift 1]
+  simp_rw [Finset.sum_range_by_parts _ _ (_ + 1), add_tsub_cancel_right, sub_eq_add_neg]
+  refine CauchySeq.add (Filter.Tendsto.cauchySeq (x := 0) ?_) (CauchySeq.neg ?_)
+  · refine squeeze_zero_norm (fun n ↦ (norm_smul_le _ _).trans
+      (mul_le_mul_of_nonneg_left (hzb (n + 1)) (norm_nonneg _))) ?_
+    simpa using (tendsto_norm_zero.comp hf0).mul_const b
+  · refine cauchySeq_range_of_norm_bounded (g := fun i ↦ b * ‖f (i + 1) + -f i‖)
+      (by simpa only [← sub_eq_add_neg] using (hvar.mul_left b).hasSum.tendsto_sum_nat.cauchySeq)
+      fun i ↦ ?_
+    rw [mul_comm]
+    exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hzb _) (norm_nonneg _))
 
 variable {K : Type*} [NormedField K]
 

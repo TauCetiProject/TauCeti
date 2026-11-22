@@ -15,7 +15,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Gaussian.Moments
-import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
+import TauCeti.Probability.Distributions.Gaussian.QuadraticForm.Basic
 import TauCeti.Probability.Moments.SubExponential
 
 /-!
