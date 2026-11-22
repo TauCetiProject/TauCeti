@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import TauCeti.Analysis.Normed.Module.Multilinear.Curry
@@ -47,6 +48,8 @@ Hölder time slices one order below are carried along in the same way.
   within `[a, b]`.
 * `TauCeti.ParabolicCkHolderSpace.norm_spatialFDerivL_le_one` and
   `TauCeti.ParabolicCkHolderSpace.norm_timeDerivL_le_one`: both have operator norm at most one.
+* `TauCeti.ParabolicCkHolderSpace.spatialFDerivL_spatialFDerivL_apply`: applied twice, the spatial
+  derivative gives the curried field `D_t^0 D_x^2 u`, the spatial Hessian.
 * `TauCeti.ParabolicCkHolderSpace.timeDerivL_spatialFDerivL`: the two derivatives commute.
 
 ## References
@@ -420,6 +423,27 @@ theorem spatialFDerivL_slabMk (u : ParabolicCkHolderSpace (k + 1) α E F hab) (x
     mixedDerivL_zero_slabMk u (by omega)]
   ext w
   simp [iteratedFDeriv_one_apply]
+
+/-- The values of the spatial derivative are those of the curried field `D_t^0 D_x^1 u`. -/
+theorem spatialFDerivL_apply_eq_spatialFDerivBCF (u : ParabolicCkHolderSpace (k + 1) α E F hab)
+    (p : slab (E := E) a b) :
+    spatialFDerivL k α E F hab u p = spatialFDerivBCF u p := by
+  ext v
+  rw [spatialFDerivL_apply, spatialFDerivBCF_apply]
+  simp only [ContinuousMultilinearMap.curryRight_apply, continuousMultilinearCurryFin1_apply]
+
+/-- The values of the second spatial derivative, the spatial Hessian, are those of the field
+`D_t^0 D_x^2 u`, curried into a bilinear map. -/
+theorem spatialFDerivL_spatialFDerivL_apply (u : ParabolicCkHolderSpace (k + 2) α E F hab)
+    (p : slab (E := E) a b) :
+    spatialFDerivL k α E (E →L[ℝ] F) hab (spatialFDerivL (k + 1) α E F hab u) p =
+      continuousMultilinearCurryFin2 ℝ E F (mixedDerivL 0 2 u p) := by
+  ext v w
+  rw [spatialFDerivL_apply, mixedDerivL_spatialFDerivL_apply, continuousMultilinearCurryFin2_apply]
+  simp only [ContinuousMultilinearMap.curryRight_apply]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
 
 /-- The time slices of `u` have Fréchet derivative `D_x u`. -/
 theorem hasSpatialFDerivAt (u : ParabolicCkHolderSpace (k + 1) α E F hab) (t : Icc a b)

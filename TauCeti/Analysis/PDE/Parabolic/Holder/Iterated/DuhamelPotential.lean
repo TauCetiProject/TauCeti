@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.DuhamelPotential.Basic
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Contraction
 import TauCeti.Analysis.Normed.Module.Multilinear.Curry
@@ -54,6 +55,8 @@ supremum of `f`.
 * `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply`: its values.
 * `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply_slabMk_zero`: its zero initial value.
 * `TauCeti.ParabolicCkHolderSpace.mixedDerivL_heatDuhamelPotentialL`: its fields.
+* `TauCeti.ParabolicCkHolderSpace.timeDerivL_heatDuhamelPotentialL_eq_laplacian_add`: the heat
+  equation `∂ₜw = Δw + f`.
 * `TauCeti.ParabolicCkHolderSpace.equivParabolicC2HolderSpace_heatDuhamelPotentialL`: agreement
   with the order-two Duhamel operator.
 
@@ -718,6 +721,17 @@ theorem equivParabolicC2HolderSpace_heatDuhamelPotentialL
   funext s x
   simp only [ParabolicC2HolderSpace.timeExtension_def, equivHolderSpace_apply]
 
+
+/-- **The heat equation.** The time derivative of the Duhamel potential `w` of `f` is `Δw + f`, at
+every point of the closed slab. -/
+theorem timeDerivL_heatDuhamelPotentialL_eq_laplacian_add (f : ParabolicCkHolderSpace k α E F hT)
+    (p : slab (E := E) 0 T) :
+    timeDerivL k α E F hT (heatDuhamelPotentialL hα₀ hα₁ hT f) p =
+      Δ (fun y ↦ heatDuhamelPotentialL hα₀ hα₁ hT f (slabMk y (slabTime p)))
+        (p : ParabolicSpaceTime E).space + f p := by
+  obtain ⟨x, t, rfl⟩ : ∃ x t, p = slabMk x t := ⟨_, _, (slabMk_space_slabTime p).symm⟩
+  rw [timeDerivL_apply, mixedDerivL_heatDuhamelPotentialL f (by omega)]
+  simp [ParabolicC2HolderSpace.timeExtension_def]
 
 end ParabolicCkHolderSpace
 

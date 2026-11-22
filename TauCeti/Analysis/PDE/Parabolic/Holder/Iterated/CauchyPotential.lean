@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.CauchyPotential
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Iterate
 
@@ -44,6 +45,9 @@ fields then come from estimates on the potential.
   linear map `C_b^{k,α}(E) → C_{par,b}^{k+α}(E × [a, b])`.
 * `TauCeti.ParabolicCkHolderSpace.heatCauchyPotentialL_apply` and
   `TauCeti.ParabolicCkHolderSpace.mixedDerivL_heatCauchyPotentialL`: the values and the fields.
+* `TauCeti.ParabolicCkHolderSpace.timeDerivL_heatCauchyPotentialL_eq_laplacian` and
+  `TauCeti.ParabolicCkHolderSpace.spatialTrace_heatCauchyPotentialL_left`: the potential solves
+  the heat equation `∂ₜu = Δu` and attains its datum at `t = 0`.
 * `TauCeti.ParabolicCkHolderSpace.norm_heatCauchyPotentialL_le`: the operator-norm bound
   `(k + 1)² (1 + dim E)^k (4 + M_α + M_{1+α})`, with the moments `M_γ` of
   `TauCeti.heatKernelMoment`.
@@ -372,6 +376,38 @@ theorem equivParabolicC2HolderSpace_heatCauchyPotentialL (g : CkHolderSpace 2 α
     equivParabolicC2HolderSpace (heatCauchyPotentialL hα hab ha g) =
       TauCeti.heatCauchyPotentialL hab ha g :=
   ParabolicC2HolderSpace.ext fun p ↦ by simp
+
+/-- **The heat equation.** For a datum of order `k + 2`, the time derivative of the Cauchy potential
+is the spatial Laplacian of its time slice, at every point of the closed slab. -/
+theorem timeDerivL_heatCauchyPotentialL_eq_laplacian (g : CkHolderSpace (k + 2) α E F)
+    (p : slab (E := E) a b) :
+    timeDerivL k α E F hab (heatCauchyPotentialL hα hab ha g) p =
+      Δ (fun y ↦ heatCauchyPotentialL hα hab ha g (slabMk y (slabTime p)))
+        (p : ParabolicSpaceTime E).space := by
+  have hL := heatCauchyPotential_comp_continuousLinearEquiv
+    (continuousMultilinearCurryFin0 ℝ E F).toContinuousLinearEquiv
+    (iteratedFDeriv ℝ 0 (Δ^[1] (g : E → F))) (p : ParabolicSpaceTime E).time
+    (p : ParabolicSpaceTime E).space
+  have hcomp : ((continuousMultilinearCurryFin0 ℝ E F).toContinuousLinearEquiv ∘
+      iteratedFDeriv ℝ 0 (Δ^[1] (g : E → F))) = Δ (g : E → F) := by
+    funext y
+    simp
+  have hslice : (fun y ↦ heatCauchyPotentialL hα hab ha g (slabMk y (slabTime p))) =
+      heatCauchyPotential g (p : ParabolicSpaceTime E).time := by
+    funext y
+    simp
+  rw [timeDerivL_apply, mixedDerivL_heatCauchyPotentialL g (by omega), hslice,
+    laplacian_heatCauchyPotential (g.contDiff.of_le (by norm_cast; omega))
+      g.norm_fderiv_le_iteratedFDeriv_one g.norm_fderiv_fderiv_le_iteratedFDeriv_two, ← hcomp, hL]
+  simp
+
+/-- **Attainment of the initial datum.** On the slab `E × [0, b]`, the initial trace of the Cauchy
+potential of `g` is `g`. -/
+theorem spatialTrace_heatCauchyPotentialL_left [CompleteSpace F] (hb : 0 < b)
+    (g : CkHolderSpace k α E F) :
+    (heatCauchyPotentialL hα hb le_rfl g).spatialTrace ⟨0, left_mem_Icc.2 hb.le⟩ = g := by
+  ext x
+  simp [heatCauchyPotential_zero]
 
 end ParabolicCkHolderSpace
 
