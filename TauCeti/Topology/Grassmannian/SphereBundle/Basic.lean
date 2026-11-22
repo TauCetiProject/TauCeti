@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
 public import TauCeti.Topology.Algebra.OrthogonalGroup
 public import TauCeti.Topology.Grassmannian.FrameQuotient
+public import TauCeti.Topology.Grassmannian.SphereBundle.SpecialUnitary
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 
 /-!
@@ -21,7 +22,13 @@ Evaluating a special orthogonal matrix on the first coordinate vector `e₀` giv
 trivial bundle with fibre `SO(n)`, and hence a Serre fibration. For `n = 0` it is not surjective:
 `SO(1)` is trivial while `S⁰` has two points.
 
-The charts come from explicit local sections. For unit vectors `b` and `y` with `y ≠ -b`, the
+Since `Matrix.specialOrthogonalGroup` is `Matrix.specialUnitaryGroup` for the trivial star of `ℝ`,
+this map is the special unitary evaluation map `TauCeti.specialUnitarySphereMap` over `ℝ`
+(`TauCeti.Topology.Grassmannian.SphereBundle.SpecialUnitary`), and its continuity, fibre,
+surjectivity and Serre fibration property are specializations of those statements. What is
+special to `ℝ` is a chart over the whole complement of a point.
+
+These charts come from explicit local sections. For unit vectors `b` and `y` with `y ≠ -b`, the
 reflection in `b` followed by the reflection in `b + y` is a rotation taking `b` to `y`
 (`TauCeti.sphereRotation`), and it depends continuously on `y`. Composing it with a fixed rotation
 taking `e₀` to `b` gives a continuous section of `A ↦ A e₀` over the complement of `-b`. Through
@@ -68,12 +75,11 @@ namespace TauCeti
 
 variable (n : ℕ)
 
-/-- The evaluation map `SO(1 + n) → Sⁿ`, `A ↦ A e₀`, on the first coordinate vector `e₀`. -/
+/-- The evaluation map `SO(1 + n) → Sⁿ`, `A ↦ A e₀`, on the first coordinate vector `e₀`: the
+special unitary evaluation map over `ℝ`. -/
 def specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1 :=
-  finiteOrthonormalFrame.sphereHomeomorph (1 + n)
-    (finiteOrthonormalFrame.unitaryMap ⟨A.val, A.property.1⟩
-      (finiteOrthonormalFrame.standard ℝ (Nat.le_add_right 1 n)))
+  specialUnitarySphereMap n A
 
 variable {n}
 
@@ -81,47 +87,33 @@ variable {n}
 @[simp]
 theorem coe_specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     (specialOrthogonalSphereMap n A : EuclideanSpace ℝ (Fin (1 + n))) =
-      WithLp.toLp 2 ((A : Matrix (Fin (1 + n)) (Fin (1 + n)) ℝ).col 0) := by
-  -- `Fin.castLE_zero` needs the target written as `Fin (m + 1)`, and `Fin (1 + n)` is not of that
-  -- form, so the cast of `0` is normalized by hand.
-  simp [specialOrthogonalSphereMap,
-    show Fin.castLE (Nat.le_add_right 1 n) (0 : Fin 1) = 0 from Fin.ext (by simp)]
+      WithLp.toLp 2 ((A : Matrix (Fin (1 + n)) (Fin (1 + n)) ℝ).col 0) :=
+  coe_specialUnitarySphereMap A
 
 variable (n) in
 /-- The evaluation map `SO(1 + n) → Sⁿ` is continuous. -/
 theorem continuous_specialOrthogonalSphereMap : Continuous (specialOrthogonalSphereMap n) :=
-  (finiteOrthonormalFrame.sphereHomeomorph (1 + n)).continuous.comp
-    (finiteOrthonormalFrame.continuous_unitaryMap.comp
-      ((continuous_subtypeVal.subtype_mk _).prodMk continuous_const))
+  continuous_specialUnitarySphereMap ℝ n
 
 /-- The evaluation map is equivariant: `(A B) e₀ = A (B e₀)`. -/
 theorem ofLp_specialOrthogonalSphereMap_mul (A B : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     WithLp.ofLp (specialOrthogonalSphereMap n (A * B) : EuclideanSpace ℝ (Fin (1 + n))) =
       (A : Matrix (Fin (1 + n)) (Fin (1 + n)) ℝ) *ᵥ
-        WithLp.ofLp (specialOrthogonalSphereMap n B : EuclideanSpace ℝ (Fin (1 + n))) := by
-  rw [coe_specialOrthogonalSphereMap, coe_specialOrthogonalSphereMap, WithLp.ofLp_toLp,
-    WithLp.ofLp_toLp, ← mulVec_single_one, ← mulVec_single_one, Submonoid.coe_mul,
-    mulVec_mulVec]
+        WithLp.ofLp (specialOrthogonalSphereMap n B : EuclideanSpace ℝ (Fin (1 + n))) :=
+  ofLp_specialUnitarySphereMap_mul A B
 
 /-- The fibre of `A ↦ A e₀` over `e₀` is the block subgroup `diag(1, SO(n))`. -/
 theorem specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff
     {A : specialOrthogonalGroup (Fin (1 + n)) ℝ} :
     specialOrthogonalSphereMap n A = specialOrthogonalSphereMap n 1 ↔
       A ∈ (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n).range := by
-  -- The final `show` normalizes `Fin.castAdd n 0` to `0 : Fin (1 + n)`: there is no library
-  -- lemma for `Fin.castAdd` of `0`, and the analogous `Fin.castLE_zero` needs the target written
-  -- as `Fin (m + 1)`, which `Fin (1 + n)` is not.
-  rw [SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff, Fin.forall_fin_one, Subtype.ext_iff,
-    coe_specialOrthogonalSphereMap, coe_specialOrthogonalSphereMap,
-    (WithLp.toLp_injective 2).eq_iff, OneMemClass.coe_one, ← mulVec_single_one,
-    ← mulVec_single_one, one_mulVec, show Fin.castAdd n (0 : Fin 1) = 0 from Fin.ext (by simp)]
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff
 
 /-- For `n ≥ 1`, every unit vector of `ℝ^(1 + n)` is `A e₀` for some `A ∈ SO(1 + n)`. -/
 theorem surjective_specialOrthogonalSphereMap [NeZero n] :
     Function.Surjective (specialOrthogonalSphereMap n) :=
-  (finiteOrthonormalFrame.sphereHomeomorph (1 + n)).surjective.comp
-    (finiteOrthonormalFrame.specialOrthogonal_unitaryMap_standard_surjective
-      (Nat.lt_add_of_pos_right (Nat.pos_of_neZero n)))
+  surjective_specialUnitarySphereMap
 
 /-! ### The fibre over `e₀` -/
 
@@ -131,18 +123,14 @@ homeomorphism of `SO(n)` onto the special orthogonal matrices fixing `e₀`. -/
 def specialOrthogonalSphereFiberHomeomorph :
     specialOrthogonalGroup (Fin n) ℝ ≃ₜ
       specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1} :=
-  (finiteOrthonormalFrame.specialOrthogonalStabilizerHomeomorph 1 n).trans
-    (Homeomorph.setCongr <| by
-      ext A
-      rw [← finiteOrthonormalFrame.range_fromBlocksOne_eq_specialOrthogonalStabilizer,
-        SetLike.mem_coe, mem_preimage, mem_singleton_iff,
-        specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff])
+  specialUnitarySphereFiberHomeomorph ℝ n
 
 @[simp]
 theorem coe_specialOrthogonalSphereFiberHomeomorph_apply (B : specialOrthogonalGroup (Fin n) ℝ) :
     (specialOrthogonalSphereFiberHomeomorph n B : specialOrthogonalGroup (Fin (1 + n)) ℝ) =
-      SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n B :=
-  finiteOrthonormalFrame.coe_specialOrthogonalStabilizerHomeomorph_apply n B
+      SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n B := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact coe_specialUnitarySphereFiberHomeomorph_apply B
 
 /-- A special orthogonal matrix fixing `e₀` is the block matrix `diag(1, B)` of its image `B` in
 `SO(n)`. -/
@@ -151,13 +139,14 @@ theorem fromBlocksOne_specialOrthogonalSphereFiberHomeomorph_symm_apply
     (A : specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1}) :
     SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n ((specialOrthogonalSphereFiberHomeomorph n).symm A) =
       A := by
-  rw [← coe_specialOrthogonalSphereFiberHomeomorph_apply, Homeomorph.apply_symm_apply]
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact fromBlocksOne_specialUnitarySphereFiberHomeomorph_symm_apply A
 
 /-- The identity of `SO(n)` corresponds to the identity of `SO(1 + n)` in the fibre. -/
 @[simp]
 theorem specialOrthogonalSphereFiberHomeomorph_one :
     specialOrthogonalSphereFiberHomeomorph n 1 = ⟨1, rfl⟩ :=
-  Subtype.ext (by simp)
+  specialUnitarySphereFiberHomeomorph_one
 
 /-! ### Local triviality -/
 
@@ -173,10 +162,12 @@ theorem exists_trivialization_specialOrthogonalSphereMap [NeZero n]
   let φ : specialOrthogonalGroup (Fin (1 + n)) ℝ ⧸ H ≃ₜ
       sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1 :=
     (finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph hn).trans
-      (finiteOrthonormalFrame.sphereHomeomorph (1 + n))
+      (finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n))
   have hφ (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
       φ (QuotientGroup.mk A) = specialOrthogonalSphereMap n A := by
-    exact congrArg (finiteOrthonormalFrame.sphereHomeomorph (1 + n))
+    rw [specialOrthogonalSphereMap, specialUnitarySphereMap_eq_sphereHomeomorph,
+      specialUnitaryFrameMap_eq_smul_standard, finiteOrthonormalFrame.specialUnitary_smul_def]
+    exact congrArg (finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n))
       (finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph_mk hn A)
   -- A rotation `g` taking `e₀` to `b`, followed by rotations taking `b` to nearby points.
   obtain ⟨g, hg⟩ := surjective_specialOrthogonalSphereMap (n := n) b
@@ -215,12 +206,7 @@ theorem specialOrthogonalSphereMap_mem_serreFibrations [NeZero n] :
       (_root_.TopCat.ofHom ⟨specialOrthogonalSphereMap n,
           continuous_specialOrthogonalSphereMap n⟩ :
         _root_.TopCat.of (specialOrthogonalGroup (Fin (1 + n)) ℝ) ⟶
-          _root_.TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1)) := by
-  refine TopCat.mem_serreFibrations_of_exists_trivialization
-    (F := specialOrthogonalGroup (Fin n) ℝ) fun b ↦ ?_
-  obtain ⟨e, he⟩ := exists_trivialization_specialOrthogonalSphereMap (n := n) b
-  refine ⟨e, ?_⟩
-  rw [he]
-  exact ne_neg_of_mem_unit_sphere ℝ b
+          _root_.TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1)) :=
+  specialUnitarySphereMap_mem_serreFibrations
 
 end TauCeti

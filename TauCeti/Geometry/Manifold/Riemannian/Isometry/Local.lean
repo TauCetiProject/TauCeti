@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors, Riccardo Brasca
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 

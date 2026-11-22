@@ -34,7 +34,8 @@ In the same way, a product `X × E` with a real vector space `E` deforms onto it
 
 It also records that inverting a homotopy equivalence twice gives it back, and that a left and
 a right homotopy inverse of the same map are homotopic, so that a left homotopy inverse of a
-homotopy equivalence is automatically a right homotopy inverse.
+homotopy equivalence is automatically a right homotopy inverse, and that a map homotopic to a
+homotopy equivalence is one too, with the same homotopy inverse.
 
 ## Main declarations
 
@@ -65,6 +66,8 @@ homotopy equivalence is automatically a right homotopy inverse.
   has a left homotopy inverse itself is a right homotopy inverse.
 * `ContinuousMap.HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id`: a left
   homotopy inverse of a homotopy equivalence is a right homotopy inverse.
+* `ContinuousMap.HomotopyEquiv.ofHomotopic`: a map homotopic to a homotopy equivalence is a
+  homotopy equivalence.
 -/
 
 public section
@@ -321,5 +324,34 @@ theorem HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id
     (e.toFun.comp g).Homotopic (ContinuousMap.id Y) :=
   ((Homotopic.refl e.toFun).comp
     (hg.homotopic_of_comp_homotopic_id e.right_inv)).trans e.right_inv
+
+/-- **A map homotopic to a homotopy equivalence is a homotopy equivalence**, with the same
+homotopy inverse: `e.ofHomotopic f hf` has forward map `f`. -/
+def HomotopyEquiv.ofHomotopic (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    X ≃ₕ Y where
+  toFun := f
+  invFun := e.invFun
+  left_inv := ((Homotopic.refl e.invFun).comp hf).trans e.left_inv
+  right_inv := (hf.comp (Homotopic.refl e.invFun)).trans e.right_inv
+
+theorem HomotopyEquiv.ofHomotopic_toFun (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    (e.ofHomotopic f hf).toFun = f :=
+  (rfl)
+
+theorem HomotopyEquiv.ofHomotopic_invFun (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    (e.ofHomotopic f hf).invFun = e.invFun :=
+  (rfl)
+
+/-- The homotopy equivalence `e.ofHomotopic f hf` is the map `f`. -/
+@[simp]
+theorem HomotopyEquiv.coe_ofHomotopic (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    ⇑(e.ofHomotopic f hf) = f :=
+  (rfl)
+
+/-- The inverse of `e.ofHomotopic f hf` is the inverse of `e`. -/
+@[simp]
+theorem HomotopyEquiv.coe_ofHomotopic_symm (e : X ≃ₕ Y) (f : C(X, Y))
+    (hf : f.Homotopic e.toFun) : ⇑(e.ofHomotopic f hf).symm = e.symm :=
+  (rfl)
 
 end ContinuousMap

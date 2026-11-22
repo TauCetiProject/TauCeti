@@ -152,6 +152,12 @@ theorem gaugeFixedOperator_apply_three (x y : ℂ → EuclideanSpace ℝ (Fin 4)
     gaugeFixedOperator x y z 3 = linearizedEquation x y z 2 := by
   rfl
 
+/-- The rows of `L_x` after the gauge-fixing row are those of the linearized equation. -/
+@[simp]
+theorem gaugeFixedOperator_apply_succ (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) (i : Fin 3) :
+    gaugeFixedOperator x y z i.succ = linearizedEquation x y z i := by
+  fin_cases i <;> rfl
+
 /-- The first connection component of `L_x*`. -/
 @[simp]
 theorem gaugeFixedAdjoint_apply_zero (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
