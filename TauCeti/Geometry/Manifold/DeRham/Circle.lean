@@ -446,10 +446,8 @@ theorem mpullback_circleAngularForm_apply_eq_im_mlogDeriv {f : M → Circle} {x 
 /-- Pulling back the angular form along a constant map into `Circle` gives `0`. -/
 @[simp]
 theorem mpullback_const_circleAngularForm (z₀ : Circle) :
-    mpullback I (𝓡 1) (fun _ : M ↦ z₀) circleAngularForm = 0 := by
-  ext x v
-  rw [mpullback_circleAngularForm_apply_eq_im_mlogDeriv mdifferentiableAt_const]
-  simp [mlogDeriv_const]
+    mpullback I (𝓡 1) (fun _ : M ↦ z₀) circleAngularForm = 0 :=
+  mpullback_const one_ne_zero z₀ _
 
 /-- **Pullback of `dθ` turns products into sums.** If `f, g : M → Circle` are differentiable at `x`,
 then `(f * g)^* dθ = f^* dθ + g^* dθ` at `x`. -/

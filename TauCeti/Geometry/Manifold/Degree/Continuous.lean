@@ -28,7 +28,7 @@ homotopic to a smooth map `g : C(M, N)`. For orientations `o` of `M` and `o'` of
 
 When `M` is boundaryless and `N` is σ-compact and connected of the same dimension `k`, any
 continuous homotopy between smooth maps `M → N` can be smoothed to a smooth homotopy
-(`ContinuousMap.Homotopy.exists_contMDiff_homotopy_of_isCompact_closure_range`), along which
+(`ContinuousMap.Homotopic.exists_contMDiff_homotopy_Icc`), along which
 `TauCeti.degree` is invariant (`TauCeti.degree_eq_of_homotopy`). Consequently:
 
 * two continuously homotopic smooth maps `M → N` have the same `TauCeti.degree`
@@ -155,13 +155,8 @@ theorem degree_eq_of_homotopic (o : Manifold.Orientation I M (Fin k))
     (hg : ContMDiff I J ∞ g)
     (h : ContinuousMap.Homotopic ⟨f, hf.continuous⟩ ⟨g, hg.continuous⟩) :
     degree o o' f = degree o o' g := by
-  obtain ⟨H⟩ := h
-  obtain ⟨K, hK, hK₀, hK₁⟩ := H.exists_contMDiff_homotopy_of_isCompact_closure_range
-    ((isCompact_range H.continuous).closure_of_subset Subset.rfl) ⊤ hf hg
-  -- Restrict `K : M × ℝ → N` to the parameter interval `[0, 1]`.
-  have hF : ContMDiff (I.prod (𝓡∂ 1)) J ∞ fun p : M × Icc (0 : ℝ) 1 ↦ K (p.1, p.2) :=
-    hK.comp (contMDiff_fst.prodMk (contMDiff_subtypeVal_Icc.comp contMDiff_snd))
-  exact degree_eq_of_homotopy o o' hf hg hF (fun x ↦ hK₀ x) (fun x ↦ hK₁ x)
+  obtain ⟨F, hF, hF₀, hF₁⟩ := h.exists_contMDiff_homotopy_Icc ⊤ hf hg
+  exact degree_eq_of_homotopy o o' hf hg hF hF₀ hF₁
 
 /-- **Characterization by smooth approximations.** For every smooth map `g : M → N` continuously
 homotopic to `f`, `continuousDegree o o' f` equals `degree o o' g`. -/
