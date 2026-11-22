@@ -152,7 +152,6 @@ open AnnularRing
 
 section Instances
 variable {p : ℕ} [Fact p.Prime] {α : ℝ}
-private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
 private theorem one_lt_inv_of_mem_Ioo {β : ℝ} (hβ : β ∈ Set.Ioo 0 1) : 1 < β⁻¹ :=
   (one_lt_inv₀ hβ.1).2 hβ.2
 
@@ -313,9 +312,22 @@ theorem norm_le_zpow_iff (z : AnnularLaurent p hα) (r : ℤ) :
 theorem norm_le_zpow_iff_norm_coeff_le (z : AnnularLaurent p hα) (r : ℤ) :
     ‖z‖ ≤ α ^ r ↔ ∀ m : ℤ, ‖coeff z m‖ ≤ (p : ℝ) ^ min 0 (m - r) := by
   rw [norm_def]; exact tateGauge_le_zpow_iff_coeff hα z r
-private theorem norm_coeff_le_zpow_neg_of_norm_le {z : AnnularLaurent p hα} {m : ℤ} {k : ℕ}
+/-- If `‖z‖ ≤ α ^ (m + k)`, then the `m`-th coefficient satisfies `‖coeff z m‖ ≤ p ^ (-k)`. -/
+theorem norm_coeff_le_zpow_neg_of_norm_le {z : AnnularLaurent p hα} {m : ℤ} {k : ℕ}
     (hz : ‖z‖ ≤ α ^ (m + k)) : ‖coeff z m‖ ≤ (p : ℝ) ^ (-(k : ℤ)) :=
   norm_coeff_le_zpow_neg_of_tateGauge_le ((norm_def hα z).symm ▸ hz)
+
+/-- For each `m : ℤ`, the `m`-th coefficient map `z ↦ coeff z m` is continuous on
+`AnnularLaurent p hα`. -/
+theorem continuous_coeff (m : ℤ) : Continuous fun z : AnnularLaurent p hα ↦ coeff z m := by
+  refine continuous_of_continuousAt_zero
+    ((LinearMap.proj m).comp (coeff (p := p) (hα := hα))).toAddMonoidHom ?_
+  rw [ContinuousAt, LinearMap.toAddMonoidHom_coe, map_zero, Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨k, hk⟩ := TauCeti.exists_zpow_neg_lt (one_lt_p (p := p)) hε
+  refine Metric.eventually_nhds_iff.2 ⟨α ^ (m + k), zpow_pos hα.1 _, fun z hz ↦ ?_⟩
+  simp only [LinearMap.comp_apply, LinearMap.proj_apply, dist_zero_right] at hz ⊢
+  exact (norm_coeff_le_zpow_neg_of_norm_le hα hz.le).trans_lt hk
 
 private theorem norm_eq_one_of_mem_of_not_le {z : AnnularLaurent p hα}
     (hz : z ∈ ringOfDefinition p hα) (hnot : ¬ ‖z‖ ≤ α) : ‖z‖ = 1 := by
@@ -406,13 +418,10 @@ private theorem norm_coeff_sub_lim_le {u : ℕ → AnnularLaurent p hα} {d : �
 /-- `AnnularLaurent p hα` is complete for the Tate gauge norm, making it a Banach–Tate ring. -/
 instance instCompleteSpace : CompleteSpace (AnnularLaurent p hα) := by
   refine Metric.complete_of_cauchySeq_tendsto fun u hu ↦ ?_
-  have hcauchy (m : ℤ) : CauchySeq fun n ↦ coeff (u n) m := Metric.cauchySeq_iff.2 fun ε hε ↦ by
-    obtain ⟨k, hk⟩ := TauCeti.exists_zpow_neg_lt (one_lt_p (p := p)) hε
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hu (α ^ (m + k)) (zpow_pos hα.1 _)
-    exact ⟨N, fun i hi j hj ↦ by
-      rw [dist_eq_norm, ← Pi.sub_apply, ← LinearMap.map_sub]
-      exact (norm_coeff_le_zpow_neg_of_norm_le hα (m := m) (k := k)
-        (by simpa [dist_eq_norm] using (hN i hi j hj).le)).trans_lt hk⟩
+  have hcauchy (m : ℤ) : CauchySeq fun n ↦ coeff (u n) m :=
+    (uniformContinuous_of_continuousAt_zero
+      ((LinearMap.proj m).comp (coeff (p := p) (hα := hα))).toAddMonoidHom
+      (continuous_coeff hα m).continuousAt).comp_cauchySeq hu
   choose d hd using fun m ↦ cauchySeq_tendsto_of_complete (hcauchy m)
   obtain ⟨N₀, hN₀⟩ := Metric.cauchySeq_iff.1 hu 1 zero_lt_one
   let y : AnnularRing p := ⟨fun m ↦ coeff (u N₀) m - d m, fun m ↦ by

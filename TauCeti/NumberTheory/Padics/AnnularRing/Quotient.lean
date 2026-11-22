@@ -36,7 +36,6 @@ open Filter Topology PowerSeries
 namespace TauCeti.AnnularRing
 
 variable {p : ℕ} [Fact p.Prime]
-private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
 private theorem p_ne_zero : (p : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
 
 /-! ### `U`-coefficients, boundary quotient `AnnularRing p ⧸ (T)`, and local structure -/

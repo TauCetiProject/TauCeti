@@ -47,8 +47,6 @@ theorem ne_zero_of_norm_mem_Ioo {p : ℕ} {K : Type*} [NormedAddGroup K] {t : K}
   norm_pos_iff.1 ((inv_nonneg.2 (Nat.cast_nonneg p)).trans_lt ht.1)
 
 variable {p : ℕ} [Fact p.Prime]
-private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
-private theorem p_pos : (0 : ℝ) < p := zero_lt_one.trans one_lt_p
 
 section Eval
 variable {K : Type*} [NormedField K] {t : K}
@@ -227,13 +225,46 @@ end Eval
 
 section JointInjectivity
 
+/-- The asymptotic score `-2 * v(d_m) - m` of the `m`-th coefficient. At radius
+`‖t‖ = p ^ (-B / (2B + 1))` (for large `B`), `‖d_m t ^ m‖ = p ^ (E_B(m) / (2B + 1))` with
+`2 * E_B(m) = (2B + 1) * valScore x m + m`. -/
 private def valScore (x : AnnularRing p) (m : ℤ) : ℤ := -2 * ((x.coeff m).valuation : ℤ) - m
+
+/-- The integer numerator `E_B(m)` in `‖d_m t ^ m‖ = p ^ (E_B(m) / (2B + 1))` when
+`‖t‖ = p ^ (-B / (2B + 1))`. -/
+private def evalExponent (x : AnnularRing p) (B : ℕ) (m : ℤ) : ℤ :=
+  -(((x.coeff m).valuation : ℤ) * (2 * B + 1)) - B * m
+
+private theorem two_mul_evalExponent (x : AnnularRing p) (B : ℕ) (m : ℤ) :
+    2 * evalExponent x B m = (2 * (B : ℤ) + 1) * valScore x m + m := by
+  simp only [evalExponent, valScore]
+  ring
+
+private theorem evalExponent_le_sub_one {x : AnnularRing p} {B : ℕ} {m m₀ : ℤ}
+    (hdom : (2 * (B : ℤ) + 1) * valScore x m + m <
+      (2 * (B : ℤ) + 1) * valScore x m₀ + m₀) :
+    evalExponent x B m ≤ evalExponent x B m₀ - 1 := by
+  have h2 : 2 * evalExponent x B m < 2 * evalExponent x B m₀ := by
+    rwa [two_mul_evalExponent, two_mul_evalExponent]
+  omega
+
+/-- Because `v(d_m) ≥ max 0 (-m)` in `AnnularRing p`, we have `valScore x m ≤ -|m|` whenever
+`d_m ≠ 0`, so `valScore` drops off linearly outside any finite window. -/
 private theorem valScore_le_neg_abs {x : AnnularRing p} {m : ℤ} (hm : x.coeff m ≠ 0) :
     valScore x m ≤ -|m| := by
   have h := x.norm_coeff_le m
   rw [PadicInt.norm_eq_zpow_neg_valuation hm, zpow_le_zpow_iff_right₀ (one_lt_p (p := p))] at h
-  rw [valScore]; cases abs_cases m <;> omega
+  rw [valScore]
+  cases abs_cases m <;> omega
 
+/-- Strategy for finding a dominant term: pick any nonzero coefficient `d_{m₁}` and set the
+window radius `R = |m₁| + 2 * v(d_{m₁})`, so `valScore x m₁ ≥ -R`. Among nonzero coefficients in
+`[-R, R]`, let `m₀` be the largest index attaining the maximum `valScore`. For every `B ≥ R + 1`,
+`(2B + 1) * valScore x m + m` is strictly largest at `m₀`:
+* inside `[-R, R]`, ties in `valScore` break in favor of `m₀` by maximality (`m < m₀`), while a
+  drop of at least `1` in `valScore` outweighs `m - m₀ ≤ 2R < 2B + 1`;
+* outside `[-R, R]`, `|m| ≥ R + 1` gives `valScore x m ≤ -|m| < -R ≤ valScore x m₀`, and the
+  margin `(2B + 1) * (valScore x m₀ - valScore x m)` dominates `m - m₀ ≤ |m| + R`. -/
 private theorem exists_dominant_index {x : AnnularRing p} (hx : x ≠ 0) :
     ∃ (R : ℕ) (m₀ : ℤ), x.coeff m₀ ≠ 0 ∧ ∀ ⦃B : ℕ⦄, R + 1 ≤ B → ∀ ⦃m : ℤ⦄, m ≠ m₀ → x.coeff m ≠ 0 →
       (2 * (B : ℤ) + 1) * valScore x m + m < (2 * (B : ℤ) + 1) * valScore x m₀ + m₀ := by
@@ -245,68 +276,106 @@ private theorem exists_dominant_index {x : AnnularRing p} (hx : x ≠ 0) :
   have hm₁S : m₁ ∈ S :=
     Finset.mem_filter.2 ⟨Finset.mem_Icc.2 (by have := Int.abs_eq_natAbs m₁; omega), hm₁⟩
   let Smax : Finset ℤ := S.filter fun m ↦ valScore x m = S.sup' ⟨m₁, hm₁S⟩ (valScore x)
-  have hSmax : Smax.Nonempty := let ⟨m, hm⟩ := Finset.exists_mem_eq_sup' ⟨m₁, hm₁S⟩ (valScore x)
+  have hSmax : Smax.Nonempty :=
+    let ⟨m, hm⟩ := Finset.exists_mem_eq_sup' ⟨m₁, hm₁S⟩ (valScore x)
     ⟨m, Finset.mem_filter.2 ⟨hm.1, hm.2.symm⟩⟩
   let m₀ : ℤ := Smax.max' hSmax
   obtain ⟨hm₀S, hm₀_score⟩ := Finset.mem_filter.1 (Finset.max'_mem Smax hSmax)
-  obtain ⟨hm₀_Icc, hm₀_ne⟩ := Finset.mem_filter.1 hm₀S; rw [Finset.mem_Icc] at hm₀_Icc
-  refine ⟨R, m₀, hm₀_ne, fun B hB m hm_ne hm0 ↦ ?_⟩; have hRB : (R : ℤ) < B := by omega
+  obtain ⟨hm₀_Icc, hm₀_ne⟩ := Finset.mem_filter.1 hm₀S
+  rw [Finset.mem_Icc] at hm₀_Icc
+  refine ⟨R, m₀, hm₀_ne, fun B hB m hm_ne hm0 ↦ ?_⟩
+  have hRB : (R : ℤ) < B := by omega
   by_cases hmIcc : -(R : ℤ) ≤ m ∧ m ≤ R
   · have hmS : m ∈ S := Finset.mem_filter.2 ⟨Finset.mem_Icc.2 hmIcc, hm0⟩
     rcases ((Finset.le_sup' (valScore x) hmS).trans_eq hm₀_score.symm).eq_or_lt with heq | hlt
-    · rw [heq]; linarith [lt_of_le_of_ne (Finset.le_max' Smax m
-        (Finset.mem_filter.2 ⟨hmS, heq.trans hm₀_score⟩)) hm_ne]
+    · rw [heq]
+      have hlt_m₀ := lt_of_le_of_ne
+        (Finset.le_max' Smax m (Finset.mem_filter.2 ⟨hmS, heq.trans hm₀_score⟩)) hm_ne
+      linarith
     · nlinarith [Int.le_sub_one_of_lt hlt, hRB, hmIcc.2, hm₀_Icc.1]
   · have habs : (R : ℤ) + 1 ≤ |m| := by cases abs_cases m <;> omega
-    have hm₀_ge : -(R : ℤ) ≤ valScore x m₀ := (by dsimp [valScore, R]; omega :
-      -(R : ℤ) ≤ valScore x m₁).trans (hm₀_score ▸ Finset.le_sup' (valScore x) hm₁S)
+    have hm₀_ge : -(R : ℤ) ≤ valScore x m₀ :=
+      (by dsimp [valScore, R]; omega : -(R : ℤ) ≤ valScore x m₁).trans
+        (hm₀_score ▸ Finset.le_sup' (valScore x) hm₁S)
     nlinarith [valScore_le_neg_abs hm0, le_abs_self m, hRB, hm₀_Icc.1, hm₀_ge]
 
+/-- If `x ≠ 0`, then at any sufficiently large radius `‖t‖ = p ^ (-B / (2B + 1))` the dominant
+term `d_{m₀} t ^ {m₀}` strictly exceeds the ultrametric bound on the rest of the series, so
+`eval ht x ≠ 0`. -/
 private theorem exists_forall_eval_ne_zero_of_ne_zero {x : AnnularRing p} (hx : x ≠ 0) :
     ∃ B₀ : ℕ, ∀ ⦃B : ℕ⦄, B₀ ≤ B → ∀ (t : ℂ_[p]) (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1),
       ‖t‖ = (p : ℝ) ^ (-((B : ℝ) / (2 * B + 1))) → eval ht x ≠ 0 := by
-  classical obtain ⟨R, m₀, hm₀_ne, hdom⟩ := exists_dominant_index hx
+  classical
+  obtain ⟨R, m₀, hm₀_ne, hdom⟩ := exists_dominant_index hx
   refine ⟨R + 1, fun B hB t ht hnorm_t heval0 ↦ ?_⟩
   have h2B1_pos : (0 : ℝ) < 2 * (B : ℝ) + 1 := by positivity
   let f : ℤ → ℂ_[p] := fun m ↦ padicIntAlgebraMap p ℂ_[p] (x.coeff m) * t ^ m
-  let E : ℤ → ℤ := fun m ↦ -(((x.coeff m).valuation : ℤ) * (2 * B + 1)) - B * m
-  have hnorm_eq {m : ℤ} (hm : x.coeff m ≠ 0) : ‖f m‖ = (p : ℝ) ^ ((E m : ℝ) / (2 * B + 1)) := by
-    dsimp only [f]; rw [norm_padicIntAlgebraMap_mul_zpow, PadicInt.norm_eq_zpow_neg_valuation hm,
+  -- Every nonzero term has norm `p ^ (evalExponent x B m / (2B + 1))`.
+  have hnorm_eq {m : ℤ} (hm : x.coeff m ≠ 0) :
+      ‖f m‖ = (p : ℝ) ^ ((evalExponent x B m : ℝ) / (2 * B + 1)) := by
+    dsimp only [f]
+    rw [norm_padicIntAlgebraMap_mul_zpow, PadicInt.norm_eq_zpow_neg_valuation hm,
       hnorm_t, ← Real.rpow_intCast, ← Real.rpow_intCast (n := m), ← Real.rpow_mul p_pos.le,
-      ← Real.rpow_add p_pos]; congr 1; simp only [E]; push_cast; field_simp [h2B1_pos.ne']; ring
-  have hE_le {m : ℤ} (hm_ne : m ≠ m₀) (hm0 : x.coeff m ≠ 0) : E m ≤ E m₀ - 1 := by
-    have h2E (k : ℤ) : 2 * E k = (2 * (B : ℤ) + 1) * valScore x k + k := by
-      simp [E, valScore]; ring
-    have := hdom hB hm_ne hm0; rw [← h2E m, ← h2E m₀] at this; omega
-  set r : ℝ := (p : ℝ) ^ (((E m₀ - 1 : ℤ) : ℝ) / (2 * B + 1))
+      ← Real.rpow_add p_pos]
+    congr 1
+    simp only [evalExponent]
+    push_cast
+    field_simp [h2B1_pos.ne']
+    ring
+  have hE_le {m : ℤ} (hm_ne : m ≠ m₀) (hm0 : x.coeff m ≠ 0) :
+      evalExponent x B m ≤ evalExponent x B m₀ - 1 :=
+    evalExponent_le_sub_one (hdom hB hm_ne hm0)
+  -- Bound the tail excluding `m₀` by `r = p ^ ((evalExponent x B m₀ - 1) / (2B + 1)) < ‖f m₀‖`.
+  set r : ℝ := (p : ℝ) ^ (((evalExponent x B m₀ - 1 : ℤ) : ℝ) / (2 * B + 1))
   have hr0 : 0 ≤ r := Real.rpow_nonneg (p_pos (p := p)).le _
-  have hr_lt : r < ‖f m₀‖ := (hnorm_eq hm₀_ne).symm ▸ Real.rpow_lt_rpow_of_exponent_lt
-    (one_lt_p (p := p)) (div_lt_div_of_pos_right (by exact_mod_cast sub_one_lt (E m₀)) h2B1_pos)
+  have hr_lt : r < ‖f m₀‖ := by
+    rw [hnorm_eq hm₀_ne]
+    exact Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
+      (div_lt_div_of_pos_right (by exact_mod_cast sub_one_lt (evalExponent x B m₀)) h2B1_pos)
   have htail_norm : ‖∑' m : ℤ, if m = m₀ then (0 : ℂ_[p]) else f m‖ ≤ r :=
     IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hr0 fun m ↦ by
-      by_cases hm_eq : m = m₀; · simp [hm_eq, hr0]
-      by_cases hm0 : x.coeff m = 0; · simp [hm_eq, f, hm0, hr0]
+      by_cases hm_eq : m = m₀
+      · simp [hm_eq, hr0]
+      by_cases hm0 : x.coeff m = 0
+      · simp [hm_eq, f, hm0, hr0]
       rw [ite_eq_right hm_eq, hnorm_eq hm0]
       exact Real.rpow_le_rpow_of_exponent_le (one_lt_p (p := p)).le
         (div_le_div_of_nonneg_right (by exact_mod_cast hE_le hm_eq hm0) h2B1_pos.le)
+  -- Splitting `eval ht x = f m₀ + tail = 0` gives `‖f m₀‖ = ‖tail‖ ≤ r`,
+  -- contradicting `r < ‖f m₀‖`.
   have hsplit := (summable_padicIntAlgebraMap_coeff_mul_zpow ht x).tsum_eq_add_tsum_ite m₀
   rw [← eval_apply ht x, heval0] at hsplit
   linarith [(congr_arg norm (eq_neg_of_add_eq_zero_left hsplit.symm)).trans (norm_neg _)]
 
+/-- For any rational `q ∈ (0, 1)`, there exists `t : ℂ_[p]` in the open annulus `(p⁻¹, 1)` with
+`‖t‖ = p ^ (-q)`. -/
+private theorem exists_padicComplex_norm_eq_rpow_neg {q : ℚ} (hq0 : 0 < q) (hq1 : q < 1) :
+    ∃ t : ℂ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 ∧ ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) := by
+  obtain ⟨t, ht⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (-q)
+  have hnorm : ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) := by simpa using ht
+  have hlt1 : ‖t‖ < 1 := by
+    rw [hnorm, ← Real.rpow_zero (p : ℝ)]
+    exact Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
+      (neg_lt_zero.2 (by exact_mod_cast hq0))
+  have hgt : (p : ℝ)⁻¹ < ‖t‖ := by
+    rw [hnorm, ← Real.rpow_neg_one (p : ℝ)]
+    exact Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
+      (neg_lt_neg (by exact_mod_cast hq1))
+  exact ⟨t, ⟨hgt, hlt1⟩, hnorm⟩
+
 private theorem exists_padicComplex_ratio (B : ℕ) (hB : 1 ≤ B) : ∃ t : ℂ_[p],
     ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 ∧ ‖t‖ = (p : ℝ) ^ (-((B : ℝ) / (2 * B + 1))) := by
-  obtain ⟨t, ht⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (-((B : ℚ) / (2 * B + 1)))
-  have hnorm : ‖t‖ = (p : ℝ) ^ (-((B : ℝ) / (2 * B + 1))) := by simpa using ht
-  have hpos : (0 : ℝ) < 2 * B + 1 := by positivity
-  refine ⟨t, ⟨?_, hnorm ▸ (Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
-    (neg_lt_zero.2 (div_pos (by positivity) hpos))).trans_eq (Real.rpow_zero _)⟩, hnorm⟩
-  rw [hnorm, ← Real.rpow_neg_one]; exact Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p)) <|
-    neg_lt_neg_iff.2 ((div_lt_one hpos).2 (by exact_mod_cast (by omega : B < 2 * B + 1)))
+  have hq0 : (0 : ℚ) < (B : ℚ) / (2 * B + 1) := by positivity
+  have hq1 : (B : ℚ) / (2 * B + 1) < 1 :=
+    (div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : B < 2 * B + 1))
+  obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_norm_eq_rpow_neg (p := p) hq0 hq1
+  exact ⟨t, ht, by simpa using hnorm⟩
 
 /-- Elements of `AnnularRing p` agreeing on `p⁻¹ < ‖t‖ < 1` in `ℂ_p` are equal. -/
 theorem eq_of_forall_eval_eq {x y : AnnularRing p}
     (h : ∀ (t : ℂ_[p]) (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1), eval ht x = eval ht y) : x = y := by
-  by_contra hxy; obtain ⟨B₀, hB₀⟩ := exists_forall_eval_ne_zero_of_ne_zero (sub_ne_zero.2 hxy)
+  by_contra hxy
+  obtain ⟨B₀, hB₀⟩ := exists_forall_eval_ne_zero_of_ne_zero (sub_ne_zero.2 hxy)
   obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_ratio (p := p) (max B₀ 1) (le_max_right _ _)
   exact hB₀ (le_max_left _ _) t ht hnorm (by rw [map_sub, h t ht, sub_self])
 
@@ -323,7 +392,8 @@ theorem mem_span_iff_forall_eval_annulus (F : MvPowerSeries (Fin 2) ℤ_[p]) :
 
 instance instNoZeroDivisors : NoZeroDivisors (AnnularRing p) where
   eq_zero_or_eq_zero_of_mul_eq_zero {x y} hxy := by
-    by_contra! hne; obtain ⟨Bx, hBx⟩ := exists_forall_eval_ne_zero_of_ne_zero hne.1
+    by_contra! hne
+    obtain ⟨Bx, hBx⟩ := exists_forall_eval_ne_zero_of_ne_zero hne.1
     obtain ⟨By, hBy⟩ := exists_forall_eval_ne_zero_of_ne_zero hne.2
     obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_ratio (p := p) (max (max Bx By) 1)
       (le_max_right _ _)
@@ -425,6 +495,133 @@ theorem continuous_eval (hα : α ∈ Set.Ioo 0 1) (ht : ‖t‖ ∈ Set.Ioo (p 
   refine Metric.eventually_nhds_iff.2 ⟨α ^ (r : ℤ), zpow_pos hα.1 _, fun z hz ↦ ?_⟩
   rw [dist_zero_right] at hz ⊢
   exact (norm_eval_le_zpow_of_norm_le_zpow hα ht hz.le).trans_lt (by simpa [zpow_natCast] using hr)
+
+/-- Any continuous ring homomorphism `AnnularLaurent p hα →+* K` agreeing with
+`padicIntAlgebraMap p K` on `ℤ_p` and sending `unitT p hα` to `t` equals `eval hα ht`. -/
+theorem eq_eval_of_continuous {hα : α ∈ Set.Ioo 0 1} (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
+    (f : AnnularLaurent p hα →+* K) (hf : Continuous f)
+    (hc : ∀ c, f (algebraMap ℤ_[p] _ c) = padicIntAlgebraMap p K c)
+    (hT : f (unitT p hα) = t) : f = eval hα ht := by
+  have ht0 : t ≠ 0 := ne_zero_of_norm_mem_Ioo ht
+  let g : AnnularRing p →+* K := f.comp (algebraMap (AnnularRing p) (AnnularLaurent p hα))
+  have hg_alg (c : ℤ_[p]) : g (algebraMap ℤ_[p] (AnnularRing p) c) = padicIntAlgebraMap p K c := by
+    rw [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply]
+    exact hc c
+  have hgT : g T = t := by
+    rw [RingHom.comp_apply, ← val_unitT hα]
+    exact hT
+  have hgU : g U = (p : K) / t := by
+    rw [eq_div_iff ht0, mul_comm, ← hgT, ← map_mul, T_mul_U, map_natCast]
+  -- Continuity at `0` bounds `g` on `AnnularRing p`, since `T ^ r * y` shrinks into the ball.
+  obtain ⟨δ, hδ, hball⟩ := Metric.continuousAt_iff.1 (hf.continuousAt (x := 0)) 1 zero_lt_one
+  obtain ⟨r, hr⟩ := exists_pow_lt_of_lt_one hδ hα.2
+  have hg_bound (y : AnnularRing p) : ‖g y‖ ≤ (‖t‖ ^ r)⁻¹ := by
+    have hnorm_Ty : ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) (T ^ r * y)‖ < δ := by
+      rw [map_mul, map_pow]
+      calc ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) T ^ r *
+              algebraMap (AnnularRing p) (AnnularLaurent p hα) y‖
+          ≤ ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) T‖ ^ r *
+              ‖algebraMap (AnnularRing p) (AnnularLaurent p hα) y‖ :=
+            (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (norm_pow_le _ r) (norm_nonneg _))
+        _ ≤ α ^ r * 1 := by
+            rw [norm_algebraMap_T]
+            exact mul_le_mul_of_nonneg_left (norm_algebraMap_le_one hα y) (pow_nonneg hα.1.le r)
+        _ < δ := by simpa using hr
+    have hfg : ‖f (algebraMap (AnnularRing p) (AnnularLaurent p hα) (T ^ r * y))‖ < 1 := by
+      rw [← dist_zero_right, ← f.map_zero]
+      exact hball (by rwa [dist_zero_right])
+    have hprod : ‖t‖ ^ r * ‖g y‖ < 1 := by
+      rw [map_mul, map_pow, f.map_mul, f.map_pow, norm_mul, norm_pow] at hfg
+      change ‖g T‖ ^ r * ‖g y‖ < 1 at hfg
+      rwa [hgT] at hfg
+    rw [← one_div, le_div_iff₀ (pow_pos (norm_pos_iff.2 ht0) r)]
+    linarith
+  -- Truncating a power series splits it into a finite polynomial plus a high-degree tail.
+  have htrunc (s : PowerSeries ℤ_[p]) (N : ℕ) :
+      s = (∑ i ∈ Finset.range N, PowerSeries.C (PowerSeries.coeff i s) * PowerSeries.X ^ i) +
+        PowerSeries.X ^ N * PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) s := by
+    refine PowerSeries.ext fun m ↦ ?_
+    rw [map_add, map_sum, PowerSeries.coeff_X_pow_mul']
+    simp only [PowerSeries.coeff_C_mul_X_pow]
+    split_ifs with hm
+    · rw [Finset.sum_eq_zero fun i hi ↦ ite_eq_right (by have := Finset.mem_range.1 hi; omega),
+        zero_add, PowerSeries.coeff_mk, Nat.sub_add_cancel hm]
+    · rw [Finset.sum_eq_single m (fun i _ him ↦ ite_eq_right him.symm)
+        (fun hm' ↦ absurd (Finset.mem_range.2 (not_le.1 hm)) hm'), ite_eq_left rfl, add_zero]
+  -- Comparing truncations of the normal form shows `g x = AnnularRing.eval ht x` for all `x`.
+  have hring : g = AnnularRing.eval ht := by
+    ext x
+    let f₀ := (normalForm.symm x).1
+    let g₀ := (normalForm.symm x).2
+    have hx : x = ofPowerSeriesT f₀ + U * ofPowerSeriesU g₀ := by
+      have h := (normalForm.apply_symm_apply x).symm
+      rwa [← Prod.eta (normalForm.symm x), normalForm_apply] at h
+    let sT : ℕ → K := fun N ↦
+      ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i f₀) * t ^ i
+    let sU : ℕ → K := fun N ↦
+      ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i g₀) * ((p : K) / t) ^ i
+    have hnorm_p_div_t : ‖(p : K) / t‖ = ((p : ℝ) * ‖t‖)⁻¹ := by
+      have hpK : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
+        simpa [map_natCast] using norm_padicIntAlgebraMap (K := K) (p : ℤ_[p])
+      rw [norm_div, hpK, div_eq_mul_inv, mul_inv_rev, mul_comm]
+    have hdiff (N : ℕ) : ‖g x - (sT N + ((p : K) / t) * sU N)‖ ≤
+        ‖t‖ ^ N * (‖t‖ ^ r)⁻¹ + ‖(p : K) / t‖ ^ (N + 1) * (‖t‖ ^ r)⁻¹ := by
+      let fTail := PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) f₀
+      let gTail := PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) g₀
+      have hsplit_T : ofPowerSeriesT f₀ =
+          (∑ i ∈ Finset.range N,
+            algebraMap ℤ_[p] (AnnularRing p) (PowerSeries.coeff i f₀) * T ^ i) +
+            T ^ N * ofPowerSeriesT fTail := by
+        conv_lhs => rw [htrunc f₀ N]
+        simp only [map_add, map_sum, map_mul, map_pow, PowerSeries.C_eq_algebraMap,
+          AlgHom.commutes, ofPowerSeriesT_X, fTail]
+      have hsplit_U : U * ofPowerSeriesU g₀ =
+          U * (∑ i ∈ Finset.range N,
+            algebraMap ℤ_[p] (AnnularRing p) (PowerSeries.coeff i g₀) * U ^ i) +
+            U ^ (N + 1) * ofPowerSeriesU gTail := by
+        conv_lhs => rw [htrunc g₀ N]
+        simp only [map_add, map_sum, map_mul, map_pow, PowerSeries.C_eq_algebraMap,
+          AlgHom.commutes, ofPowerSeriesU_X, mul_add, pow_succ', mul_assoc, gTail]
+      have hgx : g x - (sT N + ((p : K) / t) * sU N) =
+          t ^ N * g (ofPowerSeriesT fTail) +
+            ((p : K) / t) ^ (N + 1) * g (ofPowerSeriesU gTail) := by
+        rw [hx, hsplit_T, hsplit_U]
+        simp only [map_add, map_sum, map_mul, map_pow, hg_alg, hgT, hgU, sT, sU]
+        ring
+      rw [hgx]
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+      · rw [norm_mul, norm_pow]
+        exact mul_le_mul_of_nonneg_left (hg_bound _) (pow_nonneg (norm_nonneg t) N)
+      · rw [norm_mul, norm_pow]
+        exact mul_le_mul_of_nonneg_left (hg_bound _) (pow_nonneg (norm_nonneg _) (N + 1))
+    have htend_bound : Tendsto (fun N : ℕ ↦
+        ‖t‖ ^ N * (‖t‖ ^ r)⁻¹ + ‖(p : K) / t‖ ^ (N + 1) * (‖t‖ ^ r)⁻¹) atTop (𝓝 0) := by
+      have h1 : Tendsto (fun N : ℕ ↦ ‖t‖ ^ N * (‖t‖ ^ r)⁻¹) atTop (𝓝 (0 * (‖t‖ ^ r)⁻¹)) :=
+        (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg t) ht.2).mul_const _
+      have h2 : Tendsto (fun N : ℕ ↦ ‖(p : K) / t‖ ^ (N + 1) * (‖t‖ ^ r)⁻¹) atTop
+          (𝓝 (0 * (‖t‖ ^ r)⁻¹)) :=
+        (((tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _)
+          (hnorm_p_div_t ▸ inv_p_mul_norm_lt_one ht)).comp (tendsto_add_atTop_nat 1))).mul_const _
+      simpa only [zero_mul, add_zero] using h1.add h2
+    have htend_g : Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop (𝓝 (g x)) := by
+      refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
+      refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_) htend_bound
+      rw [norm_sub_rev]
+      exact hdiff N
+    have htend_eval : Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop
+        (𝓝 (AnnularRing.eval ht x)) := by
+      have hlim : AnnularRing.eval ht x =
+          AnnularRing.eval ht (ofPowerSeriesT f₀) +
+            ((p : K) / t) * AnnularRing.eval ht (ofPowerSeriesU g₀) := by
+        rw [hx, map_add, map_mul, eval_U]
+      rw [hlim]
+      dsimp only [sT, sU]
+      exact (hasSum_eval_ofPowerSeriesT ht f₀).tendsto_sum_nat.add
+        (tendsto_const_nhds.mul (hasSum_eval_ofPowerSeriesU ht g₀).tendsto_sum_nat)
+    exact tendsto_nhds_unique htend_g htend_eval
+  exact IsLocalization.ringHom_ext (Submonoid.powers (T : AnnularRing p)) <| by
+    ext x
+    exact (RingHom.congr_fun hring x).trans (eval_algebraMap hα ht x).symm
 end Eval
 
 /-- For every `α ∈ (0, 1)`, some `t ∈ ℂ_p` in `p⁻¹ < ‖t‖ < 1` gives a continuous non-Lipschitz
@@ -437,19 +634,27 @@ theorem exists_continuous_not_lipschitzWith_eval (hα : α ∈ Set.Ioo 0 1) :
   have hβ_inv : 1 < β⁻¹ :=
     (one_lt_inv₀ hβ_pos).2 (max_lt (inv_lt_one_of_one_lt₀ (one_lt_p (p := p))) hα.2)
   obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (p : ℝ) hβ_inv
-  let N : ℕ := m + 2; have hN_pos : (0 : ℝ) < N := by positivity
-  obtain ⟨t, hnorm⟩ := PadicComplex.exists_norm_eq_rpow (p := p) (-(1 / N : ℚ))
+  let N : ℕ := m + 2
+  have hN_pos : (0 : ℝ) < N := by positivity
+  have hq0 : (0 : ℚ) < (1 : ℚ) / N := by positivity
+  have hq1 : (1 : ℚ) / N < 1 :=
+    (div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : 1 < N))
+  obtain ⟨t, ht, hnorm⟩ := exists_padicComplex_norm_eq_rpow_neg (p := p) hq0 hq1
   have hnorm' : ‖t‖ = (p : ℝ) ^ (-((1 : ℝ) / N)) := by simpa using hnorm
   have hβ_lt_t : β < ‖t‖ := by
-    have hrpow := Real.rpow_lt_rpow (p_pos (p := p)).le (hm.trans_le
-      (pow_le_pow_right₀ hβ_inv.le (by omega : m ≤ N))) (div_pos zero_lt_one hN_pos)
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (inv_nonneg.2 hβ_pos.le),
-      mul_one_div_cancel hN_pos.ne', Real.rpow_one] at hrpow
-    exact hnorm' ▸ Real.rpow_neg (p_pos (p := p)).le _ ▸ inv_inv β ▸
-      inv_strictAnti₀ (Real.rpow_pos_of_pos (p_pos (p := p)) _) hrpow
-  have ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 := ⟨(le_max_left _ _).trans_lt hβ_lt_t,
-    hnorm' ▸ (Real.rpow_lt_rpow_of_exponent_lt (one_lt_p (p := p))
-      (neg_lt_zero.2 (by positivity))).trans_eq (Real.rpow_zero _)⟩
+    have hlt_pow : (p : ℝ) < (β⁻¹) ^ N :=
+      hm.trans_le (pow_le_pow_right₀ hβ_inv.le (Nat.le_add_right m 2))
+    have hrpow : (p : ℝ) ^ ((1 : ℝ) / N) < β⁻¹ := by
+      calc (p : ℝ) ^ ((1 : ℝ) / N)
+          < ((β⁻¹) ^ N : ℝ) ^ ((1 : ℝ) / N) :=
+            Real.rpow_lt_rpow (p_pos (p := p)).le hlt_pow (div_pos zero_lt_one hN_pos)
+        _ = β⁻¹ := by
+            rw [← Real.rpow_natCast, ← Real.rpow_mul (inv_nonneg.2 hβ_pos.le),
+              mul_one_div_cancel hN_pos.ne', Real.rpow_one]
+    calc β = (β⁻¹)⁻¹ := (inv_inv β).symm
+      _ < ((p : ℝ) ^ ((1 : ℝ) / N))⁻¹ :=
+          inv_strictAnti₀ (Real.rpow_pos_of_pos (p_pos (p := p)) _) hrpow
+      _ = ‖t‖ := by rw [hnorm', Real.rpow_neg (p_pos (p := p)).le]
   exact ⟨t, ht, continuous_eval hα ht,
     not_lipschitzWith_eval_of_lt hα ht ((le_max_right _ _).trans_lt hβ_lt_t)⟩
 

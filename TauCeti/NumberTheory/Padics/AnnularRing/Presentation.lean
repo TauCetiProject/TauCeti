@@ -65,8 +65,6 @@ namespace TauCeti.AnnularRing
 
 variable {p : ℕ} [Fact p.Prime]
 
-private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
-
 /-! ### Convergence of the coefficient series -/
 
 /-- Exponents bounded in both variables leave finitely many monomials. -/
