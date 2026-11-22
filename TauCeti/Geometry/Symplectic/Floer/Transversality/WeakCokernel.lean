@@ -127,9 +127,11 @@ theorem memWkpLoc_one_of_forall_integral_apply_floerLinearization_eq_zero {Ω : 
   set ψ : 𝓓(U, V) := e.transportTestFunction hmaps φ
   have hψ : (ψ : ℝ × ℝ → V) = (φ : ℂ → V) ∘ e.symm := funext fun y ↦ by simp [ψ]
   have h := hηD ψ ψ.contDiff ψ.hasCompactSupport ψ.tsupport_subset
-  rw [← volume_preserving_equiv_real_prod.integral_comp', hψ] at h
-  rw [← h]
   -- `measurableEquivRealProd` and `e` are the same map `w ↦ (re w, im w)`.
+  have he : ⇑measurableEquivRealProd = ⇑e := funext fun w ↦ by
+    simp [e, measurableEquivRealProd_apply]
+  rw [← volume_preserving_equiv_real_prod.integral_comp', hψ, he] at h
+  rw [← h]
   exact integral_congr_ae (Filter.Eventually.of_forall fun w ↦ congrArg (η (e w))
     (floerLinearization_comp_equivRealProdCLM_symm ω J Ks Kt u _ w).symm)
 
