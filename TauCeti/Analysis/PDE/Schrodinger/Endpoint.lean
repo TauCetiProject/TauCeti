@@ -37,8 +37,8 @@ its weak form
 Both come from the bound
 `|∫∫_R ⟪S(t - s) F(s), G(t)⟫ ds dt| ≤ C ‖F‖_{L²_t L^{r'}_x} ‖G‖_{L²_t L^{r'}_x}` on every
 measurable region `R` of pairs of times
-(`TauCeti.exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint`), for `R` the
-whole plane and the half plane `s < t`.
+(`TauCeti.exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint`) for the half
+plane `R = {s < t}`; the dual estimate comes from the same bound for `R = Set.univ` and `G = F`.
 
 The abstract endpoint theorem `TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint`
 applies with the decay rate `σ = n / 2 > 1`: the propagator is unitary, it satisfies the

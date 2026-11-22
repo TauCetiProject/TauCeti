@@ -34,11 +34,12 @@ estimate is not integrable at infinity, and the argument below needs a decay rat
 
 ## The argument
 
-This is the endpoint theorem of Keel and Tao,
-`TauCeti.exists_enorm_integral_adjoint_le_of_endpoint`, applied with the decay rate
-`σ = (n - 1) / 2 > 1` to the time-rescaled family `V(t) = W₊(μ t) Pⱼ` with `μ = 2^{2jγ}`. Its
-constant depends only on the constants of three bounds, and the rescaling makes all three
-independent of `j`:
+This is the endpoint theorem of Keel and Tao, applied with the decay rate `σ = (n - 1) / 2 > 1`
+to the time-rescaled family `V(t) = W₊(μ t) Pⱼ` with `μ = 2^{2jγ}`: the region estimate
+`TauCeti.exists_enorm_setIntegral_inner_adjoint_le_of_endpoint_of_four_thirds` on the whole plane
+bounds the pairings, and `TauCeti.enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le` turns
+that into the dual estimate. The constant depends only on the constants of three bounds, and the
+rescaling makes all three independent of `j`:
 
 * `‖V(t)‖ ≤ sup |ψ|`;
 * the time pairings `V(s) V(t)* = W₊(μ (s - t)) Pⱼ Pⱼ*` are bounded from `L¹` to `L^∞` by
