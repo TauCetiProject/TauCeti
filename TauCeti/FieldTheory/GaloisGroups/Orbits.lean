@@ -177,7 +177,7 @@ private theorem orbit_eq_preimage_rootSet_minpoly_aux {L : Type w} [Field L] [Al
       x ∈ MulAction.orbit p.Gal y ↔ minpoly F (x : L) = minpoly F (y : L))
     (x : p.rootSet L) :
     MulAction.orbit p.Gal x = Subtype.val ⁻¹' (minpoly F (x : L)).rootSet L := by
-  have hint : IsIntegral F (x : L) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+  have hint : IsIntegral F (x : L) := (isAlgebraic_of_mem_rootSet x.property).isIntegral
   ext y
   rw [Set.mem_preimage, (minpoly.monic hint).mem_rootSet, horbit y x, eq_comm,
     minpoly.eq_iff_aeval_minpoly_eq_zero hint]
@@ -189,11 +189,11 @@ private theorem image_val_orbit_eq_rootSet_minpoly_aux {L : Type w} [Field L] [A
       x ∈ MulAction.orbit p.Gal y ↔ minpoly F (x : L) = minpoly F (y : L))
     (x : p.rootSet L) :
     Subtype.val '' MulAction.orbit p.Gal x = (minpoly F (x : L)).rootSet L := by
-  have hdvd : minpoly F (x : L) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
+  have hdvd : minpoly F (x : L) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)
   refine Set.Subset.antisymm ?_ fun z hz => ?_
   · rintro _ ⟨y, hy, rfl⟩
     exact (orbit_eq_preimage_rootSet_minpoly_aux horbit x).le hy
-  · have hzp : z ∈ p.rootSet L := mem_rootSet.mpr ⟨ne_zero_of_mem_rootSet x.2,
+  · have hzp : z ∈ p.rootSet L := mem_rootSet.mpr ⟨ne_zero_of_mem_rootSet x.property,
       aeval_eq_zero_of_dvd_aeval_eq_zero hdvd (aeval_eq_zero_of_mem_rootSet hz)⟩
     exact ⟨⟨z, hzp⟩, (orbit_eq_preimage_rootSet_minpoly_aux horbit x).ge hz, rfl⟩
 
@@ -214,10 +214,10 @@ degree of that minimal polynomial. -/
 theorem natCard_orbit_eq_natDegree_minpoly (x : p.rootSet E)
     (hsep : (minpoly F (x : E)).Separable) :
     Nat.card (MulAction.orbit p.Gal x) = (minpoly F (x : E)).natDegree := by
-  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
+  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)
   have hsplits : ((minpoly F (x : E)).map (algebraMap F E)).Splits :=
     (Fact.out (p := ((p.map (algebraMap F E)).Splits))).of_dvd
-      (by simpa using ne_zero_of_mem_rootSet x.2) (Polynomial.map_dvd _ hdvd)
+      (by simpa using ne_zero_of_mem_rootSet x.property) (Polynomial.map_dvd _ hdvd)
   rw [Nat.card_congr (Equiv.Set.image _ _ Subtype.val_injective),
     image_val_orbit_eq_rootSet_minpoly, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep hsplits]
@@ -237,9 +237,9 @@ theorem isPretransitive_iff_irreducible (hsep : p.Separable) (hdeg : 0 < p.natDe
   refine ⟨fun h => ?_, fun h => Gal.galAction_isPretransitive p E h⟩
   have hcard : Fintype.card (p.rootSet E) = p.natDegree := card_rootSet_eq_natDegree hsep Fact.out
   obtain ⟨x⟩ : Nonempty (p.rootSet E) := Fintype.card_pos_iff.mp (by omega)
-  have hp0 : p ≠ 0 := ne_zero_of_mem_rootSet x.2
-  have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
-  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)
+  have hp0 : p ≠ 0 := ne_zero_of_mem_rootSet x.property
+  have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.property).isIntegral
+  have hdvd : minpoly F (x : E) ∣ p := minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)
   have hdegle : p.natDegree ≤ (minpoly F (x : E)).natDegree := by
     rw [← natCard_orbit_eq_natDegree_minpoly E x (hsep.of_dvd hdvd), MulAction.orbit_eq_univ]
     simp [Nat.card_eq_fintype_card, hcard]
@@ -405,7 +405,7 @@ theorem _root_.Polynomial.Gal.galActionAux_isPretransitive_of_dvd_pow {q : F[X]}
   have hroot (x : p.rootSet p.SplittingField) : aeval (x : p.SplittingField) q = 0 :=
     eq_zero_of_pow_eq_zero (n := n) <| by
       rw [← map_pow]
-      exact aeval_eq_zero_of_dvd_aeval_eq_zero hpq (aeval_eq_zero_of_mem_rootSet x.2)
+      exact aeval_eq_zero_of_dvd_aeval_eq_zero hpq (aeval_eq_zero_of_mem_rootSet x.property)
   refine ⟨fun x y => ?_⟩
   have hx := minpoly.eq_of_irreducible hq (hroot x)
   have hy := minpoly.eq_of_irreducible hq (hroot y)
@@ -499,9 +499,9 @@ noncomputable def orbitQuotientEquivFactors (hp : p ≠ 0) :
     (Quotient.lift
       (fun x : p.rootSet E =>
         (⟨minpoly F (x : E), by
-          have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+          have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.property).isIntegral
           exact ⟨minpoly.irreducible hint, minpoly.monic hint,
-            minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)⟩⟩ : p.Factors))
+            minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)⟩⟩ : p.Factors))
       fun _ _ hxy => Subtype.ext ((mem_orbit_iff_minpoly_eq E).mp hxy))
     ⟨by
       refine fun a b => Quotient.inductionOn₂ a b fun x y hxy => ?_

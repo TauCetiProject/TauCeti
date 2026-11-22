@@ -112,30 +112,31 @@ variable (k R : Type*) [CommSemiring k] [Ring R] [Algebra k R] [IsSemisimpleRing
 nonzero central elements, one in each component. The public statements below read off the parts
 of this family that they need. -/
 private theorem exists_center_family :
-    ∃ e : isotypicComponents R R → R, (∀ c, e c ∈ c.1) ∧ (∀ c, e c ≠ 0) ∧
+    ∃ e : isotypicComponents R R → R, (∀ c, e c ∈ c.val) ∧ (∀ c, e c ≠ 0) ∧
       ∀ c, e c ∈ Subalgebra.center k R := by
   classical
   let _ : Fintype (isotypicComponents R R) := Fintype.ofFinite _
-  have hind : iSupIndep fun c : isotypicComponents R R ↦ c.1 :=
+  have hind : iSupIndep fun c : isotypicComponents R R ↦ c.val :=
     (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R R)
-  have htop : ⨆ c : isotypicComponents R R, c.1 = ⊤ :=
+  have htop : ⨆ c : isotypicComponents R R, c.val = ⊤ :=
     (sSup_eq_iSup' (isotypicComponents R R)).symm.trans (sSup_isotypicComponents R R)
   -- Any two decompositions along the components agree term by term.
-  have huniq : ∀ a b : isotypicComponents R R → R, (∀ c, a c ∈ c.1) → (∀ c, b c ∈ c.1) →
+  have huniq : ∀ a b : isotypicComponents R R → R, (∀ c, a c ∈ c.val) → (∀ c, b c ∈ c.val) →
       ∑ c, a c = ∑ c, b c → ∀ c, a c = b c := fun a b ha hb hab c ↦
     (iSupIndep_iff_finsetSum_eq_imp_eq _).mp hind Finset.univ a b
       (fun i _ ↦ ⟨ha i, hb i⟩) hab c (Finset.mem_univ c)
-  obtain ⟨v, hv⟩ : ∃ v : ∀ c : isotypicComponents R R, c.1, ∑ c, (v c : R) = 1 :=
+  obtain ⟨v, hv⟩ : ∃ v : ∀ c : isotypicComponents R R, c.val, ∑ c, (v c : R) = 1 :=
     (Submodule.mem_iSup_finset_iff_exists_sum _ 1).mp (by simp [htop])
-  have hleft : ∀ (x : R) (d : isotypicComponents R R), x * (v d : R) ∈ d.1 := fun x d ↦ by
-    simpa only [smul_eq_mul] using d.1.smul_mem x (v d).2
-  refine ⟨fun c ↦ (v c : R), fun c ↦ (v c).2, fun c hc ↦ ?_, fun c ↦ ?_⟩
+  have hleft : ∀ (x : R) (d : isotypicComponents R R), x * (v d : R) ∈ d.val := fun x d ↦ by
+    simpa only [smul_eq_mul] using d.val.smul_mem x (v d).property
+  refine ⟨fun c ↦ (v c : R), fun c ↦ (v c).property, fun c hc ↦ ?_, fun c ↦ ?_⟩
   · -- A vanishing summand would kill its own component.
-    refine absurd ((Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_) (bot_lt_isotypicComponents c.2).ne'
-    have hb : ∀ d : isotypicComponents R R, (if d = c then x else 0) ∈ d.1 := fun d ↦ by
+    refine absurd ((Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_)
+        (bot_lt_isotypicComponents c.property).ne'
+    have hb : ∀ d : isotypicComponents R R, (if d = c then x else 0) ∈ d.val := fun d ↦ by
       split
       · next h => exact h ▸ hx
-      · exact d.1.zero_mem
+      · exact d.val.zero_mem
     have hsum : ∑ d, x * (v d : R) = ∑ d, if d = c then x else 0 := by
       rw [← Finset.mul_sum, hv, mul_one, Finset.sum_ite_eq' Finset.univ c fun _ ↦ x,
         ite_eq_left (Finset.mem_univ c)]
@@ -143,9 +144,9 @@ private theorem exists_center_family :
   · -- Centrality: multiplying `1 = ∑ e_d` on either side decomposes the same element.
     rw [Subalgebra.mem_center_iff]
     intro z
-    have hright : ∀ d : isotypicComponents R R, (v d : R) * z ∈ d.1 := fun d ↦ by
-      have := isTwoSided_of_mem_isotypicComponents d.2
-      exact Ideal.mul_mem_right z _ (v d).2
+    have hright : ∀ d : isotypicComponents R R, (v d : R) * z ∈ d.val := fun d ↦ by
+      have := isTwoSided_of_mem_isotypicComponents d.property
+      exact Ideal.mul_mem_right z _ (v d).property
     have hsum : ∑ d, z * (v d : R) = ∑ d, (v d : R) * z := by
       rw [← Finset.mul_sum, ← Finset.sum_mul, hv, mul_one, one_mul]
     exact huniq _ _ (hleft z) hright hsum c
@@ -177,10 +178,10 @@ theorem card_isotypicComponents_le_finrank_center [Module.Finite k (Subalgebra.c
   classical
   let _ : Fintype (isotypicComponents R R) := Fintype.ofFinite _
   obtain ⟨e, hmem, hne, hcen⟩ := exists_center_family k R
-  have hind : iSupIndep fun c : isotypicComponents R R ↦ c.1 :=
+  have hind : iSupIndep fun c : isotypicComponents R R ↦ c.val :=
     (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R R)
   -- The chosen elements are linearly independent over `k`, one from each independent summand.
-  have hind' : iSupIndep fun c : isotypicComponents R R ↦ c.1.restrictScalars k := by
+  have hind' : iSupIndep fun c : isotypicComponents R R ↦ c.val.restrictScalars k := by
     intro c
     simpa only [← Submodule.restrictScalars_iSup, disjoint_iff,
       ← Submodule.restrictScalars_inf, Submodule.restrictScalars_eq_bot_iff] using hind c

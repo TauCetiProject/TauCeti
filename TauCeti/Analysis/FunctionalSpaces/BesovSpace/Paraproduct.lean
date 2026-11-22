@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Holder
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LowPass
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.ProductSpectrum
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Annulus
@@ -21,11 +21,11 @@ import TauCeti.MeasureTheory.Function.Holder
 
 Let `Δⱼ` be the inhomogeneous Littlewood–Paley blocks of a bump function `φ`
 (`TemperedDistribution.littlewoodPaleyBlock`), and let `S_m u = ∑_{k < m} Δₖ u` be the
-**low-frequency cut-off**. For scalar `u` with `L^{p₁}` blocks and `v` with `L^{p₂}` blocks, for
-instance elements of the Besov spaces `B^α_{p₁,q}` and `B^β_{p₂,q'}`, every product `Δₖ u · Δₗ v` is
-an `Lʳ` function, `1/r = 1/p₁ + 1/p₂`, and grouping the products by the relative size of the two
-frequencies gives **Bony's decomposition** of the product `u v` into two paraproducts and a
-resonant term,
+**low-frequency cut-off** (`TauCeti.BesovSpace.lowPass`). For scalar `u` with `L^{p₁}` blocks
+and `v` with `L^{p₂}` blocks, for instance elements of the Besov spaces `B^α_{p₁,q}` and
+`B^β_{p₂,q'}`, every product `Δₖ u · Δₗ v` is an `Lʳ` function, `1/r = 1/p₁ + 1/p₂`, and
+grouping the products by the relative size of the two frequencies gives **Bony's decomposition**
+of the product `u v` into two paraproducts and a resonant term,
 
 `u v = T_u v + T_v u + R(u, v)`, with
 `T_u v = ∑ⱼ S_{j-N} u · Δⱼ v`, `T_v u = ∑ⱼ Δⱼ u · S_{j-N} v`,
@@ -76,18 +76,11 @@ constants depend only on the bump function, the gap and the regularities.
 
 ## Main declarations
 
-* `TauCeti.BesovSpace.lowPass`: the low-frequency cut-off `S_m u = ∑_{k < m} Δₖ u` as an `Lᵖ`
-  function; `TauCeti.BesovSpace.coe_lowPass_succ` identifies `S_{m+1}` with the Fourier
-  multiplier by `φ (2^{-m} ·)`.
-* `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_succ`: `S_{m+1} u` has spectrum in the ball of
-  radius `2^m φ.rOut`.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_smul_block` and
   `TauCeti.BesovSpace.isVanishingOn_fourier_block_smul_lowPass`: the terms of the two paraproducts
   have spectra in dyadic annuli.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_block_smul_sum_block`: the terms of the resonant part
   have spectra in dyadic balls.
-* `TauCeti.BesovSpace.norm_lowPass_le_of_toDistr_eq` and
-  `TauCeti.BesovSpace.norm_lowPass_le_of_neg`: the size of the low-frequency cut-offs.
 * `TauCeti.BesovSpace.lowPass_smul_lowPass`: Bony's decomposition of `S_M u · S_M v`.
 * `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq` and
   `TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_neg`: the paraproduct
@@ -95,6 +88,8 @@ constants depend only on the bump function, the gap and the regularities.
   `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq` and
   `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_neg` are the same estimates
   for `T_v u`, whose low-frequency factor is vector-valued.
+* `TauCeti.BesovSpace.rpow_mul_norm_block_smul_sum_block_le`: the weighted bound on the terms of
+  the resonant part, and on their sub-sums.
 * `TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`: the resonant estimate.
 
 ## References
@@ -120,121 +115,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace TauCeti.BesovSpace
 
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
-
-section LowPass
-
-/-- The **low-frequency cut-off** `S_m u = ∑_{k < m} Δₖ u` of an element of a Besov space, as an
-`Lᵖ` function: the sum of the Littlewood–Paley blocks of index less than `m`. For `m ≥ 1` it is
-the Fourier multiplier by `φ (2^{1-m} ·)` (`TauCeti.BesovSpace.coe_lowPass_succ`). -/
-def lowPass (u : BesovSpace F φ s p q) (m : ℕ) : Lp F p (volume : Measure E) :=
-  ∑ k ∈ Finset.range m, u.block k
-
-/-- Unfolding `TauCeti.BesovSpace.lowPass`. -/
-theorem lowPass_eq_sum (u : BesovSpace F φ s p q) (m : ℕ) :
-    u.lowPass m = ∑ k ∈ Finset.range m, u.block k :=
-  (rfl)
-
-@[simp]
-theorem lowPass_zero_right (u : BesovSpace F φ s p q) : u.lowPass 0 = 0 := by
-  simp [lowPass_eq_sum]
-
-theorem lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
-    u.lowPass (m + 1) = u.lowPass m + u.block m := by
-  simp [lowPass_eq_sum, Finset.sum_range_succ]
-
-@[simp]
-theorem lowPass_zero (m : ℕ) : (0 : BesovSpace F φ s p q).lowPass m = 0 := by
-  simp [lowPass_eq_sum]
-
-@[simp]
-theorem lowPass_add (u v : BesovSpace F φ s p q) (m : ℕ) :
-    (u + v).lowPass m = u.lowPass m + v.lowPass m := by
-  simp [lowPass_eq_sum, Finset.sum_add_distrib]
-
-@[simp]
-theorem lowPass_smul (c : ℂ) (u : BesovSpace F φ s p q) (m : ℕ) :
-    (c • u).lowPass m = c • u.lowPass m := by
-  simp [lowPass_eq_sum, Finset.smul_sum]
-
-@[simp]
-theorem lowPass_neg (u : BesovSpace F φ s p q) (m : ℕ) : (-u).lowPass m = -u.lowPass m := by
-  simp [lowPass_eq_sum]
-
-@[simp]
-theorem lowPass_sub (u v : BesovSpace F φ s p q) (m : ℕ) :
-    (u - v).lowPass m = u.lowPass m - v.lowPass m := by
-  simp [lowPass_eq_sum]
-
-/-- The `Lᵖ` function `u.lowPass m` is the sum `∑_{k < m} Δₖ u` of the Littlewood–Paley blocks of
-the tempered distribution of `u`. -/
-@[simp]
-theorem coe_lowPass (u : BesovSpace F φ s p q) (m : ℕ) :
-    (u.lowPass m : 𝓢'(E, F)) = ∑ k ∈ Finset.range m, littlewoodPaleyBlock F φ k u.toDistr := by
-  simp [lowPass_eq_sum]
-
-/-- The low-frequency cut-off `S_{m+1}` is the Fourier multiplier by `φ (2^{-m} ·)`. -/
-theorem coe_lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
-    (u.lowPass (m + 1) : 𝓢'(E, F)) =
-      fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ m)⁻¹ • ξ) : ℂ)) u.toDistr := by
-  rw [coe_lowPass, ← _root_.sum_apply, sum_littlewoodPaleyBlock_range]
-
-/-- Elements of two Besov spaces with the same tempered distribution have the same low-frequency
-cut-offs. -/
-theorem lowPass_eq_of_toDistr_eq {s' : ℝ} {q' : ℝ≥0∞} {u : BesovSpace F φ s p q}
-    {v : BesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) (m : ℕ) :
-    u.lowPass m = v.lowPass m := by
-  simp only [lowPass_eq_sum, block_eq_of_toDistr_eq h]
-
-/-- **The spectrum of a low-frequency cut-off.** The Fourier transform of `S_{m+1} u` vanishes
-outside the closed ball of radius `2^m φ.rOut`. -/
-theorem isVanishingOn_fourier_lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
-    IsVanishingOn (𝓕 (u.lowPass (m + 1) : 𝓢'(E, F)) : 𝓢'(E, F))
-      (closedBall 0 (2 ^ m * φ.rOut))ᶜ := by
-  rw [coe_lowPass]
-  exact isVanishingOn_fourier_sum_littlewoodPaleyBlock φ
-    (fun k hk ↦ Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) _
-
-/-- **The low-frequency cut-offs of an `Lᵖ` function are uniformly bounded.** If the tempered
-distribution of `u` is an `Lᵖ` function `f`, then `‖S_m u‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p` for every `m`. -/
-theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
-    {f : Lp F p (volume : Measure E)} (hf : u.toDistr = f) (m : ℕ) :
-    ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
-  rcases m with _ | m
-  · simpa using mul_nonneg (MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg f)
-  obtain ⟨g, hg, hgf⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ m f
-  -- `S_{m+1} u` and `g` are the same tempered distribution, hence the same `Lᵖ` function.
-  have h : u.lowPass (m + 1) = g :=
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
-      rw [coe_lowPass, hf, hg]
-  rwa [h]
-
-/-- **The low-frequency cut-offs at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
-`‖S_m u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`, since the blocks satisfy `‖Δₖ u‖_p ≤ 2^{-s k} ‖u‖` and
-`∑_{k < m} 2^{-s k} ≤ 2^{-s m} / (2^{-s} - 1)`. -/
-theorem norm_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q) (m : ℕ) :
-    ‖u.lowPass m‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by
-  set x : ℝ := 2 ^ (-s)
-  have hx : 1 < x := Real.one_lt_rpow one_lt_two (neg_pos.2 hs)
-  have hpow : ∀ k : ℕ, (2 : ℝ) ^ (-s * k) = x ^ k := fun k ↦ by
-    rw [Real.rpow_mul zero_le_two, Real.rpow_natCast]
-  -- Each block is bounded by `2^{-s k} ‖u‖ = x^k ‖u‖`.
-  have hblock : ∀ k : ℕ, ‖u.block k‖ ≤ x ^ k * ‖u‖ := fun k ↦ by
-    calc ‖u.block k‖ = 2 ^ (-s * k) * (2 ^ (s * k) * ‖u.block k‖) := by
-          rw [← mul_assoc, ← Real.rpow_add two_pos, neg_mul, neg_add_cancel, Real.rpow_zero,
-            one_mul]
-      _ ≤ 2 ^ (-s * k) * ‖u‖ := mul_le_mul_of_nonneg_left (u.rpow_mul_norm_block_le k)
-          (by positivity)
-      _ = x ^ k * ‖u‖ := by rw [hpow]
-  calc ‖u.lowPass m‖ ≤ ∑ k ∈ Finset.range m, ‖u.block k‖ := norm_sum_le _ _
-    _ ≤ ∑ k ∈ Finset.range m, x ^ k * ‖u‖ := Finset.sum_le_sum fun k _ ↦ hblock k
-    _ = (x ^ m - 1) / (x - 1) * ‖u‖ := by rw [← Finset.sum_mul, geom_sum_eq hx.ne']
-    _ ≤ x ^ m / (x - 1) * ‖u‖ := by
-        gcongr
-        linarith
-    _ = 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by rw [hpow]
-
-end LowPass
 
 section Spectrum
 
@@ -579,32 +459,32 @@ theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (α : ℝ) {β : ℝ
         _ = _ := mul_comm _ _
   exact ⟨w, hw, hwn.trans_eq (by ring)⟩
 
-/-- **The terms of the resonant part.** For `u ∈ B^α_{p₁,q₁}` and `v ∈ B^β_{p₂,q}`, the `j`-th term
-of `R(u, v)` with gap `N` satisfies, with `L = N + 1`,
-`2^{j(α+β)} ‖Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v‖_r ≤ ‖u‖ 2^{|β| L} ∑_{j - L ≤ k < j + L} 2^{kβ} ‖Δₖ v‖`,
-since `2^{jα} ‖Δⱼ u‖_{p₁} ≤ ‖u‖` and `2^{jβ} ≤ 2^{|β| L} 2^{kβ}` for `|k - j| ≤ N`. -/
-private theorem rpow_mul_norm_block_smul_sum_block_le {α β : ℝ} {p₁ p₂ r q q₁ : ℝ≥0∞}
+/-- **The terms of the resonant part.** For `u ∈ B^α_{p₁,q₁}`, `v ∈ B^β_{p₂,q}` and a set `t` of
+block indices with `|k - j| ≤ N` for `k ∈ t`, with `L = N + 1`,
+`2^{j(α+β)} ‖Δⱼ u · ∑_{k ∈ t} Δₖ v‖_r ≤ ‖u‖ 2^{|β| L} ∑_{j - L ≤ k < j + L} 2^{kβ} ‖Δₖ v‖`.
+For `t = [j - N, j + N]` this bounds the `j`-th term of `R(u, v)` with gap `N`. -/
+theorem rpow_mul_norm_block_smul_sum_block_le {α β : ℝ} {p₁ p₂ r q q₁ : ℝ≥0∞}
     [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r]
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q) (N j : ℕ) :
-    2 ^ ((α + β) * j) *
-      ‖(u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k : Lp F r (volume : Measure E))‖ ≤
-        ‖u‖ * (2 ^ (|β| * (N + 1 : ℕ)) *
-          ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖) := by
-  have hsub : Finset.Icc (j - N) (j + N) ⊆ Finset.Ico (j - (N + 1)) (j + (N + 1)) := fun k hk ↦ by
-    simp only [Finset.mem_Icc, Finset.mem_Ico] at hk ⊢
+    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q) {N j : ℕ} {t : Finset ℕ}
+    (ht : t ⊆ Finset.Icc (j - N) (j + N)) :
+    2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖ ≤
+      ‖u‖ * (2 ^ (|β| * (N + 1 : ℕ)) *
+        ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖) := by
+  -- This combines `2^{jα} ‖Δⱼ u‖_{p₁} ≤ ‖u‖` with `2^{jβ} ≤ 2^{|β| L} 2^{kβ}` for `|k - j| ≤ N`.
+  have hsub : t ⊆ Finset.Ico (j - (N + 1)) (j + (N + 1)) := fun k hk ↦ by
+    have := ht hk
+    simp only [Finset.mem_Icc, Finset.mem_Ico] at this ⊢
     omega
-  have hv : 2 ^ (β * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖ ≤
+  have hv : 2 ^ (β * j) * ‖∑ k ∈ t, v.block k‖ ≤
       2 ^ (|β| * (N + 1 : ℕ)) *
         ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖ := by
-    -- Extend the sum over `Icc (j - N) (j + N)` by zero to the window `Ico (j - L) (j + L)`.
+    -- Extend the sum over `t` by zero to the window `Ico (j - L) (j + L)`.
     rw [← Finset.inter_eq_right.2 hsub, ← Finset.sum_ite_mem]
     refine (TauCeti.two_rpow_mul_norm_sum_Ico_le β (C := 1) (x := v.block)
       (fun k ↦ by split_ifs <;> simp) j (N + 1)).trans_eq ?_
     rw [max_eq_left zero_le_one, one_mul]
-  calc 2 ^ ((α + β) * j) *
-        ‖(u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k : Lp F r (volume : Measure E))‖
-      ≤ 2 ^ (α * j) * ‖u.block j‖ *
-          (2 ^ (β * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖) := by
+  calc 2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖
+      ≤ 2 ^ (α * j) * ‖u.block j‖ * (2 ^ (β * j) * ‖∑ k ∈ t, v.block k‖) := by
         rw [add_mul, Real.rpow_add two_pos, mul_mul_mul_comm]
         gcongr
         exact Lp.norm_smul_le _ _
@@ -638,7 +518,7 @@ theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 
     (fun j ↦ isVanishingOn_fourier_block_smul_sum_block N j
       (fun k hk ↦ (Finset.mem_Icc.1 hk).2) u v) fun j ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hW, mul_assoc]
-      have h := rpow_mul_norm_block_smul_sum_block_le (r := r) u v N j
+      have h := rpow_mul_norm_block_smul_sum_block_le (r := r) (N := N) (j := j) u v subset_rfl
       simp only [← hc] at h
       exact h
   refine ⟨w, hw, hwn.trans ?_⟩

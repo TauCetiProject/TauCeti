@@ -110,7 +110,7 @@ private theorem exists_pow_mul_locSubring_mem_of_isBounded {B : Type*} [Ring B]
       f μ ∈ Submonoid.closure ((fun t ↦ f (divBy t s)) '' T) := by
     refine (Submonoid.closure_le (S := (Submonoid.closure _).comap (f : S →* B))).mpr ?_ hμ
     rintro _ ⟨t, rfl⟩
-    exact Submonoid.subset_closure ⟨t, t.2, rfl⟩
+    exact Submonoid.subset_closure ⟨t, t.property, rfl⟩
   refine ⟨m, fun x hx ↦ ?_⟩
   -- `D` is the `A₀`-span of the products of fractions
   have hx' : x ∈ Submodule.span P.ringOfDefinition

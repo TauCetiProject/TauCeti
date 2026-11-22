@@ -88,14 +88,15 @@ def relationalLawEquiv : ExchangeableGraphLaw ≃
     {μ : ExchangeableRelationalLaw Language.graph // ∀ n, ∀ᵐ c ∂μ.law n, IsSimpleGraph c} where
   toFun L := ⟨L.toRelationalLaw, L.ae_isSimpleGraph_toRelationalLaw_law⟩
   invFun μ :=
-    { law n := (μ.1.law n).comap SimpleGraph.toRelationalConfiguration
-      prob n := SimpleGraph.isProbabilityMeasure_comap_toRelationalConfiguration (μ.2 n)
+    { law n := (μ.val.law n).comap SimpleGraph.toRelationalConfiguration
+      prob n := SimpleGraph.isProbabilityMeasure_comap_toRelationalConfiguration (μ.property n)
       consistent {_ l} f := by
-        rw [SimpleGraph.map_comap_comap_toRelationalConfiguration _ (μ.2 l), μ.1.consistent] }
+        rw [SimpleGraph.map_comap_comap_toRelationalConfiguration _ (μ.property l),
+            μ.val.consistent] }
   left_inv L := ext fun n =>
     SimpleGraph.measurableEmbedding_toRelationalConfiguration.comap_map (L.law n)
   right_inv μ := Subtype.ext <| ExchangeableRelationalLaw.ext fun n =>
-    SimpleGraph.map_comap_toRelationalConfiguration (μ.2 n)
+    SimpleGraph.map_comap_toRelationalConfiguration (μ.property n)
 
 @[simp]
 theorem coe_relationalLawEquiv (L : ExchangeableGraphLaw) :
@@ -106,7 +107,7 @@ theorem relationalLawEquiv_symm_law
     (μ : {μ : ExchangeableRelationalLaw Language.graph // ∀ n, ∀ᵐ c ∂μ.law n, IsSimpleGraph c})
     (n : ℕ) :
     (relationalLawEquiv.symm μ).law n =
-      (μ.1.law n).comap SimpleGraph.toRelationalConfiguration := (rfl)
+      (μ.val.law n).comap SimpleGraph.toRelationalConfiguration := (rfl)
 
 /-- Distinct exchangeable graph laws have distinct relational laws. -/
 theorem toRelationalLaw_injective : Function.Injective toRelationalLaw :=
@@ -145,13 +146,14 @@ def relationalLawEquiv : InfiniteExchangeableGraphLaw ≃
     {μ : InfiniteExchangeableRelationalLaw Language.graph // ∀ᵐ c ∂μ.law, IsSimpleGraph c} where
   toFun L := ⟨L.toRelationalLaw, L.ae_isSimpleGraph_toRelationalLaw_law⟩
   invFun μ :=
-    { law := μ.1.law.comap SimpleGraph.toRelationalConfiguration
-      prob := SimpleGraph.isProbabilityMeasure_comap_toRelationalConfiguration μ.2
+    { law := μ.val.law.comap SimpleGraph.toRelationalConfiguration
+      prob := SimpleGraph.isProbabilityMeasure_comap_toRelationalConfiguration μ.property
       exchangeable σ := by
-        rw [SimpleGraph.map_comap_comap_toRelationalConfiguration _ μ.2, μ.1.exchangeable] }
+        rw [SimpleGraph.map_comap_comap_toRelationalConfiguration _ μ.property,
+            μ.val.exchangeable] }
   left_inv L := ext <| SimpleGraph.measurableEmbedding_toRelationalConfiguration.comap_map L.law
   right_inv μ := Subtype.ext <| InfiniteExchangeableRelationalLaw.ext <|
-    SimpleGraph.map_comap_toRelationalConfiguration μ.2
+    SimpleGraph.map_comap_toRelationalConfiguration μ.property
 
 @[simp]
 theorem coe_relationalLawEquiv (L : InfiniteExchangeableGraphLaw) :
@@ -161,7 +163,7 @@ theorem coe_relationalLawEquiv (L : InfiniteExchangeableGraphLaw) :
 @[simp]
 theorem relationalLawEquiv_symm_law
     (μ : {μ : InfiniteExchangeableRelationalLaw Language.graph // ∀ᵐ c ∂μ.law, IsSimpleGraph c}) :
-    (relationalLawEquiv.symm μ).law = μ.1.law.comap SimpleGraph.toRelationalConfiguration := (rfl)
+    (relationalLawEquiv.symm μ).law = μ.val.law.comap SimpleGraph.toRelationalConfiguration := (rfl)
 
 /-- Distinct exchangeable laws on infinite graphs have distinct relational laws. -/
 theorem toRelationalLaw_injective : Function.Injective toRelationalLaw :=

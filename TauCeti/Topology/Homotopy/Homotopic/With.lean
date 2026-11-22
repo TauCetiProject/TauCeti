@@ -21,6 +21,8 @@ uncurrying a path gives the homotopy.
 
 * `ContinuousMap.homotopicWith_iff_joined`: `f.HomotopicWith g P` holds exactly when `f` and `g`
   are joined by a path in `{h : C(X, Y) // P h}`.
+* `ContinuousMap.homotopic_iff_joined`: `f.Homotopic g` holds exactly when `f` and `g` are joined
+  by a path in `C(X, Y)`.
 -/
 
 public section
@@ -41,10 +43,20 @@ theorem homotopicWith_iff_joined [LocallyCompactPair X Y] {f g : C(X, Y)} (hf : 
         source' := Subtype.ext F.toHomotopy.curry_zero
         target' := Subtype.ext F.toHomotopy.curry_one }
   · exact
-      { toFun p := (γ p.1).1 p.2
+      { toFun p := (γ p.1).val p.2
         continuous_toFun := by fun_prop
         map_zero_left x := by simp
         map_one_left x := by simp
-        prop' t := (γ t).2 }
+        prop' t := (γ t).property }
+
+/-- **Homotopy is path connectedness in `C(X, Y)`**, under `LocallyCompactPair X Y` (for instance,
+for a locally compact domain). -/
+theorem homotopic_iff_joined [LocallyCompactPair X Y] {f g : C(X, Y)} :
+    f.Homotopic g ↔ Joined f g := by
+  have h : f.Homotopic g ↔ f.HomotopicWith g (fun _ ↦ True) :=
+    ⟨fun ⟨F⟩ ↦ ⟨⟨F, fun _ ↦ trivial⟩⟩, fun ⟨F⟩ ↦ ⟨F.toHomotopy⟩⟩
+  rw [h, homotopicWith_iff_joined trivial trivial]
+  exact ⟨fun hp ↦ hp.map continuous_subtypeVal,
+    fun hp ↦ hp.map (continuous_id.subtype_mk fun _ ↦ trivial)⟩
 
 end ContinuousMap
