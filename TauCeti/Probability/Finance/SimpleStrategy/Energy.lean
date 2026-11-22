@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.Predictable.Measure
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Square energy of elementary holdings
@@ -76,6 +77,29 @@ theorem lintegral_enorm_sq_simpleHolding_timeMeasure {τ : ℕ → ℝ≥0}
         ENNReal.ofReal ((min (τ (j + 1)) T : ℝ≥0) - (τ j : ℝ)) := by
   rw [Measure.lintegral_enorm_sq_simpleHolding _ hτ (fun _ _ ↦ measurableSet_Ioc)]
   simp only [TauCeti.Probability.timeMeasure_Ioc]
+
+/-- Under finite-horizon Lebesgue time, the pathwise Bochner square integral of a simple
+holding equals the finite-grid sum of squared heights times clipped interval lengths. -/
+theorem simpleHolding_energy_eq_integral_sq {τ : ℕ → ℝ≥0}
+    (hτ : MonotoneOn τ (Set.Iic n)) (t : ℝ≥0) (ω : Ω) :
+    (∑ j ∈ range n, a j ω ^ 2 * (↑(min (τ (j + 1)) t) - ↑(min (τ j) t))) =
+      ∫ s, simpleHolding τ n a s ω ^ 2 ∂TauCeti.Probability.timeMeasure t := by
+  rw [MeasureTheory.integral_sq_eq_toReal_lintegral_enorm
+      (measurable_simpleHolding (fun _ _ ↦ measurableSet_Ioc) ω).aestronglyMeasurable,
+    lintegral_enorm_sq_simpleHolding_timeMeasure hτ,
+    ENNReal.toReal_sum (fun _ _ ↦
+      ENNReal.mul_ne_top (ENNReal.pow_ne_top eNorm_ne_top) ENNReal.ofReal_ne_top)]
+  refine sum_congr rfl fun j hj ↦ ?_
+  have hj' := mem_range.mp hj
+  have hle : τ j ≤ τ (j + 1) := hτ (mem_Iic.mpr hj'.le) (mem_Iic.mpr hj') (Nat.le_succ j)
+  rw [ENNReal.toReal_mul, ENNReal.toReal_pow, toReal_eNorm, Real.norm_eq_abs, sq_abs]
+  by_cases hT : τ j ≤ t
+  · rw [ENNReal.toReal_ofReal (sub_nonneg.mpr (NNReal.coe_le_coe.mpr (le_min hle hT))),
+      min_eq_left hT]
+  · have hT' : t ≤ τ j := (not_le.mp hT).le
+    rw [ENNReal.ofReal_of_nonpos (sub_nonpos.mpr (NNReal.coe_le_coe.mpr
+      ((min_le_right _ _).trans hT')))]
+    simp [min_eq_right hT', min_eq_right (hT'.trans hle)]
 
 /-- Left-measurable `Lᵖ` heights give predictable `Lᵖ` holdings on every finite horizon.
 No order condition on the grid, boundedness, or finiteness of the sample measure is needed. -/

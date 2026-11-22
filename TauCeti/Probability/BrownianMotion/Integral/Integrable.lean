@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.Predictable.Basic
+public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Probability.Process.TimeMeasure
@@ -99,6 +100,11 @@ theorem locallyBrownianIntegrable_iff_nat : LocallyBrownianIntegrable ℱ P H �
 theorem BrownianIntegrable.memLp_timeMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
     MemLp (Function.uncurry H) 2 ((Probability.timeMeasure T).prod P) := by
   simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using h.memLp T
+
+/-- A Brownian-integrable process belongs to `L²` of the finite-horizon predictable measure. -/
+theorem BrownianIntegrable.memLp_predictableMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
+  (ℱ.memLp_predictableMeasure_iff P h.isStronglyPredictable T 2).mpr (h.memLp_timeMeasure T)
 
 /-- Finite expected energy on every finite horizon gives finite pathwise energy on all
 finite horizons simultaneously. -/
@@ -245,5 +251,27 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
   · rintro ⟨hξ, hξ₂⟩
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
+
+/-- An indicator on `(s, u]` with an `ℱ s`-measurable, square-integrable height belongs to
+the expected-energy domain. -/
+theorem brownianIntegrable_indicator_Ioc [SFinite P] {s u : ℝ≥0} {ξ : Ω → ℝ}
+    (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₂ : MemLp ξ 2 P) :
+    BrownianIntegrable ℱ P (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ ξ ω) t) where
+  isStronglyPredictable := ℱ.stronglyMeasurable_indicator_Ioc_predictable s u hξ
+  memLp T := by
+    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
+    exact (ℱ.memLp_predictableMeasure_iff P
+      (ℱ.stronglyMeasurable_indicator_Ioc_predictable s u hξ) T 2).mp
+      (ℱ.memLp_indicator_Ioc_predictableMeasure T s u hξ hξ₂)
+
+/-- A deterministic measurable function that is square integrable on every finite horizon belongs
+to the expected-energy domain. -/
+theorem brownianIntegrable_fst [IsFiniteMeasure P] {h : ℝ≥0 → ℝ}
+    (hm : Measurable h) (hLp : ∀ T : ℝ≥0, MemLp h 2 (Probability.timeMeasure T)) :
+    BrownianIntegrable ℱ P (fun t _ ↦ h t) where
+  isStronglyPredictable := hm.stronglyMeasurable.comp_measurable ℱ.measurable_fst_predictable
+  memLp T := by
+    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
+    exact (hLp T).comp_fst P
 
 end TauCeti

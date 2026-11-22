@@ -208,4 +208,28 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
     · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
     · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
+/-- The sum of two simple strategies is one simple strategy on a strictly increasing common grid
+starting at the bottom time, with heights still chosen at the left endpoints of their intervals.
+Holdings and gains against every price path are added. -/
+theorem exists_simpleHolding_simpleGains_eq_add [OrderBot ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) {τ σ : ℕ → ι} {n m : ℕ} {a b : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (hσ : MonotoneOn σ (Set.Iic m))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (b j)) :
+    ∃ (N : ℕ) (ρ : ℕ → ι) (c : ℕ → Ω → ℝ),
+      ρ 0 = ⊥ ∧ StrictMonoOn ρ (Set.Iic N) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (ρ j)] (c j)) ∧
+      (∀ t ω, simpleHolding ρ N c t ω = simpleHolding τ n a t ω + simpleHolding σ m b t ω) ∧
+      ∀ (X : ι → Ω → ℝ) t ω, simpleGains ρ N c X t ω =
+        simpleGains τ n a X t ω + simpleGains σ m b X t ω := by
+  obtain ⟨N, ρ, c, hρ₀, hρ, hc, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sub ℱ hτ hσ
+    ha (b := -b) fun j hj ↦ (hb j hj).neg
+  refine ⟨N, ρ, c, hρ₀, hρ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
+  · have hbneg : simpleHolding σ m (-b) t ω = -simpleHolding σ m b t ω := by
+      simpa only [neg_smul, one_smul, neg_one_mul] using simpleHolding_smul σ m (-1) b t ω
+    rw [hhold, hbneg, sub_neg_eq_add]
+  · have hbneg : simpleGains σ m (-b) X t ω = -simpleGains σ m b X t ω := by
+      simpa only [neg_smul, one_smul, neg_one_mul] using simpleGains_smul σ m (-1) b X t ω
+    rw [hgain, hbneg, sub_neg_eq_add]
+
 end TauCeti.Finance

@@ -7,8 +7,11 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Cumulative
 public import TauCeti.MeasureTheory.Integral.Lebesgue.CumulativeRepair
+public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Process.Predictable.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 public import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Predictable accumulated energy and finite-energy cutoffs
@@ -212,5 +215,31 @@ theorem finiteEnergyCutoff (hH : IsStronglyPredictable ℱ H) :
   simp only [finiteEnergyCutoff_def]
   exact hH.ite (hH.isStronglyProgressive.measurableSet_accumulatedEnergy_lt_top μ)
     stronglyMeasurable_zero
+
+/-- Pathwise Bochner square energy on `timeMeasure t` equals the real part of the `nnvolume`
+accumulated energy. -/
+theorem integral_sq_timeMeasure_eq_toReal_accumulatedEnergy {H : ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H) (t : ℝ≥0) (ω : Ω) :
+    (∫ s, H s ω ^ 2 ∂TauCeti.Probability.timeMeasure t) =
+      (TauCeti.nnvolume.accumulatedEnergy H t ω).toReal := by
+  have hHmeas : Measurable (fun s ↦ H s ω) :=
+    ((hH.mono ℱ.predictable_le_prod).comp_measurable measurable_prodMk_right).measurable
+  rw [integral_sq_eq_toReal_lintegral_enorm hHmeas.aestronglyMeasurable,
+    TauCeti.nnvolume.accumulatedEnergy_eq_setLIntegral_Ioc,
+    TauCeti.Probability.timeMeasure_def, ← TauCeti.nnvolume_def]
+
+/-- The elapsed pathwise Bochner square energy of a predictable process is again predictable. -/
+theorem isStronglyPredictable_integral_sq_timeMeasure {H : ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H) :
+    IsStronglyPredictable ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂TauCeti.Probability.timeMeasure t) := by
+  have hpred : IsStronglyPredictable ℱ
+      (fun t ω ↦ (TauCeti.nnvolume.accumulatedEnergy H t ω).toReal) :=
+    (ENNReal.measurable_toReal.comp
+      (hH.isStronglyProgressive.isStronglyPredictable_accumulatedEnergy
+        TauCeti.nnvolume).measurable).stronglyMeasurable
+  have hfun : (fun t ω ↦ ∫ s, H s ω ^ 2 ∂TauCeti.Probability.timeMeasure t) =
+      fun t ω ↦ (TauCeti.nnvolume.accumulatedEnergy H t ω).toReal :=
+    funext fun t ↦ funext fun ω ↦ hH.integral_sq_timeMeasure_eq_toReal_accumulatedEnergy t ω
+  rwa [hfun]
 
 end MeasureTheory.IsStronglyPredictable

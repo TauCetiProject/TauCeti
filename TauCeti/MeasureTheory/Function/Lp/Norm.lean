@@ -423,6 +423,23 @@ theorem integral_norm_sq_eq_toReal_eLpNorm_sq {alpha F : Type*} [MeasurableSpace
   refine lintegral_congr fun x ↦ ?_
   rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
 
+/-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
+real part of the lower integral of its squared extended norm. -/
+theorem integral_norm_sq_eq_toReal_lintegral_enorm {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
+    ∫ x, ‖f x‖ ^ 2 ∂m = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂m).toReal := by
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _) (hf.norm.pow 2)]
+  congr 1
+  refine lintegral_congr fun x ↦ ?_
+  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
+/-- The integral of the square of an a.e. strongly measurable real-valued function is the real
+part of the lower integral of its squared extended norm. -/
+theorem integral_sq_eq_toReal_lintegral_enorm {alpha : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} {f : alpha → ℝ} (hf : AEStronglyMeasurable f m) :
+    ∫ x, f x ^ 2 ∂m = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂m).toReal := by
+  simpa only [Real.norm_eq_abs, sq_abs] using integral_norm_sq_eq_toReal_lintegral_enorm hf
+
 /-- L² convergence implies convergence of the integral of the squared norm, for any measure
 and any normed additive group of values. -/
 theorem tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub {α F ι : Type*}

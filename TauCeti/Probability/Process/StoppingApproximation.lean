@@ -99,6 +99,21 @@ theorem dyadicCeilTime_eq_zero_iff (n : ℕ) (u : WithTop ℝ≥0) :
   · rintro rfl
     exact dyadicCeilTime_zero n
 
+/-- For a time inside a dyadic cell `(k 2⁻ⁿ, (k + 1) 2⁻ⁿ]`, the dyadic ceiling of `u` reaches
+at least that time exactly when it strictly exceeds the cell's left endpoint. -/
+theorem coe_le_dyadicCeilTime_iff_gt_dyadic (n k : ℕ) {t : ℝ≥0}
+    (ht : t ∈ Ioc ((k : ℝ≥0) / 2 ^ n) (((k + 1 : ℕ) : ℝ≥0) / 2 ^ n)) (u : WithTop ℝ≥0) :
+    (t : WithTop ℝ≥0) ≤ dyadicCeilTime n u ↔
+      (((k : ℝ≥0) / 2 ^ n : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime n u := by
+  cases u with
+  | top => rw [dyadicCeilTime_top]; exact iff_of_true le_top (WithTop.coe_lt_top _)
+  | coe r =>
+    simp only [dyadicCeilTime_coe, WithTop.coe_le_coe, WithTop.coe_lt_coe]
+    have hpos : (0 : ℝ≥0) < 2 ^ n := by positivity
+    rw [div_lt_div_iff_of_pos_right hpos, Nat.cast_lt, le_div_iff₀ hpos]
+    exact ⟨fun hle ↦ Nat.cast_lt.mp (((div_lt_iff₀ hpos).mp ht.left).trans_le hle),
+      fun hlt ↦ ((le_div_iff₀ hpos).mp ht.right).trans (Nat.cast_le.mpr hlt)⟩
+
 /-- Rounding a finite time changes it by less than one mesh width. -/
 theorem dyadicCeilTime_lt (n : ℕ) (t : ℝ≥0) :
     dyadicCeilTime n t < (↑(t + (2 ^ n : ℝ≥0)⁻¹) : WithTop ℝ≥0) := by

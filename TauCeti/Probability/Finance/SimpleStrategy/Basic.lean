@@ -292,6 +292,15 @@ theorem isStronglyPredictable_simpleHolding [OrderBot ι]
   exact Finset.stronglyMeasurable_fun_sum _ fun j hj ↦
     ℱ.stronglyMeasurable_indicator_Ioc_predictable _ _ (ha j (mem_range.1 hj))
 
+/-- For every sample `ω`, a simple holding is measurable in time whenever its trading intervals
+are measurable. -/
+theorem measurable_simpleHolding [MeasurableSpace ι]
+    (hI : ∀ j < n, MeasurableSet (Set.Ioc (τ j) (τ (j + 1)))) (ω : Ω) :
+    Measurable (fun t ↦ simpleHolding τ n a t ω) := by
+  simp only [simpleHolding_def]
+  exact Finset.measurable_sum _ fun j hj ↦
+    measurable_const.indicator (hI j (Finset.mem_range.mp hj))
+
 /-- The gains of a simple strategy over a partition monotone up to `n`, with each position chosen
 at the start of its interval, are adapted when the price is. -/
 theorem stronglyAdapted_simpleGains (hτ : MonotoneOn τ (Set.Iic n))

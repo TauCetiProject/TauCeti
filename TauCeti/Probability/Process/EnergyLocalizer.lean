@@ -89,6 +89,11 @@ theorem energyLocalizer_pos {C : ℝ≥0} (hC : 0 < C) (ω : Ω) :
   rw [← not_le, ← WithTop.coe_zero, energyLocalizer_le_iff]
   simpa using hC.ne'
 
+/-- Positive energy levels cannot be hit at the bottom time `⊥`. -/
+theorem bot_lt_energyLocalizer {C : ℝ≥0} (hC : 0 < C) (ω : Ω) :
+    (⊥ : WithTop ℝ≥0) < μ.energyLocalizer H C ω :=
+  bot_le.trans_lt (μ.energyLocalizer_pos H hC ω)
+
 omit [NullSingletonClass μ] in
 /-- Closed energy levels give pointwise increasing hitting times. -/
 theorem monotone_energyLocalizer (ω : Ω) : Monotone (fun C ↦ μ.energyLocalizer H C ω) := by
@@ -105,23 +110,28 @@ theorem stoppedProcess_accumulatedEnergy_energyLocalizer_le (C : ℝ≥0) (t : �
   exact (μ.continuous_accumulatedEnergy_finiteEnergyCutoff H ω).le_of_le_hittingAfter_Ici
     (a := 0) bot_le (by simp) (by simpa only [energyLocalizer_def] using hs)
 
+/-- Stopping an integrand at any random time equates its `(0, T]` square-energy integral with the
+stopped accumulated energy at `T` under any atomless time measure. -/
+theorem setLIntegral_enorm_sq_ite_le_eq_stoppedProcess_accumulatedEnergy
+    (τ : Ω → WithTop ℝ≥0) (T : ℝ≥0) (ω : Ω) :
+    (∫⁻ t in Ioc 0 T, ‖if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0‖ₑ ^ 2 ∂μ) =
+      stoppedProcess (μ.accumulatedEnergy H) τ T ω := by
+  have hclock : (fun u ω ↦ ∫⁻ s in Ioc 0 u, ‖H s ω‖ₑ ^ 2 ∂μ) = μ.accumulatedEnergy H := by
+    funext u ω
+    exact (μ.accumulatedEnergy_eq_setLIntegral_Ioc _ u ω).symm
+  have heq := TauCeti.setLIntegral_ite_le_eq_stoppedProcess
+    (fun t ω ↦ ‖H t ω‖ₑ ^ 2) τ μ 0 T ω
+  rw [hclock] at heq
+  simpa only [apply_ite, eNorm_zero, ite_pow, zero_pow (by norm_num : 2 ≠ 0)] using heq
+
 /-- Stopping the repaired integrand at its closed-level energy hit bounds its square energy
 on every finite horizon. The bound is pathwise and uses no measurability assumptions. -/
 theorem setLIntegral_enorm_sq_ite_le_energyLocalizer_le (C : ℝ≥0) (T : ℝ≥0) (ω : Ω) :
     (∫⁻ t in Ioc 0 T, ‖if (t : WithTop ℝ≥0) ≤ μ.energyLocalizer H C ω then
-      μ.finiteEnergyCutoff H t ω else 0‖ₑ ^ 2 ∂μ) ≤ C := by
-  have hclock : (fun u ω ↦ ∫⁻ s in Ioc 0 u, ‖μ.finiteEnergyCutoff H s ω‖ₑ ^ 2 ∂μ) =
-      μ.accumulatedEnergy (μ.finiteEnergyCutoff H) := by
-    funext u ω
-    exact (μ.accumulatedEnergy_eq_setLIntegral_Ioc _ u ω).symm
-  have heq := TauCeti.setLIntegral_ite_le_eq_stoppedProcess
-    (fun t ω ↦ ‖μ.finiteEnergyCutoff H t ω‖ₑ ^ 2) (μ.energyLocalizer H C) μ 0 T ω
-  rw [hclock] at heq
-  calc
-    _ = stoppedProcess (μ.accumulatedEnergy (μ.finiteEnergyCutoff H))
-        (μ.energyLocalizer H C) T ω := by
-      simpa only [apply_ite, eNorm_zero, ite_pow, zero_pow (by norm_num : 2 ≠ 0)] using heq
-    _ ≤ C := μ.stoppedProcess_accumulatedEnergy_energyLocalizer_le H C T ω
+      μ.finiteEnergyCutoff H t ω else 0‖ₑ ^ 2 ∂μ) ≤ C :=
+  (μ.setLIntegral_enorm_sq_ite_le_eq_stoppedProcess_accumulatedEnergy
+    (μ.finiteEnergyCutoff H) (μ.energyLocalizer H C) T ω).trans_le
+    (μ.stoppedProcess_accumulatedEnergy_energyLocalizer_le H C T ω)
 
 /-- On a path with finite original energy at every finite horizon, closed-level energy
 localizers tend to infinity as the level increases. -/
