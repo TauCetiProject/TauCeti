@@ -675,6 +675,19 @@ noncomputable def boxTensorTypeD (hP : P.IsRightIdemCompatible ιA idemA)
       rw [boxTypeD_coeff]
       exact P.boxCoeff_eq_zero_of_isRightIdemCompatible N hP hιA hp hq
 
+variable {hP : P.IsRightIdemCompatible ιA idemA} {hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0}
+  {hdB : IsUngradedDGAlgebra dB} {h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0}
+
+@[simp]
+theorem boxTensorTypeD_idem (p : {p : Y × X // idemA p.1 = N.idem p.2}) :
+    (P.boxTensorTypeD N hP hιA hdB h).idem p = P.idem p.val.1 := by
+  rw [boxTensorTypeD, TypeDStructure.restrict_idem, boxTypeD_idem]
+
+@[simp]
+theorem boxTensorTypeD_coeff (p q : {p : Y × X // idemA p.1 = N.idem p.2}) :
+    (P.boxTensorTypeD N hP hιA hdB h).coeff p q = P.boxCoeff N p q := by
+  rw [boxTensorTypeD, TypeDStructure.restrict_coeff, boxTypeD_coeff]
+
 /-- **Boundedness of `P ⊠_I N`.** If the coefficients of `N` strictly increase a height on its
 generators and those of `δ¹₁` of `P` strictly increase a height on its generators, then the box
 tensor product over the idempotents is bounded, as `P ⊠ N` is
@@ -688,21 +701,8 @@ theorem isBounded_boxTensorTypeD_of_lt [DecidableEq Y]
     (P.boxTensorTypeD N hP hιA hdB hN).IsBounded :=
   TypeDStructure.isBounded_of_lt _ (fun p => (univ.sup g + 1) * h p.val.2 + g p.val.1)
     fun p q hpq => by
-      rw [boxTensorTypeD, TypeDStructure.restrict_coeff, boxTypeD_coeff] at hpq
+      rw [boxTensorTypeD_coeff] at hpq
       exact P.lt_of_boxCoeff_ne_zero N g hg h hh hpq
-
-variable {hP : P.IsRightIdemCompatible ιA idemA} {hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0}
-  {hdB : IsUngradedDGAlgebra dB} {h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0}
-
-@[simp]
-theorem boxTensorTypeD_idem (p : {p : Y × X // idemA p.1 = N.idem p.2}) :
-    (P.boxTensorTypeD N hP hιA hdB h).idem p = P.idem p.val.1 := by
-  rw [boxTensorTypeD, TypeDStructure.restrict_idem, boxTypeD_idem]
-
-@[simp]
-theorem boxTensorTypeD_coeff (p q : {p : Y × X // idemA p.1 = N.idem p.2}) :
-    (P.boxTensorTypeD N hP hιA hdB h).coeff p q = P.boxCoeff N p q := by
-  rw [boxTensorTypeD, TypeDStructure.restrict_coeff, boxTypeD_coeff]
 
 end BoxTensor
 
