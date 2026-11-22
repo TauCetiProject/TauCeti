@@ -145,11 +145,9 @@ theorem memLp_phaseSymbol (t : ℝ) : MemLp (phaseSymbol ω t) ∞ volume :=
     (Eventually.of_forall fun ξ ↦ (norm_phaseSymbol ω t ξ).le)
 
 /-- The `L^∞` class of the phase symbol has norm at most `1`. -/
-theorem norm_toLp_phaseSymbol_le (t : ℝ) : ‖(memLp_phaseSymbol ω t).toLp _‖ ≤ 1 := by
-  rw [Lp.norm_toLp, eLpNorm_exponent_top]
-  · exact ENNReal.toReal_le_of_le_ofReal zero_le_one
-      (eLpNormEssSup_le_of_ae_bound (Eventually.of_forall fun ξ ↦ (norm_phaseSymbol ω t ξ).le))
-  · exact (memLp_phaseSymbol ω t).aestronglyMeasurable
+theorem norm_toLp_phaseSymbol_le (t : ℝ) : ‖(memLp_phaseSymbol ω t).toLp _‖ ≤ 1 :=
+  Lp.norm_le_of_ae_bound_top zero_le_one <|
+    (memLp_phaseSymbol ω t).coeFn_toLp.mono fun ξ hξ ↦ by rw [hξ, norm_phaseSymbol]
 
 variable (F) in
 /-- The unitary operator `exp(itω(D))` on `L²(E, F)`: the Fourier multiplier with symbol

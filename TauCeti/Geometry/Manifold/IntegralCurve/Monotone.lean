@@ -37,6 +37,13 @@ preconnected set of times: the curve then stays in one fibre of `g`. Conversely,
 constant along an integral curve near a time, then `dg(v) = 0` at the point of the curve at that
 time.
 
+On a boundaryless manifold modelled on a Banach space, local integral curves of a `C¹` field pass
+through every point, so a differentiable function constant along every integral curve of the field
+on an open interval is stationary along the field. Together with the constancy statement, this
+characterizes the first integrals of a `C¹` vector field: the functions with `df(v) = 0` are exactly
+those constant along its integral curves
+(`TauCeti.forall_mvfderiv_apply_eq_zero_iff_forall_isMIntegralCurveOn`).
+
 If `df(v) > 0` is only known at the points of `γ` on a level `f⁻¹(c)`, then `γ` crosses that level
 only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, and once
 `f (γ b) ≤ c`, it was in `{f < c}` at every earlier time. This is how the trajectories of a vector
@@ -59,6 +66,8 @@ vanishes at one point of the curve, by uniqueness of integral curves.
   along `γ` when `dg(v) = 0` along it.
 * `IsMIntegralCurveAt.mfderiv_apply_eq_zero_of_eventuallyEq_const`: `dg(v) = 0` along `γ` where
   `g` is constant along `γ`.
+* `TauCeti.forall_mvfderiv_apply_eq_zero_iff_forall_isMIntegralCurveOn`: `df(v) = 0` everywhere
+  exactly when `f` is constant along every integral curve of the `C¹` field `v` on an open interval.
 * `IsMIntegralCurveOn.lt_apply_of_le_apply`, `IsMIntegralCurveOn.apply_lt_of_apply_le`: `γ` crosses
   a level of `f` only upwards when `df(v) > 0` along that level.
 * `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
@@ -244,3 +253,30 @@ theorem mfderiv_apply_eq_zero_of_eventuallyEq_const {F H' N : Type*} [NormedAddC
     _ = 0 := DFunLike.congr_fun hd.symm (1 : ℝ)
 
 end IsMIntegralCurveAt
+
+namespace TauCeti
+
+/-- **First integrals of a vector field.** On a boundaryless manifold modelled on a Banach space,
+a differentiable function `f` is stationary along a `C¹` vector field `v`, `df(v) = 0` everywhere,
+exactly when `f` is constant along every integral curve of `v` on an open interval. -/
+theorem forall_mvfderiv_apply_eq_zero_iff_forall_isMIntegralCurveOn [CompleteSpace E]
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hf : MDifferentiable I 𝓘(ℝ) f) :
+    (∀ x, mvfderiv I f x (v x) = 0) ↔
+      ∀ (γ : ℝ → M) (a b : ℝ), IsMIntegralCurveOn γ v (Ioo a b) →
+        ∀ t₀ ∈ Ioo a b, ∀ t ∈ Ioo a b, f (γ t) = f (γ t₀) := by
+  refine ⟨fun h γ a b hγ t₀ ht₀ t ht ↦ hγ.apply_eq_of_mvfderiv_apply_eq_zero isPreconnected_Ioo
+    (fun u _ ↦ hf (γ u)) (fun u _ ↦ h (γ u)) ht₀ ht, fun h x ↦ ?_⟩
+  -- Along a local integral curve through `x`, which is an integral curve on an open interval, `f`
+  -- is constant, so the derivative `df(v)` of `f ∘ γ` at the time it passes through `x` vanishes.
+  obtain ⟨γ, hγ0, hγ⟩ := exists_isMIntegralCurveAt_of_contMDiffAt_boundaryless (0 : ℝ) (hv x)
+  obtain ⟨ε, hε, hγε⟩ := isMIntegralCurveAt_iff'.1 hγ
+  rw [Real.ball_eq_Ioo, zero_sub, zero_add] at hγε
+  have hmem : (0 : ℝ) ∈ Ioo (-ε) ε := ⟨neg_lt_zero.2 hε, hε⟩
+  have hconst : f ∘ γ =ᶠ[𝓝 0] fun _ ↦ f (γ 0) :=
+    eventually_of_mem (isOpen_Ioo.mem_nhds hmem) fun t ht ↦ h γ _ _ hγε 0 hmem t ht
+  rw [← hγ0]
+  exact hγ.mfderiv_apply_eq_zero_of_eventuallyEq_const (hf (γ 0)) hconst
+
+end TauCeti
