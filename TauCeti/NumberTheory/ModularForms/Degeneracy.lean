@@ -569,7 +569,7 @@ lemma exists_conjScale_mem_Gamma0_of_dvd (d M N : ℕ) (hdvd : d * M ∣ N) (γ 
       (Gamma0Map M).toHomUnits ⟨conjScale d γ c hc, hm⟩ =
         ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd) ((Gamma0Map N).toHomUnits γ) := by
   obtain ⟨t, ht⟩ :=
-    Int.natCast_mul d M ▸ mem_Gamma0_iff_dvd.mp (Gamma0_le_Gamma0_of_dvd hdvd γ.2)
+    Int.natCast_mul d M ▸ mem_Gamma0_iff_dvd.mp (Gamma0_le_Gamma0_of_dvd hdvd γ.property)
   refine ⟨_, ht.trans (mul_assoc _ _ _), mem_Gamma0_iff_dvd.mpr (dvd_mul_right _ _), ?_⟩
   ext
   simp [Gamma0Map_apply, ZMod.unitsMap_val, ZMod.cast_intCast ((Dvd.intro_left d rfl).trans hdvd)]
@@ -582,7 +582,7 @@ theorem Gamma1_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
   obtain ⟨c, hc, hm, -⟩ :=
-    exists_conjScale_mem_Gamma0_of_dvd d M _ dvd_rfl ⟨γ, Gamma1_in_Gamma0 _ hγ⟩
+    exists_conjScale_mem_Gamma0_of_dvd d M _ dvd_rfl ⟨γ, Gamma1_le_Gamma0 _ hγ⟩
   refine ⟨_, mem_Gamma1_iff.mpr ⟨hm, ?_⟩, (mapGL_conjScale γ c hc).symm⟩
   -- `conjScale` keeps the lower-right entry, whose congruence only needs reading modulo the
   -- divisor `M` of `dM`
@@ -824,7 +824,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) (hlN : l ∣ N) (�
     (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
   obtain ⟨j₀, k, hk⟩ :=
     ZMod.exists_dvd_sub_val_mul l (γ' 0 1 - i * γ' 1 1) (γ' 0 0 - i * γ' 1 0) hunit
-  set j : ℤ := (j₀.val : ℤ) with _
+  set j : ℤ := (j₀.val : ℤ)
   have hdetM : (!![γ' 0 0 - i * γ' 1 0, k; (l : ℤ) * γ' 1 0, γ' 1 1 - γ' 1 0 * j]).det = 1 := by
     rw [Matrix.det_fin_two_of]
     linear_combination hdet + γ' 1 0 * hk
@@ -1032,8 +1032,9 @@ private theorem unitsMap_Gamma0Map_toHomUnits_eq_of_diag {M N : ℕ} (hMN : M �
 
 /-- **The Γ₀(N/l)-transformation law of a function whose level-raise carries a nebentypus.**
 
-If the level-raise `f ∣[k] V_l` is an eigenvector of every `γ ∈ Γ₀(N)` with eigenvalue the value
-`χ` reads off `γ`, if `f` is `T`-periodic, and if `χ` is trivial on the kernel of the reduction
+If the slash `f ∣[k] diag(l, 1)` (the level-raise `τ ↦ f (l τ)` scaled by `l ^ (k - 1)`) is an
+eigenvector of every `γ ∈ Γ₀(N)` with eigenvalue the value `χ` reads off `γ`, if `f` is
+`T`-periodic, and if `χ` is trivial on the kernel of the reduction
 `(ZMod N)ˣ → (ZMod (N/l))ˣ`, then `f` itself transforms under each `γ' ∈ Γ₀(N / l)` by `χ u`, for
 *any* unit `u` of level `N` lying over the nebentypus label of `γ'`.
 
@@ -1072,9 +1073,10 @@ theorem slash_mapGL_eq_smul_of_unitsMap_eq (l N : ℕ) [NeZero l] (hlN : l ∣ N
 
 /-- **Γ₁(N/l)-invariance from a nebentypus of level `N` that factors through `N / l`.**
 
-If the level-raise `f ∣[k] V_l` is an eigenvector of every `γ ∈ Γ₀(N)` with eigenvalue the
-character value `χ` reads off `γ`, if `f` is `T`-periodic, and if `χ` is trivial on the kernel of
-the reduction `(ZMod N)ˣ → (ZMod (N/l))ˣ`, then `f` is invariant under all of `Γ₁(N / l)`.
+If the slash `f ∣[k] diag(l, 1)` (the level-raise `τ ↦ f (l τ)` scaled by `l ^ (k - 1)`) is an
+eigenvector of every `γ ∈ Γ₀(N)` with eigenvalue the character value `χ` reads off `γ`, if `f` is
+`T`-periodic, and if `χ` is trivial on the kernel of the reduction
+`(ZMod N)ˣ → (ZMod (N/l))ˣ`, then `f` is invariant under all of `Γ₁(N / l)`.
 
 This is the step that converts a nebentypus into honest invariance, and it is where the conductor
 drops: a `T`-periodic function whose level-raise carries a character that already factors through
@@ -1096,7 +1098,7 @@ theorem slash_mapGL_eq_self_of_mem_Gamma1_div (l N : ℕ) [NeZero l] (hlN : l �
     (hT : f ∣[k] (mapGL ℝ ModularGroup.T : GL (Fin 2) ℝ) = f)
     (δ : SL(2, ℤ)) (hδ : δ ∈ Gamma1 (N / l)) :
     f ∣[k] (mapGL ℝ δ : GL (Fin 2) ℝ) = f := by
-  have hδ0 : δ ∈ Gamma0 (N / l) := Gamma1_in_Gamma0 _ hδ
+  have hδ0 : δ ∈ Gamma0 (N / l) := Gamma1_le_Gamma0 _ hδ
   -- a `Γ₁(N / l)` element has trivial label, so this is the `u = 1` case of the general law
   have hlabel : (Gamma0Map (N / l)).toHomUnits ⟨δ, hδ0⟩ = 1 :=
     Units.ext <| by
@@ -1166,7 +1168,7 @@ lemma qParam_scaleGL_smul [NeZero d] (h : ℝ) (τ : ℍ) :
     Function.Periodic.qParam h ((scaleGL d • τ : ℍ) : ℂ) =
       Function.Periodic.qParam h (τ : ℂ) ^ d := by
   simp only [Function.Periodic.qParam, coe_scaleGL_smul]
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   ring_nf
 
 /-- **A level-raise is `1`-periodic through `ofComplex`.** If `d` is a strict period of `𝒢` (for

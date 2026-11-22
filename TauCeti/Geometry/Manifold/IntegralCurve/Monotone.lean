@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Analysis.Calculus.Deriv.LevelCrossing
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
@@ -26,8 +29,13 @@ vector fields, which are allowed to vanish away from the region being deformed.
 
 If instead `df(v) = 0` along an integral curve defined on a preconnected set of times, then
 `f` is constant along it. This is the conservation statement behind first integrals of a vector
-field. The same holds for a map `g` into another manifold with `dg(v) = 0` along an integral curve
-on an open preconnected set of times: the curve then stays in one fibre of `g`.
+field. More generally, a map `g` into a normed space with `dg(v)` equal to a constant vector
+`c` along the curve moves affinely, `g (γ t) = g (γ t₀) + (t - t₀) • c`: in coordinates
+straightening `v` to a constant field, its integral curves are straight lines. The same constancy
+holds for a map `g` into another manifold with `dg(v) = 0` along an integral curve on an open
+preconnected set of times: the curve then stays in one fibre of `g`. Conversely, if `g` is
+constant along an integral curve near a time, then `dg(v) = 0` at the point of the curve at that
+time.
 
 If `df(v) > 0` is only known at the points of `γ` on a level `f⁻¹(c)`, then `γ` crosses that level
 only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, and once
@@ -35,21 +43,28 @@ only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, 
 field pointing out of a domain `{f ≤ c}` along its boundary are shown never to re-enter it.
 
 Finally, an integral curve along which the vector field vanishes does not move at all: it is a
-constant curve.
+constant curve. For a `C¹` field on a Hausdorff boundaryless manifold it suffices that the field
+vanishes at one point of the curve, by uniqueness of integral curves.
 
 ## Main declarations
 
 * `IsMIntegralCurve.antitone_comp`: `f` is antitone along `γ`.
 * `IsMIntegralCurve.lt_of_mvfderiv_apply_lt_zero`: `f` strictly decreases along `γ` after a time
   at which `df(v) < 0`.
+* `IsMIntegralCurveOn.apply_eq_add_smul_of_mvfderiv_apply_eq`: a map `g` into a normed space
+  moves affinely along `γ` when `dg(v)` is constant along it.
 * `IsMIntegralCurveOn.apply_eq_of_mvfderiv_apply_eq_zero`: `f` is constant along `γ` when
   `df(v) = 0` along it.
 * `IsMIntegralCurveOn.apply_eq_of_mfderiv_apply_eq_zero`: a manifold-valued map `g` is constant
   along `γ` when `dg(v) = 0` along it.
+* `IsMIntegralCurveAt.mfderiv_apply_eq_zero_of_eventuallyEq_const`: `dg(v) = 0` along `γ` where
+  `g` is constant along `γ`.
 * `IsMIntegralCurveOn.lt_apply_of_le_apply`, `IsMIntegralCurveOn.apply_lt_of_apply_le`: `γ` crosses
   a level of `f` only upwards when `df(v) > 0` along that level.
 * `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
   vanishes is constant.
+* `IsMIntegralCurve.apply_eq_of_eq_zero`: an integral curve of a `C¹` field through a zero of the
+  field is constant.
 -/
 
 public section
@@ -100,9 +115,39 @@ theorem apply_eq_of_forall_eq_zero [IsManifold I 1 M] (hγ : IsMIntegralCurve γ
       -- The two zeros live in the tangent-space and the model-space spelling of one type.
       rfl) t s
 
+/-- **An integral curve through a zero of the field is constant.** On a Hausdorff boundaryless
+manifold, if the `C¹` field `v` vanishes at the point `γ t₀` of a global integral curve `γ`, then
+`γ` is the constant curve at that point, by uniqueness of integral curves. -/
+theorem apply_eq_of_eq_zero [IsManifold I 1 M] [T2Space M] [BoundarylessManifold I M]
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hγ : IsMIntegralCurve γ v) {t₀ : ℝ} (h : v (γ t₀) = 0) (t : ℝ) : γ t = γ t₀ :=
+  congrFun (isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless hv hγ (isMIntegralCurve_const h)
+    (t₀ := t₀) rfl) t
+
 end IsMIntegralCurve
 
 namespace IsMIntegralCurveOn
+
+/-- **Affine motion along an integral curve.** If a map `g` into a normed space is differentiable
+along an integral curve `γ` of `v` on a preconnected set of times `s`, such as an interval, and
+`dg(v)` is a constant vector `c` along `γ` on `s`, then `g` moves affinely along `γ` on `s`:
+`g (γ t) = g (γ t₀) + (t - t₀) • c`. -/
+theorem apply_eq_add_smul_of_mvfderiv_apply_eq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {g : M → F} {c : F} {s : Set ℝ} (hγ : IsMIntegralCurveOn γ v s)
+    (hs' : IsPreconnected s) (hg : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ, F) g (γ t))
+    (hvg : ∀ t ∈ s, mvfderiv I g (γ t) (v (γ t)) = c) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    g (γ t) = g (γ t₀) + (t - t₀) • c := by
+  -- The map `u ↦ g (γ u) - u • c` has derivative `dg(v) - c = 0` on the convex set `s`.
+  have hd (u : ℝ) (hu : u ∈ s) : HasDerivWithinAt (fun r ↦ g (γ r) - r • c) 0 s u := by
+    have h := TauCeti.Manifold.hasDerivWithinAt_comp_curve (hg u hu) (hγ u hu)
+    rw [hvg u hu] at h
+    simpa using h.fun_sub ((hasDerivWithinAt_id u s).smul_const c)
+  have hconv : Convex ℝ s := Real.convex_iff_isPreconnected.2 hs'
+  have h := hconv.norm_image_sub_le_of_norm_hasDerivWithin_le (f' := fun _ ↦ 0) (C := 0) hd
+    (fun _ _ ↦ by simp) ht₀ ht
+  rw [zero_mul, norm_le_zero_iff, sub_eq_zero, sub_eq_iff_eq_add] at h
+  rw [h, sub_smul]
+  abel
 
 /-- **Constancy along an integral curve.** If `f` is differentiable along an integral curve `γ` of
 `v` on a preconnected set of times `s`, such as an interval, and `df(v) = 0` along `γ` on `s`, then
@@ -111,11 +156,7 @@ theorem apply_eq_of_mvfderiv_apply_eq_zero {s : Set ℝ} (hγ : IsMIntegralCurve
     (hs' : IsPreconnected s) (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t))
     (hvf : ∀ t ∈ s, mvfderiv I f (γ t) (v (γ t)) = 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     f (γ t) = f (γ t₀) := by
-  have hd (u : ℝ) (hu : u ∈ s) : HasDerivWithinAt (f ∘ γ) 0 s u := by
-    simpa only [hvf u hu] using TauCeti.Manifold.hasDerivWithinAt_comp_curve (hf u hu) (hγ u hu)
-  have hconv : Convex ℝ s := Real.convex_iff_isPreconnected.2 hs'
-  simpa [sub_eq_zero] using hconv.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f' := fun _ ↦ 0) (C := 0) hd (fun _ _ ↦ by simp) ht₀ ht
+  simpa using hγ.apply_eq_add_smul_of_mvfderiv_apply_eq hs' hf hvf ht₀ ht
 
 /-- **Constancy of a manifold-valued map along an integral curve.** If `g : M → N` is
 differentiable along an integral curve `γ` of `v` on an open preconnected set of times `s`, such as
@@ -148,7 +189,7 @@ theorem apply_eq_of_mfderiv_apply_eq_zero {F H' N : Type*} [NormedAddCommGroup F
   have hlc : IsLocallyConstant (s.domRestrict (g ∘ γ)) := by
     rw [IsLocallyConstant.iff_eventually_eq]
     rintro ⟨u, hu⟩
-    exact (continuous_subtype_val.tendsto (⟨u, hu⟩ : s)).eventually (hloc u hu)
+    exact (continuous_subtypeVal.tendsto (⟨u, hu⟩ : s)).eventually (hloc u hu)
   have : PreconnectedSpace s := Subtype.preconnectedSpace hs'
   exact hlc.apply_eq_of_preconnectedSpace ⟨t, ht⟩ ⟨t₀, ht₀⟩
 
@@ -182,3 +223,24 @@ theorem apply_lt_of_apply_le (hγ : IsMIntegralCurveOn γ v s) (hs : IsOpen s) (
     ⟨ht.2, le_rfl⟩).not_ge hb
 
 end IsMIntegralCurveOn
+
+namespace IsMIntegralCurveAt
+
+/-- **A map constant along an integral curve annihilates the field.** If `g : M → N` is
+differentiable at `γ t₀` and constant along a local integral curve `γ` of `v` near `t₀`, then
+`dg(v) = 0` at `γ t₀`: the velocity of a curve staying in one fibre of `g` is vertical. -/
+theorem mfderiv_apply_eq_zero_of_eventuallyEq_const {F H' N : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {g : M → N} {t₀ : ℝ} {y : N} (hγ : IsMIntegralCurveAt γ v t₀)
+    (hg : MDifferentiableAt I J g (γ t₀)) (hgγ : g ∘ γ =ᶠ[𝓝 t₀] fun _ ↦ y) :
+    mfderiv I J g (γ t₀) (v (γ t₀)) = 0 := by
+  have hd := (hg.hasMFDerivAt.comp t₀ hγ.hasMFDerivAt).mfderiv
+  rw [hgγ.mfderiv_eq, mfderiv_const, ContinuousLinearMap.comp_zero] at hd
+  -- The composite sends `1` to `dg (1 • v)`; the tangent space of `ℝ` at `t₀` is `ℝ` itself, so
+  -- this unfolding is definitional.
+  calc mfderiv I J g (γ t₀) (v (γ t₀))
+      = mfderiv I J g (γ t₀) ((1 : ℝ) • v (γ t₀)) := by rw [one_smul]
+    _ = (mfderiv I J g (γ t₀)).comp ((1 : ℝ →L[ℝ] ℝ).smulRight (v (γ t₀))) (1 : ℝ) := rfl
+    _ = 0 := DFunLike.congr_fun hd.symm (1 : ℝ)
+
+end IsMIntegralCurveAt

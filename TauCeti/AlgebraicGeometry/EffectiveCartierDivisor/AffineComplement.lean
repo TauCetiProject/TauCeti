@@ -37,7 +37,7 @@ namespace AlgebraicGeometry
 
 private theorem exists_compl_equation_of_mem (X : Scheme.{u}) {U : X.Opens}
     {x : X} (hxU : x ∈ U) :
-    ∃ (V : X.affineOpens) (hxV : x ∈ V.1) (a : X.presheaf.stalk x),
+    ∃ (V : X.affineOpens) (hxV : x ∈ V.val) (a : X.presheaf.stalk x),
       IsSMulRegular (X.presheaf.stalk x) a ∧
         ((Scheme.IdealSheafData.vanishingIdeal
           ⟨(U : Set X)ᶜ, U.isOpen.isClosed_compl⟩).ideal V).map
@@ -90,7 +90,7 @@ private theorem exists_localized_compl_generator
 private theorem exists_compl_equation_of_factorial_stalk
     (X : Scheme.{u}) [IsLocallyNoetherian X] {U : X.Opens} [IsAffineHom U.ι]
     (hdense : Dense (U : Set X)) (x : X) [UniqueFactorizationMonoid (X.presheaf.stalk x)] :
-    ∃ (V : X.affineOpens) (hxV : x ∈ V.1) (a : X.presheaf.stalk x),
+    ∃ (V : X.affineOpens) (hxV : x ∈ V.val) (a : X.presheaf.stalk x),
       IsSMulRegular (X.presheaf.stalk x) a ∧
         ((Scheme.IdealSheafData.vanishingIdeal
           ⟨(U : Set X)ᶜ, U.isOpen.isClosed_compl⟩).ideal V).map

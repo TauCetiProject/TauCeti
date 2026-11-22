@@ -49,8 +49,6 @@ characters `χ.primitiveCharacter` of the characters `χ : DirichletCharacter �
 
 ## Main results
 
-* `TauCeti.NumberField.absNorm_eq_pow_orderOf`: for `n = p ^ k * m` with `¬ p ∣ m`, every prime `P`
-  of `𝓞 K` above `p` has norm `p ^ orderOf (p : ZMod m)`.
 * `TauCeti.NumberField.card_primesOverFinset_eq_totient_div_orderOf`: there are
   `m.totient / orderOf (p : ZMod m)` primes of `𝓞 K` above `p`.
 * `TauCeti.NumberField.prod_primesOverFinset_one_sub_absNorm_cpow_neg`,
@@ -86,15 +84,6 @@ variable {K : Type*} [Field K] [NumberField K]
 section Local
 
 variable {n p k m : ℕ} [hp : Fact p.Prime] [IsCyclotomicExtension {n} ℚ K]
-
-/-- **Norm of a prime ideal in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`, every prime
-ideal `P` of `𝓞 K` lying over `p` has absolute norm `p ^ orderOf (p : ZMod m)`. -/
-theorem absNorm_eq_pow_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (P : Ideal (𝓞 K))
-    [P.IsPrime] [P.LiesOver (span {(p : ℤ)})] :
-    absNorm P = p ^ orderOf (p : ZMod m) := by
-  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {n} ℚ K
-  rw [← pow_inertiaDeg p P, ← inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) P Gal(K/ℚ),
-    inertiaDegIn_eq_orderOf hn hm]
 
 /-- **Cardinality of `primesOverFinset` in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`,
 the number of primes of `𝓞 K` above `p` is `m.totient / orderOf (p : ZMod m)`. -/
@@ -140,15 +129,17 @@ private theorem normCoeff_one_apply_prime_pow (hn : n = p ^ k * m) (hm : ¬ p �
         (m.totient / orderOf (p : ZMod m))) (p ^ r) := by
   have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := span_singleton_natCast_ne_bot hp.out.ne_zero
   let Pset := primesOverFinset (span {(p : ℤ)}) (𝓞 K)
-  let mkH (P : {P // P ∈ Pset}) : {Q : HeightOneSpectrum (𝓞 K) // Q.asIdeal = P.1} :=
-    haveI : P.1.IsPrime := ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2).1
-    haveI : P.1.LiesOver (span {(p : ℤ)}) := ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2).2
-    ⟨heightOneSpectrumOfLiesOver p P.1, heightOneSpectrumOfLiesOver_asIdeal p P.1⟩
+  let mkH (P : {P // P ∈ Pset}) : {Q : HeightOneSpectrum (𝓞 K) // Q.asIdeal = P.val} :=
+    haveI : P.val.IsPrime := ((mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.property).1
+    haveI : P.val.LiesOver (span {(p : ℤ)}) := ((mem_primesOverFinset_iff hp0
+        (𝓞 K)).mp P.property).2
+    ⟨heightOneSpectrumOfLiesOver p P.val, heightOneSpectrumOfLiesOver_asIdeal p P.val⟩
   let toH : {P // P ∈ Pset} ↪ HeightOneSpectrum (𝓞 K) :=
-    { toFun := fun P ↦ (mkH P).1
+    { toFun := fun P ↦ (mkH P).val
       inj' := fun P₁ P₂ h ↦ Subtype.ext <|
-        (mkH P₁).2.symm.trans ((congrArg HeightOneSpectrum.asIdeal h).trans (mkH P₂).2) }
-  have hasIdeal (P : {P // P ∈ Pset}) : (toH P).asIdeal = P.1 := (mkH P).2
+        (mkH P₁).property.symm.trans ((congrArg HeightOneSpectrum.asIdeal h).trans
+            (mkH P₂).property) }
+  have hasIdeal (P : {P // P ∈ Pset}) : (toH P).asIdeal = P.val := (mkH P).property
   have hmem : ∀ Q : HeightOneSpectrum (𝓞 K),
       Q.asIdeal ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) → Q ∈ Pset.attach.map toH :=
     fun Q hQ ↦ Finset.mem_map.mpr ⟨⟨Q.asIdeal, (mem_primesOverFinset_iff hp0 (𝓞 K)).mpr hQ⟩,
@@ -160,10 +151,10 @@ private theorem normCoeff_one_apply_prime_pow (hn : n = p ^ k * m) (hm : ¬ p �
         ArithmeticFunction.ofPowerSeries (p ^ orderOf (p : ZMod m))
           (PowerSeries.mk 1 : PowerSeries ℂ) := by
     intro P _
-    obtain ⟨_, _⟩ := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.2
+    obtain ⟨_, _⟩ := (mem_primesOverFinset_iff hp0 (𝓞 K)).mp P.property
     have hps : (1 : IdealArithmeticFunction K).localPowerSeries (toH P) = PowerSeries.mk 1 := by
       ext i; simp
-    rw [localArithmeticFactor_def, hps, hasIdeal P, absNorm_eq_pow_orderOf hn hm P.1]
+    rw [localArithmeticFactor_def, hps, hasIdeal P, absNorm_eq_pow_orderOf hn hm P.val]
   rw [Finset.prod_congr rfl hloc, Finset.prod_const, Finset.card_attach,
     card_primesOverFinset_eq_totient_div_orderOf (K := K) hn hm]
 

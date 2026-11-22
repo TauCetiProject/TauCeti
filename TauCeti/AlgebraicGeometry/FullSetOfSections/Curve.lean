@@ -236,7 +236,7 @@ private lemma comap_prod_ker_le_comap_of_isLocalRing
   obtain ⟨u, hu⟩ := (δ.ker.comap I.subschemeι).exists_eq_ofIdealTop_span_singleton_of_stalkIdeal
     fun z ↦ by
       obtain ⟨V, hzV, α, -, hα⟩ := (isEffectiveCartier_iff δ.ker).mp hCartier (I.subschemeι z)
-      refine ⟨(I.subschemeι.stalkMap z).hom ((X.presheaf.germ V.1 _ hzV).hom α), ?_⟩
+      refine ⟨(I.subschemeι.stalkMap z).hom ((X.presheaf.germ V.val _ hzV).hom α), ?_⟩
       rw [δ.ker.stalkIdeal_comap, δ.ker.stalkIdeal_eq_map V _ hzV, hα, Ideal.map_span,
         Set.image_singleton, Ideal.map_span, Set.image_singleton]
   have hcomm (i : ι) :

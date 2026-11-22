@@ -159,7 +159,7 @@ instance : _root_.Quiver (OrientedQuiver G o) where
     ⟨((vertexEquiv G o).symm i, (vertexEquiv G o).symm j), h⟩ ∈ o}
 
 instance : Quiver.IsThin (OrientedQuiver G o) := fun _ _ =>
-  ⟨fun e f => Subtype.ext (Subsingleton.elim e.1 f.1)⟩
+  ⟨fun e f => Subtype.ext (Subsingleton.elim e.val f.val)⟩
 
 instance [Finite V] : Finite (OrientedQuiver G o) :=
   Finite.of_equiv V (vertexEquiv G o)
@@ -186,8 +186,8 @@ whose dart is selected by the orientation. This is the characteristic descriptio
 structure, so consumers never need to unfold the `Quiver` instance. -/
 def homEquiv (i j : V) :
     (vertex G o i ⟶ vertex G o j) ≃ {h : G.Adj i j // (⟨(i, j), h⟩ : G.Dart) ∈ o} where
-  toFun e := ⟨e.1, e.2⟩
-  invFun p := arrow G o p.1 p.2
+  toFun e := ⟨e.val, e.property⟩
+  invFun p := arrow G o p.val p.property
   left_inv _ := Subsingleton.elim _ _
   right_inv _ := Subtype.ext rfl
 
@@ -208,7 +208,7 @@ theorem homEquiv_symm_apply {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G
 /-- Every arrow of the oriented quiver comes from a dart selected by the orientation. -/
 theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
     ∃ (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o), e = arrow G o h ho :=
-  ⟨(homEquiv G o i j e).1, (homEquiv G o i j e).2, Subsingleton.elim _ _⟩
+  ⟨(homEquiv G o i j e).val, (homEquiv G o i j e).property, Subsingleton.elim _ _⟩
 
 /-- For the linear-order orientation, there is one arrow from `i` to `j` exactly when `i < j`
 and the vertices are adjacent. -/
@@ -221,7 +221,7 @@ theorem card_hom_ofLinearOrder [LinearOrder V] (i j : V) [Decidable (i < j ∧ G
   simp only [Orientation.mem_ofLinearOrder_iff]
   split_ifs with h
   · exact Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ ↦ Subtype.ext rfl⟩, ⟨⟨h.2, h.1⟩⟩⟩
-  · exact @Nat.card_of_isEmpty _ ⟨fun p ↦ h ⟨p.2, p.1⟩⟩
+  · exact @Nat.card_of_isEmpty _ ⟨fun p ↦ h ⟨p.property, p.val⟩⟩
 
 /-- Along any positive-length path in the linear-order orientation, the start vertex is strictly
 smaller than the end vertex. -/
@@ -238,7 +238,7 @@ theorem lt_of_path_of_length_pos_ofLinearOrder [LinearOrder V]
       have he' := (homEquiv G (Orientation.ofLinearOrder G)
         ((vertexEquiv G (Orientation.ofLinearOrder G)).symm b)
         ((vertexEquiv G (Orientation.ofLinearOrder G)).symm c)
-        (by simpa only [← vertexEquiv_apply, Equiv.apply_symm_apply] using e)).2
+        (by simpa only [← vertexEquiv_apply, Equiv.apply_symm_apply] using e)).property
       simpa only [Orientation.mem_ofLinearOrder_iff] using he'
     rcases Nat.eq_zero_or_pos p.length with h0 | hpos
     · rw [Path.eq_of_length_zero p h0]
@@ -277,18 +277,18 @@ theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
       have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 1 :=
         Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h, ho⟩⟩⟩
       have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
-        @Nat.card_of_isEmpty _ ⟨fun p => ho' p.2⟩
+        @Nat.card_of_isEmpty _ ⟨fun p => ho' p.property⟩
       rw [h1, h2]
     · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_notMem _).2 ho
       have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
-        @Nat.card_of_isEmpty _ ⟨fun p => ho p.2⟩
+        @Nat.card_of_isEmpty _ ⟨fun p => ho p.property⟩
       have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 1 :=
         Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h.symm, ho'⟩⟩⟩
       rw [h1, h2]
   · have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
-      @Nat.card_of_isEmpty _ ⟨fun p => h p.1⟩
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.val⟩
     have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
-      @Nat.card_of_isEmpty _ ⟨fun p => h p.1.symm⟩
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.val.symm⟩
     rw [h1, h2]
 
 /-- The symmetrification of an oriented graph has one arrow between two vertices exactly when they
@@ -340,7 +340,7 @@ theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
   obj i := DoubledQuiver.vertexEquiv G ((vertexEquiv G o).symm i)
-  map e := Quiver.homOfEq (DoubledQuiver.arrow G e.1)
+  map e := Quiver.homOfEq (DoubledQuiver.arrow G e.val)
     (DoubledQuiver.vertexEquiv_apply G _).symm
     (DoubledQuiver.vertexEquiv_apply G _).symm
 
@@ -435,20 +435,20 @@ instance instIsThinSymmetrifyOrientedQuiver :
   cases e with
   | inl e =>
       cases f with
-      | inl f => exact congrArg Sum.inl (Subtype.ext (Subsingleton.elim e.1 f.1))
+      | inl f => exact congrArg Sum.inl (Subtype.ext (Subsingleton.elim e.val f.val))
       | inr f =>
           exfalso
           exact ((o.symm_mem_iff_notMem
             ⟨((OrientedQuiver.vertexEquiv G o).symm i,
-              (OrientedQuiver.vertexEquiv G o).symm j), e.1⟩).1 f.2) e.2
+              (OrientedQuiver.vertexEquiv G o).symm j), e.val⟩).1 f.property) e.property
   | inr e =>
       cases f with
       | inl f =>
           exfalso
           exact ((o.symm_mem_iff_notMem
             ⟨((OrientedQuiver.vertexEquiv G o).symm i,
-              (OrientedQuiver.vertexEquiv G o).symm j), f.1⟩).1 e.2) f.2
-      | inr f => exact congrArg Sum.inr (Subtype.ext (Subsingleton.elim e.1 f.1))
+              (OrientedQuiver.vertexEquiv G o).symm j), f.val⟩).1 e.property) f.property
+      | inr f => exact congrArg Sum.inr (Subtype.ext (Subsingleton.elim e.val f.val))
 
 /-- On a chosen dart, the inverse comparison returns the positive copy of the corresponding
 oriented-quiver arrow. -/

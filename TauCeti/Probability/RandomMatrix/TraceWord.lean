@@ -84,7 +84,7 @@ section SingleEdge
 /-- The coordinate of the `n × n` corner entry array read by the `(i, j)` entry of an `n × n`
 Wigner matrix. -/
 private def entryIndex {n : ℕ} (i j : Fin n) :
-    {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} :=
+    {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} :=
   if h : i.val < j.val then .inl ⟨⟨(i, j), h⟩, j.isLt⟩
   else if h' : j.val < i.val then .inl ⟨⟨(j, i), h'⟩, i.isLt⟩
   else .inr ⟨i, i.isLt⟩
@@ -113,72 +113,57 @@ omit [MeasurableSpace Ω] in
 private theorem wignerMatrix_apply_eq_orientEntry {n : ℕ} (ω : Ω) (i j : Fin n) :
     wignerMatrix ξ η n ω i j = (Real.sqrt n : ℂ)⁻¹ *
       orientEntry i j
-        (Sum.elim (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1)
-          (fun i : {i : ℕ // i < n} ↦ fun ω ↦ (η i.1 ω : ℂ)) (entryIndex i j) ω) := by
+        (Sum.elim (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val)
+          (fun i : {i : ℕ // i < n} ↦ fun ω ↦ (η i.val ω : ℂ)) (entryIndex i j) ω) := by
   rcases lt_trichotomy i.val j.val with h | h | h
   · simp [orientEntry, entryIndex, h]
   · obtain rfl := Fin.ext h
     simp [orientEntry, entryIndex]
   · simp [orientEntry, entryIndex, h, h.not_gt]
 
+/-- The coordinates of the `n × n` corner entry array are almost everywhere measurable. -/
+private theorem aemeasurable_cornerEntry {n : ℕ}
+    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
+    (hηm : ∀ i < n, AEMeasurable (η i) P)
+    (r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n}) :
+    AEMeasurable (Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P := by
+  cases r with
+  | inl ij => exact hξm ij.val ij.property
+  | inr i => exact Complex.measurable_ofReal.comp_aemeasurable (hηm i.val i.property)
+
 /-- **Edge-disjoint Wigner products are independent.** Let the entries in the `n × n` corner be
 independent. Two finite products of entries of the `n × n` Wigner matrix reading disjoint sets of
 unordered positions are independent. No centering or finite-moment assumption is required. -/
 theorem indepFun_prod_wignerMatrix_apply_of_disjoint {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
-    {n : ℕ} (hξm : ∀ ij : StrictUpper, ij.1.2 < n → AEMeasurable (ξ ij) P)
+    {n : ℕ} (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
     (hηm : ∀ i < n, AEMeasurable (η i) P)
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
     (u₁ v₁ : ι₁ → Fin n) (u₂ v₂ : ι₂ → Fin n)
     (hdisj : ∀ s t, s(u₁ s, v₁ s) ≠ s(u₂ t, v₂ t)) :
     IndepFun
       (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s))
       (fun ω ↦ ∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) P := by
-  classical
-  set X : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} → Ω → ℂ :=
-    fun r ↦ Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r
-  set e₁ : ι₁ → {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} :=
-    fun s ↦ entryIndex (u₁ s) (v₁ s)
-  set e₂ : ι₂ → {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} :=
-    fun t ↦ entryIndex (u₂ t) (v₂ t)
-  have hX (r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n}) : AEMeasurable (X r) P := by
-    cases r with
-    | inl ij => exact hξm ij.1 ij.2
-    | inr i => exact Complex.measurable_ofReal.comp_aemeasurable (hηm i.1 i.2)
-  set S₁ : Finset ({ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n}) := Finset.univ.image e₁
-  set S₂ : Finset ({ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n}) := Finset.univ.image e₂
-  have hS : Disjoint S₁ S₂ := by
-    rw [Finset.disjoint_left]
-    intro k hk₁ hk₂
-    obtain ⟨s, -, rfl⟩ := Finset.mem_image.mp hk₁
-    obtain ⟨t, -, htk⟩ := Finset.mem_image.mp hk₂
-    exact hdisj s t (entryIndex_eq_entryIndex_iff.mp htk.symm)
-  set φ₁ : (S₁ → ℂ) → ℂ := fun g ↦ ∏ s ∈ Finset.univ.attach,
-    (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₁ s.1) (v₁ s.1) (g ⟨e₁ s.1, Finset.mem_image_of_mem e₁ s.2⟩)
-  set φ₂ : (S₂ → ℂ) → ℂ := fun g ↦ ∏ t ∈ Finset.univ.attach,
-    (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₂ t.1) (v₂ t.1) (g ⟨e₂ t.1, Finset.mem_image_of_mem e₂ t.2⟩)
-  have hφ₁ : Measurable φ₁ := Finset.measurable_prod _ fun s _ ↦
-    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
-  have hφ₂ : Measurable φ₂ := Finset.measurable_prod _ fun t _ ↦
-    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
-  have hind := (hindep.indepFun_finset₀ S₁ S₂ hS hX).comp hφ₁ hφ₂
-  refine hind.congr (.of_forall fun ω ↦ ?_) (.of_forall fun ω ↦ ?_)
-  · simp only [Function.comp_apply, φ₁, ← Finset.prod_attach Finset.univ,
-      wignerMatrix_apply_eq_orientEntry, X, e₁]
-  · simp only [Function.comp_apply, φ₂, ← Finset.prod_attach Finset.univ,
-      wignerMatrix_apply_eq_orientEntry, X, e₂]
+  refine (hindep.indepFun_fun_prod_comp_of_disjoint (aemeasurable_cornerEntry hξm hηm)
+    (e₁ := fun s ↦ entryIndex (u₁ s) (v₁ s)) (e₂ := fun t ↦ entryIndex (u₂ t) (v₂ t))
+    (fun s t h ↦ hdisj s t (entryIndex_eq_entryIndex_iff.mp h))
+    (g₁ := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₁ s) (v₁ s) z)
+    (g₂ := fun t z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₂ t) (v₂ t) z)
+    (fun _ ↦ measurable_const.mul (measurable_orientEntry _ _))
+    (fun _ ↦ measurable_const.mul (measurable_orientEntry _ _))).congr ?_ ?_ <;>
+  exact .of_forall fun ω ↦ by simp only [wignerMatrix_apply_eq_orientEntry]
 
 /-- **Factorization of edge-disjoint Wigner products.** Let the entries in the `n × n` corner be
 independent. When two finite products of entries of the `n × n` Wigner matrix read disjoint sets of
 unordered positions, the integral of their product equals the product of their integrals. -/
 theorem integral_prod_mul_prod_wignerMatrix_apply_of_disjoint {ι₁ ι₂ : Type*}
     [Fintype ι₁] [Fintype ι₂] {n : ℕ}
-    (hξm : ∀ ij : StrictUpper, ij.1.2 < n → AEMeasurable (ξ ij) P)
+    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
     (hηm : ∀ i < n, AEMeasurable (η i) P)
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
     (u₁ v₁ : ι₁ → Fin n) (u₂ v₂ : ι₂ → Fin n)
     (hdisj : ∀ s t, s(u₁ s, v₁ s) ≠ s(u₂ t, v₂ t)) :
     ∫ ω, (∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s)) *
@@ -198,35 +183,29 @@ For a finite family of positions `(u s, v s)`, if the unordered position `s(u t,
 no other member of the family, then the product of the corresponding entries of the `n × n` Wigner
 matrix has expectation zero. -/
 theorem integral_prod_wignerMatrix_apply_eq_zero {ι : Type*} [Fintype ι] {n : ℕ}
-    (hξm : ∀ ij : StrictUpper, ij.1.2 < n → AEMeasurable (ξ ij) P)
+    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEMeasurable (ξ ij) P)
     (hηm : ∀ i < n, AEMeasurable (η i) P)
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hη : ∀ i < n, ∫ ω, η i ω ∂P = 0) (u v : ι → Fin n)
     {t : ι} (ht : ∀ s, s(u s, v s) = s(u t, v t) → s = t) :
     ∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P = 0 := by
-  classical
-  have hsplit (ω : Ω) : ∏ s, wignerMatrix ξ η n ω (u s) (v s) =
-      (∏ _ : Unit, wignerMatrix ξ η n ω (u t) (v t)) *
-        ∏ s : ↥(Finset.univ.erase t), wignerMatrix ξ η n ω (u s.1) (v s.1) := by
-    rw [Fintype.prod_unique (f := fun _ : Unit ↦ wignerMatrix ξ η n ω (u t) (v t)),
-      Finset.prod_coe_sort (f := fun s ↦ wignerMatrix ξ η n ω (u s) (v s)),
-      Finset.mul_prod_erase Finset.univ (fun s ↦ wignerMatrix ξ η n ω (u s) (v s))
-        (Finset.mem_univ t)]
-  simp_rw [hsplit]
-  rw [integral_prod_mul_prod_wignerMatrix_apply_of_disjoint hξm hηm hindep
-    (fun _ : Unit ↦ u t) (fun _ : Unit ↦ v t)
-    (fun s : ↥(Finset.univ.erase t) ↦ u s.1) (fun s : ↥(Finset.univ.erase t) ↦ v s.1)
-    (fun _ s hs ↦ (Finset.mem_erase.mp s.2).1 (ht s.1 hs.symm))]
-  simp [integral_wignerMatrix_apply_eq_zero (P := P) hξ hη (u t) (v t)]
+  have h := hindep.integral_fun_prod_comp_eq_zero (aemeasurable_cornerEntry hξm hηm)
+    (e := fun s ↦ entryIndex (u s) (v s))
+    (g := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s) z)
+    (fun _ ↦ measurable_const.mul (measurable_orientEntry _ _)) (t := t)
+    (fun s hs ↦ ht s (entryIndex_eq_entryIndex_iff.mp hs)) (by
+      simpa only [wignerMatrix_apply_eq_orientEntry] using
+        integral_wignerMatrix_apply_eq_zero (P := P) hξ hη (u t) (v t))
+  simpa only [wignerMatrix_apply_eq_orientEntry] using h
 
 /-- On a finite measure space, the trace of the `k`th power of a Wigner matrix of size `n` lies in
 `Lᵖ` for every `p : ℝ≥0∞` whenever all coordinates of the `n × n` corner lie in `L^(p * k)`.
 Neither independence nor centering is required, and `k = 0` is included. -/
 theorem memLp_trace_pow_wignerMatrix [IsFiniteMeasure P] {p : ℝ≥0∞} {k n : ℕ}
-    (hξp : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) (p * k) P)
+    (hξp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (p * k) P)
     (hηp : ∀ i < n, MemLp (η i) (p * k) P) :
     MemLp (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) p P := by
   rcases eq_or_ne k 0 with rfl | hk
@@ -247,7 +226,7 @@ theorem memLp_trace_pow_wignerMatrix [IsFiniteMeasure P] {p : ℝ≥0∞} {k n :
 integrable whenever all coordinates of the `n × n` corner lie in `Lᵏ`. Neither independence nor
 centering is required, and `k = 0` is included. -/
 theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k n : ℕ}
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) k P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) k P)
     (hη : ∀ i < n, MemLp (η i) k P) :
     Integrable (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) P := by
   rcases eq_or_ne k 0 with rfl | hk
@@ -263,11 +242,11 @@ twice, of the expected product of the entries of `Hₙ` along the walk: the clos
 traversed exactly once contribute zero. -/
 theorem integral_trace_pow_wignerMatrix {k n : ℕ} (hk : k ≠ 0)
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hη : ∀ i < n, ∫ ω, η i ω ∂P = 0)
-    (hξk : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) k P)
+    (hξk : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) k P)
     (hηk : ∀ i < n, MemLp (η i) k P) :
     ∫ ω, (wignerMatrix ξ η n ω ^ k).trace ∂P =
       ∑ w : Fin k → Fin n with
@@ -304,7 +283,7 @@ private noncomputable def discoveryFactor (v : Fin (2 * m + 1) → Fin n)
   ‖wignerMatrix ξ η n ω (v i.val.castSucc) (v i.val.succ)‖ ^ 2
 
 private theorem indep_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
-    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P) :
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P) :
     iIndepFun (discoveryFactor (ξ := ξ) (η := η) v) P :=
   iIndepFun_norm_wignerMatrix_apply_sq_of_ne _ _
     (fun i ↦ ne_of_canonicalWalk_succ_eq v i.val (mem_filter.mp i.property).2)
@@ -312,7 +291,7 @@ private theorem indep_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
       (mem_filter.mp i.property).2 (mem_filter.mp j.property).2 hij)) hindep
 
 private theorem integrable_discoveryFactor (v : Fin (2 * m + 1) → Fin n)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
     (i : DiscoverySteps v) :
     Integrable (discoveryFactor (ξ := ξ) (η := η) v i) P := by
   unfold discoveryFactor
@@ -343,8 +322,8 @@ private theorem prod_path_eq_prod_discoveryFactor (v : Fin (2 * m + 1) → Fin n
 independent and their squared absolute values are integrable. The diagonal entries may be
 arbitrary. -/
 theorem integrable_prod_wignerMatrix_apply_path
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
-    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
     (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
     (hv : #(univ.image v) = m + 1)
     (he : ∀ i : Fin (2 * m),
@@ -361,8 +340,8 @@ absolute moments at its discovery steps whenever the upper entries in the `n × 
 independent and have almost-everywhere strongly measurable squared norms. No centering, identical
 distribution, or diagonal assumption is needed. -/
 theorem integral_prod_wignerMatrix_apply_path
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
-    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
     (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
     (hv : #(univ.image v) = m + 1)
     (he : ∀ i : Fin (2 * m),
@@ -388,9 +367,9 @@ of Wigner entries equals `((n : ℂ)⁻¹ * s) ^ m` whenever the strictly upper 
 common second absolute moment `s`. The zero-step path (`m = 0`) contributes `1`, and neither
 centering nor any assumption on the diagonal entries `η` is needed. -/
 theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq {s : ℝ}
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
-    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
-    (hξsq : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
+    (hξsq : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s)
     (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
     (hv : #(univ.image v) = m + 1)
     (he : ∀ i : Fin (2 * m),
@@ -412,8 +391,8 @@ theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq {s : ℝ}
 double-traversal tree path of length `2 * m` has expected entry product `n⁻ᵐ`. The zero-step path
 contributes `1`. -/
 theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
-    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
-    (hsecond : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1)
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
+    (hsecond : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1)
     (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
     (hv : #(univ.image v) = m + 1)
     (he : ∀ i : Fin (2 * m),
@@ -428,8 +407,8 @@ theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
 independent and their squared absolute values are integrable. The diagonal entries may be
 arbitrary. -/
 theorem integrable_prod_wignerMatrix_apply_leading
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
-    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
     (w : Fin (2 * m) → Fin n)
     (h : ∀ i, ∃ j ≠ i,
       s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
@@ -449,8 +428,8 @@ theorem integrable_prod_wignerMatrix_apply_leading
 absolute moments at its discovery steps. Only measurability of the squared upper entries and
 independence in the `n × n` corner are required; the diagonal entries may be arbitrary. -/
 theorem integral_prod_wignerMatrix_apply_leading [NeZero m]
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
-    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
     (w : Fin (2 * m) → Fin n)
     (h : ∀ i, ∃ j ≠ i,
       s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))
@@ -468,9 +447,9 @@ independent, have almost-everywhere strongly measurable squared norms, and have 
 absolute moment `s`. Neither centering nor any assumption on the diagonal entries `η` is needed,
 because leading words have no self-loops. -/
 theorem integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq {s : ℝ}
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
-    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
-    (hξsq : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
+    (hξsq : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s)
     (w : Fin (2 * m) → Fin n)
     (h : ∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t)))
     (hv : #(univ.image w) = m + 1) :
@@ -486,8 +465,8 @@ edge and `m + 1` distinct vertices, contributes exactly `n⁻ᵐ` to the expecte
 Only independence and unit second absolute moments of the upper entries in the `n × n` corner are
 required; centering, higher moments, and all conditions on the diagonal are unnecessary here. -/
 theorem integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one
-    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
-    (hsecond : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1)
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
+    (hsecond : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = 1)
     (w : Fin (2 * m) → Fin n)
     (h : ∀ i, ∃ j ≠ i,
       s(w j, w (finRotate (2 * m) j)) = s(w i, w (finRotate (2 * m) i)))

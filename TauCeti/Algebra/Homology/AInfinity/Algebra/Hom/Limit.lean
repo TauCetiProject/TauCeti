@@ -62,7 +62,7 @@ variable {ℋ : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B} {𝒜 : ℕ �
 length `k`, those of `f k`. -/
 private noncomputable def limitTaylor (f : ∀ n, AInfinityHom (𝒜 n) ℬ) :
     ReducedTensorWords R A →ₗ[R] B :=
-  DirectSum.toModule R _ _ fun k ↦ (f k.1).taylor ∘ₗ of R A k
+  DirectSum.toModule R _ _ fun k ↦ (f k.val).taylor ∘ₗ of R A k
 
 section Stabilising
 

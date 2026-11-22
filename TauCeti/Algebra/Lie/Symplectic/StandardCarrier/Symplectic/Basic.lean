@@ -143,7 +143,7 @@ private theorem points_eq_GLSymplecticFin_of_field {K : Type u} [Field K] :
           omega
         have hj : j = Order.succ i := Fin.ext (by rw [Fin.val_orderSucc_of_lt (by omega)]; omega)
         subst hj
-        have hmem := (rootSubgroupPoints n (.inl i) K (Multiplicative.ofAdd c)).2
+        have hmem := (rootSubgroupPoints n (.inl i) K (Multiplicative.ofAdd c)).property
         rwa [rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last n i hi
           (Multiplicative.ofAdd c)] at hmem
       · have hj : j ≠ Fin.last n := by
@@ -154,17 +154,17 @@ private theorem points_eq_GLSymplecticFin_of_field {K : Type u} [Field K] :
           omega
         have hi : i = Order.succ j := Fin.ext (by rw [Fin.val_orderSucc_of_lt (by omega)]; omega)
         subst hi
-        have hmem := (rootSubgroupPoints n (.inr j) K (Multiplicative.ofAdd c)).2
+        have hmem := (rootSubgroupPoints n (.inr j) K (Multiplicative.ofAdd c)).property
         rwa [rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last n j hj
           (Multiplicative.ofAdd c)] at hmem
     · intro c
       rw [Subgroup.mem_comap, Subgroup.coe_subtype]
-      have hmem := (rootSubgroupPoints n (.inl (Fin.last n)) K (Multiplicative.ofAdd c)).2
+      have hmem := (rootSubgroupPoints n (.inl (Fin.last n)) K (Multiplicative.ofAdd c)).property
       rwa [rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit n
         (Multiplicative.ofAdd c)] at hmem
     · intro c
       rw [Subgroup.mem_comap, Subgroup.coe_subtype]
-      have hmem := (rootSubgroupPoints n (.inr (Fin.last n)) K (Multiplicative.ofAdd c)).2
+      have hmem := (rootSubgroupPoints n (.inr (Fin.last n)) K (Multiplicative.ofAdd c)).property
       rwa [rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit n
         (Multiplicative.ofAdd c)] at hmem
   have hmem : (⟨g, hg⟩ : GLSymplecticFin (n + 1) K) ∈

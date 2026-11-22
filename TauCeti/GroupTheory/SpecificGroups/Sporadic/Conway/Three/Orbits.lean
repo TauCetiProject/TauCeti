@@ -160,7 +160,7 @@ private theorem exists_apply_eq_zero_one {x y : Fin 276} (hxy : x ≠ y) :
     hg ▸ (g : Equiv.Perm (Fin 276)).injective.ne hxy.symm
   obtain ⟨h0, h1⟩ := pairWord_spec _ hz
   refine ⟨(word a b (pairWord ((g : Equiv.Perm (Fin 276)) y)))⁻¹ * g,
-    mul_mem (inv_mem (word_mem a_mem b_mem _)) g.2, ?_, ?_⟩
+    mul_mem (inv_mem (word_mem a_mem b_mem _)) g.property, ?_, ?_⟩
   · rw [Equiv.Perm.mul_apply, hg, Equiv.Perm.inv_eq_iff_eq, h0]
   · rw [Equiv.Perm.mul_apply, Equiv.Perm.inv_eq_iff_eq, h1]
 
@@ -570,7 +570,7 @@ private theorem mem_orbit_stabilizerChain_two_iff (x : Fin 276) :
       triangleParity (0, 1, x) = true := by
   constructor
   · rintro ⟨g, rfl⟩
-    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.2
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.property
     have h0 : (g : Equiv.Perm (Fin 276)) 0 = 0 := by
       simpa only [basePoint_zero, Equiv.Perm.smul_def] using hfix 0 two_pos
     have h1 : (g : Equiv.Perm (Fin 276)) 1 = 1 := by

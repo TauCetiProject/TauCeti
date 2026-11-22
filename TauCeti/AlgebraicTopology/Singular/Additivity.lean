@@ -236,16 +236,17 @@ lemma toSSet_map_inclusion_app_bijective (hs : Pairwise (Disjoint on s)) : Funct
       simpa using congrArg (fun f ↦ (f x : M)) h₁
     obtain rfl : i = j := by
       by_contra hij
-      exact (hs' hij).ne_of_mem (toSSetObjEquiv _ n σ x₀).2 (toSSetObjEquiv _ n σ' x₀).2 (h' x₀)
+      exact (hs' hij).ne_of_mem (toSSetObjEquiv _ n σ x₀).property
+          (toSSetObjEquiv _ n σ' x₀).property (h' x₀)
     refine Sigma.ext rfl (heq_of_eq ((toSSetObjEquiv (of (s i)) n).injective ?_))
     ext x
     exact h' x
   · let f := toSSetObjEquiv (of ↥(⨆ i, s i)) n τ
-    obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (f x₀).2
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (f x₀).property
     have hrange : range (fun x ↦ (f x : M)) ⊆ s i :=
-      (isPreconnected_range (continuous_subtype_val.comp f.continuous)).subset_of_subset_iUnion
+      (isPreconnected_range (continuous_subtypeVal.comp f.continuous)).subset_of_subset_iUnion
         (fun j ↦ (s j).isOpen) hs'
-        (by rintro _ ⟨x, rfl⟩; exact mem_iUnion.2 (Opens.mem_iSup.1 (f x).2))
+        (by rintro _ ⟨x, rfl⟩; exact mem_iUnion.2 (Opens.mem_iSup.1 (f x).property))
         ⟨_, ⟨x₀, rfl⟩, hi⟩
     refine ⟨⟨i, (toSSetObjEquiv (of (s i)) n).symm
       ⟨fun x ↦ ⟨f x, hrange ⟨x, rfl⟩⟩, by fun_prop⟩⟩, ?_⟩

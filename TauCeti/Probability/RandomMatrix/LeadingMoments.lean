@@ -61,9 +61,9 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper �
 upper coordinates in the `n × n` corner are independent and have common second absolute moment
 `s`. -/
 theorem sum_integral_prod_wignerMatrix_leading {m n : ℕ} (hm : m ≠ 0) {s : ℝ}
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
-    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
-    (hξsq : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
+    (hξsq : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
     (∑ w : Fin (2 * m) → Fin n with
       (∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t))) ∧
         #(univ.image w) = m + 1,
@@ -81,9 +81,9 @@ common second absolute moment `s`. Neither centering nor any assumption on the d
 needed. -/
 theorem norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le {m n : ℕ} (hm : m ≠ 0)
     (hn : n ≠ 0) {s : ℝ} (hs : 0 ≤ s)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
-    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
-    (hξsq : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
+    (hξsq : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
     ‖(n : ℂ)⁻¹ * (∑ w : Fin (2 * m) → Fin n with
         (∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t))) ∧
           #(univ.image w) = m + 1,
@@ -131,15 +131,15 @@ trace of the `n × n` Wigner matrix (`n ≠ 0`) lies within
 theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le {m n : ℕ} (hn : n ≠ 0)
     {B s : ℝ} (hs : 0 ≤ s)
     (hindep : iIndepFun
-      (fun r : {ij : StrictUpper // ij.1.2 < n} ⊕ {i : ℕ // i < n} ↦
-        Sum.elim (fun ij ↦ ξ ij.1) (fun i ω ↦ (η i.1 ω : ℂ)) r) P)
-    (hξzero : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+      (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
+        Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
+    (hξzero : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hηzero : ∀ i < n, ∫ ω, η i ω ∂P = 0)
-    (hξp : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) (2 * m : ℕ) P)
+    (hξp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (2 * m : ℕ) P)
     (hηp : ∀ i < n, MemLp (η i) (2 * m : ℕ) P)
-    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B)
     (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ (2 * m) ∂P ≤ B)
-    (hξsq : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
+    (hξsq : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
     ‖(n : ℂ)⁻¹ * (∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) -
       (s : ℂ) ^ m * catalan m‖ ≤
       ((m : ℝ) ^ (2 * m) * B + s ^ m * catalan m * (m + 1).choose 2) / n := by
