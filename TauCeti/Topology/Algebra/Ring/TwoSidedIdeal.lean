@@ -204,10 +204,10 @@ closed under `R`-scalar multiplication. -/
 theorem smul_mem_of_isClosed_right_of_tendsto [SMulCommClass R A A]
     (I : AddSubgroup A) (hI : IsClosed (I : Set A))
     (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, a * b ∈ I)
-    {l : Filter A} [l.NeBot] (hl : ∀ a : A, Tendsto (a * ·) l (𝓝 a))
-    (c : R) {a : A} (ha : a ∈ I) : c • a ∈ I := by
+    {l : Filter A} [l.NeBot] (c : R) {a : A}
+    (hl : Tendsto (a * ·) l (𝓝 a)) (ha : a ∈ I) : c • a ∈ I := by
   have hlim : Tendsto (fun e : A => a * (c • e)) l (𝓝 (c • a)) := by
-    simpa only [mul_smul_comm] using (hl a).const_smul c
+    simpa only [mul_smul_comm] using hl.const_smul c
   exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => hmul ha (c • e))
 
 /-- In a topological nonunital ring with a scalar-compatible `R`-action and a nontrivial filter
@@ -216,8 +216,8 @@ closed under `R`-scalar multiplication. -/
 theorem smul_mem_of_isClosed_left_of_tendsto [IsScalarTower R A A]
     (I : AddSubgroup A) (hI : IsClosed (I : Set A))
     (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, b * a ∈ I)
-    {l : Filter A} [l.NeBot] (hl : ∀ a : A, Tendsto (· * a) l (𝓝 a))
-    (c : R) {a : A} (ha : a ∈ I) : c • a ∈ I := by
+    {l : Filter A} [l.NeBot] (c : R) {a : A}
+    (hl : Tendsto (· * a) l (𝓝 a)) (ha : a ∈ I) : c • a ∈ I := by
   let Iop : AddSubgroup Aᵐᵒᵖ := I.comap MulOpposite.opAddEquiv.symm.toAddMonoidHom
   have hIop : IsClosed (Iop : Set Aᵐᵒᵖ) := hI.preimage MulOpposite.continuous_unop
   have hmul_op : ∀ {x : Aᵐᵒᵖ}, x ∈ Iop → ∀ y : Aᵐᵒᵖ, x * y ∈ Iop := fun {x} hx y => by
@@ -227,14 +227,15 @@ theorem smul_mem_of_isClosed_left_of_tendsto [IsScalarTower R A A]
   have _ : SMulCommClass R Aᵐᵒᵖ Aᵐᵒᵖ := ⟨fun r x y => by
     apply MulOpposite.unop_injective
     simp [smul_mul_assoc]⟩
-  have hl_op : ∀ x : Aᵐᵒᵖ, Tendsto (x * ·) (l.map MulOpposite.op) (𝓝 x) := fun x => by
+  have hl_op : Tendsto (MulOpposite.op a * ·) (l.map MulOpposite.op) (𝓝 (MulOpposite.op a)) := by
     rw [tendsto_map'_iff]
-    have hfun : (fun e => x * MulOpposite.op e) = fun e => MulOpposite.op (e * x.unop) :=
-      funext fun e => by rw [MulOpposite.op_mul, MulOpposite.op_unop]
+    have hfun : (fun e => MulOpposite.op a * MulOpposite.op e) =
+        fun e => MulOpposite.op (e * a) :=
+      funext fun e => by rw [MulOpposite.op_mul]
     rw [Function.comp_def, hfun]
-    simpa only [Function.comp_def, MulOpposite.op_unop] using
-      (MulOpposite.continuous_op.tendsto x.unop).comp (hl x.unop)
-  exact Iop.smul_mem_of_isClosed_right_of_tendsto hIop hmul_op hl_op c
+    simpa only [Function.comp_def] using
+      (MulOpposite.continuous_op.tendsto a).comp hl
+  exact Iop.smul_mem_of_isClosed_right_of_tendsto hIop hmul_op c hl_op
     (show MulOpposite.op a ∈ Iop from ha)
 
 end ApproximateUnit
@@ -260,7 +261,7 @@ theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : 
       zero_mem' := I.zero_mem
       neg_mem' := I.neg_mem }
   exact J.smul_mem_of_isClosed_left_of_tendsto hI (fun hx b => I.mul_mem_left b _ hx)
-    hl.tendsto_mul_right c ha
+    c (hl.tendsto_mul_right a) ha
 
 end ApproximateUnit
 

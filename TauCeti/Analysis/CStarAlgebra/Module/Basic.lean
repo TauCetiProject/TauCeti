@@ -335,7 +335,7 @@ end Right
 
 section Essential
 
-variable [NormedAddCommGroup E] [Module ℂ E]
+variable [SeminormedAddCommGroup E] [Module ℂ E]
 
 /-- The action on a Hilbert C⋆-module is essential: `e x → x` along any filter `l` on `A` such
 that `e b → b` for every `b ∈ A`. -/
@@ -355,21 +355,21 @@ theorem tendsto_op_smul [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] {l : Filt
   rw [tendsto_map'_iff]
   simpa [Function.comp_def] using (continuous_op.tendsto (unop b)).comp (hl (unop b))
 
-/-- Coefficient multiplication `x ↦ a • x` is Lipschitz with constant `‖a‖₊` on any pre-Hilbert
-C⋆-module. -/
+/-- Coefficient multiplication `x ↦ a • x` is Lipschitz with constant `‖a‖₊` on any seminormed
+pre-Hilbert C⋆-module. -/
 theorem lipschitzWith_const_smul [SMul A E] [CStarModule A E] (a : A) :
     LipschitzWith ‖a‖₊ (fun x : E ↦ a • x) := by
-  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
-  have hsub : a • x - a • y = a • (x - y) :=
-    ext_inner_left (A := A) fun z ↦ by simp [inner_sub_right, inner_op_smul_right, mul_sub]
-  rw [dist_eq_norm, dist_eq_norm, hsub, coe_nnNorm]
-  exact CStarModule.norm_smul_le a (x - y)
+  let _ : SMulZeroClass A E :=
+    { smul := (· • ·)
+      smul_zero b := ext_inner_left (A := A) fun z ↦ by simp }
+  exact lipschitzWith_smul a
 
-/-- Coefficient multiplication `x ↦ a • x` is continuous on any pre-Hilbert C⋆-module. -/
+/-- Coefficient multiplication `x ↦ a • x` is continuous on any seminormed pre-Hilbert
+C⋆-module. -/
 @[continuity, fun_prop]
 theorem continuous_const_smul [SMul A E] [CStarModule A E] (a : A) :
     Continuous (fun x : E ↦ a • x) :=
-  (lipschitzWith_const_smul (A := A) (E := E) a).continuous
+  ContinuousConstSMul.continuous_const_smul a
 
 end Essential
 

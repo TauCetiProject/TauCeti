@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
+public import Mathlib.Topology.ContinuousMap.Ideals
 public import Mathlib.Topology.ContinuousMap.StarOrdered
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
@@ -142,6 +143,46 @@ theorem IsOrthogonallyComplemented.orthogonal {F : CStarSubmodule A E}
   rw [IsOrthogonallyComplemented, hF.orthogonal_orthogonal, sup_comm]
   exact hF
 
+private lemma IsOrthogonallyComplemented.sub_projection_mem_orthogonal
+    {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) (x : E) :
+    x - F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x ∈
+      F.orthogonal := by
+  have hdecomp := Submodule.projection_add_projection_eq_self hF.isCompl_toSubmodule x
+  have heq : x - F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x =
+      F.orthogonal.toSubmodule.projection F.toSubmodule hF.isCompl_toSubmodule.symm x :=
+    sub_eq_of_eq_add' hdecomp.symm
+  exact heq ▸ Submodule.projection_apply_mem hF.isCompl_toSubmodule.symm x
+
+private lemma IsOrthogonallyComplemented.isAdjointPair_projection
+    {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) :
+    LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := E)).flip
+      (CStarModule.innerₛₗ (A := A) (E := E)).flip
+      (F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule)
+      (F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule) := by
+  refine CStarModule.isAdjointPair_inner_iff.mpr fun x y ↦ ?_
+  let Q := F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule
+  have h1 : inner A (Q x) (y - Q y) = 0 :=
+    inner_right_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule x)
+      (hF.sub_projection_mem_orthogonal y)
+  have h2 : inner A (x - Q x) (Q y) = 0 :=
+    inner_left_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule y)
+      (hF.sub_projection_mem_orthogonal x)
+  rw [CStarModule.inner_sub_right, sub_eq_zero] at h1
+  rw [CStarModule.inner_sub_left, sub_eq_zero] at h2
+  exact h1.trans h2.symm
+
+private lemma sub_mem_orthogonal_of_isAdjointPair_idempotent
+    {F : CStarSubmodule A E} {Q : E → E}
+    (hQ : LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := E)).flip
+      (CStarModule.innerₛₗ (A := A) (E := E)).flip Q Q)
+    (hidem : ∀ x, Q (Q x) = Q x) (hrange : Set.range Q = (F : Set E)) (x : E) :
+    x - Q x ∈ F.orthogonal := by
+  refine sub_mem_orthogonal_of_inner_right fun u hu ↦ ?_
+  have hu' : u ∈ Set.range Q := hrange.symm ▸ SetLike.mem_coe.mpr hu
+  obtain ⟨v, rfl⟩ := hu'
+  calc inner A (Q v) x = inner A (Q (Q v)) x := by rw [hidem v]
+    _ = inner A (Q v) (Q x) := hQ.inner_eq_cstarModule (Q v) x
+
 /-- Purely algebraic characterization: `F` is orthogonally complemented if and only if `F` is the
 range of a self-adjoint idempotent function `Q : E → E`. -/
 theorem isOrthogonallyComplemented_iff_exists_selfAdjoint_idempotent {F : CStarSubmodule A E} :
@@ -152,22 +193,7 @@ theorem isOrthogonallyComplemented_iff_exists_selfAdjoint_idempotent {F : CStarS
   constructor
   · intro hF
     let Q := F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule
-    have hQsub : ∀ x : E, x - Q x ∈ F.orthogonal := fun x ↦ by
-      have hdecomp := Submodule.projection_add_projection_eq_self hF.isCompl_toSubmodule x
-      have heq : x - Q x =
-          F.orthogonal.toSubmodule.projection F.toSubmodule hF.isCompl_toSubmodule.symm x :=
-        sub_eq_of_eq_add' hdecomp.symm
-      exact heq ▸ Submodule.projection_apply_mem hF.isCompl_toSubmodule.symm x
-    refine ⟨Q, CStarModule.isAdjointPair_inner_iff.mpr fun x y ↦ ?_, fun x ↦ ?_, ?_⟩
-    · have h1 : inner A (Q x) (y - Q y) = 0 :=
-        inner_right_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule x)
-          (hQsub y)
-      have h2 : inner A (x - Q x) (Q y) = 0 :=
-        inner_left_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule y)
-          (hQsub x)
-      rw [CStarModule.inner_sub_right, sub_eq_zero] at h1
-      rw [CStarModule.inner_sub_left, sub_eq_zero] at h2
-      exact h1.trans h2.symm
+    refine ⟨Q, hF.isAdjointPair_projection, fun x ↦ ?_, ?_⟩
     · exact Submodule.projection_apply_left hF.isCompl_toSubmodule
         ⟨Q x, Submodule.projection_apply_mem hF.isCompl_toSubmodule x⟩
     · ext y
@@ -178,12 +204,8 @@ theorem isOrthogonallyComplemented_iff_exists_selfAdjoint_idempotent {F : CStarS
     rw [isOrthogonallyComplemented_iff_exists_add]
     intro x
     have hQx : Q x ∈ F := SetLike.mem_coe.mp (hrange ▸ Set.mem_range_self x)
-    refine ⟨Q x, hQx, x - Q x, ?_, add_sub_cancel _ _⟩
-    refine sub_mem_orthogonal_of_inner_right fun u hu ↦ ?_
-    have hu' : u ∈ Set.range Q := hrange.symm ▸ SetLike.mem_coe.mpr hu
-    obtain ⟨v, rfl⟩ := hu'
-    calc inner A (Q v) x = inner A (Q (Q v)) x := by rw [hidem v]
-      _ = inner A (Q v) (Q x) := hQ.inner_eq_cstarModule (Q v) x
+    exact ⟨Q x, hQx, x - Q x, sub_mem_orthogonal_of_isAdjointPair_idempotent hQ hidem hrange x,
+      add_sub_cancel _ _⟩
 
 end ComplementedAlgebraic
 
@@ -192,6 +214,20 @@ section ComplementedNormed
 variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
   [PartialOrder A] [Norm A] [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
   [CStarModule A E]
+
+private lemma IsOrthogonallyComplemented.isAdjointPair_subtype_projectionOnto
+    {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) :
+    LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := F)).flip
+      (CStarModule.innerₛₗ (A := A) (E := E)).flip F.subtype
+      (F.toSubmodule.projectionOnto F.orthogonal.toSubmodule hF.isCompl_toSubmodule) := by
+  refine CStarModule.isAdjointPair_inner_iff.mpr fun u x ↦ ?_
+  have horth :
+      inner A (u : E)
+        (x - F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x) = 0 :=
+    inner_right_of_mem_orthogonal u.property (hF.sub_projection_mem_orthogonal x)
+  rw [CStarModule.inner_sub_right, sub_eq_zero] at horth
+  rw [subtype_apply, inner_coe]
+  exact horth
 
 /-- Characterization without analytic C⋆-algebra assumptions: `F` is orthogonally complemented if
 and only if its subtype inclusion `F.subtype : F → E` admits a (plain-function) C⋆-module adjoint
@@ -202,19 +238,8 @@ theorem isOrthogonallyComplemented_iff_exists_adjoint_subtype {F : CStarSubmodul
         (CStarModule.innerₛₗ (A := A) (E := E)).flip F.subtype P := by
   constructor
   · intro hF
-    let P : E → F := F.toSubmodule.projectionOnto F.orthogonal.toSubmodule hF.isCompl_toSubmodule
-    refine ⟨P, CStarModule.isAdjointPair_inner_iff.mpr fun u x ↦ ?_⟩
-    have hsub : x - (P x : E) ∈ F.orthogonal := by
-      have hdecomp := Submodule.projection_add_projection_eq_self hF.isCompl_toSubmodule x
-      have heq : x - (P x : E) =
-          F.orthogonal.toSubmodule.projection F.toSubmodule hF.isCompl_toSubmodule.symm x :=
-        sub_eq_of_eq_add' hdecomp.symm
-      exact heq ▸ Submodule.projection_apply_mem hF.isCompl_toSubmodule.symm x
-    have horth : inner A (u : E) (x - (P x : E)) = 0 :=
-      inner_right_of_mem_orthogonal u.property hsub
-    rw [CStarModule.inner_sub_right, sub_eq_zero] at horth
-    rw [subtype_apply, inner_coe]
-    exact horth
+    exact ⟨F.toSubmodule.projectionOnto F.orthogonal.toSubmodule hF.isCompl_toSubmodule,
+      hF.isAdjointPair_subtype_projectionOnto⟩
   · rintro ⟨P, hP⟩
     rw [isOrthogonallyComplemented_iff_exists_add]
     intro x
@@ -231,6 +256,16 @@ section ComplementedAnalytic
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
 
+private lemma IsOrthogonallyComplemented.norm_projection_apply_le
+    {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) (x : E) :
+    ‖F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x‖ ≤ ‖x‖ := by
+  have horth :
+      inner A (F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x)
+        (x - F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x) = 0 :=
+    inner_right_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule x)
+      (hF.sub_projection_mem_orthogonal x)
+  simpa only [add_sub_cancel] using CStarModule.norm_le_norm_add_left_of_inner_eq_zero horth
+
 /-- An orthogonally complemented C⋆-submodule and its orthogonal complement form topological
 complements (without assuming completeness of `E`). -/
 theorem IsOrthogonallyComplemented.isTopCompl {F : CStarSubmodule A E}
@@ -238,18 +273,7 @@ theorem IsOrthogonallyComplemented.isTopCompl {F : CStarSubmodule A E}
   isCompl := hF.isCompl_toSubmodule
   continuous_projection := by
     refine AddMonoidHomClass.continuous_of_bound _ 1 fun x ↦ ?_
-    rw [one_mul]
-    have hdecomp := Submodule.projection_add_projection_eq_self hF.isCompl_toSubmodule x
-    have horth :
-        inner A (F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x)
-          (F.orthogonal.toSubmodule.projection F.toSubmodule hF.isCompl_toSubmodule.symm x) = 0 :=
-      inner_right_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule x)
-        (Submodule.projection_apply_mem hF.isCompl_toSubmodule.symm x)
-    calc ‖F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x‖
-        ≤ ‖F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x +
-            F.orthogonal.toSubmodule.projection F.toSubmodule hF.isCompl_toSubmodule.symm x‖ :=
-          CStarModule.norm_le_norm_add_left_of_inner_eq_zero horth
-      _ = ‖x‖ := by rw [hdecomp]
+    simpa only [one_mul] using hF.norm_projection_apply_le x
 
 /-- Every orthogonally complemented C⋆-submodule is norm-closed. -/
 theorem IsOrthogonallyComplemented.isClosed {F : CStarSubmodule A E}
@@ -317,12 +341,8 @@ theorem IsOrthogonallyComplemented.starProjection_apply_mem {F : CStarSubmodule 
   Submodule.projectionL_apply_mem hF.isTopCompl x
 
 theorem IsOrthogonallyComplemented.sub_starProjection_mem_orthogonal {F : CStarSubmodule A E}
-    (hF : F.IsOrthogonallyComplemented) (x : E) : x - hF.starProjection x ∈ F.orthogonal := by
-  have hdecomp := Submodule.projectionL_add_projectionL_eq_self hF.isTopCompl x
-  have heq : x - hF.starProjection x =
-      F.orthogonal.toSubmodule.projectionL F.toSubmodule hF.isTopCompl.symm x :=
-    sub_eq_of_eq_add' hdecomp.symm
-  exact heq ▸ Submodule.projectionL_apply_mem hF.isTopCompl.symm x
+    (hF : F.IsOrthogonallyComplemented) (x : E) : x - hF.starProjection x ∈ F.orthogonal :=
+  hF.sub_projection_mem_orthogonal x
 
 theorem IsOrthogonallyComplemented.starProjection_apply_of_mem {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) {x : E} (hx : x ∈ F) : hF.starProjection x = x :=
@@ -380,25 +400,15 @@ theorem IsOrthogonallyComplemented.isAdjointPair_subtypeL_orthogonalProjectionOn
     {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) :
     LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := F)).flip
       (CStarModule.innerₛₗ (A := A) (E := E)).flip F.subtypeL hF.orthogonalProjectionOnto := by
-  refine CStarModule.isAdjointPair_inner_iff.mpr fun u x ↦ ?_
-  have horth : inner A (u : E) (x - hF.starProjection x) = 0 :=
-    inner_right_of_mem_orthogonal u.property (hF.sub_starProjection_mem_orthogonal x)
-  rw [CStarModule.inner_sub_right, sub_eq_zero] at horth
-  rw [subtypeL_apply, inner_coe, coe_orthogonalProjectionOnto_apply]
-  exact horth
+  rw [coe_subtypeL]
+  exact hF.isAdjointPair_subtype_projectionOnto
 
 /-- `hF.starProjection` is self-adjoint for the `A`-valued inner product. -/
 theorem IsOrthogonallyComplemented.isAdjointPair_starProjection {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) :
     LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := E)).flip
-      (CStarModule.innerₛₗ (A := A) (E := E)).flip hF.starProjection hF.starProjection := by
-  refine CStarModule.isAdjointPair_inner_iff.mpr fun x y ↦ ?_
-  have h1 := hF.isAdjointPair_subtypeL_orthogonalProjectionOnto.inner_eq_cstarModule
-    (hF.orthogonalProjectionOnto x) y
-  have h2 :=
-    hF.isAdjointPair_subtypeL_orthogonalProjectionOnto.symm_cstarModule.inner_eq_cstarModule
-      x (hF.orthogonalProjectionOnto y)
-  simpa only [subtypeL_apply, coe_orthogonalProjectionOnto_apply] using h1.trans h2
+      (CStarModule.innerₛₗ (A := A) (E := E)).flip hF.starProjection hF.starProjection :=
+  hF.isAdjointPair_projection
 
 theorem IsOrthogonallyComplemented.orthogonalProjectionOnto_smul_coeff {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) (a : A) (x : E) :
@@ -411,11 +421,8 @@ theorem IsOrthogonallyComplemented.starProjection_smul_coeff {F : CStarSubmodule
   hF.isAdjointPair_starProjection.map_smul_coeff_cstarModule a x
 
 theorem IsOrthogonallyComplemented.norm_starProjection_apply_le {F : CStarSubmodule A E}
-    (hF : F.IsOrthogonallyComplemented) (x : E) : ‖hF.starProjection x‖ ≤ ‖x‖ := by
-  have horth : inner A (hF.starProjection x) (x - hF.starProjection x) = 0 :=
-    inner_right_of_mem_orthogonal (hF.starProjection_apply_mem x)
-      (hF.sub_starProjection_mem_orthogonal x)
-  simpa only [add_sub_cancel] using CStarModule.norm_le_norm_add_left_of_inner_eq_zero horth
+    (hF : F.IsOrthogonallyComplemented) (x : E) : ‖hF.starProjection x‖ ≤ ‖x‖ :=
+  hF.norm_projection_apply_le x
 
 theorem IsOrthogonallyComplemented.norm_orthogonalProjectionOnto_apply_le {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) (x : E) : ‖hF.orthogonalProjectionOnto x‖ ≤ ‖x‖ :=
@@ -451,13 +458,9 @@ theorem IsOrthogonallyComplemented.eq_starProjection_of_isAdjointPair_idempotent
     (hidem : ∀ x, Q (Q x) = Q x) (hrange : Set.range Q = (F : Set E)) :
     Q = hF.starProjection := by
   funext x
-  refine (hF.eq_starProjection_of_mem_orthogonal
-    (SetLike.mem_coe.mp (hrange ▸ Set.mem_range_self x)) ?_).symm
-  refine sub_mem_orthogonal_of_inner_right fun u hu ↦ ?_
-  have hu' : u ∈ Set.range Q := hrange.symm ▸ SetLike.mem_coe.mpr hu
-  obtain ⟨v, rfl⟩ := hu'
-  calc inner A (Q v) x = inner A (Q (Q v)) x := by rw [hidem v]
-    _ = inner A (Q v) (Q x) := hQ.inner_eq_cstarModule (Q v) x
+  exact (hF.eq_starProjection_of_mem_orthogonal
+    (SetLike.mem_coe.mp (hrange ▸ Set.mem_range_self x))
+    (sub_mem_orthogonal_of_isAdjointPair_idempotent hQ hidem hrange x)).symm
 
 /-- An orthogonally complemented C⋆-submodule `F` yields a unitary direct-sum decomposition
 `C⋆ᵐᵒᵈ(A, F × F.orthogonal) ≃ₗᵢ[ℂ] E` preserving inner products and the `A`-action. -/
@@ -663,30 +666,32 @@ section ContinuousMapCounterexample
 
 open ComplexOrder
 
+private lemma vanishingAt_mul_mem {X : Type*} [TopologicalSpace X] (x₀ : X)
+    {f : C(X, ℂ)} (hf : f ∈ (ContinuousMap.idealOfSet ℂ ({x₀}ᶜ : Set X)).restrictScalars ℂ)
+    (g : C(X, ℂ)) :
+    f * g ∈ (ContinuousMap.idealOfSet ℂ ({x₀}ᶜ : Set X)).restrictScalars ℂ :=
+  (Submodule.restrictScalars_mem ℂ _ _).mpr
+    ((ContinuousMap.idealOfSet ℂ ({x₀}ᶜ : Set X)).mul_mem_right g
+      ((Submodule.restrictScalars_mem ℂ _ _).mp hf))
+
 /-- The right ideal `{f ∈ C(X, ℂ) | f x₀ = 0}` of continuous complex-valued functions vanishing at
 `x₀`, viewed as a C⋆-submodule of the right self-module `C(X, ℂ)`. -/
-def vanishingAt (X : Type*) [TopologicalSpace X] (x₀ : X) :
-    CStarSubmodule C(X, ℂ)ᵐᵒᵖ C(X, ℂ) where
-  carrier := {f : C(X, ℂ) | f x₀ = 0}
-  add_mem' {f g} hf hg := by
-    simp only [Set.mem_ofPred_eq] at hf hg ⊢
-    simp [hf, hg]
-  zero_mem' := rfl
-  smul_mem' c f hf := by
-    simp only [Set.mem_ofPred_eq] at hf ⊢
-    simp [hf]
-  smul_mem_coeff' g f hf := by
-    simp only [Set.mem_ofPred_eq] at hf ⊢
-    simp [smul_eq_mul_unop, hf]
+noncomputable def vanishingAt (X : Type*) [TopologicalSpace X] (x₀ : X) :
+    CStarSubmodule C(X, ℂ)ᵐᵒᵖ C(X, ℂ) :=
+  ofRightIdeal ((ContinuousMap.idealOfSet ℂ ({x₀}ᶜ : Set X)).restrictScalars ℂ)
+    (vanishingAt_mul_mem x₀)
 
 @[simp]
 theorem mem_vanishingAt {X : Type*} [TopologicalSpace X] {x₀ : X} {f : C(X, ℂ)} :
-    f ∈ vanishingAt X x₀ ↔ f x₀ = 0 :=
-  (Iff.rfl)
+    f ∈ vanishingAt X x₀ ↔ f x₀ = 0 := by
+  rw [vanishingAt, mem_ofRightIdeal _ (vanishingAt_mul_mem x₀), Submodule.restrictScalars_mem,
+    ContinuousMap.mem_idealOfSet_compl_singleton]
 
 theorem isClosed_vanishingAt {X : Type*} [TopologicalSpace X] (x₀ : X) :
-    IsClosed (vanishingAt X x₀ : Set C(X, ℂ)) :=
-  isClosed_eq (continuous_eval_const x₀) continuous_const
+    IsClosed (vanishingAt X x₀ : Set C(X, ℂ)) := by
+  rw [vanishingAt, ← coe_toSubmodule, toSubmodule_ofRightIdeal _ (vanishingAt_mul_mem x₀),
+    Submodule.coe_restrictScalars]
+  exact ContinuousMap.idealOfSet_closed ℂ ({x₀}ᶜ : Set X)
 
 theorem vanishingAt_ne_top (X : Type*) [TopologicalSpace X] (x₀ : X) :
     vanishingAt X x₀ ≠ ⊤ := by

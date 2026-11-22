@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Module.Constructions
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
 public import TauCeti.Analysis.CStarAlgebra.Module.Submodule
 
 import TauCeti.Analysis.CStarAlgebra.Module.Action
@@ -136,7 +137,7 @@ variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule
 
 /-- The orthogonal complement of any complex submodule with respect to `CStarModule.innerₛₗ` is
 stable under the coefficient action `SMul A E`. -/
-theorem smul_mem_orthogonalBilin (S : Submodule ℂ E) (a : A) {y : E}
+theorem smul_mem_orthogonalBilin_innerₛₗ (S : Submodule ℂ E) (a : A) {y : E}
     (hy : y ∈ S.orthogonalBilin (CStarModule.innerₛₗ (A := A))) :
     a • y ∈ S.orthogonalBilin (CStarModule.innerₛₗ (A := A)) := by
   rw [Submodule.mem_orthogonalBilin] at hy ⊢
@@ -146,24 +147,41 @@ theorem smul_mem_orthogonalBilin (S : Submodule ℂ E) (a : A) {y : E}
 
 end Algebraic
 
+section Topological
+
+variable {R R₁ R₂ M M₁ M₂ : Type*}
+  [CommSemiring R] [CommSemiring R₁] [CommSemiring R₂]
+  [AddCommMonoid M] [Module R M] [TopologicalSpace M] [T1Space M]
+  [AddCommMonoid M₁] [Module R₁ M₁]
+  [AddCommMonoid M₂] [Module R₂ M₂] [TopologicalSpace M₂]
+  {I₁ : R₁ →+* R} {I₂ : R₂ →+* R}
+
+/-- The orthogonal complement of a submodule with respect to a sesquilinear pairing that is
+continuous in the second variable on each element of the submodule is closed, provided the codomain
+is `T₁`. -/
+theorem isClosed_orthogonalBilin (B : M₁ →ₛₗ[I₁] M₂ →ₛₗ[I₂] M) (S : Submodule R₁ M₁)
+    (hB : ∀ x ∈ S, Continuous (B x)) :
+    IsClosed (S.orthogonalBilin B : Set M₂) := by
+  have heq : (S.orthogonalBilin B : Set M₂) = ⋂ x ∈ S, {y : M₂ | B x y = 0} := by
+    ext y
+    simp
+  rw [heq]
+  exact isClosed_biInter fun x hx ↦ isClosed_singleton.preimage (hB x hx)
+
+end Topological
+
 section Analytic
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
 
 /-- The orthogonal complement of any complex submodule with respect to `CStarModule.innerₛₗ` is
 closed in the module norm. -/
-theorem isClosed_orthogonalBilin (S : Submodule ℂ E) :
-    IsClosed (S.orthogonalBilin (CStarModule.innerₛₗ (A := A)) : Set E) := by
-  have heq : (S.orthogonalBilin (CStarModule.innerₛₗ (A := A)) : Set E) =
-      ⋂ x ∈ S, {y : E | inner A x y = 0} := by
-    ext y
-    simp only [SetLike.mem_coe, Submodule.mem_orthogonalBilin, CStarModule.innerₛₗ_apply,
-      Set.mem_iInter, Set.mem_ofPred_eq]
-  rw [heq]
-  exact isClosed_biInter fun x _ ↦
-    isClosed_eq (CStarModule.continuous_inner.comp (continuous_const.prodMk continuous_id))
-      continuous_const
+theorem isClosed_orthogonalBilin_innerₛₗ (S : Submodule ℂ E) :
+    IsClosed (S.orthogonalBilin (CStarModule.innerₛₗ (A := A)) : Set E) :=
+  S.isClosed_orthogonalBilin (CStarModule.innerₛₗ (A := A)) fun x _ ↦
+    (TauCeti.PosSemidefCStarModule.continuous_inner (A := A) (E := E)).comp
+      ((continuous_const (y := x)).prodMk continuous_id)
 
 end Analytic
 
@@ -182,7 +200,7 @@ variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule
 `⟪x, y⟫_A = 0` for all `x ∈ F`. -/
 def orthogonal (F : CStarSubmodule A E) : CStarSubmodule A E where
   toSubmodule := F.toSubmodule.orthogonalBilin (CStarModule.innerₛₗ (A := A))
-  smul_mem_coeff' a _ hy := F.toSubmodule.smul_mem_orthogonalBilin a hy
+  smul_mem_coeff' a _ hy := F.toSubmodule.smul_mem_orthogonalBilin_innerₛₗ a hy
 
 theorem toSubmodule_orthogonal (F : CStarSubmodule A E) :
     F.orthogonal.toSubmodule = F.toSubmodule.orthogonalBilin (CStarModule.innerₛₗ (A := A)) :=
@@ -313,35 +331,23 @@ variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
 
 /-- The orthogonal complement of any C⋆-submodule is norm-closed. -/
 theorem isClosed_orthogonal (F : CStarSubmodule A E) : IsClosed (F.orthogonal : Set E) :=
-  F.toSubmodule.isClosed_orthogonalBilin
+  F.toSubmodule.isClosed_orthogonalBilin_innerₛₗ
 
 instance instOrthogonalCompleteSpace [CompleteSpace E] (F : CStarSubmodule A E) :
     CompleteSpace F.orthogonal :=
   (isClosed_orthogonal F).completeSpace_coe
-
-section
-
-local instance : ContinuousConstSMul A E := ⟨CStarModule.continuous_const_smul⟩
-
-/-- Taking the topological closure does not change the orthogonal complement. -/
-@[simp]
-theorem orthogonal_topologicalClosure (F : CStarSubmodule A E) :
-    F.topologicalClosure.orthogonal = F.orthogonal := by
-  refine le_antisymm (orthogonal_le (le_topologicalClosure F)) fun y hy ↦ ?_
-  rw [mem_orthogonal] at hy ⊢
-  intro x hx
-  rw [mem_topologicalClosure] at hx
-  have hclosed : IsClosed {z : E | inner A z y = 0} :=
-    isClosed_eq (CStarModule.continuous_inner.comp (continuous_id.prodMk continuous_const))
-      continuous_const
-  exact closure_minimal (fun z hz ↦ hy z hz) hclosed hx
 
 /-- The norm closure of `F` is always contained in its double orthogonal complement `F⊥⊥`. -/
 theorem topologicalClosure_le_orthogonal_orthogonal (F : CStarSubmodule A E) :
     F.topologicalClosure ≤ F.orthogonal.orthogonal :=
   topologicalClosure_minimal (le_orthogonal_orthogonal F) (isClosed_orthogonal F.orthogonal)
 
-end
+/-- Taking the topological closure does not change the orthogonal complement. -/
+@[simp]
+theorem orthogonal_topologicalClosure (F : CStarSubmodule A E) :
+    F.topologicalClosure.orthogonal = F.orthogonal :=
+  le_antisymm (orthogonal_le (le_topologicalClosure F))
+    (le_orthogonal_iff.mp (topologicalClosure_le_orthogonal_orthogonal F))
 
 /-! ### Orthogonal direct-sum isometry and closedness of `F ⊔ G` -/
 
@@ -413,7 +419,7 @@ theorem isClosed_sup_of_le_orthogonal {F G : CStarSubmodule A E} (hFG : G ≤ F.
 
 /-- If `E` is complete and `F`, `G` are closed orthogonal C⋆-submodules (`G ≤ F.orthogonal`), then
 their algebraic sum `F ⊔ G` is norm-closed in `E`. -/
-theorem isClosed_sup_of_isClosed [CompleteSpace E] {F G : CStarSubmodule A E}
+theorem isClosed_sup_of_le_orthogonal_of_isClosed [CompleteSpace E] {F G : CStarSubmodule A E}
     (hFG : G ≤ F.orthogonal) (hF : IsClosed (F : Set E)) (hG : IsClosed (G : Set E)) :
     IsClosed ((F ⊔ G : CStarSubmodule A E) : Set E) := by
   have _ : CompleteSpace F := hF.completeSpace_coe
@@ -457,7 +463,7 @@ norm-closed in `E`. -/
 theorem isClosed_sup_orthogonal_of_isClosed [CompleteSpace E] {F : CStarSubmodule A E}
     (hF : IsClosed (F : Set E)) :
     IsClosed ((F ⊔ F.orthogonal : CStarSubmodule A E) : Set E) :=
-  isClosed_sup_of_isClosed le_rfl hF (isClosed_orthogonal F)
+  isClosed_sup_of_le_orthogonal_of_isClosed le_rfl hF (isClosed_orthogonal F)
 
 end OrthogonalAnalytic
 

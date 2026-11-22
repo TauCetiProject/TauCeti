@@ -640,7 +640,7 @@ theorem smul_mem_of_isClosed_right {A : Type*} [NonUnitalCStarAlgebra A]
   have _ := CStarAlgebra.spectralOrderedRing A
   have hl := CStarAlgebra.increasingApproximateUnit A
   have := hl.neBot
-  exact I.smul_mem_of_isClosed_right_of_tendsto hI hmul hl.tendsto_mul_left c ha
+  exact I.smul_mem_of_isClosed_right_of_tendsto hI hmul c (hl.tendsto_mul_left a) ha
 
 end AddSubgroup
 
@@ -678,33 +678,32 @@ theorem isClosed_ofClosedRightAddSubgroup {A : Type*} [NonUnitalCStarAlgebra A]
 /-- The right ideal `{x : A | p * x = x}` fixed by left multiplication by `p` (for a projection
 `p`, this is `p A`), as a submodule of the right self-module `CStarModule Aᵐᵒᵖ A`. -/
 def rightFixedSubmodule {A : Type*} [NonUnitalRing A] [Module ℂ A] [SMulCommClass ℂ A A]
-    (p : A) : CStarSubmodule Aᵐᵒᵖ A where
-  carrier := {x : A | p * x = x}
-  add_mem' {x y} hx hy := by
-    simp only [Set.mem_ofPred_eq] at hx hy ⊢
-    rw [mul_add, hx, hy]
-  zero_mem' := mul_zero p
-  smul_mem' c x hx := by
-    simp only [Set.mem_ofPred_eq] at hx ⊢
-    rw [mul_smul_comm, hx]
-  smul_mem_coeff' b x hx := by
-    simp only [Set.mem_ofPred_eq] at hx ⊢
-    rw [smul_eq_mul_unop, ← mul_assoc, hx]
+    (p : A) : CStarSubmodule Aᵐᵒᵖ A :=
+  ker (LinearMap.mulLeft ℂ p - LinearMap.id)
+    (fun b x ↦ by
+      simp [LinearMap.mulLeft_apply, smul_eq_mul_unop, mul_assoc, sub_mul])
+    (fun b ↦ by simp)
 
 @[simp]
 theorem mem_rightFixedSubmodule {A : Type*} [NonUnitalRing A] [Module ℂ A] [SMulCommClass ℂ A A]
     {p x : A} : x ∈ rightFixedSubmodule p ↔ p * x = x :=
-  (Iff.rfl)
+  sub_eq_zero (a := p * x) (b := x)
 
 theorem isClosed_rightFixedSubmodule {A : Type*} [NonUnitalRing A] [Module ℂ A]
-    [SMulCommClass ℂ A A] [TopologicalSpace A] [T2Space A] [ContinuousMul A] (p : A) :
-    IsClosed (rightFixedSubmodule p : Set A) :=
-  isClosed_eq (continuous_const.mul continuous_id) continuous_id
+    [SMulCommClass ℂ A A] [TopologicalSpace A] [T2Space A] [SeparatelyContinuousMul A]
+    (p : A) :
+    IsClosed (rightFixedSubmodule p : Set A) := by
+  have hset : (rightFixedSubmodule p : Set A) = {x : A | p * x = x} := by
+    ext x
+    exact mem_rightFixedSubmodule
+  rw [hset]
+  exact isClosed_eq (continuous_const_mul p) continuous_id
 
 theorem mem_rightFixedSubmodule_iff_exists_mul {A : Type*} [NonUnitalRing A] [Module ℂ A]
     [SMulCommClass ℂ A A] {p x : A} (hp : IsIdempotentElem p) :
     x ∈ rightFixedSubmodule p ↔ ∃ a : A, p * a = x :=
-  ⟨fun hx ↦ ⟨x, hx⟩, fun ⟨a, ha⟩ ↦ by rw [mem_rightFixedSubmodule, ← ha, ← mul_assoc, hp.eq]⟩
+  ⟨fun hx ↦ ⟨x, mem_rightFixedSubmodule.mp hx⟩,
+    fun ⟨a, ha⟩ ↦ by rw [mem_rightFixedSubmodule, ← ha, ← mul_assoc, hp.eq]⟩
 
 end RightIdeals
 
