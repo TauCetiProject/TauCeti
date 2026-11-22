@@ -10,12 +10,14 @@ public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Log
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.Analysis.Asymptotics.Expansion.Basic
+public import TauCeti.RingTheory.PowerSeries.ComplexPower
 
 import Mathlib.Analysis.Analytic.Binomial
 import Mathlib.Analysis.Analytic.OfScalars
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Complex.Log
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -24,17 +26,12 @@ import TauCeti.RingTheory.PowerSeries.Substitution
 This file develops the algebraic operations on asymptotic power series in a small variable
 `w : α → 𝕜` tending to `0` along a filter `l` (NIST DLMF §2.1(iii)): sums, differences, scalar
 multiples, products, powers, reciprocals, composition, and reversion/inversion, together with
-formal complex powers `Asymptotics.formalCpow` and the rules for principal complex powers and
-logarithms of asymptotic power series.
+the rules for principal complex powers (via `PowerSeries.formalCpow`) and logarithms of asymptotic
+power series.
 
 An asymptotic power series `P : 𝕜⟦X⟧` of a function `f : α → 𝕜` in a small variable `w → 0` is
 expressed via `Asymptotics.HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f`.
 Poincaré expansions at infinity are the specialization `w z = z⁻¹`.
-
-## Main definitions
-
-* `Asymptotics.formalCpow`: the formal power `P ^ r` of `P : ℂ⟦X⟧` whose constant coefficient is
-  `Complex.exp ℓ`, with constant term fixed to `Complex.exp (r * ℓ)`.
 
 ## Main results
 
@@ -61,7 +58,6 @@ Poincaré expansions at infinity are the specialization `w z = z⁻¹`.
 public section
 
 open Filter Topology Finset PowerSeries
-open scoped Real
 
 namespace Asymptotics
 
@@ -161,16 +157,6 @@ private lemma hasAsymptoticExpansion_pow_trunc (hw : Tendsto w l (𝓝 0)) (Q : 
       rw [heq, sub_self]
     simp_rw [smul_eq_mul, hdiff]
     exact isBigO_zero _ _
-
-private lemma coeff_subst_eq_sum_range_of_lt (P Q : 𝕜⟦X⟧) (hQ : constantCoeff Q = 0) {n N : ℕ}
-    (hn : n < N) :
-    coeff n (P.subst Q) = ∑ k ∈ range N, coeff k P * coeff n (Q ^ k) := by
-  rw [PowerSeries.coeff_subst_eq_sum_range P hQ n]
-  simp_rw [smul_eq_mul]
-  refine Finset.sum_subset (range_subset_range.mpr hn) fun k _ hk => ?_
-  have hnk : n < k := by rw [mem_range] at hk; omega
-  rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr hnk).trans_le
-    (le_order_pow_of_constantCoeff_eq_zero k hQ)), mul_zero]
 
 end Helpers
 
@@ -355,7 +341,8 @@ theorem hasAsymptoticExpansion_pow_subst {σ H : β → 𝕜} {y : α → β} {P
       ∑ n ∈ range N, w x ^ n * coeff n (P.subst Q) := by
     rw [Finset.sum_comm]
     refine sum_congr rfl fun n hn => ?_
-    rw [← mul_sum, coeff_subst_eq_sum_range_of_lt P Q hQ (mem_range.mp hn)]
+    rw [← mul_sum, PowerSeries.coeff_subst_eq_sum_range_of_lt P hQ (mem_range.mp hn)]
+    simp_rw [smul_eq_mul]
   rw [hswap]
   simp only [smul_eq_mul]
   abel
@@ -445,7 +432,9 @@ private lemma isBigO_sum_trunc_substInv {P Q : 𝕜⟦X⟧} {M : ℕ}
       have h0 := X_pow_dvd_iff.mp hdvd_subst n (mem_range.mp hn)
       rw [map_sub, sub_eq_zero] at h0
       exact h0.symm
-    rw [← mul_sum, ← coeff_subst_eq_sum_range_of_lt P T hT0 (mem_range.mp hn), hcoeff_eq, hPQ]
+    have hsubst := PowerSeries.coeff_subst_eq_sum_range_of_lt P hT0 (mem_range.mp hn)
+    simp only [smul_eq_mul] at hsubst
+    rw [← mul_sum, ← hsubst, hcoeff_eq, hPQ]
   have h1lt : 1 < M + 1 := by omega
   rw [hswap, Finset.sum_eq_single 1]
   · simp
@@ -552,122 +541,6 @@ end Algebra
 
 section ComplexPowerLog
 
-/-- The formal complex power `P ^ r` of a power series `P : ℂ⟦X⟧` whose constant term is
-`Complex.exp ℓ`, with the branch fixed so that the constant term of `formalCpow ℓ r P` is
-`Complex.exp (r * ℓ)` (DLMF §2.1(iii)). -/
-noncomputable def formalCpow (ℓ r : ℂ) (P : ℂ⟦X⟧) : ℂ⟦X⟧ :=
-  C (Complex.exp (r * ℓ)) *
-    (PowerSeries.binomialSeries ℂ r).subst (C (Complex.exp (-ℓ)) * P - 1)
-
-/-- Definitional equation for `formalCpow`. -/
-theorem formalCpow_def (ℓ r : ℂ) (P : ℂ⟦X⟧) :
-    formalCpow ℓ r P =
-      C (Complex.exp (r * ℓ)) *
-        (PowerSeries.binomialSeries ℂ r).subst (C (Complex.exp (-ℓ)) * P - 1) := by
-  rfl
-
-private lemma constantCoeff_exp_neg_mul_sub_one {ℓ : ℂ} {P : ℂ⟦X⟧}
-    (hP : constantCoeff P = Complex.exp ℓ) :
-    constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
-  rw [map_sub, map_mul, map_one, constantCoeff_C, hP, ← Complex.exp_add, neg_add_cancel,
-    Complex.exp_zero, sub_self]
-
-/-- The constant term of `formalCpow ℓ r P` is `Complex.exp (r * ℓ)` when
-`constantCoeff P = Complex.exp ℓ`. -/
-theorem constantCoeff_formalCpow {ℓ r : ℂ} {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
-    constantCoeff (formalCpow ℓ r P) = Complex.exp (r * ℓ) := by
-  have hU : MvPowerSeries.constantCoeff (C (Complex.exp (-ℓ)) * P - 1 : ℂ⟦X⟧) = 0 := by
-    rw [← PowerSeries.constantCoeff_eq]
-    exact constantCoeff_exp_neg_mul_sub_one hP
-  rw [formalCpow_def, map_mul, constantCoeff_C, PowerSeries.constantCoeff_eq,
-    PowerSeries.constantCoeff_subst_of_constantCoeff_zero hU, binomialSeries_constantCoeff,
-    map_one, mul_one]
-
-/-- The zeroth formal complex power of any power series is `1`. -/
-@[simp]
-theorem formalCpow_zero (ℓ : ℂ) (P : ℂ⟦X⟧) : formalCpow ℓ 0 P = 1 := by
-  rw [formalCpow_def]
-  simp
-
-/-- The first formal complex power recovers `P` when `constantCoeff P = Complex.exp ℓ`. -/
-theorem formalCpow_one {ℓ : ℂ} {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
-    formalCpow ℓ 1 P = P := by
-  have hU : HasSubst (C (Complex.exp (-ℓ)) * P - 1) :=
-    HasSubst.of_constantCoeff_zero' (constantCoeff_exp_neg_mul_sub_one hP)
-  have hbin : PowerSeries.binomialSeries ℂ (1 : ℂ) = 1 + X := by
-    simpa using PowerSeries.binomialSeries_nat (A := ℂ) (R := ℂ) 1
-  rw [formalCpow_def, one_mul, hbin, ← coe_substAlgHom hU, map_add, map_one, coe_substAlgHom,
-    subst_X hU, add_sub_cancel, ← mul_assoc, ← map_mul, ← Complex.exp_add, add_neg_cancel,
-    Complex.exp_zero, map_one, one_mul]
-
-/-- Exponent addition law for formal complex powers with a fixed branch `ℓ`. -/
-theorem formalCpow_add {ℓ : ℂ} (r r' : ℂ) {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
-    formalCpow ℓ (r + r') P = formalCpow ℓ r P * formalCpow ℓ r' P := by
-  have hU : HasSubst (C (Complex.exp (-ℓ)) * P - 1) :=
-    HasSubst.of_constantCoeff_zero' (constantCoeff_exp_neg_mul_sub_one hP)
-  rw [formalCpow_def, formalCpow_def, formalCpow_def, add_mul, Complex.exp_add, map_mul,
-    binomialSeries_add, subst_mul hU]
-  ring
-
-/-- Natural formal complex powers agree with ordinary powers in `ℂ⟦X⟧`. -/
-theorem formalCpow_natCast {ℓ : ℂ} (n : ℕ) {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
-    formalCpow ℓ (n : ℂ) P = P ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Nat.cast_succ, formalCpow_add _ _ hP, ih, formalCpow_one hP, pow_succ]
-
-/-- Negating the exponent in `formalCpow` gives the reciprocal power series. -/
-theorem formalCpow_neg {ℓ : ℂ} (r : ℂ) {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
-    formalCpow ℓ (-r) P = (formalCpow ℓ r P)⁻¹ := by
-  refine (PowerSeries.eq_inv_iff_mul_eq_one ?_).mpr ?_
-  · rw [constantCoeff_formalCpow hP]
-    exact Complex.exp_ne_zero _
-  · rw [← formalCpow_add (-r) r hP, neg_add_cancel, formalCpow_zero]
-
-/-- On `1 + X` with branch `ℓ = 0`, `formalCpow` reduces to `PowerSeries.binomialSeries ℂ r`. -/
-@[simp]
-theorem formalCpow_zero_one_add_X (r : ℂ) :
-    formalCpow 0 r (1 + X) = PowerSeries.binomialSeries ℂ r := by
-  rw [formalCpow_def, mul_zero, neg_zero, Complex.exp_zero, map_one, one_mul, one_mul,
-    add_sub_cancel_left, X_subst]
-
-/-- Shifting the branch parameter `ℓ` by `2πi` multiplies `formalCpow ℓ r P` by `cexp (2πir)`. -/
-theorem formalCpow_add_two_pi_mul_I (ℓ r : ℂ) (P : ℂ⟦X⟧) :
-    formalCpow (ℓ + 2 * π * Complex.I) r P =
-      C (Complex.exp (2 * π * Complex.I * r)) * formalCpow ℓ r P := by
-  have hexp_neg : Complex.exp (-(ℓ + 2 * π * Complex.I)) = Complex.exp (-ℓ) := by
-    rw [neg_add, Complex.exp_add, Complex.exp_neg (2 * π * Complex.I), Complex.exp_two_pi_mul_I,
-      inv_one, mul_one]
-  have hexp_pos : Complex.exp (r * (ℓ + 2 * π * Complex.I)) =
-      Complex.exp (2 * π * Complex.I * r) * Complex.exp (r * ℓ) := by
-    rw [← Complex.exp_add]
-    congr 1
-    ring
-  rw [formalCpow_def, formalCpow_def, hexp_neg, hexp_pos, map_mul, mul_assoc]
-
-private lemma eventually_log_mul_one_add {α : Type*} {l : Filter α} {p₀ : ℂ}
-    (hp₀ : p₀ ∈ Complex.slitPlane) {u : α → ℂ} (hu : Tendsto u l (𝓝 0)) :
-    ∀ᶠ x in l, Complex.log (p₀ * (1 + u x)) = Complex.log p₀ + Complex.log (1 + u x) := by
-  have harg_ne : p₀.arg ≠ π := (Complex.mem_slitPlane_iff_arg.mp hp₀).1
-  have hp₀_ne : p₀ ≠ 0 := (Complex.mem_slitPlane_iff_arg.mp hp₀).2
-  have harg_lt : p₀.arg < π := lt_of_le_of_ne (Complex.arg_le_pi p₀) harg_ne
-  have harg_gt : -π < p₀.arg := Complex.neg_pi_lt_arg p₀
-  set ε : ℝ := min (π - p₀.arg) (p₀.arg + π)
-  have hε : 0 < ε := lt_min (sub_pos.mpr harg_lt) (by linarith)
-  have h1u : Tendsto (fun x => 1 + u x) l (𝓝 (1 : ℂ)) := by
-    simpa only [add_zero] using tendsto_const_nhds.add hu
-  have harg1u : Tendsto (fun x => (1 + u x).arg) l (𝓝 0) := by
-    simpa only [Complex.arg_one, Function.comp_def] using
-      (Complex.continuousAt_arg Complex.one_mem_slitPlane).tendsto.comp h1u
-  filter_upwards [h1u.eventually_ne one_ne_zero, harg1u.eventually (Metric.ball_mem_nhds 0 hε)]
-    with x hxne hxarg
-  rw [Complex.log_mul_eq_add_log_iff hp₀_ne hxne]
-  rw [Real.dist_eq, sub_zero, abs_lt] at hxarg
-  have hε1 : ε ≤ π - p₀.arg := min_le_left _ _
-  have hε2 : ε ≤ p₀.arg + π := min_le_right _ _
-  exact ⟨by linarith, by linarith⟩
-
 private lemma hasAsymptoticExpansion_pow_unit_sub_one {α : Type*} {l : Filter α} {w : α → ℂ}
     (hw : Tendsto w l (𝓝 0)) {P : ℂ⟦X⟧} {f : α → ℂ} {ℓ : ℂ}
     (hP : constantCoeff P = Complex.exp ℓ)
@@ -725,7 +598,7 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
   have hadd := hasAsymptoticExpansion_pow_add (hasAsymptoticExpansion_pow_const (l := l) (w := w) ℓ)
     hcomp
   refine hadd.congr_fun ?_
-  filter_upwards [eventually_log_mul_one_add hP hu0] with x hx
+  filter_upwards [Complex.eventually_log_mul_one_add hP hu0] with x hx
   have hfx : f x = p₀ * (1 + (Complex.exp (-ℓ) * f x - 1)) := by
     rw [Complex.exp_neg, hexpℓ]
     field_simp [hp₀_ne]
@@ -760,7 +633,8 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
   refine (hmul.congr_coeff fun n => by rw [formalCpow_def]).congr_fun ?_
   have h1u : Tendsto (fun x => 1 + (Complex.exp (-ℓ) * f x - 1)) l (𝓝 (1 : ℂ)) := by
     simpa only [add_zero] using tendsto_const_nhds.add hu0
-  filter_upwards [eventually_log_mul_one_add hP hu0, h1u.eventually_ne one_ne_zero] with x hx h1ne
+  filter_upwards [Complex.eventually_log_mul_one_add hP hu0, h1u.eventually_ne one_ne_zero]
+    with x hx h1ne
   have hfx : f x = p₀ * (1 + (Complex.exp (-ℓ) * f x - 1)) := by
     rw [Complex.exp_neg, hexpℓ]
     field_simp [hp₀_ne]
