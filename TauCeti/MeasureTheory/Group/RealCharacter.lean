@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Cocompact
+public import TauCeti.Topology.Algebra.Group.Covering
 import Mathlib.Algebra.Category.Grp.Injective
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.MeasureTheory.Group.Integral
@@ -40,10 +41,13 @@ sending `γ` to `1` extends to all of `Γ` because `ℝ` is divisible, hence inj
 group; its continuous extension to `G` is then nonzero. So `Γ` is a finitely generated torsion
 abelian group, which is finite.
 
-This is the group-theoretic half of Weyl's theorem that the universal cover `G'` of a compact
-connected Lie group `G` with semisimple Lie algebra is compact: the kernel of `G' → G` is a
-discrete central subgroup with compact quotient `G`. The Lie-theoretic half, that a connected Lie
-group with perfect Lie algebra has no nonzero continuous homomorphism to `ℝ`, is not proved here.
+If `f : G →* K` is a homomorphism to a compact group which is a local homeomorphism, such as a
+covering homomorphism, and `G` is connected, then the kernel of `f` is such a subgroup. So if `G`
+has no nonzero continuous real character, then `f` has finite kernel and `G` is compact
+(`MonoidHom.compactSpace_of_isLocalHomeomorph_of_forall_continuous_eq_one`). This is the
+group-theoretic half of Weyl's theorem that the universal cover of a compact Lie group with
+semisimple Lie algebra is compact. The Lie-theoretic half, that a connected Lie group with perfect
+Lie algebra has no nonzero continuous homomorphism to `ℝ`, belongs to the theory of Lie groups.
 
 ## Main results
 
@@ -52,6 +56,10 @@ group with perfect Lie algebra has no nonzero continuous homomorphism to `ℝ`, 
 * `Subgroup.finite_of_forall_continuous_eq_one`: a discrete central subgroup with compact quotient
   of a connected locally compact group without nonzero continuous real characters is finite.
 * `Subgroup.compactSpace_of_forall_continuous_eq_one`: such a group is compact.
+* `MonoidHom.finite_ker_of_isLocalHomeomorph_of_forall_continuous_eq_one`,
+  `MonoidHom.compactSpace_of_isLocalHomeomorph_of_forall_continuous_eq_one`: a connected locally
+  compact group without nonzero continuous real characters that is locally homeomorphic to a
+  compact group by a homomorphism is compact, and the homomorphism has finite kernel.
 
 ## References
 
@@ -169,3 +177,31 @@ theorem compactSpace_of_forall_continuous_eq_one [ConnectedSpace G] (hΓ : Γ �
   exact Γ.compactSpace_of_compactSpace_subgroup
 
 end Subgroup
+
+namespace MonoidHom
+
+variable {G K : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [ConnectedSpace G] [Group K] [TopologicalSpace K]
+  [SeparatelyContinuousMul K] [CompactSpace K]
+
+/-- **A local isomorphism to a compact group from a connected locally compact group without real
+characters has finite kernel.** If `f : G →* K` is a local homeomorphism, `K` is compact, and every
+continuous homomorphism `G → ℝ` is trivial, then the kernel of `f` is finite. -/
+theorem finite_ker_of_isLocalHomeomorph_of_forall_continuous_eq_one (f : G →* K)
+    (hf : IsLocalHomeomorph f) (h : ∀ F : G →* Multiplicative ℝ, Continuous F → F = 1) :
+    Finite f.ker := by
+  have := SetLike.isDiscrete_iff_discreteTopology.mp (f.isDiscrete_ker_of_isLocalHomeomorph hf)
+  have := f.compactSpace_quotient_ker_of_isOpenMap hf.continuous hf.isOpenMap
+  exact f.ker.finite_of_forall_continuous_eq_one (f.ker_le_center_of_isLocalHomeomorph hf) h
+
+/-- **A connected locally compact group without real characters that is locally isomorphic to a
+compact group is compact.** If `f : G →* K` is a local homeomorphism, `K` is compact, and every
+continuous homomorphism `G → ℝ` is trivial, then `G` is compact. -/
+theorem compactSpace_of_isLocalHomeomorph_of_forall_continuous_eq_one (f : G →* K)
+    (hf : IsLocalHomeomorph f) (h : ∀ F : G →* Multiplicative ℝ, Continuous F → F = 1) :
+    CompactSpace G := by
+  have := SetLike.isDiscrete_iff_discreteTopology.mp (f.isDiscrete_ker_of_isLocalHomeomorph hf)
+  have := f.compactSpace_quotient_ker_of_isOpenMap hf.continuous hf.isOpenMap
+  exact f.ker.compactSpace_of_forall_continuous_eq_one (f.ker_le_center_of_isLocalHomeomorph hf) h
+
+end MonoidHom
