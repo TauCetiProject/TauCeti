@@ -63,6 +63,10 @@ Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a
   (`Matrix.continuous_lagrangianChartCLE`).
 * `Matrix.lagrangianChart_smul_one`: the chart subspace of a scalar matrix `s` is the rotation
   `e^{iα} ℝⁿ` of `ℝⁿ` by the angle `α = π / 2 - arctan s` of `s + i`.
+* `Matrix.lagrangianChart_mul_mul_transpose`: a real orthogonal matrix `O` maps the chart subspace
+  of `S` onto that of `O S Oᵀ`.
+* `Matrix.lagrangianChart_fromBlocks_zero`: the chart subspace of a block-diagonal matrix is the
+  direct sum of the chart subspaces of its blocks.
 
 ## References
 
@@ -589,5 +593,56 @@ theorem lagrangianChart_neg_one :
     ring
   rw [← neg_one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_neg, arctan_one, h,
     ← smul_smul, Complex.coe_smul, realImage_smul _ (by norm_num)]
+
+/-- **A real orthogonal change of coordinates conjugates the chart.** For a real orthogonal
+matrix `O`, the complex matrix of `O`, which preserves `ℝⁿ`, maps `{S y + i y | y ∈ ℝⁿ}` onto
+`{O S Oᵀ y + i y | y ∈ ℝⁿ}`. -/
+theorem lagrangianChart_mul_mul_transpose {O : Matrix n n ℝ} (hO : O ∈ orthogonalGroup n ℝ)
+    (S : Matrix n n ℝ) :
+    (O * S * Oᵀ).lagrangianChart = S.lagrangianChart.map
+      (((toEuclideanCLM (𝕜 := ℂ) (O.map ((↑) : ℝ → ℂ)) :
+        EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
+          EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) := by
+  have hO' : Oᵀ * O = 1 := (mem_orthogonalGroup_iff' n ℝ).1 hO
+  -- `(O S Oᵀ + i) O = O (S + i)`, and right multiplication by `O` does not change the image.
+  have hmap : (O * S * Oᵀ).map ((↑) : ℝ → ℂ) * O.map (↑) = O.map (↑) * S.map (↑) :=
+    calc (O * S * Oᵀ).map ((↑) : ℝ → ℂ) * O.map (↑) = (O * S * Oᵀ * O).map (↑) :=
+          (Matrix.map_mul (f := Complex.ofRealHom)).symm
+      _ = (O * S).map (↑) := by rw [Matrix.mul_assoc (O * S), hO', Matrix.mul_one]
+      _ = O.map (↑) * S.map (↑) := Matrix.map_mul (f := Complex.ofRealHom)
+  have hframe : (O * S * Oᵀ).lagrangianChartFrame * O.map ((↑) : ℝ → ℂ) =
+      O.map (↑) * S.lagrangianChartFrame := by
+    simp only [lagrangianChartFrame, Matrix.add_mul, Matrix.mul_add, smul_mul_assoc,
+      mul_smul_comm, Matrix.one_mul, Matrix.mul_one, hmap]
+  rw [lagrangianChart_def, ← realImage_mul_map_ofReal _
+    ((isUnit_iff_isUnit_det _).2 (isUnit_det_of_left_inverse hO')), hframe, realImage_mul,
+    lagrangianChart_def]
+
+section Sum
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- **The chart of a block-diagonal matrix is the direct sum of the charts.** Under the splitting
+`ℂ^{n ⊕ m} ≃ ℂⁿ × ℂᵐ`, the subspace `{S y + i y}` of the block-diagonal matrix with blocks `S`
+and `T` is the product of the subspaces of `S` and of `T`. -/
+theorem lagrangianChart_fromBlocks_zero (S : Matrix n n ℝ) (T : Matrix m m ℝ) :
+    (fromBlocks S 0 0 T).lagrangianChart =
+      (S.lagrangianChart.prod T.lagrangianChart).map
+        (((EuclideanSpace.sumEquivProd (𝕜 := ℂ) (ι := n) (κ := m)).symm.toLinearEquiv :
+          (EuclideanSpace ℂ n × EuclideanSpace ℂ m) →ₗ[ℂ] EuclideanSpace ℂ (n ⊕ m)).restrictScalars
+            ℝ) := by
+  ext v
+  simp only [Submodule.mem_map, Submodule.mem_prod, mem_lagrangianChart]
+  constructor
+  · intro hv
+    refine ⟨EuclideanSpace.sumEquivProd v, ⟨fun i ↦ ?_, fun i ↦ ?_⟩,
+      EuclideanSpace.sumEquivProd.symm_apply_apply v⟩
+    · simpa [Fintype.sum_sum_type] using hv (.inl i)
+    · simpa [Fintype.sum_sum_type] using hv (.inr i)
+  · rintro ⟨w, ⟨h₁, h₂⟩, rfl⟩ (i | i)
+    · simpa [Fintype.sum_sum_type] using h₁ i
+    · simpa [Fintype.sum_sum_type] using h₂ i
+
+end Sum
 
 end Matrix
