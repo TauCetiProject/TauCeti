@@ -76,6 +76,15 @@ theorem coe_codRestrictOfTower_apply (f : M →L[R] N) {q : Submodule S N} (h : 
     (x : M) : (f.codRestrictOfTower h x : N) = f x :=
   (rfl)
 
+omit [Module S M] [IsScalarTower R S M] in
+/-- The corestriction of a composite `f ∘L g` evaluates to `f (g x)`, for a membership proof stated
+in terms of `f (g x)`. -/
+@[simp]
+theorem coe_codRestrictOfTower_comp_apply {L : Type*} [TopologicalSpace L] [AddCommMonoid L]
+    [Module R L] (f : M →L[R] N) (g : L →L[R] M) {q : Submodule S N} (h : ∀ x, f (g x) ∈ q)
+    (x : L) : ((f ∘L g).codRestrictOfTower h x : N) = f (g x) :=
+  (rfl)
+
 end Tower
 
 end ContinuousLinearMap

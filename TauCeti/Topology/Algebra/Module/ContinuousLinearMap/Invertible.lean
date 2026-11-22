@@ -172,8 +172,6 @@ theorem IsInvertible.codRestrictOfTower_comp {P p : Submodule S X} {f : P →L[R
     ((f ∘L ι).codRestrictOfTower h).IsInvertible := by
   have hinj : Function.Injective ι := fun x y hxy ↦ Subtype.ext <| by
     rw [← hι x, ← hι y, hxy]
-  have hD (x : p) : ((f ∘L ι).codRestrictOfTower h x : N) = f (ι x) :=
-    coe_codRestrictOfTower_apply _ h x
   let g : q →L[R] p := ((P.restrictScalars R).subtypeL ∘L f.inverse ∘L
     (q.restrictScalars R).subtypeL).codRestrictOfTower fun y ↦
       hq (f.inverse y) (by rw [hf.self_apply_inverse]; exact y.property)
@@ -181,12 +179,8 @@ theorem IsInvertible.codRestrictOfTower_comp {P p : Submodule S X} {f : P →L[R
     rw [hι]
     exact coe_codRestrictOfTower_apply _ _ y
   refine IsInvertible.of_inverse (g := g) ?_ ?_ <;> ext1 y
-  · refine Subtype.ext ?_
-    rw [comp_apply, hD, hg, hf.self_apply_inverse]
-    rfl
-  · refine hinj ?_
-    rw [comp_apply, hg, hD, hf.inverse_apply_self]
-    rfl
+  · exact Subtype.ext <| by simp [hg, hf.self_apply_inverse]
+  · exact hinj <| by simp [hg, hf.inverse_apply_self]
 
 /-- The inverse of the corestriction of `f ∘L ι`, for `f` invertible on `P` and `ι` the inclusion
 of `p ≤ P`, is the inverse of `f`. -/
@@ -197,8 +191,7 @@ theorem IsInvertible.coe_inverse_codRestrictOfTower_comp_apply {P p : Submodule 
     (((f ∘L ι).codRestrictOfTower h).inverse y : X) = f.inverse y := by
   have hy := congrArg Subtype.val ((hf.codRestrictOfTower_comp hι h hq).self_apply_inverse y)
   have hι' : ι (((f ∘L ι).codRestrictOfTower h).inverse y) = f.inverse y := by
-    rw [← hy, show ∀ x, ((f ∘L ι).codRestrictOfTower h x : N) = f (ι x) from
-      coe_codRestrictOfTower_apply _ h, hf.inverse_apply_self]
+    rw [← hy, coe_codRestrictOfTower_comp_apply, hf.inverse_apply_self]
   rw [← hι, hι']
 
 end Restrict
