@@ -8,12 +8,14 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Minimizer
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LpDecay
-import TauCeti.Analysis.PDE.Vortex.Existence
+import TauCeti.Analysis.PDE.Regularity.PlanarGradientEstimate
+public import TauCeti.Analysis.PDE.Vortex.Existence
 import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Sobolev.Poincare.Planar
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Continuity of the minimizer of Taubes's functional in the polynomial
@@ -66,8 +68,21 @@ The proof compares the two functionals at the two minimizers, with every constan
    a small `L²` norm (`TauCeti.W1p.tendsto_of_tendsto_norm_gradient_sub`), so
    `w_(P i) - w_Q → 0` in `H¹(ℂ)`.
 
-This is continuity in `H¹(ℂ)` only; smoothness in the divisor, uniform convergence of the smooth
-representatives and the corresponding statements for the vortex fields are not treated here.
+The smooth representatives `TauCeti.Vortex.reducedSolution P` then converge uniformly on the
+whole plane, together with their first derivatives
+(`TauCeti.Vortex.tendstoUniformly_reducedSolution`,
+`TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`), hence depend continuously on
+families of polynomials of a fixed positive degree with continuous coefficients
+(`TauCeti.Vortex.continuous_ofFun_reducedSolution`,
+`TauCeti.Vortex.continuous_ofFun_fderiv_reducedSolution`). The sup bounds of step 2 bound the
+right-hand sides of the reduced equations, hence the Laplacians of the differences
+`w_(P i) - w_Q`, uniformly in `i`. A square-integrable function with a bounded Laplacian is bounded
+by its `L²` norm through the mean-value inequality, so the `L²` convergence of step 5 becomes
+uniform convergence (`TauCeti.tendstoUniformly_zero_of_tendsto_integral_sq_of_abs_laplacian_le`),
+and the interior gradient estimate for Poisson's equation upgrades it to uniform convergence of
+the derivatives (`TendstoUniformly.fderiv_of_abs_laplacian_sub_le`). Smoothness in the divisor and
+the corresponding statements for the background amplitude and the reconstructed vortex fields are
+not treated here.
 
 ## Main results
 
@@ -75,6 +90,14 @@ representatives and the corresponding statements for the vortex fields are not t
   polynomials whose coefficients converge, with eventually `deg P i ≤ deg Q` and `Q` of positive
   degree.
 * `TauCeti.Vortex.continuous_reducedMinimizer`: the minimizer is continuous on families of
+  polynomials of a fixed positive degree with continuous coefficients.
+* `TauCeti.Vortex.tendstoUniformly_reducedSolution`,
+  `TauCeti.Vortex.tendstoUniformly_fderiv_reducedSolution`: under the hypotheses of
+  `TauCeti.Vortex.tendsto_reducedMinimizer`, the smooth reduced solutions and their derivatives
+  converge uniformly on the plane.
+* `TauCeti.Vortex.continuous_ofFun_reducedSolution`,
+  `TauCeti.Vortex.continuous_ofFun_fderiv_reducedSolution`: the smooth reduced solutions and their
+  derivatives are continuous, for the topology of uniform convergence on the plane, on families of
   polynomials of a fixed positive degree with continuous coefficients.
 * `TauCeti.Vortex.exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le`: minimizers
   of Taubes's functional are bounded in `L∞`, uniformly over polynomials with a common bound on
@@ -324,31 +347,11 @@ private theorem sobolevReducedFunctional_eq_realFunctional {P : Polynomial ℂ}
   rw [potential_def] at hu
   rw [sobolevReducedFunctional_eq_coe hu, realFunctional_def, potential_def, linearCoeff_def]
 
-/-- Where `u ≤ M`, the potential is at most `2 exp (2M) u²`. -/
-private theorem potential_le {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2} {M : ℝ}
-    (hM : 0 ≤ M) {z : ℂ} (hz : W1p.value u z ≤ M) :
-    potential P u z ≤ 2 * Real.exp (2 * M) * W1p.value u z ^ 2 := by
-  have h1 : ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ≤ 1 :=
-    (div_le_one (by positivity)).2 (by linarith)
-  rw [potential_def]
-  calc _ ≤ 1 * (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
-        mul_le_mul_of_nonneg_right h1 (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)
-    _ ≤ 2 * Real.exp (2 * M) * W1p.value u z ^ 2 := by
-      rw [one_mul]; exact Real.exp_two_mul_sub_one_sub_two_mul_le_mul_sq hM hz
-
 /-- A function of `H¹(ℂ)` bounded above has integrable potential. -/
 private theorem integrable_potential {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}
     {M : ℝ} (hM : 0 ≤ M) (hu : ∀ᵐ z, W1p.value u z ≤ M) : Integrable (potential P u) := by
-  have hnonneg (z : ℂ) : 0 ≤ potential P u z := by
-    rw [potential_def]
-    exact norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul_nonneg (W1p.value u) z
-  refine Integrable.mono' (((W1p.memLp_value u).integrable_sq).const_mul (2 * Real.exp (2 * M)))
-    (by
-      rw [potential_def]
-      exact aestronglyMeasurable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul u) ?_
-  filter_upwards [hu] with z hz
-  rw [Real.norm_of_nonneg (hnonneg z)]
-  exact potential_le hM hz
+  rw [potential_def]
+  exact integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hu
 
 /-- If the weights `h` of `P` and `Q` differ by at most `ε`, then for `u ≤ M` the potentials
 differ by at most `2 ε exp (2M) ‖u‖₂²`. -/
@@ -789,5 +792,161 @@ theorem continuous_reducedMinimizer {X : Type*} [TopologicalSpace X] {P : X → 
   continuous_iff_continuousAt.2 fun x ↦ tendsto_reducedMinimizer ((hdeg x).symm ▸ hm)
     (Eventually.of_forall fun y ↦ ((hdeg y).trans (hdeg x).symm).le)
     fun k ↦ (hcoeff k).continuousAt
+
+/-! ### Uniform convergence of the reduced solutions -/
+
+/-- Two-sided bounds on the Laplacian of the reduced solution `w` of `P`: if `|w| ≤ M` and
+`2 ‖P'‖² / (1 + ‖P‖²)² ≤ G`, then `-1 / 8 ≤ Δw ≤ exp (2M) / 8 + G`. -/
+private theorem laplacian_reducedSolution_bounds {P : Polynomial ℂ} (hm : 0 < P.natDegree)
+    {M G : ℝ} (hM : ∀ z, |reducedSolution P z| ≤ M)
+    (hG : ∀ z, 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ G) (z : ℂ) :
+    -(1 / 8) ≤ Δ (reducedSolution P) z ∧
+      Δ (reducedSolution P) z ≤ Real.exp (2 * M) / 8 + G := by
+  rw [laplacian_reducedSolution hm z, Polynomial.deriv]
+  have h0 := backgroundWeight_nonneg P.eval z
+  have h1 := (backgroundWeight_lt_one P.eval z).le
+  have hg : 0 ≤ 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by positivity
+  have he : Real.exp (2 * reducedSolution P z) * backgroundWeight P.eval z ≤
+      Real.exp (2 * M) * 1 :=
+    mul_le_mul (Real.exp_le_exp.2 (by linarith [(abs_le.1 (hM z)).2])) h1 h0
+      (Real.exp_pos _).le
+  have he0 := mul_nonneg (Real.exp_pos (2 * reducedSolution P z)).le h0
+  constructor <;> linarith [hG z]
+
+/-- The `L²` distance of two reduced solutions is at most the `H¹` distance of the minimizers. -/
+private theorem integral_sub_sq_le_norm_sub_sq {P Q : Polynomial ℂ} (hP : 0 < P.natDegree)
+    (hQ : 0 < Q.natDegree) :
+    ∫ z, (reducedSolution P z - reducedSolution Q z) ^ 2 ≤
+      ‖reducedMinimizer P - reducedMinimizer Q‖ ^ 2 := by
+  have hae : (W1p.value (reducedMinimizer P - reducedMinimizer Q) : ℂ → ℝ) =ᵐ[volume]
+      fun z ↦ reducedSolution P z - reducedSolution Q z := by
+    have h := W1p.value_sub_ae (reducedMinimizer P) (reducedMinimizer Q)
+    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
+    filter_upwards [h, value_reducedMinimizer_ae_eq_reducedSolution hP,
+      value_reducedMinimizer_ae_eq_reducedSolution hQ] with z hz hPz hQz
+    rw [hz, Pi.sub_apply, hPz, hQz]
+  have hsq : ∫ z, (reducedSolution P z - reducedSolution Q z) ^ 2 =
+      ∫ z, W1p.value (reducedMinimizer P - reducedMinimizer Q) z ^ 2 :=
+    integral_congr_ae (hae.mono fun z hz ↦ by simp only [hz])
+  rw [hsq, W1p.integral_value_sq_eq_norm_value_sq_top]
+  exact pow_le_pow_left₀ (norm_nonneg _) (W1p.norm_value_le _) 2
+
+/-- Along polynomials whose coefficients converge to those of `Q`, of positive degree, with
+eventually `deg P i ≤ deg Q`, the reduced solutions converge to that of `Q` in `L²`, and
+eventually their Laplacians stay within a fixed distance of that of `Q`. -/
+private theorem exists_eventually_abs_laplacian_sub_le_and_tendsto_integral_sq {ι : Type*}
+    {l : Filter ι} {P : ι → Polynomial ℂ} {Q : Polynomial ℂ} (hQ : 0 < Q.natDegree)
+    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k))) :
+    (∃ K : ℝ, ∀ᶠ i in l, ∀ z,
+      |Δ (reducedSolution (P i)) z - Δ (reducedSolution Q) z| ≤ K) ∧
+      Tendsto (fun i ↦ ∫ z, (reducedSolution (P i) z - reducedSolution Q z) ^ 2) l (𝓝 0) := by
+  obtain ⟨δ, R, -, -, hev⟩ := exists_eventually_coefficient_bounds hQ hdeg hcoeff
+  obtain ⟨C, hC⟩ := exists_comparisonWeight_le Q
+  have hconv := tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_reducedMinimizer hQ hdeg hcoeff)
+  have hint : ∀ᶠ i in l, ∫ z, (reducedSolution (P i) z - reducedSolution Q z) ^ 2 ≤
+      ‖reducedMinimizer (P i) - reducedMinimizer Q‖ ^ 2 :=
+    hev.mono fun i hi ↦ integral_sub_sq_le_norm_sub_sq hi.natDegree_pos hQ
+  refine ⟨?_, squeeze_zero' (Eventually.of_forall fun i ↦ integral_nonneg fun z ↦ sq_nonneg _)
+    hint (by simpa using hconv.pow 2)⟩
+  -- Uniform sup bounds: the minimizers of `P i` are eventually `L²`-close to that of `Q`.
+  set B := ‖W1p.value (reducedMinimizer Q)‖ + 1
+  have hB : ∀ᶠ i in l, ‖W1p.value (reducedMinimizer (P i))‖ ≤ B := by
+    filter_upwards [(tendsto_order.1 hconv).2 1 one_pos] with i hi
+    have h := W1p.norm_value_le (reducedMinimizer (P i) - reducedMinimizer Q)
+    rw [W1p.value_sub] at h
+    have h' := norm_le_norm_add_norm_sub' (W1p.value (reducedMinimizer (P i)))
+      (W1p.value (reducedMinimizer Q))
+    linarith
+  obtain ⟨M, -, hM⟩ := exists_forall_ae_abs_value_le_of_forall_sobolevReducedFunctional_le B
+    (1024 * C)
+  have hsup {P : Polynomial ℂ} (hm : 0 < P.natDegree)
+      (hG : ∀ z, 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ 1024 * C)
+      (hPB : ‖W1p.value (reducedMinimizer P)‖ ≤ B) (z : ℂ) : |reducedSolution P z| ≤ M := by
+    refine (Continuous.ae_le_iff_le volume (contDiff_reducedSolution P).continuous.abs
+      continuous_const).1 ?_ z
+    filter_upwards [hM P hm hG _ (forall_sobolevReducedFunctional_reducedMinimizer_le hm) hPB,
+      value_reducedMinimizer_ae_eq_reducedSolution hm] with z hz hz'
+    rwa [← hz']
+  have hGQ (z : ℂ) : 2 * ‖Q.derivative.eval z‖ ^ 2 / (1 + ‖Q.eval z‖ ^ 2) ^ 2 ≤ 1024 * C :=
+    (two_mul_le_comparisonWeight Q z).trans (by linarith [hC z])
+  have hQb := laplacian_reducedSolution_bounds hQ
+    (hsup hQ hGQ (by simp only [B]; linarith)) hGQ
+  refine ⟨Real.exp (2 * M) / 8 + 1024 * C + 1 / 8, ?_⟩
+  filter_upwards [hev, hB] with i hi hiB z
+  have hGi (z : ℂ) : 2 * ‖(P i).derivative.eval z‖ ^ 2 / (1 + ‖(P i).eval z‖ ^ 2) ^ 2 ≤
+      1024 * C :=
+    (hi.source_le z).trans (by linarith [hC z])
+  have hPb := laplacian_reducedSolution_bounds hi.natDegree_pos
+    (hsup hi.natDegree_pos hGi hiB) hGi z
+  rw [abs_le]
+  constructor <;> linarith [hQb z]
+
+/-- **Uniform convergence of the reduced solutions.** If the coefficients of the polynomials
+`P i` converge to those of a polynomial `Q` of positive degree, and eventually
+`deg P i ≤ deg Q`, then the smooth solutions of the reduced equations converge uniformly on the
+plane: `reducedSolution (P i) → reducedSolution Q` uniformly. -/
+theorem tendstoUniformly_reducedSolution {ι : Type*} {l : Filter ι} {P : ι → Polynomial ℂ}
+    {Q : Polynomial ℂ} (hQ : 0 < Q.natDegree) (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k))) :
+    TendstoUniformly (fun i ↦ reducedSolution (P i)) (reducedSolution Q) l := by
+  obtain ⟨⟨K, hK⟩, hint⟩ :=
+    exists_eventually_abs_laplacian_sub_le_and_tendsto_integral_sq hQ hdeg hcoeff
+  -- Apply the `L²`-to-uniform estimate to the differences `w_(P i) - w_Q`.
+  have h := tendstoUniformly_zero_of_tendsto_integral_sq_of_abs_laplacian_le (μ := volume)
+    (f := fun i ↦ reducedSolution (P i) - reducedSolution Q)
+    (.of_forall fun i ↦ ((contDiff_reducedSolution (P i)).sub
+      (contDiff_reducedSolution Q)).of_le (by simp))
+    (.of_forall fun i ↦ (memLp_reducedSolution (P i)).sub (memLp_reducedSolution Q))
+    (hK.mono fun i hi z ↦ by
+      rw [ContDiffAt.laplacian_sub
+        (((contDiff_reducedSolution (P i)).of_le (by simp)).contDiffAt)
+        (((contDiff_reducedSolution Q).of_le (by simp)).contDiffAt)]
+      exact hi z) hint
+  rw [Metric.tendstoUniformly_iff] at h ⊢
+  intro ε hε
+  filter_upwards [h ε hε] with i hi z
+  simpa [Real.dist_eq, abs_sub_comm] using hi z
+
+/-- **Uniform convergence of the derivatives of the reduced solutions.** Under the hypotheses of
+`TauCeti.Vortex.tendstoUniformly_reducedSolution`, the derivatives of the reduced solutions also
+converge uniformly on the plane: `D (reducedSolution (P i)) → D (reducedSolution Q)`. -/
+theorem tendstoUniformly_fderiv_reducedSolution {ι : Type*} {l : Filter ι}
+    {P : ι → Polynomial ℂ} {Q : Polynomial ℂ} (hQ : 0 < Q.natDegree)
+    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k))) :
+    TendstoUniformly (fun i ↦ fderiv ℝ (reducedSolution (P i))) (fderiv ℝ (reducedSolution Q))
+      l := by
+  obtain ⟨⟨K, hK⟩, -⟩ :=
+    exists_eventually_abs_laplacian_sub_le_and_tendsto_integral_sq hQ hdeg hcoeff
+  exact (tendstoUniformly_reducedSolution hQ hdeg hcoeff).fderiv_of_abs_laplacian_sub_le
+    (.of_forall fun i ↦ (contDiff_reducedSolution (P i)).of_le (by simp))
+    ((contDiff_reducedSolution Q).of_le (by simp)) hK
+
+/-- **Continuity of the reduced solutions in the uniform topology.** For a family of
+polynomials of a fixed positive degree whose coefficients depend continuously on a parameter, the
+smooth reduced solutions depend continuously on the parameter in the topology of uniform
+convergence on the plane. -/
+theorem continuous_ofFun_reducedSolution {X : Type*} [TopologicalSpace X] {P : X → Polynomial ℂ}
+    {m : ℕ} (hm : 0 < m) (hdeg : ∀ x, (P x).natDegree = m)
+    (hcoeff : ∀ k, Continuous fun x ↦ (P x).coeff k) :
+    Continuous fun x ↦ UniformFun.ofFun (reducedSolution (P x)) :=
+  continuous_iff_continuousAt.2 fun x ↦ UniformFun.tendsto_iff_tendstoUniformly.2 <|
+    tendstoUniformly_reducedSolution ((hdeg x).symm ▸ hm)
+      (Eventually.of_forall fun y ↦ ((hdeg y).trans (hdeg x).symm).le)
+      fun k ↦ (hcoeff k).continuousAt
+
+/-- **Continuity of the derivatives of the reduced solutions in the uniform topology.** Under the
+hypotheses of `TauCeti.Vortex.continuous_ofFun_reducedSolution`, the derivatives of the reduced
+solutions depend continuously on the parameter in the topology of uniform convergence on the
+plane. -/
+theorem continuous_ofFun_fderiv_reducedSolution {X : Type*} [TopologicalSpace X]
+    {P : X → Polynomial ℂ} {m : ℕ} (hm : 0 < m) (hdeg : ∀ x, (P x).natDegree = m)
+    (hcoeff : ∀ k, Continuous fun x ↦ (P x).coeff k) :
+    Continuous fun x ↦ UniformFun.ofFun (fderiv ℝ (reducedSolution (P x))) :=
+  continuous_iff_continuousAt.2 fun x ↦ UniformFun.tendsto_iff_tendstoUniformly.2 <|
+    tendstoUniformly_fderiv_reducedSolution ((hdeg x).symm ▸ hm)
+      (Eventually.of_forall fun y ↦ ((hdeg y).trans (hdeg x).symm).le)
+      fun k ↦ (hcoeff k).continuousAt
 
 end TauCeti.Vortex

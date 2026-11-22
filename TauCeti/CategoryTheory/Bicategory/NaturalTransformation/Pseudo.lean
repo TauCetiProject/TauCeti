@@ -106,6 +106,14 @@ lemma StrongTrans.isIso_of_isIso_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (Θ : 
   rw [← he]
   infer_instance
 
+/-- The components of the modification `eqToHom e` between equal strong transformations are the
+`eqToHom` of the equality of their components. -/
+@[simp]
+lemma StrongTrans.eqToHom_as_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η = θ) (a : B) :
+    (eqToHom e).as.app a = eqToHom (congrArg (fun η ↦ η.app a) e) := by
+  subst e
+  rfl
+
 variable (P : B ⥤ᵖ B')
 
 /-- Whiskering the identity strong transformation gives the identity, up to the invertible
@@ -165,6 +173,7 @@ variable {F G : B ⥤ᵖ C}
 /-- The unit condition of a strong transformation, for a `1`-morphism `f` equal to an identity:
 the inverse naturality isomorphism at `f` is determined by the comparisons `F.mapId' f` and
 `G.mapId' f`. This generalizes `StrongTrans.naturality_id_inv`. -/
+@[to_app]
 lemma naturality_id'_inv (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) :
     (η.naturality f).inv = η.app a ◁ (G.mapId' f hf).hom ≫ (ρ_ (η.app a)).hom ≫
       (λ_ (η.app a)).inv ≫ (F.mapId' f hf).inv ▷ η.app a := by
@@ -186,6 +195,7 @@ lemma naturality_comp'_hom (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c
 
 /-- The inverse form of `StrongTrans.naturality_comp'_hom`, generalizing
 `StrongTrans.naturality_comp_inv`. -/
+@[to_app]
 lemma naturality_comp'_inv (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (fg : a ⟶ c)
     (h : f ≫ g = fg) :
     (η.naturality fg).inv =
@@ -223,6 +233,28 @@ lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ :
     Iso.inv_hom_id, Category.comp_id]
   rw [key l b sq.w.symm, reassoc_of% h₁]
   simp
+
+/-- The inverse form of `StrongTrans.naturality_isoMapOfCommSq_app`, for pseudofunctors into `Cat`:
+the inverse naturality isomorphisms of `η` along the two sides of a commutative square, composed
+with the square isomorphisms of `F` and of `G`, agree on every object. -/
+@[reassoc]
+lemma naturality_inv_isoMapOfCommSq_app [Strict B] {F G : B ⥤ᵖ Cat.{v₃, u₃}} (η : F ⟶ G)
+    {X₁ X₂ Y₁ Y₂ : B} {t : X₁ ⟶ Y₁} {l : X₁ ⟶ X₂} {r : Y₁ ⟶ Y₂} {b : X₂ ⟶ Y₂}
+    (sq : CommSq t l r b) (X : F.obj X₁) :
+    (G.map r).toFunctor.map ((η.naturality t).inv.toNatTrans.app X) ≫
+      (η.naturality r).inv.toNatTrans.app ((F.map t).toFunctor.obj X) ≫
+        (η.app Y₂).toFunctor.map ((F.isoMapOfCommSq sq).hom.toNatTrans.app X) =
+      (G.isoMapOfCommSq sq).hom.toNatTrans.app ((η.app X₁).toFunctor.obj X) ≫
+        (G.map b).toFunctor.map ((η.naturality l).inv.toNatTrans.app X) ≫
+          (η.naturality b).inv.toNatTrans.app ((F.map l).toFunctor.obj X) := by
+  -- Precompose with the forward naturality isomorphisms along `t` and `r` and use the
+  -- forward form.
+  rw [← cancel_epi ((G.map r).toFunctor.map ((η.naturality t).hom.toNatTrans.app X)),
+    ← cancel_epi ((η.naturality r).hom.toNatTrans.app _)]
+  simp only [← Functor.map_comp_assoc, Cat.Hom.hom_inv_id_toNatTrans_app, Functor.map_id,
+    Category.id_comp]
+  rw [reassoc_of% (η.naturality_isoMapOfCommSq_app sq X)]
+  simp [← Functor.map_comp_assoc]
 
 end StrongTrans
 

@@ -104,6 +104,18 @@ theorem X_subst_toPowerSeries (φ : FormalCoordinate R) :
     (X : R⟦X⟧).subst φ.toPowerSeries = φ.toPowerSeries :=
   subst_X φ.hasSubst
 
+/-- A formal coordinate `φ = u X + ⋯` is `X` times the power series `u + ⋯`, a unit by
+`TauCeti.FormalCoordinate.isUnit_mk_coeff_succ`. -/
+theorem toPowerSeries_eq_X_mul (φ : FormalCoordinate R) :
+    φ.toPowerSeries = X * PowerSeries.mk fun n ↦ coeff (n + 1) φ.toPowerSeries := by
+  simpa using eq_X_mul_shift_add_const φ.toPowerSeries
+
+/-- The quotient `φ / X = u + ⋯` of a formal coordinate by `X` is a unit power series. -/
+theorem isUnit_mk_coeff_succ (φ : FormalCoordinate R) :
+    IsUnit (PowerSeries.mk fun n ↦ coeff (n + 1) φ.toPowerSeries) := by
+  rw [isUnit_iff_constantCoeff, ← coeff_zero_eq_constantCoeff_apply, coeff_mk]
+  exact φ.isUnit_coeff_one
+
 /-- Over a nontrivial ring a formal coordinate has order one. -/
 @[simp]
 theorem order_toPowerSeries [Nontrivial R] (φ : FormalCoordinate R) : φ.toPowerSeries.order = 1 :=
@@ -171,6 +183,11 @@ theorem toPowerSeries_mul_inv (φ : FormalCoordinate R) : (φ * φ⁻¹).toPower
 /-- The inverse of a formal coordinate composed with it is `X`. -/
 theorem toPowerSeries_inv_mul (φ : FormalCoordinate R) : (φ⁻¹ * φ).toPowerSeries = X := by
   rw [inv_mul_cancel, toPowerSeries_one]
+
+/-- A formal coordinate `φ = u X + ⋯` is `X` times a unit power series. -/
+theorem exists_unit_toPowerSeries_eq_X_mul (φ : FormalCoordinate R) :
+    ∃ v : R⟦X⟧ˣ, φ.toPowerSeries = X * (v : R⟦X⟧) :=
+  exists_unit_eq_X_mul_of_subst_eq_X φ.constantCoeff_toPowerSeries (toPowerSeries_inv_mul φ)
 
 section Points
 

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sheaf
+public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Germ
 public import TauCeti.Analysis.Meromorphic.OrderFiltration
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Topology.Sheaves.Abelian
@@ -20,7 +22,9 @@ import TauCeti.Geometry.Manifold.Complex.Analytic
 Local divisor sections are normalized to zero at permitted poles. This file compares them
 with meromorphic coordinate germs, whose values at their centre are discarded. The comparison
 is linear, satisfies the divisor order bound, and commutes with restriction and native divisor
-inclusions despite their normalization of newly permitted poles.
+inclusions despite their normalization of newly permitted poles. For a global section it is the
+coordinate germ of the associated meromorphic function
+(`MeromorphicFunction.toChartGerm_toMeromorphic`).
 
 The local divisor-section condition persists on a neighbourhood. Every meromorphic function
 satisfying its order bound has a normalized representative at the centre: allowed poles are
@@ -345,5 +349,23 @@ theorem exact_divisorSheafMapOfLE_of_neg_le_order {D E : WeilDivisor X} (h : D �
     TopCat.Presheaf.germ_res_apply, TopCat.Presheaf.germ_res_apply]
 
 end Representation
+
+section Meromorphic
+
+variable [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X] {E : WeilDivisor X}
+
+/-- The coordinate germ of the meromorphic function of a global section of `𝒪_E` is the coordinate
+germ of the section. -/
+theorem MeromorphicFunction.toChartGerm_toMeromorphic (s : divisorSections E ⊤) (x : X) :
+    MeromorphicFunction.toChartGerm x (divisorSections.toMeromorphic E s) =
+      divisorSections.toChartGerm E ⊤ ⟨x, trivial⟩ s := by
+  apply Subtype.ext
+  rw [MeromorphicFunction.coe_toChartGerm, divisorSections.coe_toChartGerm]
+  apply Filter.Germ.coe_eq.2
+  filter_upwards [(tendsto_chartAt_symm_nhdsNE x).eventually
+    (divisorSections.finitePart_toMeromorphic_eventuallyEq s x)] with z hz
+  exact hz.trans (Subtype.val_injective.extend_apply s.val (0 : X → ℂ) ⟨_, trivial⟩).symm
+
+end Meromorphic
 
 end TauCeti.RiemannSurface

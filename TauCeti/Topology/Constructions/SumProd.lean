@@ -22,6 +22,10 @@ The file also records the underlying function of the homeomorphism between funct
 sum type and pairs of functions, identifies a disjoint union of copies of one space, indexed by
 a discrete space, with a product (`Homeomorph.sigmaEquivProd`), and bundles a family of fibre
 homeomorphisms into a homeomorphism of sigma types (`Homeomorph.sigmaCongrRight`).
+
+Finally, a function on a product that is eventually constant near a point has eventually constant
+slices through that point (`Filter.EventuallyEq.prodMk_right_nhds`,
+`Filter.EventuallyEq.prodMk_left_nhds`).
 -/
 
 public section
@@ -81,6 +85,22 @@ theorem Homeomorph.sigmaCongrRight_symm_apply {α : Type*} {β₁ β₂ : α →
     (F : ∀ a, β₁ a ≃ₜ β₂ a) (p : Σ a, β₂ a) :
     (Homeomorph.sigmaCongrRight F).symm p = ⟨p.1, (F p.1).symm p.2⟩ :=
   (rfl)
+
+/-- If `f` is eventually constant near `(x, y)`, then its slice `y' ↦ f (x, y')` is eventually
+equal to `f (x, y)` near `y`. -/
+theorem Filter.EventuallyEq.prodMk_right_nhds {X Y A : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {f : X × Y → A} {x : X} {y : Y} {a : A} (h : f =ᶠ[𝓝 (x, y)] fun _ ↦ a) :
+    (fun y' ↦ f (x, y')) =ᶠ[𝓝 y] fun _ ↦ f (x, y) := by
+  rw [h.self_of_nhds]
+  exact h.comp_tendsto ((Continuous.prodMk_right x).tendsto y)
+
+/-- If `f` is eventually constant near `(x, y)`, then its slice `x' ↦ f (x', y)` is eventually
+equal to `f (x, y)` near `x`. -/
+theorem Filter.EventuallyEq.prodMk_left_nhds {X Y A : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {f : X × Y → A} {x : X} {y : Y} {a : A} (h : f =ᶠ[𝓝 (x, y)] fun _ ↦ a) :
+    (fun x' ↦ f (x', y)) =ᶠ[𝓝 x] fun _ ↦ f (x, y) := by
+  rw [h.self_of_nhds]
+  exact h.comp_tendsto ((Continuous.prodMk_left y).tendsto x)
 
 namespace TauCeti
 

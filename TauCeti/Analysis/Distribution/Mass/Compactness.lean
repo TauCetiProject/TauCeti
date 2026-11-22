@@ -96,8 +96,6 @@ theorem isCompact_image_coe_mass_le (C : ℝ≥0) :
     refine ⟨L.toStrongDual ∘L TestFunction.toBoundedContinuousFunctionCLM ℝ, ?_, rfl⟩
     exact (mass_le_iff_exists_extension _ C).2 ⟨L.toStrongDual, by simpa using hL, fun _ => rfl⟩
 
-variable [FiniteDimensional ℝ E]
-
 /-- The evaluation functions of real continuous linear functionals with mass at most
 `C` and distributional support in a closed set `K` form a compact set in the product
 topology. The closed set `K` need not be compact. -/

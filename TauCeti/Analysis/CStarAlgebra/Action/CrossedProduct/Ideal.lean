@@ -42,6 +42,8 @@ unitality, separability, or global σ-finiteness is assumed.
 * `IsInvariant.mul_mem_range_fullCrossedProductMap_subtypeHom_left` and
   `IsInvariant.mul_mem_range_fullCrossedProductMap_subtypeHom_right`: two-sided ideal absorption
   in `FullCrossedProduct α μ`.
+* `IsInvariant.fullCrossedProductIdeal` and `IsInvariant.isClosed_fullCrossedProductIdeal`: that
+  range as a closed two-sided ideal of `FullCrossedProduct α μ`.
 * `IsInvariant.forall_mem_range_fullCrossedProductMap_subtypeHom_integratedFull_eq_zero_iff`:
   characterization of covariant representations annihilating the embedded crossed product.
 
@@ -177,5 +179,33 @@ theorem mul_mem_range_fullCrossedProductMap_subtypeHom_right
     y * a ∈ (hI.subtypeHom.fullCrossedProductMap μ).range :=
   StarMemClass.mul_mem_right_of_mul_mem_left
     (hI.mul_mem_range_fullCrossedProductMap_subtypeHom_left μ hmul) a hy
+
+/-- For a closed invariant two-sided star ideal `I`, the range of
+`hI.subtypeHom.fullCrossedProductMap μ` as a two-sided ideal of `FullCrossedProduct α μ`. -/
+def fullCrossedProductIdeal (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) :
+    TwoSidedIdeal (FullCrossedProduct α μ) :=
+  .mk' (hI.subtypeHom.fullCrossedProductMap μ).range (zero_mem _) (add_mem · ·) (neg_mem ·)
+    (fun hy => hI.mul_mem_range_fullCrossedProductMap_subtypeHom_left μ hmul _ hy)
+    (fun hy => hI.mul_mem_range_fullCrossedProductMap_subtypeHom_right μ hmul hy _)
+
+/-- Membership in `hI.fullCrossedProductIdeal μ hmul` is membership in the range of
+`hI.subtypeHom.fullCrossedProductMap μ`. -/
+@[simp]
+theorem mem_fullCrossedProductIdeal (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I)
+    {y : FullCrossedProduct α μ} :
+    y ∈ hI.fullCrossedProductIdeal μ hmul ↔ y ∈ (hI.subtypeHom.fullCrossedProductMap μ).range :=
+  TwoSidedIdeal.mem_mk' _ _ _ _ _ _ y
+
+/-- The ideal `hI.fullCrossedProductIdeal μ hmul` is closed in `FullCrossedProduct α μ`. -/
+theorem isClosed_fullCrossedProductIdeal (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) :
+    IsClosed (hI.fullCrossedProductIdeal μ hmul : Set (FullCrossedProduct α μ)) := by
+  rw [fullCrossedProductIdeal, TwoSidedIdeal.coe_mk']
+  exact hI.isClosed_range_fullCrossedProductMap_subtypeHom μ hmul
+
+/-- The closedness of `hI.fullCrossedProductIdeal μ hmul` as an instance, so that the quotient of
+`FullCrossedProduct α μ` by it is a C⋆-algebra. -/
+instance (hmul : ∀ a : A, ∀ x ∈ I, a * x ∈ I) :
+    IsClosed (hI.fullCrossedProductIdeal μ hmul : Set (FullCrossedProduct α μ)) :=
+  hI.isClosed_fullCrossedProductIdeal μ hmul
 
 end IsInvariant

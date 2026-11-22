@@ -36,10 +36,14 @@ the values (`TendstoUniformlyOn.comp_tendstoUniformlyOn`). This is the form need
 maps read at moving base points, such as `z ↦ G i (x i + z)` with `x i → x`.
 
 Uniform convergence to a limit mapping `s` into a compact set with a neighborhood `W` puts the
-values of the family on `s` eventually inside `W` (`TendstoUniformlyOn.eventually_mapsTo`).
+values of the family on `s` eventually inside `W` (`TendstoUniformlyOn.eventually_mapsTo`); in
+particular this holds for an open set `W` containing the values on a compact set `s` of a limit
+continuous on `s` (`TendstoUniformlyOn.eventually_mapsTo_of_isOpen`).
 
 The file also records that a constant family converges uniformly
-(`TauCeti.tendstoUniformlyOn_const`), and that two families converging uniformly along the same
+(`TauCeti.tendstoUniformlyOn_const`), that uniform convergence along a mapped filter `map g l` is
+uniform convergence of the reindexed family `F ∘ g` along `l`
+(`TauCeti.tendstoUniformlyOn_map_iff`), and that two families converging uniformly along the same
 filter converge jointly (`TendstoUniformlyOn.prodMk_same`), which is the form needed to compose
 with maps of several variables.
 -/
@@ -82,12 +86,26 @@ theorem TendstoUniformlyOn.eventually_mapsTo {K W : Set β} (h : TendstoUniforml
   filter_upwards [h _ (tendsto_swap_uniformity hV)] with i hi x hx
   exact hVW (mem_biUnion (hf hx) (hi x hx))
 
+/-- If `Fᵢ → f` uniformly on a compact set `s`, and `f` is continuous on `s` with values in an open
+set `W`, then eventually every `Fᵢ` maps `s` into `W`. -/
+theorem TendstoUniformlyOn.eventually_mapsTo_of_isOpen [TopologicalSpace α] {W : Set β}
+    (h : TendstoUniformlyOn F f p s) (hs : IsCompact s) (hf : ContinuousOn f s) (hW : IsOpen W)
+    (hfW : MapsTo f s W) : ∀ᶠ i in p, MapsTo (F i) s W :=
+  h.eventually_mapsTo (mapsTo_image f s) (hs.image_of_continuousOn hf)
+    (hW.mem_nhdsSet.2 (image_subset_iff.2 hfW))
+
 namespace TauCeti
 
 /-- A constant family converges uniformly to its value. -/
 theorem tendstoUniformlyOn_const (f : α → β) (p : Filter ι) (s : Set α) :
     TendstoUniformlyOn (fun _ ↦ f) f p s :=
   fun _ hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
+
+/-- A family converges uniformly along a mapped filter `map g l` exactly when the reindexed family
+`F ∘ g` converges uniformly along `l`. -/
+theorem tendstoUniformlyOn_map_iff {κ : Type*} {g : κ → ι} {l : Filter κ} :
+    TendstoUniformlyOn F f (map g l) s ↔ TendstoUniformlyOn (fun k ↦ F (g k)) f l s :=
+  forall₂_congr fun _ _ ↦ eventually_map
 
 end TauCeti
 

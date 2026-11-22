@@ -24,6 +24,8 @@ irreducible over `K`. That converse and Mathlib's forward direction give the equ
 
 ## Main results
 
+* `IsPrimitiveRoot.finrank_eq_natDegree_minpoly`: `[L : K]` is the degree of the minimal
+  polynomial of any primitive `n`-th root of unity of `L`.
 * `IsCyclotomicExtension.finrank_le_totient`: `[L : K] ≤ φ n`.
 * `IsCyclotomicExtension.irreducible_cyclotomic_of_totient_le_finrank`: if `φ n ≤ [L : K]` then
   `Φ_n` is irreducible over `K`.
@@ -47,16 +49,20 @@ public section
 
 open Polynomial
 
+/-- **The degree of a cyclotomic extension is that of a primitive root.** For an `n`-th cyclotomic
+extension `L / K` and any primitive `n`-th root of unity `ζ ∈ L`, `[L : K]` is the degree of the
+minimal polynomial of `ζ` over `K`: `L = K(ζ)` has the power basis `1, ζ, …`.
+
+Source: Mathlib, proof of `IsCyclotomicExtension.finrank`. -/
+theorem IsPrimitiveRoot.finrank_eq_natDegree_minpoly {n : ℕ} [NeZero n] {K L : Type*} [Field K]
+    [CommRing L] [IsDomain L] [Algebra K L] [IsCyclotomicExtension {n} K L] {ζ : L}
+    (hζ : IsPrimitiveRoot ζ n) : Module.finrank K L = (minpoly K ζ).natDegree := by
+  rw [(hζ.powerBasis K).finrank, IsPrimitiveRoot.powerBasis_dim]
+
 namespace IsCyclotomicExtension
 
 variable {n : ℕ} [NeZero n] (K : Type*) [Field K] (L : Type*) [CommRing L] [IsDomain L]
   [Algebra K L] [IsCyclotomicExtension {n} K L]
-
-private theorem finrank_eq_natDegree_minpoly_zeta :
-    Module.finrank K L = (minpoly K (zeta n K L)).natDegree := by
-  -- `L = K(ζ)` has the power basis `1, ζ, …` of length `deg (minpoly K ζ)`.
-  -- Source: Mathlib, proof of `IsCyclotomicExtension.finrank`.
-  rw [((zeta_spec n K L).powerBasis K).finrank, IsPrimitiveRoot.powerBasis_dim]
 
 private theorem minpoly_zeta_dvd_cyclotomic : minpoly K (zeta n K L) ∣ cyclotomic n K :=
   -- A primitive `n`-th root of unity is a root of `Φ_n`.
@@ -77,7 +83,7 @@ Sharifi, *Algebraic Number Theory*, proof of Lemma 3.1.13 ("`[ℚ(µ_{p^r}) : �
 theorem finrank_le_totient : Module.finrank K L ≤ n.totient :=
   calc
     Module.finrank K L = (minpoly K (zeta n K L)).natDegree :=
-      finrank_eq_natDegree_minpoly_zeta K L
+      (zeta_spec n K L).finrank_eq_natDegree_minpoly
     _ ≤ (cyclotomic n K).natDegree :=
       natDegree_le_of_dvd (minpoly_zeta_dvd_cyclotomic K L) (cyclotomic_ne_zero n K)
     _ = n.totient := natDegree_cyclotomic n K
@@ -93,7 +99,7 @@ theorem irreducible_cyclotomic_of_totient_le_finrank (h : n.totient ≤ Module.f
     Irreducible (cyclotomic n K) := by
   have hint : IsIntegral K (zeta n K L) := (integral {n} K L).isIntegral _
   have hdeg : (cyclotomic n K).natDegree ≤ (minpoly K (zeta n K L)).natDegree := by
-    rwa [natDegree_cyclotomic, ← finrank_eq_natDegree_minpoly_zeta K L]
+    rwa [natDegree_cyclotomic, ← (zeta_spec n K L).finrank_eq_natDegree_minpoly]
   rw [eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) (cyclotomic.monic n K)
     (minpoly_zeta_dvd_cyclotomic K L) hdeg]
   exact minpoly.irreducible hint
