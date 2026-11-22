@@ -96,18 +96,9 @@ variable {S : Scheme.{u}} {I : Type u} [Category.{u} I] [IsCofiltered I]
   {c : Cone D} (hc : IsLimit c)
 
 private instance isAffineHom_pullback_map (X : Over S) {i j : I} (f : i ⟶ j) :
-    IsAffineHom ((D ⋙ Over.pullback X.hom ⋙ Over.forget X.left).map f) := by
-  have houter : IsPullback (pullback.snd (D.obj i).hom X.hom) (pullback.fst (D.obj i).hom X.hom)
-      X.hom ((D.map f).left ≫ (D.obj j).hom) := by
-    rw [Over.w (D.map f)]; exact (IsPullback.of_hasPullback (D.obj i).hom X.hom).flip
-  have hpb : IsPullback (pullback.fst (D.obj i).hom X.hom)
-      ((D ⋙ Over.pullback X.hom ⋙ Over.forget X.left).map f)
-      (D.map f).left (pullback.fst (D.obj j).hom X.hom) := by
-    refine (IsPullback.of_right (h₁₂ := pullback.snd (D.obj j).hom X.hom) (v₁₃ := X.hom) ?_ ?_
-      (IsPullback.of_hasPullback (D.obj j).hom X.hom).flip).flip
-    · simpa [Over.pullback_map_left] using houter
-    · simp [Over.pullback_map_left]
-  exact MorphismProperty.of_isPullback (P := @IsAffineHom) hpb inferInstance
+    IsAffineHom ((D ⋙ Over.pullback X.hom ⋙ Over.forget X.left).map f) :=
+  MorphismProperty.of_isPullback (P := @IsAffineHom)
+    (Over.isPullback_pullback_map_left X.hom (D.map f)).flip inferInstance
 
 private def pullbackToBaseNatTrans (D : I ⥤ Over S) (X : Over S) :
     (D ⋙ Over.pullback X.hom ⋙ Over.forget X.left) ⟶ (Functor.const I).obj S where
@@ -318,31 +309,13 @@ def toOpenNhds (S : Scheme.{u}) (s : S) : AffineOpenNhds S s ⥤ OpenNhds s wher
   obj U := ⟨U.opens, U.mem⟩
   map f := homOfLE f.le
 
-instance (S : Scheme.{u}) (s : S) : (toOpenNhds S s).Initial where
-  out U := by
-    obtain ⟨_, ⟨W₀, hW₀, rfl⟩, hsW₀, hW₀U⟩ :=
-      S.isBasis_affineOpens.exists_subset_of_mem_open U.property U.val.isOpen
-    have : Nonempty (CostructuredArrow (toOpenNhds S s) U) :=
-      ⟨CostructuredArrow.mk (Y := ⟨W₀, hW₀, hsW₀⟩)
-        (homOfLE (show (toOpenNhds S s).obj ⟨W₀, hW₀, hsW₀⟩ ≤ U from hW₀U))⟩
-    refine zigzag_isConnected fun X Y ↦ ?_
-    obtain ⟨_, ⟨W, hW, rfl⟩, hsW, hWle⟩ :=
-      S.isBasis_affineOpens.exists_subset_of_mem_open
-        (show s ∈ (X.left.opens ⊓ Y.left.opens : Set S) from ⟨X.left.mem, Y.left.mem⟩)
-        (X.left.opens ⊓ Y.left.opens).isOpen
-    let Z : CostructuredArrow (toOpenNhds S s) U :=
-      CostructuredArrow.mk (Y := ⟨W, hW, hsW⟩)
-        (homOfLE (show (toOpenNhds S s).obj ⟨W, hW, hsW⟩ ≤ U from
-          (hWle.trans inf_le_left).trans X.hom.le))
-    refine Relation.ReflTransGen.trans
-      (Relation.ReflTransGen.single (Or.inr ⟨CostructuredArrow.homMk
-        (f := Z) (f' := X)
-        (homOfLE (show Z.left ≤ X.left from hWle.trans inf_le_left))
-        (Subsingleton.elim _ _)⟩))
-      (Relation.ReflTransGen.single (Or.inl ⟨CostructuredArrow.homMk
-        (f := Z) (f' := Y)
-        (homOfLE (show Z.left ≤ Y.left from hWle.trans inf_le_right))
-        (Subsingleton.elim _ _)⟩))
+instance (S : Scheme.{u}) (s : S) : (toOpenNhds S s).Initial :=
+  Functor.initial_of_exists_of_isCofiltered _
+    (fun U ↦ by
+      obtain ⟨_, ⟨W₀, hW₀, rfl⟩, hsW₀, hW₀U⟩ :=
+        S.isBasis_affineOpens.exists_subset_of_mem_open U.property U.val.isOpen
+      exact ⟨⟨W₀, hW₀, hsW₀⟩, ⟨homOfLE hW₀U⟩⟩)
+    (fun _ _ ↦ ⟨_, 𝟙 _, Subsingleton.elim _ _⟩)
 
 end AffineOpenNhds
 
@@ -490,12 +463,6 @@ private def stalkMapSpec {S : Scheme.{u}} (W₁ : S.Opens) (s : S) (hs₁ : s �
     Spec (W₁.toScheme.presheaf.stalk (⟨s, hs₁⟩ : W₁.toScheme)) ⟶ Spec (S.presheaf.stalk s) :=
   Spec.map (W₁.ι.stalkMap (⟨s, hs₁⟩ : W₁.toScheme))
 
-private lemma stalkMapSpec_comp_fromSpecStalk {S : Scheme.{u}} (W₁ : S.Opens) (s : S)
-    (hs₁ : s ∈ W₁) :
-    stalkMapSpec W₁ s hs₁ ≫ S.fromSpecStalk s =
-      W₁.toScheme.fromSpecStalk ⟨s, hs₁⟩ ≫ W₁.ι :=
-  Scheme.SpecMap_stalkMap_fromSpecStalk W₁.ι (x := ⟨s, hs₁⟩)
-
 /-- The canonical comparison morphism from the preimage of `W₁.ι ⁻¹ᵁ U` in `Spec 𝒪_{W₁, s}` to
 the preimage of `U` in `Spec 𝒪_{S, s}`. -/
 def stalkOpenRestriction {S : Scheme.{u}} (U W₁ : S.Opens) (s : S) (hs₁ : s ∈ W₁) :
@@ -504,7 +471,8 @@ def stalkOpenRestriction {S : Scheme.{u}} (U W₁ : S.Opens) (s : S) (hs₁ : s 
   let s₁ : W₁.toScheme := ⟨s, hs₁⟩
   let σ := stalkMapSpec W₁ s hs₁
   have hpre : W₁.toScheme.fromSpecStalk s₁ ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U) = σ ⁻¹ᵁ (S.fromSpecStalk s ⁻¹ᵁ U) := by
-    rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, stalkMapSpec_comp_fromSpecStalk]
+    rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage]
+    exact congrArg (· ⁻¹ᵁ U) (Scheme.SpecMap_stalkMap_fromSpecStalk W₁.ι (x := s₁)).symm
   ((Spec _).isoOfEq hpre).hom ≫ (σ ∣_ (S.fromSpecStalk s ⁻¹ᵁ U))
 
 /-- `stalkOpenRestriction` commutes with restriction of `fromSpecStalk` to `U`. -/
@@ -519,7 +487,7 @@ theorem stalkOpenRestriction_comp_morphismRestrict {S : Scheme.{u}} (U W₁ : S.
     Scheme.isoOfEq_hom_ι_assoc]
   exact congrArg
     ((W₁.toScheme.fromSpecStalk ⟨s, hs₁⟩ ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).ι ≫ ·)
-    (stalkMapSpec_comp_fromSpecStalk W₁ s hs₁)
+    (Scheme.SpecMap_stalkMap_fromSpecStalk W₁.ι (x := ⟨s, hs₁⟩))
 
 /-- `stalkOpenRestriction` commutes with `fromSpecStalkOfMem` into `W₁`. -/
 @[reassoc]
@@ -532,7 +500,7 @@ theorem stalkOpenRestriction_comp_ι_fromSpecStalkOfMem {S : Scheme.{u}} (U W₁
   have hσ : stalkMapSpec W₁ s hs₁ ≫ W₁.fromSpecStalkOfMem s hs₁ =
       W₁.toScheme.fromSpecStalk s₁ := by
     rw [← cancel_mono W₁.ι, Category.assoc, Scheme.Opens.fromSpecStalkOfMem_ι]
-    exact stalkMapSpec_comp_fromSpecStalk W₁ s hs₁
+    exact Scheme.SpecMap_stalkMap_fromSpecStalk W₁.ι (x := s₁)
   dsimp only [stalkOpenRestriction]
   simp only [Category.assoc, morphismRestrict_ι_assoc, Scheme.isoOfEq_hom_ι_assoc,
     morphismRestrict_ι]

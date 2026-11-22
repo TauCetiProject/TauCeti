@@ -251,15 +251,11 @@ noncomputable def pullbackMapOpenIso {S T : Scheme.{u}} (f : T ⟶ S) (U : S.Ope
 `V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)`. -/
 noncomputable def infImageOpenIso {S : Scheme.{u}} (U W₁ : S.Opens) (V : W₁.toScheme.Opens) :
     (U ⊓ (W₁.ι ''ᵁ V)).toScheme ≅ (V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).toScheme :=
-  IsOpenImmersion.isoOfRangeEq
-    (S.homOfLE (inf_le_left : U ⊓ (W₁.ι ''ᵁ V) ≤ U) ≫ U.ι)
-    ((V.ι ⁻¹ᵁ (W₁.ι ⁻¹ᵁ U)).ι ≫ V.ι ≫ W₁.ι) <| by
-    rw [Scheme.homOfLE_ι, Scheme.Opens.range_ι]
-    ext x
-    simp only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.mem_range, Function.comp_apply]
-    constructor
-    · rintro ⟨hxU, y, hyV, rfl⟩; exact ⟨⟨⟨y, hyV⟩, hxU⟩, rfl⟩
-    · rintro ⟨⟨⟨y, hyV⟩, hyU⟩, rfl⟩; exact ⟨hyU, y, hyV, rfl⟩
+  have heq : U ⊓ (W₁.ι ''ᵁ V) = (V.ι ≫ W₁.ι) ''ᵁ ((V.ι ≫ W₁.ι) ⁻¹ᵁ U) := by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Hom.opensRange_comp,
+      Scheme.Opens.opensRange_ι, inf_comm]
+  S.isoOfEq heq ≪≫ ((V.ι ≫ W₁.ι).isoImage ((V.ι ≫ W₁.ι) ⁻¹ᵁ U)).symm ≪≫
+    V.toScheme.isoOfEq (Scheme.Hom.comp_preimage V.ι W₁.ι U)
 
 /-- `infImageOpenIso` identifies the restriction of `V.ι ∣_ (W₁.ι ⁻¹ᵁ U) ≫ W₁.ι ∣_ U` with the
 inclusion `U ⊓ (W₁.ι ''ᵁ V) ≤ U`. -/
@@ -267,9 +263,10 @@ inclusion `U ⊓ (W₁.ι ''ᵁ V) ≤ U`. -/
 theorem infImageOpenIso_hom_comp_left {S : Scheme.{u}} (U W₁ : S.Opens) (V : W₁.toScheme.Opens) :
     (infImageOpenIso U W₁ V).hom ≫ (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ∣_ U) =
       S.homOfLE (inf_le_left : U ⊓ (W₁.ι ''ᵁ V) ≤ U) := by
-  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, morphismRestrict_ι,
-    ← Category.assoc (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)), morphismRestrict_ι, Category.assoc]
-  exact IsOpenImmersion.isoOfRangeEq_hom_fac _ _ _
+  rw [← cancel_mono U.ι]
+  simp only [infImageOpenIso, Iso.trans_hom, Iso.symm_hom, Category.assoc, morphismRestrict_ι,
+    morphismRestrict_ι_assoc, Scheme.isoOfEq_hom_ι_assoc, Scheme.Hom.isoImage_inv_ι,
+    Scheme.isoOfEq_hom_ι, Scheme.homOfLE_ι]
 
 /-- `infImageOpenIso` identifies `(V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ⁻¹ᵁ U).ι` with the inclusion
 `U ⊓ (W₁.ι ''ᵁ V) ≤ W₁.ι ''ᵁ V ≤ W₁`. -/
@@ -278,6 +275,9 @@ theorem infImageOpenIso_hom_comp_right {S : Scheme.{u}} (U W₁ : S.Opens) (V : 
     (infImageOpenIso U W₁ V).hom ≫ (V.ι ∣_ (W₁.ι ⁻¹ᵁ U)) ≫ (W₁.ι ⁻¹ᵁ U).ι =
       S.homOfLE (inf_le_right : U ⊓ (W₁.ι ''ᵁ V) ≤ W₁.ι ''ᵁ V) ≫
         S.homOfLE (W₁.ι_image_le V) := by
-  rw [← cancel_mono W₁.ι]; simp [infImageOpenIso, Category.assoc]
+  rw [← cancel_mono W₁.ι]
+  simp only [infImageOpenIso, Iso.trans_hom, Iso.symm_hom, Category.assoc,
+    morphismRestrict_ι_assoc, Scheme.isoOfEq_hom_ι_assoc, Scheme.Hom.isoImage_inv_ι,
+    Scheme.isoOfEq_hom_ι, Scheme.homOfLE_ι]
 
 end TauCeti.AlgebraicGeometry

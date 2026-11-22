@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
-public import TauCeti.AlgebraicGeometry.Gluing.Pushout
+import TauCeti.AlgebraicGeometry.Gluing.Over
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
@@ -19,10 +19,10 @@ overlap `W₁₂ = W₁ ×_S W₂` and inclusions `i₁ : W₁₂ ⟶ W₁`, `i�
 `W₁₂` glue to a finite étale cover `Y` of `S` whose restrictions to `W₁` and `W₂` are `Y₁` and `Y₂`,
 compatibly with `e` (`TauCeti.FiniteEtaleScheme.exists_pullback_iso_of_isPullback`).
 
-The glued scheme is the pushout of `Y₁` and `Y₂` along `Y₁ ×_{W₁} W₁₂`, which `e` identifies with
-the open `Y₂ ×_{W₂} W₁₂` of `Y₂`. Its inverse images of `W₁` and `W₂` are `Y₁` and `Y₂`
-(`AlgebraicGeometry.Scheme.isPullback_pushout_desc_comp_inl`), so it is finite and étale over `S`,
-these properties being local on the target.
+The glued scheme is `TauCeti.AlgebraicGeometry.glueOver`, the pushout of `Y₁` and `Y₂` along
+`Y₁ ×_{W₁} W₁₂`, which `e` identifies with the open `Y₂ ×_{W₂} W₁₂` of `Y₂`. Its inverse images of
+`W₁` and `W₂` are `Y₁` and `Y₂`, so it is finite and étale over `S`, these properties being local on
+the target (`AlgebraicGeometry.IsZariskiLocalAtTarget.of_glueOver`).
 
 This is how a finite étale cover of an open `U` is extended across an open `W`: a cover of `W`
 which agrees with the given one over `U ∩ W` glues with it to a cover of `U ∪ W`. Extensions of
@@ -47,33 +47,8 @@ universe u
 namespace TauCeti.FiniteEtaleScheme
 
 variable {S W₁ W₂ W₁₂ : Scheme.{u}} {i₁ : W₁₂ ⟶ W₁} {i₂ : W₁₂ ⟶ W₂} {j₁ : W₁ ⟶ S}
-  {j₂ : W₂ ⟶ S} [IsOpenImmersion i₁] [IsOpenImmersion i₂] [IsOpenImmersion j₁]
-  [IsOpenImmersion j₂] {Y₁ : FiniteEtaleScheme W₁} {Y₂ : FiniteEtaleScheme W₂}
-
-/-- The isomorphism of underlying schemes of `e`, with source and target written as the
-pullbacks they are by definition. -/
-private def overlapIso (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
-    Limits.pullback Y₁.obj.hom i₁ ≅ Limits.pullback Y₂.obj.hom i₂ :=
-  (Over.forget _).mapIso ((ObjectProperty.ι _).mapIso e)
-
-omit [IsOpenImmersion i₁] [IsOpenImmersion i₂] in
-private lemma overlapIso_hom (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
-    (overlapIso e).hom = e.hom.hom.left :=
-  rfl
-
-omit [IsOpenImmersion i₁] [IsOpenImmersion i₂] in
-private lemma overlapIso_hom_snd (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
-    (overlapIso e).hom ≫ Limits.pullback.snd Y₂.obj.hom i₂ = Limits.pullback.snd Y₁.obj.hom i₁ :=
-  Over.w e.hom.hom
-
-omit [IsOpenImmersion i₁] [IsOpenImmersion i₂] in
-/-- The restriction `Y₁ ×_{W₁} W₁₂` of `Y₁`, mapped into `Y₂` through `e`, is the restriction of
-`Y₂` to `W₁₂`. -/
-private lemma isPullback_overlap (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
-    IsPullback ((overlapIso e).hom ≫ Limits.pullback.fst Y₂.obj.hom i₂)
-      (Limits.pullback.snd Y₁.obj.hom i₁) Y₂.obj.hom i₂ :=
-  IsPullback.of_iso_pullback ⟨by rw [Category.assoc, Limits.pullback.condition,
-    reassoc_of% overlapIso_hom_snd e]⟩ (overlapIso e) rfl (overlapIso_hom_snd e)
+  {j₂ : W₂ ⟶ S} [IsOpenImmersion j₁] [IsOpenImmersion j₂]
+  {Y₁ : FiniteEtaleScheme W₁} {Y₂ : FiniteEtaleScheme W₂}
 
 /-- **Gluing finite étale covers along two opens.** Let `j₁ : W₁ ⟶ S` and `j₂ : W₂ ⟶ S` be open
 immersions covering `S`, with overlap `W₁₂` given by a cartesian square `i₁ ≫ j₁ = i₂ ≫ j₂`. Let
@@ -89,40 +64,35 @@ theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
       Limits.pullback.fst Y₁.obj.hom i₁ ≫ e₁.inv.hom.left ≫ Limits.pullback.fst Y.obj.hom j₁ =
         e.hom.hom.left ≫ Limits.pullback.fst Y₂.obj.hom i₂ ≫ e₂.inv.hom.left ≫
           Limits.pullback.fst Y.obj.hom j₂ := by
-  have h₁ := IsPullback.of_hasPullback Y₁.obj.hom i₁
-  have h₂ := isPullback_overlap e
-  have : IsOpenImmersion (Limits.pullback.fst Y₁.obj.hom i₁) :=
-    MorphismProperty.of_isPullback (P := @IsOpenImmersion) h₁.flip inferInstance
-  have : IsOpenImmersion ((overlapIso e).hom ≫ Limits.pullback.fst Y₂.obj.hom i₂) :=
-    MorphismProperty.of_isPullback (P := @IsOpenImmersion) h₂.flip inferInstance
-  have w : Limits.pullback.fst Y₁.obj.hom i₁ ≫ Y₁.obj.hom ≫ j₁ =
-      ((overlapIso e).hom ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫ Y₂.obj.hom ≫ j₂ := by
-    rw [h₁.w_assoc, h.w, ← h₂.w_assoc]
-  have : IsFinite (pushout.desc (Y₁.obj.hom ≫ j₁) (Y₂.obj.hom ≫ j₂) w) :=
-    (IsZariskiLocalAtTarget.pushout_desc_comp_iff h h₁ h₂ w hcover).mpr
-      ⟨inferInstance, inferInstance⟩
-  have : Etale (pushout.desc (Y₁.obj.hom ≫ j₁) (Y₂.obj.hom ≫ j₂) w) :=
-    (IsZariskiLocalAtTarget.pushout_desc_comp_iff h h₁ h₂ w hcover).mpr
-      ⟨inferInstance, inferInstance⟩
-  have chart₁ := (Scheme.isPullback_pushout_desc_comp_inl h h₁.toCommSq h₂ w).flip
-  have chart₂ := (Scheme.isPullback_pushout_desc_comp_inr h h₁ h₂.toCommSq w).flip
-  -- Build `Y` with `ofHom`, then use `ofHom_obj` to see its structure morphism as `pushout.desc`.
-  obtain ⟨⟨Y, hY⟩, hYobj⟩ : ∃ Y : FiniteEtaleScheme S,
-      Y.obj = Over.mk (pushout.desc (Y₁.obj.hom ≫ j₁) (Y₂.obj.hom ≫ j₂) w) :=
-    ⟨ofHom _, ofHom_obj _⟩
-  subst hYobj
-  let Y : FiniteEtaleScheme S := ⟨_, hY⟩
+  let e' : (Over.pullback i₁).obj Y₁.obj ≅ (Over.pullback i₂).obj Y₂.obj :=
+    (finiteEtaleSchemeProperty _).ι.mapIso e
+  let Y_over : Over S := TauCeti.AlgebraicGeometry.glueOver h Y₁.obj Y₂.obj e'
+  have hfin : IsFinite Y_over.hom :=
+    IsZariskiLocalAtTarget.of_glueOver (P := @IsFinite.{u}) h hcover Y₁.obj Y₂.obj e'
+      inferInstance inferInstance
+  have het : Etale Y_over.hom :=
+    IsZariskiLocalAtTarget.of_glueOver (P := @Etale.{u}) h hcover Y₁.obj Y₂.obj e'
+      inferInstance inferInstance
+  let Y : FiniteEtaleScheme S :=
+    ⟨Y_over, (finiteEtaleSchemeProperty_iff Y_over).mpr ⟨hfin, het⟩⟩
   let e₁ : (pullback j₁).obj Y ≅ Y₁ :=
-    ObjectProperty.isoMk _ (Over.isoMk chart₁.isoPullback.symm chart₁.isoPullback_inv_snd)
+    ObjectProperty.isoMk _ (TauCeti.AlgebraicGeometry.glueOverPullbackLeftIso h Y₁.obj Y₂.obj e')
   let e₂ : (pullback j₂).obj Y ≅ Y₂ :=
-    ObjectProperty.isoMk _ (Over.isoMk chart₂.isoPullback.symm chart₂.isoPullback_inv_snd)
-  -- Through `e₁` and `e₂`, the embeddings of `Y₁` and `Y₂` into `Y` are the pushout inclusions.
-  have c₁ : e₁.inv.hom.left ≫ Limits.pullback.fst Y.obj.hom j₁ = pushout.inl _ _ :=
-    chart₁.isoPullback_hom_fst
-  have c₂ : e₂.inv.hom.left ≫ Limits.pullback.fst Y.obj.hom j₂ = pushout.inr _ _ :=
-    chart₂.isoPullback_hom_fst
+    ObjectProperty.isoMk _ (TauCeti.AlgebraicGeometry.glueOverPullbackRightIso h Y₁.obj Y₂.obj e')
   refine ⟨Y, e₁, e₂, ?_⟩
-  rw [c₁, c₂, ← overlapIso_hom]
-  exact pushout.condition.trans (Category.assoc _ _ _)
+  have hcompat := TauCeti.AlgebraicGeometry.glueOverPullback_compat h Y₁.obj Y₂.obj e'
+  rw [← Category.assoc, ← Functor.mapIso_hom, ← Iso.eq_comp_inv, Functor.mapIso_inv] at hcompat
+  have hcompat' := congrArg (fun k ↦ k.left ≫
+    Limits.pullback.fst (Limits.pullback.snd Y_over.hom j₂) i₂ ≫
+      Limits.pullback.fst Y_over.hom j₂) hcompat
+  change Limits.pullback.fst Y₁.obj.hom i₁ ≫
+      (TauCeti.AlgebraicGeometry.glueOverPullbackLeftIso h Y₁.obj Y₂.obj e').inv.left ≫
+        Limits.pullback.fst (TauCeti.AlgebraicGeometry.glueOver h Y₁.obj Y₂.obj e').hom j₁ =
+    e'.hom.left ≫ Limits.pullback.fst Y₂.obj.hom i₂ ≫
+      (TauCeti.AlgebraicGeometry.glueOverPullbackRightIso h Y₁.obj Y₂.obj e').inv.left ≫
+        Limits.pullback.fst (TauCeti.AlgebraicGeometry.glueOver h Y₁.obj Y₂.obj e').hom j₂
+  rw [TauCeti.AlgebraicGeometry.glueOverPullbackLeftIso_inv_left_fst,
+    TauCeti.AlgebraicGeometry.glueOverPullbackRightIso_inv_left_fst]
+  simpa [Y_over, Over.comp_left, Over.pullback_map_left] using hcompat'
 
 end TauCeti.FiniteEtaleScheme

@@ -177,15 +177,14 @@ via `pullbackCompIso w` for `w : f ≫ g = h`. -/
 noncomputable def conjPullback {A B D : C} {f : A ⟶ B} {g : B ⟶ D} {h : A ⟶ D} (w : f ≫ g = h)
     {X Y : Over D} (φ : (Over.pullback g).obj X ⟶ (Over.pullback g).obj Y) :
     (Over.pullback h).obj X ⟶ (Over.pullback h).obj Y :=
-  (pullbackCompIso w).inv.app X ≫ (Over.pullback f).map φ ≫ (pullbackCompIso w).hom.app Y
+  Iso.homCongr ((pullbackCompIso w).app X) ((pullbackCompIso w).app Y) ((Over.pullback f).map φ)
 
 /-- Unfolding lemma for `conjPullback`. -/
 theorem conjPullback_eq {A B D : C} {f : A ⟶ B} {g : B ⟶ D} {h : A ⟶ D} (w : f ≫ g = h)
     {X Y : Over D} (φ : (Over.pullback g).obj X ⟶ (Over.pullback g).obj Y) :
     conjPullback w φ =
       (pullbackCompIso w).inv.app X ≫ (Over.pullback f).map φ ≫ (pullbackCompIso w).hom.app Y := by
-  unfold conjPullback
-  rfl
+  simp [conjPullback]
 
 /-- Conjugation by `pullbackCompIso w` cancels on the left and right, so equal conjugates imply
 equal pullbacks along `f`. -/
@@ -193,10 +192,8 @@ theorem conjPullback_injective {A B D : C} {f : A ⟶ B} {g : B ⟶ D} {h : A �
     (w : f ≫ g = h) {X Y : Over D}
     {φ ψ : (Over.pullback g).obj X ⟶ (Over.pullback g).obj Y}
     (H : conjPullback w φ = conjPullback w ψ) :
-    (Over.pullback f).map φ = (Over.pullback f).map ψ := by
-  rw [conjPullback_eq, conjPullback_eq] at H
-  rwa [← cancel_epi ((pullbackCompIso w).inv.app X),
-    ← cancel_mono ((pullbackCompIso w).hom.app Y), Category.assoc, Category.assoc]
+    (Over.pullback f).map φ = (Over.pullback f).map ψ :=
+  (Iso.homCongr ((pullbackCompIso w).app X) ((pullbackCompIso w).app Y)).injective H
 
 /-- `conjPullback` preserves composition. -/
 theorem conjPullback_comp {A B D : C} {f : A ⟶ B} {g : B ⟶ D} {h : A ⟶ D} (w : f ≫ g = h)
@@ -204,15 +201,14 @@ theorem conjPullback_comp {A B D : C} {f : A ⟶ B} {g : B ⟶ D} {h : A ⟶ D} 
     (a : (Over.pullback g).obj X ⟶ (Over.pullback g).obj Y)
     (b : (Over.pullback g).obj Y ⟶ (Over.pullback g).obj Z) :
     conjPullback w a ≫ conjPullback w b = conjPullback w (a ≫ b) := by
-  simp only [conjPullback_eq, Category.assoc, Functor.map_comp]
-  rw [← Category.assoc ((pullbackCompIso w).hom.app Y), Iso.hom_inv_id_app, Category.id_comp]
+  simp [conjPullback]
 
 /-- `conjPullback` preserves identities. -/
 @[simp]
 theorem conjPullback_id {A B D : C} {f : A ⟶ B} {g : B ⟶ D} {h : A ⟶ D} (w : f ≫ g = h)
     (X : Over D) :
     conjPullback w (𝟙 ((Over.pullback g).obj X)) = 𝟙 ((Over.pullback h).obj X) := by
-  simp [conjPullback_eq]
+  simp [conjPullback]
 
 /-- Iterated `conjPullback` satisfies associativity up to the corresponding morphism equalities. -/
 theorem conjPullback_conjPullback {A B D E : C}

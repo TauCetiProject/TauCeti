@@ -134,7 +134,7 @@ theorem essSurj_pullback_ι_of_purityHolds {X : Scheme.{u}} [NoetherianSpace X] 
     -- Spread `Yx` to an affine open `W ∋ x` and glue with `YU₀` over `U₀ ⊔ W`, contradicting
     -- maximality of `U₀`.
     have : NoetherianSpace U₀.toScheme := U₀.ι.isOpenEmbedding.isInducing.noetherianSpace
-    have : QuasiCompact U₀.ι := ⟨fun V _ _ ↦ NoetherianSpace.isCompact (U₀.ι ⁻¹' V)⟩
+    have : QuasiCompact U₀.ι := inferInstance
     obtain ⟨W, _, hxW, Y', ⟨e'⟩, -⟩ := exists_spread_of_iso_fromSpecStalk U₀ x YU₀ Yx e
     have hmem : U₀ ⊔ W ∈ S := by
       refine ⟨hUU₀.trans le_sup_left, Y', ⟨?_⟩⟩

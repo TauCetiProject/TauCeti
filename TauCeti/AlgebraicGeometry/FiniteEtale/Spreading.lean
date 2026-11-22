@@ -7,8 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.Restrict
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
-public import TauCeti.AlgebraicGeometry.Gluing.Over
 public import TauCeti.AlgebraicGeometry.Limits.Spreading
+import TauCeti.AlgebraicGeometry.FiniteEtale.Gluing
 import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.CategoryTheory.Comma.Over
@@ -130,19 +130,6 @@ theorem exists_spread_fromSpecStalk {S : Scheme.{u}} (s : S)
   exact TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv
     (Localization.Away (f : Γ(S, W₀))) Bf (S.presheaf.stalk s) B.unop.obj eAlg.symm
 
--- `HasAffineProperty.instIsZariskiLocalAtTarget` and
--- `HasRingHomProperty.instIsZariskiLocalAtTarget` are defs rather than global instances (to avoid
--- instance loops on `MorphismProperty Scheme`), and `HasAffineProperty @IsFinite _` uses a custom
--- predicate in Mathlib rather than `affineAnd`, so `inferInstance` cannot synthesize
--- `IsZariskiLocalAtTarget @IsFinite` or `@Etale` directly.
-private lemma isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} := by
-  observe hfin_aff : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  exact @HasAffineProperty.instIsZariskiLocalAtTarget _ _ hfin_aff
-
-private lemma isZariskiLocalAtTarget_etale : IsZariskiLocalAtTarget @Etale.{u} :=
-  HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
-
 /-- **Spreading out a finite étale cover glued at a local ring.** Given a finite étale cover `YU`
 over a quasi-compact open subscheme `U ⊆ S` and a finite étale cover `Ys` over `Spec 𝒪_{S, s}`
 together with an isomorphism over `Spec 𝒪_{S, s} ×_S U`, there exist an affine open neighbourhood
@@ -231,23 +218,13 @@ theorem exists_spread_of_iso_fromSpecStalk {S : Scheme.{u}} (U : S.Opens) [Quasi
       ((Over.pullbackCompIso (rfl : S.homOfLE inf_le_right ≫ S.homOfLE hWW₁ = _)).app YW₁.obj).symm
   have hpb := isPullback_opens_inf_le (X := S) (le_sup_left : U ≤ U ⊔ W) (le_sup_right : W ≤ U ⊔ W)
   have hcov := S.opensRange_homOfLE_sup U W
-  let Y_over : Over (U ⊔ W).toScheme := glueOver hpb YU.obj YW.obj e_glue
-  have : IsZariskiLocalAtTarget @IsFinite.{u} := isZariskiLocalAtTarget_isFinite
-  have : IsZariskiLocalAtTarget @Etale.{u} := isZariskiLocalAtTarget_etale
-  have hfin : IsFinite Y_over.hom :=
-    IsZariskiLocalAtTarget.of_glueOver (P := @IsFinite.{u}) hpb hcov YU.obj YW.obj e_glue
-      inferInstance inferInstance
-  have het : Etale Y_over.hom :=
-    IsZariskiLocalAtTarget.of_glueOver (P := @Etale.{u}) hpb hcov YU.obj YW.obj e_glue
-      inferInstance inferInstance
-  let Y' : FiniteEtaleScheme (U ⊔ W).toScheme :=
-    ⟨Y_over, (finiteEtaleSchemeProperty_iff Y_over).mpr ⟨hfin, het⟩⟩
-  refine ⟨W, hW, hsW, Y',
-    ⟨ObjectProperty.isoMk _ (glueOverPullbackLeftIso hpb YU.obj YW.obj e_glue)⟩, ⟨?_⟩⟩
+  obtain ⟨Y', e_left, e_right, -⟩ :=
+    exists_pullback_iso_of_isPullback hpb hcov (Y₁ := YU) (Y₂ := YW) (ObjectProperty.isoMk _ e_glue)
+  refine ⟨W, hW, hsW, Y', ⟨e_left⟩, ⟨?_⟩⟩
   refine ObjectProperty.isoMk _
     (((Over.pullbackCompIso hstalk_sup).app Y'.obj).symm ≪≫
       (Over.pullback (W.fromSpecStalkOfMem s hsW)).mapIso
-        (glueOverPullbackRightIso hpb YU.obj YW.obj e_glue) ≪≫
+        ((finiteEtaleSchemeProperty _).ι.mapIso e_right) ≪≫
       (Over.pullbackCompIso hstalk_W₁).app YW₁.obj ≪≫
       (finiteEtaleSchemeProperty _).ι.mapIso e₁)
 
