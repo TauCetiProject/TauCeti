@@ -68,6 +68,9 @@ inclusion.
   an exponentially decaying function with a translate of a bounded one is integrable, and
   `TauCeti.integrable_mul_comp_add_of_forall_lt` restates this for nonnegative functions decaying
   at every rate below a threshold.
+* `TauCeti.locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul`: for any measure `μ` with
+  `NullSingletonClass μ`, integrability of `t ↦ exp (-(p * t)) • f t` on `(a, ∞)` implies
+  `LocallyIntegrableOn f (Ici a) μ`.
 -/
 
 public section
@@ -469,5 +472,17 @@ theorem integrableOn_exp_mul_Iic_iff {a c : ℝ} :
       (Homeomorph.neg ℝ).measurableEmbedding]
   simpa only [Function.comp_def, neg_preimage, neg_Iio, neg_neg, mul_neg, neg_mul,
     neg_lt_zero] using (integrableOn_exp_mul_Ioi_iff (a := -a) (c := -c))
+
+/-- If `t ↦ exp (-(p * t)) • f t` is integrable on `(a, ∞)` with respect to a measure `μ`
+satisfying `NullSingletonClass μ`, then `f` is locally integrable on `[a, ∞)` with respect to `μ`.
+-/
+theorem locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} [NullSingletonClass μ] {f : ℝ → E} {a p : ℝ}
+    (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) • f t) (Ioi a) μ) :
+    LocallyIntegrableOn f (Ici a) μ :=
+  (((integrableOn_Ici_iff_integrableOn_Ioi eNorm_ne_top).mpr hf).locallyIntegrableOn
+      |>.continuousOn_smul isClosed_Ici.isLocallyClosed
+      (by fun_prop : ContinuousOn (fun t : ℝ ↦ Real.exp (p * t)) (Ici a))).congr
+    (ae_of_all _ fun t ↦ by simp [smul_smul, ← Real.exp_add])
 
 end TauCeti

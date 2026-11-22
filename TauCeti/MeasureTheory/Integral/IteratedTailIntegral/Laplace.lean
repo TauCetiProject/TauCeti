@@ -56,8 +56,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### Exponentially weighted improper integration by parts on `(0, ∞)` -/
 
+/-- Exponential-polynomial moment integrability on `(0, ∞)` for a function continuous on
+`[0, ∞)` and bounded at `+∞`. -/
+private theorem integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one {h : ℝ → E} {p : ℝ}
+    (hp : 0 < p) (k : ℕ) (hh_cont : ContinuousOn h (Ici 0)) (hh_top : h =O[atTop] (1 : ℝ → ℝ)) :
+    IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ k) • h t) (Ioi 0) := by
+  have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ k) (Ioi 0) := by
+    simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi k hp
+  exact hw.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hh_cont hh_top
+
 /-- Improper integration by parts for `∫ t in Ioi 0, exp (-(p * t)) • g t` (`0 < p`). -/
-private theorem integral_Ioi_exp_neg_mul_smul_eq [CompleteSpace E] {g : ℝ → E} {p : ℝ} (hp : 0 < p)
+private theorem integral_Ioi_exp_neg_mul_smul_eq {g : ℝ → E} {p : ℝ} (hp : 0 < p)
     (hg_loc : LocallyIntegrableOn g (Ici 0))
     (hg_conv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, g t) atTop (𝓝 L))
     (hg_int : IntegrableOn (fun t ↦ Real.exp (-(p * t)) • g t) (Ioi 0)) :
@@ -76,7 +85,7 @@ private theorem integral_Ioi_exp_neg_mul_smul_eq [CompleteSpace E] {g : ℝ → 
 
 /-- Improper integration by parts for `∫ t in Ioi 0, (exp (-(p * t)) * t ^ (m + 1)) • g t`
 (`0 < p`). -/
-private theorem integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq [CompleteSpace E] {g : ℝ → E} {p : ℝ}
+private theorem integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq {g : ℝ → E} {p : ℝ}
     (hp : 0 < p) (m : ℕ) (hg_loc : LocallyIntegrableOn g (Ici 0))
     (hg_conv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, g t) atTop (𝓝 L))
     (hg_int : IntegrableOn (fun t ↦ (Real.exp (-(p * t)) * t ^ (m + 1)) • g t) (Ioi 0)) :
@@ -99,7 +108,7 @@ private theorem integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq [CompleteSpace E] 
   obtain ⟨_, heq⟩ := integral_Ioi_smul_eq_of_tendsto hg_loc ⟨L, hL⟩ (by fun_prop) hφ'_int hg_int
   have hG_int (k : ℕ) : IntegrableOn
       (fun s : ℝ ↦ (Real.exp (-(p * s)) * s ^ k) • iteratedTailIntegral g 1 s) (Ioi 0) :=
-    (hpow_int k).smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self
+    integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one hp k
       (continuousOn_iteratedTailIntegral_one hg_loc)
       ((tendsto_iteratedTailIntegral_one_atTop hg_loc hL).isBigO_one ℝ)
   have hG_smul (k : ℕ) (c : ℝ) : IntegrableOn
@@ -147,10 +156,9 @@ private theorem tendsto_pow_sub_smul_integral_exp_neg_mul_mul_pow_smul_zero [Com
       rw [smul_zero, sub_self] at hdiff
       refine hdiff.congr' ?_
       filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
-      have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ (m + 1)) (Ioi 0) := by
-        simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi (m + 1) hp
       have hh_int : IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ (m + 1)) • h t) (Ioi 0) :=
-        hw.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hh_cont (hh_top.isBigO_one ℝ)
+        integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one hp (m + 1) hh_cont
+          (hh_top.isBigO_one ℝ)
       have hk₁ : m + 1 + 1 - (k + 1) = m + 1 - k := by omega
       have hk₂ : m + 2 - k = m + 1 - k + 1 := by omega
       rw [hk₁, integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq hp m hloc ⟨L0, hL0'⟩ hh_int,
@@ -203,9 +211,8 @@ theorem tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero {f : ℝ → E} {n
     have hG_top := tendsto_iteratedTailIntegral_one_atTop hloc hL0'
     have hG_lap : ∀ p > 0, IntegrableOn
         (fun s : ℝ ↦ Real.exp (-(p * s)) • iteratedTailIntegral f 1 s) (Ioi 0) := fun p hp ↦ by
-      have hw : IntegrableOn (fun s : ℝ ↦ Real.exp (-(p * s))) (Ioi 0) := by
-        simpa only [neg_mul] using exp_neg_integrableOn_Ioi 0 hp
-      exact hw.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hG_cont (hG_top.isBigO_one ℝ)
+      simpa only [pow_zero, mul_one] using
+        integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one hp 0 hG_cont (hG_top.isBigO_one ℝ)
     have hG_conv : ∀ m ≤ n, ∃ L, Tendsto
         (fun R : ℝ ↦ ∫ t in 0..R, iteratedTailIntegral (iteratedTailIntegral f 1) m t)
         atTop (𝓝 L) := fun m hm ↦ by

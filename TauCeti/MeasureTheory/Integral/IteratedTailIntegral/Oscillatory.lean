@@ -9,10 +9,6 @@ public import TauCeti.Analysis.Asymptotics.Oscillatory
 public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Asymptotics
@@ -90,7 +86,8 @@ private theorem intervalIntegral_rpow_mul_cos_add_eq {c p α φ x R : ℝ}
   let u' : ℝ → ℝ := fun t ↦ -((α + p - 1) / (c * p)) * t ^ (-(α + p))
   let v : ℝ → ℝ := fun t ↦ Real.sin (c * t ^ p + φ)
   let v' : ℝ → ℝ := fun t ↦ Real.cos (c * t ^ p + φ) * (c * (p * t ^ (p - 1)))
-  have hpos : ∀ t ∈ [[x, R]], 0 < t := fun _ ht ↦ hx.trans_le ((uIcc_of_le hR ▸ ht).1)
+  have hpos : ∀ t ∈ [[x, R]], 0 < t :=
+    fun _ ht ↦ hx.trans_le (ordConnected_Ici.uIcc_subset le_rfl hR ht)
   have hrp (q : ℝ) : ContinuousOn (fun t : ℝ ↦ t ^ q) [[x, R]] :=
     ContinuousOn.rpow_const continuousOn_id fun t ht ↦ Or.inl (hpos t ht).ne'
   have hu : ∀ t ∈ [[x, R]], HasDerivAt u (u' t) t := fun t ht ↦ by
@@ -233,7 +230,7 @@ private theorem tendsto_oscillatorySum {c p x : ℝ} {k : ℕ} {α u v : Fin k �
         (by simpa only [← sub_eq_add_neg, Real.cos_sub_pi_div_two] using
           hL i (-(Real.pi / 2))))).congr' ?_
   filter_upwards [eventually_ge_atTop x] with R hR
-  have hsub : [[x, R]] ⊆ Ici x := by rw [uIcc_of_le hR]; exact fun _ ht ↦ ht.1
+  have hsub : [[x, R]] ⊆ Ici x := ordConnected_Ici.uIcc_subset le_rfl hR
   have hint (i : Fin k) (a : ℝ) {trig : ℝ → ℝ} (htrig : Continuous trig) :
       IntervalIntegrable (fun t ↦ a * (t ^ (-α i) * trig (c * t ^ p))) volume x R :=
     (continuousOn_const.mul ((continuousOn_rpow_mul_trig hx htrig).mono hsub)).intervalIntegrable
@@ -300,7 +297,7 @@ private theorem tendsto_and_hasOscillatoryDecay_step {c p α₀ a : ℝ} {f : �
         (intervalIntegral_tendsto_integral_Ioi x (hr_int.mono_set (Ioi_subset_Ioi hx))
           tendsto_id)).congr' ?_
       filter_upwards [eventually_ge_atTop x] with R hR
-      have hsub : [[x, R]] ⊆ Ici x := by rw [uIcc_of_le hR]; exact fun _ ht ↦ ht.1
+      have hsub : [[x, R]] ⊆ Ici x := ordConnected_Ici.uIcc_subset le_rfl hR
       rw [id, ← intervalIntegral.integral_add
         (((continuousOn_oscillatorySum (hx₀_pos.trans_le hx) (c := c) (p := p) (α := α) (u := u)
           (v := v)).mono hsub).intervalIntegrable)

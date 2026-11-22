@@ -9,7 +9,6 @@ public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 

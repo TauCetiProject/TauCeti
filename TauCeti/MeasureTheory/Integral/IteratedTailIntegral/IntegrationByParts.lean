@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.Asymptotics
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -17,16 +16,16 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 /-!
 # Improper integration by parts for iterated tail integrals
 
-This file establishes improper integration by parts on `(a, ∞)` for a conditionally convergent
-improper tail integral `TauCeti.iteratedTailIntegral g 1` against a `C¹` scalar weight `φ` whose
-derivative is integrable on `(a, ∞)`.
+This file establishes improper integration by parts on `(a, ∞)` for a possibly conditionally
+convergent improper tail integral `TauCeti.iteratedTailIntegral g 1` against a `C¹` scalar weight
+`φ` whose derivative is integrable on `(a, ∞)`.
 
 ## Main results
 
 * `TauCeti.integral_Ioi_smul_eq_of_tendsto`: if `g` is locally integrable on `[a, ∞)` with
-  convergent improper integral `R ↦ ∫ t in a..R, g t`, `φ` is `C¹` with `deriv φ` integrable on
-  `(a, ∞)`, and `t ↦ φ t • g t` is integrable on `(a, ∞)`, then
-  `s ↦ deriv φ s • iteratedTailIntegral g 1 s` is integrable on `(a, ∞)` and
+  convergent (possibly only conditionally) improper integral `R ↦ ∫ t in a..R, g t`, `φ` is `C¹`
+  with `deriv φ` integrable on `(a, ∞)`, and `t ↦ φ t • g t` is Bochner integrable on `(a, ∞)`,
+  then `s ↦ deriv φ s • iteratedTailIntegral g 1 s` is integrable on `(a, ∞)` and
   `∫ t in Ioi a, φ t • g t = φ a • iteratedTailIntegral g 1 a +
     ∫ s in Ioi a, deriv φ s • iteratedTailIntegral g 1 s`.
 -/
@@ -38,11 +37,14 @@ namespace TauCeti
 open Asymptotics Filter MeasureTheory Set Topology
 open scoped Interval
 
-/-- Improper integration by parts on `(a, ∞)` for a conditionally convergent improper tail integral
-`G := iteratedTailIntegral g 1` against a `C¹` weight `φ` whose derivative is integrable on
-`(a, ∞)`. -/
+/-- Improper integration by parts on `(a, ∞)` for `G := iteratedTailIntegral g 1`: if `g` is
+locally integrable on `[a, ∞)` with convergent (possibly only conditionally) improper integral
+`R ↦ ∫ t in a..R, g t`, `φ` is `C¹` with `deriv φ` integrable on `(a, ∞)`, and `t ↦ φ t • g t` is
+Bochner integrable on `(a, ∞)`, then `s ↦ deriv φ s • G s` is integrable on `(a, ∞)` and
+`∫ t in Ioi a, φ t • g t = φ a • G a + ∫ s in Ioi a, deriv φ s • G s`. (When `E` is incomplete,
+both integrals and `G` vanish.) -/
 theorem integral_Ioi_smul_eq_of_tendsto {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] {φ : ℝ → ℝ} {g : ℝ → E} {a : ℝ}
+    {φ : ℝ → ℝ} {g : ℝ → E} {a : ℝ}
     (hg_loc : LocallyIntegrableOn g (Ici a))
     (hg_conv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in a..R, g t) atTop (𝓝 L))
     (hφ : ContDiff ℝ 1 φ) (hφ'_int : IntegrableOn (deriv φ) (Ioi a))
@@ -51,6 +53,11 @@ theorem integral_Ioi_smul_eq_of_tendsto {E : Type*} [NormedAddCommGroup E] [Norm
       ∫ t in Ioi a, φ t • g t =
         φ a • iteratedTailIntegral g 1 a +
           ∫ s in Ioi a, deriv φ s • iteratedTailIntegral g 1 s := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp only [iteratedTailIntegral_succ_of_not_completeSpace hE g 0, smul_zero,
+      integral_of_not_completeSpace hE, add_zero, and_true]
+    exact integrableOn_zero
   obtain ⟨L, hL⟩ := hg_conv
   set G := iteratedTailIntegral g 1
   have hG_cont : ContinuousOn G (Ici a) := continuousOn_iteratedTailIntegral_one hg_loc
@@ -72,7 +79,7 @@ theorem integral_Ioi_smul_eq_of_tendsto {E : Type*} [NormedAddCommGroup E] [Norm
     (hRHS.congr' ?_)⟩
   filter_upwards [eventually_ge_atTop a] with R hR
   have hibp := TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hR hφ
-    (hg_loc.intervalIntegrable (by rw [uIcc_of_le hR]; exact Icc_subset_Ici_self))
+    (hg_loc.intervalIntegrable (ordConnected_Ici.uIcc_subset le_rfl hR))
   have hφ'G_sub : ∫ s in a..R, deriv φ s • (∫ t in a..s, g t) =
       (φ R - φ a) • G a - ∫ s in a..R, deriv φ s • G s := by
     rw [← hφ_eq, ← _root_.intervalIntegral.integral_smul_const,
@@ -81,8 +88,8 @@ theorem integral_Ioi_smul_eq_of_tendsto {E : Type*} [NormedAddCommGroup E] [Norm
         (((hφ.continuous_deriv le_rfl).continuousOn.fun_smul
           (hG_cont.mono (Icc_subset_Ici_self))).intervalIntegrable_of_Icc hR)]
     refine _root_.intervalIntegral.integral_congr fun s hs ↦ ?_
-    rw [uIcc_of_le hR] at hs
-    rw [← iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl hs.1 hL, smul_sub]
+    rw [← iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl
+      (ordConnected_Ici.uIcc_subset le_rfl hR hs) hL, smul_sub]
   have hlhs : ∫ t in a..R, φ t • g t = φ R • (G a - G R) -
       ((φ R - φ a) • G a - ∫ s in a..R, deriv φ s • G s) := by
     rw [iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl hR hL, ← hφ'G_sub,
