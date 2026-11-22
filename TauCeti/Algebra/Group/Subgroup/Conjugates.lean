@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Data.SetLike.Fintype
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
+import Mathlib.Order.Atoms
 
 /-!
 # Conjugate subgroups
@@ -35,6 +36,11 @@ that multiplicity.
   conjugacy classes.
 * `Subgroup.exists_map_conj_comap_eq_iff`: the preimages of two subgroups under a group
   isomorphism are conjugate exactly when the subgroups are.
+* `Subgroup.exists_map_conj_mem_of_forall_covBy`: descent through maximal subgroups. In a finite
+  group, let `P` be a property of subgroups that is inherited by larger subgroups and by
+  conjugates. If a family of subgroups contains `⊤` and contains a conjugate of every maximal
+  subgroup with property `P` of each of its members, then it contains a conjugate of every
+  subgroup with property `P`.
 -/
 
 public section
@@ -191,5 +197,40 @@ theorem exists_map_conj_comap_eq_iff (e : G ≃* Γ) (H K : Subgroup Γ) :
   have hinj : Function.Injective (comap (e : G →* Γ)) := comap_injective e.surjective
   refine ⟨fun ⟨σ, hσ⟩ ↦ ⟨e σ, hinj (by rwa [← key])⟩, fun ⟨τ, hτ⟩ ↦ ⟨e.symm τ, ?_⟩⟩
   rw [key, MulEquiv.apply_symm_apply, hτ]
+
+/-- **Descent through maximal subgroups.** Let `P` be a property of subgroups of a finite group
+`G` that passes to larger subgroups and to conjugates, and let `𝓡` be a family of subgroups
+containing `⊤` such that every maximal subgroup `M` of a member of `𝓡` with `P M` is conjugate to a
+member of `𝓡`. Then every subgroup with property `P` is conjugate to a member of `𝓡`.
+
+Applied to the transitive subgroups of a finite symmetric group, this reduces the classification
+of transitive groups up to conjugacy to the transitive maximal subgroups of a candidate list of
+representatives. -/
+theorem exists_map_conj_mem_of_forall_covBy [Finite G] {P : Subgroup G → Prop}
+    (hP : ∀ ⦃H K : Subgroup G⦄, H ≤ K → P H → P K)
+    (hPconj : ∀ (g : G) ⦃H : Subgroup G⦄, P H → P (H.map (MulAut.conj g).toMonoidHom))
+    {𝓡 : Set (Subgroup G)} (htop : ⊤ ∈ 𝓡)
+    (h𝓡 : ∀ R ∈ 𝓡, ∀ M : Subgroup G, M ⋖ R → P M →
+      ∃ g : G, M.map (MulAut.conj g).toMonoidHom ∈ 𝓡)
+    {H : Subgroup G} (hH : P H) : ∃ g : G, H.map (MulAut.conj g).toMonoidHom ∈ 𝓡 := by
+  -- Strong induction on the order of a member `R` of `𝓡` containing a conjugate of `H`.
+  suffices key : ∀ n, ∀ R ∈ 𝓡, Nat.card R = n → ∀ g : G,
+      H.map (MulAut.conj g).toMonoidHom ≤ R → ∃ g : G, H.map (MulAut.conj g).toMonoidHom ∈ 𝓡 from
+    key _ ⊤ htop rfl 1 le_top
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    rintro R hR rfl g hle
+    obtain heq | hlt := hle.eq_or_lt
+    · exact ⟨g, heq ▸ hR⟩
+    -- Otherwise the conjugate of `H` lies in a maximal subgroup `M` of `R`, which has property
+    -- `P` and is conjugate to a member of `𝓡` of smaller order.
+    obtain ⟨M, hHM, hMR⟩ := exists_le_covBy_of_lt hlt
+    obtain ⟨h, hh⟩ := h𝓡 R hR M hMR (hP hHM (hPconj g hH))
+    refine ih _ ?_ _ hh rfl (h * g) ?_
+    · rw [card_map_of_injective (MulAut.conj h).injective]
+      exact card_lt_of_lt hMR.lt
+    · rw [← map_conj_map_conj]
+      exact map_mono hHM
 
 end Subgroup
