@@ -600,9 +600,7 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
     (periodicSolutions X T).Finite := by
   -- On a compact manifold the flow is defined everywhere, so the return map is continuous.
   have hcomplete := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
-  have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
-    ((contMDiff_timeDependentFlowOf hcomplete le_rfl hX).comp
-      ((contMDiff_const (c := (s, s + T))).prodMk contMDiff_id)).continuous
+  have hφ := continuous_timeDependentFlowOf hcomplete le_rfl hX s (s + T)
   set e := periodicSolutionsEquivFixedPoints hX hT hT0 s
   -- Every fixed point of the return map is the initial point of a periodic solution.
   have hfin := finite_fixedPoints_of_isNondegenerateFixedPt hφ fun x hx ↦ by
@@ -665,9 +663,8 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
     exact hflow.comp (by fun_prop)
   have hY : IsClosed {x | ((s, s + T), x) ∈ timeDependentFlowDomain X ∧
       IsFixedPt (timeDependentFlowOf X s (s + T)) x} := by
-    have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
-      hflow.comp (by fun_prop : Continuous fun x : M ↦ ((s, s + T), x))
-    convert isClosed_fixedPoints hφ using 1
+    convert isClosed_fixedPoints (continuous_timeDependentFlowOf hcomplete le_rfl hX s (s + T))
+      using 1
     ext x
     simp [timeDependentFlowDomain_eq_univ hcomplete]
   -- The initial points of the contractible solutions form a closed set of nondegenerate fixed

@@ -137,12 +137,8 @@ theorem seamedSolutions_id_eq_periodicSolutions (hT : Periodic X 1) :
   have hshift (u : ℝ) : HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ γ (u + 1)) u
       ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ (u + 1)))) := by
     simpa only [hT u] using HasMFDerivAt.comp_add_right (hγ.1 (u + 1))
-  have h0 : (0 : ℝ) ∈ Ioo (min 0 t - 1) (max 0 t + 1) :=
-    ⟨by linarith [min_le_left (0 : ℝ) t], by linarith [le_max_left (0 : ℝ) t]⟩
-  have ht : t ∈ Ioo (min 0 t - 1) (max 0 t + 1) :=
-    ⟨by linarith [min_le_right (0 : ℝ) t], by linarith [le_max_right (0 : ℝ) t]⟩
-  have h₁ := timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hγ.1 u) h0 ht
-  have h₂ := timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hshift u) h0 ht
+  have h₁ := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hγ.1 0 t
+  have h₂ := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hshift 0 t
   simp only [zero_add, hγ.2, id] at h₂
   exact h₂.symm.trans h₁
 
@@ -156,21 +152,15 @@ seamed solutions of `X` with seam `f` with the points `x` at which the time-one 
 the flow from time `0`. -/
 def seamedSolutionsEquiv (f : M → M) :
     seamedSolutions X f ≃ {x | timeDependentFlowOf X 0 1 x = f x} where
-  toFun γ := ⟨γ.val 0, by
-    -- A global solution is the trajectory of the flow.
-    have hγ (u : ℝ) (_ : u ∈ Ioo (-1) 2) := γ.property.1 u
-    exact (timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ (by norm_num) (by norm_num)).trans
-      γ.property.2⟩
+  toFun γ := ⟨γ.val 0,
+    (timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX γ.property.1 0 1).trans γ.property.2⟩
   invFun x := ⟨fun t ↦ timeDependentFlowOf X 0 t x,
     fun t ↦ hasMFDerivAt_timeDependentFlowOf hX
       (by rw [timeDependentFlowDomain_eq_univ hc]; exact mem_univ _), by
       simp only [timeDependentFlowOf_self]
       exact x.property⟩
-  left_inv γ := Subtype.ext <| funext fun t ↦ by
-    have hγ (u : ℝ) (_ : u ∈ Ioo (min 0 t - 1) (max 0 t + 1)) := γ.property.1 u
-    exact timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ
-      ⟨by linarith [min_le_left (0 : ℝ) t], by linarith [le_max_left (0 : ℝ) t]⟩
-      ⟨by linarith [min_le_right (0 : ℝ) t], by linarith [le_max_right (0 : ℝ) t]⟩
+  left_inv γ := Subtype.ext <| funext <|
+    timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX γ.property.1 0
   right_inv x := Subtype.ext (timeDependentFlowOf_self X 0 x)
 
 /-- The correspondence from seamed solutions to points evaluates at time `0`. -/
@@ -240,13 +230,11 @@ theorem finite_setOf_seamedSolutionPath_mem_pathComponent (f : M ≃ₜ M) (δ :
   have hc := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
   set e := seamedSolutionsEquiv hX hc f
   -- The starts of the solutions in the component form a closed subset of a closed set.
-  have hφ : Continuous (timeDependentFlowOf X 0 1) :=
-    (contMDiff_timeDependentFlowOf hc le_rfl hX).continuous.comp
-      (by fun_prop : Continuous fun x : M ↦ (((0 : ℝ), (1 : ℝ)), x))
   set S := {x : {x | timeDependentFlowOf X 0 1 x = f x} |
     seamedSolutionPath (e.symm x) ∈ pathComponent δ}
   have hS : IsClosed (Subtype.val '' S) :=
-    (isClosed_eq hφ f.continuous).isClosedMap_subtypeVal _
+    (isClosed_eq (continuous_timeDependentFlowOf hc le_rfl hX 0 1)
+      f.continuous).isClosedMap_subtypeVal _
       (isClopen_setOf_seamedSolutionPath_mem_pathComponent hX hc f.continuous δ).isClosed
   -- They are nondegenerate fixed points of `f⁻¹ ∘ φ₁`, hence finitely many.
   have hfin := hS.isCompact.finite_of_isNondegenerateFixedPt (I := I) <| by
@@ -269,16 +257,13 @@ theorem finite_seamedSolutions (f : M ≃ₜ M)
   have := FiniteDimensional.of_locallyCompact_manifold M I
   have hc := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
   set e := seamedSolutionsEquiv hX hc f
-  have hφ : Continuous (timeDependentFlowOf X 0 1) :=
-    (contMDiff_timeDependentFlowOf hc le_rfl hX).continuous.comp
-      (by fun_prop : Continuous fun x : M ↦ (((0 : ℝ), (1 : ℝ)), x))
   -- The points where `φ₁ = f` are the fixed points of `f⁻¹ ∘ φ₁`, all nondegenerate.
   have hfix : {x | timeDependentFlowOf X 0 1 x = f x} = fixedPoints (f.symm ∘
       timeDependentFlowOf X 0 1) := by
     ext x
     simp [IsFixedPt, Homeomorph.symm_apply_eq]
   have hfin := finite_fixedPoints_of_isNondegenerateFixedPt (I := I)
-    (f.symm.continuous.comp hφ) fun x hx ↦ by
+    (f.symm.continuous.comp (continuous_timeDependentFlowOf hc le_rfl hX 0 1)) fun x hx ↦ by
       have hx' : x ∈ {x | timeDependentFlowOf X 0 1 x = f x} := hfix ▸ hx
       simpa [e] using h _ (e.symm ⟨x, hx'⟩).property
   have : Finite {x | timeDependentFlowOf X 0 1 x = f x} := (hfix ▸ hfin).to_subtype
