@@ -46,7 +46,8 @@ splitting off the first coordinate identifies the closed unit ball with the cube
 * `TauCeti.cubeCenter`, `TauCeti.cubeRadius`: the centre of `I^N` and the `sup` radius around
   it.
 * `TauCeti.cubeRadius_le_one` and `TauCeti.cubeRadius_eq_one_iff`: the radius is at most one,
-  with equality exactly on `Cube.boundary N`.
+  with equality exactly on `Cube.boundary N`; off the boundary `1 - r²` is positive
+  (`TauCeti.one_sub_cubeRadius_sq_pos`).
 * `TauCeti.cubeScale`: radial rescaling of a cube point, and `TauCeti.cubeRadius_cubeScale`: it
   scales the radius. Rescaling by `s ≥ 1` maps the points of radius at most `1 / s` bijectively
   onto the cube (`TauCeti.cubeScale_injOn`, `TauCeti.exists_cubeScale_eq`).
@@ -287,6 +288,12 @@ theorem cubeRadius_eq_one_iff (z : I^N) : cubeRadius z = 1 ↔ z ∈ Cube.bounda
     refine le_trans ?_ (dist_le_pi_dist z (cubeCenter : I^N) i)
     rw [dist_apply_cubeCenter]
     rcases hi with hi | hi <;> rw [hi] <;> norm_num
+
+/-- Off the boundary of the cube, the radius is less than one, so `1 - r²` is positive. -/
+theorem one_sub_cubeRadius_sq_pos {z : I^N} (hz : z ∉ Cube.boundary N) :
+    0 < 1 - cubeRadius z ^ 2 := by
+  have h := (cubeRadius_le_one z).lt_of_ne (mt (cubeRadius_eq_one_iff z).1 hz)
+  nlinarith [cubeRadius_nonneg z]
 
 /-- Radial rescaling is honest, that is, the clamping in `TauCeti.cubeScale` is inactive, as
 soon as the rescaled radius still fits inside the cube. -/

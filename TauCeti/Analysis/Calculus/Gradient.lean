@@ -58,6 +58,8 @@ chain rule for the gradient of a real profile composed with a real function.
   supported; `HasCompactSupport.mono_of_forall_gradient`: so is any function vanishing where both
   the function and its gradient vanish.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
+* `TauCeti.gradient_apply_eq_fderiv_apply_single`: on `EuclideanSpace ℝ ι`, the `i`-th coordinate
+  of the gradient `∇ f` is the partial derivative `∂ᵢ f`.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
   function is `Cᵐ`, and `ContDiff.continuous_gradient`: that of a `Cⁿ` function with `n ≠ 0` is
   continuous; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
@@ -71,6 +73,8 @@ chain rule for the gradient of a real profile composed with a real function.
   `y ↦ ‖y - x₀‖ ^ 2` has gradient `2 • (x - x₀)` at `x`.
 * `HasDerivAt.comp_hasGradientAt`: over `ℝ`, the chain rule for the gradient of `f ∘ g`, namely
   `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
+* `TauCeti.inner_fderiv_gradient`: over `ℝ`,
+  `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -390,6 +394,24 @@ theorem _root_.HasDerivAt.comp_hasGradientAt {E : Type*} [NormedAddCommGroup E]
   rw [hasGradientAt_iff_hasFDerivAt] at hg ⊢
   refine (hf.comp_hasFDerivAt x hg).congr_fderiv ?_
   ext v
+  simp
+
+/-- Over `ℝ`, the inner product of the derivative of the gradient with a vector equals the second
+Fréchet derivative: `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`. No
+differentiability assumption is needed. -/
+theorem inner_fderiv_gradient {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (f : E → ℝ) (x v w : E) :
+    ⟪fderiv ℝ (∇ f) x v, w⟫_ℝ = iteratedFDeriv ℝ 2 f x ![v, w] := by
+  rw [iteratedFDeriv_two_apply, ← toDual_comp_gradient, LinearIsometryEquiv.comp_fderiv]
+  simpa using (toDual_apply_apply (𝕜 := ℝ)).symm
+
+/-- **The gradient in Euclidean coordinates**: the `i`-th coordinate of the gradient of a real
+function on `ℝⁿ` is its derivative in the `i`-th coordinate direction. No differentiability is
+needed. -/
+theorem gradient_apply_eq_fderiv_apply_single {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (f : EuclideanSpace ℝ ι → ℝ) (x : EuclideanSpace ℝ ι) (i : ι) :
+    ∇ f x i = fderiv ℝ f x (EuclideanSpace.single i 1) := by
+  rw [← inner_gradient_left, EuclideanSpace.inner_single_right]
   simp
 
 end TauCeti
