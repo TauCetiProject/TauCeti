@@ -9,6 +9,8 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Jimbo.Basic
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.LinearAlgebra.Dimension.Basic
 
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
+
 /-!
 # The cyclic permutation-word module of the type-A Hecke algebra
 
@@ -110,7 +112,10 @@ theorem range_permutationOrbit :
         single (σ : Fin n → Fin n) (1 : R)) := by
   let P := Submodule.span R (Set.range fun σ : Equiv.Perm (Fin n) ↦
     single (σ : Fin n → Fin n) (1 : R))
-  have hT (i : Fin (n - 1)) (v) (hv : v ∈ P) : jimbo (Fin n) q (T q i) v ∈ P := by
+  -- `P` is stable under the Jimbo action of every generator `T i`.
+  have hT : ∀ f ∈ Set.range (jimbo (Fin n) q ∘ T (n := n) q), ∀ v ∈ P, f • v ∈ P := by
+    rintro _ ⟨i, rfl⟩ v hv
+    rw [Function.comp_apply, Module.End.smul_def]
     induction hv using Submodule.span_induction with
     | mem v hv =>
       obtain ⟨σ, rfl⟩ := hv
@@ -122,21 +127,15 @@ theorem range_permutationOrbit :
     | zero => simp
     | add x y hx hy ihx ihy => simpa only [map_add] using P.add_mem ihx ihy
     | smul r x hx ih => simpa only [map_smul] using P.smul_mem r ih
-  have hstable (x : TypeAHeckeAlgebra R q n) : ∀ v ∈ P, jimbo (Fin n) q x v ∈ P := by
-    have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
-      rw [adjoin_range_T]; trivial
-    induction hx using Algebra.adjoin_induction with
-    | mem x hx => obtain ⟨i, rfl⟩ := hx; exact hT i
-    | algebraMap r => intro v hv; simpa using P.smul_mem r hv
-    | add x y _ _ ihx ihy =>
-      intro v hv
-      simpa using P.add_mem (ihx v hv) (ihy v hv)
-    | mul x y _ _ ihx ihy =>
-      intro v hv
-      simpa only [map_mul, mul_apply_eq_comp] using ihx _ (ihy v hv)
   refine le_antisymm ?_ (Submodule.span_le.mpr ?_)
   · rintro v ⟨x, rfl⟩
-    exact hstable x _ (Submodule.subset_span ⟨1, rfl⟩)
+    -- The Jimbo images of the generators generate the Jimbo image of the Hecke algebra.
+    have hx : jimbo (Fin n) q x ∈
+        Algebra.adjoin R (Set.range (jimbo (Fin n) q ∘ T (n := n) q)) := by
+      rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
+      exact ⟨x, trivial, rfl⟩
+    rw [permutationOrbit_apply, ← Module.End.smul_def]
+    exact P.smul_mem_of_mem_adjoin hT hx (Submodule.subset_span ⟨1, rfl⟩)
   · rintro v ⟨σ, rfl⟩
     exact single_perm_mem_range q σ
 
