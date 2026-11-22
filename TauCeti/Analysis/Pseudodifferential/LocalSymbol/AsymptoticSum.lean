@@ -211,12 +211,12 @@ end LocalSymbol
 on `U`. -/
 theorem Symbol.IsAsymptoticSum.restrict {m : ℕ → ℝ} {b : Symbol n V W (m 0)}
     {a : ∀ j, Symbol n V W (m j)} (hb : b.IsAsymptoticSum a) :
-    (b.restrict U).IsAsymptoticSum fun j => (a j).restrict U := fun N => by
-  obtain ⟨r, hr⟩ := Symbol.isAsymptoticSum_iff.1 hb N
-  refine ⟨r.restrict U, funext fun ⟨x, ξ⟩ => ?_⟩
-  by_cases hx : x ∈ U
-  · simpa [hx, Finset.sum_apply] using congrFun hr (x, ξ)
-  · simp [hx, Finset.sum_apply]
+    (b.restrict U).IsAsymptoticSum fun j => (a j).restrict U := by
+  simpa only [Symbol.restrict_restrictTopEquiv] using
+    LocalSymbol.IsAsymptoticSum.restrict (b := Symbol.restrictTopEquiv b)
+      (a := fun j => Symbol.restrictTopEquiv (a j))
+      (fun N => (Symbol.isAsymptoticSum_iff.1 hb N).elim fun r hr =>
+        ⟨Symbol.restrictTopEquiv r, by simpa using hr⟩) (le_top : U ≤ ⊤)
 
 /-! ### Classical symbols with prescribed homogeneous terms -/
 
