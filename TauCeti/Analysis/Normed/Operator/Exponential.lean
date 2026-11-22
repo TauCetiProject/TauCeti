@@ -267,18 +267,14 @@ theorem exp_conj_continuousLinearEquiv {𝕜 E F : Type*}
     (B : E →L[𝕜] E) :
     exp (e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap)) =
       e.toContinuousLinearMap.comp ((exp B).comp e.symm.toContinuousLinearMap) := by
-  let conj : (E →L[𝕜] E) →ₐ[𝕜] (F →L[𝕜] F) :=
-    { toFun S := e.toContinuousLinearMap.comp (S.comp e.symm.toContinuousLinearMap)
-      map_one' := by ext x; simp
-      map_mul' S T := by ext x; simp [mul_apply_eq_comp]
-      map_zero' := by ext x; simp
-      map_add' S T := by ext x; simp
-      commutes' r := by ext x; simp [Algebra.algebraMap_eq_smul_one] }
-  have hsum : HasSum (fun n : ℕ ↦ ((Nat.factorial n : 𝕜)⁻¹) • conj B ^ n) (conj (exp B)) := by
-    have h1 : HasSum (fun n : ℕ ↦ conj (((Nat.factorial n : 𝕜)⁻¹) • B ^ n)) (conj (exp B)) :=
-      (exp_series_hasSum_exp' (𝕂 := 𝕜) B).map conj.toAddMonoidHom hcont
+  have hsum : HasSum (fun n : ℕ ↦ ((Nat.factorial n : 𝕜)⁻¹) • (e.conjContinuousAlgEquiv B) ^ n)
+      (e.conjContinuousAlgEquiv (exp B)) := by
+    have h1 : HasSum (fun n : ℕ ↦ e.conjContinuousAlgEquiv (((Nat.factorial n : 𝕜)⁻¹) • B ^ n))
+        (e.conjContinuousAlgEquiv (exp B)) :=
+      (exp_series_hasSum_exp' (𝕂 := 𝕜) B).map e.conjContinuousAlgEquiv.toAlgHom.toAddMonoidHom
+        hcont
     simpa only [map_smul, map_pow] using h1
-  rw [exp_eq_tsum 𝕜]
+  rw [← ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, exp_eq_tsum 𝕜]
   exact hsum.tsum_eq
 
 /-- **Conjugation invariance of the operator exponential in finite dimension**: for a continuous
@@ -297,11 +293,9 @@ theorem exp_conj_continuousLinearEquiv_of_finiteDimensional {𝕜 E F : Type*}
     exp (e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap)) =
       e.toContinuousLinearMap.comp ((exp B).comp e.symm.toContinuousLinearMap) := by
   have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
-  let conjL : (E →L[𝕜] E) →ₗ[𝕜] (F →L[𝕜] F) :=
-    { toFun S := e.toContinuousLinearMap.comp (S.comp e.symm.toContinuousLinearMap)
-      map_add' S T := by ext x; simp
-      map_smul' r S := by ext x; simp }
-  exact exp_conj_continuousLinearEquiv e conjL.continuous_of_finiteDimensional B
+  exact exp_conj_continuousLinearEquiv e
+    (e.conjContinuousAlgEquiv.toLinearEquiv :
+      (E →L[𝕜] E) →ₗ[𝕜] (F →L[𝕜] F)).continuous_of_finiteDimensional B
 
 end NormedSpace
 

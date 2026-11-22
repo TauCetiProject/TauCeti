@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
+import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.Eigenspace.Separation
+import TauCeti.LinearAlgebra.Eigenspace.Transport
 import TauCeti.LinearAlgebra.FixedSubmodule
 
 /-!
@@ -33,6 +35,9 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 * `LieEquiv.isCompl_fixedSubalgebra_cartanP`: `L = 𝔨 ⊕ 𝔭` for an involution when `2` is a unit.
 * `LieEquiv.lie_mem_cartanP`, `LieEquiv.lie_mem_fixedSubalgebra_of_mem_cartanP`: the bracket
   relations `[𝔨, 𝔭] ⊆ 𝔭` and `[𝔭, 𝔭] ⊆ 𝔨`.
+* `LieEquiv.map_cartanP`, `LieEquiv.cartanP_conj`, `LieEquiv.map_maximal_abelian_cartanP`:
+  transport of `θ.cartanP` and its maximal abelian subspaces under intertwining equivalences.
+* `LieEquiv.cartanP_symm`, `LieEquiv.cartanP_refl`: `-1`-eigenspace of the inverse and identity.
 * `LieEquiv.killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP`: `B(𝔨, 𝔭) = 0`.
 * `LieEquiv.twistedKillingForm_map_map_of_commute`: `B_θ` is invariant under automorphisms commuting
   with `θ`.
@@ -157,5 +162,108 @@ theorem ad_mem_selfAdjointSubmodule_twistedKillingForm {x : L} (hx : x ∈ θ.ca
   intro y z
   simp only [twistedKillingForm_apply, ad_apply, map_lie, hx, neg_lie, map_neg,
     traceForm_apply_lie_apply']
+
+/-! ### Transport and comparison lemmas -/
+
+section Transport
+
+variable {L' : Type*} [LieRing L'] [LieAlgebra R L']
+
+/-- An intertwining equivalence maps `θ.cartanP` onto `θ'.cartanP`. -/
+theorem map_cartanP {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'} (e : L ≃ₗ⁅R⁆ L')
+    (h : ∀ x, θ' (e x) = e (θ x)) :
+    θ.cartanP.map (e : L →ₗ[R] L') = θ'.cartanP := by
+  rw [cartanP_eq_eigenspace, cartanP_eq_eigenspace,
+    TauCeti.eigenspace_eq_comap_of_intertwine (e := e.toLinearEquiv)
+      (f := (θ.toLinearEquiv : Module.End R L)) (g := (θ'.toLinearEquiv : Module.End R L'))
+      (fun x ↦ (h x).symm) (-1)]
+  exact Submodule.map_comap_eq_of_surjective e.surjective _
+
+/-- Conjugating `θ` by `e` transports `θ.cartanP` along `e`. -/
+theorem cartanP_conj (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ L') :
+    (e.symm.trans (θ.trans e)).cartanP = θ.cartanP.map (e : L →ₗ[R] L') :=
+  (map_cartanP e fun x ↦ by simp).symm
+
+/-- An intertwining Lie equivalence `e : L ≃ₗ⁅R⁆ L'` maps maximal abelian subspaces of
+`θ.cartanP` to maximal abelian subspaces of `θ'.cartanP`. -/
+theorem map_maximal_abelian_cartanP {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'}
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, θ' (e x) = e (θ x)) {𝔞 : Submodule R L}
+    (h𝔞 : Maximal
+      (fun 𝔟 : Submodule R L ↦ 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) 𝔞) :
+    Maximal
+      (fun 𝔟 : Submodule R L' ↦ 𝔟 ≤ θ'.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0)
+      (𝔞.map (e : L →ₗ[R] L')) := by
+  have hmapP : θ.cartanP.map (e : L →ₗ[R] L') = θ'.cartanP := map_cartanP e he
+  refine ⟨⟨?_, ?_⟩, fun 𝔟' ⟨h𝔟'P, h𝔟'ab⟩ hle ↦ ?_⟩
+  · rw [← hmapP]
+    exact Submodule.map_mono h𝔞.prop.left
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.map_lie,
+      h𝔞.prop.right x hx y hy, map_zero]
+  · let 𝔟 : Submodule R L := 𝔟'.map (e.symm : L' →ₗ[R] L)
+    have he_symm : ∀ y, θ (e.symm y) = e.symm (θ' y) := fun y ↦ e.injective <| by
+      simp only [coe_toLieHom]
+      rw [← he, e.apply_symm_apply, e.apply_symm_apply]
+    have h𝔟P : 𝔟 ≤ θ.cartanP := by
+      rw [← map_cartanP e.symm he_symm]
+      exact Submodule.map_mono h𝔟'P
+    have h𝔟ab : ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0 := by
+      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+      simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.symm.map_lie, h𝔟'ab x hx y hy,
+        map_zero]
+    have h𝔞_le : 𝔞 ≤ 𝔟 := fun x hx ↦ ⟨e x, hle ⟨x, hx, rfl⟩, by simp⟩
+    have h𝔟_le : 𝔟 ≤ 𝔞 := h𝔞.le_of_ge ⟨h𝔟P, h𝔟ab⟩ h𝔞_le
+    intro y hy
+    exact ⟨e.symm y, h𝔟_le ⟨y, hy, rfl⟩, by simp⟩
+
+/-- The inverse of a Lie automorphism has the same `-1`-eigenspace. -/
+@[simp]
+theorem cartanP_symm (θ : L ≃ₗ⁅R⁆ L) : θ.symm.cartanP = θ.cartanP := by
+  ext x
+  rw [mem_cartanP, mem_cartanP, symm_apply_eq, map_neg, eq_comm, neg_eq_iff_eq_neg]
+
+/-- The twisted Killing form of the identity automorphism is the negative Killing form. -/
+@[simp]
+theorem twistedKillingForm_refl :
+    (LieEquiv.refl : L ≃ₗ⁅R⁆ L).twistedKillingForm = -killingForm R L := by
+  ext x y
+  simp
+
+/-- The twisted Killing form of a conjugate automorphism is the transport of the original twisted
+Killing form. -/
+theorem twistedKillingForm_conj_apply (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ L') (x y : L) :
+    (e.symm.trans (θ.trans e)).twistedKillingForm (e x) (e y) = θ.twistedKillingForm x y := by
+  simp
+
+/-- On a fixed second argument, the Killing form is the negative of the twisted Killing form. -/
+theorem killingForm_eq_neg_twistedKillingForm_of_mem_fixedSubalgebra {θ : L ≃ₗ⁅R⁆ L} {x y : L}
+    (hy : y ∈ θ.toLieHom.fixedSubalgebra) :
+    killingForm R L x y = -θ.twistedKillingForm x y := by
+  have hy' : θ y = y := LieHom.mem_fixedSubalgebra.mp hy
+  rw [twistedKillingForm_apply, hy', neg_neg]
+
+/-- On a second argument in `θ.cartanP`, the Killing form agrees with the twisted Killing
+form. -/
+theorem killingForm_eq_twistedKillingForm_of_mem_cartanP {θ : L ≃ₗ⁅R⁆ L} {x y : L}
+    (hy : y ∈ θ.cartanP) :
+    killingForm R L x y = θ.twistedKillingForm x y := by
+  rw [twistedKillingForm_apply, mem_cartanP.mp hy, map_neg, neg_neg]
+
+/-- The fixed subalgebra and `θ.cartanP` are orthogonal for the twisted Killing form over a base
+ring without additive torsion. -/
+theorem twistedKillingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP [IsAddTorsionFree R]
+    {θ : L ≃ₗ⁅R⁆ L} {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
+    θ.twistedKillingForm x y = 0 := by
+  rw [twistedKillingForm_apply, mem_cartanP.mp hy, map_neg, neg_neg,
+    killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP hx hy]
+
+/-- The identity automorphism has trivial `-1`-eigenspace when `2` is invertible. -/
+@[simp]
+theorem cartanP_refl [Invertible (2 : R)] : (LieEquiv.refl : L ≃ₗ⁅R⁆ L).cartanP = ⊥ := by
+  ext x
+  simp only [mem_cartanP, refl_apply, Submodule.mem_bot]
+  exact ⟨TauCeti.eq_zero_of_eq_neg_of_invertible_two (R := R), fun hx ↦ by simp [hx]⟩
+
+end Transport
 
 end LieEquiv

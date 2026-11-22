@@ -119,12 +119,8 @@ eigenspaces of an operator `T` representing `q`. -/
 theorem relativeEigenspace_innerₗ {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] {q : LinearMap.BilinForm ℝ E} {T : E →ₗ[ℝ] E}
     (hT : ∀ x y, q x y = ⟪T x, y⟫_ℝ)
-    (μ : ℝ) : relativeEigenspace (innerₗ E) q μ = Module.End.eigenspace T μ := by
-  ext x
-  rw [mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
-  simp only [hT, innerₗ_apply_apply]
-  exact ⟨fun h ↦ ext_inner_right ℝ fun y ↦ by rw [h, real_inner_smul_left],
-    fun h y ↦ by rw [h, real_inner_smul_left]⟩
+    (μ : ℝ) : relativeEigenspace (innerₗ E) q μ = Module.End.eigenspace T μ :=
+  relativeEigenspace_eq_eigenspace TauCeti.nondegenerate_inner.1 hT μ
 
 /-- **Euclidean model.** For positive definite symmetric `g` and symmetric `q`, a linear isometry
 from Euclidean space carries the point-spectral subspaces of a symmetric operator representing the

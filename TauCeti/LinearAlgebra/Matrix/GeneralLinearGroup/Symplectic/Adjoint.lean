@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Symplectic.Killing
+public import TauCeti.Algebra.Lie.Symplectic.Cartan
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Cartan
 public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint

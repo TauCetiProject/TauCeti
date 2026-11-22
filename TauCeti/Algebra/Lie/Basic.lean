@@ -64,6 +64,8 @@ This file supplies general constructions for Lie modules that are missing from M
   of its image.
 * `LieEquiv.ker_ad_apply`: a Lie algebra isomorphism carries the centralizer of `x` onto that of
   its image.
+* `LieEquiv.apply_mem_center`: a Lie algebra isomorphism maps central elements to central
+  elements.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
 * `LieHom.lieIdealComap_injective`: the restriction of an injective Lie homomorphism to the
@@ -504,6 +506,16 @@ theorem _root_.LieEquiv.lift_rank_ker_ad_apply (e : L ≃ₗ⁅R⁆ L') (x : L) 
   rw [e.ker_ad_apply, LinearEquiv.lift_rank_map_eq]
 
 end Centralizer
+
+/-- A Lie algebra equivalence maps central elements to central elements. -/
+theorem _root_.LieEquiv.apply_mem_center (e : L ≃ₗ⁅R⁆ L') {z : L}
+    (hz : z ∈ LieAlgebra.center R L) :
+    e z ∈ LieAlgebra.center R L' := by
+  rw [LieModule.mem_maxTrivSubmodule] at hz ⊢
+  intro y
+  obtain ⟨y, rfl⟩ := e.surjective y
+  simp only [LieEquiv.coe_toLieHom]
+  rw [← e.map_lie, hz y, map_zero]
 
 /-- Adjoint nilpotence descends along a surjective Lie homomorphism. In particular it descends
 to a quotient by any Lie ideal, without a finiteness or characteristic hypothesis. -/

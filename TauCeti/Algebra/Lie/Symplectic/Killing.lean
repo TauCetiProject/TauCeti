@@ -8,8 +8,7 @@ module
 public import Mathlib.Algebra.Lie.CartanCriterion
 public import Mathlib.Algebra.Lie.Matrix
 public import Mathlib.Algebra.Lie.Semisimple.Lemmas
-public import TauCeti.Algebra.Lie.CartanInvolution.Basic
-public import TauCeti.Algebra.Lie.Symplectic.Cartan
+public import TauCeti.Algebra.Lie.Symplectic.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Tactic.NoncommRing
 import TauCeti.Algebra.Lie.GeneralLinear.Killing
@@ -50,12 +49,6 @@ its trace on `sp l K` is its trace on `gl (2 n) K`, which is `4 n trace (X * Y)`
 form of `gl (2 n) K` (`Matrix.killingForm_apply`), plus the trace of its composite with
 `Z ↦ J Zᵀ J`, which is `4 trace (X * Y)`.
 
-Composed with the involution `θ X = -Xᵀ` (`LieAlgebra.Symplectic.cartanInvolution`), this gives
-`-κ(X, θ X) = (2 n + 2) trace (X * Xᵀ)`, the sum of the squares of the entries of `X` times
-`2 n + 2`. Over an ordered field it is positive for every nonzero `X`: the symmetric form
-`(X, Y) ↦ -κ(X, θ Y)` is positive definite, so `θ` is a Cartan involution of the real symplectic
-Lie algebra.
-
 ## Main results
 
 * `TauCeti.isIrreducible_sp_standard`: the standard module of `sp l K` is irreducible.
@@ -64,14 +57,6 @@ Lie algebra.
 * `LinearMap.BilinForm.IsAlt.hasTrivialRadical_skewAdjointLieSubalgebra`: the same for the Lie
   algebra of skew-adjoint endomorphisms of any nondegenerate alternating form.
 * `LieAlgebra.Symplectic.killingForm_apply`: `κ(X, Y) = (2 n + 2) trace (X * Y)` on `sp l K`.
-* `LieAlgebra.Symplectic.killingForm_cartanInvolution_apply`:
-  `κ(X, θ Y) = -((2 n + 2) trace (X * Yᵀ))`.
-* `LieAlgebra.Symplectic.killingForm_cartanInvolution_self_neg`: `κ(X, θ X) < 0` for nonzero `X`
-  over an ordered field.
-* `LieAlgebra.Symplectic.isCartanInvolution_cartanInvolution`: `θ` is a Cartan involution
-  (`LieEquiv.IsCartanInvolution`) over an ordered field.
-* `LieAlgebra.Symplectic.not_isCartanInvolution_refl`: for nonempty `l`, the identity is not a
-  Cartan involution of `sp l K`.
 
 ## References
 
@@ -291,61 +276,6 @@ theorem killingForm_apply (X Y : sp l K) :
       (2 * Fintype.card l + 2) * ((X : Matrix (l ⊕ l) (l ⊕ l) K) * Y).trace :=
   mul_left_cancel₀ two_ne_zero (two_mul_killingForm_apply X Y)
 
-/-- The Killing form of `sp l K` twisted by the involution `θ Y = -Yᵀ`:
-`κ(X, θ Y) = -((2 n + 2) trace (X * Yᵀ))`. -/
-theorem killingForm_cartanInvolution_apply (X Y : sp l K) :
-    killingForm K (sp l K) X (cartanInvolution l K Y) =
-      -((2 * Fintype.card l + 2) *
-        ((X : Matrix (l ⊕ l) (l ⊕ l) K) * (Y : Matrix (l ⊕ l) (l ⊕ l) K)ᵀ).trace) := by
-  rw [killingForm_apply, coe_cartanInvolution, mul_neg, trace_neg, mul_neg]
-
 end Field
-
-/-- Over an ordered field, `κ(X, θ X) < 0` for every nonzero `X ∈ sp l K`, where `θ X = -Xᵀ`,
-since `-κ(X, θ X)` is `2 n + 2` times the sum of the squares of the entries of `X`. -/
-theorem killingForm_cartanInvolution_self_neg {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] {X : sp l K} (hX : X ≠ 0) :
-    killingForm K (sp l K) X (cartanInvolution l K X) < 0 := by
-  rw [killingForm_cartanInvolution_apply, neg_lt_zero]
-  obtain ⟨i, j, hij⟩ : ∃ i j, (X : Matrix (l ⊕ l) (l ⊕ l) K) i j ≠ 0 := by
-    by_contra! h
-    exact hX (Subtype.ext (Matrix.ext h))
-  have htrace : 0 < ((X : Matrix (l ⊕ l) (l ⊕ l) K) * (X : Matrix (l ⊕ l) (l ⊕ l) K)ᵀ).trace := by
-    simp only [Matrix.trace, diag_apply, Matrix.mul_apply, Matrix.transpose_apply]
-    exact Finset.sum_pos' (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _)
-      ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ mul_self_nonneg _)
-        ⟨j, Finset.mem_univ _, mul_self_pos.mpr hij⟩⟩
-  positivity
-
-/-- **`θ X = -Xᵀ` is a Cartan involution of `sp l K`** over an ordered field. -/
-theorem isCartanInvolution_cartanInvolution {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] : (cartanInvolution l K).IsCartanInvolution :=
-  LieEquiv.isCartanInvolution_iff.mpr
-    ⟨cartanInvolution_cartanInvolution, fun _ ↦ killingForm_cartanInvolution_self_neg⟩
-
-/-- For nonempty `l`, the symplectic Lie algebra `sp l K` over an ordered field is noncompact: the
-identity automorphism is not a Cartan involution. -/
-theorem not_isCartanInvolution_refl [Nonempty l] {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] :
-    ¬ (LieEquiv.refl : sp l K ≃ₗ⁅K⁆ sp l K).IsCartanInvolution := by
-  intro hrefl
-  let Hmat : Matrix (l ⊕ l) (l ⊕ l) K := Matrix.fromBlocks 1 0 0 (-1)
-  have hHmem : Hmat ∈ sp l K := by
-    simp [Hmat, mem_sp, Matrix.J, Matrix.fromBlocks_transpose, Matrix.fromBlocks_multiply,
-      Matrix.fromBlocks_neg]
-  let H : sp l K := ⟨Hmat, hHmem⟩
-  have hHne : H ≠ 0 := by
-    intro h0
-    have hval := congrArg (fun M : sp l K ↦
-      (M : Matrix (l ⊕ l) (l ⊕ l) K) (Sum.inl (Classical.arbitrary l))
-        (Sum.inl (Classical.arbitrary l))) h0
-    simp [H, Hmat] at hval
-  have hHp : H ∈ (cartanInvolution l K).cartanP := by
-    simp [H, Hmat, Matrix.fromBlocks_transpose]
-  have hpos : 0 < killingForm K (sp l K) H H :=
-    (isCartanInvolution_cartanInvolution).killingForm_apply_self_pos_of_mem_cartanP hHp hHne
-  have hneg : killingForm K (sp l K) H H < 0 :=
-    (LieEquiv.isCartanInvolution_refl_iff.mp hrefl) H hHne
-  exact lt_asymm hpos hneg
 
 end LieAlgebra.Symplectic

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 
 /-!
@@ -29,6 +30,8 @@ definite they meet only in `0`. The spectral theory over finite-dimensional real
 * `LinearMap.BilinForm.relativeEigenspace`: the eigenspace of `q` relative to `g` at `μ`.
 * `LinearMap.BilinForm.relativeSpectralSubspace`: the sum of the relative eigenspaces at the
   eigenvalues in `Ω`.
+* `LinearMap.BilinForm.relativeEigenspace_eq_eigenspace`: when `q` is represented by `T` relative
+  to a left-separating `g`, the relative eigenspaces coincide with the eigenspaces of `T`.
 * `LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂`: naturality under linear
   equivalences.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace`: spectral subspaces for
@@ -59,6 +62,18 @@ def relativeEigenspace (g q : LinearMap.BilinForm R V) (μ : R) : Submodule R V 
 theorem mem_relativeEigenspace_iff {v : V} :
     v ∈ g.relativeEigenspace q μ ↔ ∀ w, q v w = μ * g v w := by
   simp [relativeEigenspace, LinearMap.ext_iff, sub_eq_zero]
+
+/-- If `q` is represented by an endomorphism `T` relative to a left-separating bilinear form `g`,
+`q x y = g (T x) y`, then the relative eigenspaces of `q` coincide with the eigenspaces of `T`. -/
+theorem relativeEigenspace_eq_eigenspace (hg : g.SeparatingLeft) {T : Module.End R V}
+    (hT : ∀ x y, q x y = g (T x) y) (μ : R) :
+    g.relativeEigenspace q μ = T.eigenspace μ := by
+  ext v
+  rw [mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
+  refine ⟨fun hv ↦ sub_eq_zero.mp (hg _ fun w ↦ ?_),
+    fun hv w ↦ by rw [hT, hv, map_smul, LinearMap.smul_apply, smul_eq_mul]⟩
+  rw [map_sub, LinearMap.sub_apply, map_smul, LinearMap.smul_apply, smul_eq_mul, ← hT, hv w,
+    sub_self]
 
 /-- The relative spectral subspace of `q` relative to `g` selected by `Ω`: the sum of the
 eigenspaces of `q` relative to `g` at the eigenvalues in `Ω`. -/

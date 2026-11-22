@@ -122,22 +122,6 @@ section IsCancelMulZero
 variable {κ : Type*} [CommSemiring K] [IsCancelMulZero K] [AddCommMonoid V] [Module K V]
   {f : κ → Module.End K V} {a : ι → κ → K}
 
-/-- If `f` and `g` are diagonal in the basis `b` with eigenvalues `a` and `c`, then any
-`μ`-eigenvector of `f` is a `ν`-eigenvector of `g` provided `c i = ν` whenever `a i = μ`. -/
-theorem _root_.Module.Basis.apply_eq_smul_of_apply_basis (b : Module.Basis ι K V)
-    {f g : V →ₗ[K] V} {a c : ι → K}
-    (hf : ∀ i, f (b i) = a i • b i) (hg : ∀ i, g (b i) = c i • b i)
-    {w : V} {μ ν : K} (hw : f w = μ • w) (h : ∀ i, a i = μ → c i = ν) :
-    g w = ν • w := by
-  apply b.repr.injective
-  ext i
-  rw [b.repr_apply_of_apply_basis hg, map_smul, Finsupp.smul_apply, smul_eq_mul]
-  by_cases h0 : b.repr w i = 0
-  · simp [h0]
-  · have hfi : a i * b.repr w i = μ * b.repr w i := by
-      simpa [b.repr_apply_of_apply_basis hf] using congrArg (fun v : V => b.repr v i) hw
-    rw [h i (mul_right_cancel₀ h0 hfi)]
-
 /-- A joint eigenvector has zero coordinate at every basis vector of a different joint weight,
 when a family of endomorphisms is diagonal in the basis. -/
 theorem _root_.Module.Basis.repr_eq_zero_of_weight_ne (b : Module.Basis ι K V)
@@ -149,6 +133,23 @@ theorem _root_.Module.Basis.repr_eq_zero_of_weight_ne (b : Module.Basis ι K V)
   rw [hw j, map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
   by_contra hne
   exact hj (mul_right_cancel₀ hne hcoord).symm
+
+/-- If `f` and `g` are diagonal in the basis `b` with eigenvalues `a` and `c`, then any
+`μ`-eigenvector of `f` is a `ν`-eigenvector of `g` provided `c i = ν` whenever `a i = μ`. -/
+theorem _root_.Module.Basis.apply_eq_smul_of_apply_basis (b : Module.Basis ι K V)
+    {f g : V →ₗ[K] V} {a c : ι → K}
+    (hf : ∀ i, f (b i) = a i • b i) (hg : ∀ i, g (b i) = c i • b i)
+    {w : V} {μ ν : K} (hw : f w = μ • w) (h : ∀ i, a i = μ → c i = ν) :
+    g w = ν • w := by
+  apply b.repr.injective
+  ext i
+  rw [b.repr_apply_of_apply_basis hg, map_smul, Finsupp.smul_apply, smul_eq_mul]
+  by_cases hai : a i = μ
+  · rw [h i hai]
+  · have h0 : b.repr w i = 0 := b.repr_eq_zero_of_weight_ne (κ := Unit) (f := fun _ => f)
+      (a := fun k _ => a k) (fun k _ => hf k) (fun _ => hw) (c := fun _ => μ)
+      (fun hfn => hai (congr_fun hfn ()))
+    simp [h0]
 
 end IsCancelMulZero
 

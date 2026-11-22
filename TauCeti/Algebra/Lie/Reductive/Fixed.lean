@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Reductive.Basic
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 public import Mathlib.Algebra.Lie.Prod
 import Mathlib.LinearAlgebra.Projection
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Central and derived parts of fixed reductive Lie algebras
@@ -44,15 +45,6 @@ section CommRing
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   [LieRing L'] [LieAlgebra R L']
-
-/-- A Lie algebra equivalence maps central elements to central elements. -/
-theorem apply_mem_center (e : L ≃ₗ⁅R⁆ L') {z : L} (hz : z ∈ center R L) :
-    e z ∈ center R L' := by
-  rw [LieModule.mem_maxTrivSubmodule] at hz ⊢
-  intro y
-  obtain ⟨y, rfl⟩ := e.surjective y
-  simp only [coe_toLieHom]
-  rw [← e.map_lie, hz y, map_zero]
 
 /-- When a Lie algebra splits as the direct sum of its centre and its derived ideal, every
 eigenvector of a Lie algebra automorphism decomposes uniquely into a central eigenvector and a
@@ -92,18 +84,6 @@ end CommRing
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [HasCentralRadical K L]
 
-/-- Every fixed vector has a unique decomposition into a fixed central vector and a fixed
-vector in the ambient derived ideal. -/
-theorem existsUnique_fixed_center_add_fixed_derivedSeries (e : L ≃ₗ⁅K⁆ L)
-    (x : e.toLieHom.fixedSubalgebra) :
-    ∃! p : (center K L) × derivedSeries K L 1,
-      e p.1 = p.1 ∧ e p.2 = p.2 ∧ (p.1 : L) + p.2 = x := by
-  simpa only [one_smul] using
-    e.existsUnique_center_add_derivedSeries_of_apply_eq_smul
-      (TauCeti.isCompl_center_derivedSeries K L) (c := (1 : K))
-      (by simpa only [one_smul, LieEquiv.coe_toLieHom] using
-        LieHom.mem_fixedSubalgebra.mp x.property)
-
 /-- Addition identifies the fixed algebra with the product of its fixed central part and the
 fixed part of the ambient derived ideal. The factors are subalgebras of the ambient algebra,
 so their elements retain their original central and derived membership proofs. -/
@@ -142,7 +122,11 @@ noncomputable def fixedCenterDerivedEquiv (e : L ≃ₗ⁅K⁆ L) :
         · exact congrArg (fun r => (r.1 : L)) h
         · exact congrArg (fun r => (r.2 : L)) h
       · intro x
-        obtain ⟨p, hp, _⟩ := e.existsUnique_fixed_center_add_fixed_derivedSeries x
+        obtain ⟨p, hp, _⟩ := e.existsUnique_center_add_derivedSeries_of_apply_eq_smul
+          (TauCeti.isCompl_center_derivedSeries K L) (c := (1 : K))
+          (by simpa only [one_smul, LieEquiv.coe_toLieHom] using
+            LieHom.mem_fixedSubalgebra.mp x.property)
+        simp only [one_smul] at hp
         exact ⟨(⟨p.1, LieHom.mem_fixedSubalgebra.mpr hp.1, p.1.property⟩,
           ⟨p.2, LieHom.mem_fixedSubalgebra.mpr hp.2.1, p.2.property⟩),
           Subtype.ext hp.2.2⟩)
