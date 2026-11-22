@@ -246,7 +246,7 @@ private theorem NormalChartData.normalClass_symm_complement_trivialization
     (d.continuous_coordinate_apply hf hn) q hq
   have heq' : (d.trivialization hf hn q).2 = hf.normalSpaceEquivOfComplement hn
       (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement
-      (d.invertible q.proj hq) q.2 := congrArg Prod.snd heq
+      (d.invertible q.proj hq) q.snd := congrArg Prod.snd heq
   rw [heq', ← hf.normalSpaceEquivOfComplement_symm_apply hn
     (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement (d.invertible q.proj hq),
     ContinuousLinearEquiv.symm_apply_apply]
