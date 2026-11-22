@@ -10,6 +10,8 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Ideal
 public import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Spectrum.Prime.RingHom
+public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 
 /-!
 # Monomial ideals of semigroup faces
@@ -30,6 +32,12 @@ homomorphism `φ : R →+* S`: restriction commutes with `AddMonoidAlgebra.mapRi
 ideal over `R` extends to the face ideal over `S`, and the quotient equivalence is natural in `φ`.
 No flatness, injectivity or surjectivity of `φ` is needed, because the face ideal has a fixed
 monomial generating set; this is not an instance of kernels commuting with base change.
+
+Multiplying all exponents by a positive integer `n`, that is, raising every monomial to its
+`n`-th power while fixing the coefficients, preserves each face. On a face `F` it restricts to
+the same operation on `R[F]`, and the preimage of the zero locus of the face ideal is that zero
+locus again. For `n = 0` every monomial goes to `1`, and the preimage of the zero locus of a
+proper face is empty.
 
 ## References
 
@@ -246,6 +254,72 @@ theorem faceQuotientEquiv_quotientMap (x : AddMonoidAlgebra S M ⧸ F.faceIdeal 
   simp
 
 end CommRing
+
+section NSMul
+
+variable {n : ℕ}
+
+/-- For `n ≠ 0`, raising monomials to the `n`-th power commutes with restriction to a face. -/
+theorem faceRestriction_mapDomainRingHom_nsmul (hn : n ≠ 0) (p : AddMonoidAlgebra R M) :
+    F.faceRestriction hF R (mapDomainRingHom R (nsmulAddMonoidHom n) p) =
+      mapDomainRingHom R (nsmulAddMonoidHom n) (F.faceRestriction hF R p) := by
+  induction p using AddMonoidAlgebra.induction_linear with
+  | zero => simp
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | single a r =>
+    by_cases ha : a ∈ F
+    · have h := F.faceRestriction_single_mem hF (n • ⟨a, ha⟩) r
+      rw [AddSubmonoidClass.coe_nsmul] at h
+      simp only [mapDomainRingHom_apply, mapDomain_single, nsmulAddMonoidHom_apply, h,
+        F.faceRestriction_single_mem hF ⟨a, ha⟩]
+    · have hna : n • a ∉ F := fun h ↦ ha ((hF.nsmulSaturated h).resolve_left hn)
+      simp [mapDomainRingHom_apply, F.faceRestriction_single_of_notMem hF ha,
+        F.faceRestriction_single_of_notMem hF hna]
+
+include hF in
+/-- For `n ≠ 0`, raising monomials to the `n`-th power maps the ideal of a face into itself. -/
+theorem faceIdeal_le_comap_mapDomainRingHom_nsmul (hn : n ≠ 0) :
+    F.faceIdeal R ≤ (F.faceIdeal R).comap (mapDomainRingHom R (nsmulAddMonoidHom n)) := by
+  intro p hp
+  rw [← F.ker_faceRestriction hF, RingHom.mem_ker] at hp
+  rw [Ideal.mem_comap, ← F.ker_faceRestriction hF, RingHom.mem_ker,
+    F.faceRestriction_mapDomainRingHom_nsmul hF hn, hp, map_zero]
+
+/-- For `n ≠ 0`, the preimage of the zero locus of a monomial ideal under raising monomials to
+the `n`-th power is the same zero locus. No face condition is needed: a prime contains the
+`n`-th power of a monomial exactly when it contains the monomial. -/
+theorem preimage_comap_mapDomainRingHom_nsmul_zeroLocus_faceIdeal (hn : n ≠ 0) :
+    PrimeSpectrum.comap (mapDomainRingHom R (nsmulAddMonoidHom n)) ⁻¹'
+        PrimeSpectrum.zeroLocus (F.faceIdeal R : Set (AddMonoidAlgebra R M)) =
+      PrimeSpectrum.zeroLocus (F.faceIdeal R : Set (AddMonoidAlgebra R M)) := by
+  rw [faceIdeal_def, PrimeSpectrum.zeroLocus_span, PrimeSpectrum.preimage_comap_zeroLocus,
+    ← Set.image_comp]
+  ext x
+  simp only [PrimeSpectrum.mem_zeroLocus, Set.image_subset_iff]
+  refine forall₂_congr fun a _ ↦ ?_
+  simp only [Set.mem_preimage, Function.comp_apply, of'_apply, mapDomainRingHom_apply,
+    mapDomain_single, nsmulAddMonoidHom_apply, SetLike.mem_coe]
+  rw [show single (n • a) (1 : R) = single a 1 ^ n by rw [single_pow, one_pow],
+    x.isPrime.pow_mem_iff_mem n (Nat.pos_of_ne_zero hn)]
+
+/-- Raising monomials to the zeroth power sends each of them to `1`, so the preimage of the zero
+locus of the monomial ideal of a proper submonoid is empty. -/
+theorem preimage_comap_mapDomainRingHom_zero_zeroLocus_faceIdeal (hFtop : F ≠ ⊤) :
+    PrimeSpectrum.comap (mapDomainRingHom R (nsmulAddMonoidHom 0)) ⁻¹'
+        PrimeSpectrum.zeroLocus (F.faceIdeal R : Set (AddMonoidAlgebra R M)) = ∅ := by
+  obtain ⟨a, ha⟩ : ∃ a, a ∉ F := by
+    by_contra! h
+    exact hFtop (eq_top_iff.mpr fun a _ ↦ h a)
+  refine Set.eq_empty_of_forall_notMem fun x hx ↦ x.isPrime.ne_top ?_
+  have hmem : single a (1 : R) ∈ F.faceIdeal R := Ideal.subset_span ⟨a, ha, of'_apply a⟩
+  rw [Set.mem_preimage, PrimeSpectrum.mem_zeroLocus] at hx
+  have h1 := hx hmem
+  simp only [SetLike.mem_coe, PrimeSpectrum.comap_asIdeal, Ideal.mem_comap,
+    mapDomainRingHom_apply, mapDomain_single, nsmulAddMonoidHom_apply, zero_nsmul,
+    ← one_def] at h1
+  exact (Ideal.eq_top_iff_one _).mpr h1
+
+end NSMul
 
 include hF in
 /-- Over a nontrivial semiring with no zero divisors, the ideal of a face is prime whenever

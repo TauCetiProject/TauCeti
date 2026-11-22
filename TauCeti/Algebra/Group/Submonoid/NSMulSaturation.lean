@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Lattice
+public import Mathlib.Algebra.Group.Submonoid.Saturation
 public import Mathlib.GroupTheory.Subgroup.Saturated
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 
@@ -35,6 +36,8 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
 
 * `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: `PowSaturated` is preserved by
   pullbacks and binary intersections.
+* `Submonoid.MulSaturated.powSaturated`: a submonoid saturated under products, such as a face of
+  an affine semigroup, is `PowSaturated`.
 * `Submonoid.powSaturation`: the elements of `M` having a positive power in `s`.
 * `Submonoid.mem_powSaturation`: the membership criterion.
 * `Submonoid.le_powSaturation`: `s` is contained in its saturation.
@@ -74,6 +77,16 @@ theorem PowSaturated.inf {s t : Submonoid M} (hs : s.PowSaturated) (ht : t.PowSa
   rcases hs h.1 with rfl | hxs
   · exact Or.inl rfl
   · exact (ht h.2).imp_right fun hxt => ⟨hxs, hxt⟩
+
+/-- A submonoid that contains both factors of each of its products is `PowSaturated`: it
+contains a positive power of an element only if it contains the element. -/
+@[to_additive /-- An additive submonoid that contains both summands of each of its sums, such as a
+face of an affine semigroup, is `NSMulSaturated`: it contains a positive multiple of an element
+only if it contains the element. -/]
+theorem MulSaturated.powSaturated {s : Submonoid M} (hs : s.MulSaturated) : s.PowSaturated := by
+  rintro (_ | n) x hx
+  · exact Or.inl rfl
+  · exact Or.inr (hs (by rwa [pow_succ] at hx)).2
 
 end Monoid
 
