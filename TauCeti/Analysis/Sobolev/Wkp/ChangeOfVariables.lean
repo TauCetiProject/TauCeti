@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
@@ -21,6 +22,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Gluing
@@ -297,6 +299,28 @@ theorem conj {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {U' V'
     rw [hd.fderiv, ContinuousLinearMap.det, hconj, LinearMap.det_conj]
     exact h.le_abs_det (e x) (hU hx)
 
+/-- Composing a change of variables `Φ` on the left with an affine isometry equivalence `e` gives a
+change of variables `e ∘ Φ` with the same constants: its iterated derivatives of positive order
+have the same norms, and its Jacobian determinant has the same absolute value. -/
+theorem affineIsometryEquiv_comp {V' : Opens E} (h : IsChangeOfVariables k U V Φ L c)
+    (e : E ≃ᵃⁱ[ℝ] E) (hV : MapsTo e V V') : IsChangeOfVariables k U V' (e ∘ Φ) L c := by
+  set A := e.toAffineIsometry.toContinuousAffineMap
+  refine ⟨A.contDiff.comp_contDiffOn h.contDiffOn,
+    A.differentiable.comp_differentiableOn h.differentiableOn, e.injective.comp_injOn h.injOn,
+    hV.comp h.mapsTo, fun i hi hik x hx ↦ ?_, h.pos, fun x hx ↦ ?_⟩
+  · rw [AffineIsometryEquiv.norm_iteratedFDeriv_comp_left _ _ _ (by omega)]
+    exact h.norm_iteratedFDeriv_le i hi hik x hx
+  · have hd : HasFDerivAt (e ∘ Φ) (A.contLinear.comp (fderiv ℝ Φ x)) x := A.hasFDerivAt.comp x
+      (h.differentiableOn.differentiableAt (U.isOpen.mem_nhds hx)).hasFDerivAt
+    have hA : |LinearMap.det (A.contLinear : E →ₗ[ℝ] E)| = 1 := by
+      by_cases hE : FiniteDimensional ℝ E
+      · have hAe : (A.contLinear : E →ₗ[ℝ] E) =
+            e.linearIsometryEquiv.toLinearIsometry.toLinearMap := by ext; rfl
+        rw [hAe, ← LinearMap.normDet_eq_abs_det, LinearIsometry.normDet_eq_one]
+      · simp [LinearMap.det_eq_one_of_not_module_finite (by simpa [FiniteDimensional] using hE)]
+    rw [hd.fderiv, ContinuousLinearMap.det_comp, abs_mul, ContinuousLinearMap.det, hA, one_mul]
+    exact h.le_abs_det x hx
+
 /-- **Changes of variables on relatively compact sets.** A map that is `Cⁿ` on an open set `Ω`,
 with `k ≤ n` and `1 ≤ n`, injective on `U` and mapping `U` into `V`, whose Jacobian determinant
 does not vanish on the compact set `closure U ⊆ Ω`, is a change of variables of order `k` from
@@ -430,6 +454,26 @@ theorem compLBound_anti_left {p q : ℝ≥0∞} (hp0 : p ≠ 0) (hpq : p ≤ q) 
 theorem compLBound_le_compLBound_one {p : ℝ≥0∞} (hp : 1 ≤ p) (k : ℕ) (L : ℝ) {c : ℝ}
     (hc0 : 0 < c) (hc1 : c ≤ 1) : compLBound p k L c ≤ compLBound 1 k L c :=
   compLBound_anti_left one_ne_zero hp k L hc0 hc1
+
+/-- The constant `compLBound ∞ k L c` is at least one: the exponent of `c` vanishes, and the
+summand for `i = 0` is one. -/
+theorem one_le_compLBound_top (k : ℕ) (L c : ℝ) : 1 ≤ compLBound ⊤ k L c := by
+  rw [compLBound_def, ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero, one_mul]
+  calc (1 : ℝ) = max 1 L ^ 0 * (Fintype.card (OrderedFinpartition 0) : ℝ) := by simp
+    _ ≤ _ := Finset.single_le_sum (f := fun i => max 1 L ^ i *
+        (Fintype.card (OrderedFinpartition i) : ℝ)) (fun i _ => max_one_pow_mul_card_nonneg L i)
+        (Finset.mem_range.2 k.succ_pos)
+
+open scoped NNReal in
+/-- As the finite exponent `q` tends to `∞`, the constant `compLBound q k L c` tends to
+`compLBound ∞ k L c`. -/
+theorem tendsto_compLBound_coe_atTop (k : ℕ) (L : ℝ) {c : ℝ} (hc : c ≠ 0) :
+    Tendsto (fun q : ℝ≥0 => compLBound q k L c) atTop (𝓝 (compLBound ⊤ k L c)) := by
+  simp only [compLBound_def]
+  rw [ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero]
+  refine (((Real.tendsto_const_rpow_inv_atTop (inv_ne_zero hc)).comp
+    (NNReal.tendsto_coe_atTop.2 tendsto_id)).congr fun q => ?_).mul_const _
+  rw [Function.comp_apply, id_eq, one_div, ENNReal.toReal_inv, ENNReal.coe_toReal]
 
 section Calculus
 

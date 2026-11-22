@@ -8,6 +8,9 @@ module
 public import Mathlib.Data.List.Chain
 public import TauCeti.LinearAlgebra.Ray
 
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
+
 /-!
 # Piecewise-linear paths up to reparametrization
 
@@ -70,6 +73,8 @@ reparametrizations of a common one exactly when their normal forms agree, are in
   middle of a segment list, does not change the presented path.
 * `TauCeti.PLPath.ofSegments_div_smul_cons_sub_div_smul_cons`: subdividing a segment of a segment
   list at a fraction `d / e` with `0 ≤ d ≤ e`.
+* `TauCeti.PLPath.ofSegments_ofFn_smul_comp_of_monotone`: regrouping segments along a monotone
+  map does not change the presented path.
 * `TauCeti.PLPath.map_injective`, `TauCeti.PLPath.map_smul_id_injective`: injective linear maps
   (in particular nonzero scalar dilations) commute with normalization and act injectively on
   piecewise-linear paths.
@@ -497,6 +502,21 @@ theorem prod_map_straight (l : List V) : (l.map (straight 𝕜)).prod = ofSegmen
   | nil => rfl
   | cons v l ih => rw [List.map_cons, List.prod_cons, ih, ofSegments_cons]
 
+/-- Removing the segments a predicate rejects does not change the presented path, provided each
+rejected entry gives a stationary segment. -/
+theorem ofSegments_map_filter {α : Type*} (g : α → V) {q : α → Bool} (l : List α)
+    (hq : ∀ a ∈ l, q a = false → g a = 0) :
+    ofSegments 𝕜 ((l.filter q).map g) = ofSegments 𝕜 (l.map g) := by
+  induction l with
+  | nil => rfl
+  | cons a l ih =>
+    have ih' := ih fun a' ha' ↦ hq a' (List.mem_cons_of_mem _ ha')
+    by_cases ha : q a
+    · rw [List.filter_cons_of_pos ha, List.map_cons, List.map_cons, ofSegments_cons, ih',
+        ← ofSegments_cons]
+    · rw [List.filter_cons_of_neg ha, ih', List.map_cons,
+        hq a List.mem_cons_self (by simpa using ha), ofSegments_zero_cons]
+
 /-! ### The endpoint -/
 
 /-- The endpoint `π 1` of a path, the sum of its segments. -/
@@ -621,6 +641,52 @@ theorem ofSegments_div_smul_cons_sub_div_smul_cons [PosMulReflectLT 𝕜] {d e :
     ofSegments 𝕜 ((d / e) • w :: ((e - d) / e) • w :: l) = ofSegments 𝕜 (w :: l) := by
   rw [ofSegments_smul_cons_smul_cons (div_nonneg hd he.le) (div_nonneg (sub_nonneg.2 hde) he.le),
     ← add_div, add_sub_cancel, div_self he.ne', one_smul]
+
+/-- Appending a segment `e • v K` to segments `c k • v k`, `k : Fin n`, all of which vanish after
+`K`, adds `e` to the coefficient of `v K`. -/
+private theorem ofSegments_ofFn_append_smul {n : ℕ} (v : Fin n → V) {c : Fin n → 𝕜} (hc : 0 ≤ c)
+    {K : Fin n} (hK : ∀ k, K < k → c k = 0) {e : 𝕜} (he : 0 ≤ e) :
+    ofSegments 𝕜 ((List.ofFn fun k ↦ c k • v k) ++ [e • v K]) =
+      ofSegments 𝕜 (List.ofFn fun k ↦ (c k + if k = K then e else 0) • v k) := by
+  induction n with
+  | zero => exact K.elim0
+  | succ n ih =>
+    rw [List.ofFn_succ', List.ofFn_succ', List.concat_eq_append, List.concat_eq_append]
+    induction K using Fin.lastCases with
+    | last =>
+      have hne (k : Fin n) : k.castSucc ≠ Fin.last n := (Fin.castSucc_lt_last k).ne
+      simp only [hne, ite_true, ite_false, add_zero, List.append_assoc, List.singleton_append]
+      rw [ofSegments_append, ofSegments_append, ofSegments_smul_cons_smul_cons (hc _) he]
+    | cast K =>
+      have hlast : c (Fin.last n) = 0 := hK _ (Fin.castSucc_lt_last K)
+      have hne : Fin.last n ≠ K.castSucc := (Fin.castSucc_lt_last K).ne'
+      simp only [hlast, hne, ite_false, add_zero, zero_smul, List.append_assoc,
+        List.singleton_append, Fin.castSucc_inj]
+      rw [ofSegments_append, ofSegments_zero_cons, ← ofSegments_append, ofSegments_append _ [0],
+        ofSegments_zero_cons, ofSegments_nil, mul_one]
+      exact ih (fun k ↦ v k.castSucc) (fun k ↦ hc _) (fun k hk ↦ hK _ (by simpa using hk))
+
+/-- **Regrouping segments along a monotone map.** For nonnegative coefficients `c` and a monotone
+map `σ : Fin m → Fin n`, the segments `c i • v (σ i)` present the same path as the segments
+`(∑_{σ i = k} c i) • v k`: consecutive segments along a common vector merge, and the vectors
+`v k` that `σ` misses contribute stationary segments. -/
+theorem ofSegments_ofFn_smul_comp_of_monotone {m n : ℕ} (v : Fin n → V) {σ : Fin m → Fin n}
+    (hσ : Monotone σ) {c : Fin m → 𝕜} (hc : 0 ≤ c) :
+    ofSegments 𝕜 (List.ofFn fun i ↦ c i • v (σ i)) =
+      ofSegments 𝕜 (List.ofFn fun k ↦ (∑ i, if σ i = k then c i else 0) • v k) := by
+  induction m with
+  | zero =>
+    simp only [List.ofFn_zero, Finset.univ_eq_empty, Finset.sum_empty, zero_smul]
+    rw [ofSegments_nil, eq_comm, ofSegments_eq_one_iff]
+    simp
+  | succ m ih =>
+    have h := ih (σ := fun i ↦ σ i.castSucc) (hσ.comp Fin.strictMono_castSucc.monotone)
+      (c := fun i ↦ c i.castSucc) (fun i ↦ hc _)
+    rw [List.ofFn_succ', List.concat_eq_append, ofSegments_append, h, ← ofSegments_append,
+      ofSegments_ofFn_append_smul v (fun k ↦ Finset.sum_nonneg fun i _ ↦ by
+        split_ifs; exacts [hc _, le_rfl]) (fun k hk ↦ Finset.sum_eq_zero fun i _ ↦ by
+          simp [((hσ (Fin.castSucc_lt_last i).le).trans_lt hk).ne]) (hc _)]
+    simp only [Fin.sum_univ_castSucc, eq_comm (a := σ (Fin.last m))]
 
 /-! ### Semilinear images -/
 
