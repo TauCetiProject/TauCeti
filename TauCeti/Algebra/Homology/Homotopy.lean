@@ -79,6 +79,10 @@ where the differential out of the source and the differential into the target va
 
 `Homotopy.equivSubZero_apply_hom` computes the components of the homotopy from `f - g` to `0`
 that Mathlib's `Homotopy.equivSubZero` builds from a homotopy from `f` to `g`.
+
+`HomotopyEquiv.ofKernel` splits off a contractible direct summand: the kernel of an idempotent
+endomorphism `p` of a complex that is homotopic to zero is a deformation retract of the complex,
+with retraction `𝟙 - p`. Cancelling a contractible disk from a complex is an instance.
 -/
 
 @[expose] public section
@@ -479,3 +483,42 @@ lemma nonempty_homotopy_zero_iff_of_single (K : CochainComplex C ℤ) {X : C} {p
     fun ⟨z, hz⟩ ↦ ⟨(Cochain.equivHomotopy _ _).symm ⟨z, by simpa using hz.symm⟩⟩⟩
 
 end CochainComplex
+
+namespace HomotopyEquiv
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {K : HomologicalComplex C c} (p : K ⟶ K) [HasKernel p]
+
+/-- **The kernel of a null-homotopic idempotent is a deformation retract.** If an idempotent
+endomorphism `p` of a complex `K` is homotopic to zero, the inclusion of its kernel is a homotopy
+equivalence. Its homotopy inverse is the projection `𝟙 - p`
+(`HomotopyEquiv.ofKernel_inv_comp_kernel_ι`), which retracts the inclusion on the nose
+(`HomotopyEquiv.kernel_ι_comp_ofKernel_inv`). -/
+def ofKernel (hp : p ≫ p = p) (h : Homotopy p 0) : HomotopyEquiv (kernel p) K where
+  hom := kernel.ι p
+  inv := kernel.lift p (𝟙 K - p) (by rw [Preadditive.sub_comp, Category.id_comp, hp, sub_self])
+  homotopyHomInvId := Homotopy.ofEq ((cancel_mono (kernel.ι p)).1 (by simp))
+  homotopyInvHomId := (Homotopy.ofEq (kernel.lift_ι _ _ _)).trans <| Homotopy.equivSubZero.symm <|
+    (Homotopy.ofEq (by abel)).trans (Homotopy.equivSubZero h.symm)
+
+variable {p}
+
+@[simp]
+lemma ofKernel_hom (hp : p ≫ p = p) (h : Homotopy p 0) : (ofKernel p hp h).hom = kernel.ι p :=
+  (rfl)
+
+/-- The inclusion of the kernel of a null-homotopic idempotent `p` followed by the projection
+`𝟙 - p` is the identity of the kernel. -/
+@[reassoc (attr := simp)]
+lemma kernel_ι_comp_ofKernel_inv (hp : p ≫ p = p) (h : Homotopy p 0) :
+    kernel.ι p ≫ (ofKernel p hp h).inv = 𝟙 _ :=
+  (cancel_mono (kernel.ι p)).1 (by simp [ofKernel])
+
+/-- The projection onto the kernel of a null-homotopic idempotent `p`, followed by the inclusion,
+is the complementary idempotent `𝟙 - p`. -/
+@[reassoc (attr := simp)]
+lemma ofKernel_inv_comp_kernel_ι (hp : p ≫ p = p) (h : Homotopy p 0) :
+    (ofKernel p hp h).inv ≫ kernel.ι p = 𝟙 K - p :=
+  kernel.lift_ι _ _ _
+
+end HomotopyEquiv

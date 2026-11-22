@@ -10,9 +10,11 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import Mathlib.Algebra.Exact.Basic
 import Mathlib.Algebra.Module.Shrink
 
 /-!
@@ -43,6 +45,10 @@ covers is how minimal free resolutions are built.
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
 * `TauCeti.IsLocalRing.exists_linearMap_quotient_eq_one`: an element of a module `M` outside
   `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
+* `TauCeti.IsLocalRing.isUnimodular_iff_notMem_maximalIdeal_smul`: an element of a projective
+  module `M` is sent to `1` by a linear form `M → R` exactly when it lies outside `𝔪 • M`.
+* `TauCeti.IsLocalRing.finrank_ker_add_one_of_apply_eq_one`: the kernel of a linear form taking
+  the value `1` on a finite projective module is finite free of rank one less.
 * `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a local
   ring is free, for any `AddCommMonoid` module.
 
@@ -154,6 +160,51 @@ theorem exists_linearMap_quotient_eq_one {m : M}
   obtain ⟨φ, hφ⟩ :=
     Module.Projective.exists_dual_eq_one (R ⧸ _root_.IsLocalRing.maximalIdeal R) hx
   exact ⟨(φ.restrictScalars R) ∘ₗ Submodule.mkQ _, hφ⟩
+
+/-- **An element of a projective module over a local ring is unimodular exactly when it lies
+outside `𝔪 • M`**: some linear form `M → R` sends it to `1`. -/
+theorem isUnimodular_iff_notMem_maximalIdeal_smul [Module.Projective R M] {m : M} :
+    Module.IsUnimodular R m ↔ m ∉ _root_.IsLocalRing.maximalIdeal R • (⊤ : Submodule R M) := by
+  rw [Module.isUnimodular_iff]
+  constructor
+  · rintro ⟨f, hf⟩ hm
+    have h := Submodule.smul_top_le_comap_smul_top (_root_.IsLocalRing.maximalIdeal R) f hm
+    rw [Submodule.mem_comap, hf, smul_eq_mul, Ideal.mul_top] at h
+    exact (_root_.IsLocalRing.maximalIdeal.isMaximal R).ne_top ((Ideal.eq_top_iff_one _).2 h)
+  · intro hm
+    obtain ⟨r, hr⟩ := exists_linearMap_quotient_eq_one hm
+    -- Lift the residual form `r` through `R → R ⧸ 𝔪`; its value at `m` is then a unit.
+    obtain ⟨f, hf⟩ := Module.projective_lifting_property
+      (Submodule.mkQ (_root_.IsLocalRing.maximalIdeal R)) r (Submodule.mkQ_surjective _)
+    have hu : IsUnit (f m) := by
+      rw [← _root_.IsLocalRing.notMem_maximalIdeal]
+      intro hfm
+      have h := congrArg (· m) hf
+      simp only [LinearMap.comp_apply, hr, Submodule.mkQ_apply,
+        (Submodule.Quotient.mk_eq_zero _).2 hfm] at h
+      exact zero_ne_one h
+    exact ⟨(↑hu.unit⁻¹ : R) • f, by simp⟩
+
+/-- **The kernel of a linear form taking the value `1` is finite free of rank one less.** If
+`φ : M → R` takes the value `1` on a finite projective module `M` over a local ring, then
+`M ≃ ker φ × R`, so `ker φ` is finite free and `rank (ker φ) + 1 = rank M`. -/
+theorem finrank_ker_add_one_of_apply_eq_one [Module.Finite R M] [Module.Projective R M]
+    {φ : M →ₗ[R] R} {w : M} (hw : φ w = 1) :
+    Module.Free R (LinearMap.ker φ) ∧ Module.Finite R (LinearMap.ker φ) ∧
+      Module.finrank R (LinearMap.ker φ) + 1 = Module.finrank R M := by
+  -- `r ↦ r • w` splits `φ`, so `M ≃ ker φ × R`.
+  let e : M ≃ₗ[R] LinearMap.ker φ × R :=
+    ((LinearMap.exact_subtype_ker_map φ).splitSurjectiveEquiv (LinearMap.ker φ).injective_subtype
+      ⟨LinearMap.toSpanSingleton R M w, LinearMap.ext_ring (by simpa using hw)⟩).val
+  have : Module.Finite R (LinearMap.ker φ) :=
+    .of_surjective (LinearMap.fst R (LinearMap.ker φ) R ∘ₗ e.toLinearMap)
+      fun z ↦ ⟨e.symm (z, 0), by simp⟩
+  have : Module.Projective R (LinearMap.ker φ × R) := .of_equiv e
+  have : Module.Projective R (LinearMap.ker φ) :=
+    .of_split (LinearMap.inl R (LinearMap.ker φ) R) (LinearMap.fst R (LinearMap.ker φ) R)
+      (LinearMap.fst_comp_inl ..)
+  have := Module.free_of_flat_of_isLocalRing (R := R) (P := LinearMap.ker φ)
+  exact ⟨‹_›, ‹_›, by rw [e.finrank_eq, Module.finrank_prod, Module.finrank_self]⟩
 
 /-- A scalar killing a nonzero element lies in the maximal ideal, since a unit kills only zero.
 This holds for any distributive action of a local semiring on an additive monoid, in particular
