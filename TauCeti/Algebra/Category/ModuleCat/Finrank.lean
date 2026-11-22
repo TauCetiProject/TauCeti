@@ -49,10 +49,6 @@ namespace ModuleCat
 
 variable {R : Type u} [Ring R]
 
-section Nontrivial
-
-variable [Nontrivial R]
-
 /-- The ring `R`, as an object of `ModuleCat R`, has finrank one. -/
 theorem finrank_of_self (R : Type u) [Ring R] [StrongRankCondition R] :
     Module.finrank R (ModuleCat.of R R) = 1 :=
@@ -73,8 +69,6 @@ theorem finsum_neg_one_pow_finrank_eq_sum_range {M : ℕ → ModuleCat.{v} R} {N
   refine finsum_eq_sum_of_support_subset _ fun n hn ↦ ?_
   contrapose hn
   simp [finrank_eq_zero_of_isZero (hN n (by simpa using hn))]
-
-end Nontrivial
 
 /-- The finrank of a biproduct of finite free modules is the sum of their finranks. -/
 @[simp]

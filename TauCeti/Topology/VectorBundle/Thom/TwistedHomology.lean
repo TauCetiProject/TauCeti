@@ -24,9 +24,9 @@ other than `2`, this file proves the Thom isomorphism with orientation-twisted c
 
 (`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`), with no
 orientation of `E` and over any base. For a non-orientable bundle the twist cannot be dropped: for
-the Möbius line over the circle, `H₁(E, E₀; ℚ) = 0` while `H₀(S¹; ℚ) = ℚ`. Over `ZMod 2` the twist
-disappears and the untwisted mod `2` Thom isomorphism holds instead
-(`TauCeti.existsUnique_isThomClass_of_subsingleton_units` with `TauCeti.homologyThomIso`).
+the Möbius line over the circle, `H₁(E, E₀; ℚ) = 0` while `H₀(S¹; ℚ) = ℚ`. When `2 = 0` in `K`,
+as for `ZMod 2`, the twist disappears and the untwisted Thom isomorphism holds instead
+(`TauCeti.exists_isThomClass_of_two_eq_zero` with `TauCeti.homologyThomIso`).
 
 The proof passes through the orientation double cover `B'` of `E`, with its deck involution `σ`
 reversing orientations, and the pull-back `E'` of `E` to `B'`, oriented by the tautological
@@ -444,38 +444,34 @@ theorem signHomologyToCover_thomPairSingularHomologyEquivTwistedHomology
       ((coe_homologyThomMapDeckEquiv_apply hι ω hg h _).trans
         (congrArg _ (coe_thomPairSingularHomologyEquivDeckInvariants_apply hι x))))
 
-end CommRing
-
-variable (F E) in
-/-- **The twisted Thom isomorphism, unnormalized.** Let `E → B` be a real vector bundle of rank `r`,
-`o(E)` its orientation local system, and `K` a commutative ring in which `2` is invertible. Then
-`Hₘ(E, E₀; K) ≅ Hₚ(B; o(E) ⊗ K)` for `m = r + p`, with no orientation of `E` and over any base:
-this is `thomPairSingularHomologyEquivTwistedHomology` with some choice of the orientation of the
-model fibre and of the generator of `Hʳ(F, F ∖ {0}; K)` normalizing it. -/
-theorem nonempty_singularHomology_thomPair_iso_twistedHomology (K : Type w) [CommRing K]
-    [Invertible (2 : K)] {p m : ℕ} (h : finrank ℝ F + p = m) :
-    Nonempty ((thomPair F E).singularHomology (ModuleCat.of K K) m ≅
+variable (F E K) in
+include h in
+/-- **The Thom isomorphism with coefficients in the orientation local system, unnormalized.** Let
+`E → B` be a real vector bundle of rank `r`, `o(E)` its orientation local system, and `K` a
+commutative ring in which `2` is invertible. Then `Hₘ(E, E₀; K) ≃ Hₚ(B; o(E) ⊗ K)` for
+`m = r + p`, with no orientation of `E` and over any base. This forgets the normalization of
+`thomPairSingularHomologyEquivTwistedHomology` by an orientation of the model fibre and a generator
+of `Hʳ(F, F ∖ {0}; K)`, both of which always exist. -/
+theorem nonempty_singularHomology_thomPair_linearEquiv_twistedHomology :
+    Nonempty (((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K) ≃ₗ[K]
       LocalCoefficientSystem.twistedHomology (signLocalSystem F E K hι) p) := by
-  -- A generator of `Hʳ(F, F ∖ {0}; K) ≅ K` and an orientation of the model fibre normalize the
-  -- twisted Thom isomorphism.
   obtain ⟨u, hu⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
     (OpenPartialHomeomorph.refl F) (Set.mem_univ 0)
   classical
-  let ω : Orientation ℝ F ι :=
-    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation
-  exact ⟨(thomPairSingularHomologyEquivTwistedHomology hι ω hu h).toModuleIso⟩
+  exact ⟨thomPairSingularHomologyEquivTwistedHomology hι
+    ((Module.finBasisOfFinrankEq ℝ F hι.symm).reindex (Fintype.equivFin ι).symm).orientation hu h⟩
 
-variable (F E) in
-/-- **The dimensions of the homology of the Thom pair with orientation-twisted coefficients.** Let
-`E → B` be a real vector bundle of rank `r`, `o(E)` its orientation local system, and `K` a
-commutative ring in which `2` is invertible. Then `dim Hₘ(E, E₀; K) = dim Hₚ(B; o(E) ⊗ K)` for
-`m = r + p`, with no orientation of `E` and over any base: these are the dimensions on the two sides
-of the twisted Thom isomorphism `thomPairSingularHomologyEquivTwistedHomology`. -/
-theorem finrank_singularHomology_thomPair_eq_finrank_twistedHomology (K : Type w) [CommRing K]
-    [Invertible (2 : K)] {p m : ℕ} (h : finrank ℝ F + p = m) :
+variable (F E K) in
+include h in
+/-- **The dimension of the homology of the Thom pair is a twisted Betti number of the base.** For a
+real vector bundle `E → B` of rank `r`, orientable or not, and a commutative ring `K` in which `2`
+is invertible, `dim Hₘ(E, E₀; K) = dim Hₚ(B; o(E) ⊗ K)` whenever `r + p = m`, where `o(E)` is the
+orientation local system of `E`. -/
+theorem finrank_singularHomology_thomPair_eq_finrank_twistedHomology :
     finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat.{w} K) =
       finrank K (LocalCoefficientSystem.twistedHomology (signLocalSystem F E K hι) p) :=
-  let ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology F E hι K h
-  e.toLinearEquiv.finrank_eq
+  (nonempty_singularHomology_thomPair_linearEquiv_twistedHomology F E hι K h).some.finrank_eq
+
+end CommRing
 
 end TauCeti.VectorBundleOrientationCover

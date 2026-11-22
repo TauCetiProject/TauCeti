@@ -90,9 +90,9 @@ isomorphism in cohomology over an arbitrary base over a field:
   homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over any base.
 * `TauCeti.finrank_singularHomology_thomPair_of_isThomClass`: over a commutative ring, for a bundle
   with a Thom class, `dim Hₘ(E, E₀; K) = bₚ(B; K)`.
-* `TauCeti.finrank_singularHomology_thomPair_of_subsingleton_units`: over a field whose only unit
-  is `1`, such as `ZMod 2`, `dim Hₘ(E, E₀; K) = bₚ(B; K)` for every bundle, oriented or not.
-* `TauCeti.finrank_singularHomology_thomPair_eq_ite`: over a nontrivial commutative ring, the
+* `TauCeti.finrank_singularHomology_thomPair_of_two_eq_zero`: over a field of characteristic two,
+  such as `ZMod 2`, `dim Hₘ(E, E₀; K) = bₚ(B; K)` for every bundle, oriented or not.
+* `TauCeti.finrank_singularHomology_thomPair_eq_ite`: over a commutative ring, the
   dimensions of the homology of the Thom pair in every degree from those in degrees at least the
   rank, the homology below the rank vanishing.
 * `TauCeti.bijective_thomMap_of_field`, `TauCeti.thomEquivOfField`: the cohomology Thom isomorphism
@@ -484,9 +484,9 @@ theorem finrank_singularHomology_thomPair_of_isThomClass (p m : ℕ) (h : finran
 
 variable (F E) in
 /-- **The dimensions of the homology of a Thom pair in every degree.** Let `E → B` be a real vector
-bundle of rank `r` and `K` a nontrivial commutative ring. If `dim H_{r + p}(E, E₀; K) = d p` for
+bundle of rank `r` and `K` a commutative ring. If `dim H_{r + p}(E, E₀; K) = d p` for
 every `p`, then `dim Hₙ(E, E₀; K)` is `d (n - r)` when `r ≤ n`, and `0` when `n < r`. -/
-theorem finrank_singularHomology_thomPair_eq_ite [Nontrivial K] [FiniteDimensional ℝ F] {r : ℕ}
+theorem finrank_singularHomology_thomPair_eq_ite [FiniteDimensional ℝ F] {r : ℕ}
     (hr : finrank ℝ F = r) (d : ℕ → ℕ)
     (hd : ∀ p, finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) (r + p) :
       ModuleCat K) = d p) (n : ℕ) :
@@ -538,17 +538,16 @@ theorem thomEquivOfField_apply (M : ModuleCat.{w} K) (p m : ℕ) (h : p + finran
     thomEquivOfField F E M p m h u hu a = thomMap F E M (finrank ℝ F) p m h u a := (rfl)
 
 variable (F E) in
-/-- **The mod `2` homology Thom isomorphism, in dimensions.** Let `K` be a field whose only unit is
-`1`, such as `ZMod 2`. For a real vector bundle `E → B` with fibres of dimension `r`, over any base
+/-- **The mod `2` homology Thom isomorphism, in dimensions.** Let `K` be a field of characteristic
+two, such as `ZMod 2`. For a real vector bundle `E → B` with fibres of dimension `r`, over any base
 and with no orientation, `dim Hₘ(E, E₀; K)` is the Betti number `bₚ(B; K)` whenever `r + p = m`:
-the bundle has a Thom class with coefficients in `K`
-(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`), and its homology Thom map is an
-isomorphism (`TauCeti.homologyThomIso`). -/
-theorem finrank_singularHomology_thomPair_of_subsingleton_units [FiniteDimensional ℝ F]
-    [Subsingleton Kˣ] (p m : ℕ) (h : finrank ℝ F + p = m) :
+the bundle has a Thom class with coefficients in `K` (`TauCeti.exists_isThomClass_of_two_eq_zero`),
+and its homology Thom map is an isomorphism (`TauCeti.homologyThomIso`). -/
+theorem finrank_singularHomology_thomPair_of_two_eq_zero [FiniteDimensional ℝ F]
+    (h2 : (2 : K) = 0) (p m : ℕ) (h : finrank ℝ F + p = m) :
     finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat K) =
       bettiNumber K B p := by
-  have hu := (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).exists
+  have hu := exists_isThomClass_of_two_eq_zero (F := F) (E := E) K h2
   exact finrank_singularHomology_thomPair_of_isThomClass F E p m h hu.choose_spec
 
 end IsomorphismOfField
