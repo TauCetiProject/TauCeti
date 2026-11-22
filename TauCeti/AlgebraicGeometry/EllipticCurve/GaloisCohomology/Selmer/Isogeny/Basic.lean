@@ -153,6 +153,10 @@ all places this is `Sel_φ(E₁/K)` (Silverman X.4). -/
 def selmerGroup : AddSubgroup (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :=
   (φ.selmerStructure τ).selmerGroup
 
+/-- `Sel_φ` is the Selmer group of the Selmer structure `selmerStructure φ τ`. -/
+theorem selmerStructure_selmerGroup : (φ.selmerStructure τ).selmerGroup = φ.selmerGroup τ :=
+  (rfl)
+
 /-- **Silverman's description of `Sel_φ`**: a class in `H¹(G_K, E₁(Kˢ)[φ])` is `φ`-Selmer exactly
 when its image in `H¹(G_K, E₁(Kˢ))` lies in the Shafarevich–Tate group of `W₁`. -/
 @[simp]

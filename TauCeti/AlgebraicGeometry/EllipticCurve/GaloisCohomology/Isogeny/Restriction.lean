@@ -48,6 +48,8 @@ the image of a local Kummer map of `φ` serve as the local condition of the `φ`
 * `TauCeti.Isogeny.kerRes_kummerMap`: restriction commutes with the Kummer maps of `φ`.
 * `TauCeti.Isogeny.explicitCoeff1_kerCoeffIncl_dualKerRes`: `dualKerRes` and the restriction
   `TauCeti.Isogeny.kerRes` of `φ̂` agree after inclusion into `H¹(G_L, E₂)`.
+* `TauCeti.Isogeny.dualKerRes_eq_zero_iff`: `dualKerRes` and the restriction of `φ̂` have the
+  same kernel.
 * `TauCeti.Isogeny.dualKerRes_kummerMap`: `dualKerRes` carries Kummer classes of `φ̂` to Kummer
   classes of the dual of `φ_L`.
 
@@ -218,6 +220,44 @@ theorem pointRes_dualKerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.
       explicitCoeff1 _ _ (ofIsogeny (φ.baseChange L).dual).kerCoeffIncl
         continuous_of_discreteTopology (φ.dualKerRes τ c) := by
   rw [pointRes_kerCoeffIncl, explicitCoeff1_kerCoeffIncl_dualKerRes]
+
+/-- **`dualKerRes τ` and the restriction of `φ̂` have the same kernel.** The kernels
+`E₂(Lˢ)[φ̂_L]` and `E₂(Lˢ)[(φ_L)^]` are the same subgroup of `E₂(Lˢ)`, and `dualKerRes τ` is the
+restriction `kerRes τ` of `φ̂` followed by the isomorphism this equality induces on `H¹`. So a
+class satisfies the strict local condition of `φ̂` at `L` exactly when `dualKerRes τ` kills it. -/
+theorem dualKerRes_eq_zero_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff} :
+    φ.dualKerRes τ c = 0 ↔ φ.dual.kerRes τ c = 0 := by
+  have h : ((ofIsogeny (φ.dual.baseChange L)).pointCoeffMap :
+        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker =
+      ((ofIsogeny (φ.baseChange L).dual).pointCoeffMap :
+        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
+    rw [baseChange, dual_map φ (algebraMap K L)]
+    rfl
+  -- The inclusions between the two equal kernels are mutually inverse coefficient maps.
+  let f : (ofIsogeny (φ.dual.baseChange L)).KerCoeff →+[AbsoluteGaloisGroup L]
+      (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
+    { AddSubgroup.inclusion h.le with map_smul' := fun _ _ ↦ Subtype.ext (by simp) }
+  let f' : (ofIsogeny (φ.baseChange L).dual).KerCoeff →+[AbsoluteGaloisGroup L]
+      (ofIsogeny (φ.dual.baseChange L)).KerCoeff :=
+    { AddSubgroup.inclusion h.ge with map_smul' := fun _ _ ↦ Subtype.ext (by simp) }
+  have hT : φ.dualKerRes τ c =
+      explicitCoeff1 _ _ f continuous_of_discreteTopology (φ.dual.kerRes τ c) := by
+    refine (DFunLike.congr_fun (explicitCoeff1_id _ _) (φ.dualKerRes τ c)).symm.trans ?_
+    rw [explicitCoeff1_eq_explicitMap1, explicitCoeff1_eq_explicitMap1, kerRes_eq_explicitMap1,
+      dualKerRes_eq_explicitMap1]
+    exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+      (by ext; rfl) (by ext; rfl) c
+  have hinv (x : H1 (AbsoluteGaloisGroup L) (ofIsogeny (φ.dual.baseChange L)).KerCoeff) :
+      explicitCoeff1 _ _ f' continuous_of_discreteTopology
+        (explicitCoeff1 _ _ f continuous_of_discreteTopology x) = x := by
+    rw [← AddMonoidHom.comp_apply, ← explicitCoeff1_comp]
+    have key : ∀ (g : _ →+[AbsoluteGaloisGroup L] _) (hg : Continuous g),
+        g = DistribMulActionHom.id _ → explicitCoeff1 _ _ g hg x = x := by
+      rintro g hg rfl
+      exact DFunLike.congr_fun (explicitCoeff1_id _ _) x
+    exact key _ _ (by ext; rfl)
+  refine ⟨fun h0 ↦ ?_, fun h0 ↦ by rw [hT, h0, map_zero]⟩
+  rw [← hinv (φ.dual.kerRes τ c), ← hT, h0, map_zero]
 
 variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
   [DecidableEq K] [DecidableEq L]
