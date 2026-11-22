@@ -105,7 +105,8 @@ theorem yuleSimonWeightReal_zero (ρ : ℝ) : yuleSimonWeightReal ρ 0 = 0 := by
 
 /-- The mass at one is `ρ / (ρ + 1)`. -/
 theorem yuleSimonWeightReal_one (hρ : 0 < ρ) : yuleSimonWeightReal ρ 1 = ρ / (ρ + 1) := by
-  rw [yuleSimonWeightReal, Nat.cast_one, beta_one_left (by positivity)]
+  rw [yuleSimonWeightReal, Nat.cast_one,
+    beta_one_left (fun n h => by linarith [n.cast_nonneg (α := ℝ)])]
   ring
 
 /-- The masses satisfy the recursion `p (k + 1) = k / (k + ρ + 1) * p k` at positive `k`. -/
@@ -160,7 +161,7 @@ private theorem sum_range_yuleSimonWeightReal (hρ : 0 < ρ) {n : ℕ} (hn : n �
   | zero =>
     rw [Finset.sum_range_succ, Finset.sum_range_one, yuleSimonWeightReal_zero,
       yuleSimonWeightReal_one hρ, Nat.cast_one, one_mul,
-      beta_one_left (by positivity)]
+      beta_one_left (fun n h => by linarith [n.cast_nonneg (α := ℝ)])]
     field_simp
     ring
   | succ m ih =>

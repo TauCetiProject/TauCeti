@@ -170,8 +170,8 @@ theorem regularizedIncompleteBeta_eq_incompleteBeta_div (ha : 0 < a) (hb : 0 < b
 integral of the beta integrand up to the clamped argument. -/
 theorem regularizedIncompleteBeta_def_of_pos (ha : 0 < a) (hb : 0 < b) (x : ℝ) :
     regularizedIncompleteBeta a b x =
-      (∫ t in (0 : ℝ)..min 1 (max x 0), t ^ (a - 1) * (1 - t) ^ (b - 1)) / beta a b :=
-  regularizedIncompleteBeta_eq_incompleteBeta_div ha hb x
+      (∫ t in (0 : ℝ)..min 1 (max x 0), t ^ (a - 1) * (1 - t) ^ (b - 1)) / beta a b := by
+  rw [regularizedIncompleteBeta_eq_incompleteBeta_div ha hb x, incompleteBeta_def]
 
 /-- On the support `[0, 1]` the clamp is invisible: the regularized incomplete beta function is
 the normalized integral of the beta integrand up to `x` itself. This is the form in which the
@@ -716,7 +716,8 @@ incomplete beta function is the power `x ^ a`. -/
 theorem regularizedIncompleteBeta_one_right (ha : 0 < a) (hx0 : 0 ≤ x) (hx1 : x ≤ 1) :
     regularizedIncompleteBeta a 1 x = x ^ a := by
   rw [regularizedIncompleteBeta_def_of_mem_Icc ha one_pos ⟨hx0, hx1⟩, ← incompleteBeta_def,
-    incompleteBeta_one_right ha.le, beta_one_right ha.le]
+    incompleteBeta_one_right ha.le,
+    beta_one_right (fun n h => by linarith [n.cast_nonneg (α := ℝ)])]
   field_simp
 
 /-- At first parameter `1` the reflection formula turns

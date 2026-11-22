@@ -96,7 +96,7 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
 * `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
-  `Β(a, 1) = Β(1, a) = 1 / a` for `0 ≤ a`;
+  `Β(a, 1) = Β(1, a) = 1 / a` for `a` not a negative integer;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`,
   and `ProbabilityTheory.beta_add_one_right`, the same step in the second parameter;
 * `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
@@ -1144,18 +1144,23 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self :
     rw [← mul_div_assoc, div_eq_div_iff hΓh hΓ₂]
     linear_combination Real.Gamma a * hdup'
 
-/-- Euler's beta function at second parameter `1`, for `0 ≤ a`. At `a = 0` both sides are `0`,
-through `Γ(0) = 0` and `1 / 0 = 0`. -/
+/-- Euler's beta function at second parameter `1`, for `a` not a negative integer. At `a = 0`
+both sides are `0`, through `Γ(0) = 0` and `1 / 0 = 0`; at a negative integer `a` the left side
+is `0` (both Gamma values in it are `0`) while `1 / a` is not. -/
 @[simp]
-theorem beta_one_right (ha : 0 ≤ a) : beta a 1 = 1 / a := by
-  rcases ha.eq_or_lt with rfl | ha
+theorem beta_one_right (ha : ∀ n : ℕ, a ≠ -(n + 1)) : beta a 1 = 1 / a := by
+  rcases eq_or_ne a 0 with rfl | ha0
   · simp [ProbabilityTheory.beta]
-  rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha.ne']
+  have hΓ : Real.Gamma a ≠ 0 := Real.Gamma_ne_zero fun n h => by
+    rcases n with _ | n
+    · exact ha0 (by simpa using h)
+    · exact ha n (by push_cast at h; linarith)
+  rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha0]
   field_simp
 
-/-- Euler's beta function at first parameter `1`, for `0 ≤ a`. -/
+/-- Euler's beta function at first parameter `1`, for `a` not a negative integer. -/
 @[simp]
-theorem beta_one_left (ha : 0 ≤ a) : beta 1 a = 1 / a := by
+theorem beta_one_left (ha : ∀ n : ℕ, a ≠ -(n + 1)) : beta 1 a = 1 / a := by
   rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/

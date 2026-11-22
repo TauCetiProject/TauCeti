@@ -152,7 +152,9 @@ theorem integral_rpow_quarterCircle {q : ℝ} (hq : -1 < q) :
 theorem integral_id_quarterCircle : ∫ s, s ∂quarterCircle = 8 / (3 * π) := by
   have h := integral_rpow_quarterCircle (q := 1) (by norm_num)
   norm_num at h
-  rw [h, div_div]
+  rw [h, beta_one_left (a := 3 / 2) (fun n h => by linarith [n.cast_nonneg (α := ℝ)])]
+  field_simp
+  norm_num
 
 /-- The square of a quarter-circle variable has the Marchenko–Pastur law of ratio one. -/
 @[simp]

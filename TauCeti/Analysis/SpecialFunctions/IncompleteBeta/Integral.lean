@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The quadratic transformation and the negative binomial series of the incomplete Beta function
@@ -60,21 +61,6 @@ variable {a b x : ℝ}
 
 /-! ## The quadratic transformation -/
 
-/-- A real power of a product with a nonnegative left factor splits, whatever the sign of the
-right factor: `(c * t) ^ y = c ^ y * t ^ y`. For `t < 0` both sides carry the same factor
-`cos (y π)` of `Real.rpow_def_of_neg`. -/
-private lemma mul_rpow_of_nonneg_left {c : ℝ} (hc : 0 ≤ c) (t y : ℝ) :
-    (c * t) ^ y = c ^ y * t ^ y := by
-  rcases le_or_gt 0 t with ht | ht
-  · exact Real.mul_rpow hc ht
-  rcases hc.eq_or_lt with rfl | hc
-  · rcases eq_or_ne y 0 with rfl | hy
-    · simp
-    · simp [Real.zero_rpow hy]
-  rw [Real.rpow_def_of_neg (mul_neg_of_pos_of_neg hc ht), Real.rpow_def_of_neg ht,
-    Real.rpow_def_of_pos hc, Real.log_mul hc.ne' ht.ne, add_mul, Real.exp_add]
-  ring
-
 /-- The pointwise form of the substitution `u = 4 t (1 - t)`: for `t < 1/2` the integrand with
 parameters `a` and `1/2` at `u`, times `du/dt = 4 (1 - 2 t)`, is `4 ^ a` times the symmetric
 integrand at `t`. -/
@@ -85,7 +71,8 @@ private lemma rpow_mul_one_sub_rpow_four_mul_mul_one_sub {t : ℝ} (ht1 : t < 1 
   have h2 : 0 < 1 - 2 * t := by linarith
   have h2' : 1 - t * 2 ≠ 0 := by linarith
   have hprod : (4 * t * (1 - t)) ^ (a - 1) = 4 ^ (a - 1) * (t ^ (a - 1) * (1 - t) ^ (a - 1)) := by
-    rw [mul_comm _ (1 - t), mul_rpow_of_nonneg_left h1.le, mul_rpow_of_nonneg_left (by norm_num)]
+    rw [mul_comm _ (1 - t), Real.mul_rpow_of_nonneg_left h1.le,
+      Real.mul_rpow_of_nonneg_left (by norm_num)]
     ring
   have hsq : 1 - 4 * t * (1 - t) = (1 - 2 * t) ^ (2 : ℝ) := by
     rw [Real.rpow_two]
@@ -96,8 +83,7 @@ private lemma rpow_mul_one_sub_rpow_four_mul_mul_one_sub {t : ℝ} (ht1 : t < 1 
   field_simp
 
 /-- The substitution `u = 4 t (1 - t)` on `[0, x]`, for `x ≤ 1/2`:
-`B_{4x(1-x)}(a, 1/2) = 4 ^ a * B_x(a, a)`. It holds for every `a`: the substitution is increasing
-on `t ≤ 1/2`, so the change of variables needs no integrability, and where the integrals diverge
+`B_{4x(1-x)}(a, 1/2) = 4 ^ a * B_x(a, a)`. It holds for every `a`; where the integrals diverge
 both sides are `0`. -/
 theorem incompleteBeta_one_half_four_mul_mul_one_sub (hx : x ≤ 1 / 2) :
     incompleteBeta a (1 / 2) (4 * x * (1 - x)) = 4 ^ a * incompleteBeta a a x := by
@@ -181,9 +167,7 @@ parameters, `I_x(m, n) = (1 - x) ^ n * ∑_{j ≥ m} (n + j - 1).choose j * x ^ 
 not both `0` and `0 ≤ x < 1` ([DLMF 8.17.24](https://dlmf.nist.gov/8.17.E24)), with the
 summation index shifted to start at `0`. DLMF states it for `m, n > 0`; at `m = 0` it is the
 negative binomial series of `(1 - x) ^ (-n)` together with the boundary value `I_x(0, n) = 1`,
-and at `n = 0` every term and the sum are `0`. The proof removes the finite prefix of
-`TauCeti.regularizedIncompleteBeta_natCast_eq_one_sub_sum_range` from Mathlib's full negative
-binomial series `hasSum_choose_mul_geometric_of_norm_lt_one`. -/
+and at `n = 0` every term and the sum are `0`. -/
 theorem hasSum_choose_mul_pow_regularizedIncompleteBeta {m n : ℕ} (h : 0 < m ∨ 0 < n)
     (hx0 : 0 ≤ x) (hx1 : x < 1) :
     HasSum (fun j => (1 - x) ^ n * ((n + (j + m) - 1).choose (j + m) : ℝ) * x ^ (j + m))
@@ -193,6 +177,8 @@ theorem hasSum_choose_mul_pow_regularizedIncompleteBeta {m n : ℕ} (h : 0 < m �
     rw [Nat.cast_zero, regularizedIncompleteBeta_eq_zero_of_nonpos_right le_rfl]
     convert hasSum_zero with j
     rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero, zero_mul]
+  -- Remove the finite prefix of `regularizedIncompleteBeta_natCast_eq_one_sub_sum_range` from
+  -- Mathlib's full negative binomial series `hasSum_choose_mul_geometric_of_norm_lt_one`.
   rw [regularizedIncompleteBeta_natCast_eq_one_sub_sum_range h hx0 hx1.le,
     hasSum_nat_add_iff' (f := fun j => (1 - x) ^ n * ((n + j - 1).choose j : ℝ) * x ^ j) m]
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
@@ -201,7 +187,8 @@ theorem hasSum_choose_mul_pow_regularizedIncompleteBeta {m n : ℕ} (h : 0 < m �
   have hx : (1 - x) ^ (k + 1) ≠ 0 := pow_ne_zero _ (by linarith)
   rw [mul_one_div_cancel hx] at h
   convert h using 2 with j
-  rw [show k + 1 + j - 1 = j + k by omega, Nat.choose_symm_add]
+  have hidx : k + 1 + j - 1 = j + k := by omega
+  rw [hidx, Nat.choose_symm_add]
   ring
 
 end TauCeti
