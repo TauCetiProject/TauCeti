@@ -134,8 +134,8 @@ theorem prefixSum_single {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrde
 
 /-- Scalar pushforward transforms cumulative prefix sums by the same homomorphism. -/
 @[simp]
-theorem prefixSum_mapRange {R S : Type*} [PartialOrder R] [Semiring R] [PartialOrder S]
-    [Semiring S] {n : ℕ} (f : R →+* S) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (w : StdSimplex R (Fin n))
+theorem prefixSum_mapRange {R S : Type*} [LE R] [NonAssocSemiring R] [LE S] [NonAssocSemiring S]
+    {n : ℕ} (f : R →+* S) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (w : StdSimplex R (Fin n))
     (k : Fin (n + 1)) : (w.mapRange f hf).prefixSum k = f (w.prefixSum k) := by
   rw [prefixSum_def, prefixSum_def, TauCeti.map_prefixSum f]
   congr 1
