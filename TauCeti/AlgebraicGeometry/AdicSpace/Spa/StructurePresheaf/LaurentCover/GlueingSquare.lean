@@ -7,11 +7,12 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Exactness
 public import TauCeti.RingTheory.Huber.Glueing.Square
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.RationalCompletion
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Restriction
 public import TauCeti.Topology.Algebra.Ring.Ideal
 
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Proper
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Laurent.Basic
+import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.RationalCompletion
 
 /-!
 # Simple Laurent covers of sheafy Tate rings form glueing squares
@@ -164,9 +165,10 @@ end Main
 section RatLoc
 
 open Classical in
+open scoped TauCeti.Huber.Laurent in
 /-- Canonical `GlueingSquare` on the three explicit `ratLoc` carriers `R⟨{f, 1}/1⟩`, `R⟨{1}/f⟩`,
-and `R⟨{f², 1}/f⟩`, with overlap algebra structures induced by the canonical continuous
-`R`-algebra transition maps `laurentLeftAlgHom` and `laurentRightAlgHom`. -/
+and `R⟨{f², 1}/f⟩`, with overlap algebra structures `laurentLeftAlgebra` and
+`laurentRightAlgebra`. -/
 theorem GlueingSquare.of_simpleLaurent_ratLoc {R : Type*} [CommRing R] [UniformSpace R]
     [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T0Space R]
     (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
@@ -176,36 +178,19 @@ theorem GlueingSquare.of_simpleLaurent_ratLoc {R : Type*} [CommRing R] [UniformS
       (Localization.Away f) (isOpen_span_of_one_mem (by simp))
     let hden₁₂ := P.hasDenominatorPower_of_isOpen_span ({f * f, 1} : Finset R) f
       (Localization.Away f) (isOpen_span_of_one_mem (by simp))
-    letI : Algebra (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-      (laurentLeftAlgHom P f).toRingHom.toAlgebra
-    letI : Algebra (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-      (laurentRightAlgHom P f).toRingHom.toAlgebra
     GlueingSquare R
-      (ratLoc P {f, 1} 1 hden₁) (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) := by
-  let hden₁ := P.hasDenominatorPower_of_isOpen_span ({f, 1} : Finset R) 1
-    (Localization.Away (1 : R)) (isOpen_span_of_one_mem (by simp))
-  let hden₂ := P.hasDenominatorPower_of_isOpen_span ({1} : Finset R) f
-    (Localization.Away f) (isOpen_span_of_one_mem (by simp))
-  let hden₁₂ := P.hasDenominatorPower_of_isOpen_span ({f * f, 1} : Finset R) f
-    (Localization.Away f) (isOpen_span_of_one_mem (by simp))
-  let _ : Algebra (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-    (laurentLeftAlgHom P f).toRingHom.toAlgebra
-  let _ : Algebra (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-    (laurentRightAlgHom P f).toRingHom.toAlgebra
-  have _ : IsScalarTower R (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-    IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentLeftAlgHom P f).commutes r).symm
-  have _ : IsScalarTower R (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-    IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentRightAlgHom P f).commutes r).symm
-  exact GlueingSquare.of_simpleLaurent_of_isSheafyRing hs
+      (ratLoc P {f, 1} 1 hden₁) (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
+  GlueingSquare.of_simpleLaurent_of_isSheafyRing hs
     (isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp)))
     (isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp)))
     (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
-    (continuous_laurentLeftAlgHom P f) (continuous_laurentRightAlgHom P f)
+    (continuous_algebraMap_laurentLeftAlgebra P f) (continuous_algebraMap_laurentRightAlgebra P f)
 
 open Classical in
+open scoped TauCeti.Huber.Laurent in
 /-- For any complete Hausdorff sheafy Tate ring `R`, pair of definition `P`, and `f : R`, there
 exist models `R₁`, `R₂`, `R₁₂` of `R⟨f, 1/1⟩`, `R⟨1/f⟩`, and `R⟨f², 1/f⟩` (constructed from
-`ratLoc` and `laurentLeftAlgHom` / `laurentRightAlgHom`) that form a `GlueingSquare`. -/
+`ratLoc` and `laurentLeftAlgebra` / `laurentRightAlgebra`) that form a `GlueingSquare`. -/
 theorem exists_simpleLaurent_glueingSquare {R : Type u} [CommRing R] [UniformSpace R]
     [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T0Space R]
     (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
@@ -217,22 +202,8 @@ theorem exists_simpleLaurent_glueingSquare {R : Type u} [CommRing R] [UniformSpa
       IsRationalCompletion P {f, 1} 1 (isOpen_span_of_one_mem (by simp)) R₁ ∧
         IsRationalCompletion P {1} f (isOpen_span_of_one_mem (by simp)) R₂ ∧
         IsRationalCompletion P {f * f, 1} f (isOpen_span_of_one_mem (by simp)) R₁₂ ∧
-        GlueingSquare R R₁ R₂ R₁₂ := by
-  let hden₁ := P.hasDenominatorPower_of_isOpen_span ({f, 1} : Finset R) 1
-    (Localization.Away (1 : R)) (isOpen_span_of_one_mem (by simp))
-  let hden₂ := P.hasDenominatorPower_of_isOpen_span ({1} : Finset R) f
-    (Localization.Away f) (isOpen_span_of_one_mem (by simp))
-  let hden₁₂ := P.hasDenominatorPower_of_isOpen_span ({f * f, 1} : Finset R) f
-    (Localization.Away f) (isOpen_span_of_one_mem (by simp))
-  let _ : Algebra (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-    (laurentLeftAlgHom P f).toRingHom.toAlgebra
-  let _ : Algebra (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-    (laurentRightAlgHom P f).toRingHom.toAlgebra
-  have _ : IsScalarTower R (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-    IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentLeftAlgHom P f).commutes r).symm
-  have _ : IsScalarTower R (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-    IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentRightAlgHom P f).commutes r).symm
-  exact ⟨_, _, _, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+        GlueingSquare R R₁ R₂ R₁₂ :=
+  ⟨_, _, _, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance,
     isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp)),

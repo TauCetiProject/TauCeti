@@ -330,7 +330,7 @@ variable (P : PairOfDefinition A) {Aplus : Subring A}
 
 /-- Topological ring isomorphism identifying the presentation limit over `spaBasicOpen Aplus T s`
 with the canonical completed rational localisation `ratLoc P T s _`. -/
-@[expose] noncomputable def rationalSectionTopIso :
+noncomputable def rationalSectionTopIso :
     (TopCommRingCat.isCompleteSeparated.ι.obj
       (presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))) ≅
       TopCommRingCat.of
@@ -344,7 +344,7 @@ variable {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
 
 /-- Bicontinuous ring isomorphism `presentationLimit Aplus (spaBasicOpen Aplus T s) ≃+* B` for any
 model `B` of `A⟨T/s⟩`. -/
-@[expose] noncomputable def rationalSectionRingEquiv :
+noncomputable def rationalSectionRingEquiv :
     presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ≃+* B :=
   (((forget₂ TopCommRingCat CommRingCat).mapIso
       (rationalSectionTopIso P hAplus T s hT)).commRingCatIsoToRingEquiv).trans
@@ -446,6 +446,68 @@ theorem rationalSectionRingEquiv_map_le (P : PairOfDefinition A) {Aplus : Subrin
   simpa [g] using congrArg (· (e ((eqToHom (completionLocObj_obj P p.num p.den _
     p.hasDenominatorPower)).val ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val z))))
     hg_eq
+
+end TauCeti.ValuationSpectrum
+
+namespace TauCeti.ValuationSpectrum
+
+open TauCeti.Huber TauCeti.Huber.PairOfDefinition
+
+/-- Under `rationalSectionRingEquiv`, `algebraMap A B r` corresponds to the canonical image of
+`r : A` transported across `presentationLimitRationalIso`. -/
+theorem rationalSectionRingEquiv_symm_algebraMap
+    {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+    [CompleteSpace A] [T0Space A] (P : PairOfDefinition A) {Aplus : Subring A}
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
+    (hB : IsRationalCompletion P T s hT B) (r : A) :
+    let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
+    (rationalSectionRingEquiv P hAplus T s hT hB).symm (algebraMap A B r) =
+      (presentationLimitRationalIso Aplus hAplus p hT).inv.hom.val
+        (p.toCompletionLocObjHom.hom.val
+          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) := by
+  let _ := locUniformSpace P T s (Localization.Away s)
+    (P.hasDenominatorPower_of_isOpen_span T s _ hT)
+  have _ := isUniformAddGroup_locUniformSpace P T s (Localization.Away s)
+    (P.hasDenominatorPower_of_isOpen_span T s _ hT)
+  have _ := isTopologicalRing_locUniformSpace P T s (Localization.Away s)
+    (P.hasDenominatorPower_of_isOpen_span T s _ hT)
+  let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
+  dsimp only
+  rw [RingEquiv.symm_apply_eq, rationalSectionRingEquiv_apply]
+  have hinv : (presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val
+      ((presentationLimitRationalIso Aplus hAplus p hT).inv.hom.val
+        (p.toCompletionLocObjHom.hom.val
+          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r))) =
+      p.toCompletionLocObjHom.hom.val
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) :=
+    congrArg (fun m ↦ m.hom.val
+      (p.toCompletionLocObjHom.hom.val
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)))
+      (presentationLimitRationalIso Aplus hAplus p hT).inv_hom_id
+  rw [hinv, Presentation.toCompletionLocObjHom_hom]
+  have h1 : (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+      ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A) ≫
+        (⟨toCompletionLoc P p.num p.den _ p.hasDenominatorPower,
+            continuous_toCompletionLoc P p.num p.den _ p.hasDenominatorPower⟩ :
+          TopCommRingCat.of A ⟶
+            TopCommRingCat.of (UniformSpace.Completion (Localization.Away p.den))) ≫
+        eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).val
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) =
+      toCompletionLoc P p.num p.den _ p.hasDenominatorPower r := by
+    change (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+      ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).val
+        (toCompletionLoc P p.num p.den _ p.hasDenominatorPower
+          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val
+            ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)))) = _
+    have ha : (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) = r :=
+      (eqToIso (CompleteSeparatedTopCommRingCat.of_obj A).symm).hom_inv_id_apply r
+    rw [ha]
+    exact (eqToIso
+      (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).hom_inv_id_apply _
+  rw [h1, ← algebraMap_ratLoc, ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose.commutes]
 
 end TauCeti.ValuationSpectrum
 

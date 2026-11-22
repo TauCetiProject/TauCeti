@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Laurent.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
 
@@ -49,8 +50,6 @@ built from those two by `TauCeti.Huber.PairOfDefinition.hasDenominatorPower_mul`
   `A⟨U₁⟩ × A⟨U₂⟩ → A⟨U₁ ∩ U₂⟩` is the image of `A`.
 * `TauCeti.ValuationSpectrum.laurentCover_surjective`: the difference of restrictions is
   surjective.
-* `TauCeti.ValuationSpectrum.spa_subset_iUnion_laurentCover`: the geometric half — the two
-  pieces really do cover `Spa(A, A⁺)`.
 
 ## Implementation notes
 
@@ -677,37 +676,6 @@ theorem laurentCover_surjective :
 end LaurentCover
 
 /-! ### Injectivity -/
-
-section Cover
-
--- As in `laurentCover_exact`, decidable equality is only needed for the numerator sets `{f, 1}`
--- and `{1}`, so it is supplied classically instead of being assumed of `A`.
-attribute [local instance] Classical.decEq
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A]
-
-/-- **The two Laurent pieces cover the adic spectrum.** For `f ∈ A`, every point of
-`Spa(A, A⁺)` lies in `U₁ = R({f, 1}/1)` or in `U₂ = R({1}/f)`, indexed here by `Bool` so that
-the two pieces form a single family. Every point lies in `R({f, 1}/f)` or in `R({f, 1}/1)`, and
-the first of these lies in `R({1}/f)`.
-
-This is the geometric half of the two-piece Laurent cover; `laurentCover_exact`,
-`laurentCover_surjective` and `laurentCover_injective` are the algebraic half. -/
-theorem spa_subset_iUnion_laurentCover (Aplus : Subring A) (f : A) :
-    spa Aplus ⊆ ⋃ b : Bool, rationalSubset Aplus (cond b ({f, 1} : Finset A) ({1} : Finset A))
-        (cond b 1 f) := by
-  intro v hv
-  have hspan : Ideal.span (({f, 1} : Finset A) : Set A) = ⊤ :=
-    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one
-  obtain ⟨s, hs, hvs⟩ := mem_rationalSubset_of_span_eq_top_of_mem_spa Aplus hspan hv
-  rcases Finset.mem_insert.1 hs with rfl | hs
-  · refine Set.mem_iUnion.2 ⟨false, ?_⟩
-    rw [mem_rationalSubset_iff] at hvs ⊢
-    exact ⟨hvs.1, fun t ht ↦ hvs.2.1 t (by simp_all), hvs.2.2⟩
-  · rw [Finset.mem_singleton.1 hs] at hvs
-    exact Set.mem_iUnion.2 ⟨true, hvs⟩
-
-end Cover
 
 section Injective
 

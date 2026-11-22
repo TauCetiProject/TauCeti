@@ -29,11 +29,12 @@ canonically as `N ≃ₗ[R] (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).sectio
   `R₁₂`-linear isomorphisms `ψᵢ : R₁₂ ⊗_{Rᵢ} Mᵢ ≃ₗ[R₁₂] M₁₂`.
 * `TauCeti.Huber.GlueingDatum.diff`, `TauCeti.Huber.GlueingDatum.sections R D`,
   `TauCeti.Huber.GlueingDatum.fst`, `TauCeti.Huber.GlueingDatum.snd`,
-  `TauCeti.Huber.GlueingDatum.baseChangeFst`, `TauCeti.Huber.GlueingDatum.baseChangeSnd`,
-  `TauCeti.Huber.GlueingDatum.ofModule`, `TauCeti.Huber.GlueingDatum.toSectionsOfModule`, and
+  `TauCeti.Huber.GlueingDatum.lift`, `TauCeti.Huber.GlueingDatum.baseChangeFst`,
+  `TauCeti.Huber.GlueingDatum.baseChangeSnd`, `TauCeti.Huber.GlueingDatum.ofModule`,
+  `TauCeti.Huber.GlueingDatum.toSectionsOfModule`, and
   `TauCeti.Huber.GlueingDatum.equivSectionsOfModule`: the difference map, global sections of a
-  glueing datum, projections and their base changes, the canonical datum of an `R`-module, and
-  recovery for flat modules.
+  glueing datum, projections and their universal lift and base changes, the canonical datum of an
+  `R`-module, and recovery for flat modules.
 
 ## References
 
@@ -130,6 +131,18 @@ def GlueingDatum.fst (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) : D.
 def GlueingDatum.snd (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) : D.sections R →ₗ[R] M₂ :=
   (LinearMap.snd R M₁ M₂).comp (D.sections R).subtype
 
+/-- Universal property of `D.sections R`: two compatible `R`-linear maps `f₁ : N →ₗ[R] M₁` and
+`f₂ : N →ₗ[R] M₂` lift uniquely to an `R`-linear map `N →ₗ[R] D.sections R`. -/
+def GlueingDatum.lift {R : Type*} [CommRing R] [Algebra R R₁] [Algebra R R₂]
+    [Algebra R R₁₂] [IsScalarTower R R₁ R₁₂] [IsScalarTower R R₂ R₁₂] [Module R M₁]
+    [Module R M₂] [IsScalarTower R R₁ M₁] [IsScalarTower R R₂ M₂]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+    {N : Type*} [AddCommMonoid N] [Module R N]
+    (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) :
+    N →ₗ[R] D.sections R :=
+  (f₁.prod f₂).codRestrict (D.sections R) h
+
 /-- First base-changed projection `R₁ ⊗[R] D.sections R →ₗ[R₁] M₁`, induced by `D.fst R`. -/
 noncomputable def GlueingDatum.baseChangeFst (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     R₁ ⊗[R] D.sections R →ₗ[R₁] M₁ :=
@@ -173,6 +186,57 @@ theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M�
 @[simp]
 theorem GlueingDatum.snd_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
     D.snd R x = x.val.2 := by rfl
+
+@[simp]
+theorem GlueingDatum.coe_lift_apply {N : Type*} [AddCommMonoid N] [Module R N]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) :
+    ((D.lift f₁ f₂ h n : D.sections R) : M₁ × M₂) = (f₁ n, f₂ n) := by rfl
+
+theorem GlueingDatum.fst_lift {N : Type*} [AddCommMonoid N] [Module R N]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) :
+    D.fst R (D.lift f₁ f₂ h n) = f₁ n := by rfl
+
+theorem GlueingDatum.snd_lift {N : Type*} [AddCommMonoid N] [Module R N]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) :
+    D.snd R (D.lift f₁ f₂ h n) = f₂ n := by rfl
+
+@[simp]
+theorem GlueingDatum.fst_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) :
+    (D.fst R).comp (D.lift f₁ f₂ h) = f₁ := by
+  ext n; rfl
+
+@[simp]
+theorem GlueingDatum.snd_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) :
+    (D.snd R).comp (D.lift f₁ f₂ h) = f₂ := by
+  ext n; rfl
+
+/-- Two `R`-linear maps into `D.sections R` agree if their compositions with `D.fst R` and
+`D.snd R` agree. -/
+@[ext]
+theorem GlueingDatum.sections_hom_ext {N : Type*} [AddCommMonoid N] [Module R N]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) {g₁ g₂ : N →ₗ[R] D.sections R}
+    (h₁ : (D.fst R).comp g₁ = (D.fst R).comp g₂)
+    (h₂ : (D.snd R).comp g₁ = (D.snd R).comp g₂) : g₁ = g₂ := by
+  ext n
+  · exact LinearMap.congr_fun h₁ n
+  · exact LinearMap.congr_fun h₂ n
+
+/-- Uniqueness of the universal lift into `D.sections R`: any `R`-linear map `g : N →ₗ[R]
+D.sections R` recovering `f₁` and `f₂` under `D.fst R` and `D.snd R` equals `D.lift f₁ f₂ h`. -/
+theorem GlueingDatum.eq_lift {N : Type*} [AddCommMonoid N] [Module R N]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) {f₁ : N →ₗ[R] M₁} {f₂ : N →ₗ[R] M₂}
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) {g : N →ₗ[R] D.sections R}
+    (h₁ : (D.fst R).comp g = f₁) (h₂ : (D.snd R).comp g = f₂) :
+    g = D.lift f₁ f₂ h :=
+  D.sections_hom_ext (h₁.trans (D.fst_comp_lift f₁ f₂ h).symm)
+    (h₂.trans (D.snd_comp_lift f₁ f₂ h).symm)
 
 @[simp]
 theorem GlueingDatum.baseChangeFst_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)

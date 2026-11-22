@@ -288,30 +288,6 @@ theorem topSectionRingEquiv_symm_eq (P : PairOfDefinition A) {Aplus : Subring A}
   rw [topSectionRingEquiv]
   rfl
 
-/-- Under `topSectionRingEquiv` and `rationalSectionRingEquiv`, restricting a global section to
-`R(T/s)` is `algebraMap A B`. -/
-@[simp]
-theorem rationalSectionRingEquiv_map_top (P : PairOfDefinition A) {Aplus : Subring A}
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
-    {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
-    (hB : IsRationalCompletion P T s hT B) (x : presentationLimit (P := P) Aplus ⊤) :
-    rationalSectionRingEquiv P hAplus T s hT hB
-        ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val x) =
-      algebraMap A B (topSectionRingEquiv P hAplus x) := by
-  let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
-  set r := topSectionRingEquiv P hAplus x
-  have hx : x = (topSectionRingEquiv P hAplus).symm r := by simp [r]
-  have hof : (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val
-      ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) = r :=
-    (eqToIso (CompleteSeparatedTopCommRingCat.of_obj A).symm).hom_inv_id_apply r
-  rw [hx, topSectionRingEquiv_symm_eq, rationalSectionRingEquiv, rationalSectionTopIso]
-  change ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose
-    ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
-      ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val _)) = _
-  rw [presentationLimitRationalIso_map_top_apply Aplus hAplus p hT, hof, ← algebraMap_ratLoc,
-    ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose.commutes]
-
 /-- Under `rationalSectionRingEquiv`, the canonical image of `r : A` in the presentation limit over
 `R(T/s)` maps to `algebraMap A B r`. -/
 @[simp]
@@ -324,18 +300,43 @@ theorem rationalSectionRingEquiv_toPresentationLimit (P : PairOfDefinition A) {A
         ((toPresentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)).hom.val
           ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) =
       algebraMap A B r := by
+  let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
+  have hcomp : toPresentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) =
+      p.toCompletionLocObjHom ≫ (presentationLimitRationalIso Aplus hAplus p hT).inv := by
+    rw [Iso.eq_comp_inv, presentationLimitRationalIso_hom, toPresentationLimit_comp_πToPresentation]
+  rw [congrArg (fun g ↦ g.hom.val
+    ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) hcomp]
+  change (rationalSectionRingEquiv P hAplus T s hT hB)
+      ((presentationLimitRationalIso Aplus hAplus p hT).inv.hom.val
+        (p.toCompletionLocObjHom.hom.val
+          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r))) =
+    algebraMap A B r
+  rw [← rationalSectionRingEquiv_symm_algebraMap P hAplus T s hT hB r, RingEquiv.apply_symm_apply]
+
+/-- Under `topSectionRingEquiv` and `rationalSectionRingEquiv`, restricting a global section to
+`R(T/s)` is `algebraMap A B`. -/
+@[simp]
+theorem rationalSectionRingEquiv_map_top (P : PairOfDefinition A) {Aplus : Subring A}
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra A B]
+    (hB : IsRationalCompletion P T s hT B) (x : presentationLimit (P := P) Aplus ⊤) :
+    rationalSectionRingEquiv P hAplus T s hT hB
+        ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val x) =
+      algebraMap A B (topSectionRingEquiv P hAplus x) := by
+  set r := topSectionRingEquiv P hAplus x
+  have hx : x = (topSectionRingEquiv P hAplus).symm r := by simp [r]
   have hcomp :
-      (presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val
-          ((topSectionRingEquiv P hAplus).symm r) =
+      (presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val x =
         (toPresentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)).hom.val
           ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) := by
-    rw [topSectionRingEquiv_symm_eq]
+    rw [hx, topSectionRingEquiv_symm_eq]
     exact congrArg
       (fun g : CompleteSeparatedTopCommRingCat.of A ⟶
           presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ↦
         g.hom.val ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r))
       (toPresentationLimit_comp_presentationLimitMap Aplus (le_top : spaBasicOpen Aplus T s ≤ ⊤))
-  rw [← hcomp, rationalSectionRingEquiv_map_top, RingEquiv.apply_symm_apply]
+  rw [hcomp, rationalSectionRingEquiv_toPresentationLimit]
 
 end TauCeti.ValuationSpectrum
 

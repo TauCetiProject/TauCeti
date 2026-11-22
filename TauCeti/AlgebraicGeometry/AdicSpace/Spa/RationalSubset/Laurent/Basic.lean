@@ -70,6 +70,8 @@ coordinate rings, is treated in
 * `TauCeti.ValuationSpectrum.exists_rationalSubset_superset_laurentPiece_mul_inverse` : part (iii).
 * `TauCeti.ValuationSpectrum.spaBasicOpen_laurentOverlap_eq_inf` : overlap identity for the
   two-piece simple Laurent cover.
+* `TauCeti.ValuationSpectrum.spa_subset_iUnion_laurentCover` : the two-piece simple Laurent cover
+  covers `Spa (A, A⁺)`.
 
 ## References
 
@@ -361,5 +363,26 @@ theorem spaBasicOpen_laurentOverlap_eq_inf [DecidableEq A] (Aplus : Subring A) (
   ext v
   simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen]
   rw [← Set.mem_inter_iff, ← hrat]
+
+open scoped Classical in
+/-- **The two Laurent pieces cover the adic spectrum.** For `f ∈ A`, every point of
+`Spa(A, A⁺)` lies in `U₁ = R({f, 1}/1)` or in `U₂ = R({1}/f)`, indexed here by `Bool` so that
+the two pieces form a single family. Every point lies in `R({f, 1}/f)` or in `R({f, 1}/1)`, and
+the first of these lies in `R({1}/f)`.
+
+This is the geometric half of the two-piece Laurent cover. -/
+theorem spa_subset_iUnion_laurentCover (Aplus : Subring A) (f : A) :
+    spa Aplus ⊆ ⋃ b : Bool, rationalSubset Aplus (cond b ({f, 1} : Finset A) ({1} : Finset A))
+        (cond b 1 f) := by
+  intro v hv
+  have hspan : Ideal.span (({f, 1} : Finset A) : Set A) = ⊤ :=
+    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) isUnit_one
+  obtain ⟨s, hs, hvs⟩ := mem_rationalSubset_of_span_eq_top_of_mem_spa Aplus hspan hv
+  rcases Finset.mem_insert.1 hs with rfl | hs
+  · refine Set.mem_iUnion.2 ⟨false, ?_⟩
+    rw [mem_rationalSubset_iff] at hvs ⊢
+    exact ⟨hvs.1, fun t ht ↦ hvs.2.1 t (by simp_all), hvs.2.2⟩
+  · rw [Finset.mem_singleton.1 hs] at hvs
+    exact Set.mem_iUnion.2 ⟨true, hvs⟩
 
 end TauCeti.ValuationSpectrum
