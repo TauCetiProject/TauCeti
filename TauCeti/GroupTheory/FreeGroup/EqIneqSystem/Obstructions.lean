@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.Centralizer
 public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem.Basic
+import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
 # Obstructions to solvability over a free group
