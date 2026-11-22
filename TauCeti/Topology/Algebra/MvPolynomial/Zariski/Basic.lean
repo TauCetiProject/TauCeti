@@ -16,6 +16,7 @@ import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.LinearAlgebra.Pi
 import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
@@ -37,9 +38,9 @@ ring `R`, Hilbert's basis theorem therefore makes it Noetherian whenever `σ` is
 
 Over an infinite integral domain `R`, `MvPolynomial.funext` shows that two nonempty basic opens
 always meet, making `σ → R` an irreducible space for every `σ` (including empty `σ`, where the
-space is a single point). In one variable over a ring without zero divisors, the polynomial
-Zariski topology coincides with `TopologicalSpace.cofinite`, so no nonempty set with infinite
-complement is open.
+space is a single point). In at most one variable over a ring without zero divisors, the
+polynomial Zariski topology coincides with `TopologicalSpace.cofinite`, so no nonempty set with
+infinite complement is open.
 
 ## Main definitions
 
@@ -64,8 +65,8 @@ complement is open.
 * `TauCeti.irreducibleSpace_polynomialTopology` and
   `TauCeti.isIrreducible_univ_polynomialTopology`: irreducibility of `σ → R` over an infinite
   integral domain.
-* `TauCeti.polynomialTopology_eq_cofinite`: in one variable over a commutative ring without zero
-  divisors, the polynomial Zariski topology is the cofinite topology.
+* `TauCeti.polynomialTopology_eq_cofinite`: in at most one variable over a commutative ring without
+  zero divisors, the polynomial Zariski topology is the cofinite topology.
 
 ## References
 
@@ -206,16 +207,12 @@ theorem continuous_polynomialTopology_add_const [Finite σ]
     (f : (σ → R) →ₗ[R] (τ → R)) (c : τ → R) :
     @Continuous _ _ (polynomialTopology σ R) (polynomialTopology τ R) (fun x ↦ f x + c) := by
   classical
-  cases nonempty_fintype σ
+  have := Fintype.ofFinite σ
   refine continuous_polynomialTopology_of_polynomial (fun x ↦ f x + c) fun j ↦ ?_
-  refine ⟨∑ i : σ, MvPolynomial.C (f (Pi.single i 1) j) * MvPolynomial.X i +
+  refine ⟨∑ i : σ, MvPolynomial.C (f (fun k ↦ if i = k then 1 else 0) j) * MvPolynomial.X i +
     MvPolynomial.C (c j), fun x ↦ ?_⟩
-  have hx : x = ∑ i : σ, x i • Pi.single i (1 : R) := by
-    ext k
-    simp [Pi.single_apply]
-  rw [Pi.add_apply]
-  nth_rw 1 [hx]
-  simp [map_sum, map_smul, Finset.sum_apply, mul_comm]
+  rw [Pi.add_apply, f.pi_apply_eq_sum_univ x]
+  simp [Finset.sum_apply, mul_comm]
 
 /-- Every linear map out of a finite coordinate space is continuous for the polynomial Zariski
 topologies. -/
@@ -300,6 +297,15 @@ end MvPolynomial
 
 namespace TauCeti
 
+private theorem preimage_evalPrimeSpectrum_basicOpen_eq :
+    (evalPrimeSpectrum (σ := σ) (R := R) ⁻¹' ·) ''
+        Set.range (fun p : MvPolynomial σ R ↦ (PrimeSpectrum.basicOpen p : Set _)) =
+      {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} := by
+  ext U
+  simp only [mem_image, mem_range, exists_exists_eq_and,
+    MvPolynomial.evalPrimeSpectrum_preimage_basicOpen, mem_ofPred_eq]
+  simp only [eq_comm]
+
 /-- Over a nontrivial commutative semiring without zero divisors, the polynomial Zariski topology
 is induced from the Zariski topology on `PrimeSpectrum (MvPolynomial σ R)` along evaluation
 kernels. -/
@@ -308,15 +314,7 @@ theorem polynomialTopology_eq_induced_evalPrimeSpectrum :
       TopologicalSpace.induced (evalPrimeSpectrum (σ := σ) (R := R))
         PrimeSpectrum.zariskiTopology := by
   rw [PrimeSpectrum.isTopologicalBasis_basic_opens.eq_generateFrom, induced_generateFrom_eq,
-    polynomialTopology_eq_generateFrom]
-  congr 1
-  ext U
-  simp only [mem_image, mem_range, mem_ofPred_eq]
-  constructor
-  · rintro ⟨p, rfl⟩
-    exact ⟨PrimeSpectrum.basicOpen p, ⟨p, rfl⟩, p.evalPrimeSpectrum_preimage_basicOpen⟩
-  · rintro ⟨_, ⟨p, rfl⟩, rfl⟩
-    exact ⟨p, (p.evalPrimeSpectrum_preimage_basicOpen).symm⟩
+    preimage_evalPrimeSpectrum_basicOpen_eq, polynomialTopology_eq_generateFrom]
 
 end TauCeti
 
@@ -333,14 +331,7 @@ form a topological basis of the polynomial Zariski topology. -/
 theorem isTopologicalBasis_polynomialTopology :
     @TopologicalSpace.IsTopologicalBasis (σ → R) (polynomialTopology σ R)
       {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} := by
-  have hEq : (evalPrimeSpectrum (σ := σ) (R := R) ⁻¹' ·) ''
-      Set.range (fun p : MvPolynomial σ R ↦ (PrimeSpectrum.basicOpen p : Set _)) =
-      {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} := by
-    ext U
-    simp only [mem_image, mem_range, exists_exists_eq_and,
-      MvPolynomial.evalPrimeSpectrum_preimage_basicOpen, mem_ofPred_eq]
-    simp only [eq_comm]
-  rw [← hEq, polynomialTopology_eq_induced_evalPrimeSpectrum]
+  rw [← preimage_evalPrimeSpectrum_basicOpen_eq, polynomialTopology_eq_induced_evalPrimeSpectrum]
   exact (PrimeSpectrum.isTopologicalBasis_basic_opens (R := MvPolynomial σ R)).induced
     (evalPrimeSpectrum (σ := σ) (R := R))
 
@@ -539,14 +530,17 @@ end Domain
 
 section OneVariable
 
-variable {σ R : Type*} [CommRing R] [Unique σ] [NoZeroDivisors R]
+variable {σ R : Type*} [CommRing R] [Subsingleton σ] [NoZeroDivisors R]
 
 namespace TauCeti
 
-/-- In one variable over a commutative ring without zero divisors, the polynomial Zariski topology
-coincides with the cofinite topology. -/
+/-- In at most one variable over a commutative ring without zero divisors, the polynomial Zariski
+topology coincides with the cofinite topology. -/
 theorem polynomialTopology_eq_cofinite :
     polynomialTopology σ R = TopologicalSpace.cofinite := by
+  rcases isEmpty_or_nonempty σ with hσ | ⟨⟨s₀⟩⟩
+  · exact Subsingleton.elim _ _
+  let : Unique σ := ⟨⟨s₀⟩, fun s ↦ Subsingleton.elim s s₀⟩
   rcases subsingleton_or_nontrivial R with hR | hR
   · exact Subsingleton.elim _ _
   have : IsDomain R := NoZeroDivisors.to_isDomain R
@@ -580,22 +574,23 @@ theorem polynomialTopology_eq_cofinite :
     rw [hcompl]
     exact (Polynomial.finite_setOfPred_isRoot hq).preimage hinj.injOn
 
-/-- In one variable over a commutative ring without zero divisors, a set is polynomial-Zariski
-open exactly when it is empty or has finite complement. -/
+/-- In at most one variable over a commutative ring without zero divisors, a set is
+polynomial-Zariski open exactly when it is empty or has finite complement. -/
 theorem isOpen_polynomialTopology_iff_cofinite {U : Set (σ → R)} :
     IsOpen[polynomialTopology σ R] U ↔ U = ∅ ∨ Uᶜ.Finite := by
   rw [polynomialTopology_eq_cofinite, TopologicalSpace.cofinite, isOpen_mk, nonempty_iff_ne_empty,
     or_iff_not_imp_left]
 
-/-- In one variable over a commutative ring without zero divisors, a set is polynomial-Zariski
-closed exactly when it is the whole space or finite. -/
+/-- In at most one variable over a commutative ring without zero divisors, a set is
+polynomial-Zariski closed exactly when it is the whole space or finite. -/
 theorem isClosed_polynomialTopology_iff_cofinite {F : Set (σ → R)} :
     IsClosed[polynomialTopology σ R] F ↔ F = Set.univ ∨ F.Finite := by
   let := polynomialTopology σ R
   rw [← isOpen_compl_iff, isOpen_polynomialTopology_iff_cofinite, compl_empty_iff, compl_compl]
 
-/-- In one variable over a commutative ring without zero divisors, no nonempty set with infinite
-complement (such as a complex Euclidean open ball) is open in the polynomial Zariski topology. -/
+/-- In at most one variable over a commutative ring without zero divisors, no nonempty set with
+infinite complement (such as a complex Euclidean open ball) is open in the polynomial Zariski
+topology. -/
 theorem not_isOpen_polynomialTopology_of_nonempty_of_infinite_compl {U : Set (σ → R)}
     (hne : U.Nonempty) (hinf : Uᶜ.Infinite) :
     ¬ IsOpen[polynomialTopology σ R] U := by

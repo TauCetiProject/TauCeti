@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Order.Closure
 public import Mathlib.RingTheory.Nullstellensatz
+public import Mathlib.Topology.Closure
+public import TauCeti.Topology.Algebra.MvPolynomial.Zariski.Basic
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Algebra.Polynomial.Roots
@@ -23,7 +25,9 @@ ideal of polynomials in `k[X_σ]` vanishing on `S`. This file packages it as a
 `MvPolynomial.zeroLocus_vanishingIdeal_galoisConnection`. Its closed sets are exactly the zero
 loci of ideals of `k[X_σ]`, so the general closure-operator API (`ClosureOperator.le_closure`,
 `ClosureOperator.monotone`, `ClosureOperator.idempotent`, `ClosureOperator.closure_min`, ...)
-supplies extensivity, monotonicity, idempotence and minimality among zero loci.
+supplies extensivity, monotonicity, idempotence and minimality among zero loci. When `k = K`,
+`zariskiClosure K` coincides with the topological closure operator of
+`TauCeti.polynomialTopology σ K`.
 
 No algebraic closedness of `K` is assumed, so no Nullstellensatz is used: over `ℝ`, for instance,
 the closure is still the smallest real zero locus of real equations containing `S`.
@@ -50,6 +54,8 @@ field in which `0` is not isolated: then `x` is the limit of the points `x + t �
 
 * `MvPolynomial.zariskiClosure`: the closure operator `S ↦ Z(I(S))`.
 * `MvPolynomial.zariskiClosure_isClosed_iff`: the closed sets are the zero loci of ideals.
+* `MvPolynomial.zariskiClosure_eq_closureOperator`: `zariskiClosure K` coincides with the
+  topological closure operator of `TauCeti.polynomialTopology σ K`.
 * `MvPolynomial.vanishingIdeal_zariskiClosure`: `I(Z(I(S))) = I(S)`.
 * `MvPolynomial.zariskiClosure_pi_eq_univ`: a box with infinite sides is Zariski dense.
 * `MvPolynomial.image_zariskiClosure_subset_zariskiClosure_image`: polynomial maps are
@@ -95,6 +101,38 @@ on `S` also vanishes at that point. -/
 theorem zariskiClosure_isClosed_iff {S : Set (σ → K)} :
     (zariskiClosure k).IsClosed S ↔ ∃ I : Ideal (MvPolynomial σ k), zeroLocus K I = S :=
   Iff.rfl
+
+/-- Over a field `K`, the Zariski closure operator `MvPolynomial.zariskiClosure K` coincides with
+the topological closure operator of `TauCeti.polynomialTopology σ K`. -/
+theorem zariskiClosure_eq_closureOperator :
+    zariskiClosure K = @Topology.closureOperator (σ → K) (TauCeti.polynomialTopology σ K) := by
+  let := TauCeti.polynomialTopology σ K
+  refine ClosureOperator.ext_isClosed _ _ fun S ↦ ?_
+  rw [Topology.isClosed_closureOperator, TauCeti.isClosed_polynomialTopology_iff,
+    zariskiClosure_isClosed_iff]
+  constructor
+  · rintro ⟨I, rfl⟩
+    refine ⟨(I : Set (MvPolynomial σ K)), ?_⟩
+    rw [← Ideal.span_eq I, zeroLocus_span]
+    simp [aeval_def]
+  · rintro ⟨T, rfl⟩
+    refine ⟨Ideal.span T, ?_⟩
+    rw [zeroLocus_span]
+    simp [aeval_def]
+
+/-- Over a field `K`, `MvPolynomial.zariskiClosure K S` coincides with the topological closure of
+`S` in `TauCeti.polynomialTopology σ K`. -/
+theorem zariskiClosure_eq_closure (S : Set (σ → K)) :
+    zariskiClosure K S = @closure (σ → K) (TauCeti.polynomialTopology σ K) S := by
+  let := TauCeti.polynomialTopology σ K
+  rw [zariskiClosure_eq_closureOperator, Topology.closureOperator_apply]
+
+/-- Over a field `K`, a set is closed for `MvPolynomial.zariskiClosure K` iff it is closed in
+`TauCeti.polynomialTopology σ K`. -/
+theorem zariskiClosure_isClosed_iff_isClosed_polynomialTopology {S : Set (σ → K)} :
+    (zariskiClosure K).IsClosed S ↔ @IsClosed (σ → K) (TauCeti.polynomialTopology σ K) S := by
+  let := TauCeti.polynomialTopology σ K
+  rw [zariskiClosure_eq_closureOperator, Topology.isClosed_closureOperator]
 
 /-- The zero locus of an ideal is closed for the Zariski closure. -/
 theorem zariskiClosure_isClosed_zeroLocus (I : Ideal (MvPolynomial σ k)) :
