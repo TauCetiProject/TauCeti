@@ -22,7 +22,9 @@ Thom pair `(ν⁻, ν⁻₀)`
 and when the band `f⁻¹[a, b]` around the level is compact with all its critical points on `i`, the
 relative homology across the level is that of `(D_ε, S_ε)` for all small `ε > 0`
 (`nonempty_singularHomology_sublevelPair_iso_negativeDiscSpherePair` in
-`TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair`). This file applies the homology Thom
+`TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair`). Below the rank `r` the pair `(D_ε, S_ε)` has no
+homology (`IsCriticalSubmanifold.isZero_singularHomology_negativeDiscSpherePair_of_lt`), since the
+Thom pair has none. This file applies the homology Thom
 isomorphism `Hᵣ₊ₚ(ν⁻, ν⁻₀; K) ≅ Hₚ(S; K)` (`TauCeti.homologyThomIso`) to these pairs:
 
 * given a Thom class `u` of `ν⁻` with coefficients in a commutative ring `K`, the pair `(D_ε, S_ε)`
@@ -53,6 +55,7 @@ all statements below the base `S`, the model space `E` of `M` and the coefficien
 
 In the namespace `TauCeti.SmoothEmbedding.IsCriticalSubmanifold`:
 
+* `isZero_singularHomology_negativeDiscSpherePair_of_lt`: `Hₖ(D_ε, S_ε)` vanishes for `k < r`.
 * `nonempty_singularHomology_negativeDiscSpherePair_iso_singularHomology_of_isThomClass`: a Thom
   class of `ν⁻` identifies `Hᵣ₊ₚ(D_ε, S_ε; K)` with `Hₚ(S; K)`.
 * `nonempty_singularHomology_negativeDiscSpherePair_iso_singularHomology_of_orientation`: the same
@@ -97,6 +100,29 @@ variable {E : Type} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fi
   {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
   (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) {ε : ℝ}
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E') {r : ℕ}
+
+include hdim in
+/-- **The negative disc-sphere pair has no homology below the rank.** Let `i` be a critical
+submanifold of `f`, let `g` be a fibre metric on its normal bundle, and suppose that the negative
+normal spaces have continuous local frames of size `r`, so that they form a vector bundle `ν⁻` of
+rank `r`. Then for `ε > 0` the homology `Hₖ(D_ε, S_ε)` vanishes for `k < r`, with coefficients in
+any abelian category with coproducts and exact filtered colimits, as the homology of the Thom pair
+of `ν⁻` does. -/
+theorem isZero_singularHomology_negativeDiscSpherePair_of_lt
+    (hV : letI := i.normalSpaceFiberBundle hn hdim
+      HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g))
+    (hε : 0 < ε) {C : Type*} [Category C] [HasCoproducts.{0} C] [Abelian C]
+    [HasFilteredColimitsOfSize.{0, 0} C] [AB5OfSize.{0, 0} C] (R : C) {k : ℕ} (hk : k < r) :
+    IsZero ((h.negativeDiscSpherePair hn P g ε).singularHomology R k) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  have := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
+  let := hV.fiberBundle
+  have := hV.vectorBundle
+  have := h.isIso_singularHomologyMap_negativeDiscThomPairMap hn g r hdim hV hε R k
+  exact (isZero_singularHomology_thomPair (F := Fin r → ℝ)
+    (E := fun s ↦ h.negativeNormalSpace hn g s) R (by simpa using hk)).of_iso
+    (asIso (TopPair.singularHomologyMap (h.negativeDiscThomPairMap hn P g r hε) R k))
 
 /-- **A Thom class of the negative normal bundle computes the homology of the negative disc
 bundle.** Let `i` be a critical submanifold of `f`, let `g` be a fibre metric on its normal bundle,
