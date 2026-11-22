@@ -239,7 +239,9 @@ theorem pairComap_compOpenImmersion_left_comp_hom {X Y Y' : PreAdicSpace.{u}}
     (CY : CompleteAffinoidOpen Y) (CX : CompleteAffinoidOpen X) (g : Y ⟶ Y')
     [IsOpenImmersion g] (φ : Pair.Hom CY.pair CX.pair) :
     (CY.compOpenImmersion g).pairComap CX φ ≫ (CY.compOpenImmersion g).hom =
-      CY.pairComap CX φ ≫ CY.hom ≫ g := rfl
+      CY.pairComap CX φ ≫ CY.hom ≫ g := by
+  rw [compOpenImmersion_hom]
+  rfl
 
 /-- A commuting square with source chart `CX.compOpenImmersion g` and morphism `f : X' ⟶ Z`
 is equivalent to the corresponding square for `CX` and `g ≫ f`. -/
@@ -618,17 +620,15 @@ private theorem exists_rationalLocalization_ringEquiv_of_subset
   let CX₁ := CX.rationalLocalization TC sC hTC; let ιC := CX.rationalLocalizationHom TC sC hTC
   have hpre_eq : (spaBasicOpen CX.pair.plus TC sC : Set (spa CX.pair.plus)) =
       CX.hom.base ⁻¹' (spaBasicOpen CB.pair.plus TB sB : Set (spa CB.pair.plus)) := by
-    have hCX : CB.pairComap CX δ = CX.hom :=
-      presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom ..
-    ext v
-    have hv : (CX.hom.base v : spa CB.pair.plus) = δ.spaComap v :=
-      hCX ▸ presentationLimitPreAdicSpacePairComap_base_apply ..
-    have hpre := Set.ext_iff.mp (δ.spaComap_preimage_rationalSubset TB sB) v
-    simp only [Set.mem_preimage, ← hv] at hpre
-    have hpre_v : (v ∈ CX.hom.base ⁻¹' (spaBasicOpen CB.pair.plus TB sB : Set (spa CB.pair.plus))) ↔
-        (CX.hom.base v : spa CB.pair.plus).val ∈ rationalSubset CB.pair.plus TB sB :=
-      (Set.mem_preimage (a := (v : CX.space))).trans (SetLike.mem_coe.trans mem_spaBasicOpen)
-    exact (SetLike.mem_coe.trans mem_spaBasicOpen).trans (hpre.symm.trans hpre_v.symm)
+    have hCX : CX.hom = CB.pairComap CX δ :=
+      (presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom ..).symm
+    have hbase : CX.hom.base =
+        spaComapTopHom δ.toRingHom δ.continuous_toRingHom δ.map_mem_plus := by
+      rw [hCX, pairComap, presentationLimitPreAdicSpacePairComap_def,
+        presentationLimitPreAdicSpaceComap_toHom, presentationLimitPresheafedSpaceComap_base]
+    rw [hbase]
+    exact congrArg SetLike.coe (map_spaComapTopHom_obj_spaBasicOpen δ.toRingHom
+      δ.continuous_toRingHom δ.map_mem_plus TB sB).symm
   have hrange_eq : Set.range CX₁.hom.base = Set.range CT.hom.base := by
     rw [range_ofRationalLocalization_hom_base, hpre_eq, hCT_range]
     exact Set.image_preimage_eq_iff.mpr hsub
@@ -707,15 +707,20 @@ private theorem exists_away_comp_of_rational_chart_discrete
   let eB := ofRationalLocalizationAwayEquiv P' hP' hsheafB (𝟙 _) TB sB hTB; let e := eγ.trans eB
   have hmap_eq : (algebraMap B (Localization.Away sB)).comp φ.toRingHom =
       e.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom := by
-    ext b
-    have heB : eB (ιB.toRingHom (φ.toRingHom b)) =
-        algebraMap B (Localization.Away sB) (φ.toRingHom b) :=
-      RingHom.congr_fun (ofRationalLocalizationAwayEquiv_comp_toRationalLocalizationHom
-        P' hP' hsheafB (𝟙 _) TB sB hTB) (φ.toRingHom b)
-    have heγ := RingHom.congr_fun he_comp b
-    simp only [RingHom.comp_apply, Pair.Hom.toRingHom_comp, RingEquiv.toRingHom_eq_coe,
-      e] at heγ ⊢
-    exact heB.symm.trans (congrArg eB heγ.symm)
+    calc
+      (algebraMap B (Localization.Away sB)).comp φ.toRingHom
+        = (eB.toRingHom.comp ιB.toRingHom).comp φ.toRingHom := by
+            rw [RingEquiv.toRingHom_eq_coe,
+              ofRationalLocalizationAwayEquiv_comp_toRationalLocalizationHom]
+      _ = eB.toRingHom.comp (ιB.comp φ).toRingHom := by
+            rw [RingHom.comp_assoc, Pair.Hom.toRingHom_comp]
+      _ = eB.toRingHom.comp (eγ.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom) := by
+            rw [he_comp]
+      _ = (eB.toRingHom.comp eγ.toRingHom).comp (ιC.comp (β.comp ιA)).toRingHom := by
+            rw [← RingHom.comp_assoc]
+      _ = e.toRingHom.comp (ιC.comp (β.comp ιA)).toRingHom := by
+            rw [RingEquiv.toRingHom_eq_coe, RingEquiv.toRingHom_eq_coe,
+              ← RingEquiv.toRingHom_trans, ← RingEquiv.toRingHom_eq_coe]
   have hRA : R ιA.toRingHom :=
     ringHom_prop_toRationalLocalizationHom_of_discreteTopology _ _ _ _ _ _ _ hiso hloc
   have hRC := CX.ringHom_prop_rationalLocalizationHom_of_discreteTopology hiso hloc TC sC hTC

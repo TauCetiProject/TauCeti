@@ -113,40 +113,22 @@ morphism `φ : S → T` via `{1} / 1` rational base change. -/
 @[expose]
 noncomputable def ofCompletionMap (φ : Pair.Hom S T) :
     Pair.Hom (ofCompletion P hP hsheafA).pair (ofCompletion P' hP' hsheafB).pair :=
-  let L := Localization.Away (1 : A)
-  let L' := Localization.Away (1 : B)
-  let hden := P.hasDenominatorPower_of_isOpen_span ({1} : Finset A) 1 L (by simp)
-  let hden' := P'.hasDenominatorPower_of_isOpen_span ({1} : Finset B) 1 L' (by simp)
-  letI := P.locUniformSpace ({1} : Finset A) 1 L hden
-  haveI := P.isUniformAddGroup_locUniformSpace ({1} : Finset A) 1 L hden
-  haveI := P.isTopologicalRing_locUniformSpace ({1} : Finset A) 1 L hden
-  haveI := P.isHuberRing_completion_locTopology ({1} : Finset A) 1 L hden
-  letI := P'.locUniformSpace ({1} : Finset B) 1 L' hden'
-  haveI := P'.isUniformAddGroup_locUniformSpace ({1} : Finset B) 1 L' hden'
-  haveI := P'.isTopologicalRing_locUniformSpace ({1} : Finset B) 1 L' hden'
-  haveI := P'.isHuberRing_completion_locTopology ({1} : Finset B) 1 L' hden'
-  P.completionLocPairMap S hP ({1} : Finset A) 1 L hden P' T hP' φ ({1} : Finset B) 1 L' hden'
+  P.completionLocPairMap S hP ({1} : Finset A) 1 (Localization.Away (1 : A))
+    (P.hasDenominatorPower_of_isOpen_span ({1} : Finset A) 1 _ (by simp))
+    P' T hP' φ ({1} : Finset B) 1 (Localization.Away (1 : B))
+    (P'.hasDenominatorPower_of_isOpen_span ({1} : Finset B) 1 _ (by simp))
     (map_one φ.toRingHom) (by simp)
 
 /-- Naturality of `toCompletionHom` with respect to `ofCompletionMap` at the level of Huber
 pairs. -/
 theorem ofCompletionMap_comp_toCompletionHom (φ : Pair.Hom S T) :
     (ofCompletionMap P hP hsheafA P' hP' hsheafB φ).comp (toCompletionHom P hP hsheafA) =
-      (toCompletionHom P' hP' hsheafB).comp φ := by
-  let L := Localization.Away (1 : A)
-  let L' := Localization.Away (1 : B)
-  have hden := P.hasDenominatorPower_of_isOpen_span ({1} : Finset A) 1 L (by simp)
-  have hden' := P'.hasDenominatorPower_of_isOpen_span ({1} : Finset B) 1 L' (by simp)
-  let _ := P.locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isUniformAddGroup_locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isTopologicalRing_locUniformSpace ({1} : Finset A) 1 L hden
-  have _ := P.isHuberRing_completion_locTopology ({1} : Finset A) 1 L hden
-  let _ := P'.locUniformSpace ({1} : Finset B) 1 L' hden'
-  have _ := P'.isUniformAddGroup_locUniformSpace ({1} : Finset B) 1 L' hden'
-  have _ := P'.isTopologicalRing_locUniformSpace ({1} : Finset B) 1 L' hden'
-  have _ := P'.isHuberRing_completion_locTopology ({1} : Finset B) 1 L' hden'
-  exact P.completionLocPairMap_comp_toCompletionLocHom S hP ({1} : Finset A) 1 L hden P' T hP' φ
-    ({1} : Finset B) 1 L' hden' (map_one φ.toRingHom) (by simp)
+      (toCompletionHom P' hP' hsheafB).comp φ :=
+  P.completionLocPairMap_comp_toCompletionLocHom S hP ({1} : Finset A) 1 (Localization.Away (1 : A))
+    (P.hasDenominatorPower_of_isOpen_span ({1} : Finset A) 1 _ (by simp))
+    P' T hP' φ ({1} : Finset B) 1 (Localization.Away (1 : B))
+    (P'.hasDenominatorPower_of_isOpen_span ({1} : Finset B) 1 _ (by simp))
+    (map_one φ.toRingHom) (by simp)
 
 /-- **Commuting completion square**: `pairComap` of `ofCompletionMap` intertwines the completion
 isomorphisms `(ofCompletion ...).hom` with `presentationLimitPreAdicSpacePairComap`. -/
