@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.Analysis.Normed.Ring.MulUnit
+import TauCeti.Analysis.Normed.MulAction
 
 /-!
 # Rescaling multivariate power series
@@ -37,15 +38,6 @@ theorem norm_prod_pow_smul_mul_prod (u : σ → R)
     (hu : ∀ i (e : E), ‖u i • e‖ * s i = ‖e‖ * r i) (t : σ →₀ ℕ) (e : E) :
     ‖(t.prod fun i m ↦ u i ^ m) • e‖ * t.prod (s · ^ ·) = ‖e‖ * t.prod (r · ^ ·) := by
   classical
-  have hpow (i : σ) (m : ℕ) (e : E) : ‖u i ^ m • e‖ * s i ^ m = ‖e‖ * r i ^ m := by
-    induction m generalizing e with
-    | zero => simp
-    | succ m ih =>
-      calc ‖u i ^ (m + 1) • e‖ * s i ^ (m + 1) = ‖u i • u i ^ m • e‖ * s i * s i ^ m := by
-            rw [pow_succ', mul_smul, pow_succ']
-            ring
-        _ = ‖e‖ * r i ^ (m + 1) := by
-            rw [hu, mul_right_comm, ih, pow_succ, mul_assoc]
   simp only [Finsupp.prod]
   induction t.support using Finset.induction_on generalizing e with
   | empty => simp
@@ -56,7 +48,7 @@ theorem norm_prod_pow_smul_mul_prod (u : σ → R)
           rw [mul_smul]
           ring
       _ = ‖(∏ j ∈ S, u j ^ t j) • e‖ * (∏ j ∈ S, s j ^ t j) * r i ^ t i := by
-          rw [hpow]
+          rw [TauCeti.norm_pow_smul_mul_pow (hu i)]
           ring
       _ = ‖e‖ * (r i ^ t i * ∏ j ∈ S, r j ^ t j) := by
           rw [ih]

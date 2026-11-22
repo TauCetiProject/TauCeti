@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.Analysis.Normed.Group.Defs
+import TauCeti.Analysis.Normed.MulAction
 
 /-!
 # Rescaling power series
@@ -122,12 +123,8 @@ when the weight is changed by `‖u‖`: if `‖u‖ * s = r`, then
 theorem norm_coeff_rescale_mul_pow {R : Type*} [CommSemiring R] [Norm R] (f : R⟦X⟧) {u : R}
     (hu : ∀ x : R, ‖u * x‖ = ‖u‖ * ‖x‖) {r s : ℝ} (hrs : ‖u‖ * s = r) (n : ℕ) :
     ‖coeff n (rescale u f)‖ * s ^ n = ‖coeff n f‖ * r ^ n := by
-  -- Left multiplication by `u ^ m` scales every norm by `‖u‖ ^ m`.
-  have hpow (m : ℕ) (x : R) : ‖u ^ m * x‖ = ‖u‖ ^ m * ‖x‖ := by
-    induction m generalizing x with
-    | zero => simp
-    | succ m ih => rw [pow_succ', mul_assoc, hu, ih, pow_succ', mul_assoc]
-  rw [coeff_rescale, hpow, ← hrs, mul_pow]
-  ring
+  rw [coeff_rescale]
+  exact TauCeti.norm_pow_smul_mul_pow
+    (fun x ↦ by rw [smul_eq_mul, hu, mul_right_comm, hrs, mul_comm]) n (coeff n f)
 
 end PowerSeries
