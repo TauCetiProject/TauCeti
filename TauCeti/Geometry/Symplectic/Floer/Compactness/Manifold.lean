@@ -179,6 +179,37 @@ theorem inChartAt_apply_almostComplexInChartAt {P : Type*}
   (ω.associatedBilinFormInChartAt_apply_eq_inChartAt J (z, y) a a).symm.trans
     (ω.associatedBilinFormInChartAt_apply J z hy a a)
 
+omit [FiniteDimensional ℝ E] in
+/-- **The Floer energy density in a chart, for any differentiable map.** Let `u` be differentiable
+at `z`, with `u z` in the source of the chart at `α`. Then its energy density at `z` is the
+coordinate expression of `ω` at `extChartAt I α (u z)` on the chart coordinates
+`∂ₛv(z) - X_{K_s}` and `∂ₜv(z) - X_{K_t}` of `∂ₛu - X_{K_s}` and `∂ₜu - X_{K_t}`, for
+`v = extChartAt I α ∘ u`. No Floer equation is assumed. -/
+theorem floerEnergyDensity_eq_inChartAt_sub (ω : SmoothTwoForm I M)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z) (hus : u z ∈ (extChartAt I α).source) :
+    ω.floerEnergyDensity Ks Kt u z =
+      RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α (extChartAt I α (u z))
+        ![fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
+            ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z)),
+          fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
+            ω.hamiltonianVectorFieldInChartAt α Kt (z, extChartAt I α (u z))] := by
+  set T := trivializationAt E (TangentSpace I) α
+  have hub : u z ∈ T.baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hus
+  -- The chart coordinates of `∂ₛu - X_{K_s}` and `∂ₜu - X_{K_t}`.
+  have hP (w : ℝ × ℝ) : T.symmL ℝ (u z) (fderiv ℝ (extChartAt I α ∘ u) z w -
+      w.1 • ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z)) -
+      w.2 • ω.hamiltonianVectorFieldInChartAt α Kt (z, extChartAt I α (u z))) =
+      ω.perturbedMFDeriv Ks Kt u z w := by
+    rw [← ω.continuousLinearMapAt_perturbedMFDeriv_apply hu hus w,
+      Trivialization.symmL_continuousLinearMapAt _ hub]
+  have hPs := hP stdComplexLineReal
+  have hPt := hP stdComplexLineImag
+  simp only [stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
+    stdComplexLineImag_snd, zero_smul, one_smul, sub_zero] at hPs hPt
+  rw [ω.inChartAt_apply_eq_eval₂ ((extChartAt I α).map_source hus), (extChartAt I α).left_inv hus,
+    hPs, hPt, floerEnergyDensity_def]
+
 /-- **The Floer energy density in a chart.** Let `u` be differentiable at `z`, with `u z` in the
 source of the chart at `α`, and solve the Floer equation for `J(z, u z)` at `z`. Then its energy
 density at `z` is `ω(a, J a)` read in the chart, where `a = ∂ₛv(z) - X_{K_s}` is the chart

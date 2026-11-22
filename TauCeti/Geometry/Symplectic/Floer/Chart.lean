@@ -219,6 +219,28 @@ theorem hamiltonianVectorFieldInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
         (ω.hamiltonianVectorField (K z) ((extChartAt I α).symm y)) :=
   (rfl)
 
+omit [FiniteDimensional ℝ E] in
+/-- **The coordinate expression of `ω` on two vectors.** At a coordinate `y` in the target of the
+chart at `α`, the coordinate expression of `ω` on vectors `a` and `b` is `ω_x(a', b')` at the point
+`x = (extChartAt I α).symm y`, for the tangent vectors `a'` and `b'` at `x` with tangent coordinates
+`a` and `b`. -/
+theorem inChartAt_apply_eq_eval₂ (ω : SmoothTwoForm I M) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (a b : E) :
+    RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α y ![a, b] =
+      SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) b) := by
+  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
+  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
+    (by simpa only [extChartAt_source] using (extChartAt I α).map_target hy)
+  rw [(extChartAt I α).right_inv hy] at hS
+  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
+  congr 1
+  funext i
+  -- Each entry is `extChartAt_coe_symm` unfolded; the trivialization occurs in an instance
+  -- argument of `symmL`, so it cannot be rewritten and `rfl` closes both goals.
+  fin_cases i <;> rfl
+
 /-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
 `(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
 coordinates of the chart at `α` (`associatedBilinFormInChartAt_apply`). The structures are tamed
@@ -253,26 +275,12 @@ theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M) {P : Type*}
         ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
         (J z ((extChartAt I α).symm y)
           ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) b)) := by
-  set T := trivializationAt E (TangentSpace I) α
-  have hx : (extChartAt I α).symm y ∈ T.baseSet :=
+  have hx : (extChartAt I α).symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
     TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
-  rw [associatedBilinFormInChartAt_apply_eq_inChartAt]
-  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
-  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
-    (by simpa only [extChartAt_source] using (extChartAt I α).map_target hy)
-  rw [(extChartAt I α).right_inv hy] at hS
-  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
-  congr 1
-  funext i
-  fin_cases i
-  · simp only [Fin.zero_eta, Matrix.cons_val_zero]
-    rw [extChartAt_coe_symm, Function.comp_apply]
-    -- `T` abbreviates `trivializationAt E (TangentSpace I) α`, which an instance argument of
-    -- `symmL` also mentions, so it cannot be rewritten; `rfl` unfolds the local definition.
-    rfl
-  · exact (congrArg (T.symmL ℝ ((extChartAt I α).symm y))
-      (Floer.almostComplexInChartAt_apply z y b)).trans
-      (Trivialization.symmL_continuousLinearMapAt _ hx _)
+  rw [associatedBilinFormInChartAt_apply_eq_inChartAt, ω.inChartAt_apply_eq_eval₂ hy]
+  -- The second vector is rotated by the structure read in the chart.
+  exact congrArg _ ((congrArg _ (Floer.almostComplexInChartAt_apply z y b)).trans
+    (Trivialization.symmL_continuousLinearMapAt _ hx _))
 
 /-- At the chart image of a point `x` of the chart source, the form `ω(·, J ·)` in the chart,
 evaluated on the chart coordinates of tangent vectors `v` and `w` at `x`, is `ω_x(v, J(z, x) w)`. -/
