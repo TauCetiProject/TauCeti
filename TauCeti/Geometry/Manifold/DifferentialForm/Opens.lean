@@ -44,8 +44,9 @@ A partial diffeomorphism `Ψ` between open subsets `U` and `V`, read in the ambi
 (`TauCeti.mpullback_liftOpens_apply_coe`), and a partial diffeomorphism, viewed as a
 diffeomorphism between its source and target, pulls back the restriction of a form to its target as
 it pulls back the form itself (`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`). So a
-construction carried out on an open submanifold, such as a flow defined only where some condition
-on the forms holds, transfers to the ambient manifold, together with the points it fixes and pointwise identities between pulled back forms
+construction carried out on an open submanifold, such as a flow defined only where some
+condition on the forms holds, transfers to the ambient manifold, together with the points it
+fixes and pointwise identities between pulled back forms
 (`TauCeti.exists_partialDiffeomorph_forall_mpullback_of_opens`).
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
