@@ -224,16 +224,11 @@ theorem IsInjectiveEnvelope.moduleProjective_op_matlisDual_iff_injective [Module
 left module. -/
 theorem IsInjectiveEnvelope.moduleProjective_matlisDual_iff_injective_op [Module Aᵐᵒᵖ N]
     [IsScalarTower R Aᵐᵒᵖ N] [Module.Finite Aᵐᵒᵖ N] (hf : IsInjectiveEnvelope f) :
-    Module.Projective A (MatlisDual R E N) ↔ Module.Injective Aᵐᵒᵖ N := by
+    Module.Projective A (MatlisDual R E N) ↔ Module.Injective Aᵐᵒᵖ N :=
   have := hf.moduleInjective
-  refine ⟨fun _ => ?_, fun _ => hf.moduleProjective_matlisDual_of_injective_op⟩
-  have : Small.{max w v} Aᵐᵒᵖ :=
-    have : Small.{max w v} A := small_lift A
-    small_of_injective MulOpposite.unop_injective
-  have : Module.Injective Aᵐᵒᵖ (MatlisDual R E (MatlisDual R E N)) := inferInstance
-  refine ((Module.Baer.of_injective this).of_equiv ?_).injective
-  exact (MatlisDual.evalEquivOp (A := A) hf.length_quotient_linearMap_eq_one
-    (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N)).symm
+  ⟨fun _ => moduleInjective_op_of_projective_matlisDual hf.length_quotient_linearMap_eq_one
+    (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N),
+    fun _ => hf.moduleProjective_matlisDual_of_injective_op⟩
 
 end Finite
 
@@ -246,7 +241,7 @@ theorem exists_isInjectiveEnvelope_finite (R : Type u) [CommRing R] [IsArtinianR
     [Module R N] [Module A N] [IsScalarTower R A N] [Module.Finite A N] :
     ∃ (Q : Type (max u t)) (_ : AddCommGroup Q) (_ : Module A Q) (_ : Module.Finite A Q)
       (i : N →ₗ[A] Q), IsInjectiveEnvelope i := by
-  obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson R
+  obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson.{u, u} R
   obtain ⟨n, g, hg⟩ := hf.exists_injective_linearMap_pi_matlisDual (A := A) (N := N)
   have := hf.moduleInjective
   have : Small.{max u t} A := small_max A

@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.FGModuleCat.Generator.Cogenerator
 public import TauCeti.RingTheory.DominantDimension
 
 /-!
-# The endomorphism ring of a generator-cogenerator has dominant dimension at least two
+# The Morita-Tachikawa correspondence: forward direction
 
 Let `A` be an Artin algebra and `M` a generator-cogenerator of `mod A`, with endomorphism ring
 `Γ = Module.End A M` acting on `M` by evaluation. This file proves the forward direction of the

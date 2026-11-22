@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.CategoryTheory.Generator.Preadditive
+public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
+public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
@@ -52,6 +54,8 @@ projective object of `mod R`, such as `R`, splits.
 * `FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a finitely generated projective
   module lies in the additive closure `add M` of every finitely generated generator `M`, in any
   universe.
+* `FGModuleCat.additiveClosure_of_isCoseparator_of_injective`: dually, an injective object of
+  `mod R` that is Artinian as a module lies in `add M` for every coseparator `M`.
 * `FGModuleCat.isSeparator_iff_additiveClosure` and `FGModuleCat.isSeparator_iff_exists_retract`:
   `M` is a separator of `mod R` exactly when `R ∈ add M`.
 -/
@@ -123,6 +127,43 @@ theorem _root_.FGModuleCat.additiveClosure_of_isGenerator_of_projective (M P : F
     refine LinearMap.pi_ext' fun i ↦ ?_
     simpa [p, LinearMap.comp_assoc] using congr((biproduct.ι _ i ≫ $hg).hom.hom)
   exact (additiveClosure M).prop_of_retract ⟨Projective.factorThru (𝟙 P) p, p, by simp⟩
+    ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
+
+/-- **Artinian injective modules are summands of finite sums of a coseparator**: if `M` is a
+coseparator of `mod R`, then an injective object of `mod R` that is Artinian as a module lies in
+`add M`. This is dual to `FGModuleCat.additiveClosure_of_isGenerator_of_projective`. The modules
+may live in any universe. -/
+theorem _root_.FGModuleCat.additiveClosure_of_isCoseparator_of_injective {M : FGModuleCat.{v} R}
+    (hM : IsCoseparator M) (I : FGModuleCat.{v} R) [Injective I] [IsArtinian R I.obj] :
+    additiveClosure M I := by
+  classical
+  -- The kernels of the morphisms `I ⟶ M` meet in zero, as `M` is a coseparator: test on the
+  -- inclusion of the cyclic submodule `R ∙ x`.
+  have hker (x : I.obj) (hx : ∀ g : I ⟶ M, g.hom.hom x = 0) : x = 0 := by
+    let i : FGModuleCat.of R (R ∙ x) ⟶ I := ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype)
+    have hi : i = 0 := (Preadditive.isCoseparator_iff M).1 hM i fun g ↦ by
+      ext ⟨y, hy⟩
+      obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hy
+      simp [i, hx]
+    simpa [i] using congr(($hi).hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩)
+  -- By the minimal condition, the kernels of finitely many of them already meet in zero.
+  obtain ⟨_, ⟨F, rfl⟩, hF⟩ := IsArtinian.set_has_minimal
+    (Set.range fun F : Finset (I ⟶ M) ↦ ⨅ g ∈ F, LinearMap.ker g.hom.hom) ⟨_, ∅, rfl⟩
+  have hF' (x : I.obj) (hx : ∀ g ∈ F, g.hom.hom x = 0) : x = 0 := hker x fun g ↦ by
+    -- Minimality: adding the kernel of `g` does not shrink the intersection.
+    have h := hF _ ⟨insert g F, rfl⟩
+    simp only [Finset.iInf_insert] at h
+    have hK : ⨅ g ∈ F, LinearMap.ker g.hom.hom ≤ LinearMap.ker g.hom.hom :=
+      not_not.1 (inf_lt_right.not.1 h)
+    exact hK (by simpa [Submodule.mem_iInf] using hx)
+  -- So `I` embeds into a finite sum of copies of `M`, and the embedding splits.
+  let ι : I ⟶ ⨁ fun _ : Fin F.card ↦ M := biproduct.lift fun j ↦ F.equivFin.symm j
+  have : Mono ι := Preadditive.mono_of_cancel_zero ι fun {Z} h hh ↦ by
+    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun z ↦ ?_))
+    have hz := hF' (h.hom.hom z) fun g hg ↦ by
+      simpa [ι] using congr(($hh ≫ biproduct.π _ (F.equivFin ⟨g, hg⟩)).hom.hom z)
+    simpa using hz
+  exact (additiveClosure M).prop_of_retract ⟨ι, Injective.factorThru (𝟙 I) ι, by simp⟩
     ((additiveClosure M).prop_of_isLimit (biproduct.isLimit _) fun _ ↦ additiveClosure_self M)
 
 /-- **The regular module lies in the additive closure of a generator**: if `M` is a generator of

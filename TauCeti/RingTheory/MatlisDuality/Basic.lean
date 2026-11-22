@@ -47,9 +47,10 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
 * `TauCeti.subsingleton_matlisDual_iff`: `D_R N` is zero exactly when `N` is, for every `N`.
 * `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: for modules of
   finite length over `R`, dualizing is a bijection on morphisms.
-* `TauCeti.moduleInjective_of_projective_op_matlisDual`: for an injective `E` such that each
-  `Hom_R(R ⧸ 𝔪, E)` has length one, a module of finite length over `R` whose dual is projective is
-  injective.
+* `TauCeti.moduleInjective_of_projective_op_matlisDual` and
+  `TauCeti.moduleInjective_op_of_projective_matlisDual`: for an injective `E` such that
+  `Hom_R(R ⧸ 𝔪, E)` has length one for every maximal ideal `𝔪` of `R`, a left or right module of
+  finite length over `R` whose dual is projective is injective.
 * `TauCeti.MatlisDual.exists_retract_of_retract`: a retract of `D_R N` dualizes to a retract of
   `N`, for `N` of finite length over `R`.
 
@@ -157,6 +158,14 @@ theorem map_comp {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module A N'']
     map (R := R) (E := E) (g ∘ₗ h) = map h ∘ₗ map g := by
   ext
   simp
+
+/-- The right action of the endomorphism ring `Module.End A N` on `D_R N` is dualization of
+endomorphisms. -/
+@[simp]
+theorem end_op_smul_eq_map (γ : (Module.End A N)ᵐᵒᵖ) (φ : MatlisDual R E N) :
+    γ • φ = map γ.unop φ := by
+  ext
+  simp [Module.End.smul_def]
 
 /-- An isomorphism of left modules dualizes to an isomorphism of right modules. The two modules may
 carry any `R`-module structures compatible with the `A`-action. -/
@@ -532,8 +541,23 @@ theorem moduleInjective_of_projective_op_matlisDual [Module A N] [IsScalarTower 
     (hN : IsFiniteLength R N) [Module.Projective Aᵐᵒᵖ (MatlisDual R E N)] :
     Module.Injective A N :=
   -- By biduality `N` is the dual of the projective right module `D_R N`.
-  ((LinearEquiv.ofBijective (evalₗ R E N) (bijective_evalₗ hE hN)).trans
+  (((MatlisDual.evalEquiv (A := A) hE hN).restrictScalars R).trans
     (equivLinearMap R E _)).moduleInjective_of_dual_projective fun a x φ ↦ by simp
+
+attribute [local instance] opOpModule isScalarTower_opOpModule RingHomInvPair.of_ringEquiv in
+/-- **A right module with projective dual is injective.** If `E` is injective and
+`Hom_R(R ⧸ 𝔪, E)` has length one for every maximal ideal `𝔪` of `R`, then a right `A`-module `N`
+of finite length over `R` whose dual `D_R N` is a projective left `A`-module is an injective right
+`A`-module. The ring `R` must be small in the universe of `E`. -/
+theorem moduleInjective_op_of_projective_matlisDual [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+    (hN : IsFiniteLength R N) [Module.Projective A (MatlisDual R E N)] :
+    Module.Injective Aᵐᵒᵖ N :=
+  -- By biduality `N` is the dual of the projective left module `D_R N`, an `Aᵐᵒᵖᵐᵒᵖ`-module.
+  have : Module.Projective Aᵐᵒᵖᵐᵒᵖ (MatlisDual R E N) := .of_equiv (opOpSemilinearEquiv (A := A))
+  (((MatlisDual.evalEquivOp (A := A) hE hN).restrictScalars R).trans
+    (equivLinearMap R E _)).moduleInjective_of_dual_projective (A := Aᵐᵒᵖ)
+    fun a x φ ↦ (smul_apply a.unop φ x).symm
 
 end Biduality
 

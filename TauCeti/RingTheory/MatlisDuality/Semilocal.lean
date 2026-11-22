@@ -222,12 +222,16 @@ theorem IsInjectiveEnvelope.isFiniteLength_quotient_jacobson {E : Type v} [AddCo
 
 variable (R) in
 /-- **The injective cogenerator of a commutative Artinian ring.** `R ⧸ J(R)` has an injective hull
-of finite length. -/
-theorem exists_isInjectiveEnvelope_quotient_jacobson :
-    ∃ (E : Type u) (_ : AddCommGroup E) (_ : Module R E) (f : R ⧸ Ring.jacobson R →ₗ[R] E),
+of finite length, in any universe in which `R` is small. -/
+theorem exists_isInjectiveEnvelope_quotient_jacobson [Small.{w} R] :
+    ∃ (E : Type w) (_ : AddCommGroup E) (_ : Module R E) (f : R ⧸ Ring.jacobson R →ₗ[R] E),
       IsInjectiveEnvelope f ∧ IsFiniteLength R E := by
-  obtain ⟨E, _, _, f, hf⟩ := exists_isInjectiveEnvelope R (R ⧸ Ring.jacobson R)
-  exact ⟨E, _, _, f, hf, hf.isFiniteLength_quotient_jacobson⟩
+  -- Take a hull of a copy of `R ⧸ J(R)` in the universe `w`.
+  have : Small.{w} (R ⧸ Ring.jacobson R) := small_of_surjective Ideal.Quotient.mk_surjective
+  let e := Shrink.linearEquiv.{w} R (R ⧸ Ring.jacobson R)
+  obtain ⟨E, _, _, i, hi⟩ := exists_isInjectiveEnvelope R (Shrink.{w} (R ⧸ Ring.jacobson R))
+  have hf := hi.comp e.symm.injective (by rw [LinearEquiv.range]; exact isEssential_top)
+  exact ⟨E, _, _, _, hf, hf.isFiniteLength_quotient_jacobson⟩
 
 end Artinian
 

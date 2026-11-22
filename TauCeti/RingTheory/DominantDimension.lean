@@ -112,25 +112,21 @@ theorem two_le_dominantDimension_end_of_projective_of_injective {A : Type u} [Ri
     [Module.Finite (Module.End A M) M] [Module.Projective (Module.End A M) M]
     [Module.Injective (Module.End A M) M] : 2 ≤ dominantDimension (Module.End A M) := by
   obtain ⟨n, m, q, r, hq, hqr⟩ := Module.FinitePresentation.exists_fin' A M
-  -- `Hom_A(-, M)` and `Hom_A(Aᵏ, M) ≅ Mᵏ` give the exact sequence `0 → Γ → Mⁿ → Mᵐ`.
+  -- `Hom_A(-, M)` gives the exact sequence `0 → Γ → Hom_A(Aⁿ, M) → Hom_A(Aᵐ, M)`; conjugated by
+  -- `Hom_A(Aᵏ, M) ≅ Mᵏ` it becomes `0 → Γ → Mⁿ → Mᵐ` in `ModuleCat Γ`.
   let e (k : ℕ) := LinearEquiv.piRing A M (Fin k) (Module.End A M)
-  let f := (e n).toLinearMap ∘ₗ LinearMap.lcomp (Module.End A M) M q
-  let g := (e m).toLinearMap ∘ₗ LinearMap.lcomp (Module.End A M) M r ∘ₗ (e n).symm.toLinearMap
-  have hfg : Function.Exact f g :=
-    (hqr.lcomp_of_surjective (T := Module.End A M) M hq).of_ladder_linearEquiv_of_exact
-      (e₁ := LinearEquiv.refl _ _) (e₂ := e n) (e₃ := e m)
-      (by simp only [f, LinearEquiv.refl_toLinearMap, LinearMap.comp_id])
-      (LinearMap.ext fun _ ↦ by simp [g])
+  have hex := hqr.lcomp_of_surjective (T := Module.End A M) M hq
+  let S := ModuleCat.shortComplexOfConj (LinearEquiv.refl _ _) (e n).symm (e m).symm _ _
+    hex.linearMap_comp_eq_zero
   -- Each `Mᵏ` is finitely generated, projective and injective over `Γ`, as `M` is.
   have hM (k : ℕ) : Module.Finite (Module.End A M) (ModuleCat.of (Module.End A M) (Fin k → M)) ∧
       Projective (ModuleCat.of (Module.End A M) (Fin k → M)) ∧
         Injective (ModuleCat.of (Module.End A M) (Fin k → M)) :=
     ⟨inferInstanceAs (Module.Finite _ (Fin k → M)), (IsProjective.iff_projective _).1
       inferInstance, Module.injective_object_of_injective_module _ _⟩
-  exact (two_le_dominantDimension_iff _).2 ⟨_, _, ModuleCat.ofHom f, ModuleCat.ofHom g,
-    ModuleCat.hom_ext hfg.linearMap_comp_eq_zero,
+  exact (two_le_dominantDimension_iff _).2 ⟨_, _, S.f, S.g, S.zero,
     (ModuleCat.mono_iff_injective _).2 ((e n).injective.comp hq.injective_linearMapComp_right),
-    (ShortComplex.moduleCat_exact_iff _).2 fun x hx ↦ (hfg x).1 hx, hM n, hM m⟩
+    ModuleCat.shortComplexOfConj_exact _ _ _ _ _ hex, hM n, hM m⟩
 
 /-- **Müller's criterion, forward direction, for a generator.** Let `M` be a finitely presented
 generator of the category of `A`-modules that is injective over its endomorphism ring `Γ`. Then `Γ`

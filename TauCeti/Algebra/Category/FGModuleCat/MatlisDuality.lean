@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.CategoryTheory.Generator.Basic
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.FiniteLength
@@ -16,7 +17,6 @@ public import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 import TauCeti.Algebra.Category.FGModuleCat.Projective
-import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 import TauCeti.CategoryTheory.Preadditive.Projectivization
 
 /-!
@@ -50,6 +50,8 @@ direct sum of copies of `D A`.
 
 * `TauCeti.IsInjectiveEnvelope.injective_fgModuleCatMatlisDualRegular`: `D A` is injective in
   `mod A`.
+* `TauCeti.IsInjectiveEnvelope.isCoseparator_fgModuleCatMatlisDualRegular`: `D A` is a
+  coseparator of `mod A`.
 * `TauCeti.IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective`: every
   injective object of `mod A` lies in `add (D A)`.
 * `FGModuleCat.projective_end_op_matlisDual_of_additiveClosure`: if `D A` lies in `add M`, then the
@@ -239,19 +241,21 @@ instance IsInjectiveEnvelope.injective_fgModuleCatMatlisDualRegular (hf : IsInje
     (hf.fgModuleCatMatlisDuality.symm.map_projective_iff _).2 inferInstance
   exact inferInstanceAs (Injective (unop _))
 
+/-- `D A` is a coseparator of `mod A`, as the dual of the separator `Aᵐᵒᵖ` of `mod Aᵐᵒᵖ`. -/
+theorem IsInjectiveEnvelope.isCoseparator_fgModuleCatMatlisDualRegular
+    (hf : IsInjectiveEnvelope f) : IsCoseparator (hf.fgModuleCatMatlisDualRegular (A := A)) := by
+  rw [hf.fgModuleCatMatlisDualRegular_def, isCoseparator_unop_iff]
+  exact (FGModuleCat.isSeparator Aᵐᵒᵖ).of_equivalence hf.fgModuleCatMatlisDuality.symm
+
 /-- **Finitely generated injective modules are summands of finite sums of `D A`**: an injective
-object of `mod A` lies in `add (D A)`. This is the dual of the
-statement that finitely generated projective modules over `Aᵐᵒᵖ` lie in `add Aᵐᵒᵖ`. -/
+object of `mod A` lies in `add (D A)`. This is the case of the coseparator `D A` in
+`FGModuleCat.additiveClosure_of_isCoseparator_of_injective`. -/
 theorem IsInjectiveEnvelope.additiveClosure_fgModuleCatMatlisDualRegular_of_injective
     (hf : IsInjectiveEnvelope f) (I : FGModuleCat.{v} A) [Injective I] :
-    additiveClosure (hf.fgModuleCatMatlisDualRegular (A := A)) I := by
-  let Φ := hf.fgModuleCatMatlisDuality (A := A)
-  have : Projective (Φ.functor.obj (op I)) := (Φ.map_projective_iff _).2 inferInstance
-  rw [← Φ.additiveClosure_functor_obj_op_iff]
-  exact (hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).symm.retract
-    |>.additiveClosure_le _
-      (FGModuleCat.additiveClosure_of_isGenerator_of_projective (FGModuleCat.of Aᵐᵒᵖ Aᵐᵒᵖ)
-        (Φ.functor.obj (op I)))
+    additiveClosure (hf.fgModuleCatMatlisDualRegular (A := A)) I :=
+  have := IsArtinianRing.of_finite R A
+  FGModuleCat.additiveClosure_of_isCoseparator_of_injective
+    hf.isCoseparator_fgModuleCatMatlisDualRegular I
 
 end Regular
 
@@ -286,10 +290,7 @@ theorem _root_.FGModuleCat.projective_end_op_matlisDual_of_additiveClosure {R : 
       map_smul' g f := by
         apply (equivLinearMapDualRegular (A := A)).injective
         -- The right action of `Γ` on `D_R M` is dualization of endomorphisms.
-        have hσ (γ : (Module.End A M.obj)ᵐᵒᵖ) (φ : MatlisDual R E M.obj) :
-            γ • φ = MatlisDual.map γ.unop φ :=
-          MatlisDual.ext fun x ↦ by simp [Module.End.smul_def]
-        rw [hσ, equivLinearMapDualRegular_map, LinearEquiv.apply_symm_apply,
+        rw [end_op_smul_eq_map, equivLinearMapDualRegular_map, LinearEquiv.apply_symm_apply,
           LinearEquiv.apply_symm_apply]
         ext x
         simp [End.smul_left, σ]
