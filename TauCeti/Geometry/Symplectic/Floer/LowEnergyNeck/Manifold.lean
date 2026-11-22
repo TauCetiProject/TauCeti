@@ -11,6 +11,7 @@ import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.Rotation
 import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -261,18 +262,12 @@ private theorem IsNondegenerate.integrableOn_and_setIntegral_floerEnergyDensity_
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (s₀, 0))) w) ≤ ENNReal.ofReal (3 * S) := by
     rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat]
     exact (lintegral_ball_floerEnergyDensity_comp_add_le hHper hper hs₀).trans (by gcongr)
-  have hintOn : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
-      fun w ↦ u (w + (s₀, 0))) (ball ((0 : ℝ), (1 / 2 : ℝ)) 1) := by
-    refine ⟨(ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt isOpen_ball
+  exact integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    ((ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt isOpen_ball
       (hv.of_le (by norm_num))
       (fun α ↦ by rw [hamiltonianVectorFieldInChartAt_zero]; exact continuousOn_const)
       (fun α ↦ (hX α).mono (prod_mono (subset_univ _) le_rfl))).aestronglyMeasurable
-      measurableSet_ball, ?_⟩
-    rw [hasFiniteIntegral_iff_ofReal hnonneg]
-    exact hint.trans_lt ENNReal.ofReal_lt_top
-  refine ⟨hintOn, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hnonneg hintOn.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal (by positivity) hint
+      measurableSet_ball) hnonneg subset_rfl (by positivity) hint
 
 omit [FiniteDimensional ℝ F] in
 /-- **Floer cylinders of small energy in a closed manifold have bounded energy density.** Let `ω`
