@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.Algebra.Module.AuslanderReiten.HomCokernel
+public import TauCeti.Algebra.Module.AuslanderReiten.Morphism
 public import TauCeti.Algebra.Module.LinearMap.Defs
 public import TauCeti.Algebra.Module.Injective.Hom
 public import TauCeti.LinearAlgebra.Exact
@@ -44,6 +45,12 @@ and the defect formula carries the dual of the first to the second. Each step of
 natural: the snake map, because a lift for `δ` composed with `a₂` and `a₁` is a lift for `δ'`, and
 `D H(N) ≅ Hom_A(N, D Tr X)`, by `LinearMap.auslanderReitenHomCokernelDualEquiv_map`.
 
+The formula is also natural in the presented module. A map `t : X → X'` lifted to the
+presentations by `(t₀, t₁)` induces `δ^*(X') → δ^*(X)` (precomposition with `t`) and
+`δ_*(D Tr X) → δ_*(D Tr X')` (postcomposition with `D Tr(t)`), and the defect formula carries the
+dual of the first to the second: the snake map is natural because lifts for `X'` composed with
+`(t₀, t₁)` are lifts for `X`, and `D H(N) ≅ Hom_A(N, D Tr X)` is natural in the presentation.
+
 ## Main definitions
 
 * `LinearMap.contravariantDefect` and `LinearMap.covariantDefect`: the two defects.
@@ -55,6 +62,11 @@ natural: the snake map, because a lift for `δ` composed with `a₂` and `a₁` 
 * `Function.Exact.contravariantDefectEquivKer_mk`: the snake map on representatives.
 * `Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality`: naturality of the
   defect formula in the exact sequence.
+* `LinearMap.contravariantDefectComap`, `LinearMap.covariantDefectMapRight` and
+  `LinearMap.homCokernelComap`: the maps induced by a map of presented modules.
+* `Function.Exact.dualContravariantDefectEquivCovariantDefect_comap`: naturality of the defect
+  formula in the presented module, from `Function.Exact.contravariantDefectEquivKer_comap` and
+  `LinearMap.auslanderReitenHomCokernelDualEquiv_comap`.
 
 ## References
 
@@ -183,6 +195,96 @@ theorem covariantDefectMap_comp {φ : M₁ →ₗ[A] M₂} {φ' : M₁' →ₗ[A
 
 end DefectMaps
 
+section PresentationMaps
+
+variable (k : Type*) {A : Type*} [CommRing k] [Ring A] [Algebra k A]
+
+/-- The map `δ^*(X') → δ^*(X)` of contravariant defects induced by `t : X → X'`: precomposition
+with `t`. -/
+noncomputable def contravariantDefectComap {M₂ M₃ X X' : Type*} [AddCommGroup M₂] [Module A M₂]
+    [Module k M₂] [IsScalarTower k A M₂] [AddCommGroup M₃] [Module A M₃] [Module k M₃]
+    [IsScalarTower k A M₃] [AddCommGroup X] [Module A X] [AddCommGroup X'] [Module A X']
+    (ψ : M₂ →ₗ[A] M₃) (t : X →ₗ[A] X') :
+    contravariantDefect k ψ X' →ₗ[k] contravariantDefect k ψ X :=
+  Submodule.mapQ _ _ (t.lcomp k M₃) (by
+    rintro _ ⟨g, rfl⟩
+    exact ⟨g ∘ₗ t, rfl⟩)
+
+@[simp]
+theorem contravariantDefectComap_mk {M₂ M₃ X X' : Type*} [AddCommGroup M₂] [Module A M₂]
+    [Module k M₂] [IsScalarTower k A M₂] [AddCommGroup M₃] [Module A M₃] [Module k M₃]
+    [IsScalarTower k A M₃] [AddCommGroup X] [Module A X] [AddCommGroup X'] [Module A X']
+    (ψ : M₂ →ₗ[A] M₃) (t : X →ₗ[A] X') (g : X' →ₗ[A] M₃) :
+    contravariantDefectComap k ψ t (Submodule.Quotient.mk g) = Submodule.Quotient.mk (g ∘ₗ t) := by
+  simp [contravariantDefectComap, lcomp_apply']
+
+/-- The map `δ_*(Y) → δ_*(Y')` of covariant defects induced by `g : Y → Y'`: postcomposition
+with `g`. -/
+noncomputable def covariantDefectMapRight {M₁ M₂ Y Y' : Type*} [AddCommGroup M₁] [Module A M₁]
+    [AddCommGroup M₂] [Module A M₂] [AddCommGroup Y] [Module A Y] [Module k Y]
+    [IsScalarTower k A Y] [AddCommGroup Y'] [Module A Y'] [Module k Y'] [IsScalarTower k A Y']
+    (φ : M₁ →ₗ[A] M₂) (g : Y →ₗ[A] Y') : covariantDefect k φ Y →ₗ[k] covariantDefect k φ Y' :=
+  Submodule.mapQ _ _ (g.compRight k) (by
+    rintro _ ⟨u, rfl⟩
+    exact ⟨g ∘ₗ u, rfl⟩)
+
+@[simp]
+theorem covariantDefectMapRight_mk {M₁ M₂ Y Y' : Type*} [AddCommGroup M₁] [Module A M₁]
+    [AddCommGroup M₂] [Module A M₂] [AddCommGroup Y] [Module A Y] [Module k Y]
+    [IsScalarTower k A Y] [AddCommGroup Y'] [Module A Y'] [Module k Y'] [IsScalarTower k A Y']
+    (φ : M₁ →ₗ[A] M₂) (g : Y →ₗ[A] Y') (u : M₁ →ₗ[A] Y) :
+    covariantDefectMapRight k φ g (Submodule.Quotient.mk u) = Submodule.Quotient.mk (g ∘ₗ u) := by
+  simp [covariantDefectMapRight]
+
+/-- The map `H'(N) → H(N)` of Hom cokernels induced by a commutative square `t₀ ∘ f = f' ∘ t₁`
+between presentations: precomposition with `t₁`. -/
+noncomputable def homCokernelComap {P₀ P₁ P₀' P₁' : Type*} [AddCommGroup P₀] [Module A P₀]
+    [AddCommGroup P₁] [Module A P₁] [AddCommGroup P₀'] [Module A P₀'] [AddCommGroup P₁']
+    [Module A P₁'] {f : P₁ →ₗ[A] P₀} {f' : P₁' →ₗ[A] P₀'} {t₀ : P₀ →ₗ[A] P₀'}
+    {t₁ : P₁ →ₗ[A] P₁'} (ht : t₀ ∘ₗ f = f' ∘ₗ t₁) (N : Type*) [AddCommGroup N] [Module A N]
+    [Module k N] [IsScalarTower k A N] :
+    ((P₁' →ₗ[A] N) ⧸ range (f'.lcomp k N)) →ₗ[k] ((P₁ →ₗ[A] N) ⧸ range (f.lcomp k N)) :=
+  Submodule.mapQ _ _ (t₁.lcomp k N) (by
+    rintro _ ⟨G, rfl⟩
+    refine ⟨G ∘ₗ t₀, ?_⟩
+    simp only [lcomp_apply']
+    rw [LinearMap.comp_assoc, ht, ← LinearMap.comp_assoc])
+
+@[simp]
+theorem homCokernelComap_mk {P₀ P₁ P₀' P₁' : Type*} [AddCommGroup P₀] [Module A P₀]
+    [AddCommGroup P₁] [Module A P₁] [AddCommGroup P₀'] [Module A P₀'] [AddCommGroup P₁']
+    [Module A P₁'] {f : P₁ →ₗ[A] P₀} {f' : P₁' →ₗ[A] P₀'} {t₀ : P₀ →ₗ[A] P₀'}
+    {t₁ : P₁ →ₗ[A] P₁'} (ht : t₀ ∘ₗ f = f' ∘ₗ t₁) {N : Type*} [AddCommGroup N] [Module A N]
+    [Module k N] [IsScalarTower k A N] (G : P₁' →ₗ[A] N) :
+    homCokernelComap k ht N (Submodule.Quotient.mk G) = Submodule.Quotient.mk (G ∘ₗ t₁) := by
+  simp [homCokernelComap, lcomp_apply']
+
+/-- **Naturality of `D H(N) ≅ Hom_A(N, D Tr f)` in the presentation.** For a commutative square
+`t₀ ∘ f = f' ∘ t₁`, precomposition with the map of Hom cokernels corresponds to postcomposition
+with the dual `D Tr(t) : D Tr f → D Tr f'` of the map of transposes. -/
+theorem auslanderReitenHomCokernelDualEquiv_comap {P₀ P₁ P₀' P₁' N : Type*} [AddCommGroup P₀]
+    [Module A P₀] [Module.Finite A P₀] [Module.Projective A P₀] [AddCommGroup P₁] [Module A P₁]
+    [Module.Finite A P₁] [Module.Projective A P₁] [AddCommGroup P₀'] [Module A P₀']
+    [Module.Finite A P₀'] [Module.Projective A P₀'] [AddCommGroup P₁'] [Module A P₁']
+    [Module.Finite A P₁'] [Module.Projective A P₁'] [AddCommGroup N] [Module A N] [Module k N]
+    [IsScalarTower k A N] {E : Type*} [AddCommGroup E] [Module k E] {f : P₁ →ₗ[A] P₀}
+    {f' : P₁' →ₗ[A] P₀'} {t₀ : P₀ →ₗ[A] P₀'} {t₁ : P₁ →ₗ[A] P₁'} (ht : t₀ ∘ₗ f = f' ∘ₗ t₁)
+    (u : ((P₁ →ₗ[A] N) ⧸ range (f.lcomp k N)) →ₗ[k] E) :
+    auslanderReitenHomCokernelDualEquiv f' (u ∘ₗ homCokernelComap k ht N) =
+      MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht) ∘ₗ
+        auslanderReitenHomCokernelDualEquiv f u := by
+  ext n : 1
+  apply (MatlisDual.equivLinearMap k E _).injective
+  ext τ
+  obtain ⟨φ, rfl⟩ := AuslanderReitenTranspose.mk_surjective f' τ
+  simp only [auslanderReitenHomCokernelDualEquiv_apply_mk, LinearMap.comp_apply,
+    homCokernelComap_mk, MatlisDual.mapOp_apply, AuslanderReitenTranspose.map_mk]
+  congr 2
+  ext x
+  simp [balancedDualTensorHom_tmul]
+
+end PresentationMaps
+
 end LinearMap
 
 namespace Function.Exact
@@ -268,6 +370,33 @@ theorem contravariantDefectEquivKer_naturality (hfp : Exact f p) (hp : Surjectiv
       (comp_comp_eq_comp_comp_of_comp_eq h₂ hy) (a₁ ∘ₗ z)
       (comp_comp_eq_comp_comp_of_comp_eq h₁ hz), homCokernelMap_mk]
 
+variable {P₀' P₁' X' : Type*} [AddCommGroup P₀'] [Module A P₀'] [Module.Projective A P₀']
+  [AddCommGroup P₁'] [Module A P₁'] [AddCommGroup X'] [Module A X'] {f' : P₁' →ₗ[A] P₀'}
+  {p' : P₀' →ₗ[A] X'} {t : X →ₗ[A] X'} {t₀ : P₀ →ₗ[A] P₀'} {t₁ : P₁ →ₗ[A] P₁'}
+
+/-- **Naturality of the snake lemma for the defect in the presented module.** For a map
+`t : X → X'` lifted to presentations by `(t₀, t₁)`, precomposition with `t` on `δ^*` corresponds to
+the map of Hom cokernels induced by the lift. -/
+theorem contravariantDefectEquivKer_comap (hfp : Exact f p) (hp : Surjective p)
+    (hfp' : Exact f' p') (hp' : Surjective p') (hφ : Injective φ) (hψ : Surjective ψ)
+    (hφψ : Exact φ ψ) (ht₀ : p' ∘ₗ t₀ = t ∘ₗ p) (ht₁ : t₀ ∘ₗ f = f' ∘ₗ t₁)
+    (x : contravariantDefect k ψ X') :
+    (contravariantDefectEquivKer hfp hp hφ hψ hφψ (contravariantDefectComap k ψ t x) :
+      (P₁ →ₗ[A] M₁) ⧸ range (f.lcomp k M₁)) =
+      homCokernelComap k ht₁ M₁ (contravariantDefectEquivKer hfp' hp' hφ hψ hφψ x) := by
+  obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  obtain ⟨y, hy⟩ := Module.projective_lifting_property ψ (g ∘ₗ p') hψ
+  obtain ⟨z, hz⟩ := (hφψ.compRight_of_injective (T := k) P₁' hφ (y ∘ₗ f')).mp (by
+    rw [compRight_apply, ← LinearMap.comp_assoc, hy, LinearMap.comp_assoc,
+      hfp'.linearMap_comp_eq_zero, LinearMap.comp_zero])
+  rw [compRight_apply] at hz
+  rw [contravariantDefectComap_mk, contravariantDefectEquivKer_mk hfp' hp' hφ hψ hφψ g y hy z hz,
+    contravariantDefectEquivKer_mk hfp hp hφ hψ hφψ (g ∘ₗ t) (y ∘ₗ t₀)
+      (by rw [← LinearMap.comp_assoc, hy, LinearMap.comp_assoc, ht₀, ← LinearMap.comp_assoc])
+      (z ∘ₗ t₁)
+      (by rw [← LinearMap.comp_assoc, hz, LinearMap.comp_assoc, ← ht₁, ← LinearMap.comp_assoc]),
+    homCokernelComap_mk]
+
 variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
   {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
 
@@ -332,6 +461,48 @@ theorem dualContravariantDefectEquivCovariantDefect_naturality (hfp : Exact f p)
     ext; simp
   rw [e₁, e₂, hw, ← hv]
   simp [Submodule.Quotient.equiv_apply]
+
+variable [Module.Finite A P₀'] [Module.Finite A P₁'] [Module.Projective A P₁']
+
+/-- **Naturality of Auslander's defect formula in the presented module.** For a map `t : X → X'`
+lifted by `(t₀, t₁)` to the presentations, the isomorphisms `D δ^*(X) ≅ δ_*(D Tr X)` and
+`D δ^*(X') ≅ δ_*(D Tr X')` carry the dual of precomposition with `t` to postcomposition with the
+dual `D Tr(t) : D Tr X → D Tr X'` of the map of transposes. -/
+theorem dualContravariantDefectEquivCovariantDefect_comap (hfp : Exact f p) (hp : Surjective p)
+    (hfp' : Exact f' p') (hp' : Surjective p') (hφ : Injective φ) (hψ : Surjective ψ)
+    (hφψ : Exact φ ψ) (ht₀ : p' ∘ₗ t₀ = t ∘ₗ p) (ht₁ : t₀ ∘ₗ f = f' ∘ₗ t₁)
+    (χ : contravariantDefect k ψ X →ₗ[k] E) :
+    dualContravariantDefectEquivCovariantDefect hfp' hp' hφ hψ hφψ
+        (χ ∘ₗ contravariantDefectComap k ψ t) =
+      covariantDefectMapRight k φ (MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht₁))
+        (dualContravariantDefectEquivCovariantDefect hfp hp hφ hψ hφψ χ) := by
+  simp only [dualContravariantDefectEquivCovariantDefect, LinearEquiv.trans_apply]
+  set κ := contravariantDefectEquivKer (k := k) hfp hp hφ hψ hφψ
+  set κ' := contravariantDefectEquivKer (k := k) hfp' hp' hφ hψ hφψ
+  -- Represent the class attached to `χ` by a functional `v` on `H(M₁)`.
+  obtain ⟨v, hv⟩ := Submodule.Quotient.mk_surjective _
+    ((cokernelEquivDualKer (S := k) (homCokernelMap k f φ)).symm (χ ∘ₗ κ.symm.toLinearMap))
+  have hv' (u) : v ((u : ker (homCokernelMap k f φ)) : _) = χ (κ.symm u) := by
+    simpa using LinearMap.congr_fun
+      (congrArg (cokernelEquivDualKer (S := k) (homCokernelMap k f φ)) hv) u
+  -- Then `v ∘ H(t)` represents the class attached to `χ ∘ t^*`.
+  have hw : (cokernelEquivDualKer (S := k) (homCokernelMap k f' φ)).symm
+      ((χ ∘ₗ contravariantDefectComap k ψ t) ∘ₗ κ'.symm.toLinearMap) =
+        Submodule.Quotient.mk (v ∘ₗ homCokernelComap k ht₁ M₁) := by
+    rw [LinearEquiv.symm_apply_eq, cokernelEquivDualKer_mk]
+    ext u
+    obtain ⟨x, rfl⟩ := κ'.surjective u
+    have hx := contravariantDefectEquivKer_comap hfp hp hfp' hp' hφ hψ hφψ ht₀ ht₁ x
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
+      Submodule.subtype_apply]
+    rw [← hx, hv', LinearEquiv.symm_apply_apply]
+  have e₁ : κ'.arrowCongr (LinearEquiv.refl k E) (χ ∘ₗ contravariantDefectComap k ψ t) =
+      (χ ∘ₗ contravariantDefectComap k ψ t) ∘ₗ κ'.symm.toLinearMap := by
+    ext; simp
+  have e₂ : κ.arrowCongr (LinearEquiv.refl k E) χ = χ ∘ₗ κ.symm.toLinearMap := by
+    ext; simp
+  rw [e₁, e₂, hw, ← hv]
+  simp [Submodule.Quotient.equiv_apply, auslanderReitenHomCokernelDualEquiv_comap]
 
 end Defect
 
