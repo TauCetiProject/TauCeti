@@ -296,8 +296,8 @@ theorem inner_ofContinuousMap (f g : C(AddCircle T, F)) :
       (ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (φ f j))
       (ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (φ g j)) using 1
     · funext n
-      simp only [← inner_conj_symm _ (fourierBasis n), ← HilbertBasis.repr_apply_apply,
-        fourierBasis_repr, fourierCoeff_toLp, hcoeff, inner_conj_symm]
+      simp only [← inner_conj_symm _ (fourierBasis n), inner_fourierBasis_left,
+        fourierCoeff_toLp, hcoeff, inner_conj_symm]
     · rw [ContinuousMap.inner_toLp]
       refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
       simp [φ, mul_comm]

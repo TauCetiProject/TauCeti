@@ -74,7 +74,7 @@ theorem weight_neg (y : ℝ) : weight (-y) = -weight y := by
 
 /-- The weight is nonnegative on `[0, ∞)`. -/
 theorem weight_nonneg {y : ℝ} (hy : 0 ≤ y) : 0 ≤ weight y :=
-  Real.tanh_nonneg (by positivity)
+  Real.tanh_nonneg_iff.2 (by positivity)
 
 /-- The weight is less than `1`. -/
 theorem weight_lt_one (y : ℝ) : weight y < 1 :=
