@@ -54,17 +54,21 @@ lemma eHom_eq (X Y : P.FullSubcategory) :
   rfl
 
 /-- Enriched identities in a full subcategory are the enriched identities of the underlying
-objects. -/
+objects, transported along `eHom_eq`. -/
 @[reassoc]
 lemma eId_eq (X : P.FullSubcategory) :
-    eId V X = eId V X.obj :=
+    eId V X = eId V X.obj ≫ eqToHom (eHom_eq V X X).symm := by
+  simp
   rfl
 
 /-- Enriched composition in a full subcategory is the enriched composition of the underlying
-objects. -/
+objects, transported along `eHom_eq`. -/
 @[reassoc]
 lemma eComp_eq (X Y Z : P.FullSubcategory) :
-    eComp V X Y Z = eComp V X.obj Y.obj Z.obj :=
+    eComp V X Y Z =
+      (eqToHom (eHom_eq V X Y) ⊗ₘ eqToHom (eHom_eq V Y Z)) ≫
+        eComp V X.obj Y.obj Z.obj ≫ eqToHom (eHom_eq V X Z).symm := by
+  simp only [eqToHom_refl, id_tensorHom_id, Category.id_comp, Category.comp_id]
   rfl
 
 end

@@ -42,6 +42,8 @@ an edge from `h` to `g ∘ f` in a mapping simplicial set, not an equality.
 * `CategoryTheory.SimplicialNerve.vertexEquiv_simplicialNerveMap_app`: `simplicialNerveMap F` acts
   on vertices by `F.obj`.
 * `CategoryTheory.SimplicialNerve.homEquiv`: edges of `SimplicialNerve C` are morphisms of `C`.
+* `CategoryTheory.SimplicialNerve.edgeMk_map_simplicialNerveMap`: `simplicialNerveMap F` sends
+  `edgeMk f` to the edge of the induced underlying morphism.
 
 ## References
 
@@ -206,6 +208,67 @@ def edgeMk {x y : C} (f : x ⟶ y) :
 lemma edgeMk_edge {x y : C} (f : x ⟶ y) :
     (edgeMk f).edge = (fromNerve C).app (op ⦋1⦌) (ComposableArrows.mk₁ f) :=
   (rfl)
+
+/-- `simplicialNerveMap F` maps the vertex `(vertexEquiv C).symm x` to
+`(vertexEquiv D).symm (F.obj x)`. -/
+lemma simplicialNerveMap_app_vertexEquiv_symm {D : Type u} [Category.{v} D] [SimplicialCategory D]
+    (F : EnrichedFunctor SSet.{v} C D) (x : C) :
+    (simplicialNerveMap F).app (op ⦋0⦌) ((vertexEquiv C).symm x) =
+      (vertexEquiv D).symm (F.obj x) :=
+  (vertexEquiv D).injective (by simp)
+
+/-- `simplicialNerveMap F` sends `edgeMk f` to the edge of the underlying morphism induced by `F`,
+with endpoints identified by `vertexEquiv_simplicialNerveMap_app`. -/
+@[simp]
+lemma edgeMk_map_simplicialNerveMap {D : Type u} [Category.{v} D] [SimplicialCategory D]
+    (F : EnrichedFunctor SSet.{v} C D) {x y : C} (f : x ⟶ y) :
+    (edgeMk f).map (simplicialNerveMap F) =
+      (edgeMk ((eHomEquiv SSet).symm (eHomEquiv SSet f ≫ F.map x y))).ofEq
+        (simplicialNerveMap_app_vertexEquiv_symm F x).symm
+        (simplicialNerveMap_app_vertexEquiv_symm F y).symm := by
+  refine SSet.Edge.ext ?_
+  have hL : ((edgeMk f).map (simplicialNerveMap F)).edge =
+      (SimplicialThickening.ofFunctor
+        ((Monotone.functor (f := (ULift.down : ULift.{v} (Fin 2) → _)) fun _ _ h ↦ h) ⋙
+          ComposableArrows.mk₁ f)).comp SSet F :=
+    (SSet.Edge.map_edge _ _).trans <|
+      (congrArg ((simplicialNerveMap F).app (op ⦋1⦌))
+        ((edgeMk_edge f).trans (fromNerve_app_apply C (op ⦋1⦌) (ComposableArrows.mk₁ f)))).trans
+        (simplicialNerveMap_app F (op ⦋1⦌) _)
+  have hR : ((edgeMk ((eHomEquiv SSet).symm (eHomEquiv SSet f ≫ F.map x y))).ofEq
+        (simplicialNerveMap_app_vertexEquiv_symm F x).symm
+        (simplicialNerveMap_app_vertexEquiv_symm F y).symm).edge =
+      SimplicialThickening.ofFunctor
+        ((Monotone.functor (f := (ULift.down : ULift.{v} (Fin 2) → _)) fun _ _ h ↦ h) ⋙
+          ComposableArrows.mk₁ ((eHomEquiv SSet).symm (eHomEquiv SSet f ≫ F.map x y))) :=
+    (SSet.Edge.ofEq_edge _ _ _).trans <|
+      (edgeMk_edge _).trans (fromNerve_app_apply D (op ⦋1⦌) _)
+  rw [hL, hR]
+  refine EnrichedFunctor.ext SSet (fun i ↦ ?_) (fun i j ↦ ?_)
+  · obtain ⟨⟨i⟩⟩ := i
+    fin_cases i <;> rfl
+  · by_cases hij : i.as ≤ j.as
+    · rw [EnrichedFunctor.comp_map, SimplicialThickening.ofFunctor_map_eq _ hij,
+        SimplicialThickening.ofFunctor_map_eq _ hij, Category.assoc]
+      obtain ⟨⟨i⟩⟩ := i
+      obtain ⟨⟨j⟩⟩ := j
+      fin_cases i <;> fin_cases j
+      · exact (Category.assoc _ _ _).trans <|
+          congrArg (SemiCartesianMonoidalCategory.toUnit _ ≫ ·)
+            ((Category.comp_id _).trans <|
+              ((congrArg (· ≫ F.map x x) (eHomEquiv_id SSet x)).trans (F.map_id x)).trans
+                (eHomEquiv_id SSet (F.obj x)).symm)
+      · exact (Category.assoc _ _ _).trans <|
+          congrArg (SemiCartesianMonoidalCategory.toUnit _ ≫ ·)
+            ((Category.comp_id _).trans (Equiv.apply_symm_apply (eHomEquiv SSet) _).symm)
+      · exact absurd hij (by decide)
+      · exact (Category.assoc _ _ _).trans <|
+          congrArg (SemiCartesianMonoidalCategory.toUnit _ ≫ ·)
+            ((Category.comp_id _).trans <|
+              ((congrArg (· ≫ F.map y y) (eHomEquiv_id SSet y)).trans (F.map_id y)).trans
+                (eHomEquiv_id SSet (F.obj y)).symm)
+    · ext n p
+      exact absurd (SimplicialThickening.Path.le (p.obj 0)) hij
 
 lemma edgeMk_injective {x y : C} : Function.Injective (edgeMk : (x ⟶ y) → _) := fun f g h ↦ by
   have := (bijective_fromNerve_app C (n := op ⦋1⦌) le_rfl).1 (congrArg SSet.Edge.edge h)

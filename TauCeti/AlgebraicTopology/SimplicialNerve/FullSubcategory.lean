@@ -62,10 +62,24 @@ lemma range_simplicialNerveMap_le (F : EnrichedFunctor SSet.{v} C D)
   rw [vertexEquiv_simplicialNerveMap_app]
   exact hP _
 
-private lemma subcomplex_lift_simplicialNerveMap_app_val (F : EnrichedFunctor SSet.{v} C D)
-    {B : (SimplicialNerve D).Subcomplex} (h : SSet.Subcomplex.range (simplicialNerveMap F) ≤ B)
+private noncomputable def simplicialNerveMapToFullSubcategory (F : EnrichedFunctor SSet.{v} C D)
+    (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj) :
+    SimplicialNerve C ⟶
+      ((SimplicialNerve D).fullEnhancedSubcategory fun x ↦ P (vertexEquiv D x) :
+        SSet.{max u v}) :=
+  SSet.Subcomplex.lift (simplicialNerveMap F)
+    (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)
+
+private lemma simplicialNerveMapToFullSubcategory_ι (F : EnrichedFunctor SSet.{v} C D)
+    (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj) :
+    simplicialNerveMapToFullSubcategory F P hP ≫ SSet.Subcomplex.ι _ =
+      simplicialNerveMap F :=
+  SSet.Subcomplex.lift_ι _ _
+
+private lemma simplicialNerveMapToFullSubcategory_app_val (F : EnrichedFunctor SSet.{v} C D)
+    (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj)
     (n : SimplexCategoryᵒᵖ) (H : (SimplicialNerve C).obj n) :
-    ((SSet.Subcomplex.lift (simplicialNerveMap F) h).app n H).val = H.comp SSet F :=
+    ((simplicialNerveMapToFullSubcategory F P hP).app n H).val = H.comp SSet F :=
   (SSet.Subcomplex.lift_app_coe _ _ _).trans (simplicialNerveMap_app F n H)
 
 private lemma exists_obj_eq (F : EnrichedFunctor SSet.{v} C D)
@@ -91,19 +105,15 @@ private lemma liftSimplicialNerve_rightInverse (F : EnrichedFunctor SSet.{v} C D
     [∀ a b : C, IsIso (F.map a b)] (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj)
     (n : SimplexCategoryᵒᵖ)
     (G : ((SimplicialNerve D).fullEnhancedSubcategory fun x ↦ P (vertexEquiv D x)).obj n) :
-    (SSet.Subcomplex.lift (simplicialNerveMap F)
-      (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)).app n
-      (liftSimplicialNerve F P hP G) = G :=
+    (simplicialNerveMapToFullSubcategory F P hP).app n (liftSimplicialNerve F P hP G) = G :=
   Subtype.ext <|
-    (subcomplex_lift_simplicialNerveMap_app_val F
-      (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩) n _).trans
+    (simplicialNerveMapToFullSubcategory_app_val F P hP n _).trans
       (EnrichedFunctor.lift_comp F G.val _ _)
 
-private lemma surjective_lift_simplicialNerveMap_app (F : EnrichedFunctor SSet.{v} C D)
+private lemma surjective_simplicialNerveMapToFullSubcategory_app (F : EnrichedFunctor SSet.{v} C D)
     [∀ a b : C, IsIso (F.map a b)] (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj)
     (n : SimplexCategoryᵒᵖ) :
-    Function.Surjective ((SSet.Subcomplex.lift (simplicialNerveMap F)
-      (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)).app n) :=
+    Function.Surjective ((simplicialNerveMapToFullSubcategory F P hP).app n) :=
   fun G ↦ ⟨liftSimplicialNerve F P hP G, liftSimplicialNerve_rightInverse F P hP n G⟩
 
 /-- An object-injective simplicial functor inducing isomorphisms on all mapping simplicial sets
@@ -116,21 +126,17 @@ noncomputable def fullSubcategoryIso (F : EnrichedFunctor SSet.{v} C D)
       ((SimplicialNerve D).fullEnhancedSubcategory fun x ↦ P (vertexEquiv D x) :
         SSet.{max u v}) :=
   haveI : ∀ n : SimplexCategoryᵒᵖ,
-      IsIso ((SSet.Subcomplex.lift (simplicialNerveMap F)
-        (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)).app n) := fun n ↦ by
+      IsIso ((simplicialNerveMapToFullSubcategory F P hP).app n) := fun n ↦ by
     rw [isIso_iff_bijective, Function.bijective_iff_has_inverse]
     refine ⟨liftSimplicialNerve F P hP, fun H ↦ ?_, liftSimplicialNerve_rightInverse F P hP n⟩
     refine (EnrichedFunctor.lift_unique H (fun k ↦ hobj ?_)
-      (subcomplex_lift_simplicialNerveMap_app_val F
-        (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩) n H).symm).symm
+      (simplicialNerveMapToFullSubcategory_app_val F P hP n H).symm).symm
     rw [Classical.choose_spec (exists_obj_eq F P hP _ k),
-      subcomplex_lift_simplicialNerveMap_app_val]
+      simplicialNerveMapToFullSubcategory_app_val]
     exact (EnrichedFunctor.comp_obj SSet H F k).symm
-  haveI : IsIso (SSet.Subcomplex.lift (simplicialNerveMap F)
-      (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)) :=
+  haveI : IsIso (simplicialNerveMapToFullSubcategory F P hP) :=
     NatIso.isIso_of_isIso_app _
-  asIso (SSet.Subcomplex.lift (simplicialNerveMap F)
-    (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩))
+  asIso (simplicialNerveMapToFullSubcategory F P hP)
 
 /-- Under `fullSubcategoryIso`, the inclusion of the full enhanced subcategory corresponds to
 `simplicialNerveMap F`. -/
@@ -139,8 +145,7 @@ lemma fullSubcategoryIso_hom_ι (F : EnrichedFunctor SSet.{v} C D)
     (hobj : Function.Injective F.obj) [∀ a b : C, IsIso (F.map a b)]
     (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj) :
     (fullSubcategoryIso F hobj P hP).hom ≫ SSet.Subcomplex.ι _ = simplicialNerveMap F :=
-  SSet.Subcomplex.lift_ι (simplicialNerveMap F)
-    (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)
+  simplicialNerveMapToFullSubcategory_ι F P hP
 
 /-- An object-injective simplicial functor inducing isomorphisms on all mapping simplicial sets
 induces a monomorphism on simplicial nerves. -/
@@ -158,8 +163,7 @@ lemma fullSubcategoryIso_hom_app_val (F : EnrichedFunctor SSet.{v} C D)
     (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj)
     (n : SimplexCategoryᵒᵖ) (H : (SimplicialNerve C).obj n) :
     dsimp% ((fullSubcategoryIso F hobj P hP).hom.app n H).val = EnrichedFunctor.comp SSet H F :=
-  subcomplex_lift_simplicialNerveMap_app_val F
-    (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩) n H
+  simplicialNerveMapToFullSubcategory_app_val F P hP n H
 
 /-- The range of `simplicialNerveMap F` is the full enhanced subcategory spanned by the object
 image of `F`. -/
@@ -168,15 +172,12 @@ lemma range_simplicialNerveMap (F : EnrichedFunctor SSet.{v} C D)
     (P : D → Prop) (hP : ∀ d, P d ↔ d ∈ Set.range F.obj) :
     SSet.Subcomplex.range (simplicialNerveMap F) =
       (SimplicialNerve D).fullEnhancedSubcategory fun x ↦ P (vertexEquiv D x) := by
-  have (n : SimplexCategoryᵒᵖ) : Epi ((SSet.Subcomplex.lift (simplicialNerveMap F)
-      (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)).app n) :=
-    (epi_iff_surjective _).2 (surjective_lift_simplicialNerveMap_app F P hP n)
-  have : Epi (SSet.Subcomplex.lift (simplicialNerveMap F)
-      (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)) :=
+  have (n : SimplexCategoryᵒᵖ) : Epi ((simplicialNerveMapToFullSubcategory F P hP).app n) :=
+    (epi_iff_surjective _).2 (surjective_simplicialNerveMapToFullSubcategory_app F P hP n)
+  have : Epi (simplicialNerveMapToFullSubcategory F P hP) :=
     NatTrans.epi_of_epi_app _
-  rw [← SSet.Subcomplex.lift_ι (simplicialNerveMap F)
-        (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩),
-    SSet.Subcomplex.range_comp, SSet.Subcomplex.range_eq_top, SSet.Subcomplex.image_top]
+  rw [← simplicialNerveMapToFullSubcategory_ι F P hP, SSet.Subcomplex.range_comp,
+    SSet.Subcomplex.range_eq_top, SSet.Subcomplex.image_top]
   exact Subfunctor.range_ι _
 
 end CategoryTheory.SimplicialNerve
