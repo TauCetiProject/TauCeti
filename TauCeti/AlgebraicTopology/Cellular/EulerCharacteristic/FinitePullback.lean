@@ -5,9 +5,9 @@ Authors: Riccardo Brasca
 -/
 module
 
-public import TauCeti.Topology.Covering.FinitePullback
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Covering
 public import TauCeti.Topology.Covering.Degree
+public import TauCeti.Topology.Covering.Pullback
 
 /-!
 # Euler characteristic of a pulled-back finite cover
@@ -41,14 +41,18 @@ theorem _root_.IsCoveringMap.natCard_pullback_fst_fiber (hp : IsCoveringMap p)
 
 /-- The Euler characteristic of a pulled-back finite cover is multiplied by the number of
 sheets of the original cover. -/
-theorem IsFiniteCover.eulerChar_pullback (hp : IsFiniteCover p) (hf : Continuous f) (y : Y) :
-    let hq := hp.pullback_fst hf
-    letI : FiniteCWType (f.Pullback p) := by
-      exact hq.isCoveringMap.finiteCWType hq.finite_fiber
+theorem _root_.IsCoveringMap.eulerChar_pullback (hp : IsCoveringMap p)
+    (hfin : ∀ y, Finite (p ⁻¹' {y})) (hf : Continuous f) (y : Y) :
+    let := hfin
+    letI : FiniteCWType (f.Pullback p) := (hp.pullback_fst hf).finiteCWType
+      (fun x ↦ Finite.of_equiv _ (Pullback.fstPreimageEquiv x).symm)
     eulerChar (f.Pullback p) = Nat.card (p ⁻¹' {y}) * eulerChar X := by
+  let := hfin
   let hq := hp.pullback_fst hf
-  let : FiniteCWType (f.Pullback p) := hq.isCoveringMap.finiteCWType hq.finite_fiber
-  exact eulerChar_eq_mul_of_isCoveringMap hq.isCoveringMap hq.finite_fiber
-    (fun x ↦ hp.isCoveringMap.natCard_pullback_fst_fiber x y)
+  let hqfin (x : X) : Finite ((Pullback.fst : f.Pullback p → X) ⁻¹' {x}) :=
+    Finite.of_equiv _ (Pullback.fstPreimageEquiv x).symm
+  let : FiniteCWType (f.Pullback p) := hq.finiteCWType hqfin
+  exact eulerChar_eq_mul_of_isCoveringMap hq hqfin
+    (fun x ↦ hp.natCard_pullback_fst_fiber x y)
 
 end TauCeti

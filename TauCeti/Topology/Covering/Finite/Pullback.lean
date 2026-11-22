@@ -34,21 +34,7 @@ theorem IsFiniteCover.pullback_fst (hp : IsFiniteCover p) (hf : Continuous f) :
     exact ⟨⟨(x, z), hz.symm⟩, rfl⟩
   finite_fiber := by
     intro x
-    let k : (Pullback.fst ⁻¹' {x} : Set (f.Pullback p)) → (p ⁻¹' {f x} : Set Z) :=
-      fun w ↦ ⟨w.val.snd, by
-        change p w.val.snd = f x
-        have hpw : p w.val.snd = f w.val.fst := w.val.property.symm
-        have hxw : w.val.fst = x := w.property
-        exact hpw.trans (congrArg f hxw)
-      ⟩
-    have hk : Function.Injective k := by
-      intro a b hab
-      apply Subtype.ext
-      apply Subtype.ext
-      apply Prod.ext
-      · exact a.property.trans b.property.symm
-      · exact congrArg Subtype.val hab
     let : Finite (p ⁻¹' {f x}) := hp.finite_fiber (f x)
-    exact Finite.of_injective k hk
+    exact Finite.of_equiv _ (Pullback.fstPreimageEquiv x).symm
 
 end TauCeti
