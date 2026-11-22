@@ -190,31 +190,19 @@ variable {ω c} in
 class, as they do on a symplectically aspherical manifold. -/
 theorem subsingleton_iff :
     Subsingleton (PeriodGroup ω c) ↔ ∀ s, ω s = 0 ∧ c s = 0 := by
-  constructor
-  · intro _ s
-    simpa using (mk_eq_mk_iff (ω := ω) (c := c) (s := s) (t := 0)).1 (Subsingleton.elim _ _)
-  · intro h
-    refine ⟨fun γ γ' => ?_⟩
-    induction γ using QuotientAddGroup.induction_on with
-    | H s =>
-    induction γ' using QuotientAddGroup.induction_on with
-    | H t => exact mk_eq_mk_iff.2 ⟨by rw [(h s).1, (h t).1], by rw [(h s).2, (h t).2]⟩
+  -- The quotient is trivial exactly when the kernel of `s ↦ (ω s, c s)` is everything.
+  rw [QuotientAddGroup.subsingleton_iff, AddSubgroup.eq_top_iff']
+  simp
 
 variable {ω c} in
 /-- The area vanishes on the period group exactly when `ω` vanishes on every spherical class. -/
 theorem area_eq_zero_iff : area ω c = 0 ↔ ω = 0 := by
-  refine ⟨fun h => AddMonoidHom.ext fun s => by
-    simpa using DFunLike.congr_fun h (s : PeriodGroup ω c), fun h => AddMonoidHom.ext fun γ => ?_⟩
-  induction γ using QuotientAddGroup.induction_on with
-  | H s => simp [h]
+  simp [DFunLike.ext_iff, QuotientAddGroup.mk_surjective.forall]
 
 variable {ω c} in
 /-- The degree vanishes on the period group exactly when `c` vanishes on every spherical class. -/
 theorem degree_eq_zero_iff : degree ω c = 0 ↔ c = 0 := by
-  refine ⟨fun h => AddMonoidHom.ext fun s => by
-    simpa using DFunLike.congr_fun h (s : PeriodGroup ω c), fun h => AddMonoidHom.ext fun γ => ?_⟩
-  induction γ using QuotientAddGroup.induction_on with
-  | H s => simp [h]
+  simp [DFunLike.ext_iff, QuotientAddGroup.mk_surjective.forall]
 
 section Injective
 
@@ -223,30 +211,16 @@ variable {ω c}
 /-- The first Chern number embeds the period group into `ℤ` exactly when every spherical class
 with vanishing first Chern number has vanishing area. -/
 theorem chern_injective_iff : Function.Injective (chern ω c) ↔ c.ker ≤ ω.ker := by
-  rw [injective_iff_map_eq_zero]
-  constructor
-  · intro h s hs
-    have hs' := (mk_eq_mk_iff (s := s) (t := 0)).1 (h s (by simpa using hs))
-    simpa using hs'.1
-  · intro h γ hγ
-    induction γ using QuotientAddGroup.induction_on with
-    | H s =>
-      refine ext ?_ (by rw [hγ, map_zero])
-      simpa using h (by simpa using hγ)
+  -- Test injectivity on classes of `s : S`; such a class vanishes iff `ω s = 0 ∧ c s = 0`.
+  simp [injective_iff_map_eq_zero, QuotientAddGroup.mk_surjective.forall,
+    QuotientAddGroup.eq_zero_iff, IsConcreteLE.le_iff, imp_and]
 
 /-- The area embeds the period group into `ℝ` exactly when every spherical class with vanishing
 area has vanishing first Chern number. -/
 theorem area_injective_iff : Function.Injective (area ω c) ↔ ω.ker ≤ c.ker := by
-  rw [injective_iff_map_eq_zero]
-  constructor
-  · intro h s hs
-    have hs' := (mk_eq_mk_iff (s := s) (t := 0)).1 (h s (by simpa using hs))
-    simpa using hs'.2
-  · intro h γ hγ
-    induction γ using QuotientAddGroup.induction_on with
-    | H s =>
-      refine ext (by rw [hγ, map_zero]) ?_
-      simpa using h (by simpa using hγ)
+  -- Test injectivity on classes of `s : S`; such a class vanishes iff `ω s = 0 ∧ c s = 0`.
+  simp [injective_iff_map_eq_zero, QuotientAddGroup.mk_surjective.forall,
+    QuotientAddGroup.eq_zero_iff, IsConcreteLE.le_iff, imp_and]
 
 /-- The degree is injective exactly when the first Chern number is. -/
 theorem degree_injective_iff :
@@ -354,9 +328,8 @@ theorem chern_chernEquivInt_symm_pos (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) :
 theorem chern_chernEquivInt_symm (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) (k : ℤ) :
     chern ω c ((chernEquivInt hker hc).symm k) =
       k * chern ω c ((chernEquivInt hker hc).symm 1) := by
-  have hk : k = k • (1 : ℤ) := by simp
-  conv_lhs => rw [hk]
-  rw [map_zsmul, map_zsmul, zsmul_eq_mul, Int.cast_id]
+  -- Write the right side as `chern (e.symm (k • 1))` and use `k • 1 = k`.
+  rw [← smul_eq_mul, ← map_zsmul, ← map_zsmul, smul_eq_mul, mul_one]
 
 /-- The Chern number of a period class determines its integer exponent by multiplication by
 the minimal Chern number. -/
