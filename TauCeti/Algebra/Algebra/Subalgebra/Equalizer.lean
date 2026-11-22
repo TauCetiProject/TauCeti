@@ -17,16 +17,17 @@ Mathlib's `AlgHom.equalizer f g` is the subalgebra of `A` on which two algebra m
 (`AlgEquiv.equalizerCongr`). This lets an equalizer be computed after replacing the source
 and the target by isomorphic models.
 
-The invariant subalgebra `FixedPoints.subalgebra R S G` of a monoid `G` acting on `S` is the
-equalizer of the diagonal map `S → (ι → S)` and `s ↦ (σ i • s)ᵢ`, for any family `σ : ι → G`
-generating `G` as a monoid (`TauCeti.FixedPoints.subalgebra_eq_equalizer`). Properties of
-equalizers therefore pass to invariant subalgebras.
+The invariant subalgebra `FixedPoints.subalgebra R S G` of a monoid `G` acting on `S` by
+`R`-algebra endomorphisms is the equalizer of the diagonal map `S → (ι → S)` and
+`s ↦ (σ i • s)ᵢ`, for any family `σ : ι → G` generating `G` as a monoid
+(`TauCeti.FixedPoints.subalgebra_eq_equalizer`). Properties of equalizers therefore pass to
+invariant subalgebras.
 
 For algebra maps `f g : A →ₐ[R] B` and an element `P : B`, the elements `x` of `A` with
 `P * g x = f x * P` form a subalgebra (`TauCeti.intertwiningSubalgebra`): `P` intertwines `g`
-with `f` on it. For `P = 1` this is the equalizer of `g` and `f`. To show that `P` intertwines
-`g` with `f` on a subalgebra, it therefore suffices to check it on generators
-(`Algebra.adjoin_le`).
+with `f` on it. For `P = 1` this is the equalizer of `g` and `f`
+(`TauCeti.intertwiningSubalgebra_one`). To show that `P` intertwines `g` with `f` on a subalgebra,
+it therefore suffices to check it on generators (`Algebra.adjoin_le`).
 -/
 
 public section
@@ -56,12 +57,21 @@ theorem coe_equalizerCongr_apply (eA : A ≃ₐ[R] A') (eB : B ≃ₐ[R] B') (f 
     (x : equalizer f g) : (equalizerCongr eA eB f g x : A') = eA x := by
   simp [equalizerCongr]
 
+/-- The inverse transport of an equalizer is `eA.symm` on underlying elements. -/
+@[simp]
+theorem coe_equalizerCongr_symm_apply (eA : A ≃ₐ[R] A') (eB : B ≃ₐ[R] B') (f g : A →ₐ[R] B)
+    (y : equalizer ((eB : B →ₐ[R] B').comp (f.comp (eA.symm : A' →ₐ[R] A)))
+      ((eB : B →ₐ[R] B').comp (g.comp (eA.symm : A' →ₐ[R] A)))) :
+    ((equalizerCongr eA eB f g).symm y : A) = eA.symm y :=
+  eA.injective <| by rw [← coe_equalizerCongr_apply eA eB f g, apply_symm_apply, apply_symm_apply]
+
 end AlgEquiv
 
 namespace TauCeti.FixedPoints
 
-/-- For a family `σ : ι → G` generating a monoid `G`, the invariant subalgebra is the equalizer of
-the diagonal map `S → (ι → S)` and `s ↦ (σ i • s)ᵢ`. -/
+/-- Let a monoid `G` act on `S` by `R`-algebra endomorphisms, and let `σ : ι → G` generate `G` as
+a monoid. Then the invariant subalgebra is the equalizer of the diagonal map `S → (ι → S)` and the
+`R`-algebra map `s ↦ (σ i • s)ᵢ`. -/
 theorem subalgebra_eq_equalizer {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
     (G : Type*) [Monoid G] [MulSemiringAction G S] [SMulCommClass G R S] {ι : Type*} {σ : ι → G}
     (hσ : Submonoid.closure (Set.range σ) = ⊤) :
@@ -72,7 +82,8 @@ theorem subalgebra_eq_equalizer {R S : Type*} [CommSemiring R] [Semiring S] [Alg
     AlgHom.id_apply, MulSemiringAction.toAlgHom_apply]
   -- The stabilizer of `s` is a submonoid, so it is all of `G` once it contains every `σ i`.
   refine ⟨fun h i ↦ (h (σ i)).symm, fun h g ↦ MulAction.mem_stabilizerSubmonoid_iff.1 ?_⟩
-  exact Submonoid.closure_le.2 (Set.range_subset_iff.2 fun i ↦ (h i).symm)
+  exact Submonoid.closure_le.2 (Set.range_subset_iff.2 fun i ↦
+      MulAction.mem_stabilizerSubmonoid_iff.2 (h i).symm)
     (hσ ▸ Submonoid.mem_top g)
 
 end TauCeti.FixedPoints
@@ -100,5 +111,12 @@ def intertwiningSubalgebra (P : B) (f g : A →ₐ[R] B) : Subalgebra R A where
 theorem mem_intertwiningSubalgebra {P : B} {f g : A →ₐ[R] B} {x : A} :
     x ∈ intertwiningSubalgebra P f g ↔ P * g x = f x * P :=
   Iff.rfl
+
+/-- For `P = 1`, the intertwining subalgebra is the equalizer of `g` and `f`. -/
+@[simp]
+theorem intertwiningSubalgebra_one (f g : A →ₐ[R] B) :
+    intertwiningSubalgebra 1 f g = AlgHom.equalizer g f := by
+  ext x
+  simp [AlgHom.mem_equalizer]
 
 end TauCeti
