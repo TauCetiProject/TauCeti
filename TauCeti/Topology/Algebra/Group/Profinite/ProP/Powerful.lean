@@ -483,12 +483,13 @@ private theorem exists_mul_pow_mem_pLowerCentralSeries_add_three (hG : IsProP p 
     ← QuotientGroup.mk_mul, mul_inv_cancel, QuotientGroup.mk_one]
 
 /-- **Torsion lifting in a powerful pro-`p` group** (Dixon–du Sautoy–Mann–Segal, Lemma 4.2):
-if an element `x ∉ λ_1(G)` satisfies `x ^ p ∈ λ_2(G)`, then `G` contains a nontrivial element of
-order `p`. No finite generation is needed. -/
+if an element `x ∉ λ_1(G)` satisfies `x ^ p ∈ λ_2(G)`, then `G` contains a nontrivial element `g`
+of order `p` representing the same coset as `x` modulo `λ_1(G)`. No finite generation is needed. -/
 theorem exists_pow_eq_one_of_notMem_pLowerCentralSeries_one (hG : IsProP p G)
     (hpow : IsPowerful p G) {x : G} (hx1 : x ∉ pLowerCentralSeries p G 1)
     (hx2 : x ^ p ∈ pLowerCentralSeries p G 2) :
-    ∃ g : G, g ≠ 1 ∧ g ^ p = 1 := by
+    ∃ g : G, g ≠ 1 ∧ g ^ p = 1 ∧
+      (g : G ⧸ pLowerCentralSeries p G 1) = (x : G ⧸ pLowerCentralSeries p G 1) := by
   let step : ∀ k, {z : G // z ^ p ∈ pLowerCentralSeries p G (k + 2)} →
       {z : G // z ^ p ∈ pLowerCentralSeries p G (k + 3)} := fun k s ↦
     let h := hG.exists_mul_pow_mem_pLowerCentralSeries_add_three hpow k s.property
@@ -503,9 +504,10 @@ theorem exists_pow_eq_one_of_notMem_pLowerCentralSeries_one (hG : IsProP p G)
     (fun k ↦ ((seq k).val : G ⧸ pLowerCentralSeries p G k)) fun k z hz ↦ by
       simpa using congrArg (QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k))
         (hz.trans (hstep_eq k))
-  refine ⟨g, fun h1 ↦ hx1 <| (QuotientGroup.eq_one_iff x).mp
-    (show (1 : G ⧸ pLowerCentralSeries p G 1) = (x : G ⧸ pLowerCentralSeries p G 1) by
-      simpa [h1, seq] using (hg 1).trans (hstep_eq 0)).symm, ?_⟩
+  have hgx : (g : G ⧸ pLowerCentralSeries p G 1) = (x : G ⧸ pLowerCentralSeries p G 1) := by
+    simpa [seq] using (hg 1).trans (hstep_eq 0)
+  refine ⟨g, fun h1 ↦ hx1 ((QuotientGroup.eq_one_iff x).mp (by simpa [h1] using hgx.symm)), ?_,
+    hgx⟩
   refine mem_bot.mp ((hG.iInf_pLowerCentralSeries_eq_bot hp.out) ▸ mem_iInf.mpr fun k ↦ ?_)
   match k with
   | 0 => exact mem_pLowerCentralSeries_zero p _
@@ -538,7 +540,7 @@ theorem forall_eq_one_of_pow_eq_one_iff_injective_gradedPow (hG : IsProP p G)
           (b : G) ∈ pLowerCentralSeries p G (k + j) := fun j b ↦ by
       rw [← hG.map_subtype_pLowerCentralSeries_pLowerCentralSeries hpow k j, mem_map]
       exact ⟨fun hb ↦ ⟨b, hb, rfl⟩, fun ⟨c, hc, hcb⟩ ↦ Subtype.ext hcb ▸ hc⟩
-    obtain ⟨h, hne, hhp⟩ :=
+    obtain ⟨h, hne, hhp, -⟩ :=
       (hG.subgroup (pLowerCentralSeries p G k)).exists_pow_eq_one_of_notMem_pLowerCentralSeries_one
         (hG.isPowerful_pLowerCentralSeries hpow k) ((hH_mem 1 a).not.mpr ha1)
         ((hH_mem 2 (a ^ p)).mpr <| by rw [coe_pow]; simpa [f, gradedPow_gradedMk] using hz)

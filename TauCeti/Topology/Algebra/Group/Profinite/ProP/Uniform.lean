@@ -23,10 +23,11 @@ import TauCeti.GroupTheory.Index.Basic
 /-!
 # Uniform pro-`p` groups and constant lower-`p`-series indices
 
-A topological group `G` is **uniform** for `p` (`TauCeti.IsUniform p G`) when it is profinite
-(compact and totally disconnected), pro-`p`, topologically finitely generated, torsion-free, and
-powerful (`TauCeti.IsPowerful`, with `[G, G] ≤ closedPowerSubgroup 4 G` at `p = 2`).
-Its **dimension** (`TauCeti.uniformDimension p G`) is `Nat.log p (closedPowerSubgroup p G).index`.
+A topological group `G` is **uniform** for `p` (`TauCeti.IsUniform p G`) when `p` is prime and
+`G` is profinite (compact and totally disconnected), pro-`p`, topologically finitely generated,
+torsion-free, and powerful (`TauCeti.IsPowerful`, with `[G, G] ≤ closedPowerSubgroup 4 G` at
+`p = 2`). Its **dimension** (`TauCeti.uniformDimension p G`) is
+`Nat.log p (closedPowerSubgroup p G).index`.
 
 This file proves the constant lower-`p`-series index characterization (DDMS Theorem 4.5): a
 topologically finitely generated profinite pro-`p` group is uniform iff it is powerful and all
@@ -89,7 +90,7 @@ variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace 
 /-- In a profinite pro-`p` group, every nontrivial element of finite order has a power of
 order `p`. -/
 theorem IsProP.exists_pow_eq_one_of_isOfFinOrder (hG : IsProP p G) {g : G} (hg : g ≠ 1)
-    (hfin : IsOfFinOrder g) : ∃ h : G, h ≠ 1 ∧ h ^ p = 1 := by
+    (hfin : IsOfFinOrder g) : ∃ m : ℕ, g ^ m ≠ 1 ∧ (g ^ m) ^ p = 1 := by
   obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (isOpen_compl_singleton (x := g)) hg.symm
   let q := QuotientGroup.mk' U.toSubgroup
@@ -101,7 +102,7 @@ theorem IsProP.exists_pow_eq_one_of_isOfFinOrder (hG : IsProP p G) {g : G} (hg :
   have hmp : m * p = orderOf g := Nat.div_mul_cancel hp_dvd
   have hm_pos : 0 < m := Nat.pos_of_mul_pos_right (hmp.symm ▸ hfin.orderOf_pos)
   have hm_lt : m < orderOf g := hmp ▸ lt_mul_of_one_lt_right hm_pos hp.out.one_lt
-  exact ⟨g ^ m, fun h1 ↦ hm_lt.not_ge (Nat.le_of_dvd hm_pos (orderOf_dvd_of_pow_eq_one h1)),
+  exact ⟨m, fun h1 ↦ hm_lt.not_ge (Nat.le_of_dvd hm_pos (orderOf_dvd_of_pow_eq_one h1)),
     by rw [← pow_mul, hmp, pow_orderOf_eq_one]⟩
 
 /-- **Torsion-freeness in a profinite pro-`p` group** is equivalent to having no elements of
@@ -110,8 +111,8 @@ theorem IsProP.forall_eq_one_of_isOfFinOrder_iff (hG : IsProP p G) :
     (∀ g : G, IsOfFinOrder g → g = 1) ↔ (∀ g : G, g ^ p = 1 → g = 1) :=
   ⟨fun h g hgp ↦ h g (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp.out.pos, hgp⟩), fun h g hfin ↦ by
     by_contra hg
-    obtain ⟨x, hxne, hxp⟩ := hG.exists_pow_eq_one_of_isOfFinOrder hg hfin
-    exact hxne (h x hxp)⟩
+    obtain ⟨m, hmne, hmp⟩ := hG.exists_pow_eq_one_of_isOfFinOrder hg hfin
+    exact hmne (h (g ^ m) hmp)⟩
 
 end Torsion
 
@@ -121,13 +122,15 @@ section Defs
 
 variable (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- A topological group is **uniform** at `p` when it is profinite (compact and totally
-disconnected), pro-`p`, topologically finitely generated, torsion-free and powerful
+/-- A topological group is **uniform** at `p` when `p` is prime and the group is profinite (compact
+and totally disconnected), pro-`p`, topologically finitely generated, torsion-free and powerful
 (`TauCeti.IsPowerful`, with the fourth-power condition at `p = 2`). Its dimension is its
 topological generator rank `TauCeti.topologicalGeneratorRankNat`, which equals
 `TauCeti.uniformDimension p G = Nat.log p (closedPowerSubgroup p G).index` by
 `TauCeti.IsUniform.topologicalGeneratorRankNat_eq_log_index`. -/
 structure IsUniform : Prop where
+  /-- The parameter `p` of a uniform pro-`p` group is prime. -/
+  prime : p.Prime
   /-- A uniform group is compact. -/
   compactSpace : CompactSpace G
   /-- A uniform group is totally disconnected. -/
@@ -161,9 +164,9 @@ theorem IsUniform.eq_one_of_isOfFinOrder (h : IsUniform p G) {g : G} (hg : IsOfF
   exact (pow_eq_one_iff_left hn.ne').mp hgn
 
 /-- A uniform pro-`p` group has no nontrivial `p`-torsion. -/
-theorem IsUniform.eq_one_of_pow_eq_one (h : IsUniform p G) (hp : 0 < p) {g : G} (hg : g ^ p = 1) :
+theorem IsUniform.eq_one_of_pow_eq_one (h : IsUniform p G) {g : G} (hg : g ^ p = 1) :
     g = 1 :=
-  h.eq_one_of_isOfFinOrder (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, hp, hg⟩)
+  h.eq_one_of_isOfFinOrder (isOfFinOrder_iff_pow_eq_one.mpr ⟨p, h.prime.pos, hg⟩)
 
 /-- The cardinality of `gr_k(G) = λ_k(G) ⧸ λ_{k+1}(G)` is the index of `λ_{k+1}(G)` in `λ_k(G)`. -/
 theorem natCard_gradedPiece_eq_index (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G]
@@ -192,8 +195,7 @@ end Defs
 
 section ConstantIndex
 
-variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
-  [IsTopologicalGroup G]
+variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 section Index
 
@@ -201,8 +203,9 @@ section Index
 pro-`p` group, the closed power subgroup `Gᵖ` has index `p ^ d`, where `d` is the topological
 generator rank: `Gᵖ` is the first term of the lower `p`-series, which is the Frattini
 subgroup. -/
-theorem IsPowerful.index_closedPowerSubgroup [CompactSpace G] [TotallyDisconnectedSpace G]
-    (hG : IsPowerful p G) (hP : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) :
+theorem IsPowerful.index_closedPowerSubgroup [hp : Fact p.Prime] [CompactSpace G]
+    [TotallyDisconnectedSpace G] (hG : IsPowerful p G) (hP : IsProP p G)
+    (hfg : IsTopologicallyFinitelyGenerated G) :
     (closedPowerSubgroup p G).index = p ^ topologicalGeneratorRankNat G hfg := by
   rw [hG.closedPowerSubgroup_eq_pLowerCentralSeries_one,
     pLowerCentralSeries_one_eq_proPFrattini hp.out, Subgroup.index_eq_card,
@@ -213,6 +216,7 @@ rank. -/
 theorem IsUniform.index_closedPowerSubgroup (hG : IsUniform p G) :
     (closedPowerSubgroup p G).index =
       p ^ topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated :=
+  have := Fact.mk hG.prime
   have := hG.compactSpace
   have := hG.totallyDisconnectedSpace
   hG.isPowerful.index_closedPowerSubgroup hG.isProP _
@@ -221,7 +225,7 @@ theorem IsUniform.index_closedPowerSubgroup (hG : IsUniform p G) :
 theorem IsUniform.topologicalGeneratorRankNat_eq_log_index (hG : IsUniform p G) :
     topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated =
       Nat.log p (closedPowerSubgroup p G).index := by
-  rw [hG.index_closedPowerSubgroup, Nat.log_pow hp.out.one_lt]
+  rw [hG.index_closedPowerSubgroup, Nat.log_pow hG.prime.one_lt]
 
 /-- **The dimension of a uniform pro-`p` group equals its topological generator rank.** -/
 theorem IsUniform.uniformDimension_eq_topologicalGeneratorRankNat (hU : IsUniform p G) :
@@ -238,7 +242,7 @@ end Index
 
 section Characterization
 
-variable [CompactSpace G] [TotallyDisconnectedSpace G]
+variable [hp : Fact p.Prime] [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- **Constant lower-`p`-series indices characterize uniformity** (Dixon–du Sautoy–Mann–Segal,
 Theorem 4.5): a topologically finitely generated profinite pro-`p` group is uniform if and only if
@@ -261,7 +265,7 @@ theorem IsProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq (hG : 
     have htors : ∀ g : G, IsOfFinOrder g → g = 1 :=
       (hG.forall_eq_one_of_isOfFinOrder_iff).mpr
         ((hG.forall_eq_one_of_pow_eq_one_iff_bijective_gradedPow hpow).mpr hbij)
-    refine ⟨‹_›, ‹_›, hG, hfg, ?_, hpow⟩
+    refine ⟨hp.out, ‹_›, ‹_›, hG, hfg, ?_, hpow⟩
     exact ⟨fun n hn a b hab hpow_eq ↦ mul_inv_eq_one.mp <| htors (a * b⁻¹) <|
       isOfFinOrder_iff_pow_eq_one.mpr ⟨n, Nat.pos_of_ne_zero hn, by
         rw [(hab.inv_right).mul_pow, hpow_eq, inv_pow, mul_inv_cancel]⟩⟩
@@ -294,6 +298,7 @@ namespace IsUniform
 /-- In a uniform pro-`p` group `G`, `[G : λ_1(G)] = p ^ uniformDimension p G`. -/
 theorem index_pLowerCentralSeries_one (hU : IsUniform p G) :
     (pLowerCentralSeries p G 1).index = p ^ uniformDimension p G := by
+  have := Fact.mk hU.prime
   have := hU.compactSpace
   have := hU.totallyDisconnectedSpace
   rw [hU.isProP.pLowerCentralSeries_one_eq_closedPowerSubgroup hU.isPowerful,
@@ -303,7 +308,7 @@ theorem index_pLowerCentralSeries_one (hU : IsUniform p G) :
 theorem index_pLowerCentralSeries_one_eq_pow_iff (hU : IsUniform p G) {d : ℕ} :
     (pLowerCentralSeries p G 1).index = p ^ d ↔ d = uniformDimension p G := by
   rw [hU.index_pLowerCentralSeries_one]
-  exact ⟨fun h ↦ (Nat.pow_right_injective hp.out.two_le h).symm, fun h ↦ by rw [h]⟩
+  exact ⟨fun h ↦ (Nat.pow_right_injective hU.prime.two_le h).symm, fun h ↦ by rw [h]⟩
 
 /-- There is a unique `d : ℕ` with `[G : λ_1(G)] = p ^ d`, namely `uniformDimension p G`. -/
 theorem existsUnique_index_pLowerCentralSeries_one_eq_pow (hU : IsUniform p G) :
@@ -315,6 +320,7 @@ theorem existsUnique_index_pLowerCentralSeries_one_eq_pow (hU : IsUniform p G) :
 `p ^ uniformDimension p G`. -/
 theorem natCard_gradedPiece (hU : IsUniform p G) (k : ℕ) :
     Nat.card (gradedPiece p G k) = p ^ uniformDimension p G := by
+  have := Fact.mk hU.prime
   have := hU.compactSpace
   have := hU.totallyDisconnectedSpace
   rw [((hU.isProP.isUniform_iff_isPowerful_and_forall_natCard_gradedPiece_eq
@@ -346,6 +352,7 @@ theorem index_pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
 /-- In a uniform pro-`p` group `G`, `[G : G^{p^k}] = p ^ (k * uniformDimension p G)`. -/
 theorem index_closedPowerSubgroup_pow (hU : IsUniform p G) (k : ℕ) :
     (closedPowerSubgroup (p ^ k) G).index = p ^ (k * uniformDimension p G) := by
+  have := Fact.mk hU.prime
   have := hU.compactSpace
   have := hU.totallyDisconnectedSpace
   rw [← hU.isProP.pLowerCentralSeries_eq_closedPowerSubgroup hU.isPowerful k,
@@ -364,6 +371,7 @@ variable {p : ℕ} {G : Type u} {H : Type v} [Group G] [TopologicalSpace G] [IsT
 
 /-- Uniformity transfers across a topological group isomorphism. -/
 theorem IsUniform.of_equiv (hG : IsUniform p G) (e : G ≃ₜ* H) : IsUniform p H where
+  prime := hG.prime
   compactSpace := have := hG.compactSpace; e.toHomeomorph.compactSpace
   totallyDisconnectedSpace := have := hG.totallyDisconnectedSpace
     e.toHomeomorph.totallyDisconnectedSpace
@@ -387,7 +395,8 @@ theorem uniformDimension_congr (e : G ≃ₜ* H) : uniformDimension p G = unifor
 variable (p G) in
 /-- **The trivial group is uniform**, of dimension `0` by `TauCeti.uniformDimension_of_subsingleton`
 and `TauCeti.topologicalGeneratorRankNat_of_subsingleton`. -/
-theorem isUniform_of_subsingleton [Subsingleton G] : IsUniform p G where
+theorem isUniform_of_subsingleton [hp : Fact p.Prime] [Subsingleton G] : IsUniform p G where
+  prime := hp.out
   compactSpace := inferInstance
   totallyDisconnectedSpace := inferInstance
   isProP := IsPGroup.isProP fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
@@ -404,6 +413,7 @@ theorem uniformDimension_of_subsingleton [Subsingleton G] : uniformDimension p G
 
 /-- **A product of two uniform groups is uniform.** -/
 theorem IsUniform.prod (hG : IsUniform p G) (hH : IsUniform p H) : IsUniform p (G × H) where
+  prime := hG.prime
   compactSpace := have := hG.compactSpace; have := hH.compactSpace; inferInstance
   totallyDisconnectedSpace :=
     have := hG.totallyDisconnectedSpace; have := hH.totallyDisconnectedSpace; inferInstance
@@ -417,18 +427,18 @@ theorem IsUniform.prod (hG : IsUniform p G) (hH : IsUniform p H) : IsUniform p (
   isPowerful := hG.isPowerful.prod hH.isPowerful
 
 /-- The dimension of a binary product of uniform pro-`p` groups is the sum of their dimensions. -/
-theorem IsUniform.uniformDimension_prod [hp : Fact p.Prime]
-    (hG : IsUniform p G) (hH : IsUniform p H) :
+theorem IsUniform.uniformDimension_prod (hG : IsUniform p G) (hH : IsUniform p H) :
     uniformDimension p (G × H) = uniformDimension p G + uniformDimension p H := by
   rw [uniformDimension_def, closedPowerSubgroup_prod, Subgroup.index_prod,
     hG.index_closedPowerSubgroup_eq_pow_uniformDimension,
     hH.index_closedPowerSubgroup_eq_pow_uniformDimension, ← pow_add,
-    Nat.log_pow hp.out.one_lt]
+    Nat.log_pow hG.prime.one_lt]
 
 /-- A finite indexed product of uniform pro-`p` groups is uniform. -/
-theorem IsUniform.pi {ι : Type*} [Finite ι] {F : ι → Type*} [∀ i, Group (F i)]
-    [∀ i, TopologicalSpace (F i)] [∀ i, IsTopologicalGroup (F i)]
+theorem IsUniform.pi [hp : Fact p.Prime] {ι : Type*} [Finite ι] {F : ι → Type*}
+    [∀ i, Group (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, IsTopologicalGroup (F i)]
     (hF : ∀ i, IsUniform p (F i)) : IsUniform p (∀ i, F i) where
+  prime := hp.out
   compactSpace := have := fun i ↦ (hF i).compactSpace; inferInstance
   totallyDisconnectedSpace := have := fun i ↦ (hF i).totallyDisconnectedSpace; inferInstance
   isProP := IsProP.pi fun i ↦ (hF i).isProP
@@ -441,31 +451,34 @@ theorem IsUniform.pi {ι : Type*} [Finite ι] {F : ι → Type*} [∀ i, Group (
 
 /-- The dimension of a finite indexed product of uniform pro-`p` groups is the sum of their
 dimensions. -/
-theorem IsUniform.uniformDimension_pi [hp : Fact p.Prime] {ι : Type*} [Fintype ι]
-    {F : ι → Type*} [∀ i, Group (F i)] [∀ i, TopologicalSpace (F i)]
-    [∀ i, IsTopologicalGroup (F i)] (hF : ∀ i, IsUniform p (F i)) :
+theorem IsUniform.uniformDimension_pi {ι : Type*} [Fintype ι] {F : ι → Type*}
+    [∀ i, Group (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, IsTopologicalGroup (F i)]
+    (hF : ∀ i, IsUniform p (F i)) :
     uniformDimension p (∀ i, F i) = ∑ i, uniformDimension p (F i) := by
-  rw [uniformDimension_def, closedPowerSubgroup_pi, Subgroup.index_pi',
-    Finset.prod_congr rfl fun i _ ↦ (hF i).index_closedPowerSubgroup_eq_pow_uniformDimension,
-    Finset.prod_pow_eq_pow_sum, Nat.log_pow hp.out.one_lt]
+  by_cases hne : Nonempty ι
+  · rw [uniformDimension_def, closedPowerSubgroup_pi, Subgroup.index_pi',
+      Finset.prod_congr rfl fun i _ ↦ (hF i).index_closedPowerSubgroup_eq_pow_uniformDimension,
+      Finset.prod_pow_eq_pow_sum, Nat.log_pow (hF (Classical.arbitrary ι)).prime.one_lt]
+  · have : IsEmpty ι := not_nonempty_iff.mp hne
+    simp [uniformDimension_of_subsingleton]
 
 section CanonicalSubgroups
-
-variable [hp : Fact p.Prime]
 
 /-- Every term `λ_k(G)` of the lower `p`-series of a uniform pro-`p` group `G` is uniform. -/
 theorem IsUniform.pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
     IsUniform p (TauCeti.pLowerCentralSeries p G k) :=
+  have := Fact.mk hU.prime
   have := hU.compactSpace
   have := hU.totallyDisconnectedSpace
   have := hU.isMulTorsionFree
-  { compactSpace := inferInstance
+  { prime := hU.prime
+    compactSpace := inferInstance
     totallyDisconnectedSpace := inferInstance
     isProP := hU.isProP.subgroup _
     isTopologicallyFinitelyGenerated :=
       hU.isTopologicallyFinitelyGenerated.of_openSubgroup
         ⟨TauCeti.pLowerCentralSeries p G k,
-          hU.isTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries hp.out k⟩
+          hU.isTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries hU.prime k⟩
     isMulTorsionFree := inferInstance
     isPowerful := hU.isProP.isPowerful_pLowerCentralSeries hU.isPowerful k }
 
@@ -473,6 +486,7 @@ theorem IsUniform.pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
 dimension as `G`. -/
 theorem IsUniform.uniformDimension_pLowerCentralSeries (hU : IsUniform p G) (k : ℕ) :
     uniformDimension p (TauCeti.pLowerCentralSeries p G k) = uniformDimension p G := by
+  have := Fact.mk hU.prime
   have := hU.compactSpace
   have := hU.totallyDisconnectedSpace
   set H := TauCeti.pLowerCentralSeries p G k
@@ -482,7 +496,7 @@ theorem IsUniform.uniformDimension_pLowerCentralSeries (hU : IsUniform p G) (k :
     rw [mem_subgroupOf, ← hU.isProP.map_subtype_pLowerCentralSeries_pLowerCentralSeries
       hU.isPowerful k 1, mem_map]
     exact ⟨fun hx ↦ ⟨x, hx, rfl⟩, fun ⟨y, hy, hyx⟩ ↦ Subtype.ext hyx ▸ hy⟩
-  exact Nat.pow_right_injective hp.out.two_le <| by
+  exact Nat.pow_right_injective hU.prime.two_le <| by
     dsimp only
     rw [← (hU.pLowerCentralSeries k).index_pLowerCentralSeries_one, h1,
       hU.index_pLowerCentralSeries_subgroupOf k]
@@ -490,6 +504,7 @@ theorem IsUniform.uniformDimension_pLowerCentralSeries (hU : IsUniform p G) (k :
 /-- Every canonical closed power subgroup `G^{p^k}` of a uniform pro-`p` group `G` is uniform. -/
 theorem IsUniform.closedPowerSubgroup_pow (hU : IsUniform p G) (k : ℕ) :
     IsUniform p (closedPowerSubgroup (p ^ k) G) := by
+  have := Fact.mk hU.prime
   have := hU.compactSpace
   have := hU.totallyDisconnectedSpace
   exact hU.isProP.pLowerCentralSeries_eq_closedPowerSubgroup hU.isPowerful k ▸
@@ -499,6 +514,7 @@ theorem IsUniform.closedPowerSubgroup_pow (hU : IsUniform p G) (k : ℕ) :
 dimension as `G`. -/
 theorem IsUniform.uniformDimension_closedPowerSubgroup_pow (hU : IsUniform p G) (k : ℕ) :
     uniformDimension p (closedPowerSubgroup (p ^ k) G) = uniformDimension p G := by
+  have := Fact.mk hU.prime
   have := hU.compactSpace
   have := hU.totallyDisconnectedSpace
   exact hU.isProP.pLowerCentralSeries_eq_closedPowerSubgroup hU.isPowerful k ▸
@@ -512,12 +528,13 @@ end Closure
 
 section PadicInt
 
-variable (p : ℕ) [Fact p.Prime]
+variable (p : ℕ) [hp : Fact p.Prime]
 
 /-- **`ℤ_p ^ X` is uniform** for finite `X`, of dimension `#X` by
 `TauCeti.topologicalGeneratorRankNat_multiplicative_pi_padicInt`. -/
 theorem isUniform_multiplicative_pi_padicInt (X : Type*) [Finite X] :
     IsUniform p (Multiplicative (X → ℤ_[p])) where
+  prime := hp.out
   compactSpace := inferInstance
   totallyDisconnectedSpace := inferInstance
   isProP := isProP_multiplicative_pi_padicInt p X
@@ -530,6 +547,7 @@ theorem isUniform_multiplicative_pi_padicInt (X : Type*) [Finite X] :
 `TauCeti.topologicalGeneratorRankNat_multiplicative_padicInt`. -/
 theorem isUniform_multiplicative_padicInt :
     IsUniform p (Multiplicative ℤ_[p]) where
+  prime := hp.out
   compactSpace := inferInstance
   totallyDisconnectedSpace := inferInstance
   isProP := isProP_multiplicative_padicInt p
@@ -701,6 +719,7 @@ theorem isPowerful_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
 `(if p = 2 then 2 else 1) ≤ m`, `HeisenbergGroup.level p m` is uniform. -/
 theorem isUniform_level {m : ℕ} (hm : (if p = 2 then 2 else 1) ≤ m) :
     IsUniform p (level p m).toSubgroup where
+  prime := hp.out
   compactSpace := inferInstance
   totallyDisconnectedSpace := inferInstance
   isProP := (isProP_padicInt p).subgroup _
