@@ -168,12 +168,13 @@ theorem zero_singularValue (n : ℕ) : (0 : E →L[𝕜] F).singularValue n = 0 
 
 /-- **Mixed-index additive inequality.** `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)`. -/
 theorem singularValue_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
-    (S + T).singularValue (m + n) ≤ S.singularValue m + T.singularValue n :=
-  NNReal.le_iInf_add_iInf fun R₁ R₂ ↦
+    (S + T).singularValue (m + n) ≤ S.singularValue m + T.singularValue n := by
+  rw [S.singularValue_def m, T.singularValue_def n]
+  refine NNReal.le_iInf_add_iInf fun R₁ R₂ ↦
     ((S + T).singularValue_le_nnnorm_sub (R := R₁.val + R₂.val) <|
-      (rank_add_le_of_le R₁.property R₂.property).trans_eq (Nat.cast_add m n).symm).trans <| by
-      rw [add_sub_add_comm]
-      exact nnNorm_add_le _ _
+      (rank_add_le_of_le R₁.property R₂.property).trans_eq (Nat.cast_add m n).symm).trans ?_
+  rw [add_sub_add_comm]
+  exact nnNorm_add_le _ _
 
 /-- **Perturbative triangle bound.** `aₙ(S + T) ≤ aₙ(S) + ‖T‖`. -/
 theorem singularValue_add_le (S T : E →L[𝕜] F) (n : ℕ) :
