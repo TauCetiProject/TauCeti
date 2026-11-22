@@ -126,6 +126,18 @@ lemma reindexMap_hom_f (φ : E ⟶ E') (r : ℤ) (hr : r₀' ≤ r) (j : κ') :
     ((reindexMap d f hf hd φ).hom r hr).f j = (φ.hom (r + d)).f (f j) :=
   (rfl)
 
+/-- Under the identifications `CategoryTheory.SpectralSequence.reindexPageXIso` of its objects, the
+morphism of reindexed spectral sequences induced by `φ` is `φ` itself. -/
+@[reassoc]
+lemma reindexMap_hom_f_comp_reindexPageXIso_hom (φ : E ⟶ E') (r r' : ℤ) (hr : r₀' ≤ r)
+    (hr' : r + d = r') (j : κ') (i : κ) (hj : f j = i) :
+    ((reindexMap d f hf hd φ).hom r hr).f j ≫
+        (E'.reindexPageXIso d f hf hd r r' hr hr' j i hj).hom =
+      (E.reindexPageXIso d f hf hd r r' hr hr' j i hj).hom ≫ (φ.hom r' (by lia)).f i := by
+  subst hr' hj
+  -- Both identifications are `eqToHom` of an equality of definitionally equal objects.
+  exact (Category.comp_id _).trans (Category.id_comp _).symm
+
 variable (C c' r₀')
 
 /-- Reindexing spectral sequences, as a functor. -/
