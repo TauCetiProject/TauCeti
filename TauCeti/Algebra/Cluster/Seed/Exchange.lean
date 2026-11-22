@@ -6,20 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.Seed.Mutation
+public import TauCeti.Algebra.Cluster.OneExchange.BasedChart
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
-# Reversing seed mutation
+# Constructing and reversing seed mutation
 
-The exchange relation reverses in an arbitrary ambient semiring. The target chart
-already supplies the unit needed to cancel the mutated coordinate.
+When the exchange element of a seed in direction `k` is a unit of the ambient algebra, the
+mutated seed exists (`Seed.mutation`), and it is the only seed related to the original one by
+mutation in direction `k` (`Seed.existsUnique_isMutation`). Its form is the pullback of the
+original form along the lattice involution `a ↦ a + a_k ([-b_k]₊ - 2 e_k)`, whose matrix
+congruence is `formMutation`. Its chart exchanges the coordinate at `row k` for the exchange
+element (`BasedChart.exchange`): column compatibility makes the exchange element quasi-commute
+with the monomials in the other coordinates (`Seed.exchangeElement_mul_monomial`), and the
+faithfulness of the new chart is a consequence, not an assumption. No commutativity, division
+ring or rank hypothesis is needed.
 
-This extends the involutivity of quantum seed mutation in Berenstein and Zelevinsky,
-*Quantum cluster algebras*, Advances in Mathematics 195 (2005), Proposition 4.10.
-Reversal of the selected polynomial matches its reflected coefficients with the
-original exchange terms one by one.
+Conversely, the exchange relation reverses in an arbitrary ambient semiring: the target chart
+already supplies the unit needed to cancel the mutated coordinate, so mutating twice in the same
+direction recovers the seed. Reversal of the selected polynomial matches its reflected
+coefficients with the original exchange terms one by one.
+
+## References
+
+* A. Berenstein and A. Zelevinsky, *Quantum cluster algebras*, Advances in Mathematics
+  195 (2005), Propositions 4.9 and 4.10, for the mutated toric frame and the
+  involutivity of quantum seed mutation, which this extends to polynomial exchange and
+  arbitrary ambient semirings.
+* T. Nakanishi, *Structure of seeds in generalized cluster algebras*, Pacific Journal of
+  Mathematics 277 (2015), §2, for polynomial exchange.
 -/
 
 public section
@@ -57,18 +74,30 @@ private theorem latticeMutation_apply (s : Seed c row u B) (k : K) (a : I →₀
     ring
   · simp [hi, Finsupp.single_eq_of_ne hi, mul_comm]
 
+omit [DecidableEq K] in
+private theorem toMatrix_comp_latticeMutation (s : Seed c row u B) (k : K) :
+    LinearMap.BilinForm.toMatrix Finsupp.basisSingleOne
+        (s.form.comp (latticeMutation s k) (latticeMutation s k)) =
+      formMutation row s.state.exchange.matrix s.formMatrix k := by
+  rw [LinearMap.BilinForm.toMatrix_comp Finsupp.basisSingleOne Finsupp.basisSingleOne]
+  simp only [← formMatrix_def, latticeMutation, LinearMap.toMatrix_toLin, formMutation_def]
+
 private theorem mutation_form (h : s.IsMutation k t) :
     t.form = s.form.comp (latticeMutation s k) (latticeMutation s k) := by
   apply (LinearMap.BilinForm.toMatrix Finsupp.basisSingleOne).injective
-  rw [LinearMap.BilinForm.toMatrix_comp Finsupp.basisSingleOne Finsupp.basisSingleOne]
-  simpa only [← formMatrix_def, latticeMutation, LinearMap.toMatrix_toLin,
-    formMutation_def] using h.formMatrix_eq
+  rw [toMatrix_comp_latticeMutation, ← formMatrix_def, h.formMatrix_eq]
+
+omit [DecidableEq K] in
+private theorem comp_latticeMutation_apply_of_apply_eq_zero (s : Seed c row u B) (k : K)
+    {a b : I →₀ ℤ} (ha : a (row k) = 0) (hb : b (row k) = 0) :
+    s.form.comp (latticeMutation s k) (latticeMutation s k) a b = s.form a b := by
+  rw [LinearMap.BilinForm.comp_apply, latticeMutation_apply, latticeMutation_apply, ha, hb]
+  simp
 
 private theorem mutation_form_off (h : s.IsMutation k t) {a b : I →₀ ℤ}
     (ha : a (row k) = 0) (hb : b (row k) = 0) : t.form a b = s.form a b := by
-  rw [mutation_form h, LinearMap.BilinForm.comp_apply,
-    latticeMutation_apply, latticeMutation_apply, ha, hb]
-  simp
+  rw [mutation_form h]
+  exact comp_latticeMutation_apply_of_apply_eq_zero s k ha hb
 
 /-- Seed mutation fixes every normalized monomial whose exponent avoids the changed coordinate. -/
 theorem IsMutation.monomial_eq_of_apply_eq_zero (h : s.IsMutation k t) {a : I →₀ ℤ}
@@ -245,5 +274,180 @@ theorem IsMutation.symm (h : s.IsMutation k t) : t.IsMutation k s := by
         have hc := Matrix.isColumnCompatible_iff.mp s.compatibility k j
         simpa only [Matrix.mul_apply, Matrix.transpose_apply, s.formMatrix_def,
           ite_eq_right (Ne.symm hj)] using hc)).symm
+
+/-! ### Existence of mutation -/
+
+omit [DecidableEq K] in
+private theorem latticeMutation_single_row_self (s : Seed c row u B) (k : K) :
+    latticeMutation s k (Finsupp.single (row k) 1) = s.state.exchangeExponent k 0 := by
+  have h := numerator_vector s k (Nat.zero_le _)
+  rw [latticeMutation_apply, negative_matrix, Finsupp.single_eq_same, one_smul]
+  linear_combination (norm := module) -h
+
+omit [DecidableEq K] in
+/-- The pairing of an exchange exponent with an exponent in the other coordinates does not
+depend on the summand. -/
+private theorem form_exchangeExponent_of_apply_eq_zero (s : Seed c row u B) (k : K) {l : ℕ}
+    (hl : l ≤ (s.state.polynomial k).degree) {a : I →₀ ℤ} (ha : a (row k) = 0) :
+    s.form (s.state.exchangeExponent k l) a = s.form (s.state.exchangeExponent k 0) a := by
+  have hl' := numerator_vector s k hl
+  have h0 := numerator_vector s k (Nat.zero_le _)
+  have hsub : s.state.exchangeExponent k l =
+      s.state.exchangeExponent k 0 + (l : ℤ) • dividedVector s k := by
+    linear_combination (norm := module) hl' - h0
+  rw [hsub, map_add, LinearMap.add_apply, map_smul, LinearMap.smul_apply,
+    dividedVector_pair s k ha, smul_zero, add_zero]
+
+omit [DecidableEq K] in
+/-- The exchange element quasi-commutes with every monomial in the coordinates other
+than `row k`. -/
+theorem exchangeElement_mul_monomial (s : Seed c row u B) (k : K) {a : I →₀ ℤ}
+    (ha : a (row k) = 0) :
+    s.exchangeElement k * s.chart.monomial a =
+      ((u ^ (2 * s.form (s.state.exchangeExponent k 0) a) : Rˣ) : R) •
+        ((s.chart.monomial a : B) * s.exchangeElement k) := by
+  rw [exchangeElement_def, Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun l hl ↦ ?_
+  have hl' := Nat.lt_succ_iff.mp (Finset.mem_range.mp hl)
+  rw [smul_mul_assoc, s.chart.val_monomial_mul_monomial_eq_smul_mul s.isAlt,
+    form_exchangeExponent_of_apply_eq_zero s k hl' ha, Algebra.mul_smul_comm, smul_comm]
+
+omit [DecidableEq K] in
+private theorem exchangeElement_mul_coordinate_mem (s : Seed c row u B) (k : K) :
+    s.exchangeElement k * s.chart.monomial (Finsupp.single (row k) 1) ∈
+      Submodule.span R
+        (Set.range fun a : {a : I →₀ ℤ // a (row k) = 0} ↦ (s.chart.monomial a : B)) := by
+  rw [exchangeElement_def, Finset.sum_mul]
+  refine Submodule.sum_mem _ fun l _ ↦ ?_
+  rw [smul_mul_assoc, BasedChart.val_monomial_mul]
+  exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
+    (Submodule.subset_span ⟨⟨_, by simp⟩, rfl⟩))
+
+omit [DecidableEq K] in
+private theorem comp_latticeMutation_single_row_self (s : Seed c row u B) (k : K) {a : I →₀ ℤ}
+    (ha : a (row k) = 0) :
+    s.form.comp (latticeMutation s k) (latticeMutation s k) (Finsupp.single (row k) 1) a =
+      s.form (s.state.exchangeExponent k 0) a := by
+  rw [LinearMap.BilinForm.comp_apply, latticeMutation_single_row_self, latticeMutation_apply, ha,
+    zero_smul, add_zero]
+
+omit [DecidableEq K] in
+private theorem isAlt_comp_latticeMutation (s : Seed c row u B) (k : K) :
+    (s.form.comp (latticeMutation s k) (latticeMutation s k)).IsAlt := by
+  intro a
+  exact s.isAlt _
+
+/-- The mutation of a seed in a direction whose exchange element is a unit. It has the
+mutated state and form and the same weights; its chart replaces the coordinate at `row k`
+by the exchange element and keeps the other coordinates. -/
+noncomputable def mutation (s : Seed c row u B) (k : K) (hE : IsUnit (s.exchangeElement k)) :
+    Seed c row u B where
+  state := s.state.mutation c k
+  isNormalized := s.isNormalized.mutation k
+  form := s.form.comp (latticeMutation s k) (latticeMutation s k)
+  isAlt := isAlt_comp_latticeMutation s k
+  weights := s.weights
+  compatibility := by
+    rw [toMatrix_comp_latticeMutation, ExchangeData.mutation_exchange,
+      ExchangeMatrix.mutation_matrix]
+    exact s.isColumnCompatible_formMutation k
+  chart := s.chart.exchange s.isAlt (isAlt_comp_latticeMutation s k) (row k) hE.unit
+    (fun _ _ ha hb ↦ comp_latticeMutation_apply_of_apply_eq_zero s k ha hb)
+    (fun a ha ↦ by
+      rw [comp_latticeMutation_single_row_self s k ha, IsUnit.unit_spec]
+      exact s.exchangeElement_mul_monomial k ha)
+    (by simpa using exchangeElement_mul_coordinate_mem s k)
+
+section Mutation
+
+variable (s : Seed c row u B) (k : K)
+
+@[simp]
+theorem mutation_state (hE : IsUnit (s.exchangeElement k)) :
+    (s.mutation k hE).state = s.state.mutation c k :=
+  (rfl)
+
+@[simp]
+theorem mutation_weights (hE : IsUnit (s.exchangeElement k)) :
+    (s.mutation k hE).weights = s.weights :=
+  (rfl)
+
+@[simp]
+theorem formMatrix_mutation (hE : IsUnit (s.exchangeElement k)) :
+    (s.mutation k hE).formMatrix = formMutation row s.state.exchange.matrix s.formMatrix k := by
+  rw [formMatrix_def]
+  exact toMatrix_comp_latticeMutation s k
+
+/-- The monomials of the mutated seed: with `a° = a.erase (row k)`, the monomial at `a` is
+`u ^ (-(a (row k) * Λ (α_{k,0}, a°))) • X'_k ^ (a (row k)) * M a°`, where `X'_k` is the
+exchange element and `α_{k,0}` its exponent of index zero. -/
+theorem mutation_chart_monomial (hE : IsUnit (s.exchangeElement k)) (a : I →₀ ℤ) :
+    (s.mutation k hE).chart.monomial a =
+      Units.map (algebraMap R B)
+          (u ^ (-(a (row k) * s.form (s.state.exchangeExponent k 0) (a.erase (row k))))) *
+        hE.unit ^ a (row k) * s.chart.monomial (a.erase (row k)) := by
+  dsimp only [mutation]
+  rw [BasedChart.exchange_monomial, comp_latticeMutation_single_row_self s k Finsupp.erase_same]
+
+/-- The coordinate of the mutated seed at `row k` is the exchange element. -/
+@[simp]
+theorem mutation_chart_monomial_single_self (hE : IsUnit (s.exchangeElement k)) :
+    (s.mutation k hE).chart.monomial (Finsupp.single (row k) 1) = hE.unit := by
+  dsimp only [mutation]
+  rw [BasedChart.exchange_monomial_single_self]
+
+/-- Mutation keeps every monomial in the coordinates other than `row k`. -/
+@[simp]
+theorem mutation_chart_monomial_of_apply_eq_zero (hE : IsUnit (s.exchangeElement k))
+    {a : I →₀ ℤ} (ha : a (row k) = 0) :
+    (s.mutation k hE).chart.monomial a = s.chart.monomial a := by
+  dsimp only [mutation]
+  rw [BasedChart.exchange_monomial_of_apply_eq_zero (ha := ha)]
+
+/-- The constructed seed is a mutation of `s` in direction `k`. -/
+theorem isMutation_mutation (hE : IsUnit (s.exchangeElement k)) :
+    s.IsMutation k (s.mutation k hE) where
+  state_eq := (rfl)
+  formMatrix_eq := formMatrix_mutation s k hE
+  coordinate_eq := by simp
+  coordinate_eq_of_ne i hi := by simp [Finsupp.single_eq_of_ne hi.symm]
+
+/-- **Seed mutation**: if the exchange element in direction `k` is a unit, then exactly one
+seed is a mutation of `s` in direction `k`. The faithfulness of its chart is part of the
+conclusion, not an assumption. -/
+theorem existsUnique_isMutation (hE : IsUnit (s.exchangeElement k)) : ∃! t, s.IsMutation k t :=
+  ⟨s.mutation k hE, s.isMutation_mutation k hE, fun _ ht ↦ ht.eq (s.isMutation_mutation k hE)⟩
+
+end Mutation
+
+/-- The exchange element of the mutated seed in the same direction is the old coordinate, so
+the reverse exchange is defined. -/
+@[simp]
+theorem exchangeElement_mutation (s : Seed c row u B) (k : K)
+    (hE : IsUnit (s.exchangeElement k)) :
+    (s.mutation k hE).exchangeElement k = s.chart.monomial (Finsupp.single (row k) 1) :=
+  (s.isMutation_mutation k hE).exchangeElement_eq_coordinate
+
+/-- The reverse exchange of a mutation is defined. -/
+theorem isUnit_exchangeElement_mutation (s : Seed c row u B) (k : K)
+    (hE : IsUnit (s.exchangeElement k)) : IsUnit ((s.mutation k hE).exchangeElement k) :=
+  (s.isMutation_mutation k hE).symm.isUnit_exchangeElement
+
+/-- Mutating twice in the same direction recovers the seed. -/
+@[simp]
+theorem mutation_mutation (s : Seed c row u B) (k : K) (hE : IsUnit (s.exchangeElement k))
+    (hE' : IsUnit ((s.mutation k hE).exchangeElement k)) :
+    (s.mutation k hE).mutation k hE' = s :=
+  ((s.isMutation_mutation k hE).symm.eq ((s.mutation k hE).isMutation_mutation k hE')).symm
+
+/-- A seed has a mutation in direction `k` exactly when its exchange element is a unit. -/
+theorem exists_isMutation_iff (s : Seed c row u B) (k : K) :
+    (∃ t, s.IsMutation k t) ↔ IsUnit (s.exchangeElement k) :=
+  ⟨fun ⟨_, h⟩ ↦ h.isUnit_exchangeElement, fun hE ↦ ⟨_, s.isMutation_mutation k hE⟩⟩
+
+/-- Every mutation of `s` in direction `k` is the constructed one. -/
+theorem IsMutation.eq_mutation (h : s.IsMutation k t) :
+    t = s.mutation k h.isUnit_exchangeElement :=
+  h.eq (s.isMutation_mutation k _)
 
 end TauCeti.Seed
