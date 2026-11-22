@@ -422,6 +422,16 @@ theorem cubicalChainModuleDifferential_isHomogeneous :
     rw [mem_cubicalChainModuleGrading, cubicalChainModuleEquiv_differential]
     exact cubicalChainDifferential_mem Y R (mem_cubicalChainModuleGrading.1 hx)
 
+variable (Y G R) in
+/-- The component of degree `p` of the differential of `x` is the differential of the component of
+degree `p - 1` of `x`. -/
+theorem decompose_cubicalChainModuleDifferential (p : ℤ) (x : cubicalChainModule Y G R) :
+    (DirectSum.decompose (cubicalChainModuleGrading Y G R) (cubicalChainModuleDifferential Y G R x)
+        p : cubicalChainModule Y G R) =
+      cubicalChainModuleDifferential Y G R
+        (DirectSum.decompose (cubicalChainModuleGrading Y G R) x (p - 1)) := by
+  rw [(cubicalChainModuleDifferential_isHomogeneous Y G R).map_decompose, sub_add_cancel]
+
 /-- The differential of the module squares to zero. -/
 @[simp]
 theorem cubicalChainModuleDifferential_cubicalChainModuleDifferential
@@ -684,6 +694,14 @@ theorem cubicalChainModuleLinearMap_mem (f : C(Y, Y')) {i : ℤ} {x : cubicalCha
     cubicalChainModuleLinearMap (G' := G') R f x ∈ cubicalChainModuleGrading Y' G' R i :=
   cubicalChainSumMap_mem f hx
 
+/-- The induced map is homogeneous of degree zero. -/
+theorem cubicalChainModuleLinearMap_isHomogeneous (f : C(Y, Y')) :
+    LinearMap.IsHomogeneous (cubicalChainModuleLinearMap (G := G) (G' := G') R f)
+      (cubicalChainModuleGrading Y G R) (cubicalChainModuleGrading Y' G' R) 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    rw [add_zero]
+    exact cubicalChainModuleLinearMap_mem f hx
+
 /-- The identity map induces the identity. -/
 @[simp]
 theorem cubicalChainModuleLinearMap_id :
@@ -699,6 +717,14 @@ theorem cubicalChainModuleLinearMap_comp (f : C(Y, Y')) (g : C(Y', Y'')) :
   LinearMap.ext fun x ↦ (cubicalChainModuleEquiv Y'' G'' R).injective <| by
     rw [cubicalChainModuleEquiv_linearMap, LinearMap.comp_apply, cubicalChainModuleEquiv_linearMap,
       cubicalChainModuleEquiv_linearMap, cubicalChainSumMap_comp, LinearMap.comp_apply]
+
+/-- The composite of two induced maps is the map induced by the composite, whatever the phantom
+monoid of the middle module. -/
+theorem cubicalChainModuleLinearMap_linearMap (f : C(Y, Y')) (g : C(Y', Y''))
+    (x : cubicalChainModule Y G R) :
+    cubicalChainModuleLinearMap (G := G') (G' := G'') R g (cubicalChainModuleLinearMap R f x) =
+      cubicalChainModuleLinearMap R (g.comp f) x :=
+  (LinearMap.congr_fun (cubicalChainModuleLinearMap_comp f g) x).symm
 
 /-- The induced map of a map `f` that intertwines the actions through a map `g` of the acting
 monoids is semilinear for the action, through the push-forward along `g`. -/

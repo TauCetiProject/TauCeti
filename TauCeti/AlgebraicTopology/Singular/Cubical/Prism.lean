@@ -124,20 +124,21 @@ theorem prism_mem_degenerate (H : ContinuousMap.Homotopy f g) {n : ℕ}
 
 /-- The prism identity in positive degrees. -/
 theorem boundary_prism_add_prism_boundary (H : ContinuousMap.Homotopy f g) (n : ℕ) :
-    boundary Y R (n + 1) ∘ₗ prism R H (n + 1) +
-        prism R H n ∘ₗ boundary X R n = map R g (n + 1) - map R f (n + 1) := by
+    boundary Y R R (n + 1) ∘ₗ prism R H (n + 1) +
+        prism R H n ∘ₗ boundary X R R n = map R g (n + 1) - map R f (n + 1) := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply, lsingle_apply,
-    prism_single, map_neg, boundary_single, map_sum, map_smul, map_sub, map_single]
+    prism_single, map_neg, boundary_single, map_sum, map_zsmul, map_sub, map_single]
   rw [Fin.sum_univ_succ]
   simp only [SingularCube.face_zero_prism, SingularCube.face_one_prism, Fin.val_zero,
     pow_zero, one_smul, SingularCube.face_succ_prism, Fin.val_succ, pow_succ,
-    mul_neg_one, neg_smul, smul_neg, smul_sub]
+    mul_neg_one, neg_smul, smul_sub]
+  simp only [smul_neg]
   abel
 
 /-- In degree zero the prism has just its two endpoint faces. -/
 theorem boundary_prism_zero (H : ContinuousMap.Homotopy f g) :
-    boundary Y R 0 ∘ₗ prism R H 0 = map R g 0 - map R f 0 := by
+    boundary Y R R 0 ∘ₗ prism R H 0 = map R g 0 - map R f 0 := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp [boundary_single]
 
@@ -287,19 +288,16 @@ theorem prismLast_mem_degenerate (H : ContinuousMap.Homotopy f g) {n : ℕ}
 
 /-- The prism identity with time last, in positive degrees. -/
 theorem boundary_prismLast_add_prismLast_boundary (H : ContinuousMap.Homotopy f g) (n : ℕ) :
-    boundary Y R (n + 1) ∘ₗ prismLast R H (n + 1) +
-        prismLast R H n ∘ₗ boundary X R n = map R g (n + 1) - map R f (n + 1) := by
+    boundary Y R R (n + 1) ∘ₗ prismLast R H (n + 1) +
+        prismLast R H n ∘ₗ boundary X R R n = map R g (n + 1) - map R f (n + 1) := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply, lsingle_apply,
-    prismLast_single, map_zsmul, boundary_single, map_sum, map_sub, map_smul, map_single]
+    prismLast_single, map_zsmul, boundary_single, map_sum, map_sub, map_single]
   rw [Fin.sum_univ_castSucc]
   simp only [SingularCube.face_last_zero_prismLast, SingularCube.face_last_one_prismLast,
     SingularCube.face_castSucc_prismLast, Fin.val_last, Fin.val_castSucc, smul_sub,
     Finset.smul_sum, smul_add]
-  -- Convert the signs of the boundary into integer signs, which commute with everything.
-  have hz : ∀ (k : ℕ) (z : CubicalChain Y R (n + 1)), (-1 : R) ^ k • z = ((-1 : ℤ) ^ k) • z :=
-    fun k z ↦ by rw [← Int.cast_smul_eq_zsmul R]; simp
-  simp only [hz, pow_succ (-1 : ℤ) (n + 1), mul_neg_one, smul_smul]
+  simp only [pow_succ (-1 : ℤ) (n + 1), mul_neg_one, smul_smul]
   -- The swept faces cancel in pairs, and the time faces carry the sign `-((-1) ^ (n + 1)) ^ 2`.
   have hs : ((-1 : ℤ) ^ (n + 1)) * (-1) ^ (n + 1) = 1 := by
     rw [← pow_add, ← two_mul, pow_mul]
@@ -313,7 +311,7 @@ theorem boundary_prismLast_add_prismLast_boundary (H : ContinuousMap.Homotopy f 
 
 /-- In degree zero the prism with time last has just its two endpoint faces. -/
 theorem boundary_prismLast_zero (H : ContinuousMap.Homotopy f g) :
-    boundary Y R 0 ∘ₗ prismLast R H 0 = map R g 0 - map R f 0 := by
+    boundary Y R R 0 ∘ₗ prismLast R H 0 = map R g 0 - map R f 0 := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   have h₀ := SingularCube.face_last_zero_prismLast H c
   have h₁ := SingularCube.face_last_one_prismLast H c

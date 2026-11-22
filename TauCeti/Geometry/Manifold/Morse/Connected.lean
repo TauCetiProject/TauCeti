@@ -36,6 +36,9 @@ spheres of dimension at least three carry counts satisfying both but not `c₀ �
 * `TauCeti.IsMorse.criticalCount_zero_le_criticalCount_one_add_one` and
   `TauCeti.IsMorse.criticalCount_one_ne_zero_of_two_le_criticalCount_zero`: `c₀ ≤ c₁ + 1`, so two
   local minima force a critical point of index one.
+* `TauCeti.IsMorse.subsingleton_setOf_isLocalMin_of_manifoldMorseIndex_ne_one` and
+  `TauCeti.IsMorse.isMinOn_of_isLocalMin_of_manifoldMorseIndex_ne_one`: without critical points of
+  index one, `c₀ ≤ 1`, so there is at most one local minimum, and it is the global minimum.
 * `TauCeti.IsMorse.criticalCount_finrank_le_criticalCount_finrank_sub_one_add_one`: dually,
   `cₘ ≤ cₘ₋₁ + 1`.
 
@@ -114,6 +117,31 @@ theorem IsMorse.criticalCount_finrank_le_criticalCount_finrank_sub_one_add_one
     exact le_self_add
   have h := hf.neg.criticalCount_zero_le_criticalCount_one_add_one
   rwa [hf.criticalCount_neg (Nat.zero_le _), hf.criticalCount_neg hE, Nat.sub_zero] at h
+
+/-- **Without critical points of index one there is a single local minimum.** A Morse function on
+a compact connected boundaryless manifold with no critical point of index `1` has at most one
+local minimum: local minima are critical points of index `0`, and `c₀ ≤ c₁ + 1 = 1`. -/
+theorem IsMorse.subsingleton_setOf_isLocalMin_of_manifoldMorseIndex_ne_one (hf : IsMorse I f)
+    (hd : ∀ p ∈ criticalPoints I f, manifoldMorseIndex I f p ≠ 1) :
+    {x | IsLocalMin f x}.Subsingleton := by
+  have h := hf.criticalCount_zero_le_criticalCount_one_add_one
+  rw [(criticalCount_eq_zero_iff 1).2 hd, zero_add, criticalCount_def] at h
+  refine fun x hx y hy ↦ encard_le_one_iff.1 h x y ?_ ?_
+  · exact ⟨IsLocalMin.mem_criticalPoints hx,
+      manifoldMorseIndex_eq_zero_of_isLocalMin ((hf.contMDiff x).of_le (by norm_cast)) hx⟩
+  · exact ⟨IsLocalMin.mem_criticalPoints hy,
+      manifoldMorseIndex_eq_zero_of_isLocalMin ((hf.contMDiff y).of_le (by norm_cast)) hy⟩
+
+/-- **Without critical points of index one a local minimum is global.** On a compact connected
+boundaryless manifold, every local minimum of a Morse function with no critical point of index `1`
+is a global minimum. -/
+theorem IsMorse.isMinOn_of_isLocalMin_of_manifoldMorseIndex_ne_one (hf : IsMorse I f)
+    (hd : ∀ p ∈ criticalPoints I f, manifoldMorseIndex I f p ≠ 1) {p : M}
+    (hp : IsLocalMin f p) : IsMinOn f univ p := by
+  obtain ⟨q, -, hq⟩ := isCompact_univ.exists_isMinOn univ_nonempty
+    hf.contMDiff.continuous.continuousOn
+  rwa [hf.subsingleton_setOf_isLocalMin_of_manifoldMorseIndex_ne_one hd hp
+    (hq.isLocalMin Filter.univ_mem)]
 
 end Connected
 

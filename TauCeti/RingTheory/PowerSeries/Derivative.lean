@@ -79,6 +79,10 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   its `X *`-shifted form for all `e`.
 * `PowerSeries.coeff_succ_pow_succ_eq_coeff_pow_mul_derivative`: the `e = 1` case
   `coeff (n + 1) (v ^ (n + 1)) = coeff n (v ^ n * v')`.
+* `PowerSeries.eq_of_X_mul_derivative_eq_mul`: with unique division by positive integers, a series
+  with prescribed logarithmic derivative `X f' / f` is determined by its constant coefficient.
+* `PowerSeries.X_mul_derivative_mk_eq_mul_C_mul_X_iff`: `X f' = f · u X` for `f = ∑ γₖ Xᵏ` exactly
+  when `(k + 1) γ_{k+1} = u γ_k`.
 * `PowerSeries.mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_zero`:
   for a unit `u : R⟦X⟧ˣ` over a commutative ring and `e, k ≥ 1`,
   `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`.
@@ -197,6 +201,43 @@ theorem nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative (v : R⟦X⟧)
 theorem coeff_succ_pow_succ_eq_coeff_pow_mul_derivative (v : R⟦X⟧) (n : ℕ) :
     coeff (n + 1) (v ^ (n + 1)) = coeff n (v ^ n * d⁄dX v) := by
   simpa using nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative v one_ne_zero n
+
+/-- **Uniqueness of a series with prescribed logarithmic derivative.** Over a commutative
+semiring with unique division by positive integers, a power series `f` with `X f' = f P`, for a
+series `P` without constant term, is determined by `P` and its constant coefficient: comparing
+`k`-th coefficients gives `k f_k = ∑_{i + j = k, j ≥ 1} f_i P_j`. -/
+theorem eq_of_X_mul_derivative_eq_mul [HasUniqueDiv R] {f g P : R⟦X⟧} (hP : constantCoeff P = 0)
+    (hf : X * d⁄dX f = f * P) (hg : X * d⁄dX g = g * P) (h₀ : constantCoeff f = constantCoeff g) :
+    f = g := by
+  ext k
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+    rcases k with _ | k
+    · simpa using h₀
+    have hsum : ∀ h : R⟦X⟧, (∀ i < k + 1, coeff i h = coeff i f) →
+        coeff (k + 1) (h * P) = coeff (k + 1) (f * P) := fun h hh => by
+      rw [coeff_mul, coeff_mul]
+      refine Finset.sum_congr rfl fun p hp => ?_
+      rcases Nat.eq_zero_or_pos p.2 with h2 | h2
+      · simp [h2, hP]
+      · rw [hh p.1 (by have := Finset.mem_antidiagonal.1 hp; omega)]
+    refine (nsmul_right_injective (M := R) (Nat.succ_ne_zero k) ?_).symm
+    simp only [nsmul_eq_mul]
+    rw [← coeff_X_mul_derivative, ← coeff_X_mul_derivative, hf, hg,
+      hsum g fun i hi => (ih i hi).symm]
+
+/-- A power series `∑ γₖ Xᵏ` satisfies `X f' = f · u X` exactly when its coefficients satisfy
+`(k + 1) γ_{k+1} = u γ_k`, the recursion of the divided powers `uᵏ / k!`. -/
+theorem X_mul_derivative_mk_eq_mul_C_mul_X_iff {γ : ℕ → R} {u : R} :
+    X * d⁄dX (mk γ) = mk γ * (C u * X) ↔ ∀ k, (k + 1) • γ (k + 1) = u * γ k := by
+  have hc : ∀ k, coeff (k + 1) (mk γ * (C u * X)) = u * γ k := fun k => by
+    rw [← mul_assoc, coeff_succ_mul_X, mul_comm, coeff_C_mul, coeff_mk]
+  rw [PowerSeries.ext_iff]
+  refine ⟨fun h k => ?_, fun h k => ?_⟩
+  · rw [← hc, ← h, coeff_X_mul_derivative, coeff_mk, nsmul_eq_mul]
+  · rcases k with _ | k
+    · simp
+    · rw [hc, ← h, coeff_X_mul_derivative, coeff_mk, nsmul_eq_mul]
 
 end CommSemiring
 

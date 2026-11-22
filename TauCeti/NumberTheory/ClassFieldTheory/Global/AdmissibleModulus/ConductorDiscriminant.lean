@@ -47,6 +47,8 @@ This gives the formula at every finite place
   conductor–discriminant formula at a finite place.
 * `TauCeti.ClassFieldTheory.relDiscr_eq_finprod_finitePart_abelianConductor`: the
   conductor–discriminant formula `𝔡_{L/K} = ∏_χ 𝔣(χ)`.
+* `TauCeti.ClassFieldTheory.count_relDiscr_eq_finsum_abelianConductor_exponent`: the formula at a
+  finite place for complex characters, with multiplicities counted in prime factorizations.
 
 ## References
 
@@ -124,5 +126,21 @@ theorem relDiscr_eq_finprod_finitePart_abelianConductor (M : Type*) [CommMonoid 
   exact Finset.sum_congr rfl fun χ _ ↦ by
     rw [Modulus.exponent_eq_multiplicity,
       (hfin (Modulus.finitePart_ne_zero _)).emultiplicity_eq_multiplicity]
+
+variable (K L) in
+/-- **The conductor–discriminant formula at a finite place, for complex characters.** For a finite
+abelian extension `L/K` of number fields and a finite place `v` of `K`, the number of times `v`
+occurs in the prime factorization of the relative discriminant of `L/K` is the sum, over the
+characters `ψ : Gal(L/K) →* ℂˣ`, of the number of times it occurs in the finite parts of the
+conductors of the fixed fields of their kernels. -/
+theorem count_relDiscr_eq_finsum_abelianConductor_exponent (v : HeightOneSpectrum (𝓞 K)) :
+    (UniqueFactorizationMonoid.normalizedFactors (relDiscr (𝓞 K) (𝓞 L))).count v.asIdeal =
+      ∑ᶠ ψ : Gal(L/K) →* ℂˣ,
+        (UniqueFactorizationMonoid.normalizedFactors
+          (abelianConductor K (fixedField ψ.ker)).finitePart).count v.asIdeal := by
+  have : NeZero (Monoid.exponent Gal(L/K)) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  simp only [Modulus.count_normalizedFactors_finitePart]
+  rw [v.count_normalizedFactors_eq_multiplicity relDiscr_ne_bot,
+    multiplicity_relDiscr_eq_finsum_exponent_abelianConductor ℂ v]
 
 end TauCeti.ClassFieldTheory
