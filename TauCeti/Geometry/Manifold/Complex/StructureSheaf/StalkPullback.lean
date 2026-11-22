@@ -153,8 +153,9 @@ theorem toRingHom_stalkPullbackAlgHom :
       (holomorphicStructureSheaf J Y).presheaf.stalk (f a) →+*
         (holomorphicStructureSheaf I X).presheaf.stalk a) = stalkPullback hf := (rfl)
 
+-- Pre-order so applied `stalkPullbackAlgHom` reduces to `stalkPullback` before composition splits.
 /-- `stalkPullbackAlgHom` acts on germs by `stalkPullback`. -/
-@[simp]
+@[simp↓]
 theorem stalkPullbackAlgHom_apply
     (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f a)) :
     stalkPullbackAlgHom hf s = stalkPullback hf s := (rfl)
@@ -239,6 +240,19 @@ theorem stalkPullback_comp {g : Y → Z} (hg : ∀ᶠ y in 𝓝 (f a), ContMDiff
   exact Germ.inductionOn
     (toFilterGerm K Z (g (f a)) (𝓝 (g (f a))) le_rfl s) fun _ ↦ rfl
 
+/-- Pullback along a composite bundled analytic map `g.comp f` is the composite of the pullbacks
+in reverse order, independently of the local analyticity proof term. -/
+@[simp↓]
+theorem stalkPullback_contMDiffMap_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯)
+    (a : X) (hgf : ∀ᶠ w in 𝓝 a, ContMDiffAt I K ω (g.comp f) w)
+    (s : (holomorphicStructureSheaf K Z).presheaf.stalk ((g.comp f) a)) :
+    stalkPullback hgf s =
+      stalkPullback (Eventually.of_forall fun _ ↦ f.contMDiff.contMDiffAt)
+        (stalkPullback (Eventually.of_forall fun _ ↦ g.contMDiff.contMDiffAt) s) :=
+  stalkPullback_comp (f := f) (g := g)
+    (Eventually.of_forall fun _ ↦ f.contMDiff.contMDiffAt)
+    (Eventually.of_forall fun _ ↦ g.contMDiff.contMDiffAt) s
+
 /-- Pullback along a composite of locally analytic maps is the reverse composite of their
 `ℂ`-algebra stalk pullbacks. -/
 theorem stalkPullbackAlgHom_comp {g : Y → Z} {f : X → Y} {x : X}
@@ -246,6 +260,18 @@ theorem stalkPullbackAlgHom_comp {g : Y → Z} {f : X → Y} {x : X}
     stalkPullbackAlgHom (eventually_contMDiffAt_comp hg hf rfl) =
       (stalkPullbackAlgHom hf).comp (stalkPullbackAlgHom hg) :=
   AlgHom.ext (stalkPullback_comp hf hg)
+
+/-- Pullback along a composite bundled analytic map `g.comp f` is the reverse composite of the
+`ℂ`-algebra stalk pullbacks, independently of the local analyticity proof term. -/
+@[simp]
+theorem stalkPullbackAlgHom_contMDiffMap_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯)
+    (x : X) (hgf : ∀ᶠ w in 𝓝 x, ContMDiffAt I K ω (g.comp f) w) :
+    stalkPullbackAlgHom hgf =
+      (stalkPullbackAlgHom (Eventually.of_forall fun _ ↦ f.contMDiff.contMDiffAt)).comp
+        (stalkPullbackAlgHom (Eventually.of_forall fun _ ↦ g.contMDiff.contMDiffAt)) :=
+  stalkPullbackAlgHom_comp (f := f) (g := g)
+    (Eventually.of_forall fun _ ↦ g.contMDiff.contMDiffAt)
+    (Eventually.of_forall fun _ ↦ f.contMDiff.contMDiffAt)
 
 /-- Pullback along a composite of locally analytic maps with explicit base points is the reverse
 composite of their `ℂ`-algebra stalk pullbacks. -/
@@ -255,6 +281,20 @@ theorem stalkPullbackAt_comp {g : Y → Z} {f : X → Y} {x : X} {y : Y} {z : Z}
     stalkPullbackAt (eventually_contMDiffAt_comp hg hf hfx) ((congrArg g hfx).trans hgy) =
       (stalkPullbackAt hf hfx).comp (stalkPullbackAt hg hgy) := by
   subst hfx hgy; exact stalkPullbackAlgHom_comp hg hf
+
+/-- Pullback along a composite bundled analytic map `g.comp f` with explicit target base point
+is the reverse composite of the `ℂ`-algebra stalk pullbacks, independently of the proof terms. -/
+@[simp]
+theorem stalkPullbackAt_contMDiffMap_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯)
+    {x : X} {z : Z} (hgf : ∀ᶠ w in 𝓝 x, ContMDiffAt I K ω (g.comp f) w)
+    (hgfx : (g.comp f) x = z) :
+    stalkPullbackAt hgf hgfx =
+      (stalkPullbackAlgHom (Eventually.of_forall fun _ ↦ f.contMDiff.contMDiffAt)).comp
+        (stalkPullbackAt (Eventually.of_forall fun _ ↦ g.contMDiff.contMDiffAt) hgfx) := by
+  rw [← stalkPullbackAt_rfl]
+  exact stalkPullbackAt_comp (J := J)
+    (Eventually.of_forall fun _ ↦ g.contMDiff.contMDiffAt) hgfx
+    (Eventually.of_forall fun _ ↦ f.contMDiff.contMDiffAt) rfl
 
 /-- Pullback along a map with a local analytic inverse near the base point, such as a chart or a
 biholomorphism, is bijective. -/

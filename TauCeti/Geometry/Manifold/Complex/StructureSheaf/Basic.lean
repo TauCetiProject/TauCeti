@@ -528,8 +528,9 @@ theorem toRingHom_stalkPrecompAlgHom (f : X → Y) (hf : ContMDiff I J ω f) (x 
         (holomorphicStructureSheaf I X).presheaf.stalk x) = stalkPrecomp I X f hf x := (rfl)
 
 variable {I X} in
+-- Pre-order so applied `stalkPrecompAlgHom` reduces to `stalkPrecomp` before composition splits.
 /-- `stalkPrecompAlgHom` acts on germs by `stalkPrecomp`. -/
-@[simp]
+@[simp↓]
 theorem stalkPrecompAlgHom_apply (f : X → Y) (hf : ContMDiff I J ω f) (x : X)
     (s : (holomorphicStructureSheaf J Y).presheaf.stalk (f x)) :
     stalkPrecompAlgHom I X f hf x s = stalkPrecomp I X f hf x s := (rfl)
@@ -557,12 +558,31 @@ theorem stalkPrecomp_comp (g : Y → Z) (hg : ContMDiff J K ω g) (f : X → Y)
     (stalkPrecomp_germ I X f hf x ((Opens.map (TopCat.ofHom ⟨g, hg.continuous⟩)).obj U) hx
       (precomp J Y g hg (op U) h)).symm
 
+/-- Pulling germs back along a composite bundled analytic map `g.comp f` is pulling back along
+`g` and then along `f`, independently of the analyticity proof term. -/
+@[simp↓]
+theorem stalkPrecomp_contMDiffMap_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯)
+    (hgf : ContMDiff I K ω (g.comp f)) (x : X)
+    (s : (holomorphicStructureSheaf K Z).presheaf.stalk ((g.comp f) x)) :
+    stalkPrecomp I X (g.comp f) hgf x s =
+      stalkPrecomp I X f f.contMDiff x (stalkPrecomp J Y g g.contMDiff (f x) s) :=
+  stalkPrecomp_comp I X g g.contMDiff f f.contMDiff x s
+
 /-- `stalkPrecompAlgHom` along `g ∘ f` is the reverse composite of `stalkPrecompAlgHom`s. -/
 theorem stalkPrecompAlgHom_comp (g : Y → Z) (hg : ContMDiff J K ω g) (f : X → Y)
     (hf : ContMDiff I J ω f) (x : X) :
     stalkPrecompAlgHom I X (g ∘ f) (hg.comp hf) x =
       (stalkPrecompAlgHom I X f hf x).comp (stalkPrecompAlgHom J Y g hg (f x)) :=
   AlgHom.ext (stalkPrecomp_comp I X g hg f hf x)
+
+/-- `stalkPrecompAlgHom` along a composite bundled analytic map `g.comp f` is the reverse
+composite of `stalkPrecompAlgHom`s, independently of the analyticity proof term. -/
+@[simp]
+theorem stalkPrecompAlgHom_contMDiffMap_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯)
+    (hgf : ContMDiff I K ω (g.comp f)) (x : X) :
+    stalkPrecompAlgHom I X (g.comp f) hgf x =
+      (stalkPrecompAlgHom I X f f.contMDiff x).comp (stalkPrecompAlgHom J Y g g.contMDiff (f x)) :=
+  stalkPrecompAlgHom_comp I X g g.contMDiff f f.contMDiff x
 
 end holomorphicStructureSheaf
 

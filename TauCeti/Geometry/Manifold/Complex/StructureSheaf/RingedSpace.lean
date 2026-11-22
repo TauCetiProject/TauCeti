@@ -55,7 +55,7 @@ maps:
   shows independently of charts that `φ.base` is complex analytic
   (`contMDiff_base_of_c_app_top_algebraMap`).
 * `holomorphicMapLocalRingedEquivalence` packages this into a bijection between bundled analytic
-  maps `C^ω⟮I, X; J, Y⟯` and `ℂ`-linear morphisms `locallyRingedSpace I X ⟶ locallyRingedSpace J Y`,
+  maps `C^ω⟮I, X; J, Y⟯` and `ℂ`-linear morphisms `LocallyRingedSpaceCLinearHom I X J Y`,
   compatible with identity, composition, open restriction, and the stalk-level germ equivalence
   `analyticMapGermEquivStalkAlgHom`.
 
@@ -244,6 +244,15 @@ theorem locallyRingedSpaceMap_comp {f : X → Y} (hf : ContMDiff I J ω f)
       congrArg (fun t ↦ toFun I X _ t x)
         (LocallyRingedSpace.comp_c_app_apply (locallyRingedSpaceMap f hf)
           (locallyRingedSpaceMap g hg) (op U) s).symm
+
+/-- `locallyRingedSpaceMap` sends a composite bundled analytic map `g.comp f` to the composite
+morphism, independently of the analyticity proof term. -/
+@[simp]
+theorem locallyRingedSpaceMap_contMDiffMap_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯)
+    (hgf : ContMDiff I K ω (g.comp f)) :
+    locallyRingedSpaceMap (g.comp f) hgf =
+      locallyRingedSpaceMap f f.contMDiff ≫ locallyRingedSpaceMap g g.contMDiff :=
+  locallyRingedSpaceMap_comp f.contMDiff g.contMDiff
 
 /-- Inclusion of an open subset induces an open immersion of holomorphic locally ringed spaces. -/
 instance instIsOpenImmersionLocallyRingedSpaceMapSubtypeVal (U : Opens X) :
@@ -703,6 +712,74 @@ theorem comp_c_app_algebraMap {E'' : Type*} [NormedAddCommGroup E''] [NormedSpac
   (PresheafedSpace.comp_c_app_apply φ ψ (op U) (algebraMap ℂ _ c)).trans <|
     (congrArg _ (hψ U c)).trans (hφ ((Opens.map ψ.base).obj U) c)
 
+/-- The type of `ℂ`-linear morphisms between holomorphic locally ringed spaces
+`locallyRingedSpace I X` and `locallyRingedSpace J Y`, i.e., morphisms fixing the constant
+sections `algebraMap ℂ _ c` on every open set. -/
+abbrev LocallyRingedSpaceCLinearHom
+    (I : ModelWithCorners ℂ E H) (X : Type) [TopologicalSpace X] [ChartedSpace H X]
+    (J : ModelWithCorners ℂ E' H') (Y : Type) [TopologicalSpace Y] [ChartedSpace H' Y] : Type :=
+  {φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y //
+    ∀ (U : Opens Y) (c : ℂ), (φ.c.app (op U)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ
+        ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c}
+
+namespace LocallyRingedSpaceCLinearHom
+
+/-- The identity `ℂ`-linear morphism on `locallyRingedSpace I X`. -/
+def id (I : ModelWithCorners ℂ E H) (X : Type) [TopologicalSpace X] [ChartedSpace H X] :
+    LocallyRingedSpaceCLinearHom I X I X :=
+  ⟨𝟙 (locallyRingedSpace I X), id_c_app_algebraMap I X⟩
+
+/-- The underlying locally ringed-space morphism of `LocallyRingedSpaceCLinearHom.id I X` is
+`𝟙 (locallyRingedSpace I X)`. -/
+@[simp]
+theorem val_id (I : ModelWithCorners ℂ E H) (X : Type) [TopologicalSpace X] [ChartedSpace H X] :
+    (LocallyRingedSpaceCLinearHom.id I X).val = 𝟙 (locallyRingedSpace I X) := (rfl)
+
+/-- Composition of `ℂ`-linear morphisms `locallyRingedSpace I X ⟶ locallyRingedSpace J Y` and
+`locallyRingedSpace J Y ⟶ locallyRingedSpace K Z`. -/
+def comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] {H'' : Type*}
+    [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''} {Z : Type} [TopologicalSpace Z]
+    [ChartedSpace H'' Z]
+    (ψ : LocallyRingedSpaceCLinearHom J Y K Z) (φ : LocallyRingedSpaceCLinearHom I X J Y) :
+    LocallyRingedSpaceCLinearHom I X K Z :=
+  ⟨φ.val ≫ ψ.val, comp_c_app_algebraMap (φ := φ.val.toHom) (ψ := ψ.val.toHom)
+    φ.property ψ.property⟩
+
+/-- The underlying locally ringed-space morphism of `ψ.comp φ` is `φ.val ≫ ψ.val`. -/
+@[simp]
+theorem val_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] {H'' : Type*}
+    [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''} {Z : Type} [TopologicalSpace Z]
+    [ChartedSpace H'' Z]
+    (ψ : LocallyRingedSpaceCLinearHom J Y K Z) (φ : LocallyRingedSpaceCLinearHom I X J Y) :
+    (ψ.comp φ).val = φ.val ≫ ψ.val := (rfl)
+
+/-- Left composition with `LocallyRingedSpaceCLinearHom.id` is the identity. -/
+@[simp]
+theorem id_comp (φ : LocallyRingedSpaceCLinearHom I X J Y) :
+    (LocallyRingedSpaceCLinearHom.id J Y).comp φ = φ :=
+  Subtype.ext (Category.comp_id φ.val)
+
+/-- Right composition with `LocallyRingedSpaceCLinearHom.id` is the identity. -/
+@[simp]
+theorem comp_id (φ : LocallyRingedSpaceCLinearHom I X J Y) :
+    φ.comp (LocallyRingedSpaceCLinearHom.id I X) = φ :=
+  Subtype.ext (Category.id_comp φ.val)
+
+/-- Composition of `ℂ`-linear morphisms of holomorphic locally ringed spaces is associative. -/
+theorem comp_assoc {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] {H'' : Type*}
+    [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''} {Z : Type} [TopologicalSpace Z]
+    [ChartedSpace H'' Z]
+    {E''' : Type*} [NormedAddCommGroup E'''] [NormedSpace ℂ E'''] {H''' : Type*}
+    [TopologicalSpace H'''] {L : ModelWithCorners ℂ E''' H'''} {W : Type} [TopologicalSpace W]
+    [ChartedSpace H''' W]
+    (χ : LocallyRingedSpaceCLinearHom K Z L W) (ψ : LocallyRingedSpaceCLinearHom J Y K Z)
+    (φ : LocallyRingedSpaceCLinearHom I X J Y) :
+    (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) :=
+  Subtype.ext (Category.assoc φ.val ψ.val χ.val).symm
+
+end LocallyRingedSpaceCLinearHom
+
 end CLinearity
 
 section Equivalence
@@ -795,14 +872,9 @@ variable (I X J Y) in
 /-- **Equivalence between holomorphic maps and `ℂ`-linear morphisms of locally ringed spaces.**
 For any complex charted space `(X, I)` and any finite-dimensional boundaryless complex manifold
 `(Y, J)`, bundled complex-analytic maps `C^ω⟮I, X; J, Y⟯` correspond bijectively via
-`locallyRingedSpaceMap` to `ℂ`-linear morphisms
-`locallyRingedSpace I X ⟶ locallyRingedSpace J Y`. -/
+`locallyRingedSpaceMap` to `ℂ`-linear morphisms `LocallyRingedSpaceCLinearHom I X J Y`. -/
 def holomorphicMapLocalRingedEquivalence :
-    C^ω⟮I, X; J, Y⟯ ≃
-      {φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y //
-        ∀ (U : Opens Y) (c : ℂ), (φ.c.app (op U)).hom (algebraMap ℂ _ c) =
-          algebraMap ℂ
-            ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c} where
+    C^ω⟮I, X; J, Y⟯ ≃ LocallyRingedSpaceCLinearHom I X J Y where
   toFun f := ⟨locallyRingedSpaceMap f f.contMDiff,
     locallyRingedSpaceMap_c_app_algebraMap f f.contMDiff⟩
   invFun φ := ⟨φ.val.base, contMDiff_base_of_c_app_top_algebraMap φ.val.toHom (φ.property ⊤)⟩
@@ -818,28 +890,27 @@ theorem holomorphicMapLocalRingedEquivalence_apply_val (f : C^ω⟮I, X; J, Y⟯
     (holomorphicMapLocalRingedEquivalence I X J Y f).val =
       locallyRingedSpaceMap f f.contMDiff := (rfl)
 
-/-- `holomorphicMapLocalRingedEquivalence` sends `ContMDiffMap.id` to the identity morphism. -/
+/-- `holomorphicMapLocalRingedEquivalence` sends `ContMDiffMap.id` to
+`LocallyRingedSpaceCLinearHom.id`. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_id [FiniteDimensional ℂ E] [I.Boundaryless]
     [IsManifold I 1 X] :
     holomorphicMapLocalRingedEquivalence I X I X ContMDiffMap.id =
-      ⟨𝟙 (locallyRingedSpace I X), id_c_app_algebraMap I X⟩ :=
+      LocallyRingedSpaceCLinearHom.id I X :=
   Subtype.ext (locallyRingedSpaceMap_id I X)
 
-/-- `holomorphicMapLocalRingedEquivalence.symm` sends the identity morphism to `ContMDiffMap.id`. -/
+/-- `holomorphicMapLocalRingedEquivalence.symm` sends `LocallyRingedSpaceCLinearHom.id` to
+`ContMDiffMap.id`. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_symm_id [FiniteDimensional ℂ E] [I.Boundaryless]
     [IsManifold I 1 X] :
-    (holomorphicMapLocalRingedEquivalence I X I X).symm
-        ⟨𝟙 (locallyRingedSpace I X), id_c_app_algebraMap I X⟩ = ContMDiffMap.id :=
+    (holomorphicMapLocalRingedEquivalence I X I X).symm (LocallyRingedSpaceCLinearHom.id I X) =
+      ContMDiffMap.id :=
   ContMDiffMap.ext fun _ ↦ rfl
 
 section SymmAndComp
 
-variable
-  (φ : {φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y //
-    ∀ (U : Opens Y) (c : ℂ), (φ.c.app (op U)).hom (algebraMap ℂ _ c) =
-      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c})
+variable (φ : LocallyRingedSpaceCLinearHom I X J Y)
 
 /-- Coercing `(holomorphicMapLocalRingedEquivalence I X J Y).symm φ` to a function gives
 `φ.val.base`. -/
@@ -858,28 +929,20 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] [FiniteDim
   {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z] [IsManifold K 1 Z]
 
 /-- `holomorphicMapLocalRingedEquivalence` sends composition of analytic maps to composition of
-morphisms. -/
+`LocallyRingedSpaceCLinearHom`s. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯) :
     holomorphicMapLocalRingedEquivalence I X K Z (g.comp f) =
-      ⟨(holomorphicMapLocalRingedEquivalence I X J Y f).val ≫
-          (holomorphicMapLocalRingedEquivalence J Y K Z g).val,
-        comp_c_app_algebraMap (φ := (holomorphicMapLocalRingedEquivalence I X J Y f).val.toHom)
-          (ψ := (holomorphicMapLocalRingedEquivalence J Y K Z g).val.toHom)
-          (holomorphicMapLocalRingedEquivalence I X J Y f).property
-          (holomorphicMapLocalRingedEquivalence J Y K Z g).property⟩ :=
+      (holomorphicMapLocalRingedEquivalence J Y K Z g).comp
+        (holomorphicMapLocalRingedEquivalence I X J Y f) :=
   Subtype.ext (locallyRingedSpaceMap_comp f.contMDiff g.contMDiff)
 
-/-- `holomorphicMapLocalRingedEquivalence.symm` sends composition of morphisms to composition of
-analytic maps. -/
+/-- `holomorphicMapLocalRingedEquivalence.symm` sends composition of `LocallyRingedSpaceCLinearHom`s
+to composition of analytic maps. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_symm_comp
-    (ψ : {ψ : locallyRingedSpace J Y ⟶ locallyRingedSpace K Z //
-      ∀ (U : Opens Z) (c : ℂ), (ψ.c.app (op U)).hom (algebraMap ℂ _ c) =
-        algebraMap ℂ ((holomorphicStructureSheaf J Y).obj.obj (op ((Opens.map ψ.base).obj U))) c}) :
-    (holomorphicMapLocalRingedEquivalence I X K Z).symm
-        ⟨φ.val ≫ ψ.val,
-          comp_c_app_algebraMap (φ := φ.val.toHom) (ψ := ψ.val.toHom) φ.property ψ.property⟩ =
+    (ψ : LocallyRingedSpaceCLinearHom J Y K Z) :
+    (holomorphicMapLocalRingedEquivalence I X K Z).symm (ψ.comp φ) =
       ((holomorphicMapLocalRingedEquivalence J Y K Z).symm ψ).comp
         ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ) :=
   ContMDiffMap.ext fun _ ↦ rfl
