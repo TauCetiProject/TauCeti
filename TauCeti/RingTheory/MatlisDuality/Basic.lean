@@ -38,7 +38,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
   `A`-modules.
 * `TauCeti.MatlisDual.equivLinearMapDualRegular`: the Hom-tensor adjunction
   `D_R N ≅ Hom_A(N, D_R A)` for a left `A`-module `N`, where `D_R A` is the dual of the right
-  regular module.
+  regular module, and `TauCeti.MatlisDual.equivLinearMapDualRegularOp`, its form
+  `D_R N ≅ Hom_{Aᵐᵒᵖ}(N, D_R A)` for a right `A`-module `N`.
 * `TauCeti.MatlisDual.evalEquiv` and `TauCeti.MatlisDual.evalEquivOp`: biduality for modules of
   finite length over `R`, as an isomorphism of left and of right `A`-modules.
 
@@ -243,14 +244,6 @@ theorem mapOp_comp {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module Aᵐ�
   ext
   simp
 
-/-- The right action of the endomorphism ring `Module.End Aᵐᵒᵖ N` of a right module on `D_R N` is
-dualization of endomorphisms. This is not a simp lemma, since `end_op_smul_eq_map` rewrites the
-same action to `MatlisDual.map` over `Aᵐᵒᵖ`. -/
-theorem end_op_smul_eq_mapOp (γ : (Module.End Aᵐᵒᵖ N)ᵐᵒᵖ) (φ : MatlisDual R E N) :
-    γ • φ = mapOp (A := A) γ.unop φ := by
-  ext
-  simp
-
 /-- An isomorphism of right modules dualizes to an isomorphism of left modules. The two modules may
 carry any `R`-module structures compatible with the `A`-action. -/
 def congrOp (e : N ≃ₗ[Aᵐᵒᵖ] N') : MatlisDual R E N' ≃ₗ[A] MatlisDual R E N :=
@@ -350,6 +343,49 @@ theorem equivLinearMapDualRegular_symm_comp {N' : Type*} [AddCommGroup N'] [Modu
     [Module A N'] [IsScalarTower R A N'] (h : N' →ₗ[A] MatlisDual R E A) (g : N →ₗ[A] N') :
     equivLinearMapDualRegular.symm (h ∘ₗ g) = map g (equivLinearMapDualRegular.symm h) := by
   rw [LinearEquiv.symm_apply_eq, equivLinearMapDualRegular_map, LinearEquiv.apply_symm_apply]
+
+section Op
+
+variable {N : Type w} [AddCommGroup N] [Module R N] [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
+
+/-- **The Hom-tensor adjunction for right modules**: for a right `A`-module `N`, `D_R N` is
+isomorphic to `Hom_{Aᵐᵒᵖ}(N, D_R A)`, where `D_R A` is the dual of the left regular module, a right
+`A`-module. A functional `φ` goes to `x ↦ (a ↦ φ (x · a))`, and a morphism `g : N → D_R A` goes back
+to `x ↦ g x 1`. -/
+def equivLinearMapDualRegularOp : MatlisDual R E N ≃ₗ[R] (N →ₗ[Aᵐᵒᵖ] MatlisDual R E A) where
+  toFun φ :=
+    { toFun x := (equivLinearMap R E A).symm <| equivLinearMap R E N φ ∘ₗ
+        (LinearMap.toSpanSingleton Aᵐᵒᵖ N x).restrictScalars R ∘ₗ (opLinearEquiv R).toLinearMap
+      map_add' _ _ := by ext; simp
+      map_smul' _ _ := by ext; simp [mul_smul] }
+  invFun g := (equivLinearMap R E N).symm <|
+    LinearMap.applyₗ 1 ∘ₗ (equivLinearMap R E A).toLinearMap ∘ₗ g.restrictScalars R
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+  left_inv _ := by ext; simp
+  right_inv _ := by ext; simp
+
+@[simp]
+theorem equivLinearMapDualRegularOp_apply_apply (φ : MatlisDual R E N) (x : N) (a : A) :
+    equivLinearMap R E A (equivLinearMapDualRegularOp φ x) a =
+      equivLinearMap R E N φ (op a • x) :=
+  (rfl)
+
+@[simp]
+theorem equivLinearMapDualRegularOp_symm_apply (g : N →ₗ[Aᵐᵒᵖ] MatlisDual R E A) (x : N) :
+    equivLinearMap R E N (equivLinearMapDualRegularOp.symm g) x = equivLinearMap R E A (g x) 1 :=
+  (rfl)
+
+/-- **Naturality of the Hom-tensor adjunction for right modules**: dualizing a morphism
+`g : N → N'` of right modules corresponds to precomposition with `g`. -/
+@[simp]
+theorem equivLinearMapDualRegularOp_mapOp {N' : Type*} [AddCommGroup N'] [Module R N']
+    [Module Aᵐᵒᵖ N'] [IsScalarTower R Aᵐᵒᵖ N'] (g : N →ₗ[Aᵐᵒᵖ] N') (ψ : MatlisDual R E N') :
+    equivLinearMapDualRegularOp (mapOp g ψ) = equivLinearMapDualRegularOp ψ ∘ₗ g := by
+  ext x a
+  simp
+
+end Op
 
 end Regular
 

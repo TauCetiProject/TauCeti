@@ -43,17 +43,7 @@ variable {R : Type u} [Ring R]
 monomorphism of finitely generated modules is an injective linear map. -/
 instance forget₂_preservesMonomorphisms :
     (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesMonomorphisms where
-  preserves {A B} f _ := by
-    refine (ModuleCat.mono_iff_injective _).mpr <|
-      (injective_iff_map_eq_zero _).mpr fun a ha ↦ ?_
-    simp only [forget₂, HasForget₂.forget₂, ObjectProperty.ι_map] at ha
-    -- Test `f` on the inclusion of the cyclic submodule `R ∙ a`, which is finitely generated.
-    let i : FGModuleCat.of R (R ∙ a) ⟶ A := ObjectProperty.homMk (ModuleCat.ofHom (R ∙ a).subtype)
-    have hi : i = 0 := (cancel_mono f).mp <| by
-      ext ⟨x, hx⟩
-      obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
-      simp [i, ha]
-    simpa [i] using congr(($hi).hom.hom ⟨a, Submodule.mem_span_singleton_self a⟩)
+  preserves f _ := (ModuleCat.mono_iff_injective _).2 (FGModuleCat.injective_of_mono f)
 
 /-- A finitely generated injective module is an injective object of `FGModuleCat R`. -/
 theorem injective_of_moduleInjective (X : FGModuleCat.{v} R)

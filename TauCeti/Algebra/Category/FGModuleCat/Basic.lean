@@ -231,28 +231,35 @@ instance : (ModuleCat.isFG.{v} R).IsStableUnderRetracts where
     refine (ModuleCat.isFG_iff M).mpr (Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, ?_⟩)
     simp [← ModuleCat.comp_apply]
 
+variable {R} in
+/-- **Testing on a cyclic submodule**: a morphism out of `X` composes to zero with the inclusion of
+the cyclic submodule `R ∙ x` exactly when it kills `x`. -/
+theorem _root_.FGModuleCat.span_singleton_subtype_comp_eq_zero_iff {X Y : FGModuleCat.{v} R}
+    (x : X.obj) (f : X ⟶ Y) :
+    (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) ≫ f =
+      0 ↔ f.hom.hom x = 0 := by
+  refine ⟨fun h ↦ by simpa using congr(($h).hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩),
+    fun hx ↦ ?_⟩
+  ext ⟨y, hy⟩
+  obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hy
+  simp [hx]
+
+variable {R} in
+/-- **A monomorphism of finitely generated modules is an injective linear map**: an element killed
+by the monomorphism generates a cyclic submodule whose inclusion it kills. -/
+theorem _root_.FGModuleCat.injective_of_mono {X Y : FGModuleCat.{v} R} (f : X ⟶ Y) [Mono f] :
+    Function.Injective f.hom.hom := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  have hi := (cancel_mono f).1 (((FGModuleCat.span_singleton_subtype_comp_eq_zero_iff x f).2
+    hx).trans zero_comp.symm)
+  simpa using (FGModuleCat.span_singleton_subtype_comp_eq_zero_iff x (𝟙 X)).1
+    (by rw [Category.comp_id, hi])
+
 /-- **A monomorphism of finitely generated modules is injective**: the inclusion
 `FGModuleCat R ⥤ ModuleCat R` preserves monomorphisms, over any ring `R`. -/
 instance _root_.FGModuleCat.preservesMonomorphisms_ι :
     (ModuleCat.isFG.{v} R).ι.PreservesMonomorphisms where
-  preserves {X Y} f _ := by
-    refine (ModuleCat.mono_iff_injective _).2 ((injective_iff_map_eq_zero _).2 fun x hx ↦ ?_)
-    let N := Submodule.span R {x}
-    let Z : FGModuleCat.{v} R :=
-      ⟨ModuleCat.of R N, Module.Finite.iff_fg.2 (Submodule.fg_span_singleton x)⟩
-    have h : (ObjectProperty.homMk (ModuleCat.ofHom N.subtype) : Z ⟶ X) =
-        ObjectProperty.homMk 0 := by
-      refine (cancel_mono f).1 (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext ?_)))
-      intro y
-      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-        ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp, Function.comp_apply,
-        ObjectProperty.homMk_zero, Limits.zero_comp, ObjectProperty.zero_hom, ModuleCat.hom_zero,
-        LinearMap.zero_apply]
-      -- `N.subtype y` is `y`, and `ConcreteCategory.hom` of a morphism of modules is its
-      -- underlying linear map, both definitionally.
-      exact LinearMap.mem_ker.1
-        ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hx) y.property)
-    simpa [Z] using congr_arg (fun g ↦ g.hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩) h
+  preserves f _ := (ModuleCat.mono_iff_injective _).2 (FGModuleCat.injective_of_mono f)
 
 /-- **Over a left Noetherian ring, finitely generated modules are closed under subobjects**: a
 submodule of a finitely generated module is finitely generated. -/

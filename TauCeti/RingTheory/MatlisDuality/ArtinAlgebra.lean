@@ -9,6 +9,7 @@ import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Module.Dual.ProjectiveInjective
 import TauCeti.Algebra.Module.Opposite
 import TauCeti.RingTheory.Artinian.FiniteLength
+import TauCeti.RingTheory.Artinian.Module
 public import TauCeti.RingTheory.MatlisDuality.Basic
 public import TauCeti.RingTheory.MatlisDuality.Semilocal
 
@@ -34,7 +35,7 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
   `TauCeti.moduleInjective_matlisDual_iff_projective_op` and
   `TauCeti.moduleProjective_op_matlisDual_iff_injective` are the forms for any injective `E` such
   that each `Hom_R(R ⧸ 𝔪, E)` has length one.
-* `TauCeti.IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual`: every finitely generated
+* `TauCeti.IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual`: every Artinian
   `A`-module embeds into a finite power of the injective module `D_R A`.
 * `TauCeti.exists_isInjectiveEnvelope_finite`: every finitely generated `A`-module has a finitely
   generated injective hull.
@@ -142,29 +143,23 @@ theorem IsInjectiveEnvelope.moduleInjective_matlisDual_iff_projective_op [Module
   have := hf.moduleInjective
   TauCeti.moduleInjective_matlisDual_iff_projective_op hf.length_quotient_linearMap_eq_one
 
-/-- **`D_R A` is a cogenerator.** Every finitely generated left module over an Artin algebra `A`
-embeds into a finite power of `D_R A`. -/
+omit [Module.Finite R A] in
+/-- **`D_R A` is a cogenerator.** Every Artinian left module over an `R`-algebra `A` embeds into a
+finite power of `D_R A`. -/
 theorem IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual [Module A N]
-    [IsScalarTower R A N] [Module.Finite A N] (hf : IsInjectiveEnvelope f) :
+    [IsScalarTower R A N] [IsArtinian A N] (hf : IsInjectiveEnvelope f) :
     ∃ (n : ℕ) (g : N →ₗ[A] (Fin n → MatlisDual R E A)), Function.Injective g := by
   have := hf.moduleInjective
-  have := hf.finite_op_matlisDual (A := A) (N := N)
-  obtain ⟨n, b, hb⟩ := Module.Finite.exists_fin (R := Aᵐᵒᵖ) (M := MatlisDual R E N)
-  -- The coordinate `i` of `g x` is the functional `a ↦ b i (a • x)`.
-  let g : N →ₗ[A] (Fin n → MatlisDual R E A) :=
-    LinearMap.pi fun i ↦ equivLinearMapDualRegular (b i)
-  refine ⟨n, g, (injective_iff_map_eq_zero g).mpr fun x hx => ?_⟩
-  -- Dualizing `a ↦ a • x` kills each `b i`, hence every functional on `N`.
-  have key : map (LinearMap.toSpanSingleton A N x) = (0 : MatlisDual R E N →ₗ[Aᵐᵒᵖ] _) :=
-    LinearMap.ext_on_range hb fun i ↦ MatlisDual.ext fun a ↦ by
-      have h := congr(equivLinearMap R E A ($hx i) a)
-      simpa only [g, LinearMap.pi_apply, equivLinearMapDualRegular_apply_apply, Pi.zero_apply,
-        map_zero, LinearMap.zero_apply, map_apply, LinearMap.toSpanSingleton_apply] using h
-  refine (injective_iff_map_eq_zero _).mp
-    (MatlisDual.bijective_evalₗ hf.length_quotient_linearMap_eq_one
-      (isFiniteLength_of_finite_trans R A N)).1 x
-    (MatlisDual.ext fun φ => ?_)
-  simpa using congr(equivLinearMap R E A ($key φ) 1)
+  refine IsArtinian.exists_injective_linearMap_pi fun x hx ↦ ?_
+  -- As `E` is a cogenerator, some functional `φ` on `N` does not kill `x`; its adjoint
+  -- `N → D_R A` does not kill `x` either, evaluating at `1`.
+  obtain ⟨φ, hφ⟩ : ∃ φ : MatlisDual R E N, equivLinearMap R E N φ x ≠ 0 := by
+    by_contra! h
+    exact hx (MatlisDual.injective_evalₗ
+      (nontrivial_linearMap_of_isMaximal hf.length_quotient_linearMap_eq_one)
+      (MatlisDual.ext fun φ ↦ by simpa using h φ))
+  refine ⟨equivLinearMapDualRegular φ, fun h ↦ hφ ?_⟩
+  simpa using congr(equivLinearMap R E A $h 1)
 
 variable [Small.{w} A]
 
@@ -242,6 +237,7 @@ theorem exists_isInjectiveEnvelope_finite (R : Type u) [CommRing R] [IsArtinianR
     ∃ (Q : Type (max u t)) (_ : AddCommGroup Q) (_ : Module A Q) (_ : Module.Finite A Q)
       (i : N →ₗ[A] Q), IsInjectiveEnvelope i := by
   obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson.{u, u} R
+  have := IsArtinianRing.of_finite R A
   obtain ⟨n, g, hg⟩ := hf.exists_injective_linearMap_pi_matlisDual (A := A) (N := N)
   have := hf.moduleInjective
   have : Small.{max u t} A := small_max A

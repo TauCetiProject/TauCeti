@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.DominantDimension
-public import TauCeti.Algebra.Module.Generator
 public import TauCeti.Algebra.Module.Injective.Int
 
 import TauCeti.LinearAlgebra.Exact
@@ -45,8 +44,6 @@ version is not defined here.
 * `TauCeti.two_le_dominantDimension_end_of_projective_of_injective`: **Müller's criterion,
   forward direction**: the endomorphism ring `Γ` of a finitely presented module that is projective
   and injective over `Γ` has dominant dimension at least two.
-* `TauCeti.two_le_dominantDimension_end_of_isGenerator`: the same for a finitely presented
-  generator that is injective over its endomorphism ring.
 * `TauCeti.dominantDimension_eq_top_of_injective`: a left self-injective ring has dominant
   dimension `⊤`.
 * `TauCeti.dominantDimension_int`: `dominantDimension ℤ = 0`.
@@ -127,26 +124,15 @@ theorem two_le_dominantDimension_end_of_projective_of_injective {A : Type u} [Ri
       Module.injective_object_of_injective_module _ _⟩
   -- The first map of `S` is precomposition with `q` followed by `Hom_A(Aⁿ, M) ≅ Mⁿ`; it is
   -- injective since `q` is surjective.
-  have hf : ⇑S.f.hom = ⇑(e n) ∘ fun g : Module.End A M ↦ g ∘ₗ q := by
+  have hf : ⇑S.f = ⇑(e n) ∘ fun g : Module.End A M ↦ g ∘ₗ q := by
     ext g : 1
     simp [S, LinearMap.lcomp_apply']
   have hmono : Mono S.f := (ModuleCat.mono_iff_injective _).2 <| by
-    change Function.Injective S.f.hom
     rw [hf]
     exact (e n).injective.comp hq.injective_linearMapComp_right
   rw [dominantDimension_eq_dominantDimension_of]
   exact CategoryTheory.two_le_dominantDimension_iff.2 ⟨_, _, S.f, S.g, S.zero, hmono,
     ModuleCat.shortComplexOfConj_exact _ _ _ _ _ hex, hM n, hM m⟩
-
-/-- **Müller's criterion, forward direction, for a generator.** Let `M` be a finitely presented
-generator of the category of `A`-modules that is injective over its endomorphism ring `Γ`. Then `Γ`
-has dominant dimension at least two. -/
-theorem two_le_dominantDimension_end_of_isGenerator {A : Type u} [Ring A] (M : Type v)
-    [AddCommGroup M] [Module A M] [Module.FinitePresentation A M] [Module.IsGenerator A M]
-    [Module.Injective (Module.End A M) M] : 2 ≤ dominantDimension (Module.End A M) :=
-  -- A generator is projective over its endomorphism ring.
-  have := Module.IsGenerator.projective_end (R := A) (M := M)
-  two_le_dominantDimension_end_of_projective_of_injective M
 
 /-- **A left self-injective ring has dominant dimension `⊤`**, through the coresolution
 `0 → Γ → Γ → 0 → 0 → ⋯`. -/

@@ -12,9 +12,6 @@ public import TauCeti.Algebra.Category.FGModuleCat.Projective
 public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Duality
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveClosure
 
-import Mathlib.RingTheory.Finiteness.Small
-import TauCeti.Algebra.Category.FGModuleCat.Injective
-import TauCeti.Algebra.Category.FGModuleCat.Projectivization
 import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.RingTheory.Artinian.Subalgebra
 
@@ -46,13 +43,6 @@ Krull-Schmidt property of `mod A`, with `FGModuleCat.indecomposable_obj_iff` and
 `FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a projective object lies in `add M` for
 every separator `M`, and dually an injective object lies in `add M` for every coseparator `M`
 (`FGModuleCat.additiveClosure_of_isCoseparator_of_injective`).
-
-Over an Artin algebra, with `A` small in the module universe, a coseparator `M` is injective over
-its endomorphism ring (`FGModuleCat.injective_end_of_isCoseparator`), dually to a generator being
-projective over it (`TauCeti.Module.IsGenerator.projective_end`): by projectivization and the
-Hom-tensor adjunction its dual is projective as a right module over the endomorphism ring (a left
-module over its opposite), and Matlis biduality
-returns to `M`. This is the cogenerator half of the Morita-Tachikawa correspondence.
 
 The two halves are not symmetric outside the categorical statements. Over every ring the regular
 module is a finitely generated projective generator, so separators of `mod R` have the elementwise
@@ -86,8 +76,6 @@ generator-cogenerator. (This last part is a remark and is not formalized here.)
   `M`.
 * `TauCeti.IsInjectiveEnvelope.isGeneratorCogenerator_regular_biprod_fgModuleCatMatlisDualRegular`:
   `A ⊕ D A` is a generator-cogenerator.
-* `FGModuleCat.injective_end_of_isCoseparator`: over an Artin algebra, a coseparator `M` of `mod A`
-  is an injective module over its endomorphism ring `Γ`.
 * `FGModuleCat.not_isCoseparator_int`: `ℤ` is not a coseparator of `mod ℤ`.
 
 ## References
@@ -138,19 +126,15 @@ variable {R : Type u} [CommRing R] [IsArtinianRing R] {E : Type v} [AddCommGroup
   [Module.Finite R A]
 
 /-- **The coseparators of `mod A`**: `M` is a coseparator of `mod A` exactly when `D A` lies in
-`add M`. Under the Matlis duality this is `FGModuleCat.isSeparator_iff_additiveClosure` for the
-right module `D M`. -/
+`add M`. The forward direction holds as `D A` is a finitely generated, hence Artinian, injective
+object (`FGModuleCat.additiveClosure_of_isCoseparator_of_injective`), and the converse as `D A` is a
+coseparator. -/
 theorem IsInjectiveEnvelope.isCoseparator_iff_additiveClosure (hf : IsInjectiveEnvelope f)
     (M : FGModuleCat.{v} A) :
-    IsCoseparator M ↔ additiveClosure M (hf.fgModuleCatMatlisDualRegular (A := A)) := by
-  refine ⟨fun hM ↦ ?_, hf.isCoseparator_fgModuleCatMatlisDualRegular.of_additiveClosure⟩
-  let Φ := hf.fgModuleCatMatlisDuality (A := A)
-  have hN : IsSeparator (Φ.functor.obj (op M)) :=
-    ((isSeparator_op_iff M).2 hM).of_equivalence Φ
-  rw [← Φ.additiveClosure_functor_obj_op_iff]
-  exact (additiveClosure _).prop_of_retract
-    (hf.fgModuleCatMatlisDualObjFgModuleCatMatlisDualRegularIso (A := A)).retract
-    ((FGModuleCat.isSeparator_iff_additiveClosure _).1 hN)
+    IsCoseparator M ↔ additiveClosure M (hf.fgModuleCatMatlisDualRegular (A := A)) :=
+  have := IsArtinianRing.of_finite R A
+  ⟨fun hM ↦ FGModuleCat.additiveClosure_of_isCoseparator_of_injective hM _,
+    hf.isCoseparator_fgModuleCatMatlisDualRegular.of_additiveClosure⟩
 
 /-- **The generator-cogenerators of `mod A`**: `M` is a generator-cogenerator exactly when the
 regular module `A` and its dual `D A` lie in `add M`. -/
@@ -222,38 +206,6 @@ theorem isGeneratorCogenerator_iff_forall_indecomposable (R : Type u) [CommRing 
   exact isGeneratorCogenerator_iff.trans <| and_congr
     (FGModuleCat.isSeparator_iff_forall_indecomposable M)
       (FGModuleCat.isCoseparator_iff_forall_indecomposable R M)
-
-/-- **A coseparator is injective over its endomorphism ring.** Over an Artin algebra `A`, a
-coseparator `M` of `mod A` is an injective module over `Module.End A M`. The modules may live in
-any universe in which `A` is small. -/
-theorem _root_.FGModuleCat.injective_end_of_isCoseparator (R : Type u) [CommRing R]
-    [IsArtinianRing R] {A : Type v} [Ring A] [Algebra R A] [Module.Finite R A] [Small.{w} A]
-    {M : FGModuleCat.{w} A} (hM : IsCoseparator M) :
-    Module.Injective (Module.End A M.obj) M.obj := by
-  have := IsArtinianRing.of_finite R A
-  -- Replace `R` by the centre `C` of `A`, which is small in the universe `w`, and take an injective
-  -- hull `E` of `C ⧸ J(C)`.
-  let C := Subalgebra.center R A
-  have : Module.Finite C A := Subalgebra.finite_centerAlgebra_of_finite
-  have : Small.{w} C := inferInstanceAs (Small.{w} {a : A // a ∈ C})
-  obtain ⟨E, _, _, f, hf, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson.{v, v} C
-  have := hf.moduleInjective
-  -- The dual `D_C A`, shrunk to the universe `w`, is a finitely generated injective module.
-  have : Module.Finite Aᵐᵒᵖ A := .equiv (MulOpposite.opLinearEquiv Aᵐᵒᵖ).symm
-  have : Module.Finite A (MatlisDual C E A) := hf.finite_matlisDual_of_finite_op
-  have : Small.{w} (MatlisDual C E A) := Module.Finite.small A _
-  let e := Shrink.linearEquiv.{w} A (MatlisDual C E A)
-  have : Module.Finite A (Shrink.{w} (MatlisDual C E A)) := .equiv e.symm
-  have : Module.Injective A (Shrink.{w} (MatlisDual C E A)) :=
-    ((Module.Baer.of_injective inferInstance).of_equiv e.symm).injective
-  let X := FGModuleCat.of A (Shrink.{w} (MatlisDual C E A))
-  have : Injective X := FGModuleCat.injective_of_moduleInjective X
-  -- As a finitely generated injective object, `X` lies in `add M`; so `D_C M` is projective as a
-  -- right module over `End M` (a left module over its opposite).
-  have := (FGModuleCat.finite_projective_end_op_matlisDual_of_additiveClosure (R := C)
-    (FGModuleCat.additiveClosure_of_isCoseparator_of_injective hM X) e).2
-  exact moduleInjective_of_projective_op_matlisDual hf.length_quotient_linearMap_eq_one
-    (isFiniteLength_of_finite_trans C A M.obj)
 
 /-- **`ℤ` is not a coseparator of `mod ℤ`.** -/
 theorem _root_.FGModuleCat.not_isCoseparator_int : ¬ IsCoseparator (FGModuleCat.of ℤ ℤ) := by

@@ -51,15 +51,11 @@ injective linear map `M → Eⁿ` for some `n`. -/
 theorem IsArtinian.exists_injective_linearMap_pi [IsArtinian R M]
     (h : ∀ m : M, m ≠ 0 → ∃ f : M →ₗ[R] E, f m ≠ 0) :
     ∃ (n : ℕ) (g : M →ₗ[R] Fin n → E), Function.Injective g := by
-  -- Finitely many maps `M → E` already cut out the common kernel of all of them.
+  -- Finitely many maps `M → E` already cut out the common kernel of all of them, which is zero.
   obtain ⟨s, hs⟩ := IsArtinian.exists_finset_iInf_eq fun f : M →ₗ[R] E ↦ LinearMap.ker f
-  refine ⟨s.card, LinearMap.pi fun i ↦ (s.equivFin.symm i).val,
-    (injective_iff_map_eq_zero _).2 fun m hm ↦ ?_⟩
-  by_contra hm0
+  refine ⟨s.card, LinearMap.pi fun i ↦ (s.equivFin.symm i).val, LinearMap.ker_eq_bot.mp ?_⟩
+  rw [LinearMap.ker_pi, s.equivFin.symm.iInf_comp (g := fun f ↦ LinearMap.ker f.val),
+    ← iInf_subtype' (p := (· ∈ s)) (f := fun f _ ↦ LinearMap.ker f), hs, eq_bot_iff]
+  refine fun m hm ↦ (Submodule.mem_bot R).2 (by_contra fun hm0 ↦ ?_)
   obtain ⟨f, hf⟩ := h m hm0
-  have hmem : m ∈ ⨅ g ∈ s, LinearMap.ker g := by
-    simp only [Submodule.mem_iInf, LinearMap.mem_ker]
-    intro g hg
-    simpa using congr_fun hm (s.equivFin ⟨g, hg⟩)
-  rw [hs] at hmem
-  exact hf ((Submodule.mem_iInf _).1 hmem f)
+  exact hf ((Submodule.mem_iInf _).1 hm f)

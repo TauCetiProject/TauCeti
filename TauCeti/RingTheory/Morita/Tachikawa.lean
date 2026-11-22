@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.FGModuleCat.Generator.Cogenerator
 public import TauCeti.RingTheory.DominantDimension
 
+import TauCeti.Algebra.Category.FGModuleCat.Generator.Endomorphism
+
 /-!
 # The Morita-Tachikawa correspondence: forward direction
 
@@ -16,9 +18,10 @@ Let `A` be an Artin algebra and `M` a generator-cogenerator of `mod A`, with end
 Morita-Tachikawa correspondence: `Γ` has dominant dimension at least two
 (`TauCeti.two_le_dominantDimension_end`).
 
-It combines Müller's criterion (`TauCeti.two_le_dominantDimension_end_of_isGenerator`), for a
-finitely presented generator that is injective over its endomorphism ring, with the injectivity of
-a coseparator over its endomorphism ring (`FGModuleCat.injective_end_of_isCoseparator`).
+It combines Müller's criterion (`TauCeti.two_le_dominantDimension_end_of_projective_of_injective`),
+for a finitely presented module that is projective and injective over its endomorphism ring, with
+the projectivity of a generator (`TauCeti.Module.IsGenerator.projective_end`) and the injectivity of
+a coseparator (`FGModuleCat.injective_end_of_isCoseparator`) over their endomorphism rings.
 
 ## Main results
 
@@ -55,6 +58,7 @@ theorem two_le_dominantDimension_end (R : Type u) [CommRing R] [IsArtinianRing R
   have : Module.IsGenerator A M.obj := FGModuleCat.isGenerator_of_isSeparator hs
   have := Module.finitePresentation_of_finite A M.obj
   have := FGModuleCat.injective_end_of_isCoseparator R hc
-  exact two_le_dominantDimension_end_of_isGenerator M.obj
+  -- `Module.IsGenerator.projective_end` makes `M` projective over its endomorphism ring.
+  exact two_le_dominantDimension_end_of_projective_of_injective M.obj
 
 end TauCeti
