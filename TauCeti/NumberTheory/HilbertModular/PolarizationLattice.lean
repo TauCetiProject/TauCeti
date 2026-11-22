@@ -91,13 +91,14 @@ theorem mem_polarizationLattice {c : FractionalIdeal (𝓞 K)⁰ K} {x : Fin 2 �
 /-- The nonzero second coordinate ideal `J = c⁻¹𝔡⁻¹` of the polarization lattice. -/
 noncomputable def polarizationCoordinateIdeal (c : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
-  c⁻¹ * Units.mk0 (dual ℤ ℚ 1) (dual_ne_zero ℤ ℚ one_ne_zero)
+  c⁻¹ * dualEquiv ℤ ℚ 1
 
 @[simp]
 theorem coe_polarizationCoordinateIdeal (c : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     (polarizationCoordinateIdeal c : FractionalIdeal (𝓞 K)⁰ K) =
       c.val⁻¹ * dual ℤ ℚ 1 := by
-  simp [polarizationCoordinateIdeal]
+  simp only [polarizationCoordinateIdeal, Units.val_mul, Units.val_inv_eq_inv_val,
+    coe_dualEquiv, Units.val_one]
 
 /-- For `c ≠ 0`, the second coordinate ideal `c⁻¹𝔡⁻¹` of `L_c` is nonzero. -/
 private theorem inv_mul_dual_one_ne_zero {c : FractionalIdeal (𝓞 K)⁰ K} (hc : c ≠ 0) :
