@@ -26,7 +26,8 @@ coefficients.
 
 ## Main results
 
-* `Polynomial.l1Norm_add_le` and `Polynomial.l1Norm_mul_le`: the triangle and product bounds.
+* `Polynomial.l1Norm_add_le`, `Polynomial.l1Norm_mul_le` and `Polynomial.l1Norm_prod_le`: the
+  triangle and product bounds.
 * `Polynomial.norm_eval_le_l1Norm_mul`: the evaluation bound, and
   `Polynomial.norm_eval_le_add_one_mul_supNorm_mul`: its form in terms of the sup norm.
 * `Polynomial.l1Norm_comp_le` and `Polynomial.l1Norm_comp_X_add_C_le`: the composition and
@@ -114,6 +115,13 @@ theorem l1Norm_X [NormOneClass R] : (X : R[X]).l1Norm = 1 := by
 @[simp]
 theorem l1Norm_X_pow [NormOneClass R] (n : ℕ) : (X ^ n : R[X]).l1Norm = 1 := by
   rw [← monomial_one_right_eq_X_pow, l1Norm_monomial, norm_one]
+
+/-- The linear polynomial `X - C a` has coefficient l¹-norm `1 + ‖a‖` when the coefficient norm
+preserves one. -/
+@[simp]
+theorem l1Norm_X_sub_C [NormOneClass R] (a : R) : (X - C a).l1Norm = 1 + ‖a‖ := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  simp [l1Norm_eq_sum_range, Finset.sum_range_succ, coeff_X, coeff_C, add_comm]
 
 /-- Negating a polynomial does not change its coefficient l¹-norm. -/
 @[simp]
@@ -263,6 +271,17 @@ theorem l1Norm_pow_le [NormOneClass R] (P : R[X]) (n : ℕ) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp only [pow_zero, l1Norm_one, le_refl]
   · exact P.l1Norm_pow_le_of_ne_zero hn
+
+/-- The coefficient l¹-norm of a finite product is at most the product of the coefficient
+l¹-norms. -/
+theorem l1Norm_prod_le {A : Type*} [SeminormedCommRing A] [NormOneClass A] {ι : Type*}
+    (s : Finset ι) (P : ι → A[X]) : (∏ i ∈ s, P i).l1Norm ≤ ∏ i ∈ s, (P i).l1Norm := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.prod_insert ha]
+    exact (l1Norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (l1Norm_nonneg _))
 
 /-- The coefficient l¹-norm of a composition `P.comp Q` is at most that of `P` times
 `max 1 Q.l1Norm ^ P.natDegree`. -/
