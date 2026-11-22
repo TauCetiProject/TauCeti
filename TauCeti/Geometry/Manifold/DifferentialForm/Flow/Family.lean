@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 import TauCeti.Analysis.ODE.ScalarLinear
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 
 /-!
 # Time-dependent families of forms along time-dependent flows
@@ -76,6 +76,8 @@ how Moser's argument runs with a field cut off away from a region of interest.
 * `TauCeti.hasDerivAt_mpullback_prodMk`: the slices of `α` have velocity `ι_t^* L_{∂_t} α`.
 * `TauCeti.SmoothForm.timeDeriv`, `TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`: the
   same velocity for a smooth form, as a smooth form on `ℝ × M`.
+* `TauCeti.SmoothForm.mpullback_prodMk_timeDeriv_lineMapFamily_apply_eq_zero`: the linear
+  interpolation of two forms does not move where they agree.
 * `TauCeti.SmoothForm.mpullback_prodMk_timeDeriv_mpullback_prodMap`: the time derivative of the
   pullback of a family along `id × f` is the pullback of its time derivative.
 * `TauCeti.SmoothForm.mpullback_prodMk_mpullback_prodMap_id`: the slices of `(g × id)^* β` are
@@ -331,6 +333,23 @@ theorem SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
       t := by
   simpa only [SmoothForm.coe_mpullback, SmoothForm.coe_timeDeriv] using
     hasDerivAt_mpullback_prodMk t x (α.mdifferentiableAt (t, x))
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- Where two forms agree, their linear interpolation
+(`TauCeti.SmoothForm.lineMapFamily`) does not move: its time derivative vanishes there at all
+times. -/
+theorem SmoothForm.mpullback_prodMk_timeDeriv_lineMapFamily_apply_eq_zero
+    {α₀ α₁ : SmoothForm I M F k} {c : ℝ → ℝ} (hc : ContDiff ℝ ∞ c) {x : M}
+    (hx : α₁.val x = α₀.val x) (t : ℝ) :
+    (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
+      (SmoothForm.lineMapFamily α₀ α₁ hc).timeDeriv).val x = 0 := by
+  refine ((SmoothForm.lineMapFamily α₀ α₁ hc).hasDerivAt_mpullback_prodMk_timeDeriv t x).unique ?_
+  have hconst : (fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id)
+      (SmoothForm.lineMapFamily α₀ α₁ hc)).val x) = fun _ ↦ α₀.val x := by
+    funext u
+    simp [hx]
+  rw [hconst]
+  exact hasDerivAt_const t _
 
 section Pullback
 

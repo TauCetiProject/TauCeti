@@ -79,21 +79,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 /-! ### The strict Moser isotopy fixing a transverse slice -/
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- Where two one-forms agree, the linear interpolation between them does not move: its time
-derivative vanishes there at all times. -/
-private theorem mpullback_prodMk_timeDeriv_lineMapFamily_apply {α₀ α₁ : SmoothForm I M ℝ 1}
-    {c : ℝ → ℝ} (hc : ContDiff ℝ ∞ c) {x : M} (hx : α₁.val x = α₀.val x) (t : ℝ) :
-    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
-      (lineMapFamily α₀ α₁ hc).timeDeriv).val x = 0 := by
-  refine (hasDerivAt_mpullback_prodMk_timeDeriv (lineMapFamily α₀ α₁ hc) t x).unique ?_
-  have hconst : (fun u ↦ (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id)
-      (lineMapFamily α₀ α₁ hc)).val x) = fun _ ↦ α₀.val x := by
-    funext u
-    simp [hx]
-  rw [hconst]
-  exact hasDerivAt_const t _
-
 section Family
 
 variable [TopologicalSpace.PseudoMetrizableSpace M] [SigmaCompactSpace M]
@@ -162,7 +147,7 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_forall_isContactFormAt
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ := exists_partialDiffeomorph_mpullback_eq_of_isTransverseAlong
     hcα hι himm hind hclosed hdim
     (fun t ↦ by rw [mpullback_prodMk_lineMapFamily]; exact htr _ (hst t)) hKι
-    (fun x hx t ↦ mpullback_prodMk_timeDeriv_lineMapFamily_apply _ (hval x hx) t) 0 1
+    (fun x hx t ↦ mpullback_prodMk_timeDeriv_lineMapFamily_apply_eq_zero _ (hval x hx) t) 0 1
   refine ⟨φ, hsrc, htgt, hfix, fun x hx ↦ ?_⟩
   simpa [Real.smoothTransition.one, Real.smoothTransition.zero] using hφ x hx
 
@@ -209,47 +194,6 @@ private theorem isOpen_setOf_forall_pos_apply_reebVectorField {α₀ α₁ β : 
         exact hgs.eventually (lt_mem_nhds (by simpa [g, A] using hx t ht))
   filter_upwards [hN.mem_nhds hxN, hev] with y hyN hy
   exact ⟨hyN, fun t ht ↦ by simpa [g, A] using hy t ht⟩
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- A partial diffeomorphism of an open submanifold `W` which fixes the points of `K` and pulls
-the restriction of `α₁` back to that of `α₀`, read in `M`. -/
-private theorem exists_partialDiffeomorph_mpullback_eq_of_opens {α₀ α₁ : SmoothForm I M ℝ 1}
-    {W : TopologicalSpace.Opens M} (hW : Nonempty W) {K : Set M} (hKW : K ⊆ W)
-    {φ : PartialDiffeomorph I I W W ∞} (hsrc : Subtype.val ⁻¹' K ⊆ φ.source)
-    (htgt : Subtype.val ⁻¹' K ⊆ φ.target) (hfix : ∀ y ∈ Subtype.val ⁻¹' K, φ y = y)
-    (hφ : ∀ y ∈ φ.source, TauCeti.mpullback I I φ
-      (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₁).val y =
-        (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₀).val y) :
-    ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
-      ∀ x ∈ φ.source, TauCeti.mpullback I I φ α₁.val x = α₀.val x := by
-  refine ⟨φ.liftOpens hW hW, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [PartialDiffeomorph.liftOpens_source]
-    exact ⟨⟨x, hKW hx⟩, hsrc hx, rfl⟩
-  · rw [PartialDiffeomorph.liftOpens_target]
-    exact ⟨⟨x, hKW hx⟩, htgt hx, rfl⟩
-  · exact (φ.liftOpens_apply_coe hW hW ⟨x, hKW hx⟩).trans
-      (congrArg Subtype.val (hfix ⟨x, hKW hx⟩ hx))
-  rw [PartialDiffeomorph.liftOpens_source] at hx
-  obtain ⟨y, hy, rfl⟩ := hx
-  refine (mpullback_liftOpens_apply_coe φ (by simp) hW hW α₁.val hy).trans ?_
-  have hφy := hφ y hy
-  rw [coe_mpullback] at hφy
-  exact hφy.trans (coe_mpullback_subtype_val_apply α₀ y)
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- The interpolations of the restrictions of `α₀` and `α₁` to an open submanifold are contact
-where those of `α₀` and `α₁` are. -/
-private theorem isContactFormAt_mpullback_subtypeVal_add_smul_sub {α₀ α₁ : SmoothForm I M ℝ 1}
-    {W : TopologicalSpace.Opens M} {s : ℝ} {y : W}
-    (hc : IsContactFormAt (α₀ + s • (α₁ - α₀)).val y) :
-    IsContactFormAt (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₀ +
-      s • (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₁ -
-        mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₀)).val y := by
-  rw [← map_sub, ← map_smul, ← map_add, coe_mpullback,
-    isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
-      ((α₀ + s • (α₁ - α₀)).contMDiff.of_le (by simp) y)
-      (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
-  exact hc
 
 variable [SecondCountableTopology M]
 
@@ -314,7 +258,11 @@ private theorem exists_partialDiffeomorph_mpullback_eq_of_forall_pos
       (fun y hy ↦ hrange ▸ hKι hy)
       (fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm))
-  exact exists_partialDiffeomorph_mpullback_eq_of_opens hW hKV hsrc htgt hfix hφ
+  refine exists_partialDiffeomorph_forall_mpullback_of_opens (by simp) hW hKV hsrc htgt hfix α₁.val
+    (P := fun x v ↦ v = α₀.val x) fun y hy ↦ ?_
+  have hφy := hφ y hy
+  rw [coe_mpullback] at hφy
+  exact hφy.trans (coe_mpullback_subtype_val_apply α₀ y)
 
 /-- **Strict interpolation of contact forms agreeing to first order along a slice.** Let `α₀` be
 a contact form at the points of a set `K`, and let `α₁` agree with `α₀` at the points of `K`, with

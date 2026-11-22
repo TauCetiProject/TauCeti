@@ -43,7 +43,8 @@ A partial diffeomorphism `Ψ` between open subsets `U` and `V`, read in the ambi
 (`PartialDiffeomorph.liftOpens`), pulls a form back as `Ψ` pulls back its restriction to `V`
 (`TauCeti.mpullback_liftOpens_apply_coe`). So a construction carried out on an open submanifold,
 such as a flow defined only where some condition on the forms holds, transfers to the ambient
-manifold.
+manifold, together with the points it fixes and pointwise identities between pulled back forms
+(`TauCeti.exists_partialDiffeomorph_forall_mpullback_of_opens`).
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
 coordinate reads the first coordinate of a tangent vector
@@ -417,5 +418,32 @@ theorem mpullback_liftOpens_apply_coe {E' H' M' : Type*} [NormedAddCommGroup E']
   refine (mpullback_subtype_val_apply _ x).symm.trans ?_
   rw [← mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hlift, hcomp,
     mpullback_comp_at (Ψ.mdifferentiableAt hn hx) (hval _)]
+
+omit [IsManifold I 1 M] in
+/-- **Lifting a partial diffeomorphism of an open subset which fixes a set.** Let `Ψ` be a partial
+diffeomorphism of an open subset `U` of `M` whose source and target contain the points of a set
+`K ⊆ U`, and which fixes them. Then its lift to `M` has source and target containing `K` and fixes
+`K`. If moreover the pullback along `Ψ` of the restriction to `U` of a form `ω` satisfies a
+pointwise condition `P` on the source of `Ψ`, then so does the pullback of `ω` along the lift on
+its source. -/
+theorem exists_partialDiffeomorph_forall_mpullback_of_opens {n : WithTop ℕ∞} (hn : n ≠ 0)
+    {U : Opens M} (hU : Nonempty U) {K : Set M} (hKU : K ⊆ U) {Ψ : PartialDiffeomorph I I U U n}
+    (hsrc : Subtype.val ⁻¹' K ⊆ Ψ.source) (htgt : Subtype.val ⁻¹' K ⊆ Ψ.target)
+    (hfix : ∀ y ∈ Subtype.val ⁻¹' K, Ψ y = y) (ω : RoughForm I M F k)
+    {P : (x : M) → (TangentSpace I x [⋀^Fin k]→L[ℝ] F) → Prop}
+    (hP : ∀ y ∈ Ψ.source, P y (mpullback I I Ψ (mpullback I I (Subtype.val : U → M) ω) y)) :
+    ∃ φ : PartialDiffeomorph I I M M n, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
+      ∀ x ∈ φ.source, P x (mpullback I I φ ω x) := by
+  refine ⟨Ψ.liftOpens hU hU, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · rw [PartialDiffeomorph.liftOpens_source]
+    exact ⟨⟨x, hKU hx⟩, hsrc hx, rfl⟩
+  · rw [PartialDiffeomorph.liftOpens_target]
+    exact ⟨⟨x, hKU hx⟩, htgt hx, rfl⟩
+  · exact (Ψ.liftOpens_apply_coe hU hU ⟨x, hKU hx⟩).trans
+      (congrArg Subtype.val (hfix ⟨x, hKU hx⟩ hx))
+  rw [PartialDiffeomorph.liftOpens_source] at hx
+  obtain ⟨y, hy, rfl⟩ := hx
+  rw [mpullback_liftOpens_apply_coe Ψ hn hU hU ω hy]
+  exact hP y hy
 
 end TauCeti

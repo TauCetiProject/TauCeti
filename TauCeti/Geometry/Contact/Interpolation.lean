@@ -99,6 +99,19 @@ theorem isContactFormAt_add_smul_sub {x : M} (hc : IsContactFormAt α₀.val x)
   · rw [← mextDerivₗ_apply I 1 (α₀ + s • (α₁ - α₀)), map_add, map_smul, map_sub]
     simp [hd v hv w hw]
 
+/-- The interpolations of the restrictions of `α₀` and `α₁` to an open subset `W` are contact
+where those of `α₀` and `α₁` are. -/
+theorem isContactFormAt_mpullback_subtypeVal_add_smul_sub {W : TopologicalSpace.Opens M} {s : ℝ}
+    {y : W} (hc : IsContactFormAt (α₀ + s • (α₁ - α₀)).val y) :
+    IsContactFormAt (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₀ +
+      s • (mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₁ -
+        mpullback (Subtype.val : W → M) contMDiff_subtypeVal α₀)).val y := by
+  rw [← map_sub, ← map_smul, ← map_add, coe_mpullback,
+    isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
+      ((α₀ + s • (α₁ - α₀)).contMDiff.of_le (by simp) y)
+      (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
+  exact hc
+
 variable [FiniteDimensional ℝ E]
 
 /-- **The interpolation is contact near the set of first-order agreement.** Let `α₀` be contact at
@@ -184,32 +197,17 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
   obtain ⟨N, hN, hKN, hcN⟩ := exists_isOpen_forall_isContactFormAt_add_smul_sub hc hval hd
   set W : TopologicalSpace.Opens M := ⟨N, hN⟩
   have hW : Nonempty W := ⟨⟨x₀, hKN hx₀⟩⟩
-  set res : SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I W ℝ 1 :=
-    mpullback (Subtype.val : W → M) contMDiff_subtypeVal
-  have hcW (y : W) (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) :
-      IsContactFormAt (res α₀ + s • (res α₁ - res α₀)).val y := by
-    rw [← map_sub, ← map_smul, ← map_add, coe_mpullback,
-      isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
-        ((α₀ + s • (α₁ - α₀)).contMDiff.of_le (by simp) y)
-        (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
-    exact hcN y y.property s hs
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt (K := Subtype.val ⁻¹' K)
-      hcW fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
+      (fun (y : W) s hs ↦
+        isContactFormAt_mpullback_subtypeVal_add_smul_sub (hcN y y.property s hs))
+      fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.
-  refine ⟨φ.liftOpens hW hW, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [PartialDiffeomorph.liftOpens_source]
-    exact ⟨⟨x, hKN hx⟩, hsrc hx, rfl⟩
-  · rw [PartialDiffeomorph.liftOpens_target]
-    exact ⟨⟨x, hKN hx⟩, htgt hx, rfl⟩
-  · exact (φ.liftOpens_apply_coe hW hW ⟨x, hKN hx⟩).trans
-      (congrArg Subtype.val (hfix ⟨x, hKN hx⟩ hx))
-  rw [PartialDiffeomorph.liftOpens_source] at hx
-  obtain ⟨y, hy, rfl⟩ := hx
+  refine exists_partialDiffeomorph_forall_mpullback_of_opens (by simp) hW hKN hsrc htgt hfix α₁.val
+    (P := fun x v ↦ ∃ g : ℝ, 0 < g ∧ v = g • α₀.val x) fun y hy ↦ ?_
   obtain ⟨g, hg, hφy⟩ := hφ y hy
-  refine ⟨g, hg, (mpullback_liftOpens_apply_coe φ (by simp) hW hW α₁.val hy).trans ?_⟩
   rw [coe_mpullback, coe_mpullback] at hφy
-  exact hφy.trans (congrArg (g • ·) (mpullback_subtype_val_apply α₀.val y))
+  exact ⟨g, hg, hφy.trans (congrArg (g • ·) (mpullback_subtype_val_apply α₀.val y))⟩
 
 end TauCeti.SmoothForm
