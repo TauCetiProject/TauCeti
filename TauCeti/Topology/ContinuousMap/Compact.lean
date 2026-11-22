@@ -13,9 +13,10 @@ public import Mathlib.Topology.ContinuousMap.Ordered
 # Uniform positivity of continuous functions
 
 The continuous functions into a linearly ordered semiring `𝕜` that are bounded below by a positive
-constant form a convex set. On a compact domain, where a pointwise positive continuous function
-attains a positive minimum, this set is open for the compact-open topology (the uniform topology
-when `𝕜 = ℝ`); openness needs only a linear order on `𝕜` whose intervals `Set.Iic a` are closed.
+constant form a convex set. On a compact domain this set is open for the compact-open topology
+(the uniform topology when `𝕜 = ℝ`), since on a nonempty compact domain a pointwise positive
+continuous function attains a positive minimum; openness needs only a linear order on `𝕜` whose
+intervals `Set.Iic a` are closed.
 These facts apply, for example, to separating positive continuous functions in the proof of
 Pietsch domination.
 
@@ -23,8 +24,9 @@ A linear functional on `C(X, 𝕜)` is bounded above on the uniformly positive f
 is nonpositive on them, since they form a cone. It is then nonpositive on every nonnegative
 function: adding a positive constant to a large multiple of a nonnegative function makes it
 uniformly positive. Here `𝕜` is a linearly ordered semifield in which `a ≤ b` gives `b = a + c` for
-some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any linearly ordered field. This is the
-positivity of the functional produced by separating the uniformly positive functions from a cone.
+some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0` or any linearly ordered field. This gives the sign
+of the functional produced by separating the uniformly positive functions from a cone: it is
+nonpositive on the nonnegative functions, so its negation is a positive functional.
 
 A continuous map from a compact space into a metric space (or normed additive group) stays at a
 uniform positive distance from every point outside its range.
@@ -73,7 +75,8 @@ theorem isOpen_uniformlyPositive {𝕜 : Type*} [Zero 𝕜] [LinearOrder 𝕜] [
   refine isOpen_iff_mem_nhds.2 fun h ⟨δ, hδ, hhδ⟩ ↦ Filter.mem_of_superset
     ((isOpen_setOfPred_mapsTo isCompact_univ isOpen_Ioi).mem_nhds
       fun x _ ↦ hδ.trans_le (hhδ x)) fun g hg ↦ ?_
-  -- A pointwise positive `g` attains a positive minimum on the compact space `X`.
+  -- On an empty `X` any `δ > 0` is a lower bound. On a nonempty compact `X`, the pointwise
+  -- positive `g` attains a positive minimum.
   rcases isEmpty_or_nonempty X with hX | hX
   · exact ⟨δ, hδ, isEmptyElim⟩
   · obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty g.continuous.continuousOn
