@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Projective.FullSubcategory
 public import TauCeti.CategoryTheory.ObjectProperty.Presented
 
 import TauCeti.Algebra.Module.FinitePresentation

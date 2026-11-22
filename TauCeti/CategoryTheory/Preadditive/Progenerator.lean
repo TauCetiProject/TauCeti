@@ -38,8 +38,9 @@ In an abelian category, `Hom(P, -)` identifies `C` with the finitely presented r
 
 * `TauCeti.isProgenerator_iff` and `TauCeti.isProgenerator_iff_exists_additiveClosure`: the
   biproduct and additive-closure characterizations.
-* `TauCeti.IsProgenerator.isProjective_eq_additiveClosure` and
-  `TauCeti.IsProgenerator.projective_iff_additiveClosure`: `proj C = add P`.
+* `TauCeti.IsProgenerator.isProjective_eq_additiveClosure`,
+  `TauCeti.IsProgenerator.projective_iff_additiveClosure`, and
+  `TauCeti.isProgenerator_iff_isProjective_eq_additiveClosure`: `proj C = add P`.
 * `TauCeti.IsProgenerator.enoughProjectives` and `TauCeti.IsProgenerator.isSeparator`: a category
   with a progenerator has enough projectives, and any progenerator is a separator.
 * `TauCeti.IsAdditiveGenerator.isProgenerator` and
@@ -156,6 +157,20 @@ theorem of_additiveClosure (hP : IsProgenerator P) [Projective P'] (h : additive
     exact ⟨Q, π, additiveClosure_le_iff.mpr h Q hQ, hπ⟩⟩
 
 end IsProgenerator
+
+/-- In a category with enough projectives, `P` is a progenerator if and only if the projective
+objects of `C` are precisely `add P`. -/
+theorem isProgenerator_iff_isProjective_eq_additiveClosure [EnoughProjectives C] {P : C} :
+    IsProgenerator P ↔ isProjective C = additiveClosure P := by
+  refine ⟨IsProgenerator.isProjective_eq_additiveClosure, fun h ↦ ?_⟩
+  have hP : Projective P := by
+    change isProjective C P
+    rw [h]
+    exact additiveClosure_self P
+  refine isProgenerator_iff_exists_additiveClosure.mpr ⟨hP, fun X ↦ ?_⟩
+  refine ⟨Projective.over X, Projective.π X, ?_, inferInstance⟩
+  rw [← h]
+  exact (inferInstance : Projective (Projective.over X))
 
 /-- A projective object admitting a progenerator as a retract is itself a progenerator. -/
 theorem _root_.CategoryTheory.Retract.isProgenerator {P P' : C} (h : Retract P P')

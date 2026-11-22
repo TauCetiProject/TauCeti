@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Basic
 public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic
-public import TauCeti.CategoryTheory.Preadditive.Projectivization.Basic
 public import TauCeti.CategoryTheory.Preadditive.Projectivization.Progenerator
 
 /-!

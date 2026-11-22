@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Limits.WeakLimits.WeakKernels
 public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic
-public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.RingTheory.Coherent.Basic
 
 /-!

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.DirectSum.Module
-public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.RingTheory.Finiteness.Basic

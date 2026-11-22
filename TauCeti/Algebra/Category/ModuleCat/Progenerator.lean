@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Projective.FullSubcategory
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Preadditive.Progenerator
 
@@ -15,7 +15,7 @@ public import TauCeti.CategoryTheory.Preadditive.Progenerator
 
 Let `S : ObjectProperty (ModuleCat.{v} R)` be an object property of `R`-modules. Building on the
 characterization of projective objects in `S.FullSubcategory`
-(`TauCeti.Algebra.Category.ModuleCat.Projective.Basic`), this file relates categorical
+(`TauCeti.Algebra.Category.ModuleCat.Projective.FullSubcategory`), this file relates categorical
 progenerators (`TauCeti.IsProgenerator`) in `S.FullSubcategory` to module-theoretic projectivity
 (`Module.Projective`) and generators (`TauCeti.Module.IsGenerator`).
 

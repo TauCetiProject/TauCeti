@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.ObjectProperty.Retract
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
