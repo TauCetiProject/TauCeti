@@ -17,7 +17,14 @@ finitely presented `S ⧸ (w)`-module is Gorenstein-projective iff `pd_S M ≤ 1
 (`TauCeti.isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE`). Over a local hypersurface
 `R = S ⧸ (w)` in a regular local ring `S`, combining this with
 `TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth` yields the
-Buchweitz–Eisenbud four-way equivalence (`TauCeti.isGorensteinProjective_quotient_tfae`).
+Buchweitz–Eisenbud four-way equivalence (`TauCeti.isGorensteinProjective_quotient_tfae`). Since
+Gorenstein-projective modules are finitely generated, the Gorenstein-projective `S ⧸ (w)`-modules
+are exactly the finitely generated maximal Cohen–Macaulay ones, with no finiteness hypothesis on
+the module (`TauCeti.isGorensteinProjective_quotient_iff_finite_and_ringKrullDim_le_depth`).
+
+Over a Cohen–Macaulay local ring `S`, the cokernel of the reduction modulo `w` of a
+finite-projective matrix factorization of `w` is already maximal Cohen–Macaulay
+(`TauCeti.MatrixFactorization.ringKrullDim_quotient_le_depth_quotientCokernel`).
 
 ## References
 
@@ -72,6 +79,25 @@ theorem isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_isNoethe
 
 end FiniteGlobalDimension
 
+namespace MatrixFactorization
+
+/-- **Cokernels of matrix factorizations are maximal Cohen–Macaulay.** Let `S` be a
+Cohen–Macaulay Noetherian local ring and `w` a non-zero-divisor with `S ⧸ (w)` local. The cokernel
+of the reduction modulo `w` of a finite-projective matrix factorization of `w` has depth at least
+`dim S ⧸ (w)`. -/
+theorem ringKrullDim_quotient_le_depth_quotientCokernel {S : Type u} [CommRing S]
+    [_root_.IsLocalRing S] [IsNoetherianRing S] {w : S} [_root_.IsLocalRing (S ⧸ span {w})]
+    (hS : Module.IsCohenMacaulay S S) (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
+    ringKrullDim (S ⧸ span {w}) ≤
+      _root_.IsLocalRing.depth (cokernelFunctor.obj
+        ((baseChangeFunctor (Ideal.Quotient.mk (span {w}))).obj X)).obj :=
+  ringKrullDim_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
+    hS hw _
+    ((exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE_of_isNoetherianRing hw _).1
+      ⟨X, ⟨Iso.refl _⟩⟩)
+
+end MatrixFactorization
+
 namespace IsRegularRing
 
 variable {S : Type u} [CommRing S] [IsRegularRing S] {w : S}
@@ -120,6 +146,19 @@ theorem isGorensteinProjective_quotient_iff_ringKrullDim_le_depth
       ringKrullDim (S ⧸ span {w}) ≤ (_root_.IsLocalRing.depth M : WithBot ℕ∞) :=
   (isGorensteinProjective_quotient_iff_hasProjectiveDimensionLE_of_isRegularLocalRing hw M).trans
     (hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth hw M)
+
+/-- Over the local hypersurface `S ⧸ (w)` in a regular local ring `S`, an `S ⧸ (w)`-module is
+Gorenstein-projective iff it is finitely generated and `dim (S ⧸ (w)) ≤ depth M`. Unlike
+`isGorensteinProjective_quotient_iff_ringKrullDim_le_depth`, no finiteness is assumed. -/
+theorem isGorensteinProjective_quotient_iff_finite_and_ringKrullDim_le_depth
+    (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ span {w})) :
+    IsGorensteinProjective (S ⧸ span {w}) M ↔
+      Module.Finite (S ⧸ span {w}) M ∧
+        ringKrullDim (S ⧸ span {w}) ≤ (_root_.IsLocalRing.depth M : WithBot ℕ∞) := by
+  refine ⟨fun hM ↦ ?_, fun ⟨_, hM⟩ ↦ ?_⟩
+  · have := hM.finite
+    exact ⟨this, (isGorensteinProjective_quotient_iff_ringKrullDim_le_depth hw M).1 hM⟩
+  · exact (isGorensteinProjective_quotient_iff_ringKrullDim_le_depth hw M).2 hM
 
 /-- **Four-way characterization of maximal Cohen–Macaulay modules over a local hypersurface**
 (Eisenbud, Corollary 6.3; Buchweitz, Lemma 4.2.2). -/

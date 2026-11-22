@@ -38,8 +38,9 @@ tempered distribution
 (`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceOfOrderComplexMethodEquiv_apply`).
 
 Two orders `s₀ ≠ s₁` cannot be handled this way, since `J^{s₀}` and `J^{s₁}` do not agree on the
-intersection; that case is the theorem of Bergh–Löfström, Theorem 6.4.5 (7), and needs `Lᵖ` bounds
-for Bessel potentials of imaginary order.
+intersection; that case, Bergh–Löfström, Theorem 6.4.5 (7), is
+`TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodContinuousLinearEquiv`, proved with the
+`Lᵖ` bounds for Bessel potentials of imaginary order and with equivalent rather than equal norms.
 
 ## Main declarations
 
@@ -50,6 +51,9 @@ for Bessel potentials of imaginary order.
 * `TauCeti.CompatibleCouple.besselPotentialSpaceOfOrderComplexMethodEquiv`: the isometric
   isomorphism `[H^{s,p₀}, H^{s,p₁}]_θ ≃ₗᵢ[ℂ] H^{s,p}`, which keeps the underlying tempered
   distribution.
+* `TauCeti.CompatibleCouple.exists_complexMethodSpace_toSum_eq_iff_memSobolev_of_inv_eq`: an
+  element of `H^{s,p₀} + H^{s,p₁}` lies in `[H^{s,p₀}, H^{s,p₁}]_θ` exactly when its tempered
+  distribution lies in `H^{s,p}`.
 
 ## References
 
@@ -227,6 +231,24 @@ theorem toDistr_besselPotentialSpaceOfOrderComplexMethodEquiv_apply
     rw [← (besselPotentialSpaceOfOrderComplexMethodEquiv E H s p₀ p₁ hθ hp hp_top).symm_apply_apply
       u]
   rw [sumSpaceEmbed_toSum_besselPotentialSpaceOfOrderComplexMethodEquiv_symm_apply]
+
+/-- **Complex interpolation of Bessel-potential spaces of one order**, membership form: for
+`0 < θ < 1` and `1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`, an element `w` of
+`H^{s,p₀} + H^{s,p₁}` lies in `[H^{s,p₀}, H^{s,p₁}]_θ` exactly when its tempered distribution
+lies in `H^{s,p}`. -/
+theorem exists_complexMethodSpace_toSum_eq_iff_memSobolev_of_inv_eq (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞)
+    {w : (besselPotentialSpace E H s p₀ s p₁).SumSpace} :
+    (∃ v : (besselPotentialSpace E H s p₀ s p₁).ComplexMethodSpace θ,
+        ComplexMethodSpace.toSum v = w) ↔
+      ((besselPotentialSpace E H s p₀ s p₁).sumSpaceEmbed w).MemSobolev s p := by
+  refine ⟨?_, fun hw ↦ ⟨(besselPotentialSpaceOfOrderComplexMethodEquiv E H s p₀ p₁ hθ hp
+    hp_top).symm hw.toBesselPotentialSpace, (besselPotentialSpace E H s p₀ s p₁).sumSpace_ext ?_⟩⟩
+  · rintro ⟨v, rfl⟩
+    rw [← toDistr_besselPotentialSpaceOfOrderComplexMethodEquiv_apply hθ hp hp_top v]
+    exact memSobolev_toDistr _
+  · rw [sumSpaceEmbed_toSum_besselPotentialSpaceOfOrderComplexMethodEquiv_symm_apply,
+      TemperedDistribution.MemSobolev.toBesselPotentialSpace_toDistr]
 
 end Hilbert
 

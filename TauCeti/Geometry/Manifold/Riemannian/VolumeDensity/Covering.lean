@@ -35,6 +35,11 @@ preserves volume (`TauCeti.riemannianVolume_image_of_inner_mfderiv`). Only the t
 `q` are required to preserve the inner products; no separate hypothesis that `G` acts by
 isometries, or that `q` is differentiable, is needed.
 
+The deck group `G` preserves the volume of `M`, by the same comparison on sheets. An invariant
+element of `Lᵖ(M)` descends to a strongly measurable function on `N`
+(`IsQuotientCoveringMap.exists_stronglyMeasurable_ae_eq_comp_iff`), which lies in `Lᵖ(N)` because
+pullback along `q` multiplies `Lᵖ` norms by `|G| ^ (1/p)`.
+
 ## Main results
 
 * `IsQuotientCoveringMap.map_riemannianVolume`: `q_* vol_M = |G| • vol_N`.
@@ -42,7 +47,8 @@ isometries, or that `q` is differentiable, is needed.
 * `IsQuotientCoveringMap.lintegral_comp_riemannianVolume`,
   `IsQuotientCoveringMap.integral_comp_riemannianVolume`: `∫ f ∘ q = |G| ∫ f`.
 * `IsQuotientCoveringMap.eLpNorm_comp_riemannianVolume`: `‖f ∘ q‖_p = |G| ^ (1/p) ‖f‖_p`.
-* `IsQuotientCoveringMap.measurePreserving_smul_riemannianVolume`: the translations by `G` preserve
+* `IsQuotientCoveringMap.measurePreserving_smul_riemannianVolume`,
+  `IsQuotientCoveringMap.smulInvariantMeasure_riemannianVolume`: the translations by `G` preserve
   the Riemannian volume of `M`.
 * `IsQuotientCoveringMap.normalizedPullbackLp`: the normalized pullback `|G| ^ (-1/p) q^*` as a
   linear isometry `Lᵖ(N) →ₗᵢ[𝕜] Lᵖ(M)`, with `IsQuotientCoveringMap.coeFn_normalizedPullbackLp`.
@@ -221,6 +227,16 @@ theorem measurePreserving_smul_riemannianVolume (hq : IsQuotientCoveringMap q G)
     preimage_smul, hvol hA' ((hq.injOn_smul (hinj x) g⁻¹).mono (smul_set_mono hsub)),
     hvol hA ((hinj x).mono hsub), ← image_smul, image_image]
   simp only [hq.map_smul]
+
+omit [Finite G] in
+/-- The Riemannian volume of the total space of a quotient covering map which is a local isometry
+is invariant under the deck group. -/
+theorem smulInvariantMeasure_riemannianVolume (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+    SMulInvariantMeasure G M (riemannianVolume I M) :=
+  ⟨fun g _ hA ↦ (hq.measurePreserving_smul_riemannianVolume hinner g).measure_preimage
+    hA.nullMeasurableSet⟩
 
 /-! ### The normalized pullback on `Lᵖ` -/
 
