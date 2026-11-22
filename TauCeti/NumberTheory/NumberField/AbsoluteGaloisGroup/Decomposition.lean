@@ -22,8 +22,8 @@ an integral closure, which makes `O` a `G_F`-ring. For an ideal `Q` of `O` this 
 
 * the **decomposition group** `D_Q = {σ | σ • Q = Q}`, Mathlib's `MulAction.stabilizer`;
 * the **inertia group** `I_Q = {σ | ∀ x ∈ O, σ x - x ∈ Q}`, Mathlib's `Ideal.inertia`;
-* the **wild inertia group** `P_Q`, `Ideal.wildInertia`: the `σ` with `σ(x)/x ≡ 1` modulo the
-  maximal ideal of the localization `O_Q`, for all `x ∉ Q`;
+* the **wild inertia group** `P_Q`, `Ideal.wildInertia`: the `σ` such that for every nonzero
+  `x ∈ O` the ratio `σ(x)/x` lies in the localization `O_Q` and is `≡ 1` modulo its maximal ideal;
 * the predicate `IsArithFrobAtIntegralPrime σ Q`, that `σ x ≡ x ^ q mod Q` for all `x ∈ O`, where
   `q` is the cardinality of the residue field of `𝓞 F` below `Q`; it is Mathlib's `IsArithFrobAt`
   for the action of `σ`, that is `AlgHom.IsArithFrobAt` for `toIntegralClosure F σ`.
@@ -75,7 +75,7 @@ variable (F : Type*) [Field F]
 
 /-- The automorphism of the integral closure `O` of `𝓞 F` in `F^alg` induced by `σ ∈ G_F`: Mathlib's
 `AlgEquiv.mapIntegralClosure` of `σ`, viewed as an `𝓞 F`-algebra automorphism of `F^alg`. -/
-@[expose] def toIntegralClosure (σ : Field.absoluteGaloisGroup F) :
+def toIntegralClosure (σ : Field.absoluteGaloisGroup F) :
     integralClosure (𝓞 F) (AlgebraicClosure F) ≃ₐ[𝓞 F]
       integralClosure (𝓞 F) (AlgebraicClosure F) :=
   ((σ : AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F).restrictScalars (𝓞 F)).mapIntegralClosure
@@ -157,11 +157,11 @@ theorem inertiaGroup_def :
     inertiaGroup F Q = Q.toAddSubgroup.inertia (Field.absoluteGaloisGroup F) :=
   rfl
 
-/-- The **wild inertia group** `P_Q` of an ideal `Q` of `O`, `Ideal.wildInertia`: the `σ ∈ G_F`
-such that every `x ∈ O` has `s ∈ 1 + Q` and `q ∈ Q` with `s (σ x - x) = q x`. For a maximal
-ideal `Q`, these are the `σ` with `σ(x)/x ≡ 1` modulo the maximal ideal of `O_Q` for every
-`x ∉ Q`; above a finite place of a number field this is the largest closed normal pro-`p`
-subgroup of `I_Q`. -/
+/-- The **wild inertia group** `P_Q` of an ideal `Q` of `O`, `Ideal.wildInertia`: the `σ ∈ G_F` such
+that every `x ∈ O` has `s ∈ 1 + Q` and `q ∈ Q` with `s (σ x - x) = q x`. For a maximal ideal `Q`,
+these are the `σ` such that for every nonzero `x ∈ O` the ratio `σ(x)/x` lies in `O_Q` and is `≡ 1`
+modulo its maximal ideal; above a finite place of a number field this is the largest closed normal
+pro-`p` subgroup of `I_Q`. -/
 abbrev wildInertiaGroup : Subgroup (Field.absoluteGaloisGroup F) :=
   Q.wildInertia (Field.absoluteGaloisGroup F)
 
