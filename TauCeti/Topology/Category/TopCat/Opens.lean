@@ -21,7 +21,8 @@ of its preimage.
 For opens `V ≤ W` of `X`, an open `Q` of `W` pulled back to `V` along the inclusion and pushed
 forward to `X` lies in the image of `Q` in `X`. The inclusion of `V` into `W` is an open embedding,
 and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` lying in an open set
-`U` is the image of a compact subset of `U`.
+`U` is the image of a compact subset of `U`. For an injective open map `f`, the point `f y` lies in
+the image of an open `V` exactly when `y` lies in `V`.
 
 ## Main results
 
@@ -38,6 +39,8 @@ and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` ly
   between open subspaces `U ≤ f ⁻¹' V` induced by `f : X ⟶ Y`, its compatibility with
   `Opens.inclusion'` (`resLE_comp_inclusion'`, `inclusion'_resLE_apply`, `functor_map_resLE_le`),
   and the induced isomorphism of preimage functors.
+* `IsOpenMap.apply_mem_functor_obj_iff`: for an injective open map `f`, the point `f y` lies in the
+  image of an open `V` exactly when `y` lies in `V`.
 -/
 
 public section
@@ -97,7 +100,8 @@ instance t2Space_toTopCat_obj [T2Space X] (V : Opens X) : T2Space ((toTopCat X).
 subspaces induced by `f : X ⟶ Y` when `U ≤ (Opens.map f).obj V`. -/
 def resLE (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
     (Opens.toTopCat X).obj U ⟶ (Opens.toTopCat Y).obj V :=
-  TopCat.ofHom ⟨fun x ↦ ⟨f x.1, e x.2⟩, (f.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩
+  TopCat.ofHom
+    ⟨fun x ↦ ⟨f x.val, e x.property⟩, (f.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩
 
 /-- `Opens.resLE` commutes with the open inclusions `Opens.inclusion'` into `X` and `Y`. -/
 @[reassoc (attr := simp)]
@@ -122,7 +126,7 @@ theorem functor_map_resLE_le (f : X ⟶ Y) (V : Opens Y) (U : Opens X)
     U.isOpenEmbedding.functor.obj ((Opens.map (Opens.resLE f V U e)).obj W) ≤
       (Opens.map f).obj (V.isOpenEmbedding.functor.obj W) := by
   rintro _ ⟨u, hu, rfl⟩
-  exact ⟨⟨f u.1, e u.2⟩, hu, rfl⟩
+  exact ⟨⟨f u.val, e u.property⟩, hu, rfl⟩
 
 /-- Natural isomorphism between composed open-preimage functors witnessing the commutative square
 `resLE_comp_inclusion'`. -/
@@ -133,5 +137,16 @@ def mapCompResLEIso (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.
     (Opens.resLE_comp_inclusion' f V U e).symm
 
 end TopologicalSpace.Opens
+
+namespace IsOpenMap
+
+/-- For an injective open map `f`, the point `f y` lies in the image of an open set `V` exactly when
+`y` lies in `V`. -/
+theorem apply_mem_functor_obj_iff {X Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsOpenMap f)
+    (hf' : Function.Injective f) {y : Y} {V : TopologicalSpace.Opens Y} :
+    f y ∈ hf.functor.obj V ↔ y ∈ V :=
+  hf'.mem_set_image
+
+end IsOpenMap
 
 end

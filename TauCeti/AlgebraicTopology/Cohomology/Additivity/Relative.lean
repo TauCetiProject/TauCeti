@@ -18,7 +18,8 @@ For a family of pairs `(Xᵢ, Aᵢ)`, the relative singular cochains of their di
 the product of their relative cochain complexes. In every degree this induces the product
 decomposition of relative singular cohomology. Both universal properties use restriction
 along the inclusions of the pairs as their projections, and apply to arbitrary small families,
-including the empty family.
+including the empty family. The product decomposition holds for every coproduct cofan of pairs,
+not only the disjoint union (`TopPair.isLimitFanSingularCohomologyOfIsColimit`).
 
 Relative chains already take disjoint unions to coproducts. Applying `Hom(-, M)` changes that
 coproduct to a product, and exactness of products of modules allows passage to cohomology.
@@ -70,6 +71,24 @@ def isLimitFanSingularCohomology [Small.{v} ι] (n : ℕ) :
   exact isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
     (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
       (isLimitFanSingularCochainComplex P C R k M)
+
+variable {P} in
+/-- **Additivity of relative singular cohomology along any coproduct of pairs.** Relative singular
+cohomology carries every coproduct cofan of topological pairs, not only the disjoint union
+`∐ᵢ (Xᵢ, Aᵢ)`, to a product fan in every degree, with the maps induced by the legs of the cofan as
+projections. -/
+def isLimitFanSingularCohomologyOfIsColimit [Small.{v} ι] {c : Cofan P} (hc : IsColimit c)
+    (n : ℕ) :
+    IsLimit (Fan.mk (c.pt.singularCohomology R k M n)
+      (fun i ↦ TopPair.singularCohomologyMap (c.inj i) n) :
+      Fan fun i ↦ (P i).singularCohomology R k M n) :=
+  let e := (_root_.TopPair.sigmaCofanIsColimit P).coconePointUniqueUpToIso hc
+  IsLimit.ofIsoLimit (isLimitFanSingularCohomology P C R k M n)
+    (Fan.ext (_root_.TopPair.singularCohomologyMapIso R k M e n).symm fun i ↦ by
+      rw [Iso.symm_hom, _root_.TopPair.singularCohomologyMapIso_inv]
+      exact (congrArg (TopPair.singularCohomologyMap · n)
+          ((_root_.TopPair.sigmaCofanIsColimit P).comp_coconePointUniqueUpToIso_inv hc
+            ⟨i⟩).symm).trans (_root_.TopPair.singularCohomologyMap_comp _ _ n))
 
 end TopPair
 

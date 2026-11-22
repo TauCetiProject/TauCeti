@@ -96,7 +96,7 @@ theorem mem_iff {μ : Module.Dual K (LocallyAnalytic p K K)} :
 /-- The restriction of a distribution to the analytic stage `LA_h(K)`. -/
 noncomputable def stage (h : ℕ) :
     LocallyAnalyticDistribution p K →ₗ[K] AnalyticStage p h K →L[K] K where
-  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ ofStage K h, μ.2 h⟩
+  toFun μ := ⟨(μ : Module.Dual K (LocallyAnalytic p K K)) ∘ₗ ofStage K h, μ.property h⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -155,12 +155,13 @@ theorem comp_transitionLE_of_mem_compatibleStageFunctionals
 /-- The functional on the direct limit induced by a compatible family. -/
 private noncomputable def liftFamily (μ : compatibleStageFunctionals p K) :
     Module.Dual K (LocallyAnalytic p K K) :=
-  Module.DirectLimit.lift K ℕ _ _ (fun h ↦ (μ.1 h : AnalyticStage p h K →ₗ[K] K))
-    fun _ _ hhk ↦ DFunLike.congr_fun (comp_transitionLE_of_mem_compatibleStageFunctionals μ.2 hhk)
+  Module.DirectLimit.lift K ℕ _ _ (fun h ↦ (μ.val h : AnalyticStage p h K →ₗ[K] K))
+    fun _ _ hhk ↦ DFunLike.congr_fun (comp_transitionLE_of_mem_compatibleStageFunctionals μ.property
+        hhk)
 
 /-- The functional induced by a compatible family restricts to the members of the family. -/
 private theorem liftFamily_ofStage (μ : compatibleStageFunctionals p K) (h : ℕ)
-    (c : AnalyticStage p h K) : liftFamily μ (ofStage K h c) = μ.1 h c :=
+    (c : AnalyticStage p h K) : liftFamily μ (ofStage K h c) = μ.val h c :=
   lift_ofStage K _ _ h c
 
 /-- Distributions are the compatible families of continuous linear functionals on the analytic
@@ -171,7 +172,7 @@ noncomputable def stagesEquiv :
   toFun μ := ⟨fun h ↦ stage h μ, stage_comp_transition μ⟩
   invFun μ :=
     ⟨liftFamily μ, fun h ↦ by
-      convert (μ.1 h).continuous using 1
+      convert (μ.val h).continuous using 1
       ext c
       exact liftFamily_ofStage μ h c⟩
   left_inv μ := by
@@ -192,14 +193,14 @@ theorem stagesEquiv_apply (μ : LocallyAnalyticDistribution p K) (h : ℕ) :
 /-- The distribution of a compatible family restricts to the members of the family. -/
 @[simp]
 theorem stage_stagesEquiv_symm (μ : compatibleStageFunctionals p K) (h : ℕ) :
-    stage h (stagesEquiv.symm μ) = μ.1 h := by
+    stage h (stagesEquiv.symm μ) = μ.val h := by
   rw [← stagesEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- The distribution of a compatible family applies the members of the family on the stages. -/
 @[simp]
 theorem coe_stagesEquiv_symm_apply_ofStage (μ : compatibleStageFunctionals p K) (h : ℕ)
     (c : AnalyticStage p h K) :
-    (stagesEquiv.symm μ : Module.Dual K (LocallyAnalytic p K K)) (ofStage K h c) = μ.1 h c := by
+    (stagesEquiv.symm μ : Module.Dual K (LocallyAnalytic p K K)) (ofStage K h c) = μ.val h c := by
   rw [← stage_apply, stage_stagesEquiv_symm]
 
 /-- The stage seminorm of level `h`: the operator norm of the restriction of a distribution to

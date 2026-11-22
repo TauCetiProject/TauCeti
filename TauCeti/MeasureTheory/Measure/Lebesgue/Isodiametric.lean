@@ -163,7 +163,7 @@ private lemma exists_subset_closedBall_diam_div_two_of_volume_eq_zero {s : Set E
   · exact ⟨x, empty_subset _⟩
   have hd : diam s = 0 := by
     refine le_antisymm (not_lt.1 fun hpos ↦ ?_) diam_nonneg
-    exact (measure_closedBall_pos volume x (half_pos hpos)).ne' (le_zero_iff.1 (h0 ▸ hvol))
+    exact (measure_closedBall_pos volume x (half_pos hpos)).ne' (nonpos_iff_eq_zero.1 (h0 ▸ hvol))
   refine ⟨a, fun y hy ↦ ?_⟩
   rw [mem_closedBall, hd, zero_div]
   exact hd ▸ dist_le_diam_of_mem hs hy ha

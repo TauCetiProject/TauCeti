@@ -36,7 +36,8 @@ factor, which relies on the Hahn–Banach theorem, so they are stated over `ℝ`
   the namespace `TauCeti.InjectiveTensor`.
 * `TauCeti.CompletedProjectiveTensor.comm` and `TauCeti.CompletedInjectiveTensor.comm`: the
   symmetry of the completed tensor products, together with the scalar-unit isometries onto the
-  completion of `E`.
+  completion of `E`, and `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor_comm` for
+  its compatibility with the contraction `E ⊗̂π F → E ⊗̂ε F`.
 
 ## References
 
@@ -518,5 +519,34 @@ theorem rid_symm_coe (x : E) : (rid 𝕜 E).symm x = (⟨x ⊗ₜ 1⟩ : Injecti
 end RCLike
 
 end CompletedInjectiveTensor
+
+namespace CompletedProjectiveTensor
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Over `ℝ` and `ℂ`, the contraction `E ⊗̂π F → E ⊗̂ε F` commutes with swapping the factors. -/
+theorem toCompletedInjectiveTensor_comm (u : CompletedProjectiveTensor 𝕜 E F) :
+    toCompletedInjectiveTensor 𝕜 F E (comm 𝕜 E F u) =
+      CompletedInjectiveTensor.comm 𝕜 E F (toCompletedInjectiveTensor 𝕜 E F u) := by
+  have h : toCompletedInjectiveTensor 𝕜 F E ∘L
+      (comm 𝕜 E F).toContinuousLinearEquiv.toContinuousLinearMap =
+        (CompletedInjectiveTensor.comm 𝕜 E F).toContinuousLinearEquiv.toContinuousLinearMap ∘L
+          toCompletedInjectiveTensor 𝕜 E F :=
+    continuousLinearMap_ext fun x y ↦ by simp [ProjectiveTensor.toInjectiveTensor_apply]
+  exact congr($h u)
+
+/-- Over `ℝ` and `ℂ`, the contraction `E ⊗̂π F → E ⊗̂ε F` is injective iff the swapped
+contraction `F ⊗̂π E → F ⊗̂ε E` is. -/
+theorem injective_toCompletedInjectiveTensor_comm :
+    Function.Injective (toCompletedInjectiveTensor 𝕜 E F) ↔
+      Function.Injective (toCompletedInjectiveTensor 𝕜 F E) := by
+  have h : (CompletedInjectiveTensor.comm 𝕜 E F) ∘ toCompletedInjectiveTensor 𝕜 E F =
+      toCompletedInjectiveTensor 𝕜 F E ∘ (comm 𝕜 E F) :=
+    funext fun u ↦ (toCompletedInjectiveTensor_comm u).symm
+  rw [← (CompletedInjectiveTensor.comm 𝕜 E F).injective.of_comp_iff, h,
+    Function.Injective.of_comp_iff' _ (comm 𝕜 E F).bijective]
+
+end CompletedProjectiveTensor
 
 end TauCeti

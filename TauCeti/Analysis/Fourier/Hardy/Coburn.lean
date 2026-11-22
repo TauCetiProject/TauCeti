@@ -65,7 +65,7 @@ private theorem fourierCoeff_mul_star_eq_zero {a : Lp ℂ ∞ (AddCircle.haarAdd
     (fun m hm ↦ ?_) (fun m hm ↦ ?_) (by omega)
   · lift m to ℕ using (by omega)
     exact hmem m
-  · rw [fourierCoeff_star, HardySpace.fourierCoeff_eq_zero g (by omega), map_zero]
+  · rw [Lp.fourierCoeff_star, HardySpace.fourierCoeff_eq_zero g (by omega), star_zero]
 
 /-- **The Hardy product argument.** If the Toeplitz operators `T_a` and `T_ā = T_a†` have nonzero
 kernel vectors `f` and `g`, then the symbol `a` is zero. -/
@@ -92,7 +92,7 @@ theorem eq_zero_of_toeplitz_apply_eq_zero_of_toeplitz_star_apply_eq_zero
     · rw [fourierCoeff_congr_ae hw]
       exact fourierCoeff_mul_star_eq_zero hf g hn
     · have h := fourierCoeff_mul_star_eq_zero hg f (n := -n) (by omega)
-      rwa [← fourierCoeff_congr_ae hw', fourierCoeff_star, neg_neg, map_eq_zero] at h
+      rwa [← fourierCoeff_congr_ae hw', Lp.fourierCoeff_star, neg_neg, star_eq_zero] at h
   have hw₀ := (L1.integrable_coeFn w).ae_eq_zero_of_forall_fourierCoeff_eq_zero hcoeff
   -- Since `f` and `g` are nonzero almost everywhere, `a f conj g = 0` forces `a = 0`.
   rw [Lp.eq_zero_iff_ae_eq_zero]

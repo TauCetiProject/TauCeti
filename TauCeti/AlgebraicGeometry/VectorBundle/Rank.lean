@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 public import TauCeti.Topology.LocallyConstant.Fiber
 
@@ -34,6 +35,8 @@ components.
   `FiniteLocallyFreeSheaf.rank_pullback_apply` and `FiniteLocallyFreeSheaf.rank_pullback`: the
   rank is invariant under isomorphism, is `|I|` for the free sheaf on `I`, and is preserved by
   pullback;
+* `FiniteLocallyFreeSheaf.isZero_obj_iff_forall_rank_eq_zero`: the finite locally free sheaves
+  of rank zero at every point are exactly the zero sheaves;
 * `FiniteLocallyFreeSheaf.rank_biprod_apply` and `FiniteLocallyFreeSheaf.rank_tensor_apply`: rank
   is additive under direct sums and multiplicative under tensor products;
 * `FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one`: the invertible sheaves are exactly
@@ -183,6 +186,26 @@ theorem rank_pullback_apply {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFre
 theorem rank_pullback {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
     ((pullback f).obj E).rank = E.rank.comap f.base.hom :=
   LocallyConstant.ext fun x ↦ by simp
+
+/-- A finite locally free sheaf is zero exactly when it has rank zero at every point: around each
+point it is then free on an empty basis, hence zero on the members of an open cover. -/
+theorem isZero_obj_iff_forall_rank_eq_zero (E : FiniteLocallyFreeSheaf X) :
+    IsZero E.obj ↔ ∀ x, E.rank x = 0 := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ ?_⟩
+  · have hP : IsZero (free X PEmpty).obj := TauCeti.SheafOfModules.isZero_free PEmpty
+    rw [rank_eq_of_iso (h.iso hP), rank_free_apply, Nat.card_of_isEmpty]
+  choose U hx σ hσ hI using E.exists_generatingSections
+  refine (Scheme.Modules.isZero_iff_of_iSup_eq_top U
+    (eq_top_iff.2 fun x _ ↦ Opens.mem_iSup.2 ⟨x, hx x⟩) E.obj).2 fun x ↦ ?_
+  have := hσ x
+  have := hI x
+  have : IsEmpty (σ x).I := by
+    rw [← Finite.card_eq_zero_iff, ← E.rank_apply_eq_natCard (hx x), h]
+  -- The restriction of `E` to `U x` is, up to the equivalence of the slice site over `U x` with
+  -- the open subscheme, the free sheaf on the empty basis `(σ x).I`.
+  exact ((Scheme.Modules.overEquiv (U x)).functor.map_isZero
+    ((TauCeti.SheafOfModules.isZero_free _).of_iso (asIso (σ x).π).symm)).of_iso
+      ((Scheme.Modules.overFunctorEquiv (U x)).app E.obj).symm
 
 /-- Two finite locally free sheaves are free on finite bases over a common open neighbourhood of
 each point: the intersection of neighbourhoods on which each of them is free. -/

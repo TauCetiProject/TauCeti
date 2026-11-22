@@ -53,18 +53,18 @@ theorem IsEquipartition.card_parts_mul_sup_card_lt (hP : P.IsEquipartition)
 cell. The first coordinate of the embedding records cell membership exactly. -/
 theorem exists_embedding_prod_fin (P : Finpartition s) {m : ℕ}
     (hm : ∀ A ∈ P.parts, #A ≤ m) :
-    ∃ e : s ↪ P.parts × Fin m, ∀ (A : P.parts) (x : s), (e x).1 = A ↔ x.1 ∈ A.1 := by
-  let f (A : P.parts) : A.1 ↪ Fin m :=
-    A.1.equivFin.toEmbedding.trans (Fin.castLEEmb (hm A.1 A.2))
+    ∃ e : s ↪ P.parts × Fin m, ∀ (A : P.parts) (x : s), (e x).1 = A ↔ x.val ∈ A.val := by
+  let f (A : P.parts) : A.val ↪ Fin m :=
+    A.val.equivFin.toEmbedding.trans (Fin.castLEEmb (hm A.val A.property))
   let e := P.equivSigmaParts.toEmbedding.trans
     ((Function.Embedding.sigmaMap (Function.Embedding.refl _) f).trans
       (Equiv.sigmaEquivProd P.parts (Fin m)).toEmbedding)
   refine ⟨e, fun A x ↦ ?_⟩
   -- The sigma enumeration and its fiberwise embeddings leave the cell index unchanged.
-  have hfst (x : s) : (e x).1 = ⟨P.part x.1, P.part_mem.2 x.2⟩ := by
+  have hfst (x : s) : (e x).1 = ⟨P.part x.val, P.part_mem.2 x.property⟩ := by
     simp [e, equivSigmaParts, Function.Embedding.sigmaMap, Equiv.sigmaEquivProd, Sigma.map]
   rw [hfst, Subtype.ext_iff]
-  exact P.part_eq_iff_mem A.2
+  exact P.part_eq_iff_mem A.property
 
 /-- **Divisible padding of an equipartition.** A nonempty equipartition admits a cell-preserving
 embedding into a rectangle with common positive cell size `m` divisible by `q`. The fibers
@@ -77,7 +77,7 @@ theorem IsEquipartition.exists_divisible_padding (hP : P.IsEquipartition) (hs : 
       0 < m ∧ q ∣ m ∧ Q.IsEquipartition ∧ #Q.parts = #P.parts ∧
       Q.parts = univ.image (fun A : P.parts ↦ {A} ×ˢ (univ : Finset (Fin m))) ∧
       (∀ B ∈ Q.parts, #B = m) ∧
-      (∀ (A : P.parts) (x : s), e x ∈ {A} ×ˢ (univ : Finset (Fin m)) ↔ x.1 ∈ A.1) ∧
+      (∀ (A : P.parts) (x : s), e x ∈ {A} ×ˢ (univ : Finset (Fin m)) ↔ x.val ∈ A.val) ∧
       Fintype.card (P.parts × Fin m) < #s + q * #P.parts := by
   classical
   -- Round the largest cell size up to a multiple of `q`.

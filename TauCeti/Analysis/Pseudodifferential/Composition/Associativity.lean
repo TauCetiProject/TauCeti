@@ -24,7 +24,8 @@ As a consequence, left and right parametrix symbols agree modulo smoothing symbo
 order `m` and `b_L`, `b_R` have order `-m` with `1 ∼ ∑ₖ sharpTerm b_L a k` and
 `1 ∼ ∑ₖ sharpTerm a b_R k`, then `b_L - b_R` is smoothing. Since the formal composition only
 changes by smoothing terms when one factor does, `b_L` is then also a right parametrix symbol and
-`b_R` a left one: each is a two-sided parametrix symbol.
+`b_R` a left one: each is a two-sided parametrix symbol. The same holds for symbols with estimates
+uniform in the position, with uniform remainders, modulo uniformly smoothing symbols.
 
 ## Main results
 
@@ -35,6 +36,11 @@ changes by smoothing terms when one factor does, `b_L` is then also a right para
 * `TauCeti.Symbol.isAsymptoticSum_sharpTerm_of_isSmoothing_sub_right` and
   `TauCeti.Symbol.isAsymptoticSum_sharpTerm_of_isSmoothing_sub_left`: changing one factor by a
   smoothing symbol does not change an asymptotic sum of the formal composition.
+* `TauCeti.Symbol.isUniformlySmoothing_sub_of_isUniformAsymptoticSum_sharpTerm`,
+  `TauCeti.Symbol.isUniformAsymptoticSum_sharpTerm_of_isUniformlySmoothing_sub_right` and
+  `TauCeti.Symbol.isUniformAsymptoticSum_sharpTerm_of_isUniformlySmoothing_sub_left`: the same
+  statements for uniform symbols, asymptotic sums with uniform remainders
+  (`TauCeti.Symbol.IsUniformAsymptoticSum`) and uniformly smoothing symbols.
 
 ## Proof outline
 
@@ -221,6 +227,63 @@ private theorem sum_range_coefficient_sharpTerm_right {μ : ℕ → ℝ} {ν : �
     add_sub_cancel_right]
   simp
 
+/-- Grouping the terms of degree at most `N` of the formal composition `(b_L # a) # b_R` in two
+ways. If `r M` and `s M` are the remainders `1 - ∑_{k < M} sharpTerm b_L a k` and
+`1 - ∑_{k < M} sharpTerm a b_R k`, then `b_L - b_R` is the symbol
+`∑_{i ≤ N} sharpTerm b_L (s (N + 1 - i)) i - ∑_{j ≤ N} sharpTerm (r (N + 1 - j)) b_R j` of order
+`-m - (N + 1)`. -/
+private theorem coefficient_sub_eq_sum_sharpTerm_sub_sum_sharpTerm {a : Symbol n V W m}
+    {bL bR : Symbol n W V (-m)} {r : ∀ M : ℕ, Symbol n V V (-m + m - M)}
+    {s : ∀ M : ℕ, Symbol n W W (m + -m - M)}
+    (hr : ∀ M : ℕ, (inclusion (m' := -m + m - ((0 : ℕ) : ℝ)) (by simp)
+      (const (.id ℂ V))).coefficient - ∑ k ∈ range M, (bL.sharpTerm a k).coefficient =
+        (r M).coefficient)
+    (hs : ∀ M : ℕ, (inclusion (m' := m + -m - ((0 : ℕ) : ℝ)) (by simp)
+      (const (.id ℂ W))).coefficient - ∑ k ∈ range M, (a.sharpTerm bR k).coefficient =
+        (s M).coefficient)
+    (N : ℕ) :
+    (bL - bR).coefficient =
+      (∑ i : Fin (N + 1), inclusion (by rw [Nat.cast_sub i.isLt.le]; push_cast; linarith)
+          (bL.sharpTerm (s (N + 1 - i)) i) -
+        ∑ j : Fin (N + 1), inclusion (by rw [Nat.cast_sub j.isLt.le]; push_cast; linarith)
+          ((r (N + 1 - j)).sharpTerm bR j) :
+        Symbol n W V (-m - ((N + 1 : ℕ) : ℝ))).coefficient := by
+  have hμL : ∀ M : ℕ, -m + m - (M : ℝ) ≤ -m + m - ((0 : ℕ) : ℝ) := fun M ↦ by simp
+  have hμR : ∀ M : ℕ, m + -m - (M : ℝ) ≤ m + -m - ((0 : ℕ) : ℝ) := fun M ↦ by simp
+  -- Grouped by the degree of the outer factor `b_R`, the terms are `b_R` minus remainders.
+  have hR' : ∑ k ∈ range (N + 1), ∑ p ∈ antidiagonal k,
+      ((bL.sharpTerm a p.1).sharpTerm bR p.2).coefficient =
+        bR.coefficient - ∑ j ∈ range (N + 1), ((r (N + 1 - j)).sharpTerm bR j).coefficient := by
+    have hswap (k : ℕ) : ∑ p ∈ antidiagonal k,
+        ((bL.sharpTerm a p.1).sharpTerm bR p.2).coefficient =
+          ∑ p ∈ antidiagonal k, ((bL.sharpTerm a p.2).sharpTerm bR p.1).coefficient :=
+      (Finset.Nat.sum_antidiagonal_swap
+        (f := fun p ↦ ((bL.sharpTerm a p.1).sharpTerm bR p.2).coefficient)).symm
+    simp_rw [hswap, Finset.Nat.sum_range_sum_antidiagonal fun j i ↦
+        ((bL.sharpTerm a i).sharpTerm bR j).coefficient,
+      sum_range_coefficient_sharpTerm_left hμL hr bR, sum_sub_distrib, sum_range_succ',
+      coefficient_sharpTerm_congr (coefficient_inclusion _ _) rfl, const_sharpTerm_succ]
+    funext p
+    simp
+  -- Grouped by the degree of the outer factor `b_L`, by associativity they are `b_L` minus
+  -- remainders.
+  have hL' : ∑ k ∈ range (N + 1), ∑ p ∈ antidiagonal k,
+      ((bL.sharpTerm a p.1).sharpTerm bR p.2).coefficient =
+        bL.coefficient - ∑ i ∈ range (N + 1), (bL.sharpTerm (s (N + 1 - i)) i).coefficient := by
+    simp_rw [sum_antidiagonal_coefficient_sharpTerm_assoc,
+      Finset.Nat.sum_range_sum_antidiagonal fun i j ↦
+        (bL.sharpTerm (a.sharpTerm bR j) i).coefficient,
+      sum_range_coefficient_sharpTerm_right hμR hs bL, sum_sub_distrib, sum_range_succ',
+      coefficient_sharpTerm_congr rfl (coefficient_inclusion _ _), sharpTerm_const_succ]
+    funext p
+    simp
+  rw [coefficient_sub, coefficient_sub, coefficient_sum, coefficient_sum]
+  simp only [coefficient_inclusion]
+  rw [Fin.sum_univ_eq_sum_range fun i ↦ (bL.sharpTerm (s (N + 1 - i)) i).coefficient,
+    Fin.sum_univ_eq_sum_range fun j ↦ ((r (N + 1 - j)).sharpTerm bR j).coefficient,
+    ← sub_eq_sub_iff_sub_eq_sub]
+  exact hL'.symm.trans hR'
+
 /-- **Left and right parametrix symbols agree modulo smoothing symbols.** Let `a` be a symbol of
 order `m`, and `b_L`, `b_R` symbols of order `-m` such that the formal compositions `b_L # a` and
 `a # b_R` are the identity: `1 ∼ ∑ₖ sharpTerm b_L a k` and `1 ∼ ∑ₖ sharpTerm a b_R k`. Then
@@ -234,49 +297,63 @@ theorem isSmoothing_sub_of_isAsymptoticSum_sharpTerm {a : Symbol n V W m}
     (bL - bR).IsSmoothing := by
   choose r hr using isAsymptoticSum_iff.1 hL
   choose s hs using isAsymptoticSum_iff.1 hR
-  have hμL : ∀ M : ℕ, -m + m - (M : ℝ) ≤ -m + m - ((0 : ℕ) : ℝ) := fun M ↦ by simp
-  have hμR : ∀ M : ℕ, m + -m - (M : ℝ) ≤ m + -m - ((0 : ℕ) : ℝ) := fun M ↦ by simp
-  -- Grouping the terms of degree at most `N` of `(b_L # a) # b_R` in two ways.
-  have key (N : ℕ) : (bL - bR).coefficient =
-      ∑ i ∈ range (N + 1), (bL.sharpTerm (s (N + 1 - i)) i).coefficient -
-        ∑ j ∈ range (N + 1), ((r (N + 1 - j)).sharpTerm bR j).coefficient := by
-    have hR' : ∑ k ∈ range (N + 1), ∑ p ∈ antidiagonal k,
-        ((bL.sharpTerm a p.1).sharpTerm bR p.2).coefficient =
-          bR.coefficient - ∑ j ∈ range (N + 1), ((r (N + 1 - j)).sharpTerm bR j).coefficient := by
-      have hswap (k : ℕ) : ∑ p ∈ antidiagonal k,
-          ((bL.sharpTerm a p.1).sharpTerm bR p.2).coefficient =
-            ∑ p ∈ antidiagonal k, ((bL.sharpTerm a p.2).sharpTerm bR p.1).coefficient :=
-        (Finset.Nat.sum_antidiagonal_swap
-          (f := fun p ↦ ((bL.sharpTerm a p.1).sharpTerm bR p.2).coefficient)).symm
-      simp_rw [hswap, Finset.Nat.sum_range_sum_antidiagonal fun j i ↦
-          ((bL.sharpTerm a i).sharpTerm bR j).coefficient,
-        sum_range_coefficient_sharpTerm_left hμL hr bR, sum_sub_distrib, sum_range_succ',
-        coefficient_sharpTerm_congr (coefficient_inclusion _ _) rfl, const_sharpTerm_succ]
-      funext p
-      simp
-    have hL' : ∑ k ∈ range (N + 1), ∑ p ∈ antidiagonal k,
-        ((bL.sharpTerm a p.1).sharpTerm bR p.2).coefficient =
-          bL.coefficient - ∑ i ∈ range (N + 1), (bL.sharpTerm (s (N + 1 - i)) i).coefficient := by
-      simp_rw [sum_antidiagonal_coefficient_sharpTerm_assoc,
-        Finset.Nat.sum_range_sum_antidiagonal fun i j ↦
-          (bL.sharpTerm (a.sharpTerm bR j) i).coefficient,
-        sum_range_coefficient_sharpTerm_right hμR hs bL, sum_sub_distrib, sum_range_succ',
-        coefficient_sharpTerm_congr rfl (coefficient_inclusion _ _), sharpTerm_const_succ]
-      funext p
-      simp
-    rw [coefficient_sub, ← sub_eq_sub_iff_sub_eq_sub]
-    exact hL'.symm.trans hR'
   refine isSmoothing_iff.2 fun μ ↦ ?_
   obtain ⟨N, hN⟩ := exists_nat_ge (-m - μ)
-  refine ⟨inclusion (m := -m - ((N + 1 : ℕ) : ℝ)) (by push_cast; linarith)
-    (∑ i : Fin (N + 1), inclusion (by rw [Nat.cast_sub i.isLt.le]; push_cast; linarith)
-        (bL.sharpTerm (s (N + 1 - i)) i) -
-      ∑ j : Fin (N + 1), inclusion (by rw [Nat.cast_sub j.isLt.le]; push_cast; linarith)
-        ((r (N + 1 - j)).sharpTerm bR j)), ?_⟩
-  rw [key N, coefficient_inclusion, coefficient_sub, coefficient_sum, coefficient_sum]
-  simp only [coefficient_inclusion]
-  rw [Fin.sum_univ_eq_sum_range fun i ↦ (bL.sharpTerm (s (N + 1 - i)) i).coefficient,
-    Fin.sum_univ_eq_sum_range fun j ↦ ((r (N + 1 - j)).sharpTerm bR j).coefficient]
+  exact ⟨inclusion (by push_cast; linarith) _, (coefficient_inclusion _ _).trans
+    (coefficient_sub_eq_sum_sharpTerm_sub_sum_sharpTerm hr hs N).symm⟩
+
+/-- **Left and right uniform parametrix symbols agree modulo uniformly smoothing symbols.** Let
+`a` be a symbol of order `m`, and `b_L`, `b_R` symbols of order `-m` with estimates uniform in the
+position such that the formal compositions `b_L # a` and `a # b_R` are the identity with uniform
+remainders: `1 - ∑_{k < N} sharpTerm b_L a k` and `1 - ∑_{k < N} sharpTerm a b_R k` are uniform
+symbols of order `-N` for every `N`. Then `b_L - b_R` is uniformly smoothing. -/
+theorem isUniformlySmoothing_sub_of_isUniformAsymptoticSum_sharpTerm {a : Symbol n V W m}
+    {bL bR : Symbol n W V (-m)} (hbL : bL.IsUniform) (hbR : bR.IsUniform)
+    (hL : IsUniformAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (inclusion (by simp) (const (.id ℂ V))) (bL.sharpTerm a))
+    (hR : IsUniformAsymptoticSum (m := fun k : ℕ ↦ m + -m - k)
+      (inclusion (by simp) (const (.id ℂ W))) (a.sharpTerm bR)) :
+    (bL - bR).IsUniformlySmoothing := by
+  choose r hru hr using isUniformAsymptoticSum_iff.1 hL
+  choose s hsu hs using isUniformAsymptoticSum_iff.1 hR
+  refine isUniformlySmoothing_iff_forall_nat.2 fun N ↦ ⟨inclusion (by push_cast; linarith) _, ?_,
+    (coefficient_inclusion _ _).trans
+      (coefficient_sub_eq_sum_sharpTerm_sub_sum_sharpTerm hr hs N).symm⟩
+  refine ((IsUniform.sum fun i _ ↦ ?_).sub (IsUniform.sum fun j _ ↦ ?_)).inclusion _
+  · exact (hbL.sharpTerm (hsu _) _).inclusion _
+  · exact ((hru _).sharpTerm hbR _).inclusion _
+
+/-- Changing the right factor `b` of the formal composition by a symbol `d` of order `m - N` changes
+the remainder `r = e - ∑_{k < N} sharpTerm a b k` by `-∑_{k < N} sharpTerm a d k`, which has the
+order `m' + m - N` of `r`. -/
+theorem coefficient_sub_sum_sharpTerm_right_congr {μ m m' : ℝ} {a : Symbol n W U m'} {N : ℕ}
+    {b b' : Symbol n V W m} (d : Symbol n V W (m - N)) {e : Symbol n V U μ}
+    {r : Symbol n V U (m' + m - N)}
+    (hr : e.coefficient - ∑ k ∈ range N, (a.sharpTerm b k).coefficient = r.coefficient)
+    (h : b'.coefficient = b.coefficient + d.coefficient) :
+    e.coefficient - ∑ k ∈ range N, (a.sharpTerm b' k).coefficient =
+      (r - ∑ k : Fin N, inclusion (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
+        (a.sharpTerm d k)).coefficient := by
+  rw [coefficient_sub, coefficient_sum, ← hr]
+  simp only [coefficient_inclusion, coefficient_sharpTerm_eq_add_right h, sum_add_distrib]
+  rw [Fin.sum_univ_eq_sum_range fun k ↦ (a.sharpTerm d k).coefficient]
+  abel
+
+/-- Changing the left factor `b` of the formal composition by a symbol `d` of order `m - N` changes
+the remainder `r = e - ∑_{k < N} sharpTerm b a k` by `-∑_{k < N} sharpTerm d a k`, which has the
+order `m + m' - N` of `r`. -/
+theorem coefficient_sub_sum_sharpTerm_left_congr {μ m m' : ℝ} {a : Symbol n V W m'} {N : ℕ}
+    {b b' : Symbol n W U m} (d : Symbol n W U (m - N)) {e : Symbol n V U μ}
+    {r : Symbol n V U (m + m' - N)}
+    (hr : e.coefficient - ∑ k ∈ range N, (b.sharpTerm a k).coefficient = r.coefficient)
+    (h : b'.coefficient = b.coefficient + d.coefficient) :
+    e.coefficient - ∑ k ∈ range N, (b'.sharpTerm a k).coefficient =
+      (r - ∑ k : Fin N, inclusion (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
+        (d.sharpTerm a k)).coefficient := by
+  rw [coefficient_sub, coefficient_sum, ← hr]
+  simp only [coefficient_inclusion, coefficient_sharpTerm_eq_add_left h, sum_add_distrib]
+  rw [Fin.sum_univ_eq_sum_range fun k ↦ (d.sharpTerm a k).coefficient]
+  abel
 
 /-- Changing the right factor by a smoothing symbol does not change an asymptotic sum of the formal
 composition: if `e ∼ ∑ₖ sharpTerm a b k` and `b' - b` is smoothing, then
@@ -289,15 +366,8 @@ theorem isAsymptoticSum_sharpTerm_of_isSmoothing_sub_right {m' : ℝ} {a : Symbo
   refine isAsymptoticSum_iff.2 fun N ↦ ?_
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 h N
   obtain ⟨d, hd⟩ := isSmoothing_iff.1 hb (m - N)
-  have hk (k : ℕ) : (a.sharpTerm b' k).coefficient =
-      (a.sharpTerm b k).coefficient + (a.sharpTerm d k).coefficient :=
-    coefficient_sharpTerm_eq_add_right (by rw [hd, coefficient_sub, add_sub_cancel]) a k
-  refine ⟨r - ∑ k : Fin N, inclusion (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
-    (a.sharpTerm d k), ?_⟩
-  rw [coefficient_sub, coefficient_sum, ← hr]
-  simp only [coefficient_inclusion, hk, sum_add_distrib]
-  rw [Fin.sum_univ_eq_sum_range fun k ↦ (a.sharpTerm d k).coefficient]
-  abel
+  exact ⟨_, coefficient_sub_sum_sharpTerm_right_congr d hr
+    (by rw [hd, coefficient_sub, add_sub_cancel])⟩
 
 /-- Changing the left factor by a smoothing symbol does not change an asymptotic sum of the formal
 composition: if `e ∼ ∑ₖ sharpTerm b a k` and `b' - b` is smoothing, then
@@ -310,15 +380,42 @@ theorem isAsymptoticSum_sharpTerm_of_isSmoothing_sub_left {m' : ℝ} {a : Symbol
   refine isAsymptoticSum_iff.2 fun N ↦ ?_
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 h N
   obtain ⟨d, hd⟩ := isSmoothing_iff.1 hb (m - N)
-  have hk (k : ℕ) : (b'.sharpTerm a k).coefficient =
-      (b.sharpTerm a k).coefficient + (d.sharpTerm a k).coefficient :=
-    coefficient_sharpTerm_eq_add_left (by rw [hd, coefficient_sub, add_sub_cancel]) a k
-  refine ⟨r - ∑ k : Fin N, inclusion (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
-    (d.sharpTerm a k), ?_⟩
-  rw [coefficient_sub, coefficient_sum, ← hr]
-  simp only [coefficient_inclusion, hk, sum_add_distrib]
-  rw [Fin.sum_univ_eq_sum_range fun k ↦ (d.sharpTerm a k).coefficient]
-  abel
+  exact ⟨_, coefficient_sub_sum_sharpTerm_left_congr d hr
+    (by rw [hd, coefficient_sub, add_sub_cancel])⟩
+
+/-- Changing the right factor by a uniformly smoothing symbol does not change an asymptotic sum
+with uniform remainders of the formal composition with a uniform symbol `a`: if the remainders
+`e - ∑_{k < N} sharpTerm a b k` are uniform and `b' - b` is uniformly smoothing, then so are the
+remainders `e - ∑_{k < N} sharpTerm a b' k`. -/
+theorem isUniformAsymptoticSum_sharpTerm_of_isUniformlySmoothing_sub_right {m' : ℝ}
+    {a : Symbol n W U m'} (ha : a.IsUniform) {b b' : Symbol n V W m}
+    {e : Symbol n V U (m' + m - (0 : ℕ))}
+    (h : IsUniformAsymptoticSum (m := fun k : ℕ ↦ m' + m - k) e (a.sharpTerm b))
+    (hb : (b' - b).IsUniformlySmoothing) :
+    IsUniformAsymptoticSum (m := fun k : ℕ ↦ m' + m - k) e (a.sharpTerm b') := by
+  refine isUniformAsymptoticSum_iff.2 fun N ↦ ?_
+  obtain ⟨r, hru, hr⟩ := isUniformAsymptoticSum_iff.1 h N
+  obtain ⟨d, hdu, hd⟩ := isUniformlySmoothing_iff.1 hb (m - N)
+  refine ⟨_, ?_,
+    coefficient_sub_sum_sharpTerm_right_congr d hr (by rw [hd, coefficient_sub, add_sub_cancel])⟩
+  exact hru.sub (IsUniform.sum fun k _ ↦ (ha.sharpTerm hdu k).inclusion _)
+
+/-- Changing the left factor by a uniformly smoothing symbol does not change an asymptotic sum
+with uniform remainders of the formal composition with a uniform symbol `a`: if the remainders
+`e - ∑_{k < N} sharpTerm b a k` are uniform and `b' - b` is uniformly smoothing, then so are the
+remainders `e - ∑_{k < N} sharpTerm b' a k`. -/
+theorem isUniformAsymptoticSum_sharpTerm_of_isUniformlySmoothing_sub_left {m' : ℝ}
+    {a : Symbol n V W m'} (ha : a.IsUniform) {b b' : Symbol n W U m}
+    {e : Symbol n V U (m + m' - (0 : ℕ))}
+    (h : IsUniformAsymptoticSum (m := fun k : ℕ ↦ m + m' - k) e (b.sharpTerm a))
+    (hb : (b' - b).IsUniformlySmoothing) :
+    IsUniformAsymptoticSum (m := fun k : ℕ ↦ m + m' - k) e (b'.sharpTerm a) := by
+  refine isUniformAsymptoticSum_iff.2 fun N ↦ ?_
+  obtain ⟨r, hru, hr⟩ := isUniformAsymptoticSum_iff.1 h N
+  obtain ⟨d, hdu, hd⟩ := isUniformlySmoothing_iff.1 hb (m - N)
+  refine ⟨_, ?_,
+    coefficient_sub_sum_sharpTerm_left_congr d hr (by rw [hd, coefficient_sub, add_sub_cancel])⟩
+  exact hru.sub (IsUniform.sum fun k _ ↦ (hdu.sharpTerm ha k).inclusion _)
 
 end Parametrix
 

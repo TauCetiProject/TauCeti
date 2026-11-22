@@ -66,33 +66,33 @@ def combinatorialAction : ordered I n m →* Equiv.Perm ι × Equiv.Perm (Flag �
 /-- The combinatorial action records the component and branch permutations. -/
 @[simp]
 theorem combinatorialAction_apply (e : ordered I n m) :
-    combinatorialAction I n m e = (e.1.toIso.vertexEquiv, e.1.toIso.branchEquiv) := by
+    combinatorialAction I n m e = (e.val.toIso.vertexEquiv, e.val.toIso.branchEquiv) := by
   simp [combinatorialAction]
 
 private theorem fst_apply_of_mem_ker (e : (combinatorialAction I n m).ker) (x : Σ i, X i) :
-    (e.1.1 x).1 = x.1 := by
-  have hv : e.1.1.toIso.vertexEquiv = 1 := by
-    simpa using congrArg Prod.fst (MonoidHom.mem_ker.mp e.2)
+    (e.val.val x).1 = x.1 := by
+  have hv : e.val.val.toIso.vertexEquiv = 1 := by
+    simpa using congrArg Prod.fst (MonoidHom.mem_ker.mp e.property)
   rw [← AuxiliaryIso.coe_toIso, Iso.fst_apply, hv, Equiv.Perm.one_apply]
 
 private theorem apply_special_of_mem_ker (e : (combinatorialAction I n m).ker)
-    {x : Σ i, X i} (hx : x ∈ flagPointSet d ∪ range m.point) : e.1.1 x = x := by
+    {x : Σ i, X i} (hx : x ∈ flagPointSet d ∪ range m.point) : e.val.val x = x := by
   rcases hx with hx | ⟨l, rfl⟩
   · rw [flagPointSet_eq_range] at hx
     obtain ⟨b, rfl⟩ := hx
-    have hb := Iso.flagPoint_branchEquiv e.1.1.toIso b
-    have hperm : e.1.1.toIso.branchEquiv = 1 := by
-      simpa using congrArg Prod.snd (MonoidHom.mem_ker.mp e.2)
+    have hb := Iso.flagPoint_branchEquiv e.val.val.toIso b
+    have hperm : e.val.val.toIso.branchEquiv = 1 := by
+      simpa using congrArg Prod.snd (MonoidHom.mem_ker.mp e.property)
     rw [hperm, Equiv.Perm.one_apply] at hb
     exact hb.symm
-  · exact (mem_ordered_iff_forall e.1.1).mp e.1.2 l
+  · exact (mem_ordered_iff_forall e.val.val).mp e.val.property l
 
 variable (I n m) in
 /-- Restrict an ordered automorphism fixing all components and branches to the individual
 normalization components. Each restriction fixes every special point. -/
 def kernelComponent (e : (combinatorialAction I n m).ker) (i : ι) :
     Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i) :=
-  ⟨e.1.1.toIso.toDiffeomorph.sigmaFiber (fst_apply_of_mem_ker e) i,
+  ⟨e.val.val.toIso.toDiffeomorph.sigmaFiber (fst_apply_of_mem_ker e) i,
     Diffeomorph.mem_fixingSubgroup_of_forall fun x hx ↦ sigma_mk_injective (i := i) <| by
       rw [Diffeomorph.mk_sigmaFiber_apply]
       exact apply_special_of_mem_ker e (Marking.mem_specialPoints_iff.mp hx)⟩
@@ -100,7 +100,7 @@ def kernelComponent (e : (combinatorialAction I n m).ker) (i : ι) :
 /-- The component restriction agrees with the original map after inclusion in the normalization. -/
 @[simp]
 theorem mk_kernelComponent_apply (e : (combinatorialAction I n m).ker) (i : ι) (x : X i) :
-    (⟨i, (kernelComponent I n m e i : X i ≃ₘ^n⟮I, I⟯ X i) x⟩ : Σ i, X i) = e.1.1 ⟨i, x⟩ :=
+    (⟨i, (kernelComponent I n m e i : X i ≃ₘ^n⟮I, I⟯ X i) x⟩ : Σ i, X i) = e.val.val ⟨i, x⟩ :=
   Diffeomorph.mk_sigmaFiber_apply _ _ _ _
 
 /-- An automorphism in the combinatorial kernel is determined by its component restrictions. -/
