@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Exp
+public import TauCeti.RingTheory.PowerSeries.Rescale
 
 import Mathlib.Data.Rat.Cast.Lemmas
 
@@ -34,7 +35,6 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 
 ## Main results
 
-* `PowerSeries.constantCoeff_rescale`: rescaling the variable keeps the constant coefficient.
 * `PowerSeries.rescale_exp_mul_rescale_neg_exp`, `PowerSeries.rescale_exp_mul_self`:
   `e^{aX} e^{-aX} = 1` and `e^{aX} e^{aX} = e^{2aX}`.
 * `AddMonoidAlgebra.expAlgHom_single`: `e^m ↦ e^{φ(m) X}`.
@@ -47,13 +47,6 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 public section
 
 namespace PowerSeries
-
-/-- Rescaling the variable does not change the constant coefficient. -/
-@[simp]
-theorem constantCoeff_rescale {R : Type*} [CommSemiring R] (a : R) (f : R⟦X⟧) :
-    constantCoeff (rescale a f) = constantCoeff f := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rescale]
-  simp
 
 variable (R : Type*) [CommRing R] [Algebra ℚ R]
 
