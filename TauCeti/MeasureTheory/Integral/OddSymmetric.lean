@@ -95,11 +95,11 @@ namespace MeasureTheory
 /-- **An odd integrand integrates to zero against a measure invariant under negation.** No
 integrability hypothesis is needed: the substitution `x ↦ -x` preserves the measure, so the
 integral equals its own negative. -/
-theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableNeg G]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant] {g : G → E}
-    (hodd : Function.Odd g) : ∫ x, g x ∂μ = 0 := by
+theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [InvolutiveNeg G]
+    [MeasurableNeg G] [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure G} [μ.IsNegInvariant]
+    {g : G → E} (hodd : Function.Odd g) : ∫ x, g x ∂μ = 0 := by
   have hfun : (fun x ↦ g (-x)) = fun x ↦ -g x := funext hodd
-  have h := integral_neg_eq_self g μ
+  have h := (Measure.measurePreserving_neg μ).integral_comp measurableEmbedding_neg g
   rw [hfun, integral_neg] at h
   rw [neg_eq_iff_add_eq_zero, ← two_smul ℝ] at h
   exact (smul_eq_zero.1 h).resolve_left two_ne_zero

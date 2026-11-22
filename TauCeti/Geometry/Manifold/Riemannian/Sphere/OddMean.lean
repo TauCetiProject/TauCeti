@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
+public import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Odd functions on a round sphere have zero mean
@@ -29,35 +30,24 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
   {n : ℕ} [Fact (Module.finrank ℝ E = n + 1)]
 
-/-- Negation preserves native Riemannian volume on the round unit sphere. -/
-theorem measurePreserving_neg_riemannianVolume_sphere :
-    MeasurePreserving (fun x : Metric.sphere (0 : E) 1 => -x)
-      (riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1))
-      (riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1)) := by
+/-- Native Riemannian volume on the round unit sphere is invariant under negation. -/
+instance isNegInvariant_riemannianVolume_sphere :
+    (riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1)).IsNegInvariant := by
   let Φ := (LinearIsometryEquiv.neg ℝ (E := E)).unitSphereRiemannianIsometry
     (n := n) (k := n)
   have hΦ : (Φ : Metric.sphere (0 : E) 1 → Metric.sphere (0 : E) 1) = fun x => -x := by
     funext x
-    apply Subtype.ext
-    simp [Φ]
-  rw [← hΦ]
-  exact Φ.measurePreserving_riemannianVolume
+    change Φ.toDiffeomorph x = -x
+    rw [LinearIsometryEquiv.unitSphereRiemannianIsometry_toDiffeomorph]
+    exact LinearIsometryEquiv.unitSphereDiffeomorph_neg_apply x
+  exact ⟨by simpa only [Measure.neg_def, hΦ] using Φ.measurePreserving_riemannianVolume.map_eq⟩
 
-/-- An antipodal-odd real function has zero integral for the native round-sphere volume. -/
-theorem integral_odd_riemannianVolume_sphere_eq_zero
-    (φ : Metric.sphere (0 : E) 1 → ℝ) (hodd : ∀ x, φ (-x) = -φ x) :
+/-- An antipodal-odd function into a real normed space has zero integral for the native
+round-sphere volume. -/
+theorem integral_riemannianVolume_sphere_eq_zero_of_odd
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (φ : Metric.sphere (0 : E) 1 → F) (hodd : ∀ x, φ (-x) = -φ x) :
     ∫ x, φ x ∂riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1) = 0 := by
-  let Φ := (LinearIsometryEquiv.neg ℝ (E := E)).unitSphereRiemannianIsometry
-    (n := n) (k := n)
-  have hΦ (x : Metric.sphere (0 : E) 1) : Φ x = -x := by
-    apply Subtype.ext
-    simp [Φ]
-  have h := Φ.measurePreserving_riemannianVolume.integral_comp
-    Φ.toDiffeomorph.toHomeomorph.measurableEmbedding φ
-  have hfun : (fun x : Metric.sphere (0 : E) 1 => φ (Φ x)) = fun x => -φ x := by
-    funext x
-    rw [hΦ, hodd]
-  rw [hfun, integral_neg] at h
-  linarith
+  exact MeasureTheory.integral_eq_zero_of_odd hodd
 
 end TauCeti
