@@ -537,6 +537,74 @@ theorem holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le {�
     (fun r hr hr' ↦ hdens x hx r hr (hdiam r hr')) (fun r hr hr' ↦ hdens y hy r hr (hdiam' r hr'))
     (fun r hr hr' ↦ hosc x hx r hr (hdiam r hr')) (fun r hr hr' ↦ hosc y hy r hr (hdiam' r hr'))
 
+/-- **Campanato's theorem on a set with the measure density property, below a fixed scale.** Let
+`α > 0`, `c > 0` and `ρ > 0`. Suppose that for every `x ∈ S`, `Ω` has density at least `c` in the
+closed balls `closedBall x r`, `0 < r ≤ ρ`, that `f` is integrable on `closedBall x ρ` for
+`μ.restrict Ω`, that its mean oscillation for `μ.restrict Ω` on `closedBall x r` is at most `M r^α`
+for `0 < r ≤ ρ`, and that the norm of its average over `closedBall x ρ` for `μ.restrict Ω` is at
+most `B`. Then the precise representative of `f` for `μ.restrict Ω` is `α`-Hölder continuous on
+`S`, with constant `2 · 2^α · (2ⁿ / (c (1 - 2^(-α))) · M + B ρ^(-α))`, where `n` is the dimension.
+
+Only balls of radius at most `ρ` enter, so the set `S` need not lie in `Ω`, nor `Ω` have the
+density property at large scales: for a half-space `Ω` and `S` in its closure, `c = 1 / 2`. -/
+theorem holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le_of_norm_le
+    {α : ℝ≥0} {S : Set E} {B : ℝ} (hα : 0 < α) (hc : 0 < c) (hρ : 0 < ρ)
+    (hf : ∀ x ∈ S, IntegrableOn f (closedBall x ρ) (μ.restrict Ω))
+    (hdens : ∀ x ∈ S, ∀ r, 0 < r → r ≤ ρ →
+      (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω))
+    (hosc : ∀ x ∈ S, ∀ r, 0 < r → r ≤ ρ →
+      ⨍ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ ∂μ.restrict Ω ≤
+        M * r ^ (α : ℝ))
+    (havg : ∀ x ∈ S, ‖⨍ y in closedBall x ρ, f y ∂μ.restrict Ω‖ ≤ B) :
+    HolderOnWith (Real.toNNReal (2 * 2 ^ (α : ℝ) *
+      (2 ^ finrank ℝ E / (c * (1 - 2 ^ (-(α : ℝ)))) * M + B * ρ ^ (-(α : ℝ))))) α
+      (preciseRepresentative (μ.restrict Ω) f) S := by
+  have hα' : (0 : ℝ) < α := hα
+  set C : ℝ := 2 ^ finrank ℝ E / (c * (1 - 2 ^ (-(α : ℝ))))
+  have hC : 0 ≤ C :=
+    div_nonneg (by positivity) (mul_nonneg c.property (one_sub_two_rpow_neg_pos hα').le)
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hB : 0 ≤ B := (norm_nonneg _).trans (havg x hx)
+  -- The mean oscillation on `closedBall x ρ` is nonnegative, so `M ≥ 0`.
+  have hM : 0 ≤ M := by
+    have h := (average_nonneg fun _ => norm_nonneg _).trans (hosc x hx ρ hρ le_rfl)
+    exact nonneg_of_mul_nonneg_left h (by positivity)
+  rw [Real.coe_toNNReal _ (by positivity)]
+  rcases le_or_gt (2 * dist x y) ρ with hd | hd
+  · -- Nearby points: the local Campanato estimate.
+    have hd' : ∀ r, r ≤ dist x y → r ≤ ρ := fun r hr => by
+      linarith [dist_nonneg (x := x) (y := y)]
+    have h := dist_preciseRepresentative_restrict_le_of_setAverage_norm_sub_le hα' hc
+      ((hf x hx).mono_set (closedBall_subset_closedBall hd))
+      (fun r hr hr' => hdens x hx r hr (hr'.trans hd)) (fun r hr hr' => hdens y hy r hr (hd' r hr'))
+      (fun r hr hr' => hosc x hx r hr (hr'.trans hd)) (fun r hr hr' => hosc y hy r hr (hd' r hr'))
+    have : 0 ≤ 2 * 2 ^ (α : ℝ) * (B * ρ ^ (-(α : ℝ))) * dist x y ^ (α : ℝ) := by positivity
+    calc _ ≤ _ := h
+      _ ≤ _ := by nlinarith
+  · -- Distant points: both values lie within `B + C M ρ^α` of `0`.
+    have hbound : ∀ z ∈ S, ‖preciseRepresentative (μ.restrict Ω) f z‖ ≤
+        (C * M + B * ρ ^ (-(α : ℝ))) * ρ ^ (α : ℝ) := fun z hz => by
+      have h := norm_setAverage_closedBall_restrict_sub_preciseRepresentative_le hα' hc (hf z hz)
+        (hdens z hz) (hosc z hz) hρ le_rfl
+      have h' := norm_sub_le (⨍ y in closedBall z ρ, f y ∂μ.restrict Ω)
+        ((⨍ y in closedBall z ρ, f y ∂μ.restrict Ω) - preciseRepresentative (μ.restrict Ω) f z)
+      rw [sub_sub_cancel] at h'
+      have hρα : ρ ^ (-(α : ℝ)) * ρ ^ (α : ℝ) = 1 := by
+        rw [← Real.rpow_add hρ, neg_add_cancel, Real.rpow_zero]
+      calc _ ≤ _ := h'
+        _ ≤ B + C * (M * ρ ^ (α : ℝ)) := add_le_add (havg z hz) h
+        _ = _ := by rw [add_mul, mul_assoc B, hρα]; ring
+    have hρd : ρ ^ (α : ℝ) ≤ 2 ^ (α : ℝ) * dist x y ^ (α : ℝ) := by
+      rw [← Real.mul_rpow zero_le_two dist_nonneg]
+      exact Real.rpow_le_rpow hρ.le hd.le hα'.le
+    calc dist (preciseRepresentative (μ.restrict Ω) f x) (preciseRepresentative (μ.restrict Ω) f y)
+        ≤ ‖preciseRepresentative (μ.restrict Ω) f x‖ +
+            ‖preciseRepresentative (μ.restrict Ω) f y‖ := dist_le_norm_add_norm _ _
+      _ ≤ 2 * ((C * M + B * ρ ^ (-(α : ℝ))) * ρ ^ (α : ℝ)) := by
+          linarith [hbound x hx, hbound y hy]
+      _ ≤ 2 * ((C * M + B * ρ ^ (-(α : ℝ))) * (2 ^ (α : ℝ) * dist x y ^ (α : ℝ))) := by gcongr
+      _ = _ := by ring
+
 end Domain
 
 /-! ### Morrey decay from Campanato decay on a set with the measure density property -/
