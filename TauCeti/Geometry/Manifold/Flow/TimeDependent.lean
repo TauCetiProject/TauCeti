@@ -414,13 +414,22 @@ theorem timeDependentFlowOf_eq_of_hasMFDerivAt {γ : ℝ → M} {a b : ℝ}
   rw [timeDependentFlowOf_def, flowOf_apply, heq]
   simp only [add_sub_cancel]
 
+/-- **Uniqueness of global solutions.** A solution `γ` of the time-dependent equation defined for
+all time is, between any two times `s` and `t`, the curve of the time-dependent flow through `γ s`
+at time `s`. -/
+theorem timeDependentFlowOf_eq_of_forall_hasMFDerivAt {γ : ℝ → M}
+    (hγ : ∀ u, HasMFDerivAt 𝓘(ℝ, ℝ) I γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ u)))) (s t : ℝ) :
+    timeDependentFlowOf X s t (γ s) = γ t :=
+  timeDependentFlowOf_eq_of_hasMFDerivAt hX (a := min s t - 1) (b := max s t + 1)
+    (fun u _ ↦ hγ u)
+    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+
 /-- A point at which `X` vanishes at all times is fixed by the time-dependent flow. -/
 theorem timeDependentFlowOf_eq_self_of_forall_eq_zero (hx : ∀ u, X u x = 0) (s t : ℝ) :
     timeDependentFlowOf X s t x = x :=
-  timeDependentFlowOf_eq_of_hasMFDerivAt hX (γ := fun _ ↦ x) (a := min s t - 1)
-    (b := max s t + 1) (fun u _ ↦ hasMFDerivAt_const_of_forall_eq_zero hx u)
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX (γ := fun _ ↦ x)
+    (hasMFDerivAt_const_of_forall_eq_zero hx) s t
 
 /-- **The two-time composition law.** Flowing from time `r` to time `s` and then from `s` to `t`
 is flowing from `r` to `t`, provided both steps are defined; the composite is then defined. -/
@@ -518,11 +527,8 @@ theorem timeDependentFlowOf_const_smul [T2Space M] [IsManifold I 1 M] [Boundaryl
     rw [isMIntegralCurve_iff_isMIntegralCurveOn]
     simpa [hcomplete.mem_flowDomain] using isMIntegralCurveOn_flowOf hv x
   have hγ := (hcurve.comp_mul c).comp_add (-s)
-  have h := timeDependentFlowOf_eq_of_hasMFDerivAt hX (X := fun _ ↦ c • v)
-    (γ := fun u ↦ flowOf v ((u + -s) * c) x) (s := s) (t := t) (a := min s t - 1)
-    (b := max s t + 1) (fun u _ ↦ hγ u)
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  have h := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX (X := fun _ ↦ c • v)
+    (γ := fun u ↦ flowOf v ((u + -s) * c) x) hγ s t
   simpa [flowOf_zero, sub_eq_add_neg] using h
 
 /-- **The time-dependent flow of an autonomous field.** For a `C¹` vector field `v`, wherever the
@@ -1173,6 +1179,12 @@ theorem contMDiff_timeDependentFlowOf :
       (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) := by
   rw [← contMDiffOn_univ, ← timeDependentFlowDomain_eq_univ hcomplete]
   exact contMDiffOn_timeDependentFlowOf hn hX
+
+/-- If the suspension of a `C^n` time-dependent field, `1 ≤ n`, on a finite-dimensional manifold is
+complete, the time-dependent flow from time `s` to time `t` is continuous. -/
+theorem continuous_timeDependentFlowOf (s t : ℝ) : Continuous (timeDependentFlowOf X s t) :=
+  (contMDiff_timeDependentFlowOf hcomplete hn hX).continuous.comp
+    (by fun_prop : Continuous fun x : M ↦ ((s, t), x))
 
 /-- If the suspension of a `C^n` time-dependent field, `1 ≤ n`, on a finite-dimensional manifold is
 complete, the time-dependent flow from time `s` to time `t` is a `C^n` diffeomorphism, with
