@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ComplexTangentBundle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
-public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
+public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.VectorBundle.Complex.RealStructure
 public import TauCeti.Topology.VectorBundle.Complex.LinearPart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.RestrictScalars
@@ -353,7 +353,8 @@ theorem firstChernHom_eq_zero_of_mpullback_eq_neg (hσ : σ.IsNondegenerate) (h 
         hJ.tames ⊤] at hneg
       have hhom := clutchingNumber_eq_of_homotopyAlong
         (F := EuclideanSpace ℂ (Fin (finrank ℝ E / 2)))
-        (E := (J.toContMDiff ⊤).toContinuousComplexStructure.Fiber) (GenLoop.HomotopyAlong.map H p)
+        (E := (J.toContMDiff ⊤).toContinuousComplexStructure.Fiber)
+        (GenLoop.homotopyAlongMap H rfl rfl p)
       rw [GenLoop.map_id] at hhom
       rw [firstChernHom_apply_mk (EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) hσ hJ.tames ⊤,
         AddMonoidHom.zero_apply]
