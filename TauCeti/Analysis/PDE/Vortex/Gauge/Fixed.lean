@@ -38,6 +38,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   first-order part `gaugeFixedFirstOrder`, applied to the gradients of the coordinates of `y`, plus
   its zeroth-order part `gaugeFixedZerothOrder`, bilinear in the values of `x` and `y`.
 * `gaugeAdjoint_gaugeDirection`: `d₀* d₀ f = -Δ f + (|α|² / 4) f` pointwise, at every field.
+* `gaugeAdjoint_phaseGauge`: the Coulomb defect of the gauge transform `e^{iF} y` is
+  `d₀* y - ΔF + sin F (p y₂ + q y₃) + (cos F - 1) (p y₃ - q y₂)` pointwise, at every field.
 * `gaugeFixedOperator_fun_smul` and `gaugeFixedAdjoint_fun_smul`: the Leibniz rules of `L_x` and
   `L_x*` for a real weight, whose commutators are the principal symbols
   `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
@@ -551,6 +553,27 @@ theorem gaugeAdjoint_gaugeDirection (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f 
   have hdf := (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
   simp [laplacian_eq_sum_fderiv_fderiv_apply orthonormalBasisOneI hdf,
     Fin.sum_univ_two, fderiv_fun_neg]
+  ring
+
+/-- **The Coulomb defect of a phase gauge transformation**: at `x = (b₁, b₂, p, q)`, the gauge
+transform `e^{iF} y` (`phaseGauge`) has
+`d₀* (e^{iF} y) = d₀* y - ΔF + sin F (p y₂ + q y₃) + (cos F - 1) (p y₃ - q y₂)`. -/
+theorem gaugeAdjoint_phaseGauge (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℝ} {z : ℂ}
+    (hy₀ : DifferentiableAt ℝ (fun w ↦ y w 0) z) (hy₁ : DifferentiableAt ℝ (fun w ↦ y w 1) z)
+    (hF : ContDiffAt ℝ 2 F z) :
+    gaugeAdjoint x (phaseGauge y F) z = gaugeAdjoint x y z - Δ F z +
+      Real.sin (F z) * (x z 2 * y z 2 + x z 3 * y z 3) +
+        (Real.cos (F z) - 1) * (x z 2 * y z 3 - x z 3 * y z 2) := by
+  have hdf := (hF.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hd (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ F w v) z :=
+    hdf.clm_apply (differentiableAt_const v)
+  simp only [gaugeAdjoint_def, phaseGauge_apply_zero, phaseGauge_apply_one,
+    phaseGauge_apply_two, phaseGauge_apply_three]
+  rw [fderiv_fun_sub hy₀ (hd 1), fderiv_fun_sub hy₁ (hd I),
+    laplacian_eq_sum_fderiv_fderiv_apply orthonormalBasisOneI hdf]
+  simp only [Fin.isValue, sub_apply, coe_orthonormalBasisOneI,
+    Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
   ring
 
 /-- **The Weitzenböck formula for `L_x L_x*`** at an arbitrary field, with the vortex defects
