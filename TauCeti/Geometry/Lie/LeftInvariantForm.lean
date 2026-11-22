@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Tangent.Differential
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 
@@ -59,7 +60,8 @@ forms detect nontrivial homotopy classes of maps of spheres.
 * `TauCeti.isSmoothForm_leftInvariantForm`: `j(a)` is smooth.
 * `TauCeti.integralTopForm_leftInvariantForm_pos`: on a compact Lie group of positive dimension, a
   nonzero left-invariant top form has positive integral for the orientation it defines.
-* `TauCeti.mextDeriv_leftInvariantForm_apply`: `d j(a) = j(d a)`.
+* `TauCeti.mextDeriv_leftInvariantForm`, `TauCeti.mextDerivₗ_leftInvariantSmoothForm`:
+  `d j(a) = j(d a)`, with the pointwise form `TauCeti.mextDeriv_leftInvariantForm_apply`.
 * `TauCeti.mextDeriv_leftInvariantForm_eq_zero_iff`, `TauCeti.isClosed_leftInvariantSmoothForm_iff`:
   `j(a)` is closed exactly when `a` is a Chevalley–Eilenberg cocycle.
 
@@ -421,6 +423,27 @@ theorem mextDeriv_leftInvariantForm_apply (a : GroupLieAlgebra I G [⋀^Fin k]�
       ContinuousAlternatingMap.ofSubsingleton_apply_apply, zero_apply]
     exact (trivial_lie_zero (GroupLieAlgebra I G) F (mfderiv I I (g⁻¹ * ·) g (v 0)) _).symm
   | succ n => exact mextDeriv_leftInvariantForm_apply_succ a g v
+
+/-- **The left trivialization intertwines the differentials**: for coefficients on which the Lie
+algebra acts trivially, the exterior derivative of the left-invariant form of `a` is the
+left-invariant form of the Chevalley–Eilenberg differential of `a`, `d j(a) = j(d a)`. -/
+@[simp]
+theorem mextDeriv_leftInvariantForm (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    mextDeriv (leftInvariantForm a) = leftInvariantForm (AlternatingMap.toContinuousAlternatingMap
+      (TauCeti.LieModule.Cohomology.d ℝ (GroupLieAlgebra I G) F k a.toAlternatingMap)) := by
+  funext g
+  ext v
+  rw [mextDeriv_leftInvariantForm_apply, leftInvariantForm_apply,
+    AlternatingMap.coe_toContinuousAlternatingMap]
+
+/-- `d j(a) = j(d a)` for the smooth left-invariant form of `a`, for coefficients on which the Lie
+algebra acts trivially. -/
+@[simp]
+theorem mextDerivₗ_leftInvariantSmoothForm (a : GroupLieAlgebra I G [⋀^Fin k]→L[ℝ] F) :
+    mextDerivₗ I k (leftInvariantSmoothForm a) =
+      leftInvariantSmoothForm (AlternatingMap.toContinuousAlternatingMap
+        (TauCeti.LieModule.Cohomology.d ℝ (GroupLieAlgebra I G) F k a.toAlternatingMap)) :=
+  Subtype.ext ((mextDerivₗ_apply I k _).trans (mextDeriv_leftInvariantForm a))
 
 /-- **A left-invariant form is closed exactly when its value at the identity is a
 Chevalley–Eilenberg cocycle**, for coefficients on which the Lie algebra acts trivially. -/
