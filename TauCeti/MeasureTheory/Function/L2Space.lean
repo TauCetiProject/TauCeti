@@ -28,7 +28,8 @@ hypotheses on random vectors are usually stated, together with the special case 
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
 squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
 integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`), and the squared norm `‖u‖²` of an
-element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`). The `L²` seminorm of
+element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`), with integral
+`‖u‖ ^ 2` (`MeasureTheory.Lp.norm_sq_eq_integral_norm_sq`). The `L²` seminorm of
 `V • g` is the square root of `∫⁻ V² ‖g‖²` (`TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow`),
 so a bound `∫⁻ V² ‖g‖² ≤ K ∫ ‖g‖²` gives `‖V • g‖₂ ≤ √K ‖g‖₂`
 (`MeasureTheory.MemLp.eLpNorm_two_smul_le_of_lintegral_le`). The `Lᵖ` seminorm of the pairing
@@ -121,6 +122,14 @@ theorem eLpNorm_inner_const_le (f : α → E) (c : E) (p : ℝ≥0∞) :
 theorem Lp.integrable_sq_norm {F : Type*} [NormedAddCommGroup F] (u : Lp F 2 μ) :
     Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
   (Lp.memLp u).norm.integrable_sq
+
+/-- The square of the norm of an element `u` of `L²` is `∫ ‖u x‖ ^ 2`. -/
+theorem Lp.norm_sq_eq_integral_norm_sq {F : Type*} [NormedAddCommGroup F] (u : Lp F 2 μ) :
+    ‖u‖ ^ 2 = ∫ x, ‖u x‖ ^ 2 ∂μ := by
+  rw [Lp.norm_def, (Lp.memLp u).eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity)]
+  simp only [ENNReal.toReal_ofNat, Real.rpow_two]
+  exact Real.rpow_inv_natCast_pow (n := 2) (integral_nonneg fun _ ↦ by positivity) two_ne_zero
 
 /-- The `L²` seminorm of `V • g` for a real weight `V` is the square root of
 `∫⁻ V² ‖g‖²`. -/
