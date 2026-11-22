@@ -80,29 +80,6 @@ namespace TopCat
 
 variable {k : Type w} [CommRing k] {X Y : TopCat.{w}} {B : Set X} {R S : ModuleCat.{w} k}
 
-/-- On `B × Y`, the homeomorphism `B × Y ≅ fst⁻¹(B)` followed by the first projection of the product
-pair is the first projection of `B × Y`. -/
-private lemma prodPreimageFstIso_hom_comp_ofSubsetMap_fst_snd :
-    (prodPreimageFstIso X Y B).hom ≫
-        TopPair.Hom.snd (TopPair.ofSubsetMap (fst X Y) (Set.mapsTo_preimage _ _) :
-          TopPair.ofSubset (fst X Y ⁻¹' B) ⟶ TopPair.ofSubset B) =
-      fst (TopPair.ofSubset B).snd Y := by
-  ext x
-  apply (TopPair.ofSubset B).isEmbedding_map.injective
-  have h := congrArg (fun φ ↦ (φ ≫ fst X Y) x) (prodPreimageFstIso_hom_comp_map X Y B)
-  simp only [ConcreteCategory.comp_apply]
-  rw [TopPair.Hom.w_apply, TopPair.ofSubsetMap_fst_apply]
-  exact h.trans (ConcreteCategory.congr_hom (whiskerRight_fst _ _) x)
-
-/-- On `B × Y`, the homeomorphism `B × Y ≅ fst⁻¹(B)` followed by the inclusion into `X × Y` and the
-second projection is the second projection of `B × Y`. -/
-private lemma prodPreimageFstIso_hom_comp_map_snd :
-    (prodPreimageFstIso X Y B).hom ≫ (TopPair.ofSubset (fst X Y ⁻¹' B)).map ≫
-        (snd X Y : (TopPair.ofSubset (fst X Y ⁻¹' B)).fst ⟶ Y) =
-      snd (TopPair.ofSubset B).snd Y :=
-  (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ snd X Y) (prodPreimageFstIso_hom_comp_map X Y B)).trans (whiskerRight_snd _ _)
-
 variable {p q : ℕ} {I : ModuleCat.{w} k}
 
 /-- On `B × Y`: the homeomorphism `B × Y ≅ fst⁻¹(B)`, capping with the pull-back of `σ` to
@@ -127,13 +104,17 @@ private lemma map_prodPreimageFstIso_hom_comp_singularCap_comp_singularKronecker
         ((TopPair.ofSubset B).snd ⊗ Y).singularKronecker k q
           (TopCat.singularCohomologyMap (snd (TopPair.ofSubset B).snd Y) q c) := by
   -- Move the homeomorphism past the cap product, then read the composites of maps of spaces on
-  -- `B × Y` as its two projections.
-  erw [← Functor.map_comp_assoc]
-  rw [← reassoc_of% (TopCat.singularCap_naturality
+  -- `B × Y` as its two projections. The first rewrite is given its arguments: the source
+  -- `(TopPair.ofSubset (fst X Y ⁻¹' B)).fst` of `snd X Y` is `X ⊗ Y` only up to unfolding, so the
+  -- pattern `?F.map ?f ≫ ?F.map ?g` would not be found.
+  rw [← Functor.map_comp_assoc ((singularHomologyFunctor (ModuleCat.{w} k) q).obj S)
+      (TopPair.ofSubset (fst X Y ⁻¹' B)).map
+      (snd X Y : (TopPair.ofSubset (fst X Y ⁻¹' B)).fst ⟶ Y),
+    ← reassoc_of% (TopCat.singularCap_naturality
     (prodPreimageFstIso X Y B).hom k (𝟙 (R ⊗ S)) (λ_ S).hom p q (p + q) rfl _),
-    ← Functor.map_comp_assoc, prodPreimageFstIso_hom_comp_map_snd,
+    ← Functor.map_comp_assoc, prodPreimageFstIso_hom_comp_map_snd X Y B,
     ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp,
-    prodPreimageFstIso_hom_comp_ofSubsetMap_fst_snd,
+    prodPreimageFstIso_hom_comp_ofSubsetMap_fst_snd X Y B,
     singularKronecker_naturality]
 
 /-- **The Kronecker pairing of `pr₂_*((o × x) ⌢ pr₁^* δσ)`.** For `σ ∈ Hᵖ(B)` and a class
@@ -171,13 +152,19 @@ theorem singularHomologyCrossRel_comp_singularCap_comp_singularKronecker
     rw [TopCat.singularCap_comp_singularKronecker, ← TauCeti.singularCross_eq_singularCup]
     exact singularHomologyCross_comp_singularKronecker_singularCross (λ_ I).hom _ Y p q (p + q) rfl
       σ c
+  -- The target of `(TopPair.ofSubset B).singularHomologyδ R (p + 1) p` is the homology
+  -- `(TopPair.toSSetPair.obj (TopPair.ofSubset B)).left.homology R p` of the subspace of the
+  -- simplicial pair, while the source of `(TopPair.ofSubset B).snd.singularKronecker k p σ` (and
+  -- of `hJ`'s right side) is `((singularHomologyFunctor (ModuleCat k) p).obj R).obj
+  -- (TopPair.ofSubset B).snd`. The two agree only up to unfolding, so `whiskerRight_comp_tensorHom`
+  -- is given its arguments, `hJ` is rewritten with `erw`, and the final reassociation is a term.
   conv_rhs =>
-    rw [TopPair.singularKronecker_singularCohomologyδ]
-    erw [← whiskerRight_comp_tensorHom]
-    rw [Category.assoc]
-    erw [← hJ, ← map_prodPreimageFstIso_hom_comp_singularCap_comp_singularKronecker σ c]
-  -- The two sides differ by reassociation only; the objects agree up to unfolding, so the
-  -- associativity steps are applied as terms.
+    rw [TopPair.singularKronecker_singularCohomologyδ,
+      ← whiskerRight_comp_tensorHom ((TopPair.ofSubset B).singularHomologyδ R (p + 1) p)
+        ((TopPair.ofSubset B).snd.singularKronecker k p σ) (Y.singularKronecker k q c),
+      Category.assoc]
+    erw [← hJ]
+    rw [← map_prodPreimageFstIso_hom_comp_singularCap_comp_singularKronecker σ c]
   exact (Category.assoc _ _ _).trans <| congrArg (_ ≫ ·) <| (Category.assoc _ _ _).trans <|
     congrArg (_ ≫ ·) <| congrArg (_ ≫ ·) (Category.assoc _ _ _)
 
