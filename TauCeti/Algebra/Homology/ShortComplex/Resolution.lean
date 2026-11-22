@@ -85,6 +85,13 @@ lemma resolutionComplex_d_add_two (S : ShortComplex C) (n j : ℕ) :
     S.resolutionComplex.d (n + 2) j = 0 :=
   (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
 
+/-- Every chain map out of `S.resolutionComplex` vanishes in degrees at least `2`, since the
+complex does. -/
+@[simp]
+lemma from_resolutionComplex_f_add_two {K : ChainComplex C ℕ} (f : S.resolutionComplex ⟶ K)
+    (n : ℕ) : f.f (n + 2) = 0 :=
+  (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+
 /-- Two chain maps out of `S.resolutionComplex` agree as soon as they agree in degrees `0` and `1`,
 since the complex vanishes in higher degrees. This is the analogue for this model of Mathlib's
 `HomologicalComplex.from_double_hom_ext` for the two-term complex `HomologicalComplex.double`. -/
@@ -94,7 +101,8 @@ lemma from_resolutionComplex_hom_ext {K : ChainComplex C ℕ} {f g : S.resolutio
   ext (_ | _ | n)
   · exact h₀
   · exact h₁
-  · exact (S.isZero_resolutionComplex_X_add_two n).eq_of_src _ _
+  · exact (from_resolutionComplex_f_add_two f n).trans
+      (from_resolutionComplex_f_add_two g n).symm
 
 section mkHomFromResolutionComplex
 
@@ -119,12 +127,6 @@ lemma mkHomFromResolutionComplex_f_zero :
 @[simp]
 lemma mkHomFromResolutionComplex_f_one :
     (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f 1 = φ₁ :=
-  (rfl)
-
-/-- In degrees at least `2`, `S.mkHomFromResolutionComplex φ₀ φ₁ comm` vanishes. -/
-@[simp]
-lemma mkHomFromResolutionComplex_f_add_two (n : ℕ) :
-    (S.mkHomFromResolutionComplex φ₀ φ₁ comm).f (n + 2) = 0 :=
   (rfl)
 
 end mkHomFromResolutionComplex
@@ -209,12 +211,6 @@ lemma resolutionComplexMap_f_zero (φ : S ⟶ S') : (resolutionComplexMap φ).f 
 /-- In degree `1`, the chain map induced by `φ` is `φ.τ₁`. -/
 @[simp]
 lemma resolutionComplexMap_f_one (φ : S ⟶ S') : (resolutionComplexMap φ).f 1 = φ.τ₁ :=
-  (rfl)
-
-/-- In degrees at least `2`, the chain map induced by `φ` vanishes. -/
-@[simp]
-lemma resolutionComplexMap_f_add_two (φ : S ⟶ S') (n : ℕ) :
-    (resolutionComplexMap φ).f (n + 2) = 0 :=
   (rfl)
 
 /-- The induced map of the identity short-complex morphism is the identity chain map. -/
