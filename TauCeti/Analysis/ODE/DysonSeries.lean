@@ -18,6 +18,7 @@ import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Order.ProjIcc
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 
 /-!
 # The Dyson series of a continuous path in a Banach algebra
@@ -77,6 +78,10 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
+* `TauCeti.commute_dysonSeriesLeft`, `TauCeti.commute_dysonSeries_neg`: an element commuting with
+  every value of `p` commutes with both series.
+* `TauCeti.dysonSeriesLeft_apply_I_smul`, `TauCeti.dysonSeries_neg_apply_I_smul`: the propagator
+  of a path of complex-linear maps and its inverse are complex linear.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 * `TauCeti.exists_forall_norm_sub_dysonSeriesLeft_apply_le_mul_integral_norm`,
@@ -445,6 +450,24 @@ theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeri
   ⟨⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩,
     rfl⟩
 
+/-- An element commuting with every value of a continuous path commutes with its left Dyson
+series. -/
+theorem commute_dysonSeriesLeft {a : B} (hp : Continuous p) (ha : ∀ s, Commute a (p s))
+    (t : ℝ) : Commute a (dysonSeriesLeft p t) := by
+  -- `a Ψ` solves `X' = p X` with initial value `a`, so it is `Ψ a`.
+  have h := eq_dysonSeriesLeft_mul hp (f := fun s => a * dysonSeriesLeft p s) (fun s =>
+    ((hasDerivAt_dysonSeriesLeft hp s).const_mul a).congr_deriv (by
+      rw [← mul_assoc, (ha s).eq, mul_assoc])) t
+  rwa [dysonSeriesLeft_zero, mul_one] at h
+
+/-- An element commuting with every value of a continuous path `p` commutes with the Dyson series
+of `-p`, the inverse of the left Dyson series of `p`. -/
+theorem commute_dysonSeries_neg {a : B} (hp : Continuous p) (ha : ∀ s, Commute a (p s))
+    (t : ℝ) : Commute a (dysonSeries (-p) t) :=
+  (commute_dysonSeriesLeft hp ha t).units_inv_right
+    (u := ⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t,
+      dysonSeries_neg_mul_dysonSeriesLeft hp t⟩)
+
 /-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
 theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
     ContDiff ℝ (n + 1) (dysonSeriesLeft p) := by
@@ -686,6 +709,29 @@ theorem exists_forall_norm_le_mul_integral_norm_of_norm_le {M : ℝ → X →L[�
   calc ‖w t‖ ≤ B * (‖w 0‖ + ∫ s in 0..d, ‖f s‖) := hle hf hw t ht
     _ ≤ B * (K * (C * ∫ s in 0..d, ‖f s‖) + ∫ s in 0..d, ‖f s‖) := by gcongr
     _ = B * (K * C + 1) * ∫ s in 0..d, ‖f s‖ := by ring
+
+section Complex
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {M : ℝ → E →L[ℝ] E}
+
+open Complex (I)
+
+variable [CompleteSpace E]
+
+/-- The propagator of a continuous path of complex-linear maps is complex linear. -/
+theorem dysonSeriesLeft_apply_I_smul (hM : Continuous M) (hMI : ∀ s v, M s (I • v) = I • M s v)
+    (t : ℝ) (v : E) : dysonSeriesLeft M t (I • v) = I • dysonSeriesLeft M t v :=
+  ContinuousLinearMap.commute_I_smul_one_iff.1
+    (commute_dysonSeriesLeft hM (ContinuousLinearMap.commute_I_smul_one_iff.2 <| hMI ·) t) v
+
+/-- The inverse `dysonSeries (-M)` of the propagator of a continuous path of complex-linear maps
+is complex linear. -/
+theorem dysonSeries_neg_apply_I_smul (hM : Continuous M) (hMI : ∀ s v, M s (I • v) = I • M s v)
+    (t : ℝ) (v : E) : dysonSeries (-M) t (I • v) = I • dysonSeries (-M) t v :=
+  ContinuousLinearMap.commute_I_smul_one_iff.1
+    (commute_dysonSeries_neg hM (ContinuousLinearMap.commute_I_smul_one_iff.2 <| hMI ·) t) v
+
+end Complex
 
 end Left
 

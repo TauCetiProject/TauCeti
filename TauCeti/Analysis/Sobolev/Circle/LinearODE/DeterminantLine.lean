@@ -99,6 +99,9 @@ product of the determinants at the two ends is positive, and to its opposite whe
   `TauCeti.CircleSobolev.sign_detLineEndEquiv_detLineLoopOperatorEquiv`: for bijective `L_S`, the
   trivialization of `det L_S` through `1 - Ψ(T)` is `(det (1 - Ψ(T)))⁻¹` times the trivialization
   given by bijectivity, so the two orientations differ by the sign of `det (1 - Ψ(T))`.
+* `TauCeti.CircleSobolev.sign_detLineEquivOfBijective_eq_sign_det_of_sameRay`: for bijective
+  `L_S`, the transported normalized generator of `1 - Ψ(T)` reads with the sign of
+  `det (1 - Ψ(T))` in the trivialization given by bijectivity.
 * `TauCeti.CircleSobolev.isDetLineCoherentOn_detLineLoopOperatorEquiv_symm`: for a continuous family
   of coefficient loops, the transported normalized generators form a coherent family.
 * `TauCeti.CircleSobolev.detLineOrientationTransport_rayOfNeZero_detLineLoopOperatorEquiv_symm`:
@@ -320,6 +323,17 @@ theorem quotientRangeLoopOperatorEquiv_mk (f : C(AddCircle T, E)) :
   rw [hj]
   simp [quotientRangeLoopOperatorEquiv]
 
+/-- Every class in the cokernel of `L_S` is the class of a continuous loop. -/
+theorem exists_mk_ofContinuousMap_eq_coker_loopOperator
+    (y : CircleSobolev 0 E ⧸ range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) :
+    ∃ f : C(AddCircle T, E), Submodule.Quotient.mk (ofContinuousMap T f) = y := by
+  obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ y
+  obtain ⟨_, ⟨g, rfl⟩, _, ⟨b, rfl⟩, rfl⟩ :=
+    Submodule.mem_sup.1 ((sup_range_eq_top T S).symm ▸ Submodule.mem_top (x := a))
+  refine ⟨twistedContinuousOneEquiv E T g, ?_⟩
+  rw [← toH0_apply, Submodule.Quotient.eq, sub_add_cancel_left]
+  exact Submodule.neg_mem _ (LinearMap.mem_range_self _ b)
+
 /-- **The determinant line of `L_S` is that of `1 - Ψ(T)`.** Evaluation at `0` on the kernel
 (`TauCeti.CircleSobolev.kerLoopOperatorEquiv`) and the endpoint map on the cokernel
 (`TauCeti.CircleSobolev.quotientRangeLoopOperatorEquiv`) identify the determinant line
@@ -424,6 +438,34 @@ theorem detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul
   rw [LinearEquiv.apply_symm_apply]
   exact ((LinearMap.detLineEquivOfBijective_detLineCongrKerCoker hL hP _ _ _).trans
     (LinearEquiv.apply_symm_apply _ _)).symm
+
+/-- **The sign of the transported generator at a nondegenerate loop.** Let `L_S` be bijective,
+equivalently `det (1 - Ψ(T)) ≠ 0`. Every nonzero element `x` of the determinant line of `L_S` on
+the ray of the normalized generator of `1 - Ψ(T)` transported along
+`TauCeti.CircleSobolev.detLineLoopOperatorEquiv` reads, in the trivialization given by
+bijectivity (`LinearMap.detLineEquivOfBijective`), with the sign of `det (1 - Ψ(T))`. -/
+theorem sign_detLineEquivOfBijective_eq_sign_det_of_sameRay
+    (hL : Function.Bijective (loopOperator T S))
+    {x : (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLine} (hx : x ≠ 0)
+    (hxy : SameRay ℝ x ((detLineLoopOperatorEquiv T S).symm
+      (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator)) :
+    SignType.sign
+        ((loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective
+          hL x) =
+      SignType.sign
+        (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E))) := by
+  set A := 1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)
+  -- `x` is a positive multiple of the transported normalized generator of `A`.
+  have hy : (detLineLoopOperatorEquiv T S).symm A.detLineEndGenerator ≠ 0 :=
+    (LinearEquiv.map_ne_zero_iff _).2 (LinearMap.detLineEndGenerator_ne_zero A)
+  obtain ⟨r, hr, hrx⟩ := SameRay.exists_pos_left (R := ℝ)
+    (M := (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLine) hxy hx hy
+  have hx' : x = r⁻¹ • (detLineLoopOperatorEquiv T S).symm A.detLineEndGenerator := by
+    rw [← hrx, smul_smul, inv_mul_cancel₀ hr.ne', one_smul]
+  -- The transported generator is `det A` times the generator of the bijective trivialization.
+  rw [hx', detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul T S hL, smul_smul,
+    map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one, sign_mul,
+    sign_pos (inv_pos.2 hr), one_mul]
 
 /-! ### Coherence along families -/
 
