@@ -324,7 +324,7 @@ theorem quotientRangeLoopOperatorEquiv_mk (f : C(AddCircle T, E)) :
   simp [quotientRangeLoopOperatorEquiv]
 
 /-- Every class in the cokernel of `L_S` is the class of a continuous loop. -/
-theorem exists_mk_ofContinuousMap_eq
+theorem exists_mk_ofContinuousMap_eq_coker_loopOperator
     (y : CircleSobolev 0 E ⧸ range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) :
     ∃ f : C(AddCircle T, E), Submodule.Quotient.mk (ofContinuousMap T f) = y := by
   obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ y
@@ -460,25 +460,12 @@ theorem sign_detLineEquivOfBijective_eq_sign_det_of_sameRay
     (LinearEquiv.map_ne_zero_iff _).2 (LinearMap.detLineEndGenerator_ne_zero A)
   obtain ⟨r, hr, hrx⟩ := SameRay.exists_pos_left (R := ℝ)
     (M := (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLine) hxy hx hy
-  -- `A` is injective, so the canonical trivialization takes the value `1` at its generator.
-  have hA : Function.Injective A := (injective_loopOperator_iff T S).1 hL.1
-  have hdet : LinearMap.det A ≠ 0 := fun h ↦
-    LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 hA)
-  have hgen : LinearMap.detLineEndEquiv A A.detLineEndGenerator = 1 := by
-    rw [LinearMap.detLineEndEquiv_detLineEndGenerator,
-      LinearMap.finrank_ker_eq_zero_of_injective hA, zero_mul, pow_zero]
   have hx' : x = r⁻¹ • (detLineLoopOperatorEquiv T S).symm A.detLineEndGenerator := by
     rw [← hrx, smul_smul, inv_mul_cancel₀ hr.ne', one_smul]
-  have hl : LinearMap.detLineEndEquiv A (detLineLoopOperatorEquiv T S x) = r⁻¹ := by
-    rw [hx', map_smul, map_smul, LinearEquiv.apply_symm_apply, hgen, smul_eq_mul, mul_one]
-  -- By `detLineEndEquiv_detLineLoopOperatorEquiv`, `r⁻¹ = (det A)⁻¹ * bij x`.
-  have hbx : (loopOperator T S :
-      CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective hL x =
-        LinearMap.det A * r⁻¹ := by
-    have key := detLineEndEquiv_detLineLoopOperatorEquiv T S hL x
-    rw [hl, eq_comm, inv_mul_eq_iff_eq_mul₀ hdet] at key
-    exact key
-  rw [hbx, sign_mul, sign_pos (inv_pos.2 hr), mul_one]
+  -- The transported generator is `det A` times the generator of the bijective trivialization.
+  rw [hx', detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul T S hL, smul_smul,
+    map_smul, LinearEquiv.apply_symm_apply, smul_eq_mul, mul_one, sign_mul,
+    sign_pos (inv_pos.2 hr), one_mul]
 
 /-! ### Coherence along families -/
 

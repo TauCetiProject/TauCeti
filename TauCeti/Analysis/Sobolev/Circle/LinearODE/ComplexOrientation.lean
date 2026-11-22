@@ -115,7 +115,7 @@ private theorem quotientRangeLoopOperatorEquiv_symm_I_smul
     (quotientRangeLoopOperatorEquiv T S).symm (Submodule.Quotient.mk (I • x)) =
       Submodule.Quotient.mk (I • y) := by
   -- Represent the class of `y` by a continuous loop `f`.
-  obtain ⟨f, hf⟩ := exists_mk_ofContinuousMap_eq T S (Submodule.Quotient.mk y)
+  obtain ⟨f, hf⟩ := exists_mk_ofContinuousMap_eq_coker_loopOperator T S (Submodule.Quotient.mk y)
   obtain ⟨b, hb⟩ := (Submodule.Quotient.eq _).1 hf
   have hIf : (Submodule.Quotient.mk (ofContinuousMap T (I • f)) : CircleSobolev 0 E ⧸
       range (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) =
