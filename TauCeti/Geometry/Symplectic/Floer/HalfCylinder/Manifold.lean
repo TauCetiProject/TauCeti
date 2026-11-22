@@ -58,9 +58,11 @@ measured through `e`: `c ‖d e v‖² ≤ ω(v, J z v)` for a constant `c > 0`.
 
 The proof transports the problem to `F`, where the vector-space theory applies.
 
-* The pushforward `d e (X_{H_t})` of the Hamiltonian vector field is a continuous periodic field
-  on the image `e(K)`, and extends to a continuous periodic field `Y` on all of `F` by the Tietze
-  extension theorem (`Topology.IsClosedEmbedding.exists_continuous_periodic_extension`).
+* The pushforward `d e (X_{H_t})` of the Hamiltonian vector field is continuous
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.continuous_mvfderiv_hamiltonianVectorField`), so it is
+  a continuous periodic field on the image `e(K)`, and extends to a continuous periodic field `Y`
+  on all of `F` by the Tietze extension theorem
+  (`Topology.IsClosedEmbedding.exists_continuous_periodic_extension`).
 * The defect `∂_t (e ∘ u) - Y(e ∘ u)` of the loops of `e ∘ u` is `d e (∂_t u - X_{H_t}(u))`
   (`TauCeti.sliceDefect_comp_eq_mvfderiv_sub`). By the Floer equation, the energy density is
   `ω(η, J η)` for `η = ∂_t u - X_{H_t}(u)`
@@ -181,18 +183,14 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
 /-- The pushforward `d e (X_{H_t})` of the Hamiltonian vector field on a compact set `K` on which
 `e` is injective extends to a continuous field `Y` on `F`, `1`-periodic in time. -/
-private theorem IsNondegenerate.exists_continuous_periodic_extension (hω : ω.IsNondegenerate)
+theorem IsNondegenerate.exists_continuous_periodic_extension (hω : ω.IsNondegenerate)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hHper : Periodic H 1)
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K) (he_inj : InjOn e K) :
     ∃ Y : ℝ → F → F, Continuous (uncurry Y) ∧ (∀ v, Periodic (fun t ↦ Y t v) 1) ∧
       ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p) := by
   have := isCompact_iff_compactSpace.1 hK
   have hemb := hK.isClosedEmbedding_domRestrict he.continuous.continuousOn he_inj
-  -- The pushforward `(t, p) ↦ d e_p (X_{H_t}(p))` of the Hamiltonian vector field is continuous.
-  have hXe : Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
-    (he.contMDiff_mvfderiv_apply (m := 0) (by simp)).continuous.comp
-      (hω.contMDiff_hamiltonianVectorField_uncurry (n := 0) (by simp)
-        (by simpa using hH)).continuous
+  have hXe := hω.continuous_mvfderiv_hamiltonianVectorField hH he
   -- Extend it from `e(K)` to a continuous periodic field on `F`.
   obtain ⟨Y, hYc, hYper, hYe⟩ := hemb.exists_continuous_periodic_extension
     (f := fun t (p : K) ↦ mvfderiv I e p (ω.hamiltonianVectorField (H t) p))
@@ -474,29 +472,12 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
   obtain ⟨Y, hYc, hYper, hYe, hfin⟩ :=
     hω.exists_lintegral_norm_sq_sliceDefect_comp_ne_top hH hHper he hK he_inj hu huK J hc hJc
       hfloer hE
-  -- The periodic solutions of `y' = Y(t, y)` in `e(K)` are read through `e` from the orbits in
-  -- `K`, so they are isolated.
-  have hiso' : ∀ y : ℝ → F, Periodic y 1 → (∀ t, HasDerivAt y (Y t (y t)) t) →
-      (∀ t, y t ∈ e '' K) → ∃ ε > 0, ∀ y' : ℝ → F, Periodic y' 1 →
-        (∀ t, HasDerivAt y' (Y t (y' t)) t) → (∀ t, y' t ∈ e '' K) →
-        (∀ t, dist (y' t) (y t) < ε) → y' = y := by
-    intro y hyper hy hyK
-    obtain ⟨x, hx, hxK, rfl⟩ :=
-      exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hyper hy hyK
-    -- Inside `K`, the neighbourhoods of `x 0` are read through `e`.
-    obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he.continuous.continuousOn
-      he_inj (hxK 0) (hiso x hx hxK)
-    obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
-    refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
-    obtain ⟨x', hx', hx'K, rfl⟩ :=
-      exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hy'per hy' hy'K
-    have h0 : x' 0 ∈ K ∩ e ⁻¹' V := ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩
-    rw [hVx h0 x' hx' hx'K rfl]
   -- The loops of `e ∘ u` converge to a single periodic solution of `y' = Y(t, y)`.
   obtain ⟨y, hyper, hy, hconv⟩ := exists_periodic_hasDerivAt_tendstoUniformly_atTop
     (contMDiffOn_iff_contDiffOn.1 (he.comp_contMDiffOn hu))
     (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) hKe
-    (fun s hs t ↦ mem_image_of_mem e (huK s hs t)) hYc hYper hfin hC hiso'
+    (fun s hs t ↦ mem_image_of_mem e (huK s hs t)) hYc hYper hfin hC
+    fun _ ↦ exists_pos_forall_eq_of_forall_dist_lt_of_mem_image hK he_inj hde hYe hiso
   -- The limit lies in the closed set `e(K)`, so it is read through `e` from an orbit in `K`.
   obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe
     hyper hy fun t ↦ hKe.isClosed.mem_of_tendsto (hconv.tendsto_at t)

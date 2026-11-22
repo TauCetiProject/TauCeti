@@ -30,7 +30,10 @@ The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuous
 of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
 
 The unconditional series sum of the weights of a point of `StdSimplex R α` equals `1`
-(`Convexity.StdSimplex.tsum_weights`).
+(`Convexity.StdSimplex.tsum_weights`). Over finitely many vertices, the weight vectors of the
+points of a standard simplex form a closed set whenever the coefficients carry an order-closed
+topology with continuous addition (`Convexity.StdSimplex.isClosed_range_toFun_comp_weights`); no
+ring structure is needed, so this also covers `ℝ≥0`.
 
 A standard simplex over a Hausdorff ring is Hausdorff (`Convexity.StdSimplex.t2Space`), so
 continuous surjections onto it from compact spaces are quotient maps. Over a finite vertex type, a
@@ -51,6 +54,18 @@ theorem tsum_weights {R α : Type*} [LE R] [AddCommMonoid R] [One R] [Topologica
 variable {R : Type*} [PartialOrder R] {M N : Type*}
 
 section Semiring
+
+/-- Over finitely many vertices, the weight vectors of the points of a standard simplex form a
+closed set of functions. The argument is the closed-range part of Mathlib's
+`Convexity.StdSimplex.isClosedEmbedding_toFun_comp_weights`, which assumes a topological ring;
+it needs only an order-closed topology and continuous addition. -/
+theorem isClosed_range_toFun_comp_weights [Semiring R] [TopologicalSpace R]
+    [OrderClosedTopology R] [ContinuousAdd R] [Finite M] :
+    IsClosed (Set.range (fun t ↦ t.weights : StdSimplex R M → M → R)) := by
+  have := Fintype.ofFinite M
+  rw [range_toFun_comp_weights]
+  refine IsClosed.inter (isClosed_iInter fun _ ↦ isClosed_le ?_ ?_) (isClosed_eq ?_ ?_)
+  all_goals fun_prop
 
 variable [Semiring R] [IsStrictOrderedRing R]
 
