@@ -84,6 +84,12 @@ namespace TauCeti
 
 variable {p : ℕ}
 
+/-- Multiplication by `pⁿ` is the same through `ℤ_p` and through any semiring `𝕜` acting on `E`. -/
+private theorem natCast_pow_smul_eq [Fact p.Prime] {E : Type*} [AddCommMonoid E] [Module ℤ_[p] E]
+    (𝕜 : Type*) [Semiring 𝕜] [Module 𝕜 E] (n : ℕ) (v : E) :
+    (p : ℤ_[p]) ^ n • v = ((p : 𝕜) ^ n) • v := by
+  rw [← Nat.cast_pow, ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul]
+
 namespace AnalyticStage
 
 variable {h : ℕ} {E : Type*} [NormedAddCommGroup E] [IsUltrametricDist E]
@@ -263,11 +269,10 @@ variable [NeZero (p : 𝕜)] [SMulCommClass ℤ_[p] 𝕜 E]
 theorem transition_derivative (c : AnalyticStage p h E) :
     transition 𝕜 (derivative 𝕜 c) = derivative 𝕜 (transition 𝕜 c) := by
   have hp : (p : 𝕜) ≠ 0 := NeZero.ne _
-  -- Multiplication by `p` is the same through `ℤ_p` and through `𝕜`.
   rw [derivative_apply, derivative_apply, map_smul, discDerivative_transition,
-    Nat.cast_smul_eq_nsmul ℤ_[p], ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul]
+    ← pow_one (p : ℤ_[p]), natCast_pow_smul_eq 𝕜, smul_smul]
   congr 1
-  rw [pow_succ, mul_inv, mul_assoc, inv_mul_cancel₀ hp, mul_one]
+  rw [pow_succ, pow_one, mul_inv, mul_assoc, inv_mul_cancel₀ hp, mul_one]
 
 /-- The derivative commutes with re-expansion between any two levels. -/
 theorem transitionLE_derivative {k : ℕ} (hhk : h ≤ k) (c : AnalyticStage p h E) :
@@ -283,10 +288,7 @@ omit [CompleteSpace E] in
 theorem derivative_mulCoord (c : AnalyticStage p h E) :
     derivative 𝕜 (mulCoord 𝕜 c) = c + mulCoord 𝕜 (derivative 𝕜 c) := by
   have hp : ((p : 𝕜) ^ h) ≠ 0 := pow_ne_zero h (NeZero.ne _)
-  -- Multiplication by `pʰ` is the same through `ℤ_p` and through `𝕜`.
-  have hpow : (p : ℤ_[p]) ^ h • c = ((p : 𝕜) ^ h) • c := by
-    rw [← Nat.cast_pow, Nat.cast_smul_eq_nsmul, ← Nat.cast_smul_eq_nsmul 𝕜, Nat.cast_pow]
-  rw [derivative_apply, derivative_apply, discDerivative_mulCoord, hpow, smul_add,
+  rw [derivative_apply, derivative_apply, discDerivative_mulCoord, natCast_pow_smul_eq 𝕜, smul_add,
     inv_smul_smul₀ hp, map_smul]
 
 end Derivative
@@ -357,8 +359,7 @@ theorem exists_norm_eval_sub_sub_smul_eval_derivative_le (f : LocallyAnalytic p 
     linear_combination -hd
   -- The scalar `d pʰ` acting on `p⁻ʰ v` is `d` acting on `v`.
   have hsmul (v : E) : (d * (p : ℤ_[p]) ^ h) • (((p : 𝕜) ^ h)⁻¹ • v) = d • v := by
-    rw [mul_smul, ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, ← Nat.cast_smul_eq_nsmul 𝕜,
-      Nat.cast_pow, smul_inv_smul₀ hp𝕜]
+    rw [mul_smul, natCast_pow_smul_eq 𝕜, smul_inv_smul₀ hp𝕜]
   rw [← hd, hsmul, hy]
   refine (norm_eval_add_sub_sub_smul_eval_discDerivative_le 𝕜 c a w d).trans_eq ?_
   rw [norm_mul, mul_pow]
@@ -426,6 +427,7 @@ variable [CharZero K]
 
 /-- **The Amice transform of the transpose derivative.** With the convention `(d μ)(f) = μ(f')`,
 the Amice transform of `d μ` is `log (1 + T)` times the Amice transform of `μ`. -/
+@[simp]
 theorem amiceTransform_derivative (μ : LocallyAnalyticDistribution p K) :
     amiceTransform (derivative μ) = PowerSeries.log K * amiceTransform μ := by
   set L := PowerSeries.log K
