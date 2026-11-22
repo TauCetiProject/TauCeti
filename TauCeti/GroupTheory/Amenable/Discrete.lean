@@ -295,12 +295,6 @@ theorem Amenable.of_surjective [Amenable G] {H : Type*} [Group H]
     Amenable H :=
   .of_denseRange ⟨φ, continuous_of_discreteTopology⟩ hφ.denseRange
 
-/-- The range of a homomorphism out of an amenable discrete group into a topological group is
-amenable. -/
-instance Amenable.range [Amenable G] {H : Type*} [Group H] [TopologicalSpace H]
-    [IsTopologicalGroup H] (φ : G →* H) : Amenable φ.range :=
-  .range_of_continuous continuous_of_discreteTopology
-
 end Discrete
 
 /-- An abstract group which is amenable with the discrete topology is amenable with any
@@ -327,20 +321,6 @@ theorem amenable_iff_of_discreteTopology {G H : Type*} [Group G] [TopologicalSpa
 
 end MulEquiv
 
-namespace MonoidHom
-
-open TauCeti
-
-/-- For a homomorphism `φ : G →* H` of discrete groups, `G ⧸ φ.ker` is amenable if and only if
-`φ.range` is amenable, via `QuotientGroup.quotientKerEquivRange`. -/
-theorem amenable_quotient_ker_iff_range {G H : Type*} [Group G] [TopologicalSpace G]
-    [DiscreteTopology G] [Group H] [TopologicalSpace H] [DiscreteTopology H] (φ : G →* H) :
-    Amenable (G ⧸ φ.ker) ↔ Amenable φ.range := by
-  have := QuotientGroup.discreteTopology (isOpen_discrete (φ.ker : Set G))
-  exact (QuotientGroup.quotientKerEquivRange φ).amenable_iff_of_discreteTopology
-
-end MonoidHom
-
 namespace TauCeti
 
 section AddDiscrete
@@ -359,14 +339,6 @@ theorem AddAmenable.of_surjective [AddAmenable A] {B : Type*} [AddGroup B]
   .of_denseRange ⟨φ, continuous_of_discreteTopology⟩ hφ.denseRange
 
 attribute [to_additive existing] Amenable.of_surjective
-
-/-- The range of an additive homomorphism out of an amenable discrete additive group into an
-additive topological group is amenable. -/
-instance AddAmenable.range [AddAmenable A] {B : Type*} [AddGroup B] [TopologicalSpace B]
-    [IsTopologicalAddGroup B] (φ : A →+ B) : AddAmenable φ.range :=
-  .range_of_continuous continuous_of_discreteTopology
-
-attribute [to_additive existing] Amenable.range
 
 end DiscreteTopology
 
@@ -401,20 +373,3 @@ attribute [to_additive existing AddEquiv.addAmenable_iff_of_discreteTopology]
   MulEquiv.amenable_iff_of_discreteTopology
 
 end AddEquiv
-
-namespace AddMonoidHom
-
-open TauCeti
-
-/-- For an additive homomorphism `φ : A →+ B` of discrete additive groups, `A ⧸ φ.ker` is
-amenable if and only if `φ.range` is amenable, via `QuotientAddGroup.quotientKerEquivRange`. -/
-theorem addAmenable_quotient_ker_iff_range {A B : Type*} [AddGroup A] [TopologicalSpace A]
-    [DiscreteTopology A] [AddGroup B] [TopologicalSpace B] [DiscreteTopology B] (φ : A →+ B) :
-    AddAmenable (A ⧸ φ.ker) ↔ AddAmenable φ.range := by
-  have := QuotientAddGroup.discreteTopology (isOpen_discrete (φ.ker : Set A))
-  exact (QuotientAddGroup.quotientKerEquivRange φ).addAmenable_iff_of_discreteTopology
-
-attribute [to_additive existing AddMonoidHom.addAmenable_quotient_ker_iff_range]
-  MonoidHom.amenable_quotient_ker_iff_range
-
-end AddMonoidHom

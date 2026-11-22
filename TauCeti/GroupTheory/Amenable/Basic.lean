@@ -230,16 +230,6 @@ theorem Amenable.of_denseRange [Amenable G] (φ : G →ₜ* H) (hφ : DenseRange
   have ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   ⟨⟨m.map φ, hm.map hφ⟩⟩
 
-/-- The range of a continuous homomorphism from an amenable topological group is amenable. -/
-theorem Amenable.range_of_continuous [Amenable G] {φ : G →* H} (hφ : Continuous φ) :
-    Amenable φ.range :=
-  .of_denseRange ⟨φ.rangeRestrict, hφ.subtype_mk _⟩ φ.rangeRestrict_surjective.denseRange
-
-/-- Any quotient of an amenable topological group by a normal subgroup is amenable. -/
-instance Amenable.quotientGroup [Amenable G] (N : Subgroup G) [N.Normal] : Amenable (G ⧸ N) :=
-  .of_denseRange ⟨QuotientGroup.mk' N, QuotientGroup.continuous_mk⟩
-    (QuotientGroup.mk'_surjective N).denseRange
-
 omit [TopologicalSpace G] [IsTopologicalGroup G] in
 /-- Amenability passes from a finer group topology to a coarser group topology. -/
 theorem Amenable.of_le {t₁ t₂ : TopologicalSpace G}
@@ -523,23 +513,6 @@ theorem AddAmenable.of_denseRange [AddAmenable A] (φ : A →ₜ+ B) (hφ : Dens
   ⟨.of_denseRange φ.toMultiplicative (φ.denseRange_toMultiplicative_iff.2 hφ)⟩
 
 attribute [to_additive existing] Amenable.of_denseRange
-
-/-- The range of a continuous additive homomorphism from an amenable additive topological group is
-amenable. -/
-theorem AddAmenable.range_of_continuous [AddAmenable A] {φ : A →+ B} (hφ : Continuous φ) :
-    AddAmenable φ.range :=
-  .of_denseRange ⟨φ.rangeRestrict, hφ.subtype_mk _⟩ φ.rangeRestrict_surjective.denseRange
-
-attribute [to_additive existing] Amenable.range_of_continuous
-
-/-- Any quotient of an amenable additive topological group by a normal additive subgroup is
-amenable. -/
-instance AddAmenable.quotientAddGroup [AddAmenable A] (N : AddSubgroup A) [N.Normal] :
-    AddAmenable (A ⧸ N) :=
-  .of_denseRange ⟨QuotientAddGroup.mk' N, QuotientAddGroup.continuous_mk⟩
-    (QuotientAddGroup.mk'_surjective N).denseRange
-
-attribute [to_additive existing] Amenable.quotientGroup
 
 omit [TopologicalSpace A] [IsTopologicalAddGroup A] in
 /-- Additive amenability passes from a finer additive-group topology to a coarser one. -/
