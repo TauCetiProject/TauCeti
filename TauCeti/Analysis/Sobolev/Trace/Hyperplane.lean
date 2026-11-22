@@ -25,7 +25,7 @@ test-function density theorem and Mathlib's `LinearMap.extendOfNorm`.
 The estimate behind it is the `Lʳ` trace inequality for compactly supported `C¹` functions,
 `∫ |u(a, y)|ʳ dy ≤ ∫_{x₁ > a} ((r - 1) |u|ʳ + ‖Du‖ʳ)` for `1 ≤ r`
 (`TauCeti.integral_hyperplane_abs_rpow_le_integral_halfSpace`), obtained by integrating the
-one-dimensional estimate `TauCeti.abs_rpow_le_integral_Ioi` over the normal lines. For `r = 2`
+one-dimensional estimate `TauCeti.norm_rpow_le_integral_Ioi` over the normal lines. For `r = 2`
 its right side is the `H¹` energy on the half-space, and for `r = 1` it is the `L¹` norm of the
 gradient there. For a test function, `TauCeti.integral_rpow_energy_eq_of_ae_eq` writes that right
 side as `(p - 1) ‖u‖ᵖ + ‖∇u‖ᵖ` in terms of `Lᵖ` norms.
@@ -87,8 +87,9 @@ private theorem abs_rpow_le_integral_Ioi_energy
       ∫ t : ℝ in Ioi a, ((r - 1) * |u (WithLp.toLp 2 (t, y))| ^ r +
         ‖fderiv ℝ u (WithLp.toLp 2 (t, y))‖ ^ r) := by
   set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r
-  have hFc : Continuous F := continuous_rpow_energy hu hr
-  have hs : HasCompactSupport F := hasCompactSupport_rpow_energy hsupp hr
+  have hFc : Continuous F := by simpa only [Real.norm_eq_abs] using continuous_rpow_energy hu hr
+  have hs : HasCompactSupport F := by
+    simpa only [Real.norm_eq_abs] using hasCompactSupport_rpow_energy hsupp hr
   have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
     (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
       (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
@@ -104,7 +105,9 @@ private theorem abs_rpow_le_integral_Ioi_energy
       ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.hasFDerivAt).comp_hasDerivAt t
         ((hasDerivAt_id t).prodMk (hasDerivAt_const t y))
     exact ((hu.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt t hp).deriv
-  refine (abs_rpow_le_integral_Ioi hg hgs a hr).trans (integral_mono_of_nonneg
+  have hline := norm_rpow_le_integral_Ioi hg hgs a hr
+  simp only [Real.norm_eq_abs] at hline
+  refine hline.trans (integral_mono_of_nonneg
     (Filter.Eventually.of_forall fun t ↦ add_nonneg
       (mul_nonneg (sub_nonneg.2 hr) (Real.rpow_nonneg (abs_nonneg _) _))
       (Real.rpow_nonneg (abs_nonneg _) _))
@@ -126,8 +129,9 @@ theorem integral_hyperplane_abs_rpow_le_integral_halfSpace
       ∫ x : WithLp 2 (ℝ × E) in {x | a < (WithLp.ofLp x).1},
         (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
   set F : WithLp 2 (ℝ × E) → ℝ := fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r
-  have hFc : Continuous F := continuous_rpow_energy hu hr
-  have hs : HasCompactSupport F := hasCompactSupport_rpow_energy hsupp hr
+  have hFc : Continuous F := by simpa only [Real.norm_eq_abs] using continuous_rpow_energy hu hr
+  have hs : HasCompactSupport F := by
+    simpa only [Real.norm_eq_abs] using hasCompactSupport_rpow_energy hsupp hr
   have hint : Integrable F volume := hFc.integrable_of_hasCompactSupport hs
   have hprod : Integrable (fun z : ℝ × E ↦ F (WithLp.toLp 2 z)) (volume.prod volume) :=
     (WithLp.volume_preserving_toLp ℝ E).integrable_comp hint.aestronglyMeasurable |>.mpr hint
@@ -162,8 +166,10 @@ theorem integral_hyperplane_abs_rpow_le_integral
     (∫ y : E, |u (WithLp.toLp 2 (a, y))| ^ r) ≤
       ∫ x : WithLp 2 (ℝ × E), (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r :=
   (integral_hyperplane_abs_rpow_le_integral_halfSpace hu hsupp a hr).trans
-    (setIntegral_le_integral ((continuous_rpow_energy hu hr).integrable_of_hasCompactSupport
-      (hasCompactSupport_rpow_energy hsupp hr))
+    (setIntegral_le_integral (by
+      simpa only [Real.norm_eq_abs] using
+        (continuous_rpow_energy hu hr).integrable_of_hasCompactSupport
+          (hasCompactSupport_rpow_energy hsupp hr))
       (Filter.Eventually.of_forall (rpow_energy_nonneg u hr)))
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -217,7 +223,7 @@ private theorem norm_hyperplaneTestFunction_le (hp : p ≠ ∞) (a : ℝ)
   have key := integral_hyperplane_abs_rpow_le_integral hu φ.hasCompactSupport a hr
   rw [henergy, ← htr] at key
   -- Both norms on the right are at most the Sobolev norm.
-  exact le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+  exact le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _)
     (W1p.norm_value_le w) (W1p.norm_gradient_le w) key
 
 /-- The `Lᵖ` trace on the hyperplane `{a} × E` of a whole-space `W^{1,p}` function, defined as the
