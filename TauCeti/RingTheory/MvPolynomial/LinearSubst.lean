@@ -12,8 +12,7 @@ public import TauCeti.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.Algebra.MvPolynomial.Coeff
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import Mathlib.RingTheory.Localization.FractionRing
+import TauCeti.Algebra.MvPolynomial.Monad
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -53,9 +52,10 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
-* `MvPolynomial.linearSubst_injective_of_isUnit`, `MvPolynomial.linearSubst_injective`:
-  linear substitutions with unit determinant (or nonzero determinant over a domain) are
-  injective.
+* `MvPolynomial.linearSubst_injective_of_det_mem_nonZeroDivisors`,
+  `MvPolynomial.linearSubst_injective_of_isUnit`, `MvPolynomial.linearSubst_injective`:
+  linear substitutions with regular determinant (or unit determinant, or nonzero determinant
+  over a domain) are injective.
 * `MvPolynomial.pderiv_linearSubst`: the chain rule
   `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
 * `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: a substitution with nonzero
@@ -271,30 +271,36 @@ theorem homogeneousComponent_linearSubst (M : Matrix σ σ R) (n : ℕ) (p : MvP
 /-- Linear substitution does not increase the total degree of a multivariate polynomial. -/
 theorem totalDegree_linearSubst_le (M : Matrix σ σ R) (p : MvPolynomial σ R) :
     (linearSubst M p).totalDegree ≤ p.totalDegree := by
-  conv_lhs => rw [← sum_homogeneousComponent p, map_sum]
-  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun i hi ↦ ?_)
-  have hi_le : i ≤ p.totalDegree := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
-  exact ((homogeneousComponent_isHomogeneous i p).linearSubst M).totalDegree_le.trans hi_le
+  rw [linearSubst_eq_aeval]
+  refine (totalDegree_bind₁_le (D := 1) (fun i ↦ ?_) p).trans_eq (mul_one _)
+  exact (IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j).totalDegree_le
+
+/-- A linear change of variables whose determinant is a nonzerodivisor is injective over any
+commutative ring. -/
+theorem linearSubst_injective_of_det_mem_nonZeroDivisors [DecidableEq σ] {R : Type*}
+    [CommRing R] {M : Matrix σ σ R} (hM : M.det ∈ nonZeroDivisors R) :
+    Function.Injective (linearSubst M) := by
+  intro p q hpq
+  have hres : rescale (fun _ ↦ M.det) p = rescale (fun _ ↦ M.det) q := by
+    rw [← linearSubst_diagonal, ← Matrix.smul_one_eq_diagonal, ← Matrix.mul_adjugate M,
+      linearSubst_mul_apply, linearSubst_mul_apply, hpq]
+  ext n
+  have hcoeff := congrArg (fun r : MvPolynomial σ R ↦ r.coeff n) hres
+  simp only [coeff_rescale] at hcoeff
+  have hprod : (n.prod fun _ k ↦ M.det ^ k) ∈ nonZeroDivisors R :=
+    prod_mem fun _ _ ↦ pow_mem hM _
+  rw [← sub_eq_zero]
+  exact (mem_nonZeroDivisors_iff_left.mp hprod) _ (by rw [mul_sub, sub_eq_zero, hcoeff])
 
 /-- A linear change of variables with unit determinant is injective over any commutative ring. -/
 theorem linearSubst_injective_of_isUnit [DecidableEq σ] {R : Type*} [CommRing R]
-    {M : Matrix σ σ R} (hM : IsUnit M.det) : Function.Injective (linearSubst M) := by
-  have hcomp : (linearSubst M⁻¹).comp (linearSubst M) = AlgHom.id R (MvPolynomial σ R) := by
-    rw [← linearSubst_mul, Matrix.mul_nonsing_inv M hM, linearSubst_one]
-  exact Function.LeftInverse.injective (g := linearSubst M⁻¹) fun p ↦ by
-    simpa using AlgHom.congr_fun hcomp p
+    {M : Matrix σ σ R} (hM : IsUnit M.det) : Function.Injective (linearSubst M) :=
+  linearSubst_injective_of_det_mem_nonZeroDivisors hM.mem_nonZeroDivisors
 
 /-- A linear change of variables with nonzero determinant is injective over any integral domain. -/
 theorem linearSubst_injective [DecidableEq σ] {R : Type*} [CommRing R] [IsDomain R]
-    {M : Matrix σ σ R} (hM : M.det ≠ 0) : Function.Injective (linearSubst M) := by
-  have hinj := IsFractionRing.injective R (FractionRing R)
-  have hM' : IsUnit (M.map (algebraMap R (FractionRing R))).det := by
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, isUnit_iff_ne_zero]
-    exact (map_ne_zero_iff _ hinj).mpr hM
-  intro p q hpq
-  apply map_injective _ hinj
-  apply linearSubst_injective_of_isUnit hM'
-  rw [← map_linearSubst, ← map_linearSubst, hpq]
+    {M : Matrix σ σ R} (hM : M.det ≠ 0) : Function.Injective (linearSubst M) :=
+  linearSubst_injective_of_det_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hM)
 
 variable (σ R) in
 /-- The linear changes of variables restricted to the forms of degree `n`, as a representation

@@ -55,8 +55,7 @@ private theorem discr_comp_X_add_C_of_field {K : Type*} [Field K] (f : K[X])
   · rw [eq_C_of_natDegree_eq_zero hn]
     simp
   have hpos : 0 < f.degree := natDegree_pos_iff_degree_pos.mp (Nat.pos_of_ne_zero hn)
-  have hder : (taylor a f).derivative = taylor a f.derivative := by
-    simp [taylor_apply, derivative_comp]
+  have hder : (taylor a f).derivative = taylor a f.derivative := (taylor_derivative a f).symm
   have hres :
       resultant (taylor a f) (taylor a f.derivative) f.natDegree (f.natDegree - 1) =
         resultant f f.derivative f.natDegree (f.natDegree - 1) :=

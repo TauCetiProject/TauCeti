@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Resultant multiplicity bounds
@@ -23,13 +21,13 @@ from the ordinary resultant `f.resultant f.derivative` in positive characteristi
 `f.derivative.natDegree < n - 1`.
 
 Whenever `Res_{n, n - 1}(f, f.derivative)` is nonzero, this divisibility bounds the fiberwise
-root multiplicity of `f(X, b)` at `a` by `1` plus the root multiplicity of
-`Res_{n, n - 1}(f, f.derivative)` at `b`
-(`Polynomial.rootMultiplicity_le_one_add_rootMultiplicity_resultant_deriv`). Combined with the
-coefficient-degree bound `Polynomial.natDegree_resultant_le` on Sylvester determinants, summing
-over a finite set of points with distinct second coordinates bounds the total fiberwise root
-multiplicity of an irreducible bivariate polynomial
-(`Polynomial.sum_rootMultiplicity_le_of_irreducible`).
+root multiplicity `(f.map (evalRingHom b)).rootMultiplicity a` by `1` plus the root multiplicity
+of `Res_{n, n - 1}(f, f.derivative)` at `b`
+(`Polynomial.rootMultiplicity_le_one_add_rootMultiplicity_resultant_deriv`). By Mathlib's convention
+`(0 : R[X]).rootMultiplicity a = 0`, an identically zero fiber `f.map (evalRingHom b) = 0`
+contributes `0` to `rootMultiplicity` rather than an unbounded vanishing order (in contrast to
+divisibility by `(X - C a) ^ k`, which holds for all `k` on a zero fiber and is restricted in
+`Polynomial.X_sub_C_pow_dvd_resultant_deriv` by `k - 1 ≤ n + (n - 1)`).
 
 ## Main results
 
@@ -40,9 +38,7 @@ multiplicity of an irreducible bivariate polynomial
 * `Polynomial.rootMultiplicity_le_one_add_rootMultiplicity_resultant_deriv`: when the
   fixed-degree resultant `Res_{n, n - 1}(f, f.derivative)` is nonzero, the fiberwise root
   multiplicity of `f.map (evalRingHom b)` at `a` is at most `1` plus the root multiplicity of
-  `Res_{n, n - 1}(f, f.derivative)` at `b`.
-* `Polynomial.sum_rootMultiplicity_le_of_irreducible`: sum of fiberwise root multiplicities of
-  an irreducible bivariate polynomial over a set with distinct second coordinates.
+  `Res_{n, n - 1}(f, f.derivative)` at `b` (with an identically zero fiber contributing `0`).
 
 ## References
 
@@ -103,8 +99,11 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
   have hf₂_deg : f₂.natDegree = f.natDegree := by rw [natDegree_taylor, hf₁_deg]
   have heval0 : (evalRingHom (0 : R)).comp e.toRingHom = evalRingHom b :=
     RingHom.ext fun p ↦ by
-      change eval 0 (taylor b p) = eval b p
-      rw [taylor_eval, zero_add]
+      rw [RingHom.coe_comp, Function.comp_apply, coe_evalRingHom,
+        RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
+      dsimp only [e]
+      rw [← AlgEquiv.coe_toAlgHom, toAlgHom_taylorEquiv, taylorAlgHom_apply,
+        taylor_eval, zero_add, coe_evalRingHom]
   have hf₂_eval0 : f₂.map (evalRingHom 0) = taylor a (f.map (evalRingHom b)) := by
     rw [map_taylor, Polynomial.map_map, heval0]
     simp
@@ -118,8 +117,8 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
     rwa [coeff_map, coe_evalRingHom] at h0
   have hdvd_res₂ : X ^ (k - 1) ∣ f₂.resultant f₂.derivative f₂.natDegree (f₂.natDegree - 1) :=
     X_pow_dvd_resultant_deriv_of_forall_dvd f₂ (by rwa [hf₂_deg]) hcoeff
-  have hder₁ : (taylor (C a) f₁).derivative = taylor (C a) f₁.derivative := by
-    simp [taylor_apply, derivative_comp]
+  have hder₁ : (taylor (C a) f₁).derivative = taylor (C a) f₁.derivative :=
+    (taylor_derivative (C a) f₁).symm
   have hres_eq : f₂.resultant f₂.derivative f₂.natDegree (f₂.natDegree - 1) =
       e (f.resultant f.derivative f.natDegree (f.natDegree - 1)) := by
     dsimp only [f₂]
@@ -127,18 +126,22 @@ theorem X_sub_C_pow_dvd_resultant_deriv (f : R[X][X]) {a b : R} {k : ℕ}
       resultant_taylor_of_natDegree_le f₁ f₁.derivative (C a) le_rfl (natDegree_derivative_le f₁),
       hf₁_deg]
     dsimp only [f₁]
-    rw [derivative_map, resultant_map_map]
-    rfl
+    rw [derivative_map, resultant_map_map,
+      RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
   rw [hres_eq] at hdvd_res₂
   have hdvd_symm := _root_.map_dvd e.symm.toAlgHom hdvd_res₂
-  simp only [map_pow, AlgEquiv.coe_toAlgHom, e.symm_apply_apply] at hdvd_symm
-  change (taylor (-b) X) ^ (k - 1) ∣ f.resultant f.derivative f.natDegree (f.natDegree - 1)
-    at hdvd_symm
-  simpa [taylor_X, sub_eq_add_neg] using hdvd_symm
+  rw [map_pow, AlgEquiv.coe_toAlgHom, e.symm_apply_apply] at hdvd_symm
+  dsimp only [e] at hdvd_symm
+  rw [taylorEquiv_symm, ← AlgEquiv.coe_toAlgHom, toAlgHom_taylorEquiv, taylorAlgHom_apply,
+    taylor_X, map_neg, ← sub_eq_add_neg] at hdvd_symm
+  exact hdvd_symm
 
 /-- If the fixed-degree resultant `Res_{n, n - 1}(f, f.derivative) := f.resultant f.derivative
 f.natDegree (f.natDegree - 1)` is nonzero, then the root multiplicity of `f.map (evalRingHom b)`
-at `a` is at most `1` plus the root multiplicity of `Res_{n, n - 1}(f, f.derivative)` at `b`. -/
+at `a` is at most `1` plus the root multiplicity of `Res_{n, n - 1}(f, f.derivative)` at `b`.
+By Mathlib's convention `(0 : R[X]).rootMultiplicity a = 0`, an identically zero fiber
+`f.map (evalRingHom b) = 0` contributes `0`, not an unbounded vanishing order (in contrast to
+divisibility by `(X - C a) ^ k`). -/
 theorem rootMultiplicity_le_one_add_rootMultiplicity_resultant_deriv
     {f : R[X][X]} {a b : R}
     (hres : f.resultant f.derivative f.natDegree (f.natDegree - 1) ≠ 0) :
@@ -162,59 +165,5 @@ theorem rootMultiplicity_le_one_add_rootMultiplicity_resultant_deriv
   omega
 
 end MultiplicityDivisibility
-
-section IrreducibleBound
-
-/-- **Sum of fiberwise root multiplicities of an irreducible bivariate polynomial.**
-Over a GCD domain of characteristic zero, if `F : K[X][X]` is irreducible and every coefficient
-`F.coeff i` has natural degree at most `dY`, then the sum of
-`(F.map (evalRingHom p.2)).rootMultiplicity p.1` over a finite set `Ω` of points with distinct
-second coordinates is bounded by the number of zeros of `F` in `Ω` plus
-`(2 * F.natDegree - 1) * dY`. -/
-theorem sum_rootMultiplicity_le_of_irreducible {K : Type*} [CommRing K] [IsDomain K]
-    [IsGCDMonoid K] [CharZero K] [DecidableEq K]
-    {F : K[X][X]} (hF : Irreducible F)
-    {dY : ℕ} (hdY : ∀ i, (F.coeff i).natDegree ≤ dY)
-    {Ω : Finset (K × K)} (hinj : Set.InjOn Prod.snd (Ω : Set (K × K))) :
-    ∑ p ∈ Ω, (F.map (evalRingHom p.2)).rootMultiplicity p.1 ≤
-      (Ω.filter fun p : K × K ↦ (F.map (evalRingHom p.2)).eval p.1 = 0).card +
-        (2 * F.natDegree - 1) * dY := by
-  set res := F.resultant F.derivative F.natDegree (F.natDegree - 1)
-  have hres_ne : res ≠ 0 := resultant_deriv_ne_zero_of_squarefree hF.squarefree
-  have hres_deg : res.natDegree ≤ (2 * F.natDegree - 1) * dY := by
-    have hder_deg : ∀ i ≤ F.natDegree - 1, (F.derivative.coeff i).natDegree ≤ dY := by
-      intro i _
-      rw [coeff_derivative]
-      exact (natDegree_mul_le).trans (by simpa [natDegree_natCast] using hdY (i + 1))
-    calc res.natDegree ≤ F.natDegree * dY + (F.natDegree - 1) * dY :=
-          natDegree_resultant_le (fun i _ ↦ hdY i) hder_deg
-      _ = (2 * F.natDegree - 1) * dY := by
-          rw [← add_mul]
-          congr 1
-          omega
-  let Z : Finset (K × K) := Ω.filter fun p ↦ (F.map (evalRingHom p.2)).eval p.1 = 0
-  have hsum_eq : ∑ p ∈ Ω, (F.map (evalRingHom p.2)).rootMultiplicity p.1 =
-      ∑ p ∈ Z, (F.map (evalRingHom p.2)).rootMultiplicity p.1 := by
-    symm
-    refine Finset.sum_subset (Finset.filter_subset _ Ω) fun p hp hpZ ↦ ?_
-    have hne : (F.map (evalRingHom p.2)).eval p.1 ≠ 0 := by
-      simpa [Z, hp] using hpZ
-    exact rootMultiplicity_eq_zero hne
-  have hsum_Z : ∑ p ∈ Z, (F.map (evalRingHom p.2)).rootMultiplicity p.1 ≤
-      Z.card + ∑ p ∈ Z, res.rootMultiplicity p.2 := by
-    calc ∑ p ∈ Z, (F.map (evalRingHom p.2)).rootMultiplicity p.1
-        ≤ ∑ p ∈ Z, (1 + res.rootMultiplicity p.2) :=
-          Finset.sum_le_sum fun _ _ ↦
-            rootMultiplicity_le_one_add_rootMultiplicity_resultant_deriv hres_ne
-      _ = Z.card + ∑ p ∈ Z, res.rootMultiplicity p.2 := by
-          rw [Finset.sum_add_distrib, Finset.sum_const, smul_eq_mul, mul_one]
-  have hinjZ : Set.InjOn Prod.snd (Z : Set (K × K)) :=
-    hinj.mono (Finset.coe_subset.mpr (Finset.filter_subset _ Ω))
-  have hsum_res : ∑ p ∈ Z, res.rootMultiplicity p.2 ≤ res.natDegree := by
-    rw [← Finset.sum_image (f := fun b ↦ res.rootMultiplicity b) (g := Prod.snd) hinjZ]
-    exact sum_rootMultiplicity_le_natDegree res (Z.image Prod.snd)
-  exact hsum_eq.le.trans (hsum_Z.trans (Nat.add_le_add_left (hsum_res.trans hres_deg) Z.card))
-
-end IrreducibleBound
 
 end Polynomial

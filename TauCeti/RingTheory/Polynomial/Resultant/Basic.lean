@@ -359,18 +359,31 @@ theorem resultant_taylor_of_natDegree_le (f g : R[X]) (a : R) {m n : ℕ}
     (taylor a f).resultant (taylor a g) m n = f.resultant g m n := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hf
   obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hg
+  have hpad (p q : R[X]) (k l : ℕ) :
+      p.resultant q (p.natDegree + k) (q.natDegree + l) =
+        (-1) ^ ((q.natDegree + l) * k) * q.coeff (q.natDegree + l) ^ k *
+          p.leadingCoeff ^ l * p.resultant q := by
+    rw [resultant_add_left_deg _ _ _ _ _ le_rfl, resultant_add_right_deg _ _ _ _ _ le_rfl,
+      coeff_natDegree]
+    ring
+  have htf : (taylor a f).natDegree = f.natDegree := natDegree_taylor f a
+  have htg : (taylor a g).natDegree = g.natDegree := natDegree_taylor g a
   have hcg : (taylor a g).coeff (g.natDegree + l) = g.coeff (g.natDegree + l) := by
     rcases l with _ | l
     · simp
-    · rw [coeff_eq_zero_of_natDegree_lt (by rw [natDegree_taylor]; omega),
+    · rw [coeff_eq_zero_of_natDegree_lt (by rw [htg]; omega),
         coeff_eq_zero_of_natDegree_lt (by omega)]
-  conv_lhs =>
-    rw [← natDegree_taylor f a, resultant_add_left_deg _ _ _ _ _ (by rw [natDegree_taylor]),
-      natDegree_taylor, hcg, ← natDegree_taylor g a,
-      resultant_add_right_deg _ _ _ _ _ le_rfl, coeff_taylor_natDegree,
-      ← natDegree_taylor f a, resultant_taylor, natDegree_taylor]
-  conv_rhs =>
-    rw [resultant_add_left_deg _ _ _ _ _ le_rfl, resultant_add_right_deg _ _ _ _ _ le_rfl,
-      coeff_natDegree]
+  calc
+    (taylor a f).resultant (taylor a g) (f.natDegree + k) (g.natDegree + l)
+      = (taylor a f).resultant (taylor a g) ((taylor a f).natDegree + k)
+          ((taylor a g).natDegree + l) := by rw [htf, htg]
+    _ = (-1) ^ (((taylor a g).natDegree + l) * k) *
+          (taylor a g).coeff ((taylor a g).natDegree + l) ^ k *
+          (taylor a f).leadingCoeff ^ l * (taylor a f).resultant (taylor a g) :=
+        hpad (taylor a f) (taylor a g) k l
+    _ = (-1) ^ ((g.natDegree + l) * k) * g.coeff (g.natDegree + l) ^ k *
+          f.leadingCoeff ^ l * f.resultant g := by
+        rw [resultant_taylor, htg, hcg, leadingCoeff_taylor]
+    _ = f.resultant g (f.natDegree + k) (g.natDegree + l) := (hpad f g k l).symm
 
 end Polynomial

@@ -26,8 +26,8 @@ distinct roots gives the number of roots counted with multiplicity
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
 occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`), and the
-root multiplicity of a list product of nonzero polynomials is the sum of the root multiplicities
-of its factors (`Polynomial.rootMultiplicity_list_prod`).
+root multiplicity of a multiset product of nonzero polynomials is the sum of the root multiplicities
+of its factors (`Polynomial.rootMultiplicity_multiset_prod`).
 -/
 
 public section
@@ -98,12 +98,12 @@ theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
     _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
     _ ≤ f.natDegree := card_roots' f
 
-/-- Over an integral domain, the root multiplicity of a list product of nonzero polynomials is the
-sum of the root multiplicities of its factors. -/
-theorem rootMultiplicity_list_prod (a : R) (l : List R[X]) (hl : ∀ p ∈ l, p ≠ 0) :
-    l.prod.rootMultiplicity a = (l.map fun p ↦ p.rootMultiplicity a).sum := by
+/-- Over an integral domain, the root multiplicity of a multiset product of nonzero polynomials is
+the sum of the root multiplicities of its factors. -/
+theorem rootMultiplicity_multiset_prod (a : R) (s : Multiset R[X]) (hs : ∀ p ∈ s, p ≠ 0) :
+    s.prod.rootMultiplicity a = (s.map fun p ↦ p.rootMultiplicity a).sum := by
   classical
-  rw [← count_roots, roots_list_prod l fun h0 ↦ hl 0 h0 rfl, Multiset.count_bind]
+  rw [← count_roots, roots_multiset_prod s fun h0 ↦ hs 0 h0 rfl, Multiset.count_bind]
   simp [count_roots]
 
 /-- A nonzero constant multiple of a product of linear factors vanishes exactly at the

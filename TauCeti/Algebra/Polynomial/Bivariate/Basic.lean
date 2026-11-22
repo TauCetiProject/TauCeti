@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Taylor
+import Mathlib.RingTheory.Polynomial.Content
 
 /-!
 # Coefficient maps, variable swaps, and evaluation of bivariate polynomials
@@ -108,9 +109,7 @@ theorem Bivariate.totalDegree_equivMvPolynomial_le {R : Type*} [CommSemiring R] 
     refine (MvPolynomial.totalDegree_mul _ _).trans ?_
     have hcoeff :
         (Bivariate.equivMvPolynomial R (C (C ((F.coeff r).coeff s)))).totalDegree = 0 := by
-      have h : C (C ((F.coeff r).coeff s)) = algebraMap R R[X][Y] ((F.coeff r).coeff s) := rfl
-      rw [h, AlgEquiv.commutes]
-      exact MvPolynomial.totalDegree_C _
+      rw [Bivariate.equivMvPolynomial_C_C, MvPolynomial.totalDegree_C]
     rw [hcoeff, zero_add]
     exact (MvPolynomial.totalDegree_pow _ s).trans (by
       simpa [MvPolynomial.totalDegree_X] using hs_le)
@@ -184,15 +183,6 @@ theorem map_evalRingHom_ne_zero_of_irreducible {R : Type*} [CommRing R] [IsDomai
     rw [dvd_iff_isRoot, IsRoot]
     have hi : (F.map (evalRingHom b)).coeff i = 0 := by rw [h0, coeff_zero]
     simpa [coeff_map] using hi
-  obtain ⟨Q, hQ⟩ := hdvd
-  rcases hF.isUnit_or_isUnit hQ with hU | hU
-  · have hU' : IsUnit (X - C b) := isUnit_C.mp hU
-    have hdeg0 : (X - C b).natDegree = 0 := natDegree_eq_zero_of_isUnit hU'
-    simp at hdeg0
-  · have hQ0 : Q.natDegree = 0 := natDegree_eq_zero_of_isUnit hU
-    have hF0 : F.natDegree = 0 := by
-      rw [hQ]
-      exact Nat.eq_zero_of_le_zero ((natDegree_C_mul_le _ _).trans (by omega))
-    omega
+  exact not_isUnit_X_sub_C b (hF.isPrimitive hdeg.ne' _ hdvd)
 
 end Polynomial
