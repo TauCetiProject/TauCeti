@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.Matrix.SkewAdjoint
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
 # The unitary exponential of strict upper coordinates
@@ -18,6 +19,9 @@ The exponential of the zero-diagonal skew-adjoint extension of strict upper coor
 unitary matrix. This parametrizes the unitary frames transverse to the diagonal unitary
 subgroup near the identity. The underlying matrix is smooth in the coordinates, and its
 derivative at zero is the skew-adjoint extension itself.
+
+The angular differential `TauCeti.spectralAngularFDeriv` differentiates the strict upper
+entries of the frame relative to the frame at a base angle. At zero angle it is the identity.
 
 These are the angular coordinates of the spectral change of variables in Anderson, Guionnet
 and Zeitouni, *An Introduction to Random Matrices* (2010), proof of Theorem 2.5.2 and §4.1.
@@ -35,20 +39,34 @@ variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
 
 open scoped Matrix.Norms.L2Operator in
 /-- The unitary exponential of a zero-diagonal skew-adjoint matrix. -/
-def expStrictUpper (x : StrictUpperFin n → 𝕜) : unitaryGroup (Fin n) 𝕜 :=
+def expStrictUpper (x : FinStrictUpper n → 𝕜) : unitaryGroup (Fin n) 𝕜 :=
   letI : NormedAlgebra ℚ (Matrix (Fin n) (Fin n) 𝕜) := .restrictScalars ℚ 𝕜 _
   ⟨NormedSpace.exp (skewAdjointOfStrictUpper x),
     NormedSpace.exp_mem_unitary_of_mem_skewAdjoint (skewAdjointOfStrictUpper_mem x)⟩
 
 /-- The matrix underlying the transverse unitary exponential. -/
-theorem coe_expStrictUpper (x : StrictUpperFin n → 𝕜) :
+theorem coe_expStrictUpper (x : FinStrictUpper n → 𝕜) :
     (expStrictUpper x : Matrix (Fin n) (Fin n) 𝕜) = NormedSpace.exp (skewAdjointOfStrictUpper x) :=
   (rfl)
 
 /-- Zero angles give the identity frame. -/
-@[simp] theorem expStrictUpper_zero : expStrictUpper (0 : StrictUpperFin n → 𝕜) = 1 := by
+@[simp] theorem expStrictUpper_zero : expStrictUpper (0 : FinStrictUpper n → 𝕜) = 1 := by
   apply Subtype.ext
   simp [coe_expStrictUpper]
+
+/-- The differential of the angular coordinates in the moving unitary frame.
+The differential is taken at the base angle, where the relative frame is the identity. -/
+def spectralAngularFDeriv (a : FinStrictUpper n → 𝕜) :
+    (FinStrictUpper n → 𝕜) →L[ℝ] (FinStrictUpper n → 𝕜) :=
+  fderiv ℝ (fun b ij ↦ (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
+    (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜)) ij.val.1 ij.val.2) a
+
+/-- The angular differential is the derivative of the strict upper entries of the unitary
+frame relative to the frame at the base angle. -/
+theorem spectralAngularFDeriv_def (a : FinStrictUpper n → 𝕜) :
+    spectralAngularFDeriv a =
+      fderiv ℝ (fun b ij ↦ (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
+        (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜)) ij.val.1 ij.val.2) a := (rfl)
 
 section Differentiation
 
@@ -58,7 +76,7 @@ attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
 /-- The underlying matrix of the transverse unitary exponential is smooth in the angles. -/
 theorem contDiff_expStrictUpper {k : WithTop ℕ∞} :
-    ContDiff ℝ k (fun a : StrictUpperFin n → 𝕜 ↦
+    ContDiff ℝ k (fun a : FinStrictUpper n → 𝕜 ↦
       (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜)) := by
   simp only [coe_expStrictUpper]
   have he : ContDiff ℝ k (NormedSpace.exp : Matrix (Fin n) (Fin n) 𝕜 → _) :=
@@ -68,16 +86,44 @@ theorem contDiff_expStrictUpper {k : WithTop ℕ∞} :
 /-- At zero, the derivative of the underlying matrix is the skew-adjoint extension of the
 strict upper coordinates. -/
 theorem hasFDerivAt_expStrictUpper_zero :
-    HasFDerivAt (fun a : StrictUpperFin n → 𝕜 ↦
+    HasFDerivAt (fun a : FinStrictUpper n → 𝕜 ↦
       (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜)) skewAdjointOfStrictUpper 0 := by
   let K := skewAdjointOfStrictUpper (n := n) (𝕜 := 𝕜)
   have h : HasFDerivAt NormedSpace.exp (ContinuousLinearMap.id ℝ (Matrix (Fin n) (Fin n) 𝕜))
       (K 0) := by
     simpa only [K, map_zero, ContinuousLinearMap.one_def] using
       (hasFDerivAt_exp_zero (𝕂 := ℝ) (𝔸 := Matrix (Fin n) (Fin n) 𝕜))
-  have hh := h.comp (0 : StrictUpperFin n → 𝕜) K.hasFDerivAt
+  have hh := h.comp (0 : FinStrictUpper n → 𝕜) K.hasFDerivAt
   rw [ContinuousLinearMap.id_comp] at hh
   exact hh.congr_of_eventuallyEq (Filter.Eventually.of_forall coe_expStrictUpper)
+
+/-- Each entry of the angular differential is the derivative of the corresponding strict upper
+entry of the frame relative to the frame at the base angle. -/
+theorem spectralAngularFDeriv_apply (a v : FinStrictUpper n → 𝕜) (ij : FinStrictUpper n) :
+    spectralAngularFDeriv a v ij =
+      fderiv ℝ (fun b ↦ star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
+        (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜)) a v ij.val.1 ij.val.2 := by
+  let read : Matrix (Fin n) (Fin n) 𝕜 →L[ℝ] (FinStrictUpper n → 𝕜) :=
+    (LinearMap.pi fun ij : FinStrictUpper n ↦
+      Matrix.entryLinearMap ℝ 𝕜 ij.val.1 ij.val.2).toContinuousLinearMap
+  have hF := ((contDiff_expStrictUpper (n := n) (𝕜 := 𝕜) (k := 1)).differentiable one_ne_zero
+    a).const_mul (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜)) |>.hasFDerivAt
+  have he : spectralAngularFDeriv a = read.comp (fderiv ℝ (fun b ↦
+      star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
+        (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜)) a) := by
+    rw [spectralAngularFDeriv_def]
+    exact (read.hasFDerivAt.comp a hF).fderiv
+  rw [he, ContinuousLinearMap.comp_apply]
+  rfl
+
+/-- At zero angle, the angular differential is the identity. -/
+@[simp] theorem spectralAngularFDeriv_zero :
+    spectralAngularFDeriv (0 : FinStrictUpper n → 𝕜) = ContinuousLinearMap.id ℝ _ := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun ij ↦ ?_
+  rw [spectralAngularFDeriv_apply, expStrictUpper_zero, OneMemClass.coe_one, star_one]
+  simp only [Matrix.one_mul]
+  rw [hasFDerivAt_expStrictUpper_zero.fderiv, skewAdjointOfStrictUpper_apply_of_lt _ ij.property]
+  rfl
 
 end Differentiation
 

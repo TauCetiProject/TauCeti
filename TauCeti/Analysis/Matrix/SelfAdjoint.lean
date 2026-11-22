@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Frobenius
-public import TauCeti.LinearAlgebra.Matrix.Defs
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -218,7 +218,7 @@ open Matrix
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
 
 /-- Real diagonal coordinates paired with strict upper-triangular entries. -/
-abbrev SelfAdjointCoordinates (n : ℕ) (𝕜 : Type*) := (Fin n → ℝ) × (StrictUpperFin n → 𝕜)
+abbrev SelfAdjointCoordinates (n : ℕ) (𝕜 : Type*) := (Fin n → ℝ) × (FinStrictUpper n → 𝕜)
 
 /-- Read the real parts of the diagonal and the entries strictly above it. -/
 def selfAdjointCoordinatesLinearMap :
@@ -234,7 +234,7 @@ def selfAdjointCoordinatesLinearMap :
 
 /-- The second component reads the corresponding strict upper entry. -/
 @[simp] theorem selfAdjointCoordinatesLinearMap_snd (A : Matrix (Fin n) (Fin n) 𝕜)
-    (ij : StrictUpperFin n) :
+    (ij : FinStrictUpper n) :
     (selfAdjointCoordinatesLinearMap A).2 ij = A ij.val.1 ij.val.2 := (rfl)
 
 /-- On the self-adjoint subspace, the real diagonal and strict upper coordinates
@@ -263,7 +263,7 @@ def selfAdjointCoordinates :
         · funext i
           simp
         · funext ij
-          simp [Fin.lt_def.mpr ij.property] }
+          simp [ij.property] }
 
 /-- Evaluating the self-adjoint coordinate equivalence uses the ambient coordinate map. -/
 theorem selfAdjointCoordinates_apply

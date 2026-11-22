@@ -73,19 +73,19 @@ theorem spectralCoordinates_apply (x : SelfAdjointCoordinates n 𝕜) :
 
 /-- At zero angles the parametrization returns the original coordinates. -/
 @[simp] theorem spectralCoordinates_zero (d : Fin n → ℝ) :
-    spectralCoordinates (d, (0 : StrictUpperFin n → 𝕜)) = (d, 0) := by
+    spectralCoordinates (d, (0 : FinStrictUpper n → 𝕜)) = (d, 0) := by
   apply Prod.ext
   · funext i
     simp [spectralCoordinates_apply]
   · funext ij
-    simp [spectralCoordinates_apply, diagonal_apply_ne _ (Fin.ne_of_val_ne ij.property.ne)]
+    simp [spectralCoordinates_apply, diagonal_apply_ne _ ij.property.ne]
 
 /-- On each strict upper coordinate the gap operator multiplies by the column eigenvalue
 minus the row eigenvalue. It fixes the real diagonal coordinates. -/
 def spectralGapMap (d : Fin n → ℝ) :
     SelfAdjointCoordinates n 𝕜 →L[ℝ] SelfAdjointCoordinates n 𝕜 :=
   (ContinuousLinearMap.id ℝ _).prodMap
-    (ContinuousLinearMap.pi fun ij : StrictUpperFin n ↦
+    (ContinuousLinearMap.pi fun ij : FinStrictUpper n ↦
       (d ij.val.2 - d ij.val.1) • ContinuousLinearMap.proj (R := ℝ) ij)
 
 /-- The gap operator on the diagonal component. -/
@@ -94,14 +94,14 @@ def spectralGapMap (d : Fin n → ℝ) :
 
 /-- The gap operator on a strict upper component. -/
 @[simp] theorem spectralGapMap_snd (d : Fin n → ℝ) (v : SelfAdjointCoordinates n 𝕜)
-    (ij : StrictUpperFin n) :
+    (ij : FinStrictUpper n) :
     (spectralGapMap d v).2 ij = (d ij.val.2 - d ij.val.1) • v.2 ij := (rfl)
 
 /-- Each strict upper entry contributes one eigenvalue gap for each real scalar dimension. -/
 theorem det_spectralGapMap (d : Fin n → ℝ) :
     (spectralGapMap (𝕜 := 𝕜) d).det =
-      ∏ ij : StrictUpperFin n, (d ij.val.2 - d ij.val.1) ^ Module.finrank ℝ 𝕜 := by
-  let f (ij : StrictUpperFin n) : 𝕜 →ₗ[ℝ] 𝕜 := (d ij.val.2 - d ij.val.1) • LinearMap.id
+      ∏ ij : FinStrictUpper n, (d ij.val.2 - d ij.val.1) ^ Module.finrank ℝ 𝕜 := by
+  let f (ij : FinStrictUpper n) : 𝕜 →ₗ[ℝ] 𝕜 := (d ij.val.2 - d ij.val.1) • LinearMap.id
   have heq : (spectralGapMap (𝕜 := 𝕜) d).toLinearMap =
       LinearMap.id.prodMap (LinearMap.pi fun ij ↦ (f ij).comp (LinearMap.proj ij)) := by
     ext v <;> rfl
@@ -115,36 +115,20 @@ private theorem diagonalRealL_isHermitian (d : Fin n → ℝ) :
   exact isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)
 
 /-- The relative unitary frame based at a given angle. -/
-private def relativeFrame (a b : StrictUpperFin n → 𝕜) : unitaryGroup (Fin n) 𝕜 :=
+private def relativeFrame (a b : FinStrictUpper n → 𝕜) : unitaryGroup (Fin n) 𝕜 :=
   star (expStrictUpper a) * expStrictUpper b
 
-@[simp] private theorem relativeFrame_self (a : StrictUpperFin n → 𝕜) : relativeFrame a a = 1 := by
+@[simp] private theorem relativeFrame_self (a : FinStrictUpper n → 𝕜) : relativeFrame a a = 1 := by
   simp [relativeFrame]
 
-private theorem coe_relativeFrame (a b : StrictUpperFin n → 𝕜) :
+private theorem coe_relativeFrame (a b : FinStrictUpper n → 𝕜) :
     (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜) =
       star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
         (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜) := (rfl)
 
-private theorem expStrictUpper_mul_relativeFrame (a b : StrictUpperFin n → 𝕜) :
+private theorem expStrictUpper_mul_relativeFrame (a b : FinStrictUpper n → 𝕜) :
     expStrictUpper a * relativeFrame a b = expStrictUpper b := by
   simp [relativeFrame, ← mul_assoc]
-
-/-- The differential of the angular coordinates in the moving unitary frame.
-The differential is taken at the base angle, where the relative frame is the identity. -/
-def spectralAngularFDeriv (a : StrictUpperFin n → 𝕜) :
-    (StrictUpperFin n → 𝕜) →L[ℝ] (StrictUpperFin n → 𝕜) :=
-  fderiv ℝ (fun b ↦ (selfAdjointCoordinatesLinearMap
-    (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
-      (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜))).2) a
-
-/-- The angular differential is the derivative of the strict upper entries of the unitary
-frame relative to the frame at the base angle. -/
-theorem spectralAngularFDeriv_def (a : StrictUpperFin n → 𝕜) :
-    spectralAngularFDeriv a =
-      fderiv ℝ (fun b ↦ (selfAdjointCoordinatesLinearMap
-        (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
-          (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜))).2) a := (rfl)
 
 section Differentiation
 
@@ -152,28 +136,15 @@ open scoped Matrix.Norms.L2Operator
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
-private theorem contDiff_relativeFrame (a : StrictUpperFin n → 𝕜) {k : WithTop ℕ∞} :
+private theorem contDiff_relativeFrame (a : FinStrictUpper n → 𝕜) {k : WithTop ℕ∞} :
     ContDiff ℝ k (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) := by
   simp only [coe_relativeFrame]
   exact contDiff_const.mul contDiff_expStrictUpper
 
-/-- At zero angle, the angular differential is the identity. -/
-@[simp] theorem spectralAngularFDeriv_zero :
-    spectralAngularFDeriv (0 : StrictUpperFin n → 𝕜) = ContinuousLinearMap.id ℝ _ := by
-  let read := (ContinuousLinearMap.snd ℝ (Fin n → ℝ) (StrictUpperFin n → 𝕜)).comp
-    selfAdjointCoordinatesLinearMap
-  have h := read.hasFDerivAt.comp (0 : StrictUpperFin n → 𝕜) hasFDerivAt_expStrictUpper_zero
-  have hr : read.comp skewAdjointOfStrictUpper = ContinuousLinearMap.id ℝ _ := by
-    ext v ij
-    simp [read, Fin.lt_def.mpr ij.property]
-  simpa only [spectralAngularFDeriv_def, expStrictUpper_zero, OneMemClass.coe_one,
-    star_one, Matrix.one_mul, Function.comp_def, read, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_snd'] using h.fderiv.trans hr
-
-private theorem star_fderiv_relativeFrame (a v : StrictUpperFin n → 𝕜) :
+private theorem star_fderiv_relativeFrame (a v : FinStrictUpper n → 𝕜) :
     star (fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) =
       -(fderiv ℝ (fun b ↦ (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)) a v) := by
-  let F (b : StrictUpperFin n → 𝕜) := (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)
+  let F (b : FinStrictUpper n → 𝕜) := (relativeFrame a b : Matrix (Fin n) (Fin n) 𝕜)
   let L := fderiv ℝ F a
   have hF : HasFDerivAt F L a :=
     ((contDiff_relativeFrame a (k := 1)).differentiable one_ne_zero a).hasFDerivAt
@@ -192,23 +163,18 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
         (Unitary.conjStarAlgAut ℝ _ (relativeFrame x.2 y.2) (diagonalRealL y.1)))
       ((spectralGapMap x.1).comp
         ((ContinuousLinearMap.id ℝ _).prodMap (spectralAngularFDeriv x.2))) x := by
-  let F (b : StrictUpperFin n → 𝕜) := (relativeFrame x.2 b : Matrix (Fin n) (Fin n) 𝕜)
+  let F (b : FinStrictUpper n → 𝕜) := (relativeFrame x.2 b : Matrix (Fin n) (Fin n) 𝕜)
   let L := fderiv ℝ F x.2
   have hF : HasFDerivAt F L x.2 :=
     ((contDiff_relativeFrame x.2 (k := 1)).differentiable one_ne_zero x.2).hasFDerivAt
   have h1 : F x.2 = 1 := by simp [F]
-  have hFF := hF.comp x (ContinuousLinearMap.snd ℝ (Fin n → ℝ) (StrictUpperFin n → 𝕜)).hasFDerivAt
+  have hFF := hF.comp x (ContinuousLinearMap.snd ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
   have hd := (diagonalRealL (𝕜 := 𝕜)).hasFDerivAt.comp x
-    (ContinuousLinearMap.fst ℝ (Fin n → ℝ) (StrictUpperFin n → 𝕜)).hasFDerivAt
+    (ContinuousLinearMap.fst ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜)).hasFDerivAt
   have h := selfAdjointCoordinatesLinearMap.hasFDerivAt.comp x ((hFF.fun_mul' hd).fun_mul' hFF.star)
-  have hread (v : StrictUpperFin n → 𝕜) (ij : StrictUpperFin n) :
-      spectralAngularFDeriv x.2 v ij = L v ij.val.1 ij.val.2 := by
-    let read := (ContinuousLinearMap.snd ℝ (Fin n → ℝ) (StrictUpperFin n → 𝕜)).comp
-      selfAdjointCoordinatesLinearMap
-    have he : spectralAngularFDeriv x.2 = read.comp L :=
-      (read.hasFDerivAt.comp x.2 hF).fderiv
-    rw [he, ContinuousLinearMap.comp_apply]
-    exact selfAdjointCoordinatesLinearMap_snd _ ij
+  have hread (v : FinStrictUpper n → 𝕜) (ij : FinStrictUpper n) :
+      spectralAngularFDeriv x.2 v ij = L v ij.val.1 ij.val.2 :=
+    spectralAngularFDeriv_apply x.2 v ij
   refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)).congr_fderiv ?_
   · rw [Unitary.conjStarAlgAut_apply]
     rfl
@@ -224,7 +190,7 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
     apply Prod.ext <;> funext i
     · simp [mul_diagonal, diagonal_mul, hs, mul_comm]
     · simp [hread, mul_diagonal, diagonal_mul,
-        diagonal_apply_ne _ (Fin.ne_of_val_ne i.property.ne), hs, Algebra.smul_def]
+        diagonal_apply_ne _ i.property.ne, hs, Algebra.smul_def]
       ring
 
 /-- The spectral parametrization is smooth in the diagonal and angular variables. -/
@@ -269,7 +235,7 @@ diagonal, raised to the real dimension of the scalar field. -/
 theorem abs_det_fderiv_spectralCoordinates (x : SelfAdjointCoordinates n 𝕜) :
     |(fderiv ℝ spectralCoordinates x).det| =
       |(spectralAngularFDeriv x.2).det| *
-        ∏ ij : StrictUpperFin n, |x.1 ij.val.2 - x.1 ij.val.1| ^ Module.finrank ℝ 𝕜 := by
+        ∏ ij : FinStrictUpper n, |x.1 ij.val.2 - x.1 ij.val.1| ^ Module.finrank ℝ 𝕜 := by
   rw [(hasFDerivAt_spectralCoordinates x).fderiv]
   have h : ((ContinuousLinearMap.id ℝ (Fin n → ℝ)).prodMap
         (spectralAngularFDeriv x.2)).det = (spectralAngularFDeriv x.2).det :=
@@ -290,17 +256,17 @@ theorem exists_spectralCoordinates_openPartialHomeomorph (d : Fin n → ℝ)
     (hd : Function.Injective d) (U : unitaryGroup (Fin n) 𝕜) :
     ∃ e : OpenPartialHomeomorph (SelfAdjointCoordinates n 𝕜) (SelfAdjointCoordinates n 𝕜),
       (e : _ → _) = unitaryConjCoordinates U ∘ spectralCoordinates ∧
-      (d, (0 : StrictUpperFin n → 𝕜)) ∈ e.source := by
+      (d, (0 : FinStrictUpper n → 𝕜)) ∈ e.source := by
   let x : SelfAdjointCoordinates n 𝕜 := (d, 0)
   let L := fderiv ℝ spectralCoordinates x
   have hL : L.det ≠ 0 := by
     rw [← abs_ne_zero]
     rw [abs_det_fderiv_spectralCoordinates]
     simp only [x, spectralAngularFDeriv_zero]
-    have hid : (ContinuousLinearMap.id ℝ (StrictUpperFin n → 𝕜)).det = 1 := LinearMap.det_id
+    have hid : (ContinuousLinearMap.id ℝ (FinStrictUpper n → 𝕜)).det = 1 := LinearMap.det_id
     rw [hid, abs_one, one_mul]
     refine Finset.prod_ne_zero_iff.mpr fun ij _ ↦ ?_
-    have hne := hd.ne (Fin.ne_of_val_ne ij.property.ne).symm
+    have hne := hd.ne ij.property.ne.symm
     exact pow_ne_zero _ (abs_ne_zero.mpr (sub_ne_zero.mpr hne))
   let L' := (LinearMap.equivOfIsUnitDet (isUnit_iff_ne_zero.mpr hL)).toContinuousLinearEquiv
   have hL' : L'.toContinuousLinearMap = L := by
