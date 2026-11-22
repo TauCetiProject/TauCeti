@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
-import TauCeti.Combinatorics.Hive.GelfandTsetlin
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.LittlewoodRichardson
 
 /-!

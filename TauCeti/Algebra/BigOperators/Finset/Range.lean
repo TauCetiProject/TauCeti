@@ -54,8 +54,6 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   a rectangle.
 * `sum_range_ite_pair_of_eq_add_one`, `sum_range_ite_pair_of_eq`,
   `sum_range_ite_pair_of_lt`: evaluate an alternating-pair sum at either partner or below all pairs.
-* `sum_range_eq_of_eq_zero`: truncate a `Finset.range b` sum to `Finset.range a` when terms on
-  `[a, b)` vanish.
 * `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
   specializations to supports of size two and three.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
@@ -478,16 +476,6 @@ theorem sum_range_ite_pair_of_lt {M : Type*} [AddCommGroup M] (f : ℕ → M) {s
       ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
         if j = 2 * b + s then f (2 * b + s + 1) else 0) = 0 :=
   sum_eq_zero fun b _ ↦ by rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
-
-/-- Truncating a product over `Finset.range b` to `Finset.range a` (`a ≤ b`) when all factors
-on `[a, b)` equal `1`. -/
-@[to_additive /-- Truncating a sum over `Finset.range b` to `Finset.range a` (`a ≤ b`) when all
-terms on `[a, b)` vanish. -/]
-theorem prod_range_eq_of_eq_one {M : Type*} [CommMonoid M] {f : ℕ → M} {a b : ℕ}
-    (hab : a ≤ b) (h0 : ∀ i, a ≤ i → i < b → f i = 1) :
-    ∏ i ∈ range b, f i = ∏ i ∈ range a, f i :=
-  (prod_subset (range_mono hab) fun i hib hia =>
-    h0 i (Nat.le_of_not_lt (mem_range.not.mp hia)) (mem_range.mp hib)).symm
 
 /-- A sum over `Finset.range t` whose terms vanish outside two distinct positions is the sum of
 the terms at those positions. -/
