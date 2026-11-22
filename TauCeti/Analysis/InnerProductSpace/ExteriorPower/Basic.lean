@@ -52,8 +52,9 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 ## Main results
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
-* `LinearIsometryEquiv.inner_conj_map`:
-  `⟪(⋀ⁿ e.symm ∘ₗ T ∘ₗ ⋀ⁿ e) x, y⟫ = ⟪T (⋀ⁿ e x), ⋀ⁿ e y⟫` for a linear isometric equivalence `e`.
+* `LinearIsometryEquiv.inner_conj_map` and `LinearIsometryEquiv.adjoint_map`:
+  `⟪(⋀ⁿ e.symm ∘ₗ T ∘ₗ ⋀ⁿ e) x, y⟫ = ⟪T (⋀ⁿ e x), ⋀ⁿ e y⟫` and
+  `LinearMap.adjoint (⋀ⁿ e) = ⋀ⁿ e.symm` for a linear isometric equivalence `e`.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
   `exteriorPower.orthonormal_ιMulti_two_of_orthonormal`: for an orthonormal triple `e, x, y`, the
   wedges `e ∧ x` and `e ∧ y` are orthonormal.
@@ -89,10 +90,12 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
   `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
-* `TauCeti.twoVectorContraction_twoVectorBracket`, `TauCeti.twoVectorBracket_jacobi`, and
+* `TauCeti.twoVectorContraction_twoVectorBracket`, `TauCeti.twoVectorBracket_jacobi`,
+  `LinearIsometry.map_twoVectorBracket`, `LinearIsometryEquiv.map_twoVectorBracket`, and
   `OrthonormalBasis.inner_twoVectorBracket_ιMulti`: `twoVectorContraction` takes
   `twoVectorBracket` to the commutator of skew-adjoint endomorphisms, satisfies the Jacobi
-  identity, and has an explicit pairing formula in any orthonormal basis.
+  identity, is equivariant under linear isometries, and has an explicit pairing formula in any
+  orthonormal basis.
 -/
 
 public section
@@ -349,6 +352,22 @@ theorem inner_conj_map (e : E ≃ₗᵢ[ℝ] F) (T : Module.End ℝ (⋀[ℝ]^n 
     rw [← map_comp, hlin, map_id]
   exact congrArg (⟪·, _⟫) (LinearMap.congr_fun hcomp _)
 
+/-- The adjoint of `exteriorPower.map n e.toLinearMap` is
+`exteriorPower.map n e.symm.toLinearMap`. -/
+theorem adjoint_map (e : E ≃ₗᵢ[ℝ] F) :
+    LinearMap.adjoint (map n e.toLinearMap) = map n e.symm.toLinearMap := by
+  refine LinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦ ?_
+  have hlin : e.toLinearMap ∘ₗ e.symm.toLinearMap = LinearMap.id :=
+    LinearMap.ext fun _ ↦ e.apply_symm_apply _
+  have hcomp : map n e.toLinearMap ∘ₗ map n e.symm.toLinearMap = LinearMap.id := by
+    rw [← map_comp, hlin, map_id]
+  rw [LinearMap.adjoint_inner_left]
+  calc ⟪x, map n e.toLinearMap y⟫
+    _ = ⟪map n e.toLinearMap (map n e.symm.toLinearMap x), map n e.toLinearMap y⟫ := by
+        rw [← LinearMap.comp_apply, hcomp, LinearMap.id_apply]
+    _ = ⟪map n e.symm.toLinearMap x, y⟫ :=
+        exteriorPower.inner_map_map e.toLinearIsometry _ _
+
 end LinearIsometryEquiv
 
 namespace ContinuousLinearMap
@@ -539,21 +558,32 @@ theorem twoVectorContraction_ιMulti (u v x : V) :
   simp [twoVectorContraction_apply, ExteriorAlgebra.ιMulti_apply, Matrix.vecTail,
     contractLeft_ι_mul, ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _]
 
+omit [FiniteDimensional ℝ V] in
+private noncomputable def twoVectorContractionLM : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V where
+  toFun := twoVectorContraction
+  map_add' := twoVectorContraction_add
+  map_smul' := twoVectorContraction_smul
+
+omit [FiniteDimensional ℝ V] in
+private theorem twoVectorContractionLM_apply (F : ⋀[ℝ]^2 V) :
+    twoVectorContractionLM F = twoVectorContraction F :=
+  (rfl)
+
 /-- **The contraction represents the two-form of `F`**: `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`. Equivalently,
 on two-forms, wedging with `u` is adjoint to contracting with `⟪u, ·⟫`. -/
 @[simp]
 theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
     ⟪twoVectorContraction F u, w⟫ = ⟪F, ιMulti ℝ 2 ![u, w]⟫ := by
-  let c : ⋀[ℝ]^2 V →ₗ[ℝ] V →ₗ[ℝ] V :=
-    ⟨⟨twoVectorContraction, twoVectorContraction_add⟩, twoVectorContraction_smul⟩
-  have key : (innerₗ (⋀[ℝ]^2 V)).flip (ιMulti ℝ 2 ![u, w]) = innerₗ V w ∘ₗ c.flip u :=
+  have key : (innerₗ (⋀[ℝ]^2 V)).flip (ιMulti ℝ 2 ![u, w]) =
+      innerₗ V w ∘ₗ (twoVectorContractionLM (V := V)).flip u :=
     exteriorPower.linearMap_ext_ιMulti_two fun p q ↦ by
       simp only [LinearMap.flip_apply, LinearMap.comp_apply, innerₗ_apply_apply,
-        LinearMap.coe_mk, AddHom.coe_mk, c, twoVectorContraction_ιMulti, inner_sub_right,
+        twoVectorContractionLM_apply, twoVectorContraction_ιMulti, inner_sub_right,
         real_inner_smul_right, inner_ιMulti_two]
       rw [real_inner_comm p u, real_inner_comm q w, real_inner_comm p w, real_inner_comm q u]
       ring
-  simpa [c, real_inner_comm w, real_inner_comm F] using (LinearMap.congr_fun key F).symm
+  simpa [twoVectorContractionLM_apply, real_inner_comm w, real_inner_comm F] using
+    (LinearMap.congr_fun key F).symm
 
 /-- `twoVectorContraction` is injective on `⋀[ℝ]^2 V`. -/
 theorem twoVectorContraction_injective :
@@ -625,20 +655,19 @@ theorem twoVectorContraction_twoVectorBracket (F G : ⋀[ℝ]^2 V) :
     twoVectorContraction (twoVectorBracket F G) =
       twoVectorContraction F ∘ₗ twoVectorContraction G -
         twoVectorContraction G ∘ₗ twoVectorContraction F := by
-  let c : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V :=
-    ⟨⟨twoVectorContraction, twoVectorContraction_add⟩, twoVectorContraction_smul⟩
   let rhs : ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V :=
-    LinearMap.mk₂ ℝ (fun F G ↦ c F ∘ₗ c G - c G ∘ₗ c F)
+    LinearMap.mk₂ ℝ (fun F G ↦ twoVectorContractionLM F ∘ₗ twoVectorContractionLM G -
+        twoVectorContractionLM G ∘ₗ twoVectorContractionLM F)
       (fun _ _ _ ↦ by simp only [map_add, LinearMap.add_comp, LinearMap.comp_add]; abel)
       (fun _ _ _ ↦ by simp only [map_smul, LinearMap.smul_comp, LinearMap.comp_smul, smul_sub])
       (fun _ _ _ ↦ by simp only [map_add, LinearMap.add_comp, LinearMap.comp_add]; abel)
       (fun _ _ _ ↦ by simp only [map_smul, LinearMap.smul_comp, LinearMap.comp_smul, smul_sub])
-  have h : twoVectorBracket.compr₂ c = rhs :=
+  have h : twoVectorBracket.compr₂ twoVectorContractionLM = rhs :=
     exteriorPower.linearMap_ext_ιMulti_two fun u₀ u₁ ↦
       exteriorPower.linearMap_ext_ιMulti_two fun v₀ v₁ ↦ by
         ext a
-        simp only [rhs, c, LinearMap.compr₂_apply, LinearMap.mk₂_apply, LinearMap.coe_mk,
-          AddHom.coe_mk, twoVectorBracket_ιMulti]
+        simp only [rhs, LinearMap.compr₂_apply, LinearMap.mk₂_apply, twoVectorContractionLM_apply,
+          twoVectorBracket_ιMulti]
         simp only [map_add, map_smul, twoVectorContraction_add, twoVectorContraction_smul,
           twoVectorContraction_neg, sub_eq_add_neg, LinearMap.add_apply, LinearMap.neg_apply,
           LinearMap.smul_apply, LinearMap.comp_apply, twoVectorContraction_ιMulti,
@@ -646,7 +675,8 @@ theorem twoVectorContraction_twoVectorBracket (F G : ⋀[ℝ]^2 V) :
         rw [real_inner_comm v₀ u₀, real_inner_comm v₀ u₁, real_inner_comm v₁ u₀,
           real_inner_comm v₁ u₁]
         module
-  exact LinearMap.congr_fun₂ h F G
+  simpa only [LinearMap.compr₂_apply, rhs, LinearMap.mk₂_apply, twoVectorContractionLM_apply] using
+    LinearMap.congr_fun₂ h F G
 
 omit [FiniteDimensional ℝ V] in
 /-- The two-vector bracket is skew-symmetric. -/
@@ -680,13 +710,11 @@ theorem twoVectorBracket_jacobi (F G H : ⋀[ℝ]^2 V) :
     twoVectorBracket F (twoVectorBracket G H) +
       twoVectorBracket G (twoVectorBracket H F) +
       twoVectorBracket H (twoVectorBracket F G) = 0 := by
+  let : LieRing (Module.End ℝ V) := LieRing.ofAssociativeRing
   apply twoVectorContraction_injective
   simp only [twoVectorContraction_add, twoVectorContraction_twoVectorBracket,
-    twoVectorContraction_zero]
-  ext x
-  simp only [LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.zero_apply,
-    map_sub]
-  abel
+    twoVectorContraction_zero, ← Module.End.mul_eq_comp, ← Ring.lie_def]
+  exact lie_jacobi (twoVectorContraction F : Module.End ℝ V) _ _
 
 /-- Adjoint invariance of the inner product on `⋀² V`: `twoVectorBracket F` is skew-adjoint. -/
 theorem inner_twoVectorBracket_left (F G H : ⋀[ℝ]^2 V) :
@@ -779,3 +807,37 @@ theorem inner_twoVectorBracket_ιMulti {V ι : Type*} [NormedAddCommGroup V]
   ring
 
 end OrthonormalBasis
+
+namespace LinearIsometry
+
+open TauCeti exteriorPower
+open scoped RealInnerProductSpace
+
+/-- Exterior-square functoriality of a linear isometry preserves `twoVectorBracket`. -/
+theorem map_twoVectorBracket {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] (f : E →ₗᵢ[ℝ] F) (x y : ⋀[ℝ]^2 E) :
+    map 2 f.toLinearMap (twoVectorBracket x y) =
+      twoVectorBracket (map 2 f.toLinearMap x) (map 2 f.toLinearMap y) := by
+  have h : (twoVectorBracket (V := E)).compr₂ (map 2 f.toLinearMap) =
+      twoVectorBracket.compl₁₂ (map 2 f.toLinearMap) (map 2 f.toLinearMap) :=
+    linearMap_ext_ιMulti_two fun u₀ u₁ ↦ linearMap_ext_ιMulti_two fun v₀ v₁ ↦ by
+      simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, map_apply_ιMulti_two,
+        twoVectorBracket_ιMulti, map_sub, map_add, map_smul, LinearIsometry.coe_toLinearMap,
+        f.inner_map_map]
+  exact LinearMap.congr_fun₂ h x y
+
+end LinearIsometry
+
+namespace LinearIsometryEquiv
+
+open TauCeti exteriorPower
+
+/-- Exterior-square functoriality of a linear isometric equivalence preserves
+`twoVectorBracket`. -/
+theorem map_twoVectorBracket {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] (e : E ≃ₗᵢ[ℝ] F) (x y : ⋀[ℝ]^2 E) :
+    map 2 e.toLinearMap (twoVectorBracket x y) =
+      twoVectorBracket (map 2 e.toLinearMap x) (map 2 e.toLinearMap y) :=
+  e.toLinearIsometry.map_twoVectorBracket x y
+
+end LinearIsometryEquiv
