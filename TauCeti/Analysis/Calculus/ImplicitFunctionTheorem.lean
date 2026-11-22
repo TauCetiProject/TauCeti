@@ -270,8 +270,7 @@ theorem linearSection_apply (y : E') :
 theorem linearCoord_symm_apply (y : E') (k : (A : E →ₗ[ℝ] E').ker) :
     (A.linearCoord hA).symm (y, k) = A.linearSection hA y + k := by
   have h : ((y, k) : E' × (A : E →ₗ[ℝ] E').ker) = (y, 0) + (0, k) := by simp
-  rw [h, map_add, linearSection_apply]
-  exact congrArg _ (A.implicitCoordEquiv_symm_apply_zero_mk _ _ k)
+  rw [h, map_add, linearSection_apply, linearCoord, A.implicitCoordEquiv_symm_apply_zero_mk]
 
 /-- The second component of `linearCoord` is the identity on `ker A`: it is a projection onto
 `ker A`. -/
