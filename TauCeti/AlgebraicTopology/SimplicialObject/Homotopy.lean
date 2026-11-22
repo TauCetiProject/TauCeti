@@ -235,6 +235,22 @@ namespace HomotopyEquiv
 
 variable {C : Type u} [Category.{v} C] {X Y : SimplicialObject C}
 
+/-- Two combinatorial simplicial homotopy equivalences are equal if their forward and backward
+morphisms agree and, after transport along those equalities, their homotopies agree. -/
+@[ext (iff := false)]
+lemma ext {e₁ e₂ : HomotopyEquiv X Y}
+    (hhom : e₁.hom = e₂.hom) (hinv : e₁.inv = e₂.inv)
+    (hhomInv : e₁.homotopyHomInvId.congrLeft (by rw [hhom, hinv]) = e₂.homotopyHomInvId)
+    (hinvHom : e₁.homotopyInvHomId.congrLeft (by rw [hhom, hinv]) = e₂.homotopyInvHomId) :
+    e₁ = e₂ := by
+  rcases e₁ with ⟨hom₁, inv₁, h₁, h₁'⟩
+  rcases e₂ with ⟨hom₂, inv₂, h₂, h₂'⟩
+  dsimp only at hhom hinv
+  subst hhom hinv
+  simp only [Homotopy.congrLeft] at hhomInv hinvHom
+  subst hhomInv hinvHom
+  rfl
+
 /-- Every simplicial object is combinatorially simplicially homotopy equivalent to itself. -/
 @[refl]
 def refl (X : SimplicialObject C) : HomotopyEquiv X X where
@@ -341,6 +357,46 @@ lemma whiskerRight_ofFullyFaithful_inv {D : Type u'} [Category.{v'} D] (F : C �
     (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y)) :
     Functor.whiskerRight (e.ofFullyFaithful F).inv F = e.inv :=
   ((whiskering C D).obj F).map_preimage e.inv
+
+/-- Whiskering a descended combinatorial simplicial homotopy equivalence recovers the original
+homotopy equivalence. -/
+@[simp]
+lemma whiskerRight_ofFullyFaithful {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
+    [F.Full] [F.Faithful]
+    (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y)) :
+    (e.ofFullyFaithful F).whiskerRight F = e :=
+  ext (by simp) (by simp)
+    (by
+      ext n i
+      rw [Homotopy.congrLeft_h]
+      dsimp only [whiskerRight, ofFullyFaithful]
+      simp)
+    (by
+      ext n i
+      rw [Homotopy.congrLeft_h]
+      dsimp only [whiskerRight, ofFullyFaithful]
+      simp)
+
+/-- Descending a whiskered combinatorial simplicial homotopy equivalence along a fully faithful
+functor recovers the original homotopy equivalence. -/
+@[simp]
+lemma ofFullyFaithful_whiskerRight {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
+    [F.Full] [F.Faithful] (e : HomotopyEquiv X Y) :
+    (e.whiskerRight F).ofFullyFaithful F = e :=
+  ext (((whiskering C D).obj F).map_injective
+      (((whiskering C D).obj F).map_preimage (e.whiskerRight F).hom))
+    (((whiskering C D).obj F).map_injective
+      (((whiskering C D).obj F).map_preimage (e.whiskerRight F).inv))
+    (by
+      ext n i
+      rw [Homotopy.congrLeft_h]
+      dsimp only [ofFullyFaithful, whiskerRight]
+      simp)
+    (by
+      ext n i
+      rw [Homotopy.congrLeft_h]
+      dsimp only [ofFullyFaithful, whiskerRight]
+      simp)
 
 section Preadditive
 

@@ -23,6 +23,27 @@ open CategoryTheory Limits
 
 namespace CategoryTheory.SimplicialObject.Augmented.ExtraDegeneracy
 
+/-- The forward map of `(ExtraDegeneracy.const X).homotopyEquiv` is the canonical augmentation
+`AlternatingFaceMapComplex.ε.app (SimplicialObject.Augmented.const.obj X)`. -/
+@[simp]
+lemma const_homotopyEquiv_hom {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+    (X : C) :
+    (const X).homotopyEquiv.hom =
+      AlgebraicTopology.AlternatingFaceMapComplex.ε.app
+        (SimplicialObject.Augmented.const.obj X) :=
+  rfl
+
+/-- The backward map of `(ExtraDegeneracy.const X).homotopyEquiv` is the canonical section
+`(ChainComplex.fromSingle₀Equiv _ X).symm (𝟙 X)`. -/
+@[simp]
+lemma const_homotopyEquiv_inv {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+    (X : C) :
+    (const X).homotopyEquiv.inv =
+      (ChainComplex.fromSingle₀Equiv
+          ((AlgebraicTopology.alternatingFaceMapComplex C).obj
+            ((SimplicialObject.const C).obj X)) X).symm (𝟙 X) :=
+  rfl
+
 /-- Naturality of the inverse homotopy equivalence `(ExtraDegeneracy.const X).homotopyEquiv.inv`
 with respect to morphisms `f : X ⟶ Y`. -/
 @[reassoc]

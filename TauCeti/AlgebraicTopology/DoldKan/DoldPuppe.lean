@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy
-import TauCeti.AlgebraicTopology.DoldKan.Const
+public import TauCeti.AlgebraicTopology.DoldKan.Const
 import TauCeti.AlgebraicTopology.SimplicialObject.ExtraDegeneracy
+import TauCeti.CategoryTheory.Functor.Const
 
 /-!
 # The Dold–Puppe functor
@@ -15,7 +16,8 @@ import TauCeti.AlgebraicTopology.SimplicialObject.ExtraDegeneracy
 For an arbitrary (not necessarily additive) functor `F : C ⥤ D` from an idempotent-complete
 preadditive category `C` with finite coproducts into a preadditive category `D`, the chain-level
 **Dold–Puppe functor** `CategoryTheory.Functor.doldPuppeFunctor F` is
-`Idempotents.DoldKan.Γ ⋙ (SimplicialObject.whiskering C D).obj F ⋙ alternatingFaceMapComplex D`.
+`Idempotents.DoldKan.Γ ⋙ (SimplicialObject.whiskering C D).obj F ⋙ alternatingFaceMapComplex D`,
+packaged functorially in `F` as `CategoryTheory.doldPuppe C D`.
 
 Because `Γ` carries chain homotopies to combinatorial simplicial homotopies
 (`Idempotents.DoldKan.Γ.mapHomotopy`), levelwise whiskering by *any* functor preserves simplicial
@@ -27,8 +29,8 @@ hypotheses. The projective resolution-independence theorem
 
 ## Main definitions and results
 
-* `Functor.doldPuppeFunctor`: `Γ ⋙ (whiskering C D).obj F ⋙ alternatingFaceMapComplex D`.
-* `NatTrans.doldPuppeFunctor`: naturality of `doldPuppeFunctor` in `F`.
+* `doldPuppe`, `Functor.doldPuppeFunctor`:
+  `Γ ⋙ (whiskering C D).obj F ⋙ alternatingFaceMapComplex D`, functorial in `F : C ⥤ D`.
 * `Functor.doldPuppeMapHomotopy`, `Functor.doldPuppeMapHomotopyEquiv`: preservation of chain
   homotopies and homotopy equivalences for arbitrary functors `F`.
 * `Functor.doldPuppeFunctorAdditiveHomotopyEquiv`: when `F` is additive,
@@ -59,12 +61,23 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
   [IsIdempotentComplete C]
 variable {D : Type u'} [Category.{v'} D] [Preadditive D]
 
+variable (C D) in
+/-- **The Dold–Puppe functor** on `C ⥤ D`: sends a functor `F : C ⥤ D` to
+`Γ ⋙ (SimplicialObject.whiskering C D).obj F ⋙ alternatingFaceMapComplex D` and a natural
+transformation `α : F ⟶ G` to the induced natural transformation between Dold–Puppe functors. -/
+@[expose]
+def doldPuppe : (C ⥤ D) ⥤ ChainComplex C ℕ ⥤ ChainComplex D ℕ :=
+  SimplicialObject.whiskering C D ⋙
+    (Functor.whiskeringRight (SimplicialObject C) (SimplicialObject D) (ChainComplex D ℕ)).obj
+      (alternatingFaceMapComplex D) ⋙
+    (Functor.whiskeringLeft (ChainComplex C ℕ) (SimplicialObject C) (ChainComplex D ℕ)).obj Γ
+
 /-- **The Dold–Puppe chain-complex functor** associated to an arbitrary (not necessarily additive)
 functor `F : C ⥤ D`: sends `K : ChainComplex C ℕ` to the alternating face map complex of `F` applied
 levelwise to `Idempotents.DoldKan.Γ.obj K`. Evaluating `F.doldPuppeFunctor` on a projective
 resolution computes the left derived functor of `F` in the sense of Dold and Puppe. -/
-def Functor.doldPuppeFunctor (F : C ⥤ D) : ChainComplex C ℕ ⥤ ChainComplex D ℕ :=
-  Γ ⋙ (SimplicialObject.whiskering C D).obj F ⋙ alternatingFaceMapComplex D
+abbrev Functor.doldPuppeFunctor (F : C ⥤ D) : ChainComplex C ℕ ⥤ ChainComplex D ℕ :=
+  (doldPuppe C D).obj F
 
 /-- Functor-level characterization of `Functor.doldPuppeFunctor`. -/
 theorem Functor.doldPuppeFunctor_eq (F : C ⥤ D) :
@@ -113,30 +126,14 @@ lemma Functor.doldPuppeFunctor_map_f (F : C ⥤ D) {K L : ChainComplex C ℕ} (f
       𝟙 _ ≫ F.map ((Γ.map f).app (Opposite.op ⦋n⦌)) ≫ 𝟙 _
   simp
 
-/-- Naturality of `Functor.doldPuppeFunctor` with respect to a natural transformation
-`α : F ⟶ G`. -/
-def NatTrans.doldPuppeFunctor {F G : C ⥤ D} (α : F ⟶ G) :
-    F.doldPuppeFunctor ⟶ G.doldPuppeFunctor :=
-  Functor.whiskerLeft Γ
-    (Functor.whiskerRight ((SimplicialObject.whiskering C D).map α) (alternatingFaceMapComplex D))
-
 @[simp]
-lemma NatTrans.doldPuppeFunctor_app_f {F G : C ⥤ D} (α : F ⟶ G) (K : ChainComplex C ℕ) (n : ℕ) :
-    ((NatTrans.doldPuppeFunctor α).app K).f n =
+lemma doldPuppe_map_app_f {F G : C ⥤ D} (α : F ⟶ G) (K : ChainComplex C ℕ) (n : ℕ) :
+    (((doldPuppe C D).map α).app K).f n =
       eqToHom (F.doldPuppeFunctor_obj_X K n) ≫
         α.app ((Γ.obj K) _⦋n⦌) ≫
         eqToHom (G.doldPuppeFunctor_obj_X K n).symm := by
   change α.app ((Γ.obj K) _⦋n⦌) = 𝟙 _ ≫ α.app ((Γ.obj K) _⦋n⦌) ≫ 𝟙 _
   simp
-
-@[simp]
-lemma NatTrans.doldPuppeFunctor_id (F : C ⥤ D) :
-    NatTrans.doldPuppeFunctor (𝟙 F) = 𝟙 F.doldPuppeFunctor := by ext K n; simp
-
-@[simp]
-lemma NatTrans.doldPuppeFunctor_comp {F G H : C ⥤ D} (α : F ⟶ G) (β : G ⟶ H) :
-    NatTrans.doldPuppeFunctor (α ≫ β) =
-      NatTrans.doldPuppeFunctor α ≫ NatTrans.doldPuppeFunctor β := by ext K n; simp
 
 /-- For *any* functor `F : C ⥤ D` (not necessarily additive), `F.doldPuppeFunctor` preserves chain
 homotopies. -/
@@ -155,13 +152,13 @@ def Functor.doldPuppeMapHomotopyEquiv (F : C ⥤ D) {K L : ChainComplex C ℕ}
 lemma Functor.doldPuppeMapHomotopyEquiv_hom (F : C ⥤ D) {K L : ChainComplex C ℕ}
     (e : HomotopyEquiv K L) :
     (F.doldPuppeMapHomotopyEquiv e).hom = F.doldPuppeFunctor.map e.hom := by
-  dsimp only [Functor.doldPuppeMapHomotopyEquiv, Functor.doldPuppeFunctor]; simp
+  dsimp only [Functor.doldPuppeMapHomotopyEquiv, Functor.doldPuppeFunctor, doldPuppe]; simp
 
 @[simp]
 lemma Functor.doldPuppeMapHomotopyEquiv_inv (F : C ⥤ D) {K L : ChainComplex C ℕ}
     (e : HomotopyEquiv K L) :
     (F.doldPuppeMapHomotopyEquiv e).inv = F.doldPuppeFunctor.map e.inv := by
-  dsimp only [Functor.doldPuppeMapHomotopyEquiv, Functor.doldPuppeFunctor]; simp
+  dsimp only [Functor.doldPuppeMapHomotopyEquiv, Functor.doldPuppeFunctor, doldPuppe]; simp
 
 /-- **Agreement with the classical additive derived functor** (Dold–Puppe, Satz 4.7): when
 `F : C ⥤ D` is additive, `F.doldPuppeFunctor.obj K` is canonically chain homotopy equivalent to
@@ -175,74 +172,78 @@ def Functor.doldPuppeFunctorAdditiveHomotopyEquiv (F : C ⥤ D) [F.Additive]
       (HomotopyEquiv.ofIso
         ((F.mapHomologicalComplex (.down ℕ)).mapIso ((η (C := C)).app K))))
 
+@[simp]
+lemma Functor.doldPuppeFunctorAdditiveHomotopyEquiv_hom (F : C ⥤ D) [F.Additive]
+    (K : ChainComplex C ℕ) :
+    (F.doldPuppeFunctorAdditiveHomotopyEquiv K).hom =
+      (alternatingFaceMapComplexCompMapHomologicalComplexIso F).inv.app (Γ.obj K) ≫
+        (F.mapHomologicalComplex (.down ℕ)).map (PInftyToN.app (Γ.obj K)) ≫
+          (F.mapHomologicalComplex (.down ℕ)).map ((η (C := C)).hom.app K) := by
+  simp [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, HomotopyEquiv.ofIso]
+  rfl
+
+@[simp]
+lemma Functor.doldPuppeFunctorAdditiveHomotopyEquiv_inv (F : C ⥤ D) [F.Additive]
+    (K : ChainComplex C ℕ) :
+    (F.doldPuppeFunctorAdditiveHomotopyEquiv K).inv =
+      (F.mapHomologicalComplex (.down ℕ)).map ((η (C := C)).inv.app K) ≫
+        (F.mapHomologicalComplex (.down ℕ)).map (inclusionN.app (Γ.obj K)) ≫
+          (alternatingFaceMapComplexCompMapHomologicalComplexIso F).hom.app (Γ.obj K) := by
+  simp [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, HomotopyEquiv.ofIso]
+  rfl
+
 /-- Naturality of `(F.doldPuppeFunctorAdditiveHomotopyEquiv K).hom` in `K`. -/
 lemma Functor.doldPuppeFunctorAdditiveHomotopyEquiv_hom_naturality (F : C ⥤ D) [F.Additive]
     {K L : ChainComplex C ℕ} (φ : K ⟶ L) :
     F.doldPuppeFunctor.map φ ≫ (F.doldPuppeFunctorAdditiveHomotopyEquiv L).hom =
       (F.doldPuppeFunctorAdditiveHomotopyEquiv K).hom ≫
         (F.mapHomologicalComplex (.down ℕ)).map φ := by
-  dsimp only [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, Functor.doldPuppeFunctor,
-    Functor.comp_map, HomotopyEquiv.trans, HomotopyEquiv.ofIso, HomotopyEquiv.symm]
-  simp only [Functor.mapHomotopyEquiv_hom, homotopyEquivNAlternatingFaceMapComplex_inv,
-    Functor.mapIso_hom]
-  have hnat :
-      (alternatingFaceMapComplex D).map (((SimplicialObject.whiskering C D).obj F).map (Γ.map φ)) ≫
-          ((alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.app (Γ.obj L)).hom =
-        ((alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.app (Γ.obj K)).hom ≫
-          (F.mapHomologicalComplex (.down ℕ)).map ((alternatingFaceMapComplex C).map (Γ.map φ)) :=
-    (alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.hom.naturality (Γ.map φ)
-  have hη : N.map (Γ.map φ) ≫ (η.app L).hom = (η.app K).hom ≫ φ :=
-    (η (C := C)).hom.naturality φ
-  rw [← Category.assoc, hnat, Category.assoc,
-    ← Category.assoc _ ((F.mapHomologicalComplex (.down ℕ)).map (PInftyToN.app (Γ.obj L))),
-    ← (F.mapHomologicalComplex (.down ℕ)).map_comp,
-    PInftyToN.naturality (Γ.map φ),
-    (F.mapHomologicalComplex (.down ℕ)).map_comp, Category.assoc, Category.assoc,
-    ← (F.mapHomologicalComplex (.down ℕ)).map_comp, hη,
-    (F.mapHomologicalComplex (.down ℕ)).map_comp, ← Category.assoc, ← Category.assoc]
-  simp only [Category.assoc]
+  have hsq : CommSq
+      ((alternatingFaceMapComplex D).map
+        (((SimplicialObject.whiskering C D).obj F).map (Γ.map φ)))
+      ((alternatingFaceMapComplexCompMapHomologicalComplexIso F).inv.app (Γ.obj K) ≫
+        (F.mapHomologicalComplex (.down ℕ)).map (PInftyToN.app (Γ.obj K) ≫ (η.hom.app K)))
+      ((alternatingFaceMapComplexCompMapHomologicalComplexIso F).inv.app (Γ.obj L) ≫
+        (F.mapHomologicalComplex (.down ℕ)).map (PInftyToN.app (Γ.obj L) ≫ (η.hom.app L)))
+      ((F.mapHomologicalComplex (.down ℕ)).map φ) :=
+    CommSq.vert_comp
+      ⟨(alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.hom.naturality (Γ.map φ)⟩
+      ((F.mapHomologicalComplex (.down ℕ)).map_commSq
+        (CommSq.vert_comp ⟨PInftyToN.naturality (Γ.map φ)⟩ ⟨(η (C := C)).hom.naturality φ⟩))
+  simpa [Functor.doldPuppeFunctor, doldPuppe, Category.assoc] using hsq.w
 
 /-- Naturality of `(F.doldPuppeFunctorAdditiveHomotopyEquiv K).inv` in `K`. -/
 lemma Functor.doldPuppeFunctorAdditiveHomotopyEquiv_inv_naturality (F : C ⥤ D) [F.Additive]
     {K L : ChainComplex C ℕ} (φ : K ⟶ L) :
     (F.mapHomologicalComplex (.down ℕ)).map φ ≫ (F.doldPuppeFunctorAdditiveHomotopyEquiv L).inv =
       (F.doldPuppeFunctorAdditiveHomotopyEquiv K).inv ≫ F.doldPuppeFunctor.map φ := by
-  dsimp only [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, Functor.doldPuppeFunctor,
-    Functor.comp_map, HomotopyEquiv.trans, HomotopyEquiv.ofIso, HomotopyEquiv.symm]
-  simp only [Functor.mapHomotopyEquiv_inv, homotopyEquivNAlternatingFaceMapComplex_hom,
-    Functor.mapIso_inv]
-  have hnat :
-      (F.mapHomologicalComplex (.down ℕ)).map ((alternatingFaceMapComplex C).map (Γ.map φ)) ≫
-          ((alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.app (Γ.obj L)).inv =
-        ((alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.app (Γ.obj K)).inv ≫
-          (alternatingFaceMapComplex D).map
-            (((SimplicialObject.whiskering C D).obj F).map (Γ.map φ)) :=
-    (alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.inv.naturality (Γ.map φ)
-  have hη : φ ≫ (η.app L).inv = (η.app K).inv ≫ N.map (Γ.map φ) :=
-    (η (C := C)).inv.naturality φ
-  rw [← Category.assoc, ← Category.assoc,
-    ← (F.mapHomologicalComplex (.down ℕ)).map_comp, hη,
-    (F.mapHomologicalComplex (.down ℕ)).map_comp, Category.assoc, Category.assoc,
-    ← Category.assoc _ ((F.mapHomologicalComplex (.down ℕ)).map (inclusionN.app (Γ.obj L))),
-    ← (F.mapHomologicalComplex (.down ℕ)).map_comp,
-    inclusionN.naturality (Γ.map φ),
-    (F.mapHomologicalComplex (.down ℕ)).map_comp, Category.assoc, Category.assoc, hnat,
-    ← Category.assoc]
+  have hsq : CommSq
+      ((F.mapHomologicalComplex (.down ℕ)).map φ)
+      ((F.mapHomologicalComplex (.down ℕ)).map ((η.inv.app K) ≫ inclusionN.app (Γ.obj K)) ≫
+        (alternatingFaceMapComplexCompMapHomologicalComplexIso F).hom.app (Γ.obj K))
+      ((F.mapHomologicalComplex (.down ℕ)).map ((η.inv.app L) ≫ inclusionN.app (Γ.obj L)) ≫
+        (alternatingFaceMapComplexCompMapHomologicalComplexIso F).hom.app (Γ.obj L))
+      ((alternatingFaceMapComplex D).map
+        (((SimplicialObject.whiskering C D).obj F).map (Γ.map φ))) :=
+    CommSq.vert_comp
+      ((F.mapHomologicalComplex (.down ℕ)).map_commSq
+        (CommSq.vert_comp ⟨(η (C := C)).inv.naturality φ⟩ ⟨inclusionN.naturality (Γ.map φ)⟩))
+      ⟨(alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.inv.naturality (Γ.map φ)⟩
+  simpa [Functor.doldPuppeFunctor, doldPuppe, Category.assoc] using hsq.w
 
 /-- Naturality of `(F.doldPuppeFunctorAdditiveHomotopyEquiv K).hom` in `F`. -/
 lemma NatTrans.doldPuppeFunctorAdditiveHomotopyEquiv_hom_naturality
     {F G : C ⥤ D} [F.Additive] [G.Additive] (α : F ⟶ G) (K : ChainComplex C ℕ) :
-    (NatTrans.doldPuppeFunctor α).app K ≫ (G.doldPuppeFunctorAdditiveHomotopyEquiv K).hom =
+    ((doldPuppe C D).map α).app K ≫ (G.doldPuppeFunctorAdditiveHomotopyEquiv K).hom =
       (F.doldPuppeFunctorAdditiveHomotopyEquiv K).hom ≫
         (α.mapHomologicalComplex (.down ℕ)).app K := by
   ext n
-  dsimp only [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, HomotopyEquiv.trans,
-    HomotopyEquiv.ofIso, HomotopyEquiv.symm, NatTrans.doldPuppeFunctor, Functor.doldPuppeFunctor,
-    Functor.comp_obj, Functor.whiskerLeft_app, Functor.whiskerRight_app]
-  simp only [HomologicalComplex.comp_f, alternatingFaceMapComplexCompMapHomologicalComplexIso,
-    Functor.mapHomotopyEquiv_hom, homotopyEquivNAlternatingFaceMapComplex_inv,
-    Functor.mapHomologicalComplex_map_f, Functor.mapIso_hom, NatTrans.mapHomologicalComplex_app_f,
-    AlgebraicTopology.alternatingFaceMapComplex_map_f]
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f]
+  dsimp only [doldPuppe, Functor.doldPuppeFunctor, Functor.comp_map,
+    Functor.whiskerLeft_app, Functor.whiskerRight_app]
+  simp only [Functor.doldPuppeFunctorAdditiveHomotopyEquiv_hom, HomologicalComplex.comp_f,
+    alternatingFaceMapComplexCompMapHomologicalComplexIso_inv_app_f,
+    Functor.mapHomologicalComplex_map_f, NatTrans.mapHomologicalComplex_app_f]
   dsimp
   simp only [Category.id_comp]
   rw [← α.naturality_assoc, ← α.naturality, Category.assoc]
@@ -253,15 +254,14 @@ lemma NatTrans.doldPuppeFunctorAdditiveHomotopyEquiv_inv_naturality
     (α.mapHomologicalComplex (.down ℕ)).app K ≫
         (G.doldPuppeFunctorAdditiveHomotopyEquiv K).inv =
       (F.doldPuppeFunctorAdditiveHomotopyEquiv K).inv ≫
-        (NatTrans.doldPuppeFunctor α).app K := by
+        ((doldPuppe C D).map α).app K := by
   ext n
-  dsimp only [Functor.doldPuppeFunctorAdditiveHomotopyEquiv, HomotopyEquiv.trans,
-    HomotopyEquiv.ofIso, HomotopyEquiv.symm, NatTrans.doldPuppeFunctor, Functor.doldPuppeFunctor,
-    Functor.comp_obj, Functor.whiskerLeft_app, Functor.whiskerRight_app]
-  simp only [HomologicalComplex.comp_f, alternatingFaceMapComplexCompMapHomologicalComplexIso,
-    Functor.mapHomotopyEquiv_inv, homotopyEquivNAlternatingFaceMapComplex_hom,
-    Functor.mapHomologicalComplex_map_f, Functor.mapIso_inv, NatTrans.mapHomologicalComplex_app_f,
-    AlgebraicTopology.alternatingFaceMapComplex_map_f]
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f]
+  dsimp only [doldPuppe, Functor.doldPuppeFunctor, Functor.comp_map,
+    Functor.whiskerLeft_app, Functor.whiskerRight_app]
+  simp only [Functor.doldPuppeFunctorAdditiveHomotopyEquiv_inv, HomologicalComplex.comp_f,
+    alternatingFaceMapComplexCompMapHomologicalComplexIso_hom_app_f,
+    Functor.mapHomologicalComplex_map_f, NatTrans.mapHomologicalComplex_app_f]
   dsimp
   simp only [Category.comp_id]
   rw [← α.naturality_assoc, ← α.naturality, Category.assoc]
@@ -282,74 +282,54 @@ def Functor.doldPuppeFunctorSingle₀HomotopyEquiv [HasZeroObject C] [HasZeroObj
   (HomotopyEquiv.ofIso ((alternatingFaceMapComplex D).mapIso isoSimp)).trans
     (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj X)).homotopyEquiv
 
+@[simp]
+lemma Functor.doldPuppeFunctorSingle₀HomotopyEquiv_hom [HasZeroObject C] [HasZeroObject D]
+    (F : C ⥤ D) (X : C) :
+    (F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom =
+      (alternatingFaceMapComplex D).map
+          (Functor.whiskerRight (Idempotents.DoldKan.Γ.single₀Iso.hom.app X) F) ≫
+        (alternatingFaceMapComplex D).map (Functor.constComp _ X F).hom ≫
+          AlgebraicTopology.AlternatingFaceMapComplex.ε.app
+            (SimplicialObject.Augmented.const.obj (F.obj X)) := by
+  simp only [Functor.doldPuppeFunctorSingle₀HomotopyEquiv, HomotopyEquiv.trans,
+    HomotopyEquiv.ofIso, Functor.mapIso_hom, Iso.trans_hom, Functor.map_comp,
+    SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_hom]
+  exact Category.assoc _ _ _
+
+@[simp]
+lemma Functor.doldPuppeFunctorSingle₀HomotopyEquiv_inv [HasZeroObject C] [HasZeroObject D]
+    (F : C ⥤ D) (X : C) :
+    (F.doldPuppeFunctorSingle₀HomotopyEquiv X).inv =
+      (ChainComplex.fromSingle₀Equiv
+          ((alternatingFaceMapComplex D).obj ((SimplicialObject.const D).obj (F.obj X)))
+          (F.obj X)).symm (𝟙 (F.obj X)) ≫
+        (alternatingFaceMapComplex D).map (Functor.constComp _ X F).inv ≫
+          (alternatingFaceMapComplex D).map
+            (Functor.whiskerRight (Idempotents.DoldKan.Γ.single₀Iso.inv.app X) F) := by
+  simp [Functor.doldPuppeFunctorSingle₀HomotopyEquiv, HomotopyEquiv.trans, HomotopyEquiv.ofIso]
+  rfl
+
 /-- Naturality of `(F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom` in `X`. -/
 lemma Functor.doldPuppeFunctorSingle₀HomotopyEquiv_hom_naturality
     [HasZeroObject C] [HasZeroObject D] (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
     F.doldPuppeFunctor.map ((ChainComplex.single₀ C).map f) ≫
         (F.doldPuppeFunctorSingle₀HomotopyEquiv Y).hom =
       (F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom ≫ (ChainComplex.single₀ D).map (F.map f) := by
-  have hΓ : Γ.map ((ChainComplex.single₀ C).map f) ≫ (Γ.single₀Iso.app Y).hom =
-      (Γ.single₀Iso.app X).hom ≫ (SimplicialObject.const C).map f :=
-    Γ.single₀Iso.hom.naturality f
-  have hconst :
-      (((SimplicialObject.whiskering C D).obj F).map ((SimplicialObject.const C).map f) ≫
-        (Functor.constComp _ Y F).hom) =
-      (Functor.constComp _ X F).hom ≫ (SimplicialObject.const D).map (F.map f) :=
-    (Functor.compConstIso _ F).symm.hom.naturality f
-  have hiso :
-      (((SimplicialObject.whiskering C D).obj F).map (Γ.map ((ChainComplex.single₀ C).map f)) ≫
-        ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app Y).hom ≫
-        (Functor.constComp _ Y F).hom) =
-      (((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app X).hom ≫
-        (Functor.constComp _ X F).hom) ≫ (SimplicialObject.const D).map (F.map f) := by
-    rw [← Category.assoc, ← Functor.map_comp, hΓ, Functor.map_comp, Category.assoc,
-      hconst, ← Category.assoc]
-  have hε :
-      (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map (F.map f)) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj Y)).homotopyEquiv.hom =
-        (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj X)).homotopyEquiv.hom ≫
-          (ChainComplex.single₀ D).map (F.map f) :=
-    AlgebraicTopology.AlternatingFaceMapComplex.ε.naturality
-      (SimplicialObject.Augmented.const.map (F.map f))
-  have h1 :
-      F.doldPuppeFunctor.map ((ChainComplex.single₀ C).map f) ≫
-          (F.doldPuppeFunctorSingle₀HomotopyEquiv Y).hom =
-        (alternatingFaceMapComplex D).map
-            (((SimplicialObject.whiskering C D).obj F).map
-                (Γ.map ((ChainComplex.single₀ C).map f)) ≫
-              ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app Y).hom ≫
-              (Functor.constComp _ Y F).hom) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj Y)).homotopyEquiv.hom := by
-    dsimp only [Functor.doldPuppeFunctorSingle₀HomotopyEquiv, Functor.doldPuppeFunctor,
-      Functor.comp_map, HomotopyEquiv.trans, HomotopyEquiv.ofIso, Functor.mapIso_hom,
-      Iso.trans_hom]
-    erw [← Category.assoc, ← (alternatingFaceMapComplex D).map_comp]
-    rfl
-  have h2 :
-      (alternatingFaceMapComplex D).map
-            (((SimplicialObject.whiskering C D).obj F).map
-                (Γ.map ((ChainComplex.single₀ C).map f)) ≫
-              ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app Y).hom ≫
-              (Functor.constComp _ Y F).hom) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj Y)).homotopyEquiv.hom =
-        ((alternatingFaceMapComplex D).map
-              (((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app X).hom ≫
-                (Functor.constComp _ X F).hom) ≫
-            (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map (F.map f))) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj Y)).homotopyEquiv.hom := by
-    rw [hiso, (alternatingFaceMapComplex D).map_comp]
-  have h3 :
-      ((alternatingFaceMapComplex D).map
-              (((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app X).hom ≫
-                (Functor.constComp _ X F).hom) ≫
-            (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map (F.map f))) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj Y)).homotopyEquiv.hom =
-        (F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom ≫
-          (ChainComplex.single₀ D).map (F.map f) := by
-    erw [Category.assoc]
-    refine (whisker_eq _ hε).trans ?_
-    exact (Category.assoc _ _ _).symm
-  exact h1.trans (h2.trans h3)
+  have hConst : CommSq
+      (((SimplicialObject.whiskering C D).obj F).map ((SimplicialObject.const C).map f))
+      (Functor.constComp _ X F).hom (Functor.constComp _ Y F).hom
+      ((SimplicialObject.const D).map (F.map f)) :=
+    ⟨by ext Δ; simp⟩
+  have hsq : CommSq _ _ _ ((ChainComplex.single₀ D).map (F.map f)) := CommSq.vert_comp
+    ((alternatingFaceMapComplex D).map_commSq
+      (((SimplicialObject.whiskering C D).obj F).map_commSq
+        ⟨Idempotents.DoldKan.Γ.single₀Iso.hom.naturality f⟩))
+    (CommSq.vert_comp
+      ((alternatingFaceMapComplex D).map_commSq hConst)
+      ⟨AlgebraicTopology.AlternatingFaceMapComplex.ε.naturality
+        (SimplicialObject.Augmented.const.map (F.map f))⟩)
+  simp only [Functor.doldPuppeFunctor, doldPuppe, Functor.doldPuppeFunctorSingle₀HomotopyEquiv_hom]
+  exact hsq.w
 
 /-- Naturality of `(F.doldPuppeFunctorSingle₀HomotopyEquiv X).inv` in `X`. -/
 lemma Functor.doldPuppeFunctorSingle₀HomotopyEquiv_inv_naturality
@@ -357,116 +337,47 @@ lemma Functor.doldPuppeFunctorSingle₀HomotopyEquiv_inv_naturality
     (ChainComplex.single₀ D).map (F.map f) ≫ (F.doldPuppeFunctorSingle₀HomotopyEquiv Y).inv =
       (F.doldPuppeFunctorSingle₀HomotopyEquiv X).inv ≫
         F.doldPuppeFunctor.map ((ChainComplex.single₀ C).map f) := by
-  have hΓ : (SimplicialObject.const C).map f ≫ (Γ.single₀Iso.app Y).inv =
-      (Γ.single₀Iso.app X).inv ≫ Γ.map ((ChainComplex.single₀ C).map f) :=
-    Γ.single₀Iso.inv.naturality f
-  have hconst :
-      ((SimplicialObject.const D).map (F.map f) ≫ (Functor.constComp _ Y F).inv) =
-        (Functor.constComp _ X F).inv ≫
-          ((SimplicialObject.whiskering C D).obj F).map ((SimplicialObject.const C).map f) :=
-    (Functor.compConstIso _ F).symm.inv.naturality f
-  have hiso :
-      ((SimplicialObject.const D).map (F.map f) ≫
-        (Functor.constComp _ Y F).inv ≫
-        ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app Y).inv) =
-      ((Functor.constComp _ X F).inv ≫
-        ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app X).inv) ≫
-        ((SimplicialObject.whiskering C D).obj F).map (Γ.map ((ChainComplex.single₀ C).map f)) := by
-    rw [← Category.assoc, hconst, Category.assoc, Category.assoc, ← Functor.map_comp,
-      hΓ, Functor.map_comp, ← Category.assoc]
-  have h1 :
-      (ChainComplex.single₀ D).map (F.map f) ≫ (F.doldPuppeFunctorSingle₀HomotopyEquiv Y).inv =
-        ((ChainComplex.single₀ D).map (F.map f) ≫
-            (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj Y)).homotopyEquiv.inv) ≫
-          (alternatingFaceMapComplex D).map
-            ((Functor.constComp _ Y F).inv ≫
-              ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app Y).inv) := by
-    exact (Category.assoc _ _ _).symm
-  have h2 :
-      ((ChainComplex.single₀ D).map (F.map f) ≫
-            (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj Y)).homotopyEquiv.inv) ≫
-          (alternatingFaceMapComplex D).map
-            ((Functor.constComp _ Y F).inv ≫
-              ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app Y).inv) =
-        (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj X)).homotopyEquiv.inv ≫
-          (alternatingFaceMapComplex D).map
-            ((SimplicialObject.const D).map (F.map f) ≫
-              (Functor.constComp _ Y F).inv ≫
-              ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app Y).inv) := by
-    refine (congrArg (· ≫ _)
-      (SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_inv_naturality
-        (F.map f))).trans ?_
-    erw [Category.assoc, (alternatingFaceMapComplex D).map_comp]
-    rfl
-  have h3 :
-      (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj X)).homotopyEquiv.inv ≫
-          (alternatingFaceMapComplex D).map
-            ((SimplicialObject.const D).map (F.map f) ≫
-              (Functor.constComp _ Y F).inv ≫
-              ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app Y).inv) =
-        (F.doldPuppeFunctorSingle₀HomotopyEquiv X).inv ≫
-          F.doldPuppeFunctor.map ((ChainComplex.single₀ C).map f) := by
-    erw [hiso, (alternatingFaceMapComplex D).map_comp, ← Category.assoc]
-    rfl
-  exact h1.trans (h2.trans h3)
+  have hConst : CommSq
+      ((SimplicialObject.const D).map (F.map f))
+      (Functor.constComp _ X F).inv (Functor.constComp _ Y F).inv
+      (((SimplicialObject.whiskering C D).obj F).map ((SimplicialObject.const C).map f)) :=
+    ⟨by ext Δ; simp⟩
+  have hsq : CommSq ((ChainComplex.single₀ D).map (F.map f)) _ _ _ := CommSq.vert_comp
+    ⟨SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_inv_naturality (F.map f)⟩
+    (CommSq.vert_comp
+      ((alternatingFaceMapComplex D).map_commSq hConst)
+      ((alternatingFaceMapComplex D).map_commSq
+        (((SimplicialObject.whiskering C D).obj F).map_commSq
+          ⟨Idempotents.DoldKan.Γ.single₀Iso.inv.naturality f⟩)))
+  simp only [Functor.doldPuppeFunctor, doldPuppe, Functor.doldPuppeFunctorSingle₀HomotopyEquiv_inv]
+  exact hsq.w
 
 /-- Naturality of `(F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom` in `F`. -/
 lemma NatTrans.doldPuppeFunctorSingle₀HomotopyEquiv_hom_naturality
     [HasZeroObject C] [HasZeroObject D] {F G : C ⥤ D} (α : F ⟶ G) (X : C) :
-    (NatTrans.doldPuppeFunctor α).app ((ChainComplex.single₀ C).obj X) ≫
+    ((doldPuppe C D).map α).app ((ChainComplex.single₀ C).obj X) ≫
         (G.doldPuppeFunctorSingle₀HomotopyEquiv X).hom =
       (F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom ≫
         (ChainComplex.single₀ D).map (α.app X) := by
-  have hiso :
-      (((SimplicialObject.whiskering C D).map α).app (Γ.obj ((ChainComplex.single₀ C).obj X)) ≫
-        ((SimplicialObject.whiskering C D).obj G).map (Γ.single₀Iso.app X).hom ≫
-        (Functor.constComp _ X G).hom) =
-      (((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app X).hom ≫
-        (Functor.constComp _ X F).hom) ≫ (SimplicialObject.const D).map (α.app X) := by
-    ext Δ; dsimp; simp [α.naturality]
-  have hε :
-      (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map (α.app X)) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (G.obj X)).homotopyEquiv.hom =
-        (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj X)).homotopyEquiv.hom ≫
-          (ChainComplex.single₀ D).map (α.app X) :=
-    AlgebraicTopology.AlternatingFaceMapComplex.ε.naturality
-      (SimplicialObject.Augmented.const.map (α.app X))
-  have h1 :
-      (NatTrans.doldPuppeFunctor α).app ((ChainComplex.single₀ C).obj X) ≫
-          (G.doldPuppeFunctorSingle₀HomotopyEquiv X).hom =
-        (alternatingFaceMapComplex D).map
-            (((SimplicialObject.whiskering C D).map α).app
-                (Γ.obj ((ChainComplex.single₀ C).obj X)) ≫
-              ((SimplicialObject.whiskering C D).obj G).map (Γ.single₀Iso.app X).hom ≫
-              (Functor.constComp _ X G).hom) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (G.obj X)).homotopyEquiv.hom := by
-    erw [← Category.assoc, ← (alternatingFaceMapComplex D).map_comp]
-    rfl
-  have h2 :
-      (alternatingFaceMapComplex D).map
-            (((SimplicialObject.whiskering C D).map α).app
-                (Γ.obj ((ChainComplex.single₀ C).obj X)) ≫
-              ((SimplicialObject.whiskering C D).obj G).map (Γ.single₀Iso.app X).hom ≫
-              (Functor.constComp _ X G).hom) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (G.obj X)).homotopyEquiv.hom =
-        ((alternatingFaceMapComplex D).map
-              (((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app X).hom ≫
-                (Functor.constComp _ X F).hom) ≫
-            (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map (α.app X))) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (G.obj X)).homotopyEquiv.hom := by
-    rw [hiso, (alternatingFaceMapComplex D).map_comp]
-  have h3 :
-      ((alternatingFaceMapComplex D).map
-              (((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app X).hom ≫
-                (Functor.constComp _ X F).hom) ≫
-            (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map (α.app X))) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const (G.obj X)).homotopyEquiv.hom =
-        (F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom ≫
-          (ChainComplex.single₀ D).map (α.app X) := by
-    erw [Category.assoc]
-    refine (whisker_eq _ hε).trans ?_
-    exact (Category.assoc _ _ _).symm
-  exact h1.trans (h2.trans h3)
+  have hsq1 : CommSq
+      (((SimplicialObject.whiskering C D).map α).app (Γ.obj ((ChainComplex.single₀ C).obj X)))
+      (Functor.whiskerRight (Idempotents.DoldKan.Γ.single₀Iso.hom.app X) F)
+      (Functor.whiskerRight (Idempotents.DoldKan.Γ.single₀Iso.hom.app X) G)
+      (((SimplicialObject.whiskering C D).map α).app ((SimplicialObject.const C).obj X)) :=
+    ⟨by ext Δ; dsimp; simp [α.naturality]⟩
+  have hsq2 : CommSq
+      (((SimplicialObject.whiskering C D).map α).app ((SimplicialObject.const C).obj X))
+      (Functor.constComp _ X F).hom (Functor.constComp _ X G).hom
+      ((SimplicialObject.const D).map (α.app X)) :=
+    ⟨by ext Δ; simp⟩
+  have hsq : CommSq _ _ _ ((ChainComplex.single₀ D).map (α.app X)) := CommSq.vert_comp
+    ((alternatingFaceMapComplex D).map_commSq hsq1)
+    (CommSq.vert_comp
+      ((alternatingFaceMapComplex D).map_commSq hsq2)
+      ⟨AlgebraicTopology.AlternatingFaceMapComplex.ε.naturality
+        (SimplicialObject.Augmented.const.map (α.app X))⟩)
+  simp only [doldPuppe, Functor.comp_map, Functor.doldPuppeFunctorSingle₀HomotopyEquiv_hom]
+  exact hsq.w
 
 /-- Naturality of `(F.doldPuppeFunctorSingle₀HomotopyEquiv X).inv` in `F`. -/
 lemma NatTrans.doldPuppeFunctorSingle₀HomotopyEquiv_inv_naturality
@@ -474,51 +385,25 @@ lemma NatTrans.doldPuppeFunctorSingle₀HomotopyEquiv_inv_naturality
     (ChainComplex.single₀ D).map (α.app X) ≫
         (G.doldPuppeFunctorSingle₀HomotopyEquiv X).inv =
       (F.doldPuppeFunctorSingle₀HomotopyEquiv X).inv ≫
-        (NatTrans.doldPuppeFunctor α).app ((ChainComplex.single₀ C).obj X) := by
-  have hiso :
-      ((SimplicialObject.const D).map (α.app X) ≫
-        (Functor.constComp _ X G).inv ≫
-        ((SimplicialObject.whiskering C D).obj G).map (Γ.single₀Iso.app X).inv) =
-      ((Functor.constComp _ X F).inv ≫
-        ((SimplicialObject.whiskering C D).obj F).map (Γ.single₀Iso.app X).inv) ≫
-        ((SimplicialObject.whiskering C D).map α).app
-          (Γ.obj ((ChainComplex.single₀ C).obj X)) := by
-    ext Δ; dsimp; simp [α.naturality]
-  have h1 :
-      (ChainComplex.single₀ D).map (α.app X) ≫ (G.doldPuppeFunctorSingle₀HomotopyEquiv X).inv =
-        ((ChainComplex.single₀ D).map (α.app X) ≫
-            (SimplicialObject.Augmented.ExtraDegeneracy.const (G.obj X)).homotopyEquiv.inv) ≫
-          (alternatingFaceMapComplex D).map
-            ((Functor.constComp _ X G).inv ≫
-              ((SimplicialObject.whiskering C D).obj G).map (Γ.single₀Iso.app X).inv) :=
-    (Category.assoc _ _ _).symm
-  have h2 :
-      ((ChainComplex.single₀ D).map (α.app X) ≫
-            (SimplicialObject.Augmented.ExtraDegeneracy.const (G.obj X)).homotopyEquiv.inv) ≫
-          (alternatingFaceMapComplex D).map
-            ((Functor.constComp _ X G).inv ≫
-              ((SimplicialObject.whiskering C D).obj G).map (Γ.single₀Iso.app X).inv) =
-        (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj X)).homotopyEquiv.inv ≫
-          (alternatingFaceMapComplex D).map
-            ((SimplicialObject.const D).map (α.app X) ≫
-              (Functor.constComp _ X G).inv ≫
-              ((SimplicialObject.whiskering C D).obj G).map (Γ.single₀Iso.app X).inv) := by
-    refine (congrArg (· ≫ _)
-      (SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_inv_naturality
-        (α.app X))).trans ?_
-    erw [Category.assoc, (alternatingFaceMapComplex D).map_comp]
-    rfl
-  have h3 :
-      (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj X)).homotopyEquiv.inv ≫
-          (alternatingFaceMapComplex D).map
-            ((SimplicialObject.const D).map (α.app X) ≫
-              (Functor.constComp _ X G).inv ≫
-              ((SimplicialObject.whiskering C D).obj G).map (Γ.single₀Iso.app X).inv) =
-        (F.doldPuppeFunctorSingle₀HomotopyEquiv X).inv ≫
-          (NatTrans.doldPuppeFunctor α).app ((ChainComplex.single₀ C).obj X) := by
-    erw [hiso, (alternatingFaceMapComplex D).map_comp, ← Category.assoc]
-    rfl
-  exact h1.trans (h2.trans h3)
+        ((doldPuppe C D).map α).app ((ChainComplex.single₀ C).obj X) := by
+  have hsq1 : CommSq
+      ((SimplicialObject.const D).map (α.app X))
+      (Functor.constComp _ X F).inv (Functor.constComp _ X G).inv
+      (((SimplicialObject.whiskering C D).map α).app ((SimplicialObject.const C).obj X)) :=
+    ⟨by ext Δ; simp⟩
+  have hsq2 : CommSq
+      (((SimplicialObject.whiskering C D).map α).app ((SimplicialObject.const C).obj X))
+      (Functor.whiskerRight (Idempotents.DoldKan.Γ.single₀Iso.inv.app X) F)
+      (Functor.whiskerRight (Idempotents.DoldKan.Γ.single₀Iso.inv.app X) G)
+      (((SimplicialObject.whiskering C D).map α).app (Γ.obj ((ChainComplex.single₀ C).obj X))) :=
+    ⟨by ext Δ; dsimp; simp [α.naturality]⟩
+  have hsq : CommSq ((ChainComplex.single₀ D).map (α.app X)) _ _ _ := CommSq.vert_comp
+    ⟨SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_inv_naturality (α.app X)⟩
+    (CommSq.vert_comp
+      ((alternatingFaceMapComplex D).map_commSq hsq1)
+      ((alternatingFaceMapComplex D).map_commSq hsq2))
+  simp only [doldPuppe, Functor.comp_map, Functor.doldPuppeFunctorSingle₀HomotopyEquiv_inv]
+  exact hsq.w
 
 /-- **Constant non-additive functor law**: for any object `B : D` and any chain complex
 `K : ChainComplex C ℕ` (including `K = 0`), `((Functor.const C).obj B).doldPuppeFunctor.obj K` is
@@ -533,10 +418,27 @@ def Functor.doldPuppeFunctorConstHomotopyEquiv [HasZeroObject D] (B : D) (K : Ch
   (HomotopyEquiv.ofIso ((alternatingFaceMapComplex D).mapIso isoSimp)).trans
     (SimplicialObject.Augmented.ExtraDegeneracy.const B).homotopyEquiv
 
-omit [Preadditive C] [HasFiniteCoproducts C] [IsIdempotentComplete C] [Preadditive D] in
-private lemma whiskering_const_map (B : D) {X Y : SimplicialObject C} (f : X ⟶ Y) :
-    ((SimplicialObject.whiskering C D).obj ((Functor.const C).obj B)).map f = 𝟙 _ := by
-  ext Δ; rfl
+@[simp]
+lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom [HasZeroObject D]
+    (B : D) (K : ChainComplex C ℕ) :
+    (Functor.doldPuppeFunctorConstHomotopyEquiv B K).hom =
+      (alternatingFaceMapComplex D).map
+          ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).hom.app B) ≫
+        AlgebraicTopology.AlternatingFaceMapComplex.ε.app
+          (SimplicialObject.Augmented.const.obj B) := by
+  simp [Functor.doldPuppeFunctorConstHomotopyEquiv, HomotopyEquiv.trans, HomotopyEquiv.ofIso]
+  rfl
+
+@[simp]
+lemma Functor.doldPuppeFunctorConstHomotopyEquiv_inv [HasZeroObject D]
+    (B : D) (K : ChainComplex C ℕ) :
+    (Functor.doldPuppeFunctorConstHomotopyEquiv B K).inv =
+      (ChainComplex.fromSingle₀Equiv
+          ((alternatingFaceMapComplex D).obj ((SimplicialObject.const D).obj B)) B).symm (𝟙 B) ≫
+        (alternatingFaceMapComplex D).map
+          ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).inv.app B) := by
+  simp [Functor.doldPuppeFunctorConstHomotopyEquiv, HomotopyEquiv.trans, HomotopyEquiv.ofIso]
+  rfl
 
 /-- Naturality of `(Functor.doldPuppeFunctorConstHomotopyEquiv B K).hom` in `K`. -/
 lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom_naturality [HasZeroObject D]
@@ -544,11 +446,9 @@ lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom_naturality [HasZeroObject D
     ((Functor.const C).obj B).doldPuppeFunctor.map φ ≫
         (Functor.doldPuppeFunctorConstHomotopyEquiv B L).hom =
       (Functor.doldPuppeFunctorConstHomotopyEquiv B K).hom := by
-  dsimp only [Functor.doldPuppeFunctorConstHomotopyEquiv, Functor.doldPuppeFunctor,
-    Functor.comp_map, HomotopyEquiv.trans, HomotopyEquiv.ofIso, Functor.mapIso_hom]
-  rw [← Category.assoc, ← (alternatingFaceMapComplex D).map_comp,
-    whiskering_const_map B (Γ.map φ), Category.id_comp]
-  rfl
+  ext
+  rw [HomologicalComplex.comp_f]
+  simp [Functor.doldPuppeFunctor, doldPuppe, Functor.constCompWhiskeringLeftIso]
 
 /-- Naturality of `(Functor.doldPuppeFunctorConstHomotopyEquiv B K).inv` in `K`. -/
 lemma Functor.doldPuppeFunctorConstHomotopyEquiv_inv_naturality [HasZeroObject D]
@@ -556,102 +456,44 @@ lemma Functor.doldPuppeFunctorConstHomotopyEquiv_inv_naturality [HasZeroObject D
     (Functor.doldPuppeFunctorConstHomotopyEquiv B K).inv ≫
         ((Functor.const C).obj B).doldPuppeFunctor.map φ =
       (Functor.doldPuppeFunctorConstHomotopyEquiv B L).inv := by
-  dsimp only [Functor.doldPuppeFunctorConstHomotopyEquiv, Functor.doldPuppeFunctor,
-    Functor.comp_map, HomotopyEquiv.trans, HomotopyEquiv.ofIso, Functor.mapIso_inv]
-  rw [Category.assoc, ← (alternatingFaceMapComplex D).map_comp,
-    whiskering_const_map B (Γ.map φ), Category.comp_id]
-  rfl
+  ext
+  simp [Functor.doldPuppeFunctor, doldPuppe]
 
 /-- Naturality of `(Functor.doldPuppeFunctorConstHomotopyEquiv B K).hom` in `B`. -/
 lemma Functor.doldPuppeFunctorConstHomotopyEquiv_hom_naturality_left [HasZeroObject D]
     {B B' : D} (g : B ⟶ B') (K : ChainComplex C ℕ) :
-    (NatTrans.doldPuppeFunctor ((Functor.const C).map g)).app K ≫
+    ((doldPuppe C D).map ((Functor.const C).map g)).app K ≫
         (Functor.doldPuppeFunctorConstHomotopyEquiv B' K).hom =
       (Functor.doldPuppeFunctorConstHomotopyEquiv B K).hom ≫ (ChainComplex.single₀ D).map g := by
-  have hiso :
-      (((SimplicialObject.whiskering C D).map ((Functor.const C).map g)).app (Γ.obj K) ≫
-        ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B').hom) =
-      ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B).hom ≫
-        (SimplicialObject.const D).map g :=
-    (Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).hom.naturality g
-  have hε :
-      (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map g) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const B').homotopyEquiv.hom =
-        (SimplicialObject.Augmented.ExtraDegeneracy.const B).homotopyEquiv.hom ≫
-          (ChainComplex.single₀ D).map g :=
-    AlgebraicTopology.AlternatingFaceMapComplex.ε.naturality
-      (SimplicialObject.Augmented.const.map g)
-  have h1 :
-      (NatTrans.doldPuppeFunctor ((Functor.const C).map g)).app K ≫
-          (Functor.doldPuppeFunctorConstHomotopyEquiv B' K).hom =
-        (alternatingFaceMapComplex D).map
-            (((SimplicialObject.whiskering C D).map ((Functor.const C).map g)).app (Γ.obj K) ≫
-              ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B').hom) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const B').homotopyEquiv.hom := by
-    erw [← Category.assoc, ← (alternatingFaceMapComplex D).map_comp]
-    rfl
-  have h2 :
-      (alternatingFaceMapComplex D).map
-            (((SimplicialObject.whiskering C D).map ((Functor.const C).map g)).app (Γ.obj K) ≫
-              ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B').hom) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const B').homotopyEquiv.hom =
-        ((alternatingFaceMapComplex D).map
-              ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B).hom ≫
-            (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map g)) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const B').homotopyEquiv.hom := by
-    rw [hiso, (alternatingFaceMapComplex D).map_comp]
-  have h3 :
-      ((alternatingFaceMapComplex D).map
-              ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B).hom ≫
-            (alternatingFaceMapComplex D).map ((SimplicialObject.const D).map g)) ≫
-          (SimplicialObject.Augmented.ExtraDegeneracy.const B').homotopyEquiv.hom =
-        (Functor.doldPuppeFunctorConstHomotopyEquiv B K).hom ≫ (ChainComplex.single₀ D).map g := by
-    erw [Category.assoc]
-    refine (whisker_eq _ hε).trans ?_
-    exact (Category.assoc _ _ _).symm
-  exact h1.trans (h2.trans h3)
+  have hConst : CommSq
+      (((SimplicialObject.whiskering C D).map ((Functor.const C).map g)).app (Γ.obj K))
+      ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).hom.app B)
+      ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).hom.app B')
+      ((SimplicialObject.const D).map g) :=
+    ⟨by ext Δ; simp⟩
+  have hsq : CommSq _ _ _ ((ChainComplex.single₀ D).map g) := CommSq.vert_comp
+    ((alternatingFaceMapComplex D).map_commSq hConst)
+    ⟨AlgebraicTopology.AlternatingFaceMapComplex.ε.naturality
+      (SimplicialObject.Augmented.const.map g)⟩
+  simp only [doldPuppe, Functor.comp_map, Functor.doldPuppeFunctorConstHomotopyEquiv_hom]
+  exact hsq.w
 
 /-- Naturality of `(Functor.doldPuppeFunctorConstHomotopyEquiv B K).inv` in `B`. -/
 lemma Functor.doldPuppeFunctorConstHomotopyEquiv_inv_naturality_left [HasZeroObject D]
     {B B' : D} (g : B ⟶ B') (K : ChainComplex C ℕ) :
     (ChainComplex.single₀ D).map g ≫ (Functor.doldPuppeFunctorConstHomotopyEquiv B' K).inv =
       (Functor.doldPuppeFunctorConstHomotopyEquiv B K).inv ≫
-        (NatTrans.doldPuppeFunctor ((Functor.const C).map g)).app K := by
-  have hiso :
-      ((SimplicialObject.const D).map g ≫
-        ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B').inv) =
-      ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B).inv ≫
-        ((SimplicialObject.whiskering C D).map ((Functor.const C).map g)).app (Γ.obj K) :=
-    (Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).inv.naturality g
-  have h1 :
-      (ChainComplex.single₀ D).map g ≫ (Functor.doldPuppeFunctorConstHomotopyEquiv B' K).inv =
-        ((ChainComplex.single₀ D).map g ≫
-            (SimplicialObject.Augmented.ExtraDegeneracy.const B').homotopyEquiv.inv) ≫
-          (alternatingFaceMapComplex D).map
-            ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B').inv :=
-    (Category.assoc _ _ _).symm
-  have h2 :
-      ((ChainComplex.single₀ D).map g ≫
-            (SimplicialObject.Augmented.ExtraDegeneracy.const B').homotopyEquiv.inv) ≫
-          (alternatingFaceMapComplex D).map
-            ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B').inv =
-        (SimplicialObject.Augmented.ExtraDegeneracy.const B).homotopyEquiv.inv ≫
-          (alternatingFaceMapComplex D).map
-            ((SimplicialObject.const D).map g ≫
-              ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B').inv) := by
-    refine (congrArg (· ≫ _)
-      (SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_inv_naturality g)).trans ?_
-    erw [Category.assoc, (alternatingFaceMapComplex D).map_comp]
-    rfl
-  have h3 :
-      (SimplicialObject.Augmented.ExtraDegeneracy.const B).homotopyEquiv.inv ≫
-          (alternatingFaceMapComplex D).map
-            ((SimplicialObject.const D).map g ≫
-              ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).app B').inv) =
-        (Functor.doldPuppeFunctorConstHomotopyEquiv B K).inv ≫
-          (NatTrans.doldPuppeFunctor ((Functor.const C).map g)).app K := by
-    erw [hiso, (alternatingFaceMapComplex D).map_comp, ← Category.assoc]
-    rfl
-  exact h1.trans (h2.trans h3)
+        ((doldPuppe C D).map ((Functor.const C).map g)).app K := by
+  have hConst : CommSq
+      ((SimplicialObject.const D).map g)
+      ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).inv.app B)
+      ((Functor.constCompWhiskeringLeftIso _ (Γ.obj K)).inv.app B')
+      (((SimplicialObject.whiskering C D).map ((Functor.const C).map g)).app (Γ.obj K)) :=
+    ⟨by ext Δ; simp⟩
+  have hsq : CommSq ((ChainComplex.single₀ D).map g) _ _ _ := CommSq.vert_comp
+    ⟨SimplicialObject.Augmented.ExtraDegeneracy.const_homotopyEquiv_inv_naturality g⟩
+    ((alternatingFaceMapComplex D).map_commSq hConst)
+  simp only [doldPuppe, Functor.comp_map, Functor.doldPuppeFunctorConstHomotopyEquiv_inv]
+  exact hsq.w
 
 end CategoryTheory

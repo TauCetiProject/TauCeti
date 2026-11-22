@@ -25,6 +25,7 @@ namespace SimplexCategory
 
 /-- The zeroth morphism in the enumeration `toMk₁ : Fin (n + 2) → (⦋n⦌ ⟶ ⦋1⦌)` is the constant
 morphism with value `1`. -/
+@[simp]
 lemma toMk₁_zero (n : ℕ) :
     toMk₁ (0 : Fin (n + 2)) = const ⦋n⦌ ⦋1⦌ 1 := by
   refine ConcreteCategory.hom_ext _ _ fun k ↦ ?_
@@ -33,6 +34,7 @@ lemma toMk₁_zero (n : ℕ) :
 
 /-- The last morphism in the enumeration `toMk₁ : Fin (n + 2) → (⦋n⦌ ⟶ ⦋1⦌)` is the constant
 morphism with value `0`. -/
+@[simp]
 lemma toMk₁_last (n : ℕ) :
     toMk₁ (Fin.last (n + 1)) = const ⦋n⦌ ⦋1⦌ 0 := by
   refine ConcreteCategory.hom_ext _ _ fun k ↦ ?_

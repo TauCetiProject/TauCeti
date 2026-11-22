@@ -31,7 +31,8 @@ coproducts.
 ## Main definitions and results
 
 * `CategoryTheory.SimplicialObject.cylinder`: the cylinder endofunctor on `SimplicialObject C`,
-  characterized by the universal property of its summand inclusions `cylinderι` and `cylinderDesc`.
+  characterized by the colimit witness `isColimitCylinderObj`, its summand inclusions `cylinderι`,
+  and `cylinderDesc`.
 * `CategoryTheory.SimplicialObject.cylinderι₀`, `CategoryTheory.SimplicialObject.cylinderι₁`,
   `CategoryTheory.SimplicialObject.cylinderπ`: the two endpoint inclusions into the cylinder and
   their common retraction.
@@ -93,6 +94,12 @@ map `α : m.unop ⟶ ⦋1⦌`. -/
 def cylinderι (X : SimplicialObject C) {m : SimplexCategoryᵒᵖ} (α : m.unop ⟶ ⦋1⦌) :
     X.obj m ⟶ ((cylinder C).obj X).obj m :=
   Sigma.ι (fun _ : (m.unop ⟶ ⦋1⦌) ↦ X.obj m) α
+
+/-- The object `((cylinder C).obj X).obj m` is the coproduct of copies of `X.obj m` indexed by
+morphisms `α : m.unop ⟶ ⦋1⦌`, with coproduct inclusions `cylinderι X`. -/
+def isColimitCylinderObj (X : SimplicialObject C) (m : SimplexCategoryᵒᵖ) :
+    IsColimit (Cofan.mk (((cylinder C).obj X).obj m) (cylinderι X)) :=
+  coproductIsCoproduct _
 
 /-- Universal morphism out of `((cylinder C).obj X).obj m` determined by its components on each
 summand `α : m.unop ⟶ ⦋1⦌`. -/
