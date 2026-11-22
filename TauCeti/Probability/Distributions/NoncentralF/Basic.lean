@@ -263,7 +263,7 @@ theorem measurable_noncentralFMeasure :
       (ProbabilityMeasure.measurable_fun_prod.comp (hU.prodMk hV)).subtype_mk
     have hmap := TauCeti.MeasureTheory.measurable_probabilityMeasure_map_of_measurable_uncurry
       (f := fun (p : ℝ × ℝ × ℝ≥0) (z : ℝ × ℝ) ↦ z.1 / p.1 / (z.2 / p.2.1)) (by fun_prop)
-    exact measurable_subtype_coe.comp (hmap.comp (hprod.prodMk measurable_id))
+    exact measurable_subtypeVal.comp (hmap.comp (hprod.prodMk measurable_id))
   have hvalid : MeasurableSet {p : ℝ × ℝ × ℝ≥0 | 0 < p.1 ∧ 0 < p.2.1} :=
     (measurableSet_lt measurable_const measurable_fst).inter
       (measurableSet_lt measurable_const measurable_snd.fst)

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.Compactification.OnePoint.Basic
 import TauCeti.Topology.Spectral.LocallySpectral
-import Mathlib.Topology.Compactification.OnePoint.Basic
-import Mathlib.Topology.InductiveDimension.Classes
+import TauCeti.Topology.Spectral.PatchCriterion
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -85,13 +85,11 @@ example : IsLocallySpectralMap (Prod.fst : ℕ × ℕ → ℕ) ∧ ¬ IsSpectral
 spectral, so agreement of the two notions needs a spectral source even over a spectral target. -/
 example : IsLocallySpectralMap ((↑) : ℕ → OnePoint ℕ) ∧ ¬ IsSpectralMap ((↑) : ℕ → OnePoint ℕ) := by
   refine ⟨.of_forall_exists fun n ↦ ⟨{n}, {(n : OnePoint ℕ)}, mapsTo_singleton.mpr rfl,
-    isOpen_discrete _, ?_, rfl, inferInstance, continuous_of_discreteTopology,
-    fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩
-  · rw [← image_singleton]
-    exact OnePoint.isOpen_image_coe.mpr (isOpen_discrete _)
-  · have := h.isCompact_preimage_of_isOpen isOpen_univ isCompact_univ
-    rw [preimage_univ, isCompact_iff_finite] at this
-    exact infinite_univ this
+    isOpen_discrete _, OnePoint.isOpen_singleton_coe.mpr (isOpen_discrete _), rfl, inferInstance,
+    continuous_of_discreteTopology, fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩
+  have := h.isCompact_preimage_of_isOpen isOpen_univ isCompact_univ
+  rw [preimage_univ, isCompact_iff_finite] at this
+  exact infinite_univ this
 
 /-- Composition of locally spectral maps needs a locally spectral middle space. Let
 `f : OnePoint ℕ → ℝ` send `n` to `1 / (n + 1)` and the point at infinity to `0`, and let
@@ -121,11 +119,8 @@ example : ∃ (f : OnePoint ℕ → ℝ) (g : ℝ → Prop),
     obtain rfl := hR U hUo hUs
     exact ⟨continuous_of_discreteTopology, fun _ _ _ ↦ (toFinite _).isCompact⟩
   refine ⟨f, g, hf, hg, fun h ↦ ?_⟩
-  -- `OnePoint ℕ` is compact, Hausdorff and totally disconnected, so its clopen subsets form a basis
-  -- of compact opens.
-  have : SpectralSpace (OnePoint ℕ) :=
-    { toPrespectralSpace := .of_isTopologicalBasis isTopologicalBasis_isClopen
-        fun _ hU ↦ hU.isClosed.isCompact }
+  -- `OnePoint ℕ` is compact, Hausdorff and zero-dimensional, hence spectral.
+  have : SpectralSpace (OnePoint ℕ) := spectralSpace_of_zeroDimensionalSpace (OnePoint ℕ)
   have : SpectralSpace Prop := spectralSpace_prop
   have hpre : g ∘ f ⁻¹' {True} = range ((↑) : ℕ → OnePoint ℕ) := by
     ext x

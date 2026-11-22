@@ -58,6 +58,10 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
   `finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex` (in the same
   namespace): its tangent space is the intersection of the tangent spaces, of dimension
   `ind a - ind b`.
+* `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_isManifold`: an
+  intersection that is transverse at each of its points is a smooth manifold of dimension
+  `ind a - ind b`.
+
 * `TauCeti.IsAdaptedPseudoGradient.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet`:
   along a transverse trajectory joining distinct critical points, the Morse index drops strictly.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`: the Morse–Smale condition, with
@@ -76,6 +80,14 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
   most one critical point has an index other than `0` and `n`, in particular if none has, every
   adapted pseudo-gradient is Morse–Smale.
 
+The chart, tangent-space, dimension and manifold results
+`exists_unstableSet_inter_stableSet_chart`, `span_mtangentConeAt_unstableSet_inter_stableSet`,
+`finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex` and
+`exists_unstableSet_inter_stableSet_isManifold` (in the namespace
+`TauCeti.IsAdaptedPseudoGradient`) allow the unstable manifold to be taken for one pseudo-gradient
+`X₀`, adapted to `f₀`, and the stable manifold for another, `X₁`, adapted to `f₁`, as for
+continuation maps.
+
 ## References
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
@@ -92,9 +104,11 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
-  {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {a b y : M}
+  {f f₀ f₁ : M → ℝ} {X X₀ X₁ : (x : M) → TangentSpace 𝓘(ℝ, E) x} {a b y : M}
 
 namespace IsAdaptedPseudoGradient
+
+section TangentSpaces
 
 variable (hX : IsAdaptedPseudoGradient f X)
 include hX
@@ -191,23 +205,26 @@ theorem mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet (hab : a ≠ b)
       (by simp [hX.flow_apply_of_mfderiv_eq_zero h0])
   exact zero_ne_one h01
 
-/-- **Transverse unstable and stable manifolds meet in an embedded submanifold.** If the unstable
-manifold of a critical point `a` and the stable manifold of a critical point `b` meet transversally
-at `y`, then near `y` a chart of the maximal atlas flattens their intersection, the set of points
-on trajectories from `a` to `b`, onto the intersection of their tangent spaces. -/
-theorem exists_unstableSet_inter_stableSet_chart (hf : IsMorse 𝓘(ℝ, E) f)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
-    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤) :
+omit hX in
+/-- **Transverse unstable and stable manifolds meet in an embedded submanifold.** Let `X₀` and
+`X₁` be pseudo-gradients adapted to `f₀` and `f₁`, with `f₀` Morse. If the unstable manifold of `a`
+for `X₀` and the stable manifold of `b` for `X₁` meet transversally at `y`, then near `y` a chart of
+the maximal atlas flattens their intersection onto the intersection of their tangent spaces. For
+`X₀ = X₁` this intersection is the set of points on trajectories from `a` to `b`. -/
+theorem exists_unstableSet_inter_stableSet_chart (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
+    (hX₁ : IsAdaptedPseudoGradient f₁ X₁) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (hy : y ∈ hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b)
+    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) = ⊤) :
     ∃ q : OpenPartialHomeomorph M E, y ∈ q.source ∧
       q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
-      IsSliceChart q ((Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊓
-        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) :
-          Submodule ℝ E) : Set E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) := by
+      IsSliceChart q ((Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) :
+          Submodule ℝ E) : Set E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) := by
   obtain ⟨L₁, q₁, -, hy₁, hq₁, h₁⟩ :=
-    hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
+    hX₀.exists_isSliceChart_unstableSet hf₀ (hX₀.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
   obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ :=
-    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
+    hX₁.exists_isSliceChart_stableSet (hX₁.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
   exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
@@ -217,21 +234,24 @@ theorem exists_unstableSet_inter_stableSet_chart (hf : IsMorse 𝓘(ℝ, E) f)
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.isClosed_of_finiteDimensional _))
 
-/-- **The tangent space of a transverse intersection.** If the unstable manifold of a critical
-point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the
-tangent space of `W^u(a) ∩ W^s(b)` at `y` is the intersection of their tangent spaces. -/
-theorem span_mtangentConeAt_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, E) f)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
-    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤) :
+omit hX in
+/-- **The tangent space of a transverse intersection.** Let `X₀` and `X₁` be pseudo-gradients
+adapted to `f₀` and `f₁`, with `f₀` Morse. If the unstable manifold of `a` for `X₀` and the stable
+manifold of `b` for `X₁` meet transversally at `y`, then the tangent space of
+`W^u_{X₀}(a) ∩ W^s_{X₁}(b)` at `y` is the intersection of their tangent spaces. -/
+theorem span_mtangentConeAt_unstableSet_inter_stableSet (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
+    (hX₁ : IsAdaptedPseudoGradient f₁ X₁) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (hy : y ∈ hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b)
+    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) = ⊤) :
     Submodule.span ℝ
-        (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) =
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊓
-        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) := by
+        (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) y) =
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) := by
   obtain ⟨L₁, q₁, -, hy₁, hq₁, h₁⟩ :=
-    hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
+    hX₀.exists_isSliceChart_unstableSet hf₀ (hX₀.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
   obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ :=
-    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
+    hX₁.exists_isSliceChart_stableSet (hX₁.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
   exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
@@ -241,24 +261,63 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, 
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.isClosed_of_finiteDimensional _))
 
-/-- **The intersection has dimension the index difference.** If the unstable manifold of a critical
-point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the
-tangent space of `W^u(a) ∩ W^s(b)` at `y` has dimension `ind a - ind b`. -/
+omit hX in
+/-- **The intersection has dimension the index difference.** Let `X₀` and `X₁` be pseudo-gradients
+adapted to `f₀` and `f₁`, with `f₀` Morse. If the unstable manifold of `a` for `X₀` and the stable
+manifold of `b` for `X₁` meet transversally at `y`, then the tangent space of
+`W^u_{X₀}(a) ∩ W^s_{X₁}(b)` at `y` has dimension `ind a - ind b`, the indices being taken for `f₀`
+and `f₁`. -/
 theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex
-    (hf : IsMorse 𝓘(ℝ, E) f)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
-    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤) :
+    (hX₀ : IsAdaptedPseudoGradient f₀ X₀) (hX₁ : IsAdaptedPseudoGradient f₁ X₁)
+    (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (hy : y ∈ hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b)
+    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) = ⊤) :
     Module.finrank ℝ (Submodule.span ℝ
-        (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y)) +
-      manifoldMorseIndex 𝓘(ℝ, E) f b = manifoldMorseIndex 𝓘(ℝ, E) f a := by
+        (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) y)) +
+      manifoldMorseIndex 𝓘(ℝ, E) f₁ b = manifoldMorseIndex 𝓘(ℝ, E) f₀ a := by
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y))
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y))
-  rw [htr, finrank_top, hX.finrank_span_mtangentConeAt_unstableSet hf hy.1,
-    ← hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hdim
-  have hs := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hy.2
+    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y))
+    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y))
+  rw [htr, finrank_top, hX₀.finrank_span_mtangentConeAt_unstableSet hf₀ hy.1,
+    ← hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₁ hf₀ hy htr] at hdim
+  have hs := hX₁.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hy.2
   omega
+
+omit hX in
+/-- **Transverse intersections are manifolds.** Let `X₀` and `X₁` be pseudo-gradients adapted to
+`f₀` and `f₁`, with `f₀` Morse. If `W^u_{X₀}(a)` meets `W^s_{X₁}(b)`, transversally at each of
+their common points, then their intersection carries a smooth manifold structure, modelled on a
+subspace of dimension `ind a - ind b`, with its subspace topology and a smooth inclusion into `M`.
+-/
+theorem exists_unstableSet_inter_stableSet_isManifold (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
+    (hX₁ : IsAdaptedPseudoGradient f₁ X₁) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (htr : ∀ y ∈ hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b,
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) = ⊤)
+    (hne : (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b).Nonempty) :
+    ∃ L : Submodule ℝ E,
+      Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f₁ b = manifoldMorseIndex 𝓘(ℝ, E) f₀ a ∧
+      ∃ C : ChartedSpace L ↥(hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b), letI := C
+        IsManifold 𝓘(ℝ, L) ∞ ↥(hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) ∧
+        ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) ∞
+          (Subtype.val : ↥(hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) → M) := by
+  obtain ⟨y₀, hy₀⟩ := hne
+  -- Every tangent space of the intersection has dimension `ind a - ind b`; model it on one of them.
+  refine ⟨Submodule.span ℝ
+      (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) y₀),
+    hX₀.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX₁ hf₀ hy₀
+      (htr y₀ hy₀), exists_isManifold_of_finrankSubspaceCharts fun y hy ↦ ?_⟩
+  obtain ⟨q, hyq, hq, hs⟩ := hX₀.exists_unstableSet_inter_stableSet_chart hX₁ hf₀ hy (htr y hy)
+  have hdim₀ :=
+    hX₀.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX₁ hf₀ hy₀
+      (htr y₀ hy₀)
+  have hdim :=
+    hX₀.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX₁ hf₀ hy
+      (htr y hy)
+  rw [hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₁ hf₀ hy (htr y hy)] at hdim
+  exact ⟨q, _, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
+    fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, isSliceChart_iff.1 hs, by omega⟩
 
 /-- **The Morse index drops strictly along a transverse trajectory.** If a trajectory of the flow
 runs from a critical point `a` to a different critical point `b`, and the unstable manifold of `a`
@@ -270,7 +329,7 @@ theorem manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet (hf : IsMorse �
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤) :
     manifoldMorseIndex 𝓘(ℝ, E) f b < manifoldMorseIndex 𝓘(ℝ, E) f a := by
   have hdim :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hy htr
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX hf hy htr
   -- The velocity `X y` is tangent to `W^u(a) ∩ W^s(b)`, and it is nonzero since `y` is not a
   -- critical point.
   have hmem := hX.mem_span_mtangentConeAt_unstableSet_inter_stableSet hy
@@ -283,7 +342,8 @@ theorem manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet (hf : IsMorse �
     exact (Submodule.mem_bot ℝ).1 hmem
   omega
 
-omit hX in
+end TangentSpaces
+
 /-- **The Morse–Smale condition** for a pseudo-gradient `X` adapted to `f`: for all critical points
 `a` and `b` of `f`, the unstable manifold of `a` and the stable manifold of `b` meet transversally
 at each common point `y`, that is, their tangent spaces at `y` span the tangent space of `M`. -/
@@ -293,7 +353,6 @@ def IsMorseSmale (hX : IsAdaptedPseudoGradient f X) : Prop :=
     Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤
 
-omit hX in
 /-- **The introduction rule for `IsMorseSmale`.** A pseudo-gradient is Morse–Smale once, at every
 point `y` of `W^u(a) ∩ W^s(b)` for critical points `a` and `b`, the tangent spaces of `W^u(a)` and
 `W^s(b)` span the tangent space of `M`. -/
@@ -305,7 +364,6 @@ theorem IsMorseSmale.of_forall {hX : IsAdaptedPseudoGradient f X}
     hX.IsMorseSmale :=
   h
 
-omit hX in
 /-- **The Morse–Smale condition is only a condition between intermediate indices.** Let `f` be a
 Morse function on a manifold of dimension `n`. A pseudo-gradient adapted to `f` is Morse–Smale as
 soon as `W^u(a)` and `W^s(b)` meet transversally for all distinct critical points `a` and `b` whose
@@ -358,7 +416,6 @@ theorem IsMorseSmale.of_forall_ne_of_manifoldMorseIndex_ne {hX : IsAdaptedPseudo
     exact (hXy ((Submodule.mem_bot ℝ).1 hmems)).elim
   exact htr ha hb hab ha0 han hb0 hbn hy
 
-omit hX in
 /-- **At most one critical point of intermediate index forces the Morse–Smale condition.** If at
 most one critical point of a Morse function `f` on a manifold of dimension `n` has an index other
 than `0` and `n`, then every pseudo-gradient adapted to `f` is Morse–Smale. This applies, for
@@ -371,7 +428,6 @@ theorem IsMorseSmale.of_subsingleton {hX : IsAdaptedPseudoGradient f X} (hf : Is
   of_forall_ne_of_manifoldMorseIndex_ne hf fun _ _ _ ha hb hab ha0 han hb0 hbn _ ↦
     (hab (hsub ⟨ha, ha0, han⟩ ⟨hb, hb0, hbn⟩)).elim
 
-omit hX in
 /-- **Extremal indices force the Morse–Smale condition.** If every critical point of a Morse
 function `f` has Morse index `0` or `n`, then every pseudo-gradient adapted to `f` is Morse–Smale.
 This applies, for instance, to the height function on the sphere. -/
@@ -383,7 +439,6 @@ theorem IsMorseSmale.of_manifoldMorseIndex_eq_zero_or_eq_finrank
     hX.IsMorseSmale :=
   of_subsingleton hf fun x hx ↦ ((hind x hx.1).elim hx.2.1 hx.2.2).elim
 
-omit hX in
 /-- **The pointwise elimination rule for `IsMorseSmale`.** Under the Morse–Smale condition, at a
 point `y` of `W^u(a) ∩ W^s(b)` for critical points `a` and `b`, the tangent spaces of `W^u(a)` and
 `W^s(b)` span the tangent space of `M`. -/
@@ -394,7 +449,6 @@ theorem IsMorseSmale.span_mtangentConeAt_sup_eq_top {hX : IsAdaptedPseudoGradien
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤ :=
   h (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy
 
-omit hX in
 /-- **Reversing a Morse–Smale pseudo-gradient.** If a pseudo-gradient `X` adapted to a Morse
 function `f` is Morse–Smale, then so is `-X`, adapted to `-f`: reversing the flow exchanges the
 unstable and stable manifolds of each critical point. -/
@@ -406,7 +460,6 @@ theorem IsMorseSmale.neg {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale
   rw [sup_comm]
   exact h hb ha ⟨hy.2, hy.1⟩
 
-omit hX in
 /-- **Spaces of trajectories are manifolds.** Under the Morse–Smale condition, if some trajectory
 runs from a critical point `a` to a critical point `b`, then `W^u(a) ∩ W^s(b)` carries a smooth
 manifold structure, modelled on a subspace of dimension `ind a - ind b`, with its subspace topology
@@ -419,28 +472,10 @@ theorem IsMorseSmale.exists_unstableSet_inter_stableSet_isManifold
       ∃ C : ChartedSpace L ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b), letI := C
         IsManifold 𝓘(ℝ, L) ∞ ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∧
         ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) ∞
-          (Subtype.val : ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b) → M) := by
-  obtain ⟨y₀, hy₀⟩ := hne
-  -- Every tangent space of the intersection has dimension `ind a - ind b`; model it on one of them.
-  refine ⟨Submodule.span ℝ
-      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y₀),
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hy₀
-      (h.span_mtangentConeAt_sup_eq_top hy₀), exists_isManifold_of_finrankSubspaceCharts
-      fun y hy ↦ ?_⟩
-  obtain ⟨q, hyq, hq, hs⟩ :=
-    hX.exists_unstableSet_inter_stableSet_chart hf hy (h.span_mtangentConeAt_sup_eq_top hy)
-  have hdim₀ :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hy₀
-      (h.span_mtangentConeAt_sup_eq_top hy₀)
-  have hdim :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hy
-      (h.span_mtangentConeAt_sup_eq_top hy)
-  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy
-    (h.span_mtangentConeAt_sup_eq_top hy)] at hdim
-  exact ⟨q, _, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
-    fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, isSliceChart_iff.1 hs, by omega⟩
+          (Subtype.val : ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b) → M) :=
+  hX.exists_unstableSet_inter_stableSet_isManifold hX hf
+    (fun _ hy ↦ h.span_mtangentConeAt_sup_eq_top hy) hne
 
-omit hX in
 /-- **Under the Morse–Smale condition, the Morse index drops along every trajectory** joining
 distinct critical points: if a trajectory runs from `a` to `b ≠ a`, then `ind b < ind a`. -/
 theorem IsMorseSmale.manifoldMorseIndex_lt {hX : IsAdaptedPseudoGradient f X}

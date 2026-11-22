@@ -88,7 +88,7 @@ theorem isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul
   have hua : IsUnit ((u : K⟦X⟧).evalAt a) := by
     simpa using hu.map (IsRestricted.evalAtHom K ha)
   rw [← hmul, mul_comm,
-    (TauCeti.PowerSeries.isRestricted_polynomial P).isGoodZero_mul_iff_of_isUnit u.2 ha hua,
+    (TauCeti.PowerSeries.isRestricted_polynomial P).isGoodZero_mul_iff_of_isUnit u.property ha hua,
     isGoodZero_coe_iff_of_field, and_iff_right hP]
 
 /-- **Multiplicity as a count of roots.** Let `f = u * P` be a nonzero series, where `u` is a unit

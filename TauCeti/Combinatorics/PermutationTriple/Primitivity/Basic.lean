@@ -41,7 +41,7 @@ variable {n : ℕ} (t : PermutationTriple n)
   rw [isBlockBool, decide_eq_true_eq, isBlock_iff_smul_eq_or_disjoint]
   constructor
   · intro h g
-    have hg := h g.1 ((t.mem_monodromyFinset).2 g.2)
+    have hg := h g.val ((t.mem_monodromyFinset).2 g.property)
     simpa only [Subgroup.smul_def, ← Finset.coe_smul_finset,
       ← Finset.disjoint_coe, Finset.coe_inj] using hg
   · intro h g hg
