@@ -59,6 +59,7 @@ Everything holds over every field with an involution, including in characteristi
   `U w B`.
 * `TauCeti.UnitaryRankOne.mem_borel_or_mem_doubleCoset`: the Bruhat decomposition `G = B ∪ BwB`.
 * `TauCeti.UnitaryRankOne.borel_inf_monomial`: `B ∩ N = T`.
+* `TauCeti.UnitaryRankOne.borel_le_unipotent_sup_borel_inf_monomial`: `B = U (B ∩ N)`.
 * `TauCeti.UnitaryRankOne.normalCore_borel_inf_unipotent`: `U` meets the normal core of `B`
   trivially.
 * `TauCeti.UnitaryRankOne.isIrreducible_titsSystem`: the Tits system is irreducible.
@@ -109,6 +110,18 @@ def unipotent : Subgroup (UnitaryRankOne.Group R σ) :=
   (unipotentHom R σ).range
 
 variable {R σ} in
+/-- An isometry is unipotent exactly when it is a root element. -/
+theorem mem_unipotent_iff_exists {g : UnitaryRankOne.Group R σ} :
+    g ∈ unipotent R σ ↔ ∃ a, unipotentHom R σ a = g :=
+  Iff.rfl
+
+/-- Every root element is unipotent. -/
+@[simp]
+theorem unipotentHom_mem_unipotent (a : HeisenbergGroup.unitarySubgroup σ) :
+    unipotentHom R σ a ∈ unipotent R σ :=
+  mem_unipotent_iff_exists.mpr ⟨a, rfl⟩
+
+variable {R σ} in
 /-- An isometry lies in the unipotent subgroup exactly when its matrix is upper unitriangular. -/
 theorem mem_unipotent_iff (g : UnitaryRankOne.Group R σ) :
     g ∈ unipotent R σ ↔
@@ -129,6 +142,15 @@ group. -/
 instance : Group.IsSolvable (unipotent R σ) :=
   Group.isSolvable_of_surjective (unipotentHom R σ).rangeRestrict_surjective
 
+variable {σ} in
+/-- The unipotent subgroup is nontrivial over a nontrivial commutative ring. -/
+theorem unipotent_ne_bot [Nontrivial R] (hσ : Function.Involutive σ) : unipotent R σ ≠ ⊥ := by
+  have := HeisenbergGroup.nontrivial_unitarySubgroup hσ
+  obtain ⟨a, ha⟩ := exists_ne (1 : HeisenbergGroup.unitarySubgroup σ)
+  rw [Ne, Subgroup.eq_bot_iff_forall, not_forall]
+  exact ⟨_, not_imp.mpr ⟨unipotentHom_mem_unipotent R σ a,
+    (map_ne_one_iff _ (unipotentHom_injective R σ)).mpr ha⟩⟩
+
 /-- An element of the torus conjugates the unipotent subgroup into itself. -/
 private theorem mul_mul_inv_mem_unipotent {t u : UnitaryRankOne.Group R σ} (ht : t ∈ torus R σ)
     (hu : u ∈ unipotent R σ) : t * u * t⁻¹ ∈ unipotent R σ := by
@@ -137,10 +159,7 @@ private theorem mul_mul_inv_mem_unipotent {t u : UnitaryRankOne.Group R σ} (ht 
   have hE := ((mem_torus_iff R σ _).mp (inv_mem ht)).diagonal_diag
   have hDE : ((t : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) *
       ((t⁻¹ : UnitaryRankOne.Group R σ) : SpecialLinearGroup (Fin 3) R) = 1 := by
-    -- The matrix of a product in the subgroup is the product of the matrices by definition;
-    -- the carrier is indexed by `Fin (2 + 1)`, which blocks rewriting with `Subgroup.coe_mul`.
-    exact congrArg (fun g : UnitaryRankOne.Group R σ ↦
-      ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R)) (mul_inv_cancel t)
+    rw [← coe_mul, mul_inv_cancel, coe_one]
   rw [← hD, ← hE, diagonal_mul_diagonal] at hDE
   have key := hu.diagonal_mul_mul_diagonal
     (d := ((t : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R).diag)
@@ -148,8 +167,7 @@ private theorem mul_mul_inv_mem_unipotent {t u : UnitaryRankOne.Group R σ} (ht 
       Matrix (Fin 3) (Fin 3) R).diag) fun i ↦ by
     simpa using congrFun (congrFun hDE i) i
   rw [hD, hE] at key
-  -- As above, the matrix of `t * u * t⁻¹` is the product of the three matrices by definition.
-  exact key
+  rwa [coe_mul, coe_mul]
 
 /-- The torus normalizes the unipotent subgroup. -/
 theorem torus_le_normalizer_unipotent :
@@ -160,17 +178,6 @@ theorem torus_le_normalizer_unipotent :
   simpa [mul_assoc] using mul_mul_inv_mem_unipotent R σ (inv_mem ht) hu
 
 /-! ### The monomial subgroup -/
-
-variable {R σ} in
-/-- Conjugation by the Weyl representative preserves the torus. -/
-theorem weyl_mul_mul_weyl_mem_torus {t : UnitaryRankOne.Group R σ} (ht : t ∈ torus R σ) :
-    weyl R σ * t * weyl R σ ∈ torus R σ := by
-  simpa using (Subgroup.mem_normalizer_iff.mp (weyl_mem_normalizer_torus R σ) t).mp ht
-
-/-- Multiplying twice by the Weyl representative is the identity. -/
-@[simp]
-theorem weyl_mul_weyl_mul (g : UnitaryRankOne.Group R σ) : weyl R σ * (weyl R σ * g) = g := by
-  rw [← mul_assoc, weyl_mul_self, one_mul]
 
 /-- The **monomial subgroup**: the torus `T` together with its translate `w T` by the Weyl
 representative `w`. -/
@@ -220,11 +227,25 @@ representative (`TauCeti.UnitaryRankOne.weyl_smul_infinity`). -/
 def origin : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ :=
   point K σ ⟨(0, 0), by simp⟩
 
+/-- The isotropic point `[0 : 0 : 1]` is the affine point with coordinates `(0, 0)`. -/
+theorem origin_eq_point : origin K σ = point K σ ⟨(0, 0), by simp⟩ :=
+  (rfl)
+
+/-- The homogeneous coordinates of the isotropic point `[0 : 0 : 1]`. -/
+theorem coe_origin :
+    (origin K σ : ℙ K (Fin 3 → K)) = Projectivization.mk K ![0, 0, 1] (by simp) := by
+  rw [origin_eq_point, coe_point]
+
 /-- The **Borel subgroup**: the stabilizer of the isotropic point at infinity `[1 : 0 : 0]`. -/
 def borel : Subgroup (UnitaryRankOne.Group K σ) :=
   MulAction.stabilizer _ (infinity K σ)
 
 variable {K σ}
+
+/-- An isometry lies in the Borel subgroup exactly when it fixes the point at infinity. -/
+theorem mem_borel_iff_smul_infinity {g : UnitaryRankOne.Group K σ} :
+    g ∈ borel K σ ↔ g • infinity K σ = infinity K σ :=
+  MulAction.mem_stabilizer_iff
 
 /-- An element sending a representative of `p` to a multiple of a representative of `q` sends
 `p` to `q`. -/
@@ -237,14 +258,13 @@ private theorem smul_eq_of_mulVec_eq_smul {g : UnitaryRankOne.Group K σ}
     g • p = q := by
   apply Subtype.ext
   rw [SubMulAction.val_smul, hp, hq]
-  -- The action on vectors is matrix multiplication by definition; the carrier is indexed by
-  -- `Fin (2 + 1)`, which blocks rewriting with `SpecialLinearGroup.smul_def`.
-  exact TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hv hw (c := c) h
+  exact TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hv hw (c := c)
+    (by rw [smul_def, h])
 
 variable (K σ) in
 /-- The Weyl representative sends the point at infinity to `[0 : 0 : 1]`. -/
 theorem weyl_smul_infinity : weyl K σ • infinity K σ = origin K σ :=
-  smul_eq_of_mulVec_eq_smul (w := ![0, 0, 1]) _ (by simp) (coe_infinity K σ) (coe_point _) 1
+  smul_eq_of_mulVec_eq_smul _ _ (coe_infinity K σ) (coe_origin K σ) 1
     (by simp [coe_typeAGraphConjugator_two, funext_iff, Fin.forall_fin_succ])
 
 /-- The root element with parameters `(x, z)` sends `[0 : 0 : 1]` to `[z : σ(x) : 1]`. -/
@@ -262,7 +282,7 @@ theorem unipotentHom_smul_origin (hσ : Function.Involutive σ)
 theorem unipotentHom_smul_origin_eq_iff (hσ : Function.Involutive σ)
     (a : HeisenbergGroup.unitarySubgroup σ) :
     unipotentHom K σ a • origin K σ = origin K σ ↔ a = 1 := by
-  rw [unipotentHom_smul_origin hσ, origin, point_inj, Subtype.mk.injEq, Prod.mk.injEq,
+  rw [unipotentHom_smul_origin hσ, origin_eq_point, point_inj, Subtype.mk.injEq, Prod.mk.injEq,
     map_eq_zero]
   constructor
   · rintro ⟨hz, hx⟩
@@ -270,33 +290,29 @@ theorem unipotentHom_smul_origin_eq_iff (hσ : Function.Involutive σ)
   · rintro rfl
     simp
 
-/-- A matrix sends the first basis vector to its first column. -/
-private theorem mulVec_one_zero_zero (M : Matrix (Fin 3) (Fin 3) K) :
-    M *ᵥ ![1, 0, 0] = ![M 0 0, M 1 0, M 2 0] := by
-  simp [funext_iff, Fin.forall_fin_succ, mulVec, dotProduct, Fin.sum_univ_three]
-
 /-- An isometry fixes the point at infinity exactly when its first column is a multiple of the
 first basis vector. -/
 theorem mem_borel_iff (g : UnitaryRankOne.Group K σ) :
     g ∈ borel K σ ↔
       ((g : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 0 = 0 ∧
         ((g : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 = 0 := by
+  -- The point at infinity is spanned by the first basis vector.
+  have he : (![1, 0, 0] : Fin 3 → K) = Pi.single 0 1 := by
+    ext i
+    fin_cases i <;> simp
   constructor
   · intro hg
-    have h := congrArg Subtype.val (MulAction.mem_stabilizer_iff.mp hg)
+    have h := congrArg Subtype.val (mem_borel_iff_smul_infinity.mp hg)
     rw [SubMulAction.val_smul, coe_infinity, Subgroup.smul_def, Projectivization.smul_mk,
-      Projectivization.mk_eq_mk_iff'] at h
+      Projectivization.mk_eq_mk_iff', ← Subgroup.smul_def, smul_def, he, mulVec_single_one] at h
     obtain ⟨c, hc⟩ := h
-    -- The action on vectors is matrix multiplication by definition.
-    have hc' : ((g : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) *ᵥ ![1, 0, 0] =
-        c • ![1, 0, 0] := hc.symm
-    rw [mulVec_one_zero_zero] at hc'
-    exact ⟨by simpa using congrFun hc' 1, by simpa using congrFun hc' 2⟩
+    exact ⟨by simpa using (congrFun hc 1).symm, by simpa using (congrFun hc 2).symm⟩
   · rintro ⟨h₁, h₂⟩
-    refine MulAction.mem_stabilizer_iff.mpr (smul_eq_of_mulVec_eq_smul _ _ (coe_infinity K σ)
+    refine mem_borel_iff_smul_infinity.mpr (smul_eq_of_mulVec_eq_smul _ _ (coe_infinity K σ)
       (coe_infinity K σ) (((g : SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 0 0) ?_)
-    rw [mulVec_one_zero_zero]
-    simp [h₁, h₂]
+    rw [he, mulVec_single_one]
+    ext i
+    fin_cases i <;> simp [h₁, h₂]
 
 variable (K σ)
 
@@ -312,7 +328,7 @@ theorem torus_le_borel : torus K σ ≤ borel K σ := fun t ht ↦ by
 
 /-- The Weyl representative moves the point at infinity. -/
 theorem weyl_notMem_borel : weyl K σ ∉ borel K σ := fun h ↦
-  point_ne_infinity _ ((weyl_smul_infinity K σ).symm.trans (MulAction.mem_stabilizer_iff.mp h))
+  point_ne_infinity _ ((weyl_smul_infinity K σ).symm.trans (mem_borel_iff_smul_infinity.mp h))
 
 variable {K σ}
 
@@ -369,7 +385,7 @@ theorem borel_le_normalizer_unipotent (hσ : Function.Involutive σ) :
 theorem exists_eq_unipotent_mul_weyl_mul (hσ : Function.Involutive σ)
     {g : UnitaryRankOne.Group K σ} (hg : g ∉ borel K σ) :
     ∃ u ∈ unipotent K σ, ∃ b ∈ borel K σ, g = u * weyl K σ * b := by
-  obtain ⟨c, hc⟩ := exists_point fun h ↦ hg (MulAction.mem_stabilizer_iff.mpr h)
+  obtain ⟨c, hc⟩ := exists_point fun h ↦ hg (mem_borel_iff_smul_infinity.mpr h)
   -- The root element with parameters `(σ x, z)` sends `[0 : 0 : 1]` to `[z : x : 1]`.
   have hz : c.1.1 + σ c.1.1 = σ c.1.2 * σ (σ c.1.2) := by
     rw [hσ c.1.2]
@@ -380,8 +396,9 @@ theorem exists_eq_unipotent_mul_weyl_mul (hσ : Function.Involutive σ)
     congr 1
     apply Subtype.ext
     simp [a, hσ c.1.2]
-  refine ⟨unipotentHom K σ a, ⟨a, rfl⟩, (unipotentHom K σ a * weyl K σ)⁻¹ * g, ?_, by group⟩
-  rw [borel, MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, mul_smul, hu]
+  refine ⟨unipotentHom K σ a, unipotentHom_mem_unipotent K σ a,
+    (unipotentHom K σ a * weyl K σ)⁻¹ * g, ?_, by group⟩
+  rw [mem_borel_iff_smul_infinity, mul_smul, inv_smul_eq_iff, mul_smul, hu]
 
 /-- **The Bruhat decomposition** `G = B ∪ B w B` of the rank-one unitary group. -/
 theorem mem_borel_or_mem_doubleCoset (hσ : Function.Involutive σ) (g : UnitaryRankOne.Group K σ) :
@@ -395,17 +412,10 @@ exactly when the element is trivial. -/
 theorem weyl_mul_mul_weyl_mem_borel_iff (hσ : Function.Involutive σ)
     {u : UnitaryRankOne.Group K σ} (hu : u ∈ unipotent K σ) :
     weyl K σ * u * weyl K σ ∈ borel K σ ↔ u = 1 := by
-  obtain ⟨a, rfl⟩ := hu
-  rw [borel, MulAction.mem_stabilizer_iff, mul_smul, mul_smul, weyl_smul_infinity,
+  obtain ⟨a, rfl⟩ := mem_unipotent_iff_exists.mp hu
+  rw [mem_borel_iff_smul_infinity, mul_smul, mul_smul, weyl_smul_infinity,
     smul_eq_iff_eq_inv_smul, weyl_inv, weyl_smul_infinity, unipotentHom_smul_origin_eq_iff hσ,
     map_eq_one_iff _ (unipotentHom_injective K σ)]
-
-/-- The unipotent subgroup is nontrivial. -/
-theorem unipotent_ne_bot (hσ : Function.Involutive σ) : unipotent K σ ≠ ⊥ := by
-  have := HeisenbergGroup.nontrivial_unitarySubgroup hσ
-  obtain ⟨a, ha⟩ := exists_ne (1 : HeisenbergGroup.unitarySubgroup σ)
-  rw [Ne, Subgroup.eq_bot_iff_forall, not_forall]
-  exact ⟨_, not_imp.mpr ⟨⟨a, rfl⟩, (map_ne_one_iff _ (unipotentHom_injective K σ)).mpr ha⟩⟩
 
 /-- **The unipotent subgroup meets the normal core of the Borel subgroup trivially.** -/
 theorem normalCore_borel_inf_unipotent (hσ : Function.Involutive σ) :
@@ -422,6 +432,14 @@ theorem borel_inf_monomial : borel K σ ⊓ monomial K σ = torus K σ := by
     (le_inf (torus_le_borel K σ) (torus_le_monomial K σ))
   refine (mem_monomial_iff.mp hgN).resolve_right fun h ↦ weyl_notMem_borel K σ ?_
   simpa using mul_mem (torus_le_borel K σ h) (inv_mem hgB)
+
+/-- The Borel subgroup is the product of the unipotent subgroup and its intersection with the
+monomial subgroup: the splitting hypothesis of
+`TauCeti.TitsSystem.isSimpleGroup_derivedCentralQuotient`. -/
+theorem borel_le_unipotent_sup_borel_inf_monomial (hσ : Function.Involutive σ) :
+    borel K σ ≤ unipotent K σ ⊔ borel K σ ⊓ monomial K σ := by
+  rw [borel_inf_monomial]
+  exact (borel_eq_unipotent_sup_torus hσ).le
 
 /-- The intersection of the Borel and monomial subgroups, the torus, is normal in the monomial
 subgroup. -/
@@ -440,12 +458,10 @@ def titsSystem (hσ : Function.Involutive σ) : TitsSystem (UnitaryRankOne.Group
     (fun _ hx ↦ (mem_monomial_iff.mp hx).imp (fun h ↦ torus_le_borel K σ h)
       fun h ↦ by simpa using torus_le_borel K σ h)
     (by
-      have := HeisenbergGroup.nontrivial_unitarySubgroup hσ
-      obtain ⟨a, ha⟩ := exists_ne (1 : HeisenbergGroup.unitarySubgroup σ)
-      refine ⟨unipotentHom K σ a, unipotent_le_borel K σ ⟨_, rfl⟩, ?_⟩
-      rw [Subgroup.coe_mk, weyl_inv, weyl_mul_mul_weyl_mem_borel_iff hσ ⟨_, rfl⟩,
-        map_eq_one_iff _ (unipotentHom_injective K σ)]
-      exact ha)
+      obtain ⟨⟨u, hu⟩, hu₁⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp (unipotent_ne_bot K hσ)
+      refine ⟨u, unipotent_le_borel K σ hu, ?_⟩
+      rw [Subgroup.coe_mk, weyl_inv, weyl_mul_mul_weyl_mem_borel_iff hσ hu]
+      exact fun h ↦ hu₁ (Subtype.ext h))
     (mem_borel_or_mem_doubleCoset hσ)
 
 /-- The Borel subgroup of the Tits system is the stabilizer of the point at infinity. -/

@@ -21,8 +21,9 @@ root group in `SU₃`, including in characteristic two.
 
 Multiplication and inversion are inherited from the Heisenberg group, so the parameters obey
 `(x,z)(x',z') = (x+x', z+z'+x σ(x'))`. The commutator has parameters
-`(0, x σ(x') - x' σ(x))` and is central. These formulas use no division by two. Over a field
-with an involution the group is nontrivial (`TauCeti.HeisenbergGroup.nontrivial_unitarySubgroup`).
+`(0, x σ(x') - x' σ(x))` and is central. These formulas use no division by two. Over a
+nontrivial commutative ring with an involution the group is nontrivial
+(`TauCeti.HeisenbergGroup.nontrivial_unitarySubgroup`).
 
 ## References
 
@@ -223,23 +224,17 @@ theorem commutatorElement_unitaryMk (x z x' z' : R)
   apply Subtype.ext
   exact (unitarySubgroup.coe_commutatorElement _ _).trans (by simp)
 
-/-- **The unitary root group is nontrivial** over every field with an involution, including the
-identity. -/
-theorem nontrivial_unitarySubgroup {K : Type*} [Field K] {σ : K →+* K}
-    (hσ : Function.Involutive σ) : Nontrivial (unitarySubgroup σ) := by
-  suffices ∃ x z : K, ∃ hz : z + σ z = x * σ x, unitaryMk σ hσ x z hz ≠ 1 by
-    obtain ⟨x, z, hz, h⟩ := this
-    exact nontrivial_of_ne _ _ h
-  simp_rw [ne_eq, unitaryMk_eq_one_iff, not_and_or]
-  -- When `σ ≠ id`, a nonzero `a - σ(a)` has trace zero. For `σ = id` the parameters `(0, 1)` or
-  -- `(1, 1/2)` satisfy the trace equation, according as the characteristic is two or not.
-  by_cases h : ∃ a, σ a ≠ a
-  · obtain ⟨a, ha⟩ := h
-    exact ⟨0, a - σ a, by simp [hσ a], Or.inr (sub_ne_zero.mpr (Ne.symm ha))⟩
-  simp only [not_exists, not_not] at h
-  by_cases h₂ : (2 : K) = 0
-  · exact ⟨0, 1, by rw [map_one, zero_mul, ← h₂]; norm_num, Or.inr one_ne_zero⟩
-  · exact ⟨1, 2⁻¹, by rw [h, map_one, mul_one, ← two_mul, mul_inv_cancel₀ h₂],
-      Or.inl one_ne_zero⟩
+/-- **The unitary root group is nontrivial** over every nontrivial commutative ring with an
+involution, including the identity. -/
+theorem nontrivial_unitarySubgroup [Nontrivial R] (hσ : Function.Involutive σ) :
+    Nontrivial (unitarySubgroup σ) := by
+  -- The parameters `(2, 2)` satisfy the trace equation, and are nontrivial unless `2 = 0`, in
+  -- which case the parameters `(0, 1)` do.
+  by_cases h₂ : (2 : R) = 0
+  · refine nontrivial_of_ne (unitaryMk σ hσ 0 1 (by rw [map_one, one_add_one_eq_two, h₂,
+      zero_mul])) 1 ?_
+    simp
+  · refine nontrivial_of_ne (unitaryMk σ hσ 2 2 (by rw [map_ofNat]; ring)) 1 ?_
+    simpa using h₂
 
 end TauCeti.HeisenbergGroup

@@ -42,6 +42,29 @@ variable (R : Type*) [CommRing R] (σ : R →+* R)
 protected abbrev Group :=
   ↥((typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ)
 
+/-- The matrix of a product of isometries is the product of their matrices. The carrier of
+`TauCeti.UnitaryRankOne.Group` is indexed by `Fin (2 + 1)`, so `Subgroup.coe_mul` and
+`Matrix.SpecialLinearGroup.coe_mul` do not rewrite the `Fin 3` matrix coercion. -/
+@[simp]
+theorem coe_mul (g h : UnitaryRankOne.Group R σ) :
+    (((g * h : UnitaryRankOne.Group R σ) : SpecialLinearGroup (Fin 3) R) :
+        Matrix (Fin 3) (Fin 3) R) =
+      ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) *
+        ((h : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) :=
+  (rfl)
+
+/-- The matrix of the identity isometry is the identity matrix. -/
+@[simp]
+theorem coe_one :
+    (((1 : UnitaryRankOne.Group R σ) : SpecialLinearGroup (Fin 3) R) :
+        Matrix (Fin 3) (Fin 3) R) = 1 :=
+  (rfl)
+
+/-- An isometry acts on vectors by multiplication with its matrix. -/
+theorem smul_def (g : UnitaryRankOne.Group R σ) (v : Fin 3 → R) :
+    g • v = ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) *ᵥ v :=
+  (rfl)
+
 private theorem mem_group_iff (g : SpecialLinearGroup (Fin 3) R) :
     g ∈ (typeAGraphConjugator 2 R : Matrix (Fin 3) (Fin 3) R).specialIsometryGroup σ ↔
       typeAGraphAutomorphism 2 R
@@ -223,6 +246,17 @@ theorem weyl_mem_normalizer_torus :
   apply Matrix.SpecialLinearGroup.mem_normalizer_diagonalTorus_of_toGL_mem
   rw [Subgroup.subtype_apply, toGL_weyl]
   exact typeAGraphConjugator_mem_normalizer_diagonalTorus 2
+
+variable {R σ} in
+/-- Conjugation by the Weyl representative preserves the torus. -/
+theorem weyl_mul_mul_weyl_mem_torus {t : UnitaryRankOne.Group R σ} (ht : t ∈ torus R σ) :
+    weyl R σ * t * weyl R σ ∈ torus R σ := by
+  simpa using (Subgroup.mem_normalizer_iff.mp (weyl_mem_normalizer_torus R σ) t).mp ht
+
+/-- Multiplying twice by the Weyl representative is the identity. -/
+@[simp]
+theorem weyl_mul_weyl_mul (g : UnitaryRankOne.Group R σ) : weyl R σ * (weyl R σ * g) = g := by
+  rw [← mul_assoc, weyl_mul_self, one_mul]
 
 /-- The Weyl representative is not diagonal over a nontrivial ring, so it lies outside the
 torus even in the smallest characteristic. -/
