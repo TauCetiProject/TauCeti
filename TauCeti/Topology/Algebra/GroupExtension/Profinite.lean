@@ -284,12 +284,17 @@ theorem factorSetContinuousMulEquiv_apply [ContinuousMul E] [T2Space E] [Compact
 set**, by an equivalence of extensions that is continuous, hence a homeomorphism through
 `TauCeti.GroupExtension.continuousMulEquivOfEquiv`. This is the direction of the extension
 dictionary that reads a cocycle off an extension;
-`TauCeti.GroupExtension.factorSet_canonicalSection` is the other one. -/
+`TauCeti.GroupExtension.factorSet_canonicalSection` is the other one. No continuity of the
+multiplication of `G` is assumed: `G` is the Hausdorff image of the compact group `E`, so
+`ContinuousMonoidHom.quotientKerEquivOfSurjective` identifies it with a quotient group of `E`. -/
 theorem exists_continuous_factorSet [IsTopologicalGroup E] [CompactSpace E]
-    [TotallyDisconnectedSpace E] [CompactSpace M] [T2Space G]
-    [ContinuousMul G] (hinl : Continuous S.inl)
+    [TotallyDisconnectedSpace E] [CompactSpace M] [T2Space G] (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) (hact : S.InducesAction) :
     ∃ α : FactorSet G M, Continuous ⇑α ∧ ∃ e : α.groupExtension.Equiv S, Continuous ⇑e := by
+  have : ContinuousMul G :=
+    let e := (ContinuousMonoidHom.mk S.rightHom hrh).quotientKerEquivOfSurjective
+      S.rightHom_surjective
+    e.symm.toHomeomorph.isInducing.continuousMul e.symm
   obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   exact ⟨factorSet σ hσ hact,
     continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσc hσ hact,

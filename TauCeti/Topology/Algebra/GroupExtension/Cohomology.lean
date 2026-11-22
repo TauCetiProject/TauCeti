@@ -28,10 +28,10 @@ Read through the extension dictionary, this classifies extensions of topological
 an extension `1 → M → E → G → 1` of topological groups inducing the given action of `G` on `M`,
 whose kernel is embedded (`S.inl` is an embedding) and which has a continuous normalized section.
 It has a class, that of the factor set of the section, which does not depend on the section
-(`TauCeti.GroupExtension.contCohomologyClass_factorSet_eq`); two such extensions, both with
+(`TauCeti.GroupExtension.contCohomologyClass_factorSet_eq`); two such extensions, the first with
 continuous projection, are equivalent by a continuous equivalence exactly when their classes agree
-(`TauCeti.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_factorSet_eq`), and equal
-classes even yield a homeomorphic equivalence
+(`TauCeti.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_factorSet_eq`), and when
+both projections are continuous, equal classes even yield a homeomorphic equivalence
 (`TauCeti.GroupExtension.exists_equiv_isHomeomorph_of_contCohomologyClass_factorSet_eq`); and the
 class vanishes exactly when the extension has a continuous homomorphic section
 (`TauCeti.GroupExtension.exists_splitting_continuous_iff_contCohomologyClass_factorSet_eq_zero`).
@@ -421,6 +421,33 @@ variable {E' : Type*} [Group E'] [TopologicalSpace E'] [ContinuousMul E] [Contin
   (hσc : Continuous ⇑σ) (hσ'c : Continuous ⇑σ') (hσ : σ 1 = 1) (hσ' : σ' 1 = 1)
   (hact : S.InducesAction) (hact' : S'.InducesAction)
 
+/-- Equal classes give an equivalence that is continuous, and a homeomorphism once the projection
+of `S'` is continuous as well: a continuous primitive of the quotient of the two factor sets
+rescales one twisted product onto the other by `TauCeti.FactorSet.rescaleEquiv`, and the comparison
+maps `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` are continuous. -/
+private theorem exists_equiv_continuous_and_isHomeomorph (hrh : Continuous S.rightHom)
+    (h : (factorSet σ hσ hact).contCohomologyClass (continuous_factorSet hinl hσc hσ hact) =
+      (factorSet σ' hσ' hact').contCohomologyClass (continuous_factorSet hinl' hσ'c hσ' hact')) :
+    ∃ e : S.Equiv S', Continuous ⇑e ∧ (Continuous S'.rightHom → IsHomeomorph ⇑e) := by
+  obtain ⟨x, hx, hxe⟩ := (FactorSet.isContCohomologous_iff _ _).1
+    ((FactorSet.contCohomologyClass_eq_iff _ _ _ _).1 h)
+  have hx' : ∀ g h : G, factorSet σ hσ hact (g, h) * x (g * h) =
+      factorSet σ' hσ' hact' (g, h) * (g • x h * x g) := by
+    intro g h
+    have key := hxe g h
+    rw [div_mul_eq_mul_div, div_eq_div_iff_mul_eq_mul] at key
+    rw [← key, mul_comm]
+  have he : Continuous ⇑(((factorSetToGroupExtensionEquiv σ hσ hact).symm.trans
+      (FactorSet.rescaleEquiv _ _ x hx')).trans (factorSetToGroupExtensionEquiv σ' hσ' hact')) :=
+    (continuous_factorSetToGroupExtensionEquiv hinl'.continuous hσ'c hσ' hact').comp
+      ((FactorSet.continuous_rescaleEquiv hx' hx).comp
+        (continuous_factorSetToGroupExtensionEquiv_symm hinl hrh hσc hσ hact))
+  refine ⟨_, he, fun hrh' =>
+    isHomeomorph_iff_exists_inverse.2 ⟨he, _, EquivLike.left_inv _, EquivLike.right_inv _, ?_⟩⟩
+  exact (continuous_factorSetToGroupExtensionEquiv hinl.continuous hσc hσ hact).comp
+    ((FactorSet.continuous_rescaleEquiv_symm hx' hx).comp
+      (continuous_factorSetToGroupExtensionEquiv_symm hinl' hrh' hσ'c hσ' hact'))
+
 /-- **Equal classes give a homeomorphic equivalence.** Two extensions of `G` by `M`, both inducing
 the ambient action and both with continuous projection, embedded kernel and a continuous
 normalized section, whose factor sets have the same class are equivalent by an equivalence that is
@@ -432,36 +459,24 @@ theorem exists_equiv_isHomeomorph_of_contCohomologyClass_factorSet_eq
     (hrh : Continuous S.rightHom) (hrh' : Continuous S'.rightHom)
     (h : (factorSet σ hσ hact).contCohomologyClass (continuous_factorSet hinl hσc hσ hact) =
       (factorSet σ' hσ' hact').contCohomologyClass (continuous_factorSet hinl' hσ'c hσ' hact')) :
-    ∃ e : S.Equiv S', IsHomeomorph ⇑e := by
-  obtain ⟨x, hx, hxe⟩ := (FactorSet.isContCohomologous_iff _ _).1
-    ((FactorSet.contCohomologyClass_eq_iff _ _ _ _).1 h)
-  have hx' : ∀ g h : G, factorSet σ hσ hact (g, h) * x (g * h) =
-      factorSet σ' hσ' hact' (g, h) * (g • x h * x g) := by
-    intro g h
-    have key := hxe g h
-    rw [div_mul_eq_mul_div, div_eq_div_iff_mul_eq_mul] at key
-    rw [← key, mul_comm]
-  refine ⟨((factorSetToGroupExtensionEquiv σ hσ hact).symm.trans
-    (FactorSet.rescaleEquiv _ _ x hx')).trans (factorSetToGroupExtensionEquiv σ' hσ' hact'),
-    isHomeomorph_iff_exists_inverse.2 ⟨?_, _, EquivLike.left_inv _, EquivLike.right_inv _, ?_⟩⟩
-  · exact (continuous_factorSetToGroupExtensionEquiv hinl'.continuous hσ'c hσ' hact').comp
-      ((FactorSet.continuous_rescaleEquiv hx' hx).comp
-        (continuous_factorSetToGroupExtensionEquiv_symm hinl hrh hσc hσ hact))
-  · exact (continuous_factorSetToGroupExtensionEquiv hinl.continuous hσc hσ hact).comp
-      ((FactorSet.continuous_rescaleEquiv_symm hx' hx).comp
-        (continuous_factorSetToGroupExtensionEquiv_symm hinl' hrh' hσ'c hσ' hact'))
+    ∃ e : S.Equiv S', IsHomeomorph ⇑e :=
+  let ⟨e, _, he⟩ := exists_equiv_continuous_and_isHomeomorph hinl hinl' hσc hσ'c hσ hσ' hact hact'
+    hrh h
+  ⟨e, he hrh'⟩
 
 /-- **Continuous `H²` classifies extensions with continuous normalized sections.** Two extensions of
-`G` by `M`, both inducing the ambient action and both with continuous projection, embedded kernel
-and a continuous normalized section, are equivalent by a continuous equivalence exactly when the
-classes of the factor sets of those sections agree.
+`G` by `M`, both inducing the ambient action and both with embedded kernel and a continuous
+normalized section, are equivalent by a continuous equivalence exactly when the classes of the
+factor sets of those sections agree. Only the projection of `S` has to be continuous.
 
 Forwards, the transported section `e ∘ σ` is a continuous normalized section of `S'` with literally
 the same factor set as `σ`, and the class of `S'` does not depend on the section it is read from.
-Backwards, `TauCeti.GroupExtension.exists_equiv_isHomeomorph_of_contCohomologyClass_factorSet_eq`
-even produces a homeomorphic equivalence. -/
+Backwards, a continuous primitive of the quotient of the two factor sets rescales one twisted
+product onto the other, as in
+`TauCeti.GroupExtension.exists_equiv_isHomeomorph_of_contCohomologyClass_factorSet_eq`, which
+produces a homeomorphic equivalence when the projection of `S'` is continuous too. -/
 theorem exists_equiv_continuous_iff_contCohomologyClass_factorSet_eq
-    (hrh : Continuous S.rightHom) (hrh' : Continuous S'.rightHom) :
+    (hrh : Continuous S.rightHom) :
     (∃ e : S.Equiv S', Continuous ⇑e) ↔
       (factorSet σ hσ hact).contCohomologyClass (continuous_factorSet hinl hσc hσ hact) =
         (factorSet σ' hσ' hact').contCohomologyClass
@@ -481,9 +496,9 @@ theorem exists_equiv_continuous_iff_contCohomologyClass_factorSet_eq
     rw [← contCohomologyClass_factorSet_eq hinl' hτ₁ hσ' hact' hτc hσ'c]
     exact FactorSet.contCohomologyClass_congr hfac.symm _
   · intro h
-    obtain ⟨e, he⟩ := exists_equiv_isHomeomorph_of_contCohomologyClass_factorSet_eq hinl hinl'
-      hσc hσ'c hσ hσ' hact hact' hrh hrh' h
-    exact ⟨e, he.continuous⟩
+    obtain ⟨e, he, -⟩ := exists_equiv_continuous_and_isHomeomorph hinl hinl' hσc hσ'c hσ hσ' hact
+      hact' hrh h
+    exact ⟨e, he⟩
 
 end Equiv
 
@@ -536,7 +551,7 @@ theorem _root_.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_eq
     S'.contCohomologyClass_eq hinl' hrh' hact' hσ'c hσ',
     ← exists_equiv_continuous_iff_contCohomologyClass_factorSet_eq
       (hinl.isClosedEmbedding S.inl_injective).isEmbedding
-      (hinl'.isClosedEmbedding S'.inl_injective).isEmbedding hσc hσ'c hσ hσ' hact hact' hrh hrh']
+      (hinl'.isClosedEmbedding S'.inl_injective).isEmbedding hσc hσ'c hσ hσ' hact hact' hrh]
 
 /-- **A profinite extension has a continuous homomorphic section exactly when its class
 vanishes.** -/
