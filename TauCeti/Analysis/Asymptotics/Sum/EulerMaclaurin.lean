@@ -221,6 +221,36 @@ theorem sum_Icc_eq_eulerMaclaurin_of_hasDerivAt {g : ℕ → ℝ → E} {a n : �
     rw [hlast, hΔ]
     linear_combination (norm := module) hunit
 
+/-- Reindex an Euler–Maclaurin Bernoulli sum over `s ∈ Icc 2 (2 * m)` to even indices
+`j ∈ Icc 1 m`, discarding the odd-index terms via `bernoulli_eq_zero_of_odd`. -/
+theorem sum_Icc_two_mul_bernoulli_smul {M : Type*} [AddCommMonoid M] [Module ℝ M]
+    (m : ℕ) (v : ℕ → M) :
+    ∑ s ∈ Icc 2 (2 * m), (bernoulli s / (s ! : ℝ) : ℝ) • v s =
+      ∑ j ∈ Icc 1 m, (bernoulli (2 * j) / ((2 * j)! : ℝ) : ℝ) • v (2 * j) := by
+  have hfilt :
+      ∑ s ∈ Icc 2 (2 * m), (bernoulli s / (s ! : ℝ) : ℝ) • v s =
+        ∑ s ∈ (Icc 2 (2 * m)).filter Even, (bernoulli s / (s ! : ℝ) : ℝ) • v s := by
+    refine (Finset.sum_filter_of_ne fun s hs hne ↦ ?_).symm
+    by_contra hodd
+    rw [Nat.not_even_iff_odd] at hodd
+    have hs2 : 2 ≤ s := (Finset.mem_Icc.mp hs).1
+    apply hne
+    rw [bernoulli_eq_zero_of_odd hodd (by omega), Rat.cast_zero, zero_div, zero_smul]
+  rw [hfilt]
+  symm
+  refine Finset.sum_bij (fun j _ ↦ 2 * j) ?_ ?_ ?_ ?_
+  · intro j hj
+    simp only [Finset.mem_filter, Finset.mem_Icc] at hj ⊢
+    exact ⟨⟨by omega, by omega⟩, ⟨j, by ring⟩⟩
+  · intro j₁ _ j₂ _ h
+    omega
+  · intro s hs
+    simp only [Finset.mem_filter, Finset.mem_Icc] at hs
+    rcases hs.2 with ⟨j, rfl⟩
+    exact ⟨j, Finset.mem_Icc.mpr ⟨by omega, by omega⟩, by ring⟩
+  · intro j _
+    rfl
+
 /-- **Euler–Maclaurin formula** (DLMF 2.10.1). For integers `a ≤ n`, `m ≥ 1` and `f` of class
 `C^{2m}` on `[a, n]`, with derivatives `f^{(i)}` taken within `[a, n]`,
 `∑_{j=a}^n f(j) = ∫_a^n f + f(a)/2 + f(n)/2
@@ -256,25 +286,14 @@ theorem sum_Icc_eq_eulerMaclaurin {f : ℝ → E} {a n : ℤ} (han : a ≤ n) {m
     (hcont i hi).intervalIntegrable_of_Icc han'
   have hEM := sum_Icc_eq_eulerMaclaurin_of_hasDerivAt (g := g) han.le (k := 2 * m) (by omega)
     (fun i hi => hcont i hi.le) hderiv (hint _ le_rfl)
-  -- The odd-index terms `s = 2r + 3` vanish, since `B_{2r+3} = 0`.
-  have heven : ∀ m' ≥ 1, ∑ s ∈ Icc 2 (2 * m'), (bernoulli s / s ! : ℝ) • (g (s - 1) n - g (s - 1) a)
-      = ∑ s ∈ Icc 1 m', (bernoulli (2 * s) / (2 * s)! : ℝ) •
-        (g (2 * s - 1) n - g (2 * s - 1) a) := by
-    intro m' hm'
-    induction m', hm' using Nat.le_induction with
-    | base => simp
-    | succ m' hm' ih =>
-      have h3 : bernoulli (2 * m' + 1) = 0 := bernoulli_eq_zero_of_odd ⟨m', rfl⟩ (by omega)
-      rw [show 2 * (m' + 1) = 2 * m' + 1 + 1 by ring, sum_Icc_succ_top (by omega),
-        sum_Icc_succ_top (by omega), sum_Icc_succ_top (by omega), ih, h3]
-      simp [mul_add]
   -- The `s = m` term is absorbed into the remainder by
   -- `∫_a^n f^{(2m)} = f^{(2m-1)}(n) - f^{(2m-1)}(a)`.
   have hFTC : ∫ x in a..n, g (2 * m) x = g (2 * m - 1) n - g (2 * m - 1) a := by
     have h := integral_eq_sub_of_hasDerivAt_of_le han' (hcont (2 * m - 1) (by omega))
       (fun x hx => hderiv (2 * m - 1) (by omega) x hx) (hint (2 * m - 1 + 1) (by omega))
     rwa [Nat.sub_add_cancel (by omega)] at h
-  rw [heven m hm, ← Finset.Ico_add_one_right_eq_Icc 1 m, sum_Ico_succ_top hm] at hEM
+  rw [sum_Icc_two_mul_bernoulli_smul m (fun s ↦ g (s - 1) n - g (s - 1) a),
+    ← Finset.Ico_add_one_right_eq_Icc 1 m, sum_Ico_succ_top hm] at hEM
   have hR : ∫ x in a..n, ((bernoulli (2 * m) - bernoulliFun (2 * m) (Int.fract x)) / (2 * m)!) •
         g (2 * m) x =
       (bernoulli (2 * m) / (2 * m)! : ℝ) • (∫ x in a..n, g (2 * m) x) -

@@ -29,13 +29,18 @@ of the powers `z ^ m` (`TauCeti.Complex.norm_iteratedFDeriv_pow`).
 
 On an open set `U`, the iterated derivatives over any field below `ℂ`, such as `ℝ`, of a map
 holomorphic on `U` are the restrictions of scalars of its complex iterated derivatives
-(`DifferentiableOn.iteratedFDeriv_eq_restrictScalars`). Weierstrass's theorem upgrades locally
-uniform convergence of holomorphic maps on `U` to locally uniform convergence of all iterated
-derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
-(`TendstoLocallyUniformlyOn.iteratedFDeriv`).
+(`DifferentiableOn.iteratedFDeriv_eq_restrictScalars`). Moreover, a function holomorphic on an
+open subset `U ⊆ ℂ` that agrees with `(g · : ℂ)` on a real subset restricts to a `C^n` real
+function `g` whose real iterated derivatives coerce to its complex iterated derivatives
+(`DifferentiableOn.contDiffOn_ofReal`, `DifferentiableOn.iteratedDeriv_ofReal`). Weierstrass's
+theorem upgrades locally uniform convergence of holomorphic maps on `U` to locally uniform
+convergence of all iterated derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of
+all real iterated derivatives (`TendstoLocallyUniformlyOn.iteratedFDeriv`).
 -/
 
 public section
+
+open scoped ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
@@ -114,6 +119,54 @@ theorem TendstoLocallyUniformlyOn.iteratedFDeriv (𝕜 : Type*) [NontriviallyNor
     (hF.mono fun n hn z hz => .of_eq ?_)).congr_right fun z hz => ?_
   · exact (hn.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
   · exact (hf'.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
+
+/-- A function holomorphic on an open set `U ⊆ ℂ` that agrees with `(g · : ℂ)` on a real subset
+`s` with `(↑) '' s ⊆ U` restricts to a `C^n` real function `g` on `s`. -/
+theorem DifferentiableOn.contDiffOn_ofReal {f : ℂ → ℂ} {g : ℝ → ℝ} {U : Set ℂ} {s : Set ℝ}
+    {n : WithTop ℕ∞} (hf : DifferentiableOn ℂ f U) (hU : IsOpen U)
+    (hmaps : Set.MapsTo ((↑) : ℝ → ℂ) s U) (hfg : ∀ x ∈ s, f (x : ℂ) = (g x : ℂ)) :
+    ContDiffOn ℝ n g s := by
+  have hf_cd : ContDiffOn ℝ n f U := (hf.contDiffOn hU).restrict_scalars ℝ
+  have hcomp : ContDiffOn ℝ n (fun x : ℝ ↦ Complex.reCLM (f (Complex.ofRealCLM x))) s :=
+    Complex.reCLM.contDiff.contDiffOn.comp
+      (hf_cd.comp Complex.ofRealCLM.contDiff.contDiffOn hmaps) (Set.mapsTo_univ _ _)
+  exact hcomp.congr fun x hx ↦ by
+    simp only [Complex.reCLM_apply, Complex.ofRealCLM_apply, hfg x hx, Complex.ofReal_re]
+
+/-- If `f : ℂ → ℂ` is holomorphic on an open set `U ⊆ ℂ` and agrees with `(g · : ℂ)` on an open
+real set `s` mapped into `U`, then every complex iterated derivative of `f` on `s` is the coercion
+of the real iterated derivative of `g`. -/
+theorem DifferentiableOn.iteratedDeriv_ofReal {f : ℂ → ℂ} {g : ℝ → ℝ} {U : Set ℂ} {s : Set ℝ}
+    (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hs : IsOpen s)
+    (hmaps : Set.MapsTo ((↑) : ℝ → ℂ) s U) (hfg : ∀ x ∈ s, f (x : ℂ) = (g x : ℂ))
+    (k : ℕ) {x : ℝ} (hx : x ∈ s) :
+    iteratedDeriv k f (x : ℂ) = ((iteratedDeriv k g x : ℝ) : ℂ) := by
+  have hdiff (m : ℕ) : DifferentiableOn ℂ (iteratedDeriv m f) U :=
+    ((hf.contDiffOn (n := ∞) hU).differentiableOn_iteratedDerivWithin
+      (by exact_mod_cast ENat.natCast_lt_top m) hU.uniqueDiffOn).congr
+      fun _ hz ↦ (iteratedDerivWithin_of_isOpen hU hz).symm
+  induction k generalizing x with
+  | zero => simpa only [iteratedDeriv_zero] using hfg x hx
+  | succ k ih =>
+    have hfk : HasDerivAt (iteratedDeriv k f) (iteratedDeriv (k + 1) f (x : ℂ)) (x : ℂ) := by
+      rw [iteratedDeriv_succ]
+      exact ((hdiff k).differentiableAt (hU.mem_nhds (hmaps hx))).hasDerivAt
+    have hcomp : HasDerivAt (fun t : ℝ ↦ ((iteratedDeriv k g t : ℝ) : ℂ))
+        (iteratedDeriv (k + 1) f (x : ℂ)) x := by
+      refine hfk.comp_ofReal.congr_of_eventuallyEq ?_
+      filter_upwards [hs.mem_nhds hx] with t ht
+      exact (ih ht).symm
+    have hre : HasDerivAt (iteratedDeriv k g) (iteratedDeriv (k + 1) f (x : ℂ)).re x := by
+      simpa only [Function.comp_def, Complex.reCLM_apply, Complex.ofReal_re] using
+        Complex.reCLM.hasFDerivAt.comp_hasDerivAt x hcomp
+    have him : HasDerivAt (fun _ : ℝ ↦ (0 : ℝ)) (iteratedDeriv (k + 1) f (x : ℂ)).im x := by
+      simpa only [Function.comp_def, Complex.imCLM_apply, Complex.ofReal_im] using
+        Complex.imCLM.hasFDerivAt.comp_hasDerivAt x hcomp
+    have hre_eq : iteratedDeriv (k + 1) g x = (iteratedDeriv (k + 1) f (x : ℂ)).re := by
+      rw [iteratedDeriv_succ, hre.deriv]
+    have him_eq : (iteratedDeriv (k + 1) f (x : ℂ)).im = 0 :=
+      him.unique (hasDerivAt_const x (0 : ℝ))
+    exact Complex.ext (by simp [hre_eq]) (by simp [him_eq])
 
 namespace TauCeti.Complex
 

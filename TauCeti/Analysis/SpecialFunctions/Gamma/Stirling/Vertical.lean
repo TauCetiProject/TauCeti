@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Envelope
 import Mathlib.Analysis.Asymptotics.Prod
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Asymptotics.VerticalStrip
@@ -30,8 +30,8 @@ from the real axis, on any pole-free vertical line (including complex shifts `w 
 the entire reciprocal `Γ⁻¹` across the whole strip; Cauchy's estimate on unit circles then bounds
 the derivative of `Γ⁻¹` across the strip and uniformly on unit balls.
 
-The proof is the sector form `TauCeti.abs_log_norm_Gamma_sub_stirling_le`
-(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Basic.lean`) at the angle `π / 4`.
+The proof is the sector form `TauCeti.abs_log_norm_Gamma_sub_stirling_lt`
+(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Envelope.lean`) at the angle `π / 4`.
 Once `|σ| ≤ |t|` the point `σ + i t` has `|arg| ≤ 3π/4`, and the sector main term
 `(σ - 1/2) log ‖s‖ - t arg s - σ` differs from the vertical one by two terms of size `O(1 / |t|)`:
 
@@ -45,7 +45,7 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
 ## Main declarations
 
 * `TauCeti.abs_log_norm_Gamma_vertical_sub_le`: the explicit bound
-  `(1 / (8 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|` at every `s = σ + i t` with
+  `(1 / (12 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|` at every `s = σ + i t` with
   `t ≠ 0` and `|σ| ≤ |t|`.
 * `TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le`: one constant and one threshold for all `s`
   with `Re s ∈ [a, b]`.
@@ -109,9 +109,9 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
     (hσt : |σ| ≤ t) :
     |Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤
-      (1 / (8 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
+      (1 / (12 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
   set s : ℂ := σ + t * I
-  set K : ℝ := 1 / (8 * Real.sin (π / 8) ^ 2)
+  set K : ℝ := 1 / (12 * Real.sin (π / 8) ^ 2)
   have hre : s.re = σ := by simp [s]
   have him : s.im = t := by simp [s]
   rw [abs_of_pos ht]
@@ -132,7 +132,7 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
     obtain ⟨h1, h2⟩ := abs_le.1 hatan_le
     constructor <;> linarith [Real.pi_pos]
   -- Stirling on the sector `|arg s| ≤ 3π/4`
-  have hS := abs_log_norm_Gamma_sub_stirling_le (by positivity) hsector hs0
+  have hS := (abs_log_norm_Gamma_sub_stirling_lt (by positivity) hsector hs0).le
   rw [hre, him, show π / 4 / 2 = π / 8 by ring, ← div_div] at hS
   have hS' : K / ‖s‖ ≤ K / t := div_le_div_of_nonneg_left hK ht hts
   -- the modulus term
@@ -156,7 +156,7 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_ne_zero {σ t : ℝ} (ht :
     (hσt : |σ| ≤ |t|) :
     |Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤
-      (1 / (8 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
+      (1 / (12 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
   rcases ht.lt_or_gt with ht | ht
   · have hpos := abs_log_norm_Gamma_vertical_sub_le_of_pos (σ := σ) (neg_pos.2 ht)
       (by rwa [abs_of_neg ht] at hσt)
@@ -169,11 +169,11 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_ne_zero {σ t : ℝ} (ht :
 /-- **Stirling's formula on vertical strips**, explicit form: for `s = σ + i t` with `t ≠ 0` and
 `|σ| ≤ |t|`,
 `|log ‖Γ(s)‖ - ((σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2)| ≤
-(1 / (8 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|`. -/
+(1 / (12 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|`. -/
 theorem abs_log_norm_Gamma_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre : |s.re| ≤ |s.im|) :
     |Real.log ‖Complex.Gamma s‖ -
         ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2)| ≤
-      (1 / (8 * Real.sin (π / 8) ^ 2) + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
+      (1 / (12 * Real.sin (π / 8) ^ 2) + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
   simpa only [re_add_im] using abs_log_norm_Gamma_vertical_sub_le_of_ne_zero hs hre
 
 /-- Stirling's formula on vertical strips, with one constant and one threshold for the whole
@@ -185,7 +185,7 @@ theorem exists_abs_log_norm_Gamma_vertical_sub_le (a b : ℝ) :
           ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2)| ≤
         C / |s.im| := by
   set M := max |a| |b|
-  refine ⟨1 / (8 * Real.sin (π / 8) ^ 2) + (M + 1 / 2) * M + M ^ 2, M + 1,
+  refine ⟨1 / (12 * Real.sin (π / 8) ^ 2) + (M + 1 / 2) * M + M ^ 2, M + 1,
     fun s hs ht ↦ ?_⟩
   have hσM : |s.re| ≤ M := abs_le_max_abs_abs hs.1 hs.2
   have hM : 0 ≤ M := (abs_nonneg _).trans hσM

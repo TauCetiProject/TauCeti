@@ -77,12 +77,12 @@ namespace TauCeti
 /-- **Stirling's formula for `Gammaℝ` on vertical strips**, explicit form: for `s = σ + i t` with
 `t ≠ 0` and `|σ| ≤ |t|`,
 `|log ‖Γ_ℝ(s)‖ - (-π |t| / 4 + ((σ - 1) / 2) log |t| + (log 2 - (σ - 1) log (2π)) / 2)| ≤
-  (1 / (4 * sin (π / 8) ^ 2) + |σ - 1| |σ| / 2 + σ ^ 2 / 2) / |t|`. -/
+  (1 / (6 * sin (π / 8) ^ 2) + |σ - 1| |σ| / 2 + σ ^ 2 / 2) / |t|`. -/
 theorem abs_log_norm_Gammaℝ_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre : |s.re| ≤ |s.im|) :
     |Real.log ‖Complex.Gammaℝ s‖ -
         (-π * |s.im| / 4 + (s.re - 1) / 2 * Real.log |s.im| +
           (Real.log 2 - (s.re - 1) * Real.log (2 * π)) / 2)| ≤
-      (1 / (4 * Real.sin (π / 8) ^ 2) + |s.re - 1| * |s.re| / 2 + s.re ^ 2 / 2) / |s.im| := by
+      (1 / (6 * Real.sin (π / 8) ^ 2) + |s.re - 1| * |s.re| / 2 + s.re ^ 2 / 2) / |s.im| := by
   have him2 : (s / 2).im ≠ 0 := by simpa using div_ne_zero hs two_ne_zero
   have hre2 : |(s / 2).re| ≤ |(s / 2).im| := by
     simp only [div_ofNat_re, div_ofNat_im, abs_div, Nat.abs_ofNat]
@@ -104,9 +104,9 @@ theorem abs_log_norm_Gammaℝ_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre :
     ring
   have hsub_abs : |s.re / 2 - 1 / 2| = |s.re - 1| / 2 := by
     rw [← sub_div, abs_div, abs_two]
-  have hrhs : (1 / (8 * Real.sin (π / 8) ^ 2) + |s.re / 2 - 1 / 2| * (|s.re| / 2) +
+  have hrhs : (1 / (12 * Real.sin (π / 8) ^ 2) + |s.re / 2 - 1 / 2| * (|s.re| / 2) +
         (s.re / 2) ^ 2) / (|s.im| / 2) =
-      (1 / (4 * Real.sin (π / 8) ^ 2) + |s.re - 1| * |s.re| / 2 + s.re ^ 2 / 2) / |s.im| := by
+      (1 / (6 * Real.sin (π / 8) ^ 2) + |s.re - 1| * |s.re| / 2 + s.re ^ 2 / 2) / |s.im| := by
     rw [hsub_abs]
     field_simp
     ring
@@ -118,7 +118,7 @@ private theorem abs_log_norm_Gammaℝ_vertical_sub_le_of_re_le {w : ℂ} {R : �
     |Real.log ‖Complex.Gammaℝ w‖ -
         (-π * |w.im| / 4 + (w.re - 1) / 2 * Real.log |w.im| +
           (Real.log 2 - (w.re - 1) * Real.log (2 * π)) / 2)| ≤
-      (1 / (4 * Real.sin (π / 8) ^ 2) + (R + 1) * R / 2 + R ^ 2 / 2) / |w.im| := by
+      (1 / (6 * Real.sin (π / 8) ^ 2) + (R + 1) * R / 2 + R ^ 2 / 2) / |w.im| := by
   have hR0 : 0 ≤ R := (abs_nonneg _).trans hwre
   have hwim_pos : 0 < |w.im| := by linarith
   have hwre1 : |w.re - 1| ≤ R + 1 := abs_le.2
@@ -140,7 +140,7 @@ theorem exists_abs_log_norm_Gammaℝ_vertical_sub_le (a b : ℝ) :
           (-π * |s.im| / 4 + (s.re - 1) / 2 * Real.log |s.im| +
             (Real.log 2 - (s.re - 1) * Real.log (2 * π)) / 2)| ≤
         C / |s.im| :=
-  ⟨1 / (4 * Real.sin (π / 8) ^ 2) + (max |a| |b| + 1) * max |a| |b| / 2 + max |a| |b| ^ 2 / 2,
+  ⟨1 / (6 * Real.sin (π / 8) ^ 2) + (max |a| |b| + 1) * max |a| |b| / 2 + max |a| |b| ^ 2 / 2,
     max |a| |b| + 1,
     fun _ hs ht ↦ abs_log_norm_Gammaℝ_vertical_sub_le_of_re_le (abs_le_max_abs_abs hs.1 hs.2) ht⟩
 
@@ -190,12 +190,12 @@ private theorem log_norm_Gammaℂ_sub_stirling_eq {s : ℂ} (hs : s.im ≠ 0) :
 /-- **Stirling's formula for `Gammaℂ` on vertical strips**, explicit form: for `s = σ + i t` with
 `t ≠ 0` and `|σ| ≤ |t|`,
 `|log ‖Γ_ℂ(s)‖ - (-π |t| / 2 + (σ - 1 / 2) log |t| + log 2 - (σ - 1 / 2) log (2π))| ≤
-  (1 / (8 * sin (π / 8) ^ 2) + |σ - 1 / 2| |σ| + σ ^ 2) / |t|`. -/
+  (1 / (12 * sin (π / 8) ^ 2) + |σ - 1 / 2| |σ| + σ ^ 2) / |t|`. -/
 theorem abs_log_norm_Gammaℂ_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre : |s.re| ≤ |s.im|) :
     |Real.log ‖Complex.Gammaℂ s‖ -
         (-π * |s.im| / 2 + (s.re - 1 / 2) * Real.log |s.im| +
           Real.log 2 - (s.re - 1 / 2) * Real.log (2 * π))| ≤
-      (1 / (8 * Real.sin (π / 8) ^ 2) + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
+      (1 / (12 * Real.sin (π / 8) ^ 2) + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
   rw [log_norm_Gammaℂ_sub_stirling_eq hs]
   exact abs_log_norm_Gamma_vertical_sub_le hs hre
 
@@ -288,7 +288,7 @@ theorem exists_abs_log_norm_Gammaℝ_add_vertical_sub_le (a b M : ℝ) :
   set B := max |a| |b|
   have : 0 ≤ B := (abs_nonneg a).trans (le_max_left _ _)
   set R := B + M'
-  set K := 1 / (4 * Real.sin (π / 8) ^ 2) + (R + 1) * R / 2 + R ^ 2 / 2
+  set K := 1 / (6 * Real.sin (π / 8) ^ 2) + (R + 1) * R / 2 + R ^ 2 / 2
   have hK0 : 0 ≤ K := by positivity
   have : 0 ≤ Real.log (2 * π) := Real.log_nonneg (by linarith [Real.two_le_pi])
   set C := K + π * M' / 4 + (R + 1) / 2 * M' + (Real.log 2 + (R + 1) * Real.log (2 * π)) / 2

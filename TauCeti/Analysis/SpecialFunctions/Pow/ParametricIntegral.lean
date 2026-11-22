@@ -52,8 +52,9 @@ holomorphy and partial-derivative formulas for Carlson's symmetric elliptic inte
   `TauCeti.integrableOn_mul_ofReal_add_cpow_of_re_le` — independence of `z ∈ slitPlane` and
   monotonicity in `s.re`.
 * `TauCeti.integrableOn_mul_ofReal_add_cpow_of_norm_le`,
+  `TauCeti.integrableOn_div_ofReal_add_pow_of_norm_le`,
   `TauCeti.integrableOn_ofReal_add_cpow` — Lebesgue integrability for bounded measurable weights
-  when `s.re < -1`.
+  when `s.re < -1` or for natural-power denominators `k ≥ 2`.
 * `TauCeti.hasDerivAt_integral_mul_ofReal_add_cpow` — differentiation under the integral sign for
   `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ` on `slitPlane`.
 * `TauCeti.differentiableOn_integral_mul_ofReal_add_cpow`,
@@ -177,6 +178,22 @@ theorem integrableOn_mul_ofReal_add_cpow_of_norm_le {g : ℝ → ℂ}
   have h1t : 0 < 1 + t := by have : (0 : ℝ) < t := hpos; linarith
   rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _) (by positivity))]
   exact mul_le_mul_of_nonneg_right ht (Real.rpow_nonneg h1t.le s.re)
+
+/-- If `g : ℝ → ℂ` is almost-everywhere strongly measurable and bounded on `(0, ∞)` by `M`, then
+for every `z ∈ slitPlane` and `k ≥ 2`, `t ↦ g t / ((t : ℂ) + z) ^ k` is integrable on `(0, ∞)`
+with respect to Lebesgue measure. -/
+theorem integrableOn_div_ofReal_add_pow_of_norm_le {g : ℝ → ℂ}
+    (hg_meas : AEStronglyMeasurable g (volume.restrict (Ioi 0))) {M : ℝ}
+    (hg_bdd : ∀ᵐ t ∂(volume.restrict (Ioi 0)), ‖g t‖ ≤ M) {z : ℂ} (hz : z ∈ slitPlane)
+    {k : ℕ} (hk : 2 ≤ k) :
+    IntegrableOn (fun t : ℝ => g t / ((t : ℂ) + z) ^ k) (Ioi 0) := by
+  have hs : (-(k : ℂ)).re < -1 := by
+    simp only [Complex.neg_re, Complex.natCast_re]
+    exact_mod_cast (by omega : -(k : ℤ) < -1)
+  refine (integrableOn_mul_ofReal_add_cpow_of_norm_le hg_meas hg_bdd hz hs).congr_fun
+    (fun t _ => ?_) measurableSet_Ioi
+  dsimp only
+  rw [Complex.cpow_neg, Complex.cpow_natCast, div_eq_mul_inv]
 
 /-- For `z ∈ slitPlane` and `s : ℂ` with `s.re < -1`, `t ↦ ((t : ℂ) + z) ^ s` is integrable on
 `(0, ∞)` with respect to Lebesgue measure. -/

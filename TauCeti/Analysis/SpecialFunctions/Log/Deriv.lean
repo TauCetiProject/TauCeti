@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
+import TauCeti.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 
 /-!
@@ -16,7 +19,9 @@ For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` 
 `log x`, by evenness of `v ∘ log` for `x < 0`.
 Where `0 < f ≤ 1`, the gradient of `f = exp (log f)` is at most that of `log f`.
 The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, that of `r ↦ log (c / r)`
-wherever `c ≠ 0` and `r ≠ 0`, and the higher derivatives `iteratedDeriv k Real.log` for `k ≥ 1`.
+wherever `c ≠ 0` and `r ≠ 0`, the higher derivatives `iteratedDeriv k Real.log` for `k ≥ 1`, and
+the real-parameter smoothness and higher derivatives of `t ↦ Complex.log (t + z)` wherever
+`t + z ∈ Complex.slitPlane`.
 
 ## Main results
 
@@ -28,6 +33,9 @@ wherever `c ≠ 0` and `r ≠ 0`, and the higher derivatives `iteratedDeriv k Re
   exponent, assuming `log x ≠ 0`.
 * `Real.hasDerivAt_log_const_div`: the derivative of `log (c / r)` is `-r⁻¹`.
 * `Real.iteratedDeriv_log`: for `k ≥ 1`, `iteratedDeriv k log x = (-1)^(k-1) (k-1)! / x^k`.
+* `Complex.contDiffAt_log_ofReal_add`, `Complex.hasDerivAt_log_ofReal_add`,
+  `Complex.iteratedDeriv_log_ofReal_add`: smoothness, first derivative, and higher derivatives of
+  `t ↦ Complex.log (t + z)` along `ℝ` whenever `(u : ℂ) + z ∈ Complex.slitPlane`.
 
 The reciprocal-log-power derivative is adapted from the Ramanujan estimates in the
 [PrimeNumberTheoremAnd project][PNTLogPower].
@@ -38,7 +46,7 @@ The reciprocal-log-power derivative is adapted from the Ramanujan estimates in t
 public section
 
 open Real Filter Topology
-open scoped Nat
+open scoped ContDiff Nat
 
 namespace TauCeti
 
@@ -128,9 +136,56 @@ theorem hasDerivAt_log_const_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :
 `(-1) ^ (k - 1) * (k - 1)! / x ^ k` (at `x = 0` both sides vanish). -/
 theorem iteratedDeriv_log {k : ℕ} (hk : 1 ≤ k) (x : ℝ) :
     iteratedDeriv k log x = (-1 : ℝ) ^ (k - 1) * ((k - 1)! : ℝ) / x ^ k := by
-  have hk_eq : k = (k - 1) + 1 := by omega
+  have hk_eq : k = (k - 1) + 1 := (Nat.sub_add_cancel hk).symm
   conv_lhs => rw [hk_eq, iteratedDeriv_succ', deriv_log']
-  simpa [one_div, show k - 1 + 1 = k by omega] using
+  simpa [one_div, Nat.sub_add_cancel hk] using
     TauCeti.iteratedDeriv_const_div (k - 1) (1 : ℝ) x
 
 end Real
+
+namespace Complex
+
+/-- For `(u : ℂ) + z ∈ Complex.slitPlane`, the shifted principal logarithm `t ↦ log (t + z)` is
+smooth of arbitrary order at `u : ℝ`. -/
+theorem contDiffAt_log_ofReal_add {u : ℝ} {z : ℂ} (h : (u : ℂ) + z ∈ slitPlane)
+    (n : WithTop ℕ∞) :
+    ContDiffAt ℝ n (fun t : ℝ ↦ log ((t : ℂ) + z)) u := by
+  have hlin : ContDiffAt ℝ n (fun t : ℝ ↦ (t : ℂ) + z) u :=
+    ofRealCLM.contDiff.contDiffAt.add contDiffAt_const
+  exact ((contDiffAt_log h).restrict_scalars ℝ).comp u hlin
+
+/-- For `(u : ℂ) + z ∈ Complex.slitPlane`, the derivative of `t ↦ log (t + z)` at `u : ℝ` is
+`(u + z)⁻¹`. -/
+theorem hasDerivAt_log_ofReal_add {u : ℝ} {z : ℂ} (h : (u : ℂ) + z ∈ slitPlane) :
+    HasDerivAt (fun t : ℝ ↦ log ((t : ℂ) + z)) (((u : ℂ) + z)⁻¹) u := by
+  have hlin : HasDerivAt (fun t : ℝ ↦ (t : ℂ) + z) 1 u := by
+    simpa using (hasDerivAt_id (u : ℂ)).comp_ofReal.add_const z
+  refine ((hasDerivAt_log h).comp u hlin).congr_deriv ?_
+  simp
+
+/-- For `k ≥ 1` and `(u : ℂ) + z ∈ Complex.slitPlane`, the `k`-th derivative of `t ↦ log (t + z)`
+at `u : ℝ` is `(-1) ^ (k - 1) * (k - 1)! / (u + z) ^ k`. -/
+theorem iteratedDeriv_log_ofReal_add {k : ℕ} (hk : 1 ≤ k) {u : ℝ} {z : ℂ}
+    (h : (u : ℂ) + z ∈ slitPlane) :
+    iteratedDeriv k (fun t : ℝ ↦ log ((t : ℂ) + z)) u =
+      (-1 : ℂ) ^ (k - 1) * ((k - 1)! : ℂ) / ((u : ℂ) + z) ^ k := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hk
+  clear hk
+  induction m generalizing u with
+  | zero =>
+    rw [zero_add, iteratedDeriv_one, (hasDerivAt_log_ofReal_add h).deriv]
+    simp [one_div]
+  | succ m ih =>
+    have hs : {t : ℝ | (t : ℂ) + z ∈ slitPlane} ∈ 𝓝 u :=
+      (isOpen_slitPlane.preimage (continuous_ofReal.add continuous_const)).mem_nhds h
+    have hev : iteratedDeriv (m + 1) (fun t : ℝ ↦ log ((t : ℂ) + z)) =ᶠ[𝓝 u]
+        fun t : ℝ ↦ (-1 : ℂ) ^ m * (m ! : ℂ) / ((t : ℂ) + z) ^ (m + 1) :=
+      Filter.eventually_of_mem hs fun _ ht ↦ ih ht
+    have hlin : HasDerivAt (fun t : ℝ ↦ (t : ℂ) + z) 1 u := by
+      simpa using (hasDerivAt_id (u : ℂ)).comp_ofReal.add_const z
+    have hpow := hlin.const_div_pow (slitPlane_ne_zero h) ((-1 : ℂ) ^ m * (m ! : ℂ)) (m + 1)
+    rw [iteratedDeriv_succ, hev.deriv_eq, hpow.deriv]
+    simp only [Nat.add_sub_cancel, Nat.factorial_succ, Nat.cast_mul, pow_succ]
+    ring
+
+end Complex

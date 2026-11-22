@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Envelope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import TauCeti.Analysis.SpecialFunctions.Integrals.PeriodicStieltjes
+import Mathlib.NumberTheory.ZetaValues
 
 /-!
 # Stieltjes representation and higher derivatives of the Stirling remainder
@@ -18,24 +18,21 @@ On the slit plane `ℂ ∖ (-∞, 0]`, the remainder
 in Stirling's formula is given by the periodic-quadratic Stieltjes integral
 `stirlingRemainder z = ∫_{t > 0} ((fract t - fract t ^ 2) / 2) / (z + t) ^ 2 dt`.
 
-Differentiating under the integral sign `j` times on `slitPlane`
-(`TauCeti.hasDerivAt_integral_fract_sub_fract_sq_div_add_pow`) yields, for every `j : ℕ` and
-`z ∈ slitPlane`,
+Specializing `TauCeti.iteratedDeriv_stirlingSeriesRemainder` at `n = 1` yields, for every `j : ℕ`
+and `z ∈ slitPlane`,
 `iteratedDeriv j stirlingRemainder z =
   (-1) ^ j * (j + 1)! * ∫_{t > 0} ((fract t - fract t ^ 2) / 2) / (z + t) ^ (j + 2) dt`.
 
-Combining `0 ≤ (fract t - fract t ^ 2) / 2 ≤ 1 / 8` with the sharp half-angle lower bound
-`cos (arg z / 2) * (‖z‖ + t) ≤ ‖z + t‖` and the exact half-line evaluation
-`∫_{t > 0} 1 / (a + t) ^ (j + 2) dt = 1 / ((j + 1) * a ^ (j + 1))`
-(`TauCeti.norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le`) gives Nemes's explicit bound on
-the whole slit plane:
-`‖iteratedDeriv j stirlingRemainder z‖ ≤ j! / (8 * cos (arg z / 2) ^ (j + 2) * ‖z‖ ^ (j + 1))`.
-On any closed sector `|arg z| ≤ π - δ` (`0 < δ`, `z ≠ 0`) this specializes to
-`‖iteratedDeriv j stirlingRemainder z‖ ≤ j! / (8 * sin (δ / 2) ^ (j + 2) * ‖z‖ ^ (j + 1))`,
+Combined with the sharp `1 / 12` half-angle bounds
+`TauCeti.norm_iteratedDeriv_stirlingRemainder_lt` and
+`TauCeti.norm_iteratedDeriv_stirlingRemainder_lt_of_abs_arg_le`
+(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Envelope.lean`), on any closed sector
+`|arg z| ≤ π - δ` (`0 < δ`, `z ≠ 0`) this gives
+`‖iteratedDeriv j stirlingRemainder z‖ < j! / (12 * sin (δ / 2) ^ (j + 2) * ‖z‖ ^ (j + 1))`,
 and hence `iteratedDeriv j stirlingRemainder =O ‖z‖ ^ (-(j + 1))` as `z → ∞` in the sector.
 Along the positive real axis `(0, ∞)`, `iteratedDeriv j stirlingRemainder` is real-valued and
-strictly alternates in sign: `0 < (-1) ^ j * (iteratedDeriv j stirlingRemainder x).re ≤
-j! / (8 * x ^ (j + 1))`; in particular `(stirlingRemainder x).re > 0` and
+strictly alternates in sign: `0 < (-1) ^ j * (iteratedDeriv j stirlingRemainder x).re <
+j! / (12 * x ^ (j + 1))`; in particular `(stirlingRemainder x).re > 0` and
 `(deriv stirlingRemainder x).re < 0` for `x > 0`.
 
 ## Main declarations
@@ -44,16 +41,18 @@ j! / (8 * x ^ (j + 1))`; in particular `(stirlingRemainder x).re > 0` and
   `TauCeti.deriv_stirlingRemainder_eq_integral`: integral representation of all iterated
   derivatives of `stirlingRemainder` (extending `TauCeti.stirlingRemainder_eq_integral`) and
   identification with iterated derivatives of `digamma z - log z + (2 * z)⁻¹`.
-* `TauCeti.norm_iteratedDeriv_stirlingRemainder_le`,
-  `TauCeti.norm_iteratedDeriv_stirlingRemainder_le_of_abs_arg_le`,
+* `TauCeti.norm_deriv_stirlingRemainder_lt`,
   `TauCeti.exists_norm_iteratedDeriv_stirlingRemainder_le`,
-  `TauCeti.isBigO_iteratedDeriv_stirlingRemainder`: Nemes's explicit slit-plane and sector bounds
-  for all `j : ℕ`, with specialization `TauCeti.norm_deriv_stirlingRemainder_le`.
+  `TauCeti.isBigO_iteratedDeriv_stirlingRemainder`: `j = 1` specialization of
+  `TauCeti.norm_iteratedDeriv_stirlingRemainder_lt`, existential sector bound, and asymptotic
+  `O(‖z‖ ^ (-(j + 1)))` bound for all `j : ℕ`.
 * `TauCeti.iteratedDeriv_stirlingRemainder_ofReal_im`,
+  `TauCeti.iteratedDeriv_stirlingRemainder_ofReal_re`,
   `TauCeti.neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_pos`,
-  `TauCeti.neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_le`,
-  `TauCeti.deriv_stirlingRemainder_ofReal_re_neg`: real-valuedness and strict sign alternation on
-  `(0, ∞)`.
+  `TauCeti.neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_lt`,
+  `TauCeti.stirlingRemainder_ofReal_re_pos`, `TauCeti.stirlingRemainder_ofReal_re_lt`,
+  `TauCeti.deriv_stirlingRemainder_ofReal_re_neg`: real-valuedness, strict sign alternation, and
+  sharp `1 / 12` upper bounds on `(0, ∞)`.
 
 ## References
 
@@ -72,9 +71,6 @@ namespace TauCeti
 
 /-! ### Iterated derivatives of `stirlingRemainder` -/
 
-private noncomputable abbrev stieltjesKernel (j : ℕ) (z : ℂ) : ℂ :=
-  ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ (j + 2)
-
 /-- Integral representation of all higher derivatives of the Stirling remainder on the slit plane:
 for every `j : ℕ` and `z ∈ slitPlane`,
 `iteratedDeriv j stirlingRemainder z =
@@ -82,26 +78,26 @@ for every `j : ℕ` and `z ∈ slitPlane`,
 theorem iteratedDeriv_stirlingRemainder (j : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
     iteratedDeriv j stirlingRemainder z = (-1 : ℂ) ^ j * ((j + 1).factorial : ℂ) *
       ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ (j + 2) := by
-  induction j generalizing z with
-  | zero =>
-    simpa [iteratedDeriv_zero] using stirlingRemainder_eq_integral hz
-  | succ j ih =>
-    rw [iteratedDeriv_succ]
-    have heq : EqOn (iteratedDeriv j stirlingRemainder)
-        (fun w ↦ (-1 : ℂ) ^ j * ((j + 1).factorial : ℂ) * stieltjesKernel j w) slitPlane :=
-      fun w hw ↦ ih hw
-    have hd : HasDerivAt (fun w ↦ (-1 : ℂ) ^ j * ((j + 1).factorial : ℂ) * stieltjesKernel j w)
-        ((-1 : ℂ) ^ j * ((j + 1).factorial : ℂ) * (-(j + 2 : ℂ) * stieltjesKernel (j + 1) z))
-        z :=
-      (hasDerivAt_integral_fract_sub_fract_sq_div_add_pow hz j).const_mul _
-    rw [(heq.eventuallyEq_of_mem (isOpen_slitPlane.mem_nhds hz)).deriv_eq, hd.deriv]
-    have hfac : ((j + 2).factorial : ℂ) = (j + 2 : ℂ) * ((j + 1).factorial : ℂ) := by
-      rw [show j + 2 = (j + 1) + 1 by ring, Nat.factorial_succ]
-      push_cast
-      ring
-    rw [pow_succ, hfac]
-    dsimp [stieltjesKernel]
-    ring
+  have hfun : stirlingRemainder = stirlingSeriesRemainder 1 :=
+    funext fun w ↦ (stirlingSeriesRemainder_one_eq_stirlingRemainder w).symm
+  rw [hfun, iteratedDeriv_stirlingSeriesRemainder le_rfl j hz]
+  have hidx : 2 * 1 + j - 1 = j + 1 := by omega
+  have hpow : 2 * 1 + j = j + 2 := by omega
+  rw [hidx, hpow, Nat.mul_one]
+  have hcoe : (-1 : ℂ) ^ j * (((j + 1).factorial : ℂ) / ((2 : ℕ).factorial : ℂ)) *
+      ∫ u in Ioi (0 : ℝ),
+        (((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract u) : ℝ) : ℂ) / ((u : ℂ) + z) ^ (j + 2) =
+      (-1 : ℂ) ^ j * ((j + 1).factorial : ℂ) *
+        ((2 : ℂ)⁻¹ * ∫ u in Ioi (0 : ℝ),
+          (((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract u) : ℝ) : ℂ) /
+            ((u : ℂ) + z) ^ (j + 2)) := by
+    rw [Nat.factorial_two, Nat.cast_ofNat]; ring
+  rw [hcoe, ← MeasureTheory.integral_const_mul]
+  refine congr_arg (_ * ·) (setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_)
+  rw [bernoulli_two, bernoulliFun_two]
+  push_cast
+  rw [add_comm (t : ℂ) z]
+  ring
 
 /-- For `j : ℕ` and `z ∈ slitPlane`, the `(j + 1)`-st derivative of `stirlingRemainder` coincides
 with the `j`-th derivative of `w ↦ digamma w - log w + (2 * w)⁻¹`. -/
@@ -117,51 +113,13 @@ theorem deriv_stirlingRemainder_eq_integral {z : ℂ} (hz : z ∈ slitPlane) :
       -2 * ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ 3 := by
   simpa [iteratedDeriv_one] using iteratedDeriv_stirlingRemainder 1 hz
 
-/-! ### Nemes's explicit sector bounds for `stirlingRemainder` and its derivatives -/
+/-! ### Sector bounds and asymptotics for `stirlingRemainder` and its derivatives -/
 
-/-- **Nemes's bound for higher derivatives of the Stirling remainder** on the slit plane (Nemes
-2015, eq. (2.5) and Lemma 2.1): for every `j : ℕ` and `z ∈ slitPlane`,
-`‖iteratedDeriv j stirlingRemainder z‖ ≤
-  j! / (8 * cos (arg z / 2) ^ (j + 2) * ‖z‖ ^ (j + 1))`. -/
-theorem norm_iteratedDeriv_stirlingRemainder_le (j : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
-    ‖iteratedDeriv j stirlingRemainder z‖ ≤
-      (j.factorial : ℝ) / (8 * Real.cos (z.arg / 2) ^ (j + 2) * ‖z‖ ^ (j + 1)) := by
-  calc
-    ‖iteratedDeriv j stirlingRemainder z‖
-        = ((j + 1).factorial : ℝ) * ‖stieltjesKernel j z‖ := by
-          simp [iteratedDeriv_stirlingRemainder j hz, stieltjesKernel]
-    _ ≤ ((j + 1).factorial : ℝ) *
-          (1 / (8 * (j + 1 : ℝ) * Real.cos (z.arg / 2) ^ (j + 2) * ‖z‖ ^ (j + 1))) :=
-        mul_le_mul_of_nonneg_left (norm_integral_Ioi_fract_sub_fract_sq_div_add_pow_le j z)
-          (Nat.cast_nonneg _)
-    _ = (j.factorial : ℝ) / (8 * Real.cos (z.arg / 2) ^ (j + 2) * ‖z‖ ^ (j + 1)) := by
-        rw [Nat.factorial_succ]
-        push_cast
-        have hj1 : (j + 1 : ℝ) ≠ 0 := by positivity
-        field_simp [hj1]
-
-/-- Nemes's explicit sector bound for higher derivatives of the Stirling remainder: for `0 < δ`,
-every nonzero `z` with `|arg z| ≤ π - δ`, and every `j : ℕ`,
-`‖iteratedDeriv j stirlingRemainder z‖ ≤ j! / (8 * sin (δ / 2) ^ (j + 2) * ‖z‖ ^ (j + 1))`.
-Note that `δ ≤ π` follows automatically from `|arg z| ≤ π - δ`. -/
-theorem norm_iteratedDeriv_stirlingRemainder_le_of_abs_arg_le (j : ℕ) {z : ℂ} {δ : ℝ}
-    (hδ : 0 < δ) (hz : |z.arg| ≤ π - δ) (hz0 : z ≠ 0) :
-    ‖iteratedDeriv j stirlingRemainder z‖ ≤
-      (j.factorial : ℝ) / (8 * Real.sin (δ / 2) ^ (j + 2) * ‖z‖ ^ (j + 1)) := by
-  have hδπ : δ ≤ π := by linarith [abs_nonneg z.arg]
-  have : 0 < Real.sin (δ / 2) :=
-    Real.sin_pos_of_pos_of_lt_pi (half_pos hδ) (by linarith [Real.pi_pos])
-  have : Real.sin (δ / 2) ≤ Real.cos (z.arg / 2) :=
-    sin_half_le_cos_half_arg_of_abs_arg_le hδ.le hz
-  have : 0 < ‖z‖ := norm_pos_iff.mpr hz0
-  exact (norm_iteratedDeriv_stirlingRemainder_le j (mem_slitPlane_of_abs_arg_le hδ hz hz0)).trans
-    (by gcongr)
-
-/-- Nemes's explicit slit-plane bound for `deriv stirlingRemainder` (`j = 1`):
-`‖deriv stirlingRemainder z‖ ≤ 1 / (8 * cos (arg z / 2) ^ 3 * ‖z‖ ^ 2)` for `z ∈ slitPlane`. -/
-theorem norm_deriv_stirlingRemainder_le {z : ℂ} (hz : z ∈ slitPlane) :
-    ‖deriv stirlingRemainder z‖ ≤ 1 / (8 * Real.cos (z.arg / 2) ^ 3 * ‖z‖ ^ 2) := by
-  simpa [iteratedDeriv_one] using norm_iteratedDeriv_stirlingRemainder_le 1 hz
+/-- Sharp `1 / 12` slit-plane bound for `deriv stirlingRemainder` (`j = 1`):
+`‖deriv stirlingRemainder z‖ < 1 / (12 * cos (arg z / 2) ^ 3 * ‖z‖ ^ 2)` for `z ∈ slitPlane`. -/
+theorem norm_deriv_stirlingRemainder_lt {z : ℂ} (hz : z ∈ slitPlane) :
+    ‖deriv stirlingRemainder z‖ < 1 / (12 * Real.cos (z.arg / 2) ^ 3 * ‖z‖ ^ 2) := by
+  simpa [iteratedDeriv_one] using norm_iteratedDeriv_stirlingRemainder_lt 1 hz
 
 /-- Existential sector bound for higher derivatives of `stirlingRemainder`: for every `j : ℕ` and
 `0 < δ`, there exists `C > 0` with `‖iteratedDeriv j stirlingRemainder z‖ ≤ C / ‖z‖ ^ (j + 1)`
@@ -172,11 +130,11 @@ theorem exists_norm_iteratedDeriv_stirlingRemainder_le (j : ℕ) {δ : ℝ} (hδ
   rcases le_or_gt δ π with hδπ | hπδ
   · have hsin : 0 < Real.sin (δ / 2) :=
       Real.sin_pos_of_pos_of_lt_pi (half_pos hδ) (by linarith [Real.pi_pos])
-    refine ⟨(j.factorial : ℝ) / (8 * Real.sin (δ / 2) ^ (j + 2)),
+    refine ⟨(j.factorial : ℝ) / (12 * Real.sin (δ / 2) ^ (j + 2)),
       div_pos (Nat.cast_pos.mpr (Nat.factorial_pos j)) (by positivity),
       fun z hz hz0 ↦ ?_⟩
     rw [div_div]
-    exact norm_iteratedDeriv_stirlingRemainder_le_of_abs_arg_le j hδ hz hz0
+    exact (norm_iteratedDeriv_stirlingRemainder_lt_of_abs_arg_le j hδ hz hz0).le
   · exact ⟨1, one_pos, fun z hz _ ↦ False.elim (by linarith [abs_nonneg z.arg])⟩
 
 /-- Asymptotic `O(‖z‖ ^ (-(j + 1)))` bound for the `j`-th derivative of `stirlingRemainder` as
@@ -193,91 +151,63 @@ theorem isBigO_iteratedDeriv_stirlingRemainder (j : ℕ) {δ : ℝ} (hδ : 0 < �
 
 /-! ### Positive real axis: real-valuedness and strict sign alternation -/
 
-private theorem iteratedDeriv_stirlingRemainder_ofReal_eq (j : ℕ) {x : ℝ} (hx : 0 < x) :
-    iteratedDeriv j stirlingRemainder x =
-      (((-1 : ℝ) ^ j * ((j + 1).factorial : ℝ) *
-        ∫ t : ℝ in Ioi 0, ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) : ℝ) : ℂ) := by
-  rw [iteratedDeriv_stirlingRemainder j (ofReal_mem_slitPlane.mpr hx)]
-  have heq : (∫ t : ℝ in Ioi 0,
-      (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((x : ℂ) + t) ^ (j + 2)) =
-      ((∫ t : ℝ in Ioi 0,
-        ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) : ℝ) : ℂ) := by
-    calc
-      (∫ t : ℝ in Ioi 0,
-          (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((x : ℂ) + t) ^ (j + 2))
-          = ∫ t : ℝ in Ioi 0,
-            ((((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) : ℝ) : ℂ) := by
-        refine setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_
-        push_cast
-        rfl
-      _ = ((∫ t : ℝ in Ioi 0,
-            ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) : ℝ) : ℂ) :=
-        integral_ofReal
-  rw [heq]
-  push_cast
-  rfl
-
 /-- For every `j : ℕ` and `0 < x`, `iteratedDeriv j stirlingRemainder x` is real-valued. -/
 theorem iteratedDeriv_stirlingRemainder_ofReal_im (j : ℕ) {x : ℝ} (hx : 0 < x) :
     (iteratedDeriv j stirlingRemainder x).im = 0 := by
-  rw [iteratedDeriv_stirlingRemainder_ofReal_eq j hx, ofReal_im]
+  have hfun : stirlingRemainder = stirlingSeriesRemainder 1 :=
+    funext fun w ↦ (stirlingSeriesRemainder_one_eq_stirlingRemainder w).symm
+  rw [hfun, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_im]
 
 /-- Real integral representation of `(iteratedDeriv j stirlingRemainder x).re` for `0 < x`. -/
 theorem iteratedDeriv_stirlingRemainder_ofReal_re (j : ℕ) {x : ℝ} (hx : 0 < x) :
     (iteratedDeriv j stirlingRemainder x).re =
       (-1 : ℝ) ^ j * ((j + 1).factorial : ℝ) *
         ∫ t : ℝ in Ioi 0, ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2) := by
-  rw [iteratedDeriv_stirlingRemainder_ofReal_eq j hx, ofReal_re]
+  have hfun : stirlingRemainder = stirlingSeriesRemainder 1 :=
+    funext fun w ↦ (stirlingSeriesRemainder_one_eq_stirlingRemainder w).symm
+  rw [hfun, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_re,
+    iteratedDeriv_realStirlingSeriesRemainder le_rfl j hx]
+  have hidx : 2 * 1 + j - 1 = j + 1 := by omega
+  have hpow : 2 * 1 + j = j + 2 := by omega
+  rw [hidx, hpow, Nat.mul_one]
+  have hcoe : (-1 : ℝ) ^ j * (((j + 1).factorial : ℝ) / ((2 : ℕ).factorial : ℝ)) *
+      ∫ u in Ioi (0 : ℝ),
+        ((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract u)) / (u + x) ^ (j + 2) =
+      (-1 : ℝ) ^ j * ((j + 1).factorial : ℝ) *
+        ((2 : ℝ)⁻¹ * ∫ u in Ioi (0 : ℝ),
+          ((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract u)) / (u + x) ^ (j + 2)) := by
+    rw [Nat.factorial_two, Nat.cast_ofNat]; ring
+  rw [hcoe, ← MeasureTheory.integral_const_mul]
+  refine congr_arg (_ * ·) (setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_)
+  rw [bernoulli_two, bernoulliFun_two]
+  push_cast
+  rw [add_comm t x]
+  ring
 
 /-- Strict sign alternation of the Stirling remainder and its derivatives on `(0, ∞)`:
 for every `j : ℕ` and `0 < x`, `0 < (-1) ^ j * (iteratedDeriv j stirlingRemainder x).re`. -/
 theorem neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_pos (j : ℕ) {x : ℝ}
     (hx : 0 < x) :
     0 < (-1 : ℝ) ^ j * (iteratedDeriv j stirlingRemainder x).re := by
-  let f : ℝ → ℝ := fun t ↦ ((Int.fract t - Int.fract t ^ 2) / 2) / (x + t) ^ (j + 2)
-  have hf_int : IntegrableOn f (Ioi 0) := by
-    have hc := (integrableOn_Ioi_fract_sub_fract_sq_div_add_pow_iff (j := j)).mpr
-      (ofReal_mem_slitPlane.mpr hx)
-    refine hc.re.congr_fun (fun t _ ↦ ?_) measurableSet_Ioi
-    dsimp [f]
-    rw [← ofReal_add, ← ofReal_pow, ← ofReal_div, ofReal_re]
-  have hf_nn : 0 ≤ᵐ[volume.restrict (Ioi 0)] f := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-    have hxt : 0 < x + t := by linarith [mem_Ioi.mp ht]
-    exact div_nonneg (div_nonneg (Int.fract_sub_fract_sq_nonneg t) zero_le_two)
-      (pow_nonneg hxt.le _)
-  have hint_pos : 0 < ∫ t : ℝ in Ioi 0, f t := by
-    rw [setIntegral_pos_iff_support_of_nonneg_ae hf_nn hf_int]
-    have hsub : Ioo (1 / 4 : ℝ) (3 / 4) ⊆ Function.support f ∩ Ioi 0 := by
-      intro t ht
-      refine ⟨Function.mem_support.mpr ?_, mem_Ioi.mpr (by linarith [ht.1])⟩
-      have hfr : Int.fract t = t := Int.fract_eq_self.mpr ⟨by linarith [ht.1], by linarith [ht.2]⟩
-      have hnum : 0 < (Int.fract t - Int.fract t ^ 2) / 2 := by
-        rw [hfr]
-        nlinarith [ht.1, ht.2]
-      have hden : 0 < (x + t) ^ (j + 2) := pow_pos (by linarith [ht.1]) _
-      exact (div_pos hnum hden).ne'
-    have hvol : 0 < volume (Ioo (1 / 4 : ℝ) (3 / 4)) := by
-      rw [Real.volume_Ioo]
-      exact ENNReal.ofReal_pos.mpr (by norm_num)
-    exact hvol.trans_le (measure_mono hsub)
-  simpa [f, iteratedDeriv_stirlingRemainder_ofReal_re j hx, ← mul_assoc, ← mul_pow] using
-    mul_pos (Nat.cast_pos.mpr (Nat.factorial_pos (j + 1))) hint_pos
+  have hfun : stirlingRemainder = stirlingSeriesRemainder 1 :=
+    funext fun w ↦ (stirlingSeriesRemainder_one_eq_stirlingRemainder w).symm
+  rw [hfun, iteratedDeriv_stirlingSeriesRemainder_ofReal 1 j hx, ofReal_re]
+  exact neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos 0 j hx
 
-/-- Explicit upper bound on `(-1) ^ j * (iteratedDeriv j stirlingRemainder x).re` for `0 < x`:
-`(-1) ^ j * (iteratedDeriv j stirlingRemainder x).re ≤ j! / (8 * x ^ (j + 1))`. -/
-theorem neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_le (j : ℕ) {x : ℝ} (hx : 0 < x) :
-    (-1 : ℝ) ^ j * (iteratedDeriv j stirlingRemainder x).re ≤
-      (j.factorial : ℝ) / (8 * x ^ (j + 1)) := by
-  have hb : ‖iteratedDeriv j stirlingRemainder x‖ ≤ (j.factorial : ℝ) / (8 * x ^ (j + 1)) := by
+/-- Sharp upper bound on `(-1) ^ j * (iteratedDeriv j stirlingRemainder x).re` for `0 < x`:
+`(-1) ^ j * (iteratedDeriv j stirlingRemainder x).re < j! / (12 * x ^ (j + 1))`. -/
+theorem neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_lt (j : ℕ) {x : ℝ} (hx : 0 < x) :
+    (-1 : ℝ) ^ j * (iteratedDeriv j stirlingRemainder x).re <
+      (j.factorial : ℝ) / (12 * x ^ (j + 1)) := by
+  have hb : ‖iteratedDeriv j stirlingRemainder x‖ < (j.factorial : ℝ) / (12 * x ^ (j + 1)) := by
     simpa [arg_ofReal_of_nonneg hx.le, abs_of_pos hx] using
-      norm_iteratedDeriv_stirlingRemainder_le j (ofReal_mem_slitPlane.mpr hx)
+      norm_iteratedDeriv_stirlingRemainder_lt j (ofReal_mem_slitPlane.mpr hx)
   calc
     (-1 : ℝ) ^ j * (iteratedDeriv j stirlingRemainder x).re
         ≤ |(-1 : ℝ) ^ j * (iteratedDeriv j stirlingRemainder x).re| := le_abs_self _
     _ = |(iteratedDeriv j stirlingRemainder x).re| := by simp
     _ ≤ ‖iteratedDeriv j stirlingRemainder x‖ := abs_re_le_norm _
-    _ ≤ (j.factorial : ℝ) / (8 * x ^ (j + 1)) := hb
+    _ < (j.factorial : ℝ) / (12 * x ^ (j + 1)) := hb
 
 /-- On `(0, ∞)` the Stirling remainder has strictly positive real part. -/
 theorem stirlingRemainder_ofReal_re_pos {x : ℝ} (hx : 0 < x) :
@@ -285,11 +215,11 @@ theorem stirlingRemainder_ofReal_re_pos {x : ℝ} (hx : 0 < x) :
   simpa [iteratedDeriv_zero] using
     neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_pos 0 hx
 
-/-- On `(0, ∞)` the Stirling remainder satisfies `(stirlingRemainder x).re ≤ 1 / (8 * x)`. -/
-theorem stirlingRemainder_ofReal_re_le {x : ℝ} (hx : 0 < x) :
-    (stirlingRemainder x).re ≤ 1 / (8 * x) := by
+/-- On `(0, ∞)` the Stirling remainder satisfies `(stirlingRemainder x).re < 1 / (12 * x)`. -/
+theorem stirlingRemainder_ofReal_re_lt {x : ℝ} (hx : 0 < x) :
+    (stirlingRemainder x).re < 1 / (12 * x) := by
   simpa [iteratedDeriv_zero] using
-    neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_le 0 hx
+    neg_one_pow_mul_iteratedDeriv_stirlingRemainder_ofReal_re_lt 0 hx
 
 /-- On `(0, ∞)`, `deriv stirlingRemainder` has strictly negative real part:
 `(deriv stirlingRemainder x).re < 0` for `0 < x`. -/

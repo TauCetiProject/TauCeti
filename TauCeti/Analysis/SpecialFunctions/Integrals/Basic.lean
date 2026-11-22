@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Matteo Cipollina
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
@@ -71,6 +72,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
   `θ ↦ G (sin² θ)` (with `G` valued in a normed space) is odd and quasi-periodic in its upper
   limit.
+* `TauCeti.integral_log_ofReal_add`: `∫ u in a..b, Complex.log (u + z)` in closed form when
+  `u + z` remains in `Complex.slitPlane`.
 -/
 
 public section
@@ -504,6 +507,30 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+/-- For any `a b : ℝ` and `z : ℂ` such that `(u : ℂ) + z ∈ Complex.slitPlane` for all `u` in
+`Set.uIcc a b`, `∫ u in a..b, Complex.log (u + z) = ((z + b) * log (z + b) - (z + b)) -
+((z + a) * log (z + a) - (z + a))`. -/
+theorem integral_log_ofReal_add {a b : ℝ} {z : ℂ}
+    (h : ∀ u ∈ Set.uIcc a b, (u : ℂ) + z ∈ Complex.slitPlane) :
+    ∫ u in a..b, Complex.log ((u : ℂ) + z) =
+      ((z + b) * Complex.log (z + b) - (z + b)) - ((z + a) * Complex.log (z + a) - (z + a)) := by
+  have hlin (u : ℝ) : HasDerivAt (fun t : ℝ ↦ (t : ℂ) + z) 1 u := by
+    simpa using (hasDerivAt_id (u : ℂ)).comp_ofReal.add_const z
+  have hderiv : ∀ u ∈ Set.uIcc a b,
+      HasDerivAt (fun t : ℝ ↦ ((t : ℂ) + z) * Complex.log ((t : ℂ) + z) - ((t : ℂ) + z))
+        (Complex.log ((u : ℂ) + z)) u := by
+    intro u hu
+    have hmem : (u : ℂ) + z ∈ Complex.slitPlane := h u hu
+    refine (((hlin u).mul ((Complex.hasDerivAt_log hmem).comp u (hlin u))).sub
+      (hlin u)).congr_deriv ?_
+    simp [mul_inv_cancel₀ (Complex.slitPlane_ne_zero hmem)]
+  have hcont : ContinuousOn (fun u : ℝ ↦ Complex.log ((u : ℂ) + z)) (Set.uIcc a b) := by
+    intro u hu
+    have hd := (Complex.hasDerivAt_log (h u hu)).comp u (hlin u)
+    exact hd.continuousAt.continuousWithinAt
+  simpa [add_comm] using
+    intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable
 
 end TauCeti
 

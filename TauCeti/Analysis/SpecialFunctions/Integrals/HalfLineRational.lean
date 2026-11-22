@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
+import TauCeti.Analysis.Calculus.Deriv.ZPow
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 
@@ -214,11 +214,9 @@ theorem integral_Ioi_one_div_add_pow {a : ℝ} (ha : 0 ≤ a) (j : ℕ) :
 /-- For `z ∈ Complex.slitPlane` and `j : ℕ`, `u ↦ 1 / (u + z) ^ (j + 2)` is integrable on
 `(0, ∞)`. -/
 theorem integrableOn_Ioi_one_div_ofReal_add_pow {z : ℂ} (hz : z ∈ Complex.slitPlane) (j : ℕ) :
-    IntegrableOn (fun u : ℝ ↦ 1 / ((u : ℂ) + z) ^ (j + 2)) (Ioi 0) := by
-  have hs : (-(((j + 2 : ℕ) : ℂ))).re < -1 := by simp; linarith
-  refine (integrableOn_ofReal_add_cpow hz hs).congr_fun (fun u _ ↦ ?_) measurableSet_Ioi
-  dsimp only
-  rw [Complex.cpow_neg, Complex.cpow_natCast, one_div]
+    IntegrableOn (fun u : ℝ ↦ 1 / ((u : ℂ) + z) ^ (j + 2)) (Ioi 0) :=
+  integrableOn_div_ofReal_add_pow_of_norm_le aestronglyMeasurable_const (M := (1 : ℝ))
+    (Eventually.of_forall fun _ ↦ by norm_num) hz (by omega)
 
 /-- For `z ∈ Complex.slitPlane` and `j : ℕ`,
 `∫_{u > 0} 1 / (u + z) ^ (j + 2) du = 1 / ((j + 1) * z ^ (j + 1))`. -/
@@ -236,7 +234,7 @@ theorem integral_Ioi_one_div_ofReal_add_pow {z : ℂ} (hz : z ∈ Complex.slitPl
       simpa using (hasDerivAt_id (u : ℂ)).comp_ofReal.add_const z
     refine (hlin.const_div_pow hne (-(((j + 1 : ℕ) : ℂ))⁻¹) (j + 1)).congr_deriv ?_
     have hj1c : (((j + 1 : ℕ) : ℂ)) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero j
-    rw [show j + 1 + 1 = j + 2 by omega]
+    rw [Nat.add_assoc]
     field_simp
   have htend : Tendsto F atTop (𝓝 0) := by
     refine squeeze_zero_norm' (a := fun t : ℝ ↦
