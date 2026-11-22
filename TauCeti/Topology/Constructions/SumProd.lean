@@ -70,19 +70,21 @@ def Homeomorph.sigmaCongrRight {α : Type*} {β₁ β₂ : α → Type*}
   continuous_toFun := Continuous.sigma_map (f₁ := id) fun a ↦ (F a).continuous
   continuous_invFun := Continuous.sigma_map (f₁ := id) fun a ↦ (F a).symm.continuous
 
+/-- The underlying equivalence of `Homeomorph.sigmaCongrRight F` is `Equiv.sigmaCongrRight` of
+the underlying equivalences. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_toEquiv {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) :
+    (Homeomorph.sigmaCongrRight F).toEquiv = Equiv.sigmaCongrRight fun a ↦ (F a).toEquiv :=
+  (rfl)
+
 /-- `Homeomorph.sigmaCongrRight F` applies `F a` on each summand `a`. -/
 @[simp]
 theorem Homeomorph.sigmaCongrRight_apply {α : Type*} {β₁ β₂ : α → Type*}
     [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
     (F : ∀ a, β₁ a ≃ₜ β₂ a) (p : Σ a, β₁ a) :
     Homeomorph.sigmaCongrRight F p = ⟨p.1, F p.1 p.2⟩ :=
-  (rfl)
-
-/-- The inverse of `Homeomorph.sigmaCongrRight F` applies `(F a).symm` on each summand `a`. -/
-theorem Homeomorph.sigmaCongrRight_symm_apply {α : Type*} {β₁ β₂ : α → Type*}
-    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
-    (F : ∀ a, β₁ a ≃ₜ β₂ a) (p : Σ a, β₂ a) :
-    (Homeomorph.sigmaCongrRight F).symm p = ⟨p.1, (F p.1).symm p.2⟩ :=
   (rfl)
 
 /-- Bundled `Homeomorph.sigmaCongrRight` of identity homeomorphisms is the identity. -/
@@ -100,10 +102,11 @@ theorem Homeomorph.sigmaCongrRight_symm {α : Type*} {β₁ β₂ : α → Type*
     [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
     (F : ∀ a, β₁ a ≃ₜ β₂ a) :
     (Homeomorph.sigmaCongrRight F).symm = Homeomorph.sigmaCongrRight fun a ↦ (F a).symm :=
-  Homeomorph.ext fun p ↦ by simp [Homeomorph.sigmaCongrRight_symm_apply]
+  Homeomorph.ext fun _ ↦ rfl
 
 /-- Composing two `Homeomorph.sigmaCongrRight` homeomorphisms composes the component
 homeomorphisms. -/
+@[simp]
 theorem Homeomorph.sigmaCongrRight_trans {α : Type*} {β₁ β₂ β₃ : α → Type*}
     [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
     [∀ a, TopologicalSpace (β₃ a)]
