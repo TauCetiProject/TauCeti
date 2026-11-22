@@ -41,9 +41,9 @@ morphism.
 ## Main declarations
 
 * `CategoryTheory.ExactPairing.rightHom_ext`: morphisms into a right dual agree once they agree
-  after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext` and
-  `CategoryTheory.ExactPairing.rightDualHom_ext`: morphisms out of a left or right member agree
-  once they agree after coevaluation;
+  after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext` /
+  `CategoryTheory.ExactPairing.rightDualHom_ext`: morphisms out of a left/right member agree after
+  coevaluation;
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
   original morphism, so `CategoryTheory.rightAdjointMate_injective` and
@@ -54,8 +54,7 @@ morphism.
   pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` (and its
   whiskered form `CategoryTheory.ExactPairing.whiskerRight_rightMate_evaluation`) and
   `CategoryTheory.ExactPairing.coevaluation_comp_rightMate`, with `rightMate_id`, `comp_rightMate`,
-  the induced isomorphism `CategoryTheory.ExactPairing.rightMateIso`, and its pairing identities
-  `coevaluation_comp_tensorHom_rightMate` and `tensorHom_rightMate_comp_evaluation`;
+  `rightMateIso`, `coevaluation_comp_tensorHom_rightMate`, `tensorHom_rightMate_comp_evaluation`;
 * `CategoryTheory.ExactPairing.rightMate_whiskerLeft`,
   `CategoryTheory.ExactPairing.rightMate_whiskerRight` and
   `CategoryTheory.ExactPairing.rightMate_tensorHom`: mates with respect to tensor product
@@ -75,13 +74,13 @@ morphism.
 * `CategoryTheory.ExactPairing.leftMate`: the left adjoint mate with respect to explicit exact
   pairings, characterized by `CategoryTheory.ExactPairing.leftMate_comp_evaluation` and
   `CategoryTheory.ExactPairing.coevaluation_comp_leftMate`, with `leftMate_id`, `comp_leftMate`,
-  `CategoryTheory.ExactPairing.leftMateIso`, `coevaluation_comp_tensorHom_leftMate`,
-  `tensorHom_leftMate_comp_evaluation`, the tensor product formulas `leftMate_whiskerLeft`,
-  `leftMate_whiskerRight` and `leftMate_tensorHom`, and the structure-morphism formulas
-  `leftMate_associator_hom`, `leftMate_leftUnitor_hom` and `leftMate_rightUnitor_hom`;
+  `leftMateIso`, `coevaluation_comp_tensorHom_leftMate`, `tensorHom_leftMate_comp_evaluation`,
+  the tensor product formulas `leftMate_whiskerLeft`, `leftMate_whiskerRight` and
+  `leftMate_tensorHom`, and the structure-morphism formulas `leftMate_associator_hom`,
+  `leftMate_leftUnitor_hom` and `leftMate_rightUnitor_hom`;
 * `TauCeti.leftAdjointMate_eq_leftMate`, `CategoryTheory.ExactPairing.leftDualIso_hom` and
   `CategoryTheory.ExactPairing.leftDualIso_inv`: Mathlib's `leftAdjointMate` and `leftDualIso`
-  as left mates, with the evaluation identities `whiskerLeft_leftDualIso_hom_evaluation` and
+  as left mates, with `whiskerLeft_leftDualIso_hom_evaluation` and
   `whiskerLeft_leftDualIso_inv_evaluation`;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
@@ -176,9 +175,8 @@ theorem comp_rightMate {X X' Y Y' Z Z' : C} (pX : ExactPairing X X') (pY : Exact
     rightMate pX pZ (f ≫ g) = rightMate pY pZ g ≫ rightMate pX pY f :=
   @comp_rightAdjointMate C _ _ X Y Z ⟨X'⟩ ⟨Y'⟩ ⟨Z'⟩ f g
 
-/-- An isomorphism `e : X ≅ Y` induces an isomorphism `Y' ≅ X'` between right duals with respect
-to explicit exact pairings `(X, X')` and `(Y, Y')`, whose components are the right mates of those
-of `e`. -/
+/-- An isomorphism `e : X ≅ Y` induces an isomorphism `Y' ≅ X'` between right duals via right
+mates with respect to explicit exact pairings `(X, X')` and `(Y, Y')`. -/
 def rightMateIso {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y') (e : X ≅ Y) :
     Y' ≅ X' where
   hom := rightMate pX pY e.hom
@@ -186,31 +184,22 @@ def rightMateIso {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y
   hom_inv_id := by rw [← comp_rightMate, e.inv_hom_id, rightMate_id]
   inv_hom_id := by rw [← comp_rightMate, e.hom_inv_id, rightMate_id]
 
-/-- The forward morphism of `rightMateIso pX pY e` is the right mate of `e.hom`. -/
 @[simp] theorem rightMateIso_hom {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y')
     (e : X ≅ Y) : (rightMateIso pX pY e).hom = rightMate pX pY e.hom := (rfl)
-
-/-- The inverse morphism of `rightMateIso pX pY e` is the right mate of `e.inv`. -/
 @[simp] theorem rightMateIso_inv {X X' Y Y' : C} (pX : ExactPairing X X') (pY : ExactPairing Y Y')
     (e : X ≅ Y) : (rightMateIso pX pY e).inv = rightMate pY pX e.inv := (rfl)
 
-/-- Pairing `e.inv` with the right mate of `e.hom` transports the coevaluation of `pY` to the
-coevaluation of `pX`. -/
-@[reassoc]
-theorem coevaluation_comp_tensorHom_rightMate {X X' Y Y' : C} (pX : ExactPairing X X')
+/-- Pairing `e.inv` with the right mate of `e.hom` transports the coevaluation of `pY` to `pX`. -/
+@[reassoc] theorem coevaluation_comp_tensorHom_rightMate {X X' Y Y' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (e : X ≅ Y) :
     η_ Y Y' ≫ (e.inv ⊗ₘ rightMate pX pY e.hom) = η_ X X' := by
-  rw [tensorHom_def', coevaluation_comp_rightMate_assoc, ← comp_whiskerRight]
-  simp
+  rw [tensorHom_def', coevaluation_comp_rightMate_assoc, ← comp_whiskerRight]; simp
 
-/-- Precomposing the evaluation of `pX` with the tensor product of the right mate of `e.hom` and
-`e.inv` recovers the evaluation of `pY`. -/
-@[reassoc]
-theorem tensorHom_rightMate_comp_evaluation {X X' Y Y' : C} (pX : ExactPairing X X')
+/-- Precomposing the evaluation of `pX` with `rightMate pX pY e.hom ⊗ₘ e.inv` gives `pY`. -/
+@[reassoc] theorem tensorHom_rightMate_comp_evaluation {X X' Y Y' : C} (pX : ExactPairing X X')
     (pY : ExactPairing Y Y') (e : X ≅ Y) :
     (rightMate pX pY e.hom ⊗ₘ e.inv) ≫ ε_ X X' = ε_ Y Y' := by
-  rw [tensorHom_def', Category.assoc, rightMate_comp_evaluation, ← whiskerLeft_comp_assoc]
-  simp
+  rw [tensorHom_def', Category.assoc, rightMate_comp_evaluation, ← whiskerLeft_comp_assoc]; simp
 
 /-- The mate of `f ▷ Z` with respect to the tensor product pairings is `Z' ◁ fᘁ`. -/
 @[simp]
@@ -401,9 +390,8 @@ theorem comp_leftMate {X X' Y Y' Z Z' : C} (pX : ExactPairing X' X) (pY : ExactP
     leftMate pX pZ (f ≫ g) = leftMate pY pZ g ≫ leftMate pX pY f :=
   @comp_leftAdjointMate C _ _ X Y Z ⟨X'⟩ ⟨Y'⟩ ⟨Z'⟩ f g
 
-/-- An isomorphism `e : X ≅ Y` induces an isomorphism `Y' ≅ X'` between left duals with respect
-to explicit exact pairings `(X', X)` and `(Y', Y)`, whose components are the left mates of those
-of `e`. -/
+/-- An isomorphism `e : X ≅ Y` induces an isomorphism `Y' ≅ X'` between left duals via left
+mates with respect to explicit exact pairings `(X', X)` and `(Y', Y)`. -/
 def leftMateIso {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y) (e : X ≅ Y) :
     Y' ≅ X' where
   hom := leftMate pX pY e.hom
@@ -411,31 +399,22 @@ def leftMateIso {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y
   hom_inv_id := by rw [← comp_leftMate, e.inv_hom_id, leftMate_id]
   inv_hom_id := by rw [← comp_leftMate, e.hom_inv_id, leftMate_id]
 
-/-- The forward morphism of `leftMateIso pX pY e` is the left mate of `e.hom`. -/
 @[simp] theorem leftMateIso_hom {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y)
     (e : X ≅ Y) : (leftMateIso pX pY e).hom = leftMate pX pY e.hom := (rfl)
-
-/-- The inverse morphism of `leftMateIso pX pY e` is the left mate of `e.inv`. -/
 @[simp] theorem leftMateIso_inv {X X' Y Y' : C} (pX : ExactPairing X' X) (pY : ExactPairing Y' Y)
     (e : X ≅ Y) : (leftMateIso pX pY e).inv = leftMate pY pX e.inv := (rfl)
 
-/-- Pairing the left mate of `e.hom` with `e.inv` transports the coevaluation of `pY` to the
-coevaluation of `pX`. -/
-@[reassoc]
-theorem coevaluation_comp_tensorHom_leftMate {X X' Y Y' : C} (pX : ExactPairing X' X)
+/-- Pairing the left mate of `e.hom` with `e.inv` transports the coevaluation of `pY` to `pX`. -/
+@[reassoc] theorem coevaluation_comp_tensorHom_leftMate {X X' Y Y' : C} (pX : ExactPairing X' X)
     (pY : ExactPairing Y' Y) (e : X ≅ Y) :
     η_ Y' Y ≫ (leftMate pX pY e.hom ⊗ₘ e.inv) = η_ X' X := by
-  rw [tensorHom_def, coevaluation_comp_leftMate_assoc, ← whiskerLeft_comp]
-  simp
+  rw [tensorHom_def, coevaluation_comp_leftMate_assoc, ← whiskerLeft_comp]; simp
 
-/-- Precomposing the evaluation of `pX` with the tensor product of `e.inv` and the left mate of
-`e.hom` recovers the evaluation of `pY`. -/
-@[reassoc]
-theorem tensorHom_leftMate_comp_evaluation {X X' Y Y' : C} (pX : ExactPairing X' X)
+/-- Precomposing the evaluation of `pX` with `e.inv ⊗ₘ leftMate pX pY e.hom` gives `pY`. -/
+@[reassoc] theorem tensorHom_leftMate_comp_evaluation {X X' Y Y' : C} (pX : ExactPairing X' X)
     (pY : ExactPairing Y' Y) (e : X ≅ Y) :
     (e.inv ⊗ₘ leftMate pX pY e.hom) ≫ ε_ X' X = ε_ Y' Y := by
-  rw [tensorHom_def, Category.assoc, leftMate_comp_evaluation, ← comp_whiskerRight_assoc]
-  simp
+  rw [tensorHom_def, Category.assoc, leftMate_comp_evaluation, ← comp_whiskerRight_assoc]; simp
 
 /-- The left mate of `Z ◁ f` with respect to the tensor product pairings is `ᘁf ▷ Z'`. -/
 @[simp]
@@ -539,16 +518,13 @@ theorem leftDualIso_inv {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y) (p₂ : E
 
 /-- Through the comparison `leftDualIso p₁ p₂ : X₁ ≅ X₂`, the evaluation of `p₂` is the
 evaluation of `p₁`. -/
-@[reassoc]
-theorem whiskerLeft_leftDualIso_hom_evaluation {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y)
+@[reassoc] theorem whiskerLeft_leftDualIso_hom_evaluation {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y)
     (p₂ : ExactPairing X₂ Y) : Y ◁ (leftDualIso p₁ p₂).hom ≫ ε_ X₂ Y = ε_ X₁ Y := by
-  rw [leftDualIso_hom, leftMate_comp_evaluation, MonoidalCategory.id_whiskerRight,
-    Category.id_comp]
+  rw [leftDualIso_hom, leftMate_comp_evaluation, MonoidalCategory.id_whiskerRight, Category.id_comp]
 
 /-- Through the inverse comparison `(leftDualIso p₁ p₂).inv : X₂ ⟶ X₁`, the evaluation of `p₁` is
 the evaluation of `p₂`. -/
-@[reassoc]
-theorem whiskerLeft_leftDualIso_inv_evaluation {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y)
+@[reassoc] theorem whiskerLeft_leftDualIso_inv_evaluation {X₁ X₂ Y : C} (p₁ : ExactPairing X₁ Y)
     (p₂ : ExactPairing X₂ Y) : Y ◁ (leftDualIso p₁ p₂).inv ≫ ε_ X₁ Y = ε_ X₂ Y := by
   rw [leftDualIso_inv, ← leftDualIso_hom, whiskerLeft_leftDualIso_hom_evaluation]
 

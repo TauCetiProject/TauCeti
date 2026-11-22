@@ -11,24 +11,18 @@ public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Universal
 /-!
 # Substitution of rigid expressions for coupons
 
-A `DualitySignature.Substitution S T` replaces object generators of a duality signature `S` by
-objects of `T.FreeRigid` (arbitrary formal rigid object expressions in `T`, including the unit,
-multi-port tensor products and iterated right or left duals) and replaces each coupon of `S` by a
-raw morphism expression `FreeRigid.Hom` in `T` with the interpreted source and target boundaries.
+A `DualitySignature.Substitution S T` replaces object generators of `S` by objects of
+`T.FreeRigid` and coupons of `S` by raw morphisms `FreeRigid.Hom` in `T`:
 
-* `FreeRigid.eval_eq_subst` and `FreeRigid.as_eval_eq_subst` identify the categorical object
-  interpreter `RigidObject.eval` into `T.FreeRigid` with the syntactic substitution
-  `RigidObject.subst`, and `Substitution.normalize_toFunctor_obj_as` links object substitution to
-  winding-word substitution `WindingWord.subst`.
-* `FreeRigid.Hom.subst` performs typed substitution directly on raw formal morphism expressions
-  before quotienting by the monoidal and zigzag axioms, and `FreeRigid.HomEquiv.subst` proves that
-  it respects those axioms without requiring any equation between the replacing coupons.
-* `Substitution.toFunctor` packages the induced strong monoidal functor `S.FreeRigid ⥤ T.FreeRigid`
-  via `FreeRigid.lift`, and `Substitution.toFunctor_map_homMk` identifies its morphism action with
-  raw substitution on representatives.
+* `FreeRigid.eval_eq_subst`, `FreeRigid.as_eval_eq_subst`,
+  `Substitution.normalize_toFunctor_obj_as`: identify categorical object evaluation with
+  `RigidObject.subst` and `WindingWord.subst`.
+* `FreeRigid.Hom.subst` and `FreeRigid.HomEquiv.subst`: typed substitution on raw morphism
+  expressions respecting the monoidal and zigzag axioms without coupon equations.
+* `Substitution.toFunctor` and `Substitution.toFunctor_map_homMk`: induced strong monoidal functor
+  `S.FreeRigid ⥤ T.FreeRigid` via `FreeRigid.lift`, agreeing with raw substitution.
 
-The construction parallels `TauCeti.TensorSignature.Substitution`, extended to right and left dual
-objects and (co)evaluation constructors.
+Parallels `TauCeti.TensorSignature.Substitution`, extended to right and left duals.
 
 ## References
 
@@ -67,8 +61,7 @@ theorem eval_eq_subst {α : Type w} (f : α → T.FreeRigid) (X : RigidObject α
   induction X with
   | of _ => rw [RigidObject.eval_of, RigidObject.subst_of]
   | unit => rw [RigidObject.eval_unit, RigidObject.subst_unit]; rfl
-  | tensor _ _ ihX ihY =>
-    rw [RigidObject.eval_tensor, RigidObject.subst_tensor, ihX, ihY]; rfl
+  | tensor _ _ ihX ihY => rw [RigidObject.eval_tensor, RigidObject.subst_tensor, ihX, ihY]; rfl
   | rightDual _ ih => rw [RigidObject.eval_rightDual, RigidObject.subst_rightDual, ih]; rfl
   | leftDual _ ih => rw [RigidObject.eval_leftDual, RigidObject.subst_leftDual, ih]; rfl
 
@@ -83,12 +76,10 @@ for coupons. Endpoints are interpreted by `RigidObject.eval`. -/
 noncomputable def Hom.subst (σ : Substitution S T) : ∀ {X Y}, Hom X Y →
     Hom (RigidObject.eval σ.obj X).as (RigidObject.eval σ.obj Y).as
   | _, _, .id X => .id (RigidObject.eval σ.obj X).as
-  | _, _, .α_hom X Y Z =>
-    .α_hom (RigidObject.eval σ.obj X).as (RigidObject.eval σ.obj Y).as
-      (RigidObject.eval σ.obj Z).as
-  | _, _, .α_inv X Y Z =>
-    .α_inv (RigidObject.eval σ.obj X).as (RigidObject.eval σ.obj Y).as
-      (RigidObject.eval σ.obj Z).as
+  | _, _, .α_hom X Y Z => .α_hom (RigidObject.eval σ.obj X).as
+      (RigidObject.eval σ.obj Y).as (RigidObject.eval σ.obj Z).as
+  | _, _, .α_inv X Y Z => .α_inv (RigidObject.eval σ.obj X).as
+      (RigidObject.eval σ.obj Y).as (RigidObject.eval σ.obj Z).as
   | _, _, .l_hom X => .l_hom (RigidObject.eval σ.obj X).as
   | _, _, .l_inv X => .l_inv (RigidObject.eval σ.obj X).as
   | _, _, .ρ_hom X => .ρ_hom (RigidObject.eval σ.obj X).as
@@ -105,61 +96,38 @@ noncomputable def Hom.subst (σ : Substitution S T) : ∀ {X Y}, Hom X Y →
 
 @[simp] theorem Hom.subst_id (σ : Substitution S T) (X) :
     (Hom.id X).subst σ = .id (RigidObject.eval σ.obj X).as := by rfl
-
 @[simp] theorem Hom.subst_coupon (σ : Substitution S T) (g : S.Coupon) :
     (Hom.coupon g).subst σ = σ.coupon g := by rfl
-
 @[simp] theorem Hom.subst_comp (σ : Substitution S T) {X Y Z} (f : Hom X Y) (g : Hom Y Z) :
     (f.comp g).subst σ = (f.subst σ).comp (g.subst σ) := by rfl
-
 @[simp] theorem Hom.subst_tensor (σ : Substitution S T) {W X Y Z} (f : Hom W X) (g : Hom Y Z) :
     (f.tensor g).subst σ = (f.subst σ).tensor (g.subst σ) := by rfl
-
 @[simp] theorem Hom.subst_whiskerLeft (σ : Substitution S T) (X) {Y Z} (f : Hom Y Z) :
-    (f.whiskerLeft X).subst σ =
-      (f.subst σ).whiskerLeft (RigidObject.eval σ.obj X).as := by rfl
-
+    (f.whiskerLeft X).subst σ = (f.subst σ).whiskerLeft (RigidObject.eval σ.obj X).as := by rfl
 @[simp] theorem Hom.subst_whiskerRight (σ : Substitution S T) {Y Z} (f : Hom Y Z) (X) :
-    (f.whiskerRight X).subst σ =
-      (f.subst σ).whiskerRight (RigidObject.eval σ.obj X).as := by rfl
-
-@[simp] theorem Hom.subst_α_hom (σ : Substitution S T) (X Y Z) :
-    (Hom.α_hom X Y Z).subst σ =
-      .α_hom (RigidObject.eval σ.obj X).as (RigidObject.eval σ.obj Y).as
-        (RigidObject.eval σ.obj Z).as := by rfl
-
-@[simp] theorem Hom.subst_α_inv (σ : Substitution S T) (X Y Z) :
-    (Hom.α_inv X Y Z).subst σ =
-      .α_inv (RigidObject.eval σ.obj X).as (RigidObject.eval σ.obj Y).as
-        (RigidObject.eval σ.obj Z).as := by rfl
-
+    (f.whiskerRight X).subst σ = (f.subst σ).whiskerRight (RigidObject.eval σ.obj X).as := by rfl
+@[simp] theorem Hom.subst_α_hom (σ : Substitution S T) (X Y Z) : (Hom.α_hom X Y Z).subst σ =
+    .α_hom (RigidObject.eval σ.obj X).as (RigidObject.eval σ.obj Y).as
+      (RigidObject.eval σ.obj Z).as := by rfl
+@[simp] theorem Hom.subst_α_inv (σ : Substitution S T) (X Y Z) : (Hom.α_inv X Y Z).subst σ =
+    .α_inv (RigidObject.eval σ.obj X).as (RigidObject.eval σ.obj Y).as
+      (RigidObject.eval σ.obj Z).as := by rfl
 @[simp] theorem Hom.subst_l_hom (σ : Substitution S T) (X) :
     (Hom.l_hom X).subst σ = .l_hom (RigidObject.eval σ.obj X).as := by rfl
-
 @[simp] theorem Hom.subst_l_inv (σ : Substitution S T) (X) :
     (Hom.l_inv X).subst σ = .l_inv (RigidObject.eval σ.obj X).as := by rfl
-
 @[simp] theorem Hom.subst_ρ_hom (σ : Substitution S T) (X) :
     (Hom.ρ_hom X).subst σ = .ρ_hom (RigidObject.eval σ.obj X).as := by rfl
-
 @[simp] theorem Hom.subst_ρ_inv (σ : Substitution S T) (X) :
     (Hom.ρ_inv X).subst σ = .ρ_inv (RigidObject.eval σ.obj X).as := by rfl
-
 @[simp] theorem Hom.subst_rightCoevaluation (σ : Substitution S T) (X) :
-    (Hom.rightCoevaluation X).subst σ =
-      .rightCoevaluation (RigidObject.eval σ.obj X).as := by rfl
-
+    (Hom.rightCoevaluation X).subst σ = .rightCoevaluation (RigidObject.eval σ.obj X).as := by rfl
 @[simp] theorem Hom.subst_rightEvaluation (σ : Substitution S T) (X) :
-    (Hom.rightEvaluation X).subst σ =
-      .rightEvaluation (RigidObject.eval σ.obj X).as := by rfl
-
+    (Hom.rightEvaluation X).subst σ = .rightEvaluation (RigidObject.eval σ.obj X).as := by rfl
 @[simp] theorem Hom.subst_leftCoevaluation (σ : Substitution S T) (X) :
-    (Hom.leftCoevaluation X).subst σ =
-      .leftCoevaluation (RigidObject.eval σ.obj X).as := by rfl
-
+    (Hom.leftCoevaluation X).subst σ = .leftCoevaluation (RigidObject.eval σ.obj X).as := by rfl
 @[simp] theorem Hom.subst_leftEvaluation (σ : Substitution S T) (X) :
-    (Hom.leftEvaluation X).subst σ =
-      .leftEvaluation (RigidObject.eval σ.obj X).as := by rfl
+    (Hom.leftEvaluation X).subst σ = .leftEvaluation (RigidObject.eval σ.obj X).as := by rfl
 
 end FreeRigid
 
@@ -179,25 +147,17 @@ noncomputable instance : σ.toFunctor.Monoidal :=
   inferInstanceAs (FreeRigid.lift σ.obj (fun g ↦ FreeRigid.homMk (σ.coupon g))).Monoidal
 
 @[simp] theorem toFunctor_ε : Functor.LaxMonoidal.ε σ.toFunctor = 𝟙 _ := FreeRigid.lift_ε _ _
-
 @[simp] theorem toFunctor_η : Functor.OplaxMonoidal.η σ.toFunctor = 𝟙 _ := FreeRigid.lift_η _ _
-
 @[simp] theorem toFunctor_μ (X Y : S.FreeRigid) :
     Functor.LaxMonoidal.μ σ.toFunctor X Y = 𝟙 _ := FreeRigid.lift_μ _ _ X Y
-
 @[simp] theorem toFunctor_δ (X Y : S.FreeRigid) :
     Functor.OplaxMonoidal.δ σ.toFunctor X Y = 𝟙 _ := FreeRigid.lift_δ _ _ X Y
-
 @[simp] theorem toFunctor_mapRightDualIso (X : S.FreeRigid) :
     σ.toFunctor.mapRightDualIso X (_hFX := RightRigidCategory.rightDual (σ.toFunctor.obj X)) =
-      Iso.refl _ :=
-  FreeRigid.lift_mapRightDualIso _ _ X
-
+      Iso.refl _ := FreeRigid.lift_mapRightDualIso _ _ X
 @[simp] theorem toFunctor_mapLeftDualIso (X : S.FreeRigid) :
     σ.toFunctor.mapLeftDualIso X (_hFY := LeftRigidCategory.leftDual (σ.toFunctor.obj X)) =
-      Iso.refl _ :=
-  FreeRigid.lift_mapLeftDualIso _ _ X
-
+      Iso.refl _ := FreeRigid.lift_mapLeftDualIso _ _ X
 @[simp] theorem toFunctor_obj (X : S.FreeRigid) :
     σ.toFunctor.obj X = RigidObject.eval σ.obj X.as := by rfl
 
@@ -210,20 +170,16 @@ normalized boundaries. -/
 theorem normalize_toFunctor_obj_as (X : S.FreeRigid) :
     RigidObject.normalize (σ.toFunctor.obj X).as =
       WindingWord.subst (fun a ↦ RigidObject.normalize (σ.obj a).as)
-        (RigidObject.normalize X.as) := by
-  rw [σ.toFunctor_obj_as, RigidObject.normalize_subst]
+        (RigidObject.normalize X.as) := by rw [σ.toFunctor_obj_as, RigidObject.normalize_subst]
 
-@[simp]
-theorem toFunctor_map_coupon (g : S.Coupon) :
+@[simp] theorem toFunctor_map_coupon (g : S.Coupon) :
     σ.toFunctor.map (FreeRigid.coupon g) = FreeRigid.homMk (σ.coupon g) :=
   FreeRigid.lift_map_coupon _ _ g
 
 /-- Interpreting a raw formal morphism expression via `σ.toFunctor` yields the equivalence class of
 its raw substitution `f.subst σ`. -/
-@[simp]
-theorem toFunctor_map_homMk {X Y : RigidObject S.Obj} (f : FreeRigid.Hom X Y) :
-    σ.toFunctor.map (FreeRigid.homMk (X := ⟨X⟩) (Y := ⟨Y⟩) f) =
-      FreeRigid.homMk (f.subst σ) := by
+@[simp] theorem toFunctor_map_homMk {X Y : RigidObject S.Obj} (f : FreeRigid.Hom X Y) :
+    σ.toFunctor.map (FreeRigid.homMk (X := ⟨X⟩) (Y := ⟨Y⟩) f) = FreeRigid.homMk (f.subst σ) := by
   induction f with
   | id X => exact liftMap_id _ _ ⟨X⟩
   | α_hom X Y Z => exact lift_map_associator_hom _ _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
@@ -237,16 +193,12 @@ theorem toFunctor_map_homMk {X Y : RigidObject S.Obj} (f : FreeRigid.Hom X Y) :
   | leftCoevaluation X => exact lift_map_leftCoevaluation _ _ ⟨X⟩
   | leftEvaluation X => exact lift_map_leftEvaluation _ _ ⟨X⟩
   | coupon g => exact lift_map_coupon _ _ g
-  | comp f g hf hg =>
-    exact (liftMap_comp _ _ (homMk f) (homMk g)).trans (congrArg₂ (· ≫ ·) hf hg)
-  | whiskerLeft X f hf =>
-    exact (lift_map_whiskerLeft _ _ ⟨X⟩ (homMk f)).trans
-      (congrArg (RigidObject.eval σ.obj X ◁ ·) hf)
-  | whiskerRight f X hf =>
-    exact (lift_map_whiskerRight _ _ (homMk f) ⟨X⟩).trans
-      (congrArg (· ▷ RigidObject.eval σ.obj X) hf)
-  | tensor f g hf hg =>
-    exact (lift_map_tensorHom _ _ (homMk f) (homMk g)).trans (congrArg₂ (· ⊗ₘ ·) hf hg)
+  | comp _ _ hf hg => exact (liftMap_comp _ _ _ _).trans (congrArg₂ (· ≫ ·) hf hg)
+  | whiskerLeft X _ hf =>
+    exact (lift_map_whiskerLeft _ _ ⟨X⟩ _).trans (congrArg (RigidObject.eval σ.obj X ◁ ·) hf)
+  | whiskerRight _ X hf =>
+    exact (lift_map_whiskerRight _ _ _ ⟨X⟩).trans (congrArg (· ▷ RigidObject.eval σ.obj X) hf)
+  | tensor _ _ hf hg => exact (lift_map_tensorHom _ _ _ _).trans (congrArg₂ (· ⊗ₘ ·) hf hg)
 
 end Substitution
 
@@ -255,9 +207,8 @@ namespace FreeRigid
 /-- Raw substitution preserves the congruence generated by the monoidal and zigzag axioms. No
 equation between the replacing coupons is required. -/
 theorem HomEquiv.subst (σ : Substitution S T) {X Y} {f g : Hom X Y} (h : HomEquiv f g) :
-    HomEquiv (f.subst σ) (g.subst σ) := by
-  apply Quotient.exact (s := setoidHom _ _)
-  exact (σ.toFunctor_map_homMk f).symm.trans
+    HomEquiv (f.subst σ) (g.subst σ) :=
+  Quotient.exact (s := setoidHom _ _) <| (σ.toFunctor_map_homMk f).symm.trans
     ((congrArg (σ.toFunctor.map (X := ⟨X⟩) (Y := ⟨Y⟩)) (Quotient.sound h)).trans
       (σ.toFunctor_map_homMk g))
 

@@ -355,7 +355,53 @@ noncomputable def evalIsoOfNormalizeEq (f : α → C) {X Y : RigidObject α}
       evalIsoOfNormalizeEq f (h.trans h') := by
   ext; simp [evalIsoOfNormalizeEq]
 
+/-- The isomorphism between evaluations of a formal rigid object induced by isomorphisms
+`e a : f a ≅ g a` of the interpretations of its generators. -/
+@[expose]
+noncomputable def evalIso {f g : α → C} (e : ∀ a, f a ≅ g a) :
+    ∀ X : RigidObject α, eval f X ≅ eval g X
+  | .of a => e a
+  | .unit => Iso.refl _
+  | .tensor X Y => evalIso e X ⊗ᵢ evalIso e Y
+  | .rightDual X => (evalIso e X).symm.rightAdjointMate
+  | .leftDual X => (evalIso e X).symm.leftAdjointMate
+
+@[simp] theorem evalIso_of {f g : α → C} (e : ∀ a, f a ≅ g a) (a : α) :
+    evalIso e (.of a) = e a := (rfl)
+@[simp] theorem evalIso_unit {f g : α → C} (e : ∀ a, f a ≅ g a) :
+    evalIso e (.unit : RigidObject α) = Iso.refl (𝟙_ C) := (rfl)
+@[simp] theorem evalIso_tensor {f g : α → C} (e : ∀ a, f a ≅ g a) (X Y : RigidObject α) :
+    evalIso e (X.tensor Y) = evalIso e X ⊗ᵢ evalIso e Y := (rfl)
+@[simp] theorem evalIso_rightDual {f g : α → C} (e : ∀ a, f a ≅ g a) (X : RigidObject α) :
+    evalIso e X.rightDual = (evalIso e X).symm.rightAdjointMate := (rfl)
+@[simp] theorem evalIso_leftDual {f g : α → C} (e : ∀ a, f a ≅ g a) (X : RigidObject α) :
+    evalIso e X.leftDual = (evalIso e X).symm.leftAdjointMate := (rfl)
+
+@[simp] theorem evalIso_refl {f : α → C} (X : RigidObject α) :
+    evalIso (fun a ↦ Iso.refl (f a)) X = Iso.refl (eval f X) := by
+  induction X with
+  | of _ | unit => rfl
+  | tensor _ _ ihX ihY => ext; simp [ihX, ihY]
+  | rightDual _ ih | leftDual _ ih => ext; simp [ih]
+
+@[simp] theorem evalIso_trans {f g h : α → C} (e : ∀ a, f a ≅ g a) (e' : ∀ a, g a ≅ h a)
+    (X : RigidObject α) :
+    evalIso (fun a ↦ e a ≪≫ e' a) X = evalIso e X ≪≫ evalIso e' X := by
+  induction X with
+  | of _ => rfl
+  | unit => exact (Iso.refl_trans _).symm
+  | tensor _ _ ihX ihY => ext; simp [ihX, ihY]
+  | rightDual _ ih => ext; simp [ih, comp_rightAdjointMate]
+  | leftDual _ ih => ext; simp [ih, comp_leftAdjointMate]
+
+@[simp] theorem evalIso_symm {f g : α → C} (e : ∀ a, f a ≅ g a) (X : RigidObject α) :
+    evalIso (fun a ↦ (e a).symm) X = (evalIso e X).symm := by
+  induction X with
+  | of _ => rfl
+  | unit => exact (Iso.refl_symm _).symm
+  | tensor _ _ ihX ihY => ext; simp [ihX, ihY]
+  | rightDual _ ih | leftDual _ ih => ext; simp [ih]
+
 end RigidObject
 
 end TauCeti
-
