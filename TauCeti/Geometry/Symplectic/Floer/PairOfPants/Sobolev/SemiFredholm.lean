@@ -220,47 +220,16 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_esti
           J Ks Kt u x‖ +
         ‖restrictWeightedValue V thricePuncturedSphereReal
           (Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1)) x‖) := by
-  set S := thricePuncturedSphereReal
-  set K := Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1)
-  have hK : IsCompact K := isCompact_preimage_truncation _
-  have hKS : K ⊆ S := preimage_truncation_subset_thricePuncturedSphereReal _
-  have hρ := isWeight_cylindricalWeight
   obtain ⟨A, hA, hW⟩ :=
     exists_forall_setIntegral_le_mul_sum_setIntegral_sobolevDensity_add (V := V) hT
-  -- On `K` the `L²` norm of a section is controlled by its weighted value.
-  obtain ⟨B, hB⟩ :=
-    exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (V := V) hρ hK hKS
-  set k := A * max C 0 * (1 + |B|)
-  refine ⟨√k, fun x hx ↦ ?_⟩
-  obtain ⟨ξ, hξ, hxξ⟩ := mem_jetSubmodule_iff.1 hx
-  obtain ⟨hξ2, hξc, hξS⟩ := mem_testSection_iff.1 hξ
-  set D := ω.floerConformalSobolevOperator S cylindricalWeight J Ks Kt u
-  set R := restrictWeightedValue V S K
-  have hY : ∫ z in K, ‖ξ z‖ ^ 2 ≤ |B| * ‖R x‖ ^ 2 :=
-    (hB hξ2.continuous hxξ).trans (by gcongr; exact le_abs_self B)
-  -- Assemble: `‖x‖² ≤ k (‖D x‖ + ‖R x‖)²`.
-  have hx2 : ‖x‖ ^ 2 ≤ k * (‖D x‖ + ‖R x‖) ^ 2 := by
-    have h₁ := (sq_norm_le_integral hρ hξ hxξ).trans (hW (hξ2.of_le one_le_two) hξc hξS)
-    have h₂ := mul_le_mul_of_nonneg_left (hest hξ2 hξc hξS) hA
-    have h₃ : C * ((∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2) ≤
-        max C 0 * (‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2) := by
-      rw [← norm_floerConformalSobolevOperator_sq ω hρ hM hξ hxξ]
-      exact mul_le_mul (le_max_left C 0) (by linarith)
-        (add_nonneg (sq_nonneg _) (setIntegral_nonneg hK.measurableSet fun _ _ ↦ sq_nonneg _))
-        (le_max_right C 0)
-    have h₄ : ‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2 ≤ (1 + |B|) * (‖D x‖ + ‖R x‖) ^ 2 := by
-      nlinarith [norm_nonneg (D x), norm_nonneg (R x), abs_nonneg B,
-        mul_nonneg (norm_nonneg (D x)) (norm_nonneg (R x)),
-        mul_nonneg (abs_nonneg B) (mul_nonneg (norm_nonneg (D x)) (norm_nonneg (R x))),
-        mul_nonneg (abs_nonneg B) (sq_nonneg ‖D x‖)]
-    calc ‖x‖ ^ 2 ≤ A * (max C 0 * (‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2)) :=
-          h₁.trans (h₂.trans (mul_le_mul_of_nonneg_left h₃ hA))
-      _ ≤ A * (max C 0 * ((1 + |B|) * (‖D x‖ + ‖R x‖) ^ 2)) := by gcongr
-      _ = k * (‖D x‖ + ‖R x‖) ^ 2 := by ring
-  calc ‖x‖ = √(‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg _)).symm
-    _ ≤ √(k * (‖D x‖ + ‖R x‖) ^ 2) := Real.sqrt_le_sqrt hx2
-    _ = √k * (‖D x‖ + ‖R x‖) := by
-      rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity)]
+  -- The weighted energy is at most `A` times the left side of the semi-Fredholm estimate.
+  exact ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le
+    isWeight_cylindricalWeight hM (isCompact_preimage_truncation _)
+    (preimage_truncation_subset_thricePuncturedSphereReal _) (C := A * C) fun ξ hξ ↦ by
+      obtain ⟨hξ2, hξc, hξS⟩ := mem_testSection_iff.1 hξ
+      rw [mul_assoc]
+      exact (hW (hξ2.of_le one_le_two) hξc hξS).trans
+        (mul_le_mul_of_nonneg_left (hest hξ2 hξc hξS) hA)
 
 /-- **The coefficients of the linearized operator of a Floer pair of pants are bounded on the
 jets of `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate

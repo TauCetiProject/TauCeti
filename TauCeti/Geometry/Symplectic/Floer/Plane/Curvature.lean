@@ -191,9 +191,8 @@ theorem det_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (ζ : ℝ × ℝ)
     (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det =
       (2 * π * ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)‖) ^ 2 := by
   rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _),
-    TauCeti.Complex.equivRealProdCLM_symm_realChart, Complex.normSq_eq_norm_sq, norm_mul,
-    Complex.norm_real, Real.norm_eq_abs, abs_mul, abs_endSign, mul_one,
-    abs_of_pos Real.two_pi_pos]
+    TauCeti.Complex.equivRealProdCLM_symm_realChart]
+  simp [Complex.normSq_eq_norm_sq, abs_endSign, mul_pow]
 
 /-- The end lift sends a point with longitudinal coordinate `s` to a point of norm
 `exp (2π ε s)`. -/
@@ -346,6 +345,27 @@ theorem exists_Icc_eq_preimage_endSign_mul (p : PSSPlane) {R N : ℝ} (h : R ≤
     simp only [endSign_negative, neg_mul, one_mul, mem_Icc]
     constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
+/-- **Sections of compact support vanish far out on the end.** For a section `ξ` of compact
+support on a PSS plane there is `N` such that, in end coordinates, `ξ` vanishes near every point
+with `ε s > N`. -/
+theorem exists_eventuallyEq_zero_comp_realChart_cylindricalEndLift {X : Type*} [Zero X]
+    (p : PSSPlane) {ξ : ℝ × ℝ → X} (hξc : HasCompactSupport ξ) :
+    ∃ N : ℝ, ∀ ζ : ℝ × ℝ, N < p.endSign * ζ.1 →
+      ξ ∘ realChart p.cylindricalEndLift =ᶠ[𝓝 ζ] 0 := by
+  obtain ⟨M, hM⟩ := hξc.isCompact.exists_bound_of_continuousOn
+    Complex.equivRealProdCLM.symm.continuous.continuousOn
+  refine ⟨max M 0, fun ζ hζ ↦ ?_⟩
+  filter_upwards [(isOpen_lt continuous_const (continuous_const.mul continuous_fst)).mem_nhds hζ]
+    with ζ' (hζ' : max M 0 < p.endSign * ζ'.1)
+  rw [Function.comp_apply, Pi.zero_apply]
+  refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
+  have h₁ := hM _ hmem
+  rw [norm_symm_realChart_cylindricalEndLift] at h₁
+  -- Otherwise `M ≥ exp (2π ε s) ≥ 1 + 2π ε s > ε s > M`.
+  have hpos : 0 < p.endSign * ζ'.1 := (le_max_right M 0).trans_lt hζ'
+  linarith [Real.add_one_le_exp (2 * π * (p.endSign * ζ'.1)), le_max_left M 0,
+    mul_le_mul_of_nonneg_right Real.two_le_pi hpos.le]
+
 /-- **Sections far out on the end, in end coordinates.** A section `ξ` with compact support in the
 part `‖w‖ > exp (2π R)` of a PSS plane is, in end coordinates, supported in a band `[a, b] × ℝ` on
 which `ε s ≥ R`: it vanishes on the two boundary slices and near every point off the band. -/
@@ -357,24 +377,16 @@ theorem exists_band_of_tsupport_subset {X : Type*} [Zero X] (p : PSSPlane) {R : 
       (∀ t, (ξ ∘ realChart p.cylindricalEndLift) (b, t) = 0) ∧
       ∀ ζ : ℝ × ℝ, ζ.1 ∉ Icc a b → ξ ∘ realChart p.cylindricalEndLift =ᶠ[𝓝 ζ] 0 := by
   set φ := realChart p.cylindricalEndLift
-  obtain ⟨M, hM⟩ := hξc.isCompact.exists_bound_of_continuousOn
-    Complex.equivRealProdCLM.symm.continuous.continuousOn
-  set N := max (max M 0 + 1) R
+  obtain ⟨N₀, hN₀⟩ := p.exists_eventuallyEq_zero_comp_realChart_cylindricalEndLift hξc
+  set N := max (N₀ + 1) R
   -- In end coordinates, `ξ ∘ φ` vanishes outside the open band `R < ε s < N`.
   have hvan (ζ : ℝ × ℝ) (hζ : ¬ (R < p.endSign * ζ.1 ∧ p.endSign * ζ.1 < N)) :
       (ξ ∘ φ) ζ = 0 := by
     by_contra h
     have hs : φ ζ ∈ tsupport ξ := subset_tsupport _ h
-    have h₂ := hM _ hs
-    rw [norm_symm_realChart_cylindricalEndLift] at h₂
     refine hζ ⟨p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.1 (hξR hs),
-      lt_of_not_ge fun h₃ ↦ ?_⟩
-    -- Otherwise `exp (2π N) ≤ M`, while `exp (2π N) ≥ 1 + 2π N > N > M`.
-    have h₄ : max M 0 + 1 ≤ N := le_max_left _ _
-    have h₅ : N ≤ 2 * π * N := by nlinarith [Real.two_le_pi, le_max_right M 0]
-    have h₆ : Real.exp (2 * π * N) ≤ Real.exp (2 * π * (p.endSign * ζ.1)) :=
-      Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
-    linarith [le_max_left M 0, Real.add_one_le_exp (2 * π * N)]
+      lt_of_not_ge fun h₃ ↦ h (hN₀ ζ ?_).eq_of_nhds⟩
+    linarith [le_max_left (N₀ + 1) R]
   obtain ⟨a, b, hab, hband, ha, hb⟩ := exists_Icc_eq_preimage_endSign_mul p (le_max_right _ R)
   have hendpt {s : ℝ} (hs : p.endSign * s = R ∨ p.endSign * s = N) (t : ℝ) :
       (ξ ∘ φ) (s, t) = 0 :=
@@ -382,6 +394,30 @@ theorem exists_band_of_tsupport_subset {X : Type*} [Zero X] (p : PSSPlane) {R : 
   refine ⟨a, b, hab, fun s hs ↦ ((hband s).1 hs).1, hendpt ha, hendpt hb, fun ζ hζ ↦ ?_⟩
   filter_upwards [(isClosed_Icc.preimage continuous_fst).isOpen_compl.mem_nhds hζ] with ζ' hζ'
   exact hvan ζ' fun h ↦ hζ' ((hband _).2 ⟨h.1.le, h.2.le⟩)
+
+/-- **The energy density of a lift on a band of the end is integrable.** If, in end coordinates,
+the lift of a `C¹` section `ξ` vanishes near every point `(s, t)` with `s ∈ P` and `s ∉ [a, b]`,
+then the `W^{1,2}` energy density of the lift is integrable over `P × [0, 1]`. -/
+theorem integrableOn_comp_realChart_cylindricalEndLift {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] (p : PSSPlane) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) {P : Set ℝ}
+    (hP : MeasurableSet P) {a b : ℝ}
+    (hout : ∀ ζ : ℝ × ℝ, ζ.1 ∈ P → ζ.1 ∉ Icc a b →
+      ξ ∘ realChart p.cylindricalEndLift =ᶠ[𝓝 ζ] 0) :
+    IntegrableOn (fun ζ ↦
+      ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineImag‖ ^ 2 +
+        ‖(ξ ∘ realChart p.cylindricalEndLift) ζ‖ ^ 2) (P ×ˢ Icc (0 : ℝ) 1) := by
+  set φ := realChart p.cylindricalEndLift
+  have hφ : ContDiff ℝ 1 φ := contDiff_realChart p.contDiff_cylindricalEndLift
+  have hξφ : ContDiff ℝ 1 (ξ ∘ φ) := hξ.comp hφ
+  have := hξφ.continuous_fderiv one_ne_zero
+  have hg : Continuous fun ζ ↦ ‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineImag‖ ^ 2 + ‖(ξ ∘ φ) ζ‖ ^ 2 := by fun_prop
+  refine IntegrableOn.of_forall_sdiff_eq_zero (s := Icc a b ×ˢ Icc 0 1)
+    (hg.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
+    (hP.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+  have hev : ξ ∘ φ =ᶠ[𝓝 ζ] 0 := hout ζ hζ.1.1 fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
+  simp [hev.fderiv_eq, show ξ (φ ζ) = 0 from hev.eq_of_nhds]
 
 /-- **Changing variables along the end lift.** For a nonnegative integrable function `g` on the
 plane, the integral of `det (dφ) · g ∘ φ` over a band `[a, b] × [0, 1]` of the cylinder is at most

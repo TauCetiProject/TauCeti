@@ -43,8 +43,9 @@ on the end, up to constants, with the `W^{1,2}` norm of the cylinder.
 * **The realization of `D_u`.** Let `u` solve the Floer equation on the end for the perturbation
   `TauCeti.Floer.PSSPlane.perturbation` of a period-one Hamiltonian `H`, with values in a symplectic
   vector space. Its linearized operator `D_u ξ = ∂s ξ + J(z, u z) ∂t ξ + C(z) ξ`
-  (`TauCeti.SymplecticForm.floerLinearization`) has an unbounded zeroth-order part: on the end the
-  perturbation is `H(t) dt`, and `dt` has size `|w|⁻¹ / 2π`. Read in end coordinates, the operator
+  (`TauCeti.SymplecticForm.floerLinearization`) has a zeroth-order part `C(w)` that decays only like
+  `|w|⁻¹` on the end: there the perturbation is `H(t) dt`, and `dt` has size `|w|⁻¹ / 2π`, while
+  the conformal jets carry the factor `ρ^(-1/2) ~ |w|`. Read in end coordinates, the operator
   at `φ(ζ)` is `a D_u - b J D_u` for `(a, b) = dφ (1, 0)`
   (`TauCeti.SymplecticForm.floerLinearization_comp_realChart_cylindricalEndLift`), so on constant
   sections `C_end(ζ) = (a - b J) C(φ ζ)`, and since `a² + b² = 4π² |φ(ζ)|²`,
@@ -144,31 +145,6 @@ section Energy
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The partial derivatives of `ξ ∘ φ` along the end lift are those of `ξ` composed with the
-conformal derivative `(1, 0) ↦ (a, b)`, `(0, 1) ↦ (-b, a)` of `φ`, whose Jacobian is `a² + b²`. -/
-private theorem exists_fderiv_comp_realChart_cylindricalEndLift (p : PSSPlane) {ξ : ℝ × ℝ → V}
-    {ζ : ℝ × ℝ} (hξ : DifferentiableAt ℝ ξ (realChart p.cylindricalEndLift ζ)) :
-    ∃ a b : ℝ, (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det = a ^ 2 + b ^ 2 ∧
-      fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ (1, 0) =
-        a • fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (1, 0) +
-          b • fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (0, 1) ∧
-      fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ (0, 1) =
-        (-b) • fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (1, 0) +
-          a • fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (0, 1) := by
-  set c := deriv p.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)
-  have hd : HasDerivAt p.cylindricalEndLift c (Complex.equivRealProdCLM.symm ζ) :=
-    (p.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt
-  have hφ : DifferentiableAt ℝ (realChart p.cylindricalEndLift) ζ :=
-    (contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable one_ne_zero ζ
-  refine ⟨c.re, c.im, ?_, ?_, ?_⟩
-  · rw [TauCeti.Complex.det_fderiv_realChart hd, Complex.normSq_apply]
-    ring
-  all_goals
-    rw [fderiv_comp ζ hξ hφ, ContinuousLinearMap.comp_apply,
-      TauCeti.Complex.fderiv_realChart_apply hd, ← ContinuousLinearMap.apply_mk_eq_smul_add_smul]
-    congr 1
-    simp [Complex.equivRealProdCLM_symm_apply]
-
 /-- **The weighted density on the end, from the `W^{1,2}` density of the cylinder.** The Jacobian
 of the end lift `φ` times the weighted density `ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²` at `φ(ζ)` is at most
 `4π²` times the `W^{1,2}` density of `ξ ∘ φ` in the end coordinates. -/
@@ -182,66 +158,20 @@ private theorem det_fderiv_mul_cylindricalWeight_le (p : PSSPlane) {ξ : ℝ × 
       4 * π ^ 2 * (‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineImag‖ ^ 2 +
         ‖(ξ ∘ realChart p.cylindricalEndLift) ζ‖ ^ 2) := by
-  obtain ⟨a, b, hdet, h₁, h₂⟩ := exists_fderiv_comp_realChart_cylindricalEndLift p hξ
+  obtain ⟨c, hc⟩ : ∃ c, HasDerivAt p.cylindricalEndLift c (Complex.equivRealProdCLM.symm ζ) :=
+    ⟨_, p.hasDerivAt_cylindricalEndLift _⟩
   have hρ := cylindricalWeight_mul_det_fderiv_realChart_cylindricalEndLift_le p ζ
-  have hconf := le_two_mul_norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq a b
-    (fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (1, 0))
-    (fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (0, 1))
-  simp only [stdComplexLineReal, stdComplexLineImag, Function.comp_apply]
-  rw [h₁, h₂]
-  rw [hdet] at hρ ⊢
-  have hπ : 2 ≤ 4 * π ^ 2 := by nlinarith [Real.two_le_pi]
-  nlinarith [sq_nonneg ‖ξ (realChart p.cylindricalEndLift ζ)‖,
-    sq_nonneg ‖a • fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (1, 0) +
-      b • fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (0, 1)‖,
-    sq_nonneg ‖(-b) • fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (1, 0) +
-      a • fderiv ℝ ξ (realChart p.cylindricalEndLift ζ) (0, 1)‖]
-
-/-- On the half-cylinder `ε s > R`, `0 ≤ t ≤ 1` of the end, the `W^{1,2}` density of the lift of a
-`C¹` section of compact support is integrable: the lift vanishes far out on the end. -/
-private theorem integrableOn_comp_realChart_cylindricalEndLift_Ioi (p : PSSPlane)
-    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ) (R : ℝ) :
-    IntegrableOn (fun ζ ↦
-      ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineImag‖ ^ 2 +
-        ‖(ξ ∘ realChart p.cylindricalEndLift) ζ‖ ^ 2)
-      ({s : ℝ | R < p.endSign * s} ×ˢ Icc (0 : ℝ) 1) := by
   set φ := realChart p.cylindricalEndLift
-  have hφ : ContDiff ℝ 1 φ := contDiff_realChart p.contDiff_cylindricalEndLift
-  have hξφ : ContDiff ℝ 1 (ξ ∘ φ) := hξ.comp hφ
-  have := hξφ.continuous_fderiv one_ne_zero
-  have hg : Continuous fun ζ ↦ ‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineImag‖ ^ 2 + ‖(ξ ∘ φ) ζ‖ ^ 2 := by fun_prop
-  -- Beyond `ε s = N`, the end lift leaves the support of `ξ`.
-  obtain ⟨M, hM⟩ := hξc.isCompact.exists_bound_of_continuousOn
-    Complex.equivRealProdCLM.symm.continuous.continuousOn
-  set N := max R (max M 0)
-  have hN : M < Real.exp (2 * π * N) := by
-    have hM0 : max M 0 ≤ N := le_max_right _ _
-    have hN0 : 0 ≤ N := (le_max_right M 0).trans hM0
-    have h₁ : N ≤ 2 * π * N := le_mul_of_one_le_left hN0 (by linarith [Real.two_le_pi])
-    linarith [le_max_left M 0, Real.add_one_le_exp (2 * π * N)]
-  obtain ⟨a, b, -, hband, -, -⟩ := exists_Icc_eq_preimage_endSign_mul p (le_max_left R (max M 0))
-  refine IntegrableOn.of_forall_sdiff_eq_zero (s := Icc a b ×ˢ Icc 0 1)
-    (hg.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-    ((measurableSet_lt measurable_const (measurable_id.const_mul _)).prod measurableSet_Icc)
-    fun ζ hζ ↦ ?_
-  have hζN : N < p.endSign * ζ.1 := by
-    by_contra h
-    exact hζ.2 ⟨(hband ζ.1).2 ⟨hζ.1.1.le, not_lt.1 h⟩, hζ.1.2⟩
-  -- Near `ζ` the lift of `ξ` vanishes.
-  have hev : ξ ∘ φ =ᶠ[𝓝 ζ] 0 := by
-    have hopen : IsOpen {ζ' : ℝ × ℝ | N < p.endSign * ζ'.1} :=
-      isOpen_lt continuous_const (continuous_const.mul continuous_fst)
-    filter_upwards [hopen.mem_nhds hζN] with ζ' hζ'
-    rw [Function.comp_apply, Pi.zero_apply]
-    refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
-    have h₁ := hM _ hmem
-    rw [norm_symm_realChart_cylindricalEndLift] at h₁
-    have h₂ : Real.exp (2 * π * N) < Real.exp (2 * π * (p.endSign * ζ'.1)) :=
-      Real.exp_lt_exp.2 (mul_lt_mul_of_pos_left hζ' Real.two_pi_pos)
-    linarith
-  simp [hev.fderiv_eq, show ξ (φ ζ) = 0 from hev.eq_of_nhds]
+  have hconf := le_two_mul_norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq c.re c.im
+    (fderiv ℝ ξ (φ ζ) (1, 0)) (fderiv ℝ ξ (φ ζ) (0, 1))
+  simp only [stdComplexLineReal, stdComplexLineImag, Function.comp_apply]
+  rw [TauCeti.Complex.fderiv_comp_realChart_apply_one_zero hc hξ,
+    TauCeti.Complex.fderiv_comp_realChart_apply_zero_one hc hξ]
+  rw [TauCeti.Complex.det_fderiv_realChart hc, Complex.normSq_apply] at hρ ⊢
+  have hπ : 2 ≤ 4 * π ^ 2 := by nlinarith [Real.two_le_pi]
+  nlinarith [sq_nonneg ‖ξ (φ ζ)‖,
+    sq_nonneg ‖c.re • fderiv ℝ ξ (φ ζ) (1, 0) + c.im • fderiv ℝ ξ (φ ζ) (0, 1)‖,
+    sq_nonneg ‖(-c.im) • fderiv ℝ ξ (φ ζ) (1, 0) + c.re • fderiv ℝ ξ (φ ζ) (0, 1)‖]
 
 /-- On the part `|w| > exp (2π R)` of the plane, the weighted energy of a `C¹` section `ξ` of
 compact support is at most `4π²` times the `W^{1,2}` energy of `ξ ∘ φ` on the half-cylinder
@@ -268,8 +198,13 @@ private theorem setIntegral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : �
     · intro hz
       obtain ⟨ζ, hζ1, hζ2, hζz⟩ := p.exists_realChart_cylindricalEndLift_eq hz
       exact ⟨ζ, ⟨hζ1, hζ2⟩, hζz⟩
-  have hEc := (integrableOn_comp_realChart_cylindricalEndLift_Ioi p hξ hξc R).const_mul
-    (4 * π ^ 2)
+  -- The lift of `ξ` vanishes far out on the end, so its energy density is integrable there.
+  obtain ⟨N, hN⟩ := p.exists_eventuallyEq_zero_comp_realChart_cylindricalEndLift hξc
+  obtain ⟨a, b, -, hab, -, -⟩ := exists_Icc_eq_preimage_endSign_mul p (le_max_left R N)
+  have hEc := (p.integrableOn_comp_realChart_cylindricalEndLift hξ
+    (measurableSet_lt measurable_const (measurable_id.const_mul _)) fun ζ hζ hζab ↦
+      hN ζ ((le_max_right R N).trans_lt
+        (not_le.1 fun h ↦ hζab ((hab ζ.1).2 ⟨le_of_lt hζ, h⟩)))).const_mul (4 * π ^ 2)
   rw [← himage, integral_image_eq_integral_of_eq_abs_det_smul hband
     ((p.injOn_realChart_cylindricalEndLift 0).mono
       (prod_mono (subset_univ _) (by rw [zero_add])))
@@ -393,8 +328,8 @@ theorem mul_norm_floerLinearizationCoeff_cylindricalEndLift_le (ω : SymplecticF
   have hdet : a ^ 2 + b ^ 2 = r ^ 2 := by
     have hab : (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det = a ^ 2 + b ^ 2 := by
       rw [ContinuousLinearMap.det,
-        (isComplexLinearMap_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)).det_eq_sq_add_sq]
-      rfl
+        (isComplexLinearMap_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)).det_eq_sq_add_sq,
+        ContinuousLinearMap.coe_coe]
     rw [← hab, det_fderiv_realChart_cylindricalEndLift]
   have hr : 0 < r := by
     have hne : Complex.equivRealProdCLM.symm w ≠ 0 := by
@@ -572,52 +507,19 @@ private theorem exists_norm_le_floerConformalSobolevOperator_pssPlane (ω : Symp
         ‖x‖ ≤ A * (‖ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight J Ks Kt u x‖ +
           ‖restrictWeightedValue V univ
             {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (R + 1))} x‖) := by
-  set K := {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (R + 1))}
-  -- On `K` the `L²` norm of a section is controlled by its weighted value.
-  obtain ⟨B, hB⟩ := exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (V := V)
-    isWeight_cylindricalWeight (isCompact_setOf_norm_equivRealProdCLM_symm_le _) (subset_univ K)
-  set cK := 1 + |B|
-  set A₀ := 4 * π ^ 2 * max C 0 * cK
-  have hA₀ : 0 ≤ A₀ := by positivity
-  refine ⟨√A₀, fun x hx ↦ ?_⟩
-  obtain ⟨ξ, hξ, hxξ⟩ := mem_jetSubmodule_iff.1 hx
+  -- The weighted energy is at most `4π²` times the left side of the semi-Fredholm estimate.
+  refine ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le
+    isWeight_cylindricalWeight hM (isCompact_setOf_norm_equivRealProdCLM_symm_le _)
+    (subset_univ _) (C := 4 * π ^ 2 * C) fun ξ hξ ↦ ?_
   obtain ⟨hξs, hξc, -⟩ := mem_testSection_iff.1 hξ
-  -- `‖x‖²` is at most the weighted energy, which the semi-Fredholm estimate controls by
-  -- `∫ ‖D_u ξ‖² = ‖D_u x‖²` and `∫_K ‖ξ‖² ≤ cK ‖√ρ ξ‖²_{L²(K)}`.
-  have h₁ : ‖x‖ ^ 2 ≤ ∫ z, (PSSPlane.cylindricalWeight z * ‖ξ z‖ ^ 2 +
-      ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) :=
-    (sq_norm_le_integral isWeight_cylindricalWeight hξ hxξ).trans_eq setIntegral_univ
-  have h₂ := integral_cylindricalWeight_mul_add_le p (hξs.of_le one_le_two) hξc R
-  have hD := ω.norm_floerConformalSobolevOperator_sq isWeight_cylindricalWeight hM hξ hxξ
-  have hKξ : ∫ z in K, ‖ξ z‖ ^ 2 ≤ cK * ‖restrictWeightedValue V univ K x‖ ^ 2 :=
-    (hB hξs.continuous hxξ).trans
-      (mul_le_mul_of_nonneg_right (by linarith [le_abs_self B]) (sq_nonneg _))
-  have hDx0 : 0 ≤ ∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 :=
-    integral_nonneg fun _ ↦ by positivity
-  have hK0 : 0 ≤ ∫ z in K, ‖ξ z‖ ^ 2 :=
-    setIntegral_nonneg_of_ae_restrict (Eventually.of_forall fun _ ↦ by positivity)
-  have hest' := (hest hξs hξc).trans
-    (mul_le_mul_of_nonneg_right (le_max_left C 0) (add_nonneg hDx0 hK0))
   have hEp0 : 0 ≤ ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * R)},
       (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
         ‖ξ z‖ ^ 2) := setIntegral_nonneg_of_ae_restrict (Eventually.of_forall fun _ ↦ by positivity)
   have hπ : 1 ≤ 4 * π ^ 2 := by nlinarith [Real.two_le_pi]
-  have hsq : ‖x‖ ^ 2 ≤ A₀ * (‖ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight
-      J Ks Kt u x‖ ^ 2 + ‖restrictWeightedValue V univ K x‖ ^ 2) := by
-    rw [hD]
-    have hcK : 1 ≤ cK := le_add_of_nonneg_right (abs_nonneg _)
-    nlinarith [mul_le_mul_of_nonneg_left hest' (show (0 : ℝ) ≤ 4 * π ^ 2 by positivity),
-      mul_le_mul_of_nonneg_left hEp0 (show (0 : ℝ) ≤ 4 * π ^ 2 - 1 by linarith),
-      mul_le_mul_of_nonneg_left hKξ (show (0 : ℝ) ≤ 4 * π ^ 2 * max C 0 by positivity),
-      mul_le_mul_of_nonneg_left (le_mul_of_one_le_left hDx0 hcK)
-        (show (0 : ℝ) ≤ 4 * π ^ 2 * max C 0 by positivity)]
-  -- Since `a² + b² ≤ (a + b)²` for `a, b ≥ 0`, this gives the estimate with `A = √A₀`.
-  have ha := norm_nonneg
-    (ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight J Ks Kt u x)
-  have hb := norm_nonneg (restrictWeightedValue V univ K x)
-  refine (pow_le_pow_iff_left₀ (norm_nonneg x) (by positivity) two_ne_zero).1 ?_
-  rw [mul_pow, Real.sq_sqrt hA₀]
-  nlinarith [mul_nonneg hA₀ (mul_nonneg ha hb)]
+  rw [setIntegral_univ]
+  refine (integral_cylindricalWeight_mul_add_le p (hξs.of_le one_le_two) hξc R).trans ?_
+  nlinarith [mul_le_mul_of_nonneg_left (hest hξs hξc) (show (0 : ℝ) ≤ 4 * π ^ 2 by positivity),
+    mul_le_mul_of_nonneg_left hEp0 (show (0 : ℝ) ≤ 4 * π ^ 2 - 1 by linarith)]
 
 /-- **The linearized operator of a PSS plane has finite-dimensional kernel on `W^{1,2}`.** Let the
 coefficient field of `D_u` on the conformal jets of the cylindrical weight be essentially bounded

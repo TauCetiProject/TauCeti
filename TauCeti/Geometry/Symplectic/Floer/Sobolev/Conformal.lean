@@ -38,7 +38,10 @@ coordinates is bounded. The realization is
 `TauCeti.SymplecticForm.floerConformalSobolevOperator`, which agrees with `D_u` on test sections
 (`TauCeti.SymplecticForm.floerConformalSobolevOperator_toLp_jet_ae_eq`), so that its norm on the jet
 of a test section `ξ` is the `L²` norm of `D_u ξ`
-(`TauCeti.SymplecticForm.norm_floerConformalSobolevOperator_sq`).
+(`TauCeti.SymplecticForm.norm_floerConformalSobolevOperator_sq`). An estimate of the weighted
+energy of test sections by `∫ ‖D_u ξ‖²` and an `L²` norm on a compact set then gives the estimate
+of Peetre's argument
+(`exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le`).
 
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
 `(0, 1)`-form `(dξ + …)^(0,1)` for the conformal metric, since the conformal factors of a
@@ -197,5 +200,58 @@ theorem norm_floerConformalSobolevOperator_sq (ω : SymplecticForm V) (hρ : IsW
   exact setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
     rw [ω.floerLinearization_of_notMem_tsupport J Ks Kt u
       fun h ↦ hz ((mem_testSection_iff.1 hξ).2.2 h), norm_zero, zero_pow two_ne_zero]
+
+
+/-- **Peetre's estimate from an energy estimate.** Let the coefficient field of the linearized
+Floer operator `D_u` on the conformal jets of `ρ` be essentially bounded on `U`, let `K ⊆ U` be
+compact, and suppose that every test section `ξ` on `U` has weighted energy
+
+`∫_U (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_K ‖ξ‖²)`.
+
+Then there is `A` such that the jet `x ∈ W^{1,2}_0(U, V)` of every test section `ξ` satisfies
+`‖x‖ ≤ A (‖D_u x‖ + ‖√ρ ξ‖_{L²(K)})`, the estimate consumed by Peetre's argument
+`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`. -/
+theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le
+    (ω : SymplecticForm V) (hρ : IsWeight U ρ) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hM : MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict U))
+    {K : Set (ℝ × ℝ)} (hK : IsCompact K) (hKU : K ⊆ U) {C : ℝ}
+    (hest : ∀ ⦃ξ : ℝ × ℝ → V⦄, ξ ∈ testSection V U →
+      ∫ z in U, (ρ z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) ≤
+        C * ((∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2)) :
+    ∃ A, ∀ x : H1 V U ρ, (x : Lp (V × V × V) 2 (volume.restrict U)) ∈ jetSubmodule V U ρ →
+      ‖x‖ ≤ A * (‖ω.floerConformalSobolevOperator U ρ J Ks Kt u x‖ +
+        ‖restrictWeightedValue V U K x‖) := by
+  -- On `K` the `L²` norm of a section is controlled by its weighted value.
+  obtain ⟨B, hB⟩ :=
+    exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (V := V) hρ hK hKU
+  set k := max C 0 * (1 + |B|)
+  refine ⟨√k, fun x hx ↦ ?_⟩
+  obtain ⟨ξ, hξ, hxξ⟩ := mem_jetSubmodule_iff.1 hx
+  set D := ω.floerConformalSobolevOperator U ρ J Ks Kt u
+  set R := restrictWeightedValue V U K
+  have hY : ∫ z in K, ‖ξ z‖ ^ 2 ≤ |B| * ‖R x‖ ^ 2 :=
+    (hB (mem_testSection_iff.1 hξ).1.continuous hxξ).trans (by gcongr; exact le_abs_self B)
+  -- Assemble: `‖x‖² ≤ k (‖D x‖ + ‖R x‖)²`.
+  have hx2 : ‖x‖ ^ 2 ≤ k * (‖D x‖ + ‖R x‖) ^ 2 := by
+    have h₁ : C * ((∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2) ≤
+        max C 0 * (‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2) := by
+      rw [← norm_floerConformalSobolevOperator_sq ω hρ hM hξ hxξ]
+      exact mul_le_mul (le_max_left C 0) (by linarith)
+        (add_nonneg (sq_nonneg _) (setIntegral_nonneg hK.measurableSet fun _ _ ↦ sq_nonneg _))
+        (le_max_right C 0)
+    have h₂ : ‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2 ≤ (1 + |B|) * (‖D x‖ + ‖R x‖) ^ 2 := by
+      nlinarith [norm_nonneg (D x), norm_nonneg (R x), abs_nonneg B,
+        mul_nonneg (norm_nonneg (D x)) (norm_nonneg (R x)),
+        mul_nonneg (abs_nonneg B) (mul_nonneg (norm_nonneg (D x)) (norm_nonneg (R x))),
+        mul_nonneg (abs_nonneg B) (sq_nonneg ‖D x‖)]
+    calc ‖x‖ ^ 2 ≤ max C 0 * (‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2) :=
+          (sq_norm_le_integral hρ hξ hxξ).trans ((hest hξ).trans h₁)
+      _ ≤ max C 0 * ((1 + |B|) * (‖D x‖ + ‖R x‖) ^ 2) := by gcongr
+      _ = k * (‖D x‖ + ‖R x‖) ^ 2 := by ring
+  calc ‖x‖ = √(‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg _)).symm
+    _ ≤ √(k * (‖D x‖ + ‖R x‖) ^ 2) := Real.sqrt_le_sqrt hx2
+    _ = √k * (‖D x‖ + ‖R x‖) := by
+      rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity)]
 
 end TauCeti.SymplecticForm
