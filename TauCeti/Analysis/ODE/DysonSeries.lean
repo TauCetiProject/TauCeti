@@ -72,6 +72,8 @@ one-parameter automorphism groups of C⋆-algebras.
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
 * `TauCeti.commute_dysonSeriesLeft`, `TauCeti.commute_dysonSeries_neg`: an element commuting with
   every value of `p` commutes with both series.
+* `TauCeti.dysonSeriesLeft_apply_I_smul`, `TauCeti.dysonSeries_neg_apply_I_smul`: the propagator
+  of a path of complex-linear maps and its inverse are complex linear.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
   `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 
@@ -571,6 +573,37 @@ theorem eq_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : 
   simp only [v, dysonSeriesLeft_zero, intervalIntegral.integral_same, add_zero,
     one_apply_eq_self, sub_self, map_zero] at h0
   exact sub_eq_zero.1 h0
+
+section Complex
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {M : ℝ → E →L[ℝ] E}
+
+open Complex (I)
+
+/-- Multiplication by `I` commutes with every value of a path of complex-linear maps. -/
+private theorem commute_I_smul_one (hMI : ∀ s v, M s (I • v) = I • M s v) (s : ℝ) :
+    Commute (I • (1 : E →L[ℝ] E)) (M s) :=
+  ContinuousLinearMap.ext fun w ↦ by simp [hMI]
+
+/-- A real-linear map commuting with multiplication by `I` commutes with `I` on vectors. -/
+private theorem apply_I_smul_of_commute {A : E →L[ℝ] E} (h : Commute (I • (1 : E →L[ℝ] E)) A)
+    (v : E) : A (I • v) = I • A v := by
+  simpa using (ContinuousLinearMap.ext_iff.1 h.eq v).symm
+
+variable [CompleteSpace E]
+
+/-- The propagator of a continuous path of complex-linear maps is complex linear. -/
+theorem dysonSeriesLeft_apply_I_smul (hM : Continuous M) (hMI : ∀ s v, M s (I • v) = I • M s v)
+    (t : ℝ) (v : E) : dysonSeriesLeft M t (I • v) = I • dysonSeriesLeft M t v :=
+  apply_I_smul_of_commute (commute_dysonSeriesLeft hM (commute_I_smul_one hMI) t) v
+
+/-- The inverse `dysonSeries (-M)` of the propagator of a continuous path of complex-linear maps
+is complex linear. -/
+theorem dysonSeries_neg_apply_I_smul (hM : Continuous M) (hMI : ∀ s v, M s (I • v) = I • M s v)
+    (t : ℝ) (v : E) : dysonSeries (-M) t (I • v) = I • dysonSeries (-M) t v :=
+  apply_I_smul_of_commute (commute_dysonSeries_neg hM (commute_I_smul_one hMI) t) v
+
+end Complex
 
 end Left
 

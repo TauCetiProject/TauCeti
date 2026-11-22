@@ -86,35 +86,6 @@ for the propagator. -/
 local instance instCompleteSpaceComplexOrientation : CompleteSpace E :=
   FiniteDimensional.completeSpace ℂ E
 
-/-! ### Complex linearity of the propagator -/
-
-omit hT [FiniteDimensional ℂ E] in
-/-- Multiplication by `I` commutes with every value of a loop of complex-linear maps. -/
-private theorem commute_I_smul_one (hS : ∀ t v, S t (I • v) = I • S t v) (r : ℝ) :
-    Commute (I • (1 : E →L[ℝ] E)) (S r) :=
-  ContinuousLinearMap.ext fun w ↦ by simp [hS]
-
-omit [FiniteDimensional ℂ E] in
-/-- A real-linear map commuting with multiplication by `I` commutes with `I` on vectors. -/
-private theorem apply_I_smul_of_commute {A : E →L[ℝ] E} (h : Commute (I • (1 : E →L[ℝ] E)) A)
-    (v : E) : A (I • v) = I • A v := by
-  simpa using (ContinuousLinearMap.ext_iff.1 h.eq v).symm
-
-omit hT in
-/-- The propagator of a loop of complex-linear maps is complex linear. -/
-private theorem dysonSeriesLeft_apply_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (t : ℝ) (v : E) :
-    dysonSeriesLeft (fun t : ℝ ↦ S t) t (I • v) = I • dysonSeriesLeft (fun t : ℝ ↦ S t) t v :=
-  apply_I_smul_of_commute
-    (commute_dysonSeriesLeft (AddCircle.continuous_comp_coe S) (commute_I_smul_one T hS) t) v
-
-omit hT in
-/-- The inverse `dysonSeries (-S)` of the propagator of a loop of complex-linear maps is complex
-linear. -/
-private theorem dysonSeries_neg_apply_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (t : ℝ) (v : E) :
-    dysonSeries (-fun t : ℝ ↦ S t) t (I • v) = I • dysonSeries (-fun t : ℝ ↦ S t) t v :=
-  apply_I_smul_of_commute
-    (commute_dysonSeries_neg (AddCircle.continuous_comp_coe S) (commute_I_smul_one T hS) t) v
-
 /-! ### The complex orientation -/
 
 omit hT in
@@ -122,7 +93,7 @@ omit hT in
 private theorem one_sub_apply_I_smul (hS : ∀ t v, S t (I • v) = I • S t v) (v : E) :
     (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) (I • v) =
       I • (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) v := by
-  simp [dysonSeriesLeft_apply_I_smul T hS, smul_sub]
+  simp [dysonSeriesLeft_apply_I_smul (AddCircle.continuous_comp_coe S) fun s ↦ hS s, smul_sub]
 
 /-- The inverse of evaluation at `0` on the kernels commutes with multiplication by `I`. -/
 private theorem kerLoopOperatorEquiv_symm_I_smul (hS : ∀ t v, S t (I • v) = I • S t v)
@@ -133,7 +104,8 @@ private theorem kerLoopOperatorEquiv_symm_I_smul (hS : ∀ t v, S t (I • v) = 
   refine toContinuousMap_injective T (show (1 : ℝ) / 2 < 1 by norm_num) ?_
   refine AddCircle.continuousMap_ext_coe fun t ↦ ?_
   rw [map_smul, ContinuousMap.smul_apply, toContinuousMap_kerLoopOperatorEquiv_symm_apply,
-    toContinuousMap_kerLoopOperatorEquiv_symm_apply, hxy, dysonSeriesLeft_apply_I_smul T hS]
+    toContinuousMap_kerLoopOperatorEquiv_symm_apply, hxy,
+    dysonSeriesLeft_apply_I_smul (AddCircle.continuous_comp_coe S) fun s ↦ hS s]
 
 /-- The inverse of the endpoint map on the cokernels commutes with multiplication by `I`. -/
 private theorem quotientRangeLoopOperatorEquiv_symm_I_smul
@@ -157,8 +129,10 @@ private theorem quotientRangeLoopOperatorEquiv_symm_I_smul
   refine (Submodule.Quotient.eq _).2 ⟨I • c, ?_⟩
   rw [one_sub_apply_I_smul T hS, hc, smul_sub]
   congr 1
-  simp only [ContinuousMap.smul_apply, dysonSeries_neg_apply_I_smul T hS,
-    intervalIntegral.integral_smul, dysonSeriesLeft_apply_I_smul T hS]
+  simp only [ContinuousMap.smul_apply,
+    dysonSeries_neg_apply_I_smul (AddCircle.continuous_comp_coe S) fun s ↦ hS s,
+    intervalIntegral.integral_smul,
+    dysonSeriesLeft_apply_I_smul (AddCircle.continuous_comp_coe S) fun s ↦ hS s]
 
 /-- **The complex orientation of a loop operator with complex-linear coefficients.** If every
 `S t` is complex linear, the normalized generator of the determinant line of `1 - Ψ(T)`,
