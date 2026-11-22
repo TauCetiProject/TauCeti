@@ -154,7 +154,7 @@ theorem exists_homotopy_morseCharacteristicMap_polarFactor (hf : ContMDiff Iₘ 
   have hmem (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d) :
       √ε • (w : EuclideanSpace ℝ (Fin k)) ∈ closedBall 0 (√ε * d) := by
     rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg hsε.le]
-    exact mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.1 w.2) hsε.le
+    exact mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.1 w.property) hsε.le
   let G' : C(I × closedBall (0 : EuclideanSpace ℝ (Fin k)) d, M) :=
     G.comp ⟨fun x ↦ (x.1, ⟨_, hmem x.2⟩), by fun_prop⟩
   have hG' (t : I) (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d) :
@@ -297,27 +297,27 @@ theorem exists_homotopy_morseFamilyCharacteristicMap_polarFactor (hfs : ContMDif
         f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ p y j ^ 2)
       (h : P → EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i))) (p : P)
       (w : TopCat.disk.{u} (k i)) :
-      f ((ψ p).morseCellMap (hk i) ε (h p w.down)) ≤ c - ε * ‖w.down.1‖ ^ 2 := by
-    have hw : ‖h p w.down.1‖ ≤ 1 :=
-      ((h p).norm_map _).trans_le (mem_closedBall_zero_iff.1 w.down.2)
+      f ((ψ p).morseCellMap (hk i) ε (h p w.down)) ≤ c - ε * ‖w.down.val‖ ^ 2 := by
+    have hw : ‖h p w.down.val‖ ≤ 1 :=
+      ((h p).norm_map _).trans_le (mem_closedBall_zero_iff.1 w.down.property)
     exact ((ψ p).apply_morseCellMap_eq_sub_mul_norm_sq (hball p) (hfψ p) (hk i) hε.le hw).trans_le
       (by rw [(h p).norm_map])
   -- Rescale `G` onto the discs of radius `d`, where it joins the two families.
   have hmem (w : closedBall (0 : EuclideanSpace ℝ (Fin (k i))) d) :
       √ε • (w : EuclideanSpace ℝ (Fin (k i))) ∈ closedBall 0 (√ε * d) := by
     rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg hsε.le]
-    exact mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.1 w.2) hsε.le
+    exact mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.1 w.property) hsε.le
   let G' : C(I × (P × closedBall (0 : EuclideanSpace ℝ (Fin (k i))) d), M) :=
     G.comp ⟨fun x ↦ (x.2.1, x.1, ⟨_, hmem x.2.2⟩), by fun_prop⟩
   have hG' (t : I) (p : P) (w : closedBall (0 : EuclideanSpace ℝ (Fin (k i))) d) :
       G' (t, p, w) = G (p, t, ⟨_, hmem w⟩) := rfl
   have hnorm (w : EuclideanSpace ℝ (Fin (k i))) : ‖√ε • w‖ ^ 2 = ε * ‖w‖ ^ 2 := by
     rw [norm_smul, Real.norm_of_nonneg hsε.le, mul_pow, Real.sq_sqrt hε.le]
-  have hG'₀ (p : P) (w : TopCat.disk.{u} (k i)) (hw : ‖w.down.1‖ ≤ d) :
-      G' (0, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ₁ (p, w) := by
+  have hG'₀ (p : P) (w : TopCat.disk.{u} (k i)) (hw : ‖w.down.val‖ ≤ d) :
+      G' (0, p, ⟨w.down.val, mem_closedBall_zero_iff.2 hw⟩) = χ₁ (p, w) := by
     rw [hG', hG0, map_smul, hχ₁, OpenPartialHomeomorph.morseCellMap_def]
-  have hG'₁ (p : P) (w : TopCat.disk.{u} (k i)) (hw : ‖w.down.1‖ ≤ d) :
-      G' (1, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ₀ (p, w) := by
+  have hG'₁ (p : P) (w : TopCat.disk.{u} (k i)) (hw : ‖w.down.val‖ ≤ d) :
+      G' (1, p, ⟨w.down.val, mem_closedBall_zero_iff.2 hw⟩) = χ₀ (p, w) := by
     rw [hG', hG1, ← hg, map_smul, map_smul, hχ₀, OpenPartialHomeomorph.morseCellMap_def]
   have hG'f (q : I × (P × closedBall (0 : EuclideanSpace ℝ (Fin (k i))) d)) :
       f (G' q) ≤ c + ε := by

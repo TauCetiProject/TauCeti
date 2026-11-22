@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.DirectLimit
+public import TauCeti.RingTheory.Huber.DirectLimit
 public import TauCeti.RingTheory.Huber.Continuous.OfCofinal
 public import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
@@ -44,6 +45,11 @@ the limit being realised as the subspace of compatible families in `∏ᵢ Spa(A
 numerators generate the unit ideal when `T` does
 (`TauCeti.ValuationSpectrum.exists_spaComap_preimage_rationalSubset`).
 
+For a colimit of Tate pairs these hypotheses are met by the `ϖ'`-adic topology on `L` and the union
+of the plus rings (`TauCeti/RingTheory/Huber/DirectLimit.lean`), which gives the homeomorphism
+`TauCeti.ValuationSpectrum.spaTateDirectLimitHomeomorph` with no pair of definition of `L` as
+input.
+
 ## Main results
 
 * `TauCeti.ValuationSpectrum.isContinuous_of_forall_isContinuous_comap`: continuity of a point of
@@ -54,6 +60,8 @@ numerators generate the unit ideal when `T` does
   `TauCeti.ValuationSpectrum.range_pi_spaComap`,
   `TauCeti.ValuationSpectrum.spaDirectLimitHomeomorph`: `Spa(L, L⁺)` is homeomorphic to the
   inverse limit of the `Spa(Aᵢ, Aᵢ⁺)`.
+* `TauCeti.ValuationSpectrum.spaTateDirectLimitHomeomorph`: the same for a colimit of Tate pairs
+  with the `ϖ'`-adic topology.
 * `TauCeti.ValuationSpectrum.exists_spaComap_preimage_rationalSubset`: rational subsets of
   `Spa(L, L⁺)` come from a finite stage.
 
@@ -121,7 +129,7 @@ theorem isContinuous_of_forall_isContinuous_comap [∀ i, ContinuousConstSMul (A
       simpa only [comap_apply, hφt] using hu.ne'
     obtain ⟨n, hn⟩ := exists_pow_lt_of_isTopologicallyNilpotent
       (((hw m).isOpen_lt_div (t j m hjm r') hu').mem_nhds
-        (by simpa using zero_lt_iff.mpr (div_ne_zero
+        (by simpa using pos_iff_ne_zero.mpr (div_ne_zero
           (by simpa only [comap_apply, hφt] using hr.ne') hu')))
       (hy.map (ht i m him))
     refine ⟨n, ?_⟩
@@ -197,16 +205,16 @@ theorem range_pi_spaComap :
   · rintro _ ⟨v, rfl⟩ i j h
     refine Subtype.ext ?_
     simp only [spaComap_val]
-    exact comap_comap_of_comp_eq hφt h v.1
-  have hw' : (fun i ↦ (w i).1) ∈
+    exact comap_comap_of_comp_eq hφt h v.val
+  have hw' : (fun i ↦ (w i).val) ∈
       {w : ∀ i, Spv (A i) | ∀ i j (h : i ≤ j), comap (t i j h) (w j) = w i} :=
     fun i j h ↦ (spaComap_val _ _ _ _ _ _).symm.trans (congrArg Subtype.val (hw i j h))
   rw [← range_pi_comap hφt hcover hker] at hw'
   obtain ⟨v, hv⟩ := hw'
-  have hvi : ∀ i, comap (φ i) v = (w i).1 := fun i ↦ congr_fun hv i
+  have hvi : ∀ i, comap (φ i) v = (w i).val := fun i ↦ congr_fun hv i
   have hmem : v ∈ spa Lplus :=
     (mem_spa_iff_forall_comap_mem_spa Aplus Lplus hφc hφplus hφt hcover ht P hP hLplus v).mpr
-      fun i ↦ hvi i ▸ (w i).2
+      fun i ↦ hvi i ▸ (w i).property
   exact ⟨⟨v, hmem⟩, funext fun i ↦ Subtype.ext ((spaComap_val _ _ _ _ _ _).trans (hvi i))⟩
 
 /-- **The adic spectrum of a directed colimit of Huber pairs is the inverse limit of the adic
@@ -240,6 +248,78 @@ theorem spaComap_spaDirectLimitHomeomorph_symm_apply
     hLplus, Homeomorph.apply_symm_apply]
 
 end Spa
+
+section Tate
+
+open Huber Huber.DirectLimit
+
+variable [IsDirectedOrder ι] [∀ i, IsTopologicalRing (A i)] [IsTopologicalRing L]
+  [DirectedSystem A fun i j h ↦ t i j h] (hφt : ∀ i j (h : i ≤ j) a, φ j (t i j h a) = φ i a)
+  (hcover : ∀ x : L, ∃ i a, φ i a = x) (ht : ∀ i j (h : i ≤ j), Continuous (t i j h))
+  (hker : ∀ i (a b : A i), φ i a = φ i b → ∃ j, ∃ h : i ≤ j, t i j h a = t i j h b)
+  (A₀ : ∀ i, Subring (A i)) (hA₀ : ∀ i, IsOpen (A₀ i : Set (A i))) {L₀ : Subring L}
+  (hφA₀ : ∀ i, ∀ a ∈ A₀ i, φ i a ∈ L₀) (hL₀ : ∀ x ∈ L₀, ∃ i, ∃ a ∈ A₀ i, φ i a = x)
+  {i₀ : ι} {ϖ : A i₀} (hϖ : IsPseudoUniformizer ϖ) {ϖ' : L₀} (hϖ' : (ϖ' : L) = φ i₀ ϖ)
+  (h : (𝓝 (0 : L)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (awayNhd ϖ' L n : Set L))
+  (Aplus : ∀ i, Subring (A i)) (hAplus : ∀ i, ∀ a ∈ Aplus i, IsPowerBounded a)
+  (hA₀plus : ∀ i, A₀ i ≤ Aplus i) (htplus : ∀ i j (h : i ≤ j), ∀ a ∈ Aplus i, t i j h a ∈ Aplus j)
+  (Lplus : Subring L) (hφplus : ∀ i, ∀ a ∈ Aplus i, φ i a ∈ Lplus)
+  (hLplus : ∀ x ∈ Lplus, ∃ i, ∃ a ∈ Aplus i, φ i a = x)
+
+/-- **The adic spectrum of a colimit of Tate pairs is the inverse limit of the adic spectra.**
+Let `L` be the colimit of a directed system of topological rings `Aᵢ` with open subrings
+`A₀ᵢ ⊆ Aᵢ⁺`, where the subrings `Aᵢ⁺` consist of power-bounded elements and are preserved by
+the transition maps, let `L₀` and `L⁺` be the unions of the images of the `A₀ᵢ` and of the
+`Aᵢ⁺`, and give `L` the `ϖ'`-adic topology for the image `ϖ'` of a pseudouniformiser of some
+stage. Then pulling back along the `φᵢ` is a homeomorphism of
+`Spa(L, L⁺)` onto the space of compatible families of points of the `Spa(Aᵢ, Aᵢ⁺)`.
+
+This is `spaDirectLimitHomeomorph` for the pair of definition `(L₀, ϖ' L₀)` of `L`, whose ideal of
+definition consists of images of topologically nilpotent elements of the stages. Its rational
+subsets come from a finite stage by `exists_spaComap_preimage_rationalSubset`, the maps `φᵢ`
+being continuous by `TauCeti.Huber.DirectLimit.continuous_of_hasBasis`. -/
+noncomputable def spaTateDirectLimitHomeomorph :
+    spa Lplus ≃ₜ {w : ∀ i, spa (Aplus i) | ∀ i j (h : i ≤ j),
+      spaComap (t i j h) (ht i j h) (Aplus i) (Aplus j) (htplus i j h) (w j) = w i} :=
+  haveI := isLocalization_away hφt ht A₀ hA₀ hφA₀ hϖ hϖ' hcover
+  spaDirectLimitHomeomorph Aplus Lplus (continuous_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h)
+    hφplus hφt hcover ht htplus hker
+    (.ofIsPseudoUniformizer _ (isOpen_range_algebraMap_of_hasBasis h)
+      (isBounded_range_algebraMap_of_hasBasis h) (isPseudoUniformizer_algebraMap_of_hasBasis h)
+      (RingHom.mem_range_self _ ϖ'))
+    (fun _ ha ↦ exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition hφt ht Aplus hAplus
+      htplus _ (fun c hc ↦ by
+        rw [PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition] at hc
+        obtain ⟨c, rfl⟩ := RingHom.mem_range.mp hc
+        obtain ⟨i, a, ha, hac⟩ := hL₀ c c.property
+        exact ⟨i, a, hA₀plus i ha, hac⟩)
+      hϖ.isTopologicallyNilpotent (fun _ ha ↦ by
+        rw [PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition] at ha
+        simpa [Algebra.algebraMap_ofSubsemiring_apply, hϖ'] using ha) ha)
+    hLplus
+
+/-- The `i`-th coordinate of `spaTateDirectLimitHomeomorph` is the pullback along `φᵢ`. -/
+@[simp]
+theorem spaTateDirectLimitHomeomorph_apply_coe (v : spa Lplus) (i : ι) :
+    (spaTateDirectLimitHomeomorph hφt hcover ht hker A₀ hA₀ hφA₀ hL₀ hϖ hϖ' h Aplus hAplus hA₀plus
+      htplus Lplus hφplus hLplus v : ∀ i, spa (Aplus i)) i =
+      spaComap (φ i) (continuous_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h i) (Aplus i) Lplus
+        (hφplus i) v :=
+  (rfl)
+
+/-- The point of `Spa(L, L⁺)` glued by `spaTateDirectLimitHomeomorph` from a compatible family
+pulls back to the `i`-th member of the family along `φᵢ`. -/
+@[simp]
+theorem spaComap_spaTateDirectLimitHomeomorph_symm_apply
+    (w : {w : ∀ i, spa (Aplus i) | ∀ i j (h : i ≤ j),
+      spaComap (t i j h) (ht i j h) (Aplus i) (Aplus j) (htplus i j h) (w j) = w i}) (i : ι) :
+    spaComap (φ i) (continuous_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h i) (Aplus i) Lplus
+        (hφplus i)
+        ((spaTateDirectLimitHomeomorph hφt hcover ht hker A₀ hA₀ hφA₀ hL₀ hϖ hϖ' h Aplus hAplus
+          hA₀plus htplus Lplus hφplus hLplus).symm w) = (w : ∀ i, spa (Aplus i)) i :=
+  spaComap_spaDirectLimitHomeomorph_symm_apply ..
+
+end Tate
 
 section Rational
 

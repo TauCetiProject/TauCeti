@@ -142,13 +142,13 @@ variables, and the variables of the off-diagonal unordered pairs, indexed by the
 pairs. -/
 def splitJointNoise (u : NoiseIndex Unit (Sym2 ℕ) → I) :
     (I × (ℕ → I)) × ({t : ℕ × ℕ // t.1 < t.2} → I) :=
-  ((u .global, fun k => u (.vertex () k)), fun t => u (.cell s(t.1.1, t.1.2)))
+  ((u .global, fun k => u (.vertex () k)), fun t => u (.cell s(t.val.1, t.val.2)))
 
 /-- The joint noise split reads the global, vertex, and off-diagonal cell coordinates. -/
 @[simp]
 theorem splitJointNoise_apply (u : NoiseIndex Unit (Sym2 ℕ) → I) :
     splitJointNoise u =
-      ((u .global, fun k => u (.vertex () k)), fun t => u (.cell s(t.1.1, t.1.2))) :=
+      ((u .global, fun k => u (.vertex () k)), fun t => u (.cell s(t.val.1, t.val.2))) :=
   (rfl)
 
 /-- The joint noise split is measurable. -/
@@ -165,16 +165,16 @@ theorem map_splitJointNoise_noiseMeasure :
       ((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).prod
         (Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} => (volume : Measure I)) := by
   -- Increasing pairs are sorted, so `Sym2.mk` is injective on them.
-  have hc : Function.Injective (fun t : {t : ℕ × ℕ // t.1 < t.2} => s(t.1.1, t.1.2)) :=
+  have hc : Function.Injective (fun t : {t : ℕ × ℕ // t.1 < t.2} => s(t.val.1, t.val.2)) :=
     fun t t' h => by
       rcases Sym2.eq_iff.1 h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
       · exact Subtype.ext (Prod.ext h₁ h₂)
-      · have := t.2
-        have := t'.2
+      · have := t.property
+        have := t'.property
         omega
   have hsplit : splitJointNoise = fun u =>
       ((u .global, fun k => u (.vertex ((), k).1 ((), k).2)),
-        fun t => u (.cell s(t.1.1, t.1.2))) := by
+        fun t => u (.cell s(t.val.1, t.val.2))) := by
     funext u
     rfl
   rw [hsplit]

@@ -74,8 +74,8 @@ variable {k : Type u} {k' : Type w} {G : Type v} [Field k] [Field k'] [Monoid G]
 lattices, by applying it to every value. -/
 def virtualCharacterEquiv (σ : k ≃+* k') :
     virtualCharacters k G ≃+ virtualCharacters k' G where
-  toFun f := ⟨σ ∘ f.1, σ.toRingHom.comp_mem_virtualCharacters f.2⟩
-  invFun f := ⟨σ.symm ∘ f.1, σ.symm.toRingHom.comp_mem_virtualCharacters f.2⟩
+  toFun f := ⟨σ ∘ f.val, σ.toRingHom.comp_mem_virtualCharacters f.property⟩
+  invFun f := ⟨σ.symm ∘ f.val, σ.symm.toRingHom.comp_mem_virtualCharacters f.property⟩
   left_inv f := by ext g; simp
   right_inv f := by ext g; simp
   map_add' f h := by ext g; simp
@@ -83,7 +83,7 @@ def virtualCharacterEquiv (σ : k ≃+* k') :
 /-- The induced equivalence applies the coefficient equivalence pointwise. -/
 @[simp]
 theorem virtualCharacterEquiv_apply (σ : k ≃+* k') (f : virtualCharacters k G) (g : G) :
-    (σ.virtualCharacterEquiv f).1 g = σ (f.1 g) :=
+    (σ.virtualCharacterEquiv f).val g = σ (f.val g) :=
   (rfl)
 
 /-- Inverting the coefficient equivalence inverts its action on virtual characters. -/

@@ -83,9 +83,9 @@ variable (f g) in
 noncomputable def separatedSumEquiv :
     MorseCriticalPoint (separatedSum f g) ≃ MorseCriticalPoint f × MorseCriticalPoint g where
   toFun P :=
-    have h := isNondegenerateCriticalPoint_separatedSum_iff.1 P.2
-    (⟨P.1.fst, h.1⟩, ⟨P.1.snd, h.2⟩)
-  invFun pq := ⟨WithLp.toLp 2 (pq.1.1, pq.2.1), pq.1.2.separatedSum pq.2.2⟩
+    have h := isNondegenerateCriticalPoint_separatedSum_iff.1 P.property
+    (⟨P.val.fst, h.1⟩, ⟨P.val.snd, h.2⟩)
+  invFun pq := ⟨WithLp.toLp 2 (pq.1.val, pq.2.val), pq.1.property.separatedSum pq.2.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 

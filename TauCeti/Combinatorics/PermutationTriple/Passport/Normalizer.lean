@@ -122,7 +122,7 @@ theorem isGeneratingTriple_conjugate_smul_iff (τ : Perm (Fin n)) :
 /-- A connected triple is a generating triple of `P` exactly when it lies in the passport `P` and
 its monodromy subgroup is the reference subgroup itself. -/
 theorem isGeneratingTriple_iff_monodromyGroup_eq_and_hasPassport {s : ConnectedTriple n} :
-    P.IsGeneratingTriple s.1 ↔ s.1.monodromyGroup = P.G ∧ HasPassport s P := by
+    P.IsGeneratingTriple s.val ↔ s.val.monodromyGroup = P.G ∧ HasPassport s P := by
   rw [isGeneratingTriple_iff, hasPassport_iff]
   have h1 : (MulAut.conj (1 : Perm (Fin n))).toMonoidHom = MonoidHom.id _ := by
     ext x
@@ -134,7 +134,7 @@ theorem isGeneratingTriple_iff_monodromyGroup_eq_and_hasPassport {s : ConnectedT
 /-- Every connected triple in a passport is isomorphic to a generating triple of that passport:
 some relabeling carries its monodromy subgroup onto the reference subgroup. -/
 theorem exists_isGeneratingTriple_smul {s : ConnectedTriple n} (hs : HasPassport s P) :
-    ∃ τ : Perm (Fin n), P.IsGeneratingTriple (τ • s.1) := by
+    ∃ τ : Perm (Fin n), P.IsGeneratingTriple (τ • s.val) := by
   obtain ⟨⟨τ, hτ⟩, h0, h1, hinf⟩ := (hasPassport_iff s P).mp hs
   refine ⟨τ, ?_, ?_, ?_, ?_⟩
   · rw [PermutationTriple.monodromyGroup_smul]
@@ -174,13 +174,13 @@ namespace GeneratingTriple
 /-- Simultaneous conjugation by an element normalizing the reference subgroup, acting on the
 generating triples of a passport. -/
 instance : SMul (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple where
-  smul τ g := ⟨(τ : Perm (Fin n)) • g.1, g.2.smul τ.2⟩
+  smul τ g := ⟨(τ : Perm (Fin n)) • g.val, g.property.smul τ.property⟩
 
 /-- Conjugation by a normalizing element acts on the underlying permutation triple. -/
 @[simp]
 theorem coe_smul (τ : Subgroup.normalizer (P.G : Set (Perm (Fin n))))
     (g : P.GeneratingTriple) :
-    ((τ • g : P.GeneratingTriple) : PermutationTriple n) = (τ : Perm (Fin n)) • g.1 :=
+    ((τ • g : P.GeneratingTriple) : PermutationTriple n) = (τ : Perm (Fin n)) • g.val :=
   (rfl)
 
 instance : MulAction (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple where
@@ -194,17 +194,17 @@ include hn hG
 /-- A generating triple of a passport of nonzero degree with transitive reference subgroup, as a
 connected triple. -/
 def toConnectedTriple (g : P.GeneratingTriple) : ConnectedTriple n :=
-  ⟨g.1, g.2.isConnected hn hG⟩
+  ⟨g.val, g.property.isConnected hn hG⟩
 
 /-- The connected triple attached to a generating triple has the same underlying triple. -/
 @[simp]
 theorem coe_toConnectedTriple (g : P.GeneratingTriple) :
-    ((g.toConnectedTriple hn hG : ConnectedTriple n) : PermutationTriple n) = g.1 := (rfl)
+    ((g.toConnectedTriple hn hG : ConnectedTriple n) : PermutationTriple n) = g.val := (rfl)
 
 /-- A generating triple of `P` lies in the passport `P`. -/
 theorem hasPassport_toConnectedTriple (g : P.GeneratingTriple) :
     HasPassport (g.toConnectedTriple hn hG) P :=
-  (isGeneratingTriple_iff_monodromyGroup_eq_and_hasPassport.mp g.2).2
+  (isGeneratingTriple_iff_monodromyGroup_eq_and_hasPassport.mp g.property).2
 
 /-- The isomorphism class of a generating triple. -/
 def toClass (g : P.GeneratingTriple) : ConnectedIsoClass n :=
@@ -233,14 +233,14 @@ theorem toClass_eq_toClass_iff {g g' : P.GeneratingTriple} :
     mem_orbit_iff]
   constructor
   · rintro ⟨τ, hτ⟩
-    have hτ' : τ • g'.1 = g.1 := congrArg Subtype.val hτ
+    have hτ' : τ • g'.val = g.val := congrArg Subtype.val hτ
     have hmem : τ ∈ Subgroup.normalizer (P.G : Set (Perm (Fin n))) :=
-      mem_normalizer_of_monodromyGroup_smul_eq g'.2.monodromyGroup_eq
-        (by rw [hτ']; exact g.2.monodromyGroup_eq)
+      mem_normalizer_of_monodromyGroup_smul_eq g'.property.monodromyGroup_eq
+        (by rw [hτ']; exact g.property.monodromyGroup_eq)
     exact ⟨⟨τ, hmem⟩, Subtype.ext hτ'⟩
   · rintro ⟨τ, hτ⟩
     refine ⟨(τ : Perm (Fin n)), Subtype.ext ?_⟩
-    have hτ' : ((τ • g' : P.GeneratingTriple) : PermutationTriple n) = g.1 :=
+    have hτ' : ((τ • g' : P.GeneratingTriple) : PermutationTriple n) = g.val :=
       congrArg Subtype.val hτ
     simpa using hτ'
 
@@ -249,7 +249,7 @@ theorem exists_toClass_eq {c : ConnectedIsoClass n} (hc : c.HasPassport P) :
     ∃ g : P.GeneratingTriple, g.toClass hn hG = c := by
   obtain ⟨s, rfl⟩ := ConnectedIsoClass.mk_surjective c
   obtain ⟨τ, hτ⟩ := exists_isGeneratingTriple_smul ((ConnectedIsoClass.hasPassport_mk s P).mp hc)
-  refine ⟨⟨τ • s.1, hτ⟩, ?_⟩
+  refine ⟨⟨τ • s.val, hτ⟩, ?_⟩
   rw [toClass, ConnectedIsoClass.mk_eq_mk_iff_exists_smul]
   exact ⟨τ, Subtype.ext (by simp)⟩
 

@@ -102,7 +102,7 @@ theorem IsCycle.takeUntil_internallyDisjoint_dropUntil_reverse [DecidableEq V]
     (c.takeUntil t ht).InternallyDisjoint (c.dropUntil t ht).reverse := by
   have hdisj : (c.takeUntil t ht).support.tail.Disjoint
       (c.dropUntil t ht).support.tail := by
-    have hnodup := hc.2
+    have hnodup := hc.support_nodup
     rw [← c.take_spec ht, Walk.tail_support_append, List.nodup_append'] at hnodup
     exact hnodup.2.2
   intro x hxp hxq
