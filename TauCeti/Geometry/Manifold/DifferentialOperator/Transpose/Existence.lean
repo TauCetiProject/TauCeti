@@ -82,7 +82,7 @@ of the partition of unity, so they form a locally finite family. -/
 private theorem locallyFinite_support_glue (g : C^∞⟮I, M; ℝ⟯) :
     LocallyFinite fun i ↦ Function.support (T i (ρ i * g)) :=
   ρ.locallyFinite.closure.subset fun i ↦ (subset_tsupport _).trans <| (hT i _).trans <|
-    (tsupport_mul_subset_left (f := (ρ i : M → ℝ)) (g := g)).trans_eq rfl
+    (by rw [ContMDiffMap.coe_mul]; exact tsupport_mul_subset_left)
 
 /-- The operator `g ↦ ∑ᶠ i, T i (ρ i * g)` glued from the operators `T i` along a smooth partition
 of unity `ρ`. -/
@@ -213,15 +213,24 @@ private def vectorFieldProd {ι : Type*} (X : ι → Cₛ^∞⟮I; E, (TangentSp
       vectorFieldProd X (Fin.tail i)
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
+private theorem vectorFieldProd_succ {ι : Type*}
+    (X : ι → Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) {k : ℕ} (i : Fin (k + 1) → ι) :
+    vectorFieldProd X i =
+      (vectorFieldDerivation (X (i 0)) : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∘ₗ
+        vectorFieldProd X (Fin.tail i) :=
+  rfl
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
 private theorem vectorFieldProd_mem {ι : Type*}
     (X : ι → Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
     ∀ {k : ℕ} (i : Fin k → ι),
       vectorFieldProd X i ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k
   | 0, _ => mem_differentialOperators_zero_iff.2 fun _ _ ↦ rfl
   | k + 1, i => by
-    simpa [vectorFieldProd, add_comm] using comp_mem_differentialOperators
+    have h := comp_mem_differentialOperators
       (Derivation.mem_differentialOperators_one (vectorFieldDerivation (X (i 0))))
       (vectorFieldProd_mem X (Fin.tail i))
+    rwa [Nat.add_comm 1 k, ← vectorFieldProd_succ] at h
 
 /-- The principal symbol of `X (i 0) ∘ ⋯ ∘ X (i (k - 1))` is `ξ ↦ ∏ l, ξ (X (i l) y)`. -/
 private theorem smoothPrincipalSymbol_vectorFieldProd {ι : Type*}
@@ -234,10 +243,10 @@ private theorem smoothPrincipalSymbol_vectorFieldProd {ι : Type*}
     rw [smoothPrincipalSymbol_eq_apply_one]
     simp [vectorFieldProd]
   | k + 1, i => by
-    rw [smoothPrincipalSymbol_congr hy (add_comm 1 k).symm
+    rw [smoothPrincipalSymbol_congr hy (Nat.add_comm 1 k).symm
       (D' := ⟨_, comp_mem_differentialOperators
         (Derivation.mem_differentialOperators_one (vectorFieldDerivation (X (i 0))))
-        (vectorFieldProd_mem X (Fin.tail i))⟩) rfl]
+        (vectorFieldProd_mem X (Fin.tail i))⟩) (vectorFieldProd_succ X i)]
     rw [smoothPrincipalSymbol_comp hy ⟨_, Derivation.mem_differentialOperators_one
       (vectorFieldDerivation (X (i 0)))⟩ ⟨_, vectorFieldProd_mem X (Fin.tail i)⟩,
       smoothPrincipalSymbol_vectorFieldDerivation, smoothPrincipalSymbol_vectorFieldProd X hy ξ,
@@ -372,13 +381,10 @@ private theorem HasTranspose.sum {m : ℕ} {κ : Type*} (s : Finset κ)
     {D : κ → C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯} (h : ∀ i ∈ s, HasTranspose μ m (D i))
     (hD : ∀ i ∈ s, D i ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
     HasTranspose μ m (∑ i ∈ s, D i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => exact ⟨0, zero_mem _, by rw [Finset.sum_empty]; exact IsFormalTranspose.zero⟩
-  | insert i s hi ih =>
-    simp only [Finset.forall_mem_insert] at h hD
-    rw [Finset.sum_insert hi]
-    exact h.1.add (ih h.2 hD.2) hD.1 (sum_mem hD.2)
+  choose! D' hD' hT using h
+  exact ⟨∑ i ∈ s, D' i, sum_mem hD', IsFormalTranspose.sum s hT
+    (fun i hi ↦ tsupport_differentialOperators_apply_subset (hD i hi))
+    (fun i hi ↦ tsupport_differentialOperators_apply_subset (hD' i hi))⟩
 
 end Integrable
 
@@ -396,8 +402,9 @@ private theorem hasTranspose_vectorFieldProd {ι : Type*}
   | 0, _ => ⟨LinearMap.id, mem_differentialOperators_zero_iff.2 fun _ _ ↦ rfl,
       IsFormalTranspose.id⟩
   | k + 1, i => by
-    simpa [vectorFieldProd, add_comm] using (hX (X (i 0))).comp
-      (hasTranspose_vectorFieldProd hX X (Fin.tail i)) (vectorFieldProd_mem X (Fin.tail i))
+    have h := (hX (X (i 0))).comp (hasTranspose_vectorFieldProd hX X (Fin.tail i))
+      (vectorFieldProd_mem X (Fin.tail i))
+    rwa [Nat.add_comm 1 k, ← vectorFieldProd_succ] at h
 
 /-- If `D ∘ χ` has a formal transpose `T`, then `T` is a formal transpose of `D` for test functions
 supported where `χ = 1`, since `D` is local. -/
