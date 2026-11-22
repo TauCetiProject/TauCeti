@@ -369,8 +369,7 @@ private theorem exists_flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGrad
   -- Enter the box, cross it, and leave it backwards from `w'`.
   refine ⟨-splitExitTime ε (φ.splitCoord (φ.coord (φ.toChart w'))) +
     (splitExitTime ε z.1 + splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w)))), ?_⟩
-  rw [Flow.map_add, Flow.map_add, h₁, h₃, ← h₂, ← Flow.map_add, neg_add_cancel,
-    Flow.map_zero_apply]
+  rw [Flow.map_add, Flow.map_add, h₁, h₃, ← h₂, Flow.map_neg_apply_map]
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
@@ -862,7 +861,7 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
   -- the image `Z'` of `Z` under the flow.
   set Z' := hX.flow (-T₂) ⁻¹' Z
   have hy₂Z : hX.flow (-T₂) y₂ = y := by
-    rw [← hT₂, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
+    rw [← hT₂, Flow.map_neg_apply_map]
   obtain ⟨φ', hφ', hZ', hy₂φ', htr'⟩ :=
     hX.exists_isSliceChart_preimage_flow hφZ hZ hyφZ htr T₂
   rw [hT₂] at hy₂φ' htr'
@@ -895,7 +894,7 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
   -- Flowing back by `T₁` and `T₂`, points near the entrance and exit points land in `N₁` and `N`.
   have hN₁' : hX.flow (-T₁) ⁻¹' N₁ ∈ 𝓝 y₁ := by
     refine (hX.flow.continuous_toFun (-T₁)).continuousAt.preimage_mem_nhds ?_
-    rwa [← hT₁, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
+    rwa [← hT₁, Flow.map_neg_apply_map]
   have hN' : hX.flow (-T₂) ⁻¹' N ∈ 𝓝 y₂ :=
     (hX.flow.continuous_toFun (-T₂)).continuousAt.preimage_mem_nhds (hy₂Z ▸ hN)
   set U' : Set ({i // ¬φ.weight i = 1} → ℝ) := {z | Ψ (ψ z) ∈ U ∧
