@@ -9,6 +9,8 @@ public import TauCeti.MeasureTheory.Integral.Lebesgue.Encard
 public import TauCeti.Probability.MarkovChain.StrongMarkov.Basic
 public import TauCeti.Probability.Process.SuccessiveVisits
 
+import Mathlib.MeasureTheory.MeasurableSpace.NCard
+
 /-!
 # The number of visits of a Markov chain to a state
 
@@ -26,6 +28,15 @@ exists exactly when this fresh chain returns. Hence the number of visits has a g
 ```text
 ℙ_ν(visit k exists) = ℙ_ν(H_y < ∞) · ρ_y ^ k.
 ```
+
+Equivalently, the chain is at `y` more than `k` times with this probability, counting the visits
+in `ℕ∞`. Started at `y`, the number `V_y = #{n ≥ 1 | X_n = y}` of positive-time visits satisfies
+
+```text
+ℙ_y(V_y ≥ k) = ρ_y ^ k,      𝔼_y V_y = ρ_y / (1 - ρ_y)
+```
+
+for every `k`, in `ℝ≥0∞` and without assuming transience.
 
 This gives the recurrence/transience dichotomy for the visits of a single state.
 
@@ -49,9 +60,16 @@ in `ℝ≥0∞`. In particular `y` satisfies `ρ_y = 1` exactly when `∑ n, (κ
 
 * `MeasureTheory.Measure.markovChainLaw_setOf_successiveVisit_ne_top`: the geometric tail
   `ℙ_ν(visit k exists) = ℙ_ν(H_y < ∞) · ρ_y ^ k`.
+* `MeasureTheory.Measure.markovChainLaw_setOf_lt_encard_setOf_eq`: the same tail for the number
+  of visits.
+* `ProbabilityTheory.Kernel.markovChainLaw_dirac_setOf_le_encard_setOf_succ_eq` and
+  `ProbabilityTheory.Kernel.lintegral_encard_setOf_succ_eq_markovChainLaw_dirac`: the tail
+  `ℙ_y(V_y ≥ k) = ρ_y ^ k` and mean `𝔼_y V_y = ρ_y / (1 - ρ_y)` of the positive-time visits.
 * `MeasureTheory.Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top` and
   `ProbabilityTheory.Kernel.ae_infinite_setOf_eq_markovChainLaw_dirac`: if `ρ_y = 1`, a path that
-  reaches `y` visits it infinitely often almost surely.
+  reaches `y` visits it infinitely often almost surely;
+  `ProbabilityTheory.Kernel.ae_encard_setOf_succ_eq_eq_top_markovChainLaw_dirac` states that then
+  `V_y = ⊤` almost surely under `ℙ_y`.
 * `MeasureTheory.Measure.markovChainLaw_setOf_infinite_setOf_eq_eq_zero`: if `ρ_y < 1`, the chain
   visits `y` infinitely often with probability zero.
 * `MeasureTheory.Measure.lintegral_encard_setOf_eq_markovChainLaw`: the mean number of visits is
@@ -142,6 +160,19 @@ theorem markovChainLaw_setOf_successiveVisit_ne_top (y : α) (k : ℕ) :
     rw [← setOf_successiveVisit_succ_ne_top, Set.inter_comm, ← restrict_apply (hB.preimage hθ),
       ← map_apply hθ hB, markovChainLaw_restrict_map_successiveVisit_eq_smul,
       smul_apply, smul_eq_mul, ih, pow_succ, mul_assoc]
+
+/-- **The number of visits has a geometric tail.** For every initial measure, the chain is at `y`
+more than `k` times with probability `ℙ_ν(H_y < ∞) · ρ_y ^ k`, where the number of visits
+`#{n | X_n = y}` is counted in `ℕ∞` and includes time zero. -/
+theorem markovChainLaw_setOf_lt_encard_setOf_eq (y : α) (k : ℕ) :
+    markovChainLaw ν κ {x | (k : ℕ∞) < {n | x n = y}.encard} =
+      markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
+        markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} ^ k := by
+  have hset : {x : ℕ → α | (k : ℕ∞) < {n | x n = y}.encard} =
+      {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} :=
+    Set.ext fun x =>
+      (successiveVisit_ne_top_iff_lt_encard (X := fun n (x : ℕ → α) => x n) (ω := x)).symm
+  rw [hset, markovChainLaw_setOf_successiveVisit_ne_top]
 
 /-- **A state that is returned to almost surely is visited infinitely often.** If the chain started
 at `y` returns to `y` almost surely, then for every initial measure, almost every path that
@@ -269,6 +300,55 @@ theorem ae_infinite_setOf_eq_markovChainLaw_dirac {y : α}
   filter_upwards [Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top (Measure.dirac y) κ hy,
     ae_hittingAfter_zero_ne_top_markovChainLaw_dirac κ y] with x hx h0
   exact hx h0
+
+/-- **The returns to the starting state have a geometric tail.** Started at `y`, the chain visits
+`y` at least `k` times at positive times with probability `ρ_y ^ k`, where
+`ρ_y = ℙ_y(T_y⁺ < ∞)` is the return probability of `y` and the number of positive-time visits
+`V_y = #{n ≥ 1 | X_n = y}` is counted in `ℕ∞`. No transience is assumed: if `ρ_y = 1`, both
+sides are one. -/
+theorem markovChainLaw_dirac_setOf_le_encard_setOf_succ_eq (y : α) (k : ℕ) :
+    markovChainLaw (Measure.dirac y) κ {x | (k : ℕ∞) ≤ {n | x (n + 1) = y}.encard} =
+      markovChainLaw (Measure.dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} ^ k := by
+  -- Started at `y`, the visits to `y` are time zero and the positive-time visits.
+  have hevent : {x : ℕ → α | (k : ℕ∞) ≤ {n | x (n + 1) = y}.encard} =ᵐ[
+      markovChainLaw (Measure.dirac y) κ] {x | (k : ℕ∞) < {n | x n = y}.encard} := by
+    filter_upwards [markovChainLaw_dirac_ae_apply_zero κ y] with x hx0
+    simp only [encard_setOf_eq_eq_encard_setOf_succ_add_one hx0,
+      ENat.lt_add_one_iff' (ENat.natCast_ne_top k)]
+  rw [measure_congr hevent, Measure.markovChainLaw_setOf_lt_encard_setOf_eq,
+    markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
+
+/-- **The mean number of returns.** Started at `y`, the mean number of positive-time visits to `y`
+is `ρ_y / (1 - ρ_y)` in `ℝ≥0∞`, where `ρ_y = ℙ_y(T_y⁺ < ∞)` is the return probability of `y`.
+It is finite exactly when `ρ_y < 1`. -/
+theorem lintegral_encard_setOf_succ_eq_markovChainLaw_dirac (y : α) :
+    ∫⁻ x, ({n | x (n + 1) = y}.encard : ℝ≥0∞) ∂markovChainLaw (Measure.dirac y) κ =
+      markovChainLaw (Measure.dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} /
+        (1 - markovChainLaw (Measure.dirac y) κ
+          {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤}) := by
+  have hm : Measurable fun x : ℕ → α => {n | x (n + 1) = y}.encard :=
+    measurable_encard.comp (measurable_set_iff.mpr fun n =>
+      ((measurableSet_singleton y).preimage (measurable_pi_apply (n + 1))).mem)
+  -- The `k`-th term of the tail sum is the probability of at least `k + 1` returns.
+  have hk : ∀ k : ℕ, markovChainLaw (Measure.dirac y) κ
+      {x | (k : ℕ∞) < {n | x (n + 1) = y}.encard} =
+        markovChainLaw (Measure.dirac y) κ
+          {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} ^ (k + 1) := fun k => by
+    rw [← markovChainLaw_dirac_setOf_le_encard_setOf_succ_eq]
+    simp only [Nat.cast_add, Nat.cast_one, ENat.add_one_le_iff (ENat.natCast_ne_top k)]
+  rw [lintegral_enat_eq_tsum _ fun k => hm (Set.to_countable (Set.Ioi (k : ℕ∞))).measurableSet]
+  simp_rw [hk, pow_succ', ENNReal.tsum_mul_left, ENNReal.tsum_geometric, div_eq_mul_inv]
+
+/-- **A state returned to almost surely is returned to infinitely often.** If the chain started
+at `y` returns to `y` almost surely, then almost surely it visits `y` infinitely often at positive
+times. -/
+theorem ae_encard_setOf_succ_eq_eq_top_markovChainLaw_dirac {y : α}
+    (hy : markovChainLaw (Measure.dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
+    ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ, {n | x (n + 1) = y}.encard = ⊤ := by
+  filter_upwards [ae_infinite_setOf_eq_markovChainLaw_dirac κ hy,
+    markovChainLaw_dirac_ae_apply_zero κ y] with x hx hx0
+  rw [← Set.encard_eq_top_iff, encard_setOf_eq_eq_encard_setOf_succ_add_one hx0] at hx
+  simpa using hx
 
 /-- **The Green function at the diagonal.** The mean number of visits to `y` of the chain started
 at `y`, `∑ n, (κ ^ n) y {y}`, is `(1 - ρ_y)⁻¹`, where `ρ_y = ℙ_y(T_y⁺ < ∞)` is the return
