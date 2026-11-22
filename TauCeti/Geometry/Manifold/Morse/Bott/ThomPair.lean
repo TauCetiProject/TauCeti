@@ -977,24 +977,19 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomP
       ∐ fun j : {j // ∀ s, f (i j s) = c} ↦ (thomPair (Fin (r j) → ℝ)
         fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
           (g j).toRiemannianMetric s).singularHomology R n) := by
-  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
-    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
-    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   have := h.finite
+  have (j : ι) : Nonempty (S j) := h.nonempty j
   have (j : ι) : CompactSpace (S j) :=
     (Topology.IsClosedEmbedding.mk (i j).isEmbedding (h.isClosed_range j)).compactSpace
-  obtain ⟨Θ, -, -, hΘf, ε₀, hε₀, hmain⟩ :=
-    h.nonempty_singularHomology_sublevelPair_iso_sigma_negativeDiscBundle hn hac hcb hcrit hdim g
-  have hε : ε₀ / 2 ∈ Ioo 0 ε₀ := ⟨half_pos hε₀, half_lt_self hε₀⟩
-  obtain ⟨hD, -, hiso⟩ := hmain _ hε
-  obtain ⟨e⟩ := hiso R n
-  -- Each summand, the lower sublevel with one negative disc bundle attached, is a Thom pair.
-  have hnd := h.isNondegenerateCriticalSubmanifold
-  exact ⟨e ≪≫ Sigma.mapIso fun j ↦
-    ((hnd j).nonempty_singularHomology_union_image_negativeDiscBundle_iso_thomPair hn h.contMDiff
-      (hdim j) (g j) (hr j) hε.1 ((Θ j).contMDiffOn_toFun.continuousOn.mono (hD j))
-      ((Θ j).injOn.mono (hD j)) (fun x hx ↦ hΘf j x (hD j hx)) R n).some⟩
+  refine SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair
+    (ι := {j // ∀ s, f (i j s) = c}) (S := fun j ↦ S j) (P := fun j ↦ P j) (J := fun j ↦ J j)
+    (i := fun j ↦ i j) hn (fun j ↦ h.isNondegenerateCriticalSubmanifold j) h.contMDiff
+    (fun j ↦ j.property) (fun j k hjk ↦ h.pairwise_disjoint_range fun he ↦ hjk (Subtype.ext he))
+    hac hcb
+    (isClosed_Icc.preimage h.contMDiff.continuous).isCompact (fun x ⟨hx, hfx⟩ ↦ ?_)
+    (fun j ↦ hdim j) (fun j ↦ g j) (fun j ↦ hr j) R n
+  -- A critical point in the band has value `c`, so its piece lies on the level `c`.
+  exact h.mem_iUnion_range_of_apply_eq hn hx (hcrit _ hx hfx)
 
 end Family
 
