@@ -18,8 +18,10 @@ by unique infinitesimal lifting along affine first-order thickenings.
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.FormallyEtale.of_etale`: an étale morphism, for instance an open
-  immersion, is formally étale. First-order thickenings are universal homeomorphisms, which lift
-  against étale morphisms by `IsUniversalHomeomorphism.hasLiftingProperty_of_etale`.
+  immersion, is formally étale: every commutative square against a first-order thickening with
+  affine target has a unique lift. The lifts come from
+  `IsUniversalHomeomorphism.hasLiftingProperty_of_etale`, since first-order thickenings are
+  universal homeomorphisms.
 * `TauCeti.AlgebraicGeometry.etale_iff_formallyEtale`: a morphism locally of finite presentation
   is étale if and only if it is formally étale.
 
@@ -39,10 +41,12 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {X S : Scheme.{u}}
 
-/-- An étale morphism is formally étale: lifts exist by
-`IsUniversalHomeomorphism.hasLiftingProperty_of_etale`, since first-order thickenings are
-universal homeomorphisms, and étale morphisms are formally unramified. -/
+/-- An étale morphism is formally étale: every commutative square of an étale morphism against a
+first-order thickening with affine target has a unique lift. -/
 instance (priority := 100) FormallyEtale.of_etale (f : X ⟶ S) [Etale f] : FormallyEtale f :=
+  -- First-order thickenings are universal homeomorphisms, so lifts exist by
+  -- `IsUniversalHomeomorphism.hasLiftingProperty_of_etale`; étale morphisms are formally
+  -- unramified, so lifts are unique.
   (formallyEtale_iff f).2
     ⟨⟨fun i _ a h w ↦ let sq : CommSq a i f h := ⟨w⟩; ⟨sq.lift, sq.fac_left, sq.fac_right⟩⟩,
       inferInstance⟩

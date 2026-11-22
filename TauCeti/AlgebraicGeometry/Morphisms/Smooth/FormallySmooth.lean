@@ -22,9 +22,9 @@ defined by the infinitesimal lifting property along affine first-order thickenin
   formally smooth, so `smooth_iff_formallySmooth_of_isAffineHom`.
 
 That an arbitrary smooth morphism `f : X ⟶ S` is formally smooth is not proved here. For a
-first-order thickening `T ⟶ T'`, lifts `T' ⟶ X` exist locally on `T'`, and the sheaf of local
-lifts on `T'` is a torsor rather than having a unique section. The missing argument must show
-that this torsor has a global section when `T'` is affine.
+first-order thickening `T ⟶ T'`, lifts `T' ⟶ X` exist locally on `T'`, and the local lifts form a
+torsor on `T'`. The step not covered here is that this torsor has a global section when `T'` is
+affine.
 
 ## References
 

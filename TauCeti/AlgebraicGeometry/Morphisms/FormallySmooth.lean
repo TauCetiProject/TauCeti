@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
-public import Mathlib.CategoryTheory.LiftingProperties.Basic
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.RingHom.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
@@ -42,7 +41,8 @@ Definitions 37.11.1 (02H0) and 37.8.1 (02HG)). The test thickenings are Tau Ceti
   unramified in the sense of Mathlib's `AlgebraicGeometry.FormallyUnramified`.
 * `TauCeti.AlgebraicGeometry.FormallySmooth.of_comp_of_formallyUnramified` and
   `TauCeti.AlgebraicGeometry.FormallyEtale.of_comp_of_formallyUnramified`: if `g ≫ j` is formally
-  smooth (formally étale) and `j` is formally unramified, then so is `g`.
+  smooth (formally étale) and `j` is formally unramified, then `g` is formally smooth (formally
+  étale).
 * `TauCeti.AlgebraicGeometry.formallySmooth_iff_exists_lift_quotient` and
   `TauCeti.AlgebraicGeometry.formallyEtale_iff_existsUnique_lift_quotient`: it suffices to test
   the lifting property on `Spec (B ⧸ I) ⟶ Spec B` for rings `B` and ideals `I` with `I ^ 2 = ⊥`.
@@ -141,6 +141,10 @@ instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallySmooth g] :
   rw [← pullbackSymmetry_hom_comp_snd]
   infer_instance
 
+instance : MorphismProperty.IsStableUnderBaseChange @FormallySmooth :=
+  MorphismProperty.IsStableUnderBaseChange.mk' fun _ _ _ f g _ (_ : FormallySmooth g) ↦
+    inferInstanceAs (FormallySmooth (pullback.fst f g))
+
 /-- A formally smooth morphism has the right lifting property against every first-order
 thickening with affine target. -/
 instance hasLiftingProperty {T T' : Scheme.{u}} [IsAffine T'] (i : T ⟶ T')
@@ -157,13 +161,6 @@ namespace FormallyEtale
 instance (priority := 100) formallySmooth (f : X ⟶ S) [FormallyEtale f] : FormallySmooth f where
   exists_lift i _ g h w := (existsUnique_lift i g h w).exists
 
-/-- Lifts along an affine first-order thickening through a formally étale morphism are unique. -/
-theorem lift_unique (f : X ⟶ S) [FormallyEtale f] {T T' : Scheme.{u}} [IsAffine T']
-    (i : T ⟶ T') [IsFirstOrderThickening i] {l₁ l₂ : T' ⟶ X} (h₁ : i ≫ l₁ = i ≫ l₂)
-    (h₂ : l₁ ≫ f = l₂ ≫ f) : l₁ = l₂ :=
-  (existsUnique_lift (f := f) i (i ≫ l₁) (l₁ ≫ f) (Category.assoc _ _ _)).unique
-    ⟨rfl, rfl⟩ ⟨h₁.symm, h₂.symm⟩
-
 end FormallyEtale
 
 /-- A morphism is formally étale exactly when it is formally smooth and lifts along affine
@@ -172,7 +169,9 @@ private theorem formallyEtale_iff_formallySmooth_and_lift_unique (f : X ⟶ S) :
     FormallyEtale f ↔ FormallySmooth f ∧
       ∀ {T T' : Scheme.{u}} [IsAffine T'] (i : T ⟶ T') [IsFirstOrderThickening i]
         (l₁ l₂ : T' ⟶ X), i ≫ l₁ = i ≫ l₂ → l₁ ≫ f = l₂ ≫ f → l₁ = l₂ := by
-  refine ⟨fun _ ↦ ⟨inferInstance, fun i _ _ _ h₁ h₂ ↦ FormallyEtale.lift_unique f i h₁ h₂⟩,
+  refine ⟨fun _ ↦ ⟨inferInstance, fun i _ l₁ _ h₁ h₂ ↦
+      (FormallyEtale.existsUnique_lift (f := f) i (i ≫ l₁) (l₁ ≫ f) (Category.assoc _ _ _)).unique
+        ⟨rfl, rfl⟩ ⟨h₁.symm, h₂.symm⟩⟩,
     fun ⟨hs, hu⟩ ↦ ⟨fun i _ g h w ↦ ?_⟩⟩
   obtain ⟨l, hl, hl'⟩ := hs.exists_lift i g h w
   exact ⟨l, ⟨hl, hl'⟩, fun l' ⟨hl₁, hl₂⟩ ↦ hu i l' l (hl₁.trans hl.symm) (hl₂.trans hl'.symm)⟩
@@ -186,8 +185,7 @@ theorem formallyEtale_iff (f : X ⟶ S) :
   · refine FormallyUnramified.of_hom_ext f fun R _ φ hφ hker g₁ g₂ h₁ h₂ ↦ ?_
     have := (IsFirstOrderThickening.SpecMap_iff φ hφ).2 (by rwa [← pow_two])
     exact H (Spec.map φ) g₁ g₂ h₁ h₂
-  · exact FormallyUnramified.hom_ext i
-      ⟨2, by simp [pow_two, IsFirstOrderThickening.ker_mul_self]⟩ f h₁ h₂
+  · exact FormallyUnramified.hom_ext i (IsFirstOrderThickening.isNilpotent_ker i) f h₁ h₂
 
 namespace FormallyEtale
 
@@ -198,16 +196,13 @@ instance (priority := 100) formallyUnramified (f : X ⟶ S) [FormallyEtale f] :
 
 /-- An isomorphism is formally étale. -/
 instance (priority := 100) of_isIso (f : X ⟶ S) [IsIso f] : FormallyEtale f :=
-  (formallyEtale_iff_formallySmooth_and_lift_unique f).mpr
-    ⟨inferInstance, fun _ _ _ _ _ h ↦ by simpa using h =≫ inv f⟩
+  (formallyEtale_iff f).2 ⟨inferInstance, inferInstance⟩
 
 /-- A composite of formally étale morphisms is formally étale. -/
 instance comp (f : X ⟶ Y) (g : Y ⟶ S) [FormallyEtale f] [FormallyEtale g] :
-    FormallyEtale (f ≫ g) := by
-  refine (formallyEtale_iff_formallySmooth_and_lift_unique _).mpr
-    ⟨inferInstance, fun i _ l₁ l₂ h₁ h₂ ↦ ?_⟩
-  have h₂' : l₁ ≫ f = l₂ ≫ f := lift_unique g i (by simp [reassoc_of% h₁]) (by simpa using h₂)
-  exact lift_unique f i h₁ h₂'
+    FormallyEtale (f ≫ g) :=
+  (formallyEtale_iff _).2
+    ⟨inferInstance, MorphismProperty.comp_mem _ f g inferInstance inferInstance⟩
 
 instance : MorphismProperty.IsStableUnderComposition @FormallyEtale where
   comp_mem _ _ _ _ := inferInstance
@@ -221,12 +216,10 @@ instance : MorphismProperty.RespectsIso @FormallyEtale :=
 
 /-- Formal étaleness is stable under base change. -/
 instance pullback_snd (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale f] :
-    FormallyEtale (pullback.snd f g) := by
-  refine (formallyEtale_iff_formallySmooth_and_lift_unique _).mpr
-    ⟨inferInstance, fun i _ l₁ l₂ h₁ h₂ ↦ ?_⟩
-  have h : l₁ ≫ pullback.fst f g = l₂ ≫ pullback.fst f g :=
-    lift_unique f i (by simp [reassoc_of% h₁]) (by simp [pullback.condition, reassoc_of% h₂])
-  exact pullback.hom_ext h h₂
+    FormallyEtale (pullback.snd f g) :=
+  (formallyEtale_iff _).2
+    ⟨inferInstance, MorphismProperty.IsStableUnderBaseChange.of_isPullback
+      (IsPullback.of_hasPullback f g) inferInstance⟩
 
 /-- Formal étaleness is stable under base change, on the other side. -/
 instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale g] :
@@ -234,21 +227,25 @@ instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale g] :
   rw [← pullbackSymmetry_hom_comp_snd]
   infer_instance
 
+instance : MorphismProperty.IsStableUnderBaseChange @FormallyEtale :=
+  MorphismProperty.IsStableUnderBaseChange.mk' fun _ _ _ f g _ (_ : FormallyEtale g) ↦
+    inferInstanceAs (FormallyEtale (pullback.fst f g))
+
 end FormallyEtale
 
-/-- If `g ≫ j` is formally smooth and `j` is formally unramified, for instance a monomorphism or
-an open immersion, then `g` is formally smooth: a lift `l` for `g ≫ j` satisfies `l ≫ g = h`
-because both agree after `j` and along the thickening. -/
+/-- If `g ≫ j` is formally smooth and `j` is formally unramified, then `g` is formally smooth.
+This applies for instance when `j` is a monomorphism or an open immersion. -/
 theorem FormallySmooth.of_comp_of_formallyUnramified (g : X ⟶ Y) (j : Y ⟶ S)
     [FormallyUnramified j] [FormallySmooth (g ≫ j)] : FormallySmooth g where
   exists_lift i _ a h w := by
+    -- A lift `l` for `g ≫ j` satisfies `l ≫ g = h`: both agree after `j` and along `i`.
     obtain ⟨l, hl, hl'⟩ := exists_lift (f := g ≫ j) i a (h ≫ j) (by simp [reassoc_of% w])
-    refine ⟨l, hl, FormallyUnramified.hom_ext i
-      ⟨2, by simp [pow_two, IsFirstOrderThickening.ker_mul_self]⟩ j ?_ (by simpa using hl')⟩
+    refine ⟨l, hl, FormallyUnramified.hom_ext i (IsFirstOrderThickening.isNilpotent_ker i) j ?_
+      (by simpa using hl')⟩
     rw [reassoc_of% hl, w]
 
-/-- If `g ≫ j` is formally étale and `j` is formally unramified, for instance a monomorphism or
-an open immersion, then `g` is formally étale. -/
+/-- If `g ≫ j` is formally étale and `j` is formally unramified, then `g` is formally étale.
+This applies for instance when `j` is a monomorphism or an open immersion. -/
 theorem FormallyEtale.of_comp_of_formallyUnramified (g : X ⟶ Y) (j : Y ⟶ S)
     [FormallyUnramified j] [FormallyEtale (g ≫ j)] : FormallyEtale g :=
   have := FormallyUnramified.of_comp g j
