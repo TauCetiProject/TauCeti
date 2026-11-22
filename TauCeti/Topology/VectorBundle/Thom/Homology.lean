@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Pushforward
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 
 /-!
-# The homology Thom map and the Thom isomorphism over a field
+# The homology Thom map and the Thom isomorphism in homology
 
 Let `E → B` be a vector bundle with Thom pair `(E, E₀)`, `E₀` the complement of the zero section,
 and let `u ∈ Hⁿ(E, E₀; K)` be a relative class with coefficients in a commutative ring `K`. The
@@ -35,8 +36,9 @@ the rank, with the homology of the base, as in the relative homology of a sublev
 Morse–Bott critical level.
 
 This file sets up `TauCeti.homologyThomMap`, relates it to `TauCeti.thomMap` via Kronecker duality,
-and proves the Thom isomorphism in homology and cohomology over an arbitrary base over a field `K`,
-and the passage from cohomology to homology over any commutative ring `K`:
+passes from cohomology to homology over any commutative ring `K`, proves the Thom isomorphism in
+homology over an arbitrary base and an arbitrary commutative ring `K`, and deduces the Thom
+isomorphism in cohomology over an arbitrary base over a field:
 
 1. **Functoriality**: `TauCeti.homologyThomMap` is `K`-linear in `u`, natural
    (`TauCeti.homologyThomMap_naturality`, `TauCeti.homologyThomMap_pullback`), and restricts on
@@ -45,17 +47,7 @@ and the passage from cohomology to homology over any commutative ring `K`:
 2. **Kronecker duality**: `⟨a, Φ_u(x)⟩ = (-1)^(n p) ⟨π^*a ⌣ u, x⟩`
    (`TauCeti.homologyThomMap_comp_singularKronecker`); over a field `K`, `Φ_u` with coefficients
    `A = K` is bijective iff `TauCeti.thomMap` over `K` is (`TauCeti.bijective_homologyThomMap_iff`).
-3. **Global Thom isomorphism over a field**: finite-union bijectivity
-   (`TauCeti.bijective_pullbackCupRestrict_thomPair_biUnion`) and the filtered colimit of singular
-   homology over finite trivializing unions (`TauCeti.isColimitMapCoconeSingularHomology` via
-   `TauCeti.isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion` and
-   `TauCeti.isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion`) show that for any Thom
-   class `u`, `Φ_u` with coefficients `A = K` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` over any
-   base `B` (`TauCeti.isIso_homologyThomMap_of_field`, `TauCeti.homologyThomIsoOfField`); UCT
-   (`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`) then gives
-   `Hᵖ(B; K, M) ≃ₗ[K] Hᵐ(E, E₀; K, M)` (`TauCeti.bijective_thomMap_of_field`,
-   `TauCeti.thomEquivOfField`).
-4. **Over any commutative ring**: with injective coefficients `I` the Kronecker maps are bijective,
+3. **Over any commutative ring**: with injective coefficients `I` the Kronecker maps are bijective,
    so the Thom map with values in `I` is `±` precomposition with `Φ_u` on morphisms to `I`.
    Injective modules detect monomorphisms
    (`CategoryTheory.Injective.mono_iff_forall_surjective_comp`) and, being coseparating
@@ -66,6 +58,22 @@ and the passage from cohomology to homology over any commutative ring `K`:
    `TauCeti.surjective_homologyThomMap_iff_forall_injective_thomMap`,
    `TauCeti.bijective_homologyThomMap_iff_forall_bijective_thomMap`): the Thom isomorphism in
    cohomology with all coefficient modules gives the Thom isomorphism in integral homology.
+4. **Global Thom isomorphism in homology**: over a finite union of trivializing open sets the Thom
+   map is bijective for every coefficient module
+   (`TauCeti.bijective_pullbackCupRestrict_thomPair_biUnion`), in particular for every injective
+   one, so the homology Thom map with coefficients `A = K` is an isomorphism there
+   (`TopPair.isIso_pushforwardCap_of_bijective_pullbackCup`). The filtered
+   colimit of singular homology over finite trivializing unions
+   (`TauCeti.isColimitMapCoconeSingularHomology` via
+   `TauCeti.isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion` and
+   `TauCeti.isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion`) then shows that for
+   any Thom class `u`, `Φ_u` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` over any base `B`
+   (`TauCeti.isIso_homologyThomMap`, `TauCeti.homologyThomIso`). For `K = ℤ` and the Thom class of
+   an orientation this is the integral Thom isomorphism `Hₚ₊ᵣ(E, E₀; ℤ) ≅ Hₚ(B; ℤ)`.
+5. **Global Thom isomorphism in cohomology over a field**: UCT
+   (`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`) then gives
+   `Hᵖ(B; K, M) ≃ₗ[K] Hᵐ(E, E₀; K, M)` for a field `K` (`TauCeti.bijective_thomMap_of_field`,
+   `TauCeti.thomEquivOfField`).
 
 ## Main definitions and results
 
@@ -74,9 +82,13 @@ and the passage from cohomology to homology over any commutative ring `K`:
 * `TauCeti.singularHomologyMap_fiberThomPairMap_comp_homologyThomMap`: the restriction to a fibre.
 * `TauCeti.homologyThomMap_comp_singularKronecker`: the homology Thom map is the transpose of the
   Thom map, up to the sign `(-1)^(n p)`.
-* `TauCeti.bijective_homologyThomMap_iff`, `TauCeti.isIso_homologyThomMap_of_field`,
-  `TauCeti.bijective_homologyThomMap_of_field`, `TauCeti.homologyThomIsoOfField`: for a Thom class
-  `u`, the homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over a field `K`.
+* `TauCeti.bijective_homologyThomMap_iff`: over a field, the homology Thom map is bijective
+  exactly when the Thom map is.
+* `TauCeti.isIso_homologyThomMap`, `TauCeti.bijective_homologyThomMap`,
+  `TauCeti.homologyThomIso`: for a Thom class `u` with coefficients in a commutative ring `K`, the
+  homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over any base.
+* `TauCeti.finrank_singularHomology_thomPair_of_subsingleton_units`: over a field whose only unit
+  is `1`, such as `ZMod 2`, `dim Hₘ(E, E₀; K) = bₚ(B; K)` for every bundle, oriented or not.
 * `TauCeti.bijective_thomMap_of_field`, `TauCeti.thomEquivOfField`: the cohomology Thom isomorphism
   over a field and an arbitrary base with vector-space coefficients `M`.
 * `TauCeti.bijective_homologyThomMap_iff_forall_bijective_thomMap`: over any commutative ring, the
@@ -296,15 +308,15 @@ end Injective
 
 end HomologyThomMap
 
-section IsomorphismOfField
+section Isomorphism
 
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  {K : Type w} [Field K]
+  {K : Type w} [CommRing K]
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
-private def homologyThomMapOver {K : Type w} [CommRing K] (A : ModuleCat.{w} K) (W : Set B)
+private def homologyThomMapOver (A : ModuleCat.{w} K) (W : Set B)
     (n p m : ℕ) (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     (thomPairOver F E W).singularHomology A m ⟶
@@ -314,7 +326,7 @@ private def homologyThomMapOver {K : Type w} [CommRing K] (A : ModuleCat.{w} K) 
       (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) n u)
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
-private theorem homologyThomMapOver_naturality {K : Type w} [CommRing K] (A : ModuleCat.{w} K)
+private theorem homologyThomMapOver_naturality (A : ModuleCat.{w} K)
     {W W' : Set B} (hWW' : W ⊆ W') {n p m : ℕ} (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     homologyThomMapOver A W n p m h u ≫ ((singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map
@@ -329,8 +341,8 @@ private theorem homologyThomMapOver_naturality {K : Type w} [CommRing K] (A : Mo
     (thomPairOverMap_fst_comp_thomPairOverProj F E hWW') A h _
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
-private theorem homologyThomMapOver_comp_map_subtypeVal {K : Type w} [CommRing K]
-    (A : ModuleCat.{w} K) (W : Set B) {n p m : ℕ} (h : n + p = m)
+private theorem homologyThomMapOver_comp_map_subtypeVal (A : ModuleCat.{w} K) (W : Set B)
+    {n p m : ℕ} (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     homologyThomMapOver A W n p m h u ≫ ((singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map
         (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩) =
@@ -347,15 +359,6 @@ private theorem homologyThomMapOver_comp_map_subtypeVal {K : Type w} [CommRing K
     (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     (by rw [hι, restrictPreimagePairMap_fst_comp_thomPairProj]) A h u
 
-omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
-private theorem bijective_homologyThomMapOver_iff (W : Set B) {n p m : ℕ} (h : n + p = m)
-    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
-    Function.Bijective (homologyThomMapOver (ModuleCat.of K K) W n p m h u).hom ↔
-      Function.Bijective (TopCat.pullbackCupRestrict (thomPairProj F E)
-        (zeroSectionCompl F E) (ModuleCat.of K K) W n p m (by omega) u) := by
-  rw [bijective_pullbackCupRestrict_thomPairProj_iff]
-  exact (thomPairOver F E W).bijective_pushforwardCap_iff (thomPairOverProj F E W) h _
-
 private theorem isIso_homologyThomMapOver_finiteTrivializingUnion {p m : ℕ}
     (h : finrank ℝ F + p = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
@@ -363,8 +366,10 @@ private theorem isIso_homologyThomMapOver_finiteTrivializingUnion {p m : ℕ}
     IsIso (homologyThomMapOver (ModuleCat.of K K) (⋃ b ∈ s, (trivializationAt F E b).baseSet)
       (finrank ℝ F) p m h u) := by
   obtain ⟨_, hu⟩ := isThomClass_iff.1 hu
-  rw [ConcreteCategory.isIso_iff_bijective, bijective_homologyThomMapOver_iff]
-  exact bijective_pullbackCupRestrict_thomPair_biUnion (ModuleCat.of K K) s
+  -- Over a finite trivializing union the Thom map is bijective for every coefficient module.
+  refine TopPair.isIso_pushforwardCap_of_bijective_pullbackCup _ _ h _ fun M _ ↦ ?_
+  rw [← bijective_pullbackCupRestrict_thomPairProj_iff]
+  exact bijective_pullbackCupRestrict_thomPair_biUnion M s
     (fun b _ ↦ (trivializationAt F E b).open_baseSet)
     (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) p m (by omega) fun b _ ↦ hu b
 
@@ -394,10 +399,11 @@ private def homologyThomMapOverNatIso {p m : ℕ} (h : finrank ℝ F + p = m)
         (W' := ⋃ b ∈ t, (trivializationAt F E b).baseSet)
         (biUnion_subset_biUnion_left (Finset.coe_subset.2 f.le)) h u)]
 
-/-- **The homology Thom isomorphism over a field** (Spanier, Chapter 5, Section 7): for `E → B`
-over any base `B`, a field `K`, and a Thom class `u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`),
-`homologyThomMap` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`r + p = m`) in `ModuleCat K`. -/
-theorem isIso_homologyThomMap_of_field (p m : ℕ) (h : finrank ℝ F + p = m)
+/-- **The homology Thom isomorphism** (Spanier, Chapter 5, Section 7): for `E → B` over any base
+`B`, a commutative ring `K`, and a Thom class `u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`),
+`homologyThomMap` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`r + p = m`) in `ModuleCat K`. For
+`K = ℤ` and the Thom class of an orientation this is the integral Thom isomorphism. -/
+theorem isIso_homologyThomMap (p m : ℕ) (h : finrank ℝ F + p = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) :
     IsIso (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u) := by
@@ -430,32 +436,41 @@ theorem isIso_homologyThomMap_of_field (p m : ℕ) (h : finrank ℝ F + p = m)
     (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u ≫ eqToHom hbase)
   exact IsIso.of_isIso_comp_right _ (eqToHom hbase)
 
-/-- **The homology Thom map is bijective over a field** on any base `B`: for a Thom class
-`u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`), the homology Thom map with coefficients in `K`,
-`Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` (`r + p = m`), is bijective. -/
-theorem bijective_homologyThomMap_of_field (p m : ℕ) (h : finrank ℝ F + p = m)
+/-- **The homology Thom map is bijective** on any base `B`: for a Thom class `u ∈ Hʳ(E, E₀; K)`
+with coefficients in a commutative ring `K` (`r = finrank ℝ F`), the homology Thom map with
+coefficients in `K`, `Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` (`r + p = m`), is bijective. -/
+theorem bijective_homologyThomMap (p m : ℕ) (h : finrank ℝ F + p = m)
     {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F E u) :
     Function.Bijective (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u).hom :=
-  (ConcreteCategory.isIso_iff_bijective _).1 (isIso_homologyThomMap_of_field p m h hu)
+  (ConcreteCategory.isIso_iff_bijective _).1 (isIso_homologyThomMap p m h hu)
 
 variable (F E) in
-/-- **The homology Thom isomorphism over a field**, bundled as `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` over any
-base `B`. -/
-def homologyThomIsoOfField (p m : ℕ) (h : finrank ℝ F + p = m := by lia)
+/-- **The homology Thom isomorphism**, bundled as `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` over any base `B` and
+any commutative ring `K`. -/
+def homologyThomIso (p m : ℕ) (h : finrank ℝ F + p = m := by lia)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
     (hu : IsThomClass F E u) :
     (thomPair F E).singularHomology (ModuleCat.of K K) m ≅
       ((singularHomologyFunctor (ModuleCat.{w} K) p).obj (ModuleCat.of K K)).obj (TopCat.of B) :=
-  @asIso _ _ _ _ _ (isIso_homologyThomMap_of_field p m h hu)
+  @asIso _ _ _ _ _ (isIso_homologyThomMap p m h hu)
 
-/-- The forward morphism of `TauCeti.homologyThomIsoOfField` is `TauCeti.homologyThomMap`. -/
+/-- The forward morphism of `TauCeti.homologyThomIso` is `TauCeti.homologyThomMap`. -/
 @[simp]
-theorem homologyThomIsoOfField_hom (p m : ℕ) (h : finrank ℝ F + p = m)
+theorem homologyThomIso_hom (p m : ℕ) (h : finrank ℝ F + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
     (hu : IsThomClass F E u) :
-    (homologyThomIsoOfField F E p m h u hu).hom =
+    (homologyThomIso F E p m h u hu).hom =
       homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u := (rfl)
+
+end Isomorphism
+
+section IsomorphismOfField
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {K : Type w} [Field K]
 
 /-- **The cohomology Thom isomorphism over a field and an arbitrary base** (Milnor–Stasheff,
 Theorem 10.4; Hatcher, Theorem 4D.10): for `E → B` over any `B`, a field `K`, any `K`-vector space
@@ -465,7 +480,7 @@ theorem bijective_thomMap_of_field (M : ModuleCat.{w} K) (p m : ℕ) (h : p + fi
     (hu : IsThomClass F E u) :
     Function.Bijective (thomMap F E M (finrank ℝ F) p m h u) := by
   have : IsIso ((thomPair F E).pushforwardCap (thomPairProj F E) (ModuleCat.of K K)
-      (finrank ℝ F) p m (by omega) u) := isIso_homologyThomMap_of_field p m (by omega) hu
+      (finrank ℝ F) p m (by omega) u) := isIso_homologyThomMap p m (by omega) hu
   rw [thomMap_def]
   exact (thomPair F E).bijective_pullbackCup_of_isIso_pushforwardCap (thomPairProj F E) M h
     ((TopCat.of B).singularKronecker_bijective_of_projective_homology (ModuleCat.of K K) M p)
@@ -487,6 +502,21 @@ theorem thomEquivOfField_apply (M : ModuleCat.{w} K) (p m : ℕ) (h : p + finran
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
     (hu : IsThomClass F E u) (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
     thomEquivOfField F E M p m h u hu a = thomMap F E M (finrank ℝ F) p m h u a := (rfl)
+
+variable (F E) in
+/-- **The mod `2` homology Thom isomorphism, in dimensions.** Let `K` be a field whose only unit is
+`1`, such as `ZMod 2`. For a real vector bundle `E → B` with fibres of dimension `r`, over any base
+and with no orientation, `dim Hₘ(E, E₀; K)` is the Betti number `bₚ(B; K)` whenever `r + p = m`:
+the bundle has a Thom class with coefficients in `K`
+(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`), and its homology Thom map is an
+isomorphism (`TauCeti.homologyThomIso`). -/
+theorem finrank_singularHomology_thomPair_of_subsingleton_units [FiniteDimensional ℝ F]
+    [Subsingleton Kˣ] (p m : ℕ) (h : finrank ℝ F + p = m) :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat K) =
+      bettiNumber K B p := by
+  have hu := (existsUnique_isThomClass_of_subsingleton_units (F := F) (E := E) K).exists
+  rw [bettiNumber_def]
+  exact (homologyThomIso F E p m h _ hu.choose_spec).toLinearEquiv.finrank_eq
 
 end IsomorphismOfField
 
