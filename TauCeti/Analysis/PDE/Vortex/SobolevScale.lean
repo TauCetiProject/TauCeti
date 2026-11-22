@@ -27,7 +27,7 @@ inverse that is bounded on `L²` and orthogonal to the weak kernel.
   it is smooth (`contDiff_of_gaugeFixedOperator_eq`) and gains one Sobolev derivative over `f`
   (`mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`). So the weak and
   classical `L²` kernels coincide, and lie in every `H^k`.
-* `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one`:
+* `exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one`:
   at a continuous vortex lying in `A_m^k` for every `k`, the weak right inverse `Q` of `L_x` maps
   `H^k` into `H^(k+1)` for every `k`. This is the vanishing of the cokernel of `L_x` on the
   Sobolev scale.
@@ -112,34 +112,29 @@ variable {ρ : ContDiffBump (0 : ℝ)} {m : ℕ}
 vortex equations lying in the affine field space `A_m^k` for every `k`. Then there is a bounded
 operator `Q` on `L²(ℂ; ℝ⁴)` such that
 
-* `Q f` is a weak solution of `L_x y = f` for every `f ∈ L²`;
-* `Q f` is orthogonal to the weak kernel of `L_x`;
+* `Q f` is a weak solution of `L_x y = f` for every `f ∈ L²`, orthogonal to the weak kernel of
+  `L_x` (`IsMinimalGaugeFixedWeakSolution`);
 * `Q` maps `H^k` into `H^(k+1)` for every `k`.
 
 In particular `L_x : H^(k+1) → H^k` is surjective in the weak sense for every `k`: the cokernel of
 `L_x` vanishes on the Sobolev scale. This extends to every `k` the case `k = 0`,
-`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields`. -/
-theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one
+`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields`. -/
+theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one
     (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace ρ m k)
     (hsol : ∀ z, equation x z = 0) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 volume,
-      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) ∧
-      (∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume,
-        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ = 0) →
-        ∫ z, ⟪Q f z, u z⟫ = 0) ∧
-      ∀ (k : ℕ) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume),
-        (f : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields k →
+      ∀ f, IsMinimalGaugeFixedWeakSolution volume x f (Q f) ∧
+        ∀ k : ℕ, (f : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields k →
           (Q f : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields (k + 1) := by
   have hxs := contDiff_of_forall_mem_framedFieldSpace hx hmem
   have hlim := tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx
-  obtain ⟨Q, hQ, hQK⟩ := exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq
+  obtain ⟨Q, hQ⟩ := exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution
     (μ := volume) (hxs.of_le (by exact_mod_cast le_top)) hsol hlim
-  refine ⟨Q, hQ, hQK, fun k f hf ↦ ?_⟩
+  refine ⟨Q, fun f ↦ ⟨hQ f, fun k hf ↦ ?_⟩⟩
   exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hxs
     (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
-    (Lp.memLp _) hf fun η hη hηc ↦ hQ f η (hη.of_le (by norm_cast)) hηc
+    (Lp.memLp _) hf fun η hη hηc ↦
+      (hQ f).isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by norm_cast)) hηc
 
 /-- **Classical surjectivity at a vortex.** Let `x` be a continuous solution of the plane vortex
 equations lying in the affine field space `A_m^k` for every `k`. Every continuous field `f` lying
@@ -149,15 +144,15 @@ theorem exists_contDiff_gaugeFixedOperator_eq_of_forall_mem_framedFieldSpace (hx
     (hf : ∀ k : ℕ, f ∈ sobolevFields k) (hfc : Continuous f) :
     ∃ y : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ y ∧ (∀ k : ℕ, y ∈ sobolevFields k) ∧
       ∀ z, gaugeFixedOperator x y z = f z := by
-  obtain ⟨Q, hQ, -⟩ :=
-    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one
+  obtain ⟨Q, hQ⟩ :=
+    exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one
       hx hmem hsol
   have hfL : MemLp f 2 volume := by simpa using hf 0
   obtain ⟨y, hy, -, hyk, heq⟩ := exists_contDiff_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq
     (contDiff_of_forall_mem_framedFieldSpace hx hmem)
     (fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2)))
     (Lp.memLp (Q (hfL.toLp f))) hf hfc fun η hη hηc ↦ by
-      rw [hQ _ η (hη.of_le (by norm_cast)) hηc]
+      rw [(hQ _).1.isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by norm_cast)) hηc]
       exact integral_congr_ae (hfL.coeFn_toLp.mono fun z hz ↦ by simp only [hz])
   exact ⟨y, hy, hyk, heq⟩
 

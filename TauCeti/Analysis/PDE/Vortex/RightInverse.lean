@@ -26,24 +26,30 @@ square-integrable field `y` is a *weak solution* of `L_x y = f`, for `f ∈ L²(
 
 `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫`
 
-for every compactly supported `C²` test field `η`. This extends the classical notion: by the
-integration-by-parts identity `integral_inner_gaugeFixedOperator`, when `x` is continuous a
-compactly supported `C¹` field `y` is a weak solution of `L_x y = f` for `f` its classical image
-under `L_x`. The *weak kernel* of `L_x` consists of the weak solutions of `L_x y = 0`.
+for every compactly supported `C²` test field `η` (`TauCeti.Vortex.IsGaugeFixedWeakSolution`).
+This extends the classical notion: by the integration-by-parts identity
+`integral_inner_gaugeFixedOperator`, when `x` is continuous a compactly supported `C¹` field `y`
+is a weak solution of `L_x y = f` for `f` its classical image under `L_x`. The *weak kernel* of
+`L_x` consists of the weak solutions of `L_x y = 0`, and a weak solution of `L_x y = f` is
+*minimal* if it is orthogonal to the weak kernel
+(`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution`). At a continuous field the minimal weak
+solution is unique (`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.unique`) and has least norm
+among all weak solutions (`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.norm_le`).
 
 This file shows that the weak cokernel of `L_x` vanishes at a plane vortex, with a bounded right
 inverse. If `L_x*` is bounded below on test fields, `c ∫ |η|² ≤ ∫ |L_x* η|²` with `c > 0`, there
-is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `c^(-1/2)` such that `Q f` is a weak
-solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kernel
-(`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`). Thus
-`Q f` is the weak solution of least norm, and `Q` is the right inverse `L_x* (L_x L_x*)⁻¹` on the
-`L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
-gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
-bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`). The
-uniform gap `exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` over
-the smooth vortices of a given degree `m` gives the same for the bound on `Q`: one constant,
-depending only on `m`, bounds the norm of `Q` over the whole moduli space `Sym^m ℂ`
-(`exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`).
+is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `c^(-1/2)` such that `Q f` is a minimal
+weak solution of `L_x y = f` for every `f`
+(`TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mul_le`). Thus
+`Q f` is the weak solution of least norm, `Q` is uniquely determined, and `Q` is the right
+inverse `L_x* (L_x L_x*)⁻¹` on the `L²`-orthogonal complement of the weak kernel. At an actual
+vortex with `|α| → 1`, the spectral gap
+`exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower bound
+(`TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`). The uniform gap
+`exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` over the smooth
+vortices of a given degree `m` gives the same for the bound on `Q`: one constant, depending only
+on `m`, bounds the norm of `Q` over the whole moduli space `Sym^m ℂ`
+(`exists_forall_exists_continuousLinearMap_norm_le_isMinimalGaugeFixedWeakSolution`).
 
 At such a vortex `Q` also respects exponential decay. With `ρ = √(1 + |z|²)` and `|c| < 1/2`,
 every weak solution `y` of `L_x y = f` orthogonal to the weak kernel, in particular `y = Q f`,
@@ -68,14 +74,23 @@ by the elliptic regularity of `TauCeti.Analysis.PDE.Vortex.EllipticRegularity`, 
 there. The Fredholm property and the dimension of the kernel of the Sobolev realization of `L_x`
 are not proved here.
 
+## Main definitions
+
+* `TauCeti.Vortex.IsGaugeFixedWeakSolution μ x f y`: `y` is a weak solution of `L_x y = f`.
+* `TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution μ x f y`: `y` is a weak solution of
+  `L_x y = f` orthogonal to the weak solutions of `L_x w = 0`.
+
 ## Main results
 
-* `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`: a
+* `TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.unique`,
+  `TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.norm_le`: the minimal weak solution is unique
+  and has least norm.
+* `TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mul_le`: a
   lower bound on `L_x*` gives a bounded weak right inverse of `L_x` orthogonal to its weak kernel.
-* `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`: the weak
+* `TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`: the weak
   right inverse at a plane vortex with `|α| → 1`.
-* `exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`: a bound
-  on its norm uniform over the smooth vortices of degree `m`.
+* `exists_forall_exists_continuousLinearMap_norm_le_isMinimalGaugeFixedWeakSolution`: a bound on
+  its norm uniform over the smooth vortices of degree `m`.
 * `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`: the
   exponentially weighted `L²` estimate for the weak right inverse at such a vortex.
 * `TauCeti.Vortex.adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint`,
@@ -98,6 +113,139 @@ namespace TauCeti.Vortex
 
 open MeasureTheory Filter
 open scoped ContDiff RealInnerProductSpace Topology NNReal ENNReal
+
+/-! ### Weak solutions -/
+
+section WeakSolution
+
+variable {μ : Measure ℂ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+
+/-- `y` is a **weak solution** of `L_x y = f`: `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly
+supported `C²` test field `η`. -/
+def IsGaugeFixedWeakSolution (μ : Measure ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    (f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) : Prop :=
+  ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+    ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ
+
+/-- `y` is a **minimal weak solution** of `L_x y = f`: a weak solution which is orthogonal to
+every square-integrable weak solution `w` of `L_x w = 0`. At a continuous field it is the weak
+solution of least norm (`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.norm_le`), and it is
+unique (`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.unique`). At a plane vortex with
+`|α| → 1` it is the value at `f` of a bounded weak right inverse
+(`TauCeti.Vortex.exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`). -/
+def IsMinimalGaugeFixedWeakSolution (μ : Measure ℂ) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    (f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) : Prop :=
+  IsGaugeFixedWeakSolution μ x f y ∧
+    ∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪w z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪y z, w z⟫ ∂μ = 0
+
+/-- Unfolding `TauCeti.Vortex.IsGaugeFixedWeakSolution`: `y` is a weak solution of `L_x y = f`
+exactly when `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly supported `C²` test field `η`. -/
+theorem isGaugeFixedWeakSolution_iff {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    IsGaugeFixedWeakSolution μ x f y ↔
+      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ :=
+  Iff.rfl
+
+/-- A weak solution of `L_x y = f` satisfies `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly
+supported `C²` test field `η`. -/
+theorem IsGaugeFixedWeakSolution.integral_inner_eq {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (h : IsGaugeFixedWeakSolution μ x f y) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+    ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ :=
+  h η hη hηc
+
+/-- The weak solutions of `L_x w = 0` are the fields `w` with `∫ ⟪w, L_x* η⟫ = 0` for every
+compactly supported `C²` test field `η`. -/
+theorem isGaugeFixedWeakSolution_zero_iff {w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    IsGaugeFixedWeakSolution μ x 0 w ↔
+      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪w z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+  simp only [IsGaugeFixedWeakSolution, Lp.integral_inner_coeFn_zero_left]
+
+/-- A minimal weak solution of `L_x y = f` is a weak solution orthogonal to every weak solution
+of `L_x w = 0`. -/
+theorem isMinimalGaugeFixedWeakSolution_iff {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    IsMinimalGaugeFixedWeakSolution μ x f y ↔
+      IsGaugeFixedWeakSolution μ x f y ∧
+        ∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ, IsGaugeFixedWeakSolution μ x 0 w →
+          ∫ z, ⟪y z, w z⟫ ∂μ = 0 := by
+  simp only [IsMinimalGaugeFixedWeakSolution, isGaugeFixedWeakSolution_zero_iff]
+
+/-- A minimal weak solution is a weak solution. -/
+theorem IsMinimalGaugeFixedWeakSolution.isGaugeFixedWeakSolution
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsMinimalGaugeFixedWeakSolution μ x f y) :
+    IsGaugeFixedWeakSolution μ x f y :=
+  h.1
+
+/-- A minimal weak solution of `L_x y = f` is orthogonal to every weak solution of
+`L_x w = 0`. -/
+theorem IsMinimalGaugeFixedWeakSolution.integral_inner_eq_zero
+    {f y w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsMinimalGaugeFixedWeakSolution μ x f y)
+    (hw : IsGaugeFixedWeakSolution μ x 0 w) : ∫ z, ⟪y z, w z⟫ ∂μ = 0 :=
+  (isMinimalGaugeFixedWeakSolution_iff.1 h).2 w hw
+
+/-- At a continuous field, weak solutions can be subtracted: if `y` and `y'` are weak solutions
+of `L_x y = f` and `L_x y' = f'`, then `y - y'` is a weak solution of `L_x w = f - f'`. -/
+theorem IsGaugeFixedWeakSolution.sub [IsFiniteMeasureOnCompacts μ] (hx : Continuous x)
+    {f f' y y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsGaugeFixedWeakSolution μ x f y)
+    (h' : IsGaugeFixedWeakSolution μ x f' y') :
+    IsGaugeFixedWeakSolution μ x (f - f') (y - y') := by
+  intro η hη hηc
+  -- Both pairings are `L²` inner products with the classes of compactly supported fields.
+  have hm : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+    (continuous_gaugeFixedAdjoint hx (hη.of_le one_le_two)).memLp_of_hasCompactSupport
+      (hasCompactSupport_gaugeFixedAdjoint hηc)
+  have hmη : MemLp η 2 μ := hη.continuous.memLp_of_hasCompactSupport hηc
+  rw [← L2.inner_toLp _ hm, ← L2.inner_toLp _ hmη, inner_sub_left, inner_sub_left,
+    L2.inner_toLp, L2.inner_toLp, L2.inner_toLp, L2.inner_toLp, h η hη hηc, h' η hη hηc]
+
+/-- At a continuous field, the difference of two weak solutions of `L_x y = f` is a weak
+solution of `L_x w = 0`. -/
+private theorem IsGaugeFixedWeakSolution.forall_integral_inner_sub_eq_zero
+    [IsFiniteMeasureOnCompacts μ] (hx : Continuous x)
+    {f y y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsGaugeFixedWeakSolution μ x f y)
+    (h' : IsGaugeFixedWeakSolution μ x f y') :
+    ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪(y' - y) z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 :=
+  isGaugeFixedWeakSolution_zero_iff.1 (by simpa only [sub_self] using h'.sub hx h)
+
+/-- **The minimal weak solution has least norm.** At a continuous field, a minimal weak solution
+`y` of `L_x y = f` has norm at most that of every weak solution `y'`: indeed
+`‖y'‖² = ‖y‖² + ‖y' - y‖²`, since `y' - y` is a weak solution of `L_x w = 0`. -/
+theorem IsMinimalGaugeFixedWeakSolution.norm_le [IsFiniteMeasureOnCompacts μ] (hx : Continuous x)
+    {f y y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsMinimalGaugeFixedWeakSolution μ x f y)
+    (h' : IsGaugeFixedWeakSolution μ x f y') : ‖y‖ ≤ ‖y'‖ := by
+  have horth : ⟪y, y' - y⟫ = 0 := by
+    rw [L2.inner_def]
+    exact h.2 _ (h.1.forall_integral_inner_sub_eq_zero hx h')
+  have hsq : ‖y'‖ ^ 2 = ‖y‖ ^ 2 + ‖y' - y‖ ^ 2 := by
+    have := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (𝕜 := ℝ) y (y' - y) horth
+    rw [add_sub_cancel] at this
+    rw [sq, sq, sq, this]
+  refine (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+  rw [hsq]
+  exact le_add_of_nonneg_right (sq_nonneg _)
+
+/-- **The minimal weak solution is unique.** At a continuous field, two minimal weak solutions of
+`L_x y = f` coincide. -/
+theorem IsMinimalGaugeFixedWeakSolution.unique [IsFiniteMeasureOnCompacts μ] (hx : Continuous x)
+    {f y y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} (h : IsMinimalGaugeFixedWeakSolution μ x f y)
+    (h' : IsMinimalGaugeFixedWeakSolution μ x f y') : y = y' := by
+  have hw := h.1.forall_integral_inner_sub_eq_zero hx h'.1
+  have h₁ : ⟪y, y' - y⟫ = 0 := by
+    rw [L2.inner_def]
+    exact h.2 _ hw
+  have h₂ : ⟪y', y' - y⟫ = 0 := by
+    rw [L2.inner_def]
+    exact h'.2 _ hw
+  have : ‖y' - y‖ ^ 2 = 0 := by
+    rw [← real_inner_self_eq_norm_sq, inner_sub_left, h₁, h₂, sub_self]
+  exact (sub_eq_zero.1 (norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 this))).symm
+
+end WeakSolution
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -135,24 +283,18 @@ private theorem inner_gaugeFixedAdjointToLp (hx : Continuous x)
 /-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
 field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`,
 with `c > 0`. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` with `‖Q‖ ≤ c^(-1/2)` such
-that
+that `Q f` is a minimal weak solution of `L_x y = f` for every `f`:
 
 * `Q f` is a weak solution of `L_x y = f`: `∫ ⟪Q f, L_x* η⟫ = ∫ ⟪f, η⟫` for every compactly
   supported `C²` field `η`;
 * `Q f` is orthogonal to the weak kernel: `∫ ⟪Q f, u⟫ = 0` for every `u ∈ L²` with
   `∫ ⟪u, L_x* η⟫ = 0` for all such `η`. -/
-theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
+theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mul_le
     (hx : Continuous x) {c : ℝ} (hc : 0 < c)
     (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-      ‖Q‖ ≤ (√c)⁻¹ ∧
-      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
-      ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
-        ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
+      ‖Q‖ ≤ (√c)⁻¹ ∧ ∀ f, IsMinimalGaugeFixedWeakSolution μ x f (Q f) := by
   set S := gaugeFixedAdjointToLp μ hx
   set ι := (TestFunction.ambientToLp 2 μ : TestField →L[ℝ] _).toLinearMap
   have hS := inner_gaugeFixedAdjointToLp (μ := μ) hx
@@ -167,7 +309,7 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
     exact hgap η η.contDiff η.hasCompactSupport
   obtain ⟨Q, hQn, hQK, hQ⟩ := LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le
     S ι (Real.sqrt_pos.2 hc) hbound
-  refine ⟨Q, hQn, fun f η hη hηc ↦ ?_, fun f u hu ↦ ?_⟩
+  refine ⟨Q, hQn, fun f ↦ ⟨fun η hη hηc ↦ ?_, fun u hu ↦ ?_⟩⟩
   · have h := hQ f ⟨η, hη, hηc, by simp⟩
     rwa [hS, hι] at h
   · -- `u` lies in the weak kernel `(range S)ᗮ`, and `Q f` in its orthogonal complement.
@@ -181,47 +323,37 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
 
 /-- **Weak right inverse at a plane vortex.** Let `x` be a `C¹` solution of the plane vortex
 equation with `|α| → 1` at infinity. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` such
-that `Q f` is a weak solution of `L_x y = f` for every `f ∈ L²`, orthogonal to the weak kernel of
-`L_x`. In particular the weak cokernel of `L_x` vanishes. -/
-theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq (hx : ContDiff ℝ 1 x)
+that `Q f` is a minimal weak solution of `L_x y = f` for every `f ∈ L²`: a weak solution
+orthogonal to the weak kernel of `L_x`. In particular the weak cokernel of `L_x` vanishes. By
+`TauCeti.Vortex.IsMinimalGaugeFixedWeakSolution.unique`, `Q` is the only such map. -/
+theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-      (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-        ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
-      ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
-        ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
+      ∀ f, IsMinimalGaugeFixedWeakSolution μ x f (Q f) := by
   obtain ⟨c, hc, hgap⟩ :=
     exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) hx hsol hlim
   obtain ⟨Q, -, hQ⟩ :=
-    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc hgap
+    exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mul_le hx.continuous hc hgap
   exact ⟨Q, hQ⟩
 
 /-- **Uniform weak right inverse over all vortices of degree `m`.** There is `K`, depending only
 on `m`, such that at every smooth plane vortex `x` with the degree-`m` end framing there is a
-bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `K` such that `Q f` is a weak solution of
-`L_x y = f` for every `f ∈ L²`, orthogonal to the weak kernel of `L_x`. The bound is uniform over
-the whole noncompact moduli space `Sym^m ℂ`. -/
-theorem exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq
+bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `K` such that `Q f` is a minimal weak
+solution of `L_x y = f` for every `f ∈ L²`: a weak solution orthogonal to the weak kernel of
+`L_x`. The bound is uniform over the whole noncompact moduli space `Sym^m ℂ`. -/
+theorem exists_forall_exists_continuousLinearMap_norm_le_isMinimalGaugeFixedWeakSolution
     (m : ℕ) :
     ∃ K, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ z, equation x z = 0) →
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
       IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
       ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-        ‖Q‖ ≤ K ∧
-        (∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-          ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ) ∧
-        ∀ f u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
-          (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
-            ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
-          ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
+        ‖Q‖ ≤ K ∧ ∀ f, IsMinimalGaugeFixedWeakSolution μ x f (Q f) := by
   obtain ⟨c, hc, hgap⟩ :=
     exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) m
   exact ⟨(√c)⁻¹, fun x D hx hsol hframe hD ↦
-    exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc
+    exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mul_le hx.continuous hc
       (hgap x D hx hsol hframe hD)⟩
 
 /-! ### The exponentially weighted estimate -/
@@ -512,7 +644,7 @@ orthogonal to the weak kernel of `L_x` satisfies
 
 where either side may be infinite. Such a `y` is unique
 (`LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal`), so it is the value at `f` of the weak right
-inverse `Q` of `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`, and this is the
+inverse `Q` of `exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`, and this is the
 weighted output estimate `‖exp(c ρ) Q f‖₂ ≤ K ‖exp(c ρ) f‖₂` for every `f ∈ L²`. For `c > 0` it
 says that `Q` maps inputs decaying like `exp(-c ρ)` in `L²` to outputs decaying at the same rate.
 
@@ -654,7 +786,7 @@ theorem adjoint_apply_eq_zero_of_integral_inner_gaugeFixedAdjoint_eq_zero
 `|c| < 1/2`. There is `K`, depending only on the vortex and `c`, with the following property. Let
 `Q` be a bounded operator on `L²(ℂ; ℝ⁴)` such that `Q f` is a weak solution of `L_x y = f`
 orthogonal to the weak kernel of `L_x`, for every `f`, for instance the weak right inverse of
-`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`. Then its Hilbert space adjoint
+`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`. Then its Hilbert space adjoint
 `Q†` satisfies
 
 `‖exp(c ρ) Q† g‖₂ ≤ K ‖exp(c ρ) g‖₂`  for every `g ∈ L²`,
