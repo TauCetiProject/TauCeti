@@ -360,6 +360,25 @@ section Differential
 
 variable [CharP R 2]
 
+/-- **The map induced by a matrix on a generator of `B ⊠ P`.** For the type `A` module `B ⊠ P` of
+the differential algebra `B` over itself, if associativity `(B ⊠ P) ⊠ F = B ⊠ (P ⊠ F)` holds for a
+matrix `F` from `N` to `N'`, the map induced by `F` sends the generator `1 ⊗ p` of `B ⊠ (P ⊠ N)`,
+the row vector supported at `p` with value `1`, to the row of `P ⊠ F` at `p`. -/
+theorem typeABoxMap_boxModule_single [DecidableEq Y] (hdB : IsUngradedDGAlgebra dB)
+    (F : Matrix X X' A)
+    (hassoc : ∀ (φ : X → Y → B) (z : X') (y' : Y),
+      TypeDStructure.typeABoxMap N N' (P.boxModule hdB.isUngradedDGRightModule) F φ z y' =
+        continuationMap R B (P.boxMorphism N N' F) (fun p => φ p.2 p.1) (y', z))
+    (p : Y × X) :
+    TypeDStructure.typeABoxMap N N' (P.boxModule hdB.isUngradedDGRightModule) F
+        (fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x)) =
+      fun z y' => P.boxMorphism N N' F p (y', z) := by
+  funext z y'
+  rw [hassoc]
+  simp only [Prod.mk.eta]
+  rw [continuationMap_single_apply (R := R) (M := B) (P.boxMorphism N N' F), op_smul_eq_mul,
+    one_mul]
+
 /-- **The box tensor differential of `B ⊠ P` on a generator.** For the type `A` module `B ⊠ P` of
 the differential algebra `B` over itself, the box tensor differential with `N` sends the generator
 `1 ⊗ p` of `B ⊠ (P ⊠ N)`, the row vector supported at `p` with value `1`, to the row of the
@@ -401,17 +420,12 @@ private theorem morphismDifferential_boxMorphism_of_assoc (hdB : IsUngradedDGAlg
   have hB := hdB.isUngradedDGRightModule
   ext p q
   -- The generator `1 ⊗ p` of `B ⊠ (P ⊠ N)`, as a row vector of `B ⊠ P` over `N`.
-  set e : X → Y → B := fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x) with he
-  have hsingle : (fun q : Y × X => e q.2 q.1) = Pi.single p 1 := by
-    funext q
-    simp [he]
+  set e : X → Y → B := fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x)
   -- The map induced by `G` sends it to the row of `P ⊠ G` at `p`.
   have hmap (G : Matrix X X' A) :
       TypeDStructure.typeABoxMap N N' (P.boxModule hB) G e =
-        fun z y' => P.boxMorphism N N' G p (y', z) := by
-    funext z y'
-    rw [hassoc, hsingle, continuationMap_single_apply (R := R) (M := B) (P.boxMorphism N N' G),
-      op_smul_eq_mul, one_mul]
+        fun z y' => P.boxMorphism N N' G p (y', z) :=
+    P.typeABoxMap_boxModule_single N N' hdB G (hassoc G) p
   -- The box tensor differential sends it to the row of `P ⊠ N` at `p`.
   have hrow : N.typeABoxDifferential (P.boxModule hB) e = fun x y => P.boxCoeff N p (y, x) :=
     P.typeABoxDifferential_boxModule_single N hdB hN p

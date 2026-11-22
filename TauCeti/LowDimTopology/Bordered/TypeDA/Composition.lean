@@ -213,21 +213,13 @@ private theorem morphismDifferential_boxCompHomotopy_of_assoc (hdB : IsUngradedD
   ext p q
   -- The generator `1 ⊗ p` of `B ⊠ (P ⊠ N)`, as a row vector of `B ⊠ P` over `N`.
   set e : X → Y → B := fun x y => Pi.single (M := fun _ : Y × X => B) p 1 (y, x) with he
-  have hsingle : (fun r : Y × X => e r.2 r.1) = Pi.single p 1 := by
-    funext r
-    simp [he]
   -- The maps induced by `F` and `F * G` send `e` to the rows of `P ⊠ F` and `P ⊠ (F * G)` at `p`.
   have hmapF : TypeDStructure.typeABoxMap N N' (P.boxModule hB) F e =
-      fun z y' => P.boxMorphism N N' F p (y', z) := by
-    funext z y'
-    rw [hF₁, hsingle, continuationMap_single_apply (R := R) (M := B) (P.boxMorphism N N' F),
-      op_smul_eq_mul, one_mul]
+      fun z y' => P.boxMorphism N N' F p (y', z) :=
+    P.typeABoxMap_boxModule_single N N' hdB F hF₁ p
   have hmapFG : TypeDStructure.typeABoxMap N N'' (P.boxModule hB) (F * G) e =
-      fun z y' => P.boxMorphism N N'' (F * G) p (y', z) := by
-    funext z y'
-    rw [hFG₁, hsingle,
-      continuationMap_single_apply (R := R) (M := B) (P.boxMorphism N N'' (F * G)),
-      op_smul_eq_mul, one_mul]
+      fun z y' => P.boxMorphism N N'' (F * G) p (y', z) :=
+    P.typeABoxMap_boxModule_single N N'' hdB (F * G) hFG₁ p
   -- The homotopy of `B ⊠ P` is the map induced by `fromCols F 0` into the mapping cone of `G`.
   have hK (φ : X → Y → B) (z : X'') (y' : Y) :
       TypeDStructure.typeABoxCompHomotopy N N' N'' (P.boxModule hB) F G φ z y' =
