@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Analytic.Submanifold.Complex
 public import TauCeti.Geometry.Manifold.AnalyticSubmanifold.Basic
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.Complex.Euclidean
-public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
 public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 

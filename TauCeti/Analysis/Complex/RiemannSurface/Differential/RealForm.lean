@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Basic
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Complex.Analytic
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!

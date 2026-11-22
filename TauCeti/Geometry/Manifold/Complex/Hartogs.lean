@@ -18,7 +18,7 @@ import Mathlib.Topology.Piecewise
 import TauCeti.Analysis.Complex.Hartogs
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
 import TauCeti.Topology.DiscreteSubset
 

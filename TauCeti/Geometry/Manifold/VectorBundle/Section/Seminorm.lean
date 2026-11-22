@@ -12,8 +12,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
-import TauCeti.Geometry.Manifold.ExtChartAt
-
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 /-!
 # Compact chart seminorms for bundle sections
 

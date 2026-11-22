@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
-public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Metrizable.Uniformity
 import Mathlib.Topology.Separation.Basic

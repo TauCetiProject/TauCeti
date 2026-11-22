@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
 
 /-!

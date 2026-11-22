@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.Icc
-import TauCeti.Geometry.Manifold.ExtChartAt
-
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 /-!
 # Coordinates and derivatives of a rectangle with corners
 

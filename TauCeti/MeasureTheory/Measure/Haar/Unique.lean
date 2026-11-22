@@ -34,10 +34,10 @@ a single set of positive finite measure are equal.
 * `MeasureTheory.Measure.haar_apply_le_haar_apply_iff`: two Haar measures on a second-countable
   locally compact group compare sets the same way, since they differ by a positive finite factor.
   The additive version is `MeasureTheory.Measure.addHaar_apply_le_addHaar_apply_iff`.
-* `MeasureTheory.Measure.withDensity_eq_withDensity_haarScalarFactor`: rewriting a weighted
+* `MeasureTheory.Measure.withDensity_eq_withDensity_haarScalarFactor_mul`: rewriting a weighted
   left-invariant measure against a Haar measure multiplies the density by
   `Measure.haarScalarFactor`. The additive version is
-  `MeasureTheory.Measure.withDensity_eq_withDensity_addHaarScalarFactor`.
+  `MeasureTheory.Measure.withDensity_eq_withDensity_addHaarScalarFactor_mul`.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_measure_univ_eq`: a left-invariant measure
   with the same total mass as a finite Haar measure coincides with it.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_apply_eq`: a left-invariant measure that is
@@ -181,10 +181,11 @@ theorem haar_apply_le_haar_apply_iff {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- Rewriting a weighted regular left-invariant measure against a regular Haar measure on a
 locally compact group multiplies the density by `Measure.haarScalarFactor`. -/
-@[to_additive /-- Rewriting a weighted regular additively left-invariant measure against a regular
+@[to_additive withDensity_eq_withDensity_addHaarScalarFactor_mul
+/-- Rewriting a weighted regular additively left-invariant measure against a regular
 additive Haar measure on a locally compact additive group multiplies the density by
 `Measure.addHaarScalarFactor`. -/]
-theorem withDensity_eq_withDensity_haarScalarFactor {G : Type*} [Group G] [TopologicalSpace G]
+theorem withDensity_eq_withDensity_haarScalarFactor_mul {G : Type*} [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
     (μ' μ : Measure G) [IsHaarMeasure μ] [IsMulLeftInvariant μ'] [Regular μ] [Regular μ']
     (f : G → ℝ≥0∞) :

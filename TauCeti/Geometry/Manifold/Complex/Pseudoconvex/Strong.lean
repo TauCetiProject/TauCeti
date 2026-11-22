@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
-public import TauCeti.Geometry.Manifold.ExtChartAt
-
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 /-!
 # Pseudoconvexity in the strong Whitney topology
 

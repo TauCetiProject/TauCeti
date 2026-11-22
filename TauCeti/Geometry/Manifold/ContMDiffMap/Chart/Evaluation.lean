@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
-public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Hom.ContinuousEval
 public import Mathlib.Topology.UniformSpace.UniformConvergence

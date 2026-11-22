@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Complete
-public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 public import Mathlib.Topology.Metrizable.Uniformity
 
 /-!

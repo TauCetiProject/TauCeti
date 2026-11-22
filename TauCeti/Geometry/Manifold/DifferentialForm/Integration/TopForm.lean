@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Geometry.Manifold.Measure
+public import TauCeti.Geometry.Manifold.Measure.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basis
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Operations
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Linear
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OrientationLift
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Order.Disjointed
 

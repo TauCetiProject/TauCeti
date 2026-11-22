@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Measure
+public import TauCeti.Geometry.Manifold.Measure.Basic
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Analysis.Calculus.Sard.LowDimension
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum

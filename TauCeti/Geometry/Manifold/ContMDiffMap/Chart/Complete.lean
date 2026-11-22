@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
-public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 public import TauCeti.Topology.ContinuousMap.CompactConvergence
 
 /-!

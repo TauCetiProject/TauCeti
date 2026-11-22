@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.TangentHom
-public import TauCeti.Geometry.Manifold.Measure
+public import TauCeti.Geometry.Manifold.Measure.Basic
 public import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered
 public import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Geometry.Manifold.Measure.Differentiable
 
 /-!

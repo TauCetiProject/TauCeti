@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartSectionTopology
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.FiniteAtlas
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Topology.VectorBundle.Bilinear
 
 /-!

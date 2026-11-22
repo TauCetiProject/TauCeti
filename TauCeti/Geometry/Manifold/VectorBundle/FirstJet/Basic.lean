@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
-public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 public import TauCeti.Topology.VectorBundle.Trivialization
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 

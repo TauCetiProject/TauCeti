@@ -11,7 +11,7 @@ public import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Topology.LocallyFinite.Basic
 
 /-!

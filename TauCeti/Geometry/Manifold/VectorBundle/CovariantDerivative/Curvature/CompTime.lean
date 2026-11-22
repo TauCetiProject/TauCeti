@@ -9,8 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Jet
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.CompTime
 import TauCeti.Analysis.Calculus.ContDiff.BilinearJet
-import TauCeti.Geometry.Manifold.ExtChartAt
-
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 /-!
 # Scalar curvature of a metric composed with a map of the time coordinate
 

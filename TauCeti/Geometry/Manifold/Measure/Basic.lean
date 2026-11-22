@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Basic
 import Mathlib.Analysis.Convex.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar

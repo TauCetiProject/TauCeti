@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Analysis.Calculus.TangentCone.Prod
-import TauCeti.Geometry.Manifold.ExtChartAt
-
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 /-!
 # Tangent cones of products of sets
 

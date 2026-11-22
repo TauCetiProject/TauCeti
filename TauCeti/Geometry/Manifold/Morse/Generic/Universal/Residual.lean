@@ -9,8 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Generic.Universal.Differential
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Banach
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.SecondCountable
-import TauCeti.Geometry.Manifold.ExtChartAt
-
+import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 /-!
 # Generic `C^k` functions are Morse, by the Sard–Smale theorem
 

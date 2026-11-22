@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CountableSeminorms
-public import TauCeti.Geometry.Manifold.ExtChartAt
-
+public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 /-!
 # Finite-atlas `C^k` norms
 
