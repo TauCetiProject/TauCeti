@@ -184,6 +184,35 @@ theorem cayleyOrrCoeff_add_self {𝕂 : Type*} [Field 𝕂] (a b : 𝕂) (s : �
 
 section CayleyOrrRecurrence
 
+/-!
+### Creative-telescoping (Zeilberger) certificates for the Cayley–Orr recurrence
+
+We prove `sum_ordinaryHypergeometricCoefficient_mul_eq_div_mul_cayleyOrrCoeff` by showing that
+both sides satisfy the same second-order recurrence with respect to `s` (with matching values at
+`s = 0, 1`):
+
+1. `cayleySummand a b c` (`F(s, k)`) satisfies the telescoping identity
+   `cayleyRecR2 * F(n + 2, k) + cayleyRecR1 * F(n + 1, k) + cayleyRecR0 * F(n, k) = H(k + 1) - H(k)`
+   for `k ≤ n`, certified by `cayleyCertH` (`cayleySummand_step`). Summing over `k ≤ n` yields
+   the second-order recurrence `cayleyOrrCoeff_recurrence` for `cayleyOrrCoeff a b c`.
+2. `cayleyConvTerm a b c` (`T(s, k)`) satisfies the rescaled telescoping identity
+   `cayleyRecQ2 * T(n + 2, k) + cayleyRecQ1 * T(n + 1, k) + cayleyRecQ0 * T(n, k) = G(k + 1) - G(k)`
+   for `k ≤ n`, certified by `cayleyCertG` (`cayleyConvTerm_step`), where `cayleyRecQ2/Q1/Q0`
+   rescale `cayleyRecR2/R1/R0` so that `((c)_s / (c + 1/2)_s) * cayleyOrrCoeff a b c s`
+   satisfies the exact same recurrence (`cayleyRhs_recurrence`).
+
+In `sum_range_recurrence_of_cert`, summing the telescoping step over `k ∈ range (n + 1)` gives
+`C (n + 1) - C 0 = C (n + 1)`, while the full recurrence sums over `k ∈ range (n + 3)` for
+`F (n + 2)`, `range (n + 2)` for `F (n + 1)`, and `range (n + 1)` for `F n`. Thus the total
+recurrence sum vanishes iff `C (n + 1)` cancels the three boundary terms `k = n + 1, n + 2`
+outside `range (n + 1)`.
+-/
+
+/-- Deduces the three-term recurrence
+`r₂ * ∑_{k ≤ n+2} F(n+2, k) + r₁ * ∑_{k ≤ n+1} F(n+1, k) + r₀ * ∑_{k ≤ n} F(n, k) = 0` from a
+telescoping certificate `C` on `0 ≤ k ≤ n` with `C 0 = 0` and the boundary condition `hbd`, which
+states that `C (n + 1)` cancels the upper-boundary terms `r₂ * (F(n+2, n+1) + F(n+2, n+2))` and
+`r₁ * F(n+1, n+1)` omitted from the `0 ≤ k ≤ n` telescoping sum. -/
 private theorem sum_range_recurrence_of_cert {𝕂 : Type*} [CommRing 𝕂] {r₂ r₁ r₀ : 𝕂}
     {F : ℕ → ℕ → 𝕂} {C : ℕ → 𝕂} {n : ℕ} (hC0 : C 0 = 0)
     (hstep : ∀ k ≤ n, r₂ * F (n + 2) k + r₁ * F (n + 1) k + r₀ * F n k = C (k + 1) - C k)
@@ -299,17 +328,36 @@ private theorem ascPochhammer_div_add_two_eq_add_two (x y : 𝕂) (n : ℕ) :
   simp only [div_eq_mul_inv, ascPochhammer_succ_eval]
   push_cast; ring
 
+/-- Leading (`n + 2`) coefficient `(n + 2)(n + 2c)` of the three-term recurrence
+`R₂ A_{n+2} + R₁ A_{n+1} + R₀ A_n = 0` for `cayleyOrrCoeff a b c`. -/
 private def cayleyRecR2 (c : 𝕂) (n : ℕ) : 𝕂 := (n + 2) * (n + 2 * c)
 
+/-- Middle (`n + 1`) coefficient
+`-2(n + 1)n - 4c(n + 1) + (a + b - c)(2c - 1) - 4ab` of the three-term recurrence
+`R₂ A_{n+2} + R₁ A_{n+1} + R₀ A_n = 0` for `cayleyOrrCoeff a b c`. -/
 private def cayleyRecR1 (a b c : 𝕂) (n : ℕ) : 𝕂 :=
   -2 * (n + 1) * n - 4 * c * (n + 1) + (a + b - c) * (2 * c - 1) - 4 * a * b
 
+/-- Trailing (`n`) coefficient `(n + c + a - b)(n + c - a + b)` of the three-term recurrence
+`R₂ A_{n+2} + R₁ A_{n+1} + R₀ A_n = 0` for `cayleyOrrCoeff a b c`. -/
 private def cayleyRecR0 (a b c : 𝕂) (n : ℕ) : 𝕂 := (n + c + a - b) * (n + c - a + b)
 
+/-- The `k`-th summand
+`F(s, k) = ((c - a - b)_{s - k} / (s - k)!) * ((2a)_k (2b)_k / (k! (2c - 1)_k))` of
+`cayleyOrrCoeff a b c s`. -/
 private noncomputable def cayleySummand (a b c : 𝕂) (s k : ℕ) : 𝕂 :=
   ((s - k)! : 𝕂)⁻¹ * (ascPochhammer 𝕂 (s - k)).eval (c - a - b) *
     ordinaryHypergeometricCoefficient (2 * a) (2 * b) (2 * c - 1) k
 
+/-- Zeilberger creative-telescoping certificate `H` for `F = cayleySummand a b c`: for `k ≤ n`,
+`cayleyRecR2 c n * F (n + 2) k + cayleyRecR1 a b c n * F (n + 1) k + cayleyRecR0 a b c n * F n k`
+equals `H (k + 1) - H k`, with `H 0 = 0` and boundary condition
+`H (n + 1) + cayleyRecR2 c n * (F (n + 2) (n + 1) + F (n + 2) (n + 2)) +`
+`cayleyRecR1 a b c n * F (n + 1) (n + 1) = 0` (for `sum_range_recurrence_of_cert`). Produced by
+Zeilberger's algorithm on the hypergeometric summand `F(n, k)` with rational certificate
+`H(k) / F(n, k) =`
+`(a + b - c + 1) * k * (2c + k - 2) * (n - k + c - a - b) / ((n - k + 1) * (n - k + 2))`
+for `1 ≤ k ≤ n`. -/
 private noncomputable def cayleyCertH (a b c : 𝕂) (n : ℕ) : ℕ → 𝕂
   | 0 => 0
   | j + 1 =>
@@ -411,13 +459,25 @@ theorem cayleyOrrCoeff_recurrence [CharZero 𝕂] (a b : 𝕂) {c : 𝕂} (hc : 
       (n + c + a - b) * (n + c - a + b) * cayleyOrrCoeff a b c n = 0 := by
   simpa only [cayleyRecR2, cayleyRecR1, cayleyRecR0] using cayleyOrrCoeff_recurrence_aux a b hc n
 
+/-- Rescaled leading (`n + 2`) coefficient `cayleyRecR2 c n * (c + n + 1/2) * (c + n + 3/2)` of the
+three-term recurrence `Q₂ B_{n+2} + Q₁ B_{n+1} + Q₀ B_n = 0` shared by `cayleyConvSum a b c` and
+`cayleyRhs a b c`. -/
 private def cayleyRecQ2 (c : 𝕂) (n : ℕ) : 𝕂 := cayleyRecR2 c n * (c + n + 1 / 2) * (c + n + 3 / 2)
 
+/-- Rescaled middle (`n + 1`) coefficient `cayleyRecR1 a b c n * (c + n + 1/2) * (c + n + 1)` of
+the three-term recurrence `Q₂ B_{n+2} + Q₁ B_{n+1} + Q₀ B_n = 0` shared by `cayleyConvSum a b c` and
+`cayleyRhs a b c`. -/
 private def cayleyRecQ1 (a b c : 𝕂) (n : ℕ) : 𝕂 :=
   cayleyRecR1 a b c n * (c + n + 1 / 2) * (c + n + 1)
 
+/-- Rescaled trailing (`n`) coefficient `cayleyRecR0 a b c n * (c + n) * (c + n + 1)` of the
+three-term recurrence `Q₂ B_{n+2} + Q₁ B_{n+1} + Q₀ B_n = 0` shared by `cayleyConvSum a b c` and
+`cayleyRhs a b c`. -/
 private def cayleyRecQ0 (a b c : 𝕂) (n : ℕ) : 𝕂 := cayleyRecR0 a b c n * (c + n) * (c + n + 1)
 
+/-- Degree-2 polynomial in `kp = k` (written in the symmetric variables `s₁ = a + b`, `s₂ = a * b`,
+`d = c + n + 1`, `m = n + 1`) appearing in the numerator of the Zeilberger rational certificate
+`cayleyCertG / cayleyConvTerm` for the Cauchy convolution recurrence. -/
 private def cayleyCertPolyAux (s₁ s₂ d m kp : 𝕂) : 𝕂 :=
   ((m + 1 + 2 * d * (s₁ + m - d)) * kp ^ 2 +
     (s₁ * (m + 1 - d) - d * (2 * m + 1) * (3 * d + 1) + 6 * d ^ 2 * (d - s₁) + 4 * s₂ * d) * kp +
@@ -425,19 +485,39 @@ private def cayleyCertPolyAux (s₁ s₂ d m kp : 𝕂) : 𝕂 :=
       2 * s₁ * d * (m + 1 - d - 2 * d ^ 2) +
       d * ((2 * d - 1) * (m + 1) + 2 * d ^ 2 * (2 * m + 1 - 2 * d)))) / 2
 
+/-- Specialization of `cayleyCertPolyAux` to
+`(s₁, s₂, d, m, kp) = (a + b, a * b, c + n + 1, n + 1, j + 1)`, representing the `k = j + 1`
+polynomial numerator of `cayleyCertG a b c n (j + 1)`. -/
 private def cayleyCertPoly (a b c : 𝕂) (n j : ℕ) : 𝕂 :=
   cayleyCertPolyAux (a + b) (a * b) (c + (n + 1)) (n + 1) (j + 1)
 
+/-- The `k`-th Cauchy-product summand `T(s, k)` of
+`₂F₁(a, b; c - 1/2; z) * ₂F₁(c - a, c - b; c + 1/2; z)` at degree `s`. -/
 private noncomputable def cayleyConvTerm (a b c : 𝕂) (s k : ℕ) : 𝕂 :=
   ordinaryHypergeometricCoefficient a b (c - 1 / 2) k *
     ordinaryHypergeometricCoefficient (c - a) (c - b) (c + 1 / 2) (s - k)
 
+/-- The `s`-th Cauchy-product coefficient `∑_{k ≤ s} T(s, k)` on the LHS of
+`sum_ordinaryHypergeometricCoefficient_mul_eq_div_mul_cayleyOrrCoeff`. -/
 private noncomputable def cayleyConvSum (a b c : 𝕂) (s : ℕ) : 𝕂 :=
   ∑ k ∈ range (s + 1), cayleyConvTerm a b c s k
 
+/-- The RHS `((c)_s / (c + 1/2)_s) * cayleyOrrCoeff a b c s` of
+`sum_ordinaryHypergeometricCoefficient_mul_eq_div_mul_cayleyOrrCoeff`. -/
 private noncomputable def cayleyRhs (a b c : 𝕂) (s : ℕ) : 𝕂 :=
   (ascPochhammer 𝕂 s).eval c / (ascPochhammer 𝕂 s).eval (c + 1 / 2) * cayleyOrrCoeff a b c s
 
+/-- Zeilberger creative-telescoping certificate `G` for `T = cayleyConvTerm a b c`: for `k ≤ n`,
+`cayleyRecQ2 c n * T (n + 2) k + cayleyRecQ1 a b c n * T (n + 1) k + cayleyRecQ0 a b c n * T n k`
+equals `G (k + 1) - G k`, with `G 0 = 0` and boundary condition
+`G (n + 1) + cayleyRecQ2 c n * (T (n + 2) (n + 1) + T (n + 2) (n + 2)) +`
+`cayleyRecQ1 a b c n * T (n + 1) (n + 1) = 0` (for `sum_range_recurrence_of_cert`). Produced by
+Zeilberger's algorithm on the hypergeometric convolution summand `T(n, k)` with rational
+certificate
+`G(k) / T(n, k) = cayleyCertPoly a b c n (k - 1) * k * (c - 1/2 + k - 1) *`
+`(c - a + n - k) * (c - b + n - k) /`
+`((n - k + 1) * (n - k + 2) * (c + 1/2 + n - k) * (c + 1/2 + n - k + 1))`
+for `1 ≤ k ≤ n`. -/
 private noncomputable def cayleyCertG (a b c : 𝕂) (n : ℕ) : ℕ → 𝕂
   | 0 => 0
   | j + 1 =>
@@ -608,6 +688,10 @@ theorem hasFPowerSeriesOnBall_ordinaryHypergeometric_mul_ordinaryHypergeometric_
     (hasFPowerSeriesOnBall_ordinaryHypergeometric 𝔸 a b (c - 1 / 2)).mul_ofScalars
       (hasFPowerSeriesOnBall_ordinaryHypergeometric 𝔸 (c - a) (c - b) (c + 1 / 2))
 
+private theorem mem_eball_zero_one {E : Type*} [SeminormedAddCommGroup E] {z : E}
+    (hz : ‖z‖ < 1) : z ∈ Metric.eball (0 : E) 1 :=
+  mem_eball_zero_iff.mpr (by rw [← ofReal_norm]; exact ENNReal.ofReal_lt_one.mpr hz)
+
 /-- **Cayley–Orr product expansion (DLMF 15.16.1, `HasSum` form).** Over any `RCLike` field `𝕂`
 (such as `ℝ` or `ℂ`), for `‖z‖ < 1` and `2 * c - 1 ∉ -ℕ`,
 `₂F₁(a, b; c - 1/2; z) * ₂F₁(c - a, c - b; c + 1/2; z)` expands as
@@ -618,11 +702,9 @@ theorem hasSum_ordinaryHypergeometric_mul_ordinaryHypergeometric_sub {𝕂 : Typ
       (fun s : ℕ ↦ (ascPochhammer 𝕂 s).eval c / (ascPochhammer 𝕂 s).eval (c + 1 / 2) *
         cayleyOrrCoeff a b c s * z ^ s)
       (₂F₁ a b (c - 1 / 2) z * ₂F₁ (c - a) (c - b) (c + 1 / 2) z) := by
-  have hz' : z ∈ Metric.eball (0 : 𝕂) 1 := by
-    simpa only [Metric.mem_eball, edist_dist, dist_zero_right, ENNReal.ofReal_lt_one] using hz
   have hs := (hasFPowerSeriesOnBall_ordinaryHypergeometric_mul_ordinaryHypergeometric_sub 𝕂
-    a b hc).hasSum hz'
-  simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hs
+    a b hc).hasSum (mem_eball_zero_one hz)
+  simpa only [zero_add, FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul, mul_comm] using hs
 
 end TauCeti
 
@@ -669,10 +751,9 @@ theorem hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric (a b c : �
 theorem hasSum_cayleyOrrCoeff_mul_pow (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun s : ℕ ↦ TauCeti.cayleyOrrCoeff a b c s * z ^ s)
       ((1 - z) ^ (a + b - c) * ₂F₁ (2 * a) (2 * b) (2 * c - 1) z) := by
-  have hz' : z ∈ Metric.eball (0 : ℂ) 1 := by
-    simpa only [Metric.mem_eball, edist_dist, dist_zero_right, ENNReal.ofReal_lt_one] using hz
-  have hs := (hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric a b c).hasSum hz'
-  simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hs
+  have hs := (hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric a b c).hasSum
+    (TauCeti.mem_eball_zero_one hz)
+  simpa only [zero_add, FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul, mul_comm] using hs
 
 /-- The Taylor coefficients at `0` of `(1 - z) ^ (a + b - c) * ₂F₁(2a, 2b; 2c - 1; z)` are
 `TauCeti.cayleyOrrCoeff a b c` (DLMF 15.16.2; classical when `2 * c - 1 ∉ -ℕ`, and reflecting
@@ -696,7 +777,9 @@ theorem eq_cayleyOrrCoeff_of_eventually_hasSum (a b c : ℂ) {A : ℕ → ℂ}
   have hpA : HasFPowerSeriesAt
       (fun z : ℂ ↦ (1 - z) ^ (a + b - c) * ₂F₁ (2 * a) (2 * b) (2 * c - 1) z)
       (FormalMultilinearSeries.ofScalars ℂ A) 0 :=
-    hasFPowerSeriesAt_iff.mpr (hA.mono fun z hz ↦ by simpa [mul_comm] using hz)
+    hasFPowerSeriesAt_iff.mpr <| hA.mono fun z hz ↦ by
+      simpa only [zero_add, FormalMultilinearSeries.coeff_ofScalars, smul_eq_mul,
+        mul_comm] using hz
   exact FormalMultilinearSeries.ofScalars_series_injective ℂ ℂ
     (hpA.eq_formalMultilinearSeries
       (hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric a b c).hasFPowerSeriesAt)
@@ -796,7 +879,10 @@ private theorem exists_bc_coeff_bound (a b c : ℂ) :
           (2 * ((s : ℝ) + 1) * ((m : ℝ) + 1)) ^ M * (m.choose j : ℝ) := by gcongr
     _ = CΓ ^ 2 * ((N : ℝ) + 1) ^ (4 * N) * 2 ^ M * ((s : ℝ) + 1) ^ (4 * N + 2 * M) *
           ((j + k : ℝ) + 1) ^ (2 * N + M) * ((j + k).choose j : ℝ) := by
-        simp only [m, Nat.cast_add, mul_pow]; ring_nf
+        have h4N : 4 * N = 2 * N + 2 * N := by ring
+        have h2M : 2 * M = M + M := by ring
+        simp only [m, Nat.cast_add, mul_pow, h4N, h2M, pow_add]
+        ring
 
 private theorem norm_bcGenTerm_coeff_eq (a b c u v y : ℂ) (s j k : ℕ) :
     ‖bcGenPref a b c u v s j *
@@ -806,23 +892,18 @@ private theorem norm_bcGenTerm_coeff_eq (a b c u v y : ℂ) (s j k : ℕ) :
   have hp1 : (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ j).eval (a + s) *
       (ascPochhammer ℂ k).eval (a + s + j) = (ascPochhammer ℂ (s + j + k)).eval a := by
     rw [TauCeti.ascPochhammer_add_eval a (s + j) k, TauCeti.ascPochhammer_add_eval a s j]
-    push_cast; ring_nf
+    push_cast; rw [add_assoc a (s : ℂ) j]
   have hp2 : (ascPochhammer ℂ s).eval b * (ascPochhammer ℂ j).eval (b + s) *
       (ascPochhammer ℂ k).eval (b + s + j) = (ascPochhammer ℂ (s + j + k)).eval b := by
     rw [TauCeti.ascPochhammer_add_eval b (s + j) k, TauCeti.ascPochhammer_add_eval b s j]
-    push_cast; ring_nf
+    push_cast; rw [add_assoc b (s : ℂ) j]
   have hc_eq : c + 2 * (s : ℂ) + j + k = c + (2 * s + j + k : ℕ) := by push_cast; ring
   simp only [bcGenPref, bcPref, bcGenCoeff, coeff_regularizedGaussHGFunSeries, hc_eq]
   rw [← norm_pow u s, ← norm_pow v j, ← norm_pow y k, ← norm_mul, ← norm_mul, ← norm_mul]
   refine congrArg norm ?_
   simp only [div_eq_mul_inv, mul_inv]
-  linear_combination
-    (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) *
-      (s ! : ℂ)⁻¹ * (Gamma (c + s))⁻¹ * (j ! : ℂ)⁻¹ * (k ! : ℂ)⁻¹ *
-      (Gamma (c + (2 * s + j + k : ℕ)))⁻¹ * u ^ s * v ^ j * y ^ k *
-      ((ascPochhammer ℂ (s + j + k)).eval b * hp1 +
-        (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ j).eval (a + s) *
-          (ascPochhammer ℂ k).eval (a + s + j) * hp2)
+  rw [← hp1, ← hp2]
+  ring
 
 private theorem norm_bcGenTerm_le {a b c u v y : ℂ} {K : ℝ} {P Q : ℕ} (hy : ‖y‖ < 1)
     (hbound : ∀ s j k : ℕ,
