@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.GroupAction.Quotient
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 public import TauCeti.Topology.Grassmannian.Tautological
 
@@ -32,18 +33,22 @@ def orientationCoverQuotientHomeomorph (r N : ℕ) :
     MulAction.orbitRel.Quotient ℤˣ
       (VectorBundleOrientationCover (Fin r → ℝ) (Tautological ℝ r N) (Fin r)) ≃ₜ
         finiteGrassmannian ℝ r N :=
-  VectorBundleOrientationCover.orbitQuotientHomeomorph (by simp)
+  let hq := VectorBundleOrientationCover.isQuotientCoveringMap_proj
+    (F := Fin r → ℝ) (E := Tautological ℝ r N) (ι := Fin r) (by simp)
+  hq.toIsQuotientMap.orbitRelQuotientHomeomorph (fun _ _ ↦ hq.apply_eq_iff_mem_orbit)
 
 @[simp]
 theorem orientationCoverQuotientHomeomorph_mk (r N : ℕ)
     (p : VectorBundleOrientationCover (Fin r → ℝ) (Tautological ℝ r N) (Fin r)) :
-    orientationCoverQuotientHomeomorph r N (Quotient.mk _ p) = p.proj :=
-  VectorBundleOrientationCover.orbitQuotientHomeomorph_mk (by simp) p
+    orientationCoverQuotientHomeomorph r N (Quotient.mk _ p) = p.proj := by
+  unfold orientationCoverQuotientHomeomorph
+  exact Topology.IsQuotientMap.orbitRelQuotientHomeomorph_mk _ _ p
 
 @[simp]
 theorem orientationCoverQuotientHomeomorph_symm_proj (r N : ℕ)
     (p : VectorBundleOrientationCover (Fin r → ℝ) (Tautological ℝ r N) (Fin r)) :
     (orientationCoverQuotientHomeomorph r N).symm p.proj = Quotient.mk _ p :=
-  VectorBundleOrientationCover.orbitQuotientHomeomorph_symm_proj (by simp) p
+  (orientationCoverQuotientHomeomorph r N).symm_apply_eq.2
+    (orientationCoverQuotientHomeomorph_mk r N p).symm
 
 end TauCeti.finiteGrassmannian

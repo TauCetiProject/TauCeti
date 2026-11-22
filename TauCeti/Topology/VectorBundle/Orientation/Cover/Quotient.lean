@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Covering.Quotient
 public import TauCeti.Topology.FiberBundle.Pullback
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
@@ -191,26 +190,6 @@ theorem isQuotientCoveringMap_lift [Fintype ι] [FiniteDimensional ℝ F]
         TotalSpace F E) ℤˣ :=
   Pullback.isQuotientCoveringMap_lift (isQuotientCoveringMap_proj hι)
     (FiberBundle.continuous_proj F E) proj_smul_totalSpace lift_smul
-
-variable [Fintype ι] [FiniteDimensional ℝ F]
-
-/-- The orientation cover modulo its deck action is the original base. -/
-noncomputable def orbitQuotientHomeomorph (hι : Fintype.card ι = finrank ℝ F) :
-    MulAction.orbitRel.Quotient ℤˣ (VectorBundleOrientationCover F E ι) ≃ₜ B :=
-  (isQuotientCoveringMap_proj hι).orbitRelQuotientHomeomorph
-
-@[simp]
-theorem orbitQuotientHomeomorph_mk (hι : Fintype.card ι = finrank ℝ F)
-    (p : VectorBundleOrientationCover F E ι) :
-    orbitQuotientHomeomorph hι (Quotient.mk _ p) = p.proj := by
-  unfold orbitQuotientHomeomorph
-  exact (isQuotientCoveringMap_proj hι).orbitRelQuotientHomeomorph_mk p
-
-@[simp]
-theorem orbitQuotientHomeomorph_symm_proj (hι : Fintype.card ι = finrank ℝ F)
-    (p : VectorBundleOrientationCover F E ι) :
-    (orbitQuotientHomeomorph hι).symm p.proj = Quotient.mk _ p :=
-  (orbitQuotientHomeomorph hι).symm_apply_eq.2 (orbitQuotientHomeomorph_mk hι p).symm
 
 end VectorBundleOrientationCover
 
