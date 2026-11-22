@@ -113,7 +113,7 @@ variable (R : Type u) [CommRing R]
 
 /-- An actual resolution merge has quantum degree `-1`. -/
 theorem isHomogeneous_resolutionMergeMap :
-    TauCeti.LinearMap.IsHomogeneous (D.resolutionMergeMap hst hc hs R).toLinearMap
+    LinearMap.IsHomogeneous (D.resolutionMergeMap hst hc hs R).toLinearMap
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle t)).piece (-1) := by
   have hcard := D.card_resolvedCircle_source_eq_target_add_one hst

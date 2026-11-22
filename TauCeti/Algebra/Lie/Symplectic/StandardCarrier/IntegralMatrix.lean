@@ -19,8 +19,9 @@ In the enumerated basis the matrix is the single unit `E_{i,m+i}` at the final n
 difference `E_{i,i+1} - E_{m+i+1,m+i}` of two units at a nonfinal one. Those are the matrices of
 the symplectic group's long-root transvection at the terminal coordinate and of its difference
 short-root element at an adjacent pair, which is what
-`TauCeti/Algebra/Lie/Symplectic/StandardCarrier/Generation.lean` uses to identify the two point
-groups.
+`TauCeti/Algebra/Lie/Symplectic/StandardCarrier/Generation.lean` uses to identify the numbered root
+subgroups, supplying the generation input for the point-group equality in
+`TauCeti/Algebra/Lie/Symplectic/StandardCarrier/Symplectic/Basic.lean`.
 
 ## Main results
 
@@ -97,9 +98,7 @@ theorem rootIntMatrix_inr_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
 
 /-- The matrix of a carrier root subgroup point is `1 + u X` for the integral matrix `X` of the
 corresponding root generator. -/
--- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
--- left-hand side first, so a simp normal form stated against `rootSubgroupPoints` is
--- unreachable. Consumers rewrite with it by name.
+@[simp]
 theorem coe_rootSubgroupPoints_eq_one_add_smul (k : Fin (n + 1) ⊕ Fin (n + 1))
     (A : Type v) [CommRing A] (u : Multiplicative A) :
     ((rootSubgroupPoints n k A u :

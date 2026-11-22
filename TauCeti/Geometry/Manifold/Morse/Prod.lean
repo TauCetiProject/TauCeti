@@ -14,6 +14,8 @@ public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.Lemma
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.Morse.Submersion
+import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # Morse functions on a product manifold
@@ -24,9 +26,9 @@ points are the pairs `(x, y)` of critical points of `f` and `g`, and its Morse i
 is the sum of the two indices. This is the classical construction of the standard Morse function
 on a product, for instance on a torus `S¹ × S¹` as the sum of two height functions.
 
-A function `g ∘ Prod.snd` of the second factor alone is the separated sum with `f = 0`. Its
-critical set is `M × crit(g)`, and at a point `(x, y)` its Morse index is that of `g` at `y`. These
-are the critical submanifolds `M × {y}` of the model Morse–Bott functions.
+A function `g ∘ Prod.snd` of the second factor alone has critical set `M × crit(g)`, and at a point
+`(x, y)` its Morse index is that of `g` at `y`, with no regularity assumption on `g`. These are the
+critical submanifolds `M × {y}` of the model Morse–Bott functions.
 
 The product chart at `(x, y)` is the product of the preferred charts at `x` and `y`, so all the
 statements reduce to the calculus of separated sums on the model space `E × E'`. The Morse
@@ -60,9 +62,11 @@ for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
   Morse index of the separated sum, in the product charts with values in `E × E'`.
 * `TauCeti.IsMorse.comp_fst_add_comp_snd_chartedSpaceProd`: the separated sum of Morse functions
   is Morse in these charts.
-* `TauCeti.criticalPoints_comp_snd`: the critical set of a function of the second factor.
-* `TauCeti.manifoldMorseIndex_comp_snd`: its Morse index is that of the function on the second
-  factor.
+* `TauCeti.criticalPoints_comp_snd` and `TauCeti.manifoldMorseIndex_comp_snd`: the critical
+  points of `(x, y) ↦ g y` on `M × N` are the points over critical points of `g`, and its Morse
+  index at `(x, y)` is that of `g` at `y`.
+* `TauCeti.ker_criticalHessian_comp_snd`: the kernel of the Hessian of `(x, y) ↦ g y` is the
+  preimage under the second projection of the kernel of the Hessian of `g`.
 
 ## References
 
@@ -183,38 +187,52 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_com
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hf).contDiffAt
     ((isManifoldNondegenerateCriticalPoint_iff I').1 hg).contDiffAt
 
-/-! ### Functions of the second factor -/
+section CompSnd
 
-/-- **The critical points of a function of the second factor.** The point `(x, y)` of `M × N` is a
-critical point of `g ∘ Prod.snd` exactly when `y` is a critical point of `g`, so the critical set
-is `M × crit(g)`. No regularity of `g` is needed: the differential of `g ∘ Prod.snd` is that of
-`g` on the second component of a tangent vector. -/
+/-! ### Functions of the second factor
+
+A function `g` on `N` pulls back to the function `(x, y) ↦ g y` on `M × N`, which is constant along
+the slices `M × {y}`. Its critical points are the points over critical points of `g`, and its Morse
+indices are those of `g`. -/
+
+/-- **Critical points of a function of the second factor.** A point `p` of `M × N` is a critical
+point of `(x, y) ↦ g y` exactly when `p.2` is a critical point of `g`. -/
+theorem mem_criticalPoints_comp_snd_iff {p : M × N} :
+    p ∈ criticalPoints (I.prod I') (g ∘ Prod.snd) ↔ p.2 ∈ criticalPoints I' g := by
+  simp only [mem_criticalPoints, ContinuousLinearMap.ext_iff, mvfderiv_comp_snd_apply, zero_apply]
+  exact ⟨fun h w ↦ h ((0 : E), w), fun h v ↦ h v.2⟩
+
+/-- The critical set of `(x, y) ↦ g y` on `M × N` is `M` times the critical set of `g`. -/
+@[simp]
 theorem criticalPoints_comp_snd :
-    criticalPoints (I.prod I') (g ∘ Prod.snd : M × N → ℝ) = univ ×ˢ criticalPoints I' g := by
+    criticalPoints (I.prod I') (g ∘ Prod.snd) = (univ : Set M) ×ˢ criticalPoints I' g := by
   ext p
-  simp only [mem_criticalPoints, mem_prod, mem_univ, true_and]
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun w ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
-  · -- The vector `(0, w)` is read as a tangent vector of the product at `p`.
-    have hw := mvfderiv_comp_snd_apply (I := I) (J := I') g p
-      (((0 : E), w) : TangentSpace (I.prod I') p)
-    rw [h] at hw
-    exact hw.symm
-  · rw [mvfderiv_comp_snd_apply, h]
-    -- Both sides are values of zero maps.
-    rfl
+  rw [mem_criticalPoints_comp_snd_iff]
+  simp
 
-/-- **The Morse index of a function of the second factor.** When the coordinate expression of `g`
-at `y` is twice continuously differentiable, the index of `g ∘ Prod.snd` at `(x, y)` is the index
-of `g` at `y`: the first factor contributes only null directions of the Hessian. This is not a
-`simp` lemma, for the reason given at `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd`. -/
-theorem manifoldMorseIndex_comp_snd [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
-    (hg : ContDiffAt ℝ 2 (g ∘ (extChartAt I' y).symm) (extChartAt I' y y)) :
-    manifoldMorseIndex (I.prod I') (g ∘ Prod.snd) (x, y) = manifoldMorseIndex I' g y := by
-  have hsum : g ∘ Prod.snd = (fun _ : M ↦ (0 : ℝ)) ∘ Prod.fst + g ∘ Prod.snd := by
-    ext
-    simp
-  rw [hsum, manifoldMorseIndex_comp_fst_add_comp_snd contDiffAt_const hg, manifoldMorseIndex_def]
-  simp only [Function.comp_def, morseIndex_const, zero_add]
+/-- **The Morse index of a function of the second factor** at `p` is the Morse index of `g` at
+`p.2`: the slice directions contribute nothing to the Hessian. -/
+@[simp]
+theorem manifoldMorseIndex_comp_snd [FiniteDimensional ℝ E] (g : N → ℝ) (p : M × N) :
+    manifoldMorseIndex (I.prod I') (g ∘ Prod.snd) p = manifoldMorseIndex I' g p.2 := by
+  have hchart : (g ∘ Prod.snd) ∘ (extChartAt (I.prod I') p).symm =
+      (g ∘ (extChartAt I' p.2).symm) ∘ Prod.snd := by
+    funext z
+    simp only [Function.comp_apply, extChartAt_prod, PartialEquiv.prod_coe_symm]
+  rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hchart, morseIndex_comp_snd]
+  simp only [extChartAt_prod, PartialEquiv.prod_coe]
+
+/-- **The kernel of the Hessian of a function of the second factor.** At a point `p` of `M × N`
+over a critical point `p.2` of `g` at which `g` is `C²`, the kernel of the critical Hessian of
+`(x, y) ↦ g y` is the preimage under the second projection of the kernel of the critical Hessian
+of `g` at `p.2`. -/
+theorem ker_criticalHessian_comp_snd [I.Boundaryless] [I'.Boundaryless] {p : M × N}
+    (hg : ContMDiffAt I' 𝓘(ℝ) 2 g p.2) (hcrit : p.2 ∈ criticalPoints I' g) :
+    (criticalHessian (I.prod I') (g ∘ Prod.snd) p).ker =
+      (criticalHessian I' g p.2).ker.comap (mfderiv (I.prod I') I' Prod.snd p).toLinearMap :=
+  (isRegularPoint_snd p).ker_criticalHessian_comp hg contMDiffAt_snd hcrit
+
+end CompSnd
 
 end TauCeti
 

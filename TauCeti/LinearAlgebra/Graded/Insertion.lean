@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Ring.NegOnePow
 public import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Fin.Tuple.Reflection
 public import TauCeti.LinearAlgebra.Graded.Multilinear
+public import TauCeti.Data.List.ProdOfFn
 
 /-!
 # Signed insertion of graded multilinear maps
@@ -31,7 +32,11 @@ proves that insertion adds the degrees of the outer and inner operations.
 ## Main definitions
 
 * `MultilinearMap.evalNat`: evaluate a finite-arity map on a natural-indexed input family.
-* `TauCeti.replaceBlock`: collapse a consecutive block in a natural-indexed family.
+* `TauCeti.replaceBlock`: collapse a consecutive block in a natural-indexed family.  Collapsing
+  a block of homogeneous entries to a homogeneous entry keeps the family homogeneous
+  (`TauCeti.replaceBlock_mem`), replacing a block of one entry is `Function.update`
+  (`TauCeti.replaceBlock_one`), and collapsing a block of a family in a monoid to the product of
+  its entries keeps the product of the family (`TauCeti.prod_ofFn_replaceBlock`).
 * `TauCeti.IsComposableString`: natural-indexed arrows `aᵢ ⟶ bᵢ` forming a composable string;
   blocks of a composable string, and replacements of blocks, are composable
   (`TauCeti.IsComposableString.block`, `TauCeti.IsComposableString.replaceBlock`).
@@ -64,11 +69,11 @@ variable {R : Type uR} {M : Type uM} [Semiring R] [AddCommMonoid M] [Module R M]
 /-- Evaluate an arity-`k` operation on the first `k` entries of a family indexed by the naturals. -/
 def evalNat {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
     (f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) N) (x : ℕ → M) : N :=
-  f fun i ↦ x i.1
+  f fun i ↦ x i.val
 
 theorem evalNat_def {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
     (f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) N) (x : ℕ → M) :
-    evalNat f x = f (fun i ↦ x i.1) := (rfl)
+    evalNat f x = f (fun i ↦ x i.val) := (rfl)
 
 /-- `evalNat` only reads the entries whose indices are below the operation's arity. -/
 theorem evalNat_congr {k : ℕ} {N : Type uN} [AddCommMonoid N] [Module R N]
@@ -227,6 +232,72 @@ theorem apply_replaceBlock {α β : Type*} (g : α → β) (x : ℕ → α) (p s
   simp only [replaceBlock]
   split_ifs <;> rfl
 
+/-- A function of two arguments applied entrywise to two families commutes with replacing the
+same block of entries in both. -/
+theorem apply₂_replaceBlock {α β γ : Type*} (g : α → β → γ) (x : ℕ → α) (y : ℕ → β) (p s : ℕ)
+    (v : α) (w : β) (i : ℕ) :
+    g (replaceBlock x p s v i) (replaceBlock y p s w i) =
+      replaceBlock (fun j ↦ g (x j) (y j)) p s (g v w) i := by
+  simp only [replaceBlock]
+  split_ifs <;> rfl
+
+/-- Replacing a block of one entry is updating that entry. -/
+theorem replaceBlock_one {α : Type*} (x : ℕ → α) (p : ℕ) (v : α) :
+    replaceBlock x p 1 v = Function.update x p v := by
+  funext i
+  rcases lt_trichotomy i p with h | rfl | h
+  · rw [replaceBlock_of_lt _ _ _ _ h, Function.update_of_ne h.ne]
+  · rw [replaceBlock_self, Function.update_self]
+  · rw [replaceBlock_of_gt _ _ _ _ h, Nat.add_sub_cancel, Function.update_of_ne h.ne']
+
+/-- Replacing an entry by itself does not change a family. -/
+@[simp]
+theorem replaceBlock_one_self {α : Type*} (x : ℕ → α) (p : ℕ) :
+    replaceBlock x p 1 (x p) = x := by
+  rw [replaceBlock_one, Function.update_eq_self]
+
+/-- Replacing the entry at `p` of a family by `v` changes the sum of its first `m` entries by
+`v - x p` when `p < m`, and does not change it otherwise. -/
+theorem sum_range_replaceBlock_one {β : Type*} [AddCommGroup β] (x : ℕ → β) (p : ℕ) (v : β)
+    (m : ℕ) :
+    ∑ i ∈ Finset.range m, replaceBlock x p 1 v i =
+      ∑ i ∈ Finset.range m, x i + if p < m then v - x p else 0 := by
+  rw [replaceBlock_one]
+  split_ifs with h
+  · rw [Finset.sum_update_of_mem (Finset.mem_range.2 h),
+      Finset.sum_eq_add_sum_sdiff_singleton_of_mem (Finset.mem_range.2 h)]
+    abel
+  · rw [Finset.sum_update_of_notMem (by simpa using h), add_zero]
+
+/-- Collapsing a block of a family of homogeneous entries to a homogeneous entry gives a family of
+homogeneous entries, whose degrees are collapsed in the same way. -/
+theorem replaceBlock_mem {ι σ M : Type*} [SetLike σ M] (S : ι → σ) {x : ℕ → M} {e : ℕ → ι}
+    {n p s : ℕ} (hx : ∀ i < n, x i ∈ S (e i)) {v : M} {k : ι} (hv : v ∈ S k) (hps : p + s ≤ n)
+    {i : ℕ} (hi : i < p + 1 + (n - p - s)) :
+    replaceBlock x p s v i ∈ S (replaceBlock e p s k i) := by
+  rcases lt_trichotomy i p with h | rfl | h
+  · rw [replaceBlock_of_lt _ _ _ _ h, replaceBlock_of_lt _ _ _ _ h]
+    exact hx i (by omega)
+  · rwa [replaceBlock_self, replaceBlock_self]
+  · rw [replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h]
+    exact hx _ (by omega)
+
+/-- Collapsing a block of a family in a monoid to the product of its entries does not change the
+product of the family. -/
+theorem prod_ofFn_replaceBlock {M : Type*} [Monoid M] (b : ℕ → M) (p d t : ℕ) :
+    (List.ofFn fun j : Fin (p + 1 + t) ↦
+        replaceBlock b p d (List.ofFn fun j : Fin d ↦ b (p + j)).prod j).prod =
+      (List.ofFn fun j : Fin (p + d + t) ↦ b j).prod := by
+  induction t with
+  | zero =>
+    rw [add_zero, add_zero, List.prod_ofFn_val_succ, List.prod_ofFn_val_add b p d,
+      replaceBlock_self, List.prod_ofFn_val_congr fun i hi ↦ replaceBlock_of_lt b p d _ hi]
+  | succ t ih =>
+    rw [← add_assoc, List.prod_ofFn_val_succ, ih, ← add_assoc (p + d), List.prod_ofFn_val_succ,
+      replaceBlock_of_gt _ _ _ _ (by omega : p < p + 1 + t)]
+    congr 2
+    omega
+
 section IsComposableString
 
 variable {α : Type*}
@@ -307,8 +378,8 @@ theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
     (f : MultilinearMap (RingHom.id R) (fun _ : Fin u ↦ A) N)
     (x : ℕ → A) {p : ℕ} (s : ℕ) (hp : p < u) (c : R) (v : A) :
     evalNat f (replaceBlock x p s (c • v)) = c • evalNat f (replaceBlock x p s v) := by
-  have hupd (w : A) : (fun i : Fin u ↦ replaceBlock x p s w i.1) =
-      Function.update (fun i : Fin u ↦ replaceBlock x p s v i.1) ⟨p, hp⟩ w := by
+  have hupd (w : A) : (fun i : Fin u ↦ replaceBlock x p s w i.val) =
+      Function.update (fun i : Fin u ↦ replaceBlock x p s v i.val) ⟨p, hp⟩ w := by
     funext i
     by_cases hi : i = ⟨p, hp⟩
     · subst i
