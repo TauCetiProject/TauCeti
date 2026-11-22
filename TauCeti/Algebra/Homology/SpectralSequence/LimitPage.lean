@@ -74,14 +74,14 @@ lower bound in `Subobject ((E.page r₀).X pq)`. -/
 class HasInfCyclesAt (pq : κ) : Prop where
   exists_isGLB :
     ∃ Z : Subobject ((E.page r₀).X pq),
-      IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2) Z
+      IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) Z
 
 /-- `E` has infinite boundaries at `pq` if the boundary tower `{B_r(pq) | r ≥ r₀}` admits a least
 upper bound in `Subobject ((E.page r₀).X pq)`. -/
 class HasInfBoundariesAt (pq : κ) : Prop where
   exists_isLUB :
     ∃ B : Subobject ((E.page r₀).X pq),
-      IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2) B
+      IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) B
 
 /-- `E` has a limit page at `pq` if both the infinite cycles `Z_∞(pq)` and the infinite boundaries
 `B_∞(pq)` exist in `Subobject ((E.page r₀).X pq)`. -/
@@ -95,7 +95,7 @@ noncomputable def infCyclesSubobject (pq : κ) [E.HasInfCyclesAt pq] :
 
 /-- `E.infCyclesSubobject pq` is the greatest lower bound of the cycle tower at `pq`. -/
 lemma isGLB_infCyclesSubobject (pq : κ) [E.HasInfCyclesAt pq] :
-    IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2)
+    IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property)
       (E.infCyclesSubobject pq) :=
   HasInfCyclesAt.exists_isGLB.choose_spec
 
@@ -110,7 +110,7 @@ lemma le_infCyclesSubobject {pq : κ} [E.HasInfCyclesAt pq] {W : Subobject ((E.p
 
 lemma infCyclesSubobject_eq_of_isGLB {pq : κ} [E.HasInfCyclesAt pq]
     {Z : Subobject ((E.page r₀).X pq)}
-    (hZ : IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2) Z) :
+    (hZ : IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) Z) :
     E.infCyclesSubobject pq = Z :=
   (E.isGLB_infCyclesSubobject pq).unique hZ
 
@@ -122,7 +122,7 @@ noncomputable def infBoundariesSubobject (pq : κ) [E.HasInfBoundariesAt pq] :
 
 /-- `E.infBoundariesSubobject pq` is the least upper bound of the boundary tower at `pq`. -/
 lemma isLUB_infBoundariesSubobject (pq : κ) [E.HasInfBoundariesAt pq] :
-    IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2)
+    IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property)
       (E.infBoundariesSubobject pq) :=
   HasInfBoundariesAt.exists_isLUB.choose_spec
 
@@ -138,7 +138,8 @@ lemma infBoundariesSubobject_le {pq : κ} [E.HasInfBoundariesAt pq]
 
 lemma infBoundariesSubobject_eq_of_isLUB {pq : κ} [E.HasInfBoundariesAt pq]
     {B : Subobject ((E.page r₀).X pq)}
-    (hB : IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2) B) :
+    (hB : IsLUB
+      (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) B) :
     E.infBoundariesSubobject pq = B :=
   (E.isLUB_infBoundariesSubobject pq).unique hB
 
@@ -167,8 +168,8 @@ noncomputable def limitPageIsoCokernel (pq : κ) [E.HasLimitPageAt pq] :
 bottom `B_∞(pq)` and top `Z_∞(pq)`. -/
 noncomputable abbrev limitPagePresentation (pq : κ) [E.HasLimitPageAt pq] :
     TauCeti.SubquotientPresentation ((E.page r₀).X pq) (E.limitPage pq) where
-  bottom := E.infBoundariesSubobject pq
-  top := E.infCyclesSubobject pq
+  B := E.infBoundariesSubobject pq
+  Z := E.infCyclesSubobject pq
   le := E.infBoundariesSubobject_le_infCyclesSubobject pq
   iso := E.limitPageIsoCokernel pq
 
@@ -183,7 +184,7 @@ lower bound. -/
 lemma isGLB_cyclesSubobject_of_eventually_eq {pq : κ} {s : ℤ} (hs : r₀ ≤ s)
     (hconst : ∀ r (hsr : s ≤ r),
       E.cyclesSubobject pq r (hs.trans hsr) = E.cyclesSubobject pq s hs) :
-    IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2)
+    IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property)
       (E.cyclesSubobject pq s hs) := by
   refine ⟨?_, fun W hW ↦ hW ⟨⟨s, hs⟩, rfl⟩⟩
   rintro _ ⟨⟨r, hr⟩, rfl⟩
@@ -196,7 +197,7 @@ upper bound. -/
 lemma isLUB_boundariesSubobject_of_eventually_eq {pq : κ} {s : ℤ} (hs : r₀ ≤ s)
     (hconst : ∀ r (hsr : s ≤ r),
       E.boundariesSubobject pq r (hs.trans hsr) = E.boundariesSubobject pq s hs) :
-    IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2)
+    IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property)
       (E.boundariesSubobject pq s hs) := by
   refine ⟨?_, fun W hW ↦ hW ⟨⟨s, hs⟩, rfl⟩⟩
   rintro _ ⟨⟨r, hr⟩, rfl⟩
@@ -244,18 +245,21 @@ noncomputable def limitPageIsoOfStabilizesAt {pq : κ} {s : ℤ} (h : E.Stabiliz
     [E.HasLimitPageAt pq] :
     E.limitPage pq ≅ (E.page s h.le).X pq :=
   TauCeti.SubquotientPresentation.isoOfEq
-    (p := E.limitPagePresentation pq)
-    (q := E.pagePresentation pq s h.le)
+    (P := E.limitPagePresentation pq)
+    (P' := E.pagePresentation pq s h.le)
     (E.infBoundariesSubobject_eq_of_stabilizesAt h)
     (E.infCyclesSubobject_eq_of_stabilizesAt h)
 
-lemma proj_comp_limitPageIsoOfStabilizesAt_hom {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s)
+/-- Compatibility of `limitPageIsoOfStabilizesAt` with the subquotient presentation
+projections. -/
+@[reassoc]
+lemma π_comp_limitPageIsoOfStabilizesAt_hom {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s)
     [E.HasLimitPageAt pq] :
-    (E.limitPagePresentation pq).proj ≫ (E.limitPageIsoOfStabilizesAt h).hom =
-      (Subobject.isoOfEq (E.infCyclesSubobject pq) (E.cyclesSubobject pq s h.le)
-          (E.infCyclesSubobject_eq_of_stabilizesAt h)).hom ≫
-        (E.pagePresentation pq s h.le).proj :=
-  TauCeti.SubquotientPresentation.proj_comp_isoOfEq_hom _ _
+    (E.limitPagePresentation pq).π ≫ (E.limitPageIsoOfStabilizesAt h).hom =
+      Subobject.ofLE (E.infCyclesSubobject pq) (E.cyclesSubobject pq s h.le)
+          (E.infCyclesSubobject_eq_of_stabilizesAt h).le ≫
+        (E.pagePresentation pq s h.le).π :=
+  TauCeti.SubquotientPresentation.π_isoOfEq_hom _ _ _ _
 
 /-- **Compatibility with stabilization isomorphisms.** Composing `limitPageIsoOfStabilizesAt` at
 page `s` with the stabilization isomorphism `pageXIsoOfStabilizesAt` from `s` to `r ≥ s` yields
@@ -264,14 +268,8 @@ theorem limitPageIsoOfStabilizesAt_trans_pageXIsoOfStabilizesAt {pq : κ} {s r :
     (h : E.StabilizesAt pq s) (hsr : s ≤ r) [E.HasLimitPageAt pq] :
     E.limitPageIsoOfStabilizesAt h ≪≫ E.pageXIsoOfStabilizesAt h r hsr =
       E.limitPageIsoOfStabilizesAt (h.mono hsr) := by
-  ext
-  rw [Iso.trans_hom, ← cancel_epi (E.limitPagePresentation pq).proj, ← Category.assoc,
-    E.proj_comp_limitPageIsoOfStabilizesAt_hom h, Category.assoc,
-    E.proj_comp_pageXIsoOfStabilizesAt_hom h r hsr,
-    E.proj_comp_limitPageIsoOfStabilizesAt_hom (h.mono hsr), ← Category.assoc]
-  congr 1
-  rw [← cancel_mono (E.cyclesSubobject pq r (h.le.trans hsr)).arrow]
-  simp
+  rw [limitPageIsoOfStabilizesAt, pageXIsoOfStabilizesAt_eq_isoOfEq,
+    TauCeti.SubquotientPresentation.isoOfEq_trans, limitPageIsoOfStabilizesAt]
 
 /-- If `(E.page r hr).X pq` is zero for some `r ≥ r₀`, then `E` stabilizes at `pq` from page `r`,
 so `E` has a limit page at `pq` without limit hypotheses on `C`. -/
@@ -285,7 +283,7 @@ limit page exists at `pq`, then `E.limitPage pq` is zero. -/
 theorem isZero_limitPage_of_isZero_page_X (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
     [E.HasLimitPageAt pq] (hzero : IsZero ((E.page r hr).X pq)) :
     IsZero (E.limitPage pq) := by
-  refine (E.limitPagePresentation pq).isZero_iff_bottom_eq_top.2 ?_
+  refine (E.limitPagePresentation pq).isZero_iff_B_eq_Z.2 ?_
   have hBZ : E.boundariesSubobject pq r hr = E.cyclesSubobject pq r hr :=
     (E.isZero_page_X_iff_boundariesSubobject_eq_cyclesSubobject pq r hr).1 hzero
   exact le_antisymm (E.infBoundariesSubobject_le_infCyclesSubobject pq)
@@ -301,28 +299,28 @@ variable (E : SpectralSequence C c r₀)
 /-- If `C` has countable products, every spectral sequence has infinite cycles at every position. -/
 instance hasInfCyclesAt_of_hasCountableProducts [HasCountableProducts C] (pq : κ) :
     E.HasInfCyclesAt pq :=
-  ⟨Subobject.iInfCokernel (fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2),
+  ⟨Subobject.iInfCokernel (fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property),
     Subobject.isGLB_iInfCokernel _⟩
 
 /-- When `C` has countable products, `Z_∞(pq)` is the kernel subobject of the map from
 `(E.page r₀).X pq` to the product of the cokernels of the `Z_r(pq)`. -/
 lemma infCyclesSubobject_eq_iInfCokernel [HasCountableProducts C] (pq : κ) :
     E.infCyclesSubobject pq =
-      Subobject.iInfCokernel (fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2) :=
+      Subobject.iInfCokernel (fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) :=
   E.infCyclesSubobject_eq_of_isGLB (Subobject.isGLB_iInfCokernel _)
 
 /-- If `C` has countable coproducts, every spectral sequence has infinite boundaries at every
 position. -/
 instance hasInfBoundariesAt_of_hasCountableCoproducts [HasCountableCoproducts C] (pq : κ) :
     E.HasInfBoundariesAt pq :=
-  ⟨Subobject.iSupImage (fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2),
+  ⟨Subobject.iSupImage (fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property),
     Subobject.isLUB_iSupImage _⟩
 
 /-- When `C` has countable coproducts, `B_∞(pq)` is the image subobject of the map from the
 coproduct of the `B_r(pq)` into `(E.page r₀).X pq`. -/
 lemma infBoundariesSubobject_eq_iSupImage [HasCountableCoproducts C] (pq : κ) :
     E.infBoundariesSubobject pq =
-      Subobject.iSupImage (fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2) :=
+      Subobject.iSupImage (fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) :=
   E.infBoundariesSubobject_eq_of_isLUB (Subobject.isLUB_iSupImage _)
 
 /-- If `C` has countable products and countable coproducts, every spectral sequence has a limit
@@ -378,13 +376,15 @@ noncomputable def Hom.limitPageMap (f : E ⟶ E') (pq : κ)
   (E.limitPagePresentation pq).map (E'.limitPagePresentation pq) ((f.hom r₀).f pq)
     (f.factors_infBoundariesSubobject pq) (f.factors_infCyclesSubobject pq)
 
-lemma Hom.proj_comp_limitPageMap (f : E ⟶ E') (pq : κ)
+/-- Compatibility of `Hom.limitPageMap` with the subquotient presentation projections. -/
+@[reassoc]
+lemma Hom.π_comp_limitPageMap (f : E ⟶ E') (pq : κ)
     [E.HasLimitPageAt pq] [E'.HasLimitPageAt pq] :
-    (E.limitPagePresentation pq).proj ≫ f.limitPageMap pq =
+    (E.limitPagePresentation pq).π ≫ f.limitPageMap pq =
       (E'.infCyclesSubobject pq).factorThru ((E.infCyclesSubobject pq).arrow ≫ (f.hom r₀).f pq)
           (f.factors_infCyclesSubobject pq) ≫
-        (E'.limitPagePresentation pq).proj :=
-  TauCeti.SubquotientPresentation.proj_comp_map _ _ _ _ _
+        (E'.limitPagePresentation pq).π :=
+  TauCeti.SubquotientPresentation.π_comp_map _ _ _ _ _
 
 @[simp]
 lemma Hom.limitPageMap_id (E : SpectralSequence C c r₀) (pq : κ) [E.HasLimitPageAt pq] :
@@ -406,16 +406,9 @@ theorem Hom.limitPageMap_comp_limitPageIsoOfStabilizesAt_hom (f : E ⟶ E')
     [E.HasLimitPageAt pq] [E'.HasLimitPageAt pq] :
     f.limitPageMap pq ≫ (E'.limitPageIsoOfStabilizesAt h').hom =
       (E.limitPageIsoOfStabilizesAt h).hom ≫ (f.hom s h.le).f pq := by
-  rw [← cancel_epi (E.limitPagePresentation pq).proj, ← Category.assoc,
-    f.proj_comp_limitPageMap pq, Category.assoc,
-    E'.proj_comp_limitPageIsoOfStabilizesAt_hom h',
-    ← Category.assoc (E.limitPagePresentation pq).proj,
-    E.proj_comp_limitPageIsoOfStabilizesAt_hom h, Category.assoc,
-    ← f.pagePresentation_map pq s h.le, TauCeti.SubquotientPresentation.proj_comp_map,
-    ← Category.assoc, ← Category.assoc]
-  congr 1
-  rw [← cancel_mono (E'.cyclesSubobject pq s h'.le).arrow]
-  simp
+  rw [limitPageIsoOfStabilizesAt, limitPageIsoOfStabilizesAt, ← f.pagePresentation_map pq s h.le]
+  exact (TauCeti.SubquotientPresentation.isoOfEq_hom_comp_map _ _ _ _ ((f.hom r₀).f pq)
+    _ _ _ _).symm
 
 /-- The isomorphism `E.limitPage pq ≅ E'.limitPage pq` induced by an isomorphism of spectral
 sequences `e : E ≅ E'`. -/
@@ -438,23 +431,23 @@ lemma limitPageIsoOfIso_inv (e : E ≅ E') (pq : κ) [E.HasLimitPageAt pq] [E'.H
   (rfl)
 
 private lemma range_cyclesSubobject_eq_map_image (e : E ≅ E') (pq : κ) :
-    (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E'.cyclesSubobject pq r.1 r.2) =
+    (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E'.cyclesSubobject pq r.val r.property) =
       (Subobject.mapIsoToOrderIso (pageXIsoOfIso e r₀ le_rfl pq)) ''
-        (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2) := by
+        (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) := by
   ext W
   simp only [Set.mem_range, Set.mem_image, exists_exists_eq_and]
   exact exists_congr fun r ↦ by
-    rw [← map_cyclesSubobject_of_iso e pq r.1 r.2]
+    rw [← map_cyclesSubobject_of_iso e pq r.val r.property]
     rfl
 
 private lemma range_boundariesSubobject_eq_map_image (e : E ≅ E') (pq : κ) :
-    (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E'.boundariesSubobject pq r.1 r.2) =
+    (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E'.boundariesSubobject pq r.val r.property) =
       (Subobject.mapIsoToOrderIso (pageXIsoOfIso e r₀ le_rfl pq)) ''
-        (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2) := by
+        (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) := by
   ext W
   simp only [Set.mem_range, Set.mem_image, exists_exists_eq_and]
   exact exists_congr fun r ↦ by
-    rw [← map_boundariesSubobject_of_iso e pq r.1 r.2]
+    rw [← map_boundariesSubobject_of_iso e pq r.val r.property]
     rfl
 
 /-- Existence of infinite cycles at `pq` is invariant under isomorphisms of spectral sequences. -/
@@ -544,12 +537,13 @@ variable (E : SpectralSequence C c r₀)
 
 private lemma isGLB_cyclesSubobject_tail_iff (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     (Z : Subobject ((E.page r₀).X pq)) :
-    IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2) Z ↔
-      IsGLB (Set.range fun r : {r : ℤ // s ≤ r} ↦ E.cyclesSubobject pq r.1 (hs.trans r.2)) Z := by
+    IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) Z ↔
+      IsGLB (Set.range fun r : {r : ℤ // s ≤ r} ↦
+        E.cyclesSubobject pq r.val (hs.trans r.property)) Z := by
   have hlb :
-      lowerBounds (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.1 r.2) =
+      lowerBounds (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) =
         lowerBounds (Set.range fun r : {r : ℤ // s ≤ r} ↦
-          E.cyclesSubobject pq r.1 (hs.trans r.2)) := by
+          E.cyclesSubobject pq r.val (hs.trans r.property)) := by
     ext W
     constructor
     · rintro hW _ ⟨⟨r, hsr⟩, rfl⟩
@@ -561,13 +555,14 @@ private lemma isGLB_cyclesSubobject_tail_iff (s : ℤ) (hs : r₀ ≤ s) (pq : �
 
 private lemma isLUB_boundariesSubobject_tail_iff (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     (B : Subobject ((E.page r₀).X pq)) :
-    IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2) B ↔
+    IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) B ↔
       IsLUB (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.boundariesSubobject pq r.1 (hs.trans r.2)) B := by
+        E.boundariesSubobject pq r.val (hs.trans r.property)) B := by
   have hub :
-      upperBounds (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.1 r.2) =
+      upperBounds
+          (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) =
         upperBounds (Set.range fun r : {r : ℤ // s ≤ r} ↦
-          E.boundariesSubobject pq r.1 (hs.trans r.2)) := by
+          E.boundariesSubobject pq r.val (hs.trans r.property)) := by
     ext W
     constructor
     · rintro hW _ ⟨⟨r, hsr⟩, rfl⟩
@@ -577,58 +572,63 @@ private lemma isLUB_boundariesSubobject_tail_iff (s : ℤ) (hs : r₀ ≤ s) (pq
         (hW ⟨⟨max r s, le_max_right r s⟩, rfl⟩)
   simp only [IsLUB, hub]
 
-private lemma range_cyclesSubobject_tail_eq_lift_image (s : ℤ) (hs : r₀ ≤ s) (pq : κ) :
-    (Set.range fun r : {r : ℤ // s ≤ r} ↦ E.cyclesSubobject pq r.1 (hs.trans r.2)) =
-      (E.pagePresentation pq s hs).lift ''
-        (Set.range fun r : {r : ℤ // s ≤ r} ↦ (E.fromPage s hs).cyclesSubobject pq r.1 r.2) := by
-  ext W
-  simp only [Set.mem_range, Set.mem_image, exists_exists_eq_and]
-  exact exists_congr fun r ↦ by
-    rw [E.cyclesSubobject_eq_lift_fromPage s hs pq r.1 r.2]
-
-private lemma range_boundariesSubobject_tail_eq_lift_image (s : ℤ) (hs : r₀ ≤ s) (pq : κ) :
-    (Set.range fun r : {r : ℤ // s ≤ r} ↦ E.boundariesSubobject pq r.1 (hs.trans r.2)) =
-      (E.pagePresentation pq s hs).lift ''
+private lemma range_cyclesSubobject_tail_eq_preimage_image (s : ℤ) (hs : r₀ ≤ s) (pq : κ) :
+    (Set.range fun r : {r : ℤ // s ≤ r} ↦ E.cyclesSubobject pq r.val (hs.trans r.property)) =
+      (E.pagePresentation pq s hs).preimage ''
         (Set.range fun r : {r : ℤ // s ≤ r} ↦
-          (E.fromPage s hs).boundariesSubobject pq r.1 r.2) := by
+          (E.fromPage s hs).cyclesSubobject pq r.val r.property) := by
   ext W
   simp only [Set.mem_range, Set.mem_image, exists_exists_eq_and]
   exact exists_congr fun r ↦ by
-    rw [E.boundariesSubobject_eq_lift_fromPage s hs pq r.1 r.2]
+    rw [E.cyclesSubobject_eq_preimage_fromPage s hs pq r.val r.property]
+
+private lemma range_boundariesSubobject_tail_eq_preimage_image (s : ℤ) (hs : r₀ ≤ s) (pq : κ) :
+    (Set.range fun r : {r : ℤ // s ≤ r} ↦ E.boundariesSubobject pq r.val (hs.trans r.property)) =
+      (E.pagePresentation pq s hs).preimage ''
+        (Set.range fun r : {r : ℤ // s ≤ r} ↦
+          (E.fromPage s hs).boundariesSubobject pq r.val r.property) := by
+  ext W
+  simp only [Set.mem_range, Set.mem_image, exists_exists_eq_and]
+  exact exists_congr fun r ↦ by
+    rw [E.boundariesSubobject_eq_preimage_fromPage s hs pq r.val r.property]
 
 /-- Existence of infinite cycles at `pq` is unaffected by rebasing to page `s ≥ r₀`. -/
 theorem hasInfCyclesAt_fromPage_iff (s : ℤ) (hs : r₀ ≤ s) (pq : κ) :
     (E.fromPage s hs).HasInfCyclesAt pq ↔ E.HasInfCyclesAt pq := by
   have hne : (Set.range fun r : {r : ℤ // s ≤ r} ↦
-      (E.fromPage s hs).cyclesSubobject pq r.1 r.2).Nonempty := ⟨_, ⟨⟨s, le_rfl⟩, rfl⟩⟩
+      (E.fromPage s hs).cyclesSubobject pq r.val r.property).Nonempty := ⟨_, ⟨⟨s, le_rfl⟩, rfl⟩⟩
   constructor
   · rintro ⟨Z, hZ⟩
-    refine ⟨(E.pagePresentation pq s hs).lift Z, ?_⟩
+    refine ⟨(E.pagePresentation pq s hs).preimage Z, ?_⟩
     rw [E.isGLB_cyclesSubobject_tail_iff s hs pq,
-      E.range_cyclesSubobject_tail_eq_lift_image s hs pq]
-    exact ((E.pagePresentation pq s hs).isGLB_lift_image_iff hne).2 hZ
+      E.range_cyclesSubobject_tail_eq_preimage_image s hs pq]
+    exact ((E.pagePresentation pq s hs).isGLB_preimage_iff hne).2 hZ
   · rintro ⟨W, hW⟩
     rw [E.isGLB_cyclesSubobject_tail_iff s hs pq,
-      E.range_cyclesSubobject_tail_eq_lift_image s hs pq] at hW
-    exact ⟨(E.pagePresentation pq s hs).desc W,
-      ((E.pagePresentation pq s hs).isGLB_desc_of_isGLB_lift_image hne hW).1⟩
+      E.range_cyclesSubobject_tail_eq_preimage_image s hs pq] at hW
+    have himg := (E.pagePresentation pq s hs).preimage_image_of_isGLB hne hW
+    refine ⟨(E.pagePresentation pq s hs).image W,
+      ((E.pagePresentation pq s hs).isGLB_preimage_iff hne).1 ?_⟩
+    simpa only [himg] using hW
 
 /-- Existence of infinite boundaries at `pq` is unaffected by rebasing to page `s ≥ r₀`. -/
 theorem hasInfBoundariesAt_fromPage_iff (s : ℤ) (hs : r₀ ≤ s) (pq : κ) :
     (E.fromPage s hs).HasInfBoundariesAt pq ↔ E.HasInfBoundariesAt pq := by
   have hne : (Set.range fun r : {r : ℤ // s ≤ r} ↦
-      (E.fromPage s hs).boundariesSubobject pq r.1 r.2).Nonempty := ⟨_, ⟨⟨s, le_rfl⟩, rfl⟩⟩
+      (E.fromPage s hs).boundariesSubobject pq r.val r.property).Nonempty := ⟨_, ⟨⟨s, le_rfl⟩, rfl⟩⟩
   constructor
   · rintro ⟨B, hB⟩
-    refine ⟨(E.pagePresentation pq s hs).lift B, ?_⟩
+    refine ⟨(E.pagePresentation pq s hs).preimage B, ?_⟩
     rw [E.isLUB_boundariesSubobject_tail_iff s hs pq,
-      E.range_boundariesSubobject_tail_eq_lift_image s hs pq]
-    exact ((E.pagePresentation pq s hs).isLUB_lift_image_iff hne).2 hB
+      E.range_boundariesSubobject_tail_eq_preimage_image s hs pq]
+    exact ((E.pagePresentation pq s hs).isLUB_preimage_iff hne).2 hB
   · rintro ⟨W, hW⟩
     rw [E.isLUB_boundariesSubobject_tail_iff s hs pq,
-      E.range_boundariesSubobject_tail_eq_lift_image s hs pq] at hW
-    exact ⟨(E.pagePresentation pq s hs).desc W,
-      ((E.pagePresentation pq s hs).isLUB_desc_of_isLUB_lift_image hne hW).1⟩
+      E.range_boundariesSubobject_tail_eq_preimage_image s hs pq] at hW
+    have himg := (E.pagePresentation pq s hs).preimage_image_of_isLUB hne hW
+    refine ⟨(E.pagePresentation pq s hs).image W,
+      ((E.pagePresentation pq s hs).isLUB_preimage_iff hne).1 ?_⟩
+    simpa only [himg] using hW
 
 /-- Existence of a limit page at `pq` is unaffected by rebasing to page `s ≥ r₀`. -/
 theorem hasLimitPageAt_fromPage_iff (s : ℤ) (hs : r₀ ≤ s) (pq : κ) :
@@ -642,31 +642,32 @@ theorem hasLimitPageAt_fromPage_iff (s : ℤ) (hs : r₀ ≤ s) (pq : κ) :
       toHasInfBoundariesAt := (E.hasInfBoundariesAt_fromPage_iff s hs pq).2 inferInstance
     }⟩
 
-/-- **Rebasing infinite cycles.** For `s ≥ r₀`, `Z_∞(pq)` of `E` is the lift along the page-`s`
+/-- **Rebasing infinite cycles.** For `s ≥ r₀`, `Z_∞(pq)` of `E` is the preimage along the page-`s`
 presentation of `Z_∞(pq)` of `E.fromPage s hs`. -/
-lemma infCyclesSubobject_eq_lift_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
+lemma infCyclesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     [E.HasInfCyclesAt pq] [(E.fromPage s hs).HasInfCyclesAt pq] :
     E.infCyclesSubobject pq =
-      (E.pagePresentation pq s hs).lift ((E.fromPage s hs).infCyclesSubobject pq) := by
+      (E.pagePresentation pq s hs).preimage ((E.fromPage s hs).infCyclesSubobject pq) := by
   have hne : (Set.range fun r : {r : ℤ // s ≤ r} ↦
-      (E.fromPage s hs).cyclesSubobject pq r.1 r.2).Nonempty := ⟨_, ⟨⟨s, le_rfl⟩, rfl⟩⟩
+      (E.fromPage s hs).cyclesSubobject pq r.val r.property).Nonempty := ⟨_, ⟨⟨s, le_rfl⟩, rfl⟩⟩
   refine E.infCyclesSubobject_eq_of_isGLB ?_
-  rw [E.isGLB_cyclesSubobject_tail_iff s hs pq, E.range_cyclesSubobject_tail_eq_lift_image s hs pq]
-  exact ((E.pagePresentation pq s hs).isGLB_lift_image_iff hne).2
+  rw [E.isGLB_cyclesSubobject_tail_iff s hs pq,
+    E.range_cyclesSubobject_tail_eq_preimage_image s hs pq]
+  exact ((E.pagePresentation pq s hs).isGLB_preimage_iff hne).2
     ((E.fromPage s hs).isGLB_infCyclesSubobject pq)
 
-/-- **Rebasing infinite boundaries.** For `s ≥ r₀`, `B_∞(pq)` of `E` is the lift along the page-`s`
-presentation of `B_∞(pq)` of `E.fromPage s hs`. -/
-lemma infBoundariesSubobject_eq_lift_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
+/-- **Rebasing infinite boundaries.** For `s ≥ r₀`, `B_∞(pq)` of `E` is the preimage along the
+page-`s` presentation of `B_∞(pq)` of `E.fromPage s hs`. -/
+lemma infBoundariesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     [E.HasInfBoundariesAt pq] [(E.fromPage s hs).HasInfBoundariesAt pq] :
     E.infBoundariesSubobject pq =
-      (E.pagePresentation pq s hs).lift ((E.fromPage s hs).infBoundariesSubobject pq) := by
+      (E.pagePresentation pq s hs).preimage ((E.fromPage s hs).infBoundariesSubobject pq) := by
   have hne : (Set.range fun r : {r : ℤ // s ≤ r} ↦
-      (E.fromPage s hs).boundariesSubobject pq r.1 r.2).Nonempty := ⟨_, ⟨⟨s, le_rfl⟩, rfl⟩⟩
+      (E.fromPage s hs).boundariesSubobject pq r.val r.property).Nonempty := ⟨_, ⟨⟨s, le_rfl⟩, rfl⟩⟩
   refine E.infBoundariesSubobject_eq_of_isLUB ?_
   rw [E.isLUB_boundariesSubobject_tail_iff s hs pq,
-    E.range_boundariesSubobject_tail_eq_lift_image s hs pq]
-  exact ((E.pagePresentation pq s hs).isLUB_lift_image_iff hne).2
+    E.range_boundariesSubobject_tail_eq_preimage_image s hs pq]
+  exact ((E.pagePresentation pq s hs).isLUB_preimage_iff hne).2
     ((E.fromPage s hs).isLUB_infBoundariesSubobject pq)
 
 /-- **Rebasing isomorphism for the limit page.** Computing the limit page of `E` from the towers
@@ -675,21 +676,23 @@ noncomputable def limitPageFromPageIso (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     [E.HasLimitPageAt pq] [(E.fromPage s hs).HasLimitPageAt pq] :
     (E.fromPage s hs).limitPage pq ≅ E.limitPage pq :=
   TauCeti.SubquotientPresentation.isoOfEq
-    (p := (E.pagePresentation pq s hs).comp ((E.fromPage s hs).limitPagePresentation pq))
-    (q := E.limitPagePresentation pq)
-    (E.infBoundariesSubobject_eq_lift_fromPage s hs pq).symm
-    (E.infCyclesSubobject_eq_lift_fromPage s hs pq).symm
+    (P := (E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq))
+    (P' := E.limitPagePresentation pq)
+    (E.infBoundariesSubobject_eq_preimage_fromPage s hs pq).symm
+    (E.infCyclesSubobject_eq_preimage_fromPage s hs pq).symm
 
-lemma proj_comp_limitPageFromPageIso_hom (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
+/-- Compatibility of `limitPageFromPageIso` with the subquotient presentation projections. -/
+@[reassoc]
+lemma π_comp_limitPageFromPageIso_hom (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     [E.HasLimitPageAt pq] [(E.fromPage s hs).HasLimitPageAt pq] :
-    ((E.pagePresentation pq s hs).comp ((E.fromPage s hs).limitPagePresentation pq)).proj ≫
+    ((E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq)).π ≫
         (E.limitPageFromPageIso s hs pq).hom =
-      (Subobject.isoOfEq
-          ((E.pagePresentation pq s hs).lift ((E.fromPage s hs).infCyclesSubobject pq))
+      Subobject.ofLE
+          ((E.pagePresentation pq s hs).preimage ((E.fromPage s hs).infCyclesSubobject pq))
           (E.infCyclesSubobject pq)
-          (E.infCyclesSubobject_eq_lift_fromPage s hs pq).symm).hom ≫
-        (E.limitPagePresentation pq).proj :=
-  TauCeti.SubquotientPresentation.proj_comp_isoOfEq_hom _ _
+          (E.infCyclesSubobject_eq_preimage_fromPage s hs pq).symm.le ≫
+        (E.limitPagePresentation pq).π :=
+  TauCeti.SubquotientPresentation.π_isoOfEq_hom _ _ _ _
 
 /-- **Naturality of the rebasing isomorphism.** A morphism `f : E ⟶ E'` of spectral sequences
 commutes with `limitPageFromPageIso`. -/
@@ -703,41 +706,35 @@ theorem limitPageFromPageIso_hom_naturality {E E' : SpectralSequence C c r₀} (
   let p' := E'.pagePresentation pq s hs
   let q := (E.fromPage s hs).limitPagePresentation pq
   let q' := (E'.fromPage s hs).limitPagePresentation pq
-  have hBq : q'.bottom.Factors (q.bottom.arrow ≫
+  have hBq : q'.B.Factors (q.B.arrow ≫
       p.map p' ((f.hom r₀).f pq)
         (f.factors_boundariesSubobject pq s hs) (f.factors_cyclesSubobject pq s hs)) := by
     rw [f.pagePresentation_map pq s hs]
     exact (f.fromPageMap s hs).factors_infBoundariesSubobject pq
-  have hZq : q'.top.Factors (q.top.arrow ≫
+  have hZq : q'.Z.Factors (q.Z.arrow ≫
       p.map p' ((f.hom r₀).f pq)
         (f.factors_boundariesSubobject pq s hs) (f.factors_cyclesSubobject pq s hs)) := by
     rw [f.pagePresentation_map pq s hs]
     exact (f.fromPageMap s hs).factors_infCyclesSubobject pq
-  have hmap : (p.comp q).map (p'.comp q') ((f.hom r₀).f pq)
-      (p.factors_lift_of_factors_map p' ((f.hom r₀).f pq)
+  have hmap : (p.trans q).map (p'.trans q') ((f.hom r₀).f pq)
+      (p.factors_preimage_of_factors_map p' ((f.hom r₀).f pq)
         (f.factors_boundariesSubobject pq s hs) (f.factors_cyclesSubobject pq s hs) hBq)
-      (p.factors_lift_of_factors_map p' ((f.hom r₀).f pq)
+      (p.factors_preimage_of_factors_map p' ((f.hom r₀).f pq)
         (f.factors_boundariesSubobject pq s hs) (f.factors_cyclesSubobject pq s hs) hZq) =
       (f.fromPageMap s hs).limitPageMap pq := by
-    rw [TauCeti.SubquotientPresentation.comp_map p p' q q' ((f.hom r₀).f pq)
+    rw [TauCeti.SubquotientPresentation.trans_map p p' q q' ((f.hom r₀).f pq)
       (f.factors_boundariesSubobject pq s hs) (f.factors_cyclesSubobject pq s hs) hBq hZq]
     have h1 : ∀ (g : (E.page s hs).X pq ⟶ (E'.page s hs).X pq)
         (_ : g = ((f.fromPageMap s hs).hom s le_rfl).f pq)
-        (hB : q'.bottom.Factors (q.bottom.arrow ≫ g))
-        (hZ : q'.top.Factors (q.top.arrow ≫ g)),
+        (hB : q'.B.Factors (q.B.arrow ≫ g))
+        (hZ : q'.Z.Factors (q.Z.arrow ≫ g)),
         q.map q' g hB hZ = (f.fromPageMap s hs).limitPageMap pq := by
       rintro _ rfl _ _
       rfl
     exact h1 _ (f.pagePresentation_map pq s hs) _ _
-  rw [← cancel_epi (p.comp q).proj, ← Category.assoc, ← hmap,
-    TauCeti.SubquotientPresentation.proj_comp_map, Category.assoc,
-    E'.proj_comp_limitPageFromPageIso_hom s hs pq,
-    ← Category.assoc (p.comp q).proj,
-    E.proj_comp_limitPageFromPageIso_hom s hs pq, Category.assoc,
-    f.proj_comp_limitPageMap pq, ← Category.assoc, ← Category.assoc]
-  congr 1
-  rw [← cancel_mono (E'.infCyclesSubobject pq).arrow]
-  simp [p, p', q, q']
+  rw [limitPageFromPageIso, limitPageFromPageIso, ← hmap]
+  exact (TauCeti.SubquotientPresentation.isoOfEq_hom_comp_map _ _ _ _ ((f.hom r₀).f pq)
+    _ _ _ _).symm
 
 end Rebasing
 

@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.Topology.MetricSpace.Thickening
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Connectedness of punctured balls
+# Connectedness of punctured balls and thickenings
 
 In an affine space over a real seminormed space of dimension greater than one, removing a countable
 set from an open ball of positive radius leaves a path-connected set; in particular so does
@@ -20,6 +22,10 @@ the local input for showing that removing a discrete set from a connected manifo
 greater than one keeps it connected: through a partial homeomorphism to the affine space, every
 point of its source has arbitrarily small neighbourhoods whose punctured versions are connected.
 
+In any real seminormed space, the `δ`-thickening of a preconnected set is again preconnected
+(`IsPreconnected.thickening`), because `thickening δ s = s + ball 0 δ` is the continuous sum image
+of the product of two preconnected sets.
+
 ## Main declarations
 
 * `Set.Countable.isPathConnected_ball_sdiff`: an open ball with a countable set removed is path
@@ -29,11 +35,14 @@ point of its source has arbitrarily small neighbourhoods whose punctured version
 * `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source`: every point in the
   source of a partial homeomorphism to the affine space has arbitrarily small neighbourhoods whose
   punctured versions are connected.
+* `IsPreconnected.thickening`: the `δ`-thickening of a preconnected set in a real seminormed space
+  is preconnected.
 -/
 
 public section
 
 open Metric Set Topology
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -66,6 +75,12 @@ positive radius with its centre removed is connected. -/
 theorem isConnected_ball_sdiff_singleton (h : 1 < Module.rank ℝ E) (x : P) {r : ℝ}
     (hr : 0 < r) : IsConnected (ball x r \ {x}) :=
   (isPathConnected_ball_sdiff_singleton h x hr).isConnected
+
+/-- The `δ`-thickening of a preconnected set in a real seminormed space is preconnected. -/
+theorem _root_.IsPreconnected.thickening {s : Set E} (hs : IsPreconnected s) (δ : ℝ) :
+    IsPreconnected (thickening δ s) := by
+  rw [← add_ball_zero, ← image2_add, ← image_uncurry_prod]
+  exact (hs.prod (convex_ball (0 : E) δ).isPreconnected).image _ continuous_add.continuousOn
 
 variable {X : Type*} [TopologicalSpace X]
 

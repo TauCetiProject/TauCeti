@@ -102,6 +102,23 @@ theorem isLUB_iSupImage : IsLUB (Set.range P) (iSupImage P) := by
 
 end Join
 
+section PullbackExists
+
+variable {Y : C}
+
+lemma le_pullback_iff [HasPullbacks C] (f : X ⟶ Y) (X' : Subobject X) (Y' : Subobject Y) :
+    X' ≤ (pullback f).obj Y' ↔ Y'.Factors (X'.arrow ≫ f) := by
+  refine ⟨fun h ↦ (pullback_factors_iff f Y' X'.arrow).mp
+    (factors_of_le X'.arrow h (factors_self X')), fun h ↦ ?_⟩
+  exact le_pullback_of_comm f (Y'.factorThru (X'.arrow ≫ f) h) (Y'.factorThru_arrow _ h)
+
+lemma exists_le_iff [HasPullbacks C] [HasImages C] (f : X ⟶ Y) (X' : Subobject X)
+    (Y' : Subobject Y) :
+    («exists» f).obj X' ≤ Y' ↔ Y'.Factors (X'.arrow ≫ f) :=
+  ((existsPullbackAdj f).gc X' Y').trans (le_pullback_iff f X' Y')
+
+end PullbackExists
+
 end CategoryTheory.Subobject
 
 namespace CategoryTheory.Limits

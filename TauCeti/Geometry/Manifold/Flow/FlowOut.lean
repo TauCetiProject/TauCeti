@@ -125,14 +125,10 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
     rw [Manifold.tangentSpaceProdEquiv_symm_apply] at hL
     have h0 : a • v (ι p.2) + mfderiv J I ι p.2 w = 0 :=
       hψinj (hL.symm.trans (hx.trans (map_zero _).symm))
-    obtain rfl : a = 0 := by
-      by_contra ha
-      refine isTransverseAlong_iff.1 htr p.2 (LinearMap.mem_range.2
-        ⟨-a⁻¹ • w, ((mfderiv J I ι p.2).map_smul _ _).trans ?_⟩)
-      rw [eq_neg_of_add_eq_zero_right h0, smul_neg, smul_smul, neg_mul, inv_mul_cancel₀ ha,
-        neg_smul, one_smul, neg_neg]
-    rw [zero_smul, zero_add] at h0
-    exact Prod.ext rfl ((himm p.2) (h0.trans (map_zero _).symm))
+    refine htr.injective_smul_add (himm p.2) (h0.trans ?_)
+    -- The zero tangent vector at `p` is the zero of `ℝ × E'`.
+    change 0 = (0 : ℝ) • v (ι p.2) + mfderiv J I ι p.2 0
+    rw [zero_smul, map_zero, add_zero]
   -- Source and target have the same dimension, so the differential is invertible.
   have hfin : finrank ℝ (TangentSpace (𝓘(ℝ).prod J) p) =
       finrank ℝ (TangentSpace I (ψ p.1 (ι p.2))) := by

@@ -11,10 +11,12 @@ public import Mathlib.Algebra.Homology.QuasiIso
 # Complexes with zero differentials
 
 A family of objects `E i` forms a homological complex `HomologicalComplex.graded c E` with zero
-differentials. It has homology in every degree, and each of its terms consists of cycles
+differentials, functorial in degreewise families of morphisms via `HomologicalComplex.gradedMap`. It
+has homology in every degree, and each of its terms consists of cycles
 (Mathlib's `HomologicalComplex.iCyclesIso`). Hence a family of morphisms `e i : E i ⟶ K.cycles i`
-into the cycles of a complex `K` defines a morphism of complexes `K.fromGraded e`, which induces
-`e i` on cycles (`HomologicalComplex.iCyclesIso_inv_cyclesMap_fromGraded`). It is surjective on
+into the cycles of a complex `K` defines a morphism of complexes `K.fromGraded e` (natural in both
+arguments via `HomologicalComplex.gradedMap_fromGraded`), which induces `e i` on cycles
+(`HomologicalComplex.iCyclesIso_inv_cyclesMap_fromGraded`). It is surjective on
 homology when every `e i` is an epimorphism (`HomologicalComplex.epi_homologyMap_fromGraded`), and
 a quasi-isomorphism when every `e i ≫ K.homologyπ i` is an isomorphism
 (`HomologicalComplex.quasiIso_fromGraded`). Such morphisms are the first step in the
@@ -45,6 +47,32 @@ variable {C ι : Type*} [Category* C] [HasZeroMorphisms C] (c : ComplexShape ι)
 abbrev graded (E : ι → C) : HomologicalComplex C c where
   X := E
   d _ _ := 0
+
+/-- The morphism between complexes with zero differentials induced degreewise by a family of
+morphisms. -/
+def gradedMap {E₁ E₂ : ι → C} (α : ∀ i, E₁ i ⟶ E₂ i) :
+    graded c E₁ ⟶ graded c E₂ where
+  f := α
+  comm' _ _ _ := by simp
+
+@[simp]
+lemma gradedMap_f {E₁ E₂ : ι → C} (α : ∀ i, E₁ i ⟶ E₂ i) (i : ι) :
+    (gradedMap c α).f i = α i := by
+  rfl
+
+/-- Applying `gradedMap c` to identity morphisms gives the identity morphism of `graded c E`. -/
+@[simp]
+lemma gradedMap_id (E : ι → C) :
+    gradedMap c (fun i ↦ 𝟙 (E i)) = 𝟙 (graded c E) := by
+  ext
+  simp
+
+/-- `gradedMap c` commutes with degreewise composition of morphisms. -/
+@[reassoc (attr := simp)]
+lemma gradedMap_comp {E₁ E₂ E₃ : ι → C} (α : ∀ i, E₁ i ⟶ E₂ i) (β : ∀ i, E₂ i ⟶ E₃ i) :
+    gradedMap c α ≫ gradedMap c β = gradedMap c fun i ↦ α i ≫ β i := by
+  ext
+  simp
 
 /-- A complex with zero differentials has homology in every degree. -/
 instance hasHomology_graded (E : ι → C) (i : ι) : (graded c E).HasHomology i :=
@@ -126,6 +154,8 @@ lemma isIso_of_quasiIso_of_d_eq_zero {K L : HomologicalComplex C c} (f : K ⟶ L
     infer_instance
   exact Hom.isIso_of_components f
 
+section
+
 variable (K : HomologicalComplex C c) [∀ i, K.HasHomology i] {E : ι → C}
   (e : ∀ i, E i ⟶ K.cycles i)
 
@@ -165,5 +195,19 @@ lemma quasiIso_fromGraded (he : ∀ i, IsIso (e i ≫ K.homologyπ i)) :
       exact he i
     exact IsIso.of_isIso_comp_left (((graded c E).iCyclesIso i (c.next i) rfl rfl).inv ≫
       (graded c E).homologyπ i) _
+
+end
+
+/-- Compatibility of `gradedMap` and `fromGraded`: if `α i ≫ e₂ i = e₁ i ≫ cyclesMap g i` in every
+degree `i`, then `gradedMap c α ≫ L.fromGraded e₂ = K.fromGraded e₁ ≫ g`. -/
+@[reassoc]
+lemma gradedMap_fromGraded {K L : HomologicalComplex C c}
+    [∀ i, K.HasHomology i] [∀ i, L.HasHomology i]
+    {E₁ E₂ : ι → C} (α : ∀ i, E₁ i ⟶ E₂ i)
+    (e₁ : ∀ i, E₁ i ⟶ K.cycles i) (e₂ : ∀ i, E₂ i ⟶ L.cycles i) (g : K ⟶ L)
+    (h : ∀ i, α i ≫ e₂ i = e₁ i ≫ cyclesMap g i) :
+    gradedMap c α ≫ L.fromGraded e₂ = K.fromGraded e₁ ≫ g := by
+  ext i
+  simp only [comp_f, gradedMap_f, reassoc_of% (h i), cyclesMap_i, Category.assoc]
 
 end HomologicalComplex

@@ -132,7 +132,7 @@ theorem exists_finset_eq_zero_of_coe_eq_zero {X R M : Type*} [TopologicalSpace X
     [Module.Finite R P] :
     ∃ S : Finset X, ∀ f ∈ P, (∀ x ∈ S, f x = 0) → f = 0 := by
   let ev (x : X) : P →ₗ[R] M :=
-    { toFun p := p.1 x
+    { toFun p := p.val x
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
   obtain ⟨S, hS⟩ := TauCeti.exists_finset_eq_zero_of_forall_apply_eq_zero ev

@@ -210,22 +210,21 @@ between the page-`r` and page-`(r + 1)` subquotient presentations. -/
 lemma pageXStepIso_eq_isoOfEq (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
     (hdTo : (E.page r hr).dTo pq = 0) (hdFrom : (E.page r hr).dFrom pq = 0) :
     E.pageXStepIso pq r hr hdTo hdFrom =
-      TauCeti.SubquotientPresentation.isoOfEq
-        (p := E.pagePresentation pq r hr)
-        (q := E.pagePresentation pq (r + 1) (Int.le_add_one hr))
+      (E.pagePresentation pq r hr).isoOfEq
+        (E.pagePresentation pq (r + 1) (Int.le_add_one hr))
         ((E.boundariesSubobject_add_one_eq_iff pq r hr).2 hdTo).symm
         ((E.cyclesSubobject_add_one_eq_iff pq r hr).2 hdFrom).symm := by
   have hZ : E.cyclesSubobject pq r hr = E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) :=
     ((E.cyclesSubobject_add_one_eq_iff pq r hr).2 hdFrom).symm
   ext
-  rw [← cancel_epi (E.pagePresentation pq r hr).proj,
-    TauCeti.SubquotientPresentation.proj_comp_isoOfEq_hom, E.pagePresentation_add_one_proj pq r hr]
+  rw [← cancel_epi (E.pagePresentation pq r hr).π,
+    TauCeti.SubquotientPresentation.π_isoOfEq_hom, E.pagePresentation_add_one_π pq r hr]
   let p := E.pagePresentation pq r hr
   let sc := (E.page r hr).sc pq
-  have hsc_proj : sc.homologyPresentation.proj =
+  have hsc_π : sc.homologyPresentation.π =
       (kernelSubobject ((E.page r hr).dFrom pq)).arrow ≫
         ((E.page r hr).XIsoHomologyOfDEqZero pq hdTo hdFrom).hom := by
-    rw [ShortComplex.homologyPresentation_proj, HomologicalComplex.XIsoHomologyOfDEqZero_hom]
+    rw [ShortComplex.homologyPresentation_π, HomologicalComplex.XIsoHomologyOfDEqZero_hom]
     have hcyc : (kernelSubobject ((E.page r hr).dFrom pq)).arrow ≫
           ((E.page r hr).iCyclesIso pq _ rfl hdFrom).inv =
         (kernelSubobjectIso ((E.page r hr).dFrom pq)).hom ≫ sc.cyclesIsoKernel.inv := by
@@ -235,26 +234,16 @@ lemma pageXStepIso_eq_isoOfEq (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
       simp [sc]
     rw [reassoc_of% hcyc]
     rfl
-  have hlift : (Subobject.isoOfEq (E.cyclesSubobject pq r hr)
-        (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr)) hZ).hom ≫
-      (Subobject.isoOfEq (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr))
-        (p.lift (kernelSubobject ((E.page r hr).dFrom pq)))
-        (E.cyclesSubobject_add_one pq r hr)).hom ≫
-      p.liftProj (kernelSubobject ((E.page r hr).dFrom pq)) ≫
-      (kernelSubobject ((E.page r hr).dFrom pq)).arrow = p.proj := by
-    rw [p.liftProj_comp_arrow]
-    have hofLE : (Subobject.isoOfEq (E.cyclesSubobject pq r hr)
-          (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr)) hZ).hom ≫
-        (Subobject.isoOfEq (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr))
-          (p.lift (kernelSubobject ((E.page r hr).dFrom pq)))
-          (E.cyclesSubobject_add_one pq r hr)).hom ≫
-        Subobject.ofLE (p.lift (kernelSubobject ((E.page r hr).dFrom pq))) p.top
-          (p.lift_le_top _) = 𝟙 _ := by
-      rw [← cancel_mono p.top.arrow]
-      simp [p]
-    rw [← Category.assoc, ← Category.assoc, Category.assoc _ _ (Subobject.ofLE _ _ _),
-      hofLE, Category.id_comp]
-  rw [hsc_proj, pageXStepIso, Iso.trans_hom]
+  have hlift : Subobject.ofLE (E.cyclesSubobject pq r hr)
+        (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr)) hZ.le ≫
+      Subobject.ofLE (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr))
+        (p.preimage (kernelSubobject ((E.page r hr).dFrom pq)))
+        (E.cyclesSubobject_add_one pq r hr).le ≫
+      p.preimageπ (kernelSubobject ((E.page r hr).dFrom pq)) ≫
+      (kernelSubobject ((E.page r hr).dFrom pq)).arrow = p.π := by
+    rw [p.preimageπ_arrow, Subobject.ofLE_comp_ofLE_assoc, Subobject.ofLE_comp_ofLE_assoc,
+      Subobject.ofLE_refl, Category.id_comp]
+  rw [hsc_π, pageXStepIso, Iso.trans_hom]
   simp only [Category.assoc]
   rw [reassoc_of% hlift]
 
@@ -288,52 +277,37 @@ isomorphism `SubquotientPresentation.isoOfEq` between the page-`s` and page-`r` 
 theorem pageXIsoOfStabilizesAt_eq_isoOfEq {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s)
     (r : ℤ) (hsr : s ≤ r) :
     E.pageXIsoOfStabilizesAt h r hsr =
-      TauCeti.SubquotientPresentation.isoOfEq
-        (p := E.pagePresentation pq s h.le)
-        (q := E.pagePresentation pq r (h.le.trans hsr))
+      (E.pagePresentation pq s h.le).isoOfEq
+        (E.pagePresentation pq r (h.le.trans hsr))
         (h.boundariesSubobject_eq r hsr).symm
         (h.cyclesSubobject_eq r hsr).symm := by
   induction r, hsr using Int.leInduction with
   | base =>
     ext
-    rw [pageXIsoOfStabilizesAt_self, ← cancel_epi (E.pagePresentation pq s h.le).proj,
-      TauCeti.SubquotientPresentation.proj_comp_isoOfEq_hom]
-    simp
+    rw [pageXIsoOfStabilizesAt_self, ← cancel_epi (E.pagePresentation pq s h.le).π,
+      TauCeti.SubquotientPresentation.π_isoOfEq_hom, Subobject.ofLE_refl, Category.id_comp,
+      Iso.refl_hom, Category.comp_id]
   | succ r hsr ih =>
-    ext
-    rw [E.pageXIsoOfStabilizesAt_add_one h r hsr, Iso.trans_hom, ih,
+    rw [E.pageXIsoOfStabilizesAt_add_one h r hsr, ih,
       E.pageXStepIso_eq_isoOfEq pq r (h.le.trans hsr) (h.dTo_eq_zero r hsr) (h.dFrom_eq_zero r hsr),
-      ← cancel_epi (E.pagePresentation pq s h.le).proj,
-      TauCeti.SubquotientPresentation.proj_comp_isoOfEq_hom_assoc,
-      TauCeti.SubquotientPresentation.proj_comp_isoOfEq_hom,
-      TauCeti.SubquotientPresentation.proj_comp_isoOfEq_hom, ← Category.assoc]
-    congr 1
-    rw [← cancel_mono (E.cyclesSubobject pq (r + 1) (Int.le_add_one (h.le.trans hsr))).arrow]
-    simp
+      TauCeti.SubquotientPresentation.isoOfEq_trans]
 
 /-- Compatibility of `pageXIsoOfStabilizesAt` with the subquotient presentation projections. -/
-lemma proj_comp_pageXIsoOfStabilizesAt_hom {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s)
+@[reassoc]
+lemma π_comp_pageXIsoOfStabilizesAt_hom {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s)
     (r : ℤ) (hsr : s ≤ r) :
-    (E.pagePresentation pq s h.le).proj ≫ (E.pageXIsoOfStabilizesAt h r hsr).hom =
-      (Subobject.isoOfEq (E.cyclesSubobject pq s h.le) (E.cyclesSubobject pq r (h.le.trans hsr))
-          (h.cyclesSubobject_eq r hsr).symm).hom ≫
-        (E.pagePresentation pq r (h.le.trans hsr)).proj := by
-  rw [pageXIsoOfStabilizesAt_eq_isoOfEq]
-  exact TauCeti.SubquotientPresentation.proj_comp_isoOfEq_hom _ _
+    (E.pagePresentation pq s h.le).π ≫ (E.pageXIsoOfStabilizesAt h r hsr).hom =
+      Subobject.ofLE (E.cyclesSubobject pq s h.le) (E.cyclesSubobject pq r (h.le.trans hsr))
+          (h.cyclesSubobject_eq r hsr).symm.le ≫
+        (E.pagePresentation pq r (h.le.trans hsr)).π := by
+  rw [pageXIsoOfStabilizesAt_eq_isoOfEq, TauCeti.SubquotientPresentation.π_isoOfEq_hom]
 
 /-- **Composition compatibility.** The stabilization isomorphisms compose transitively. -/
 theorem pageXIsoOfStabilizesAt_trans {pq : κ} {s r t : ℤ} (h : E.StabilizesAt pq s)
     (hsr : s ≤ r) (hrt : r ≤ t) :
     E.pageXIsoOfStabilizesAt h r hsr ≪≫ E.pageXIsoOfStabilizesAt (h.mono hsr) t hrt =
       E.pageXIsoOfStabilizesAt h t (hsr.trans hrt) := by
-  ext
-  rw [Iso.trans_hom, ← cancel_epi (E.pagePresentation pq s h.le).proj,
-    ← Category.assoc, E.proj_comp_pageXIsoOfStabilizesAt_hom h r hsr, Category.assoc,
-    E.proj_comp_pageXIsoOfStabilizesAt_hom (h.mono hsr) t hrt,
-    E.proj_comp_pageXIsoOfStabilizesAt_hom h t (hsr.trans hrt), ← Category.assoc]
-  congr 1
-  rw [← cancel_mono (E.cyclesSubobject pq t (h.le.trans (hsr.trans hrt))).arrow]
-  simp
+  simp only [pageXIsoOfStabilizesAt_eq_isoOfEq, TauCeti.SubquotientPresentation.isoOfEq_trans]
 
 /-- **Naturality of stabilization isomorphisms.** A morphism `f : E ⟶ E'` between spectral
 sequences that both stabilize at `pq` from page `s` commutes with the canonical stabilization
@@ -342,16 +316,9 @@ theorem pageXIsoOfStabilizesAt_hom_naturality {E E' : SpectralSequence C c r₀}
     {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s) (h' : E'.StabilizesAt pq s) (r : ℤ) (hsr : s ≤ r) :
     (E.pageXIsoOfStabilizesAt h r hsr).hom ≫ (f.hom r (h.le.trans hsr)).f pq =
       (f.hom s h.le).f pq ≫ (E'.pageXIsoOfStabilizesAt h' r hsr).hom := by
-  rw [← cancel_epi (E.pagePresentation pq s h.le).proj, ← Category.assoc,
-    E.proj_comp_pageXIsoOfStabilizesAt_hom h r hsr, Category.assoc,
-    ← f.pagePresentation_map pq r (h.le.trans hsr),
-    TauCeti.SubquotientPresentation.proj_comp_map,
-    ← Category.assoc (E.pagePresentation pq s h.le).proj, ← f.pagePresentation_map pq s h.le,
-    TauCeti.SubquotientPresentation.proj_comp_map, Category.assoc,
-    E'.proj_comp_pageXIsoOfStabilizesAt_hom h' r hsr, ← Category.assoc, ← Category.assoc]
-  congr 1
-  rw [← cancel_mono (E'.cyclesSubobject pq r (h'.le.trans hsr)).arrow]
-  simp
+  rw [pageXIsoOfStabilizesAt_eq_isoOfEq, pageXIsoOfStabilizesAt_eq_isoOfEq,
+    ← f.pagePresentation_map pq r (h.le.trans hsr), ← f.pagePresentation_map pq s h.le]
+  exact TauCeti.SubquotientPresentation.isoOfEq_hom_comp_map _ _ _ _ ((f.hom r₀).f pq) _ _ _ _
 
 end StabilizationIso
 

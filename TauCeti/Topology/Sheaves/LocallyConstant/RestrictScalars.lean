@@ -147,20 +147,18 @@ def restrictToConstantsRestrictScalarsIso :
           (LocallyConstant.const U.unop r))).symm) fun _ ↦ rfl)) fun _ ↦ by ext; rfl
 
 /-- The comparison for restriction to constants fixes each section. -/
-@[simp]
 lemma restrictToConstantsRestrictScalarsIso_hom_app_hom_app_apply
     (M : SheafOfModules.{u} (locallyConstantRingCatSheaf X S)) (U : (Opens X)ᵒᵖ)
     (m : M.val.obj U) :
-    dsimp% only [Functor.comp_obj]
+    dsimp% only [Functor.comp_obj, sheafCompose_obj_obj]
       (((restrictToConstantsRestrictScalarsIso X φ).hom.app M).hom.app U m = m) :=
   (rfl)
 
 /-- The reverse comparison for restriction to constants fixes each section. -/
-@[simp]
 lemma restrictToConstantsRestrictScalarsIso_inv_app_hom_app_apply
     (M : SheafOfModules.{u} (locallyConstantRingCatSheaf X S)) (U : (Opens X)ᵒᵖ)
     (m : M.val.obj U) :
-    dsimp% only [Functor.comp_obj]
+    dsimp% only [Functor.comp_obj, sheafCompose_obj_obj]
       (((restrictToConstantsRestrictScalarsIso X φ).inv.app M).hom.app U m = m) :=
   (rfl)
 

@@ -41,8 +41,8 @@ theorem trace_binaryFormAction_eq_dickson_eval {K : Type*} [CommRing K]
     (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) :
     LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)
         (binaryFormAction (R := K) hw (mk A)) =
-      (Polynomial.dickson 2 (n : K) w).eval (A.1.trace : K) := by
-  rw [binaryFormAction_mk, trace_binaryFormRep_eq_dickson_eval w A.1, A.2]
+      (Polynomial.dickson 2 (n : K) w).eval (A.val.trace : K) := by
+  rw [binaryFormAction_mk, trace_binaryFormRep_eq_dickson_eval w A.val, A.property]
 
 /-- A determinant-matrix basis element contributes its coefficient times the Dickson weight
 polynomial to the trace of its action. -/
@@ -50,7 +50,7 @@ theorem trace_periodAction_single_eq_dickson_eval {K : Type*} [CommRing K]
     (w : ℕ) (hw : Even w) (A : TraceFormulaMatrix n) (c : K) :
     LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)
         (periodAction (R := K) hw (single (mk A) c)) =
-      c * (Polynomial.dickson 2 (n : K) w).eval (A.1.trace : K) := by
+      c * (Polynomial.dickson 2 (n : K) w).eval (A.val.trace : K) := by
   rw [periodAction_single, map_smul, smul_eq_mul,
     trace_binaryFormAction_eq_dickson_eval w hw A]
 
@@ -62,7 +62,7 @@ theorem trace_periodAction_sum_eq_dickson_eval {K : Type*} [CommRing K]
     (c : TraceFormulaMatrix n → K) :
     LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)
         (periodAction hw (∑ A ∈ s, single (mk A) (c A))) =
-      ∑ A ∈ s, c A * (Polynomial.dickson 2 (n : K) w).eval (A.1.trace : K) := by
+      ∑ A ∈ s, c A * (Polynomial.dickson 2 (n : K) w).eval (A.val.trace : K) := by
   simp only [map_sum, trace_periodAction_single_eq_dickson_eval w hw _]
 
 end TraceFormulaMatrixModule

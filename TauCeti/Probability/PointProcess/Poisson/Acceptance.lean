@@ -9,6 +9,7 @@ public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.MeasureTheory.Measure.Prod
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Distributions.Bernoulli
+public import TauCeti.Topology.UnitInterval.NNReal
 
 /-!
 # Poisson acceptance regions and monotone coupling
@@ -81,7 +82,7 @@ theorem IsPoissonRandomMeasure.acceptance_univ_prod_singleton_of_bernoulliMeasur
   have hb : ((bernoulliMeasure true false p) {b}).toNNReal =
       if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p := by
     cases b
-    · simpa using eq_tsub_of_add_eq (unitInterval.toNNReal_symm_add_toNNReal p)
+    · simpa using unitInterval.toNNReal_symm p
     · simp
   simpa only [← hb, ENNReal.coe_toNNReal (measure_ne_top _ _)] using
     h.acceptance_univ_prod (measurableSet_singleton b)

@@ -32,7 +32,7 @@ subobjects form the cycle and boundary towers
   `CategoryTheory.SpectralSequence.boundariesSubobject`: the inductive presentations and towers,
   together with monotonicity, vanishing characterizations (`cyclesSubobject_add_one_eq_iff`,
   `boundariesSubobject_add_one_eq_iff`, `isZero_page_X_iff_boundariesSubobject_eq_cyclesSubobject`),
-  naturality (`Hom.pagePresentation_map`), rebasing (`pagePresentation_eq_comp_fromPage`), and
+  naturality (`Hom.pagePresentation_map`), rebasing (`pagePresentation_eq_trans_fromPage`), and
   invariance under isomorphisms of spectral sequences.
 
 ## References
@@ -108,7 +108,7 @@ noncomputable def pagePresentation (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by li
       TauCeti.SubquotientPresentation ((E.page r₀).X pq) ((E.page r hr).X pq))
     (TauCeti.SubquotientPresentation.refl ((E.page r₀).X pq))
     (fun r hr p ↦
-      p.comp (((E.page r hr).sc pq).homologyPresentation.transIso (E.iso r (r + 1) pq rfl hr)))
+      p.trans (((E.page r hr).sc pq).homologyPresentation.mapIso (E.iso r (r + 1) pq rfl hr)))
     r hr
 
 @[simp]
@@ -118,37 +118,37 @@ lemma pagePresentation_base (pq : κ) :
 
 lemma pagePresentation_add_one (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
     E.pagePresentation pq (r + 1) (Int.le_add_one hr) =
-      (E.pagePresentation pq r hr).comp
-        (((E.page r hr).sc pq).homologyPresentation.transIso (E.iso r (r + 1) pq rfl hr)) :=
+      (E.pagePresentation pq r hr).trans
+        (((E.page r hr).sc pq).homologyPresentation.mapIso (E.iso r (r + 1) pq rfl hr)) :=
   Int.leInduction_add_one _ _ r hr
 
-/-- The `r`-th cycle subobject `Z_r(pq)` of `(E.page r₀).X pq`, namely the top subobject of
+/-- The `r`-th cycle subobject `Z_r(pq)` of `(E.page r₀).X pq`, namely the larger subobject of
 `E.pagePresentation pq r hr`. -/
 noncomputable abbrev cyclesSubobject (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     Subobject ((E.page r₀).X pq) :=
-  (E.pagePresentation pq r hr).top
+  (E.pagePresentation pq r hr).Z
 
-/-- The `r`-th boundary subobject `B_r(pq)` of `(E.page r₀).X pq`, namely the bottom subobject of
+/-- The `r`-th boundary subobject `B_r(pq)` of `(E.page r₀).X pq`, namely the smaller subobject of
 `E.pagePresentation pq r hr`. -/
 noncomputable abbrev boundariesSubobject (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     Subobject ((E.page r₀).X pq) :=
-  (E.pagePresentation pq r hr).bottom
+  (E.pagePresentation pq r hr).B
 
 @[simp]
 lemma cyclesSubobject_base (pq : κ) :
     E.cyclesSubobject pq r₀ le_rfl = ⊤ := by
-  rw [cyclesSubobject, pagePresentation_base]
+  rw [cyclesSubobject, pagePresentation_base, TauCeti.SubquotientPresentation.refl_Z]
 
 @[simp]
 lemma boundariesSubobject_base (pq : κ) :
     E.boundariesSubobject pq r₀ le_rfl = ⊥ := by
-  rw [boundariesSubobject, pagePresentation_base]
+  rw [boundariesSubobject, pagePresentation_base, TauCeti.SubquotientPresentation.refl_B]
 
 /-- On page `r + 1`, the cycle subobject `Z_{r+1}(pq)` is the preimage along the page-`r`
 presentation of the kernel of the leaving differential `(E.page r hr).dFrom pq`. -/
 lemma cyclesSubobject_add_one (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
     E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) =
-      (E.pagePresentation pq r hr).lift (kernelSubobject ((E.page r hr).dFrom pq)) := by
+      (E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r hr).dFrom pq)) := by
   rw [cyclesSubobject, E.pagePresentation_add_one pq r hr]
   rfl
 
@@ -156,31 +156,31 @@ lemma cyclesSubobject_add_one (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
 presentation of the image of the entering differential `(E.page r hr).dTo pq`. -/
 lemma boundariesSubobject_add_one (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
     E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) =
-      (E.pagePresentation pq r hr).lift (imageSubobject ((E.page r hr).dTo pq)) := by
+      (E.pagePresentation pq r hr).preimage (imageSubobject ((E.page r hr).dTo pq)) := by
   rw [boundariesSubobject, E.pagePresentation_add_one pq r hr]
   rfl
 
 /-- Description of the projection of `E.pagePresentation pq (r + 1)` in terms of the page-`r`
 presentation, the homology presentation of page `r`, and `E.iso r (r + 1) pq`. -/
-lemma pagePresentation_add_one_proj (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
-    (E.pagePresentation pq (r + 1) (Int.le_add_one hr)).proj =
-      (Subobject.isoOfEq (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr))
-          ((E.pagePresentation pq r hr).lift (kernelSubobject ((E.page r hr).dFrom pq)))
-          (E.cyclesSubobject_add_one pq r hr)).hom ≫
-        (E.pagePresentation pq r hr).liftProj (kernelSubobject ((E.page r hr).dFrom pq)) ≫
-        ((E.page r hr).sc pq).homologyPresentation.proj ≫ (E.iso r (r + 1) pq rfl hr).hom := by
+lemma pagePresentation_add_one_π (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
+    (E.pagePresentation pq (r + 1) (Int.le_add_one hr)).π =
+      Subobject.ofLE (E.cyclesSubobject pq (r + 1) (Int.le_add_one hr))
+          ((E.pagePresentation pq r hr).preimage (kernelSubobject ((E.page r hr).dFrom pq)))
+          (E.cyclesSubobject_add_one pq r hr).le ≫
+        (E.pagePresentation pq r hr).preimageπ (kernelSubobject ((E.page r hr).dFrom pq)) ≫
+        ((E.page r hr).sc pq).homologyPresentation.π ≫ (E.iso r (r + 1) pq rfl hr).hom := by
   let p := E.pagePresentation pq r hr
   let sc := (E.page r hr).sc pq
   have h1 : ∀ (q : TauCeti.SubquotientPresentation ((E.page r₀).X pq)
         ((E.page (r + 1) (Int.le_add_one hr)).X pq))
-      (hq : q = p.comp (sc.homologyPresentation.transIso (E.iso r (r + 1) pq rfl hr))),
-      q.proj = (Subobject.isoOfEq q.top (p.lift (kernelSubobject ((E.page r hr).dFrom pq)))
-          (by rw [hq]; rfl)).hom ≫
-        p.liftProj (kernelSubobject ((E.page r hr).dFrom pq)) ≫
-        sc.homologyPresentation.proj ≫ (E.iso r (r + 1) pq rfl hr).hom := by
+      (hq : q = p.trans (sc.homologyPresentation.mapIso (E.iso r (r + 1) pq rfl hr))),
+      q.π = Subobject.ofLE q.Z (p.preimage (kernelSubobject ((E.page r hr).dFrom pq)))
+          (by rw [hq]; rfl) ≫
+        p.preimageπ (kernelSubobject ((E.page r hr).dFrom pq)) ≫
+        sc.homologyPresentation.π ≫ (E.iso r (r + 1) pq rfl hr).hom := by
     rintro _ rfl
-    rw [TauCeti.SubquotientPresentation.comp_proj, TauCeti.SubquotientPresentation.transIso_proj]
-    simp [sc]
+    rw [TauCeti.SubquotientPresentation.π_trans', TauCeti.SubquotientPresentation.π_mapIso]
+    rfl
   exact h1 _ (E.pagePresentation_add_one pq r hr)
 
 lemma boundariesSubobject_le_cyclesSubobject (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
@@ -190,12 +190,12 @@ lemma boundariesSubobject_le_cyclesSubobject (pq : κ) (r : ℤ) (hr : r₀ ≤ 
 lemma boundariesSubobject_le_add_one (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
     E.boundariesSubobject pq r hr ≤ E.boundariesSubobject pq (r + 1) (Int.le_add_one hr) := by
   rw [boundariesSubobject_add_one]
-  exact (E.pagePresentation pq r hr).bottom_le_lift _
+  exact (E.pagePresentation pq r hr).B_le_preimage _
 
 lemma cyclesSubobject_add_one_le (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
     E.cyclesSubobject pq (r + 1) (Int.le_add_one hr) ≤ E.cyclesSubobject pq r hr := by
   rw [cyclesSubobject_add_one]
-  exact (E.pagePresentation pq r hr).lift_le_top _
+  exact (E.pagePresentation pq r hr).preimage_le_Z _
 
 /-- The boundary tower `r ↦ B_r(pq)` is increasing. -/
 lemma boundariesSubobject_le_of_le (pq : κ) {r r' : ℤ} (hr : r₀ ≤ r) (hrr' : r ≤ r') :
@@ -228,8 +228,8 @@ theorem cyclesSubobject_add_one_eq_iff (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
       (E.page r hr).dFrom pq = 0 := by
   rw [E.cyclesSubobject_add_one pq r hr]
   dsimp only [cyclesSubobject]
-  rw [← (E.pagePresentation pq r hr).lift_top,
-    (E.pagePresentation pq r hr).lift_eq_lift_iff, kernelSubobject_eq_top_iff]
+  rw [← (E.pagePresentation pq r hr).preimage_top,
+    (E.pagePresentation pq r hr).preimage_inj, kernelSubobject_eq_top_iff]
 
 /-- `B_{r+1}(pq) = B_r(pq)` if and only if the entering differential on page `r` at `pq`
 vanishes. -/
@@ -238,8 +238,8 @@ theorem boundariesSubobject_add_one_eq_iff (pq : κ) (r : ℤ) (hr : r₀ ≤ r)
       (E.page r hr).dTo pq = 0 := by
   rw [E.boundariesSubobject_add_one pq r hr]
   dsimp only [boundariesSubobject]
-  rw [← (E.pagePresentation pq r hr).lift_bot,
-    (E.pagePresentation pq r hr).lift_eq_lift_iff, imageSubobject_eq_bot_iff]
+  rw [← (E.pagePresentation pq r hr).preimage_bot,
+    (E.pagePresentation pq r hr).preimage_inj, imageSubobject_eq_bot_iff]
 
 /-- If the leaving differential at `pq` vanishes on all pages `t` with `s ≤ t < r`, then
 `Z_r(pq) = Z_s(pq)`. -/
@@ -280,7 +280,7 @@ lemma boundariesSubobject_eq_bot_of_dTo_eq_zero (pq : κ) {r : ℤ} (hr : r₀ �
 /-- The object `(E.page r hr).X pq` is zero if and only if `B_r(pq) = Z_r(pq)`. -/
 theorem isZero_page_X_iff_boundariesSubobject_eq_cyclesSubobject (pq : κ) (r : ℤ) (hr : r₀ ≤ r) :
     IsZero ((E.page r hr).X pq) ↔ E.boundariesSubobject pq r hr = E.cyclesSubobject pq r hr :=
-  (E.pagePresentation pq r hr).isZero_iff_bottom_eq_top
+  (E.pagePresentation pq r hr).isZero_iff_B_eq_Z
 
 end Tower
 
@@ -307,37 +307,34 @@ private lemma naturality_step (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ 
   let φ : (E.page r hr).sc pq ⟶ (E'.page r hr).sc pq :=
     (HomologicalComplex.shortComplexFunctor C (c r) pq).map (f.hom r hr)
   have hτ₂ : φ.τ₂ = (f.hom r hr).f pq := rfl
-  have hI : (imageSubobject ((E'.page r hr).dTo pq)).Factors
-      ((imageSubobject ((E.page r hr).dTo pq)).arrow ≫ p.map p' ((f.hom r₀).f pq) hB hZ) := by
+  let q₀ := ((E.page r hr).sc pq).homologyPresentation
+  let q₀' := ((E'.page r hr).sc pq).homologyPresentation
+  have hI : q₀'.B.Factors (q₀.B.arrow ≫ p.map p' ((f.hom r₀).f pq) hB hZ) := by
     rw [hmap, ← hτ₂]
     exact ShortComplex.factors_imageSubobject_map φ
-  have hK : (kernelSubobject ((E'.page r hr).dFrom pq)).Factors
-      ((kernelSubobject ((E.page r hr).dFrom pq)).arrow ≫ p.map p' ((f.hom r₀).f pq) hB hZ) := by
+  have hK : q₀'.Z.Factors (q₀.Z.arrow ≫ p.map p' ((f.hom r₀).f pq) hB hZ) := by
     rw [hmap, ← hτ₂]
     exact ShortComplex.factors_kernelSubobject_map φ
-  let q := ((E.page r hr).sc pq).homologyPresentation.transIso (E.iso r (r + 1) pq rfl hr)
-  let q' := ((E'.page r hr).sc pq).homologyPresentation.transIso (E'.iso r (r + 1) pq rfl hr)
+  let q := q₀.mapIso (E.iso r (r + 1) pq rfl hr)
+  let q' := q₀'.mapIso (E'.iso r (r + 1) pq rfl hr)
   have hB' : (E'.boundariesSubobject pq (r + 1) (Int.le_add_one hr)).Factors
       ((E.boundariesSubobject pq (r + 1) (Int.le_add_one hr)).arrow ≫ (f.hom r₀).f pq) := by
     rw [boundariesSubobject_add_one, boundariesSubobject_add_one]
-    exact p.factors_lift_of_factors_map p' ((f.hom r₀).f pq) hB hZ hI
+    exact p.factors_preimage_of_factors_map p' ((f.hom r₀).f pq) hB hZ hI
   have hZ' : (E'.cyclesSubobject pq (r + 1) (Int.le_add_one hr)).Factors
       ((E.cyclesSubobject pq (r + 1) (Int.le_add_one hr)).arrow ≫ (f.hom r₀).f pq) := by
     rw [cyclesSubobject_add_one, cyclesSubobject_add_one]
-    exact p.factors_lift_of_factors_map p' ((f.hom r₀).f pq) hB hZ hK
+    exact p.factors_preimage_of_factors_map p' ((f.hom r₀).f pq) hB hZ hK
   refine ⟨hB', hZ', ?_⟩
-  have hcomp := TauCeti.SubquotientPresentation.comp_map p p' q q' ((f.hom r₀).f pq) hB hZ hI hK
+  have hcomp := TauCeti.SubquotientPresentation.trans_map p p' q q' ((f.hom r₀).f pq) hB hZ hI hK
   have hqmap : q.map q' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
       (f.hom (r + 1) (Int.le_add_one hr)).f pq := by
     dsimp only [q, q']
-    rw [TauCeti.SubquotientPresentation.map_transIso_left,
-      TauCeti.SubquotientPresentation.map_transIso_right]
-    have hsc : ((E.page r hr).sc pq).homologyPresentation.map
-          ((E'.page r hr).sc pq).homologyPresentation (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
+    rw [TauCeti.SubquotientPresentation.map_mapIso]
+    have hsc : q₀.map q₀' (p.map p' ((f.hom r₀).f pq) hB hZ) hI hK =
         HomologicalComplex.homologyMap (f.hom r hr) pq := by
       have h1 : ∀ (g : (E.page r hr).X pq ⟶ (E'.page r hr).X pq) (_ : g = φ.τ₂) h1 h2,
-          ((E.page r hr).sc pq).homologyPresentation.map
-            ((E'.page r hr).sc pq).homologyPresentation g h1 h2 = ShortComplex.homologyMap φ := by
+          q₀.map q₀' g h1 h2 = ShortComplex.homologyMap φ := by
         rintro _ rfl _ _
         exact ShortComplex.homologyPresentation_map φ
       exact h1 _ hmap hI hK
@@ -463,32 +460,33 @@ variable (E : SpectralSequence C c r₀)
 /-- **Rebasing presentations.** For `s ≥ r₀` and `r ≥ s`, the page-`r` presentation of `E` inside
 page `r₀` is the composite of the page-`s` presentation of `E` with the page-`r` presentation of
 `E.fromPage s hs`. -/
-theorem pagePresentation_eq_comp_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
+theorem pagePresentation_eq_trans_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     (r : ℤ) (hsr : s ≤ r) :
     E.pagePresentation pq r (hs.trans hsr) =
-      (E.pagePresentation pq s hs).comp ((E.fromPage s hs).pagePresentation pq r hsr) := by
+      (E.pagePresentation pq s hs).trans ((E.fromPage s hs).pagePresentation pq r hsr) := by
   induction r, hsr using Int.leInduction with
   | base =>
-    rw [pagePresentation_base, TauCeti.SubquotientPresentation.comp_refl]
+    rw [pagePresentation_base, TauCeti.SubquotientPresentation.trans_refl]
   | succ r hsr ih =>
     rw [E.pagePresentation_add_one pq r (hs.trans hsr), ih,
       (E.fromPage s hs).pagePresentation_add_one pq r hsr,
-      TauCeti.SubquotientPresentation.comp_assoc]
+      TauCeti.SubquotientPresentation.trans_assoc]
 
-/-- **Rebasing the cycle tower.** For `s ≥ r₀` and `r ≥ s`, `Z_r(pq)` is the lift along the
+/-- **Rebasing the cycle tower.** For `s ≥ r₀` and `r ≥ s`, `Z_r(pq)` is the preimage along the
 page-`s` presentation of the `r`-th cycle subobject of `E.fromPage s hs`. -/
-lemma cyclesSubobject_eq_lift_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ) (r : ℤ) (hsr : s ≤ r) :
+lemma cyclesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ) (r : ℤ) (hsr : s ≤ r) :
     E.cyclesSubobject pq r (hs.trans hsr) =
-      (E.pagePresentation pq s hs).lift ((E.fromPage s hs).cyclesSubobject pq r hsr) :=
-  congrArg TauCeti.SubquotientPresentation.top (E.pagePresentation_eq_comp_fromPage s hs pq r hsr)
+      (E.pagePresentation pq s hs).preimage ((E.fromPage s hs).cyclesSubobject pq r hsr) :=
+  congrArg TauCeti.SubquotientPresentation.Z (E.pagePresentation_eq_trans_fromPage s hs pq r hsr)
 
-/-- **Rebasing the boundary tower.** For `s ≥ r₀` and `r ≥ s`, `B_r(pq)` is the lift along the
+/-- **Rebasing the boundary tower.** For `s ≥ r₀` and `r ≥ s`, `B_r(pq)` is the preimage along the
 page-`s` presentation of the `r`-th boundary subobject of `E.fromPage s hs`. -/
-lemma boundariesSubobject_eq_lift_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ) (r : ℤ) (hsr : s ≤ r) :
+lemma boundariesSubobject_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) (pq : κ) (r : ℤ)
+    (hsr : s ≤ r) :
     E.boundariesSubobject pq r (hs.trans hsr) =
-      (E.pagePresentation pq s hs).lift ((E.fromPage s hs).boundariesSubobject pq r hsr) :=
-  congrArg TauCeti.SubquotientPresentation.bottom
-    (E.pagePresentation_eq_comp_fromPage s hs pq r hsr)
+      (E.pagePresentation pq s hs).preimage ((E.fromPage s hs).boundariesSubobject pq r hsr) :=
+  congrArg TauCeti.SubquotientPresentation.B
+    (E.pagePresentation_eq_trans_fromPage s hs pq r hsr)
 
 end Rebasing
 

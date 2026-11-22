@@ -84,7 +84,8 @@ theorem ker_outerAction :
   rw [MonoidHom.mem_ker, outerAction_mk, QuotientGroup.eq_one_iff, Subgroup.mem_map]
   constructor
   · rintro ⟨n, hn⟩
-    refine ⟨e, Subgroup.mem_sup_of_normal_left.mpr ⟨n, n.2, (n : E)⁻¹ * e, ?_, by group⟩, rfl⟩
+    refine ⟨e, Subgroup.mem_sup_of_normal_left.mpr ⟨n, n.property, (n : E)⁻¹ * e, ?_, by group⟩,
+        rfl⟩
     rw [← ContinuousAut.ker_conjNormal, MonoidHom.mem_ker, map_mul, map_inv,
       ContinuousAut.conjNormal_coe, hn, inv_mul_cancel]
   · rintro ⟨x, hx, hxe⟩

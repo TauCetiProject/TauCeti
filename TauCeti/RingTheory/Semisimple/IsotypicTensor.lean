@@ -14,6 +14,9 @@ import Mathlib.LinearAlgebra.DirectSum.Finsupp
 -- Non-public: the rank of a product with finitely many nontrivial factors is used only inside the
 -- proof of the hom-space dimension formula.
 import TauCeti.LinearAlgebra.Pi
+-- Non-public: flatness of a vector space is used only inside the proof that a multiplicity space
+-- is simple for a commuting action.
+import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # An isotypic component is its type tensored with its multiplicity space
@@ -91,6 +94,10 @@ spaces, and for finite-dimensional `M` and `N` the dimension of `M →ₗ[A] N` 
 * `TauCeti.finrank_linearMap_eq_finsum`: for finite-dimensional `M` and finite-dimensional
   multiplicity spaces of `N`,
   `dim (M →ₗ[A] N) = ∑ⱼ dim (S j →ₗ[A] M) · dim (S j →ₗ[A] N)`.
+* `TauCeti.isotypicComponent_eq_top_of_commuting` and
+  `TauCeti.isSimpleModule_linearMap_of_commuting`: for two commuting actions of `A` and `B` with no
+  common invariant subspace, `M` is isotypic for `A` and the multiplicity space is a simple
+  `B`-module.
 * `TauCeti.nonempty_end_algEquiv_pi_matrix`: with finite-dimensional multiplicity spaces,
   `Module.End A M` is the product of the full matrix algebras over `k` whose sizes are the
   multiplicities `dim (S j →ₗ[A] M)`.
@@ -615,5 +622,93 @@ theorem nonempty_end_algEquiv_pi_matrix [IsSemisimpleModule A M]
     (AlgEquiv.piCongrRight fun _ => LinearMap.toMatrixAlgEquiv (Module.finBasis k _))⟩
 
 end MultiplicitySpaces
+
+/-! ### Two commuting actions with no common invariant subspace -/
+
+section Commuting
+
+open Module
+
+variable {k A B M : Type*} [Field k] [Ring A] [Ring B] [Algebra k A] [Algebra k B]
+  [AddCommGroup M] [Module k M]
+variable [Module A M] [Module B M] [SMulCommClass A B M] [IsScalarTower k A M]
+variable {S : Type*} [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+
+omit [Algebra k B] in
+/-- Let `A` and `B` act on `M` by commuting actions with no common invariant `k`-subspace other
+than `⊥` and `⊤`. Then the isotypic component of any simple `A`-submodule `V` is stable under `B`,
+so it is all of `M`. -/
+theorem isotypicComponent_eq_top_of_commuting
+    (hM : ∀ p : Submodule k M, (∀ (a : A), ∀ m ∈ p, a • m ∈ p) →
+      (∀ (b : B), ∀ m ∈ p, b • m ∈ p) → p = ⊥ ∨ p = ⊤)
+    (V : Submodule A M) [IsSimpleModule A V] : isotypicComponent A M V = ⊤ := by
+  have : SMulCommClass B A M := SMulCommClass.symm A B M
+  have h := hM ((isotypicComponent A M V).restrictScalars k)
+    (fun a m hm ↦ (isotypicComponent A M V).smul_mem a hm)
+    (fun b m hm ↦ (DistribSMul.toLinearMap A M b).le_comap_isotypicComponent V hm)
+  refine (Submodule.restrictScalars_eq_top_iff k A M).mp
+    (h.resolve_left fun h ↦ ?_)
+  have : Nontrivial V := IsSimpleModule.nontrivial A V
+  rw [Submodule.restrictScalars_eq_bot_iff k A M] at h
+  exact (Submodule.nontrivial_iff_ne_bot.mp this) (eq_bot_iff.mpr (h ▸ V.le_isotypicComponent))
+
+/-- Evaluation `S ⊗ W' → M` on a subspace `W'` of the multiplicity space has range stable under
+both actions when `W'` is stable under `B`. -/
+private theorem range_lTensor_eval_stable [IsScalarTower k B M] (W' : Submodule B (S →ₗ[A] M)) :
+    let r := (isotypicEval k).restrictScalars k ∘ₗ (W'.restrictScalars k).subtype.lTensor S
+    (∀ (a : A), ∀ m ∈ LinearMap.range r, a • m ∈ LinearMap.range r) ∧
+      ∀ (b : B), ∀ m ∈ LinearMap.range r, b • m ∈ LinearMap.range r := by
+  intro r
+  have hr_tmul : ∀ (v : S) (f : W'.restrictScalars k), r (v ⊗ₜ f) = (f : S →ₗ[A] M) v :=
+    fun v f ↦ isotypicEval_tmul k v (f : S →ₗ[A] M)
+  constructor
+  · rintro a _ ⟨x, rfl⟩
+    induction x using TensorProduct.inductionOn with
+    | tmul v f => exact ⟨(a • v) ⊗ₜ f, by rw [hr_tmul, hr_tmul, map_smul]⟩
+    | add x y hx hy => rw [map_add, smul_add]; exact add_mem hx hy
+  · rintro b _ ⟨x, rfl⟩
+    induction x using TensorProduct.inductionOn with
+    | tmul v f =>
+      exact ⟨v ⊗ₜ ⟨b • (f : S →ₗ[A] M), W'.smul_mem b f.property⟩, by rw [hr_tmul, hr_tmul]; rfl⟩
+    | add x y hx hy => rw [map_add, smul_add]; exact add_mem hx hy
+
+/-- Let `A` and `B` act on a finite-dimensional `M` by commuting actions with no common invariant
+`k`-subspace other than `⊥` and `⊤`, over an algebraically closed field `k`. If `M` is
+`S`-isotypic for a finite-dimensional simple `A`-module `S`, then the multiplicity space
+`S →ₗ[A] M`, with `B` acting on the target, is a simple `B`-module. -/
+theorem isSimpleModule_linearMap_of_commuting [IsScalarTower k B M] [IsSimpleModule A S]
+    [IsAlgClosed k] [FiniteDimensional k S]
+    [FiniteDimensional k M] [Nontrivial M]
+    (hM : ∀ p : Submodule k M, (∀ (a : A), ∀ m ∈ p, a • m ∈ p) →
+      (∀ (b : B), ∀ m ∈ p, b • m ∈ p) → p = ⊥ ∨ p = ⊤)
+    (htop : isotypicComponent A M S = ⊤) : IsSimpleModule B (S →ₗ[A] M) := by
+  have : Nontrivial S := IsSimpleModule.nontrivial A S
+  have : FiniteDimensional k (S →ₗ[A] M) :=
+    Module.Finite.of_injective (LinearMap.restrictScalarsₗ k A S M k)
+      (LinearMap.restrictScalars_injective _)
+  have hM_rank : finrank k M = finrank k S * finrank k (S →ₗ[A] M) := by
+    rw [← ((isotypicTensorEquiv k htop).restrictScalars k).finrank_eq,
+      Module.finrank_tensorProduct]
+  have : Nontrivial (S →ₗ[A] M) := Module.finrank_pos_iff.mp
+    (Nat.pos_of_mul_pos_left (hM_rank ▸ Module.finrank_pos : 0 < _))
+  refine { eq_bot_or_eq_top := fun W' ↦ ?_ }
+  have hr : Function.Injective
+      ((isotypicEval k).restrictScalars k ∘ₗ (W'.restrictScalars k).subtype.lTensor S) :=
+    (isotypicEval_injective k).comp
+      (Module.Flat.lTensor_preserves_injective_linearMap _ Subtype.val_injective)
+  have hrank := LinearMap.finrank_range_of_inj hr
+  rw [Module.finrank_tensorProduct] at hrank
+  have hS0 : 0 < finrank k S := Module.finrank_pos
+  obtain ⟨hA, hB⟩ := range_lTensor_eval_stable (k := k) W'
+  rcases hM _ hA hB with h | h
+  · left
+    rw [h, finrank_bot, eq_comm, mul_eq_zero, Submodule.finrank_eq_zero] at hrank
+    exact (Submodule.restrictScalars_eq_bot_iff k B _).mp (hrank.resolve_left hS0.ne')
+  · right
+    rw [h, finrank_top, hM_rank] at hrank
+    exact (Submodule.restrictScalars_eq_top_iff k B _).mp
+      (Submodule.eq_top_of_finrank_eq (Nat.eq_of_mul_eq_mul_left hS0 hrank).symm)
+
+end Commuting
 
 end TauCeti
