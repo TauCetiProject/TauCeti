@@ -8,12 +8,12 @@ module
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+public import TauCeti.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.RingTheory.Polynomial.Content
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import TauCeti.Algebra.Polynomial.Bivariate
 import TauCeti.Algebra.Polynomial.Bivariate.SchwartzZippel
-import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Matrix.Polynomial
@@ -52,8 +52,9 @@ specialization to planar grids via the Schwartz–Zippel lemma
 * `Squarefree.rootMultiplicity_map_evalRingHom_le`,
   `Irreducible.rootMultiplicity_map_evalRingHom_le`: fiber multiplicity bounds in characteristic
   zero.
-* `Polynomial.card_mul_le_of_pow_dvd_map_evalRingHom`: bivariate multiplicity bound along
-  fibers with injective base coordinates.
+* `Polynomial.sum_cappedRootMultiplicity_map_evalRingHom_le`,
+  `Polynomial.card_mul_le_of_pow_dvd_map_evalRingHom`: summed capped bivariate multiplicity
+  bound along fibers with injective base coordinates, and its uniform-order specialization.
 * `Polynomial.eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube`: vanishing criterion on
   planar grids under an invertible linear or affine change of coordinates.
 
@@ -180,12 +181,9 @@ theorem _root_.Squarefree.rootMultiplicity_map_evalRingHom_le {R : Type*} [CommR
     [IsDomain R] [IsGCDMonoid R] [CharZero R] {Q : R[X][X]} (hQ : Squarefree Q) (α β : R) :
     (Q.map (evalRingHom β)).rootMultiplicity α ≤
       1 + (Q.resultant Q.derivative).rootMultiplicity β := by
-  have hres :
-      Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1) = Q.resultant Q.derivative := by
-    rw [← natDegree_derivative]
-  rw [← hres]
+  rw [resultant_deriv_eq]
   exact rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero
-    (hres ▸ hQ.resultant_deriv_ne_zero) α β
+    (Q.resultant_deriv_eq ▸ hQ.resultant_deriv_ne_zero) α β
 
 /-- **Resultant multiplicity bound for irreducible bivariate polynomials** (Green, Appendix A). -/
 theorem _root_.Irreducible.rootMultiplicity_map_evalRingHom_le {R : Type*} [CommRing R]
@@ -227,7 +225,7 @@ private theorem sum_cappedFiberMult_C_le {K ι : Type*} [Field K] [Fintype ι]
   have hterm (i : ι) : cappedFiberMult (α i) (β i) N (C q) = if i ∈ Z then N else 0 := by
     by_cases h0 : q.eval (β i) = 0
     · simp [cappedFiberMult, Z, h0]
-    · simp [cappedFiberMult, Z, h0, cappedRootMultiplicity_C]
+    · simp [cappedFiberMult, Z, h0]
   have hZ : Z.card ≤ q.natDegree := by
     calc Z.card = ∑ i ∈ Z, 1 := by simp
       _ ≤ ∑ i ∈ Z, q.rootMultiplicity (β i) := Finset.sum_le_sum fun i hi ↦
@@ -258,11 +256,8 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
     exact sum_cappedFiberMult_C_le hβ N (fun h ↦ hQ.ne_zero (by simp [h]))
   · let Z := Finset.univ.filter fun i : ι ↦ (Q.map (evalRingHom (β i))).eval (α i) = 0
     have hne (i : ι) : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
-    have hout (i : ι) (hi : i ∉ Z) : cappedFiberMult (α i) (β i) N Q = 0 := by
-      have hnroot : ¬ (Q.map (evalRingHom (β i))).IsRoot (α i) := by
-        simpa [Z, IsRoot.def] using hi
-      simp [cappedFiberMult, cappedRootMultiplicity_of_ne_zero (hne i),
-        rootMultiplicity_eq_zero hnroot]
+    have hout (i : ι) (hi : i ∉ Z) : cappedFiberMult (α i) (β i) N Q = 0 :=
+      cappedRootMultiplicity_eq_zero_of_not_isRoot (by simpa [Z, IsRoot.def] using hi) N
     have hin (i : ι) : cappedFiberMult (α i) (β i) N Q ≤
         1 + (Q.resultant Q.derivative).rootMultiplicity (β i) := by
       rw [cappedFiberMult, cappedRootMultiplicity_of_ne_zero (hne i)]
@@ -282,34 +277,26 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
             2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
           Nat.add_le_add_left (natDegree_resultant_deriv_le Q) _
 
-/-- **Bivariate multiplicity estimate** (Green, Proposition 4.1). Let `(α i, β i)` be a finite
-family of points in `K × K` over a characteristic-zero field `K`, with `β` injective, such that
-every nonzero bivariate polynomial `H : K[X][X]` vanishes at no more than
-`N * (H.natDegree + (Bivariate.swap H).natDegree)` of the points. If `F ≠ 0` vanishes to order at
-least `N` in the outer coordinate along every fiber `X = β i`, then
-`Fintype.card ι * N ≤ N * (F.natDegree + (Bivariate.swap F).natDegree) +
-  2 * F.natDegree * (Bivariate.swap F).natDegree`. -/
-theorem card_mul_le_of_pow_dvd_map_evalRingHom {K ι : Type*} [Field K] [CharZero K]
+/-- **Summed capped fiber multiplicity bound** (Green, Proposition 4.1). Let `(α i, β i)` be a
+finite family of points in `K × K` over a characteristic-zero field `K`, with `β` injective, such
+that every nonzero bivariate polynomial `H : K[X][X]` vanishes at no more than
+`N * (H.natDegree + (Bivariate.swap H).natDegree)` of the points. Then for every nonzero
+`F : K[X][X]`,
+`∑ i : ι, (F.map (evalRingHom (β i))).cappedRootMultiplicity (α i) N ≤
+  N * (F.natDegree + (Bivariate.swap F).natDegree) +
+    2 * F.natDegree * (Bivariate.swap F).natDegree`. -/
+theorem sum_cappedRootMultiplicity_map_evalRingHom_le {K ι : Type*} [Field K] [CharZero K]
     [DecidableEq K] [Fintype ι] {α β : ι → K} (hβ : Function.Injective β) {N : ℕ}
     (hzero : ∀ H : K[X][X], H ≠ 0 →
       #{i : ι | (H.map (evalRingHom (β i))).eval (α i) = 0} ≤
         N * (H.natDegree + (Bivariate.swap H).natDegree))
-    {F : K[X][X]} (hF : F ≠ 0)
-    (hmult : ∀ i : ι, (X - C (α i)) ^ N ∣ F.map (evalRingHom (β i))) :
-    Fintype.card ι * N ≤
+    {F : K[X][X]} (hF : F ≠ 0) :
+    ∑ i : ι, (F.map (evalRingHom (β i))).cappedRootMultiplicity (α i) N ≤
       N * (F.natDegree + (Bivariate.swap F).natDegree) +
         2 * F.natDegree * (Bivariate.swap F).natDegree := by
-  have hsum_F : Fintype.card ι * N = ∑ i : ι, cappedFiberMult (α i) (β i) N F := by
-    have hpt (i : ι) : cappedFiberMult (α i) (β i) N F = N :=
-      cappedRootMultiplicity_eq_self_iff.mpr (hmult i)
-    simp [hpt]
-  rw [hsum_F]
-  suffices hgen : ∀ P : K[X][X], P ≠ 0 →
-      ∑ i : ι, cappedFiberMult (α i) (β i) N P ≤
-        N * (P.natDegree + (Bivariate.swap P).natDegree) +
-          2 * P.natDegree * (Bivariate.swap P).natDegree from hgen F hF
-  intro P
-  refine UniqueFactorizationMonoid.induction_on_prime P (fun h ↦ absurd rfl h) (fun u hu _ ↦ ?_)
+  change ∑ i : ι, cappedFiberMult (α i) (β i) N F ≤ _
+  revert hF
+  refine UniqueFactorizationMonoid.induction_on_prime F (fun h ↦ absurd rfl h) (fun u hu _ ↦ ?_)
     (fun a p ha0 hp ih _ ↦ ?_)
   · simp [cappedFiberMult_of_isUnit _ _ N hu]
   · have hp0 : p ≠ 0 := hp.ne_zero
@@ -330,6 +317,31 @@ theorem card_mul_le_of_pow_dvd_map_evalRingHom {K ι : Type*} [Field K] [CharZer
             2 * (p * a).natDegree * (Bivariate.swap (p * a)).natDegree := by
           rw [hdeg_z, hdeg_y]
           nlinarith
+
+/-- **Bivariate multiplicity estimate** (Green, Proposition 4.1). Let `(α i, β i)` be a finite
+family of points in `K × K` over a characteristic-zero field `K`, with `β` injective, such that
+every nonzero bivariate polynomial `H : K[X][X]` vanishes at no more than
+`N * (H.natDegree + (Bivariate.swap H).natDegree)` of the points. If `F ≠ 0` vanishes to order at
+least `N` in the outer coordinate along every fiber `X = β i`, then
+`Fintype.card ι * N ≤ N * (F.natDegree + (Bivariate.swap F).natDegree) +
+  2 * F.natDegree * (Bivariate.swap F).natDegree`. -/
+theorem card_mul_le_of_pow_dvd_map_evalRingHom {K ι : Type*} [Field K] [CharZero K]
+    [DecidableEq K] [Fintype ι] {α β : ι → K} (hβ : Function.Injective β) {N : ℕ}
+    (hzero : ∀ H : K[X][X], H ≠ 0 →
+      #{i : ι | (H.map (evalRingHom (β i))).eval (α i) = 0} ≤
+        N * (H.natDegree + (Bivariate.swap H).natDegree))
+    {F : K[X][X]} (hF : F ≠ 0)
+    (hmult : ∀ i : ι, (X - C (α i)) ^ N ∣ F.map (evalRingHom (β i))) :
+    Fintype.card ι * N ≤
+      N * (F.natDegree + (Bivariate.swap F).natDegree) +
+        2 * F.natDegree * (Bivariate.swap F).natDegree := by
+  have hsum_F : Fintype.card ι * N =
+      ∑ i : ι, (F.map (evalRingHom (β i))).cappedRootMultiplicity (α i) N := by
+    have hpt (i : ι) : (F.map (evalRingHom (β i))).cappedRootMultiplicity (α i) N = N :=
+      cappedRootMultiplicity_eq_self_iff.mpr (hmult i)
+    simp [hpt]
+  rw [hsum_F]
+  exact sum_cappedRootMultiplicity_map_evalRingHom_le hβ hzero hF
 
 /-- **Planar grid vanishing criterion.** Let `S` be a finite subset of a characteristic-zero field
 `K`, and let `L₁, L₂ : MvPolynomial (Fin 2) K` have total degree at most `1` such that substitution

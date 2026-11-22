@@ -261,22 +261,8 @@ private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime)
     (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
         2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) ≤
       (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
-        Real.log p := by
-  have hlog_nn : 0 ≤ Real.log p := Real.log_nonneg (by exact_mod_cast hp.one_le)
-  have hSX_R : (S : ℝ) ≤ X := by exact_mod_cast hSX
-  have hp_pos : (0 : ℝ) < p := by exact_mod_cast hp.pos
-  have hXS_div : (X : ℝ) * S / p ≤ (X : ℝ) ^ 2 / p := by rw [sq]; gcongr
-  have h2div : 2 * (X : ℝ) ^ 2 / p = (X : ℝ) ^ 2 / p + (X : ℝ) ^ 2 / p := by ring
-  have hexp :
-      (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
-        2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ) := by
-    linarith [Fintype.le_two_mul_sum_fin_prod_min_div (K := ℝ) p X S, hXS_div, h2div]
-  calc (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
-        2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2)
-      = ((X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2) *
-          Real.log p := by ring
-    _ ≤ (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
-          Real.log p := mul_le_mul_of_nonneg_right hexp hlog_nn
+        Real.log p :=
+  Fintype.le_two_mul_sum_fin_prod_min_div_mul hSX (Real.log_nonneg (by exact_mod_cast hp.one_le))
 
 end InertPrimeSum
 
@@ -316,10 +302,9 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
           (X : ℝ) ^ 3 * (∑ p ∈ P, Real.log p / (p : ℝ) ^ 2) ≤
         ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
           Real.log p := by
-    rw [Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum,
-      ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
-    exact Finset.sum_le_sum fun p hp ↦
-      le_two_mul_sum_fin_prod_min_mul_log (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2 hSX
+    simpa only [Finset.mul_sum, Finset.sum_sub_distrib] using
+      Finset.sum_le_sum fun p hp ↦
+        le_two_mul_sum_fin_prod_min_mul_log (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2 hSX
   have hrhs_le : Real.log (D : ℝ) ≤
       (X : ℝ) ^ 2 * S * ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) *
         Real.log ((q : ℝ) ^ C) + 15) :=

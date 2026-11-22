@@ -18,6 +18,7 @@ import TauCeti.Algebra.Squarefree
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 import TauCeti.Analysis.InnerProductSpace.Gram.Integral
+import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.NumberTheory.Zsqrtd.Gram
 import TauCeti.RingTheory.Polynomial.Resultant.Multiplicity
@@ -408,15 +409,6 @@ private theorem log_det_intGram_le {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
 
 /-! ### `p`-adic divisibility of `G.det` at inert primes -/
 
-/-- Frobenius at a prime `p` with `jacobiSym d p = -1` sends `x + y√d` to `x - y√d` mod `p`. -/
-private theorem inert_frobenius_sub_conj {d : ℤ} {p : ℕ} (hp : p.Prime)
-    (hjac : jacobiSym d p = -1) (x y : ℤ) :
-    (p : ℤ√d) ∣ (⟨x, y⟩ : ℤ√d) ^ p - ⟨x, -y⟩ := by
-  have : Fact p.Prime := ⟨hp⟩
-  have hns : ¬ IsSquare (d : ZMod p) := by
-    rw [← legendreSym.eq_neg_one_iff p, jacobiSym.legendreSym.to_jacobiSym, hjac]
-  simpa [Zsqrtd.star_mk] using Zsqrtd.natCast_dvd_pow_sub_star hp hns ⟨x, y⟩
-
 /-- Exponent `h = min (r / p) (S - 1 - s)` and the modified polynomial
 `z ^ (r - p * h) * (z ^ p - z') ^ h * z' ^ s`. -/
 private def shiftExp (p S : ℕ) (i : Fin R × Fin S) : ℕ :=
@@ -568,7 +560,8 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime)
   have hf : f = C (α_bar ^ i.2.val) * X ^ (i.1.val - p * h) * (X ^ p - C α_bar) ^ h := by
     simp [f, shiftPoly, h, mul_assoc]
   obtain ⟨A, hA⟩ := exists_taylor_X_pow_sub_C_eq_C_mul_add_X_pow hp
-    (inert_frobenius_sub_conj hp hjac k.1.val k.2.1.val)
+    (by simpa [α, α_bar, Zsqrtd.star_mk] using
+      Zsqrtd.natCast_dvd_pow_sub_star_of_jacobiSym_eq_neg_one hp hjac α)
   have htf : taylor α f =
       C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * (X ^ p + C (p : ℤ√d) * A) ^ h := by
     rw [hf, taylor_mul, taylor_mul, taylor_C, taylor_X_pow, taylor_pow, hA,
@@ -604,18 +597,10 @@ private theorem pow_dvd_det_intGram {d : ℤ} {p : ℕ} (hp : p.Prime)
     refine ⟨a₁ * a₂ + (d.natAbs : ℤ) * b₁ * b₂, ?_⟩
     rw [ha₁, hb₁, ha₂, hb₂]
     ring
-  choose M₀ hM₀ using hdvd_entry
-  have hmat : Zsqrtd.intGram d (shiftFam d p N R S) =
-      Matrix.diagonal (fun i ↦ (p : ℤ) ^ shiftExp p S i) * Matrix.of M₀ *
-        Matrix.diagonal (fun i ↦ (p : ℤ) ^ shiftExp p S i) := by
-    ext i j
-    rw [Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.of_apply, hM₀ i j]
-    ring
-  rw [← det_intGram_shiftFam_eq d hp.pos, hmat, Matrix.det_mul, Matrix.det_mul,
-    Matrix.det_diagonal, Finset.prod_pow_eq_pow_sum]
-  refine ⟨(Matrix.of M₀).det, ?_⟩
-  rw [two_mul, pow_add]
-  ring
+  rw [← det_intGram_shiftFam_eq d hp.pos]
+  simpa [Finset.prod_pow_eq_pow_sum, ← pow_add, ← two_mul] using
+    Matrix.prod_mul_prod_dvd_det_of_dvd (Zsqrtd.intGram d (shiftFam d p N R S))
+      (fun i ↦ (p : ℤ) ^ shiftExp p S i) (fun j ↦ (p : ℤ) ^ shiftExp p S j) hdvd_entry
 
 end InertPrimeSum
 

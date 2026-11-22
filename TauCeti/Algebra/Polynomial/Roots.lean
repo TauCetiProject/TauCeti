@@ -30,7 +30,8 @@ roots counted with multiplicity
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
 occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`), and
-`Polynomial.cappedRootMultiplicity` caps the root multiplicity at `N` (taking value `N` on `0`),
+`Polynomial.cappedRootMultiplicity` caps the root multiplicity at `N` (taking value `N` on `0`,
+and `0` at any nonroot via `Polynomial.cappedRootMultiplicity_eq_zero_of_not_isRoot`),
 so `k ≤ p.cappedRootMultiplicity a N ↔ (X - C a) ^ k ∣ p` for all `k ≤ N`.
 -/
 
@@ -219,6 +220,22 @@ end
 section
 
 variable {R : Type*} [CommRing R]
+
+/-- A polynomial's capped root multiplicity at any point where it evaluates to a nonzero value is
+`0`. This is the `simp` normal form of `Polynomial.cappedRootMultiplicity_eq_zero_of_not_isRoot`,
+since `Polynomial.IsRoot.def` simplifies `p.IsRoot a` to `p.eval a = 0`. -/
+@[simp]
+theorem cappedRootMultiplicity_eq_zero_of_eval_ne_zero {p : R[X]} {a : R}
+    (hp : p.eval a ≠ 0) (N : ℕ) :
+    p.cappedRootMultiplicity a N = 0 := by
+  have hp0 : p ≠ 0 := fun h ↦ hp (by simp [h])
+  simp [cappedRootMultiplicity_of_ne_zero hp0, rootMultiplicity_eq_zero (mt IsRoot.def.mp hp)]
+
+/-- A polynomial's capped root multiplicity at any nonroot is `0`. -/
+theorem cappedRootMultiplicity_eq_zero_of_not_isRoot {p : R[X]} {a : R}
+    (hp : ¬ p.IsRoot a) (N : ℕ) :
+    p.cappedRootMultiplicity a N = 0 :=
+  cappedRootMultiplicity_eq_zero_of_eval_ne_zero (mt IsRoot.def.mpr hp) N
 
 /-- For `k ≤ N`, `k ≤ p.cappedRootMultiplicity a N` if and only if `(X - C a) ^ k ∣ p`
 (including when `p = 0`). -/

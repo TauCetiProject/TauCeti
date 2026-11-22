@@ -92,8 +92,10 @@ depressed specialization of that formula is used to compare a quartic with its c
   exactly when `R` has a repeated element.
 * `Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr`: the same product formula for
   `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
-* `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
-  has nonzero discriminant.
+* `Squarefree.discr_ne_zero`, `Polynomial.resultant_deriv_eq`,
+  `Squarefree.resultant_deriv_ne_zero`: in characteristic zero, the default and explicitly
+  padded derivative resultants agree, and a squarefree polynomial over a GCD domain has nonzero
+  discriminant and nonzero derivative resultant.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
@@ -794,6 +796,15 @@ theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
   · exact PerfectField.separable_iff_squarefree.mpr hp.map_fraction_map
   · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
 
+/-- When the base ring has no `ℕ`-torsion (in particular, in characteristic zero), the default
+resultant `f.resultant f.derivative` equals the resultant at degree bounds `f.natDegree` and
+`f.natDegree - 1`. -/
+theorem resultant_deriv_eq {f : R[X]} [HasUniqueDiv R] :
+    f.resultant f.derivative = f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
+  show f.resultant f.derivative f.natDegree f.derivative.natDegree =
+    f.resultant f.derivative f.natDegree (f.natDegree - 1)
+  rw [natDegree_derivative]
+
 /-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero resultant with its
 derivative. -/
 theorem _root_.Squarefree.resultant_deriv_ne_zero {D : Type*} [CommRing D] [IsDomain D]
@@ -802,8 +813,7 @@ theorem _root_.Squarefree.resultant_deriv_ne_zero {D : Type*} [CommRing D] [IsDo
   rcases Nat.eq_zero_or_pos p.natDegree with h0 | hdeg
   · rw [eq_C_of_natDegree_eq_zero h0]
     simp [resultant]
-  · rw [resultant, natDegree_derivative, ← resultant,
-      resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg)]
+  · rw [resultant_deriv_eq, resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg)]
     exact mul_ne_zero
       (mul_ne_zero (pow_ne_zero _ (by norm_num)) (leadingCoeff_ne_zero.mpr hp.ne_zero))
       hp.discr_ne_zero

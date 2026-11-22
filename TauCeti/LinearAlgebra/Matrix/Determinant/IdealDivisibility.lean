@@ -31,8 +31,9 @@ statement needs the index type to be nonempty.
   product of the row ideals, and of the column ideals.
 * `Matrix.det_mem_pow_card`: the determinant of a matrix with all entries in `J` lies in
   `J ^ card n`.
-* `Matrix.prod_dvd_det_of_dvd_row`, `Matrix.pow_card_dvd_det`: row divisors multiply to a divisor
-  of the determinant, and a common divisor `r` of all entries gives `r ^ card n ∣ det A`.
+* `Matrix.prod_dvd_det_of_dvd_row`, `Matrix.prod_mul_prod_dvd_det_of_dvd`,
+  `Matrix.pow_card_dvd_det`: row divisors (and combined row-and-column divisors) multiply to a
+  divisor of the determinant, and a common divisor `r` of all entries gives `r ^ card n ∣ det A`.
 * `Matrix.det_submatrix_mem_prod_row_ideals` and its companions: the same statements for every
   full-row minor of a rectangular matrix.
 
@@ -78,6 +79,19 @@ theorem prod_dvd_det_of_dvd_row (A : Matrix m m R) (r : m → R) (h : ∀ i j, r
   simpa [← Ideal.mem_span_singleton, ← Ideal.prod_span_singleton] using
     det_mem_prod_row_ideals A (fun i ↦ Ideal.span {r i}) fun i j ↦
       Ideal.mem_span_singleton.2 (h i j)
+
+/-- **Row-and-column-divisor form.** If `r i * c j` divides entry `(i, j)` of `A`, then
+`(∏ i, r i) * (∏ j, c j)` divides `A.det`. -/
+theorem prod_mul_prod_dvd_det_of_dvd (A : Matrix m m R) (r c : m → R)
+    (h : ∀ i j, r i * c j ∣ A i j) :
+    (∏ i, r i) * (∏ j, c j) ∣ A.det := by
+  choose M hM using h
+  have hmat : A = Matrix.diagonal r * Matrix.of M * Matrix.diagonal c := by
+    ext i j
+    rw [Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.of_apply, hM i j]
+    ring
+  rw [hmat, Matrix.det_mul, Matrix.det_mul, Matrix.det_diagonal, Matrix.det_diagonal]
+  exact ⟨(Matrix.of M).det, by ring⟩
 
 /-- **Principal form.** If `r` divides every entry of a square matrix, then `r ^ card m` divides
 its determinant. -/
