@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Complex.Runge.Operator
 public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
-import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
 import TauCeti.Analysis.Normed.Module.FilledHull
@@ -102,28 +101,26 @@ theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {W : Type*} [Norm
     [NormedSpace ℂ W] {Ω K U : Set ℂ} (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U)
     (hKU : K ⊆ U) {f : ℂ → W} (hf : DifferentiableOn ℂ f U) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : ℂ → W, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε := by
-  obtain ⟨L, hL, -, hLUO, hop⟩ := exists_finite_rank_runge_operator hRunge hU hKU
+  obtain ⟨W₂, hW₂, hKW₂, hW₂UO, hW₂c⟩ :=
+    exists_open_between_and_isCompact_closure hRunge.isCompact (hU.inter hRunge.isOpen)
+      (subset_inter hKU hRunge.subset)
+  set L : Set ℂ := closure W₂
+  have hKL : K ⊆ interior L := hKW₂.trans (hW₂.subset_interior_iff.mpr subset_closure)
+  have hLU : interior L ⊆ U :=
+    interior_subset.trans (hW₂UO.trans inter_subset_left)
   obtain ⟨M, hM⟩ :=
-    hL.bddAbove_image (hf.continuousOn.mono (hLUO.trans inter_subset_left)).norm
+    hW₂c.bddAbove_image (hf.continuousOn.mono (hW₂UO.trans inter_subset_left)).norm
   set B : ℝ := max M 1
   have hB1 : 0 < B := zero_lt_one.trans_le (le_max_right _ _)
-  have hLB : ∀ z ∈ L, ‖f z‖ ≤ B := fun z hz =>
-    (hM ⟨z, hz, rfl⟩).trans (le_max_left _ _)
-  obtain ⟨N, ζ, w, g, -, hg_diff, hbound⟩ := hop (ε / 2 / B) (by positivity)
-  refine ⟨fun z => ∑ j : Fin N, (w j * g j z) • f (ζ j), ?_, fun z hz => ?_⟩
-  · exact DifferentiableOn.fun_sum fun j _ => ((hg_diff j).const_mul (w j)).smul_const (f (ζ j))
-  -- The scalar estimate for `φ ∘ f`, for every continuous linear functional `φ`, bounds the norm.
-  refine (NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun φ => ?_).trans_lt
-    ((div_mul_cancel₀ _ hB1.ne').trans_lt (half_lt_self hε))
-  have hφ := hbound (fun z => φ (f z)) (φ.differentiable.comp_differentiableOn hf)
-    (‖φ‖ * B) (by positivity) (fun z hz => (φ.le_opNorm _).trans (by gcongr; exact hLB z hz)) z hz
-  calc ‖φ (f z - ∑ j : Fin N, (w j * g j z) • f (ζ j))‖
-      = ‖φ (f z) - ∑ j : Fin N, w j * φ (f (ζ j)) * g j z‖ := by
-        simp only [map_sub, map_sum, map_smul, smul_eq_mul]
-        congr 2
-        exact Finset.sum_congr rfl fun j _ => by ring
-    _ ≤ ε / 2 / B * (‖φ‖ * B) := hφ
-    _ = ε / 2 / B * B * ‖φ‖ := by ring
+  have hLB : ∀ z ∈ interior L, ‖f z‖ ≤ B := fun z hz =>
+    (hM ⟨z, interior_subset hz, rfl⟩).trans (le_max_left _ _)
+  obtain ⟨N, ζ, c, g, -, hg_diff, hbound⟩ :=
+    hRunge.isFilledIn.exists_norm_sub_sum_mul_smul_le hRunge.isOpen hRunge.isCompact hRunge.subset
+      isOpen_interior hKL (ε := ε / 2 / B) (by positivity)
+  refine ⟨fun z => ∑ i : Fin N, (c i * g i z) • f (ζ i), ?_, fun z hz => ?_⟩
+  · exact DifferentiableOn.fun_sum fun i _ => ((hg_diff i).const_mul (c i)).smul_const (f (ζ i))
+  · exact (hbound f B (hf.mono hLU) hLB z hz).trans_lt
+      ((div_mul_cancel₀ _ hB1.ne').trans_lt (half_lt_self hε))
 
 /-- **Runge's approximation theorem** (domain-relative form): for compact `K ⊆ Ω` with `Ω ⊆ ℂ`
 open, `IsRungeCompactPair Ω K` holds if and only if every function holomorphic on an open

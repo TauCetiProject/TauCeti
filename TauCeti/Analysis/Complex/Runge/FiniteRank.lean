@@ -6,45 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import TauCeti.Analysis.Complex.Runge.SimpleFraction
+public import TauCeti.Analysis.Complex.Runge.Operator
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Complex.MixedDeriv
-import TauCeti.Analysis.Complex.Pompeiu.Discretization
 
 /-!
-# Finite-rank Runge approximation operators
+# Parametric finite-rank Runge approximation operators
 
 Let `K` be a compact subset of an open set `Ω ⊆ ℂ` which is filled in `Ω` (`TauCeti.IsFilledIn K Ω`,
 meaning no connected component of `Ω \ K` is relatively compact in `Ω`), and let `V ⊇ K` be open.
-For every `ε > 0`, this file constructs finitely many evaluation points `ζ i ∈ V \ K`, weights
-`c i : ℂ`, and holomorphic functions `g i : ℂ → ℂ` on `Ω` such that every function `f : ℂ → F`
-into any complex normed space, holomorphic on `V` and bounded by `M` there, satisfies
-
-`‖f w - ∑ i, (c i * g i w) • f (ζ i)‖ ≤ ε * M`  for all `w ∈ K`
-
-(`TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`). Writing
-`A f w = ∑ i, (c i * g i w) • f (ζ i)` and taking `V = interior L` for a compact collar `L ⊆ U`
-with `K ⊆ interior L` inside an open neighbourhood `U ⊇ K` on which `f` is holomorphic specializes
-the estimate to `sup_K ‖f - A f‖ ≤ ε * sup_L ‖f‖` with `ζ i ∈ interior L \ K`. Because `ζ`, `c`,
-and `g` depend only on `K`, `V`, `Ω`, and `ε` — neither on `f` nor on the target space `F` — the
-resulting linear operator `A` commutes with differentiation in external smooth parameters
-(`TauCeti.iteratedFDeriv_sub_sum_mul_smul`), preserves joint smoothness and holomorphic dependence
-on external complex parameters, and yields the corresponding `ε * M` error estimate for every
-iterated parameter derivative (`TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`).
-
-The proof combines the discretized Cauchy–Pompeiu formula
-(`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`), which approximates `f` uniformly on `K` by
-fixed simple fractions `(w - ζ i)⁻¹`, with simple-fraction Runge approximation
-(`TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`), which replaces each `(w - ζ i)⁻¹`
-on `K` by a function `g i` holomorphic on `Ω`.
+Because the finite-rank Runge operator from `TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`
+(`TauCeti.Analysis.Complex.Runge.Operator`) chooses its nodes `ζ i ∈ V \ K`, weights `c i : ℂ`,
+and `Ω`-holomorphic functions `g i : ℂ → ℂ` independently of both the input function and the
+target space, applying it fiberwise and commuting finite constant-coefficient sums with
+`iteratedFDeriv` (`TauCeti.iteratedFDeriv_sub_sum_const_smul`) yields a parametric finite-rank
+Runge operator (`TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`) that preserves
+joint smoothness and external complex holomorphy while bounding every iterated parameter derivative
+uniformly by `ε * M` on `K`.
 
 ## Main results
 
-* `TauCeti.IsFilledIn.exists_norm_sub_sum_mul_smul_le`: the finite-rank Runge operator with
-  uniform error bound `ε * M`, independent of the target space `F`.
-* `TauCeti.iteratedFDeriv_sub_sum_mul_smul`: commutation of `iteratedFDeriv ℝ k` with finite-rank
-  Runge approximation.
 * `TauCeti.IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le`: parametric finite-rank Runge
   approximation preserving joint smoothness and parameter holomorphy and bounding all iterated
   parameter derivatives uniformly by `ε * M`.
@@ -60,80 +43,9 @@ public section
 
 open Set
 
-universe u uX uQ uF
+universe uX uQ uF
 
 namespace TauCeti
-
-/-- **The finite-rank Runge operator.** Let `K` be a compact subset filled in an open set `Ω ⊆ ℂ`,
-and let `V ⊇ K` be open. For every `ε > 0` there are finitely many evaluation points `ζ i ∈ V \ K`,
-weights `c i : ℂ`, and functions `g i : ℂ → ℂ` holomorphic on `Ω` such that every `f : ℂ → F`
-into a complex normed space, holomorphic on `V` and bounded by `M` there, satisfies
-`‖f w - ∑ i, (c i * g i w) • f (ζ i)‖ ≤ ε * M` for all `w ∈ K`.
-
-The data `(N, ζ, c, g)` depend only on `K`, `V`, `Ω`, and `ε`, not on `f` or `F`. -/
-theorem IsFilledIn.exists_norm_sub_sum_mul_smul_le {K V Ω : Set ℂ} (hfill : IsFilledIn K Ω)
-    (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hV : IsOpen V) (hKV : K ⊆ V)
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ (N : ℕ) (ζ : Fin N → ℂ) (c : Fin N → ℂ) (g : Fin N → ℂ → ℂ),
-      (∀ i, ζ i ∈ V \ K) ∧ (∀ i, DifferentiableOn ℂ (g i) Ω) ∧
-      ∀ {F : Type u} [NormedAddCommGroup F] [NormedSpace ℂ F] (f : ℂ → F) (M : ℝ),
-        DifferentiableOn ℂ f V → (∀ z ∈ V, ‖f z‖ ≤ M) →
-        ∀ w ∈ K, ‖f w - ∑ i, (c i * g i w) • f (ζ i)‖ ≤ ε * M := by
-  -- Discretize the Cauchy–Pompeiu formula at accuracy `ε / 2`, then approximate each pole on `K`.
-  obtain ⟨N, ζ, c, hζ, hdisc⟩ :=
-    hK.exists_norm_sub_sum_mul_sub_inv_smul_le.{u} hV hKV (half_pos hε)
-  set S : ℝ := ∑ i, ‖c i‖
-  have hδ : 0 < (ε / 2) / (S + 1) := by positivity
-  have hrunge (i : Fin N) : ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧
-      ∀ w ∈ K, ‖(w - ζ i)⁻¹ - g w‖ < (ε / 2) / (S + 1) :=
-    hfill.exists_differentiableOn_norm_inv_sub_lt hΩ hK hKΩ (hζ i).2 hδ
-  choose g hg hgap using hrunge
-  refine ⟨N, ζ, c, g, hζ, hg, fun {F} _ _ f M hf hM w hw ↦ ?_⟩
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM w (hKV hw))
-  have hsplit : f w - ∑ i, (c i * g i w) • f (ζ i) =
-      (f w - ∑ i, (c i * (w - ζ i)⁻¹) • f (ζ i)) +
-        ∑ i, (c i * ((w - ζ i)⁻¹ - g i w)) • f (ζ i) := by
-    simp_rw [mul_sub, sub_smul, Finset.sum_sub_distrib]
-    abel
-  have htail : ‖∑ i, (c i * ((w - ζ i)⁻¹ - g i w)) • f (ζ i)‖ ≤ ε / 2 * M := by
-    calc
-      ‖∑ i, (c i * ((w - ζ i)⁻¹ - g i w)) • f (ζ i)‖
-          ≤ ∑ i, ‖(c i * ((w - ζ i)⁻¹ - g i w)) • f (ζ i)‖ := norm_sum_le _ _
-      _ ≤ ∑ i, ‖c i‖ * ((ε / 2) / (S + 1)) * M := by
-        refine Finset.sum_le_sum fun i _ ↦ ?_
-        rw [norm_smul, norm_mul]
-        exact mul_le_mul (mul_le_mul_of_nonneg_left (hgap i w hw).le (norm_nonneg _))
-          (hM (ζ i) (hζ i).1) (norm_nonneg _) (by positivity)
-      _ = S * ((ε / 2) / (S + 1)) * M := by simp only [← Finset.sum_mul, S]
-      _ ≤ (S + 1) * ((ε / 2) / (S + 1)) * M := by gcongr; linarith
-      _ = ε / 2 * M := by rw [mul_div_cancel₀ _ (by positivity)]
-  rw [hsplit]
-  calc
-    ‖(f w - ∑ i, (c i * (w - ζ i)⁻¹) • f (ζ i)) +
-        ∑ i, (c i * ((w - ζ i)⁻¹ - g i w)) • f (ζ i)‖
-        ≤ ‖f w - ∑ i, (c i * (w - ζ i)⁻¹) • f (ζ i)‖ +
-          ‖∑ i, (c i * ((w - ζ i)⁻¹ - g i w)) • f (ζ i)‖ := norm_add_le _ _
-    _ ≤ ε / 2 * M + ε / 2 * M := add_le_add (hdisc f M hf hM w hw) htail
-    _ = ε * M := by ring
-
-/-- **Parameter-derivative commutation for finite-rank Runge sums.** Forming a finite linear
-combination with fixed `w`-dependent scalar weights `c i * g i w` evaluated at fixed nodes `ζ i`
-commutes with the `k`-th Fréchet derivative in the external parameter `x`. -/
-theorem iteratedFDeriv_sub_sum_mul_smul {X F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    [NormedAddCommGroup F] [NormedSpace ℂ F] {N : ℕ} (ζ c : Fin N → ℂ) (g : Fin N → ℂ → ℂ)
-    {f : X → ℂ → F} {k : ℕ} {x : X} {w : ℂ}
-    (hw : ContDiffAt ℝ k (fun x' ↦ f x' w) x)
-    (hζ : ∀ i, ContDiffAt ℝ k (fun x' ↦ f x' (ζ i)) x) :
-    iteratedFDeriv ℝ k (fun x' ↦ f x' w - ∑ i, (c i * g i w) • f x' (ζ i)) x =
-      iteratedFDeriv ℝ k (fun x' ↦ f x' w) x -
-        ∑ i, (c i * g i w) • iteratedFDeriv ℝ k (fun x' ↦ f x' (ζ i)) x := by
-  have ha_cd : ContDiffAt ℝ k (fun x' ↦ ∑ i : Fin N, (c i * g i w) • f x' (ζ i)) x :=
-    ContDiffAt.sum fun i _ ↦ (hζ i).const_smul (c i * g i w)
-  have hsub_eq : (fun x' ↦ f x' w - ∑ i : Fin N, (c i * g i w) • f x' (ζ i)) =
-      (fun x' ↦ f x' w) - (fun x' ↦ ∑ i : Fin N, (c i * g i w) • f x' (ζ i)) := rfl
-  rw [hsub_eq, iteratedFDeriv_sub_apply hw ha_cd,
-    iteratedFDeriv_fun_sum_apply fun i _ ↦ (hζ i).const_smul (c i * g i w)]
-  simp only [iteratedFDeriv_const_smul_apply' (hζ _)]
 
 /-- **Parametric finite-rank Runge operator.** Let `K` be a compact subset filled in an open set
 `Ω ⊆ ℂ`, and let `V ⊇ K` be open. For every `ε > 0` there are finitely many evaluation points
@@ -187,7 +99,8 @@ theorem IsFilledIn.exists_norm_iteratedFDeriv_sub_sum_mul_smul_le {K V Ω : Set 
     have hslice (z : ℂ) (hz : z ∈ V) : ContDiffAt ℝ k (fun x' ↦ f x' z) x :=
       ((hf_cd.contDiffAt ((hs.prod hV).mem_nhds ⟨hx, hz⟩)).of_le
         (by exact_mod_cast Nat.le_succ k)).comp x (contDiffAt_id.prodMk contDiffAt_const)
-    rw [iteratedFDeriv_sub_sum_mul_smul ζ c g (hslice w (hKV hw)) fun i ↦ hslice (ζ i) (hζ i).1]
+    rw [iteratedFDeriv_sub_sum_const_smul (u := Finset.univ) (fun i ↦ c i * g i w)
+      (hslice w (hKV hw)) fun i _ ↦ hslice (ζ i) (hζ i).1]
     exact happrox φ M hφ_hol hM w hw
 
 end TauCeti

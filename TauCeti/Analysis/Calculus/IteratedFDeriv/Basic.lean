@@ -45,7 +45,9 @@ most one (`TauCeti.norm_iteratedFDeriv_id_le_one`), as have those of right trans
 a continuous linear map `L` are constant (`ContinuousLinearMap.iteratedFDeriv_succ_eq`), so
 adding `L` to a differentiable function adds them to its derivatives of positive order
 (`ContinuousLinearMap.iteratedFDeriv_succ_add_apply`) and does not change their Hölder constants
-(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_succ_add_left_iff`).
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_succ_add_left_iff`). Finite linear
+combinations with constant coefficients commute with `iteratedFDeriv`
+(`TauCeti.iteratedFDeriv_fun_sum_const_smul`, `TauCeti.iteratedFDeriv_sub_sum_const_smul`).
 -/
 
 public section
@@ -326,5 +328,27 @@ theorem iteratedFDeriv_indicator_of_mem_nhds {𝕜 E F : Type*} [NontriviallyNor
     iteratedFDeriv 𝕜 k (s.indicator g) x = iteratedFDeriv 𝕜 k g x :=
   (Filter.EventuallyEq.iteratedFDeriv 𝕜 (Filter.eventually_of_mem hs
     fun _ hy ↦ Set.indicator_of_mem hy g) k).eq_of_nhds
+
+/-- Finite linear combinations with constant coefficients commute with `iteratedFDeriv`. -/
+theorem iteratedFDeriv_fun_sum_const_smul {ι R : Type*} [DistribSMul R F] [SMulCommClass 𝕜 R F]
+    [ContinuousConstSMul R F] {u : Finset ι} (a : ι → R) {g : ι → E → F} {k : ℕ} {x : E}
+    (hg : ∀ i ∈ u, ContDiffAt 𝕜 k (g i) x) :
+    iteratedFDeriv 𝕜 k (fun x' ↦ ∑ i ∈ u, a i • g i x') x =
+      ∑ i ∈ u, a i • iteratedFDeriv 𝕜 k (g i) x := by
+  rw [iteratedFDeriv_fun_sum_apply fun i hi ↦ (hg i hi).const_smul (a i)]
+  exact Finset.sum_congr rfl fun i hi ↦ iteratedFDeriv_const_smul_apply' (hg i hi)
+
+/-- Subtracting a finite linear combination with constant coefficients commutes with
+`iteratedFDeriv`. -/
+theorem iteratedFDeriv_sub_sum_const_smul {ι R : Type*} [DistribSMul R F] [SMulCommClass 𝕜 R F]
+    [ContinuousConstSMul R F] {u : Finset ι} (a : ι → R) {f : E → F} {g : ι → E → F}
+    {k : ℕ} {x : E} (hf : ContDiffAt 𝕜 k f x) (hg : ∀ i ∈ u, ContDiffAt 𝕜 k (g i) x) :
+    iteratedFDeriv 𝕜 k (fun x' ↦ f x' - ∑ i ∈ u, a i • g i x') x =
+      iteratedFDeriv 𝕜 k f x - ∑ i ∈ u, a i • iteratedFDeriv 𝕜 k (g i) x := by
+  have hsum : ContDiffAt 𝕜 k (fun x' ↦ ∑ i ∈ u, a i • g i x') x :=
+    ContDiffAt.sum fun i hi ↦ (hg i hi).const_smul (a i)
+  have hsub_eq : (fun x' ↦ f x' - ∑ i ∈ u, a i • g i x') =
+      f - (fun x' ↦ ∑ i ∈ u, a i • g i x') := rfl
+  rw [hsub_eq, iteratedFDeriv_sub_apply hf hsum, iteratedFDeriv_fun_sum_const_smul a hg]
 
 end TauCeti
