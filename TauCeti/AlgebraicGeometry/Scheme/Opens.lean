@@ -60,6 +60,8 @@ This file records general-purpose facts about open subsets of schemes.
   closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
   finitely many basic opens `V i` is covered by `A` and one basic open inside the union of the
   `V i`.
+* `AlgebraicGeometry.IsAffineOpen.isAffineHom_ι`: an affine open in a scheme with affine
+  diagonal has affine inclusion.
 * `AlgebraicGeometry.Scheme.exists_basicOpen_eq_of_isCompl`: an open and closed subset of a
   scheme is the basic open of a global function, namely the one that is `1` on it and `0` on its
   complement.
@@ -122,13 +124,20 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage {Y : 
 cover `X`. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top {Y : Scheme.{u}}
     (f : X ⟶ Y) :
-    ⨆ V : {V : X.affineOpens // ∃ U : Y.affineOpens, V.1 ≤ f ⁻¹ᵁ U.1}, V.1.1 = ⊤ := by
+    ⨆ V : {V : X.affineOpens // ∃ U : Y.affineOpens, V.val ≤ f ⁻¹ᵁ U.val}, V.val.val = ⊤ := by
   refine eq_top_iff.2 fun x _ ↦ ?_
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).2
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).is_open'
   exact Opens.mem_iSup.2 ⟨⟨⟨V, hV⟩, ⟨U, hU⟩, hVU⟩, hxV⟩
+
+/-- An affine open in a scheme with affine diagonal has affine inclusion. -/
+lemma _root_.AlgebraicGeometry.IsAffineOpen.isAffineHom_ι (hU : IsAffineOpen U)
+    [IsAffineHom (Limits.pullback.diagonal (Limits.terminal.from X))] : IsAffineHom U.ι :=
+  ⟨fun V hV ↦ U.ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+    exact hU.inf hV)⟩
 
 /-- On a scheme with affine diagonal, for instance a separated one, a nonempty finite intersection
 of affine opens is affine. -/
@@ -161,8 +170,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq
 is inherited by the restriction of `b` to any smaller open `V'`. -/
 theorem _root_.AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le {V V' : X.Opens}
     (hV'V : V' ≤ V) {b : Γ(X, V)} {P : ∀ W : X.affineOpens, Γ(X, W) → Prop}
-    (h : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
-    (W : X.affineOpens) (hWV' : W.1 ≤ V') :
+    (h : ∀ (W : X.affineOpens) (hWV : W.val ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
+    (W : X.affineOpens) (hWV' : W.val ≤ V') :
     P W (X.presheaf.map (homOfLE hWV').op (X.presheaf.map (homOfLE hV'V).op b)) := by
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
   exact h W (hWV'.trans hV'V)
@@ -171,29 +180,32 @@ theorem _root_.AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le {V V' : X.O
 affine open `U` of `X`, compatible with restriction from an affine open to a smaller one, consists
 of the restrictions of a unique global section. -/
 theorem _root_.AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens (X : Scheme.{u})
-    (s : ∀ U : X.affineOpens, Γ(X, U.1))
-    (hs : ∀ (U V : X.affineOpens) (h : V.1 ≤ U.1), X.presheaf.map (homOfLE h).op (s U) = s V) :
+    (s : ∀ U : X.affineOpens, Γ(X, U.val))
+    (hs : ∀ (U V : X.affineOpens) (h : V.val ≤ U.val), X.presheaf.map (homOfLE h).op (s U) = s V) :
     ∃! t : Γ(X, ⊤), ∀ U : X.affineOpens, X.presheaf.map (homOfLE le_top).op t = s U := by
   -- every open `V` is covered by the affine opens it contains
-  have hcov (V : X.Opens) : V ≤ ⨆ W : {W : X.affineOpens // W.1 ≤ V}, W.1.1 := fun x hx ↦ by
+  have hcov (V : X.Opens) : V ≤ ⨆ W : {W : X.affineOpens // W.val ≤ V}, W.val.val := fun x hx ↦ by
     obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hWV⟩ :=
       X.isBasis_affineOpens.exists_subset_of_mem_open hx V.isOpen
     exact Opens.mem_iSup.mpr ⟨⟨⟨W, hW⟩, hWV⟩, hxW⟩
-  refine X.sheaf.existsUnique_gluing' (fun U : X.affineOpens ↦ U.1) ⊤ (fun _ ↦ homOfLE le_top)
+  refine X.sheaf.existsUnique_gluing' (fun U : X.affineOpens ↦ U.val) ⊤ (fun _ ↦ homOfLE le_top)
     (iSup_affineOpens_eq_top X).ge s fun U U' ↦ ?_
   -- on `U ⊓ U'`, the two restrictions agree on every affine open `W ⊆ U ⊓ U'`
-  refine X.sheaf.eq_of_locally_eq' (fun W : {W : X.affineOpens // W.1 ≤ U.1 ⊓ U'.1} ↦ W.1.1) _
-    (fun W ↦ homOfLE W.2) (hcov _) _ _ fun W ↦ ?_
+  refine X.sheaf.eq_of_locally_eq' (fun W : {W : X.affineOpens // W.val ≤ U.val ⊓ U'.val} ↦
+      W.val.val) _
+    (fun W ↦ homOfLE W.property) (hcov _) _ _ fun W ↦ ?_
   -- stated through `X.presheaf`, the underlying presheaf of `X.sheaf`
-  have h₁ : X.presheaf.map (homOfLE W.2).op (X.presheaf.map (Opens.infLELeft U.1 U'.1).op (s U)) =
-      s W.1 := by
+  have h₁ : X.presheaf.map (homOfLE W.property).op (X.presheaf.map (Opens.infLELeft U.val U'.val).op
+      (s U)) =
+      s W.val := by
     rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-    exact hs U W.1 (W.2.trans inf_le_left)
+    exact hs U W.val (W.property.trans inf_le_left)
   have h₂ :
-      X.presheaf.map (homOfLE W.2).op (X.presheaf.map (Opens.infLERight U.1 U'.1).op (s U')) =
-        s W.1 := by
+      X.presheaf.map (homOfLE W.property).op (X.presheaf.map (Opens.infLERight U.val U'.val).op
+          (s U')) =
+        s W.val := by
     rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-    exact hs U' W.1 (W.2.trans inf_le_right)
+    exact hs U' W.val (W.property.trans inf_le_right)
   exact h₁.trans h₂.symm
 
 /-- Restriction of sections from `W` to `U` followed by restriction to `V ≤ U` is restriction from
@@ -208,10 +220,10 @@ theorem _root_.AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp {V U W : X.Ope
 /-- **Global sections are determined by their restrictions to the affine opens.** -/
 theorem _root_.AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq (X : Scheme.{u})
     {x y : Γ(X, ⊤)}
-    (h : ∀ U : X.affineOpens, X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op x =
-      X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op y) :
+    (h : ∀ U : X.affineOpens, X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op x =
+      X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op y) :
     x = y :=
-  (X.existsUnique_gluing_affineOpens (fun U ↦ X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op y)
+  (X.existsUnique_gluing_affineOpens (fun U ↦ X.presheaf.map (homOfLE (le_top : U.val ≤ ⊤)).op y)
     fun _ _ hVU ↦ congrArg (· y)
       (congrArg DFunLike.coe (Scheme.presheaf_map_homOfLE_comp (X := X) hVU le_top))).unique h
     fun _ ↦ rfl
@@ -222,11 +234,34 @@ below `U` whose supremum contains `U`, the form taken by the sheaf gluing lemmas
 `TopCat.Sheaf.eq_of_locally_eq'` and `TopCat.Sheaf.existsUnique_gluing'`. -/
 theorem _root_.AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover
     (hU : IsCompact (U : Set X)) :
-    ∃ (s : Set X.affineOpens) (_ : Finite s), (∀ i : s, (i.1 : X.Opens) ≤ U) ∧
-      U ≤ ⨆ i : s, (i.1 : X.Opens) := by
+    ∃ (s : Set X.affineOpens) (_ : Finite s), (∀ i : s, (i.val : X.Opens) ≤ U) ∧
+      U ≤ ⨆ i : s, (i.val : X.Opens) := by
   obtain ⟨s, hs, e⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hU
-  exact ⟨s, hs.to_subtype, fun i ↦ e ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.2,
+  exact ⟨s, hs.to_subtype, fun i ↦ e ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.property,
     by rw [e, iSup_subtype']⟩
+
+/-- A compact open admits a finite affine refinement whose members map into affine
+opens of the target of a given scheme morphism. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.exists_finite_affine_refinement
+    {Y S : Scheme.{u}} (p : Y ⟶ S) (V : Y.Opens) (hV : IsCompact (V : Set Y)) :
+    ∃ (U : V → Y.Opens), (∀ x, IsAffineOpen (U x)) ∧
+      (∀ x, U x ≤ V) ∧ ∃ (W : V → S.Opens), (∀ x, IsAffineOpen (W x)) ∧
+        (∀ x, U x ≤ p ⁻¹ᵁ W x) ∧ ∃ t : Finset V,
+          (V : Set Y) ⊆ ⋃ x ∈ t, (U x : Set Y) := by
+  classical
+  have hnbhd (x : V) : ∃ (U : Y.Opens), IsAffineOpen U ∧ x.val ∈ U ∧
+      U ≤ V ∧ ∃ W : S.Opens, IsAffineOpen W ∧ U ≤ p ⁻¹ᵁ W := by
+    obtain ⟨W, hW, hxW, _⟩ := exists_isAffineOpen_mem_and_subset
+      (X := S) (x := p x.val) (U := ⊤) (by trivial)
+    obtain ⟨U, hU, hxU, hUV⟩ := exists_isAffineOpen_mem_and_subset
+      (U := V ⊓ p ⁻¹ᵁ W) ⟨x.property, hxW⟩
+    exact ⟨U, hU, hxU, le_trans hUV inf_le_left, W, hW, le_trans hUV inf_le_right⟩
+  choose U hU hxU hUV W hW hUW using hnbhd
+  obtain ⟨t, ht⟩ := hV.elim_finite_subcover (fun x ↦ (U x : Set Y))
+    (fun x ↦ (U x).isOpen) (by
+      intro x hx
+      exact Set.mem_iUnion.mpr ⟨⟨x, hx⟩, hxU ⟨x, hx⟩⟩)
+  exact ⟨U, hU, hUV, W, hW, hUW, t, ht⟩
 
 /-- Along the open immersion `hU.fromSpec : Spec Γ(X, U) ⟶ X` onto an affine open `U`,
 restricting a section of `𝒪_X` from `U` to the image of an open `V` and transporting it to `V`
@@ -268,15 +303,15 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top 
 opens of `U` contained in `W`. -/
 theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_finset_sup_basicOpen_eq (hU : IsAffineOpen U)
     {W : X.Opens} (hW : IsCompact (W : Set X)) (hWU : W ≤ U) :
-    ∃ s : Finset {f : Γ(X, U) // X.basicOpen f ≤ W}, s.sup (fun i ↦ X.basicOpen i.1) = W := by
+    ∃ s : Finset {f : Γ(X, U) // X.basicOpen f ≤ W}, s.sup (fun i ↦ X.basicOpen i.val) = W := by
   obtain ⟨s, hs⟩ := hW.elim_finite_subcover
-    (fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ (X.basicOpen i.1 : Set X))
-    (fun i ↦ (X.basicOpen i.1).isOpen) fun x hx ↦ by
+    (fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ (X.basicOpen i.val : Set X))
+    (fun i ↦ (X.basicOpen i.val).isOpen) fun x hx ↦ by
       obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hWU hx)
       exact Set.mem_iUnion.mpr ⟨⟨f, hf⟩, hxf⟩
-  refine ⟨s, le_antisymm (Finset.sup_le fun i _ ↦ i.2) fun x hx ↦ ?_⟩
+  refine ⟨s, le_antisymm (Finset.sup_le fun i _ ↦ i.property) fun x hx ↦ ?_⟩
   obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (hs hx)
-  exact (Finset.le_sup (f := fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ X.basicOpen i.1) hi) hxi
+  exact (Finset.le_sup (f := fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ X.basicOpen i.val) hi) hxi
 
 /-- The basic opens `X.basicOpen f` of sections `f` over an open `U` are closed under binary
 intersections. -/

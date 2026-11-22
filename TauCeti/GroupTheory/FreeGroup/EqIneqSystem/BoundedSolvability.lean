@@ -206,8 +206,8 @@ private theorem primrec₂_constrainedCandidates : Primrec₂ (constrainedCandid
       (Primrec.eq.comp (Primrec.fst.comp Primrec.snd) (Primrec.snd.comp Primrec.fst))
       (Primrec.option_some.comp (Primrec.snd.comp Primrec.snd)) (Primrec.const none)).to₂
   have hb : Primrec (constraintBound (A := A)) :=
-    Primrec.succ.comp ((Primrec.list_sum Primrec.nat_add).comp
-      (Primrec.list_map Primrec.id (Primrec.fst.comp Primrec.snd).to₂))
+    Primrec.succ.comp
+      (Primrec.list_sum (Primrec.list_map Primrec.id (Primrec.fst.comp Primrec.snd).to₂))
   exact (Primrec.list_sections.comp (Primrec.list_map
     (Primrec.list_range.comp (hb.comp Primrec.fst))
     (primrec₂_wordsOverOfLengthLE.comp (hl.comp (Primrec.fst.comp Primrec.fst) Primrec.snd)

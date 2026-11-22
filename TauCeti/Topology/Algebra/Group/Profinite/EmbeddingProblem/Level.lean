@@ -94,18 +94,18 @@ def levelSolutionEquiv (α : A →ₜ* B) (hα : Function.Surjective α) (f : G 
     {β : G →* (levelProblem α hα f U).E // (levelProblem α hα f U).IsSolution β} ≃
       LevelSolution α hα f U where
   toFun β :=
-    ⟨⟨_, (MonoidHom.continuous_iff_isOpen_ker _).mpr β.2.isOpen_ker_subtype_comp⟩,
-      fun g ↦ DFunLike.congr_fun β.2.comp_subtype_comp g⟩
+    ⟨⟨_, (MonoidHom.continuous_iff_isOpen_ker _).mpr β.property.isOpen_ker_subtype_comp⟩,
+      fun g ↦ DFunLike.congr_fun β.property.comp_subtype_comp g⟩
   invFun β := by
     let φ := levelMap α hα U
     let π := (QuotientGroup.mk' (levelImage α hα U).toSubgroup).comp f.toMonoidHom
-    let β' : G →* π.range.comap φ := β.1.toMonoidHom.codRestrict _ fun g ↦
-      ⟨g, (β.2 g).symm⟩
+    let β' : G →* π.range.comap φ := β.val.toMonoidHom.codRestrict _ fun g ↦
+      ⟨g, (β.property g).symm⟩
     refine ⟨β', FiniteEmbeddingProblem.isSolution_ofSurjective_iff.mpr ⟨?_, ?_⟩⟩
     · exact (MonoidHom.continuous_iff_isOpen_ker _).mp
-        (β.1.continuous.subtype_mk _)
+        (β.val.continuous.subtype_mk _)
     · ext g
-      exact β.2 g
+      exact β.property g
   left_inv β := by
     apply Subtype.ext
     ext g
@@ -121,14 +121,14 @@ def levelSolutionEquiv (α : A →ₜ* B) (hα : Function.Surjective α) (f : G 
 theorem levelSolutionEquiv_apply_coe (α : A →ₜ* B) (hα : Function.Surjective α) (f : G →ₜ* B)
     (U : OpenNormalSubgroup A)
     (β : {β : G →* (levelProblem α hα f U).E // (levelProblem α hα f U).IsSolution β}) (g : G) :
-    (levelSolutionEquiv α hα f U β).1 g = (β.1 g : A ⧸ U.toSubgroup) :=
+    (levelSolutionEquiv α hα f U β).val g = (β.val g : A ⧸ U.toSubgroup) :=
   (rfl)
 
 /-- The solution associated with a lift into `A/U` has the same underlying map. -/
 -- Not `@[simp]`, for the same reason as `levelSolutionEquiv_apply_coe`.
 theorem levelSolutionEquiv_symm_apply_coe (α : A →ₜ* B) (hα : Function.Surjective α)
     (f : G →ₜ* B) (U : OpenNormalSubgroup A) (β : LevelSolution α hα f U) (g : G) :
-    (((levelSolutionEquiv α hα f U).symm β).1 g : A ⧸ U.toSubgroup) = β.1 g :=
+    (((levelSolutionEquiv α hα f U).symm β).val g : A ⧸ U.toSubgroup) = β.val g :=
   (rfl)
 
 /-- Every finite level has a solution when all finite `p`-kernel embedding problems do. -/

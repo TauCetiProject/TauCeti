@@ -113,7 +113,7 @@ private theorem rightRadicalMap_surjective (hS : S.IsAlmostSplit) (X : C) :
   intro x
   obtain ⟨a, rfl⟩ := irreducibleMorphismMk_surjective x
   obtain ⟨b, hb⟩ := hS.isRightAlmostSplit_g.factors X a
-    (mem_jacobsonRadical_iff_not_isSplitEpi.mp (mem_jacobsonRadicalSubmodule.mp a.2))
+    (mem_jacobsonRadical_iff_not_isSplitEpi.mp (mem_jacobsonRadicalSubmodule.mp a.property))
   exact ⟨b, congrArg (irreducibleMorphismMk k X S.X₃) (Subtype.ext hb)⟩
 
 /-- Composition with the final map of an almost-split sequence identifies morphisms into its
@@ -165,7 +165,7 @@ private theorem leftRadicalMap_surjective (hS : S.IsAlmostSplit) (X : C) :
   intro x
   obtain ⟨a, rfl⟩ := irreducibleMorphismMk_surjective x
   obtain ⟨b, hb⟩ := hS.isLeftAlmostSplit_f.factors X a
-    (mem_jacobsonRadical_iff_not_isSplitMono.mp (mem_jacobsonRadicalSubmodule.mp a.2))
+    (mem_jacobsonRadical_iff_not_isSplitMono.mp (mem_jacobsonRadicalSubmodule.mp a.property))
   exact ⟨b, congrArg (irreducibleMorphismMk k S.X₁ X) (Subtype.ext hb)⟩
 
 /-- Precomposition with the initial map of an almost-split sequence identifies morphisms out of its

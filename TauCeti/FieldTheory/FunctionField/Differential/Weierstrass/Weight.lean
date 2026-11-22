@@ -83,7 +83,7 @@ private theorem exists_wronskian_eq_wronskian_basis_mul (hF : IsFunctionField k 
   -- Enumerate the gaps as `e 0, …, e (n - 1)`.
   set e : Fin n → ℕ := fun j ↦ ((P.weierstrassGaps.equivFinOfCardEq hcard).symm j : ℕ)
   have he_mem : ∀ j, e j ∈ P.weierstrassGaps := fun j ↦
-    ((P.weierstrassGaps.equivFinOfCardEq hcard).symm j).2
+    ((P.weierstrassGaps.equivFinOfCardEq hcard).symm j).property
   have he_inj : Function.Injective e := Subtype.val_injective.comp (Equiv.injective _)
   have he_sum : ∑ j, (e j : ℤ) = ∑ m ∈ P.weierstrassGaps, (m : ℤ) := by
     rw [← Finset.sum_coe_sort P.weierstrassGaps]

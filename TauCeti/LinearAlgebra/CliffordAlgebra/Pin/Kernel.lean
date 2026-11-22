@@ -43,14 +43,14 @@ private noncomputable def pinKernelToSpinKernel
     (x : MonoidHom.ker (pinToOrthogonal Q)) :
     MonoidHom.ker (spinToSpecialOrthogonal Q) :=
   let s : spinGroup Q :=
-    ⟨x, x.1.2, mem_even_of_det_pinToOrthogonal_eq_one Q x.1 (by
-      rw [MonoidHom.mem_ker.mp x.2]
+    ⟨x, x.val.property, mem_even_of_det_pinToOrthogonal_eq_one Q x.val (by
+      rw [MonoidHom.mem_ker.mp x.property]
       simp)⟩
   ⟨s, by
     rw [ker_spinToSpecialOrthogonal, MonoidHom.mem_ker, ← pinToOrthogonal_spinToPin]
-    have hspinpin : spinToPin Q s = x.1 := Subtype.ext (coe_spinToPin_apply s)
+    have hspinpin : spinToPin Q s = x.val := Subtype.ext (coe_spinToPin_apply s)
     rw [hspinpin]
-    exact MonoidHom.mem_ker.mp x.2⟩
+    exact MonoidHom.mem_ker.mp x.property⟩
 
 private noncomputable def kerSpinToSpecialOrthogonalEquivKerPinToOrthogonal
     (Q : QuadraticForm K M) [Invertible (2 : K)] :
@@ -59,28 +59,28 @@ private noncomputable def kerSpinToSpecialOrthogonalEquivKerPinToOrthogonal
   toFun x :=
     ⟨spinToPin Q x, by
       rw [MonoidHom.mem_ker, pinToOrthogonal_spinToPin]
-      exact MonoidHom.mem_ker.mp (ker_spinToSpecialOrthogonal Q ▸ x.2)⟩
+      exact MonoidHom.mem_ker.mp (ker_spinToSpecialOrthogonal Q ▸ x.property)⟩
   invFun := pinKernelToSpinKernel Q
   left_inv x := by
     apply Subtype.ext
     apply Subtype.ext
     simp only
-    exact coe_spinToPin_apply x.1
+    exact coe_spinToPin_apply x.val
   right_inv x := by
     apply Subtype.ext
     simp only
     apply Subtype.ext
-    exact coe_spinToPin_apply (pinKernelToSpinKernel Q x).1
+    exact coe_spinToPin_apply (pinKernelToSpinKernel Q x).val
   map_mul' x y := by
     apply Subtype.ext
     apply Subtype.ext
-    exact congrArg Subtype.val (map_mul (spinToPin Q) x.1 y.1)
+    exact congrArg Subtype.val (map_mul (spinToPin Q) x.val y.val)
 
 private theorem kerSpinToSpecialOrthogonalEquivKerPinToOrthogonal_apply
     (Q : QuadraticForm K M) [Invertible (2 : K)]
     (x : MonoidHom.ker (spinToSpecialOrthogonal Q)) :
-    (kerSpinToSpecialOrthogonalEquivKerPinToOrthogonal Q x).1 =
-      spinToPin Q x.1 :=
+    (kerSpinToSpecialOrthogonalEquivKerPinToOrthogonal Q x).val =
+      spinToPin Q x.val :=
   rfl
 
 /-- The kernel of the Pin action on a positive-dimensional nondegenerate quadratic space over a

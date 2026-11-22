@@ -298,6 +298,21 @@ theorem restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_polynomialToRestri
   rw [← restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom,
     ← RingHom.comp_assoc, RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
 
+/-- The completed Gauss comparison commutes with the coefficient algebra maps. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).toRingHom.comp
+        (algebraMap R (restrictedMvPowerSeriesCompletion n R)) =
+      algebraMap R (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1)) :=
+  RingHom.ext fun _ ↦ by simp
+
+/-- The inverse completed Gauss comparison commutes with the coefficient algebra maps. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_algebraMap :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).symm.toRingHom.comp
+        (algebraMap R (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1))) =
+      algebraMap R (restrictedMvPowerSeriesCompletion n R) := by
+  rw [← restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap, ← RingHom.comp_assoc,
+    RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
+
 /-- The completed Tate algebra over a complete nonarchimedean normed domain is a domain. -/
 instance isDomain_restrictedMvPowerSeriesCompletion [IsDomain R] :
     IsDomain (restrictedMvPowerSeriesCompletion n R) :=

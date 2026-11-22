@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.NumberTheory.AbelSummation
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
 /-!
@@ -20,11 +22,18 @@ Bernoulli numbers, and an exact remainder integral against the periodic Bernoull
 `bernoulliFun k (Int.fract x)`. The function `f` takes values in a real Banach space `E`, so
 complex-valued `f` is included.
 
+For the first-order formula, the endpoints may instead be real `0 ≤ a ≤ b`. The sum runs over
+natural indices in `(⌊a⌋₊, ⌊b⌋₊]`, with endpoint terms
+`B₁({a}) • f a - B₁({b}) • f b`, where `B₁({x}) = bernoulliFun 1 (Int.fract x)`.
+
 It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`, such as those of
 `∑ j^α`, `∑ 1/j` and `∑ j log j`: the remainder integral is controlled by `f^{(k)}` alone.
 
 ## Main results
 
+* `TauCeti.sum_Ioc_floor_eq_eulerMaclaurin_one`: the first-order formula for nonnegative real
+  endpoints and a real Banach-valued function with pointwise derivative and integrable derivative.
+  The finite sum is over the natural indices between the endpoint floors.
 * `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands
   `Bₖ({x}) g(x)` are interval integrable whenever `g` is.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`: the formula of any order `k ≥ 1`, for a
@@ -36,14 +45,21 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
   `C^{2m}` on `[a, n]`, with derivatives taken within `[a, n]`, and remainder
   `∫_a^n (B_{2m} - B_{2m}({x}))/(2m)! f^{(2m)}(x) dx`.
 
-The proof integrates by parts on each unit interval `[j, j + 1]`, on whose interior `(j, j + 1)`
-`Bₖ({x}) = Bₖ(x - j)` (the endpoints do not affect the integral), using `Bₖ' = k Bₖ₋₁`
+The integer-endpoint proof integrates by parts on each unit interval `[j, j + 1]`, on whose
+interior `(j, j + 1)` we have `Bₖ({x}) = Bₖ(x - j)` (the endpoints do not affect the integral),
+using `Bₖ' = k Bₖ₋₁`
 (`hasDerivAt_bernoulliFun`), `Bₖ(1) = Bₖ(0) = Bₖ` for `k ≠ 1`
 (`bernoulliFun_endpoints_eq_of_ne_one`) and the vanishing of the odd Bernoulli numbers beyond
 `B₁` (`bernoulli_eq_zero_of_odd`).
 
+The first-order real-endpoint proof rearranges Abel summation; continuous real duals lift the
+scalar identity to Banach-valued functions.
+
 ## References
 
+* [PNT+ real-endpoint Euler–Maclaurin proof]
+  (https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/blob/5754873e8dae73f3b50f8f2b7a4f0b15d4df58aa/PrimeNumberTheoremAnd/EulerMaclaurin.lean),
+  for the Abel-summation rearrangement.
 * NIST *Digital Library of Mathematical Functions*, §2.10(i), formula 2.10.1.
 * F. W. J. Olver, *Asymptotics and Special Functions*, Chapter 8, §1.
 -/
@@ -71,6 +87,12 @@ theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
       hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
 
 namespace TauCeti
+
+/-- The sawtooth `B₁({x}) = {x} - 1/2`, the periodic Bernoulli function of order one, has absolute
+value at most `1/2`. -/
+theorem abs_bernoulliFun_one_fract_le (x : ℝ) : |bernoulliFun 1 (Int.fract x)| ≤ 1 / 2 := by
+  rw [bernoulliFun_one, abs_le]
+  constructor <;> linarith [Int.fract_nonneg x, Int.fract_lt_one x]
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)
@@ -262,5 +284,78 @@ theorem sum_Icc_eq_eulerMaclaurin {f : ℝ → E} {a n : ℤ} (han : a ≤ n) {m
   simp only [hg, iteratedDerivWithin_zero] at hEM hR hFTC ⊢
   rw [hEM, hR, hFTC, pow_mul, neg_one_sq, one_pow]
   module
+
+/-- The scalar finite-remainder assembly used to test the vector identity by real duals. -/
+private theorem sum_Ioc_floor_eq_eulerMaclaurin_one_real {f : ℝ → ℝ} {a b : ℝ}
+    (ha : 0 ≤ a) (hab : a ≤ b)
+    (hf_diff : ∀ t ∈ Set.Icc a b, DifferentiableAt ℝ f t)
+    (hf_int : IntervalIntegrable (deriv f) volume a b) :
+    ∑ k ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, f k =
+      bernoulliFun 1 (Int.fract a) * f a - bernoulliFun 1 (Int.fract b) * f b +
+      (∫ t in a..b, f t) + ∫ t in a..b, bernoulliFun 1 (Int.fract t) * deriv f t := by
+  have hB : IntervalIntegrable (fun t => bernoulliFun 1 (Int.fract t) * deriv f t)
+      volume a b := by simpa only [smul_eq_mul] using hf_int.bernoulliFun_fract_smul 1
+  have hD : ∀ t ∈ Set.uIcc a b, HasDerivAt f (deriv f t) t :=
+    fun t ht => (hf_diff t ((Set.uIcc_of_le hab) ▸ ht)).hasDerivAt
+  have hparts := integral_mul_deriv_eq_deriv_mul
+    (fun t (_ : t ∈ Set.uIcc a b) => (hasDerivAt_id t).add_const (1 / 2 : ℝ))
+    hD intervalIntegrable_const hf_int
+  simp only [one_mul, id_eq] at hparts
+  have hsplit : (∫ t in a..b, deriv f t * (⌊t⌋₊ + 1)) =
+      (∫ t in a..b, (t + 1 / 2) * deriv f t) -
+        ∫ t in a..b, bernoulliFun 1 (Int.fract t) * deriv f t := by
+    rw [← integral_sub (hf_int.continuousOn_mul (by fun_prop)) hB]
+    apply integral_congr
+    intro t ht
+    have ht0 : 0 ≤ t := ha.trans (((Set.uIcc_of_le hab) ▸ ht).1)
+    simp only [bernoulliFun_one, Int.fract, ← Int.natCast_floor_eq_floor ht0]
+    push_cast
+    ring
+  have hsum := sum_mul_eq_sub_sub_integral_mul (fun _ => (1 : ℝ)) ha hab hf_diff
+    ((intervalIntegrable_iff_integrableOn_Icc_of_le hab).mp hf_int)
+  simp only [mul_one, sum_const, Nat.card_Icc, tsub_zero, nsmul_eq_mul, Nat.cast_add,
+    Nat.cast_one] at hsum
+  rw [← integral_of_le hab, hsplit, hparts] at hsum
+  rw [bernoulliFun_one, bernoulliFun_one, Int.fract, Int.fract,
+    ← Int.natCast_floor_eq_floor ha, ← Int.natCast_floor_eq_floor (ha.trans hab)]
+  push_cast at hsum ⊢
+  linarith
+
+/-- First-order Euler–Maclaurin summation between nonnegative real endpoints.
+
+The sum uses the half-open natural-index interval between the floors of the endpoints. Only
+pointwise differentiability and integrability of the derivative are required; continuity of the
+derivative is not assumed. The periodic Bernoulli function is `bernoulliFun 1 (Int.fract t)`.
+-/
+theorem sum_Ioc_floor_eq_eulerMaclaurin_one {f : ℝ → E} {a b : ℝ}
+    (ha : 0 ≤ a) (hab : a ≤ b)
+    (hf_diff : ∀ t ∈ Set.Icc a b, DifferentiableAt ℝ f t)
+    (hf_int : IntervalIntegrable (deriv f) volume a b) :
+    ∑ k ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, f k =
+      bernoulliFun 1 (Int.fract a) • f a - bernoulliFun 1 (Int.fract b) • f b +
+      (∫ t in a..b, f t) + ∫ t in a..b, bernoulliFun 1 (Int.fract t) • deriv f t := by
+  apply (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2
+  intro L
+  have hD (t : ℝ) (ht : t ∈ Set.Icc a b) :
+      HasDerivAt (fun x => L (f x)) (L (deriv f t)) t :=
+    L.hasFDerivAt.comp_hasDerivAt t (hf_diff t ht).hasDerivAt
+  have hiL : IntervalIntegrable (fun t => L (deriv f t)) volume a b :=
+    ⟨L.integrable_comp hf_int.1, L.integrable_comp hf_int.2⟩
+  have hiD : IntervalIntegrable (deriv (fun t => L (f t))) volume a b :=
+    hiL.congr fun t ht => (hD t ((Set.uIcc_of_le hab) ▸ (Set.uIoc_subset_uIcc ht))).deriv.symm
+  have hFcont : ContinuousOn f (Set.uIcc a b) := fun t ht =>
+    (hf_diff t ((Set.uIcc_of_le hab) ▸ ht)).continuousAt.continuousWithinAt
+  have hB := hf_int.bernoulliFun_fract_smul 1
+  have hI : (∫ t in a..b, bernoulliFun 1 (Int.fract t) * deriv (fun x => L (f x)) t) =
+      L (∫ t in a..b, bernoulliFun 1 (Int.fract t) • deriv f t) := by
+    rw [← L.intervalIntegral_comp_comm hB]
+    apply integral_congr
+    intro t ht
+    dsimp only
+    rw [(hD t ((Set.uIcc_of_le hab) ▸ ht)).deriv, map_smul, smul_eq_mul]
+  have h := sum_Ioc_floor_eq_eulerMaclaurin_one_real ha hab
+    (fun t ht => (hD t ht).differentiableAt) hiD
+  rw [hI, L.intervalIntegral_comp_comm hFcont.intervalIntegrable] at h
+  simpa only [map_sum, map_add, map_sub, map_smul, smul_eq_mul] using h
 
 end TauCeti

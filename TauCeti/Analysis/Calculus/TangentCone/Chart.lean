@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
@@ -29,8 +28,6 @@ charts used to verify it.
 
 ## Main results
 
-* `OpenPartialHomeomorph.det_fderiv_ne_zero`: a chart of a space to itself that is
-  differentiable in both directions at a point has a derivative with nonzero determinant there.
 * `OpenPartialHomeomorph.exists_hasFDerivAt_of_chart`: a chart that is differentiable at a
   point, with inverse differentiable at the image point, has a derivative there represented by a
   continuous linear equivalence.
@@ -61,15 +58,6 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 namespace OpenPartialHomeomorph
-
-/-- A chart of a space to itself which is differentiable at a point of its source, and whose
-inverse is differentiable at the image point, has a derivative with nonzero determinant there. -/
-theorem det_fderiv_ne_zero (e : OpenPartialHomeomorph E E) {y : E} (hy : y ∈ e.source)
-    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
-    (fderiv 𝕜 e y).det ≠ 0 := by
-  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hy he hes
-  rw [← hA]
-  exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 /-- A chart which is differentiable at a point of its source, and whose inverse is differentiable
 at the image point, has a derivative represented by a continuous linear equivalence. -/

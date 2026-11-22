@@ -176,8 +176,8 @@ theorem fixedPointFree_conjNormal_affineTranslationSubgroup
     MonoidHom.FixedPointFree
       (MulAut.conjNormal (h : AffineGroup F) : MulAut (affineTranslationSubgroup F)) := by
   rintro n hn
-  rcases h.2 with ⟨u, hu⟩
-  rcases n.2 with ⟨x, hx⟩
+  rcases h.property with ⟨u, hu⟩
+  rcases n.property with ⟨x, hx⟩
   have hu_one : u ≠ 1 := by
     intro h1
     apply hh
