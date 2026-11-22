@@ -206,8 +206,8 @@ theorem basepoint_sampleBrokenGeodesicLoop
     (γ : MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1)) :
     (sampleBrokenGeodesicLoop hr n γ).basepoint = (γ : MooreFreeLoopSpace M).basepoint := by
   rw [sampleBrokenGeodesicLoop_apply hr n γ
-      (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin γ.property),
-    basepoint_brokenGeodesicLoop, MoorePath.sample_zero, MooreFreeLoopSpace.source_toMoorePath]
+      (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin γ.property)]
+  simp
 
 /-- The length of the broken geodesic through the samples is the sum of the distances between
 consecutive samples, the last one followed by the first one. -/

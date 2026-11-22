@@ -121,6 +121,14 @@ theorem coe_cyclicDistanceCutSampleBrokenGeodesic_apply {n : ℕ} {δ : Fin (n +
       (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.sample (m + 1) :=
   (rfl)
 
+/-- The first sample of the broken geodesic through `q` is its base point, the first vertex `q₀`. -/
+@[simp]
+theorem coe_cyclicDistanceCutSampleBrokenGeodesic_apply_zero {n : ℕ} {δ : Fin (n + 1) → ℝ}
+    (hδ : ∀ i, δ i < r) (m : ℕ) {δ' : Fin (m + 1) → ℝ}
+    (hm : ∀ j, ∑ i, δ i ≤ ((m + 1 : ℕ) : ℝ) * δ' j) (q : cyclicDistanceCut (X := M) δ) :
+    (cyclicDistanceCutSampleBrokenGeodesic hr hδ m hm q : Fin (m + 1) → M) 0 = q.val 0 := by
+  simp
+
 /-- The times of the slide at `s`: the convex combination `(1 - s) aⱼ + s bⱼ` of the time `aⱼ` at
 which the closed broken geodesic through `q` passes through the `j`-th vertex of
 `(q₀, …, q₀, q₁, …, qₙ)` and the equally spaced time `bⱼ = L j / (n + k + 1)` for its length `L`. -/
@@ -241,9 +249,8 @@ theorem coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply_zero {n k : ℕ}
       p.2.val 0 := by
   have h0 : slideTimes hr hδ p.1 p.2 (0 : Fin (n + k + 1)) = 0 := by
     simp [slideTimes]
-  rw [coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply, h0, ← MoorePath.source_def,
-    MooreFreeLoopSpace.source_toMoorePath, cyclicDistanceCutBrokenGeodesic_apply,
-    basepoint_brokenGeodesicLoop]
+  rw [coe_cyclicDistanceCutSampleBrokenGeodesicHomotopy_apply, h0]
+  simp [← MoorePath.source_def]
 
 /-- **`ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ ≃ evₙ₊ₖ₊₁ ∘ geoⁿ`.** For cut-offs `δ i < r` with `δ (j - k) ≤ δ' j` and
 `∑ i, δ i ≤ (n + k + 1) * δ' j` for every `j`, repeating the first vertex `k` more times and

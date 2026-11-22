@@ -270,8 +270,8 @@ theorem toMoorePath_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
 @[simp]
 theorem basepoint_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
     (arcStraighteningMap hρ hr (t, γ)).basepoint = (γ : MooreFreeLoopSpace X).basepoint := by
-  rw [← source_toMoorePath, toMoorePath_arcStraighteningMap, MoorePath.source_arcStraighteningMap,
-    coe_toArcsWithin, source_toMoorePath]
+  rw [← source_toMoorePath]
+  simp
 
 /-- The broken loop through the sampled vertices of a free Moore loop whose arcs lie in `U`. -/
 def brokenPathMap : C(arcsWithin U r, MooreFreeLoopSpace X) :=

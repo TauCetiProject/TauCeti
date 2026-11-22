@@ -177,11 +177,9 @@ theorem exists_basedCyclicDistanceCutBrokenGeodesic_comp_homotopic {x : M}
       (fun γ ↦ by simp [ι]) = (basedCyclicDistanceCutBrokenGeodesic hr hδ x).comp e :=
     ContinuousMap.ext fun γ ↦ MooreLoopSpace.toFreeLoop_injective <| by
       rw [MooreLoopSpace.toFreeLoop_codRestrictFreeLoop_apply, ContinuousMap.comp_apply,
-        ContinuousMap.comp_apply, toFreeLoop_basedCyclicDistanceCutBrokenGeodesic_apply,
-        cyclicDistanceCutBrokenGeodesic_apply, sampleBrokenGeodesicLoop_apply hr n (ι γ)
+        sampleBrokenGeodesicLoop_apply hr n (ι γ)
           (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin (hKA γ))]
-      congr 1
-      exact congrArg (MoorePath.sample · (n + 1)) (MooreLoopSpace.toMoorePath_toFreeLoop _)
+      simp [ι, e]
   rw [← h₀, ← h₁]
   exact (homotopic_codRestrictFreeLoop_sampleBrokenGeodesicLoop hr ι).symm
 
@@ -199,9 +197,7 @@ def basedCyclicDistanceCutSampleBrokenGeodesic {n : ℕ} {δ : Fin (n + 1) → �
     ⟨q.val, (mem_basedCyclicDistanceCut.1 q.property).1⟩, mem_basedCyclicDistanceCut.2
     ⟨(cyclicDistanceCutSampleBrokenGeodesic hr hδ m hm
       ⟨q.val, (mem_basedCyclicDistanceCut.1 q.property).1⟩).property, by
-      rw [coe_cyclicDistanceCutSampleBrokenGeodesic_apply, MoorePath.sample_zero,
-        MooreFreeLoopSpace.source_toMoorePath, cyclicDistanceCutBrokenGeodesic_apply,
-        basepoint_brokenGeodesicLoop]
+      rw [coe_cyclicDistanceCutSampleBrokenGeodesic_apply_zero]
       exact (mem_basedCyclicDistanceCut.1 q.property).2⟩⟩
   continuous_toFun := (continuous_subtypeVal.comp ((map_continuous _).comp
     ((continuous_subtypeVal).subtype_mk _))).subtype_mk _
