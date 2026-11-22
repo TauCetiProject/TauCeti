@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.UniqueProds.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.Algebra.Regular.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
@@ -434,7 +433,8 @@ section MonoidCoefficients
 variable {R H : Type*} [CommSemiring R] [Monoid H]
   {β : H → H → Rˣ} [IsFactorSet β]
 
-/-- Right multiplication by a basis element at an index with a unique supporting preimage. -/
+/-- The coefficient at `a * b` when no support index other than `a` maps there under right
+multiplication by `b`; the coefficient at `a` is allowed to be zero. -/
 theorem repr_mul_of_apply_of_unique (f : twistedMonoidAlgebra R H β) (a b : H)
     (h : ∀ x ∈ ((basis R H β).repr f).support, x * b = a * b → x = a) :
     (basis R H β).repr (f * of b) (a * b) =
@@ -449,7 +449,8 @@ theorem repr_mul_of_apply_of_unique (f : twistedMonoidAlgebra R H β) (a b : H)
     exact ⟨h x hx hxy, rfl⟩
   simpa only [repr_of, Finsupp.single_eq_same, mul_one] using repr_mul_apply_of_uniqueMul h'
 
-/-- Left multiplication by a basis element at an index with a unique supporting preimage. -/
+/-- The coefficient at `b * a` when no support index other than `a` maps there under left
+multiplication by `b`; the coefficient at `a` is allowed to be zero. -/
 theorem repr_of_mul_apply_of_unique (f : twistedMonoidAlgebra R H β) (a b : H)
     (h : ∀ x ∈ ((basis R H β).repr f).support, b * x = b * a → x = a) :
     (basis R H β).repr (of b * f) (b * a) =
@@ -492,21 +493,35 @@ theorem repr_of_mul_apply [IsLeftCancelMul H] (f : twistedMonoidAlgebra R H β) 
       (basis R H β).repr f a * (β b a : R) :=
   repr_of_mul_apply_of_isLeftRegular f a b fun _ _ h ↦ mul_left_cancel h
 
-/-- A coefficient outside the right translate of the index monoid vanishes. -/
+/-- A coefficient outside the right translate of the actual coefficient support vanishes. -/
 theorem repr_mul_of_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
-    (hc : c ∉ Set.range (fun a : H ↦ a * b)) :
+    (hc : c ∉ (fun a : H ↦ a * b) '' ↑((basis R H β).repr f).support) :
     (basis R H β).repr (f * of b) c = 0 := by
   classical
-  have hn : ∀ a : H, a * b ≠ c := fun a he ↦ hc ⟨a, he⟩
-  simp [repr_mul, repr_of, hn]
+  have hn : ∀ a ∈ ((basis R H β).repr f).support, a * b ≠ c :=
+    fun a ha he ↦ hc ⟨a, ha, he⟩
+  rw [repr_mul, repr_of]
+  simp only [Finsupp.sum_single_index, zero_mul, mul_zero, Finsupp.single_zero,
+    mul_one]
+  simp only [Finsupp.sum, Finsupp.finsetSum_apply, Finsupp.single_apply]
+  apply Finset.sum_eq_zero
+  intro a ha
+  simp only [ite_eq_right (hn a ha)]
 
-/-- A coefficient outside the left translate of the index monoid vanishes. -/
+/-- A coefficient outside the left translate of the actual coefficient support vanishes. -/
 theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
-    (hc : c ∉ Set.range (fun a : H ↦ b * a)) :
+    (hc : c ∉ (fun a : H ↦ b * a) '' ↑((basis R H β).repr f).support) :
     (basis R H β).repr (of b * f) c = 0 := by
   classical
-  have hn : ∀ a : H, b * a ≠ c := fun a he ↦ hc ⟨a, he⟩
-  simp [repr_mul, repr_of, hn]
+  have hn : ∀ a ∈ ((basis R H β).repr f).support, b * a ≠ c :=
+    fun a ha he ↦ hc ⟨a, ha, he⟩
+  rw [repr_mul, repr_of]
+  simp only [Finsupp.sum_single_index, zero_mul, Finsupp.single_zero,
+    Finsupp.sum_fun_zero, one_mul]
+  simp only [Finsupp.sum, Finsupp.finsetSum_apply, Finsupp.single_apply]
+  apply Finset.sum_eq_zero
+  intro a ha
+  simp only [ite_eq_right (hn a ha)]
 
 /-- The coefficient at a free index after right multiplication by a unit-index basis element. -/
 @[simp]
@@ -554,33 +569,39 @@ section CommMonoidCoefficients
 variable {R H : Type*} [CommSemiring R] [CommMonoid H]
   {β : H → H → Rˣ} [IsFactorSet β]
 
-/-- Commutation with a basis element is equality of coefficients weighted by opposite
-factor-set values. -/
+/-- If right translation by the tested index is injective on the coefficient support,
+commutation is equality of the opposite factor-set-weighted coefficients. -/
+theorem commute_of_iff_of_injOn (f : twistedMonoidAlgebra R H β) (b : H)
+    (hb : Set.InjOn (fun a : H ↦ a * b) ↑((basis R H β).repr f).support) :
+    Commute f (of b) ↔ ∀ a,
+      (basis R H β).repr f a * (β a b : R) =
+        (basis R H β).repr f a * (β b a : R) := by
+  classical
+  rw [commute_iff_eq]
+  constructor
+  · intro h a
+    by_cases ha : a ∈ ((basis R H β).repr f).support
+    · have he := congrArg (fun z ↦ (basis R H β).repr z (a * b)) h
+      rw [repr_mul_of_apply_of_unique f a b (fun x hx he ↦ hb hx ha he),
+        mul_comm a b, repr_of_mul_apply_of_unique f a b (fun x hx he ↦
+          hb hx ha (by simpa only [mul_comm b] using he))] at he
+      exact he
+    · simp [Finsupp.notMem_support_iff.mp ha]
+  · intro h
+    apply (basis R H β).repr.injective
+    simp only [repr_mul, repr_of, Finsupp.sum_single_index, zero_mul, mul_zero,
+      Finsupp.single_zero, Finsupp.sum_fun_zero, mul_one, one_mul]
+    apply Finsupp.sum_congr
+    intro a _
+    rw [mul_comm b a, h a]
+
+/-- A right regular tested index gives the coefficientwise commutation criterion. -/
 theorem commute_of_iff_of_isRightRegular (f : twistedMonoidAlgebra R H β) (b : H)
     (hb : IsRightRegular b) :
     Commute f (of b) ↔ ∀ a,
       (basis R H β).repr f a * (β a b : R) =
-        (basis R H β).repr f a * (β b a : R) := by
-  have hleft : IsLeftRegular b := hb.left_of_commute (fun x ↦ mul_comm b x)
-  rw [commute_iff_eq]
-  constructor
-  · intro h a
-    have he := congrArg (fun z ↦ (basis R H β).repr z (a * b)) h
-    rw [repr_mul_of_apply_of_isRightRegular f a b hb, mul_comm a b,
-      repr_of_mul_apply_of_isLeftRegular f a b hleft] at he
-    exact he
-  · intro h
-    apply (basis R H β).repr.injective
-    apply Finsupp.ext
-    intro c
-    by_cases hc : c ∈ Set.range (fun a : H ↦ a * b)
-    · obtain ⟨a, ha⟩ := hc
-      dsimp only at ha
-      rw [← ha, repr_mul_of_apply_of_isRightRegular f a b hb, mul_comm a b,
-        repr_of_mul_apply_of_isLeftRegular f a b hleft]
-      exact h a
-    · rw [repr_mul_of_apply_eq_zero f b c hc,
-        repr_of_mul_apply_eq_zero f b c (by simpa only [mul_comm b] using hc)]
+        (basis R H β).repr f a * (β b a : R) :=
+  commute_of_iff_of_injOn f b fun _ _ _ _ he ↦ hb he
 
 
 /-- Coefficientwise commutation with a basis element over a cancellative commutative monoid. -/

@@ -132,33 +132,14 @@ theorem repr_centerHom_apply_eq_zero
   rintro ⟨x, rfl⟩
   exact ha x.property
 
-private theorem centerHom_val_eq_constr :
-    (Subalgebra.center R (twistedMonoidAlgebra R G α)).val.toLinearMap.comp
-        (centerHom α).toLinearMap =
-      (basis R (centralIndices α) (fun a b ↦ α a b)).constr R
-        (fun a ↦ of (a : G)) := by
-  symm
-  apply Module.Basis.constr_eq
-  intro a
-  simp only [basis_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-    centerHom_of, Subalgebra.val_apply]
-
 /-- The restricted center map is injective even without scalar cancellation. -/
 theorem centerHom_injective : Function.Injective (centerHom α) := by
-  have hli : LinearIndependent R (fun a : centralIndices α ↦
-      (of (a : G) : twistedMonoidAlgebra R G α)) := by
-    simpa only [Function.comp_def, basis_apply] using
-      (basis R G α).linearIndependent.comp (fun a : centralIndices α ↦ (a : G))
-        Subtype.val_injective
-  have hi : Function.Injective
-      ((Subalgebra.center R (twistedMonoidAlgebra R G α)).val.toLinearMap.comp
-      (centerHom α).toLinearMap) := by
-    rw [centerHom_val_eq_constr]
-    exact (basis R (centralIndices α) _).injective_constr_of_linearIndependent hli
-  intro x y h
-  apply hi
-  exact congrArg (fun z : Subalgebra.center R (twistedMonoidAlgebra R G α) ↦
-    (z : twistedMonoidAlgebra R G α)) h
+  intro f g h
+  apply (basis R (centralIndices α) _).repr.injective
+  apply Finsupp.mapDomain_injective Subtype.val_injective
+  have he := congrArg (fun x : Subalgebra.center R (twistedMonoidAlgebra R G α) ↦
+    (basis R G α).repr (x : twistedMonoidAlgebra R G α)) h
+  simpa only [repr_centerHom] using he
 
 end CommMonoid
 
@@ -203,22 +184,18 @@ theorem center_toSubmodule_eq_span [IsLeftCancelMulZero R] :
 
 /-- Under index and nonzero-scalar cancellation, the restricted map exhausts the center. -/
 theorem centerHom_surjective [IsLeftCancelMulZero R] : Function.Surjective (centerHom α) := by
-  let F := (Subalgebra.center R (twistedMonoidAlgebra R G α)).val.toLinearMap.comp
-    (centerHom α).toLinearMap
-  have hr : LinearMap.range F = Submodule.span R (of '' (centralIndices α : Set G)) := by
-    dsimp only [F]
-    rw [centerHom_val_eq_constr, Module.Basis.constr_range]
-    congr 1
-    exact (Set.image_eq_range of (centralIndices α : Set G)).symm
   rintro ⟨f, hf⟩
-  have hs : f ∈ LinearMap.range F := by
-    have hset : (centralIndices α : Set G) = {a | ∀ b, α a b = α b a} := by
-      ext a
-      exact mem_centralIndices a
-    rw [hr, hset, ← center_toSubmodule_eq_span]
-    exact hf
-  obtain ⟨g, hg⟩ := hs
-  exact ⟨g, Subtype.ext hg⟩
+  have hs := (mem_center_iff_support f).mp hf
+  have hm : (basis R G α).repr f ∈ Set.range
+      (Finsupp.mapDomain (fun a : centralIndices α ↦ (a : G))) := by
+    apply (Finsupp.mem_range_mapDomain_iff _ Subtype.val_injective _).mpr
+    intro a ha
+    by_contra hn
+    exact ha ⟨⟨a, (mem_centralIndices a).mpr (hs a (Finsupp.mem_support_iff.mpr hn))⟩, rfl⟩
+  obtain ⟨v, hv⟩ := hm
+  refine ⟨(basis R (centralIndices α) _).repr.symm v, Subtype.ext ?_⟩
+  apply (basis R G α).repr.injective
+  rw [repr_centerHom, LinearEquiv.apply_symm_apply, hv]
 
 /-- The center is the twisted algebra restricted to its central-index submonoid. -/
 noncomputable def centerEquiv [IsLeftCancelMulZero R] :
@@ -238,6 +215,15 @@ theorem centerEquiv_of [IsLeftCancelMulZero R] (a : centralIndices α) :
 theorem centerEquiv_toAlgHom [IsLeftCancelMulZero R] :
     (centerEquiv (α := α)).toAlgHom = centerHom α :=
   AlgEquiv.toAlgHom_ofBijective _ _
+
+/-- Inverse center coordinates are the ambient coefficients at the included central indices. -/
+@[simp]
+theorem repr_centerEquiv_symm_apply [IsLeftCancelMulZero R]
+    (f : Subalgebra.center R (twistedMonoidAlgebra R G α)) (a : centralIndices α) :
+    (basis R (centralIndices α) (fun a b ↦ α a b)).repr (centerEquiv.symm f) a =
+      (basis R G α).repr (f : twistedMonoidAlgebra R G α) (a : G) := by
+  simpa only [← centerEquiv_toAlgHom, AlgEquiv.toAlgHom_apply, AlgEquiv.apply_symm_apply] using
+    (repr_centerHom_apply (centerEquiv.symm f) a).symm
 
 /-- The inverse restricted center equivalence recovers the basis element at a central index. -/
 @[simp]
