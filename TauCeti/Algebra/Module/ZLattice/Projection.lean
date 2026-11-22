@@ -7,26 +7,23 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basis
+import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Module.ZLattice.Basic
 import TauCeti.Analysis.InnerProductSpace.Gram.Projection
-import TauCeti.LinearAlgebra.Submodule.Primitive
 
 /-!
 # Projecting a lattice along a rational subspace
 
-Let `Δ` be a finitely generated subgroup of a real normed space `E`, such as a discrete subgroup
-of a finite-dimensional one, and `W` a real subspace. The intersection `Δ ∩ W` is recorded as the
-lattice `ZLattice.comap ℝ Δ W.subtype` in `W`. Since `W` is a real subspace, the quotient
-`Δ ⧸ (Δ ∩ W)` is torsion-free, hence free, so every `ℤ`-basis of `Δ ∩ W` extends to a `ℤ`-basis
-of `Δ` (`ZLattice.exists_basis_sum_inl_eq`). When `Δ` is a discrete full lattice in a
-finite-dimensional `E` and `W` is rational for `Δ`, meaning that `Δ ∩ W` spans `W`, this gives a
-basis of `Δ` whose first `dim W` vectors form a basis of `Δ ∩ W`
-(`ZLattice.exists_basis_sum_finrank`). The first block of such a basis then spans `W` over `ℝ`
-(`ZLattice.span_range_ofZLatticeBasis_inl`).
+Let `Δ` be a discrete full lattice in a finite-dimensional real inner product space `E` and `W`
+a real subspace. The intersection `Δ ∩ W` is recorded as the lattice `ZLattice.comap ℝ Δ W.subtype`
+in `W`, and `W` is rational for `Δ` when `Δ ∩ W` spans `W`. In that case `Δ` has a basis whose
+first `dim W` vectors form a basis of `Δ ∩ W` (`ZLattice.exists_basis_sum_finrank`, in
+`TauCeti.Algebra.Module.ZLattice.AdaptedBasis`), and the first block of such a basis spans `W`
+over `ℝ` (`ZLattice.span_range_ofZLatticeBasis_inl`).
 
-In an inner product space, let `π : E → Wᗮ` be the orthogonal projection. For a basis of a full
-lattice `Δ` whose first block spans `W`, the projections of the second block are a real basis of
-`Wᗮ` whose `ℤ`-span is the image `π(Δ)` (`ZLattice.span_orthogonalProjectionInr_ofZLatticeBasis`).
+Let `π : E → Wᗮ` be the orthogonal projection. For a basis of `Δ` whose first block spans `W`, the
+projections of the second block are a real basis of `Wᗮ` whose `ℤ`-span is the image `π(Δ)`
+(`ZLattice.span_orthogonalProjectionInr_ofZLatticeBasis`).
 So if `W` is rational for `Δ`, the projection `π(Δ)` is a full lattice in `Wᗮ`, and its covolume is
 the covolume of `Δ` divided by the covolume of `Δ ∩ W`, all covolumes being taken for the intrinsic
 volumes of `E`, `W` and `Wᗮ` (`ZLattice.covolume_map_orthogonalProjectionOnto`). No unimodularity
@@ -34,11 +31,8 @@ or self-duality of `Δ` is assumed.
 
 ## Main results
 
-* `ZLattice.exists_basis_sum_inl_eq`: a `ℤ`-basis of `Δ ∩ W` extends to a `ℤ`-basis of `Δ`.
-* `ZLattice.exists_basis_sum_finrank`: if `Δ` is a discrete full lattice in a finite-dimensional
-  `E` and `Δ ∩ W` spans `W`, then `Δ` has a basis indexed by `Fin (dim W) ⊕ Fin s`, with
-  `dim W + s = dim E`, whose first block is a basis of `Δ ∩ W`.
-* `ZLattice.span_range_ofZLatticeBasis_inl`: the first block of such a basis spans `W` over `ℝ`.
+* `ZLattice.span_range_ofZLatticeBasis_inl`: if `Δ ∩ W` spans `W`, the first block of a basis of
+  `Δ` that extends a basis of `Δ ∩ W` spans `W` over `ℝ`.
 * `ZLattice.span_orthogonalProjectionInr_ofZLatticeBasis`: the projections to `Wᗮ` of the second
   block of a basis of `Δ` whose first block spans `W` span `π(Δ)` over `ℤ`.
 * `ZLattice.discreteTopology_map_orthogonalProjectionOnto`,
@@ -51,8 +45,6 @@ or self-duality of `Δ` is assumed.
 
 * T. Horesh and Y. Karasik, *Equidistribution of primitive lattices in ℝⁿ*, Q. J. Math. 74
   (2023), 1253–1294, Proposition B.4, p. 1290.
-* M. Henk, *Successive minima and lattice points*, Rend. Circ. Mat. Palermo (2) Suppl. 70 (2002),
-  377–384, p. 3 of arXiv:math/0204158.
 -/
 
 public section
@@ -60,59 +52,6 @@ public section
 open MeasureTheory Module Submodule
 
 namespace ZLattice
-
-section NormedSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- The intersection `Δ ∩ W`, seen as a submodule of `Δ`, is linearly equivalent to the lattice
-`ZLattice.comap ℝ Δ W.subtype` in `W`. -/
-private def comapSubtypeEquiv (Δ : Submodule ℤ E) (W : Submodule ℝ E) :
-    (W.restrictScalars ℤ).comap Δ.subtype ≃ₗ[ℤ] ZLattice.comap ℝ Δ W.subtype where
-  toFun x := ⟨⟨x.val, x.property⟩, x.val.property⟩
-  invFun y := ⟨⟨y.val, y.property⟩, y.val.property⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- **Extending a basis of `Δ ∩ W` to a basis of `Δ`.** For a finitely generated subgroup `Δ` of a
-real normed space and a real subspace `W`, every `ℤ`-basis `c` of `Δ ∩ W` extends to a `ℤ`-basis
-`b` of `Δ` indexed by `ι ⊕ Fin s`, with `b (inl i) = c i`. -/
-theorem exists_basis_sum_inl_eq (Δ : Submodule ℤ E) [Module.Finite ℤ Δ] (W : Submodule ℝ E)
-    {ι : Type*} (c : Basis ι ℤ (ZLattice.comap ℝ Δ W.subtype)) :
-    ∃ (s : ℕ) (b : Basis (ι ⊕ Fin s) ℤ Δ),
-      Nat.card ι + s = finrank ℤ Δ ∧ ∀ i, (b (.inl i) : E) = c i := by
-  have : IsTorsionFree ℤ (Δ ⧸ (W.restrictScalars ℤ).comap Δ.subtype) :=
-    isTorsionFree_quotient_of_smul_mem _ fun n x hn hx ↦ by
-      have hx' : (n : ℝ) • (x : E) ∈ W := by simpa [Int.cast_smul_eq_zsmul] using hx
-      simpa using (W.smul_mem_iff (Int.cast_ne_zero.2 hn)).1 hx'
-  have : Module.Free ℤ (Δ ⧸ (W.restrictScalars ℤ).comap Δ.subtype) :=
-    Module.free_of_finite_type_torsion_free'
-  let b := (c.map (comapSubtypeEquiv Δ W).symm).sumQuot
-    (Module.finBasis ℤ (Δ ⧸ (W.restrictScalars ℤ).comap Δ.subtype))
-  refine ⟨_, b, ?_, fun i ↦ by simp [b, comapSubtypeEquiv]⟩
-  have := Module.Finite.finite_basis b
-  have : Finite ι := .of_injective (β := ι ⊕ Fin (finrank ℤ (Δ ⧸ (W.restrictScalars ℤ).comap
-    Δ.subtype))) Sum.inl Sum.inl_injective
-  rw [Module.finrank_eq_nat_card_basis b, Nat.card_sum, Nat.card_fin]
-
-/-- **A basis adapted to a rational subspace.** If the intersection of a full lattice `Δ` with a
-real subspace `W` spans `W`, then `Δ` has a `ℤ`-basis `b` indexed by `Fin (dim W) ⊕ Fin s`, with
-`dim W + s = dim E`, whose first block is a `ℤ`-basis `c` of `Δ ∩ W`. No orthogonality of the
-second block to `W` is asserted. -/
-theorem exists_basis_sum_finrank [FiniteDimensional ℝ E] (Δ : Submodule ℤ E) [DiscreteTopology Δ]
-    [IsZLattice ℝ Δ] {W : Submodule ℝ E}
-    (hW : span ℝ (ZLattice.comap ℝ Δ W.subtype : Set W) = ⊤) :
-    ∃ (s : ℕ) (b : Basis (Fin (finrank ℝ W) ⊕ Fin s) ℤ Δ)
-      (c : Basis (Fin (finrank ℝ W)) ℤ (ZLattice.comap ℝ Δ W.subtype)),
-      finrank ℝ W + s = finrank ℝ E ∧ ∀ i, (b (.inl i) : E) = c i := by
-  have : IsZLattice ℝ (ZLattice.comap ℝ Δ W.subtype) := ⟨hW⟩
-  let c := Module.finBasisOfFinrankEq ℤ _ (ZLattice.rank ℝ (ZLattice.comap ℝ Δ W.subtype))
-  obtain ⟨s, b, hs, hb⟩ := exists_basis_sum_inl_eq Δ W c
-  exact ⟨s, b, c, by rwa [Nat.card_fin, ZLattice.rank ℝ Δ] at hs, hb⟩
-
-end NormedSpace
 
 section InnerProductSpace
 
