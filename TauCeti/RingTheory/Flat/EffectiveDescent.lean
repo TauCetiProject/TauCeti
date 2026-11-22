@@ -182,7 +182,7 @@ private theorem coaction_baseChangeHom (x : S ⊗[R] D.descended) :
       Algebra.TensorProduct.map (AlgHom.id R S) D.descended.val x := by
   induction x using TensorProduct.inductionOn with
   | tmul s a =>
-    have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.2
+    have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.property
     rw [baseChangeHom, AlgHom.liftEquiv_tmul]
     simp [ha, Algebra.smul_def, Algebra.TensorProduct.algebraMap_apply,
       Algebra.TensorProduct.tmul_mul_tmul]
@@ -234,7 +234,7 @@ private theorem baseChangeHom_bijective [Module.Flat R S] :
   have hexact : Function.Exact D.descended.val.toLinearMap
       ((D.coaction.restrictScalars R).toLinearMap -
         (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toLinearMap) := fun b ↦
-    ⟨fun h ↦ ⟨⟨b, sub_eq_zero.mp h⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact sub_eq_zero.mpr a.2⟩
+    ⟨fun h ↦ ⟨⟨b, sub_eq_zero.mp h⟩, rfl⟩, by rintro ⟨a, rfl⟩; exact sub_eq_zero.mpr a.property⟩
   obtain ⟨x, hx⟩ := ((Module.Flat.lTensor_exact S hexact) (D.coaction b)).mp <| by
     rw [LinearMap.lTensor_sub, LinearMap.sub_apply, AlgHom.lTensor_toLinearMap_apply,
       AlgHom.lTensor_toLinearMap_apply, D.coassoc, sub_self]
@@ -284,7 +284,7 @@ noncomputable def equivDescended [Module.FaithfullyFlat R S] {A : Type*} [Ring A
     (by
       refine ⟨fun a a' h ↦ ?_, fun ⟨b, hb⟩ ↦ ?_⟩
       · refine Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := S) A ?_
-        simpa using e.injective congr($h.1)
+        simpa using e.injective congr(($h).val)
       -- The coaction of `D` is the transport of the canonical coaction along `e`.
       have hcompat : ∀ x, D.coaction (e x) =
           Algebra.TensorProduct.map (AlgHom.id R S) (e.toAlgHom.restrictScalars R)
@@ -409,7 +409,7 @@ theorem mem_descended (f : Hom D D') {b : B} (hb : b ∈ D.descended) :
 /-- The morphism of descended algebras induced by a morphism of descent data. -/
 def descend (f : Hom D D') : D.descended →ₐ[R] D'.descended :=
   ((f.toAlgHom.restrictScalars R).comp D.descended.val).codRestrict _
-    fun a ↦ f.mem_descended a.2
+    fun a ↦ f.mem_descended a.property
 
 @[simp]
 theorem coe_descend_apply (f : Hom D D') (a : D.descended) :
@@ -497,8 +497,8 @@ private noncomputable def ofDescend [Module.Flat R S] (φ : D.descended →ₐ[R
     obtain ⟨x, rfl⟩ := D.baseChangeEquiv.surjective b
     induction x using TensorProduct.inductionOn with
     | tmul s a =>
-      have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.2
-      have hφa : D'.coaction (φ a) = 1 ⊗ₜ ((φ a : D'.descended) : B') := (φ a).2
+      have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.property
+      have hφa : D'.coaction (φ a) = 1 ⊗ₜ ((φ a : D'.descended) : B') := (φ a).property
       simp [ha, hφa, Algebra.smul_def, Algebra.TensorProduct.algebraMap_apply,
         Algebra.TensorProduct.tmul_mul_tmul]
     | add x y hx hy => simp only [map_add] at hx hy ⊢; rw [hx, hy]
@@ -651,7 +651,7 @@ theorem exact_lTensor_descended_val [Module.FaithfullyFlat R S] :
     (by rw [LinearEquiv.refl_toLinearMap, LinearMap.comp_id, lTensor_descended_val_eq]) ?_
     (Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one S _)
   ext s m a
-  have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.2
+  have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.property
   simp [leftCommBaseChangeEquiv, leftCommBaseChangeEquiv₂, ha, Algebra.smul_def,
     Algebra.TensorProduct.algebraMap_apply]
 
@@ -670,7 +670,7 @@ variable {R' S' B' : Type*} [CommRing R'] [CommRing S'] [Ring B'] [Algebra R R']
 
 include hθ in
 private theorem mem_descended_of_coaction_comp (a : D.descended) : ψ a ∈ D'.descended := by
-  have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.2
+  have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.property
   simp [hθ, ha]
 
 /-- The comparison map `R' ⊗[R] D.descended → D'.descended`, `r ⊗ a ↦ r • ψ a`. -/
@@ -719,7 +719,7 @@ private theorem tensorDescendedHom_bijective [Module.FaithfullyFlat R S]
   obtain ⟨z, rfl⟩ := (D.exact_lTensor_descended_val R' y).mp <|
     (hφ.tensorProduct hψ).equiv.injective <| by
       rw [D.equiv_lTensor_coaction_sub hθ hφ hψ, hy', map_zero, sub_eq_zero]
-      exact x'.2
+      exact x'.property
   exact ⟨z, Subtype.ext ((D.coe_tensorDescendedHom hθ hψ z).trans hy')⟩
 
 /-- **Descent commutes with base change.** Let `S` be faithfully flat over `R`, let `R → R'` be

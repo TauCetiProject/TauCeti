@@ -21,6 +21,8 @@ into `k` perfect matchings, colours by the matching indices, and restricts the c
 the original graph. The matching-partition and chromatic-number formulations are included as
 equivalent interfaces. Consequently the least number of colours is the largest number of edges at
 a vertex, which is zero for the empty graph; for a simple graph this is its maximum degree.
+For a finite bipartite simple graph the theorem is also stated through colourings of Mathlib's
+`SimpleGraph.lineGraph`.
 
 ## References
 

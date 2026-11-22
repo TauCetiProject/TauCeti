@@ -140,7 +140,7 @@ private theorem image_standardFramedSphere_setOf_norm_lt_one :
     let y : {x : sphere (0 : WithLp 2 (E × F)) 1 | ‖(x : WithLp 2 (E × F)).snd‖ ≤
         ‖(x : WithLp 2 (E × F)).fst‖} := ⟨x, hx.le⟩
     refine ⟨sphereProdSndLeHomeomorph E F y, ?_, by simp [standardFramedSphere, y]⟩
-    exact (mem_closedBall_zero_iff.1 (sphereProdSndLeHomeomorph E F y).2.2).lt_of_ne
+    exact (mem_closedBall_zero_iff.1 (sphereProdSndLeHomeomorph E F y).2.property).lt_of_ne
       fun h ↦ hx.ne' ((norm_sphereProdSndLeHomeomorph_snd_eq_one_iff y).1 h)
 
 /-- **The exterior of the standard framed sphere** is the piece `‖x.fst‖ ≤ ‖x.snd‖` of the unit
@@ -163,7 +163,7 @@ private theorem standardSphereExteriorHomeomorph_apply
     (x : sphereExterior (standardFramedSphere (E := E) (F := F))) :
     standardSphereExteriorHomeomorph x =
       sphereProdFstLeHomeomorph E F
-        ⟨x, sphereExterior_standardFramedSphere (E := E) (F := F) ▸ x.2⟩ :=
+        ⟨x, sphereExterior_standardFramedSphere (E := E) (F := F) ▸ x.property⟩ :=
   (rfl)
 
 /-- On the boundary `Sᵏ × S^(q-1)`, the identification of the exterior of the standard framed

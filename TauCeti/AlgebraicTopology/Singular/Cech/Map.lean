@@ -124,7 +124,7 @@ chain map. -/
 @[reassoc (attr := simp)]
 lemma ι_cechDoubleComplexMap_f {p : ℕ} (s : {s : Finset ι // #s = p + 1}) :
     cechDoubleComplexι U R s ≫ (cechDoubleComplexMap U V f hf R).f p =
-      (cechSingularChainsMap U V f hf R).app (op s.1) ≫ cechDoubleComplexι V R s :=
+      (cechSingularChainsMap U V f hf R).app (op s.val) ≫ cechDoubleComplexι V R s :=
   NatTrans.ι_orderedCechComplexMap_f _ s
 
 /-- Identity maps induce identity ordered Čech double-complex maps. -/

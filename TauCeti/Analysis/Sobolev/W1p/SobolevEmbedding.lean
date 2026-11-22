@@ -284,14 +284,6 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ u : W1p μ Ω (q : ℝ≥0∞),
       eLpNorm (W1p.value u) s (μ.restrict V) ≤ C * ‖u‖ₑ := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · -- In a trivial space `finrank = 0`, so the gap condition is impossible.
-    have h0 : (0 : ℝ) ≤ (q : ℝ)⁻¹ - (s : ℝ)⁻¹ := by
-      rw [sub_nonneg]
-      have hq : (1 : ℝ≥0) ≤ q := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ q)
-      exact inv_anti₀ (by positivity) (by exact_mod_cast hqs)
-    simp [Module.finrank_zero_of_subsingleton] at hgap
-    linarith
   obtain ⟨U, hUf, hVU, T, hTrep⟩ :=
     W1p.exists_zeroBoundaryLocalization (μ := μ) (Ω := Ω) (p := (q : ℝ≥0∞))
       ENNReal.coe_ne_top hVc hVΩ
@@ -305,16 +297,16 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
   refine ⟨(A * ‖T‖ₑ).toNNReal, fun u ↦ ?_⟩
   rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top hAf (by finiteness))]
   calc
-    _ = eLpNorm (W1p.value (T u).1) s (μ.restrict V) := eLpNorm_congr_ae (hTrep u).symm
-    _ ≤ eLpNorm (W1p.value (T u).1) s (μ.restrict U) :=
+    _ = eLpNorm (W1p.value (T u).val) s (μ.restrict V) := eLpNorm_congr_ae (hTrep u).symm
+    _ ≤ eLpNorm (W1p.value (T u).val) s (μ.restrict U) :=
       eLpNorm_mono_measure _ (Measure.restrict_mono_set μ hVU)
-    _ ≤ A * ‖W1p.gradient (T u).1‖ₑ := by
+    _ ≤ A * ‖W1p.gradient (T u).val‖ₑ := by
       exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
-        ENNReal.coe_ne_top hUf (by exact_mod_cast hqs)
-        (by simp) hgap (T u).2
+        hUf (by exact_mod_cast hqs)
+        (by simp) hgap (T u).property
     _ ≤ A * ‖T u‖ₑ := by
       gcongr
-      exact W1p.enorm_gradient_le (T u).1
+      exact W1p.enorm_gradient_le (T u).val
     _ ≤ A * (‖T‖ₑ * ‖u‖ₑ) := by gcongr; exact T.le_opENorm u
     _ = _ := (mul_assoc _ _ _).symm
 
@@ -392,7 +384,7 @@ theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
       H u =ᵐ[μ.restrict V] W1p.value u := by
     have hz := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet
       (show (U : Set E) ⊆ ((⊤ : Opens E) : Set E) from subset_univ _)
-      (W1p.value (T u).1)
+      (W1p.value (T u).val)
     rw [← W1p0.value_extendByZeroL (le_top : U ≤ ⊤)] at hz
     have hmor := ae_restrict_of_ae (s := V) (W1p.value_ae_eq_morreyEmbedding hq (Z u))
     have hmem : ∀ᵐ x ∂μ.restrict V, x ∈ U :=

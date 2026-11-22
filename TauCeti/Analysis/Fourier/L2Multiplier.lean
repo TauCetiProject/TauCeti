@@ -14,6 +14,8 @@ import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Multiplication
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Fourier multipliers on `L²`
@@ -25,7 +27,8 @@ operator
 `T_m f = 𝓕⁻ (m • 𝓕 f)`
 
 on `L²(E, F)`, where `𝓕 = MeasureTheory.Lp.fourierTransformₗᵢ` is the Fourier transform on `L²`.
-By Plancherel's theorem it is bounded, with `‖T_m‖ ≤ ‖m‖_∞`.
+By Plancherel's theorem it is conjugate to multiplication by `m`, so it is bounded with
+`‖T_m‖ = ‖m‖_∞` (for nonzero `F`).
 
 Mathlib defines Fourier multipliers on Schwartz functions and on tempered distributions
 (`SchwartzMap.fourierMultiplierCLM`, `TemperedDistribution.fourierMultiplierCLM`), but they are
@@ -39,9 +42,14 @@ defined, it agrees with Mathlib's multipliers.
 ## Main declarations
 
 * `MeasureTheory.Lp.fourierMultiplierCLM`: the Fourier multiplier on `L²` with symbol in `L^∞`.
-* `MeasureTheory.Lp.fourier_fourierMultiplierCLM`: `𝓕 (T_m f) = m • 𝓕 f`, and
+* `MeasureTheory.Lp.fourier_fourierMultiplierCLM`: `𝓕 (T_m f) = m • 𝓕 f`, pointwise almost
+  everywhere for a symbol given by a function
+  (`MeasureTheory.Lp.coeFn_fourier_fourierMultiplierCLM_toLp`), and
   `MeasureTheory.Lp.eq_fourierMultiplierCLM_iff`, which characterizes `T_m` by it.
-* `MeasureTheory.Lp.norm_fourierMultiplierCLM_le`: the bound `‖T_m‖ ≤ ‖m‖_∞`.
+* `MeasureTheory.Lp.norm_fourierMultiplierCLM_le`: the bound `‖T_m‖ ≤ ‖m‖_∞`, and
+  `MeasureTheory.Lp.norm_fourierMultiplierCLM_toLp_le`: `‖T_m‖ ≤ C` for a symbol given by a
+  function bounded by `C` almost everywhere, and `MeasureTheory.Lp.norm_fourierMultiplierCLM`:
+  the equality `‖T_m‖ = ‖m‖_∞` for nonzero `F`.
 * `MeasureTheory.Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM`: `T_{m₁} ∘ T_{m₂} =
   T_{m₁ m₂}`, with linearity in the symbol and `T_c = c • id` for a constant symbol.
 * `MeasureTheory.Lp.adjoint_fourierMultiplierCLM`: the adjoint of `T_m` is `T_{star m}`, so a
@@ -62,6 +70,17 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m i` are eventually
   uniformly bounded and converge to `m₀` almost everywhere along a countably generated filter,
   then `T_{m i} f → T_{m₀} f` in `L²`.
+* `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply_self`: symbols uniformly bounded and
+  tending to `1` almost everywhere give `T_{m i} f → f` in `L²`.
+* `MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_of_tendsto`: if the partial sums of the
+  symbols are uniformly bounded and converge to `1` almost everywhere, the partial sums of the
+  multipliers converge to the identity in `L²`.
+* `MeasureTheory.Lp.hasDerivAt_fourierMultiplierCLM_toLp_apply`: if symbols `m s` depending on a
+  real parameter are differentiable in `s` at almost every frequency, with derivative `a ξ m' ξ`
+  and increments bounded by `C ‖a ξ‖ |s - t|`, then `s ↦ T_{m s} f` has derivative `T_{m'} h` in
+  `L²` whenever `𝓕 h = a • 𝓕 f`. With `a = 1` this differentiates multiplier families
+  applied to arbitrary `f ∈ L²`; with `a` the symbol of a differential operator `P`, it
+  differentiates them applied to `f` with `P f = h ∈ L²`.
 
 ## Kernels of multipliers
 
@@ -92,6 +111,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
 
+/-- The Fourier transform on `L²` commutes with real scalars. -/
+@[simp]
+theorem fourier_real_smul (r : ℝ) (f : Lp F 2 (volume : Measure E)) : 𝓕 (r • f) = r • 𝓕 f := by
+  rw [RCLike.real_smul_eq_coe_smul (K := ℂ), FourierTransform.fourier_smul,
+    ← RCLike.real_smul_eq_coe_smul]
+
 variable (F) in
 /-- The **Fourier multiplier** on `L²(E, F)` with symbol `m ∈ L^∞(E)`: the bounded operator
 `f ↦ 𝓕⁻ (m • 𝓕 f)`, where `𝓕` is the Fourier transform on `L²`. -/
@@ -117,6 +142,14 @@ theorem fourier_fourierMultiplierCLM :
     𝓕 (fourierMultiplierCLM F m f) = (m • 𝓕 f : Lp F 2 (volume : Measure E)) := by
   rw [fourierMultiplierCLM_apply, fourier_fourierInv_eq]
 
+/-- For a bounded symbol given by a function `m`, the Fourier transform of `T_m f` is
+`ξ ↦ m ξ • 𝓕 f ξ` almost everywhere. -/
+theorem coeFn_fourier_fourierMultiplierCLM_toLp {m : E → ℂ} (hm : MemLp m ∞ volume) :
+    𝓕 (fourierMultiplierCLM F (hm.toLp m) f) =ᵐ[volume] fun ξ ↦ m ξ • 𝓕 f ξ := by
+  rw [fourier_fourierMultiplierCLM]
+  filter_upwards [coeFn_lpSMul (r := 2) (hm.toLp m) (𝓕 f), hm.coeFn_toLp] with ξ h₁ h₂
+  rw [h₁, Pi.smul_apply', h₂]
+
 variable {m} in
 /-- A bounded operator on `L²` is the multiplier with symbol `m` if and only if it acts as
 multiplication by `m` on the Fourier side. -/
@@ -136,6 +169,26 @@ theorem norm_fourierMultiplierCLM_apply_le : ‖fourierMultiplierCLM F m f‖ �
 theorem norm_fourierMultiplierCLM_le : ‖fourierMultiplierCLM (E := E) F m‖ ≤ ‖m‖ :=
   opNorm_le_bound _ (norm_nonneg m) (norm_fourierMultiplierCLM_apply_le m)
 
+/-- A symbol given by a function bounded by `C` almost everywhere gives a multiplier of operator
+norm at most `C`. -/
+theorem norm_fourierMultiplierCLM_toLp_le {g : E → ℂ} (hg : MemLp g ∞ volume) {C : ℝ}
+    (hC : 0 ≤ C) (h : ∀ᵐ ξ ∂volume, ‖g ξ‖ ≤ C) : ‖fourierMultiplierCLM F (hg.toLp g)‖ ≤ C :=
+  (norm_fourierMultiplierCLM_le _).trans (Lp.norm_top_le_of_ae_bound hC
+    (by filter_upwards [hg.coeFn_toLp, h] with ξ hξ hξ'; rwa [hξ]))
+
+/-- The `L²` operator norm of the multiplier with symbol `m` is exactly `‖m‖_∞`, for nonzero
+`F`. -/
+@[simp]
+theorem norm_fourierMultiplierCLM [Nontrivial F] : ‖fourierMultiplierCLM (E := E) F m‖ = ‖m‖ := by
+  refine (norm_fourierMultiplierCLM_le m).antisymm ?_
+  -- By Plancherel, `T_m` is conjugate to multiplication by `m`, whose norm is `‖m‖_∞`.
+  rw [← norm_multiplicationOperator (E := F) (p := 2) m]
+  refine opNorm_le_bound _ (norm_nonneg (fourierMultiplierCLM F m)) fun g ↦ ?_
+  -- Test `T_m` on the inverse Fourier transform of `g`, which has the same norm as `g`.
+  have h := (fourierMultiplierCLM F m).le_opNorm (𝓕⁻ g)
+  rwa [← norm_fourier_eq (fourierMultiplierCLM F m (𝓕⁻ g)), fourier_fourierMultiplierCLM,
+    ← norm_fourier_eq (𝓕⁻ g), fourier_fourierInv_eq, ← multiplicationOperator_apply] at h
+
 /-! ### Dependence on the symbol -/
 
 @[simp]
@@ -148,6 +201,10 @@ theorem fourierMultiplierCLM_add :
     fourierMultiplierCLM F (m₁ + m₂) = fourierMultiplierCLM F m₁ + fourierMultiplierCLM F m₂ := by
   ext1 f
   simp [fourierMultiplierCLM_apply, Lp.smul_add]
+
+theorem fourierMultiplierCLM_sub :
+    fourierMultiplierCLM F (m₁ - m₂) = fourierMultiplierCLM F m₁ - fourierMultiplierCLM F m₂ :=
+  map_sub (AddMonoidHom.mk' (fourierMultiplierCLM F) fourierMultiplierCLM_add) m₁ m₂
 
 /-- The multiplier of a finite sum of symbols is the sum of the multipliers. -/
 theorem fourierMultiplierCLM_sum {ι : Type*} (s : Finset ι)
@@ -181,7 +238,9 @@ theorem fourierMultiplierCLM_compL_fourierMultiplierCLM :
     coeFn_lpSMul (r := 2) m₂ (𝓕 f),
     coeFn_lpSMul (r := 2) (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) (𝓕 f),
     coeFn_lpSMul (r := ∞) m₁ m₂] with x h₁ h₂ h₃ h₄
-  simp [h₁, h₂, h₃, h₄, smul_smul]
+  -- With the `L^∞` algebra instances in scope, `smul_eq_mul` and `Lp.smul_eq_mul` would rewrite
+  -- the Hölder product `m₁ • m₂` to `m₁ * m₂`, so `h₃` and `h₄` would no longer match.
+  simp [h₁, h₂, h₃, h₄, smul_smul, -smul_eq_mul, -Lp.smul_eq_mul]
 
 theorem fourierMultiplierCLM_fourierMultiplierCLM_apply :
     fourierMultiplierCLM F m₁ (fourierMultiplierCLM F m₂ f) =
@@ -397,6 +456,128 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
     simp only [h₁, h₂, Pi.smul_apply']
     exact h₃.smul_const _
 
+/-- **Approximate identities among multipliers.** If the symbols `m i` are eventually bounded
+almost everywhere by a constant along a countably generated filter `l` and tend to `1` almost
+everywhere along `l`, then `T_{m i} f → f` in `L²` along `l` for every `f ∈ L²`. -/
+theorem tendsto_fourierMultiplierCLM_apply_self {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {m : ι → Lp ℂ ∞ (volume : Measure E)} {C : ℝ}
+    (hC : ∀ᶠ i in l, ∀ᵐ ξ, ‖m i ξ‖ ≤ C) (hm : ∀ᵐ ξ, Tendsto (fun i ↦ m i ξ) l (𝓝 1))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun i ↦ fourierMultiplierCLM F (m i) f) l (𝓝 f) := by
+  have hC' : ∀ᶠ i in l, ‖m i‖ ≤ max C 0 := hC.mono fun i hi ↦
+    Lp.norm_top_le_of_ae_bound (le_max_right C 0) (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0))
+  have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
+  have h := tendsto_fourierMultiplierCLM_apply (F := F) (m₀ := h1.toLp _) hC'
+    (by filter_upwards [hm, h1.coeFn_toLp] with ξ h₁ h₂; rwa [h₂]) f
+  rwa [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp, one_smul, id_apply] at h
+
+/-- If the partial sums `∑_{i ∈ t N} ψᵢ` of symbols are uniformly bounded by `C` and converge
+to `1` almost everywhere, then the partial sums `∑_{i ∈ t N} T_{m i} f` of the Fourier multipliers
+with these symbols converge to `f` in `L²` for every `f ∈ L²`. -/
+theorem tendsto_sum_fourierMultiplierCLM_of_tendsto {ι : Type*}
+    {ψ : ι → E → ℂ} {m : ι → Lp ℂ ∞ (volume : Measure E)}
+    (hm : ∀ i, m i =ᵐ[volume] ψ i) (t : ℕ → Finset ι) {C : ℝ}
+    (hle : ∀ N ξ, ‖∑ i ∈ t N, ψ i ξ‖ ≤ C)
+    (hlim : ∀ᵐ ξ ∂(volume : Measure E), Tendsto (fun N ↦ ∑ i ∈ t N, ψ i ξ) atTop (𝓝 1))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun N ↦ ∑ i ∈ t N, fourierMultiplierCLM F (m i) f) atTop (𝓝 f) := by
+  -- The partial sums are the multipliers with the symbols `∑_{i ∈ t N} ψᵢ`.
+  have hae : ∀ᵐ ξ ∂(volume : Measure E), ∀ N, (∑ i ∈ t N, m i) ξ = ∑ i ∈ t N, ψ i ξ := by
+    refine ae_all_iff.2 fun N ↦ ?_
+    filter_upwards [coeFn_fun_finsetSum (t N) m, (eventually_all_finset (t N)).2 fun i _ ↦ hm i]
+      with ξ h₁ h₂
+    rw [h₁]
+    exact Finset.sum_congr rfl fun i hi ↦ h₂ i hi
+  have h := tendsto_fourierMultiplierCLM_apply_self (F := F) (l := atTop)
+    (m := fun N ↦ ∑ i ∈ t N, m i) (C := C) (Eventually.of_forall fun N ↦ by
+      filter_upwards [hae] with ξ hξ
+      rw [hξ N]
+      exact hle N ξ) (by filter_upwards [hae, hlim] with ξ h₁ h₂; simpa only [h₁] using h₂) f
+  simpa only [fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply] using h
+
+/-- The `L²` distance between a difference quotient of `s ↦ T_{m s} f` and `T_{m'} h`, computed on
+the Fourier side. -/
+private theorem norm_slope_fourierMultiplierCLM_toLp_sub {m : ℝ → E → ℂ}
+    (hm : ∀ s, MemLp (m s) ∞ volume) {m' : E → ℂ} (hm' : MemLp m' ∞ volume) (t s : ℝ)
+    (f h : Lp F 2 (volume : Measure E)) :
+    ‖slope (fun s ↦ fourierMultiplierCLM F ((hm s).toLp (m s)) f) t s -
+        fourierMultiplierCLM F (hm'.toLp m') h‖ =
+      (eLpNorm (fun ξ ↦ ((s - t)⁻¹ • (m s ξ - m t ξ)) • (𝓕 f : Lp F 2 (volume : Measure E)) ξ -
+        m' ξ • (𝓕 h : Lp F 2 (volume : Measure E)) ξ) 2 volume).toReal := by
+  rw [← norm_fourier_eq, Lp.norm_def]
+  congr 1
+  refine eLpNorm_congr_ae ?_
+  rw [slope_def_module, FourierTransform.fourier_sub, fourier_real_smul,
+    FourierTransform.fourier_sub]
+  set A := 𝓕 (fourierMultiplierCLM F ((hm s).toLp (m s)) f)
+  set B := 𝓕 (fourierMultiplierCLM F ((hm t).toLp (m t)) f)
+  set D := 𝓕 (fourierMultiplierCLM F (hm'.toLp m') h)
+  filter_upwards [Lp.coeFn_sub ((s - t)⁻¹ • (A - B)) D, Lp.coeFn_smul (s - t)⁻¹ (A - B),
+    Lp.coeFn_sub A B, coeFn_fourier_fourierMultiplierCLM_toLp f (hm s),
+    coeFn_fourier_fourierMultiplierCLM_toLp f (hm t),
+    coeFn_fourier_fourierMultiplierCLM_toLp h hm'] with ξ h₁ h₂ h₃ h₄ h₅ h₆
+  rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, Pi.sub_apply, h₄, h₅, h₆]
+  simp only [sub_smul, smul_sub, smul_assoc]
+
+/-- **Differentiating a family of Fourier multipliers.** Let `m s` be bounded symbols depending
+on a real parameter `s`, and let `f, h ∈ L²` with `𝓕 h = a • 𝓕 f`. If, at almost every
+frequency, the symbol `s ↦ m s ξ` has derivative `a ξ * m' ξ` at `t`, and its increments satisfy
+`‖m s ξ - m t ξ‖ ≤ C ‖a ξ‖ |s - t|` almost everywhere for `s` near `t`, then `s ↦ T_{m s} f` has
+derivative `T_{m'} h` at `t` in `L²`. -/
+theorem hasDerivAt_fourierMultiplierCLM_toLp_apply {m : ℝ → E → ℂ}
+    (hm : ∀ s, MemLp (m s) ∞ volume) {m' : E → ℂ} (hm' : MemLp m' ∞ volume) {a : E → ℂ}
+    {C : ℝ} {t : ℝ} {f h : Lp F 2 (volume : Measure E)}
+    (hh : (𝓕 h : Lp F 2 (volume : Measure E)) =ᵐ[volume]
+      fun ξ ↦ a ξ • (𝓕 f : Lp F 2 (volume : Measure E)) ξ)
+    (hderiv : ∀ᵐ ξ ∂volume, HasDerivAt (fun s ↦ m s ξ) (a ξ * m' ξ) t)
+    (hbound : ∀ᶠ s in 𝓝[≠] t, ∀ᵐ ξ ∂volume, ‖m s ξ - m t ξ‖ ≤ C * ‖a ξ‖ * |s - t|) :
+    HasDerivAt (fun s ↦ fourierMultiplierCLM F ((hm s).toLp (m s)) f)
+      (fourierMultiplierCLM F (hm'.toLp m') h) t := by
+  set Ff : E → F := ⇑(𝓕 f : Lp F 2 (volume : Measure E))
+  set Fh : E → F := ⇑(𝓕 h : Lp F 2 (volume : Measure E))
+  -- The Fourier transforms of the difference quotients, as genuine functions.
+  set q : ℝ → E → F := fun s ξ ↦ ((s - t)⁻¹ • (m s ξ - m t ξ)) • Ff ξ
+  have hq : ∀ s, ‖slope (fun s ↦ fourierMultiplierCLM F ((hm s).toLp (m s)) f) t s -
+      fourierMultiplierCLM F (hm'.toLp m') h‖ =
+        (eLpNorm (q s - fun ξ ↦ m' ξ • Fh ξ) 2 volume).toReal := fun s ↦
+    norm_slope_fourierMultiplierCLM_toLp_sub hm hm' t s f h
+  -- `m'` is bounded by its `L^∞` norm `K`.
+  set K := ‖hm'.toLp m'‖
+  rw [hasDerivAt_iff_tendsto_slope, tendsto_iff_norm_sub_tendsto_zero]
+  simp only [hq]
+  rw [← ENNReal.toReal_zero]
+  refine (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp ?_
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by norm_num) (Eventually.of_forall fun s ↦ ?_)
+    (Lp.memLp (𝓕 h)) (C := (C + K).toNNReal) ?_ ?_
+  · have h₁ := (hm s).aestronglyMeasurable
+    have h₂ := (hm t).aestronglyMeasurable
+    simp only [q, Ff]
+    fun_prop
+  · filter_upwards [hbound, self_mem_nhdsWithin] with s hs hst
+    filter_upwards [hh, hs, hm'.coeFn_toLp, Lp.ae_norm_le_norm_top (hm'.toLp m')]
+      with ξ hξ hsξ hm'ξ hKξ
+    -- Turn the increment bound into a bound on the difference quotient.
+    have hslope : ‖(s - t)⁻¹ • (m s ξ - m t ξ)‖ ≤ C * ‖a ξ‖ := by
+      rw [norm_smul, norm_inv, Real.norm_eq_abs,
+        inv_mul_le_iff₀ (abs_pos.2 (sub_ne_zero.2 hst))]
+      exact hsξ.trans_eq (mul_comm _ _)
+    have h₁ : ‖q s ξ‖ ≤ C * ‖Fh ξ‖ := calc
+      ‖q s ξ‖ = ‖(s - t)⁻¹ • (m s ξ - m t ξ)‖ * ‖Ff ξ‖ := norm_smul _ _
+      _ ≤ C * ‖a ξ‖ * ‖Ff ξ‖ := by gcongr
+      _ = C * ‖Fh ξ‖ := by rw [hξ, norm_smul, mul_assoc]
+    have h₂ : ‖m' ξ • Fh ξ‖ ≤ K * ‖Fh ξ‖ := by
+      rw [norm_smul, ← hm'ξ]
+      gcongr
+    rw [ENNReal.ofNNReal_toNNReal, ← ofReal_norm, ← ofReal_norm,
+      ← ENNReal.ofReal_mul' (norm_nonneg _)]
+    exact ENNReal.ofReal_le_ofReal
+      ((norm_sub_le _ _).trans ((add_le_add h₁ h₂).trans_eq (add_mul _ _ _).symm))
+  · filter_upwards [hh, hderiv] with ξ hξ hξ'
+    have := (hξ'.tendsto_slope).smul_const (Ff ξ)
+    simp only [slope_def_module] at this
+    rw [hξ, smul_smul, mul_comm]
+    exact this
+
 end MeasureTheory.Lp
 
 /-! ### Convolution with an integrable kernel -/
@@ -457,8 +638,7 @@ theorem coeFn_fourier_convolutionLp (hk : Integrable k) (f : Lp F 2 (volume : Me
     (eLpNorm_fourier_top_le _).trans_lt (memLp_one_iff_integrable.2 hki).eLpNorm_lt_top
   have h := congr($(convolutionLp_eq_fourierMultiplierCLM (F := F) hk hk'.coeFn_toLp) f)
   rw [coe_restrictScalars'] at h
-  rw [h, Lp.fourier_fourierMultiplierCLM]
-  filter_upwards [Lp.coeFn_lpSMul (r := 2) (hk'.toLp _) (𝓕 f), hk'.coeFn_toLp] with ξ h₁ h₂
-  rw [h₁, Pi.smul_apply', h₂]
+  rw [h]
+  exact Lp.coeFn_fourier_fourierMultiplierCLM_toLp f hk'
 
 end TauCeti

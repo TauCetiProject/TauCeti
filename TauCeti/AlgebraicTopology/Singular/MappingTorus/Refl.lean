@@ -79,7 +79,7 @@ theorem wangEndomorphism_refl : wangEndomorphism (Homeomorph.refl F) R = 0 := by
 every degree. -/
 instance mono_homologyMap_fibreInclusionChainMap_refl (n : ℕ) :
     Mono (homologyMap (fibreInclusionChainMap (Homeomorph.refl F) R) n) :=
-  (wang_exact₂ (Homeomorph.refl F) R n).mono_g (by simp)
+  mono_homologyMap_fibreInclusionChainMap _ R n (by simp)
 
 /-- For the mapping torus of the identity, the Wang connecting morphism is an epimorphism in every
 degree. -/

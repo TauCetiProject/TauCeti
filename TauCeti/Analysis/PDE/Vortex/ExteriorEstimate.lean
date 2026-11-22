@@ -20,7 +20,10 @@ The proof uses the Weitzenböck formula at a vortex
 (`gaugeFixedOperator_gaugeFixedAdjoint_of_equation_eq_zero`). The magnetic first-order terms
 complete to covariant-gradient squares, while the two potentials are
 `P = |α|²/4` and `1/8 + P/2`. Integrating the squared-norm Bochner identity eliminates the
-Laplacian.
+Laplacian. At a continuous field with `|α| → 1`, the squared mass `P` is bounded
+(`exists_forall_sq_add_sq_le`, `memLp_top_sq_add_sq`) and exceeds every `a < 1/4` outside a disc
+(`exists_exterior_lt_mass`); together these are the hypotheses of the stationary Schrödinger
+theory for `-Δ + P` (`exists_memLp_top_sq_add_sq_and_le`).
 
 The gauge-fixed operator `L_x` itself satisfies the same kind of exterior bound, at every mass
 below `1/2`, once the covariant derivative `∇₁ α` also tends to zero at infinity. At a vortex the
@@ -103,6 +106,49 @@ theorem exists_exterior_lt_mass
     hR (le_trans (le_max_left R 1) hz.le)
   linarith
 
+/-- At a continuous field, the squared mass `P = |α|² / 4 = x₂² + x₃²` is continuous. -/
+theorem continuous_sq_add_sq (hx : Continuous x) :
+    Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
+  have _ : Continuous fun z ↦ x z 2 := by fun_prop
+  have _ : Continuous fun z ↦ x z 3 := by fun_prop
+  fun_prop
+
+/-- At a continuous field with a unit-modulus end, the squared mass `P = |α|² / 4 = x₂² + x₃²` is
+bounded above. -/
+theorem exists_forall_sq_add_sq_le (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ M, ∀ z, x z 2 ^ 2 + x z 3 ^ 2 ≤ M := by
+  obtain ⟨K, hK, hKc⟩ := mem_cocompact.1 (hlim.eventually (ge_mem_nhds (by norm_num : (1 : ℝ) < 2)))
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (continuous_sq_add_sq hx).continuousOn
+  refine ⟨max M 1, fun z ↦ ?_⟩
+  by_cases hz : z ∈ K
+  · exact (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hM z hz).trans (le_max_left _ _))
+  · have h2 : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 2 := hKc hz
+    linarith [le_max_right M 1]
+
+/-- At a continuous field with a unit-modulus end, the squared mass `P = |α|² / 4 = x₂² + x₃²` is
+essentially bounded. -/
+theorem memLp_top_sq_add_sq (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ (volume : Measure ℂ) := by
+  obtain ⟨M, hM⟩ := exists_forall_sq_add_sq_le hx hlim
+  refine memLp_top_of_bound (continuous_sq_add_sq hx).aestronglyMeasurable M
+    (ae_of_all _ fun z ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact hM z
+
+/-- At a continuous field with a unit-modulus end, the squared mass `P = |α|² / 4 = x₂² + x₃²`
+satisfies the hypotheses of the stationary Schrödinger theory for `-Δ + P`: it is essentially
+bounded, nonnegative, and at least `1 / 8` outside some disc. -/
+theorem exists_memLp_top_sq_add_sq_and_le (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ R : ℝ, MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ (volume : Measure ℂ) ∧
+      (∀ᵐ z ∂volume, 0 ≤ x z 2 ^ 2 + x z 3 ^ 2) ∧
+      ∀ᵐ z ∂(volume : Measure ℂ), R < ‖z‖ → 1 / 8 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
+  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
+  exact ⟨R, memLp_top_sq_add_sq hx hlim, ae_of_all _ fun z ↦ by positivity,
+    ae_of_all _ fun z hz ↦ (hR z hz).le⟩
+
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 
 /-- The vortex adjoint has squared `L²` lower bound `a ≤ 1/4` on any compactly supported
@@ -142,7 +188,7 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
   simp only [Pi.add_apply] at hb
   rw [integral_const_mul, integral_add hi hΔ, integral_div,
     integral_laplacian_eq_zero_of_hasCompactSupport (hη.norm_sq ℝ) hnc,
-    zero_div, add_zero, integral_inner_gaugeFixedOperator hx.continuous hA hη₁ (.inl hAc)] at hb
+    zero_div, add_zero, integral_inner_gaugeFixedOperator hA hη₁ (.inl hAc)] at hb
   simpa only [real_inner_self_eq_norm_sq] using hb
 
 /-- For an actual vortex with unit-modulus end and `0 < c < 1/2`, there is a radius `R > 0`,
