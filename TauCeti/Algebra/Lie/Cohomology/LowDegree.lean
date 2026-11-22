@@ -47,17 +47,8 @@ variable [LieRingModule L M] [LieModule R L M]
 
 /-- The degree-zero Chevalley--Eilenberg differential, sending `m` to the principal cocycle
 `x ↦ ⁅x, m⁆`. -/
-def d₀₁ : M →ₗ[R] oneCochain R L M where
-  toFun m :=
-    { toFun := fun x ↦ ⁅x, m⁆
-      map_add' := fun x y ↦ add_lie x y m
-      map_smul' := fun r x ↦ smul_lie r x m }
-  map_add' m n := by
-    ext x
-    exact lie_add x m n
-  map_smul' r m := by
-    ext x
-    exact lie_smul r x m
+def d₀₁ : M →ₗ[R] oneCochain R L M :=
+  (LieModule.toEnd R L M : L →ₗ[R] Module.End R M).flip
 
 @[simp]
 theorem d₀₁_apply (m : M) (x : L) : d₀₁ R L M m x = ⁅x, m⁆ := (rfl)
@@ -66,11 +57,7 @@ theorem d₀₁_apply (m : M) (x : L) : d₀₁ R L M m x = ⁅x, m⁆ := (rfl)
 theorem d₁₂_comp_d₀₁ :
     (d₁₂ R L M).comp (d₀₁ R L M) = 0 := by
   ext m x y
-  -- Extensionality exposes the `twoCochain` subtype coercion, which otherwise prevents the
-  -- evaluation lemmas for the two differentials from matching the goal.
-  change ⁅x, ⁅y, m⁆⁆ - ⁅y, ⁅x, m⁆⁆ - ⁅⁅x, y⁆, m⁆ = 0
-  rw [leibniz_lie]
-  abel
+  simp
 
 /-- Lie algebra one-cocycles: linear maps annihilated by the differential `d₁₂`. -/
 def oneCocycle : Submodule R (oneCochain R L M) := LinearMap.ker (d₁₂ R L M)
@@ -79,32 +66,18 @@ def oneCocycle : Submodule R (oneCochain R L M) := LinearMap.ker (d₁₂ R L M)
 theorem mem_oneCocycle_iff {f : oneCochain R L M} :
     f ∈ oneCocycle R L M ↔
       ∀ x y, f ⁅x, y⁆ = ⁅x, f y⁆ - ⁅y, f x⁆ := by
-  rw [oneCocycle, LinearMap.mem_ker]
-  constructor
-  · intro h x y
-    have hxy : d₁₂ R L M f x y = 0 := by
-      rw [h]
-      rfl
-    rw [_root_.LieModule.Cohomology.d₁₂_apply_apply] at hxy
-    exact (sub_eq_zero.mp hxy).symm
-  · intro h
-    apply Subtype.ext
-    ext x y
-    -- The target is equality of the underlying bilinear maps of two `twoCochain` subtypes.
-    change ⁅x, f y⁆ - ⁅y, f x⁆ - f ⁅x, y⁆ = 0
-    rw [h x y]
-    abel
+  rw [oneCocycle, LinearMap.mem_ker, ← Submodule.coe_eq_zero, LinearMap.ext_iff]
+  simp [LinearMap.ext_iff, sub_eq_zero, eq_comm (a := f _)]
 
 /-- The cocycle identity for a bundled one-cocycle. -/
 theorem oneCocycle_apply_lie (f : oneCocycle R L M) (x y : L) :
     f.val ⁅x, y⁆ = ⁅x, f.val y⁆ - ⁅y, f.val x⁆ :=
-  (mem_oneCocycle_iff (R := R) (L := L) (M := M)).1 f.property x y
+  (mem_oneCocycle_iff R L M).1 f.property x y
 
 /-- The degree-zero differential, with codomain restricted to one-cocycles. -/
 def d₀₁Cocycle : M →ₗ[R] oneCocycle R L M :=
   (d₀₁ R L M).codRestrict (oneCocycle R L M) fun m ↦ by
-    rw [oneCocycle, LinearMap.mem_ker, ← LinearMap.comp_apply, d₁₂_comp_d₀₁]
-    rfl
+    simpa [oneCocycle] using LinearMap.congr_fun (d₁₂_comp_d₀₁ R L M) m
 
 @[simp]
 theorem d₀₁Cocycle_coe (m : M) :
@@ -126,6 +99,11 @@ abbrev firstCohomology := oneCocycle R L M ⧸ oneCoboundary R L M
 def firstCohomologyMk : oneCocycle R L M →ₗ[R] firstCohomology R L M :=
   (oneCoboundary R L M).mkQ
 
+/-- Every first cohomology class has a cocycle representative. -/
+theorem firstCohomologyMk_surjective :
+    Function.Surjective (firstCohomologyMk R L M) :=
+  (oneCoboundary R L M).mkQ_surjective
+
 variable {N : Type*} [AddCommGroup N] [Module R N]
 
 /-- Descend a linear map on one-cocycles that vanishes on principal cocycles to first
@@ -133,9 +111,8 @@ cohomology. -/
 def firstCohomologyLift (f : oneCocycle R L M →ₗ[R] N)
     (h : ∀ m, f (d₀₁Cocycle R L M m) = 0) : firstCohomology R L M →ₗ[R] N :=
   (oneCoboundary R L M).liftQ f fun x hx ↦ by
-    rw [LinearMap.mem_ker]
-    obtain ⟨m, rfl⟩ := (mem_oneCoboundary_iff (R := R) (L := L) (M := M)).1 hx
-    exact h m
+    obtain ⟨m, rfl⟩ := (mem_oneCoboundary_iff R L M).1 hx
+    exact LinearMap.mem_ker.2 (h m)
 
 @[simp]
 theorem firstCohomologyLift_mk (f : oneCocycle R L M →ₗ[R] N)
@@ -146,15 +123,10 @@ theorem firstCohomologyLift_mk (f : oneCocycle R L M →ₗ[R] N)
 theorem firstCohomologyLift_unique (f : oneCocycle R L M →ₗ[R] N)
     (h : ∀ m, f (d₀₁Cocycle R L M m) = 0) (g : firstCohomology R L M →ₗ[R] N)
     (hg : g.comp (firstCohomologyMk R L M) = f) :
-    g = firstCohomologyLift R L M f h := by
-  apply LinearMap.ext
-  intro q
-  obtain ⟨x, rfl⟩ := (oneCoboundary R L M).mkQ_surjective q
-  -- The representative produced by `mkQ_surjective` uses `Submodule.mkQ`; unfold the
-  -- definitionally equal `firstCohomologyMk` wrapper so the computation lemma applies.
-  change g (firstCohomologyMk R L M x) =
-    firstCohomologyLift R L M f h (firstCohomologyMk R L M x)
-  rw [firstCohomologyLift_mk, ← LinearMap.comp_apply, hg]
+    g = firstCohomologyLift R L M f h :=
+  LinearMap.ext fun q ↦ by
+    obtain ⟨x, rfl⟩ := firstCohomologyMk_surjective R L M q
+    rw [firstCohomologyLift_mk, ← hg, LinearMap.comp_apply]
 
 @[simp]
 theorem firstCohomologyMk_eq_zero_iff (f : oneCocycle R L M) :
@@ -164,9 +136,8 @@ theorem firstCohomologyMk_eq_zero_iff (f : oneCocycle R L M) :
 
 @[simp]
 theorem firstCohomologyMk_d₀₁Cocycle (m : M) :
-    firstCohomologyMk R L M (d₀₁Cocycle R L M m) = 0 := by
-  rw [firstCohomologyMk_eq_zero_iff]
-  exact ⟨m, rfl⟩
+    firstCohomologyMk R L M (d₀₁Cocycle R L M m) = 0 :=
+  (firstCohomologyMk_eq_zero_iff R L M _).2 ⟨m, rfl⟩
 
 /-- Two cocycles represent the same first cohomology class exactly when their difference is
 principal. -/
@@ -175,24 +146,10 @@ theorem firstCohomologyMk_eq_iff (f g : oneCocycle R L M) :
       ∃ m : M, d₀₁Cocycle R L M m = f - g := by
   rw [← sub_eq_zero, ← map_sub, firstCohomologyMk_eq_zero_iff]
 
-/-- Every first cohomology class has a cocycle representative. -/
-theorem firstCohomologyMk_surjective :
-    Function.Surjective (firstCohomologyMk R L M) :=
-  (oneCoboundary R L M).mkQ_surjective
-
 /-- First cohomology is trivial exactly when every one-cocycle is principal. -/
 theorem subsingleton_firstCohomology_iff :
     Subsingleton (firstCohomology R L M) ↔
       ∀ f : oneCocycle R L M, ∃ m : M, d₀₁Cocycle R L M m = f := by
-  constructor
-  · intro h f
-    rw [← firstCohomologyMk_eq_zero_iff]
-    exact h.elim _ _
-  · intro h
-    refine ⟨fun a b ↦ ?_⟩
-    obtain ⟨f, rfl⟩ := firstCohomologyMk_surjective R L M a
-    obtain ⟨g, rfl⟩ := firstCohomologyMk_surjective R L M b
-    rw [(firstCohomologyMk_eq_zero_iff R L M f).2 (h f),
-      (firstCohomologyMk_eq_zero_iff R L M g).2 (h g)]
+  simp only [Submodule.Quotient.subsingleton_iff, Submodule.eq_top_iff', mem_oneCoboundary_iff]
 
 end TauCeti.LieModule.Cohomology

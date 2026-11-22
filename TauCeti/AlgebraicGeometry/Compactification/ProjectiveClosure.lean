@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Compactification.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.PolynomialQuotient
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Polynomial.Quotient
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 public import TauCeti.RingTheory.MvPolynomial.Homogenization
 

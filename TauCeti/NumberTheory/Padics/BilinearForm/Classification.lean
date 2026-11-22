@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
-import TauCeti.Algebra.Group.AddChar
+import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
