@@ -8,11 +8,10 @@ module
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Geometry.Lie.Subgroup.Image
 
-import Mathlib.Analysis.SpecialFunctions.Exp
-import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 import TauCeti.Algebra.Lie.Killing.Perfect
 import TauCeti.Geometry.Lie.AutomaticSmoothness
 import TauCeti.Geometry.Lie.Subgroup.Commutative
+import TauCeti.Geometry.Manifold.Algebra.TypeTags
 
 /-!
 # Connected Lie groups with perfect Lie algebra
@@ -29,9 +28,8 @@ the Lie algebra of `G'`, which is abelian when `G'` is commutative
 (`TauCeti.Lie.isLieAbelian_of_isMulCommutative`), so it kills `⁅𝔤, 𝔤⁆ = 𝔤`. A smooth homomorphism
 with zero Lie map from a connected group is trivial
 (`ContMDiffMonoidMorphism.toMonoidHom_eq_one_iff_lieMap_eq_zero`), and continuous homomorphisms of
-Lie groups are smooth (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`). For `ℝ`, which is not
-presented here as a multiplicative Lie group, the exponential embeds `Multiplicative ℝ` as a
-subgroup of the commutative Lie group `ℝˣ`.
+Lie groups are smooth (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`). For `ℝ`, the type tag
+`Multiplicative ℝ` is a commutative Lie group (`Multiplicative.lieGroup`).
 
 This is the Lie-theoretic half of Weyl's theorem that the universal cover of a compact semisimple
 Lie group is compact. Its group-theoretic half extends every homomorphism to `ℝ` from a discrete
@@ -105,11 +103,5 @@ end CommutativeTarget
 theorem MonoidHom.eq_one_of_continuous_of_derivedSeries_one_eq_top_real
     (f : G →* Multiplicative ℝ) (hf : Continuous f)
     (h : LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 = ⊤) :
-    f = 1 := by
-  -- The exponential is a continuous injective homomorphism into the commutative Lie group `ℝˣ`.
-  let e : Multiplicative ℝ →* ℝˣ := Real.expMonoidHom.toHomUnits
-  have he : Continuous e := Units.isEmbedding_val₀.continuous_iff.mpr continuous_toAdd.rexp
-  have hef := (e.comp f).eq_one_of_continuous_of_derivedSeries_one_eq_top 𝓘(ℝ, ℝ) (he.comp hf) h
-  ext g
-  have hg := congrArg (fun u : ℝˣ ↦ (u : ℝ)) (DFunLike.congr_fun hef g)
-  simpa [e] using hg
+    f = 1 :=
+  f.eq_one_of_continuous_of_derivedSeries_one_eq_top 𝓘(ℝ, ℝ) hf h
