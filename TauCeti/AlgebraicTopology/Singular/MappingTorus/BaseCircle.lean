@@ -47,7 +47,7 @@ With integer coefficients, `circleWangClass` is the winding number times the con
 `TauCeti.MappingTorus.circleWangSign`, its value on the circuit class `AddCircle.fundamentalClass 1`
 (`TauCeti.MappingTorus.circleWangClass_hom_apply`), and this constant is `1` or `-1`
 (`TauCeti.MappingTorus.circleWangSign_eq_one_or_eq_neg_one`). Which of the two it is, that is,
-which generator of `H¹(ℝ/ℤ; ℤ)` the Wang class is, is not computed here.
+which generator of `Hom(H₁(ℝ/ℤ; ℤ), ℤ)` the Wang class is, is not computed here.
 
 ## References
 
@@ -204,6 +204,11 @@ end Circle
 def circleWangSign : ℤ :=
   (circleWangClass (ModuleCat.of ℤ ℤ)).hom (AddCircle.fundamentalClass 1)
 
+/-- The integral Wang class of the circle takes the value `circleWangSign` on the circuit class. -/
+theorem circleWangClass_hom_fundamentalClass :
+    (circleWangClass (ModuleCat.of ℤ ℤ)).hom (AddCircle.fundamentalClass 1) = circleWangSign :=
+  (rfl)
+
 /-- The integral Wang class of the circle is the winding number times `circleWangSign`. -/
 theorem circleWangClass_hom_apply
     (c : ((singularChains ℤ).obj (TopCat.of UnitAddCircle)).homology 1) :
@@ -226,5 +231,9 @@ theorem circleWangSign_eq_one_or_eq_neg_one : circleWangSign = 1 ∨ circleWangS
 @[simp]
 theorem circleWangSign_mul_self : circleWangSign * circleWangSign = 1 := by
   rcases circleWangSign_eq_one_or_eq_neg_one with h | h <;> rw [h] <;> norm_num
+
+/-- `circleWangSign` is nonzero. -/
+theorem circleWangSign_ne_zero : circleWangSign ≠ 0 :=
+  left_ne_zero_of_mul_eq_one circleWangSign_mul_self
 
 end TauCeti.MappingTorus

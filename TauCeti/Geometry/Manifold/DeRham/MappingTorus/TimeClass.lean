@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.BaseCircle
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FirstCohomology
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
+import TauCeti.AlgebraicTopology.Singular.HomeomorphAction
 
 /-!
 # The integral class of the time form of a mapping torus
@@ -37,9 +38,9 @@ path-connected fibre:
   the Wang connecting morphism (`TauCeti.MappingTorus.ker_wangδ_zero_eq_torsion`). So `N`
   identifies `H₁(Y_φ; ℤ)` modulo torsion with `ℤ`: for a class `g` of time period one, every
   class `c` differs from `N(c) • g` by an element of finite order
-  (`TauCeti.SmoothMappingTorus.isOfFinAddOrder_sub_intTimePeriodHom_smul`). In particular the
+  (`TauCeti.SmoothMappingTorus.isOfFinAddOrder_sub_intTimePeriodHom_zsmul`). In particular the
   class of the closed orbit through a point of period `d` is `d • g` modulo torsion
-  (`TauCeti.SmoothMappingTorus.isOfFinAddOrder_closedOrbitHomologyClass_sub_smul`): when
+  (`TauCeti.SmoothMappingTorus.isOfFinAddOrder_closedOrbitHomologyClass_sub_zsmul`): when
   `b₁(Y_φ) = 1`, the real period of a closed orbit is its divisibility in homology modulo torsion,
   while the torsion part of its class is not determined by the period.
 
@@ -48,8 +49,10 @@ path-connected fibre:
 `[dt] ∈ H¹(Y_φ; ℤ)` (`TauCeti.SmoothMappingTorus.timeClass`) is the class corresponding to `N`: its
 pairing with a class is that class's period of `dt`
 (`TauCeti.SmoothMappingTorus.intCast_singularKronecker_timeClass`). It is the integral class of the
-closed form `dt`, defined for every mapping torus. When `b₁(Y_φ) = 1` it generates
-`H¹(Y_φ; ℤ) ≅ ℤ`: every class is a unique integer multiple of `[dt]`
+closed form `dt`, defined for every mapping torus, and it is the pullback `proj^* θ` of the angular
+class `θ = [ds]` of the circle (`AddCircle.angularClass`) along the projection `Y_φ → ℝ / ℤ`
+(`TauCeti.SmoothMappingTorus.singularCohomologyMap_proj_angularClass`). When `b₁(Y_φ) = 1` it
+generates `H¹(Y_φ; ℤ) ≅ ℤ`: every class is a unique integer multiple of `[dt]`
 (`TauCeti.SmoothMappingTorus.exists_eq_zsmul_timeClass`,
 `TauCeti.SmoothMappingTorus.zsmul_timeClass_eq_zero_iff`). So for the symplectic suspension
 `(ℝ / ℤ)_s × Y_φ` of a surface diffeomorphism with `b₁(Y_φ) = 1`, the generator of `H¹(Y_φ; ℤ)`
@@ -67,6 +70,7 @@ class of the time form, where `θ = [ds]` is the angular class (`AddCircle.angul
 * `TauCeti.SmoothMappingTorus.intTimePeriodHom_eq_zero_iff`: when `b₁(Y_φ) = 1`, a class has time
   period zero exactly when it has finite order.
 * `TauCeti.SmoothMappingTorus.timeClass`: the integral class `[dt] ∈ H¹(Y_φ; ℤ)`.
+* `TauCeti.SmoothMappingTorus.singularCohomologyMap_proj_angularClass`: `[dt] = proj^* θ`.
 * `TauCeti.SmoothMappingTorus.exists_eq_zsmul_timeClass`,
   `TauCeti.SmoothMappingTorus.zsmul_timeClass_eq_zero_iff`: when `b₁(Y_φ) = 1`, `[dt]` generates
   `H¹(Y_φ; ℤ) ≅ ℤ`.
@@ -127,9 +131,10 @@ theorem wangClass_singularHomologyMap_homeomorphMappingTorus
         (ContinuousMap.singularHomologyMap ℤ 1 ⟨proj φ, (contMDiff_proj φ).continuous⟩ c) := by
         rw [wangClass_eq_singularHomologyMap_proj_comp_circleWangClass, ← hproj,
           ContinuousMap.singularHomologyMap_comp]
-        -- The map of `singularHomologyFunctor` on `TopCat.ofHom g` is `singularHomologyMap g` by
-        -- definition (`ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map`).
-        rfl
+        simp only [ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map,
+          ModuleCat.hom_comp]
+        -- `rw [LinearMap.comp_apply]` cannot see through the two spellings of `H₁` here.
+        exact LinearMap.comp_apply _ _ _
     _ = _ := by rw [circleWangClass_hom_apply, intTimePeriodHom_eq_firstHomologyAddEquiv, mul_comm]
 
 /-- The time period is `circleWangSign` times the Wang class, read through the homeomorphism of
@@ -141,39 +146,6 @@ theorem intTimePeriodHom_eq_circleWangSign_mul_wangClass
           ⟨homeomorphMappingTorus φ, (homeomorphMappingTorus φ).continuous⟩ c) := by
   rw [wangClass_singularHomologyMap_homeomorphMappingTorus, ← mul_assoc, circleWangSign_mul_self,
     one_mul]
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] in
-/-- The map induced on `H₁` by the inverse of the homeomorphism with the topological mapping torus
-undoes the map induced by the homeomorphism. -/
-private theorem singularHomologyMap_homeomorphMappingTorus_symm_apply
-    (c : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1) :
-    ContinuousMap.singularHomologyMap ℤ 1
-        ⟨(homeomorphMappingTorus φ).symm, (homeomorphMappingTorus φ).symm.continuous⟩
-        (ContinuousMap.singularHomologyMap ℤ 1
-          ⟨homeomorphMappingTorus φ, (homeomorphMappingTorus φ).continuous⟩ c) = c := by
-  rw [← ContinuousMap.singularHomologyMap_comp,
-    show (⟨(homeomorphMappingTorus φ).symm, (homeomorphMappingTorus φ).symm.continuous⟩ :
-        C(MappingTorus φ.toHomeomorph.symm, SmoothMappingTorus φ)).comp
-        ⟨homeomorphMappingTorus φ, (homeomorphMappingTorus φ).continuous⟩ = ContinuousMap.id _ from
-      ContinuousMap.ext (homeomorphMappingTorus φ).symm_apply_apply,
-    ContinuousMap.singularHomologyMap_id]
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] in
-/-- The map induced on `H₁` by the homeomorphism with the topological mapping torus undoes the map
-induced by its inverse. -/
-private theorem singularHomologyMap_homeomorphMappingTorus_apply_symm
-    (x : ((singularChains ℤ).obj (TopCat.of (MappingTorus φ.toHomeomorph.symm))).homology 1) :
-    ContinuousMap.singularHomologyMap ℤ 1
-        ⟨homeomorphMappingTorus φ, (homeomorphMappingTorus φ).continuous⟩
-        (ContinuousMap.singularHomologyMap ℤ 1
-          ⟨(homeomorphMappingTorus φ).symm, (homeomorphMappingTorus φ).symm.continuous⟩ x) = x := by
-  rw [← ContinuousMap.singularHomologyMap_comp,
-    show (⟨homeomorphMappingTorus φ, (homeomorphMappingTorus φ).continuous⟩ :
-        C(SmoothMappingTorus φ, MappingTorus φ.toHomeomorph.symm)).comp
-        ⟨(homeomorphMappingTorus φ).symm, (homeomorphMappingTorus φ).symm.continuous⟩ =
-        ContinuousMap.id _ from
-      ContinuousMap.ext (homeomorphMappingTorus φ).apply_symm_apply,
-    ContinuousMap.singularHomologyMap_id]
 
 /-! ### The integral class of `dt` -/
 
@@ -231,6 +203,20 @@ theorem eq_timeClass_iff
   rw [TopCat.singularKroneckerEquivOne_apply, TopCat.singularKroneckerEquivOne_apply]
   exact ModuleCat.hom_ext (LinearMap.ext fun c ↦ (h c).trans (singularKronecker_timeClass φ c).symm)
 
+/-- **`[dt]` is the pullback of the angular class**: the integral class of `dt` is the pullback
+`proj^* θ` of the angular class `θ = [ds]` of `ℝ / ℤ` along the projection `Y_φ → ℝ / ℤ`, since
+the time period of a class is the winding number of its image. -/
+theorem singularCohomologyMap_proj_angularClass :
+    TopCat.singularCohomologyMap (TopCat.ofHom ⟨proj φ, (contMDiff_proj φ).continuous⟩) 1
+      (AddCircle.angularClass 1) = timeClass φ := by
+  refine (eq_timeClass_iff φ _).2 fun c ↦ ?_
+  rw [TopCat.singularKronecker_naturality]
+  -- The composite applied to `c` is the pairing of `θ` with the image of `c` by definition
+  -- (`ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map`).
+  exact (AddCircle.singularKronecker_angularClass 1
+    (ContinuousMap.singularHomologyMap ℤ 1 ⟨proj φ, (contMDiff_proj φ).continuous⟩ c)).trans
+      (intTimePeriodHom_eq_firstHomologyAddEquiv φ c).symm
+
 /-! ### The time period modulo torsion -/
 
 /-- **The time period is onto.** For a path-connected fibre, every integer is the time period of a
@@ -250,8 +236,16 @@ theorem intTimePeriodHom_surjective [PathConnectedSpace M] :
       (congrArg _ hx).trans (TauCeti.singularHomology₀Section_singularHomology₀ε_apply ℤ
         (TopCat.of M) (ModuleCat.of ℤ ℤ) x₀ _)
   rw [intTimePeriodHom_eq_circleWangSign_mul_wangClass,
-    singularHomologyMap_homeomorphMappingTorus_apply_symm, hw, ← mul_assoc,
+    (homeomorphMappingTorus φ).singularHomologyMap_apply_symm_apply, hw, ← mul_assoc,
     circleWangSign_mul_self, one_mul]
+
+/-- For a path-connected fibre, some class of `H₁(Y_φ; ℤ)` pairs to `1` with the integral class of
+`dt`: a class of time period one. -/
+theorem exists_singularKronecker_timeClass_eq_one [PathConnectedSpace M] :
+    ∃ g : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
+      (𝟙_ (ModuleCat.{0} ℤ))).obj (TopCat.of (SmoothMappingTorus φ)),
+      ((TopCat.of (SmoothMappingTorus φ)).singularKronecker ℤ 1 (timeClass φ)).hom g = 1 :=
+  (intTimePeriodHom_surjective φ 1).imp fun g hg ↦ (singularKronecker_timeClass φ g).trans hg
 
 /-- **`[dt]` has infinite order.** For a path-connected fibre, an integer multiple of the integral
 class of `dt` vanishes only for the integer zero: it pairs to that integer with a class of time
@@ -259,17 +253,12 @@ period one. -/
 theorem zsmul_timeClass_eq_zero_iff [PathConnectedSpace M] {n : ℤ} :
     n • timeClass φ = 0 ↔ n = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, zero_smul]⟩
-  obtain ⟨g, hg⟩ := intTimePeriodHom_surjective φ 1
-  -- Read `g` in the spelling `singularHomologyFunctor` of the source of the Kronecker pairing.
-  obtain ⟨g, rfl⟩ : ∃ g' : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
-      (𝟙_ (ModuleCat.{0} ℤ))).obj (TopCat.of (SmoothMappingTorus φ)), g' = g := ⟨g, rfl⟩
+  obtain ⟨g, hg⟩ := exists_singularKronecker_timeClass_eq_one φ
   -- Pairing `n • [dt] = 0` with the class `g` of time period one gives `n = 0`.
   have hK : ((TopCat.of (SmoothMappingTorus φ)).singularKronecker ℤ 1 (n • timeClass φ)).hom g =
       0 := by
     rw [h, map_zero, ModuleCat.hom_zero, LinearMap.zero_apply]
-  rwa [map_zsmul, ModuleCat.hom_zsmul, LinearMap.smul_apply,
-    show ((TopCat.of (SmoothMappingTorus φ)).singularKronecker ℤ 1 (timeClass φ)).hom g = 1 from
-      (singularKronecker_timeClass φ g).trans hg, smul_eq_mul, mul_one] at hK
+  rwa [map_zsmul, ModuleCat.hom_zsmul, LinearMap.smul_apply, hg, smul_eq_mul, mul_one] at hK
 
 variable [PathConnectedSpace M]
   [Module.Free ℤ (((singularChains ℤ).obj (TopCat.of M)).homology 1)]
@@ -290,6 +279,8 @@ theorem intTimePeriodHom_eq_zero_iff
   -- unit and the augmentation of the path-connected fibre is injective.
   have hε : (wangClass (ModuleCat.of ℤ ℤ) φ.toHomeomorph.symm).hom x = 0 ↔
       (wangδ φ.toHomeomorph.symm (ModuleCat.of ℤ ℤ) 0).hom x = 0 := by
+    -- `x` lives in the homology of `singularChains ℤ`, which is the source of `wangClass` only
+    -- definitionally, so a plain `rw [wangClass_hom_apply]` cannot find the pattern.
     rw [show (wangClass (ModuleCat.of ℤ ℤ) φ.toHomeomorph.symm).hom x =
       ((TopCat.of M).singularHomology₀ε (ModuleCat.of ℤ ℤ)).hom
         ((wangδ φ.toHomeomorph.symm (ModuleCat.of ℤ ℤ) 0).hom x) from wangClass_hom_apply _ _ x]
@@ -301,7 +292,7 @@ theorem intTimePeriodHom_eq_zero_iff
     ((det_id_sub_homologyMap_monodromyChainMap_symm_ne_zero_iff φ.toHomeomorph 1).2 hdet)) x
   rw [LinearMap.mem_ker] at hker
   rw [intTimePeriodHom_eq_circleWangSign_mul_wangClass, mul_eq_zero,
-    or_iff_right (by rcases circleWangSign_eq_one_or_eq_neg_one with h | h <;> rw [h] <;> simp),
+    or_iff_right circleWangSign_ne_zero,
     hε, hker, ← Submodule.mem_toAddSubgroup]
   -- The torsion submodule for the module structure of `ModuleCat ℤ` is the group torsion; the two
   -- `ℤ`-module structures agree because `Module ℤ` is a subsingleton.
@@ -313,14 +304,14 @@ theorem intTimePeriodHom_eq_zero_iff
   -- Finite order is preserved by the homeomorphism in both directions.
   refine ⟨fun h ↦ ?_, fun h ↦ (ContinuousMap.singularHomologyMap ℤ 1 ⟨homeomorphMappingTorus φ,
     (homeomorphMappingTorus φ).continuous⟩).toAddMonoidHom.isOfFinAddOrder h⟩
-  rw [← singularHomologyMap_homeomorphMappingTorus_symm_apply φ c]
+  rw [← (homeomorphMappingTorus φ).singularHomologyMap_symm_apply_apply c]
   exact (ContinuousMap.singularHomologyMap ℤ 1 ⟨(homeomorphMappingTorus φ).symm,
     (homeomorphMappingTorus φ).symm.continuous⟩).toAddMonoidHom.isOfFinAddOrder h
 
 /-- **`H₁(Y_φ; ℤ)` modulo torsion is generated by a class of time period one.** When
 `b₁(Y_φ) = 1`, for a class `g` with `∫_g dt = 1`, every class `c` differs from `N(c) • g` by an
 element of finite order, where `N(c) = ∫_c dt`. -/
-theorem isOfFinAddOrder_sub_intTimePeriodHom_smul
+theorem isOfFinAddOrder_sub_intTimePeriodHom_zsmul
     (hdet : (LinearMap.id -
       (HomologicalComplex.homologyMap
         (monodromyChainMap φ.toHomeomorph (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
@@ -332,7 +323,7 @@ theorem isOfFinAddOrder_sub_intTimePeriodHom_smul
 
 /-- **Closed orbits modulo torsion.** When `b₁(Y_φ) = 1`, the class of the closed orbit through a
 point of period `d` is `d • g` modulo torsion, for every class `g` of time period one. -/
-theorem isOfFinAddOrder_closedOrbitHomologyClass_sub_smul
+theorem isOfFinAddOrder_closedOrbitHomologyClass_sub_zsmul
     (hdet : (LinearMap.id -
       (HomologicalComplex.homologyMap
         (monodromyChainMap φ.toHomeomorph (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
@@ -340,7 +331,7 @@ theorem isOfFinAddOrder_closedOrbitHomologyClass_sub_smul
     (hg : intTimePeriodHom φ g = 1) {d : ℕ} {x : M} (hx : Function.IsPeriodicPt φ d x) :
     IsOfFinAddOrder (closedOrbitHomologyClass hx - (d : ℤ) • g) := by
   simpa [intTimePeriodHom_closedOrbitHomologyClass] using
-    isOfFinAddOrder_sub_intTimePeriodHom_smul φ hdet hg (closedOrbitHomologyClass hx)
+    isOfFinAddOrder_sub_intTimePeriodHom_zsmul φ hdet hg (closedOrbitHomologyClass hx)
 
 /-- **`[dt]` generates `H¹(Y_φ; ℤ)`.** Let the fibre `M` be path-connected with `H₁(M; ℤ)` free of
 finite rank, and let `det (1 - φ_*) ≠ 0` on it, so that `b₁(Y_φ) = 1`. Then every class of
@@ -353,10 +344,7 @@ theorem exists_eq_zsmul_timeClass
     (a : (TopCat.of (SmoothMappingTorus φ)).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
       (𝟙_ (ModuleCat.{0} ℤ)) 1) :
     ∃ n : ℤ, a = n • timeClass φ := by
-  obtain ⟨g, hg⟩ := intTimePeriodHom_surjective φ 1
-  -- Read `g` in the spelling `singularHomologyFunctor` of the source of the Kronecker pairing.
-  obtain ⟨g, rfl⟩ : ∃ g' : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
-      (𝟙_ (ModuleCat.{0} ℤ))).obj (TopCat.of (SmoothMappingTorus φ)), g' = g := ⟨g, rfl⟩
+  obtain ⟨g, hg⟩ := exists_singularKronecker_timeClass_eq_one φ
   set f := ((TopCat.of (SmoothMappingTorus φ)).singularKronecker ℤ 1 a).hom
   refine ⟨f g, ?_⟩
   apply ((TopCat.of (SmoothMappingTorus φ)).singularKroneckerEquivOne
@@ -365,7 +353,8 @@ theorem exists_eq_zsmul_timeClass
   refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
   -- The pairing with `a` kills the torsion class `c - N(c) • g`, so it sends `c` to `N(c) f(g)`.
   have htor : IsOfFinAddOrder (c - intTimePeriodHom φ c • g) :=
-    isOfFinAddOrder_sub_intTimePeriodHom_smul φ hdet hg c
+    isOfFinAddOrder_sub_intTimePeriodHom_zsmul φ hdet
+      ((singularKronecker_timeClass φ g).symm.trans hg) c
   have hc : f (c - intTimePeriodHom φ c • g) = 0 :=
     IsOfFinAddOrder.eq_zero' (G := ℤ) (f.toAddMonoidHom.isOfFinAddOrder htor)
   rw [map_sub, map_zsmul, sub_eq_zero, smul_eq_mul] at hc
