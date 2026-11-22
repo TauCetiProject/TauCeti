@@ -270,7 +270,7 @@ private theorem indecomposableDecomposition_eq_singleton_top :
     · exact eq_top_of_isCompl_bot (hrest ▸ hcompl)
   have htop : ⊤ ∈ s := by
     obtain ⟨P, hP⟩ : s.Nonempty := by
-      rw [Finset.nonempty_iff_ne_empty]
+      rw [← Finset.ne_empty_iff_nonempty]
       intro hs0
       let _ := hM.nontrivial
       apply top_ne_bot (α := Submodule A M)
@@ -289,7 +289,7 @@ theorem indecomposableMultiplicity_self (e : M ≃ₗ[A] N) :
   rw [← decompositionMultiplicity_top hM, decompositionMultiplicity_def]
   refine Nat.card_eq_one_iff_unique.mpr ⟨⟨fun P Q ↦ Subtype.ext ?_⟩,
     ⟨⟨⊤, by simp, ⟨Submodule.topEquiv.trans e⟩⟩⟩⟩
-  rw [Finset.mem_singleton.mp P.2.1, Finset.mem_singleton.mp Q.2.1]
+  rw [Finset.mem_singleton.mp P.property.1, Finset.mem_singleton.mp Q.property.1]
 
 /-- **A nonisomorphic module does not occur in an indecomposable module.** -/
 theorem indecomposableMultiplicity_eq_zero_of_isEmpty_linearEquiv (he : IsEmpty (M ≃ₗ[A] N)) :
@@ -298,7 +298,7 @@ theorem indecomposableMultiplicity_eq_zero_of_isEmpty_linearEquiv (he : IsEmpty 
   have : IsEmpty {P : Submodule A M // P ∈ ({⊤} : Finset (Submodule A M)) ∧
       Nonempty (↥P ≃ₗ[A] N)} :=
     ⟨fun P ↦ he.elim (Submodule.topEquiv.symm.trans
-      (by rw [← Finset.mem_singleton.mp P.2.1]; exact P.2.2.some))⟩
+      (by rw [← Finset.mem_singleton.mp P.property.1]; exact P.property.2.some))⟩
   exact Nat.card_of_isEmpty
 
 end Indecomposable

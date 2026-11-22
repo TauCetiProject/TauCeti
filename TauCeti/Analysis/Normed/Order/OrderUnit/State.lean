@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Normed.Order.OrderUnit.PositiveLinearMap
 public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.Convex.Cone.Dual
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
-import TauCeti.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
@@ -31,20 +31,21 @@ weak-star dual `WeakDual ℝ E`, carrying the weak-star subspace topology.
 ## Main definitions and results
 
 * `TauCeti.OrderUnit.stateSpace`: the state space `{φ : WeakDual ℝ E | Monotone φ ∧ φ e = 1}`.
-* `TauCeti.OrderUnit.IsOrderUnitNorm.stateSpace_nonempty`, `convex_stateSpace`,
-  `isClosed_stateSpace`, `isCompact_stateSpace`: nonemptiness (by Hahn–Banach), convexity,
-  weak-star closedness, and weak-star compactness (by Banach–Alaoglu).
+* `TauCeti.IsOrderUnitNorm.stateSpace_nonempty`, `TauCeti.OrderUnit.convex_stateSpace`,
+  `TauCeti.OrderUnit.isClosed_stateSpace`, `TauCeti.IsOrderUnitNorm.isCompact_stateSpace`:
+  nonemptiness (by Hahn–Banach), convexity, weak-star closedness, and weak-star compactness (by
+  Banach–Alaoglu).
 * `ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace`,
-  `TauCeti.OrderUnit.IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL`,
-  `TauCeti.OrderUnit.IsOrderUnitNorm.existsUnique_state_extension_completion`,
-  `TauCeti.OrderUnit.IsOrderUnitNorm.completionStateSpaceHomeomorph`: pullback along unital positive
-  maps (via `ContinuousLinearMap.pullbackFunctional`), extension from unital subspaces, and unique
+  `TauCeti.IsOrderUnitNorm.surjOn_pullbackFunctional_subtypeL`,
+  `TauCeti.IsOrderUnitNorm.existsUnique_state_extension_completion`,
+  `TauCeti.IsOrderUnitNorm.completionStateSpaceHomeomorph`: pullback along unital positive maps
+  (via `ContinuousLinearMap.pullbackFunctional`), extension from unital subspaces, and unique
   weak-star homeomorphic extension to the norm completion.
-* `TauCeti.OrderUnit.IsOrderUnitNorm.nonneg_iff_forall_stateSpace`,
+* `TauCeti.IsOrderUnitNorm.nonneg_iff_forall_stateSpace`,
   `exists_mem_stateSpace_abs_apply_eq_norm`, `norm_eq_iSup_states`, `nnNorm_eq_iSup_states`,
-  `evalContinuousMap`, `evalContinuousMap_apply_convexCombo`,
-  `IsOrderUnitNorm.evalLinearIsometry`: order separation, norm detection by states, and the
-  isometric unital order embedding `E → C(stateSpace e, ℝ)`.
+  `TauCeti.OrderUnit.evalContinuousMap`, `evalContinuousMap_apply_convexCombo`,
+  `TauCeti.IsOrderUnitNorm.evalLinearIsometry`: order separation, norm detection by states, and
+  the isometric unital order embedding `E → C(stateSpace e, ℝ)`.
 
 ## References
 
@@ -58,12 +59,13 @@ public section
 open Set Metric WeakDual
 open scoped NNReal Topology
 
-namespace TauCeti.OrderUnit
-
+namespace TauCeti
 
 /-! ### The state space -/
 
 section StateSpace
+
+namespace OrderUnit
 
 /-- The **state space** of an order-unit space `(E, e)`: the set of monotone functionals in
 `WeakDual ℝ E` normalized by `φ e = 1`, equipped with the inherited weak-star topology. -/
@@ -134,23 +136,25 @@ theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff_apply_e
 functionals `{ω : E →P[ℝ] ℝ // ω e = 1}`. -/
 noncomputable def stateSpaceEquivPositiveContinuousLinearMap (e : E) :
     stateSpace e ≃ {ω : E →P[ℝ] ℝ // ω e = 1} where
-  toFun φ := ⟨⟨⟨(toStrongDual φ.1).toLinearMap, φ.2.1⟩, (toStrongDual φ.1).continuous⟩, φ.2.2⟩
-  invFun ω := ⟨StrongDual.toWeakDual (ω.1 : E →L[ℝ] ℝ),
-    (ω.1.toWeakDual_mem_stateSpace_iff_apply_eq_one e).mpr ω.2⟩
+  toFun φ := ⟨⟨⟨(toStrongDual φ.val).toLinearMap, φ.property.1⟩,
+    (toStrongDual φ.val).continuous⟩, φ.property.2⟩
+  invFun ω := ⟨StrongDual.toWeakDual (ω.val : E →L[ℝ] ℝ),
+    (ω.val.toWeakDual_mem_stateSpace_iff_apply_eq_one e).mpr ω.property⟩
   left_inv _ := Subtype.ext (DFunLike.ext _ _ fun _ => rfl)
   right_inv _ := Subtype.ext (DFunLike.ext _ _ fun _ => rfl)
 
-/-- Evaluating `stateSpaceEquivPositiveContinuousLinearMap` at `a` gives `φ.1 a`. -/
+/-- Evaluating `stateSpaceEquivPositiveContinuousLinearMap` at `a` gives `φ.val a`. -/
 @[simp]
 theorem stateSpaceEquivPositiveContinuousLinearMap_apply (e : E) (φ : stateSpace e) (a : E) :
-    (stateSpaceEquivPositiveContinuousLinearMap e φ).1 a = φ.1 a :=
+    (stateSpaceEquivPositiveContinuousLinearMap e φ).val a = φ.val a :=
   (rfl)
 
-/-- Evaluating the inverse of `stateSpaceEquivPositiveContinuousLinearMap` at `a` gives `ω.1 a`. -/
+/-- Evaluating the inverse of `stateSpaceEquivPositiveContinuousLinearMap` at `a` gives
+`ω.val a`. -/
 @[simp]
 theorem stateSpaceEquivPositiveContinuousLinearMap_symm_apply (e : E)
     (ω : {ω : E →P[ℝ] ℝ // ω e = 1}) (a : E) :
-    ((stateSpaceEquivPositiveContinuousLinearMap e).symm ω).1 a = ω.1 a :=
+    ((stateSpaceEquivPositiveContinuousLinearMap e).symm ω).val a = ω.val a :=
   (rfl)
 
 end PositiveContinuousStateSpace
@@ -170,26 +174,30 @@ theorem mem_stateSpace_iff_map_nonneg :
 
 end OrderedGroupStateSpace
 
+end OrderUnit
+
+section NormedStateSpace
+
+open OrderUnit
+
 /-- States correspond to normalized positive linear functionals `E →ₚ[ℝ] ℝ`, via automatic
 continuity. -/
 theorem IsOrderUnitNorm.mem_stateSpace_iff_exists_positiveLinearMap {E : Type*}
     [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E] {e : E}
     (he : IsOrderUnitNorm e) {φ : WeakDual ℝ E} :
     φ ∈ stateSpace e ↔ ∃ ω : E →ₚ[ℝ] ℝ, ω e = 1 ∧
-      StrongDual.toWeakDual (he.toPositiveContinuousLinearMap isOrderUnitNorm_one_real ω :
+      StrongDual.toWeakDual (he.toPositiveContinuousLinearMap isOrderUnitNorm_real_one ω :
         E →L[ℝ] ℝ) = φ := by
   refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ =>
-    h ▸ ((he.toPositiveContinuousLinearMap isOrderUnitNorm_one_real
+    h ▸ ((he.toPositiveContinuousLinearMap isOrderUnitNorm_real_one
       ω).toWeakDual_mem_stateSpace_iff_apply_eq_one e).mpr (by simpa using hω)⟩
   let ω : E →ₚ[ℝ] ℝ := { toLinearMap := (toStrongDual φ).toLinearMap, monotone' := hφ.1 }
-  have hω : (he.toPositiveContinuousLinearMap isOrderUnitNorm_one_real ω : E →L[ℝ] ℝ) =
+  have hω : (he.toPositiveContinuousLinearMap isOrderUnitNorm_real_one ω : E →L[ℝ] ℝ) =
       toStrongDual φ := by
     ext a
     simp [ω]
     rfl
   exact ⟨ω, hφ.2, by rw [hω, toWeakDual_toStrongDual]⟩
-
-section NormedStateSpace
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   {e : E} (he : IsOrderUnitNorm e)
@@ -254,6 +262,8 @@ end StateSpace
 /-! ### Pullback, subspace extension, and completion extension -/
 
 section Functoriality
+
+open OrderUnit
 
 /-- Composing a state with a unital positive continuous linear map yields a state. -/
 theorem _root_.ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace {E F : Type*}
@@ -331,25 +341,25 @@ noncomputable def IsOrderUnitNorm.completionStateSpaceHomeomorph :
       (stateSpace (e : UniformSpace.Completion E)) (stateSpace e) :=
     T.mapsTo_pullbackFunctional_stateSpace hTmono rfl
   let f : stateSpace (e : UniformSpace.Completion E) → stateSpace e :=
-    fun ψ => ⟨T.pullbackFunctional ψ.1, hmaps ψ.2⟩
+    fun ψ => ⟨T.pullbackFunctional ψ.val, hmaps ψ.property⟩
   have hbij : Function.Bijective f := by
     refine ⟨fun ψ₁ ψ₂ h => ?_, fun φ => ?_⟩
-    · obtain ⟨_, _, huniq⟩ := he.existsUnique_state_extension_completion (f ψ₂).2
-      have h1 : ψ₁.1 = _ := huniq ψ₁.1 ⟨ψ₁.2, congrArg Subtype.val h⟩
-      have h2 : ψ₂.1 = _ := huniq ψ₂.1 ⟨ψ₂.2, rfl⟩
+    · obtain ⟨_, _, huniq⟩ := he.existsUnique_state_extension_completion (f ψ₂).property
+      have h1 : ψ₁.val = _ := huniq ψ₁.val ⟨ψ₁.property, congrArg Subtype.val h⟩
+      have h2 : ψ₂.val = _ := huniq ψ₂.val ⟨ψ₂.property, rfl⟩
       exact Subtype.ext (h1.trans h2.symm)
-    · obtain ⟨ψ, ⟨hψmem, hψeq⟩, _⟩ := he.existsUnique_state_extension_completion φ.2
+    · obtain ⟨ψ, ⟨hψmem, hψeq⟩, _⟩ := he.existsUnique_state_extension_completion φ.property
       exact ⟨⟨ψ, hψmem⟩, Subtype.ext hψeq⟩
   exact Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hbij)
-    ((T.pullbackFunctional.continuous.comp continuous_subtype_val).subtype_mk _)
+    ((T.pullbackFunctional.continuous.comp continuous_subtypeVal).subtype_mk _)
 
 /-- Evaluating `completionStateSpaceHomeomorph` restricts a completion state to `E`. -/
 @[simp]
 theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_apply
     (ψ : @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
       (e : UniformSpace.Completion E)) (a : E) :
-    (he.completionStateSpaceHomeomorph ψ).1 a = ψ.1 (a : UniformSpace.Completion E) := by
-  change (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ.1 a = _
+    (he.completionStateSpaceHomeomorph ψ).val a = ψ.val (a : UniformSpace.Completion E) := by
+  change (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ.val a = _
   simp
 
 /-- Evaluating the inverse of `completionStateSpaceHomeomorph` on a coerced element recovers the
@@ -357,7 +367,7 @@ original state. -/
 @[simp]
 theorem IsOrderUnitNorm.completionStateSpaceHomeomorph_symm_apply
     (φ : stateSpace e) (a : E) :
-    (he.completionStateSpaceHomeomorph.symm φ).1 (a : UniformSpace.Completion E) = φ.1 a := by
+    (he.completionStateSpaceHomeomorph.symm φ).val (a : UniformSpace.Completion E) = φ.val a := by
   rw [← he.completionStateSpaceHomeomorph_apply,
     he.completionStateSpaceHomeomorph.apply_symm_apply]
 
@@ -368,6 +378,8 @@ end Functoriality
 /-! ### Order separation, norm detection, and the evaluation embedding -/
 
 section Separation
+
+open OrderUnit
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
@@ -424,42 +436,44 @@ theorem IsOrderUnitNorm.exists_mem_stateSpace_abs_apply_eq_norm (a : E) :
   obtain ⟨φ₀, hφ₀, hmax⟩ := he.isCompact_stateSpace.exists_isMaxOn he.stateSpace_nonempty
     hcont.continuousOn
   refine ⟨φ₀, hφ₀, le_antisymm (he.abs_apply_le_norm_of_mem_stateSpace hφ₀ a) ?_⟩
-  refine (he.norm_le_iff a |φ₀ a| (abs_nonneg _)).mpr ⟨?_, ?_⟩
+  refine (he.norm_le_iff (abs_nonneg _)).mpr ⟨?_, ?_⟩
   · refine he.le_iff_forall_stateSpace.mpr fun φ hφ => ?_
     have hle : |φ a| ≤ |φ₀ a| := hmax hφ
-    rw [map_smul, smul_eq_mul, hφ.2, mul_one]
+    rw [map_neg, map_smul, smul_eq_mul, hφ.2, mul_one]
     exact (abs_le.mp hle).1
   · refine he.le_iff_forall_stateSpace.mpr fun φ hφ => ?_
     have hle : |φ a| ≤ |φ₀ a| := hmax hφ
     rw [map_smul, smul_eq_mul, hφ.2, mul_one]
     exact (abs_le.mp hle).2
 
-/-- **Norm detection by states** (in `ℝ`): `‖a‖ = ⨆ φ : stateSpace e, |φ.1 a|`. -/
+/-- **Norm detection by states** (in `ℝ`): `‖a‖ = ⨆ φ : stateSpace e, |φ.val a|`. -/
 theorem IsOrderUnitNorm.norm_eq_iSup_states (a : E) :
-    ‖a‖ = ⨆ φ : stateSpace e, |φ.1 a| := by
+    ‖a‖ = ⨆ φ : stateSpace e, |φ.val a| := by
   have : Nonempty (stateSpace e) := he.stateSpace_nonempty.to_subtype
-  have hbdd : BddAbove (Set.range fun φ : stateSpace e => |φ.1 a|) :=
-    ⟨‖a‖, by rintro _ ⟨φ, rfl⟩; exact he.abs_apply_le_norm_of_mem_stateSpace φ.2 a⟩
+  have hbdd : BddAbove (Set.range fun φ : stateSpace e => |φ.val a|) :=
+    ⟨‖a‖, by rintro _ ⟨φ, rfl⟩; exact he.abs_apply_le_norm_of_mem_stateSpace φ.property a⟩
   obtain ⟨φ₀, hφ₀, hval⟩ := he.exists_mem_stateSpace_abs_apply_eq_norm a
-  refine le_antisymm ?_ (ciSup_le fun φ => he.abs_apply_le_norm_of_mem_stateSpace φ.2 a)
+  refine le_antisymm ?_ (ciSup_le fun φ => he.abs_apply_le_norm_of_mem_stateSpace φ.property a)
   exact hval ▸ le_ciSup hbdd ⟨φ₀, hφ₀⟩
 
 end Separation
 
 section EvalEmbedding
 
+namespace OrderUnit
+
 /-- The canonical evaluation map `E →ₗ[ℝ] C(stateSpace e, ℝ)`, sending `a` to `φ ↦ φ a`. -/
 noncomputable def evalContinuousMap {E : Type*} [AddCommMonoid E] [Module ℝ E]
     [TopologicalSpace E] [Preorder E] (e : E) : E →ₗ[ℝ] C(stateSpace e, ℝ) where
-  toFun a := ⟨fun φ => φ.1 a, (eval_continuous a).comp continuous_subtype_val⟩
+  toFun a := ⟨fun φ => φ.val a, (eval_continuous a).comp continuous_subtypeVal⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
 
-/-- Evaluating `evalContinuousMap e a` at a state `φ` gives `φ.1 a`. -/
+/-- Evaluating `evalContinuousMap e a` at a state `φ` gives `φ.val a`. -/
 @[simp]
 theorem evalContinuousMap_apply {E : Type*} [AddCommMonoid E] [Module ℝ E] [TopologicalSpace E]
     [Preorder E] (e : E) (a : E) (φ : stateSpace e) :
-    evalContinuousMap e a φ = φ.1 a :=
+    evalContinuousMap e a φ = φ.val a :=
   (rfl)
 
 /-- The evaluation embedding sends the order unit `e` to the constant function `1`. -/
@@ -467,15 +481,20 @@ theorem evalContinuousMap_apply {E : Type*} [AddCommMonoid E] [Module ℝ E] [To
 theorem evalContinuousMap_unit {E : Type*} [AddCommMonoid E] [Module ℝ E] [TopologicalSpace E]
     [Preorder E] (e : E) : evalContinuousMap e e = 1 := by
   ext φ
-  exact φ.2.2
+  exact φ.property.2
 
 /-- Evaluating `evalContinuousMap e a` preserves convex combinations of states. -/
 theorem evalContinuousMap_apply_convexCombo {E : Type*} [AddCommMonoid E] [Module ℝ E]
     [TopologicalSpace E] [Preorder E] (e : E) (a : E) {φ ψ : stateSpace e} {s t : ℝ}
     (hs : 0 ≤ s) (ht : 0 ≤ t) (hst : s + t = 1) :
-    evalContinuousMap e a ⟨s • φ.1 + t • ψ.1, convex_stateSpace φ.2 ψ.2 hs ht hst⟩ =
+    evalContinuousMap e a
+        ⟨s • φ.val + t • ψ.val, convex_stateSpace φ.property ψ.property hs ht hst⟩ =
       s * evalContinuousMap e a φ + t * evalContinuousMap e a ψ := by
   simp
+
+end OrderUnit
+
+open OrderUnit
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
@@ -494,9 +513,9 @@ theorem IsOrderUnitNorm.norm_evalContinuousMap [CompactSpace (stateSpace e)] (a 
   rw [ContinuousMap.norm_eq_iSup_norm, he.norm_eq_iSup_states a]
   simp [Real.norm_eq_abs]
 
-/-- **Norm detection by states** (in `ℝ≥0`): `‖a‖₊ = ⨆ φ : stateSpace e, ‖φ.1 a‖₊`. -/
+/-- **Norm detection by states** (in `ℝ≥0`): `‖a‖₊ = ⨆ φ : stateSpace e, ‖φ.val a‖₊`. -/
 theorem IsOrderUnitNorm.nnNorm_eq_iSup_states (a : E) :
-    ‖a‖₊ = ⨆ φ : stateSpace e, ‖φ.1 a‖₊ := by
+    ‖a‖₊ = ⨆ φ : stateSpace e, ‖φ.val a‖₊ := by
   have : CompactSpace (stateSpace e) := he.compactSpace_stateSpace
   have h : ‖a‖₊ = ‖evalContinuousMap e a‖₊ := NNReal.eq (he.norm_evalContinuousMap a).symm
   rw [h, ContinuousMap.nnNorm_eq_iSup_nnNorm]
@@ -517,7 +536,7 @@ theorem IsOrderUnitNorm.evalLinearIsometry_toLinearMap [CompactSpace (stateSpace
 /-- Evaluating `evalLinearIsometry` agrees with `evalContinuousMap`. -/
 @[simp]
 theorem IsOrderUnitNorm.evalLinearIsometry_apply [CompactSpace (stateSpace e)]
-    (a : E) (φ : stateSpace e) : he.evalLinearIsometry a φ = φ.1 a :=
+    (a : E) (φ : stateSpace e) : he.evalLinearIsometry a φ = φ.val a :=
   (rfl)
 
 /-- The evaluation isometry sends the order unit `e` to `1`. -/
@@ -527,6 +546,8 @@ theorem IsOrderUnitNorm.evalLinearIsometry_unit [CompactSpace (stateSpace e)] :
   evalContinuousMap_unit e
 
 end EvalEmbedding
+
+namespace OrderUnit
 
 /-! ### Concrete example -/
 
@@ -540,4 +561,6 @@ theorem stateSpace_one_real :
   · rintro rfl
     exact ⟨fun _ _ h => h, rfl⟩
 
-end TauCeti.OrderUnit
+end OrderUnit
+
+end TauCeti

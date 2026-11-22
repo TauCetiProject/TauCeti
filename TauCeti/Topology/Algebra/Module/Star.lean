@@ -34,7 +34,7 @@ theorem continuous_imaginaryPart {A : Type*} [AddCommGroup A] [Module ℂ A] [St
   have : ContinuousConstSMul ℝ A :=
     ⟨fun r => by simpa only [← Complex.coe_smul] using continuous_const_smul (r : ℂ)⟩
   have hnegI : Continuous (skewAdjoint.negISMul (A := A)) :=
-    ((continuous_const_smul (-Complex.I)).comp continuous_subtype_val).subtype_mk _
+    ((continuous_const_smul (-Complex.I)).comp continuous_subtypeVal).subtype_mk _
   exact hnegI.comp (continuous_skewAdjointPart ℝ A)
 
 end TauCeti

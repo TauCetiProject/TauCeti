@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
 
@@ -16,9 +17,11 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
 # Locally uniform limits of harmonic functions
 
 Let `E` be a finite-dimensional real inner product space. This file proves that a locally uniform
-limit of harmonic functions `E → ℝ` on an open set `U` is harmonic. The limit is continuous and
-inherits the mean-value property on small balls, so it is harmonic by the converse of the
-mean-value property (`TauCeti.harmonicOnNhd_of_setAverage_ball_eq`).
+limit of harmonic functions on an open set `U`, with values in a finite-dimensional real normed
+space, is harmonic. For real-valued functions, the limit is continuous and inherits the
+mean-value property on small balls, so it is harmonic by the converse of the mean-value property
+(`TauCeti.harmonicOnNhd_of_setAverage_ball_eq`). The general case follows by taking coordinates
+in a basis of the codomain.
 
 ## Main declarations
 
@@ -39,12 +42,11 @@ namespace TauCeti
 open InnerProductSpace MeasureTheory Metric Set Filter Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {ι : Type*} {F : ι → E → ℝ} {f : E → ℝ} {U : Set E}
+  {ι : Type*} {U : Set E}
 
-/-- **Locally uniform limits of harmonic functions are harmonic.** If eventually along a nontrivial
-filter `p` the functions `F i` are harmonic on the open set `U`, and `F i` tends to `f` locally
-uniformly on `U`, then `f` is harmonic on `U`. -/
-theorem harmonicOnNhd_of_tendstoLocallyUniformlyOn {p : Filter ι} [p.NeBot] (hU : IsOpen U)
+/-- The real-valued case of `harmonicOnNhd_of_tendstoLocallyUniformlyOn`. -/
+private theorem harmonicOnNhd_of_tendstoLocallyUniformlyOn_real {F : ι → E → ℝ} {f : E → ℝ}
+    {p : Filter ι} [p.NeBot] (hU : IsOpen U)
     (hF : ∀ᶠ i in p, HarmonicOnNhd (F i) U) (hlim : TendstoLocallyUniformlyOn F f p U) :
     HarmonicOnNhd f U := by
   borelize E
@@ -81,5 +83,25 @@ theorem harmonicOnNhd_of_tendstoLocallyUniformlyOn {p : Filter ι} [p.NeBot] (hU
   exact tendsto_nhds_unique
     (havg.congr' (hF.mono fun i hi ↦ HarmonicOnNhd.setAverage_ball_eq (hi.mono hrU) hr.1))
     (hunif.tendsto_at (mem_closedBall_self hr.1.le))
+
+/-- **Locally uniform limits of harmonic functions are harmonic.** Let `F` be a
+finite-dimensional real normed space. If eventually along a nontrivial filter `p` the functions
+`g i : E → F` are harmonic on the open set `U`, and `g i` tends to `f` locally uniformly on `U`,
+then `f` is harmonic on `U`. -/
+theorem harmonicOnNhd_of_tendstoLocallyUniformlyOn {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {g : ι → E → F} {f : E → F} {p : Filter ι}
+    [p.NeBot] (hU : IsOpen U) (hg : ∀ᶠ i in p, HarmonicOnNhd (g i) U)
+    (hlim : TendstoLocallyUniformlyOn g f p U) :
+    HarmonicOnNhd f U := by
+  -- Each coordinate of `f` in a basis of `F` is a locally uniform limit of harmonic functions.
+  let b := Module.finBasis ℝ F
+  have hcoord : ∀ i, HarmonicOnNhd (fun x ↦ b.coord i (f x)) U := fun i ↦
+    harmonicOnNhd_of_tendstoLocallyUniformlyOn_real hU
+      (hg.mono fun _ hj ↦ hj.comp_CLM (b.coord i).toContinuousLinearMap)
+      ((b.coord i).toContinuousLinearMap.uniformContinuous.comp_tendstoLocallyUniformlyOn hlim)
+  have hf : f = fun x ↦ ∑ i, b.coord i (f x) • b i := funext fun x ↦ (b.sum_repr (f x)).symm
+  rw [hf]
+  exact HarmonicOnNhd.sum fun i _ ↦
+    (hcoord i).comp_CLM (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (b i))
 
 end TauCeti

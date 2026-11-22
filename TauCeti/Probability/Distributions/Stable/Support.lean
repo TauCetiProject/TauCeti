@@ -14,10 +14,10 @@ import TauCeti.Probability.Distributions.Stable.Compensation
 import TauCeti.Probability.Distributions.Stable.SmallJump.Limit
 
 /-!
-# Support, singularity, and density positivity of stable laws
+# Support and density positivity of stable laws
 
 A zero-scale stable law is a Dirac mass at its location, so its support is the corresponding
-singleton and it is singular with respect to Lebesgue measure. A positive-scale stable law has
+singleton. A positive-scale stable law has
 topological support all of `ℝ`, except in the fully skewed
 cases of shape below one. Those are supported on a half-line ending at the `S₁` location
 `d = stableS1Location α β s m`: on `[d, ∞)` at skewness `1`, and on `(-∞, d]` at skewness `-1`.
@@ -42,8 +42,7 @@ even before either density is known to be positive in the interior of its suppor
 
 ## Main results
 
-* `TauCeti.Probability.support_stableMeasure_zero_scale` and
-  `TauCeti.Probability.mutuallySingular_stableMeasure_zero_scale` describe the atomic boundary.
+* `TauCeti.Probability.support_stableMeasure_zero_scale` describes the atomic boundary.
 * `TauCeti.Probability.support_stableMeasure_of_abs_lt_one` and
   `TauCeti.Probability.support_stableMeasure_of_one_le` give full topological support.
 * `TauCeti.Probability.support_stableMeasure_one_of_lt_one` and
@@ -81,16 +80,6 @@ theorem support_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 
     (stableMeasure α β 0 m).support = {m} := by
   rw [stableMeasure_zero_scale hα hβ, Measure.support_dirac, closure_singleton]
 
-/-- Every zero-scale stable measure is singular with respect to Lebesgue measure. For invalid
-shape or skewness parameters, this is the singularity of the zero measure. -/
-theorem mutuallySingular_stableMeasure_zero_scale (m : ℝ) :
-    stableMeasure α β 0 m ⟂ₘ volume := by
-  by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
-  · rw [stableMeasure_zero_scale h.1 h.2]
-    exact mutuallySingular_dirac m volume
-  · rw [stableMeasure_of_not_valid h]
-    exact Measure.MutuallySingular.zero_left
-
 /-! ### Reduction to the standardized law -/
 
 /-- Every stable measure is the affine image of the scale-one, location-zero measure of the same
@@ -123,7 +112,6 @@ private theorem support_standardStableMeasure_of_abs_lt_one (hα : α ∈ Ioo 0 
     (hβ : |β| < 1) : (stableMeasure α β 1 0).support = univ := by
   obtain ⟨μ, hμ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ.le
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   obtain ⟨a, ha⟩ := Measure.nonempty_support (IsProbabilityMeasure.ne_zero (μ : Measure ℝ))
   apply eq_univ_of_forall
   intro x
@@ -160,7 +148,8 @@ private theorem mem_support_standardStableMeasure_of_eventually (hα : α ∈ Io
     (existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ (hr n)).exists
   -- The small-jump factors converge weakly to the point mass at zero.
   have hball := ProbabilityMeasure.le_liminf_measure_open_of_tendsto
-    (tendsto_smallJumpFactor_dirac hα hrlim hρ) (Metric.isOpen_ball (x := 0) (ε := δ))
+    (tendsto_smallJumpFactor_dirac hα.2.ne hrlim (.of_forall hρ))
+    (Metric.isOpen_ball (x := 0) (ε := δ))
   have hpos : ∀ᶠ n in atTop, 0 < (ρ n : Measure ℝ) (Metric.ball 0 δ) := by
     refine eventually_lt_of_lt_liminf (lt_of_lt_of_le ?_ hball)
     simp [Metric.mem_ball, hδ]
@@ -168,7 +157,6 @@ private theorem mem_support_standardStableMeasure_of_eventually (hα : α ∈ Io
   obtain ⟨a, ha, haS⟩ := Measure.nonempty_inter_support_of_pos hn
   have hya : y - a ∈ (stableCompensatedPoissonMeasure α β (r n)).support :=
     hsub (by simpa [Metric.mem_ball, Real.dist_eq, abs_sub_comm] using ha)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β (r n)
   have hmem := Measure.add_mem_support_conv haS hya
   rwa [hρ n, add_sub_cancel] at hmem
 

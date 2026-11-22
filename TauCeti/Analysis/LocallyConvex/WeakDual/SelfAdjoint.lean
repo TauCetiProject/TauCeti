@@ -56,7 +56,7 @@ variable {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A] [StarModu
 noncomputable def restrictToSelfAdjoint : WeakDual ℂ A →L[ℝ] WeakDual ℝ (selfAdjoint A) :=
   let incl : selfAdjoint A →L[ℝ] A :=
     { toLinearMap := (selfAdjoint.submodule ℝ A).subtype
-      cont := continuous_subtype_val }
+      cont := continuous_subtypeVal }
   incl.pullbackFunctional.comp
     (WeakDual.extendRCLikeL (𝕜 := ℂ) (F := A)).symm.toContinuousLinearMap
 

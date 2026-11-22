@@ -50,6 +50,18 @@ theorem mem_atlas_iff (e : OpenPartialHomeomorph (ComplexProjectiveSpace n) (Fin
     e ∈ atlas (Fin n → ℂ) (ComplexProjectiveSpace n) ↔ ∃ k, affineChart k = e :=
   Iff.rfl
 
+/-- The preferred chart at the point `affineParam k 0`, whose only nonzero homogeneous coordinate is
+the coordinate `k`, is the homogeneous-ratio chart `X_k ≠ 0`: it is the only chart containing it. -/
+@[simp]
+theorem chartAt_affineParam_zero (k : Fin (n + 1)) :
+    chartAt (Fin n → ℂ) (affineParam k 0) = affineChart k := by
+  have h := (exists_mem_affineOpen (affineParam k (0 : Fin n → ℂ))).choose_spec
+  rw [affineParam_zero_mem_affineOpen_iff] at h
+  -- By the definition of the atlas, `chartAt p` is the chart of the index chosen by
+  -- `exists_mem_affineOpen p`, and the only possible index is `k`.
+  change affineChart _ = _
+  rw [h]
+
 /-- Homogeneous-ratio transitions are holomorphic wherever the new denominator is nonzero. -/
 theorem contDiffOn_affineChart_transition (k l : Fin (n + 1)) (r : ℕ∞ω) :
     ContDiffOn ℂ r ((affineChart k).symm.trans (affineChart l))

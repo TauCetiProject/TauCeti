@@ -84,7 +84,7 @@ variable [FiniteDimensional ℝ F] [FiniteDimensional ℝ F']
 the subbundle. -/
 private theorem eventually_mapOrientation_fiberTransverse (hF : finrank ℝ F = k + 1)
     (hF' : finrank ℝ F' = k)
-    (hV : Continuous fun p : TotalSpace F' (fun b ↦ V b) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))
+    (hV : Continuous fun p : TotalSpace F' (fun b ↦ V b) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E))
     (o : VectorBundleOrientation F E (Fin (k + 1))) {ν : ∀ b, E b}
     (hν : Continuous fun b ↦ (⟨b, ν b⟩ : TotalSpace F E)) (hνV : ∀ b, ν b ∉ V b) (b₀ : B) :
     ∀ᶠ x in 𝓝 b₀, ∀ hx : x ∈ (trivializationAt F' (fun b ↦ V b) b₀).baseSet,
@@ -145,7 +145,7 @@ whose total space maps continuously into that of `E`, and let `ν` be a continuo
 with `ν b ∉ V b` everywhere. Then `V` is oriented by declaring a basis `v₁, …, vₖ` of `V b`
 positive exactly when `ν b, v₁, …, vₖ` is a positive basis of `E b`. -/
 def transverse (hF : finrank ℝ F = k + 1) (hF' : finrank ℝ F' = k)
-    (hV : Continuous fun p : TotalSpace F' (fun b ↦ V b) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))
+    (hV : Continuous fun p : TotalSpace F' (fun b ↦ V b) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E))
     (o : VectorBundleOrientation F E (Fin (k + 1))) {ν : ∀ b, E b}
     (hν : Continuous fun b ↦ (⟨b, ν b⟩ : TotalSpace F E)) (hνV : ∀ b, ν b ∉ V b) :
     VectorBundleOrientation F' (fun b ↦ V b) (Fin k) :=
@@ -155,7 +155,7 @@ def transverse (hF : finrank ℝ F = k + 1) (hF' : finrank ℝ F' = k)
     (eventually_mapOrientation_fiberTransverse hF hF' hV o hν hνV)
 
 variable (hF : finrank ℝ F = k + 1) (hF' : finrank ℝ F' = k)
-  (hV : Continuous fun p : TotalSpace F' (fun b ↦ V b) ↦ (⟨p.proj, p.2⟩ : TotalSpace F E))
+  (hV : Continuous fun p : TotalSpace F' (fun b ↦ V b) ↦ (⟨p.proj, p.snd⟩ : TotalSpace F E))
   (o : VectorBundleOrientation F E (Fin (k + 1))) {ν : ∀ b, E b}
   (hν : Continuous fun b ↦ (⟨b, ν b⟩ : TotalSpace F E)) (hνV : ∀ b, ν b ∉ V b)
 

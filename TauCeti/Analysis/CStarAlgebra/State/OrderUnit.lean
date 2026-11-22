@@ -88,7 +88,7 @@ theorem extendFromSelfAdjoint_restrictToSelfAdjoint_of_mem_stateSpace {φ : Weak
   refine extendFromSelfAdjoint_restrictToSelfAdjoint fun a => ?_
   let ω : A →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => TauCeti.map_nonneg_of_mem_stateSpace hφ
   have hstar : star (ω (a : A)) = ω (a : A) := by
-    rw [← map_star, a.2.star_eq]
+    rw [← map_star, a.property.star_eq]
   exact Complex.conj_eq_iff_im.mp hstar
 
 /-- **C⋆-algebra state correspondence.** Restriction to `selfAdjoint A` and complex-linear
@@ -96,25 +96,27 @@ extension define a weak-star homeomorphism between `TauCeti.stateSpace A` and
 `OrderUnit.stateSpace (1 : selfAdjoint A)`. -/
 noncomputable def cstarStateSpaceHomeomorph :
     TauCeti.stateSpace A ≃ₜ stateSpace (1 : selfAdjoint A) where
-  toFun φ := ⟨restrictToSelfAdjoint φ.1, mapsTo_restrictToSelfAdjoint_stateSpace φ.2⟩
-  invFun ψ := ⟨extendFromSelfAdjoint ψ.1, mapsTo_extendFromSelfAdjoint_stateSpace ψ.2⟩
-  left_inv φ := Subtype.ext (extendFromSelfAdjoint_restrictToSelfAdjoint_of_mem_stateSpace φ.2)
-  right_inv ψ := Subtype.ext (restrictToSelfAdjoint_extendFromSelfAdjoint ψ.1)
+  toFun φ := ⟨restrictToSelfAdjoint φ.val, mapsTo_restrictToSelfAdjoint_stateSpace φ.property⟩
+  invFun ψ := ⟨extendFromSelfAdjoint ψ.val, mapsTo_extendFromSelfAdjoint_stateSpace ψ.property⟩
+  left_inv φ :=
+    Subtype.ext (extendFromSelfAdjoint_restrictToSelfAdjoint_of_mem_stateSpace φ.property)
+  right_inv ψ := Subtype.ext (restrictToSelfAdjoint_extendFromSelfAdjoint ψ.val)
   continuous_toFun :=
-    (restrictToSelfAdjoint.continuous.comp continuous_subtype_val).subtype_mk _
+    (restrictToSelfAdjoint.continuous.comp continuous_subtypeVal).subtype_mk _
   continuous_invFun :=
-    (extendFromSelfAdjoint.continuous.comp continuous_subtype_val).subtype_mk _
+    (extendFromSelfAdjoint.continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- Evaluating `cstarStateSpaceHomeomorph` takes the real part on self-adjoint elements. -/
 @[simp]
 theorem cstarStateSpaceHomeomorph_apply (φ : TauCeti.stateSpace A) (a : selfAdjoint A) :
-    (cstarStateSpaceHomeomorph φ).1 a = (φ.1 (a : A)).re := by
+    (cstarStateSpaceHomeomorph φ).val a = (φ.val (a : A)).re := by
   simp [cstarStateSpaceHomeomorph]
 
 /-- Evaluating the inverse of `cstarStateSpaceHomeomorph` recovers the complex-linear extension. -/
 @[simp]
 theorem cstarStateSpaceHomeomorph_symm_apply (ψ : stateSpace (1 : selfAdjoint A)) (a : A) :
-    (cstarStateSpaceHomeomorph.symm ψ).1 a = (ψ.1 (ℜ a) : ℂ) + Complex.I * (ψ.1 (ℑ a) : ℂ) := by
+    (cstarStateSpaceHomeomorph.symm ψ).val a =
+      (ψ.val (ℜ a) : ℂ) + Complex.I * (ψ.val (ℑ a) : ℂ) := by
   simp [cstarStateSpaceHomeomorph]
 
 /-- The bijection between normalized positive continuous complex-linear functionals
@@ -122,23 +124,23 @@ theorem cstarStateSpaceHomeomorph_symm_apply (ψ : stateSpace (1 : selfAdjoint A
 noncomputable def cstarPositiveLinearMapEquivStateSpace :
     {ω : A →P[ℂ] ℂ // ω 1 = 1} ≃ stateSpace (1 : selfAdjoint A) where
   toFun ω := cstarStateSpaceHomeomorph
-    ⟨StrongDual.toWeakDual (ω.1 : A →L[ℂ] ℂ),
-      TauCeti.mem_stateSpace_iff_map_one.mpr ⟨fun _ ha => ω.1.map_nonneg ha, ω.2⟩⟩
+    ⟨StrongDual.toWeakDual (ω.val : A →L[ℂ] ℂ),
+      TauCeti.mem_stateSpace_iff_map_one.mpr ⟨fun _ ha => ω.val.map_nonneg ha, ω.property⟩⟩
   invFun ψ :=
     let φ := cstarStateSpaceHomeomorph.symm ψ
-    ⟨PositiveContinuousLinearMap.mk₀ (toStrongDual φ.1)
-      (fun _ ha => TauCeti.map_nonneg_of_mem_stateSpace φ.2 ha),
-      TauCeti.map_one_of_mem_stateSpace φ.2⟩
+    ⟨PositiveContinuousLinearMap.mk₀ (toStrongDual φ.val)
+      (fun _ ha => TauCeti.map_nonneg_of_mem_stateSpace φ.property ha),
+      TauCeti.map_one_of_mem_stateSpace φ.property⟩
   left_inv ω := by
     refine Subtype.ext (DFunLike.ext _ _ fun a => ?_)
-    have h := congrArg (fun x : TauCeti.stateSpace A => x.1 a)
+    have h := congrArg (fun x : TauCeti.stateSpace A => x.val a)
       (cstarStateSpaceHomeomorph.left_inv
-        ⟨StrongDual.toWeakDual (ω.1 : A →L[ℂ] ℂ),
-          TauCeti.mem_stateSpace_iff_map_one.mpr ⟨fun _ ha => ω.1.map_nonneg ha, ω.2⟩⟩)
+        ⟨StrongDual.toWeakDual (ω.val : A →L[ℂ] ℂ),
+          TauCeti.mem_stateSpace_iff_map_one.mpr ⟨fun _ ha => ω.val.map_nonneg ha, ω.property⟩⟩)
     exact h
   right_inv ψ := by
     refine Subtype.ext (DFunLike.ext _ _ fun a => ?_)
-    have h := congrArg (fun x : stateSpace (1 : selfAdjoint A) => x.1 a)
+    have h := congrArg (fun x : stateSpace (1 : selfAdjoint A) => x.val a)
       (cstarStateSpaceHomeomorph.right_inv ψ)
     exact h
 
@@ -146,7 +148,7 @@ noncomputable def cstarPositiveLinearMapEquivStateSpace :
 @[simp]
 theorem cstarPositiveLinearMapEquivStateSpace_apply (ω : {ω : A →P[ℂ] ℂ // ω 1 = 1})
     (a : selfAdjoint A) :
-    (cstarPositiveLinearMapEquivStateSpace ω).1 a = (ω.1 (a : A)).re := by
+    (cstarPositiveLinearMapEquivStateSpace ω).val a = (ω.val (a : A)).re := by
   simp [cstarPositiveLinearMapEquivStateSpace]
 
 /-- Evaluating the inverse of `cstarPositiveLinearMapEquivStateSpace` gives the complex-linear
@@ -154,8 +156,8 @@ extension of `ψ`. -/
 @[simp]
 theorem cstarPositiveLinearMapEquivStateSpace_symm_apply (ψ : stateSpace (1 : selfAdjoint A))
     (a : A) :
-    (cstarPositiveLinearMapEquivStateSpace.symm ψ).1 a =
-      (ψ.1 (ℜ a) : ℂ) + Complex.I * (ψ.1 (ℑ a) : ℂ) :=
+    (cstarPositiveLinearMapEquivStateSpace.symm ψ).val a =
+      (ψ.val (ℜ a) : ℂ) + Complex.I * (ψ.val (ℑ a) : ℂ) :=
   cstarStateSpaceHomeomorph_symm_apply ψ a
 
 end CStarCorrespondence

@@ -47,33 +47,25 @@ variable {β 𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   (j : E →ₗᵢ[𝕜] F) (c : β → F)
 
 /-- The inclusion plus the series of rank-one errors sending `b i` to `c i`.
-The evaluation laws require summability of the weighted errors. -/
+The evaluation laws require summability of the error series. -/
 def ambientPerturbationMap : E →L[𝕜] F :=
   j.toContinuousLinearMap + ∑' i, (b.coord i).smulRight (c i - j (b i))
 
-section CompleteTarget
-
-variable [CompleteSpace F]
-
-/-- The perturbing map is the inclusion plus its absolutely convergent error series. -/
+/-- The perturbing map is the inclusion plus its summable error series. -/
 theorem ambientPerturbationMap_apply
-    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖c i - j (b i)‖)) (x : E) :
+    (hs : Summable (fun i ↦ (b.coord i).smulRight (c i - j (b i)))) (x : E) :
     b.ambientPerturbationMap j c x =
       j x + ∑' i, b.coord i x • (c i - j (b i)) := by
-  simp only [ambientPerturbationMap, add_apply,
-    LinearIsometry.coe_toContinuousLinearMap,
-    tsum_apply (b.summable_coord_smulRight (fun i ↦ c i - j (b i)) hs),
-    ContinuousLinearMap.smulRight_apply]
+  simp only [ambientPerturbationMap, add_apply, LinearIsometry.coe_toContinuousLinearMap,
+    tsum_apply hs, ContinuousLinearMap.smulRight_apply]
 
 /-- The perturbing map sends the original basis vectors to their prescribed perturbations. -/
 @[simp]
 theorem ambientPerturbationMap_apply_basis
-    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖c i - j (b i)‖)) (i : β) :
+    (hs : Summable (fun i ↦ (b.coord i).smulRight (c i - j (b i)))) (i : β) :
     b.ambientPerturbationMap j c (b i) = c i := by
   simp only [ambientPerturbationMap, add_apply, LinearIsometry.coe_toContinuousLinearMap,
-    b.tsum_coord_smulRight_apply_basis (fun k ↦ c k - j (b k)) hs i, add_sub_cancel]
-
-end CompleteTarget
+    b.tsum_coord_smulRight_apply_basis _ hs i, add_sub_cancel]
 
 /-- The operator error is bounded by the sum of weighted vector errors. -/
 theorem norm_ambientPerturbationMap_sub_le
@@ -127,6 +119,7 @@ theorem range_ambientPerturbationMap
     (b.ambientPerturbationMap j c).range =
       (Submodule.span 𝕜 (range c)).topologicalClosure := by
   let T := b.ambientPerturbationMap j c
+  have hs' := b.summable_coord_smulRight _ hs
   have hclosed : IsClosed (T.range : Set F) :=
     (b.antilipschitz_ambientPerturbationMap j c hs hθ).isClosed_range T.uniformContinuous
   apply le_antisymm
@@ -136,11 +129,11 @@ theorem range_ambientPerturbationMap
         T.continuous ⟨x, b.dense_span x, rfl⟩)
     apply (Submodule.image_span_subset T.toLinearMap (range b) (Submodule.span 𝕜 (range c))).2
     rintro _ ⟨i, rfl⟩
-    exact Submodule.subset_span ⟨i, (b.ambientPerturbationMap_apply_basis j c hs i).symm⟩
+    exact Submodule.subset_span ⟨i, (b.ambientPerturbationMap_apply_basis j c hs' i).symm⟩
   · apply Submodule.topologicalClosure_minimal _ _ hclosed
     apply Submodule.span_le.2
     rintro _ ⟨i, rfl⟩
-    exact ⟨b i, b.ambientPerturbationMap_apply_basis j c hs i⟩
+    exact ⟨b i, b.ambientPerturbationMap_apply_basis j c hs' i⟩
 
 /-- **Ambient small perturbation theorem.** A small summable perturbation of an isometrically
 embedded basis gives an isomorphism onto its new closed span, with quantitative norm bounds. -/
@@ -208,7 +201,7 @@ theorem coe_ambientPerturb_apply
     (hθ : (∑' i, ‖b.coord i‖ * ‖c i - j (b i)‖) < 1) (i : β) :
     (b.ambientPerturb j c hs hθ i : F) = c i := by
   simp only [ambientPerturb, map_apply, coe_ambientSmallPerturbationEquiv_apply,
-    ambientPerturbationMap_apply_basis b j c hs]
+    ambientPerturbationMap_apply_basis b j c (b.summable_coord_smulRight _ hs)]
 
 /-- Coordinates of the ambient perturbation are the old coordinates transported by the inverse. -/
 @[simp]

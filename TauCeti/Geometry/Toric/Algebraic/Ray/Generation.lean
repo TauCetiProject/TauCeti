@@ -60,7 +60,7 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 /-- A salient finitely generated pointed cone is the join of its rays. -/
 theorem ToricRay.iSup_toPointedCone (hσ : σ.FG) (hsal : (σ : ConvexCone ℝ V).Salient) :
     ⨆ ρ : ToricRay σ, ρ.toPointedCone = σ := by
-  refine le_antisymm (iSup_le fun ρ ↦ ρ.1.isFaceOf.le) ?_
+  refine le_antisymm (iSup_le fun ρ ↦ ρ.val.isFaceOf.le) ?_
   obtain ⟨s, hs, hface⟩ := PointedCone.FG.exists_finset_hull_eq_isFaceOf hσ hsal
   refine hs.ge.trans (Submodule.span_le.2 fun v hv ↦ ?_)
   obtain ⟨hv0, hvσ⟩ := hface v hv
@@ -108,9 +108,9 @@ theorem IsToricCone.hull_primitiveGenerator (hi : IsIntegralLattice i) (hσ : Is
     PointedCone.hull ℝ (i '' Set.range (primitiveGenerator hi hσ)) = σ := by
   refine le_antisymm (Submodule.span_le.2 ?_) ?_
   · rintro _ ⟨_, ⟨ρ, rfl⟩, rfl⟩
-    exact ρ.1.isFaceOf.le (primitiveGenerator_mem hi hσ ρ)
+    exact ρ.val.isFaceOf.le (primitiveGenerator_mem hi hσ ρ)
   · refine (ToricRay.iSup_toPointedCone hσ.fg hσ.salient).ge.trans (iSup_le fun ρ ↦ ?_)
-    rw [ρ.eq_hull_singleton (hσ.salient.anti ρ.1.isFaceOf.le) (primitiveGenerator_mem hi hσ ρ)
+    rw [ρ.eq_hull_singleton (hσ.salient.anti ρ.val.isFaceOf.le) (primitiveGenerator_mem hi hσ ρ)
       (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ ρ))]
     exact Submodule.span_mono (Set.singleton_subset_iff.2 ⟨_, ⟨ρ, rfl⟩, rfl⟩)
 
@@ -125,8 +125,8 @@ theorem IsToricCone.le_of_isFaceOf_of_sum_primitiveGenerator_mem (hi : IsIntegra
     rwa [Finset.sum_coe_sort _ fun ν ↦ i (primitiveGenerator hi hσ ν), ← map_sum]
   refine (hσ.hull_primitiveGenerator hi).ge.trans (Submodule.span_le.2 ?_)
   rintro _ ⟨_, ⟨ρ, rfl⟩, rfl⟩
-  exact hF.mem_of_sum_mem (fun ν ↦ ν.1.1.isFaceOf.le (primitiveGenerator_mem hi hσ ν.1)) hsum
-    ⟨ρ, (ToricRay.mem_faceFinset _ _).2 ρ.1.isFaceOf.le⟩
+  exact hF.mem_of_sum_mem (fun ν ↦ ν.val.val.isFaceOf.le (primitiveGenerator_mem hi hσ ν.val)) hsum
+    ⟨ρ, (ToricRay.mem_faceFinset _ _).2 ρ.val.isFaceOf.le⟩
 
 /-- An integral character lies in the dual semigroup of a toric cone exactly when it is
 nonnegative on every primitive ray generator. -/
