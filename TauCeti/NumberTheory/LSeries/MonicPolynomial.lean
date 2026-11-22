@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 public import TauCeti.Algebra.Polynomial.MonicOfCoeffs
+public import TauCeti.RingTheory.PowerSeries.Derivative
 import Mathlib.Algebra.Order.Antidiag.Finsupp
 import Mathlib.Tactic.LinearCombination
 
@@ -71,19 +72,6 @@ every finite commutative semiring `F`. The Euler product and the logarithmic der
 public section
 
 open Finset UniqueFactorizationMonoid
-
-namespace PowerSeries
-
-/-- The coefficients of `X f'` are `n` times those of `f`. -/
-theorem coeff_X_mul_derivative {R : Type*} [CommSemiring R] (f : PowerSeries R) (n : ℕ) :
-    coeff n (X * derivative (R := R) f) = n * coeff n f := by
-  rcases n with _ | n
-  · simp
-  · rw [coeff_succ_X_mul, coeff_derivative]
-    push_cast
-    ring
-
-end PowerSeries
 
 namespace Polynomial
 
