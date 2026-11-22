@@ -31,6 +31,8 @@ homomorphisms, such as the cap cover `TauCeti.Floer.CapCover` and the reference-
 
 ## Main definitions
 
+* `TauCeti.UniversalCover.fundamentalGroupHomOfAdditive x₀ f`: `f` read multiplicatively on the
+  fundamental group.
 * `TauCeti.UniversalCover.additiveKerSubgroup x₀ f`: the kernel of `f`, as a subgroup of
   `π₁(X, x₀)`.
 * `TauCeti.UniversalCover.deckAdditiveKerEquiv x₀ f hf`: for onto `f`, the deck group of the
@@ -58,34 +60,40 @@ namespace TauCeti.UniversalCover
 variable {X : Type*} [TopologicalSpace X] (x₀ : X) {A : Type*} [AddGroup A]
   (f : Additive (HomotopyGroup (Fin 1) X x₀) →+ A)
 
-/-- The homomorphism `f` read multiplicatively on the fundamental group. -/
-private def fundamentalGroupHom : FundamentalGroup X x₀ →* Multiplicative A :=
+/-- **An additive homomorphism on `π₁` read on the fundamental group**: `f`, with values in `A`
+read multiplicatively, through `π₁ ≅ FundamentalGroup`. -/
+def fundamentalGroupHomOfAdditive : FundamentalGroup X x₀ →* Multiplicative A :=
   (AddMonoidHom.toMultiplicativeRight f).comp
     HomotopyGroup.pi1MulEquivFundamentalGroup.symm.toMonoidHom
 
-private theorem fundamentalGroupHom_pi1MulEquivFundamentalGroup
-    (a : HomotopyGroup (Fin 1) X x₀) :
-    fundamentalGroupHom x₀ f (HomotopyGroup.pi1MulEquivFundamentalGroup a) =
-      Multiplicative.ofAdd (f (Additive.ofMul a)) := by
-  simp [fundamentalGroupHom]
+theorem fundamentalGroupHomOfAdditive_apply (g : FundamentalGroup X x₀) :
+    fundamentalGroupHomOfAdditive x₀ f g = Multiplicative.ofAdd
+      (f (Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g))) :=
+  (rfl)
 
-private theorem fundamentalGroupHom_surjective (hf : Function.Surjective f) :
-    Function.Surjective (fundamentalGroupHom x₀ f) :=
+@[simp]
+theorem fundamentalGroupHomOfAdditive_pi1MulEquivFundamentalGroup
+    (a : HomotopyGroup (Fin 1) X x₀) :
+    fundamentalGroupHomOfAdditive x₀ f (HomotopyGroup.pi1MulEquivFundamentalGroup a) =
+      Multiplicative.ofAdd (f (Additive.ofMul a)) := by
+  simp [fundamentalGroupHomOfAdditive]
+
+/-- An onto additive homomorphism on `π₁` is onto when read on the fundamental group. -/
+theorem fundamentalGroupHomOfAdditive_surjective (hf : Function.Surjective f) :
+    Function.Surjective (fundamentalGroupHomOfAdditive x₀ f) :=
   hf.comp HomotopyGroup.pi1MulEquivFundamentalGroup.symm.surjective
 
 /-- **The kernel of an additive homomorphism on `π₁`, read in the fundamental group**: the classes
 of `FundamentalGroup X x₀` of the loops `a` with `f a = 0`. -/
 def additiveKerSubgroup : Subgroup (FundamentalGroup X x₀) :=
-  (fundamentalGroupHom x₀ f).ker
+  (fundamentalGroupHomOfAdditive x₀ f).ker
 
 /-- A class of the fundamental group lies in the kernel of `f` exactly when `f` vanishes on the
 corresponding element of `π₁`. -/
 theorem mem_additiveKerSubgroup_iff (g : FundamentalGroup X x₀) :
     g ∈ additiveKerSubgroup x₀ f ↔
       f (Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)) = 0 := by
-  obtain ⟨a, rfl⟩ := HomotopyGroup.pi1MulEquivFundamentalGroup.surjective g
-  rw [additiveKerSubgroup, MonoidHom.mem_ker, fundamentalGroupHom_pi1MulEquivFundamentalGroup,
-    ofAdd_eq_one, MulEquiv.symm_apply_apply]
+  rw [additiveKerSubgroup, MonoidHom.mem_ker, fundamentalGroupHomOfAdditive_apply, ofAdd_eq_one]
 
 /-- The kernel of an additive homomorphism on `π₁` is a normal subgroup. -/
 instance additiveKerSubgroup_normal : (additiveKerSubgroup x₀ f).Normal :=
@@ -98,8 +106,20 @@ variable [LocallyPathConnectedSpace X] [PathConnectedSpace X] [SemilocallySimply
 `a`. -/
 def deckAdditiveKerEquiv (hf : Function.Surjective f) :
     Multiplicative A ≃* deck (subgroupQuotientProj x₀ (additiveKerSubgroup x₀ f)) :=
-  (deckSubgroupQuotientProjKerEquivOfSurjective x₀ (fundamentalGroupHom x₀ f)
-    (fundamentalGroupHom_surjective x₀ f hf)).symm
+  (deckSubgroupQuotientProjKerEquivOfSurjective x₀ (fundamentalGroupHomOfAdditive x₀ f)
+    (fundamentalGroupHomOfAdditive_surjective x₀ f hf)).symm
+
+/-- The deck transformation labelled by the value of `f` on a class `g` of the fundamental group
+acts on the cover attached to the kernel of `f` through the action of `g` on the universal
+cover. -/
+@[simp]
+theorem deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_apply_mk (hf : Function.Surjective f)
+    (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
+    (deckAdditiveKerEquiv x₀ f hf (fundamentalGroupHomOfAdditive x₀ f g)).val (Quotient.mk'' e) =
+      Quotient.mk'' (g • e) :=
+  -- the cover is attached to `additiveKerSubgroup x₀ f`, which is by definition the kernel of
+  -- `fundamentalGroupHomOfAdditive x₀ f`
+  deckSubgroupQuotientProjKerEquivOfSurjective_symm_apply_mk _ _ _ g e
 
 /-- The deck transformation labelled by `f a` acts on the cover attached to the kernel of `f`
 through the action of `a` on the universal cover. -/
@@ -109,10 +129,8 @@ theorem deckAdditiveKerEquiv_apply_mk (hf : Function.Surjective f)
     (deckAdditiveKerEquiv x₀ f hf (Multiplicative.ofAdd (f (Additive.ofMul a)))).val
         (Quotient.mk'' e) =
       Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) := by
-  rw [← fundamentalGroupHom_pi1MulEquivFundamentalGroup, deckAdditiveKerEquiv]
-  -- the cover is attached to `additiveKerSubgroup x₀ f`, which is by definition the kernel of
-  -- `fundamentalGroupHom x₀ f`
-  exact deckSubgroupQuotientProjKerEquivOfSurjective_symm_apply_mk _ _ _ _ e
+  rw [← fundamentalGroupHomOfAdditive_pi1MulEquivFundamentalGroup]
+  exact deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_apply_mk x₀ f hf _ e
 
 /-- **`f a` acts on the cover attached to the kernel of `f` as `a` acts on the universal
 cover**, for the action of `A` through the deck group. -/

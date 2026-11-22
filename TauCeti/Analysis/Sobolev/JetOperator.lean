@@ -17,7 +17,9 @@ The jet of a section `ξ : ℝ × ℝ → V` of a trivial bundle over a domain o
 A first-order operator with coefficient field `M : ℝ × ℝ → L(V × V × V, W)` acts on jets
 pointwise, `f ↦ (z ↦ M z (f z))`. For a measure `μ` on the plane and `M` essentially bounded for
 `μ`, this is a bounded operator `L²(μ, V × V × V) → L²(μ, W)` (`TauCeti.jetOperator`), the
-operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`.
+operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`. It depends
+Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
+along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`).
 
 The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linearized Floer operators,
 have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.firstOrderJetCoeff`),
@@ -40,7 +42,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory Filter Topology
 open scoped ENNReal
 
 namespace TauCeti
@@ -77,6 +79,53 @@ theorem coeFn_jetOperator {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V
   rw [jetOperator_of_memLp hM]
   filter_upwards [Lp.operatorMultiplication_ae (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
   rw [h₁, h₂]
+
+/-- The first-order operator is additive in its coefficient field. -/
+theorem jetOperator_add {μ : Measure (ℝ × ℝ)} {M N : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ μ) (hN : MemLp N ∞ μ) :
+    jetOperator μ (M + N) = jetOperator μ M + jetOperator μ N := by
+  ext1 f
+  refine Lp.ext ?_
+  filter_upwards [coeFn_jetOperator (hM.add hN) f, coeFn_jetOperator hM f,
+    coeFn_jetOperator hN f, Lp.coeFn_add (jetOperator μ M f) (jetOperator μ N f)]
+    with z h h₁ h₂ h₃
+  rw [add_apply, h₃, Pi.add_apply, h, h₁, h₂, Pi.add_apply, add_apply]
+
+/-- An almost everywhere bound `‖M z‖ ≤ C` on the coefficient field bounds the first-order
+operator by `C`. -/
+theorem norm_jetOperator_apply_le {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ μ) {C : ℝ} (hC : ∀ᵐ z ∂μ, ‖M z‖ ≤ C) (f : Lp (V × V × V) 2 μ) :
+    ‖jetOperator μ M f‖ ≤ C * ‖f‖ :=
+  Lp.norm_le_mul_norm_of_ae_le_mul (by
+    filter_upwards [coeFn_jetOperator hM f, hC] with z h₁ h₂
+    rw [h₁]
+    exact ((M z).le_opNorm _).trans (mul_le_mul_of_nonneg_right h₂ (norm_nonneg _)))
+
+/-- The first-order operator depends Lipschitz-continuously on its coefficient field: its operator
+norm on `L²` jets is at most the essential supremum of the difference of the coefficients. -/
+theorem norm_jetOperator_sub_le {μ : Measure (ℝ × ℝ)} {M M' : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ μ) (hM' : MemLp M' ∞ μ) :
+    ‖jetOperator μ M - jetOperator μ M'‖ ≤ (eLpNorm (M - M') ∞ μ).toReal := by
+  rw [jetOperator_of_memLp hM, jetOperator_of_memLp hM', ← map_sub, ← MemLp.toLp_sub,
+    ← Lp.norm_toLp _ (hM.sub hM')]
+  exact Lp.norm_operatorMultiplication_le _
+
+/-- Coefficient fields depending continuously on a parameter in `L^∞` give first-order operators
+on `L²` jets depending continuously on the parameter in the operator norm. -/
+theorem continuousOn_jetOperator {μ : Measure (ℝ × ℝ)} {X : Type*} [TopologicalSpace X]
+    {s : Set X} {M : X → ℝ × ℝ → V × V × V →L[ℝ] W} (hM : ∀ x ∈ s, MemLp (M x) ∞ μ)
+    (hcont : ∀ x ∈ s, Tendsto (fun y ↦ eLpNorm (M y - M x) ∞ μ) (𝓝[s] x) (𝓝 0)) :
+    ContinuousOn (fun x ↦ jetOperator μ (M x)) s := by
+  intro x hx
+  have hlim : Tendsto (fun y ↦ (eLpNorm (M y - M x) ∞ μ).toReal) (𝓝[s] x) (𝓝 0) := by
+    simpa only [Function.comp_def, ENNReal.toReal_zero] using
+      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hcont x hx)
+  -- `‖D_y - D_x‖ ≤ ‖M y - M x‖_{L^∞}` for `y ∈ s`.
+  have hle : ∀ᶠ y in 𝓝[s] x, ‖jetOperator μ (M y) - jetOperator μ (M x)‖ ≤
+      (eLpNorm (M y - M x) ∞ μ).toReal := by
+    filter_upwards [self_mem_nhdsWithin] with y hy using norm_jetOperator_sub_le (hM y hy) (hM x hx)
+  exact tendsto_iff_norm_sub_tendsto_zero.mpr
+    (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hle hlim)
 
 /-- The coefficient field `(a, b, c) ↦ b + A c + C a` on jets `(a, b, c)` of the operator
 `∂s + A ∂t + C`, where `b` and `c` are the slots of the partial derivatives `∂s` and `∂t`. -/

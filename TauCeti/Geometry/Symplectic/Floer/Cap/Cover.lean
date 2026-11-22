@@ -40,10 +40,13 @@ attached to this kernel (`TauCeti.Floer.capCoverSubgroup`), the quotient of the 
 at `x` to `γ`, modulo loops sweeping out tori of zero area and zero first Chern number. When `𝓛₀X`
 is locally path-connected and semilocally simply connected, for instance when `X` is locally
 equiconnected, such as a closed manifold, the projection is a covering map
-(`TauCeti.Floer.isCoveringMap_capCoverProj`), so paths and their homotopies in `𝓛₀X` lift. The
+(`TauCeti.Floer.isCoveringMap_capCoverProj`), so paths and their homotopies in `𝓛₀X` lift, and a
+loop of contractible loops lifts to a loop of the cover exactly when the torus it sweeps out has
+zero area and zero first Chern number (`TauCeti.Floer.mem_range_mapOfEq_capCoverProj_iff`). The
 kernel is normal, and over a path-connected `X` the cover is regular, with deck group `Γ`
 (`TauCeti.Floer.capCoverDeckEquiv`): the period class of a loop `Λ` acts by transport around `Λ`
-(`TauCeti.Floer.ofContractibleLoopsHomotopyGroup_vadd_mk`). So `Γ` acts on the cap cover, and every
+(`TauCeti.Floer.capCoverDeckEquiv_capCoverPeriodHom_apply_mk`,
+`TauCeti.Floer.ofContractibleLoopsHomotopyGroup_vadd_mk`). So `Γ` acts on the cap cover, and every
 fibre is a torsor under `Γ` (`TauCeti.Floer.instAddTorsorCapCoverFiber`): the difference of two
 points of a fibre is the period class of the loop relating them (`TauCeti.Floer.CapCover.vsub_mk`).
 The cap classes of a contractible loop are also a `Γ`-torsor
@@ -53,7 +56,7 @@ fibre over a loop based at `x` with its cap classes is not constructed here.
 ## Main definitions
 
 * `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup`: the period homomorphism
-  `π₁(𝓛₀X, x) → Γ`.
+  `π₁(𝓛₀X, x) → Γ`, and `TauCeti.Floer.capCoverPeriodHom`, the same on the fundamental group.
 * `TauCeti.Floer.capCoverSubgroup`: its kernel, read in the fundamental group of `𝓛₀X`.
 * `TauCeti.Floer.CapCover`, `TauCeti.Floer.capCoverProj`: the cap cover and its projection to
   `𝓛₀X`.
@@ -73,6 +76,8 @@ fibre over a loop based at `x` with its cap classes is not constructed here.
   homomorphism is onto for a path-connected `X`.
 * `TauCeti.Floer.isCoveringMap_capCoverProj`, `TauCeti.Floer.isRegular_capCoverProj`: the cap
   cover is a covering space, regular over a path-connected `X`.
+* `TauCeti.Floer.mem_range_mapOfEq_capCoverProj_iff`: a loop of contractible loops lifts to a loop
+  of the cap cover exactly when its torus has zero area and zero first Chern number.
 * `TauCeti.Floer.ofContractibleLoopsHomotopyGroup_vadd_mk`: the period class of a loop of
   contractible free loops acts on the cap cover as the loop acts on the universal cover.
 * `TauCeti.Floer.CapCover.vsub_mk`: the difference of two points of a fibre is the period class of
@@ -184,6 +189,37 @@ variable {X : Type} [TopologicalSpace X]
     (TopCat.of X) →+ ℤ}
 
 variable (ω c) in
+/-- **The period homomorphism of the cap cover** on the fundamental group of `𝓛₀X` at the constant
+loop at `x`, with values in `Γ` read multiplicatively: it is
+`TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup` through
+`π₁ ≅ FundamentalGroup` (`TauCeti.UniversalCover.fundamentalGroupHomOfAdditive`). -/
+def capCoverPeriodHom (x : X) :
+    FundamentalGroup (contractibleLoops X) (constContractibleLoop x) →*
+      Multiplicative (SphericalPeriodGroup ω c) :=
+  fundamentalGroupHomOfAdditive _ (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x)
+
+theorem capCoverPeriodHom_apply (x : X)
+    (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x)) :
+    capCoverPeriodHom ω c x g = Multiplicative.ofAdd
+      (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x
+        (Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g))) :=
+  fundamentalGroupHomOfAdditive_apply _ _ g
+
+@[simp]
+theorem capCoverPeriodHom_pi1MulEquivFundamentalGroup (x : X)
+    (a : HomotopyGroup (Fin 1) (contractibleLoops X) (constContractibleLoop x)) :
+    capCoverPeriodHom ω c x (HomotopyGroup.pi1MulEquivFundamentalGroup a) =
+      Multiplicative.ofAdd
+        (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x (Additive.ofMul a)) :=
+  fundamentalGroupHomOfAdditive_pi1MulEquivFundamentalGroup _ _ a
+
+/-- The period homomorphism of the cap cover is onto for a path-connected space. -/
+theorem capCoverPeriodHom_surjective [PathConnectedSpace X] (x : X) :
+    Function.Surjective (capCoverPeriodHom ω c x) :=
+  fundamentalGroupHomOfAdditive_surjective _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x)
+
+variable (ω c) in
 /-- **The subgroup of the cap cover**: the classes in `π₁(𝓛₀X, x)`, at the constant loop at `x`,
 of the loops of contractible free loops sweeping out tori of zero area and zero first Chern
 number, the kernel of the period homomorphism
@@ -227,6 +263,24 @@ theorem isCoveringMap_capCoverProj [LocallyPathConnectedSpace (contractibleLoops
     IsCoveringMap (capCoverProj ω c x) :=
   isCoveringMap_subgroupQuotientProj _ _
 
+/-- **A loop of contractible free loops lifts to a loop of the cap cover**, at its base point,
+exactly when the torus it sweeps out has zero area and zero first Chern number: the subgroup of
+`π₁(𝓛₀X)` recovered by the cap cover is `TauCeti.Floer.capCoverSubgroup`. -/
+theorem mem_range_mapOfEq_capCoverProj_iff [LocallyPathConnectedSpace (contractibleLoops X)]
+    [SemilocallySimplyConnectedSpace (contractibleLoops X)] (x : X)
+    (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x)) :
+    g ∈ (FundamentalGroup.mapOfEq
+        ⟨capCoverProj ω c x, continuous_subgroupQuotientProj _ _⟩
+        (subgroupQuotientProj_basepoint _ _)).range ↔
+      ω (freeLoopTorusClassHom X (ContinuousMap.const Circle x) (Additive.ofMul
+          (contractibleLoopsHomotopyGroupMulEquiv x
+            (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)))) = 0 ∧
+        c (freeLoopTorusClassHom X (ContinuousMap.const Circle x) (Additive.ofMul
+          (contractibleLoopsHomotopyGroupMulEquiv x
+            (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)))) = 0 := by
+  rw [range_mapOfEq_subgroupQuotientProj, mem_capCoverSubgroup_iff,
+    SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_eq_zero_iff, toMul_ofMul]
+
 /-- The cap cover over a path-connected space is a regular covering. -/
 theorem isRegular_capCoverProj [PathConnectedSpace X]
     [LocallyPathConnectedSpace (contractibleLoops X)]
@@ -246,6 +300,27 @@ the cover attached to the kernel of a surjective homomorphism is its target. -/
 def capCoverDeckEquiv (x : X) :
     Multiplicative (SphericalPeriodGroup ω c) ≃* deck (capCoverProj ω c x) :=
   deckAdditiveKerEquiv _ _ (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x)
+
+/-- The period class of a loop `g` of contractible free loops acts on the cap cover by transporting
+caps around `g`: it sends the class of a path `e` of loops to the class of `g • e`. -/
+@[simp]
+theorem capCoverDeckEquiv_capCoverPeriodHom_apply_mk (x : X)
+    (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x))
+    (e : UniversalCover (constContractibleLoop x)) :
+    (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g)).val (Quotient.mk'' e) =
+      Quotient.mk'' (g • e) :=
+  deckAdditiveKerEquiv_fundamentalGroupHomOfAdditive_apply_mk _ _
+    (SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective x) g e
+
+/-- The inverse of the deck transformation of the period class of a loop `g` of contractible free
+loops sends the class of a path `e` of loops to the class of `g⁻¹ • e`. -/
+@[simp]
+theorem capCoverDeckEquiv_capCoverPeriodHom_symm_apply_mk (x : X)
+    (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x))
+    (e : UniversalCover (constContractibleLoop x)) :
+    (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g)).val.symm (Quotient.mk'' e) =
+      Quotient.mk'' (g⁻¹ • e) := by
+  rw [Homeomorph.symm_apply_eq, capCoverDeckEquiv_capCoverPeriodHom_apply_mk, smul_inv_smul]
 
 /-- The deck transformation of the period class of a loop `a` of contractible free loops acts on
 the cap cover through the action of `a` on the universal cover of `𝓛₀X`. -/
