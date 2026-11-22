@@ -54,7 +54,7 @@ Minkowski's second theorem.
   strictly above the minimum satisfies `i < Set.finrank ℝ (r • s ∩ L)`.
 * `MeasureTheory.exists_linearIndependent_of_successiveMin_lt`: for discrete `L`,
   `i < finrank ℤ L` and a convex neighbourhood of `0`, every dilate by a factor strictly above the
-  `i`-th minimum contains `i + 1` linearly independent vectors of `L`.
+  `i`-th minimum contains `i + 1` `ℤ`-linearly independent vectors of `L`.
 * `MeasureTheory.lt_setFinrank_successiveMin_smul`: for discrete `L`, `i < finrank ℤ L` and a
   compact convex neighbourhood of `0`, the infimum is attained: the dilate by the `i`-th minimum
   itself contains vectors of `L` spanning a real subspace of dimension greater than `i`.
@@ -63,9 +63,10 @@ Minkowski's second theorem.
   the `i`-th minimum form the closed half-line above it.
 * `MeasureTheory.exists_directional_set'`, `MeasureTheory.exists_directional_set` and
   `MeasureTheory.exists_directional_basis`: for discrete `L` and a compact convex neighbourhood
-  `s` of `0`, some `finrank ℤ L` independent vectors of `L` have their `j`-th member in the dilate
-  of `s` by the `j`-th minimum; for a full lattice they form a real basis of `E`. They need not
-  form a basis of `L` over `ℤ`.
+  `s` of `0`, some `finrank ℤ L` vectors of `L` (`ℝ`-linearly independent in
+  `exists_directional_set'`, `ℤ`-linearly independent in `exists_directional_set`) have their
+  `j`-th member in the dilate of `s` by the `j`-th minimum; for a full lattice they form a real
+  basis of `E`. They need not form a basis of `L` over `ℤ`.
 
 ## References
 
@@ -129,6 +130,12 @@ theorem successiveMin_of_finrank_int_le [DiscreteTopology L]
     successiveMin L s i = 0 := by
   simp [hi]
 
+private theorem finiteDimensional_span_of_lt_finrank_int [DiscreteTopology L]
+    (hi : i < finrank ℤ L) : FiniteDimensional ℝ (span ℝ (L : Set E)) :=
+  Module.finite_of_finrank_pos (by
+    rw [← Set.finrank, setFinrank_real_eq_finrank_int]
+    exact (Nat.zero_le i).trans_lt hi)
+
 /-- For a discrete `L`, an absorbent set `s`, and `i < finrank ℤ L`, some dilate of `s` contains
 vectors of `L` spanning a real subspace of dimension greater than `i`: the infimum defining
 `successiveMin L s i` is taken over a nonempty set. Because `finrank ℤ L` is `0` when `L` has
@@ -136,9 +143,7 @@ infinite rank, the bound `i < finrank ℤ L` excludes infinite rank of `L`, thou
 the ambient space `E`. -/
 theorem exists_lt_setFinrank_smul_inter [DiscreteTopology L] (hs : Absorbent ℝ s)
     (hi : i < finrank ℤ L) : ∃ r : ℝ≥0, i < Set.finrank ℝ (r • s ∩ L) := by
-  have hi' : i < Set.finrank ℝ (L : Set E) := by rwa [setFinrank_real_eq_finrank_int]
-  have : FiniteDimensional ℝ (span ℝ (L : Set E)) :=
-    Module.finite_of_finrank_pos ((Nat.zero_le i).trans_lt hi')
+  have := finiteDimensional_span_of_lt_finrank_int hi
   -- Finitely many vectors of `L` span `span ℝ L`, and `s` absorbs them.
   obtain ⟨f, hfL, hspan, -⟩ := exists_fun_fin_finrank_span_eq ℝ (L : Set E)
   obtain ⟨r, hr, hrs⟩ := (hs.absorbs_finite (Set.finite_range f)).exists_pos
@@ -149,7 +154,8 @@ theorem exists_lt_setFinrank_smul_inter [DiscreteTopology L] (hs : Absorbent ℝ
     exact ⟨Set.mem_smul_set.2 ⟨y, hy, by simpa [NNReal.smul_def] using hyf⟩, hfL j⟩
   have : FiniteDimensional ℝ (span ℝ (((⟨r, hr.le⟩ : ℝ≥0) • s ∩ L) : Set E)) :=
     Submodule.finiteDimensional_of_le (span_mono Set.inter_subset_right)
-  calc i < Set.finrank ℝ (L : Set E) := hi'
+  calc i < finrank ℤ L := hi
+    _ = Set.finrank ℝ (L : Set E) := by rw [setFinrank_real_eq_finrank_int]
     _ = Set.finrank ℝ (Set.range f) := by rw [Set.finrank, Set.finrank, hspan]
     _ ≤ Set.finrank ℝ ((⟨r, hr.le⟩ : ℝ≥0) • s ∩ L) := finrank_mono (span_mono hf)
 
@@ -180,10 +186,7 @@ necessarily of the ambient space `E`. -/
 theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : ℝ≥0}
     (hsc : StarConvex ℝ 0 s) (hs : Absorbent ℝ s) (hi : i < finrank ℤ L)
     (hr : successiveMin L s i < r) : i < Set.finrank ℝ (r • s ∩ L) := by
-  have : FiniteDimensional ℝ (span ℝ (L : Set E)) :=
-    Module.finite_of_finrank_pos (by
-      rw [← Set.finrank, setFinrank_real_eq_finrank_int]
-      exact (Nat.zero_le i).trans_lt hi)
+  have := finiteDimensional_span_of_lt_finrank_int hi
   have : FiniteDimensional ℝ (span ℝ ((r • s ∩ L) : Set E)) :=
     Submodule.finiteDimensional_of_le (span_mono Set.inter_subset_right)
   rw [successiveMin_def] at hr
@@ -195,7 +198,7 @@ theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : �
   exact ⟨y, hy, by simpa [NNReal.smul_def] using hyx⟩
 
 /-- For a discrete `L`, `i < finrank ℤ L`, and a convex neighbourhood `s` of `0`, every dilate of
-`s` by a factor strictly greater than the `i`-th successive minimum contains `i + 1` linearly
+`s` by a factor strictly greater than the `i`-th successive minimum contains `i + 1` `ℤ`-linearly
 independent vectors of `L`. Because `finrank ℤ L` is `0` when `L` has infinite rank, the bound
 `i < finrank ℤ L` excludes infinite rank of `L`, though not necessarily of the ambient space
 `E`. -/
@@ -280,9 +283,9 @@ theorem isClosed_setOf_lt_setFinrank_smul_inter [DiscreteTopology L] (hsc : Conv
 
 variable (L) in
 /-- **A directional family.** For a discrete `L` and a compact convex neighbourhood `s` of `0`,
-there are `finrank ℤ L` real-linearly independent vectors of `L` whose `j`-th member lies in the
+there are `finrank ℤ L` `ℝ`-linearly independent vectors of `L` whose `j`-th member lies in the
 dilate of `s` by the `j`-th successive minimum. They need not span `L` over `ℤ`;
-`exists_directional_set` restates them as an integrally independent family in `L`. The set `s`
+`exists_directional_set` restates them as a `ℤ`-linearly independent family in `L`. The set `s`
 need not be symmetric. -/
 theorem exists_directional_set' [DiscreteTopology L] (hsc : Convex ℝ s) (hs : IsCompact s)
     (hs₀ : s ∈ 𝓝 0) :
@@ -310,8 +313,8 @@ theorem exists_directional_set' [DiscreteTopology L] (hsc : Convex ℝ s) (hs : 
 
 variable (L) in
 /-- **A directional family in `L`.** For a discrete `L` and a compact convex neighbourhood `s` of
-`0`, there are `finrank ℤ L` linearly independent vectors of `L` whose `j`-th member lies in the
-dilate of `s` by the `j`-th successive minimum. They need not form a basis of `L`. -/
+`0`, there are `finrank ℤ L` `ℤ`-linearly independent vectors of `L` whose `j`-th member lies in the
+dilate of `s` by the `j`-th successive minimum. They need not form a `ℤ`-basis of `L`. -/
 theorem exists_directional_set [DiscreteTopology L] (hsc : Convex ℝ s) (hs : IsCompact s)
     (hs₀ : s ∈ 𝓝 0) :
     ∃ v : Fin (finrank ℤ L) → L,
