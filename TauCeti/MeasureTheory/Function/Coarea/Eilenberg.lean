@@ -69,6 +69,10 @@ and is positive on the image of `A`, so `∞` times it is a majorant with integr
   for a map locally Lipschitz on a Lebesgue measurable subset `A` of an `n`-dimensional real inner
   product space with `n ≤ m + k`, almost every fiber of `A` is `μHE[k]`-null if and only if almost
   every fiber of every compact subset of `A` is `μHE[k]`-null.
+* `TauCeti.ae_finite_preimage_prodMk` and `TauCeti.ae_isDiscrete_preimage_prodMk`: the case
+  `t = 0` for the first projection of a product `P × X`. If `S ⊆ P × X` has finite, or locally
+  finite, `μH[dim P]` measure, then almost every slice `{x | (w, x) ∈ S}` is finite, respectively
+  discrete.
 
 ## References
 
@@ -355,3 +359,56 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_iff_forall_isCompact
   · exact Or.inl ⟨⟨hxA, hxK⟩, hxy⟩
 
 end LocallyLipschitzOn
+
+/-! ### Finite and discrete slices
+
+For `t = 0` Eilenberg's inequality counts points: `μH[0]` is counting measure. Applied to the
+first projection of a product, which is `1`-Lipschitz, it says that the slices of a set
+`S ⊆ P × X` of finite `μH[dim P]` measure are almost all finite, and those of a set of locally
+finite `μH[dim P]` measure are almost all discrete. -/
+
+open scoped Topology
+
+namespace TauCeti
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
+  [MeasurableSpace P] [BorelSpace P] (ν : Measure P) [ν.IsAddHaarMeasure]
+  [MeasurableSpace X] [BorelSpace X] {S : Set (P × X)}
+
+/-- If `S ⊆ P × X` has finite `μH[dim P]` measure, where `P` is a finite-dimensional real normed
+space with an additive Haar measure `ν`, then for `ν`-almost every `w` the slice
+`{x | (w, x) ∈ S}` is finite. -/
+theorem ae_finite_preimage_prodMk (hS : μH[finrank ℝ P] S ≠ ∞) :
+    ∀ᵐ w ∂ν, (Prod.mk w ⁻¹' S).Finite := by
+  have hf : LipschitzOnWith 1 (Prod.fst : P × X → P) S := LipschitzWith.prod_fst.lipschitzOnWith
+  filter_upwards [hf.ae_hausdorffMeasure_inter_preimage_lt_top ν (t := 0) (by simpa using hS)]
+    with w hw
+  rw [hausdorffMeasure_zero_eq_count, count_apply_lt_top] at hw
+  exact (hw.preimage (Prod.mk_right_injective w).injOn).subset fun x hx ↦ ⟨hx, rfl⟩
+
+/-- If every point of `S ⊆ P × X` has a neighborhood meeting `S` in a set of finite `μH[dim P]`
+measure, where `P` is a finite-dimensional real normed space with an additive Haar measure `ν` and
+`X` is second countable, then for `ν`-almost every `w` the slice `{x | (w, x) ∈ S}` is discrete. In
+particular its compact subsets are finite (`IsCompact.finite`). -/
+theorem ae_isDiscrete_preimage_prodMk [SecondCountableTopology X]
+    (hS : ∀ p ∈ S, ∃ U ∈ 𝓝 p, μH[finrank ℝ P] (S ∩ U) ≠ ∞) :
+    ∀ᵐ w ∂ν, IsDiscrete (Prod.mk w ⁻¹' S) := by
+  -- Countably many of the open sets `interior (U p)` cover `S`, and almost every slice of each
+  -- piece `S ∩ interior (U p)` is finite.
+  choose! U hU hUS using hS
+  obtain ⟨t, htS, htc, hcov⟩ := TopologicalSpace.countable_cover_nhdsWithin
+    (f := fun p ↦ interior (U p)) fun p hp ↦
+      mem_nhdsWithin_of_mem_nhds (interior_mem_nhds.2 (hU p hp))
+  have ht : ∀ᵐ w ∂ν, ∀ p ∈ t, (Prod.mk w ⁻¹' (S ∩ interior (U p))).Finite :=
+    (ae_ball_iff htc).2 fun p hp ↦ ae_finite_preimage_prodMk ν <|
+      ne_top_of_le_ne_top (hUS p (htS hp))
+        (measure_mono (inter_subset_inter_right _ interior_subset))
+  filter_upwards [ht] with w hw
+  refine IsDiscrete.of_nhdsWithin fun x hx ↦ ?_
+  obtain ⟨p, hp, hxp⟩ := mem_iUnion₂.1 (hcov hx)
+  have hV : Prod.mk w ⁻¹' interior (U p) ∈ 𝓝 x :=
+    (isOpen_interior.preimage (Continuous.prodMk_right w)).mem_nhds hxp
+  rw [nhdsWithin_restrict' _ hV, ← preimage_inter]
+  exact (isDiscrete_iff_nhdsWithin.1 (hw p hp).isDiscrete x ⟨hx, hxp⟩).le
+
+end TauCeti
