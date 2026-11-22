@@ -14,8 +14,8 @@ public import Mathlib.MeasureTheory.Function.L2Space
 The Bochner integral against `Measure.bind` is the iterated integral against its components.
 Integrability is characterized by almost-everywhere component integrability and integrability
 of the component absolute moments. The second-moment version supports covariance calculations
-for probability mixtures. The real mass of a measurable set is the integral of its component
-real masses when those component masses are finite almost everywhere.
+for mixtures. The real mass of a measurable set is the integral of its component real masses
+when those component masses are finite almost everywhere.
 
 These results use Mathlib's integration theory for kernel composition, with the mixing measure
 viewed as a constant kernel. The component family need only be almost everywhere measurable: it
@@ -75,8 +75,9 @@ theorem bind_apply_real (hK : AEMeasurable K μ) {s : Set β} (hs : MeasurableSe
   exact (integral_toReal ((Measure.measurable_coe hs).comp_aemeasurable hK)
     (hKs.mono fun _ h ↦ lt_top_iff_ne_top.mpr h)).symm
 
-/-- Component expectations of an almost everywhere strongly measurable observable are almost
-everywhere strongly measurable under the mixing law. -/
+/-- If an observable is almost everywhere strongly measurable with respect to the mixture, then
+its component Bochner integrals are almost everywhere strongly measurable with respect to the
+mixing measure. -/
 theorem aestronglyMeasurable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
     (hf : AEStronglyMeasurable f (μ.bind K)) :
     AEStronglyMeasurable (fun a ↦ ∫ x, f x ∂K a) μ := by
@@ -92,7 +93,8 @@ theorem aestronglyMeasurable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurabl
   filter_upwards [hKκ] with a ha
   simp only [κ, Kernel.coe_mk, ha]
 
-/-- Component expectations of an integrable observable are integrable under the mixing law. -/
+/-- If an observable is integrable against the mixture, then its component Bochner integrals are
+integrable against the mixing measure. -/
 theorem integrable_integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
     (hf : Integrable f (μ.bind K)) :
     Integrable (fun a ↦ ∫ x, f x ∂K a) μ :=

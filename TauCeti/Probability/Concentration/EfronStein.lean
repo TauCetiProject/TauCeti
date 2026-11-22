@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 
 /-!
 # The Efron–Stein inequality

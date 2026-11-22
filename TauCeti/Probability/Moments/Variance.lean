@@ -400,7 +400,7 @@ omit [SFinite ν] in
 theorem evariance_prod_le [IsProbabilityMeasure ν] (hL : MemLp F 2 (ν.prod π)) :
     evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
-  rw [evariance_prod_eq hL]
+  rw [evariance_prod_eq hL.aestronglyMeasurable]
   gcongr
   exact evariance_integral_prod_le (hL.integrable one_le_two)
 
