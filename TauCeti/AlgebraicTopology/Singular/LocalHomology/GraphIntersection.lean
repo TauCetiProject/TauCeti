@@ -73,7 +73,7 @@ exchanging the two coordinates of `ℂ²` if the graph is over the second axis, 
 `TauCeti.HomologicalOrientation`). Every holomorphic disc immersed at a point runs near it in such
 a graph, over an axis on which its tangent vector has a nonzero component, since the local inverse
 of that coordinate is holomorphic (`AnalyticAt.analyticAt_localInverse`); so these statements apply
-to every pair of holomorphic discs one of which is immersed.
+to every pair of holomorphic discs whose first disc `u₁` is immersed.
 
 ## Proof
 
@@ -496,10 +496,10 @@ holomorphic at `(u₁ z₀).2`. Then the local intersection number of `u₁` wit
 
 This follows from `localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq` after
 exchanging the two coordinates of `ℂ²`, a unitary change of coordinates of the target, which does
-not change local intersection numbers (`localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt`). An
-immersed holomorphic disc has a coordinate of nonzero derivative, so by the holomorphic inverse
-function theorem it runs in a holomorphic graph over the first or the second coordinate, and one of
-the two statements applies. -/
+not change local intersection numbers (`localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt`). If
+the holomorphic disc `u₁` is immersed, it has a coordinate of nonzero derivative, so by the
+holomorphic inverse function theorem it runs in a holomorphic graph over the first or the second
+coordinate, and one of the two statements applies. -/
 theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq
     {F : C(ℂ × ℂ, ℂ × ℂ)} {u₁ u₂ : ℂ → ℂ × ℂ} (hF : ∀ p, F p = u₁ p.1 - u₂ p.2) {z₀ w₀ a : ℂ}
     (h₁ : HasStrictDerivAt (fun z ↦ (u₁ z).2) a z₀) (ha : a ≠ 0)
