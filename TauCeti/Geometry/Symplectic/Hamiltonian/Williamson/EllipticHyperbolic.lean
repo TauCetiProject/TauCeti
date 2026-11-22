@@ -238,21 +238,13 @@ private theorem exists_pair_mem_maxGenEigenspace_sq_sub
   have hfin : finrank ℝ L = 2 := finrank_maxGenEigenspace_sq_sub hA hs hAs hν
   have : Nontrivial L := Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [hfin]; norm_num)
   rcases lt_or_gt_of_ne hν0 with hneg | hpos
-  · -- Elliptic plane: `ν = -c²`, with the sign of `c` that of `ω(A v, v)` for any `v ≠ 0`.
-    obtain ⟨v, hv0⟩ := exists_ne (0 : L)
-    have hv := apply_ne_zero_of_neg_of_mul_self_eq_smul_one (ω := ω') hfin hneg hAA hv0
-    have hsqrt : 0 < √(-ν) := Real.sqrt_pos.2 (neg_pos.2 hneg)
-    have hsqrt2 : √(-ν) ^ 2 = -ν := Real.sq_sqrt (neg_nonneg.2 hneg.le)
-    obtain ⟨c, hsq, hc⟩ : ∃ c : ℝ, c ^ 2 = -ν ∧ 0 < c * ω' (A' v) v := by
-      rcases lt_or_gt_of_ne hv with h | h
-      · exact ⟨-√(-ν), by rw [neg_sq, hsqrt2], by nlinarith⟩
-      · exact ⟨√(-ν), hsqrt2, by positivity⟩
-    have hAAv : A' (A' v) = -(c ^ 2) • v := by
-      simpa [hsq] using LinearMap.congr_fun hAA v
-    obtain ⟨q, p, hqp, hAq, hAp, -⟩ := exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul hAAv hc
+  · -- Elliptic plane: `ν = -c²`.
+    obtain ⟨c, hsq, q, p, hqp, hAq, hAp⟩ :=
+      exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul_of_neg_of_mul_self_eq_smul_one
+        (ω := ω') hfin hneg hAA
     -- `ω' q p` is `ω q p`, and the coercion to `V` of `A' q = -c • p` is `A q = -c • p`, both
     -- definitionally (the restrictions and the scalar action on `L` evaluate as on `V`).
-    exact ⟨q, q.property, p, p.property, c, fun h ↦ by simp [h] at hc, hqp,
+    exact ⟨q, q.property, p, p.property, c, by rintro rfl; linarith, hqp,
       fun _ ↦ ⟨by rw [hsq, neg_neg], congrArg Subtype.val hAq, congrArg Subtype.val hAp⟩,
       fun h ↦ absurd h hneg.not_gt⟩
   · -- Hyperbolic plane: `ν = a²` with `a = √ν > 0`.
