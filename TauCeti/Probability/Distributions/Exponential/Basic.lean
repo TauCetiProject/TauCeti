@@ -16,7 +16,6 @@ import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Probability.Distributions.Gamma.CharFun
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
 import TauCeti.Probability.Distributions.Relations
-import TauCeti.Basic.NNReal.Interval
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.Order.ConditionallyCompleteLattice.Finset
 
@@ -70,13 +69,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials;
 * `hasLaw_min_iid_expMeasure` — minimum of `d` i.i.d. exponentials of rate `r` is exponential of
   rate `d * r`.
-* `nnrealExpMeasure`, `ae_pos_nnrealExpMeasure`, `nnrealExpMeasure_map_coe`,
-  `nnrealExpMeasure_map_coe_ennreal`, `expMeasure_map_ofReal_map_toReal`,
-  `hasLaw_nnrealExpMeasure_iff`, `measure_Ioc_nnrealExpMeasure`,
-  `setLIntegral_Ioc_exp_mul_nnrealExpMeasure` — the exponential measure transported to `ℝ≥0`,
-  its almost-sure positivity, its pushforward and law equivalences with `expMeasure`, its
-  left-open, right-closed interval masses, and its exponential-weighted set Lebesgue integral on
-  `(u, v]`.
+* `nnrealExpMeasure`, `hasLaw_nnrealExpMeasure_iff` — the exponential measure transported to `ℝ≥0`
+  and its law equivalence with `expMeasure`.
 
 ## References
 
@@ -560,14 +554,6 @@ theorem isProbabilityMeasure_nnrealExpMeasure {r : ℝ} (hr : 0 < r) :
   rw [nnrealExpMeasure_def]
   infer_instance
 
-/-- The measure `nnrealExpMeasure r` is concentrated on `(0, ∞)`, for every `r`. For `0 < r` this
-says a nonnegative exponential random variable is almost surely positive; for `r ≤ 0` the measure
-is zero (`expMeasure_of_nonpos`) and the statement holds trivially. -/
-theorem ae_pos_nnrealExpMeasure (r : ℝ) : ∀ᵐ x ∂nnrealExpMeasure r, 0 < x := by
-  rw [nnrealExpMeasure_def, ae_map_iff (by fun_prop) measurableSet_Ioi]
-  filter_upwards [ae_pos_expMeasure r] with x hx
-  exact Real.toNNReal_pos.mpr hx
-
 /-- Coercing `nnrealExpMeasure r` back to `ℝ` recovers `expMeasure r`, for every rate `r`
 (including nonpositive rates, where both measures are zero). -/
 @[simp]
@@ -612,58 +598,5 @@ theorem hasLaw_nnrealExpMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measu
   · intro hX
     have h := (hasLaw_map (P := expMeasure r) measurable_real_toNNReal.aemeasurable).comp hX
     simpa only [← nnrealExpMeasure_def, Function.comp_def, Real.toNNReal_coe] using h
-
-/-- The mass assigned by `nnrealExpMeasure r` (`0 ≤ r`) to a left-open, right-closed interval
-`(u, v]` is `e^{-r u} - e^{-r v}` (truncated at `0` when `v < u`, and `0` at `r = 0`). -/
-@[simp]
-theorem measure_Ioc_nnrealExpMeasure {r : ℝ} (hr : 0 ≤ r) (u v : ℝ≥0) :
-    nnrealExpMeasure r (Ioc u v) =
-      ENNReal.ofReal (Real.exp (-(r * (u : ℝ))) - Real.exp (-(r * (v : ℝ)))) := by
-  rcases eq_or_lt_of_le hr with rfl | hrpos
-  · simp [nnrealExpMeasure_def]
-  · have _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hrpos
-    rw [nnrealExpMeasure_def, Measure.map_apply (by fun_prop) measurableSet_Ioc,
-      Real.preimage_toNNReal_Ioc]
-    by_cases huv : u ≤ v
-    · have hunion : Ioc (u : ℝ) (v : ℝ) ∪ Ioi (v : ℝ) = Ioi (u : ℝ) :=
-        Ioc_union_Ioi_eq_Ioi (NNReal.coe_le_coe.mpr huv)
-      have hreal : (expMeasure r).real (Ioi (u : ℝ)) =
-          (expMeasure r).real (Ioc (u : ℝ) (v : ℝ)) + (expMeasure r).real (Ioi (v : ℝ)) := by
-        rw [← hunion, measureReal_union (Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi]
-      rw [measureReal_Ioi_expMeasure hrpos, measureReal_Ioi_expMeasure hrpos,
-        ite_eq_left u.coe_nonneg, ite_eq_left v.coe_nonneg] at hreal
-      rw [← ENNReal.ofReal_toReal (measure_ne_top (expMeasure r) _), ← measureReal_def]
-      congr 1
-      linarith
-    · have hvu : v ≤ u := (lt_of_not_ge huv).le
-      rw [Ioc_eq_empty_of_le (NNReal.coe_le_coe.mpr hvu), measure_empty, eq_comm,
-        ENNReal.ofReal_eq_zero, sub_nonpos]
-      exact Real.exp_le_exp.mpr
-        (neg_le_neg (mul_le_mul_of_nonneg_left (NNReal.coe_le_coe.mpr hvu) hr))
-
-/-- Integrating `e^{r x}` over `(u, v]` against `nnrealExpMeasure r` (`0 ≤ r`) cancels the
-exponential density factor `e^{-r x}`, leaving `r` times the length of `(u, v]` (truncated at `0`
-when `v < u`, and `0` at `r = 0`). -/
-theorem setLIntegral_Ioc_exp_mul_nnrealExpMeasure {r : ℝ} (hr : 0 ≤ r) (u v : ℝ≥0) :
-    ∫⁻ x in Ioc u v, ENNReal.ofReal (Real.exp (r * (x : ℝ))) ∂nnrealExpMeasure r =
-      ENNReal.ofReal (r * ((v : ℝ) - u)) := by
-  have hm : Measurable fun x : ℝ≥0 => ENNReal.ofReal (Real.exp (r * (x : ℝ))) := by fun_prop
-  have hm_pdf : Measurable (exponentialPDF r) := (measurable_exponentialPDFReal r).ennreal_ofReal
-  rw [nnrealExpMeasure_def, setLIntegral_map measurableSet_Ioc hm (by fun_prop),
-    Real.preimage_toNNReal_Ioc, expMeasure_eq_withDensity,
-    setLIntegral_withDensity_eq_setLIntegral_mul volume hm_pdf (by fun_prop) measurableSet_Ioc]
-  have hcongr : EqOn
-      (exponentialPDF r * fun x : ℝ => ENNReal.ofReal (Real.exp (r * (Real.toNNReal x : ℝ))))
-      (fun _ : ℝ => ENNReal.ofReal r) (Ioc (u : ℝ) (v : ℝ)) := by
-    intro x hx
-    have hxnonneg : 0 ≤ x := u.coe_nonneg.trans hx.1.le
-    rw [Pi.mul_apply, Real.coe_toNNReal x hxnonneg, exponentialPDF_eq, ite_eq_left hxnonneg,
-      ← ENNReal.ofReal_mul (mul_nonneg hr (Real.exp_nonneg _))]
-    congr 1
-    rw [mul_assoc, ← Real.exp_add]
-    ring_nf
-    simp
-  rw [setLIntegral_congr_fun measurableSet_Ioc hcongr, setLIntegral_const, Real.volume_Ioc,
-    ← ENNReal.ofReal_mul hr]
 
 end TauCeti.Probability

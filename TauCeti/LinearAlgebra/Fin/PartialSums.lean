@@ -40,7 +40,11 @@ theorem partialSumsLinearMap_apply_eq_sum_Iic (x : Fin n → R) (i : Fin n) :
 @[simp]
 theorem partialSumsLinearMap_apply (x : Fin n → R) (i : Fin n) :
     partialSumsLinearMap R n x i = Fin.partialSum x i.succ := by
-  simp [partialSumsLinearMap, Fin.partialSum_succ_eq_sum_Iic]
+  have hs : ({j : Fin n | j.val < i.succ.val} : Finset (Fin n)) = Iic i := by
+    ext j
+    simp
+  simp only [Fin.partialSum, List.sum_take_ofFn, hs]
+  simp [partialSumsLinearMap]
 
 /-- The partial-sum change of coordinates has determinant one. -/
 @[simp]

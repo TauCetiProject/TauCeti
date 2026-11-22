@@ -77,7 +77,7 @@ theorem toNNReal_occurrenceGap_succ (μ : Measure ℝ≥0) (n : ℕ) :
       (μ.occurrenceTime (n + 1)).toNNReal - (μ.occurrenceTime n).toNNReal := by
   by_cases hn : μ.occurrenceTime n = ∞
   · have hnext : μ.occurrenceTime (n + 1) = ∞ :=
-      top_le_iff.mp (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
+      μ.occurrenceTime_eq_top_of_le (Nat.le_succ n) hn
     simp [occurrenceGap_succ_of_eq_top hn, hn, hnext]
   · rw [occurrenceGap_succ_of_ne_top hn, ENNReal.toNNReal_sub hn]
 
@@ -101,7 +101,7 @@ theorem occurrenceGap_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
     rw [occurrenceGap_succ]
     by_cases hn : μ.occurrenceTime n = ∞
     · have hnext : μ.occurrenceTime (n + 1) = ∞ :=
-        top_le_iff.mp (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
+        μ.occurrenceTime_eq_top_of_le (Nat.le_succ n) hn
       simp [hn, hnext]
     · simp [hn, ENNReal.sub_eq_top_iff]
 
@@ -164,7 +164,7 @@ theorem sum_range_succ_occurrenceGap (μ : Measure ℝ≥0) (n : ℕ) :
     rw [Finset.sum_range_succ, ih, occurrenceGap_succ]
     by_cases hn : μ.occurrenceTime n = ∞
     · have hnext : μ.occurrenceTime (n + 1) = ∞ :=
-        top_le_iff.mp (hn ▸ μ.monotone_occurrenceTime (Nat.le_succ n))
+        μ.occurrenceTime_eq_top_of_le (Nat.le_succ n) hn
       simp [hn, hnext]
     · rw [ite_eq_right hn, add_tsub_cancel_of_le (μ.monotone_occurrenceTime (Nat.le_succ n))]
 

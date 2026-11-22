@@ -35,8 +35,6 @@ minors of a diagonal matrix with chained entries the smallest ones in divisibili
 A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a canonically ordered
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
-At `i.succ`, `Fin.partialProd` and `Fin.partialSum` agree with the `Finset.Iic i` product and sum,
-and strictly positive entries yield strictly increasing partial sums (`Fin.strictMono_partialSum`).
 
 A product over the pairs `Fin 2 → α` is the double product over their two entries, and a
 product over the triples `Fin 3 → α` is the triple product over their three entries. A double sum
@@ -74,26 +72,6 @@ For a multi-index `α : Fin n → ℕ`, the blocks of lengths `αᵢ` give the w
 public section
 
 namespace Fin
-
-/-- The partial product up to `i.succ` is the product over the closed initial interval `Iic i`. -/
-@[to_additive /-- The partial sum up to `i.succ` is the sum over the closed initial interval
-`Iic i`. -/]
-theorem partialProd_succ_eq_prod_Iic {M : Type*} [CommMonoid M] {n : ℕ}
-    (f : Fin n → M) (i : Fin n) :
-    partialProd f i.succ = ∏ j ∈ Finset.Iic i, f j := by
-  have hs : ({j : Fin n | j.val < i.succ.val} : Finset (Fin n)) = Finset.Iic i := by
-    ext j
-    simp
-  simp only [partialProd, List.prod_take_ofFn, hs]
-
-/-- Entries strictly greater than `1` produce a strictly increasing partial-product tuple. -/
-@[to_additive /-- Strictly positive entries produce a strictly increasing partial-sum tuple. -/]
-theorem strictMono_partialProd {M : Type*} [Monoid M] [Preorder M] [MulLeftStrictMono M]
-    {n : ℕ} {f : Fin n → M} (hf : ∀ i, 1 < f i) :
-    StrictMono (partialProd f) :=
-  strictMono_iff_lt_succ.mpr fun i => by
-    rw [partialProd_succ]
-    exact lt_mul_of_one_lt_right' _ (hf i)
 
 /-- Reindex the product omitting an index by the order-preserving map `Fin.succAbove`. -/
 @[to_additive /-- Reindex the sum omitting an index by the order-preserving map

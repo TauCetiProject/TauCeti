@@ -82,12 +82,11 @@ theorem measure_Ioc_bot_eq_measure_Iic {α : Type*} [PartialOrder α] [OrderBot 
   rw [heq, measure_sdiff_null hbot]
 
 /-- The measure of adjacent left-open, right-closed intervals is additive. -/
-theorem measure_Ioc_add_measure_Ioc {α : Type*} [LinearOrder α] [TopologicalSpace α]
-    [ClosedIicTopology α] [MeasurableSpace α] [OpensMeasurableSpace α]
-    {μ : Measure α} {a b c : α} (hab : a ≤ b) (hbc : b ≤ c) :
+theorem measure_Ioc_add_measure_Ioc {α : Type*} [LinearOrder α] [MeasurableSpace α]
+    {μ : Measure α} {a b c : α} (hab : a ≤ b) (hbc : b ≤ c)
+    (h : MeasurableSet (Ioc b c)) :
     μ (Ioc a b) + μ (Ioc b c) = μ (Ioc a c) := by
-  rw [← measure_union (Ioc_disjoint_Ioc_of_le le_rfl) measurableSet_Ioc,
-    Ioc_union_Ioc_eq_Ioc hab hbc]
+  rw [← measure_union (Ioc_disjoint_Ioc_of_le le_rfl) h, Ioc_union_Ioc_eq_Ioc hab hbc]
 
 namespace Measure
 
