@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Function.JacobianOneDim
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The turning points of the spherical pendulum
@@ -51,6 +54,8 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
   fibre, the vertical momentum vanishes exactly at the turning points.
 * `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq`: integrals over `(-1, 1)`
   against the inverse square root of the radicand run between the turning points.
+* `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin`: the sine
+  substitution turns such an integral into one over `[-π/2, π/2]` with a regular denominator.
 * `TauCeti.continuousOn_sphericalPendulumLowerTurningPoint`,
   `TauCeti.continuousOn_sphericalPendulumUpperTurningPoint`: continuity of the turning points.
 
@@ -377,6 +382,74 @@ theorem integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq (hj : j ≠ 0)
       (s := Ioo _ _) fun z hz ↦ ⟨ha.le.trans hz.1.le, hz.2.le.trans hb.le⟩]
   rintro z ⟨hz, hzab⟩
   rw [Real.sqrt_eq_zero'.2 (two_mul_sub_mul_one_sub_sq_sub_sq_nonpos hj hz₀ hV hz.2 hzab), div_zero]
+
+/-- **The sine substitution between the turning points.** Above the curve of relative equilibria,
+the substitution `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between the turning points `z₋ < z₊`
+absorbs both inverse square root singularities of a height quadrature: for every function `g`,
+
+`∫_{-1}^{1} g(z) dz / √(2 (h - z) (1 - z²) - j²) = ∫_{-π/2}^{π/2} g(z) dθ / √(2 (z₃ - z))`,
+
+where `z₃ = h - z₋ - z₊ > 1` is the third root of the radicand. The new denominator is positive
+for every `θ`. -/
+theorem integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq_integral_sin (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) (g : ℝ → ℝ) :
+    ∫ z in (-1)..1, g z / √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) =
+      ∫ θ in (-(Real.pi / 2))..(Real.pi / 2),
+        g ((sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+            (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) / 2 *
+              Real.sin θ) /
+          √(2 * (h - sphericalPendulumLowerTurningPoint h j -
+            sphericalPendulumUpperTurningPoint h j -
+            ((sphericalPendulumLowerTurningPoint h j + sphericalPendulumUpperTurningPoint h j) / 2 +
+              (sphericalPendulumUpperTurningPoint h j - sphericalPendulumLowerTurningPoint h j) /
+                2 * Real.sin θ))) := by
+  rw [integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV]
+  have hfac := two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  have hc := one_lt_sub_sphericalPendulumLowerTurningPoint_sub_sphericalPendulumUpperTurningPoint
+    hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  set a := sphericalPendulumLowerTurningPoint h j
+  set b := sphericalPendulumUpperTurningPoint h j
+  set u : ℝ → ℝ := fun θ ↦ (a + b) / 2 + (b - a) / 2 * Real.sin θ with hu
+  have hr : 0 < (b - a) / 2 := by linarith
+  -- The substitution maps `[-π/2, π/2]` injectively onto `[z₋, z₊]`.
+  have hu_image : u '' Icc (-(Real.pi / 2)) (Real.pi / 2) = Icc a b := by
+    have : u = (fun s ↦ (b - a) / 2 * s + (a + b) / 2) ∘ Real.sin := by
+      funext θ
+      simp only [hu, Function.comp]
+      ring
+    rw [this, image_comp, Real.bijOn_sin.image_eq, image_affine_Icc' hr]
+    congr 1 <;> ring
+  have hu_inj : InjOn u (Icc (-(Real.pi / 2)) (Real.pi / 2)) := fun x hx y hy hxy ↦
+    Real.injOn_sin hx hy (by simpa [hu, hr.ne'] using hxy)
+  have hu_deriv : ∀ θ ∈ Icc (-(Real.pi / 2)) (Real.pi / 2),
+      HasDerivWithinAt u ((b - a) / 2 * Real.cos θ) (Icc (-(Real.pi / 2)) (Real.pi / 2)) θ :=
+    fun θ _ ↦ (((Real.hasDerivAt_sin θ).const_mul _).const_add _).hasDerivWithinAt
+  rw [intervalIntegral.integral_of_le hab.le, ← MeasureTheory.integral_Icc_eq_integral_Ioc,
+    ← hu_image,
+    MeasureTheory.integral_image_eq_integral_abs_deriv_smul measurableSet_Icc hu_deriv hu_inj,
+    MeasureTheory.integral_Icc_eq_integral_Ioo,
+    intervalIntegral.integral_of_le (by linarith [Real.pi_pos]),
+    MeasureTheory.integral_Ioc_eq_integral_Ioo]
+  refine MeasureTheory.setIntegral_congr_fun measurableSet_Ioo fun θ hθ ↦ ?_
+  -- On `(-π/2, π/2)`, the Jacobian `(z₊ - z₋) / 2 · cos θ` cancels the vanishing factor
+  -- `√((z - z₋) (z₊ - z))` of the square root of the radicand.
+  have hrc : 0 < (b - a) / 2 * Real.cos θ := mul_pos hr (Real.cos_pos_of_mem_Ioo hθ)
+  have hx : u θ ∈ Icc a b := mem_Icc_add_mul_sin hab.le θ
+  have hpos : 0 < √(2 * (h - a - b - u θ)) := Real.sqrt_pos.2 (by linarith [hx.2])
+  have hrad : 2 * (h - u θ) * (1 - u θ ^ 2) - j ^ 2 =
+      ((b - a) / 2 * Real.cos θ) ^ 2 * (2 * (h - a - b - u θ)) := by
+    rw [hfac]
+    simp only [hu]
+    linear_combination
+      (-2 * ((b - a) / 2) ^ 2 * (h - a - b - ((a + b) / 2 + (b - a) / 2 * Real.sin θ))) *
+        Real.sin_sq_add_cos_sq θ
+  have hux : u θ = (a + b) / 2 + (b - a) / 2 * Real.sin θ := rfl
+  rw [← hux, hrad, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hrc.le, abs_of_pos hrc, smul_eq_mul]
+  generalize √(2 * (h - a - b - u θ)) = k at hpos ⊢
+  generalize (b - a) / 2 * Real.cos θ = c at hrc ⊢
+  field_simp
 
 /-- **The heights of a fibre.** Above the curve of relative equilibria, the heights `q₃` of the
 points of the fibre `F⁻¹(h, j)` of the energy–momentum map form the interval `[z₋, z₊]` between
