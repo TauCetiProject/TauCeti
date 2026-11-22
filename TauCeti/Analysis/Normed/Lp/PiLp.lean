@@ -346,18 +346,15 @@ end PiLp
 namespace ContinuousLinearMap
 
 /-- Decomposing a continuous linear map on a finite `PiLp` product along the coordinate
-inclusions `PiLp.singleCLM`, transported from `ContinuousLinearMap.sum_comp_single` via
-`PiLp.continuousLinearEquiv`. -/
+inclusions `PiLp.singleCLM`. -/
 theorem sum_comp_piLpSingleCLM {ι : Type*} [Fintype ι] [DecidableEq ι] {p : ℝ≥0∞}
     {𝕜 M : Type*} [Semiring 𝕜] {β : ι → Type*}
     [∀ i, TopologicalSpace (β i)] [∀ i, AddCommGroup (β i)] [∀ i, Module 𝕜 (β i)]
-    [TopologicalSpace M] [AddCommGroup M] [Module 𝕜 M]
+    [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M]
     (L : PiLp p β →L[𝕜] M) (v : PiLp p β) :
     ∑ i, L.comp (PiLp.singleCLM p 𝕜 β i) (v i) = L v := by
-  simpa [PiLp.singleCLM, ContinuousLinearMap.comp_assoc] using
-    ContinuousLinearMap.sum_comp_single 𝕜 β
-      (L.comp (PiLp.continuousLinearEquiv p 𝕜 β).symm.toContinuousLinearMap)
-      (PiLp.continuousLinearEquiv p 𝕜 β v)
+  simp only [ContinuousLinearMap.comp_apply, PiLp.singleCLM_apply]
+  rw [← map_sum, PiLp.univ_sum_single]
 
 end ContinuousLinearMap
 
