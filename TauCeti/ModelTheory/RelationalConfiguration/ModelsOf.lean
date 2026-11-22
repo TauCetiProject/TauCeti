@@ -38,6 +38,8 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 
 ## Main results
 
+* `TauCeti.RelationalConfiguration.mem_modelsOf_toInf`: the model class of a first-order sentence
+  consists of the configurations satisfying it.
 * `TauCeti.RelationalConfiguration.modelsOf_inf`, `modelsOf_sup`, `modelsOf_iInf`,
   `modelsOf_iSup`, `modelsOf_not`, `modelsOf_imp`, `modelsOf_top` and `modelsOf_bot`: model
   classes turn the connectives into the Boolean set operations.
@@ -73,6 +75,13 @@ def modelsOf (φ : L.SentenceInf ι) : Set (RelationalConfiguration L V) :=
 theorem mem_modelsOf {φ : L.SentenceInf ι} {c : RelationalConfiguration L V} :
     c ∈ modelsOf φ ↔ @SentenceInf.Realize L ι φ V c.toStructure :=
   Iff.rfl
+
+/-- A configuration lies in the model class of a first-order sentence, embedded in the infinitary
+logic, exactly when its decoded structure satisfies the sentence. Not a simp lemma: `simp` already
+reaches the right side through `mem_modelsOf` and `Sentence.realize_toInf`. -/
+theorem mem_modelsOf_toInf {φ : L.Sentence} {c : RelationalConfiguration L V} :
+    c ∈ modelsOf (φ.toInf (ι := ι)) ↔ @Sentence.Realize L V c.toStructure φ :=
+  @Sentence.realize_toInf L ι φ V c.toStructure
 
 /-- The false sentence has no models. -/
 @[simp]

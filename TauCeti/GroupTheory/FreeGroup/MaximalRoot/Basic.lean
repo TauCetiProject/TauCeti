@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Centralizer
+public import TauCeti.GroupTheory.ProperPower
+import Mathlib.Algebra.Group.Subgroup.ZPowers.Lemmas
 
 /-!
 # Maximal roots in free groups
@@ -39,6 +41,7 @@ roots of `g * x * g⁻¹` and `x⁻¹` are `g * r * g⁻¹` and `r⁻¹`, with t
   is `zpowers u`.
 * `IsFreeGroup.intEquivCentralizer`: the centralizer of a non-proper-power `u` is isomorphic to
   `ℤ`, via `k ↦ u ^ k`.
+* `IsFreeGroup.eq_or_eq_inv_of_commute`: two commuting non-proper-powers are equal or inverse.
 
 * `Group.maximalRoot_conj`, `Group.maximalRoot_inv`, `Group.maximalRoot_pow`: transport
   maximal-root decompositions under conjugation, inversion, and positive powers.
@@ -98,6 +101,14 @@ noncomputable def intEquivCentralizer {u : G} (hu : ¬IsProperPower u) :
 @[simp] theorem intEquivCentralizer_symm_apply_self {u : G} (hu : ¬IsProperPower u)
     (hk : u ∈ centralizer {u}) : (intEquivCentralizer hu).symm ⟨u, hk⟩ = .ofAdd 1 :=
   (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
+/-- In a free group, two commuting elements that are not proper powers are equal or inverse to
+each other: each generates the centralizer of the other. -/
+theorem eq_or_eq_inv_of_commute {u v : G} (hu : ¬IsProperPower u) (hv : ¬IsProperPower v)
+    (h : Commute u v) : u = v ∨ u = v⁻¹ := by
+  obtain ⟨k, rfl⟩ := mem_zpowers_iff.1 (centralizer_singleton_eq_zpowers_self hu ▸
+    mem_centralizer_singleton_iff.2 h.eq.symm : v ∈ zpowers u)
+  obtain rfl | rfl := Int.natAbs_eq_iff.1 (natAbs_eq_one_of_not_isProperPower_zpow hv) <;> simp
 
 /-- Uniqueness of maximal roots in a free group: if `r` and `s` are not proper powers and the
 exponent `l` is nonzero, then `r ^ k = s ^ l` exactly when `r = s` and `k = l`. The exponent `l`
