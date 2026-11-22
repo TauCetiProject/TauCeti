@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.TotallyRamified
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.RamificationGroup
+import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 
 /-!
 # Function-field and local-ring ramification groups
@@ -69,7 +70,7 @@ instance instSMulCommClassInertiaSubgroupIntegers :
       (mem_inertiaField_iff F P _).mp (a : inertiaField F P).2 g g.2,
       ValuationSubring.coe_decompositionSubgroup_smul]
 
-variable [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
+variable [hsep : Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
 
 /-- **A uniformizer generates the valuation ring over the inertia field**: when the residue
 extension is separable, `P` is totally ramified over its inertia field `T`, so any `t` of order
@@ -98,6 +99,8 @@ theorem algebra_adjoin_restrict_inertiaField_eq_top_of_ord_eq_one {t : P.integer
   rw [← hft, ← Set.image_singleton, ← AlgHom.map_adjoin, hadj]
   exact ⟨⟨x, hint.mpr x.2⟩, Algebra.mem_top, rfl⟩
 
+omit [FiniteDimensional F F'] in
+include hsep in
 /-- **The ramification groups are read off a uniformizer** (Stichtenoth, Proposition 3.8.5): when
 the residue extension is separable, an element `σ` of the inertia group of `P` lies in the `i`-th
 ramification group exactly when `σ t - t` has order at least `i + 1` for one uniformizer `t` at
@@ -105,16 +108,14 @@ ramification group exactly when `σ t - t` has order at least `i + 1` for one un
 theorem mem_ramificationGroup_iff_sub_mem_filtration {t : F'} (ht : P.ord t = 1)
     {g : P.integers.decompositionSubgroup F} (hg : g ∈ P.integers.inertiaSubgroup F) (i : ℕ) :
     g ∈ ramificationGroup F P i ↔ (g : F' ≃ₐ[F] F') t - t ∈ P.filtration (i + 1) := by
-  have htP : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
-  have hadj := algebra_adjoin_restrict_inertiaField_eq_top_of_ord_eq_one F P
-    (t := ⟨t, htP⟩) ht
-  have hi : ((i : ℤ) + 1).toNat = i + 1 := by omega
-  rw [ramificationGroup_def,
-    ← Subgroup.mem_subgroupOf (h := (⟨g, hg⟩ : P.integers.inertiaSubgroup F)),
-    IsLocalRing.subgroupOf_ramificationGroup,
-    IsLocalRing.mem_ramificationGroup_iff_of_adjoin_singleton_eq_top hadj, hi,
-    P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub, Subgroup.smul_def,
-    ValuationSubring.coe_decompositionSubgroup_smul, Nat.cast_add, Nat.cast_one]
+  have htP : Irreducible (⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩ : P.integers) :=
+    P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
+  rw [← ramificationGroup_zero] at hg
+  rw [ramificationGroup_def, Nat.cast_zero] at hg
+  rw [ramificationGroup_def, IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem
+    (P.restrict k F).integers htP hg, P.mem_maximalIdeal_pow_iff_coe_mem_filtration,
+    AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
+    Nat.cast_add, Nat.cast_one]
 
 end InertiaField
 

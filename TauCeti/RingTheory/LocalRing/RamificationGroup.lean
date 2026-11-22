@@ -324,40 +324,35 @@ theorem iInf_ramificationGroup_eq_bot [FaithfulSMul G S] :
     ⨅ i : ℤ, ramificationGroup G S i = ⊥ := by
   rw [iInf_ramificationGroup_eq_ker, TauCeti.MulSemiringAction.ker_toRingAut_eq_bot]
 
-omit [IsNoetherianRing S] in
-/-- The intersection over the integer indices is already attained over the natural ones, since the
-filtration is constantly `⊤` below `0`. -/
-private theorem iInf_natCast_ramificationGroup :
-    ⨅ n : ℕ, ramificationGroup G S (n : ℤ) = ⨅ i : ℤ, ramificationGroup G S i :=
-  le_antisymm
-    (le_iInf fun i ↦ (iInf_le _ i.toNat).trans
-      (ramificationGroup_antitone G S (Int.self_le_toNat i)))
-    (le_iInf fun n ↦ iInf_le _ (n : ℤ))
-
-/-- Once the zeroth ramification group is finite, the filtration over a Noetherian local ring
+/-- Once a ramification group `G_{i₀}` is finite, the filtration over a Noetherian local ring
 reaches the kernel of the action at a finite index. -/
-theorem exists_forall_ramificationGroup_eq_ker [Finite (ramificationGroup G S 0)] :
+theorem exists_forall_ramificationGroup_eq_ker (i₀ : ℤ := 0)
+    [Finite (ramificationGroup G S i₀)] :
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i →
       ramificationGroup G S i = MonoidHom.ker (MulSemiringAction.toRingAut G S) := by
-  have hanti : Antitone fun n : ℕ ↦ ramificationGroup G S (n : ℤ) :=
-    fun _ _ hmn ↦ ramificationGroup_antitone G S (by exact_mod_cast hmn)
-  have h0 : (fun n : ℕ ↦ ramificationGroup G S (n : ℤ)) 0 = ramificationGroup G S 0 := by
-    norm_num
-  have : Finite ((fun n : ℕ ↦ ramificationGroup G S (n : ℤ)) 0) := h0 ▸ ‹_›
+  have hanti : Antitone fun n : ℕ ↦ ramificationGroup G S (i₀ + n) :=
+    fun _ _ hmn ↦ ramificationGroup_antitone G S (by omega)
+  have h0 : (fun n : ℕ ↦ ramificationGroup G S (i₀ + n)) 0 = ramificationGroup G S i₀ := by
+    simp
+  have : Finite ((fun n : ℕ ↦ ramificationGroup G S (i₀ + n)) 0) := h0 ▸ ‹_›
+  have hinf : ⨅ n : ℕ, ramificationGroup G S (i₀ + n) =
+      MonoidHom.ker (MulSemiringAction.toRingAut G S) := by
+    rw [← iInf_ramificationGroup_eq_ker G S]
+    exact le_antisymm
+      (le_iInf fun j ↦ (iInf_le _ (j - i₀).toNat).trans (ramificationGroup_antitone G S (by omega)))
+      (le_iInf fun n ↦ iInf_le _ (i₀ + n))
   obtain ⟨N, hN⟩ := TauCeti.Subgroup.exists_forall_eq_iInf_of_antitone _ hanti
-  refine ⟨(N : ℤ), fun i hi ↦ ?_⟩
-  have hi0 : (0 : ℤ) ≤ i := (Int.natCast_nonneg N).trans hi
-  have hcast : (i.toNat : ℤ) = i := Int.toNat_of_nonneg hi0
-  have hiN : N ≤ i.toNat := by omega
-  rw [← hcast, hN i.toNat hiN, iInf_natCast_ramificationGroup, iInf_ramificationGroup_eq_ker]
+  refine ⟨i₀ + N, fun i hi ↦ ?_⟩
+  have hcast : i₀ + ((i - i₀).toNat : ℤ) = i := by omega
+  rw [← hcast, hN (i - i₀).toNat (by omega), hinf]
 
-/-- For a faithful action whose zeroth ramification group is finite, the ramification groups over
+/-- For a faithful action with a finite ramification group `G_{i₀}`, the ramification groups over
 a Noetherian local ring vanish from some index on. -/
-theorem exists_forall_ramificationGroup_eq_bot [FaithfulSMul G S]
-    [Finite (ramificationGroup G S 0)] :
+theorem exists_forall_ramificationGroup_eq_bot (i₀ : ℤ := 0) [FaithfulSMul G S]
+    [Finite (ramificationGroup G S i₀)] :
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i → ramificationGroup G S i = ⊥ := by
   simpa only [TauCeti.MulSemiringAction.ker_toRingAut_eq_bot] using
-    exists_forall_ramificationGroup_eq_ker G S
+    exists_forall_ramificationGroup_eq_ker G S i₀
 
 end Separated
 
@@ -1037,17 +1032,10 @@ theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p]
     [IsNoetherianRing S] [FaithfulSMul G S] {i : ℤ} [Finite (ramificationGroup G S i)]
     (hi : 0 < i) :
     IsPGroup p (ramificationGroup G S i) := by
-  have hanti : Antitone fun k : ℕ ↦ ramificationGroup G S (i + k) :=
-    fun _ _ hmn ↦ ramificationGroup_antitone G S (by omega)
-  have h0 : (fun k : ℕ ↦ ramificationGroup G S (i + k)) 0 = ramificationGroup G S i := by simp
-  have : Finite ((fun k : ℕ ↦ ramificationGroup G S (i + k)) 0) := h0 ▸ ‹_›
-  have hinf : ⨅ k : ℕ, ramificationGroup G S (i + k) = ⊥ :=
-    eq_bot_iff.mpr <| (iInf_ramificationGroup_eq_bot G S) ▸
-      le_iInf fun j ↦ (iInf_le _ (j - i).toNat).trans (ramificationGroup_antitone G S (by omega))
-  obtain ⟨N, hN⟩ := TauCeti.Subgroup.exists_forall_eq_bot_of_antitone_iInf_eq_bot _ hanti hinf
+  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S i
   rw [isPGroup_iff_pow_pow_eq_one]
   intro g
-  refine ⟨N, ?_⟩
+  refine ⟨(N - i).toNat, ?_⟩
   have hpow : ∀ k : ℕ, (g : G) ^ (p ^ k) ∈ ramificationGroup G S (i + k) := by
     intro k
     induction k with
@@ -1055,9 +1043,9 @@ theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p]
     | succ k ih =>
       rw [pow_succ, pow_mul, show i + ((k + 1 : ℕ) : ℤ) = (i + k) + 1 by push_cast; ring]
       exact pow_mem_ramificationGroup_add_one p (by omega) ih
-  have hg1 : (g : G) ^ (p ^ N) = 1 := by
-    have hmem := hpow N
-    rwa [hN N le_rfl, Subgroup.mem_bot] at hmem
+  have hg1 : (g : G) ^ (p ^ (N - i).toNat) = 1 := by
+    have hmem := hpow (N - i).toNat
+    rwa [hN _ (by omega), Subgroup.mem_bot] at hmem
   exact Subtype.ext hg1
 
 /-- If `σ ∈ G_i` (`0 < i`) satisfies `σ ^ m ∈ G_{i+1}` for an `m : ℕ` nonzero in `ResidueField S`,

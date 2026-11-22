@@ -306,7 +306,7 @@ theorem normGradedMap_zero_bijective_of_lowerRamificationGroup_one_eq_top
   set p := ringChar 𝓀[L]
   have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
   -- The Galois group is `G_1`, a `p`-group, so `[L : K]` is a power of `p`.
-  have hpG := isPGroup_ramificationGroup (L := L) (L ≃ₐ[K] L) p (i := 1) one_pos
+  have hpG := TauCeti.IsLocalRing.isPGroup_ramificationGroup (L ≃ₐ[K] L) 𝒪[L] p (i := 1) one_pos
   rw [← lowerRamificationGroup_def, hG] at hpG
   obtain ⟨k, hk⟩ := IsPGroup.iff_card.1 hpG
   rw [Subgroup.card_top, IsGalois.card_aut_eq_finrank] at hk
@@ -590,7 +590,7 @@ private theorem charP_residueField_of_lowerRamificationGroup_one_eq_top
   let _ := Fintype.ofFinite 𝓀[L]
   set p := ringChar 𝓀[L]
   have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  have hpG := isPGroup_ramificationGroup (L := L) (L ≃ₐ[K] L) p (i := 1) one_pos
+  have hpG := TauCeti.IsLocalRing.isPGroup_ramificationGroup (L ≃ₐ[K] L) 𝒪[L] p (i := 1) one_pos
   rw [← lowerRamificationGroup_def, hG1] at hpG
   obtain ⟨k, hk⟩ := IsPGroup.iff_card.1 hpG
   rw [Subgroup.card_top, IsGalois.card_aut_eq_finrank] at hk

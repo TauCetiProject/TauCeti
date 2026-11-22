@@ -335,19 +335,9 @@ variable (F) (P : Place k F')
 theorem commutator_ramificationGroup_le (i : ℕ) :
     ⁅ramificationGroup F P (i + 1), ramificationGroup F P (i + 1)⁆ ≤
       ramificationGroup F P (i + 2) := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  rw [Subgroup.commutator_le]
-  intro a ha b hb
-  rw [commutatorElement_def]
-  have hmem : (⟨a, ha⟩ * ⟨b, hb⟩ * ⟨a, ha⟩⁻¹ * ⟨b, hb⟩⁻¹ :
-      ramificationGroup F P (i + 1)) ∈ (ramificationResidueHom F P ht i).ker := by
-    rw [MonoidHom.mem_ker, ← toAdd_eq_zero]
-    funext x
-    simp only [map_mul, map_inv, toAdd_mul, toAdd_inv, Pi.add_apply, Pi.neg_apply, Pi.zero_apply]
-    ring
-  rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
+  rw [ramificationGroup_def, ramificationGroup_def]
+  exact (IsLocalRing.commutator_ramificationGroup_le _ P.integers (i + 1 : ℕ) (i + 1 : ℕ)).trans
+    (IsLocalRing.ramificationGroup_antitone _ _ (by push_cast; omega))
 
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in
@@ -355,16 +345,9 @@ theorem commutator_ramificationGroup_le (i : ℕ) :
 theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i : ℕ)
     {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P (i + 1)) :
     g ^ p ∈ ramificationGroup F P (i + 2) := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  have hp : (p : P.ResidueField) = 0 := CharP.cast_eq_zero P.ResidueField p
-  have hmem : (⟨g, hg⟩ : ramificationGroup F P (i + 1)) ^ p ∈
-      (ramificationResidueHom F P ht i).ker := by
-    rw [MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero]
-    funext x
-    rw [toAdd_pow, Pi.smul_apply, Pi.zero_apply, nsmul_eq_mul, hp, zero_mul]
-  rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
+  rw [ramificationGroup_def] at hg ⊢
+  simpa only [Nat.cast_add, Nat.cast_one, Nat.cast_ofNat, add_assoc, one_add_one_eq_two] using
+    IsLocalRing.pow_mem_ramificationGroup_add_one (S := P.integers) p (by push_cast; omega) hg
 
 /-- **In characteristic zero a finite first ramification group is trivial** (Stichtenoth,
 Proposition 3.8.5): each successive quotient embeds in a
@@ -372,44 +355,8 @@ torsion-free additive group, so the filtration is constant from `1` on and meets
 theorem ramificationGroup_one_eq_bot [Finite (ramificationGroup F P 1)]
     [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  have hstep : ∀ i : ℕ, ramificationGroup F P (i + 1) ≤ ramificationGroup F P (i + 2) := by
-    intro i g hg
-    let _ : Finite (ramificationGroup F P (i + 1)) :=
-      Finite.of_injective
-        (fun g : ramificationGroup F P (i + 1) ↦
-          (⟨g, ramificationGroup_antitone F P (Nat.succ_le_succ (Nat.zero_le i)) g.2⟩ :
-            ramificationGroup F P 1))
-        (fun _ _ h ↦ Subtype.ext (congrArg
-          (fun g : ramificationGroup F P 1 ↦ (g : P.integers.decompositionSubgroup F)) h))
-    have hfin : (0 : ℕ) < orderOf (⟨g, hg⟩ : ramificationGroup F P (i + 1)) := orderOf_pos _
-    have hmem : (⟨g, hg⟩ : ramificationGroup F P (i + 1)) ∈
-        (ramificationResidueHom F P ht i).ker := by
-      rw [MonoidHom.mem_ker, ← toAdd_eq_zero]
-      funext x
-      set n := orderOf (⟨g, hg⟩ : ramificationGroup F P (i + 1))
-      have hpow : (ramificationResidueHom F P ht i ⟨g, hg⟩) ^ n = 1 := by
-        rw [← map_pow, pow_orderOf_eq_one, map_one]
-      have hval := congrFun (congrArg Multiplicative.toAdd hpow) x
-      rw [toAdd_pow, toAdd_one, Pi.zero_apply, Pi.smul_apply, nsmul_eq_mul] at hval
-      have hncast : (n : P.ResidueField) ≠ 0 := Nat.cast_ne_zero.mpr hfin.ne'
-      rw [Pi.zero_apply]
-      exact (mul_eq_zero.mp hval).resolve_left hncast
-    rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-    simpa using hmem
-  have hle : ∀ i : ℕ, ramificationGroup F P 1 ≤ ramificationGroup F P i := by
-    intro i
-    induction i with
-    | zero => exact ramificationGroup_antitone F P (Nat.zero_le 1)
-    | succ i ih =>
-      rcases Nat.eq_zero_or_pos i with rfl | hi
-      · exact le_rfl
-      · obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
-        exact le_trans ih (hstep j)
-  refine le_antisymm ?_ bot_le
-  rw [← iInf_ramificationGroup_eq_bot F P]
-  exact le_iInf hle
+  rw [ramificationGroup_def] at *
+  exact IsLocalRing.ramificationGroup_one_eq_bot_of_charZero _ P.integers
 
 end Structure
 
