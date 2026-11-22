@@ -13,7 +13,9 @@ public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Basic
 The unimodular divisor of `g ∈ SL₂(ℤ)` is the divisor `{g · 0} - {g · ∞}` of the oriented path
 from `g · ∞` to `g · 0`. Right multiplication by `S` reverses this path, and the three paths
 permuted by `U = TS` around an ideal triangle sum to zero: these are the two-term and three-term
-Manin relations, here proved among the degree-zero divisors themselves.
+Manin relations, here proved among the degree-zero divisors themselves. The unimodular divisors
+span the degree-zero divisors by Manin's lemma, so an additive map on them is determined by its
+values on the unimodular divisors.
 
 A Manin symbol is the modular symbol on the oriented edge from `g · ∞` to `g · 0`,
 for `g ∈ SL₂(ℤ)`. These edges generate the modular-symbol module. Reversing an edge
@@ -88,6 +90,17 @@ theorem unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq (g : SL(2, ℤ)) :
     mapGL_T_mul_S_sq_smul_zero]
   rw [add_right_comm, divisor_add_divisor, divisor_add_divisor, divisor_self]
 
+/-- An additive map on the integral degree-zero divisors is determined by its values on the
+unimodular divisors `{g 0} - {g ∞}`, which span by Manin's lemma. -/
+theorem addMonoidHom_ext_unimodular {V : Type*} [AddCommGroup V] {φ ψ : degreeZero ℤ →+ V}
+    (h : ∀ g : SL(2, ℤ), φ (unimodularDivisor ℤ g) = ψ (unimodularDivisor ℤ g)) : φ = ψ := by
+  refine AddMonoidHom.toIntLinearMap_injective
+    (LinearMap.ext_on_range span_degreeZeroRep_eq_top fun g ↦ ?_)
+  -- The translate `g ({∞} - {0})` is the reversed unimodular divisor of `g`.
+  have hg : degreeZeroRep ℤ g (divisor ℤ ((0 : ℚ) : OnePoint ℚ) ∞) = -unimodularDivisor ℤ g := by
+    rw [degreeZeroRep_apply, degreeZeroGLRep_divisor, unimodularDivisor_def, neg_divisor]
+  simp only [AddMonoidHom.coe_toIntLinearMap, hg, map_neg, h g]
+
 end UnimodularDivisor
 
 /-! ### Manin symbols -/
@@ -114,17 +127,15 @@ theorem maninSymbol_eq_mk (g : SL(2, ℤ))
       (degreeZeroRep R g (divisor R ((0 : ℚ) : OnePoint ℚ) ∞) ⊗ₜ[R] P) := by
   rw [maninSymbol_apply, symbol_apply, degreeZeroRep_apply, degreeZeroGLRep_divisor]
 
-/-- A Manin symbol is the class of the reversed unimodular divisor tensored with its coefficient
-polynomial. -/
-private theorem maninSymbol_eq_mk_neg_unimodularDivisor (g : SL(2, ℤ))
+/-- A Manin symbol is the image of the reversed unimodular divisor under the linear map
+`D ↦ [D ⊗ P]` into the coinvariants, so the relations among unimodular divisors give relations
+among Manin symbols. -/
+theorem maninSymbol_eq_mk_neg_unimodularDivisor (g : SL(2, ℤ))
     (P : homogeneousSubmodule (Fin 2) R w) :
-    maninSymbol Γ g P = Coinvariants.mk _ ((-unimodularDivisor R g) ⊗ₜ[R] P) := by
-  rw [maninSymbol_apply, symbol_apply, unimodularDivisor_def, neg_divisor]
-
-private theorem mk_neg_tmul (D : degreeZero R) (P : homogeneousSubmodule (Fin 2) R w) :
-    Coinvariants.mk ((symbolRep R w).comp Γ.subtype) ((-D) ⊗ₜ[R] P) =
-      -Coinvariants.mk ((symbolRep R w).comp Γ.subtype) (D ⊗ₜ[R] P) := by
-  rw [eq_neg_iff_add_eq_zero, ← map_add, ← add_tmul, neg_add_cancel, zero_tmul, map_zero]
+    maninSymbol Γ g P =
+      (Coinvariants.mk _ ∘ₗ (TensorProduct.mk R _ _).flip P) (-unimodularDivisor R g) := by
+  rw [LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply, maninSymbol_apply,
+    symbol_apply, unimodularDivisor_def, neg_divisor]
 
 private theorem maninSymbol_mul (g h : SL(2, ℤ))
     (P : homogeneousSubmodule (Fin 2) R w) :
@@ -149,7 +160,7 @@ theorem maninSymbol_mul_S (g : SL(2, ℤ)) :
       homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
   rw [LinearMap.neg_apply, maninSymbol_eq_mk_neg_unimodularDivisor,
-    maninSymbol_eq_mk_neg_unimodularDivisor, unimodularDivisor_mul_S, mk_neg_tmul]
+    maninSymbol_eq_mk_neg_unimodularDivisor, unimodularDivisor_mul_S, map_neg]
 
 /-- The Manin symbol is unchanged when its matrix is multiplied by the central element `-1`. -/
 @[simp]
@@ -167,11 +178,8 @@ theorem maninSymbol_add_mul_T_mul_S_add_mul_T_mul_S_sq (g : SL(2, ℤ)) :
       maninSymbol Γ (g * (T * S) ^ 2) =
         (0 : homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w) := by
   ext P
-  rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.zero_apply,
-    maninSymbol_eq_mk_neg_unimodularDivisor, maninSymbol_eq_mk_neg_unimodularDivisor,
-    maninSymbol_eq_mk_neg_unimodularDivisor, ← map_add, ← map_add, ← add_tmul, ← add_tmul,
-    ← neg_add, ← neg_add, unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq, neg_zero,
-    zero_tmul, map_zero]
+  simp only [LinearMap.add_apply, LinearMap.zero_apply, maninSymbol_eq_mk_neg_unimodularDivisor,
+    ← map_add, ← neg_add, unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq, neg_zero, map_zero]
 
 /-- The Manin symbols `maninSymbol Γ g P`, for `g ∈ SL(2, ℤ)` and homogeneous binary forms
 `P` of degree `w`, span `𝕄_w(Γ; R)`. -/

@@ -30,8 +30,9 @@ The divisor `{b} - {a}` with `+1` at `b` and `-1` at `a` is the oriented path fr
 (`TauCeti.ModularSymbols.divisor`). The unimodular divisors `{g 0} - {g ∞}`, `g ∈ SL(2, ℤ)`
 (`TauCeti.ModularSymbols.unimodularDivisor`), span `Δ₀` by Manin's lemma
 (`TauCeti.ModularSymbols.span_degreeZeroRep_eq_top`), so an additive map on `Δ₀` is determined by
-its values on them, and a modular symbol by its values on the unimodular divisors of a set of
-representatives of the right cosets `Γ \ SL(2, ℤ)`. With the two-term and three-term Manin
+its values on them (`TauCeti.ModularSymbols.addMonoidHom_ext_unimodular`), and a modular symbol
+by its values on the unimodular divisors of a set of representatives of the right cosets
+`Γ \ SL(2, ℤ)`. With the two-term and three-term Manin
 relations among them (`TauCeti.ModularSymbols.unimodularDivisor_mul_S`,
 `TauCeti.ModularSymbols.unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq`), this shows that
 the module of modular symbols of the full modular group with trivial coefficients is zero.
@@ -42,8 +43,6 @@ the module of modular symbols of the full modular group with trivial coefficient
 
 ## Main results
 
-* `TauCeti.ModularSymbol.addMonoidHom_ext`: an additive map on `Δ₀` is determined by its values on
-  the unimodular divisors.
 * `TauCeti.ModularSymbol.eq_of_forall_unimodularDivisor_eq`: a modular symbol is determined by its
   values on the unimodular divisors of representatives of `Γ \ SL(2, ℤ)`.
 * `TauCeti.ModularSymbol.symb_le_symb_comp_inclusion`: for `Γ' ≤ Γ`, every `Γ`-symbol is a
@@ -73,17 +72,6 @@ section Symbol
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
-/-- An additive map on the degree-zero divisors is determined by its values on the unimodular
-divisors `{g 0} - {g ∞}`, which span by Manin's lemma. -/
-theorem addMonoidHom_ext {φ ψ : degreeZero ℤ →+ V}
-    (h : ∀ g : SL(2, ℤ), φ (unimodularDivisor ℤ g) = ψ (unimodularDivisor ℤ g)) : φ = ψ := by
-  refine AddMonoidHom.toIntLinearMap_injective
-    (LinearMap.ext_on_range span_degreeZeroRep_eq_top fun g ↦ ?_)
-  -- The translate `g ({∞} - {0})` is the reversed unimodular divisor of `g`.
-  have hg : degreeZeroRep ℤ g (divisor ℤ ((0 : ℚ) : OnePoint ℚ) ∞) = -unimodularDivisor ℤ g := by
-    rw [degreeZeroRep_apply, degreeZeroGLRep_divisor, unimodularDivisor_def, neg_divisor]
-  simp only [AddMonoidHom.coe_toIntLinearMap, hg, map_neg, h g]
-
 variable {Γ : Subgroup SL(2, ℤ)} (ρ : Representation R Γ V)
 
 /-- **The module of `V`-valued modular symbols** `Symb_Γ(V) = Hom_{ℤ[Γ]}(Δ₀, V)` for a
@@ -100,6 +88,7 @@ def symb : Submodule R (degreeZero ℤ →+ V) where
 
 variable {ρ}
 
+@[simp]
 theorem mem_symb_iff {φ : degreeZero ℤ →+ V} :
     φ ∈ symb ρ ↔
       ∀ (γ : Γ) (D : degreeZero ℤ), φ (degreeZeroRep ℤ (γ : SL(2, ℤ)) D) = ρ γ (φ D) :=
@@ -129,7 +118,7 @@ theorem eq_of_forall_unimodularDivisor_eq {s : Set SL(2, ℤ)}
     (hs : ∀ g : SL(2, ℤ), ∃ γ ∈ Γ, ∃ t ∈ s, γ * t = g) {φ ψ : degreeZero ℤ →+ V}
     (hφ : φ ∈ symb ρ) (hψ : ψ ∈ symb ρ)
     (h : ∀ t ∈ s, φ (unimodularDivisor ℤ t) = ψ (unimodularDivisor ℤ t)) : φ = ψ := by
-  refine addMonoidHom_ext fun g ↦ ?_
+  refine addMonoidHom_ext_unimodular fun g ↦ ?_
   obtain ⟨γ, hγ, t, ht, rfl⟩ := hs g
   rw [apply_unimodularDivisor_mul hφ ⟨γ, hγ⟩, apply_unimodularDivisor_mul hψ ⟨γ, hγ⟩, h t ht]
 
@@ -157,7 +146,7 @@ theorem symb_trivial_eq_bot :
     have h3 := congrArg φ (unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq (R := ℤ) 1)
     rwa [map_add, map_add, map_zero, hconst (1 * (T * S)), hconst (1 * (T * S) ^ 2), h2,
       zero_add] at h3
-  exact addMonoidHom_ext fun g ↦ by rw [hconst, hv, AddMonoidHom.zero_apply]
+  exact addMonoidHom_ext_unimodular fun g ↦ by rw [hconst, hv, AddMonoidHom.zero_apply]
 
 end Symbol
 

@@ -191,6 +191,7 @@ theorem neg_divisor (a b : OnePoint ℚ) : -divisor R a b = divisor R b a := by
 
 /-- Composing the path from `a` to `b` with the path from `b` to `c` gives the path from `a` to
 `c`. -/
+@[simp]
 theorem divisor_add_divisor (a b c : OnePoint ℚ) :
     divisor R a b + divisor R b c = divisor R a c := by
   ext1
