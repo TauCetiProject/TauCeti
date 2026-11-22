@@ -486,15 +486,17 @@ variable (F E) in
 /-- **The dimensions of the homology of a Thom pair in every degree.** Let `E → B` be a real vector
 bundle of rank `r` and `K` a nontrivial commutative ring. If `dim H_{r + p}(E, E₀; K) = d p` for
 every `p`, then `dim Hₙ(E, E₀; K)` is `d (n - r)` when `r ≤ n`, and `0` when `n < r`. -/
-theorem finrank_singularHomology_thomPair_eq_ite [Nontrivial K] [FiniteDimensional ℝ F] {r : ℕ}
-    (hr : finrank ℝ F = r) (d : ℕ → ℕ)
+theorem finrank_singularHomology_thomPair_eq_ite [Nontrivial K] {r : ℕ} (hr : finrank ℝ F = r)
+    (d : ℕ → ℕ)
     (hd : ∀ p, finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) (r + p) :
       ModuleCat K) = d p) (n : ℕ) :
     finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) n : ModuleCat K) =
       if r ≤ n then d (n - r) else 0 := by
   split_ifs with hrn
   · rw [← hd, Nat.add_sub_cancel' hrn]
-  · exact ModuleCat.finrank_eq_zero_of_isZero
+  · -- Below the rank, which is then positive, the homology vanishes.
+    have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+    exact ModuleCat.finrank_eq_zero_of_isZero
       (isZero_singularHomology_thomPair (F := F) (E := E) (ModuleCat.of K K) (by omega))
 
 end Isomorphism
