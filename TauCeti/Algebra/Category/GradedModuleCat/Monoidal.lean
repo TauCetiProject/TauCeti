@@ -56,7 +56,7 @@ flatness or field hypothesis is imposed.
   1836, Chapter 2.
 -/
 
-@[expose] public section
+public section
 
 universe uk u
 
@@ -76,18 +76,12 @@ noncomputable instance instMonoidalCategoryStruct :
   tensorObj M N :=
     { carrier := M ⊗[A] N
       grading := M.grading.tensorProductOver 𝒜 N.grading }
-  whiskerLeft M _ _ f := ofHom (f.hom.lTensor M) <| by
-    have h := M.grading.isHomogeneous_tensorProductMap 𝒜 _ _ _
-      (LinearMap.isHomogeneous_id M.grading.piece) f.isHomogeneous
-    rwa [zero_add] at h
-  whiskerRight f N := ofHom (f.hom.rTensor N) <| by
-    have h := InternalGrading.isHomogeneous_tensorProductMap 𝒜 _ _ _ _
-      f.isHomogeneous (LinearMap.isHomogeneous_id N.grading.piece)
-    rwa [zero_add] at h
-  tensorHom f g := ofHom (TensorProduct.map f.hom g.hom) <| by
-    have h := InternalGrading.isHomogeneous_tensorProductMap 𝒜 _ _ _ _
-      f.isHomogeneous g.isHomogeneous
-    rwa [zero_add] at h
+  whiskerLeft M _ _ f := ofHom (f.hom.lTensor M) <|
+    (LinearMap.isHomogeneous_id M.grading.piece).tensorProductOver_zero 𝒜 f.isHomogeneous
+  whiskerRight f N := ofHom (f.hom.rTensor N) <|
+    f.isHomogeneous.tensorProductOver_zero 𝒜 (LinearMap.isHomogeneous_id N.grading.piece)
+  tensorHom f g := ofHom (TensorProduct.map f.hom g.hom) <|
+    f.isHomogeneous.tensorProductOver_zero 𝒜 g.isHomogeneous
   tensorUnit := regular
   associator M N P := isoMk (TensorProduct.assoc A M N P) fun p x ↦
     (LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff
@@ -351,10 +345,12 @@ theorem tensorShiftIso_inv_hom : (tensorShiftIso M N a b).inv.hom = LinearMap.id
   (rfl)
 
 /-- The comparison `M{a} ⊗ N{b} ≅ (M ⊗ N){a + b}` fixes pure tensors. -/
+@[simp]
 theorem tensorShiftIso_hom_tmul (m : M) (n : N) :
     (tensorShiftIso M N a b).hom.hom (m ⊗ₜ[A] n) = m ⊗ₜ[A] n :=
   (rfl)
 
+@[simp]
 theorem tensorShiftIso_inv_tmul (m : M) (n : N) :
     (tensorShiftIso M N a b).inv.hom (m ⊗ₜ[A] n) = m ⊗ₜ[A] n :=
   (rfl)

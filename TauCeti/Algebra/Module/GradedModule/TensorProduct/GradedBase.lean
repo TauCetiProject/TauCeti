@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Isomorphisms
-public import Mathlib.LinearAlgebra.TensorProduct.Quotient
 public import Mathlib.Algebra.GradedMulAction
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
@@ -45,8 +44,8 @@ hom-modules.
   pure tensors of total degree `d` contains the degree-`d` piece.
 * `TauCeti.InternalGrading.isHomogeneous_of_tmul_mem_tensorProductOver`: homogeneity of a map
   out of `M ⊗[A] N` can be checked on homogeneous pure tensors.
-* `TauCeti.InternalGrading.isHomogeneous_tensorProductMap`: tensoring homogeneous `A`-linear maps
-  adds their degrees.
+* `TauCeti.LinearMap.IsHomogeneous.tensorProductOver`: tensoring homogeneous `A`-linear maps adds
+  their degrees.
 * `TauCeti.InternalGrading.isHomogeneous_comm_tensorProductOver` and
   `TauCeti.InternalGrading.isHomogeneous_assoc_tensorProductOver`: the symmetry and associativity
   isomorphisms preserve total degree.
@@ -66,7 +65,7 @@ public section
 
 open DirectSum TensorProduct
 
-namespace TauCeti.InternalGrading
+namespace TauCeti
 
 variable {k A M N : Type*} [CommRing k] [CommRing A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A) [Decomposition 𝒜]
@@ -74,6 +73,8 @@ variable {k A M N : Type*} [CommRing k] [CommRing A] [Algebra k A]
   [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
   (G : InternalGrading k M ℤ) (H : InternalGrading k N ℤ)
   [SetLike.GradedSMul 𝒜 G.piece] [SetLike.GradedSMul 𝒜 H.piece]
+
+namespace InternalGrading
 
 section Kernel
 
@@ -129,7 +130,8 @@ private theorem mapOfCompatibleSMul_decompose (d : ℤ) (z : M ⊗[k] N) :
     mapOfCompatibleSMul A k k M N (decompose (G.tensorProduct H).piece z d) =
       tensorProj 𝒜 G H d (mapOfCompatibleSMul A k k M N z) := by
   induction z using TensorProduct.inductionOn with
-  | tmul m n => rfl
+  | tmul m n =>
+    rw [mapOfCompatibleSMul_tmul, tensorProj, liftAddHom_tmul, tensorComponent_apply]
   | add x y hx hy =>
     simp only [decompose_add, DirectSum.add_apply, Submodule.coe_add, map_add, hx, hy]
 
@@ -159,7 +161,9 @@ theorem tensorProductOver_piece (d : ℤ) :
     (G.tensorProductOver 𝒜 H).piece d =
       ((G.tensorProduct H).piece d).map (mapOfCompatibleSMul A k k M N) := by
   rw [tensorProductOver, map_piece, quotient_piece, ← Submodule.map_comp]
-  congr 1
+  refine congrArg (Submodule.map · _) (LinearMap.ext fun x ↦ ?_)
+  rw [LinearMap.comp_apply, LinearMap.restrictScalars_apply, Submodule.mkQ_apply,
+    LinearEquiv.coe_coe, LinearMap.quotKerEquivOfSurjective_apply_mk]
 
 /-- An element of `M ⊗[A] N` has degree `d` exactly when it is the image of an element of
 `M ⊗[k] N` of degree `d`. -/
@@ -206,26 +210,6 @@ instance gradedSMul_tensorProductOver :
       ← hpq, ← add_assoc]
     exact G.tmul_mem_tensorProductOver 𝒜 H (SetLike.GradedSMul.smul_mem ha hm) hn
 
-section Map
-
-variable {M' N' : Type*}
-  [AddCommGroup M'] [Module k M'] [Module A M'] [IsScalarTower k A M']
-  [AddCommGroup N'] [Module k N'] [Module A N'] [IsScalarTower k A N']
-  (G' : InternalGrading k M' ℤ) (H' : InternalGrading k N' ℤ)
-  [SetLike.GradedSMul 𝒜 G'.piece] [SetLike.GradedSMul 𝒜 H'.piece]
-
-/-- Tensoring `A`-linear maps of degrees `s` and `t` gives a map of degree `s + t`. -/
-theorem isHomogeneous_tensorProductMap {f : M →ₗ[A] M'} {g : N →ₗ[A] N'} {s t : ℤ}
-    (hf : LinearMap.IsHomogeneous f G.piece G'.piece s)
-    (hg : LinearMap.IsHomogeneous g H.piece H'.piece t) :
-    LinearMap.IsHomogeneous (TensorProduct.map f g)
-      (G.tensorProductOver 𝒜 H).piece (G'.tensorProductOver 𝒜 H').piece (s + t) :=
-  G.isHomogeneous_of_tmul_mem_tensorProductOver 𝒜 H _ _ _ fun {p q _ _} hm hn ↦ by
-    rw [map_tmul, add_add_add_comm]
-    exact G'.tmul_mem_tensorProductOver 𝒜 H' (hf.map_mem hm) (hg.map_mem hn)
-
-end Map
-
 section Assoc
 
 variable {P : Type*} [AddCommGroup P] [Module k P] [Module A P] [IsScalarTower k A P]
@@ -264,15 +248,6 @@ section Unit
 
 variable [SetLike.GradedMul 𝒜]
 
-/-- Left multiplication respects the grading of a graded algebra, viewed as the internal grading
-of its regular module. This is the counterpart of `InternalGrading.instGradedSMulOppositeSelf`
-for the left action. -/
-instance instGradedSMulOfDecompositionSelf :
-    SetLike.GradedSMul 𝒜 (ofDecomposition 𝒜).piece where
-  smul_mem {_ _} _ _ ha hb := by
-    rw [ofDecomposition_piece] at hb ⊢
-    exact SetLike.GradedMul.mul_mem ha hb
-
 /-- The left unit isomorphism `A ⊗[A] M ≃ M`, `a ⊗ m ↦ a • m`, preserves total degree. -/
 theorem isHomogeneous_lid_tensorProductOver :
     LinearMap.IsHomogeneous (TensorProduct.lid A M).toLinearMap
@@ -295,4 +270,35 @@ theorem isHomogeneous_rid_tensorProductOver :
 
 end Unit
 
-end TauCeti.InternalGrading
+end InternalGrading
+
+namespace LinearMap.IsHomogeneous
+
+variable {G H} {M' N' : Type*}
+  [AddCommGroup M'] [Module k M'] [Module A M'] [IsScalarTower k A M']
+  [AddCommGroup N'] [Module k N'] [Module A N'] [IsScalarTower k A N']
+  {G' : InternalGrading k M' ℤ} {H' : InternalGrading k N' ℤ}
+  [SetLike.GradedSMul 𝒜 G'.piece] [SetLike.GradedSMul 𝒜 H'.piece]
+  {f : M →ₗ[A] M'} {g : N →ₗ[A] N'}
+
+/-- Tensoring `A`-linear maps of degrees `s` and `t` gives a map of degree `s + t` for the
+total-degree gradings over `A`. -/
+theorem tensorProductOver {s t : ℤ} (hf : LinearMap.IsHomogeneous f G.piece G'.piece s)
+    (hg : LinearMap.IsHomogeneous g H.piece H'.piece t) :
+    LinearMap.IsHomogeneous (TensorProduct.map f g)
+      (G.tensorProductOver 𝒜 H).piece (G'.tensorProductOver 𝒜 H').piece (s + t) :=
+  G.isHomogeneous_of_tmul_mem_tensorProductOver 𝒜 H _ _ _ fun {p q _ _} hm hn ↦ by
+    rw [map_tmul, add_add_add_comm]
+    exact G'.tmul_mem_tensorProductOver 𝒜 H' (hf.map_mem hm) (hg.map_mem hn)
+
+/-- Tensoring `A`-linear maps of degree zero gives a map of degree zero for the total-degree
+gradings over `A`. -/
+theorem tensorProductOver_zero (hf : LinearMap.IsHomogeneous f G.piece G'.piece 0)
+    (hg : LinearMap.IsHomogeneous g H.piece H'.piece 0) :
+    LinearMap.IsHomogeneous (TensorProduct.map f g)
+      (G.tensorProductOver 𝒜 H).piece (G'.tensorProductOver 𝒜 H').piece 0 := by
+  simpa only [add_zero] using hf.tensorProductOver 𝒜 hg
+
+end LinearMap.IsHomogeneous
+
+end TauCeti
