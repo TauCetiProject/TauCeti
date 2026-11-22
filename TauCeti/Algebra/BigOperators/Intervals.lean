@@ -46,6 +46,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
 * `Finset.sum_Icc_eq_add_sum_range`: `(∑ i ∈ Icc (-(a : ℤ)) b, F i) + F 0` equals the sum of `F j`
   over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
+* `Finset.sum_Ioc_neg_zero_eq_sum_range`: the sum of `F j` over `-a < j ≤ 0` is the sum of
+  `F (-(k : ℤ))` over `k < a`.
 * `Finset.sum_Icc_neg_eq_sum_fin`, `Finset.sum_Ico_int_add_eq_sum_range`, and
   `Finset.sum_Ico_int_add_eq_sum_fin`: reindex symmetric integer intervals `[-K, K]` by
   `Fin (2 * K + 1)` and shifted integer intervals `[M, M + H)` by `range H` or `Fin H`.
@@ -153,6 +155,21 @@ theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (
   rw [hunion, hinter, sum_singleton] at hkey
   rw [hkey, hs, ht, sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
     sum_image (fun _ _ _ _ h ↦ by omega)]
+
+/-- Reindexing a nonpositive integer interval: the sum of `F j` over `-a < j ≤ 0` is the sum of
+`F (-(k : ℤ))` over `k < a`. -/
+theorem sum_Ioc_neg_zero_eq_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (a : ℕ) :
+    ∑ j ∈ Ioc (-(a : ℤ)) 0, F j = ∑ k ∈ range a, F (-(k : ℤ)) := by
+  refine sum_nbij' (fun j ↦ (-j).toNat) (fun k ↦ -(k : ℤ)) (fun j hj ↦ ?_) (fun k hk ↦ ?_)
+    (fun j hj ↦ ?_) (fun k _ ↦ by simp) (fun j hj ↦ ?_)
+  · simp only [mem_Ioc, mem_range] at hj ⊢
+    omega
+  · simp only [mem_Ioc, mem_range] at hk ⊢
+    omega
+  · simp only [mem_Ioc] at hj
+    omega
+  · simp only [mem_Ioc] at hj
+    rw [Int.toNat_of_nonneg (by omega), neg_neg]
 
 /-- Reindex a sum over `Ico M (M + H)` by `range H`. -/
 theorem sum_Ico_int_add_eq_sum_range {α : Type*} [AddCommMonoid α]
