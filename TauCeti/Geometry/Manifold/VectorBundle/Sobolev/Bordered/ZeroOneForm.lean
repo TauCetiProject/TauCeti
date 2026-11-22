@@ -295,6 +295,7 @@ theorem borderedZeroOnePartSobolevL_coe (w : borderedZeroOneSobolevSections A p 
 
 /-- An element of `W^{k,p}` of `V`-valued one-forms is fixed by the `(0,1)`-projection iff it
 belongs to `borderedZeroOneSobolevSections A p k`. -/
+@[simp]
 theorem coe_borderedZeroOnePartSobolevL_eq_self_iff
     {w : BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p k} :
     (borderedZeroOnePartSobolevL A p k w :
@@ -483,21 +484,28 @@ theorem borderedZeroOneContMDiffSMulL_const (c : ℝ) :
     borderedZeroOneContMDiffSMulL A p k (contMDiff_const (c := c)) =
       c • ContinuousLinearMap.id ℝ _ := by
   ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_const c) w.val)
+  apply Subtype.ext
+  simp only [smul_apply, ContinuousLinearMap.id_apply, Submodule.coe_smul,
+    coe_borderedZeroOneContMDiffSMulL]
+  exact DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_const c) w.val
 
 theorem borderedZeroOneContMDiffSMulL_add (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     borderedZeroOneContMDiffSMulL A p k (hφ.add hψ) =
       borderedZeroOneContMDiffSMulL A p k hφ + borderedZeroOneContMDiffSMulL A p k hψ := by
   ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_add hφ hψ) w.val)
+  apply Subtype.ext
+  simp only [add_apply, Submodule.coe_add, coe_borderedZeroOneContMDiffSMulL]
+  exact DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_add hφ hψ) w.val
 
 theorem borderedZeroOneContMDiffSMulL_mul (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     borderedZeroOneContMDiffSMulL A p k (hφ.mul hψ) =
       (borderedZeroOneContMDiffSMulL A p k hφ).comp (borderedZeroOneContMDiffSMulL A p k hψ) := by
   ext1 w
-  exact Subtype.ext (DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_mul hφ hψ) w.val)
+  apply Subtype.ext
+  simp only [ContinuousLinearMap.comp_apply, coe_borderedZeroOneContMDiffSMulL]
+  exact DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_mul hφ hψ) w.val
 
 /-- Smooth real multiplication up to the boundary commutes with forgetting derivatives on
 `(0,1)`-forms. -/
@@ -555,11 +563,7 @@ theorem exists_isZeroOneForm_memWkpLoc_halfCoord (w : borderedZeroOneSobolevSect
   · have hloc : MemWkpLoc p (A.halfClosedImage i) k
         ((A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ₀) := by
       simpa only [halfClosedImage_tangentHom] using hloc₀ i
-    rw [show (A.tangentHom closedUpperHalfPlaneModel).halfCoord i
-          (fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ₀ x)) =
-        fun z ↦ complexAntilinearPartL
-          ((A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ₀ z) from
-      funext (A.halfCoord_tangentHom_ofBorderedHolomorphic_zeroOnePart i θ₀)]
+    rw [funext (A.halfCoord_tangentHom_ofBorderedHolomorphic_zeroOnePart i θ₀)]
     exact hloc.clm_comp complexAntilinearPartL
 
 end BorderedZeroOne

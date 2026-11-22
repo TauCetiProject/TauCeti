@@ -352,6 +352,7 @@ theorem zeroOnePartSobolevL_coe (w : zeroOneSobolevSections A μ p k) :
 
 /-- An element of `W^{k,p}` of `V`-valued one-forms is fixed by the `(0,1)`-projection exactly when
 it is a `(0,1)`-form. -/
+@[simp]
 theorem coe_zeroOnePartSobolevL_eq_self_iff {w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k} :
     (zeroOnePartSobolevL A μ p k w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) = w ↔
       w ∈ zeroOneSobolevSections A μ p k :=
@@ -521,19 +522,29 @@ theorem coe_zeroOneContMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ 
 @[simp]
 theorem zeroOneContMDiffSMulL_const (c : ℝ) :
     zeroOneContMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ := by
-  ext1 w; exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_const c) w.val)
+  ext1 w
+  apply Subtype.ext
+  simp only [smul_apply, ContinuousLinearMap.id_apply, Submodule.coe_smul,
+    coe_zeroOneContMDiffSMulL]
+  exact DFunLike.congr_fun (SobolevSection.contMDiffSMulL_const c) w.val
 
 theorem zeroOneContMDiffSMulL_add (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ) :
     zeroOneContMDiffSMulL A μ p k (hφ.add hψ) =
       zeroOneContMDiffSMulL A μ p k hφ + zeroOneContMDiffSMulL A μ p k hψ := by
-  ext1 w; exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_add hφ hψ) w.val)
+  ext1 w
+  apply Subtype.ext
+  simp only [add_apply, Submodule.coe_add, coe_zeroOneContMDiffSMulL]
+  exact DFunLike.congr_fun (SobolevSection.contMDiffSMulL_add hφ hψ) w.val
 
 theorem zeroOneContMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ) :
     zeroOneContMDiffSMulL A μ p k (hφ.mul hψ) =
       (zeroOneContMDiffSMulL A μ p k hφ).comp (zeroOneContMDiffSMulL A μ p k hψ) := by
-  ext1 w; exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_mul hφ hψ) w.val)
+  ext1 w
+  apply Subtype.ext
+  simp only [ContinuousLinearMap.comp_apply, coe_zeroOneContMDiffSMulL]
+  exact DFunLike.congr_fun (SobolevSection.contMDiffSMulL_mul hφ hψ) w.val
 
 /-- Smooth real multiplication commutes with forgetting derivatives on `(0,1)`-forms. -/
 theorem zeroOneLowerOrdersL_zeroOneContMDiffSMulL (d : ℕ) (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)

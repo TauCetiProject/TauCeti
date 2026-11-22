@@ -174,21 +174,30 @@ def antilinearPartSobolevL :
 
 variable {C μ p k}
 
+/-- As a section in `C.sobolevSections μ p k`, `C.antilinearPartSobolevL μ p k proj hproj w` is
+`C.constMapL μ p k complexAntilinearPartL proj hproj w`. -/
+theorem coe_antilinearPartSobolevL (w : C.sobolevSections μ p k) :
+    (C.antilinearPartSobolevL μ p k proj hproj w : C.sobolevSections μ p k) =
+      C.constMapL μ p k complexAntilinearPartL proj hproj w :=
+  ContinuousLinearMap.coe_codRestrict_apply _ _ _ w
+
 /-- The components of `C.antilinearPartSobolevL μ p k proj hproj w` are those of `w` transformed by
 the matrix of `ContinuousLinearMap.complexAntilinearPartL`. -/
 @[simp]
 theorem coe_coe_antilinearPartSobolevL (w : C.sobolevSections μ p k) :
     ((C.antilinearPartSobolevL μ p k proj hproj w : C.sobolevSections μ p k) :
         C.SobolevData μ p k) =
-      C.constMapData μ p k complexAntilinearPartL w :=
-  C.coe_constMapL (μ := μ) (p := p) (k := k) hproj w
+      C.constMapData μ p k complexAntilinearPartL w := by
+  rw [coe_antilinearPartSobolevL]
+  exact C.coe_constMapL (μ := μ) (p := p) (k := k) hproj w
 
 /-- The chart data of `C.antilinearPartSobolevL μ p k proj hproj w` are the complex antilinear parts
 of the chart data of `w`. -/
 theorem chartValueL_antilinearPartSobolevL_ae (w : C.sobolevSections μ p k) (i : Fin C.n) :
     C.chartValueL μ p k i (C.antilinearPartSobolevL μ p k proj hproj w) =ᵐ[μ.restrict (C.image i)]
-      fun y ↦ complexAntilinearPartL (C.chartValueL μ p k i w y) :=
-  C.chartValueL_constMapL_ae μ p k hproj w i
+      fun y ↦ complexAntilinearPartL (C.chartValueL μ p k i w y) := by
+  rw [coe_antilinearPartSobolevL]
+  exact C.chartValueL_constMapL_ae μ p k hproj w i
 
 /-- The complex-antilinear projection of `w` vanishes iff the chart data of `w` are complex linear
 almost everywhere on the image of every chart. -/
@@ -200,7 +209,7 @@ theorem antilinearPartSobolevL_eq_zero_iff {w : C.sobolevSections μ p k} :
       ((0 : C.sobolevSections μ p k) : C.SobolevData μ p k) =ᵐ[μ.restrict (C.image i)] 0 := by
     rw [ZeroMemClass.coe_zero, map_zero]
     exact Lp.coeFn_zero _ _ _
-  rw [← ZeroMemClass.coe_eq_zero, antilinearPartSobolevL, ContinuousLinearMap.coe_codRestrict_apply]
+  rw [← ZeroMemClass.coe_eq_zero, coe_antilinearPartSobolevL]
   refine ⟨fun h i ↦ ?_, fun h ↦ C.eq_of_chartValueL_ae_eq fun i ↦ ?_⟩
   · filter_upwards [C.chartValueL_constMapL_ae μ p k hproj w i, h ▸ h0 i] with y h₁ h₂
     rw [← complexAntilinearPartL_eq_zero_iff, ← h₁, h₂, Pi.zero_apply]
@@ -212,21 +221,25 @@ complex-antilinear projection equal the reading of `proj s`. -/
 theorem chartValueL_antilinearPartSobolevL_ae_coord {w : C.sobolevSections μ p k} {s : S}
     {i : Fin C.n} (hw : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s) :
     C.chartValueL μ p k i (C.antilinearPartSobolevL μ p k proj hproj w) =ᵐ[μ.restrict (C.image i)]
-      C.coord i (proj s) :=
-  C.chartValueL_constMapL_ae_coord hproj hw
+      C.coord i (proj s) := by
+  rw [coe_antilinearPartSobolevL]
+  exact C.chartValueL_constMapL_ae_coord hproj hw
 
 /-- The complex-antilinear projection fixes elements of `C.antilinearSobolevSections μ p k`. -/
 @[simp]
 theorem antilinearPartSobolevL_coe (w : C.antilinearSobolevSections μ p k) :
     C.antilinearPartSobolevL μ p k proj hproj w = w :=
-  Subtype.ext (C.constMapL_eq_self_of_mem_antilinearSobolevSections μ p k proj hproj w.property)
+  Subtype.ext <| (C.coe_antilinearPartSobolevL proj hproj w).trans
+    (C.constMapL_eq_self_of_mem_antilinearSobolevSections μ p k proj hproj w.property)
 
 /-- An element of `C.sobolevSections μ p k` is fixed by the complex-antilinear projection iff it
 belongs to `C.antilinearSobolevSections μ p k`. -/
+@[simp]
 theorem coe_antilinearPartSobolevL_eq_self_iff {w : C.sobolevSections μ p k} :
     (C.antilinearPartSobolevL μ p k proj hproj w : C.sobolevSections μ p k) = w ↔
-      w ∈ C.antilinearSobolevSections μ p k :=
-  ⟨fun h ↦ h ▸ (C.antilinearPartSobolevL μ p k proj hproj w).property,
+      w ∈ C.antilinearSobolevSections μ p k := by
+  rw [coe_antilinearPartSobolevL]
+  exact ⟨fun h ↦ h ▸ (C.antilinearPartSobolevL μ p k proj hproj w).property,
     C.constMapL_eq_self_of_mem_antilinearSobolevSections μ p k proj hproj⟩
 
 /-- The complex-antilinear projection is surjective. -/
@@ -302,8 +315,10 @@ theorem antilinearLowerOrdersL_antilinearPartSobolevL (d : ℕ) (proj : S → S)
     (hproj : ∀ i s, ∀ y ∈ C.image i, C.coord i (proj s) y = complexAntilinearPartL (C.coord i s y))
     (w : C.sobolevSections μ p (k + d)) :
     C.antilinearLowerOrdersL μ p k d (C.antilinearPartSobolevL μ p (k + d) proj hproj w) =
-      C.antilinearPartSobolevL μ p k proj hproj (C.lowerOrdersL μ p k d w) :=
-  Subtype.ext (C.lowerOrdersL_constMapL μ p k d hproj w)
+      C.antilinearPartSobolevL μ p k proj hproj (C.lowerOrdersL μ p k d w) := by
+  apply Subtype.ext
+  rw [coe_antilinearLowerOrdersL, coe_antilinearPartSobolevL, coe_antilinearPartSobolevL]
+  exact C.lowerOrdersL_constMapL μ p k d hproj w
 
 end Antilinear
 
