@@ -476,11 +476,9 @@ theorem relIndex_withCenter_mul_card_center_subgroupOf (Γ : Subgroup G) :
   have hrel : Γ.relIndex Γ.withCenter = (Γ.subgroupOf (Subgroup.center G)).index := by
     rw [withCenter_def, relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal, relIndex]
   have hcard : Nat.card ((Subgroup.center G).subgroupOf Γ) =
-      Nat.card (Γ.subgroupOf (Subgroup.center G)) :=
-    Nat.card_congr ⟨fun x ↦ ⟨⟨x.val.val, mem_subgroupOf.mp x.property⟩,
-        mem_subgroupOf.mpr x.val.property⟩,
-      fun y ↦ ⟨⟨y.val.val, mem_subgroupOf.mp y.property⟩,
-        mem_subgroupOf.mpr y.val.property⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+      Nat.card (Γ.subgroupOf (Subgroup.center G)) := by
+    rw [← Subgroup.card_subtype Γ, ← Subgroup.card_subtype (Subgroup.center G),
+      Subgroup.subgroupOf_map_subtype, Subgroup.subgroupOf_map_subtype, inf_comm]
   rw [hrel, hcard, mul_comm]
   exact (Γ.subgroupOf (Subgroup.center G)).card_mul_index
 

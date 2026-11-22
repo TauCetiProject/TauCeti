@@ -10,6 +10,7 @@ public import TauCeti.Data.ZMod.FinEquiv
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Sum
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
 # The upper-triangular Hecke slash sum under `T`-invariance

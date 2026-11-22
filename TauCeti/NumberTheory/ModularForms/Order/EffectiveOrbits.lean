@@ -191,9 +191,14 @@ theorem hasFiniteSupport_orderOfVanishingOnEffectiveOrbit [Γ.FiniteIndex] (f : 
 
 /-- Only finitely many effective orbits carry nonzero projective weighted order. -/
 theorem hasFiniteSupport_weightedOrderOfVanishingOnEffectiveOrbit [Γ.FiniteIndex] (f : F) :
-    Function.HasFiniteSupport (weightedOrderOfVanishingOnEffectiveOrbit (Γ := Γ) (k := k) f) :=
-  (hasFiniteSupport_orderOfVanishingOnEffectiveOrbit f).subset fun _ hP h0 ↦
-    hP (by simp [weightedOrderOfVanishingOnEffectiveOrbit_def, h0])
+    Function.HasFiniteSupport (weightedOrderOfVanishingOnEffectiveOrbit (Γ := Γ) (k := k) f) := by
+  have hdef : weightedOrderOfVanishingOnEffectiveOrbit (Γ := Γ) (k := k) f =
+      fun P ↦ (orderOfVanishingOnEffectiveOrbit f P : ℚ) / (cardStabilizerOnOrbit P : ℚ) :=
+    funext (weightedOrderOfVanishingOnEffectiveOrbit_def f)
+  rw [Function.HasFiniteSupport, hdef, Function.support_div]
+  exact ((hasFiniteSupport_orderOfVanishingOnEffectiveOrbit f).subset
+    fun _ hP ↦ by simpa only [Function.mem_support, ne_eq, Int.cast_eq_zero] using hP).subset
+      Set.inter_subset_left
 
 end Modular
 

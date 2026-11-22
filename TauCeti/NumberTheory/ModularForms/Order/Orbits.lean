@@ -171,9 +171,13 @@ lemma weightedOrderOfVanishingOnOrbit_nonneg [ModularFormClass F 𝒮ℒ k] (f :
 support where the order has none. -/
 lemma hasFiniteSupport_weightedOrderOfVanishingOnOrbit [ModularFormClass F 𝒮ℒ k] (f : F) :
     Function.HasFiniteSupport (weightedOrderOfVanishingOnOrbit f) := by
-  refine (hasFiniteSupport_orderOfVanishingOnOrbit f).subset fun q hq ↦ ?_
-  simp only [Function.mem_support, ne_eq] at hq ⊢
-  exact fun h ↦ hq (by rw [weightedOrderOfVanishingOnOrbit_def, h]; simp)
+  have hdef : weightedOrderOfVanishingOnOrbit f =
+      fun q ↦ (orderOfVanishingOnOrbit f q : ℚ) / (ModularGroup.ellipticOrder q : ℚ) :=
+    funext (weightedOrderOfVanishingOnOrbit_def f)
+  rw [Function.HasFiniteSupport, hdef, Function.support_div]
+  exact ((hasFiniteSupport_orderOfVanishingOnOrbit f).subset
+    fun _ hq ↦ by simpa only [Function.mem_support, ne_eq, Int.cast_eq_zero] using hq).subset
+      Set.inter_subset_left
 
 /-- A divisor sum reindexed over the orbits its points represent. The index set is arbitrary,
 mapped into `ℍ` by `p`.

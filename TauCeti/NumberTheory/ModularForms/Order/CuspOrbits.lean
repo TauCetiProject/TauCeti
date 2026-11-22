@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.Regularity
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Irregular
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
+import TauCeti.NumberTheory.ModularForms.Cusps.Width
 
 /-!
 # Vanishing orders on cusp orbits of `Γ \ ∂ℍ`

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Basic
 public import TauCeti.NumberTheory.ModularForms.Norm.Trace
 public import TauCeti.NumberTheory.ModularForms.Norm.Valence
+import TauCeti.GroupTheory.GroupAction.Orbit.Period
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 
 /-!
@@ -213,7 +214,7 @@ lemma qExpansionOrderAtCusp_quotientFunc_TSL_zpow_smul (f : F)
   have hw : 0 < minimalPeriod (TSL • ·) q := Nat.pos_of_neZero _
   have hper : Periodic (quotientFunc f (TSL ^ j • q) ∘ ofComplex)
       ((minimalPeriod (TSL • ·) q : ℕ) : ℝ) :=
-    minimalPeriod_zpow_smul_TSL j q ▸ periodic_quotientFunc f (TSL ^ j • q)
+    MulAction.minimalPeriod_zpow_smul TSL j q ▸ periodic_quotientFunc f (TSL ^ j • q)
   rw [qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_def,
     ← qExpansion_one_galoisProd_order_eq hw hper
       (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)
@@ -276,7 +277,7 @@ coset's own period; the `Quotient.out` in the definition is therefore only a cho
 @[simp] lemma orderAtCuspTranslationOrbit_mk (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
     orderAtCuspTranslationOrbit f (⟦q⟧ : CuspTranslationOrbit 𝒢) =
       qExpansionOrderAtCusp ((minimalPeriod (TSL • ·) q : ℕ) : ℝ) (quotientFunc f q) := by
-  obtain ⟨j, hj⟩ := exists_TSL_zpow_smul_eq_out (𝒢 := 𝒢) q
+  obtain ⟨j, hj⟩ := MulAction.exists_zpow_smul_eq_out TSL q
   rw [orderAtCuspTranslationOrbit, cuspTranslationOrbitWidth_mk, ← hj,
     qExpansionOrderAtCusp_quotientFunc_TSL_zpow_smul]
 

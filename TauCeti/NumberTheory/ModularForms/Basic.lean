@@ -90,6 +90,8 @@ AINTLIB `LeanModularForms` project
 * `ModularForm.mem_range_restrictₗ_iff`, `CuspForm.mem_range_restrictₗ_iff`: for `Γ' ≤ Γ` with every
   cusp of `Γ` a cusp of `Γ'`, a form for `Γ'` extends to `Γ` exactly when it is `Γ`-slash
   invariant.
+* `Subgroup.card_quotient_mapGL_eq_index`: the index `[SL(2, ℤ) : Γ]` equals the cardinality
+  of the coset space `𝒮ℒ ⧸ (Γ.map (mapGL ℝ)).subgroupOf 𝒮ℒ`.
 * `SlashInvariantForm.restrict_trace`, `ModularForm.restrict_trace`, `CuspForm.restrict_trace`:
   when every element of `Γ` factors as an element of `Γ' ≤ Γ` times an element of `𝒢`, the trace
   from `𝒢` to `Γ` restricts to the trace from `𝒢` to `Γ'`.
@@ -116,6 +118,15 @@ theorem det_pos_of_mem_slGL {g : GL (Fin 2) ℝ} (hg : g ∈ 𝒮ℒ) :
   obtain ⟨γ, rfl⟩ := hg
   rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.SpecialLinearGroup.det_mapGL]
   exact one_pos
+
+/-- The index of a subgroup of `SL(2, ℤ)` equals the number of cosets of its real matrix
+image in `𝒮ℒ`. -/
+theorem _root_.Subgroup.card_quotient_mapGL_eq_index (Γ : Subgroup SL(2, ℤ)) :
+    Nat.card (𝒮ℒ ⧸ (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) = Γ.index := by
+  rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
+    MonoidHom.range_eq_map (Matrix.SpecialLinearGroup.mapGL ℝ), ← Subgroup.relIndex_comap,
+    Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective,
+    Subgroup.relIndex_top_right]
 
 /-- The slash-action conjugation `σ` is the identity for matrices coming from
 `SL₂(ℤ)`: their determinant is `1 > 0`, so the `σ` branch picks `ContinuousAlgEquiv.refl ℝ ℂ`.
@@ -291,8 +302,8 @@ lemma TauCeti.periodic_slash_of_apply_one_zero_eq_zero {h : ℝ} {g : ℍ → �
     {M : GL (Fin 2) ℝ} (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
     (hg_per : Function.Periodic (g ∘ ofComplex) h) :
     Function.Periodic ((g ∣[k] M) ∘ ofComplex) ((M 1 1 / M 0 0) * h : ℝ) := by
-  obtain ⟨h11, h00⟩ := div_ne_zero_iff.mp
-    (apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM).ne'
+  have h00 := M.a_ne_zero_of_c_eq_zero hM
+  have h11 := M.d_ne_zero_of_c_eq_zero hM
   have hscale : (M 0 0 / M 1 1) * ((M 1 1 / M 0 0) * h) = h := by field_simp
   refine TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mpr fun τ ↦ ?_
   simp only [_root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM,

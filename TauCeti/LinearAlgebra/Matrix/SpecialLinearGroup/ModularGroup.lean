@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 
@@ -41,6 +42,9 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
   `TauCeti.ModularGroup.mul_S_apply_apply_one`, `TauCeti.ModularGroup.neg_mul_S_apply_apply_zero`,
   `TauCeti.ModularGroup.neg_mul_S_apply_apply_one`: the columns of `γ Tⁿ`, `γ S` and `-(γ S)` in
   terms of those of `γ`.
+* `TauCeti.ModularGroup.mapGL_T_zpow_eq_upperRightHom`,
+  `TauCeti.ModularGroup.mapGL_T_pow_eq_upperRightHom`: images of `Tⁿ` (`n : ℤ` and `n : ℕ`) under
+  `mapGL S`.
 * `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_S`: explicit
   `2 × 2` matrices of `γ * T ^ n` and `γ * S` for `γ ∈ SL₂(ℤ)`.
 -/
@@ -203,5 +207,22 @@ theorem neg_mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i
 /-- The second column of `-(γ S)` is the first column of `γ`. -/
 theorem neg_mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i 1 = γ i 0 := by
   rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_one, neg_neg]
+
+/-- The image of `T ^ n : SL(2, ℤ)` in `GL(2, S)` for any commutative ring `S` is the
+upper-triangular matrix `[1, n; 0, 1]`. -/
+@[simp]
+lemma mapGL_T_zpow_eq_upperRightHom {S : Type*} [CommRing S] (n : ℤ) :
+    _root_.Matrix.SpecialLinearGroup.mapGL S ((T : SL(2, ℤ)) ^ n) =
+      _root_.Matrix.GeneralLinearGroup.upperRightHom (n : S) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [_root_.Matrix.SpecialLinearGroup.mapGL_coe_matrix, coe_T_zpow, -map_zpow]
+
+/-- The image of `T ^ n : SL(2, ℤ)` in `GL(2, S)`, for a natural exponent. -/
+@[simp]
+lemma mapGL_T_pow_eq_upperRightHom {S : Type*} [CommRing S] (n : ℕ) :
+    _root_.Matrix.SpecialLinearGroup.mapGL S ((T : SL(2, ℤ)) ^ n) =
+      _root_.Matrix.GeneralLinearGroup.upperRightHom (n : S) := by
+  rw [← zpow_natCast, mapGL_T_zpow_eq_upperRightHom, Int.cast_natCast]
 
 end TauCeti.ModularGroup

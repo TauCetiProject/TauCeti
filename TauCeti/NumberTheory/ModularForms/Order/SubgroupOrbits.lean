@@ -365,9 +365,15 @@ where the order has none. -/
 lemma hasFiniteSupport_weightedOrderOfVanishingOnSubgroupOrbit [Γ.FiniteIndex]
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) :
     Function.HasFiniteSupport (weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f) := by
-  refine (hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).subset fun o ho ↦ ?_
-  simp only [Function.mem_support, ne_eq] at ho ⊢
-  exact fun h0 ↦ ho (by rw [weightedOrderOfVanishingOnSubgroupOrbit_def, h0]; simp)
+  have hdef : weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f =
+      fun o ↦ 2 * (orderOfVanishingOnSubgroupOrbit f o : ℚ) / (cardStabilizerOnOrbit o : ℚ) :=
+    funext (weightedOrderOfVanishingOnSubgroupOrbit_def f)
+  have hcast : Function.support (fun o ↦ (orderOfVanishingOnSubgroupOrbit f o : ℚ)) ⊆
+      Function.support (orderOfVanishingOnSubgroupOrbit f) :=
+    fun _ ho ↦ by simpa only [Function.mem_support, ne_eq, Int.cast_eq_zero] using ho
+  rw [Function.HasFiniteSupport, hdef, Function.support_div]
+  exact ((hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).subset
+    ((Function.support_mul_subset_right _ _).trans hcast)).subset Set.inter_subset_left
 
 end ModularForm
 

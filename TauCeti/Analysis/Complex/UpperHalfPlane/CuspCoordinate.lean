@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UnitDisc.PuncturedManifold
 public import Mathlib.Topology.Maps.Strict.Basic
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.LinearAlgebra.Matrix.Triangular
 
@@ -470,11 +471,9 @@ theorem qParam_smul_of_apply_one_zero_eq_zero {h : ℝ} {M : Matrix.GeneralLinea
         Function.Periodic.qParam ((M 1 1 / M 0 0) * h) (τ : ℂ) := by
   rcases eq_or_ne h 0 with rfl | hh
   · simp [Function.Periodic.qParam]
-  have hdiv :=
-    Matrix.apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM
-  obtain ⟨h11, h00⟩ := div_ne_zero_iff.mp hdiv.ne'
-  have := Complex.ofReal_ne_zero.mpr hh; have := Complex.ofReal_ne_zero.mpr h00
-  have := Complex.ofReal_ne_zero.mpr h11
+  have := Complex.ofReal_ne_zero.mpr hh
+  have := Complex.ofReal_ne_zero.mpr (M.a_ne_zero_of_c_eq_zero hM)
+  have := Complex.ofReal_ne_zero.mpr (M.d_ne_zero_of_c_eq_zero hM)
   rw [Function.Periodic.qParam, Function.Periodic.qParam,
     _root_.UpperHalfPlane.coe_smul_of_apply_one_zero_eq_zero hdet hM, ← Complex.exp_add]
   congr 1; push_cast; field_simp; ring

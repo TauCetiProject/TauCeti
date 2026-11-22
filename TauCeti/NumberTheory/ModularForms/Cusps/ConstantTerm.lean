@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 import TauCeti.GroupTheory.GroupAction.ConjAct
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO

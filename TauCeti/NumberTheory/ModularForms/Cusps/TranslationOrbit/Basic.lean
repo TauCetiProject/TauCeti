@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.QuotientGroup
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.GroupTheory.GroupAction.Orbit.Period
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -84,27 +85,6 @@ theorem CuspTranslationOrbit.induction_on {P : CuspTranslationOrbit 𝒢 → Pro
       rw [hx]
       exact h γ
 
-/-- The period of a group element on a point is constant along that element's orbit. -/
-lemma minimalPeriod_zpow_smul_TSL (j : ℤ) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
-    minimalPeriod (TSL • ·) (TSL ^ j • q) = minimalPeriod (TSL • ·) q := by
-  have key : ∀ (b : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) (i : ℤ),
-      minimalPeriod (TSL • ·) (TSL ^ i • b) ∣ minimalPeriod (TSL • ·) b :=
-    fun b i ↦ MulAction.pow_smul_eq_iff_minimalPeriod_dvd.mp (by
-      rw [← mul_smul, ← zpow_natCast, ← _root_.zpow_add, add_comm, _root_.zpow_add, zpow_natCast,
-        mul_smul, MulAction.pow_smul_eq_iff_minimalPeriod_dvd.mpr dvd_rfl])
-  refine Nat.dvd_antisymm (key q j) ?_
-  have h := key (TSL ^ j • q) (-j)
-  rwa [← mul_smul, ← _root_.zpow_add, neg_add_cancel, zpow_zero, one_smul] at h
-
-/-- Any representative coset `q` in a cusp translation orbit is a `TSL`-power translate of
-`c.out`. -/
-lemma exists_TSL_zpow_smul_eq_out (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
-    ∃ j : ℤ, TSL ^ j • q = (⟦q⟧ : CuspTranslationOrbit 𝒢).out := by
-  obtain ⟨h, hh⟩ := (orbitRel_apply (G := Subgroup.zpowers TSL)).mp
-    (Quotient.eq.mp (Quotient.out_eq (⟦q⟧ : CuspTranslationOrbit 𝒢)))
-  obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp h.property
-  exact ⟨j, by rw [hj]; exact hh⟩
-
 /-- The **width** of a cusp translation orbit of `𝒢`: the period of the `T`-action. Under
 `[𝒢.IsFiniteRelIndex 𝒮ℒ]`, `minimalPeriod_TSL_dvd_iff` and
 `cuspTranslationOrbitWidth_mk` identify it with the least `m > 0` such that
@@ -117,8 +97,8 @@ coset. -/
 @[simp] lemma cuspTranslationOrbitWidth_mk (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
     cuspTranslationOrbitWidth (⟦q⟧ : CuspTranslationOrbit 𝒢) =
       minimalPeriod (TSL • ·) q := by
-  obtain ⟨j, hj⟩ := exists_TSL_zpow_smul_eq_out (𝒢 := 𝒢) q
-  rw [cuspTranslationOrbitWidth, ← hj, minimalPeriod_zpow_smul_TSL]
+  obtain ⟨j, hj⟩ := MulAction.exists_zpow_smul_eq_out TSL q
+  rw [cuspTranslationOrbitWidth, ← hj, MulAction.minimalPeriod_zpow_smul]
 
 /-- **What the period of a coset says about the group**: `T ^ n` fixes the coset of `x` exactly
 when `x⁻¹ T ^ n x ∈ 𝒢`. Thus the action period is characterized by divisibility of exactly these
@@ -182,21 +162,12 @@ noncomputable instance fintypeCuspTranslationOrbit [𝒢.IsFiniteRelIndex 𝒮�
     Fintype (CuspTranslationOrbit 𝒢) :=
   Fintype.ofFinite _
 
-/-- The period of the base coset is the integer cusp width of `𝒢`: both are characterised by
-divisibility of the exponents `n` with `T ^ n ∈ 𝒢`. -/
+/-- The period of the base coset is the integer cusp width of `𝒢`: both are the
+`MulAction.period` of `T` on the base coset. -/
 lemma minimalPeriod_TSL_mk_one :
     minimalPeriod (TSL • ·) (QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) =
       Subgroup.integerCuspWidth 𝒢 := by
-  have hsmul : ∀ n : ℕ, (TSL ^ n • (QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)) =
-      QuotientGroup.mk (TSL ^ n) := fun n ↦ by
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
-  have key : ∀ n : ℕ,
-      minimalPeriod (TSL • ·) (QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) ∣ n ↔
-      Subgroup.integerCuspWidth 𝒢 ∣ n := fun n ↦ by
-    rw [← MulAction.pow_smul_eq_iff_minimalPeriod_dvd, hsmul n,
-      ← Subgroup.natCast_mem_strictPeriods_iff]
-    exact ⟨fun h ↦ Subgroup.mk_T_pow_eq_iff.mp h, fun h ↦ Subgroup.mk_T_pow_eq_iff.mpr h⟩
-  exact Nat.dvd_antisymm ((key _).mpr dvd_rfl) ((key _).mp dvd_rfl)
+  rw [Subgroup.integerCuspWidth, ← TSL, MulAction.period_eq_minimalPeriod]
 
 /-- The orbit of the base coset represents the cusp `∞`, whose width is the integer cusp width. -/
 @[simp 1100] lemma cuspTranslationOrbitWidth_mk_one :

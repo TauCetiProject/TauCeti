@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Basic
-public import TauCeti.NumberTheory.Modular.ConjugateTranslation
 public import Mathlib.GroupTheory.GroupAction.Period
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.NumberTheory.ModularForms.Cusps
 public import Mathlib.NumberTheory.ModularForms.SlashActions
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
 # The integer cusp width of a finite-index subgroup
@@ -58,13 +59,6 @@ open scoped MatrixGroups ModularForm Pointwise
 
 namespace TauCeti
 
-/-- The image of `T ^ n : SL(2, ℤ)` in `GL(2, S)`, for a natural exponent. -/
-@[simp]
-lemma ModularGroup.mapGL_T_pow_eq_upperRightHom {S : Type*} [CommRing S] (n : ℕ) :
-    Matrix.SpecialLinearGroup.mapGL S ((ModularGroup.T : SL(2, ℤ))^n) =
-      Matrix.GeneralLinearGroup.upperRightHom (n : S) := by
-  rw [← zpow_natCast, ModularGroup.mapGL_T_zpow_eq_upperRightHom, Int.cast_natCast]
-
 /-- The Möbius action of `upperRightHom x = [1, x; 0, 1]` on `ℍ` is the shift `x +ᵥ ·`. -/
 lemma Matrix.GeneralLinearGroup.upperRightHom_smul (x : ℝ) (τ : ℍ) :
     _root_.Matrix.GeneralLinearGroup.upperRightHom x • τ = x +ᵥ τ := by
@@ -105,15 +99,6 @@ section IntegerCuspWidth
 
 variable {𝒢 : Subgroup (GL (Fin 2) ℝ)}
 
-/-- The left-multiplication action of `𝒮ℒ` on the coset space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`,
-constructed explicitly: instance synthesis for this action is unstable at use sites, so
-the declarations below install it with `letI`. -/
-@[instance_reducible]
-private def quotientTAction :
-    MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) :=
-  letI : MulAction 𝒮ℒ 𝒮ℒ := Monoid.toMulAction _
-  .quotient ..
-
 /-- The coset of a power of `T` is the base coset exactly when the exponent is a strict
 period of `𝒢`: the bridge between the coset space and the strict periods, stated without
 reference to the group action. -/
@@ -138,25 +123,14 @@ lemma Subgroup.exists_pos_nat_mem_strictPeriods [𝒢.IsFiniteRelIndex 𝒮ℒ] 
   rw [QuotientGroup.eq]
   simpa using inv_mem hn_mem
 
-/-- The powers of the element `T` of `𝒮ℒ` acting on the base coset, as statements about
-cosets: `t ^ n • ⟦1⟧ = ⟦t ^ n⟧` under the explicit action. -/
-private lemma quotientTAction_pow_smul_mk_one (n : ℕ) :
-    let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
-    ((mapGL ℝ).rangeRestrict ((ModularGroup.T : SL(2, ℤ))))^n •
-        (⟦1⟧ : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) =
-      ⟦((mapGL ℝ).rangeRestrict ((ModularGroup.T : SL(2, ℤ))))^n⟧ := by
-  intro _
-  rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
-
 /-- The `MulAction.period` of the element `T` of `𝒮ℒ` (via `(mapGL ℝ).rangeRestrict`) acting by
 left multiplication on the base coset of `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. When some positive power of `T` lies in
 `𝒢` — in particular whenever `𝒢` has finite relative index in `𝒮ℒ`, see
 `Subgroup.integerCuspWidth_pos` — this is the smallest positive integer `n` such that the
 upper-triangular matrix `[1, n; 0, 1]` lies in `𝒢`; otherwise it is `0`. -/
-def Subgroup.integerCuspWidth (𝒢 : Subgroup (GL (Fin 2) ℝ)) : ℕ :=
-  let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
+@[expose] def Subgroup.integerCuspWidth (𝒢 : Subgroup (GL (Fin 2) ℝ)) : ℕ :=
   MulAction.period ((mapGL ℝ).rangeRestrict (ModularGroup.T : SL(2, ℤ)))
-    (⟦1⟧ : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ))
+    (QuotientGroup.mk 1 : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ))
 
 /-- The natural numbers among the strict periods are exactly the multiples of the
 integer cusp width. -/
@@ -164,9 +138,9 @@ integer cusp width. -/
 -- through `Subgroup.mem_strictPeriods_iff`.
 lemma Subgroup.natCast_mem_strictPeriods_iff {n : ℕ} :
     (n : ℝ) ∈ 𝒢.strictPeriods ↔ Subgroup.integerCuspWidth 𝒢 ∣ n := by
-  let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
-  rw [← Subgroup.mk_T_pow_eq_iff, ← quotientTAction_pow_smul_mk_one n,
-    Subgroup.integerCuspWidth, MulAction.pow_smul_eq_iff_period_dvd]
+  rw [← Subgroup.mk_T_pow_eq_iff, Subgroup.integerCuspWidth,
+    ← MulAction.pow_smul_eq_iff_period_dvd, MulAction.Quotient.smul_mk,
+    smul_eq_mul, mul_one]
 
 /-- The integer cusp width is positive. -/
 lemma Subgroup.integerCuspWidth_pos [𝒢.IsFiniteRelIndex 𝒮ℒ] : 0 < Subgroup.integerCuspWidth 𝒢 := by
@@ -210,19 +184,17 @@ lemma Subgroup.quotient_T_pow_integerCuspWidth_injective :
     Function.Injective (fun j : Fin (Subgroup.integerCuspWidth 𝒢) ↦
       (⟦(mapGL ℝ).rangeRestrict ((ModularGroup.T : SL(2, ℤ))^(j : ℕ))⟧ :
         𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ))) := by
-  let _ : MulAction 𝒮ℒ (𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) := quotientTAction (𝒢 := 𝒢)
   set t := (mapGL ℝ).rangeRestrict (ModularGroup.T : SL(2, ℤ))
   intro j₁ j₂ hj
   simp only [map_pow] at hj
-  rw [← quotientTAction_pow_smul_mk_one (j₁ : ℕ),
-    ← quotientTAction_pow_smul_mk_one (j₂ : ℕ)] at hj
   -- Injectivity of iterates below the minimal period, transported along
   -- `period = minimalPeriod` and `iterate = pow-smul`.
   have hinj := Function.iterate_injOn_Iio_minimalPeriod (f := (t • ·))
-    (x := (⟦1⟧ : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)))
+    (x := (QuotientGroup.mk 1 : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)))
   rw [← MulAction.period_eq_minimalPeriod] at hinj
   exact Fin.ext (hinj (Set.mem_Iio.mpr j₁.isLt) (Set.mem_Iio.mpr j₂.isLt)
-    (by simpa only [smul_iterate] using hj))
+    (by simpa only [smul_iterate, MulAction.Quotient.smul_mk, smul_eq_mul, mul_one,
+      Quotient.mk''_eq_mk] using hj))
 
 /-- The integer cusp width is a positive integer multiple of the strict width at `∞`. -/
 lemma Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 import TauCeti.Algebra.Field.LinearFractional
 
 /-!
@@ -218,8 +219,7 @@ affine map**: `M • τ = (M 0 0 / M 1 1) * τ + M 0 1 / M 1 1`. -/
 theorem coe_smul_of_apply_one_zero_eq_zero {M : GL (Fin 2) ℝ}
     (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0) (τ : ℍ) :
     ((M • τ : ℍ) : ℂ) = ((M 0 0 / M 1 1 : ℝ) : ℂ) * τ + (M 0 1 / M 1 1 : ℝ) := by
-  have h11_c : (M 1 1 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr fun h0 ↦ by
-    simp [Matrix.det_fin_two, hM, h0] at hdet
+  have h11_c : (M 1 1 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (M.d_ne_zero_of_c_eq_zero hM)
   rw [coe_smul_of_det_pos (by rwa [Matrix.GeneralLinearGroup.val_det_apply])]
   simp only [num, denom, hM, Complex.ofReal_zero, zero_mul, zero_add, Complex.ofReal_div]
   field_simp
@@ -228,8 +228,7 @@ theorem coe_smul_of_apply_one_zero_eq_zero {M : GL (Fin 2) ℝ}
 by `M 0 0 / M 1 1`. -/
 theorem smul_vadd_of_apply_one_zero_eq_zero {M : GL (Fin 2) ℝ} (hM : M 1 0 = 0) (x : ℝ) (τ : ℍ) :
     M • (x +ᵥ τ) = ((M 0 0 / M 1 1) * x) +ᵥ (M • τ) := by
-  have h11 : (M 1 1 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr fun h0 ↦
-    M.det.ne_zero <| by simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_fin_two, hM, h0]
+  have h11 : (M 1 1 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (M.d_ne_zero_of_c_eq_zero hM)
   refine UpperHalfPlane.ext ?_
   rw [coe_smul, coe_vadd, coe_vadd, coe_smul, ← σ_ofReal M (M 0 0 / M 1 1 * x), ← map_add]
   congr 1; simp only [num, denom, hM, Complex.ofReal_zero, zero_mul, zero_add]; push_cast

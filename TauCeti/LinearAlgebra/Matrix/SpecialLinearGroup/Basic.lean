@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.GroupTheory.Index.Basic
 import Mathlib.Tactic.LinearCombination
@@ -88,10 +87,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.coe_mapGL_int` and `Matrix.SpecialLinearGroup.mapGL_map_intCast`:
   the matrix of `mapGL S` on `SL(n, ℤ)` is the entrywise integer cast, and `mapGL S` absorbs
   base change from `ℤ`.
-* `Matrix.SpecialLinearGroup.coe_mapGL_fin_two` and
-  `Matrix.SpecialLinearGroup.mapGL_transvection_eq_upperRightHom`: the entrywise matrix of
-  `mapGL S` on `SL₂(R)` (with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization) and its
-  action on upper-right transvections.
+* `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
+  with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
   `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
   row `(a, b)`.
@@ -300,15 +297,6 @@ lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
   rw [mapGL_coe_matrix]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
-
-/-- Under `mapGL S`, an upper-right transvection in `SL₂(R)` becomes `upperRightHom`. -/
-lemma mapGL_transvection_eq_upperRightHom {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    (w : R) :
-    mapGL S (transvection (zero_ne_one' (Fin 2)) w) =
-      GeneralLinearGroup.upperRightHom (algebraMap R S w) := by
-  apply Units.ext; rw [coe_mapGL_fin_two]; ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [transvection, Matrix.transvection, GeneralLinearGroup.upperRightHom]
 
 /-- The rational matrix of `mapGL ℚ σ`, written entrywise for `σ ∈ SL₂(ℤ)`. -/
 lemma coe_mapGL_int_rat_fin_two (σ : SL(2, ℤ)) :

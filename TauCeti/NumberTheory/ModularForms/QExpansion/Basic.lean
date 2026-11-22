@@ -347,12 +347,14 @@ lemma cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero (hh : 0 < h)
     (eventually_nhdsWithin_iff.mpr ?_)
     (continuousAt_const.mul (hg.comp_of_eq (continuousAt_const.mul continuousAt_id) (mul_zero _)))
   filter_upwards [Metric.ball_mem_nhds (0 : ℂ) one_pos] with q hq_ball hq_ne
-  let τ : ℍ := ⟨Function.Periodic.invQParam ((M 1 1 / M 0 0) * h) q,
-    Function.Periodic.im_invQParam_pos_of_norm_lt_one hh'
-      (mem_ball_zero_iff.mp hq_ball) hq_ne⟩
-  have hqτ : Function.Periodic.qParam ((M 1 1 / M 0 0) * h) (τ : ℂ) = q :=
-    Function.Periodic.qParam_right_inv hh'.ne' hq_ne
-  rw [← hqτ, _root_.UpperHalfPlane.eq_cuspFunction τ hh'.ne'
+  obtain ⟨τ, hqτ⟩ := UpperHalfPlane.qParamPuncturedUnitDisc_surjective
+    ((M 1 1 / M 0 0) * h) hh'
+    ⟨Complex.UnitDisc.mk q (mem_ball_zero_iff.mp hq_ball),
+      fun h0 ↦ hq_ne (congrArg ((↑) : Complex.UnitDisc → ℂ) h0)⟩
+  have hqτ' : Function.Periodic.qParam ((M 1 1 / M 0 0) * h) (τ : ℂ) = q := by
+    simpa only [UpperHalfPlane.coe_qParamPuncturedUnitDisc, Complex.UnitDisc.coe_mk] using
+      congrArg (fun x : {q : Complex.UnitDisc // q ≠ 0} ↦ ((x : Complex.UnitDisc) : ℂ)) hqτ
+  rw [← hqτ', _root_.UpperHalfPlane.eq_cuspFunction τ hh'.ne'
       (periodic_slash_of_apply_one_zero_eq_zero hdet hM hg_per),
     _root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM,
     ← _root_.UpperHalfPlane.eq_cuspFunction (M • τ) hh.ne' hg_per,

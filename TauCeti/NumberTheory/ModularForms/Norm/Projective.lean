@@ -5,19 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit
+public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Projective
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 public import TauCeti.NumberTheory.ModularForms.Order.CompactifiedQuotient
 import TauCeti.GroupTheory.GroupAction.ConjAct
-import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
 # The projective valence formula on the compactified quotient
 
 For finite-index `Γ ≤ SL(2, ℤ)`, dividing every interior term (`Order/EffectiveOrbits.lean`), every
-cusp fibre over `Γ.cuspOrbitOfTranslationOrbit` (`Cusps/TranslationOrbit.lean`), and the index
-`[SL(2, ℤ) : Γ] = [±Γ : Γ] · [SL(2, ℤ) : ±Γ]` in `valence_formula_finiteIndex` by `[±Γ : Γ]` yields
-`valence_formula_projective`, its unified form `valence_formula_compactifiedQuotient` over
+cusp fibre over `Γ.cuspOrbitOfTranslationOrbit` (`Cusps/TranslationOrbit/Projective.lean`), and the
+index `[SL(2, ℤ) : Γ] = [±Γ : Γ] · [SL(2, ℤ) : ±Γ]` in `valence_formula_finiteIndex` by `[±Γ : Γ]`
+yields `valence_formula_projective`, its unified form `valence_formula_compactifiedQuotient` over
 `Order/CompactifiedQuotient.lean`'s `weightedOrderOnCompactifiedQuotient`, and projective vanishing
 bounds.
 

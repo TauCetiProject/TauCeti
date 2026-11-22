@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm
-public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit
+public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Projective
 public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 
 /-!

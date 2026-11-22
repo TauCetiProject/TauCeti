@@ -336,8 +336,7 @@ theorem qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
     (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
     (hg_per : Periodic (g ∘ ofComplex) h) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
     qExpansionOrderAtCusp ((M 1 1 / M 0 0) * h) (g ∣[k] M) = qExpansionOrderAtCusp h g := by
-  have h11 := (div_ne_zero_iff.mp
-    (apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM).ne').1
+  have h11 := M.d_ne_zero_of_c_eq_zero hM
   set c : ℂ := ((|(M.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * (M 1 1 : ℂ) ^ (-k)
   set ζ : ℂ := Complex.exp (2 * Real.pi * Complex.I * (M 0 1 / M 1 1 : ℝ) / h)
   have hc : c ≠ 0 := mul_ne_zero (zpow_ne_zero _ <| Complex.ofReal_ne_zero.mpr <|

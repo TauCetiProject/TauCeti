@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Cusps.Regularity
 public import TauCeti.NumberTheory.ModularForms.Cusps.TranslationOrbit.Basic
 import TauCeti.GroupTheory.GroupAction.ConjAct
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
 
 /-!
