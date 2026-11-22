@@ -91,9 +91,7 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger {F : Type*} [Fie
         (((3 : ℂ) + 4 * Complex.I) / 5) ^ (2 * k) ∨
       (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
         (((3 : ℂ) + 4 * Complex.I) / 5) ^ (-(2 * k)) := by
-  let w : {w : InfinitePlace F // w.IsComplex} :=
-    ⟨Classical.arbitrary (InfinitePlace F),
-      (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex _⟩
+  let w := complexPlaceFour F
   rw [unitaryWeight_angularGrossencharacter_span_singleton k w
     (two_add_toInteger_ne_zero_of_four hζ)]
   set τ := w.val.embedding
@@ -156,8 +154,7 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod {F :
       (∏ τ : F →+* ℂ, τ (2 + ζ) ^ (angularGrossencharacter F k).infinityType τ)⁻¹ := by
   set α : 𝓞 F := (2 : 𝓞 F) + hζ.toInteger
   have hαF : (algebraMap (𝓞 F) F α) ≠ 0 :=
-    (map_ne_zero_iff (algebraMap (𝓞 F) F) (IsFractionRing.injective (𝓞 F) F)).mpr
-      (two_add_toInteger_ne_zero_of_four hζ)
+    RingOfIntegers.coe_ne_zero_iff.mpr (two_add_toInteger_ne_zero_of_four hζ)
   let x : Fˣ := Units.mk0 (algebraMap (𝓞 F) F α) hαF
   have hcompat := (angularGrossencharacter F k).compatibility_inv x (isCongrOne_one x) α rfl
   have hxval : (x : F) = 2 + ζ := by
@@ -196,9 +193,6 @@ theorem angularGrossencharacter_not_isNormTwist
       (angularGrossencharacter F k).unitaryWeight.val u := by
   intro htwist
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ F
-  let w : {w : InfinitePlace F // w.IsComplex} :=
-    ⟨Classical.arbitrary (InfinitePlace F),
-      (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex _⟩
   set α : 𝓞 F := (2 : 𝓞 F) + hζ.toInteger
   set β : 𝓞 F := (2 : 𝓞 F) - hζ.toInteger
   have hNα : Ideal.absNorm (Ideal.span {α}) = 5 := by
@@ -225,7 +219,7 @@ theorem angularGrossencharacter_not_isNormTwist
   have hmul5 : α * β = (5 : 𝓞 F) := by
     simp only [α, β]; linear_combination -hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
   have hval5 : (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(5 : 𝓞 F)}) = 1 := by
-    rw [unitaryWeight_angularGrossencharacter_span_singleton k w (by norm_num)]
+    rw [unitaryWeight_angularGrossencharacter_span_singleton k (complexPlaceFour F) (by norm_num)]
     simp [map_ofNat]
   have hsq1 : ((angularGrossencharacter F k).unitaryWeight.val (Ideal.span {α})) ^ 2 = 1 := by
     rw [sq, ← hval5, ← hmul5, ← Ideal.span_singleton_mul_span_singleton, map_mul, heqαβ]

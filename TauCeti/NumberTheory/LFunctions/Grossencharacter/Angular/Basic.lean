@@ -12,6 +12,8 @@ import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
+import TauCeti.NumberTheory.NumberField.Units.Dirichlet
+import TauCeti.NumberTheory.NumberField.Units.Torsion
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
@@ -87,30 +89,38 @@ open GlobalNumberFields TauCeti.NumberField
 
 section CyclotomicFourHelpers
 
+private theorem embedding_coe_ne_zero {F : Type*} [Field F] {w : InfinitePlace F} {α : 𝓞 F}
+    (hα : α ≠ 0) : w.embedding (α : F) ≠ 0 :=
+  (map_ne_zero _).mpr (RingOfIntegers.coe_ne_zero_iff.mpr hα)
+
+private theorem zpow_four_mul_eq_one_of_pow_four_eq_one {z : ℂ} (hz : z ^ 4 = 1) (m : ℤ) :
+    z ^ (4 * m) = 1 := by
+  rw [show (4 * m : ℤ) = (4 : ℕ) * m by norm_num, zpow_mul, zpow_natCast, hz, one_zpow]
+
+private theorem div_norm_zpow_four_mul_eq_one_of_pow_four_eq_one {z : ℂ} (hz : z ^ 4 = 1)
+    (m : ℤ) : (z / (‖z‖ : ℂ)) ^ (4 * m) = 1 := by
+  rw [Complex.norm_eq_one_of_pow_eq_one hz (by decide), Complex.ofReal_one, div_one]
+  exact zpow_four_mul_eq_one_of_pow_four_eq_one hz m
+
 variable (F : Type*) [Field F] [NumberField F] [IsCyclotomicExtension {4} ℚ F]
-
-/-- The unique complex infinite place of `F`. -/
-private def angularPlace : {w : InfinitePlace F // w.IsComplex} :=
-  let w := Classical.arbitrary (InfinitePlace F)
-  ⟨w, (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex w⟩
-
-private theorem infinitePlace_eq_angularPlace (w : InfinitePlace F) :
-    w = (angularPlace F).val :=
-  letI : IsTotallyComplex F := IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)
-  letI : Subsingleton (InfinitePlace F) :=
-    InfinitePlace.subsingleton_of_finrank_eq_two
-      (TauCeti.finrank_eq_two_of_isCyclotomicExtension_four (K := F))
-  Subsingleton.elim _ _
-
-private theorem complexPlace_eq_angularPlace (w : {w : InfinitePlace F // w.IsComplex}) :
-    w = angularPlace F :=
-  Subtype.ext (infinitePlace_eq_angularPlace F w.val)
 
 private theorem raySubgroup_one_eq_top : raySubgroup (Modulus.one F) = ⊤ := by
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ F
   exact (raySubgroup_one_eq_top_iff F).mpr
     (GaussianRationals.classNumber_eq_one hζ.minpoly_toInteger_eq_X_sq_add_one
       (IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ))
+
+private theorem embedding_unit_pow_four_eq_one (u : (𝓞 F)ˣ) :
+    ((complexPlaceFour F).val.embedding ((u : 𝓞 F) : F)) ^ 4 = 1 := by
+  have hrank : Units.rank F = 0 :=
+    Units.rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two F
+      (TauCeti.finrank_eq_two_of_isCyclotomicExtension_four (K := F))
+  have htor : Units.torsionOrder F = 4 := by
+    rw [IsCyclotomicExtension.Rat.torsionOrder_eq (n := 4)]
+    decide
+  simpa [htor] using
+    TauCeti.NumberField.Units.apply_unit_pow_torsionOrder_eq_one_of_rank_eq_zero
+      hrank (complexPlaceFour F).val.embedding u
 
 end CyclotomicFourHelpers
 
@@ -126,7 +136,7 @@ is the complex embedding of the unique infinite place of `F`. -/
 private def angularGenVal (k : ℤ) (α : 𝓞 F) : ℂ :=
   if α = 0 then 0
   else
-    let τ := (angularPlace F).val.embedding
+    let τ := (complexPlaceFour F).val.embedding
     (τ (α : F) / starRingEnd ℂ (τ (α : F))) ^ (2 * k)
 
 private theorem angularGenVal_zero (k : ℤ) : angularGenVal F k 0 = 0 := by
@@ -134,8 +144,8 @@ private theorem angularGenVal_zero (k : ℤ) : angularGenVal F k 0 = 0 := by
 
 private theorem angularGenVal_of_ne_zero (k : ℤ) {α : 𝓞 F} (hα : α ≠ 0) :
     angularGenVal F k α =
-      ((angularPlace F).val.embedding (α : F) /
-        starRingEnd ℂ ((angularPlace F).val.embedding (α : F))) ^ (2 * k) := by
+      ((complexPlaceFour F).val.embedding (α : F) /
+        starRingEnd ℂ ((complexPlaceFour F).val.embedding (α : F))) ^ (2 * k) := by
   simp [angularGenVal, hα]
 
 private theorem angularGenVal_one (k : ℤ) : angularGenVal F k 1 = 1 := by
@@ -157,14 +167,13 @@ private theorem angularGenVal_mul (k : ℤ) (α β : 𝓞 F) :
 `(τ u / conj (τ u)) ^ (2 * k) = ((τ u) ^ 4) ^ k = 1`. -/
 private theorem angularGenVal_unit (k : ℤ) (u : (𝓞 F)ˣ) : angularGenVal F k (u : 𝓞 F) = 1 := by
   rw [angularGenVal_of_ne_zero F k u.ne_zero]
-  set z : ℂ := (angularPlace F).val.embedding ((u : 𝓞 F) : F)
-  have hz4 : z ^ 4 = 1 :=
-    TauCeti.apply_unit_pow_four_eq_one_of_four (angularPlace F).val.embedding u
+  set z : ℂ := (complexPlaceFour F).val.embedding ((u : 𝓞 F) : F)
+  have hz4 : z ^ 4 = 1 := embedding_unit_pow_four_eq_one F u
   have hconj : starRingEnd ℂ z = z⁻¹ :=
     (Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hz4 (by decide))).symm
-  have hexp : ((2 : ℕ) : ℤ) * (2 * k) = (4 : ℕ) * k := by ring
-  rw [hconj, div_inv_eq_mul, ← sq, ← zpow_natCast, ← zpow_mul, hexp, zpow_mul, zpow_natCast, hz4,
-    one_zpow]
+  rw [hconj, div_inv_eq_mul, ← sq, ← zpow_natCast, ← zpow_mul,
+    show ((2 : ℕ) : ℤ) * (2 * k) = 4 * k by ring]
+  exact zpow_four_mul_eq_one_of_pow_four_eq_one hz4 k
 
 /-- Associated elements of `𝓞 F` have the same `angularGenVal`. -/
 private theorem angularGenVal_eq_of_associated (k : ℤ) {α β : 𝓞 F} (h : Associated α β) :
@@ -175,18 +184,14 @@ private theorem angularGenVal_eq_of_associated (k : ℤ) {α β : 𝓞 F} (h : A
 private theorem angularGenVal_ne_zero (k : ℤ) {α : 𝓞 F} (hα : α ≠ 0) :
     angularGenVal F k α ≠ 0 := by
   rw [angularGenVal_of_ne_zero F k hα]
-  have hαF : (α : F) ≠ 0 :=
-    (map_ne_zero_iff (algebraMap (𝓞 F) F) (IsFractionRing.injective (𝓞 F) F)).mpr hα
-  have hz : (angularPlace F).val.embedding (α : F) ≠ 0 := (map_ne_zero _).mpr hαF
+  have hz := embedding_coe_ne_zero (w := (complexPlaceFour F).val) hα
   exact zpow_ne_zero _ (div_ne_zero hz ((map_ne_zero _).mpr hz))
 
 private theorem norm_angularGenVal_of_ne_zero (k : ℤ) {α : 𝓞 F} (hα : α ≠ 0) :
     ‖angularGenVal F k α‖ = 1 := by
   rw [angularGenVal_of_ne_zero F k hα, norm_zpow, norm_div, RCLike.norm_conj]
-  have hαF : (α : F) ≠ 0 :=
-    (map_ne_zero_iff (algebraMap (𝓞 F) F) (IsFractionRing.injective (𝓞 F) F)).mpr hα
-  have hz : ‖(angularPlace F).val.embedding (α : F)‖ ≠ 0 :=
-    norm_ne_zero_iff.mpr ((map_ne_zero _).mpr hαF)
+  have hz : ‖(complexPlaceFour F).val.embedding (α : F)‖ ≠ 0 :=
+    norm_ne_zero_iff.mpr (embedding_coe_ne_zero hα)
   rw [div_self hz, one_zpow]
 
 /-- The completely multiplicative ideal weight on `Ideal (𝓞 F)` sending `(α)` to
@@ -260,54 +265,41 @@ open Classical in
 /-- The algebraic infinity type of Hecke's `k`-th angular character: `-2 * k` at the chosen
 embedding of the unique complex place and `2 * k` at its complex conjugate. -/
 private def angularAlgebraicInfinityType (k : ℤ) : AlgebraicInfinityType F :=
-  fun σ ↦ if σ = (angularPlace F).val.embedding then -(2 * k) else 2 * k
+  fun σ ↦ if σ = (complexPlaceFour F).val.embedding then -(2 * k) else 2 * k
 
 private theorem angularAlgebraicInfinityType_embedding (k : ℤ) :
-    angularAlgebraicInfinityType F k (angularPlace F).val.embedding = -(2 * k) := by
+    angularAlgebraicInfinityType F k (complexPlaceFour F).val.embedding = -(2 * k) := by
   simp [angularAlgebraicInfinityType]
 
 private theorem angularAlgebraicInfinityType_conjugate (k : ℤ) :
-    angularAlgebraicInfinityType F k (ComplexEmbedding.conjugate (angularPlace F).val.embedding) =
-      2 * k := by
-  have hne : ComplexEmbedding.conjugate (angularPlace F).val.embedding ≠
-      (angularPlace F).val.embedding := by
+    angularAlgebraicInfinityType F k
+        (ComplexEmbedding.conjugate (complexPlaceFour F).val.embedding) = 2 * k := by
+  have hne : ComplexEmbedding.conjugate (complexPlaceFour F).val.embedding ≠
+      (complexPlaceFour F).val.embedding := by
     intro h
-    exact InfinitePlace.not_isReal_iff_isComplex.mpr (angularPlace F).property
+    exact InfinitePlace.not_isReal_iff_isComplex.mpr (complexPlaceFour F).property
       (InfinitePlace.isReal_iff.mpr (ComplexEmbedding.isReal_iff.mpr h))
   simp [angularAlgebraicInfinityType, hne]
 
-/-- Every embedding `σ : F →+* ℂ` is either `(angularPlace F).val.embedding` or its conjugate. -/
-private theorem embedding_eq_or_eq_conjugate_four (σ : F →+* ℂ) :
-    σ = (angularPlace F).val.embedding ∨
-      σ = ComplexEmbedding.conjugate (angularPlace F).val.embedding := by
-  have hmk : InfinitePlace.mk σ = (angularPlace F).val :=
-    infinitePlace_eq_angularPlace F (InfinitePlace.mk σ)
-  rcases InfinitePlace.embedding_mk_eq σ with h | h
-  · left
-    exact (congrArg InfinitePlace.embedding hmk).symm.trans h |>.symm
-  · right
-    have h' := congrArg ComplexEmbedding.conjugate
-      ((congrArg InfinitePlace.embedding hmk).symm.trans h)
-    have hconj_inv : ComplexEmbedding.conjugate (ComplexEmbedding.conjugate σ) = σ :=
-      RingHom.ext fun z ↦ by simp
-    rwa [hconj_inv, eq_comm] at h'
-
 /-- The continuous character on `IdeleGroup (𝓞 F) F` reading the angular character of frequency
-`-4 * k` at the unique complex place `angularPlace F`. Its restriction to
+`-4 * k` at the unique complex place `complexPlaceFour F`. Its restriction to
 `ideleCongruenceSubgroup (Modulus.one F)` kills `U ∩ F^× = (𝓞 F)ˣ`. -/
 private def angularIdeleArchChar (k : ℤ) : IdeleGroup (𝓞 F) F →ₜ* ℂˣ :=
   ((complexAngularCharacter ^ (-(4 * k))).comp
     (ContinuousMonoidHom.toContinuousMonoidHom
       (Units.mapContinuousMulEquiv
-        (continuousMulEquivComplexOfIsComplex (angularPlace F).property)))).comp
-    ⟨(angularPlace F).val.ideleInfiniteCoord, (angularPlace F).val.continuous_ideleInfiniteCoord⟩
+        (continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property)))).comp
+    ⟨(complexPlaceFour F).val.ideleInfiniteCoord,
+      (complexPlaceFour F).val.continuous_ideleInfiniteCoord⟩
 
 private theorem coe_angularIdeleArchChar_apply (k : ℤ) (y : IdeleGroup (𝓞 F) F) :
     (angularIdeleArchChar F k y : ℂ) =
-      (continuousMulEquivComplexOfIsComplex (angularPlace F).property
-          ((angularPlace F).val.ideleInfiniteCoord y : (angularPlace F).val.Completion) /
-        (‖continuousMulEquivComplexOfIsComplex (angularPlace F).property
-          ((angularPlace F).val.ideleInfiniteCoord y : (angularPlace F).val.Completion)‖ : ℂ)) ^
+      (continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property
+          ((complexPlaceFour F).val.ideleInfiniteCoord y :
+            (complexPlaceFour F).val.Completion) /
+        (‖continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property
+          ((complexPlaceFour F).val.ideleInfiniteCoord y :
+            (complexPlaceFour F).val.Completion)‖ : ℂ)) ^
         (-(4 * k)) := by
   simp only [angularIdeleArchChar, ContinuousMonoidHom.coe_comp, Function.comp_apply,
     ContinuousMonoidHom.coe_mk, ContinuousMonoidHom.zpow_apply, Units.val_zpow_eq_zpow_val,
@@ -337,19 +329,16 @@ private theorem ideleCongruenceToClassHom_ker_le (k : ℤ) :
   rw [MonoidHom.coe_ofClass, ContinuousMonoidHom.coe_comp, Function.comp_apply,
     TauCeti.ContinuousMonoidHom.subgroupSubtype_apply, ← hx, Units.val_one,
     coe_angularIdeleArchChar_apply, InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-  have hval : continuousMulEquivComplexOfIsComplex (angularPlace F).property
-      ((Units.map (algebraMap F (angularPlace F).val.Completion).toMonoidHom
-        (Units.map (algebraMap (𝓞 F) F).toMonoidHom u) : (angularPlace F).val.Completionˣ) :
-          (angularPlace F).val.Completion) =
-      (angularPlace F).val.embedding ((u : 𝓞 F) : F) := by
+  have hval : continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property
+      ((Units.map (algebraMap F (complexPlaceFour F).val.Completion).toMonoidHom
+        (Units.map (algebraMap (𝓞 F) F).toMonoidHom u) :
+          (complexPlaceFour F).val.Completionˣ) : (complexPlaceFour F).val.Completion) =
+      (complexPlaceFour F).val.embedding ((u : 𝓞 F) : F) := by
     simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
       continuousMulEquivComplexOfIsComplex_apply]
-  rw [hval]
-  have hz4 : ((angularPlace F).val.embedding ((u : 𝓞 F) : F)) ^ 4 = 1 :=
-    TauCeti.apply_unit_pow_four_eq_one_of_four (angularPlace F).val.embedding u
-  have hexp : -(4 * k) = (4 : ℕ) * (-k) := by ring
-  rw [Complex.norm_eq_one_of_pow_eq_one hz4 (by decide), Complex.ofReal_one, div_one,
-    hexp, zpow_mul, zpow_natCast, hz4, one_zpow]
+  rw [hval, show -(4 * k) = 4 * (-k) by ring]
+  exact div_norm_zpow_four_mul_eq_one_of_pow_four_eq_one
+    (embedding_unit_pow_four_eq_one F u) (-k)
 
 /-- Hecke's `k`-th angular idele class character on `F`. -/
 private def angularHeckeCharacter (k : ℤ) : HeckeCharacter F :=
@@ -371,12 +360,12 @@ private theorem angularHeckeCharacter_ideleCongruenceToClassHom (k : ℤ)
 private theorem coe_angularHeckeCharacter_ideleCongruenceToClassHom (k : ℤ)
     (y : ideleCongruenceSubgroup (Modulus.one F)) :
     ((angularHeckeCharacter F k (ideleCongruenceToClassHom (Modulus.one F) y) : ℂˣ) : ℂ) =
-      (continuousMulEquivComplexOfIsComplex (angularPlace F).property
-          ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
-            (angularPlace F).val.Completion) /
-        (‖continuousMulEquivComplexOfIsComplex (angularPlace F).property
-          ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
-            (angularPlace F).val.Completion)‖ : ℂ)) ^ (-(4 * k)) := by
+      (continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property
+          ((complexPlaceFour F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
+            (complexPlaceFour F).val.Completion) /
+        (‖continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property
+          ((complexPlaceFour F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
+            (complexPlaceFour F).val.Completion)‖ : ℂ)) ^ (-(4 * k)) := by
   rw [angularHeckeCharacter_ideleCongruenceToClassHom, coe_angularIdeleArchChar_apply]
 
 /-- Every value of `angularHeckeCharacter F k` has norm `1`, so its idelic shift vanishes. -/
@@ -386,11 +375,12 @@ private theorem shift_angularHeckeCharacter (k : ℤ) :
   obtain ⟨y, rfl⟩ :=
     (ideleCongruenceToClassHom_surjective_iff (Modulus.one F)).mpr (raySubgroup_one_eq_top F) c
   rw [coe_angularHeckeCharacter_ideleCongruenceToClassHom]
-  set z : ℂ := continuousMulEquivComplexOfIsComplex (angularPlace F).property
-    ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
-      (angularPlace F).val.Completion)
+  set z : ℂ := continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property
+    ((complexPlaceFour F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
+      (complexPlaceFour F).val.Completion)
   have hz : z ≠ 0 :=
-    (map_ne_zero _).mpr ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F)).ne_zero
+    (map_ne_zero _).mpr
+      ((complexPlaceFour F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F)).ne_zero
   rw [norm_zpow, norm_div, Complex.norm_real, norm_norm, div_self (norm_ne_zero_iff.mpr hz),
     one_zpow]
 
@@ -403,11 +393,11 @@ private theorem unitaryPart_angularHeckeCharacter (k : ℤ) :
 private theorem complexComponent_angularHeckeCharacter (k : ℤ)
     (w : {w : InfinitePlace F // w.IsComplex}) :
     (angularHeckeCharacter F k).complexComponent w = complexUnitsCharacter 0 (-(4 * k)) := by
-  obtain rfl : w = angularPlace F := complexPlace_eq_angularPlace F w
+  obtain rfl : w = complexPlaceFour F := Subsingleton.elim w _
   refine ContinuousMonoidHom.ext fun z ↦ ?_
   let e := Units.mapContinuousMulEquiv
-    (continuousMulEquivComplexOfIsComplex (angularPlace F).property)
-  have hmem : IdeleGroup.ofCompletion (𝓞 F) F (angularPlace F).val (e.symm z) ∈
+    (continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property)
+  have hmem : IdeleGroup.ofCompletion (𝓞 F) F (complexPlaceFour F).val (e.symm z) ∈
       ideleCongruenceSubgroup (Modulus.one F) :=
     mem_ideleCongruenceSubgroup_one_iff.mpr fun v ↦ by simp
   rw [HeckeCharacter.complexComponent_apply, HeckeCharacter.infiniteComponent_apply,
@@ -423,18 +413,15 @@ private theorem complexComponent_angularHeckeCharacter (k : ℤ)
 private theorem infinityType_angularHeckeCharacter (k : ℤ) :
     (angularHeckeCharacter F k).infinityType =
       AlgebraicInfinityType.toContinuous (angularAlgebraicInfinityType F k) := by
-  refine HeckeCharacter.infinityType_eq_iff.mpr ⟨fun w ↦ ?_, fun w ↦ ?_⟩
-  · have : IsTotallyComplex F :=
-      IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)
-    exact IsEmpty.elim inferInstance w
-  · obtain rfl : w = angularPlace F := complexPlace_eq_angularPlace F w
-    rw [complexComponent_angularHeckeCharacter,
-      AlgebraicInfinityType.toContinuous_complexExponent,
-      AlgebraicInfinityType.toContinuous_complexAngularFrequency,
-      angularAlgebraicInfinityType_embedding, angularAlgebraicInfinityType_conjugate]
-    have hsum : ((-(2 * k) : ℤ) : ℂ) + ((2 * k : ℤ) : ℂ) = 0 := by push_cast; ring
-    have hdiff : -(2 * k) - 2 * k = -(4 * k) := by ring
-    rw [hsum, hdiff]
+  refine HeckeCharacter.infinityType_eq_iff.mpr ⟨fun w ↦ IsEmpty.elim inferInstance w, fun w ↦ ?_⟩
+  obtain rfl : w = complexPlaceFour F := Subsingleton.elim w _
+  rw [complexComponent_angularHeckeCharacter,
+    AlgebraicInfinityType.toContinuous_complexExponent,
+    AlgebraicInfinityType.toContinuous_complexAngularFrequency,
+    angularAlgebraicInfinityType_embedding, angularAlgebraicInfinityType_conjugate]
+  have hsum : ((-(2 * k) : ℤ) : ℂ) + ((2 * k : ℤ) : ℂ) = 0 := by push_cast; ring
+  have hdiff : -(2 * k) - 2 * k = -(4 * k) := by ring
+  rw [hsum, hdiff]
 
 /-- Evaluating `angularHeckeCharacter F k` at a uniformizer `u` of `v` gives the principal-ideal
 weight at `v.asIdeal`: multiplying `ofAdicCompletion v u` by `(unitEmbedding π)⁻¹` for a generator
@@ -448,8 +435,7 @@ private theorem finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one (
   have : IsPrincipalIdealRing (𝓞 F) := isPrincipalIdealRing_ringOfIntegers_four F
   obtain ⟨π, hπ0, hspan⟩ := v.exists_span_singleton_eq_asIdeal
   have hspan1 : Ideal.span {π} = v.asIdeal ^ 1 := by rw [pow_one, hspan]
-  have hπF : (algebraMap (𝓞 F) F π) ≠ 0 :=
-    (map_ne_zero_iff (algebraMap (𝓞 F) F) (IsFractionRing.injective (𝓞 F) F)).mpr hπ0
+  have hπF : (algebraMap (𝓞 F) F π) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hπ0
   set x : Fˣ := Units.mk0 (algebraMap (𝓞 F) F π) hπF
   set y : IdeleGroup (𝓞 F) F :=
     IdeleGroup.ofAdicCompletion (𝓞 F) F v u * (IdeleGroup.unitEmbedding (𝓞 F) F x)⁻¹
@@ -472,9 +458,9 @@ private theorem finiteComponent_angularHeckeCharacter_of_valued_eq_exp_neg_one (
   rw [HeckeCharacter.finiteComponent_apply, ← hy_class,
     coe_angularHeckeCharacter_ideleCongruenceToClassHom, ← hspan,
     angularIdealWeight_span_singleton, angularGenVal_of_ne_zero F k hπ0]
-  have hinf : continuousMulEquivComplexOfIsComplex (angularPlace F).property
-      ((angularPlace F).val.ideleInfiniteCoord y : (angularPlace F).val.Completion) =
-      ((angularPlace F).val.embedding (π : F))⁻¹ := by
+  have hinf : continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property
+      ((complexPlaceFour F).val.ideleInfiniteCoord y : (complexPlaceFour F).val.Completion) =
+      ((complexPlaceFour F).val.embedding (π : F))⁻¹ := by
     simp [y, x, InfinitePlace.ideleInfiniteCoord_ofAdicCompletion,
       InfinitePlace.ideleInfiniteCoord_unitEmbedding,
       NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
@@ -501,16 +487,13 @@ def angularGrossencharacter (F : Type*) [Field F] [NumberField F]
   infinityType := angularAlgebraicInfinityType F k
   eq_one_of_mem y hy hw := by
     rw [← ideleCongruenceToClassHom_apply (Modulus.one F) ⟨y, hy⟩, Units.ext_iff,
-      coe_angularHeckeCharacter_ideleCongruenceToClassHom, hw (angularPlace F).val, Units.val_one,
-      map_one]
+      coe_angularHeckeCharacter_ideleCongruenceToClassHom, hw (complexPlaceFour F).val,
+      Units.val_one, map_one]
     simp
   agreesOnIdentityComponent := by
     rw [infinityType_angularHeckeCharacter]
     exact (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mpr ⟨rfl, rfl, rfl⟩
-  realParity_eq w _ := by
-    have : IsTotallyComplex F :=
-      IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)
-    exact IsEmpty.elim inferInstance w
+  realParity_eq w _ := IsEmpty.elim inferInstance w
   unitaryWeight_eq_zero I hI := by
     by_cases hbot : I = ⊥
     · simp [hbot]
@@ -550,7 +533,7 @@ theorem toHeckeCharacter_angularGrossencharacter_ideleCongruenceToClassHom {F : 
         (‖continuousMulEquivComplexOfIsComplex w.property
           (w.val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) : w.val.Completion)‖ : ℂ)) ^
         (-(4 * k)) := by
-  obtain rfl : w = angularPlace F := complexPlace_eq_angularPlace F w
+  obtain rfl : w = complexPlaceFour F := Subsingleton.elim w _
   exact coe_angularHeckeCharacter_ideleCongruenceToClassHom F k y
 
 /-- At the chosen embedding `w.val.embedding` of the complex place `w` of `F`, the algebraic
@@ -559,7 +542,7 @@ infinity type of `angularGrossencharacter F k` has exponent `-(2 * k)`. -/
 theorem infinityType_angularGrossencharacter_embedding {F : Type*} [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] (k : ℤ) (w : {w : InfinitePlace F // w.IsComplex}) :
     (angularGrossencharacter F k).infinityType w.val.embedding = -(2 * k) := by
-  obtain rfl : w = angularPlace F := complexPlace_eq_angularPlace F w
+  obtain rfl : w = complexPlaceFour F := Subsingleton.elim w _
   exact angularAlgebraicInfinityType_embedding F k
 
 /-- At the conjugate embedding `conj w.val.embedding` of the complex place `w` of `F`, the algebraic
@@ -569,7 +552,7 @@ theorem infinityType_angularGrossencharacter_conjugate {F : Type*} [Field F] [Nu
     [IsCyclotomicExtension {4} ℚ F] (k : ℤ) (w : {w : InfinitePlace F // w.IsComplex}) :
     (angularGrossencharacter F k).infinityType (ComplexEmbedding.conjugate w.val.embedding) =
       2 * k := by
-  obtain rfl : w = angularPlace F := complexPlace_eq_angularPlace F w
+  obtain rfl : w = complexPlaceFour F := Subsingleton.elim w _
   exact angularAlgebraicInfinityType_conjugate F k
 
 /-- **Ideal-side value on principal ideals**: for any nonzero `α ∈ 𝓞 F` and the complex place `w`
@@ -580,7 +563,7 @@ theorem unitaryWeight_angularGrossencharacter_span_singleton {F : Type*} [Field 
     {α : 𝓞 F} (hα : α ≠ 0) :
     (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {α}) =
       (w.val.embedding (α : F) / starRingEnd ℂ (w.val.embedding (α : F))) ^ (2 * k) := by
-  obtain rfl : w = angularPlace F := complexPlace_eq_angularPlace F w
+  obtain rfl : w = complexPlaceFour F := Subsingleton.elim w _
   rw [unitaryWeight_angularGrossencharacter_def, val_angularUnitaryWeight,
     angularIdealWeight_span_singleton, angularGenVal_of_ne_zero F k hα]
 
@@ -593,9 +576,9 @@ theorem exists_angularGrossencharacter (F : Type*) [Field F] [NumberField F]
     ∃ χ : Grossencharacter F (Modulus.one F), ∃ τ : F →+* ℂ, χ.infinityType τ = -(2 * k) ∧
       ∀ α : 𝓞 F, α ≠ 0 →
         χ.unitaryWeight.val (Ideal.span {α}) = (τ (α : F) / starRingEnd ℂ (τ (α : F))) ^ (2 * k) :=
-  ⟨angularGrossencharacter F k, (angularPlace F).val.embedding,
-    infinityType_angularGrossencharacter_embedding k (angularPlace F),
-    fun _ hα ↦ unitaryWeight_angularGrossencharacter_span_singleton k (angularPlace F) hα⟩
+  ⟨angularGrossencharacter F k, (complexPlaceFour F).val.embedding,
+    infinityType_angularGrossencharacter_embedding k (complexPlaceFour F),
+    fun _ hα ↦ unitaryWeight_angularGrossencharacter_span_singleton k (complexPlaceFour F) hα⟩
 
 /-- Because `angularGrossencharacter F k` is unramified everywhere, its unitary ideal weight has no
 bad primes. -/
@@ -696,9 +679,9 @@ theorem angularGrossencharacter_zero (F : Type*) [Field F] [NumberField F]
     angularGrossencharacter F 0 = Grossencharacter.ofRayClassCharacter 1 := by
   apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
   ext σ
-  rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
-  · simp [infinityType_angularGrossencharacter_embedding 0 (angularPlace F)]
-  · simp [infinityType_angularGrossencharacter_conjugate 0 (angularPlace F)]
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
+  · simp [infinityType_angularGrossencharacter_embedding 0 (complexPlaceFour F)]
+  · simp [infinityType_angularGrossencharacter_conjugate 0 (complexPlaceFour F)]
 
 /-- At `k = 0`, the Hecke character of `angularGrossencharacter F 0` is trivial. -/
 theorem toHeckeCharacter_angularGrossencharacter_zero (F : Type*) [Field F] [NumberField F]
@@ -714,7 +697,7 @@ theorem unitaryWeight_angularGrossencharacter_zero (F : Type*) [Field F] [Number
   apply Subtype.ext
   refine MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_
   obtain ⟨π, hπ0, hspan⟩ := v.exists_span_singleton_eq_asIdeal
-  rw [← hspan, unitaryWeight_angularGrossencharacter_span_singleton 0 (angularPlace F) hπ0,
+  rw [← hspan, unitaryWeight_angularGrossencharacter_span_singleton 0 (complexPlaceFour F) hπ0,
     hspan, UnitaryIdealWeight.val_one, MultiplicativeIdealWeight.one_apply]
   simp [v.ne_bot]
 
@@ -724,9 +707,9 @@ theorem angularGrossencharacter_neg (F : Type*) [Field F] [NumberField F]
     angularGrossencharacter F (-k) = (angularGrossencharacter F k).inverse := by
   apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
   ext σ
-  rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
-  · simp [infinityType_angularGrossencharacter_embedding _ (angularPlace F)]
-  · simp [infinityType_angularGrossencharacter_conjugate _ (angularPlace F)]
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
+  · simp [infinityType_angularGrossencharacter_embedding _ (complexPlaceFour F)]
+  · simp [infinityType_angularGrossencharacter_conjugate _ (complexPlaceFour F)]
 
 /-- Adding angular indices adds the algebraic infinity types. -/
 theorem infinityType_angularGrossencharacter_add (F : Type*) [Field F] [NumberField F]
@@ -735,10 +718,10 @@ theorem infinityType_angularGrossencharacter_add (F : Type*) [Field F] [NumberFi
       (angularGrossencharacter F j).infinityType +
         (angularGrossencharacter F k).infinityType := by
   ext σ
-  rcases embedding_eq_or_eq_conjugate_four F σ with rfl | rfl
-  · simp only [Pi.add_apply, infinityType_angularGrossencharacter_embedding _ (angularPlace F)]
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
+  · simp only [Pi.add_apply, infinityType_angularGrossencharacter_embedding _ (complexPlaceFour F)]
     ring
-  · simp only [Pi.add_apply, infinityType_angularGrossencharacter_conjugate _ (angularPlace F)]
+  · simp only [Pi.add_apply, infinityType_angularGrossencharacter_conjugate _ (complexPlaceFour F)]
     ring
 
 /-- Adding angular indices multiplies the underlying Hecke characters. -/
@@ -753,12 +736,13 @@ theorem toHeckeCharacter_angularGrossencharacter_add (F : Type*) [Field F] [Numb
   simp only [ContinuousMonoidHom.mul_apply, Units.val_mul,
     toHeckeCharacter_angularGrossencharacter_def,
     coe_angularHeckeCharacter_ideleCongruenceToClassHom]
-  set z : ℂ := continuousMulEquivComplexOfIsComplex (angularPlace F).property
-    ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
-      (angularPlace F).val.Completion)
+  set z : ℂ := continuousMulEquivComplexOfIsComplex (complexPlaceFour F).property
+    ((complexPlaceFour F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F) :
+      (complexPlaceFour F).val.Completion)
   have hz : z / (‖z‖ : ℂ) ≠ 0 := by
     have hz0 : z ≠ 0 :=
-      (map_ne_zero _).mpr ((angularPlace F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F)).ne_zero
+      (map_ne_zero _).mpr
+        ((complexPlaceFour F).val.ideleInfiniteCoord (y : IdeleGroup (𝓞 F) F)).ne_zero
     exact div_ne_zero hz0 (by simp [hz0])
   have hexp : -(4 * (j + k)) = -(4 * j) + -(4 * k) := by ring
   rw [hexp, zpow_add₀ hz]
@@ -774,12 +758,10 @@ theorem unitaryWeight_angularGrossencharacter_add (F : Type*) [Field F] [NumberF
   refine MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_
   obtain ⟨π, hπ0, hspan⟩ := v.exists_span_singleton_eq_asIdeal
   rw [UnitaryIdealWeight.val_mul, MultiplicativeIdealWeight.mul_apply, ← hspan,
-    unitaryWeight_angularGrossencharacter_span_singleton (j + k) (angularPlace F) hπ0,
-    unitaryWeight_angularGrossencharacter_span_singleton j (angularPlace F) hπ0,
-    unitaryWeight_angularGrossencharacter_span_singleton k (angularPlace F) hπ0]
-  have hπF : (π : F) ≠ 0 :=
-    (map_ne_zero_iff (algebraMap (𝓞 F) F) (IsFractionRing.injective (𝓞 F) F)).mpr hπ0
-  have hz : (angularPlace F).val.embedding (π : F) ≠ 0 := (map_ne_zero _).mpr hπF
+    unitaryWeight_angularGrossencharacter_span_singleton (j + k) (complexPlaceFour F) hπ0,
+    unitaryWeight_angularGrossencharacter_span_singleton j (complexPlaceFour F) hπ0,
+    unitaryWeight_angularGrossencharacter_span_singleton k (complexPlaceFour F) hπ0]
+  have hz := embedding_coe_ne_zero (w := (complexPlaceFour F).val) hπ0
   have hexp : 2 * (j + k) = 2 * j + 2 * k := by ring
   rw [hexp, zpow_add₀ (div_ne_zero hz ((map_ne_zero _).mpr hz))]
 
@@ -809,9 +791,10 @@ theorem angularGrossencharacter_injective (F : Type*) [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] :
     Function.Injective (angularGrossencharacter F) := by
   intro j k h
-  have hinj := congrFun (congrArg Grossencharacter.infinityType h) (angularPlace F).val.embedding
-  rw [infinityType_angularGrossencharacter_embedding j (angularPlace F),
-    infinityType_angularGrossencharacter_embedding k (angularPlace F)] at hinj
+  have hinj :=
+    congrFun (congrArg Grossencharacter.infinityType h) (complexPlaceFour F).val.embedding
+  rw [infinityType_angularGrossencharacter_embedding j (complexPlaceFour F),
+    infinityType_angularGrossencharacter_embedding k (complexPlaceFour F)] at hinj
   omega
 
 /-- Two angular Größencharaktere of `F` are equal if and only if their indices are equal. -/
@@ -830,8 +813,9 @@ theorem isFiniteOrder_toHeckeCharacter_angularGrossencharacter_iff {F : Type*} [
     (angularGrossencharacter F k).toHeckeCharacter.IsFiniteOrder ↔ k = 0 := by
   refine ⟨fun hfin ↦ ?_, ?_⟩
   · have hn := (angularGrossencharacter F k).infinityType_eq_zero_of_isFiniteOrder hfin
-    have hk0 := congrFun hn (angularPlace F).val.embedding
-    rw [infinityType_angularGrossencharacter_embedding k (angularPlace F), Pi.zero_apply] at hk0
+    have hk0 := congrFun hn (complexPlaceFour F).val.embedding
+    rw [infinityType_angularGrossencharacter_embedding k (complexPlaceFour F), Pi.zero_apply]
+      at hk0
     omega
   · rintro rfl
     rw [angularGrossencharacter_zero, Grossencharacter.toHeckeCharacter_ofRayClassCharacter]

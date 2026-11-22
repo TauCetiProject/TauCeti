@@ -62,6 +62,9 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
 * `TauCeti.LFunctions.Grossencharacter.ext`: a presentation is determined by its Hecke character.
 * `TauCeti.LFunctions.Grossencharacter.infiniteComponent_eq_of_infinityType_eq_of_isComplex`:
   presentations with equal algebraic infinity types agree at every complex place.
+* `TauCeti.LFunctions.Grossencharacter.infiniteComponent_apply_eq_of_infinityType_eq_of_isReal`:
+  presentations with equal algebraic infinity types agree at a real place on positive or
+  parity-compatible inputs.
 * `TauCeti.LFunctions.Grossencharacter.ext_of_infinityType_eq`: when `raySubgroup 𝔪 = ⊤`, a
   presentation is determined by its algebraic infinity type.
 * `TauCeti.LFunctions.Grossencharacter.badPrimes_unitaryWeight`: the bad primes of the unitary
@@ -232,6 +235,12 @@ theorem toHeckeCharacter_injective :
     Function.Injective (toHeckeCharacter : Grossencharacter K 𝔪 → HeckeCharacter K) :=
   fun _ _ ↦ ext
 
+private theorem agreesOnIdentityComponent_of_infinityType_eq {𝔪 𝔫 : Modulus K}
+    {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.infinityType = ψ.infinityType) :
+    χ.toHeckeCharacter.infinityType.AgreesOnIdentityComponent ψ.toHeckeCharacter.infinityType :=
+  χ.agreesOnIdentityComponent.trans (h ▸ ψ.agreesOnIdentityComponent.symm)
+
 /-- Two presentations with the same algebraic infinity type have the same archimedean component at
 every complex place: their continuous infinity types agree on the identity component, which
 determines the complex components completely. -/
@@ -239,8 +248,9 @@ theorem infiniteComponent_eq_of_infinityType_eq_of_isComplex {𝔪 𝔫 : Modulu
     {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
     (h : χ.infinityType = ψ.infinityType) {w : InfinitePlace K} (hw : w.IsComplex) :
     χ.toHeckeCharacter.infiniteComponent w = ψ.toHeckeCharacter.infiniteComponent w := by
-  have hagree := χ.agreesOnIdentityComponent.trans (h ▸ ψ.agreesOnIdentityComponent.symm)
-  obtain ⟨_, hce, hkf⟩ := (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp hagree
+  obtain ⟨_, hce, hkf⟩ :=
+    (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp
+      (agreesOnIdentityComponent_of_infinityType_eq h)
   have hc : χ.toHeckeCharacter.complexComponent ⟨w, hw⟩ =
       ψ.toHeckeCharacter.complexComponent ⟨w, hw⟩ := by
     rw [HeckeCharacter.complexComponent_eq, HeckeCharacter.complexComponent_eq,
@@ -252,6 +262,39 @@ theorem infiniteComponent_eq_of_infinityType_eq_of_isComplex {𝔪 𝔫 : Modulu
   rwa [HeckeCharacter.complexComponent_apply, HeckeCharacter.complexComponent_apply,
     e.symm_apply_apply] at hu
 
+/-- Two presentations with the same algebraic infinity type have equal archimedean components at a
+real place `w` on any unit `u` whose real coordinate is positive or at a place where both
+presentations have the same real parity. -/
+theorem infiniteComponent_apply_eq_of_infinityType_eq_of_isReal {𝔪 𝔫 : Modulus K}
+    {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
+    (h : χ.infinityType = ψ.infinityType) {w : InfinitePlace K} (hw : w.IsReal)
+    (u : w.Completionˣ)
+    (hu : 0 < NumberField.InfinitePlace.Completion.continuousMulEquivRealOfIsReal hw
+          (u : w.Completion) ∨
+      χ.toHeckeCharacter.infinityType.realParity ⟨w, hw⟩ =
+        ψ.toHeckeCharacter.infinityType.realParity ⟨w, hw⟩) :
+    χ.toHeckeCharacter.infiniteComponent w u = ψ.toHeckeCharacter.infiniteComponent w u := by
+  obtain ⟨hre, -, -⟩ :=
+    (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp
+      (agreesOnIdentityComponent_of_infinityType_eq h)
+  set w' : {w : InfinitePlace K // w.IsReal} := ⟨w, hw⟩
+  let r : ℝˣ := Units.mapContinuousMulEquiv
+    (NumberField.InfinitePlace.Completion.continuousMulEquivRealOfIsReal hw) u
+  have hcomp (ξ : HeckeCharacter K) :
+      ((ξ.infiniteComponent w u : ℂˣ) : ℂ) = (ξ.realComponent w' r : ℂ) := by
+    rw [HeckeCharacter.realComponent_apply, ContinuousMulEquiv.symm_apply_apply]
+  apply Units.ext
+  rw [hcomp χ.toHeckeCharacter, hcomp ψ.toHeckeCharacter,
+    HeckeCharacter.realComponent_eq, HeckeCharacter.realComponent_eq, congrFun hre w']
+  rcases hu with hpos | hpar
+  · have hrpos : 0 < (r : ℝ) := by
+      simpa only [r, Units.mapContinuousMulEquiv_apply, Units.coe_map, MonoidHom.coe_ofClass,
+        ContinuousMulEquiv.coe_toMulEquiv,
+        InfinitePlace.Completion.continuousMulEquivRealOfIsReal_apply] using hpos
+    rw [coe_realUnitsCharacter_apply, coe_realUnitsCharacter_apply, sign_pos hrpos]
+    simp
+  · rw [hpar]
+
 /-- **Uniqueness by infinity type when `raySubgroup 𝔪 = ⊤`**: if every idele class lies in
 `raySubgroup 𝔪` (in particular, at `Modulus.one K` when `K` has class number `1`), then two
 presentations at `𝔪` with the same algebraic infinity type are equal. -/
@@ -259,6 +302,7 @@ theorem ext_of_infinityType_eq {𝔪 : Modulus K} (hray : raySubgroup 𝔪 = ⊤
     {χ ψ : Grossencharacter K 𝔪} (h : χ.infinityType = ψ.infinityType) : χ = ψ := by
   apply ext
   refine ContinuousMonoidHom.ext fun c ↦ Units.ext ?_
+  -- Lift `c` to a congruence idele `y` and strip its finite part, on which both characters are `1`.
   obtain ⟨⟨y, hy⟩, rfl⟩ := (ideleCongruenceToClassHom_surjective_iff 𝔪).mpr hray c
   rw [ideleCongruenceToClassHom_apply, Subtype.coe_mk]
   have hfin_mem := ideleCongruenceSubgroup.ofFiniteIdele_toFiniteIdele_mem hy
@@ -270,37 +314,20 @@ theorem ext_of_infinityType_eq {𝔪 : Modulus K} (hray : raySubgroup 𝔪 = ⊤
     χ.eq_one_of_mem _ hfin_mem hfin_inf, ψ.eq_one_of_mem _ hfin_mem hfin_inf,
     mul_one, mul_one, QuotientGroup.mk_prod, map_prod, map_prod]
   simp only [Units.coe_prod]
+  -- Compare the archimedean coordinates place by place via the real and complex companions.
   refine Finset.prod_congr rfl fun w _ ↦ ?_
+  rw [← IdeleClassGroup.ofCompletion_apply, ← HeckeCharacter.infiniteComponent_apply,
+    ← HeckeCharacter.infiniteComponent_apply]
+  refine congrArg Units.val ?_
   rcases w.isReal_or_isComplex with hw | hw
-  · set w' : {w : InfinitePlace K // w.IsReal} := ⟨w, hw⟩
-    have hagree := χ.agreesOnIdentityComponent.trans (h ▸ ψ.agreesOnIdentityComponent.symm)
-    obtain ⟨hre, -, -⟩ := (ContinuousInfinityType.agreesOnIdentityComponent_iff _ _).mp hagree
-    have hre_w' : χ.toHeckeCharacter.infinityType.realExponent w' =
-        ψ.toHeckeCharacter.infinityType.realExponent w' := congrFun hre w'
-    let r : ℝˣ := Units.mapContinuousMulEquiv
-      (NumberField.InfinitePlace.Completion.continuousMulEquivRealOfIsReal hw)
-      (w.ideleInfiniteCoord y)
-    have hcomp (ξ : Grossencharacter K 𝔪) :
-        ((ξ.toHeckeCharacter (IdeleClassGroup.ofCompletion (𝓞 K) K w (w.ideleInfiniteCoord y)) :
-          ℂˣ) : ℂ) = (ξ.toHeckeCharacter.realComponent w' r : ℂ) := by
-      rw [HeckeCharacter.realComponent_apply, ContinuousMulEquiv.symm_apply_apply,
-        HeckeCharacter.infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply]
-    rw [← IdeleClassGroup.ofCompletion_apply, hcomp χ, hcomp ψ,
-      HeckeCharacter.realComponent_eq, HeckeCharacter.realComponent_eq, hre_w']
-    by_cases hw_mem : w' ∈ 𝔪.infinitePart
-    · have hpos : 0 < (r : ℝ) := by
-        simpa only [r, Units.mapContinuousMulEquiv_apply, Units.coe_map, MonoidHom.coe_ofClass,
-          ContinuousMulEquiv.coe_toMulEquiv,
-          InfinitePlace.Completion.continuousMulEquivRealOfIsReal_apply] using
-          ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hy hw_mem
-      rw [coe_realUnitsCharacter_apply, coe_realUnitsCharacter_apply, sign_pos hpos]
-      simp
-    · rw [χ.realParity_eq w' hw_mem, ψ.realParity_eq w' hw_mem, h]
-  · have hw' := DFunLike.congr_fun
-      (infiniteComponent_eq_of_infinityType_eq_of_isComplex h hw)
-      (w.ideleInfiniteCoord y)
-    simpa only [HeckeCharacter.infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply] using
-      congrArg Units.val hw'
+  · refine infiniteComponent_apply_eq_of_infinityType_eq_of_isReal h hw (w.ideleInfiniteCoord y) ?_
+    by_cases hw_mem : ⟨w, hw⟩ ∈ 𝔪.infinitePart
+    · exact .inl (by
+        simpa [InfinitePlace.Completion.continuousMulEquivRealOfIsReal_apply] using
+          ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hy hw_mem)
+    · exact .inr (by rw [χ.realParity_eq ⟨w, hw⟩ hw_mem, ψ.realParity_eq ⟨w, hw⟩ hw_mem, h])
+  · exact DFunLike.congr_fun
+      (infiniteComponent_eq_of_infinityType_eq_of_isComplex h hw) (w.ideleInfiniteCoord y)
 
 /-! ### The finite conductor of a presentation -/
 
