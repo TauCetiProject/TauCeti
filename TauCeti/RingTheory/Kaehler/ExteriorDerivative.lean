@@ -43,13 +43,18 @@ variable {R A}
 @[simp] theorem exteriorDeriv_exteriorDeriv_apply (q : ℕ) (ω : ⋀[A]^q Ω[A⁄R]) :
     exteriorDeriv R A (q + 1) (exteriorDeriv R A q ω) = 0 :=
   Derivation.exteriorDeriv_exteriorDeriv_apply _ _ _ _ q ω
+/-- **Scalar Leibniz rule on Kähler `q`-forms**: `d (a • ω) = D a ∧ ω + a • d ω`. -/
 theorem exteriorDeriv_smul (q : ℕ) (a : A) (ω : ⋀[A]^q Ω[A⁄R]) :
     exteriorDeriv R A q (a • ω) =
       TauCeti.ExteriorAlgebra.wedgeLeft (D R A a) q ω + a • exteriorDeriv R A q ω :=
   Derivation.exteriorDeriv_smul _ _ _ _ q a ω
+/-- Every wedge product `D b₀ ∧ ⋯ ∧ D b_{q-1}` of exact Kähler differentials is closed (`d = 0`). -/
 @[simp] theorem exteriorDeriv_ιMulti_comp_D {q : ℕ} (b : Fin q → A) :
     exteriorDeriv R A q (exteriorPower.ιMulti A q (D R A ∘ b)) = 0 :=
   Derivation.exteriorDeriv_ιMulti_comp_D _ _ _ _ b
+/-- **Formula on scaled exact-differential wedges**: since `D b₀ ∧ ⋯ ∧ D b_{q-1}` is closed,
+only its scalar coefficient `a` is differentiated:
+`d (a • (D b₀ ∧ ⋯ ∧ D b_{q-1})) = D a ∧ D b₀ ∧ ⋯ ∧ D b_{q-1}`. -/
 theorem exteriorDeriv_smul_ιMulti_comp_D {q : ℕ} (a : A) (b : Fin q → A) :
     exteriorDeriv R A q (a • exteriorPower.ιMulti A q (D R A ∘ b)) =
       exteriorPower.ιMulti A (q + 1) (Fin.cons (D R A a) (D R A ∘ b)) :=

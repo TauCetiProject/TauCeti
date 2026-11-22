@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Dagger.Omega.DeRham
-public import TauCeti.RingTheory.Dagger.Omega.Quotient
-public import TauCeti.RingTheory.Dagger.Omega.Kaehler
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.Unramified.Field
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Derivation.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.MapSemilinear
 public import TauCeti.LinearAlgebra.ExteriorPower.Noetherian
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorAlgebra.GradeInvolution
 
 /-!
 # Exterior derivative associated to a universal derivation
@@ -293,6 +293,7 @@ theorem exteriorAlgebraDeriv_mul_of_mem_exteriorPower {p : ℕ} {x : ExteriorAlg
   rw [exteriorAlgebraDeriv_mul, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower hx,
     smul_mul_assoc]
 
+/-- **Scalar Leibniz rule on `ExteriorAlgebra A M`**: `d (a • x) = ι A (D a) * x + a • d x`. -/
 theorem exteriorAlgebraDeriv_smul (a : A) (x : ExteriorAlgebra A M) :
     D.exteriorAlgebraDeriv u hspan hu (a • x) =
       ExteriorAlgebra.ι A (D a) * x + a • D.exteriorAlgebraDeriv u hspan hu x := by
@@ -414,11 +415,12 @@ powers, used to assemble de Rham cochain complexes. -/
 theorem exteriorDeriv_comp_exteriorDeriv (q : ℕ) :
     (D.exteriorDeriv u hspan hu (q + 1)) ∘ₗ (D.exteriorDeriv u hspan hu q) = 0 :=
   LinearMap.ext (D.exteriorDeriv_exteriorDeriv_apply u hspan hu q)
+/-- **Scalar Leibniz rule on `⋀[A]^q M`**: `d (a • ω) = D a ∧ ω + a • d ω`. -/
 theorem exteriorDeriv_smul (q : ℕ) (a : A) (ω : ⋀[A]^q M) :
     D.exteriorDeriv u hspan hu q (a • ω) =
       TauCeti.ExteriorAlgebra.wedgeLeft (D a) q ω + a • D.exteriorDeriv u hspan hu q ω :=
   Subtype.ext <| by simpa using D.exteriorAlgebraDeriv_smul u hspan hu a ω.1
-/-- The exterior derivative vanishes on pure wedge products of exact differentials `D bᵢ`. -/
+/-- Every pure wedge product `D b₀ ∧ ⋯ ∧ D b_{q-1}` of exact differentials is closed (`d = 0`). -/
 @[simp] theorem exteriorDeriv_ιMulti_comp_D {q : ℕ} (b : Fin q → A) :
     D.exteriorDeriv u hspan hu q (exteriorPower.ιMulti A q (D ∘ b)) = 0 := by
   apply Subtype.ext
@@ -429,7 +431,9 @@ theorem exteriorDeriv_smul (q : ℕ) (a : A) (ω : ⋀[A]^q M) :
     rw [ExteriorAlgebra.ιMulti_succ_apply, Function.comp_apply, exteriorAlgebraDeriv_mul,
       exteriorAlgebraDeriv_ι_apply, zero_mul, zero_add]
     exact (congrArg _ (ih (Matrix.vecTail b))).trans (mul_zero _)
-/-- **Formula on standard generators**: `d(a • (D b₀ ∧ ⋯ ∧ D b_{q-1})) = D a ∧ D b₀ ∧ ⋯`. -/
+/-- **Formula on scaled standard generators**: since `D b₀ ∧ ⋯ ∧ D b_{q-1}` is closed, only
+its scalar coefficient `a` is differentiated:
+`d (a • (D b₀ ∧ ⋯ ∧ D b_{q-1})) = D a ∧ D b₀ ∧ ⋯ ∧ D b_{q-1}`. -/
 theorem exteriorDeriv_smul_ιMulti_comp_D {q : ℕ} (a : A) (b : Fin q → A) :
     D.exteriorDeriv u hspan hu q (a • exteriorPower.ιMulti A q (D ∘ b)) =
       exteriorPower.ιMulti A (q + 1) (Fin.cons (D a) (D ∘ b)) := by

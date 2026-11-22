@@ -90,13 +90,18 @@ powers of `Omega R A`, used to construct `deRhamComplex R A`. -/
 theorem exteriorDeriv_comp_exteriorDeriv (q : ℕ) :
     (exteriorDeriv R A (q + 1)) ∘ₗ (exteriorDeriv R A q) = 0 :=
   Derivation.exteriorDeriv_comp_exteriorDeriv _ _ _ _ q
+/-- **Scalar Leibniz rule on overconvergent `q`-forms**: `d (a • ω) = d a ∧ ω + a • d ω`. -/
 theorem exteriorDeriv_smul (q : ℕ) (a : A) (ω : ⋀[A]^q (Omega R A)) :
     exteriorDeriv R A q (a • ω) =
       TauCeti.ExteriorAlgebra.wedgeLeft (d R A a) q ω + a • exteriorDeriv R A q ω :=
   Derivation.exteriorDeriv_smul _ _ _ _ q a ω
+/-- Every wedge product `d b₀ ∧ ⋯ ∧ d b_{q-1}` of exact differentials is closed (`d = 0`). -/
 @[simp] theorem exteriorDeriv_ιMulti_comp_d {q : ℕ} (b : Fin q → A) :
     exteriorDeriv R A q (exteriorPower.ιMulti A q (d R A ∘ b)) = 0 :=
   Derivation.exteriorDeriv_ιMulti_comp_D _ _ _ _ b
+/-- **Formula on scaled exact-differential wedges**: since `d b₀ ∧ ⋯ ∧ d b_{q-1}` is closed,
+only its scalar coefficient `a` is differentiated:
+`d (a • (d b₀ ∧ ⋯ ∧ d b_{q-1})) = d a ∧ d b₀ ∧ ⋯ ∧ d b_{q-1}`. -/
 theorem exteriorDeriv_smul_ιMulti_comp_d {q : ℕ} (a : A) (b : Fin q → A) :
     exteriorDeriv R A q (a • exteriorPower.ιMulti A q (d R A ∘ b)) =
       exteriorPower.ιMulti A (q + 1) (Fin.cons (d R A a) (d R A ∘ b)) :=
