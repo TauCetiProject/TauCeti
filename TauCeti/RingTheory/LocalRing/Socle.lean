@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
-import Mathlib.RingTheory.Nakayama
 import TauCeti.Algebra.Module.Injective.SelfInjective
 
 /-!
@@ -23,7 +22,7 @@ its simple `R`-submodules are its lines.
 
 When `M` is artinian, the socle is essential: every nonzero submodule of `M` contains a nonzero
 element of the socle. Indeed a nonzero submodule contains a minimal nonzero submodule `A`, which
-is cyclic, so `m • A < A` by Nakayama's lemma and hence `m • A = 0`.
+is simple, so its annihilator is a maximal ideal, namely `m`, and hence `m • A = 0`.
 
 In a self-injective local ring, every nonzero principal ideal `R x` contains the socle. Indeed, if
 `y` is in the socle, any `r` with `r x = 0` is not a unit, so `r ∈ m` and `r y = 0`; the
@@ -67,18 +66,14 @@ theorem inf_torsionBySet_maximalIdeal_ne_bot [IsArtinian R M] {N : Submodule R M
     N ⊓ torsionBySet R M (maximalIdeal R) ≠ ⊥ := by
   obtain ⟨A, hA, hAN⟩ := (eq_bot_or_exists_atom_le N).resolve_left hN
   obtain ⟨a, haA, ha⟩ := exists_mem_ne_zero_of_ne_bot hA.1
-  have hspan : span R {a} = A :=
-    hA.le_iff.mp ((span_singleton_le_iff_mem a A).mpr haA) |>.resolve_left
-      (span_singleton_eq_bot.not.mpr ha)
-  -- the minimal submodule `A` is cyclic, so Nakayama's lemma gives `m • A < A`, hence `m • A = 0`
-  have hsmul : maximalIdeal R • A = ⊥ := by
-    refine (hA.le_iff.mp smul_le_right).resolve_right fun h ↦ hA.1 ?_
-    exact eq_bot_of_le_smul_of_le_jacobson _ A (hspan ▸ fg_span_singleton a) h.ge
-      (ringJacobson_eq_maximalIdeal (R := R)).ge
+  -- the minimal submodule `A` is simple, so its annihilator is the maximal ideal
+  have : IsSimpleModule R A := isSimpleModule_iff_isAtom.mpr hA
+  have hann : Module.annihilator R A = maximalIdeal R :=
+    eq_maximalIdeal IsSimpleModule.annihilator_isMaximal
   refine (Submodule.ne_bot_iff _).mpr ⟨a, ⟨hAN haA, ?_⟩, ha⟩
   refine (mem_torsionBySet_iff _ _).mpr fun r ↦ ?_
-  rw [← mem_bot R, ← hsmul]
-  exact smul_mem_smul r.property haA
+  have hr : r.val ∈ Module.annihilator R A := hann.symm ▸ r.property
+  exact congrArg Subtype.val (Module.mem_annihilator.mp hr ⟨a, haA⟩)
 
 /-- A nonzero artinian module over a local ring has a nonzero socle. -/
 theorem torsionBySet_maximalIdeal_ne_bot [IsArtinian R M] [Nontrivial M] :

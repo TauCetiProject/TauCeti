@@ -16,6 +16,7 @@ The characters `CharacterModule M = M →+ AddCircle (1 : ℚ)` of an abelian gr
 points, and when `M` is finite its character module is finite with as many elements as `M`; when
 `M` is infinite, so is its character module:
 
+* `TauCeti.CharacterModule.zero_apply`: the zero character vanishes everywhere;
 * `TauCeti.CharacterModule.eval_injective`: evaluation embeds `M` in its double character module;
 * an instance `Finite (CharacterModule M)` for finite `M`;
 * `TauCeti.natCard_characterModule`: `Nat.card (CharacterModule M) = Nat.card M` for every abelian
@@ -34,6 +35,12 @@ nonzero element of finite order this character detects it, taking a nonzero valu
 public section
 
 namespace TauCeti
+
+/-- The zero character vanishes everywhere. -/
+@[simp]
+theorem CharacterModule.zero_apply {A : Type*} [AddCommGroup A] (a : A) :
+    (0 : CharacterModule A) a = 0 :=
+  rfl
 
 /-- The character module of a finite abelian group is finite. -/
 instance (M : Type*) [AddCommGroup M] [Finite M] : Finite (CharacterModule M) :=

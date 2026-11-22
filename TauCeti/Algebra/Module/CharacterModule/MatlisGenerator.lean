@@ -84,10 +84,6 @@ def IsMatlisGenerator (χ : CharacterModule R) : Prop :=
 
 variable {χ ψ : CharacterModule R}
 
-/-- The zero character vanishes everywhere. -/
-private theorem zero_apply (r : R) : (0 : CharacterModule R) r = 0 :=
-  rfl
-
 theorem isMatlisGenerator_def :
     χ.IsMatlisGenerator ↔ ∀ I : Ideal R, (∀ x ∈ I, χ x = 0) → I = ⊥ :=
   Iff.rfl
@@ -108,8 +104,10 @@ theorem isMatlisGenerator_iff_injective :
     refine Ideal.span_singleton_eq_bot.mp (h _ fun x hx ↦ ?_)
     obtain ⟨s, rfl⟩ := Ideal.mem_span_singleton'.mp hx
     calc χ (s * r) = LinearMap.toSpanSingleton R _ χ r s := by simp [mul_comm]
-      _ = 0 := by rw [hr, zero_apply]
-  · exact DFunLike.ext _ _ fun s ↦ (smul_apply χ r s).trans (hI _ (I.mul_mem_right s hr))
+      _ = 0 := by rw [hr, TauCeti.CharacterModule.zero_apply]
+  · ext s
+    rw [LinearMap.toSpanSingleton_apply, smul_apply, TauCeti.CharacterModule.zero_apply]
+    exact hI _ (I.mul_mem_right s hr)
 
 /-- An injective character is a Matlis generator. -/
 theorem IsMatlisGenerator.of_injective (h : Function.Injective χ) : χ.IsMatlisGenerator :=
@@ -118,7 +116,7 @@ theorem IsMatlisGenerator.of_injective (h : Function.Injective χ) : χ.IsMatlis
 /-- The zero character of a nonzero ring is not a Matlis generator: it kills the unit ideal. -/
 theorem not_isMatlisGenerator_zero [Nontrivial R] :
     ¬ (0 : CharacterModule R).IsMatlisGenerator :=
-  fun h ↦ top_ne_bot (h ⊤ fun x _ ↦ zero_apply x)
+  fun h ↦ top_ne_bot (h ⊤ fun x _ ↦ TauCeti.CharacterModule.zero_apply x)
 
 /-- A unit multiple of a Matlis generator is a Matlis generator. -/
 theorem IsMatlisGenerator.units_smul (hχ : χ.IsMatlisGenerator) (u : Rˣ) :
