@@ -8,9 +8,12 @@ module
 public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.Analysis.Complex.NormalizedDeterminant
 public import TauCeti.Topology.Circle.Degree.Square
+public import TauCeti.Topology.Homotopy.HomotopyGroup.FundamentalGroupAction
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 public import TauCeti.Topology.VectorBundle.Complex.Structure
 public import TauCeti.Topology.VectorBundle.Contractible
+import Mathlib.Topology.LocallyConstant.Basic
+import Mathlib.Topology.Subpath
 
 /-!
 # The clutching number of a complex vector bundle over the second homotopy group
@@ -48,11 +51,22 @@ The clutching function depends on the choices, but its degree does not:
   (`TauCeti.clutchingFunction_eq_mul_coordChangeL`).
 
 So `TauCeti.clutchingNumber_eq_squareBoundaryDegree` computes the clutching number from any frame
-and any trivialization near `x`. It is invariant under homotopies relative to the boundary, by
-restricting a frame along the homotopy (`TauCeti.clutchingNumber_eq_of_homotopic`), and it is
-additive under the concatenation `GenLoop.transAt 0` that defines the product of `π₂(X, x)`,
-because a frame along the concatenation restricts to frames along both halves
-(`TauCeti.clutchingNumber_transAt`).
+and any trivialization near `x`. It is additive under the concatenation `GenLoop.transAt 0` that
+defines the product of `π₂(X, x)`, because a frame along the concatenation restricts to frames
+along both halves (`TauCeti.clutchingNumber_transAt`).
+
+The clutching number is invariant under homotopies of spheres whose base points trace a path `γ`
+(`TauCeti.GenLoop.HomotopyAlong`). Restrict one frame along the whole homotopy to each time. Near
+a given time, read the slices in one trivialization around the corresponding point of `γ`; the
+change of trivialization at the moving base point is a constant factor on the boundary, so the
+clutching number of the slices is locally constant in time, hence constant
+(`TauCeti.clutchingNumber_eq_of_homotopyAlong`). For a constant path this is invariance under
+homotopies relative to the boundary (`TauCeti.clutchingNumber_eq_of_homotopic`). The clutching
+number does not depend on the base point: since the transport of a sphere along a path is joined
+to it by such a homotopy, transport does not change clutching numbers
+(`TauCeti.clutchingNumberHom_homotopyGroupTransport`), and the clutching number homomorphism is
+invariant under the action of the fundamental group on `π₂(X, x)`
+(`TauCeti.clutchingNumberHom_fundamentalGroup_smul`).
 
 A family of complex-linear isomorphisms `E x ≃ E' x`, continuous on total spaces, carries frames
 of `E` to frames of `E'` and changes the clutching function only by conjugation, so isomorphic
@@ -81,6 +95,10 @@ case for any two almost complex structures tamed by a common symplectic form.
   frame and any trivialization near `x`.
 * `TauCeti.clutchingNumber_eq_of_homotopic`: homotopy invariance.
 * `TauCeti.clutchingNumber_transAt`: additivity under concatenation.
+* `TauCeti.clutchingNumber_eq_of_homotopyAlong`: invariance under homotopies through spheres
+  whose base points move along a path.
+* `TauCeti.clutchingNumberHom_homotopyGroupTransport`,
+  `TauCeti.clutchingNumberHom_fundamentalGroup_smul`: independence of the base point.
 * `TauCeti.clutchingNumber_eq_of_continuousLinearEquiv`,
   `TauCeti.clutchingNumberHom_eq_of_continuousLinearEquiv`: invariance under isomorphisms of
   complex vector bundles.
@@ -155,12 +173,8 @@ in a trivialization differ by the inverse normalized determinant of the automorp
 theorem clutchingFunction_eq_mul_normalizedDet_inv {y : B} (hy : f y ∈ e.baseSet) :
     clutchingFunction f ψ e y =
       clutchingFunction f φ e y * ((ψ y).trans (φ y).symm).normalizedDet⁻¹ := by
-  have h : (ψ y).trans (e.continuousLinearEquivAt ℂ (f y) hy) =
-      ((ψ y).trans (φ y).symm).trans ((φ y).trans (e.continuousLinearEquivAt ℂ (f y) hy)) := by
-    ext v
-    simp
-  rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hy, h,
-    ContinuousLinearEquiv.normalizedDet_trans, mul_inv, mul_comm]
+  rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hy,
+    ← ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans (ψ y) (φ y), mul_inv, mul_comm]
 
 omit [TopologicalSpace B] in
 /-- **Change of trivialization.** At a point where two trivializations `e` and `e'` are both
@@ -200,17 +214,22 @@ theorem continuousOn_clutchingFunction
 theorem continuous_normalizedDet_trans_symm [VectorBundle ℂ F E]
     (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
     (hψ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) :
-    Continuous fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet := by
-  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
-  -- Near `y₀`, read both frames in a trivialization around `f y₀`.
-  let e₀ := trivializationAt F E (f y₀)
-  have hU : f ⁻¹' e₀.baseSet ∈ 𝓝 y₀ :=
-    (continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
-      (e₀.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (f y₀)))
-  refine (((continuousOn_clutchingFunction hψ e₀).inv.mul
-    (continuousOn_clutchingFunction hφ e₀)).continuousAt hU).congr
-      (eventually_of_mem hU fun y (hy : f y ∈ e₀.baseSet) ↦ ?_)
-  simp [clutchingFunction_eq_mul_normalizedDet_inv (φ := φ) (ψ := ψ) hy]
+    Continuous fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet :=
+  (continuous_trans_symm_of_continuous_frame hψ hφ).normalizedDet
+
+/-- If `φ` and `ψ` are frames along `f` that are continuous over a set `s`, the normalized
+determinant of `(φ y)⁻¹ ∘ ψ y` is continuous on `s`. -/
+theorem continuousOn_normalizedDet_trans_symm [VectorBundle ℂ F E] {s : Set B}
+    (hφ : ContinuousOn (fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2)) (s ×ˢ univ))
+    (hψ : ContinuousOn (fun q : B × F ↦ TotalSpace.mk' F (f q.1) (ψ q.1 q.2)) (s ×ˢ univ)) :
+    ContinuousOn (fun y ↦ ((ψ y).trans (φ y).symm).normalizedDet) s := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  -- Restrict both frames to the subspace `s`, where they are continuous.
+  have hval : Continuous fun q : s × F ↦ ((q.1 : B), q.2) :=
+    (continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd
+  have hs : ∀ q : s × F, ((q.1 : B), q.2) ∈ s ×ˢ univ := fun q ↦ ⟨q.1.property, mem_univ _⟩
+  exact continuous_normalizedDet_trans_symm (f := fun y : s ↦ f y)
+    (hφ.comp_continuous hval hs) (hψ.comp_continuous hval hs)
 
 end ClutchingFunction
 
@@ -219,7 +238,7 @@ end ClutchingFunction
 section ClutchingNumber
 
 variable [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)]
-  [FiniteDimensional ℂ F] {x : X}
+  [FiniteDimensional ℂ F] {x y : X}
 
 /-- The finite-dimensional model fibre is complete, as `TauCeti.exists_continuous_frame` needs. -/
 private local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
@@ -290,30 +309,74 @@ theorem clutchingNumber_eq_squareBoundaryDegree_comp {f : C(B, X)} {Ψ : ∀ y, 
     (hΨ.comp ((k.continuous.comp continuous_fst).prodMk continuous_snd))]
   exact congrArg squareBoundaryDegree (funext fun y ↦ clutchingFunction_comp f k Ψ e y)
 
+omit [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)] in
+/-- Along a homotopy `H` of spheres whose base points trace a path `γ`, the clutching function of a
+frame along `H`, read in a trivialization `e` containing `γ` on the interval between two times `a`
+and `b`, has the same degree around the boundary of the square at the times `a` and `b`. -/
+private theorem squareBoundaryDegree_clutchingFunction_eq_of_uIcc {H : I × (Fin 2 → I) → X}
+    {γ : Path x y} (hHγ : ∀ t, ∀ z ∈ Cube.boundary (Fin 2), H (t, z) = γ t)
+    {Θ : ∀ w, F ≃L[ℂ] E (H w)}
+    (hΘ : Continuous fun q : (I × (Fin 2 → I)) × F ↦ TotalSpace.mk' F (H q.1) (Θ q.1 q.2))
+    (e : Trivialization F (π F E)) [e.IsLinear ℂ] {a b : I}
+    (hab : ∀ t ∈ uIcc a b, γ t ∈ e.baseSet) :
+    squareBoundaryDegree (fun z ↦ clutchingFunction H Θ e (a, z)) =
+      squareBoundaryDegree (fun z ↦ clutchingFunction H Θ e (b, z)) := by
+  -- Run through the interval from `a` to `b` by the convex combinations of `a` and `b`.
+  have hc : ContinuousOn
+      (fun w : I × (Fin 2 → I) ↦ clutchingFunction H Θ e (Set.Icc.convexComb a b w.1, w.2))
+      (univ ×ˢ Cube.boundary (Fin 2)) := by
+    refine (continuousOn_clutchingFunction hΘ e).comp (by fun_prop) fun w hw ↦ ?_
+    rw [mem_preimage, hHγ _ _ hw.2]
+    exact hab _ (Path.range_subpathAux a b ▸ mem_range_self _)
+  simpa using squareBoundaryDegree_eq_of_homotopy hc
+
+/-- **Invariance under free homotopy.** Spheres `p` at `x` and `q` at `y` joined by a homotopy
+through spheres whose base points trace a path `γ` from `x` to `y` have the same clutching
+number. -/
+theorem clutchingNumber_eq_of_homotopyAlong {γ : Path x y} {p : Ω^ (Fin 2) X x}
+    {q : Ω^ (Fin 2) X y} (h : GenLoop.HomotopyAlong γ p q) :
+    clutchingNumber F E q = clutchingNumber F E p := by
+  have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
+  obtain ⟨Θ, hΘ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous h)
+  have hHγ (t : I) (z : Fin 2 → I) (hz : z ∈ Cube.boundary (Fin 2)) : h (t, z) = γ t :=
+    h.map_boundary t z hz
+  -- The slice of the homotopy at time `τ`, a sphere based at `γ τ`, with the restricted frame.
+  let ι (τ : I) : C(Fin 2 → I, I × (Fin 2 → I)) := ⟨fun z ↦ (τ, z), by fun_prop⟩
+  let slice (τ : I) : Ω^ (Fin 2) X (γ τ) := ⟨(h : C(I × (Fin 2 → I), X)).comp (ι τ), hHγ τ⟩
+  have hslice (τ : I) (e : Trivialization F (π F E)) [e.IsLinear ℂ] (he : γ τ ∈ e.baseSet) :
+      clutchingNumber F E (slice τ) =
+        squareBoundaryDegree (fun z ↦ clutchingFunction h Θ e (τ, z)) :=
+    clutchingNumber_eq_squareBoundaryDegree_comp (f := h) hΘ (ι τ) (hHγ τ) e he
+  -- The clutching number of the slice is locally constant in time: near `τ₀`, compute it in one
+  -- trivialization around `γ τ₀` and move along intervals on which `γ` stays in its base set.
+  have hloc : IsLocallyConstant fun τ ↦ clutchingNumber F E (slice τ) := by
+    refine (IsLocallyConstant.iff_eventually_eq _).2 fun τ₀ ↦ ?_
+    set e₀ := trivializationAt F E (γ τ₀)
+    have hW : γ ⁻¹' e₀.baseSet ∈ 𝓝 τ₀ := γ.continuous.continuousAt.preimage_mem_nhds
+      (e₀.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (γ τ₀)))
+    filter_upwards [tendsto_smallSets_iff.1 (tendsto_const_nhds.uIcc tendsto_id) _ hW]
+      with τ hτ
+    rw [hslice τ e₀ (hτ right_mem_uIcc), hslice τ₀ e₀ (hτ left_mem_uIcc)]
+    exact (squareBoundaryDegree_clutchingFunction_eq_of_uIcc hHγ hΘ e₀ hτ).symm
+  -- The slices at times `0` and `1` are `p` and `q`, read at the base points `x` and `y`.
+  have hend (τ : I) {z : X} (hz : γ τ = z) (r : Ω^ (Fin 2) X z) (hr : ∀ w, h (τ, w) = r w) :
+      clutchingNumber F E r = clutchingNumber F E (slice τ) := by
+    set e := trivializationAt F E z
+    have hze : z ∈ e.baseSet := mem_baseSet_trivializationAt F E z
+    have hr' : r = ⟨(h : C(I × (Fin 2 → I), X)).comp (ι τ), fun w hw ↦
+        (hHγ τ w hw).trans hz⟩ := GenLoop.ext _ _ fun w ↦ (hr w).symm
+    rw [hr', clutchingNumber_eq_squareBoundaryDegree_comp (f := h) hΘ (ι τ) _ e hze,
+      hslice τ e (by rwa [hz])]
+    simp only [Function.comp_def, ι, ContinuousMap.coe_mk]
+  rw [hend 0 γ.source p h.apply_zero, hend 1 γ.target q h.apply_one]
+  exact hloc.apply_eq_of_preconnectedSpace 1 0
+
 /-- **Homotopy invariance.** Spheres based at `x` that are homotopic relative to the boundary of
 the square have the same clutching number. -/
 theorem clutchingNumber_eq_of_homotopic {p q : Ω^ (Fin 2) X x} (h : GenLoop.Homotopic p q) :
     clutchingNumber F E p = clutchingNumber F E q := by
   obtain ⟨H⟩ := h
-  have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
-  obtain ⟨Θ, hΘ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous H)
-  set e₀ := trivializationAt F E x
-  have hx₀ : x ∈ e₀.baseSet := mem_baseSet_trivializationAt F E x
-  have hHx (τ : I) (y : Fin 2 → I) (hy : y ∈ Cube.boundary (Fin 2)) : H (τ, y) = x :=
-    (H.eq_fst τ hy).trans (GenLoop.boundary p y hy)
-  -- The slice of the homotopy at time `τ`, a sphere based at `x`, with the restricted frame.
-  let ι (τ : I) : C(Fin 2 → I, I × (Fin 2 → I)) := ⟨fun y ↦ (τ, y), by fun_prop⟩
-  let slice (τ : I) : Ω^ (Fin 2) X x := ⟨H.toContinuousMap.comp (ι τ), hHx τ⟩
-  have hslice (τ : I) : clutchingNumber F E (slice τ) =
-      squareBoundaryDegree (fun y ↦ clutchingFunction H Θ e₀ (τ, y)) :=
-    clutchingNumber_eq_squareBoundaryDegree_comp (f := H.toContinuousMap) hΘ (ι τ) (hHx τ) e₀ hx₀
-  have hH : ContinuousOn (clutchingFunction H Θ e₀) (univ ×ˢ Cube.boundary (Fin 2)) :=
-    (continuousOn_clutchingFunction hΘ e₀).mono fun w hw ↦ by
-      simp [hHx w.1 w.2 hw.2, hx₀]
-  have h₀ : p = slice 0 := GenLoop.ext _ _ fun y ↦ (H.apply_zero y).symm
-  have h₁ : q = slice 1 := GenLoop.ext _ _ fun y ↦ (H.apply_one y).symm
-  rw [h₀, h₁, hslice, hslice]
-  exact squareBoundaryDegree_eq_of_homotopy hH
+  exact (clutchingNumber_eq_of_homotopyAlong (GenLoop.HomotopyAlong.ofHomotopyRel H)).symm
 
 /-- **Additivity.** The clutching number of the concatenation `GenLoop.transAt 0 q p` of two
 spheres is the sum of their clutching numbers. -/
@@ -365,6 +428,34 @@ def clutchingNumberHom : Additive (π_ 2 X x) →+ ℤ :=
 theorem clutchingNumberHom_apply_mk (p : Ω^ (Fin 2) X x) :
     clutchingNumberHom F E x (Additive.ofMul (Quotient.mk _ p)) = clutchingNumber F E p :=
   (rfl)
+
+/-! ### Base-point change -/
+
+/-- **Base-point change.** Transporting a sphere along a path does not change its clutching
+number. -/
+@[simp]
+theorem clutchingNumber_transport (γ : Path x y) (p : Ω^ (Fin 2) X x) :
+    clutchingNumber F E (GenLoop.transport γ p) = clutchingNumber F E p :=
+  clutchingNumber_eq_of_homotopyAlong (GenLoop.collarHomotopyAlong γ p)
+
+/-- **Base-point change.** The clutching number homomorphism at `y`, on the transport of a class of
+`π₂(X, x)` along a path from `x` to `y`, is the clutching number homomorphism at `x` on that
+class. -/
+@[simp]
+theorem clutchingNumberHom_homotopyGroupTransport (γ : Path x y) (a : π_ 2 X x) :
+    clutchingNumberHom F E y (Additive.ofMul (homotopyGroupTransport γ a)) =
+      clutchingNumberHom F E x (Additive.ofMul a) := by
+  induction a using Quotient.inductionOn with
+  | h p => rw [homotopyGroupTransport_mk, clutchingNumberHom_apply_mk,
+      clutchingNumberHom_apply_mk, clutchingNumber_transport]
+
+/-- The clutching number homomorphism is invariant under the action of the fundamental group on
+`π₂(X, x)`. -/
+theorem clutchingNumberHom_fundamentalGroup_smul (g : FundamentalGroup X x) (a : π_ 2 X x) :
+    clutchingNumberHom F E x (Additive.ofMul (g • a)) =
+      clutchingNumberHom F E x (Additive.ofMul a) := by
+  obtain ⟨p, hp⟩ := Path.Homotopic.Quotient.mk_surjective g.toPath
+  rw [fundamentalGroup_smul_eq_transport hp.symm, clutchingNumberHom_homotopyGroupTransport]
 
 end ClutchingNumber
 

@@ -20,6 +20,10 @@ valuation subring whose pullback contains it, and among finitely many elements o
 all zero, one of largest valuation divides all the others in the valuation subring. A ring
 embedded in a field is itself a field if no proper valuation subring contains its image.
 
+For a group acting on `L` by ring automorphisms, the translate `g • A` of a valuation subring is
+its pullback along `g⁻¹`, with units and nonunits translated accordingly; automorphisms fixing a
+subfield `K` do not change the restriction to `K`.
+
 ## Main results
 
 * `ValuationSubring.mem_nonunits_comap`: nonunits of a pulled-back valuation subring.
@@ -35,6 +39,10 @@ embedded in a field is itself a field if no proper valuation subring contains it
   landing in an ideal of `S` that is sent into the nonunits of `W`.
 * `RingHom.isField_of_forall_valuationSubring_eq_top`: a subring of a field lying in no proper
   valuation subring is a field.
+* `ValuationSubring.pointwise_smul_eq_comap`: the translate `g • A` is the pullback of `A` along
+  the action of `g⁻¹`.
+* `ValuationSubring.comap_algebraMap_pointwise_smul`: translates of `A` by automorphisms fixing
+  `K` have the same restriction to `K`.
 
 ## References
 
@@ -114,6 +122,42 @@ theorem comap_eq_of_map_maximalIdeal_le {S : Type*} [CommRing S]
   · simpa only [mem_comap, hg ⟨x, hx⟩] using hmem (ι ⟨x, hx⟩)
   · simpa only [mem_nonunits_comap, hg ⟨x, nonunits_subset hx⟩] using
       hnon _ (hQ (Ideal.mem_map_of_mem _ (coe_mem_nonunits_iff.mp hx)))
+
+section Pointwise
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G] [MulSemiringAction G L]
+
+/-- The translate `g • A` of a valuation subring is its pullback along the action of `g⁻¹`. -/
+theorem pointwise_smul_eq_comap (g : G) (A : ValuationSubring L) :
+    g • A = A.comap (MulSemiringAction.toRingHom G L g⁻¹) := by
+  ext x
+  rw [mem_comap, mem_pointwise_smul_iff_inv_smul_mem, MulSemiringAction.toRingHom_apply]
+
+/-- `g • x` is a nonunit of `g • A` exactly when `x` is a nonunit of `A`. -/
+@[simp]
+theorem smul_mem_nonunits_pointwise_smul_iff {g : G} {A : ValuationSubring L} {x : L} :
+    g • x ∈ (g • A).nonunits ↔ x ∈ A.nonunits := by
+  rw [pointwise_smul_eq_comap, mem_nonunits_comap, MulSemiringAction.toRingHom_apply,
+    inv_smul_smul]
+
+/-- `g • x` is a unit of `g • A` exactly when `x` is a unit of `A`. -/
+@[simp]
+theorem valuation_pointwise_smul_smul_eq_one_iff {g : G} {A : ValuationSubring L} {x : L} :
+    (g • A).valuation (g • x) = 1 ↔ A.valuation x = 1 := by
+  simp only [eq_iff_le_not_lt, valuation_le_one_iff, ← mem_nonunits_iff,
+    smul_mem_pointwise_smul_iff, smul_mem_nonunits_pointwise_smul_iff]
+
+/-- Automorphisms fixing `K` do not change the restriction of a valuation subring to `K`. -/
+@[simp]
+theorem comap_algebraMap_pointwise_smul [Algebra K L] [SMulCommClass G K L] (g : G)
+    (A : ValuationSubring L) :
+    (g • A).comap (algebraMap K L) = A.comap (algebraMap K L) := by
+  ext a
+  rw [mem_comap, mem_comap, mem_pointwise_smul_iff_inv_smul_mem, smul_algebraMap]
+
+end Pointwise
 
 end ValuationSubring
 
