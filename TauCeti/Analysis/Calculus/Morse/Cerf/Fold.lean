@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.Cerf.Isolated
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import TauCeti.Analysis.Calculus.Bifurcation
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -61,6 +62,9 @@ nondegenerate is `TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_z
 
 ## Main results
 
+* `TauCeti.exists_criticalCurve`: the critical points of the family near a transverse degenerate
+  critical point form a `C²` curve through it, with velocity `(0, v)` for a kernel vector `v` of
+  the Hessian.
 * `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg`: a birth at a
   birth–death point where the product is negative.
 * `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos`: a death at a
@@ -85,35 +89,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E �
 
 /-! ### The parameter along a curve of critical points -/
 
-/-- The derivative of `s ↦ B (c s) (w s) (w s)` for a family `B` of bilinear forms along a curve
-`c`, as used for the Hessian along a curve of critical points. -/
-private theorem hasDerivAt_apply_apply {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {B : F → G →L[ℝ] StrongDual ℝ G}
-    {B' : F →L[ℝ] G →L[ℝ] StrongDual ℝ G} {c : ℝ → F} {c' : F} {w : ℝ → G} {w' : G} {s : ℝ}
-    (hB : HasFDerivAt B B' (c s)) (hc : HasDerivAt c c' s) (hw : HasDerivAt w w' s) :
-    HasDerivAt (fun r ↦ B (c r) (w r) (w r))
-      (B' c' (w s) (w s) + B (c s) w' (w s) + B (c s) (w s) w') s := by
-  have h₁ : HasDerivAt (B ∘ c) (B' c') s := by
-    simpa using (hB.comp s hc.hasFDerivAt).hasDerivAt
-  simpa [add_assoc] using (h₁.clm_apply hw).clm_apply hw
-
-/-- If `τ' d + q = 0` near `0`, where `τ'` and `q` vanish at `0`, `q` has derivative `κ` there and
-`d` tends to `a ≠ 0`, then the derivative of `τ'` at `0` is `-κ / a`: near `0` the slope
-`τ'(s) / s` is `-(q(s) / s) / d(s)`. -/
-private theorem eq_neg_div_of_mul_add_eq_zero {τ' d q : ℝ → ℝ} {l κ a : ℝ}
-    (hid : ∀ᶠ s in 𝓝 0, τ' s * d s + q s = 0) (hτ' : HasDerivAt τ' l 0) (hτ'0 : τ' 0 = 0)
-    (hq : HasDerivAt q κ 0) (hq0 : q 0 = 0) (hd : Tendsto d (𝓝 0) (𝓝 a)) (ha : a ≠ 0) :
-    l = -κ / a := by
-  refine tendsto_nhds_unique (hasDerivAt_iff_tendsto_slope.1 hτ')
-    ((((hasDerivAt_iff_tendsto_slope.1 hq).neg).div (hd.mono_left nhdsWithin_le_nhds) ha).congr'
-      ?_)
-  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds hid,
-    nhdsWithin_le_nhds (hd.eventually_ne ha)] with s hs0 hsid hds
-  have hs0 : s ≠ 0 := hs0
-  simp only [Pi.div_apply]
-  rw [slope_def_field, slope_def_field, hq0, hτ'0]
-  field_simp
-  linarith
+/-- The Hessian of `f t` at `x` is symmetric when the family is jointly `C²` at `(t, x)`. -/
+private theorem fderiv_fderiv_apply_comm_of_uncurry (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
+    (u w : E) :
+    fderiv ℝ (fderiv ℝ (f t)) x u w = fderiv ℝ (fderiv ℝ (f t)) x w u :=
+  (hf.comp x (contDiffAt_const.prodMk contDiffAt_id)).isSymmSndFDerivAt (by simp) u w
 
 /-- **Differentiating the critical equation along a curve of critical points.** If `c` is a curve
 of critical points of the family, `C²` at `0` and through a point where the family is jointly
@@ -132,13 +112,14 @@ private theorem eventually_deriv_fst_mul_add_eq_zero {c : ℝ → ℝ × E}
   have hfc : ∀ᶠ s in 𝓝 0, ContDiffAt ℝ 2 (uncurry f) ((c s).1, (c s).2) :=
     hcd.continuousAt.tendsto.eventually (hf.eventually (by simp))
   filter_upwards [hcrit.eventually_nhds, hcd.eventually (by simp), hfc] with s hs hsd hsf
+  have hGc : G ∘ c =ᶠ[𝓝 s] fun _ ↦ 0 := hs.mono fun _ h ↦ by simpa [G] using h
   have hGd : DifferentiableAt ℝ G (c s) :=
     (hsf.fderiv_slice (m := 1) (by norm_num)).differentiableAt one_ne_zero
   -- The derivative of `s ↦ d(f τ(s))_{ξ(s)}`, which vanishes identically near `s`, is zero.
   have h0 : fderiv ℝ G (c s) (deriv c s) = 0 := by
     rw [← (hGd.hasFDerivAt.comp_hasDerivAt s
       (hsd.differentiableAt two_ne_zero).hasDerivAt).deriv]
-    exact (Filter.EventuallyEq.deriv_eq (hs : G ∘ c =ᶠ[𝓝 s] fun _ ↦ 0)).trans (deriv_const _ _)
+    exact hGc.deriv_eq.trans (deriv_const _ _)
   have hHw : fderiv ℝ G (c s) (0, (deriv c s).2) =
       fderiv ℝ (fderiv ℝ (f (c s).1)) (c s).2 (deriv c s).2 := by
     simpa using fderiv_fderiv_apply hsf (0, (deriv c s).2)
@@ -166,8 +147,6 @@ private theorem deriv_deriv_fst_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {
   set a := deriv (fun s ↦ fderiv ℝ (f s) x) t v
   have hG : ContDiffAt ℝ 2 G (t, x) := hf.fderiv_slice (m := 2) le_rfl
   have hH : ContDiffAt ℝ 1 H (t, x) := hG.fderiv_slice (m := 1) le_rfl
-  have hsymm : ∀ u w, H (t, x) u w = H (t, x) w u :=
-    (hf2.comp x (contDiffAt_const.prodMk contDiffAt_id)).isSymmSndFDerivAt (by simp)
   -- The velocity `c' = (τ', w)` is differentiable at `0`, with `τ' 0 = 0` and `w 0 = v`.
   have hc'd : HasDerivAt (deriv c) (deriv (deriv c) 0) 0 :=
     (((hcd.fderiv_right (m := 1) le_rfl).clm_apply contDiffAt_const).differentiableAt
@@ -186,8 +165,11 @@ private theorem deriv_deriv_fst_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {
       rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
         (hH.differentiableAt one_ne_zero)]
       simp [H, κ]
-    convert hasDerivAt_apply_apply hH' hc' hw using 1
-    simp [hw0, hc0, hκ, hsymm _ v, hHv]
+    have hHc : HasDerivAt (H ∘ c) (fderiv ℝ H (t, x) (0, v)) 0 := by
+      simpa using (hH'.comp 0 hc'.hasFDerivAt).hasDerivAt
+    have hsymm : H (t, x) (deriv (deriv c) 0).2 v = H (t, x) v (deriv (deriv c) 0).2 :=
+      fderiv_fderiv_apply_comm_of_uncurry hf2 _ v
+    simpa [hw0, hc0, hκ, hsymm, hHv] using (hHc.clm_apply hw).clm_apply hw
   -- `d s = ∂ₜ (d(f t)_{ξ(s)}) (w s)` tends to `a`.
   have hd : Tendsto (fun s ↦ fderiv ℝ G (c s) (1, 0) (w s)) (𝓝 0) (𝓝 a) := by
     have hd0 : fderiv ℝ G (c 0) (1, 0) (w 0) = a := by
@@ -198,10 +180,7 @@ private theorem deriv_deriv_fst_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {
       (hc0 ▸ (hG.fderiv_right (m := 1) (by norm_num)).continuousAt).comp hcd.continuousAt
     exact ((hGc.clm_apply continuousAt_const).clm_apply hw.continuousAt).tendsto
   have ha : a ≠ 0 := fun h ↦ by simp [h] at hsign
-  have hτ' : HasDerivAt (fun s ↦ (deriv c s).1) (deriv (deriv c) 0).1 0 :=
-    (ContinuousLinearMap.fst ℝ ℝ E).hasFDerivAt.comp_hasDerivAt _ hc'd
-  rw [hτ'.deriv, eq_neg_div_of_mul_add_eq_zero hid hτ' (by simp [hc'.deriv]) hq
-    (by simp [hc'.deriv, hc0, hv]) hd ha]
+  rw [(hasDerivAt_neg_div_of_mul_add_eq_zero hid (by simp [hc'.deriv]) hq hd ha).deriv]
   have := div_pos (neg_pos.2 hsign) (by positivity : 0 < a ^ 2)
   rwa [show -(κ * a) / a ^ 2 = -κ / a by field_simp] at this
 
@@ -273,8 +252,8 @@ private theorem exists_pos_forall_mem_ball {c : ℝ → ℝ × E} {ℓ : StrongD
     rw [Prod.dist_eq, max_lt_iff]
     exact ⟨hs.trans_le (min_le_left _ _), (mem_ball.1 hy).trans_le (min_le_left _ _)⟩
   have hℓy := hr₂ℓ ((mem_ball.1 hy).trans_le (min_le_right _ _))
-  rw [Real.dist_eq, abs_lt] at hℓy
-  exact ⟨⟨by linarith [hℓy.1], by linarith [hℓy.2]⟩, hcN _ (hr₁N hz).1 hy0,
+  rw [Real.dist_eq] at hℓy
+  exact ⟨mem_Ioo.2 (abs_lt.1 hℓy), hcN _ (hr₁N hz).1 hy0,
     fun hne ↦ (hr₁N hz).2 hne hy0⟩
 
 /-- **Two parameter values on the critical curve give two critical points.** Let `c` be a curve of
@@ -332,7 +311,8 @@ private theorem eventually_ncard_setOf_fderiv_eq_zero_eq_two {c : ℝ → ℝ ×
   filter_upwards [nhdsWithin_le_nhds (h₀.and h₁), Ioo_mem_nhdsGT (show t < t + r by linarith)]
     with s ⟨h₀, h₁⟩ hs
   have hst : dist s t < r := by
-    rw [Real.dist_eq, abs_lt]; constructor <;> linarith [hs.1, hs.2]
+    rw [← mem_ball, Real.ball_eq_Ioo]
+    exact Ioo_subset_Ioo_left (by linarith) hs
   obtain ⟨x₁, hx₁, x₂, hx₂, hset₀⟩ := h₀ hs.1
   obtain ⟨y₁, hy₁, y₂, hy₂, hset₁⟩ := h₁ hs.1
   -- The two solutions in `(-δ₁, δ₁)` are the two solutions in `(-δ₀, δ₀)`.
@@ -374,8 +354,6 @@ private theorem exists_continuousLinearEquiv_fderiv_prod (hf : ContDiffAt ℝ 2 
   have hD : ∀ w, D w = (w.1 • deriv (fun s ↦ fderiv ℝ (f s) x) t +
       fderiv ℝ (fderiv ℝ (f t)) x w.2, ℓ w.2) := fun w ↦ by
     simp [D, fderiv_fderiv_apply hf]
-  have hsymm : ∀ u w, fderiv ℝ (fderiv ℝ (f t)) x u w = fderiv ℝ (fderiv ℝ (f t)) x w u :=
-    (hf.comp x (contDiffAt_const.prodMk contDiffAt_id)).isSymmSndFDerivAt (by simp)
   have ha : deriv (fun s ↦ fderiv ℝ (f s) x) t v ≠ 0 :=
     fun h ↦ hv0 ((surjective_fderiv_fderiv_iff hf).1 hs v hv h)
   -- Pairing the first component with `v` kills the parameter component, and then the space
@@ -383,7 +361,7 @@ private theorem exists_continuousLinearEquiv_fderiv_prod (hf : ContDiffAt ℝ 2 
   have hinj : Injective D := (injective_iff_map_eq_zero _).2 fun ⟨τ, ξ⟩ h ↦ by
     rw [hD, Prod.mk_eq_zero] at h
     have hτ : τ = 0 := by
-      simpa [hsymm ξ v, hv, ha] using congrArg (· v) h.1
+      simpa [fderiv_fderiv_apply_comm_of_uncurry hf ξ v, hv, ha] using congrArg (· v) h.1
     subst hτ
     obtain ⟨c, rfl⟩ :=
       exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf hs hv0 hv (by simpa using h.1)
@@ -399,7 +377,7 @@ a `C²` curve `c` through `(t, x)` with velocity `(0, v)`, made of critical poin
 along which `ℓ` restricted to the space component increases at unit rate, and which passes
 through every critical point of the family near `(t, x)`. It is the preimage of the line
 `{0} × ℝ` under the local inverse of `(t, x) ↦ (d(f t)_x, ℓ x)`. -/
-private theorem exists_criticalCurve (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
+theorem exists_criticalCurve (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
     (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
     (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) (hv0 : v ≠ 0)
     {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1) :
@@ -489,8 +467,9 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
   obtain ⟨ε, hε, hεc⟩ := Metric.eventually_nhds_iff.1 hcrit
   obtain ⟨δ₀, hfold₀, hδ₀⟩ := (hfold.and (Ioo_mem_nhdsGT hε)).exists
   have hcritI : ∀ σ ∈ Ioo (-δ₀) δ₀, fderiv ℝ (f (c σ).1) (c σ).2 = 0 ∧ ℓ (c σ).2 = ℓ x + σ :=
-    fun σ hσ ↦ hεc (by rw [Real.dist_eq, sub_zero, abs_lt]; constructor <;> linarith [hσ.1, hσ.2,
-      hδ₀.2])
+    fun σ hσ ↦ hεc (by
+      rw [← mem_ball, Real.ball_zero_eq_Ioo]
+      exact Ioo_subset_Ioo (neg_le_neg hδ₀.2.le) hδ₀.2.le hσ)
   -- The critical points in a small ball lie on the curve.
   obtain ⟨r, hr, hcurve⟩ := exists_pos_forall_mem_ball hN hcN
     (eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero hf hs
@@ -501,8 +480,6 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
     simpa [hc0] using hcd.continuousAt.snd.tendsto
   obtain ⟨ε₁, hε₁, hε₁U⟩ := Metric.eventually_nhds_iff.1 (hξ.eventually (ball_mem_nhds x hr))
   obtain ⟨δ₁, hfold₁, hδ₁⟩ := (hfold.and (Ioo_mem_nhdsGT (lt_min hδ₀.1 hε₁))).exists
-  have hdist : ∀ {s}, s ∈ Ioo (t - r) (t + r) → dist s t < r := fun hs ↦ by
-    rw [Real.dist_eq, abs_lt]; constructor <;> linarith [hs.1, hs.2]
   refine ⟨ball x r, ball_mem_nhds x hr, Set.ext fun y ↦ ⟨fun ⟨hy, hy0⟩ ↦ ?_, ?_⟩, ?_, ?_⟩
   · -- At `t`, the only critical point in the ball is `x`, the point of the curve at `σ = 0`.
     obtain ⟨hσ, hcσ, -⟩ := hcurve t y (by simpa using hr) hy hy0
@@ -515,14 +492,17 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
   · -- Before `t`, there is none, since the parameter is at least `t` along the curve near `0`.
     filter_upwards [nhdsWithin_le_nhds hfold₀, Ioo_mem_nhdsLT (show t - r < t by linarith)]
       with s h₀ hs y hy hy0
-    obtain ⟨hσ, hcσ, -⟩ := hcurve s y (hdist ⟨hs.1, by linarith [hs.2]⟩) hy hy0
+    obtain ⟨hσ, hcσ, -⟩ := hcurve s y (by
+      rw [← mem_ball, Real.ball_eq_Ioo]
+      exact Ioo_subset_Ioo_right (by linarith) hs) hy hy0
     have := h₀.1 hs.2 _ hσ
     simp [hcσ] at this
   · -- After `t`, there are exactly two, both nondegenerate.
     exact eventually_ncard_setOf_fderiv_eq_zero_eq_two (hδ₁.2.le.trans (min_le_left _ _)) hr
       hcritI hcurve (fun σ hσ ↦ hε₁U (by
-        rw [Real.dist_eq, sub_zero, abs_lt]
-        constructor <;> linarith [hσ.1, hσ.2, hδ₁.2, min_le_right δ₀ ε₁]))
+        have hδε : δ₁ ≤ ε₁ := hδ₁.2.le.trans (min_le_right _ _)
+        rw [← mem_ball, Real.ball_zero_eq_Ioo]
+        exact Ioo_subset_Ioo (neg_le_neg hδε) hδε hσ))
       (hfold₀.mono fun _ h ↦ h.2.2) (hfold₁.mono fun _ h ↦ h.2.2)
 
 /-- **A pair of critical points dies at a birth–death point.** Let `f t` be a family of
@@ -557,18 +537,10 @@ theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos
     simpa using this
   obtain ⟨U, hU, h₀, h₁, h₂⟩ := exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg hg hgs
     (by rwa [hgt]) (by rwa [hgt]) (by rw [hgt, hderiv]; simpa using hsign)
-  have hGT : Tendsto (fun s : ℝ ↦ -s) (𝓝[>] t) (𝓝[<] (-t)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((continuous_neg.tendsto t).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun _ hs ↦ neg_lt_neg hs)
-  have hLT : Tendsto (fun s : ℝ ↦ -s) (𝓝[<] t) (𝓝[>] (-t)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((continuous_neg.tendsto t).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun _ hs ↦ neg_lt_neg hs)
   refine ⟨U, hU, by rwa [hgt] at h₀, ?_, ?_⟩
-  · filter_upwards [hGT.eventually h₁] with s hs
+  · filter_upwards [tendsto_neg_nhdsGT.eventually h₁] with s hs
     simpa [g] using hs
-  · filter_upwards [hLT.eventually h₂] with s hs
+  · filter_upwards [tendsto_neg_nhdsLT.eventually h₂] with s hs
     simpa [g] using hs
 
 end FiniteDimensional

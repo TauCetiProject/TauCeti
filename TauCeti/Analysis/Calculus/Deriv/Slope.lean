@@ -43,6 +43,10 @@ A negative right derivative at `x` forces nearby values to the right to lie stri
 A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f(t) / t → a` as
 `t → 0` within `s \ {0}`; in particular a right derivative `a` gives `f(t) / t → a` as `t → 0⁺`.
 
+If `f d + q = 0` near `x`, where `f` vanishes at `x`, `q` has derivative `κ` at `x` and `d` tends
+to `a ≠ 0`, then near `x` the slope of `f` is `-(slope of q) / d`, so `f` has derivative `-κ / a`
+at `x`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
@@ -60,6 +64,8 @@ A function vanishing at `0` has derivative `a` at `0` within `s` exactly when `f
   `b (t - a) < 0` there.
 * `HasDerivWithinAt.tendsto_div_nhdsGT_zero`: `f(t) / t → a` at `0⁺` when `f 0 = 0` and
   `a` is the right derivative at `0`.
+* `TauCeti.hasDerivAt_neg_div_of_mul_add_eq_zero`: if `f d + q = 0` near `x`, with `f x = 0`,
+  `q' (x) = κ` and `d → a ≠ 0` at `x`, then `f' (x) = -κ / a`.
 -/
 
 public section
@@ -157,6 +163,22 @@ theorem lt_and_lt_of_hasDerivAt_of_mul_pos {D : Set ℝ} {f f' : ℝ → ℝ} {a
   refine ⟨fun hbt => ?_, fun hbt => ?_⟩
   · exact sub_pos.1 ((pos_iff_pos_of_mul_pos (key (by rintro rfl; simp at hbt))).1 hbt)
   · exact sub_neg.1 ((neg_iff_neg_of_mul_pos (key (by rintro rfl; simp at hbt))).1 hbt)
+
+/-- If `f s * d s + q s = 0` for `s` near `x`, where `f x = 0`, `q` has derivative `κ` at `x` and
+`d` tends to `a ≠ 0` at `x`, then `f` has derivative `-κ / a` at `x`: near `x` the slope of `f`
+is `-(slope q x s) / d s`. -/
+theorem hasDerivAt_neg_div_of_mul_add_eq_zero {f d q : ℝ → ℝ} {x κ a : ℝ}
+    (hid : ∀ᶠ s in 𝓝 x, f s * d s + q s = 0) (hf : f x = 0) (hq : HasDerivAt q κ x)
+    (hd : Tendsto d (𝓝 x) (𝓝 a)) (ha : a ≠ 0) : HasDerivAt f (-κ / a) x := by
+  have hq0 : q x = 0 := by simpa [hf] using hid.self_of_nhds
+  refine hasDerivAt_iff_tendsto_slope.2 ((((hasDerivAt_iff_tendsto_slope.1 hq).neg).div
+    (hd.mono_left nhdsWithin_le_nhds) ha).congr' ?_)
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds hid,
+    nhdsWithin_le_nhds (hd.eventually_ne ha)] with s hs hsid hds
+  have hs : s - x ≠ 0 := sub_ne_zero.2 (mem_compl_singleton_iff.1 hs)
+  rw [Pi.div_apply, slope_def_field, slope_def_field, hq0, hf]
+  field_simp
+  linarith
 
 end TauCeti
 
