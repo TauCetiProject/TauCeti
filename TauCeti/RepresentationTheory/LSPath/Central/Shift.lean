@@ -105,6 +105,19 @@ theorem sum_map_snd_shiftTimed (χ : V) (p : List (𝕜 × V)) :
 
 end Algebra
 
+section Reverse
+
+variable {𝕜 V : Type*} [Semiring 𝕜] [AddCommGroup V] [Module 𝕜 V]
+
+/-- Reversing a shifted presentation is shifting the reversed presentation by the opposite
+velocity: the segment `(d, v + d • χ)` reverses to `(d, -v + d • (-χ))`. -/
+@[simp]
+theorem reverseTimed_shiftTimed (χ : V) (p : List (𝕜 × V)) :
+    reverseTimed (shiftTimed χ p) = shiftTimed (-χ) (reverseTimed p) := by
+  simp [reverseTimed_def, shiftTimed_def, List.map_reverse, Function.comp_def, smul_neg, add_comm]
+
+end Reverse
+
 section OrderedField
 
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]

@@ -43,6 +43,8 @@ ray, this is the distinguished presentation of `f_α π`.
   a distinguished presentation for a reflection-stable set `S`**.
 * `TauCeti.PLPath.distinguished_of_lower_eq_some`: the distinguished presentation of `f_α π` is
   the segment list of the lowered graph of the distinguished presentation of `π`.
+* `TauCeti.PLPath.lower_shiftDistinguished`, `TauCeti.PLPath.raise_shiftDistinguished`: **the
+  root operators commute with the central shift** by a vector annihilated by the coroot form.
 * `TauCeti.LSPath.hasDistinguished_of_lower_eq_some`,
   `TauCeti.LSPath.hasDistinguished_of_raise_eq_some`: lowering or raising an LS path of shape `λ`
   along any root gives a path with velocities in the Weyl orbit `W λ`.
@@ -138,6 +140,48 @@ theorem hasDistinguished_of_raise_eq_some (h : HasDistinguished S π)
   have hS' : MapsTo (preReflection x f) (-S) (-S) := fun u hu ↦ by
     simpa [Set.mem_neg, map_neg] using hS (Set.mem_neg.1 hu)
   simpa using (hasDistinguished_of_lower_eq_some h.reverse hS' hρ).reverse
+
+/-! ### Root operators and the central shift -/
+
+/-- **Lowering commutes with the central shift.** Suppose that no two distinct points of `S` lie
+in the same ray, that `S` is stable under the reflection `s = preReflection x f`, and that `f`
+annihilates `χ`. If `π` has a distinguished presentation for `S`, then lowering the shift of `π` by
+`χ` is shifting the lowering of `π` by `χ`. -/
+theorem lower_shiftDistinguished (h : HasDistinguished S π) (hS : MapsTo (preReflection x f) S S)
+    (hS' : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) {χ : V} (hχ : f χ = 0) :
+    lower f x (shiftDistinguished S χ π) = (lower f x π).map (shiftDistinguished S χ) := by
+  obtain ⟨p, hp, rfl⟩ := hasDistinguished_iff.1 h
+  rw [shiftDistinguished_ofSegments hp hS' χ, lower_ofSegments_shiftTimed p hχ x,
+    lower_ofSegments_map_snd, Option.map_map]
+  refine Option.map_congr fun Γ hΓ ↦ ?_
+  -- The segments of the lowered time–weight graph `Γ` are the distinguished presentation of
+  -- its projection, so the central shift of the projection is computed on them.
+  have hΓd := isDistinguished_segments_of_lower_eq_some hS hp.isTimed hp.duration_eq_one
+    hp.slope_mem hΓ
+  have hΓχ : Γ.shiftGraph χ = ofSegments 𝕜 (shiftTimed χ Γ.segments) := by
+    rw [← shiftGraph_ofSegments, ofSegments_segments]
+  dsimp only [Function.comp_apply]
+  rw [hΓχ, map_ofSegments, map_def]
+  simpa using (shiftDistinguished_ofSegments hΓd hS' χ).symm
+
+/-- **Raising commutes with the central shift.** Suppose that no two distinct points of `S` lie
+in the same ray, that `S` is stable under the reflection `s = preReflection x f`, and that `f`
+annihilates `χ`. If `π` has a distinguished presentation for `S`, then raising the shift of `π` by
+`χ` is shifting the raising of `π` by `χ`. -/
+theorem raise_shiftDistinguished (h : HasDistinguished S π) (hS : MapsTo (preReflection x f) S S)
+    (hS' : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) {χ : V} (hχ : f χ = 0) :
+    raise f x (shiftDistinguished S χ π) = (raise f x π).map (shiftDistinguished S χ) := by
+  -- Conjugate by reversal, which turns `S` into `-S` and the shift by `χ` into the shift by `-χ`.
+  have hSn : MapsTo (preReflection x f) (-S) (-S) := fun u hu ↦ by
+    simpa [Set.mem_neg, map_neg] using hS (Set.mem_neg.1 hu)
+  have hSn' : (-S).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v :=
+    fun u hu v hv huv h ↦ hS' hu hv (neg_injective.ne huv) h.neg
+  rw [raise_def, raise_def, reverse_shiftDistinguished h hS',
+    lower_shiftDistinguished h.reverse hSn hSn' (by rw [map_neg, hχ, neg_zero]), Option.map_map,
+    Option.map_map]
+  refine Option.map_congr fun ρ hρ ↦ ?_
+  have hρd := hasDistinguished_of_lower_eq_some h.reverse hSn hρ
+  simpa using reverse_shiftDistinguished hρd hSn' (-χ)
 
 end TauCeti.PLPath
 

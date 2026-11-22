@@ -86,6 +86,8 @@ same minimum height.
   is the straight path along `u + χ`.
 * `TauCeti.PLPath.endpoint_shiftDistinguished`, `TauCeti.PLPath.minHeight_shiftDistinguished`:
   the endpoint moves by `χ`, and the minimum height for a form annihilating `χ` is unchanged.
+* `TauCeti.PLPath.reverse_shiftDistinguished`: reversing the shift by `χ` for `S` is shifting the
+  reversed path by `-χ` for `-S`.
 
 ## References
 
@@ -410,6 +412,19 @@ presentation for `-S`. -/
 theorem HasDistinguished.reverse (h : HasDistinguished S π) : HasDistinguished (-S) π.reverse := by
   obtain ⟨p, hp, rfl⟩ := hasDistinguished_iff.1 h
   exact hasDistinguished_iff.2 ⟨_, hp.reverseTimed, ofSegments_map_snd_reverseTimed p⟩
+
+/-- **Reversal commutes with the central shift.** If no two distinct points of `S` lie in the same
+ray, the reverse of the shift by `χ` of a path with a distinguished presentation for `S` is the
+shift by `-χ`, for `-S`, of the reversed path. -/
+theorem reverse_shiftDistinguished (h : HasDistinguished S π)
+    (hS : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) (χ : V) :
+    (shiftDistinguished S χ π).reverse = shiftDistinguished (-S) (-χ) π.reverse := by
+  obtain ⟨p, hp, rfl⟩ := hasDistinguished_iff.1 h
+  have hS' : (-S).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v :=
+    fun u hu v hv huv h ↦ hS hu hv (neg_injective.ne huv) h.neg
+  rw [shiftDistinguished_ofSegments hp hS, ← ofSegments_map_snd_reverseTimed,
+    ← ofSegments_map_snd_reverseTimed, shiftDistinguished_ofSegments hp.reverseTimed hS',
+    reverseTimed_shiftTimed]
 
 end TauCeti.PLPath
 
