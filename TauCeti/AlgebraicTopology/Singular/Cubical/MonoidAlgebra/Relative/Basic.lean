@@ -33,6 +33,8 @@ differential `b`.
   `TauCeti.exists_iCycles_eq_of_mem_cubicalChainGrading`: the cycles of the normalized cubical
   chain complex of a space are the homogeneous elements of the algebra of cubical chains with
   differential zero.
+* `TauCeti.normalizedCubicalChainComplex_homologyπ_eq_iff`: two cycles have the same homology
+  class exactly when the difference of their chains is a boundary.
 * `TauCeti.exists_isRepresentingChain`: every relative class is represented.
 * `TauCeti.IsRepresentingCycle.exists_isRepresentingChain`: a relative class is represented by a
   chain with a prescribed boundary.
@@ -102,6 +104,27 @@ theorem exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero (q : ℕ)
     exact ⟨_, HomologicalComplex.iCycles_moduleCatCyclesMk
       ((normalizedCubicalChainComplex k).obj (TopCat.of Y)) (q + 1) a q (by simp)
       ((normalizedCubicalChainComplexXEquiv_d_apply (R := k) (TopCat.of Y) q a).trans hd)⟩
+
+/-- Two cycles of the normalized cubical chain complex have the same homology class exactly when
+the difference of the chains they represent is a boundary. -/
+theorem normalizedCubicalChainComplex_homologyπ_eq_iff (q : ℕ)
+    (z z' : ((normalizedCubicalChainComplex k).obj (TopCat.of Y)).cycles q) :
+    ((normalizedCubicalChainComplex k).obj (TopCat.of Y)).homologyπ q z =
+        ((normalizedCubicalChainComplex k).obj (TopCat.of Y)).homologyπ q z' ↔
+      ∃ c : NormalizedCubicalChain Y k (q + 1), boundary Y k q c =
+        normalizedCubicalChainComplexXEquiv _ q
+            (((normalizedCubicalChainComplex k).obj (TopCat.of Y)).iCycles q z) -
+          normalizedCubicalChainComplexXEquiv _ q
+            (((normalizedCubicalChainComplex k).obj (TopCat.of Y)).iCycles q z') := by
+  rw [HomologicalComplex.moduleCat_homologyπ_eq_iff _ (m := q + 1) (by simp)]
+  constructor
+  · rintro ⟨c, hc⟩
+    exact ⟨normalizedCubicalChainComplexXEquiv _ _ c,
+      (normalizedCubicalChainComplexXEquiv_d_apply _ q c).symm.trans (by rw [hc, map_sub])⟩
+  · rintro ⟨c, hc⟩
+    refine ⟨(normalizedCubicalChainComplexXEquiv _ _).symm c,
+      (normalizedCubicalChainComplexXEquiv (R := k) _ q).injective ?_⟩
+    exact (normalizedCubicalChainComplexXEquiv_d_apply _ q _).trans (hc.trans (map_sub _ _ _).symm)
 
 /-- A homogeneous element of cohomological degree `-q` with differential zero in the algebra of
 cubical chains is a cycle of the normalized cubical chain complex. -/

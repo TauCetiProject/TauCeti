@@ -25,15 +25,13 @@ loops, this module is
 
 the free module of the cocycle `TauCeti.cycleCellCocycle R n x` of a cell attached along `x`, on
 the generators `Unit ⊕ Unit` with `e₀ = Sum.inl ()` of index `0` and `e₁ = Sum.inr ()` of index
-`n + 1`. The differential of a
-vector `α e₀ + β e₁` is `dα + κ(β) x` on `e₀` and `dβ` on `e₁`, with `κ` the Koszul sign twist
-(`TauCeti.cycleCellCocycle_differential_apply`). The cocycle of the circle,
-`TauCeti.loopCellCocycle R γ`, has the same shape with `n = 0` and `x = [γ] - [1]`.
-
-The augmentation `ε : K → R` takes the augmentation of the coefficient of `e₀`
-(`TauCeti.loopCellAugmentation`); it vanishes on boundaries as soon as `x` has augmentation zero.
-It is a quasi-isomorphism as soon as right multiplication by `x` is injective on homology and every
-cycle of augmentation zero is, up to a boundary, a right multiple of `x` by a cycle
+`n + 1`. That cocycle, its differential and the augmentation `ε : K → R`
+(`TauCeti.loopCellAugmentation`) are set up in `CircleResolution.lean`, since the cocycle of the
+circle, `TauCeti.loopCellCocycle R γ`, is its case `n = 0` and `x = [γ] - [1]`. The augmentation
+vanishes on boundaries as soon as `x` has augmentation zero
+(`TauCeti.loopCellAugmentation_cycleCellCocycle_differential`). It is a quasi-isomorphism as soon
+as right multiplication by `x` is injective on homology and every cycle of augmentation zero is,
+up to a boundary, a right multiple of `x` by a cycle
 (`TauCeti.exists_cycleCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`): the module is
 then a semi-free resolution of `R`.
 
@@ -55,19 +53,16 @@ The homological conditions are stated on all of the algebra `C_*(Ω_b B; R)`, a 
 chains of every dimension, and are proved for the sphere one dimension at a time. The passage uses
 the components of the differential and of right multiplication by a homogeneous chain
 (`TauCeti.cubicalChainDifferential_apply`, `TauCeti.mul_cubicalChainLof_apply_add`) and of the
-augmentation (`TauCeti.loopChainAugmentation_eq_augment`).
+augmentation (`TauCeti.cubicalChainAugmentation_eq_augment`).
 
 ## Main definitions
 
-* `TauCeti.cycleCellCocycle R n x`: the twisting cocycle of one `(n + 1)`-cell attached along an
-  `n`-cycle `x` to one `0`-cell.
 * `TauCeti.sphereAttachingChain h k`: the attaching cycle of the top cell of the sphere, in the
   loop chain algebra.
 * `TauCeti.sphereCellCocycle h k`: the cocycle of the top cell of the sphere.
 
 ## Main results
 
-* `TauCeti.cycleCellCocycle_differential_apply`: the differential on `α e₀ + β e₁`.
 * `TauCeti.exists_cycleCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`: the module
   resolves the ground ring when right multiplication by `x` behaves as for a sphere.
 * `TauCeti.exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`: Brown's
@@ -90,135 +85,13 @@ open CategoryTheory HomologicalComplex Metric
 
 namespace TauCeti
 
-/-! ### The cocycle of a cell attached along a cycle -/
+/-! ### The resolution of a cell attached along a cycle -/
 
 section CycleCell
 
-variable {B : Type*} [TopologicalSpace B] {b : B} (R : Type*) [CommRing R]
-
-/-- **The twisting cocycle of one `(n + 1)`-cell attached along an `n`-cycle.** On the
-generators `Unit ⊕ Unit`, the `0`-cell `e₀ = Sum.inl ()` of index `0` has zero row, and the cell
-`e₁ = Sum.inr ()` of index `n + 1` is attached (`TauCeti.RowFiniteTwistingCocycle.attach`) along
-the cycle `x e₀`, for an `n`-cycle `x` of the chains `C_*(Ω_b B; R)` on the Moore loops. For a
-sphere and the cycle swept out by the boundary of its top cell, this is Brown's semi-free
-resolution of `R` over `C_*(Ω_b B; R)`. -/
-def cycleCellCocycle (n : ℕ) (x : loopChainAlgebra B b R)
-    (hx : x ∈ cubicalChainGrading (MooreLoopSpace B b) R (-(n : ℤ)))
-    (hdx : cubicalChainDifferential (MooreLoopSpace B b) R x = 0) :
-    RowFiniteTwistingCocycle (R := R) (A := loopChainAlgebra B b R)
-      (cubicalChainGrading (MooreLoopSpace B b) R) (cubicalChainDifferential (MooreLoopSpace B b) R)
-      (Unit ⊕ Unit) (Sum.elim (fun _ ↦ 0) (fun _ ↦ (n : ℤ) + 1)) :=
-  (0 : RowFiniteTwistingCocycle (R := R) (A := loopChainAlgebra B b R)
-      (cubicalChainGrading (MooreLoopSpace B b) R) (cubicalChainDifferential (MooreLoopSpace B b) R)
-      Unit (fun _ ↦ 0)).attach
-    (fun _ ↦ Finsupp.single () x)
-    (fun _ y ↦ by
-      cases y
-      simpa [show (0 : ℤ) - (n + 1) + 1 = -n by ring] using hx)
-    (fun _ ↦ by
-      rw [RowFiniteTwistingCocycle.zero_m, rowFiniteTwistedDifferential_zero,
-        Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single, hdx, Finsupp.single_zero])
-
-variable {R} {n : ℕ} {x : loopChainAlgebra B b R}
-  (hx : x ∈ cubicalChainGrading (MooreLoopSpace B b) R (-(n : ℤ)))
+variable {B : Type*} [TopologicalSpace B] {b : B} {R : Type*} [CommRing R] {n : ℕ}
+  {x : loopChainAlgebra B b R} (hx : x ∈ cubicalChainGrading (MooreLoopSpace B b) R (-(n : ℤ)))
   (hdx : cubicalChainDifferential (MooreLoopSpace B b) R x = 0)
-
-@[simp]
-theorem cycleCellCocycle_m_inl : (cycleCellCocycle R n x hx hdx).m (Sum.inl ()) = 0 := by
-  simp [cycleCellCocycle]
-
-/-- The row of `e₁` is `x e₀`. -/
-@[simp]
-theorem cycleCellCocycle_m_inr :
-    (cycleCellCocycle R n x hx hdx).m (Sum.inr ()) = Finsupp.single (Sum.inl ()) x := by
-  rw [cycleCellCocycle, RowFiniteTwistingCocycle.attach_m_inr, Finsupp.mapDomain_single]
-
-/-- The cocycle is one-sided, so its free module is semi-free
-(`TauCeti.RowFiniteTwistingCocycle.wellFounded_mem_support`). -/
-theorem cycleCellCocycle_m_eq_zero_of_le {y z : Unit ⊕ Unit}
-    (h : Sum.elim (fun _ ↦ (0 : ℤ)) (fun _ ↦ (n : ℤ) + 1) y ≤
-      Sum.elim (fun _ ↦ (0 : ℤ)) (fun _ ↦ (n : ℤ) + 1) z) :
-    (cycleCellCocycle R n x hx hdx).m y z = 0 :=
-  RowFiniteTwistingCocycle.attach_m_eq_zero_of_le _ _ _ (fun _ _ _ ↦ by simp)
-    (fun _ _ h ↦ absurd h (by simp)) y z h
-
-/-- The differential of the free module of `TauCeti.cycleCellCocycle R n x` on `α e₀ + β e₁`: the
-coefficient of `e₀` is `dα + κ(β) x`, with `κ` the Koszul sign twist, and the coefficient of `e₁`
-is `dβ`. -/
-theorem cycleCellCocycle_differential_apply (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) :
-    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m u =
-      Finsupp.single (Sum.inl ())
-          (cubicalChainDifferential (MooreLoopSpace B b) R (u (Sum.inl ())) +
-          (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist
-              1 (u (Sum.inr ())) * x) +
-        Finsupp.single (Sum.inr ())
-          (cubicalChainDifferential (MooreLoopSpace B b) R (u (Sum.inr ()))) := by
-  have hu : u = Finsupp.single (Sum.inl ()) (u (Sum.inl ())) +
-      Finsupp.single (Sum.inr ()) (u (Sum.inr ())) := by
-    ext i
-    rcases i with ⟨⟩ | ⟨⟩ <;> simp
-  conv_lhs => rw [hu]
-  rw [map_add, rowFiniteTwistedDifferential_single_koszulTwist,
-    rowFiniteTwistedDifferential_single_koszulTwist, cycleCellCocycle_m_inl, cycleCellCocycle_m_inr,
-    smul_zero, add_zero, Finsupp.smul_single, smul_eq_mul, Finsupp.single_add]
-  abel
-
-/-- The coefficient of `e₀` in the differential of `u` is `d(u e₀) + κ(u e₁) x`. -/
-@[simp]
-theorem cycleCellCocycle_differential_apply_inl (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) :
-    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m u
-          (Sum.inl ()) =
-      cubicalChainDifferential (MooreLoopSpace B b) R (u (Sum.inl ())) +
-        (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist
-            1 (u (Sum.inr ())) * x := by
-  simp [cycleCellCocycle_differential_apply]
-
-/-- The coefficient of `e₁` in the differential of `u` is `d(u e₁)`. -/
-@[simp]
-theorem cycleCellCocycle_differential_apply_inr (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) :
-    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m u
-          (Sum.inr ()) =
-      cubicalChainDifferential (MooreLoopSpace B b) R (u (Sum.inr ())) := by
-  simp [cycleCellCocycle_differential_apply]
-
-/-- The differential of `α e₀` is `(dα) e₀`. -/
-@[simp]
-theorem cycleCellCocycle_differential_single_inl (α : loopChainAlgebra B b R) :
-    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m
-        (Finsupp.single (Sum.inl ()) α) =
-      Finsupp.single (Sum.inl ()) (cubicalChainDifferential (MooreLoopSpace B b) R α) := by
-  simp [cycleCellCocycle_differential_apply]
-
-/-- The differential of `β e₁` is `κ(β) x e₀ + (dβ) e₁`, with `κ` the Koszul sign twist. -/
-theorem cycleCellCocycle_differential_single_inr (β : loopChainAlgebra B b R) :
-    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-        (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m
-        (Finsupp.single (Sum.inr ()) β) =
-      Finsupp.single (Sum.inl ())
-          ((InternalGrading.ofDecomposition
-              (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist 1 β * x) +
-        Finsupp.single (Sum.inr ()) (cubicalChainDifferential (MooreLoopSpace B b) R β) := by
-  simp [cycleCellCocycle_differential_apply]
-
-/-- When the attaching cycle has augmentation zero, as it does in positive dimension, the
-augmentation of the free module of `TauCeti.cycleCellCocycle R n x` vanishes on boundaries. -/
-theorem loopCellAugmentation_cycleCellCocycle_differential
-    (hεx : loopChainAugmentation B b R x = 0) (u : Unit ⊕ Unit →₀ loopChainAlgebra B b R) :
-    loopCellAugmentation B b R
-        (rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-          (d := cubicalChainDifferential (MooreLoopSpace B b) R)
-          (cycleCellCocycle R n x hx hdx).m u) = 0 := by
-  simp [loopCellAugmentation_apply, hεx]
 
 /-- A cycle `α` of augmentation zero which is, up to a boundary, a right multiple `β x` of a cycle
 `β` gives a boundary `α e₀` of the free module of `TauCeti.cycleCellCocycle R n x`: if
@@ -230,17 +103,11 @@ private theorem exists_cycleCellCocycle_differential_eq_single_inl {α β w : lo
       (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
       (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m v =
         Finsupp.single (Sum.inl ()) α := by
-  have hdκ : cubicalChainDifferential (MooreLoopSpace B b) R
-      ((InternalGrading.ofDecomposition
-        (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist 1 β) = 0 := by
-    rw [← neg_eq_zero, ← (loopChain_isDGAlgebra B b R).toIsNonUnitalDGAlgebra.koszulTwist_map,
-      hβ, map_zero]
   refine ⟨Finsupp.single (Sum.inl ()) w + Finsupp.single (Sum.inr ())
     ((InternalGrading.ofDecomposition
       (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist 1 β), ?_⟩
-  rw [map_add, cycleCellCocycle_differential_single_inl, cycleCellCocycle_differential_single_inr,
-    InternalGrading.koszulTwist_koszulTwist, hdκ, Finsupp.single_zero, add_zero,
-    ← Finsupp.single_add, add_comm, hα]
+  simp [cycleCellCocycle_differential_single_inr, InternalGrading.koszulTwist_koszulTwist,
+    (loopChain_isDGAlgebra B b R).toIsNonUnitalDGAlgebra.map_koszulTwist, hβ, ← hα, add_comm]
 
 /-- **The module of a cell attached along a cycle resolves the ground ring** when right
 multiplication by the attaching cycle `x` behaves as for a sphere: a cycle `β` with `β x` a
@@ -274,13 +141,7 @@ theorem exists_cycleCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero
     (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
     (d := cubicalChainDifferential (MooreLoopSpace B b) R) (cycleCellCocycle R n x hx hdx).m with hD
   -- The Koszul twist `κ` anticommutes with the differential.
-  have hdκ (a : loopChainAlgebra B b R) :
-      cubicalChainDifferential (MooreLoopSpace B b) R
-        ((InternalGrading.ofDecomposition
-          (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist 1 a) =
-        -(InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).koszulTwist
-          1 (cubicalChainDifferential (MooreLoopSpace B b) R a) := by
-    rw [(loopChain_isDGAlgebra B b R).toIsNonUnitalDGAlgebra.koszulTwist_map, neg_neg]
+  have hdκ := (loopChain_isDGAlgebra B b R).toIsNonUnitalDGAlgebra.map_koszulTwist
   have hu0 := congrArg (· (Sum.inl ())) hu
   have hu1 := congrArg (· (Sum.inr ())) hu
   simp only [hD, cycleCellCocycle_differential_apply_inl, cycleCellCocycle_differential_apply_inr,
@@ -359,6 +220,7 @@ theorem cubicalChainDifferential_sphereAttachingChain :
     (sphereAttachingCycle h k)
 
 /-- The attaching cycle has augmentation zero, being of positive dimension. -/
+@[simp]
 theorem loopChainAugmentation_sphereAttachingChain :
     loopChainAugmentation Sph (spherePolePoint h) k (sphereAttachingChain h k) = 0 :=
   loopChainAugmentation_lof_succ _ _
@@ -392,8 +254,6 @@ private theorem exists_boundary_eq_of_boundary_eq_mul {j : ℕ}
       NormalizedCubicalChain.mul _ k j (m + 1) y (sphereAttachingCycleChain h k)) :
     ∃ y' : NormalizedCubicalChain (MooreLoopSpace Sph (spherePolePoint h)) k (j + 1),
       NormalizedCubicalChain.boundary _ k j y' = y := by
-  let X := TopCat.of (MooreLoopSpace Sph (spherePolePoint h))
-  let K := (normalizedCubicalChainComplex k).obj X
   obtain ⟨z, hz⟩ := exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero j hy
   have hdw : cubicalChainDifferential (MooreLoopSpace Sph (spherePolePoint h)) k
       (cubicalChainLof _ k (j + (m + 1)) (NormalizedCubicalChain.boundary _ k (j + (m + 1)) w)) =
@@ -402,22 +262,16 @@ private theorem exists_boundary_eq_of_boundary_eq_mul {j : ℕ}
     exact (loopChain_isDGAlgebra Sph (spherePolePoint h) k).sq_zero _
   obtain ⟨wc, hwc⟩ := exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero _ hdw
   -- The class of the product vanishes, so the class of `y` does.
-  have hπw : K.homologyπ (j + (m + 1)) wc = 0 := by
-    refine (K.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d (w := 0) (m := j + (m + 1) + 1) w
-      ?_).trans (map_zero _)
-    rw [map_zero, sub_zero]
-    exact hwc.trans (normalizedCubicalChainComplexXEquiv_d_apply X (j + (m + 1)) w).symm
-  have hπz : K.homologyπ j z = 0 := by
+  have hπz : ((normalizedCubicalChainComplex k).obj _).homologyπ j z =
+      ((normalizedCubicalChainComplex k).obj _).homologyπ j 0 := by
     apply (sphereLoopHomologyMulRightEquiv h k j).injective
-    rw [map_zero, sphereLoopHomologyMulRightEquiv_homologyπ h k j z wc
+    rw [map_zero, map_zero, sphereLoopHomologyMulRightEquiv_homologyπ h k j z wc
       (hwc.trans (hw.trans (congrArg (fun t ↦ NormalizedCubicalChain.mul _ k j (m + 1) t
-        (sphereAttachingCycleChain h k)) hz.symm)))]
-    exact hπw
-  obtain ⟨y', hy'⟩ := (K.moduleCat_homologyπ_eq_zero_iff (m := j + 1) (by simp) z).1 hπz
-  have hdy' : K.d (j + 1) j y' = K.iCycles j z := by
-    rw [← hy', moduleCat_iCycles_toCycles_apply]
-  exact ⟨y', (normalizedCubicalChainComplexXEquiv_d_apply X j y').symm.trans
-    ((congrArg (normalizedCubicalChainComplexXEquiv X j) hdy').trans hz)⟩
+        (sphereAttachingCycleChain h k)) hz.symm))),
+      ← map_zero (((normalizedCubicalChainComplex k).obj _).homologyπ _).hom]
+    exact (normalizedCubicalChainComplex_homologyπ_eq_iff _ wc 0).2 ⟨w, by simp [hwc]⟩
+  obtain ⟨y', hy'⟩ := (normalizedCubicalChainComplex_homologyπ_eq_iff j z 0).1 hπz
+  exact ⟨y', by simpa [hz] using hy'⟩
 
 /-- **Right multiplication by the attaching cycle of the sphere is injective on homology**: a
 cycle `β` of the loop chain algebra of `Sⁿ` such that `β x` is a boundary is a boundary. -/
@@ -440,24 +294,6 @@ theorem exists_cubicalChainDifferential_eq_of_eq_mul_sphereAttachingChain
   conv_rhs => rw [← DirectSum.sum_support_of β]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [cubicalChainDifferential_lof_succ, hγ, DirectSum.lof_eq_of]
-
-/-- A cycle of dimension zero of the loops of the sphere with augmentation zero is a boundary: the
-sphere is simply connected, so its loops form a path connected space. -/
-private theorem exists_boundary_eq_of_augment_eq_zero
-    {a : NormalizedCubicalChain (MooreLoopSpace Sph (spherePolePoint h)) k 0}
-    (ha : NormalizedCubicalChain.augment _ k a = 0) :
-    ∃ w : NormalizedCubicalChain (MooreLoopSpace Sph (spherePolePoint h)) k 1,
-      NormalizedCubicalChain.boundary _ k 0 w = a := by
-  have : SimplyConnectedSpace Sph :=
-    simplyConnectedSpace_sphere_of_lt_finrank (by simp [finrank_euclideanSpace, h]) 0 zero_le_one
-  have hT : loopZeroChainToGroupAlgebra Sph (spherePolePoint h) k a = 0 := by
-    have hker : loopZeroChainToGroupAlgebra Sph (spherePolePoint h) k a ∈
-        RingHom.ker (MonoidAlgebra.augmentation k (FundamentalGroup Sph (spherePolePoint h))) := by
-      rw [RingHom.mem_ker, ← loopChainToGroupAlgebra_lof_zero, augmentation_loopChainToGroupAlgebra,
-        loopChainAugmentation_lof_zero, ha]
-    rwa [MonoidAlgebra.ker_augmentation_eq_span_of_closure_eq_top k (s := ∅)
-      (Subsingleton.elim _ _), Set.image_empty, Ideal.span_empty, Ideal.mem_bot] at hker
-  exact (loopZeroChainToGroupAlgebra_eq_zero_iff a).1 hT
 
 /-- A cycle of dimension `i + 1 ≤ m` of the loops of the sphere is a boundary. -/
 private theorem exists_boundary_eq_of_lt {i : ℕ} (hi : i < m)
@@ -507,14 +343,8 @@ private theorem exists_mul_add_boundary_eq {i : ℕ}
     rw [← sphereLoopHomologyMulRightEquiv_homologyπ h k i z' wc
       (hwc.trans (congrArg (fun t ↦ NormalizedCubicalChain.mul _ k i (m + 1) t
         (sphereAttachingCycleChain h k)) hy.symm)), hz', LinearEquiv.apply_symm_apply]
-  obtain ⟨c, hc⟩ := (K.moduleCat_homologyπ_eq_iff (m := i + (m + 1) + 1) (by simp) wc z).1 hπ
-  obtain ⟨c', hc'⟩ : ∃ c' : NormalizedCubicalChain (MooreLoopSpace Sph (spherePolePoint h)) k
-      (i + (m + 1) + 1), normalizedCubicalChainComplexXEquiv X _ c = c' := ⟨_, rfl⟩
-  have hbc : NormalizedCubicalChain.boundary (MooreLoopSpace Sph (spherePolePoint h)) k
-      (i + (m + 1)) c' =
-        NormalizedCubicalChain.mul _ k i (m + 1) y (sphereAttachingCycleChain h k) - a :=
-    (congrArg _ hc'.symm).trans ((normalizedCubicalChainComplexXEquiv_d_apply X _ c).symm.trans
-      ((congrArg (normalizedCubicalChainComplexXEquiv X _) hc).trans (congrArg₂ (· - ·) hwc hz)))
+  obtain ⟨c', hbc⟩ := (normalizedCubicalChainComplex_homologyπ_eq_iff _ wc z).1 hπ
+  rw [hwc, hz] at hbc
   refine ⟨y, -c', hdy, ?_⟩
   rw [map_neg, hbc]
   abel
@@ -538,8 +368,11 @@ theorem exists_mul_sphereAttachingChain_add_cubicalChainDifferential_eq
           cubicalChainLof _ k j (α j) := by
     have hj := cubicalChainDifferential_lof_apply_eq_zero hα j
     rcases Nat.eq_zero_or_pos j with rfl | hj0
-    · obtain ⟨w, hw⟩ := exists_boundary_eq_of_augment_eq_zero h k
-        ((loopChainAugmentation_eq_augment α).symm.trans hε)
+    · have : SimplyConnectedSpace Sph :=
+        simplyConnectedSpace_sphere_of_lt_finrank (by simp [finrank_euclideanSpace, h]) 0
+          zero_le_one
+      obtain ⟨w, hw⟩ := mem_range_boundary_of_augment_eq_zero
+        (by rwa [loopChainAugmentation_def, cubicalChainAugmentation_eq_augment] at hε)
       exact ⟨0, cubicalChainLof _ k 1 w, map_zero _, by
         rw [zero_mul, zero_add, cubicalChainDifferential_lof_succ, hw]⟩
     by_cases hjm : j ≤ m
