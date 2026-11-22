@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Composition.Manifold
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -165,15 +166,6 @@ private theorem tendsto_chainEdges {b : M₁ × M₄ → M₂ × M₃} {q : M₁
     by simpa only [hb₀] using hb.tendsto,
     by simpa only [hb₀] using (hb.snd.prodMk continuousAt_snd).tendsto⟩
 
-/-- A real function that is `C^(n+2)` at a point is differentiable near it. -/
-private theorem eventually_mdifferentiableAt_of_contMDiffAt {E H M : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n : WithTop ℕ∞} {f : M → ℝ}
-    {x : M} (hf : ContMDiffAt I 𝓘(ℝ) (n + 2) f x) :
-    ∀ᶠ z in 𝓝 x, MDifferentiableAt I 𝓘(ℝ) f z :=
-  ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 (hf.of_le (le_add_left one_le_two))).mono
-    fun _ hz ↦ hz.mdifferentiableAt one_ne_zero
-
 /-! ### Elimination of the internal vertices -/
 
 section Elimination
@@ -224,9 +216,9 @@ theorem exists_generatingComposition_three [CompleteSpace E₁] [CompleteSpace E
     exists_generatingComposition hH hT h
   /- Step 2: the three edges are differentiable near their base points, which the splitting of the
   matching equation needs. -/
-  have hd₀ := eventually_mdifferentiableAt_of_contMDiffAt hS₀
-  have hd₁ := eventually_mdifferentiableAt_of_contMDiffAt hS₁
-  have hd₂ := eventually_mdifferentiableAt_of_contMDiffAt hS₂
+  have hd₀ := hS₀.eventually_mdifferentiableAt (by simp)
+  have hd₁ := hS₁.eventually_mdifferentiableAt (by simp)
+  have hd₂ := hS₂.eventually_mdifferentiableAt (by simp)
   refine ⟨b, R, hb₀, hRdef, hb, hR, ?_, ?_⟩
   /- Step 3: split the matching of the head and the tail along the branch. -/
   · obtain ⟨hto₀, hto₁, hto₂⟩ := tendsto_chainEdges hb.continuousAt hb₀
