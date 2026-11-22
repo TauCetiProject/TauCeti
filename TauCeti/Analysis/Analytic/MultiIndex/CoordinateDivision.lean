@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Analytic.MultiIndex.TaylorCoeff
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Algebra.Order.Pi
 import TauCeti.Analysis.Analytic.Constructions
-import TauCeti.Analysis.Normed.Group.InfiniteSum
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Division of a multi-index power series by a monomial

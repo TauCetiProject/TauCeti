@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.IteratedFDeriv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
-import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.GroupTheory.Perm.FiberSubgroup
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Multi-index Taylor coefficients of analytic functions

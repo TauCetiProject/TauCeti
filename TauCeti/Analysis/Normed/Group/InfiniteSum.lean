@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 
 /-!
-# Bounds for infinite sums
+# Partial sums of a family with at most one nonzero term
 
 If a family `u` in a seminormed group has at most one nonzero term, then every finite partial sum
 is either the whole sum or zero, so it differs from `∑' i, u i` by at most `‖∑' i, u i‖ₑ`
@@ -19,14 +19,9 @@ pairwise disjoint supports.
 For families `f` and `y` in seminormed groups with `∑ i, ‖f i‖ * ‖y i‖` summable, the extended sum
 `∑' i, ‖f i‖ₑ * ‖y i‖ₑ` is the extended real `ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖)`
 (`TauCeti.tsum_enorm_mul_enorm_eq_ofReal`).
-
-Weighted powers with nonnegative real weights stay summable when the nonnegative radius
-decreases (`TauCeti.summable_mul_pow_of_le`).
 -/
 
 public section
-
-open scoped NNReal
 
 /-- If a family has at most one nonzero term, each finite partial sum differs from the sum by at
 most the extended norm of the sum. -/
@@ -41,15 +36,6 @@ theorem Set.Subsingleton.enorm_sum_sub_tsum_le {κ E : Type*} [SeminormedAddComm
   split_ifs <;> simp
 
 namespace TauCeti
-
-/-- Weighted powers with nonnegative weights that are summable at radius `s` are summable
-at every nonnegative radius `r ≤ s`, for any family of natural-number exponents. -/
-theorem summable_mul_pow_of_le {ι : Type*} {w : ι → ℝ} {degree : ι → ℕ}
-    {r s : ℝ≥0} (hw : ∀ i, 0 ≤ w i) (hrs : r ≤ s)
-    (h : Summable fun i ↦ w i * (s : ℝ) ^ degree i) :
-    Summable fun i ↦ w i * (r : ℝ) ^ degree i :=
-  h.of_nonneg_of_le (fun i ↦ mul_nonneg (hw i) (pow_nonneg r.coe_nonneg _)) fun i ↦
-    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ r.coe_nonneg (NNReal.coe_le_coe.2 hrs) _) (hw i)
 
 /-- If `∑ i, ‖f i‖ * ‖y i‖` is summable, the extended sum `∑' i, ‖f i‖ₑ * ‖y i‖ₑ` is its real sum
 viewed as an extended real. -/
