@@ -43,7 +43,7 @@ agrees with the original one near that point.
 
 ## Locally finite sums
 
-* `TauCeti.contDiffAt_tsum_of_eventually_eq_zero`: a sum of functions smooth at `x`, all but
+* `Finset.contDiffAt_tsum_of_eventually_eq_zero`: a sum of functions smooth at `x`, all but
   finitely many of which vanish near `x`, is smooth at `x`.
 -/
 
@@ -185,7 +185,7 @@ variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGrou
 /-- A sum of functions which are smooth at `x` is smooth at `x` if, on a neighbourhood of `x`,
 all but finitely many of them vanish. This makes locally finite sums of smooth functions, such as
 those built from a smooth partition of unity, smooth. -/
-theorem contDiffAt_tsum_of_eventually_eq_zero (s : Finset ι)
+theorem _root_.Finset.contDiffAt_tsum_of_eventually_eq_zero (s : Finset ι)
     (hg : ∀ j ∈ s, ContDiffAt 𝕜 n (g j) x) (hs : ∀ᶠ y in 𝓝 x, ∀ j ∉ s, g j y = 0) :
     ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
   (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)

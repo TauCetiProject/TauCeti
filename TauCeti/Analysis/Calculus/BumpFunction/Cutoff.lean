@@ -47,7 +47,7 @@ which keeps its periods in the second coordinate
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
-functions are smooth (`TauCeti.contDiffAt_tsum_of_eventually_eq_zero`); in particular the
+functions are smooth (`Finset.contDiffAt_tsum_of_eventually_eq_zero`); in particular the
 periodization `Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map
 of period one in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
 function is bounded and Hölder continuous with every exponent at most one
@@ -583,7 +583,7 @@ theorem exists_contDiff_periodic_eventuallyEq [NormedSpace ℝ E] {F : Type*} [N
     image_eq_zero_of_notMem_tsupport (x := (z.1, z.2 + n)) fun h ↦ hz (hU h).2
   refine ⟨fun z ↦ ∑' n, φ n z, contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun x t ↦ ?_, ?_, ?_⟩
   · -- Near `z`, only the terms with `-z.2 - 1 < n < 2 - z.2` can be nonzero.
-    refine contDiffAt_tsum_of_eventually_eq_zero (Finset.Ioo ⌊-z.2 - 1⌋ ⌈2 - z.2⌉)
+    refine Finset.contDiffAt_tsum_of_eventually_eq_zero (Finset.Ioo ⌊-z.2 - 1⌋ ⌈2 - z.2⌉)
       (fun n _ ↦ (hf.comp (contDiff_fst.prodMk (contDiff_snd.add contDiff_const))).contDiffAt) ?_
     filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
       (Ioo_mem_nhds (sub_one_lt z.2) (lt_add_one z.2))] with w hw n hn
