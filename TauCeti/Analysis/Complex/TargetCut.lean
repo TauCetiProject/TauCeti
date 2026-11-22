@@ -43,8 +43,9 @@ finiteness for `K = ℂ`.
   weaker than transversality, and it is exactly what the isolation argument needs. Intersection
   points at which it holds are isolated
   (`TauCeti.IsTransverseCutAt.eventually_notMem`). Hence if `u` is continuous, `D` is closed, `u`
-  has a limit `y ∉ D` at `∞` and the predicate holds at every point of `u⁻¹(D)`, the preimage
-  `u⁻¹(D)` is finite (`TauCeti.finite_preimage_of_isTransverseCutAt`). The predicate is invariant
+  does not meet `D` near `∞` (for instance because it has a limit `y ∉ D` there) and the predicate
+  holds at every point of `u⁻¹(D)`, the preimage `u⁻¹(D)` is finite
+  (`TauCeti.finite_preimage_of_isTransverseCutAt`). The predicate is invariant
   under reparametrization by maps with invertible derivative (`TauCeti.IsTransverseCutAt.comp`),
   in particular under the automorphisms of the sphere fixing `∞`, which have invertible real
   derivatives (`AffineEquiv.hasFDerivAt_restrictScalars`,
@@ -112,13 +113,13 @@ theorem IsTransverseCutAt.eventually_notMem (h : IsTransverseCutAt u D z)
     nhdsWithin_le_nhds (hu.eventually hD)] with w hw hwD
   exact fun hmem ↦ hw (hwD.1 hmem)
 
-/-- **Finiteness of the full preimage of a transverse cut.** If the sphere component `u`, with a
-limit `y ∉ D` at `∞`, meets the closed set `D` transversally at every point of `u⁻¹(D)`, then
-`u⁻¹(D)` is finite. -/
-theorem finite_preimage_of_isTransverseCutAt {y : X} (hu : Continuous u) (hD : IsClosed D)
-    (hy : Tendsto u (cocompact ℂ) (𝓝 y)) (hyD : y ∉ D)
+/-- **Finiteness of the full preimage of a transverse cut.** If the sphere component `u` does not
+meet the closed set `D` near `∞`, for instance because it has a limit `y ∉ D` there, and meets `D`
+transversally at every point of `u⁻¹(D)`, then `u⁻¹(D)` is finite. -/
+theorem finite_preimage_of_isTransverseCutAt (hu : Continuous u) (hD : IsClosed D)
+    (hinf : ∀ᶠ z in cocompact ℂ, u z ∉ D)
     (h : ∀ z ∈ u ⁻¹' D, IsTransverseCutAt u D z) : (u ⁻¹' D).Finite := by
-  obtain ⟨K, hK, hKD⟩ := mem_cocompact.1 (hy (hD.isOpen_compl.mem_nhds hyD))
+  obtain ⟨K, hK, hKD⟩ := mem_cocompact.1 hinf
   refine (hK.of_isClosed_subset (hD.preimage hu) fun z hz ↦ ?_).finite
     (isDiscrete_iff_nhdsNE.2 fun z hz ↦
       inf_principal_eq_bot.2 ((h z hz).eventually_notMem hu.continuousAt))
