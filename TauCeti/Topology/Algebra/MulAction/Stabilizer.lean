@@ -51,9 +51,10 @@ section Action
 variable {G α : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [TopologicalSpace α] [MulAction G α] [ContinuousSMul G α]
 
-/-- **Kramer's stabilizer openness lemma.** For a continuous action of a topological group `G` on a
-topological space `α`, the setwise stabilizer `{g : G | g • C = C}` of any compact open subset
-`C ⊆ α` is open in `G`. Neither Hausdorffness of `G` nor Hausdorffness of `α` is required. -/
+/-- A generalization of Kramer's translation-stabilizer lemma: for a continuous action of a
+topological group `G` on a topological space `α`, the setwise stabilizer `{g : G | g • C = C}` of
+any compact open subset `C ⊆ α` is open in `G`. Neither Hausdorffness of `G` nor Hausdorffness of
+`α` is required. -/
 @[to_additive
 /-- For a continuous additive action of a topological additive group `G` on a topological space `α`,
 the setwise stabilizer `{g : G | g +ᵥ C = C}` of any compact open subset `C ⊆ α` is open in `G`.

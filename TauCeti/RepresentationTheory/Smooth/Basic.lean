@@ -21,10 +21,14 @@ For a locally profinite group, such as the rational points of a reductive group 
 nonarchimedean local field, this says that every vector is fixed by a compact open subgroup, and
 these are the representations studied in the representation theory of `p`-adic groups.
 
-Every representation has a largest smooth subrepresentation, its subrepresentation of *smooth
-vectors* `V^∞`, made of the vectors with open stabilizer. When `G` is weakly locally compact and
-nonarchimedean (in particular, for locally profinite groups), `V^∞` is the union (and supremum)
-of the invariants `V^U` over the compact open subgroups `U` of `G`.
+Over any semiring `A`, every representation has a largest smooth subrepresentation, its
+subrepresentation of *smooth vectors* `V^∞`, made of the vectors with open stabilizer; when `G` is
+weakly locally compact and nonarchimedean (in particular, for locally profinite groups), a vector
+lies in `V^∞` exactly when its stabilizer contains a compact open subgroup `U` of `G`. When `A` is
+a commutative ring and `V` is an additive commutative group (matching `Representation.invariants`),
+`V^∞` is correspondingly the union and supremum of the invariants `V^U` over the open subgroups
+`U` of `G`, and over the compact open subgroups `U` in the weakly locally compact nonarchimedean
+case.
 
 ## Main definitions
 
@@ -40,8 +44,9 @@ of the invariants `V^U` over the compact open subgroups `U` of `G`.
 * `Representation.isSmooth_iff_exists_isCompact_openSubgroup`: for a locally profinite group, a
   representation is smooth when every vector is fixed by a compact open subgroup.
 * `Representation.coe_smoothVectors_eq_iUnion`,
-  `Representation.toSubmodule_smoothVectors_eq_biSup_invariants_isCompact`: for a locally profinite
-  group, `V^∞` is the union and supremum of the invariants of the compact open subgroups.
+  `Representation.toSubmodule_smoothVectors_eq_biSup_invariants_isCompact`: over a commutative ring
+  `A` and an additive commutative group `V`, for a locally profinite group, `V^∞` is the union and
+  supremum of the invariants of the compact open subgroups.
 * `Representation.le_smoothVectors_iff`: `V^∞` is the largest smooth subrepresentation.
 * `Representation.smoothVectors_eq_top_iff`: `V^∞ = V` exactly when the representation is smooth.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
@@ -141,7 +146,7 @@ instance instIsSmoothOfQuotient [IsSmooth ρ] (S : Subgroup G) [S.Normal]
     rw [← (QuotientGroup.isQuotientMap_mk S).isOpen_preimage]
     change IsOpen
       ((((ρ.ofQuotient S).stabilizer v).comap (QuotientGroup.mk' S) : Subgroup G) : Set G)
-    rw [← stabilizer_comp, ofQuotient_comp_mk']
+    rw [comap_mk'_stabilizer_ofQuotient]
     exact IsSmooth.isOpen_stabilizer v
 
 /-- The binary product of two smooth representations is smooth. -/
@@ -308,6 +313,13 @@ theorem IntertwiningMap.coe_restrictSmoothVectors_apply (f : ρ.IntertwiningMap 
     ((f.restrictSmoothVectors v : σ.smoothVectors.toSubmodule) : W) = f v := by
   simp [restrictSmoothVectors]
 
+/-- Composing `f.restrictSmoothVectors` with the inclusion of `σ.smoothVectors` equals the
+restriction of `f` to `ρ.smoothVectors`. -/
+@[simp]
+theorem IntertwiningMap.subtype_comp_restrictSmoothVectors (f : ρ.IntertwiningMap σ) :
+    σ.smoothVectors.subtype.comp f.restrictSmoothVectors = f.comp ρ.smoothVectors.subtype :=
+  (f.comp ρ.smoothVectors.subtype).subtype_comp_liftSmoothVectors
+
 /-- Restricting the identity intertwining map to `smoothVectors` yields the identity. -/
 @[simp]
 theorem IntertwiningMap.restrictSmoothVectors_id (ρ : Representation A G V) :
@@ -357,7 +369,11 @@ theorem smoothVectors_eq_top [IsSmooth ρ] : ρ.smoothVectors = ⊤ :=
 
 end SmoothVectors
 
-/-! ### Invariants of open and compact open subgroups -/
+/-! ### Invariants of open and compact open subgroups
+
+Because `Representation.invariants` requires a commutative ring acting on an additive commutative
+group, the invariant characterizations in this section assume `[CommRing A]` and
+`[AddCommGroup V]`. -/
 
 section Invariants
 
@@ -545,6 +561,15 @@ theorem smoothVectors_leftRegular_eq_bot [SeparatelyContinuousMul G] [T1Space G]
   exact hG (discreteTopology_of_isOpen_singleton_one
     (isOpen_singleton_of_finite_mem_nhds 1 ((mem_smoothVectors_iff.1 hf).mem_nhds H.one_mem) hfin))
 
+omit [TopologicalSpace G] in
+private theorem stabilizer_pi_ofMulAction_quotient_basepoint [Nontrivial A] {ι : Type*}
+    (H : ι → Subgroup G) :
+    (Representation.pi fun i ↦ ofMulAction A G (G ⧸ H i)).stabilizer
+        (fun i ↦ MonoidAlgebra.single ((1 : G) : G ⧸ H i) (1 : A)) =
+      ⨅ i, H i := by
+  simp only [stabilizer_pi, stabilizer_ofMulAction_single _ one_ne_zero,
+    MulAction.stabilizer_quotient]
+
 /-- In a product `∏ i, A[G ⧸ H i]` of coset permutation representations over a nontrivial
 semiring `A`, if `⨅ i, H i` is not open in `G`, then the family of basepoints
 `fun i ↦ single ↑1 1` is not a smooth vector. -/
@@ -553,17 +578,14 @@ theorem notMem_smoothVectors_pi_ofMulAction_quotient [Nontrivial A] [SeparatelyC
     (hH : ¬ IsOpen (((⨅ i, H i : Subgroup G) : Set G))) :
     (fun i ↦ MonoidAlgebra.single ((1 : G) : G ⧸ H i) 1) ∉
       (Representation.pi fun i ↦ ofMulAction A G (G ⧸ H i)).smoothVectors := by
-  simpa [stabilizer_ofMulAction_single _ one_ne_zero] using hH
+  simpa [mem_smoothVectors_iff, stabilizer_pi_ofMulAction_quotient_basepoint] using hH
 
 /-- In a product `∏ i, A[G ⧸ H i]` of coset permutation representations over a nontrivial
 semiring `A`, if `⨅ i, H i` is not open in `G`, then the product representation is not smooth. -/
 theorem not_isSmooth_pi_ofMulAction_quotient [Nontrivial A] {ι : Type*} {H : ι → Subgroup G}
     (hH : ¬ IsOpen (((⨅ i, H i : Subgroup G) : Set G))) :
-    ¬ IsSmooth (Representation.pi fun i ↦ ofMulAction A G (G ⧸ H i)) := fun h ↦ by
-  have hopen := h.isOpen_stabilizer (fun i ↦ MonoidAlgebra.single ((1 : G) : G ⧸ H i) 1)
-  simp only [stabilizer_pi, stabilizer_ofMulAction_single _ one_ne_zero,
-    MulAction.stabilizer_quotient] at hopen
-  exact hH hopen
+    ¬ IsSmooth (Representation.pi fun i ↦ ofMulAction A G (G ⧸ H i)) := fun h ↦
+  hH (stabilizer_pi_ofMulAction_quotient_basepoint (A := A) H ▸ h.isOpen_stabilizer _)
 
 end OfMulAction
 

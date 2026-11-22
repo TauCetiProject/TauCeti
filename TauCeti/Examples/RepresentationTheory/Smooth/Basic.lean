@@ -11,9 +11,9 @@ public import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Algebra.Group.Quotient
-import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.QuotientTower
+import TauCeti.RepresentationTheory.Quotient
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 import TauCeti.Topology.Compactness.Compact
@@ -70,23 +70,6 @@ end BasicExamples
 section PadicGroup
 
 variable (p : ℕ) [Fact p.Prime]
-
-example : ¬ (leftRegular ℤ (Multiplicative ℤ_[p])).IsSmooth ∧
-    (leftRegular ℤ (Multiplicative ℤ_[p])).smoothVectors = ⊥ :=
-  ⟨by simpa [isSmooth_leftRegular_iff] using
-      not_discreteTopology_of_compactSpace_of_infinite (Multiplicative ℤ_[p]),
-    smoothVectors_leftRegular_eq_bot (not_discreteTopology_of_compactSpace_of_infinite _)⟩
-
-example (n : ℕ) :
-    let U := ((TauCeti.FiniteQuotientTower.padicTower p).ker n).toOpenSubgroup
-    (ofMulAction ℤ (Multiplicative ℤ_[p]) (Multiplicative ℤ_[p] ⧸ U.toSubgroup)).IsSmooth ∧
-      ∀ v : ℤ[Multiplicative ℤ_[p] ⧸ U.toSubgroup],
-        U.toSubgroup ≤
-          (ofMulAction ℤ (Multiplicative ℤ_[p])
-            (Multiplicative ℤ_[p] ⧸ U.toSubgroup)).stabilizer v :=
-  ⟨inferInstance,
-    le_stabilizer_ofMulAction_quotient
-      ((TauCeti.FiniteQuotientTower.padicTower p).ker n).toSubgroup⟩
 
 example :
     let H : ℕ → Subgroup (Multiplicative ℤ_[p]) :=
@@ -185,13 +168,13 @@ example (n : ℕ) :
       (Multiplicative ℤ_[p] ⧸ (padicIntLevel p n).toSubgroup)) :=
   inferInstance
 
-/-- Every vector of `ℤ[ℤ_[p] ⧸ p ^ n ℤ_[p]]` is fixed by `p ^ n ℤ_[p]`: the group is commutative,
-so `p ^ n ℤ_[p]` fixes every coset. -/
+/-- Every vector of `ℤ[ℤ_[p] ⧸ p ^ n ℤ_[p]]` is fixed by `p ^ n ℤ_[p]`: the subgroup is normal,
+so it acts trivially on the coset permutation representation. -/
 example (n : ℕ) (f : ℤ[Multiplicative ℤ_[p] ⧸ (padicIntLevel p n).toSubgroup])
     (u : Multiplicative ℤ_[p]) (hu : u ∈ (padicIntLevel p n).toSubgroup) :
-    ofMulAction ℤ (Multiplicative ℤ_[p]) _ u f = f := by
-  ext y
-  simp [coeff_ofMulAction, smul_quotient_eq_self_of_mem (inv_mem hu)]
+    ofMulAction ℤ (Multiplicative ℤ_[p]) _ u f = f :=
+  le_stabilizer_of_isTrivial_comp_subtype (ofMulAction ℤ (Multiplicative ℤ_[p]) _)
+    (padicIntLevel p n).toSubgroup f hu
 
 end PadicInt
 
