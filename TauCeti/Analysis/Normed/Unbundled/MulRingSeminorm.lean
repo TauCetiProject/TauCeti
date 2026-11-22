@@ -32,11 +32,17 @@ formula on the Gel'fand spectrum of a normed commutative ring.
 
 * `MulRingSeminorm.toRingSeminorm`: view a multiplicative ring seminorm as a `RingSeminorm`.
 * `MulRingSeminorm.comp`: composition of a multiplicative ring seminorm with a ring homomorphism.
+* `RingSeminorm.iInfOfDirected`: pointwise infimum of a nonempty downward-directed family of
+  ring seminorms.
 
 ## Main results
 
 * `MulRingSeminorm.le_smoothingFun_of_le_mul`: over a commutative ring, a multiplicative seminorm
   bounded by `C * μ` is bounded by `smoothingFun μ`.
+* `IsPowMul.iInf`: the pointwise infimum of a nonempty family of nonnegative power-multiplicative
+  functions is power-multiplicative.
+* `RingSeminorm.isPowMul_iInfOfDirected`: the pointwise infimum of a nonempty downward-directed
+  family of power-multiplicative ring seminorms is power-multiplicative.
 * `RingSeminorm.exists_mulRingSeminorm_le_and_apply_eq`: for a nonzero power-multiplicative ring
   seminorm `ρ` on a commutative ring and any `x₀`, some `α : MulRingSeminorm R` satisfies
   `α ≤ ρ` and `α x₀ = ρ x₀`.
@@ -160,7 +166,122 @@ end CommRing
 
 end MulRingSeminorm
 
+/-- The pointwise infimum of a nonempty family of nonnegative power-multiplicative functions is
+power-multiplicative. -/
+theorem IsPowMul.iInf {R : Type*} {ι : Sort*} [Pow R ℕ] [Nonempty ι] {f : ι → R → ℝ}
+    (hf_nonneg : ∀ i a, 0 ≤ f i a) (hf_pm : ∀ i, IsPowMul (f i)) :
+    IsPowMul (fun a ↦ ⨅ i, f i a) := by
+  intro a k hk
+  have hbdd (x : R) : BddBelow (Set.range fun i ↦ f i x) :=
+    ⟨0, by rintro _ ⟨i, rfl⟩; exact hf_nonneg i x⟩
+  have hle (i : ι) (x : R) : (⨅ j, f j x) ≤ f i x := ciInf_le (hbdd x) i
+  have hnonneg (x : R) : 0 ≤ ⨅ j, f j x := le_ciInf fun i ↦ hf_nonneg i x
+  refine le_antisymm ?_
+    (le_ciInf fun i ↦ (pow_le_pow_left₀ (hnonneg a) (hle i a) k).trans_eq
+      ((hf_pm i a hk).symm))
+  have hk0 : k ≠ 0 := Nat.one_le_iff_ne_zero.1 hk
+  have hroot : (⨅ j, f j (a ^ k)) ^ (1 / k : ℝ) ≤ ⨅ j, f j a := by
+    refine le_ciInf fun i ↦ ?_
+    calc (⨅ j, f j (a ^ k)) ^ (1 / k : ℝ)
+        ≤ f i (a ^ k) ^ (1 / k : ℝ) := by
+          gcongr
+          · exact hnonneg _
+          · exact hle i (a ^ k)
+      _ = (f i a ^ k) ^ (1 / k : ℝ) := by rw [hf_pm i a hk]
+      _ = f i a := by rw [one_div, Real.pow_rpow_inv_natCast (hf_nonneg i a) hk0]
+  calc ⨅ j, f j (a ^ k)
+      = ((⨅ j, f j (a ^ k)) ^ (1 / k : ℝ)) ^ k := by
+        rw [one_div, ← Real.rpow_natCast, ← Real.rpow_mul (hnonneg _),
+          inv_mul_cancel₀ (Nat.cast_ne_zero.2 hk0), Real.rpow_one]
+    _ ≤ (⨅ j, f j a) ^ k := pow_le_pow_left₀ (Real.rpow_nonneg (hnonneg _) _) hroot k
+
 namespace RingSeminorm
+
+section NonUnitalRing
+
+variable {R : Type*} [NonUnitalRing R]
+
+/-- The pointwise infimum of a nonempty downward-directed family of ring seminorms is a
+`RingSeminorm`. -/
+noncomputable def iInfOfDirected {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
+    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) : RingSeminorm R where
+  toFun a := ⨅ i, p i a
+  map_zero' := by simp only [map_zero, ciInf_const]
+  add_le' a b := by
+    have hbdd (x : R) : BddBelow (Set.range fun i ↦ p i x) :=
+      ⟨0, by rintro _ ⟨i, rfl⟩; exact apply_nonneg (p i) x⟩
+    have hpair (i j : ι) : (⨅ k, p k (a + b)) ≤ p i a + p j b := by
+      obtain ⟨k, hki, hkj⟩ := hp i j
+      exact (ciInf_le (hbdd (a + b)) k).trans
+        ((map_add_le_add (p k) a b).trans (add_le_add (hki a) (hkj b)))
+    have h1 (i : ι) : (⨅ k, p k (a + b)) - p i a ≤ ⨅ j, p j b :=
+      le_ciInf fun j ↦ sub_le_iff_le_add'.2 (hpair i j)
+    have h2 : (⨅ k, p k (a + b)) - (⨅ j, p j b) ≤ ⨅ i, p i a :=
+      le_ciInf fun i ↦ sub_le_iff_le_add.2 (sub_le_iff_le_add'.1 (h1 i))
+    exact sub_le_iff_le_add.1 h2
+  neg' a := by simp only [map_neg_eq_map]
+  mul_le' a b := by
+    have hbdd (x : R) : BddBelow (Set.range fun i ↦ p i x) :=
+      ⟨0, by rintro _ ⟨i, rfl⟩; exact apply_nonneg (p i) x⟩
+    have hpair (i j : ι) : (⨅ k, p k (a * b)) ≤ p i a * p j b := by
+      obtain ⟨k, hki, hkj⟩ := hp i j
+      exact (ciInf_le (hbdd (a * b)) k).trans
+        ((map_mul_le_mul (p k) a b).trans (mul_le_mul (hki a) (hkj b)
+          (apply_nonneg (p k) b) (apply_nonneg (p i) a)))
+    have h1 (i : ι) : (⨅ k, p k (a * b)) ≤ p i a * (⨅ j, p j b) := by
+      rcases (apply_nonneg (p i) a).eq_or_lt with hia | hia
+      · simpa [← hia] using hpair i i
+      · rw [← div_le_iff₀' hia]
+        exact le_ciInf fun j ↦ (div_le_iff₀' hia).2 (hpair i j)
+    have hnonneg_b : 0 ≤ ⨅ j, p j b := le_ciInf fun j ↦ apply_nonneg (p j) b
+    rcases hnonneg_b.eq_or_lt with hb | hb
+    · obtain ⟨i₀⟩ := ‹Nonempty ι›
+      simpa [← hb] using h1 i₀
+    · rw [← div_le_iff₀ hb]
+      exact le_ciInf fun i ↦ (div_le_iff₀ hb).2 (h1 i)
+
+/-- Evaluating `iInfOfDirected p hp` at `a` gives `⨅ i, p i a`. -/
+@[simp]
+theorem iInfOfDirected_apply {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
+    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) (a : R) :
+    iInfOfDirected p hp a = ⨅ i, p i a :=
+  (rfl)
+
+/-- The underlying function of `iInfOfDirected p hp` is `fun a ↦ ⨅ i, p i a`. -/
+@[simp]
+theorem coe_iInfOfDirected {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
+    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) :
+    ⇑(iInfOfDirected p hp) = fun a ↦ ⨅ i, p i a :=
+  (rfl)
+
+/-- `iInfOfDirected p hp` is bounded above pointwise by every `p i`. -/
+theorem iInfOfDirected_le {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
+    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) (i : ι) (a : R) :
+    iInfOfDirected p hp a ≤ p i a :=
+  ciInf_le ⟨0, by rintro _ ⟨j, rfl⟩; exact apply_nonneg (p j) a⟩ i
+
+/-- A real number bounded above by `p i a` for every `i` is bounded above by
+`iInfOfDirected p hp a`. -/
+theorem le_iInfOfDirected {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
+    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) {a : R} {c : ℝ}
+    (hc : ∀ i, c ≤ p i a) :
+    c ≤ iInfOfDirected p hp a :=
+  le_ciInf hc
+
+end NonUnitalRing
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+/-- The pointwise infimum of a nonempty downward-directed family of power-multiplicative ring
+seminorms is power-multiplicative. -/
+theorem isPowMul_iInfOfDirected {ι : Sort*} [Nonempty ι] (p : ι → RingSeminorm R)
+    (hp : Directed (· ≥ ·) (fun i ↦ (p i : R → ℝ))) (hpm : ∀ i, IsPowMul (p i)) :
+    IsPowMul (iInfOfDirected p hp) :=
+  IsPowMul.iInf (fun i ↦ apply_nonneg (p i)) hpm
+
+end Ring
 
 section CommRing
 
@@ -213,78 +334,32 @@ private theorem powMulSeminormAt_iInf_of_chain {x₀ : R} {r : ℝ} (hr : 0 < r)
     ∃ lb ∈ {f | PowMulSeminormAt x₀ r f}, ∀ z ∈ c, lb ≤ z := by
   have : Nonempty c := ⟨⟨y₀, hy₀⟩⟩
   have hmem (z : c) : PowMulSeminormAt x₀ r z.1 := hcs z.2
-  let lb : R → ℝ := fun a ↦ ⨅ z : c, z.1 a
-  have hbdd (a : R) : BddBelow (Set.range fun z : c ↦ z.1 a) :=
-    ⟨0, by rintro _ ⟨z, rfl⟩; exact (hmem z).nonneg a⟩
-  have hlb_le (z : c) (a : R) : lb a ≤ z.1 a := ciInf_le (hbdd a) z
-  have hlb_nonneg (a : R) : 0 ≤ lb a := le_ciInf fun z ↦ (hmem z).nonneg a
-  have hlb_zero : lb 0 = 0 := by
-    simp only [lb, fun z : c ↦ (hmem z).map_zero, ciInf_const]
-  have hlb_neg (a : R) : lb (-a) = lb a := by
-    simp only [lb, fun z : c ↦ (hmem z).neg a]
+  let p : c → RingSeminorm R := fun z ↦ (hmem z).toRingSeminorm
+  have hdir : Directed (· ≥ ·) (fun z : c ↦ (p z : R → ℝ)) := hc.directedOn.directed_val
+  let lb : RingSeminorm R := iInfOfDirected p hdir
+  have hlb_le (z : c) (a : R) : lb a ≤ z.1 a := iInfOfDirected_le p hdir z a
+  have hlb_pm : IsPowMul lb := isPowMul_iInfOfDirected p hdir (fun z ↦ (hmem z).isPowMul)
   have hlb_one : lb 1 = 1 := by
-    simp only [lb, fun z : c ↦ (hmem z).map_one, ciInf_const]
+    dsimp only [lb]
+    rw [iInfOfDirected_apply]
+    simp only [p, PowMulSeminormAt.toRingSeminorm_apply, fun z : c ↦ (hmem z).map_one, ciInf_const]
   have hlb_x₀ : lb x₀ = r := by
-    simp only [lb, fun z : c ↦ (hmem z).apply_x₀, ciInf_const]
-  have hlb_add (a b : R) : lb (a + b) ≤ lb a + lb b := by
-    have hpair (z₁ z₂ : c) : lb (a + b) ≤ z₁.1 a + z₂.1 b := by
-      rcases hc.total z₁.2 z₂.2 with h12 | h21
-      · exact (hlb_le z₂ (a + b)).trans
-          (((hmem z₂).add_le a b).trans (add_le_add_left (h12 a) _))
-      · exact (hlb_le z₁ (a + b)).trans
-          (((hmem z₁).add_le a b).trans (add_le_add_right (h21 b) _))
-    have h1 (z₁ : c) : lb (a + b) - z₁.1 a ≤ lb b :=
-      le_ciInf fun z₂ ↦ sub_le_iff_le_add'.2 (hpair z₁ z₂)
-    have h2 : lb (a + b) - lb b ≤ lb a :=
-      le_ciInf fun z₁ ↦ sub_le_iff_le_add.2 (sub_le_iff_le_add'.1 (h1 z₁))
-    exact sub_le_iff_le_add.1 h2
-  have hlb_mul (a b : R) : lb (a * b) ≤ lb a * lb b := by
-    have hpair (z₁ z₂ : c) : lb (a * b) ≤ z₁.1 a * z₂.1 b := by
-      rcases hc.total z₁.2 z₂.2 with h12 | h21
-      · exact (hlb_le z₂ (a * b)).trans (((hmem z₂).mul_le a b).trans
-          (mul_le_mul_of_nonneg_right (h12 a) ((hmem z₂).nonneg b)))
-      · exact (hlb_le z₁ (a * b)).trans (((hmem z₁).mul_le a b).trans
-          (mul_le_mul_of_nonneg_left (h21 b) ((hmem z₁).nonneg a)))
-    have h1 (z₁ : c) : lb (a * b) ≤ z₁.1 a * lb b := by
-      rcases ((hmem z₁).nonneg a).eq_or_lt with hza | hza
-      · simpa [← hza] using hpair z₁ z₁
-      · rw [← div_le_iff₀' hza]
-        exact le_ciInf fun z₂ ↦ (div_le_iff₀' hza).2 (hpair z₁ z₂)
-    rcases (hlb_nonneg b).eq_or_lt with hlbb | hlbb
-    · simpa [← hlbb] using h1 ⟨y₀, hy₀⟩
-    · rw [← div_le_iff₀ hlbb]
-      exact le_ciInf fun z₁ ↦ (div_le_iff₀ hlbb).2 (h1 z₁)
-  have hlb_pm : IsPowMul lb := fun a k hk ↦ by
-    refine le_antisymm ?_
-      (le_ciInf fun z ↦ (pow_le_pow_left₀ (hlb_nonneg a) (hlb_le z a) k).trans_eq
-        ((hmem z).isPowMul a hk).symm)
-    have hk0 : k ≠ 0 := Nat.one_le_iff_ne_zero.1 hk
-    have hroot : lb (a ^ k) ^ (1 / k : ℝ) ≤ lb a := by
-      refine le_ciInf fun z ↦ ?_
-      calc lb (a ^ k) ^ (1 / k : ℝ)
-          ≤ z.1 (a ^ k) ^ (1 / k : ℝ) := by
-            gcongr
-            · exact hlb_nonneg _
-            · exact hlb_le z (a ^ k)
-        _ = (z.1 a ^ k) ^ (1 / k : ℝ) := by rw [(hmem z).isPowMul a hk]
-        _ = z.1 a := by rw [one_div, Real.pow_rpow_inv_natCast ((hmem z).nonneg a) hk0]
-    calc lb (a ^ k) = (lb (a ^ k) ^ (1 / k : ℝ)) ^ k := by
-          rw [one_div, ← Real.rpow_natCast, ← Real.rpow_mul (hlb_nonneg _),
-            inv_mul_cancel₀ (Nat.cast_ne_zero.2 hk0), Real.rpow_one]
-      _ ≤ lb a ^ k := pow_le_pow_left₀ (Real.rpow_nonneg (hlb_nonneg _) _) hroot k
+    dsimp only [lb]
+    rw [iInfOfDirected_apply]
+    simp only [p, PowMulSeminormAt.toRingSeminorm_apply, fun z : c ↦ (hmem z).apply_x₀,
+      ciInf_const]
   have hlb_x₀_mul (y : R) : lb (x₀ * y) = lb x₀ * lb y := by
     have hz_mul (z : c) : z.1 (x₀ * y) = r * z.1 y := by
       rw [(hmem z).const_mul y, (hmem z).apply_x₀]
     rw [hlb_x₀]
-    refine le_antisymm ?_ ?_
+    refine le_antisymm ?_ (le_iInfOfDirected p hdir fun z ↦ ?_)
     · rw [← div_le_iff₀' hr]
-      refine le_ciInf fun z ↦ (div_le_iff₀' hr).2 ?_
-      exact (hlb_le z (x₀ * y)).trans_eq (hz_mul z)
-    · refine le_ciInf fun z ↦ ?_
-      rw [hz_mul z]
+      exact le_ciInf fun z ↦ (div_le_iff₀' hr).2 ((hlb_le z (x₀ * y)).trans_eq (hz_mul z))
+    · dsimp only [p]
+      rw [PowMulSeminormAt.toRingSeminorm_apply, hz_mul z]
       exact mul_le_mul_of_nonneg_left (hlb_le z y) hr.le
-  exact ⟨lb, ⟨hlb_zero, hlb_nonneg, hlb_add, hlb_neg, hlb_mul, hlb_pm, hlb_one, hlb_x₀,
-    hlb_x₀_mul⟩, fun z hz ↦ hlb_le ⟨z, hz⟩⟩
+  exact ⟨lb, PowMulSeminormAt.of_ringSeminorm lb hlb_pm hlb_one hlb_x₀ hlb_x₀_mul,
+    fun z hz ↦ hlb_le ⟨z, hz⟩⟩
 
 /-- Every minimal element of `{f | PowMulSeminormAt x₀ r f}` is multiplicative on all of `R`. -/
 private theorem mul_of_minimal_powMulSeminormAt {x₀ : R} {r : ℝ} {m : R → ℝ}
