@@ -17,7 +17,6 @@ import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Etale
 import TauCeti.AlgebraicGeometry.RelativeSpec.BaseChange
 import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
 import TauCeti.AlgebraicGeometry.VectorBundle.Pushforward
-import TauCeti.CategoryTheory.Comma.Over.Pullback
 import TauCeti.CategoryTheory.EqToHom
 import TauCeti.CategoryTheory.Monoidal.EqToHom
 
@@ -65,10 +64,11 @@ locally of finite presentation, the pushforward `p_* 𝒪_V` is already finite l
   `AlgebraicGeometry.Scheme.formalCompletion.exists_hom_of_isFinite_of_flat`: uniqueness and
   existence of algebraized scheme morphisms over `X` between schemes that are finite, flat, and
   locally of finite presentation over `X`.
-* `TauCeti.AlgebraicGeometry.overPullback_map_injective_of_completion_finiteLocallyFree` and
-  `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_completion_finiteLocallyFree`:
-  injectivity (for finite locally free, formally unramified target) and bijectivity (for finite
-  étale target) of restriction along a closed immersion `j : X₀ ⟶ X` with `j.ker = I`.
+* `TauCeti.AlgebraicGeometry.overPullback_map_injective_of_faithful_completionFunctor` and
+  `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_fullyFaithful_completionFunctor`:
+  injectivity (for finite, flat, locally finitely presented, formally unramified target) and
+  bijectivity (for finite étale target) of restriction along the zeroth level
+  `toScheme X I 0 : V(I ^ 1) ⟶ X`.
 
 ## References
 
@@ -618,22 +618,21 @@ namespace TauCeti.AlgebraicGeometry
 
 section OverPullback
 
-variable {X X₀ : Scheme.{u}} (I : X.IdealSheafData)
+variable {X : Scheme.{u}} (I : X.IdealSheafData)
 
-/-- If completion is faithful on finite locally free sheaves, then base change along any closed
-immersion `j : X₀ ⟶ X` with `j.ker = I` is injective on `X`-morphisms from a finite locally free
-scheme `Y ⟶ X` into a finite locally free, formally unramified scheme `Z ⟶ X`. -/
-theorem overPullback_map_injective_of_completion_finiteLocallyFree
-    (j : X₀ ⟶ X) [IsClosedImmersion j] (hj : j.ker = I)
+/-- If completion is faithful on finite locally free sheaves, then base change along the zeroth
+level `toScheme X I 0 : V(I ^ 1) ⟶ X` of `X.formalCompletion I` is injective on `X`-morphisms
+from a finite, flat, locally finitely presented scheme `Y ⟶ X` into a finite, flat, locally
+finitely presented, formally unramified scheme `Z ⟶ X`. -/
+theorem overPullback_map_injective_of_faithful_completionFunctor
     [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
       Scheme.formalCompletion.completionFunctor X I).Faithful]
     {Y Z : Scheme.{u}} (p : Y ⟶ X) (q : Z ⟶ X)
     [IsFinite p] [Flat p] [LocallyOfFinitePresentation p]
     [IsFinite q] [Flat q] [LocallyOfFinitePresentation q] [FormallyUnramified q] :
     Function.Injective
-      (fun g : Over.mk p ⟶ Over.mk q ↦ (Over.pullback j).map g) := by
-  refine Over.pullback_map_injective_of_fac_iso (Scheme.formalCompletion.isoLevelZeroOfKerEq j hj)
-    (Scheme.formalCompletion.isoLevelZeroOfKerEq_hom_toScheme j hj) ?_
+      (fun g : Over.mk p ⟶ Over.mk q ↦
+        (Over.pullback (Scheme.formalCompletion.toScheme X I 0)).map g) := by
   intro g₁ g₂ h
   dsimp only at h
   have hg₁ : g₁.left ≫ q = p := by simpa only [Over.mk_hom] using Over.w g₁
@@ -663,11 +662,11 @@ theorem overPullback_map_injective_of_completion_finiteLocallyFree
   exact Over.OverMorphism.ext
     (Scheme.formalCompletion.hom_ext_of_isFinite_of_flat (I := I) p q rfl rfl hg₁ hg₂ hfc)
 
-/-- If completion is fully faithful on finite locally free sheaves, then base change along any
-closed immersion `j : X₀ ⟶ X` with `j.ker = I` is bijective from `X`-morphisms `Y ⟶ Z` (for finite
-locally free `Y ⟶ X` and finite étale `Z ⟶ X`) to `X₀`-morphisms `Y ×_X X₀ ⟶ Z ×_X X₀`. -/
-theorem overPullback_map_bijective_of_completion_finiteLocallyFree
-    (j : X₀ ⟶ X) [IsClosedImmersion j] (hj : j.ker = I)
+/-- If completion is fully faithful on finite locally free sheaves, then base change along the
+zeroth level `toScheme X I 0 : V(I ^ 1) ⟶ X` of `X.formalCompletion I` is bijective from
+`X`-morphisms `Y ⟶ Z` (for finite, flat, locally finitely presented `Y ⟶ X` and finite étale
+`Z ⟶ X`) to `V(I ^ 1)`-morphisms. -/
+theorem overPullback_map_bijective_of_fullyFaithful_completionFunctor
     [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
       Scheme.formalCompletion.completionFunctor X I).Full]
     [(FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙
@@ -676,13 +675,11 @@ theorem overPullback_map_bijective_of_completion_finiteLocallyFree
     [IsFinite p] [Flat p] [LocallyOfFinitePresentation p]
     [IsFinite q] [Etale q] :
     Function.Bijective
-      (fun g : Over.mk p ⟶ Over.mk q ↦ (Over.pullback j).map g) := by
+      (fun g : Over.mk p ⟶ Over.mk q ↦
+        (Over.pullback (Scheme.formalCompletion.toScheme X I 0)).map g) := by
   have ⟨_, _, _⟩ : Flat q ∧ FormallyUnramified q ∧ LocallyOfFinitePresentation q :=
     Etale.iff_flat_and_formallyUnramified.mp inferInstance
-  refine ⟨overPullback_map_injective_of_completion_finiteLocallyFree I j hj p q, ?_⟩
-  refine Over.pullback_map_surjective_of_fac_iso (Scheme.formalCompletion.isoLevelZeroOfKerEq j hj)
-    (Scheme.formalCompletion.isoLevelZeroOfKerEq_hom_toScheme j hj) ?_
-  intro g₀
+  refine ⟨overPullback_map_injective_of_faithful_completionFunctor I p q, fun g₀ ↦ ?_⟩
   let p_fc := Scheme.formalCompletion.map (I := I.comap p) p le_rfl
   let q_fc := Scheme.formalCompletion.map (I := I.comap q) q le_rfl
   let a₀ : (Y.formalCompletion (I.comap p)).X 0 ⟶ (Z.formalCompletion (I.comap q)).X 0 :=

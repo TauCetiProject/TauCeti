@@ -35,11 +35,7 @@ It also establishes faithfulness and epimorphism preservation for the base-chang
   is faithful when the second projections `X ⨯ Y ⟶ Y` are epimorphisms (and jointly faithful for a
   family `U` whose second projections are jointly epimorphic);
 * `CategoryTheory.Over.preservesEpimorphisms_star`: `Over.star X` preserves epimorphisms whenever
-  `X ⨯ -` does (in particular when epimorphisms in `C` are stable under base change);
-* `CategoryTheory.Over.pullback_map_injective_of_fac_iso` and
-  `CategoryTheory.Over.pullback_map_surjective_of_fac_iso`: injectivity and surjectivity of
-  `(Over.pullback j).map` on morphisms over `X` follow from those of `(Over.pullback i).map`
-  whenever `j = e.hom ≫ i` for an isomorphism `e`.
+  `X ⨯ -` does (in particular when epimorphisms in `C` are stable under base change).
 -/
 
 public section
@@ -117,57 +113,6 @@ instance preservesEpimorphisms_pullback {X Y : C} (f : X ⟶ Y) [HasPullbacksAlo
     (forget X).epi_of_epi_map <|
       MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
         (isPullback_pullback_map_left f k).flip ‹_›
-
-section
-
-attribute [local instance] hasPullback_of_right_iso
-
-private lemma exists_equiv_pullback_map_of_fac_iso {X X₀ X₀' : C} {i : X₀' ⟶ X} {j : X₀ ⟶ X}
-    [HasPullbacksAlong i] [HasPullbacksAlong j] (e : X₀ ≅ X₀') (he : e.hom ≫ i = j)
-    (Y Z : Over X) :
-    ∃ Φ : ((pullback i).obj Y ⟶ (pullback i).obj Z) ≃
-        ((pullback j).obj Y ⟶ (pullback j).obj Z),
-      ∀ g : Y ⟶ Z, (pullback j).map g = Φ ((pullback i).map g) := by
-  subst he
-  have : (pullback e.hom).IsEquivalence :=
-    (mapPullbackAdj e.hom).isEquivalence_right_of_isEquivalence_left
-  let hiso : pullback (e.hom ≫ i) ≅ pullback i ⋙ pullback e.hom :=
-    pullbackComp e.hom i
-  refine ⟨(Functor.FullyFaithful.ofFullyFaithful (pullback e.hom)).homEquiv.trans
-    (Iso.homCongr (hiso.app Y).symm (hiso.app Z).symm), fun g ↦ ?_⟩
-  simp only [Equiv.trans_apply, Functor.FullyFaithful.homEquiv_apply, Iso.homCongr_apply,
-    Iso.symm_inv, Iso.symm_hom, Iso.app_hom, Iso.app_inv]
-  have hnat := hiso.hom.naturality g
-  simp only [Functor.comp_map] at hnat
-  rw [← Category.assoc, ← hnat, Category.assoc, Iso.hom_inv_id_app, Category.comp_id]
-
-/-- Pulling back morphisms in `Over X` along `j = e.hom ≫ i` (for an isomorphism `e`) is injective
-if pulling back along `i` is injective. -/
-theorem pullback_map_injective_of_fac_iso {X X₀ X₀' : C} {i : X₀' ⟶ X} {j : X₀ ⟶ X}
-    [HasPullbacksAlong i] [HasPullbacksAlong j] (e : X₀ ≅ X₀') (he : e.hom ≫ i = j)
-    {Y Z : Over X}
-    (hi : Function.Injective (fun g : Y ⟶ Z ↦ (pullback i).map g)) :
-    Function.Injective (fun g : Y ⟶ Z ↦ (pullback j).map g) := by
-  obtain ⟨Φ, hΦ⟩ := exists_equiv_pullback_map_of_fac_iso e he Y Z
-  intro g₁ g₂ h
-  apply hi
-  apply Φ.injective
-  rwa [← hΦ g₁, ← hΦ g₂]
-
-/-- Pulling back morphisms in `Over X` along `j = e.hom ≫ i` (for an isomorphism `e`) is surjective
-if pulling back along `i` is surjective. -/
-theorem pullback_map_surjective_of_fac_iso {X X₀ X₀' : C} {i : X₀' ⟶ X} {j : X₀ ⟶ X}
-    [HasPullbacksAlong i] [HasPullbacksAlong j] (e : X₀ ≅ X₀') (he : e.hom ≫ i = j)
-    {Y Z : Over X}
-    (hi : Function.Surjective (fun g : Y ⟶ Z ↦ (pullback i).map g)) :
-    Function.Surjective (fun g : Y ⟶ Z ↦ (pullback j).map g) := by
-  obtain ⟨Φ, hΦ⟩ := exists_equiv_pullback_map_of_fac_iso e he Y Z
-  intro g₀
-  obtain ⟨g, hg⟩ := hi (Φ.symm g₀)
-  dsimp only at hg
-  exact ⟨g, (hΦ g).trans (by rw [hg, Equiv.apply_symm_apply])⟩
-
-end
 
 section HasBinaryProducts
 

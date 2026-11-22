@@ -43,10 +43,8 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
   `V(I ^ (n + 1)) ⟶ X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.toOfScheme`: the canonical morphism from `X/V(I)` to
   the constant adic thickening system of `X`.
-* `AlgebraicGeometry.Scheme.formalCompletion.subschemeIsoLevelZero` and
-  `AlgebraicGeometry.Scheme.formalCompletion.isoLevelZeroOfKerEq`: canonical isomorphisms
-  identifying `V(I)` (or any closed immersion `j : X₀ ⟶ X` with `j.ker = I`) with
-  `(X.formalCompletion I).X 0` over `X`.
+* `AlgebraicGeometry.Scheme.formalCompletion.subschemeIsoLevelZero`: the canonical isomorphism
+  `V(I) ≅ (X.formalCompletion I).X 0` over `X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.map`: functoriality in pairs `(X, I)`.
 * `AlgebraicGeometry.Scheme.formalCompletion.levelIsoPullback`: levelwise identification of
   `X.formalCompletion I` with the base change `(Over.pullback (toScheme Y J n)).obj (Over.mk f)`
@@ -212,31 +210,6 @@ theorem subschemeIsoLevelZero_hom_toScheme :
 theorem subschemeIsoLevelZero_inv_subschemeι :
     (subschemeIsoLevelZero X I).inv ≫ I.subschemeι = toScheme X I 0 :=
   inclusion_subschemeι (pow_one I).ge
-
-/-- Factoring a closed immersion `j : X₀ ⟶ X` with `j.ker = I` through the zeroth level
-`toScheme X I 0 : V(I ^ 1) ⟶ X` of `X.formalCompletion I` via an isomorphism `X₀ ≅ V(I ^ 1)`. -/
-noncomputable def isoLevelZeroOfKerEq {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
-    [IsClosedImmersion j] (hj : j.ker = I) :
-    X₀ ≅ (X.formalCompletion I).X 0 :=
-  asIso j.toImage ≪≫
-    ⟨inclusion ((pow_one I).le.trans hj.ge), inclusion (hj.le.trans (pow_one I).ge),
-      (inclusion_comp _ _).trans (inclusion_id _),
-      (inclusion_comp _ _).trans (inclusion_id _)⟩
-
-@[reassoc (attr := simp)]
-theorem isoLevelZeroOfKerEq_hom_toScheme {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
-    [IsClosedImmersion j] (hj : j.ker = I) :
-    (isoLevelZeroOfKerEq j hj).hom ≫ toScheme X I 0 = j := by
-  have h : inclusion ((pow_one I).le.trans hj.ge) ≫ toScheme X I 0 = j.ker.subschemeι :=
-    inclusion_subschemeι _
-  rw [isoLevelZeroOfKerEq, Iso.trans_hom, asIso_hom, Category.assoc]
-  exact (congrArg (j.toImage ≫ ·) h).trans j.toImage_imageι
-
-@[reassoc (attr := simp)]
-theorem isoLevelZeroOfKerEq_inv_comp {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
-    [IsClosedImmersion j] (hj : j.ker = I) :
-    (isoLevelZeroOfKerEq j hj).inv ≫ j = toScheme X I 0 := by
-  rw [Iso.inv_comp_eq, isoLevelZeroOfKerEq_hom_toScheme]
 
 /-- The ideal sheaf of `V(I ^ (n + 1))` in `V(I ^ (n + 2))` is the inverse image of `I ^ (n + 1)`
 along `V(I ^ (n + 2)) ⟶ X`. -/
