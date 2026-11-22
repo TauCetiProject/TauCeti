@@ -30,12 +30,12 @@ with Mathlib's `UpperHalfPlane.qExpansion` when the cusp function is analytic at
 its constant term is the value of the cusp function at `0`.
 
 The Laurent `q`-expansion is compatible with the field operations: it is additive and
-multiplicative, and it commutes with scalars, powers, inverses and quotients. It only depends on
-the cusp function on a punctured neighbourhood of `0`. Its order is the order of the cusp function
-at `0`, so it vanishes exactly when the cusp function vanishes near `0`, and for a periodic
-function it converges to the function sufficiently high in the upper half-plane. This gives the
-`q`-expansion principle: two periodic functions meromorphic at `i∞` have the same Laurent
-`q`-expansion exactly when they agree near `i∞`. Passing from the period `h` to a multiple
+multiplicative, and it commutes with scalars, powers, finite products, inverses and quotients. It
+only depends on the cusp function on a punctured neighbourhood of `0`. Its order is the order of
+the cusp function at `0`, so it vanishes exactly when the cusp function vanishes near `0`, and for
+a periodic function it converges to the function sufficiently high in the upper half-plane. This
+gives the `q`-expansion principle: two periodic functions meromorphic at `i∞` have the same
+Laurent `q`-expansion exactly when they agree near `i∞`. Passing from the period `h` to a multiple
 `d * h` substitutes `q ^ d` for `q`.
 
 These are the expansions at `i∞` through which modular functions, and fields of modular
@@ -401,6 +401,19 @@ theorem laurentQExpansion_pow (hf : MeromorphicAt (cuspFunction h f) 0) (n : ℕ
   | zero => simp
   | succ n ih =>
     rw [pow_succ, laurentQExpansion_mul (meromorphicAt_cuspFunction_pow hf n) hf, ih, pow_succ]
+
+/-- The Laurent `q`-expansion commutes with finite products. -/
+theorem laurentQExpansion_prod {ι : Type*} {s : Finset ι} {F : ι → ℍ → ℂ}
+    (hF : ∀ i ∈ s, MeromorphicAt (cuspFunction h (F i)) 0) :
+    laurentQExpansion h (∏ i ∈ s, F i) = ∏ i ∈ s, laurentQExpansion h (F i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    have hs : ∀ k ∈ s, MeromorphicAt (cuspFunction h (F k)) 0 :=
+      fun k hk ↦ hF k (Finset.mem_insert_of_mem hk)
+    rw [Finset.prod_insert hi, Finset.prod_insert hi, laurentQExpansion_mul
+      (hF i (Finset.mem_insert_self i s)) (meromorphicAt_cuspFunction_prod hs), ih hs]
 
 /-- The Laurent `q`-expansion commutes with inverses. This includes the case where the cusp
 function vanishes near `q = 0`, where both sides are `0`. -/

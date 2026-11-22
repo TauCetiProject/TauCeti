@@ -17,7 +17,9 @@ The order formula allows semiring coefficients; Mathlib's `HahnSeries.addVal` re
 coefficients, so its `AddValuation.map_pow` does not cover this generality.
 
 The formulas are `TauCeti.hahnSeries_leadingCoeff_pow n` and
-`TauCeti.hahnSeries_orderTop_pow n`; both are also simplification lemmas. The exponent is
+`TauCeti.hahnSeries_orderTop_pow n`; both are also simplification lemmas. Over a commutative
+domain, the leading coefficient of a finite product is the product of the leading coefficients
+(`TauCeti.hahnSeries_leadingCoeff_prod`). The exponent is
 explicit, and the series is inferred from the equality being rewritten.
 
 With the typeclasses below in scope, use the qualified names as follows:
@@ -94,6 +96,16 @@ theorem hahnSeries_orderTop_pow [Nontrivial R] (n : ℕ) {f : HahnSeries Γ R} :
   induction n with
   | zero => simp
   | succ n ih => simp [pow_succ, ih, add_nsmul]
+
+/-- The leading coefficient of a finite product is the product of the leading coefficients. -/
+theorem hahnSeries_leadingCoeff_prod {R : Type*} [CommSemiring R] [NoZeroDivisors R] {ι : Type*}
+    (s : Finset ι) (f : ι → HahnSeries Γ R) :
+    (∏ i ∈ s, f i).leadingCoeff = ∏ i ∈ s, (f i).leadingCoeff := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.prod_insert hi, HahnSeries.leadingCoeff_mul, ih]
 
 end TauCeti
 

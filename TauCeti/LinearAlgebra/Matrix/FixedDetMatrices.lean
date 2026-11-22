@@ -33,6 +33,8 @@ common divisor one, the representatives `FixedDetMatrices.primitiveReps n` are t
   `FixedDetMatrices.reps n` into `FixedDetMatrices.reps n` is `g = 1`; hence
   (`FixedDetMatrices.eq_of_smul_eq_of_mem_reps`) two matrices of `FixedDetMatrices.reps n` in the
   same `SL(2, ℤ)`-orbit are equal.
+* `FixedDetMatrices.val_zero_zero_mul_val_one_one_of_mem_reps`: a representative `(a b; 0 d)` has
+  `a d = n`, and `FixedDetMatrices.pos_val_one_one_of_mem_reps`: `0 < d` when `0 < n`.
 * `FixedDetMatrices.repsEquiv`: the representatives are parametrized by positive factor pairs
   `(a, d)` of `|n|` and residues `0 ≤ b < d`.
 * `FixedDetMatrices.ncard_reps`: `FixedDetMatrices.reps n` has `σ₁(|n|)` elements.
@@ -80,6 +82,17 @@ theorem smul_coe_apply {R : Type*} [CommRing R] {m : R} (g : SpecialLinearGroup 
     (A : FixedDetMatrix (Fin 2) R m) (i j : Fin 2) :
     (g • A).val i j = g i 0 * A.val 0 j + g i 1 * A.val 1 j := by
   rw [smul_coe, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- A representative `(a b; 0 d)` of determinant `n` has `a d = n`. -/
+theorem val_zero_zero_mul_val_one_one_of_mem_reps {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ reps n) : A.val 0 0 * A.val 1 1 = n := by
+  have hdet := A.property
+  rwa [det_fin_two, hA.1, mul_zero, sub_zero] at hdet
+
+/-- A representative `(a b; 0 d)` of positive determinant has `0 < d`. -/
+theorem pos_val_one_one_of_mem_reps (hn : 0 < n) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : A ∈ reps n) : 0 < A.val 1 1 :=
+  pos_of_mul_pos_right ((val_zero_zero_mul_val_one_one_of_mem_reps hA).symm ▸ hn) hA.2.1.le
 
 /-- No nontrivial element of `SL(2, ℤ)` moves a representative to a representative: if `A` and
 `g • A` both lie in `reps n`, then `g = 1`. -/
