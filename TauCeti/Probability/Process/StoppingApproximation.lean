@@ -34,8 +34,10 @@ Stopped-value convergence is asserted only at finite times: the native value at 
 is a fallback, not a terminal path limit.
 
 No rounded value lies strictly between consecutive grid points (`le_dyadicCeilTime_of_div_lt`).
-Projecting the dyadic grid onto `[s, b]` (`dyadicProjIcc`) inherits monotonicity, endpoint bounds,
-and the same no-interior-point property (`dyadicProjIcc_le_dyadicCeilTime`).
+Projecting the dyadic grid onto `[s, b]` (`dyadicProjIcc`, evaluated via `dyadicProjIcc_def`
+and `dyadicProjIcc_of_mem_Icc`) inherits monotonicity, endpoint bounds, the same
+no-interior-point property (`dyadicProjIcc_le_dyadicCeilTime`), and exact telescoping on
+`[s, min t T]` (`sum_dyadicProjIcc_telescope`).
 
 ## References
 
@@ -242,6 +244,17 @@ theorem tendsto_stoppedProcess_dyadicCeilTime {Ω E : Type*} [TopologicalSpace E
 def dyadicProjIcc (s b : ℝ≥0) (hsb : s ≤ b) (k j : ℕ) : ℝ≥0 :=
   Set.projIcc s b hsb ((j : ℝ≥0) / 2 ^ k)
 
+/-- The projected dyadic grid clips `j / 2 ^ k` to `[s, b]`. -/
+theorem dyadicProjIcc_def (s b : ℝ≥0) (hsb : s ≤ b) (k j : ℕ) :
+    dyadicProjIcc s b hsb k j = max s (min b ((j : ℝ≥0) / 2 ^ k)) :=
+  Set.coe_projIcc s b hsb _
+
+/-- A dyadic grid point inside `[s, b]` is unchanged by the projected dyadic grid. -/
+theorem dyadicProjIcc_of_mem_Icc {s b : ℝ≥0} (hsb : s ≤ b) {k j : ℕ}
+    (hj : (j : ℝ≥0) / 2 ^ k ∈ Icc s b) :
+    dyadicProjIcc s b hsb k j = (j : ℝ≥0) / 2 ^ k :=
+  congrArg Subtype.val (Set.projIcc_of_mem hsb hj)
+
 /-- The projected dyadic grid is monotone in the grid index. -/
 theorem monotone_dyadicProjIcc {s b : ℝ≥0} (hsb : s ≤ b) (k : ℕ) :
     Monotone (dyadicProjIcc s b hsb k) :=
@@ -297,6 +310,65 @@ theorem dyadicProjIcc_le_dyadicCeilTime {s b : ℝ≥0} (hsb : s ≤ b) {k j : �
     exact (WithTop.coe_le_coe.mpr hnext).trans (by
       rw [WithTop.coe_max]
       exact max_le hs_lt.le hdiv)
+
+end TauCeti
+
+namespace WithTop
+
+/-- Coercing the unwrapped minimum of a finite element and a `WithTop` element recovers that
+minimum. -/
+theorem coe_untopA_coe_min {ι : Type*} [LinearOrder ι] [Nonempty ι] (x : ι) (a : WithTop ι) :
+    ((min (x : WithTop ι) a).untopA : WithTop ι) = min (x : WithTop ι) a := by
+  rw [untopA_eq_untop (ne_of_lt (lt_of_le_of_lt (min_le_left _ _) (coe_lt_top x))), coe_untop]
+
+end WithTop
+
+namespace TauCeti
+
+/-- Telescoping identity for stopping a single elementary interval `(s, t]` at `dyadicCeilTime k u`
+on horizon `T` (when `s ≤ T`): summing the indicator-weighted increments over `dyadicProjIcc`
+telescopes to `c * (f (min t (min T σ).untopA) - f (min s (min T σ).untopA))`. -/
+theorem sum_dyadicProjIcc_telescope {s t T : ℝ≥0} (hst : s ≤ t) (hsT : s ≤ T)
+    (k : ℕ) (u : WithTop ℝ≥0) (c : ℝ) (f : ℝ≥0 → ℝ) :
+    let b : ℝ≥0 := min t T
+    let hsb : s ≤ b := le_min hst hsT
+    let p : ℕ → ℝ≥0 := dyadicProjIcc s b hsb k
+    let σ : WithTop ℝ≥0 := dyadicCeilTime k u
+    ∑ j ∈ Finset.range (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1),
+        (if (p j : WithTop ℝ≥0) < σ then c else 0) * (f (min (p (j + 1)) T) - f (min (p j) T)) =
+      c * (f (min t (min (T : WithTop ℝ≥0) σ).untopA) -
+        f (min s (min (T : WithTop ℝ≥0) σ).untopA)) := by
+  intro b hsb p σ
+  have hbT : b ≤ T := min_le_right t T
+  have hp0 : p 0 = s := dyadicProjIcc_zero hsb k
+  have hp_end : p (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1) = b := dyadicProjIcc_end hsb k
+  have hp_le (j : ℕ) : p j ≤ b := dyadicProjIcc_le hsb k j
+  have hterm (j : ℕ) :
+      (if (p j : WithTop ℝ≥0) < σ then c else 0) * (f (min (p (j + 1)) T) - f (min (p j) T)) =
+        c * (f (min (p (j + 1) : WithTop ℝ≥0) σ).untopA -
+          f (min (p j : WithTop ℝ≥0) σ).untopA) := by
+    rw [min_eq_left ((hp_le (j + 1)).trans hbT), min_eq_left ((hp_le j).trans hbT)]
+    by_cases hgt : (p j : WithTop ℝ≥0) < σ
+    · have hno : (p (j + 1) : WithTop ℝ≥0) ≤ σ := dyadicProjIcc_le_dyadicCeilTime hsb hgt
+      simp only [hgt, ite_true, min_eq_left hgt.le, min_eq_left hno,
+        WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
+    · have hle : σ ≤ (p j : WithTop ℝ≥0) := le_of_not_gt hgt
+      have hle' : σ ≤ (p (j + 1) : WithTop ℝ≥0) :=
+        hle.trans (WithTop.coe_le_coe.mpr (monotone_dyadicProjIcc hsb k (Nat.le_succ j)))
+      simp only [hgt, ite_false, zero_mul, min_eq_right hle, min_eq_right hle', sub_self, mul_zero]
+  simp_rw [hterm, ← Finset.mul_sum,
+    Finset.sum_range_sub (fun j ↦ f (min (p j : WithTop ℝ≥0) σ).untopA) (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1),
+    hp0, hp_end]
+  have hmin_le {r : ℝ≥0} (hrT : r ≤ T) :
+      min r (min (T : WithTop ℝ≥0) σ).untopA = (min (r : WithTop ℝ≥0) σ).untopA := by
+    apply WithTop.coe_injective
+    rw [WithTop.coe_min, WithTop.coe_untopA_coe_min, WithTop.coe_untopA_coe_min,
+      ← min_assoc, min_eq_left (WithTop.coe_le_coe.mpr hrT)]
+  have hmin_t : min t (min (T : WithTop ℝ≥0) σ).untopA = (min (b : WithTop ℝ≥0) σ).untopA := by
+    rw [← hmin_le hbT]
+    dsimp only [b]
+    rw [min_assoc, min_eq_right (WithTop.untopA_le (min_le_left (T : WithTop ℝ≥0) σ))]
+  rw [hmin_t, hmin_le hsT]
 
 end TauCeti
 

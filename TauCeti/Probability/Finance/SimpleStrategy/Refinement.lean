@@ -22,9 +22,11 @@ any finite family, preserving both holdings and gains against every price path. 
 bottom time and has strictly increasing dates, including when some input intervals are empty or
 reversed. The new heights are bounded pointwise by the sum of the original absolute heights;
 thus boundedness and Lᵖ control survive refinement without additional moment assumptions.
-`exists_simpleHolding_simpleGains_eq_sub` and `exists_simpleHolding_simpleGains_eq_add` specialize
-this to the difference and sum of two simple strategies on monotone grids, subtracting or adding
-both their holdings and their gains.
+`exists_simpleHolding_simpleGains_eq_sub` specializes this to the difference of two simple
+strategies on monotone grids, subtracting both their holdings and their gains.
+`simpleHolding_clip_Ioc_mul` clips a simple strategy to `(s, t]` via `Set.projIcc s t hst ∘ τ`
+and multiplies by an `ℱ s`-measurable height `ξ`, factoring `ξ` out of the `(s, t]` gain
+difference.
 
 This bridges finite sums of predictable rectangles and finite-grid trading strategies. In
 particular, differences of elementary stochastic-integral approximants can be evaluated on one
@@ -209,24 +211,124 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
     · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
     · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
-/-- The sum of two simple strategies is one simple strategy on a strictly increasing common grid
-starting at the bottom time, with heights still chosen at the left endpoints of their intervals.
-Holdings and gains against every price path are added. -/
-theorem exists_simpleHolding_simpleGains_eq_add [OrderBot ι] {mΩ : MeasurableSpace Ω}
-    (ℱ : Filtration ι mΩ) {τ σ : ℕ → ι} {n m : ℕ} {a b : ℕ → Ω → ℝ}
-    (hτ : MonotoneOn τ (Set.Iic n)) (hσ : MonotoneOn σ (Set.Iic m))
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hb : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (b j)) :
-    ∃ (N : ℕ) (ρ : ℕ → ι) (c : ℕ → Ω → ℝ),
-      ρ 0 = ⊥ ∧ StrictMonoOn ρ (Set.Iic N) ∧
-      (∀ j < N, StronglyMeasurable[ℱ (ρ j)] (c j)) ∧
-      (∀ t ω, simpleHolding ρ N c t ω = simpleHolding τ n a t ω + simpleHolding σ m b t ω) ∧
-      ∀ (X : ι → Ω → ℝ) t ω, simpleGains ρ N c X t ω =
-        simpleGains τ n a X t ω + simpleGains σ m b X t ω := by
-  obtain ⟨N, ρ, c, hρ₀, hρ, hc, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sub ℱ hτ hσ ha
-    (b := (-1 : ℝ) • b) (fun j hj ↦ (hb j hj).const_smul (-1 : ℝ))
-  refine ⟨N, ρ, c, hρ₀, hρ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
-  · simpa only [simpleHolding_smul, neg_one_mul, sub_neg_eq_add] using hhold t ω
-  · simpa only [simpleGains_smul, neg_one_mul, sub_neg_eq_add] using hgain X t ω
+private theorem Ioc_projIcc_eq_Ioc_inter {s t l r : ι} (hst : s ≤ t) (hlt : l ≤ t) :
+    Set.Ioc (Set.projIcc s t hst l : ι) (Set.projIcc s t hst r : ι) =
+      Set.Ioc s t ∩ Set.Ioc l r := by
+  ext u
+  simp only [Set.mem_Ioc, Set.mem_inter_iff, Set.coe_projIcc, min_eq_right hlt, max_lt_iff,
+    le_max_iff, le_min_iff]
+  constructor
+  · rintro ⟨⟨hsu, hlu⟩, h1 | ⟨hut, hur⟩⟩
+    · exact absurd h1 hsu.not_ge
+    · exact ⟨⟨hsu, hut⟩, ⟨hlu, hur⟩⟩
+  · rintro ⟨⟨hsu, hut⟩, ⟨hlu, hur⟩⟩
+    exact ⟨⟨hsu, hlu⟩, Or.inr ⟨hut, hur⟩⟩
+
+private theorem indicator_Ioc_projIcc_mul {s t l r : ι} (hst : s ≤ t) (hlr : l ≤ r)
+    (ξ c : ℝ) (u : ι) :
+    (Set.Ioc (Set.projIcc s t hst l : ι) (Set.projIcc s t hst r : ι)).indicator
+        (fun _ ↦ if l ≤ t then ξ * c else 0) u =
+      (Set.Ioc s t).indicator (fun _ ↦ ξ * (Set.Ioc l r).indicator (fun _ ↦ c) u) u := by
+  by_cases hlt : l ≤ t
+  · rw [Ioc_projIcc_eq_Ioc_inter hst hlt]
+    by_cases hus : u ∈ Set.Ioc s t <;> by_cases hul : u ∈ Set.Ioc l r <;>
+      simp [hlt, hus, hul]
+  · have htl : t < l := lt_of_not_ge hlt
+    have htr : t < r := htl.trans_le hlr
+    have hpl : Set.projIcc s t hst l = ⟨t, Set.right_mem_Icc.2 hst⟩ :=
+      Set.projIcc_of_right_le hst htl.le
+    have hpr : Set.projIcc s t hst r = ⟨t, Set.right_mem_Icc.2 hst⟩ :=
+      Set.projIcc_of_right_le hst htr.le
+    simp only [hlt, ite_false, hpl, hpr, Set.Ioc_self, Set.indicator_apply, Set.mem_Ioc]
+    by_cases hus : s < u ∧ u ≤ t
+    · have hul : ¬ l < u := not_lt_of_ge (hus.2.trans htl.le)
+      simp [hus, hul]
+    · simp [hus]
+
+private theorem min_coe_projIcc_eq {s t T : ι} (hst : s ≤ t) (hsT : s ≤ T) (r : ι) :
+    min (Set.projIcc s t hst r : ι) T = max s (min r (min T t)) := by
+  rw [Set.coe_projIcc, min_max_distrib_right, min_eq_left hsT]
+  ac_rfl
+
+private theorem single_clip_Ioc_gain {s t l r T : ι} (hst : s ≤ t) (hlr : l ≤ r)
+    (ξ c : ℝ) (f : ι → ℝ) :
+    (if l ≤ t then ξ * c else 0) *
+        (f (min (Set.projIcc s t hst r : ι) T) - f (min (Set.projIcc s t hst l : ι) T)) =
+      ξ * (c * (f (min r (min T t)) - f (min l (min T t))) -
+        c * (f (min r (min T s)) - f (min l (min T s)))) := by
+  rcases le_total T s with hTs | hsT
+  · have hpl : T ≤ (Set.projIcc s t hst l : ι) := hTs.trans (Set.projIcc s t hst l).property.1
+    have hpr : T ≤ (Set.projIcc s t hst r : ι) := hTs.trans (Set.projIcc s t hst r).property.1
+    rw [min_eq_right hpl, min_eq_right hpr, min_eq_left (hTs.trans hst), min_eq_left hTs,
+      sub_self, mul_zero, sub_self, mul_zero]
+  · by_cases hlt : l ≤ t
+    · simp only [hlt, ite_true, min_coe_projIcc_eq hst hsT, min_eq_right hsT]
+      rw [show ξ * (c * (f (min r (min T t)) - f (min l (min T t))) -
+            c * (f (min r s) - f (min l s))) =
+          (ξ * c) * ((f (min r (min T t)) - f (min l (min T t))) -
+            (f (min r s) - f (min l s))) by ring]
+      congr 1
+      have hsu : s ≤ min T t := le_min hsT hst
+      rcases le_total l s with hls | hsl <;> rcases le_total r s with hrs | hsr
+      · simp [hls, hrs, hls.trans hsu, hrs.trans hsu]
+      · rw [max_eq_right (le_min hsr hsu), max_eq_left (min_le_of_left_le hls),
+          min_eq_left (hls.trans hsu), min_eq_right hsr, min_eq_left hls]
+        ring
+      · have hls_eq : l = s := (hlr.trans hrs).antisymm hsl
+        have hrs_eq : r = s := hrs.antisymm (hsl.trans hlr)
+        simp [hls_eq, hrs_eq, hsu]
+      · rw [max_eq_right (le_min hsl hsu), max_eq_right (le_min hsr hsu),
+          min_eq_right hsl, min_eq_right hsr]
+        ring
+    · have htl : t < l := lt_of_not_ge hlt
+      have htr : t < r := htl.trans_le hlr
+      simp only [hlt, ite_false, zero_mul]
+      have h1 : min T t ≤ l := (min_le_right T t).trans htl.le
+      have h2 : min T t ≤ r := (min_le_right T t).trans htr.le
+      have h3 : min T s ≤ l := (min_le_right T s).trans (hst.trans htl.le)
+      have h4 : min T s ≤ r := (min_le_right T s).trans (hst.trans htr.le)
+      rw [min_eq_right h1, min_eq_right h2, min_eq_right h3, min_eq_right h4,
+        sub_self, mul_zero, sub_self, mul_zero, sub_self, mul_zero]
+
+/-- Clipping a simple holding `(τ, n, a)` to `(s, t]` via `Set.projIcc s t hst ∘ τ` and
+multiplying by an `ℱ s`-measurable function `ξ` yields another simple holding whose holdings
+equal `1_{(s, t]} · ξ · simpleHolding τ n a` and whose gains factor `ξ` out of the `(s, t]`
+difference of gains. -/
+theorem simpleHolding_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration ι mΩ)
+    {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    {s t : ι} (hst : s ≤ t) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
+    let σ : ℕ → ι := fun j ↦ Set.projIcc s t hst (τ j)
+    let b (j : ℕ) (ω : Ω) : ℝ := if τ j ≤ t then ξ ω * a j ω else 0
+    MonotoneOn σ (Set.Iic n) ∧
+      (∀ j < n, StronglyMeasurable[ℱ (σ j)] (b j)) ∧
+      (∀ u ω, simpleHolding σ n b u ω =
+        (Set.Ioc s t).indicator (fun _ ↦ ξ ω * simpleHolding τ n a u ω) u) ∧
+      ∀ (X : ι → Ω → ℝ) (T : ι) (ω : Ω), simpleGains σ n b X T ω =
+        ξ ω * (simpleGains τ n a X (min T t) ω - simpleGains τ n a X (min T s) ω) := by
+  intro σ b
+  have hσ : MonotoneOn σ (Set.Iic n) := fun i hi j hj hij ↦
+    Set.monotone_projIcc hst (hτ hi hj hij)
+  refine ⟨hσ, fun j hj ↦ ?_, fun u ω ↦ ?_, fun X T ω ↦ ?_⟩
+  · dsimp only [b]
+    by_cases hjt : τ j ≤ t
+    · simp only [hjt, ite_true]
+      have hsσ : s ≤ σ j := (Set.projIcc s t hst (τ j)).property.1
+      have hτσ : τ j ≤ σ j := by
+        rw [show σ j = max s (min t (τ j)) from Set.coe_projIcc s t hst (τ j)]
+        exact le_max_of_le_right (le_min hjt le_rfl)
+      exact (hξ.mono (ℱ.mono hsσ)).mul ((ha j hj).mono (ℱ.mono hτσ))
+    · simp only [hjt, ite_false]
+      exact stronglyMeasurable_zero
+  · rw [simpleHolding_def, simpleHolding_def, sum_congr rfl fun j hj ↦
+      indicator_Ioc_projIcc_mul hst (hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j))
+        (ξ ω) (a j ω) u]
+    by_cases hu : u ∈ Set.Ioc s t
+    · simp only [Set.indicator_of_mem hu, mul_sum]
+    · simp [Set.indicator_of_notMem hu]
+  · rw [simpleGains_def, simpleGains_def, simpleGains_def, ← sum_sub_distrib, mul_sum]
+    refine sum_congr rfl fun j hj ↦ ?_
+    have hj' : j < n := mem_range.mp hj
+    exact single_clip_Ioc_gain hst (hτ hj'.le hj' (Nat.le_succ j)) (ξ ω) (a j ω) (X · ω)
 
 end TauCeti.Finance

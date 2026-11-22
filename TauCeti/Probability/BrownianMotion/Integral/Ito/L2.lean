@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.L2
@@ -20,7 +21,10 @@ import TauCeti.Probability.Finance.SimpleStrategy.Energy
 For a Brownian-integrable predictable integrand `H` (`TauCeti.BrownianIntegrable`) and a filtered
 pre-Brownian motion `W`, any process satisfying `TauCeti.Probability.IsItoIntegral ℱ P W H I`
 agrees almost surely at every time `t` with the finite-horizon predictable L² Brownian integral
-`hW.l2Integral t` (`ae_eq_l2Integral_of_isItoIntegral`). This yields mean zero
+`hW.l2Integral t` (`ae_eq_l2Integral_of_isItoIntegral`). For deterministic `L²(timeMeasure t)`
+integrands `f`, `l2Integral_toLp_fst` and `ae_eq_wienerIntegral_of_isItoIntegral` identify the
+predictable integral and any Itô integral at time `t` with the Wiener integral
+`hW.toIsPreBrownianReal.wienerIntegral t (hf.toLp f)`. This also yields mean zero
 (`integral_eq_zero_of_isItoIntegral`), the bilinear cross-isometry
 (`integral_mul_of_isItoIntegral`), increment `L²` isometry (`eLpNorm_l2Integral_sub_of_le`), and
 `L²`-continuity of the finite-horizon integral curve `t ↦ hW.l2Integral t ...`
@@ -81,6 +85,78 @@ theorem ae_eq_l2Integral_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W 
     (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
       ((hKlim t).congr fun k ↦ (hW.eLpNorm_simpleGains_sub_l2Integral (hτ k).monotoneOn (ha k)
         (Finance.memLp_of_bound_stronglyMeasurable (ha k) (hb k)) hH t).symm))
+
+/-- For a deterministic `L²(timeMeasure T)` representative `f`, the finite-horizon predictable
+L² Brownian integral of the pulled-back representative `(t, ω) ↦ f t` equals the Wiener integral
+`hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f)`. -/
+theorem l2Integral_toLp_fst (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥0)
+    {f : ℝ≥0 → ℝ} (hf : MemLp f 2 (timeMeasure T)) :
+    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
+    letI : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+    hW.l2Integral T ((hf.comp_measurePreserving
+      (ℱ.measurePreserving_fst_predictableMeasure P T)).toLp (fun p : ℝ≥0 × Ω ↦ f p.1)) =
+      hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f) := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  have hcomp : Lp.compMeasurePreserving Prod.fst
+      (ℱ.measurePreserving_fst_predictableMeasure P T) (hf.toLp f) =
+      (hf.comp_measurePreserving
+        (ℱ.measurePreserving_fst_predictableMeasure P T)).toLp (fun p : ℝ≥0 × Ω ↦ f p.1) := by
+    apply Lp.ext
+    exact (Lp.coeFn_compMeasurePreserving (hf.toLp f)
+      (ℱ.measurePreserving_fst_predictableMeasure P T)).trans
+      (((ℱ.measurePreserving_fst_predictableMeasure P T).quasiMeasurePreserving.ae_eq_comp
+        hf.coeFn_toLp).trans
+        (hf.comp_measurePreserving
+          (ℱ.measurePreserving_fst_predictableMeasure P T)).coeFn_toLp.symm)
+  rw [← hcomp, hW.l2Integral_compMeasurePreserving_fst T (hf.toLp f)]
+
+/-- At any time `t`, an Itô integral of a deterministic integrand `f ∈ L²(timeMeasure t)` agrees
+almost surely with its Wiener integral `hW.toIsPreBrownianReal.wienerIntegral t (hf.toLp f)`. -/
+theorem ae_eq_wienerIntegral_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
+    {f : ℝ≥0 → ℝ} {I : ℝ≥0 → Ω → ℝ} {t : ℝ≥0} (hf : MemLp f 2 (timeMeasure t))
+    (hI : IsItoIntegral ℱ P W (fun s _ ↦ f s) I) :
+    I t =ᵐ[P] hW.toIsPreBrownianReal.wienerIntegral t (hf.toLp f) := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hf_prod : MemLp (fun p : ℝ≥0 × Ω ↦ f p.1) 2 ((timeMeasure t).prod P) := by
+    simpa only [Function.comp_def] using
+      hf.comp_measurePreserving (measurePreserving_fst (μ := timeMeasure t) (ν := P))
+  have hex (k : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t
+    hI.isStronglyPredictable hf_prod (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
+  choose n τ a C _ hτ ha hb hlt using hex
+  have hKlim : Tendsto (fun k ↦ eLpNorm
+      (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - f p.1) 2
+      ((timeMeasure t).prod P)) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
+      (fun _ ↦ zero_le) fun k ↦ (hlt k).le
+  have hpred : IsStronglyPredictable ℱ (fun s _ ↦ f s) := hI.isStronglyPredictable
+  have hfp : MemLp (Function.uncurry fun s (_ : Ω) ↦ f s) 2 (ℱ.predictableMeasure P t) :=
+    (ℱ.memLp_predictableMeasure_iff P hpred t 2).mpr hf_prod
+  have hsub (k : ℕ) : eLpNorm (fun ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω -
+      hW.l2Integral t (hfp.toLp (Function.uncurry fun s (_ : Ω) ↦ f s)) ω) 2 P =
+      eLpNorm (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - f p.1) 2
+        ((timeMeasure t).prod P) := by
+    have hK : MemLp (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k))) 2
+        (ℱ.predictableMeasure P t) :=
+      Finance.memLp_simpleHolding_predictableMeasure (ha k)
+        (Finance.memLp_of_bound_stronglyMeasurable (ha k) (hb k)) t
+    exact (eLpNorm_congr_ae
+      ((hW.coeFn_l2Integral_simpleHolding (hτ k).monotoneOn (ha k) t hK).symm.mono
+        fun ω hω ↦ by simp only [Pi.sub_apply, hω])).trans
+      (hW.eLpNorm_l2Integral_sub t
+        (Finance.isStronglyPredictable_simpleHolding (ha k)) hpred hK hfp)
+  have hae := hI.ae_eq_of_tendstoInMeasure hW (fun k ↦ (hτ k).monotoneOn) ha
+    (tendsto_measure_le_lintegral_enorm_sq_sub
+      (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k)) (fun _ ↦ hpred) hKlim)
+    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
+      (hKlim.congr fun k ↦ (hsub k).symm))
+  have hl2 : hW.l2Integral t (hfp.toLp (Function.uncurry fun s (_ : Ω) ↦ f s)) =
+      hW.toIsPreBrownianReal.wienerIntegral t (hf.toLp f) := by
+    let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+    rw [← hW.l2Integral_toLp_fst t hf]
+    congr 1
+  simpa only [hl2] using hae
 
 /-- Increment `L²` isometry for the finite-horizon L² Brownian integral: for `s ≤ t`, the `L²(P)`
 distance between `hW.l2Integral t` and `hW.l2Integral s` of a `BrownianIntegrable` integrand
@@ -164,9 +240,14 @@ theorem continuous_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
   have hzero : timeMeasure T {t₀} = 0 := by
     rw [timeMeasure_apply T (measurableSet_singleton t₀)]
     exact measure_mono_null (by rintro _ ⟨y, ⟨rfl, -⟩, rfl⟩; rfl) Real.volume_singleton
+  have hne_time : ∀ᵐ u ∂timeMeasure T, u ≠ t₀ :=
+    ae_iff.mpr (by simpa only [ne_eq, not_not, Set.ofPred_eq_eq_singleton] using hzero)
   have hne : ∀ᵐ p : ℝ≥0 × Ω ∂(timeMeasure T).prod P, p.1 ≠ t₀ :=
-    Measure.quasiMeasurePreserving_fst.ae
-      (ae_iff.mpr (by rw [show {a | ¬a ≠ t₀} = {t₀} from by ext; simp, hzero]))
+    Measure.quasiMeasurePreserving_fst.ae hne_time
+  have hexcl (u : ℝ≥0) (hu : u ≠ t₀) : ∀ᶠ t in 𝓝 t₀, u ∉ Ioc (min t t₀) (max t t₀) := by
+    rcases lt_or_gt_of_ne hu with hut₀ | ht₀u
+    · exact (eventually_gt_nhds hut₀).mono fun t ht h ↦ h.1.not_ge (le_min ht.le hut₀.le)
+    · exact (eventually_lt_nhds ht₀u).mono fun t ht h ↦ h.2.not_gt (max_lt ht ht₀u)
   have hg_lim : Tendsto (fun t ↦ eLpNorm (g t - 0) 2 ((timeMeasure T).prod P)) (𝓝 t₀) (𝓝 0) := by
     refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (by norm_num)
       (.of_forall fun t ↦ ((hH.isStronglyPredictable.indicator
@@ -177,23 +258,8 @@ theorem continuous_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
         simp only [Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul, g]
         exact eNorm_indicator_le_eNorm_self _ p) ?_
     filter_upwards [hne] with ⟨u, ω⟩ hu
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [Metric.ball_mem_nhds t₀ (dist_pos.mpr hu)] with t ht
-    have hnot : (u, ω) ∉ Ioc (min t t₀) (max t t₀) ×ˢ (univ : Set Ω) := by
-      rintro ⟨⟨hmin, hmax⟩, -⟩
-      dsimp only at hmin hmax
-      simp only [Metric.mem_ball, NNReal.dist_eq] at ht
-      rcases le_total t t₀ with htt₀ | ht₀t
-      · rw [min_eq_left htt₀] at hmin
-        rw [max_eq_right htt₀] at hmax
-        rw [abs_of_nonpos (sub_nonpos.mpr (NNReal.coe_le_coe.mpr hmax)), neg_sub] at ht
-        rw [abs_of_nonpos (sub_nonpos.mpr (NNReal.coe_le_coe.mpr htt₀)), neg_sub] at ht
-        linarith [show (t : ℝ) < u from hmin]
-      · rw [min_eq_right ht₀t] at hmin
-        rw [max_eq_left ht₀t] at hmax
-        rw [abs_of_pos (sub_pos.mpr (NNReal.coe_lt_coe.mpr hmin))] at ht
-        rw [abs_of_nonneg (sub_nonneg.mpr (NNReal.coe_le_coe.mpr ht₀t))] at ht
-        linarith [show (u : ℝ) ≤ t from hmax]
+    refine tendsto_const_nhds.congr' ((hexcl u hu).mono fun t ht ↦ ?_)
+    have hnot : (u, ω) ∉ Ioc (min t t₀) (max t t₀) ×ˢ (univ : Set Ω) := fun h ↦ ht h.1
     simp [g, indicator_of_notMem hnot]
   have henorm : Tendsto (fun t ↦ ‖F t - F t₀‖ₑ) (𝓝 t₀) (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds

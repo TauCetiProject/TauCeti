@@ -26,13 +26,15 @@ constructs the Itô integral of `H` against `W` and proves the Itô isometry.
   `H` has an Itô integral which is a predictable martingale.
 * `TauCeti.Probability.IsItoIntegral.martingale`: every adapted Itô integral of `H` is a
   martingale.
-* `TauCeti.Probability.IsItoIntegral.memLp`, `TauCeti.Probability.IsItoIntegral.eLpNorm_eq`,
+* `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_isometry`,
+  `TauCeti.Probability.IsItoIntegral.memLp`, `TauCeti.Probability.IsItoIntegral.eLpNorm_eq`,
   `TauCeti.Probability.IsItoIntegral.integral_sq`,
   `TauCeti.Probability.IsItoIntegral.eLpNorm_sub_eq`,
   `TauCeti.Probability.IsItoIntegral.integral_sub_sq`, and
   `TauCeti.Probability.IsItoIntegral.continuous_toLp`: every Itô integral `I` of `H` is square
   integrable at each time `t`, continuous in `L²(P)`, with `E[I_t²] = E ∫_(0,t] H_s² ds` and
-  `E[(I_t - I_s)²] = E ∫_(s,t] H_u² du` for `s ≤ t`.
+  `E[(I_t - I_s)²] = E ∫_(s,t] H_u² du` for `s ≤ t` (and combined with the martingale property
+  in `itoIntegral_isometry`).
 
 The integral is the limit of the elementary integrals of bounded simple holdings approximating
 `H` in `L²` of Lebesgue time times `P` on every finite horizon. By the elementary isometry
@@ -293,5 +295,20 @@ theorem IsItoIntegral.continuous_toLp (hI : IsItoIntegral ℱ P W H I)
       (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t))
   rw [hEq]
   exact hW.continuous_l2Integral hH
+
+/-- **Combined Itô isometry and martingale theorem.** Against a pre-Brownian motion relative to
+the filtration, an adapted Itô integral `I` of a `BrownianIntegrable` integrand `H` is a
+square-integrable martingale satisfying `E[I_t²] = E ∫_(0,t] H_s² ds` and
+`E[(I_t - I_s)²] = E ∫_(s, t] H_u² du` for all `s ≤ t`. -/
+theorem IsFilteredPreBrownianReal.itoIntegral_isometry
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
+    (hI : IsItoIntegral ℱ P W H I) (hIa : StronglyAdapted ℱ I) :
+    Martingale I ℱ P ∧ (∀ t : ℝ≥0, MemLp (I t) 2 P) ∧
+      (∀ t : ℝ≥0, ∫ ω, I t ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P) ∧
+      (∀ s t : ℝ≥0, s ≤ t →
+        ∫ ω, (I t ω - I s ω) ^ 2 ∂P =
+          ∫ p, H p.1 p.2 ^ 2 ∂((timeMeasure t).restrict (Ioc s t)).prod P) :=
+  ⟨hI.martingale hW hH hIa, hI.memLp hW hH, hI.integral_sq hW hH,
+    fun _ _ hst ↦ hI.integral_sub_sq hW hH hst⟩
 
 end TauCeti.Probability

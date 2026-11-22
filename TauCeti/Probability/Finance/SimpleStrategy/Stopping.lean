@@ -37,54 +37,6 @@ namespace TauCeti.Finance
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 
-/-- Telescoping identity for stopping a single elementary interval `(s, t]` at `dyadicCeilTime k u`
-on horizon `T` (when `s ≤ T`): summing the indicator-weighted increments over `dyadicProjIcc`
-telescopes to `c * (f (min t (min T σ).untopA) - f (min s (min T σ).untopA))`. -/
-private theorem sum_dyadicProjIcc_telescope {s t T : ℝ≥0} (hst : s ≤ t) (hsT : s ≤ T)
-    (k : ℕ) (u : WithTop ℝ≥0) (c : ℝ) (f : ℝ≥0 → ℝ) :
-    let b : ℝ≥0 := min t T
-    let hsb : s ≤ b := le_min hst hsT
-    let p : ℕ → ℝ≥0 := dyadicProjIcc s b hsb k
-    let σ : WithTop ℝ≥0 := dyadicCeilTime k u
-    ∑ j ∈ range (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1),
-        (if (p j : WithTop ℝ≥0) < σ then c else 0) * (f (min (p (j + 1)) T) - f (min (p j) T)) =
-      c * (f (min t (min (T : WithTop ℝ≥0) σ).untopA) -
-        f (min s (min (T : WithTop ℝ≥0) σ).untopA)) := by
-  intro b hsb p σ
-  have hbT : b ≤ T := min_le_right t T
-  have hp0 : p 0 = s := dyadicProjIcc_zero hsb k
-  have hp_end : p (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1) = b := dyadicProjIcc_end hsb k
-  have hp_le (j : ℕ) : p j ≤ b := dyadicProjIcc_le hsb k j
-  have hterm (j : ℕ) :
-      (if (p j : WithTop ℝ≥0) < σ then c else 0) * (f (min (p (j + 1)) T) - f (min (p j) T)) =
-        c * (f (min (p (j + 1) : WithTop ℝ≥0) σ).untopA -
-          f (min (p j : WithTop ℝ≥0) σ).untopA) := by
-    rw [min_eq_left ((hp_le (j + 1)).trans hbT), min_eq_left ((hp_le j).trans hbT)]
-    by_cases hgt : (p j : WithTop ℝ≥0) < σ
-    · have hno : (p (j + 1) : WithTop ℝ≥0) ≤ σ := dyadicProjIcc_le_dyadicCeilTime hsb hgt
-      simp only [hgt, ite_true, min_eq_left hgt.le, min_eq_left hno,
-        WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
-    · have hle : σ ≤ (p j : WithTop ℝ≥0) := le_of_not_gt hgt
-      have hle' : σ ≤ (p (j + 1) : WithTop ℝ≥0) :=
-        hle.trans (WithTop.coe_le_coe.mpr (monotone_dyadicProjIcc hsb k (Nat.le_succ j)))
-      simp only [hgt, ite_false, zero_mul, min_eq_right hle, min_eq_right hle', sub_self, mul_zero]
-  simp_rw [hterm, ← Finset.mul_sum,
-    Finset.sum_range_sub (fun j ↦ f (min (p j : WithTop ℝ≥0) σ).untopA) (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1),
-    hp0, hp_end]
-  have hmin_le {r : ℝ≥0} (hrT : r ≤ T) :
-      min r (min (T : WithTop ℝ≥0) σ).untopA = (min (r : WithTop ℝ≥0) σ).untopA := by
-    have hcoe (x : ℝ≥0) :
-        ((min (x : WithTop ℝ≥0) σ).untopA : WithTop ℝ≥0) = min (x : WithTop ℝ≥0) σ := by
-      rw [WithTop.untopA_eq_untop (ne_of_lt (lt_of_le_of_lt (min_le_left _ _)
-        (WithTop.coe_lt_top x))), WithTop.coe_untop]
-    apply WithTop.coe_injective
-    rw [WithTop.coe_min, hcoe T, hcoe r, ← min_assoc, min_eq_left (WithTop.coe_le_coe.mpr hrT)]
-  have hmin_t : min t (min (T : WithTop ℝ≥0) σ).untopA = (min (b : WithTop ℝ≥0) σ).untopA := by
-    rw [← hmin_le hbT]
-    dsimp only [b]
-    rw [min_assoc, min_eq_right (WithTop.untopA_le (min_le_left (T : WithTop ℝ≥0) σ))]
-  rw [hmin_t, hmin_le hsT]
-
 /-- On a single interval `(s, t]` with bounded `ℱ s`-measurable height `ξ`, stopping the
 elementary integral at the dyadic stopping time `dyadicCeilTime k ∘ τ` at horizon `T` is realized
 exactly by a bounded simple holding equal to `1_{[0, σ]} · 1_{(s, t]} ξ` on `[0, T]`. -/
