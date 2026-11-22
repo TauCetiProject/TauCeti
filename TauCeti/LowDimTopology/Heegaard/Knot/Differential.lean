@@ -276,6 +276,17 @@ theorem aeval_knotCoefficient_zero_one (hfin : (H.minusDomains χ x y).Finite) :
   rw [aeval_zero_one_eq_coeff_zero_aeval_X_one, aeval_knotCoefficient_X_one,
     coeff_zero_minusCoefficient (by rwa [minusDomains_withBasepoints])]
 
+/-- Evaluating `U = V = 0` is evaluating `U = V = X`, and then `X = 0`. -/
+private theorem constantCoeff_eq_coeff_zero_aeval_X_X (p : MvPolynomial (Fin 2) (ZMod 2)) :
+    constantCoeff p =
+      (aeval ![(Polynomial.X : Polynomial (ZMod 2)), Polynomial.X] p).coeff 0 := by
+  have h0 : (fun i => Polynomial.aeval (0 : ZMod 2)
+      (![(Polynomial.X : Polynomial (ZMod 2)), Polynomial.X] i)) = 0 := by
+    ext i
+    fin_cases i <;> simp
+  rw [Polynomial.coeff_zero_eq_aeval_zero, ← AlgHom.comp_apply, comp_aeval, h0, aeval_zero,
+    Algebra.algebraMap_self, RingHom.id_apply]
+
 /-- **Setting `U = V = 0` gives the hat knot Floer coefficient.** When finitely many domains are
 counted, the constant coefficient of the knot coefficient is the hat coefficient of the diagram
 pointed at `w` and `z` alone: the counted domains avoiding both basepoints are those counted by
@@ -283,12 +294,8 @@ its hat differential. -/
 theorem constantCoeff_knotCoefficient (hfin : (H.minusDomains χ x y).Finite) :
     constantCoeff (H.knotCoefficient χ w z x y) =
       (H.withBasepoints ![H.basepoint w, H.basepoint z]).hatCoefficient χ x y := by
-  rw [constantCoeff_eq, coeff_knotCoefficient hfin, hatCoefficient_def,
-    hatDomains_eq_setOf_mem_minusDomains,
-    minusDomains_withBasepoints ![H.basepoint w, H.basepoint z]]
-  congr 3
-  ext D
-  simp [Fin.forall_fin_two]
+  rw [constantCoeff_eq_coeff_zero_aeval_X_X, aeval_knotCoefficient_X_X,
+    coeff_zero_minusCoefficient (by rwa [minusDomains_withBasepoints])]
 
 end Specialization
 
@@ -383,11 +390,14 @@ private theorem mapRange_knotDifferential {S F : Type*} [CommSemiring S]
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     Finsupp.mapRange f (map_zero f) (H.knotDifferential χ w z c) =
       d (Finsupp.mapRange f (map_zero f) c) := by
+  have hv : (fun x => Finsupp.mapRange f (map_zero f)
+      (Finsupp.equivFunOnFinite.symm (H.knotCoefficient χ w z x))) =
+        fun x => Finsupp.equivFunOnFinite.symm (e x) := by
+    ext x y
+    simp [he]
   ext y
-  rw [Finsupp.mapRange_apply, knotDifferential_apply, hd,
-    Finsupp.sum_mapRange_index fun _ => zero_mul _, map_finsuppSum]
-  refine Finsupp.sum_congr fun x _ => ?_
-  rw [map_mul, he]
+  rw [knotDifferential, Finsupp.mapRange_linearCombination, hv,
+    Finsupp.linearCombination_equivFunOnFinite_symm_apply, hd]
 
 /-- **Setting `V = 1` gives the minus differential of the ambient manifold.** Evaluating `U = X`
 and `V = 1` in the coefficients of a chain intertwines the knot differential with the minus
@@ -423,10 +433,19 @@ theorem mapRange_constantCoeff_knotDifferential (hfin : ∀ x y, (H.minusDomains
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     Finsupp.mapRange constantCoeff (map_zero _) (H.knotDifferential χ w z c) =
       (H.withBasepoints ![H.basepoint w, H.basepoint z]).hatDifferential χ
-        (Finsupp.mapRange constantCoeff (map_zero _) c) :=
-  mapRange_knotDifferential (H := H) _
-    (hatDifferential_apply (H := H.withBasepoints ![H.basepoint w, H.basepoint z]))
-    (fun x y => constantCoeff_knotCoefficient (hfin x y)) c
+        (Finsupp.mapRange constantCoeff (map_zero _) c) := by
+  have h (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
+      Finsupp.mapRange constantCoeff (map_zero _) c =
+        Finsupp.mapRange Polynomial.constantCoeff (map_zero _)
+          (Finsupp.mapRange (aeval ![(Polynomial.X : Polynomial (ZMod 2)), Polynomial.X])
+            (map_zero _) c) := by
+    ext x
+    rw [Finsupp.mapRange_apply, Finsupp.mapRange_apply, Finsupp.mapRange_apply,
+      Polynomial.constantCoeff_apply, constantCoeff_eq_coeff_zero_aeval_X_X]
+  rw [h, h, mapRange_aeval_X_X_knotDifferential,
+    mapRange_constantCoeff_minusDifferential fun x y => by
+      rw [minusDomains_withBasepoints]
+      exact hfin x y]
 
 /-- **Setting `U = 0` and `V = 1` gives the hat differential of the ambient manifold.** When the
 counts are finite, evaluating `U = 0` and `V = 1` in the coefficients of a chain intertwines the
