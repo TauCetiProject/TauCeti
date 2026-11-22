@@ -20,6 +20,9 @@ of linear maps, such as the module snake lemma, be applied to continuous linear 
 Precomposing with a continuous linear equivalence does not change whether a continuous linear map
 vanishes.
 
+A continuous linear map out of `κ → R`, with `κ` finite, is determined by its values on the
+coordinate vectors `Pi.single k 1`.
+
 A semilinear family `μ : M₁ →ₛₗ[σ₁₃] M₂ →SL[σ₂₃] M₃` of continuous semilinear maps becomes a
 family of semilinear maps after composing with the coercion `ContinuousLinearMap.coeLMₛₗ`, and
 then Mathlib's algebraic flip `LinearMap.flip` applies to it.
@@ -32,6 +35,8 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
   for a continuous semilinear equivalence `e`.
 * `ContinuousLinearMap.surjective_iff_ne_zero`: a continuous linear functional is surjective
   exactly when it is nonzero.
+* `ContinuousLinearMap.pi_ext_single_one`: a continuous linear map out of `κ → R`, `κ` finite, is
+  determined by its values on the coordinate vectors.
 * `LinearMap.flip_coeLMₛₗ_comp_apply`: evaluation of the algebraic flip of such a family `μ`,
   `((ContinuousLinearMap.coeLMₛₗ σ₂₃).comp μ).flip y x = μ x y`.
 -/
@@ -71,6 +76,13 @@ theorem surjective_iff_ne_zero {R M : Type*} [DivisionSemiring R] [TopologicalSp
     [TopologicalSpace M] [AddCommMonoid M] [Module R M] {f : M →L[R] R} :
     Function.Surjective f ↔ f ≠ 0 :=
   LinearMap.surjective_iff_ne_zero.trans (not_congr (coe_inj (g := 0)))
+
+/-- A continuous linear map out of `κ → R`, with `κ` finite, is determined by its values on the
+coordinate vectors `Pi.single k 1`. -/
+theorem pi_ext_single_one {R M κ : Type*} [Semiring R] [TopologicalSpace R] [TopologicalSpace M]
+    [AddCommMonoid M] [Module R M] [Finite κ] [DecidableEq κ] {f g : (κ → R) →L[R] M}
+    (h : ∀ k, f (Pi.single k 1) = g (Pi.single k 1)) : f = g :=
+  coe_injective <| LinearMap.pi_ext' fun k ↦ LinearMap.ext_ring <| h k
 
 end ContinuousLinearMap
 
