@@ -76,7 +76,7 @@ theorem nestedOrDisjoint_comm {S T : Finset V} :
   tauto
 
 /-- Every set is nested with itself. -/
-theorem NestedOrDisjoint.refl (S : Finset V) : NestedOrDisjoint S S :=
+@[simp] theorem NestedOrDisjoint.refl (S : Finset V) : NestedOrDisjoint S S :=
   .of_subset subset_rfl
 
 /-- Being nested or disjoint is a reflexive relation. -/
@@ -151,6 +151,10 @@ theorem NestedOrDisjoint.not_crosses {S T : Finset V} (h : NestedOrDisjoint S T)
     ¬Crosses S T := by
   simp only [NestedOrDisjoint, Crosses, subset_iff, disjoint_left] at *
   grind
+
+/-- No cut crosses itself. -/
+@[simp] theorem not_crosses_self (S : Finset V) : ¬Crosses S S :=
+  (NestedOrDisjoint.refl S).not_crosses
 
 /-- **Root convention.** Two sets avoiding a common vertex do not cross exactly when they are
 nested or disjoint: their union cannot cover all vertices. -/
