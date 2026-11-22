@@ -45,7 +45,8 @@ For a fiberwise nondegenerate form on a finite-dimensional manifold every smooth
 Hamiltonian (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianFunctions_eq_top`), and the bracket
 is the Poisson bracket `TauCeti.SmoothTwoForm.poissonBracket`
 (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.lie_apply_eq_poissonBracket`), the bracket of
-the Poisson Lie algebra `TauCeti.SmoothTwoForm.PoissonLieAlgebra`.
+the Poisson Lie algebra `TauCeti.SmoothTwoForm.PoissonLieAlgebra`, which is identified with this Lie
+algebra in `TauCeti.Geometry.Symplectic.Hamiltonian.LieAlgebra`.
 
 The Lie algebra is a type synonym of the Hamiltonian functions indexed by the proof `hσ` that `σ`
 is symplectic, as for `TauCeti.SmoothTwoForm.PoissonLieAlgebra`. It carries only the Lie bracket,

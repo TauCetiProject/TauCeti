@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Ideal
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Bracket
+public import TauCeti.Geometry.Symplectic.Hamiltonian.FunctionLieAlgebra
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -55,7 +56,11 @@ an exact sequence of Lie algebras, with `H⁰_dR(M)` and `H¹_dR(M)` abelian.
 The Poisson Lie algebra is a type synonym of `C^∞⟮I, M; ℝ⟯` indexed by `σ` and by the proof that
 `σ` is symplectic, so that the Poisson brackets of different forms live on different types. It
 carries only the Lie bracket, not the pointwise product of functions. It is identified with the
-smooth functions by `TauCeti.SmoothTwoForm.poissonLieAlgebraEquiv`.
+smooth functions by `TauCeti.SmoothTwoForm.poissonLieAlgebraEquiv`, and, as a Lie algebra, with the
+Lie algebra of Hamiltonian functions `TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra σ hσ`,
+defined on any Banach model, by
+`TauCeti.SmoothTwoForm.poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra`. Its Leibniz rule and
+the kernel of `f ↦ -X_f` are transported along this identification.
 
 ## Main definitions
 
@@ -64,6 +69,8 @@ smooth functions by `TauCeti.SmoothTwoForm.poissonLieAlgebraEquiv`.
 * `TauCeti.SmoothTwoForm.hamiltonianLieIdeal σ hσ`: the Lie ideal of Hamiltonian vector fields of
   smooth functions.
 * `TauCeti.SmoothTwoForm.PoissonLieAlgebra σ hσ`: the smooth functions with the Poisson bracket.
+* `TauCeti.SmoothTwoForm.poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra σ hσ`: the
+  identification of the Poisson Lie algebra with the Lie algebra of Hamiltonian functions.
 * `TauCeti.SmoothTwoForm.negHamiltonianLieHom σ hσ`: the Lie algebra homomorphism `f ↦ -X_f`.
 
 ## Main results
@@ -295,15 +302,42 @@ private theorem mdifferentiableAt (f : σ.PoissonLieAlgebra hσ) (x : M) :
     MDifferentiableAt I 𝓘(ℝ) (σ.poissonLieAlgebraEquiv hσ f) x :=
   (σ.poissonLieAlgebraEquiv hσ f).contMDiff.mdifferentiableAt (by simp)
 
+/-- The smooth functions, all of which are Hamiltonian in finite dimension
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianFunctions_eq_top`), as elements of the Lie
+algebra of Hamiltonian functions. -/
+private def toHamiltonianFunctionLieAlgebra :
+    σ.PoissonLieAlgebra hσ ≃ₗ[ℝ] σ.HamiltonianFunctionLieAlgebra hσ :=
+  (σ.poissonLieAlgebraEquiv hσ).trans <|
+    (LinearEquiv.ofTop _ hσ.isNondegenerate.hamiltonianFunctions_eq_top).symm.trans
+      (σ.hamiltonianFunctionLieAlgebraEquiv hσ).symm
+
+/-- The identification with the Hamiltonian functions does not change the underlying function. -/
+private theorem coe_toHamiltonianFunctionLieAlgebra (f : σ.PoissonLieAlgebra hσ) :
+    (σ.hamiltonianFunctionLieAlgebraEquiv hσ (toHamiltonianFunctionLieAlgebra f) :
+      C^∞⟮I, M; ℝ⟯) = σ.poissonLieAlgebraEquiv hσ f := by
+  rw [toHamiltonianFunctionLieAlgebra, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply, LinearEquiv.ofTop_symm_apply]
+
 omit [FiniteDimensional ℝ E] in
 /-- A smooth function is `C^2`. -/
 private theorem contMDiff_two (f : σ.PoissonLieAlgebra hσ) :
     ContMDiff I 𝓘(ℝ) 2 (σ.poissonLieAlgebraEquiv hσ f) :=
   (σ.poissonLieAlgebraEquiv hσ f).contMDiff.of_le (by simp)
 
+/-- The identification with the Hamiltonian functions takes the Poisson bracket to the bracket
+`σ(X_f, X_g)` of the Lie algebra of Hamiltonian functions. -/
+private theorem toHamiltonianFunctionLieAlgebra_lie (f g : σ.PoissonLieAlgebra hσ) :
+    toHamiltonianFunctionLieAlgebra ⁅f, g⁆ =
+      ⁅toHamiltonianFunctionLieAlgebra f, toHamiltonianFunctionLieAlgebra g⁆ := by
+  ext x
+  rw [HamiltonianFunctionLieAlgebra.lie_apply_eq_poissonBracket,
+    coe_toHamiltonianFunctionLieAlgebra, coe_toHamiltonianFunctionLieAlgebra,
+    coe_toHamiltonianFunctionLieAlgebra, poissonLieAlgebraEquiv_lie_apply]
+
 /-- The Poisson bracket makes the smooth functions a Lie ring: bilinearity and antisymmetry hold
-pointwise, and the Leibniz rule is the Jacobi identity of the Poisson bracket
-(`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket`). -/
+pointwise, and the Leibniz rule is that of the Lie algebra of Hamiltonian functions, whose bracket
+is the Poisson bracket in finite dimension
+(`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.lie_apply_eq_poissonBracket`). -/
 instance instLieRing : LieRing (σ.PoissonLieAlgebra hσ) where
   add_lie f g k := by
     ext x
@@ -318,13 +352,9 @@ instance instLieRing : LieRing (σ.PoissonLieAlgebra hσ) where
     simp only [poissonLieAlgebraEquiv_lie_apply, poissonBracket_self, map_zero,
       ContMDiffMap.coe_zero, Pi.zero_apply]
   leibniz_lie f g k := by
-    ext x
-    simp only [map_add, ContMDiffMap.coe_add, Pi.add_apply, poissonLieAlgebraEquiv_lie_apply,
-      coe_poissonLieAlgebraEquiv_lie]
-    rw [hσ.isNondegenerate.poissonBracket_poissonBracket hσ.isClosed (contMDiff_two f)
-        (contMDiff_two g) (contMDiff_two k),
-      ← neg_poissonBracket σ (σ.poissonBracket _ _) (σ.poissonLieAlgebraEquiv hσ g)]
-    ring
+    apply toHamiltonianFunctionLieAlgebra.injective
+    simp only [map_add, toHamiltonianFunctionLieAlgebra_lie]
+    exact leibniz_lie _ _ _
 
 /-- The Poisson Lie algebra is a real Lie algebra. -/
 instance instLieAlgebra : LieAlgebra ℝ (σ.PoissonLieAlgebra hσ) where
@@ -334,6 +364,27 @@ instance instLieAlgebra : LieAlgebra ℝ (σ.PoissonLieAlgebra hσ) where
       poissonBracket_const_smul_right, Pi.smul_apply]
 
 end PoissonLieAlgebra
+
+variable (σ) in
+/-- **The Poisson Lie algebra is the Lie algebra of Hamiltonian functions** in finite dimension:
+every smooth function is Hamiltonian
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianFunctions_eq_top`), and the bracket
+`σ(X_f, X_g)` of Hamiltonian functions is the Poisson bracket
+(`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.lie_apply_eq_poissonBracket`). -/
+def poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra (hσ : σ.IsSymplectic) :
+    σ.PoissonLieAlgebra hσ ≃ₗ⁅ℝ⁆ σ.HamiltonianFunctionLieAlgebra hσ where
+  __ := PoissonLieAlgebra.toHamiltonianFunctionLieAlgebra
+  map_lie' := PoissonLieAlgebra.toHamiltonianFunctionLieAlgebra_lie _ _
+
+/-- The identification of the Poisson Lie algebra with the Lie algebra of Hamiltonian functions
+does not change the underlying smooth function. -/
+@[simp]
+theorem coe_poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra_apply {hσ : σ.IsSymplectic}
+    (f : σ.PoissonLieAlgebra hσ) :
+    (σ.hamiltonianFunctionLieAlgebraEquiv hσ
+        (σ.poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra hσ f) : C^∞⟮I, M; ℝ⟯) =
+      σ.poissonLieAlgebraEquiv hσ f :=
+  PoissonLieAlgebra.coe_toHamiltonianFunctionLieAlgebra f
 
 /-! ### The Lie algebra homomorphism `f ↦ -X_f` -/
 
@@ -394,18 +445,24 @@ theorem symplecticLieSubalgebraEquiv_negHamiltonianLieHom (hσ : σ.IsSymplectic
       hσ.isNondegenerate.negHamiltonianₗ (SmoothForm.ofFunction (σ.poissonLieAlgebraEquiv hσ f)) :=
   LinearEquiv.apply_symm_apply _ _
 
+/-- In finite dimension `f ↦ -X_f` on the Poisson Lie algebra is `f ↦ -X_f` on the Hamiltonian
+functions (`TauCeti.SmoothTwoForm.HamiltonianFunctionLieAlgebra.negVectorFieldLieHom`). -/
+theorem coe_negHamiltonianLieHom (hσ : σ.IsSymplectic) (f : σ.PoissonLieAlgebra hσ) :
+    (σ.negHamiltonianLieHom hσ f : (LieAlgebroid.tangent I M).Sections) =
+      HamiltonianFunctionLieAlgebra.negVectorFieldLieHom σ hσ
+        (σ.poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra hσ f) :=
+  (LieAlgebroid.tangent I M).sectionsEquiv.injective <| ContMDiffSection.ext fun x ↦ by
+    rw [negHamiltonianLieHom_apply, HamiltonianFunctionLieAlgebra.negVectorFieldLieHom_apply,
+      HamiltonianFunctionLieAlgebra.vectorField_eq_hamiltonianVectorField,
+      coe_poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra_apply]
+
 /-- **The kernel of `f ↦ -X_f`** consists of the smooth functions with vanishing differential. -/
 theorem mem_ker_negHamiltonianLieHom_iff (hσ : σ.IsSymplectic) {f : σ.PoissonLieAlgebra hσ} :
     f ∈ (σ.negHamiltonianLieHom hσ).ker ↔
       ∀ x, mvfderiv I (σ.poissonLieAlgebraEquiv hσ f) x = 0 := by
-  simp_rw [LieHom.mem_ker, ← hσ.isNondegenerate.hamiltonianVectorField_eq_zero_iff,
-    ← neg_eq_zero (a := σ.hamiltonianVectorField _ _), ← negHamiltonianLieHom_apply]
-  constructor
-  · intro h x
-    rw [h, ZeroMemClass.coe_zero, map_zero, ContMDiffSection.coe_zero, Pi.zero_apply]
-  · intro h
-    ext x
-    simp [h x]
+  rw [LieHom.mem_ker, ← ZeroMemClass.coe_eq_zero, coe_negHamiltonianLieHom, ← LieHom.mem_ker,
+    HamiltonianFunctionLieAlgebra.mem_ker_negVectorFieldLieHom_iff,
+    coe_poissonLieAlgebraEquivHamiltonianFunctionLieAlgebra_apply]
 
 /-- **The range of `f ↦ -X_f`** is the Lie ideal of Hamiltonian vector fields. -/
 theorem range_negHamiltonianLieHom (hσ : σ.IsSymplectic) :

@@ -286,17 +286,22 @@ theorem poissonBracket_poissonBracket (hσ : σ.IsClosed) {k : M → ℝ} (hf : 
     σ.poissonBracket f (σ.poissonBracket g k) x =
       σ.poissonBracket (σ.poissonBracket f g) k x -
         σ.poissonBracket (σ.poissonBracket f k) g x := by
-  have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
-  -- `{f, k}` and `{f, g}` are the derivatives of `f` along `X_k` and `X_g`.
-  have hfk : σ.poissonBracket f k = fun y ↦ mvfderiv I f y (σ.hamiltonianVectorField k y) :=
-    funext (h.poissonBracket_eq_mvfderiv f k)
-  have hfg : σ.poissonBracket f g = fun y ↦ mvfderiv I f y (σ.hamiltonianVectorField g y) :=
-    funext (h.poissonBracket_eq_mvfderiv f g)
-  rw [h.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_poissonBracket hσ hg hk, Pi.neg_apply,
-    map_neg, mvfderiv_mlieBracket (hf x) (by simp) (h.mdifferentiable_hamiltonianVectorField hg x)
-      (h.mdifferentiable_hamiltonianVectorField hk x), h.poissonBracket_eq_mvfderiv,
-    h.poissonBracket_eq_mvfderiv, ← hfk, ← hfg]
-  ring
+  -- With `{f, g} = σ(X_f, X_g)` and `X_{{f, g}} = -[X_f, X_g]`, this is the Jacobi identity for
+  -- the Hamiltonian vector fields `X_f`, `X_g`, `X_k`.
+  have hJ := (h.isHamiltonianVectorField_hamiltonianVectorField f).eval₂_mlieBracket_jacobi hσ
+    (h.isHamiltonianVectorField_hamiltonianVectorField g)
+    (h.isHamiltonianVectorField_hamiltonianVectorField k) (hf x) (hg x) (hk x)
+    (h.mdifferentiable_hamiltonianVectorField hf x) (h.mdifferentiable_hamiltonianVectorField hg x)
+    (h.mdifferentiable_hamiltonianVectorField hk x)
+  rw [mlieBracket_swap_apply (V := σ.hamiltonianVectorField k),
+    SmoothBundleForm.eval₂_neg_left] at hJ
+  rw [poissonBracket_def, poissonBracket_def, poissonBracket_def,
+    h.hamiltonianVectorField_poissonBracket hσ hg hk,
+    h.hamiltonianVectorField_poissonBracket hσ hf hg,
+    h.hamiltonianVectorField_poissonBracket hσ hf hk, Pi.neg_apply, Pi.neg_apply, Pi.neg_apply,
+    SmoothBundleForm.eval₂_neg_right, SmoothBundleForm.eval₂_neg_left,
+    SmoothBundleForm.eval₂_neg_left, SmoothBundleForm.eval₂_swap σ x (σ.hamiltonianVectorField f x)]
+  linear_combination hJ
 
 /-- **The Jacobi identity for the Poisson bracket.** For a nondegenerate closed form on a
 finite-dimensional manifold and `C²` functions `f`, `g`, `k`,
