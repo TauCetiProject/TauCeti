@@ -91,6 +91,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 * `LinearMap.apply_eq_det_smul_of_finrank_eq_one`: on a free module of rank one, an endomorphism
   is multiplication by its determinant.
+* `LinearMap.det_eq_of_comp_eq`: endomorphisms intertwined by a linear equivalence have the same
+  determinant.
 
 ## Implementation notes
 
@@ -342,6 +344,14 @@ theorem apply_eq_det_smul_of_finrank_eq_one [Module.Free R M] (hM : Module.finra
     exact Subsingleton.elim _ _
   obtain ⟨c, rfl, -⟩ := f.existsUnique_eq_smul_id_of_finrank_eq_one hM
   rw [det_smul, det_id, mul_one, hM, pow_one, LinearMap.smul_apply, id_apply]
+
+/-- **Intertwined endomorphisms have the same determinant.** If a linear equivalence `e`
+intertwines endomorphisms `f` and `g`, that is `e ∘ₗ f = g ∘ₗ e`, then `det f = det g`. This is
+Mathlib's `LinearMap.det_conj` with the conjugation written as a commuting square. -/
+theorem det_eq_of_comp_eq {f : M →ₗ[R] M} {g : N →ₗ[R] N} (e : M ≃ₗ[R] N)
+    (h : (e : M →ₗ[R] N) ∘ₗ f = g ∘ₗ (e : M →ₗ[R] N)) : LinearMap.det f = LinearMap.det g := by
+  rw [← det_conj f e, ← comp_assoc, h, comp_assoc, LinearEquiv.comp_coe, e.symm_trans_self,
+    LinearEquiv.refl_toLinearMap, comp_id]
 
 end LinearMap
 

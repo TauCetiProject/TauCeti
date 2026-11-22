@@ -5,220 +5,371 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.TransferInstance
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 
 /-!
-# Twisting the coefficients of continuous nonabelian cohomology
+# Twisting continuous nonabelian first cohomology by a cocycle
 
-A continuous cocycle `c` changes the action of `G` on `A` to `g ⋆ a = c(g) (g • a) c(g)⁻¹`,
-without changing the group or its topology. Right multiplication by `c` identifies cocycles for
-the twisted action with cocycles for the original action. This identification respects gauge
-equivalence and sends the trivial cocycle to `c`. Thus `NonabelianH1.twistEquiv` is an equivalence
-of sets taking the twisted neutral class to `[c]`, not necessarily to the original neutral class.
-It allows arguments about a fibre over a given class to be reduced to neutral-class arguments.
+Let a group `G` with a topology act on a topological group `A` by group automorphisms, and let
+`c` be a continuous `1`-cocycle of `G` with values in `A`. The **twist** `₍c₎A` of `A` by `c` is
+the topological group `A` on which `g : G` acts by the inner twist
+
+`g ⋆ x = c g * g • x * (c g)⁻¹`.
+
+This is again an action by group automorphisms, and continuous when the original action is. For
+`A` the automorphism group of an object `X`, `₍c₎A` is the automorphism group of the form of `X`
+classified by `c` (Serre, I.5.3).
+
+Right multiplication by `c` turns cocycles of the twist into cocycles of `A`: the map
+`d ↦ (g ↦ d g * c g)` is a bijection `Z¹(G, ₍c₎A) ≃ Z¹(G, A)`, with inverse
+`f ↦ (g ↦ f g * (c g)⁻¹)`.
+It intertwines the gauge actions of `A` on both sides, so it descends to a bijection
+
+`H¹(G, ₍c₎A) ≃ H¹(G, A)`
+
+which sends the base point to the class of `c`. It is a bijection of underlying sets only: the
+target is pointed at `[c]` rather than at its own base point. Through it, the fibre of a map of
+`H¹` over the class of a cocycle becomes, after twisting, a fibre over the base point; the
+compatibility with the maps induced by compatible pairs needed for this is
+`TauCeti.NonabelianH1.map_ofTwistEquiv`.
+
+The elements of `₍c₎A` form the one-field structure `TauCeti.NonabelianH1.Twist c`, so that the
+twisted action cannot be confused with the original one; `Twist.ofOriginal` and
+`Twist.toOriginal` pass between `A` and `₍c₎A`, and `Twist.continuousMulEquiv c` bundles them as
+an isomorphism of topological groups, which is not `G`-equivariant.
+
+## Main definitions
+
+* `TauCeti.NonabelianH1.Twist c`: the twist `₍c₎A` of `A` by the cocycle `c`, a topological group
+  with the twisted action `g ⋆ x = c g * g • x * (c g)⁻¹`.
+* `TauCeti.NonabelianH1.Twist.continuousMulEquiv c`: the underlying identification `₍c₎A ≃ₜ* A`.
+* `TauCeti.NonabelianH1.Twist.map`: the map `₍c₎A →ₜ* ₍φ ∘ c ∘ ψ₎A'` induced by a compatible
+  pair `(ψ, φ)`.
+* `TauCeti.NonabelianH1.Cocycle.ofTwistEquiv c`: the bijection `Z¹(G, ₍c₎A) ≃ Z¹(G, A)`,
+  `d ↦ (g ↦ d g * c g)`.
+* `TauCeti.NonabelianH1.ofTwistEquiv c`: the induced bijection `H¹(G, ₍c₎A) ≃ H¹(G, A)`.
+
+## Main results
+
+* `TauCeti.NonabelianH1.Twist.toOriginal_smul`: the twisted action is `c g * g • x * (c g)⁻¹`.
+* `TauCeti.NonabelianH1.Twist.mem_fixedPoints_iff`: the invariants of `₍c₎A` are the elements
+  `x` with `c g * g • x = x * c g` for all `g`.
+* `TauCeti.NonabelianH1.translated_apply_mul_iff`: right multiplication by `c` transports the
+  twisted cocycle equation to the original one, even for an unbundled function.
+* `TauCeti.NonabelianH1.Cocycle.ofTwistEquiv_twist`: twisting intertwines the gauge actions.
+* `TauCeti.NonabelianH1.ofTwistEquiv_one`: the base point of `H¹(G, ₍c₎A)` goes to `[c]`.
+* `TauCeti.NonabelianH1.map_ofTwistEquiv`: twisting commutes with the maps induced by compatible
+  pairs.
 
 ## References
 
-* J.-P. Serre, *Galois Cohomology*, I.5.3, Proposition 35.
-* M. Kim, *The motivic fundamental group of the projective line minus three points and the
-  theorem of Siegel*, §1, proof of Proposition 1.
+* J.-P. Serre, *Galois Cohomology*, Springer, 1997, I.5.3, Proposition 35bis.
+* M. Kim, *The motivic fundamental group of `P¹ ∖ {0, 1, ∞}` and the theorem of Siegel*,
+  Invent. Math. 161 (2005), §1, proof of Proposition 1.
 -/
 
 public section
 
-namespace TauCeti.NonabelianH1
+namespace TauCeti
+
+namespace NonabelianH1
 
 variable {G A : Type*} [Group G] [TopologicalSpace G] [Group A] [TopologicalSpace A]
   [MulDistribMulAction G A]
 
--- The compiler needs the representation exposed to reuse the group operations of `A`.
-/-- The coefficient group `A` with the action twisted by `c`. The multiplication and topology
-are those of `A`, but the action is `g ⋆ a = c(g) (g • a) c(g)⁻¹`. -/
-@[expose] def Twist (_c : Cocycle G A) : Type _ := A
+/-- The **twist** `₍c₎A` of the `G`-group `A` by a cocycle `c`: a copy of the topological group
+`A`, on which `g : G` acts by `x ↦ c g * g • x * (c g)⁻¹`
+(`TauCeti.NonabelianH1.Twist.toOriginal_smul`). -/
+@[ext]
+structure Twist (c : Cocycle G A) where
+  /-- The element of the twist `₍c₎A` with a given underlying element of `A`. -/
+  ofOriginal ::
+  /-- The underlying element of `A` of an element of the twist `₍c₎A`. -/
+  toOriginal : A
 
 namespace Twist
 
-variable (c : Cocycle G A)
+variable {c : Cocycle G A}
 
-instance : Group (Twist c) := inferInstanceAs (Group A)
+@[simp]
+theorem toOriginal_ofOriginal (a : A) : (ofOriginal a : Twist c).toOriginal = a :=
+  (rfl)
 
-instance : TopologicalSpace (Twist c) := inferInstanceAs (TopologicalSpace A)
+@[simp]
+theorem ofOriginal_toOriginal (x : Twist c) : ofOriginal x.toOriginal = x :=
+  (rfl)
 
-/-- The identity on the underlying group, forgetting the twisted action. -/
-def toOriginal : Twist c ≃* A := MulEquiv.refl A
+instance : Group (Twist c) :=
+  Equiv.group ⟨toOriginal, ofOriginal, fun _ ↦ rfl, fun _ ↦ rfl⟩
 
-/-- Forgetting the twisted action is continuous for the inherited topology. -/
+@[simp]
+theorem toOriginal_one : (1 : Twist c).toOriginal = 1 :=
+  (rfl)
+
+@[simp]
+theorem toOriginal_mul (x y : Twist c) : (x * y).toOriginal = x.toOriginal * y.toOriginal :=
+  (rfl)
+
+@[simp]
+theorem toOriginal_inv (x : Twist c) : x⁻¹.toOriginal = x.toOriginal⁻¹ :=
+  (rfl)
+
+@[simp]
+theorem ofOriginal_one : (ofOriginal 1 : Twist c) = 1 :=
+  (rfl)
+
+@[simp]
+theorem ofOriginal_mul (a b : A) : (ofOriginal (a * b) : Twist c) = ofOriginal a * ofOriginal b :=
+  (rfl)
+
+@[simp]
+theorem ofOriginal_inv (a : A) : (ofOriginal a⁻¹ : Twist c) = (ofOriginal a)⁻¹ :=
+  (rfl)
+
+/-- The twist carries the topology of `A`. -/
+instance : TopologicalSpace (Twist c) :=
+  .induced toOriginal ‹_›
+
 @[continuity, fun_prop]
-theorem continuous_toOriginal : Continuous (toOriginal c) := continuous_id
+theorem continuous_toOriginal : Continuous (toOriginal : Twist c → A) :=
+  continuous_induced_dom
 
-/-- The inverse identification with the original group is also continuous. -/
 @[continuity, fun_prop]
-theorem continuous_toOriginal_symm : Continuous (toOriginal c).symm := continuous_id
+theorem continuous_ofOriginal : Continuous (ofOriginal : A → Twist c) :=
+  continuous_induced_rng.2 continuous_id
 
-/-- The `G`-action followed by conjugation by the cocycle value. -/
-instance : MulDistribMulAction G (Twist c) :=
-  .compHom (Twist c) ({
-    toFun g := ((toOriginal c).trans (MulDistribMulAction.toMulAut G A g)).trans
-      ((MulAut.conj (c g)).trans (toOriginal c).symm)
-    map_one' := MulEquiv.ext fun x ↦ (toOriginal c).injective (by simp)
-    map_mul' g h := MulEquiv.ext fun x ↦ (toOriginal c).injective (by
-      simp only [MulEquiv.trans_apply, MulEquiv.apply_symm_apply, MulAut.conj_apply,
-        MulAut.mul_apply, MulDistribMulAction.toMulAut_apply, MulDistribMulAction.toMulEquiv_apply,
-        c.apply_mul, mul_smul, smul_mul', smul_inv', mul_inv_rev]
-      group) } : G →* MulAut (Twist c))
+variable (c) in
+/-- The underlying identification `₍c₎A ≃ₜ* A` of topological groups. It need not be
+`G`-equivariant: it carries the twisted action to `x ↦ c g * g • x * (c g)⁻¹`. -/
+def continuousMulEquiv : Twist c ≃ₜ* A where
+  toFun := toOriginal
+  invFun := ofOriginal
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  continuous_toFun := continuous_toOriginal
+  continuous_invFun := continuous_ofOriginal
 
-/-- In the original group, the new action is the old action followed by conjugation by `c g`. -/
+@[simp]
+theorem coe_continuousMulEquiv : ⇑(continuousMulEquiv c) = toOriginal :=
+  (rfl)
+
+@[simp]
+theorem coe_continuousMulEquiv_symm : ⇑(continuousMulEquiv c).symm = ofOriginal :=
+  (rfl)
+
+instance [IsTopologicalGroup A] : IsTopologicalGroup (Twist c) :=
+  Topology.IsInducing.isTopologicalGroup (continuousMulEquiv c) ⟨rfl⟩
+
+/-- The twisted action `g ⋆ x = c g * g • x * (c g)⁻¹` of `G` on `₍c₎A`. -/
+instance : SMul G (Twist c) :=
+  ⟨fun g x ↦ ofOriginal (c g * g • x.toOriginal * (c g)⁻¹)⟩
+
+/-- The **twisted action**: `g ⋆ x = c g * g • x * (c g)⁻¹`. -/
 @[simp]
 theorem toOriginal_smul (g : G) (x : Twist c) :
-    toOriginal c (g • x) = c g * (g • toOriginal c x) * (c g)⁻¹ :=
-  (toOriginal c).apply_symm_apply _
+    (g • x).toOriginal = c g * g • x.toOriginal * (c g)⁻¹ :=
+  (rfl)
 
-/-- The underlying identification for the trivial cocycle is equivariant. -/
-theorem toOriginal_one_smul (g : G) (x : Twist (1 : Cocycle G A)) :
-    toOriginal (1 : Cocycle G A) (g • x) = g • toOriginal (1 : Cocycle G A) x := by
-  simp
+/-- The twisted action is an action by group automorphisms. -/
+instance : MulDistribMulAction G (Twist c) where
+  smul := (· • ·)
+  one_smul x := by ext; simp
+  mul_smul g h x := by ext; simp [c.apply_mul, mul_smul, smul_mul', mul_assoc]
+  smul_mul g x y := by ext; simp [smul_mul', mul_assoc]
+  smul_one g := by ext; simp
 
-/-- An element is fixed under the twisted action exactly when it satisfies these intertwining
-identities in the original group. -/
-theorem mem_fixedPoints_iff (x : Twist c) :
-    x ∈ FixedPoints.subgroup G (Twist c) ↔ ∀ g : G,
-      c g * (g • toOriginal c x) = toOriginal c x * c g := by
-  simp only [FixedPoints.mem_subgroup, ← (toOriginal c).injective.eq_iff (a := _ • _),
-    toOriginal_smul, mul_inv_eq_iff_eq_mul]
-
-instance [ContinuousMul A] : ContinuousMul (Twist c) := inferInstanceAs (ContinuousMul A)
-
-instance [ContinuousInv A] : ContinuousInv (Twist c) := inferInstanceAs (ContinuousInv A)
-
-instance [IsTopologicalGroup A] : IsTopologicalGroup (Twist c) where
-
-instance [ContinuousMul A] [ContinuousInv A] [ContinuousSMul G A] : ContinuousSMul G (Twist c) where
-  continuous_smul := by
-    have h : (fun p : G × Twist c ↦ p.1 • p.2) = fun p ↦ (toOriginal c).symm
-        (c p.1 * (p.1 • toOriginal c p.2) * (c p.1)⁻¹) := by
-      funext p
-      apply (toOriginal c).injective
-      simp
-    rw [h]
+/-- The twisted action is continuous when the original action is. -/
+instance [IsTopologicalGroup A] [ContinuousSMul G A] : ContinuousSMul G (Twist c) where
+  continuous_smul := continuous_induced_rng.2 <| by
+    simp only [Function.comp_def, toOriginal_smul]
     fun_prop
+
+/-- Where `c g` commutes with `g • x`, the twisted action of `g` on `x` is the original one. In
+particular this holds for the trivial cocycle and for commutative `A`. -/
+theorem toOriginal_smul_of_commute {g : G} {x : Twist c} (h : Commute (c g) (g • x.toOriginal)) :
+    (g • x).toOriginal = g • x.toOriginal := by
+  rw [toOriginal_smul, h.eq, mul_inv_cancel_right]
+
+/-- `x` is fixed by `g` for the twisted action exactly when `c g * g • x = x * c g`. -/
+theorem smul_eq_self_iff {g : G} {x : Twist c} :
+    g • x = x ↔ c g * g • x.toOriginal = x.toOriginal * c g := by
+  rw [Twist.ext_iff, toOriginal_smul, mul_inv_eq_iff_eq_mul]
+
+/-- The **invariants of the twist**: `x` is fixed by the twisted action exactly when
+`c g * g • x = x * c g` for all `g`. -/
+theorem mem_fixedPoints_iff {x : Twist c} :
+    x ∈ MulAction.fixedPoints G (Twist c) ↔ ∀ g, c g * g • x.toOriginal = x.toOriginal * c g := by
+  simp only [MulAction.mem_fixedPoints, smul_eq_self_iff]
+
+section Map
+
+variable {G' A' : Type*} [Group G'] [TopologicalSpace G'] [Group A'] [TopologicalSpace A']
+  [MulDistribMulAction G' A']
+
+variable (c) in
+/-- The map `₍c₎A →ₜ* ₍φ ∘ c ∘ ψ₎A'` of twists induced by a compatible pair `(ψ, φ)`: continuous
+homomorphisms `ψ : G' →ₜ* G` and `φ : A →ₜ* A'` with `φ (ψ g • a) = g • φ a`. It is compatible
+with the twisted actions (`TauCeti.NonabelianH1.Twist.map_smul`). -/
+def map (ψ : G' →ₜ* G) (φ : A →ₜ* A') (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) :
+    Twist c →ₜ* Twist (c.map ψ φ h) where
+  toFun x := ofOriginal (φ x.toOriginal)
+  map_one' := by ext; simp
+  map_mul' x y := by ext; simp
+  continuous_toFun := by fun_prop
+
+@[simp]
+theorem toOriginal_map (ψ : G' →ₜ* G) (φ : A →ₜ* A')
+    (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) (x : Twist c) :
+    (map c ψ φ h x).toOriginal = φ x.toOriginal :=
+  (rfl)
+
+/-- The map of twists is compatible with the twisted actions. -/
+theorem map_smul (ψ : G' →ₜ* G) (φ : A →ₜ* A')
+    (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) (g : G') (x : Twist c) :
+    map c ψ φ h (ψ g • x) = g • map c ψ φ h x := by
+  ext
+  simp [h]
+
+end Map
 
 end Twist
 
-open Twist (toOriginal)
-
-/-- Right multiplication by `c` converts the twisted cocycle identity to the original one. -/
+/-- Right multiplication by `c` turns the twisted cocycle equation for a function `d` into the
+original cocycle equation for `g ↦ (d g).toOriginal * c g`. -/
 theorem translated_apply_mul_iff (c : Cocycle G A) (d : G → Twist c) (g h : G) :
-    toOriginal c (d (g * h)) * c (g * h) =
-      (toOriginal c (d g) * c g) * (g • (toOriginal c (d h) * c h)) ↔
+    (d (g * h)).toOriginal * c (g * h) =
+      ((d g).toOriginal * c g) * (g • ((d h).toOriginal * c h)) ↔
     d (g * h) = d g * g • d h := by
-  rw [← (toOriginal c).injective.eq_iff (a := d (g * h)), map_mul (toOriginal c),
-    Twist.toOriginal_smul]
-  have hmul : (toOriginal c (d g) * (c g * (g • toOriginal c (d h)) * (c g)⁻¹)) * c (g * h) =
-      (toOriginal c (d g) * c g) * (g • (toOriginal c (d h) * c h)) := by
+  rw [Twist.ext_iff, Twist.toOriginal_mul, Twist.toOriginal_smul]
+  have hmul : ((d g).toOriginal * (c g * g • (d h).toOriginal * (c g)⁻¹)) * c (g * h) =
+      ((d g).toOriginal * c g) * (g • ((d h).toOriginal * c h)) := by
     simp [c.apply_mul, smul_mul', mul_assoc]
   rw [← hmul, mul_left_inj]
 
-section Translation
+namespace Cocycle
 
-variable [ContinuousMul A] [ContinuousInv A] (c : Cocycle G A)
+variable [IsTopologicalGroup A] (c : Cocycle G A)
 
-/-- The cocycles for the twisted action correspond to the original cocycles by right
-multiplication by `c`. The inverse is right multiplication by the pointwise inverse of `c`. -/
-def cocycleTwistEquiv : Cocycle G (Twist c) ≃ Cocycle G A where
+/-- **Twisting by a cocycle** on cocycles: the bijection `Z¹(G, ₍c₎A) ≃ Z¹(G, A)` sending `d` to
+`g ↦ d g * c g`, with inverse `f ↦ (g ↦ f g * (c g)⁻¹)`. -/
+def ofTwistEquiv : Cocycle G (Twist c) ≃ Cocycle G A where
   toFun d :=
-    { toFun := fun g ↦ toOriginal c (d g) * c g
+    { toFun g := (d g).toOriginal * c g
       continuous_toFun := by fun_prop
-      map_mul' := fun g h ↦ (translated_apply_mul_iff c d g h).mpr (d.apply_mul g h) }
-  invFun d :=
-    { toFun := fun g ↦ (toOriginal c).symm (d g * (c g)⁻¹)
+      map_mul' g h := (translated_apply_mul_iff c d g h).mpr (d.apply_mul g h) }
+  invFun f :=
+    { toFun g := Twist.ofOriginal (f g * (c g)⁻¹)
       continuous_toFun := by fun_prop
-      map_mul' := fun g h ↦
-        (translated_apply_mul_iff c (fun k ↦ (toOriginal c).symm (d k * (c k)⁻¹)) g h).mp
-          (by simpa using d.apply_mul g h) }
-  left_inv d := Cocycle.ext fun g ↦ by
-    apply (toOriginal c).injective
-    simp
-  right_inv d := Cocycle.ext fun g ↦ by simp
+      map_mul' g h := by
+        apply (translated_apply_mul_iff c (fun k ↦ Twist.ofOriginal (f k * (c k)⁻¹)) g h).mp
+        simpa using f.apply_mul g h }
+  left_inv d := by ext; simp
+  right_inv f := by ext; simp
 
-/-- Evaluation of translation from the twist to the original coefficients. -/
 @[simp]
-theorem cocycleTwistEquiv_apply (d : Cocycle G (Twist c)) (g : G) :
-    cocycleTwistEquiv c d g = toOriginal c (d g) * c g := (rfl)
+theorem ofTwistEquiv_apply (d : Cocycle G (Twist c)) (g : G) :
+    c.ofTwistEquiv d g = (d g).toOriginal * c g :=
+  (rfl)
 
-/-- Evaluation of translation back into the twisted coefficients. -/
 @[simp]
-theorem toOriginal_cocycleTwistEquiv_symm_apply (d : Cocycle G A) (g : G) :
-    toOriginal c ((cocycleTwistEquiv c).symm d g) = d g * (c g)⁻¹ :=
-  (toOriginal c).apply_symm_apply _
+theorem toOriginal_ofTwistEquiv_symm_apply (f : Cocycle G A) (g : G) :
+    (c.ofTwistEquiv.symm f g).toOriginal = f g * (c g)⁻¹ :=
+  (rfl)
 
-/-- Translation carries the trivial cocycle to the twisting cocycle. -/
+/-- Twisting sends the trivial cocycle of `₍c₎A` to `c`. -/
 @[simp]
-theorem cocycleTwistEquiv_one : cocycleTwistEquiv c 1 = c := by
-  ext g
+theorem ofTwistEquiv_one : c.ofTwistEquiv 1 = c := by
+  ext
   simp
 
-omit [ContinuousMul A] [ContinuousInv A] in
-private theorem toOriginal_gauge_mul (a x : Twist c) (g : G) :
-    toOriginal c (a⁻¹ * x * g • a) * c g =
-      (toOriginal c a)⁻¹ * (toOriginal c x * c g) * (g • toOriginal c a) := by
-  simp [mul_assoc]
+@[simp]
+theorem ofTwistEquiv_symm_self : c.ofTwistEquiv.symm c = 1 :=
+  c.ofTwistEquiv.symm_apply_eq.2 c.ofTwistEquiv_one.symm
 
-/-- Translation preserves and reflects gauge equivalence; it uses the same coefficient element
-read in the original group. This does not require joint continuity of the actions. -/
-theorem cocycleTwistEquiv_equiv_iff {d e : Cocycle G (Twist c)} :
-    cocycleTwistEquiv c d ≈ cocycleTwistEquiv c e ↔ d ≈ e := by
-  have gauge (a : Twist c) (g : G) :
-      cocycleTwistEquiv c e g = (toOriginal c a)⁻¹ * cocycleTwistEquiv c d g *
-        (g • toOriginal c a) ↔ e g = a⁻¹ * d g * g • a := by
-    simp only [cocycleTwistEquiv_apply, ← toOriginal_gauge_mul, mul_left_inj,
-      (toOriginal c).injective.eq_iff]
-  rw [Cocycle.equiv_iff, Cocycle.equiv_iff]
+/-- Twisting by `c` preserves and reflects the cohomology relation. -/
+theorem ofTwistEquiv_equiv_ofTwistEquiv_iff {d d' : Cocycle G (Twist c)} :
+    c.ofTwistEquiv d ≈ c.ofTwistEquiv d' ↔ d ≈ d' := by
+  simp only [equiv_iff, ofTwistEquiv_apply]
   constructor
   · rintro ⟨a, ha⟩
-    refine ⟨(toOriginal c).symm a, fun g ↦ (gauge _ g).mp ?_⟩
-    simpa only [MulEquiv.apply_symm_apply] using ha g
-  · rintro ⟨a, ha⟩
-    exact ⟨toOriginal c a, fun g ↦ (gauge a g).mpr (ha g)⟩
+    refine ⟨Twist.ofOriginal a, fun g ↦ ?_⟩
+    ext
+    simp only [Twist.toOriginal_mul, Twist.toOriginal_inv, Twist.toOriginal_smul, ← mul_assoc]
+    rw [eq_mul_inv_iff_mul_eq, ha g]
+    simp only [mul_assoc]
+  · rintro ⟨b, hb⟩
+    exact ⟨b.toOriginal, fun g ↦ by simp [hb g, mul_assoc]⟩
 
-/-- Translation intertwines the gauge operations on cocycles. -/
+/-- Twisting intertwines the gauge actions: twisting the gauge transform of `d` by `a` is the gauge
+transform by `a` of the twisted cocycle. -/
+theorem ofTwistEquiv_twist [ContinuousSMul G A] (d : Cocycle G (Twist c)) (a : Twist c) :
+    c.ofTwistEquiv (d.twist a) = (c.ofTwistEquiv d).twist a.toOriginal := by
+  ext
+  simp [mul_assoc]
+
+section Map
+
+variable {G' A' : Type*} [Group G'] [TopologicalSpace G'] [Group A'] [TopologicalSpace A']
+  [IsTopologicalGroup A'] [MulDistribMulAction G' A']
+
+/-- Twisting commutes with mapping along a compatible pair `(ψ, φ)`. -/
+theorem map_ofTwistEquiv (ψ : G' →ₜ* G) (φ : A →ₜ* A')
+    (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) (d : Cocycle G (Twist c)) :
+    (c.ofTwistEquiv d).map ψ φ h =
+      (c.map ψ φ h).ofTwistEquiv (d.map ψ (Twist.map c ψ φ h) (Twist.map_smul ψ φ h)) := by
+  ext
+  simp
+
+end Map
+
+end Cocycle
+
+variable [IsTopologicalGroup A] (c : Cocycle G A)
+
+/-- **Twisting by a cocycle**: the bijection `H¹(G, ₍c₎A) ≃ H¹(G, A)` induced by
+`d ↦ (g ↦ d g * c g)` on cocycles. It sends the base point to the class of `c`
+(`TauCeti.NonabelianH1.ofTwistEquiv_one`), so it preserves base points only when `c` is a
+coboundary. -/
+def ofTwistEquiv : NonabelianH1 G (Twist c) ≃ NonabelianH1 G A :=
+  congr c.ofTwistEquiv fun _ _ ↦ c.ofTwistEquiv_equiv_ofTwistEquiv_iff.symm
+
 @[simp]
-theorem cocycleTwistEquiv_twist [ContinuousSMul G A] (d : Cocycle G (Twist c)) (a : Twist c) :
-    cocycleTwistEquiv c (d.twist a) = (cocycleTwistEquiv c d).twist (toOriginal c a) := by
-  ext g
-  simp only [Cocycle.twist_apply, cocycleTwistEquiv_apply, toOriginal_gauge_mul]
+theorem ofTwistEquiv_mk (d : Cocycle G (Twist c)) : ofTwistEquiv c (mk d) = mk (c.ofTwistEquiv d) :=
+  congr_mk _ _ d
 
-/-- Twisting gives a bijection between the twisted and original continuous `H¹` sets.
-This sends the twisted neutral class to the class of `c`. -/
-def twistEquiv : NonabelianH1 G (Twist c) ≃ NonabelianH1 G A where
-  toFun := lift (fun d ↦ mk (cocycleTwistEquiv c d)) fun _ _ h ↦
-    mk_eq_mk_iff.mpr (Cocycle.equiv_iff.mp ((cocycleTwistEquiv_equiv_iff c).mpr h))
-  invFun := lift (fun d ↦ mk ((cocycleTwistEquiv c).symm d)) fun d e h ↦ by
-    refine mk_eq_mk_iff.mpr (Cocycle.equiv_iff.mp ((cocycleTwistEquiv_equiv_iff c).mp ?_))
-    simpa only [Equiv.apply_symm_apply] using h
-  left_inv x := by
-    induction x using induction_on
-    simp only [lift_mk, Equiv.symm_apply_apply]
-  right_inv x := by
-    induction x using induction_on
-    simp only [lift_mk, Equiv.apply_symm_apply]
-
-/-- Translation of the class of a twisted cocycle is the class of its translate. -/
 @[simp]
-theorem twistEquiv_mk (d : Cocycle G (Twist c)) :
-    twistEquiv c (mk d) = mk (cocycleTwistEquiv c d) :=
-  lift_mk _ _ _
+theorem ofTwistEquiv_symm_mk (f : Cocycle G A) :
+    (ofTwistEquiv c).symm (mk f) = mk (c.ofTwistEquiv.symm f) :=
+  congr_symm_mk _ _ f
 
-/-- Inverse translation of a class is computed by inverse translation of a representative. -/
+/-- Twisting by `c` sends the base point of `H¹(G, ₍c₎A)` to the class of `c`. -/
 @[simp]
-theorem twistEquiv_symm_mk (d : Cocycle G A) :
-    (twistEquiv c).symm (mk d) = mk ((cocycleTwistEquiv c).symm d) :=
-  lift_mk _ _ _
+theorem ofTwistEquiv_one : ofTwistEquiv c 1 = mk c := by
+  rw [one_def, ofTwistEquiv_mk, Cocycle.ofTwistEquiv_one]
 
-/-- The twisted neutral class translates to the class of `c`. -/
-@[simp]
-theorem twistEquiv_one : twistEquiv c 1 = mk c := by
-  rw [one_def, twistEquiv_mk, cocycleTwistEquiv_one]
+/-- The fibre of twisting over the class of `c` consists exactly of the twisted base point. -/
+theorem ofTwistEquiv_eq_mk_iff {x : NonabelianH1 G (Twist c)} :
+    ofTwistEquiv c x = mk c ↔ x = 1 := by
+  rw [← ofTwistEquiv_one c, (ofTwistEquiv c).injective.eq_iff]
 
-end Translation
+/-- The class of `c` corresponds to the base point of `H¹(G, ₍c₎A)`. -/
+theorem ofTwistEquiv_symm_mk_self : (ofTwistEquiv c).symm (mk c) = 1 := by
+  rw [ofTwistEquiv_symm_mk, Cocycle.ofTwistEquiv_symm_self, mk_one]
 
-end TauCeti.NonabelianH1
+/-- Twisting commutes with the maps of `H¹` induced by a compatible pair `(ψ, φ)`: the square
+formed by `H¹(G, ₍c₎A) → H¹(G', ₍φ ∘ c ∘ ψ₎A')` and `H¹(G, A) → H¹(G', A')` commutes. In
+particular twisting commutes with restriction. -/
+theorem map_ofTwistEquiv {G' A' : Type*} [Group G'] [TopologicalSpace G'] [Group A']
+    [TopologicalSpace A'] [IsTopologicalGroup A'] [MulDistribMulAction G' A'] (ψ : G' →ₜ* G)
+    (φ : A →ₜ* A') (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a)
+    (x : NonabelianH1 G (Twist c)) :
+    map ψ φ h (ofTwistEquiv c x) =
+      ofTwistEquiv (c.map ψ φ h) (map ψ (Twist.map c ψ φ h) (Twist.map_smul ψ φ h) x) := by
+  induction x using induction_on with | mk d =>
+  simp only [ofTwistEquiv_mk, map_mk, Cocycle.map_ofTwistEquiv]
+
+end NonabelianH1
+
+end TauCeti
