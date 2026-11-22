@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Restriction
 public import TauCeti.Topology.Algebra.Ring.Ideal
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Proper
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Laurent.Basic
 import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.RationalCompletion
 
 /-!
@@ -56,35 +55,6 @@ public section
 open TauCeti.Huber TauCeti.ValuationSpectrum
 
 namespace TauCeti.Huber
-
-/-- Maximal-ideal prime contraction for a simple Laurent cover: every maximal ideal of `R` is the
-contraction of a prime ideal of `R₁ × R₂` via a point of `Spa(R, R⁺)`. -/
-private theorem exists_prime_comap_eq_of_simpleLaurent {R : Type*} [CommRing R] [UniformSpace R]
-    [IsUniformAddGroup R] [IsTopologicalRing R] [CompleteSpace R] [T0Space R] [IsHuberRing R]
-    [DecidableEq R] (P : PairOfDefinition R) (S : Pair R)
-    (hs : IsSheafyForEveryPresentation S.plus) (f : R)
-    {R₁ R₂ : Type*} [CommRing R₁] [CommRing R₂] [TopologicalSpace R₁] [TopologicalSpace R₂]
-    [Algebra R R₁] [Algebra R R₂]
-    {hT₁ : IsOpen (Ideal.span (({f, 1} : Finset R) : Set R) : Set R)}
-    {hT₂ : IsOpen (Ideal.span (({1} : Finset R) : Set R) : Set R)}
-    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ R₁)
-    (h₂ : IsRationalCompletion P {1} f hT₂ R₂)
-    (m : Ideal R) (hm : m.IsMaximal) :
-    ∃ p : Ideal (R₁ × R₂), p.IsPrime ∧
-      p.comap ((algebraMap R R₁).prod (algebraMap R R₂)) = m := by
-  have := hm
-  obtain ⟨P₀, hP₀, -⟩ := hs.exists_compatible_isSheaf
-  obtain ⟨v, hv, rfl⟩ := exists_mem_spa_supp_eq_of_isMaximal S.plus S.isRingOfIntegralElements m
-  obtain ⟨b, hb⟩ := Set.mem_iUnion.mp (spa_subset_iUnion_laurentCover S.plus f hv)
-  cases b with
-  | true =>
-    obtain ⟨q, hq, hqm⟩ := exists_prime_comap_eq_of_mem_rationalSubset hP₀ h₁
-      (by simpa [mem_rationalSubset_iff] using hb) hm
-    exact ⟨q.comap (RingHom.fst R₁ R₂), hq.comap _, by rw [Ideal.comap_comap]; exact hqm⟩
-  | false =>
-    obtain ⟨q, hq, hqm⟩ := exists_prime_comap_eq_of_mem_rationalSubset hP₀ h₂
-      (by simpa [mem_rationalSubset_iff] using hb) hm
-    exact ⟨q.comap (RingHom.snd R₁ R₂), hq.comap _, by rw [Ideal.comap_comap]; exact hqm⟩
 
 section Main
 
@@ -135,12 +105,13 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
     rw [RingHom.algebraMap_toAlgebra]; exact he₁₂'.comp (hc₂.comp he₂)
   obtain ⟨hinj, hexact⟩ :=
     laurent_injective_and_exact_of_isSheafyForEveryPresentation S hs hL₁ hL₂ hL₁₂ hcL₁ hcL₂
+  obtain ⟨P₀, hP₀, -⟩ := hs.exists_compatible_isSheaf
   have hsqL : GlueingSquare R L₁ L₂ L₁₂ :=
     GlueingSquare.of_exact hL₁.continuous_algebraMap hL₂.continuous_algebraMap hcL₁ hcL₂
       hinj hexact (hL₁.surjective_algebraMap_sub_laurent hL₂ hL₁₂ hcL₁ hcL₂)
       (hL₂.denseRange_of_comp_algebraMap_eq hL₁₂
         (RingHom.ext fun x ↦ (IsScalarTower.algebraMap_apply R L₂ L₁₂ x).symm))
-      (exists_prime_comap_eq_of_simpleLaurent P S hs f hL₁ hL₂)
+      (exists_prime_comap_eq_of_simpleLaurent S.plus S.isRingOfIntegralElements hP₀ f hL₁ hL₂)
   exact hsqL.congr e₁ he₁ he₁' e₂ he₂ he₂' e₁₂.toRingEquiv he₁₂ he₁₂'
     (fun x ↦ by simp only [RingHom.algebraMap_toAlgebra, φ₁, RingHom.comp_apply,
       RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,

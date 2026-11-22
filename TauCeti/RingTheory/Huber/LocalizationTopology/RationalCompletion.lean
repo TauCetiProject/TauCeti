@@ -40,6 +40,11 @@ and universal properties of `ratLoc`.
   Huber, and Tate properties of any model.
 * `TauCeti.Huber.IsRationalCompletion.isPowerBounded_algebraMap_mul_unit_inv`: the distinguished
   fractions `t / s` (`t ∈ T`) are power-bounded in any model.
+* `TauCeti.Huber.IsRationalCompletion.localizationAlgHom`,
+  `TauCeti.Huber.IsRationalCompletion.localizationAlgHom_algebraMap`,
+  `TauCeti.Huber.IsRationalCompletion.continuous_localizationAlgHom`, and
+  `TauCeti.Huber.IsRationalCompletion.denseRange_localizationAlgHom`: canonical dense copy of
+  `Localization.Away s` in any model and its continuity for the localisation topology.
 * `TauCeti.Huber.IsRationalCompletion.ringHom_ext_of_continuous`,
   `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom`,
   `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_of_refines`, and
@@ -299,6 +304,73 @@ theorem IsRationalCompletion.existsUnique_continuous_algHom_of_refines
   have _ : T2Space B' := h'.t2Space
   exact ⟨e'.toAlgHom.comp g, he'.comp hg, fun f hf ↦ h.algHom_ext_of_continuous hf (he'.comp hg)⟩
 
+/-- The canonical `A`-algebra homomorphism from `Localization.Away s` into any model `B` of
+`A⟨T/s⟩`. -/
+noncomputable def IsRationalCompletion.localizationAlgHom
+    (h : IsRationalCompletion P T s hT B) : Localization.Away s →ₐ[A] B where
+  toRingHom := IsLocalization.Away.lift s h.isUnit_algebraMap
+  commutes' := IsLocalization.Away.lift_eq s h.isUnit_algebraMap
+
+/-- On the image of `A`, `IsRationalCompletion.localizationAlgHom` agrees with `algebraMap A B`
+(also available to `simp` via `AlgHom.commutes`). -/
+theorem IsRationalCompletion.localizationAlgHom_algebraMap
+    (h : IsRationalCompletion P T s hT B) (a : A) :
+    h.localizationAlgHom (algebraMap A (Localization.Away s) a) = algebraMap A B a :=
+  h.localizationAlgHom.commutes a
+
+private theorem IsRationalCompletion.localizationAlgHom_eq_comp_coeRingHom
+    (h : IsRationalCompletion P T s hT B)
+    (e : ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT) ≃ₐ[A] B) :
+    let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
+    letI := P.locUniformSpace T s (Localization.Away s) hden
+    letI := P.isUniformAddGroup_locUniformSpace T s (Localization.Away s) hden
+    letI := P.isTopologicalRing_locUniformSpace T s (Localization.Away s) hden
+    h.localizationAlgHom.toRingHom = e.toRingHom.comp Completion.coeRingHom := by
+  let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
+  let _ := P.locUniformSpace T s (Localization.Away s) hden
+  have _ := P.isUniformAddGroup_locUniformSpace T s (Localization.Away s) hden
+  have _ := P.isTopologicalRing_locUniformSpace T s (Localization.Away s) hden
+  refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    localizationAlgHom_algebraMap, RingEquiv.toRingHom_eq_coe, AlgEquiv.coe_toRingEquiv,
+    Completion.coe_coeRingHom]
+  rw [← P.toCompletionLoc_apply T s (Localization.Away s) hden a, ← algebraMap_ratLoc, e.commutes]
+
+/-- The canonical map `Localization.Away s →ₐ[A] B` into any model `B` of `A⟨T/s⟩` is continuous
+for the localisation topology on `Localization.Away s`. -/
+theorem IsRationalCompletion.continuous_localizationAlgHom
+    (h : IsRationalCompletion P T s hT B) :
+    letI := P.locTopology T s (Localization.Away s)
+      (P.hasDenominatorPower_of_isOpen_span T s _ hT)
+    Continuous h.localizationAlgHom := by
+  let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
+  let _ := P.locUniformSpace T s (Localization.Away s) hden
+  have _ := P.isUniformAddGroup_locUniformSpace T s (Localization.Away s) hden
+  have _ := P.isTopologicalRing_locUniformSpace T s (Localization.Away s) hden
+  obtain ⟨e, he, -⟩ := id h
+  rw [← P.locUniformSpace_toTopologicalSpace T s (Localization.Away s) hden]
+  have hcomp : (h.localizationAlgHom : Localization.Away s → B) =
+      e ∘ (Completion.coe' : Localization.Away s → ratLoc P T s hden) :=
+    funext fun x ↦ RingHom.congr_fun (h.localizationAlgHom_eq_comp_coeRingHom e) x
+  rw [hcomp]
+  exact he.comp (Completion.continuous_coe (Localization.Away s))
+
+/-- The canonical map `Localization.Away s →ₐ[A] B` into any model `B` of `A⟨T/s⟩` has dense
+range. -/
+theorem IsRationalCompletion.denseRange_localizationAlgHom
+    (h : IsRationalCompletion P T s hT B) :
+    DenseRange h.localizationAlgHom := by
+  let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
+  let _ := P.locUniformSpace T s (Localization.Away s) hden
+  have _ := P.isUniformAddGroup_locUniformSpace T s (Localization.Away s) hden
+  have _ := P.isTopologicalRing_locUniformSpace T s (Localization.Away s) hden
+  obtain ⟨e, he, -⟩ := id h
+  have hcomp : (h.localizationAlgHom : Localization.Away s → B) =
+      e ∘ (Completion.coe' : Localization.Away s → ratLoc P T s hden) :=
+    funext fun x ↦ RingHom.congr_fun (h.localizationAlgHom_eq_comp_coeRingHom e) x
+  rw [hcomp]
+  exact e.surjective.denseRange.comp Completion.denseRange_coe he
+
 /-- Any ring homomorphism compatible with the `A`-algebra maps between two rational completions at
 the *same* denominator `s` has dense range, because its range contains the canonical dense image of
 `Localization.Away s`. -/
@@ -309,41 +381,14 @@ theorem IsRationalCompletion.denseRange_of_comp_algebraMap_eq
     (hC : IsRationalCompletion P T' s hT' C)
     {φ : B →+* C} (hφ : φ.comp (algebraMap A B) = algebraMap A C) :
     DenseRange φ := by
-  let S := Localization.Away s
-  let hdenB := P.hasDenominatorPower_of_isOpen_span T s S hT
-  let hdenC := P.hasDenominatorPower_of_isOpen_span T' s S hT'
-  obtain ⟨eB, -, -⟩ := hB
-  obtain ⟨eC, heC, -⟩ := hC
-  let f₁ : S →+* C :=
-    letI := P.locUniformSpace T s S hdenB
-    letI := P.isUniformAddGroup_locUniformSpace T s S hdenB
-    letI := P.isTopologicalRing_locUniformSpace T s S hdenB
-    φ.comp (eB.toRingHom.comp Completion.coeRingHom)
-  let f₂ : S →+* C :=
-    letI := P.locUniformSpace T' s S hdenC
-    letI := P.isUniformAddGroup_locUniformSpace T' s S hdenC
-    letI := P.isTopologicalRing_locUniformSpace T' s S hdenC
-    eC.toRingHom.comp Completion.coeRingHom
-  have heqS : f₁ = f₂ := IsLocalization.ringHom_ext (Submonoid.powers s) <| RingHom.ext fun a ↦ by
-    have hb : f₁ (algebraMap A S a) = φ (algebraMap A B a) := by
-      let _ := P.locUniformSpace T s S hdenB
-      have _ := P.isUniformAddGroup_locUniformSpace T s S hdenB
-      have _ := P.isTopologicalRing_locUniformSpace T s S hdenB
-      simp only [f₁, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-        AlgEquiv.coe_toRingEquiv, Completion.coe_coeRingHom]
-      rw [← P.toCompletionLoc_apply T s S hdenB a, ← algebraMap_ratLoc, eB.commutes]
-    have hc : f₂ (algebraMap A S a) = algebraMap A C a := by
-      let _ := P.locUniformSpace T' s S hdenC
-      have _ := P.isUniformAddGroup_locUniformSpace T' s S hdenC
-      have _ := P.isTopologicalRing_locUniformSpace T' s S hdenC
-      simp only [f₂, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-        AlgEquiv.coe_toRingEquiv, Completion.coe_coeRingHom]
-      rw [← P.toCompletionLoc_apply T' s S hdenC a, ← algebraMap_ratLoc, eC.commutes]
-    simpa only [RingHom.comp_apply, hb, hc] using congrArg (· a) hφ
-  have hdense₂ : DenseRange f₂ := by
-    let _ := P.locUniformSpace T' s S hdenC
-    exact eC.surjective.denseRange.comp Completion.denseRange_coe heC
-  exact hdense₂.mono fun _ h ↦ by rcases h with ⟨x, rfl⟩; rw [← heqS]; exact ⟨_, rfl⟩
+  have heq : φ.comp hB.localizationAlgHom.toRingHom = hC.localizationAlgHom.toRingHom := by
+    refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
+    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      localizationAlgHom_algebraMap]
+    exact RingHom.congr_fun hφ a
+  exact hC.denseRange_localizationAlgHom.mono fun _ hy ↦ by
+    rcases hy with ⟨x, rfl⟩
+    exact ⟨hB.localizationAlgHom x, by simpa using RingHom.congr_fun heq x⟩
 
 /-- At denominator `0`, any model of `A⟨T/0⟩` is a subsingleton, since `Localization.Away (0 : A)`
 is already trivial. -/

@@ -61,8 +61,9 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
   rational subset contains `V` is an isomorphism.
 * `TauCeti.ValuationSpectrum.bijective_presentationLimitRationalIso_hom` : sections over `R(p)`
   are in bijection with `A⟨p⟩`, read through the isomorphism and the equality transport.
-* `TauCeti.ValuationSpectrum.presentationLimitRationalIso_inv_comp_map_comp_hom` : between rational
-  opens, the restriction maps of `presentationLimitPresheaf` are the comparison morphisms.
+* `TauCeti.ValuationSpectrum.presentationLimitRationalIso_inv_comp_map_comp_hom` and
+  `TauCeti.ValuationSpectrum.rationalIso_map_apply` : between rational opens, the restriction
+  maps of `presentationLimitPresheaf` are the comparison morphisms (`restrictionRingHom`).
 
 ## References
 
@@ -321,6 +322,31 @@ theorem presentationLimitRationalIso_inv_comp_map_comp_hom
   rw [presentationLimitRationalIso_hom, presentationLimitMap_comp_πToPresentation,
     reassoc_of% presentationLimitRationalIso_inv_comp_π]
   exact homOfRationalSubsetSubset_comp_eqToHom hAplus (presentationIndexRestrict_obj_pres h _) _ _ _
+
+/-- Under `presentationLimitRationalIso`, restriction from `R(p)` to `R(q)` along a refinement with
+cofactor `r` agrees with `restrictionRingHom`. -/
+theorem rationalIso_map_apply (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (p q : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
+    (hq : IsOpen (Ideal.span (q.num : Set A) : Set A)) (r : A) (hr : q.den = p.den * r)
+    (hT : ∀ t ∈ p.num, t * r ∈ q.num)
+    (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den)
+    (z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den)) :
+    (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).val
+        ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.val
+          ((presentationLimitMap h).hom.val z)) =
+      restrictionRingHom P p.num p.den _ p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower r
+        hr hT ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z)) := by
+  have key := (Iso.inv_comp_eq _).1 <|
+    (presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q hp hq h).trans <|
+      (restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus
+        (Presentation.le_def.mpr ⟨r, hr, hT⟩)).symm.trans (Presentation.restrictionHom_eq _ r hr hT)
+  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).val (g.hom.val z)) key).trans ?_
+  rw [ObjectProperty.FullSubcategory.comp_hom, restrictionObjHom_eq_completionLocObjHom,
+    completionLocObjHom_hom]
+  exact (eqToIso
+    (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower).symm).hom_inv_id_apply _
 
 section RationalSection
 

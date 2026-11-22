@@ -27,17 +27,8 @@ lemmas that take those ring-level statements as hypotheses, so they also apply w
 (Buzzard--Verberkmoes, Corollary 4). The topology induced by restriction is transported in the
 same way.
 
-## Main definitions
-
-* `TauCeti.ValuationSpectrum.laurentCoverOpen` : the two pieces `R({f, 1}/1)` and `R({1}/f)` of
-  the Laurent cover, indexed by `Bool`. Both are rational opens
-  (`TauCeti.ValuationSpectrum.laurentCoverOpen_mem_spaRationalOpens`).
-
 ## Main results
 
-* `TauCeti.ValuationSpectrum.laurentCoverOpen_inv_mul_true` and
-  `TauCeti.ValuationSpectrum.laurentCoverOpen_inv_mul_false` : for a unit `u`, the pieces of the
-  Laurent cover of `u⁻¹ g` are `R({g, u}/u) = {|g| ≤ |u|}` and `R({u}/g) = {|g| ≥ |u|}`.
 * `TauCeti.ValuationSpectrum.injective_presentationLimitMap_laurentCoverOpen` : restriction from
   `X` to the two pieces is injective.
 * `TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen` : sections over
@@ -81,12 +72,12 @@ private theorem injective_eqToHom {X Y : TopCommRingCat.{v}} (e : X = Y) :
     Function.Injective (eqToHom e).val :=
   Function.LeftInverse.injective (eqToHom_symm_apply_eqToHom_apply e)
 
-/-! ### Restriction between rational opens -/
+/-! ### Presentations for simple Laurent covers -/
 
 section Rational
 
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-  {P : PairOfDefinition A} {Aplus : Subring A} (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+  {P : PairOfDefinition A}
 
 -- The presentation `({f, 1}, 1)` (`true`) or `({1}, f)` (`false`) of a Laurent piece.
 variable (P) in
@@ -111,95 +102,10 @@ private theorem isOpen_span_laurentPresentation (f : A) (b : Bool) :
     IsOpen (Ideal.span ((laurentPresentation P f b).num : Set A) : Set A) :=
   isOpen_span_of_one_mem <| by cases b <;> simp
 
--- Under `presentationLimitRationalIso`, restriction from `R(p)` to `R(q)` along a refinement with
--- cofactor `r` is `restrictionRingHom`.
-private theorem rationalIso_map_apply (p q : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
-    (hq : IsOpen (Ideal.span (q.num : Set A) : Set A)) (r : A) (hr : q.den = p.den * r)
-    (hT : ∀ t ∈ p.num, t * r ∈ q.num)
-    (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den)
-    (z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den)) :
-    (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).val
-        ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.val
-          ((presentationLimitMap h).hom.val z)) =
-      restrictionRingHom P p.num p.den _ p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower r
-        hr hT ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
-          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z)) := by
-  have key := (Iso.inv_comp_eq _).1 <|
-    (presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q hp hq h).trans <|
-      (restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus
-        (Presentation.le_def.mpr ⟨r, hr, hT⟩)).symm.trans (Presentation.restrictionHom_eq _ r hr hT)
-  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).val (g.hom.val z)) key).trans ?_
-  rw [ObjectProperty.FullSubcategory.comp_hom, restrictionObjHom_eq_completionLocObjHom,
-    completionLocObjHom_hom]
-  exact eqToHom_symm_apply_eqToHom_apply _ _
-
 end Rational
-
-/-! ### Restriction from the whole spectrum -/
-
-section Top
-
-variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
-  [CompleteSpace A] [T0Space A] {P : PairOfDefinition A} {Aplus : Subring A}
-  (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
-
--- Under `presentationLimitRationalIso`, the section of `c : A` over the whole spectrum restricts to
--- `z` over `R(p)` exactly when the structure map `A → A⟨p⟩` sends `c` to the image of `z`.
-private theorem presentationLimitMap_apply_toPresentationLimit_apply_eq_iff (p : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) {c : CompleteSeparatedTopCommRingCat.of A}
-    {z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den)} :
-    (presentationLimitMap le_top).hom.val ((toPresentationLimit Aplus ⊤).hom.val c) = z ↔
-      toCompletionLoc P p.num p.den _ p.hasDenominatorPower
-          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c) =
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
-          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z) :=
-  (bijective_presentationLimitRationalIso_hom Aplus hAplus p hp).1.eq_iff.symm.trans
-    (presentationLimitRationalIso_map_top_apply Aplus hAplus p hp c).congr_left
-
-end Top
 
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [CompleteSpace A] [T0Space A] (P : PairOfDefinition A) {Aplus : Subring A}
-
-variable (Aplus) in
-/-- **The Laurent cover of `f`**: the rational opens `R({f, 1}/1) = {|f| ≤ 1}` (at `true`) and
-`R({1}/f) = {|f| ≥ 1}` (at `false`) of `Spa(A, A⁺)`, indexed by `Bool` so that they form one
-family. They cover the adic spectrum (`spa_subset_iUnion_laurentCover`). Since this is an
-`abbrev` for `spaBasicOpen`, the `spaBasicOpen` API (such as `mem_spaBasicOpen`) applies to it
-directly. -/
-noncomputable abbrev laurentCoverOpen (f : A) (b : Bool) : Opens ↥(spa Aplus) :=
-  spaBasicOpen Aplus (cond b ({f, 1} : Finset A) ({1} : Finset A)) (cond b 1 f)
-
-omit [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] in
-variable (Aplus) in
-/-- Each piece of the Laurent cover is a rational open: its numerators contain `1`, so they span
-the unit ideal, which is open. -/
-theorem laurentCoverOpen_mem_spaRationalOpens (f : A) (b : Bool) :
-    laurentCoverOpen Aplus f b ∈ spaRationalOpens Aplus :=
-  spaBasicOpen_mem_spaRationalOpens <| isOpen_span_of_one_mem <| by cases b <;> simp
-
-omit [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] in
-variable (Aplus) in
-/-- **The Laurent cover of `u⁻¹ g` for a unit `u`, first piece**: `{|u⁻¹ g| ≤ 1}` is
-`R({g, u}/u) = {|g| ≤ |u|}`. -/
-theorem laurentCoverOpen_inv_mul_true [DecidableEq A] (u : Aˣ) (g : A) :
-    laurentCoverOpen Aplus (↑u⁻¹ * g) true = spaBasicOpen Aplus {g, ↑u} u := by
-  ext v
-  have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
-  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.property,
-    inv_mul_le_iff₀ (pos_iff_ne_zero.mpr hu)]
-
-omit [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] in
-variable (Aplus) in
-/-- **The Laurent cover of `u⁻¹ g` for a unit `u`, second piece**: `{|u⁻¹ g| ≥ 1}` is
-`R({u}/g) = {|g| ≥ |u|}`. -/
-theorem laurentCoverOpen_inv_mul_false (u : Aˣ) (g : A) :
-    laurentCoverOpen Aplus (↑u⁻¹ * g) false = spaBasicOpen Aplus {↑u} g := by
-  ext v
-  have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
-  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.property,
-    le_inv_mul_iff₀ (pos_iff_ne_zero.mpr hu)]
 
 /-! ### Transport from the completed rational localisations -/
 
@@ -233,7 +139,7 @@ theorem injective_presentationLimitMap_laurentCoverOpen_of_injective_toCompletio
   refine .of_comp_right (fun c d hcd ↦ ?_) <|
     Function.RightInverse.surjective (asIso (toPresentationLimit Aplus ⊤)).inv_hom_id_apply
   have key (b : Bool) :=
-    ((presentationLimitMap_apply_toPresentationLimit_apply_eq_iff hAplus (p b) (hp b)).1
+    ((presentationLimitMap_apply_toPresentationLimit_apply_eq_iff Aplus hAplus (p b) (hp b)).1
       (congrFun hcd b)).trans
       (presentationLimitRationalIso_map_top_apply Aplus hAplus (p b) (hp b) d)
   exact injective_eqToHom _ <| hinj (p false).hasDenominatorPower <| Prod.ext (key true) (key false)
@@ -433,7 +339,7 @@ theorem exists_presentationLimitMap_eq_of_laurentCoverOpen_of_exact_toCompletion
   -- restricts to `x b`, since both agree after `presentationLimitRationalIso`
   obtain ⟨c, hc⟩ := exists_toCompletionLoc_eq_of_laurentCoverOpen P hAplus f hexact x hx
   exact ⟨(toPresentationLimit Aplus ⊤).hom.val c, fun b ↦
-    (presentationLimitMap_apply_toPresentationLimit_apply_eq_iff hAplus _
+    (presentationLimitMap_apply_toPresentationLimit_apply_eq_iff Aplus hAplus _
       (isOpen_span_laurentPresentation P f b)).2 (hc b)⟩
 
 /-! ### Strongly noetherian Tate rings -/

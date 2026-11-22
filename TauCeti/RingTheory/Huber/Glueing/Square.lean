@@ -34,6 +34,8 @@ automatically from algebraic exactness and continuity via Henkel's open mapping 
 
 * `TauCeti.Huber.GlueingSquare.comp_algebraMap_eq` and
   `TauCeti.Huber.GlueingSquare.algebraMap_algebraMap`: commutativity of the square.
+* `TauCeti.Huber.GlueingSquare.isOpenQuotientMap_sub`: openness of the difference quotient map
+  when `R₁` and `R₂` have continuous addition.
 * `TauCeti.Huber.GlueingSquare.of_exact`: upgrades algebraic exactness, surjectivity of the
   difference map, dense range, and maximal-ideal lifting to a full `GlueingSquare` via the open
   mapping theorem.
@@ -118,6 +120,17 @@ theorem GlueingSquare.isEmbedding (h : GlueingSquare R R₁ R₂ R₁₂) :
 theorem GlueingSquare.isQuotientMap_sub (h : GlueingSquare R R₁ R₂ R₁₂) :
     Topology.IsQuotientMap fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2 :=
   Topology.isQuotientMap_iff_isStrictMap_surjective.mpr ⟨h.isStrictMap_sub, h.surjective_sub⟩
+
+/-- In a glueing square, when `R₁` and `R₂` have continuous addition, the difference map
+`R₁ × R₂ → R₁₂` is an open quotient map. -/
+theorem GlueingSquare.isOpenQuotientMap_sub [ContinuousAdd R₁] [ContinuousAdd R₂]
+    (h : GlueingSquare R R₁ R₂ R₁₂) :
+    IsOpenQuotientMap
+      fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2 :=
+  AddMonoidHom.isOpenQuotientMap_of_isQuotientMap
+    (φ := (algebraMap R₁ R₁₂).toAddMonoidHom.comp (AddMonoidHom.fst R₁ R₂) -
+      (algebraMap R₂ R₁₂).toAddMonoidHom.comp (AddMonoidHom.snd R₁ R₂))
+    h.isQuotientMap_sub
 
 /-- Swapping `R₁` and `R₂` in a glueing square yields a glueing square as soon as
 `algebraMap R₁ R₁₂` also has dense range. Note that `DenseRange (algebraMap R₁ R₁₂)` is genuinely

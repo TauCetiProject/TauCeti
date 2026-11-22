@@ -53,7 +53,8 @@ itself an isomorphism.
   sections over a rational open are determined by their composites with the canonical map.
 * `TauCeti.ValuationSpectrum.isIso_toPresentationLimit_top` : on the whole spectrum the canonical
   map is an isomorphism.
-* `TauCeti.ValuationSpectrum.presentationLimitRationalIso_map_top_apply` : under
+* `TauCeti.ValuationSpectrum.presentationLimitRationalIso_map_top_apply` and
+  `TauCeti.ValuationSpectrum.presentationLimitMap_apply_toPresentationLimit_apply_eq_iff` : under
   `presentationLimitRationalIso`, restricting the image of an element of `A` from the whole
   spectrum to `R(p)` agrees with `toCompletionLoc`.
 * `TauCeti.ValuationSpectrum.continuous_topSectionRingEquiv` and
@@ -253,6 +254,20 @@ theorem presentationLimitRationalIso_map_top_apply
   rw [Presentation.toCompletionLocObjHom_hom]
   exact (eqToIso
     (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).hom_inv_id_apply _
+
+/-- Under `presentationLimitRationalIso`, the section of `c : A` over the whole spectrum restricts
+to `z` over `R(p)` exactly when the structure map `A → A⟨p⟩` sends `c` to the image of `z`. -/
+theorem presentationLimitMap_apply_toPresentationLimit_apply_eq_iff
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) {c : CompleteSeparatedTopCommRingCat.of A}
+    {z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den)} :
+    (presentationLimitMap le_top).hom.val ((toPresentationLimit Aplus ⊤).hom.val c) = z ↔
+      toCompletionLoc P p.num p.den _ p.hasDenominatorPower
+          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c) =
+        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z) :=
+  (bijective_presentationLimitRationalIso_hom Aplus hAplus p hp).1.eq_iff.symm.trans
+    (presentationLimitRationalIso_map_top_apply Aplus hAplus p hp c).congr_left
 
 /-- Bicontinuous ring isomorphism `presentationLimit Aplus ⊤ ≃+* A` identifying global sections
 with `A`. -/
