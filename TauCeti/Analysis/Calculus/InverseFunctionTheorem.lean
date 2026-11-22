@@ -47,6 +47,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `HasStrictFDerivAt.contDiffAt_toOpenPartialHomeomorph_symm` and
   `HasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm`: the local inverse is `C^n` at every
   point of the target, and hence on the target.
+* `OpenPartialHomeomorph.contDiffOn_symm_inter_preimage`: inverse regularity on the part of the
+  target corresponding to an open portion of the source.
 * `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
   homeomorphism from a complete normed space whose derivative is invertible on its source has a
   `C^n` inverse on its target.
@@ -180,6 +182,22 @@ theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSp
   refine (ψ.contDiffAt_symm hy (f₀' := e) ?_ hat).contDiffWithinAt
   rw [he]
   exact (hat.differentiableAt hn).hasFDerivAt
+
+/-- Regularity and invertibility on a local part of the source give inverse regularity on
+the corresponding part of the target. -/
+theorem OpenPartialHomeomorph.contDiffOn_symm_inter_preimage [CompleteSpace E] {n : ℕ∞ω}
+    (ψ : OpenPartialHomeomorph E F) {s : Set E} (hs : IsOpen s)
+    (hψ : ContDiffOn 𝕜 n ψ (ψ.source ∩ s))
+    (hinv : ∀ x ∈ ψ.source ∩ s, (fderiv 𝕜 ψ x).IsInvertible) :
+    ContDiffOn 𝕜 n ψ.symm (ψ.target ∩ ψ.symm ⁻¹' s) := by
+  have hcoe : ⇑(ψ.restr s) = ψ := ψ.restr_apply s
+  have hsource : (ψ.restr s).source = ψ.source ∩ s := ψ.restr_source' s hs
+  have hC : ContDiffOn 𝕜 n (ψ.restr s) (ψ.restr s).source := by
+    simpa only [hcoe, hsource] using hψ
+  have hInv : ∀ x ∈ (ψ.restr s).source, (fderiv 𝕜 (ψ.restr s) x).IsInvertible := by
+    simpa only [hcoe, hsource] using hinv
+  simpa only [ψ.restr_symm_apply, ψ.restr_target, hs.interior_eq] using
+    (ψ.restr s).contDiffOn_symm_of_isInvertible_fderiv hC hInv
 
 /-- A map that is `C^n` on an open set `s` and approximates a continuous linear equivalence `L`
 there with a constant less than `‖L⁻¹‖⁻¹` restricts to an open partial homeomorphism with source

@@ -56,11 +56,7 @@ covariant derivative, regarded as a section of `Hom(TM, V)` with the induced con
 theorem secondCovariantDerivative_eq_hom_apply (hσ : CMDiff ∞ (T% σ))
     (x : M) (u v : TangentSpace I x) :
     cov.secondCovariantDerivative covT σ x u v = covT.hom cov (cov σ) x u v := by
-  have hD : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] V x) x (cov σ x)) :=
-    contMDiffOn_univ.mp (ContMDiffCovariantDerivative.contMDiff.contMDiff
-      (by simpa using hσ.contMDiffOn))
+  have hD := cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)
   obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
   rw [secondCovariantDerivative_apply cov covT hσ x hY,
     hom_apply covT cov (hD.mdifferentiable (by simp) x) (hY.mdifferentiable (by simp) x)]
