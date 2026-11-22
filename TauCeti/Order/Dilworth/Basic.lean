@@ -365,22 +365,20 @@ private theorem fiber_chainPartition_reflClosure {α : Type*} (r : α → α →
       sup_parts := (Finset.sup_eq_biUnion C' id).trans hC'cov
       bot_notMem := fun h ↦ (hC' ∅ h).1.ne_empty rfl }
   let P := P'.comap (toAntisymmRefl r)
-  refine ⟨P.parts, fun c hc ↦ ⟨P.nonempty_of_mem_parts hc, ?_⟩, P.disjoint, P.biUnion_parts, ?_⟩
-  · obtain ⟨c', hc', rfl⟩ := mem_image.mp (P'.parts_comap (toAntisymmRefl r) ▸ hc)
-    intro a₁ ha₁ a₂ ha₂ hne
-    have h₁ := (mem_filter.mp (mem_coe.mp ha₁)).2
-    have h₂ := (mem_filter.mp (mem_coe.mp ha₂)).2
-    have htot : toAntisymmRefl r a₁ ≤ toAntisymmRefl r a₂ ∨
-        toAntisymmRefl r a₂ ≤ toAntisymmRefl r a₁ := by
-      rcases eq_or_ne (toAntisymmRefl r a₁) (toAntisymmRefl r a₂) with heq | hqne
-      · exact Or.inl heq.le
-      · exact (hC' c' hc').2 h₁ h₂ hqne
-    rcases htot with h | h
-    · exact Or.inl (((toAntisymmRefl_le_iff r a₁ a₂).mp h).resolve_left hne)
-    · exact Or.inr (((toAntisymmRefl_le_iff r a₂ a₁).mp h).resolve_left hne.symm)
-  · rw [Finpartition.parts_comap]
-    exact Finset.card_image_of_injOn fun c₁ hc₁ c₂ hc₂ heq ↦ by
-      rw [← P'.image_filter_mem_of_mem_parts hc₁, ← P'.image_filter_mem_of_mem_parts hc₂, heq]
+  refine ⟨P.parts, fun c hc ↦ ⟨P.nonempty_of_mem_parts hc, ?_⟩, P.disjoint, P.biUnion_parts,
+    P'.card_parts_comap⟩
+  obtain ⟨c', hc', rfl⟩ := mem_image.mp (P'.parts_comap (toAntisymmRefl r) ▸ hc)
+  intro a₁ ha₁ a₂ ha₂ hne
+  have h₁ := (mem_filter.mp (mem_coe.mp ha₁)).2
+  have h₂ := (mem_filter.mp (mem_coe.mp ha₂)).2
+  have htot : toAntisymmRefl r a₁ ≤ toAntisymmRefl r a₂ ∨
+      toAntisymmRefl r a₂ ≤ toAntisymmRefl r a₁ := by
+    rcases eq_or_ne (toAntisymmRefl r a₁) (toAntisymmRefl r a₂) with heq | hqne
+    · exact Or.inl heq.le
+    · exact (hC' c' hc').2 h₁ h₂ hqne
+  rcases htot with h | h
+  · exact Or.inl (((toAntisymmRefl_le_iff r a₁ a₂).mp h).resolve_left hne)
+  · exact Or.inr (((toAntisymmRefl_le_iff r a₂ a₁).mp h).resolve_left hne.symm)
 
 /-- **Dilworth's theorem for finite subsets of a transitive relation.** Every finite subset `s` of
 a type equipped with a transitive relation `r` (in particular, any preorder, partial order, or

@@ -881,6 +881,15 @@ theorem image_filter_mem_of_mem_parts {C : Finset β} (hC : C ∈ P.parts) :
     {x ∈ s | f x ∈ C}.image f = C :=
   filter_image.symm.trans <| filter_mem_eq_inter.trans <| inter_eq_right.2 (P.le hC)
 
+omit [DecidableEq α] in
+/-- Taking preimages in `s` along `f` is injective on the parts of a finite partition of
+`f '' s`. -/
+private theorem filter_mem_injOn_parts (P : Finpartition (s.image f)) :
+    Set.InjOn (fun C => {x ∈ s | f x ∈ C}) (P.parts : Set (Finset β)) :=
+  fun _ hC _ hD hCD => by
+    dsimp only at hCD
+    rw [← image_filter_mem_of_mem_parts hC, hCD, image_filter_mem_of_mem_parts hD]
+
 variable (f) in
 /-- The pullback along `f` of a finite partition `P` of the image `f '' s`: the partition of `s`
 whose parts are the preimages in `s` of the parts of `P`, so that two points of `s` lie in a common
@@ -910,6 +919,12 @@ theorem parts_comap (P : Finpartition (s.image f)) :
     (P.comap f).parts = P.parts.image fun C => {x ∈ s | f x ∈ C} :=
   (rfl)
 
+/-- Pulling back a finite partition of `f '' s` along `f` preserves the number of parts. -/
+@[simp]
+theorem card_parts_comap (P : Finpartition (s.image f)) :
+    #(P.comap f).parts = #P.parts := by
+  rw [parts_comap, card_image_of_injOn P.filter_mem_injOn_parts]
+
 /-- The part of the pullback `P.comap f` through a point `x` of `s` consists of the points of `s`
 whose images lie in the part of `P` through `f x`. -/
 theorem part_comap {x : α} (hx : x ∈ s) :
@@ -928,8 +943,7 @@ of their preimages `{x ∈ s | f x ∈ C}`. -/
 theorem prod_parts_comap {M : Type*} [CommMonoid M] (P : Finpartition (s.image f))
     (g : Finset α → M) :
     ∏ X ∈ (P.comap f).parts, g X = ∏ C ∈ P.parts, g {x ∈ s | f x ∈ C} :=
-  prod_image fun C hC D hD hCD => by
-    rw [← image_filter_mem_of_mem_parts hC, hCD, image_filter_mem_of_mem_parts hD]
+  prod_image fun _ hC _ hD hCD => P.filter_mem_injOn_parts hC hD hCD
 
 /-- Pulling back a finite partition `P` of `univ` along an equivalence `g`, after identifying
 `univ` with its image under `g`, moves each part of `P` along `g.symm`. -/
