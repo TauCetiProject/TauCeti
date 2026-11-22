@@ -73,6 +73,11 @@ theorem toTableau_apply {μ : YoungDiagram} (T : StandardYoungTableau μ) (c : �
 theorem ext {μ : YoungDiagram} {T U : StandardYoungTableau μ} (h : ∀ c, T c = U c) : T = U :=
   DFunLike.ext T U h
 
+/-- A standard Young tableau is determined by its underlying tableau. -/
+theorem toTableau_injective {μ : YoungDiagram} :
+    Function.Injective (toTableau : StandardYoungTableau μ → YoungTableau μ) :=
+  fun T U h => ext fun c => by rw [← toTableau_apply, h, toTableau_apply]
+
 /-- The entries of a standard Young tableau form a bijection. -/
 theorem bijective {μ : YoungDiagram} (T : StandardYoungTableau μ) :
     Function.Bijective T :=

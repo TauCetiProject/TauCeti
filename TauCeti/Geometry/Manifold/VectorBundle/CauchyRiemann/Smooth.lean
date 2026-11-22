@@ -90,7 +90,7 @@ theorem IsRealCauchyRiemannOperator.contMDiffOn_difference [VectorBundle ℝ F V
   have : ContMDiffVectorBundle n F V I := .of_le (le_self_add.trans hn)
   have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
     .of_le (le_self_add.trans hn)
-  refine Manifold.contMDiffOn_hom_of_forall_contMDiff (le_self_add.trans hn) fun τ hτ ↦ ?_
+  refine Manifold.contMDiffOn_hom_of_forall_contMDiff (le_self_add.trans hn) le_rfl fun τ hτ ↦ ?_
   have hτu : CMDiff[u] (n + 1) (T% τ) := (hτ.of_le hn).contMDiffOn
   refine ((hDs.contMDiff hτu).sub_section (hD's.contMDiff hτu)).congr fun y _ ↦ ?_
   rw [hD.difference_apply hD' ((hτ y).mdifferentiableAt (by simp)), Pi.sub_apply]

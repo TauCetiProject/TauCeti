@@ -139,11 +139,7 @@ def mooreLoopSpaceFundamentalGroupMulEquiv (hn : n ≠ 0) :
     FundamentalGroup (MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)) 1 ≃*
       Multiplicative ℤ :=
   HomotopyGroup.pi1MulEquivFundamentalGroup.symm.trans <|
-    (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) 0).trans <|
-    (HomotopyGroup.congrMulEquiv (finSuccEquiv 1)).trans <|
-    (hopfBoundaryMulEquiv v (N := Fin 1) (by simp; omega)).trans <|
-    (HomotopyGroup.homeomorphMulEquivOfEq Circle.homeomorphSphere.symm (by ext; simp)).trans <|
-    HomotopyGroup.pi1MulEquivFundamentalGroup.trans (Circle.fundamentalGroupMulEquiv 1)
+    (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) 0).trans (pi2MulEquivInt v hn)
 
 /-- The isomorphism `π₁(ΩCPⁿ) ≃* ℤ` evaluated on a class `a`: shift `a` to `π₂(CPⁿ)` by the Moore
 loop-space shift, apply the boundary map of the Hopf fibration to land in `π₁(S¹)`, and take the
@@ -157,7 +153,7 @@ theorem mooreLoopSpaceFundamentalGroupMulEquiv_apply (hn : n ≠ 0)
           (hopfBoundary v (Fin 1) (HomotopyGroup.congrEquiv (finSuccEquiv 1)
             (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) 0
               (HomotopyGroup.pi1MulEquivFundamentalGroup.symm a)))))) := by
-  simp [mooreLoopSpaceFundamentalGroupMulEquiv]
+  simp [mooreLoopSpaceFundamentalGroupMulEquiv, pi2MulEquivInt_apply]
 
 variable (v) in
 /-- **The based Hopf product realizes the splitting.** For `n ≥ 1` there is a based map

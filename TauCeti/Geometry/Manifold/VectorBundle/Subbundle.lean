@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
-public import TauCeti.Analysis.InnerProductSpace.Frame
+public import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 public import TauCeti.Topology.VectorBundle.RestrictScalars
 public import TauCeti.Topology.VectorBundle.Subbundle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup

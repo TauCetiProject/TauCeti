@@ -18,7 +18,10 @@ inclusion `ι_t : y ↦ (t, y)`, and its *time derivative* at time `t` is the sl
 `ι_t^* (L_{∂_t} α)` of the Lie derivative along the unit vector field `∂_t` of the time coordinate.
 This is the velocity of the slices: `d/dt (α_t)_y = (ι_t^* L_{∂_t} α)_y`
 (`TauCeti.hasDerivAt_mpullback_prodMk`). For a smooth form, `L_{∂_t} α` is again a smooth form,
-the time derivative `TauCeti.SmoothForm.timeDeriv`.
+the time derivative `TauCeti.SmoothForm.timeDeriv`. Slices and time derivatives commute with
+pullback along `id × f` for a smooth map `f`
+(`TauCeti.SmoothForm.mpullback_prodMk_mpullback_prodMap`,
+`TauCeti.SmoothForm.mpullback_prodMk_timeDeriv_mpullback_prodMap`).
 
 Let `X` be a jointly `C²` time-dependent vector field on a finite-dimensional manifold without
 boundary, with suspension `Z = (1, X)` on `ℝ × M`, and let `φ_{s,t}` be its time-dependent flow
@@ -67,6 +70,8 @@ how Moser's argument runs with a field cut off away from a region of interest.
 * `TauCeti.hasDerivAt_mpullback_prodMk`: the slices of `α` have velocity `ι_t^* L_{∂_t} α`.
 * `TauCeti.SmoothForm.timeDeriv`, `TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`: the
   same velocity for a smooth form, as a smooth form on `ℝ × M`.
+* `TauCeti.SmoothForm.mpullback_prodMk_timeDeriv_mpullback_prodMap`: the time derivative of the
+  pullback of a family along `id × f` is the pullback of its time derivative.
 * `TauCeti.mpullback_prodMk_mlieDerivForm_vertical`: `ι_t^* L_{(0, X)} α = L_{X_t} α_t`.
 * `TauCeti.mpullback_prodMk_mlieDerivForm_timeDependentSuspensionField`:
   `ι_t^* L_Z α = ι_t^* L_{∂_t} α + L_{X_t} α_t`.
@@ -196,6 +201,62 @@ theorem SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
       t := by
   simpa only [SmoothForm.coe_mpullback, SmoothForm.coe_timeDeriv] using
     hasDerivAt_mpullback_prodMk t x (α.mdifferentiableAt (t, x))
+
+section Pullback
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless] [TopologicalSpace M'] [ChartedSpace H' M']
+  [IsManifold I' 2 M']
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [I'.Boundaryless] in
+/-- The slices of the pullback of a family of forms along `id × f` are the pullbacks along `f` of
+the slices: `ι_t^* (id × f)^* α = f^* ι_t^* α`. -/
+theorem SmoothForm.mpullback_prodMk_mpullback_prodMap (f : M → M') (hf : ContMDiff I I' ∞ f)
+    (α : SmoothForm (𝓘(ℝ, ℝ).prod I') (ℝ × M') F k) (t : ℝ) :
+    SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
+        (SmoothForm.mpullback (Prod.map id f) (contMDiff_id.prodMap hf) α) =
+      SmoothForm.mpullback f hf
+        (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α) :=
+  SmoothForm.mpullback_mpullback_of_comp_eq (contMDiff_const.prodMk contMDiff_id)
+    (contMDiff_id.prodMap hf) hf (contMDiff_const.prodMk contMDiff_id) rfl α
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- **The time derivative commutes with pullback along `id × f`.** The slices of the time
+derivative of `(id × f)^* α` are the pullbacks along `f` of the slices of `∂_t α`. -/
+theorem SmoothForm.mpullback_prodMk_timeDeriv_mpullback_prodMap (f : M → M')
+    (hf : ContMDiff I I' ∞ f) (α : SmoothForm (𝓘(ℝ, ℝ).prod I') (ℝ × M') F k) (t : ℝ) :
+    SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
+        (SmoothForm.mpullback (Prod.map id f) (contMDiff_id.prodMap hf) α).timeDeriv =
+      SmoothForm.mpullback f hf
+        (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv) := by
+  apply Subtype.ext
+  funext x
+  set L : E →L[ℝ] E' := mfderiv I I' f x
+  have h₀ : HasDerivAt (F := E' [⋀^Fin k]→L[ℝ] F)
+      (fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).val (f x))
+      ((SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val
+        (f x)) t :=
+    α.hasDerivAt_mpullback_prodMk_timeDeriv t (f x)
+  have h := (SmoothForm.mpullback (Prod.map id f) (contMDiff_id.prodMap hf)
+    α).hasDerivAt_mpullback_prodMk_timeDeriv t x
+  -- The slices of the pullback are the slices of `α` composed with the differential of `f`.
+  have hfun : (fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id)
+      (SmoothForm.mpullback (Prod.map id f) (contMDiff_id.prodMap hf) α)).val x) =
+      ⇑(compContinuousLinearMapCLM (ι := Fin k) (F := F) L) ∘
+        fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).val
+          (f x) := by
+    funext u
+    rw [SmoothForm.mpullback_prodMk_mpullback_prodMap f hf, SmoothForm.coe_mpullback,
+      mpullback_apply_eq_compContinuousLinearMapCLM]
+    -- The sides agree by `Function.comp_apply` and `L = mfderiv f x`, up to the defeq of the
+    -- tangent space at `f x` with `E'`, which blocks rewriting with `Function.comp_apply`.
+    rfl
+  rw [hfun] at h
+  refine h.unique ?_
+  rw [SmoothForm.coe_mpullback, mpullback_apply_eq_compContinuousLinearMapCLM]
+  exact (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t h₀
+
+end Pullback
 
 variable (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
   (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))

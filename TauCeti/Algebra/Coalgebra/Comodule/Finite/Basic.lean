@@ -35,7 +35,9 @@ this identification as a linear equivalence over a commutative semiring.
   comodules.
 * `TauCeti.FGComoduleCat.isoOfLinearEquiv`: build an isomorphism from a coaction-compatible
   linear equivalence.
-* `HasZeroObject (FGComoduleCat R C)`.
+* `TauCeti.ComoduleCat.isFG_containsZero`: the zero comodule is finitely generated, so the
+  property `isFG` contains zero; Mathlib's `ObjectProperty.ContainsZero` API then gives
+  `HasZeroObject (FGComoduleCat R C)`.
 
 ## References
 

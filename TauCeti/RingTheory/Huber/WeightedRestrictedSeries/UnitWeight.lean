@@ -185,7 +185,7 @@ instance isDomain_completion_weightedRestrictedSubring_singleton [CompleteSpace 
     [IsDomain B] {u : Fin k → B} {hT : IsWeightFamily (fun i ↦ ({u i} : Set B))} :
     IsDomain (UniformSpace.Completion
       (weightedRestrictedSubring (fun i ↦ ({u i} : Set B)) hT)) :=
-  (UniformSpace.Completion.completeRingEquivSelf _).toMulEquiv.isDomain _
+  isDomain_completion_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
 
 end Uniform
 

@@ -22,7 +22,9 @@ coefficient. The moment–cumulant equation identifies this series with `C₀⁻
 `C₀(z) = C(z) - 1 = z R(z)`, so `z S(z)` is a two-sided compositional inverse of `C₀`, which
 characterizes `S`. In particular its constant coefficient is the inverse mean and
 it is a unit power series. These are formal identities over a commutative ring; they assert
-no analytic convergence. The multiplicativity `S_{ab} = S_a S_b` for free `a` and `b` is
+no analytic convergence. The identity and scalar laws `S_1(z) = 1`, `S_{c a}(z) = c⁻¹ S_a(z)`, and
+`S_{c · 1}(z) = c⁻¹` are `TauCeti.sSeries_one`, `TauCeti.sSeries_smul`, and
+`TauCeti.sSeries_algebraMap`; the multiplicativity `S_{ab} = S_a S_b` for free `a` and `b` is
 `TauCeti.IsFreelyIndependent.sSeries_mul`.
 
 The definition also makes sense without normalization, following the convention for
@@ -171,33 +173,40 @@ theorem sSeries_congr {B : Type*} [Monoid B] {ψ : B → R} {b : B}
   congr 1
   exact congrArg (· - 1) h
 
+/-- The formal S-series of the identity element `1` for a normalised `φ` is `1`. -/
+@[simp]
+theorem sSeries_one (hφ : φ 1 = 1) (h1 : IsUnit (φ 1)) :
+    sSeries φ (1 : A) h1 = 1 :=
+  (eq_sSeries_of_subst_X_mul_eq (1 : A) hφ h1 (by rw [freeCumulantSeries_one hφ]; simp)).symm
+
 end Monoid
 
 section Algebra
 
 variable [Semiring A] [Algebra R A] {φ : A →ₗ[R] R}
 
+/-- Rescaling a variable `a` of unit mean by a unit scalar `c` scales its formal S-series by the
+inverse of `c`: `S_{c a}(z) = c⁻¹ S_a(z)`. -/
+theorem sSeries_smul (hφ : φ 1 = 1) {a : A} (ha : IsUnit (φ a)) {c : R} (hc : IsUnit c) :
+    sSeries φ (c • a) (by simpa [smul_eq_mul] using hc.mul ha) =
+      Ring.inverse c • sSeries φ a ha := by
+  apply (eq_sSeries_of_subst_X_mul_eq (c • a) hφ _ ?_).symm
+  have h1 : freeCumulantSeries φ (c • a) - 1 = (freeCumulantSeries φ a - 1).subst (c • X) := by
+    rw [← rescale_eq_subst, map_sub, map_one, ← freeCumulantSeries_smul]
+  have hX : HasSubst (X * (Ring.inverse c • sSeries φ a ha)) := .of_constantCoeff_zero' (by simp)
+  rw [h1, subst_comp_subst_apply (.smul_X' c) hX, subst_smul hX, subst_X hX]
+  simp [smul_smul, Ring.mul_inverse_cancel c hc,
+    freeCumulantSeries_sub_one_subst_X_mul_sSeries a hφ ha]
+
 /-- A scalar variable of unit value has the constant S-series given by its inverse. -/
 @[simp]
 theorem sSeries_algebraMap (hφ : φ 1 = 1) (c : R) (hc : IsUnit c) :
     sSeries φ (algebraMap R A c) (by simpa [Algebra.algebraMap_eq_smul_one, hφ] using hc) =
       C (Ring.inverse c) := by
-  have hC : freeCumulantSeries φ (algebraMap R A c) - 1 = C c * X := by
-    ext (_ | _ | n)
-    · simp
-    · simp [Algebra.algebraMap_eq_smul_one, hφ]
-    · have hz := freeCumulant_add_algebraMap (s := Finset.univ) φ (fun _ : Fin (n + 2) => 0) hφ
-        (fun _ => c) (by simp)
-      have hz' : freeCumulant φ (fun _ : Fin (n + 2) => algebraMap R A c) Finset.univ = 0 := by
-        simpa only [zero_add] using hz.trans
-          ((freeCumulantMultilinear_apply φ _).symm.trans
-            ((freeCumulantMultilinear φ).map_coord_zero (0 : Fin (n + 2)) rfl))
-      simp [coeff_freeCumulantSeries, hz', coeff_succ_mul_X]
-  apply (eq_sSeries_of_subst_X_mul_eq (algebraMap R A c) hφ _ ?_).symm
-  rw [hC, subst_mul (.of_constantCoeff_zero' (by simp)), subst_C,
-    subst_X (.of_constantCoeff_zero' (by simp))]
-  rw [← C_apply, mul_left_comm]
-  simp [← map_mul, Ring.mul_inverse_cancel c hc]
+  refine (sSeries_congr _ _ _
+    (congrArg (momentSeries φ) (Algebra.algebraMap_eq_smul_one c))).trans
+    ((sSeries_smul hφ (hφ ▸ isUnit_one) hc).trans ?_)
+  rw [sSeries_one hφ, Algebra.smul_def, mul_one, algebraMap_eq]
 
 end Algebra
 

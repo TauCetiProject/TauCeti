@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Reindexing sequences in `ℓᵖ`
@@ -22,8 +23,9 @@ reindexing yields a norm-preserving additive equivalence between `ℓᵖ(ι, G)`
 (`LinearIsometryEquiv.lpCongrLeft`). Shifts of a sequence indexed
 by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
-(`TauCeti.memℓp_nat_add_iff`). Two sequences indexed by `ℕ` in `ℓᵖ` can be interleaved into a
-single one, `f 0, g 0, f 1, g 1, …` (`Memℓp.interleave`).
+(`TauCeti.memℓp_nat_add_iff`), with no larger norm (`lp.norm_le_of_forall_eq_nat_add`). Two
+sequences indexed by `ℕ` in `ℓᵖ` can be interleaved into a single one, `f 0, g 0, f 1, g 1, …`
+(`Memℓp.interleave`).
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -150,6 +152,13 @@ theorem memℓp_nat_add_iff {f : ℕ → G} (d : ℕ) : Memℓp (fun j ↦ f (j 
 
 end TauCeti
 
+/-- **Dropping the first terms does not increase the norm.** A sequence in `ℓᵖ` that reads `f`
+shifted by `d` has norm at most `‖f‖`. -/
+theorem lp.norm_le_of_forall_eq_nat_add {f f' : lp (fun _ : ℕ ↦ G) p} (d : ℕ)
+    (h : ∀ j, f' j = f (j + d)) : ‖f'‖ ≤ ‖f‖ :=
+  lp.norm_le_of_forall_eq_indicator_comp (g := fun j ↦ j + d) (s := Set.univ)
+    (fun _ _ _ _ hab ↦ Nat.add_right_cancel hab) fun j ↦ by simp [h j]
+
 /-- **Window sums in `ℓᵖ`.** If `f ∈ ℓᵖ`, then so is `j ↦ ∑_{j - L ≤ k < j + L} f k`. -/
 theorem Memℓp.sum_Ico_sub_add {f : ℕ → G} (hf : Memℓp f p) (L : ℕ) :
     Memℓp (fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), f k) p := by
@@ -226,14 +235,15 @@ theorem lp.exists_hasSum_and_norm_le_of_summable [Fact (1 ≤ p)] [CompleteSpace
   have hT (d : ℤ) : ‖T d‖ ≤ c * ‖x‖ * a d := by
     -- Compare with the real sequence of the norms of `z d`.
     have had := ha0 d
-    set n : lp (fun _ : ℕ ↦ ℝ) p := ⟨fun j ↦ ‖(z d : ℕ → G) j‖, (lp.memℓp (z d)).norm⟩
+    set n := lp.normSeq (z d)
     calc ‖T d‖ ≤ ‖(c * a d) • n‖ := lp.norm_mono hp fun j ↦ by
-          rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, Real.norm_of_nonneg (by positivity)]
+          rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, lp.normSeq_apply,
+            Real.norm_of_nonneg (by positivity)]
           exact ht d j
       _ ≤ c * a d * ‖x‖ := by
           rw [lp.norm_const_smul hp, Real.norm_of_nonneg (by positivity)]
           gcongr
-          exact (lp.norm_mono hp fun j ↦ (norm_norm _).le).trans (hz d)
+          exact (lp.norm_normSeq _).le.trans (hz d)
       _ = _ := by ring
   have hTs : Summable T := Summable.of_norm_bounded (ha.mul_left (c * ‖x‖)) hT
   refine ⟨∑' d, T d, fun j ↦ ?_, ?_⟩

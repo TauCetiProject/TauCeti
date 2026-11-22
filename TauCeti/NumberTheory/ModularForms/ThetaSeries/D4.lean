@@ -35,8 +35,8 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 
 ## Main statements
 
-* `TauCeti.IntegralLattice.nebentypus_realModel_checkerboardLattice_four`: the nebentypus of `D₄`
-  is trivial.
+* `TauCeti.IntegralLattice.nebentypus_realModel_checkerboardLattice_four`: the nebentypus of the
+  real model of `D₄` is trivial.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0`:
   `Θ_{D₄} ∣[2] A = Θ_{D₄}` for every `A ∈ Γ₀(2)`.
 * `TauCeti.IntegralLattice.thetaFormRealModelCheckerboardLatticeFour_eq_neg_correctedE2`,
@@ -64,6 +64,7 @@ namespace TauCeti.IntegralLattice
 
 /-- The nebentypus of the real model of `D₄` is trivial, since its signed discriminant `4` is a
 square. -/
+@[simp]
 theorem nebentypus_realModel_checkerboardLattice_four (R : Type*) [CommRing R] [NeZero (2 : R)] :
     ((isEven_realModel_iff _ (isPosDef_checkerboardLattice 4)).mpr
       (isEven_checkerboardLattice 4)).nebentypus R ⟨2, by simp [finrank_carrier]⟩ = 1 :=

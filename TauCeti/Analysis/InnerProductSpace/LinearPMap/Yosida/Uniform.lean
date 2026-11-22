@@ -99,12 +99,7 @@ theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
     intro y hy
     have hconv := ((hA.tendsto_symmetricYosidaApproximation_apply ⟨y, hy⟩).mono_left
       atTop_le_cocompact).comp (tendsto_natCast_atTop_atTop.comp tendsto_PNat_val_atTop_atTop)
-    have hzero : Tendsto (fun p : ℕ+ × ℕ+ => K * dist
-        (A.symmetricYosidaApproximation (p.1 : ℝ) y)
-        (A.symmetricYosidaApproximation (p.2 : ℝ) y)) (atTop ×ˢ atTop) (𝓝 0) := by
-      simpa only [Function.comp_apply, dist_self, mul_zero] using tendsto_const_nhds.mul
-        ((hconv.comp tendsto_fst).dist (hconv.comp tendsto_snd))
-    apply uniformCauchySeqOn_of_dist_le hzero
+    apply uniformCauchySeqOn_of_dist_le_mul_dist hconv K
     exact Filter.Eventually.of_forall fun p t ht => by
       have htK : |t| ≤ K := le_trans ht
         (le_trans (le_max_left R 0) (by dsimp [K]; linarith))

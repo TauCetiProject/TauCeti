@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.Pseudo.Basic
+import Mathlib.Topology.Algebra.Ring.Real
+import Mathlib.Topology.MetricSpace.Pseudo.Constructions
 
 /-!
 # Uniform convergence and uniform Cauchy criteria from distance bounds
@@ -49,6 +51,17 @@ theorem uniformCauchySeqOn_of_dist_le {u : ι × ι → ℝ} (hu : Tendsto u (l 
   filter_upwards [h, Metric.tendsto_nhds.1 hu ε hε] with p hp hpu x hx
   rw [Real.dist_eq, sub_zero] at hpu
   exact hεV ((hp x hx).trans_lt ((le_abs_self _).trans_lt hpu))
+
+/-- A family whose pairwise distances are controlled by a constant times those of a
+convergent family is uniformly Cauchy. -/
+theorem uniformCauchySeqOn_of_dist_le_mul_dist {γ : Type*} [PseudoMetricSpace γ]
+    {a : ι → γ} {z : γ} (ha : Tendsto a l (𝓝 z)) (C : ℝ)
+    (h : ∀ᶠ p in l ×ˢ l, ∀ x ∈ s,
+      dist (F p.1 x) (F p.2 x) ≤ C * dist (a p.1) (a p.2)) :
+    UniformCauchySeqOn F l s := by
+  apply uniformCauchySeqOn_of_dist_le (u := fun p => C * dist (a p.1) (a p.2)) ?_ h
+  simpa only [Function.comp_apply, dist_self, mul_zero] using tendsto_const_nhds.mul
+    ((ha.comp tendsto_fst).dist (ha.comp tendsto_snd))
 
 /-- If `F` converges uniformly to `f` on `s`, and eventually along `l` the distance between `F i`
 and `G i` on `s` is at most `u i` with `u → 0`, then `G` also converges uniformly to `f` on `s`. -/

@@ -37,29 +37,6 @@ namespace ContinuousLinearMap
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-/-- The native bounded-semigroup comparison at nonnegative times, after scalar restriction. -/
-private theorem norm_exp_smul_I_sub_exp_smul_I_apply_le_of_nonneg {Sm Sn : H →L[ℂ] H}
-    (hm : IsSelfAdjoint Sm) (hn : IsSelfAdjoint Sn) (hcomm : Commute Sm Sn)
-    {t : ℝ} (ht : 0 ≤ t) (ψ : H) :
-    ‖exp (t • (I • Sm)) ψ - exp (t • (I • Sn)) ψ‖ ≤
-      t * ‖(I • Sm - I • Sn) ψ‖ := by
-  have hexp (S : H →L[ℂ] H) (u : ℝ) :
-      exp (u • (I • S).restrictScalars ℝ) =
-        (exp (u • (I • S))).restrictScalars ℝ := by
-    simpa only [Complex.coe_smul] using
-      Semigroups.StronglyContinuousGroup.restrictScalars_exp (I • S) u
-  have hbound (S : H →L[ℂ] H) (hS : IsSelfAdjoint S) (u : ℝ) (_hu : 0 ≤ u) :
-      ‖exp (u • (I • S).restrictScalars ℝ)‖ ≤ (1 : ℝ) := by
-    rw [hexp, norm_restrictScalars]
-    exact Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le S hS u
-  have hc : Commute ((I • Sm).restrictScalars ℝ) ((I • Sn).restrictScalars ℝ) := by
-    ext x
-    exact congrArg (fun C : H →L[ℂ] H => C x) ((hcomm.smul_left I).smul_right I).eq
-  have h := Semigroups.norm_exp_smul_sub_exp_smul_apply_le_of_commute
-    ((I • Sm).restrictScalars ℝ) ((I • Sn).restrictScalars ℝ) hc
-    (hbound Sm hm) (hbound Sn hn) ht ψ
-  simpa only [one_mul, hexp, sub_apply, ContinuousLinearMap.coe_restrictScalars'] using h
-
 /-- **The Duhamel estimate.**  For commuting skew-adjoint generators the two
 unitary flows differ by at most `|t|` times the difference of the generators. -/
 theorem norm_exp_smul_I_sub_exp_smul_I_apply_le {Sm Sn : H →L[ℂ] H}
@@ -67,14 +44,25 @@ theorem norm_exp_smul_I_sub_exp_smul_I_apply_le {Sm Sn : H →L[ℂ] H}
     (t : ℝ) (ψ : H) :
     ‖exp (t • (I • Sm)) ψ - exp (t • (I • Sn)) ψ‖
       ≤ |t| * ‖(I • Sm - I • Sn) ψ‖ := by
-  by_cases ht : 0 ≤ t
-  · simpa only [abs_of_nonneg ht] using
-      norm_exp_smul_I_sub_exp_smul_I_apply_le_of_nonneg hm hn hcomm ht ψ
-  · have h := norm_exp_smul_I_sub_exp_smul_I_apply_le_of_nonneg hm.neg hn.neg
-      (hcomm.neg_left.neg_right) (by linarith : 0 ≤ -t) ψ
-    simp only [smul_neg, neg_smul, neg_neg, neg_sub_neg, sub_apply] at h ⊢
-    rw [norm_sub_rev ((I • Sn) ψ) ((I • Sm) ψ)] at h
-    simpa only [abs_of_neg (lt_of_not_ge ht)] using h
+  have hexp (S : H →L[ℂ] H) (s : ℝ) :
+      exp (s • (t • (I • S)).restrictScalars ℝ) =
+        (exp ((s * t) • (I • S))).restrictScalars ℝ := by
+    rw [Semigroups.StronglyContinuousGroup.restrictScalars_exp]
+    simp only [Complex.coe_smul, smul_smul]
+  have hbound (S : H →L[ℂ] H) (hS : IsSelfAdjoint S) (s : ℝ) (_hs : 0 ≤ s) :
+      ‖exp (s • (t • (I • S)).restrictScalars ℝ)‖ ≤ (1 : ℝ) := by
+    rw [hexp, norm_restrictScalars]
+    exact Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le S hS (s * t)
+  have hc : Commute ((t • (I • Sm)).restrictScalars ℝ) ((t • (I • Sn)).restrictScalars ℝ) := by
+    ext x
+    exact congrArg (fun C : H →L[ℂ] H => C x)
+      ((((hcomm.smul_left I).smul_right I).smul_left t).smul_right t).eq
+  have h := Semigroups.norm_exp_smul_sub_exp_smul_apply_le_of_commute
+    ((t • (I • Sm)).restrictScalars ℝ) ((t • (I • Sn)).restrictScalars ℝ) hc
+    (hbound Sm hm) (hbound Sn hn) (by norm_num : (0 : ℝ) ≤ 1) ψ
+  simpa only [one_mul, hexp, ← smul_sub, sub_apply, coe_restrictScalars', smul_apply,
+    norm_smul, Real.norm_eq_abs] using h
+
 
 
 end ContinuousLinearMap
