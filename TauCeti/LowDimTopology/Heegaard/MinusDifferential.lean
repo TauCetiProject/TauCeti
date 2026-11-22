@@ -175,6 +175,13 @@ theorem hatDomains_subset_minusDomains : H.hatDomains χ x y ⊆ H.minusDomains 
   rw [hatDomains_eq_setOf_mem_minusDomains]
   exact Set.sep_subset _ _
 
+/-- The domains counted by the minus differential do not involve the basepoints. -/
+@[simp]
+theorem minusDomains_withBasepoints {B : Type*} (b : B → Region) :
+    (H.withBasepoints b).minusDomains χ x y = H.minusDomains χ x y := by
+  ext D
+  simp only [mem_minusDomains_iff, isDomainBetween_withBasepoints, maslovIndex_withBasepoints]
+
 /-- In a singly pointed diagram of a closed surface of genus `n` that is strongly admissible at
 `y`, only finitely many domains are counted by the minus differential from any generator to `y`,
 whatever their multiplicity at the basepoint. -/
