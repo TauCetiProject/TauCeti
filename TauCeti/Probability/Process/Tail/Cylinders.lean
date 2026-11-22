@@ -98,6 +98,7 @@ theorem cylinderEventsTail_le_pi : cylinderEventsTail X ≤ MeasurableSpace.pi :
   (cylinderEventsTail_le ∅).trans cylinderEvents_le_pi
 
 /-- On a finite product the tail σ-algebra is trivial. -/
+@[simp]
 theorem cylinderEventsTail_eq_bot [Finite ι] : cylinderEventsTail X = ⊥ := by
   have := Fintype.ofFinite ι
   refine le_bot_iff.1 ((cylinderEventsTail_le Finset.univ).trans ?_)
@@ -161,6 +162,7 @@ variable {Γ : Type*} [Group Γ] [MulAction Γ I]
 
 /-- Let `Γ` act on configurations by `(γ • ω) i = ω (γ⁻¹ • i)`. Pulling the tail σ-algebra back
 along `ω ↦ γ • ω` gives the tail σ-algebra again. -/
+@[simp]
 theorem comap_inv_smul_cylinderEventsTail (γ : Γ) :
     MeasurableSpace.comap (fun (ω : I → S) i => ω (γ⁻¹ • i)) (cylinderEventsTail (fun _ : I => S)) =
       cylinderEventsTail (fun _ : I => S) := by

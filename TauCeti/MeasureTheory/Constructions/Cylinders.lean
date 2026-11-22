@@ -56,7 +56,7 @@ theorem mem_of_measurableSet_cylinderEvents {Δ : Set ι} {A : Set (∀ i, X i)}
     cylinderEvents_le_iff.2 fun i hi =>
       (measurable_pi_apply (⟨i, hi⟩ : Δ)).comp (comap_measurable Δ.domRestrict)
   obtain ⟨B, -, rfl⟩ := hle A hA
-  have : Δ.domRestrict ω' = Δ.domRestrict ω := funext fun i => h i i.2
+  have : Δ.domRestrict ω' = Δ.domRestrict ω := funext fun i => h i i.property
   simpa [Set.mem_preimage, this] using hω
 
 end Coordinates
@@ -66,12 +66,22 @@ section Action
 variable {I J S : Type*} [MeasurableSpace S]
 
 /-- Precomposition with `f : I → J` pulls the σ-algebra of the coordinates in `Δ ⊆ I` back to
-the σ-algebra of the coordinates in `f '' Δ`. -/
-theorem comap_comp_cylinderEvents (f : I → J) (Δ : Set I) :
-    MeasurableSpace.comap (fun ω : J → S => ω ∘ f) (cylinderEvents Δ) =
+the σ-algebra of the coordinates in `f '' Δ`, for a product of possibly different spaces
+`X j`. -/
+theorem comap_comp_cylinderEvents_pi {X : J → Type*} [∀ j, MeasurableSpace (X j)] (f : I → J)
+    (Δ : Set I) :
+    MeasurableSpace.comap (fun (ω : ∀ j, X j) i => ω (f i))
+        (cylinderEvents (X := fun i => X (f i)) Δ) =
       cylinderEvents (f '' Δ) := by
   simp only [cylinderEvents, MeasurableSpace.comap_iSup, MeasurableSpace.comap_comp, iSup_image]
   rfl
+
+/-- Precomposition with `f : I → J` pulls the σ-algebra of the coordinates in `Δ ⊆ I` back to
+the σ-algebra of the coordinates in `f '' Δ`. -/
+theorem comap_comp_cylinderEvents (f : I → J) (Δ : Set I) :
+    MeasurableSpace.comap (fun ω : J → S => ω ∘ f) (cylinderEvents Δ) =
+      cylinderEvents (f '' Δ) :=
+  comap_comp_cylinderEvents_pi (X := fun _ => S) f Δ
 
 variable {Γ : Type*} [Group Γ] [MulAction Γ I]
 
