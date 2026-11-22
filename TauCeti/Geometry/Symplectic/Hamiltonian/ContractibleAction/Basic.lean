@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # The action functional on contractible loops of a weakly exact manifold
@@ -16,8 +17,9 @@ coordinate `t`, with `w (0, ·) = γ₀` and `w (1, ·) = γ₁`. Cylinders comp
 (`TauCeti.IsLoopCylinder.trans`, by `TauCeti.rectangleTrans`) and reverse
 (`TauCeti.IsLoopCylinder.symm`), and their images under `C²` maps are cylinders
 (`TauCeti.IsLoopCylinder.comp`). A **cap** of `γ` (`TauCeti.IsCap`) is a cylinder from `γ` to a
-constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. A cylinder between two
-constant loops is a **sphere**.
+constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. Every `C²` map of the
+plane, read in polar coordinates on the closed unit disc, caps its boundary loop
+(`TauCeti.isLoopCylinder_comp_polar`). A cylinder between two constant loops is a **sphere**.
 
 The integral `∫ w^* φ` of a two-form `φ` over a cylinder is `TauCeti.rectangleIntegral φ w (0, 0)
 (1, 1)`, oriented by the coordinates `(s, t)`.
@@ -157,6 +159,17 @@ variable {w w₁ w₂ : ℝ × ℝ → M} {γ₀ γ₁ γ₂ : ℝ → M}
 theorem isCap {x : M} (hw : IsLoopCylinder I w γ₀ fun _ ↦ x) : IsCap I w γ₀ :=
   ⟨x, hw⟩
 
+/-- The initial loop of a cylinder is `1`-periodic. -/
+theorem periodic_left (hw : IsLoopCylinder I w γ₀ γ₁) : Function.Periodic γ₀ 1 := fun t ↦ by
+  rw [← hw.apply_zero, ← hw.apply_zero]
+  exact hw.apply_add_one (0, t)
+
+/-- The initial loop of a cylinder is `C²`. -/
+theorem contMDiff_left (hw : IsLoopCylinder I w γ₀ γ₁) : ContMDiff 𝓘(ℝ) I 2 γ₀ := by
+  have h : γ₀ = w ∘ fun t ↦ (0, t) := funext fun t ↦ (hw.apply_zero t).symm
+  rw [h]
+  exact hw.contMDiff.comp (contDiff_const.prodMk contDiff_id).contMDiff
+
 /-- The concatenation of a cylinder from `γ₀` to `γ₁` and a cylinder from `γ₁` to `γ₂` is a
 cylinder from `γ₀` to `γ₂`. -/
 theorem trans (hw₁ : IsLoopCylinder I w₁ γ₀ γ₁) (hw₂ : IsLoopCylinder I w₂ γ₁ γ₂) :
@@ -176,6 +189,19 @@ theorem symm (hw : IsLoopCylinder I w γ₀ γ₁) :
   apply_zero t := by simp [hw.apply_one]
   apply_one t := by simp [hw.apply_zero]
 
+/-- Reversing the second coordinate of a cylinder from `γ₀` to `γ₁` gives a cylinder from the
+reversed loop `t ↦ γ₀ (1 - t)` to the reversed loop `t ↦ γ₁ (1 - t)`. -/
+theorem comp_prodMap_id_one_sub (hw : IsLoopCylinder I w γ₀ γ₁) :
+    IsLoopCylinder I (w ∘ Prod.map id (fun t ↦ 1 - t)) (fun t ↦ γ₀ (1 - t))
+      (fun t ↦ γ₁ (1 - t)) where
+  contMDiff := hw.contMDiff.comp (contDiff_id.prodMap (contDiff_const.sub contDiff_id)).contMDiff
+  apply_add_one z := by
+    obtain ⟨s, t⟩ := z
+    simp only [Function.comp_apply, Prod.map_apply, id_eq]
+    rw [show 1 - (t + 1) = -t by ring, ← neg_add_eq_sub, hw.apply_add_one (s, -t)]
+  apply_zero t := by simp [hw.apply_zero]
+  apply_one t := by simp [hw.apply_one]
+
 /-- The image of a cylinder from `γ₀` to `γ₁` under a `C²` map `f` is a cylinder from `f ∘ γ₀` to
 `f ∘ γ₁`. -/
 theorem comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -186,6 +212,16 @@ theorem comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [To
   apply_add_one z := congrArg f (hw.apply_add_one z)
   apply_zero t := congrArg f (hw.apply_zero t)
   apply_one t := congrArg f (hw.apply_one t)
+
+/-- Rotating a cylinder from `γ₀` to `γ₁` in its circle coordinate, `z ↦ w (z + (0, θ))`, gives a
+cylinder from the rotated loop `t ↦ γ₀ (t + θ)` to the rotated loop `t ↦ γ₁ (t + θ)`. -/
+theorem comp_add_snd (hw : IsLoopCylinder I w γ₀ γ₁) (θ : ℝ) :
+    IsLoopCylinder I (fun z ↦ w (z + (0, θ))) (fun t ↦ γ₀ (t + θ)) (fun t ↦ γ₁ (t + θ)) where
+  contMDiff := hw.contMDiff.comp (contDiff_id.add contDiff_const).contMDiff
+  apply_add_one := fun ⟨s, t⟩ ↦ by
+    simpa only [Prod.mk_add_mk, add_zero, add_right_comm t 1 θ] using hw.apply_add_one (s, t + θ)
+  apply_zero t := by simpa only [Prod.mk_add_mk, add_zero] using hw.apply_zero (t + θ)
+  apply_one t := by simpa only [Prod.mk_add_mk, add_zero] using hw.apply_one (t + θ)
 
 end IsLoopCylinder
 
@@ -200,6 +236,21 @@ theorem isLoopCylinder_comp_prodMap {w : ℝ × ℝ → M} (hwc : ContMDiff 𝓘
   apply_add_one z := hper (s + (s₀ - s) * z.1, z.2)
   apply_zero t := by simp
   apply_one t := by simp
+
+open Real in
+/-- **Every disc is a cap of its boundary loop.** For a `C²` map `u` of the plane, the map
+`(s, t) ↦ u ((1 - s) cos 2πt, (1 - s) sin 2πt)`, which runs over the closed unit disc in polar
+coordinates, is a cylinder from the boundary loop `t ↦ u (cos 2πt, sin 2πt)` to the constant loop
+at the centre `u 0`; in particular it is a cap of the boundary loop. -/
+theorem isLoopCylinder_comp_polar {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) :
+    IsLoopCylinder I (fun z ↦ u ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2)))
+      (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) fun _ ↦ u 0 where
+  contMDiff := hu.comp (by fun_prop : ContDiff ℝ 2 fun z : ℝ × ℝ ↦
+    ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2))).contMDiff
+  apply_add_one z := by simp only [mul_add, mul_one, cos_add_two_pi, sin_add_two_pi]
+  apply_zero t := by simp
+  apply_one t := by simp [← Prod.mk_zero_zero]
 
 /-! ### Weakly exact forms and the cap area -/
 

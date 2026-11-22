@@ -93,9 +93,9 @@ example (p : ℕ) [Fact p.Prime] :
     ext u
     simp only [SetLike.mem_coe, Set.mem_preimage, Set.mem_prod, Set.mem_singleton_iff,
       Ideal.span_singleton_pow, Ideal.mem_span_singleton, _root_.PadicInt.maximalIdeal_eq_span_p]
-    have hπ : (π ^ (n + 1)).1 = ((p : ℤ_[p]) ^ (n + 1), (0 : B)) := by
+    have hπ : (π ^ (n + 1)).val = ((p : ℤ_[p]) ^ (n + 1), (0 : B)) := by
       ext <;> simp [π, zero_pow (Nat.succ_ne_zero n)]
-    refine ⟨fun ⟨c, hc⟩ ↦ ⟨⟨c.1.1, by simp [hc, Subring.coe_mul, hπ]⟩,
+    refine ⟨fun ⟨c, hc⟩ ↦ ⟨⟨c.val.1, by simp [hc, Subring.coe_mul, hπ]⟩,
       by simp [hc, Subring.coe_mul, hπ]⟩, fun ⟨⟨q, hq⟩, hu2⟩ ↦ ?_⟩
     exact ⟨⟨(q, 0), ⟨trivial, (⊥ : Subring B).zero_mem⟩⟩, Subtype.ext <| Prod.ext
       (by simp [Subring.coe_mul, hπ, hq]) (by simp [Subring.coe_mul, hπ, hu2])⟩
@@ -106,7 +106,7 @@ example (p : ℕ) [Fact p.Prime] :
       · simp
       · rw [hpow n]
         exact ((IsLocalRing.isOpen_maximalIdeal_pow ℤ_[p] _).prod
-          (isOpen_discrete ({0} : Set B))).preimage continuous_subtype_val
+          (isOpen_discrete ({0} : Set B))).preimage continuous_subtypeVal
     · rw [nhds_subtype_eq_comap, Filter.mem_comap] at hs
       obtain ⟨t, ht, hts⟩ := hs
       rw [nhds_prod_eq, Filter.mem_prod_iff] at ht

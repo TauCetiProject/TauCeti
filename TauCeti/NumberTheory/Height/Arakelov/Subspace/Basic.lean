@@ -60,6 +60,8 @@ the plane in `ℚ³` orthogonal to `(1, 2, 2)` has absolute height `3`, the Eucl
 * `Submodule.relativeSubspaceArakelovHeight_euclideanDual` and
   `Submodule.subspaceHeight_euclideanDual`: the orthogonal complement of `U` for the dot product
   has the height of `U`, with their logarithmic forms.
+* `Matrix.subspaceHeight_ker_mulVecLin`: Hodge duality for matrices, equating the absolute
+  Euclidean height of `ker A` with that of the row space of `A`.
 * `Submodule.finite_subspaceHeight_le`, `Submodule.instNorthcottSubspaceHeight` and
   `Submodule.instNorthcottSubspaceLogHeight`: Northcott's theorem for the absolute height.
 
@@ -254,7 +256,7 @@ theorem relativeSubspaceArakelovHeight_euclideanDual [Fintype ι] :
   obtain ⟨c, hc, h⟩ :=
     exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
     b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
-    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
+    fun i j ↦ mem_euclideanDual.1 (b' j).property _ (b i).property
   rw [relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b',
     relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b,
     arakelovMulHeight_eq_of_forall_eq_or_eq_neg h]
@@ -458,6 +460,25 @@ instance instNorthcottSubspaceLogHeight : Northcott (subspaceLogHeight (ι := ι
     bddAbove_def.mpr ⟨Real.exp B, fun _ ↦ Real.le_exp_of_log_le⟩
 
 end Submodule
+
+namespace Matrix
+
+open Submodule
+
+variable {m ι K : Type*} [LinearOrder ι] [Fintype ι] [Field K] [NumberField K]
+
+/-- **Hodge duality for matrix kernels.** The absolute Euclidean height of `ker A` equals the
+absolute Euclidean height of the row space of `A`, without any rank assumption on `A`. -/
+theorem subspaceHeight_ker_mulVecLin (A : Matrix m ι K) :
+    (LinearMap.ker A.mulVecLin).subspaceHeight = (span K (Set.range A.row)).subspaceHeight := by
+  rw [← subspaceHeight_euclideanDual (span K (Set.range A.row))]
+  congr 1
+  ext x
+  rw [LinearMap.mem_ker, mulVecLin_apply, mem_euclideanDual_span]
+  simp only [Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
+  simp only [funext_iff, mulVec_apply, Pi.zero_apply]
+
+end Matrix
 
 /-! Over `ℚ` there are finitely many subspaces of bounded relative logarithmic Arakelov height. -/
 

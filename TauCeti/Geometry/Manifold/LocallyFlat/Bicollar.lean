@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.HasGroupoid
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.CoordinateBall
 
 /-!
 # Locally flat embeddings are locally bicollared
@@ -68,6 +71,8 @@ eliminate them downstream.
   the complement of the image inside the collar.
 * `TauCeti.IsBicollared.exists_isOpen_sdiff_range_eq_union`: a bicollared map with nonempty
   domain is two-sided.
+* `TauCeti.isBicollared_prodMkRight_of_finrank_eq_one`: a point fiber `Prod.mk x₀ : Y → X × Y` in
+  a product with a 1-manifold `X` is globally bicollared.
 * `TauCeti.IsLocallyBicollared.restrict`, `TauCeti.IsLocallyBicollared.isOpenEmbedding_comp`, and
   `TauCeti.IsLocallyBicollared.comp_homeomorph`: the local predicate's basic closure API.
 
@@ -162,6 +167,12 @@ theorem preimage_range (h : IsBicollar f b) : b ⁻¹' range f = univ ×ˢ ({0} 
   refine ⟨fun ⟨z, hz⟩ => ?_, fun ht => ⟨y, ht ▸ (h.apply_zero y).symm⟩⟩
   have hb : b (z, 0) = b (y, t) := by rw [h.apply_zero z, ← hz]
   exact ((Prod.ext_iff.1 (h.isOpenEmbedding.injective hb)).2).symm
+
+/-- A point of a bicollar lies in the collared image exactly at depth zero. -/
+theorem apply_mem_range_iff (h : IsBicollar f b) {p : N × ℝ} :
+    b p ∈ range f ↔ p.2 = 0 := by
+  simpa only [mem_preimage, mem_prod, mem_univ, true_and, mem_singleton_iff] using
+    Set.ext_iff.mp h.preimage_range p
 
 /-- Inside a bicollar the complement of the collared image splits into the two sides `t > 0` and
 `t < 0` of the collar. This is what makes the collar two-sided, and it is exactly what fails for
@@ -261,6 +272,27 @@ theorem isBicollar_prodMkLeft : IsBicollar (fun x : N => (x, (0 : ℝ))) id wher
   isOpenEmbedding := IsOpenEmbedding.id
   apply_zero _ := rfl
 
+/-- **A point fiber in a product with a 1-manifold is globally bicollared.** For any `x₀ : X` in a
+topological space `X` charted on a one-dimensional real normed space `H` (`Module.finrank ℝ H = 1`)
+and any topological space `Y`, the fiber inclusion `Prod.mk x₀ : Y → X × Y` admits a global
+bicollar. -/
+theorem isBicollared_prodMkRight_of_finrank_eq_one {X Y H : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [ChartedSpace H X]
+    (hH : Module.finrank ℝ H = 1) (x₀ : X) :
+    IsBicollared (Prod.mk x₀ : Y → X × Y) := by
+  have : FiniteDimensional ℝ H := .of_finrank_pos (by omega)
+  let L : ℝ ≃L[ℝ] H :=
+    (FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq
+      ((Module.finrank_self ℝ).trans hH.symm)).some
+  obtain ⟨κU, hκU, hκU0⟩ := isOpen_univ.exists_isOpenEmbedding_apply_zero_eq (E := H) (mem_univ x₀)
+  let κ : ℝ → X := Subtype.val ∘ κU ∘ L
+  have hκ : IsOpenEmbedding κ :=
+    isOpen_univ.isOpenEmbedding_subtypeVal.comp (hκU.comp L.toHomeomorph.isOpenEmbedding)
+  have hκ0 : κ 0 = x₀ := by simp [κ, hκU0]
+  refine isBicollared_iff.2 ⟨fun q ↦ (κ q.2, q.1), ?_, fun y ↦ by simp [hκ0]⟩
+  exact (Homeomorph.prodComm Y X).isOpenEmbedding.comp (IsOpenEmbedding.id.prodMap hκ)
+
 namespace IsBicollared
 
 theorem isEmbedding (h : IsBicollared f) : IsEmbedding f :=
@@ -316,13 +348,13 @@ theorem restrict (h : IsLocallyBicollared f) {U : Set N} (hU : IsOpen U) :
   obtain ⟨V, hV, hxV, hb⟩ := h x
   let W : Set U := ((↑) : U → N) ⁻¹' V
   let R : Set V := ((↑) : V → N) ⁻¹' U
-  have hW : IsOpen W := hV.preimage continuous_subtype_val
-  have hR : IsOpen R := hU.preimage continuous_subtype_val
+  have hW : IsOpen W := hV.preimage continuous_subtypeVal
+  have hR : IsOpen R := hU.preimage continuous_subtypeVal
   -- `W` and `R` are the two readings of `U ∩ V`, one as a subset of `U` and one as a subset of
   -- `V`; the homeomorphism between them only re-brackets the pair of membership proofs.
   let e : W ≃ₜ R := {
-    toFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
-    invFun y := ⟨⟨y.1.1, y.2⟩, y.1.2⟩
+    toFun y := ⟨⟨y.val.val, y.property⟩, y.val.property⟩
+    invFun y := ⟨⟨y.val.val, y.property⟩, y.val.property⟩
     left_inv _ := rfl
     right_inv _ := rfl
     continuous_toFun := by fun_prop
