@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
 public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.Homotopy.Basic
+import TauCeti.Topology.Category.TopCat.Limits.Basic
 import TauCeti.Topology.Homotopy.Sigma
 
 /-!
@@ -132,17 +133,7 @@ theorem homotopic_of_homotopic_ι_comp {ι : Type u} {X : ι → TopCat.{u}} {Y 
     {φ ψ : ∐ X ⟶ Y}
     (h : ∀ i, (Sigma.ι X i ≫ φ).hom.Homotopic (Sigma.ι X i ≫ ψ).hom) :
     φ.hom.Homotopic ψ.hom := by
-  -- Read through `TopCat.sigmaIsoSigma`, a map out of the coproduct is the map out of the
-  -- disjoint union given by its restrictions to the summands.
-  have key (χ : ∐ X ⟶ Y) : χ.hom = (ContinuousMap.sigma fun i ↦ (Sigma.ι X i ≫ χ).hom).comp
-      (TopCat.sigmaIsoSigma X).hom.hom := by
-    ext x
-    have hx : x = (TopCat.sigmaIsoSigma X).inv ((TopCat.sigmaIsoSigma X).hom x) := by simp
-    generalize (TopCat.sigmaIsoSigma X).hom x = s at hx
-    obtain ⟨i, y⟩ := s
-    subst hx
-    simpa using congrArg χ.hom (TopCat.sigmaIsoSigma_inv_apply X i y)
-  rw [key φ, key ψ]
+  rw [hom_eq_sigma_comp_sigmaIsoSigma_hom φ, hom_eq_sigma_comp_sigmaIsoSigma_hom ψ]
   exact (ContinuousMap.Homotopic.sigma h).comp (ContinuousMap.Homotopic.refl _)
 
 end TauCeti.TopCat
