@@ -93,6 +93,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   are those of the first broken trajectory above the level of `q`, and of the second below.
 * `morseLevelPath_morseRecordsConcat`: the Moore path of a concatenation is the concatenation of
   the Moore paths.
+* `TauCeti.concatLevelRecords_assoc`: concatenation of records is associative.
+* `concatLevelRecords_notMem_morseTrajectoryRecords`: a concatenation at `q ≠ r` is not the record
+  of an unbroken trajectory when some level lies between `f q` and `f p`.
 
 ## References
 
@@ -732,6 +735,21 @@ theorem continuous_concatLevelRecords :
     · simp only [concatLevelRecords, h, ↓reduceDIte]
       exact (continuous_apply _).comp continuous_snd
 
+omit [TopologicalSpace M] [CompactSpace M] [T2Space M] in
+/-- **Concatenation of records is associative.** If `f s ≤ f q` and no level of `c` is the level
+of `q` or of `s`, concatenating at `q` and then at `s` is concatenating at `s` and then at `q`. -/
+theorem concatLevelRecords_assoc {s : M} (hs : ∀ i, c i ≠ f s) (hsq : f s ≤ f q)
+    (a : c ⁻¹' Ioo (f q) (f p) → M) (b : c ⁻¹' Ioo (f s) (f q) → M)
+    (d : c ⁻¹' Ioo (f r) (f s) → M) :
+    concatLevelRecords c hs (concatLevelRecords c hq a b) d =
+      concatLevelRecords c hq a (concatLevelRecords c hs b d) := by
+  funext i
+  -- Compare the level `c i` with `f q` and `f s`; it is neither of them.
+  have := hq i
+  have := hs i
+  simp only [concatLevelRecords]
+  split_ifs <;> first | rfl | (exfalso; grind)
+
 end Concat
 
 namespace IsAdaptedPseudoGradient
@@ -807,6 +825,34 @@ theorem concatLevelRecords_mem :
   obtain ⟨x, z, hx0, hxk, hxc, hxne, hz, hrec, -, -⟩ := exists_chain_concatLevelRecords hq hx0₁ hxk₁
     hxc₁ hxne₁ hz₁ hrec₁ hx0₂ hxk₂ hxc₂ hxne₂ hz₂ hrec₂
   exact hX.mem_morseBrokenTrajectoryRecords.2 ⟨_, x, z, hx0, hxk, hxc, hxne, hz, hrec⟩
+
+/-- **Concatenations are not unbroken.** If `q ≠ r` and some level of `c` lies strictly between
+`f q` and `f p`, the concatenation at `q` of records of broken trajectories from `p` to `q` and
+from `q` to `r` is not the record of an unbroken trajectory from `p` to `r`. -/
+theorem concatLevelRecords_notMem_morseTrajectoryRecords (hqr : q ≠ r) {i₀ : ι}
+    (hi₀ : c i₀ ∈ Ioo (f q) (f p)) :
+    concatLevelRecords c hq w₁ w₂ ∉
+      hX.morseTrajectoryRecords p r ((c ⁻¹' Ioo (f r) (f p)).domRestrict c) := by
+  intro hw
+  have hrq := hX.value_lt_of_mem_morseBrokenTrajectoryRecords hqr hw₂
+  -- On the level `c i₀`, the unbroken trajectory lies in the stable set of `r`, and the
+  -- concatenation is the first record.
+  obtain ⟨y, hy, hwy⟩ := hX.mem_morseTrajectoryRecords.1 hw
+  obtain ⟨-, t, ht⟩ := hwy ⟨i₀, hrq.trans hi₀.1, hi₀.2⟩
+  rw [concatLevelRecords_of_lt hq w₁ w₂ (i := ⟨i₀, hrq.trans hi₀.1, hi₀.2⟩) hi₀.1] at ht
+  -- There the first record lies on a component of the first broken trajectory, in the stable set
+  -- of a critical point `x j.succ` with `f q ≤ f (x j.succ)`, so not in that of `r`.
+  obtain ⟨k, x, z, -, rfl, -, -, hz, hw₁'⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw₁
+  obtain ⟨-, j, t', ht'⟩ := hw₁' ⟨i₀, hi₀⟩
+  have hxq : f (x (Fin.last k)) ≤ f (x j.succ) := hX.antitone_apply_of_chain hz (Fin.le_last _)
+  have hne : x j.succ ≠ r := fun h ↦ (hrq.trans_le hxq).ne' (congrArg f h)
+  have h₁ : w₁ ⟨i₀, hi₀⟩ ∈ hX.flow.stableSet (x j.succ) := by
+    rw [← ht']
+    exact (Flow.apply_mem_stableSet_iff _ t').2 (hz j).2
+  have h₂ : w₁ ⟨i₀, hi₀⟩ ∈ hX.flow.stableSet r := by
+    rw [← ht]
+    exact (Flow.apply_mem_stableSet_iff _ t).2 hy.2
+  exact disjoint_left.1 (Flow.disjoint_stableSet hne) h₁ h₂
 
 /-- **Above the level of `q`, the points of a concatenation are those of the first broken
 trajectory.** -/
