@@ -49,6 +49,9 @@ The converse direction of the universal property is
 * `Bundle.Trivialization.continuous_chartLocalization`: it is continuous.
 * `Bundle.Trivialization.chartTestSection_chartLocalization`: extending the localization through
   the chart recovers `ψ • s`.
+* `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless model, every point lies in the
+  source of a smooth chart into the model vector space, with smooth inverse, inside the base set of
+  the trivialization at that point.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
   inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
 * `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
@@ -293,6 +296,17 @@ private theorem contMDiffOn_testChart_symm {n : ℕ∞ω} [IsManifold I n M] (x 
     ContMDiffOn 𝓘(ℝ, E) I n (testChart F I V x).symm (testChart F I V x).target :=
   OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ (restr_chartAt_mem_maximalAtlas V x)
     contDiff_id
+
+variable (F I) in
+/-- On a boundaryless model, every point `x` lies in the source of a chart into the model vector
+space that is `C^n` with `C^n` inverse and whose source lies in the base set of the trivialization
+at `x`. -/
+theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
+      ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
+      x ∈ c.source :=
+  ⟨testChart F I V x, contMDiffOn_testChart V x, contMDiffOn_testChart_symm V x,
+    testChart_source_subset V x, mem_testChart_source V x⟩
 
 end TestChart
 

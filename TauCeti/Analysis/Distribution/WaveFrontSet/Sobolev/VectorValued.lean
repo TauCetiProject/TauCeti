@@ -57,6 +57,9 @@ finite Sobolev order near every compact set
   `Distribution.vectorSobolevSingularSupport_sum_mapCLM_smulLeftCLM_subset`: smooth changes of
   frame.
 * `Distribution.exists_disjoint_vectorSobolevSingularSupport`: the local finite Sobolev order.
+* `Distribution.isLocallySobolevAt_mapCLM_apply_of_basis`: for a distribution with values in the
+  real dual of `G`, the components along a basis of `G` determine local Sobolev regularity of all
+  components.
 * `Distribution.vectorSobolevWaveFrontSet_mapCLM_toSpanSingleton_delta_eq_empty`,
   `Distribution.vectorSobolevSingularSupport_mapCLM_toSpanSingleton_delta_eq_empty`: in dimension
   `d`, the point mass `δ_{x₀} v` is `H^s` for `s < -d / 2`.
@@ -612,6 +615,31 @@ theorem exists_disjoint_vectorSobolevSingularSupport (T : 𝓓'(Ω, F)) {K : Set
     _ ≤ r i := neg_abs_le (r i)
 
 end Frame
+
+section RealFrame
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {ι : Type*} [Finite ι]
+
+/-- **Frames of a real dual.** Let `R` be a distribution with values in the real dual of `G` and
+`b` a finite basis of `G`. If the complex components `φ ↦ R φ (bᵢ)` are `H^s` near a point `x` of
+`Ω`, so is the component `φ ↦ R φ v` along every `v : G`. -/
+theorem isLocallySobolevAt_mapCLM_apply_of_basis (b : Module.Basis ι ℝ G) {R : 𝓓'(Ω, G →L[ℝ] ℝ)}
+    {s : ℝ} {x : E} (hx : x ∈ Ω)
+    (h : ∀ i, (mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ (b i)) R).IsLocallySobolevAt s x)
+    (v : G) : (mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ v) R).IsLocallySobolevAt s x := by
+  have := Fintype.ofFinite ι
+  -- The component along `v = ∑ᵢ vᵢ bᵢ` is the corresponding combination of the frame components.
+  have hv : mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ v) R =
+      ∑ i, ((b.repr v i : ℝ) : ℂ) •
+        mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ (b i)) R := by
+    ext φ
+    have hφ := congrArg (fun w ↦ ((R φ w : ℝ) : ℂ)) (b.sum_repr v)
+    simp only [map_sum, map_smul, smul_eq_mul, Complex.ofReal_sum, Complex.ofReal_mul] at hφ
+    simpa [smul_eq_mul] using hφ.symm
+  rw [hv]
+  exact IsLocallySobolevAt.sum hx fun i _ ↦ (h i).smul _
+
+end RealFrame
 
 /-! ### Point masses -/
 

@@ -11,7 +11,9 @@ import Mathlib.Analysis.Calculus.Deriv.Abs
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.VectorValued
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -62,7 +64,7 @@ do smooth multiples and finite sums. Exchanging the roles of the two charts give
   `TauCeti.BundleTest.isLocallySobolevAt_iff`, its characterization in every chart and frame.
 * `TauCeti.BundleTest.sobolevSingularSupport`: the `H^s` singular support, a closed subset of `M`
   (`TauCeti.BundleTest.isClosed_sobolevSingularSupport`) growing with `s`, with the rules for
-  sums and scalar multiples.
+  sums, differences, negatives and scalar multiples.
 * `TauCeti.BundleTest.exists_forall_isLocallySobolevAt`: on a manifold without boundary every
   functional on bundle tests has a finite Sobolev order near every compact set.
 * `TauCeti.BundleTest.sobolevSingularSupport_delta`,
@@ -223,22 +225,6 @@ private theorem contDiffOn_transitionCoeff
     (n := (⊤ : ℕ∞))
   exact hdet.mul (hcoord.comp_contDiffOn (hG.clm_apply contDiffOn_const))
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [T2Space M] [IsManifold I ∞ M] in
-include hc hc' in
-/-- The chart transition `κ = c ∘ c'⁻¹` between smooth charts with smooth inverses is smooth on its
-source, and so is its inverse on its target. -/
-private theorem contDiffOn_transition (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source ∧
-      ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
-  constructor
-  · rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.coe_trans]
-    exact contMDiffOn_iff_contDiffOn.1 (hc.comp (hcs'.mono inter_subset_left) fun _ hy ↦ hy.2)
-  · rw [← OpenPartialHomeomorph.symm_source, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-      OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.coe_trans]
-    exact contMDiffOn_iff_contDiffOn.1 (hc'.comp (hcs.mono inter_subset_left) fun _ hy ↦ hy.2)
-
 /-- If every component of the local representative in `(t, c)` is `H^s` near `κ y`, for the
 transition `κ = c ∘ c'⁻¹`, then every component in `(t', c')` is `H^s` near `y`. -/
 private theorem isLocallySobolevAt_mapCLM_chartDistributionCLM_of_forall
@@ -249,7 +235,11 @@ private theorem isLocallySobolevAt_mapCLM_chartDistributionCLM_of_forall
       (t.chartDistributionCLM c hc hct T)).IsLocallySobolevAt s (c'.symm.trans c y)) (v : F) :
     (mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ v)
       (t'.chartDistributionCLM c' hc' hct' T)).IsLocallySobolevAt s y := by
-  obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
+  have he := OpenPartialHomeomorph.contDiffOn_symm_trans hc hcs'
+  have he' : ContDiffOn ℝ ∞ (c'.symm.trans c).symm (c'.symm.trans c).target := by
+    rw [← OpenPartialHomeomorph.symm_source, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+      OpenPartialHomeomorph.symm_symm]
+    exact OpenPartialHomeomorph.contDiffOn_symm_trans hc' hcs
   -- A neighbourhood `B` of `y` with compact closure in the source of the transition.
   obtain ⟨W, hWo, hyW, hWs, hWc⟩ := exists_open_between_and_isCompact_closure isCompact_singleton
     (c'.symm.trans c).open_source (singleton_subset_iff.2 hy)
@@ -267,10 +257,8 @@ private theorem isLocallySobolevAt_mapCLM_chartDistributionCLM_of_forall
   rw [← isLocallySobolevAt_restrictCLM_iff hBt hyB,
     restrictCLM_mapCLM_chartDistributionCLM_eq_sum (hc := hc) (hct := hct) T v he he' hB hBc hg
       hgB]
-  refine (notMem_sobolevSingularSupport_iff hyB).1 fun hmem ↦ ?_
-  obtain ⟨j, -, hj⟩ := mem_iUnion₂.1 (sobolevSingularSupport_sum_subset s _ _ hmem)
-  exact (Distribution.mem_sobolevSingularSupport_iff.1 hj).2
-    (((isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hyB).2 (h _)).smulLeftCLM (hg j))
+  exact Distribution.IsLocallySobolevAt.sum hyB fun j _ ↦
+    ((isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hyB).2 (h _)).smulLeftCLM (hg j)
 
 /-- **Independence of the chart and the frame.** Let `c` and `c'` be smooth charts with smooth
 inverses, with frames `t` and `t'` over their sources, and let `x` be a point of both chart
@@ -356,29 +344,6 @@ theorem IsLocallySobolevAt.mono {s s' : ℝ} {T : BundleTest I F V →L_c[ℝ] �
   let ⟨t, ht, c, hc, hcs, hct, hx, h⟩ := h
   ⟨t, ht, c, hc, hcs, hct, hx, fun v ↦ (h v).mono hs⟩
 
-omit [T2Space M] [IsManifold I ∞ M] in
-/-- The components of a distribution `R` with values in the dual of `F` along a basis of `F`
-determine all its components: if they are `H^s` near `y`, so is the component along every
-`v : F`. -/
-private theorem forall_isLocallySobolevAt_mapCLM_of_basis {Ω : Opens E}
-    {R : 𝓓'(Ω, F →L[ℝ] ℝ)} {s : ℝ} {y : E} (hy : y ∈ Ω)
-    (h : ∀ j, (mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ (Module.finBasis ℝ F j))
-      R).IsLocallySobolevAt s y) (v : F) :
-    (mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ v) R).IsLocallySobolevAt s y := by
-  set b := Module.finBasis ℝ F
-  -- The component along `v = ∑ⱼ vⱼ bⱼ` is the corresponding combination of the basis components.
-  have hv : mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ v) R =
-      ∑ j, ((b.repr v j : ℝ) : ℂ) •
-        mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ (b j)) R := by
-    ext φ
-    have hφ := congrArg (fun w ↦ ((R φ w : ℝ) : ℂ)) (b.sum_repr v)
-    simp only [map_sum, map_smul, smul_eq_mul, Complex.ofReal_sum, Complex.ofReal_mul] at hφ
-    simpa [smul_eq_mul] using hφ.symm
-  rw [hv]
-  refine (notMem_sobolevSingularSupport_iff hy).1 fun hmem ↦ ?_
-  obtain ⟨j, -, hj⟩ := mem_iUnion₂.1 (sobolevSingularSupport_sum_subset s _ _ hmem)
-  exact (Distribution.mem_sobolevSingularSupport_iff.1 hj).2 ((h j).smul _)
-
 /-- The points near which `T` is `H^s` form an open set. -/
 theorem isOpen_setOf_isLocallySobolevAt (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
     IsOpen {x : M | IsLocallySobolevAt s T x} := by
@@ -392,7 +357,7 @@ theorem isOpen_setOf_isLocallySobolevAt (s : ℝ) (T : BundleTest I F V →L_c[�
       Distribution.isOpen_setOf_isLocallySobolevAt _ _)
   exact Filter.mem_of_superset (hopen.mem_nhds ⟨hx, mem_iInter.2 fun j ↦ h (b j)⟩)
     fun y ⟨hy, hyj⟩ ↦ ⟨t, ht, c, hc, hcs, hct, hy,
-      forall_isLocallySobolevAt_mapCLM_of_basis (c.map_source hy) (mem_iInter.1 hyj)⟩
+      isLocallySobolevAt_mapCLM_apply_of_basis b (c.map_source hy) (mem_iInter.1 hyj)⟩
 
 /-- A sum of functionals `H^s` near `x` is `H^s` near `x`. -/
 theorem IsLocallySobolevAt.add {s : ℝ} {T T' : BundleTest I F V →L_c[ℝ] ℝ} {x : M}
@@ -465,47 +430,33 @@ theorem sobolevSingularSupport_smul_subset (s : ℝ) (a : ℝ) (T : BundleTest I
     sobolevSingularSupport I s (a • T) ⊆ sobolevSingularSupport I s T :=
   fun _ hx h ↦ hx (h.smul a)
 
+/-- The negative of `T` has the same `H^s` singular support as `T`. -/
+@[simp]
+theorem sobolevSingularSupport_neg (s : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    sobolevSingularSupport I s (-T) = sobolevSingularSupport I s T :=
+  Subset.antisymm (by simpa using sobolevSingularSupport_smul_subset s (-1) T)
+    (by simpa using sobolevSingularSupport_smul_subset s (-1) (-T))
+
+/-- The `H^s` singular support of a difference lies in the union of the `H^s` singular
+supports. -/
+theorem sobolevSingularSupport_sub_subset (s : ℝ) (T T' : BundleTest I F V →L_c[ℝ] ℝ) :
+    sobolevSingularSupport I s (T - T') ⊆
+      sobolevSingularSupport I s T ∪ sobolevSingularSupport I s T' := by
+  simpa [sub_eq_add_neg] using sobolevSingularSupport_add_subset s T (-T')
+
 /-! ### Manifolds without boundary -/
 
 section Boundaryless
 
 variable [I.Boundaryless]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [T2Space M] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle ∞ F V I] in
-variable (F I V) in
-/-- On a manifold without boundary, every point `x` lies in the source of a smooth chart into the
-model space with smooth inverse, inside the base set of the trivialization at `x`. -/
-private theorem exists_chart (x : M) :
-    ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source ∧
-      ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
-      x ∈ c.source := by
-  have hmem : (chartAt H x).restr (trivializationAt F V x).baseSet ∈
-      IsManifold.maximalAtlas I ∞ M :=
-    restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
-      (trivializationAt F V x).open_baseSet
-  have hsource : (((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I
-      (Homeomorph.refl E)).source = (chartAt H x).source ∩ (trivializationAt F V x).baseSet := by
-    rw [OpenPartialHomeomorph.extendTrans_source,
-      OpenPartialHomeomorph.restr_source' _ _ (trivializationAt F V x).open_baseSet]
-  refine ⟨_, OpenPartialHomeomorph.contMDiffOn_extendTrans (Ψ := Homeomorph.refl E) _ hmem
-      contDiff_id,
-    OpenPartialHomeomorph.contMDiffOn_extendTrans_symm (Ψ := Homeomorph.refl E) _ hmem
-      contDiff_id, ?_, ?_⟩
-  · rw [hsource]
-    exact inter_subset_right
-  · rw [hsource]
-    exact ⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x⟩
-
 /-- On a manifold without boundary, the zero functional is `H^s` near every point. -/
 theorem isLocallySobolevAt_zero (s : ℝ) (x : M) :
     IsLocallySobolevAt s (0 : BundleTest I F V →L_c[ℝ] ℝ) x := by
-  obtain ⟨c, hc, hcs, hct, hx⟩ := exists_chart F I V x
+  obtain ⟨c, hc, hcs, hct, hx⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) x
   refine ⟨trivializationAt F V x, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
   rw [map_zero, map_zero]
-  exact (Distribution.isLocallySobolevAt_zero_iff (s := s) (x := c x)
-    (Ω := ⟨c.target, c.open_target⟩)).2 (c.map_source hx)
+  exact isLocallySobolevAt_zero_iff.2 (c.map_source hx)
 
 /-- On a manifold without boundary, the zero functional has empty `H^s` singular support. -/
 @[simp]
@@ -520,14 +471,14 @@ theorem exists_forall_isLocallySobolevAt (T : BundleTest I F V →L_c[ℝ] ℝ) 
     (hK : IsCompact K) : ∃ s : ℝ, ∀ x ∈ K, IsLocallySobolevAt s T x := by
   -- At each point, the finitely many basis components have a common finite order.
   have hpt (x : M) : ∃ s : ℝ, IsLocallySobolevAt s T x := by
-    obtain ⟨c, hc, hcs, hct, hx⟩ := exists_chart F I V x
+    obtain ⟨c, hc, hcs, hct, hx⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) x
     set b := Module.finBasis ℝ F
     choose s hs using fun j ↦ Distribution.exists_forall_isLocallySobolevAt
       (mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ (b j))
         ((trivializationAt F V x).chartDistributionCLM c hc hct T))
       (isCompact_singleton (x := c x)) (singleton_subset_iff.2 (c.map_source hx))
     refine ⟨-∑ j, |s j|, trivializationAt F V x, inferInstance, c, hc, hcs, hct, hx,
-      forall_isLocallySobolevAt_mapCLM_of_basis (c.map_source hx) fun j ↦
+      isLocallySobolevAt_mapCLM_apply_of_basis b (c.map_source hx) fun j ↦
         (hs j (c x) rfl).mono ?_⟩
     have := Finset.single_le_sum (f := fun j ↦ |s j|) (fun j _ ↦ abs_nonneg _)
       (Finset.mem_univ j)
@@ -565,18 +516,14 @@ theorem sobolevSingularSupport_delta_eq_empty {s : ℝ}
     (hs : (Module.finrank ℝ E : ℝ) < -2 * s) (x : M) (ℓ : V x →L[ℝ] ℝ) :
     sobolevSingularSupport I s (BundleTest.delta x ℓ : BundleTest I F V →L_c[ℝ] ℝ) = ∅ := by
   refine eq_empty_iff_forall_notMem.2 fun p hp ↦ hp ?_
-  obtain ⟨c, hc, hcs, hct, hp⟩ := exists_chart F I V p
+  obtain ⟨c, hc, hcs, hct, hp⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) p
   refine ⟨trivializationAt F V p, inferInstance, c, hc, hcs, hct, hp, fun v ↦ ?_⟩
   by_cases hx : x ∈ c.source
   · rw [mapCLM_chartDistributionCLM_delta_of_mem hc hct hx]
-    refine Distribution.IsLocallySobolevAt.smul ?_ _
-    by_contra h
-    have := Distribution.sobolevSingularSupport_delta_eq_empty
-      (Ω := ⟨c.target, c.open_target⟩) hs (c x)
-    exact this.subset (Distribution.mem_sobolevSingularSupport_iff.2 ⟨c.map_source hp, h⟩)
+    exact ((notMem_sobolevSingularSupport_iff (c.map_source hp)).1
+      (by simp [Distribution.sobolevSingularSupport_delta_eq_empty hs])).smul _
   · rw [chartDistributionCLM_delta_of_notMem _ _ _ _ hx, map_zero]
-    exact (Distribution.isLocallySobolevAt_zero_iff (s := s) (x := c p)
-      (Ω := ⟨c.target, c.open_target⟩)).2 (c.map_source hp)
+    exact isLocallySobolevAt_zero_iff.2 (c.map_source hp)
 
 /-- **The `H^s` singular support of a point mass.** On a manifold without boundary of positive
 dimension `d`, the point mass `δ_x ℓ` with `ℓ ≠ 0` has `H^s` singular support `{x}` for
@@ -585,7 +532,7 @@ theorem sobolevSingularSupport_delta [Nontrivial E] {s : ℝ}
     (hs : -2 * s ≤ Module.finrank ℝ E) {x : M} {ℓ : V x →L[ℝ] ℝ} (hℓ : ℓ ≠ 0) :
     sobolevSingularSupport I s (BundleTest.delta x ℓ : BundleTest I F V →L_c[ℝ] ℝ) = {x} := by
   ext p
-  obtain ⟨c, hc, hcs, hct, hp⟩ := exists_chart F I V p
+  obtain ⟨c, hc, hcs, hct, hp⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) p
   rw [mem_sobolevSingularSupport_iff, isLocallySobolevAt_iff _ hc hcs hct hp, mem_singleton_iff]
   have hdelta (y : E) (hy : y ∈ c.target) := Distribution.sobolevSingularSupport_delta
     (Ω := ⟨c.target, c.open_target⟩) (x₀ := y) hs hy
@@ -596,16 +543,11 @@ theorem sobolevSingularSupport_delta [Nontrivial E] {s : ℝ}
     refine h fun v ↦ ?_
     by_cases hx : x ∈ c.source
     · rw [mapCLM_chartDistributionCLM_delta_of_mem hc hct hx]
-      refine Distribution.IsLocallySobolevAt.smul ?_ _
-      by_contra h'
-      have hmem : c p ∈ Distribution.sobolevSingularSupport s (mapCLM ofRealCLM
-          (Distribution.delta (c x) : 𝓓'(⟨c.target, c.open_target⟩, ℝ))) :=
-        Distribution.mem_sobolevSingularSupport_iff.2 ⟨c.map_source hp, h'⟩
-      rw [hdelta _ (c.map_source hx), mem_singleton_iff] at hmem
-      exact hpx (c.injOn hp hx hmem)
+      refine ((notMem_sobolevSingularSupport_iff (c.map_source hp)).1 ?_).smul _
+      rw [hdelta _ (c.map_source hx), mem_singleton_iff]
+      exact fun h' ↦ hpx (c.injOn hp hx h')
     · rw [chartDistributionCLM_delta_of_notMem _ _ _ _ hx, map_zero]
-      exact (Distribution.isLocallySobolevAt_zero_iff (s := s) (x := c p)
-        (Ω := ⟨c.target, c.open_target⟩)).2 (c.map_source hp)
+      exact isLocallySobolevAt_zero_iff.2 (c.map_source hp)
   · -- At `x`, some component is a nonzero multiple of the point mass at `c x`.
     rintro rfl h
     obtain ⟨u, hu⟩ : ∃ u, ℓ u ≠ 0 := by
@@ -615,11 +557,8 @@ theorem sobolevSingularSupport_delta [Nontrivial E] {s : ℝ}
     rw [mapCLM_chartDistributionCLM_delta_of_mem hc hct hp,
       (trivializationAt F V p).symmL_continuousLinearMapAt (hct hp),
       isLocallySobolevAt_smul_iff (Complex.ofReal_ne_zero.2 hu)] at hv
-    have hmem : c p ∈ Distribution.sobolevSingularSupport s (mapCLM ofRealCLM
-        (Distribution.delta (c p) : 𝓓'(⟨c.target, c.open_target⟩, ℝ))) := by
-      rw [hdelta _ (c.map_source hp)]
-      exact mem_singleton _
-    exact (Distribution.mem_sobolevSingularSupport_iff.1 hmem).2 hv
+    exact (notMem_sobolevSingularSupport_iff (c.map_source hp)).2 hv
+      (by simp [hdelta _ (c.map_source hp)])
 
 end Boundaryless
 
