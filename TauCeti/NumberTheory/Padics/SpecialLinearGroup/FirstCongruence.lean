@@ -1,0 +1,251 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.Topology.Algebra.Group.Matrix
+public import TauCeti.NumberTheory.Padics.RingHoms
+public import TauCeti.Topology.Algebra.Group.Subgroup
+public import TauCeti.Topology.Algebra.Matrix.SpecialLinearGroup
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Lift
+
+/-!
+# The first congruence subgroup of `SL_n(ℤ_p)`
+
+The **first congruence subgroup** `G₁ = ker(SL_n(ℤ_p) → SL_n(𝔽_p))` is the kernel of reduction
+modulo `p`, equivalently the subgroup `SL_n(ℤ_p) ∩ (1 + p M_n(ℤ_p))` of matrices congruent to the
+identity modulo `p`. For `n = 2` and `p` odd it is the group whose Iwasawa algebra `ℤ_p[[G₁]]`
+and its microlocalisation appear in Ardakov–Wadsley's semisimplicity theorem for
+finite-dimensional Iwasawa modules and in Fu's injectivity theorem for central specialisations;
+there the group `G = G₁^m` is the product of `m` copies of it.
+
+This file sets up these groups as compact open normal subgroups of `SL_n(ℤ_p)` and of
+`SL_n(ℤ_p)^ι`, and computes their indices: reduction modulo `p` is surjective on `SL_n`, since
+`ℤ_p` is local, so `[SL_n(ℤ_p) : G₁] = |SL_n(𝔽_p)|`, which is `p(p² - 1)` for `n = 2`. As compact
+topological groups, `G₁` and `G₁^ι` are the groups whose completed group algebras
+`TauCeti.completedGroupAlgebra ℤ_[p] G₁` are the Iwasawa algebras above.
+
+## Main definitions
+
+* `TauCeti.firstCongruenceSubgroup n p`: the kernel `G₁` of reduction modulo `p` on
+  `SL n ℤ_[p]`.
+* `TauCeti.firstCongruenceProduct n p ι`: the product `G₁^ι ≤ SL_n(ℤ_p)^ι`, as `Subgroup.pi`.
+* `TauCeti.firstCongruenceProduct.continuousMulEquivPi`: `G₁^ι`, with its topology as a subgroup
+  of the product `SL_n(ℤ_p)^ι`, is the product of copies of `G₁`.
+
+## Main results
+
+* `TauCeti.ker_map_toZMod`, `TauCeti.mem_firstCongruenceSubgroup_iff_map_eq_one`: `G₁` is the
+  kernel of reduction modulo `p`.
+* `TauCeti.mem_firstCongruenceSubgroup_iff`: `g ∈ G₁` exactly when `p` divides every entry of
+  `g - 1`; `TauCeti.mk_upperRight_mem_firstCongruenceSubgroup_iff`: so `!![1, a; 0, 1] ∈ G₁`
+  exactly when `p ∣ a`.
+* `TauCeti.isOpen_firstCongruenceSubgroup`, `TauCeti.isClosed_firstCongruenceSubgroup` and the
+  instances `CompactSpace (firstCongruenceSubgroup n p)` and
+  `(firstCongruenceSubgroup n p).Normal`: `G₁` is a compact open normal subgroup.
+* `TauCeti.index_firstCongruenceSubgroup`: `[SL_n(ℤ_p) : G₁] = |SL_n(𝔽_p)|`;
+  `TauCeti.index_firstCongruenceSubgroup_fin_two`: `[SL₂(ℤ_p) : G₁] = p(p² - 1)`.
+* `TauCeti.ker_compLeft_map_toZMod`: `G₁^ι` is the kernel of reduction modulo `p` on
+  `SL_n(ℤ_p)^ι`; `TauCeti.isOpen_firstCongruenceProduct` (for finite `ι`),
+  `TauCeti.isClosed_firstCongruenceProduct`, `TauCeti.index_firstCongruenceProduct` and the
+  compactness and normality instances.
+* `TauCeti.neg_one_mem_firstCongruenceSubgroup_iff`: `-1 ∈ G₁ ≤ SL₂(ℤ_p)` exactly when `p = 2`;
+  so for `p = 2` the group `G₁` has an element of order two and is not uniform.
+
+## References
+
+* K. Ardakov and S. Wadsley, *On irreducible representations of compact `p`-adic analytic
+  groups*, Ann. of Math. (2) 178 (2013), 453–557, §10.
+* W. Fu, *Sharp bounds for multiplicities of Bianchi modular forms*, Ann. of Math. (2) 200
+  (2024), 123–152, §1 (before Theorem 1.4) and §5 (before Lemma 5.6).
+-/
+
+public section
+
+open Matrix PadicInt
+
+namespace TauCeti
+
+variable (n : Type*) [Fintype n] [DecidableEq n] (p : ℕ) [Fact p.Prime]
+
+/-! ### The first congruence subgroup -/
+
+/-- The **first congruence subgroup** `G₁` of `SL_n(ℤ_p)`: the kernel of reduction modulo `p`,
+`SL_n(ℤ_p) → SL_n(𝔽_p)`, that is the determinant-one matrices congruent to the identity
+modulo `p` (`mem_firstCongruenceSubgroup_iff`). For `n = Fin 2` this is the group `G₁` of
+Ardakov–Wadsley and Fu. -/
+noncomputable def firstCongruenceSubgroup : Subgroup (SpecialLinearGroup n ℤ_[p]) :=
+  (SpecialLinearGroup.map (toZMod (p := p))).ker
+
+/-- The first congruence subgroup is the kernel of reduction modulo `p`. -/
+theorem ker_map_toZMod :
+    (SpecialLinearGroup.map (n := n) (toZMod (p := p))).ker = firstCongruenceSubgroup n p :=
+  (rfl)
+
+variable {n p}
+
+/-- A determinant-one matrix lies in the first congruence subgroup exactly when it reduces to the
+identity modulo `p`. -/
+theorem mem_firstCongruenceSubgroup_iff_map_eq_one {g : SpecialLinearGroup n ℤ_[p]} :
+    g ∈ firstCongruenceSubgroup n p ↔ SpecialLinearGroup.map toZMod g = 1 := by
+  rw [← ker_map_toZMod, MonoidHom.mem_ker]
+
+/-- A determinant-one matrix `g` lies in the first congruence subgroup exactly when `p` divides
+every entry of `g - 1`. -/
+theorem mem_firstCongruenceSubgroup_iff {g : SpecialLinearGroup n ℤ_[p]} :
+    g ∈ firstCongruenceSubgroup n p ↔
+      ∀ i j, (p : ℤ_[p]) ∣ ((g : Matrix n n ℤ_[p]) - 1) i j := by
+  rw [mem_firstCongruenceSubgroup_iff_map_eq_one, SpecialLinearGroup.ext_iff]
+  refine forall₂_congr fun i j ↦ ?_
+  rcases eq_or_ne i j with rfl | hij <;> simp [← toZMod_eq_zero_iff_dvd, sub_eq_zero, *]
+
+variable (n p)
+
+instance : (firstCongruenceSubgroup n p).Normal :=
+  ker_map_toZMod n p ▸ MonoidHom.normal_ker _
+
+/-- The first congruence subgroup is open: it is the preimage of `1` under the continuous
+reduction to the discrete group `SL_n(𝔽_p)`. -/
+theorem isOpen_firstCongruenceSubgroup :
+    IsOpen (firstCongruenceSubgroup n p : Set (SpecialLinearGroup n ℤ_[p])) := by
+  rw [← ker_map_toZMod, MonoidHom.coe_ker]
+  exact (isOpen_discrete {1}).preimage continuous_toZMod.specialLinearGroup_map
+
+/-- The first congruence subgroup is closed. -/
+instance isClosed_firstCongruenceSubgroup :
+    IsClosed (firstCongruenceSubgroup n p : Set (SpecialLinearGroup n ℤ_[p])) :=
+  Subgroup.isClosed_of_isOpen _ (isOpen_firstCongruenceSubgroup n p)
+
+/-- The index of the first congruence subgroup of `SL_n(ℤ_p)` is the order of `SL_n(𝔽_p)`:
+reduction modulo `p` maps `SL_n(ℤ_p)` onto `SL_n(𝔽_p)`, since `ℤ_p` is local. -/
+theorem index_firstCongruenceSubgroup :
+    (firstCongruenceSubgroup n p).index = Nat.card (SpecialLinearGroup n (ZMod p)) := by
+  rw [← ker_map_toZMod, Subgroup.index_ker, MonoidHom.range_eq_top.mpr
+    (SpecialLinearGroup.map_surjective _ (ZMod.ringHom_surjective _)), Subgroup.card_top]
+
+/-- The first congruence subgroup of `SL₂(ℤ_p)` has index `|SL₂(𝔽_p)| = p(p² - 1)`. -/
+theorem index_firstCongruenceSubgroup_fin_two :
+    (firstCongruenceSubgroup (Fin 2) p).index = p * (p ^ 2 - 1) := by
+  have hp : 0 < p - 1 := Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt
+  rw [index_firstCongruenceSubgroup, card_SL_field, ZMod.card, Fin.prod_univ_two, Fin.val_zero,
+    Fin.val_one, pow_zero, pow_one, sq p, ← Nat.mul_sub_one]
+  exact Nat.div_eq_of_eq_mul_left hp (by ring)
+
+/-! ### Products of first congruence subgroups -/
+
+variable (ι : Type*)
+
+/-- The product `G₁^ι` of copies of the first congruence subgroup, as the subgroup of
+`ι → SL_n(ℤ_p)` whose every coordinate lies in `G₁`. For `ι = Fin m` and `n = Fin 2` this is the
+group `G = G₁^m` of Fu. -/
+noncomputable def firstCongruenceProduct : Subgroup (ι → SpecialLinearGroup n ℤ_[p]) :=
+  Subgroup.pi Set.univ fun _ ↦ firstCongruenceSubgroup n p
+
+/-- The product of first congruence subgroups is `Subgroup.pi` of copies of `G₁`. -/
+theorem firstCongruenceProduct_def :
+    firstCongruenceProduct n p ι = Subgroup.pi Set.univ fun _ ↦ firstCongruenceSubgroup n p :=
+  (rfl)
+
+variable {n p ι} in
+/-- A family of determinant-one matrices lies in `G₁^ι` exactly when each of them lies in `G₁`. -/
+@[simp]
+theorem mem_firstCongruenceProduct_iff {g : ι → SpecialLinearGroup n ℤ_[p]} :
+    g ∈ firstCongruenceProduct n p ι ↔ ∀ i, g i ∈ firstCongruenceSubgroup n p := by
+  simp [firstCongruenceProduct_def, Subgroup.mem_pi]
+
+/-- The product `G₁^ι` is the kernel of reduction modulo `p`, coordinatewise, from
+`SL_n(ℤ_p)^ι` to `SL_n(𝔽_p)^ι`. -/
+theorem ker_compLeft_map_toZMod :
+    (MonoidHom.compLeft (SpecialLinearGroup.map (n := n) (toZMod (p := p))) ι).ker =
+      firstCongruenceProduct n p ι := by
+  ext g
+  simp [funext_iff, mem_firstCongruenceSubgroup_iff_map_eq_one]
+
+instance : (firstCongruenceProduct n p ι).Normal :=
+  ker_compLeft_map_toZMod n p ι ▸ MonoidHom.normal_ker _
+
+/-- A product of finitely many copies of the first congruence subgroup is open. -/
+theorem isOpen_firstCongruenceProduct [Finite ι] :
+    IsOpen (firstCongruenceProduct n p ι : Set (ι → SpecialLinearGroup n ℤ_[p])) := by
+  rw [firstCongruenceProduct_def, Subgroup.coe_pi]
+  exact isOpen_set_pi Set.finite_univ fun _ _ ↦ isOpen_firstCongruenceSubgroup n p
+
+/-- A product of copies of the first congruence subgroup is closed. -/
+instance isClosed_firstCongruenceProduct :
+    IsClosed (firstCongruenceProduct n p ι : Set (ι → SpecialLinearGroup n ℤ_[p])) := by
+  rw [firstCongruenceProduct_def, Subgroup.coe_pi]
+  exact isClosed_set_pi fun _ _ ↦ isClosed_firstCongruenceSubgroup n p
+
+/-- The index of `G₁^ι` in `SL_n(ℤ_p)^ι` is `|SL_n(𝔽_p)| ^ |ι|`. -/
+theorem index_firstCongruenceProduct [Fintype ι] :
+    (firstCongruenceProduct n p ι).index =
+      Nat.card (SpecialLinearGroup n (ZMod p)) ^ Fintype.card ι := by
+  rw [firstCongruenceProduct_def, Subgroup.index_pi, index_firstCongruenceSubgroup,
+    Finset.prod_const, Finset.card_univ]
+
+/-- The index of `G₁^ι` in `SL₂(ℤ_p)^ι` is `(p(p² - 1)) ^ |ι|`. -/
+theorem index_firstCongruenceProduct_fin_two [Fintype ι] :
+    (firstCongruenceProduct (Fin 2) p ι).index = (p * (p ^ 2 - 1)) ^ Fintype.card ι := by
+  rw [index_firstCongruenceProduct, ← index_firstCongruenceSubgroup,
+    index_firstCongruenceSubgroup_fin_two]
+
+/-- The product `G₁^ι`, with its topology as a subgroup of `SL_n(ℤ_p)^ι`, is isomorphic as a
+topological group to the product of copies of `G₁`, each with its topology as a subgroup of
+`SL_n(ℤ_p)`. -/
+noncomputable def firstCongruenceProduct.continuousMulEquivPi :
+    firstCongruenceProduct n p ι ≃ₜ* (ι → firstCongruenceSubgroup n p) :=
+  -- `firstCongruenceProduct n p ι` is by definition this `Subgroup.pi`, as
+  -- `firstCongruenceProduct_def` records
+  Subgroup.piContinuousMulEquiv fun _ ↦ firstCongruenceSubgroup n p
+
+/-- The `i`-th coordinate of the image of `g ∈ G₁^ι` in `ι → G₁` is the `i`-th coordinate of
+`g`. -/
+@[simp]
+theorem firstCongruenceProduct.coe_continuousMulEquivPi_apply (g : firstCongruenceProduct n p ι)
+    (i : ι) :
+    (continuousMulEquivPi n p ι g i : SpecialLinearGroup n ℤ_[p]) =
+      (g : ι → SpecialLinearGroup n ℤ_[p]) i :=
+  Subgroup.coe_piContinuousMulEquiv_apply _ g i
+
+/-- The inverse of `firstCongruenceProduct.continuousMulEquivPi` assembles the coordinates into an
+element of `G₁^ι`. -/
+@[simp]
+theorem firstCongruenceProduct.coe_continuousMulEquivPi_symm_apply
+    (g : ι → firstCongruenceSubgroup n p) :
+    ((continuousMulEquivPi n p ι).symm g : ι → SpecialLinearGroup n ℤ_[p]) =
+      fun i ↦ (g i : SpecialLinearGroup n ℤ_[p]) :=
+  Subgroup.coe_piContinuousMulEquiv_symm_apply _ g
+
+/-! ### Degenerate products and particular elements -/
+
+/-- An empty product of first congruence subgroups is the whole of the trivial group
+`SL_n(ℤ_p)^ι`. -/
+theorem firstCongruenceProduct_eq_top_of_isEmpty [IsEmpty ι] : firstCongruenceProduct n p ι = ⊤ :=
+  Subsingleton.elim _ _
+
+variable {p}
+
+/-- The unipotent matrix `!![1, a; 0, 1]` lies in the first congruence subgroup of `SL₂(ℤ_p)`
+exactly when `p ∣ a`. So `!![1, p; 0, 1] ∈ G₁` while `!![1, 1; 0, 1] ∉ G₁`: membership constrains
+all entries of `g - 1`, not only the determinant. -/
+theorem mk_upperRight_mem_firstCongruenceSubgroup_iff (a : ℤ_[p]) :
+    SpecialLinearGroup.mk !![1, a; 0, 1] (by simp) ∈ firstCongruenceSubgroup (Fin 2) p ↔
+      (p : ℤ_[p]) ∣ a := by
+  simp [mem_firstCongruenceSubgroup_iff, Fin.forall_fin_two, one_fin_two]
+
+/-- The matrix `-1` lies in the first congruence subgroup of `SL₂(ℤ_p)` exactly when `p = 2`. So
+for odd `p` the group `G₁` does not contain `-1`, while `G₁ ≤ SL₂(ℤ₂)` has an element of order
+two. -/
+theorem neg_one_mem_firstCongruenceSubgroup_iff :
+    (-1 : SpecialLinearGroup (Fin 2) ℤ_[p]) ∈ firstCongruenceSubgroup (Fin 2) p ↔ p = 2 := by
+  have h2 : (p : ℤ_[p]) ∣ 2 ↔ p = 2 := by
+    rw [← toZMod_eq_zero_iff_dvd, map_ofNat, ← Nat.cast_ofNat, ZMod.natCast_eq_zero_iff,
+      Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two]
+  have hneg : (-1 - 1 : ℤ_[p]) = -2 := by norm_num
+  simp [mem_firstCongruenceSubgroup_iff, Fin.forall_fin_two, one_fin_two, hneg, ← h2]
+
+end TauCeti
