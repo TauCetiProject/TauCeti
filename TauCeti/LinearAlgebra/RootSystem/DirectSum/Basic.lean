@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.PerfectPairing.Pi
 public import TauCeti.LinearAlgebra.RootSystem.Basic
 import Mathlib.Algebra.Ring.Regular
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Finite external direct sums of root pairings
@@ -245,14 +246,10 @@ theorem mem_span_pi_root_image_iff (S : Type*) [Semiring S] [∀ c, Module S (M 
     (s : ∀ c, Set (ι c)) (x : ∀ c, M c) :
     x ∈ span S ((pi P).root '' (Set.univ.sigma s)) ↔ ∀ c, x c ∈ span S ((P c).root '' s c) := by
   have himage : (pi P).root '' (Set.univ.sigma s) = ⋃ c, Pi.single c '' ((P c).root '' s c) := by
-    ext v
-    simp [Set.mem_sigma_iff]
-  rw [himage, Submodule.span_iUnion]
-  have hsingle (c : κ) : span S (Pi.single c '' ((P c).root '' s c)) =
-      (span S ((P c).root '' s c)).map (LinearMap.single S M c) := by
-    rw [show Pi.single c '' ((P c).root '' s c) =
-      (LinearMap.single S M c) '' ((P c).root '' s c) from rfl, ← Submodule.map_span]
-  simp_rw [hsingle, Submodule.iSup_map_single, Submodule.mem_pi, Set.mem_univ, forall_true_left]
+    rw [Set.image_sigma_eq_iUnion]
+    simp [Set.image_image]
+  rw [himage, Submodule.span_iUnion_single]
+  simp
 
 /-- The `S`-span of the roots of a finite direct sum is the coordinatewise product of the
 summands' root spans. -/

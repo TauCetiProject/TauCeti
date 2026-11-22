@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.SimplyLaced
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Simple orbits of based automorphisms of irreducible root pairings

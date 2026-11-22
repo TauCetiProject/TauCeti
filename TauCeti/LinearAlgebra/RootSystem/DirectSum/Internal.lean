@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Projection
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Basic
 import Mathlib.Algebra.Ring.Regular
 import TauCeti.LinearAlgebra.RootSystem.EquivComp
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Finite internal direct sums of root pairings
@@ -43,9 +43,12 @@ wherever no `Finset.univ` appears in the statement.
 
 ## Main results
 
-* `RootPairing.range_internalDirectSum_root`, `RootPairing.range_internalDirectSum_coroot`: the
-  roots and coroots of an internal direct sum are the unions of those of its summands inside `M`
-  and `Module.Dual R M`.
+* `RootPairing.toPerfPair_symm_internalDirectSum_coroot_comp_same`,
+  `RootPairing.internalDirectSum_coroot_comp_ne`, `RootPairing.range_internalDirectSum_root`,
+  `RootPairing.range_internalDirectSum_coroot`: coroot restriction formulas and characterization of
+  roots and coroots of an internal direct sum inside `M` and `Module.Dual R M`.
+* `RootPairing.piEquivInternalDirectSum_coweightEquiv_symm_apply`: formula assembling a tuple of
+  summand coweights into an ambient functional.
 * `RootPairing.isRootSystem_internalDirectSum_iff`,
   `RootPairing.isValuedIn_internalDirectSum_iff`,
   `RootPairing.isReduced_of_internalDirectSum`,
@@ -181,6 +184,23 @@ theorem internalDirectSum_coroot'_apply (c : κ) (i : ι c) (x : M) :
     (internalDirectSum hEi hEt P).coroot' ⟨c, i⟩ x =
       (P c).coroot' i (internalProjection hEi hEt c x) :=
   (rfl)
+
+/-- Restricting a coroot of `internalDirectSum` from summand `c` to `E c` recovers `(P c).coroot i`
+via the summand perfect pairing. -/
+theorem toPerfPair_symm_internalDirectSum_coroot_comp_same (c : κ) (i : ι c) :
+    (P c).flip.toPerfPair.symm
+        (((internalDirectSum hEi hEt P).coroot ⟨c, i⟩).comp (E c).subtype) =
+      (P c).coroot i := by
+  apply (P c).flip.toPerfPair.injective
+  ext x
+  simp [coroot']
+
+/-- Restricting a coroot of `internalDirectSum` from summand `c` to a distinct summand `E d`
+vanishes. -/
+theorem internalDirectSum_coroot_comp_ne {c d : κ} (hdc : d ≠ c) (i : ι c) :
+    ((internalDirectSum hEi hEt P).coroot ⟨c, i⟩).comp (E d).subtype = 0 := by
+  ext x
+  simp [internalProjection_apply_of_ne hEi hEt hdc]
 
 @[simp]
 theorem internalDirectSum_pairing_same (c : κ) (i j : ι c) :
@@ -389,6 +409,22 @@ theorem piEquivInternalDirectSum_coweightMap_apply [DecidableEq κ]
     (piEquivInternalDirectSum hEi hEt P).coweightMap f c =
       (P c).flip.toPerfPair.symm (f.comp (E c).subtype) :=
   internalDirectSumCoweightEquiv_symm_apply hEi hEt P f c
+
+/-- Assembling a tuple of summand coweights under
+`(piEquivInternalDirectSum hEi hEt P).coweightEquiv.symm` evaluates on `x : M` as the sum of the
+summand pairings against `internalProjection hEi hEt c x`. -/
+@[simp]
+theorem piEquivInternalDirectSum_coweightEquiv_symm_apply [DecidableEq κ]
+    (y : ∀ c, N c) (x : M) :
+    (piEquivInternalDirectSum hEi hEt P).coweightEquiv.symm y x =
+      ∑ c, (P c).toLinearMap (internalProjection hEi hEt c x) (y c) := by
+  have heq : (piEquivInternalDirectSum hEi hEt P).coweightEquiv =
+      (internalDirectSumCoweightEquiv hEi hEt P).symm :=
+    LinearEquiv.toLinearMap_injective rfl
+  rw [heq, LinearEquiv.symm_symm, internalDirectSumCoweightEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.dualMap_apply, LinearMap.toPerfPair_apply, LinearMap.piPairing_apply_apply]
+  refine Finset.sum_congr rfl fun c _ ↦ ?_
+  simp
 
 end EquivPi
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Root systems whose automorphisms are all Weyl

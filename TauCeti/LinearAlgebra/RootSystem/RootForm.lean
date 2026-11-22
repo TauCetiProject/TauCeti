@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+public import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Canonical bilinear forms under morphisms of root pairings
 
 A morphism `f : P.Hom Q` of finite root pairings preserves the canonical root form `RootForm`:
 its index bijection reindexes the sum of products of coroot values. This file lives downstream of
-`TauCeti.LinearAlgebra.RootSystem.HomInvariance` and
-`Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate` without pulling in invariant-form or
-positive-definiteness theory.
+`TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic` and
+`Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear` without pulling in nondegeneracy,
+invariant-form, or positive-definiteness theory.
 
 ## Main results
 

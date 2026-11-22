@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Internal
 public import TauCeti.LinearAlgebra.RootSystem.Height
 import TauCeti.LinearAlgebra.LinearIndependent.Pi
-import TauCeti.LinearAlgebra.RootSystem.EquivComp
 
 /-!
 # Bases, Cartan matrices, and heights for direct sums of root pairings
@@ -126,8 +125,7 @@ that summand. -/
 noncomputable def Base.restrictPi (b : (RootPairing.pi P).Base) (c : κ) : (P c).Base :=
   have hsupp : (b.support : Set (Σ d, ι d)) = Set.univ.sigma fun d ↦
       ((b.support.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d)) := by
-    ext ⟨d, i⟩
-    simp
+    simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
   { support := b.support.preimage (Sigma.mk c) sigma_mk_injective.injOn
     linearIndepOn_root := by
       have hfn : (fun p : Σ d, ι d ↦ Pi.single p.1 ((P p.1).root p.2)) =

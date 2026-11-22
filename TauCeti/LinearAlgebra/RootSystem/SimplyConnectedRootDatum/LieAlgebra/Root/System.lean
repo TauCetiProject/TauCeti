@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
 
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Chain
 
 /-!

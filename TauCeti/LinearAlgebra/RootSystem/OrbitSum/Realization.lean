@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.Basic
 public import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Orbit-sum realizations of a root-pairing automorphism

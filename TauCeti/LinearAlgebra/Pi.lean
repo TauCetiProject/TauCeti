@@ -35,6 +35,8 @@ weights.
 
 * `Submodule.disjoint_pi_compl_bot_of_disjoint`: disjoint index sets give disjoint submodules of
   families vanishing outside them.
+* `Submodule.span_iUnion_single`: the span of a union of coordinate embeddings is the product of
+  the summand spans.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
   coordinates along `e` reads the coordinate at `e i` from `i`, and moves a one-point family to
   the image coordinate.
@@ -116,6 +118,17 @@ public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R
   obtain ⟨a, ha⟩ := mem_span_singleton.mp hmem
   have := congrFun ha i
   simp [hij] at this
+
+/-- For a finite index type `ι`, the `R`-span of the union of the coordinate embeddings
+`Pi.single i '' s i` is the product submodule `Submodule.pi Set.univ (fun i ↦ span R (s i))`. -/
+public theorem span_iUnion_single {R ι : Type*} {M : ι → Type*} [Semiring R] [DecidableEq ι]
+    [Finite ι] [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (s : ∀ i, Set (M i)) :
+    span R (⋃ i, Pi.single i '' s i) = pi Set.univ fun i ↦ span R (s i) := by
+  rw [span_iUnion]
+  have hsingle (i : ι) :
+      span R (Pi.single i '' s i) = (span R (s i)).map (LinearMap.single R M i) := by
+    rw [show Pi.single i '' s i = (LinearMap.single R M i) '' s i from rfl, ← map_span]
+  simp_rw [hsingle, iSup_map_single]
 
 end Submodule
 

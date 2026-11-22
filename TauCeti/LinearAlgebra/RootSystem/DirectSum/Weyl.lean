@@ -31,12 +31,14 @@ respect to `TauCeti.internalProjection`.
 
 ## Main results
 
-* `RootPairing.piWeylGroupEquiv_smul`, `RootPairing.piWeylGroupEquiv_ofIdx`: equivariance and
-  generator formulas for `RootPairing.piWeylGroupEquiv`.
+* `RootPairing.piWeylGroupEquiv_smul`, `RootPairing.piWeylGroupEquiv_ofIdx`,
+  `RootPairing.piWeylGroupEquiv_symm_mulSingle_ofIdx`: equivariance and generator formulas for
+  `RootPairing.piWeylGroupEquiv`.
 * `RootPairing.internalProjection_smul_internalDirectSum`,
   `RootPairing.internalDirectSumWeylGroupEquiv_ofIdx_self`,
-  `RootPairing.internalDirectSumWeylGroupEquiv_ofIdx_ne`: equivariance and generator formulas for
-  `RootPairing.internalDirectSumWeylGroupEquiv`.
+  `RootPairing.internalDirectSumWeylGroupEquiv_ofIdx_ne`,
+  `RootPairing.internalDirectSumWeylGroupEquiv_symm_mulSingle_ofIdx`: equivariance and generator
+  formulas for `RootPairing.internalDirectSumWeylGroupEquiv`.
 
 ## References
 
@@ -131,6 +133,14 @@ theorem piWeylGroupEquiv_ofIdx (c : κ) (i : ι c) :
   exact Pi.mulSingle_op (fun d ↦ ⇑(P d).weylGroup.subtype) (fun _ ↦ map_one _) c
     (weylGroup.ofIdx (P c) i)
 
+/-- Lifting a single summand reflection from coordinate `c` maps under `piWeylGroupEquiv.symm`
+to the direct-sum reflection at `⟨c, i⟩`. -/
+@[simp]
+theorem piWeylGroupEquiv_symm_mulSingle_ofIdx (c : κ) (i : ι c) :
+    (piWeylGroupEquiv P).symm (Pi.mulSingle c (weylGroup.ofIdx (P c) i)) =
+      weylGroup.ofIdx (pi P) ⟨c, i⟩ :=
+  (piWeylGroupEquiv P).symm_apply_eq.mpr (piWeylGroupEquiv_ofIdx P c i).symm
+
 end External
 
 section Internal
@@ -180,6 +190,22 @@ theorem internalDirectSumWeylGroupEquiv_ofIdx_ne {c d : κ} (hdc : d ≠ c) (i :
   let _ : Fintype κ := Fintype.ofFinite κ
   let _ : DecidableEq κ := Classical.decEq κ
   simp [internalDirectSumWeylGroupEquiv, hdc]
+
+/-- Lifting a single summand reflection from coordinate `c` maps under
+`internalDirectSumWeylGroupEquiv.symm` to the internal direct-sum reflection at `⟨c, i⟩`. -/
+@[simp]
+theorem internalDirectSumWeylGroupEquiv_symm_mulSingle_ofIdx [DecidableEq κ]
+    (c : κ) (i : ι c) :
+    (internalDirectSumWeylGroupEquiv hEi hEt P).symm
+        (Pi.mulSingle c (weylGroup.ofIdx (P c) i)) =
+      weylGroup.ofIdx (internalDirectSum hEi hEt P) ⟨c, i⟩ := by
+  let _ : Fintype κ := Fintype.ofFinite κ
+  rw [MulEquiv.symm_apply_eq]
+  ext d
+  by_cases hdc : d = c
+  · subst hdc
+    simp
+  · simp [hdc]
 
 end Internal
 

@@ -198,32 +198,6 @@ noncomputable def internalDirectSumEquiv [Fintype ι] (hQi : iSupIndep Q) (hQt :
     (LinearEquiv.ofBijective (DirectSum.coeLinearMap Q)
       (DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hQi hQt))
 
-/-- Applying the internal direct-sum equivalence to a single-coordinate tuple returns the coerced
-element in `M`. -/
-theorem internalDirectSumEquiv_single [Fintype ι] [inst : DecidableEq ι]
-    (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) (x : Q i) :
-    internalDirectSumEquiv hQi hQt (Pi.single i x) = (x : M) := by
-  let dec := Classical.decEq ι
-  have hpi : @Pi.single ι (fun j ↦ Q j) _ inst i x = @Pi.single ι (fun j ↦ Q j) _ dec i x := by
-    rw [Subsingleton.elim inst dec]
-  have hsingle := @DirectSum.linearEquivFunOnFintype_symm_single A _ ι (fun j ↦ Q j) _ _ dec _ i x
-  have hcoe := @DirectSum.coeLinearMap_of A _ ι dec M _ _ Q i x
-  exact (congrArg (internalDirectSumEquiv hQi hQt) hpi).trans
-    ((congrArg (@DirectSum.coeLinearMap A _ ι dec M _ _ Q) hsingle).trans hcoe)
-
-/-- The internal direct-sum equivalence sends a tuple of summand elements to their sum in `M`. -/
-@[simp]
-theorem internalDirectSumEquiv_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
-    (x : ∀ i, Q i) :
-    internalDirectSumEquiv hQi hQt x = ∑ i, (x i : M) := by
-  classical
-  have hlin : (internalDirectSumEquiv hQi hQt).toLinearMap =
-      LinearMap.lsum A (fun i ↦ Q i) ℕ fun i ↦ (Q i).subtype := by
-    refine LinearMap.pi_ext fun i y ↦ ?_
-    rw [LinearEquiv.coe_toLinearMap, internalDirectSumEquiv_single, LinearMap.lsum_piSingle,
-      Submodule.coe_subtype]
-  simpa [LinearMap.lsum_apply] using LinearMap.congr_fun hlin x
-
 /-- The inverse of the internal direct-sum equivalence reads off the `i`-th coordinate by
 `TauCeti.internalProjection`. -/
 @[simp]
@@ -234,6 +208,24 @@ theorem internalDirectSumEquiv_symm_apply [Fintype ι] (hQi : iSupIndep Q) (hQt 
   exact Subtype.ext
     (DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
       (DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hQi hQt) i x)
+
+/-- The internal direct-sum equivalence sends a tuple of summand elements to their sum in `M`. -/
+@[simp]
+theorem internalDirectSumEquiv_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
+    (x : ∀ i, Q i) :
+    internalDirectSumEquiv hQi hQt x = ∑ i, (x i : M) := by
+  have h := sum_coe_internalProjection hQi hQt (internalDirectSumEquiv hQi hQt x)
+  simpa [← internalDirectSumEquiv_symm_apply] using h.symm
+
+/-- Applying the internal direct-sum equivalence to a single-coordinate tuple returns the coerced
+element in `M`. -/
+theorem internalDirectSumEquiv_single [Fintype ι] [inst : DecidableEq ι]
+    (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) (x : Q i) :
+    internalDirectSumEquiv hQi hQt (Pi.single i x) = (x : M) := by
+  rw [internalDirectSumEquiv_apply, Finset.sum_eq_single_of_mem i (Finset.mem_univ i)]
+  · simp
+  · intro j _ hji
+    simp [Pi.single_eq_of_ne hji]
 
 end TauCeti
 

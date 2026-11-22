@@ -24,8 +24,9 @@ product of the Weyl groups of its irreducible component pairings `P.componentPai
 
 * `RootPairing.componentProj_smul_eq_componentWeylGroupEquiv`,
   `RootPairing.componentWeylGroupEquiv_ofIdx_self`,
-  `RootPairing.componentWeylGroupEquiv_ofIdx_ne`: equivariance and generator formulas for
-  `RootPairing.componentWeylGroupEquiv`.
+  `RootPairing.componentWeylGroupEquiv_ofIdx_ne`,
+  `RootPairing.componentWeylGroupEquiv_symm_mulSingle_ofIdx`: equivariance and generator formulas
+  for `RootPairing.componentWeylGroupEquiv`.
 
 ## References
 
@@ -73,5 +74,21 @@ theorem componentWeylGroupEquiv_ofIdx_ne [NeZero (2 : K)] [Finite ι] [P.IsRootS
     {C : P.Component} {i : ι} (hC : C ≠ P.componentOf i) :
     P.componentWeylGroupEquiv (weylGroup.ofIdx P i) C = 1 := by
   simp [componentWeylGroupEquiv, hC]
+
+/-- Lifting a single component reflection from coordinate `C` maps under
+`componentWeylGroupEquiv.symm` to the ambient reflection at `i`. -/
+@[simp]
+theorem componentWeylGroupEquiv_symm_mulSingle_ofIdx [DecidableEq P.Component]
+    [NeZero (2 : K)] [Finite ι] [P.IsRootSystem] (C : P.Component) (i : C.supp) :
+    P.componentWeylGroupEquiv.symm
+        (Pi.mulSingle C (weylGroup.ofIdx (P.componentPairing C) i)) =
+      weylGroup.ofIdx P i.val := by
+  rcases i with ⟨i, rfl⟩
+  rw [MulEquiv.symm_apply_eq]
+  ext D
+  by_cases hDC : D = P.componentOf i
+  · subst hDC
+    simp
+  · simp [hDC]
 
 end RootPairing

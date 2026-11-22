@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Hom
-public import Mathlib.LinearAlgebra.RootSystem.IsValuedIn
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 
 /-!
