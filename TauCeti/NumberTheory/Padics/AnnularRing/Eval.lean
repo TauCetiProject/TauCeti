@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.Padics.Complex.Valuation
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -496,6 +497,80 @@ theorem continuous_eval (hα : α ∈ Set.Ioo 0 1) (ht : ‖t‖ ∈ Set.Ioo (p 
   rw [dist_zero_right] at hz ⊢
   exact (norm_eval_le_zpow_of_norm_le_zpow hα ht hz.le).trans_lt (by simpa [zpow_natCast] using hr)
 
+/-- Splitting an `AlgHom` from `ℤ_p⟦X⟧` into `AnnularRing p` at degree `N`. -/
+private theorem algHom_powerSeries_eq_sum_add_pow_mul
+    (φ : PowerSeries ℤ_[p] →ₐ[ℤ_[p]] AnnularRing p) (s : PowerSeries ℤ_[p]) (N : ℕ) :
+    φ s = (∑ i ∈ Finset.range N,
+        algebraMap ℤ_[p] (AnnularRing p) (PowerSeries.coeff i s) * (φ PowerSeries.X) ^ i) +
+      (φ PowerSeries.X) ^ N * φ (PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) s) := by
+  conv_lhs => rw [PowerSeries.eq_X_pow_mul_shift_add_trunc N s, ← Polynomial.eval₂_C_X_eq_coe]
+  rw [map_add, map_mul, map_pow, ← AlgHom.coe_toRingHom, Polynomial.hom_eval₂,
+    PowerSeries.eval₂_trunc_eq_sum_range, add_comm]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [RingHom.comp_apply, AlgHom.coe_toRingHom, PowerSeries.C_eq_algebraMap, AlgHom.commutes]
+
+/-- Any bounded ring homomorphism `AnnularRing p →+* K` agreeing with `AnnularRing.eval ht`
+on `ℤ_p`, `T`, and `U` equals `AnnularRing.eval ht`, by truncating normal forms. -/
+private theorem ringHom_eq_eval_of_bounded (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
+    (g : AnnularRing p →+* K) {C : ℝ} (hC : ∀ y : AnnularRing p, ‖g y‖ ≤ C)
+    (hg_alg : ∀ c : ℤ_[p], g (algebraMap ℤ_[p] (AnnularRing p) c) = padicIntAlgebraMap p K c)
+    (hgT : g T = t) (hgU : g U = (p : K) / t) : g = AnnularRing.eval ht := by
+  ext x
+  let f₀ := (normalForm.symm x).1
+  let g₀ := (normalForm.symm x).2
+  have hx : x = ofPowerSeriesT f₀ + U * ofPowerSeriesU g₀ := by
+    have h := (normalForm.apply_symm_apply x).symm
+    rwa [← Prod.eta (normalForm.symm x), normalForm_apply] at h
+  let sT : ℕ → K := fun N ↦
+    ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i f₀) * t ^ i
+  let sU : ℕ → K := fun N ↦
+    ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i g₀) * ((p : K) / t) ^ i
+  have hnorm_p_div_t : ‖(p : K) / t‖ = ((p : ℝ) * ‖t‖)⁻¹ := by
+    have hpK : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
+      simpa [map_natCast] using norm_padicIntAlgebraMap (K := K) (p : ℤ_[p])
+    rw [norm_div, hpK, div_eq_mul_inv, mul_inv_rev, mul_comm]
+  have hdiff (N : ℕ) : ‖g x - (sT N + ((p : K) / t) * sU N)‖ ≤
+      ‖t‖ ^ N * C + ‖(p : K) / t‖ ^ (N + 1) * C := by
+    let fTail := PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) f₀
+    let gTail := PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) g₀
+    have hsplit_T := algHom_powerSeries_eq_sum_add_pow_mul ofPowerSeriesT f₀ N
+    have hsplit_U := algHom_powerSeries_eq_sum_add_pow_mul ofPowerSeriesU g₀ N
+    simp only [ofPowerSeriesT_X] at hsplit_T
+    simp only [ofPowerSeriesU_X] at hsplit_U
+    have hgx : g x - (sT N + ((p : K) / t) * sU N) =
+        t ^ N * g (ofPowerSeriesT fTail) + ((p : K) / t) ^ (N + 1) * g (ofPowerSeriesU gTail) := by
+      conv_lhs => rw [hx, hsplit_T, hsplit_U]
+      simp only [map_add, map_sum, map_mul, map_pow, hg_alg, hgT, hgU, sT, sU, fTail, gTail]
+      ring
+    rw [hgx]
+    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+    · rw [norm_mul, norm_pow]
+      exact mul_le_mul_of_nonneg_left (hC _) (pow_nonneg (norm_nonneg t) N)
+    · rw [norm_mul, norm_pow]
+      exact mul_le_mul_of_nonneg_left (hC _) (pow_nonneg (norm_nonneg _) (N + 1))
+  have htend_bound : Tendsto (fun N : ℕ ↦ ‖t‖ ^ N * C + ‖(p : K) / t‖ ^ (N + 1) * C) atTop
+      (𝓝 0) := by
+    have h1 : Tendsto (fun N : ℕ ↦ ‖t‖ ^ N * C) atTop (𝓝 (0 * C)) :=
+      (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg t) ht.2).mul_const C
+    have h2 : Tendsto (fun N : ℕ ↦ ‖(p : K) / t‖ ^ (N + 1) * C) atTop (𝓝 (0 * C)) :=
+      ((tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _)
+        (hnorm_p_div_t ▸ inv_p_mul_norm_lt_one ht)).comp (tendsto_add_atTop_nat 1)).mul_const C
+    simpa only [zero_mul, add_zero] using h1.add h2
+  have htend_g : Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop (𝓝 (g x)) :=
+    tendsto_iff_norm_sub_tendsto_zero.2 <|
+      squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ (norm_sub_rev _ _).trans_le (hdiff N))
+        htend_bound
+  have htend_eval : Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop
+      (𝓝 (AnnularRing.eval ht x)) := by
+    have hlim : AnnularRing.eval ht x = AnnularRing.eval ht (ofPowerSeriesT f₀) +
+        ((p : K) / t) * AnnularRing.eval ht (ofPowerSeriesU g₀) := by
+      rw [hx, map_add, map_mul, eval_U]
+    rw [hlim]
+    exact (hasSum_eval_ofPowerSeriesT ht f₀).tendsto_sum_nat.add
+      (tendsto_const_nhds.mul (hasSum_eval_ofPowerSeriesU ht g₀).tendsto_sum_nat)
+  exact tendsto_nhds_unique htend_g htend_eval
+
 /-- Any continuous ring homomorphism `AnnularLaurent p hα →+* K` agreeing with
 `padicIntAlgebraMap p K` on `ℤ_p` and sending `unitT p hα` to `t` equals `eval hα ht`. -/
 theorem eq_eval_of_continuous {hα : α ∈ Set.Ioo 0 1} (ht : ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1)
@@ -534,91 +609,9 @@ theorem eq_eval_of_continuous {hα : α ∈ Set.Ioo 0 1} (ht : ‖t‖ ∈ Set.I
       rw [map_mul, map_pow, f.map_mul, f.map_pow, norm_mul, norm_pow] at hfg
       change ‖g T‖ ^ r * ‖g y‖ < 1 at hfg
       rwa [hgT] at hfg
-    rw [← one_div, le_div_iff₀ (pow_pos (norm_pos_iff.2 ht0) r)]
-    linarith
-  -- Truncating a power series splits it into a finite polynomial plus a high-degree tail.
-  have htrunc (s : PowerSeries ℤ_[p]) (N : ℕ) :
-      s = (∑ i ∈ Finset.range N, PowerSeries.C (PowerSeries.coeff i s) * PowerSeries.X ^ i) +
-        PowerSeries.X ^ N * PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) s := by
-    refine PowerSeries.ext fun m ↦ ?_
-    rw [map_add, map_sum, PowerSeries.coeff_X_pow_mul']
-    simp only [PowerSeries.coeff_C_mul_X_pow]
-    split_ifs with hm
-    · rw [Finset.sum_eq_zero fun i hi ↦ ite_eq_right (by have := Finset.mem_range.1 hi; omega),
-        zero_add, PowerSeries.coeff_mk, Nat.sub_add_cancel hm]
-    · rw [Finset.sum_eq_single m (fun i _ him ↦ ite_eq_right him.symm)
-        (fun hm' ↦ absurd (Finset.mem_range.2 (not_le.1 hm)) hm'), ite_eq_left rfl, add_zero]
-  -- Comparing truncations of the normal form shows `g x = AnnularRing.eval ht x` for all `x`.
-  have hring : g = AnnularRing.eval ht := by
-    ext x
-    let f₀ := (normalForm.symm x).1
-    let g₀ := (normalForm.symm x).2
-    have hx : x = ofPowerSeriesT f₀ + U * ofPowerSeriesU g₀ := by
-      have h := (normalForm.apply_symm_apply x).symm
-      rwa [← Prod.eta (normalForm.symm x), normalForm_apply] at h
-    let sT : ℕ → K := fun N ↦
-      ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i f₀) * t ^ i
-    let sU : ℕ → K := fun N ↦
-      ∑ i ∈ Finset.range N, padicIntAlgebraMap p K (PowerSeries.coeff i g₀) * ((p : K) / t) ^ i
-    have hnorm_p_div_t : ‖(p : K) / t‖ = ((p : ℝ) * ‖t‖)⁻¹ := by
-      have hpK : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
-        simpa [map_natCast] using norm_padicIntAlgebraMap (K := K) (p : ℤ_[p])
-      rw [norm_div, hpK, div_eq_mul_inv, mul_inv_rev, mul_comm]
-    have hdiff (N : ℕ) : ‖g x - (sT N + ((p : K) / t) * sU N)‖ ≤
-        ‖t‖ ^ N * (‖t‖ ^ r)⁻¹ + ‖(p : K) / t‖ ^ (N + 1) * (‖t‖ ^ r)⁻¹ := by
-      let fTail := PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) f₀
-      let gTail := PowerSeries.mk fun i ↦ PowerSeries.coeff (i + N) g₀
-      have hsplit_T : ofPowerSeriesT f₀ =
-          (∑ i ∈ Finset.range N,
-            algebraMap ℤ_[p] (AnnularRing p) (PowerSeries.coeff i f₀) * T ^ i) +
-            T ^ N * ofPowerSeriesT fTail := by
-        conv_lhs => rw [htrunc f₀ N]
-        simp only [map_add, map_sum, map_mul, map_pow, PowerSeries.C_eq_algebraMap,
-          AlgHom.commutes, ofPowerSeriesT_X, fTail]
-      have hsplit_U : U * ofPowerSeriesU g₀ =
-          U * (∑ i ∈ Finset.range N,
-            algebraMap ℤ_[p] (AnnularRing p) (PowerSeries.coeff i g₀) * U ^ i) +
-            U ^ (N + 1) * ofPowerSeriesU gTail := by
-        conv_lhs => rw [htrunc g₀ N]
-        simp only [map_add, map_sum, map_mul, map_pow, PowerSeries.C_eq_algebraMap,
-          AlgHom.commutes, ofPowerSeriesU_X, mul_add, pow_succ', mul_assoc, gTail]
-      have hgx : g x - (sT N + ((p : K) / t) * sU N) =
-          t ^ N * g (ofPowerSeriesT fTail) +
-            ((p : K) / t) ^ (N + 1) * g (ofPowerSeriesU gTail) := by
-        rw [hx, hsplit_T, hsplit_U]
-        simp only [map_add, map_sum, map_mul, map_pow, hg_alg, hgT, hgU, sT, sU]
-        ring
-      rw [hgx]
-      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-      · rw [norm_mul, norm_pow]
-        exact mul_le_mul_of_nonneg_left (hg_bound _) (pow_nonneg (norm_nonneg t) N)
-      · rw [norm_mul, norm_pow]
-        exact mul_le_mul_of_nonneg_left (hg_bound _) (pow_nonneg (norm_nonneg _) (N + 1))
-    have htend_bound : Tendsto (fun N : ℕ ↦
-        ‖t‖ ^ N * (‖t‖ ^ r)⁻¹ + ‖(p : K) / t‖ ^ (N + 1) * (‖t‖ ^ r)⁻¹) atTop (𝓝 0) := by
-      have h1 : Tendsto (fun N : ℕ ↦ ‖t‖ ^ N * (‖t‖ ^ r)⁻¹) atTop (𝓝 (0 * (‖t‖ ^ r)⁻¹)) :=
-        (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg t) ht.2).mul_const _
-      have h2 : Tendsto (fun N : ℕ ↦ ‖(p : K) / t‖ ^ (N + 1) * (‖t‖ ^ r)⁻¹) atTop
-          (𝓝 (0 * (‖t‖ ^ r)⁻¹)) :=
-        (((tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _)
-          (hnorm_p_div_t ▸ inv_p_mul_norm_lt_one ht)).comp (tendsto_add_atTop_nat 1))).mul_const _
-      simpa only [zero_mul, add_zero] using h1.add h2
-    have htend_g : Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop (𝓝 (g x)) := by
-      refine tendsto_iff_norm_sub_tendsto_zero.2 ?_
-      refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_) htend_bound
-      rw [norm_sub_rev]
-      exact hdiff N
-    have htend_eval : Tendsto (fun N ↦ sT N + ((p : K) / t) * sU N) atTop
-        (𝓝 (AnnularRing.eval ht x)) := by
-      have hlim : AnnularRing.eval ht x =
-          AnnularRing.eval ht (ofPowerSeriesT f₀) +
-            ((p : K) / t) * AnnularRing.eval ht (ofPowerSeriesU g₀) := by
-        rw [hx, map_add, map_mul, eval_U]
-      rw [hlim]
-      dsimp only [sT, sU]
-      exact (hasSum_eval_ofPowerSeriesT ht f₀).tendsto_sum_nat.add
-        (tendsto_const_nhds.mul (hasSum_eval_ofPowerSeriesU ht g₀).tendsto_sum_nat)
-    exact tendsto_nhds_unique htend_g htend_eval
+    rw [← one_div, le_div_iff₀' (pow_pos (norm_pos_iff.2 ht0) r)]
+    exact hprod.le
+  have hring := ringHom_eq_eval_of_bounded ht g hg_bound hg_alg hgT hgU
   exact IsLocalization.ringHom_ext (Submonoid.powers (T : AnnularRing p)) <| by
     ext x
     exact (RingHom.congr_fun hring x).trans (eval_algebraMap hα ht x).symm
