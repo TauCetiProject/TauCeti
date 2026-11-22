@@ -60,7 +60,9 @@ dense in `L²`, it takes values in `L²` everywhere, with the same bound
   functions.
 * `TemperedDistribution.exists_besselPotential_smulLeftCLM_eq_and_norm_le`: the estimate on
   tempered distributions in `H^s`.
-* `TemperedDistribution.MemSobolev.smulLeftCLM`: `φ u ∈ H^s` for `u ∈ H^s` and every real `s`.
+* `TemperedDistribution.MemSobolev.smulLeftCLM`: `φ u ∈ H^s` for `u ∈ H^s` and every real `s`, and
+  `TemperedDistribution.MemSobolev.smulLeftCLM_mul`: the same for `g φ u` with `g` of temperate
+  growth.
 * `BesselPotentialSpace.smulLeftCLM`: multiplication by `φ` as a bounded operator on `H^s`, with
   `BesselPotentialSpace.norm_smulLeftCLM_le`.
 
@@ -175,7 +177,7 @@ theorem eLpNorm_rpow_smul_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ)) (
   have hg : Measurable g := ENNReal.measurable_ofReal.comp
     ((((measurable_const.add (measurable_norm.pow_const 2)).pow_const (s / 2))).mul
       (𝓕 f).continuous.norm.measurable)
-  have hint := ((𝓕 φ).integrable_one_add_norm_sq_rpow_mul_norm (ν := volume) (|s| / 2)).const_mul
+  have hint := ((𝓕 φ).integrable_one_add_norm_sq_rpow_mul_norm (μ := volume) (|s| / 2)).const_mul
     (2 ^ (|s| / 2))
   have hk_int : ∫⁻ ζ, k ζ = ENNReal.ofReal
       (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) := by
@@ -306,6 +308,17 @@ theorem MemSobolev.smulLeftCLM {s : ℝ} {u : 𝓢'(E, F)} (hu : MemSobolev s 2 
   obtain ⟨v, hv⟩ := hu
   obtain ⟨v', hv', -⟩ := exists_besselPotential_smulLeftCLM_eq_and_norm_le s φ hv
   exact ⟨v', hv'⟩
+
+/-- Multiplication by `g φ`, for `g` of temperate growth and `φ` a Schwartz function, preserves
+`H^s`, since `g φ` is again a Schwartz function. -/
+theorem MemSobolev.smulLeftCLM_mul {s : ℝ} {u : 𝓢'(E, F)} (hu : MemSobolev s 2 u) {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (φ : 𝓢(E, ℂ)) :
+    MemSobolev s 2 (TemperedDistribution.smulLeftCLM F (g * ⇑φ) u) := by
+  have hgφ : g * ⇑φ = ⇑(SchwartzMap.smulLeftCLM ℂ g φ) := by
+    ext x
+    rw [SchwartzMap.smulLeftCLM_apply_apply hg, Pi.mul_apply, smul_eq_mul]
+  rw [hgφ]
+  exact hu.smulLeftCLM _
 
 end TemperedDistribution
 

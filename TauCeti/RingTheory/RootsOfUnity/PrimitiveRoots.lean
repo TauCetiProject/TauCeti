@@ -36,6 +36,9 @@ it therefore sends each element outside its kernel to a primitive `p`-th root of
 Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th root of unity gives
 `n` distinct `n`-th roots of `a`, and these are all of them.
 
+A primitive root of unity in an extension of a field pulls back: if `ζ` is a primitive
+`m * ℓ`-th root of unity and `η` maps to `ζ ^ ℓ`, then `η` is a primitive `m`-th root of unity.
+
 If `q²` is a primitive `l`-th root of unity, then `q^(l(l+1)) = (-1)^(l+1)`, the sign that appears
 when quantum binomial coefficients are evaluated at such a `q`.
 
@@ -50,6 +53,8 @@ evaluated scalar form.
 
 * `IsPrimitiveRoot.map_eq_pow`: a monoid endomorphism sending a primitive `n`-th root of
   unity `ζ` to `ζ ^ j` sends every `n`-th root of unity `μ` to `μ ^ j`.
+* `IsPrimitiveRoot.of_algebraMap_eq_pow`: if `ζ` is a primitive `m * ℓ`-th root of unity and `η`
+  maps to `ζ ^ ℓ`, then `η` is a primitive `m`-th root of unity.
 * `IsPrimitiveRoot.autToPow_eq_one_iff`: the cyclotomic character kills an automorphism exactly
   when it fixes the chosen primitive root.
 * `IsPrimitiveRoot.coe_autToPow_eq_natCast_iff`: an automorphism has cyclotomic character `k`
@@ -102,6 +107,13 @@ theorem _root_.IsPrimitiveRoot.map_eq_pow {F : Type*} [FunLike F R R] [MonoidHom
     (hμ : μ ^ n = 1) : σ μ = μ ^ j := by
   obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one hμ
   rw [map_pow, hσ, ← pow_mul, ← pow_mul, Nat.mul_comm]
+
+/-- If `ζ` is a primitive `m * ℓ`-th root of unity and `η` maps to `ζ ^ ℓ`, then `η` is a
+primitive `m`-th root of unity. -/
+theorem _root_.IsPrimitiveRoot.of_algebraMap_eq_pow {K L : Type*} [Field K] [CommRing L]
+    [Nontrivial L] [Algebra K L] {m ℓ : ℕ} [NeZero (m * ℓ)] {ζ : L} {η : K}
+    (hζ : IsPrimitiveRoot ζ (m * ℓ)) (hη : algebraMap K L η = ζ ^ ℓ) : IsPrimitiveRoot η m :=
+  .of_map_of_injective (hη ▸ hζ.pow (NeZero.pos _) (mul_comm m ℓ)) (algebraMap K L).injective
 
 /-- If `Φ_n` is irreducible over `K`, every coprime power of a primitive root in a normal
 extension is the image of that root under a `K`-algebra automorphism. -/

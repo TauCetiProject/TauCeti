@@ -127,7 +127,7 @@ private theorem exists_eLpNorm_le_mul_eLpNormWkp_one_of_w1p [Fact (1 ≤ (q : �
         eLpNorm_sum_le ht
     _ ≤ ∑ i, ‖A i‖ₑ * eLpNorm (fun z => ℓ i (u z)) t (volume.restrict V) := by
         gcongr with i
-        exact eLpNorm_clm_comp_le (A i)
+        exact (A i).eLpNorm_comp_le
     _ ≤ ∑ i, ‖A i‖ₑ * (C * (‖ℓ i‖ₑ * eLpNormWkp q W 1 u)) := by
         gcongr with i
         exact (hC _).trans (by gcongr; exact eLpNormWkp_clm_comp_le (ℓ i))

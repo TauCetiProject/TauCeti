@@ -59,6 +59,8 @@ compatibility with composition characterizes the transport
   `Hₖ(M, M ∖ M)`.
 * `TauCeti.singularHomologyToLocalHomology_singularHomologyMap`: passing to local homology is
   natural in maps `j` for which `x` is the only preimage of `j x`.
+* `TauCeti.localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom`: the
+  local homology isomorphism of a chart is the map induced by the chart on its source.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.isIso_singularHomologyδ_ofSubset_compl`: the connecting morphism of the triple
   `(M, M ∖ T, M ∖ S)` is an isomorphism when the local homology along `S` vanishes.
@@ -110,6 +112,39 @@ variable {M : Type w} [TopologicalSpace M]
 abbrev localHomology (S : Set M) (k : ℕ) : A :=
   (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomology R k
 
+/-- The degree-zero relative class of a point, as the coefficient morphism into local homology
+along a set. This is the actual point section followed by the quotient map. -/
+def localHomologyPointClass (S : Set M) (x : M) : R ⟶ localHomology R S 0 :=
+  singularHomology₀Section R (X := TopCat.of M) x ≫
+    (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0
+
+/-- The point class is the image of the absolute point section under the relative quotient. -/
+@[elementwise]
+lemma localHomologyPointClass_def (S : Set M) (x : M) :
+    localHomologyPointClass R S x = singularHomology₀Section R (X := TopCat.of M) x ≫
+      (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0 := by rfl
+
+/-- The inverse of a rank-zero chart's homology coordinate is the actual relative point class. -/
+@[elementwise nosimp]
+lemma singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_localHomologyPointClass
+    {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [T1Space M] (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source)
+    (h : Module.finrank ℝ E = 0) :
+    (singularHomologyComplSingletonIsoOfFinrankEqZero R φ hx h).inv =
+      localHomologyPointClass R {x} x := by
+  rw [localHomologyPointClass_def]
+  apply (cancel_mono (singularHomologyComplSingletonIsoOfChart R φ hx 0).hom).1
+  calc
+    _ = singularHomology₀Section R (φ x) ≫
+        (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).singularHomologyπ R 0 := by
+      rw [singularHomologyComplSingletonIsoOfFinrankEqZero_inv]
+      -- The point section uses the singular functor's object, whereas the projection uses
+      -- simplicial homology; `erw` unfolds these equal presentations before reassociating.
+      erw [Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+      rfl
+    _ = _ := (singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_hom
+      R φ hx).symm
+
 /-- The subspace `M ∖ M` of the pair `(M, M ∖ M)` is empty, so `Hₖ(M, M ∖ M)` is the singular
 homology of `M`. -/
 instance isEmpty_ofSubset_compl_univ_snd :
@@ -156,6 +191,15 @@ lemma singularHomologyπ_localHomologyRestriction {S T : Set M} (h : S ⊆ T) (k
   rw [localHomologyRestriction_def]
   exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R
     (compl_subset_compl.2 h) k
+
+/-- Restricting the relative point class is the point class in the smaller pair. -/
+@[reassoc, elementwise]
+lemma localHomologyPointClass_restriction {S T : Set M} (h : S ⊆ T) (x : M) :
+    localHomologyPointClass R T x ≫ localHomologyRestriction R h 0 =
+      localHomologyPointClass R S x := by
+  rw [localHomologyPointClass_def, localHomologyPointClass_def]
+  exact (Category.assoc _ _ _).trans
+    (singularHomology₀Section R x ≫= singularHomologyπ_localHomologyRestriction R h 0)
 
 /-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`. -/
 theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
@@ -315,6 +359,20 @@ lemma localHomologyMap_def {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : �
           (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k :=
   (rfl)
 
+/-- A map of local homology carries the actual relative point class to its image point. -/
+@[reassoc, elementwise]
+lemma localHomologyPointClass_map {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (x : M) :
+    localHomologyPointClass R S x ≫ localHomologyMap R j h 0 =
+      localHomologyPointClass R T (j x) := by
+  let hf : Set.MapsTo (TopCat.ofHom j) Sᶜ Tᶜ :=
+    (mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h)
+  let f := TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N)
+    (B := Sᶜ) (B' := Tᶜ) (TopCat.ofHom j) hf
+  rw [localHomologyPointClass_def, localHomologyPointClass_def, localHomologyMap_def]
+  exact TopPair.singularHomology₀Section_singularHomologyMap _ R f x (j x)
+    (TopPair.ofSubsetMap_fst_apply (X := TopCat.of M) (Y := TopCat.of N)
+      (TopCat.ofHom j) hf x)
+
 /-- Equal continuous maps induce equal maps of local homology, with the preimage hypothesis
 transported along the equality. -/
 lemma localHomologyMap_congr {j₁ j₂ : C(M, N)} (hj : j₁ = j₂) {S : Set M} {T : Set N}
@@ -447,6 +505,54 @@ theorem singularHomologyToLocalHomology_singularHomologyMap (j : C(M, N)) {x : M
   exact h'
 
 end SingularHomologyMap
+
+section ChartIso
+
+variable {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [TopologicalSpace E]
+  [T1Space E] (φ : OpenPartialHomeomorph M E)
+
+/-- **The chart isomorphism through the source.** The local homology isomorphism of a chart `φ`
+at `a` (`TauCeti.singularHomologyComplSingletonIsoOfChart`) is the inverse of the excision
+isomorphism of the source of `φ`, followed by the map induced by its canonical source
+restriction `φ.sourceRestrict`. -/
+theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom
+    {a : M} (ha : a ∈ φ.source)
+    (h : φ.sourceRestrict ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (k : ℕ) :
+    localHomologyMap R (ContinuousMap.subtypeVal φ.source)
+        (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k ≫
+          (singularHomologyComplSingletonIsoOfChart R φ ha k).hom =
+      localHomologyMap R φ.sourceRestrict h k := by
+  have h₁ : localHomologyMap R (ContinuousMap.subtypeVal φ.source)
+      (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k =
+        TopPair.singularHomologyMap
+        (TopPair.excisionMap (X := TopCat.of M) φ.source {a}ᶜ) R k := by
+    -- The pairs agree only after unfolding the preimages of complements.
+    erw [localHomologyMap_def]
+    congr 1
+    apply TopPair.hom_ext_of_fst
+    ext z
+    erw [TopPair.excisionMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
+    rfl
+  have h₂ : localHomologyMap R φ.sourceRestrict h k =
+      TopPair.singularHomologyMap ((TopPair.ofSubsetIso (X := TopCat.of φ.source)
+          (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
+          (B := Subtype.val ⁻¹' {a}ᶜ) (B' := Subtype.val ⁻¹' {φ a}ᶜ)
+          fun z ↦ (φ.injOn.eq_iff z.property ha).not.symm).hom ≫
+        TopPair.excisionMap (X := TopCat.of E) φ.target {φ a}ᶜ) R k := by
+    -- The pairs agree only after unfolding the preimages of complements.
+    erw [localHomologyMap_def]
+    congr 1
+    apply TopPair.hom_ext_of_fst
+    ext z
+    rw [TopPair.Hom.fst_comp]
+    erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.ofSubsetIso_hom,
+      TopPair.ofSubsetMap_fst_apply,
+      TopPair.ofSubsetMap_fst_apply]
+    exact φ.sourceRestrict_apply z
+  rw [h₁, h₂, TopPair.singularHomologyMap_comp]
+  exact singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom R φ ha k
+
+end ChartIso
 
 section Chart
 
