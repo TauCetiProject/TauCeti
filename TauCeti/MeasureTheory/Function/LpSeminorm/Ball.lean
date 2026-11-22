@@ -46,10 +46,12 @@ exact form of the bounded-overlap count.
   inequalities, whose right-hand side is a power of a mean rather than a mean.
 * `TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`: the same for local estimates by two
   functions on concentric balls of radii `r` and `2 r`, with the explicit constant `2 ^ (d + 1)`.
-* `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure` and
-  `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_zero`: for `0 < p < ∞` and `eLpNorm f p μ ≠ ∞`,
-  the supremum over all centres `x` of `‖f‖_{Lᵖ(B(x, r))}` tends to `0` as the ball measure
-  (or radius, in a nontrivial finite-dimensional space) tends to `0`.
+* `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure`,
+  `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_zero`, and
+  `TauCeti.tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball`: for `0 < p < ∞` and
+  `eLpNorm f p μ ≠ ∞`, the supremum over all centres `x` of `‖f‖_{Lᵖ(B(x, r))}` (and any quantity
+  eventually bounded by a finite multiple of it) tends to `0` as the ball measure (or radius, in a
+  nontrivial finite-dimensional space) tends to `0`.
 -/
 
 public section
@@ -323,6 +325,22 @@ theorem tendsto_iSup_eLpNorm_restrict_ball_zero [Nontrivial E] {ι : Type*} {l :
     tendsto_const_nhds.congr' <| eventually_nhdsWithin_of_forall fun t ht => by
       simp [ball_eq_empty.2 ht]
   exact ((hnonpos.sup hpos).mono_left (nhdsLE_sup_nhdsGT 0).ge).comp hr
+
+omit [ProperSpace E] in
+/-- **Vanishing of quantities controlled by shrinking-ball `Lᵖ` seminorms.** In a nontrivial
+finite-dimensional real normed space, if `0 < p < ∞`, `‖f‖_{Lᵖ} ≠ ∞`, `r i → 0`, and `a i` is
+eventually bounded by `C * ⨆ x, ‖f‖_{Lᵖ(B(x, r i))}` for a finite constant `C`, then `a i → 0`. -/
+theorem tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball [Nontrivial E]
+    {ι : Type*} {l : Filter ι} {r : ι → ℝ} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : E → F}
+    (hf : eLpNorm f p μ ≠ ∞) (hr : Tendsto r l (𝓝 0)) {C : ℝ≥0∞} {a : ι → ℝ≥0∞}
+    (ha : ∀ᶠ i in l, a i ≤ C * ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i))))
+    (hC : C ≠ ∞) :
+    Tendsto a l (𝓝 0) := by
+  have hrhs := ENNReal.Tendsto.const_mul
+    (tendsto_iSup_eLpNorm_restrict_ball_zero hp0 hp hf hr) (Or.inr hC)
+  rw [mul_zero] at hrhs
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hrhs
+    (.of_forall fun _ => zero_le) ha
 
 end FiniteDimensional
 

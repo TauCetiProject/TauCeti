@@ -498,17 +498,11 @@ theorem HasWeakFDerivOn.vmoModulus_le [Nontrivial E] (hu : HasWeakFDerivOn μ �
 derivative has finite `Lⁿ` seminorm has vanishing mean oscillation. -/
 theorem HasWeakFDerivOn.memVMO [Nontrivial E] (hu : HasWeakFDerivOn μ ⊤ u Du)
     (hDu : eLpNorm Du (finrank ℝ E) μ ≠ ∞) :
-    MemVMO u μ := by
-  refine memVMO_iff_tendsto.2 ⟨hu.memBMO hDu, ?_⟩
-  have hn0 : (finrank ℝ E : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.2 finrank_pos.ne'
-  have hntop : (finrank ℝ E : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top _
-  have hsup : Tendsto (fun r : ℝ => ⨆ c : E, eLpNorm Du (finrank ℝ E) (μ.restrict (ball c r)))
-      (𝓝[>] 0) (𝓝 0) :=
-    tendsto_iSup_eLpNorm_restrict_ball_zero hn0 hntop hDu (tendsto_id.mono_left nhdsWithin_le_nhds)
-  have hrhs := ENNReal.Tendsto.const_mul hsup (Or.inr (ENNReal.ofReal_ne_top (r :=
-    2 ^ (finrank ℝ E + 1) * μ.real (ball (0 : E) 1) ^ (-(finrank ℝ E : ℝ)⁻¹))))
-  rw [mul_zero] at hrhs
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hrhs
-    (fun _ => zero_le) hu.vmoModulus_le
+    MemVMO u μ :=
+  memVMO_iff_tendsto.2 ⟨hu.memBMO hDu,
+    tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball
+      (Nat.cast_ne_zero.2 finrank_pos.ne') (ENNReal.natCast_ne_top _) hDu
+      (tendsto_id.mono_left nhdsWithin_le_nhds) (.of_forall hu.vmoModulus_le)
+      ENNReal.ofReal_ne_top⟩
 
 end TauCeti

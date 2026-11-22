@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Real
+public import TauCeti.Basic.Real.Sign
 
 /-!
 # Norms of real numbers
 
 `Real.enorm_sq_eq_ofReal_sq` converts a squared extended norm into the nonnegative
 real square embedded in `ℝ≥0∞`, for use in lower-integral energy identities.
+`Real.norm_sign_le_one` and `SignType.norm_coe_le_one` bound the norm of a real sign by `1`.
 `Filter.Eventually.norm_inv_le_inv` bounds the reciprocal of a real function that is eventually
 bounded below by a positive constant.
 -/
@@ -26,7 +28,19 @@ namespace Real
 theorem enorm_sq_eq_ofReal_sq (x : ℝ) : ‖x‖ₑ ^ 2 = ENNReal.ofReal (x ^ 2) := by
   rw [eNorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg x), sq_abs]
 
+/-- The real sign function has norm at most one. -/
+theorem norm_sign_le_one (r : ℝ) : ‖sign r‖ ≤ 1 := by
+  simpa only [norm_eq_abs] using abs_sign_le_one r
+
 end Real
+
+namespace SignType
+
+/-- Coercing a `SignType` to `ℝ` has norm at most one. -/
+theorem norm_coe_le_one (s : SignType) : ‖(s : ℝ)‖ ≤ 1 := by
+  cases s <;> simp
+
+end SignType
 
 namespace Filter.Eventually
 

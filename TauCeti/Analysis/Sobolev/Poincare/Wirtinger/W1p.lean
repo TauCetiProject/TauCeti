@@ -180,10 +180,6 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
     eLpNorm (fun x ↦ W1p.value u x - ⨍ y in (Omega : Set E), W1p.value u y ∂mu) p
         (mu.restrict Omega) ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * R) * ‖W1p.gradient u‖ₑ := by
-  rcases ne_or_eq p ∞ with hp | rfl
-  · have h := (W1p.hasWeakFDerivOn u).eLpNorm_sub_setAverage_ball_le
-      (x := c) (r := R) hOmega.symm.subset Fact.out hp
-    rwa [← hOmega, eLpNorm_innerSL_gradient u] at h
   rcases le_or_gt R 0 with hR | hR
   · -- The ball is empty, so the measure vanishes.
     have h0 : mu.restrict (Omega : Set E) = 0 := by

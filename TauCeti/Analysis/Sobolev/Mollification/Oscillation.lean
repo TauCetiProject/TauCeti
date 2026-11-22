@@ -40,8 +40,8 @@ mollifications of `W^{1,n}` maps close to a target submanifold in Schoen–Uhlen
 
 ## Main declarations
 
-* `TauCeti.HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le` and
-  `TauCeti.HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le_of_finrank`: Sobolev
+* `TauCeti.HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le_mul_rpow` and
+  `TauCeti.HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le`: Sobolev
   mollification oscillation bounds for all `1 ≤ p ≤ ∞` and at the scale-invariant exponent `p = n`.
 * `TauCeti.HasWeakFDerivOn.tendsto_iSup_setLAverage_enorm_sub_normed_convolution_indicator` and
   `TauCeti.HasWeakFDerivOn.tendsto_iSup_setLAverage_enorm_sub_normed_convolution`: uniform
@@ -76,7 +76,7 @@ on `Ω`, a normalized bump `φ`, a point `x` with `ball x φ.rOut ⊆ Ω`, and a
 `  ≤ (1 + (φ.rOut / φ.rIn) ^ n) * 2 ^ (n + 1) * ω ^ (-1 / p) * φ.rOut ^ (1 - n / p) * ‖Du‖_{Lᵖ(B)}`.
 
 No a priori integrability assumption on `u` or `Du` is required. -/
-theorem HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le
+theorem HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le_mul_rpow
     (hu : HasWeakFDerivOn μ Ω u Du) (φ : ContDiffBump (0 : E)) {x : E}
     (hball : ball x φ.rOut ⊆ Ω) {p : ℝ≥0∞} (hp1 : 1 ≤ p) :
     ⨍⁻ z in ball x φ.rOut, ‖u z - (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ₑ ∂μ ≤
@@ -133,7 +133,7 @@ In positive dimension `n = finrank ℝ E ≥ 1`, for `ball x φ.rOut ⊆ Ω`,
 `  ≤ (1 + (φ.rOut / φ.rIn) ^ n) * 2 ^ (n + 1) * ω ^ (-1 / n) * ‖Du‖_{Lⁿ(B(x, φ.rOut))}`.
 
 The radius cancels completely; only the aspect ratio `φ.rOut / φ.rIn` enters the constant. -/
-theorem HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le_of_finrank [Nontrivial E]
+theorem HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le [Nontrivial E]
     (hu : HasWeakFDerivOn μ Ω u Du) (φ : ContDiffBump (0 : E)) {x : E}
     (hball : ball x φ.rOut ⊆ Ω) :
     ⨍⁻ z in ball x φ.rOut, ‖u z - (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ₑ ∂μ ≤
@@ -142,8 +142,15 @@ theorem HasWeakFDerivOn.setLAverage_enorm_sub_normed_convolution_le_of_finrank [
         eLpNorm Du (finrank ℝ E) (μ.restrict (ball x φ.rOut)) := by
   have hn : 1 ≤ (finrank ℝ E : ℝ≥0∞) := by exact_mod_cast finrank_pos
   have hn0 : (finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.2 finrank_pos.ne'
-  have h := hu.setLAverage_enorm_sub_normed_convolution_le φ hball hn
+  have h := hu.setLAverage_enorm_sub_normed_convolution_le_mul_rpow φ hball hn
   simpa only [ENNReal.toReal_natCast, div_self hn0, sub_self, Real.rpow_zero, mul_one] using h
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- The scale-invariant `p = n` oscillation constant for aspect ratio bound `κ`. -/
+private def oscillationConst (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] (μ : Measure E) (κ : ℝ) : ℝ :=
+  (1 + (max κ 0) ^ finrank ℝ E) * 2 ^ (finrank ℝ E + 1) *
+    μ.real (ball (0 : E) 1) ^ (-(finrank ℝ E : ℝ)⁻¹)
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- Monotonicity of the scale-invariant `p = n` oscillation constant in the aspect ratio bound. -/
@@ -151,11 +158,11 @@ private theorem oscillationConst_le (φ : ContDiffBump (0 : E)) {κ : ℝ}
     (hκ : φ.rOut ≤ κ * φ.rIn) :
     (1 + (φ.rOut / φ.rIn) ^ finrank ℝ E) * 2 ^ (finrank ℝ E + 1) *
         μ.real (ball (0 : E) 1) ^ (-(finrank ℝ E : ℝ)⁻¹) ≤
-      (1 + (max κ 0) ^ finrank ℝ E) * 2 ^ (finrank ℝ E + 1) *
-        μ.real (ball (0 : E) 1) ^ (-(finrank ℝ E : ℝ)⁻¹) := by
+      oscillationConst E μ κ := by
   have hratio : φ.rOut / φ.rIn ≤ max κ 0 :=
     ((div_le_iff₀ φ.rIn_pos).2 hκ).trans (le_max_left κ 0)
   have hr0 : 0 ≤ φ.rOut / φ.rIn := div_nonneg φ.rOut_pos.le φ.rIn_pos.le
+  unfold oscillationConst
   gcongr
 
 /-- **Uniform vanishing of the mollification oscillation on compact subsets at `p = n`.** Let
@@ -174,21 +181,12 @@ theorem HasWeakFDerivOn.tendsto_iSup_setLAverage_enorm_sub_normed_convolution_in
     Tendsto (fun i => ⨆ x ∈ K, ⨍⁻ z in ball x (φ i).rOut,
         ‖u z - ((φ i).normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) x‖ₑ ∂μ)
       l (𝓝 0) := by
-  have hn0 : (finrank ℝ E : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.2 finrank_pos.ne'
-  have hntop : (finrank ℝ E : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top _
   have hDext : eLpNorm ((V : Set E).indicator Du) (finrank ℝ E) μ ≠ ∞ := by
     rwa [eLpNorm_indicator_eq_eLpNorm_restrict (f := Du) V.isOpen.measurableSet.nullMeasurableSet]
-  have hsup : Tendsto (fun i =>
-        ⨆ c : E, eLpNorm ((V : Set E).indicator Du) (finrank ℝ E) (μ.restrict (ball c (φ i).rOut)))
-      l (𝓝 0) :=
-    tendsto_iSup_eLpNorm_restrict_ball_zero hn0 hntop hDext hφ
-  set C : ℝ := (1 + (max κ 0) ^ finrank ℝ E) * 2 ^ (finrank ℝ E + 1) *
-    μ.real (ball (0 : E) 1) ^ (-(finrank ℝ E : ℝ)⁻¹)
-  have hrhs := ENNReal.Tendsto.const_mul hsup (Or.inr (ENNReal.ofReal_ne_top (r := C)))
-  rw [mul_zero] at hrhs
   obtain ⟨δ, hδ, hδV⟩ := hK.exists_cthickening_subset_open V.isOpen hKV
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hrhs
-    (.of_forall fun _ => zero_le) ?_
+  refine tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball
+    (Nat.cast_ne_zero.2 finrank_pos.ne') (ENNReal.natCast_ne_top _) hDext hφ
+    (C := ENNReal.ofReal (oscillationConst E μ κ)) ?_ ENNReal.ofReal_ne_top
   filter_upwards [hφ.eventually (gt_mem_nhds hδ), hκ] with i hi hκi
   refine iSup₂_le fun x hx => ?_
   have hball : ball x (φ i).rOut ⊆ V := fun y hy =>
@@ -198,7 +196,7 @@ theorem HasWeakFDerivOn.tendsto_iSup_setLAverage_enorm_sub_normed_convolution_in
     eLpNorm_congr_ae <| ae_restrict_of_forall_mem isOpen_ball.measurableSet fun y hy =>
       (Set.indicator_of_mem (hball hy) Du).symm
   rw [(φ i).normed_convolution_indicator_eq_of_ball_subset hball]
-  refine (hu.setLAverage_enorm_sub_normed_convolution_le_of_finrank (φ i)
+  refine (hu.setLAverage_enorm_sub_normed_convolution_le (φ i)
     (hball.trans (SetLike.coe_subset_coe.2 hVΩ))).trans ?_
   rw [hDu_eq]
   exact mul_le_mul' (ENNReal.ofReal_le_ofReal (oscillationConst_le (φ i) hκi))
@@ -218,20 +216,12 @@ theorem HasWeakFDerivOn.tendsto_iSup_setLAverage_enorm_sub_normed_convolution
     Tendsto (fun i => ⨆ x : E, ⨍⁻ z in ball x (φ i).rOut,
         ‖u z - ((φ i).normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ₑ ∂μ)
       l (𝓝 0) := by
-  have hn0 : (finrank ℝ E : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.2 finrank_pos.ne'
-  have hntop : (finrank ℝ E : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top _
-  have hsup : Tendsto (fun i => ⨆ c : E, eLpNorm Du (finrank ℝ E) (μ.restrict (ball c (φ i).rOut)))
-      l (𝓝 0) :=
-    tendsto_iSup_eLpNorm_restrict_ball_zero hn0 hntop hDu hφ
-  set C : ℝ := (1 + (max κ 0) ^ finrank ℝ E) * 2 ^ (finrank ℝ E + 1) *
-    μ.real (ball (0 : E) 1) ^ (-(finrank ℝ E : ℝ)⁻¹)
-  have hrhs := ENNReal.Tendsto.const_mul hsup (Or.inr (ENNReal.ofReal_ne_top (r := C)))
-  rw [mul_zero] at hrhs
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hrhs
-    (.of_forall fun _ => zero_le) ?_
+  refine tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball
+    (Nat.cast_ne_zero.2 finrank_pos.ne') (ENNReal.natCast_ne_top _) hDu hφ
+    (C := ENNReal.ofReal (oscillationConst E μ κ)) ?_ ENNReal.ofReal_ne_top
   filter_upwards [hκ] with i hκi
   refine iSup_le fun x => ?_
-  refine (hu.setLAverage_enorm_sub_normed_convolution_le_of_finrank (φ i) (subset_univ _)).trans ?_
+  refine (hu.setLAverage_enorm_sub_normed_convolution_le (φ i) (subset_univ _)).trans ?_
   exact mul_le_mul' (ENNReal.ofReal_le_ofReal (oscillationConst_le (φ i) hκi))
     (le_iSup (fun c => eLpNorm Du (finrank ℝ E) (μ.restrict (ball c (φ i).rOut))) x)
 

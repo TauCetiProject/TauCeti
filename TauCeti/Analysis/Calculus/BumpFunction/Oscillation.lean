@@ -204,29 +204,30 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
+/-- Pointwise upper bound on a normalized bump in terms of the open-ball measure. -/
+private theorem normed_le_div_measureReal_ball (φ : ContDiffBump (0 : E)) (y : E) :
+    φ.normed μ y ≤ (φ.rOut / φ.rIn) ^ finrank ℝ E / μ.real (ball 0 φ.rOut) := by
+  rw [← measureReal_congr (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero _ _ φ.rOut_pos.ne')]
+  exact φ.normed_le_div_measure_closedBall_rOut μ (φ.rOut / φ.rIn)
+    (div_mul_cancel₀ _ φ.rIn_pos.ne').ge y
+
 /-- **Distance from a normalized-bump mollification to the ball average.** -/
 theorem enorm_normed_convolution_sub_setAverage_ball_le (φ : ContDiffBump (0 : E)) {f : E → F}
     {x : E} (hf : IntegrableOn f (ball x φ.rOut) μ) :
     ‖(φ.normed μ ⋆[lsmul ℝ ℝ, μ] f) x - ⨍ z in ball x φ.rOut, f z ∂μ‖ₑ ≤
       ENNReal.ofReal ((φ.rOut / φ.rIn) ^ finrank ℝ E) *
-        ⨍⁻ z in ball x φ.rOut, ‖f z - ⨍ w in ball x φ.rOut, f w ∂μ‖ₑ ∂μ := by
-  refine TauCeti.enorm_convolution_sub_setAverage_ball_le φ.nonneg_normed φ.integral_normed
-    φ.support_normed_eq.subset ?_ hf
-  rw [← measureReal_congr (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero _ _ φ.rOut_pos.ne')]
-  exact φ.normed_le_div_measure_closedBall_rOut μ (φ.rOut / φ.rIn)
-    (div_mul_cancel₀ _ φ.rIn_pos.ne').ge
+        ⨍⁻ z in ball x φ.rOut, ‖f z - ⨍ w in ball x φ.rOut, f w ∂μ‖ₑ ∂μ :=
+  TauCeti.enorm_convolution_sub_setAverage_ball_le φ.nonneg_normed φ.integral_normed
+    φ.support_normed_eq.subset φ.normed_le_div_measureReal_ball hf
 
 /-- **Mean deviation from a normalized-bump mollification.** -/
 theorem setLAverage_enorm_sub_normed_convolution_le (φ : ContDiffBump (0 : E)) {f : E → F}
     {x : E} (hf : IntegrableOn f (ball x φ.rOut) μ) :
     ⨍⁻ z in ball x φ.rOut, ‖f z - (φ.normed μ ⋆[lsmul ℝ ℝ, μ] f) x‖ₑ ∂μ ≤
       ENNReal.ofReal (1 + (φ.rOut / φ.rIn) ^ finrank ℝ E) *
-        ⨍⁻ z in ball x φ.rOut, ‖f z - ⨍ w in ball x φ.rOut, f w ∂μ‖ₑ ∂μ := by
-  refine TauCeti.setLAverage_enorm_sub_convolution_le φ.nonneg_normed φ.integral_normed
-    φ.support_normed_eq.subset ?_ hf
-  rw [← measureReal_congr (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero _ _ φ.rOut_pos.ne')]
-  exact φ.normed_le_div_measure_closedBall_rOut μ (φ.rOut / φ.rIn)
-    (div_mul_cancel₀ _ φ.rIn_pos.ne').ge
+        ⨍⁻ z in ball x φ.rOut, ‖f z - ⨍ w in ball x φ.rOut, f w ∂μ‖ₑ ∂μ :=
+  TauCeti.setLAverage_enorm_sub_convolution_le φ.nonneg_normed φ.integral_normed
+    φ.support_normed_eq.subset φ.normed_le_div_measureReal_ball hf
 
 end ContDiffBump
 

@@ -14,9 +14,11 @@ import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Group.Integral
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.Sign
 
 /-!
 # Endpoint example: mollification of `|x|` on `ℝ`
@@ -51,13 +53,6 @@ open ContinuousLinearMap Filter MeasureTheory Metric Set TopologicalSpace
 open scoped ContDiff Convolution ENNReal Topology
 
 namespace TauCeti
-
-private theorem measurable_sign : Measurable fun y : ℝ => (SignType.sign y : ℝ) := by
-  simpa only [← deriv_abs] using measurable_deriv (abs : ℝ → ℝ)
-
-private theorem norm_sign_le_one (y : ℝ) : ‖(SignType.sign y : ℝ)‖ ≤ 1 := by
-  rw [Real.norm_eq_abs]
-  cases SignType.sign y <;> norm_num
 
 /-- The absolute value on `ℝ` has weak Fréchet derivative `x ↦ (SignType.sign x : ℝ) • id`. -/
 theorem hasWeakFDerivOn_abs :
@@ -119,10 +114,10 @@ theorem _root_.ContDiffBump.fderiv_normed_convolution_abs_apply (φ : ContDiffBu
   have hDu_loc : LocallyIntegrable
       (fun y : ℝ => (SignType.sign y : ℝ) • ContinuousLinearMap.id ℝ ℝ) volume :=
     (memLp_top_of_bound (f := fun y : ℝ => (SignType.sign y : ℝ) • ContinuousLinearMap.id ℝ ℝ)
-      (measurable_sign.aestronglyMeasurable.smul aestronglyMeasurable_const) 1
+      (measurable_coe_sign.aestronglyMeasurable.smul aestronglyMeasurable_const) 1
       (.of_forall fun y => by
         rw [norm_smul, ContinuousLinearMap.norm_id, mul_one]
-        exact norm_sign_le_one y)).locallyIntegrable le_top
+        exact SignType.norm_coe_le_one (SignType.sign y))).locallyIntegrable le_top
   have h := hasWeakFDerivOn_abs.fderiv_convolution_right continuous_abs.locallyIntegrable hDu_loc
     (φ.normed volume) φ.contDiff_normed φ.hasCompactSupport_normed x (fun _ _ => trivial)
   rw [convolution_flip, convolution_flip] at h
@@ -149,13 +144,12 @@ theorem tendsto_eLpNorm_fderiv_normed_convolution_abs_sub {K : Set ℝ} (hK : Is
       isFiniteMeasure_restrict.2
         ((measure_mono (thickening_subset_cthickening 1 K)).trans_lt
           hK.cthickening.measure_lt_top).ne
-    exact (memLp_top_of_bound measurable_sign.aestronglyMeasurable 1
-      (.of_forall norm_sign_le_one)).mono_exponent le_top
+    exact (memLp_top_of_bound measurable_coe_sign.aestronglyMeasurable 1
+      (.of_forall fun y => SignType.norm_coe_le_one (SignType.sign y))).mono_exponent le_top
   refine (tendsto_eLpNorm_normed_convolution_sub_restrict hp hφ one_pos hmem).congr fun i => ?_
   congr 1
   ext x
-  rw [(φ i).fderiv_normed_convolution_abs_apply x]
-  rfl
+  rw [(φ i).fderiv_normed_convolution_abs_apply x, Pi.sub_apply]
 
 /-- Any real function continuous at `0` stays at `L^∞(B(0, r))` distance at least `1` from `sign`
 for every `r > 0`. -/

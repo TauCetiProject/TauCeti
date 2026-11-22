@@ -34,6 +34,9 @@ continuous on `Ω`, the mollifications also converge uniformly to `u` on `closur
 
 ## Main declarations
 
+* `TauCeti.HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator` and
+  `TauCeti.HasWeakFDerivOn.fderiv_normed_convolution_indicator`: interior derivative identity
+  `D(φ ⋆ V.indicator u) = φ ⋆ V.indicator Du`.
 * `TauCeti.HasWeakFDerivOn.contDiff_normed_convolution_indicator`: smoothness of the zero-extended
   mollification.
 * `TauCeti.HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le`: `Lᵖ` gradient bound
@@ -72,18 +75,32 @@ private theorem integrableOn_of_isCompact_closure {G : Type*} [NormedAddCommGrou
     IntegrableOn g V μ :=
   (hg.integrableOn_compact_subset hVΩ hVc).mono_set subset_closure
 
-private theorem fderiv_normed_convolution_indicator (hu : HasWeakFDerivOn μ Ω u Du)
+/-- **Interior derivative of a normalized-bump mollification.** If `u` has weak Fréchet derivative
+`Du` on `Ω`, `V` has compact closure in `Ω`, and `closedBall x φ.rOut ⊆ V`, then
+`φ.normed μ ⋆ V.indicator u` is Fréchet differentiable at `x` with derivative
+`(φ.normed μ ⋆ V.indicator Du) x`. -/
+theorem HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator (hu : HasWeakFDerivOn μ Ω u Du)
     {V : Opens E} (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Ω)
     (φ : ContDiffBump (0 : E)) {x : E} (hx : closedBall x φ.rOut ⊆ V) :
-    fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) x =
-      (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) x := by
+    HasFDerivAt (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u)
+      ((φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) x) x := by
   have huV : MemLp u 1 (μ.restrict V) :=
     memLp_one_iff_integrable.2 (integrableOn_of_isCompact_closure hu.locallyIntegrableOn hVc hVΩ)
   have hDuV : MemLp Du 1 (μ.restrict V) := memLp_one_iff_integrable.2
     (integrableOn_of_isCompact_closure hu.locallyIntegrableOn_deriv hVc hVΩ)
-  have h := (hu.mono (subset_closure.trans hVΩ)).fderiv_indicator_convolution_normed
+  have h := (hu.mono (subset_closure.trans hVΩ)).hasFDerivAt_indicator_convolution_normed
     huV hDuV le_rfl le_rfl φ x hx
   simpa only [convolution_flip] using h
+
+/-- **Interior derivative identity for a normalized-bump mollification.** If `u` has weak Fréchet
+derivative `Du` on `Ω`, `V` has compact closure in `Ω`, and `closedBall x φ.rOut ⊆ V`, then
+`fderiv ℝ (φ.normed μ ⋆ V.indicator u) x = (φ.normed μ ⋆ V.indicator Du) x`. -/
+theorem HasWeakFDerivOn.fderiv_normed_convolution_indicator (hu : HasWeakFDerivOn μ Ω u Du)
+    {V : Opens E} (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Ω)
+    (φ : ContDiffBump (0 : E)) {x : E} (hx : closedBall x φ.rOut ⊆ V) :
+    fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) x =
+      (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) x :=
+  (hu.hasFDerivAt_normed_convolution_indicator hVc hVΩ φ hx).fderiv
 
 /-- **Smoothness of the interior mollification.** If `u` has a weak Fréchet derivative on `Ω` and
 `V` is an open set with compact closure in `Ω`, then convolving the zero extension of `u` from `V`
@@ -118,7 +135,7 @@ theorem HasWeakFDerivOn.eLpNorm_fderiv_normed_convolution_indicator_le
   have heq : fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u) =ᵐ[μ.restrict s]
       φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du :=
     (ae_restrict_mem hs).mono fun x hx =>
-      fderiv_normed_convolution_indicator hu hVc hVΩ φ (hball x hx)
+      hu.fderiv_normed_convolution_indicator hVc hVΩ φ (hball x hx)
   calc eLpNorm (fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u)) p (μ.restrict s)
       = eLpNorm (φ.normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator Du) p (μ.restrict s) :=
         eLpNorm_congr_ae heq
@@ -152,7 +169,7 @@ theorem HasWeakFDerivOn.tendsto_eLpNorm_fderiv_normed_convolution_indicator_sub
   have hball : closedBall x (φ i).rOut ⊆ V := fun y hy => hsV <| by
     rw [← thickening_closure]
     exact mem_thickening_iff.2 ⟨x, hx, (mem_closedBall.1 hy).trans_lt hi⟩
-  simp only [Pi.sub_apply, fderiv_normed_convolution_indicator hu hVc hVΩ (φ i) hball]
+  simp only [Pi.sub_apply, hu.fderiv_normed_convolution_indicator hVc hVΩ (φ i) hball]
 
 /-- Shared interior mollification construction with separate finite exponents `q` (for `u`) and
 `p` (for `Du`), and an optional uniform convergence conclusion when `u` is continuous on `Ω`. -/
