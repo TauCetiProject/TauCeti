@@ -110,6 +110,9 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.norm_le_of_isWeakSolutionDirichlet`: the energy estimate `‖u‖ ≤ ‖f‖/C`.
 * `TauCeti.PDE.UniformlyEllipticOn.norm_le_of_isWeakSolutionDirichlet_of_norm_le`: the energy
   estimate `‖u‖_{H¹} ≤ (2/λ) (‖f‖ + κ ‖u‖_{L²})` from Gårding's inequality, with no coercivity.
+* `TauCeti.PDE.weakEquationGraph` and `TauCeti.PDE.isClosed_weakEquationGraph`: the pairs
+  `(u, f)` with `L u = f` weakly and no boundary condition form a closed subspace of
+  `H¹(Ω) × L²(Ω)`.
 * `TauCeti.PDE.dirichletGraph` and `TauCeti.PDE.isClosed_dirichletGraph`: the pairs `(u, f)` of
   a weak solution and its datum form a closed subspace of `H¹(Ω) × L²(Ω)`;
   `TauCeti.PDE.mk_mem_dirichletGraph_iff` identifies membership with
@@ -229,6 +232,17 @@ theorem divergenceForcing_apply_eq_neg_setIntegral
     (F : Lp (EuclideanSpace ℝ ι) 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
     divergenceForcing F v = -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
   rw [divergenceForcing_apply, L2.inner_def]
+
+/-- The divergence-form forcing functional of a vector field `F ∈ L²(Ω; ℝⁿ)`, given as a function,
+is `v ↦ -∫_Ω ⟪F, ∇v⟫`. -/
+theorem divergenceForcing_toLp_apply {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hF : MemLp F 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
+    divergenceForcing (hF.toLp F) v =
+      -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+  rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
+  refine integral_congr_ae ?_
+  filter_upwards [hF.coeFn_toLp] with x hx
+  rw [hx]
 
 /-- The divergence-form forcing functional is bounded by the `L²` norm of its vector field,
 because the gradient component of a Sobolev jet is dominated by the graph norm. -/
@@ -428,31 +442,61 @@ theorem UniformlyEllipticOn.norm_le_of_isWeakSolutionDirichlet_of_norm_le [Decid
 
 /-! ### The graph of the Dirichlet problem -/
 
-/-- The **graph of the weak Dirichlet problem**: the pairs `(u, f)` with `u ∈ H¹₀(Ω)` a weak
-solution of `L u = f` for `f ∈ L²(Ω)`, as a subspace of `H¹(Ω) × L²(Ω)`. For essentially bounded
-coefficients it is closed (`TauCeti.PDE.isClosed_dirichletGraph`), hence a Banach space, the
-setting of open-mapping arguments for a priori estimates. -/
-def dirichletGraph
+/-- The **graph of the weak equation**: the pairs `(u, f)` with `u ∈ H¹(Ω)` a weak solution of
+`L u = f` for `f ∈ L²(Ω)`, tested against `H¹₀(Ω)`, with no boundary condition on `u`, as a
+subspace of `H¹(Ω) × L²(Ω)`. For essentially bounded coefficients it is closed
+(`TauCeti.PDE.isClosed_weakEquationGraph`); its intersection with the boundary condition
+`u ∈ H¹₀(Ω)` is `TauCeti.PDE.dirichletGraph`. -/
+def weakEquationGraph
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
     Submodule ℝ (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)) where
-  carrier := {p | p.1 ∈ w1p0Submodule mu Omega 2 ∧
-    ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v}
-  add_mem' {p q} hp hq := ⟨add_mem hp.1 hq.1, fun v => by
-    simp only [Prod.fst_add, Prod.snd_add, map_add, add_apply, hp.2 v,
-      hq.2 v, dirichletForcing_apply, inner_add_left]⟩
-  zero_mem' := ⟨zero_mem _, fun v => by simp⟩
-  smul_mem' r p hp := ⟨SMulMemClass.smul_mem r hp.1, fun v => by
-    simp only [Prod.smul_fst, Prod.smul_snd, map_smul, smul_apply, hp.2 v,
-      dirichletForcing_apply, real_inner_smul_left, smul_eq_mul]⟩
+  carrier := {p | ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v}
+  add_mem' {p q} hp hq v := by
+    simp only [Prod.fst_add, Prod.snd_add, map_add, add_apply, hp v, hq v,
+      dirichletForcing_apply, inner_add_left]
+  zero_mem' v := by simp
+  smul_mem' r p hp v := by
+    simp only [Prod.smul_fst, Prod.smul_snd, map_smul, smul_apply, hp v,
+      dirichletForcing_apply, real_inner_smul_left, smul_eq_mul]
 
-/-- The graph of the weak Dirichlet problem as a set: the boundary condition `u ∈ H¹₀(Ω)` and the
-weak equation, each a closed condition. -/
-theorem coe_dirichletGraph
+/-- The graph of the weak equation as a set: the pairs `(u, f)` with
+`a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
+theorem coe_weakEquationGraph
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
-    (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
-      {p | p.1 ∈ w1p0Submodule mu Omega 2} ∩
-        {p | ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v} :=
+    (weakEquationGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
+      {p | ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v} :=
   (rfl)
+
+/-- A pair `(u, f)` lies in the graph of the weak equation exactly when
+`a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
+@[simp] theorem mem_weakEquationGraph_iff
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    {p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)} :
+    p ∈ weakEquationGraph hcoeff ↔ ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v := by
+  rw [← SetLike.mem_coe, coe_weakEquationGraph, Set.mem_ofPred_eq]
+  simp only [energyFormH1L_apply]
+
+/-- The graph of the weak equation is closed in `H¹(Ω) × L²(Ω)`. -/
+theorem isClosed_weakEquationGraph
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    IsClosed (weakEquationGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) := by
+  rw [coe_weakEquationGraph]
+  simp only [Set.ofPred_forall]
+  refine isClosed_iInter fun v => isClosed_eq ?_ ?_
+  · exact ((energyFormH1L hcoeff).continuous.comp continuous_fst).clm_apply continuous_const
+  · simp only [dirichletForcing_apply]
+    exact continuous_snd.inner continuous_const
+
+/-- The **graph of the weak Dirichlet problem**: the pairs `(u, f)` with `u ∈ H¹₀(Ω)` a weak
+solution of `L u = f` for `f ∈ L²(Ω)`, as a subspace of `H¹(Ω) × L²(Ω)`: the graph of the weak
+equation cut down by the boundary condition. For essentially bounded coefficients it is closed
+(`TauCeti.PDE.isClosed_dirichletGraph`), hence a Banach space, the setting of open-mapping
+arguments for a priori estimates. -/
+def dirichletGraph
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    Submodule ℝ (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)) :=
+  (w1p0Submodule mu Omega 2).toSubmodule.comap (LinearMap.fst ℝ _ _) ⊓ weakEquationGraph hcoeff
 
 /-- A pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly when `u ∈ H¹₀(Ω)`
 and `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
@@ -462,8 +506,16 @@ and `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
     p ∈ dirichletGraph hcoeff ↔ p.1 ∈ w1p0Submodule mu Omega 2 ∧
       ∀ v : W1p0 mu Omega 2,
         energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v := by
-  rw [← SetLike.mem_coe, coe_dirichletGraph]
-  simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, energyFormH1L_apply]
+  simp [dirichletGraph]
+
+/-- The graph of the weak Dirichlet problem as a set: the boundary condition `u ∈ H¹₀(Ω)` and the
+weak equation, each a closed condition. -/
+theorem coe_dirichletGraph
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
+      {p | p.1 ∈ w1p0Submodule mu Omega 2} ∩ weakEquationGraph hcoeff := by
+  ext p
+  simp [mem_dirichletGraph_iff]
 
 /-- For `u ∈ H¹₀(Ω)`, the pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly
 when `u` is a weak solution of `L u = f`. -/
@@ -478,13 +530,9 @@ theorem isClosed_dirichletGraph
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
     IsClosed (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) := by
   rw [coe_dirichletGraph]
-  refine ((w1p0Submodule mu Omega 2).isClosed.preimage
-    (continuous_fst (X := W1p mu Omega 2) (Y := Lp ℝ 2 (mu.restrict Omega)))).inter ?_
-  simp only [Set.ofPred_forall]
-  refine isClosed_iInter fun v => isClosed_eq ?_ ?_
-  · exact ((energyFormH1L hcoeff).continuous.comp continuous_fst).clm_apply continuous_const
-  · simp only [dirichletForcing_apply]
-    exact continuous_snd.inner continuous_const
+  exact ((w1p0Submodule mu Omega 2).isClosed.preimage
+    (continuous_fst (X := W1p mu Omega 2) (Y := Lp ℝ 2 (mu.restrict Omega)))).inter
+    (isClosed_weakEquationGraph hcoeff)
 
 /-! ### Coercivity and Lax--Milgram -/
 
@@ -885,9 +933,7 @@ theorem UniformlyEllipticOn.exists_forall_energyFormH1_eq_divergence_of_measure_
   obtain ⟨v, hv, -⟩ := h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
     (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hOmega
     (divergenceForcing (hH.toLp H))
-  refine ⟨v, fun w => ?_⟩
-  rw [hv w, divergenceForcing_apply_eq_neg_setIntegral]
-  exact congrArg Neg.neg (integral_congr_ae (hH.coeFn_toLp.mono fun x hx => by simp only [hx]))
+  exact ⟨v, fun w => (hv w).trans (divergenceForcing_toLp_apply hH w)⟩
 
 /-- **Weak solvability of the Dirichlet problem with `Lʳ` data.** Let `n ≥ 1` be the dimension
 and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`. On a domain `Ω` of finite

@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Degree
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Fuchsian
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.Tower
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Cusp
 import TauCeti.Analysis.Complex.ModularForms.CongruenceSubgroups.Degree
@@ -126,11 +124,8 @@ theorem card_cuspOrbit_Gamma_one : Nat.card ((Gamma 1).map sl2zToPSL2R).CuspOrbi
 @[simp]
 theorem card_cuspOrbit_Gamma_two : Nat.card ((Gamma 2).map sl2zToPSL2R).CuspOrbit = 3 := by
   have h := mul_card_cuspOrbit_Gamma 2
-  have h6 : Nat.card SL(2, ZMod 2) = 6 := by
-    rw [Matrix.card_SL_field]
-    simp [Fin.prod_univ_two, ZMod.card]
   rw [Subgroup.withCenter_eq_self_iff.mpr (Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem.mpr
-    (neg_one_mem_Gamma_iff.mpr dvd_rfl)), index_Gamma, h6] at h
+    (neg_one_mem_Gamma_iff.mpr dvd_rfl)), index_Gamma_two] at h
   omega
 
 end TauCeti
