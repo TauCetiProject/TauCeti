@@ -144,6 +144,18 @@ private theorem integrable_log_sub {w : ℂ} (hw : 0 < w.im) :
     simpa using restrict_Icc_semicircleReal 0 1
   rwa [IntegrableOn, hrestrict] at h
 
+private theorem integrable_log_norm_sub {w : ℂ} (hw : 0 < w.im) :
+    Integrable (fun y : ℝ ↦ Real.log ‖w - y‖) (semicircleReal 0 1) := by
+  have h := (integrable_log_sub hw).re
+  refine h.congr ?_
+  filter_upwards with y
+  exact Complex.log_re _
+
+private theorem sub_ofReal_ne_zero {w : ℂ} (hw : w.im ≠ 0) (y : ℝ) :
+    w - (y : ℂ) ≠ 0 := by
+  exact sub_ne_zero.mpr
+    (Ne.symm (sub_ne_zero.mp (Complex.ofReal_sub_ne_zero_of_im_ne_zero hw y)))
+
 /-- The complex logarithmic potential is holomorphic in the upper half-plane, with derivative the
 Cauchy transform `∫ (z - y)⁻¹`. -/
 private theorem hasDerivAt_logPotential (hz : 0 < z.im) :
@@ -200,14 +212,8 @@ private theorem hasDerivAt_logPotential_eq_neg_m (hz : 0 < z.im) :
   rw [← integral_neg]
   apply integral_congr_ae
   filter_upwards with y
-  simp only [resolvent, Ring.inverse_eq_inv]
-  have hyz : (algebraMap ℝ ℂ) y - z ≠ 0 := by
-    simpa using Complex.ofReal_sub_ne_zero_of_im_ne_zero hz.ne' y
-  have hzy : z - (y : ℂ) ≠ 0 := sub_ne_zero.mpr
-    (Ne.symm (sub_ne_zero.mp (Complex.ofReal_sub_ne_zero_of_im_ne_zero hz.ne' y)))
-  field_simp [hyz, hzy]
-  rw [RCLike.algebraMap_eq_ofReal]
-  exact neg_sub _ _
+  simp only [resolvent, Ring.inverse_eq_inv, Complex.coe_algebraMap]
+  rw [show (y : ℂ) - z = -(z - y) from (neg_sub _ _).symm, inv_neg, neg_neg]
 
 private theorem mem_slitPlane_neg_m (hz : 0 < z.im) : -(m z) ∈ Complex.slitPlane := by
   rw [Complex.mem_slitPlane_iff]
@@ -299,20 +305,11 @@ private theorem real_logPotential_sub_primitive_is_const {z w : ℂ}
   have h := congrArg Complex.re (logPotential_sub_primitive_is_const hz hw)
   simpa only [Complex.sub_re, integral_log_norm_sub hz, integral_log_norm_sub hw] using h
 
-private theorem integrable_log_norm_imaginary (t : ℝ) (ht : 0 < t) :
-    Integrable (fun y : ℝ ↦ Real.log ‖(t : ℂ) * Complex.I - y‖)
-      (semicircleReal 0 1) := by
-  have hz : 0 < ((t : ℂ) * Complex.I).im := by simpa using ht
-  have h := (integrable_log_sub hz).re
-  refine h.congr ?_
-  filter_upwards with y
-  exact Complex.log_re _
-
 private theorem log_norm_imaginary_bounds (t : ℝ) (ht : 0 < t) :
     Real.log t ≤ ∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1 ∧
       (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1) ≤
         Real.log (t + 2) := by
-  have hInt := integrable_log_norm_imaginary t ht
+  have hInt := integrable_log_norm_sub (w := (t : ℂ) * Complex.I) (by simpa using ht)
   have hlow : ∀ᵐ (y : ℝ) ∂(semicircleReal (0 : ℝ) (1 : ℝ≥0)),
       Real.log t ≤ Real.log ‖(t : ℂ) * Complex.I - y‖ := by
     filter_upwards with y
@@ -495,17 +492,12 @@ private theorem integral_log_norm_sub_semicircleReal_of_im_pos_of_pos
       field_simp [ne_of_gt hs]
     rw [hwm]
     exact div_pos hz hs
-  have hmap : (semicircleReal 0 1).map (fun y : ℝ ↦ a + s * y) =
-      semicircleReal a v := map_standardSemicircleReal a v
   have hlogInt :
-      Integrable (fun y : ℝ ↦ Real.log ‖w - y‖) (semicircleReal 0 1) := by
-    refine (integrable_log_sub hw).re.congr ?_
-    filter_upwards with y
-    simpa using Complex.log_re (w - (y : ℂ))
+      Integrable (fun y : ℝ ↦ Real.log ‖w - y‖) (semicircleReal 0 1) :=
+    integrable_log_norm_sub hw
   have hne : ∀ᵐ y : ℝ ∂semicircleReal 0 1, w - y ≠ 0 := by
     filter_upwards with y
-    exact sub_ne_zero.mpr
-      (Ne.symm (sub_ne_zero.mp (Complex.ofReal_sub_ne_zero_of_im_ne_zero hw.ne' y)))
+    exact sub_ofReal_ne_zero hw.ne' y
   have hscale :
       (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal a v) =
         Real.log s + ∫ y : ℝ, Real.log ‖w - y‖ ∂semicircleReal 0 1 := by
@@ -513,8 +505,7 @@ private theorem integral_log_norm_sub_semicircleReal_of_im_pos_of_pos
   have hstd := log_norm_eq_primitive_re hw
   have hRT : resolventTransform (semicircleReal a v) z =
       (s : ℂ)⁻¹ * resolventTransform (semicircleReal 0 1) w := by
-    rw [← hmap]
-    simpa [w] using resolventTransform_map_affine a s (ne_of_gt hs) z
+    simpa [s, w] using resolventTransform_semicircleReal_eq_standard a hv z
   have harg : z - a = (s : ℂ) * w := by
     dsimp [w]
     field_simp [ne_of_gt hs]
@@ -530,14 +521,6 @@ private theorem integral_log_norm_sub_semicircleReal_of_im_pos_of_pos
     rw [hnorm, Real.log_mul (inv_ne_zero (ne_of_gt hs)) (norm_ne_zero_iff.mpr (m_ne_zero hw)),
       Real.log_inv]
     ring
-  have hprod' :
-      (z - a) * ((s : ℂ)⁻¹ * resolventTransform (semicircleReal 0 1) w) =
-        w * resolventTransform (semicircleReal 0 1) w := by
-    simpa using hprod
-  have hlog' :
-      Real.log ‖(s : ℂ)⁻¹ * resolventTransform (semicircleReal 0 1) w‖ =
-        Real.log ‖resolventTransform (semicircleReal 0 1) w‖ - Real.log s := by
-    simpa using hlog
   calc
     ∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal a v =
         Real.log s + ∫ y : ℝ, Real.log ‖w - y‖ ∂semicircleReal 0 1 := hscale
@@ -546,7 +529,7 @@ private theorem integral_log_norm_sub_semicircleReal_of_im_pos_of_pos
       ring
     _ = ( -((z - a) * resolventTransform (semicircleReal a v) z) / 2).re -
         Real.log ‖resolventTransform (semicircleReal a v) z‖ - 1 / 2 := by
-      rw [hRT, hprod', hlog']
+      rw [hRT, hprod, hlog]
       ring_nf
 
 /-- In the upper half-plane, the logarithmic potential of a semicircle law is expressed by its
@@ -557,8 +540,7 @@ theorem integral_log_norm_sub_semicircleReal_of_im_pos (a : ℝ) (v : ℝ≥0) {
       ( -((z - a) * resolventTransform (semicircleReal a v) z) / 2).re -
         Real.log ‖resolventTransform (semicircleReal a v) z‖ - 1 / 2 := by
   rcases eq_zero_or_pos v with rfl | hv
-  · have hza : z - (a : ℂ) ≠ 0 := sub_ne_zero.mpr
-      (Ne.symm (sub_ne_zero.mp (Complex.ofReal_sub_ne_zero_of_im_ne_zero hz.ne' a)))
+  · have hza : z - (a : ℂ) ≠ 0 := sub_ofReal_ne_zero hz.ne' a
     have hmul : (z - (a : ℂ)) * ((a : ℂ) - z)⁻¹ = -1 := by
       have hsub : (a : ℂ) - z = -(z - a) := by ring
       rw [hsub, inv_neg, mul_neg, mul_inv_cancel₀ hza]
@@ -569,11 +551,10 @@ theorem integral_log_norm_sub_semicircleReal_of_im_pos (a : ℝ) (v : ℝ≥0) {
     norm_num
   · exact integral_log_norm_sub_semicircleReal_of_im_pos_of_pos a hv hz
 
-private theorem tendsto_log_norm_m_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) :
+private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) :
     Tendsto
-      (fun ε : ℝ ↦ Real.log ‖resolventTransform (semicircleReal 0 1)
-        ((x : ℂ) + (ε : ℂ) * Complex.I)‖)
-      (𝓝[>] 0) (𝓝 0) := by
+      (fun ε : ℝ ↦ (primitive ((x : ℂ) + (ε : ℂ) * Complex.I)).re)
+      (𝓝[>] 0) (𝓝 (x ^ 2 / 4 - 1 / 2)) := by
   let c : ℂ := ((-x / 2 : ℝ) : ℂ) + (Real.sqrt (1 - x ^ 2 / 4) : ℂ) * Complex.I
   have hrad : 0 ≤ 1 - x ^ 2 / 4 := by
     have hleft : 0 ≤ x + 2 := by linarith [hx.1]
@@ -590,6 +571,21 @@ private theorem tendsto_log_norm_m_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) :
   have hM : Tendsto (fun ε : ℝ ↦ resolventTransform (semicircleReal 0 1)
       ((x : ℂ) + (ε : ℂ) * Complex.I)) (𝓝[>] 0) (𝓝 c) :=
     tendsto_resolventTransform_semicircleReal_zero_one_of_mem_Icc hx
+  have hε : Tendsto (fun ε : ℝ ↦ (ε : ℂ)) (𝓝[>] 0) (𝓝 0) := by
+    simpa using Complex.continuous_ofReal.continuousAt.tendsto.comp
+      (tendsto_id.mono_left nhdsWithin_le_nhds : Tendsto (fun ε : ℝ ↦ ε) (𝓝[>] 0) (𝓝 0))
+  have hz : Tendsto (fun ε : ℝ ↦ (x : ℂ) + (ε : ℂ) * Complex.I)
+      (𝓝[>] 0) (𝓝 (x : ℂ)) := by
+    simpa using tendsto_const_nhds.add (hε.mul_const Complex.I)
+  have hprod : Tendsto
+      (fun ε : ℝ ↦ ( -(((x : ℂ) + (ε : ℂ) * Complex.I) *
+        resolventTransform (semicircleReal 0 1) ((x : ℂ) + (ε : ℂ) * Complex.I)) / 2).re)
+      (𝓝[>] 0) (𝓝 (x ^ 2 / 4)) := by
+    have hlim : ( -((x : ℂ) * c) / 2).re = x ^ 2 / 4 := by
+      simp [c, Complex.mul_re]
+      ring
+    simpa only [Function.comp_def, hlim] using
+      Complex.continuous_re.continuousAt.tendsto.comp ((hz.mul hM).neg.div_const 2)
   have hnorm : Tendsto
       (fun ε : ℝ ↦ ‖resolventTransform (semicircleReal 0 1)
         ((x : ℂ) + (ε : ℂ) * Complex.I)‖)
@@ -597,63 +593,8 @@ private theorem tendsto_log_norm_m_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) :
     have h := continuous_norm.continuousAt.tendsto.comp hM
     simpa [Function.comp_def, hcNorm] using h
   have hlog := (Real.continuousAt_log (by norm_num : (1 : ℝ) ≠ 0)).tendsto.comp hnorm
-  simpa [Function.comp_def] using hlog
-
-private theorem primitive_re_vertical (x ε : ℝ) :
-    (primitive ((x : ℂ) + (ε : ℂ) * Complex.I)).re =
-      -(x * (m ((x : ℂ) + (ε : ℂ) * Complex.I)).re) / 2 +
-        ε * (m ((x : ℂ) + (ε : ℂ) * Complex.I)).im / 2 -
-          Real.log ‖m ((x : ℂ) + (ε : ℂ) * Complex.I)‖ - 1 / 2 := by
-  rw [primitive_re]
-  simp [Complex.mul_re]
-  ring
-
-private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) :
-    Tendsto
-      (fun ε : ℝ ↦
-        (primitive ((x : ℂ) + (ε : ℂ) * Complex.I)).re)
-      (𝓝[>] 0) (𝓝 (x ^ 2 / 4 - 1 / 2)) := by
-  let M : ℝ → ℂ := fun ε ↦
-    resolventTransform (semicircleReal 0 1) ((x : ℂ) + (ε : ℂ) * Complex.I)
-  let A : ℝ → ℝ := fun ε ↦ (M ε).re
-  let B : ℝ → ℝ := fun ε ↦ ε * (M ε).im
-  have hM := tendsto_resolventTransform_semicircleReal_zero_one_of_mem_Icc hx
-  have hA : Tendsto A (𝓝[>] 0) (𝓝 (-x / 2)) := by
-    simpa [A, M, Function.comp_def] using
-      Complex.continuous_re.continuousAt.tendsto.comp hM
-  have hIm : Tendsto (fun ε : ℝ ↦ (M ε).im) (𝓝[>] 0)
-      (𝓝 (Real.sqrt (1 - x ^ 2 / 4))) := by
-    simpa [M, Function.comp_def] using
-      Complex.continuous_im.continuousAt.tendsto.comp hM
-  have hε : Tendsto (fun ε : ℝ ↦ ε) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_id.mono_left nhdsWithin_le_nhds
-  have hB : Tendsto B (𝓝[>] 0) (𝓝 0) := by
-    have h := hε.mul hIm
-    simpa [B] using h
-  have hlog : Tendsto
-      (fun ε : ℝ ↦ Real.log ‖M ε‖) (𝓝[>] 0) (𝓝 0) := by
-    simpa [M] using tendsto_log_norm_m_boundary hx
-  have hterm₁ : Tendsto (fun ε ↦ -(x * A ε) / 2) (𝓝[>] 0) (𝓝 (x ^ 2 / 4)) := by
-    convert (tendsto_const_nhds.mul hA).const_mul (-1 / 2) using 1 <;> ring_nf
-  have hterm₂ : Tendsto (fun ε ↦ B ε / 2) (𝓝[>] 0) (𝓝 0) := by
-    have h := hB.div_const 2
-    simpa using h
-  have hsum : Tendsto
-      (fun ε ↦ (-(x * A ε) / 2 + B ε / 2) - Real.log ‖M ε‖ + (-1 / 2))
-      (𝓝[>] 0) (𝓝 (x ^ 2 / 4 - 1 / 2)) := by
-    have h := ((hterm₁.add hterm₂).sub hlog).add
-      (tendsto_const_nhds : Tendsto (fun _ : ℝ ↦ (-1 / 2 : ℝ)) (𝓝[>] 0) (𝓝 (-1 / 2)))
-    convert h using 1
-    ring_nf
-  have hEq : (fun ε : ℝ ↦ (primitive ((x : ℂ) + (ε : ℂ) * Complex.I)).re) =ᶠ[𝓝[>] 0]
-      fun ε ↦
-        (-(x * A ε) / 2 + B ε / 2) -
-          Real.log ‖M ε‖ + (-1 / 2) := by
-    filter_upwards with ε
-    rw [primitive_re_vertical]
-    simp [A, B, M]
-    ring
-  exact Filter.Tendsto.congr' (EventuallyEq.symm hEq) hsum
+  have h := (hprod.sub hlog).sub_const (1 / 2 : ℝ)
+  simpa [Function.comp_def, primitive_re] using h
 
 /-- The logarithmic potential of the standard semicircle law on its support. -/
 private theorem integral_log_abs_sub_semicircleReal_zero_one (x : ℝ) (hx : x ∈ Icc (-2) 2) :

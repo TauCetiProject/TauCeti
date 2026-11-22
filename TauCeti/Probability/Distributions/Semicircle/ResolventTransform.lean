@@ -198,13 +198,6 @@ theorem resolventTransform_semicircleReal_eq_iff (hz : 0 < z.im) {w : ℂ} :
       (normSq_nonneg _)
   linarith
 
-/-- The upper-half-plane semicircle resolvent is characterized by its quadratic equation and
-positive imaginary part. -/
-theorem eq_resolventTransform_semicircleReal_iff (hz : 0 < z.im) {w : ℂ} :
-    w = resolventTransform (semicircleReal a v) z ↔
-      0 < w.im ∧ (v : ℂ) * (w * w) + (z - a) * w + 1 = 0 :=
-  resolventTransform_semicircleReal_eq_iff hz
-
 /-- On the positive imaginary axis through its centre, the semicircle resolvent has zero real
 part and its imaginary part satisfies the quadratic equation. -/
 theorem resolventTransform_semicircleReal_mul_I_re_eq_zero_and_im_sq_add_mul_eq_one
@@ -552,6 +545,17 @@ theorem tendsto_resolventTransform_semicircleReal_zero_one_of_mem_Icc {x : ℝ}
   simpa [Complex.equivRealProdCLM_symm_apply, standardSemicircleResolventAt,
     standardSemicircleResolvent] using h'
 
+/-- The resolvent of a positive-variance semicircle law is obtained from the standard law
+by its location-scale transformation. -/
+theorem resolventTransform_semicircleReal_eq_standard (a : ℝ) {v : ℝ≥0}
+    (hv : 0 < v) (z : ℂ) :
+    resolventTransform (semicircleReal a v) z =
+      (Real.sqrt v : ℂ)⁻¹ *
+        resolventTransform (semicircleReal 0 1) ((z - a) / Real.sqrt v) := by
+  have hs : Real.sqrt (v : ℝ) ≠ 0 := (Real.sqrt_pos.2 (by exact_mod_cast hv)).ne'
+  rw [← map_standardSemicircleReal a v]
+  exact resolventTransform_map_affine a (Real.sqrt v) hs z
+
 /-- On the support of a positive-variance semicircle law, the resolvent transform has the
 boundary value obtained from the standard semicircle law by affine transport. -/
 theorem tendsto_resolventTransform_semicircleReal_of_mem_Icc {a x : ℝ} {v : ℝ≥0}
@@ -566,8 +570,6 @@ theorem tendsto_resolventTransform_semicircleReal_of_mem_Icc {a x : ℝ} {v : �
   let s : ℝ := Real.sqrt v
   let x₀ : ℝ := (x - a) / s
   have hs : 0 < s := by dsimp [s]; exact Real.sqrt_pos.2 (by exact_mod_cast hv)
-  have hmap : (semicircleReal 0 1).map (fun y : ℝ ↦ a + s * y) =
-      semicircleReal a v := map_standardSemicircleReal a v
   have hx₀ : x₀ ∈ Icc (-2) 2 := sub_div_sqrt_mem_Icc_of_mem_Icc hv hx
   have hId : Tendsto (fun ε : ℝ ↦ ε) (𝓝[>] 0) (𝓝 0) :=
     tendsto_id.mono_left nhdsWithin_le_nhds
@@ -602,7 +604,7 @@ theorem tendsto_resolventTransform_semicircleReal_of_mem_Icc {a x : ℝ} {v : �
           resolventTransform (semicircleReal 0 1)
             ((x₀ : ℂ) + (ε / s : ℂ) * Complex.I) := by
     intro ε
-    rw [← hmap, resolventTransform_map_affine a s (ne_of_gt hs), harg]
+    rw [resolventTransform_semicircleReal_eq_standard a hv, ← show s = Real.sqrt v from rfl, harg]
   have hfinal := Filter.Tendsto.congr' (EventuallyEq.symm
     (Filter.Eventually.of_forall hEq)) hmul'
   simpa [s, x₀] using hfinal
