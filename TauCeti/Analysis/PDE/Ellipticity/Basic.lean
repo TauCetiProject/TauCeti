@@ -55,7 +55,9 @@ constants are parameters, not hidden existential data.
   the predicate.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
-* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion in the standard orthonormal basis.
+* `TauCeti.PDE.sum_inner_mul_matrixBilinearForm` and
+  `TauCeti.PDE.sum_inner_mul_matrixBilinearForm_right`: expansion in the standard orthonormal
+  basis, in the first and second arguments.
 * `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
   `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
   conormal component of a smooth gradient.
@@ -1174,6 +1176,13 @@ theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : Euclidean
   conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' ξ]
   simp [map_sum, map_smul]
 
+/-- Expanding the second argument of a matrix bilinear form in an orthonormal basis. -/
+theorem sum_inner_mul_matrixBilinearForm_right {A : Matrix n n ℝ} (ξ η : EuclideanSpace ℝ n) :
+    ∑ i, ⟪η, EuclideanSpace.basisFun n ℝ i⟫_ℝ *
+        matrixBilinearForm A ξ (EuclideanSpace.basisFun n ℝ i) = matrixBilinearForm A ξ η := by
+  conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' η]
+  simp [map_sum, map_smul]
+
 /-- The conormal component obtained by applying a matrix bilinear form to a smooth gradient is
 smooth. -/
 theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
@@ -1188,8 +1197,8 @@ theorem contDiff_matrixBilinearForm_apply {k : WithTop ℕ∞}
     {η ξ : EuclideanSpace ℝ n → EuclideanSpace ℝ n} (hη : ContDiff ℝ k η) (hξ : ContDiff ℝ k ξ) :
     ContDiff ℝ k fun x => matrixBilinearForm (a x) (η x) (ξ x) := by
   simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec]
-  exact ContDiff.sum fun k _ => (contDiff_euclidean.1 hη k).mul
-    (ContDiff.sum fun l _ => (ha k l).mul (contDiff_euclidean.1 hξ l))
+  exact ContDiff.sum fun i _ => (contDiff_euclidean.1 hη i).mul
+    (ContDiff.sum fun j _ => (ha i j).mul (contDiff_euclidean.1 hξ j))
 
 /-- **`C¹` coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
 continuously differentiable on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz

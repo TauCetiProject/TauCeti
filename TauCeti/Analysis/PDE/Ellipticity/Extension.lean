@@ -123,6 +123,36 @@ private theorem exists_lipschitzWith_and_norm_le_matrixBilinearForm_smul_add_one
       exact NNReal.coe_nonneg _
   linarith [norm_add_le C0 (χ x • F x)]
 
+/-- **Blending a uniformly elliptic field with `λ I` by a cutoff that is one near `C`.** Let `a`
+be uniformly elliptic on `S` with constants `λ, Λ`, and let `T ∩ U ⊆ S`. If `χ` takes values in
+`[0, 1]`, is supported in `U` and equals one near `C`, then `χ a + (1 - χ) λ I` is uniformly
+elliptic on `T`, and `χ = 1` on an open `W` with `C ⊆ W ⊆ U`. -/
+private theorem exists_uniformlyEllipticOn_smul_add_one_sub_smul [DecidableEq ι] {lam Lam : ℝ}
+    {S T C : Set (EuclideanSpace ℝ ι)} {U : Opens (EuclideanSpace ℝ ι)}
+    (ha : UniformlyEllipticOn S a lam Lam) (hTU : T ∩ U ⊆ S) {χ : EuclideanSpace ℝ ι → ℝ}
+    (hχr : range χ ⊆ Icc 0 1) (hχ1 : C ⊆ interior (χ ⁻¹' {1})) (hχs : tsupport χ ⊆ U) :
+    ∃ W : Opens (EuclideanSpace ℝ ι), C ⊆ W ∧ W ≤ U ∧
+      UniformlyEllipticOn T (fun x => χ x • a x + (1 - χ x) • (lam • 1)) lam Lam ∧
+        ∀ x ∈ W, χ x = 1 := by
+  classical
+  have hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1 := fun x => hχr (mem_range_self x)
+  have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
+  refine ⟨⟨interior (χ ⁻¹' {1}), isOpen_interior⟩, hχ1, fun x hx => ?_, ?_,
+    fun x hx => interior_subset hx⟩
+  · have hχx : χ x = 1 := interior_subset hx
+    exact hχs (subset_tsupport _ (by simp [hχx]))
+  · -- On `T`, the weight vanishes off `S`, since `T ∩ U ⊆ S` and `tsupport χ ⊆ U`.
+    have hT := ha.smul_add_one_sub_smul
+      (uniformlyEllipticOn_const_smul_one univ ha.pos le_rfl ha.le)
+      (χ := fun x => if x ∈ T then χ x else 0)
+      (fun x => by split_ifs <;> simp [hχI x])
+      (fun x hx => by
+        split_ifs with hxT
+        · exact hχ0 x fun h => hx (hTU ⟨hxT, hχs h⟩)
+        · rfl)
+    refine (hT.mono_set (subset_univ T)).congr fun x hx => ?_
+    simp only [hx, ite_true]
+
 /-- **A uniformly elliptic field, Lipschitz up to part of the boundary, agrees near a compact set
 with a Lipschitz field on the whole space.** Let `a` be uniformly elliptic on a set `S` with
 constants `λ, Λ`, with `x ↦ a(x)` Lipschitz on `S` in the operator norm of its bilinear forms. Let
@@ -147,30 +177,12 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {la
   classical
   obtain ⟨abar, _, habar, hLbar⟩ := exists_lipschitzWith_matrixBilinearForm_eqOn hK
   obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
-  have hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1 := fun x => hχr (mem_range_self x)
-  have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
+  obtain ⟨W, hCW, hWU, hT, hW1⟩ :=
+    exists_uniformlyEllipticOn_smul_add_one_sub_smul (ha.congr habar) hTU hχr hχ1 hχs
   obtain ⟨K', M, hK', hM⟩ :=
     exists_lipschitzWith_and_norm_le_matrixBilinearForm_smul_add_one_sub_smul hLbar
-    (hχ.of_le (by simp)) hχc hχI (lam • 1)
-  refine ⟨fun x => χ x • abar x + (1 - χ x) • (lam • 1), K', M,
-    ⟨interior (χ ⁻¹' {1}), isOpen_interior⟩, hχ1, fun x hx => ?_, ?_, hK', fun x => ?_,
-    fun x hx => ?_⟩
-  · have hχx : χ x = 1 := interior_subset hx
-    exact hχs (subset_tsupport _ (by simp [hχx]))
-  · -- On `T`, the weight vanishes off `S`, since `T ∩ U ⊆ S` and `tsupport χ ⊆ U`.
-    have hT := (ha.congr habar).smul_add_one_sub_smul
-      (uniformlyEllipticOn_const_smul_one univ ha.pos le_rfl ha.le)
-      (χ := fun x => if x ∈ T then χ x else 0)
-      (fun x => by split_ifs <;> simp [hχI x])
-      (fun x hx => by
-        split_ifs with hxT
-        · exact hχ0 x fun h => hx (hTU ⟨hxT, hχs h⟩)
-        · rfl)
-    refine (hT.mono_set (subset_univ T)).congr fun x hx => ?_
-    simp [hx]
-  · exact hM x
-  · have hχx : χ x = 1 := interior_subset hx.2
-    simp [hχx, habar hx.1]
+    (hχ.of_le (by simp)) hχc (fun x => hχr (mem_range_self x)) (lam • 1)
+  exact ⟨_, K', M, W, hCW, hWU, hT, hK', hM, fun x hx => by simp [hW1 x hx.2, habar hx.1]⟩
 
 /-- **A locally Lipschitz uniformly elliptic field agrees near a compact set with a Lipschitz
 uniformly elliptic field on the whole space.** Let `a` be uniformly elliptic on `Ω` with
@@ -275,28 +287,12 @@ theorem UniformlyEllipticOn.exists_contDiff_eqOn_inter [DecidableEq ι] {lam Lam
         (∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M) ∧ EqOn a' a (W : Set (EuclideanSpace ℝ ι)) := by
   classical
   obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
-  have hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1 := fun x => hχr (mem_range_self x)
-  have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
+  obtain ⟨W, hCW, hWU, hT, hW1⟩ :=
+    exists_uniformlyEllipticOn_smul_add_one_sub_smul ha hTU hχr hχ1 hχs
   obtain ⟨K, K', M, hsm, hK, hK', hM⟩ :=
     exists_lipschitzWith_contDiff_smul_add_one_sub_smul hsmooth hχ hχc hχs (lam • 1)
-  refine ⟨fun x => χ x • a x + (1 - χ x) • (lam • 1), K, K', M,
-    ⟨interior (χ ⁻¹' {1}), isOpen_interior⟩, hχ1, fun x hx => ?_, ?_, hsm, hK, hK', hM,
-    fun x hx => ?_⟩
-  · have hχx : χ x = 1 := interior_subset hx
-    exact hχs (subset_tsupport _ (by simp [hχx]))
-  · -- On `T`, the weight vanishes off `S`, since `T ∩ U ⊆ S` and `tsupport χ ⊆ U`.
-    have hT := ha.smul_add_one_sub_smul
-      (uniformlyEllipticOn_const_smul_one univ ha.pos le_rfl ha.le)
-      (χ := fun x => if x ∈ T then χ x else 0)
-      (fun x => by split_ifs <;> simp [hχI x])
-      (fun x hx => by
-        split_ifs with hxT
-        · exact hχ0 x fun h => hx (hTU ⟨hxT, hχs h⟩)
-        · rfl)
-    refine (hT.mono_set (subset_univ T)).congr fun x hx => ?_
-    simp only [hx, ite_true]
-  · have hχx : χ x = 1 := interior_subset hx
-    simp only [hχx, one_smul, sub_self, zero_smul, add_zero]
+  exact ⟨_, K, K', M, W, hCW, hWU, hT, hsm, hK, hK', hM, fun x hx => by
+    simp only [hW1 x hx, one_smul, sub_self, zero_smul, add_zero]⟩
 
 /-- **Extending a measurable uniformly elliptic field by `λ I`.** A field `a`, measurable and
 uniformly elliptic on `Ω` with constants `λ, Λ`, agrees on `Ω` with a field that is measurable and

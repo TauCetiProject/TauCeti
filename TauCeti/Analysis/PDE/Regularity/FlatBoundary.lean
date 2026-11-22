@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Regularity.HalfSpace
 public import TauCeti.Analysis.PDE.Regularity.Interior
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Localization
-import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 
 /-!
 # Local `H²` and `H³` regularity near a flat part of the boundary
@@ -67,7 +66,8 @@ changes.
 * The forcing of the equation for `ψ u`,
   `ψ F - ⟨∇u, a' ∇ψ⟩ - ⟨∇ψ, a' ∇u⟩ - u div(a' ∇ψ)`, must now lie in `H¹(H)`. It is a combination of
   `F`, the first derivatives of `u` and `u` with smooth compactly supported multipliers, so it lies
-  in `H¹(Ω ∩ W)` because `u` is already `H²` there by the first part. It vanishes off `tsupport ψ`,
+  in `H¹(Ω ∩ W)` because `u` is already `H²` there by the first part
+  (`TauCeti.PDE.exists_value_ae_eq_localizedForcing`). It vanishes off `tsupport ψ`,
   and `tsupport ψ ∩ H ⊆ Ω ∩ W`, so its extension by zero lies in `H¹(H)`
   (`TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`).
 
@@ -105,6 +105,28 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega H U V : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c₀ : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+
+omit [DecidableEq ι] in
+/-- Zero boundary values on `∂Ω ∩ U` pass to the restriction of `u` to `Ω ∩ U'` for an open
+`U' ⊆ U`: `ψ u ∈ H¹₀(Ω ∩ U')` for every smooth `ψ` compactly supported in `U'`. -/
+private theorem exists_w1p0_value_ae_eq_mul_restrictL {U' : Opens (EuclideanSpace ℝ ι)}
+    {u : W1p mu Omega 2} (hU' : (U' : Set (EuclideanSpace ℝ ι)) ⊆ U)
+    (hu0 : ∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
+      tsupport ψ ⊆ U → ∃ v : W1p0 mu Omega 2,
+        W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
+    (hψs : tsupport ψ ⊆ U') :
+    ∃ v : W1p0 mu (Omega ⊓ U') 2, W1p.value (v : W1p mu (Omega ⊓ U') 2) =ᵐ[mu.restrict (Omega ⊓ U')]
+      fun x => ψ x * W1p.value (W1p.restrictL (inf_le_left : Omega ⊓ U' ≤ Omega) u) x := by
+  obtain ⟨v, hv⟩ := hu0 ψ hψ hψc (hψs.trans hU')
+  have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport ψ → W1p.value (v : W1p mu Omega 2) x = 0 := by
+    filter_upwards [hv] with x hx hxψ
+    rw [hx, image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
+  refine ⟨⟨_, W1p.restrictL_mem_w1p0Submodule_of_isCompact hψc hψs v.property hv0⟩, ?_⟩
+  filter_upwards [W1p.value_restrictL_ae inf_le_left (v : W1p mu Omega 2),
+    W1p.value_restrictL_ae inf_le_left u,
+    ae_restrict_of_ae_restrict_of_subset inter_subset_left hv] with x h1 h2 h3
+  rw [h1, h3, h2]
 
 /-- **Local `H²` regularity near a flat part of the boundary.** Let `ν ≠ 0`, and let `H` be an
 open set mapped into itself by every translation orthogonal to `ν`, as a half-space
@@ -158,25 +180,20 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := mem_interior_iff_mem_nhds.1 (hψ1 hx)
     exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const x 1)⟩
   -- The zero boundary values of `u` give `ψ u ∈ H¹₀(Ω ∩ W)`.
-  obtain ⟨v, hv⟩ := hu0 ψ hψ hψc (hψs.trans hWU')
-  have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport ψ → W1p.value (v : W1p mu Omega 2) x = 0 := by
-    filter_upwards [hv] with x hx hxψ
-    rw [hx, image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
-  have hmem := W1p.restrictL_mem_w1p0Submodule_of_isCompact hψc hψs v.property hv0
+  obtain ⟨v, hv⟩ := exists_w1p0_value_ae_eq_mul_restrictL hWU' hu0 hψ hψc hψs
   have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁ =
-      W1p.restrictL hΩ₁ (v : W1p mu Omega 2) := by
+      (v : W1p mu Ω₁ 2) := by
     refine W1p.ext_value (Lp.ext ?_)
     filter_upwards [W1p.value_contDiffSMul_ae hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁,
-      W1p.value_restrictL_ae hΩ₁ u, W1p.value_restrictL_ae hΩ₁ (v : W1p mu Omega 2),
-      ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.mpr hΩ₁) hv] with x h1 h2 h3 h4
-    rw [h1, h2, h3, h4, smul_eq_mul]
+      hv] with x h1 h2
+    rw [h1, h2, smul_eq_mul]
   -- Extended by zero, `ψ u` solves an equation on all of `H`.
   have hts : tsupport ψ ∩ H ⊆ (Ω₁ : Set (EuclideanSpace ℝ ι)) := fun x hx => by
     have hxU : x ∈ (H : Set (EuclideanSpace ℝ ι)) ∩ U := ⟨hx.2, hWU' (hψs hx.1)⟩
     rw [← hΩU] at hxU
     exact ⟨hxU.1, hψs hx.1⟩
   obtain ⟨w, g', hw, -, -, hwg⟩ := exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem
-    hM' hK' hΩ₁H hg hψ hψc hts hN _ _ (hψu ▸ hmem)
+    hM' hK' hΩ₁H hg hψ hψc hts hN _ _ (hψu ▸ v.property)
   -- On `Ω ∩ V`, the gradient of `ψ u` is that of `u`.
   have hVW' : (V : Set (EuclideanSpace ℝ ι)) ⊆ W := subset_closure.trans hVW
   have hΩVΩ₁ : ((Omega ⊓ V : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) ⊆ Ω₁ :=
@@ -249,90 +266,6 @@ private theorem energyFormH1_restrictL_eq_of_eqOn {U' : Opens (EuclideanSpace �
   refine integral_congr_ae ?_
   filter_upwards [W1p.value_restrictL_ae hU' F] with x hx
   rw [hx]
-
-omit [DecidableEq ι] in
-/-- **The localized forcing is `H¹` for smooth coefficients.** Let the entries of `a` be smooth,
-let `ψ` be smooth with compact support, let `F ∈ H¹(Ω)` and let `u ∈ H²(Ω)`. Then the forcing
-`ψ F - ⟨∇u, a ∇ψ⟩ - ⟨∇ψ, a ∇u⟩ - u div(a ∇ψ)` of the equation satisfied by `ψ u`, when `u` solves
-`-div(a ∇u) = F`, lies in `H¹(Ω)`. -/
-private theorem exists_value_ae_eq_localizedForcing
-    (hsmooth : ∀ i j, ContDiff ℝ ∞ fun x => a x i j) {ψ : EuclideanSpace ℝ ι → ℝ}
-    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (F : W1p mu Omega 2)
-    (U : Wkp mu Omega 2 2) :
-    ∃ h : W1p mu Omega 2, W1p.value h =ᵐ[mu.restrict Omega]
-      localizedForcing a ψ (W1p.value F) (Wkp.lowerOrder 1 U) := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  set u : W1p mu Omega 2 := Wkp.lowerOrder 1 U
-  have hgψ : ContDiff ℝ ∞ (∇ ψ) := hψ.gradient_right (m := ∞) (by simp)
-  -- Multiplying by a smooth compactly supported function preserves `H¹(Ω)`.
-  have hmul : ∀ φ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
-      ∀ w : W1p mu Omega 2, ∃ h : W1p mu Omega 2,
-        W1p.value h =ᵐ[mu.restrict Omega] fun x => φ x * W1p.value w x := by
-    intro φ hφ hφc w
-    obtain ⟨M, hM, h1, h2⟩ := (hφ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hφc
-    exact ⟨W1p.contDiffSMul φ hφ hM (fun x _ => h1 x) (fun x _ => h2 x) w,
-      W1p.value_contDiffSMul_ae hφ hM _ _ w⟩
-  -- The multipliers of the first derivatives of `u` and of `u` itself.
-  set c : ι → EuclideanSpace ℝ ι → ℝ := fun i x =>
-    -(matrixBilinearForm (a x) (b i) (∇ ψ x) + matrixBilinearForm (a x) (∇ ψ x) (b i))
-  have hc : ∀ i, ContDiff ℝ ∞ (c i) := fun i =>
-    ((contDiff_matrixBilinearForm_apply hsmooth contDiff_const hgψ).add
-      (contDiff_matrixBilinearForm_apply hsmooth hgψ contDiff_const)).neg
-  have hcc : ∀ i, HasCompactSupport (c i) := fun i => hψc.mono' fun x hx => by
-    by_contra hxψ
-    exact hx (by simp [c, gradient_of_notMem_tsupport hxψ])
-  have hc₀c : HasCompactSupport fun x => -divMatrixGradient a ψ x := hψc.mono' fun x hx => by
-    by_contra hxψ
-    exact hx (by simp [divMatrixGradient_eq_zero_of_notMem_tsupport hxψ])
-  -- The first derivatives of `u` lie in `H¹(Ω)`, since `u ∈ H²(Ω)`.
-  have hd : ∀ i, ∃ d : W1p mu Omega 2,
-      W1p.value d =ᵐ[mu.restrict Omega] fun x => ⟪W1p.gradient u x, b i⟫_ℝ := fun i => by
-    obtain ⟨d, hd, -⟩ := Wkp.exists_w1p_value_eq_inner_gradient U (b i)
-    exact ⟨d, by rwa [Wkp.iteratedGradient_zero] at hd⟩
-  choose d hdv using hd
-  obtain ⟨T, hT⟩ := hmul ψ hψ hψc F
-  choose S hS using fun i => hmul (c i) (hc i) (hcc i) (d i)
-  obtain ⟨Z, hZ⟩ := hmul _ (contDiff_divMatrixGradient hsmooth hψ).neg hc₀c u
-  refine ⟨T + ∑ i, S i + Z, ?_⟩
-  filter_upwards [W1p.value_add_ae (T + ∑ i, S i) Z, W1p.value_add_ae T (∑ i, S i),
-    W1p.value_finsetSum_ae Finset.univ S, hT, hZ, ae_all_iff.2 hS, ae_all_iff.2 hdv]
-    with x h1 h2 h3 h4 h5 h6 h7
-  -- Expand both bilinear terms along the basis in the slot of `∇u`.
-  have hB₁ : ∑ i, ⟪W1p.gradient u x, b i⟫_ℝ * matrixBilinearForm (a x) (b i) (∇ ψ x) =
-      matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x) :=
-    sum_inner_mul_matrixBilinearForm _ _
-  have hB₂ : ∑ i, ⟪W1p.gradient u x, b i⟫_ℝ * matrixBilinearForm (a x) (∇ ψ x) (b i) =
-      matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x) := by
-    conv_rhs => rw [← b.sum_repr' (W1p.gradient u x)]
-    simp [map_sum, map_smul, real_inner_comm]
-  simp only [Pi.add_apply] at h1 h2
-  rw [h1, h2, h3, h4, h5, localizedForcing_def]
-  simp only [h6, h7, c, ← hB₁, ← hB₂]
-  simp only [neg_add, neg_mul, add_mul, Finset.sum_add_distrib, Finset.sum_neg_distrib]
-  simp only [mul_comm _ ⟪W1p.gradient u x, _⟫_ℝ]
-  ring
-
-omit [DecidableEq ι] in
-/-- Zero boundary values on `∂Ω ∩ U` pass to the restriction of `u` to `Ω ∩ U'` for an open
-`U' ⊆ U`: `ψ u ∈ H¹₀(Ω ∩ U')` for every smooth `ψ` compactly supported in `U'`. -/
-private theorem exists_w1p0_value_ae_eq_mul_restrictL {U' : Opens (EuclideanSpace ℝ ι)}
-    (hU' : (U' : Set (EuclideanSpace ℝ ι)) ⊆ U)
-    (hu0 : ∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
-      tsupport ψ ⊆ U → ∃ v : W1p0 mu Omega 2,
-        W1p.value (v : W1p mu Omega 2) =ᵐ[mu.restrict Omega] fun x => ψ x * W1p.value u x)
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
-    (hψs : tsupport ψ ⊆ U') :
-    ∃ v : W1p0 mu (Omega ⊓ U') 2, W1p.value (v : W1p mu (Omega ⊓ U') 2) =ᵐ[mu.restrict (Omega ⊓ U')]
-      fun x => ψ x * W1p.value (W1p.restrictL (inf_le_left : Omega ⊓ U' ≤ Omega) u) x := by
-  obtain ⟨v, hv⟩ := hu0 ψ hψ hψc (hψs.trans hU')
-  have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport ψ → W1p.value (v : W1p mu Omega 2) x = 0 := by
-    filter_upwards [hv] with x hx hxψ
-    rw [hx, image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
-  refine ⟨⟨_, W1p.restrictL_mem_w1p0Submodule_of_isCompact hψc hψs v.property hv0⟩, ?_⟩
-  filter_upwards [W1p.value_restrictL_ae inf_le_left (v : W1p mu Omega 2),
-    W1p.value_restrictL_ae inf_le_left u,
-    ae_restrict_of_ae_restrict_of_subset inter_subset_left hv] with x h1 h2 h3
-  rw [h1, h3, h2]
 
 omit [DecidableEq ι] in
 /-- **The localized equation on the whole flat domain.** Let `Ω ⊆ H` and let `u ∈ H²(Ω)` solve
@@ -421,24 +354,18 @@ private theorem exists_value_eq_value_restrictL_of_contDiff (hν : ν ≠ 0)
   -- A cutoff `ψ` equal to one near `closure V` and supported in `W`; then `ψ u ∈ H¹₀(Ω₁)`.
   obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
     hV.exists_contDiff_cutoff_with_bounds hWo hVW
-  obtain ⟨v, hv⟩ := hu0 ψ hψ hψc (hψs.trans hWU')
-  have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport ψ → W1p.value (v : W1p mu Omega 2) x = 0 := by
-    filter_upwards [hv] with x hx hxψ
-    rw [hx, image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
-  have hmem := W1p.restrictL_mem_w1p0Submodule_of_isCompact (V := W) hψc hψs v.property hv0
+  obtain ⟨v, hv⟩ := exists_w1p0_value_ae_eq_mul_restrictL hWU' hu0 hψ hψc hψs
   have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x)
-      (Wkp.lowerOrder 1 U2) = W1p.restrictL hΩ₁ (v : W1p mu Omega 2) := by
+      (Wkp.lowerOrder 1 U2) = (v : W1p mu Ω₁ 2) := by
     refine W1p.ext_value (Lp.ext ?_)
     filter_upwards [W1p.value_contDiffSMul_ae hψ hN (fun x _ => hψN x) (fun x _ => hgradN x)
-      (Wkp.lowerOrder 1 U2), W1p.value_restrictL_ae hΩ₁ u,
-      W1p.value_restrictL_ae hΩ₁ (v : W1p mu Omega 2),
-      ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.mpr hΩ₁) hv] with x h1 h2 h3 h4
-    rw [h1, hU2, h2, h3, h4, smul_eq_mul]
+      (Wkp.lowerOrder 1 U2), hv] with x h1 h2
+    rw [h1, hU2, h2, smul_eq_mul]
   -- `ψ u` extends to a Dirichlet solution on `H` with `H¹` forcing, so it is `H³` there.
   have hts : tsupport ψ ∩ H ⊆ (Ω₁ : Set (EuclideanSpace ℝ ι)) := fun x hx =>
     ⟨(hΩH x (hWU' (hψs hx.1))).2 hx.2, hψs hx.1⟩
   obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator hM hK hsm
-    hΩ₁H hu₁ hψ hψc hts hN _ _ (hψu ▸ hmem)
+    hΩ₁H hu₁ hψ hψc hts hN _ _ (hψu ▸ v.property)
   obtain ⟨W3, hW3⟩ := ha.exists_value_eq_value_of_mapsTo hν hHc hH hK.lipschitzOnWith
     (fun i j => (hsm i j).contDiffOn) (fun i j => (hK' i j).lipschitzOnWith) hw
   -- On `Ω ∩ V`, where `ψ = 1`, the function `ψ u` is `u`.
