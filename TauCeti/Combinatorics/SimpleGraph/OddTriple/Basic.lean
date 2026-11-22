@@ -185,22 +185,14 @@ theorem card_oddTripleFinset_eq_card_filter_lt :
     #G.oddTripleFinset =
       #{p : V × V × V | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧
         Xor (G.Adj p.1 p.2.1) (Xor (G.Adj p.2.1 p.2.2) (G.Adj p.2.2 p.1))} := by
-  symm
-  refine card_bij (fun p _ ↦ ({p.1, p.2.1, p.2.2} : Finset V)) ?_ ?_ ?_
-  · rintro ⟨u, v, w⟩ hp
-    obtain ⟨-, -, hxor⟩ := (mem_filter.mp hp).2
-    rw [triple_mem_oddTripleFinset_iff, G.adj_comm u w, xor_comm (G.Adj w u)]
-    exact hxor
-  · rintro ⟨u₁, v₁, w₁⟩ hp₁ ⟨u₂, v₂, w₂⟩ hp₂ htri
-    obtain ⟨huv₁, hvw₁, -⟩ := (mem_filter.mp hp₁).2
-    obtain ⟨huv₂, hvw₂, -⟩ := (mem_filter.mp hp₂).2
-    exact Set.powersetCard.eq_of_lt_lt_triple_eq huv₁ hvw₁ huv₂ hvw₂ htri
-  · intro s hs
-    obtain ⟨hs3, -⟩ := mem_oddTripleFinset.mp hs
-    obtain ⟨u, v, w, huv, hvw, rfl⟩ := Set.powersetCard.exists_lt_lt_val_eq ⟨s, hs3⟩
-    refine ⟨(u, v, w), mem_filter.mpr ⟨mem_univ _, huv, hvw, ?_⟩, rfl⟩
-    have hxor := triple_mem_oddTripleFinset_iff.mp hs
-    rwa [G.adj_comm u w, xor_comm (G.Adj w u)] at hxor
+  rw [← Set.powersetCard.card_filter_lt_triple_eq_card_of_card_eq_three G.oddTripleFinset
+    fun _ ht ↦ (mem_oddTripleFinset.mp ht).1]
+  simp only [triple_mem_oddTripleFinset_iff, G.adj_comm _ _]
+  congr 2
+  ext ⟨u, v, w⟩
+  simp only [and_congr_right_iff]
+  intro _ _
+  rw [G.adj_comm u w, xor_comm (G.Adj w u)]
 
 /-- Over a linear order, the odd triples are counted by their increasing triples `u < v < w`:
 each odd triple is `{u, v, w}` for exactly one such triple. -/

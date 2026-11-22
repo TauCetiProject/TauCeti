@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.OddTriple.Basic
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
-import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Tactic.Ring
 import TauCeti.Combinatorics.SimpleGraph.Degree
 

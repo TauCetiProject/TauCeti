@@ -9,7 +9,6 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Combinatorics.SimpleGraph.Operations
 public import Mathlib.Data.Finset.Interval
-public import Mathlib.Data.Finset.Sym
 public import Mathlib.Order.Sym2
 import TauCeti.Order.Sym2
 

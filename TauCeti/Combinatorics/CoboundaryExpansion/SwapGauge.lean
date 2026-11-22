@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Binary
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.ParityRetract
 public import TauCeti.Combinatorics.SimpleGraph.CutMinimal.Basic
+import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SingleEdge
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
@@ -66,12 +67,6 @@ theorem parityRetract_inv_mul_ite_adj_mul [DecidableEq V]
     Equiv.Perm.parityRetract_eq_ite_sign_eq_neg_one ht (β v), hedge]
   exact G.ite_mem_inv_mul_ite_adj_mul ht.mul_self {w | Equiv.Perm.sign (β w) = -1} u v
 
-/-- Pushing `G.toCochain ht.mul_self` forward along `Equiv.Perm.parityRetract ht` fixes it. -/
-theorem map_parityRetract_toCochain [Fintype V] (G : SimpleGraph V) {t : Equiv.Perm α}
-    (ht : t.IsSwap) :
-    (G.toCochain ht.mul_self).map (Equiv.Perm.parityRetract ht) = G.toCochain ht.mul_self := by
-  simp
-
 /-- Under the trivial gauge `1`, the moved-point cost of `G.toCochain ht.mul_self` equals
 `2 * #G.edgeFinset`. -/
 theorem cost_movedNorm_toCochain_one [Fintype V] [LinearOrder V] (G : SimpleGraph V)
@@ -108,8 +103,8 @@ theorem two_mul_card_symmDiff_le_cost_movedNorm_toCochain [Fintype V] [LinearOrd
       fun w ↦ if w ∈ {x | Equiv.Perm.sign (β x) = -1} then t else 1 :=
     funext fun w ↦ Equiv.Perm.parityRetract_eq_ite_sign_eq_neg_one ht (β w)
   have hle := (G.toCochain ht.mul_self).cost_map_le (Equiv.Perm.movedNorm_parityRetract_le ht) β
-  rwa [G.map_parityRetract_toCochain ht, hcomp,
-    G.cost_movedNorm_toCochain_ite_mem ht {w | Equiv.Perm.sign (β w) = -1}] at hle
+  simp only [SimpleGraph.map_toCochain, Equiv.Perm.parityRetract_self] at hle
+  rwa [hcomp, G.cost_movedNorm_toCochain_ite_mem ht {w | Equiv.Perm.sign (β w) = -1}] at hle
 
 /-- Whenever `G ∆ (⊤ : SimpleGraph V).between S Sᶜ` is cut-minimal, the `Equiv.Perm α` gauge
 distance of `G.toCochain ht.mul_self` equals

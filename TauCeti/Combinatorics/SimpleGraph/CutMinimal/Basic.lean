@@ -6,7 +6,6 @@ Authors: pi
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Bipartite
-import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import TauCeti.Combinatorics.SimpleGraph.Degree
 import TauCeti.Combinatorics.SimpleGraph.Finite
 import TauCeti.Data.Finset.Basic
@@ -327,16 +326,9 @@ theorem exists_finset_isCutMinimal_symmDiff_top_between [Finite V] (G : SimpleGr
 /-- On at least three vertices, every single-edge graph `SimpleGraph.edge u v` is cut-minimal. -/
 theorem isCutMinimal_edge_of_three_le_card [Fintype V] (hV : 3 ≤ Fintype.card V) (u v : V) :
     (edge u v).IsCutMinimal := by
-  rcases eq_or_ne u v with rfl | huv
-  · simp
-  classical
-  have hpos : 0 < #((Finset.univ.erase u).erase v) := by
-    rw [Finset.card_erase_of_mem (Finset.mem_erase.mpr ⟨huv.symm, Finset.mem_univ _⟩),
-      Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ]
-    omega
-  obtain ⟨w, hw⟩ := Finset.card_pos.mp hpos
-  rw [Finset.mem_erase, Finset.mem_erase] at hw
-  exact (isCutMinimal_edge_iff u v).mpr (Or.inr ⟨w, hw.2.1, hw.1⟩)
+  obtain ⟨w, hwu, hwv⟩ := ENat.exists_ne_ne_of_three_le
+    (by rw [ENat.card_eq_coe_fintype_card]; exact_mod_cast hV) u v
+  exact (isCutMinimal_edge_iff u v).mpr (Or.inr ⟨w, hwu, hwv⟩)
 
 /-- On at least three vertices, every graph with at most one edge is cut-minimal. -/
 theorem isCutMinimal_of_card_edgeFinset_le_one [Fintype V] {G : SimpleGraph V}

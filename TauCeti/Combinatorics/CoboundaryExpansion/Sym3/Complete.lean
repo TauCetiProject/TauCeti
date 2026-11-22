@@ -33,7 +33,7 @@ The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
 For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`.
 
 * `k = (2 t + 1) q`: Kozlov's staircase graph `SimpleGraph.staircase q t`
-  (`h1_complete_movedNorm_fin_three_le_of_card_eq_mul`).
+  (`h1_complete_movedNorm_le_of_card_eq_mul`).
 * `k = 4 q`: a private `k = 4` seed `w4`, with the three transpositions on the pairs `(1, 2)`,
   `(1, 3)`, `(2, 3)`, replicated on `Fin 4 ×ₗ Fin q`. Its defect is `8 q ^ 3`
   (`Cochain.defect_ofLt_lex`; `8` by `decide` for the seed), and every gauge costs at least
@@ -149,7 +149,7 @@ private theorem h1_complete_movedNorm_fin_three_le {V : Type*} [Fintype V] [Line
   · exact Sym3.h1_complete_le_of_card_eq_four_mul (by omega) hq
   · have ht : 0 < t := by have := hp.one_lt; omega
     have hq0 : 0 < q := Nat.pos_of_ne_zero fun h => by simp [h] at hq; omega
-    exact h1_complete_movedNorm_fin_three_le_of_card_eq_mul hq0 ht (by rw [hq]; ring)
+    exact h1_complete_movedNorm_le_of_card_eq_mul hq0 ht (by rw [hq]; ring)
 
 variable {V : Type*} [Fintype V] [LinearOrder V]
 

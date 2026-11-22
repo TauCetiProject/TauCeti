@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph
 public import TauCeti.GroupTheory.Perm.Basic
-import Mathlib.Tactic.Ring
 import TauCeti.Combinatorics.CoboundaryExpansion.SwapGauge
 import TauCeti.Combinatorics.SimpleGraph.CutMinimal.OddTriple
 import TauCeti.Combinatorics.SimpleGraph.OddTriple.Switching

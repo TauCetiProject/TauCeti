@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Data.Finset.Sort
-public import Mathlib.Data.Fintype.Perm
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.GroupTheory.Perm.Basic
 public import Mathlib.GroupTheory.Perm.List
@@ -17,7 +16,6 @@ import Mathlib.Tactic
 import Mathlib.Data.Fintype.Fin
 -- Non-public: a cycle and an adjacent transposition generate the permutation group.
 import Mathlib.GroupTheory.Perm.Closure
-import Mathlib.Tactic.FinCases
 
 /-!
 # Permutations of `Fin n`
