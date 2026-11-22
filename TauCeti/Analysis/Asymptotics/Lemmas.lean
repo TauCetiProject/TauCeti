@@ -127,17 +127,22 @@ theorem isLittleO_sub_mul_iff_tendsto_div {α 𝕜 : Type*} [NormedDivisionRing 
 
 /-- **A limit of `(σ - a) • f(σ)` bounds `f` by `(σ - a)⁻¹`.** If `(σ - a) • f(σ)` has a limit
 along a filter `l` on a normed division ring `𝕜` on which eventually `σ ≠ a`, then
-`f(σ) = O((σ - a)⁻¹)` along `l`. Typical choices of `l` are the one-sided and punctured
-neighbourhoods of `a`. For `𝕜 = ℝ`, `a = 1` and `l = 𝓝[>] 1` this is how such a bound is usually
-obtained for a Dedekind zeta function or an `L`-series near `s = 1`, from the limit of
-`(s - 1) L(s)` along the real axis. -/
+`f(σ) = O((σ - a)⁻¹)` along `l`. The action of `𝕜` need only be a multiplicative action with
+`‖c • x‖ ≤ ‖c‖ * ‖x‖`, as `norm_smul_le` gives for any bounded action. Typical choices of `l` are
+the one-sided and punctured neighbourhoods of `a`. For `𝕜 = ℝ`, `a = 1` and `l = 𝓝[>] 1` this is
+how such a bound is usually obtained for a Dedekind zeta function or an `L`-series near `s = 1`,
+from the limit of `(s - 1) L(s)` along the real axis. -/
 theorem isBigO_inv_sub_of_tendsto_sub_smul {𝕜 E : Type*} [NormedDivisionRing 𝕜]
-    [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {l : Filter 𝕜} {f : 𝕜 → E}
-    {a : 𝕜} {r : E} (hne : ∀ᶠ σ in l, σ ≠ a) (h : Tendsto (fun σ ↦ (σ - a) • f σ) l (𝓝 r)) :
+    [SeminormedAddGroup E] [MulAction 𝕜 E] (hb : ∀ (c : 𝕜) (x : E), ‖c • x‖ ≤ ‖c‖ * ‖x‖)
+    {l : Filter 𝕜} {f : 𝕜 → E} {a : 𝕜} {r : E} (hne : ∀ᶠ σ in l, σ ≠ a)
+    (h : Tendsto (fun σ ↦ (σ - a) • f σ) l (𝓝 r)) :
     f =O[l] fun σ ↦ (σ - a)⁻¹ := by
-  refine ((isBigO_refl (fun σ ↦ (σ - a)⁻¹) _).smul (h.isBigO_one 𝕜)).congr' ?_ (by simp)
-  filter_upwards [hne] with σ hσ
-  rw [smul_smul, inv_mul_cancel₀ (sub_ne_zero.2 hσ), one_smul]
+  obtain ⟨C, hC⟩ := (h.norm.isBigO_one ℝ).bound
+  refine .of_bound C ?_
+  filter_upwards [hne, hC] with σ hσ hCσ
+  rw [Real.norm_eq_abs, abs_norm, norm_one, mul_one] at hCσ
+  rw [← inv_smul_smul₀ (sub_ne_zero.2 hσ) (f σ), mul_comm]
+  exact (hb _ _).trans (mul_le_mul_of_nonneg_left hCσ (norm_nonneg _))
 
 /-- **At the origin a higher power of the norm is dominated by a lower one.** The norm is at most
 one near `0`, so `‖x‖ ^ m = O(‖x‖ ^ n)` whenever `n ≤ m`. -/
