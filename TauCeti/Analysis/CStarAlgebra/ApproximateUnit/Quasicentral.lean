@@ -311,7 +311,8 @@ theorem isIncreasingApproximateUnit_comap_coe [IsClosed (I : Set A)]
 /-- Pushing `l.comap ((↑) : I → A)` forward to `A` recovers `l`. -/
 theorem map_coe_comap_coe (hl : I.IsQuasicentralApproximateUnit l) :
     (l.comap ((↑) : I → A)).map ((↑) : I → A) = l :=
-  map_comap_of_mem (by rw [Subtype.range_coe]; exact hl.eventually_mem)
+  (subtypeVal_map_comap (I : Set A) l).trans
+    (inf_eq_left.mpr (le_principal_iff.mpr hl.eventually_mem))
 
 /-- Elements along a quasicentral approximate unit in a star-ordered C⋆-algebra are eventually
 self-adjoint. -/
@@ -505,11 +506,10 @@ theorem mem_quasicentralApproximateUnit_iff {I : TwoSidedIdeal A} {s : Set A} :
 @[simp]
 theorem map_coe_comap_coe_quasicentralApproximateUnit (I : TwoSidedIdeal A) :
     (I.quasicentralApproximateUnit.comap ((↑) : I → A)).map ((↑) : I → A) =
-      I.quasicentralApproximateUnit := by
-  refine map_comap_of_mem ?_
-  rw [Subtype.range_coe]
-  exact mem_quasicentralApproximateUnit_iff.mpr
-    ⟨∅, ∅, 1, zero_lt_one, fun _ h => (mem_quasicentralSet_iff.mp h).1⟩
+      I.quasicentralApproximateUnit :=
+  (subtypeVal_map_comap (I : Set A) _).trans <| inf_eq_left.mpr <| le_principal_iff.mpr <|
+    mem_quasicentralApproximateUnit_iff.mpr
+      ⟨∅, ∅, 1, zero_lt_one, fun _ h => (mem_quasicentralSet_iff.mp h).1⟩
 
 /-- Universal property of `I.quasicentralApproximateUnit`: a filter `l` is finer than
 `I.quasicentralApproximateUnit` precisely when it satisfies all eventual bounds and convergence
