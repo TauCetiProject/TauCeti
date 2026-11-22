@@ -431,8 +431,8 @@ theorem hamiltonianFlowStabilizer_sphericalPendulumEnergyMomentum_eq_closure {h 
   ext i
   fin_cases i
   · simp [hm]
-  · simp
-    linarith
+  · have hv₁ : v 1 = m * -sphericalPendulumRotationAngle h j + n * (2 * π) := by linarith
+    simp [hv₁]
 
 end PeriodLattice
 
