@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Variational.PolynomialJet.Basic
 public import TauCeti.RingTheory.Kaehler.DeRham.LieDerivative
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.RingTheory.Kaehler.MvPolynomial
 
 /-!
 # The variational bicomplex of polynomial jets
@@ -201,6 +202,15 @@ theorem totalLieDeriv_contactForm (i : ι) (a : α) (I : ι →₀ ℕ) :
     totalLieDeriv_smul, totalLieDeriv_horizontalForm, smul_zero, add_zero]
   simp only [add_right_comm I]
 
+/-- Contact forms square to zero. -/
+@[simp]
+theorem contactForm_mul_self (a : α) (I : ι →₀ ℕ) : contactForm R a I * contactForm R a I = 0 := by
+  have h : contactForm R a I = ExteriorAlgebra.ι _ (KaehlerDifferential.D R _ (X (Sum.inr (a, I))) -
+      ∑ i, (X (Sum.inr (a, I + Finsupp.single i 1)) : PolynomialJet R ι α) •
+        KaehlerDifferential.D R _ (X (Sum.inl i))) := by
+    simp [contactForm, horizontalForm_def]
+  rw [h, ExteriorAlgebra.ι_sq_zero]
+
 /-- Contact forms have exterior degree one. -/
 theorem contactForm_mem_grading (a : α) (I : ι →₀ ℕ) :
     contactForm R a I ∈ grading R (PolynomialJet R ι α) 1 :=
@@ -309,6 +319,19 @@ theorem verticalDiff_verticalDiff (ω : Forms R ι α) :
     horizontalDiff_horizontalDiff]
   abel
 
+/-- The total derivative on forms commutes with the horizontal differential. -/
+theorem totalLieDeriv_horizontalDiff (i : ι) (ω : Forms R ι α) :
+    totalLieDeriv i (horizontalDiff R ι α ω) = horizontalDiff R ι α (totalLieDeriv i ω) := by
+  simp only [horizontalDiff_apply, map_sum, totalLieDeriv_mul, totalLieDeriv_horizontalForm,
+    zero_mul, zero_add]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [totalLieDeriv_comm]
+
+/-- The total derivative on forms commutes with the vertical differential. -/
+theorem totalLieDeriv_verticalDiff (i : ι) (ω : Forms R ι α) :
+    totalLieDeriv i (verticalDiff R ι α ω) = verticalDiff R ι α (totalLieDeriv i ω) := by
+  rw [verticalDiff_apply, verticalDiff_apply, map_sub, totalLieDeriv_horizontalDiff,
+    extDeriv_totalLieDeriv]
+
 /-- **The horizontal and vertical differentials anticommute**: `d_V d_H = -d_H d_V`. -/
 theorem verticalDiff_horizontalDiff (ω : Forms R ι α) :
     verticalDiff R ι α (horizontalDiff R ι α ω) =
@@ -343,6 +366,14 @@ theorem verticalDiff_contactForm (a : α) (I : ι →₀ ℕ) :
     verticalDiff R ι α (contactForm R a I) = 0 := by
   rw [← verticalDiff_algebraMap_X_field, verticalDiff_verticalDiff]
 
+/-- The exterior derivative of a contact form is `dθᵃ_I = ∑ᵢ dxⁱ ∧ θᵃ_(I+eᵢ)`. -/
+@[simp]
+theorem extDeriv_contactForm (a : α) (I : ι →₀ ℕ) :
+    extDeriv R (PolynomialJet R ι α) (contactForm R a I) =
+      ∑ i, horizontalForm R α i * contactForm R a (I + Finsupp.single i 1) := by
+  rw [← horizontalDiff_add_verticalDiff, LinearMap.add_apply, verticalDiff_contactForm, add_zero,
+    horizontalDiff_contactForm]
+
 /-- On functions the vertical differential is a derivation. -/
 private def verticalDiffDerivation :
     Derivation R (PolynomialJet R ι α) (Forms R ι α) :=
@@ -361,18 +392,9 @@ theorem verticalDiff_algebraMap (f : PolynomialJet R ι α) :
     verticalDiff R ι α (algebraMap _ (Forms R ι α) f) =
       ∑ aI ∈ f.vars.toRight, pderiv (Sum.inr aI) f • contactForm R aI.1 aI.2 := by
   classical
-  -- the derivation `g ↦ ∑ v ∈ f.vars, (∂g/∂v) • d_V v` agrees with `d_V` on the variables of `f`
-  set c : _ → Forms R ι α := fun v ↦ verticalDiffDerivation (X v) with hc
-  have key : verticalDiffDerivation f = ∑ v ∈ f.vars, pderiv v f • c v := by
-    let D : Derivation R (PolynomialJet R ι α) (Forms R ι α) :=
-      ∑ v ∈ f.vars, (LinearMap.toSpanSingleton _ _ (c v)).compDer (pderiv v)
-    have hD : ∀ g, D g = ∑ v ∈ f.vars, pderiv v g • c v := fun g ↦ by simp [D]
-    rw [← hD]
-    refine derivation_eq_of_forall_mem_vars fun i hi ↦ ?_
-    simp [hD, hc, pderiv_X, Pi.single_apply, hi]
-  rw [← verticalDiffDerivation_apply, key]
+  rw [← verticalDiffDerivation_apply, derivation_apply_eq_sum_vars]
   conv_lhs => rw [← f.vars.toLeft_disjSum_toRight, Finset.sum_disjSum]
-  simp only [hc, verticalDiffDerivation_apply, verticalDiff_algebraMap_X_base, smul_zero,
+  simp only [verticalDiffDerivation_apply, verticalDiff_algebraMap_X_base, smul_zero,
     Finset.sum_const_zero, zero_add]
   exact Finset.sum_congr rfl fun aI _ ↦ by rw [← verticalDiff_algebraMap_X_field]
 

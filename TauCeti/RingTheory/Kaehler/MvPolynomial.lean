@@ -17,12 +17,16 @@ module on `{D (X i) | i : σ}` with coordinates given by `MvPolynomial.pderiv`. 
 resulting coordinate expansion of `KaehlerDifferential.D R (MvPolynomial σ R) p` as a finite sum
 over `p.vars` (valid for arbitrary, possibly infinite variable sets `σ`), together with its
 specialization to a `[Fintype σ]` sum, mirroring `KaehlerDifferential.polynomial_D_apply`.
+Through the universal property of `Ω[MvPolynomial σ R⁄R]`, the same expansion holds for every
+`R`-linear derivation on `MvPolynomial σ R`.
 
 ## Main results
 
 * `KaehlerDifferential.mvPolynomial_D_apply_eq_sum_vars`:
   `D R (MvPolynomial σ R) p = ∑ i ∈ p.vars, MvPolynomial.pderiv i p • D R (MvPolynomial σ R) (X i)`.
 * `KaehlerDifferential.mvPolynomial_D_apply`: the corresponding sum over `i : σ` when `[Fintype σ]`.
+* `MvPolynomial.derivation_apply_eq_sum_vars`: every derivation `D` on `MvPolynomial σ R` satisfies
+  `D p = ∑ i ∈ p.vars, MvPolynomial.pderiv i p • D (X i)`.
 -/
 
 public section
@@ -70,3 +74,18 @@ theorem mvPolynomial_D_apply [Fintype σ] (p : MvPolynomial σ R) :
   rw [MvPolynomial.pderiv_eq_zero_of_notMem_vars hi, zero_smul]
 
 end KaehlerDifferential
+
+namespace MvPolynomial
+
+variable {R σ M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module (MvPolynomial σ R) M]
+  [IsScalarTower R (MvPolynomial σ R) M]
+
+/-- Every `R`-linear derivation `D` on `MvPolynomial σ R` (with `σ` possibly infinite) is
+determined by its values on the variables of `p`:
+`D p = ∑ i ∈ p.vars, pderiv i p • D (X i)`. -/
+theorem derivation_apply_eq_sum_vars (D : Derivation R (MvPolynomial σ R) M)
+    (p : MvPolynomial σ R) : D p = ∑ i ∈ p.vars, pderiv i p • D (X i) := by
+  rw [← D.liftKaehlerDifferential_comp_D, KaehlerDifferential.mvPolynomial_D_apply_eq_sum_vars]
+  simp
+
+end MvPolynomial
