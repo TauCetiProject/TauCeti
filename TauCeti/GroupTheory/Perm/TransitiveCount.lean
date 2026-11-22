@@ -61,7 +61,7 @@ def orbitSplitEquiv (ha : a ∈ s) :
       {σ : Γ →* Perm s // IsPretransitive σ.range s} × (Γ →* Perm {x // x ∉ s}) where
   toFun ρ :=
     -- The orbit of `a` is invariant under every `ρ g`.
-    have hs : ∀ g x, ρ.1 g x ∈ s ↔ x ∈ s := by
+    have hs : ∀ g x, ρ.val g x ∈ s ↔ x ∈ s := by
       obtain ⟨ρ, hρ⟩ := ρ
       intro g x
       dsimp only
@@ -71,24 +71,24 @@ def orbitSplitEquiv (ha : a ∈ s) :
         exact ⟨g⁻¹ * h, by simp [hh]⟩
       · rintro ⟨h, rfl⟩
         exact ⟨g * h, by simp⟩
-    (⟨ρ.1.subtypePerm (· ∈ s) hs, (MonoidHom.isPretransitive_range_iff _ ⟨a, ha⟩).2
+    (⟨ρ.val.subtypePerm (· ∈ s) hs, (MonoidHom.isPretransitive_range_iff _ ⟨a, ha⟩).2
       fun x => by
-        obtain ⟨g, hg⟩ : (x : α) ∈ Set.range (fun g => ρ.1 g a) := by
-          rw [ρ.2]
-          exact x.2
+        obtain ⟨g, hg⟩ : (x : α) ∈ Set.range (fun g => ρ.val g a) := by
+          rw [ρ.property]
+          exact x.property
         exact ⟨g, Subtype.ext <| (MonoidHom.subtypePerm_apply_coe _ _ _ _ _).trans hg⟩⟩,
-      ρ.1.subtypePerm (· ∉ s) fun g x => not_congr (hs g x))
+      ρ.val.subtypePerm (· ∉ s) fun g x => not_congr (hs g x))
   invFun στ :=
-    ⟨(Perm.subtypeCongrHom (· ∈ s)).comp (στ.1.1.prod στ.2), by
+    ⟨(Perm.subtypeCongrHom (· ∈ s)).comp (στ.1.val.prod στ.2), by
       ext x
       simp only [Set.mem_range, MonoidHom.comp_apply, MonoidHom.prod_apply,
         Perm.subtypeCongrHom_apply]
       constructor
       · rintro ⟨g, rfl⟩
         rw [Perm.subtypeCongr.left_apply _ _ ha]
-        exact (στ.1.1 g ⟨a, ha⟩).2
+        exact (στ.1.val g ⟨a, ha⟩).property
       · intro hx
-        obtain ⟨g, hg⟩ := (MonoidHom.isPretransitive_range_iff _ ⟨a, ha⟩).1 στ.1.2 ⟨x, hx⟩
+        obtain ⟨g, hg⟩ := (MonoidHom.isPretransitive_range_iff _ ⟨a, ha⟩).1 στ.1.property ⟨x, hx⟩
         exact ⟨g, by rw [Perm.subtypeCongr.left_apply _ _ ha, hg]⟩⟩
   left_inv ρ := by
     ext g x
@@ -104,21 +104,21 @@ def orbitSplitEquiv (ha : a ∈ s) :
 @[simp]
 theorem orbitSplitEquiv_apply_fst_coe_apply (ha : a ∈ s)
     (ρ : {ρ : Γ →* Perm α // Set.range (fun g => ρ g a) = s}) (g : Γ) (x : s) :
-    ((orbitSplitEquiv ha ρ).1.1 g x : α) = ρ.1 g x :=
+    ((orbitSplitEquiv ha ρ).1.val g x : α) = ρ.val g x :=
   MonoidHom.subtypePerm_apply_coe _ _ _ g x
 
 /-- Off the orbit, the split representation acts as the original one. -/
 @[simp]
 theorem orbitSplitEquiv_apply_snd_apply (ha : a ∈ s)
     (ρ : {ρ : Γ →* Perm α // Set.range (fun g => ρ g a) = s}) (g : Γ) (x : {x // x ∉ s}) :
-    ((orbitSplitEquiv ha ρ).2 g x : α) = ρ.1 g x :=
+    ((orbitSplitEquiv ha ρ).2 g x : α) = ρ.val g x :=
   MonoidHom.subtypePerm_apply_coe _ _ _ g x
 
 /-- The glued representation acts on the orbit and on its complement by the two pieces. -/
 @[simp]
 theorem orbitSplitEquiv_symm_apply_coe (ha : a ∈ s)
     (στ : {σ : Γ →* Perm s // IsPretransitive σ.range s} × (Γ →* Perm {x // x ∉ s})) :
-    ((orbitSplitEquiv ha).symm στ).1 = (Perm.subtypeCongrHom (· ∈ s)).comp (στ.1.1.prod στ.2) :=
+    ((orbitSplitEquiv ha).symm στ).val = (Perm.subtypeCongrHom (· ∈ s)).comp (στ.1.val.prod στ.2) :=
   (rfl)
 
 variable [Fintype α] [DecidableEq α]
@@ -141,16 +141,16 @@ theorem natCard_monoidHom_perm_eq_sum [Finite (Γ →* Perm α)] (a : α) :
     Finset.sum_subtype (univ.filter (a ∈ ·)) (p := (a ∈ ·)) (by simp)]
   refine Fintype.sum_congr _ _ fun s => ?_
   rw [Nat.card_congr ((Equiv.subtypeEquivRight (horbit · s)).trans
-      (orbitSplitEquiv (s := (s.1 : Set α)) (Finset.mem_coe.2 s.2))),
+      (orbitSplitEquiv (s := (s.val : Set α)) (Finset.mem_coe.2 s.property))),
     Nat.card_prod, Nat.card_congr ((MulEquiv.monoidHomCongrRightEquiv
-      (Fintype.equivFinOfCardEq (α := (s.1 : Set α)) (n := s.1.card)
+      (Fintype.equivFinOfCardEq (α := (s.val : Set α)) (n := s.val.card)
         (by simp)).permCongrHom).subtypeEquiv
-        (q := fun σ => IsPretransitive σ.range (Fin s.1.card)) fun σ => by
+        (q := fun σ => IsPretransitive σ.range (Fin s.val.card)) fun σ => by
         rw [MulEquiv.monoidHomCongrRightEquiv_apply, MonoidHom.range_comp,
           isPretransitive_map_permCongrHom_iff]),
     Nat.card_congr (MulEquiv.monoidHomCongrRightEquiv
-      (Fintype.equivFinOfCardEq (α := {x // x ∉ (s.1 : Set α)})
-        (n := Fintype.card α - s.1.card) (by simp [Fintype.card_subtype_compl])).permCongrHom)]
+      (Fintype.equivFinOfCardEq (α := {x // x ∉ (s.val : Set α)})
+        (n := Fintype.card α - s.val.card) (by simp [Fintype.card_subtype_compl])).permCongrHom)]
 
 /-- **The orbit recursion for permutation representations.** Splitting a representation of `Γ`
 on `Fin (n + 1)` along the orbit of `0`: the orbit has some size `k + 1`, there are
