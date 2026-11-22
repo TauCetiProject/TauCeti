@@ -131,12 +131,13 @@ theorem evenPeriodPolynomial_injective {k : ℤ} {w : ℕ} (hk : k = w + 2) :
     (L := evenPeriodPolynomial hk)
     (fun p h hh ↦ by
       rcases Nat.even_or_odd w with hw | hw
-      · obtain ⟨ξ, hξ⟩ := TraceFormulaMatrixModule.exists_periodRelation ℂ (p.1 : ℤ)
+      · obtain ⟨ξ, hξ⟩ := TraceFormulaMatrixModule.exists_periodRelation ℂ (p.val : ℤ)
         rw [LinearMap.mem_ker] at hh ⊢
         apply Subtype.ext
-        rw [← hξ.periodAction_evenPeriodPolynomial hk hw p.1 h, hh, ZeroMemClass.coe_zero, map_zero]
+        rw [← hξ.periodAction_evenPeriodPolynomial hk hw p.val h, hh, ZeroMemClass.coe_zero,
+            map_zero]
       · obtain ⟨m, rfl⟩ := hw
-        rw [CuspForm.levelOne_odd_weight_eq_zero ⟨m + 1, by omega⟩ (heckeTCuspLevelOne k p.1 h)]
+        rw [CuspForm.levelOne_odd_weight_eq_zero ⟨m + 1, by omega⟩ (heckeTCuspLevelOne k p.val h)]
         exact zero_mem _)
     (evenPeriodPolynomial_levelOneNewformBasis_ne_zero hk)
 
@@ -147,12 +148,13 @@ theorem oddPeriodPolynomial_injective {k : ℤ} {w : ℕ} (hk : k = w + 2) :
     (L := oddPeriodPolynomial hk)
     (fun p h hh ↦ by
       rcases Nat.even_or_odd w with hw | hw
-      · obtain ⟨ξ, hξ⟩ := TraceFormulaMatrixModule.exists_periodRelation ℂ (p.1 : ℤ)
+      · obtain ⟨ξ, hξ⟩ := TraceFormulaMatrixModule.exists_periodRelation ℂ (p.val : ℤ)
         rw [LinearMap.mem_ker] at hh ⊢
         apply Subtype.ext
-        rw [← hξ.periodAction_oddPeriodPolynomial hk hw p.1 h, hh, ZeroMemClass.coe_zero, map_zero]
+        rw [← hξ.periodAction_oddPeriodPolynomial hk hw p.val h, hh, ZeroMemClass.coe_zero,
+            map_zero]
       · obtain ⟨m, rfl⟩ := hw
-        rw [CuspForm.levelOne_odd_weight_eq_zero ⟨m + 1, by omega⟩ (heckeTCuspLevelOne k p.1 h)]
+        rw [CuspForm.levelOne_odd_weight_eq_zero ⟨m + 1, by omega⟩ (heckeTCuspLevelOne k p.val h)]
         exact zero_mem _)
     (oddPeriodPolynomial_levelOneNewformBasis_ne_zero hk)
 
@@ -435,12 +437,12 @@ theorem PeriodRelation.periodAction_extendedEvenPeriodPolynomialEquiv {k : ℤ} 
   · have hbot : evenPeriodPolynomials ℂ 0 = ⊥ :=
       evenPeriodPolynomials_eq_bot_of_not_pos_even (by simp)
     have h0 (Q : evenPeriodPolynomials ℂ 0) : (Q : homogeneousSubmodule (Fin 2) ℂ 0) = 0 :=
-      (Submodule.mem_bot ℂ).mp (hbot ▸ Q.2)
+      (Submodule.mem_bot ℂ).mp (hbot ▸ Q.property)
     rw [h0, h0, map_zero]
   · -- Reduce to `k = (w + 2 : ℕ)` and split along `M_k = S_k ⊕ ℂ · E_k`.
     obtain rfl : k = ((w + 2 : ℕ) : ℤ) := by omega
     have hk3 : 3 ≤ w + 2 := by omega
-    have hk2 : Even (w + 2) := hw.add even_two
+    have _ : Even (w + 2) := hw.add even_two
     have hw1 : w + 2 - 1 = w + 1 := by omega
     have hmem : F ∈ ModularForm.cuspFormSubmodule 𝒮ℒ (w + 2 : ℕ) ⊔ (ℂ ∙ ModularForm.E hk3) := by
       rw [(isCompl_cuspFormSubmodule_span_E hk3).sup_eq_top]
@@ -491,7 +493,7 @@ theorem PeriodRelation.periodAction_mem_periodPolynomials {w : ℕ} (hw : Even w
   have hval : P = periodPolynomialEquiv (k := (w + 2 : ℤ)) rfl fg :=
     (congrArg Subtype.val hfg).symm
   rw [hval, h.periodAction_periodPolynomialEquiv rfl hw n fg]
-  exact (periodPolynomialEquiv (k := (w + 2 : ℤ)) rfl _).2
+  exact (periodPolynomialEquiv (k := (w + 2 : ℤ)) rfl _).property
 
 /-- **Trace of a solution of the period relation (A) on `periodPolynomials ℂ w`.** Across the
 Eichler–Shimura isomorphism `periodPolynomialEquiv hk`, the restriction of `periodAction hw ξ` to

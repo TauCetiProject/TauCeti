@@ -20,8 +20,13 @@ public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 For a homological complex `K` of modules over a ring, the inclusion of the degree-`n` cycles into
 `K.X n` is injective and the class map from the cycles onto the degree-`n` homology is surjective.
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
-`K.homologyπ n` is an epimorphism.  Chain maps commute with the differentials and the square of
-the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
+`K.homologyπ n` is an epimorphism.  Additive maps out of the homology are therefore determined by
+their values on classes of cycles (`HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ`,
+`HomologicalComplex.moduleCat_linearMap_ext_homologyπ`).  Dually, the inclusion of the homology
+into the opcycles is injective and the projection of `K.X n` onto the opcycles is surjective
+(`HomologicalComplex.moduleCat_homologyι_injective`,
+`HomologicalComplex.moduleCat_pOpcycles_surjective`).  Chain maps commute with the differentials
+and the square of the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
 `HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
 (`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
 `c.next i` is killed by every differential out of degree `i`
@@ -57,15 +62,28 @@ Given concrete cocycle and coboundary submodules identified with the terms of a 
 with its surjectivity and its kernel described by the coboundaries.  When the differential is a
 linear map `δ` under these identifications, the kernels of `δ` and the coboundaries `0, im δ, …`
 satisfy the hypotheses of this construction (`HomologicalComplex.moduleCat_d_inv_eq_zero_iff`,
-`HomologicalComplex.moduleCat_mem_iff_exists_d_eq_inv`).  At a degree where the complex
-is exact, the image of the incoming differential, the term and the image of the outgoing
-differential form a short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
+`HomologicalComplex.moduleCat_mem_iff_exists_d_eq_inv`).  A complex of modules is exact
+in a degree exactly when the image of the incoming differential is the kernel of the outgoing one
+(`HomologicalComplex.exactAt_iff_range_eq_ker`). At a degree where the complex is exact, the
+image of the incoming differential, the term and the image of the outgoing differential form a
+short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`). Linear equivalences
+intertwining two differentials up to a unit identify their images and kernels
+(`HomologicalComplex.range_d_eq_map_of_linearEquiv`,
+`HomologicalComplex.ker_d_eq_map_of_linearEquiv`), restrict to an equivalence of the images
+(`HomologicalComplex.boundaryEquivOfLinearEquiv`), and transfer exactness
+(`HomologicalComplex.exactAt_iff_of_linearEquiv`).
 A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), zero on the image of a zero differential
-(`HomologicalComplex.Hom.boundaryMap_eq_zero`), and injective where the chain map is; for a
-degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
-exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  A family of chain endomorphisms
+(`HomologicalComplex.Hom.boundaryMap_eq_zero`), injective where the chain map is, and surjective
+where the chain map is surjective in the source degree
+(`HomologicalComplex.Hom.boundaryMap_surjective`); for a degreewise short exact sequence of
+complexes whose third term is exact, these maps form a sequence exact in the middle
+(`HomologicalComplex.Hom.exact_boundaryMap`). More generally, without exactness of the third term,
+a chain map restricts from the preimage of the target boundaries
+(`HomologicalComplex.Hom.comapBoundaryMap`), and at a degree where `K ⟶ L ⟶ M` is exact,
+`HomologicalComplex.Hom.comapBoundaryMap` and `HomologicalComplex.Hom.boundaryMap` form an exact
+pair (`HomologicalComplex.Hom.exact_comapBoundaryMap_boundaryMap`).  A family of chain endomorphisms
 that is locally nilpotent on the degree-`n` term is locally nilpotent on the degree-`n` homology
 (`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
 cycles, a submodule of the term.
@@ -84,7 +102,7 @@ subspace, such as fundamental chains of a manifold with boundary.
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace HomologicalComplex
 
@@ -130,6 +148,12 @@ theorem d_apply_eq_zero_of_d_next_apply_eq_zero {R : Type*} [Ring R] {ι : Type*
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat R) c) (n : ι)
 
+/-- A complex of modules is exact in degree `j` exactly when the image of the incoming
+differential `K.X i ⟶ K.X j` is the kernel of the outgoing differential `K.X j ⟶ K.X k`. -/
+theorem exactAt_iff_range_eq_ker {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k) :
+    K.ExactAt j ↔ LinearMap.range (K.d i j).hom = LinearMap.ker (K.d j k).hom :=
+  (K.exactAt_iff' i j k hi hk).trans (ShortComplex.moduleCat_exact_iff_range_eq_ker _)
+
 variable {K} in
 /-- At a degree `j` where a complex of modules is exact, the inclusion of the image of the incoming
 differential `K.X i ⟶ K.X j` and the corestriction of the outgoing differential `K.X j ⟶ K.X k` to
@@ -138,8 +162,7 @@ theorem exact_subtype_rangeRestrict {i j k : ι} (hi : c.prev j = i) (hk : c.nex
     (h : K.ExactAt j) :
     Function.Exact (LinearMap.range (K.d i j).hom).subtype (K.d j k).hom.rangeRestrict := by
   rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, Submodule.range_subtype]
-  exact ((ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
-    ((K.exactAt_iff' i j k hi hk).1 h)).symm
+  exact ((K.exactAt_iff_range_eq_ker hi hk).1 h).symm
 
 section BoundaryMap
 
@@ -181,6 +204,16 @@ theorem Hom.boundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
     (hφ : Function.Injective (φ.f j).hom) : Function.Injective (φ.boundaryMap i j) :=
   fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
 
+/-- A chain map that is surjective in degree `i` is surjective on the images of the differentials
+`L.X i ⟶ L.X j` and `M.X i ⟶ M.X j`. -/
+theorem Hom.boundaryMap_surjective (ψ : L ⟶ M) {i : ι} (j : ι)
+    (hψ : Function.Surjective (ψ.f i).hom) : Function.Surjective (ψ.boundaryMap i j) := by
+  rintro ⟨_, y, rfl⟩
+  obtain ⟨x, rfl⟩ := hψ y
+  refine ⟨⟨(L.d i j).hom x, x, rfl⟩, Subtype.ext ?_⟩
+  rw [ψ.coe_boundaryMap]
+  simpa using (ψ.comm_apply i j x).symm
+
 /-- Let `K ⟶ L ⟶ M` be chain maps of complexes of modules, let `h = c.prev i` and
 `j = c.next i`. If the sequence `K ⟶ L ⟶ M` is exact in degree `i`, `L ⟶ M` is
 surjective in degree `h` and `M` is exact in degree `i`, then the induced maps on the images of
@@ -211,6 +244,46 @@ theorem Hom.exact_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} {h i j : ι} (hh : c
     simp only [coe_boundaryMap, ← Hom.comm_apply, hi.apply_apply_eq_zero, map_zero]
     rfl
 
+/-- A chain map sends boundaries into the preimage of the target boundaries. -/
+theorem Hom.range_d_le_comap_range_d (φ : K ⟶ L) (i j : ι) :
+    LinearMap.range (K.d i j).hom ≤ (LinearMap.range (L.d i j).hom).comap (φ.f j).hom := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨(φ.f i).hom x, φ.comm_apply i j x⟩
+
+/-- A chain map `φ : K ⟶ L` restricts to a linear map from the preimage in `K.X j` of the
+boundaries `LinearMap.range (L.d i j).hom` into `LinearMap.range (L.d i j).hom`. -/
+def Hom.comapBoundaryMap (φ : K ⟶ L) (i j : ι) :
+    (LinearMap.range (L.d i j).hom).comap (φ.f j).hom →ₗ[R] LinearMap.range (L.d i j).hom :=
+  (φ.f j).hom.restrict fun _ h ↦ h
+
+/-- `Hom.comapBoundaryMap` acts as the chain map on underlying elements. -/
+@[simp]
+theorem Hom.coe_comapBoundaryMap (φ : K ⟶ L) (i j : ι)
+    (x : (LinearMap.range (L.d i j).hom).comap (φ.f j).hom) :
+    (φ.comapBoundaryMap i j x : L.X j) = (φ.f j).hom x :=
+  (rfl)
+
+/-- If `φ` is injective in degree `j`, then `φ.comapBoundaryMap i j` is injective. -/
+theorem Hom.comapBoundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
+    (hφ : Function.Injective (φ.f j).hom) : Function.Injective (φ.comapBoundaryMap i j) :=
+  fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
+
+/-- If `K ⟶ L ⟶ M` is exact in degree `j`, then `φ.comapBoundaryMap i j` and `ψ.boundaryMap i j`
+form an exact pair at `LinearMap.range (L.d i j).hom`. -/
+theorem Hom.exact_comapBoundaryMap_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} (i : ι) {j : ι}
+    (hj : Function.Exact (φ.f j).hom (ψ.f j).hom) :
+    Function.Exact (φ.comapBoundaryMap i j) (ψ.boundaryMap i j) := by
+  intro b
+  constructor
+  · intro hb
+    have hb' : (ψ.f j).hom b.val = 0 := by simpa [ψ.coe_boundaryMap] using congrArg Subtype.val hb
+    obtain ⟨a, ha⟩ := (hj b.val).1 hb'
+    exact ⟨⟨a, by simpa only [Submodule.mem_comap, ha] using b.property⟩, Subtype.ext ha⟩
+  · rintro ⟨a, rfl⟩
+    refine Subtype.ext ?_
+    rw [ψ.coe_boundaryMap, φ.coe_comapBoundaryMap]
+    exact hj.apply_apply_eq_zero a.val
+
 end BoundaryMap
 
 /-- The inclusion of the degree-`n` cycles of a homological complex of modules into its degree-`n`
@@ -221,6 +294,32 @@ lemma moduleCat_iCycles_injective : Function.Injective (K.iCycles n) :=
 /-- The class map from the degree-`n` cycles of a homological complex of modules onto its
 degree-`n` homology is surjective. -/
 lemma moduleCat_homologyπ_surjective : Function.Surjective (K.homologyπ n) :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+variable {K n} in
+/-- Two additive homomorphisms out of the degree-`n` homology of a complex of modules agree once
+they agree on the classes of cycles. -/
+lemma moduleCat_addMonoidHom_ext_homologyπ {G : Type*} [AddZeroClass G] {f g : K.homology n →+ G}
+    (h : ∀ z, f (K.homologyπ n z) = g (K.homologyπ n z)) : f = g := by
+  ext x
+  obtain ⟨z, rfl⟩ := K.moduleCat_homologyπ_surjective n x
+  exact h z
+
+variable {K n} in
+/-- Two linear maps out of the degree-`n` homology of a complex of modules agree once they agree
+on the classes of cycles. -/
+lemma moduleCat_linearMap_ext_homologyπ {G : Type*} [AddCommMonoid G] [Module R G]
+    {f g : K.homology n →ₗ[R] G} (h : ∀ z, f (K.homologyπ n z) = g (K.homologyπ n z)) : f = g :=
+  LinearMap.toAddMonoidHom_injective (moduleCat_addMonoidHom_ext_homologyπ h)
+
+/-- The inclusion of the degree-`n` homology of a homological complex of modules into its
+degree-`n` opcycles is injective. -/
+lemma moduleCat_homologyι_injective : Function.Injective (K.homologyι n) :=
+  (ModuleCat.mono_iff_injective _).1 inferInstance
+
+/-- The projection of the degree-`n` term of a homological complex of modules onto its degree-`n`
+opcycles is surjective. -/
+lemma moduleCat_pOpcycles_surjective : Function.Surjective (K.pOpcycles n) :=
   (ModuleCat.epi_iff_surjective _).1 inferInstance
 
 /-- The differential out of degree `n` of a complex of modules kills every cycle of degree `n`, on
@@ -369,12 +468,12 @@ variable {n} {m : ι} (hm : c.next n = m)
 
 /-- The homology class of an element of the kernel of the outgoing differential `K.d n m`. -/
 noncomputable def moduleCatKerHomologyClass : LinearMap.ker (K.d n m).hom →ₗ[R] K.homology n :=
-  K.moduleCatHomologyClass hm (Submodule.subtype _) fun z ↦ LinearMap.mem_ker.1 z.2
+  K.moduleCatHomologyClass hm (Submodule.subtype _) fun z ↦ LinearMap.mem_ker.1 z.property
 
 /-- The kernel class map is the homology class map of the kernel's inclusion into the term. -/
 lemma moduleCatKerHomologyClass_eq_moduleCatHomologyClass :
     K.moduleCatKerHomologyClass hm =
-      K.moduleCatHomologyClass hm (Submodule.subtype _) (fun z ↦ z.2) :=
+      K.moduleCatHomologyClass hm (Submodule.subtype _) (fun z ↦ z.property) :=
   (rfl)
 
 /-- The homology class of the kernel element given by a cycle `y` is the class of `y`. -/
@@ -400,7 +499,7 @@ lemma homologyMap_moduleCatKerHomologyClass {L : HomologicalComplex (ModuleCat R
     (z : LinearMap.ker (K.d n m).hom) :
     homologyMap φ n (K.moduleCatKerHomologyClass hm z) =
       L.moduleCatKerHomologyClass hm
-        ⟨φ.f n z, φ.d_apply_eq_zero_of_d_apply_eq_zero n m z z.2⟩ := by
+        ⟨φ.f n z, φ.d_apply_eq_zero_of_d_apply_eq_zero n m z z.property⟩ := by
   rw [moduleCatKerHomologyClass, moduleCatKerHomologyClass]
   exact homologyMap_moduleCatHomologyClass hm _ _ φ _ _
     ((φ.f n).hom.restrict (φ.d_apply_eq_zero_of_d_apply_eq_zero n m)) (fun _ ↦ rfl) z
@@ -478,19 +577,19 @@ end Differential
 homology class map of the cocycles transported through the chosen identifications of the terms. -/
 noncomputable def moduleCatCohomologyClassOfIso (n : ℕ) : Z n →ₗ[R] K.homology n :=
   K.moduleCatHomologyClass (CochainComplex.next ℕ n) ((e n).inv.hom ∘ₗ (Z n).subtype)
-    fun z ↦ (hZ n z.1).1 z.2
+    fun z ↦ (hZ n z.val).1 z.property
 
 /-- The class of a cocycle is the homology class of the cocycle transported into the complex. -/
 lemma moduleCatCohomologyClassOfIso_apply (n : ℕ) (z : Z n) :
     K.moduleCatCohomologyClassOfIso V Z e hZ n z =
-      K.homologyπ n (K.moduleCatCyclesMk ((e n).inv z.1) (n + 1) (CochainComplex.next ℕ n)
-        ((hZ n z.1).1 z.2)) :=
+      K.homologyπ n (K.moduleCatCyclesMk ((e n).inv z.val) (n + 1) (CochainComplex.next ℕ n)
+        ((hZ n z.val).1 z.property)) :=
   (rfl)
 
 /-- The class of a cocycle `z` is the homology class of any cycle whose underlying element
 corresponds to `z` under the identification of the term. -/
 lemma moduleCatCohomologyClassOfIso_eq_homologyπ {n : ℕ} (z : Z n) (y : K.cycles n)
-    (hy : (e n).hom (K.iCycles n y) = z.1) :
+    (hy : (e n).hom (K.iCycles n y) = z.val) :
     K.moduleCatCohomologyClassOfIso V Z e hZ n z = K.homologyπ n y := by
   rw [moduleCatCohomologyClassOfIso_apply]
   congr 1
@@ -508,22 +607,22 @@ differential from the degree preceding it. -/
 lemma moduleCatCohomologyClassOfIso_eq_zero_iff_exists {n m : ℕ}
     (hm : (ComplexShape.up ℕ).prev n = m) (z : Z n) :
     K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔
-      ∃ y, K.d m n y = (e n).inv z.1 :=
+      ∃ y, K.d m n y = (e n).inv z.val :=
   K.moduleCatHomologyClass_eq_zero_iff _ _ _ hm z
 
 include hB
 
 /-- The class of a cocycle is zero exactly when its underlying element is a coboundary. -/
 lemma moduleCatCohomologyClassOfIso_eq_zero_iff (n : ℕ) (z : Z n) :
-    K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔ z.1 ∈ B n := by
+    K.moduleCatCohomologyClassOfIso V Z e hZ n z = 0 ↔ z.val ∈ B n := by
   rw [K.moduleCatCohomologyClassOfIso_eq_zero_iff_exists V Z e hZ rfl]
-  exact (hB n z.1).symm
+  exact (hB n z.val).symm
 
 /-- Two cocycles represent the same cohomology class exactly when their difference is a
 coboundary. -/
 lemma moduleCatCohomologyClassOfIso_eq_iff (n : ℕ) (z w : Z n) :
     K.moduleCatCohomologyClassOfIso V Z e hZ n z =
-        K.moduleCatCohomologyClassOfIso V Z e hZ n w ↔ (z - w).1 ∈ B n := by
+        K.moduleCatCohomologyClassOfIso V Z e hZ n w ↔ (z - w).val ∈ B n := by
   rw [← sub_eq_zero, ← map_sub, moduleCatCohomologyClassOfIso_eq_zero_iff K V Z B e hZ hB]
 
 end CochainPresentation
@@ -665,6 +764,101 @@ theorem iSup_wordKer_homologyMap_eq_top {κ : Type*} (φ : κ → (K ⟶ K))
   exact Module.End.iSup_wordKer_eq_top_of_injective
     (fun i ↦ by rw [← ModuleCat.hom_comp, cyclesMap_i, ModuleCat.hom_comp])
     (K.moduleCat_iCycles_injective n) h
+
+/-- Components of a biproduct cochain lift have the prescribed coboundaries and difference. -/
+lemma moduleCat_exists_components_of_biprod_lift {R : Type*} [Ring R]
+    {A B C D : CochainComplex (ModuleCat R) ℕ}
+    (r : A ⟶ C) (b : A ⟶ D) (t : C ⟶ B) (l : D ⟶ B)
+    (p : ℕ) (x : (C ⊞ D).X p) (z : A.X (p + 1)) (a : B.X p)
+    (hx : ((C ⊞ D).d p (p + 1)).hom x = ((biprod.lift r b).f (p + 1)).hom z)
+    (ha : ((biprod.desc t (-l)).f p).hom x = a) :
+    ∃ (u : C.X p) (v : D.X p),
+      (C.d p (p + 1)).hom u = (r.f (p + 1)).hom z ∧
+      (D.d p (p + 1)).hom v = (b.f (p + 1)).hom z ∧
+      (t.f p).hom u - (l.f p).hom v = a := by
+  refine ⟨((biprod.fst : C ⊞ D ⟶ C).f p).hom x,
+    ((biprod.snd : C ⊞ D ⟶ D).f p).hom x, ?_, ?_, ?_⟩
+  · have h := congrArg (((biprod.fst : C ⊞ D ⟶ C).f (p + 1)).hom) hx
+    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
+      ← HomologicalComplex.comp_f, biprod.lift_fst] using h
+  · have h := congrArg (((biprod.snd : C ⊞ D ⟶ D).f (p + 1)).hom) hx
+    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
+      ← HomologicalComplex.comp_f, biprod.lift_snd] using h
+  · simpa only [biprod.desc_eq, Preadditive.comp_neg, ← sub_eq_add_neg,
+      HomologicalComplex.sub_f_apply, ModuleCat.hom_sub, LinearMap.sub_apply,
+      HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] using ha
+
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+/-! ### Linear equivalences intertwining the differentials up to a unit -/
+
+variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+  {C D : HomologicalComplex (ModuleCat R) c}
+
+/-- If `D.d k' j' ∘ e_k = u • (e_j ∘ C.d k j)` for linear equivalences `e_j`, `e_k` and a unit `u`,
+the boundaries of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
+theorem range_d_eq_map_of_linearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
+    LinearMap.range (D.d k' j').hom =
+      (LinearMap.range (C.d k j).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
+  ext y
+  simp only [LinearMap.mem_range, Submodule.mem_map, exists_exists_eq_and, LinearEquiv.coe_coe]
+  constructor
+  · rintro ⟨z, rfl⟩
+    obtain ⟨x, rfl⟩ := eₖ.surjective z
+    exact ⟨u • x, by rw [h, map_smul, map_smul]⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨eₖ (hu.unit⁻¹.val • x), by rw [h, map_smul, map_smul, smul_smul, hu.mul_val_inv,
+      one_smul]⟩
+
+/-- The linear equivalence between the boundaries of `C` in degree `j` and those of `D` in degree
+`j'` induced by linear equivalences `e_j`, `e_k` intertwining the differentials up to a unit; it is
+the restriction of `e_j` (`HomologicalComplex.range_d_eq_map_of_linearEquiv`). -/
+def boundaryEquivOfLinearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
+    LinearMap.range (C.d k j).hom ≃ₗ[R] LinearMap.range (D.d k' j').hom :=
+  (eⱼ.submoduleMap _).trans
+    (LinearEquiv.ofEq _ _ (range_d_eq_map_of_linearEquiv eⱼ eₖ hu h).symm)
+
+/-- The isomorphism `boundaryEquivOfLinearEquiv` is the restriction of `e_j`. -/
+@[simp]
+theorem coe_boundaryEquivOfLinearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x))
+    (x : LinearMap.range (C.d k j).hom) :
+    (boundaryEquivOfLinearEquiv eⱼ eₖ hu h x : D.X j') = eⱼ x :=
+  (rfl)
+
+/-- If `D.d j' k' ∘ e_j = u • (e_k ∘ C.d j k)` for linear equivalences `e_j`, `e_k` and a unit `u`,
+the cycles of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
+theorem ker_d_eq_map_of_linearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x)) :
+    LinearMap.ker (D.d j' k').hom =
+      (LinearMap.ker (C.d j k).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
+  ext y
+  obtain ⟨x, rfl⟩ := eⱼ.surjective y
+  rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, LinearMap.mem_ker,
+    LinearMap.mem_ker, h, hu.smul_eq_zero, LinearEquiv.coe_coe, eⱼ.symm_apply_apply,
+    eₖ.map_eq_zero_iff]
+
+/-- Linear equivalences `e_i`, `e_j`, `e_k` intertwining, up to units, the differentials of `C`
+into and out of degree `j` with those of `D` into and out of degree `j'` make `D` exact in degree
+`j'` exactly when `C` is exact in degree `j`. -/
+theorem exactAt_iff_of_linearEquiv {i j k i' j' k' : ι} (hi : c.prev j = i) (hk : c.next j = k)
+    (hi' : c.prev j' = i') (hk' : c.next j' = k') (eᵢ : C.X i ≃ₗ[R] D.X i')
+    (eⱼ : C.X j ≃ₗ[R] D.X j') (eₖ : C.X k ≃ₗ[R] D.X k') {u v : R} (hu : IsUnit u)
+    (hv : IsUnit v) (hij : ∀ x, (D.d i' j').hom (eᵢ x) = u • eⱼ ((C.d i j).hom x))
+    (hjk : ∀ x, (D.d j' k').hom (eⱼ x) = v • eₖ ((C.d j k).hom x)) :
+    D.ExactAt j' ↔ C.ExactAt j := by
+  rw [D.exactAt_iff_range_eq_ker hi' hk', C.exactAt_iff_range_eq_ker hi hk,
+    range_d_eq_map_of_linearEquiv eⱼ eᵢ hu hij, ker_d_eq_map_of_linearEquiv eⱼ eₖ hv hjk]
+  exact (Submodule.map_injective_of_injective eⱼ.injective).eq_iff
 
 end HomologicalComplex
 

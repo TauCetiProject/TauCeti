@@ -104,7 +104,7 @@ private theorem IsJordanSplitting.exists_basis_toMatrix_mul_eq [Module.Free R M]
   obtain ⟨ι, _, _, b, H, hH, hHs, hHd⟩ := exists_basis_toMatrix_mul_eq_of_isInternal hB hπ
     (DirectSum.isInternal_ne_bot_iff.mpr h.isInternal)
     (fun i i' hii ↦ h.apply_eq_zero i i' fun h ↦ hii (Subtype.ext h)) (e := fun i ↦ i)
-    (fun i ↦ h.isModular i) (fun i ↦ not_lt.mp fun hj ↦ i.2 (htop i hj))
+    (fun i ↦ h.isModular i) (fun i ↦ not_lt.mp fun hj ↦ i.property (htop i hj))
   exact ⟨ι, _, _, b, H, hH, hHs, hHd h2 fun i hi ↦ hi ▸ heven⟩
 
 /-- **Approximate isometries out of a Jordan splitting.** Let `R` be a local domain, `π`-adically
@@ -198,7 +198,7 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
       (Matrix.isUnit_nonsing_inv_det _ (hUdet (m - k)))
     rw [hEapp, Nat.sub_sub_self hk]
   refine ⟨D, hDs hEs, isJordanSplitting_reverse h.isInternal htop horth hmod, horth,
-    fun i hi ↦ ⟨d i, ?_⟩, fun i hi heven w hw ↦ ?_⟩
+    fun i hi ↦ ⟨d i, ?_⟩, fun i _ heven w hw ↦ ?_⟩
   · have hBU : (B.restrict (N i)).toMatrix (d i) = π ^ i • U i := by
       ext a a'
       simp [U, toMatrix_apply, ← hCapp]
@@ -207,7 +207,7 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
   · -- `U i` has even diagonal, hence so does its inverse, and the norm ideal of `E i` lies in
     -- `2 π ^ (m - i) R`.
     have hUd (a : Fin (finrank R (N i))) : 2 ∣ U i a a := by
-      obtain ⟨c, hc⟩ := heven _ (d i a).2
+      obtain ⟨c, hc⟩ := heven _ (d i a).property
       refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ i)).mp ?_⟩
       simp only [U, toMatrix_apply]
       rw [hCapp, hc]

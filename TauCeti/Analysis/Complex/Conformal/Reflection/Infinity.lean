@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
@@ -176,11 +177,7 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
     calc
       g (-w⁻¹) = (f (-(-w⁻¹)⁻¹) - q) / b := hgf hw
       _ = (f w - q) / b := by rw [inv_neg, inv_inv, neg_neg]
-  have hderiv : (deriv fun w : ℂ => (f w - q) / b) = fun w => deriv f w / b := by
-    ext w
-    simp only [deriv_div_const, deriv_sub_const]
-  rw [(logDeriv_congr_nhds heq.deriv).eq_of_nhds, hderiv]
-  simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+  rw [(logDeriv_congr_nhds heq.deriv).eq_of_nhds, logDeriv_deriv_sub_div_const f q hb z]
 
 /-- **Decay of a continued pre-Schwarzian derivative at infinity.** Read the map `f` of the upper
 half-plane in the coordinate `w ↦ -1 / w` at infinity and normalize the target by `w ↦ (w - q) / b`.
@@ -236,7 +233,7 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv
       |(g z).arg| = β * Real.pi / 2) :
     Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 ((β : ℂ) - 1)) := by
-  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet with hs_def
+  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet
   have hs : IsOpen s := Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
   have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
     rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]

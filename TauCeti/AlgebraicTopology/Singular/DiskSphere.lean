@@ -236,16 +236,16 @@ lemma diskBoundaryPairToComplDiskCenter_fst :
 private def complDiskCenterHomeomorph :
     ↥(Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 \ {0}) ≃ₜ
       ↥({diskCenter n}ᶜ : Set (TopCat.disk.{w} n)) where
-  toFun z := ⟨(ULift.up ⟨z, z.2.1⟩ :
+  toFun z := ⟨(ULift.up ⟨z, z.property.1⟩ :
       ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)),
-    fun h ↦ z.2.2 ((congrArg (fun w : TopCat.disk.{w} n ↦
+    fun h ↦ z.property.2 ((congrArg (fun w : TopCat.disk.{w} n ↦
       ((w : ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
         EuclideanSpace ℝ (Fin n))) h).trans (coe_diskCenter_down n))⟩
   invFun w := ⟨((w : TopCat.disk.{w} n) :
       ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down,
     ((w : TopCat.disk.{w} n) :
-      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2,
-    fun h ↦ w.2 (ULift.ext (Subtype.ext ((Set.mem_singleton_iff.1 h).trans
+      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.property,
+    fun h ↦ w.property (ULift.ext (Subtype.ext ((Set.mem_singleton_iff.1 h).trans
       (coe_diskCenter_down n).symm)))⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -256,10 +256,6 @@ private def complDiskCenterHomeomorph :
 induces isomorphisms on relative singular homology. -/
 theorem isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (diskBoundaryPairToComplDiskCenter.{w} n) R k) := by
-  have hfst (m : ℕ) : IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{w} n))) R m) := by
-    have : IsIso (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{w} n)) := IsIso.id _
-    infer_instance
   -- The subspace map is the inclusion of the boundary sphere into the punctured disk, a homotopy
   -- equivalence by radial projection.
   let e := (Homeomorph.ulift.{w} (X := Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :
@@ -273,13 +269,9 @@ theorem isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter (k : ℕ) :
     apply Subtype.ext
     exact (StarConvex.coe_sphereHomotopyEquiv_apply _ _ _ _).trans
       (TopCat.coe_diskBoundaryInclusion_apply_down n s).symm
-  have hsnd (m : ℕ) : IsIso (SSet.homologyMap
-      (TopCat.toSSet.map (TopPair.Hom.snd (diskBoundaryPairToComplDiskCenter.{w} n))) R m) := by
-    have := (e.singularHomologyIso R m).isIso_hom
-    rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, he] at this
-    exact this
-  exact TopPair.isIso_singularHomologyMap_of_isIso R _ k (hfst k) (hsnd k) (fun m _ ↦ hfst m)
-    fun m _ ↦ hsnd m
+  exact TopPair.isIso_singularHomologyMap_of_homotopyEquiv
+    (diskBoundaryPairToComplDiskCenter.{w} n) (.refl (TopCat.disk.{w} n)) e
+    (diskBoundaryPairToComplDiskCenter_fst n) he.symm R k
 
 end PuncturedDisk
 

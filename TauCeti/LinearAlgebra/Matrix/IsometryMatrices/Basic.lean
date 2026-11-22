@@ -25,6 +25,9 @@ are what that count needs.
 * A change of basis `A ↦ Pᵀ * A * P` by an invertible `P` conjugates the submonoid by `P`, so its
   cardinality does not depend on the basis. Neither does it change under reindexing or under a
   ring isomorphism of the coefficients.
+* The invertible elements of the submonoid are the solutions of unit determinant. When the
+  determinant of `A` is a non-zero-divisor, as for a nonsingular Gram matrix over `ℤ`, every
+  solution has determinant a square root of `1`, so every solution is invertible.
 * When every solution has unit determinant, the solutions form a group, so for any ring
   homomorphism `f` their number is the number of their images under `f` times the number of
   solutions sent to `1`.
@@ -46,6 +49,10 @@ the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in t
   `A ↦ Pᵀ * A * P` for invertible `P`.
 * `Matrix.natCard_isometryMatrices_reindex`, `Matrix.natCard_isometryMatrices_map_ringEquiv`: the
   count is invariant under reindexing and under ring isomorphisms.
+* `Matrix.isUnit_isometryMatrices_iff`: a solution is invertible in the submonoid exactly when its
+  determinant is a unit; `Matrix.isUnit_isometryMatrices_of_isRegular_det` and
+  `Matrix.natCard_units_isometryMatrices`: when the determinant of `A` is a non-zero-divisor,
+  every solution is invertible.
 * `Matrix.natCard_isometryMatrices_eq_mul`: the count is the number of images under a ring
   homomorphism times the size of the fibre above `1`, when all solutions are invertible.
 * `Matrix.transposeMulMulEquiv`: the solutions of `Yᵀ * A * Y = B` only depend on `A` and `B` up
@@ -82,7 +89,7 @@ def isometryMatrices (A : Matrix n n R) : Submonoid (Matrix n n R) where
   mul_mem' {X Y} hX hY := by
     simp only [Set.mem_ofPred_eq] at *
     calc (X * Y)ᵀ * A * (X * Y) = Yᵀ * (Xᵀ * A * X) * Y := by
-          simp only [transpose_mul, Matrix.mul_assoc]
+          simp only [transpose_mul, mul_assoc]
       _ = A := by rw [hX, hY]
 
 /-- Membership in `isometryMatrices A` is the equation `Xᵀ * A * X = A`. -/
@@ -103,7 +110,7 @@ theorem mulVec_dotProduct_mulVec_mulVec_of_mem_isometryMatrices {A X : Matrix n 
     (hX : X ∈ isometryMatrices A) (x y : n → R) :
     (X *ᵥ x) ⬝ᵥ A *ᵥ (X *ᵥ y) = x ⬝ᵥ A *ᵥ y := by
   rw [mulVec_mulVec, dotProduct_mulVec, ← vecMul_transpose, vecMul_vecMul, ← dotProduct_mulVec,
-    ← Matrix.mul_assoc, mem_isometryMatrices.mp hX]
+    ← mul_assoc, mem_isometryMatrices.mp hX]
 
 /-- **The count of matrices preserving a Gram matrix does not depend on the indexing**:
 reindexing `A` along an equivalence `e` reindexes the solutions along `e`. -/
@@ -123,7 +130,7 @@ theorem natCard_isometryMatrices_map_ringEquiv (e : R ≃+* S) (A : Matrix n n R
   rw [mem_isometryMatrices, mem_isometryMatrices, RingEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
     RingEquiv.mapMatrix_apply, ← transpose_map, ← RingEquiv.coe_toRingHom,
     ← Matrix.map_mul, ← Matrix.map_mul, RingEquiv.coe_toRingHom,
-    (Matrix.map_injective e.injective).eq_iff]
+    (map_injective e.injective).eq_iff]
 
 end CommSemiring
 
@@ -137,31 +144,53 @@ theorem add_transpose_mul_mul_add_of_sq_eq_bot {I : Ideal R} (hI : I ^ 2 = ⊥)
     (X + D)ᵀ * A * (X + D) = A + Xᵀ * A * D + (Xᵀ * A * D)ᵀ := by
   classical
   have hDD : Dᵀ * (A * D) = 0 :=
-    mul_eq_zero_of_sq_eq_bot hI (fun i j => hD j i) ((I.matrix n).mul_mem_left A hD)
+    mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) (fun i j => hD j i) ((I.matrix n).mul_mem_left A hD)
   calc (X + D)ᵀ * A * (X + D)
       = Xᵀ * A * X + Xᵀ * A * D + Dᵀ * A * X + Dᵀ * (A * D) := by
         rw [transpose_add]; noncomm_ring
     _ = A + Xᵀ * A * D + (Xᵀ * A * D)ᵀ := by
         rw [mem_isometryMatrices.mp hX, hDD, add_zero, transpose_mul, transpose_mul,
           transpose_transpose, hA]
-        simp only [Matrix.mul_assoc]
+        simp only [mul_assoc]
 
-/-- A matrix preserving a Gram matrix with unit determinant has unit determinant, its square
-being `1`. -/
-theorem isUnit_det_of_mem_isometryMatrices {A X : Matrix n n R} (hA : IsUnit A.det)
+/-- A matrix preserving a Gram matrix whose determinant is a non-zero-divisor has unit
+determinant, its square being `1`. Over `ℤ` this applies to every Gram matrix of nonzero
+determinant, and the determinant of the matrix is then `1` or `-1`. -/
+theorem isUnit_det_of_mem_isometryMatrices {A X : Matrix n n R} (hA : IsRegular A.det)
     (hX : X ∈ isometryMatrices A) : IsUnit X.det := by
   have h := congrArg det (mem_isometryMatrices.mp hX)
   rw [det_mul, det_mul, det_transpose] at h
   have h' : X.det * X.det * A.det = 1 * A.det := by linear_combination h
-  exact IsUnit.of_mul_eq_one _ (hA.mul_left_injective h')
+  exact IsUnit.of_mul_eq_one _ (hA.right h')
 
 /-- The inverse of a matrix with unit determinant preserving `A` also preserves `A`. -/
 theorem nonsing_inv_mem_isometryMatrices {A X : Matrix n n R} (hX : X ∈ isometryMatrices A)
     (hdet : IsUnit X.det) : X⁻¹ ∈ isometryMatrices A := by
   rw [mem_isometryMatrices] at *
   calc X⁻¹ᵀ * A * X⁻¹ = X⁻¹ᵀ * (Xᵀ * A * X) * X⁻¹ := by rw [hX]
-    _ = (X * X⁻¹)ᵀ * A * (X * X⁻¹) := by simp only [transpose_mul, Matrix.mul_assoc]
-    _ = A := by rw [mul_nonsing_inv X hdet, transpose_one, Matrix.one_mul, Matrix.mul_one]
+    _ = (X * X⁻¹)ᵀ * A * (X * X⁻¹) := by simp only [transpose_mul, mul_assoc]
+    _ = A := by rw [mul_nonsing_inv X hdet, transpose_one, one_mul, mul_one]
+
+/-- **The invertible elements of `isometryMatrices A`** are the matrices of unit determinant: the
+inverse of such a matrix preserves `A` again, so it is an inverse inside the submonoid. -/
+theorem isUnit_isometryMatrices_iff {A : Matrix n n R} {X : isometryMatrices A} :
+    IsUnit X ↔ IsUnit (X : Matrix n n R).det := by
+  refine ⟨fun h ↦ (isUnit_iff_isUnit_det _).mp (h.map (isometryMatrices A).subtype), fun h ↦ ?_⟩
+  exact ⟨⟨X, ⟨_, nonsing_inv_mem_isometryMatrices X.property h⟩,
+    Subtype.ext (mul_nonsing_inv _ h), Subtype.ext (nonsing_inv_mul _ h)⟩, rfl⟩
+
+/-- If the determinant of `A` is a non-zero-divisor, every element of `isometryMatrices A` is
+invertible in it, so the submonoid is a group. -/
+theorem isUnit_isometryMatrices_of_isRegular_det {A : Matrix n n R} (hA : IsRegular A.det)
+    (X : isometryMatrices A) : IsUnit X :=
+  isUnit_isometryMatrices_iff.mpr (isUnit_det_of_mem_isometryMatrices hA X.property)
+
+/-- If the determinant of `A` is a non-zero-divisor, the group of units of `isometryMatrices A`
+has as many elements as the submonoid itself. -/
+theorem natCard_units_isometryMatrices {A : Matrix n n R} (hA : IsRegular A.det) :
+    Nat.card (isometryMatrices A)ˣ = Nat.card (isometryMatrices A) :=
+  Nat.card_congr <| Equiv.ofBijective Units.val
+    ⟨Units.val_injective, fun X ↦ ⟨(isUnit_isometryMatrices_of_isRegular_det hA X).unit, rfl⟩⟩
 
 /-- **Counting matrices preserving a Gram matrix fibrewise.** If every matrix preserving `A` has
 unit determinant, these matrices form a group, so the fibres of a ring homomorphism `f` on them
@@ -172,31 +201,31 @@ theorem natCard_isometryMatrices_eq_mul (f : R →+* S) {A : Matrix n n R}
     Nat.card (isometryMatrices A) = Nat.card ((isometryMatrices A).map f.mapMatrix) *
       Nat.card {X ∈ isometryMatrices A | X.map f = 1} := by
   set T := isometryMatrices A
-  let σ : T.map f.mapMatrix → Matrix n n R := fun y => y.2.choose
-  have hσT (y) : σ y ∈ T := y.2.choose_spec.1
-  have hσf (y) : (σ y).map f = y := y.2.choose_spec.2
+  let σ : T.map f.mapMatrix → Matrix n n R := fun y => y.property.choose
+  have hσT (y) : σ y ∈ T := y.property.choose_spec.1
+  have hσf (y) : (σ y).map f = y := y.property.choose_spec.2
   have hσσ (y) : σ y * (σ y)⁻¹ = 1 := mul_nonsing_inv _ (hunit _ (hσT y))
   have hσσ' (y) : (σ y)⁻¹ * σ y = 1 := nonsing_inv_mul _ (hunit _ (hσT y))
   have hσinv (y) : (σ y)⁻¹.map f * y = 1 := by
     rw [← hσf y, ← RingHom.mapMatrix_apply, ← RingHom.mapMatrix_apply, ← map_mul, hσσ', map_one]
   rw [← Nat.card_prod]
   refine Nat.card_congr
-    { toFun := fun X => (⟨f.mapMatrix X.1, X.1, X.2, rfl⟩,
-        ⟨(σ ⟨f.mapMatrix X.1, X.1, X.2, rfl⟩)⁻¹ * X.1,
-          T.mul_mem (nonsing_inv_mem_isometryMatrices (hσT _) (hunit _ (hσT _))) X.2, ?_⟩)
-      invFun := fun yK => ⟨σ yK.1 * yK.2.1, T.mul_mem (hσT _) yK.2.2.1⟩
+    { toFun := fun X => (⟨f.mapMatrix X.val, X.val, X.property, rfl⟩,
+        ⟨(σ ⟨f.mapMatrix X.val, X.val, X.property, rfl⟩)⁻¹ * X.val,
+          T.mul_mem (nonsing_inv_mem_isometryMatrices (hσT _) (hunit _ (hσT _))) X.property, ?_⟩)
+      invFun := fun yK => ⟨σ yK.1 * yK.2.val, T.mul_mem (hσT _) yK.2.property.1⟩
       left_inv := fun X => Subtype.ext ?_
       right_inv := fun yK => ?_ }
   · rw [← RingHom.mapMatrix_apply, map_mul]
     exact hσinv _
-  · simp only [← Matrix.mul_assoc, hσσ, Matrix.one_mul]
+  · simp only [← mul_assoc, hσσ, one_mul]
   · obtain ⟨y, K, hKT, hK⟩ := yK
     have hy : (⟨f.mapMatrix (σ y * K), σ y * K, T.mul_mem (hσT y) hKT, rfl⟩ :
         T.map f.mapMatrix) = y := by
       ext1
-      simp only [map_mul, RingHom.mapMatrix_apply, hσf, hK, Matrix.mul_one]
+      simp only [map_mul, RingHom.mapMatrix_apply, hσf, hK, mul_one]
     simp only [hy, Prod.mk.injEq, Subtype.mk.injEq, true_and]
-    rw [← Matrix.mul_assoc, hσσ', Matrix.one_mul]
+    rw [← mul_assoc, hσσ', one_mul]
 
 section Congruence
 
@@ -209,21 +238,21 @@ variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
 noncomputable def transposeMulMulEquiv (hP : IsUnit P.det) (hQ : IsUnit Q.det)
     (hA : Pᵀ * A * P = A') (hB : Qᵀ * B * Q = B') :
     {Y : Matrix m k R // Yᵀ * A' * Y = B'} ≃ {Y : Matrix m k R // Yᵀ * A * Y = B} where
-  toFun Y := ⟨P * Y.1 * Q⁻¹, by
-    calc (P * Y.1 * Q⁻¹)ᵀ * A * (P * Y.1 * Q⁻¹)
-        = Q⁻¹ᵀ * (Y.1ᵀ * (Pᵀ * A * P) * Y.1) * Q⁻¹ := by
+  toFun Y := ⟨P * Y.val * Q⁻¹, by
+    calc (P * Y.val * Q⁻¹)ᵀ * A * (P * Y.val * Q⁻¹)
+        = Q⁻¹ᵀ * (Y.valᵀ * (Pᵀ * A * P) * Y.val) * Q⁻¹ := by
           simp only [transpose_mul, Matrix.mul_assoc]
       _ = (Q * Q⁻¹)ᵀ * B * (Q * Q⁻¹) := by
-          rw [hA, Y.2, ← hB]
+          rw [hA, Y.property, ← hB]
           simp only [transpose_mul, Matrix.mul_assoc]
       _ = B := by rw [mul_nonsing_inv Q hQ, transpose_one, Matrix.one_mul, Matrix.mul_one]⟩
-  invFun Y := ⟨P⁻¹ * Y.1 * Q, by
-    calc (P⁻¹ * Y.1 * Q)ᵀ * A' * (P⁻¹ * Y.1 * Q)
-        = Qᵀ * (Y.1ᵀ * ((P * P⁻¹)ᵀ * A * (P * P⁻¹)) * Y.1) * Q := by
+  invFun Y := ⟨P⁻¹ * Y.val * Q, by
+    calc (P⁻¹ * Y.val * Q)ᵀ * A' * (P⁻¹ * Y.val * Q)
+        = Qᵀ * (Y.valᵀ * ((P * P⁻¹)ᵀ * A * (P * P⁻¹)) * Y.val) * Q := by
           rw [← hA]
           simp only [transpose_mul, Matrix.mul_assoc]
       _ = B' := by
-          rw [mul_nonsing_inv P hP, transpose_one, Matrix.one_mul, Matrix.mul_one, Y.2, ← hB,
+          rw [mul_nonsing_inv P hP, transpose_one, Matrix.one_mul, Matrix.mul_one, Y.property, ← hB,
             Matrix.mul_assoc]⟩
   left_inv Y := Subtype.ext <| by
     simp only [← Matrix.mul_assoc, nonsing_inv_mul P hP, Matrix.one_mul]
@@ -236,7 +265,7 @@ noncomputable def transposeMulMulEquiv (hP : IsUnit P.det) (hQ : IsUnit Q.det)
 @[simp]
 theorem transposeMulMulEquiv_apply_coe (hP : IsUnit P.det) (hQ : IsUnit Q.det)
     (hA : Pᵀ * A * P = A') (hB : Qᵀ * B * Q = B') (Y : {Y : Matrix m k R // Yᵀ * A' * Y = B'}) :
-    (transposeMulMulEquiv hP hQ hA hB Y : Matrix m k R) = P * Y.1 * Q⁻¹ :=
+    (transposeMulMulEquiv hP hQ hA hB Y : Matrix m k R) = P * Y.val * Q⁻¹ :=
   -- `(rfl)` keeps the definitional unfolding of the equivalence out of the exported interface.
   (rfl)
 
@@ -244,7 +273,7 @@ theorem transposeMulMulEquiv_apply_coe (hP : IsUnit P.det) (hQ : IsUnit Q.det)
 @[simp]
 theorem transposeMulMulEquiv_symm_apply_coe (hP : IsUnit P.det) (hQ : IsUnit Q.det)
     (hA : Pᵀ * A * P = A') (hB : Qᵀ * B * Q = B') (Y : {Y : Matrix m k R // Yᵀ * A * Y = B}) :
-    ((transposeMulMulEquiv hP hQ hA hB).symm Y : Matrix m k R) = P⁻¹ * Y.1 * Q :=
+    ((transposeMulMulEquiv hP hQ hA hB).symm Y : Matrix m k R) = P⁻¹ * Y.val * Q :=
   (rfl)
 
 omit [Fintype k] [DecidableEq k] in
@@ -296,7 +325,7 @@ theorem exists_map_eq_of_mem_isometryMatrices_map (hf : Function.Surjective f)
       Matrix.map_mul, transpose_map, mem_isometryMatrices.mp hY, sub_self]
   have hEt : Eᵀ = E := by
     rw [hE_def, transpose_sub, transpose_mul, transpose_mul, transpose_transpose, hA,
-      Matrix.mul_assoc]
+      mul_assoc]
   set Z : Matrix n n R := c • (A⁻¹ * E) with hZ_def
   have hZ : ∀ i j, Z i j ∈ RingHom.ker f := fun i j => by
     rw [hZ_def, Matrix.smul_apply, smul_eq_mul]
@@ -305,29 +334,30 @@ theorem exists_map_eq_of_mem_isometryMatrices_map (hf : Function.Surjective f)
     rw [Matrix.smul_apply, smul_eq_mul]
     exact Ideal.mul_mem_left _ _ (hE i j)
   have hAZ : A * Z = c • E := by
-    rw [hZ_def, Matrix.mul_smul, ← Matrix.mul_assoc, mul_nonsing_inv A hdet, Matrix.one_mul]
+    rw [hZ_def, Matrix.mul_smul, ← mul_assoc, mul_nonsing_inv A hdet, one_mul]
   have hZA : Zᵀ * A = c • E :=
     calc Zᵀ * A = (A * Z)ᵀ := by rw [transpose_mul, hA]
       _ = c • E := by rw [hAZ, transpose_smul, hEt]
   have hEE : c • E + c • E = E := by
     rw [← add_smul, ← two_mul, mul_comm, hc, one_smul]
   have hZt : ∀ i j, Zᵀ i j ∈ RingHom.ker f := fun i j => hZ j i
-  have h₁ : Zᵀ * (A * Z) = 0 := by rw [hAZ]; exact mul_eq_zero_of_sq_eq_bot hker hZt hcE
-  have h₂ : E * Z = 0 := mul_eq_zero_of_sq_eq_bot hker hE hZ
-  have h₃ : Zᵀ * E = 0 := mul_eq_zero_of_sq_eq_bot hker hZt hE
+  rw [sq] at hker
+  have h₁ : Zᵀ * (A * Z) = 0 := by rw [hAZ]; exact mul_eq_zero_of_mul_eq_bot hker hZt hcE
+  have h₂ : E * Z = 0 := mul_eq_zero_of_mul_eq_bot hker hE hZ
+  have h₃ : Zᵀ * E = 0 := mul_eq_zero_of_mul_eq_bot hker hZt hE
   refine ⟨M * (1 + Z), ?_, ?_⟩
   · rw [mem_isometryMatrices]
     have hME : Mᵀ * A * M = A - E := by rw [hE_def, sub_sub_cancel]
     calc (M * (1 + Z))ᵀ * A * (M * (1 + Z))
         = (1 + Zᵀ) * (Mᵀ * A * M) * (1 + Z) := by
-          simp only [transpose_mul, transpose_add, transpose_one, Matrix.mul_assoc]
+          simp only [transpose_mul, transpose_add, transpose_one, mul_assoc]
       _ = A - E + A * Z + Zᵀ * A + Zᵀ * (A * Z) - E * Z - Zᵀ * E - Zᵀ * E * Z := by
           rw [hME]; noncomm_ring
       _ = A := by
-          rw [h₁, hAZ, hZA, h₂, h₃, Matrix.zero_mul, add_assoc (A - E), hEE]
+          rw [h₁, hAZ, hZA, h₂, h₃, zero_mul, add_assoc (A - E), hEE]
           abel
   · rw [Matrix.map_mul, Matrix.map_add f (map_add f), Matrix.map_one f f.map_zero f.map_one,
-      forall_mem_ker_iff_map_eq_zero.mp hZ, add_zero, Matrix.mul_one]
+      forall_mem_ker_iff_map_eq_zero.mp hZ, add_zero, mul_one]
 
 /-- **The solutions congruent to a given one modulo a square-zero ideal form a torsor under the
 skew-symmetric matrices with entries in the ideal.** Let `A` be symmetric with unit determinant
@@ -336,37 +366,39 @@ ideal `I` correspond to the skew-symmetric `K` with entries in `I`, via
 `K = X₀ᵀ * A * (X - X₀)` and `X = X₀ + (X₀ᵀ * A)⁻¹ * K`. -/
 noncomputable def isometryMatricesFiberEquiv {I : Ideal R} (hI : I ^ 2 = ⊥) {A X₀ : Matrix n n R}
     (hA : Aᵀ = A) (hdet : IsUnit A.det) (hX₀ : X₀ ∈ isometryMatrices A) :
-    {X : isometryMatrices A // ∀ i j, X.1 i j - X₀ i j ∈ I} ≃
+    {X : isometryMatrices A // ∀ i j, X.val i j - X₀ i j ∈ I} ≃
       {K : Matrix n n R // (∀ i j, K i j ∈ I) ∧ Kᵀ = -K} :=
   have hB : IsUnit (X₀ᵀ * A).det := by
     rw [det_mul, det_transpose]
-    exact (isUnit_det_of_mem_isometryMatrices hdet hX₀).mul hdet
+    exact (isUnit_det_of_mem_isometryMatrices hdet.isRegular hX₀).mul hdet
   have hinv : ∀ K : Matrix n n R, (∀ i j, K i j ∈ I) → ∀ i j, ((X₀ᵀ * A)⁻¹ * K) i j ∈ I :=
     fun _ hK => (I.matrix n).mul_mem_left _ hK
-  { toFun := fun X => ⟨X₀ᵀ * A * (X.1.1 - X₀), (I.matrix n).mul_mem_left _ X.2, by
-      have h := add_transpose_mul_mul_add_of_sq_eq_bot (D := X.1.1 - X₀) hI hA hX₀ X.2
-      rw [add_sub_cancel, mem_isometryMatrices.mp X.1.2, add_assoc, left_eq_add] at h
+  { toFun := fun X => ⟨X₀ᵀ * A * (X.val.val - X₀), (I.matrix n).mul_mem_left _ X.property, by
+      have h := add_transpose_mul_mul_add_of_sq_eq_bot (D := X.val.val - X₀) hI hA hX₀ X.property
+      rw [add_sub_cancel, mem_isometryMatrices.mp X.val.property, add_assoc, left_eq_add] at h
       rw [eq_neg_iff_add_eq_zero, add_comm]
       exact h⟩
-    invFun := fun K => ⟨⟨X₀ + (X₀ᵀ * A)⁻¹ * K.1, by
-      rw [mem_isometryMatrices, add_transpose_mul_mul_add_of_sq_eq_bot hI hA hX₀ (hinv _ K.2.1),
-        ← Matrix.mul_assoc, mul_nonsing_inv _ hB, Matrix.one_mul, K.2.2, add_neg_cancel_right]⟩,
-      fun i j => by simpa only [Matrix.add_apply, add_sub_cancel_left] using hinv _ K.2.1 i j⟩
+    invFun := fun K => ⟨⟨X₀ + (X₀ᵀ * A)⁻¹ * K.val, by
+      rw [mem_isometryMatrices, add_transpose_mul_mul_add_of_sq_eq_bot hI hA hX₀
+          (hinv _ K.property.1),
+        ← mul_assoc, mul_nonsing_inv _ hB, one_mul, K.property.2, add_neg_cancel_right]⟩,
+      fun i j => by
+          simpa only [Matrix.add_apply, add_sub_cancel_left] using hinv _ K.property.1 i j⟩
     left_inv := fun X => by
       ext : 2
       dsimp only
-      rw [← Matrix.mul_assoc, nonsing_inv_mul _ hB, Matrix.one_mul, add_sub_cancel]
+      rw [← mul_assoc, nonsing_inv_mul _ hB, one_mul, add_sub_cancel]
     right_inv := fun K => by
       ext : 1
       dsimp only
-      rw [add_sub_cancel_left, ← Matrix.mul_assoc, mul_nonsing_inv _ hB, Matrix.one_mul] }
+      rw [add_sub_cancel_left, ← mul_assoc, mul_nonsing_inv _ hB, one_mul] }
 
 /-- `Matrix.isometryMatricesFiberEquiv` sends a solution `X` to `X₀ᵀ * A * (X - X₀)`. -/
 @[simp]
 theorem isometryMatricesFiberEquiv_apply_coe {I : Ideal R} (hI : I ^ 2 = ⊥)
     {A X₀ : Matrix n n R} (hA : Aᵀ = A) (hdet : IsUnit A.det) (hX₀ : X₀ ∈ isometryMatrices A)
-    (X : {X : isometryMatrices A // ∀ i j, X.1 i j - X₀ i j ∈ I}) :
-    (isometryMatricesFiberEquiv hI hA hdet hX₀ X : Matrix n n R) = X₀ᵀ * A * (X.1.1 - X₀) :=
+    (X : {X : isometryMatrices A // ∀ i j, X.val i j - X₀ i j ∈ I}) :
+    (isometryMatricesFiberEquiv hI hA hdet hX₀ X : Matrix n n R) = X₀ᵀ * A * (X.val.val - X₀) :=
   -- `(rfl)` opts out of exporting the definitional equality, so the equivalence can remain
   -- opaque while this theorem and the next provide its rewriting interface.
   (rfl)
@@ -378,7 +410,7 @@ theorem isometryMatricesFiberEquiv_symm_apply_coe_coe {I : Ideal R} (hI : I ^ 2 
     {A X₀ : Matrix n n R} (hA : Aᵀ = A) (hdet : IsUnit A.det) (hX₀ : X₀ ∈ isometryMatrices A)
     (K : {K : Matrix n n R // (∀ i j, K i j ∈ I) ∧ Kᵀ = -K}) :
     (((isometryMatricesFiberEquiv hI hA hdet hX₀).symm K : isometryMatrices A) : Matrix n n R) =
-      X₀ + (X₀ᵀ * A)⁻¹ * K.1 :=
+      X₀ + (X₀ᵀ * A)⁻¹ * K.val :=
   (rfl)
 
 /-- **Counting matrices preserving a Gram matrix across a square-zero extension.** Let `f` be a
@@ -395,12 +427,12 @@ theorem natCard_isometryMatrices_eq_pow_mul (hf : Function.Surjective f)
       Nat.card (RingHom.ker f) ^ (Fintype.card n).choose 2 *
         Nat.card (isometryMatrices (A.map f)) := by
   choose s hs hsf using fun Y : isometryMatrices (A.map f) =>
-    exists_map_eq_of_mem_isometryMatrices_map hf hker h2 hA hdet Y.2
+    exists_map_eq_of_mem_isometryMatrices_map hf hker h2 hA hdet Y.property
   let red : isometryMatrices A → isometryMatrices (A.map f) :=
-    fun X => ⟨X.1.map f, map_mem_isometryMatrices_map f X.2⟩
+    fun X => ⟨X.val.map f, map_mem_isometryMatrices_map f X.property⟩
   have hfiber : ∀ (Y) (X : isometryMatrices A),
-      red X = Y ↔ ∀ i j, X.1 i j - s Y i j ∈ RingHom.ker f := fun Y X => by
-    refine Iff.trans ?_ (forall_mem_ker_iff_map_eq_zero (f := f) (D := X.1 - s Y)).symm
+      red X = Y ↔ ∀ i j, X.val i j - s Y i j ∈ RingHom.ker f := fun Y X => by
+    refine Iff.trans ?_ (forall_mem_ker_iff_map_eq_zero (f := f) (D := X.val - s Y)).symm
     rw [Matrix.map_sub f (map_sub f), hsf, sub_eq_zero, Subtype.ext_iff]
   have hskew : Nat.card {K : Matrix n n R // (∀ i j, K i j ∈ RingHom.ker f) ∧ Kᵀ = -K} =
       Nat.card (RingHom.ker f) ^ (Fintype.card n).choose 2 :=

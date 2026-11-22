@@ -183,7 +183,7 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
     exact absurd hy (not_lt.mpr hpim)
   obtain ⟨C, hC, hev⟩ := exists_norm_schwarzChristoffelIntegrand_le a e (a j)
   set T : ℝ := ∑ i with a i = a j, e i
-  set u : ℝ := min T 0 with hudef
+  set u : ℝ := min T 0
   have hu : -1 < u := lt_min he (by norm_num)
   have hu0 : u ≤ 0 := min_le_right _ _
   have hu1 : (0 : ℝ) < u + 1 := by linarith
@@ -240,7 +240,6 @@ theorem tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalf
     (he : -1 < ∑ i with a i = a j, e i) :
     Tendsto (schwarzChristoffelPrimitive a e z₀) (𝓝[upperHalfPlaneSet] ((a j : ℂ)))
       (𝓝 (schwarzChristoffelVertex a e z₀ j)) := by
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot (a j)
   obtain ⟨v, hv⟩ := exists_tendsto_schwarzChristoffelPrimitive a e z₀ j he
   rwa [schwarzChristoffelVertex, hv.limUnder_eq]
 
@@ -250,7 +249,6 @@ theorem schwarzChristoffelVertex_change_base (a e : ι → ℝ) (b c : UpperHalf
     (he : -1 < ∑ i with a i = a j, e i) :
     schwarzChristoffelVertex a e b j
       = schwarzChristoffelVertex a e c j - schwarzChristoffelPrimitive a e c b := by
-  have := Real.nhdsWithin_upperHalfPlaneSet_neBot (a j)
   refine tendsto_nhds_unique (tendsto_schwarzChristoffelPrimitive a e b j he) ?_
   refine Tendsto.congr' ?_
     ((tendsto_schwarzChristoffelPrimitive a e c j he).sub tendsto_const_nhds)

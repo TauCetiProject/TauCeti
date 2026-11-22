@@ -1,0 +1,676 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Group.Coprime
+public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
+public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
+public import TauCeti.GroupTheory.PresentedGroup
+public import Mathlib.Algebra.Group.Torsion
+public import Mathlib.Data.Int.Cast.Lemmas
+public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.GroupTheory.Index
+public import Mathlib.RingTheory.Coprime.Basic
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Index
+
+/-!
+# One-edge graphs of infinite cyclic groups
+
+The two one-edge graphs of groups all of whose vertex and edge groups are infinite cyclic, with
+their fundamental groups as two-generator one-relator groups. The group `ℤ` is written
+multiplicatively, as `Multiplicative ℤ`, with generator `a = Multiplicative.ofAdd 1`, and
+multiplication by a nonzero integer `m` is the monomorphism `c ↦ c ^ m`.
+
+* The loop `GraphOfGroups.baumslagSolitar m n hm hn` has boundary maps `α = (· ^ m)` and
+  `ω = (· ^ n)` on its dart `e = ((), true)`. The defining relation `e ω_e(c) e⁻¹ = α_e(c)` makes
+  its fundamental group, relative to the empty maximal tree, the Baumslag–Solitar group
+  `⟨a, t ∣ t a ^ n t⁻¹ = a ^ m⟩`, with `t` the dart `e`. For `m = 1` and `n = 2` this is
+  `BS(1, 2) = ⟨a, t ∣ t a² t⁻¹ = a⟩`.
+* The segment `GraphOfGroups.cyclicAmalgam m n hm hn` has boundary maps `(· ^ m)` and `(· ^ n)`
+  into its two vertex groups. Its fundamental group, relative to its maximal tree, is the
+  amalgam `ℤ ∗_ℤ ℤ = ⟨x, y ∣ x ^ m = y ^ n⟩`. For `m = 2` and `n = 3` this is the trefoil knot
+  group `⟨x, y ∣ x² = y³⟩`. For coprime `m` and `n` its abelianization is infinite cyclic, the
+  generators of the two vertex groups going to `n` and to `m`; for the trefoil knot group the
+  abelianization is `ℤ`. The same holds for the fundamental group of closed `𝔸`-paths at either
+  vertex: for an edge path `q` from the base vertex to a vertex `b`, the class of `q c q⁻¹`
+  corresponds to `x ^ c` or `y ^ c` according to `b`, and the class of `p c p⁻¹` for any
+  `𝔸`-path `p` to `b` goes to `c ^ n` or `c ^ m` in the abelianization.
+
+The generators of the presented groups are indexed by `Bool`: `false` is `a`, respectively `x`,
+and `true` is `t`, respectively `y`.
+
+## Main definitions
+
+* `TauCeti.GraphOfGroups.baumslagSolitar`: the loop of infinite cyclic groups.
+* `TauCeti.GraphOfGroups.baumslagSolitarRelator`: the relator `t a ^ n t⁻¹ a ^ (-m)`.
+* `TauCeti.GraphOfGroups.π₁Tree.baumslagSolitarEquiv`: the fundamental group of the loop is
+  `⟨a, t ∣ t a ^ n t⁻¹ = a ^ m⟩`.
+* `TauCeti.GraphOfGroups.cyclicAmalgam`: the segment of infinite cyclic groups.
+* `TauCeti.GraphOfGroups.cyclicAmalgamRelator`: the relator `x ^ m y ^ (-n)`.
+* `TauCeti.GraphOfGroups.π₁Tree.cyclicAmalgamEquiv`: the fundamental group of the segment is
+  `⟨x, y ∣ x ^ m = y ^ n⟩`.
+* `TauCeti.GraphOfGroups.cyclicAmalgamRelatorAbelianizationEquiv`: for coprime `m` and `n`, the
+  abelianization of `⟨x, y ∣ x ^ m = y ^ n⟩` is `ℤ`.
+* `TauCeti.GraphOfGroups.π₁Tree.cyclicAmalgamAbelianizationEquiv`: for coprime `m` and `n`, the
+  abelianization of the fundamental group of the segment is `ℤ`.
+* `TauCeti.GraphOfGroups.π₁.cyclicAmalgamEquiv`: the fundamental group of closed `𝔸`-paths at
+  either vertex of the segment is `⟨x, y ∣ x ^ m = y ^ n⟩`.
+* `TauCeti.GraphOfGroups.π₁.cyclicAmalgamAbelianizationEquiv`: for coprime `m` and `n`, its
+  abelianization is `ℤ`.
+
+## Main results
+
+* `TauCeti.GraphOfGroups.index_range_α_baumslagSolitar`,
+  `TauCeti.GraphOfGroups.index_range_ω_baumslagSolitar`: the boundary images of `baumslagSolitar`
+  have indices `|m|` and `|n|`.
+
+## References
+
+* J.-P. Serre, *Trees*, Chapter I, §1.1 and §5.1.
+* I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
+  Internat. J. Algebra Comput. 15 (2005), §2, Convention 2.1, Definitions 2.2–2.3 and
+  Proposition 2.4(3).
+* G. Baumslag, D. Solitar, *Some two-generator one-relator non-Hopfian groups*,
+  Bull. Amer. Math. Soc. 68 (1962).
+* A. Hatcher, *Algebraic Topology*, Example 1.24 (the torus knot groups `⟨a, b ∣ a ^ m = b ^ n⟩`).
+-/
+
+public section
+
+namespace TauCeti
+
+namespace GraphOfGroups
+
+open Multiplicative
+
+variable (m n : ℤ) (hm : m ≠ 0) (hn : n ≠ 0)
+
+/-! ### The loop: Baumslag–Solitar groups -/
+
+/-- The loop of infinite cyclic groups: one vertex and one loop, with vertex and edge group `ℤ`,
+whose dart `((), true)` has boundary monomorphisms `α = (· ^ m)` and `ω = (· ^ n)`. Its
+fundamental group is the Baumslag–Solitar group `⟨a, t ∣ t a ^ n t⁻¹ = a ^ m⟩`. -/
+@[expose] def baumslagSolitar : GraphOfGroups.{0, 0, 0, 0} (SerreGraph.rose Unit) :=
+  loop (zpowGroupHom (α := Multiplicative ℤ) m) (zpowGroupHom n) (zpow_left_injective hm)
+    (zpow_left_injective hn)
+
+@[simp] theorem baumslagSolitar_ω_true :
+    (baumslagSolitar m n hm hn).ω ((), true) = zpowGroupHom (α := Multiplicative ℤ) n := (rfl)
+
+@[simp] theorem baumslagSolitar_ω_false :
+    (baumslagSolitar m n hm hn).ω ((), false) = zpowGroupHom (α := Multiplicative ℤ) m := (rfl)
+
+@[simp] theorem baumslagSolitar_α_true :
+    (baumslagSolitar m n hm hn).α ((), true) = zpowGroupHom (α := Multiplicative ℤ) m :=
+  loop_α_true ..
+
+@[simp] theorem baumslagSolitar_α_false :
+    (baumslagSolitar m n hm hn).α ((), false) = zpowGroupHom (α := Multiplicative ℤ) n :=
+  loop_α_false ..
+
+/-- The image of `α` on a dart of `baumslagSolitar m n` has index `|m|` on `((), true)` and `|n|`
+on `((), false)`. -/
+@[simp] theorem index_range_α_baumslagSolitar (e : (SerreGraph.rose Unit).E) :
+    ((baumslagSolitar m n hm hn).α e).range.index = cond e.2 m.natAbs n.natAbs := by
+  -- The vertex and edge groups of `baumslagSolitar` reduce definitionally to `Multiplicative ℤ`.
+  obtain ⟨⟨⟩, _ | _⟩ := e
+  · simp only [baumslagSolitar_α_false, Bool.cond_false]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) n
+  · simp only [baumslagSolitar_α_true, Bool.cond_true]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) m
+
+/-- The image of `ω` on a dart of `baumslagSolitar m n` has index `|n|` on `((), true)` and `|m|`
+on `((), false)`. -/
+@[simp] theorem index_range_ω_baumslagSolitar (e : (SerreGraph.rose Unit).E) :
+    ((baumslagSolitar m n hm hn).ω e).range.index = cond e.2 n.natAbs m.natAbs := by
+  -- The vertex and edge groups of `baumslagSolitar` reduce definitionally to `Multiplicative ℤ`.
+  obtain ⟨⟨⟩, _ | _⟩ := e
+  · simp only [baumslagSolitar_ω_false, Bool.cond_false]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) m
+  · simp only [baumslagSolitar_ω_true, Bool.cond_true]
+    exact IsCyclic.index_zpowGroupHom_range_of_infinite (G := Multiplicative ℤ) n
+
+/-- The Baumslag–Solitar relator `t a ^ n t⁻¹ a ^ (-m)` in the free group on `a = false` and
+`t = true`. -/
+def baumslagSolitarRelator : FreeGroup Bool :=
+  FreeGroup.of true * FreeGroup.of false ^ n * (FreeGroup.of true)⁻¹ * (FreeGroup.of false ^ m)⁻¹
+
+@[simp] theorem lift_baumslagSolitarRelator {H : Type*} [Group H] (f : Bool → H) :
+    FreeGroup.lift f (baumslagSolitarRelator m n) =
+      f true * f false ^ n * (f true)⁻¹ * (f false ^ m)⁻¹ := by
+  simp [baumslagSolitarRelator]
+
+/-- The defining relation `t a ^ n t⁻¹ = a ^ m` of the Baumslag–Solitar group. -/
+theorem baumslagSolitarRelator_relation :
+    (PresentedGroup.of true * PresentedGroup.of false ^ n * (PresentedGroup.of true)⁻¹ :
+      PresentedGroup {baumslagSolitarRelator m n}) = PresentedGroup.of false ^ m := by
+  have h := PresentedGroup.one_of_mem (rels := {baumslagSolitarRelator m n}) rfl
+  rw [← PresentedGroup.lift_of_eq_mk, lift_baumslagSolitarRelator] at h
+  exact mul_inv_eq_one.1 h
+
+/-- The defining relation of the Baumslag–Solitar group on all powers of `a`: conjugation by `t`
+carries the image of `c ^ n` to the image of `c ^ m`, for every `c` in the infinite cyclic
+group. -/
+private theorem of_true_mul_zpowersHom_zpow_mul_inv (c : Multiplicative ℤ) :
+    (PresentedGroup.of true * zpowersHom _ (PresentedGroup.of false) (c ^ n) *
+      (PresentedGroup.of true)⁻¹ : PresentedGroup {baumslagSolitarRelator m n}) =
+      zpowersHom _ (PresentedGroup.of false) (c ^ m) := by
+  have h := congrArg (· ^ c.toAdd) (baumslagSolitarRelator_relation m n)
+  simp only [conj_zpow] at h
+  simpa only [map_zpow, zpowersHom_apply, ← zpow_mul, mul_comm c.toAdd] using h
+
+/-- The inverse form of the defining relation: conjugation by `t⁻¹` carries the image of `c ^ m`
+to the image of `c ^ n`. -/
+private theorem of_true_inv_mul_zpowersHom_zpow_mul (c : Multiplicative ℤ) :
+    ((PresentedGroup.of true)⁻¹ * zpowersHom _ (PresentedGroup.of false) (c ^ m) *
+      (PresentedGroup.of true)⁻¹⁻¹ : PresentedGroup {baumslagSolitarRelator m n}) =
+      zpowersHom _ (PresentedGroup.of false) (c ^ n) := by
+  rw [← of_true_mul_zpowersHom_zpow_mul_inv]
+  simp [mul_assoc]
+
+namespace π₁Tree
+
+/-- The defining relation `e c ^ n e⁻¹ = c ^ m` of the dart `e = ((), true)` of the loop of
+infinite cyclic groups. -/
+theorem baumslagSolitar_edge_mul_of_zpow_mul_edge_inv (c : Multiplicative ℤ) :
+    edge ∅ ((), true) * of (𝔸 := baumslagSolitar m n hm hn) ∅ () (c ^ n) *
+        (edge ∅ ((), true))⁻¹ = of (𝔸 := baumslagSolitar m n hm hn) ∅ () (c ^ m) := by
+  have h := edge_mul_of_ω_mul_edge_inv (𝔸 := baumslagSolitar m n hm hn) (T := ∅) ((), true) c
+  rw [baumslagSolitar_ω_true, baumslagSolitar_α_true] at h
+  -- The vertices `tgt ((), true)` and `src ((), true)` are `()`, and `zpowGroupHom n c` is
+  -- `c ^ n`, by definition.
+  exact h
+
+/-- The map from the fundamental group of the loop of infinite cyclic groups to the
+Baumslag–Solitar group: the generator of the vertex group maps to `a` and the dart `((), true)`
+to `t`. -/
+private noncomputable def toBaumslagSolitar :
+    π₁Tree (baumslagSolitar m n hm hn) ∅ →* PresentedGroup {baumslagSolitarRelator m n} :=
+  lift (fun _ => zpowersHom _ (PresentedGroup.of false))
+    (fun e => cond e.2 (PresentedGroup.of true) (PresentedGroup.of true)⁻¹)
+    (fun _ h => h.elim)
+    (fun e => by
+      obtain ⟨⟨⟩, _ | _⟩ := e <;> simp)
+    -- The edge group of every dart of the loop is `Multiplicative ℤ` by definition.
+    (fun e (c : Multiplicative ℤ) => by
+      obtain ⟨⟨⟩, _ | _⟩ := e
+      · simp only [baumslagSolitar_ω_false, baumslagSolitar_α_false]
+        exact of_true_inv_mul_zpowersHom_zpow_mul m n c
+      · simp only [baumslagSolitar_ω_true, baumslagSolitar_α_true]
+        exact of_true_mul_zpowersHom_zpow_mul_inv m n c)
+
+private theorem toBaumslagSolitar_of (c : Multiplicative ℤ) :
+    toBaumslagSolitar m n hm hn (of ∅ () c) = PresentedGroup.of false ^ c.toAdd :=
+  (lift_of (𝔸 := baumslagSolitar m n hm hn) (T := ∅) _ _ _ _ _ () c).trans (zpowersHom_apply ..)
+
+private theorem toBaumslagSolitar_edge_true :
+    toBaumslagSolitar m n hm hn (edge ∅ ((), true)) = PresentedGroup.of true :=
+  lift_edge (𝔸 := baumslagSolitar m n hm hn) (T := ∅) _ _ _ _ _ ((), true)
+
+private theorem toBaumslagSolitar_edge_false :
+    toBaumslagSolitar m n hm hn (edge ∅ ((), false)) = (PresentedGroup.of true)⁻¹ :=
+  lift_edge (𝔸 := baumslagSolitar m n hm hn) (T := ∅) _ _ _ _ _ ((), false)
+
+/-- The inverse map from the Baumslag–Solitar group to the fundamental group of the loop of
+infinite cyclic groups, sending `a` to the generator of the vertex group and `t` to the dart
+`((), true)`. -/
+private noncomputable def ofBaumslagSolitar :
+    PresentedGroup {baumslagSolitarRelator m n} →* π₁Tree (baumslagSolitar m n hm hn) ∅ :=
+  PresentedGroup.toGroup
+    (f := fun b => cond b (edge ∅ ((), true))
+      (of (𝔸 := baumslagSolitar m n hm hn) ∅ () (ofAdd (1 : ℤ))))
+    (by
+      rintro _ rfl
+      rw [lift_baumslagSolitarRelator, mul_inv_eq_one]
+      -- Powers of the generator are moved into `of`, whose source is `Multiplicative ℤ` only
+      -- by definition.
+      exact (congrArg (fun x => edge ∅ ((), true) * x * (edge ∅ ((), true))⁻¹)
+        (map_zpow (of (𝔸 := baumslagSolitar m n hm hn) ∅ ()) (ofAdd (1 : ℤ)) n).symm).trans
+        ((baumslagSolitar_edge_mul_of_zpow_mul_edge_inv m n hm hn (ofAdd 1)).trans
+          (map_zpow (of (𝔸 := baumslagSolitar m n hm hn) ∅ ()) (ofAdd (1 : ℤ)) m)))
+
+private theorem ofBaumslagSolitar_of_false :
+    ofBaumslagSolitar m n hm hn (PresentedGroup.of false) = of ∅ () (ofAdd (1 : ℤ)) :=
+  PresentedGroup.toGroup.of _
+
+private theorem ofBaumslagSolitar_of_true :
+    ofBaumslagSolitar m n hm hn (PresentedGroup.of true) = edge ∅ ((), true) :=
+  PresentedGroup.toGroup.of _
+
+/-- The fundamental group of the loop of infinite cyclic groups with `α = (· ^ m)` and
+`ω = (· ^ n)`, relative to its maximal tree `∅`, is the Baumslag–Solitar group
+`⟨a, t ∣ t a ^ n t⁻¹ = a ^ m⟩`: the generator of the vertex group corresponds to `a` and the dart
+`((), true)` to `t`. -/
+noncomputable def baumslagSolitarEquiv :
+    π₁Tree (baumslagSolitar m n hm hn) ∅ ≃* PresentedGroup {baumslagSolitarRelator m n} :=
+  MonoidHom.toMulEquiv (toBaumslagSolitar m n hm hn) (ofBaumslagSolitar m n hm hn)
+    (hom_ext (fun ⟨⟩ => MonoidHom.ext_mint <|
+        (congrArg (ofBaumslagSolitar m n hm hn) (toBaumslagSolitar_of m n hm hn (ofAdd 1))).trans
+          ((congrArg _ (by simp)).trans (ofBaumslagSolitar_of_false m n hm hn)))
+      fun e => by
+        obtain ⟨⟨⟩, _ | _⟩ := e
+        · refine (congrArg (ofBaumslagSolitar m n hm hn)
+            (toBaumslagSolitar_edge_false m n hm hn)).trans ?_
+          rw [map_inv, ofBaumslagSolitar_of_true]
+          exact (edge_rev (𝔸 := baumslagSolitar m n hm hn) (T := ∅) ((), true)).symm
+        · exact (congrArg (ofBaumslagSolitar m n hm hn)
+            (toBaumslagSolitar_edge_true m n hm hn)).trans (ofBaumslagSolitar_of_true m n hm hn))
+    (PresentedGroup.ext fun b => by
+      cases b
+      · exact (congrArg (toBaumslagSolitar m n hm hn) (ofBaumslagSolitar_of_false m n hm hn)).trans
+          ((toBaumslagSolitar_of m n hm hn (ofAdd 1)).trans (by simp))
+      · exact (congrArg (toBaumslagSolitar m n hm hn) (ofBaumslagSolitar_of_true m n hm hn)).trans
+          (toBaumslagSolitar_edge_true m n hm hn))
+
+@[simp] theorem baumslagSolitarEquiv_of (c : Multiplicative ℤ) :
+    baumslagSolitarEquiv m n hm hn (of ∅ () c) = PresentedGroup.of false ^ c.toAdd :=
+  toBaumslagSolitar_of m n hm hn c
+
+@[simp] theorem baumslagSolitarEquiv_edge_true :
+    baumslagSolitarEquiv m n hm hn (edge ∅ ((), true)) = PresentedGroup.of true :=
+  toBaumslagSolitar_edge_true m n hm hn
+
+@[simp] theorem baumslagSolitarEquiv_edge_false :
+    baumslagSolitarEquiv m n hm hn (edge ∅ ((), false)) = (PresentedGroup.of true)⁻¹ :=
+  toBaumslagSolitar_edge_false m n hm hn
+
+@[simp] theorem baumslagSolitarEquiv_symm_of_false :
+    (baumslagSolitarEquiv m n hm hn).symm (PresentedGroup.of false) = of ∅ () (ofAdd (1 : ℤ)) :=
+  ofBaumslagSolitar_of_false m n hm hn
+
+@[simp] theorem baumslagSolitarEquiv_symm_of_true :
+    (baumslagSolitarEquiv m n hm hn).symm (PresentedGroup.of true) = edge ∅ ((), true) :=
+  ofBaumslagSolitar_of_true m n hm hn
+
+end π₁Tree
+
+/-! ### The segment: amalgams of infinite cyclic groups -/
+
+/-- The segment of infinite cyclic groups: two vertices joined by an edge, with vertex and edge
+groups `ℤ`, whose edge group maps to the vertex group at `false` by `(· ^ m)` and to the vertex
+group at `true` by `(· ^ n)`. Its fundamental group is the amalgam `⟨x, y ∣ x ^ m = y ^ n⟩`. -/
+@[expose] def cyclicAmalgam : GraphOfGroups.{0, 0, 0, 0} SerreGraph.segment :=
+  segment (zpowGroupHom (α := Multiplicative ℤ) m) (zpowGroupHom (α := Multiplicative ℤ) n)
+    (zpow_left_injective hm) (zpow_left_injective hn)
+
+@[simp] theorem cyclicAmalgam_ω_false :
+    (cyclicAmalgam m n hm hn).ω false = zpowGroupHom (α := Multiplicative ℤ) n := (rfl)
+
+@[simp] theorem cyclicAmalgam_ω_true :
+    (cyclicAmalgam m n hm hn).ω true = zpowGroupHom (α := Multiplicative ℤ) m := (rfl)
+
+@[simp] theorem cyclicAmalgam_α_false :
+    (cyclicAmalgam m n hm hn).α false = zpowGroupHom (α := Multiplicative ℤ) m :=
+  segment_α_false ..
+
+@[simp] theorem cyclicAmalgam_α_true :
+    (cyclicAmalgam m n hm hn).α true = zpowGroupHom (α := Multiplicative ℤ) n :=
+  segment_α_true ..
+
+/-- The relator `x ^ m y ^ (-n)` of the amalgam `⟨x, y ∣ x ^ m = y ^ n⟩` in the free group on
+`x = false` and `y = true`. -/
+def cyclicAmalgamRelator : FreeGroup Bool :=
+  FreeGroup.of false ^ m * (FreeGroup.of true ^ n)⁻¹
+
+@[simp] theorem lift_cyclicAmalgamRelator {H : Type*} [Group H] (f : Bool → H) :
+    FreeGroup.lift f (cyclicAmalgamRelator m n) = f false ^ m * (f true ^ n)⁻¹ := by
+  simp [cyclicAmalgamRelator]
+
+/-- The defining relation `x ^ m = y ^ n` of the amalgam `⟨x, y ∣ x ^ m = y ^ n⟩`. -/
+theorem cyclicAmalgamRelator_relation :
+    (PresentedGroup.of false ^ m : PresentedGroup {cyclicAmalgamRelator m n}) =
+      PresentedGroup.of true ^ n := by
+  have h := PresentedGroup.one_of_mem (rels := {cyclicAmalgamRelator m n}) rfl
+  rw [← PresentedGroup.lift_of_eq_mk, lift_cyclicAmalgamRelator] at h
+  exact mul_inv_eq_one.1 h
+
+/-- The defining relation of `⟨x, y ∣ x ^ m = y ^ n⟩` on all powers of the generators: the
+image of `c ^ m` under `ℤ → ⟨x⟩` is the image of `c ^ n` under `ℤ → ⟨y⟩`, for every `c` in the
+infinite cyclic group. -/
+private theorem zpowersHom_of_false_zpow_eq (c : Multiplicative ℤ) :
+    (zpowersHom _ (PresentedGroup.of false) (c ^ m) :
+      PresentedGroup {cyclicAmalgamRelator m n}) =
+      zpowersHom _ (PresentedGroup.of true) (c ^ n) := by
+  have h := congrArg (· ^ c.toAdd) (cyclicAmalgamRelator_relation m n)
+  simpa only [map_zpow, zpowersHom_apply, ← zpow_mul, mul_comm c.toAdd] using h
+
+/-- The maps from the two vertex groups of the segment of infinite cyclic groups to
+`⟨x, y ∣ x ^ m = y ^ n⟩`, sending the generators to `x` and to `y`. -/
+private noncomputable def cyclicAmalgamVertexHom : ∀ b : SerreGraph.segment.V,
+    (cyclicAmalgam m n hm hn).vertexGroup b →* PresentedGroup {cyclicAmalgamRelator m n}
+  | false => zpowersHom _ (PresentedGroup.of false)
+  | true => zpowersHom _ (PresentedGroup.of true)
+
+namespace π₁Tree
+
+variable {T : Set SerreGraph.segment.E}
+
+/-- The map from the fundamental group of the segment of infinite cyclic groups to
+`⟨x, y ∣ x ^ m = y ^ n⟩`: the generators of the vertex groups map to `x` and to `y`, and the
+darts to `1`. -/
+private noncomputable def toCyclicAmalgam :
+    π₁Tree (cyclicAmalgam m n hm hn) T →* PresentedGroup {cyclicAmalgamRelator m n} :=
+  lift (cyclicAmalgamVertexHom m n hm hn) (fun _ => 1) (fun _ _ => rfl) (fun _ => by simp)
+    -- The edge group of both darts of the segment is `Multiplicative ℤ` by definition.
+    (fun e (c : Multiplicative ℤ) => by
+      simp only [one_mul, inv_one, mul_one]
+      cases e
+      · simp only [cyclicAmalgam_ω_false, cyclicAmalgam_α_false]
+        exact (zpowersHom_of_false_zpow_eq m n c).symm
+      · simp only [cyclicAmalgam_ω_true, cyclicAmalgam_α_true]
+        exact zpowersHom_of_false_zpow_eq m n c)
+
+private theorem toCyclicAmalgam_of_false (c : Multiplicative ℤ) :
+    toCyclicAmalgam m n hm hn (of T false c) = PresentedGroup.of false ^ c.toAdd :=
+  (lift_of (𝔸 := cyclicAmalgam m n hm hn) (T := T) _ _ _ _ _ false c).trans
+    (zpowersHom_apply ..)
+
+private theorem toCyclicAmalgam_of_true (c : Multiplicative ℤ) :
+    toCyclicAmalgam m n hm hn (of T true c) = PresentedGroup.of true ^ c.toAdd :=
+  (lift_of (𝔸 := cyclicAmalgam m n hm hn) (T := T) _ _ _ _ _ true c).trans
+    (zpowersHom_apply ..)
+
+private theorem toCyclicAmalgam_edge (e : SerreGraph.segment.E) :
+    toCyclicAmalgam m n hm hn (edge T e) = 1 :=
+  lift_edge (𝔸 := cyclicAmalgam m n hm hn) (T := T) _ _ _ _ _ e
+
+variable (T) in
+/-- The generators of the two vertex groups of the segment of infinite cyclic groups, in its
+fundamental group. -/
+private noncomputable def cyclicAmalgamGen : Bool → π₁Tree (cyclicAmalgam m n hm hn) T
+  | false => of T false (ofAdd (1 : ℤ))
+  | true => of T true (ofAdd (1 : ℤ))
+
+/-- The inverse map from `⟨x, y ∣ x ^ m = y ^ n⟩` to the fundamental group of the segment of
+infinite cyclic groups relative to a nonempty set of darts. -/
+private noncomputable def ofCyclicAmalgam (hT : T.Nonempty) :
+    PresentedGroup {cyclicAmalgamRelator m n} →* π₁Tree (cyclicAmalgam m n hm hn) T :=
+  PresentedGroup.toGroup (f := cyclicAmalgamGen m n hm hn T) (by
+    rintro _ rfl
+    rw [lift_cyclicAmalgamRelator, mul_inv_eq_one]
+    -- Both sides are the image of the generator of the edge group: the boundary maps are
+    -- `c ↦ c ^ m` and `c ↦ c ^ n` by definition.
+    exact ((map_zpow (of (𝔸 := cyclicAmalgam m n hm hn) T false) (ofAdd (1 : ℤ)) m).symm.trans
+      (of_true_eq_of_false hT (ofAdd (1 : ℤ))).symm).trans
+      (map_zpow (of (𝔸 := cyclicAmalgam m n hm hn) T true) (ofAdd (1 : ℤ)) n))
+
+private theorem ofCyclicAmalgam_of_false (hT : T.Nonempty) :
+    ofCyclicAmalgam m n hm hn hT (PresentedGroup.of false) = of T false (ofAdd (1 : ℤ)) :=
+  PresentedGroup.toGroup.of _
+
+private theorem ofCyclicAmalgam_of_true (hT : T.Nonempty) :
+    ofCyclicAmalgam m n hm hn hT (PresentedGroup.of true) = of T true (ofAdd (1 : ℤ)) :=
+  PresentedGroup.toGroup.of _
+
+/-- The fundamental group of the segment of infinite cyclic groups with boundary maps `(· ^ m)`
+and `(· ^ n)`, relative to a nonempty set `T` of darts (for instance its maximal tree), is the
+amalgam `⟨x, y ∣ x ^ m = y ^ n⟩`: the generators of the vertex groups at `false` and at `true`
+correspond to `x` and to `y`, and both darts are trivial. -/
+noncomputable def cyclicAmalgamEquiv (hT : T.Nonempty) :
+    π₁Tree (cyclicAmalgam m n hm hn) T ≃* PresentedGroup {cyclicAmalgamRelator m n} :=
+  MonoidHom.toMulEquiv (toCyclicAmalgam m n hm hn) (ofCyclicAmalgam m n hm hn hT)
+    (hom_ext (fun b => by
+        -- Each vertex group is `Multiplicative ℤ` by definition, so maps out of it agree when
+        -- they agree on the generator.
+        cases b
+        · exact MonoidHom.ext_mint <| (congrArg (ofCyclicAmalgam m n hm hn hT)
+            (toCyclicAmalgam_of_false m n hm hn (ofAdd 1))).trans
+            ((congrArg _ (by simp)).trans (ofCyclicAmalgam_of_false m n hm hn hT))
+        · exact MonoidHom.ext_mint <| (congrArg (ofCyclicAmalgam m n hm hn hT)
+            (toCyclicAmalgam_of_true m n hm hn (ofAdd 1))).trans
+            ((congrArg _ (by simp)).trans (ofCyclicAmalgam_of_true m n hm hn hT)))
+      fun e => (congrArg (ofCyclicAmalgam m n hm hn hT) (toCyclicAmalgam_edge m n hm hn e)).trans
+        ((map_one _).trans (edge_segment_eq_one hT e).symm))
+    (PresentedGroup.ext fun b => by
+      cases b
+      · exact (congrArg (toCyclicAmalgam m n hm hn) (ofCyclicAmalgam_of_false m n hm hn hT)).trans
+          ((toCyclicAmalgam_of_false m n hm hn (ofAdd 1)).trans (by simp))
+      · exact (congrArg (toCyclicAmalgam m n hm hn) (ofCyclicAmalgam_of_true m n hm hn hT)).trans
+          ((toCyclicAmalgam_of_true m n hm hn (ofAdd 1)).trans (by simp)))
+
+@[simp] theorem cyclicAmalgamEquiv_of_false (hT : T.Nonempty) (c : Multiplicative ℤ) :
+    cyclicAmalgamEquiv m n hm hn hT (of T false c) = PresentedGroup.of false ^ c.toAdd :=
+  toCyclicAmalgam_of_false m n hm hn c
+
+@[simp] theorem cyclicAmalgamEquiv_of_true (hT : T.Nonempty) (c : Multiplicative ℤ) :
+    cyclicAmalgamEquiv m n hm hn hT (of T true c) = PresentedGroup.of true ^ c.toAdd :=
+  toCyclicAmalgam_of_true m n hm hn c
+
+@[simp] theorem cyclicAmalgamEquiv_edge (hT : T.Nonempty) (e : SerreGraph.segment.E) :
+    cyclicAmalgamEquiv m n hm hn hT (edge T e) = 1 :=
+  toCyclicAmalgam_edge m n hm hn e
+
+@[simp] theorem cyclicAmalgamEquiv_symm_of_false (hT : T.Nonempty) :
+    (cyclicAmalgamEquiv m n hm hn hT).symm (PresentedGroup.of false) =
+      of T false (ofAdd (1 : ℤ)) :=
+  ofCyclicAmalgam_of_false m n hm hn hT
+
+@[simp] theorem cyclicAmalgamEquiv_symm_of_true (hT : T.Nonempty) :
+    (cyclicAmalgamEquiv m n hm hn hT).symm (PresentedGroup.of true) =
+      of T true (ofAdd (1 : ℤ)) :=
+  ofCyclicAmalgam_of_true m n hm hn hT
+
+end π₁Tree
+
+/-! ### The abelianization of the amalgam of infinite cyclic groups -/
+
+/-- The map from `⟨x, y ∣ x ^ m = y ^ n⟩` to the infinite cyclic group sending `x` to `n` and `y`
+to `m`. -/
+private def cyclicAmalgamRelatorToInt :
+    PresentedGroup {cyclicAmalgamRelator m n} →* Multiplicative ℤ :=
+  PresentedGroup.toGroup (f := fun b => cond b (ofAdd m) (ofAdd n)) (by
+    rintro _ rfl
+    rw [lift_cyclicAmalgamRelator, mul_inv_eq_one]
+    simp only [Bool.cond_false, Bool.cond_true, ← ofAdd_zsmul, smul_eq_mul, mul_comm])
+
+private theorem cyclicAmalgamRelatorToInt_of_false :
+    cyclicAmalgamRelatorToInt m n (PresentedGroup.of false) = ofAdd n :=
+  PresentedGroup.toGroup.of _
+
+private theorem cyclicAmalgamRelatorToInt_of_true :
+    cyclicAmalgamRelatorToInt m n (PresentedGroup.of true) = ofAdd m :=
+  PresentedGroup.toGroup.of _
+
+private theorem bijective_lift_cyclicAmalgamRelatorToInt (hmn : IsCoprime m n) :
+    Function.Bijective (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n)) := by
+  obtain ⟨u, v, huv⟩ := hmn
+  set x :=
+    Group.Abelianization.of (PresentedGroup.of false : PresentedGroup {cyclicAmalgamRelator m n})
+  set y :=
+    Group.Abelianization.of (PresentedGroup.of true : PresentedGroup {cyclicAmalgamRelator m n})
+  have hxy : x ^ m = y ^ n := by
+    simpa only [x, y, map_zpow] using
+      congrArg Group.Abelianization.of (cyclicAmalgamRelator_relation m n)
+  -- The inverse sends the generator `1` to `x ^ v y ^ u`, whose `n`-th power is `x` and whose
+  -- `m`-th power is `y`, because `x ^ m = y ^ n` and `u m + v n = 1`.
+  have hx : (x ^ v * y ^ u) ^ n = x :=
+    (Commute.all x y).zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow hxy huv
+  have hy : (x ^ v * y ^ u) ^ m = y := by
+    rw [mul_comm]
+    exact (Commute.all y x).zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow hxy.symm
+      ((add_comm _ _).trans huv)
+  let ψ := zpowersHom _ (x ^ v * y ^ u)
+  have hleft :
+      ψ.comp (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n)) = MonoidHom.id _ := by
+    refine Group.Abelianization.hom_ext _ _ (PresentedGroup.ext fun b => ?_)
+    cases b
+    · simpa [ψ, cyclicAmalgamRelatorToInt_of_false] using hx
+    · simpa [ψ, cyclicAmalgamRelatorToInt_of_true] using hy
+  have hright :
+      (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n)).comp ψ = MonoidHom.id _ := by
+    refine MonoidHom.ext_mint (toAdd.injective ?_)
+    simpa [ψ, x, y, cyclicAmalgamRelatorToInt_of_false, cyclicAmalgamRelatorToInt_of_true,
+      add_comm] using huv
+  exact ⟨Function.LeftInverse.injective (g := ψ) fun a => DFunLike.congr_fun hleft a,
+    Function.RightInverse.surjective (g := ψ) fun a => DFunLike.congr_fun hright a⟩
+
+/-- For coprime `m` and `n`, the abelianization of `⟨x, y ∣ x ^ m = y ^ n⟩` is infinite cyclic:
+the class of `x` corresponds to `n` and the class of `y` to `m`. For `m = 2` and `n = 3` this is
+the abelianization `ℤ` of the trefoil knot group `⟨x, y ∣ x² = y³⟩`. -/
+noncomputable def cyclicAmalgamRelatorAbelianizationEquiv (hmn : IsCoprime m n) :
+    Group.Abelianization (PresentedGroup {cyclicAmalgamRelator m n}) ≃* Multiplicative ℤ :=
+  MulEquiv.ofBijective (Group.Abelianization.lift (cyclicAmalgamRelatorToInt m n))
+    (bijective_lift_cyclicAmalgamRelatorToInt m n hmn)
+
+@[simp] theorem cyclicAmalgamRelatorAbelianizationEquiv_of_false (hmn : IsCoprime m n) :
+    cyclicAmalgamRelatorAbelianizationEquiv m n hmn
+      (Group.Abelianization.of (PresentedGroup.of false)) = ofAdd n :=
+  (Group.Abelianization.lift_apply_of ..).trans (cyclicAmalgamRelatorToInt_of_false m n)
+
+@[simp] theorem cyclicAmalgamRelatorAbelianizationEquiv_of_true (hmn : IsCoprime m n) :
+    cyclicAmalgamRelatorAbelianizationEquiv m n hmn
+      (Group.Abelianization.of (PresentedGroup.of true)) = ofAdd m :=
+  (Group.Abelianization.lift_apply_of ..).trans (cyclicAmalgamRelatorToInt_of_true m n)
+
+namespace π₁Tree
+
+variable {T : Set SerreGraph.segment.E}
+
+/-- For coprime `m` and `n`, the fundamental group of the segment of infinite cyclic groups with
+boundary maps `(· ^ m)` and `(· ^ n)`, relative to a nonempty set `T` of darts (for instance its
+maximal tree), has infinite cyclic abelianization: the vertex group at `false` maps by `(· ^ n)`
+and the vertex group at `true` by `(· ^ m)`. For `m = 2` and `n = 3` the fundamental group is the
+trefoil knot group `⟨x, y ∣ x² = y³⟩`, with abelianization `ℤ`. -/
+noncomputable def cyclicAmalgamAbelianizationEquiv (hmn : IsCoprime m n) (hT : T.Nonempty) :
+    Group.Abelianization (π₁Tree (cyclicAmalgam m n hm hn) T) ≃* Multiplicative ℤ :=
+  (cyclicAmalgamEquiv m n hm hn hT).abelianizationCongr.trans
+    (cyclicAmalgamRelatorAbelianizationEquiv m n hmn)
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_of_false (hmn : IsCoprime m n)
+    (hT : T.Nonempty) (c : Multiplicative ℤ) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Group.Abelianization.of (of T false c)) =
+      c ^ n := by
+  apply toAdd.injective
+  simp [cyclicAmalgamAbelianizationEquiv, mul_comm]
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_of_true (hmn : IsCoprime m n)
+    (hT : T.Nonempty) (c : Multiplicative ℤ) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Group.Abelianization.of (of T true c)) =
+      c ^ m := by
+  apply toAdd.injective
+  simp [cyclicAmalgamAbelianizationEquiv, mul_comm]
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_edge (hmn : IsCoprime m n)
+    (hT : T.Nonempty) (e : SerreGraph.segment.E) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn hmn hT (Group.Abelianization.of (edge T e)) = 1 := by
+  simp [cyclicAmalgamAbelianizationEquiv]
+
+end π₁Tree
+
+/-! ### The segment of infinite cyclic groups at a base vertex -/
+
+namespace π₁
+
+private theorem segment_spanningTree_darts_nonempty :
+    SerreGraph.segment_isTree.spanningTree.darts.Nonempty :=
+  ⟨true, by rw [SerreGraph.IsTree.spanningTree_darts]; exact Set.mem_univ _⟩
+
+variable (v₀ : SerreGraph.segment.V)
+
+/-- The fundamental group at any vertex `v₀` of the segment of infinite cyclic groups with
+boundary maps `(· ^ m)` and `(· ^ n)` is the amalgam `⟨x, y ∣ x ^ m = y ^ n⟩`: for an edge path
+`q` from `v₀` to the vertex `false`, respectively `true`, the class of `q c q⁻¹` corresponds to
+`x ^ c`, respectively `y ^ c`. For `m = 2` and `n = 3` this is the trefoil knot group
+`⟨x, y ∣ x² = y³⟩`. -/
+noncomputable def cyclicAmalgamEquiv :
+    π₁ (cyclicAmalgam m n hm hn) v₀ ≃* PresentedGroup {cyclicAmalgamRelator m n} :=
+  (π₁Equiv _ v₀ SerreGraph.segment_isTree.spanningTree).trans
+    (π₁Tree.cyclicAmalgamEquiv m n hm hn segment_spanningTree_darts_nonempty)
+
+/-- The image of the class of `q c q⁻¹`, for an edge path `q` from `v₀` to `b`, is the image of
+`c` under `A_b → π₁(𝔸, T)`. -/
+private theorem cyclicAmalgamEquiv_vertexHom_mapPath {b : SerreGraph.segment.V}
+    (q : SerreGraph.segment.Path v₀ b) (c : (cyclicAmalgam m n hm hn).vertexGroup b) :
+    cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
+      π₁Tree.cyclicAmalgamEquiv m n hm hn segment_spanningTree_darts_nonempty
+        (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c) := by
+  -- Every dart of the segment lies in its tree, so it reads as `1` in `π₁(𝔸, T)`, and so does
+  -- the edge path `q`.
+  have hq : q.weight (fun {a b : SerreGraph.segment.V} (_ : a ⟶ b) =>
+      (1 : π₁Tree (cyclicAmalgam m n hm hn) SerreGraph.segment_isTree.spanningTree.darts)) = 1 :=
+    SerreGraph.Path.weight_eq_one _ q (f := fun _ => 1) fun _ _ => rfl
+  simp [cyclicAmalgamEquiv, π₁Equiv_apply, hq]
+
+@[simp] theorem cyclicAmalgamEquiv_vertexHom_false (q : SerreGraph.segment.Path v₀ false)
+    (c : Multiplicative ℤ) :
+    cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
+      PresentedGroup.of false ^ c.toAdd :=
+  (cyclicAmalgamEquiv_vertexHom_mapPath m n hm hn v₀ q c).trans
+    (π₁Tree.cyclicAmalgamEquiv_of_false ..)
+
+@[simp] theorem cyclicAmalgamEquiv_vertexHom_true (q : SerreGraph.segment.Path v₀ true)
+    (c : Multiplicative ℤ) :
+    cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
+      PresentedGroup.of true ^ c.toAdd :=
+  (cyclicAmalgamEquiv_vertexHom_mapPath m n hm hn v₀ q c).trans
+    (π₁Tree.cyclicAmalgamEquiv_of_true ..)
+
+/-- The inverse sends `x` to the class of `q a q⁻¹`, for `a = ofAdd 1` the generator of the
+vertex group at `false` and `q` the reduced edge path from `v₀` to `false`: empty if `v₀ = false`
+and the edge otherwise. -/
+@[simp] theorem cyclicAmalgamEquiv_symm_of_false :
+    (cyclicAmalgamEquiv m n hm hn v₀).symm (PresentedGroup.of false) =
+      vertexHom
+        ((dartPrefunctor _).mapPath (SerreGraph.segment_isTree.spanningTree.path v₀ false))
+        -- Typed at `Multiplicative ℤ`, as in `cyclicAmalgamEquiv_vertexHom_false`, so that `simp`
+        -- can apply that lemma to the right-hand side.
+        (ofAdd 1 : Multiplicative ℤ) :=
+  (MulEquiv.symm_apply_eq _).mpr
+    ((cyclicAmalgamEquiv_vertexHom_false m n hm hn v₀ _ (ofAdd 1)).trans (zpow_one _)).symm
+
+/-- The inverse sends `y` to the class of `q a q⁻¹`, for `a = ofAdd 1` the generator of the
+vertex group at `true` and `q` the reduced edge path from `v₀` to `true`: empty if `v₀ = true`
+and the edge otherwise. -/
+@[simp] theorem cyclicAmalgamEquiv_symm_of_true :
+    (cyclicAmalgamEquiv m n hm hn v₀).symm (PresentedGroup.of true) =
+      vertexHom
+        ((dartPrefunctor _).mapPath (SerreGraph.segment_isTree.spanningTree.path v₀ true))
+        -- Typed at `Multiplicative ℤ` for `cyclicAmalgamEquiv_vertexHom_true`, as above.
+        (ofAdd 1 : Multiplicative ℤ) :=
+  (MulEquiv.symm_apply_eq _).mpr
+    ((cyclicAmalgamEquiv_vertexHom_true m n hm hn v₀ _ (ofAdd 1)).trans (zpow_one _)).symm
+
+/-- For coprime `m` and `n`, the fundamental group at any vertex of the segment of infinite cyclic
+groups with boundary maps `(· ^ m)` and `(· ^ n)` has infinite cyclic abelianization: for any
+`𝔸`-path `p` from the base vertex, the class of `p c p⁻¹` maps to `c ^ n` when `p` ends at the
+vertex `false` and to `c ^ m` when it ends at `true`. For `m = 2` and `n = 3` the fundamental group
+is the trefoil knot group, with abelianization `ℤ`. -/
+noncomputable def cyclicAmalgamAbelianizationEquiv (hmn : IsCoprime m n) :
+    Group.Abelianization (π₁ (cyclicAmalgam m n hm hn) v₀) ≃* Multiplicative ℤ :=
+  (cyclicAmalgamEquiv m n hm hn v₀).abelianizationCongr.trans
+    (cyclicAmalgamRelatorAbelianizationEquiv m n hmn)
+
+/-- In the abelianization, the class of `p c p⁻¹`, for an `𝔸`-path `p` from `v₀` to `b`, is
+the class of the image of `c` under `A_b → π₁(𝔸, T)`. -/
+private theorem cyclicAmalgamAbelianizationEquiv_of_vertexHom (hmn : IsCoprime m n)
+    {b : SerreGraph.segment.V} (p : (cyclicAmalgam m n hm hn).Path ⟨v₀⟩ ⟨b⟩)
+    (c : (cyclicAmalgam m n hm hn).vertexGroup b) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn v₀ hmn (Group.Abelianization.of (vertexHom p c)) =
+      π₁Tree.cyclicAmalgamAbelianizationEquiv m n hm hn hmn segment_spanningTree_darts_nonempty
+        (Group.Abelianization.of
+          (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c)) := by
+  simp [cyclicAmalgamAbelianizationEquiv, π₁Tree.cyclicAmalgamAbelianizationEquiv,
+    cyclicAmalgamEquiv, π₁Equiv_apply]
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_of_vertexHom_false (hmn : IsCoprime m n)
+    (p : (cyclicAmalgam m n hm hn).Path ⟨v₀⟩ ⟨false⟩) (c : Multiplicative ℤ) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn v₀ hmn
+      (Group.Abelianization.of (vertexHom p c)) = c ^ n :=
+  (cyclicAmalgamAbelianizationEquiv_of_vertexHom m n hm hn v₀ hmn p c).trans
+    (π₁Tree.cyclicAmalgamAbelianizationEquiv_of_false ..)
+
+@[simp] theorem cyclicAmalgamAbelianizationEquiv_of_vertexHom_true (hmn : IsCoprime m n)
+    (p : (cyclicAmalgam m n hm hn).Path ⟨v₀⟩ ⟨true⟩) (c : Multiplicative ℤ) :
+    cyclicAmalgamAbelianizationEquiv m n hm hn v₀ hmn
+      (Group.Abelianization.of (vertexHom p c)) = c ^ m :=
+  (cyclicAmalgamAbelianizationEquiv_of_vertexHom m n hm hn v₀ hmn p c).trans
+    (π₁Tree.cyclicAmalgamAbelianizationEquiv_of_true ..)
+
+end π₁
+
+end GraphOfGroups
+
+end TauCeti

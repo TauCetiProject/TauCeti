@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.MorseInequa
 public import TauCeti.Geometry.Manifold.Morse.CWModel
 import TauCeti.Geometry.Manifold.Morse.Cell.Band
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
+import TauCeti.Geometry.Manifold.Morse.Inequalities
 
 /-!
 # The Morse polynomial identity with Betti numbers
@@ -42,6 +43,8 @@ invariance of Betti numbers.
 
 * `TauCeti.bettiNumber_eq_zero_of_finrank_lt`: the Betti numbers of a compact boundaryless
   manifold vanish above its dimension.
+* `TauCeti.bettiNumber_eq_sum_connectedComponents_of_compactSpace`: the Betti numbers of a compact
+  boundaryless manifold are the sums of those of its connected components.
 * `TauCeti.IsMorse.exists_cwComplex_criticalCount_eq_bettiNumber_add_coeff`: the Morse polynomial
   identity, with the coefficients of `Q` the ranks of the cellular differentials of a CW model of
   `M` with one cell for each critical point.
@@ -74,6 +77,7 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
 
 variable (I M) in
 include I in
+omit [FiniteDimensional ℝ E] in
 /-- **The Betti numbers of a compact manifold vanish above its dimension.** For a compact
 boundaryless manifold `M` of dimension `m` and a nontrivial ring `k`, `bⱼ(M; k) = 0` for `j > m`:
 a Morse function on `M` has no critical points of index above `m`. -/
@@ -85,6 +89,19 @@ theorem bettiNumber_eq_zero_of_finrank_lt (k : Type u) [Ring k] [Nontrivial k] {
       (fun _ _ ↦ manifoldMorseIndex_le_finrank) (ModuleCat.of k k) hj)
   rw [bettiNumber_def]
   exact finrank_zero_of_subsingleton
+
+variable (I) in
+include I in
+/-- **The Betti numbers of a compact manifold are the sums of those of its components.** For a
+compact boundaryless manifold `M` and a division ring `k`, `bⱼ(M; k)` is the sum of the `bⱼ` of the
+connected components of `M`, each an open subset. The homology of `M` is finite-dimensional, since
+`M` carries a Morse function. -/
+theorem bettiNumber_eq_sum_connectedComponents_of_compactSpace (k : Type u) [DivisionRing k]
+    [LocallyConnectedSpace M] [Fintype (ConnectedComponents M)] (j : ℕ) :
+    bettiNumber k M j = ∑ C : ConnectedComponents M, bettiNumber k C.opens j := by
+  obtain ⟨f, hf⟩ := exists_isMorse (I := I) (M := M)
+  have := hf.finite_singularHomology (ModuleCat.of k k) j
+  exact bettiNumber_eq_sum_connectedComponents j
 
 /-- **The Morse polynomial identity, with the cellular coefficients.** A compact boundaryless
 manifold `M` with a Morse function `f` is homotopy equivalent to a finite CW complex `W` with one
@@ -101,7 +118,10 @@ theorem IsMorse.exists_cwComplex_criticalCount_eq_bettiNumber_add_coeff (hf : Is
         (bettiNumber k M j + ((1 + X) * ∑ i ∈ Finset.range (finrank ℝ E), monomial i (finrank k
           (LinearMap.range ((cellularChainComplex (univ : Set W) (ModuleCat.of k k)).d (i + 1)
             i).hom))).coeff j : ℕ) := by
-  obtain ⟨W, _, _, _, _, ⟨e⟩, hcount⟩ := hf.exists_finite_cwComplex_homotopyEquiv
+  obtain ⟨W, _, _, _, _, ⟨e⟩, hcell⟩ := hf.exists_finite_cwComplex_homotopyEquiv
+  have hcount (m : ℕ) : ENat.card (cell (univ : Set W) m) = criticalCount I f m := by
+    obtain ⟨c⟩ := hcell m
+    rw [ENat.card_congr c, ENat.card_coe_set_eq, criticalCount_def]
   refine ⟨W, _, ‹_›, ‹_›, ‹_›, ⟨e⟩, hcount, fun k _ j ↦ ?_⟩
   have hfinite (i : ℕ) : Finite (cell (univ : Set W) i) := FiniteType.finite_cell i
   have := hfinite j

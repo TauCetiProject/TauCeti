@@ -65,6 +65,8 @@ rank is additive.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
 * `TauCeti.RegularFormClass.mk_succ_eq_mk_rankOne_add`: the class of a presentation of positive
   rank is the rank-one class of its first weight plus the class of the remaining weights.
+* `TauCeti.RegularFormClass.mk_rankOne_inv`: `⟨a⁻¹⟩ ≅ ⟨a⟩`.
+* `TauCeti.RegularFormClass.mk_const`: the form `⟨a, …, a⟩` of rank `n` is `n • ⟨a⟩`.
 * `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
 * `TauCeti.RegularFormClass.exists_eq_add_mk_rankOne` and
   `TauCeti.RegularFormClass.exists_eq_mk_binary_add`: a class of positive rank splits off a line,
@@ -74,9 +76,6 @@ rank is additive.
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I §2 and §5.
 -/
-
--- The presentation-and-quotient design realised here, and the names of the declarations that
--- carry it, follow the `TauCetiRoadmap/QuadraticFormInvariants` README and its `Suggested.lean`.
 
 public section
 
@@ -232,6 +231,18 @@ def RegularFormClass.rank : RegularFormClass K → ℕ :=
 @[simp]
 theorem RegularFormClass.rank_mk (p : RegularFormPresentation K) :
     RegularFormClass.rank (Quotient.mk (regularFormSetoid K) p) = p.1 := (rfl)
+
+/-- **A rank-one class is the class of its inverse weight**: `⟨a⁻¹⟩ ≅ ⟨a⟩`, since `a⁻¹` and `a`
+differ by the square `a⁻¹ * a⁻¹`. The isometry is multiplication by `a⁻¹`, so this holds in every
+characteristic. -/
+@[simp]
+theorem RegularFormClass.mk_rankOne_inv (a : Kˣ) :
+    Quotient.mk (regularFormSetoid K) (⟨1, fun _ => a⁻¹⟩ : RegularFormPresentation K) =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by
+  rw [RegularFormClass.mk_eq_mk_iff, presentedForm_eq_weightedSumSquares_coe,
+    presentedForm_eq_weightedSumSquares_coe]
+  exact ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares (fun _ => a⁻¹)
+    fun _ => by simp [pow_two]⟩
 
 /-! ### The orthogonal sum -/
 
@@ -592,6 +603,19 @@ theorem RegularFormClass.mk_succ_eq_mk_rankOne_add {n : ℕ} (w : Fin (n + 1) �
   simp only [RegularFormPresentation.append, Fin.append_left_eq_cons, Function.comp_apply,
     Fin.cast_cast, Fin.cast_eq_self]
   exact (congrFun (Fin.cons_self_tail w) i).symm
+
+/-- The diagonal form `⟨a, …, a⟩` with `n` equal weights is the orthogonal sum of `n` copies
+of the line `⟨a⟩`. This is not a `simp` lemma: at `n = 1` its right side contains its left
+side, so `simp` would loop. -/
+theorem RegularFormClass.mk_const (n : ℕ) (a : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨n, fun _ => a⟩ =
+      n • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by
+  induction n with
+  | zero =>
+    rw [zero_nsmul, RegularFormClass.zero_def]
+    exact congrArg (Quotient.mk (regularFormSetoid K))
+      (RegularFormPresentation.ext rfl fun i => i.elim0)
+  | succ n ih => rw [RegularFormClass.mk_succ_eq_mk_rankOne_add, ih, succ_nsmul']
 
 /-- Every isometry class of regular forms is built from the zero class by adjoining rank-one
 classes one at a time. This is the induction principle behind every statement proved by

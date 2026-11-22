@@ -32,12 +32,12 @@ theorem idxOf_map_eq_of_injectiveOn (w : List α) (f : α → β)
     · subst x
       simp
     · have hfa : f x ≠ f a := fun h => hxa (hf hx (by simp) h)
-      have hx' : x ∈ w := (List.mem_cons.mp hx).resolve_left hxa
+      have hx' : x ∈ w := (mem_cons.mp hx).resolve_left hxa
       have hf' : ∀ ⦃x y⦄, x ∈ w → y ∈ w → f x = f y → x = y := by
         intro x y hx' hy' hxy
         exact hf (by simp [hx']) (by simp [hy']) hxy
-      rw [List.map_cons, List.idxOf_cons_ne _ (Ne.symm hxa),
-        List.idxOf_cons_ne _ (Ne.symm hfa)]
+      rw [map_cons, idxOf_cons_ne _ (Ne.symm hxa),
+        idxOf_cons_ne _ (Ne.symm hfa)]
       exact congrArg Nat.succ (ih hf' hx')
 
 /-- Relabelling the entries of a list of rows by an injective map does not move the row in which

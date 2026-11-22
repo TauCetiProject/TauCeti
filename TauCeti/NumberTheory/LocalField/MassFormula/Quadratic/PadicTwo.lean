@@ -102,7 +102,7 @@ private theorem adjoin_mem_and_wildExponent_of_sq_eq_one_sub_padicTwo {c : 𝒪[
   have h2 : (2 : 𝒪[ℚ_[2]]) ∈ 𝓂[ℚ_[2]] :=
     (IsLocalRing.mem_maximalIdeal _).2 irreducible_two_padicTwo.not_isUnit
   have hmem := adjoin_mem_totallyRamifiedOfDegree_two_of_sq_eq_one_sub h2 hc hx
-  have h := natCast_discriminantExponent_adjoin_of_sq_eq_one_sub_of_irreducible h2 hc hx
+  have h := natCast_discriminantExponent_adjoin_of_sq_eq_one_sub_of_irreducible hc hx
   rw [addVal_uniformizer irreducible_two_padicTwo] at h
   have hd : (ℚ_[2]⟮x⟯).discriminantExponent = 2 := by exact_mod_cast h
   refine ⟨hmem, ?_⟩
@@ -258,7 +258,7 @@ theorem encard_totallyRamifiedOfDegree_two_padicTwo :
 /-- **Serre's mass formula for the quadratic extensions of `ℚ_2`**:
 `∑_{L ∈ σ_{ℚ_2}(2)} 2 ^ (-c(L)) = 2 · 2⁻¹ + 4 · 2⁻² = 2`. -/
 theorem tsum_one_div_pow_wildExponent_two_padicTwo :
-    ∑' L : totallyRamifiedOfDegree ℚ_[2] 2, 1 / (2 : ℝ≥0∞) ^ L.1.wildExponent = 2 := by
+    ∑' L : totallyRamifiedOfDegree ℚ_[2] 2, 1 / (2 : ℝ≥0∞) ^ L.val.wildExponent = 2 := by
   classical
   choose y hy using fun i : Fin 8 ↦ IsSepClosed.exists_pow_nat_eq
     (algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) (padicTwoSquareClassRep i)) 2

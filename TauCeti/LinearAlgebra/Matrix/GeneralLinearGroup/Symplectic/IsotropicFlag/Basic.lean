@@ -146,7 +146,7 @@ theorem mem_matrixSubgroup_iff_castAdd (g : GLSymplecticFin m A) :
   let M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A :=
     (g.val : Matrix _ _ A).submatrix finSumFinEquiv finSumFinEquiv
   have hsymp : M ∈ Matrix.symplecticGroup (Fin m) A :=
-    submatrix_mem_symplecticGroup (GLSymplecticFin.mem_iff.mp g.2)
+    submatrix_mem_symplecticGroup (GLSymplecticFin.mem_iff.mp g.property)
   have hM₂₁ : M.toBlocks₂₁ = 0 := by
     ext i j
     simpa only [M, Matrix.toBlocks₂₁, Matrix.of_apply, Matrix.submatrix_apply,
@@ -203,7 +203,7 @@ theorem toBlocks₂₁_mulEquivGLSymplectic_eq_zero (g : matrixSubgroup m (A := 
     (((mulEquivGLSymplectic m A g.val : GLSymplectic (Fin m) A) :
       GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A).toBlocks₂₁ = 0 := by
   ext i j
-  have hg := (mem_matrixSubgroup_iff m g.val).mp g.2
+  have hg := (mem_matrixSubgroup_iff m g.val).mp g.property
   simpa only [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL,
     Matrix.submatrix_apply, Matrix.toBlocks₂₁, Matrix.of_apply, Equiv.symm_symm,
     finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
@@ -217,7 +217,7 @@ theorem isUnit_toBlocks₁₁_mulEquivGLSymplectic (g : matrixSubgroup m (A := A
       GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A).toBlocks₁₁ := by
   set M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A :=
     (((mulEquivGLSymplectic m A g.val : GLSymplectic (Fin m) A) :
-      GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A) with hM
+      GL (Fin m ⊕ Fin m) A) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) A)
   have h : IsUnit M := Units.isUnit _
   rw [← M.fromBlocks_toBlocks, toBlocks₂₁_mulEquivGLSymplectic_eq_zero g] at h
   exact (Matrix.isUnit_fromBlocks_zero₂₁.mp h).1

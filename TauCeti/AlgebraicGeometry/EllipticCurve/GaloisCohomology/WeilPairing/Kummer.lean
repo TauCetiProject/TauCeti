@@ -93,8 +93,8 @@ variable {n : ℤ} (hn : (n : K) ≠ 0)
 /-- The divisor of the auxiliary function of the lift attached to `R`. -/
 private abbrev liftDivisor (R : (W⁄K).toAffine.Point) : Divisor K (W⁄K).toAffine.FunctionField :=
   weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) (-(n • R)) -
-    (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (-(n • n • R))).1 -
-      WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace 0).1)
+    (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (-(n • n • R))).val -
+      WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace 0).val)
 
 /-- `[n]^* (-n R) - [n]^* (O) - ((-n² R) - (O))` is principal: its sum is `n² (-R) + n² R = O`. -/
 private theorem exists_principal_eq_liftDivisor (R : (W⁄K).toAffine.Point) :
@@ -129,8 +129,8 @@ private theorem principal_lift {f : (W⁄K).toAffine.FunctionFieldˣ} {R : (W⁄
   have hgal : Multiplicative.toAdd (W.divisorGaloisAction σ) (liftDivisor W hn R) =
       weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn)
           (Multiplicative.toAdd (W.pointGaloisAction σ) (-(n • R))) -
-        (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (-(n • n • R))).1 -
-          WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace 0).1) := by
+        (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (-(n • n • R))).val -
+          WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace 0).val) := by
     rw [liftDivisor, map_sub, map_sub, divisorGaloisAction_weilPairingDivisor W σ hn,
       divisorGaloisAction_ofPoint, divisorGaloisAction_ofPoint,
       placeGaloisAction_pointEquivDegreeOnePlace, placeGaloisAction_pointEquivDegreeOnePlace,
@@ -210,7 +210,7 @@ private theorem mul_apply_eq_mul_weilPairing {f₁ f₂ f₃ : (W⁄K).toAffine.
       weilPairingDivisor (W⁄K) hψ T) :
     (c σ : K) * σ (c τ) = (c (σ * τ) : K) * (((weilPairing (W⁄K) N hN S T).toMul : Kˣ) : K) := by
   set e : (K ≃ₐ[F] K) → (W⁄K).toAffine.Point ≃+ (W⁄K).toAffine.Point :=
-    fun σ ↦ Multiplicative.toAdd (W.pointGaloisAction σ) with he
+    fun σ ↦ Multiplicative.toAdd (W.pointGaloisAction σ)
   have hcommute (Z : (W⁄K).toAffine.Point) (x : K) :
       Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ Z)
         (algebraMap K (W⁄K).toAffine.FunctionField x) =
@@ -300,8 +300,8 @@ private theorem exists_finset_mul_eq {f₁ f₂ f₃ : (W⁄K).toAffine.Function
     ∃ s : Finset K, ∀ σ u : K ≃ₐ[F] K, (∀ x ∈ s, u x = x) → c (σ * u) = c σ := by
   classical
   set e : (K ≃ₐ[F] K) → (W⁄K).toAffine.Point ≃+ (W⁄K).toAffine.Point :=
-    fun σ ↦ Multiplicative.toAdd (W.pointGaloisAction σ) with he
-  obtain ⟨sP, hsP⟩ := W.exists_finset_pointGaloisAction_eq_self P
+    fun σ ↦ Multiplicative.toAdd (W.pointGaloisAction σ)
+  obtain ⟨sP, _⟩ := W.exists_finset_pointGaloisAction_eq_self P
   obtain ⟨sQ, hsQ⟩ := W.exists_finset_pointGaloisAction_eq_self Q
   obtain ⟨s₁, hs₁⟩ :=
     W.exists_finset_functionFieldGaloisAction_eq_self (f₁ : (W⁄K).toAffine.FunctionField)
@@ -311,7 +311,7 @@ private theorem exists_finset_mul_eq {f₁ f₂ f₃ : (W⁄K).toAffine.Function
     W.exists_finset_functionFieldGaloisAction_eq_self (f₃ : (W⁄K).toAffine.FunctionField)
   refine ⟨sP ∪ sQ ∪ s₁ ∪ s₂ ∪ s₃, fun σ u hu ↦ ?_⟩
   simp only [Finset.mem_union, or_imp, forall_and] at hu
-  obtain ⟨⟨⟨⟨huP, huQ⟩, hu₁⟩, hu₂⟩, hu₃⟩ := hu
+  obtain ⟨⟨⟨⟨_, huQ⟩, hu₁⟩, hu₂⟩, hu₃⟩ := hu
   have hcu : c u = 1 := by
     have h := hc u
     rw [lift_eq_one W (hs₁ u hu₁), lift_eq_one W (hs₂ u hu₂), lift_eq_one W (hs₃ u hu₃),
@@ -348,7 +348,7 @@ private theorem exists_cochain (P Q : (W⁄K).toAffine.Point)
   classical
   have hn : ((N : ℤ) : K) ≠ 0 := by exact_mod_cast hN
   set e : (K ≃ₐ[F] K) → (W⁄K).toAffine.Point ≃+ (W⁄K).toAffine.Point :=
-    fun σ ↦ Multiplicative.toAdd (W.pointGaloisAction σ) with he
+    fun σ ↦ Multiplicative.toAdd (W.pointGaloisAction σ)
   set n : ℤ := (N : ℤ) with hn_def
   have hP' (σ : K ≃ₐ[F] K) : e σ (n • P) = n • P := by
     rw [hn_def, natCast_zsmul]; exact hP σ

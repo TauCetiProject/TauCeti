@@ -54,20 +54,20 @@ namespace TauCeti.LocalFieldsRamification
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-  [Module.Finite K L]
 
 section Galois
 
-variable [IsGalois K L]
+variable [IsGalois K L] {M : Type*} [MulOneClass M]
 
-variable {M : Type*} [MulOneClass M]
-
-/-- The **Artin conductor exponent** of a homomorphism `χ` on the Galois group of a finite Galois
-extension of local fields: the least natural number `n` such that `χ` is trivial on the upper
+/-- The **Artin conductor exponent** of a homomorphism `χ` on the Galois group of a compatible
+Galois extension of local fields: the least natural number `n` such that `χ` is trivial on the upper
 ramification group `G^n`. The minimum is attained
 (`upperRamificationGroup_artinConductorExponent_le_ker`). -/
 def artinConductorExponent (χ : (L ≃ₐ[K] L) →* M) : ℕ :=
+  haveI : Module.Finite K L := finite_of_valuativeExtension K L
   sInf {n : ℕ | upperRamificationGroup K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ ≤ χ.ker}
+
+variable [Module.Finite K L]
 
 /-- **The Artin conductor exponent is attained**: `χ` is trivial on `G^{f(χ)}`. -/
 theorem upperRamificationGroup_artinConductorExponent_le_ker (χ : (L ≃ₐ[K] L) →* M) :
@@ -108,7 +108,7 @@ end Galois
 
 section Abelian
 
-variable [IsAbelianGalois K L] {M : Type*} [MulOneClass M]
+variable [Module.Finite K L] [IsAbelianGalois K L] {M : Type*} [MulOneClass M]
 
 /-- If `χ` is nontrivial on `G_t` and trivial on `G_{t+1}`, then by Hasse–Arf
 `#G_1 + ⋯ + #G_t = m · #G_0` for a natural number `m`, that is `φ(t) = m`, and `f(χ) = m + 1`. -/
@@ -161,7 +161,7 @@ theorem artinConductorExponent_mul_card_eq_sum_range (χ : (L ≃ₐ[K] L) →* 
         else Nat.card (lowerRamificationGroup K L i) := by
   have hP : ∃ i : ℕ, lowerRamificationGroup K L i ≤ χ.ker := ⟨n, hn⟩
   -- The indices where `χ` is nontrivial on `G_i` are those below `c`.
-  set c := Nat.find hP with hc
+  set c := Nat.find hP
   have hiff : ∀ i : ℕ, lowerRamificationGroup K L i ≤ χ.ker ↔ c ≤ i := fun i ↦
     ⟨Nat.find_min' hP, fun h ↦
       (lowerRamificationGroup_antitone K L (by exact_mod_cast h)).trans (Nat.find_spec hP)⟩

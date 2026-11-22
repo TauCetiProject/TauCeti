@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Geometry.Manifold.RegularValue.Open
 
 /-!
 # Functions of a map near its regular points
@@ -20,6 +21,8 @@ Let `F : M → V` be a map from a boundaryless manifold to a finite-dimensional 
 recorded here.
 
 * `F` is open at `x`: it maps the neighbourhoods of `x` onto the neighbourhoods of `F x`.
+  Consequently the regular values in the image of a closed map, such as a proper map, form an
+  open set.
 * A `C^n` function `g` on `M` whose differential vanishes on the kernel of `dF` at every point near
   `x` is, near `x`, a function `h ∘ F` of `F`, with `h` of class `C^n` at `F x`. The kernel of `dF`
   is the tangent space of the level sets of `F`, so this says that a function which is stationary
@@ -36,6 +39,8 @@ results below say that such a function is a function of the integrals.
 ## Main results
 
 * `TauCeti.IsRegularPoint.map_nhds_eq`: a map is open at its regular points.
+* `TauCeti.isOpen_range_inter_setOf_isRegularValue`: the regular values in the image of a closed
+  map form an open set.
 * `TauCeti.IsRegularPoint.exists_eventuallyEq_comp_of_ker_mfderiv_le`: near a regular point of `F`,
   a function whose differential vanishes on `ker dF` is a `C^n` function of `F`.
 * `TauCeti.exists_eqOn_comp_of_ker_mfderiv_le`: on an open set of regular points with
@@ -68,7 +73,7 @@ finite-dimensional space which is `C^n`, `n ≠ 0`, at a regular point `x` sends
 of `x` onto the neighbourhoods of its value. -/
 theorem IsRegularPoint.map_nhds_eq (hreg : IsRegularPoint I 𝓘(𝕜, V) F x)
     (hF : ContMDiffAt I 𝓘(𝕜, V) n F x) (hn : n ≠ 0) : map F (𝓝 x) = 𝓝 (F x) := by
-  have : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   set e := extChartAt I x
   have hFc := hF.contDiffAt_comp_extChartAt_symm
   have hmap := (hFc.hasStrictFDerivAt_fderiv hn).map_nhds_eq_of_surj
@@ -78,6 +83,20 @@ theorem IsRegularPoint.map_nhds_eq (hreg : IsRegularPoint I 𝓘(𝕜, V) F x)
     rw [comp_apply, comp_apply, e.left_inv hy]
   rw [map_congr hFe, ← map_map, map_extChartAt_nhds_of_boundaryless, hmap, comp_apply,
     extChartAt_to_inv]
+
+/-- **The regular values in the image of a closed map form an open set.** On a boundaryless
+manifold, for a `C^n` map `F` into a finite-dimensional space, `1 ≤ n`, which is a closed map, for
+instance a proper map, the values of `F` which are regular values form an open set: the regular
+values form an open set, and `F` is open at the points over them. -/
+theorem isOpen_range_inter_setOf_isRegularValue (hF : ContMDiff I 𝓘(𝕜, V) n F) (hn : 1 ≤ n)
+    (hcl : IsClosedMap F) : IsOpen (range F ∩ {c | IsRegularValue I 𝓘(𝕜, V) F c}) := by
+  refine isOpen_iff_mem_nhds.2 fun c ⟨⟨x, hx⟩, hc⟩ ↦ ?_
+  subst hx
+  have hrange : range F ∈ 𝓝 (F x) := by
+    rw [← (hc.isRegularPoint rfl).map_nhds_eq (hF x) (zero_lt_one.trans_le hn).ne']
+    exact Filter.mem_map.2 (by simp)
+  exact Filter.inter_mem hrange
+    ((isOpen_setOf_isRegularValue_of_isClosedMap hF hn hcl).mem_nhds hc)
 
 /-- **A function whose differential kills the kernel of `dF` is locally a function of `F`.** Let
 `F` be a map from a boundaryless manifold to a finite-dimensional space, `C^n` (`n ≠ 0`) at a
@@ -89,7 +108,7 @@ theorem IsRegularPoint.exists_eventuallyEq_comp_of_ker_mfderiv_le
     (hg : ContMDiffAt I 𝓘(𝕜, W) n g x) (hn : n ≠ 0)
     (hFg : ∀ᶠ y in 𝓝 x, (mfderiv I 𝓘(𝕜, V) F y).ker ≤ (mfderiv I 𝓘(𝕜, W) g y).ker) :
     ∃ h : V → W, ContDiffAt 𝕜 n h (F x) ∧ g =ᶠ[𝓝 x] h ∘ F := by
-  have : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  have : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   set e := extChartAt I x
   have hFc := hF.contDiffAt_comp_extChartAt_symm
   have hgc := hg.contDiffAt_comp_extChartAt_symm
@@ -151,15 +170,15 @@ theorem exists_eqOn_comp_of_ker_mfderiv_le {U : Set M} (hU : IsOpen U)
     have : PreconnectedSpace S := isPreconnected_iff_preconnectedSpace.1 (hconn (F y))
     have hlc : IsLocallyConstant (S.domRestrict g) := by
       refine (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦ ?_
-      obtain ⟨h, -, hgh⟩ := hloc z z.2.1
-      filter_upwards [(continuous_subtype_val.tendsto z).eventually hgh] with z' hz'
-      have hz : F z = F y := z.2.2
-      have hz'' : F z' = F y := z'.2.2
+      obtain ⟨h, -, hgh⟩ := hloc z z.property.1
+      filter_upwards [(continuous_subtypeVal.tendsto z).eventually hgh] with z' hz'
+      have hz : F z = F y := z.property.2
+      have hz'' : F z' = F y := z'.property.2
       rw [domRestrict_apply, domRestrict_apply, hz', hgh.self_of_nhds, comp_apply, comp_apply, hz,
         hz'']
     exact hlc.apply_eq_of_preconnectedSpace ⟨y, hy, rfl⟩ ⟨y', hy', hyy'.symm⟩
   have hfac : (U.domRestrict g).FactorsThrough (U.domRestrict F) :=
-    fun a b hab ↦ hfib a a.2 b b.2 hab
+    fun a b hab ↦ hfib a a.property b b.property hab
   refine ⟨extend (U.domRestrict F) (U.domRestrict g) 0,
     fun y hy ↦ (hfac.extend_apply 0 ⟨y, hy⟩).symm, fun y hy ↦ ?_⟩
   -- Near `F y`, every value is taken near `y`, where `g` agrees with a local `C^n` factor.

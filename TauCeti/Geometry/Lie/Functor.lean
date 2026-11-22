@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Algebra.Monoid
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Monoid
 import TauCeti.Geometry.Manifold.VectorField.Related
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The Lie functor on smooth homomorphisms
@@ -29,6 +30,12 @@ Lie-group exponential.
 
 ## Main results
 
+* `ContMDiffMonoidMorphism.mfderiv_mulInvariantVectorField`: a smooth homomorphism carries the
+  left-invariant vector field of `X` to that of its differential at the identity applied to `X`.
+* `ContMDiffMonoidMorphism.surjective_mfderiv_of_surjective_groupLieAlgebraMap`: a surjective
+  differential at the identity is surjective at every point.
+* `ContMDiffMonoidMorphism.groupLieAlgebraLieHom`: the differential at the identity of a smooth
+  homomorphism, as a homomorphism of the tangent Lie algebras.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
   homomorphism preserves the Lie bracket.
@@ -42,6 +49,7 @@ Lie-group exponential.
   criterion at every point.
 * `ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective`: injectivity of the identity
   differential implies injectivity of the Lie map.
+* `ContMDiffMonoidMorphism.leftInverse_lieMap`: inverse composition laws pass to Lie maps.
 * `TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt`: the Lie-algebra equivalence induced by a smooth
   homomorphism that is a local diffeomorphism at the identity.
 * `ContMDiffMonoidMorphism.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a
@@ -71,7 +79,9 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable [LieGroup I ∞ G] [LieGroup I' ∞ G']
 
-private theorem mfderiv_monoidHom_mulInvariantVectorField
+/-- A smooth homomorphism `φ` carries the left-invariant vector field of `X` to that of its
+differential `dφ X` at the identity: `dφ_g (X^L g) = (dφ X)^L (φ g)`. -/
+theorem ContMDiffMonoidMorphism.mfderiv_mulInvariantVectorField
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
     (X : GroupLieAlgebra I G) :
     mfderiv I I' φ g (mulInvariantVectorField X g) =
@@ -96,6 +106,17 @@ private theorem mfderiv_monoidHom_mulInvariantVectorField
   rw [φ.toMonoidHom.groupLieAlgebraMap_apply I X]
   exact h
 
+/-- A smooth homomorphism whose differential at the identity is surjective has surjective
+differential at every point: `dφ_g` carries `X^L g` to `(dφ X)^L (φ g)`, and every tangent vector
+is the value of a left-invariant vector field. -/
+theorem ContMDiffMonoidMorphism.surjective_mfderiv_of_surjective_groupLieAlgebraMap
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    (hφ : Surjective (φ.toMonoidHom.groupLieAlgebraMap I I')) (g : G) :
+    Surjective (mfderiv I I' φ g) := fun v ↦ by
+  obtain ⟨Y, rfl⟩ := TauCeti.exists_mulInvariantVectorField_eq v
+  obtain ⟨X, rfl⟩ := hφ Y
+  exact ⟨mulInvariantVectorField X g, φ.mfderiv_mulInvariantVectorField g X⟩
+
 /-- The differential at the identity of a smooth homomorphism preserves the Lie bracket of the
 tangent Lie algebras. -/
 theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
@@ -109,25 +130,41 @@ theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
     (mdifferentiableAt_mulInvariantVectorField X) (mdifferentiableAt_mulInvariantVectorField Y)
     (mdifferentiableAt_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
     (mdifferentiableAt_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y))
-    (Filter.Eventually.of_forall fun g => mfderiv_monoidHom_mulInvariantVectorField φ g X)
-    (Filter.Eventually.of_forall fun g => mfderiv_monoidHom_mulInvariantVectorField φ g Y)
+    (Filter.Eventually.of_forall fun g => φ.mfderiv_mulInvariantVectorField g X)
+    (Filter.Eventually.of_forall fun g => φ.mfderiv_mulInvariantVectorField g Y)
   rw [φ.toMonoidHom.groupLieAlgebraMap_apply I, GroupLieAlgebra.bracket_def X Y,
     GroupLieAlgebra.bracket_def]
   rw [map_one] at h
   exact h
 
+/-- The differential at the identity of a smooth homomorphism, as a homomorphism of the tangent
+Lie algebras. -/
+def ContMDiffMonoidMorphism.groupLieAlgebraLieHom [CompleteSpace E] [CompleteSpace E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I' G' where
+  toLinearMap := φ.toMonoidHom.groupLieAlgebraMap I I'
+  map_lie' := φ.groupLieAlgebraMap_lie _ _
+
+@[simp]
+theorem ContMDiffMonoidMorphism.coe_groupLieAlgebraLieHom [CompleteSpace E] [CompleteSpace E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    ⇑φ.groupLieAlgebraLieHom = φ.toMonoidHom.groupLieAlgebraMap I I' :=
+  (rfl)
+
+@[simp]
+theorem ContMDiffMonoidMorphism.toLinearMap_groupLieAlgebraLieHom [CompleteSpace E]
+    [CompleteSpace E'] (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    (φ.groupLieAlgebraLieHom : GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I' G') =
+      (φ.toMonoidHom.groupLieAlgebraMap I I' : GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I' G') :=
+  (rfl)
+
 /-- The Lie functor on morphisms: the differential at the identity of a smooth homomorphism. -/
 noncomputable def lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
     LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G' :=
-  let tangentMap : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I' G' :=
-    { toLinearMap := φ.toMonoidHom.groupLieAlgebraMap I I'
-      map_lie' := by
-        intro X Y
-        exact φ.groupLieAlgebraMap_lie X Y }
   (leftInvariantDerivationLieEquivGroupLieAlgebra
       (I := I') (G := G') (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)).symm.toLieHom.comp
-    (tangentMap.comp
+    (φ.groupLieAlgebraLieHom.comp
       (leftInvariantDerivationLieEquivGroupLieAlgebra
         (I := I) (G := G) (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)).toLieHom)
 
@@ -249,7 +286,7 @@ private theorem monoidHom_mulInvariantExp
       (W := mulInvariantVectorField (I := I') (G := G') Y)
       (γ := γ) (s := Set.univ)
       (fun t _ => φ.contMDiff_toFun.mdifferentiable (by simp) (γ t))
-      (fun t _ => mfderiv_monoidHom_mulInvariantVectorField (I := I) (I' := I') φ (γ t) X)
+      (fun t _ => φ.mfderiv_mulInvariantVectorField (I := I) (I' := I') (γ t) X)
       ((isMIntegralCurve_mulInvariantIntegralCurve
         (I := I) (G := G) X 1).isMIntegralCurveOn Set.univ)
   have hzero : (φ ∘ γ) 0 = (1 : G') := by simp [γ]
@@ -259,6 +296,17 @@ private theorem monoidHom_mulInvariantExp
   rw [mulInvariantExp_eq_mulInvariantIntegralCurve]
   rw [mulInvariantExp_eq_mulInvariantIntegralCurve]
   exact congrFun heq 1
+
+/-- A left inverse pair of smooth homomorphisms induces a left inverse pair of Lie maps. -/
+theorem ContMDiffMonoidMorphism.leftInverse_lieMap
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    (ψ : ContMDiffMonoidMorphism I' I ∞ G' G)
+    (h : ψ.comp φ = ContMDiffMonoidMorphism.id) :
+    Function.LeftInverse (lieMap ψ) (lieMap φ) := by
+  intro X
+  have h' := congrArg (fun f ↦ lieMap f X) h
+  simpa only [lieMap_comp, LieHom.comp_apply, lieMap_id, one_apply_eq_self] using h'
 
 /-- A smooth group homomorphism intertwines the Lie-group exponentials through its Lie map. -/
 @[simp]

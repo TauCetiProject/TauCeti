@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
+import TauCeti.Topology.FiberBundle.Prod
 
 /-!
 # Closed fibre discs and the frontier of their images
@@ -15,6 +16,9 @@ In a continuous Riemannian vector bundle, a positive continuous radius gives the
 fibre discs as the closure of the open fibre discs. Over a compact base with finite-dimensional
 model fibre, the closed discs are compact. Consequently a partial homeomorphism defined on
 these closed discs takes the sphere bundle precisely onto the frontier of the open disc image.
+The fibre spheres are compact as well, which makes, for instance, the unit tangent bundle of a
+compact Riemannian manifold compact, and so are the closed tubes `‖u‖² + ‖v‖² ≤ r` of a Whitney
+sum over a compact base.
 This gives the topological boundary calculation for closed tubular neighbourhoods.
 
 ## References
@@ -37,9 +41,9 @@ namespace TauCeti
 /-- The closure of the open fibre discs of positive continuous radius is the closed
 fibre disc bundle. No rank, compactness or separation assumption is needed. -/
 theorem closure_setOf_norm_lt_bundle {r : B → ℝ} (hr : Continuous r) (hpos : ∀ b, 0 < r b) :
-    closure {p : TotalSpace F V | ‖p.2‖ < r p.proj} =
-      {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} := by
-  refine subset_antisymm (closure_minimal (fun p (hp : ‖p.2‖ < r p.proj) => le_of_lt hp)
+    closure {p : TotalSpace F V | ‖p.snd‖ < r p.proj} =
+      {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} := by
+  refine subset_antisymm (closure_minimal (fun p (hp : ‖p.snd‖ < r p.proj) => le_of_lt hp)
     (isClosed_le (TauCeti.continuous_norm_bundle F V)
       (hr.comp (FiberBundle.continuous_proj F V)))) ?_
   rintro ⟨b, v⟩ hv
@@ -47,7 +51,7 @@ theorem closure_setOf_norm_lt_bundle {r : B → ℝ} (hr : Continuous r) (hpos :
     rw [closure_ball _ (hpos b).ne']
     exact mem_closedBall_zero_iff.mpr hv
   have hsub : TotalSpace.mk b '' ball (0 : V b) (r b) ⊆
-      {p : TotalSpace F V | ‖p.2‖ < r p.proj} := by
+      {p : TotalSpace F V | ‖p.snd‖ < r p.proj} := by
     rintro _ ⟨w, hw, rfl⟩
     exact mem_ball_zero_iff.mp hw
   have hc := (FiberBundle.totalSpaceMk_isEmbedding (F := F) (E := V) b).continuous
@@ -57,12 +61,72 @@ theorem closure_setOf_norm_lt_bundle {r : B → ℝ} (hr : Continuous r) (hpos :
 fibre is finite-dimensional. The radius may vary and need not be positive. -/
 theorem isCompact_setOf_norm_le_bundle [CompactSpace B] [FiniteDimensional ℝ F]
     {r : B → ℝ} (hr : Continuous r) :
-    IsCompact {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} := by
+    IsCompact {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} := by
   obtain ⟨R, hR⟩ := (isCompact_range hr).bddAbove
   apply (isCompact_univ.norm_le_bundle (F := F) (E := V) R).of_isClosed_subset
     (isClosed_le (TauCeti.continuous_norm_bundle F V)
       (hr.comp (FiberBundle.continuous_proj F V)))
   exact fun p hp => ⟨mem_univ _, hp.trans (hR (mem_range_self p.proj))⟩
+
+/-- Fibre spheres of continuous radius are compact over a compact base when the model fibre is
+finite-dimensional. In particular the unit sphere bundle is compact. -/
+theorem isCompact_setOf_norm_eq_bundle [CompactSpace B] [FiniteDimensional ℝ F]
+    {r : B → ℝ} (hr : Continuous r) :
+    IsCompact {p : TotalSpace F V | ‖p.snd‖ = r p.proj} :=
+  (isCompact_setOf_norm_le_bundle hr).of_isClosed_subset
+    (isClosed_eq (TauCeti.continuous_norm_bundle F V) (hr.comp (FiberBundle.continuous_proj F V)))
+    fun _ hp => le_of_eq hp
+
+/-- The closed tube `‖u‖² + ‖v‖² ≤ r` of continuous radius of a Whitney sum `V₁ ×ᵇ V₂` of
+continuous Riemannian bundles with finite-dimensional model fibres over a compact base is
+compact. -/
+theorem isCompact_setOf_norm_sq_add_norm_sq_le_prod_bundle [CompactSpace B]
+    {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [FiniteDimensional ℝ F₂]
+    {V₁ V₂ : B → Type*} [∀ b, NormedAddCommGroup (V₁ b)] [∀ b, InnerProductSpace ℝ (V₁ b)]
+    [∀ b, NormedAddCommGroup (V₂ b)] [∀ b, InnerProductSpace ℝ (V₂ b)]
+    [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
+    [IsContinuousRiemannianBundle F₁ V₁]
+    [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
+    [IsContinuousRiemannianBundle F₂ V₂] {r : B → ℝ} (hr : Continuous r) :
+    IsCompact {z : TotalSpace (F₁ × F₂) (V₁ ×ᵇ V₂) | ‖z.snd.1‖ ^ 2 + ‖z.snd.2‖ ^ 2 ≤ r z.proj} := by
+  obtain ⟨R, hR⟩ := (isCompact_range hr).bddAbove
+  have hu := (continuous_norm_bundle F₁ V₁).comp
+    (FiberBundle.Prod.continuous_totalSpaceFst (F₂ := F₂) (E₂ := V₂))
+  have hv := (continuous_norm_bundle F₂ V₂).comp
+    (FiberBundle.Prod.continuous_totalSpaceSnd (F₁ := F₁) (E₁ := V₁))
+  -- The tube lies in the vectors of the Whitney sum of sup norm at most `√R`.
+  refine (isCompact_univ.norm_le_bundle_of_continuous (F := F₁ × F₂) (E := V₁ ×ᵇ V₂)
+    (hu.max hv) (fun x ↦ ?_) √R).of_isClosed_subset
+    (isClosed_le ((hu.pow 2).add (hv.pow 2))
+      (hr.comp (FiberBundle.continuous_proj (F₁ × F₂) (V₁ ×ᵇ V₂)))) fun z hz ↦
+    have hz : ‖z.snd.1‖ ^ 2 + ‖z.snd.2‖ ^ 2 ≤ r z.proj := hz
+    ⟨mem_univ _, max_le
+      (Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.snd.2‖, hR (mem_range_self z.proj)]))
+      (Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg ‖z.snd.1‖, hR (mem_range_self z.proj)]))⟩
+  -- Near `x`, the trivializations of the summands at `x` are bounded, hence so is their product,
+  -- which is the trivialization of the Whitney sum at `x`.
+  obtain ⟨C₁, hC₁, hy₁⟩ := eventually_norm_trivializationAt_lt F₁ V₁ x
+  obtain ⟨C₂, -, hy₂⟩ := eventually_norm_trivializationAt_lt F₂ V₂ x
+  refine ⟨max C₁ C₂, ?_⟩
+  filter_upwards [hy₁, hy₂, (trivializationAt F₁ V₁ x).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt' x),
+    (trivializationAt F₂ V₂ x).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt' x)] with y hy₁ hy₂ hb₁ hb₂ w
+  have hw : (trivializationAt (F₁ × F₂) (V₁ ×ᵇ V₂) x).continuousLinearMapAt ℝ y w =
+      ((trivializationAt F₁ V₁ x).continuousLinearMapAt ℝ y w.1,
+        (trivializationAt F₂ V₂ x).continuousLinearMapAt ℝ y w.2) := by
+    rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ)
+        (trivializationAt (F₁ × F₂) (V₁ ×ᵇ V₂) x) (b := y) ⟨hb₁, hb₂⟩,
+      Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hb₁,
+      Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hb₂]
+    rfl
+  rw [hw, Prod.norm_def, Prod.norm_def]
+  exact max_le
+    ((ContinuousLinearMap.le_of_opNorm_le _ hy₁.le _).trans (mul_le_mul (le_max_left _ _)
+      (le_max_left _ _) (norm_nonneg _) (hC₁.le.trans (le_max_left _ _))))
+    ((ContinuousLinearMap.le_of_opNorm_le _ hy₂.le _).trans (mul_le_mul (le_max_right _ _)
+      (le_max_right _ _) (norm_nonneg _) (hC₁.le.trans (le_max_left _ _))))
 
 end TauCeti
 
@@ -74,9 +138,9 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X]
 embedding of the closed fibre disc bundle. -/
 theorem isClosedEmbedding_domRestrict_norm_le_bundle [CompactSpace B] [FiniteDimensional ℝ F]
     (e : OpenPartialHomeomorph (TotalSpace F V) X) {r : B → ℝ} (hr : Continuous r)
-    (hsource : {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} ⊆ e.source) :
-    IsClosedEmbedding ({p : TotalSpace F V | ‖p.2‖ ≤ r p.proj}.domRestrict e) := by
-  let : CompactSpace {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} :=
+    (hsource : {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} ⊆ e.source) :
+    IsClosedEmbedding ({p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj}.domRestrict e) := by
+  let : CompactSpace {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} :=
     isCompact_iff_compactSpace.mp (TauCeti.isCompact_setOf_norm_le_bundle hr)
   exact ((e.continuousOn.mono hsource).domRestrict).isClosedEmbedding
     (fun p q hpq => Subtype.ext (e.injOn (hsource p.property) (hsource q.property) hpq))
@@ -85,14 +149,10 @@ theorem isClosedEmbedding_domRestrict_norm_le_bundle [CompactSpace B] [FiniteDim
 embedding of it. -/
 theorem isClosedEmbedding_domRestrict_norm_eq_bundle [CompactSpace B] [FiniteDimensional ℝ F]
     (e : OpenPartialHomeomorph (TotalSpace F V) X) {r : B → ℝ} (hr : Continuous r)
-    (hsource : {p : TotalSpace F V | ‖p.2‖ = r p.proj} ⊆ e.source) :
-    IsClosedEmbedding ({p : TotalSpace F V | ‖p.2‖ = r p.proj}.domRestrict e) := by
-  have hclosed : IsClosed {p : TotalSpace F V | ‖p.2‖ = r p.proj} :=
-    isClosed_eq (TauCeti.continuous_norm_bundle F V) (hr.comp (FiberBundle.continuous_proj F V))
-  let : CompactSpace {p : TotalSpace F V | ‖p.2‖ = r p.proj} :=
-    isCompact_iff_compactSpace.mp
-      ((TauCeti.isCompact_setOf_norm_le_bundle hr).of_isClosed_subset hclosed
-        fun p hp => le_of_eq hp)
+    (hsource : {p : TotalSpace F V | ‖p.snd‖ = r p.proj} ⊆ e.source) :
+    IsClosedEmbedding ({p : TotalSpace F V | ‖p.snd‖ = r p.proj}.domRestrict e) := by
+  let : CompactSpace {p : TotalSpace F V | ‖p.snd‖ = r p.proj} :=
+    isCompact_iff_compactSpace.mp (TauCeti.isCompact_setOf_norm_eq_bundle hr)
   exact ((e.continuousOn.mono hsource).domRestrict).isClosedEmbedding
     (fun p q hpq => Subtype.ext (e.injOn (hsource p.property) (hsource q.property) hpq))
 
@@ -101,24 +161,24 @@ omit [T2Space X] in
 of it. -/
 theorem isOpenEmbedding_domRestrict_norm_lt_bundle
     (e : OpenPartialHomeomorph (TotalSpace F V) X) {r : B → ℝ} (hr : Continuous r)
-    (hsource : {p : TotalSpace F V | ‖p.2‖ < r p.proj} ⊆ e.source) :
-    IsOpenEmbedding ({p : TotalSpace F V | ‖p.2‖ < r p.proj}.domRestrict e) :=
+    (hsource : {p : TotalSpace F V | ‖p.snd‖ < r p.proj} ⊆ e.source) :
+    IsOpenEmbedding ({p : TotalSpace F V | ‖p.snd‖ < r p.proj}.domRestrict e) :=
   e.isOpenEmbedding_restrict.comp
     (IsOpenEmbedding.inclusion hsource
       ((isOpen_lt (TauCeti.continuous_norm_bundle F V)
-        (hr.comp (FiberBundle.continuous_proj F V))).preimage continuous_subtype_val))
+        (hr.comp (FiberBundle.continuous_proj F V))).preimage continuous_subtypeVal))
 
 /-- A partial homeomorphism defined on compact closed fibre discs takes them onto the
 closure of the open disc image. -/
 theorem closure_image_norm_lt_bundle [CompactSpace B] [FiniteDimensional ℝ F]
     (e : OpenPartialHomeomorph (TotalSpace F V) X) {r : B → ℝ}
     (hr : Continuous r) (hpos : ∀ b, 0 < r b)
-    (hsource : {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} ⊆ e.source) :
-    closure (e '' {p : TotalSpace F V | ‖p.2‖ < r p.proj}) =
-      e '' {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} := by
-  let D := {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj}
-  let U := {p : TotalSpace F V | ‖p.2‖ < r p.proj}
-  have hUD : U ⊆ D := fun p (hp : ‖p.2‖ < r p.proj) => le_of_lt hp
+    (hsource : {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} ⊆ e.source) :
+    closure (e '' {p : TotalSpace F V | ‖p.snd‖ < r p.proj}) =
+      e '' {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} := by
+  let D := {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj}
+  let U := {p : TotalSpace F V | ‖p.snd‖ < r p.proj}
+  have hUD : U ⊆ D := fun p (hp : ‖p.snd‖ < r p.proj) => le_of_lt hp
   have hclosed : IsClosed (e '' D) :=
     ((TauCeti.isCompact_setOf_norm_le_bundle hr).image_of_continuousOn
       (e.continuousOn.mono hsource)).isClosed
@@ -136,18 +196,18 @@ sphere bundle onto the frontier of the open disc image. -/
 theorem frontier_image_norm_lt_bundle [CompactSpace B] [FiniteDimensional ℝ F]
     (e : OpenPartialHomeomorph (TotalSpace F V) X) {r : B → ℝ}
     (hr : Continuous r) (hpos : ∀ b, 0 < r b)
-    (hsource : {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} ⊆ e.source) :
-    frontier (e '' {p : TotalSpace F V | ‖p.2‖ < r p.proj}) =
-      e '' {p : TotalSpace F V | ‖p.2‖ = r p.proj} := by
-  let D := {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj}
-  let U := {p : TotalSpace F V | ‖p.2‖ < r p.proj}
-  have hUD : U ⊆ D := fun p (hp : ‖p.2‖ < r p.proj) => le_of_lt hp
+    (hsource : {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} ⊆ e.source) :
+    frontier (e '' {p : TotalSpace F V | ‖p.snd‖ < r p.proj}) =
+      e '' {p : TotalSpace F V | ‖p.snd‖ = r p.proj} := by
+  let D := {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj}
+  let U := {p : TotalSpace F V | ‖p.snd‖ < r p.proj}
+  have hUD : U ⊆ D := fun p (hp : ‖p.snd‖ < r p.proj) => le_of_lt hp
   have hcl := e.closure_image_norm_lt_bundle hr hpos hsource
   have hopen : IsOpen (e '' U) :=
     e.isOpen_image_of_subset_source
       (isOpen_lt (TauCeti.continuous_norm_bundle F V)
         (hr.comp (FiberBundle.continuous_proj F V))) (hUD.trans hsource)
-  have hdiff : D \ U = {p : TotalSpace F V | ‖p.2‖ = r p.proj} := by
+  have hdiff : D \ U = {p : TotalSpace F V | ‖p.snd‖ = r p.proj} := by
     ext p
     simp only [D, U, mem_sdiff, mem_ofPred_eq, not_lt]
     exact le_antisymm_iff.symm

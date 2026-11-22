@@ -42,6 +42,8 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
   of a regular point is discrete.
 * `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_eq_iff`: two vectors act alike
   on `x` exactly when they differ by an element of its stabilizer.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_hamiltonianFlowAction_apply`: the
+  points of an orbit have the same stabilizer.
 * `eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer`, in the namespace
   `TauCeti.SmoothTwoForm.IsSymplectic`: the derivative of the action of an element of the
   stabilizer of `y` at `y` is a linear symplectic map of `T_y M`.
@@ -159,7 +161,7 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
           Fintype.linearCombination_apply]
     have := LinearMap.injective_coprod_linearCombination
       (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) dF.toLinearMap
-      (fun i ↦ (hσ.isNondegenerate.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
+      (fun i ↦ (TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
         fun j ↦ hcomm j i x') hdFs (S := S.toLinearMap)
     have h2 : Injective L.toLinearMap := by rw [hLeq]; exact this
     exact h2
@@ -298,6 +300,16 @@ theorem hamiltonianFlowAction_apply_eq_iff {x : M} {v w : ι → ℝ} :
   (AddAction.injective_ofQuotientStabilizer (ι → ℝ) x).eq_iff
     (a := (v : (ι → ℝ) ⧸ AddAction.stabilizer (ι → ℝ) x)) (b := w) |>.trans QuotientAddGroup.eq
 
+/-- **Points of one orbit have the same stabilizer.** Since `ι → ℝ` is commutative, `v • x` and
+`x` have the same stabilizer: the Liouville tori carry a single period lattice. This is Mathlib's
+`AddAction.stabilizer_vadd_eq_right` for the flow action. -/
+@[simp]
+theorem hamiltonianFlowStabilizer_hamiltonianFlowAction_apply (v : ι → ℝ) (x : M) :
+    hσ.hamiltonianFlowStabilizer hF hcomm hc ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) =
+      hσ.hamiltonianFlowStabilizer hF hcomm hc x :=
+  letI := hσ.hamiltonianFlowAddAction hF hcomm hc
+  AddAction.stabilizer_vadd_eq_right v x
+
 /-- **The linearized return map of a period is symplectic.** If `v` is a period of `y`, the action
 of `v` fixes `y`, and its derivative at `y` is a linear symplectic map of `T_y M`. -/
 theorem eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer {y : M}
@@ -333,7 +345,7 @@ then no vector near `0` other than `0` fixes `x`. -/
 theorem eventually_eq_zero_of_hamiltonianFlowAction_apply_eq {x : M}
     (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) :
     ∀ᶠ v in 𝓝 (0 : ι → ℝ), (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x = x → v = 0 := by
-  set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x with ho
+  set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x
   have ho0 : o 0 = x := hσ.hamiltonianFlowAction_zero_apply hF hcomm hc x
   have hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F (o 0) := ho0 ▸ hx
   have hinj : Injective (mfderiv 𝓘(ℝ, ι → ℝ) I o 0) :=

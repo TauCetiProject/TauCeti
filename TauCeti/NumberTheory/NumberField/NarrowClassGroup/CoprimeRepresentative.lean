@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 Every narrow ideal class of a number field has an integral representative coprime to any prescribed
 nonzero ideal. This is the finite-place approximation input needed to evaluate genus characters on
-narrow ideal classes in Layer 3 of the multiquadratic roadmap.
+narrow ideal classes.
 
 The proof starts with the Dedekind-domain approximation
 `IsDedekindDomain.exists_sup_span_eq`, applied to `I * M ≤ I`. It gives an element `a ∈ I` such
@@ -73,8 +73,8 @@ theorem exists_isTotallyPositive_span_eq_mul_isCoprime (I M : (Ideal (𝓞 K))�
       IsCoprime (J : Ideal (𝓞 K)) (M : Ideal (𝓞 K)) := by
   classical
   let H : Ideal (𝓞 K) := (I : Ideal (𝓞 K)) * (M : Ideal (𝓞 K))
-  have hI0 : (I : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp I.2
-  have hM0 : (M : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp M.2
+  have hI0 : (I : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp I.property
+  have hM0 : (M : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp M.property
   have hH0 : H ≠ 0 := mul_ne_zero hI0 hM0
   have hHI : H ≤ (I : Ideal (𝓞 K)) := Ideal.mul_le_left
   -- Dedekind approximation supplies an initial generator with the required ideal identity.

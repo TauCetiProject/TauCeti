@@ -124,7 +124,7 @@ theorem IsIntegralLattice.isLatticeRational_dual_of_isRationalFunctional (h : Is
   classical
   induction s using Finset.induction_on with
   | empty => simpa using h.isLatticeRational_top
-  | @insert f s hf ih =>
+  | @insert f s _ ih =>
     rw [Finset.coe_insert, PointedCone.dual_insert]
     exact IsLatticeRational.inf h.isBaseChange.equiv.injective
       (hs f (Finset.mem_insert_self f s)).isLatticeRational_dual_singleton

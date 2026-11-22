@@ -45,6 +45,8 @@ from Mathlib's polynomial Leibniz rule `Polynomial.hasseDeriv_mul`.
   case `D⁽ᵏ⁺¹⁾ ((X - a) * f) = (X - a) * D⁽ᵏ⁺¹⁾ f + D⁽ᵏ⁾ f`.
 * `PowerSeries.hasseDeriv_one_apply` and `PowerSeries.factorial_smul_hasseDeriv`: over a
   commutative semiring, `D⁽¹⁾ = d/dX` and `k! • D⁽ᵏ⁾ = (d/dX)^[k]`.
+* `PowerSeries.hasseDeriv_rescale`: the chain rule `D⁽ᵏ⁾ (f(a X)) = a ^ k * (D⁽ᵏ⁾ f)(a X)` for
+  rescaling.
 
 ## References
 
@@ -149,7 +151,7 @@ theorem hasseDeriv_mul (f g : R⟦X⟧) :
   ext n
   -- Up to degree `n`, both sides only see the coefficients of `f` and `g` below `N`, so we may
   -- replace them by their truncations and apply the polynomial Leibniz rule.
-  set N := n + k + 1 with hN
+  set N := n + k + 1
   -- the `m`th coefficient of `D⁽ⁱ⁾ f * D⁽ʲ⁾ g` only involves `coeff a f` and `coeff b g` with
   -- `a ≤ m + i` and `b ≤ m + j`, which truncation at `N > m + i + j` leaves unchanged
   have htrunc (i j m : ℕ) (h : m + i + j < N) :
@@ -220,6 +222,14 @@ theorem factorial_smul_hasseDeriv (k : ℕ) (f : R⟦X⟧) :
     k ! • hasseDeriv k f = d⁄dX^[k] f := by
   ext n
   simp [coeff_iterate_derivative, Nat.ascFactorial_eq_factorial_mul_choose, nsmul_eq_mul, mul_assoc]
+
+/-- **The chain rule for Hasse derivatives under rescaling**: the `k`th Hasse derivative of
+`f(a X)` is `a ^ k * (D⁽ᵏ⁾ f)(a X)`. -/
+theorem hasseDeriv_rescale (k : ℕ) (a : R) (f : R⟦X⟧) :
+    hasseDeriv k (rescale a f) = C (a ^ k) * rescale a (hasseDeriv k f) := by
+  ext n
+  simp only [coeff_hasseDeriv, coeff_rescale, coeff_C_mul, pow_add]
+  ring
 
 end CommSemiring
 

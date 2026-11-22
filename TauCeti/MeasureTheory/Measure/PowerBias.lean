@@ -81,19 +81,19 @@ theorem lintegral_powerBiasWeight_eq_of_integrable {μ : Measure ℝ} {q : ℝ}
   rw [← ofReal_integral_eq_lintegral_ofReal hq
     (hμ.mono fun x hx => Real.rpow_nonneg hx q)]
 
-/-- A positive finite power moment makes the corresponding power bias a probability measure. -/
-theorem isProbabilityMeasure_powerBias {μ : Measure ℝ} {q : ℝ}
-    (hpos : 0 < ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ)
-    (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
-    IsProbabilityMeasure (μ.powerBias q) := by
-  rw [powerBias_def]
-  exact Measure.isProbabilityMeasure_weighted hpos hfin
+/-- A power bias is a probability measure exactly when its normalizing power moment is positive
+and finite. -/
+theorem isProbabilityMeasure_powerBias_iff {μ : Measure ℝ} {q : ℝ} :
+    IsProbabilityMeasure (μ.powerBias q) ↔
+      0 < ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ∧
+        ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞ := by
+  rw [powerBias_def, isProbabilityMeasure_weighted_iff]
 
 /-- A law carried by `(0, ∞)` whose power moment `∫⁻ x ^ q` vanishes is the zero measure. -/
 theorem eq_zero_of_lintegral_powerBiasWeight_eq_zero {μ : Measure ℝ} {q : ℝ}
     (hμ : ∀ᵐ x ∂μ, 0 < x) (hZ : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ = 0) : μ = 0 := by
   rw [lintegral_eq_zero_iff (measurable_powerBiasWeight q).coe_nnreal_ennreal] at hZ
-  have h : ∀ᵐ x ∂μ, False := by
+  have h : ∀ᵐ _ ∂μ, False := by
     filter_upwards [hμ, hZ] with x hx hz
     simp only [Pi.zero_apply, ENNReal.coe_eq_zero, Real.toNNReal_eq_zero] at hz
     exact (Real.rpow_pos_of_pos hx q).not_ge hz
@@ -106,11 +106,8 @@ theorem integrable_rpow_powerBias_iff {μ : Measure ℝ} {q r : ℝ}
     (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
     Integrable (fun x : ℝ => x ^ r) (μ.powerBias q) ↔
       Integrable (fun x : ℝ => x ^ (q + r)) μ := by
-  rcases eq_zero_or_pos (∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ) with hZ | hpos
-  · obtain rfl := eq_zero_of_lintegral_powerBiasWeight_eq_zero hμ hZ
-    simp [powerBias_def]
   rw [powerBias_def, Measure.integrable_weighted_iff
-    (measurable_powerBiasWeight q).aemeasurable hpos hfin]
+    (measurable_powerBiasWeight q).aemeasurable hfin]
   apply integrable_congr
   filter_upwards [hμ] with x hx
   rw [NNReal.smul_def, Real.coe_toNNReal _ (Real.rpow_nonneg hx.le q),
@@ -155,11 +152,8 @@ theorem powerBias_powerBias {μ : Measure ℝ} {q r : ℝ}
     (hμ : ∀ᵐ x ∂μ, 0 < x)
     (hfin : ∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ ≠ ∞) :
     (μ.powerBias q).powerBias r = μ.powerBias (q + r) := by
-  rcases eq_zero_or_pos (∫⁻ x, (Real.toNNReal (x ^ q) : ℝ≥0∞) ∂μ) with hZ | hpos
-  · obtain rfl := eq_zero_of_lintegral_powerBiasWeight_eq_zero hμ hZ
-    simp [powerBias_def]
   simp only [powerBias_def]
-  rw [Measure.weighted_weighted (measurable_powerBiasWeight q).aemeasurable hpos hfin]
+  rw [Measure.weighted_weighted (measurable_powerBiasWeight q).aemeasurable hfin]
   apply Measure.weighted_congr
   filter_upwards [hμ] with x hx
   apply NNReal.eq

@@ -76,7 +76,7 @@ exactly the Weyl Coxeter system, including its indexed simple reflections. -/
 theorem toCoxeterSystem_map_weylCoxeterSystem_mulEquiv_symm :
     (coxeterMatrixOfBase P b).toCoxeterSystem.map
       (weylCoxeterSystem P b).mulEquiv.symm = weylCoxeterSystem P b := by
-  apply CoxeterSystem.simple_determines_coxeterSystem
+  apply CoxeterSystem.injective_simple
   funext i
   simp only [CoxeterSystem.map_simple, weylCoxeterSystem_mulEquiv_symm_apply,
     CoxeterMatrix.toCoxeterSystem_simple, weylCoxeterHom_apply_simple,
@@ -124,8 +124,8 @@ theorem isRightDescent_weylCoxeterSystem_iff (w : P.weylGroup) (i : b.support) :
       ¬ b.IsPos (P.weylGroupToPerm w (i : ι)) := by
   rw [CoxeterSystem.IsRightDescent, weylCoxeterSystem_simple,
     length_weylCoxeterSystem_eq, length_weylCoxeterSystem_eq,
-    ncard_inversions_mul_ofIdx_lt_iff P b w (b.isPos_of_mem_support i.2),
-    mem_inversions, and_iff_right (b.isPos_of_mem_support i.2)]
+    ncard_inversions_mul_ofIdx_lt_iff P b w (b.isPos_of_mem_support i.property),
+    mem_inversions, and_iff_right (b.isPos_of_mem_support i.property)]
 
 /-- The specified presentation homomorphism preserves and reflects right descents. -/
 theorem isRightDescent_presentation_iff

@@ -106,14 +106,12 @@ private theorem norm_one_add_norm_sq_rpow_smul_le {F : E → ℂ} {C₀ : ℝ} {
   have hA : 0 ≤ A := norm_nonneg _
   have hR : 0 < ((1 + ‖η‖) ^ r)⁻¹ := by positivity
   have hv1 : 1 ≤ 1 + ‖v‖ := le_add_of_nonneg_right (norm_nonneg v)
-  have hD : 0 ≤ D := le_max_of_le_left (by positivity)
+  have _ : 0 ≤ D := le_max_of_le_left (by positivity)
   have hw : 0 ≤ (1 + ‖η‖ ^ 2) ^ (s / 2) := by positivity
   rw [norm_smul, Real.norm_of_nonneg hw]
   -- The weight `⟨y⟩ ^ s` is at most `⟨y⟩ ^ N ≤ (1 + ‖y‖) ^ N`.
-  have hweight (y : E) : (1 + ‖y‖ ^ 2) ^ (s / 2) ≤ (1 + ‖y‖) ^ N := by
-    refine le_trans (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖y‖])
-      (by linarith [le_abs_self s] : s / 2 ≤ (N : ℝ) / 2)) ?_
-    exact one_add_norm_sq_rpow_le_one_add_norm_pow y N
+  have hweight (y : E) : (1 + ‖y‖ ^ 2) ^ (s / 2) ≤ (1 + ‖y‖) ^ N :=
+    one_add_norm_sq_rpow_le_one_add_norm_pow_of_le y ((le_abs_self s).trans hN)
   by_cases hv : ‖v‖ ≤ c * ‖η‖
   · -- Small shifts stay in `Γ`; Peetre's inequality moves the weight to `η - v`.
     have hmem : η - v ∈ Γ := by
@@ -124,10 +122,8 @@ private theorem norm_one_add_norm_sq_rpow_smul_le {F : E → ℂ} {C₀ : ℝ} {
         (0 : ℝ) ≤ (1 + ‖η - v‖ ^ 2) ^ (s / 2))]
     have hpeetre := one_add_norm_sq_rpow_le_mul_sub s η (η - v)
     rw [sub_sub_cancel] at hpeetre
-    have hvN : (1 + ‖v‖ ^ 2) ^ (|s| / 2) ≤ (1 + ‖v‖) ^ (k + N + r) := by
-      refine le_trans (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖v‖])
-        (by linarith : |s| / 2 ≤ (N : ℝ) / 2)) ?_
-      exact (one_add_norm_sq_rpow_le_one_add_norm_pow v N).trans
+    have hvN : (1 + ‖v‖ ^ 2) ^ (|s| / 2) ≤ (1 + ‖v‖) ^ (k + N + r) :=
+      (one_add_norm_sq_rpow_le_one_add_norm_pow_of_le v hN).trans
         (pow_le_pow_right₀ hv1 (by omega))
     calc (1 + ‖η‖ ^ 2) ^ (s / 2) * ‖F (η - v)‖
         ≤ 2 ^ (|s| / 2) * (1 + ‖v‖ ^ 2) ^ (|s| / 2) * (1 + ‖η - v‖ ^ 2) ^ (s / 2) *
@@ -146,7 +142,7 @@ private theorem norm_one_add_norm_sq_rpow_smul_le {F : E → ℂ} {C₀ : ℝ} {
       nlinarith [norm_nonneg v, inv_pos.2 hc]
     have hηv : 1 + ‖η - v‖ ≤ (1 + c⁻¹) * (1 + ‖v‖) := by
       nlinarith [norm_sub_le η v, norm_nonneg v, inv_pos.2 hc]
-    have hone : (1 + ‖η‖) ^ r * ((1 + ‖η‖) ^ r)⁻¹ = 1 :=
+    have _ : (1 + ‖η‖) ^ r * ((1 + ‖η‖) ^ r)⁻¹ = 1 :=
       mul_inv_cancel₀ (by positivity)
     calc (1 + ‖η‖ ^ 2) ^ (s / 2) * ‖F (η - v)‖
         ≤ (1 + ‖η‖) ^ N * (C₀ * (1 + ‖η - v‖) ^ k) := by
@@ -188,7 +184,7 @@ private theorem memLp_one_add_norm_sq_rpow_smul_of_hasSum_of_countable {ι : Typ
   have hN : |s| ≤ N := Nat.le_ceil _
   set r := finrank ℝ E + 1
   set D := max (2 ^ (|s| / 2)) (C₀ * (1 + c⁻¹) ^ (k + N + r))
-  have hD : 0 ≤ D := le_max_of_le_left (by positivity)
+  have _ : 0 ≤ D := le_max_of_le_left (by positivity)
   -- The two fixed square integrable functions of the pointwise bound.
   set H : E → ℂ := Γ.indicator fun ζ ↦ w ζ • F ζ
   have hH : MemLp H 2 volume := (memLp_indicator_iff_restrict hΓ.nullMeasurableSet).2 hL
@@ -239,7 +235,7 @@ private theorem memLp_one_add_norm_sq_rpow_smul_of_hasSum_of_countable {ι : Typ
     refine ne_top_of_le_ne_top (b := ENNReal.ofReal (∑' i, D * ((1 + ‖v i‖) ^ (k + N + r) *
       ‖a i‖)) * M) (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hM) ?_
     rw [ENNReal.ofReal_tsum_of_nonneg (fun i ↦ by positivity) hs, ← ENNReal.tsum_mul_right]
-    exact CompleteLattice.summable.tsum_le_tsum (fun i ↦ (Lp.enorm_toLp (hgL i)).trans_le (hgle i))
+    exact CompleteLattice.summable.tsum_le_tsum (fun i ↦ (Lp.eNorm_toLp (hgL i)).trans_le (hgle i))
       CompleteLattice.summable
   have h2 : ∀ᵐ η ∂(volume.restrict Γ'), ∀ i, f i η = g i η :=
     ae_all_iff.2 fun i ↦ (hgL i).coeFn_toLp
@@ -318,9 +314,7 @@ theorem IsMicrolocallySobolevAt.exists_nhds_cone {s : ℝ} {T : 𝓓'(Ω, ℂ)} 
 theorem IsMicrolocallySobolevAt.add {s : ℝ} {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (hS : S.IsMicrolocallySobolevAt s x ξ) (hT : T.IsMicrolocallySobolevAt s x ξ) :
     (S + T).IsMicrolocallySobolevAt s x ξ := by
-  have hx : x ∈ Ω := by
-    obtain ⟨φ, hφ, -⟩ := isMicrolocallySobolevAt_iff.1 hS
-    exact φ.tsupport_subset (subset_tsupport _ hφ)
+  have hx : x ∈ Ω := hS.mem
   obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hLS⟩ := hS.exists_nhds_cone
   obtain ⟨V, hV, Γ', hΓ', hξ', hcone', hLT⟩ := hT.exists_nhds_cone
   -- A cutoff supported in `U ∩ V` serves for both distributions, on the cone `Γ ∩ Γ'`.

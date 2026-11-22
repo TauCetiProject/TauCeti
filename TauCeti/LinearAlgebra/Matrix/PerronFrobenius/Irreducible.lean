@@ -35,6 +35,8 @@ of the transpose (simplicity as a root of the characteristic polynomial, and the
 
 ## Main results
 
+* `Matrix.isIrreducible_iff_forall_transGen`: a nonnegative matrix is irreducible exactly when
+  nonempty chains of positive entries join every index to every index.
 * `Matrix.IsIrreducible.isPrimitive_one_add`: if `A` is irreducible, then `1 + A` is primitive.
 * `Matrix.IsIrreducible.exists_mulVec_eq_smul`: an irreducible real matrix has an eigenvector with
   strictly positive entries, for a strictly positive eigenvalue.
@@ -60,6 +62,27 @@ open scoped Matrix
 
 namespace Matrix
 
+/-- A matrix with nonnegative entries is irreducible exactly when every index reaches every index,
+itself included, through a nonempty chain of strictly positive entries. -/
+theorem isIrreducible_iff_forall_transGen {n R : Type*} [Ring R] [LinearOrder R]
+    {A : Matrix n n R} (hA : ∀ i j, 0 ≤ A i j) :
+    A.IsIrreducible ↔ ∀ i j, Relation.TransGen (fun i j ↦ 0 < A i j) i j := by
+  let := toQuiver A
+  refine ⟨fun h i j ↦ ?_, fun h ↦ ⟨hA, fun i j ↦ ?_⟩⟩
+  · obtain ⟨p, hp⟩ := h.connected i j
+    induction p with
+    | nil => simp at hp
+    | cons p e ih =>
+      rcases Nat.eq_zero_or_pos p.length with h0 | h0
+      · obtain rfl := Quiver.Path.eq_of_length_zero p h0
+        exact .single e.down
+      · exact (ih h0).tail e.down
+  · induction h i j with
+    | single hab => exact ⟨Quiver.Path.nil.cons ⟨hab⟩, by simp⟩
+    | tail _ hbc ih =>
+      obtain ⟨p, -⟩ := ih
+      exact ⟨p.cons ⟨hbc⟩, by simp⟩
+
 variable {n : Type*} [Fintype n]
 
 section OrderedCommRing
@@ -71,7 +94,7 @@ variable {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] {A : M
 strictly positive. -/
 theorem IsIrreducible.isPrimitive_one_add [DecidableEq n] (hA : A.IsIrreducible) :
     (1 + A).IsPrimitive := by
-  choose k hk0 hk using (isIrreducible_iff_exists_pow_pos hA.nonneg).1 hA
+  choose k _ hk using (isIrreducible_iff_exists_pow_pos hA.nonneg).1 hA
   -- A power `N` beyond every `k i j` works, since `(1 + A) ^ N` dominates a positive multiple of
   -- each `A ^ k i j` by the binomial theorem.
   obtain ⟨N, hN, hkN⟩ : ∃ N, 0 < N ∧ ∀ i j, k i j ≤ N :=

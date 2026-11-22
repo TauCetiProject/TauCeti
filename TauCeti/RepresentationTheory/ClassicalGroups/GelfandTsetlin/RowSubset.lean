@@ -70,7 +70,7 @@ def rowSubset (I : Finset (Fin n)) : GTPattern n where
     rw [ite_eq_right_iff]
     omega
   interlacing' := by
-    intro c j hcj hj
+    intro c j _ hj
     have h := card_filter_castSucc_lt_succ I ⟨j, hj⟩
     simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at h
     split_ifs at h <;> constructor <;> split_ifs <;> omega
@@ -84,7 +84,7 @@ theorem rowSubset_apply (I : Finset (Fin n)) (c j : ℕ) :
 theorem topRow_rowSubset (I : Finset (Fin n)) :
     (rowSubset I).topRow = fun i : Fin n => if (i : ℕ) < #I then (1 : ℤ) else 0 := by
   funext i
-  rw [topRow_apply, rowSubset_apply, filter_true_of_mem fun r _ => r.2]
+  rw [topRow_apply, rowSubset_apply, filter_true_of_mem fun r _ => r.isLt]
   simp
 
 theorem zero_le_rowSubset (I : Finset (Fin n)) : 0 ≤ rowSubset I :=
@@ -127,7 +127,7 @@ theorem rowSubset_injective : Function.Injective (rowSubset (n := n)) := by
   have hI := card_filter_castSucc_lt_succ I r
   have hJ := card_filter_castSucc_lt_succ J r
   simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at hI hJ
-  rw [hcount _ r.2, hcount _ r.2.le] at hI
+  rw [hcount _ r.isLt, hcount _ r.isLt.le] at hI
   split_ifs at hI hJ <;> simp_all
 
 /-! ### The row-subset patterns generate the nonnegative patterns -/
@@ -145,7 +145,7 @@ private theorem eq_one_iff_lt_card {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
   -- The entries equal to `1` form an initial segment of the row, since the row decreases.
   refine (Fin.lt_card_filter_univ_iff_apply_of_imp (j := ⟨c, hc⟩) (fun i : Fin j => Q i j = 1)
     fun c' c hcc' h1 => ?_).symm
-  have := Q.entry_anti hcc' c'.2
+  have := Q.entry_anti hcc' c'.isLt
   rcases hQ c j with h | h <;> omega
 
 /-- A pattern with entries in `{0, 1}` is a row-subset pattern.  The rows of `I` are those at

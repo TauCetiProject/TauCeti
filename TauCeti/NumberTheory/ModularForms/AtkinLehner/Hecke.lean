@@ -112,9 +112,9 @@ private lemma heckeSlashSum_slash_atkinLehnerGL (hQ : 0 < Q) (hQN : Q ∣ N)
   rw [← HeckeCoset.mk_rep D, coprimeDetCoset_mk, HeckeCoset.rep_def] at hD
   rw [← hmap, ← ModularForm.rat_slash, ← ModularForm.rat_slash]
   have hnorm := h.mem_normalizer_map_mapGL hQN hw
-  obtain ⟨A, hA, -⟩ := (mem_Delta0_iff N).mp (Quotient.out D).2
+  obtain ⟨A, hA, -⟩ := (mem_Delta0_iff N).mp (Quotient.out D).property
   exact heckeSlashSum_slash_of_mem_normalizer k D hnorm hnorm
-    (h.inv_mul_mul_mem_doubleCoset hQN hw (Quotient.out D).2 hA (hD A hA)) f hf
+    (h.inv_mul_mul_mem_doubleCoset hQN hw (Quotient.out D).property hA (hD A hA)) f hf
 
 /-- **The Atkin–Lehner operator `W_Q` commutes with the Hecke operator of a double coset of
 determinant coprime to `Q`**, on `M_k(Γ₀(N))`. -/
@@ -209,7 +209,7 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
           ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) ((Gamma0Map N).toHomUnits ⟨A, hA⟩) = 1 ∧
           ∃ B ∈ Gamma1 N, φ (natDiagGL 2 ![1, n]) * atkinLehnerGL h.pos hM =
             atkinLehnerGL h.pos hM * mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) := by
-  set m := N / Q with hm
+  set m := N / Q
   have hNm : N = Q * m := (Nat.mul_div_cancel' h.dvd).symm
   have hN : (N : ℤ) = Q * m := by exact_mod_cast hNm
   set a : ℤ := Nat.gcdA Q m
@@ -227,9 +227,9 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
   set Am : Matrix (Fin 2) (Fin 2) ℤ :=
     !![Q * a + n * m * b, a * l - a - j * m * b;
       -((Q : ℤ) * m) * b * (n - 1), Q * a + j * (Q * m) * b + m * b * l]
-  set Bm : Matrix (Fin 2) (Fin 2) ℤ := !![1, j; 0, 1]
-  have key : X * W = W * Am * X * Bm := by
-    simp only [X, W, Am, Bm, Matrix.mul_fin_two]
+  let B : SL(2, ℤ) := ModularGroup.T ^ j
+  have key : X * W = W * Am * X * B := by
+    simp only [X, W, Am, B, ModularGroup.coe_T_zpow, Matrix.mul_fin_two]
     congrm !![?_, ?_; ?_, ?_]
     · linear_combination (-(Q : ℤ)) * hred
     · linear_combination (-1 : ℤ) * hred - (Q * a + m * b) * hjl
@@ -239,13 +239,11 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
     have hdet := congrArg Matrix.det key
     rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_mul, Matrix.det_mul, hW.det_eq] at hdet
     have hX : X.det = n := by simp [X, Matrix.det_fin_two_of]
-    have hB : Bm.det = 1 := by simp [Bm, Matrix.det_fin_two_of]
-    rw [hX, hB] at hdet
+    rw [hX, B.det_coe] at hdet
     have hQn : (Q : ℤ) * n ≠ 0 :=
       mul_ne_zero (by exact_mod_cast h.pos.ne') (by exact_mod_cast NeZero.ne n)
     exact mul_left_cancel₀ hQn (by linear_combination -hdet)
-  let A : SL(2, ℤ) := ⟨Am, hdetAm⟩
-  let B : SL(2, ℤ) := ⟨Bm, by simp [Bm, Matrix.det_fin_two_of]⟩
+  let A : SL(2, ℤ) := .mk Am hdetAm
   have hA : A ∈ Gamma0 N := mem_Gamma0_iff_dvd.mpr ⟨-b * (n - 1), by simp [A, Am, hN]; ring⟩
   -- the diamond label of `A` is its lower-right entry
   have hlabel : (((Gamma0Map N).toHomUnits ⟨A, hA⟩ : (ZMod N)ˣ) : ZMod N) =
@@ -260,8 +258,8 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
     ZMod.unitsMap_eq_inv_unitOfCoprime_of_intCast_mul_eq h.dvd (hn.coprime_dvd_right h.dvd) hlabel
       hmodQ,
     ZMod.unitsMap_eq_one_of_intCast_eq (Nat.div_dvd_of_dvd h.dvd) hlabel hmodm, B,
-    mem_Gamma1_of_dvd_lowerRow (by simp [B, Bm]) (by simp [B, Bm]),
-    natDiagGL_mul_atkinLehnerGL_eq_of_mul_eq h.pos hW key⟩
+    T_zpow_mem_Gamma1 N j, natDiagGL_mul_atkinLehnerGL_eq_of_mul_eq h.pos hW
+      (by simpa only [A, X, Matrix.SpecialLinearGroup.coe_mk] using key)⟩
 
 /-- The trace argument behind `atkinLehnerOperatorGamma1_heckeTNat`: a factorization
 `diag(1, n) · W = W · A · diag(1, n) · B` with `A ∈ Γ₀(N)` and `B ∈ Γ₁(N)` gives

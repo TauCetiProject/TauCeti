@@ -7,14 +7,17 @@ module
 
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
+import Mathlib.Analysis.Normed.Order.Lattice
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Layercake
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation
 import TauCeti.MeasureTheory.Integral.Average
 
 /-!
-# The logarithm of the norm has bounded, but not vanishing, mean oscillation
+# Logarithms of the norm and mean oscillation
 
 On a finite-dimensional real normed space `E` of dimension `n ≥ 1` with an additive Haar
 measure `μ`, the function `x ↦ log ‖x‖` is the basic example separating the space of functions of
@@ -29,6 +32,14 @@ oscillation:
   small the ball (`TauCeti.ofReal_le_setLAverage_enorm_log_norm_sub_setAverage_ball_zero`), so it
   does not have vanishing mean oscillation (`TauCeti.not_memVMO_log_norm`).
 
+One more logarithm separates the functions of vanishing mean oscillation from the bounded ones.
+The function `log (1 + log⁺ ‖x‖⁻¹)`, which vanishes for `‖x‖ ≥ 1` and near the origin is
+`log log (1 / ‖x‖)` up to a bounded error:
+
+* has vanishing mean oscillation (`TauCeti.memVMO_log_one_add_posLog_norm_inv`);
+* tends to `∞` at the origin (`TauCeti.tendsto_log_one_add_posLog_norm_inv`), so in positive
+  dimension it is not essentially bounded (`TauCeti.not_memLp_top_log_one_add_posLog_norm_inv`).
+
 ## Main declarations
 
 * `TauCeti.setLIntegral_enorm_log_norm_sub_log_le`: `∫_{B(0, R)} |log ‖y‖ - log R| ≤ μ(B(0, R))`.
@@ -37,6 +48,10 @@ oscillation:
 * `TauCeti.not_memLp_top_log_norm`: `log ‖·‖` is not essentially bounded.
 * `TauCeti.ofReal_le_setLAverage_enorm_log_norm_sub_setAverage_ball_zero`,
   `TauCeti.not_memVMO_log_norm`: `log ‖·‖` does not have vanishing mean oscillation.
+* `TauCeti.memBMO_posLog_norm_inv`: `log⁺ ‖·‖⁻¹` has bounded mean oscillation.
+* `TauCeti.memVMO_log_one_add_posLog_norm_inv`,
+  `TauCeti.not_memLp_top_log_one_add_posLog_norm_inv`: `log (1 + log⁺ ‖·‖⁻¹)` has vanishing mean
+  oscillation and is not essentially bounded.
 
 ## The bounds
 
@@ -52,9 +67,22 @@ The lower bound is scale invariant. The ball `B(0, r)` contains two balls of rad
 of measure `8⁻ⁿ μ(B(0, r))`, one on which `log ‖·‖ < log (r / 4)` and one on which
 `log ‖·‖ > log (r / 2)`. No constant is within `log 2 / 2` of both ranges.
 
+The vanishing mean oscillation of `log (1 + L)`, `L = log⁺ ‖·‖⁻¹`, comes from the slow growth of
+the outer logarithm rather than from a bound on balls. `L` has bounded mean oscillation, as a
+`1`-Lipschitz function of `log ‖·‖`. Its truncation `min L n` agrees away from the origin with the
+continuous compactly supported function `log⁺ (max ‖·‖ e⁻ⁿ)⁻¹`, so `log (1 + min L n)` has
+vanishing mean oscillation. What remains,
+`log (1 + L) - log (1 + min L n) = log⁺ ((1 + L) / (n + 1))`, is an `(n + 1)⁻¹`-Lipschitz function
+of `L`, so its BMO seminorm is at most `2 (n + 1)⁻¹ ‖L‖_{BMO}`. As `n → ∞` this tends to `0`, and
+functions of vanishing mean oscillation are closed in the BMO seminorm. This is the general
+truncation criterion `TauCeti.memVMO_log_one_add_of_forall_memVMO_min` of
+`TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Truncation`.
+
 ## References
 
 * L. Grafakos, *Modern Fourier Analysis*, 3rd ed., Section 3.1.
+* D. Sarason, *Functions of vanishing mean oscillation*, Trans. Amer. Math. Soc. **207** (1975),
+  391–405.
 * E. M. Stein, *Harmonic Analysis*, Chapter IV, §1.1.
 -/
 
@@ -63,6 +91,7 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module Set
+open scoped Topology
 open scoped ENNReal NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
@@ -92,7 +121,7 @@ theorem not_memLp_top_log_norm [Nontrivial E] [μ.IsOpenPosMeasure] :
     simp only [U, mem_ofPred_eq] at hy ⊢
     have hlog : M.toReal < Real.log ‖y‖ := by
       rwa [Real.lt_log_iff_exp_lt ((Real.exp_pos _).trans hy)]
-    rw [not_le, Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_toReal hM]
+    rw [not_le, Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_toReal hM]
     exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg).2
       (hlog.trans_le (le_abs_self _))
   exact (hU.measure_pos μ hUne).ne' (measure_mono_null hUsub ae_le_eLpNormEssSup)
@@ -114,7 +143,7 @@ theorem setLIntegral_enorm_log_norm_sub_log_le [Nontrivial E] {R : ℝ} (hR : 0 
     have hpos : 0 < ‖y‖ := norm_pos_iff.2 (by simpa using hy0)
     have hle : 0 ≤ g y := sub_nonneg.2 (Real.log_le_log hpos (mem_ball_zero_iff.1 hy).le)
     refine ⟨hle, ?_⟩
-    rw [← enorm_neg, neg_sub, Real.enorm_eq_ofReal hle]
+    rw [← eNorm_neg, neg_sub, Real.eNorm_eq_ofReal hle]
   have hmeas : AEMeasurable g (μ.restrict (ball 0 R)) :=
     (measurable_const.sub (Real.measurable_log.comp measurable_norm)).aemeasurable
   rw [lintegral_congr_ae (hg0.mono fun _ hy => hy.2),
@@ -182,7 +211,7 @@ private theorem exists_setLAverage_enorm_log_norm_sub_le [Nontrivial E] (c : E) 
     refine ⟨Real.log ‖c‖, (laverage_le_essSup _).trans (essSup_le_of_ae_le _ ?_)⟩
     filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
     have habs := abs_log_norm_sub_log_norm_le_one (mem_ball_iff_norm.1 hy) hc
-    rw [Real.enorm_eq_ofReal_abs]
+    rw [Real.eNorm_eq_ofReal_abs]
     exact (ENNReal.ofReal_le_one.2 habs).trans (one_le_pow₀ (by norm_num))
   · -- Near the origin, `B(c, r) ⊆ B(0, 3r)` and `log ‖·‖` is within `1` of `log (3r)` in mean
     -- over `B(0, 3r)`.
@@ -248,7 +277,7 @@ private theorem exists_forall_mem_ball_ofReal_le_enorm_log_norm_sub [Nontrivial 
     have hyz := mem_ball_iff_norm.1 hy
     have hy0 : 0 < ‖y‖ := by linarith [norm_le_insert' z y, norm_sub_rev y z]
     have hlog := Real.log_lt_log hy0 (by linarith [norm_le_insert' y z] : ‖y‖ < r / 4)
-    rw [Real.enorm_eq_ofReal_abs, abs_sub_comm]
+    rw [Real.eNorm_eq_ofReal_abs, abs_sub_comm]
     exact ENNReal.ofReal_le_ofReal ((by linarith : δ ≤ a - Real.log ‖y‖).trans (le_abs_self _))
   · -- `a` lies below the values of `log ‖·‖` on a ball of points of norm in `(r / 2, r)`.
     obtain ⟨z, hz⟩ := exists_norm_eq E (by positivity : 0 ≤ 3 / 4 * r)
@@ -256,7 +285,7 @@ private theorem exists_forall_mem_ball_ofReal_le_enorm_log_norm_sub [Nontrivial 
     have hyz := mem_ball_iff_norm.1 hy
     have hlog := Real.log_lt_log (by positivity)
       (by linarith [norm_le_insert' z y, norm_sub_rev y z] : r / 2 < ‖y‖)
-    rw [Real.enorm_eq_ofReal_abs]
+    rw [Real.eNorm_eq_ofReal_abs]
     exact ENNReal.ofReal_le_ofReal ((by linarith : δ ≤ Real.log ‖y‖ - a).trans (le_abs_self _))
 
 /-- **The mean oscillation of `log ‖x‖` does not vanish on small balls.** On a nontrivial
@@ -302,5 +331,99 @@ theorem not_memVMO_log_norm [Nontrivial E] :
   have := (ofReal_le_setLAverage_enorm_log_norm_sub_setAverage_ball_zero (μ := μ) hr).trans
     ((setLAverage_enorm_sub_setAverage_le_vmoModulus _ μ 0 le_rfl).trans hle)
   exact (ENNReal.half_lt_self hδ ENNReal.ofReal_ne_top).not_ge this
+
+/-! ### An unbounded function of vanishing mean oscillation -/
+
+omit [NormedSpace ℝ E] [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- The function `log (1 + log⁺ ‖x‖⁻¹)`, which near the origin is `log log (1 / ‖x‖)` up to a
+bounded error, tends to `∞` at the origin. -/
+theorem tendsto_log_one_add_posLog_norm_inv :
+    Tendsto (fun x : E => Real.log (1 + Real.posLog ‖x‖⁻¹)) (𝓝[≠] 0) atTop := by
+  have hpos : Tendsto Real.posLog atTop atTop :=
+    tendsto_atTop_mono (fun x => by rw [Real.posLog_apply]; exact le_max_right _ _)
+      Real.tendsto_log_atTop
+  exact Real.tendsto_log_atTop.comp (tendsto_atTop_add_const_left _ 1
+    (hpos.comp (tendsto_inv_nhdsGT_zero.comp tendsto_norm_nhdsNE_zero)))
+
+/-- **`log⁺ (1 / ‖x‖)` has bounded mean oscillation** on a finite-dimensional real normed space
+with an additive Haar measure. -/
+theorem memBMO_posLog_norm_inv : MemBMO (fun x : E => Real.posLog ‖x‖⁻¹) μ := by
+  have h : (fun x : E => Real.posLog ‖x‖⁻¹) = (fun t : ℝ => t⁻) ∘ fun x => Real.log ‖x‖ := by
+    funext x
+    simp [Real.posLog_apply, negPart_def, Real.log_inv, max_comm]
+  rw [h]
+  exact memBMO_log_norm.comp_lipschitz lipschitzWith_negPart
+
+/-- The truncations of `log⁺ (1 / ‖x‖)` have vanishing mean oscillation: away from the origin,
+`min (log⁺ ‖x‖⁻¹) n` is the continuous compactly supported function
+`log⁺ (max ‖x‖ (exp (-n)))⁻¹`. -/
+private theorem memVMO_min_posLog_norm_inv [Nontrivial E] (n : ℕ) :
+    MemVMO (fun x : E => min (Real.posLog ‖x‖⁻¹) n) μ := by
+  have hpos (x : E) : 0 < max ‖x‖ (Real.exp (-n)) := lt_max_of_lt_right (Real.exp_pos _)
+  have hcont : Continuous fun x : E => Real.posLog (max ‖x‖ (Real.exp (-n)))⁻¹ :=
+    Real.continuous_posLog.comp ((continuous_norm.max continuous_const).inv₀ fun x => (hpos x).ne')
+  have hsupp : HasCompactSupport fun x : E => Real.posLog (max ‖x‖ (Real.exp (-n)))⁻¹ := by
+    refine HasCompactSupport.intro (isCompact_closedBall (0 : E) 1) fun x hx => ?_
+    have h1 : 1 < ‖x‖ := by simpa using hx
+    have hle : Real.exp (-n) ≤ ‖x‖ :=
+      (Real.exp_le_one_iff.2 (neg_nonpos.2 (Nat.cast_nonneg n))).trans h1.le
+    rw [max_eq_left hle, Real.posLog_eq_zero_iff, abs_inv, abs_norm]
+    exact inv_le_one_of_one_le₀ h1.le
+  refine (hcont.memVMO_of_hasCompactSupport hsupp).congr_ae ?_
+  filter_upwards [compl_mem_ae_iff.2 (measure_singleton (μ := μ) (0 : E))] with x hx
+  have hx0 : 0 < ‖x‖ := norm_pos_iff.2 (by simpa using hx)
+  have hn : Real.posLog (Real.exp n) = n := by
+    rw [Real.posLog_eq_log (by
+      rw [abs_of_pos (Real.exp_pos _)]
+      exact Real.one_le_exp (Nat.cast_nonneg n)), Real.log_exp]
+  rcases le_total ‖x‖ (Real.exp (-n)) with h | h
+  · have hinv : Real.exp n ≤ ‖x‖⁻¹ := by
+      rw [← inv_inv (Real.exp n), ← Real.exp_neg]
+      exact inv_anti₀ hx0 h
+    rw [max_eq_right h, ← Real.exp_neg, neg_neg, hn, min_eq_right]
+    exact hn ▸ Real.posLog_le_posLog (by linarith [Real.exp_pos (n : ℝ)]) hinv
+  · have hinv : ‖x‖⁻¹ ≤ Real.exp n := by
+      rw [← inv_inv (Real.exp n), ← Real.exp_neg]
+      exact inv_anti₀ (Real.exp_pos _) h
+    rw [max_eq_left h, min_eq_left]
+    exact hn ▸ Real.posLog_le_posLog (by linarith [inv_pos.2 hx0]) hinv
+
+/-- **`log log (1 / ‖x‖)`, cut off away from the origin, has vanishing mean oscillation.** On a
+finite-dimensional real normed space with an additive Haar measure, the function
+`log (1 + log⁺ ‖x‖⁻¹)`, which vanishes for `‖x‖ ≥ 1` and is `log log (1 / ‖x‖)` up to a bounded
+error near the origin, has vanishing mean oscillation. In positive dimension it is not
+essentially bounded (`TauCeti.not_memLp_top_log_one_add_posLog_norm_inv`), unlike the continuous
+functions with compact support of `Continuous.memVMO_of_hasCompactSupport`. -/
+theorem memVMO_log_one_add_posLog_norm_inv :
+    MemVMO (fun x : E => Real.log (1 + Real.posLog ‖x‖⁻¹)) μ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have h : (fun x : E => Real.log (1 + Real.posLog ‖x‖⁻¹)) = fun _ => 0 := by
+      funext x
+      simp [Subsingleton.elim x 0]
+    rw [h]
+    exact memVMO_const 0
+  exact memVMO_log_one_add_of_forall_memVMO_min memBMO_posLog_norm_inv
+    (.of_forall fun _ => Real.posLog_nonneg) memVMO_min_posLog_norm_inv
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- **`log log (1 / ‖x‖)`, cut off away from the origin, is not essentially bounded.** For a
+measure that is positive on nonempty open sets and vanishes on points, such as an additive Haar
+measure in positive dimension, the function `log (1 + log⁺ ‖x‖⁻¹)` is not essentially bounded.
+Since it has vanishing mean oscillation (`TauCeti.memVMO_log_one_add_posLog_norm_inv`), functions
+of vanishing mean oscillation need not be bounded. -/
+theorem not_memLp_top_log_one_add_posLog_norm_inv [μ.IsOpenPosMeasure] [NullSingletonClass μ] :
+    ¬ MemLp (fun x : E => Real.log (1 + Real.posLog ‖x‖⁻¹)) ∞ μ := by
+  intro h
+  obtain ⟨C, hC⟩ := eLpNormEssSup_lt_top_iff_isBoundedUnder.1
+    (eLpNorm_exponent_top h.aestronglyMeasurable ▸ h.eLpNorm_lt_top)
+  -- On a punctured neighbourhood of the origin the function exceeds the essential bound `C`.
+  obtain ⟨o, ho, h0o, hos⟩ := mem_nhdsWithin.1
+    ((tendsto_log_one_add_posLog_norm_inv (E := E)).eventually_gt_atTop (C : ℝ))
+  have hpos : 0 < μ (o \ {0}) := by
+    rw [measure_sdiff_null (measure_singleton _)]
+    exact ho.measure_pos μ ⟨0, h0o⟩
+  refine hpos.ne' (measure_mono_null (fun y hy => ?_) (ae_iff.1 (eventually_map.1 hC)))
+  rw [mem_ofPred_eq, not_le, ← NNReal.coe_lt_coe, coe_nnNorm, Real.norm_eq_abs]
+  exact (hos ⟨hy.1, hy.2⟩).trans_le (le_abs_self _)
 
 end TauCeti

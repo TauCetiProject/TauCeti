@@ -25,11 +25,6 @@ their fundamental functorial properties: invariance under isomorphism and additi
 and short exact sequences. It also records that, among pointwise finite-dimensional
 representations, only the zero object has vanishing dimension vector, so that an indecomposable
 one has a nonzero dimension vector.
-
-## References
-
-This implements Layer 4, item “Dimension vectors”, of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 -/
 
 public section

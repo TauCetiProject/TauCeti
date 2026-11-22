@@ -17,7 +17,10 @@ The orientation cover receives its smooth structure by pulling charts back along
 projection. At a point `(x, o)`, its canonical tangent orientation is the inverse image of `o`
 under the derivative of the projection. Thus the projection carries that tangent orientation
 to the orientation recorded by the point, even when the base manifold is not orientable.
-The deck involution is a smooth diffeomorphism reversing this canonical orientation.
+The deck involution is a smooth diffeomorphism reversing this canonical orientation. The section
+`x ↦ (x, oₓ)` of the cover given by an orientation `o` of `M` is smooth
+(`TauCeti.Manifold.OrientationCover.contMDiff_coverSection`) and carries `o` to the canonical
+orientation.
 
 The construction works for every finite-dimensional real model with corners. It uses the
 existing topology of the orientation cover and the chart-pullback construction for local
@@ -137,7 +140,7 @@ private def tautologicalTangentOrientation :
         ((trivializationAt E (TangentSpace I) p.proj).mapOrientation _ hp p.orientation) :=
       VectorBundleOrientationCover.mem_sheet_iff.mpr ⟨hp, rfl⟩
     filter_upwards [(VectorBundleOrientationCover.isOpen_sheet_trivializationAt _ _).mem_nhds hs]
-      with q hq hmem
+      with q hq _
     exact (VectorBundleOrientationCover.mem_sheet_iff.mp hq).choose_spec
 
 /-- The canonical orientation of the orientation cover: the derivative of the projection at
@@ -218,5 +221,39 @@ theorem isOrientationReversingAt_deck (p : OrientationCover I M) :
   rw [ContinuousLinearEquiv.trans_toLinearEquiv] at hlin
   rw [hlin, map_orientationAt_canonicalOrientation p _ (projDerivEquiv_coe _)]
   exact ((congrArg Neg.neg ho).trans (neg_neg p.orientation)).symm
+
+/-- The section `x ↦ (x, oₓ)` of the orientation cover given by an orientation `o` of `M` is
+smooth: the charts of the cover are pulled back along the projection, and its composite with the
+projection is the identity. -/
+theorem contMDiff_coverSection {n : ℕ∞ω} (o : Orientation I M (Fin (finrank ℝ E))) :
+    ContMDiff I I n (o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)) := by
+  have hπs : VectorBundleOrientationCover.proj ∘
+      ⇑(o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)) = id :=
+    funext (o.toVectorBundleOrientation.proj_coverSection _)
+  apply (isCoveringMap_proj I M).isLocalHomeomorph.contMDiff_chartedSpaceComap_iff.mpr
+  exact ⟨(o.toVectorBundleOrientation.coverSection _).continuous, hπs ▸ contMDiff_id⟩
+
+/-- The section `x ↦ (x, oₓ)` of the orientation cover given by an orientation `o` of `M` preserves
+orientations, from `o` to the canonical orientation: it is smooth (`contMDiff_coverSection`), its
+composite with the projection is the identity, and the projection carries the canonical
+orientation at `(x, oₓ)` to `oₓ`. -/
+theorem isOrientationPreservingAt_coverSection (o : Orientation I M (Fin (finrank ℝ E))) (x : M) :
+    IsOrientationPreservingAt o canonicalOrientation
+      (o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)) x := by
+  set s := o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)
+  have hπs : VectorBundleOrientationCover.proj ∘ ⇑s = id :=
+    funext (o.toVectorBundleOrientation.proj_coverSection _)
+  have hs : ContMDiff I I 1 s := contMDiff_coverSection o
+  obtain ⟨D, hD⟩ := (isLocalDiffeomorph_proj (I := I) (M := M) (n := 1)).isInvertible_mfderiv
+    one_ne_zero (s x)
+  have hsx : (s x).orientation = o.orientationAt (s x).proj := by
+    rw [VectorBundleOrientation.coverSection_apply]
+    exact o.toVectorBundleOrientation_apply x
+  refine IsOrientationPreservingAt.of_comp (g := VectorBundleOrientationCover.proj)
+    ((isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD).2
+      ((map_orientationAt_canonicalOrientation _ D hD).trans hsx))
+    ?_ (hs.mdifferentiableAt one_ne_zero)
+  rw [hπs]
+  exact isOrientationPreservingAt_id o x
 
 end TauCeti.Manifold.OrientationCover

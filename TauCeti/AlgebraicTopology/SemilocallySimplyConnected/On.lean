@@ -30,9 +30,8 @@ that path-homotopy classes are open in the compact-open topology
 It is adapted from the Mathlib drafts
 [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 [#31576](https://github.com/leanprover-community/mathlib4/pull/31576), and
-[#38292](https://github.com/leanprover-community/mathlib4/pull/38292) by Kim Morrison, for
-Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap, following the earlier Tau Ceti
-work in [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
+[#38292](https://github.com/leanprover-community/mathlib4/pull/38292) by Kim Morrison,
+following the earlier Tau Ceti work in [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 
 The final section shows with the same tubes that null-homotopy of a continuous family of loops,
 with varying basepoints, is locally constant in the parameter (`isClopen_setOf_homotopic_refl`):
@@ -68,7 +67,7 @@ public theorem semilocallySimplyConnectedAt_iff {x : X} :
 public theorem semilocallySimplyConnectedAt_iff_range_eq_bot {x : X} :
     SemilocallySimplyConnectedAt x ↔
       ∃ U ∈ 𝓝 x, ∀ hx : x ∈ U,
-        (FundamentalGroup.map (⟨Subtype.val, continuous_subtype_val⟩ : C(U, X))
+        (FundamentalGroup.map (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, X))
           ⟨x, hx⟩).range = ⊥ := by
   constructor
   · intro h
@@ -80,7 +79,7 @@ public theorem semilocallySimplyConnectedAt_iff_range_eq_bot {x : X} :
   · rintro ⟨U, hU, hU_triv⟩
     refine semilocallySimplyConnectedAt_def.mpr ⟨U, hU, fun γ hγ ↦ ?_⟩
     have hmem : ∀ t, γ t ∈ U := fun t ↦ hγ ⟨t, rfl⟩
-    have h := (TauCeti.FundamentalGroup.map_range_eq_bot_iff ⟨Subtype.val, continuous_subtype_val⟩
+    have h := (TauCeti.FundamentalGroup.map_range_eq_bot_iff ⟨Subtype.val, continuous_subtypeVal⟩
       (⟨x, mem_of_mem_nhds hU⟩ : U)).mp (hU_triv _) (γ.codRestrict hmem)
     rwa [Path.map_codRestrict] at h
 

@@ -83,11 +83,9 @@ private theorem forkBacktrack_false :
   · rw [forkBacktrack_false]
     exact forkTurn_mul_self k (G := DG)
       (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1) (by omega)
-      (by rw [DynkinType.rank_D]; omega)
   · rw [forkBacktrack_true]
     exact forkTurn_mul_self k (G := DG)
       (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1) (by omega)
-      (by rw [DynkinType.rank_D]; omega)
 
 /-- The sum of the leaf backtracks has zero `(n - 2)`-nd power. -/
 @[simp] theorem signlessPreprojectiveDForkBacktrack_add_pow_eq_zero (hn : 3 ≤ n) :
@@ -136,7 +134,7 @@ theorem signlessPreprojectiveDForkTopWord_eq (hn : 3 ≤ n) :
   have hxe_pow (t : ℕ) : x * (x + y) ^ t * e = x * (x + y) ^ t := by
     induction t with
     | zero => simpa only [pow_zero, mul_one] using hxe
-    | succ t ih =>
+    | succ t _ =>
       simp only [pow_succ, mul_assoc, hse]
   -- The two corner idempotents in the unfolded fork word act as the identity on its factors.
   change e * (x * (x + y) ^ c) * e = x * (x + y) ^ c
@@ -220,7 +218,6 @@ private theorem leafArrow_mul_topWord (hn : 3 ≤ n) (l : Bool) :
     have h := signlessArrow_mul_signlessArrow_leaf k (G := DG)
       (by simpa only [DynkinType.rank_D] using fun i j => (diagramGraph_D_adj hn i j).1)
       (l := if l then c + 1 else c + 2) (by split_ifs <;> omega)
-      (by rw [DynkinType.rank_D]; split_ifs <;> omega)
     cases l <;> simp only [Bool.false_eq_true, ite_false, ite_true,
       signlessPreprojectiveDForkBacktrack_true,
       signlessPreprojectiveDForkBacktrack_false] at h ⊢ <;>
@@ -257,8 +254,7 @@ theorem signlessPreprojectiveMk_ofArrow_mul_DForkTopWord_eq_zero (hn : 3 ≤ n)
   · omega
   · have h' : j.val = c - 1 := by omega
     simpa only [h'] using armArrow_mul_topWord k hn (by omega)
-  · have hjn := j.isLt
-    have hjn' : j.val < n := by simpa only [DynkinType.rank_D] using hjn
+  · have _ := j.isLt
     obtain h' | h' : j.val = c + 1 ∨ j.val = c + 2 := by omega
     · simpa only [h', ite_true] using leafArrow_mul_topWord k hn true
     · simpa only [h', Bool.false_eq_true, ite_false] using leafArrow_mul_topWord k hn false

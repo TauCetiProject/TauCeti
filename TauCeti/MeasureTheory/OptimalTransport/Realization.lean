@@ -112,7 +112,6 @@ theorem exists_measurePreserving_graphPlan_prod_eq (hπ : IsCoupling π μ ν)
   let I : Set ι := {i | 0 < μ (A i)}
   have hI : I.Countable := Measure.countable_meas_pos_of_disjoint_iUnion hAm hAd
   have : Countable I := hI.to_subtype
-  let A' : Option I → Set X := fun o ↦ o.elim (⋃ i : I, A i)ᶜ fun i ↦ A i
   obtain ⟨hA'm, hA'd, hA'u⟩ := measurable_disjoint_iUnion_option (Z := fun i : I ↦ A i)
     (fun i ↦ hAm i) fun i j hij ↦ hAd fun h ↦ hij (Subtype.ext h)
   obtain ⟨T, hT, hcell⟩ :=
@@ -137,10 +136,10 @@ theorem exists_measurePreserving_map_graphPlan_eq (hπ : IsCoupling π μ ν)
   -- countable and which generate its measurable sets.
   let κ : Type _ := range (measurableAtom : ι → Set ι)
   have : Countable κ := (countable_range _).to_subtype
-  have hκm (a : κ) : MeasurableSet (q ⁻¹' a.1) := by
-    obtain ⟨i, hi⟩ := a.2
+  have hκm (a : κ) : MeasurableSet (q ⁻¹' a.val) := by
+    obtain ⟨i, hi⟩ := a.property
     exact hq (hi ▸ MeasurableSet.measurableAtom_of_countable i)
-  have hκd : Pairwise (Disjoint on fun a : κ ↦ q ⁻¹' a.1) := by
+  have hκd : Pairwise (Disjoint on fun a : κ ↦ q ⁻¹' a.val) := by
     rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩ hij
     refine (disjoint_measurableAtom_of_notMem fun h ↦ hij ?_).preimage q
     exact Subtype.ext (measurableAtom_eq_of_mem h)

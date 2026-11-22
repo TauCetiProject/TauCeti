@@ -14,7 +14,10 @@ public import TauCeti.Combinatorics.Graph.Serre.SpanningTree
 A spanning tree bases any path at a chosen vertex by adjoining the tree paths to its
 endpoints. In particular, the loop through a dart follows the tree to its source, crosses
 the dart, and returns through the tree. Basing respects concatenation and reversal, and
-paths contained in the tree give the identity.
+paths contained in the tree give the identity. A closed path is the product of the tree loops of
+its darts, which expresses the tree loops of one spanning tree in those of another. A closed path
+based through the tree is conjugated by a change of spanning tree, so the normal closure of a
+family of based closed paths does not depend on the tree.
 
 The comparison with spanning-tree presentations and free groups is developed in
 `TauCeti.GroupTheory.GraphOfGroups.PathGroup`.
@@ -77,7 +80,7 @@ theorem loop_def (e : Γ.E) :
       (((T.path v (Γ.src e)).cons (Γ.dart e)).comp (T.path (Γ.tgt e) v)) := (rfl)
 
 @[simp] theorem basedPath_toPath {a b : Γ.V} (e : a ⟶ b) :
-    T.basedPath v e.toPath = T.loop v e.1 := by
+    T.basedPath v e.toPath = T.loop v e.val := by
   obtain ⟨e, rfl, rfl⟩ := e
   rw [loop]
   congr 2
@@ -105,6 +108,45 @@ theorem basedPath_eq_one {a b : Γ.V} (p : Γ.Path a b)
 /-- Tree darts represent the identity. -/
 @[simp] theorem loop_eq_one {e : Γ.E} (he : e ∈ T.darts) : T.loop v e = 1 :=
   T.basedPath_eq_one v _ (by simpa using he)
+
+/-- The based class of a path is the product of the tree loops of its darts. -/
+theorem basedPath_eq_prod_loop {a b : Γ.V} (p : Γ.Path a b) :
+    T.basedPath v p = ((Path.darts Γ p).map (T.loop v)).prod := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    rw [← Quiver.Path.comp_toPath_eq_cons, basedPath_comp, basedPath_toPath, ih,
+      Path.darts_comp, Path.darts_toPath, List.map_append, List.prod_append, List.map_singleton,
+      List.prod_singleton]
+
+/-- The class of a closed path is the product of the tree loops of its darts. -/
+theorem ofPath_eq_prod_loop (p : Γ.Path v v) :
+    PathGroup.ofPath p = ((Path.darts Γ p).map (T.loop v)).prod := by
+  rw [← T.basedPath_self, basedPath_eq_prod_loop]
+
+/-- Change of spanning tree: the tree loop of a dart relative to `T'` is the product of the tree
+loops relative to `T` of the darts on the `T'`-path to its source, of the dart itself, and of
+the darts on the `T'`-path back from its target. -/
+theorem loop_eq_prod_loop (T' : Γ.SpanningTree) (e : Γ.E) :
+    T'.loop v e = ((Path.darts Γ (T'.path v (Γ.src e))).map (T.loop v)).prod * T.loop v e *
+      ((Path.darts Γ (T'.path (Γ.tgt e) v)).map (T.loop v)).prod := by
+  rw [T'.loop_def, T.ofPath_eq_prod_loop]
+  simp [mul_assoc]
+
+/-- A closed path based through the tree is the path based along the tree path to its start. -/
+theorem basedPath_eq_ofPath_comp_comp_reverse {a : Γ.V} (p : Γ.Path a a) :
+    T.basedPath v p = PathGroup.ofPath (((T.path v a).comp p).comp (T.path v a).reverse) := by
+  rw [basedPath_def, reverse_path]
+
+/-- The normal closure of a family of closed paths based at `v` through a spanning tree does not
+depend on the spanning tree. -/
+theorem normalClosure_range_basedPath (T' : Γ.SpanningTree) {ι : Sort*} {a : ι → Γ.V}
+    (p : ∀ i, Γ.Path (a i) (a i)) :
+    Subgroup.normalClosure (Set.range fun i => T.basedPath v (p i)) =
+      Subgroup.normalClosure (Set.range fun i => T'.basedPath v (p i)) := by
+  simpa only [basedPath_eq_ofPath_comp_comp_reverse] using
+    PathGroup.normalClosure_range_ofPath_comp_comp_reverse p (fun i => T.path v (a i))
+      (fun i => T'.path v (a i))
 
 end
 end TauCeti.SerreGraph.SpanningTree

@@ -17,6 +17,8 @@ import TauCeti.NumberTheory.GaussSum.Stickelberger
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.RingTheory.Ideal.Norm.Galois
+import TauCeti.RingTheory.Ideal.Pointwise
 
 /-!
 # Stickelberger's relation
@@ -48,6 +50,10 @@ The decomposition group of `P` corresponds to the subgroup of `(ℤ/m)ˣ` genera
 of `P`, and the multiplicity of each in `P ^ γ` is a sum of the same shape over a coset of `⟨p⟩`.
 Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 
+Evaluating the `m`-th power residue symbol on the Stickelberger product `α ^ γ` turns the Galois
+action on the exponents into the Galois product of ideals, yielding `(α ^ γ / B)_m = (α / (N B))_m`
+for every ideal `B` of `𝓞 K`.
+
 ## Main results
 
 * `Ideal.intValuation_smul_stickelbergerPhi`: `v_P(σ(Φ(P))) = ∑_{i < f} (p ^ i c(σ) mod m)`.
@@ -55,6 +61,8 @@ Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 * `Ideal.span_stickelbergerPhi`: `(Φ(A)) = ∏_σ (σ⁻¹ A) ^ c(σ)` for `A` prime to `m`.
 * `Ideal.span_stickelbergerPhi_span_singleton`: `(Φ((α))) = (∏_σ (σ⁻¹ α) ^ c(σ))` for `α` prime
   to `m`.
+* `Ideal.powerResidueSymbol_stickelbergerProduct`,
+  `Ideal.powerResidueSymbolIdeal_stickelbergerProduct`: `(α ^ γ / B)_m = (α / (N B))_m`.
 
 ## References
 
@@ -105,6 +113,23 @@ theorem stickelbergerProduct_pow (α : 𝓞 K) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
+
+variable {m} in
+/-- For `m ≥ 2`, the Stickelberger product of `α` is a unit if and only if `α` is a unit. -/
+theorem isUnit_stickelbergerProduct_iff (hm : 2 ≤ m) {α : 𝓞 K} :
+    IsUnit (stickelbergerProduct m α) ↔ IsUnit α := by
+  classical
+  have : Fact (1 < m) := ⟨hm⟩
+  refine ⟨fun h ↦ isUnit_of_dvd_unit ?_ h, fun h ↦ ?_⟩
+  · have h1 : (galEquivZMod m K 1 : ZMod m).val = 1 := by
+      rw [map_one, Units.val_one, ZMod.val_one]
+    have hdvd := Finset.dvd_prod_of_mem
+      (fun σ : Gal(K/ℚ) ↦ (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val)
+      (Finset.mem_univ (1 : Gal(K/ℚ)))
+    rwa [inv_one, one_smul, h1, pow_one] at hdvd
+  · rw [stickelbergerProduct_def]
+    exact Finset.prod_induction _ IsUnit (fun _ _ ↦ IsUnit.mul) isUnit_one fun σ _ ↦
+      ((MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) σ⁻¹).isUnit_map h).pow _
 
 end TauCeti
 
@@ -228,7 +253,7 @@ theorem intValuation_smul_stickelbergerPhi (hm : 2 ≤ m) {p : ℕ} [Fact p.Prim
 
 /-- A prime containing `Φ(P)` contains `N P`, since `Φ(P) σ₋₁(Φ(P)) = N(P)^m` for the complex
 conjugation `σ₋₁`. -/
-private theorem absNorm_mem_of_stickelbergerPhi_mem (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal]
+private theorem absNorm_mem_of_stickelbergerPhi_mem (hm : 2 ≤ m) (P : Ideal (𝓞 K))
     (hP : (absNorm P).Coprime m) {Q : Ideal (𝓞 K)} [Q.IsPrime]
     (hΦQ : stickelbergerPhi P m ∈ Q) : (absNorm P : 𝓞 K) ∈ Q := by
   let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) ((galEquivZMod m K).symm (-1))
@@ -237,7 +262,7 @@ private theorem absNorm_mem_of_stickelbergerPhi_mem (hm : 2 ≤ m) (P : Ideal (�
       MulEquiv.apply_symm_apply, Units.val_neg, Units.val_one]
     obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne m)
     rw [ZMod.val_neg_one, Nat.succ_sub_one]
-  have h := stickelbergerPhi_mul_apply_eq_absNorm_pow P hP hm τ hτ
+  have h := stickelbergerPhi_mul_apply_eq_absNorm_pow hP hm τ hτ
   exact IsPrime.mem_of_pow_mem ‹_› m (h ▸ Q.mul_mem_right _ hΦQ)
 
 /-- The multiplicity of a nonzero prime `Q` in `(Φ(P))` is the sum of the representatives `c(σ)`
@@ -253,7 +278,6 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     simpa using (mem_of_liesOver P (span {(p : ℤ)}) (p : ℤ)).1 (mem_span_singleton_self _)
   have hNP : p ^ inertiaDeg P ℤ = absNorm P := pow_inertiaDeg p P
   have hΦ := stickelbergerPhi_ne_zero hP hm
-  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨Q, inferInstance, hQ⟩
   by_cases hpQ : (p : 𝓞 K) ∈ Q
   swap
   · -- Away from `p`: no `σ⁻¹ • P` is `Q`, and `Φ(P) ∉ Q` as `N P = p ^ f ∉ Q`.
@@ -272,6 +296,7 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     IsPrime.ne_top' ((span_singleton_le_iff_mem _).2 (by simpa using hpQ))⟩
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
   obtain ⟨τ, rfl⟩ := exists_smul_eq_of_isGaloisGroup (span {(p : ℤ)}) P Q Gal(K/ℚ)
+  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨τ • P, inferInstance, hQ⟩
   have hΦτ : τ⁻¹ • stickelbergerPhi v.asIdeal m = stickelbergerPhi P m := by
     have h := map_stickelbergerPhi (m := m) P (MulSemiringAction.toRingEquiv _ (𝓞 K) τ)
     rw [MulSemiringAction.toRingEquiv_apply_apply] at h
@@ -280,7 +305,7 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
     rfl
   have hloc := intValuation_smul_stickelbergerPhi hm hpm v τ⁻¹
   rw [hΦτ, v.intValuation_eq_exp_neg_multiplicity hΦ, multiplicity_eq_count_normalizedFactors
-    v.irreducible (by simpa using hΦ), normalize_eq] at hloc
+    v.irreducible, normalize_eq] at hloc
   rw [Nat.cast_injective (neg_injective (WithZero.exp_injective hloc)),
     TauCeti.NumberField.sum_val_galEquivZMod_filter_inv_smul_eq_smul hpm P τ]
 
@@ -301,9 +326,6 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
   have hpm : ¬ p ∣ m := (Nat.Prime.coprime_iff_not_dvd hp).1 <|
     hP.coprime_dvd_left (hNP ▸ dvd_pow_self p (inertiaDeg_pos P ℤ).ne')
   set c : Gal(K/ℚ) → ℕ := fun σ ↦ (galEquivZMod m K σ : ZMod m).val
-  have hσP (σ : Gal(K/ℚ)) : (σ • P).IsMaximal := by
-    rw [pointwise_smul_eq_comap]
-    exact comap_isMaximal_of_surjective _ (RingEquiv.surjective _)
   -- The right side is the product of the multiset `M` of primes, its normalized factors.
   set M : Multiset (Ideal (𝓞 K)) := ∑ σ, c σ • {σ⁻¹ • P} with hM
   have hMprod : M.prod = ∏ σ : Gal(K/ℚ), (σ⁻¹ • P) ^ c σ := by
@@ -313,8 +335,8 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
     obtain ⟨σ, -, hσ⟩ := Multiset.mem_sum.1 hQ
     rw [Multiset.mem_nsmul, Multiset.mem_singleton] at hσ
     rw [hσ.2]
-    exact prime_of_isPrime (Ring.ne_bot_of_isMaximal_of_not_isField (hσP σ⁻¹)
-      (RingOfIntegers.not_isField K)) (hσP σ⁻¹).isPrime
+    exact prime_of_isPrime (Ring.ne_bot_of_isMaximal_of_not_isField inferInstance
+      (RingOfIntegers.not_isField K)) inferInstance
   have hΦ := stickelbergerPhi_ne_zero hP hm
   suffices h : normalizedFactors (span {stickelbergerPhi P m}) = M by
     rw [← hMprod, ← h, prod_normalizedFactors_eq_self (by simpa using hΦ)]
@@ -325,7 +347,6 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
       fun hS ↦ Multiset.count_eq_zero.2 fun h ↦ hQ ⟨(hS Q h).ne_zero, isPrime_of_prime (hS Q h)⟩
     rw [hQ' fun _ h ↦ prime_of_normalized_factor _ h, hQ' hMprime]
   have : Q.IsPrime := hQ.2
-  let v : IsDedekindDomain.HeightOneSpectrum (𝓞 K) := ⟨Q, hQ.2, hQ.1⟩
   -- The multiplicity of `Q` on the right is the sum of the `c σ` with `σ⁻¹ • P = Q`.
   have hcount : M.count Q = ∑ σ with σ⁻¹ • P = Q, c σ := by
     simp [hM, Multiset.count_sum', Multiset.count_singleton, Finset.sum_filter, eq_comm]
@@ -362,5 +383,63 @@ theorem span_stickelbergerPhi_span_singleton (hm : 2 ≤ m) {α : 𝓞 K}
       span {TauCeti.stickelbergerProduct m α} := by
   rw [TauCeti.stickelbergerProduct_def, span_stickelbergerPhi hm hα, ← prod_span_singleton]
   simp only [smul_closure, Set.smul_set_singleton, span_singleton_pow]
+
+/-- **The power residue symbol of a Stickelberger product at an ideal.** Let `K` be the `m`-th
+cyclotomic field, `m ≥ 2`, and `B` an ideal of `𝓞 K`. For every `α ∈ 𝓞 K`,
+`(α ^ γ / B)_m = (α / (N B))_m`, where `(N B)` is the principal ideal generated by `absNorm B`. -/
+theorem powerResidueSymbolIdeal_stickelbergerProduct (hm : 2 ≤ m) (B : Ideal (𝓞 K)) (α : 𝓞 K) :
+    powerResidueSymbolIdeal B m (Quotient.mk B (TauCeti.stickelbergerProduct m α)) =
+      powerResidueSymbolIdeal (span {(absNorm B : 𝓞 K)}) m
+        (Quotient.mk (span {(absNorm B : 𝓞 K)}) α) := by
+  classical
+  have : Fact (1 < m) := ⟨hm⟩
+  obtain rfl | hB := eq_or_ne B ⊥
+  · rw [absNorm_bot, Nat.cast_zero, span_singleton_eq_bot.mpr rfl]
+    have hbot {x : 𝓞 K} :
+        powerResidueSymbolIdeal (⊥ : Ideal (𝓞 K)) m (Quotient.mk ⊥ x) = 0 ↔ ¬IsUnit x := by
+      rw [powerResidueSymbolIdeal_mk_eq_zero_iff, isCoprime_iff_sup_eq, sup_bot_eq,
+        span_singleton_eq_top]
+    by_cases hα : IsUnit α
+    · have hγ : IsUnit (TauCeti.stickelbergerProduct m α) :=
+        (TauCeti.isUnit_stickelbergerProduct_iff hm).mpr hα
+      rw [powerResidueSymbolIdeal_bot, MulChar.one_apply (hγ.map _), MulChar.one_apply (hα.map _)]
+    · rw [hbot.mpr ((TauCeti.isUnit_stickelbergerProduct_iff hm).not.mpr hα), hbot.mpr hα]
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
+  have hstep (σ : Gal(K/ℚ)) :
+      powerResidueSymbolIdeal B m (Quotient.mk B (σ⁻¹ • α)) ^ (galEquivZMod m K σ : ZMod m).val =
+        powerResidueSymbolIdeal (σ • B) m (Quotient.mk (σ • B) α) := by
+    set x := powerResidueSymbolIdeal B m (Quotient.mk B (σ⁻¹ • α))
+    have hsmul : x ^ (galEquivZMod m K σ : ZMod m).val = σ • x := by
+      by_cases hu : IsUnit (Quotient.mk B (σ⁻¹ • α))
+      · exact (galEquivZMod_smul_of_pow_eq m K σ (powerResidueSymbolIdeal_pow_eq_one hu)).symm
+      · have hx0 : x = 0 := MulChar.map_nonunit _ hu
+        have hc0 : (galEquivZMod m K σ : ZMod m).val ≠ 0 :=
+          (ZMod.val_ne_zero _).mpr (Units.ne_zero _)
+        rw [hx0, zero_pow hc0, smul_zero]
+    have hBmap : B.map (MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ) = σ • B := by
+      rw [← map_coe, pointwise_smul_def]
+      exact congr_arg (B.map ·) (RingHom.ext fun _ ↦ by simp)
+    have hmap := map_powerResidueSymbolIdeal (n := m) B
+      (MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ) (σ⁻¹ • α)
+    rw [MulSemiringAction.toRingEquiv_apply_apply, MulSemiringAction.toRingEquiv_apply_apply,
+      smul_inv_smul, hBmap] at hmap
+    exact hsmul.trans hmap
+  have hne : ∀ σ ∈ (Finset.univ : Finset Gal(K/ℚ)), σ • B ≠ ⊥ := fun σ _ ↦
+    (map_eq_bot_iff_of_injective
+      (MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ).injective).not.mpr hB
+  rw [TauCeti.stickelbergerProduct_def, map_prod, map_prod]
+  simp_rw [map_pow, hstep]
+  rw [← powerResidueSymbolIdeal_prod_right Finset.univ (· • B) hne α,
+    prod_smul_eq_span_absNorm Gal(K/ℚ) B]
+
+/-- **The power residue symbol of a Stickelberger product at a prime.** Let `K` be the `m`-th
+cyclotomic field, `m ≥ 2`, and `P` a maximal ideal of `𝓞 K`. For every `α ∈ 𝓞 K`,
+`(α ^ γ / P)_m = (α / (N P))_m`, where `(N P)` is the principal ideal generated by `absNorm P`. -/
+theorem powerResidueSymbol_stickelbergerProduct (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal]
+    (α : 𝓞 K) :
+    powerResidueSymbol P m (Quotient.mk P (TauCeti.stickelbergerProduct m α)) =
+      powerResidueSymbolIdeal (span {(absNorm P : 𝓞 K)}) m
+        (Quotient.mk (span {(absNorm P : 𝓞 K)}) α) := by
+  rw [← powerResidueSymbolIdeal_of_isMaximal, powerResidueSymbolIdeal_stickelbergerProduct hm P α]
 
 end Ideal

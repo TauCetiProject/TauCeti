@@ -93,9 +93,6 @@ for a bare matrix:
 this file re-exports.
 -/
 
--- The `NumericalType` structure, the signed genus and the two worked examples follow the
--- signatures written down in `StableReduction/Suggested.lean` of the Tau Ceti roadmap.
-
 public section
 
 namespace TauCeti
@@ -147,6 +144,12 @@ variable (T : NumericalType.{u})
 /-- Intersection numbers of a numerical type commute. -/
 lemma intersection_comm (i j : T.Component) : T.intersection i j = T.intersection j i :=
   (T.intersection_isSymm.apply i j).symm
+
+/-- A component `i` that does not meet `k` differs from every component `l` that does. -/
+lemma ne_of_intersection_eq_zero_of_pos {i k l : T.Component}
+    (hik : T.intersection i k = 0) (hkl : 0 < T.intersection k l) : i ≠ l := by
+  rintro rfl
+  linarith [T.intersection_comm k i]
 
 /-! ### Weight and multiplicity bounds -/
 

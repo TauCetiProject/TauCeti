@@ -73,20 +73,21 @@ theorem exists_space_eq_inter (hK : LocallyFinite fun s : K.faces => convexHull 
         ∃ t ∈ L.faces, convexHull ℝ (s : Set E) ⊆ convexHull ℝ (t : Set E)) ∧
       LocallyFinite fun s : M.faces => convexHull ℝ (s : Set E) := by
   -- The cells: `σ ∩ τ` for simplices `σ` of `K` and `τ` of `L` whose open simplices meet.
-  let ι := {p : K.faces × L.faces // (intrinsicInterior ℝ (convexHull ℝ (p.1.1 : Set E)) ∩
-    intrinsicInterior ℝ (convexHull ℝ (p.2.1 : Set E))).Nonempty}
-  let P : ι → Set E := fun p => convexHull ℝ (p.1.1.1 : Set E) ∩ convexHull ℝ (p.1.2.1 : Set E)
+  let ι := {p : K.faces × L.faces // (intrinsicInterior ℝ (convexHull ℝ (p.1.val : Set E)) ∩
+    intrinsicInterior ℝ (convexHull ℝ (p.2.val : Set E))).Nonempty}
+  let P : ι → Set E := fun p => convexHull ℝ (p.val.1.val : Set E) ∩ convexHull ℝ
+      (p.val.2.val : Set E)
   have hPv : ∀ p, Convex ℝ (P p) := fun p => (convex_convexHull ℝ _).inter (convex_convexHull ℝ _)
   have hPc : ∀ p, IsCompact (P p) := fun p =>
-    (p.1.1.1.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).inter_right
-      (p.1.2.1.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).isClosed
+    (p.val.1.val.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).inter_right
+      (p.val.2.val.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).isClosed
   have hri : ∀ p, intrinsicInterior ℝ (P p) =
-      intrinsicInterior ℝ (convexHull ℝ (p.1.1.1 : Set E)) ∩
-        intrinsicInterior ℝ (convexHull ℝ (p.1.2.1 : Set E)) := fun p =>
-    TauCeti.intrinsicInterior_inter (convex_convexHull ℝ _) (convex_convexHull ℝ _) p.2
+      intrinsicInterior ℝ (convexHull ℝ (p.val.1.val : Set E)) ∩
+        intrinsicInterior ℝ (convexHull ℝ (p.val.2.val : Set E)) := fun p =>
+    TauCeti.intrinsicInterior_inter (convex_convexHull ℝ _) (convex_convexHull ℝ _) p.property
   -- Every point of `|K| ∩ |L|` lies in the intrinsic interior of a cell inside any given pair of
   -- simplices containing it.
-  have hcell : ∀ ⦃x : E⦄ ⦃σ τ : Finset E⦄ (hσ : σ ∈ K.faces) (hτ : τ ∈ L.faces),
+  have hcell : ∀ ⦃x : E⦄ ⦃σ τ : Finset E⦄, σ ∈ K.faces → τ ∈ L.faces →
       x ∈ convexHull ℝ (σ : Set E) → x ∈ convexHull ℝ (τ : Set E) →
       ∃ q : ι, x ∈ intrinsicInterior ℝ (P q) ∧
         P q ⊆ convexHull ℝ (σ : Set E) ∩ convexHull ℝ (τ : Set E) := by
@@ -103,26 +104,27 @@ theorem exists_space_eq_inter (hK : LocallyFinite fun s : K.faces => convexHull 
     refine Set.disjoint_left.2 fun x hxp hxq => hpq ?_
     rw [hri] at hxp hxq
     exact Subtype.ext (Prod.ext
-      (Subtype.ext (eq_of_mem_intrinsicInterior p.1.1.2 q.1.1.2 hxp.1 hxq.1))
-      (Subtype.ext (eq_of_mem_intrinsicInterior p.1.2.2 q.1.2.2 hxp.2 hxq.2)))
+      (Subtype.ext (eq_of_mem_intrinsicInterior p.val.1.property q.val.1.property hxp.1 hxq.1))
+      (Subtype.ext (eq_of_mem_intrinsicInterior p.val.2.property q.val.2.property hxp.2 hxq.2)))
   have hfr := fun p => TauCeti.intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior p
-    (hPc p).isClosed fun x hx => hcell p.1.1.2 p.1.2.2 hx.1 hx.2
-  obtain ⟨M, hMs, -, hMP, hMlf⟩ := exists_subdivision P hPc hPv (fun q => q.2.some)
-    (fun q => (hri q).symm ▸ q.2.some_mem) hPlf hdisj hfr
+    (hPc p).isClosed fun x hx => hcell p.val.1.property p.val.2.property hx.1 hx.2
+  obtain ⟨M, hMs, -, hMP, hMlf⟩ := exists_subdivision P hPc hPv (fun q => q.property.some)
+    (fun q => (hri q).symm ▸ q.property.some_mem) hPlf hdisj hfr
   refine ⟨M, ?_, fun s hs => ?_, hMlf⟩
   · rw [hMs]
     ext x
     refine ⟨fun hx => ?_, fun ⟨hxK, hxL⟩ => ?_⟩
     · obtain ⟨p, hxp⟩ := mem_iUnion.1 hx
-      exact ⟨mem_space_iff.2 ⟨_, p.1.1.2, hxp.1⟩, mem_space_iff.2 ⟨_, p.1.2.2, hxp.2⟩⟩
+      exact ⟨mem_space_iff.2 ⟨_, p.val.1.property, hxp.1⟩, mem_space_iff.2 ⟨_, p.val.2.property,
+          hxp.2⟩⟩
     · obtain ⟨σ, hσ, hxσ⟩ := mem_space_iff.1 hxK
       obtain ⟨τ, hτ, hxτ⟩ := mem_space_iff.1 hxL
       obtain ⟨q, hxq, -⟩ := hcell hσ hτ hxσ hxτ
       exact mem_iUnion.2 ⟨q, intrinsicInterior_subset hxq⟩
   · obtain ⟨p, -, hsp⟩ := hMP s hs
     have hconv : convexHull ℝ (s : Set E) ⊆ P p := convexHull_min hsp (hPv p)
-    exact ⟨⟨_, p.1.1.2, hconv.trans inter_subset_left⟩,
-      ⟨_, p.1.2.2, hconv.trans inter_subset_right⟩⟩
+    exact ⟨⟨_, p.val.1.property, hconv.trans inter_subset_left⟩,
+      ⟨_, p.val.2.property, hconv.trans inter_subset_right⟩⟩
 
 /-- **Common subdivision.** Two locally finite geometric simplicial complexes in a
 finite-dimensional real normed space with the same underlying space have a common locally finite

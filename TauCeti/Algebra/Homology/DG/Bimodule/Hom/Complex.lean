@@ -56,7 +56,7 @@ left multiplication by an element of degree `r` contributes the sign `(-1)^(p*r)
 def dgBimoduleCochains (p : ℤ) :
     Submodule R (dgRightModuleCochains (R := R) (A := B) (ℳ := ℳ) (ℳN := 𝒩) p) where
   carrier := {f | ∀ {r : ℤ} {a : A}, a ∈ 𝒜 r → ∀ x : M,
-    f.1 (a • x) = (p * r).negOnePow • (a • f.1 x)}
+    f.val (a • x) = (p * r).negOnePow • (a • f.val x)}
   zero_mem' := by simp
   add_mem' := by
     intro f g hf hg r a ha x
@@ -79,7 +79,7 @@ theorem mem_iff {p : ℤ}
     {f : dgRightModuleCochains (R := R) (A := B) (ℳ := ℳ) (ℳN := 𝒩) p} :
     f ∈ dgBimoduleCochains (B := B) (𝒜 := 𝒜) p ↔
       ∀ {r : ℤ} {a : A}, a ∈ 𝒜 r → ∀ x : M,
-        f.1 (a • x) = (p * r).negOnePow • (a • f.1 x) :=
+        f.val (a • x) = (p * r).negOnePow • (a • f.val x) :=
   (Iff.rfl)
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
@@ -89,7 +89,7 @@ omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
 /-- Two bimodule cochains agree if their underlying functions agree. -/
 @[ext]
 theorem ext {p : ℤ} {f g : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p}
-    (hfg : ∀ x, f.1.1 x = g.1.1 x) : f = g :=
+    (hfg : ∀ x, f.val.val x = g.val.val x) : f = g :=
   Subtype.ext (Subtype.ext (LinearMap.ext hfg))
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
@@ -99,8 +99,8 @@ omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
 /-- A degree-`p` bimodule cochain raises degree by `p`. -/
 theorem map_mem {p q : ℤ}
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p)
-    {x : M} (hx : x ∈ ℳ q) : f.1.1 x ∈ 𝒩 (q + p) :=
-  dgRightModuleCochains.map_mem f.1 hx
+    {x : M} (hx : x ∈ ℳ q) : f.val.val x ∈ 𝒩 (q + p) :=
+  dgRightModuleCochains.map_mem f.val hx
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
   [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
@@ -110,8 +110,8 @@ omit [GradedAlgebra 𝒜] [IsScalarTower R A M]
 theorem map_smul_left {p r : ℤ}
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p)
     {a : A} (ha : a ∈ 𝒜 r) (x : M) :
-    f.1.1 (a • x) = (p * r).negOnePow • (a • f.1.1 x) :=
-  mem_iff.mp f.2 ha x
+    f.val.val (a • x) = (p * r).negOnePow • (a • f.val.val x) :=
+  mem_iff.mp f.property ha x
 
 omit [IsScalarTower R A M] [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
   [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
@@ -120,7 +120,7 @@ omit [IsScalarTower R A M] [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐ�
 @[simp]
 theorem map_smul_left_zero
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) 0) (a : A) (x : M) :
-    f.1.1 (a • x) = a • f.1.1 x := by
+    f.val.val (a • x) = a • f.val.val x := by
   classical
   conv_lhs => rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_smul, map_sum]
   conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_smul]
@@ -133,7 +133,7 @@ variable {hM : IsDGBimodule hA hB ℳ dM} {hN : IsDGBimodule hA hB 𝒩 dN}
 private theorem differential_mem (p : ℤ)
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p) :
     dgRightModuleCochains.differential
-      (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) p f.1 ∈
+      (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) p f.val ∈
         dgBimoduleCochains (B := B) (𝒜 := 𝒜) (p + 1) := by
   apply mem_iff.mpr
   intro r a ha x
@@ -164,18 +164,18 @@ right-module differential. -/
 @[simp↓]
 theorem differential_val (p : ℤ)
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p) :
-    (differential (hM := hM) (hN := hN) p f).1 =
+    (differential (hM := hM) (hN := hN) p f).val =
       dgRightModuleCochains.differential
-        (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) p f.1 := by
+        (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) p f.val := by
   rfl
 
 /-- Evaluation of the differential is the graded commutator. -/
 @[simp↓]
 theorem differential_apply (p : ℤ)
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p) (x : M) :
-    (differential (hM := hM) (hN := hN) p f).1.1 x =
-      dN (f.1.1 x) - p.negOnePow • f.1.1 (dM x) :=
-  dgRightModuleCochains.differential_apply p f.1 x
+    (differential (hM := hM) (hN := hN) p f).val.val x =
+      dN (f.val.val x) - p.negOnePow • f.val.val (dM x) :=
+  dgRightModuleCochains.differential_apply p f.val x
 
 /-- The bimodule cochain differential squares to zero. -/
 theorem differential_comp_self (p : ℤ) :
@@ -187,7 +187,7 @@ theorem differential_comp_self (p : ℤ) :
   simpa only [LinearMap.comp_apply, differential_val, LinearMap.zero_apply,
     Submodule.coe_zero] using LinearMap.congr_fun
     (dgRightModuleCochains.differential_comp_self
-      (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) p) f.1
+      (hM := hM.isDGRightModule) (hN := hN.isDGRightModule) p) f.val
 
 end dgBimoduleCochains
 
@@ -234,27 +234,27 @@ def dgBimoduleHomLinearEquivZeroCocycles (hM : IsDGBimodule hA hB ℳ dM)
     DGBimoduleHom hM hN ≃ₗ[R] LinearMap.ker
       (dgBimoduleCochains.differential (hM := hM) (hN := hN) 0) where
   toFun f := ⟨⟨(dgRightModuleHomLinearEquivZeroCocycles
-    hM.isDGRightModule hN.isDGRightModule f.1).1, by
+    hM.isDGRightModule hN.isDGRightModule f.val).val, by
       apply dgBimoduleCochains.mem_iff.mpr
-      intro r a ha x
+      intro r a _ x
       simpa only [zero_mul, Int.negOnePow_zero, one_smul,
         dgRightModuleHomLinearEquivZeroCocycles_apply, DGBimoduleHom.coe_val] using
         f.map_smul_left a x⟩, by
       apply Subtype.ext
       exact (dgRightModuleHomLinearEquivZeroCocycles
-        hM.isDGRightModule hN.isDGRightModule f.1).2⟩
+        hM.isDGRightModule hN.isDGRightModule f.val).property⟩
   invFun f := ⟨(dgRightModuleHomLinearEquivZeroCocycles
-    hM.isDGRightModule hN.isDGRightModule).symm ⟨f.1.1, by
+    hM.isDGRightModule hN.isDGRightModule).symm ⟨f.val.val, by
       simpa only [LinearMap.mem_ker, dgBimoduleCochains.differential_val,
-        Submodule.coe_zero] using congrArg Subtype.val f.2⟩, by
+        Submodule.coe_zero] using congrArg Subtype.val f.property⟩, by
       apply (mem_dgBimoduleHomSubmodule hM hN _).mpr
       intro a x
       simp only [dgRightModuleHomLinearEquivZeroCocycles_symm_apply]
-      exact dgBimoduleCochains.map_smul_left_zero f.1 a x⟩
+      exact dgBimoduleCochains.map_smul_left_zero f.val a x⟩
   left_inv f := by
     apply Subtype.ext
     exact (dgRightModuleHomLinearEquivZeroCocycles
-      hM.isDGRightModule hN.isDGRightModule).symm_apply_apply f.1
+      hM.isDGRightModule hN.isDGRightModule).symm_apply_apply f.val
   right_inv f := by
     ext x
     simp only [dgRightModuleHomLinearEquivZeroCocycles_apply,
@@ -273,9 +273,9 @@ def dgBimoduleHomLinearEquivZeroCocycles (hM : IsDGBimodule hA hB ℳ dM)
 @[simp↓]
 theorem dgBimoduleHomLinearEquivZeroCocycles_apply (hM : IsDGBimodule hA hB ℳ dM)
     (hN : IsDGBimodule hA hB 𝒩 dN) (f : DGBimoduleHom hM hN) (x : M) :
-    (dgBimoduleHomLinearEquivZeroCocycles hM hN f).1.1.1 x = f x := by
+    (dgBimoduleHomLinearEquivZeroCocycles hM hN f).val.val.val x = f x := by
   exact dgRightModuleHomLinearEquivZeroCocycles_apply
-    hM.isDGRightModule hN.isDGRightModule f.1 x
+    hM.isDGRightModule hN.isDGRightModule f.val x
 
 /-- Recovering a bimodule morphism from a closed cochain preserves its values. -/
 @[simp↓]
@@ -283,7 +283,7 @@ theorem dgBimoduleHomLinearEquivZeroCocycles_symm_apply (hM : IsDGBimodule hA hB
     (hN : IsDGBimodule hA hB 𝒩 dN)
     (f : LinearMap.ker (dgBimoduleCochains.differential (hM := hM) (hN := hN) 0))
     (x : M) :
-    (dgBimoduleHomLinearEquivZeroCocycles hM hN).symm f x = f.1.1.1 x := by
+    (dgBimoduleHomLinearEquivZeroCocycles hM hN).symm f x = f.val.val.val x := by
   exact dgRightModuleHomLinearEquivZeroCocycles_symm_apply
     hM.isDGRightModule hN.isDGRightModule _ x
 

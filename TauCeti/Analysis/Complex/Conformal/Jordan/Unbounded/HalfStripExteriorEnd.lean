@@ -187,7 +187,7 @@ private theorem false_of_inverted_coordinate_eq_zero_of_rays
     {u v : ℝ} (huv : u < v) (hu : (u : ℂ) ∈ ball (x : ℂ) r) (hv : (v : ℂ) ∈ ball (x : ℂ) r)
     (hgu : g u = 0) (hgv : g v = 0) : False := by
   have hgR : Continuous fun s : ℝ => g s :=
-    hgc.comp_continuous continuous_ofReal fun s => by simp
+    hgc.comp_continuous continuous_ofReal fun _ => by simp
   have hZ : IsClosed {s : ℝ | g s = 0} := isClosed_eq hgR continuous_const
   obtain ⟨t, ht, hgt⟩ : ∃ t ∈ Ioo u v, g t ≠ 0 := by
     have h := exists_mem_Ioo_ne_zero_of_ne_zero (f := g) (x := (u + v) / 2) (r := (v - u) / 2)
@@ -223,7 +223,7 @@ private theorem false_of_inverted_coordinate_eq_zero_of_rays
     (hlim _ ?_)
   · exact ((continuousOn_const.add (hgR.continuousOn.inv₀ hgap)).sub continuousOn_const).div_const b
   · intro s hs s' hs' h
-    simp only [div_left_inj' hb, sub_left_inj, add_right_inj, inv_inj] at h
+    simp only [div_left_inj₀ hb, sub_left_inj, add_right_inj, inv_inj] at h
     exact ofReal_injective (hgi ⟨by simp, hgap s hs⟩ ⟨by simp, hgap s' hs'⟩ h)
   · refine tendsto_nhdsWithin_iff.mpr ⟨hA.2 ▸ hgR.continuousAt.tendsto.mono_left
       nhdsWithin_le_nhds, ?_⟩
@@ -250,13 +250,14 @@ private theorem exists_ball_eq_of_inverted_coordinate_eq_zero
       ∀ z ∈ ball (x : ℂ) r, 0 ≤ z.im → g z = 0 → z = x := by
   obtain ⟨r₁, hr₁, hS₁⟩ := Metric.mem_nhdsWithin_iff.mp hfS
   obtain ⟨r₂, hr₂, hfar⟩ :=
-    exists_ball_lt_norm_of_inverted_coordinate (q := q) hgc hx c (max ρ (Real.pi * ‖b‖))
+    exists_ball_lt_norm_of_inverted_coordinate (q := q) (hgc _ (by simp)) hx c
+      (max ρ (Real.pi * ‖b‖))
   have hr : 0 < min r₁ r₂ := lt_min hr₁ hr₂
   have h₁ : ball (x : ℂ) (min r₁ r₂) ⊆ ball (x : ℂ) r₁ := ball_subset_ball (min_le_left _ _)
   have hfS' (z : ℂ) (hz : z ∈ ball (x : ℂ) (min r₁ r₂) ∩ upperHalfPlaneSet) := hS₁ ⟨h₁ hz.1, hz.2⟩
   -- the nonzero real boundary values lie on the two bounding rays
   have hray (z : ℂ) (hz : z ∈ ball (x : ℂ) (min r₁ r₂)) (hz0 : z.im = 0) (hgz : g z ≠ 0) :=
-    have hzfar := hfar z (ball_subset_ball (min_le_right _ _) hz) hz0.ge hgz
+    have hzfar := hfar z ⟨ball_subset_ball (min_le_right _ _) hz, hz0.ge⟩ hgz
     re_nonneg_and_im_eq_zero_or_eq_pi_of_inverted_coordinate hgc hgf hgi hb hS hfS' hz hz0 hgz
       ((le_max_left _ _).trans_lt hzfar) ((le_max_right _ _).trans_lt hzfar)
   -- so a second real zero is impossible, and in the open upper half-plane `g` has no zeros
@@ -322,7 +323,6 @@ private theorem exists_lt_norm_mem_image_ball_of_halfStripExterior
     · exact Or.inr ⟨z, ⟨hz, not_le.mpr h⟩, hzw⟩
   -- points of the half-disc near `x` are mapped far into the end, hence into `C`
   have hmeet : (C ∩ F '' A).Nonempty := by
-    have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
     obtain ⟨z, hzr, hzC, hzH⟩ := ((eventually_mem_set.mpr
       (mem_nhdsWithin_of_mem_nhds (ball_mem_nhds (x : ℂ) hr))).and
         (((tendsto_cobounded_of_inverted_boundary_eq_zero (hgc _ (by simp)) hgf hgne

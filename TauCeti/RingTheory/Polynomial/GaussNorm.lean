@@ -89,7 +89,6 @@ theorem gaussNorm_map_eq_one_of_contentIdeal_eq_top {A : Type*} [Semiring A]
     (hna : IsNonarchimedean v) (φ : A →+* R) (hφ : ∀ a, v (φ a) ≤ 1) {p : A[X]}
     (hp : p.contentIdeal = ⊤) :
     (p.map φ).gaussNorm v 1 = 1 := by
-  have hg : 0 ≤ (p.map φ).gaussNorm v 1 := gaussNorm_nonneg v _ zero_le_one
   refine le_antisymm ?_ ?_
   · rw [gaussNorm_eq_iSup _ _ zero_le_one]
     exact ciSup_le fun i ↦ by simpa using hφ (p.coeff i)
@@ -100,13 +99,9 @@ theorem gaussNorm_map_eq_one_of_contentIdeal_eq_top {A : Type*} [Semiring A]
     | mem x hx =>
       obtain ⟨n, -, rfl⟩ := mem_coeffs_iff.mp hx
       simpa using le_gaussNorm v (p.map φ) zero_le_one n
-    | zero => simpa using hg
-    | add x y _ _ hx hy =>
-      rw [map_add]
-      exact (hna _ _).trans (max_le hx hy)
-    | smul r x _ hx =>
-      rw [smul_eq_mul, map_mul, map_mul]
-      simpa using mul_le_mul (hφ r) hx (v.nonneg _) zero_le_one
+    | zero => simpa using gaussNorm_nonneg v _ zero_le_one
+    | add x y _ _ hx hy => simpa using (hna _ _).trans (max_le hx hy)
+    | smul r x _ hx => simpa using mul_le_mul (hφ r) hx (v.nonneg _) zero_le_one
   simpa using key 1 (hp ▸ Submodule.mem_top)
 
 end AbsoluteValueSemiring
@@ -122,13 +117,10 @@ theorem gaussNorm_X_sub_C (hc : 0 ≤ c) (b : R) :
     (X - C b).gaussNorm v c = max c (v b) := by
   refine le_antisymm ?_ (max_le ?_ ?_)
   · obtain ⟨i, hi⟩ := exists_eq_gaussNorm v c (X - C b)
-    rw [hi]
-    rcases i with _ | (_ | i) <;> simp [coeff_sub, coeff_X]
+    rcases i with _ | (_ | i) <;> simp [hi, coeff_X]
   · have h := le_gaussNorm v (X - C b) hc 1
-    simp only [coeff_sub] at h
     simpa using h
   · have h := le_gaussNorm v (X - C b) hc 0
-    simp only [coeff_sub] at h
     simpa using h
 
 /-- **Gauss's lemma at a nonarchimedean absolute value.** A primitive polynomial with integer
@@ -153,9 +145,7 @@ theorem gaussNorm_multiset_prod [Nontrivial R] (hna : IsNonarchimedean v) (hc : 
     (s : Multiset R[X]) :
     s.prod.gaussNorm v c = (s.map (gaussNorm v c)).prod := by
   rcases hc.eq_or_lt with rfl | hc
-  · simpa [gaussNorm_zero_right, coeff_zero_multiset_prod, Multiset.map_map,
-      Function.comp_def] using
-      map_multiset_prod v.toMonoidHom (s.map fun p ↦ p.coeff 0)
+  · simp [coeff_zero_multiset_prod, map_multiset_prod v, Multiset.map_map]
   · have := gaussNorm_isAbsoluteValue hna hc
     exact map_multiset_prod (IsAbsoluteValue.abvHom (gaussNorm v c)) s
 

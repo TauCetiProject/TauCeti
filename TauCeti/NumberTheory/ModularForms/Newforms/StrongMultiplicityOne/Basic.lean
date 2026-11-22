@@ -313,13 +313,14 @@ private theorem false_of_mul_dvd_of_not_mul_dvd {M L q : ℕ} [NeZero M] [NeZero
     levelRaise_mem_cuspFormsNewAt hq h1M hqML
       (cuspFormsNew_le_cuspFormsNewAt hq.ne_one g.isNew)
   have hp : ∀ p : {p // p ∈ L.primeFactors},
-      haveI : NeZero p.1 := ⟨(Nat.prime_of_mem_primeFactors p.2).ne_zero⟩
-      ℓ (P (CuspForm.levelRaise p.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd
-        (Nat.mul_div_cancel' (Nat.dvd_of_mem_primeFactors p.2)).dvd) (Fp p))) = 0 := fun p ↦
-    have : NeZero p.1 := ⟨(Nat.prime_of_mem_primeFactors p.2).ne_zero⟩
+      haveI : NeZero p.val := ⟨(Nat.prime_of_mem_primeFactors p.property).ne_zero⟩
+      ℓ (P (CuspForm.levelRaise p.val (Gamma1_map_le_conjAct_scaleGL_of_dvd
+        (Nat.mul_div_cancel' (Nat.dvd_of_mem_primeFactors p.property)).dvd) (Fp p))) = 0 := fun p ↦
+    have : NeZero p.val := ⟨(Nat.prime_of_mem_primeFactors p.property).ne_zero⟩
     (CuspForm.qExpansionCoeffₗ_apply _ _ _ _).trans
-      (qExpansion_coeff_one_projection_levelRaise_eq_zero (Nat.prime_of_mem_primeFactors p.2) hq
-        (Nat.dvd_of_mem_primeFactors p.2) _)
+      (qExpansion_coeff_one_projection_levelRaise_eq_zero (Nat.prime_of_mem_primeFactors p.property)
+          hq
+        (Nat.dvd_of_mem_primeFactors p.property) _)
   have hℓG : ℓ G = 1 := (hcoeff h1M _).trans g.isNorm
   have key := congrArg (fun x ↦ ℓ (P x)) hsum
   simp only [hD, map_sub, hF, hG, map_sum, hp, Finset.sum_const_zero, zero_sub, map_neg, hℓG,
@@ -349,7 +350,7 @@ private theorem false_of_not_dvd {M : ℕ} [NeZero M] (f : Newform N k) (g : New
   have hq := Nat.prime_of_mem_primeFactors hqM'
   have hqM := Nat.dvd_of_mem_primeFactors hqM'
   -- the working level
-  set P := ∏ p ∈ S.filter (fun p ↦ p.Prime ∧ p.Coprime (N * M)), p with hP
+  set P := ∏ p ∈ S.filter (fun p ↦ p.Prime ∧ p.Coprime (N * M)), p
   have hP0 : P ≠ 0 := Finset.prod_ne_zero_iff.mpr fun p hp ↦
     (Finset.mem_filter.mp hp).2.1.ne_zero
   have hqP : ¬q ∣ P := fun hqP ↦ by

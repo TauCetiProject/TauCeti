@@ -19,9 +19,6 @@ The key input is that the semisimple part is a polynomial in the original automo
 cross-commutation statements then reduce the product formula to uniqueness of the multiplicative
 Jordan decomposition.
 
-This supplies a structural compatibility for the Jordan decomposition in Layer 4 of the
-ReductiveGroups roadmap.
-
 ## Main declarations
 
 * `LinearMap.GeneralLinearGroup.commute_coe_semisimplePart_left_of_commute` and

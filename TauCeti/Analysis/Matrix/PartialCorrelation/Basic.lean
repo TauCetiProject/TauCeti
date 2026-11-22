@@ -52,13 +52,13 @@ variable {p : ℕ}
 
 /-- The strict-lower positions in column `j` correspond to the row indices strictly above `j`. -/
 def strictLowerTriangleColumnEquiv (j : Fin p) :
-    {ij : strictLowerTriangle p // ij.1.2 = j} ≃ Set.Ioi j where
-  toFun ij := ⟨ij.1.1.1, by simpa [ij.2] using ij.1.2⟩
-  invFun i := ⟨⟨(i.1, j), i.2⟩, rfl⟩
+    {ij : strictLowerTriangle p // ij.val.2 = j} ≃ Set.Ioi j where
+  toFun ij := ⟨ij.val.val.1, by simpa [ij.property] using ij.val.property⟩
+  invFun i := ⟨⟨(i.val, j), i.property⟩, rfl⟩
   left_inv ij := by
     apply Subtype.ext
     apply Subtype.ext
-    exact Prod.ext rfl ij.2.symm
+    exact Prod.ext rfl ij.property.symm
   right_inv i := by
     apply Subtype.ext
     rfl
@@ -66,20 +66,34 @@ def strictLowerTriangleColumnEquiv (j : Fin p) :
 /-- The column equivalence sends a strict-lower position to its row index. -/
 @[simp]
 theorem strictLowerTriangleColumnEquiv_apply_coe (j : Fin p)
-    (ij : {ij : strictLowerTriangle p // ij.1.2 = j}) :
-    (strictLowerTriangleColumnEquiv j ij : Fin p) = ij.1.1.1 := by
+    (ij : {ij : strictLowerTriangle p // ij.val.2 = j}) :
+    (strictLowerTriangleColumnEquiv j ij : Fin p) = ij.val.val.1 := by
   rfl
 
 /-- The inverse column equivalence pairs a row index with the fixed column. -/
 @[simp]
 theorem strictLowerTriangleColumnEquiv_symm_apply_coe (j : Fin p) (i : Set.Ioi j) :
-    ((strictLowerTriangleColumnEquiv j).symm i).1 = ⟨(i.1, j), i.2⟩ := by
+    ((strictLowerTriangleColumnEquiv j).symm i).val = ⟨(i.val, j), i.property⟩ := by
   rfl
 
 /-- Column `j` of the strict lower triangle of a `p × p` matrix has `p - 1 - j` entries. -/
 theorem card_strictLowerTriangle_column (j : Fin p) :
-    Fintype.card {ij : strictLowerTriangle p // ij.1.2 = j} = p - 1 - j.val := by
+    Fintype.card {ij : strictLowerTriangle p // ij.val.2 = j} = p - 1 - j.val := by
   rw [Fintype.card_congr (strictLowerTriangleColumnEquiv j), Fintype.card_Ioi, Fin.card_Ioi]
+
+/-- Distinct strictly lower positions `ij ≠ kl` have an index of `ij` that is not an index of
+`kl`. Flipping the sign of that axis negates entry `ij` and fixes entry `kl`. -/
+theorem strictLowerTriangle.exists_index_ne_ne_of_ne {ij kl : strictLowerTriangle p}
+    (hne : ij ≠ kl) : ∃ v : Fin p, (v = ij.val.1 ∨ v = ij.val.2) ∧ v ≠ kl.val.1 ∧ v ≠ kl.val.2 := by
+  have hp : ij.val ≠ kl.val := Subtype.coe_injective.ne hne
+  have := ij.property
+  have := kl.property
+  by_cases h : ij.val.1 = kl.val.1 ∨ ij.val.1 = kl.val.2
+  · refine ⟨ij.val.2, Or.inr rfl, ?_, ?_⟩
+    all_goals rcases h with h | h
+    all_goals intro h'
+    all_goals first | exact hp (Prod.ext h h') | omega
+  · exact ⟨ij.val.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
 
 private def partialCorrelationRow (z : strictLowerTriangle p → ℝ) (i j : Fin p) : ℝ :=
   if h : j < i then z ⟨(i, j), h⟩ else 0
@@ -135,26 +149,26 @@ theorem partialCorrelationCholesky_apply_of_lt (z : strictLowerTriangle p → �
 private theorem prod_partialCorrelationRow (z : strictLowerTriangle p → ℝ) (f : ℝ → ℝ)
     (i j : Fin p) (h : j ≤ i) :
     (∏ k ∈ Finset.Iio j, f (partialCorrelationRow z i k)) =
-      ∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < j, f (z ij) := by
+      ∏ ij : strictLowerTriangle p with ij.val.1 = i ∧ ij.val.2 < j, f (z ij) := by
   apply Finset.prod_bij (fun k hk ↦ (⟨(i, k), (Finset.mem_Iio.1 hk).trans_le h⟩ :
     strictLowerTriangle p))
   · intro k hk
     simp [Finset.mem_Iio.1 hk]
   · intro a _ b _ hab
-    exact congrArg (fun ij : strictLowerTriangle p ↦ ij.1.2) hab
+    exact congrArg (fun ij : strictLowerTriangle p ↦ ij.val.2) hab
   · intro ij hij
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hij
-    exact ⟨ij.1.2, Finset.mem_Iio.2 hij.2, Subtype.ext (Prod.ext hij.1.symm rfl)⟩
+    exact ⟨ij.val.2, Finset.mem_Iio.2 hij.2, Subtype.ext (Prod.ext hij.1.symm rfl)⟩
   · intro k hk
     simp [partialCorrelationRow, (Finset.mem_Iio.1 hk).trans_le h]
 
 private theorem row_filter (i : Fin p) :
-    (Finset.univ.filter fun ij : strictLowerTriangle p ↦ ij.1.1 = i ∧ ij.1.2 < i) =
-      Finset.univ.filter (fun ij : strictLowerTriangle p ↦ ij.1.1 = i) := by
+    (Finset.univ.filter fun ij : strictLowerTriangle p ↦ ij.val.1 = i ∧ ij.val.2 < i) =
+      Finset.univ.filter (fun ij : strictLowerTriangle p ↦ ij.val.1 = i) := by
   ext ij
   simp only [Finset.mem_filter, Finset.mem_univ, true_and, and_iff_left_iff_imp]
   intro h
-  exact h ▸ ij.2
+  exact h ▸ ij.property
 
 /-- The entry below the diagonal is the partial correlation times the preceding square-root
 residual factors in the same row. -/
@@ -162,7 +176,7 @@ residual factors in the same row. -/
 theorem partialCorrelationCholesky_apply_of_gt (z : strictLowerTriangle p → ℝ)
     {i j : Fin p} (h : j < i) :
     partialCorrelationCholesky z i j = z ⟨(i, j), h⟩ *
-      ∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < j,
+      ∏ ij : strictLowerTriangle p with ij.val.1 = i ∧ ij.val.2 < j,
         Real.sqrt (1 - z ij ^ 2) := by
   simp only [partialCorrelationCholesky, h, ↓reduceIte]
   rw [prod_partialCorrelationRow z (fun x ↦ Real.sqrt (1 - x ^ 2)) i j h.le]
@@ -172,7 +186,7 @@ theorem partialCorrelationCholesky_apply_of_gt (z : strictLowerTriangle p → �
 @[simp]
 theorem partialCorrelationCholesky_apply_self (z : strictLowerTriangle p → ℝ) (i : Fin p) :
     partialCorrelationCholesky z i i =
-      ∏ ij : strictLowerTriangle p with ij.1.1 = i, Real.sqrt (1 - z ij ^ 2) := by
+      ∏ ij : strictLowerTriangle p with ij.val.1 = i, Real.sqrt (1 - z ij ^ 2) := by
   simp only [partialCorrelationCholesky, lt_self_iff_false, ↓reduceIte, one_mul]
   rw [prod_partialCorrelationRow z (fun x ↦ Real.sqrt (1 - x ^ 2)) i i le_rfl, row_filter]
 
@@ -186,19 +200,31 @@ theorem partialCorrelationGram_apply_eq_sum_Iic (z : strictLowerTriangle p → �
     (i j : Fin p) :
     partialCorrelationGram z i j =
       ∑ k ∈ Finset.Iic j, partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
-  rw [partialCorrelationGram_def, Matrix.mul_apply]
-  simp only [Matrix.transpose_apply]
-  symm
-  apply Finset.sum_subset (Finset.subset_univ _)
-  intro k _ hk
-  simp only [Finset.mem_Iic, not_le] at hk
-  rw [partialCorrelationCholesky_apply_of_lt z hk, mul_zero]
+  rw [partialCorrelationGram_def,
+    (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic]
+  apply Finset.sum_subset (Finset.Iic_subset_Iic.2 (min_le_right i j))
+  intro k hk hmin
+  have hik : i < k := by
+    rcases min_lt_iff.mp (not_le.mp (Finset.mem_Iic.not.mp hmin)) with hik | hjk
+    · exact hik
+    · exact absurd hjk (not_lt_of_ge (Finset.mem_Iic.mp hk))
+  rw [partialCorrelationCholesky_apply_of_lt z hik, zero_mul]
+
+/-- Each entry of the partial-correlation Gram matrix sums triangular column products up to
+`min i j`. -/
+theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p → ℝ)
+    (i j : Fin p) :
+    partialCorrelationGram z i j =
+      ∑ k ∈ Finset.Iic (min i j),
+        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
+  rw [partialCorrelationGram_def,
+    (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic]
 
 /-- The first column of the Gram matrix consists of the first-column partial correlations. -/
 theorem partialCorrelationGram_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)
     {i : Fin (p + 1)} (h : 0 < i) : partialCorrelationGram z i 0 = z ⟨(i, 0), h⟩ := by
-  have hrow : ∀ ij : strictLowerTriangle (p + 1), ij.1.1 ≠ 0 := fun ij h0 ↦
-    Fin.not_lt_zero _ (h0 ▸ ij.2)
+  have hrow : ∀ ij : strictLowerTriangle (p + 1), ij.val.1 ≠ 0 := fun ij h0 ↦
+    Fin.not_lt_zero _ (h0 ▸ ij.property)
   rw [partialCorrelationGram_apply_eq_sum_Iic, Finset.sum_eq_single_of_mem 0
       (Finset.mem_Iic.2 le_rfl) fun k hk hk0 ↦ absurd (nonpos_iff_eq_zero.1 (Finset.mem_Iic.1 hk))
         hk0, partialCorrelationCholesky_apply_of_gt z h, partialCorrelationCholesky_apply_self]
@@ -302,17 +328,17 @@ theorem det_partialCorrelationGram {z : strictLowerTriangle p → ℝ}
   simp only [cholesky_sq hz, lt_self_iff_false, ↓reduceIte, one_mul]
   have hrow (i : Fin p) :
       (∏ k ∈ Finset.Iio i, (1 - partialCorrelationRow z i k ^ 2)) =
-        ∏ ij : strictLowerTriangle p with ij.1.1 = i, (1 - z ij ^ 2) := by
+        ∏ ij : strictLowerTriangle p with ij.val.1 = i, (1 - z ij ^ 2) := by
     rw [prod_partialCorrelationRow z (fun x ↦ 1 - x ^ 2) i i le_rfl, row_filter]
   simp_rw [hrow]
-  exact Finset.prod_fiberwise Finset.univ (fun ij : strictLowerTriangle p ↦ ij.1.1)
+  exact Finset.prod_fiberwise Finset.univ (fun ij : strictLowerTriangle p ↦ ij.val.1)
     (fun ij ↦ 1 - z ij ^ 2)
 
 /-- Changing signs of the coordinate axes conjugates the partial-correlation triangular factor
 by the diagonal sign matrix. No restriction on the partial correlations is needed. -/
 theorem partialCorrelationCholesky_signChange (z : strictLowerTriangle p → ℝ)
     {s : Fin p → ℝ} (hs : ∀ i, |s i| = 1) (i j : Fin p) :
-    partialCorrelationCholesky (fun ij ↦ s ij.1.1 * s ij.1.2 * z ij) i j =
+    partialCorrelationCholesky (fun ij ↦ s ij.val.1 * s ij.val.2 * z ij) i j =
       s i * partialCorrelationCholesky z i j * s j := by
   have hsq : ∀ i, s i ^ 2 = 1 := fun i ↦ by
     nlinarith [sq_abs (s i), hs i]
@@ -327,7 +353,7 @@ theorem partialCorrelationCholesky_signChange (z : strictLowerTriangle p → ℝ
 square-root branches outside the closed cube. -/
 theorem partialCorrelationGram_signChange (z : strictLowerTriangle p → ℝ)
     {s : Fin p → ℝ} (hs : ∀ i, |s i| = 1) (i j : Fin p) :
-    partialCorrelationGram (fun ij ↦ s ij.1.1 * s ij.1.2 * z ij) i j =
+    partialCorrelationGram (fun ij ↦ s ij.val.1 * s ij.val.2 * z ij) i j =
       s i * partialCorrelationGram z i j * s j := by
   have hsq : ∀ k, s k ^ 2 = 1 := fun k ↦ by
     nlinarith [sq_abs (s k), hs k]
@@ -344,7 +370,7 @@ theorem partialCorrelationGram_signChange (z : strictLowerTriangle p → ℝ)
 /-- The triangular construction is injective on the open partial-correlation cube. -/
 theorem injOn_partialCorrelationCholesky :
     Set.InjOn (partialCorrelationCholesky (p := p)) {z | ∀ ij, |z ij| < 1} := by
-  intro z hz w hw heq
+  intro z _ w hw heq
   have hrows : ∀ n, ∀ j : Fin p, j.val = n → ∀ i,
       partialCorrelationRow z i j = partialCorrelationRow w i j := by
     intro n
@@ -364,7 +390,7 @@ theorem injOn_partialCorrelationCholesky :
           Real.sqrt_pos.2 (sub_pos.2 (row_sq_lt_one hw i k))).ne' hentry
       · simp [partialCorrelationRow, hji]
   funext ij
-  simpa [partialCorrelationRow, ij.2] using hrows ij.1.2.val ij.1.2 rfl ij.1.1
+  simpa [partialCorrelationRow, ij.property] using hrows ij.val.2.val ij.val.2 rfl ij.val.1
 
 /-- Distinct partial correlations in the open cube give distinct correlation matrices. -/
 theorem injOn_partialCorrelationGram :
@@ -383,12 +409,12 @@ inverts `TauCeti.partialCorrelationCholesky`
 (`TauCeti.partialCorrelationOfCholesky_partialCorrelationCholesky`). -/
 def _root_.Matrix.partialCorrelationOfCholesky (L : Matrix (Fin p) (Fin p) ℝ) :
     strictLowerTriangle p → ℝ :=
-  fun ij ↦ L ij.1.1 ij.1.2 / Real.sqrt (1 - ∑ k ∈ Finset.Iio ij.1.2, L ij.1.1 k ^ 2)
+  fun ij ↦ L ij.val.1 ij.val.2 / Real.sqrt (1 - ∑ k ∈ Finset.Iio ij.val.2, L ij.val.1 k ^ 2)
 
 theorem _root_.Matrix.partialCorrelationOfCholesky_apply (L : Matrix (Fin p) (Fin p) ℝ)
     (ij : strictLowerTriangle p) :
     L.partialCorrelationOfCholesky ij =
-      L ij.1.1 ij.1.2 / Real.sqrt (1 - ∑ k ∈ Finset.Iio ij.1.2, L ij.1.1 k ^ 2) := (rfl)
+      L ij.val.1 ij.val.2 / Real.sqrt (1 - ∑ k ∈ Finset.Iio ij.val.2, L ij.val.1 k ^ 2) := (rfl)
 
 section OfCholesky
 

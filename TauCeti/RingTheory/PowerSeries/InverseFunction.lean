@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Evaluation
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+import Mathlib.RingTheory.AdicCompletion.Topology
 import TauCeti.RingTheory.PowerSeries.Rescale
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
@@ -34,9 +35,11 @@ public section
 
 namespace PowerSeries
 
-variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
-  [CompleteSpace R] [T2Space R] [IsTopologicalRing R] [IsLinearTopology R R]
-  {I : Ideal R} [Fact (IsAdic I)] {f : R⟦X⟧}
+variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [CompleteSpace R]
+
+section AdicIdeal
+
+variable [T2Space R] [IsTopologicalRing R] {I : Ideal R} [Fact (IsAdic I)] {f : R⟦X⟧}
 
 /-- Evaluation of a power series with zero constant term and unit linear coefficient is a
 bijection of every adic ideal onto itself. -/
@@ -45,6 +48,7 @@ theorem bijOn_eval₂_of_isUnit (hf : constantCoeff f = 0) (ha : IsUnit (coeff 1
   let g := f.substInvOfIsUnit ha
   have hg : constantCoeff g = 0 := constantCoeff_substInvOfIsUnit _ _
   have hI : IsAdic I := Fact.out
+  have := IsLinearTopology.mk_of_hasBasis _ hI.hasBasis_nhds_zero
   have hmem {x : R} (hx : x ∈ I) {p : R⟦X⟧} (hp : constantCoeff p = 0) :
       eval₂ (RingHom.id R) x p ∈ I := by
     simpa only [coe_aeval, Algebra.algebraMap_self] using
@@ -74,12 +78,13 @@ theorem bijOn_eval₂_span_singleton_mul (hf : constantCoeff f = 0)
     {c : R} (hc : coeff 1 f ∣ c) (hac : IsRegular (coeff 1 f * c)) :
     Set.BijOn (fun x ↦ eval₂ (RingHom.id R) x f)
       (↑(Ideal.span {c} * I) : Set R) (↑(Ideal.span {coeff 1 f * c} * I) : Set R) := by
+  have hI : IsAdic I := Fact.out
+  have := IsLinearTopology.mk_of_hasBasis _ hI.hasBasis_nhds_zero
   obtain ⟨g, hg0, hg1, hfg⟩ := exists_rescale_eq_C_mul hf hc
   have hg := bijOn_eval₂_of_isUnit (I := I) hg0 (hg1 ▸ isUnit_one)
   have heval {s : R} (hs : s ∈ I) :
       eval₂ (RingHom.id R) (c * s) f =
         (coeff 1 f * c) * eval₂ (RingHom.id R) s g := by
-    have hI : IsAdic I := Fact.out
     have hcs := hI.isTopologicallyNilpotent_of_mem (I.mul_mem_left c hs)
     have h := aeval_rescale (hI.isTopologicallyNilpotent_of_mem hs) c hcs f
     rw [hfg, map_mul, aeval_C] at h
@@ -102,9 +107,11 @@ theorem bijOn_eval₂_span_singleton_mul (hf : constantCoeff f = 0)
     exact ⟨c * s, Ideal.mem_span_singleton_mul.mpr ⟨s, hs, rfl⟩,
       by simpa only [heval hs] using congrArg (fun z ↦ (coeff 1 f * c) * z) hst⟩
 
+end AdicIdeal
+
 section DiscreteValuationRing
 
-variable [IsDomain R] [IsDiscreteValuationRing R]
+variable [IsTopologicalRing R] {f : R⟦X⟧} [IsDomain R] [IsDiscreteValuationRing R]
   [Fact (IsAdic (IsLocalRing.maximalIdeal R))]
 
 /-- Over a complete discrete valuation ring, a series with zero constant term and linear
@@ -114,6 +121,9 @@ theorem bijOn_eval₂_maximalIdeal_pow (hf : constantCoeff f = 0) {e k : ℕ}
     Set.BijOn (fun x ↦ eval₂ (RingHom.id R) x f)
       (↑(IsLocalRing.maximalIdeal R ^ k) : Set R)
       (↑(IsLocalRing.maximalIdeal R ^ (k + e)) : Set R) := by
+  have hI : IsAdic (IsLocalRing.maximalIdeal R) := Fact.out
+  have := IsLinearTopology.mk_of_hasBasis _ hI.hasBasis_nhds_zero
+  have := (IsAdic.isHausdorff_iff hI).mp inferInstance
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
   have hpow (j : ℕ) : IsLocalRing.maximalIdeal R ^ j = Ideal.span {ϖ ^ j} := by
     rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]

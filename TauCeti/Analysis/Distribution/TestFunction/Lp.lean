@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
@@ -41,6 +44,13 @@ evaluation on integrable forms (`Distribution.extendL1`).
 * `HasCompactSupport.exists_testFunction_eLpNorm_sub_le`: a continuous compactly supported
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
+* `TestFunction.integrable_bilin_of_memLp`: a continuous bilinear map applied to a test function
+  and an `Lᵖ` function is integrable.
+* `TestFunction.integrable_smul_of_memLp`: a test function times an `Lᵖ` function is integrable.
+* `TestFunction.integrable_laplacian_smul_of_memLp`: so is the Laplacian of a test function
+  times an `Lᵖ` function.
+* `MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero`: an `Lᵖ` function on a
+  finite-dimensional space whose pairings with all test functions vanish is zero.
 
 ## References
 
@@ -67,9 +77,9 @@ theorem HasCompactSupport.exists_testFunction_eLpNorm_sub_le [IsFiniteMeasureOnC
     ∃ φ : 𝓓^{n}(Ω, F), eLpNorm (g - fun x : Ω => φ x) p μ ≤ ε := by
   -- Mollify the extension of `g` by zero, inside a closed thickening `K'` of its support.
   set K : Set E := (↑) '' tsupport g
-  have hK : IsCompact K := hgc.isCompact.image continuous_subtype_val
+  have hK : IsCompact K := hgc.isCompact.image continuous_subtypeVal
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen
-    (image_subset_iff.2 fun x _ => x.2)
+    (image_subset_iff.2 fun x _ => x.property)
   set K' := cthickening δ K
   set M := μ ((↑) ⁻¹' K') ^ (1 / p.toReal)
   have hM : M ≠ ⊤ := ENNReal.rpow_ne_top_of_nonneg (by positivity)
@@ -77,14 +87,14 @@ theorem HasCompactSupport.exists_testFunction_eLpNorm_sub_le [IsFiniteMeasureOnC
       (by simpa using hδΩ)).measure_ne_top
   obtain ⟨η, hη, hηε⟩ := ENNReal.exists_nnreal_pos_mul_lt hM hε
   obtain ⟨φ, hφK', hφ⟩ := (hgc.continuous_extend_zero Ω.isOpen hg).exists_testFunction_dist_le hK
-    (hgc.tsupport_extend_zero_subset continuous_subtype_val) hδ hδΩ (NNReal.coe_pos.2 hη)
+    (hgc.tsupport_extend_zero_subset continuous_subtypeVal) hδ hδΩ (NNReal.coe_pos.2 hη)
   refine ⟨⟨φ, φ.contDiff.of_le (WithTop.coe_le_coe.2 le_top), φ.hasCompactSupport,
     φ.tsupport_subset⟩, ?_⟩
   -- The error is supported in `K'` and bounded by `η` there.
   simp only [TestFunction.coe_mk]
   refine (eLpNorm_sub_le_of_dist_bdd μ hp
-    (measurable_subtype_coe isClosed_cthickening.measurableSet).nullMeasurableSet η.coe_nonneg
-    (hg.sub (φ.continuous.comp continuous_subtype_val)).aestronglyMeasurable (fun x => ?_)
+    (measurable_subtypeVal isClosed_cthickening.measurableSet).nullMeasurableSet η.coe_nonneg
+    (hg.sub (φ.continuous.comp continuous_subtypeVal)).aestronglyMeasurable (fun x => ?_)
     (fun x hx => self_subset_cthickening K (mem_image_of_mem _ (subset_tsupport _ hx)))
     fun x hx => hφK' (subset_tsupport _ hx)).trans ?_
   · rw [dist_comm]
@@ -209,16 +219,16 @@ variable (μ) in
 /-- The `L¹(μ)` norm of a test function is the integral of its norm. -/
 theorem enorm_toLp_one (φ : 𝓓^{n}(Ω, F)) :
     ‖toLp 1 μ φ‖ₑ = ∫⁻ x, ‖φ x‖ₑ ∂μ := by
-  rw [Lp.enorm_def, eLpNorm_congr_ae (coeFn_toLp φ), eLpNorm_one_eq_lintegral_enorm]
+  rw [Lp.eNorm_def, eLpNorm_congr_ae (coeFn_toLp φ), eLpNorm_one_eq_lintegral_eNorm]
   exact (memLp_subtype (p := 1) φ).aestronglyMeasurable
 
 variable (μ) in
 /-- The `L¹(μ)` norm of `1_A φ` is the integral of `‖φ‖` over `A`. -/
 theorem enorm_indicatorToLp_one (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
     ‖indicatorToLp 1 μ hA φ‖ₑ = ∫⁻ x in A, ‖φ x‖ₑ ∂μ := by
-  rw [indicatorToLp_apply, Lp.enorm_toLp, eLpNorm_one_eq_lintegral_enorm,
+  rw [indicatorToLp_apply, Lp.eNorm_toLp, eLpNorm_one_eq_lintegral_eNorm,
     ← lintegral_indicator hA]
-  · simp_rw [enorm_indicator_eq_indicator_enorm]
+  · simp_rw [eNorm_indicator_eq_indicator_eNorm]
   · exact ((memLp_subtype (p := 1) φ).indicator hA.nullMeasurableSet).aestronglyMeasurable
 
 /-- Cutting a test function off by an indicator does not increase its `Lᵖ(μ)` norm. -/
@@ -293,7 +303,7 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   refine fun f => (mem_closure_iff_nhds_basis Metric.nhds_basis_closedEBall).2 fun ε hε => ?_
   -- Approximate `f` by a continuous function with compact support, and that by a test function.
-  obtain ⟨g, hgc, hfg, hg, hgp⟩ := (Lp.memLp f).exists_hasCompactSupport_eLpNorm_sub_le hp
+  obtain ⟨g, hgc, hfg, hg, _⟩ := (Lp.memLp f).exists_hasCompactSupport_eLpNorm_sub_le hp
     (ENNReal.half_pos hε.ne').ne'
   obtain ⟨φ, hφ⟩ := hgc.exists_testFunction_eLpNorm_sub_le (n := n) (μ := μ) hg hp
     (ENNReal.half_pos hε.ne').ne'
@@ -301,5 +311,42 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   rw [Metric.mem_closedEBall', ← Lp.toLp_coeFn f (Lp.memLp f), toLp_apply, Lp.edist_toLp_toLp,
     ← ENNReal.add_halves ε, ← sub_add_sub_cancel (⇑f) g]
   exact (eLpNorm_add_le Fact.out).trans (add_le_add hfg hφ)
+
+/-- A continuous bilinear map applied to a test function and an `Lᵖ` function, `1 ≤ p`, is
+integrable, for a measure that is finite on compact sets. -/
+theorem integrable_bilin_of_memLp {𝕜 F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂]
+    [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] (B : F₁ →L[𝕜] F₂ →L[𝕜] F₃)
+    {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (φ : 𝓓^{n}(Ω, F₁)) {f : E → F₂}
+    (hf : MemLp f p ν) : Integrable (fun x ↦ B (φ x) (f x)) ν := by
+  have : (ENNReal.conjExponent p).HolderConjugate p :=
+    (ENNReal.HolderConjugate.conjExponent Fact.out).symm
+  exact memLp_one_iff_integrable.1 <|
+    B.memLp_of_bilin 1 (p := ENNReal.conjExponent p)
+      (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport) hf
+
+/-- A test function multiplied by an `Lᵖ` function, `1 ≤ p`, is integrable. -/
+theorem integrable_smul_of_memLp {ν : Measure E} [IsFiniteMeasureOnCompacts ν]
+    (φ : 𝓓^{n}(Ω, ℝ)) {f : E → F} (hf : MemLp f p ν) : Integrable (fun x ↦ φ x • f x) ν :=
+  φ.integrable_bilin_of_memLp (ContinuousLinearMap.lsmul ℝ ℝ) hf
+
+/-- **An `Lᵖ` function is determined by its pairings with test functions.** If `1 ≤ p` and
+`∫ φ • g = 0` for every test function `φ` on a finite-dimensional space, then `g = 0` in `Lᵖ`. -/
+theorem _root_.MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero
+    [FiniteDimensional ℝ E] [CompleteSpace F] {ν : Measure E} [IsLocallyFiniteMeasure ν]
+    {g : Lp F p ν}
+    (h : ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, φ x • g x ∂ν = 0) : g = 0 := by
+  refine Lp.eq_zero_iff_ae_eq_zero.2 <| ae_eq_zero_of_integral_contDiff_smul_eq_zero
+    ((Lp.memLp g).locallyIntegrable Fact.out) fun ψ hψ hψc ↦ ?_
+  exact h ⟨ψ, hψ, hψc, by simp⟩
+
+open Laplacian in
+/-- The Laplacian of a test function multiplied by an `Lᵖ` function, `1 ≤ p`, is integrable. -/
+theorem integrable_laplacian_smul_of_memLp {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {Ω : Opens E} {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (φ : 𝓓(Ω, ℝ)) {f : E → F}
+    (hf : MemLp f p ν) : Integrable (fun x ↦ Δ (φ : E → ℝ) x • f x) ν := by
+  simpa only [laplacianCLM_apply] using
+    (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ).integrable_smul_of_memLp hf
 
 end TestFunction

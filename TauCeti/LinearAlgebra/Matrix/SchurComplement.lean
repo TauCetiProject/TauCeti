@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
-public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Schur complements and rank-one inverse updates
@@ -69,19 +68,16 @@ theorem PosSemidef.schur_complement₂₂ [Fintype n]
     (hP : P.IsHermitian) (hPDP : P * D * P = P) :
     (A - B * P * Bᴴ).PosSemidef := by
   classical
-  refine TauCeti.posSemidef_of_support_posSemidef (fun a b ↦ (A - B * P * Bᴴ) a b)
-    ((isHermitian_fromBlocks_iff.1 h.1).1.sub
-      (by simp [IsHermitian, conjTranspose_mul, hP.eq, Matrix.mul_assoc]))
-    fun x ↦ ?_
-  let e : x.support → m := (↑)
+  refine posSemidef_iff_submatrix_finset.mpr fun s ↦ ?_
+  let e : s → m := (↑)
   have hmat : (fromBlocks A B Bᴴ D).submatrix (Sum.map e id) (Sum.map e id) =
       fromBlocks (A.submatrix e e) (B.submatrix e id) (B.submatrix e id)ᴴ D := by
     ext (i | i) (j | j) <;> simp [conjTranspose_apply]
   have hsub : (A - B * P * Bᴴ).submatrix e e =
       A.submatrix e e - B.submatrix e id * P * (B.submatrix e id)ᴴ := by
-    rw [Matrix.submatrix_sub, Pi.sub_apply, Pi.sub_apply,
-      Matrix.submatrix_mul _ _ _ id _ Function.bijective_id,
-      Matrix.submatrix_mul _ _ _ id _ Function.bijective_id, Matrix.conjTranspose_submatrix]
+    rw [submatrix_sub, Pi.sub_apply, Pi.sub_apply,
+      submatrix_mul _ _ _ id _ Function.bijective_id,
+      submatrix_mul _ _ _ id _ Function.bijective_id, conjTranspose_submatrix]
     simp
   have hcancel : B.submatrix e id * P * D * P = B.submatrix e id * P := by
     simpa only [Matrix.mul_assoc] using congrArg (B.submatrix e id * ·) hPDP
@@ -96,9 +92,6 @@ theorem PosSemidef.schur_complement₂₂ [Fintype n]
       Matrix.add_mul, Matrix.neg_mul, Matrix.mul_neg,
       ← Matrix.mul_assoc, hcancel]
     abel
-  -- The support helper states its goal for `Matrix.of fun a b ↦ (A - B * P * Bᴴ) a b`, which is
-  -- `(A - B * P * Bᴴ).submatrix e e` by definition (both are `fun a b ↦ _ (e a) (e b)`).
-  change ((A - B * P * Bᴴ).submatrix e e).PosSemidef
   rw [← hcompress, ← hmat]
   exact (h.submatrix _).mul_mul_conjTranspose_same _
 
@@ -159,7 +152,7 @@ theorem inv_add_vecMulVec (A : Matrix n n R) (hA : IsUnit A) (u v : n → R)
   rw [hUV, hinv] at h
   rw [h]
   congr 1
-  simp only [Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_assoc,
+  simp only [Matrix.mul_smul, Matrix.mul_one, smul_mul, Matrix.mul_assoc,
     hUV, mul_vecMulVec, vecMulVec_mul]
 
 end RankOne

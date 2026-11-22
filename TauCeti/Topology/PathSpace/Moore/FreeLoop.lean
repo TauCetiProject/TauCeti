@@ -243,24 +243,6 @@ namespace MooreFreeLoopSpace
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-- A free Moore loop, as a based Moore loop at its own base point. -/
-def toLoop (γ : MooreFreeLoopSpace X) : MooreLoopSpace X γ.basepoint :=
-  ⟨γ.toMoorePath, γ.source_toMoorePath, γ.target_eq_source⟩
-
-@[simp]
-theorem toMoorePath_toLoop (γ : MooreFreeLoopSpace X) : γ.toLoop.toMoorePath = γ.toMoorePath :=
-  (rfl)
-
-@[simp]
-theorem toFreeLoop_toLoop (γ : MooreFreeLoopSpace X) : γ.toLoop.toFreeLoop = γ :=
-  (rfl)
-
-end MooreFreeLoopSpace
-
-namespace MooreFreeLoopSpace
-
-variable {X : Type*} [TopologicalSpace X]
-
 /-! ### Contractible loops -/
 
 variable (X) in
@@ -333,7 +315,7 @@ theorem isClosedEmbedding_constContractible :
   toIsEmbedding := isClosedEmbedding_const.isEmbedding.codRestrict _ _
   isClosed_range := by
     rw [constContractible, Set.range_codRestrict]
-    exact isClosedEmbedding_const.isClosed_range.preimage continuous_subtype_val
+    exact isClosedEmbedding_const.isClosed_range.preimage continuous_subtypeVal
 
 variable (X) in
 /-- Basepoint evaluation `𝓛₀X → X` on contractible free Moore loops. -/
@@ -342,7 +324,7 @@ def basepointContractible : C(contractibleLoops X, X) :=
 
 @[simp]
 theorem basepointContractible_apply (γ : contractibleLoops X) :
-    basepointContractible X γ = γ.1.basepoint :=
+    basepointContractible X γ = γ.val.basepoint :=
   (rfl)
 
 variable (X) in

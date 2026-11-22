@@ -64,7 +64,7 @@ theorem contMDiff_normalQuotientMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 
   let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le ((le_add_right le_rfl).trans hm)⟩
   let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
     ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
-  let : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  let : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   intro p
   let d := normalChartData f hn hdim p.proj
   let e := d.trivialization f hn
@@ -94,7 +94,7 @@ theorem contMDiff_normalQuotientMap (f : SmoothEmbedding I J n M N) (hn : n ≠ 
   simpa only [a, Trivialization.pullback_apply, Pullback.lift,
     Function.comp_apply] using
     f.normalSpaceEquivOfComplement_normalClass hn
-      (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement (d.invertible q.proj hq) q.2
+      (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement (d.invertible q.proj hq) q.snd
 
 /-- Near each intrinsic normal vector there is a `C^m` choice of ambient tangent
 representatives. The right-inverse identity holds on a neighbourhood of that normal vector. -/

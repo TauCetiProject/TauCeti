@@ -58,8 +58,6 @@ embedded submanifold (`TauCeti.Analysis.Calculus.Morse.GlobalChart`).
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
   Chapter 2.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -185,11 +183,9 @@ variable {z : E}
 
 /-- Reversing time turns a negative gradient flow of `f` into a negative gradient flow of `-f`. -/
 theorem IsNegativeGradient.reverse (hφ : IsNegativeGradient φ f) :
-    IsNegativeGradient φ.reverse (-f) := by
-  refine isNegativeGradient_iff.2 fun z t ↦ ?_
-  have hgrad : ∇ (-f) (φ (-t) z) = -∇ f (φ (-t) z) := TauCeti.gradient_neg
-  have hd := (hφ.isIntegralCurve z (-t)).scomp t (hasDerivAt_neg t)
-  simpa [Function.comp_def, hgrad] using hd
+    IsNegativeGradient φ.reverse (-f) :=
+  isNegativeGradient_iff.2 fun z ↦ by
+    simpa only [_root_.Flow.reverse_apply] using (hφ.isIntegralCurve z).comp_neg_neg_gradient
 
 /-- Along a negative gradient trajectory, `f + c * dist (·) x` is antitone on a time interval
 in whose interior the trajectory avoids `x` and `c ≤ ‖∇ f‖`: there the value of `f` drops at

@@ -169,7 +169,8 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing Wint] {I : Ideal Win
     intro z
     obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective z
     obtain ⟨q, r, hr, hf, hq, hr1⟩ :=
-      exists_mul_add_eq_and_norm_le_of_isDistinguished hg hu (toWashnitzerAlgebra _ K f)
+      washnitzerAlgebra.exists_mul_add_eq_and_norm_le_of_isDistinguished hg hu
+        (toWashnitzerAlgebra _ K f)
     have hf1 := norm_toWashnitzerAlgebra_le_one f
     rw [hg1, mul_one] at hq
     -- Lift the quotient and the remainder to the integral algebras.
@@ -183,7 +184,7 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing Wint] {I : Ideal Win
     let q' : Wint' := ⟨q, mem_intWashnitzerAlgebra_iff_norm_le_one.2 (hq.trans hf1)⟩
     have hf' : f = q' * g + p.eval₂ intOptionC intY := toWashnitzerAlgebra_injective (by
       rw [map_add, map_mul, toWashnitzerAlgebra_eval₂, hp, toWashnitzerAlgebra_mk]
-      exact hf)
+      exact hf.symm)
     refine ⟨⟨p, Polynomial.mem_degreeLT.2 hpdeg⟩, ?_⟩
     have hgJ : Ideal.Quotient.mk J (q' * g) = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self g))
@@ -245,7 +246,7 @@ private theorem isNoetherianRing_of_forall_fg {π : K} (hπ1 : ‖π‖ < 1)
   obtain ⟨b, hbI', hb⟩ := Set.not_subset.1 hk
   have hb1 : ‖ι b‖ = 1 := by
     refine (norm_toWashnitzerAlgebra_le_one b).antisymm (not_lt.1 fun hlt ↦ hb ?_)
-    exact mem_span_algebraMap_iff_norm_le.2 ((washnitzerAlgebra.norm_le_iff (norm_nonneg _)).2
+    exact mem_span_algebraMap_iff_norm_le.2 ((washnitzerAlgebra.norm_le_iff).2
       fun t ↦ hπ _ ((washnitzerAlgebra.norm_coeff_le _ t).trans_lt hlt))
   rw [hIk]
   exact (Submodule.fg_span_singleton _).mul (h _ b hbI' hb1)

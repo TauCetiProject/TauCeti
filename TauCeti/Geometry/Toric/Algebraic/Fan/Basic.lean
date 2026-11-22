@@ -93,7 +93,6 @@ variable {N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup V]
 
 /-- A *finite fan* for the lattice map `i : N →+ V` is a finite family of toric cones in `V`,
 closed under passing to faces, whose pairwise intersections are faces of both members. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 structure Fan (i : N →+ V) where
   /-- The ambient map of integral vectors is an integral lattice. -/
   lattice : IsIntegralLattice i
@@ -138,7 +137,7 @@ instance : SemilatticeInf Φ.cones :=
 
 /-- Coercing the intersection of two fan cones gives their intersection as pointed cones. -/
 @[simp, norm_cast] theorem coe_inf (σ τ : Φ.cones) :
-    ((σ ⊓ τ : Φ.cones) : PointedCone ℝ V) = σ.1 ⊓ τ.1 := rfl
+    ((σ ⊓ τ : Φ.cones) : PointedCone ℝ V) = σ.val ⊓ τ.val := rfl
 
 /-- A fan has finitely many cones. -/
 instance : Finite Φ.cones := Φ.finite_cones.to_subtype
@@ -352,7 +351,6 @@ end Fan
 /-- A *morphism of fans* is a map of the integral vectors together with the compatible real-linear
 map, subject to the condition that every cone of the source lands inside some cone of the
 target. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 structure FanHom (Φ : Fan i) (Ψ : Fan i') where
   /-- The underlying map of integral vectors. -/
   latticeMap : N →+ N'
@@ -562,12 +560,12 @@ theorem subfanInclusion_realMap :
 /-- The least ambient cone containing a cone of a subfan is that cone itself. -/
 @[simp]
 theorem subfanInclusion_leastCone (σ : (Φ.subfan S hS hface).cones) :
-    (Φ.subfanInclusion S hS hface).leastCone σ.2 = σ.1 := by
+    (Φ.subfanInclusion S hS hface).leastCone σ.property = σ.val := by
   apply le_antisymm
-  · apply FanHom.leastCone_le _ σ.2 (hS (by simpa only [subfan_cones] using σ.2))
+  · apply FanHom.leastCone_le _ σ.property (hS (by simpa only [subfan_cones] using σ.property))
     simp [subfanInclusion_realMap]
   · simpa only [subfanInclusion_realMap, PointedCone.map_id] using
-      (Φ.subfanInclusion S hS hface).map_le_leastCone σ.2
+      (Φ.subfanInclusion S hS hface).map_le_leastCone σ.property
 
 /-- The inclusion of a fan in itself, as the subfan on all of its cones, is the identity. -/
 @[simp]

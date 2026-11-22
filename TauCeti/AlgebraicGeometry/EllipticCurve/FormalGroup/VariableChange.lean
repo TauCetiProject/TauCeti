@@ -6,15 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
-public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
-public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
-public import TauCeti.RingTheory.MvPowerSeries.Inverse
-import Mathlib.Algebra.CharP.Algebra
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 import TauCeti.RingTheory.Derivation.Localization
@@ -38,10 +33,11 @@ These are the coordinate transitions used to descend the formal neighbourhood of
 the marked identity in families of Weierstrass equations.
 
 The transition also respects the invariant differential and the group law. The curve
-morphism `(x,y) ↦ (u²x+r, u³y+su²x+t)` pulls back `ω = dx / (2y + a₁x + a₃)` on `W` to
-`u⁻¹` times the invariant differential of `C • W`. In the formal parameter, with `ψ` the
-transition, this reads `P_W(ψ(z)) ψ'(z) = u⁻¹ P_{C • W}(z)` for the normalised invariant
-differentials `P` of the formal groups. Over a field, the corresponding statement on function
+morphism `(x,y) ↦ (u²x+r, u³y+su²x+t)` pulls back `ω = dx / (2y + a₁x + a₃)` on `W` (where the
+denominator is nonzero; the formal statements below do not need this) to `u⁻¹` times the
+invariant differential of `C • W`. In the formal parameter, with `ψ` the transition, this reads
+`P_W(ψ(z)) ψ'(z) = u⁻¹ P_{C • W}(z)` for the normalised invariant differentials `P` of the formal
+groups. Over a field, the corresponding statement on function
 fields, for the inverse morphism, is
 `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`;
 here it is read in the formal neighbourhood of the identity, over every ring. Consequently
@@ -104,6 +100,7 @@ theorem formalDenom_def (C : VariableChange R) (W : WeierstrassCurve R) :
       PowerSeries.C (C.s * (C.u : R) ^ 2) * X - PowerSeries.C C.t * formalW (C • W) :=
   (rfl)
 
+/-- The constant coefficient of the denominator of the transition is `u³`. -/
 @[simp]
 theorem constantCoeff_formalDenom (C : VariableChange R) (W : WeierstrassCurve R) :
     constantCoeff (C.formalDenom W) = (C.u : R) ^ 3 := by
@@ -134,8 +131,7 @@ private theorem coeff_one_formalNum_mul_inverseDenom (C : VariableChange R)
     (W : WeierstrassCurve R) :
     coeff 1 ((PowerSeries.C (C.u : R) ^ 2 * X +
       PowerSeries.C C.r * formalW (C • W)) * C.inverseDenom W) = (↑(C.u⁻¹) : R) := by
-  simp [coeff_mul, Finset.Nat.antidiagonal_succ, constantCoeff_inverseDenom,
-    ← map_pow]
+  simp [coeff_one_mul, constantCoeff_inverseDenom, ← map_pow]
   simp only [← Units.val_pow_eq_pow_val, ← Units.val_mul]
   congr 1
   group
@@ -157,7 +153,6 @@ theorem formalCoordinate_toPowerSeries (C : VariableChange R) (W : WeierstrassCu
     (C.formalCoordinate W).toPowerSeries =
       (PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W)) *
         invOfUnit (C.formalDenom W) (C.u ^ 3) := by
-  rw [← inverseDenom_def]
   rfl
 
 /-- The induced parameter has linear coefficient `u⁻¹`, in the direction from
@@ -234,6 +229,34 @@ theorem subst_formalCoordinate_formalDenom_mul (C C' : VariableChange R)
   simp only [inverseDenom_def, formalDenom_def, map_mul, map_pow] at hd
   grind
 
+/-- The formal coordinate times the transition denominator is the numerator
+`u² X + r W(C • W)` of the projective change of variables. -/
+private theorem formalCoordinate_mul_formalDenom (C : VariableChange R) (W : WeierstrassCurve R) :
+    (C.formalCoordinate W).toPowerSeries * C.formalDenom W =
+      PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W) := by
+  have h := C.formalDenom_mul_inverseDenom W
+  simp only [formalCoordinate_toPowerSeries, inverseDenom_def] at h ⊢
+  linear_combination (PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W)) * h
+
+/-- Substituting the formal coordinate of `C` into the numerator of `C'` gives the numerator of
+`C * C'` divided by the denominator of `C`. -/
+private theorem subst_formalCoordinate_numerator (C C' : VariableChange R)
+    (W : WeierstrassCurve R) :
+    subst (C.formalCoordinate (C' • W)).toPowerSeries
+        (PowerSeries.C (C'.u : R) ^ 2 * X + PowerSeries.C C'.r * formalW (C' • W)) =
+      (PowerSeries.C ((C * C').u : R) ^ 2 * X +
+        PowerSeries.C (C * C').r * formalW ((C * C') • W)) * C.inverseDenom (C' • W) := by
+  have hp : HasSubst (C.formalCoordinate (C' • W)).toPowerSeries :=
+    (C.formalCoordinate (C' • W)).hasSubst
+  have hw : subst (C.formalCoordinate (C' • W)).toPowerSeries (formalW (C' • W)) =
+      formalW ((C * C') • W) * C.inverseDenom (C' • W) := by
+    simpa only [inverseDenom_def, mul_smul] using C.subst_formalCoordinate_formalW (C' • W)
+  simp only [PowerSeries.subst_add hp, PowerSeries.subst_mul hp, PowerSeries.subst_pow hp,
+    PowerSeries.subst_X hp, PowerSeries.subst_C, ← PowerSeries.C_apply, hw]
+  simp only [formalCoordinate_toPowerSeries, mul_smul]
+  simp only [inverseDenom_def, mul_def, Units.val_mul, map_add, map_mul, map_pow]
+  ring
+
 /-- Formal parameter transitions reverse the native product, just like the
 maps of Weierstrass curves: first apply `C` to go to `C' • W`, then `C'` to go
 to `W`. This is the cocycle identity for the formal neighbourhood charts. -/
@@ -252,24 +275,14 @@ theorem formalCoordinate_mul (C C' : VariableChange R) (W : WeierstrassCurve R) 
   have he : subst P E * subst P e = 1 := by
     rw [← PowerSeries.coe_substAlgHom hp, ← map_mul, C'.formalDenom_mul_inverseDenom W,
       map_one]
-  have hw : subst P (formalW (C' • W)) = formalW ((C * C') • W) * d := by
-    simpa only [P, d, inverseDenom_def, mul_smul] using C.subst_formalCoordinate_formalW (C' • W)
   have hE : subst P E * D = H := subst_formalCoordinate_formalDenom_mul C C' W
   have hN : subst P (PowerSeries.C (C'.u : R) ^ 2 * X +
-      PowerSeries.C C'.r * formalW (C' • W)) = N * d := by
-    simp only [← PowerSeries.coe_substAlgHom hp, map_add, map_mul, map_pow,
-      PowerSeries.substAlgHom_X, PowerSeries.subst_C, ← PowerSeries.C_apply,
-      PowerSeries.coe_substAlgHom, hw]
-    simp only [P, formalCoordinate_toPowerSeries, N, mul_smul]
-    simp only [d, inverseDenom_def, mul_def, Units.val_mul, map_add, map_mul, map_pow]
-    ring
+      PowerSeries.C C'.r * formalW (C' • W)) = N * d := subst_formalCoordinate_numerator C C' W
   have hQ : subst P (C'.formalCoordinate W).toPowerSeries = N * d * subst P e := by
     simp only [formalCoordinate_toPowerSeries, PowerSeries.subst_mul hp, hN,
       e, inverseDenom_def]
-  have hH : ((C * C').formalCoordinate W).toPowerSeries * H = N := by
-    have h := (C * C').formalDenom_mul_inverseDenom W
-    simp only [formalCoordinate_toPowerSeries, N, H, inverseDenom_def] at *
-    linear_combination N * h
+  have hH : ((C * C').formalCoordinate W).toPowerSeries * H = N :=
+    formalCoordinate_mul_formalDenom (C * C') W
   apply TauCeti.FormalCoordinate.ext
   apply ((C * C').isUnit_formalDenom W).mul_right_cancel
   rw [hH, TauCeti.FormalCoordinate.toPowerSeries_mul, hQ]
@@ -311,21 +324,20 @@ open PowerSeries TauCeti.WeierstrassChange
 variable {R : Type*} [CommRing R]
 
 /-- The field identity behind the transformation of the invariant differential. If `δ` is the
-derivative of `x'`, the curve morphism scales `x` by `U²` and `2y + a₁x + a₃` by `U³`, and `G₁⁻¹Ψ`,
-`G₂⁻¹` are the two expressions of the invariant differential, then `G₁ = UΨG₂`. -/
+derivative of `x'`, the curve morphism scales `dx` by `U²` and `2y + a₁x + a₃` by `U³`, and
+`G₁⁻¹Ψ`, `G₂⁻¹` are the two expressions of the invariant differential, then `G₁ = UΨG₂`. -/
 private theorem eq_mul_mul_of_inv_mul_eq {F : Type*} [Field F] {δ P G₁ G₂ Ψ U : F} (hU : U ≠ 0)
-    (hG₁ : G₁ ≠ 0) (hG₂ : G₂ ≠ 0) (e₁ : (U ^ 3 * P)⁻¹ * (U ^ 2 * δ) = G₁⁻¹ * Ψ)
+    (hG₂ : G₂ ≠ 0) (e₁ : (U ^ 3 * P)⁻¹ * (U ^ 2 * δ) = G₁⁻¹ * Ψ)
     (e₂ : P⁻¹ * δ = G₂⁻¹) :
     G₁ = U * Ψ * G₂ := by
-  have hP0 : P ≠ 0 := by
+  have h : G₁⁻¹ * Ψ = U⁻¹ * G₂⁻¹ := by
+    rw [← e₁, ← e₂, mul_inv]
+    field_simp
+  have hG₁ : G₁ ≠ 0 := by
     rintro rfl
-    exact hG₂ (inv_eq_zero.1 (by simpa using e₂.symm))
-  field_simp at e₁ e₂
-  have hδ : δ ≠ 0 := by
-    rintro rfl
-    exact hP0 (by simpa using e₂.symm)
-  refine mul_left_cancel₀ hδ ?_
-  linear_combination e₁ - U * Ψ * e₂
+    simp [hU, hG₂] at h
+  field_simp at h
+  linear_combination -h
 
 section Domain
 
@@ -335,6 +347,36 @@ variable [IsDomain R]
 because `inv_mul_derivation_div_subst_formalW` is stated for multivariable series rings. -/
 local notation "K" => FractionRing (MvPowerSeries Unit R)
 local notation "ι" => algebraMap (MvPowerSeries Unit R) (FractionRing (MvPowerSeries Unit R))
+
+/-- The curve morphism `(x, y) ↦ (u²x + r, u³y + su²x + t)` maps the point with parameter `z` on
+`C • W` to the point with parameter `ψ(z)` on `W`: in the fraction field `K` of the series ring,
+the coordinates `(ψ / w_W(ψ), -1 / w_W(ψ))` are `(u²x' + r, u³y' + su²x' + t)` for
+`(x', y') = (z / w_{C • W}(z), -1 / w_{C • W}(z))`. -/
+private theorem coords_subst_formalCoordinate_formalW (C : VariableChange R)
+    (W : WeierstrassCurve R) :
+    ι (C.formalCoordinate W).toPowerSeries /
+        ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
+      algebraMap R K (C.u : R) ^ 2 * (ι X / ι (formalW (C • W))) + algebraMap R K C.r ∧
+    -1 / ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
+      algebraMap R K (C.u : R) ^ 3 * (-1 / ι (formalW (C • W))) +
+        algebraMap R K (C.u : R) ^ 2 * algebraMap R K C.s * (ι X / ι (formalW (C • W))) +
+        algebraMap R K C.t := by
+  have hC (c : R) : ι (PowerSeries.C c) = algebraMap R K c := by
+    rw [← PowerSeries.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
+  have hDe := congrArg ι (mul_invOfUnit (C.formalDenom W) (C.u ^ 3) (by simp))
+  rw [map_mul, map_one] at hDe
+  nth_rw 1 [formalDenom_def] at hDe
+  simp only [map_sub, map_mul, map_pow, hC] at hDe
+  have ha0 : ι (formalW (C • W)) ≠ 0 := by
+    simpa [X_subst] using
+      algebraMap_subst_formalW_ne_zero (C • W) (σ := Unit) (KK := K) constantCoeff_X X_ne_zero
+  have he0 := right_ne_zero_of_mul_eq_one hDe
+  rw [subst_formalCoordinate_formalW, formalCoordinate_toPowerSeries]
+  simp only [map_mul, map_add, map_pow, hC]
+  constructor
+  · field_simp
+  · field_simp
+    linear_combination hDe
 
 /-- Over a domain in which `2 ≠ 0`, the transition transforms the denominator of the invariant
 differential by `G_W(ψ(z)) = u ψ'(z) G_{C • W}(z)`. Both sides are read at the points with
@@ -354,40 +396,14 @@ private theorem subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDom
   have hC (c : R) : ι (PowerSeries.C c) = algebraMap R K c := by
     rw [← PowerSeries.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
   have hinj := IsFractionRing.injective (MvPowerSeries Unit R) K
-  have hψ : (C.formalCoordinate W).toPowerSeries ≠ 0 := fun h ↦
-    (C.u⁻¹).ne_zero (by simpa [h] using (coeff_one_formalCoordinate C W).symm)
   -- `ω` at the point with parameter `ψ(z)` of `W` and at the point with parameter `z` of `C • W`
   have e₁ := W.inv_mul_derivation_div_subst_formalW h2 D
     (C.formalCoordinate W).constantCoeff_toPowerSeries
   have e₂ := (C • W).inv_mul_derivation_div_subst_formalW h2 D constantCoeff_X
   rw [X_subst, X_subst, hD, derivative_X, map_one, mul_one] at e₂
   rw [hD] at e₁
-  -- the coordinates `x = u²x' + r` and `y = u³y' + su²x' + t` of the first point in `K`
-  have hDen : ι (C.formalDenom W) = algebraMap R K (C.u : R) ^ 3 -
-      algebraMap R K C.s * algebraMap R K (C.u : R) ^ 2 * ι X -
-      algebraMap R K C.t * ι (formalW (C • W)) := by
-    rw [formalDenom_def]
-    simp only [map_sub, map_mul, map_pow, hC]
-  have hDe := congrArg ι (mul_invOfUnit (C.formalDenom W) (C.u ^ 3) (by simp))
-  rw [map_mul, map_one, hDen] at hDe
-  have ha0 : ι (formalW (C • W)) ≠ 0 := by
-    simpa [X_subst] using
-      algebraMap_subst_formalW_ne_zero (C • W) (σ := Unit) (KK := K) constantCoeff_X X_ne_zero
-  have he0 := right_ne_zero_of_mul_eq_one hDe
-  have hx : ι (C.formalCoordinate W).toPowerSeries /
-      ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
-      algebraMap R K (C.u : R) ^ 2 * (ι X / ι (formalW (C • W))) + algebraMap R K C.r := by
-    rw [subst_formalCoordinate_formalW, formalCoordinate_toPowerSeries]
-    simp only [map_mul, map_add, map_pow, hC]
-    field_simp
-  have hy : -1 / ι (subst (C.formalCoordinate W).toPowerSeries (formalW W)) =
-      algebraMap R K (C.u : R) ^ 3 * (-1 / ι (formalW (C • W))) +
-        algebraMap R K (C.u : R) ^ 2 * algebraMap R K C.s * (ι X / ι (formalW (C • W))) +
-        algebraMap R K C.t := by
-    rw [subst_formalCoordinate_formalW, map_mul]
-    field_simp
-    linear_combination hDe
-  -- `2y + a₁x + a₃` scales by `u³` under the change of variables
+  -- the first point is the image of the second, and `2y + a₁x + a₃` scales by `u³`
+  obtain ⟨hx, hy⟩ := coords_subst_formalCoordinate_formalW C W
   have hP := Affine.variableChange_evalEval_polynomialY (W.baseChange K) (C.map (algebraMap R K))
     (ι X / ι (formalW (C • W))) (-1 / ι (formalW (C • W)))
   simp only [WeierstrassCurve.baseChange, map_variableChange, map_u, Units.coe_map,
@@ -397,34 +413,17 @@ private theorem subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDom
   rw [hP] at e₁
   simp only [map_add, Derivation.leibniz, Derivation.leibniz_pow, hDc, mul_zero, smul_zero,
     add_zero, smul_eq_mul] at e₁
-  have hG₁ : ι (subst (C.formalCoordinate W).toPowerSeries
-      W.formalInvariantDifferentialDenom) ≠ 0 :=
-    (map_ne_zero_iff _ hinj).2 fun h ↦ by
-      simpa [(C.formalCoordinate W).constantCoeff_subst_toPowerSeries] using
-        congrArg constantCoeff h
   have hG₂ : ι (C • W).formalInvariantDifferentialDenom ≠ 0 :=
     (map_ne_zero_iff _ hinj).2 fun h ↦ by simpa using congrArg constantCoeff h
   apply hinj
   rw [map_mul, map_mul, hC]
-  exact eq_mul_mul_of_inv_mul_eq (C.u.isUnit.map (algebraMap R K)).ne_zero hG₁ hG₂ e₁ e₂
+  exact eq_mul_mul_of_inv_mul_eq (C.u.isUnit.map (algebraMap R K)).ne_zero hG₂ e₁ e₂
 
 end Domain
 
 /-- The ring `ℤ[a₁, a₂, a₃, a₄, a₆][u, u⁻¹, r, s, t]` of the universal pair of a Weierstrass
 equation and a change of variables. -/
 private abbrev UnivRing := ChangeRing (MvPolynomial Coeff ℤ)
-
-private theorem injective_algebraMap_univRing :
-    Function.Injective (algebraMap (MvPolynomial (Fin 4) (MvPolynomial Coeff ℤ)) UnivRing) :=
-  IsLocalization.injective _
-    (powers_le_nonZeroDivisors_of_noZeroDivisors (MvPolynomial.X_ne_zero (0 : Fin 4)))
-
-private theorem isDomain_univRing : IsDomain UnivRing :=
-  IsLocalization.isDomain_localization
-    (powers_le_nonZeroDivisors_of_noZeroDivisors (MvPolynomial.X_ne_zero (0 : Fin 4)))
-
-private theorem charZero_univRing : CharZero UnivRing :=
-  charZero_of_injective_algebraMap injective_algebraMap_univRing
 
 /-- Every pair of a Weierstrass equation and a change of variables is a specialization of the
 universal pair over `UnivRing`. -/
@@ -443,8 +442,6 @@ theorem subst_formalCoordinate_formalInvariantDifferentialDenom
     subst (C.formalCoordinate W).toPowerSeries W.formalInvariantDifferentialDenom =
       PowerSeries.C (C.u : R) * d⁄dX (C.formalCoordinate W).toPowerSeries *
         (C • W).formalInvariantDifferentialDenom := by
-  have := isDomain_univRing
-  have := charZero_univRing
   obtain ⟨k, hW, hC⟩ := exists_map_universal C W
   have h := congrArg (PowerSeries.map k)
     (subst_formalCoordinate_formalInvariantDifferentialDenom_of_isDomain two_ne_zero
@@ -517,10 +514,7 @@ theorem formalGroup_smul (C : VariableChange R) (W : WeierstrassCurve R) :
     formalGroup (C • W) = (C.formalCoordinate W)⁻¹ • formalGroup W := by
   -- prove it for the universal pair after embedding `UnivRing` in its fraction field, a
   -- `ℚ`-algebra, and specialize
-  have := isDomain_univRing
-  have := charZero_univRing
   have hι := IsFractionRing.injective UnivRing (FractionRing UnivRing)
-  have : CharZero (FractionRing UnivRing) := charZero_of_injective_algebraMap hι
   obtain ⟨k, hW, hC⟩ := exists_map_universal C W
   generalize WeierstrassCurve.map Universal.curve (algebraMap _ UnivRing) = W₀ at hW
   generalize ChangeRing.universalChange (MvPolynomial Coeff ℤ) = C₀ at hC

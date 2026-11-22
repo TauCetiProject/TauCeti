@@ -14,8 +14,11 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Analysis.ODE.NormalMode
+public import TauCeti.LinearAlgebra.Matrix.CrossProduct
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.LinearAlgebra.Eigenspace.Smul
+import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
+import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 /-!
 # The spring tetrahedron: its symmetry, its force matrix and its normal modes
@@ -62,6 +65,9 @@ below.
 ## Main results
 
 * `TauCeti.tetrahedronSymmetryMatrix_swap`: transpositions act by reflections.
+* `TauCeti.det_tetrahedronSymmetryMatrix`: `det R_σ = sgn σ`.
+* `TauCeti.tetrahedronSymmetryMatrix_mul_crossProductMatrix_mul`:
+  `R_σ ω̂ R_σ⁻¹ = sgn σ • (R_σ ω)^`, where `ω̂` is the matrix of `x ↦ ω ⨯₃ x`.
 * `TauCeti.isSymm_tetrahedronSpringMatrix`, `TauCeti.posSemidef_neg_tetrahedronSpringMatrix`:
   `H` is symmetric and `-H` is positive semidefinite.
 * `TauCeti.tetrahedronSpringMatrix_mulVec_displacementRep`: `H` commutes with the `S₄`-action.
@@ -72,6 +78,8 @@ below.
 * `TauCeti.tetrahedronAffineFieldEquiv_mem_eigenspace_zero_iff` and its `neg_two`, `neg_four`,
   `neg_eight` companions: the four eigenspaces in the coordinates `(t, A)`.
 * `TauCeti.sup_eigenspace_tetrahedronSpringMatrix_eq_top`: the four eigenspaces span `ℝ¹²`.
+* `TauCeti.dotProduct_eq_zero_of_mem_eigenspace_tetrahedronSpringMatrix`: distinct eigenspaces are
+  orthogonal.
 * `TauCeti.finrank_eigenspace_smul_tetrahedronSpringMatrix`: the frequencies of
   `u'' = (κ / (2m)) H u` and their multiplicities.
 * `TauCeti.eq_normalModeMotion_tetrahedronSpringMatrix`: every solution of
@@ -250,6 +258,27 @@ theorem tetrahedronSymmetryMatrix_swap (j k : Fin 4) :
     simp [h]
     module
   · simp [Equiv.swap_apply_of_ne_of_ne hj hk, Ne.symm hj, Ne.symm hk]
+
+/-- **A tetrahedral symmetry has determinant `sgn σ`**: transpositions act by reflections, of
+determinant `-1`. -/
+theorem det_tetrahedronSymmetryMatrix (σ : Equiv.Perm (Fin 4)) :
+    (tetrahedronSymmetryMatrix σ).det = ((Equiv.Perm.sign σ : ℤ) : ℝ) := by
+  refine Equiv.Perm.swap_induction_on σ (by simp) fun f x y hxy ih ↦ ?_
+  rw [map_mul, det_mul, ih, Equiv.Perm.sign_mul, Equiv.Perm.sign_swap hxy,
+    tetrahedronSymmetryMatrix_swap, det_one_sub_vecMulVec]
+  simp [sub_dotProduct, dotProduct_sub, dotProduct_tetrahedronCenteredVertex, hxy, Ne.symm hxy]
+  norm_num
+
+/-- Conjugating the hat matrix `ω̂` of `x ↦ ω ⨯₃ x` by a tetrahedral symmetry gives the hat matrix
+of `R_σ ω`, twisted by the sign: `R_σ ω̂ R_σ⁻¹ = sgn σ • (R_σ ω)^`. So `R_σ` preserves the cross
+product only up to `sgn σ`. -/
+theorem tetrahedronSymmetryMatrix_mul_crossProductMatrix_mul (σ : Equiv.Perm (Fin 4))
+    (ω : Fin 3 → ℝ) :
+    tetrahedronSymmetryMatrix σ * crossProductMatrix ℝ ω * tetrahedronSymmetryMatrix σ⁻¹ =
+      ((Equiv.Perm.sign σ : ℤ) : ℝ) • crossProductMatrix ℝ (tetrahedronSymmetryMatrix σ *ᵥ ω) := by
+  rw [← transpose_tetrahedronSymmetryMatrix,
+    mul_crossProductMatrix_mul_transpose_of_mem_orthogonalGroup
+      (tetrahedronSymmetryMatrix_mem_orthogonalGroup σ), det_tetrahedronSymmetryMatrix]
 
 /-! ### Displacements -/
 
@@ -537,7 +566,8 @@ private theorem tetrahedronSpringMatrix_mulVec_modeBasis (m : Fin 12) :
     fin_cases m <;> refine Prod.ext (funext fun i ↦ ?_) (Matrix.ext fun i j ↦ ?_) <;>
       fin_cases i <;> try fin_cases j
     all_goals
-      simp [tetrahedronModeCoord, tetrahedronModeEigenvalue, Matrix.trace, Fin.sum_univ_three]
+      simp [tetrahedronModeCoord, tetrahedronModeEigenvalue, Matrix.trace, Fin.sum_univ_three,
+        Function.swap, Matrix.vecHead, Matrix.vecTail]
     all_goals norm_num
   rw [← map_smul, ← hm,
     ← tetrahedronSpringMatrix_mulVec_affineFieldEquiv (tetrahedronModeCoord m).1]
@@ -671,6 +701,13 @@ theorem sup_eigenspace_tetrahedronSpringMatrix_eq_top :
   · exact Submodule.mem_sup_left (Submodule.mem_sup_right hm)
   · exact Submodule.mem_sup_right hm
 
+/-- **Distinct eigenspaces of the force matrix are orthogonal**, since `H` is symmetric
+(`Matrix.IsSymm.dotProduct_eq_zero_of_mem_eigenspace`). -/
+theorem dotProduct_eq_zero_of_mem_eigenspace_tetrahedronSpringMatrix {μ ν : ℝ} (h : μ ≠ ν)
+    {u v : Fin 4 × Fin 3 → ℝ} (hu : u ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' μ)
+    (hv : v ∈ Module.End.eigenspace tetrahedronSpringMatrix.toLin' ν) : u ⬝ᵥ v = 0 :=
+  isSymm_tetrahedronSpringMatrix.dotProduct_eq_zero_of_mem_eigenspace h hu hv
+
 /-! ### Frequencies and normal-mode motions
 
 A spring of stiffness `κ` along an edge of squared length `2` between particles of mass `m`
@@ -704,8 +741,7 @@ theorem finrank_eigenspace_smul_tetrahedronSpringMatrix {κ m ω : ℝ} (hκm : 
   have hev {μ s : ℝ} (hs : 0 ≤ s) (h : s ^ 2 = -(κ / (2 * m) * μ)) :
       -(ω ^ 2) / (κ / (2 * m)) = μ ↔ ω = s := by
     rw [← sq_eq_sq₀ hω hs, h, div_eq_iff hc, mul_comm μ, neg_eq_iff_eq_neg]
-  rw [map_smul, ← mul_div_cancel₀ (-(ω ^ 2)) hc, Module.End.eigenspace_smul _ hc,
-    finrank_eigenspace_tetrahedronSpringMatrix]
+  rw [map_smul, Module.End.eigenspace_smul_eq_div _ hc, finrank_eigenspace_tetrahedronSpringMatrix]
   simp only [hev (μ := 0) le_rfl (by simp), hev (Real.sqrt_nonneg _) h₂,
     hev (Real.sqrt_nonneg _) h₄, hev (by positivity) h₈]
 

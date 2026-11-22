@@ -67,11 +67,6 @@ the given element is conjugate to, where the closed forms below apply.
 
 ## References
 
-This serves the engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`, "Engine case: `SU(2)` and the
-maximal torus", which asks for the character on the torus in the closed forms
-`sin ((n+1)θ) / sin θ` and `(e^{i(n+1)θ} - e^{-i(n+1)θ}) / (e^{iθ} - e^{-iθ})`.
-
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 18.
 * T. Bröcker, T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
   Chapter II, §5.
@@ -180,7 +175,7 @@ theorem sin_mul_character_symPower_torusExp (θ : ℝ) :
   have hnum : ((Circle.exp θ : Circle) : ℂ) ^ (d + 1)
       - (((Circle.exp θ : Circle) : ℂ)⁻¹) ^ (d + 1)
       = 2 * Complex.I * (Real.sin (((d : ℝ) + 1) * θ) : ℂ) := by
-    rw [hz, ← Complex.exp_neg, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul, Nat.cast_add,
+    rw [hz, ← Complex.exp_neg, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul, Nat.cast_add,
       Nat.cast_one, h₁, h₂, exp_sub_exp_neg_mul_I]
   rw [torusExp_def, ← mul_assoc, ← hden, sub_inv_mul_character_symPower_torusHom d (Circle.exp θ)]
   exact hnum

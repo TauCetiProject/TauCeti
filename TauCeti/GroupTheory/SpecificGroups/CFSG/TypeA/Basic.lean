@@ -38,7 +38,7 @@ F (x_i(u)) = x_{γ i}(u ^ q),
 
 where `γ` is the diagram permutation already attached to the index: the identity on `A_r(q)`, and
 on `²A_r(q)` the reversal `i ↦ i.rev` of the zero-based Bourbaki numbering. Finally,
-`TauCeti.TypeALieIndex.Group d` applies the roadmap's fixed-points, derived-subgroup, and
+`TauCeti.TypeALieIndex.Group d` applies the fixed-points, derived-subgroup, and
 central-quotient recipe to this endomorphism.
 
 The Steinberg map is also split back into its two factors. `TauCeti.TypeALieIndex.frobenius` is the
@@ -50,7 +50,7 @@ and the two factorizations
 ```text
 F = γ ∘ Frob_q = Frob_q ∘ γ
 ```
-carry the relations that milestone L1 asks of a graph-twisted Steinberg map: the twist order of the
+carry the relations of a graph-twisted Steinberg map: the twist order of the
 diagram permutation `γ` realizes annihilates `γ`, that is `γ = 1` on `A_r(q)` and `γ ^ 2 = 1` on
 `²A_r(q)`, and `γ` commutes with the Frobenius. Its exact order is not proved here.
 
@@ -58,8 +58,8 @@ The branch equations `steinberg_ofA` and `steinberg_ofTwistedA` name the Steinbe
 family as `TauCeti.SlStd.frobenius` and `TauCeti.SlStd.twistedFrobenius` outright, so the upstream
 results about those maps apply to `d.steinberg` directly and are not restated here. The upstream
 lemmas include the commutation `TauCeti.SlStd.graphAutomorphismPoints_comp_frobenius` and the
-involution equation `TauCeti.SlStd.graphAutomorphismPoints_graphAutomorphismPoints` required by
-milestone L1. Separately, `TauCeti.SlStd.twistedFrobenius_comp_self` supplies the square relation
+involution equation `TauCeti.SlStd.graphAutomorphismPoints_graphAutomorphismPoints` of the graph
+factor. Separately, `TauCeti.SlStd.twistedFrobenius_comp_self` supplies the square relation
 for the composite Steinberg map. The fixed-point identification
 `TauCeti.SlStd.map_subtype_fixedSubgroup_frobenius_eq` and the containment
 `TauCeti.SlStd.map_subtype_fixedSubgroup_twistedFrobenius_le` are available in the same way. The
@@ -108,10 +108,6 @@ constructed group is finite or simple.
 * R. W. Carter, *Simple Groups of Lie Type*, Chapters 2 and 14.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
-* The target signatures realized here follow the human-authored formal skeleton
-  `TauCetiRoadmap/CFSGStatement/Suggested.lean`: the ambient group, the numbered simple root
-  subgroup, the Steinberg map and its pinned equation `x_i(u) ↦ x_{γ i}(u ^ q)`, the fixed points,
-  and the derived central quotient, all taken on a validated-index subtype.
 -/
 
 public section
@@ -122,20 +118,20 @@ namespace TypeALieIndex
 
 /-- The algebraic-closure-valued points of the explicit full-weight type-A Chevalley carrier. -/
 noncomputable abbrev AmbientGroup (d : TypeALieIndex) : Type :=
-  SlStd.points d.1.rank d.1.Closure
+  SlStd.points d.val.rank d.val.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of a type-A carrier. -/
-noncomputable def simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank) :
-    Multiplicative d.1.Closure →* d.AmbientGroup :=
-  SlStd.rootSubgroupPoints d.1.rank (.inl i) d.1.Closure
+noncomputable def simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.val.rank) :
+    Multiplicative d.val.Closure →* d.AmbientGroup :=
+  SlStd.rootSubgroupPoints d.val.rank (.inl i) d.val.Closure
 
 /-- The simple-root subgroup is the carrier's numbered root subgroup at the positive simple root
 `i`. This is the equation through which the upstream root-subgroup API reaches
 `simpleRootSubgroup`. It is not a `simp` lemma: `steinberg_simpleRootSubgroup` is the normal form
 the pinned equations of this file are stated against, and unfolding to
 `TauCeti.SlStd.rootSubgroupPoints` would keep it from firing. -/
-theorem simpleRootSubgroup_def (d : TypeALieIndex) (i : Fin d.1.rank) :
-    d.simpleRootSubgroup i = SlStd.rootSubgroupPoints d.1.rank (.inl i) d.1.Closure :=
+theorem simpleRootSubgroup_def (d : TypeALieIndex) (i : Fin d.val.rank) :
+    d.simpleRootSubgroup i = SlStd.rootSubgroupPoints d.val.rank (.inl i) d.val.Closure :=
   (rfl)
 
 /-- **The Steinberg endomorphism of a validated type-A index.** It is the `q`-power Frobenius on
@@ -147,20 +143,20 @@ noncomputable def steinberg (d : TypeALieIndex) : d.AmbientGroup →* d.AmbientG
   -- Matching on `d.1.1` rather than destructuring `d` keeps the validated index `d.1` a variable,
   -- which is what lets `Fin d.1.rank`, `d.1.Closure` and its `ExpChar` instance be found uniformly
   -- in every branch.
-  match h : d.1.1 with
-  | .A _ _ => SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure
+  match h : d.val.val with
+  | .A _ _ => SlStd.frobenius d.val.rank d.val.characteristic d.val.fieldExponent d.val.Closure
   | .twistedA _ _ =>
-      SlStd.twistedFrobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure
+      SlStd.twistedFrobenius d.val.rank d.val.characteristic d.val.fieldExponent d.val.Closure
   | .B _ _ | .C _ _ | .D _ _ | .twistedD _ _ | .E6 _ | .E7 _ | .E8 _ | .F4 _ | .G2 _
   | .twistedE6 _ | .trialityD4 _ | .suzuki _ | .reeG2 _ | .reeF4 _ | .tits =>
-      absurd d.2 (by rw [LieTypeIndex.isTypeA_iff, h]; exact not_false)
+      absurd d.property (by rw [LieTypeIndex.isTypeA_iff, h]; exact not_false)
 
 /-- On `A_r(q)` the Steinberg map is the `q`-power Frobenius of the standard carrier. -/
 theorem steinberg_ofA (rank : ℕ) (q : PrimePower)
     (hvalid : (LieTypeIndex.A rank q).Valid) :
     (ofA rank q hvalid).steinberg =
-      SlStd.frobenius (ofA rank q hvalid).1.rank (ofA rank q hvalid).1.characteristic
-        (ofA rank q hvalid).1.fieldExponent (ofA rank q hvalid).1.Closure := by
+      SlStd.frobenius (ofA rank q hvalid).val.rank (ofA rank q hvalid).val.characteristic
+        (ofA rank q hvalid).val.fieldExponent (ofA rank q hvalid).val.Closure := by
   simp only [steinberg]
 
 /-- On `²A_r(q)` the Steinberg map is the graph-twisted `q`-power Frobenius of the standard
@@ -168,20 +164,20 @@ carrier, that is, the pinned reversal graph automorphism composed with the Frobe
 theorem steinberg_ofTwistedA (rank : ℕ) (q : PrimePower)
     (hvalid : (LieTypeIndex.twistedA rank q).Valid) :
     (ofTwistedA rank q hvalid).steinberg =
-      SlStd.twistedFrobenius (ofTwistedA rank q hvalid).1.rank
-        (ofTwistedA rank q hvalid).1.characteristic (ofTwistedA rank q hvalid).1.fieldExponent
-        (ofTwistedA rank q hvalid).1.Closure := by
+      SlStd.twistedFrobenius (ofTwistedA rank q hvalid).val.rank
+        (ofTwistedA rank q hvalid).val.characteristic (ofTwistedA rank q hvalid).val.fieldExponent
+        (ofTwistedA rank q hvalid).val.Closure := by
   simp only [steinberg]
 
 /-- **The Steinberg map has the pinned action on every positive simple-root subgroup.** It sends
 `x_i(u)` to `x_{γ i}(u ^ q)`, where `γ` is the diagram permutation of the index and `q` is its
 recorded field order. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toGraphTwistedIndex.diagramPerm i)
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rcases d.exists_eq_ofA_or_exists_eq_ofTwistedA with
     ⟨rank, q, hvalid, rfl⟩ | ⟨rank, q, hvalid, rfl⟩
   · rw [steinberg_ofA, simpleRootSubgroup_def, simpleRootSubgroup_def,
@@ -209,7 +205,7 @@ parameter recorded by the index. It is the same map on both type-A families: wha
 `²A_r(q)` from `A_r(q)` is the graph automorphism `TauCeti.TypeALieIndex.graphAut` its Steinberg
 map composes with this one. -/
 noncomputable def frobenius (d : TypeALieIndex) : d.AmbientGroup →* d.AmbientGroup :=
-  SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure
+  SlStd.frobenius d.val.rank d.val.characteristic d.val.fieldExponent d.val.Closure
 
 /-- The type-A Frobenius is the standard carrier's Frobenius at the characteristic and field
 exponent recorded by the index. -/
@@ -219,27 +215,29 @@ exponent recorded by the index. -/
 -- `TauCeti.SlStd.frobenius` would keep `frobenius_simpleRootSubgroup` from firing.
 theorem frobenius_def (d : TypeALieIndex) :
     d.frobenius =
-      SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure :=
+      SlStd.frobenius d.val.rank d.val.characteristic d.val.fieldExponent d.val.Closure :=
   (rfl)
 
 /-- The Frobenius raises every matrix entry to the field order recorded by the index. -/
 @[simp]
 theorem coe_frobenius_apply (d : TypeALieIndex) (g : d.AmbientGroup)
-    (i j : Fin (d.1.rank + 1)) :
-    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin (d.1.rank + 1)) d.1.Closure) :
-        Matrix (Fin (d.1.rank + 1)) (Fin (d.1.rank + 1)) d.1.Closure) i j =
-      ((g : Matrix.GeneralLinearGroup (Fin (d.1.rank + 1)) d.1.Closure) :
-        Matrix (Fin (d.1.rank + 1)) (Fin (d.1.rank + 1)) d.1.Closure) i j ^ d.1.fieldOrder := by
-  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+    (i j : Fin (d.val.rank + 1)) :
+    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin (d.val.rank + 1)) d.val.Closure) :
+        Matrix (Fin (d.val.rank + 1)) (Fin (d.val.rank + 1)) d.val.Closure) i j =
+      ((g : Matrix.GeneralLinearGroup (Fin (d.val.rank + 1)) d.val.Closure) :
+        Matrix (Fin (d.val.rank + 1)) (Fin (d.val.rank + 1)) d.val.Closure) i j ^ d.val.fieldOrder
+            := by
+  rw [frobenius_def, d.val.fieldOrder_eq_characteristic_pow]
   exact SlStd.coe_frobenius_apply _ _ _ _ g i j
 
 /-- **The Frobenius fixes the Bourbaki numbering of a positive simple-root subgroup and raises its
 parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
-      d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+      d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder))
+          := by
   rw [TypeALieIndex.frobenius, simpleRootSubgroup_def, SlStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
@@ -248,23 +246,23 @@ the defining characteristic. The `q`-power Frobenius `TauCeti.TypeALieIndex.frob
 `e`-th power, for `e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`.
 The two agree when the index has prime field order. -/
 noncomputable def primeFrobenius (d : TypeALieIndex) : d.AmbientGroup →* d.AmbientGroup :=
-  SlStd.frobenius d.1.rank d.1.characteristic 1 d.1.Closure
+  SlStd.frobenius d.val.rank d.val.characteristic 1 d.val.Closure
 
 /-- The prime-field Frobenius is the standard carrier's Frobenius at exponent one. -/
 -- Not a `simp` lemma: `primeFrobenius_simpleRootSubgroup` is the normal form the equations of
 -- this file are stated against, and unfolding to the carrier's Frobenius would keep it from firing.
 theorem primeFrobenius_def (d : TypeALieIndex) :
-    d.primeFrobenius = SlStd.frobenius d.1.rank d.1.characteristic 1 d.1.Closure :=
+    d.primeFrobenius = SlStd.frobenius d.val.rank d.val.characteristic 1 d.val.Closure :=
   (rfl)
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a positive simple-root subgroup and
 raises its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, SlStd.frobenius_rootSubgroupPoints, pow_one]
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
@@ -273,7 +271,7 @@ theorem primeFrobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
 /-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
 exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow (d : TypeALieIndex) :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, TypeALieIndex.frobenius, SlStd.frobenius_pow, Nat.one_mul]
 
 /-- **The pinned graph automorphism of a validated type-A index.** It realizes on the ambient group
@@ -287,12 +285,12 @@ noncomputable def graphAut (d : TypeALieIndex) : MulAut d.AmbientGroup :=
   -- As in `steinberg`, matching on `d.1.1` rather than destructuring `d` keeps the validated index
   -- `d.1` a variable, which is what lets `d.1.rank` and `d.1.Closure` be found uniformly in every
   -- branch.
-  match h : d.1.1 with
+  match h : d.val.val with
   | .A _ _ => 1
-  | .twistedA _ _ => SlStd.graphAutomorphismPoints d.1.rank d.1.Closure
+  | .twistedA _ _ => SlStd.graphAutomorphismPoints d.val.rank d.val.Closure
   | .B _ _ | .C _ _ | .D _ _ | .twistedD _ _ | .E6 _ | .E7 _ | .E8 _ | .F4 _ | .G2 _
   | .twistedE6 _ | .trialityD4 _ | .suzuki _ | .reeG2 _ | .reeF4 _ | .tits =>
-      absurd d.2 (by rw [LieTypeIndex.isTypeA_iff, h]; exact not_false)
+      absurd d.property (by rw [LieTypeIndex.isTypeA_iff, h]; exact not_false)
 
 /-- On `A_r(q)` the graph automorphism is trivial: the `A_r` diagram symmetry is not used by the
 untwisted family. -/
@@ -305,8 +303,8 @@ reverse inverse transpose. -/
 theorem graphAut_ofTwistedA (rank : ℕ) (q : PrimePower)
     (hvalid : (LieTypeIndex.twistedA rank q).Valid) :
     (ofTwistedA rank q hvalid).graphAut =
-      SlStd.graphAutomorphismPoints (ofTwistedA rank q hvalid).1.rank
-        (ofTwistedA rank q hvalid).1.Closure := by
+      SlStd.graphAutomorphismPoints (ofTwistedA rank q hvalid).val.rank
+        (ofTwistedA rank q hvalid).val.Closure := by
   simp only [graphAut]
 
 /-- **The graph automorphism has the pinned action on every positive simple-root subgroup**: it
@@ -314,8 +312,8 @@ sends `x_i(u)` to `x_{γ i}(u)`, where `γ` is the diagram permutation of the in
 carried across unchanged, with neither a field power nor a sign; on a general root the equation
 would acquire a sign forced by the Chevalley structure constants. -/
 @[simp]
-theorem graphAut_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem graphAut_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.graphAut (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toGraphTwistedIndex.diagramPerm i) u := by
   rcases d.exists_eq_ofA_or_exists_eq_ofTwistedA with
@@ -347,8 +345,8 @@ theorem graphAut_mul_self (d : TypeALieIndex) : d.graphAut * d.graphAut = 1 :=
   MulEquiv.ext fun g => by rw [MulAut.mul_apply, graphAut_graphAut, MulAut.one_apply]
 
 /-- **The twist order of a type-A index annihilates its graph automorphism**, so `γ = 1` on
-`A_r(q)` and `γ ^ 2 = 1` on `²A_r(q)`. This is the order relation milestone L1 asks of the graph
-factor of a Steinberg map, and it matches `TauCeti.GraphTwistedIndex.diagramPerm_pow_twistOrder` on
+`A_r(q)` and `γ ^ 2 = 1` on `²A_r(q)`. This is the order relation of the graph factor of a
+Steinberg map, and it matches `TauCeti.GraphTwistedIndex.diagramPerm_pow_twistOrder` on
 the diagram permutation that `γ` realizes. -/
 @[simp]
 theorem graphAut_pow_twistOrder (d : TypeALieIndex) :
@@ -367,7 +365,7 @@ theorem graphAut_frobenius (d : TypeALieIndex) (g : d.AmbientGroup) :
   · rw [graphAut_ofTwistedA, TypeALieIndex.frobenius, SlStd.graphAutomorphismPoints_frobenius]
 
 /-- The graph automorphism commutes with the Frobenius, as an identity of endomorphisms. This is
-the relation `γ ∘ Frob_q = Frob_q ∘ γ` required of the graph-twisted families by milestone L1. -/
+the relation `γ ∘ Frob_q = Frob_q ∘ γ` of the graph-twisted families. -/
 theorem graphAut_comp_frobenius (d : TypeALieIndex) :
     d.graphAut.toMonoidHom.comp d.frobenius = d.frobenius.comp d.graphAut.toMonoidHom :=
   MonoidHom.ext fun g => by

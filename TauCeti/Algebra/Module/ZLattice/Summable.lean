@@ -35,6 +35,8 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
   discrete.
 * `ZLattice.summable_one_add_norm_pow_inv`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ (-r)` converges once the
   natural number `r` exceeds the rank of `L`.
+* `ZLattice.summable_one_add_norm_pow_mul_norm_of_decay`: a function decaying faster than every
+  power of `1 + ‖x‖` is summable along `L` against every power of `1 + ‖ℓ‖`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
 * `TauCeti.summable_pi_int_inv_one_add_norm_pow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-(card d + 1))`
   converges.
@@ -62,7 +64,7 @@ theorem discreteTopology_of_summable_exp_neg_mul_norm_add_sq (γ : E) {c : ℝ} 
     have := pow_le_pow_left₀ (norm_nonneg _) hv 2
     exact Real.exp_le_exp.mpr (by nlinarith)
   have hnhds : {v : L | ‖(v : E)‖ < 1} ∈ 𝓝 (0 : L) :=
-    (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).mem_nhds (by simp)
+    (isOpen_lt (continuous_norm.comp continuous_subtypeVal) continuous_const).mem_nhds (by simp)
   refine discreteTopology_of_isOpen_singleton_zero (isOpen_singleton_of_finite_mem_nhds 0 hnhds
     ((hfin (‖γ‖ + 1)).subset fun v hv => ?_))
   have := norm_add_le γ (v : E)
@@ -102,6 +104,19 @@ theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : Module.finrank ℤ L < r) 
   rw [norm_inv, norm_pow, Real.norm_of_nonneg (by positivity), ← inv_pow]
   gcongr
   simp
+
+/-- A function on `E` decaying faster than every power of `1 + ‖x‖` is summable along a discrete
+subgroup `L` against every power of `1 + ‖ℓ‖`. -/
+theorem summable_one_add_norm_pow_mul_norm_of_decay {F : Type*} [SeminormedAddCommGroup F]
+    {f : E → F} (hf : ∀ N : ℕ, ∃ C, ∀ x, (1 + ‖x‖) ^ N * ‖f x‖ ≤ C) (k : ℕ) :
+    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ k * ‖f ℓ‖ := by
+  set r := Module.finrank ℤ L + 1
+  obtain ⟨C, hC⟩ := hf (k + r)
+  have hsum := summable_one_add_norm_pow_inv L (r := r) (by omega)
+  refine (hsum.mul_left C).of_nonneg_of_le (fun ℓ ↦ by positivity) fun ℓ ↦ ?_
+  have hpos : 0 < (1 + ‖(ℓ : E)‖) ^ r := by positivity
+  rw [← div_eq_mul_inv, le_div_iff₀ hpos, mul_right_comm, ← pow_add]
+  exact hC ℓ
 
 end ZLattice
 

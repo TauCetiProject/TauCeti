@@ -80,20 +80,21 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 vector field of `α`. For a contact form and `C²` functions it equals `α([X_f, X_g])`
 (`TauCeti.SmoothForm.IsContactForm.apply_mlieBracket_contactHamiltonianVectorField`). -/
 def jacobiBracket (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M) : ℝ :=
-  mextDeriv α.1 x ![α.contactHamiltonianVectorField f x, α.contactHamiltonianVectorField g x] +
+  mextDeriv α.val x ![α.contactHamiltonianVectorField f x, α.contactHamiltonianVectorField g x] +
     f x * mvfderiv I g x (α.reebVectorField x) - g x * mvfderiv I f x (α.reebVectorField x)
 
 /-- The Jacobi bracket unfolds as `dα(X_f, X_g) + f R_α(g) - g R_α(f)`. -/
 theorem jacobiBracket_def (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M) :
     α.jacobiBracket f g x =
-      mextDeriv α.1 x ![α.contactHamiltonianVectorField f x, α.contactHamiltonianVectorField g x] +
+      mextDeriv α.val x ![α.contactHamiltonianVectorField f x, α.contactHamiltonianVectorField g x]
+          +
         f x * mvfderiv I g x (α.reebVectorField x) - g x * mvfderiv I f x (α.reebVectorField x) :=
   (rfl)
 
 /-- The Jacobi bracket is antisymmetric. -/
 theorem neg_jacobiBracket (α : SmoothForm I M ℝ 1) (f g : M → ℝ) (x : M) :
     -α.jacobiBracket g f x = α.jacobiBracket f g x := by
-  rw [jacobiBracket_def, jacobiBracket_def, mextDeriv_apply_swap α.1 x]
+  rw [jacobiBracket_def, jacobiBracket_def, mextDeriv_apply_swap α.val x]
   ring
 
 /-- The Jacobi bracket of a function with itself vanishes. -/
@@ -159,7 +160,7 @@ and `Y` are contact Hamiltonian vector fields of `f` and `g`, then
 theorem mvfderiv_apply_eq (hY : α.IsContactHamiltonianVectorField g Y)
     (hX : α.IsContactHamiltonianVectorField f X) (x : M) :
     mvfderiv I g x (X x) =
-      f x * mvfderiv I g x (α.reebVectorField x) + mextDeriv α.1 x ![X x, Y x] := by
+      f x * mvfderiv I g x (α.reebVectorField x) + mextDeriv α.val x ![X x, Y x] := by
   have h := hY.mextDeriv_apply_eq x (X x)
   rw [hX.apply_eq, mextDeriv_apply_swap] at h
   linarith
@@ -171,15 +172,15 @@ theorem apply_mlieBracket (hX : α.IsContactHamiltonianVectorField f X)
     (hY : α.IsContactHamiltonianVectorField g Y)
     (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
     (hYd : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) x) :
-    α.1 x ![mlieBracket I X Y x] = mextDeriv α.1 x ![X x, Y x] +
+    α.val x ![mlieBracket I X Y x] = mextDeriv α.val x ![X x, Y x] +
       f x * mvfderiv I g x (α.reebVectorField x) - g x * mvfderiv I f x (α.reebVectorField x) := by
   -- The invariant formula `dα(X, Y) = X(α(Y)) - Y(α(X)) - α([X, Y])`, with `α(X) = f` and
   -- `α(Y) = g`.
   have h := SmoothForm.mextDeriv_apply_one (φ := α) hXd hYd
-  have hfX : (fun y ↦ α.1 y ![X y]) = f := funext hX.apply_eq
-  have hgY : (fun y ↦ α.1 y ![Y y]) = g := funext hY.apply_eq
+  have hfX : (fun y ↦ α.val y ![X y]) = f := funext hX.apply_eq
+  have hgY : (fun y ↦ α.val y ![Y y]) = g := funext hY.apply_eq
   rw [hfX, hgY, hY.mvfderiv_apply_eq hX, hX.mvfderiv_apply_eq hY,
-    mextDeriv_apply_swap α.1 x (Y x)] at h
+    mextDeriv_apply_swap α.val x (Y x)] at h
   linarith
 
 /-- The contraction of `dα` with the bracket of contact Hamiltonian vector fields `X` of `f` and
@@ -195,10 +196,10 @@ private theorem mextDeriv_mlieBracket_apply [CompleteSpace E]
     (hRf : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (α.reebVectorField y)) x)
     (hRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I g y (α.reebVectorField y)) x)
     (v : TangentSpace I x) :
-    mextDeriv α.1 x ![mlieBracket I X Y x, v] =
+    mextDeriv α.val x ![mlieBracket I X Y x, v] =
       (mvfderiv I (fun y ↦ mvfderiv I g y (α.reebVectorField y)) x (X x) -
-        mvfderiv I (fun y ↦ mvfderiv I f y (α.reebVectorField y)) x (Y x)) * α.1 x ![v] -
-      mvfderiv I (fun y ↦ mextDeriv α.1 y ![X y, Y y] +
+        mvfderiv I (fun y ↦ mvfderiv I f y (α.reebVectorField y)) x (Y x)) * α.val x ![v] -
+      mvfderiv I (fun y ↦ mextDeriv α.val y ![X y, Y y] +
         f y * mvfderiv I g y (α.reebVectorField y) -
         g y * mvfderiv I f y (α.reebVectorField y)) x v := by
   have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
@@ -209,11 +210,11 @@ private theorem mextDeriv_mlieBracket_apply [CompleteSpace E]
     FiberBundle.mdifferentiableAt_extend I E v
   have hWx : W x = v := FiberBundle.extend_apply_self E v
   -- Differentiability of the functions whose derivatives appear below.
-  have hA : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mextDeriv α.1 y ![X y, Y y]) x := by
+  have hA : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mextDeriv α.val y ![X y, Y y]) x := by
     simpa only [mextDerivₗ_apply] using
       (mextDerivₗ I 1 α).mdifferentiableAt_apply_vectorField (V := fun i y ↦ ![X y, Y y] i)
         fun i ↦ by fin_cases i <;> assumption
-  have hαW : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ α.1 y ![W y]) x :=
+  have hαW : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ α.val y ![W y]) x :=
     α.mdifferentiableAt_apply_vectorField (V := fun i y ↦ ![W y] i)
       fun i ↦ by fin_cases i; exact hW
   have hfRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ f y * mvfderiv I g y (α.reebVectorField y)) x :=
@@ -221,11 +222,11 @@ private theorem mextDeriv_mlieBracket_apply [CompleteSpace E]
   have hgRf : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ g y * mvfderiv I f y (α.reebVectorField y)) x :=
     (hg.mdifferentiableAt two_ne_zero).mul hRf
   have hRgαW : MDifferentiableAt I 𝓘(ℝ)
-      (fun y ↦ mvfderiv I g y (α.reebVectorField y) * α.1 y ![W y]) x := hRg.mul hαW
+      (fun y ↦ mvfderiv I g y (α.reebVectorField y) * α.val y ![W y]) x := hRg.mul hαW
   have hRfαW : MDifferentiableAt I 𝓘(ℝ)
-      (fun y ↦ mvfderiv I f y (α.reebVectorField y) * α.1 y ![W y]) x := hRf.mul hαW
-  have hdgW := mdifferentiableAt_mvfderiv_apply hg h2 hW
-  have hdfW := mdifferentiableAt_mvfderiv_apply hf h2 hW
+      (fun y ↦ mvfderiv I f y (α.reebVectorField y) * α.val y ![W y]) x := hRf.mul hαW
+  have hdgW := mdifferentiableAt_mvfderiv_apply hg le_rfl hW
+  have hdfW := mdifferentiableAt_mvfderiv_apply hf le_rfl hW
   -- `d(dα)(X, Y, W) = 0`, expanded by the invariant formula.
   have hdd := SmoothForm.mextDeriv_apply_two (φ := mextDerivₗ I 1 α) hXd hYd hW
   simp only [mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv, Pi.zero_apply,
@@ -238,20 +239,20 @@ private theorem mextDeriv_mlieBracket_apply [CompleteSpace E]
   have hYWX := hX.mextDeriv_apply_eq x (mlieBracket I Y W x)
   -- The derivative along `W` of `Y(f)`; that of `X(g)` is `hY.mvfderiv_apply_eq hX`.
   have efY : (fun y ↦ mvfderiv I f y (Y y)) =
-      fun y ↦ g y * mvfderiv I f y (α.reebVectorField y) - mextDeriv α.1 y ![X y, Y y] := by
+      fun y ↦ g y * mvfderiv I f y (α.reebVectorField y) - mextDeriv α.val y ![X y, Y y] := by
     funext y
-    rw [hX.mvfderiv_apply_eq hY y, mextDeriv_apply_swap α.1 y (Y y)]
+    rw [hX.mvfderiv_apply_eq hY y, mextDeriv_apply_swap α.val y (Y y)]
     ring
   rw [mvfderiv_mlieBracket hg h2 hXd hW, funext fun y ↦ hY.mvfderiv_apply_eq hX y,
     mvfderiv_fun_add hfRg hA] at hXWY
   rw [mvfderiv_mlieBracket hf h2 hYd hW, efY, mvfderiv_fun_sub hgRf hA] at hYWX
   -- The terms differentiating `dα(Y, W)` and `dα(X, W)`.
-  rw [mextDeriv_apply_swap α.1 x (mlieBracket I X W x),
-    mextDeriv_apply_swap α.1 x (mlieBracket I Y W x),
+  rw [mextDeriv_apply_swap α.val x (mlieBracket I X W x),
+    mextDeriv_apply_swap α.val x (mlieBracket I Y W x),
     funext fun y ↦ hY.mextDeriv_apply_eq y (W y), funext fun y ↦ hX.mextDeriv_apply_eq y (W y),
     mvfderiv_fun_sub hRgαW hdgW, mvfderiv_fun_sub hRfαW hdfW,
     mvfderiv_fun_mul hRg hαW, mvfderiv_fun_mul hRf hαW] at hdd
-  have hAfRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mextDeriv α.1 y ![X y, Y y] +
+  have hAfRg : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mextDeriv α.val y ![X y, Y y] +
       f y * mvfderiv I g y (α.reebVectorField y)) x := hA.add hfRg
   rw [mvfderiv_fun_sub hAfRg hgRf, mvfderiv_fun_add hA hfRg]
   simp only [add_apply, sub_apply, smul_apply, smul_eq_mul] at hdd hXWY hYWX ⊢
@@ -274,11 +275,11 @@ theorem IsContactHamiltonianVectorField.mlieBracket (hα : α.IsContactForm)
     (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 𝓘(ℝ) 2 g)
     (hXd : MDifferentiable I I.tangent (fun y ↦ (X y : TangentBundle I M)))
     (hYd : MDifferentiable I I.tangent (fun y ↦ (Y y : TangentBundle I M))) :
-    α.IsContactHamiltonianVectorField (fun y ↦ α.1 y ![mlieBracket I X Y y])
+    α.IsContactHamiltonianVectorField (fun y ↦ α.val y ![mlieBracket I X Y y])
       (mlieBracket I X Y) := by
   refine isContactHamiltonianVectorField_iff.2 fun x ↦ ⟨rfl, fun v ↦ ?_⟩
-  have hfun : (fun y ↦ α.1 y ![VectorField.mlieBracket I X Y y]) =
-      fun y ↦ mextDeriv α.1 y ![X y, Y y] +
+  have hfun : (fun y ↦ α.val y ![VectorField.mlieBracket I X Y y]) =
+      fun y ↦ mextDeriv α.val y ![X y, Y y] +
         f y * mvfderiv I g y (α.reebVectorField y) - g y * mvfderiv I f y (α.reebVectorField y) :=
     funext fun y ↦ hX.apply_mlieBracket hY (hXd y) (hYd y)
   have key := hX.mextDeriv_mlieBracket_apply hY (hf x) (hg x) (hXd x) (hYd x)
@@ -288,7 +289,7 @@ theorem IsContactHamiltonianVectorField.mlieBracket (hα : α.IsContactForm)
   have hR := key (α.reebVectorField x)
   rw [hα.mextDeriv_reebVectorField_right, hα.apply_reebVectorField, mul_one] at hR
   rw [hfun, key v]
-  linear_combination -α.1 x ![v] * hR
+  linear_combination -α.val x ![v] * hR
 
 namespace IsContactForm
 
@@ -358,7 +359,7 @@ theorem apply_mlieBracket_contactHamiltonianVectorField
       (fun y ↦ (α.contactHamiltonianVectorField f y : TangentBundle I M)) x)
     (hg : MDifferentiableAt I I.tangent
       (fun y ↦ (α.contactHamiltonianVectorField g y : TangentBundle I M)) x) :
-    α.1 x ![mlieBracket I (α.contactHamiltonianVectorField f)
+    α.val x ![mlieBracket I (α.contactHamiltonianVectorField f)
       (α.contactHamiltonianVectorField g) x] = α.jacobiBracket f g x :=
   (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField f).apply_mlieBracket
     (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField g) hf hg
@@ -373,7 +374,7 @@ theorem contactHamiltonianVectorField_jacobiBracket (hf : ContMDiff I 𝓘(ℝ) 
   have hXg := hα.mdifferentiable_contactHamiltonianVectorField hg
   have h := (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField f).mlieBracket hα
     (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField g) hf hg hXf hXg
-  have hfun : (fun y ↦ α.1 y ![mlieBracket I (α.contactHamiltonianVectorField f)
+  have hfun : (fun y ↦ α.val y ![mlieBracket I (α.contactHamiltonianVectorField f)
       (α.contactHamiltonianVectorField g) y]) = α.jacobiBracket f g :=
     funext fun y ↦ hα.apply_mlieBracket_contactHamiltonianVectorField (hXf y) (hXg y)
   rw [hfun] at h
@@ -397,7 +398,8 @@ theorem mvfderiv_jacobiBracket_reebVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hα.mdifferentiable_mvfderiv_reebVectorField hg x) (α.reebVectorField x)
   rw [hα.mextDeriv_reebVectorField_right, hα.apply_reebVectorField, mul_one] at h
   have hfun : α.jacobiBracket f g = fun y ↦
-      mextDeriv α.1 y ![α.contactHamiltonianVectorField f y, α.contactHamiltonianVectorField g y] +
+      mextDeriv α.val y ![α.contactHamiltonianVectorField f y, α.contactHamiltonianVectorField g y]
+          +
         f y * mvfderiv I g y (α.reebVectorField y) - g y * mvfderiv I f y (α.reebVectorField y) :=
     funext (jacobiBracket_def α f g)
   rw [hfun]
@@ -430,10 +432,10 @@ theorem jacobiBracket_jacobi (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 
     funext fun y ↦ by rw [hα.jacobiBracket_eq_neg_mvfderiv]; ring
   have hkf : MDifferentiableAt I 𝓘(ℝ) (α.jacobiBracket k f) x := by
     rw [funext (hα.jacobiBracket_eq_mvfderiv k f)]
-    exact (mdifferentiableAt_mvfderiv_apply (hf x) h2 hXk).sub hfRk
+    exact (mdifferentiableAt_mvfderiv_apply (hf x) le_rfl hXk).sub hfRk
   have hfg : MDifferentiableAt I 𝓘(ℝ) (α.jacobiBracket f g) x := by
     rw [funext (hα.jacobiBracket_eq_neg_mvfderiv f g)]
-    exact (mdifferentiableAt_mvfderiv_apply (hf x) h2 hXg).neg.add hfRg
+    exact (mdifferentiableAt_mvfderiv_apply (hf x) le_rfl hXg).neg.add hfRg
   -- Expand `{f, {g, k}} = -[X_g, X_k](f) + f R_α({g, k})`.
   have h1 := hα.jacobiBracket_eq_neg_mvfderiv f (α.jacobiBracket g k) x
   rw [hα.contactHamiltonianVectorField_jacobiBracket hg hk,

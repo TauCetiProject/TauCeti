@@ -151,10 +151,10 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     rw [Subtype.isCompact_iff, image_preimage_eq_of_subset fun y hy ↦ ⟨⟨y, hgV hy⟩, rfl⟩]
     exact hgc
   have hC : IsCompact (Subtype.val '' (f ⁻¹' (Subtype.val ⁻¹' tsupport g))) :=
-    (hp.isCompact_preimage hK).image continuous_subtype_val
+    (hp.isCompact_preimage hK).image continuous_subtypeVal
   have hCs : Subtype.val '' (f ⁻¹' (Subtype.val ⁻¹' tsupport g)) ⊆ U := by
     rintro _ ⟨z, -, rfl⟩
-    exact z.2
+    exact z.property
   have hint' : ∀ c : E → ℝ, ContinuousOn c U → IntegrableOn (fun x ↦ c x • g (φ x)) U :=
     fun c hc ↦ (((hc.smul (hg.comp_continuousOn hφd.continuousOn)).mono hCs).integrableOn_compact'
       hC hC.measurableSet).of_forall_sdiff_eq_zero hs.measurableSet fun x hx ↦ by
@@ -190,7 +190,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
       · simp [h]
       · exact absurd (Or.inl ⟨hx.1, h⟩) hx.2
   -- A measurable map agreeing with `φ` on `U`, to which the area formula applies.
-  set ψ : E → E := (U : Set E).piecewise φ fun _ ↦ 0 with hψ_def
+  set ψ : E → E := (U : Set E).piecewise φ fun _ ↦ 0
   have hψm : Measurable ψ := hφd.continuousOn.measurable_piecewise continuousOn_const
     hs.measurableSet
   have hψφ : ∀ x ∈ (U : Set E), ψ =ᶠ[𝓝 x] φ := fun x hx ↦
@@ -210,7 +210,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     · rintro ⟨hwU, hw⟩
       exact ⟨⟨w, hwU⟩, (hφ ⟨w, hwU⟩).symm.trans hw, rfl⟩
     · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, (hφ z).trans hz⟩
+      exact ⟨z.property, (hφ z).trans hz⟩
   have hfin : ∀ᵐ y, ((U : Set E) ∩ φ ⁻¹' {y}).Finite := hsard.mono fun y hy ↦ by
     refine (IsCompact.finite_inter_preimage_of_hasFDerivAt ?_ (fun x hx ↦ hd x hx.1) fun x hx ↦
       ⟨_, ((fderiv ℝ φ x).toContinuousLinearEquivOfDetNeZero
@@ -218,7 +218,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     rw [hfib, preimage_comp]
     exact (hp.isCompact_preimage (Subtype.isCompact_iff.2
       ((finite_singleton y).subset (image_preimage_subset _ _)).isCompact)).image
-        continuous_subtype_val
+        continuous_subtypeVal
   -- The area formula with multiplicity on an open subset of `U` where the Jacobian does not
   -- vanish, applied to the measurable map `ψ`.
   have harea : ∀ S : Set E, IsOpen S → S ⊆ U → (∀ x ∈ S, (fderiv ℝ φ x).det ≠ 0) →
@@ -258,7 +258,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
   · simp [hgy]
   have hyV : y ∈ (V : Set E) := hgV (subset_tsupport g hgy)
   rw [o.degree_comap_eq_ncard_sub_ncard hE hp hφ (f' := fderiv ℝ φ) (y := ⟨y, hyV⟩)
-    (fun x _ ↦ hd x x.2) fun x hx ↦ hy x x.2 ((hφ x).trans (congrArg Subtype.val hx))]
+    (fun x _ ↦ hd x x.property) fun x hx ↦ hy x x.property ((hφ x).trans (congrArg Subtype.val hx))]
   push_cast
   rw [sub_smul]
 

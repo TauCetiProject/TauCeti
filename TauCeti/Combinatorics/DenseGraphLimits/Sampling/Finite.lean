@@ -383,8 +383,8 @@ theorem sampleGraph_const (p : I) (n : ℕ) :
   refine Measure.ext_of_singleton fun G => ?_
   rw [sampleGraph_singleton, sampleMass_const,
     SimpleGraph.binomialRandom_singleton]
-  have hp : 0 ≤ (p : ℝ) := p.2.1
-  have hσ : 0 ≤ 1 - (p : ℝ) := sub_nonneg.mpr p.2.2
+  have hp : 0 ≤ (p : ℝ) := p.property.1
+  have hσ : 0 ≤ 1 - (p : ℝ) := sub_nonneg.mpr p.property.2
   rw [ENNReal.ofReal_mul (pow_nonneg hp _), ENNReal.ofReal_pow hp,
     ENNReal.ofReal_pow hσ]
   have hncard : G.edgeSet.ncard = G.edgeFinset.card := by

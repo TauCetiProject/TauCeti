@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.PositiveDegrees.Grading
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Degree completions as products of homogeneous pieces
@@ -26,6 +27,10 @@ assumption on the homogeneous modules is needed.
 Adapted from `Mei/Algebra/PositiveDegrees/Completion.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
+
+The component formulas for maps are adapted from
+`Mei/Algebra/PositiveDegrees/Naturality.lean` in the same repository, commit
+`bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0).
 -/
 
 public section
@@ -82,7 +87,7 @@ theorem quotient_ext {k : ℕ} {x y : (ModuleTower.quotients J hJ).obj (Opposite
   rw [hJd k, d.mem_degreeSubmodule_iff ℳ]
   intro n hn
   have he := congrArg Subtype.val (h n hn)
-  simpa only [quotientComponent_mk, decompose_sub, sub_apply,
+  simpa only [quotientComponent_mk, decompose_sub, DirectSum.sub_apply,
     Submodule.coe_sub, sub_eq_zero] using he
 
 /-- The degree-`n` coefficient of a completed module element. -/
@@ -136,11 +141,11 @@ private theorem decompose_finiteApprox (k : ℕ) (x : ∀ n, ℳ n) (n : N)
   by_cases hP : n ∈ d.monoid
   · have hn' : n ∈ (d.finite_cutoff k).toFinset := by simp [hP, hn]
     simp only [finiteApprox, LinearMap.sum_apply, LinearMap.comp_apply,
-      LinearMap.proj_apply, Submodule.subtype_apply, decompose_sum, sum_apply,
+      LinearMap.proj_apply, Submodule.subtype_apply, decompose_sum, DirectSum.sum_apply,
       Submodule.coe_sum]
     rw [Finset.sum_eq_single n]
     · exact decompose_of_mem_same ℳ (x n).property
-    · intro m hm hmn
+    · intro m _ hmn
       exact decompose_of_mem_ne ℳ (x m).property hmn
     · exact fun h => (h hn').elim
   · have hb : ℳ n = ⊥ := hℳ n hP
@@ -231,5 +236,62 @@ theorem projection_eq_sum_completionComponent (k : ℕ) (x : (ModuleTower.quotie
   have h := d.projection_completionEquivPi_symm ℳ J hJ hJd hℳ
     (d.completionEquivPi ℳ J hJ hJd hℳ x) k
   simpa only [LinearEquiv.symm_apply_apply, completionEquivPi_apply] using h
+
+section Map
+
+variable {K S P : Type*} [AddCommMonoid K] [Ring S] [AddCommGroup P] [Module S P]
+  [DecidableEq K] (e : PositiveDegrees K) (𝓝 : K → Submodule S P) [Decomposition 𝓝]
+  (L : ℕ → Submodule S P) (hL : Antitone L) (hLe : ∀ k, L k = e.degreeSubmodule 𝓝 k)
+  {τ : R →+* S} (f : M →ₛₗ[τ] P) (σ : N → K)
+  (hσ : ∀ n x, x ∈ ℳ n → f x ∈ 𝓝 (σ n))
+  (hf : ∀ k, ∃ l, J l ≤ (L k).comap f)
+
+include hℳ hσ in
+open Classical in
+/-- A component of a homogeneous semilinear map on completions sums the images of the source
+components over the corresponding fiber. The source cutoff can be any cutoff which computes the
+chosen target quotient. -/
+theorem completionComponent_limQuotientsMap_eq_sum {m k : ℕ}
+    (hm : J m ≤ (L k).comap f) {j : K} (hj : e.degree j ≤ k)
+    (x : (ModuleTower.quotients J hJ).lim) :
+    (e.completionComponent 𝓝 L hL hLe j (ModuleTower.limQuotientsMap hJ hL f hf x) : P) =
+      ∑ n ∈ (d.finite_cutoff m).toFinset with σ n = j,
+        f (d.completionComponent ℳ J hJ hJd n x : M) := by
+  have hx := (d.projection_eq_sum_completionComponent ℳ J hJ hJd hℳ m x).symm
+  rw [e.completionComponent_eq_quotientComponent 𝓝 L hL hLe j k hj,
+    ModuleTower.limπ_limQuotientsMap hJ hL f hf hm hx, quotientComponent_mk, map_sum]
+  have hproj (n : N) :
+      (decompose 𝓝 (f (d.completionComponent ℳ J hJ hJd n x : M)) j : P) =
+        if σ n = j then f (d.completionComponent ℳ J hJ hJd n x : M) else 0 := by
+    have hn := hσ n _ (d.completionComponent ℳ J hJ hJd n x).property
+    split_ifs with h
+    · exact decompose_of_mem_same 𝓝 (h ▸ hn)
+    · exact decompose_of_mem_ne 𝓝 hn h
+  simp only [decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+  simp_rw [hproj]
+  rw [Finset.sum_filter]
+
+include hσ in
+/-- For an injective regrading, the completed map commutes with taking a homogeneous
+component. This holds even if the grading has nonzero pieces outside the positive monoid. -/
+theorem completionComponent_limQuotientsMap_of_injective (hinj : Function.Injective σ)
+    (n : N) (x : (ModuleTower.quotients J hJ).lim) :
+    (e.completionComponent 𝓝 L hL hLe (σ n) (ModuleTower.limQuotientsMap hJ hL f hf x) : P) =
+      f (d.completionComponent ℳ J hJ hJd n x : M) := by
+  let k := (e.degree (σ n)).toNat
+  obtain ⟨m, hm⟩ := hf k
+  let l := max m (d.degree n).toNat
+  have hnl : d.degree n ≤ l :=
+    (Int.self_le_toNat _).trans (Int.ofNat_le.mpr (le_max_right _ _))
+  have hl : J l ≤ (L k).comap f := (hJ (le_max_left _ _)).trans hm
+  obtain ⟨a, ha⟩ :=
+    ModuleTower.quotientsπ_surjective J hJ l ((ModuleTower.quotients J hJ).limπ l x)
+  rw [e.completionComponent_eq_quotientComponent 𝓝 L hL hLe (σ n) k (Int.self_le_toNat _),
+    ModuleTower.limπ_limQuotientsMap hJ hL f hf hl ha, quotientComponent_mk,
+    d.completionComponent_eq_quotientComponent ℳ J hJ hJd n l hnl, ← ha,
+    quotientComponent_mk]
+  exact (DirectSum.map_decompose_shift ℳ 𝓝 f.toAddMonoidHom σ hinj hσ n a).symm
+
+end Map
 
 end TauCeti.PositiveDegrees

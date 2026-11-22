@@ -12,6 +12,8 @@ public import TauCeti.Geometry.Manifold.SmoothTriangulation.Edgewise
 import TauCeti.Analysis.Convex.StdSimplex
 import TauCeti.Analysis.Convex.Lipschitz
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Lipschitz
 
 /-!
 # Lipschitz control of secant errors on edgewise faces
@@ -27,6 +29,12 @@ along chords of each face. This supplies the facewise bounds needed to glue a Li
 estimate across a finite closed simplex cover; simplexwise immersion alone does not give
 such an estimate.
 
+A map which is `C¹` on every closed simplex of a complex on a finite vertex type is Lipschitz in
+barycentric coordinates, by `TauCeti.exists_norm_sub_le_mul_norm_sub_of_contDiffOn`. For a cut-off
+function `φ` this bounds the product `φ • (s - f ∘ π)`, so interpolating between `f` and its
+secant map `s` by `φ`, to make `f` rectilinear on one part of the complex while keeping it on
+another, is again a perturbation with arbitrarily small Lipschitz error.
+
 ## Main results
 
 * `ContDiffOn.eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision`: the
@@ -37,6 +45,10 @@ such an estimate.
   closed simplex of the subdivision, in the original coordinates.
 * `TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision`: the same difference is
   `ε`-Lipschitz on the whole subdivision, also between points of different simplices.
+* `TauCeti.eventually_norm_lineMap_secantMap_sub_sub_le_edgewiseSubdivision`: interpolating
+  between a map which is `C¹` on every closed simplex and its secant map by a cut-off function
+  which is `C¹` on every closed simplex changes the map by an `ε`-Lipschitz error on all fine
+  edgewise subdivisions.
 
 ## Implementation notes
 
@@ -72,9 +84,9 @@ theorem eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision
     ∀ᶠ k in atTop, ∀ (K : PreAbstractSimplicialComplex ι)
       (ρ : Finset (K.EdgewiseVertex k)), ρ ∈ K.edgewiseSubdivision k →
       ∀ p : ρ → StandardSimplex σ,
-      (∀ a, (p a : ι →₀ ℝ) = edgewisePoint a.1.1) →
-      let A := Fintype.linearCombination ℝ (fun (a : ρ) (i : σ) => (p a).1 i)
-      let B := Fintype.linearCombination ℝ (fun a : ρ => F (fun i : σ => (p a).1 i))
+      (∀ a, (p a : ι →₀ ℝ) = edgewisePoint a.val.val) →
+      let A := Fintype.linearCombination ℝ (fun (a : ρ) (i : σ) => (p a).val i)
+      let B := Fintype.linearCombination ℝ (fun a : ρ => F (fun i : σ => (p a).val i))
       ∀ x y : Convexity.StdSimplex ℝ ρ,
         ‖(B ⇑y.weights - F (A ⇑y.weights)) - (B ⇑x.weights - F (A ⇑x.weights))‖ ≤
           ε * ‖A (⇑y.weights - ⇑x.weights)‖ := by
@@ -86,14 +98,14 @@ theorem eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision
   let S := range fun z : Convexity.StdSimplex ℝ ρ => ⇑z.weights
   let T := range fun z : Convexity.StdSimplex ℝ σ => ⇑z.weights
   let A : (ρ → ℝ) →L[ℝ] (σ → ℝ) :=
-    (Fintype.linearCombination ℝ (fun (a : ρ) (i : σ) => (p a).1 i)).toContinuousLinearMap
+    (Fintype.linearCombination ℝ (fun (a : ρ) (i : σ) => (p a).val i)).toContinuousLinearMap
   let B : (ρ → ℝ) →L[ℝ] E :=
-    (Fintype.linearCombination ℝ (fun a : ρ => F (fun i : σ => (p a).1 i))).toContinuousLinearMap
-  have hvertex (a : ρ) : (fun i : σ => (p a).1 i) ∈ T :=
+    (Fintype.linearCombination ℝ (fun a : ρ => F (fun i : σ => (p a).val i))).toContinuousLinearMap
+  have hvertex (a : ρ) : (fun i : σ => (p a).val i) ∈ T :=
     ⟨Finset.standardSimplexHomeomorph σ (p a),
       funext fun i => Finset.standardSimplexHomeomorph_weights σ (p a) i⟩
   have hconv := Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ σ
-  have hAhull : ∀ z ∈ S, A z ∈ convexHull ℝ (range fun a : ρ => fun i : σ => (p a).1 i) := by
+  have hAhull : ∀ z ∈ S, A z ∈ convexHull ℝ (range fun a : ρ => fun i : σ => (p a).val i) := by
     rintro _ ⟨z, rfl⟩
     exact (convex_convexHull ℝ _).sum_mem (fun a _ => z.weights_nonneg a)
       z.total_of_fintype (fun a _ => subset_convexHull ℝ _ (mem_range_self a))
@@ -133,61 +145,61 @@ coordinates. Here `s` is the secant map of `f` on the subdivision, `φ` is the c
 `|K|`, and being `C¹` on a closed simplex means being, in barycentric coordinates, the restriction
 of a map which is `C¹` within the standard simplex. -/
 theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision_faceInclusion
-    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    (hf : ∀ σ : Face K, ∃ F : (σ.val → ℝ) → E,
+      (∀ x : StandardSimplex σ.val, F (fun a => x.val a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights))
     {ε : ℝ} (hε : 0 < ε) :
-    ∀ᶠ k in atTop, ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.1),
+    ∀ᶠ k in atTop, ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.val),
       ‖((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
               (faceInclusion _ ρ y) -
             f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y))) -
           ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
               (faceInclusion _ ρ x) -
             f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)))‖ ≤
-        ε * ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).1 : ι → ℝ) -
-          (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1‖ := by
+        ε * ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).val : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val‖ := by
   have : Finite (Face K) := (Set.toFinite K.faces).to_subtype
   choose F hFg hF using hf
   filter_upwards [eventually_all.mpr fun σ : Face K =>
     (hF σ).eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision hε]
     with k hk ρ x y
   -- The simplex `ρ` lies in the face `σ` of `K` spanned by the entries of its vertices.
-  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
-  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩
+  have hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val := fun u hu l =>
     Finset.mem_biUnion.mpr ⟨u, hu, Finset.mem_image_of_mem _ (Finset.mem_univ l)⟩
-  let w (t : StandardSimplex ρ.1) := ⇑(Finset.standardSimplexHomeomorph ρ.1 t).weights
-  have hφ (t : StandardSimplex ρ.1) :
+  let w (t : StandardSimplex ρ.val) := ⇑(Finset.standardSimplexHomeomorph ρ.val t).weights
+  have hφ (t : StandardSimplex ρ.val) :
       edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ t) =
         faceInclusion K σ (edgewiseSubdivisionFaceMap hρσ t) :=
     congrFun (edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ) t
   -- In the coordinates of `σ`, the vertices of `ρ` combine to the image of `t`.
-  have hA (t : StandardSimplex ρ.1) :
-      Fintype.linearCombination ℝ (fun (a : ρ.1) (i : σ.1) => (edgewiseVertexPoint hρσ a).1 i)
-        (w t) = fun i : σ.1 => (edgewiseSubdivisionFaceMap hρσ t).1 i := by
+  have hA (t : StandardSimplex ρ.val) :
+      Fintype.linearCombination ℝ (fun (a : ρ.val) (i : σ.val) => (edgewiseVertexPoint hρσ a).val i)
+        (w t) = fun i : σ.val => (edgewiseSubdivisionFaceMap hρσ t).val i := by
     funext i
     rw [Fintype.linearCombination_apply, edgewiseSubdivisionFaceMap_apply, Finset.sum_apply,
-      ← Finset.sum_coe_sort ρ.1]
+      ← Finset.sum_coe_sort ρ.val]
     simp [w, Finset.standardSimplexHomeomorph_weights]
-  have hB (t : StandardSimplex ρ.1) :
+  have hB (t : StandardSimplex ρ.val) :
       Fintype.linearCombination ℝ
-          (fun a : ρ.1 => F σ fun i : σ.1 => (edgewiseVertexPoint hρσ a).1 i) (w t) -
+          (fun a : ρ.val => F σ fun i : σ.val => (edgewiseVertexPoint hρσ a).val i) (w t) -
         F σ (Fintype.linearCombination ℝ
-          (fun (a : ρ.1) (i : σ.1) => (edgewiseVertexPoint hρσ a).1 i) (w t)) =
+          (fun (a : ρ.val) (i : σ.val) => (edgewiseVertexPoint hρσ a).val i) (w t)) =
         (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
             (faceInclusion _ ρ t) -
           f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ t)) := by
     rw [hA, hFg, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ, hφ,
       Fintype.linearCombination_apply]
     simp only [hFg, w, Finset.standardSimplexHomeomorph_weights, Function.comp_apply]
-  have h := hk σ K.toPreAbstractSimplicialComplex ρ.1 ρ.2 (edgewiseVertexPoint hρσ)
-    (coe_edgewiseVertexPoint hρσ) (Finset.standardSimplexHomeomorph ρ.1 x)
-    (Finset.standardSimplexHomeomorph ρ.1 y)
+  have h := hk σ K.toPreAbstractSimplicialComplex ρ.val ρ.property (edgewiseVertexPoint hρσ)
+    (coe_edgewiseVertexPoint hρσ) (Finset.standardSimplexHomeomorph ρ.val x)
+    (Finset.standardSimplexHomeomorph ρ.val y)
   rw [hB, hB, map_sub, hA, hA] at h
   refine h.trans (mul_le_mul_of_nonneg_left ?_ hε.le)
   rw [hφ, hφ, faceInclusion_val, faceInclusion_val]
   refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => ?_
-  exact norm_le_pi_norm (((edgewiseSubdivisionFaceMap hρσ y).1 : ι → ℝ) -
-    ((edgewiseSubdivisionFaceMap hρσ x).1 : ι → ℝ)) i.1
+  exact norm_le_pi_norm (((edgewiseSubdivisionFaceMap hρσ y).val : ι → ℝ) -
+    ((edgewiseSubdivisionFaceMap hρσ x).val : ι → ℝ)) i.val
 
 /-- The secant error of `f` on the `k`-th edgewise subdivision: the difference between the secant
 map of `f` and `f`, read on the subdivision through the canonical map onto `|K|`. -/
@@ -210,14 +222,14 @@ zero off the realization). -/
 private noncomputable def secantErrorCoord (f : Realization K → E) (k : ℕ) : (ι → ℝ) → E :=
   Function.extend
     (fun x : Realization (K.edgewiseSubdivision k) =>
-      ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ))
+      ((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ))
     (secantError f k) 0
 
 omit [Fintype ι] in
 /-- The secant error read in the original coordinates is the secant error. -/
 private theorem secantErrorCoord_apply (f : Realization K → E) (k : ℕ)
     (x : Realization (K.edgewiseSubdivision k)) :
-    secantErrorCoord f k ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) =
+    secantErrorCoord f k ((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ) =
       secantError f k x :=
   Function.Injective.extend_apply (fun _ _ h => edgewiseSubdivisionRealizationMap_injective
     (Subtype.ext (DFunLike.coe_injective h))) _ _ x
@@ -225,19 +237,19 @@ private theorem secantErrorCoord_apply (f : Realization K → E) (k : ℕ)
 /-- A Lipschitz bound for the secant error on the closed simplices of the edgewise subdivision
 holds on every closed simplex of `K`, in the original coordinates. -/
 private theorem lipschitzOnWith_secantErrorCoord {k : ℕ} (hk : k ≠ 0) {ε : ℝ} (hε : 0 ≤ ε)
-    (hface : ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.1),
+    (hface : ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.val),
       ‖secantError f k (faceInclusion _ ρ y) - secantError f k (faceInclusion _ ρ x)‖ ≤
-        ε * ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).1 : ι → ℝ) -
-          (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1‖)
+        ε * ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).val : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val‖)
     (σ : Face K) :
     LipschitzOnWith (Real.toNNReal ε) (secantErrorCoord f k)
-      (range fun x : StandardSimplex σ.1 => (x.1 : ι → ℝ)) := by
+      (range fun x : StandardSimplex σ.val => (x.val : ι → ℝ)) := by
   have : Finite (K.EdgewiseVertex k) := Finite.of_injective Subtype.val Subtype.val_injective
   have : Finite (Face (K.edgewiseSubdivision k)) :=
     Finite.of_injective Subtype.val Subtype.val_injective
-  refine (convex_range_standardSimplex_coe σ.1).lipschitzOnWith_of_finite_closed_cover
+  refine (convex_range_standardSimplex_coe σ.val).lipschitzOnWith_of_finite_closed_cover
     (fun ρ : Face (K.edgewiseSubdivision k) =>
-      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ)))
+      convexHull ℝ (range fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)))
     (fun ρ => ((finite_range _).isCompact_convexHull (𝕜 := ℝ)).isClosed) (fun z hz => ?_)
     (fun ρ => LipschitzOnWith.of_dist_le_mul fun z hz z' hz' => ?_)
   · obtain ⟨t, rfl⟩ := hz
@@ -256,17 +268,17 @@ between points of different simplices. Here `s` is the secant map of `f` on the 
 is the canonical map onto `|K|`, and being `C¹` on a closed simplex means being, in barycentric
 coordinates, the restriction of a map which is `C¹` within the standard simplex. -/
 theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
-    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    (hf : ∀ σ : Face K, ∃ F : (σ.val → ℝ) → E,
+      (∀ x : StandardSimplex σ.val, F (fun a => x.val a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights))
     {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
       ‖((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
             f (edgewiseSubdivisionRealizationMap K k x)) -
           ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) y -
             f (edgewiseSubdivisionRealizationMap K k y))‖ ≤
-        ε * ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
-          (edgewiseSubdivisionRealizationMap K k y).1‖ := by
+        ε * ‖((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k y).val‖ := by
   have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => by
     obtain ⟨F, hFg, hF⟩ := hf σ
     exact Finset.continuous_of_continuousOn_coordinates hFg hF.continuousOn
@@ -279,10 +291,11 @@ theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
       (ε := ε / (2 * (N + 1))) (by positivity)] with k hk hface hclose x y
   rw [← secantError_apply, ← secantError_apply]
   set c := fun x : Realization (K.edgewiseSubdivision k) =>
-    ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ)
+    ((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ)
   have hmem (x : Realization (K.edgewiseSubdivision k)) :
-      c x ∈ range fun t : StandardSimplex (carrier K (edgewiseSubdivisionRealizationMap K k x)).1 =>
-        (t.1 : ι → ℝ) :=
+      c x ∈ range fun t : StandardSimplex (carrier K (edgewiseSubdivisionRealizationMap K k x)).val
+          =>
+        (t.val : ι → ℝ) :=
     ⟨⟨_, mem_convexHull_carrier K _⟩, rfl⟩
   by_cases hnear : N * ‖c x - c y‖ < 1
   · -- Nearby points: pass through a common point `z` of the two closed simplices of `K`.
@@ -311,5 +324,72 @@ theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
       _ = ε / (N + 1) * 1 := by field_simp; ring
       _ ≤ ε / (N + 1) * ((N + 1) * ‖c x - c y‖) := by gcongr
       _ = ε * ‖c x - c y‖ := by field_simp
+
+/-- On every sufficiently fine edgewise subdivision, interpolating between `f` and its secant
+map by a cut-off function `φ` changes `f` by a map which is `ε`-Lipschitz in the original
+coordinates. Here `f` is `C¹` on every closed simplex and `φ` is real-valued and `C¹` on every
+closed simplex; the interpolation is `AffineMap.lineMap (f (π x)) (s x) (φ (π x))`, where `s` is
+the secant map of `f` on the subdivision and `π` is the canonical map onto `|K|`. It agrees with
+`s` where `φ = 1` and with `f ∘ π` where `φ = 0`. -/
+theorem eventually_norm_lineMap_secantMap_sub_sub_le_edgewiseSubdivision {φ : Realization K → ℝ}
+    (hf : ∀ σ : Face K, ∃ F : (σ.val → ℝ) → E,
+      (∀ x : StandardSimplex σ.val, F (fun a => x.val a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights))
+    (hφ : ∀ σ : Face K, ∃ Φ : (σ.val → ℝ) → ℝ,
+      (∀ x : StandardSimplex σ.val, Φ (fun a => x.val a) = φ (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 Φ (range fun t : Convexity.StdSimplex ℝ σ.val => ⇑t.weights))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
+      ‖(AffineMap.lineMap (f (edgewiseSubdivisionRealizationMap K k x))
+              ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x)
+              (φ (edgewiseSubdivisionRealizationMap K k x)) -
+            f (edgewiseSubdivisionRealizationMap K k x)) -
+          (AffineMap.lineMap (f (edgewiseSubdivisionRealizationMap K k y))
+              ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) y)
+              (φ (edgewiseSubdivisionRealizationMap K k y)) -
+            f (edgewiseSubdivisionRealizationMap K k y))‖ ≤
+        ε * ‖((edgewiseSubdivisionRealizationMap K k x).val : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k y).val‖ := by
+  have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => by
+    obtain ⟨F, hFg, hF⟩ := hf σ
+    exact Finset.continuous_of_continuousOn_coordinates hFg hF.continuousOn
+  have hφc : Continuous φ := continuous_iff_faceInclusion.2 fun σ => by
+    obtain ⟨Φ, hΦg, hΦ⟩ := hφ σ
+    exact Finset.continuous_of_continuousOn_coordinates hΦg hΦ.continuousOn
+  -- The cut-off function is bounded by `B` and `L`-Lipschitz in barycentric coordinates.
+  obtain ⟨B, hB⟩ := (isCompact_range hφc).isBounded.exists_norm_le
+  obtain ⟨L, hL⟩ := exists_norm_sub_le_mul_norm_sub_of_contDiffOn hφ
+  have : 0 < |B| + 1 := by positivity
+  have : 0 < |L| + 1 := by positivity
+  filter_upwards [eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision hf
+      (ε := ε / (2 * (|B| + 1))) (by positivity),
+    hfc.eventually_norm_secantMap_sub_lt_edgewiseSubdivision (Set.toFinite K.faces)
+      (ε := ε / (2 * (|L| + 1))) (by positivity)] with k hlip hclose x y
+  set π := edgewiseSubdivisionRealizationMap K k
+  set e := fun x => (K.edgewiseSubdivision k).secantMap (f ∘ π) x - f (π x)
+  set d := ‖((π x).val : ι → ℝ) - (π y).val‖
+  -- The change is `φ • e`, where `e` is the secant error.
+  have hlm (x) : AffineMap.lineMap (f (π x)) ((K.edgewiseSubdivision k).secantMap (f ∘ π) x)
+      (φ (π x)) - f (π x) = φ (π x) • e x := by
+    rw [AffineMap.lineMap_apply_module']
+    abel
+  rw [hlm, hlm]
+  have hφx : ‖φ (π x)‖ ≤ |B| + 1 := (hB _ (mem_range_self _)).trans (by linarith [le_abs_self B])
+  have hφxy : ‖φ (π x) - φ (π y)‖ ≤ (|L| + 1) * d :=
+    (hL _ _).trans (mul_le_mul_of_nonneg_right (by linarith [le_abs_self L]) (norm_nonneg _))
+  have : 0 ≤ d := norm_nonneg _
+  calc ‖φ (π x) • e x - φ (π y) • e y‖ = ‖φ (π x) • (e x - e y) + (φ (π x) - φ (π y)) • e y‖ := by
+        congr 1
+        module
+    _ ≤ ‖φ (π x)‖ * ‖e x - e y‖ + ‖φ (π x) - φ (π y)‖ * ‖e y‖ := by
+        rw [← norm_smul, ← norm_smul]
+        exact norm_add_le _ _
+    _ ≤ (|B| + 1) * (ε / (2 * (|B| + 1)) * d) + (|L| + 1) * d * (ε / (2 * (|L| + 1))) := by
+        gcongr
+        · exact hlip x y
+        · exact (hclose y).le
+    _ = ε * d := by
+        field_simp
+        ring
 
 end TauCeti

@@ -99,14 +99,14 @@ theorem integrable_exp_mul_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ
   rcases hα.2.eq_or_lt with rfl | hα2
   · rw [stableMeasure_two hβ.le]
     exact integrable_exp_mul_gaussianReal t
-  rcases eq_zero_or_pos s with rfl | hs
+  rcases eq_zero_or_pos s with rfl | _
   · rw [stableMeasure_zero_scale hα hβ.le]
     exact integrable_dirac' (by fun_prop) (by simp)
   suffices h : t ∈ integrableExpSet id (stableMeasure α β s m) by
     simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using h
   rw [mem_integrableExpSet_id_stableMeasure_iff_one_zero]
   have hts : β * (s * t) ≤ 0 := by
-    rw [mul_left_comm]; exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
+    rw [mul_left_comm]; exact mul_nonpos_of_nonneg_of_nonpos s.property ht
   simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using
     integrable_exp_mul_stableMeasure_one_zero ⟨hα.1, hα2⟩ hβ hts
 

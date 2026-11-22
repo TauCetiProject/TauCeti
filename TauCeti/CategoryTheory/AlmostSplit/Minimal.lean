@@ -22,7 +22,8 @@ This agrees with the convention in `TauCeti.CategoryTheory.AlmostSplit.Irreducib
 No finite-length or locality hypothesis is needed when minimality is supplied. If the opposite
 end has a local endomorphism ring, non-splitness already implies minimality, so a single
 almost-split lifting property suffices. Conversely, the maps of an almost-split sequence are
-minimal when the opposite end has a local endomorphism ring.
+always minimal, since its ends have local endomorphism rings by
+`TauCeti.IsLeftAlmostSplit.isLocalRing_end` and `TauCeti.IsRightAlmostSplit.isLocalRing_end`.
 
 The pushout argument uses `TauCeti.shortExact_cobaseChange`.
 
@@ -104,16 +105,18 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] {S : ShortCo
 
 namespace IsAlmostSplit
 
-/-- The final map of an almost-split sequence is right minimal when the left-hand end has
-a local endomorphism ring. -/
-theorem isIso_of_comp_g_eq (hS : S.IsAlmostSplit) [IsLocalRing (End S.X₁)]
-    (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) : IsIso b :=
+/-- The final map of an almost-split sequence is right minimal. The left-hand end has a local
+endomorphism ring because the initial map is left almost split. -/
+theorem isIso_of_comp_g_eq (hS : S.IsAlmostSplit) (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) :
+    IsIso b :=
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
   hS.shortExact.isIso_of_comp_g_eq hS.isLeftAlmostSplit_f.not_isSplitMono b hb
 
-/-- The initial map of an almost-split sequence is left minimal when the right-hand end has
-a local endomorphism ring. -/
-theorem isIso_of_f_comp_eq (hS : S.IsAlmostSplit) [IsLocalRing (End S.X₃)]
-    (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) : IsIso b :=
+/-- The initial map of an almost-split sequence is left minimal. The right-hand end has a local
+endomorphism ring because the final map is right almost split. -/
+theorem isIso_of_f_comp_eq (hS : S.IsAlmostSplit) (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) :
+    IsIso b :=
+  have := hS.isRightAlmostSplit_g.isLocalRing_end
   hS.shortExact.isIso_of_f_comp_eq hS.isRightAlmostSplit_g.not_isSplitEpi b hb
 
 end IsAlmostSplit

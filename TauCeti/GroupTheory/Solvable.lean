@@ -15,6 +15,7 @@ import Mathlib.GroupTheory.QuotientGroup.Simple
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.Order.Atoms.Finite
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.Index.Two
 
 /-!
 # Derived words and solvable groups
@@ -27,7 +28,8 @@ that solvability is invariant under isomorphism, and the characterization of sol
 direct products via the two surjective projections and the converse product instance, that a
 nontrivial finite solvable group has a normal subgroup of prime index, and that in a perfect group
 a normal subgroup supplemented by a solvable subgroup, or by a subgroup normalizing a solvable
-subgroup whose conjugates generate the group, is the whole group.
+subgroup whose conjugates generate the group, is the whole group. Finally, a group is solvable
+when every element outside some proper subgroup squares to one.
 
 The identity formulation is useful when a group is represented by an affine scheme: an identity
 between derived words can be checked on a schematically dense family of points, while the
@@ -46,6 +48,8 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
 * `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer`: in a perfect group, a normal
   subgroup supplemented by a subgroup normalizing a solvable subgroup whose conjugates generate the
   group is the whole group.
+* `Group.isSolvable_of_forall_notMem_mul_self_eq_one`: a group with a proper subgroup outside
+  which every element squares to one is solvable.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
 * `TauCeti.map_derivedWord`: derived words commute with group homomorphisms.
@@ -59,8 +63,7 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
   identity.
 
 This is a prerequisite for descending geometric solvability along schematically dense morphisms
-from smooth affine groups. That descent supplies the multiplication-image step in the construction
-of the solvable radical in Layer 6 of the ReductiveGroups roadmap.
+from smooth affine groups, which is done in `TauCeti.Algebra.AlgebraicGroup.Solvable.Reduced`.
 -/
 
 public section
@@ -139,6 +142,32 @@ theorem _root_.Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer {G : T
     (QuotientGroup.map_mk'_eq_top.mp ?_)
   rw [eq_top_iff, ← Subgroup.map_top_of_surjective _ hπ, ← hU, Subgroup.map_normalClosure _ _ hπ]
   exact Subgroup.normalClosure_le_normal (Subgroup.coe_map _ U).ge
+
+/-- A group with a proper subgroup `M` such that every element outside `M` squares to one is
+solvable. Conjugation by any element outside `M` inverts `M`, so `M` is normal and commutative, and
+every element of `G ⧸ M` squares to one, so the quotient is commutative as well. -/
+theorem _root_.Group.isSolvable_of_forall_notMem_mul_self_eq_one {G : Type*} [Group G]
+    {M : Subgroup G} (hM : M ≠ ⊤) (h : ∀ x ∉ M, x * x = 1) :
+    Group.IsSolvable G := by
+  have hinv : ∀ x ∉ M, ∀ m ∈ M, x * m * x⁻¹ = m⁻¹ := fun x hx m hm ↦ by
+    have hxm : x * m ∉ M := fun hxm ↦ hx (by simpa using M.mul_mem hxm (M.inv_mem hm))
+    rw [inv_eq_of_mul_eq_one_right (h x hx)]
+    exact eq_inv_of_mul_eq_one_left (by simpa only [mul_assoc] using h _ hxm)
+  have : M.Normal := ⟨fun m hm g ↦ by
+    by_cases hg : g ∈ M
+    · exact M.mul_mem (M.mul_mem hg hm) (M.inv_mem hg)
+    · exact hinv g hg m hm ▸ M.inv_mem hm⟩
+  obtain ⟨x, hx⟩ := SetLike.exists_notMem_of_ne_top M hM
+  have hsq : ∀ q : G ⧸ M, q * q = 1 := fun q ↦ by
+    induction q using QuotientGroup.induction_on with
+    | H g =>
+      by_cases hg : g ∈ M
+      · rw [(QuotientGroup.eq_one_iff g).mpr hg, one_mul]
+      · rw [← QuotientGroup.mk_mul, h g hg, QuotientGroup.mk_one]
+  rw [Group.isSolvable_iff_subgroup_quotient M]
+  have := TauCeti.isMulCommutative_of_conj_eq_inv (hinv x hx)
+  exact ⟨inferInstance, Group.isSolvable_of_comm fun a b ↦ (Commute.of_orderOf_dvd_two
+    (fun q ↦ orderOf_dvd_of_pow_eq_one ((sq q).trans (hsq q))) a b).eq⟩
 
 universe u v
 

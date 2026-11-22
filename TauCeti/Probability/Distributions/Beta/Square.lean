@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Affine
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # Squaring a centered symmetric Beta variable
@@ -65,7 +65,7 @@ private theorem betaPDFReal_centered_sq {a x : ℝ} (hx : 0 < x) :
     rw [betaPDFReal_self_add_one_div_two a ⟨by linarith, hx₁⟩, betaPDFReal, ite_eq_left hx₂,
       hsq]
     field_simp
-  · have hx₁' : 1 ≤ x := le_of_not_gt hx₁
+  · have _ : 1 ≤ x := le_of_not_gt hx₁
     rw [betaPDFReal, ite_eq_right (by rintro ⟨_, h⟩; nlinarith : ¬ (0 < x ^ 2 ∧ x ^ 2 < 1)),
       betaPDFReal, ite_eq_right (by rintro ⟨_, h⟩; linarith)]
     ring
@@ -92,7 +92,7 @@ theorem betaMeasure_map_centered_sq (a : ℝ) :
     rw [betaMeasure,
       map_affine_withDensity_volume _ (by norm_num),
       map_abs_withDensity (f := affineDensity (-1) 2 (betaPDF a a))
-        (measurable_affineDensity hf _ _)]
+        (measurable_affineDensity hf _ _).aemeasurable]
     congr 1
     ext x
     exact congrArg ((Ioi 0).indicator · x)

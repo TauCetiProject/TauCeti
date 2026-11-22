@@ -148,11 +148,11 @@ theorem isEmpty_hom_to_outer (a : D4) (i : Fin 3) : IsEmpty (a ⟶ outer i) := b
 
 /-- The centre is a sink: every arrow of `D₄` ends there. -/
 theorem isSink_center : IsSink center :=
-  (IsSink_def _).mpr isEmpty_hom_from_center
+  (isSink_iff _).mpr isEmpty_hom_from_center
 
 /-- Each outer vertex is a source: every arrow of `D₄` starts at one. -/
 theorem isSource_outer (i : Fin 3) : IsSource (outer i) :=
-  (IsSource_def _).mpr fun a => isEmpty_hom_to_outer a i
+  (isSource_iff _).mpr fun a => isEmpty_hom_to_outer a i
 
 instance instFintypeHom : ∀ a b : D4, Fintype (a ⟶ b)
   | .center, .center => Fintype.ofIsEmpty

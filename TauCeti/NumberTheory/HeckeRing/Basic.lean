@@ -27,10 +27,9 @@ coset actions) can build on one shared vocabulary. Finally it defines the degree
 double coset, the number of left cosets in its decomposition, together with its
 relative-index form, since that count is read straight off `DecompQuotient`.
 
-The coset vocabulary is vendored from the in-review mathlib4 PR
-[#41253](https://github.com/leanprover-community/mathlib4/pull/41253) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete it when that stack
-merges. The degree section is instead ported from the AINTLIB `LeanModularForms` project
+The coset vocabulary is vendored from mathlib4 PR
+[#41253](https://github.com/leanprover-community/mathlib4/pull/41253) (Chris Birkbeck). The
+degree section is instead ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/AbstractHeckeRing/Degree.lean`, Chris Birkbeck,
 <https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>).
 
@@ -61,6 +60,8 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
   fundamental-domain statement needs: the group that acts
   faithfully on `ℍ` is a *quotient*, so the homomorphism reaching it is deliberately non-injective,
   and the kernel is absorbed by the denominator instead.
+* `DoubleCoset.decompQuotientEquivOfInf`: bijection `DecompQuotient H H g ≃ DecompQuotient H' H' g`
+  for `g ∈ P` when `H = H' ⊓ P` meets every left coset of `H' ∩ g H' g⁻¹` in `H'`.
 * `HeckeCosetModule.single`: the basis element `b • [D]` of the Hecke coset module, with
   `single_apply`, `sum_single_index`, `smul_single_one`, `single_add`, `induction_linear`,
   and the `Module R` instance `HeckeCosetModule.instModule`.
@@ -83,7 +84,9 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
 
 ## Main results
 
-* `HeckeCoset.eq_iff`: `mk H₁ H₂ g = mk H₁ H₂ h ↔ H₁gH₂ = H₁hH₂`.
+* `HeckeCoset.eq_iff`: `mk H₁ H₂ g = mk H₁ H₂ h ↔ H₁gH₂ = H₁hH₂`, with `HeckeCoset.mk_congr_val`
+  when `g` and `h` have the same underlying element of `G` and `HeckeCoset.rep_map_mem_doubleCoset`
+  for chosen representatives of mapped cosets.
 * `HeckeCoset.toSet_injective`: a double coset is determined by its underlying set.
 * `DoubleCoset.doubleCoset_eq_iUnion_rightCosets` and
   `DoubleCoset.op_mul_out_inv_smul_injective`: Shimura's decomposition `Γ₁gΓ₂ = ⊔ᵥ Γ₁(gτᵥ⁻¹)`
@@ -254,6 +257,11 @@ lemma mk_eq_mk_of_mem {g₁ g₂ : Δ} (h : (g₁ : G) ∈ doubleCoset (g₂ : G
     mk H₁ H₂ g₁ = mk H₁ H₂ g₂ :=
   eq_iff.mpr (doubleCoset_eq_of_mem h)
 
+/-- Two elements of `Δ` with equal underlying group elements define the same `HeckeCoset`,
+irrespective of how their `Δ`-memberships are bundled. -/
+lemma mk_congr_val {g₁ g₂ : Δ} (h : (g₁ : G) = (g₂ : G)) : mk H₁ H₂ g₁ = mk H₁ H₂ g₂ :=
+  congrArg (mk H₁ H₂) (Subtype.ext h)
+
 section Map
 
 variable {Δ' : Submonoid G} {H₁' H₂' : Subgroup G}
@@ -292,6 +300,22 @@ variable {Δ'' : Submonoid G} {H₁'' H₂'' : Subgroup G}
     (h₁' : H₁' ≤ H₁'') (h₂' : H₂' ≤ H₂'') (D : HeckeCoset Δ H₁ H₂) :
     map hΔ' h₁' h₂' (map hΔ h₁ h₂ D) = map (hΔ.trans hΔ') (h₁.trans h₁') (h₂.trans h₂') D :=
   Quotient.inductionOn D fun _ ↦ rfl
+
+/-- `HeckeCoset.map` preserves the identity double coset. -/
+@[simp] lemma map_one {H H' : Subgroup G} (hΔ : Δ ≤ Δ') (hH : H ≤ H') :
+    map hΔ hH hH (1 : HeckeCoset Δ H H) = (1 : HeckeCoset Δ' H' H') := by
+  rw [one_def, one_def, map_mk]
+  exact mk_congr_val (by simp)
+
+/-- The chosen representative of `D.map hΔ h₁ h₂` lies in the `(H₁', H₂')`-double coset of
+`D.rep`. -/
+theorem rep_map_mem_doubleCoset (hΔ : Δ ≤ Δ') (h₁ : H₁ ≤ H₁') (h₂ : H₂ ≤ H₂')
+    (D : HeckeCoset Δ H₁ H₂) :
+    (((D.map hΔ h₁ h₂).rep : Δ') : G) ∈ doubleCoset (D.rep : G) H₁' H₂' := by
+  have hmap : D.map hΔ h₁ h₂ = mk H₁' H₂' (Submonoid.inclusion hΔ D.rep) := by
+    conv_lhs => rw [← mk_rep D, map_mk]
+  simpa only [hmap, Submonoid.coe_inclusion] using
+    rep_mk_mem_doubleCoset (H₁ := H₁') (H₂ := H₂') (Submonoid.inclusion hΔ D.rep)
 
 end Map
 
@@ -337,7 +361,7 @@ so `restrict_mk` is its defining equation. -/
 noncomputable def restrict (D : HeckeCoset Δ H₁ H₂) (hΔ : Δ ≤ H.toSubmonoid)
     (h₁ : H₁ ≤ H) (h₂ : H₂ ≤ H) :
     HeckeCoset (Δ.comap H.subtype) (H₁.subgroupOf H) (H₂.subgroupOf H) :=
-  Quotient.map (fun g : Δ ↦ (⟨⟨(g : G), hΔ g.2⟩, g.2⟩ : ↥(Δ.comap H.subtype)))
+  Quotient.map (fun g : Δ ↦ (⟨⟨(g : G), hΔ g.property⟩, g.property⟩ : ↥(Δ.comap H.subtype)))
     (fun a b hab ↦ by
       obtain ⟨γ₁, hγ₁, γ₂, hγ₂, hb⟩ := DoubleCoset.rel_iff.mp hab
       exact DoubleCoset.rel_iff.mpr
@@ -353,7 +377,7 @@ noncomputable def restrict (D : HeckeCoset Δ H₁ H₂) (hΔ : Δ ≤ H.toSubmo
 @[simp] theorem restrict_mk (g : Δ) (hΔ : Δ ≤ H.toSubmonoid) (h₁ : H₁ ≤ H) (h₂ : H₂ ≤ H) :
     (mk H₁ H₂ g).restrict hΔ h₁ h₂ =
       mk (H₁.subgroupOf H) (H₂.subgroupOf H)
-        (⟨⟨(g : G), hΔ g.2⟩, g.2⟩ : ↥(Δ.comap H.subtype)) := (rfl)
+        (⟨⟨(g : G), hΔ g.property⟩, g.property⟩ : ↥(Δ.comap H.subtype)) := (rfl)
 
 /-- **Restriction is an equivalence.** With the whole triple inside `H`, the double cosets of
 `Δ` and those of `Δ.comap H.subtype` are the same objects described twice, so the two quotients
@@ -363,7 +387,7 @@ noncomputable def restrictEquiv (hΔ : Δ ≤ H.toSubmonoid) (h₁ : H₁ ≤ H)
     HeckeCoset Δ H₁ H₂ ≃
       HeckeCoset (Δ.comap H.subtype) (H₁.subgroupOf H) (H₂.subgroupOf H) where
   toFun D := D.restrict hΔ h₁ h₂
-  invFun := Quotient.map (fun g : ↥(Δ.comap H.subtype) ↦ (⟨((g : ↥H) : G), g.2⟩ : Δ))
+  invFun := Quotient.map (fun g : ↥(Δ.comap H.subtype) ↦ (⟨((g : ↥H) : G), g.property⟩ : Δ))
     fun a b hab ↦ by
       obtain ⟨γ₁, hγ₁, γ₂, hγ₂, hb⟩ := DoubleCoset.rel_iff.mp hab
       exact DoubleCoset.rel_iff.mpr
@@ -380,7 +404,7 @@ representative lies in `H`. -/
 @[simp] lemma restrictEquiv_symm_mk (hΔ : Δ ≤ H.toSubmonoid) (h₁ : H₁ ≤ H) (h₂ : H₂ ≤ H)
     (g : ↥(Δ.comap H.subtype)) :
     (restrictEquiv hΔ h₁ h₂).symm (mk (H₁.subgroupOf H) (H₂.subgroupOf H) g) =
-      mk H₁ H₂ (⟨((g : ↥H) : G), g.2⟩ : Δ) := (rfl)
+      mk H₁ H₂ (⟨((g : ↥H) : G), g.property⟩ : Δ) := (rfl)
 
 /-- **The round trip through `restrictEquiv` is the identity**, in the direction that starts in
 the ambient group. -/
@@ -440,7 +464,7 @@ open scoped Pointwise in
 of `(ConjAct.toConjAct g • H₂).subgroupOf H₁` conjugates by `g` into `H₂`. -/
 lemma conj_mem_of_stabilizer {H₁ H₂ : Subgroup G} (g : G)
     (n : (ConjAct.toConjAct g • H₂).subgroupOf H₁) : g⁻¹ * (n : G) * g ∈ H₂ := by
-  have hn := n.2
+  have hn := n.property
   rw [Subgroup.mem_subgroupOf, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
     ConjAct.smul_def] at hn
   simpa [ConjAct.ofConjAct_toConjAct] using hn
@@ -464,7 +488,7 @@ lemma map_subgroupOf_smul {G' : Type*} [Group G'] (φ : G →* G') (hφ : Functi
     exact ⟨g⁻¹ * (y : G) * g, hy, by
       simp [Subgroup.coe_equivMapOfInjective_apply, mul_assoc]⟩
   · rintro ⟨z, hz, hzx⟩
-    obtain ⟨y, hy, hyx⟩ := x.2
+    obtain ⟨y, hy, hyx⟩ := x.property
     have hzy : z = g⁻¹ * y * g := hφ (by rw [hzx, ← hyx]; simp [mul_assoc])
     exact ⟨⟨y, hy⟩, hzy ▸ hz, Subtype.ext (by simpa [Subgroup.coe_equivMapOfInjective_apply])⟩
 
@@ -519,7 +543,7 @@ lemma map_subgroupOf_smul_of_ker_inf_le {G' : Type*} [Group G'] (φ : G →* G')
     refine ⟨g⁻¹ * (y : G) * g, hy, ?_⟩
     simp [map_mul, map_inv, mul_assoc]
   · rintro ⟨z, hz, hzx⟩
-    obtain ⟨y, hy, hyx⟩ := x.2
+    obtain ⟨y, hy, hyx⟩ := x.property
     refine ⟨⟨y, hy⟩, ?_, Subtype.ext hyx⟩
     have hφ : φ (g⁻¹ * y * g) = φ z := by rw [hzx, ← hyx]; simp [mul_assoc]
     have hmemker : z⁻¹ * (g⁻¹ * y * g) ∈ φ.ker := by simp [MonoidHom.mem_ker, hφ]
@@ -544,7 +568,7 @@ noncomputable def decompQuotientEquivMapOfKerInfLe {G' : Type*} [Group G'] (φ :
       refine (Subgroup.mem_subgroupOf).mpr ?_
       rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def,
         ConjAct.ofConjAct_inv, ConjAct.ofConjAct_toConjAct, inv_inv]
-      refine hker ⟨?_, hconj (y : G) y.2⟩
+      refine hker ⟨?_, hconj (y : G) y.property⟩
       simpa [mul_assoc] using (MonoidHom.normal_ker φ).conj_mem (y : G) hyker g⁻¹)
     (map_subgroupOf_smul_of_ker_inf_le φ Γ₁ Γ₂ H g h₂ hconj hker)
 
@@ -558,6 +582,37 @@ theorem decompQuotientEquivMapOfKerInfLe_mk {G' : Type*} [Group G'] (φ : G →*
   subst hd
   unfold decompQuotientEquivMapOfKerInfLe
   exact TauCeti.QuotientGroup.congrOfSurjectiveOfKerLe_mk _ _ _ _ _
+
+open scoped Pointwise in
+/-- When `H = H' ⊓ P`, `g ∈ P`, and `H` meets every left coset of `H' ∩ g H' g⁻¹` in `H'`,
+inclusion `H ≤ H'` induces a bijection `DecompQuotient H H g ≃ DecompQuotient H' H' g`. -/
+noncomputable def decompQuotientEquivOfInf {H H' P : Subgroup G} (hHP : H = H' ⊓ P) {g : G}
+    (hgP : g ∈ P) (hstab : ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct g • H') :
+    DecompQuotient H H g ≃ DecompQuotient H' H' g :=
+  have hsub : (ConjAct.toConjAct g • H).subgroupOf H =
+      ((ConjAct.toConjAct g • H').subgroupOf H').comap
+        (Subgroup.inclusion (hHP ▸ inf_le_left)) := by
+    have hmem_iff (w : G) : w ∈ H ↔ w ∈ H' ∧ w ∈ P := by rw [hHP, Subgroup.mem_inf]
+    ext x; have hxP : (x : G) ∈ P := ((hmem_iff (x : G)).mp x.property).2
+    simp only [Subgroup.mem_subgroupOf, Subgroup.mem_comap, Subgroup.coe_inclusion,
+      Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
+      ConjAct.ofConjAct_toConjAct, inv_inv, hmem_iff]
+    exact and_iff_left (P.mul_mem (P.mul_mem (P.inv_mem hgP) hxP) hgP)
+  (Subgroup.quotientEquivOfEq hsub).trans
+    (TauCeti.QuotientGroup.congrComapOfSurjectiveMk (Subgroup.inclusion (hHP ▸ inf_le_left))
+      ((ConjAct.toConjAct g • H').subgroupOf H') fun q ↦
+        QuotientGroup.induction_on q fun u ↦
+          let ⟨x, hxH, hxu⟩ := hstab (u : G) u.property
+          ⟨⟨x, hxH⟩, QuotientGroup.eq.mpr (by simpa [Subgroup.mem_subgroupOf] using hxu)⟩)
+
+open scoped Pointwise in
+/-- `decompQuotientEquivOfInf` sends the coset of `x : H` to the coset of `x` in `H'`. -/
+@[simp] theorem decompQuotientEquivOfInf_mk {H H' P : Subgroup G} (hHP : H = H' ⊓ P) {g : G}
+    (hgP : g ∈ P) (hstab : ∀ u ∈ H', ∃ x ∈ H, x⁻¹ * u ∈ ConjAct.toConjAct g • H') (x : H) :
+    decompQuotientEquivOfInf hHP hgP hstab (QuotientGroup.mk x) =
+      QuotientGroup.mk (Subgroup.inclusion (hHP ▸ inf_le_left) x) := by
+  rw [decompQuotientEquivOfInf, Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk]
+  exact TauCeti.QuotientGroup.congrComapOfSurjectiveMk_mk _ _ _ x
 
 /-- Equality of classes in `DecompQuotient H₁ H₂ g` gives the conjugation relation between their
 representatives: `u₁⁻¹ u₂` lies in the stabilizer indexing the decomposition, so conjugating it
@@ -744,7 +799,7 @@ group. -/
 lemma rightCosetRep_mem {Γ₁ Γ₂ : Subgroup G} (D : HeckeCoset Δ Γ₁ Γ₂) {Δ' : Submonoid G}
     (hD : (D.out : G) ∈ Δ') (hΓ₂ : Γ₂.toSubmonoid ≤ Δ')
     (v : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) : rightCosetRep D v ∈ Δ' := by
-  have hv : ((v.out : Γ₂) : G)⁻¹ ∈ Γ₂ := inv_mem v.out.2
+  have hv : ((v.out : Γ₂) : G)⁻¹ ∈ Γ₂ := inv_mem v.out.property
   rw [rightCosetRep_def]
   exact mul_mem hD (hΓ₂ hv)
 
@@ -1002,6 +1057,12 @@ lemma sum_single (f : HeckeCosetModule Δ H₁ H₂ R) : f.sum (single R) = f :=
 lemma single_add (D : HeckeCoset Δ H₁ H₂) (b c : R) :
     single R D (b + c) = single R D b + single R D c :=
   Finsupp.single_add D b c
+
+/-- `Finsupp.mapDomain_single`, as a wrapper-level equation between two Hecke coset modules. -/
+lemma mapDomain_single {G' : Type*} [Group G'] {Δ' : Submonoid G'} {H₁' H₂' : Subgroup G'}
+    (k : HeckeCoset Δ H₁ H₂ → HeckeCoset Δ' H₁' H₂') (D : HeckeCoset Δ H₁ H₂) (b : R) :
+    (Finsupp.mapDomain k (single R D b) : HeckeCosetModule Δ' H₁' H₂' R) = single R (k D) b :=
+  Finsupp.mapDomain_single
 
 /-- `Finsupp.induction_linear`, restated for the wrapper type `HeckeCosetModule Δ H₁ H₂ R` in
 its basis vocabulary `single`, in the same way that `MonoidAlgebra.induction_linear` restates

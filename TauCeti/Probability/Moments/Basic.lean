@@ -13,9 +13,9 @@ import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
-# Basic facts about moment-generating functions
+# Basic facts about moments and moment-generating functions
 
-This file supplements Mathlib's basic moment-generating-function API.
+This file supplements Mathlib's basic API for moments and moment-generating functions.
 
 ## Main results
 
@@ -23,6 +23,8 @@ This file supplements Mathlib's basic moment-generating-function API.
   moment-generating function of any real-valued statistic equals `1` at zero.
 * `TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet`: a measure with an exponential moment at
   `0` is finite.
+* `TauCeti.centralMoment_eq_integral_sub_pow`: the central moment of a variable with known mean
+  `m` is the integral of `(X - m) ^ n`.
 * `TauCeti.mgf_lt_one_of_nonneg_of_neg`: under a probability measure, the moment-generating
   function of a nonnegative random variable that is not almost surely zero is strictly less than
   `1` at every negative argument.
@@ -36,9 +38,21 @@ This file supplements Mathlib's basic moment-generating-function API.
   the summation set.
 * `ProbabilityTheory.iIndepFun.integrable_exp_mul_sum_of_aemeasurable`: the exponential of a finite
   sum of independent a.e. measurable variables is integrable when each factor is.
-
+* `ProbabilityTheory.iIndepFun.mgf_sum_le_exp_sum`: exponential MGF bound for a finite sum of
+  independent variables from coordinatewise exponential bounds.
 * `TauCeti.ofReal_mgf_sub_integral_le_lintegral`: symmetrization by Jensen's inequality, the
   moment-generating function of `f - 𝔼 f` is at most `∫∫ exp (t (f x - f y)) dμ(x) dμ(y)`.
+* `TauCeti.memLp_exp_of_integrable_exp_mul`: if `exp (p Z)` is integrable for some `p > 0`, then
+  `exp Z` lies in `Lᵖ`.
+* `TauCeti.integrable_exp_mul_sum_of_integrable_exp_mul`: by Hölder's inequality,
+  `exp (t ∑ i ∈ s, X i)` is integrable when each `exp (p i t X i)` is, for exponents with
+  `∑ i ∈ s, (p i)⁻¹ = 1`, without independence.
+* `TauCeti.integrable_exp_mul_add_of_integrable_exp_two_mul`: `exp (θ (X + Y))` is integrable
+  when `exp (2θX)` and `exp (2θY)` are, without independence.
+* `TauCeti.mgf_add_le_sqrt_mgf_two_mul_mul`: by the Cauchy-Schwarz inequality,
+  `mgf (X + Y) μ θ ≤ √(mgf X μ (2θ) * mgf Y μ (2θ))` without independence.
+* `TauCeti.mgf_add_le_of_mgf_two_mul_le`, `TauCeti.mgf_add_le_exp_half_add`: its AM-GM and
+  exponential consequences.
 -/
 
 public section
@@ -62,6 +76,11 @@ theorem isFiniteMeasure_of_zero_mem_integrableExpSet (h : (0 : ℝ) ∈ integrab
     IsFiniteMeasure μ :=
   (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
     simpa using integrable_of_mem_integrableExpSet h
+
+/-- The `n`th central moment of `X` is the integral of `(X - m) ^ n` when `X` has mean `m`. -/
+theorem centralMoment_eq_integral_sub_pow {m : ℝ} (hmean : ∫ ω, X ω ∂μ = m) (n : ℕ) :
+    centralMoment X n μ = ∫ ω, (X ω - m) ^ n ∂μ := by
+  simp only [centralMoment, Pi.sub_apply, Pi.pow_apply, hmean]
 
 /-- Under a probability measure, the moment-generating function of an almost surely nonnegative
 random variable that is positive with positive probability is strictly less than `1` at every
@@ -155,6 +174,105 @@ theorem ofReal_mgf_sub_integral_le_lintegral [IsProbabilityMeasure μ]
 
 end Symmetrization
 
+section AddBounds
+
+open Real
+
+/-- If `exp (p Z)` is integrable for some `p > 0`, then `exp Z` lies in `Lᵖ`. The measure need not
+be finite. -/
+theorem memLp_exp_of_integrable_exp_mul {Z : Ω → ℝ} {p : ℝ} (hp : 0 < p)
+    (hZ : Integrable (fun ω ↦ exp (p * Z ω)) μ) :
+    MemLp (fun ω ↦ exp (Z ω)) (ENNReal.ofReal p) μ := by
+  have hmeas : AEStronglyMeasurable (fun ω ↦ exp (Z ω)) μ :=
+    (aemeasurable_of_aemeasurable_exp_mul hp.ne' hZ.1.aemeasurable).exp.aestronglyMeasurable
+  rw [← integrable_norm_rpow_iff hmeas (by simpa using hp) ENNReal.ofReal_ne_top,
+    ENNReal.toReal_ofReal hp.le]
+  refine hZ.congr (.of_forall fun ω ↦ ?_)
+  dsimp only; rw [norm_of_nonneg (exp_pos _).le, ← exp_mul, mul_comm]
+
+/-- **Exponential integrability of a finite sum** without independence, by Hölder's inequality:
+if `∑ i ∈ s, (p i)⁻¹ = 1` with every `p i > 0`, and `exp (p i * t * X i)` is integrable for each
+`i ∈ s`, then `exp (t * ∑ i ∈ s, X i)` is integrable. Taking every `p i` equal to the cardinality
+of `s` shows that variables with exponential moments of every order have a sum with exponential
+moments of every order. -/
+theorem integrable_exp_mul_sum_of_integrable_exp_mul {ι : Type*} {X : ι → Ω → ℝ} {s : Finset ι}
+    {p : ι → ℝ} {t : ℝ} (hp : ∀ i ∈ s, 0 < p i) (hp_sum : ∑ i ∈ s, (p i)⁻¹ = 1)
+    (hX : ∀ i ∈ s, Integrable (fun ω ↦ exp (p i * t * X i ω)) μ) :
+    Integrable (fun ω ↦ exp (t * ∑ i ∈ s, X i ω)) μ := by
+  have hexp : (∑ i ∈ s, (ENNReal.ofReal (p i))⁻¹)⁻¹ = 1 := by
+    rw [← Finset.sum_congr rfl fun i hi ↦ ENNReal.ofReal_inv_of_pos (hp i hi),
+      ← ENNReal.ofReal_sum_of_nonneg fun i hi ↦ (inv_pos.2 (hp i hi)).le, hp_sum]
+    simp
+  have h := MemLp.fun_prod fun i hi ↦
+    memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ t * X i ω) (hp i hi)
+      (by simpa only [mul_assoc] using hX i hi)
+  rw [hexp, memLp_one_iff_integrable] at h
+  simpa only [Finset.mul_sum, exp_sum] using h
+
+/-- **Exponential integrability of a sum** without independence: if `exp (2θX)` and `exp (2θY)`
+are integrable, then so is `exp (θ (X + Y))`, their pointwise geometric mean. -/
+theorem integrable_exp_mul_add_of_integrable_exp_two_mul {Y : Ω → ℝ} {θ : ℝ}
+    (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
+    (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ) :
+    Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ := by
+  simpa [Fin.sum_univ_two] using integrable_exp_mul_sum_of_integrable_exp_mul
+    (X := ![X, Y]) (s := Finset.univ) (p := fun _ ↦ 2) (t := θ) (fun _ _ ↦ two_pos)
+    (by norm_num) (by simp [Fin.forall_fin_two, hX_int, hY_int])
+
+/-- **Cauchy-Schwarz bound for the moment-generating function of a sum** without independence:
+if `exp (2θX)` and `exp (2θY)` are integrable, then `mgf (X + Y) μ θ` is at most the geometric
+mean `√(mgf X μ (2θ) * mgf Y μ (2θ))`. The measure need not be finite. -/
+theorem mgf_add_le_sqrt_mgf_two_mul_mul {Y : Ω → ℝ} {θ : ℝ}
+    (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
+    (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ) :
+    mgf (fun ω ↦ X ω + Y ω) μ θ ≤ √(mgf X μ (2 * θ) * mgf Y μ (2 * θ)) := by
+  have hLX := memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ θ * X ω) two_pos
+    (by simpa only [mul_assoc] using hX_int)
+  have hLY := memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ θ * Y ω) two_pos
+    (by simpa only [mul_assoc] using hY_int)
+  have hsq (Z : Ω → ℝ) : ∫ ω, exp (θ * Z ω) ^ (2 : ℝ) ∂μ = mgf Z μ (2 * θ) := by
+    simp only [mgf, rpow_two, ← exp_natCast_mul 2, Nat.cast_ofNat, mul_assoc]
+  calc mgf (fun ω ↦ X ω + Y ω) μ θ = ∫ ω, exp (θ * X ω) * exp (θ * Y ω) ∂μ := by
+        simp only [mgf, mul_add, exp_add]
+    _ ≤ (∫ ω, exp (θ * X ω) ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) *
+          (∫ ω, exp (θ * Y ω) ^ (2 : ℝ) ∂μ) ^ (1 / (2 : ℝ)) :=
+        integral_mul_le_Lp_mul_Lq_of_nonneg HolderConjugate.two_two
+          (.of_forall fun _ ↦ (exp_pos _).le) (.of_forall fun _ ↦ (exp_pos _).le) hLX hLY
+    _ = √(mgf X μ (2 * θ) * mgf Y μ (2 * θ)) := by
+        rw [hsq, hsq, sqrt_mul mgf_nonneg, sqrt_eq_rpow, sqrt_eq_rpow]
+
+/-- **AM-GM bound for the moment-generating function of a sum** without independence: if
+`mgf X μ (2θ) ≤ M₁` and `mgf Y μ (2θ) ≤ M₂`, then `mgf (X + Y) μ θ ≤ (M₁ + M₂) / 2`. It follows
+from `mgf_add_le_sqrt_mgf_two_mul_mul` and the AM-GM inequality. -/
+theorem mgf_add_le_of_mgf_two_mul_le {Y : Ω → ℝ} {θ M₁ M₂ : ℝ}
+    (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
+    (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ)
+    (hX_le : mgf X μ (2 * θ) ≤ M₁) (hY_le : mgf Y μ (2 * θ) ≤ M₂) :
+    Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ ∧
+      mgf (fun ω ↦ X ω + Y ω) μ θ ≤ (M₁ + M₂) / 2 := by
+  refine ⟨integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int,
+    (mgf_add_le_sqrt_mgf_two_mul_mul hX_int hY_int).trans ?_⟩
+  have hX0 : 0 ≤ mgf X μ (2 * θ) := mgf_nonneg
+  have hY0 : 0 ≤ mgf Y μ (2 * θ) := mgf_nonneg
+  rw [sqrt_mul hX0]
+  nlinarith [two_mul_le_add_sq √(mgf X μ (2 * θ)) √(mgf Y μ (2 * θ)), sq_sqrt hX0, sq_sqrt hY0]
+
+/-- **Geometric-mean bound for the moment-generating function of a sum** without independence:
+if `mgf X μ (2θ) ≤ exp a` and `mgf Y μ (2θ) ≤ exp b`, then `mgf (X + Y) μ θ ≤ exp ((a + b) / 2)`.
+It follows from `mgf_add_le_sqrt_mgf_two_mul_mul`. -/
+theorem mgf_add_le_exp_half_add {Y : Ω → ℝ} {θ a b : ℝ}
+    (hX_int : Integrable (fun ω ↦ exp (2 * θ * X ω)) μ)
+    (hY_int : Integrable (fun ω ↦ exp (2 * θ * Y ω)) μ)
+    (hX_le : mgf X μ (2 * θ) ≤ exp a) (hY_le : mgf Y μ (2 * θ) ≤ exp b) :
+    Integrable (fun ω ↦ exp (θ * (X ω + Y ω))) μ ∧
+      mgf (fun ω ↦ X ω + Y ω) μ θ ≤ exp ((a + b) / 2) := by
+  refine ⟨integrable_exp_mul_add_of_integrable_exp_two_mul hX_int hY_int,
+    (mgf_add_le_sqrt_mgf_two_mul_mul hX_int hY_int).trans ?_⟩
+  rw [exp_half, exp_add]
+  exact sqrt_le_sqrt (mul_le_mul hX_le hY_le mgf_nonneg (exp_pos _).le)
+
+end AddBounds
+
 end TauCeti
 
 namespace ProbabilityTheory.iIndepFun
@@ -170,7 +288,7 @@ theorem mgf_sum_of_aemeasurable (h_indep : iIndepFun X μ) {s : Finset ι}
     (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ) :
     mgf (fun ω => ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t := by
   have h := (h_indep.precomp Subtype.val_injective).mgf_sum₀ (t := t)
-    (fun i : s => h_meas i i.2) Finset.univ
+    (fun i : s => h_meas i i.property) Finset.univ
   rw [Finset.prod_coe_sort s (fun i => mgf (X i) μ t)] at h
   rw [← h]
   congr 1
@@ -188,5 +306,15 @@ theorem integrable_exp_mul_sum_of_aemeasurable (h_indep : iIndepFun X μ)
   rw [← mgf_pos_iff]
   rw [h_indep.mgf_sum_of_aemeasurable h_meas (t := t)]
   exact Finset.prod_pos fun i hi => mgf_pos (h_int i hi)
+
+omit [IsProbabilityMeasure μ] in
+/-- Exponential MGF bound for a finite sum of independent random variables from coordinatewise
+exponential MGF bounds. -/
+theorem mgf_sum_le_exp_sum (h_indep : iIndepFun X μ) {s : Finset ι}
+    (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ) {b : ι → ℝ}
+    (hb : ∀ i ∈ s, mgf (X i) μ t ≤ Real.exp (b i)) :
+    mgf (fun ω ↦ ∑ i ∈ s, X i ω) μ t ≤ Real.exp (∑ i ∈ s, b i) := by
+  rw [h_indep.mgf_sum_of_aemeasurable h_meas, Real.exp_sum]
+  exact Finset.prod_le_prod₀ (fun _ _ ↦ mgf_nonneg) hb
 
 end ProbabilityTheory.iIndepFun

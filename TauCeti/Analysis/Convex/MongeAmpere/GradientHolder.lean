@@ -39,7 +39,6 @@ private lemma reverse_gap_le_of_convexSection
       convexSection Ω u x ℓ h ⊆ convexSection Ω u y m (θ * h)) :
     u x - u y - m (x - y) ≤ θ * (u y - u x - ℓ (y - x)) := by
   let D := u y - u x - ℓ (y - x)
-  have hθ0 : 0 ≤ θ := le_trans zero_le_one hθ
   have hθ1 : 0 < θ + 1 := by linarith
   apply le_of_forall_pos_le_add
   intro ε hε
@@ -66,7 +65,7 @@ private lemma reverse_gap_le_of_convexSection
   nlinarith only [hs.2, hδε]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Two-sided Monge–Ampère bounds and a uniform height of sections compactly contained in the
 open convex domain give a Hölder gradient for a differentiable convex globally Lipschitz

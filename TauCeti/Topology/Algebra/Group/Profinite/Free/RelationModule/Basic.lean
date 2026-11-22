@@ -82,10 +82,12 @@ open _root_.MonoidAlgebra Multiplicative Additive
 
 universe u
 
-variable (p : ℕ) [Fact p.Prime] {G : Type u} [Group G] [Finite G] [TopologicalSpace G]
-  [DiscreteTopology G] {ι : Type u} (g : ι → G)
+variable (p : ℕ) [Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  {ι : Type u} (g : ι → G)
 
 section Crossed
+
+variable [Finite G]
 
 /-- Two continuous maps `c : F → G → N` that are crossed homomorphisms for left translation
 through `lift g`, `c (f * f') x = c f x + c f' ((lift g f)⁻¹ * x)`, and agree on the generators
@@ -117,7 +119,7 @@ end Crossed
 
 section FoxDerivative
 
-variable [DecidableEq ι]
+variable [Finite G] [DecidableEq ι]
 
 /-- There is a continuous map `D : F → ℤ_p[G]^ι` with `D (f * f') = D f + lift g f • D f'` and
 `D (of i) = e_i`. -/
@@ -280,11 +282,16 @@ section Lyndon
 
 variable {g}
 
+variable [Finite G] in
 /-- The kernel of `lift g` is compact, so that `R^ab(p)` is a profinite pro-`p` group. -/
 private instance compactSpace_ker : CompactSpace (lift g : freeProfiniteGroup ι →* G).ker :=
   isCompact_iff_compactSpace.mp (isClosed_singleton.preimage (lift g).continuous).isCompact
 
 variable (hg : Subgroup.closure (Set.range g) = ⊤)
+
+section
+
+variable [Finite G]
 
 open scoped Classical in
 /-- A section of `lift g`, normalized to send `1` to `1`. -/
@@ -337,8 +344,10 @@ private theorem continuous_schreierCocycle : Continuous (schreierCocycle p hg) :
 /-- The Schreier element of `R` at `1 ∈ G` and `r ∈ R` is `r` itself. -/
 private theorem toKer_sec_one_mul (r : (lift g : freeProfiniteGroup ι →* G).ker) :
     toKer hg (sec hg 1⁻¹ * r) = r := by
-  have hr : lift g r = 1 := MonoidHom.mem_ker.1 r.2
+  have hr : lift g r = 1 := MonoidHom.mem_ker.1 r.property
   exact Subtype.ext (by simp [toKer, sec_one, hr])
+
+section
 
 variable [DecidableEq ι]
 
@@ -346,6 +355,18 @@ private theorem foxDerivative_toKer (a : freeProfiniteGroup ι) :
     foxDerivative p g (toKer hg a) =
       foxDerivative p g a - foxDerivative p g (sec hg (lift g a)) := by
   simp [toKer, foxDerivative_mul_inv, lift_sec, ← one_def]
+
+/-- The Fox derivative of the Schreier element at `h` and `i` is
+`D (s h) + h • e_i - D (s (h * g i))`. -/
+private theorem foxDerivative_toKer_sec_mul_of (h : G) (i : ι) :
+    foxDerivative p g (toKer hg (sec hg h * of i)) = foxDerivative p g (sec hg h) +
+      Pi.single i (single h 1) - foxDerivative p g (sec hg (h * g i)) := by
+  rw [foxDerivative_toKer, foxDerivative_mul, foxDerivative_of, map_mul, lift_sec, lift_of]
+  congr 2
+  funext j
+  by_cases hj : j = i
+  · subst hj; simp
+  · simp [Pi.single_eq_of_ne hj]
 
 /-! ### The Fox derivative on `R^ab(p)` -/
 
@@ -355,13 +376,13 @@ private noncomputable def foxHom :
   toFun r := ofAdd fun k ↦ (foxDerivative p g r k.1).coeff k.2
   map_one' := by simp; rfl
   map_mul' r r' := by
-    simp only [Subgroup.coe_mul, foxDerivative_mul_of_mem_ker p g r.2, ← ofAdd_add]
+    simp only [Subgroup.coe_mul, foxDerivative_mul_of_mem_ker p g r.property, ← ofAdd_add]
     congr 1
 
 private theorem continuous_foxHom : Continuous (foxHom p (g := g)) :=
   continuous_ofAdd.comp (continuous_pi fun k ↦ (continuous_apply k.2).comp
     ((continuous_apply k.1).comp
-      ((continuous_coeff_foxDerivative p g).comp continuous_subtype_val)))
+      ((continuous_coeff_foxDerivative p g).comp continuous_subtypeVal)))
 
 /-- The Fox derivative factors through `R^ab(p)`. -/
 private noncomputable def abelianFoxHom :
@@ -369,7 +390,7 @@ private noncomputable def abelianFoxHom :
       Multiplicative (ι × G → ℤ_[p]) :=
   maximalProPQuotient.lift (isProP_multiplicative_pi_padicInt p (ι × G))
     (QuotientGroup.lift _ (foxHom p) (Subgroup.topologicalClosure_minimal _
-      (Abelianization.commutator_le_ker _)
+      (Group.Abelianization.commutator_le_ker _)
       (isClosed_singleton.preimage (continuous_foxHom p))))
     ((QuotientGroup.isQuotientMap_mk _).continuous_iff.2 (continuous_foxHom p))
 
@@ -418,7 +439,9 @@ private theorem foxAddHom_mem
     foxAddHom p a ∈ MonoidAlgebra.relationModule ℤ_[p] G g := by
   obtain ⟨r, hr⟩ := abelianizationProPMk_surjective p _ _ a.toMul
   rw [← ofMul_toMul a, ← hr, foxAddHom_ofMul_mk]
-  exact foxDerivative_mem_relationModule p g r.2
+  exact foxDerivative_mem_relationModule p g r.property
+
+end
 
 /-! ### The Schreier inverse -/
 
@@ -426,24 +449,27 @@ private theorem foxAddHom_mem
 `m ↦ ∑ (m i)(h) • [s (x⁻¹ * h) * of i * s (x⁻¹ * h * g i)⁻¹]`. At `x = 1` it inverts the Fox
 derivative on the relation module; as a function of `x` it is the crossed homomorphism
 `schreierCocycle` read off the Fox derivative. -/
-private noncomputable def schreierSum (m : ι → MonoidAlgebra ℤ_[p] G) (x : G) :
+private noncomputable def schreierSum [Fintype ι] (m : ι → MonoidAlgebra ℤ_[p] G) (x : G) :
     Additive (abelianizationProP p _ (lift g : freeProfiniteGroup ι →* G).ker) :=
   ∑ i, (m i).coeff.sum fun h c ↦ ofMul (isProP_maximalProPQuotient.padicPow
     (abelianizationProPMk p _ _ (toKer hg (sec hg (x⁻¹ * h) * of i))) c)
 
-omit [DecidableEq ι] in
-private theorem schreierSum_eq [Fintype G] (m : ι → MonoidAlgebra ℤ_[p] G) (x : G) :
+end
+
+private theorem schreierSum_eq [Fintype G] [Fintype ι] (m : ι → MonoidAlgebra ℤ_[p] G) (x : G) :
     schreierSum p hg m x = ∑ i, ∑ h, ofMul (isProP_maximalProPQuotient.padicPow
       (abelianizationProPMk p _ _ (toKer hg (sec hg (x⁻¹ * h) * of i))) ((m i).coeff h)) :=
   Finset.sum_congr rfl fun _ _ ↦ Finsupp.sum_fintype _ _ fun _ ↦ by simp
 
-omit [DecidableEq ι] in
+section
+
+variable [Finite G] [Fintype ι]
+
 private theorem schreierSum_add (m m' : ι → MonoidAlgebra ℤ_[p] G) (x : G) :
     schreierSum p hg (m + m') x = schreierSum p hg m x + schreierSum p hg m' x := by
   have := Fintype.ofFinite G
   simp [schreierSum_eq, IsProP.padicPow_add, Finset.sum_add_distrib]
 
-omit [DecidableEq ι] in
 private theorem schreierSum_single_smul (y : G) (m : ι → MonoidAlgebra ℤ_[p] G) (x : G) :
     schreierSum p hg (single y (1 : ℤ_[p]) • m) x = schreierSum p hg m (y⁻¹ * x) := by
   have := Fintype.ofFinite G
@@ -452,6 +478,8 @@ private theorem schreierSum_single_smul (y : G) (m : ι → MonoidAlgebra ℤ_[p
   rw [← Equiv.sum_comp (Equiv.mulLeft y)]
   refine Finset.sum_congr rfl fun h _ ↦ ?_
   simp [mul_assoc]
+
+variable [DecidableEq ι]
 
 private theorem schreierSum_single (i : ι) (x : G) :
     schreierSum p hg (Pi.single i 1) x = schreierCocycle p hg (of i) x := by
@@ -483,24 +511,13 @@ private theorem schreierSum_foxDerivative (r : (lift g : freeProfiniteGroup ι �
   have h := congrFun (congrFun (schreierCocycle_eq_schreierSum p hg) r) 1
   rw [← h, schreierCocycle, toKer_sec_one_mul]
 
-omit [Fintype ι] in
-/-- The Fox derivative of the Schreier element at `h` and `i` is
-`D (s h) + h • e_i - D (s (h * g i))`. -/
-private theorem foxDerivative_toKer_sec_mul_of (h : G) (i : ι) :
-    foxDerivative p g (toKer hg (sec hg h * of i)) = foxDerivative p g (sec hg h) +
-      Pi.single i (single h 1) - foxDerivative p g (sec hg (h * g i)) := by
-  rw [foxDerivative_toKer, foxDerivative_mul, foxDerivative_of, map_mul, lift_sec, lift_of]
-  congr 2
-  funext j
-  by_cases hj : j = i
-  · subst hj; simp
-  · simp [Pi.single_eq_of_ne hj]
+end
 
 /-- **The Schreier elements span the relation module**: an element `m` of the relation module is
 `∑ (m i)(h) • D (s h * of i * s (h * g i)⁻¹)`. The terms `D (s h)` cancel by the relation
 `∑ m i * (g i - 1) = 0`. -/
-private theorem sum_smul_foxDerivative_toKer [Fintype G] {m : ι → MonoidAlgebra ℤ_[p] G}
-    (hm : m ∈ MonoidAlgebra.relationModule ℤ_[p] G g) :
+private theorem sum_smul_foxDerivative_toKer [Fintype G] [DecidableEq ι] [Fintype ι]
+    {m : ι → MonoidAlgebra ℤ_[p] G} (hm : m ∈ MonoidAlgebra.relationModule ℤ_[p] G g) :
     ∑ i, ∑ h, (m i).coeff h • foxDerivative p g (toKer hg (sec hg h * of i)) = m := by
   have hrel : ∀ k, ∑ i, (m i).coeff (k * (g i)⁻¹) = ∑ i, (m i).coeff k := fun k ↦ by
     have := congrArg (fun y ↦ y.coeff k) (MonoidAlgebra.mem_relationModule_iff.1 hm)
@@ -523,6 +540,8 @@ private theorem sum_smul_foxDerivative_toKer [Fintype G] {m : ι → MonoidAlgeb
   simp only [foxDerivative_toKer_sec_mul_of, smul_add, smul_sub, Finset.sum_add_distrib,
     Finset.sum_sub_distrib, hB, hC]
   abel
+
+variable [Finite G] [DecidableEq ι] [Fintype ι]
 
 /-- The Schreier sum is a right inverse of the Fox derivative on the relation module. -/
 private theorem foxAddHom_schreierSum {m : ι → MonoidAlgebra ℤ_[p] G}
@@ -550,7 +569,7 @@ noncomputable def abelianizationProPEquivRelationModule :
     rw [← ofMul_toMul a, ← hr]
     dsimp only
     rw [foxAddHom_ofMul_mk, schreierSum_foxDerivative]
-  right_inv m := Subtype.ext (foxAddHom_schreierSum p hg m.2)
+  right_inv m := Subtype.ext (foxAddHom_schreierSum p hg m.property)
   map_add' a b := Subtype.ext (map_add (foxAddHom p) a b)
 
 /-- Lyndon's isomorphism sends the class of `r ∈ R` to the Fox derivative of `r`. -/
@@ -608,7 +627,7 @@ theorem abelianizationProPEquivRelationModule_smul (f : freeProfiniteGroup ι)
   ext1
   rw [Submodule.coe_smul, coe_abelianizationProPEquivRelationModule_ofMul,
     coe_abelianizationProPEquivRelationModule_ofMul, MulAut.conjNormal_apply,
-    foxDerivative_conj p g r.2]
+    foxDerivative_conj p g r.property]
 
 end Lyndon
 

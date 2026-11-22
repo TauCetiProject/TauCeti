@@ -38,8 +38,6 @@ uses it, and the lattices of root data are the case of free `ℤ`-modules of fin
   `TauCeti.CartanDatum.reflection`: the simple reflection `λ ↦ λ − ⟨λ, hᵢ⟩ αᵢ` of `X`, both
   Mathlib's `Module.reflection`.
 * `TauCeti.CartanDatum.simpleTorus`: the toral direction `dᵢ hᵢ ∈ Y`.
-* `TauCeti.CartanDatum.braidLength`: the length `2, 3, 4, 6` of the braid relation between two
-  distinct nodes with Cartan product `aᵢⱼ aⱼᵢ = 0, 1, 2, 3`.
 * `TauCeti.CartanDatum.Hom`: a morphism of Cartan data, a linear map of coweight lattices carrying
   coroots to coroots and compatible with the roots, such as the one induced by a central isogeny.
 
@@ -49,6 +47,10 @@ uses it, and the lattices of root data are the case of free `ℤ`-modules of fin
 * `TauCeti.CartanDatum.pairing_reflection_coreflection`: the two reflections preserve the pairing.
 * `TauCeti.CartanDatum.coreflection_simpleTorus`:
   `sᵢ(dⱼ hⱼ) = dⱼ hⱼ − aᵢⱼ dᵢ hᵢ`, by symmetrizability.
+* `TauCeti.CartanDatum.coxeterMatrixOfGeneralizedCartanMatrix_cartan_apply_eq_zero_iff`: the
+  length of the braid relation between two distinct nodes, an entry of
+  `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix`, is one of `2, 3, 4, 6` exactly when their
+  Cartan product `aᵢⱼ aⱼᵢ` is at most `3`.
 * `TauCeti.CartanDatum.Hom.weightMap`: the induced map of weight lattices, the transpose of a
   morphism, which carries roots to roots (`TauCeti.CartanDatum.Hom.weightMap_root`).
 * `TauCeti.CartanDatum.Hom.cartan_eq`, `TauCeti.CartanDatum.Hom.map_coreflection` and
@@ -246,45 +248,46 @@ lemma coreflection_simpleTorus_self (i : ι) :
     D.coreflection i (D.simpleTorus i) = -D.simpleTorus i := by
   rw [simpleTorus_def, map_nsmul, coreflection_coroot_self, smul_neg]
 
+/-! ### Serre lengths -/
+
+/-- The Serre exponent `(1 - aᵢⱼ).toNat`: equal to `1 - aᵢⱼ ≥ 1` for `i ≠ j` and `0` on the
+diagonal `aᵢᵢ = 2`. -/
+def serreLength (i j : ι) : ℕ := (1 - D.cartan i j).toNat
+
+lemma serreLength_def (i j : ι) : D.serreLength i j = (1 - D.cartan i j).toNat := (rfl)
+
+@[simp] lemma serreLength_self (i : ι) : D.serreLength i i = 0 := by simp [serreLength_def]
+
+lemma one_le_serreLength {i j : ι} (hij : i ≠ j) : 1 ≤ D.serreLength i j := by
+  have := D.cartan_nonpos hij; rw [serreLength_def]; omega
+
+lemma serreLength_ne_zero {i j : ι} (hij : i ≠ j) : D.serreLength i j ≠ 0 :=
+  Nat.ne_of_gt (D.one_le_serreLength hij)
+
+lemma natCast_serreLength {i j : ι} (hij : i ≠ j) :
+    (D.serreLength i j : ℤ) = 1 - D.cartan i j := by
+  have := D.cartan_nonpos hij; rw [serreLength_def]; omega
+
+lemma serreLength_of_cartan_eq_zero {i j : ι} (h : D.cartan i j = 0) : D.serreLength i j = 1 := by
+  simp [serreLength_def, h]
+
 /-! ### Braid lengths -/
 
 variable [DecidableEq ι]
 
-/-- The length `mᵢⱼ` of the braid relation between the nodes `i` and `j`: for `i ≠ j` it is
-`2, 3, 4, 6` according as the Cartan product `aᵢⱼ aⱼᵢ` is `0, 1, 2, 3` (`TauCeti.coxeterOrder`),
-and `0`, Mathlib's encoding of an infinite order, when `aᵢⱼ aⱼᵢ ≥ 4`; on the diagonal it is `1`.
-For two distinct nodes the Cartan product `4` means an affine pair such as `A₁^(1)`, where no
-braid relation holds. -/
-def braidLength (i j : ι) : ℕ :=
-  if i = j then 1
-  else if D.cartan i j * D.cartan j i ≤ 3 then coxeterOrder (D.cartan i j * D.cartan j i) else 0
-
-@[simp]
-lemma braidLength_self (i : ι) : D.braidLength i i = 1 := by
-  simp [braidLength]
-
-lemma braidLength_of_ne_of_le {i j : ι} (hij : i ≠ j) (h : D.cartan i j * D.cartan j i ≤ 3) :
-    D.braidLength i j = coxeterOrder (D.cartan i j * D.cartan j i) := by
-  simp [braidLength, hij, h]
-
-lemma braidLength_of_ne_of_lt {i j : ι} (hij : i ≠ j) (h : 3 < D.cartan i j * D.cartan j i) :
-    D.braidLength i j = 0 := by
-  simp [braidLength, hij, not_le.mpr h]
-
-lemma braidLength_comm (i j : ι) : D.braidLength i j = D.braidLength j i := by
-  simp only [braidLength, eq_comm (a := i), mul_comm (D.cartan i j)]
-
-/-- For distinct nodes the braid length is one of `2, 3, 4, 6` exactly when the Cartan product is
-at most `3`, and `0` otherwise. -/
-lemma braidLength_eq_zero_iff {i j : ι} (hij : i ≠ j) :
-    D.braidLength i j = 0 ↔ 3 < D.cartan i j * D.cartan j i := by
-  refine ⟨fun h ↦ not_le.mp fun hle ↦ ?_, D.braidLength_of_ne_of_lt hij⟩
-  have hmem : D.cartan i j * D.cartan j i ∈ ({0, 1, 2, 3} : Set ℤ) := by
-    have := D.cartan_mul_cartan_nonneg i j
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-    omega
+/-- The length of the braid relation between two distinct nodes, the entry of the Coxeter matrix
+`TauCeti.coxeterMatrixOfGeneralizedCartanMatrix` of the Cartan matrix, is one of `2, 3, 4, 6`
+exactly when their Cartan product `aᵢⱼ aⱼᵢ` is at most `3`, and `0`, an infinite order, otherwise.
+For two distinct nodes the Cartan product `4` means an affine pair such as `A₁^(1)`, where no braid
+relation holds. -/
+lemma coxeterMatrixOfGeneralizedCartanMatrix_cartan_apply_eq_zero_iff {i j : ι} (hij : i ≠ j) :
+    coxeterMatrixOfGeneralizedCartanMatrix D.cartan i j = 0 ↔
+      3 < D.cartan i j * D.cartan j i := by
+  refine ⟨fun h ↦ not_le.mp fun hle ↦ ?_, fun h ↦
+    coxeterMatrixOfGeneralizedCartanMatrix_apply_of_four_le _ hij (by omega)⟩
+  have hmem := mem_zero_one_two_three_iff.mpr ⟨D.cartan_mul_cartan_nonneg i j, by omega⟩
   have := two_le_coxeterOrder hmem
-  rw [D.braidLength_of_ne_of_le hij hle] at h
+  rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four _ hij (by omega)] at h
   omega
 
 end CartanDatum

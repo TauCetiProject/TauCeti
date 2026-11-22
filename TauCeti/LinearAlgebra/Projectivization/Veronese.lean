@@ -92,16 +92,16 @@ noncomputable def veroneseExponentEquiv (N d : ℕ) :
     Fin (veroneseDim N d) ≃ {α : Fin N → ℕ // ∑ i, α i = d} :=
   (((Nat.antidiagonalTuple N d).map toLex.toEmbedding).orderIsoOfFin
       (card_map _)).toEquiv.trans
-    { toFun α := ⟨ofLex α.1, by
-        obtain ⟨β, hβ, h⟩ := mem_map.mp α.2
+    { toFun α := ⟨ofLex α.val, by
+        obtain ⟨β, hβ, h⟩ := mem_map.mp α.property
         simpa [← h] using Nat.mem_antidiagonalTuple.mp hβ⟩
-      invFun α := ⟨toLex α.1, mem_map_of_mem _ (Nat.mem_antidiagonalTuple.mpr α.2)⟩
+      invFun α := ⟨toLex α.val, mem_map_of_mem _ (Nat.mem_antidiagonalTuple.mpr α.property)⟩
       left_inv _ := rfl
       right_inv _ := rfl }
 
 /-- The `k`-th exponent vector of degree `d` in `N` variables, in lexicographic order. -/
 noncomputable def veroneseExponent (N d : ℕ) (k : Fin (veroneseDim N d)) : Fin N → ℕ :=
-  (veroneseExponentEquiv N d k).1
+  (veroneseExponentEquiv N d k).val
 
 /-- The exponent vector enumerated by `veroneseExponentEquiv` is `veroneseExponent`. -/
 @[simp]
@@ -113,7 +113,7 @@ theorem veroneseExponentEquiv_apply {d : ℕ} (k : Fin (veroneseDim N d)) :
 @[simp]
 theorem sum_veroneseExponent (d : ℕ) (k : Fin (veroneseDim N d)) :
     ∑ i, veroneseExponent N d k i = d :=
-  (veroneseExponentEquiv N d k).2
+  (veroneseExponentEquiv N d k).property
 
 /-- In a positive number of variables there are monomials of every degree `d`, for instance the
 pure powers. -/
@@ -220,7 +220,7 @@ exponent vectors of degree `d` with `α_a + α_b = α_c + α_e`. These binomials
 of monomials of degree `d` of every vector. -/
 noncomputable def veroneseRelation (R : Type*) [CommRing R] (N d : ℕ)
     (q : VeroneseRelationIndex N d) : MvPolynomial (Fin (veroneseDim N d)) R :=
-  X q.1.1.1 * X q.1.1.2 - X q.1.2.1 * X q.1.2.2
+  X q.val.1.1 * X q.val.1.2 - X q.val.2.1 * X q.val.2.2
 
 /-- The relations among the monomials are homogeneous quadrics. -/
 theorem isHomogeneous_veroneseRelation (R : Type*) [CommRing R] (N d : ℕ)
@@ -232,7 +232,7 @@ theorem isHomogeneous_veroneseRelation (R : Type*) [CommRing R] (N d : ℕ)
 @[simp]
 theorem eval_veroneseRelation {R : Type*} [CommRing R] {d : ℕ} (q : VeroneseRelationIndex N d)
     (y : Fin (veroneseDim N d) → R) :
-    eval y (veroneseRelation R N d q) = y q.1.1.1 * y q.1.1.2 - y q.1.2.1 * y q.1.2.2 := by
+    eval y (veroneseRelation R N d q) = y q.val.1.1 * y q.val.1.2 - y q.val.2.1 * y q.val.2.2 := by
   simp [veroneseRelation]
 
 /-- The relations among the monomials vanish on the vector of monomials of degree `d`. -/
@@ -241,7 +241,7 @@ theorem eval_veroneseMonomials_veroneseRelation {R : Type*} [CommRing R] {d : �
     (q : VeroneseRelationIndex N d) (v : Fin N → R) :
     eval (veroneseMonomials d v) (veroneseRelation R N d q) = 0 := by
   simp only [eval_veroneseRelation, veroneseMonomials_apply,
-    ← prod_mul_distrib, ← pow_add, ← Pi.add_apply, q.2, sub_self]
+    ← prod_mul_distrib, ← pow_add, ← Pi.add_apply, q.property, sub_self]
 
 /-- From a nonzero coordinate `Y α` with `0 < α i`, the binomial relations reach a nonzero
 pure power `Y (d e_i)`. -/
@@ -277,7 +277,7 @@ private theorem pow_mul_apply_eq_prod {K : Type*} [Field K] {d : ℕ} (hd : d �
   have hsingle : Pi.single i (d - 1) + Pi.single i 1 = Pi.single (M := fun _ ↦ ℕ) i d := by
     rw [← Pi.single_add, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)]
   refine Pi.induction_on_single_of_sum_eq (P := fun α ↦ Y (Pi.single i d) ^ (d - 1) * Y α =
-    ∏ j, Y (Pi.single i (d - 1) + Pi.single j 1) ^ α j) i ?_ (fun β j hji hβ ih ↦ ?_) hα
+    ∏ j, Y (Pi.single i (d - 1) + Pi.single j 1) ^ α j) i ?_ (fun β j _ hβ ih ↦ ?_) hα
   · rw [Fintype.prod_pow_pi_single, hsingle, ← pow_succ,
       Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hd)]
   have hrel := hY (β + Pi.single j 1) (Pi.single i d) (β + Pi.single i 1)
@@ -378,7 +378,7 @@ variable (K : Type*) [Field K]
 `[(∏ i, v i ^ α i)_α]` whose homogeneous coordinates are the monomials of degree `d` in `v`. -/
 noncomputable def veronese (d : ℕ) : ℙ K (Fin N → K) → ℙ K (Fin (veroneseDim N d) → K) :=
   Projectivization.lift
-    (fun v ↦ mk K (veroneseMonomials d v.1) (veroneseMonomials_ne_zero d v.2))
+    (fun v ↦ mk K (veroneseMonomials d v.val) (veroneseMonomials_ne_zero d v.property))
     (by
       rintro ⟨-, ha⟩ ⟨w, hw⟩ t rfl
       exact (mk_eq_mk_iff' K _ _ _ _).mpr ⟨t ^ d, (veroneseMonomials_smul d t w).symm⟩)

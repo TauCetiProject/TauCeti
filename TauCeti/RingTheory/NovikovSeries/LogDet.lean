@@ -125,7 +125,7 @@ theorem exp_tsum_trace_mul_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈
       ((A ^ (k + 1)).trace • (a : NovikovSeries K H N) ^ (k + 1)))
       (-NormedSpace.log u : nonnegSubring K N) := by
     convert (hasSum_log_aeval_charpolyRev ha A).neg.map (nonnegSubring K N).subtype
-      continuous_subtype_val using 1
+      continuous_subtypeVal using 1
     · funext k
       simp
     · simp [u]
@@ -135,7 +135,7 @@ theorem exp_tsum_trace_mul_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈
         = NormedSpace.exp (-NormedSpace.log u) * NormedSpace.exp (NormedSpace.log u) := by
           rw [hu.exp_log]
       _ = 1 := by rw [← hlog'.exp_add hu.log, neg_add_cancel, NormedSpace.exp_zero]
-  rw [hsum.tsum_eq, ← coe_exp_of_mem_posIdeal hlog, ← coe_aeval_nonnegSubring, ← Subring.coe_mul,
+  rw [hsum.tsum_eq, ← coe_exp_nonnegSubring _, ← coe_aeval_nonnegSubring, ← Subring.coe_mul,
     hinv, Subring.coe_one]
 
 end TauCeti.NovikovSeries

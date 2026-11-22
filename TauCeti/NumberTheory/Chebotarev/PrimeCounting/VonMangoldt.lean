@@ -66,7 +66,6 @@ open IsDedekindDomain (HeightOneSpectrum)
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
--- The powered-class convention follows `TauCetiRoadmap/Chebotarev/Suggested.lean`.
 variable (K L) in
 /-- The prime powers whose powered Artin class is `C`. A prime power `𝔭 ^ j` is included when
 `𝔭` is unramified in `L` and `(artinSymbol 𝔭) ^ j = C`. -/
@@ -257,7 +256,7 @@ theorem frobeniusVonMangoldtWeight_idealPrimePower (C : ConjClasses (L ≃ₐ[K]
     (A : IdealPrimePower K) :
     frobeniusVonMangoldtWeight K L C (A : (Ideal (𝓞 K))⁰) =
       frobeniusPrimePowerWeight K L C A := by
-  simp [frobeniusVonMangoldtWeight, A.2]
+  simp [frobeniusVonMangoldtWeight, A.property]
 
 /-- The ideal weight vanishes away from prime-power ideals. -/
 @[simp]

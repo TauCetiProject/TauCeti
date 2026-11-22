@@ -86,18 +86,29 @@ theorem zerothHomotopyEquivFundamentalGroup_mk (γ : MooreLoopSpace X x) :
   exact congrArg (Inv.inv (α := FundamentalGroup X x))
     (HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ.toPath)
 
-/-- Moore loops in the same path component have the same class. -/
-theorem fundamentalGroupHom_eq_of_joined {γ δ : MooreLoopSpace X x} (h : Joined γ δ) :
-    fundamentalGroupHom x γ = fundamentalGroupHom x δ := by
-  rw [← zerothHomotopyEquivFundamentalGroup_mk, ← zerothHomotopyEquivFundamentalGroup_mk]
-  exact congrArg _ (Quotient.sound h)
-
 /-- Every element of the fundamental group is the multiplicative class of a Moore loop. -/
 theorem fundamentalGroupHom_surjective (x : X) : Function.Surjective (fundamentalGroupHom x) :=
   fun g ↦ by
     obtain ⟨q, rfl⟩ := (zerothHomotopyEquivFundamentalGroup x).surjective g
     induction q using Quotient.inductionOn with
     | h γ => exact ⟨γ, (zerothHomotopyEquivFundamentalGroup_mk γ).symm⟩
+
+/-- Two homomorphisms out of the fundamental group agree once they agree on the classes of Moore
+loops. -/
+theorem fundamentalGroup_hom_ext {M : Type*} [Monoid M] {χ ψ : FundamentalGroup X x →* M}
+    (h : ∀ γ : MooreLoopSpace X x, χ (fundamentalGroupHom x γ) = ψ (fundamentalGroupHom x γ)) :
+    χ = ψ :=
+  MonoidHom.ext fun g ↦ by
+    obtain ⟨γ, rfl⟩ := fundamentalGroupHom_surjective x g
+    exact h γ
+
+/-- Two Moore loops have the same multiplicative class exactly when they are joined by a path in
+the Moore loop space. -/
+theorem fundamentalGroupHom_eq_iff_joined {γ δ : MooreLoopSpace X x} :
+    fundamentalGroupHom x γ = fundamentalGroupHom x δ ↔ Joined γ δ := by
+  rw [← zerothHomotopyEquivFundamentalGroup_mk, ← zerothHomotopyEquivFundamentalGroup_mk,
+    (zerothHomotopyEquivFundamentalGroup x).apply_eq_iff_eq]
+  exact Quotient.eq
 
 /-- Moore loops are path connected exactly when the fundamental group at their
 basepoint is trivial. -/

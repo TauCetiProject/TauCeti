@@ -90,8 +90,9 @@ needs, in addition, an `I`-adically complete ring of definition.
 * `TauCeti.Huber.IsTateRing.isOpen_map_extendedIdealOfDefinition`,
   `TauCeti.Huber.IsBounded.image_of_isTateRing` and
   `TauCeti.Huber.IsPowerBounded.map_of_isTateRing`: every homomorphism out of a Tate ring maps an
-  ideal of definition to an open ideal, so every continuous homomorphism from a Tate ring to a
-  Huber ring has these properties.
+  ideal of definition to an open ideal, and every homomorphism out of a Tate ring into a ring with
+  continuous multiplication that is continuous at zero sends bounded sets to bounded sets and
+  power-bounded elements to power-bounded elements.
 
 ## Provenance
 
@@ -459,7 +460,7 @@ theorem isAdic_map_idealOfDefinition {B : Type*} [CommRing B] [TopologicalSpace 
   have : IsTopologicalRing Q.ringOfDefinition :=
     Q.isAdic_idealOfDefinition ▸ Q.idealOfDefinition.nonarchimedean.toIsTopologicalRing
   let f₀ := f.restrict _ _ h
-  have hc : Continuous f₀ := (hf.comp continuous_subtype_val).subtype_mk _
+  have hc : Continuous f₀ := (hf.comp continuous_subtypeVal).subtype_mk _
   have hrad := P.isAdic_idealOfDefinition.map_le_radical_of_continuous
     Q.isAdic_idealOfDefinition hc
   apply Q.isAdic_idealOfDefinition.isAdic_iff_isOpen_and_exists_pow_le.mpr
@@ -482,16 +483,16 @@ theorem isAdic_map_idealOfDefinition {B : Type*} [CommRing B] [TopologicalSpace 
   have htQ : ∀ t ∈ T, t ∈ Q.ringOfDefinition := by
     intro t ht
     obtain ⟨g, -, rfl⟩ := Finset.mem_image.mp ht
-    exact h g g.2
-  have heq' : ∑ t ∈ T.attach, (⟨t.1, htQ t.1 t.2⟩ : Q.ringOfDefinition) *
-      ⟨w t.1, hwQ t.1 t.2⟩ = a := by
+    exact h g g.property
+  have heq' : ∑ t ∈ T.attach, (⟨t.val, htQ t.val t.property⟩ : Q.ringOfDefinition) *
+      ⟨w t.val, hwQ t.val t.property⟩ = a := by
     apply Subtype.ext
     simpa using heq
   rw [← heq']
   apply sum_mem
-  intro t ht
+  intro t _
   apply Ideal.mul_mem_right
-  obtain ⟨g, hg, hgt⟩ := Finset.mem_image.mp t.2
+  obtain ⟨g, hg, hgt⟩ := Finset.mem_image.mp t.property
   have hgI : g ∈ P.idealOfDefinition := hG ▸ Ideal.subset_span hg
   convert Ideal.mem_map_of_mem f₀ hgI using 1
   exact Subtype.ext hgt.symm
@@ -575,7 +576,7 @@ theorem isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isRadical [IsHub
   · -- `q` contains the trace on `B` of the open set of topologically nilpotent elements of `I`
     obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
     refine AddSubgroup.isOpen_of_mem_nhds q.toAddSubgroup (g := 0) <|
-      Filter.mem_of_superset (continuous_subtype_val.continuousAt.preimage_mem_nhds
+      Filter.mem_of_superset (continuous_subtypeVal.continuousAt.preimage_mem_nhds
         ((P.isOpen_idealImage 1).mem_nhds ?_))
         fun s hs ↦ h (P.isTopologicallyNilpotent_of_mem_idealImage one_ne_zero hs)
     simp
@@ -729,25 +730,19 @@ theorem IsTateRing.isOpen_map_extendedIdealOfDefinition [IsTopologicalRing A] [I
     IsOpen (Ideal.map f P.extendedIdealOfDefinition : Set B) :=
   IsTateRing.isOpen_map_of_isOpen f P.isOpen_extendedIdealOfDefinition
 
-variable [IsTopologicalRing A] [IsTateRing A] [IsTopologicalRing B] [IsHuberRing B]
+variable [IsTopologicalRing A] [IsTateRing A] [ContinuousMul B]
 
-/-- **A homomorphism from a Tate ring to a Huber ring, continuous at zero, sends bounded sets to
-bounded sets.** -/
+/-- **A homomorphism from a Tate ring, continuous at zero, sends bounded sets to bounded sets.** -/
 theorem IsBounded.image_of_isTateRing {S : Set A} (hS : IsBounded S) {f : A →+* B}
     (hf : ContinuousAt f 0) : IsBounded (f '' S) := by
-  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
-  obtain ⟨Q⟩ := IsHuberRing.nonempty_pairOfDefinition (A := B)
-  exact hS.image_of_map_extendedIdealOfDefinition_mem_nhds P Q hf
-    ((IsTateRing.isOpen_map_extendedIdealOfDefinition P f).mem_nhds (zero_mem _))
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  exact hS.image_of_isPseudoUniformizer hϖ hf
 
-/-- **A homomorphism from a Tate ring to a Huber ring, continuous at zero, preserves
-power-boundedness.** -/
+/-- **A homomorphism from a Tate ring, continuous at zero, preserves power-boundedness.** -/
 theorem IsPowerBounded.map_of_isTateRing {a : A} (ha : IsPowerBounded a) {f : A →+* B}
     (hf : ContinuousAt f 0) : IsPowerBounded (f a) := by
-  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
-  obtain ⟨Q⟩ := IsHuberRing.nonempty_pairOfDefinition (A := B)
-  exact ha.map_of_map_extendedIdealOfDefinition_mem_nhds P Q hf
-    ((IsTateRing.isOpen_map_extendedIdealOfDefinition P f).mem_nhds (zero_mem _))
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  exact ha.map_of_isPseudoUniformizer hϖ hf
 
 end BoundedImage
 

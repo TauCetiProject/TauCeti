@@ -100,7 +100,7 @@ theorem progressive_le_prod_of_cover [Preorder ι] (F : Filtration ι m) (a : �
   intro s hs
   rw [measurableSet_progressive_iff] at hs
   have hpiece (n : ℕ) : MeasurableSet (s ∩ (Iic (a n) ×ˢ univ)) := by
-    have he := (MeasurableEmbedding.subtype_coe (ha n)).prodMap
+    have he := (MeasurableEmbedding.subtypeVal (ha n)).prodMap
       (MeasurableEmbedding.id (mα := m))
     have hm : MeasurableSet[(inferInstance : MeasurableSpace (Iic (a n))).prod m]
         ((Prod.map (Subtype.val : Iic (a n) → ι) id) ⁻¹' s) :=
@@ -131,7 +131,7 @@ theorem measurableSet_comap_progressive_iff [LinearOrder ι] [MeasurableInf ι]
         ((fun p : Iic t × Ω =>
           (⟨(p.1 : ι), mem_Iic.mpr ((mem_Iic.mp p.1.prop).trans ht)⟩, p.2)) ⁻¹' s) := by
   constructor
-  · rintro ⟨u, hu, rfl⟩ t ht
+  · rintro ⟨u, hu, rfl⟩ t _
     exact (F.measurableSet_progressive_iff.1 hu) t
   · intro h
     let cap : ι × Ω → Iic T × Ω := fun p => (⟨min p.1 T, min_le_right _ _⟩, p.2)
@@ -142,7 +142,7 @@ theorem measurableSet_comap_progressive_iff [LinearOrder ι] [MeasurableInf ι]
         simp only [mem_preimage, cap, min_eq_left (p.1.prop.trans ht)]
       · have hsT : MeasurableSet[Subtype.instMeasurableSpace.prod (F T)] s := h T le_rfl
         have hst := (MeasurableSpace.prod_mono le_rfl (F.mono ht)) _ hsT
-        exact hst.preimage (((measurable_subtype_coe.comp measurable_fst).inf_const T).subtype_mk
+        exact hst.preimage (((measurable_subtypeVal.comp measurable_fst).inf_const T).subtype_mk
           |>.prodMk measurable_snd)
     · ext p
       simp only [mem_preimage, cap, min_eq_left p.1.prop]

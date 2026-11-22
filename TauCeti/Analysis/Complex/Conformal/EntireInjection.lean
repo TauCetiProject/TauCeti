@@ -33,6 +33,8 @@ polynomial of degree at most one.
 * `Differentiable.exists_eq_mul_add_of_injective`: an injective entire function is affine.
 * `Differentiable.injective_iff_exists_eq_mul_add`: an entire function is injective exactly when
   it is a nonconstant affine map.
+* `Differentiable.injective_of_injOn_compl`: an entire function that is injective off a finite set
+  is injective.
 
 ## References
 
@@ -137,7 +139,7 @@ theorem exists_eq_mul_add_of_injective (hf : Differentiable ℂ f) (hinj : Injec
     obtain rfl | hw0 := eq_or_ne w 0
     · by_contra hw'0
       exact hne w' hw' (Ne.symm hw'0) (h.symm.trans hφ0)
-    obtain rfl | hw'0 := eq_or_ne w' 0
+    obtain rfl | _ := eq_or_ne w' 0
     · exact absurd (h.trans hφ0) (hne w hw hw0)
     exact inv_injective (hinj (sub_left_injective (inv_injective h)))
   have hd : _root_.deriv φ 0 ≠ 0 :=
@@ -155,12 +157,9 @@ theorem exists_eq_mul_add_of_injective (hf : Differentiable ℂ f) (hinj : Injec
     exact mul_le_mul_of_nonneg_left hw.le (norm_nonneg w)
   -- Hence `‖f z - f 0‖ ≤ 2 ‖z‖ / ‖φ'(0)‖` at infinity, so `f` has linear growth.
   have hO : f =O[cobounded ℂ] (· ^ 1) := by
-    have hpos : 0 < ‖_root_.deriv φ 0‖ := norm_pos_iff.2 hd
     refine Asymptotics.IsBigO.of_bound (‖f 0‖ + 2 / ‖_root_.deriv φ 0‖) ?_
     filter_upwards [tendsto_inv₀_cobounded.eventually hslope, eventually_cobounded_le_norm 1]
       with z hz hz1
-    have hz0 : 0 < ‖z‖ := one_pos.trans_le hz1
-    have hu : 0 < ‖f z - f 0‖ := hr.trans_le (hfar z hz1)
     simp only [φ, inv_inv, norm_inv] at hz
     have hbound : ‖f z - f 0‖ ≤ 2 / ‖_root_.deriv φ 0‖ * ‖z‖ := by
       rw [← inv_inv ‖f z - f 0‖]
@@ -186,5 +185,29 @@ theorem injective_iff_exists_eq_mul_add (hf : Differentiable ℂ f) :
   rintro ⟨a, b, ha, hab⟩ z w h
   rw [hab, hab] at h
   exact mul_left_cancel₀ ha (add_right_cancel h)
+
+/-- An entire function that is injective off a finite set is injective. -/
+theorem injective_of_injOn_compl (hf : Differentiable ℂ f) {s : Set ℂ} (hs : s.Finite)
+    (hinj : InjOn f sᶜ) : Injective f := by
+  -- `f` is not constant, since it is injective on the infinite set `sᶜ`.
+  have hopen : IsOpenMap f := by
+    refine (AnalyticOnNhd.is_constant_or_isOpenMap fun z _ => hf.analyticAt z).resolve_left ?_
+    rintro ⟨w, hw⟩
+    obtain ⟨x, hx, y, hy, hxy⟩ := hs.infinite_compl.nontrivial
+    exact hxy (hinj hx hy ((hw x).trans (hw y).symm))
+  -- If two points had the same value, then by the open mapping theorem disjoint neighbourhoods of
+  -- them would share all values near it, including values not taken on the finite set.
+  intro x y hxy
+  by_contra hne
+  obtain ⟨U, V, hU, hV, hxU, hyV, hUV⟩ := t2_separation hne
+  have hW : f '' U ∩ f '' V ∈ 𝓝 (f x) :=
+    inter_mem ((hopen U hU).mem_nhds (mem_image_of_mem f hxU))
+      (hxy ▸ (hopen V hV).mem_nhds (mem_image_of_mem f hyV))
+  have : Finite (f '' s) := (hs.image f).to_subtype
+  obtain ⟨_, ⟨⟨u, hu, rfl⟩, v, hv, hvu⟩, hus⟩ :=
+    Filter.nonempty_of_mem (nhdsNE_of_nhdsNE_sdiff_finite (nhdsWithin_le_nhds hW) this)
+  have hu' : u ∉ s := fun h => hus (mem_image_of_mem f h)
+  have hv' : v ∉ s := fun h => hus (hvu ▸ mem_image_of_mem f h)
+  exact hUV.ne_of_mem hu hv (hinj hu' hv' hvu.symm)
 
 end Differentiable

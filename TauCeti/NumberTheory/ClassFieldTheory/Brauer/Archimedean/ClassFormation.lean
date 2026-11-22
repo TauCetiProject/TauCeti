@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Formation
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.InfinitePlace
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.TrivialLayer
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
 
 /-!
@@ -84,15 +85,14 @@ end NumberField.InfinitePlace
 
 namespace TauCeti.ClassFieldTheory
 
-variable {K : Type} [Field K]
+section General
+
+variable {K : Type*} [Field K]
 
 /-- The absolute Galois group of a complex infinite completion is trivial. -/
 theorem subsingleton_absoluteGaloisGroup_of_isComplex (w : InfinitePlace K) (hw : w.IsComplex) :
-    Subsingleton (AbsoluteGaloisGroup w.Completion) := by
-  let _ : IsAlgClosed w.Completion :=
-    IsAlgClosed.of_ringEquiv ℂ w.Completion
-      (Completion.ringEquivComplexOfIsComplex hw).symm
-  infer_instance
+    Subsingleton (AbsoluteGaloisGroup w.Completion) :=
+  (Completion.ringEquivComplexOfIsComplex hw).absoluteGaloisGroupCongr.symm.toEquiv.subsingleton
 
 /-- Every subgroup of the absolute Galois group of an infinite completion is either trivial
 or the whole group. -/
@@ -105,19 +105,30 @@ theorem subgroup_eq_bot_or_eq_top (w : InfinitePlace K)
   · have := subsingleton_absoluteGaloisGroup_of_isComplex w hw
     exact Or.inl (Subsingleton.elim _ _)
 
+/-- The absolute Galois group of an infinite completion is finite: it has order two at a real
+place and is trivial at a complex place. -/
+instance finite_absoluteGaloisGroup (w : InfinitePlace K) :
+    Finite (AbsoluteGaloisGroup w.Completion) := by
+  rcases w.isReal_or_isComplex with hw | hw
+  · exact Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
+  · let _ := subsingleton_absoluteGaloisGroup_of_isComplex w hw
+    infer_instance
+
+end General
+
+section Formation
+
+variable {K : Type} [Field K]
+
 /-- The trivial open normal subgroup of the two-element absolute Galois group at a real place. -/
-noncomputable def realOpenNormalSubgroup (w : InfinitePlace K) (hw : w.IsReal) :
-    OpenNormalSubgroup (AbsoluteGaloisGroup w.Completion) := by
-  let _ : Finite (AbsoluteGaloisGroup w.Completion) :=
-    Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
-  exact ⊥
+noncomputable def realOpenNormalSubgroup (w : InfinitePlace K) (_hw : w.IsReal) :
+    OpenNormalSubgroup (AbsoluteGaloisGroup w.Completion) :=
+  ⊥
 
 @[simp]
 theorem realOpenNormalSubgroup_toSubgroup (w : InfinitePlace K) (hw : w.IsReal) :
-    (realOpenNormalSubgroup w hw).toSubgroup = ⊥ := by
-  let _ : Finite (AbsoluteGaloisGroup w.Completion) :=
-    Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
-  exact OpenNormalSubgroup.toSubgroup_bot
+    (realOpenNormalSubgroup w hw).toSubgroup = ⊥ :=
+  OpenNormalSubgroup.toSubgroup_bot
 
 /-- A finite normal layer over a real infinite completion is either trivial or the unique
 quadratic layer from the trivial subgroup to the full absolute Galois group. -/
@@ -354,15 +365,6 @@ theorem infiniteClassFormationOfIsReal_inv (w : InfinitePlace K) (hw : w.IsReal)
     subst x
     simp
 
-/-- The absolute Galois group of an infinite completion is finite: it has order two at a real
-place and is trivial at a complex place. -/
-instance finite_absoluteGaloisGroup (w : InfinitePlace K) :
-    Finite (AbsoluteGaloisGroup w.Completion) := by
-  rcases w.isReal_or_isComplex with hw | hw
-  · exact Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
-  · let _ := subsingleton_absoluteGaloisGroup_of_isComplex w hw
-    infer_instance
-
 /-- **The class formation at a complex place.** The absolute Galois group of the completion is
 trivial, so the units formation carries the canonical class formation with zero invariant maps. -/
 def infiniteClassFormationOfIsComplex (w : InfinitePlace K) (hw : w.IsComplex) :
@@ -435,7 +437,13 @@ theorem infiniteClassFormation_inv (w : InfinitePlace K)
   · rw [infiniteClassFormation_of_isComplex w hw]
     exact infiniteClassFormationOfIsComplex_inv w hw V x
 
+end Formation
+
 /-! ### Mathlib's absolute Galois group at an infinite place -/
+
+section FieldAbsoluteGaloisGroup
+
+variable {K : Type*} [Field K]
 
 /-- At a complex place `Gal(AlgebraicClosure K_w/K_w)` is trivial. -/
 theorem subsingleton_fieldAbsoluteGaloisGroup_of_isComplex (w : InfinitePlace K)
@@ -553,7 +561,7 @@ theorem fieldAbsoluteGaloisGroup_apply_eq_inv
     refine (sq_eq_sq_iff_eq_or_eq_neg.mp h2).resolve_left fun h ↦ ?_
     obtain ⟨c, hc⟩ := mem_range_algebraMap_of_fieldAbsoluteGaloisGroup_apply_eq w hσ h
     exact hnsq c (ι.injective (by rw [map_pow, hc, hi, map_neg, map_one]))
-  have hi0 : i ≠ 0 := by
+  have _ : i ≠ 0 := by
     rintro rfl
     norm_num at hi
   -- The real and imaginary parts of `z` are fixed by `σ`, so they lie in `K_w`.
@@ -578,5 +586,7 @@ theorem fieldAbsoluteGaloisGroup_apply_eq_inv
   exact eq_inv_of_mul_eq_one_right hzz
 
 end Real
+
+end FieldAbsoluteGaloisGroup
 
 end TauCeti.ClassFieldTheory

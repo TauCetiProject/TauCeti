@@ -82,8 +82,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_complexBasePair_le {n
     have := hfinite i hi
     finite_cellularChainComplex_X C M i).trans_eq ?_
   rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  let _ := hfinite i (Finset.mem_range_succ_iff.1 hi)
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [finrank_cellularChainComplex_X]
   push_cast
   ring
@@ -110,8 +109,7 @@ theorem sum_range_monomial_natCard_cell_mul_finrank_eq {n : ℕ}
       have := hfinite i hi
       finite_cellularChainComplex_X C M i)
     (hX.eq_of_src _ 0)]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  let _ := hfinite i (Finset.mem_range_succ_iff.1 hi)
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [finrank_cellularChainComplex_X]
 
 end Relative
@@ -168,10 +166,10 @@ theorem natCard_cell_eq_bettiNumber_add_coeff_of_cwComplex {n : ℕ}
     Nat.card (cell C j) = bettiNumber k C j +
       ((1 + Polynomial.X) * ∑ i ∈ Finset.range n, monomial i (finrank k (LinearMap.range
         ((cellularChainComplex C (ModuleCat.of k k)).d (i + 1) i).hom))).coeff j := by
-  have h := congrArg (Polynomial.coeff · j)
+  have h := congrArg (fun p : Polynomial ℕ => p.coeff j)
     (sum_range_monomial_natCard_cell_mul_finrank_eq_of_cwComplex C (ModuleCat.of k k) hfinite
       (hn (n + 1) n.lt_succ_self))
-  simp only [Polynomial.coeff_add, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial,
+  simp only [Polynomial.coeff_add, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial_apply,
     Finset.sum_ite_eq', Finset.mem_range, finrank_self, mul_one] at h
   rw [bettiNumber_def]
   split_ifs at h with hj

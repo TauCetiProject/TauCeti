@@ -155,10 +155,6 @@ end TopologicalSpace.Opens
 
 namespace TestFunction
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ}
-
 /-- A test function of time equal to one on a neighbourhood of `[0, 1]`. Multiplying a form on a
 cylinder by it cuts the form off in time without changing it near times in `[0, 1]`. -/
 def timeCutoff : 𝓓((⊤ : Opens ℝ), ℝ) :=
@@ -173,6 +169,28 @@ theorem timeCutoff_eventually_eq_one : ∀ᶠ t in 𝓝ˢ (Icc (0 : ℝ) 1), tim
 /-- The time cutoff is equal to one on `[0, 1]`. -/
 theorem timeCutoff_eq_one {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : timeCutoff t = 1 :=
   timeCutoff_eventually_eq_one.self_of_nhdsSet t ht
+
+section UnitInterval
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ}
+
+/-- If the part of `W` over a set `S` of times lies over `Ω`, then at a time `t ∈ S` the pullback
+along the slice `x ↦ (x, t)` is `ω (x, t)` restricted to `E`, at every point of `E`. -/
+theorem pullbackCLM_prodMk_left_apply {S : Set ℝ} (hW : ∀ p ∈ W, p.2 ∈ S → p.1 ∈ Ω)
+    {m : ℕ} {t : ℝ} (ht : t ∈ S)
+    {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ W →
+      IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, t)) ⁻¹' K)}
+    (ω : 𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F)) (x : E) :
+    pullbackCLM (fun x ↦ (x, t)) (contDiffOn_id.prodMk contDiffOn_const) hp ω x =
+      (ω (x, t)).compContinuousLinearMap (.inl ℝ E ℝ) := by
+  by_cases hx : x ∈ Ω
+  · rw [pullbackCLM_apply_of_mem _ hx, (hasFDerivAt_prodMk_left x t).fderiv]
+  · have hxt : (x, t) ∉ tsupport ω := fun h ↦ hx (hW _ (ω.tsupport_subset h) ht)
+    rw [pullbackCLM_apply_of_notMem _ hx, image_eq_zero_of_notMem_tsupport hxt]
+    ext _
+    simp
 
 variable [CompleteSpace F]
 
@@ -247,23 +265,6 @@ theorem norm_cylinderHomotopyCLM_apply_le (ω : 𝓓(W, (E × ℝ) [⋀^Fin (k +
     {B : ℝ} (h : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (x, t)‖ ≤ B) : ‖cylinderHomotopyCLM hW ω x‖ ≤ B :=
   norm_cylinderHomotopy_le h
 
-omit [CompleteSpace F] in
-/-- If the part of `W` over a set `S` of times lies over `Ω`, then at a time `t ∈ S` the pullback
-along the slice `x ↦ (x, t)` is `ω (x, t)` restricted to `E`, at every point of `E`. -/
-theorem pullbackCLM_prodMk_left_apply {S : Set ℝ} (hW : ∀ p ∈ W, p.2 ∈ S → p.1 ∈ Ω)
-    {m : ℕ} {t : ℝ} (ht : t ∈ S)
-    {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ W →
-      IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, t)) ⁻¹' K)}
-    (ω : 𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F)) (x : E) :
-    pullbackCLM (fun x ↦ (x, t)) (contDiffOn_id.prodMk contDiffOn_const) hp ω x =
-      (ω (x, t)).compContinuousLinearMap (.inl ℝ E ℝ) := by
-  by_cases hx : x ∈ Ω
-  · rw [pullbackCLM_apply_of_mem _ hx, (hasFDerivAt_prodMk_left x t).fderiv]
-  · have hxt : (x, t) ∉ tsupport ω := fun h ↦ hx (hW _ (ω.tsupport_subset h) ht)
-    rw [pullbackCLM_apply_of_notMem _ hx, image_eq_zero_of_notMem_tsupport hxt]
-    ext v
-    simp
-
 /-- **The homotopy formula on test forms**: `h ∘ d = ι₁^* - ι₀^* - d ∘ h` on test
 `(k + 1)`-forms, where `ιₜ^*` is the pullback along the slice `x ↦ (x, t)`. -/
 theorem cylinderHomotopyCLM_comp_extDerivCLM :
@@ -297,6 +298,8 @@ theorem cylinderHomotopyCLM_comp_extDerivCLM_finZero :
     pullbackCLM_prodMk_left_apply hW ⟨le_rfl, zero_le_one⟩]
   exact cylinderHomotopy_extDeriv_eq_sub (ω.contDiff.of_le (by simp)) x
 
+end UnitInterval
+
 /-! ### The product with an oriented interval
 
 For real numbers `a` and `b`, the operator `h_{a,b}` contracts a test form with `∂ₜ` and integrates
@@ -306,7 +309,9 @@ zero. Its values are pinned by `TestFunction.intervalCylinderHomotopyCLM_apply`.
 
 section Interval
 
-variable {a b : ℝ}
+section Reparam
+
+variable {E : Type*} [NormedAddCommGroup E] {Ω : Opens E} {W : Opens (E × ℝ)} {a b : ℝ}
 
 /-- The affine reparametrization `(x, t) ↦ (x, (b - a) * t + a)` of the time line, as a
 homeomorphism of `E × ℝ` when `a ≠ b`. -/
@@ -314,18 +319,36 @@ private def reparam (a b : ℝ) (hab : a ≠ b) : E × ℝ ≃ₜ E × ℝ :=
   (Homeomorph.refl E).prodCongr
     ((Homeomorph.mulLeft₀ (b - a) (sub_ne_zero.2 hab.symm)).trans (Homeomorph.addRight a))
 
-omit [NormedSpace ℝ E] [CompleteSpace F] in
 private theorem reparam_apply (hab : a ≠ b) (p : E × ℝ) :
     reparam a b hab p = (p.1, (b - a) * p.2 + a) :=
   (rfl)
 
-omit [CompleteSpace F] in
+/-- The preimage of `W` under the reparametrization. -/
+private def reparamPreimage (hab : a ≠ b) (W : Opens (E × ℝ)) : Opens (E × ℝ) :=
+  ⟨reparam a b hab ⁻¹' W, W.isOpen.preimage (reparam a b hab).continuous⟩
+
+private theorem coe_reparamPreimage (hab : a ≠ b) :
+    (reparamPreimage hab W : Set (E × ℝ)) = reparam a b hab ⁻¹' W :=
+  (rfl)
+
+private theorem reparamPreimage_spec (hab : a ≠ b) (hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω) :
+    ∀ p ∈ reparamPreimage hab W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun p hp ht ↦ by
+  rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage] at hp
+  simpa [reparam_apply] using hW _ hp (by simpa [reparam_apply] using sub_mul_add_mem_uIcc ht)
+
+private theorem isCompact_inter_preimage_reparam (hab : a ≠ b) (K : Set (E × ℝ))
+    (hK : IsCompact K) (hKW : K ⊆ W) :
+    IsCompact ((reparamPreimage hab W : Set (E × ℝ)) ∩ reparam a b hab ⁻¹' K) := by
+  rw [coe_reparamPreimage, inter_eq_right.2 (preimage_mono hKW)]
+  exact (reparam a b hab).isCompact_preimage.2 hK
+
+variable [NormedSpace ℝ E]
+
 private theorem contDiff_reparam (hab : a ≠ b) :
     ContDiff ℝ (⊤ : ℕ∞) (reparam (E := E) a b hab) := by
   simp_rw [funext (reparam_apply hab)]
   exact contDiff_fst.prodMk ((contDiff_const.mul contDiff_snd).add contDiff_const)
 
-omit [CompleteSpace F] in
 /-- The derivative of the reparametrization is `(v, s) ↦ (v, (b - a) s)`. -/
 private theorem fderiv_reparam (hab : a ≠ b) (p : E × ℝ) :
     fderiv ℝ (reparam a b hab) p =
@@ -333,29 +356,14 @@ private theorem fderiv_reparam (hab : a ≠ b) (p : E × ℝ) :
   simp_rw [funext (reparam_apply hab)]
   exact (hasFDerivAt_fst.prodMk ((hasFDerivAt_snd.const_mul (b - a)).add_const a)).fderiv
 
-/-- The preimage of `W` under the reparametrization. -/
-private def reparamPreimage (hab : a ≠ b) (W : Opens (E × ℝ)) : Opens (E × ℝ) :=
-  ⟨reparam a b hab ⁻¹' W, W.isOpen.preimage (reparam a b hab).continuous⟩
+end Reparam
 
-omit [NormedSpace ℝ E] [CompleteSpace F] in
-private theorem coe_reparamPreimage (hab : a ≠ b) :
-    (reparamPreimage hab W : Set (E × ℝ)) = reparam a b hab ⁻¹' W :=
-  (rfl)
+section ReparamPullback
 
-omit [NormedSpace ℝ E] [CompleteSpace F] in
-private theorem reparamPreimage_spec (hab : a ≠ b) (hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω) :
-    ∀ p ∈ reparamPreimage hab W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun p hp ht ↦ by
-  rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage] at hp
-  simpa [reparam_apply] using hW _ hp (by simpa [reparam_apply] using sub_mul_add_mem_uIcc ht)
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {Ω : Opens E} {W : Opens (E × ℝ)} {a b : ℝ}
 
-omit [NormedSpace ℝ E] [CompleteSpace F] in
-private theorem isCompact_inter_preimage_reparam (hab : a ≠ b) (K : Set (E × ℝ))
-    (hK : IsCompact K) (hKW : K ⊆ W) :
-    IsCompact ((reparamPreimage hab W : Set (E × ℝ)) ∩ reparam a b hab ⁻¹' K) := by
-  rw [coe_reparamPreimage, inter_eq_right.2 (preimage_mono hKW)]
-  exact (reparam a b hab).isCompact_preimage.2 hK
-
-omit [CompleteSpace F] in
 /-- Contracting a pulled back form with `∂ₜ` and restricting to `E` gives `b - a` times the
 contraction of the form. -/
 private theorem curryLeft_compContinuousLinearMap_reparam (hab : a ≠ b) {m : ℕ}
@@ -368,7 +376,6 @@ private theorem curryLeft_compContinuousLinearMap_reparam (hab : a ≠ b) {m : �
   simpa [fderiv_reparam, Function.comp_def, Matrix.vecCons] using
     α.toMultilinearMap.cons_smul (fun i ↦ (v i, 0)) (b - a) (0, 1)
 
-omit [CompleteSpace F] in
 /-- The pullback along the reparametrization is given by the pullback formula at every point of
 `E × ℝ`, including points off the preimage of `W`, where both sides vanish. -/
 private theorem pullbackCLM_reparam_apply (hab : a ≠ b) {m : ℕ}
@@ -382,12 +389,11 @@ private theorem pullbackCLM_reparam_apply (hab : a ≠ b) {m : ℕ}
       rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage]
       exact ω.tsupport_subset h
     rw [pullbackCLM_apply_of_notMem _ hp, image_eq_zero_of_notMem_tsupport hp']
-    ext v
+    ext _
     simp
 
 variable {hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω}
 
-omit [CompleteSpace F] in
 /-- Pulling back along the reparametrization and then along the slice at time `t ∈ [0, 1]` is
 pulling back along the slice at the reparametrized time `(b - a) * t + a`. -/
 private theorem pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hab : a ≠ b) {m : ℕ} {t s : ℝ}
@@ -407,6 +413,37 @@ private theorem pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hab : a ≠ b)
     reparam_apply, hs]
   ext v
   simp [fderiv_reparam, Function.comp_def]
+
+/-- The slice at time `1` of the reparametrized form is the slice at time `b`. -/
+private theorem pullbackCLM_prodMk_one_comp_pullbackCLM_reparam (hab : a ≠ b) {m : ℕ} :
+    (pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+        (isCompact_inter_preimage_prodMk_left (reparamPreimage_spec hab hW)
+          ⟨zero_le_one, le_rfl⟩) ∘L
+      pullbackCLM (reparam a b hab) (contDiff_reparam hab).contDiffOn
+        (isCompact_inter_preimage_reparam hab) :
+        𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F) →L[ℝ] _) =
+      pullbackCLM (fun x ↦ (x, b)) (contDiffOn_id.prodMk contDiffOn_const)
+        (isCompact_inter_preimage_prodMk_left hW right_mem_uIcc) :=
+  pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨zero_le_one, le_rfl⟩ (by ring)
+
+/-- The slice at time `0` of the reparametrized form is the slice at time `a`. -/
+private theorem pullbackCLM_prodMk_zero_comp_pullbackCLM_reparam (hab : a ≠ b) {m : ℕ} :
+    (pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+        (isCompact_inter_preimage_prodMk_left (reparamPreimage_spec hab hW)
+          ⟨le_rfl, zero_le_one⟩) ∘L
+      pullbackCLM (reparam a b hab) (contDiff_reparam hab).contDiffOn
+        (isCompact_inter_preimage_reparam hab) :
+        𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F) →L[ℝ] _) =
+      pullbackCLM (fun x ↦ (x, a)) (contDiffOn_id.prodMk contDiffOn_const)
+        (isCompact_inter_preimage_prodMk_left hW left_mem_uIcc) :=
+  pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨le_rfl, zero_le_one⟩ (by ring)
+
+end ReparamPullback
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ} [CompleteSpace F]
+  {a b : ℝ} {hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω}
 
 /-- The **cylinder homotopy operator over an oriented interval** on test forms: the continuous
 linear map sending a test `(k + 1)`-form `ω` on `W` to the test `k`-form
@@ -496,32 +533,6 @@ theorem norm_intervalCylinderHomotopyCLM_apply_le (ω : 𝓓(W, (E × ℝ) [⋀^
   rw [coe_intervalCylinderHomotopyCLM, Pi.smul_apply, norm_smul, Real.norm_eq_abs]
   gcongr
   exact norm_cylinderHomotopy_le fun t ht ↦ h _ (sub_mul_add_mem_uIcc ht)
-
-omit [CompleteSpace F] in
-/-- The slice at time `1` of the reparametrized form is the slice at time `b`. -/
-private theorem pullbackCLM_prodMk_one_comp_pullbackCLM_reparam (hab : a ≠ b) {m : ℕ} :
-    (pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
-        (isCompact_inter_preimage_prodMk_left (reparamPreimage_spec hab hW)
-          ⟨zero_le_one, le_rfl⟩) ∘L
-      pullbackCLM (reparam a b hab) (contDiff_reparam hab).contDiffOn
-        (isCompact_inter_preimage_reparam hab) :
-        𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F) →L[ℝ] _) =
-      pullbackCLM (fun x ↦ (x, b)) (contDiffOn_id.prodMk contDiffOn_const)
-        (isCompact_inter_preimage_prodMk_left hW right_mem_uIcc) :=
-  pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨zero_le_one, le_rfl⟩ (by ring)
-
-omit [CompleteSpace F] in
-/-- The slice at time `0` of the reparametrized form is the slice at time `a`. -/
-private theorem pullbackCLM_prodMk_zero_comp_pullbackCLM_reparam (hab : a ≠ b) {m : ℕ} :
-    (pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
-        (isCompact_inter_preimage_prodMk_left (reparamPreimage_spec hab hW)
-          ⟨le_rfl, zero_le_one⟩) ∘L
-      pullbackCLM (reparam a b hab) (contDiff_reparam hab).contDiffOn
-        (isCompact_inter_preimage_reparam hab) :
-        𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F) →L[ℝ] _) =
-      pullbackCLM (fun x ↦ (x, a)) (contDiffOn_id.prodMk contDiffOn_const)
-        (isCompact_inter_preimage_prodMk_left hW left_mem_uIcc) :=
-  pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨le_rfl, zero_le_one⟩ (by ring)
 
 /-- **Naturality of `d`**: for `a ≠ b`, `h_{a,b} ∘ d` is the unit-interval `h ∘ d` applied after
 the pullback along the reparametrization. -/
@@ -647,12 +658,12 @@ namespace Distribution
 
 open TestFunction
 
+section Pullback
+
 variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup V]
   {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ}
 
-omit [CompleteSpace F] [NormedSpace ℝ V] in
 /-- **The mass of a slice**: `M({t} × T) ≤ M(T)` for a `k`-current `T` on `Ω`, where
 `{t} × T = T ∘ ιₜ^*` is the pushforward along the slice `ιₜ : x ↦ (x, t)`, for the sup norm
 on `E × ℝ`. -/
@@ -672,6 +683,46 @@ theorem mass_comp_pullbackCLM_prodMk_left_le {𝓕 : Type*}
       _ = 1 := by simp
   · simp [hx]
 
+end Pullback
+
+section LocallyFiniteMass
+
+variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] [NormedAddCommGroup V]
+  {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ}
+  {a b : ℝ} {hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω}
+
+/-- **Products with an oriented interval preserve locally finite mass.** If a map `T` on test
+`k`-forms on `Ω` has locally finite mass, so does `[[a, b]] × T = T ∘ h_{a,b}` on `W`. For the
+quantitative local mass bound see `Distribution.localMass_comp_intervalCylinderHomotopyCLM_le`. -/
+theorem HasLocallyFiniteMass.comp_intervalCylinderHomotopyCLM
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) → V} (hT : HasLocallyFiniteMass T) :
+    HasLocallyFiniteMass (T ∘ intervalCylinderHomotopyCLM a b hW) := by
+  rw [hasLocallyFiniteMass_def] at hT ⊢
+  intro K hK hKW
+  obtain ⟨C, hC, hTC⟩ := hT _ ((hK.inter_right (isClosed_univ.prod isClosed_uIcc)).image
+    continuous_fst) (by rintro _ ⟨p, ⟨hpK, -, hp⟩, rfl⟩; exact hW p (hKW hpK) hp)
+  refine ⟨C * |b - a|, by positivity, fun ω hω ↦ ?_⟩
+  have hb : ‖(intervalCylinderHomotopyCLM a b hW ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤
+      |b - a| * ‖(ω : E × ℝ →ᵇ (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)‖ :=
+    (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦
+      norm_intervalCylinderHomotopyCLM_apply_le ω fun t _ ↦
+        BoundedContinuousFunction.norm_coe_le_norm
+          (ω : E × ℝ →ᵇ (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F) (x, t)
+  calc ‖(T ∘ intervalCylinderHomotopyCLM a b hW) ω‖
+      ≤ C * ‖(intervalCylinderHomotopyCLM a b hW ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ :=
+        hTC _ ((tsupport_intervalCylinderHomotopyCLM_subset ω).trans
+          (image_mono (inter_subset_inter_left _ hω)))
+    _ ≤ C * (|b - a| * ‖(ω : E × ℝ →ᵇ (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)‖) := by gcongr
+    _ = C * |b - a| * ‖(ω : E × ℝ →ᵇ (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)‖ := (mul_assoc ..).symm
+
+end LocallyFiniteMass
+
+variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {Ω : Opens E} {W : Opens (E × ℝ)} {k : ℕ}
+
 section Interval
 
 variable {a b : ℝ} {hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω}
@@ -689,7 +740,7 @@ theorem localMass_comp_intervalCylinderHomotopyCLM_le {𝓕 : Type*}
   refine enorm_apply_le_localMass_mul_of_forall_enorm_le T
     ((tsupport_intervalCylinderHomotopyCLM_subset ω).trans
       (image_mono (inter_subset_inter_left _ hωU))) fun x ↦ ?_
-  rw [← ofReal_norm, Real.enorm_eq_ofReal_abs]
+  rw [← ofReal_norm, Real.eNorm_eq_ofReal_abs]
   exact ENNReal.ofReal_le_ofReal ((norm_intervalCylinderHomotopyCLM_apply_le ω
     fun t _ ↦ hω _).trans_eq (mul_one _))
 
@@ -730,31 +781,6 @@ theorem mass_comp_intervalCylinderHomotopyCLM_comp_extDerivCLM_finZero_le
   refine (mass_sub_le ..).trans (add_le_add ?_ ?_) <;> rw [ContinuousLinearMap.coe_comp] <;>
     exact mass_comp_pullbackCLM_prodMk_left_le T
 
-omit [NormedSpace ℝ V] in
-/-- **Products with an oriented interval preserve locally finite mass.** If a map `T` on test
-`k`-forms on `Ω` has locally finite mass, so does `[[a, b]] × T = T ∘ h_{a,b}` on `W`. For the
-quantitative local mass bound see `Distribution.localMass_comp_intervalCylinderHomotopyCLM_le`. -/
-theorem HasLocallyFiniteMass.comp_intervalCylinderHomotopyCLM
-    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) → V} (hT : HasLocallyFiniteMass T) :
-    HasLocallyFiniteMass (T ∘ intervalCylinderHomotopyCLM a b hW) := by
-  rw [hasLocallyFiniteMass_def] at hT ⊢
-  intro K hK hKW
-  obtain ⟨C, hC, hTC⟩ := hT _ ((hK.inter_right (isClosed_univ.prod isClosed_uIcc)).image
-    continuous_fst) (by rintro _ ⟨p, ⟨hpK, -, hp⟩, rfl⟩; exact hW p (hKW hpK) hp)
-  refine ⟨C * |b - a|, by positivity, fun ω hω ↦ ?_⟩
-  have hb : ‖(intervalCylinderHomotopyCLM a b hW ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤
-      |b - a| * ‖(ω : E × ℝ →ᵇ (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)‖ :=
-    (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦
-      norm_intervalCylinderHomotopyCLM_apply_le ω fun t _ ↦
-        BoundedContinuousFunction.norm_coe_le_norm
-          (ω : E × ℝ →ᵇ (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F) (x, t)
-  calc ‖(T ∘ intervalCylinderHomotopyCLM a b hW) ω‖
-      ≤ C * ‖(intervalCylinderHomotopyCLM a b hW ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ :=
-        hTC _ ((tsupport_intervalCylinderHomotopyCLM_subset ω).trans
-          (image_mono (inter_subset_inter_left _ hω)))
-    _ ≤ C * (|b - a| * ‖(ω : E × ℝ →ᵇ (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)‖) := by gcongr
-    _ = C * |b - a| * ‖(ω : E × ℝ →ᵇ (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F)‖ := (mul_assoc ..).symm
-
 /-- **Products with an oriented interval preserve local normality**: if `T` is a locally normal
 `k`-current on `Ω`, then `[[a, b]] × T = T ∘ h_{a,b}` is a locally normal `(k + 1)`-current on
 `W`. -/
@@ -783,7 +809,7 @@ theorem IsNormal.comp_intervalCylinderHomotopyCLM
     {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} (hT : IsNormal T) :
     IsNormal (T ∘L intervalCylinderHomotopyCLM a b hW) := by
   rw [isNormal_succ_iff, ContinuousLinearMap.coe_comp]
-  refine ⟨ne_top_of_le_ne_top (ENNReal.mul_ne_top enorm_ne_top hT.mass_ne_top)
+  refine ⟨ne_top_of_le_ne_top (ENNReal.mul_ne_top eNorm_ne_top hT.mass_ne_top)
     (mass_comp_intervalCylinderHomotopyCLM_le T), ?_⟩
   cases k with
   | zero =>
@@ -792,7 +818,7 @@ theorem IsNormal.comp_intervalCylinderHomotopyCLM
   | succ k =>
     have hT := isNormal_succ_iff.1 hT
     exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.ofNat_ne_top hT.1,
-      ENNReal.mul_ne_top enorm_ne_top hT.2⟩)
+      ENNReal.mul_ne_top eNorm_ne_top hT.2⟩)
       (mass_comp_intervalCylinderHomotopyCLM_comp_extDerivCLM_le T)
 
 end Interval
@@ -801,18 +827,14 @@ section UnitInterval
 
 variable {hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω}
 
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] [CompleteSpace F] in
-private theorem forall_mem_uIcc_zero_one (hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω) :
-    ∀ p ∈ W, p.2 ∈ uIcc (0 : ℝ) 1 → p.1 ∈ Ω := by
-  rwa [uIcc_of_le zero_le_one]
-
 /-- **The mass of a product with the unit interval**: `M([[0, 1]] × T) ≤ M(T)` for a `k`-current
 `T` on `Ω`, where `[[0, 1]] × T = T ∘ h`, for the sup norm on `E × ℝ`. -/
 theorem mass_comp_cylinderHomotopyCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
     [LinearMapClass 𝓕 ℝ 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] (T : 𝓕) :
     mass (T ∘ cylinderHomotopyCLM hW) ≤ mass T := by
-  simpa [← intervalCylinderHomotopyCLM_zero_one (forall_mem_uIcc_zero_one hW) hW] using
-    mass_comp_intervalCylinderHomotopyCLM_le (hW := forall_mem_uIcc_zero_one hW) T
+  have hW' : ∀ p ∈ W, p.2 ∈ uIcc (0 : ℝ) 1 → p.1 ∈ Ω := by rwa [uIcc_of_le zero_le_one]
+  simpa [← intervalCylinderHomotopyCLM_zero_one hW' hW] using
+    mass_comp_intervalCylinderHomotopyCLM_le (hW := hW') T
 
 /-- **The mass of the boundary of a product with the unit interval**:
 `M(∂ ([[0, 1]] × T)) ≤ 2 M(T) + M(∂ T)` for a `(k + 1)`-current `T` on `Ω`, where
@@ -821,9 +843,9 @@ theorem mass_comp_cylinderHomotopyCLM_comp_extDerivCLM_le
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V) :
     mass ((T ∘L cylinderHomotopyCLM hW) ∘L extDerivCLM) ≤
       2 * mass T + mass (T ∘L extDerivCLM) := by
-  simpa [← intervalCylinderHomotopyCLM_zero_one (forall_mem_uIcc_zero_one hW) hW] using
-    mass_comp_intervalCylinderHomotopyCLM_comp_extDerivCLM_le
-      (hW := forall_mem_uIcc_zero_one hW) T
+  have hW' : ∀ p ∈ W, p.2 ∈ uIcc (0 : ℝ) 1 → p.1 ∈ Ω := by rwa [uIcc_of_le zero_le_one]
+  simpa [← intervalCylinderHomotopyCLM_zero_one hW' hW] using
+    mass_comp_intervalCylinderHomotopyCLM_comp_extDerivCLM_le (hW := hW') T
 
 end UnitInterval
 

@@ -106,8 +106,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
--- The declaration sequence follows the human-authored specification in
--- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
 variable (K) in
 /-- The normalized valuation `v_K^×` of a nonarchimedean local field `K`: the composite of
 `ValuativeRel.valuation K` with the order isomorphism `valueGroupWithZeroIsoInt` of the value
@@ -475,8 +473,7 @@ For a nonzero element `x`, its value is `q ^ (-v_K(x))`, where
 noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
   (intValuation (K := K)).toAbsoluteValue
     (WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
-    (fun _ _ h ↦
-      (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone h)
+    (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone
     (fun _ ↦ map_eq_zero _)
     (fun _ ↦ (intValuation (K := K)).zero_iff)
 

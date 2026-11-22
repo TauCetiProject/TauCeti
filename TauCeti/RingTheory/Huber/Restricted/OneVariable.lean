@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import TauCeti.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.PowerSeries.Restricted
@@ -25,7 +26,8 @@ completed Huber algebra with Mathlib's univariate restricted-series ring.
 The comparison is stated over commutative normed rings because Mathlib packages variable
 renaming of power series, `MvPowerSeries.rename`, only over a commutative semiring. The
 ultrametric hypothesis is needed only for the target ring: Mathlib defines
-`PowerSeries.IsRestricted.subring` only under `[IsUltrametricDist R]`.
+`PowerSeries.IsRestricted.subring` only under `[IsUltrametricDist R]`. It also makes `R` a
+nonarchimedean ring (`IsUltrametricDist.nonarchimedeanRing`), as the Huber side requires.
 
 Independently of any norm, the one-variable polynomials `A[T]`, evaluated at the variable, are
 dense in every one-variable weighted ring `A⟨T⟩_T`. This is how facts about `A[T]`, such as
@@ -97,9 +99,9 @@ end Polynomial
 
 section Comparison
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NonarchimedeanRing R]
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
-omit [IsUltrametricDist R] [NonarchimedeanRing R] in
+omit [IsUltrametricDist R] in
 /-- **Renaming the sole variable preserves restrictedness.** The Huber predicate asks directly
 that the coefficients tend to zero, while Mathlib's radius-one predicate asks the same of their
 norms. The exponent sets are identified by the unique-coordinate equivalence. -/
@@ -126,10 +128,10 @@ noncomputable def restrictedMvPowerSeriesSubringOneEquiv :
     restrictedMvPowerSeriesSubring 1 R ≃+*
       PowerSeries.IsRestricted.subring (R := R) 1 where
   toFun f := ⟨MvPowerSeries.renameEquiv R finOneEquiv f,
-    isRestricted_renameEquiv_finOne_iff.mp (mem_restrictedMvPowerSeriesSubring.mp f.2)⟩
+    isRestricted_renameEquiv_finOne_iff.mp (mem_restrictedMvPowerSeriesSubring.mp f.property)⟩
   invFun f := ⟨(MvPowerSeries.renameEquiv R finOneEquiv).symm f,
     mem_restrictedMvPowerSeriesSubring.mpr <| isRestricted_renameEquiv_finOne_iff.mpr <| by
-      rw [AlgEquiv.apply_symm_apply]; exact f.2⟩
+      rw [AlgEquiv.apply_symm_apply]; exact f.property⟩
   left_inv f := Subtype.ext <| (MvPowerSeries.renameEquiv R finOneEquiv).left_inv f
   right_inv f := Subtype.ext <| (MvPowerSeries.renameEquiv R finOneEquiv).right_inv f
   map_mul' f g := Subtype.ext <| map_mul (MvPowerSeries.renameEquiv R finOneEquiv)
@@ -223,8 +225,7 @@ end Comparison
 
 section Complete
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NonarchimedeanRing R]
-  [CompleteSpace R]
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 
 /-- **The completed one-variable Huber algebra is the univariate restricted-series ring.**
 Completeness identifies the completion with the trivial-weight restricted-series subring; the

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Data.ZMod.QuotientGroup
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -46,6 +47,8 @@ grading graded-isomorphic to a shift has such a generator.
   the shift `A(d)` if and only if it has a unit in degree `-d`.
 * `TauCeti.sub_mem_homogeneousUnitDegrees_iff` and `TauCeti.ShiftClassGroup.mk_eq_mk_iff`: the
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
+* `TauCeti.ShiftClassGroup.equivZMod`: for a `ℤ`-grading whose homogeneous unit degrees are the
+  multiples of `e`, the shift class group is `ZMod |e|`.
 
 The group-algebra and Laurent-polynomial examples, `TauCeti.homogeneousUnitDegrees_gradeBy` and
 `TauCeti.shiftClassGroupLaurentPolynomialEquiv`, are in `TauCeti.Algebra.MonoidAlgebra.Grading`
@@ -125,7 +128,7 @@ theorem mem_homogeneousUnitDegrees_iff {d : ι} :
     d ∈ homogeneousUnitDegrees 𝒜 ↔ ∃ u : Aˣ, (u : A) ∈ 𝒜 d := by
   refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦ mem_homogeneousUnitDegrees_of_mem hu⟩
   induction h using AddSubgroup.closure_induction with
-  | mem d hd => exact hd
+  | mem _ hd => exact hd
   | zero => exact ⟨1, SetLike.one_mem_graded 𝒜⟩
   | add d e _ _ hd he =>
     obtain ⟨u, hu⟩ := hd
@@ -143,6 +146,22 @@ units. The shifts `A(d)` and `A(e)` of the graded module `A` are graded-isomorph
 abbrev ShiftClassGroup {ι A σ : Type*} [AddCommGroup ι] [Monoid A] [SetLike σ A] (𝒜 : ι → σ) :
     Type _ :=
   ι ⧸ homogeneousUnitDegrees 𝒜
+
+/-- If the degrees of the homogeneous units of a `ℤ`-graded ring are the multiples of `e`, then the
+shift class group is `ZMod |e|`. -/
+noncomputable def ShiftClassGroup.equivZMod {A σ : Type*} [Monoid A] [SetLike σ A] {𝒜 : ℤ → σ}
+    {e : ℤ} (h : homogeneousUnitDegrees 𝒜 = AddSubgroup.zmultiples e) :
+    ShiftClassGroup 𝒜 ≃+ ZMod e.natAbs :=
+  (QuotientAddGroup.quotientAddEquivOfEq h).trans (Int.quotientZMultiplesEquivZMod e)
+
+/-- The identification `ShiftClassGroup.equivZMod` sends the class of a shift `c` to
+`c mod |e|`. -/
+@[simp]
+theorem ShiftClassGroup.equivZMod_mk {A σ : Type*} [Monoid A] [SetLike σ A] {𝒜 : ℤ → σ} {e : ℤ}
+    (h : homogeneousUnitDegrees 𝒜 = AddSubgroup.zmultiples e) (c : ℤ) :
+    ShiftClassGroup.equivZMod h c = c := by
+  rw [ShiftClassGroup.equivZMod, AddEquiv.trans_apply, QuotientAddGroup.quotientAddEquivOfEq_mk,
+    Int.quotientZMultiplesEquivZMod_mk]
 
 section Shift
 
@@ -165,7 +184,7 @@ theorem mul_mem_iff_of_isUnit_mem [AddSubmonoidClass σM A] [Decomposition ℳ]
     have h := DirectSum.coe_decompose_smul_add_of_right_mem 𝒜 ℳ (a := x) (i := n - c) hmem
     rw [smul_eq_mul, sub_add_cancel, decompose_of_mem_same ℳ hx, smul_eq_mul,
       hu.isRegular.right.eq_iff] at h
-    exact h ▸ (decompose 𝒜 x (n - c)).2
+    exact h ▸ (decompose 𝒜 x (n - c)).property
   · simpa using SetLike.GradedSMul.smul_mem (B := ℳ) hx hmem
 
 /-- Linear form of the shift classification: a grading `ℳ` of `A` compatible with `𝒜` with a

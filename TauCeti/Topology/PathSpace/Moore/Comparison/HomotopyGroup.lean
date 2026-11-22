@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
+import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 
 /-!
@@ -16,7 +18,20 @@ Normalizing a Moore loop to the unit interval induces the usual loop-space shift
 homotopy groups. This identifies `πₖ(ΩᴹX, 1)` with `πₖ₊₁(X, x)` for positive `k`, identifies
 the path components of the double Moore loop space with the elements of `π₂(X, x)`
 (`TauCeti.MooreLoopSpace.zerothHomotopyDoubleEquiv`), and shows that the double Moore loop space
-is path connected when `π₂(X, x)` vanishes.
+is path connected when `π₂(X, x)` vanishes. The Moore loop space of a simply connected space is
+path connected (`TauCeti.MooreLoopSpace.instPathConnectedSpace`).
+
+In cube coordinates, with the loop coordinate as the last cube direction, the shift sends the
+image `j_* ⟦a⟧` under a based map `j : Y → ΩᴹX` to the class of `t ↦ (j (a t')).toPath (t none)`
+(`TauCeti.MooreLoopSpace.exists_congrEquiv_homotopyGroupMulEquiv_map_mk`).
+
+The shift is natural in based maps (`TauCeti.MooreLoopSpace.homotopyGroupMulEquiv_map`), so the
+Moore loop map of `f` is bijective on `πₖ(ΩᴹX, 1)` for positive `k` exactly when `f` is bijective
+on `πₖ₊₁(X, x)` (`TauCeti.MooreLoopSpace.bijective_homotopyGroup_map_iff`).
+
+Reversing Moore loops inverts the positive homotopy groups of the Moore loop space
+(`TauCeti.MooreLoopSpace.homotopyGroup_map_symm`): under the shift it reverses the loop coordinate
+of a cube.
 
 The unit is not special: concatenation in front with a Moore loop `γ` is a homotopy equivalence
 of the Moore loop space carrying the unit to `γ`, so the positive homotopy groups of `ΩᴹX` at
@@ -64,6 +79,91 @@ theorem homotopyGroupMulEquiv_apply (x : X) (n : ℕ)
     homeomorphMulEquivOfEq_apply, HomotopyGroup.map_comp_apply]
   congr 1
 
+/-- The Moore loop-space shift is natural: the map induced on `πₖ(ΩᴹX, 1)` by the Moore loop map
+of `f` corresponds to the map induced by `f` on `πₖ₊₁(X, x)`. -/
+theorem homotopyGroupMulEquiv_map {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) {x : X} {y : Y}
+    (hf : f x = y) (n : ℕ) (a : π_ (n + 1) (MooreLoopSpace X x) 1) :
+    homotopyGroupMulEquiv y n
+        (HomotopyGroup.map (map f hf).toContinuousMap (map_one (map f hf)) a) =
+      HomotopyGroup.map f hf (homotopyGroupMulEquiv x n a) := by
+  subst hf
+  -- Normalizing Moore loops intertwines the Moore loop map with postcomposition of
+  -- fixed-interval loops (`toPath_map`), which commutes with the fixed-interval shift.
+  let F : C(Path x x, Path (f x) (f x)) :=
+    ⟨fun γ ↦ γ.map f.continuous,
+      continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp f).comp continuous_induced_dom)⟩
+  rw [homotopyGroupMulEquiv_apply, homotopyGroupMulEquiv_apply, HomotopyGroup.map_comp_apply,
+    ← f.pathLoopSpaceMulEquiv_map rfl F (fun _ _ ↦ rfl), HomotopyGroup.map_comp_apply]
+  refine congrArg _ (HomotopyGroup.map_congr (ContinuousMap.ext fun γ ↦ ?_) _ _ a)
+  simp [F, homotopyEquivPath_apply]
+
+/-- **The Moore loop-space shift in cube coordinates.** For a based map `j : Y → ΩᴹX` and a cube
+loop `a` of `Y`, the shift of `j_* ⟦a⟧`, with the loop coordinate as the last cube direction, is the
+class of the cube loop `t ↦ (j (a t')).toPath (t none)`, where `t'` is the restriction of `t` to the
+other directions. -/
+theorem exists_congrEquiv_homotopyGroupMulEquiv_map_mk {Y : Type*} [TopologicalSpace Y] {y : Y}
+    (j : C(Y, MooreLoopSpace X x)) (hj : j y = 1) {k : ℕ} (a : Ω^ (Fin (k + 1)) Y y) :
+    ∃ γ : Ω^ (Option (Fin (k + 1))) X x,
+      (∀ t, γ t = (j (a fun i ↦ t (some i))).toPath (t none)) ∧
+        HomotopyGroup.congrEquiv finSuccEquivLast
+          (homotopyGroupMulEquiv x k (HomotopyGroup.map j hj ⟦a⟧)) =
+            (⟦γ⟧ : HomotopyGroup (Option (Fin (k + 1))) X x) := by
+  rw [homotopyGroupMulEquiv_apply]
+  simp only [HomotopyGroup.map_mk, pathLoopSpaceMulEquiv_mk, HomotopyGroup.congrEquiv_mk]
+  refine ⟨_, fun t ↦ ?_, rfl⟩
+  -- The loop coordinate is the last direction, `Sum.inr` before the reindexing.
+  have hl (m : Fin (k + 1)) :
+      finSuccEquivLast (finSumFinEquiv (Sum.inl m : Fin (k + 1) ⊕ Fin 1)) = some m :=
+    finSuccEquivLast_castSucc m
+  have hr : finSuccEquivLast (finSumFinEquiv (Sum.inr default : Fin (k + 1) ⊕ Fin 1)) = none :=
+    (congrArg finSuccEquivLast (Fin.ext (by simp))).trans finSuccEquivLast_last
+  simp only [GenLoop.congr_apply, GenLoop.genLoopGenLoopEquiv_apply, GenLoop.map_apply,
+    GenLoop.homeomorphOfUnique_symm_apply, ContinuousMap.coe_mk, hl, hr]
+  -- The shift applies the forward map of `homotopyEquivPath`, which is its coercion.
+  exact congrArg (· (t none)) (homotopyEquivPath_apply (j (a fun m ↦ t (some m))))
+
+/-- **Reversal of Moore loops inverts the positive homotopy groups of the Moore loop space.**
+Under the loop-space shift, reversing every loop of a family reverses the loop coordinate of the
+corresponding cube, which inverts its class. -/
+@[simp]
+theorem homotopyGroup_map_symm (x : X) (n : ℕ) (a : π_ (n + 1) (MooreLoopSpace X x) 1) :
+    HomotopyGroup.map ⟨symm, continuous_symm⟩ symm_one a = a⁻¹ := by
+  let s : C(MooreLoopSpace X x, MooreLoopSpace X x) := ⟨symm, continuous_symm⟩
+  obtain ⟨p, ha⟩ := Quotient.exists_rep a
+  -- the shifts of the classes of `p` and of its reversal `GenLoop.map s p` in cube coordinates
+  obtain ⟨γ, hγ, hγeq⟩ := exists_congrEquiv_homotopyGroupMulEquiv_map_mk s symm_one p
+  obtain ⟨γ₀, hγ₀, hγ₀eq⟩ :=
+    exists_congrEquiv_homotopyGroupMulEquiv_map_mk s symm_one (GenLoop.map s symm_one p)
+  have hp : HomotopyGroup.map s symm_one
+      (⟦GenLoop.map s symm_one p⟧ : π_ (n + 1) (MooreLoopSpace X x) 1) = a := by
+    rw [HomotopyGroup.map_mk, ← ha]
+    exact congrArg _ (GenLoop.ext _ _ fun t ↦ by simp [s])
+  rw [hp] at hγ₀eq
+  rw [ha] at hγeq
+  -- the shifted cube of the reversed family is the shifted cube reversed in the loop coordinate
+  have hsymm : γ = GenLoop.symmAt none γ₀ := GenLoop.ext _ _ fun t ↦ by
+    rw [hγ, GenLoop.symmAt_apply, hγ₀]
+    simp [s, Function.update_of_ne]
+  refine (homotopyGroupMulEquiv x n).injective
+    ((HomotopyGroup.congrMulEquiv (finSuccEquivLast (n := n + 1))).injective ?_)
+  rw [MulEquiv.map_inv, MulEquiv.map_inv, HomotopyGroup.congrMulEquiv_apply,
+    HomotopyGroup.congrMulEquiv_apply, hγeq, hγ₀eq, hsymm, HomotopyGroup.inv_spec]
+
+/-- The Moore loop map of `f` is bijective on `πₖ(ΩᴹX, 1)` for positive `k` exactly when `f` is
+bijective on `πₖ₊₁(X, x)`. -/
+theorem bijective_homotopyGroup_map_iff {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) {x : X}
+    {y : Y} (hf : f x = y) (n : ℕ) :
+    Function.Bijective (HomotopyGroup.map (N := Fin (n + 1)) (map f hf).toContinuousMap
+        (map_one (map f hf))) ↔
+      Function.Bijective (HomotopyGroup.map (N := Fin (n + 2)) f hf) := by
+  have h : HomotopyGroup.map (N := Fin (n + 1)) (map f hf).toContinuousMap
+      (map_one (map f hf)) =
+        (homotopyGroupMulEquiv y n).symm ∘ HomotopyGroup.map f hf ∘ homotopyGroupMulEquiv x n := by
+    funext a
+    rw [Function.comp_apply, Function.comp_apply, MulEquiv.eq_symm_apply]
+    exact homotopyGroupMulEquiv_map f hf n a
+  rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
+
 /-- **The path components of the double Moore loop space are the second homotopy group.** -/
 def zerothHomotopyDoubleEquiv (x : X) :
     ZerothHomotopy (MooreLoopSpace (MooreLoopSpace X x) 1) ≃ π_ 2 X x :=
@@ -92,6 +192,12 @@ trivial. -/
 theorem pathConnectedSpace_iff_subsingleton_pi1 (x : X) :
     PathConnectedSpace (MooreLoopSpace X x) ↔ Subsingleton (π_ 1 X x) :=
   (pathConnectedSpace_iff x).trans pi1MulEquivFundamentalGroup.symm.toEquiv.subsingleton_congr
+
+/-- The Moore loop space of a simply connected space is path connected. -/
+instance instPathConnectedSpace [SimplyConnectedSpace X] (x : X) :
+    PathConnectedSpace (MooreLoopSpace X x) :=
+  (pathConnectedSpace_iff_subsingleton_pi1 x).2
+    (pi1MulEquivFundamentalGroup.toEquiv.subsingleton_congr.2 inferInstance)
 
 /-- The double Moore loop space `MooreLoopSpace (MooreLoopSpace X x) 1` is path connected if and
 only if `π_ 2 X x` is trivial. -/

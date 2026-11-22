@@ -28,7 +28,9 @@ This file develops the basic properties of the measure that need no reduction th
 
 * **Total mass.** For measurable `μ`, the measure of the whole space is the symplectic volume of
   `M` (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_univ`); it is a finite measure on a compact
-  manifold (`TauCeti.SmoothTwoForm.isFiniteMeasure_duistermaatHeckmanMeasure`).
+  manifold (`TauCeti.SmoothTwoForm.isFiniteMeasure_duistermaatHeckmanMeasure`). A constant map
+  has measure the symplectic volume times a point mass
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_const`).
 * **Properness.** If `μ` is a proper map to a Hausdorff space, the measure is finite on compact
   sets (`TauCeti.SmoothTwoForm.isFiniteMeasureOnCompacts_duistermaatHeckmanMeasure`), hence locally
   finite when the target is locally compact, even when `M` is not compact.
@@ -37,6 +39,10 @@ This file develops the basic properties of the measure that need no reduction th
   changes of moment map: shifting `μ` by a constant translates the measure
   (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_add_const`), and restricting the action to a
   subtorus `𝔰 ⊆ 𝔱` replaces `μ` by its composition with the restriction `𝔱* → 𝔰*`.
+* **Rescaling and restriction.** Replacing `σ` by `r • σ` multiplies the measure by `|r|ⁿ`
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_smul`), and restricting `σ` and `μ` to an open
+  subset `U` gives the pushforward of the Liouville measure restricted to `U`
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_mpullback_subtypeVal`).
 * **Support.** For a nondegenerate form and a continuous map, the support of the measure is the
   closure of the image of `μ` (`TauCeti.SmoothTwoForm.support_duistermaatHeckmanMeasure`).
 * **Invariance.** A differentiable homeomorphism `Φ : M → N` with `Φ^* τ = σ`, intertwining the
@@ -111,6 +117,33 @@ theorem duistermaatHeckmanMeasure_add_const [Add F] [MeasurableAdd F] (hμ : Mea
       (σ.duistermaatHeckmanMeasure n μ).map (· + c) :=
   duistermaatHeckmanMeasure_comp (measurable_add_const c) hμ
 
+variable (σ n) in
+/-- **A constant moment map.** A constant map, such as the moment map of the trivial action, has
+Duistermaat–Heckman measure the symplectic volume of `M` times the point mass at its value. -/
+@[simp]
+theorem duistermaatHeckmanMeasure_const (c : F) :
+    σ.duistermaatHeckmanMeasure n (fun _ ↦ c) = σ.liouvilleMeasure n univ • Measure.dirac c :=
+  Measure.map_const _ c
+
+/-- **Rescaling the form.** Replacing `σ` by `r • σ` multiplies the Duistermaat–Heckman measure by
+`|r|ⁿ`. -/
+@[simp]
+theorem duistermaatHeckmanMeasure_smul (hμ : Measurable μ) (r : ℝ) :
+    (r • σ).duistermaatHeckmanMeasure n μ =
+      ENNReal.ofReal (|r| ^ n) • σ.duistermaatHeckmanMeasure n μ := by
+  rw [duistermaatHeckmanMeasure_def, duistermaatHeckmanMeasure_def, liouvilleMeasure_smul,
+    Measure.map_smul _ hμ.aemeasurable]
+
+/-- **Restriction to an open subset.** The Duistermaat–Heckman measure of the restrictions of `σ`
+and of a measurable map `μ` to an open subset `U` is the pushforward along `μ` of the restriction
+to `U` of the Liouville measure of `σ`. -/
+theorem duistermaatHeckmanMeasure_mpullback_subtypeVal (U : TopologicalSpace.Opens M)
+    [LindelofSpace U] (hμ : Measurable μ) :
+    duistermaatHeckmanMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)
+        (μ ∘ Subtype.val) = ((σ.liouvilleMeasure n).restrict U).map μ := by
+  rw [duistermaatHeckmanMeasure_def, ← Measure.map_map hμ measurable_subtypeVal,
+    map_liouvilleMeasure_mpullback_subtypeVal]
+
 /-- On a compact manifold the Duistermaat–Heckman measure is finite. -/
 instance isFiniteMeasure_duistermaatHeckmanMeasure [CompactSpace M] :
     IsFiniteMeasure (σ.duistermaatHeckmanMeasure n μ) := by
@@ -158,7 +191,7 @@ variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [T
 Duistermaat–Heckman measure as `τ` and `ν`. In particular an equivariant symplectomorphism
 intertwining two moment maps preserves the Duistermaat–Heckman measure. -/
 theorem duistermaatHeckmanMeasure_eq {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N}
-    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ) (h : mpullback I J Φ τ.1 = σ.1) {μ : M → F}
+    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I J Φ) (h : mpullback I J Φ τ.val = σ.val) {μ : M → F}
     {ν : N → F} (hν : Measurable ν) (hμν : ν ∘ Φ = μ) :
     σ.duistermaatHeckmanMeasure n μ = τ.duistermaatHeckmanMeasure n ν := by
   rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, SmoothTwoForm.duistermaatHeckmanMeasure_def,

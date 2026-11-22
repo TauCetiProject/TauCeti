@@ -161,23 +161,23 @@ noncomputable def liftEquiv (e : C ≌ C) (σ : AddAut G) :
       {f : SplitK0 C →+ G // ∀ x, f (mapEquiv e x) = σ (f x)} where
   toFun a := ⟨a.lift, a.lift_mapEquiv⟩
   invFun f :=
-    { toAdditiveInvariant := SplitK0.liftEquiv.symm f.1
-      map_shift := fun X => by simpa using f.2 (of X) }
+    { toAdditiveInvariant := SplitK0.liftEquiv.symm f.val
+      map_shift := fun X => by simpa using f.property (of X) }
   left_inv a := by ext X; simp
   right_inv f :=
     Subtype.ext
-      (SplitK0.lift_unique _ f.1 fun X => (SplitK0.liftEquiv_symm_apply_obj f.1 X).symm).symm
+      (SplitK0.lift_unique _ f.val fun X => (SplitK0.liftEquiv_symm_apply_obj f.val X).symm).symm
 
 @[simp]
 lemma liftEquiv_apply (a : ShiftInvariant C e σ) :
-    (liftEquiv e σ a).1 = a.lift :=
+    (liftEquiv e σ a).val = a.lift :=
   (rfl)
 
 @[simp]
 lemma liftEquiv_symm_apply_obj
     (f : {f : SplitK0 C →+ G // ∀ x, f (mapEquiv e x) = σ (f x)}) (X : C) :
-    ((liftEquiv e σ).symm f).obj X = f.1 (of X) :=
-  SplitK0.liftEquiv_symm_apply_obj f.1 X
+    ((liftEquiv e σ).symm f).obj X = f.val (of X) :=
+  SplitK0.liftEquiv_symm_apply_obj f.val X
 
 end ShiftInvariant
 
@@ -260,24 +260,24 @@ noncomputable def liftEquiv (e : A ≌ A) [e.functor.Additive] (σ : AddAut G) :
       {f : AbelianK0 A →+ G // ∀ x, f (mapEquiv e x) = σ (f x)} where
   toFun a := ⟨a.lift, a.lift_mapEquiv⟩
   invFun f :=
-    { toAdditiveInvariant := AbelianK0.liftEquiv.symm f.1
-      map_shift := fun X => by simpa using f.2 (of X) }
+    { toAdditiveInvariant := AbelianK0.liftEquiv.symm f.val
+      map_shift := fun X => by simpa using f.property (of X) }
   left_inv a := by ext X; simp
   right_inv f :=
     Subtype.ext
-      (AbelianK0.lift_unique _ f.1 fun X =>
-        (AbelianK0.liftEquiv_symm_apply_obj f.1 X).symm).symm
+      (AbelianK0.lift_unique _ f.val fun X =>
+        (AbelianK0.liftEquiv_symm_apply_obj f.val X).symm).symm
 
 @[simp]
 lemma liftEquiv_apply (a : ShiftInvariant A e σ) :
-    (liftEquiv e σ a).1 = a.lift :=
+    (liftEquiv e σ a).val = a.lift :=
   (rfl)
 
 @[simp]
 lemma liftEquiv_symm_apply_obj
     (f : {f : AbelianK0 A →+ G // ∀ x, f (mapEquiv e x) = σ (f x)}) (X : A) :
-    ((liftEquiv e σ).symm f).obj X = f.1 (of X) :=
-  AbelianK0.liftEquiv_symm_apply_obj f.1 X
+    ((liftEquiv e σ).symm f).obj X = f.val (of X) :=
+  AbelianK0.liftEquiv_symm_apply_obj f.val X
 
 end ShiftInvariant
 
@@ -404,24 +404,24 @@ noncomputable def liftEquiv (σ : AddAut G) :
       {f : ExactK0 E.toExactStructure →+ G // ∀ x, f (E.shiftEquiv x) = σ (f x)} where
   toFun a := ⟨a.lift, a.lift_shiftEquiv⟩
   invFun f :=
-    { toAdditiveInvariant := ExactK0.liftEquiv.symm f.1
-      map_shift := fun X => by simpa using f.2 (ExactK0.of X) }
+    { toAdditiveInvariant := ExactK0.liftEquiv.symm f.val
+      map_shift := fun X => by simpa using f.property (ExactK0.of X) }
   left_inv a := by ext X; simp
   right_inv f :=
     Subtype.ext
-      (ExactK0.lift_unique _ f.1 fun X => (ExactK0.liftEquiv_symm_apply_obj f.1 X).symm).symm
+      (ExactK0.lift_unique _ f.val fun X => (ExactK0.liftEquiv_symm_apply_obj f.val X).symm).symm
 
 @[simp]
 lemma liftEquiv_apply (a : ShiftInvariant E σ) :
-    (liftEquiv σ a).1 = a.lift :=
+    (liftEquiv σ a).val = a.lift :=
   (rfl)
 
 @[simp]
 lemma liftEquiv_symm_apply_obj
     (f : {f : ExactK0 E.toExactStructure →+ G //
       ∀ x, f (E.shiftEquiv x) = σ (f x)}) (X : C) :
-    ((liftEquiv σ).symm f).obj X = f.1 (ExactK0.of X) :=
-  ExactK0.liftEquiv_symm_apply_obj f.1 X
+    ((liftEquiv σ).symm f).obj X = f.val (ExactK0.of X) :=
+  ExactK0.liftEquiv_symm_apply_obj f.val X
 
 end ShiftInvariant
 
@@ -696,24 +696,24 @@ noncomputable def liftEquiv (e : C ≌ C) [e.functor.CommShift ℤ] [e.functor.I
       {f : TriangulatedK0 C →+ G // ∀ x, f (mapEquiv e x) = σ (f x)} where
   toFun a := ⟨a.lift, a.lift_mapEquiv⟩
   invFun f :=
-    { toAdditiveInvariant := TriangulatedK0.liftEquiv.symm f.1
-      map_shift := fun X => by simpa using f.2 (of X) }
+    { toAdditiveInvariant := TriangulatedK0.liftEquiv.symm f.val
+      map_shift := fun X => by simpa using f.property (of X) }
   left_inv a := by ext X; simp
   right_inv f :=
     Subtype.ext
-      (TriangulatedK0.lift_unique _ f.1 fun X =>
-        (TriangulatedK0.liftEquiv_symm_apply_obj f.1 X).symm).symm
+      (TriangulatedK0.lift_unique _ f.val fun X =>
+        (TriangulatedK0.liftEquiv_symm_apply_obj f.val X).symm).symm
 
 @[simp]
 lemma liftEquiv_apply (a : ShiftInvariant C e σ) :
-    (liftEquiv e σ a).1 = a.lift :=
+    (liftEquiv e σ a).val = a.lift :=
   (rfl)
 
 @[simp]
 lemma liftEquiv_symm_apply_obj
     (f : {f : TriangulatedK0 C →+ G // ∀ x, f (mapEquiv e x) = σ (f x)}) (X : C) :
-    ((liftEquiv e σ).symm f).obj X = f.1 (of X) :=
-  TriangulatedK0.liftEquiv_symm_apply_obj f.1 X
+    ((liftEquiv e σ).symm f).obj X = f.val (of X) :=
+  TriangulatedK0.liftEquiv_symm_apply_obj f.val X
 
 end ShiftInvariant
 

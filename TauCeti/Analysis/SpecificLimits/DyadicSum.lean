@@ -5,20 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import Mathlib.Data.Int.Log
+public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Sums over dyadic scales
 
-For `u > 0` and `δ > 0`, the sum over all dyadic scales `2 ^ j`, `j ∈ ℤ`, of
-`min (2 ^ j u) ((2 ^ j u) ^ (-δ))` is bounded independently of `u`: the terms with `2 ^ j u ≤ 1`
-form a geometric series of ratio `1/2` dominated by its largest term, and the terms with
-`2 ^ j u > 1` a geometric series of ratio `2 ^ (-δ)`. This is how per-scale estimates of the
-shape "at most `2 ^ j ‖h‖` for small scales and at most `(2 ^ j ‖h‖) ^ (-δ)` for large ones" are
-summed into a bound uniform in `h`, as in the verification of Hörmander's condition for the
-kernel of a Fourier multiplier cut into Littlewood–Paley pieces.
+For a base `b > 1` and an exponent `δ > 0`, the sum of `min (b ^ j u) ((b ^ j u) ^ (-δ))` over
+any finite set of integers `j` is at most `(1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹`, for every real `u`.
+For `u > 0`, the terms with `b ^ j u ≤ 1` are at most `b ^ j u`, a geometric series of ratio
+`b⁻¹` whose largest term is at most `1`, and the terms with `b ^ j u > 1` are `(b ^ j u) ^ (-δ)`,
+a geometric series of ratio `b ^ (-δ)` whose largest term is below `1`. For `u ≤ 0` every term is
+nonpositive.
+
+With `b = 2` this is how per-scale estimates of the shape "at most `2 ^ j ‖h‖` for small scales and
+at most `(2 ^ j ‖h‖) ^ (-δ)` for large ones" are summed into a bound uniform in `h`, as in the
+verification of Hörmander's condition for the kernel of a Fourier multiplier cut into
+Littlewood–Paley pieces.
 
 Similarly, for `0 < α < 1`, a nonnegative sequence with `2^{jα} gⱼ ≤ a` and `2^{jα} gⱼ ≤ b 2^j d`
 sums to at most `C (a + b) d^α`: the second bound is the better one while `2^j d ≤ 1`, and the
@@ -26,11 +31,50 @@ first beyond. Applied to the increments `gⱼ = |fⱼ(x) - fⱼ(y)|` at distance
 pieces with `‖fⱼ‖_∞ ≲ 2^{-jα}` and Lipschitz constants `≲ 2^{j(1-α)}`, this shows that `∑ⱼ fⱼ` is
 `α`-Hölder.
 
+For `0 < s < t` the same bound sums `(2^j)^s (1 + 2^j r)^(-t)` over `j ∈ ℕ` to at most
+`C r^(-s)`, uniformly in `r > 0`: with `u = 2^j r`, the term is `r^(-s)` times
+`u^s (1 + u)^(-t) ≤ min (u^s) ((u^s)^(-(t - s)/s))`. These are the sums of the dyadic pieces of a
+kernel with the size `(2^j)^s` at scale `2^{-j}` and rapid decay beyond it, evaluated at
+distance `r`: they give the bound `C r^(-s)` of the whole kernel. For `r` bounded below by `ρ > 0`
+and `t > s` a natural number, the terms are moreover at most `ρ^(-t) (2^(s - t))^j`, a geometric
+sequence.
+
+When a series `∑ⱼ fⱼ` has terms bounded both by `D (2^j)^(s + 1) d` and by
+`C (2^j)^s (1 + 2^j r)^(-N)`, each term is at most the interpolation `A^δ B^(1 - δ)` of the two
+bounds `A` and `B`, for `0 ≤ δ ≤ 1`. The interpolated bounds are of the previous shape with
+exponents `s + δ` and `N (1 - δ)`, so the series sums to at most
+`E D^δ C^(1 - δ) d^δ r^(-(s + δ))` when `0 < s + δ < N (1 - δ)`. This is how increments of a
+kernel at distance `d`, cut into dyadic pieces, are bounded by `d^δ`.
+
+For `ε > 0`, the two-sided series `∑_{m ∈ ℤ} 2^{-ε |m|}` in `ℝ≥0∞` is finite, being the
+bilateral geometric series of ratio `2^{-ε}`. For `σ ≥ 1` the shifted sums
+`∑_{j ∈ ℤ} 2^{-ε |x - σ j|}` are at most `2^ε ∑_{m ∈ ℤ} 2^{-ε |m|}`, uniformly in `x`, since the
+points `σ j` are `1`-separated. These sum per-scale bounds over the dyadic time shells
+`|s - t| ≈ 2^j` in the endpoint Strichartz estimate.
+
+Finally, for a base `b > 1`, a function `R` antitone on `(0, ∞)` is bounded by step functions
+built from its values at the left endpoints of the scales `b ^ n s`: on `(0, s]` by the values
+`R (b⁻¹ ^ (n + 1) s)` on `(b⁻¹ ^ (n + 1) s, b⁻¹ ^ n s]`, and on `[s, ∞)` by the values `R (b ^ n s)`
+on `[b ^ n s, b ^ (n + 1) s)`. Taking `Lᵖ` norms of these step functions bounds that of `R` by
+dyadic series.
+
 ## Main declarations
 
 * `TauCeti.sum_min_zpow_mul_rpow_neg_le`: the uniform bound over any finite set of scales.
+* `TauCeti.exists_tsum_rpow_mul_one_add_rpow_neg_le`: for `0 < s < t`,
+  `∑ⱼ (2^j)^s (1 + 2^j r)^(-t) ≤ C r^(-s)` for every `r > 0`.
 * `TauCeti.exists_tsum_le_mul_rpow_of_rpow_mul_le`: for `0 < α < 1`, a nonnegative sequence with
   `2^{jα} gⱼ ≤ a` and `2^{jα} gⱼ ≤ b 2^j d` sums to at most `C (a + b) d^α`.
+* `TauCeti.rpow_mul_one_add_rpow_neg_le`: `(2^j)^s (1 + 2^j r)^(-N) ≤ ρ^(-N) (2^(s - N))^j` for
+  `r ≥ ρ > 0`.
+* `TauCeti.exists_norm_le_of_hasSum_of_le_of_le`: a series whose terms are bounded by
+  `D (2^j)^(s + 1) d` and by `C (2^j)^s (1 + 2^j r)^(-N)` sums to at most
+  `E D^δ C^(1 - δ) d^δ r^(-(s + δ))`.
+* `TauCeti.tsum_two_rpow_neg_mul_abs_ne_top`, `TauCeti.tsum_two_rpow_neg_mul_abs_sub_le`: the
+  two-sided series `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite and bounds its shifts by `σ`-separated points.
+* `AntitoneOn.le_tsum_indicator_Ioc`, `AntitoneOn.le_tsum_indicator_Ico`: a function antitone on
+  `(0, ∞)` is bounded on `(0, s]` and on `[s, ∞)` by its values at the left endpoints of the
+  intervals between consecutive scales `b ^ n s`.
 
 ## References
 
@@ -43,53 +87,111 @@ namespace TauCeti
 
 open Finset
 
-/-- For `u > 0` and `δ > 0`, summing `min (2 ^ j u) ((2 ^ j u) ^ (-δ))` over any finite set of
-integers `j` gives at most `2 + (1 - 2 ^ (-δ))⁻¹`, independently of `u`. -/
-theorem sum_min_zpow_mul_rpow_neg_le {δ u : ℝ} (hδ : 0 < δ) (hu : 0 < u) (s : Finset ℤ) :
-    ∑ j ∈ s, min (2 ^ j * u) ((2 ^ j * u) ^ (-δ)) ≤ 2 + (1 - (2 : ℝ) ^ (-δ))⁻¹ := by
-  set m : ℤ := Int.log 2 u
-  set q : ℝ := (2 : ℝ) ^ (-δ)
+/-- For `b > 1` and `δ > 0`, summing `min (b ^ j u) ((b ^ j u) ^ (-δ))` over any finite set of
+integers `j` gives at most `(1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹`, independently of `u`. For `b = 2` the
+first summand is `2`. -/
+theorem sum_min_zpow_mul_rpow_neg_le {b δ : ℝ} (hb : 1 < b) (hδ : 0 < δ) (u : ℝ) (s : Finset ℤ) :
+    ∑ j ∈ s, min (b ^ j * u) ((b ^ j * u) ^ (-δ)) ≤ (1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹ := by
+  have hb0 : 0 < b := zero_lt_one.trans hb
+  have hb1 : b⁻¹ < 1 := inv_lt_one_of_one_lt₀ hb
+  set q : ℝ := b ^ (-δ)
   have hq0 : 0 ≤ q := by positivity
-  have hq1 : q < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
-  -- The comparison function on `ℤ`: `2 ^ (i + 1)` for `i < 0` and `q ^ i` for `i ≥ 0`.
-  set f : ℤ → ℝ := fun i ↦ if i < 0 then 2 ^ (i + 1) else q ^ i.toNat
-  have hf : HasSum f ((1 - q)⁻¹ + 2) := by
+  have hq1 : q < 1 := Real.rpow_lt_one_of_one_lt_of_neg hb (by linarith)
+  -- For `u ≤ 0` every term is nonpositive.
+  obtain hu | hu := le_or_gt u 0
+  · exact (sum_nonpos fun j _ ↦ (min_le_left _ _).trans
+      (mul_nonpos_of_nonneg_of_nonpos (by positivity) hu)).trans
+      (add_nonneg (inv_nonneg.2 (sub_nonneg.2 hb1.le)) (inv_nonneg.2 (sub_nonneg.2 hq1.le)))
+  obtain ⟨m, hlo, hhi⟩ := exists_mem_Ico_zpow hu hb
+  -- The comparison function on `ℤ`: `b ^ (i + 1)` for `i < 0` and `q ^ i` for `i ≥ 0`.
+  set f : ℤ → ℝ := fun i ↦ if i < 0 then b ^ (i + 1) else q ^ i
+  have hf : HasSum f ((1 - q)⁻¹ + (1 - b⁻¹)⁻¹) := by
     refine HasSum.of_nat_of_neg_add_one ?_ ?_
     · convert hasSum_geometric_of_lt_one hq0 hq1 using 2 with n
       simp [f]
-    · have : (fun n : ℕ ↦ f (-(n + 1))) = fun n : ℕ ↦ (1 / 2 : ℝ) ^ n := by
-        ext n
-        have hn : (-((n : ℤ) + 1)) < 0 := by omega
-        simp only [f, hn, ite_true]
-        rw [show -((n : ℤ) + 1) + 1 = -(n : ℤ) by ring, zpow_neg, zpow_natCast, one_div, inv_pow]
-      rw [this]
-      exact hasSum_geometric_two
-  have hlo : (2 : ℝ) ^ m ≤ u := Int.zpow_log_le_self (by norm_num) hu
-  have hhi : u < (2 : ℝ) ^ (m + 1) := Int.lt_zpow_succ_log_self (by norm_num) u
-  -- Since `2 ^ m ≤ u < 2 ^ (m + 1)`, the term of index `j` is at most `f (j + m)`.
-  have hterm (j : ℤ) : min (2 ^ j * u) ((2 ^ j * u) ^ (-δ)) ≤ f (j + m) := by
+    · convert hasSum_geometric_of_lt_one (inv_nonneg.2 hb0.le) hb1 using 2 with n
+      have hn : (-((n : ℤ) + 1)) < 0 := by omega
+      simp only [f, hn, ite_true]
+      rw [show -((n : ℤ) + 1) + 1 = -(n : ℤ) by ring, zpow_neg, zpow_natCast, inv_pow]
+  -- Since `b ^ m ≤ u < b ^ (m + 1)`, the term of index `j` is at most `f (j + m)`.
+  have hterm (j : ℤ) : min (b ^ j * u) ((b ^ j * u) ^ (-δ)) ≤ f (j + m) := by
     by_cases hj : j + m < 0
     · simp only [f, hj, ite_true]
       refine (min_le_left _ _).trans ?_
-      rw [add_assoc, zpow_add₀ two_ne_zero]
-      exact (mul_lt_mul_of_pos_left hhi (by positivity)).le
+      rw [add_assoc, zpow_add₀ hb0.ne']
+      gcongr
     · simp only [f, hj, ite_false]
       refine (min_le_right _ _).trans ?_
-      have hle : (2 : ℝ) ^ (j + m) ≤ 2 ^ j * u := by
-        rw [zpow_add₀ two_ne_zero]
-        exact mul_le_mul_of_nonneg_left hlo (by positivity)
-      obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (not_lt.1 hj)
-      calc (2 ^ j * u) ^ (-δ) ≤ ((2 : ℝ) ^ (j + m)) ^ (-δ) :=
-            Real.rpow_le_rpow_of_nonpos (by positivity) hle (by linarith)
-        _ = q ^ (j + m).toNat := by
-            rw [hk, Int.toNat_natCast, zpow_natCast, ← Real.rpow_natCast,
-              ← Real.rpow_mul zero_le_two, mul_comm (k : ℝ), Real.rpow_mul zero_le_two,
-              Real.rpow_natCast]
-  calc ∑ j ∈ s, min (2 ^ j * u) ((2 ^ j * u) ^ (-δ)) ≤ ∑ j ∈ s, f (j + m) :=
+      rw [Real.rpow_zpow_comm hb0.le, zpow_add₀ hb0.ne']
+      exact Real.rpow_le_rpow_of_nonpos (by positivity) (by gcongr) (by linarith)
+  calc ∑ j ∈ s, min (b ^ j * u) ((b ^ j * u) ^ (-δ)) ≤ ∑ j ∈ s, f (j + m) :=
         sum_le_sum fun j _ ↦ hterm j
     _ = ∑ i ∈ s.map (addRightEmbedding m), f i := by simp
-    _ ≤ (1 - q)⁻¹ + 2 := sum_le_hasSum _ (fun i _ ↦ by positivity) hf
-    _ = 2 + (1 - q)⁻¹ := add_comm _ _
+    _ ≤ (1 - q)⁻¹ + (1 - b⁻¹)⁻¹ := sum_le_hasSum _ (fun i _ ↦ by positivity) hf
+    _ = (1 - b⁻¹)⁻¹ + (1 - q)⁻¹ := add_comm _ _
+
+/-- With `u = 2^j r`, the term `(2^j)^s (1 + 2^j r)^(-t)` is `r^(-s)` times
+`u^s (1 + u)^(-t) ≤ min (u^s) ((u^s)^(-δ))`, where `u^s = b^j r^s` for `b = 2^s` and
+`δ = (t - s) / s`. -/
+private theorem rpow_mul_one_add_rpow_neg_le_mul_min {s t r : ℝ} (hs : 0 < s) (hst : s < t)
+    (hr : 0 < r) (j : ℕ) :
+    ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-t) ≤ r ^ (-s) *
+      min ((2 ^ s) ^ (j : ℤ) * r ^ s) (((2 ^ s) ^ (j : ℤ) * r ^ s) ^ (-((t - s) / s))) := by
+  set u : ℝ := 2 ^ j * r
+  have hu : 0 < u := by positivity
+  have hbj : ((2 : ℝ) ^ s) ^ (j : ℤ) * r ^ s = u ^ s := by
+    simp only [u]
+    rw [zpow_natCast, Real.rpow_pow_comm zero_le_two, Real.mul_rpow (by positivity) hr.le]
+  have hj : ((2 : ℝ) ^ j) ^ s = r ^ (-s) * u ^ s := by
+    simp only [u]
+    rw [Real.mul_rpow (by positivity) hr.le, Real.rpow_neg hr.le, mul_left_comm,
+      inv_mul_cancel₀ (by positivity), mul_one]
+  rw [hbj, hj, mul_assoc]
+  refine mul_le_mul_of_nonneg_left (le_min ?_ ?_) (by positivity)
+  · exact mul_le_of_le_one_right (by positivity)
+      (Real.rpow_le_one_of_one_le_of_nonpos (by linarith) (by linarith))
+  · have hsδ : s * -((t - s) / s) = s + -t := by
+      field_simp
+      ring
+    rw [← Real.rpow_mul hu.le, hsδ, Real.rpow_add hu]
+    exact mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_nonpos hu (le_add_of_nonneg_left zero_le_one) (by linarith))
+      (by positivity)
+
+/-- **Dyadic sums with polynomial decay.** For `0 < s < t` there is `C ≥ 0` such that for every
+`r > 0` the series `∑ⱼ (2^j)^s (1 + 2^j r)^(-t)` over `j ∈ ℕ` converges, with sum at most
+`C r^(-s)`. -/
+theorem exists_tsum_rpow_mul_one_add_rpow_neg_le {s t : ℝ} (hs : 0 < s) (hst : s < t) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ r : ℝ, 0 < r →
+      Summable (fun j : ℕ ↦ ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-t)) ∧
+        ∑' j : ℕ, ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-t) ≤ C * r ^ (-s) := by
+  -- The terms are bounded by `r^(-s) min (b^j r^s) ((b^j r^s)^(-δ))`, whose finite sums are
+  -- bounded uniformly in `r` by `sum_min_zpow_mul_rpow_neg_le`.
+  set b : ℝ := 2 ^ s
+  set δ : ℝ := (t - s) / s
+  have hb : 1 < b := Real.one_lt_rpow one_lt_two hs
+  have hδ : 0 < δ := div_pos (by linarith) hs
+  set C : ℝ := (1 - b⁻¹)⁻¹ + (1 - b ^ (-δ))⁻¹
+  have hC : 0 ≤ C := by
+    have := sub_pos.2 (inv_lt_one_of_one_lt₀ hb)
+    have := sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg hb (by linarith : -δ < 0))
+    positivity
+  refine ⟨C, hC, fun r hr ↦ ?_⟩
+  set f : ℕ → ℝ := fun j ↦ ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-t)
+  have hf0 : ∀ j, 0 ≤ f j := fun j ↦ by positivity
+  have hsum (N : ℕ) : ∑ j ∈ Finset.range N, f j ≤ C * r ^ (-s) := by
+    calc ∑ j ∈ Finset.range N, f j
+        ≤ ∑ j ∈ Finset.range N,
+            r ^ (-s) * min (b ^ (j : ℤ) * r ^ s) ((b ^ (j : ℤ) * r ^ s) ^ (-δ)) :=
+          Finset.sum_le_sum fun j _ ↦ rpow_mul_one_add_rpow_neg_le_mul_min hs hst hr j
+      _ = r ^ (-s) * ∑ i ∈ (Finset.range N).map (Nat.castEmbedding : ℕ ↪ ℤ),
+            min (b ^ i * r ^ s) ((b ^ i * r ^ s) ^ (-δ)) := by
+          rw [Finset.mul_sum, Finset.sum_map]
+          simp only [Nat.castEmbedding_apply, zpow_natCast]
+      _ ≤ r ^ (-s) * C :=
+          mul_le_mul_of_nonneg_left (sum_min_zpow_mul_rpow_neg_le hb hδ _ _) (by positivity)
+      _ = C * r ^ (-s) := mul_comm _ _
+  exact ⟨summable_of_sum_range_le hf0 hsum, Real.tsum_le_of_sum_range_le hf0 hsum⟩
 
 /-- **Summing two dyadic bounds.** For `0 < α < 1` there is `C ≥ 0` such that every nonnegative
 sequence with `2^{jα} gⱼ ≤ a` and `2^{jα} gⱼ ≤ b 2^j d` for all `j`, where `a, b, d ≥ 0`, is
@@ -197,4 +299,135 @@ theorem exists_tsum_le_mul_rpow_of_rpow_mul_le {α : ℝ} (hα0 : 0 < α) (hα1 
   have : 0 ≤ d ^ α := by positivity
   nlinarith [mul_nonneg ha0 hC₂, mul_nonneg hb0 hC₁]
 
+/-- For `r ≥ ρ > 0`, the term `(2^j)^s (1 + 2^j r)^(-N)` is at most `ρ^(-N) q^j` with
+`q = 2^(s - N)`: a geometric sequence, of ratio `q < 1` when `s < N`. -/
+theorem rpow_mul_one_add_rpow_neg_le {s ρ r : ℝ} {N : ℕ} (hρ : 0 < ρ) (hr : ρ ≤ r) (j : ℕ) :
+    ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ)) ≤
+      ρ ^ (-(N : ℝ)) * ((2 : ℝ) ^ (s - N)) ^ j := by
+  have h2 : (0 : ℝ) < 2 ^ j := by positivity
+  have hle : (1 + 2 ^ j * r) ^ (-(N : ℝ)) ≤ (2 ^ j * ρ) ^ (-(N : ℝ)) :=
+    Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) (by simp)
+  calc ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ))
+      ≤ ((2 : ℝ) ^ j) ^ s * (2 ^ j * ρ) ^ (-(N : ℝ)) :=
+        mul_le_mul_of_nonneg_left hle (by positivity)
+    _ = ρ ^ (-(N : ℝ)) * ((2 : ℝ) ^ j) ^ (s + -(N : ℝ)) := by
+        rw [Real.mul_rpow h2.le hρ.le, Real.rpow_add h2]
+        ring
+    _ = ρ ^ (-(N : ℝ)) * ((2 : ℝ) ^ (s - N)) ^ j := by
+        rw [← sub_eq_add_neg, Real.rpow_pow_comm zero_le_two]
+
+/-- **Summing interpolated dyadic bounds.** For `0 < δ < 1` and `0 < s + δ < N (1 - δ)` there is
+`E ≥ 0` such that, if `L = ∑ⱼ fⱼ` in a normed group with `‖fⱼ‖ ≤ D (2^j)^(s + 1) d` and
+`‖fⱼ‖ ≤ C (2^j)^s (1 + 2^j r)^(-N)` for all `j`, where `C, D, d ≥ 0` and `r > 0`, then
+`‖L‖ ≤ E D^δ C^(1 - δ) d^δ r^(-(s + δ))`. -/
+theorem exists_norm_le_of_hasSum_of_le_of_le {s δ : ℝ} {N : ℕ} (hsδ : 0 < s + δ)
+    (hδ0 : 0 < δ) (hδ1 : δ < 1) (hN : s + δ < N * (1 - δ)) :
+    ∃ E, 0 ≤ E ∧ ∀ {F : Type*} [NormedAddCommGroup F] {f : ℕ → F} {L : F} {C D d r : ℝ},
+      HasSum f L → 0 ≤ C → 0 ≤ D → 0 ≤ d → 0 < r →
+      (∀ j, ‖f j‖ ≤ D * ((2 : ℝ) ^ j) ^ (s + 1) * d) →
+      (∀ j, ‖f j‖ ≤ C * ((2 : ℝ) ^ j) ^ s * (1 + 2 ^ j * r) ^ (-(N : ℝ))) →
+      ‖L‖ ≤ E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by
+  obtain ⟨E, hE0, hE⟩ := exists_tsum_rpow_mul_one_add_rpow_neg_le hsδ hN
+  refine ⟨E, hE0, fun {F} _ {f L C D d r} hf hC hD hd hr hA hB ↦ ?_⟩
+  obtain ⟨hsum, hle⟩ := hE r hr
+  set c := D ^ δ * C ^ (1 - δ) * d ^ δ with hc
+  -- The interpolated bound of the `j`-th term.
+  have hterm (j : ℕ) : ‖f j‖ ≤ c * (((2 : ℝ) ^ j) ^ (s + δ) *
+      (1 + 2 ^ j * r) ^ (-(N * (1 - δ)))) := by
+    refine (Real.le_rpow_mul_rpow_of_le_of_le (norm_nonneg _) (hA j) (hB j) hδ0.le
+      hδ1.le).trans_eq ?_
+    have hexp : ((2 : ℝ) ^ j) ^ (s + δ) = ((2 : ℝ) ^ j) ^ ((s + 1) * δ) *
+        ((2 : ℝ) ^ j) ^ (s * (1 - δ)) := by
+      rw [← Real.rpow_add (by positivity)]
+      ring_nf
+    rw [hexp, show -(N * (1 - δ)) = -(N : ℝ) * (1 - δ) by ring, hc]
+    simp (disch := positivity) only [Real.mul_rpow, ← Real.rpow_mul]
+    ring
+  calc ‖L‖ ≤ c * ∑' j : ℕ, ((2 : ℝ) ^ j) ^ (s + δ) * (1 + 2 ^ j * r) ^ (-(N * (1 - δ))) :=
+        tsum_of_norm_bounded (hsum.mul_left c).hasSum hterm |>.trans_eq' (by rw [hf.tsum_eq])
+          |>.trans_eq (tsum_mul_left)
+    _ ≤ c * (E * r ^ (-(s + δ))) := mul_le_mul_of_nonneg_left hle (by positivity)
+    _ = E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by ring
+
+open scoped ENNReal
+
+/-- `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite for `ε > 0`: it is the bilateral geometric series of ratio
+`2^{-ε} < 1`. -/
+theorem tsum_two_rpow_neg_mul_abs_ne_top {ε : ℝ} (hε : 0 < ε) :
+    ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) ≠ ∞ := by
+  have hr : (2 : ℝ) ^ (-ε) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  have hterm (m : ℤ) :
+      (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) = ENNReal.ofReal (((2 : ℝ) ^ (-ε)) ^ m.natAbs) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, Nat.cast_natAbs, Int.cast_abs,
+      ← ENNReal.ofReal_rpow_of_pos two_pos, ENNReal.ofReal_ofNat, neg_mul]
+  rw [tsum_congr hterm, ← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity)
+    (summable_pow_natAbs (by positivity) hr)]
+  exact ENNReal.ofReal_ne_top
+
+/-- For `σ ≥ 1` and `ε > 0`, `∑_{j ∈ ℤ} 2^{-ε |x - σ j|}` is bounded uniformly in `x`: the points
+`σ j` are `1`-separated, so the sum is at most `2^ε ∑_{m ∈ ℤ} 2^{-ε |m|}`. -/
+theorem tsum_two_rpow_neg_mul_abs_sub_le {σ ε : ℝ} (hσ : 1 ≤ σ) (hε : 0 < ε) (x : ℝ) :
+    ∑' j : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |x - σ * j|)) ≤
+      2 ^ ε * ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) := by
+  have hσ0 : 0 < σ := one_pos.trans_le hσ
+  have hfl := Int.floor_le (x / σ)
+  have hlt := Int.lt_floor_add_one (x / σ)
+  set n : ℤ := ⌊x / σ⌋
+  have hj (j : ℤ) : (2 : ℝ≥0∞) ^ (-(ε * |x - σ * j|)) ≤
+      2 ^ ε * (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := by
+    rw [← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top]
+    refine ENNReal.rpow_le_rpow_of_exponent_le (by norm_num) ?_
+    -- `|x - σ j| ≥ |x / σ - j| ≥ |j - n| - 1`.
+    have h1 : |x / σ - j| ≤ |x - σ * j| := by
+      rw [show x - σ * j = σ * (x / σ - j) by field_simp, abs_mul, abs_of_pos hσ0]
+      exact le_mul_of_one_le_left (abs_nonneg _) hσ
+    have h2 : |((j - n : ℤ) : ℝ)| - 1 ≤ |x / σ - j| := by
+      have h := abs_sub_le (j : ℝ) (x / σ) (n : ℝ)
+      rw [abs_sub_comm (j : ℝ) (x / σ), abs_of_nonneg (by linarith : 0 ≤ x / σ - n)] at h
+      push_cast
+      linarith
+    nlinarith
+  calc _ ≤ ∑' j : ℤ, 2 ^ ε * (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := tsum_le_tsum hj
+    _ = 2 ^ ε * ∑' j : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := ENNReal.tsum_mul_left
+    _ = _ := by
+        congr 1
+        exact (Equiv.subRight n).tsum_eq fun m : ℤ ↦ (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|))
+
 end TauCeti
+
+namespace AntitoneOn
+
+open Set
+open scoped ENNReal
+
+/-- For a base `b > 1`, a function antitone on `(0, ∞)` is bounded on `(0, s]` by the step function
+taking, on each interval `(b⁻¹ ^ (n + 1) s, b⁻¹ ^ n s]`, its value at the left endpoint. -/
+theorem le_tsum_indicator_Ioc {R : ℝ → ℝ≥0∞} (hR : AntitoneOn R (Ioi 0)) {b : ℝ} (hb : 1 < b)
+    {s u : ℝ} (hu : 0 < u) (hus : u ≤ s) :
+    R u ≤ ∑' n : ℕ, (Ioc (b⁻¹ ^ (n + 1) * s) (b⁻¹ ^ n * s)).indicator
+      (fun _ ↦ R (b⁻¹ ^ (n + 1) * s)) u := by
+  have hs : 0 < s := hu.trans_le hus
+  obtain ⟨n, hn₁, hn₂⟩ := exists_nat_pow_near ((one_le_div hu).2 hus) hb
+  have hmem : u ∈ Ioc (b⁻¹ ^ (n + 1) * s) (b⁻¹ ^ n * s) := by
+    rw [inv_pow, inv_pow, ← div_eq_inv_mul, ← div_eq_inv_mul]
+    rw [div_lt_iff₀ hu, mul_comm] at hn₂
+    rw [le_div_iff₀ hu, mul_comm] at hn₁
+    exact ⟨(div_lt_iff₀ (by positivity)).2 hn₂, (le_div_iff₀ (by positivity)).2 hn₁⟩
+  refine le_trans ?_ (le_tsum _ n)
+  rw [indicator_of_mem hmem]
+  exact hR (show 0 < b⁻¹ ^ (n + 1) * s by positivity) hu hmem.1.le
+
+/-- For a base `b > 1`, a function antitone on `(0, ∞)` is bounded on `[s, ∞)`, `s > 0`, by the
+step function taking, on each interval `[b ^ n s, b ^ (n + 1) s)`, its value at the left
+endpoint. -/
+theorem le_tsum_indicator_Ico {R : ℝ → ℝ≥0∞} (hR : AntitoneOn R (Ioi 0)) {b : ℝ} (hb : 1 < b)
+    {s u : ℝ} (hs : 0 < s) (hsu : s ≤ u) :
+    R u ≤ ∑' n : ℕ, (Ico (b ^ n * s) (b ^ (n + 1) * s)).indicator (fun _ ↦ R (b ^ n * s)) u := by
+  obtain ⟨n, hn₁, hn₂⟩ := exists_nat_pow_near ((one_le_div hs).2 hsu) hb
+  have hmem : u ∈ Ico (b ^ n * s) (b ^ (n + 1) * s) :=
+    ⟨(le_div_iff₀ hs).1 hn₁, (div_lt_iff₀ hs).1 hn₂⟩
+  refine le_trans ?_ (le_tsum _ n)
+  rw [indicator_of_mem hmem]
+  exact hR (show 0 < b ^ n * s by positivity) (hs.trans_le hsu) hmem.1
+
+end AntitoneOn

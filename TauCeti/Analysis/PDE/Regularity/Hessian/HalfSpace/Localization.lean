@@ -246,10 +246,9 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_traceCLM_comp_eq_of_norm_sub_l
       refine W1p.ext_value (Lp.ext ?_)
       rw [Wkp.value_firstOrder]
       exact hwv.trans hv.symm
-    exact hfo ▸ v.2
+    exact hfo ▸ v.property
   -- The half-space estimate for `ζ u`, and `ζ D²u = D²(ζ u) - T`.
   have hkey := hCZ a hlam hA₀ hΩU hcpt.isCompact hζU hε hA w FL hw0 hwK hweq
-  have hCl : 0 ≤ (C : ℝ) / lam := by positivity
   rw [hζD]
   calc ‖Wkp.iteratedGradient 1 w - T‖
       ≤ ‖Wkp.iteratedGradient 1 w‖ + ‖T‖ := norm_sub_le _ _

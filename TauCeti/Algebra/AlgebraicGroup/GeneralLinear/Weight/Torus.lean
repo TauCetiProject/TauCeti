@@ -38,7 +38,7 @@ attached to an integer weight on each coordinate.
 
 The construction is the scheme-level realization of `TauCeti.basisWeightTorus`. In particular,
 when `wt` is the weight function of a finite free admissible lattice, it supplies the split-torus
-morphism in the pinned Chevalley--Demazure construction of Layer 9 of the ReductiveGroups roadmap.
+morphism in the pinned Chevalley--Demazure construction.
 No faithfulness is asserted: an arbitrary weight family may have a common kernel.
 
 ## Main declarations
@@ -122,6 +122,7 @@ theorem weightTorusCoordinateBialgHom_def [Fintype sigma] (wt : Fin N → sigma 
       DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))
         (fun i ↦ SplitTorus.weightCharacter (wt i)) := by
   rw [weightTorusCoordinateBialgHom]
+  dsimp only
   congr 1
   funext i
   apply Multiplicative.toAdd.injective
@@ -436,7 +437,7 @@ morphism. -/
 theorem coe_weightTorusClosedSubgroup [Finite κ] (wt : Fin N → κ → ℤ)
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     let _ := isClosedImmersion_weightTorus (R := R) wt hwt
-    (weightTorusClosedSubgroup (R := R) wt hwt).1 =
+    (weightTorusClosedSubgroup (R := R) wt hwt).val =
       Subobject.mk (weightTorus (R := R) wt) := by
   have _ := isClosedImmersion_weightTorus (R := R) wt hwt
   rw [weightTorusClosedSubgroup]

@@ -44,6 +44,8 @@ matrices.
   semidefinite matrices.
 * `Matrix.realify_fromBlocks_zero`: realification turns block-diagonal complex matrices into
   symplectic direct sums.
+* `Matrix.det_symplecticSum` and `Matrix.symplecticSum_map`: the determinant of a direct sum is
+  the product of the determinants, and entrywise maps fixing `0` commute with direct sums.
 
 ## References
 
@@ -100,6 +102,21 @@ theorem symplecticSum_conjTranspose [AddMonoid R] [StarAddMonoid R]
     (symplecticSum A B)ᴴ = symplecticSum Aᴴ Bᴴ := by
   simp only [symplecticSum, conjTranspose_submatrix, fromBlocks_conjTranspose, conjTranspose_zero]
 
+/-- Applying an entrywise map that fixes `0` to a direct sum gives the direct sum of the mapped
+matrices. -/
+theorem symplecticSum_map {S : Type*} [Zero R] [Zero S] (f : R → S) (hf : f 0 = 0)
+    (A : Matrix (n ⊕ n) (n ⊕ n) R) (B : Matrix (m ⊕ m) (m ⊕ m) R) :
+    (symplecticSum A B).map f = symplecticSum (A.map f) (B.map f) := by
+  rw [symplecticSum, symplecticSum, ← submatrix_map, fromBlocks_map, Matrix.map_zero f hf,
+    Matrix.map_zero f hf]
+
+/-- The determinant of a direct sum is the product of the determinants. -/
+@[simp]
+theorem det_symplecticSum [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m] [CommRing R]
+    (A : Matrix (n ⊕ n) (n ⊕ n) R) (B : Matrix (m ⊕ m) (m ⊕ m) R) :
+    (symplecticSum A B).det = A.det * B.det := by
+  rw [symplecticSum, det_submatrix_equiv_self, det_fromBlocks_zero₂₁]
+
 /-- The standard symplectic form on `R^{2(n + m)}` is the direct sum of the standard symplectic
 forms on `R^{2n}` and `R^{2m}`. -/
 theorem symplecticSum_J [DecidableEq n] [DecidableEq m] [CommRing R] :
@@ -127,18 +144,16 @@ theorem symplecticSum_mem_unitaryGroup [Fintype n] [Fintype m] [DecidableEq n] [
     ← star_eq_conjTranspose, ← star_eq_conjTranspose, hA, hB, symplecticSum_one]
 
 /-- The direct sum of two positive semidefinite matrices is positive semidefinite. -/
-theorem PosSemidef.symplecticSum [Finite n] [Finite m] [CommRing R] [PartialOrder R]
-    [StarRing R] [StarOrderedRing R] {A : Matrix (n ⊕ n) (n ⊕ n) R}
+theorem PosSemidef.symplecticSum [Ring R] [PartialOrder R]
+    [StarRing R] [AddLeftMono R] {A : Matrix (n ⊕ n) (n ⊕ n) R}
     {B : Matrix (m ⊕ m) (m ⊕ m) R} (hA : A.PosSemidef) (hB : B.PosSemidef) :
     (Matrix.symplecticSum A B).PosSemidef := by
-  have := Fintype.ofFinite n
-  have := Fintype.ofFinite m
   rw [Matrix.symplecticSum, posSemidef_submatrix_equiv]
-  rw [posSemidef_iff_dotProduct_mulVec] at hA hB ⊢
   refine ⟨hA.1.fromBlocks (by simp) hB.1, fun x ↦ ?_⟩
-  rw [← Sum.elim_comp_inl_inr x, fromBlocks_mulVec, Function.star_sumElim,
-    sumElim_dotProduct_sumElim]
-  simpa using add_nonneg (hA.2 (x ∘ Sum.inl)) (hB.2 (x ∘ Sum.inr))
+  obtain ⟨a, b, rfl⟩ : ∃ (a : (n ⊕ n) →₀ R) (b : (m ⊕ m) →₀ R), x = Finsupp.sumElim a b :=
+    ⟨_, _, (Finsupp.comapDomain_sumElim_comapDomain x).symm⟩
+  simpa [Finsupp.sum_sumElim, fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁,
+    fromBlocks_apply₂₂, Function.comp_def] using add_nonneg (hA.2 a) (hB.2 b)
 
 /-- Realification turns a block-diagonal complex matrix into the symplectic direct sum of the
 realifications of its blocks. -/
@@ -165,7 +180,7 @@ def sum : GLSymplectic n R × GLSymplectic m R →* GLSymplectic (n ⊕ m) R whe
       by rw [← symplecticSum_mul, Units.mul_inv, Units.mul_inv, symplecticSum_one],
       by rw [← symplecticSum_mul, Units.inv_mul, Units.inv_mul, symplecticSum_one]⟩,
       mem_iff_mem_symplecticGroup.2 (symplecticSum_mem_symplecticGroup
-        (mem_iff_mem_symplecticGroup.1 p.1.2) (mem_iff_mem_symplecticGroup.1 p.2.2))⟩
+        (mem_iff_mem_symplecticGroup.1 p.1.property) (mem_iff_mem_symplecticGroup.1 p.2.property))⟩
   map_one' := Subtype.ext (Units.ext (by simp))
   map_mul' p q := Subtype.ext (Units.ext (by simp))
 

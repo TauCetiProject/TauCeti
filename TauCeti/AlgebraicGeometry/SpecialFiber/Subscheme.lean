@@ -41,7 +41,8 @@ this effective Cartier divisor with the Weil divisor of `π` is not done here.
   of `𝔪·𝒪_X`, and `TauCeti.isPullback_subschemeι_specialFiber` records the resulting pullback
   square.
 * `TauCeti.subschemeToSpecialFiber`: a closed subscheme of `X` contained in the special fibre,
-  that is, whose ideal sheaf contains `𝔪·𝒪_X`, is a closed subscheme of the special fibre;
+  that is, whose ideal sheaf contains `𝔪·𝒪_X`, is a closed subscheme of the special fibre,
+  compatibly with closed-subscheme inclusions (`TauCeti.inclusion_subschemeToSpecialFiber`);
 * `TauCeti.subschemeOverResidueField`: such a closed subscheme is a scheme over the residue field
   of `R`, proper when `X` is proper over `R`
   (`TauCeti.isProper_subschemeOverResidueField`). Two such closed subschemes have the same
@@ -171,6 +172,18 @@ lemma isClosedImmersion_subschemeToSpecialFiber {I : X.IdealSheafData}
     infer_instance
   exact .of_comp_isClosedImmersion _ (specialFiberι R toBase)
 
+/-- Composing an inclusion of closed subschemes contained in the special fibre with
+`subschemeToSpecialFiber` gives `subschemeToSpecialFiber` on the smaller subscheme. -/
+@[reassoc (attr := simp)]
+lemma inclusion_subschemeToSpecialFiber {I J : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) (hIJ : I ≤ J) :
+    Scheme.IdealSheafData.inclusion hIJ ≫ subschemeToSpecialFiber hI =
+      subschemeToSpecialFiber (hI.trans hIJ) := by
+  have := isClosedImmersion_specialFiberι R toBase
+  rw [← cancel_mono (specialFiberι R toBase), Category.assoc,
+    subschemeToSpecialFiber_specialFiberι, Scheme.IdealSheafData.inclusion_subschemeι,
+    subschemeToSpecialFiber_specialFiberι]
+
 /-- Two closed subschemes contained in the special fibre induce the same morphism to the special
 fibre on their intersection. -/
 @[reassoc]
@@ -187,6 +200,24 @@ lemma pullback_fst_subschemeToSpecialFiber {I J : X.IdealSheafData}
 noncomputable abbrev subschemeOverResidueField {I : X.IdealSheafData}
     (hI : (specialFiberι R toBase).ker ≤ I) : I.subscheme.Over (Spec (.of (ResidueField R))) :=
   ⟨subschemeToSpecialFiber hI ≫ (specialFiber R toBase).hom⟩
+
+/-- The structure morphism of a closed subscheme contained in the special fibre is its
+factorization through the special fibre and then the spectrum of the residue field. -/
+lemma subschemeOverResidueField_over {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) :
+    letI := subschemeOverResidueField hI
+    I.subscheme ↘ Spec (.of (ResidueField R)) =
+      subschemeToSpecialFiber hI ≫ (specialFiber R toBase).hom := rfl
+
+/-- For a closed subscheme contained in the special fibre, the structure morphisms to `Spec R`
+and to the spectrum of the residue field are compatible. -/
+lemma subschemeOverResidueField_comp {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) :
+    letI := subschemeOverResidueField hI
+    (I.subscheme ↘ Spec (.of (ResidueField R))) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap R (ResidueField R))) = I.subschemeι ≫ toBase := by
+  rw [subschemeOverResidueField_over, Category.assoc, ← specialFiberι_toBase R toBase,
+    ← Category.assoc, subschemeToSpecialFiber_specialFiberι]
 
 /-- A closed subscheme of a proper scheme over `R` contained in the special fibre is proper over the
 residue field. -/
