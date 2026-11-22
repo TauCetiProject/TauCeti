@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.MappingTorus.Covering
 public import TauCeti.Topology.MappingTorus.LocalProduct
+public import TauCeti.Topology.MappingTorus.Refl
 public import TauCeti.Topology.PathSpace.Seamed
 import TauCeti.Algebra.AddCircle
 import TauCeti.Topology.Instances.AddCircle.UnitInterval
@@ -27,12 +29,24 @@ This identifies the seamed path space with the space of sections, as topological
 (`TauCeti.SeamedPath.sectionHomeomorph`). Through it, a loop of seamed paths is a loop of
 sections, which sweeps a torus in the mapping torus rather than in `F`.
 
+More generally, a family of sections `s : K × UnitAddCircle → MappingTorus φ`, with `s (k, θ)`
+over `θ`, sweeps the mapping torus of the identity of `K`, which is `K × UnitAddCircle`
+(`TauCeti.MappingTorus.reflHomeomorph`), into the mapping torus of `φ`. Read on the infinite
+cyclic covers, through the fibre coordinates, it is the map of cylinders
+`TauCeti.MappingTorus.sectionCylinderMap`, `(k, t) ↦ (x, t)` with `mk φ x t = s (k, t)`. Since the
+fibre coordinate one sheet up is the image under `φ` (`TauCeti.MappingTorus.fiberCoord_add_one`),
+this map intertwines the deck transformations, and the swept map is the map of mapping tori
+descended from it (`TauCeti.MappingTorus.descend_sectionCylinderMap`). A family of seamed paths
+`ℓ : K → SeamedPath φ` is such a family of sections (`TauCeti.SeamedPath.sectionFamily`).
+
 ## Main definitions
 
 * `TauCeti.MappingTorus.fiberCoord φ z t`: the fibre coordinate at height `t` of a point `z` over
   `(t : UnitAddCircle)`.
 * `TauCeti.SeamedPath.sectionHomeomorph φ`: the homeomorphism from the `φ`-seamed paths to the
   continuous sections of the projection `MappingTorus φ → UnitAddCircle`.
+* `TauCeti.MappingTorus.sectionCylinderMap φ s hs`: a family of sections, read on the cylinders.
+* `TauCeti.SeamedPath.sectionFamily φ ℓ`: the family of sections of a family of seamed paths.
 
 ## References
 
@@ -124,6 +138,57 @@ theorem continuousOn_fiberCoord :
     nhdsWithin_le_nhds (continuous_snd.continuousAt.preimage_mem_nhds (isOpen_Ioo.mem_nhds ha))
   filter_upwards [hIoo, self_mem_nhdsWithin] with p hp hpS
   simp [he hp hpS]
+
+/-- The fibre coordinate one sheet up is the image under the monodromy:
+`fiberCoord φ z (t + 1) = φ (fiberCoord φ z t)` for `z` over `(t : UnitAddCircle)`. -/
+theorem fiberCoord_add_one {z : MappingTorus φ} {t : ℝ} (h : proj φ z = t) :
+    fiberCoord φ z (t + 1) = φ (fiberCoord φ z t) :=
+  (fiberCoord_eq_iff φ (h.trans (AddCircle.coe_add_period 1 t).symm)).2
+    ((mk_apply_add_one φ _ t).trans (mk_fiberCoord φ h))
+
+section SectionFamily
+
+variable {K : Type*} [TopologicalSpace K] (s : C(K × UnitAddCircle, MappingTorus φ))
+  (hs : ∀ k θ, proj φ (s (k, θ)) = θ)
+
+/-- **A family of sections, read on the cylinders.** For a family of sections
+`s : K × UnitAddCircle → MappingTorus φ`, with `s (k, θ)` over `θ`, the map of cylinders
+`(k, t) ↦ (x, t)`, where `x` is the fibre coordinate of `s (k, t)` at height `t`. -/
+def sectionCylinderMap : C(K × ℝ, F × ℝ) where
+  toFun p := (fiberCoord φ (s (p.1, p.2)) p.2, p.2)
+  continuous_toFun := ((continuousOn_fiberCoord φ).comp_continuous
+    ((s.continuous.comp (continuous_fst.prodMk
+      ((AddCircle.continuous_mk' (1 : ℝ)).comp continuous_snd))).prodMk continuous_snd)
+    fun p ↦ hs p.1 p.2).prodMk continuous_snd
+
+@[simp]
+theorem sectionCylinderMap_apply (p : K × ℝ) :
+    sectionCylinderMap φ s hs p = (fiberCoord φ (s (p.1, p.2)) p.2, p.2) :=
+  (rfl)
+
+/-- A family of sections, read on the cylinders, intertwines the deck transformation of the
+identity of `K` with that of `φ`: one sheet up, the fibre coordinate is moved by `φ`. -/
+theorem semiconj_sectionCylinderMap_deck :
+    Function.Semiconj (sectionCylinderMap φ s hs) (deck (Homeomorph.refl K)) (deck φ) :=
+  fun p ↦ by
+    simp only [sectionCylinderMap_apply, deck_apply, Homeomorph.refl_apply, id_eq,
+      AddCircle.coe_add_period, fiberCoord_add_one φ (hs _ _)]
+
+/-- **The swept map of a family of sections descends from the cylinders.** The map of mapping tori
+descended from `sectionCylinderMap φ s hs` is `s`, read on the mapping torus of the identity of
+`K` through `MappingTorus.reflHomeomorph`. -/
+theorem descend_sectionCylinderMap :
+    descend (Homeomorph.refl K) φ (sectionCylinderMap φ s hs)
+        (semiconj_sectionCylinderMap_deck φ s hs) =
+      s.comp (reflHomeomorph (F := K) :
+        C(MappingTorus (Homeomorph.refl K), K × UnitAddCircle)) := by
+  ext z
+  obtain ⟨⟨k, t⟩, rfl⟩ := mk_surjective _ z
+  rw [descend_mk, sectionCylinderMap_apply, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
+    reflHomeomorph_mk]
+  exact mk_fiberCoord φ (hs _ _)
+
+end SectionFamily
 
 end MappingTorus
 
@@ -232,6 +297,36 @@ theorem mk_sectionHomeomorph_symm_apply
     mk φ (((sectionHomeomorph φ).symm s).val t) t = s.val t := by
   rw [sectionHomeomorph_symm_apply]
   exact mk_fiberCoord φ (s.property _)
+
+section SectionFamily
+
+variable {K : Type*} [TopologicalSpace K]
+
+/-- **The family of sections of a family of seamed paths.** For `ℓ : K → SeamedPath φ`, the map
+`(k, θ) ↦ s_k θ`, where `s_k` is the section of the mapping torus traced by `ℓ k`
+(`TauCeti.SeamedPath.sectionHomeomorph`). -/
+def sectionFamily (ℓ : C(K, SeamedPath φ)) : C(K × UnitAddCircle, MappingTorus φ) :=
+  ContinuousMap.uncurry
+    ⟨fun k ↦ (sectionHomeomorph φ (ℓ k)).val,
+      continuous_subtypeVal.comp ((sectionHomeomorph φ).continuous.comp ℓ.continuous)⟩
+
+@[simp]
+theorem sectionFamily_apply (ℓ : C(K, SeamedPath φ)) (k : K) (θ : UnitAddCircle) :
+    sectionFamily φ ℓ (k, θ) = (sectionHomeomorph φ (ℓ k)).val θ :=
+  (rfl)
+
+/-- The family of sections of a family of seamed paths consists of sections. -/
+theorem proj_sectionFamily (ℓ : C(K, SeamedPath φ)) (k : K) (θ : UnitAddCircle) :
+    proj φ (sectionFamily φ ℓ (k, θ)) = θ :=
+  (sectionHomeomorph φ (ℓ k)).property θ
+
+/-- At height zero, the family of sections of a family of seamed paths passes through the start
+points of the paths. -/
+theorem sectionFamily_zero (ℓ : C(K, SeamedPath φ)) (k : K) :
+    sectionFamily φ ℓ (k, 0) = mk φ ((ℓ k).val 0) 0 := by
+  simpa using sectionHomeomorph_apply φ (ℓ k) 0
+
+end SectionFamily
 
 end SeamedPath
 
