@@ -81,9 +81,9 @@ proves that it is smooth jointly in the coefficients and the correction
 (`TauCeti.Vortex.hasFDerivAt_reducedEquationMapOfCoeff`,
 `TauCeti.Vortex.coeFn_reducedLinearizationOfCoeff`). At a real `C²` correction `u = w`,
 `Φ(c, w) = 0` exactly when `w` solves the reduced equation classically
-(`TauCeti.Vortex.reducedEquationMapOfCoeff_eq_zero_iff`), and for every `c` the map `Φ(c, ·)` has
-a zero whose `L²` function is a smooth real function
-(`TauCeti.Vortex.exists_reducedEquationMapOfCoeff_eq_zero`).
+(`TauCeti.Vortex.reducedEquationMapOfCoeff_eq_zero_iff`). The reduced solution of `P_c` is such a
+zero (`TauCeti.Vortex.reducedEquationMapOfCoeff_sobolevReducedSolution`, in
+`TauCeti.Analysis.PDE.Vortex.Reduced.SmoothDependence`).
 
 The coefficients enter only through the defect `φ_c = 1 - h_c = (1 + ‖P_c‖²)⁻¹`
 (`TauCeti.Vortex.backgroundDefect`), as a bounded continuous multiplier and as an element of `L²`,
@@ -129,9 +129,8 @@ and `c ↦ φ_c, k_c` are smooth into `L²` (`TauCeti.Vortex.contDiff_background
 * `TauCeti.Vortex.hasFDerivAt_reducedEquationMapOfCoeff`,
   `TauCeti.Vortex.coeFn_reducedLinearizationOfCoeff`: its partial derivative in `u` is
   `v ↦ Δv - h_c exp (2u) v / 4`.
-* `TauCeti.Vortex.reducedEquationMapOfCoeff_eq_zero_iff`,
-  `TauCeti.Vortex.exists_reducedEquationMapOfCoeff_eq_zero`: at a real `C²` correction,
-  `Φ(c, u) = 0` is the classical reduced equation, and `Φ(c, ·)` has a smooth real zero.
+* `TauCeti.Vortex.reducedEquationMapOfCoeff_eq_zero_iff`: at a real `C²` correction,
+  `Φ(c, u) = 0` is the classical reduced equation.
 
 ## References
 
@@ -886,27 +885,6 @@ theorem reducedEquationMapOfCoeff_eq_zero_iff (hm : 0 < m) (c : Fin m → ℂ) {
   · intro h
     refine Lp.ext (hae.trans (Filter.EventuallyEq.trans (.of_forall fun z ↦ ?_) hzero.symm))
     simp [g, h z]
-
-/-- **The reduced equation map has a smooth real zero.** For every `c ∈ ℂ^m`, `m ≥ 1`, there are
-`u ∈ H²(ℂ)` and a smooth real function `w` such that the `L²` function of `u` is almost everywhere
-`w` and `Φ(c, u) = 0`.
-The proof takes for `w` a smooth square-integrable solution of the reduced equation for `P_c`,
-which exists by Taubes's variational construction
-(`TauCeti.Vortex.exists_contDiff_memLp_laplacian_eq_reduced`), and shows that it lies in
-`H²(ℂ)`. -/
-theorem exists_reducedEquationMapOfCoeff_eq_zero (hm : 0 < m) (c : Fin m → ℂ) :
-    ∃ (u : H^{2}(ℂ)) (w : ℂ → ℝ), ContDiff ℝ ∞ w ∧
-      (⇑(inclusionLp zero_le_two u) =ᵐ[volume] fun z ↦ (w z : ℂ)) ∧
-      reducedEquationMapOfCoeff hm c u = 0 := by
-  have hP : 0 < (monicOfCoeff c).natDegree := by rwa [natDegree_monicOfCoeff]
-  obtain ⟨w, hw, hw2, -, hΔ⟩ := exists_contDiff_memLp_laplacian_eq_reduced hP
-  obtain ⟨u, hu⟩ := (TemperedDistribution.mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq
-    zero_le_two).1 (mem_realSobolevFunctions_of_laplacian_eq_reduced hP (hw.of_le (by simp))
-      hw2 hΔ 2)
-  refine ⟨u, w, hw, hu, (reducedEquationMapOfCoeff_eq_zero_iff hm c (hw.of_le (by simp)) hu).2
-    fun z ↦ ?_⟩
-  rw [hΔ z, reducedSource_def, backgroundSource_def]
-  ring
 
 end EquationMap
 

@@ -134,7 +134,7 @@ theorem integral_inclusionLp_laplacianCLM_mul {s : ℝ} (hs : 0 ≤ s) (u : H^{s
     rw [toTemperedDistribution_inclusionLp, toTemperedDistribution_inclusionLp,
       toDistr_laplacianCLM]
   -- The Schwartz function of `φ` has the values of `φ`.
-  have hcoe : ⇑(hc.toSchwartzMap hφ) = φ := rfl
+  have hcoe : ⇑(hc.toSchwartzMap hφ) = φ := funext (hc.toSchwartzMap_toFun hφ)
   have h := congrArg (fun T : 𝓢'(E, ℂ) ↦ T ψ) hT
   simp only [laplacian_apply_apply, ψ, TauCeti.laplacian_postcompCLM,
     Lp.toTemperedDistribution_apply, SchwartzMap.postcompCLM_apply,
