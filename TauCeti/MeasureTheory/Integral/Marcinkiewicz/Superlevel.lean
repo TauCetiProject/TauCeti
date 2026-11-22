@@ -53,20 +53,16 @@ theorem setOf_ofReal_lt_ae_le_union [MeasurableSpace β] {ν : Measure β} {v g�
       _ ≤ ENNReal.ofReal t := ENNReal.ofReal_le_ofReal (by nlinarith)
   exact absurd (hy'.trans_le hle) (lt_irrefl _)
 
-/-- A weak-type bound at the height `r` bounds the measure of the superlevel set at that height. -/
-theorem meas_ofReal_lt_le_of_weak [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
-    {ν : Measure β} [ENorm G] {q r : ℝ} {B : ℝ≥0∞} {w : α → G} (hr : 0 < r)
-    (hweak : ENNReal.ofReal r ^ q * ν {y | ENNReal.ofReal r < T w y} ≤
-      B * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ) :
-    ν {y | ENNReal.ofReal r < T w y} ≤
-      B * ENNReal.ofReal (r ^ (-q)) * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ := by
-  have hinv : (ENNReal.ofReal r ^ q)⁻¹ = ENNReal.ofReal (r ^ (-q)) := by
-    rw [← ENNReal.rpow_neg, ENNReal.ofReal_rpow_of_pos hr]
-  refine ((ENNReal.mul_le_iff_le_inv
+/-- A weak-type bound at the height `r` bounds the measure of the superlevel set at that height:
+`r ^ q * ν {T w > r} ≤ B` gives `ν {T w > r} ≤ r ^ (-q) * B`. The right side `B` is arbitrary, so
+the same step serves weak-type bounds of any form, such as `A * ∫⁻ ‖w‖ₑ ^ p` or
+`A * (∫⁻ ‖w‖ₑ ^ p) ^ (q / p)`. -/
+theorem meas_ofReal_lt_le_of_weak [MeasurableSpace β] {ν : Measure β} {w : α → G} {q r : ℝ}
+    {B : ℝ≥0∞} (hr : 0 < r) (hweak : ENNReal.ofReal r ^ q * ν {y | ENNReal.ofReal r < T w y} ≤ B) :
+    ν {y | ENNReal.ofReal r < T w y} ≤ ENNReal.ofReal (r ^ (-q)) * B := by
+  rw [← ENNReal.ofReal_rpow_of_pos hr, ENNReal.rpow_neg]
+  exact (ENNReal.mul_le_iff_le_inv
     (ENNReal.rpow_pos (ENNReal.ofReal_pos.2 hr) ENNReal.ofReal_ne_top).ne'
-    (ENNReal.rpow_ne_top_of_ne_zero (ENNReal.ofReal_pos.2 hr).ne'
-      ENNReal.ofReal_ne_top)).mp hweak).trans_eq ?_
-  rw [hinv]
-  ring
+    (ENNReal.rpow_ne_top_of_ne_zero (ENNReal.ofReal_pos.2 hr).ne' ENNReal.ofReal_ne_top)).1 hweak
 
 end TauCeti

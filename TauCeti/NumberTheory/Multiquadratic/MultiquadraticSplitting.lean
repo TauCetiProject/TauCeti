@@ -196,7 +196,7 @@ private theorem stabilizer_eq_bot_of_forall_legendreSym_eq_one {ι : Type*} (d :
 /-- **The multiquadratic splitting law.** For `K = ℚ(√d₁, …, √dₙ)` generated over `ℚ` by square
 roots `r i` of integers `d i`, and an odd prime `p` dividing none of the `d i`, `p` splits
 completely in `K` iff every `d i` is a quadratic residue mod `p`. -/
-theorem ncard_primesOver_multiquadratic_iff {ι : Type*} [Finite ι] (d : ι → ℤ) (r : ι → K)
+theorem ncard_primesOver_multiquadratic_iff {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔
@@ -204,10 +204,8 @@ theorem ncard_primesOver_multiquadratic_iff {ι : Type*} [Finite ι] (d : ι →
   -- `K` is Galois over `ℚ`: transport the multiquadratic `isGalois` along `htop`.
   have hr' : ∀ i, r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) := by
     intro i; rw [hr i]; simp
-  have : IsGalois ℚ K := by
-    have hg := TauCeti.Multiquadratic.isGalois (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr'
-    rw [htop] at hg
-    exact isGalois_iff_isGalois_top.mp hg
+  have : IsGalois ℚ K :=
+    TauCeti.Multiquadratic.isGalois_of_adjoin_eq_top (d := fun i => (d i : ℚ)) hr' htop
   -- Fix a prime `Q` of `𝓞 K` above `p`.
   have hpne : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   have : (span {(p : ℤ)} : Ideal ℤ).IsMaximal :=

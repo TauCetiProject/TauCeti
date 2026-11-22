@@ -28,14 +28,11 @@ is one side of the archimedean local-image formula of explicit `2`-descent, whic
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeakMordellWeil.lean` lines 806-868 — the `2`-torsion section, which sits after
 the range that `TauCeti/AlgebraicGeometry/EllipticCurve/MordellWeil/XSubT.lean` ported.
 
-This advances `TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (README:813-820), whose
-"Explicit `2`-descent (core, this layer)" bullet names the local conditions and the rank bound;
-the archimedean local-image count needs this torsion count.
+The archimedean local-image count of explicit `2`-descent needs this torsion count.
 -/
 
 public section
@@ -60,7 +57,7 @@ theorem card_ker_nsmul_two : Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker 
   have hfin : Finite {x : K | W.f.eval x = 0} :=
     Set.Finite.to_subtype (Polynomial.finite_setOfPred_isRoot W.f_ne_zero)
   set pt : {x : K | W.f.eval x = 0} → W.Point :=
-    fun x ↦ Point.some _ _ (W.nonsingular_of_eval_f_eq_zero x.2)
+    fun x ↦ Point.some _ _ (W.nonsingular_of_eval_f_eq_zero x.property)
   have hinj : Function.Injective pt := by
     intro a b hab
     exact Subtype.ext ((Point.some.injEq _ _ _ _ _ _).mp hab).1

@@ -41,7 +41,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver MulOpposite
 
 variable (k : Type*) [Field k] {n : ℕ}
 
-attribute [local instance] finiteNeighborSetFintype signlessPreprojectiveGradedAlgebra
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite signlessPreprojectiveGradedAlgebra
 
 local notation "AG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.A n))
 local notation "Q" => DoubledQuiver AG
@@ -129,7 +129,7 @@ theorem mem_ker_signlessPreprojectiveKoszulLeft_A_iff
         Submodule.coe_zero, unop_zero] using h
     refine ⟨φ (unop (x : Πᵐᵒᵖ)), Subtype.ext (unop_injective ?_)⟩
     simpa only [Submodule.coe_smul_of_tower, unop_smul, unop_signlessPreprojectiveATopValley] using
-      eq_smul_topValley k a ((mem_signlessPreprojectiveRightProjective_iff k _ _).1 x.2) hb
+      eq_smul_topValley k a ((mem_signlessPreprojectiveRightProjective_iff k _ _).1 x.property) hb
   · rintro ⟨t, rfl⟩
     exact ((LinearMap.ker (signlessPreprojectiveKoszulLeft k
       (vertex AG a.rev))).restrictScalars k).smul_mem t
@@ -144,7 +144,7 @@ theorem finrank_ker_signlessPreprojectiveKoszulLeft_A
     ⟨signlessPreprojectiveATopValley k a, signlessPreprojectiveATopValley_mem_ker k a⟩
   refine (finrank_eq_one_iff_of_ne_zero' y (fun h =>
     signlessPreprojectiveATopValley_ne_zero k a (congrArg Subtype.val h))).2 fun x => ?_
-  obtain ⟨t, ht⟩ := (mem_ker_signlessPreprojectiveKoszulLeft_A_iff k a x.1).1 x.2
+  obtain ⟨t, ht⟩ := (mem_ker_signlessPreprojectiveKoszulLeft_A_iff k a x.val).1 x.property
   exact ⟨t, Subtype.ext ht.symm⟩
 
 /-- The graded Koszul defect of `Aₙ` at `a.rev` is the degree-`n - 1` line with source `a`.
@@ -179,7 +179,7 @@ theorem finrank_signlessPreprojectiveCorner_inf_iInf_ker_A
       exact ⟨hy, fun w b => signlessPreprojectiveMk_ofArrow_mul_AValley_zero k a _⟩
     refine (finrank_eq_one_iff' (K := k)).2 ⟨⟨y, hyK⟩,
       fun hz => hy0 (congrArg Subtype.val hz), fun x => ?_⟩
-    obtain ⟨t, ht⟩ := hK x.2
+    obtain ⟨t, ht⟩ := hK x.property
     exact ⟨t, Subtype.ext ht.symm⟩
   · rw [Submodule.finrank_eq_zero, Submodule.eq_bot_iff]
     intro x hx

@@ -158,11 +158,11 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
   have : CompleteSpace S := (IsUltrametricDist.isClosed_ball (1 : K) 1).completeSpace_coe
   have : Nonempty S := ⟨⟨c, hmem.mpr hc⟩⟩
   have hne (v : S) : (v : K) ≠ 0 := fun h ↦ by
-    have := hmem.mp v.2
+    have := hmem.mp v.property
     rw [h, sub_zero, norm_one] at this
     exact lt_irrefl _ this
   let U : S → Kˣ := fun v ↦ Units.mk0 v (hne v)
-  have hU (v : S) : ‖1 - ((U v : Kˣ) : K)‖ < 1 := hmem.mp v.2
+  have hU (v : S) : ‖1 - ((U v : Kˣ) : K)‖ < 1 := hmem.mp v.property
   -- the step stays in the ball: it moves by less than one from `c`, which lies in the ball
   have hstep (v : S) : kernelStep q (U v) c ∈ S := by
     refine hmem.mpr ?_
@@ -171,9 +171,9 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
     rw [norm_sub_rev]
     exact norm_kernelStep_sub_lt q _ hq hc (hU v)
   have hF : ContractingWith ‖(q : K)‖₊ (fun v : S ↦ (⟨kernelStep q (U v) c, hstep v⟩ : S)) := by
-    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one],
+    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one],
       LipschitzWith.of_dist_le_mul fun v w ↦ ?_⟩
-    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm]
+    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnNorm]
     exact norm_kernelStep_sub_kernelStep_le q _ _ hq hc (hU v) (hU w)
   set v := ContractingWith.fixedPoint _ hF
   have hv : kernelStep q (U v) c = v :=
@@ -222,7 +222,7 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_one_lt_norm 
     exact (one_lt_inv₀ (by positivity)).mpr (pow_lt_one₀ hd.le hu two_ne_zero)
   have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
   have hnot : u ∉ Subgroup.zpowers q :=
-    notMem_zpowers_of_norm_eq_one hq hu₁ fun h ↦ hu1 (by rw [h, Units.val_one])
+    notMem_zpowers_of_norm_eq_one hq.ne hu₁ fun h ↦ hu1 (by rw [h, Units.val_one])
   obtain ⟨hX, hY⟩ := eq_of_mul_eq_mul_of_one_lt_norm hA₄ hA₆ hx hXu
     ((tateCurveAt_equation_iff q hq).mp h) ((tateCurveAt_equation_iff q hq).mp
       (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq hnot)) hcross
@@ -246,7 +246,7 @@ theorem exists_tateUniformization_eq_some_iff_one_lt_norm (q : Kˣ) (hq : ‖(q 
     have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
     refine ⟨u, hu, (tateUniformization_eq_some_iff q hq _ h).mpr ⟨?_, ?_, ?_⟩⟩
     · rw [Ne, QuotientGroup.eq_one_iff]
-      exact notMem_zpowers_of_norm_eq_one hq hu₁ hu1
+      exact notMem_zpowers_of_norm_eq_one hq.ne hu₁ hu1
     · rw [tateQuotientCoordinates_mk, hX]
     · rw [tateQuotientCoordinates_mk, hY]
 

@@ -131,10 +131,10 @@ variable {𝓕 : Type*} [FunLike 𝓕 E F] [AddMonoidHomClass 𝓕 E F] {K M : �
 theorem HasType.of_map [Fact (1 ≤ p)] (h : HasType F p C) (f : 𝓕) (hK : ∀ x, ‖x‖ ≤ K * ‖f x‖)
     (hM : ∀ x, ‖f x‖ ≤ M * ‖x‖) : HasType E p (K * C * M) := fun n y ↦ calc
   rademacherSecondMoment y ≤ K * rademacherSecondMoment (fun i ↦ f (y i)) :=
-    rademacherSecondMoment_le_mul_map f K.2 hK y
+    rademacherSecondMoment_le_mul_map f hK y
   _ ≤ K * (C * (M * ‖WithLp.toLp p y‖)) := by
     gcongr
-    exact (h n _).trans (by gcongr; exact PiLp.norm_toLp_comp_le M.2 hM y)
+    exact (h n _).trans (by gcongr; exact PiLp.norm_toLp_comp_le hM y)
   _ = (K * C * M : ℝ≥0) * ‖WithLp.toLp p y‖ := by push_cast; ring
 
 /-- Cotype passes to the domain of an additive map `f` with `‖x‖ ≤ K ‖f x‖` and
@@ -144,20 +144,20 @@ theorem HasCotype.of_map [Fact (1 ≤ q)] (h : HasCotype F q C) (f : 𝓕)
   fun n y ↦ calc
   ‖WithLp.toLp q y‖ ≤ K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ := by
     calc ‖WithLp.toLp q y‖ ≤ ‖(K : ℝ) • WithLp.toLp q (fun i ↦ ‖f (y i)‖)‖ :=
-          PiLp.norm_mono fun i ↦ by simpa [abs_of_nonneg K.2] using hK (y i)
+          PiLp.norm_mono fun i ↦ by simpa [abs_of_nonneg K.property] using hK (y i)
       _ = K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ := by
           rw [norm_smul, Real.norm_eq_abs, NNReal.abs_eq,
             PiLp.norm_norm (WithLp.toLp q fun i ↦ f (y i))]
   _ ≤ K * (C * (M * rademacherSecondMoment y)) := by
     gcongr
-    exact (h n _).trans (by gcongr; exact rademacherSecondMoment_map_le f M.2 hM y)
+    exact (h n _).trans (by gcongr; exact rademacherSecondMoment_map_le f hM y)
   _ = (K * C * M : ℝ≥0) * rademacherSecondMoment y := by push_cast; ring
 
 /-- Type passes along linear isometries with the same constant; in particular it passes to
 subspaces, through `Submodule.subtypeₗᵢ`. -/
 theorem HasType.of_linearIsometry {R : Type*} [Semiring R] [Module R E] [Module R F]
     (h : HasType F p C) (f : E →ₗᵢ[R] F) : HasType E p C := fun n y ↦ by
-  have hR := rademacherSecondMoment_le_mul_map f zero_le_one (fun x ↦ by simp) y
+  have hR := rademacherSecondMoment_le_mul_map f (K := 1) (fun x ↦ by simp) y
   have hy : ‖WithLp.toLp p fun i ↦ f (y i)‖ = ‖WithLp.toLp p y‖ :=
     le_antisymm (PiLp.norm_mono fun i ↦ by simp) (PiLp.norm_mono fun i ↦ by simp)
   rw [one_mul] at hR
@@ -168,7 +168,7 @@ theorem HasType.of_linearIsometry {R : Type*} [Semiring R] [Module R E] [Module 
 subspaces, through `Submodule.subtypeₗᵢ`. -/
 theorem HasCotype.of_linearIsometry {R : Type*} [Semiring R] [Module R E] [Module R F]
     (h : HasCotype F q C) (f : E →ₗᵢ[R] F) : HasCotype E q C := fun n y ↦ by
-  have hR := rademacherSecondMoment_map_le f zero_le_one (fun x ↦ by simp) y
+  have hR := rademacherSecondMoment_map_le f (M := 1) (fun x ↦ by simp) y
   have hy : ‖WithLp.toLp q fun i ↦ f (y i)‖ = ‖WithLp.toLp q y‖ :=
     le_antisymm (PiLp.norm_mono fun i ↦ by simp) (PiLp.norm_mono fun i ↦ by simp)
   rw [one_mul] at hR

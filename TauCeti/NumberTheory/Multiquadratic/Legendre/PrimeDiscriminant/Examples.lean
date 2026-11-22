@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Examples.Li
 /-!
 # Concrete Legendre criteria for the first genus-field examples
 
-The multiquadratic roadmap's genus-field worked examples begin with the prime-discriminant
+The genus-field worked examples begin with the prime-discriminant
 lists `[-4, 5]` for `ℚ(√-5)` and `[-4, -3, -7]` for `ℚ(√-21)`. This file records the
 corresponding concrete Legendre-character criteria, so later worked-example code can consume
 the familiar congruence and reciprocal-symbol conditions directly.
@@ -45,7 +45,7 @@ theorem forall_legendreSym_neg_four_five_eq_one_iff {p : ℕ} [Fact p.Prime] (ho
     constructor
     · have h0 := h 0
       simpa using
-        (legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (q := p) hodd).mp h0
+        (legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (q := p)).mp h0
     · have h1 := h 1
       simpa [oddPrimeDiscriminant] using
         (legendreSym_oddPrimeDiscriminant_eq_one_iff
@@ -53,7 +53,7 @@ theorem forall_legendreSym_neg_four_five_eq_one_iff {p : ℕ} [Fact p.Prime] (ho
   · rintro ⟨hfour, hfive⟩ i
     fin_cases i
     · exact
-        (legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (q := p) hodd).mpr hfour
+        (legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (q := p)).mpr hfour
     · simpa [oddPrimeDiscriminant] using
         (legendreSym_oddPrimeDiscriminant_eq_one_iff
           (p := 5) (q := p) (by norm_num) hodd).mpr hfive
@@ -74,7 +74,7 @@ theorem forall_legendreSym_neg_four_neg_three_neg_seven_eq_one_iff {p : ℕ}
     constructor
     · have h0 := h 0
       simpa using
-        (legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (q := p) hodd).mp h0
+        (legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (q := p)).mp h0
     · constructor
       · have h1 := h 1
         simpa [oddPrimeDiscriminant] using
@@ -87,7 +87,7 @@ theorem forall_legendreSym_neg_four_neg_three_neg_seven_eq_one_iff {p : ℕ}
   · rintro ⟨hfour, hthree, hseven⟩ i
     fin_cases i
     · exact
-        (legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (q := p) hodd).mpr hfour
+        (legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (q := p)).mpr hfour
     · simpa [oddPrimeDiscriminant] using
         (legendreSym_oddPrimeDiscriminant_eq_one_iff
           (p := 3) (q := p) (by norm_num) hodd).mpr hthree

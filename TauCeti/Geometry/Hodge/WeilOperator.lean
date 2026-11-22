@@ -17,7 +17,8 @@ public import TauCeti.LinearAlgebra.Complex.Conjugation
 The Weil operator `C` of a pure Hodge structure of weight `n` is the complex-linear automorphism
 acting on the Hodge component `H^{p,q}` by the scalar `i^{p-q}`. Since `q = n - p` on the
 component `piece p`, that scalar is `i^{2p-n}`, and the Hodge decomposition
-`TauCeti.Hodge.HodgeStructureOn.isInternal_piece` extends it to the whole ambient space.
+`TauCeti.Hodge.HodgeStructureOn.isInternal_piece` extends it to the whole ambient space: `C` is
+`TauCeti.Hodge.HodgeStructureOn.pieceSMul` of these scalars.
 
 Two identities make `C` the carrier of the Hermitian theory. It squares to the weight sign,
 `C ∘ C = (-1)^n`, so `C` is an automorphism, and is a complex structure in odd weight.
@@ -49,10 +50,8 @@ of the ambient space, rather than only on homogeneous vectors where `i^{p-q}` ma
 * `TauCeti.Hodge.HodgeStructure.Hom.commutes_weilOperator`: morphisms commute with `C`.
 * `TauCeti.Hodge.tate_weilOperator`: the Weil operator of `ℤ(m)` is the identity.
 
-This supplies the Weil operator targeted in Layer L1 of
-`TauCetiRoadmap/HodgeStructures/README.md`. The sign conventions are those of Voisin, *Hodge
-Theory and Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink, *Mixed Hodge
-Structures*, §2.
+The sign conventions are those of Voisin, *Hodge Theory and Complex Algebraic Geometry I*,
+§7.1.2, and Peters–Steenbrink, *Mixed Hodge Structures*, §2.
 -/
 
 public section
@@ -89,23 +88,24 @@ private theorem negOne_zpow_two_mul_sub (p k : ℤ) :
 /-- **The Weil operator** of a pure Hodge structure of weight `n`: the complex-linear map acting
 on the Hodge component `H^{p,q}` by `i^{p-q} = i^{2p-n}`. -/
 noncomputable def weilOperator (hs : HodgeStructureOn W ω n) : W →ₗ[ℂ] W :=
-  (DirectSum.toModule ℂ ℤ W fun p ↦ Complex.I ^ (2 * p - n) • (hs.piece p).subtype) ∘ₗ
-    hs.decomposition.toLinearMap
+  hs.pieceSMul fun p ↦ Complex.I ^ (2 * p - n)
+
+/-- The Weil operator is `pieceSMul` of the scalars `i^{2p-n}`. -/
+theorem weilOperator_eq_pieceSMul (hs : HodgeStructureOn W ω n) :
+    hs.weilOperator = hs.pieceSMul fun p ↦ Complex.I ^ (2 * p - n) :=
+  (rfl)
 
 /-- The Weil operator acts on the Hodge component `H^{p,n-p}` by the scalar `i^{2p-n}`. -/
 theorem weilOperator_apply_of_mem (hs : HodgeStructureOn W ω n) {p : ℤ} {x : W}
     (hx : x ∈ hs.piece p) : hs.weilOperator x = Complex.I ^ (2 * p - n) • x := by
-  rw [weilOperator, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    hs.decomposition_apply_of_mem hx, DirectSum.toModule_lof]
-  rfl
+  rw [weilOperator_eq_pieceSMul, hs.pieceSMul_apply_of_mem _ hx]
 
 /-- The Weil operator is the only complex-linear map acting on each Hodge component `H^{p,n-p}`
 by `i^{2p-n}`. -/
 theorem weilOperator_unique (hs : HodgeStructureOn W ω n) (f : W →ₗ[ℂ] W)
     (hf : ∀ p : ℤ, ∀ x ∈ hs.piece p, f x = Complex.I ^ (2 * p - n) • x) :
     f = hs.weilOperator :=
-  hs.addHom_ext_of_piece fun p x hx ↦ by
-    rw [hf p x hx, hs.weilOperator_apply_of_mem hx]
+  hs.eq_pieceSMul _ f hf
 
 /-- The Weil operator preserves every Hodge component. -/
 theorem weilOperator_mem_piece (hs : HodgeStructureOn W ω n) {p : ℤ} {x : W}
@@ -151,13 +151,7 @@ theorem weilOperator_mem_conjF (hs : HodgeStructureOn W ω n) {p : ℤ} {x : W}
 /-- The Hodge projections intertwine the Weil operator with multiplication by `i^{2p-n}`. -/
 theorem proj_weilOperator (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
     hs.proj p (hs.weilOperator x) = Complex.I ^ (2 * p - n) • hs.proj p x := by
-  refine hs.piece_induction_on (motive := fun y ↦
-    hs.proj p (hs.weilOperator y) = Complex.I ^ (2 * p - n) • hs.proj p y) x
-    (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp only [map_add, hy, hz, smul_add]
-  rw [hs.weilOperator_apply_of_mem hy, map_smul]
-  rcases eq_or_ne q p with rfl | hqp
-  · rfl
-  · rw [hs.proj_apply_eq_zero_of_mem_of_ne hy hqp, smul_zero, smul_zero]
+  rw [weilOperator_eq_pieceSMul, proj_pieceSMul]
 
 /-- **The eigenspaces of the Weil operator.** The `μ`-eigenspace of the Weil operator is spanned
 by the Hodge components `H^{p,n-p}` on which it acts by `i^{2p-n} = μ`. -/
@@ -266,7 +260,7 @@ theorem conj_weilOperator (hs : HodgeStructureOn W ω n) (x : W) :
     ω.toEquiv (hs.weilOperator x) = hs.weilOperator (ω.toEquiv x) := by
   refine hs.piece_induction_on
     (motive := fun w ↦ ω.toEquiv (hs.weilOperator w) = hs.weilOperator (ω.toEquiv w)) x
-    (fun p y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp [map_add, hy, hz]
+    (fun p y hy ↦ ?_) fun y z hy hz ↦ by simp [map_add, hy, hz]
   have hconj : ω.toEquiv y ∈ hs.piece (n - p) := by
     rw [← hs.conj_piece p]
     exact ⟨y, hy, rfl⟩
@@ -447,7 +441,7 @@ theorem commutes_weilOperator (f : Hom source target) (x : W₁) :
     f (source.weilOperator x) = target.weilOperator (f x) := by
   refine source.piece_induction_on
     (motive := fun w ↦ f (source.weilOperator w) = target.weilOperator (f w)) x
-    (fun p y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp [map_add, hy, hz]
+    (fun p y hy ↦ ?_) fun y z hy hz ↦ by simp [map_add, hy, hz]
   rw [source.weilOperator_apply_of_mem hy, map_smul,
     target.weilOperator_apply_of_mem (f.map_mem_piece p hy)]
 

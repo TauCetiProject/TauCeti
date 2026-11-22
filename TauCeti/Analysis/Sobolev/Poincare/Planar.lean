@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Analysis.Sobolev.W1p.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -37,11 +42,25 @@ dimension two (`MeasureTheory.lintegral_pow_le_pow_lintegral_fderiv`), to `f = r
 gives `∫ w² ≤ k ∫ g(w)`. Finally `g(t) ≤ |t|` bounds the part of `∫ g(w)` over `s` by
 `(μ(s) ∫ w²) ^ (1/2)`, which is absorbed.
 
+When `E` is an inner product space, the same bound holds for every `u` in the Sobolev space
+`W^{1,2}(E)`, with `‖Du‖₂` the norm of its weak gradient
+(`TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two`). Both sides are
+continuous on `W^{1,2}(E)`: for the modular this is the local Lipschitz bound
+`|g(a) - g(b)| ≤ |a - b| (|a| + |b|)` of `g(t) = √(1 + t²) - 1` and the Cauchy–Schwarz inequality
+(`TauCeti.continuous_setIntegral_sqrt_one_add_sq_sub_one`). So the bound passes from test
+functions to their closure, which is all of `W^{1,2}(E)`.
+
 ## Main results
 
 * `TauCeti.integral_sq_le_mul_sq_integral_norm_fderiv`: the Gagliardo–Nirenberg–Sobolev
   inequality `∫ f² ≤ G (∫ ‖Df‖)²` in dimension two, for Bochner integrals.
 * `TauCeti.exists_integral_sq_le_of_finrank_eq_two`: the `L²` bound above.
+* `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two`: the `L²` bound on `W^{1,2}(E)`.
+* `TauCeti.W1p.exists_norm_value_sq_le_of_mul_norm_gradient_le`: its rescaled form
+  `‖u‖₂² ≤ 3 ∫_{sᶜ} u² + 9 μ(s) / c²` when `C c ‖∇u‖₂ ≤ 1`, `c ≥ 1`.
+* `TauCeti.W1p.tendsto_of_tendsto_norm_gradient_sub`: in dimension two, `u_i → u` in
+  `W^{1,2}(E)` as soon as `‖∇(u_i - u)‖₂ → 0` and `∫_{sᶜ} (u_i - u)² → 0` outside a set `s` of
+  finite measure.
 
 ## References
 
@@ -57,7 +76,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Filter MeasureTheory Module Set
+open Filter MeasureTheory Module Set Topology
 open scoped ENNReal
 
 /-! ### The smooth square root of the modular -/
@@ -110,6 +129,8 @@ private theorem continuous_hasCompactSupport_modularRoot_comp {X : Type*} [Topol
 
 /-! ### Integral inequalities -/
 
+section Smooth
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
@@ -133,7 +154,7 @@ theorem integral_sq_le_mul_sq_integral_norm_fderiv (hE : finrank ℝ E = 2) {f :
   have hl : ∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂μ = ENNReal.ofReal (∫ x, f x ^ 2 ∂μ) := by
     rw [ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun x ↦ sq_nonneg _)]
     refine lintegral_congr fun x ↦ ?_
-    rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
+    rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
       Real.rpow_two, sq_abs]
   have hr : ∫⁻ x, ‖fderiv ℝ f x‖ₑ ∂μ = ENNReal.ofReal (∫ x, ‖fderiv ℝ f x‖ ∂μ) := by
     rw [ofReal_integral_eq_lintegral_ofReal hintd (Eventually.of_forall fun x ↦ norm_nonneg _)]
@@ -166,7 +187,8 @@ private theorem integral_modularRoot_pow_three_sq_le (hE : finrank ℝ E = 2) {w
         ((hw.differentiable one_ne_zero) x).hasFDerivAt
     rw [h.fderiv, norm_smul, Real.norm_eq_abs, abs_mul, abs_mul,
       abs_of_pos (by norm_num : (0 : ℝ) < 3 / 2)]
-    have h1 := Real.abs_div_sqrt_one_add_sq_le_one (w x)
+    have h1 : |w x / √(1 + w x ^ 2)| ≤ 1 := by
+      simpa only [add_comm] using Real.abs_div_sqrt_sq_add_le_one zero_le_one (w x)
     calc 3 / 2 * |modularRoot (w x)| * |w x / √(1 + w x ^ 2)| * ‖fderiv ℝ w x‖ ≤
           3 / 2 * |modularRoot (w x)| * 1 * ‖fderiv ℝ w x‖ := by gcongr
       _ = 3 / 2 * (|modularRoot (w x)| * ‖fderiv ℝ w x‖) := by ring
@@ -180,8 +202,6 @@ private theorem integral_modularRoot_pow_three_sq_le (hE : finrank ℝ E = 2) {w
     (hrc.abs.memLp_of_hasCompactSupport (μ := μ) habs)
     (hdc.norm.memLp_of_hasCompactSupport hds.norm)
   simp only [sq_abs] at hCS
-  have hI0 : 0 ≤ ∫ x, ‖fderiv ℝ (fun x ↦ modularRoot (w x) ^ 3) x‖ ∂μ :=
-    integral_nonneg fun x ↦ norm_nonneg _
   calc ∫ x, (modularRoot (w x) ^ 3) ^ 2 ∂μ
       ≤ G * (∫ x, ‖fderiv ℝ (fun x ↦ modularRoot (w x) ^ 3) x‖ ∂μ) ^ 2 :=
         integral_sq_le_mul_sq_integral_norm_fderiv μ hE hf3 hf3s
@@ -263,8 +283,6 @@ private theorem le_two_mul_add_sq_mul_of_le_mul_add {W k Q Z S : ℝ} (hk : 0 �
       _ = k ^ 2 * Z ^ 2 := by ring
       _ ≤ k ^ 2 * (S * W) := by gcongr
   have h2 : W * W ≤ W * (2 * k * Q + k ^ 2 * S) := by
-    have e : W * (2 * k * Q + k ^ 2 * S) - W * W =
-        k ^ 2 * (S * W) - (W - k * Q) ^ 2 + (k * Q) ^ 2 := by ring
     linarith [sq_nonneg (k * Q)]
   exact le_of_mul_le_mul_left h2 (hkQ.trans_lt h)
 
@@ -318,5 +336,157 @@ theorem exists_integral_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
   have hW := (integral_sq_le_mul_integral_modular μ hE hw hws).trans
     (mul_le_mul_of_nonneg_left hsplit hk)
   exact le_two_mul_add_sq_mul_of_le_mul_add hk hQ measureReal_nonneg hW hZ
+
+end Smooth
+
+/-! ### Sobolev functions -/
+
+section Sobolev
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- **An `L²` bound for planar Sobolev functions.** In dimension two there is a constant `C`,
+depending only on the Haar measure `μ`, such that every `u ∈ W^{1,2}(E)` and every measurable set
+`s` of finite measure satisfy
+
+`‖u‖₂² ≤ 2 k ∫_{sᶜ} (√(1 + u²) - 1) + k² μ(s)`,    `k = 2 + C ‖∇u‖₂`.
+
+This extends `TauCeti.exists_integral_sq_le_of_finrank_eq_two` from compactly supported `C¹`
+functions to `W^{1,2}(E)`, by density of test functions, since both sides are continuous on
+`W^{1,2}(E)`. -/
+theorem W1p.exists_norm_value_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u : W1p μ ⊤ 2, ∀ s : Set E, MeasurableSet s → μ s ≠ ∞ →
+      ‖W1p.value u‖ ^ 2 ≤
+        2 * (2 + C * ‖W1p.gradient u‖) * ∫ x in sᶜ, (√(1 + W1p.value u x ^ 2) - 1) ∂μ +
+          (2 + C * ‖W1p.gradient u‖) ^ 2 * μ.real s := by
+  obtain ⟨C, hC, h⟩ := exists_integral_sq_le_of_finrank_eq_two μ hE
+  refine ⟨C, hC, fun u s hs hμs ↦ ?_⟩
+  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := μ) (p := 2) ENNReal.ofNat_ne_top).induction_on
+    u ?_ ?_
+  · -- Both sides are continuous on `W^{1,2}`, so the inequality persists in the limit.
+    have hval : Continuous fun u : W1p μ ⊤ 2 ↦ W1p.value u := by
+      have h := (W1p.valueL (mu := μ) (Omega := ⊤) (p := 2)).continuous
+      rwa [show ⇑(W1p.valueL (mu := μ) (Omega := ⊤) (p := 2)) = W1p.value from
+        funext W1p.valueL_apply] at h
+    have hcont : Continuous fun u : W1p μ ⊤ 2 ↦
+        ∫ x in sᶜ, (√(1 + W1p.value u x ^ 2) - 1) ∂μ := by
+      have h := (continuous_setIntegral_sqrt_one_add_sq_sub_one (ν := μ.restrict
+        ((⊤ : TopologicalSpace.Opens E) : Set E)) sᶜ).comp hval
+      simp only [Function.comp_def, TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
+      exact h
+    have hg : Continuous fun u : W1p μ ⊤ 2 ↦ ‖W1p.gradient u‖ := by
+      simpa only [W1p.gradientL_apply] using
+        (W1p.gradientL (mu := μ) (Omega := ⊤) (p := 2)).continuous.norm
+    exact isClosed_le (hval.norm.pow 2) (by fun_prop)
+  · intro φ
+    set U := W1p.ofTestFunctionₗ μ ⊤ 2 φ
+    have hv : (W1p.value U : E → ℝ) =ᵐ[μ] φ := W1p.value_ofTestFunctionₗ_top_ae φ
+    have hgrad : ‖W1p.gradient U‖ = √(∫ x, ‖fderiv ℝ φ x‖ ^ 2 ∂μ) := by
+      rw [← W1p.norm_gradient_ofTestFunctionₗ_top_sq, Real.sqrt_sq (norm_nonneg _)]
+    have hmod : ∫ x in sᶜ, (√(1 + W1p.value U x ^ 2) - 1) ∂μ =
+        ∫ x in sᶜ, (√(1 + φ x ^ 2) - 1) ∂μ :=
+      integral_congr_ae (ae_restrict_of_ae (hv.mono fun x hx ↦ by simp only [hx]))
+    rw [W1p.norm_value_ofTestFunctionₗ_top_sq, hgrad, hmod]
+    exact h φ (φ.contDiff.of_le (by exact_mod_cast le_top)) φ.hasCompactSupport s hs hμs
+
+/-- **The rescaled planar `L²` bound.** In dimension two there is a constant `C`, depending only
+on the Haar measure `μ`, such that every `u ∈ W^{1,2}(E)`, every measurable set `s` of finite
+measure and every `c ≥ 1` with `C c ‖∇u‖₂ ≤ 1` satisfy
+
+`‖u‖₂² ≤ 3 ∫_{sᶜ} u² + 9 μ(s) / c²`. -/
+theorem W1p.exists_norm_value_sq_le_of_mul_norm_gradient_le (hE : finrank ℝ E = 2) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (u : W1p μ ⊤ 2) (s : Set E), MeasurableSet s → μ s ≠ ∞ →
+      ∀ c : ℝ, 1 ≤ c → C * c * ‖W1p.gradient u‖ ≤ 1 →
+      ‖W1p.value u‖ ^ 2 ≤ 3 * (∫ x in sᶜ, W1p.value u x ^ 2 ∂μ) + 9 * μ.real s / c ^ 2 := by
+  -- Apply `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two` to `c u`, with
+  -- `√(1 + t²) - 1 ≤ t² / 2`.
+  obtain ⟨C, hC, hpl⟩ := W1p.exists_norm_value_sq_le_of_finrank_eq_two μ hE
+  refine ⟨C, hC, fun u s hs hμs c hc hG ↦ ?_⟩
+  have hc0 : 0 < c := by linarith
+  have h := hpl (c • u) s hs hμs
+  have hn : ‖W1p.value (c • u)‖ = c * ‖W1p.value u‖ := by
+    rw [W1p.value_smul, norm_smul, Real.norm_of_nonneg hc0.le]
+  have hg : ‖W1p.gradient (c • u)‖ = c * ‖W1p.gradient u‖ := by
+    rw [W1p.gradient_smul, norm_smul, Real.norm_of_nonneg hc0.le]
+  rw [hn, hg] at h
+  set I := ∫ x in sᶜ, W1p.value u x ^ 2 ∂μ
+  set S := μ.real s
+  have hS : 0 ≤ S := measureReal_nonneg
+  -- The modular of `c u` on `sᶜ` is at most `c² I / 2`.
+  have hmod : ∫ x in sᶜ, (√(1 + W1p.value (c • u) x ^ 2) - 1) ∂μ ≤ c ^ 2 / 2 * I := by
+    have hae := W1p.value_smul_ae c u
+    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at hae
+    rw [← integral_const_mul]
+    refine integral_mono_of_nonneg (Eventually.of_forall fun x ↦
+      sub_nonneg.2 (Real.one_le_sqrt_one_add_sq _))
+      (((W1p.memLp_value u).integrable_sq.integrableOn).const_mul _) ?_
+    filter_upwards [ae_restrict_of_ae hae] with x hx
+    rw [hx, Pi.smul_apply, smul_eq_mul]
+    calc √(1 + (c * W1p.value u x) ^ 2) - 1 ≤ (c * W1p.value u x) ^ 2 / 2 :=
+          Real.sqrt_one_add_sq_sub_one_le_sq_div_two _
+      _ = c ^ 2 / 2 * W1p.value u x ^ 2 := by ring
+  set k := 2 + C * (c * ‖W1p.gradient u‖)
+  have hk2 : 2 ≤ k := le_add_of_nonneg_right (by positivity)
+  have h1 : 2 * k * ∫ x in sᶜ, (√(1 + W1p.value (c • u) x ^ 2) - 1) ∂μ ≤
+      2 * k * (c ^ 2 / 2 * I) := mul_le_mul_of_nonneg_left hmod (by positivity)
+  have h2 : k ^ 2 * S ≤ 9 * S := mul_le_mul_of_nonneg_right (by nlinarith) hS
+  have h3 : 2 * k * (c ^ 2 / 2 * I) ≤ 3 * (c ^ 2 * I) := by
+    have : 0 ≤ c ^ 2 * I := by positivity
+    nlinarith
+  have h4 : c ^ 2 * (3 * I + 9 * S / c ^ 2) = 3 * (c ^ 2 * I) + 9 * S := by field_simp
+  have hmain : c ^ 2 * ‖W1p.value u‖ ^ 2 ≤ c ^ 2 * (3 * I + 9 * S / c ^ 2) := by
+    rw [h4]
+    calc c ^ 2 * ‖W1p.value u‖ ^ 2 = (c * ‖W1p.value u‖) ^ 2 := by ring
+      _ ≤ _ := h
+      _ ≤ 2 * k * (c ^ 2 / 2 * I) + k ^ 2 * S := by simp only [k] at h1 ⊢; linarith
+      _ ≤ 3 * (c ^ 2 * I) + 9 * S := by linarith
+  have hc2 : 0 < c ^ 2 := by positivity
+  exact le_of_mul_le_mul_left hmain hc2
+
+/-- **Convergence from the gradient and an exterior.** In dimension two, if `s` has finite
+measure, `‖∇(u_i - u)‖₂ → 0` and `∫_{sᶜ} (u_i - u)² → 0`, then `u_i → u` in `W^{1,2}(E)`. -/
+theorem W1p.tendsto_of_tendsto_norm_gradient_sub (hE : finrank ℝ E = 2) {ι : Type*}
+    {l : Filter ι} {u : ι → W1p μ ⊤ 2} {v : W1p μ ⊤ 2} {s : Set E} (hs : MeasurableSet s)
+    (hμs : μ s ≠ ∞) (hG : Tendsto (fun i ↦ ‖W1p.gradient (u i - v)‖) l (𝓝 0))
+    (hI : Tendsto (fun i ↦ ∫ x in sᶜ, W1p.value (u i - v) x ^ 2 ∂μ) l (𝓝 0)) :
+    Tendsto u l (𝓝 v) := by
+  obtain ⟨C, -, hpl⟩ := W1p.exists_norm_value_sq_le_of_mul_norm_gradient_le μ hE
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  set S := μ.real s
+  refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun i ↦ ha.trans_le (norm_nonneg _),
+    fun a ha ↦ ?_⟩
+  -- A scale `c ≥ 1` with `9 S / c² < a² / 2`.
+  have ha2 : 0 < a ^ 2 := by positivity
+  set c := 18 * S / a ^ 2 + 1
+  have hc1 : 1 ≤ c := le_add_of_nonneg_left (by positivity)
+  have hc0 : 0 < c := by linarith
+  have hcS : 9 * S / c ^ 2 < a ^ 2 / 2 := by
+    have h1 : 9 * S / c ^ 2 ≤ 9 * S / c :=
+      div_le_div_of_nonneg_left (by positivity) hc0 (by nlinarith)
+    have h2 : 9 * S / c < a ^ 2 / 2 := by
+      rw [div_lt_iff₀ hc0]
+      have : a ^ 2 / 2 * c = 9 * S + a ^ 2 / 2 := by
+        simp only [c]; field_simp; ring
+      linarith
+    linarith
+  have hG1 : ∀ᶠ i in l, C * c * ‖W1p.gradient (u i - v)‖ ≤ 1 :=
+    (by simpa using hG.const_mul (C * c) :
+      Tendsto (fun i ↦ C * c * ‖W1p.gradient (u i - v)‖) l (𝓝 0)).eventually
+      (eventually_le_nhds one_pos)
+  have hG2 : ∀ᶠ i in l, ‖W1p.gradient (u i - v)‖ ^ 2 < a ^ 2 / 4 :=
+    (by simpa using hG.pow 2 : Tendsto (fun i ↦ ‖W1p.gradient (u i - v)‖ ^ 2) l (𝓝 0)).eventually
+      (eventually_lt_nhds (by positivity))
+  have hI3 : ∀ᶠ i in l, 3 * (∫ x in sᶜ, W1p.value (u i - v) x ^ 2 ∂μ) < a ^ 2 / 4 :=
+    (by simpa using hI.const_mul 3 :
+      Tendsto (fun i ↦ 3 * ∫ x in sᶜ, W1p.value (u i - v) x ^ 2 ∂μ) l (𝓝 0)).eventually
+      (eventually_lt_nhds (by positivity))
+  filter_upwards [hG1, hG2, hI3] with i h1 h2 h3
+  have hval := hpl (u i - v) s hs hμs c hc1 h1
+  have hnorm := W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u i - v)
+  have hsq : ‖u i - v‖ ^ 2 < a ^ 2 := by linarith
+  exact lt_of_pow_lt_pow_left₀ 2 ha.le hsq
+
+end Sobolev
 
 end TauCeti

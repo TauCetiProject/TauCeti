@@ -27,7 +27,9 @@ those of `artinMap K` read through inversion.
 
 * It is continuous (`continuous_geometricArtinMap`), has the same image as `artinMap K`
   (`range_geometricArtinMap`), hence dense image (`denseRange_geometricArtinMap`), and the same
-  kernel (`ker_geometricArtinMap`).
+  kernel (`ker_geometricArtinMap`). So a continuous character of `G_K^ab` with Hausdorff values is
+  determined by its values on geometric Artin symbols
+  (`continuousMonoidHom_ext_geometricArtinMap`).
 * Its unramified coordinate is the inverse, in the multiplicatively written `ℤ̂`, of the
   normalized valuation (`unramifiedCoordinate_geometricArtinMap`). So every lift of the geometric
   Artin symbol of a uniformizer is the inverse of an arithmetic Frobenius lift
@@ -85,6 +87,16 @@ theorem denseRange_geometricArtinMap : DenseRange (geometricArtinMap K) := by
   rw [DenseRange, ← MonoidHom.coe_range, range_geometricArtinMap, MonoidHom.coe_range]
   exact denseRange_artinMap K
 
+variable {K} in
+/-- **A continuous character of `G_K^ab` is determined on geometric Artin symbols.** Two continuous
+homomorphisms from `G_K^ab` to a Hausdorff topological monoid that agree on the image of the
+geometric local Artin map are equal, since that image is dense. -/
+theorem continuousMonoidHom_ext_geometricArtinMap {A : Type*} [Monoid A] [TopologicalSpace A]
+    [T2Space A] {ψ₁ ψ₂ : Field.absoluteGaloisGroupAbelianization K →ₜ* A}
+    (h : ∀ x : Kˣ, ψ₁ (geometricArtinMap K x) = ψ₂ (geometricArtinMap K x)) : ψ₁ = ψ₂ :=
+  ContinuousMonoidHom.ext <| congrFun <|
+    (denseRange_geometricArtinMap K).equalizer ψ₁.continuous ψ₂.continuous (funext h)
+
 /-- **The geometric and arithmetic local Artin maps have the same kernel**, the intersection of the
 norm subgroups (`ker_artinMap_eq_iInf`). -/
 theorem ker_geometricArtinMap : (geometricArtinMap K).ker = (artinMap K).ker :=
@@ -127,7 +139,7 @@ theorem geometricArtinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDi
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = geometricArtinMap K x) :
     localArtinMap K L ι (Additive.ofMul x) =
       -Additive.ofMul
-        (Abelianization.of (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ))) := by
+        (Group.Abelianization.of (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ))) := by
   rw [artinMap_restrict K L ι x σ⁻¹ (by rw [QuotientGroup.mk_inv, hσ, geometricArtinMap_apply,
     inv_inv]), map_inv, map_inv, map_inv, ofMul_inv]
 

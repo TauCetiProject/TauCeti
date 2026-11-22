@@ -128,16 +128,17 @@ theorem comp_extDerivCLM_eq_zero_iff {k : ℕ} (o : Orientation ℝ E (Fin (k + 
 
 /-- **The local constancy theorem.** A top-degree current with zero boundary on an arbitrary open
 subset `Ω` of an oriented real vector space of dimension `k + 1` restricts, on every connected open
-subset `U ⊆ Ω`, to a unique real multiple of the integration current `[[U]]`. -/
+subset `U ⊆ Ω`, to a unique real multiple of the integration current `[[U]]`. (If `U ⊄ Ω` the
+restriction map `monoCLM` is zero, and the multiple is `0`.) -/
 theorem existsUnique_comp_monoCLM_eq_smul_integrationCurrent {k : ℕ}
     (o : Orientation ℝ E (Fin (k + 1))) (hE : finrank ℝ E = k + 1)
-    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ} (hT : T ∘L extDerivCLM = 0) (hU : U ≤ Ω)
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ} (hT : T ∘L extDerivCLM = 0)
     (hUc : IsConnected (U : Set E)) :
     ∃! c : ℝ, T ∘L (monoCLM ℝ : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] _) =
       c • o.integrationCurrent U := by
   refine existsUnique_eq_smul_integrationCurrent_of_comp_extDerivCLM_eq_zero o hE hUc ?_
   ext ω
-  simpa [extDerivCLM_monoCLM hU] using DFunLike.congr_fun hT (monoCLM ℝ ω)
+  simpa [extDerivCLM_monoCLM] using DFunLike.congr_fun hT (monoCLM ℝ ω)
 
 /-- **The constancy theorem in degree zero.** On a zero-dimensional oriented real vector space
 every `0`-current on a connected open set, which is then the whole point, is a unique real multiple

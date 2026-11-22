@@ -89,11 +89,12 @@ theorem perturbationSeries_apply_sub_sum_mem {m : ℕ} {z : M} (hz : z ∈ F m) 
   exact Module.End.ringInverse_one_add_apply_sub_sum_mem hanti hF0
     (c.map_mul_homotopy_le δ hh hδ) hU (hδ m ⟨z, hz, rfl⟩) n
 
+omit hU in
 /-- The perturbation operator `X = (1 + δ h)⁻¹ δ` raises the filtration. -/
 theorem perturbationSeries_apply_mem {m : ℕ} {z : M} (hz : z ∈ F m) :
     c.perturbationSeries δ z ∈ F (m + 1) := by
   rw [perturbationSeries_def, mul_apply_eq_comp]
-  exact Module.End.ringInverse_one_add_apply_mem hanti hF0 (c.map_mul_homotopy_le δ hh hδ) hU
+  exact Module.End.ringInverse_one_add_apply_mem hanti hF0 (c.map_mul_homotopy_le δ hh hδ)
     (hδ m ⟨z, hz, rfl⟩)
 
 /-- The perturbed homotopy `h - h X h` preserves the filtration, so the perturbed contraction again
@@ -103,7 +104,7 @@ theorem map_perturb_homotopy_le (hsq : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM
   rintro _ ⟨z, hz, rfl⟩
   have hhz : c.homotopy z ∈ F n := hh n ⟨z, hz, rfl⟩
   have hX : c.perturbationSeries δ (c.homotopy z) ∈ F n :=
-    hanti (Nat.le_succ n) (c.perturbationSeries_apply_mem δ hF0 hh hδ hanti hU hhz)
+    hanti (Nat.le_succ n) (c.perturbationSeries_apply_mem δ hF0 hh hδ hanti hhz)
   rw [perturb_homotopy, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply]
   exact sub_mem hhz (hh n ⟨_, hX, rfl⟩)
 

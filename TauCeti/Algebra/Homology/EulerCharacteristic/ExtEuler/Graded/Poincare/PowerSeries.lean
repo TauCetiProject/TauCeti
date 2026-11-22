@@ -149,16 +149,6 @@ theorem coeff_map_laurentEval_one_bigradedExtPoincarePowerSeries
         Module.finrank k (⨁ j, GradedExt.{w} e X Y n j) := by
   simp
 
-/-- The formal substitution `t ↦ -t` introduces the alternating signs needed for the
-Cartan–Poincaré comparison, without summing infinitely many cohomological dimensions. -/
-theorem rescale_neg_one_map_laurentEval_one_bigradedExtPoincarePowerSeries
-    (h : IsGradedExtInternallyFinite.{w} k e X Y) :
-    PowerSeries.rescale (-1 : ℤ) (PowerSeries.map (laurentEval (1 : ℤˣ)).toRingHom
-      (bigradedExtPoincarePowerSeries k e h)) =
-        PowerSeries.mk fun n ↦
-          (-1 : ℤ) ^ n * Module.finrank k (⨁ j, GradedExt.{w} e X Y n j) := by
-  rw [map_laurentEval_one_bigradedExtPoincarePowerSeries, PowerSeries.rescale_mk]
-
 /-- For a diagonally supported series, forgetting internal degree retains exactly the
 diagonal Ext dimensions. This identifies the ordinary formal Poincaré series with the
 diagonal series without introducing a separate construction. -/

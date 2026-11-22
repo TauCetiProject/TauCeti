@@ -20,8 +20,8 @@ root of `g` going elsewhere. This file proves the multiplicity-sensitive stateme
 algebraically closed normed field, `ℂ` being the case of interest: the roots of `g`, counted with
 multiplicity, can be **matched bijectively** with those of `f` so that matched roots are close.
 
-The input is `TauCeti.Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`, the continuity of the inverse
-of the elementary symmetric chart `TauCeti.Sym.coeffHomeomorph`, which comes from Cauchy's bound
+The input is `Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`, the continuity of the inverse
+of the elementary symmetric chart `Sym.coeffHomeomorph`, which comes from Cauchy's bound
 `Polynomial.cauchyBound` through properness of the coefficient map. Nothing here chooses a
 continuous labelling of the roots; the matching is made separately for each nearby polynomial.
 
@@ -48,6 +48,9 @@ continuous labelling of the roots; the matching is made separately for each near
 * `Polynomial.eventually_exists_bijOn_roots_toFinset`: if moreover no nearby member of the family
   has more distinct roots than the central one, the distinct roots of nearby members correspond
   bijectively to those of the central one, with matched roots close and of equal multiplicity.
+* `Polynomial.continuousAt_sum_map_roots`: the sum of a function over the roots, with multiplicity,
+  is continuous in the family, at a point where the function is continuous at the roots, except
+  possibly at one point whose multiplicity as a root stays constant nearby.
 
 ## References
 
@@ -302,6 +305,74 @@ theorem eventually_exists_bijOn_roots_toFinset {B : Type*} [TopologicalSpace B]
     (roots_eq_map_of_eq_C_mul_prod_X_sub_C (ne_zero_of_coe_le_degree hx.ge) hgb) hab
     (fun z hz w hw hzw => by linarith [hsep z hz w hw hzw, min_le_right ε r]) hxcard
   exact ⟨e, he, fun z hz => ⟨(hed z hz).1.trans_le (min_le_left ε r), (hed z hz).2⟩⟩
+
+/-- If two enumerations `a` and `b` take the value `c` equally often, and `b i ≠ c` whenever
+`a i ≠ c`, then `b i = c` whenever `a i = c`. -/
+private theorem forall_eq_of_count_map_eq {ι α : Type*} [Fintype ι] [DecidableEq α]
+    {a b : ι → α} {c : α} (hab : ∀ i, a i ≠ c → b i ≠ c)
+    (hcount : (Finset.univ.val.map a).count c = (Finset.univ.val.map b).count c) (i : ι)
+    (hi : a i = c) : b i = c := by
+  have hsub : Finset.univ.filter (fun j => b j = c) ⊆ Finset.univ.filter (fun j => a j = c) :=
+    fun j => by
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      exact fun hj => by_contra fun h => hab j h hj
+  have hcard : (Finset.univ.filter (fun j => a j = c)).card ≤
+      (Finset.univ.filter (fun j => b j = c)).card := by
+    rw [Multiset.count_map, Multiset.count_map] at hcount
+    rw [Finset.card_def, Finset.card_def, Finset.filter_val, Finset.filter_val]
+    simp_rw [eq_comm (a := c)] at hcount
+    omega
+  simpa [hi] using (Finset.ext_iff.1 (Finset.eq_of_subset_of_card_le hsub hcard) i).2
+
+/-- **Continuity of sums over the roots in a family.** Let `F x` be polynomials of degree `d`, near
+`x₀`, whose coefficients of index at most `d` are continuous at `x₀`, and let `g` be continuous at
+every root of `F x₀` other than `c`. If, near `x₀`, the multiplicity of `c` as a root of `F x` is
+its multiplicity as a root of `F x₀`, then the sum of `g` over the roots of `F x`, counted with
+multiplicity, is continuous at `x₀`. In particular `g` may be discontinuous at `c`. -/
+theorem continuousAt_sum_map_roots {B E : Type*} [TopologicalSpace B] [SeminormedAddCommGroup E]
+    {F : B → K[X]} {x₀ : B} {d : ℕ} (hF : ∀ i ≤ d, ContinuousAt (fun x => (F x).coeff i) x₀)
+    (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).degree = d) {g : K → E} {c : K}
+    (hg : ∀ z ∈ (F x₀).roots, z ≠ c → ContinuousAt g z)
+    (hc : ∀ᶠ x in 𝓝 x₀, (F x).rootMultiplicity c = (F x₀).rootMultiplicity c) :
+    ContinuousAt (fun x => ((F x).roots.map g).sum) x₀ := by
+  classical
+  refine Metric.tendsto_nhds.2 fun η hη => ?_
+  have hη' : 0 < η / (d + 1) := by positivity
+  -- a radius `δ` keeping each root `z ≠ c` of `F x₀` away from `c` and controlling `g` near `z`
+  have hδ : ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ z ∈ (F x₀).roots.toFinset.filter (· ≠ c), ∀ w,
+      ‖w - z‖ < δ → w ≠ c ∧ ‖g w - g z‖ < η / (d + 1) := by
+    refine (eventually_all_finset _).2 fun z hz => ?_
+    obtain ⟨hzr, hzc⟩ := Finset.mem_filter.1 hz
+    obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1 <| (isOpen_ne.eventually_mem hzc).and
+      (Metric.tendsto_nhds.1 (hg z (Multiset.mem_toFinset.1 hzr) hzc) _ hη')
+    filter_upwards [Ioo_mem_nhdsGT hr] with δ hδ w hw
+    simpa only [dist_eq_norm, Set.mem_ofPred_eq] using
+      hball (y := w) (by rw [dist_eq_norm]; exact hw.trans hδ.2)
+  obtain ⟨δ, hδ, hδpos⟩ := (hδ.and self_mem_nhdsWithin).exists
+  filter_upwards [eventually_exists_C_mul_prod_X_sub_C_norm_sub_lt hF hdeg hδpos, hdeg, hc]
+    with x ⟨a, b, ha, hb, hab⟩ hx hcx
+  have hra := roots_eq_map_of_eq_C_mul_prod_X_sub_C
+    (ne_zero_of_coe_le_degree hdeg.self_of_nhds.ge) ha
+  have hrb := roots_eq_map_of_eq_C_mul_prod_X_sub_C (ne_zero_of_coe_le_degree hx.ge) hb
+  -- matched roots away from `c` stay away from `c`, and `g` moves little along them
+  have hne (i : Fin d) (hi : a i ≠ c) : b i ≠ c ∧ ‖g (b i) - g (a i)‖ < η / (d + 1) :=
+    hδ (a i) (Finset.mem_filter.2 ⟨Multiset.mem_toFinset.2
+      (hra ▸ Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)), hi⟩) (b i)
+      (by rw [norm_sub_rev]; exact hab i)
+  -- matched roots at `c` stay at `c`, as `F x` and `F x₀` have equally many roots at `c`
+  have hbc := forall_eq_of_count_map_eq (fun i hi => (hne i hi).1) <| by
+    rw [← hra, ← hrb, count_roots, count_roots, hcx]
+  rw [dist_eq_norm, hra, hrb, Multiset.map_map, Multiset.map_map, ← Finset.sum_eq_multiset_sum,
+    ← Finset.sum_eq_multiset_sum, ← Finset.sum_sub_distrib]
+  calc ‖∑ i, ((g ∘ b) i - (g ∘ a) i)‖ ≤ ∑ i, ‖g (b i) - g (a i)‖ := norm_sum_le _ _
+    _ ≤ ∑ _i : Fin d, η / (d + 1) := Finset.sum_le_sum fun i _ => by
+      by_cases hi : a i = c
+      · simp [hi, hbc i hi, hη'.le]
+      · exact (hne i hi).2.le
+    _ < η := by
+      rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_div_assoc',
+        div_lt_iff₀ (by positivity)]
+      nlinarith
 
 end Continuity
 

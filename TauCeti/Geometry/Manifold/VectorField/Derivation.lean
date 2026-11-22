@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.RingTheory.Derivation.Lie
+public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.DerivationBundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -28,6 +30,8 @@ bump-localized coordinate functions.
 
 * `TauCeti.vectorFieldDerivation`: the derivation of smooth functions given by differentiation
   along a smooth vector field, as a linear map in the vector field.
+* `TauCeti.lineDerivation`: on a normed space, differentiation of smooth functions in a fixed
+  direction, the derivation of a constant vector field.
 * `Derivation.vectorField`: the tangent vector field of a derivation, read pointwise
   through `pointDerivationEquivTangentSpace`.
 * `TauCeti.derivationEquivSmoothVectorField`: the `C^∞(M, ℝ)`-linear equivalence between
@@ -35,6 +39,9 @@ bump-localized coordinate functions.
 
 ## Main results
 
+* `TauCeti.commute_lineDerivation`: directional derivatives of smooth functions commute.
+* `Module.Basis.lineDerivation_smoothCoord`: the partial derivatives along a basis are dual to
+  its coordinate functions.
 * `Derivation.mvfderiv_vectorField`: the inverse evaluation equation `δ f x = df_x (X x)`.
 * `Derivation.contMDiff_vectorField`: the vector field of a derivation is smooth.
 * `TauCeti.exists_derivationEquivSmoothVectorField`: derivations of `C^∞(M, ℝ)` are
@@ -133,6 +140,90 @@ end VectorFieldDerivation
 
 end ContMDiffSection
 
+namespace TauCeti
+
+section VectorFieldDerivation
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- The support of the derivative of a smooth function along a smooth vector field lies in the
+support of the function. -/
+theorem tsupport_vectorFieldDerivation_apply_subset
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (f : C^∞⟮I, M; 𝕜⟯) :
+    tsupport (vectorFieldDerivation X f) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
+  by_contra h
+  have hf : (f : M → 𝕜) =ᶠ[𝓝 x] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 h
+  simp [Function.mem_support, ContMDiffSection.vectorFieldDerivation_apply_apply, hf.mvfderiv_eq,
+    mvfderiv_const] at hx
+
+end VectorFieldDerivation
+
+section LineDerivation
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+variable (𝕜) in
+/-- Differentiation of smooth functions on `E` in the direction `v`, `f ↦ (x ↦ df_x v)`, as a
+derivation of `C^∞(E)`: the derivation `TauCeti.vectorFieldDerivation` of the constant vector
+field `v`. -/
+def lineDerivation (v : E) : Derivation 𝕜 C^∞⟮𝓘(𝕜, E), E; 𝕜⟯ C^∞⟮𝓘(𝕜, E), E; 𝕜⟯ :=
+  vectorFieldDerivation
+    ⟨fun _ ↦ v, contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const 𝓘(𝕜, E) v ∞⟩
+
+@[simp]
+theorem lineDerivation_apply_apply (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯) (x : E) :
+    lineDerivation 𝕜 v f x = fderiv 𝕜 f x v :=
+  (ContMDiffSection.vectorFieldDerivation_apply_apply _ f x).trans (mvfderiv_eq_fderiv_apply f x v)
+
+/-- The support of a directional derivative lies in the support of the function. -/
+theorem tsupport_lineDerivation_apply_subset (v : E) (f : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯) :
+    tsupport (lineDerivation 𝕜 v f) ⊆ tsupport f :=
+  tsupport_vectorFieldDerivation_apply_subset _ f
+
+/-- Directional derivatives of smooth functions commute, by the symmetry of second
+derivatives. -/
+theorem commute_lineDerivation {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (v w : E) :
+    Commute (lineDerivation 𝕜 v : Module.End 𝕜 C^∞⟮𝓘(𝕜, E), E; 𝕜⟯) (lineDerivation 𝕜 w) := by
+  refine LinearMap.ext fun f ↦ ContMDiffMap.ext fun x ↦ ?_
+  have hf : ContDiff 𝕜 ∞ f := f.contMDiff.contDiff
+  have hdf : DifferentiableAt 𝕜 (fderiv 𝕜 f) x :=
+    (hf.fderiv_right (m := ∞) (by simp)).differentiable (by simp) x
+  simp only [mul_apply_eq_comp, Derivation.coeFn_coe, lineDerivation_apply_apply]
+  rw [funext (lineDerivation_apply_apply w f), funext (lineDerivation_apply_apply v f),
+    fderiv_clm_apply hdf (differentiableAt_const w),
+    fderiv_clm_apply hdf (differentiableAt_const v)]
+  simp [(hf.contDiffAt.isSymmSndFDerivAt (by simp)).eq v w]
+
+end LineDerivation
+
+end TauCeti
+
+namespace Module.Basis
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {E : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {ι : Type*}
+  (b : Module.Basis ι 𝕜 E)
+
+/-- The partial derivatives along a basis are dual to its coordinate functions. -/
+theorem lineDerivation_smoothCoord [DecidableEq ι] (i j : ι) :
+    TauCeti.lineDerivation 𝕜 (b i) (b.smoothCoord j) = if j = i then 1 else 0 := by
+  ext x
+  have : fderiv 𝕜 (b.coord j) x = LinearMap.toContinuousLinearMap (b.coord j) :=
+    (LinearMap.toContinuousLinearMap (b.coord j)).fderiv
+  -- Rewrite the smooth coordinate function to the linear coordinate functional.
+  rw [TauCeti.lineDerivation_apply_apply, show ⇑(b.smoothCoord j) = b.coord j from
+    funext (b.smoothCoord_apply j), this, LinearMap.coe_toContinuousLinearMap', coord_apply,
+    repr_self]
+  split_ifs with h <;> simp [h]
+
+end Module.Basis
+
 section DerivationVectorField
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -204,7 +295,7 @@ smooth because `δ` takes values in smooth functions. -/
 theorem contMDiff_vectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) :
     ContMDiff I I.tangent ∞ (T% δ.vectorField) := by
   intro x₀
-  rw [contMDiffAt_section]
+  rw [contMDiffAt_section_iff]
   -- A globally smooth map with the germ of the extended chart at `x₀`.
   obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x₀
   -- Composing with the coordinates of a basis gives smooth scalar coordinate functions.
@@ -287,6 +378,15 @@ end ContMDiffSection
 
 namespace TauCeti
 
+/-- The vector field of the directional derivative `∂_w` is the constant field `w`. -/
+@[simp]
+theorem vectorField_lineDerivation (w x : E) : (lineDerivation ℝ w).vectorField x = w :=
+  ContMDiffSection.vectorField_vectorFieldDerivation _ x
+
+end TauCeti
+
+namespace TauCeti
+
 /-- **Derivations are smooth vector fields.** On a finite-dimensional, Hausdorff, boundaryless
 real manifold, sending a derivation of `C^∞(M, ℝ)` to its vector field is a `C^∞(M, ℝ)`-linear
 equivalence onto the smooth sections of the tangent bundle; its inverse differentiates along the
@@ -325,6 +425,11 @@ open TauCeti
 theorem derivationEquivSmoothVectorField_apply_apply
     (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) (x : M) :
     derivationEquivSmoothVectorField δ x = δ.vectorField x :=
+  (rfl)
+
+/-- The equivalence sends a derivation to its vector field, as functions. -/
+theorem coe_derivationEquivSmoothVectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) :
+    ⇑(derivationEquivSmoothVectorField δ) = δ.vectorField :=
   (rfl)
 
 end Derivation

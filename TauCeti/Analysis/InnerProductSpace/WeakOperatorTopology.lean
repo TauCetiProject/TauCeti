@@ -5,19 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Slope
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.CStarAlgebra.ProjectionDilation
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 
 /-!
-# Weak operator limits of projections
+# Weak operator limits of projections and finite-dimensional entry convergence
 
 On a complete inner product space `E`, order intervals `Set.Icc a b` of bounded operators, for
-the Loewner order, are closed in the weak operator topology. On an infinite-dimensional complex
-Hilbert space `H` the weak operator closure of the orthogonal projections is exactly the set of
-positive contractions `0 ≤ a ≤ 1`.
+the Loewner order, and the self-adjoint operators are closed in the weak operator topology. On an
+infinite-dimensional complex Hilbert space `H` the weak operator closure of the orthogonal
+projections is exactly the set of positive contractions `0 ≤ a ≤ 1`.
 
 Projections are positive contractions, and positive contractions form a weak operator closed
 set. Conversely, fix a positive contraction `a` and a finite-dimensional subspace `K`. When the
@@ -31,6 +33,11 @@ vectors gives a net converging to `a` in the weak operator topology. No separabi
 The dimension hypothesis cannot be dropped: on `ℂ` the projections are `0` and `1`, while `1/2`
 is a positive contraction.
 
+For operators from a finite-dimensional normed space to a finite-dimensional inner-product
+space over `ℝ` or `ℂ`, convergence of every inner-product entry implies convergence in operator
+norm. The proof passes through Mathlib's weak operator topology; its linear equivalence with
+continuous linear maps is continuous because the operator space is finite-dimensional.
+
 ## Main statements
 
 * `Submodule.exists_isStarProjection_starProjection_mul_mul_eq`: if `Kᗮ` is at least as large
@@ -40,9 +47,15 @@ is a positive contraction.
 * `ContinuousLinearMapWOT.isClosed_setOf_isPositive`: the positive operators form a weak
   operator closed set.
 * `ContinuousLinearMapWOT.isClosed_image_ofCLM_Icc`: order intervals are weak operator closed.
+* `ContinuousLinearMapWOT.isClosed_image_ofCLM_setOf_isSelfAdjoint`: the self-adjoint operators
+  form a weak operator closed set.
 * `ContinuousLinearMapWOT.closure_isStarProjection_eq_positive_contractions`: on an
   infinite-dimensional complex Hilbert space, the weak operator closure of the projections is the
   set of positive contractions.
+* `ContinuousLinearMap.tendsto_of_forall_inner_apply_tendsto`: in finite dimension, convergence
+  of inner-product entries gives operator-norm convergence.
+* `ContinuousLinearMap.hasDerivAt_of_forall_inner_apply_hasDerivAt`: in finite dimension,
+  derivatives of inner-product entries give the operator-norm derivative.
 
 ## References
 
@@ -106,6 +119,20 @@ theorem isClosed_image_ofCLM_Iic {b : E →L[𝕜] E} :
   obtain ⟨T, rfl⟩ := ofCLM_surjective T
   simp [ofCLM_injective.mem_set_image, ← ofCLM_neg]
 
+/-- Adjoints on the weak operator copy are computed on the underlying operators. -/
+@[simp]
+theorem ofCLM_star (T : E →L[𝕜] E) : ofCLM (star T) = star (ofCLM T) :=
+  rfl
+
+/-- The self-adjoint operators form a weak operator closed set. -/
+theorem isClosed_image_ofCLM_setOf_isSelfAdjoint :
+    IsClosed (ofCLM '' {T : E →L[𝕜] E | IsSelfAdjoint T}) := by
+  convert isClosed_setOfPred_isSelfAdjoint (α := E →WOT[𝕜] E) using 1
+  ext T
+  obtain ⟨T, rfl⟩ := ofCLM_surjective T
+  rw [ofCLM_injective.mem_set_image, Set.mem_ofPred_eq, Set.mem_ofPred_eq, IsSelfAdjoint,
+    IsSelfAdjoint, ← ofCLM_star, ofCLM_injective.eq_iff]
+
 /-- Order intervals of operators, for the Loewner order, are weak operator closed. -/
 theorem isClosed_image_ofCLM_Icc {a b : E →L[𝕜] E} :
     IsClosed (ofCLM '' Set.Icc a b) := by
@@ -153,3 +180,46 @@ theorem closure_isStarProjection_eq_positive_contractions (hH : ¬ FiniteDimensi
   exact (hpa s x (hs (by simp)) y (hs (by simp))).symm
 
 end ContinuousLinearMapWOT
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+
+/-- In finite dimension, convergence of inner-product entries gives operator-norm convergence. -/
+theorem tendsto_of_forall_inner_apply_tendsto {α : Type*} {l : Filter α}
+    {A : α → E →L[𝕜] F} {B : E →L[𝕜] F}
+    (h : ∀ x y, Tendsto (fun a ↦ ⟪y, A a x⟫_𝕜) l (𝓝 ⟪y, B x⟫_𝕜)) :
+    Tendsto A l (𝓝 B) := by
+  have := FiniteDimensional.completeSpace 𝕜 F
+  have : FiniteDimensional 𝕜 (E →WOT[𝕜] F) :=
+    FiniteDimensional.of_injective (ContinuousLinearMapWOT.linearEquiv 𝕜).toLinearMap
+      (ContinuousLinearMapWOT.linearEquiv 𝕜).injective
+  let e : (E →WOT[𝕜] F) ≃ₗ[𝕜] (E →L[𝕜] F) := ContinuousLinearMapWOT.linearEquiv 𝕜
+  have hc : Continuous (ContinuousLinearMapWOT.toCLM (σ := RingHom.id 𝕜) :
+      (E →WOT[𝕜] F) → E →L[𝕜] F) := by
+    convert e.toLinearMap.continuous_of_finiteDimensional using 1
+    funext T
+    exact (ContinuousLinearMapWOT.linearEquiv_apply 𝕜 T).symm
+  have hw : Tendsto (fun a ↦ ContinuousLinearMapWOT.ofCLM (A a)) l
+      (𝓝 (ContinuousLinearMapWOT.ofCLM B)) :=
+    ContinuousLinearMapWOT.tendsto_iff_forall_inner_apply_tendsto.mpr h
+  exact hc.continuousAt.tendsto.comp hw
+
+/-- Inner-product entry derivatives determine finite-dimensional operator-norm derivatives. -/
+theorem hasDerivAt_of_forall_inner_apply_hasDerivAt {A : 𝕜 → E →L[𝕜] F}
+    {B : E →L[𝕜] F} {t : 𝕜}
+    (h : ∀ x y, HasDerivAt (fun u ↦ ⟪y, A u x⟫_𝕜) ⟪y, B x⟫_𝕜 t) :
+    HasDerivAt A B t := by
+  rw [hasDerivAt_iff_tendsto_slope]
+  apply tendsto_of_forall_inner_apply_tendsto
+  intro x y
+  have heq : (fun u ↦ ⟪y, slope A t u x⟫_𝕜) = slope (fun u ↦ ⟪y, A u x⟫_𝕜) t := by
+    funext u
+    simp only [slope_def_module, smul_apply, sub_apply, inner_smul_right,
+      inner_sub_right, smul_eq_mul]
+  rw [heq]
+  exact (h x y).tendsto_slope
+
+end ContinuousLinearMap

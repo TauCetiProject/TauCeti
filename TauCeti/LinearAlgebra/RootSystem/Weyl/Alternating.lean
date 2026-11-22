@@ -69,11 +69,10 @@ every result below.
 
 ## References
 
-This is the "concluding by Weyl alternation" step of the Weyl character formula route fixed by
-Layer 6 ("the Weyl character, dimension, and Kostant formulas") of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. As with `TauCeti.weylNumerator`
-and `TauCeti.weylDenominator`, nothing here needs a Lie algebra, so it is stated for an abstract
-root pairing and the Lie-algebra statement is a specialization rather than a rebuild.
+This is the Weyl-alternation step that concludes the proof of the Weyl character formula. As with
+`TauCeti.weylNumerator` and `TauCeti.weylDenominator`, nothing here needs a Lie algebra, so it is
+stated for an abstract root pairing and the Lie-algebra statement is a specialization rather than a
+rebuild.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.2.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII, §7.
@@ -221,7 +220,7 @@ variable [Invertible (2 : R)] [P.IsCrystallographic] [P.IsReduced]
 
 section Numerator
 
-variable [P.flip.IsReduced] [Fintype P.weylGroup]
+variable [Fintype P.weylGroup]
 
 /-- **The numerator of a weight of the open dot chamber vanishes at every other weight of that
 chamber**: the chamber meets each dot orbit at most once. -/
@@ -229,6 +228,7 @@ chamber**: the chamber meets each dot orbit at most once. -/
 theorem coeff_weylNumerator_eq_zero_of_mem_openDotDominantChamber {lam nu : M}
     (hlam : lam ∈ openDotDominantChamber P b) (hnu : nu ∈ openDotDominantChamber P b)
     (hne : lam ≠ nu) : (weylNumerator P b lam).coeff nu = 0 :=
+  have := P.flip_isReduced
   coeff_weylNumerator_eq_zero P b fun _ hw ↦
     hne (eq_of_dotAction_eq_of_mem_openDotDominantChamber P b hlam hnu hw).symm
 
@@ -283,7 +283,7 @@ end Determination
 
 section Basis
 
-variable [P.flip.IsReduced] [P.IsRootSystem] [Fintype P.weylGroup]
+variable [P.IsRootSystem] [Fintype P.weylGroup]
 
 open scoped Classical in
 /-- **An alternating element is the combination of the Weyl numerators of the weights of the open
@@ -352,7 +352,7 @@ noncomputable def weylNumeratorBasis :
         rw [Finset.sum_image fun x _ y _ h ↦ Subtype.ext h]
         simpa [hcval] using congrArg Subtype.val hg
       have := eq_zero_of_sum_smul_weylNumerator_eq_zero
-        (fun nu hnu ↦ by obtain ⟨nu, -, rfl⟩ := Finset.mem_image.mp hnu; exact nu.2) hsum
+        (fun nu hnu ↦ by obtain ⟨nu, -, rfl⟩ := Finset.mem_image.mp hnu; exact nu.property) hsum
         (Finset.mem_image_of_mem _ hmu)
       rwa [hcval] at this)
     (by
@@ -370,7 +370,7 @@ noncomputable def weylNumeratorBasis :
         exact hf.eq_sum_weylNumerator
       rw [key]
       exact Submodule.sum_mem _ fun mu _ ↦ Submodule.smul_mem _ _
-        (Submodule.subset_span ⟨⟨(mu : M), (Finset.mem_filter.mp mu.2).2⟩, rfl⟩))
+        (Submodule.subset_span ⟨⟨(mu : M), (Finset.mem_filter.mp mu.property).2⟩, rfl⟩))
 
 variable (P b) in
 /-- The basis vector of `TauCeti.weylNumeratorBasis` at a weight of the open dot chamber is the
@@ -394,9 +394,10 @@ lemma weylNumeratorBasis_repr_apply (f : dotAlternatingSubmodule P b)
       simp only [SetLike.val_smul, AddMonoidAlgebra.coeff_smul_apply, Pi.smul_apply])
     (fun mu ↦ funext fun nu ↦ ?_) f mu
   rcases eq_or_ne nu mu with rfl | hne
-  · simp [coeff_weylNumerator_self_of_mem_openDotDominantChamber P b nu.2]
+  · simp [coeff_weylNumerator_self_of_mem_openDotDominantChamber P b nu.property]
   · rw [Finsupp.single_eq_of_ne hne]
-    simpa using coeff_weylNumerator_eq_zero_of_mem_openDotDominantChamber P b mu.2 nu.2
+    simpa using coeff_weylNumerator_eq_zero_of_mem_openDotDominantChamber P b mu.property
+        nu.property
       fun h ↦ hne (Subtype.ext h).symm
 
 /-- **An alternating element whose only nonvanishing coefficient on the open dot chamber is a `1`

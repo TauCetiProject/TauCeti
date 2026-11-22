@@ -39,15 +39,15 @@ public section
 
 open Asymptotics Filter Topology
 
-namespace TauCeti
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E]
+
+namespace DifferentiableAt
 
 /-- A function differentiable at a point `p` of an affine hyperplane `ℓ = b` and vanishing on the
 hyperplane near `p` has differential at `p` vanishing on the kernel of `ℓ`, the direction of the
 hyperplane. -/
-theorem _root_.DifferentiableAt.fderiv_apply_eq_zero_of_eventually_eq_zero {F : Type*}
+theorem fderiv_apply_eq_zero_of_eventually_eq_zero {F : Type*}
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] {H : E → F} {ℓ : E →L[𝕜] 𝕜} {b : 𝕜} {p : E}
     (hH : DifferentiableAt 𝕜 H p) (hp : ℓ p = b) (hzero : ∀ᶠ x in 𝓝 p, ℓ x = b → H x = 0)
     {u : E} (hu : ℓ u = 0) : fderiv 𝕜 H p u = 0 := by
@@ -62,11 +62,15 @@ theorem _root_.DifferentiableAt.fderiv_apply_eq_zero_of_eventually_eq_zero {F : 
     exact hs (by simp [hu, hp])
   exact hd.unique ((hasDerivAt_const (0 : 𝕜) (0 : F)).congr_of_eventuallyEq h0)
 
+end DifferentiableAt
+
+namespace AnalyticAt
+
 /-- **Two local equations of an affine hyperplane meet an analytic curve to the same order.** Let
 `γ` be analytic at `w` with `γ w` on the hyperplane `ℓ = b`, and let `H` be analytic at `γ w` with
 nonzero differential there and vanishing on the hyperplane near `γ w`. Then `H ∘ γ` and `ℓ ∘ γ - b`
 have the same order of vanishing at `w`. -/
-theorem _root_.AnalyticAt.analyticOrderAt_comp_eq_analyticOrderAt_sub {H : E → 𝕜} {γ : 𝕜 → E}
+theorem analyticOrderAt_comp_eq_analyticOrderAt_sub {H : E → 𝕜} {γ : 𝕜 → E}
     {ℓ : E →L[𝕜] 𝕜} {b w : 𝕜} (hH : AnalyticAt 𝕜 H (γ w)) (hH' : fderiv 𝕜 H (γ w) ≠ 0)
     (hγ : AnalyticAt 𝕜 γ w) (hw : ℓ (γ w) = b) (hzero : ∀ᶠ x in 𝓝 (γ w), ℓ x = b → H x = 0) :
     analyticOrderAt (fun t => H (γ t)) w = analyticOrderAt (fun t => ℓ (γ t) - b) w := by
@@ -111,6 +115,6 @@ theorem _root_.AnalyticAt.analyticOrderAt_comp_eq_analyticOrderAt_sub {H : E →
   exact (hH.comp hγ).analyticOrderAt_eq_of_isTheta
     (((ℓ.analyticAt _).comp hγ).sub analyticAt_const) hΘ
 
-end TauCeti
+end AnalyticAt
 
 end

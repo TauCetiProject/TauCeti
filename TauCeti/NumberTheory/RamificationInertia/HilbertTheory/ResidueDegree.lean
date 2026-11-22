@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.RamificationInertia.HilbertTheory
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import TauCeti.NumberTheory.RamificationInertia.Galois
+import TauCeti.RingTheory.Localization.FiniteDimensional
 
 /-!
 # Hilbert theory over arbitrary residue fields
@@ -77,6 +78,7 @@ theorem IsDecompositionField.finrank_eq_ncard_primesOver [IsGalois K L]
 
 variable (E : Type*) [Field E] [Algebra E L] [IsInertiaField K L P E]
 
+omit [FiniteDimensional K L] in
 include K P in
 /-- The degree above the inertia field is the ramification index times the inseparable
 residue degree. -/
@@ -87,6 +89,7 @@ theorem IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree [IsDomain A
   rw [← IsGaloisGroup.card_eq_finrank (inertia Gal(L/K) P) E L]
   exact P.card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := A) (G := Gal(L/K))
 
+omit [FiniteDimensional K L] in
 include K P in
 /-- When the residue extension at `P` is separable, the degree above the inertia field is the
 ramification index. This is Mathlib's `IsInertiaField.rank_left` with separability assumed only at
@@ -122,25 +125,27 @@ variable (A K L : Type*) {B : Type*} [Field K] [Field L] [Algebra K L]
   (D 𝓞D : Type*) [Field D] [Algebra D L] [IsDecompositionField K L P D] [CommRing 𝓞D]
   [Algebra 𝓞D D] [IsFractionRing 𝓞D D] [Algebra 𝓞D B] [Algebra 𝓞D L]
   [IsScalarTower 𝓞D D L] [IsScalarTower 𝓞D B L]
-  [IsGalois K L] [FiniteDimensional K L] [IsDedekindDomain A] [IsDomain B]
+  [IsGalois K L] [IsDedekindDomain A]
   [Module.Finite A B] [Algebra A 𝓞D] [IsScalarTower A 𝓞D B] [IsDedekindDomain 𝓞D] [P.IsMaximal]
 
-omit [FiniteDimensional K L] [P.IsMaximal] in
+omit [P.IsMaximal] in
 include K L D P in
 private theorem instances :
-    Module.Finite 𝓞D B ∧ Module.IsTorsionFree 𝓞D B ∧ Module.IsTorsionFree A B ∧
+    IsDomain B ∧ Module.Finite 𝓞D B ∧ Module.IsTorsionFree 𝓞D B ∧ Module.IsTorsionFree A B ∧
       IsGaloisGroup Gal(L/K) A B ∧ IsGaloisGroup (stabilizer Gal(L/K) P) 𝓞D B := by
+  have : IsDomain B := .of_faithfulSMul B L
   have : Module.Finite 𝓞D B := Module.Finite.right A 𝓞D B
   -- The fraction-field embeddings make both ring maps injective.
   have : FaithfulSMul A B := .of_field_isFractionRing A B K L
   have : FaithfulSMul 𝓞D B := .of_field_isFractionRing 𝓞D B D L
-  exact ⟨inferInstance, inferInstance, inferInstance,
+  exact ⟨inferInstance, inferInstance, inferInstance, inferInstance,
     .of_isFractionRing _ _ _ K L, .of_isFractionRing _ _ _ D L⟩
 
 include K L D P in
 private theorem ramificationIdx_eq_and_inertiaDeg_eq :
     P.ramificationIdx 𝓞D = P.ramificationIdx A ∧ P.inertiaDeg 𝓞D = P.inertiaDeg A := by
-  obtain ⟨_, _, _, _, _⟩ := instances A K L P D 𝓞D
+  obtain ⟨_, _, _, _, _, _⟩ := instances A K L P D 𝓞D
+  have : FiniteDimensional K L := IsFractionRing.finiteDimensional_of_finite A B K L
   refine eq_and_eq_of_pos_of_le_of_mul_le_mul
     (ramificationIdx_pos 𝓞D P) (inertiaDeg_pos P 𝓞D)
     ((P.under 𝓞D).ramificationIdx_above_le P) (inertiaDeg_above_le (P.under 𝓞D) P) ?_
@@ -168,7 +173,7 @@ theorem inertiaDeg_eq : P.inertiaDeg 𝓞D = P.inertiaDeg A :=
 include K L D P in
 /-- The prime contracted to the decomposition ring has ramification index one over the base. -/
 theorem ramificationIdx_under_eq_one : (P.under 𝓞D).ramificationIdx A = 1 := by
-  obtain ⟨_, _, _, _, _⟩ := instances A K L P D 𝓞D
+  obtain ⟨_, _, _, _, _, _⟩ := instances A K L P D 𝓞D
   have h := ramificationIdx_tower (R := A) (P.under 𝓞D) P
   rw [ramificationIdx_eq A K L P D 𝓞D] at h
   exact (right_eq_mul₀ (ramificationIdx_pos A P).ne').mp h
@@ -177,7 +182,7 @@ include K L D P in
 /-- The prime contracted to the decomposition ring has residue degree one over the base,
 even when the residue extension at `P` is inseparable. -/
 theorem inertiaDeg_under_eq_one : (P.under 𝓞D).inertiaDeg A = 1 := by
-  obtain ⟨_, _, _, _, _⟩ := instances A K L P D 𝓞D
+  obtain ⟨_, _, _, _, _, _⟩ := instances A K L P D 𝓞D
   have h := inertiaDeg_tower (R := A) (P.under 𝓞D) P
   rw [inertiaDeg_eq A K L P D 𝓞D] at h
   exact (right_eq_mul₀ (inertiaDeg_pos P A).ne').mp h

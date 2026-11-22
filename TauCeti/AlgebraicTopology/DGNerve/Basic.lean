@@ -104,12 +104,14 @@ theorem Coherences.congr {X : Fin (n + 1) → C} (f : Coherences R X) {i j : Fin
 /-- Composites of coherences indexed by equal sets of interior vertices agree. -/
 theorem Coherences.dgComp_congr {X : Fin (n + 1) → C} (f : Coherences R X)
     {i t j : Fin (n + 1)} {S₁ S₁' S₂ S₂' : Finset (Fin (n + 1))} {p p' q q' r : ℤ}
-    (h₁ : S₁ = S₁') (h₂ : S₂ = S₂') (hp : p = p') (hq : q = q') {hit : i ≤ t} {htj : t ≤ j}
+    (h₁ : S₁ = S₁') (h₂ : S₂ = S₂') {hit : i ≤ t} {htj : t ≤ j}
     {hS₁ : S₁ ⊆ Ioo i t} {hS₁' : S₁' ⊆ Ioo i t} {hS₂ : S₂ ⊆ Ioo t j} {hS₂' : S₂' ⊆ Ioo t j}
     {hp₁ : p + #S₁ = 0} {hp₁' : p' + #S₁' = 0} {hq₂ : q + #S₂ = 0} {hq₂' : q' + #S₂' = 0}
     {e : p + q = r} {e' : p' + q' = r} :
     dgComp R (f i t S₁ p hit hS₁ hp₁) (f t j S₂ q htj hS₂ hq₂) e =
       dgComp R (f i t S₁' p' hit hS₁' hp₁') (f t j S₂' q' htj hS₂' hq₂') e' := by
+  have hp : p = p' := by subst h₁; omega
+  have hq : q = q' := by subst h₂; omega
   subst h₁ h₂ hp hq
   rfl
 
@@ -121,16 +123,16 @@ nerve. For `i ≤ j` and interior vertices `S`, writing `σ t = (-1) ^ #{s ∈ S
 noncomputable def boundary {X : Fin (n + 1) → C} (f : Coherences R X) (i j : Fin (n + 1))
     (S : Finset (Fin (n + 1))) (d : ℤ) (hij : i ≤ j) (hS : S ⊆ Ioo i j) (hd : d + #S = 0) :
     DGHom R (d + 1) (X i) (X j) :=
-  ∑ t ∈ S.attach, (#{s ∈ S | t.1 ≤ s} : ℤ).negOnePow •
+  ∑ t ∈ S.attach, (#{s ∈ S | t.val ≤ s} : ℤ).negOnePow •
     (f i j (S.erase t) (d + 1) hij ((erase_subset _ _).trans hS)
-        (add_one_add_card_erase_eq_zero t.2 hd) -
-      (#{s ∈ S | s < t.1} * #{s ∈ S | t.1 < s} : ℤ).negOnePow •
+        (add_one_add_card_erase_eq_zero t.property hd) -
+      (#{s ∈ S | s < t.val} * #{s ∈ S | t.val < s} : ℤ).negOnePow •
         dgComp R
-          (f i t {s ∈ S | s < t.1} _ (mem_Ioo.1 (hS t.2)).1.le (filter_lt_subset_Ioo hS)
+          (f i t {s ∈ S | s < t.val} _ (mem_Ioo.1 (hS t.property)).1.le (filter_lt_subset_Ioo hS)
             (neg_add_cancel _))
-          (f t j {s ∈ S | t.1 < s} _ (mem_Ioo.1 (hS t.2)).2.le (filter_gt_subset_Ioo hS)
+          (f t j {s ∈ S | t.val < s} _ (mem_Ioo.1 (hS t.property)).2.le (filter_gt_subset_Ioo hS)
             (neg_add_cancel _))
-          (neg_card_filter_lt_add_neg_card_filter_gt t.2 hd))
+          (neg_card_filter_lt_add_neg_card_filter_gt t.property hd))
 
 /-- The defining formula of `TauCeti.DGNerve.boundary`. -/
 -- The degree and subset proofs are `by` blocks because the lemmas they cite are not part of this
@@ -138,16 +140,16 @@ noncomputable def boundary {X : Fin (n + 1) → C} (f : Coherences R X) (i j : F
 theorem boundary_def {X : Fin (n + 1) → C} (f : Coherences R X) (i j : Fin (n + 1))
     (S : Finset (Fin (n + 1))) (d : ℤ) (hij : i ≤ j) (hS : S ⊆ Ioo i j) (hd : d + #S = 0) :
     boundary R f i j S d hij hS hd =
-      ∑ t ∈ S.attach, (#{s ∈ S | t.1 ≤ s} : ℤ).negOnePow •
+      ∑ t ∈ S.attach, (#{s ∈ S | t.val ≤ s} : ℤ).negOnePow •
         (f i j (S.erase t) (d + 1) hij ((erase_subset _ _).trans hS)
-            (by exact add_one_add_card_erase_eq_zero t.2 hd) -
-          (#{s ∈ S | s < t.1} * #{s ∈ S | t.1 < s} : ℤ).negOnePow •
+            (by exact add_one_add_card_erase_eq_zero t.property hd) -
+          (#{s ∈ S | s < t.val} * #{s ∈ S | t.val < s} : ℤ).negOnePow •
             dgComp R
-              (f i t {s ∈ S | s < t.1} _ (mem_Ioo.1 (hS t.2)).1.le
+              (f i t {s ∈ S | s < t.val} _ (mem_Ioo.1 (hS t.property)).1.le
                 (by exact filter_lt_subset_Ioo hS) (neg_add_cancel _))
-              (f t j {s ∈ S | t.1 < s} _ (mem_Ioo.1 (hS t.2)).2.le
+              (f t j {s ∈ S | t.val < s} _ (mem_Ioo.1 (hS t.property)).2.le
                 (by exact filter_gt_subset_Ioo hS) (neg_add_cancel _))
-              (by exact neg_card_filter_lt_add_neg_card_filter_gt t.2 hd)) := by
+              (by exact neg_card_filter_lt_add_neg_card_filter_gt t.property hd)) := by
   rw [boundary]
 
 /-- The right-hand side of the dg nerve equation vanishes on the empty set of interior vertices,
@@ -166,13 +168,13 @@ theorem boundary_two {X : Fin 3 → C} (f : Coherences R X) :
           (f 1 2 ∅ 0 (by decide) (empty_subset _) (by simp)) (by simp) -
         f 0 2 ∅ (-1 + 1) (by decide) (empty_subset _) (by simp) := by
   rw [boundary, sum_eq_single_of_mem ⟨1, mem_singleton_self 1⟩
-    (mem_attach _ _) fun t _ ht ↦ absurd (Subtype.ext (mem_singleton.1 t.2)) ht]
+    (mem_attach _ _) fun t _ ht ↦ absurd (Subtype.ext (mem_singleton.1 t.property)) ht]
   dsimp only
   have hσ : ((#{s ∈ ({1} : Finset (Fin 3)) | 1 ≤ s} : ℕ) : ℤ).negOnePow = -1 := by decide
   have hκ : ((#{s ∈ ({1} : Finset (Fin 3)) | s < 1} : ℕ) *
       (#{s ∈ ({1} : Finset (Fin 3)) | 1 < s} : ℕ) : ℤ).negOnePow = 1 := by decide
   rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, neg_sub]
-  exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide) (by simp) (by simp))
+  exact congrArg₂ (· - ·) (Coherences.dgComp_congr _ (by decide) (by decide))
     (Coherences.congr _ (by decide))
 
 /-- Coherences pulled back along a strictly monotone map `e`: the coherence indexed by `i`, `S`
@@ -218,24 +220,24 @@ theorem boundary_comap {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
       #{s ∈ S.image e | P s} = #{s ∈ S | P (e s)} := by
     rw [filter_image, card_image_of_injective _ he.injective]
   rw [boundary_def, boundary_def]
-  refine sum_bij (fun t _ ↦ ⟨e t, mem_image_of_mem e t.2⟩) (fun _ _ ↦ mem_attach _ _)
+  refine sum_bij (fun t _ ↦ ⟨e t, mem_image_of_mem e t.property⟩) (fun _ _ ↦ mem_attach _ _)
     (fun a _ b _ h ↦ Subtype.ext (he.injective (congrArg Subtype.val h))) (fun b _ ↦ ?_)
     fun t _ ↦ ?_
-  · obtain ⟨a, ha, hab⟩ := mem_image.1 b.2
+  · obtain ⟨a, ha, hab⟩ := mem_image.1 b.property
     exact ⟨⟨a, ha⟩, mem_attach _ _, Subtype.ext hab⟩
-  have hle : #{s ∈ S.image e | e t ≤ s} = #{s ∈ S | t.1 ≤ s} := by
+  have hle : #{s ∈ S.image e | e t ≤ s} = #{s ∈ S | t.val ≤ s} := by
     rw [hcard]
     simp only [he.le_iff_le]
-  have hlt : #{s ∈ S.image e | s < e t} = #{s ∈ S | s < t.1} := by
+  have hlt : #{s ∈ S.image e | s < e t} = #{s ∈ S | s < t.val} := by
     rw [hcard]
     simp only [he.lt_iff_lt]
-  have hgt : #{s ∈ S.image e | e t < s} = #{s ∈ S | t.1 < s} := by
+  have hgt : #{s ∈ S.image e | e t < s} = #{s ∈ S | t.val < s} := by
     rw [hcard]
     simp only [he.lt_iff_lt]
-  have e₁ : {s ∈ S | s < t.1}.image e = {s ∈ S.image e | s < e t} := by
+  have e₁ : {s ∈ S | s < t.val}.image e = {s ∈ S.image e | s < e t} := by
     rw [filter_image]
     simp only [he.lt_iff_lt]
-  have e₂ : {s ∈ S | t.1 < s}.image e = {s ∈ S.image e | e t < s} := by
+  have e₂ : {s ∈ S | t.val < s}.image e = {s ∈ S.image e | e t < s} := by
     rw [filter_image]
     simp only [he.lt_iff_lt]
   rw [hle]
@@ -243,7 +245,7 @@ theorem boundary_comap {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
   refine congrArg₂ (· - ·) (Coherences.congr f (image_erase he.injective _ _)) ?_
   congr 1
   · rw [hlt, hgt]
-  · exact Coherences.dgComp_congr f e₁ e₂ (by rw [hlt]) (by rw [hgt])
+  · exact Coherences.dgComp_congr f e₁ e₂
 
 variable (R C) in
 /-- An `n`-simplex of the differential graded nerve: objects `X 0, …, X n` with coherences
@@ -378,10 +380,26 @@ theorem dgComp_mapCoh_of_eq_right {i t j : Fin (m + 1)} {S₁ S₂ : Finset (Fin
 /-- Removing either of two interior vertices with the same image gives the same pulled-back
 coherence. -/
 theorem mapCoh_erase_eq_mapCoh_erase {i j u v : Fin (m + 1)} {S : Finset (Fin (m + 1))}
-    {d : ℤ} (hu : u ∈ S) (hv : v ∈ S) (h : α u = α v) {hij : i ≤ j}
+    {d : ℤ} (h : α u = α v) {hij : i ≤ j}
     {hSu : S.erase u ⊆ Ioo i j} {hSv : S.erase v ⊆ Ioo i j} {hdu : d + #(S.erase u) = 0}
     {hdv : d + #(S.erase v) = 0} :
     x.mapCoh α i j (S.erase u) d hij hSu hdu = x.mapCoh α i j (S.erase v) d hij hSv hdv := by
+  have hcard : #(S.erase u) = #(S.erase v) := by omega
+  by_cases huv : u ∈ S ∧ v ∈ S
+  swap
+  · have hn : u ∉ S ∧ v ∉ S := by
+      by_cases hu : u ∈ S <;> by_cases hv : v ∈ S
+      · exact absurd ⟨hu, hv⟩ huv
+      · rw [card_erase_of_mem hu, erase_eq_of_notMem hv] at hcard
+        have := card_pos.2 ⟨u, hu⟩
+        omega
+      · rw [erase_eq_of_notMem hu, card_erase_of_mem hv] at hcard
+        have := card_pos.2 ⟨v, hv⟩
+        omega
+      · exact ⟨hu, hv⟩
+    congr 1
+    rw [erase_eq_of_notMem hn.1, erase_eq_of_notMem hn.2]
+  obtain ⟨hu, hv⟩ := huv
   have himage : (S.erase u).image α = (S.erase v).image α := by
     ext y
     simp only [mem_image, mem_erase]
@@ -396,8 +414,6 @@ theorem mapCoh_erase_eq_mapCoh_erase {i j u v : Fin (m + 1)} {S : Finset (Fin (m
       · subst hsu
         exact ⟨v, ⟨fun hvu ↦ hsv hvu.symm, hv⟩, h.symm⟩
       · exact ⟨s, ⟨hsu, hs⟩, rfl⟩
-  have hcard : #(S.erase u) = #(S.erase v) := by
-    rw [card_erase_of_mem hu, card_erase_of_mem hv]
   by_cases hc : #((S.erase u).image α) = #(S.erase u) ∧ (S.erase u).image α ⊆ Ioo (α i) (α j)
   · have hc' : #((S.erase v).image α) = #(S.erase v) ∧
         (S.erase v).image α ⊆ Ioo (α i) (α j) := by rwa [← himage, ← hcard]
@@ -421,7 +437,8 @@ private lemma dgDifferential_mapCoh_eq_coh {a b : Fin (m + 1)} {T : Finset (Fin 
   have hmono : StrictMonoOn α T := (α.monotone.monotoneOn _).strictMonoOn_of_injOn hinj
   rw [x.mapCoh_eq_coh α h, x.dgDifferential_coh, boundary, boundary]
   symm
-  refine sum_bij (fun t _ ↦ ⟨α t.1, mem_image_of_mem α t.2⟩) (fun _ _ ↦ mem_attach _ _) ?_ ?_ ?_
+  refine sum_bij (fun t _ ↦ ⟨α t.val, mem_image_of_mem α t.property⟩) (fun _ _ ↦ mem_attach _ _) ?_
+      ?_ ?_
   · rintro ⟨t₁, h₁⟩ - ⟨t₂, h₂⟩ - he
     exact Subtype.ext (hinj h₁ h₂ (congrArg Subtype.val he))
   · rintro ⟨y, hy⟩ -
@@ -459,7 +476,7 @@ private lemma dgDifferential_mapCoh_eq_coh {a b : Fin (m + 1)} {T : Finset (Fin 
   · rw [← e₄, hcard]
   · exact Coherences.congr _ e₁
   · rw [← e₂, ← e₃, hcard, hcard]
-  · exact Coherences.dgComp_congr _ e₂ e₃ (by rw [← e₂, hcard]) (by rw [← e₃, hcard])
+  · exact Coherences.dgComp_congr _ e₂ e₃
 
 /-- Removing an interior vertex `t` other than two collapsed vertices `u < v` leaves a collapsed
 pair, so the corresponding face term of the dg nerve equation for the pullback vanishes. -/
@@ -628,7 +645,7 @@ private lemma boundary_mapCoh_eq_zero {a b : Fin (m + 1)} {T : Finset (Fin (m + 
           · exact ⟨huT, le_rfl⟩
           · exact ⟨hs, huv.le.trans hvs⟩
       rw [hσ, card_insert_of_notMem (fun hu ↦ (mem_filter.1 hu).2.not_gt huv),
-        x.mapCoh_erase_eq_mapCoh_erase α huT hvT hα (hSv := (erase_subset _ _).trans hT)
+        x.mapCoh_erase_eq_mapCoh_erase α hα (hSv := (erase_subset _ _).trans hT)
           (hdv := add_one_add_card_erase_eq_zero hvT hd)]
       simp [Int.negOnePow_succ]
     · rintro ⟨t, ht⟩ - hne
@@ -827,7 +844,7 @@ theorem coh_eq_dgComp_of_coh_eq_zero (x : Simplex R C n) {i t j : Fin (n + 1)} (
   have key := x.dgDifferential_coh i j {t} (-1) (hit.le.trans htj.le) (by simp [hit, htj])
     (by simp)
   rw [h, map_zero, boundary_def, sum_eq_single_of_mem ⟨t, mem_singleton_self t⟩ (mem_attach _ _)
-    fun s _ hs ↦ absurd (Subtype.ext (mem_singleton.1 s.2)) hs] at key
+    fun s _ hs ↦ absurd (Subtype.ext (mem_singleton.1 s.property)) hs] at key
   dsimp only at key
   have hσ : ((#{s ∈ ({t} : Finset (Fin (n + 1))) | t ≤ s} : ℕ) : ℤ).negOnePow = -1 := by
     rw [filter_singleton, ite_eq_left le_rfl, card_singleton, Nat.cast_one, Int.negOnePow_one]
@@ -837,7 +854,7 @@ theorem coh_eq_dgComp_of_coh_eq_zero (x : Simplex R C n) {i t j : Fin (n + 1)} (
       Int.negOnePow_zero]
   rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, eq_comm, neg_eq_zero, sub_eq_zero] at key
   exact (Coherences.congr _ (by simp)).trans (key.trans
-    (Coherences.dgComp_congr _ (by simp) (by simp) (by simp) (by simp)))
+    (Coherences.dgComp_congr _ (by simp) (by simp)))
 
 /-- When the Hom complexes vanish in degree `-1`, the edge from `i` to `j` of a simplex is the
 composite of the edges from `i` to `t` and from `t` to `j`, for all `i ≤ t ≤ j`. -/
@@ -861,7 +878,7 @@ theorem coh_eq_dgComp (h₁ : ∀ X Y : C, Subsingleton (DGHom R (-1) X Y)) (x :
     castDeg R (by simpa [Fin.eq_empty_of_subset_Ioo_of_le_two (by decide) hS] using hd.symm) <|
       match i, j, hij with
       | 0, 0, _ => dgId R X
-      | 0, 1, _ => f.1
+      | 0, 1, _ => f.val
       | 1, 1, _ => dgId R Y
   coh_self i := by
     fin_cases i <;> exact castDeg_self R rfl _
@@ -871,7 +888,7 @@ theorem coh_eq_dgComp (h₁ : ∀ X Y : C, Subsingleton (DGHom R (-1) X Y)) (x :
     simp only [castDeg_self, boundary, attach_empty, sum_empty]
     fin_cases i <;> fin_cases j
     · exact dgDifferential_dgId R X
-    · exact (mem_dgCycles R).1 f.2
+    · exact (mem_dgCycles R).1 f.property
     · exact absurd hij (by decide)
     · exact dgDifferential_dgId R Y
 
@@ -882,7 +899,7 @@ theorem edge_obj {X Y : C} (f : dgCycles R X Y) : (edge f).obj = ![X, Y] := rfl
 /-- The coherence of the edge at a closed morphism `f` is `f`. -/
 @[simp]
 theorem edge_coh_zero_one {X Y : C} (f : dgCycles R X Y) :
-    (edge f).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) = f.1 :=
+    (edge f).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) = f.val :=
   castDeg_self R rfl _
 
 /-- A coherence without interior vertices is a closed degree-zero morphism. -/
@@ -978,7 +995,7 @@ private lemma mk₂Coh_zero_two_empty {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X
 private lemma mk₂Coh_zero_two_singleton {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
     (h : DGHom R 0 X₀ X₂) (η : DGHom R (-1) X₀ X₂) {hij hS hd} :
     mk₂Coh f g h η 0 2 {1} (-1) hij hS hd = η := by
-  simp only [mk₂Coh, singleton_ne_empty, dite_false]
+  simp only [mk₂Coh, (singleton_nonempty _).ne_empty, dite_false]
   exact castDeg_self R _ η
 
 /-- The `2`-simplex of the differential graded nerve with edges `f : X₀ ⟶ X₁`, `g : X₁ ⟶ X₂` and
@@ -986,9 +1003,9 @@ private lemma mk₂Coh_zero_two_singleton {X₀ X₁ X₂ : C} (f : DGHom R 0 X�
 `d η = g ∘ f - h`. -/
 noncomputable def mk₂ {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
-    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) : Simplex R C 2 where
+    (hη : dgDifferential R (-1) η = dgCompZero R f.val g.val - h.val) : Simplex R C 2 where
   obj := ![X₀, X₁, X₂]
-  coh := mk₂Coh f.1 g.1 h.1 η
+  coh := mk₂Coh f.val g.val h.val η
   coh_self i := match i with
     | 0 => castDeg_self R _ (dgId R X₀)
     | 1 => castDeg_self R _ (dgId R X₁)
@@ -996,23 +1013,23 @@ noncomputable def mk₂ {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgC
   dgDifferential_coh i j S d hij hS hd := match i, j, hij with
     | 0, 0, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) (dgId R X₀)
       (dgDifferential_dgId R X₀) fun _ _ _ ↦ castDeg_self R _ _
-    | 0, 1, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) f.1
-      ((mem_dgCycles R).1 f.2) fun _ _ _ ↦ castDeg_self R _ _
+    | 0, 1, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) f.val
+      ((mem_dgCycles R).1 f.property) fun _ _ _ ↦ castDeg_self R _ _
     | 0, 2, _ => by
       rcases subset_singleton_iff.1 (hS.trans (by decide : Ioo (0 : Fin 3) 2 ⊆ {1})) with
         rfl | rfl
       · obtain rfl : d = 0 := by simpa using hd
         rw [boundary_empty, mk₂Coh_zero_two_empty]
-        exact (mem_dgCycles R).1 h.2
+        exact (mem_dgCycles R).1 h.property
       · obtain rfl : d = -1 := by simp at hd; omega
         rw [boundary_two, mk₂Coh_zero_two_singleton, mk₂Coh_zero_one, mk₂Coh_one_two]
         refine hη.trans ?_
         rw [dgCompZero_def]
-        exact congrArg (dgComp R f.1 g.1 _ - ·) (mk₂Coh_zero_two_empty f.1 g.1 h.1 η).symm
+        exact congrArg (dgComp R f.val g.val _ - ·) (mk₂Coh_zero_two_empty f.val g.val h.val η).symm
     | 1, 1, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) (dgId R X₁)
       (dgDifferential_dgId R X₁) fun _ _ _ ↦ castDeg_self R _ _
-    | 1, 2, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) g.1
-      ((mem_dgCycles R).1 g.2) fun _ _ _ ↦ castDeg_self R _ _
+    | 1, 2, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) g.val
+      ((mem_dgCycles R).1 g.property) fun _ _ _ ↦ castDeg_self R _ _
     | 2, 2, _ => dgDifferential_eq_boundary_of_Ioo_eq_empty _ (by decide) (dgId R X₂)
       (dgDifferential_dgId R X₂) fun _ _ _ ↦ castDeg_self R _ _
 
@@ -1020,7 +1037,7 @@ noncomputable def mk₂ {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgC
 @[simp]
 theorem mk₂_obj {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
-    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (hη : dgDifferential R (-1) η = dgCompZero R f.val g.val - h.val) :
     (mk₂ f g h η hη).obj = ![X₀, X₁, X₂] :=
   (rfl)
 
@@ -1028,9 +1045,9 @@ theorem mk₂_obj {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles 
 @[simp]
 theorem mk₂_coh_zero_two_singleton_heq {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁)
     (g : dgCycles R X₁ X₂) (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
-    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (hη : dgDifferential R (-1) η = dgCompZero R f.val g.val - h.val) :
     (mk₂ f g h η hη).coh 0 2 {1} (-1) (by decide) (by decide) (by simp) ≍ η :=
-  heq_of_eq (mk₂Coh_zero_two_singleton f.1 g.1 h.1 η (hij := by decide) (hS := by decide)
+  heq_of_eq (mk₂Coh_zero_two_singleton f.val g.val h.val η (hij := by decide) (hS := by decide)
     (hd := by simp))
 
 /-- The edge of a `2`-simplex opposite the vertex `2` carries its coherence from `0` to `1`. -/
@@ -1062,29 +1079,31 @@ theorem coh_map_δ_one (x : Simplex R C 2) :
 @[simp]
 theorem mk₂_map_δ_two {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
-    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (hη : dgDifferential R (-1) η = dgCompZero R f.val g.val - h.val) :
     (mk₂ f g h η hη).map (SimplexCategory.δ 2).toOrderHom = edge f :=
   (eq_edge _).trans (congrArg edge (Subtype.ext ((coh_map_δ_two (mk₂ f g h η hη)).trans
-    (mk₂Coh_zero_one f.1 g.1 h.1 η (hij := by decide) (hS := empty_subset _) (hd := by simp)))))
+    (mk₂Coh_zero_one f.val g.val h.val η (hij := by decide) (hS := empty_subset _) (hd
+        := by simp)))))
 
 /-- The face of `TauCeti.DGNerve.Simplex.mk₂` opposite the vertex `0` is the edge `g`. -/
 @[simp]
 theorem mk₂_map_δ_zero {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
-    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (hη : dgDifferential R (-1) η = dgCompZero R f.val g.val - h.val) :
     (mk₂ f g h η hη).map (SimplexCategory.δ 0).toOrderHom = edge g :=
   (eq_edge _).trans (congrArg edge (Subtype.ext ((coh_map_δ_zero (mk₂ f g h η hη)).trans
-    (mk₂Coh_one_two f.1 g.1 h.1 η (hij := by decide) (hS := empty_subset _) (hd := by simp)))))
+    (mk₂Coh_one_two f.val g.val h.val η (hij := by decide) (hS := empty_subset _) (hd
+        := by simp)))))
 
 /-- The face of `TauCeti.DGNerve.Simplex.mk₂` opposite the vertex `1` is the edge `h`. -/
 @[simp]
 theorem mk₂_map_δ_one {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
-    (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
+    (hη : dgDifferential R (-1) η = dgCompZero R f.val g.val - h.val) :
     (mk₂ f g h η hη).map (SimplexCategory.δ 1).toOrderHom =
       edge h :=
   (eq_edge _).trans (congrArg edge (Subtype.ext ((coh_map_δ_one (mk₂ f g h η hη)).trans
-    (mk₂Coh_zero_two_empty f.1 g.1 h.1 η (hij := by decide) (hS := empty_subset _)
+    (mk₂Coh_zero_two_empty f.val g.val h.val η (hij := by decide) (hS := empty_subset _)
       (hd := by simp)))))
 
 end Simplex
@@ -1196,7 +1215,7 @@ underlying `1`-simplex. The two sides are heterogeneously equal because the endp
 coherence are `X` and `Y` only propositionally. -/
 theorem edgeEquiv_symm_apply_heq {X Y : C}
     (e : (dgNerve R C).Edge ((dgNerveEquiv R C).symm X) ((dgNerveEquiv R C).symm Y)) :
-    ((edgeEquiv R C X Y).symm e).1 ≍
+    ((edgeEquiv R C X Y).symm e).val ≍
       Simplex.coh (R := R) e.edge 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) := by
   obtain ⟨f, rfl⟩ := (edgeEquiv R C X Y).surjective e
   rw [Equiv.symm_apply_apply, edgeEquiv_apply, edgeMk_edge, Simplex.edge_coh_zero_one]

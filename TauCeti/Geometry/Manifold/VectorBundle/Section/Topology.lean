@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Gluing
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CLMApply
 public import Mathlib.Topology.ContinuousMap.LocallyConvex
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 
@@ -68,7 +69,7 @@ def frameJet : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜]
     ∀ (i : ι) (x : U i) (m : {m : ℕ // m ≤ n}),
       C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F) :=
   LinearMap.pi fun i ↦ LinearMap.pi fun x ↦ LinearMap.pi fun m ↦
-    (ContMDiffMap.chartIteratedFDerivLinearMap x m m.2).comp
+    (ContMDiffMap.chartIteratedFDerivLinearMap x m m.property).comp
       ((e i).frameCoordinates (hU i))
 
 /-- The frame jet is the native chart derivative of the frame-coordinate function. -/
@@ -80,7 +81,7 @@ theorem frameJet_apply (s : Cₛ^n⟮I; F, V⟯) (i : ι) (x : U i)
       ∀ (i : ι) (x : U i) (m : {m : ℕ // m ≤ n}),
         C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×(m : ℕ)]→L[𝕜] F))
       (frameJet e U hU) s i x m =
-      ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) x m m.2 :=
+      ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) x m m.property :=
   ContMDiffMap.chartIteratedFDerivLinearMap_apply _ _ _ _
 
 /-- The topology of compact convergence of all available coordinate derivatives in the
@@ -120,11 +121,44 @@ theorem continuous_frameJet_apply (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n) :
   let _ := frameTopology (I := I) (n := n) e U hU
   exact (continuous_frameTopology_iff (I := I) (n := n) e U hU).mp continuous_id i x m hm
 
+/-- A frame-coordinate jet at a chosen coordinate point depends continuously on the section. -/
+theorem continuous_frameJetAt (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n)
+    (z : (extChartAt I x).target) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous ((e i).frameJetAt (hU i) x m hm z) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  rw [funext ((e i).frameJetAt_apply (hU i) x m hm z)]
+  exact (continuous_eval_const z).comp (continuous_frameJet_apply e U hU i x m hm)
+
 /-- Addition and subtraction are continuous for the frame topology. -/
 theorem isTopologicalAddGroup_frameTopology :
     let _ := frameTopology (I := I) (n := n) e U hU
     IsTopologicalAddGroup Cₛ^n⟮I; F, V⟯ :=
   isTopologicalAddGroup_induced (frameJet (I := I) e U hU)
+
+/-- The additive uniformity compatible with the existing compact derivative frame topology.
+It is supplied explicitly because the frame system is a parameter. -/
+@[expose, instance_reducible]
+def frameUniformSpace : UniformSpace Cₛ^n⟮I; F, V⟯ :=
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
+  IsTopologicalAddGroup.rightUniformSpace _
+
+/-- The frame uniformity retains the original compact derivative topology on sections. -/
+@[simp]
+theorem frameUniformSpace_toTopologicalSpace :
+    (frameUniformSpace (I := I) (n := n) e U hU).toTopologicalSpace =
+      frameTopology (I := I) (n := n) e U hU :=
+  (rfl)
+
+/-- The frame uniformity makes sections a uniform additive group. -/
+theorem isUniformAddGroup_frameUniformSpace :
+    let _ := frameUniformSpace (I := I) (n := n) e U hU
+    IsUniformAddGroup Cₛ^n⟮I; F, V⟯ := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
+  let _ := frameUniformSpace (I := I) (n := n) e U hU
+  exact isUniformAddGroup_of_addCommGroup
 
 /-- Joint scalar multiplication is continuous for the frame topology. -/
 theorem continuousSMul_frameTopology :
@@ -162,6 +196,37 @@ theorem continuous_frameTopology_iff_frameCoordinates {P : Type*} [TopologicalSp
     intro i x m hm
     exact (ContMDiffMap.continuous_chartIteratedFDeriv x m hm).comp (hs i)
 
+/-- A section map is continuous for the frame topologies if, on each common frame domain, its
+coordinates are a fixed continuous linear map applied to the source coordinates. The model map
+may depend on the frame index, but not on the base point or section. No covering assumption on
+the frame domains is required. -/
+theorem continuous_frameTopology_of_frameCoordinates_eq_clm_apply
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+    [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
+    [FiberBundle G W] [VectorBundle 𝕜 G W] [ContMDiffVectorBundle n G W I]
+    (e' : ι → Trivialization G (π G W)) [∀ i, MemTrivializationAtlas (e' i)]
+    (hU' : ∀ i, (U i : Set M) ⊆ (e' i).baseSet)
+    {f : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; G, W⟯} (L : ι → F →L[𝕜] G)
+    (hf : ∀ i s (x : U i),
+      (e' i).frameCoordinates (hU' i) (f s) x = L i ((e i).frameCoordinates (hU i) s x)) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    let _ := frameTopology (I := I) (n := n) e' U hU'
+    Continuous f := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let _ := frameTopology (I := I) (n := n) e' U hU'
+  apply (continuous_frameTopology_iff_frameCoordinates e' U hU').mpr
+  intro i
+  let A : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] G), F →L[𝕜] G⟯ := ContMDiffMap.const (L i)
+  have hc := (ContMDiffMap.continuous_clmApplyLinearMap A).comp
+    (continuous_frameCoordinates e U hU i)
+  refine hc.congr fun s ↦ ?_
+  apply ContMDiffMap.ext
+  intro x
+  dsimp only [Function.comp_apply]
+  rw [ContMDiffMap.clmApplyLinearMap_apply]
+  simpa only [A, ContMDiffMap.const, ContMDiffMap.coeFn_mk] using (hf i s x).symm
+
 /-- The topology on sections is induced by their tuple of weak Whitney frame coefficients,
 as well as by their coordinate jets. -/
 theorem isInducing_sectionFrameCoordinates :
@@ -171,10 +236,10 @@ theorem isInducing_sectionFrameCoordinates :
   let J : (∀ i, C^n⟮I, U i; 𝓘(𝕜, F), F⟯) →
       ∀ (i : ι) (x : U i) (m : {m : ℕ // m ≤ n}),
         C((extChartAt I x).target, E [×(m : ℕ)]→L[𝕜] F) :=
-    fun f i x m ↦ ContMDiffMap.chartIteratedFDeriv (f i) x m m.2
+    fun f i x m ↦ ContMDiffMap.chartIteratedFDeriv (f i) x m m.property
   have hJ : Continuous J := continuous_pi fun i ↦ continuous_pi fun x ↦
     continuous_pi fun m ↦
-      (ContMDiffMap.continuous_chartIteratedFDeriv x m m.2).comp (continuous_apply i)
+      (ContMDiffMap.continuous_chartIteratedFDeriv x m m.property).comp (continuous_apply i)
   have hcomp : J ∘ TauCeti.Manifold.sectionFrameCoordinates (I := I) e U hU =
       frameJet e U hU := by
     funext s i x m
@@ -253,7 +318,7 @@ theorem continuous_totalSpace_eval (hcover : ∀ x, ∃ i, x ∈ U i) :
       ContMDiffMap.continuous_eval_manifoldWeakWhitney.comp
         (((continuous_frameCoordinates e U hU i).comp continuous_fst).prodMk continuous_snd)
     have ht := (e i).continuousOn_symm.comp_continuous
-      ((continuous_subtype_val.comp continuous_snd).prodMk hc)
+      ((continuous_subtypeVal.comp continuous_snd).prodMk hc)
       (fun p ↦ ⟨hU i p.2.property, Set.mem_univ _⟩)
     exact ht.congr fun p ↦ by
       simp only [Function.comp_apply, Trivialization.frameCoordinates_apply,

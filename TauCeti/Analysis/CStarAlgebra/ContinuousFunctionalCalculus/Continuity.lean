@@ -35,11 +35,8 @@ variable {X R A : Type*} {p : A → Prop} [CommSemiring R] [StarRing R] [MetricS
 `cfc (F x) a → cfc f a`. No continuity of `F x` or `f` is needed. -/
 theorem tendsto_cfc_fun_of_finite_spectrum {l : Filter X} {F : X → R → R} {f : R → R} {a : A}
     (ha : (spectrum R a).Finite) (hFf : ∀ t ∈ spectrum R a, Tendsto (fun x ↦ F x t) l (𝓝 (f t))) :
-    Tendsto (fun x ↦ cfc (F x) a) l (𝓝 (cfc f a)) := by
-  refine tendsto_cfc_fun ?_ (Eventually.of_forall fun _ ↦ ha.continuousOn _)
-  rw [Metric.tendstoUniformlyOn_iff]
-  intro ε hε
-  exact ha.eventually_all.2 fun t ht ↦
-    (Metric.tendsto_nhds.1 (hFf t ht) ε hε).mono fun _ h ↦ by rwa [dist_comm]
+    Tendsto (fun x ↦ cfc (F x) a) l (𝓝 (cfc f a)) :=
+  tendsto_cfc_fun (fun _ hu ↦ ha.eventually_all.2 fun t ht ↦
+    Uniform.tendsto_nhds_right.1 (hFf t ht) hu) (.of_forall fun _ ↦ ha.continuousOn _)
 
 end TauCeti

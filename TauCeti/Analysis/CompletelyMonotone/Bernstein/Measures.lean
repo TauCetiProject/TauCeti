@@ -62,8 +62,6 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
-
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012), Ch. 1.
 -/
@@ -246,14 +244,14 @@ variable `p`, for fixed `n` and nonnegative `x`. -/
 noncomputable def bernsteinKernelBoundedContinuous (n : ℕ) {x : ℝ} (hx : 0 ≤ x) :
     ℝ≥0 →ᵇ ℝ where
   toFun := fun p => bernsteinKernel n x (p : ℝ)
-  continuous_toFun := (continuous_bernsteinKernel n x).comp continuous_subtype_val
+  continuous_toFun := (continuous_bernsteinKernel n x).comp continuous_subtypeVal
   map_bounded' :=
     ⟨1, fun p q => by
       rw [Real.dist_eq]
       have hp0 : 0 ≤ bernsteinKernel n x (p : ℝ) := bernsteinKernel_nonneg n x (p : ℝ)
-      have hp1 : bernsteinKernel n x (p : ℝ) ≤ 1 := bernsteinKernel_le_one hx p.2
+      have hp1 : bernsteinKernel n x (p : ℝ) ≤ 1 := bernsteinKernel_le_one hx p.property
       have hq0 : 0 ≤ bernsteinKernel n x (q : ℝ) := bernsteinKernel_nonneg n x (q : ℝ)
-      have hq1 : bernsteinKernel n x (q : ℝ) ≤ 1 := bernsteinKernel_le_one hx q.2
+      have hq1 : bernsteinKernel n x (q : ℝ) ≤ 1 := bernsteinKernel_le_one hx q.property
       exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
 
 /-- The bundled Bernstein kernel evaluates to the unbundled kernel on `ℝ≥0`. -/
@@ -393,7 +391,7 @@ lemma chafaiRescaled_integral_bernsteinKernel (f : ℝ → ℝ) (n : ℕ) (x : �
     ∫ p, bernsteinKernel n x (p : ℝ) ∂(chafaiRescaled f n) =
       ∫ t, bernsteinKernel n x (chafaiRescaling n t : ℝ) ∂(chafaiMeasure f n) := by
   exact chafaiRescaled_integral f n
-    (((continuous_bernsteinKernel n x).comp continuous_subtype_val).measurable.aestronglyMeasurable)
+    (((continuous_bernsteinKernel n x).comp continuous_subtypeVal).measurable.aestronglyMeasurable)
 
 /-- Bounded-continuous characteristic pairing of the rescaled Chafaï measure with the Bernstein
 kernel. This lets weak-convergence consumers use the bundled test function while the right-hand
@@ -531,7 +529,7 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
   have hF_deriv : ∀ t ∈ Ioo 0 T, HasDerivAt F
       (chafaiDensity f (m + 2) t - chafaiDensity f (m + 1) t) t := fun t ht => by
     have hg : HasDerivAt g (iteratedDerivWithin (m + 2) f (Ici 0) t) t :=
-      hf.hasDerivAt_iteratedDerivWithin (mod_cast (m + 1).lt_succ_self) (uniqueDiffOn_Ici 0)
+      hf.hasDerivAt_iteratedDerivWithin (mod_cast (m + 1).lt_succ_self)
         (Ici_mem_nhds ht.1)
     exact (chafaiDensity_succ_succ_sub_succ f m t).symm ▸
       (hasDerivAt_pow (m + 1) t).mul (hg.const_mul _)
@@ -1243,7 +1241,7 @@ private lemma bernsteinKernel_le_exp {n : ℕ} (hn : 2 ≤ n) {x p : ℝ} (_hx :
           ≤ (Real.exp (-(x * p / ↑(n - 1)))) ^ (n - 1) :=
             pow_le_pow_left₀ h.le hle _
       _ = Real.exp (↑(n - 1) * -(x * p / ↑(n - 1))) := by
-            rw [← Real.exp_nat_mul]
+            rw [← Real.exp_natCast_mul]
       _ = Real.exp (-(x * p)) := by
             congr 1
             field_simp [hden_pos.ne']
@@ -1407,7 +1405,7 @@ lemma integral_bernsteinKernel_sub_laplaceKernel_tendsto_zero_of_mass_bound
           apply integral_mono_of_nonneg
             (ae_of_all _ fun _ => norm_nonneg _) (integrable_const _)
           exact ae_of_all _ fun p => by
-            simpa [Real.norm_eq_abs] using le_of_lt (hN n hn (p : ℝ) p.2)
+            simpa [Real.norm_eq_abs] using le_of_lt (hN n hn (p : ℝ) p.property)
       _ = ε / (2 * max C 1) * ((σ n) univ).toReal := by
           simp [MeasureTheory.integral_const, smul_eq_mul, Measure.real, mul_comm]
       _ ≤ ε / (2 * max C 1) * max C 1 := by

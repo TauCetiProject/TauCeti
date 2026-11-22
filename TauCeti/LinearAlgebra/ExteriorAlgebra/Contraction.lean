@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.Order.Hom.PowersetCard
 
@@ -31,6 +32,13 @@ exterior basis vectors containing both coordinates.
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
+Reversal is diagonal too, with the sign `(-1) ^ (s.card.choose 2)`
+(`ExteriorAlgebra.reverse_basis`). For a finite index set, the top-degree coefficient
+`b.ExteriorAlgebra.coord Finset.univ` therefore kills every contraction, and the grade involution
+and reversal multiply it by `(-1) ^ n` and `(-1) ^ (n.choose 2)` in rank `n`
+(`Module.Basis.exteriorAlgebra_coord_univ_contractLeft`,
+`Module.Basis.exteriorAlgebra_coord_univ_involute`,
+`Module.Basis.exteriorAlgebra_coord_univ_reverse`).
 
 Every basis vector is the product of the exterior-algebra generators of its index set, in
 increasing order; for index sets with one or two elements this is also recorded in the explicit
@@ -348,7 +356,7 @@ theorem involute_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra R M} (hx : 
   induction hx using Submodule.pow_induction_on_left' with
   | algebraMap r => simp
   | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, smul_add]
-  | mem_mul m hm i x hx ih =>
+  | mem_mul m hm i x _ ih =>
     obtain ⟨v, rfl⟩ := hm
     rw [map_mul, ih, involute_ι, mul_smul_comm, neg_mul, smul_neg, pow_succ', mul_smul,
       neg_one_smul]
@@ -438,6 +446,78 @@ theorem ι_mul_eq_neg_one_pow_smul_mul {n : ℕ} {x : ExteriorAlgebra R M} (hx :
     (m : M) : ExteriorAlgebra.ι R m * x = (-1 : R) ^ n • (x * ExteriorAlgebra.ι R m) := by
   rw [ι_mul_eq_involute_mul, TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower hx,
     smul_mul_assoc]
+
+/-! ### Reversal and the top-degree coefficient of a basis -/
+
+section Basis
+
+open TauCeti.ExteriorAlgebra (contractLeft_coord_basis involute_basis)
+
+variable {I : Type*} [LinearOrder I] (b : Module.Basis I R M)
+
+/-- **Reversal acts on an exterior-basis vector by the sign `(-1) ^ (k.choose 2)`** of reversing
+its `k` generators. -/
+@[simp]
+theorem reverse_basis (s : Finset I) :
+    reverse (Q := (0 : QuadraticForm R M)) (b.ExteriorAlgebra s) =
+      (-1 : R) ^ s.card.choose 2 • b.ExteriorAlgebra s := by
+  -- For the zero form every pair of vectors is orthogonal.
+  rw [b.exteriorAlgebra_eq_prod_map_sort, CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho
+    (List.pairwise_of_forall fun _ _ ↦ QuadraticMap.IsOrtho.all _ _), List.length_map,
+    Finset.length_sort]
+
+variable [Fintype I]
+
+/-- **The top-degree coefficient kills every contraction**: contraction lowers the degree. -/
+theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_contractLeft (d : Module.Dual R M)
+    (x : ExteriorAlgebra R M) : b.ExteriorAlgebra.coord Finset.univ (contractLeft d x) = 0 := by
+  classical
+  -- Contraction by a coordinate functional erases its coordinate, so the result has no
+  -- component on the full index set.
+  have key (i : I) :
+      b.ExteriorAlgebra.coord Finset.univ ∘ₗ contractLeft (b.coord i) = 0 := by
+    refine b.ExteriorAlgebra.ext fun s ↦ ?_
+    rw [LinearMap.comp_apply, contractLeft_coord_basis, LinearMap.zero_apply]
+    split_ifs with hi
+    · have hs : s.erase i ≠ Finset.univ := fun h ↦ by
+        simpa using (h ▸ Finset.mem_univ i : i ∈ s.erase i)
+      rw [Units.smul_def, map_zsmul, Module.Basis.coord_apply, Module.Basis.repr_self_apply]
+      simp [hs]
+    · exact map_zero _
+  rw [← b.sum_dual_apply_smul_coord d]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul]
+  exact Finset.sum_eq_zero fun i _ ↦ by rw [← LinearMap.comp_apply, key, LinearMap.zero_apply,
+    mul_zero]
+
+/-- The grade involution multiplies the top-degree coefficient by `(-1) ^ n` in rank `n`. -/
+theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_involute (x : ExteriorAlgebra R M) :
+    b.ExteriorAlgebra.coord Finset.univ (involute x) =
+      (-1 : R) ^ Fintype.card I * b.ExteriorAlgebra.coord Finset.univ x := by
+  have h : b.ExteriorAlgebra.coord Finset.univ ∘ₗ involute.toLinearMap =
+      ((-1 : R) ^ Fintype.card I) • b.ExteriorAlgebra.coord Finset.univ := by
+    refine b.ExteriorAlgebra.ext fun s ↦ ?_
+    rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, involute_basis, map_smul,
+      LinearMap.smul_apply, Module.Basis.coord_apply, Module.Basis.repr_self_apply]
+    split_ifs with hs
+    · rw [hs, Finset.card_univ]
+    · simp
+  simpa using LinearMap.congr_fun h x
+
+/-- Reversal multiplies the top-degree coefficient by `(-1) ^ (n.choose 2)` in rank `n`. -/
+theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_reverse (x : ExteriorAlgebra R M) :
+    b.ExteriorAlgebra.coord Finset.univ (reverse x) =
+      (-1 : R) ^ (Fintype.card I).choose 2 * b.ExteriorAlgebra.coord Finset.univ x := by
+  have h : b.ExteriorAlgebra.coord Finset.univ ∘ₗ reverse =
+      ((-1 : R) ^ (Fintype.card I).choose 2) • b.ExteriorAlgebra.coord Finset.univ := by
+    refine b.ExteriorAlgebra.ext fun s ↦ ?_
+    rw [LinearMap.comp_apply, reverse_basis, map_smul, LinearMap.smul_apply,
+      Module.Basis.coord_apply, Module.Basis.repr_self_apply]
+    split_ifs with hs
+    · rw [hs, Finset.card_univ]
+    · simp
+  simpa using LinearMap.congr_fun h x
+
+end Basis
 
 end ExteriorAlgebra
 

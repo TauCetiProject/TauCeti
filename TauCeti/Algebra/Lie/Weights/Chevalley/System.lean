@@ -70,9 +70,7 @@ the integral root--coroot span.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
 
-This supplies the integral Chevalley-basis input to the explicit Chevalley--Demazure construction
-in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the
-`CFSGStatement` roadmap. The existence of a compatible Chevalley system remains downstream.
+This supplies the integral Chevalley-basis input to the explicit Chevalley--Demazure construction.
 -/
 
 public section
@@ -132,7 +130,7 @@ theorem map_cartan (h : H) : ω (h : L) = -(h : L) := by
   | mem y hy =>
       obtain ⟨α, rfl⟩ := hy
       rw [rootSystem_coroot_apply]
-      exact hx.map_coroot α.1
+      exact hx.map_coroot α.val
   | zero => simp
   | add y z _ _ hy hz =>
       -- Expose the ambient addition hidden by the subtype coercion in the induction goal.
@@ -228,7 +226,7 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast
       hx.toIsSl2System.structureConstant α β γ hγ hαβ =
         -((chainBotCoeff α β + 1 : ℕ) : K) :=
   hx.toIsSl2System.structureConstant_eq_natCast_or_eq_neg_natCast_of_killingForm_ratio
-    α β γ hα hβ hγ hαβ ω.toLieHom (hx.map_root α) (hx.map_root β) (hx.map_root γ)
+    α β γ hβ hγ hαβ ω.toLieHom (hx.map_root α) (hx.map_root β) (hx.map_root γ)
     (hx.toIsSl2System.chainTopCoeff_mul_killingForm_root_neg_eq α β γ hα hβ hγ hαβ)
 
 /-- **Root vectors from brackets.** If `γ = α + β` is a genuine root sum, then dividing the bracket

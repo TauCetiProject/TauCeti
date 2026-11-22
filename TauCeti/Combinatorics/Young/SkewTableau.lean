@@ -115,18 +115,20 @@ theorem ext {T T' : SkewSemistandardYoungTableau inner outer} (h : ∀ i j, T i 
     T = T' :=
   DFunLike.ext T T' fun i => funext (h i)
 
-/-- The entries of a skew tableau are weakly increasing along each row of the skew shape. -/
+/-- The entries of a skew tableau are weakly increasing along each row, up to the outer diagram. -/
 theorem row_weak (T : SkewSemistandardYoungTableau inner outer) {i j₁ j₂ : ℕ} (hj : j₁ < j₂)
-    (h₁ : (i, j₁) ∉ inner) (h₂ : (i, j₂) ∈ outer) : T i j₁ ≤ T i j₂ :=
-  T.row_weak' hj h₁ h₂
+    (h₂ : (i, j₂) ∈ outer) : T i j₁ ≤ T i j₂ := by
+  by_cases h₁ : (i, j₁) ∈ inner
+  · exact (T.zeros_inner' h₁).le.trans (Nat.zero_le _)
+  · exact T.row_weak' hj h₁ h₂
 
 /-- The entries of a skew tableau are weakly increasing along each row of the skew shape, stated
 for weakly ordered columns. -/
 theorem row_weak_of_le (T : SkewSemistandardYoungTableau inner outer) {i j₁ j₂ : ℕ}
-    (hj : j₁ ≤ j₂) (h₁ : (i, j₁) ∉ inner) (h₂ : (i, j₂) ∈ outer) : T i j₁ ≤ T i j₂ := by
+    (hj : j₁ ≤ j₂) (h₂ : (i, j₂) ∈ outer) : T i j₁ ≤ T i j₂ := by
   rcases hj.eq_or_lt with rfl | hj
   · exact le_rfl
-  · exact T.row_weak hj h₁ h₂
+  · exact T.row_weak hj h₂
 
 /-- The entries of a skew tableau are strictly increasing down each column of the skew shape. -/
 theorem col_strict (T : SkewSemistandardYoungTableau inner outer) {i₁ i₂ j : ℕ} (hi : i₁ < i₂)
@@ -258,7 +260,7 @@ theorem rowCount_def (T : SkewSemistandardYoungTableau inner outer) (i k : ℕ) 
 /-- A row past the last row of the outer diagram is empty. -/
 theorem rowCount_eq_zero_of_colLen_le (T : SkewSemistandardYoungTableau inner outer) {i : ℕ}
     (hi : outer.colLen 0 ≤ i) (k : ℕ) : T.rowCount i k = 0 := by
-  simp [rowCount, YoungDiagram.rowLen_eq_zero_of_colLen_le hi]
+  simp [rowCount, YoungDiagram.rowLen_eq_zero_iff.mpr hi]
 
 /-- Summing the row counts over the letters below `x` counts the entries smaller than `x`. -/
 theorem sum_range_rowCount (T : SkewSemistandardYoungTableau inner outer) (i x : ℕ) :
@@ -276,8 +278,6 @@ than `x` exactly when `j` lies among the first `∑_{k < x} rowCount i k` cells 
 theorem apply_lt_iff (T : SkewSemistandardYoungTableau inner outer) {i j x : ℕ}
     (hi : inner.rowLen i ≤ j) (ho : j < outer.rowLen i) :
     T i j < x ↔ j - inner.rowLen i < ∑ k ∈ range x, T.rowCount i k := by
-  have hin : ∀ {j'}, inner.rowLen i ≤ j' → (i, j') ∉ inner := fun h hm =>
-    (YoungDiagram.mem_iff_lt_rowLen.mp hm).not_ge h
   have hout : (i, j) ∈ outer := YoungDiagram.mem_iff_lt_rowLen.mpr ho
   rw [sum_range_rowCount]
   constructor
@@ -287,7 +287,7 @@ theorem apply_lt_iff (T : SkewSemistandardYoungTableau inner outer) {i j x : ℕ
       intro j' hj'
       rw [mem_Ico] at hj'
       exact mem_filter.mpr ⟨mem_Ico.mpr ⟨hj'.1, by omega⟩,
-        (T.row_weak_of_le (by omega) (hin hj'.1) hout).trans_lt h⟩
+        (T.row_weak_of_le (by omega) hout).trans_lt h⟩
     have := card_le_card hsub
     rw [Nat.card_Ico] at this
     omega
@@ -298,7 +298,7 @@ theorem apply_lt_iff (T : SkewSemistandardYoungTableau inner outer) {i j x : ℕ
       intro j' hj'
       rw [mem_filter, mem_Ico] at hj'
       refine mem_Ico.mpr ⟨hj'.1.1, not_le.mp fun hj => ?_⟩
-      exact hx ((T.row_weak_of_le hj (hin hi)
+      exact hx ((T.row_weak_of_le hj
         (YoungDiagram.mem_iff_lt_rowLen.mpr hj'.1.2)).trans_lt hj'.2)
     have := card_le_card hsub
     rw [Nat.card_Ico] at this
@@ -429,7 +429,7 @@ theorem flatMap_range_rowReadingWord (T : SkewSemistandardYoungTableau inner out
   have hnil : ((List.range d).map (outer.colLen 0 + ·)).flatMap T.rowReadingWord = [] := by
     refine List.flatMap_eq_nil_iff.mpr fun r hr => ?_
     obtain ⟨r, -, rfl⟩ := List.mem_map.mp hr
-    simp [rowReadingWord_def, YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.le_add_right _ r)]
+    simp [rowReadingWord_def, YoungDiagram.rowLen_eq_zero_iff.mpr (Nat.le_add_right _ r)]
   rw [readingWord_def, List.range_add, List.flatMap_append, hnil, List.append_nil]
 
 /-- The rows above row `x`, followed by a prefix of row `x`, form a prefix of the reading word. -/
@@ -576,7 +576,7 @@ def botEquiv (μ : YoungDiagram) :
     SkewSemistandardYoungTableau ⊥ μ ≃ SemistandardYoungTableau μ where
   toFun T :=
     { entry := T
-      row_weak' := fun hj h => T.row_weak hj (YoungDiagram.notMem_bot _) h
+      row_weak' := fun hj h => T.row_weak hj h
       col_strict' := fun hi h => T.col_strict hi (YoungDiagram.notMem_bot _) h
       zeros' := fun h => T.zeros h }
   invFun T :=
@@ -661,27 +661,27 @@ variable {n m : ℕ} {inner outer : YoungDiagram}
 
 /-- There are no bounded skew tableaux unless the inner diagram is contained in the outer one. -/
 theorem isEmpty_of_not_le (h : ¬ inner ≤ outer) : IsEmpty (BoundedSkewSSYT n inner outer) :=
-  ⟨fun T => h T.1.le⟩
+  ⟨fun T => h T.val.le⟩
 
 /-- Every entry on a skew cell belongs to the bounded alphabet. -/
 theorem entry_lt (T : BoundedSkewSSYT n inner outer) {i j : ℕ}
-    (h : (i, j) ∈ outer.cells \ inner.cells) : T.1 i j < n :=
-  T.2 i j h
+    (h : (i, j) ∈ outer.cells \ inner.cells) : T.val i j < n :=
+  T.property i j h
 
 /-- A bounded skew tableau is determined by its entries on the skew cells. -/
 @[ext]
 theorem ext {T U : BoundedSkewSSYT n inner outer}
-    (h : ∀ i j, (i, j) ∈ outer.cells \ inner.cells → T.1 i j = U.1 i j) : T = U := by
+    (h : ∀ i j, (i, j) ∈ outer.cells \ inner.cells → T.val i j = U.val i j) : T = U := by
   refine Subtype.ext (SkewSemistandardYoungTableau.ext fun i j => ?_)
   by_cases hc : (i, j) ∈ outer.cells \ inner.cells
   · exact h i j hc
-  · rw [T.1.zeros_of_notMem_sdiff hc, U.1.zeros_of_notMem_sdiff hc]
+  · rw [T.val.zeros_of_notMem_sdiff hc, U.val.zeros_of_notMem_sdiff hc]
 
 /-- There are finitely many skew tableaux in a finite alphabet. -/
 instance finite (n : ℕ) (inner outer : YoungDiagram) :
     Finite (BoundedSkewSSYT n inner outer) := by
   refine Finite.of_injective (β := ↥(outer.cells \ inner.cells) → Fin n)
-    (fun T c => ⟨T.1 c.1.1 c.1.2, T.entry_lt c.2⟩) ?_
+    (fun T c => ⟨T.val c.val.1 c.val.2, T.entry_lt c.property⟩) ?_
   intro T U h
   exact ext fun i j hc => congrArg Fin.val (congrFun h ⟨(i, j), hc⟩)
 
@@ -691,12 +691,12 @@ noncomputable instance (n : ℕ) (inner outer : YoungDiagram) :
 /-- Enlarge the alphabet without changing any entry. -/
 def castLE (h : n ≤ m) (T : BoundedSkewSSYT n inner outer) :
     BoundedSkewSSYT m inner outer :=
-  ⟨T.1, fun _ _ hc => (T.entry_lt hc).trans_le h⟩
+  ⟨T.val, fun _ _ hc => (T.entry_lt hc).trans_le h⟩
 
 /-- Enlarging the alphabet leaves the underlying skew tableau unchanged. -/
 @[simp]
 theorem coe_castLE (h : n ≤ m) (T : BoundedSkewSSYT n inner outer) :
-    (castLE h T).1 = T.1 :=
+    (castLE h T).val = T.val :=
   (rfl)
 
 /-- Enlargement of the alphabet is injective. -/
@@ -708,16 +708,16 @@ theorem castLE_injective (h : n ≤ m) :
 /-- A tableau comes from alphabet enlargement exactly when all its skew entries lie in the
 smaller alphabet. -/
 theorem exists_castLE_iff (h : n ≤ m) (T : BoundedSkewSSYT m inner outer) :
-    (∃ U, castLE h U = T) ↔ ∀ i j, (i, j) ∈ outer.cells \ inner.cells → T.1 i j < n := by
+    (∃ U, castLE h U = T) ↔ ∀ i j, (i, j) ∈ outer.cells \ inner.cells → T.val i j < n := by
   constructor
   · rintro ⟨U, rfl⟩
-    exact U.2
+    exact U.property
   · intro hT
-    exact ⟨⟨T.1, hT⟩, rfl⟩
+    exact ⟨⟨T.val, hT⟩, rfl⟩
 
 /-- A letter outside the alphabet has multiplicity zero. -/
 theorem content_eq_zero (T : BoundedSkewSSYT n inner outer) {k : ℕ} (hk : n ≤ k) :
-    T.1.content k = 0 := by
+    T.val.content k = 0 := by
   rw [SkewSemistandardYoungTableau.content_apply, Finset.card_eq_zero,
     Finset.filter_eq_empty_iff]
   intro c hc he
@@ -727,9 +727,9 @@ theorem content_eq_zero (T : BoundedSkewSSYT n inner outer) {k : ℕ} (hk : n �
 /-- Straight bounded skew tableaux are precisely the native bounded semistandard tableaux. -/
 def botEquiv (n : ℕ) (outer : YoungDiagram) :
     BoundedSkewSSYT n ⊥ outer ≃ BoundedSSYT n outer where
-  toFun T := ⟨SkewSemistandardYoungTableau.botEquiv outer T.1,
+  toFun T := ⟨SkewSemistandardYoungTableau.botEquiv outer T.val,
     fun i j hc => T.entry_lt (by simpa using hc)⟩
-  invFun T := ⟨(SkewSemistandardYoungTableau.botEquiv outer).symm T.1,
+  invFun T := ⟨(SkewSemistandardYoungTableau.botEquiv outer).symm T.val,
     fun i j hc => T.entry_lt (by simpa using hc)⟩
   left_inv T := Subtype.ext (Equiv.symm_apply_apply _ _)
   right_inv T := Subtype.ext (Equiv.apply_symm_apply _ _)
@@ -737,14 +737,14 @@ def botEquiv (n : ℕ) (outer : YoungDiagram) :
 /-- The straight-shape comparison preserves every entry. -/
 @[simp]
 theorem botEquiv_apply (T : BoundedSkewSSYT n ⊥ outer) (i j : ℕ) :
-    (botEquiv n outer T).1 i j = T.1 i j :=
-  SkewSemistandardYoungTableau.botEquiv_apply T.1 i j
+    (botEquiv n outer T).val i j = T.val i j :=
+  SkewSemistandardYoungTableau.botEquiv_apply T.val i j
 
 /-- The inverse straight-shape comparison preserves every entry. -/
 @[simp]
 theorem botEquiv_symm_apply (T : BoundedSSYT n outer) (i j : ℕ) :
-    ((botEquiv n outer).symm T).1 i j = T.1 i j :=
-  SkewSemistandardYoungTableau.botEquiv_symm_apply T.1 i j
+    ((botEquiv n outer).symm T).val i j = T.val i j :=
+  SkewSemistandardYoungTableau.botEquiv_symm_apply T.val i j
 
 /-- The empty skew shape has exactly one bounded tableau, even in the empty alphabet. -/
 instance (n : ℕ) (μ : YoungDiagram) : Unique (BoundedSkewSSYT n μ μ) where

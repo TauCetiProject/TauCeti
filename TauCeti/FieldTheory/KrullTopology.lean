@@ -34,6 +34,8 @@ the discrete topology imposed by `TauCeti.ForcedDiscrete`, is a discrete `Gal(L/
   `σ ↦ σ x` on `Gal(L/K)` is locally constant.
 * `Matrix.isLocallyConstant_map`: the orbit map of a finite matrix with integral entries is
   locally constant.
+* `IsLocallyConstant.of_mul_eq_of_fixes`: a function on `Gal(L/K)` invariant under right
+  multiplication by the automorphisms fixing a finite set of integral elements is locally constant.
 * `Units.stabilizer_isOpen_of_isIntegral`: the stabilizer of a unit of `L` whose underlying
   element is integral over `K` is open in `Gal(L/K)`.
 * `AlgHom.stabilizer_isOpen`: the stabilizer of a point `A →ₐ[K] L` of a finite-dimensional
@@ -76,6 +78,21 @@ theorem Matrix.isLocallyConstant_map {m n : Type*} [Finite m] [Finite n]
   filter_upwards [Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦
     (IsLocallyConstant.iff_eventually_eq _).1 (hM i j).isLocallyConstant_apply σ₀] with σ hσ
   exact Matrix.ext fun i j ↦ hσ i j
+
+/-- **A function invariant under the subgroup fixing a finite set is locally constant** for the
+Krull topology: if `f (σ * u) = f σ` whenever `u` fixes every element of a finite set `s` of
+elements integral over `K`, then `f` is locally constant on `Gal(L/K)`. The extension `L/K` may be
+transcendental. -/
+theorem IsLocallyConstant.of_mul_eq_of_fixes {X : Type*} {f : Gal(L/K) → X} (s : Finset L)
+    (hs : ∀ x ∈ s, IsIntegral K x)
+    (hf : ∀ σ u : Gal(L/K), (∀ x ∈ s, u x = x) → f (σ * u) = f σ) : IsLocallyConstant f := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun σ₀ ↦ ?_
+  filter_upwards [(Filter.eventually_all_finset s).2 fun x hx ↦
+    (IsLocallyConstant.iff_eventually_eq _).1 (hs x hx).isLocallyConstant_apply σ₀] with σ hσ
+  -- `σ = σ₀ * u`, where `u = σ₀⁻¹ * σ` fixes `s`
+  have h := hf σ₀ (σ₀⁻¹ * σ) fun x hx ↦ by
+    rw [AlgEquiv.mul_apply, hσ x hx, ← AlgEquiv.mul_apply, inv_mul_cancel, AlgEquiv.one_apply]
+  rwa [mul_inv_cancel_left] at h
 
 /-- The stabilizer of a unit whose underlying element is integral over `K` is open for the
 Krull topology. The extension `L/K` may be transcendental. -/

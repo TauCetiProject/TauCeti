@@ -24,6 +24,15 @@ its characterizing API, at every exponent `1 ≤ p ≤ ∞` and over every nontr
   composing coordinatewise composes the direct sums;
 * its operator norm is exactly the supremum `⨆ i, ‖T i‖` (`lp.norm_mapCLM`).
 
+Taking the same operator `T : X →L[𝕜] Y` in every coordinate gives its ampliation
+`lp.ampliation ι p T = ⊕_{i : ι} T : ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, Y)`, bundled as a bounded linear map
+of `T`. It has the same norm as `T` for nonempty `ι`, so it is injective, and it is compatible
+with composition. For `p ≠ ∞`, coordinate vectors span a dense subspace, so an operator on
+`ℓ^p(ι, X)` commutes with the ampliation of a set `s` of endomorphisms of `X` precisely when each
+of its `(i, j)` coordinate blocks lies in `s.centralizer`, and the ampliation maps `s''` into
+`(⊕ s)''` (`lp.ampliation_mem_centralizer_centralizer`). On `ℓ²(ℕ, H)` it is the device that
+defines the ultrastrong and ultraweak operator topologies from the strong and weak ones.
+
 On Hilbert spaces and `p = 2` the direct sum is moreover compatible with adjoints, so these laws
 let representations of an algebra on the summands be assembled into one on the direct sum; the
 adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
@@ -35,15 +44,19 @@ adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
 * `lp.mapCLM_inj`: the direct sum determines the family.
 * `lp.mapCLM_add`, `lp.mapCLM_smul`, `lp.mapCLM_id`, `lp.mapCLM_comp`: the algebraic laws.
 * `lp.norm_mapCLM`: `‖⊕ T i‖ = ⨆ i, ‖T i‖`.
+* `lp.ampliation`, `lp.norm_ampliation`, `lp.ampliation_comp`: the ampliation of one operator.
+* `lp.mem_centralizer_image_ampliation_iff`, `lp.ampliation_mem_centralizer_centralizer`: the
+  commutant and double commutant under ampliation for `p ≠ ∞`.
 
 ## References
 
 * J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Springer GTM 96, 1990, §II.1.
+* J. Dixmier, *Von Neumann Algebras*, North-Holland, 1981, Part I, Chapter 2, §1.
 -/
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal lp
 
 namespace lp
 
@@ -169,5 +182,132 @@ theorem norm_mapCLM (T : ∀ i, E i →L[𝕜] F i) {K : ℝ} (hK : 0 ≤ K) (hT
   rw [mapCLM_congr rfl hK hTK (Real.iSup_nonneg fun i ↦ norm_nonneg (T i))
     fun i ↦ le_ciSup hbdd i]
   exact norm_mapCLM_le _ _ _ _
+
+section Ampliation
+
+variable (ι p) {X Y Z : Type*}
+  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+  [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+
+/-- The **ampliation** `T ↦ ⊕_{i : ι} T` of an operator to `ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, Y)`, acting by
+`T` in every coordinate, as a bounded linear map of `T`. -/
+noncomputable def ampliation : (X →L[𝕜] Y) →L[𝕜] (ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, Y)) :=
+  LinearMap.mkContinuous
+    { toFun T := mapCLM p (fun _ ↦ T) (norm_nonneg T) fun _ ↦ le_rfl
+      map_add' T S := by ext x i; simp
+      map_smul' c T := by ext x i; simp }
+    1 fun T ↦ by simpa using norm_mapCLM_le p (fun _ : ι ↦ T) (norm_nonneg T) fun _ ↦ le_rfl
+
+variable {ι p}
+
+theorem ampliation_eq_mapCLM (T : X →L[𝕜] Y) :
+    ampliation ι p T = mapCLM p (fun _ ↦ T) (norm_nonneg T) fun _ ↦ le_rfl :=
+  (rfl)
+
+@[simp]
+theorem ampliation_apply_apply (T : X →L[𝕜] Y) (x : ℓ^p(ι, X)) (i : ι) :
+    ampliation ι p T x i = T (x i) := by
+  simp [ampliation_eq_mapCLM]
+
+/-- The ampliation maps the coordinate vector `single i x` to `single i (T x)`. -/
+@[simp]
+theorem ampliation_single [DecidableEq ι] (T : X →L[𝕜] Y) (i : ι) (x : X) :
+    ampliation ι p T (lp.single p i x) = lp.single p i (T x) := by
+  simp [ampliation_eq_mapCLM]
+
+theorem norm_ampliation_le (T : X →L[𝕜] Y) : ‖ampliation ι p T‖ ≤ ‖T‖ :=
+  norm_mapCLM_le p _ (norm_nonneg T) fun _ ↦ le_rfl
+
+/-- Over a nonempty index type the ampliation preserves the operator norm. -/
+@[simp]
+theorem norm_ampliation [Nonempty ι] (T : X →L[𝕜] Y) : ‖ampliation ι p T‖ = ‖T‖ := by
+  rw [ampliation_eq_mapCLM, norm_mapCLM, ciSup_const]
+
+theorem ampliation_injective [Nonempty ι] :
+    Function.Injective (ampliation ι p : (X →L[𝕜] Y) → ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, Y)) := by
+  classical
+  intro T S h
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  ext x
+  simpa using congr($h (lp.single p i x) i)
+
+@[simp]
+theorem ampliation_id :
+    ampliation ι p (ContinuousLinearMap.id 𝕜 X) = ContinuousLinearMap.id 𝕜 ℓ^p(ι, X) := by
+  ext x i
+  simp
+
+@[simp]
+theorem ampliation_comp (T : Y →L[𝕜] Z) (S : X →L[𝕜] Y) :
+    ampliation ι p (T ∘L S) = ampliation ι p T ∘L ampliation ι p S := by
+  ext x i
+  simp
+
+@[simp]
+theorem ampliation_one : ampliation ι p (1 : X →L[𝕜] X) = 1 :=
+  ampliation_id
+
+@[simp]
+theorem ampliation_mul (T S : X →L[𝕜] X) :
+    ampliation ι p (T * S) = ampliation ι p T * ampliation ι p S :=
+  ampliation_comp T S
+
+/-- The ampliation of an operator in the commutant of `s` commutes with the ampliation of `s`. -/
+theorem ampliation_mem_centralizer_image {s : Set (X →L[𝕜] X)} {y : X →L[𝕜] X}
+    (hy : y ∈ s.centralizer) :
+    ampliation ι p y ∈ (ampliation ι p '' s).centralizer := by
+  rintro _ ⟨a, ha, rfl⟩
+  simp [← ampliation_mul, hy a ha]
+
+/-- Over a nonempty index type, the ampliation of `y` commutes with the ampliation of `s` if and
+only if `y` commutes with `s`. -/
+theorem ampliation_mem_centralizer_image_iff [Nonempty ι] {s : Set (X →L[𝕜] X)} {y : X →L[𝕜] X} :
+    ampliation ι p y ∈ (ampliation ι p '' s).centralizer ↔ y ∈ s.centralizer := by
+  refine ⟨fun h a ha ↦ ampliation_injective (ι := ι) (p := p) ?_, ampliation_mem_centralizer_image⟩
+  simpa only [ampliation_mul] using h (ampliation ι p a) ⟨a, ha, rfl⟩
+
+/-- **Coordinate blocks of the commutant of an ampliation.** For `p ≠ ∞`, an operator `T` on
+`ℓ^p(ι, X)` commutes with the ampliation of a set `s` of endomorphisms of `X` if and only if each
+of its `(i, j)` coordinate blocks commutes with `s`. -/
+theorem mem_centralizer_image_ampliation_iff [DecidableEq ι] (hp : p ≠ ∞) {s : Set (X →L[𝕜] X)}
+    {T : ℓ^p(ι, X) →L[𝕜] ℓ^p(ι, X)} :
+    T ∈ (ampliation ι p '' s).centralizer ↔ ∀ i j : ι,
+      evalCLM 𝕜 (fun _ : ι ↦ X) p i ∘L T ∘L
+        singleContinuousLinearMap 𝕜 (fun _ : ι ↦ X) p j ∈ s.centralizer := by
+  simp only [Set.mem_centralizer_iff, Set.forall_mem_image]
+  refine ⟨fun hT i j a ha ↦ ?_, fun hblock {a} ha ↦ ?_⟩
+  · ext x
+    simpa [ContinuousLinearMap.mul_def] using congr($(hT ha) (lp.single p j x) i)
+  · -- Coordinate vectors span a dense subspace of `ℓ^p` for `p ≠ ∞`.
+    refine lp.ext_continuousLinearMap hp fun j ↦ ?_
+    ext x i
+    simpa [ContinuousLinearMap.mul_def] using congr($(hblock i j a ha) x)
+
+/-- **Double commutant under ampliation.** For `p ≠ ∞`, the ampliation maps the double commutant
+`s''` into the double commutant of the ampliation of `s`. -/
+theorem ampliation_mem_centralizer_centralizer (hp : p ≠ ∞) {s : Set (X →L[𝕜] X)} {x : X →L[𝕜] X}
+    (hx : x ∈ s.centralizer.centralizer) :
+    ampliation ι p x ∈ (ampliation ι p '' s).centralizer.centralizer := by
+  classical
+  intro T hT
+  rw [mem_centralizer_image_ampliation_iff hp] at hT
+  -- Commuting with `⊕ x` is membership in `(⊕ {x})'`, checked blockwise via `hx`.
+  have hxT : T ∈ (ampliation ι p '' ({x} : Set (X →L[𝕜] X))).centralizer :=
+    (mem_centralizer_image_ampliation_iff hp).2 fun i j a ha ↦ by
+      obtain rfl : a = x := ha
+      exact (hx _ (hT i j)).symm
+  exact (hxT (ampliation ι p x) ⟨x, rfl, rfl⟩).symm
+
+/-- Over a nonempty index type and for `p ≠ ∞`, an operator lies in the double commutant `s''` if
+and only if its ampliation lies in the double commutant of the ampliation of `s`. -/
+theorem ampliation_mem_centralizer_centralizer_iff [Nonempty ι] (hp : p ≠ ∞) {s : Set (X →L[𝕜] X)}
+    {x : X →L[𝕜] X} :
+    ampliation ι p x ∈ (ampliation ι p '' s).centralizer.centralizer ↔
+      x ∈ s.centralizer.centralizer := by
+  refine ⟨fun h y hy ↦ ampliation_injective (ι := ι) (p := p) ?_,
+    ampliation_mem_centralizer_centralizer hp⟩
+  simpa only [ampliation_mul] using h (ampliation ι p y) (ampliation_mem_centralizer_image hy)
+
+end Ampliation
 
 end lp

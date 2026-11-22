@@ -33,10 +33,6 @@ long.
 
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §5.2.
 * R. Steinberg, *Lectures on Chevalley Groups* (1968), §§3--4.
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`: it supplies the type-`A` subsystem generation needed
-to identify the explicit full-weight type-`C` carrier on field-valued points.
 -/
 
 public section

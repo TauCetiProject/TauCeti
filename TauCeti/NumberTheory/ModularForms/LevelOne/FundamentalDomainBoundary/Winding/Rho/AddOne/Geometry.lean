@@ -153,10 +153,10 @@ theorem norm_fdBoundary_sub_rho_add_one_segment4 (H : ℝ) (ht : t ∈ Icc (3 : 
 /-- On the ceiling the contour keeps distance at least `|H - √3/2|` from `ρ + 1`. The
 absolute value is what the height difference gives, and it is the only form with content
 below the corner row, where `H - √3/2 < 0` makes the signed bound vacuous. -/
-theorem norm_fdBoundary_sub_rho_add_one_segment5 (ht : t ∈ Icc (4 : ℝ) 5) :
+theorem norm_fdBoundary_sub_rho_add_one_segment5 (ht : 4 ≤ t) :
     |H - Real.sqrt 3 / 2| ≤ ‖fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)‖ := by
   have him : (fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)).im = H - Real.sqrt 3 / 2 := by
-    rw [Complex.sub_im, im_fdBoundarySegment5 H ht, rho_add_one_im]
+    rw [Complex.sub_im, im_fdBoundary_of_four_le ht, rho_add_one_im]
   have h1 : |(fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)).im| ≤
       ‖fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)‖ := Complex.abs_im_le_norm _
   exact him ▸ h1
@@ -183,9 +183,8 @@ theorem im_fdBoundary_sub_rho_add_one_arc_nonneg (H : ℝ) (ht : t ∈ Icc (1 : 
   -- proved for a contour at the corner height transports to this one.
   have htransport : fdBoundary H t = fdBoundary (Real.sqrt 3 / 2) t := by
     rw [eqOn_fdBoundary_arc H ht, eqOn_fdBoundary_arc (Real.sqrt 3 / 2) ht]
-  have ht05 : t ∈ Icc (0 : ℝ) 5 := ⟨by linarith [ht.1], by linarith [ht.2]⟩
   rw [Complex.sub_im, rho_add_one_im, htransport]
-  linarith [sqrt_three_div_two_le_im_fdBoundary (H := Real.sqrt 3 / 2) le_rfl ht05]
+  linarith [sqrt_three_div_two_le_im_fdBoundary (H := Real.sqrt 3 / 2) (t := t) le_rfl]
 
 /-- Strictly inside the arc the shifted contour has positive height. -/
 theorem im_fdBoundary_sub_rho_add_one_arc_pos (H : ℝ) (ht1 : 1 < t) (ht3 : t < 3) :
@@ -198,11 +197,10 @@ theorem im_fdBoundary_sub_rho_add_one_arc_pos (H : ℝ) (ht1 : 1 < t) (ht3 : t <
 
 /-- The shifted contour stays in the closed upper half-plane over the whole parameter
 range: the contour clears the corner row `√3/2`, which is the height of `ρ + 1`. -/
-theorem im_fdBoundary_sub_rho_add_one_nonneg (hH : Real.sqrt 3 / 2 ≤ H)
-    (ht : t ∈ Icc (0 : ℝ) 5) :
+theorem im_fdBoundary_sub_rho_add_one_nonneg (hH : Real.sqrt 3 / 2 ≤ H) :
     0 ≤ (fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)).im := by
   rw [Complex.sub_im, rho_add_one_im]
-  linarith [sqrt_three_div_two_le_im_fdBoundary hH ht]
+  linarith [sqrt_three_div_two_le_im_fdBoundary (t := t) hH]
 
 /-- The polar form of the shifted contour just after the corner. -/
 private lemma fdBoundary_one_add_sub_rho_add_one_eq (H : ℝ) (hδ : 0 < δ) (hδ2 : δ ≤ 2) :
@@ -282,7 +280,7 @@ theorem eq_one_of_fdBoundary_eq_rho_add_one (hH : H ≠ Real.sqrt 3 / 2) (ht : t
         rw [h0] at this
         norm_num at this
       · have him := congrArg Complex.im (norm_eq_zero.mp h0)
-        rw [Complex.sub_im, im_fdBoundarySegment5 H ⟨h4.le, ht.2⟩, rho_add_one_im,
+        rw [Complex.sub_im, im_fdBoundary_of_four_le h4.le, rho_add_one_im,
           Complex.zero_im] at him
         exact absurd (by linarith) hH
 

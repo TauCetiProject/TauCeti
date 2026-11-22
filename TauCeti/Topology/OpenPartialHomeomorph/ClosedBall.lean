@@ -43,12 +43,10 @@ theorem exists_finset_closedBall_cover (φ : OpenPartialHomeomorph M E) {A U : S
   obtain ⟨t, htA, hAt⟩ := hA.elim_nhds_subcover (fun a ↦ φ.source ∩ φ ⁻¹' ball (φ a) (r a))
     fun a ha ↦ Filter.inter_mem (φ.open_source.mem_nhds (hAφ ha))
       ((φ.continuousAt (hAφ ha)).preimage_mem_nhds (ball_mem_nhds _ (hr a ha)))
-  refine ⟨t, r, fun a ha ↦ ⟨htA a ha, hr a (htA a ha), fun z hz ↦ (hrU a (htA a ha) hz).1, ?_⟩,
-    fun x hx ↦ ?_⟩
-  · rintro _ ⟨z, hz, rfl⟩
-    exact (hrU a (htA a ha) hz).2
-  · obtain ⟨hxs, a, ha, hxb⟩ : x ∈ φ.source ∧ ∃ a ∈ t, φ x ∈ ball (φ a) (r a) := by
-      simpa using hAt hx
-    exact ⟨φ x, mem_biUnion ha (ball_subset_closedBall hxb), φ.left_inv hxs⟩
+  refine ⟨t, r, fun a ha ↦ ⟨htA a ha, hr a (htA a ha), fun z hz ↦ (hrU a (htA a ha) hz).1,
+    image_subset_iff.2 fun z hz ↦ (hrU a (htA a ha) hz).2⟩, fun x hx ↦ ?_⟩
+  obtain ⟨hxs, a, ha, hxb⟩ : x ∈ φ.source ∧ ∃ a ∈ t, φ x ∈ ball (φ a) (r a) := by
+    simpa using hAt hx
+  exact ⟨φ x, mem_biUnion ha (ball_subset_closedBall hxb), φ.left_inv hxs⟩
 
 end OpenPartialHomeomorph

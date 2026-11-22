@@ -49,8 +49,9 @@ does not depend on the caps. These are `TauCeti.Floer.productClass_eq_add_sub` a
 
 The three loops share the base point `x`, which is where the two seams of the pair of pants
 start and end. Orbits with different base points are brought to this form by conjugating the input
-loops along paths to the base point of the output; the corresponding transport of caps is not
-treated here.
+loops along paths to the base point of the output (`Path.conjLoop`); the corresponding transport of
+caps is `TauCeti.Floer.SphericalCapClass.transport`, in
+`TauCeti.Geometry.Symplectic.Floer.Cap.Transport`.
 
 ## References
 
@@ -134,6 +135,26 @@ theorem pantsGlue_comp_comp {γ₁' γ₂' : Ω X x}
     (p₂ : (⟨γ₂⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂'⟩) (D₁ : RawCap γ₁') (D₂ : RawCap γ₂') :
     pantsGlue P (p₁ ≫ D₁) (p₂ ≫ D₂) = pantsGlue (P ≫ HSpace.pathHmul p₁ p₂) D₁ D₂ := by
   simp only [pantsGlue_def, HSpace.pathHmul_comp, Category.assoc]
+
+/-- Gluing a cap glued along a pair of pants `Q` at the first input of a pair of pants `P` is
+gluing the caps side by side along `P` followed by the product `Q ⋀ 𝟙`. -/
+theorem pantsGlue_pantsGlue_left {γ₃ γ₁₂ : Ω X x}
+    (P : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁₂.trans γ₃⟩)
+    (Q : (⟨γ₁₂⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂⟩) (D₁ : RawCap γ₁)
+    (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) :
+    pantsGlue P (pantsGlue Q D₁ D₂) D₃ =
+      pantsGlue (P ≫ HSpace.pathHmul Q (𝟙 _)) (pantsGlue (𝟙 _) D₁ D₂) D₃ := by
+  rw [← pantsGlue_comp_comp, comp_pantsGlue, Category.comp_id, Category.id_comp]
+
+/-- Gluing a cap glued along a pair of pants `Q` at the second input of a pair of pants `P` is
+gluing the caps side by side along `P` followed by the product `𝟙 ⋀ Q`. -/
+theorem pantsGlue_pantsGlue_right {γ₃ γ₂₃ : Ω X x}
+    (P : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₁.trans γ₂₃⟩)
+    (Q : (⟨γ₂₃⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂.trans γ₃⟩) (D₁ : RawCap γ₁)
+    (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) :
+    pantsGlue P D₁ (pantsGlue Q D₂ D₃) =
+      pantsGlue (P ≫ HSpace.pathHmul (𝟙 _) Q) D₁ (pantsGlue (𝟙 _) D₂ D₃) := by
+  rw [← pantsGlue_comp_comp, comp_pantsGlue, Category.comp_id, Category.id_comp]
 
 /-- Changing the first input cap changes the glued cap by the same sphere. -/
 @[simp]

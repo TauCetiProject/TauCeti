@@ -106,17 +106,17 @@ noncomputable instance instNormedRingSubring : NormedRing (HasGaussNorm.subring 
       map_zero' := gaussNorm_zero norm R₀ norm_zero
       add_le' f g :=
         (gaussNorm_add_le_max norm R₀ (f : R⟦X⟧) (g : R⟦X⟧) hR₀.out.le norm_nonneg
-          IsUltrametricDist.isNonarchimedean_norm (HasGaussNorm.mem_subring.mp f.2)
-          (HasGaussNorm.mem_subring.mp g.2)).trans
+          IsUltrametricDist.isNonarchimedean_norm (HasGaussNorm.mem_subring.mp f.property)
+          (HasGaussNorm.mem_subring.mp g.property)).trans
           (max_le_add_of_nonneg (gaussNorm_nonneg norm _ _ norm_nonneg)
             (gaussNorm_nonneg norm _ _ norm_nonneg))
       neg' f := MvPowerSeries.gaussNorm_neg (fun x : R ↦ ‖x‖) _ (fun x ↦ norm_neg x)
         (f : R⟦X⟧)
       mul_le' f g := TauCeti.PowerSeries.gaussNorm_mul_le hR₀.out.le
-        (HasGaussNorm.mem_subring.mp f.2) (HasGaussNorm.mem_subring.mp g.2)
+        (HasGaussNorm.mem_subring.mp f.property) (HasGaussNorm.mem_subring.mp g.property)
       eq_zero_of_map_eq_zero' f h := by
         rwa [gaussNorm_eq_zero_iff norm R₀ _ norm_zero norm_nonneg
-          (fun _ ↦ norm_eq_zero.mp) hR₀.out (HasGaussNorm.mem_subring.mp f.2),
+          (fun _ ↦ norm_eq_zero.mp) hR₀.out (HasGaussNorm.mem_subring.mp f.property),
           ZeroMemClass.coe_eq_zero] at h }
 
 variable {R₀}
@@ -128,13 +128,14 @@ theorem norm_eq_gaussNorm (f : HasGaussNorm.subring R R₀) :
 /-- Each weighted coefficient norm `‖aₙ‖ R₀ⁿ` of a bounded series is bounded by its norm. -/
 theorem norm_coeff_mul_pow_le (f : HasGaussNorm.subring R R₀) (n : ℕ) :
     ‖coeff n (f : R⟦X⟧)‖ * R₀ ^ n ≤ ‖f‖ :=
-  le_gaussNorm norm R₀ _ (HasGaussNorm.mem_subring.mp f.2) n
+  le_gaussNorm norm R₀ _ (HasGaussNorm.mem_subring.mp f.property) n
 
-/-- The norm of a bounded series is bounded by a nonnegative `r` exactly when every weighted
-coefficient norm `‖aₙ‖ R₀ⁿ` is. -/
-theorem norm_le_iff {f : HasGaussNorm.subring R R₀} {r : ℝ} (hr : 0 ≤ r) :
+/-- The norm of a bounded series is bounded by `r` exactly when every weighted coefficient norm
+`‖aₙ‖ R₀ⁿ` is. -/
+theorem norm_le_iff {f : HasGaussNorm.subring R R₀} {r : ℝ} :
     ‖f‖ ≤ r ↔ ∀ n, ‖coeff n (f : R⟦X⟧)‖ * R₀ ^ n ≤ r := by
   refine ⟨fun h n ↦ (norm_coeff_mul_pow_le f n).trans h, fun h ↦ ?_⟩
+  have hr : 0 ≤ r := (mul_nonneg (norm_nonneg _) (by simp)).trans (h 0)
   rw [norm_eq_gaussNorm, gaussNorm_eq]
   exact Real.iSup_le h hr
 
@@ -165,8 +166,8 @@ variable (R₀)
 instance : IsUltrametricDist (HasGaussNorm.subring R R₀) :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun f g ↦
     gaussNorm_add_le_max norm R₀ (f : R⟦X⟧) (g : R⟦X⟧) hR₀.out.le norm_nonneg
-      IsUltrametricDist.isNonarchimedean_norm (HasGaussNorm.mem_subring.mp f.2)
-      (HasGaussNorm.mem_subring.mp g.2)
+      IsUltrametricDist.isNonarchimedean_norm (HasGaussNorm.mem_subring.mp f.property)
+      (HasGaussNorm.mem_subring.mp g.property)
 
 /-- The Gauss norm on bounded series preserves the norm of `1`. -/
 instance [NormOneClass R] : NormOneClass (HasGaussNorm.subring R R₀) where
@@ -178,7 +179,7 @@ instance [NormOneClass R] : NormOneClass (HasGaussNorm.subring R R₀) where
 instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
   obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit (R₀ ^ ·)
-    (fun k n ↦ coeff n (F k : R⟦X⟧)) (fun n ↦ (uniformContinuous_coeff n).comp_cauchySeq hF) (by
+    (fun k n ↦ coeff n (F k : R⟦X⟧)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
       refine ⟨N, fun k hk l hl n ↦ ?_⟩
@@ -200,7 +201,7 @@ instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk ↦ ?_⟩
   rw [dist_eq_norm]
-  refine ((norm_le_iff (half_pos hε).le).mpr fun n ↦ ?_).trans_lt (half_lt_self hε)
+  refine (norm_le_iff.mpr fun n ↦ ?_).trans_lt (half_lt_self hε)
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_mk]
   exact hN k hk n
 

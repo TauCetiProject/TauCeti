@@ -510,7 +510,7 @@ theorem coe_β_pow {n : ℕ} (hn : n ≠ 0) : ⇑(pow hn).β = OnePoint.map fun 
 
 /-- The power map `z ↦ z ^ n` of the sphere is a Belyi map of degree `n`. -/
 theorem degree_β_pow {n : ℕ} (hn : n ≠ 0) : degree (pow hn).β = n :=
-  (congrArg degree (coe_β_pow hn)).trans (degree_onePointMap_pow hn)
+  (congrArg degree (coe_β_pow hn)).trans degree_onePointMap_pow
 
 /-- The power map `z ↦ z ^ n` is unramified over `1`. -/
 theorem one_notMem_branchValues_β_pow {n : ℕ} (hn : n ≠ 0) :
@@ -822,7 +822,7 @@ evaluation. -/
 instance instMulActionRestrictFiber (P : AnalyticBelyiPair.{u}) (b : ThricePuncturedSphere) :
     MulAction (P.Iso P) (P.restrict ⁻¹' {b}) where
   smul e x := ⟨e.restrict x, by simpa only [Set.mem_preimage, Set.mem_singleton_iff,
-    restrict_restrict] using x.2⟩
+    restrict_restrict] using x.property⟩
   one_smul x := by
     apply Subtype.ext
     apply Subtype.ext
@@ -868,7 +868,7 @@ map**, the homeomorphisms of the surface over the sphere: these are automaticall
 (`TauCeti.AnalyticBelyiPair.Iso.ofHomeomorph`). -/
 def isoMulEquivDeck : P.Iso P ≃* deck P.β where
   toFun e := ⟨e.toHomeomorph, deck.mem_iff.2 e.β_comp⟩
-  invFun φ := .ofHomeomorph φ.1 (congrFun φ.2)
+  invFun φ := .ofHomeomorph φ.val (congrFun φ.property)
   left_inv e := Iso.ext fun _ ↦ by simp
   right_inv φ := Subtype.ext <| Homeomorph.ext fun _ ↦ by simp
   map_mul' _ _ := rfl
@@ -975,11 +975,11 @@ namespace AnalyticBelyiPair
 
 /-- Isomorphism of analytic Belyi pairs of degree `n`, as an equivalence relation. -/
 def isoSetoid (n : ℕ) : Setoid {P : AnalyticBelyiPair.{u} // degree P.β = n} where
-  r P Q := Nonempty (P.1.Iso Q.1)
-  iseqv := ⟨fun P ↦ ⟨Iso.refl P.1⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩⟩
+  r P Q := Nonempty (P.val.Iso Q.val)
+  iseqv := ⟨fun P ↦ ⟨Iso.refl P.val⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩⟩
 
 theorem isoSetoid_r {n : ℕ} {P Q : {P : AnalyticBelyiPair.{u} // degree P.β = n}} :
-    (isoSetoid n).r P Q ↔ Nonempty (P.1.Iso Q.1) :=
+    (isoSetoid n).r P Q ↔ Nonempty (P.val.Iso Q.val) :=
   Iff.rfl
 
 /-- **The permutation triple of an isomorphism class of analytic Belyi pairs** of degree `n`: the
@@ -989,8 +989,8 @@ pairs have isomorphic monodromy triples
 (`TauCeti.AnalyticBelyiPair.Iso.isoClass_monodromyTriple_eq`). -/
 def toIsoClass (n : ℕ) : Quotient (isoSetoid.{u} n) → PermutationTriple.IsoClass n :=
   Quotient.lift
-    (fun P ↦ .mk (P.1.isCoveringMap_restrict.monodromyTriple
-      ((P.1.nonempty_restrict_preimage_singleton_equiv basePt).some.trans (finCongr P.2))))
+    (fun P ↦ .mk (P.val.isCoveringMap_restrict.monodromyTriple
+      ((P.val.nonempty_restrict_preimage_singleton_equiv basePt).some.trans (finCongr P.property))))
     fun _ _ ⟨e⟩ ↦ (e.isoClass_monodromyTriple_eq _ _).symm
 
 /-- **The topological branched cover of an isomorphism class of analytic Belyi pairs.** This is
@@ -999,7 +999,7 @@ structure and retains the same map to the sphere. -/
 def toTopBranchedCoverIsoClass (n : ℕ) :
     Quotient (isoSetoid.{u} n) → TopBranchedCover.IsoClass n :=
   Quotient.lift
-    (fun P ↦ TopBranchedCover.IsoClass.mk (P.1.toTopBranchedCover P.2))
+    (fun P ↦ TopBranchedCover.IsoClass.mk (P.val.toTopBranchedCover P.property))
     fun _ _ ⟨e⟩ ↦ TopBranchedCover.IsoClass.mk_eq_mk_iff.2
       ⟨e.toTopBranchedCover _ _⟩
 
@@ -1009,7 +1009,7 @@ branched cover. -/
 theorem toTopBranchedCoverIsoClass_mk {n : ℕ}
     (P : {P : AnalyticBelyiPair.{u} // degree P.β = n}) :
     toTopBranchedCoverIsoClass n ⟦P⟧ =
-      TopBranchedCover.IsoClass.mk (P.1.toTopBranchedCover P.2) := (rfl)
+      TopBranchedCover.IsoClass.mk (P.val.toTopBranchedCover P.property) := (rfl)
 
 /-- **Analytic Belyi pairs are determined by their underlying topological branched covers**: two
 analytic Belyi pairs of degree `n` whose topological branched covers are isomorphic are isomorphic,
@@ -1024,10 +1024,10 @@ theorem toTopBranchedCoverIsoClass_injective (n : ℕ) :
 /-- The permutation triple of the class of an analytic Belyi pair of degree `n` is the class of
 its monodromy triple, for any numbering of the fibre over `1/2`. -/
 theorem toIsoClass_mk {n : ℕ} (P : {P : AnalyticBelyiPair.{u} // degree P.β = n})
-    (ν : P.1.restrict ⁻¹' {basePt} ≃ Fin n) :
-    toIsoClass n ⟦P⟧ = .mk (P.1.isCoveringMap_restrict.monodromyTriple ν) := by
+    (ν : P.val.restrict ⁻¹' {basePt} ≃ Fin n) :
+    toIsoClass n ⟦P⟧ = .mk (P.val.isCoveringMap_restrict.monodromyTriple ν) := by
   rw [toIsoClass, Quotient.lift_mk]
-  exact P.1.isCoveringMap_restrict.isoClass_monodromyTriple_eq _ _
+  exact P.val.isCoveringMap_restrict.isoClass_monodromyTriple_eq _ _
 
 end AnalyticBelyiPair
 
@@ -1306,7 +1306,7 @@ theorem degree_β_eq_one_iff_nonempty_iso {P : AnalyticBelyiPair.{0}} :
 
 /-- There is at most one isomorphism class of analytic Belyi pairs of degree one. -/
 instance : Subsingleton (Quotient (isoSetoid.{u} 1)) :=
-  ⟨Quotient.ind₂ fun P Q ↦ Quotient.sound (isoSetoid_r.2 ⟨isoOfDegreeEqOne P.2 Q.2⟩)⟩
+  ⟨Quotient.ind₂ fun P Q ↦ Quotient.sound (isoSetoid_r.2 ⟨isoOfDegreeEqOne P.property Q.property⟩)⟩
 
 /-- The class of the trivial pair is the only isomorphism class of analytic Belyi pairs of degree
 one. -/

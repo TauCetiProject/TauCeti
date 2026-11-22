@@ -105,13 +105,17 @@ theorem tsupport_extDerivCLM_subset (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
   exact TauCeti.tsupport_extDeriv_subset
 
 /-- The exterior derivative of a test form extended from `Ω'` to a larger open set `Ω` is the
-extension of its exterior derivative. -/
+extension of its exterior derivative. If `Ω' ⊄ Ω` both sides are `0`, since `monoCLM` is then the
+zero map. -/
 @[simp]
-theorem extDerivCLM_monoCLM (h : Ω' ≤ Ω) (ω : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F)) :
+theorem extDerivCLM_monoCLM (ω : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F)) :
     extDerivCLM (monoCLM ℝ ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) =
       (monoCLM ℝ (extDerivCLM ω) : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) := by
-  ext x : 1
-  simp [monoCLM_apply, h]
+  by_cases h : Ω' ≤ Ω
+  · ext x : 1
+    simp [monoCLM_apply, h]
+  · have H : ¬ ((⊤ : ℕ∞) ≤ ⊤ ∧ Ω' ≤ Ω) := fun hh ↦ h hh.2
+    simp [monoCLM_eq_zero H]
 
 /-- In degree zero, the exterior derivative of the `0`-form with values `f` is the `1`-form
 `Df`. -/
@@ -141,7 +145,7 @@ theorem extDerivCLM_postcompCLM_toSpanSingleton_curryLeft [FiniteDimensional ℝ
     eq_zero_of_finrank_lt _ (by simpa using Nat.lt_succ_of_le hk)
   have hcartan := alternatizeUncurryFin_curryLeft_comp_add_curryLeft L y
   rw [hzero, curryLeft_zero, zero_apply, add_zero] at hcartan
-  have hcomp : (curryLeftLI (𝕜 := ℝ) (E := E) (F := F)).toContinuousLinearMap.flip y ∘L L =
+  have hcomp : curryLeftFlipL y ∘L L =
       (fderiv ℝ (g : E → ℝ) x).smulRight (α.curryLeft y) := by
     ext w : 1
     simp [L]
@@ -182,11 +186,11 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **Restriction commutes with the boundary**: for a current `T` on `Ω` and an open subset
 `Ω' ⊆ Ω`, the boundary of the restriction `T ∘ monoCLM` of `T` to `Ω'` is the restriction of the
 boundary `∂ T = T ∘ d`. -/
-theorem comp_monoCLM_comp_extDerivCLM (h : Ω' ≤ Ω)
+theorem comp_monoCLM_comp_extDerivCLM
     (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) :
     (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ∘L extDerivCLM =
       (T ∘L extDerivCLM) ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) := by
   ext ω
-  simp [extDerivCLM_monoCLM h]
+  simp [extDerivCLM_monoCLM]
 
 end ContinuousLinearMap

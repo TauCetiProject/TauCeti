@@ -45,9 +45,9 @@ scalar heights of the coordinates.
   `max (⨆ i, v (x i)) 1`; `Height.prod_mulHeightAff_eq` splits a finite product of affine heights
   into the products of these local factors place by place.
 * `Height.iSup_option_elim_eq_max`, `Height.iSup_option_elim_smul_le`: the local factor
-  `max (⨆ i, v (x i)) 1` for any nonnegative multiplicative `v`, and its bound for a scalar
-  multiple; `Height.mul_log_iSup_option_elim_smul_le` turns a logarithmic bound for `v c` and
-  the local sup norm of `x` into one for the local factor of `c • x`.
+  `max (⨆ i, v (x i)) 1` for any multiplicative `v`, and, for nonnegative `v`, its bound for a
+  scalar multiple; `Height.mul_log_iSup_option_elim_smul_le` turns a logarithmic bound for `v c`
+  and the local sup norm of `x` into one for the local factor of `c • x`.
 * `Height.hasFiniteMulSupport_max_iSup_nonarchAbsVal`: the nonarchimedean local factors are `1`
   at all but finitely many places.
 * `Height.mulHeight_le_mulHeightAff`, `Height.mulHeight₁_le_mulHeightAff`: for finite `ι`, the
@@ -120,18 +120,14 @@ lemma logHeightAff_eq_log_mulHeightAff (x : ι → K) : logHeightAff x = log (mu
 lemma mulHeightAff_comp_equiv (e : ι ≃ ι') (x : ι' → K) :
     mulHeightAff (x ∘ e) = mulHeightAff x := by
   have h : (fun o : Option ι ↦ o.elim 1 (x ∘ e)) =
-      (fun o : Option ι' ↦ o.elim 1 x) ∘ Equiv.optionCongr e := by
-    funext o
-    cases o <;> rfl
+      (fun o : Option ι' ↦ o.elim 1 x) ∘ Equiv.optionCongr e := by ext (_ | _) <;> rfl
   rw [mulHeightAff_def, mulHeightAff_def, h, mulHeight_comp_equiv]
 
 /-- The tuple of ones has affine height `1`: appending a coordinate `1` gives the tuple of ones
 on `Option ι`. -/
 @[simp]
 lemma mulHeightAff_one : mulHeightAff (1 : ι → K) = 1 := by
-  have h : (fun o : Option ι ↦ o.elim 1 (1 : ι → K)) = 1 := by
-    funext o
-    cases o <;> rfl
+  have h : (fun o : Option ι ↦ o.elim 1 (1 : ι → K)) = 1 := by ext (_ | _) <;> rfl
   rw [mulHeightAff_def, h, mulHeight_one]
 
 /-- The tuple of ones has affine logarithmic height `0`. -/
@@ -142,8 +138,7 @@ lemma logHeightAff_one : logHeightAff (1 : ι → K) = 0 := by
 /-- The logarithmic form of `Height.mulHeightAff_comp_equiv`. -/
 lemma logHeightAff_comp_equiv (e : ι ≃ ι') (x : ι' → K) :
     logHeightAff (x ∘ e) = logHeightAff x := by
-  rw [logHeightAff_eq_log_mulHeightAff, logHeightAff_eq_log_mulHeightAff,
-    mulHeightAff_comp_equiv]
+  simp only [logHeightAff_eq_log_mulHeightAff, mulHeightAff_comp_equiv]
 
 /-- The affine height may equally be computed by prepending the coordinate `1` to a tuple
 indexed by `Fin n`: the projective height of `Fin.cons 1 x` is `Height.mulHeightAff x`. -/
@@ -165,12 +160,9 @@ lemma logHeight_cons_one {n : ℕ} (x : Fin n → K) :
 /-- The zero tuple has affine height `1`, with no finiteness assumption on its index type. -/
 @[simp]
 lemma mulHeightAff_zero : mulHeightAff (0 : ι → K) = 1 := by
-  have key (v : AbsoluteValue K ℝ) :
-      (⨆ o : Option ι, v (o.elim 1 (0 : ι → K))) = 1 := by
-    apply ciSup_eq_of_forall_le_of_forall_lt_exists_gt
-    · intro o
-      cases o <;> simp
-    · exact fun b hb ↦ ⟨none, by simpa using hb⟩
+  have key (v : AbsoluteValue K ℝ) : ⨆ o : Option ι, v (o.elim 1 (0 : ι → K)) = 1 := by
+    refine ciSup_eq_of_forall_le_of_forall_lt_exists_gt (fun o ↦ ?_) fun b hb ↦ ⟨none, by simpa⟩
+    cases o <;> simp
   have hx : (fun o : Option ι ↦ o.elim 1 (0 : ι → K)) ≠ 0 :=
     fun h ↦ one_ne_zero (congrFun h none)
   simp [mulHeightAff_def, mulHeight_eq hx, key]
@@ -186,55 +178,83 @@ variable [Finite ι] [Finite ι']
 
 section LocalFactor
 
-omit [AdmissibleAbsValues K]
+variable {F : Type*}
 
-variable {F : Type*} [FunLike F K ℝ] [MonoidWithZeroHomClass F K ℝ] [NonnegHomClass F K ℝ]
+section GroupWithZero
 
-/-- The local sup norm `⨆ i, v (x i)` of a nonzero finite tuple is positive. -/
-lemma iSup_apply_pos (v : F) {x : ι → K} (hx : x ≠ 0) : 0 < ⨆ i, v (x i) := by
+variable {G₀ : Type*} [GroupWithZero G₀] [FunLike F G₀ ℝ] [MonoidWithZeroHomClass F G₀ ℝ]
+  [NonnegHomClass F G₀ ℝ]
+
+/-- The local sup norm `⨆ i, v (x i)` of a finite tuple is positive exactly when the tuple is
+nonzero. -/
+@[simp]
+lemma iSup_apply_pos_iff {v : F} {x : ι → G₀} : 0 < ⨆ i, v (x i) ↔ x ≠ 0 := by
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro h rfl
+    simp at h
   obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
   exact ((apply_nonneg v _).lt_of_ne' ((map_ne_zero v).mpr hi)).trans_le
     (Finite.le_ciSup_of_le i le_rfl)
 
-omit [NonnegHomClass F K ℝ] in
+end GroupWithZero
+
+variable {M₀ : Type*} [MulZeroOneClass M₀] [FunLike F M₀ ℝ] [MonoidWithZeroHomClass F M₀ ℝ]
+  [NonnegHomClass F M₀ ℝ]
+
+omit [NonnegHomClass F M₀ ℝ] in
 /-- The local sup norm of a tuple with a coordinate `1` appended is at least `1`. -/
-lemma one_le_iSup_option_elim (v : F) (x : ι → K) : 1 ≤ ⨆ o : Option ι, v (o.elim 1 x) :=
+lemma one_le_iSup_option_elim (v : F) (x : ι → M₀) : 1 ≤ ⨆ o : Option ι, v (o.elim 1 x) :=
   Finite.le_ciSup_of_le none (by simp)
 
+omit [NonnegHomClass F M₀ ℝ] in
 /-- The local factor of the affine height: the local sup norm of a tuple with a coordinate `1`
 appended is `max (⨆ i, v (x i)) 1`. -/
-lemma iSup_option_elim_eq_max (v : F) (x : ι → K) :
+lemma iSup_option_elim_eq_max (v : F) (x : ι → M₀) :
     ⨆ o : Option ι, v (o.elim 1 x) = max (⨆ i, v (x i)) 1 := by
   refine le_antisymm (ciSup_le fun o ↦ ?_) (max_le ?_ (one_le_iSup_option_elim v x))
   · cases o with
     | none => simp
     | some i => exact le_max_of_le_left (Finite.le_ciSup_of_le i le_rfl)
-  · exact Real.iSup_le (fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl)
-      (Real.iSup_nonneg_of_nonnegHomClass v _)
+  · cases isEmpty_or_nonempty ι with
+    | inl h => simpa using zero_le_one.trans (one_le_iSup_option_elim v x)
+    | inr h => exact ciSup_le fun i ↦ Finite.le_ciSup_of_le (some i) le_rfl
 
+omit [Finite ι] in
 /-- The local factor of the affine height of a scalar multiple `c • x` is at most
 `max (v c * ⨆ i, v (x i)) 1`. -/
-lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
+lemma iSup_option_elim_smul_le (v : F) (c : M₀) (x : ι → M₀) :
     ⨆ o : Option ι, v (o.elim 1 (c • x)) ≤ max (v c * ⨆ i, v (x i)) 1 := by
-  rw [iSup_option_elim_eq_max]
-  simp only [Pi.smul_apply, smul_eq_mul, map_mul, ← Real.mul_iSup_of_nonneg (apply_nonneg v c),
-    le_refl]
+  rw [Real.mul_iSup_of_nonneg (apply_nonneg v c)]
+  by_cases hb : BddAbove (Set.range fun o : Option ι ↦ v (o.elim 1 (c • x)))
+  · refine ciSup_le fun o ↦ ?_
+    cases o with
+    | none => simp
+    | some i =>
+      refine le_max_of_le_left (le_ciSup_of_le (hb.mono ?_) i (by simp [map_mul]))
+      rintro _ ⟨j, rfl⟩
+      exact ⟨some j, by simp [map_mul]⟩
+  · rw [Real.iSup_of_not_bddAbove hb]
+    exact zero_le_one.trans (le_max_right _ _)
 
-/-- A logarithmic bound `m * log (v c) + m * log (⨆ i, v (x i)) ≤ B` with `0 ≤ m` and `0 ≤ B`
-bounds `m` times the logarithm of the local factor of the affine height of `c • x`. -/
-lemma mul_log_iSup_option_elim_smul_le (v : F) {x : ι → K} (hx : x ≠ 0) {c : K} (hc : c ≠ 0)
-    {m B : ℝ} (hm : 0 ≤ m) (hB : 0 ≤ B) (h : m * log (v c) + m * log (⨆ i, v (x i)) ≤ B) :
+/-- A logarithmic bound `m * log (v c) + m * log (⨆ i, v (x i)) ≤ B` with `0 ≤ B` bounds `m`
+times the logarithm of the local factor of the affine height of `c • x`. -/
+lemma mul_log_iSup_option_elim_smul_le (v : F) {x : ι → M₀} {c : M₀} {m B : ℝ} (hB : 0 ≤ B)
+    (h : m * log (v c) + m * log (⨆ i, v (x i)) ≤ B) :
     m * log (⨆ o : Option ι, v (o.elim 1 (c • x))) ≤ B := by
-  have hs := iSup_apply_pos v hx
-  have hvc : 0 < v c := (apply_nonneg v c).lt_of_ne' ((map_ne_zero v).mpr hc)
+  have hA := one_le_iSup_option_elim v (c • x)
+  -- for `m ≤ 0` the left side is nonpositive, since the local factor is at least `1`
+  rcases le_or_gt m 0 with hm | hm
+  · exact (mul_nonpos_of_nonpos_of_nonneg hm (log_nonneg hA)).trans hB
   calc m * log (⨆ o : Option ι, v (o.elim 1 (c • x)))
       ≤ m * log (max (v c * ⨆ i, v (x i)) 1) :=
-        mul_le_mul_of_nonneg_left (log_le_log (zero_lt_one.trans_le
-          (one_le_iSup_option_elim v _)) (iSup_option_elim_smul_le v c x)) hm
+        mul_le_mul_of_nonneg_left (log_le_log (zero_lt_one.trans_le hA)
+          (iSup_option_elim_smul_le v c x)) hm.le
     _ ≤ B := by
       rcases le_total (v c * ⨆ i, v (x i)) 1 with h1 | h1
       · simpa [max_eq_right h1] using hB
-      · rwa [max_eq_left h1, log_mul hvc.ne' hs.ne', mul_add]
+      · -- `1 ≤ v c * ⨆ i, v (x i)` forces both factors to be nonzero
+        obtain ⟨hvc, hs⟩ := mul_ne_zero_iff.mp (one_pos.trans_le h1).ne'
+        rwa [max_eq_left h1, log_mul hvc hs, mul_add]
 
 end LocalFactor
 
@@ -292,9 +312,7 @@ lemma logHeight_le_logHeightAff (x : ι → K) : logHeight x ≤ logHeightAff x 
 lemma mulHeightAff_comp_le (f : ι → ι') (x : ι' → K) :
     mulHeightAff (x ∘ f) ≤ mulHeightAff x := by
   have h : (fun o : Option ι ↦ o.elim 1 (x ∘ f)) =
-      (fun o : Option ι' ↦ o.elim 1 x) ∘ Option.map f := by
-    funext o
-    cases o <;> rfl
+      (fun o : Option ι' ↦ o.elim 1 x) ∘ Option.map f := by ext (_ | _) <;> rfl
   rw [mulHeightAff_def, mulHeightAff_def, h]
   exact mulHeight_comp_le _ _
 

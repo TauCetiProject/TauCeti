@@ -134,7 +134,7 @@ theorem exists_fundSystem_sum_abs_logEmbedding_le_max_one_mul {u : Fin (rank K) 
     (convex_logBall K) (fun x ↦ (neg_mem_logBall K x).2) (absorbent_logBall K)
     (Units.finrank_eq_rank K).symm (a := fun i ↦ logEmbedding K (Additive.ofMul (u i)))
     (fun i ↦ logEmbedding_mem_unitLattice _) hu (by simpa only [gauge_logBall] using hmono)
-  choose ε hε using fun j ↦ mem_unitLattice_iff.1 (b j).2
+  choose ε hε using fun j ↦ mem_unitLattice_iff.1 (b j).property
   refine ⟨ε, closure_sup_torsion_eq_top_of_basis b hε, fun j ↦ ?_⟩
   simpa only [gauge_logBall, hε] using hb j
 
@@ -157,8 +157,7 @@ theorem exists_fundSystem_prod_logHeight₁_le_of_isMaxRank {u : Fin (rank K) �
   rw [← Equiv.prod_comp (Tuple.sort n) n, ← prod_max_one_add_one_div_two,
     ← Finset.prod_mul_distrib]
   refine Finset.prod_le_prod₀ (fun i _ ↦ zero_le_logHeight₁ _) fun i _ ↦ ?_
-  exact (le_of_mul_le_mul_left (two_mul_logHeight₁_le_two_mul_sum_abs_logEmbedding (ε i))
-    two_pos).trans (hle i)
+  exact (logHeight₁_le_sum_abs_logEmbedding (ε i)).trans (hle i)
 
 open Classical in
 /-- **A fundamental system of controlled absolute height.** If the logarithmic embeddings of

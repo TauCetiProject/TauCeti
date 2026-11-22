@@ -27,10 +27,9 @@ being new is orthogonality to the old forms **of the same nebentypus** alone,
 `f ∈ S_k(Γ₁(N))ⁿᵉʷ ↔ f ⊥ (S_k(Γ₁(N))ᵒˡᵈ ⊓ S_k(N, χ))`,
 
 because old forms of a different nebentypus are automatically orthogonal to `f`. Equivalently,
-in the form Layer 3 of the ModularForms roadmap asks for, the new subspace of `S_k(N, χ)` —
-the orthogonal complement, taken inside `S_k(N, χ)`, of the old forms there — is
-`S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)`: newness may be read at level `Γ₁(N)` and then intersected. The
-old/new decomposition then restricts to each nebentypus space,
+the new subspace of `S_k(N, χ)` — the orthogonal complement, taken inside `S_k(N, χ)`, of the old
+forms there — is `S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)`: newness may be read at level `Γ₁(N)` and then
+intersected. The old/new decomposition then restricts to each nebentypus space,
 `S_k(N, χ) = S_k(N, χ)ᵒˡᵈ ⊕ S_k(N, χ)ⁿᵉʷ`.
 
 The old part of `S_k(N, χ)` is then described by its generators: it is spanned by the
@@ -156,8 +155,7 @@ theorem mem_cuspFormsNew_iff_of_mem_cuspFormCharSpace
 /-- **The new subspace of `S_k(N, χ)`.** The orthogonal complement of the old forms of
 nebentypus `χ`, taken inside `S_k(N, χ)`, is what one gets by intersecting the new subspace of
 `S_k(Γ₁(N))` with `S_k(N, χ)`: newness may be read at level `Γ₁(N)` and then restricted to a
-nebentypus. This is the milestone `S_k(N, χ)ⁿᵉʷ = S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)` of Layer 3 of the
-ModularForms roadmap. -/
+nebentypus: `S_k(N, χ)ⁿᵉʷ = S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)`. -/
 theorem cuspFormsNew_inf_cuspFormCharSpace (N : ℕ) [NeZero N] (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
     cuspFormsNew N k ⊓ cuspFormCharSpace k χ =
       CuspForm.peterssonOrthogonal (cuspFormsOld N k ⊓ cuspFormCharSpace k χ) ⊓

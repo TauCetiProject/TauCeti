@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import TauCeti.KnotTheory.Khovanov.EnhancedState
 public import TauCeti.KnotTheory.Khovanov.QuantumGrading
+public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
 
 /-!
@@ -189,7 +190,7 @@ variable {σ τ : Type*} [Fintype σ] [DecidableEq τ]
 
 /-- The merge map along `f` sends the basis vector of a labelling `l` to the pure tensor carrying,
 on each circle `j`, the power of `ε` counting the `X`-labels of `l` on the fibre of `j`. -/
-theorem fiberwiseMul_circleBasis_eq_tprod [Finite τ] (f : σ → τ) (l : σ → Bool) :
+theorem fiberwiseMul_circleBasis_eq_tprod (f : σ → τ) (l : σ → Bool) :
     fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f (circleBasis R σ l) =
       ⨂ₜ[R] j, (ε : R[ε]) ^ #{i | f i = j ∧ l i = true} := by
   rw [circleBasis_apply, fiberwiseMul_tprod_eq_tprod_prod]
@@ -268,13 +269,11 @@ theorem fiberwiseMul_circleX [Fintype σ] (f : σ → τ) (i : σ) (x : CircleTe
   rw [circleX_apply, circleX_apply, map_mul, fiberwiseMul_singleAlgHom]
 
 /-- Reindexing along `e` carries `X` on the circle `i` to `X` on the circle `e i`. -/
-theorem reindex_circleX [Finite σ] (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
+theorem reindex_circleX (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
     reindex R (fun _ ↦ R[ε]) e (circleX R i x) =
       circleX R (e i) (reindex R (fun _ ↦ R[ε]) e x) := by
-  have := Fintype.ofFinite σ
-  have h := toLinearMap_fiberwiseMul_equiv (R := R) (B := R[ε]) e
-  rw [← LinearEquiv.coe_coe, ← h, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply,
-    fiberwiseMul_circleX]
+  simp only [← reindexAlgEquiv_toLinearEquiv, AlgEquiv.toLinearEquiv_apply, circleX_apply,
+    map_mul, reindexAlgEquiv_singleAlgHom]
 
 end X
 
@@ -287,7 +286,7 @@ variable (R : Type u) [CommRing R] (ι : Type*) [Fintype ι]
 /-- The **quantum grading** of the circle tensor: the basis vector of a labelling `l` spans its
 degree `TauCeti.Khovanov.labelingQuantumDegree ι l`. It is the grading of the free module on the
 labellings, transported along `TauCeti.Khovanov.circleBasis`. -/
-noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) :=
+noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) ℤ :=
   (InternalGrading.finsupp R (labelingQuantumDegree ι)).map (circleBasis R ι).repr.symm
 
 variable {R ι}
@@ -372,7 +371,7 @@ with element `l₀`. -/
 private def uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
     Unique {l : ι → Bool // labelingQuantumDegree ι l = p} :=
-  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.2)⟩
+  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.property)⟩
 
 private theorem coe_default_uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
@@ -434,11 +433,11 @@ variable {σ τ : Type*} [Fintype σ] [Fintype τ] [DecidableEq τ]
 one has degree `-1`, and the birth of a circle (a point of `τ` outside the range of `f`) has
 degree `+1`. -/
 theorem isHomogeneous_fiberwiseMul (f : σ → τ) :
-    TauCeti.LinearMap.IsHomogeneous (fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f).toLinearMap
+    LinearMap.IsHomogeneous (fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f).toLinearMap
       (circleQuantumGrading R σ).piece (circleQuantumGrading R τ).piece
       (Fintype.card τ - Fintype.card σ) := by
   classical
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [mem_circleQuantumGrading_piece_iff] at hx
   rw [← (circleBasis R σ).sum_repr x, map_sum]
@@ -456,9 +455,9 @@ theorem isHomogeneous_fiberwiseMul (f : σ → τ) :
 
 /-- The `X` action on a circle has quantum degree `-2`. -/
 theorem isHomogeneous_circleX [DecidableEq ι] (i : ι) :
-    TauCeti.LinearMap.IsHomogeneous (circleX R i)
+    LinearMap.IsHomogeneous (circleX R i)
       (circleQuantumGrading R ι).piece (circleQuantumGrading R ι).piece (-2) := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [mem_circleQuantumGrading_piece_iff] at hx
   rw [← (circleBasis R ι).sum_repr x, map_sum]
@@ -536,7 +535,7 @@ theorem exists_circleX_eq_of_mem_piece_of_circleX_eq_zero [DecidableEq ι] (i : 
 omit [DecidableEq τ] in
 /-- Reindexing the circle factors preserves their total quantum degree. -/
 theorem isHomogeneous_reindex (e : σ ≃ τ) :
-    TauCeti.LinearMap.IsHomogeneous (reindex R (fun _ ↦ R[ε]) e).toLinearMap
+    LinearMap.IsHomogeneous (reindex R (fun _ ↦ R[ε]) e).toLinearMap
       (circleQuantumGrading R σ).piece (circleQuantumGrading R τ).piece 0 := by
   classical
   simpa only [toLinearMap_fiberwiseMul_equiv, Fintype.card_congr e, sub_self] using

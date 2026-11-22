@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
 import Mathlib.FieldTheory.IsAlgClosed.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 import TauCeti.RingTheory.Localization.Integral
 
 /-!
@@ -84,21 +84,21 @@ theorem IsUnramifiedWRT.kummer_multiple
   have hgenβ : K⟮AdjoinSimple.gen K₁ β⟯ = ⊤ :=
     TauCeti.IntermediateField.adjoin_gen_eq_top_of_pow_eq hgen hβ
   have hdegree := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible
-    hπ (Nat.mul_ne_zero he hd) hβK hgenβ
+    hπ hβK hgenβ
   have : FiniteDimensional K K₁⟮β⟯ :=
     Module.finite_of_finrank_pos (hdegree ▸ Nat.mul_pos (Nat.pos_of_ne_zero he)
       (Nat.pos_of_ne_zero hd))
   have := IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
-    hπ (Nat.mul_ne_zero he hd) hβK hgenβ
+    hπ hβK hgenβ
   -- Use the canonical integral closures over `A` on both sides of base change.
   have : IsFractionRing (integralClosure A K₁) K₁ := by
-    have hdegree₁ := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible hπ he hα hgen
+    have hdegree₁ := IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible hπ hα hgen
     have : FiniteDimensional K K₁ :=
       Module.finite_of_finrank_pos (hdegree₁ ▸ Nat.pos_of_ne_zero he)
     exact IsIntegralClosure.isFractionRing_of_finite_extension A K K₁ _
   have : IsDiscreteValuationRing (integralClosure A K₁) :=
     IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
-      hπ he hα hgen
+      hπ hα hgen
   have : IsFractionRing (integralClosure A K₁⟮β⟯) K₁⟮β⟯ :=
     IsIntegralClosure.isFractionRing_of_finite_extension A K K₁⟮β⟯ _
   let := integralClosureMapAlgebra A K₁ A K₁⟮β⟯
@@ -108,7 +108,8 @@ theorem IsUnramifiedWRT.kummer_multiple
       ((TauCeti.IntermediateField.adjoinBaseChange K₁ L₁ β).restrictScalars (integralClosure A K₁))
   have hβint : IsIntegral L₁ β :=
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hd) (hβ ▸ isIntegral_algebraMap)).tower_top
-  have hsurj := TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K₁ L₁ hβint
+  have hsurj := TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct K₁ L₁
+    hβint.isAlgebraic
   refine ⟨hβπ, hgenβ, hdegree, inferInstance, ?_, ?_⟩
   · exact h.baseChange (TauCeti.IntermediateField.adjoinBaseChangeTensorLift K₁ L₁ β) hsurj
   · exact Module.Finite.of_surjective

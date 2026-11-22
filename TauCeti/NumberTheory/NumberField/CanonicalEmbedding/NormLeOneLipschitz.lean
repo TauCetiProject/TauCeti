@@ -134,7 +134,7 @@ theorem frontier_image_paramSet_subset :
       expMapBasis '' frontier (paramSet K) ∪ {0} :=
   TauCeti.frontier_image_subset_of_closure_subset
     (fun _ hs ↦ expMapBasis.isOpen_image_of_subset_source hs (by simp [expMapBasis_source]))
-    (injective_expMapBasis K) (closure_image_paramSet_subset K)
+    (closure_image_paramSet_subset K)
 
 variable {K}
 
@@ -147,7 +147,7 @@ private theorem expMapBasis_mem_image_faceMapZero {x : realSpace K} (hx : x ∈ 
     expMapBasis x ∈ faceMapZero K '' Set.Icc (0 : {w : InfinitePlace K // w ≠ w₀} → ℝ) 1 := by
   rw [closure_paramSet, Set.mem_univ_pi] at hx
   have hmem : ∀ i : {w : InfinitePlace K // w ≠ w₀}, x i ∈ Set.Icc (0 : ℝ) 1 :=
-    fun i ↦ by simpa [i.2] using hx i
+    fun i ↦ by simpa [i.property] using hx i
   refine ⟨fun i ↦ x i, ⟨fun i ↦ (hmem i).1, fun i ↦ (hmem i).2⟩, ?_⟩
   exact congrArg expMapBasis (funext fun w ↦ by by_cases hw : w = w₀ <;> simp [hw, hx₀])
 
@@ -162,7 +162,7 @@ private theorem expMapBasis_mem_image_faceMapSide {x : realSpace K} (hx : x ∈ 
   rw [closure_paramSet, Set.mem_univ_pi] at hx
   have hx₀ : x w₀ ≤ 0 := by simpa using hx w₀
   have hmem : ∀ j : {w : InfinitePlace K // w ≠ w₀}, x j ∈ Set.Icc (0 : ℝ) 1 :=
-    fun j ↦ by simpa [j.2] using hx j
+    fun j ↦ by simpa [j.property] using hx j
   refine ⟨Function.update (fun j : {w : InfinitePlace K // w ≠ w₀} ↦ x j) i (Real.exp (x w₀)),
     ⟨fun j ↦ ?_, fun j ↦ ?_⟩, ?_⟩
   · rcases eq_or_ne j i with rfl | hj
@@ -221,7 +221,7 @@ private theorem isLipschitzParametrizable_image_frontier_paramSet :
       (expMapBasis '' frontier (paramSet K)) := by
   classical
   have hcard : Fintype.card {w : InfinitePlace K // w ≠ w₀} = rank K :=
-    (Fintype.card_congr equivFinRank).symm.trans (Fintype.card_fin _)
+    (Fintype.card_congr (NumberField.Units.equivFinRank K)).symm.trans (Fintype.card_fin _)
   refine .mono ?_ (image_frontier_paramSet_subset K)
   refine .union
     (.image_unitCube_of_contDiffOn hcard (ContDiff.contDiffOn (contDiff_faceMapZero K))) ?_
@@ -260,8 +260,8 @@ at a real place instead of its norm. The cover below needs a map defined — and
 closed cube, and needs the real places to carry a separate choice of sign. -/
 private noncomputable def liftMap (s : {w : InfinitePlace K // IsReal w} → Bool)
     (p : realSpace K × ({w : InfinitePlace K // IsComplex w} → ℝ)) : mixedSpace K :=
-  (fun w ↦ (if s w then 1 else -1) * p.1 w.1,
-    fun w ↦ p.1 w.1 • Complex.exp ((2 * Real.pi * p.2 w - Real.pi) • Complex.I))
+  (fun w ↦ (if s w then 1 else -1) * p.1 w.val,
+    fun w ↦ p.1 w.val • Complex.exp ((2 * Real.pi * p.2 w - Real.pi) • Complex.I))
 
 open scoped Classical in
 /-- Each lift is `C¹`: it is linear at the real places, and a product of a coordinate with a
@@ -288,11 +288,11 @@ private theorem preimage_subset_iUnion_image_liftMap (S : Set (realSpace K)) :
   · exact div_nonneg (by linarith [Complex.neg_pi_lt_arg (x.2 w)]) hpi.le
   · exact (div_le_one hpi).2 (by linarith [Complex.arg_le_pi (x.2 w)])
   refine Prod.ext (funext fun w ↦ ?_) (funext fun w ↦ ?_)
-  · have hnorm : normAtAllPlaces x w.1 = ‖x.1 w‖ := normAtPlace_apply_of_isReal w.2 x
+  · have hnorm : normAtAllPlaces x w.val = ‖x.1 w‖ := normAtPlace_apply_of_isReal w.property x
     by_cases h : 0 ≤ x.1 w
     · simp [liftMap, hnorm, h, Real.norm_of_nonneg h]
     · simp [liftMap, hnorm, h, Real.norm_of_nonpos (not_le.1 h).le]
-  · have hnorm : normAtAllPlaces x w.1 = ‖x.2 w‖ := normAtPlace_apply_of_isComplex w.2 x
+  · have hnorm : normAtAllPlaces x w.val = ‖x.2 w‖ := normAtPlace_apply_of_isComplex w.property x
     have hang : 2 * Real.pi * ((Complex.arg (x.2 w) + Real.pi) / (2 * Real.pi)) - Real.pi
         = Complex.arg (x.2 w) := by
       field_simp
@@ -316,9 +316,10 @@ theorem isLipschitzParametrizable_frontier_normLeOne :
     simpa using TauCeti.IsLipschitzParametrizable.image_unitCube_of_contDiffOn
       (d := nrComplexPlaces K) (f := id) rfl contDiffOn_id
   -- `rank K + r₂` is the codimension-one dimension: the identity is
-  -- `NumberField.rank_add_nrComplexPlaces_add_one`, transported across `mixedEmbedding.finrank`.
+  -- `NumberField.Units.rank_add_nrComplexPlaces_add_one`, transported across
+  -- `mixedEmbedding.finrank`.
   have hdim : rank K + nrComplexPlaces K = finrank ℝ (mixedSpace K) - 1 := by
-    rw [mixedEmbedding.finrank, ← rank_add_nrComplexPlaces_add_one K]
+    rw [mixedEmbedding.finrank, ← Units.rank_add_nrComplexPlaces_add_one K]
     omega
   rw [← hdim]
   refine .mono (.iUnion fun s ↦ .image_of_locallyLipschitz (contDiff_liftMap K s).locallyLipschitz

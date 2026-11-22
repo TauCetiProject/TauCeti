@@ -19,15 +19,13 @@ nonvanishing of the principal subresultant coefficient at the degree of the gcd.
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 variable {K : Type*} [Field K] [DecidableEq K]
 
 /-- In a relation `A * q + B * p = 0`, if `A` has degree below `deg p - deg (gcd p q)`, then
 `A = 0`. -/
-theorem _root_.Polynomial.eq_zero_of_mul_add_mul_eq_zero_of_degree_lt {p q A B : K[X]}
+theorem eq_zero_of_mul_add_mul_eq_zero_of_degree_lt {p q A B : K[X]}
     (hAB : A * q + B * p = 0)
     (hA : A.degree < ((p.natDegree - (EuclideanDomain.gcd p q).natDegree : ℕ) : WithBot ℕ)) :
     A = 0 := by
@@ -45,4 +43,4 @@ theorem _root_.Polynomial.eq_zero_of_mul_add_mul_eq_zero_of_degree_lt {p q A B :
   have := (natDegree_le_of_dvd hdvd (mul_ne_zero hA0 hg)).trans natDegree_mul_le
   omega
 
-end TauCeti
+end Polynomial

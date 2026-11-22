@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Ring.Finite
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Eval
+public import Mathlib.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Distances from roots of unity to one
@@ -20,6 +21,10 @@ compute the radius of cyclotomic translations in p-adic analysis.
 The factorization and the enumeration of primitive roots are Mathlib's
 `Polynomial.cyclotomic_eq_prod_X_sub_primitiveRoots` and
 `IsPrimitiveRoot.card_primitiveRoots`.
+
+A square root `i` of `-1` is a fourth root of unity, so it has norm one in any normed ring whose
+norm is multiplicative (`TauCeti.norm_eq_one_of_sq_eq_neg_one`), and in a nonarchimedean normed
+field it lies in the valuation ring (`TauCeti.mem_integer_of_sq_eq_neg_one`).
 -/
 
 public section
@@ -38,7 +43,7 @@ theorem norm_sub_one_eq (hζ : IsPrimitiveRoot ζ n) (hξ : IsPrimitiveRoot ξ n
     obtain ⟨i, _, rfl⟩ := ha.eq_pow_of_pow_eq_one hb.pow_eq_one
     have hnorm := (ha.isOfFinOrder (NeZero.ne n)).norm_eq_one
     simpa using TauCeti.norm_prod_sub_prod_le (s := Finset.range i)
-      (f := fun _ => a) (g := fun _ => (1 : K)) (by norm_num : (0 : ℝ) ≤ 1)
+      (f := fun _ => a) (g := fun _ => (1 : K)) (M := 1)
       (norm_nonneg (a - 1)) (by simp [hnorm]) (by simp) (by simp)
   exact le_antisymm (hle hξ hζ) (hle hζ hξ)
 
@@ -67,3 +72,19 @@ theorem norm_sub_one_pow_prime_sub_one {p : ℕ} [Fact p.Prime]
     using hζ.norm_sub_one_pow_totient
 
 end IsPrimitiveRoot
+
+namespace TauCeti
+
+/-- A square root `i` of `-1` in a normed ring with multiplicative norm has norm one. -/
+theorem norm_eq_one_of_sq_eq_neg_one {R : Type*} [NormedRing R] [NormMulClass R] [NormOneClass R]
+    {i : R} (hi : i ^ 2 = -1) : ‖i‖ = 1 :=
+  (pow_eq_one_iff_of_nonneg (norm_nonneg i) two_ne_zero).mp (by rw [← norm_pow, hi, norm_neg,
+    norm_one])
+
+/-- A square root `i` of `-1` in a nonarchimedean normed field lies in its valuation ring. -/
+theorem mem_integer_of_sq_eq_neg_one {K : Type*} [NormedField K] [IsUltrametricDist K] {i : K}
+    (hi : i ^ 2 = -1) : i ∈ (NormedField.valuation (K := K)).integer := by
+  rw [Valuation.mem_integer_iff, NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm,
+    norm_eq_one_of_sq_eq_neg_one hi]
+
+end TauCeti

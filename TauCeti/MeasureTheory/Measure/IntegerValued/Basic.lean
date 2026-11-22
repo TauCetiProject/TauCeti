@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Measure.Count
 public import Mathlib.MeasureTheory.Measure.Map
 public import Mathlib.MeasureTheory.Measure.Restrict
@@ -60,6 +61,13 @@ theorem IsIntegerValued.exists_eq_natCast (hμ : μ.IsIntegerValued) {A : Set X}
     (hA : MeasurableSet A) (hfin : μ A < ∞) : ∃ n : ℕ, μ A = n :=
   isIntegerValued_def.1 hμ hA hfin
 
+/-- Flooring a finite measurable mass of an integer-valued measure to a natural number and
+casting back recovers the mass. -/
+theorem IsIntegerValued.natCast_floor_toNNReal (hμ : μ.IsIntegerValued) {A : Set X}
+    (hA : MeasurableSet A) (hfin : μ A ≠ ∞) : (⌊(μ A).toNNReal⌋₊ : ℝ≥0∞) = μ A := by
+  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast hA hfin.lt_top
+  rw [hn, ENNReal.toNNReal_natCast, Nat.floor_natCast]
+
 /-- An integer-valued measure takes only natural-number or infinite values on measurable sets. -/
 theorem isIntegerValued_iff : μ.IsIntegerValued ↔
     ∀ A : Set X, MeasurableSet A → (∃ n : ℕ, μ A = n) ∨ μ A = ∞ := by
@@ -71,10 +79,12 @@ theorem isIntegerValued_iff : μ.IsIntegerValued ↔
   · intro h A hA hfin
     exact (h A hA).resolve_right hfin.ne
 
-/-- A nonzero measurable mass of an integer-valued measure is at least one. -/
+/-- A nonzero mass of an integer-valued measure is at least one. The set need not be measurable:
+its mass is that of a measurable hull. -/
 theorem IsIntegerValued.one_le_apply (hμ : μ.IsIntegerValued) {A : Set X}
-    (hA : MeasurableSet A) (hne : μ A ≠ 0) : 1 ≤ μ A := by
-  rcases isIntegerValued_iff.1 hμ A hA with ⟨n, hn⟩ | hn
+    (hne : μ A ≠ 0) : 1 ≤ μ A := by
+  rw [← measure_toMeasurable A] at hne ⊢
+  rcases isIntegerValued_iff.1 hμ _ (measurableSet_toMeasurable μ A) with ⟨n, hn⟩ | hn
   · rw [hn] at hne ⊢
     exact_mod_cast Nat.one_le_iff_ne_zero.2 (by simpa using hne)
   · simp [hn]
@@ -112,7 +122,7 @@ theorem IsIntegerValued.sum {μ : ι → Measure X} (hμ : ∀ i, (μ i).IsInteg
   choose n hn using fun i => hμ i hA (hi i)
   have hs : {i | μ i A ≠ 0}.Finite :=
     (ENNReal.finite_const_le_of_tsum_ne_top hfin.ne one_ne_zero).subset
-      fun i hi => (hμ i).one_le_apply hA hi
+      fun i hi => (hμ i).one_le_apply hi
   refine ⟨∑ i ∈ hs.toFinset, n i, ?_⟩
   rw [tsum_eq_sum (s := hs.toFinset) (fun i hi => by simpa using hi)]
   simp [hn]
@@ -192,19 +202,65 @@ theorem isIntegerValued_of_isPiSystem {S : Set (Set X)}
       tsum_eq_sum (s := hsupport.toFinset) (fun i hi => by simpa using hi)]
     simp [hn]
 
-/-- Integrality can be checked on the restrictions to any countable measurable cover.
-The cover need not be disjoint. -/
-theorem isIntegerValued_of_restrict {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n))
+/-- Integrality can be checked on the restrictions to any countable cover.
+The cover need not be disjoint or measurable. -/
+theorem isIntegerValued_of_restrict {s : ℕ → Set X}
     (hcover : ⋃ n, s n = Set.univ) (hμ : ∀ n, (μ.restrict (s n)).IsIntegerValued) :
     μ.IsIntegerValued := by
-  have hpieces (n : ℕ) : (μ.restrict (disjointed s n)).IsIntegerValued := by
-    simpa only [restrict_restrict_of_subset (disjointed_le s n)] using
-      (hμ n).restrict (A := disjointed s n)
-  have heq : μ = Measure.sum (fun n => μ.restrict (disjointed s n)) := by
-    rw [← restrict_iUnion (disjoint_disjointed s) (MeasurableSet.disjointed hs),
-      iUnion_disjointed, hcover, restrict_univ]
-  rw [heq]
-  exact IsIntegerValued.sum hpieces
+  -- The case of a measurable cover.
+  have key {ν : Measure X} {t : ℕ → Set X} (ht : ∀ n, MeasurableSet (t n))
+      (hcover : ⋃ n, t n = Set.univ) (hν : ∀ n, (ν.restrict (t n)).IsIntegerValued) :
+      ν.IsIntegerValued := by
+    have hpieces (n : ℕ) : (ν.restrict (disjointed t n)).IsIntegerValued := by
+      simpa only [restrict_restrict_of_subset (disjointed_le t n)] using
+        (hν n).restrict (A := disjointed t n)
+    have heq : ν = Measure.sum (fun n => ν.restrict (disjointed t n)) := by
+      rw [← restrict_iUnion (disjoint_disjointed t) (MeasurableSet.disjointed ht),
+        iUnion_disjointed, hcover, restrict_univ]
+    rw [heq]
+    exact IsIntegerValued.sum hpieces
+  -- A measurable set `A` of finite mass: restrict to `A` and replace `s n` by measurable hulls.
+  intro A hA hfin
+  have : IsFiniteMeasure (μ.restrict A) := ⟨by rwa [restrict_apply_univ]⟩
+  have hint : (μ.restrict A).IsIntegerValued := by
+    refine key (t := fun n ↦ toMeasurable (μ.restrict A) (s n))
+      (fun n ↦ measurableSet_toMeasurable _ _)
+      (Set.eq_univ_of_univ_subset (hcover ▸ Set.iUnion_mono fun n ↦ subset_toMeasurable _ _))
+      fun n ↦ ?_
+    rw [restrict_toMeasurable (measure_ne_top _ _), restrict_restrict' hA]
+    simpa only [restrict_restrict hA, Set.inter_comm] using (hμ n).restrict (A := A)
+  obtain ⟨n, hn⟩ := hint MeasurableSet.univ (measure_lt_top _ _)
+  exact ⟨n, by simpa only [restrict_apply_univ] using hn⟩
+
+/-- A measure on a second-countable ordered Borel space is integer-valued if its mass on every
+initial interval `Set.Iic a` is a natural number. No finite-total-mass or nonempty assumption is
+needed. -/
+theorem isIntegerValued_of_Iic {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    [SecondCountableTopology α] [LinearOrder α] [OrderTopology α] [BorelSpace α]
+    {μ : Measure α} (hμ : ∀ a, ∃ n : ℕ, μ (Set.Iic a) = n) : μ.IsIntegerValued := by
+  by_cases hne : Nonempty α
+  · obtain ⟨s, hsc, hsd, -, hst⟩ := exists_countable_dense_bot_top α
+    have hsne : s.Nonempty := by
+      obtain ⟨x⟩ := hne
+      obtain ⟨a, ha, -⟩ := hsd.exists_ge' hst x
+      exact ⟨a, ha⟩
+    obtain ⟨f, hf⟩ := hsc.exists_eq_range hsne
+    apply isIntegerValued_of_restrict (s := fun n => Set.Iic (f n))
+    · ext x
+      simp only [Set.mem_iUnion, Set.mem_Iic, Set.mem_univ, iff_true]
+      obtain ⟨a, ha, hxa⟩ := hsd.exists_ge' hst x
+      rw [hf] at ha
+      obtain ⟨n, rfl⟩ := ha
+      exact ⟨n, hxa⟩
+    · intro n
+      apply isIntegerValued_of_isPiSystem (μ := μ.restrict (Set.Iic (f n)))
+        (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic (α := α))) isPiSystem_Iic
+      · rintro _ ⟨a, rfl⟩
+        simpa [Measure.restrict_apply measurableSet_Iic, Set.Iic_inter_Iic] using hμ (min a (f n))
+      · simpa [Measure.restrict_apply_univ] using hμ (f n)
+  · intro A _ _
+    have : IsEmpty α := not_nonempty_iff.mp hne
+    exact ⟨0, by simp [Set.eq_empty_of_isEmpty A]⟩
 
 /-- Removing one occurrence preserves integer multiplicities, including absent and infinite
 atoms. No local-finiteness or sigma-finiteness assumption is needed. -/
@@ -231,6 +287,6 @@ theorem isIntegerValued_sum {ι X : Type*} [MeasurableSpace X]
     (s : Finset ι) {μ : ι → Measure X} (hμ : ∀ i ∈ s, (μ i).IsIntegerValued) :
     (∑ i ∈ s, μ i).IsIntegerValued := by
   rw [← Measure.sum_coe_finset]
-  exact Measure.IsIntegerValued.sum fun i => hμ i i.2
+  exact Measure.IsIntegerValued.sum fun i => hμ i i.property
 
 end Finset

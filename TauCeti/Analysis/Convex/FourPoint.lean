@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.SpecificFunctions.Basic
-import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Convex.StrictConvexSpace
 
 /-!
 # Four-point inequalities for convex functions
@@ -28,10 +28,13 @@ public section
 
 namespace TauCeti
 
+variable {𝕜 β : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommMonoid β] [PartialOrder β] [IsOrderedAddMonoid β] [Module 𝕜 β]
+
 /-- Convexity bounds the sum at two intermediate points by the sum at two endpoints whenever
-both pairs have the same sum. Only the endpoints need to be assumed in the convex domain. -/
-theorem add_le_add_of_convexOn_of_add_eq {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] {s : Set 𝕜} {f : 𝕜 → 𝕜} (hf : ConvexOn 𝕜 s f)
+both pairs have the same sum. The function may take values in any ordered additive monoid that is
+a `𝕜`-module, and only the endpoints need to be assumed in the convex domain. -/
+theorem add_le_add_of_convexOn_of_add_eq {s : Set 𝕜} {f : 𝕜 → β} (hf : ConvexOn 𝕜 s f)
     {a b c d : 𝕜} (hc : c ∈ s) (hd : d ∈ s) (hca : c ≤ a) (had : a ≤ d)
     (hsum : a + b = c + d) : f a + f b ≤ f c + f d := by
   rcases eq_or_lt_of_le (hca.trans had) with hcd | hcd
@@ -52,14 +55,13 @@ theorem add_le_add_of_convexOn_of_add_eq {𝕜 : Type*} [Field 𝕜] [LinearOrde
     have h₂ := hf.2 hc hd hv hu (by linarith)
     simp only [smul_eq_mul, ha, hb] at h₁ h₂
     calc
-      f a + f b ≤ (u * f c + v * f d) + (v * f c + u * f d) := add_le_add h₁ h₂
+      f a + f b ≤ (u • f c + v • f d) + (v • f c + u • f d) := add_le_add h₁ h₂
       _ = f c + f d := by
-        linear_combination (f c + f d) * huv
+        match_scalars <;> linear_combination huv
 
 /-- Convex displacement costs satisfy the Monge four-point inequality on ordered points.
 The convexity domain need only contain the two extreme, crossed displacements. -/
-theorem add_sub_le_add_sub_of_convexOn {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] {s : Set 𝕜} {f : 𝕜 → 𝕜} (hf : ConvexOn 𝕜 s f)
+theorem add_sub_le_add_sub_of_convexOn {s : Set 𝕜} {f : 𝕜 → β} (hf : ConvexOn 𝕜 s f)
     {x₁ x₂ y₁ y₂ : 𝕜} (hx : x₁ ≤ x₂) (hy : y₁ ≤ y₂)
     (h₁ : x₁ - y₂ ∈ s) (h₂ : x₂ - y₁ ∈ s) :
     f (x₁ - y₁) + f (x₂ - y₂) ≤ f (x₁ - y₂) + f (x₂ - y₁) := by
@@ -71,12 +73,7 @@ theorem abs_sub_rpow_add_abs_sub_rpow_le {p x₁ x₂ y₁ y₂ : ℝ} (hp : 1 �
     (hx : x₁ ≤ x₂) (hy : y₁ ≤ y₂) :
     |x₁ - y₁| ^ p + |x₂ - y₂| ^ p ≤ |x₁ - y₂| ^ p + |x₂ - y₁| ^ p := by
   have hf : ConvexOn ℝ Set.univ (fun x : ℝ ↦ |x| ^ p) := by
-    refine ⟨convex_univ, fun x _ y _ a b ha hb hab ↦ ?_⟩
-    have hnorm := (convexOn_univ_norm (E := ℝ)).2 (Set.mem_univ x) (Set.mem_univ y)
-      ha hb hab
-    have hpow := (convexOn_rpow hp).2 (abs_nonneg x) (abs_nonneg y) ha hb hab
-    simp only [Real.norm_eq_abs, smul_eq_mul] at hnorm hpow ⊢
-    exact (Real.rpow_le_rpow (abs_nonneg _) hnorm (zero_le_one.trans hp)).trans hpow
+    simpa only [Real.norm_eq_abs] using convexOn_norm_rpow (E := ℝ) hp
   exact add_sub_le_add_sub_of_convexOn hf hx hy (Set.mem_univ _) (Set.mem_univ _)
 
 end TauCeti

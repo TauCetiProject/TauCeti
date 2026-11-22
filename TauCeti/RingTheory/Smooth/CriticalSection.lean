@@ -97,7 +97,7 @@ differentials form a basis of `Ω[W⁄A]`, all lying in a prime `P`, and `f ∈ 
 a smooth `A'`-algebra in which the images of `x` are again étale coordinates, a prime `P'` of `W'`
 above `P` with the same residue field, and `h ∈ A'` such that `f - h ∈ (x) ^ 2` in `W'`. -/
 theorem exists_etale_sub_algebraMap_mem_span_range_sq {A W : Type u} [CommRing A] [CommRing W]
-    [Algebra A W] [Algebra.Smooth A W] {ι : Type*} [Finite ι] {x : ι → W}
+    [Algebra A W] [Algebra.Smooth A W] {ι : Type*} {x : ι → W}
     (b : Module.Basis ι W Ω[W⁄A]) (hb : ∀ i, b i = D A W (x i))
     (P : Ideal W) [P.IsPrime] (hx : ∀ i, x i ∈ P) {f : W}
     (hf : D A W f ∈ Ideal.span (Set.range x) • (⊤ : Submodule W Ω[W⁄A])) :
@@ -119,7 +119,7 @@ theorem exists_etale_sub_algebraMap_mem_span_range_sq {A W : Type u} [CommRing A
     TauCeti.Algebra.FormallyUnramified.exists_mul_tmul_sub_mem_map_includeRight A I
   obtain ⟨ψ₀, hψ₀⟩ := Ideal.ResidueField.exists_algHom_tensorProduct_eq_lmul' A I P hIP
   have hψ₀t : IsUnit (ψ₀ t) := by
-    rw [hψ₀, ht₁, map_one]
+    rw [hψ₀, ht₁, Algebra.FormallyUnramified.lmul_elem, map_one]
     exact isUnit_one
   -- Invert `t` and take the point `P'` of `W' = T[1/t]` given by `ψ₀`.
   let W' := Localization.Away t

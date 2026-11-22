@@ -298,7 +298,7 @@ private theorem finite_image_apply
   refine ((hSlf.finite_nonempty_inter_compact (isCompact_closedRegionBetween_convexHull
     (a := (a : E →ᵃ[ℝ] ℝ)) (b := b) t.finite_toSet hab)).biUnion
     fun D _ ↦ (show {q : ℝ | (x, q) ∈ (D : Set (E × ℝ))}.Subsingleton from ?_).finite).subset ?_
-  · obtain ⟨⟨u, c⟩, -, hD⟩ := D.2
+  · obtain ⟨⟨u, c⟩, -, hD⟩ := D.property
     intro q₁ hq₁ q₂ hq₂
     simp only [mem_ofPred_eq, ← hD, mem_graphOn] at hq₁ hq₂
     exact hq₁.2.symm.trans hq₂.2
@@ -339,8 +339,6 @@ private theorem exists_mem_intrinsicInterior (hS : ∀ p ∈ S, p.1 ∈ K.faces)
     SimplicialComplex.exists_mem_faces_subset_mem_intrinsicInterior (hS _ ha) hx
   have htne := K.nonempty_of_mem_faces ht
   have hxt' : x ∈ convexHull ℝ (t : Set E) := intrinsicInterior_subset hxt
-  have hts' : convexHull ℝ (t : Set E) ⊆ convexHull ℝ (s : Set E) :=
-    convexHull_mono (Finset.coe_subset.2 hts)
   have habt : ∀ v ∈ t, a v ≤ b v := fun v hv ↦ hab v (hts hv)
   -- the sections over `t` between `a` and `b`
   set T := {c : E →ᴬ[ℝ] ℝ | (t, c) ∈ S ∧ (∀ v ∈ t, a v ≤ c v) ∧ ∀ v ∈ t, c v ≤ b v}
@@ -627,20 +625,21 @@ theorem exists_subdivision_rectilinearCells
       (∀ t ∈ L.faces, ∃ C ∈ rectilinearCells S, (t : Set (E × ℝ)) ⊆ C) ∧
       LocallyFinite fun t : L.faces ↦ convexHull ℝ (t : Set (E × ℝ)) := by
   have hne : ∀ C : rectilinearCells S, (intrinsicInterior ℝ (C : Set (E × ℝ))).Nonempty :=
-    fun C ↦ Set.Nonempty.intrinsicInterior (convex_of_mem_rectilinearCells C.2)
-      (nonempty_of_mem_rectilinearCells hS C.2)
+    fun C ↦ Set.Nonempty.intrinsicInterior (convex_of_mem_rectilinearCells C.property)
+      (nonempty_of_mem_rectilinearCells hS C.property)
   obtain ⟨L, hLs, hLP, hLf, hLlf⟩ := SimplicialComplex.exists_subdivision
     (fun C : rectilinearCells S ↦ (C : Set (E × ℝ)))
-    (fun C ↦ isCompact_of_mem_rectilinearCells C.2) (fun C ↦ convex_of_mem_rectilinearCells C.2)
+    (fun C ↦ isCompact_of_mem_rectilinearCells C.property) (fun C ↦ convex_of_mem_rectilinearCells
+        C.property)
     (fun C ↦ (hne C).some) (fun C ↦ (hne C).some_mem)
     (locallyFinite_rectilinearCells hK hS hSle hSlf)
     (fun C D hCD ↦ Set.disjoint_left.2 fun _ hzC hzD ↦ hCD (Subtype.ext
-      (eq_of_mem_intrinsicInterior_rectilinearCells hS hSle C.2 D.2 hzC hzD)))
+      (eq_of_mem_intrinsicInterior_rectilinearCells hS hSle C.property D.property hzC hzD)))
     (fun C z hz ↦ by
       -- a point of the intrinsic frontier lies in the intrinsic interior of a smaller cell
-      obtain ⟨s, a, b, ha, hb, hab, hC⟩ := exists_eq_closedRegionBetween C.2
+      obtain ⟨s, a, b, ha, hb, hab, hC⟩ := exists_eq_closedRegionBetween C.property
       have hzC : z ∈ (C : Set (E × ℝ)) :=
-        intrinsicFrontier_subset (isCompact_of_mem_rectilinearCells C.2).isClosed hz
+        intrinsicFrontier_subset (isCompact_of_mem_rectilinearCells C.property).isClosed hz
       rw [← hC] at hzC
       obtain ⟨D, hD, hzD, hDC⟩ := exists_mem_intrinsicInterior hS hSface hSle hSlf ha hb hab hzC
       have hzi : z ∉ intrinsicInterior ℝ (C : Set (E × ℝ)) := by
@@ -651,7 +650,7 @@ theorem exists_subdivision_rectilinearCells
       exact hzD)
   refine ⟨L, by rw [hLs, sUnion_eq_iUnion], fun C hC ↦ hLP ⟨C, hC⟩, fun t ht ↦ ?_, hLlf⟩
   obtain ⟨C, -, htC⟩ := hLf t ht
-  exact ⟨C, C.2, htC⟩
+  exact ⟨C, C.property, htC⟩
 
 /-- **Triangulating a cylinder over a simplicial complex.** For a locally finite simplicial complex
 `K` in a finite-dimensional real normed space `E`, the cylinder `|K| × ℝ` has a locally finite

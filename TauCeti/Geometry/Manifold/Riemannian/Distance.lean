@@ -1,15 +1,17 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
-# Finiteness of the Riemannian distance, and the induced metric space
+# Comparison and finiteness of the Riemannian distance, and the induced metric space
 
 `Manifold.riemannianEDist I x y` is the infimum of the lengths of `C¹` paths from `x` to `y`, an
 *extended* distance: it is `∞` as soon as no such path exists. This file identifies exactly when it
@@ -27,6 +29,10 @@ is the special case that matters downstream.
 
 ## Main results
 
+* `TauCeti.Manifold.riemannianEDist_le_mul`: a `C¹` map with differential uniformly bounded by
+  a positive constant increases Riemannian extended distances by at most that factor.
+* `TauCeti.IsRiemannianManifold.lipschitzWith_of_norm_mfderiv_le`: the corresponding global
+  Lipschitz estimate when both ambient extended distances are Riemannian.
 * `TauCeti.Manifold.riemannianEDist_lt_top_iff_mem_connectedComponent`: the Riemannian distance from
   `x` to `y` is finite if and only if `y` lies in the connected component of `x`.
 * `TauCeti.Manifold.riemannianEDist_ne_top`: on a preconnected manifold the Riemannian distance is
@@ -34,21 +40,33 @@ is the special case that matters downstream.
 * `TauCeti.PseudoMetricSpace.ofRiemannianMetric` and `TauCeti.MetricSpace.ofRiemannianMetric`: the
   (pseudo)metric space structures of a preconnected Riemannian manifold, refining
   `PseudoEMetricSpace.ofRiemannianMetric` and `EMetricSpace.ofRiemannianMetric`; both satisfy
-  `IsRiemannianManifold I M`.
+  `IsRiemannianManifold I M`, and `PseudoMetricSpace.ofRiemannianMetric_eq`,
+  `MetricSpace.ofRiemannianMetric_eq`, and `MetricSpace.completeSpace_ofRiemannianMetric` compare
+  them with an existing ambient `(Pseudo)MetricSpace` satisfying `IsRiemannianManifold I M`.
 * `TauCeti.IsRiemannianManifold.edist_le_pathELength` and
   `TauCeti.IsRiemannianManifold.dist_le_toReal_pathELength`: the ambient (extended) distance of a
   Riemannian manifold, read through `IsRiemannianManifold.out`, is bounded by the length of any
   `C¹` path.
 * `TauCeti.IsRiemannianManifold.edist_le_of_norm_mfderiv_le`: the mean-value inequality for a
   `C¹` map from a normed space into a Riemannian manifold along a segment.
+* `TauCeti.IsRiemannianManifold.lipschitzOnWith_of_norm_curveVelocity_le`: a `C¹` curve whose speed
+  is bounded by `K` on an interval is `K`-Lipschitz there.
+* `TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_of_contMDiffAt`: a map from a
+  real normed space into a manifold with continuous Riemannian metric is Lipschitz
+  on a ball around each point where it is `C¹`.
 * `TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`: the extended distance is bounded
   below by any bound valid for the lengths of *all* `C¹` curves joining two points, since it is the
   infimum of those lengths.
+* `TauCeti.Manifold.riemannianEDist_le_of_tendsto_of_forall_pathELength_le` and
+  `TauCeti.Manifold.tendsto_of_mapClusterPt_of_forall_pathELength_le`: a convergent `C¹` curve is
+  within its tail length of its limit, and a curve whose tail lengths tend to zero converges to each
+  of its cluster points.
+
+The path-containment lemma `TauCeti.Manifold.mem_ball_of_pathELength_lt` is adapted from
+Giada Franz’s verified `ForTauCeti` formalization.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 0, "Distance compatibility and finiteness".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 7 §2, Def. 2.4.
 * `Mathlib/Geometry/Manifold/Riemannian/Basic.lean` (S. Gouëzel):
   `PseudoEMetricSpace.ofRiemannianMetric`, `EMetricSpace.ofRiemannianMetric`, and their
@@ -58,7 +76,7 @@ is the special case that matters downstream.
 public section
 
 open Bundle Manifold Set
-open scoped ENNReal Manifold Topology
+open scoped ENNReal Manifold NNReal Topology
 
 noncomputable section
 
@@ -94,19 +112,48 @@ theorem le_riemannianEDist_of_forall_le_pathELength {x y : M} {c : ℝ≥0∞}
   obtain ⟨γ, h0, h1, hγ, hl⟩ := exists_lt_of_riemannianEDist_lt hr1
   exact absurd ((h γ h0 h1 hγ).trans hl.le) (not_le.2 hr2)
 
+section Comparison
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {K : Type*} [TopologicalSpace K] {J : ModelWithCorners ℝ F K}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace K N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+
+/-- A `C¹` map whose differential is bounded by a positive constant increases Riemannian
+extended distances by at most that factor. Positivity allows infinitely distant components. -/
+theorem riemannianEDist_le_mul {f : M → N} (hf : ContMDiff I J 1 f) {C : ℝ≥0}
+    (hC0 : C ≠ 0) (hC : ∀ x (v : TangentSpace I x), ‖mfderiv I J f x v‖ ≤ C * ‖v‖)
+    (x y : M) : riemannianEDist J (f x) (f y) ≤ C * riemannianEDist I x y := by
+  rw [← ENNReal.div_le_iff' (ENNReal.coe_ne_zero.2 hC0) ENNReal.coe_ne_top]
+  refine le_riemannianEDist_of_forall_le_pathELength fun γ h0 h1 hγ ↦ ?_
+  rw [ENNReal.div_le_iff' (ENNReal.coe_ne_zero.2 hC0) ENNReal.coe_ne_top]
+  refine (riemannianEDist_le_pathELength (hf.comp_contMDiffOn hγ)
+    (congrArg f h0) (congrArg f h1) zero_le_one).trans ?_
+  rw [pathELength_eq_lintegral_mfderiv_Ioo, pathELength_eq_lintegral_mfderiv_Ioo,
+    ← MeasureTheory.lintegral_const_mul' _ _ ENNReal.coe_ne_top]
+  refine MeasureTheory.setLIntegral_mono' measurableSet_Ioo fun t ht ↦ ?_
+  have hdiff := (hγ.contMDiffAt (Icc_mem_nhds ht.1 ht.2)).mdifferentiableAt one_ne_zero
+  rw [mfderiv_comp t ((hf _).mdifferentiableAt one_ne_zero) hdiff, ContinuousLinearMap.comp_apply,
+    ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
+    ← ENNReal.ofReal_mul C.coe_nonneg]
+  exact ENNReal.ofReal_le_ofReal (hC _ _)
+
+end Comparison
+
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
-/-- The set of points at finite Riemannian distance from `x` is open: any point close enough to a
-point `y` of this set is at Riemannian distance `< 1` from `y`, hence at finite distance from `x` by
-the triangle inequality. -/
-theorem isOpen_setOfPred_riemannianEDist_lt_top (x : M) :
-    IsOpen {y | riemannianEDist I x y < ⊤} := by
+/-- Open Riemannian balls are open: any point close enough to a point `y` at Riemannian distance
+less than `r` from `x` is again at distance less than `r` from `x`, by the triangle inequality. In
+particular, with `r = ⊤`, the set of points at finite Riemannian distance from `x` is open. -/
+theorem isOpen_setOfPred_riemannianEDist_lt (x : M) (r : ℝ≥0∞) :
+    IsOpen {y | riemannianEDist I x y < r} := by
   rw [isOpen_iff_mem_nhds]
   intro y hy
-  filter_upwards [eventually_riemannianEDist_lt I y zero_lt_one] with z hz
+  obtain ⟨δ, hδ, hδr⟩ := ENNReal.lt_iff_exists_add_pos_lt.1 hy
+  filter_upwards [eventually_riemannianEDist_lt I y (ENNReal.coe_pos.2 hδ)] with z hz
   exact (riemannianEDist_triangle (y := y)).trans_lt
-    (ENNReal.add_lt_top.2 ⟨hy, hz.trans_le le_top⟩)
+    ((ENNReal.add_lt_add_left (ne_top_of_lt hy) hz).trans hδr)
 
 variable (I) in
 /-- The set of points at finite Riemannian distance from `x` is closed: if `y` is at infinite
@@ -125,7 +172,7 @@ variable (I) in
 /-- The set of points at finite Riemannian distance from `x` is clopen. -/
 theorem isClopen_setOfPred_riemannianEDist_lt_top (x : M) :
     IsClopen {y | riemannianEDist I x y < ⊤} :=
-  ⟨isClosed_setOfPred_riemannianEDist_lt_top I x, isOpen_setOfPred_riemannianEDist_lt_top I x⟩
+  ⟨isClosed_setOfPred_riemannianEDist_lt_top I x, isOpen_setOfPred_riemannianEDist_lt I x ⊤⟩
 
 variable (I) in
 /-- Two points of a preconnected set are at finite Riemannian distance. -/
@@ -156,6 +203,68 @@ theorem riemannianEDist_ne_top [PreconnectedSpace M] (x y : M) : riemannianEDist
   (riemannianEDist_lt_top I x y).ne
 
 end Finiteness
+
+section TailLength
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  {γ : ℝ → M} {p : M}
+
+open Filter
+
+/-- **The distance from a point of a convergent curve to its limit is at most the length of the
+rest of the curve.** If `γ` is `C¹` on `[t, ∞)` and converges to `p`, and every piece of `γ`
+starting at time `t` has Riemannian length at most `L`, then `γ t` is at Riemannian distance at
+most `L` from `p`. -/
+theorem riemannianEDist_le_of_tendsto_of_forall_pathELength_le {t : ℝ} {L : ℝ≥0∞}
+    (hγ : CMDiff[Ici t] 1 γ) (hp : Tendsto γ atTop (𝓝 p))
+    (hL : ∀ s, pathELength I γ t s ≤ L) : riemannianEDist I (γ t) p ≤ L := by
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
+  -- Compare with a later point `γ s` which is `ε`-close to `p`.
+  obtain ⟨s, hs, hts⟩ := ((hp.eventually (eventually_riemannianEDist_lt I p
+    (c := ε) (by exact_mod_cast hε))).and (eventually_ge_atTop t)).exists
+  calc riemannianEDist I (γ t) p
+      ≤ riemannianEDist I (γ t) (γ s) + riemannianEDist I (γ s) p := riemannianEDist_triangle
+    _ ≤ pathELength I γ t s + ε := by
+        gcongr
+        · exact riemannianEDist_le_pathELength (hγ.mono Icc_subset_Ici_self) rfl rfl hts
+        · rw [riemannianEDist_comm]
+          exact hs.le
+    _ ≤ L + ε := by gcongr; exact hL s
+
+/-- **A curve whose tail lengths tend to zero converges to each of its cluster points.** If `γ`
+is `C¹` on `[a, ∞)`, the Riemannian lengths of its pieces starting at time `t` tend to zero as
+`t → ∞`, and `p` is a cluster point of `γ t` as `t → ∞`, then `γ` converges to `p`. In particular
+a curve of finite length on `[a, ∞)` in a compact manifold converges. -/
+theorem tendsto_of_mapClusterPt_of_forall_pathELength_le [RegularSpace M] {a : ℝ}
+    (hγ : CMDiff[Ici a] 1 γ) (hp : MapClusterPt p atTop γ)
+    (hlen : ∀ ε > 0, ∀ᶠ t in atTop, ∀ s, pathELength I γ t s ≤ ε) :
+    Tendsto γ atTop (𝓝 p) := by
+  intro U hU
+  -- Points at Riemannian distance less than `c` from `p` lie in `U`.
+  obtain ⟨c, hc, hcU⟩ := setOfPred_riemannianEDist_lt_subset_nhds I hU
+  have hc2 : (0 : ℝ≥0∞) < (c : ℝ≥0∞) / 2 :=
+    ENNReal.half_pos (by exact_mod_cast hc.ne')
+  obtain ⟨T, hT⟩ := eventually_atTop.1 ((hlen _ hc2).and (eventually_ge_atTop a))
+  -- Some time `u ≥ T` brings `γ` within `c / 2` of `p`; afterwards `γ` moves by at most `c / 2`.
+  obtain ⟨u, hu, huT⟩ := ((hp.frequently (eventually_riemannianEDist_lt I p hc2)).and_eventually
+    (eventually_ge_atTop T)).exists
+  refine mem_map.2 (mem_atTop_sets.2 ⟨T, fun t ht ↦ hcU ?_⟩)
+  have hut : riemannianEDist I (γ u) (γ t) ≤ c / 2 := by
+    rcases le_total u t with h | h
+    · exact (riemannianEDist_le_pathELength (hγ.mono fun r hr ↦ (hT u huT).2.trans hr.1) rfl rfl
+        h).trans ((hT u huT).1 t)
+    · rw [riemannianEDist_comm]
+      exact (riemannianEDist_le_pathELength (hγ.mono fun r hr ↦ (hT t ht).2.trans hr.1) rfl rfl
+        h).trans ((hT t ht).1 u)
+  calc riemannianEDist I p (γ t)
+      ≤ riemannianEDist I p (γ u) + riemannianEDist I (γ u) (γ t) := riemannianEDist_triangle
+    _ < c / 2 + c / 2 :=
+        ENNReal.add_lt_add_of_lt_of_le (ne_top_of_le_ne_top (by finiteness) hut) hu hut
+    _ = c := ENNReal.add_halves _
+
+end TailLength
 
 end Manifold
 
@@ -211,6 +320,96 @@ theorem edist_le_of_norm_mfderiv_le {F : Type*} [NormedAddCommGroup F] [NormedSp
       exact ENNReal.ofReal_le_ofReal (hC _ hτ')
     _ = ENNReal.ofReal C := by simp
 
+/-- A curve that is `C¹` at every point of an interval `s` and whose Riemannian speed is at most
+`K` on `s` is `K`-Lipschitz on `s` for the ambient extended distance. -/
+theorem lipschitzOnWith_of_norm_curveVelocity_le {γ : ℝ → M} {s : Set ℝ} {K : ℝ≥0}
+    (hs : OrdConnected s) (hγ : ∀ t ∈ s, ContMDiffAt 𝓘(ℝ) I 1 γ t)
+    (hK : ∀ t ∈ s, ‖Manifold.curveVelocity I γ t‖ ≤ K) :
+    LipschitzOnWith K γ s := by
+  intro u hu v hv
+  have hsub : segment ℝ u v ⊆ s := by
+    rw [segment_eq_uIcc]
+    exact hs.uIcc_subset hu hv
+  calc edist (γ u) (γ v) ≤ ENNReal.ofReal (K * dist u v) := by
+        refine edist_le_of_norm_mfderiv_le (fun z hz ↦ hγ z (hsub hz)) fun z hz ↦ ?_
+        -- `L` is the differential retyped with source `ℝ` instead of `TangentSpace 𝓘(ℝ) z`, which
+        -- unfolds to `ℝ`; this lets real scalars act on its arguments.
+        let L : ℝ →L[ℝ] TangentSpace I (γ z) := mfderiv 𝓘(ℝ) I γ z
+        have hL : L (v - u) = (v - u) • Manifold.curveVelocity I γ z := by
+          have h := L.map_smul (v - u) (1 : ℝ)
+          rw [smul_eq_mul, mul_one] at h
+          rwa [Manifold.curveVelocity_apply]
+        -- Restate the goal through the `let`-bound `L`, so that `hL` can rewrite it.
+        change ‖L (v - u)‖ ≤ K * dist u v
+        rw [hL, norm_smul, Real.norm_eq_abs, ← Real.dist_eq, dist_comm, mul_comm]
+        exact mul_le_mul_of_nonneg_right (hK z (hsub hz)) dist_nonneg
+    _ = K * edist u v := by
+        rw [ENNReal.ofReal_mul K.coe_nonneg, ENNReal.ofReal_coe_nnreal, edist_dist]
+
+/-- A `C¹` map between Riemannian manifolds with differential bounded by a positive constant
+is Lipschitz with that constant. -/
+theorem lipschitzWith_of_norm_mfderiv_le
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {K : Type*} [TopologicalSpace K] {J : ModelWithCorners ℝ F K}
+    {N : Type*} [PseudoEMetricSpace N] [ChartedSpace K N]
+    [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsRiemannianManifold J N]
+    {f : M → N} (hf : ContMDiff I J 1 f) {C : ℝ≥0} (hC0 : C ≠ 0)
+    (hC : ∀ x (v : TangentSpace I x), ‖mfderiv I J f x v‖ ≤ C * ‖v‖) :
+    LipschitzWith C f := by
+  intro x y
+  rw [IsRiemannianManifold.out (I := J), IsRiemannianManifold.out (I := I)]
+  exact Manifold.riemannianEDist_le_mul hf hC0 hC x y
+
+section LocalLipschitz
+
+variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A map from a real normed space into a manifold with a continuous Riemannian
+metric is Lipschitz, for the ambient extended distance, on a ball around each point at which it is
+`C¹`. -/
+theorem exists_lipschitzOnWith_of_contMDiffAt {f : F → M} {x : F}
+    (hf : ContMDiffAt 𝓘(ℝ, F) I 1 f x) :
+    ∃ r > 0, ∃ C : ℝ≥0, LipschitzOnWith C f (Metric.ball x r) := by
+  set U := {y | ContMDiffAt 𝓘(ℝ, F) I 1 f y}
+  have hU : IsOpen U := TauCeti.isOpen_setOfPred_contMDiffAt (by simp)
+  have hUx : ∀ᶠ y in 𝓝 x, y ∈ U := hU.mem_nhds hf
+  have hcont := ContMDiffOn.continuousOn_norm_mfderiv_apply
+    (fun y (hy : y ∈ U) ↦ hy.contMDiffWithinAt) le_rfl hU
+  -- `L y` is the differential retyped with source `F` instead of `TangentSpace 𝓘(ℝ, F) y`, which
+  -- unfolds to `F`; this gives it an operator norm.
+  let L (y : F) : F →L[ℝ] TangentSpace I (f y) := mfderiv 𝓘(ℝ, F) I f y
+  have hL0 : ‖L x 0‖ < 1 := by
+    rw [map_zero, norm_zero]
+    exact one_pos
+  -- Joint continuity at `(x, 0)` gives `‖L y w‖ < 1` for `y` near `x` and `‖w‖ < δ`.
+  have hsmall : ∀ᶠ p : F × F in 𝓝 x ×ˢ 𝓝 0, ‖L p.1 p.2‖ < 1 := by
+    rw [← nhds_prod_eq]
+    exact (hcont.continuousAt ((hU.prod isOpen_univ).mem_nhds ⟨hf, mem_univ 0⟩)).eventually
+      (gt_mem_nhds hL0)
+  obtain ⟨P, hP, Q, hQ, hPQ⟩ := Filter.eventually_prod_iff.1 hsmall
+  obtain ⟨δ, hδ, hδQ⟩ := Metric.eventually_nhds_iff_ball.1 hQ
+  obtain ⟨C, hC⟩ : ∃ C : ℝ≥0, (C : ℝ) = 2 / δ := ⟨⟨2 / δ, by positivity⟩, rfl⟩
+  -- Rescaling vectors of norm in `[δ / 2, δ)` bounds the operator norm by `2 / δ`.
+  have hbound : ∀ᶠ y in 𝓝 x, ‖L y‖ ≤ C :=
+    hP.mono fun y hy ↦ ContinuousLinearMap.opNorm_le_of_shell (c := (2 : ℝ)) hδ C.coe_nonneg
+      (by norm_num) fun w hw₁ hw₂ ↦ by
+        rw [Real.norm_ofNat] at hw₁
+        refine (hPQ hy (hδQ w (mem_ball_zero_iff.2 hw₂))).le.trans ?_
+        calc (1 : ℝ) = 2 / δ * (δ / 2) := by field_simp
+          _ ≤ C * ‖w‖ := by rw [hC]; gcongr
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp (hUx.and hbound)
+  refine ⟨r, hr, C, fun a ha b hb ↦ ?_⟩
+  have hseg := (convex_ball x r).segment_subset ha hb
+  calc edist (f a) (f b) ≤ ENNReal.ofReal (C * ‖b - a‖) :=
+        edist_le_of_norm_mfderiv_le (fun z hz ↦ (hball _ (hseg hz)).1) fun z hz ↦
+          (L z).le_of_opNorm_le (hball _ (hseg hz)).2 _
+    _ = C * edist a b := by
+        rw [ENNReal.ofReal_mul C.coe_nonneg, ENNReal.ofReal_coe_nnreal, edist_dist, dist_eq_norm,
+          norm_sub_rev]
+
+end LocalLipschitz
+
 end PseudoEMetric
 
 section PseudoMetric
@@ -247,6 +446,33 @@ theorem exists_pathELength_lt_of_dist_lt {x y : M} {r : ℝ} (hr : dist x y < r)
 end PseudoMetric
 
 end IsRiemannianManifold
+
+namespace Manifold
+
+section BallContainment
+
+variable {M : Type*} [PseudoMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+
+/-- A `C¹` path starting at `p` whose length is less than `s` stays in the open ball `B(p, s)`. -/
+theorem mem_ball_of_pathELength_lt {γ : ℝ → M} {p : M} {s : ℝ} (hγ : CMDiff[Icc 0 1] 1 γ)
+    (hγ0 : γ 0 = p) (hlen : pathELength I γ 0 1 < ENNReal.ofReal s) {t : ℝ} (ht : t ∈ Icc 0 1) :
+    γ t ∈ Metric.ball p s := by
+  have hle : pathELength I γ 0 t ≤ pathELength I γ 0 1 := pathELength_mono le_rfl ht.2
+  have hlt : pathELength I γ 0 t < ENNReal.ofReal s := hle.trans_lt hlen
+  have hd := TauCeti.IsRiemannianManifold.dist_le_toReal_pathELength (I := I)
+    (hγ.mono (Icc_subset_Icc le_rfl ht.2)) hγ0 rfl ht.1 hlt.ne_top
+  rw [Metric.mem_ball, dist_comm]
+  refine hd.trans_lt ?_
+  have hs : 0 < s := by
+    by_contra h
+    simp [ENNReal.ofReal_eq_zero.2 (not_lt.1 h)] at hlt
+  exact (ENNReal.toReal_lt_toReal hlt.ne_top ENNReal.ofReal_ne_top).2 hlt |>.trans_eq
+    (ENNReal.toReal_ofReal hs.le)
+
+end BallContainment
+
+end Manifold
 
 section OfRiemannianMetric
 
@@ -306,5 +532,44 @@ instance [T3Space M] [PreconnectedSpace M] :
   exact ⟨fun _ _ ↦ rfl⟩
 
 end OfRiemannianMetric
+
+section OfRiemannianMetricEq
+
+variable (I) in
+/-- When the ambient pseudometric space on a preconnected Riemannian manifold already has distance
+given by `riemannianEDist`, `PseudoMetricSpace.ofRiemannianMetric` recovers that ambient
+`PseudoMetricSpace` structure. -/
+theorem PseudoMetricSpace.ofRiemannianMetric_eq (M : Type*) [hM : PseudoMetricSpace M]
+    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [PreconnectedSpace M]
+    [IsRiemannianManifold I M] :
+    PseudoMetricSpace.ofRiemannianMetric I M = hM := by
+  ext x y
+  exact (IsRiemannianManifold.dist_eq_toReal_riemannianEDist I x y).symm
+
+variable (I) in
+/-- When the ambient metric space on a preconnected Riemannian manifold already has distance given
+by `riemannianEDist`, `MetricSpace.ofRiemannianMetric` recovers that ambient `MetricSpace`
+structure. -/
+theorem MetricSpace.ofRiemannianMetric_eq (M : Type*) [hM : MetricSpace M]
+    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [PreconnectedSpace M]
+    [IsRiemannianManifold I M] :
+    MetricSpace.ofRiemannianMetric I M = hM := by
+  ext x y
+  exact (IsRiemannianManifold.dist_eq_toReal_riemannianEDist I x y).symm
+
+variable (I) in
+/-- When a complete metric space on a preconnected Riemannian manifold has distance given by
+`riemannianEDist`, the metric space `MetricSpace.ofRiemannianMetric I M` is also complete. -/
+theorem MetricSpace.completeSpace_ofRiemannianMetric (M : Type*) [MetricSpace M]
+    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [PreconnectedSpace M]
+    [IsRiemannianManifold I M] [CompleteSpace M] :
+    @CompleteSpace M (MetricSpace.ofRiemannianMetric I M).toUniformSpace := by
+  rw [MetricSpace.ofRiemannianMetric_eq I M]
+  infer_instance
+
+end OfRiemannianMetricEq
 
 end TauCeti

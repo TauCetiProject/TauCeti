@@ -65,13 +65,11 @@ the span.
 
 ## References
 
-This is the completeness half of the "the `{χ_n}` are an orthonormal basis of the class functions
-of `SU(2)`" item of the `SU(2)` engine case of
-`TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md`; orthonormality is
-`TauCeti.SU2.character_symPower_orthonormal_torusExp`. It is the analytic input to the remaining
-item of that engine case, that the `Symᵈ(ℂ²)` exhaust the finite-dimensional irreducibles, which
-is *not* proved here: that deduction additionally needs the symmetric powers as continuous unitary
-representations, so that the character orthogonality of
+Orthonormality of the characters is `TauCeti.SU2.character_symPower_orthonormal_torusExp`. The
+density proved here is the analytic input to the exhaustion theorem, that the `Symᵈ(ℂ²)` exhaust the
+finite-dimensional irreducibles, which is *not* proved here but in
+`TauCeti/RepresentationTheory/SU2/Exhaustion.lean`: that deduction additionally needs the symmetric
+powers as continuous representations, so that the character orthogonality of
 `TauCeti/RepresentationTheory/Compact/Character/Basic.lean` applies to them.
 
 * D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 3.
@@ -190,7 +188,7 @@ theorem character_symPower_eq_chebyshevU_eval (d : ℕ) (g : SU2) :
 /-- The trace is continuous on `SU(2)`, the topology being induced from the matrices. -/
 private theorem continuous_trace :
     Continuous fun g : SU2 => Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) :=
-  Continuous.matrix_trace continuous_subtype_val
+  Continuous.matrix_trace continuous_subtypeVal
 
 /-- **The character of `Symᵈ(ℂ²)` is continuous**, being a polynomial in the trace. -/
 theorem continuous_character_symPower (d : ℕ) :

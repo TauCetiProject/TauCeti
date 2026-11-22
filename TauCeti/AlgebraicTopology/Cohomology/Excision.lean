@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Singular.Excision
+import TauCeti.Topology.Closure
 
 /-!
 # Excision for relative singular cohomology
@@ -147,13 +148,11 @@ cohomology. -/
 theorem isIso_singularCohomologyMap_excisionMap (h : interior A ∪ interior B = Set.univ)
     (n : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (excisionMap A B) n) := by
-  refine isIso_singularCohomologyMap_of_open_cover (excisionMap A B)
+  exact isIso_singularCohomologyMap_of_open_cover (excisionMap A B)
     (isEmbedding_fst_excisionMap A B) (mem_range_map_of_fst_excisionMap_mem A B)
     (fun b : Bool ↦ bif b then interior A else interior B)
-    (fun b ↦ by cases b <;> exact isOpen_interior) ?_
+    (fun b ↦ by cases b <;> exact isOpen_interior) (Set.union_eq_iUnion.symm.trans h)
     (interior_subset_range_or_subset_range_fst_excisionMap A B) n
-  rw [← Set.union_eq_iUnion]
-  exact h
 
 variable (R k M) in
 /-- **Excision of a set with closure in the interior of the subspace.** If
@@ -162,12 +161,8 @@ variable (R k M) in
 theorem isIso_singularCohomologyMap_excisionMap_compl (Z : Set X) (h : closure Z ⊆ interior B)
     (n : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (excisionMap Zᶜ B) n) := by
-  refine isIso_singularCohomologyMap_excisionMap R k M Zᶜ B ?_ n
-  rw [interior_compl, Set.eq_univ_iff_forall]
-  intro x
-  by_cases hx : x ∈ closure Z
-  · exact Or.inr (h hx)
-  · exact Or.inl hx
+  exact isIso_singularCohomologyMap_excisionMap R k M Zᶜ B
+    (TauCeti.interior_compl_union_interior_eq_univ_iff.2 h) n
 
 variable (R k M) in
 /-- **Excision onto a neighbourhood.** If `U` is open and contains the closed set `K`, the
@@ -176,9 +171,8 @@ inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms
 theorem isIso_singularCohomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (hU : IsOpen U)
     (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (excisionMap U Kᶜ) n) := by
-  refine isIso_singularCohomologyMap_excisionMap R k M U Kᶜ ?_ n
-  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
-  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
+  exact isIso_singularCohomologyMap_excisionMap R k M U Kᶜ
+    (TauCeti.interior_union_interior_compl_eq_univ hU hK hKU) n
 
 variable (R k M) in
 /-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let

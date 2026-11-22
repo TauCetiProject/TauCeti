@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Semigroups.Generator.Invariance
+import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-!
@@ -15,7 +16,9 @@ This file characterizes membership in the infinitesimal generator domain by righ
 differentiability of the orbit at zero. For a vector in the generator domain, it computes the
 right derivative at every nonnegative time in the equivalent forms `A (S t x)` and `S t (A x)`.
 It also proves that a generator-domain orbit has a derivative within the whole nonnegative
-half-line, hence a two-sided derivative at positive times.
+half-line, hence a two-sided derivative at positive times, and
+`StronglyContinuousSemigroup.hasDerivAt_realOperator_sub` reads such an orbit backwards from a
+fixed time `t`: at `s < t`, `u ↦ S (t - u) y` has derivative `-S (t - s) (A y)`.
 
 Finally, `StronglyContinuousSemigroup.slope_apply_realOperator_eq` rebases an orbit inside a
 slope by the semigroup law, and
@@ -156,8 +159,8 @@ theorem realOperator_hasDerivWithinAt_map_generator
       (S.realOperator t (S.generator ⟨x, by
         rw [S.generator_domain]
         exact x.property⟩)) (Set.Ici t) t := by
-  rw [← S.realOperator_generator_map ht x]
-  exact S.realOperator_hasDerivWithinAt ht (S.realOperator_mem_domain ht x.property)
+  rw [← S.realOperator_generator_map x]
+  exact S.realOperator_hasDerivWithinAt ht (S.realOperator_mem_domain x.property)
 
 /-! ## Derivatives within the nonnegative half-line -/
 
@@ -186,7 +189,7 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
     HasDerivWithinAt (fun s : ℝ => S.realOperator s (x : X))
       (S.generator ⟨S.realOperator t x, by
         rw [S.generator_domain]
-        exact S.realOperator_mem_domain ht x.property⟩) (Set.Ici 0) t := by
+        exact S.realOperator_mem_domain x.property⟩) (Set.Ici 0) t := by
   rcases ht.eq_or_lt with rfl | ht
   · simpa only [S.realOperator_zero_apply] using S.realOperator_hasDerivWithinAt_zero x
   let z : X := S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩
@@ -209,15 +212,21 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
     have h := ((hasDerivAt_const t (x : X)).add hint).hasDerivWithinAt (s := Set.Ici 0)
     exact h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _)
   -- Finally transfer the derivative from `g` back to the orbit and commute the generator.
-  rw [S.realOperator_generator_map ht.le x]
+  rw [S.realOperator_generator_map x]
   exact hg.congr (fun s hs => horbit s hs) (horbit t ht.le)
 
-/-- The orbit of a generator-domain vector is right-differentiable at every nonnegative time. -/
+/-- The orbit of a generator-domain vector is right-differentiable at every time. -/
 theorem realOperator_differentiableWithinAt (S : StronglyContinuousSemigroup X)
-    (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
-    DifferentiableWithinAt ℝ (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici t) t :=
-  (S.realOperator_hasDerivWithinAt ht
-    (S.realOperator_mem_domain ht x.property)).differentiableWithinAt
+    (x : S.domain) (t : ℝ) :
+    DifferentiableWithinAt ℝ (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici t) t := by
+  rcases le_or_gt 0 t with ht | ht
+  · exact (S.realOperator_hasDerivWithinAt ht
+      (S.realOperator_mem_domain x.property)).differentiableWithinAt
+  · -- before time `0` the orbit is constant
+    refine (differentiableWithinAt_const (x : X)).congr_of_eventuallyEq ?_
+      (S.realOperator_of_nonpos_apply ht.le _)
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds (Iio_mem_nhds ht)] with s hs
+    exact S.realOperator_of_nonpos_apply hs.le _
 
 /-- The right derivative of an orbit at a nonnegative time is the generator evaluated on the
 evolved vector, provided that vector belongs to the generator domain. -/
@@ -245,7 +254,22 @@ orbit of its generator. In particular, the derivative at zero is a right derivat
     derivWithin (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici 0) t =
       S.realOperator t (S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩) := by
   rw [(S.realOperator_hasDerivWithinAt_Ici x ht).derivWithin
-    (uniqueDiffOn_Ici 0 t ht), S.realOperator_generator_map ht x]
+    (uniqueDiffOn_Ici 0 t ht), S.realOperator_generator_map x]
+
+/-- **The backwards orbit of a domain point.** Reading the orbit of `y ∈ D(A)` backwards from a
+fixed time `t`, the derivative at `s < t` is the negative of the generator transported along the
+remaining time `t - s`. -/
+theorem hasDerivAt_realOperator_sub [CompleteSpace X] {S : StronglyContinuousSemigroup X}
+    {t s : ℝ} (hrpos : 0 < t - s) {y a : X} (hy : y ∈ S.generator.domain)
+    (hSa : S.generator ⟨y, hy⟩ = a) :
+    HasDerivAt (fun u : ℝ => S.realOperator (t - u) y) (-(S.realOperator (t - s) a)) s := by
+  have hyS : y ∈ S.domain := by rwa [S.generator_domain] at hy
+  have hpsi : HasDerivAt (fun u : ℝ => S.realOperator u y) (S.realOperator (t - s) a) (t - s) := by
+    have h := S.realOperator_hasDerivWithinAt_Ici ⟨y, hyS⟩ hrpos.le
+    rw [S.realOperator_generator_map ⟨y, hyS⟩] at h
+    simp only [hSa] at h
+    exact h.hasDerivAt (Ici_mem_nhds hrpos)
+  exact HasDerivAt.comp_const_sub t s hpsi
 
 end StronglyContinuousSemigroup
 

@@ -33,6 +33,8 @@ Holomorphy and boundedness at every rational cusp then supply the analytic condi
 * `ZLattice.IsEven.thetaCoset_slash_of_mem_Gamma`: invariance for every matrix of `Γ(N)`.
 * `ZLattice.thetaCosetForm`: the modular form associated to a discriminant class.
 * `ZLattice.qExpansion_thetaCosetForm_coeff`: its coefficients count vectors in the coset.
+* `ZLattice.not_isCuspForm_thetaCosetForm_zero`: the form of the zero class, `Θ_L` itself, is
+  not a cusp form.
 
 ## References
 
@@ -91,7 +93,7 @@ theorem IsEven.thetaCosetClass_slash_of_mem_Gamma (hL : IsEven L)
     (hA : A ∈ CongruenceSubgroup.Gamma (level L)) :
     thetaCosetClass L δ ∣[(k : ℤ)] A = thetaCosetClass L δ := by
   induction δ using Submodule.Quotient.induction_on with
-  | H γ => simpa using hL.thetaCoset_slash_of_mem_Gamma hk γ.2 hA
+  | H γ => simpa using hL.thetaCoset_slash_of_mem_Gamma hk γ.property hA
 
 /-- The coset theta series of a discriminant class of an even full lattice, as a modular form
 of weight half the rank on the principal congruence subgroup at the lattice's level. -/
@@ -108,13 +110,22 @@ noncomputable def thetaCosetForm (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
   bdd_at_cusps' hc := by
     induction δ using Submodule.Quotient.induction_on with
     | H γ =>
-      simpa using hL.isBoundedAt_thetaCoset hk γ.2 (hc.mono (Subgroup.map_le_range _ _))
+      simpa using hL.isBoundedAt_thetaCoset hk γ.property (hc.mono (Subgroup.map_le_range _ _))
 
 /-- The underlying function of the coset theta form is the theta series of its class. -/
 @[simp]
 theorem coe_thetaCosetForm (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (δ : DiscriminantGroup L) : ⇑(thetaCosetForm hL hk δ) = thetaCosetClass L δ :=
   (rfl)
+
+/-- The coset theta form of the zero class, the theta series `Θ_L` as a modular form on `Γ(N)`,
+is not a cusp form: its value at `∞` is `1`. -/
+@[simp]
+theorem not_isCuspForm_thetaCosetForm_zero (hL : IsEven L) (hk : finrank ℝ E = 2 * k) :
+    ¬ ModularForm.IsCuspForm (thetaCosetForm hL hk 0) := by
+  -- a positive level makes `Γ(N)` of finite index, so that `∞` is one of its cusps
+  have : NeZero (level L) := ⟨hL.isIntegral.level_pos.ne'⟩
+  exact not_isCuspForm_of_coe_eq_thetaSeries L (by rw [coe_thetaCosetForm, thetaCosetClass_zero])
 
 /-- The coefficients of a coset theta form in `q_N = exp (2 π i τ / N)` count the vectors in
 that coset of squared norm `2m / N`, where `N` is the lattice's level. -/

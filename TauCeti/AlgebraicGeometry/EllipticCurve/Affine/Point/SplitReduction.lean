@@ -321,7 +321,6 @@ private theorem valuation_eq_and_le_of_nonsingular {a₆ A B ν x₁ x₂ x₃ :
   -- every quadratic monomial in `x₁`, `u₁`, `w₁` with coefficient of valuation `≤ σ²` is at most
   -- `σ² κ²`, which is smaller than `σ³ κ`
   have hσ2 : σ ≤ σ ^ 2 := le_self_pow₀ hσ1 two_ne_zero
-  have hσ23 : σ ^ 2 ≤ σ ^ 3 := pow_le_pow_right₀ hσ1 (by norm_num)
   have hκκ : σ ^ 2 * (κ * κ) < σ ^ 3 * κ :=
     calc σ ^ 2 * (κ * κ) < σ ^ 2 * (σ * κ) :=
           mul_lt_mul_of_pos_left (mul_lt_mul_of_pos_right (hu₁.trans_le hσ1) hκ0.pos)
@@ -375,12 +374,12 @@ private theorem valuation_lt_sq_of_lt {δ a₆ x u w : F} (hδ : v δ = 1) (hx :
   have h3 : v (x ^ 3) < v a₆ := by
     rw [map_pow, hvx]
     refine lt_of_lt_of_le ?_ (not_lt.1 h)
-    exact pow_lt_pow_right_of_lt_one₀ (zero_lt_iff.2 hu0) hu (by norm_num)
+    exact pow_lt_pow_right_of_lt_one₀ (pos_iff_ne_zero.2 hu0) hu (by norm_num)
   have h' := congrArg v hc
   rw [map_mul, v.map_add_eq_of_lt_right h3] at h'
   -- `v u * v w = v a₆ ≥ (v u)²` forces `v w ≥ v u`
   have : v u * v u ≤ v u * v w := by rw [h', ← sq]; exact not_lt.1 h
-  exact not_lt.2 (le_of_mul_le_mul_left this (zero_lt_iff.2 hu0)) hwu
+  exact not_lt.2 (le_of_mul_le_mul_left this (pos_iff_ne_zero.2 hu0)) hwu
 
 /-- **Branches of equal size.** On `u w = x³ + a₆` with `δ x = u - w`, `δ` a unit and `a₆ ≠ 0`, if
 `v u = v w < 1` then `(v u)² = v a₆`. -/
@@ -401,7 +400,7 @@ private theorem valuation_sq_eq_of_eq {δ a₆ x u w : F} (hδ : v δ = 1) (hx :
   have h3 : v (x ^ 3) < v u ^ 2 := by
     rw [map_pow]
     exact (pow_le_pow_left₀ zero_le hvx 3).trans_lt
-      (pow_lt_pow_right_of_lt_one₀ (zero_lt_iff.2 hu0) hu (by norm_num))
+      (pow_lt_pow_right_of_lt_one₀ (pos_iff_ne_zero.2 hu0) hu (by norm_num))
   rcases lt_trichotomy (v a₆) (v u ^ 2) with h | h | h
   · exact absurd (huw ▸ congrArg v hc ▸ v.map_add_lt h3 h) (lt_irrefl _)
   · exact h.symm
@@ -511,7 +510,7 @@ private theorem SplitNodal.valuation_lt_of_le (hW : SplitNodal v W α β) {x y :
   refine ⟨lt_of_le_of_lt hsq ?_, hsq⟩
   have h0 : v (y - α * x) ≠ 0 := fun h0 ↦ hW.valuation_a₆_ne_zero (le_antisymm
     (by simpa [h0] using hsq) zero_le)
-  exact pow_lt_self_of_lt_one₀ (zero_lt_iff.2 h0) hu one_lt_two
+  exact pow_lt_self_of_lt_one₀ (pos_iff_ne_zero.2 h0) hu one_lt_two
 
 /-- On a branch at least as large as the other one, `v (y - α x) < 1` forces `y - α x ≠ 0`. -/
 private theorem SplitNodal.sub_ne_zero_of_le (hW : SplitNodal v W α β) {x y : F}
@@ -649,11 +648,11 @@ private theorem SplitNodal.sq_componentValue (hW : SplitNodal v W α β) {x y : 
   · rw [componentValue_some_of_ge hW h hw huw.le]
     have hsym := hW.symm.valuation_lt_of_le h.left hw huw.le
     have hw0 : v (y - β * x) ≠ 0 := (zero_le.trans_lt hsym.1).ne'
-    rw [div_pow, div_lt_iff₀ (pow_pos (zero_lt_iff.2 hw0) 2), sq (v W.a₆)]
+    rw [div_pow, div_lt_iff₀ (pow_pos (pos_iff_ne_zero.2 hw0) 2), sq (v W.a₆)]
     -- the strict inequality `v a₆ < (v w)²` of the second branch
     have hlt := valuation_lt_sq_of_lt v (δ := α - β) (x := x) (by rw [← v.map_neg, neg_sub,
       hW.sub]) (by ring) (by rw [mul_comm]; exact hW.equation_iff.1 h.left) hw huw
-    exact mul_lt_mul_of_pos_left hlt (zero_lt_iff.2 hW.valuation_a₆_ne_zero)
+    exact mul_lt_mul_of_pos_left hlt (pos_iff_ne_zero.2 hW.valuation_a₆_ne_zero)
 
 /-- **The values of the component** on the points outside `E₀(F)` lie in `(v a₆, 1)`, and are
 values of `v`. -/
@@ -671,7 +670,7 @@ private theorem SplitNodal.componentValue_mem (hW : SplitNodal v W α β) {P : W
     have hw0 : 0 < v (y - β * x) := zero_le.trans_lt hsym
     refine ⟨⟨W.a₆ / (y - β * x), map_div₀ v _ _⟩, ?_, ?_⟩
     · rw [lt_div_iff₀ hw0]
-      exact mul_lt_of_lt_one_right (zero_lt_iff.2 hW.valuation_a₆_ne_zero) hw
+      exact mul_lt_of_lt_one_right (pos_iff_ne_zero.2 hW.valuation_a₆_ne_zero) hw
     · rwa [div_lt_one₀ hw0]
 
 /-- **Adding a point of `E₀(F)` to a point on the first branch.** If `(x₁, y₁)` has singular
@@ -852,7 +851,7 @@ private theorem SplitNodal.exists_point [HenselianLocalRing v.valuationSubring]
     field_simp at hroot ⊢
     linear_combination hroot
   · rw [hw, map_mul]
-    exact mul_le_of_le_one_right' t.2
+    exact mul_le_of_le_one_right' t.property
 
 /-- **Every value of `v` in `(v a₆, 1)` is the component of a point.** -/
 private theorem SplitNodal.exists_componentValue_eq [HenselianLocalRing v.valuationSubring]

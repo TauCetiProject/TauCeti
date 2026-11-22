@@ -142,7 +142,7 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk (σ : G) :
 theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff
     (q : p.primesOver C) (σ : G) :
     (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C).symm q = DoubleCoset.mk H _ σ ↔
-      q.1 = (σ • Q).under C := by
+      q.val = (σ • Q).under C := by
   rw [Equiv.symm_apply_eq, Subtype.ext_iff, doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk]
 
 /-- **The double-coset law is compatible with the action of `G`.** Indexing the primes of `C`
@@ -162,8 +162,8 @@ theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_natural {H' : Subgroup G
     [FaithfulSMul C' B] [Algebra.IsInvariant C' B H'] [SMulCommClass H' C' B]
     (q : DoubleCoset.Quotient (H : Set G) (stabilizer G Q : Set G)) :
     (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H' C'
-        (DoubleCoset.quotientMapOfLELeft h (stabilizer G Q) q)).1 =
-      (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q).1.under C' := by
+        (DoubleCoset.quotientMapOfLELeft h (stabilizer G Q) q)).val =
+      (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q).val.under C' := by
   induction q using Quotient.inductionOn' with
   | h σ =>
     simp only [DoubleCoset.quotientMapOfLELeft_apply_mk,
@@ -243,6 +243,7 @@ variable [Finite G] [IsDomain A] [IsDomain B]
   [Module.Finite A B] [Module.Flat A B] [Module.Flat C B]
   [IsGaloisGroup G A B] [IsGaloisGroup H C B]
 
+omit [Finite G] in
 /-- The local degree below a translate, multiplied by `|H|`, is the cardinality of its
 double coset. -/
 theorem ramificationIdx_mul_inertiaDeg_under_smul_mul_card (sigma : G) :
@@ -253,6 +254,7 @@ theorem ramificationIdx_mul_inertiaDeg_under_smul_mul_card (sigma : G) :
 
 variable [FaithfulSMul C B]
 
+omit [IsDomain C] in
 /-- The local degree of the prime attached to a double coset, multiplied by `|H|`, is the
 cardinality of that double coset. -/
 theorem ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOverOfIsInvariant_mul_card
@@ -260,11 +262,13 @@ theorem ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOverOfIsInv
     (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q : Ideal C).ramificationIdx A *
         (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q : Ideal C).inertiaDeg A *
           Nat.card H = Nat.card (DoubleCoset.quotToDoubleCoset H (stabilizer G Q) q) := by
+  have := IsDomain.of_faithfulSMul C B
   conv_lhs => rw [← DoubleCoset.out_eq' q,
     Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk p H C]
   rw [Q.ramificationIdx_mul_inertiaDeg_under_smul_mul_card (H := H) (C := C),
     DoubleCoset.quotToDoubleCoset]
 
+omit [IsDomain C] in
 /-- The local degree of the prime attached to a double coset is its cardinality divided by
 the order of `H`. -/
 theorem ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOverOfIsInvariant_eq_card_div
@@ -272,9 +276,11 @@ theorem ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOverOfIsInv
     (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q : Ideal C).ramificationIdx A *
         (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q : Ideal C).inertiaDeg A =
       Nat.card (DoubleCoset.quotToDoubleCoset H (stabilizer G Q) q) / Nat.card H := by
+  have := IsDomain.of_faithfulSMul C B
   rw [← Q.ramificationIdx_mul_inertiaDeg_doubleCosetQuotientEquivPrimesOverOfIsInvariant_mul_card
     (p := p) (H := H) (C := C) q, Nat.mul_div_cancel _ Nat.card_pos]
 
+omit [IsDomain C] in
 /-- The local degrees indexed by the invariant-ring double-coset law sum to the index of
 `H` in `G`. -/
 theorem sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_index :
@@ -282,6 +288,7 @@ theorem sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_index :
       (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q : Ideal C).ramificationIdx A *
         (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q : Ideal C).inertiaDeg A) =
       H.index := by
+  have := IsDomain.of_faithfulSMul C B
   classical
   let _ := Fintype.ofFinite
     (DoubleCoset.Quotient (H : Set G) (stabilizer G Q : Set G))
@@ -319,7 +326,7 @@ theorem sum_ramificationIdx_mul_inertiaDeg_doubleCosetOfIsInvariant_eq_finrank :
   let _ : Fintype (p.primesOver C) := Fintype.ofEquiv _ e
   rw [finsum_eq_sum_of_fintype]
   rw [e.sum_comp fun q : p.primesOver C =>
-    q.1.ramificationIdx A * q.1.inertiaDeg A]
+    q.val.ramificationIdx A * q.val.inertiaDeg A]
   exact Ideal.sum_ramification_inertia_eq_finrank p C
 
 end RankIdentity

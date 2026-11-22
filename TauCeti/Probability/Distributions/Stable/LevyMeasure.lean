@@ -267,15 +267,17 @@ theorem stableLevyMeasure_abs_gt (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε 
   ring
 
 /-- The cutoff Lévy measure has positive mass, even at either full-skewness boundary. -/
-theorem stableLevyMeasure_abs_gt_pos (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
-    (hε : 0 < ε) :
+theorem stableLevyMeasure_abs_gt_pos (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) :
     0 < stableLevyMeasure α β {x | ε < |x|} := by
-  rw [stableLevyMeasure_abs_gt hα hβ hε]
+  have hδ : 0 < max ε 1 := lt_max_of_lt_right one_pos
+  refine lt_of_lt_of_le ?_ (measure_mono (s := {x | max ε 1 < |x|}) fun x hx ↦
+    lt_of_le_of_lt (le_max_left ε 1) hx)
+  rw [stableLevyMeasure_abs_gt hα hβ hδ]
   apply ENNReal.ofReal_pos.mpr
   have hcoeff := stableLevyDensity_coefficient_pos hα
-  have hden : 0 < α * ε ^ α := mul_pos hα.1 (rpow_pos_of_pos hε _)
-  have heq : 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * ε ^ α) =
-      2 * (Gamma (1 + α) * sin (π * α / 2) / π) / (α * ε ^ α) := by ring
+  have hden : 0 < α * max ε 1 ^ α := mul_pos hα.1 (rpow_pos_of_pos hδ _)
+  have heq : 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * max ε 1 ^ α) =
+      2 * (Gamma (1 + α) * sin (π * α / 2) / π) / (α * max ε 1 ^ α) := by ring
   rw [heq]
   positivity
 
@@ -341,15 +343,18 @@ theorem isFiniteMeasure_stableLevyMeasure_restrict_abs_gt (hε : 0 < ε) :
 theorem isProbabilityMeasure_cond_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     (hε : 0 < ε) :
     IsProbabilityMeasure (cond (stableLevyMeasure α β) {x | ε < |x|}) := by
-  exact cond_isProbabilityMeasure_of_finite (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
+  exact cond_isProbabilityMeasure_of_finite (stableLevyMeasure_abs_gt_pos hα hβ).ne'
     (stableLevyMeasure_abs_gt_ne_top hε)
 
 /-- The absolute-value pushforward of the large-jump intensity is a multiple of a Pareto
 law. Its mass includes both tails, even when one of them vanishes at full skewness. -/
-theorem map_abs_restrict_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
-    (hε : 0 < ε) :
+theorem map_abs_restrict_stableLevyMeasure (hε : 0 < ε) :
     ((stableLevyMeasure α β).restrict {x : ℝ | ε < |x|}).map abs =
       stableLevyMeasure α β {x : ℝ | ε < |x|} • paretoMeasure ε α := by
+  by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
+  swap
+  · simp [stableLevyMeasure_eq_zero_of_not h]
+  obtain ⟨hα, hβ⟩ : α ∈ Ioo 0 2 ∧ |β| ≤ 1 := ⟨⟨h.1, h.2.1⟩, h.2.2⟩
   have hset : {x : ℝ | ε < |x|} = Iio (-ε) ∪ Ioi ε := by
     ext x
     simp only [mem_ofPred_eq, mem_union, mem_Iio, mem_Ioi, lt_abs, lt_neg, or_comm]
@@ -388,8 +393,8 @@ theorem map_abs_cond_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     (hε : 0 < ε) :
     (cond (stableLevyMeasure α β) {x : ℝ | ε < |x|}).map abs = paretoMeasure ε α := by
   rw [ProbabilityTheory.cond, Measure.map_smul _ continuous_abs.measurable.aemeasurable,
-    map_abs_restrict_stableLevyMeasure hα hβ hε, smul_smul,
-    ENNReal.inv_mul_cancel (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
+    map_abs_restrict_stableLevyMeasure hε, smul_smul,
+    ENNReal.inv_mul_cancel (stableLevyMeasure_abs_gt_pos hα hβ).ne'
       (stableLevyMeasure_abs_gt_ne_top hε), one_smul]
 
 /-- For valid parameters, every nonempty stable jump band gives a probability jump law. -/

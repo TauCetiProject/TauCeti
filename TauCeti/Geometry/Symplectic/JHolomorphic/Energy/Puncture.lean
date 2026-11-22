@@ -8,9 +8,9 @@ module
 public import Mathlib.Topology.MetricSpace.Bounded
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Finite-energy `J`-holomorphic curves near a puncture
@@ -54,7 +54,7 @@ public section
 namespace TauCeti
 
 open Complex Metric MeasureTheory Set Filter Topology
-open scoped ENNReal NNReal Real
+open scoped Real
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 variable {J : V → V →L[ℝ] V} {W K : Set V} {u : ℂ → V} {z₀ : ℂ} {R : ℝ}
@@ -119,15 +119,7 @@ theorem tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE
   -- The energy `ε ρ` of `u` in the disk of radius `ρ` about the puncture tends to zero with `ρ`.
   set ε : ℝ → ℝ := fun ρ ↦
     ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ∂(volume.restrict (ball z₀ R)) with hεdef
-  have hε : Tendsto ε (𝓝 0) (𝓝 0) := by
-    refine hE.tendsto_setIntegral_nhds_zero ?_
-    have hvol : Tendsto (fun ρ : ℝ ↦ volume (ball z₀ ρ)) (𝓝 0) (𝓝 0) := by
-      have hc : Continuous fun ρ : ℝ ↦ ENNReal.ofReal ρ ^ 2 * (NNReal.pi : ℝ≥0∞) :=
-        (ENNReal.continuous_mul_const ENNReal.coe_ne_top).comp
-          ((ENNReal.continuous_pow 2).comp ENNReal.continuous_ofReal)
-      simpa using hc.tendsto 0
-    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hvol
-      (fun _ ↦ zero_le) fun _ ↦ Measure.restrict_apply_le _ _
+  have hε : Tendsto ε (𝓝 0) (𝓝 0) := hE.tendsto_setIntegral_ball_nhds_zero z₀
   have hεz : Tendsto (fun z ↦ ε (2 * ‖z - z₀‖)) (𝓝[≠] z₀) (𝓝 0) :=
     hε.comp ((((continuous_id.sub continuous_const).norm.const_mul 2).tendsto' z₀ 0
       (by simp)).mono_left nhdsWithin_le_nhds)

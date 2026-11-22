@@ -15,8 +15,8 @@ public import Mathlib.Topology.Spectral.Basic
 # A basis criterion for spectral maps, and transport of spectrality along an embedding
 
 Utilities for spectral spaces and maps. A continuous map is spectral as soon as the preimage
-of every member of some topological **basis** of the target is compact; and spectrality transports
-from the preimage of a set to the set itself along an embedding whose range contains it.
+of every member of some topological **basis** of the target is compact; and a set contained in the
+range of an embedding is spectral exactly when its preimage is.
 
 The basis criterion first. Spectrality asks for compact preimages of all compact open sets; the
 reduction to a basis is the observation that a compact open set is a *finite* union of basis
@@ -39,8 +39,11 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
   subsets of the ambient spaces.
 * `TauCeti.isSpectralMap_eval`: a coordinate projection is spectral when every other factor
   is quasi-compact.
-* `TauCeti.spectralSpace_of_isEmbedding` : a subset of the range of an embedding is spectral as
-  soon as its preimage is — the transport step of any "prove it on a subspace" argument.
+* `TauCeti.isSpectralMap_prodMk_right`, `TauCeti.isSpectralMap_prodMk_left`: pairing with a fixed
+  point gives a spectral map into a product.
+* `Topology.IsEmbedding.spectralSpace_preimage_iff` : a subset of the range of an embedding is
+  spectral if and only if its preimage is — the transport step of any "prove it on a subspace"
+  argument.
 * `IsOpen.exists_spectralSpace_subset_inter`: compact spectral open neighbourhoods inside a
   spectral open subset.
 * `TauCeti.spectralSpace_prop`: the Sierpiński space `Prop` is spectral.
@@ -86,13 +89,13 @@ theorem isSpectralMap_of_isTopologicalBasis {f : X → Y} {B : Set (Set Y)}
   -- Write `s` as a union of basis members, then extract a finite subcover from compactness.
   obtain ⟨S, hSB, rfl⟩ := hB.open_eq_sUnion hso
   obtain ⟨t, ht⟩ := hs.elim_finite_subcover (fun b : S ↦ (b : Set Y))
-    (fun b ↦ hB.isOpen (hSB b.2)) Set.sUnion_eq_iUnion.le
+    (fun b ↦ hB.isOpen (hSB b.property)) Set.sUnion_eq_iUnion.le
   -- The subcover is an equality: every member of `S` is contained in `⋃₀ S`.
   have heq : ⋃₀ S = ⋃ b ∈ t, (b : Set Y) := by
     refine subset_antisymm ht (Set.iUnion₂_subset fun b _ ↦ ?_)
-    exact Set.subset_sUnion_of_mem b.2
+    exact Set.subset_sUnion_of_mem b.property
   rw [heq, Set.preimage_iUnion₂]
-  exact t.isCompact_biUnion fun b _ ↦ hpre b (hSB b.2)
+  exact t.isCompact_biUnion fun b _ ↦ hpre b (hSB b.property)
 
 /-- Spectrality of the restriction of a map between subspaces is tested on compact open subsets of
 the ambient target: every compact open subset of `V` must pull back to a compact subset of `U`. -/
@@ -106,14 +109,14 @@ theorem _root_.Set.MapsTo.isSpectralMap_restrict_iff {f : X → Y} {U : Set X} {
   constructor
   · intro h K hKV hKo hKc
     rw [← hpre]
-    refine (h.isCompact_preimage_of_isOpen (hKo.preimage continuous_subtype_val) ?_).image
-      continuous_subtype_val
+    refine (h.isCompact_preimage_of_isOpen (hKo.preimage continuous_subtypeVal) ?_).image
+      continuous_subtypeVal
     rwa [IsEmbedding.subtypeVal.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.mpr hKV]
   · intro h
     refine ⟨hf.mapsToRestrict hUV, fun s hso hsc ↦ ?_⟩
     rw [← preimage_image_eq s Subtype.val_injective, IsEmbedding.subtypeVal.isCompact_iff, hpre]
-    exact h _ (Subtype.coe_image_subset V s) (hV.isOpenMap_subtype_val s hso)
-      (hsc.image continuous_subtype_val)
+    exact h _ (Subtype.coe_image_subset V s) (hV.isOpenMap_subtypeVal s hso)
+      (hsc.image continuous_subtypeVal)
 
 /-- Evaluation at a coordinate `i` is a spectral map as soon as every *other* factor is
 quasi-compact: the preimage of a quasi-compact open is a box with that set in the `i`-th slot and
@@ -131,21 +134,44 @@ theorem isSpectralMap_eval {ι : Type*} {Z : ι → Type*} [∀ i, TopologicalSp
     · rw [Function.update_of_ne hj]
       exact hZ j hj
 
-/-- **Spectrality transports from a trace along an embedding.** A subset of the target contained
-in the range of an embedding is spectral as soon as its preimage is: the embedding restricts to a
+/-- Pairing on the left with a fixed point `x : X` gives a spectral map `Y → X × Y`. -/
+theorem isSpectralMap_prodMk_right (x : X) :
+    IsSpectralMap (fun y : Y ↦ (x, y)) where
+  toContinuous := .prodMk_right x
+  isCompact_preimage_of_isOpen := fun U hUo hUc ↦ by
+    have heq : (fun y : Y ↦ (x, y)) ⁻¹' U = Prod.snd '' (U ∩ (closure ({x} : Set X) ×ˢ univ)) := by
+      ext y
+      constructor
+      · intro hy
+        exact ⟨(x, y), ⟨hy, subset_closure rfl, trivial⟩, rfl⟩
+      · rintro ⟨⟨z, y⟩, ⟨hzyU, hz, -⟩, rfl⟩
+        exact ((specializes_iff_mem_closure.mpr hz).prod specializes_rfl).mem_open hUo hzyU
+    rw [heq]
+    exact (hUc.inter_right (isClosed_closure.prod isClosed_univ)).image continuous_snd
+
+/-- Pairing on the right with a fixed point `y : Y` gives a spectral map `X → X × Y`. -/
+theorem isSpectralMap_prodMk_left (y : Y) :
+    IsSpectralMap (fun x : X ↦ (x, y)) :=
+  (Homeomorph.prodComm Y X).isProperMap.isSpectralMap.comp (isSpectralMap_prodMk_right y)
+
+/-- **Spectrality transports along an embedding.** A subset of the target contained in the range
+of an embedding is spectral if and only if its preimage is: the embedding restricts to a
 homeomorphism between the two.
 
 This is the shape every "prove it on a subspace and carry it back" spectrality argument takes.
 It is worth stating separately because the *reason* one works on the subspace is usually that the
 inclusion is not a spectral map, which makes the general preservation theorems unavailable along
 it; this lemma supplies the homeomorphism route instead. -/
-theorem spectralSpace_of_isEmbedding {f : X → Y} (hf : Topology.IsEmbedding f) {S : Set Y}
-    (hS : S ⊆ Set.range f) (h : SpectralSpace (f ⁻¹' S)) : SpectralSpace S := by
+theorem _root_.Topology.IsEmbedding.spectralSpace_preimage_iff {f : X → Y} (hf : IsEmbedding f)
+    {S : Set Y} (hS : S ⊆ range f) : SpectralSpace (f ⁻¹' S) ↔ SpectralSpace S := by
   -- The embedding restricts to a homeomorphism `f ⁻¹' S ≃ₜ S`.
   let e := hf.homeomorphOfSubsetRange hS
   -- Transfer compactness along it, then spectrality; a homeomorphism is an open embedding.
-  have : CompactSpace S := e.compactSpace
-  exact e.symm.isOpenEmbedding.spectralSpace
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
+  · have : CompactSpace S := e.compactSpace
+    exact e.symm.isOpenEmbedding.spectralSpace
+  · have : CompactSpace (f ⁻¹' S) := e.symm.compactSpace
+    exact e.isOpenEmbedding.spectralSpace
 
 /-- Inside a spectral open subset `V`, every point of an open set `O` has a compact spectral open
 neighbourhood contained in `V ∩ O`. -/
@@ -154,13 +180,13 @@ theorem _root_.IsOpen.exists_spectralSpace_subset_inter {V O : Set X} (hVo : IsO
     ∃ W ⊆ V ∩ O, IsOpen W ∧ x ∈ W ∧ IsCompact W ∧ SpectralSpace W := by
   obtain ⟨W', ⟨hW'o, hW'c⟩, hxW', hW'O⟩ :=
     PrespectralSpace.isTopologicalBasis.exists_subset_of_mem_open (a := (⟨x, hxV⟩ : V))
-      (mem_preimage.2 hxO) (hOo.preimage continuous_subtype_val)
+      (mem_preimage.2 hxO) (hOo.preimage continuous_subtypeVal)
   have hemb := hVo.isOpenEmbedding_subtypeVal
   refine ⟨Subtype.val '' W', ?_, hemb.isOpenMap _ hW'o, ⟨_, hxW', rfl⟩,
-    hW'c.image continuous_subtype_val, ?_⟩
+    hW'c.image continuous_subtypeVal, ?_⟩
   · rintro _ ⟨y, hy, rfl⟩
-    exact ⟨y.2, hW'O hy⟩
-  · refine spectralSpace_of_isEmbedding hemb.isEmbedding (image_subset_range _ _) ?_
+    exact ⟨y.property, hW'O hy⟩
+  · refine (hemb.isEmbedding.spectralSpace_preimage_iff (image_subset_range _ _)).mp ?_
     rw [preimage_image_eq W' Subtype.val_injective]
     have : CompactSpace W' := isCompact_iff_compactSpace.mp hW'c
     exact hW'o.isOpenEmbedding_subtypeVal.spectralSpace

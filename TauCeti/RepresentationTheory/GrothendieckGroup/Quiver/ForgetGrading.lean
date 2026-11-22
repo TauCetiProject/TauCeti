@@ -83,6 +83,8 @@ theorem laurentEval_one_smulGradedDimension_vertexIdempotent [Finite Q]
 
 end VertexDimension
 
+section Comparison
+
 variable (k : Type (max u v)) (Q : Type u) [Field k] [Quiver.{v} Q]
   [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
 
@@ -150,9 +152,16 @@ theorem gradedFiniteModulesForgetK0Equiv_mk_of
   rw [← LinearEquiv.coe_coe, gradedFiniteModulesForgetK0Equiv_toLinearMap]
   exact gradedFiniteModulesForgetK0_mk_of _ M
 
+end Comparison
+
+section Expansion
+
+variable (k : Type (max u v)) (Q : Type u) [Field k] [Quiver.{v} Q]
+  [Fintype Q] [FiniteDimensional k (pathAlgebra k Q)]
+
 /-- The inverse comparison expands an ungraded class in the specialized graded vertex simples,
 with its integral vertex dimensions as coefficients. -/
-theorem gradedFiniteModulesForgetK0Equiv_symm_apply [Fintype Q]
+theorem gradedFiniteModulesForgetK0Equiv_symm_apply
     (x : ExactK0.{max u v} (finiteModulesExactStructure (pathAlgebra k Q))) :
     (gradedFiniteModulesForgetK0Equiv k Q).symm x =
       ∑ i, pathAlgebraDimensionVectorK0 k Q x i •
@@ -171,6 +180,13 @@ theorem gradedFiniteModulesForgetK0Equiv_symm_apply [Fintype Q]
     gradedVertexSimpleClassBasis_apply] using
     (b.sum_repr ((gradedFiniteModulesForgetK0Equiv k Q).symm x)).symm
 
+end Expansion
+
+section VertexSimple
+
+variable (k : Type (max u v)) (Q : Type u) [Field k] [Quiver.{v} Q]
+  [Finite Q] [FiniteDimensional k (pathAlgebra k Q)]
+
 /-- The inverse sends an ordinary vertex-simple class to its graded class at `q = 1`. -/
 -- Keep this named: child normalization would prevent generic equivalence inverse laws matching.
 theorem gradedFiniteModulesForgetK0Equiv_symm_vertexSimple (i : Q) :
@@ -185,5 +201,7 @@ theorem gradedFiniteModulesForgetK0Equiv_symm_vertexSimple (i : Q) :
     ← pathAlgebraDimensionVectorK0Equiv_apply,
     pathAlgebraDimensionVectorK0Equiv_vertexSimple]
   simp [Pi.single_apply]
+
+end VertexSimple
 
 end TauCeti.PathAlgebra

@@ -46,7 +46,7 @@ noncomputable def generatorCoordinateAlgebraBaseChangeIso :
       generatorCoordinateAlgebra K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
   | .inr _ => _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K
+      (MonoidAlgebra.scalarTensorBialgEquiv k K
         (G := SplitTorus.characterGroup (Fin 4)))
 
 /-- Each root or torus generator over `K` is the scalar extension of the corresponding generator
@@ -59,8 +59,8 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 4 ⊕ Fin 4) Unit) :
   rcases j with j | _
   · rw [Category.assoc, generatorCoordinateMap_inl, generatorCoordinateMap_inl]
     exact
-      UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
-        _ _ _ _ _ _ _ k K j
+      UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_baseChange
+        _ _ _ _ _ j _ _ k K
   · rw [Category.assoc, generatorCoordinateMap_inr, generatorCoordinateMap_inr]
     exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K _
 

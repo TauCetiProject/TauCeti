@@ -80,6 +80,8 @@ namespace TauCeti
 
 namespace Place
 
+section MarkedPlace
+
 variable {k : Type*} [Field k]
 
 /-- The order of a monomial `c X ^ a (X - 1) ^ b` at the marked places `0`, `1` and `∞`. -/
@@ -162,6 +164,8 @@ theorem mapsTo_branchPointAut_zeroOneInfty (ρ : Perm (Fin 3)) :
   obtain ⟨i, rfl⟩ := hP
   exact ⟨ρ i, (map_branchPointAut_markedPlace ρ i).symm⟩
 
+end MarkedPlace
+
 section Reorder
 
 variable {k F F' : Type*} [Field k] [Field F] [Field F'] [Algebra k F] [Algebra k F']
@@ -201,7 +205,7 @@ theorem relativeDegree_map_of_branchPointAut [IsScalarTower k (RatFunc k) F]
     [IsScalarTower k (RatFunc k) F'] [Algebra.IsIntegral (RatFunc k) F]
     [Algebra.IsIntegral (RatFunc k) F'] (P : Place k F) :
     relativeDegree k (RatFunc k) (P.map e) = relativeDegree k (RatFunc k) P :=
-  relativeDegree_map e (branchPointAut k ρ⁻¹) (commute_branchPointAut_inv ρ e he) P
+  relativeDegree_map e (branchPointAut k ρ⁻¹).toRingEquiv (commute_branchPointAut_inv ρ e he) P
 
 /-- **Reordering the branch points permutes the local data**: when `e : F ≃ₐ[k] F'` replaces
 the Belyi function `t` of `F` by `m(t)`, the multiset of pairs `(e, f)` of ramification indices

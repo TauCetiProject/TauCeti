@@ -19,7 +19,7 @@ irreducible, so is `x`.
 
 ## Main results
 
-* `Irreducible.of_map_of_dvd`: irreducibility of `f x` implies irreducibility of a nonzero `x`
+* `Irreducible.of_map_of_dvd`: irreducibility of `f x` implies irreducibility of `x`
   when `f x ∣ f y` implies `x ∣ y`.
 -/
 
@@ -28,10 +28,15 @@ public section
 variable {M N F : Type*} [CommMonoidWithZero M] [IsLeftCancelMulZero M] [Monoid N]
   [FunLike F M N] [MonoidHomClass F M N]
 
-/-- If a monoid homomorphism `f` reflects divisibility by a nonzero element `x`, then `x` is
+/-- If a monoid homomorphism `f` reflects divisibility by an element `x`, then `x` is
 irreducible whenever `f x` is. Unlike `Irreducible.of_map`, `f` need not be local. -/
-theorem Irreducible.of_map_of_dvd {f : F} {x : M} (hx : x ≠ 0)
+theorem Irreducible.of_map_of_dvd {f : F} {x : M}
     (hdvd : ∀ y, f x ∣ f y → x ∣ y) (h : Irreducible (f x)) : Irreducible x := by
+  -- `x` is nonzero, since `f 0 = f 0 * f 0` would make the irreducible `f 0` a unit.
+  have hx : x ≠ 0 := by
+    rintro rfl
+    exact h.not_isUnit
+      ((h.isUnit_or_isUnit (a := f 0) (b := f 0) (by rw [← map_mul, mul_zero])).elim id id)
   -- If the image of a factor `a` of `x = a * b` is a unit, then `x` divides `b`; cancelling
   -- `b` shows that `a` is a unit.
   have key (a b : M) (hab : x = a * b) (ha : IsUnit (f a)) : IsUnit a := by

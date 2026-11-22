@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
+import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!
 # Conjugation on ramification quotients
@@ -58,12 +59,6 @@ namespace TauCeti
 variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G 𝒪[L]]
-
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-/-- Coercion from the invariant integer ring to the ambient field respects the group action. -/
-private theorem coe_smul_integer (g : G) (x : 𝒪[L]) :
-    ((g • x : 𝒪[L]) : L) = g • (x : L) :=
-  map_smul (IsInvariantSubring.subtypeHom G 𝒪[L]) g x
 
 /-- The change from `π` to `g⁻¹ • π` is the inverse tame-character coordinate of `g`. -/
 private theorem residue_uniformizerChangeUnit_inv_smul
@@ -143,7 +138,7 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : 𝒪[L])
     let π' : 𝒪[L] := g⁻¹ • π
     have hπ' : Irreducible π' := hπ.map (MulSemiringAction.toRingAut G 𝒪[L] g⁻¹)
     have hmove : (τ : G) • π' - π' ∈ maximalIdeal 𝒪[L] ^ (n + 2) :=
-      (mem_ramificationGroup_natCast_iff.mp τ.2) π'
+      (mem_ramificationGroup_natCast_iff.mp τ.property) π'
     rw [hπ'.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton'] at hmove
     obtain ⟨y, hy⟩ := hmove
     -- First compute the coordinate of `τ` using the moved uniformizer `π' = g⁻¹ • π`.
@@ -153,7 +148,7 @@ theorem ramificationGroupGradedToResidueField_conj (n : ℕ) (π : 𝒪[L])
       exact ramificationGroupGradedToResidueField_of_smul_sub_eq n π' hπ' τ y hy.symm
     have hconjCoord := ramificationGroupGradedToResidueField_conjNormal n π hπ g τ y hy.symm
     have hresidue : residue 𝒪[L] (g • y) = residue 𝒪[L] y :=
-      residue_smul_eq_of_mem_ramificationGroup_zero G 𝒪[L] σ.2 y
+      residue_smul_eq_of_mem_ramificationGroup_zero G 𝒪[L] σ.property y
     -- Changing back from `π'` to `π` contributes the inverse tame-character factor.
     have hπ'coe : (π' : L) = (σ : G)⁻¹ • (π : L) := by
       simpa only [π', g] using coe_smul_integer ((σ : G)⁻¹) π

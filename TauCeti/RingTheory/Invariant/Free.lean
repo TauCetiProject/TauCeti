@@ -249,7 +249,7 @@ private theorem exists_tensorToPi_eq_single [Finite G] [DecidableEq G]
   classical
   have := Fintype.ofFinite G
   choose u hu₁ hu using fun g : {g : G // g ≠ 1} ↦
-    exists_tensorToPi_one_eq_one_and_eq_zero (R := R) (hG g g.2)
+    exists_tensorToPi_one_eq_one_and_eq_zero (R := R) (hG g g.property)
   refine ⟨∏ g, u g, funext fun h ↦ ?_⟩
   rw [map_prod, Finset.prod_apply]
   by_cases hh : h = 1
@@ -349,13 +349,15 @@ theorem tensorToPi_bijective [Finite G]
   rw [← sum_tmul_eq hS z, hz]
   simp
 
-/-- For a free action of a finite group with invariant ring `R`, `A` is a finite `R`-module. -/
+omit [SMulCommClass G R A] in
+/-- For a free action of a finite group, `A` is a finite `R`-module whenever every fixed point of
+`A` lies in the image of `R`; no compatibility of the action with `R` is assumed. -/
 theorem moduleFinite [Finite G]
     (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤) :
     Module.Finite R A := by
   classical
   have := Fintype.ofFinite G
-  obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := R) hG
+  obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := FixedPoints.subring A G) hG
   obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
   refine ⟨⟨S.image Prod.fst, eq_top_iff.mpr fun b _ ↦ ?_⟩⟩
   rw [← sum_sum_smul_mul hS b]
@@ -373,8 +375,8 @@ theorem projective [Finite G] [FaithfulSMul R A]
   have := Fintype.ofFinite G
   obtain ⟨u, hu⟩ := exists_tensorToPi_eq_single (R := R) hG
   obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
-  refine .of_split (LinearMap.pi fun p : S ↦ traceCoord G p.1.2)
-    (Fintype.linearCombination R fun p : S ↦ p.1.1) (LinearMap.ext fun b ↦ ?_)
+  refine .of_split (LinearMap.pi fun p : S ↦ traceCoord G p.val.2)
+    (Fintype.linearCombination R fun p : S ↦ p.val.1) (LinearMap.ext fun b ↦ ?_)
   simp only [LinearMap.comp_apply, Fintype.linearCombination_apply, LinearMap.pi_apply,
     LinearMap.id_apply, Algebra.smul_def, algebraMap_traceCoord]
   exact (Finset.sum_coe_sort S _).trans (sum_sum_smul_mul hS b)

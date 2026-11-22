@@ -32,9 +32,9 @@ increasing and the map acts on finsets.
 
 public section
 
-namespace TauCeti
+namespace Finset
 
-open Finset Function
+open Function
 
 variable {α : Type*} [Fintype α]
 
@@ -42,7 +42,7 @@ variable {α : Type*} [Fintype α]
 `Fintype.card α - #s` iterations: the iterates form an increasing chain of finsets starting at
 `s`, and such a chain can grow strictly at most `Fintype.card α - #s` times. Taking
 `n = Fintype.card α` gives a bound independent of the starting finset. -/
-theorem _root_.Finset.isFixedPt_iterate_of_card_le_card_add {f : Finset α → Finset α}
+theorem isFixedPt_iterate_of_card_le_card_add {f : Finset α → Finset α}
     (hf : ∀ s, s ⊆ f s) {s : Finset α} {n : ℕ} (hn : Fintype.card α ≤ #s + n) :
     IsFixedPt f (f^[n] s) := by
   -- Until the iterates reach a fixed point, each one is strictly larger than the previous one.
@@ -60,4 +60,4 @@ theorem _root_.Finset.isFixedPt_iterate_of_card_le_card_add {f : Finset α → F
   rw [(card_eq_iff_eq_univ _).1 ((card_le_univ _).antisymm (hn.trans h))]
   exact univ_subset_iff.1 (hf _)
 
-end TauCeti
+end Finset

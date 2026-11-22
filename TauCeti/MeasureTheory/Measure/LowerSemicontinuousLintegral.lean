@@ -143,7 +143,7 @@ theorem exists_lintegral_eq_iInf {K : Set (ProbabilityMeasure Ω)} (hK : K.Nonem
       ⨅ ν : K, ∫⁻ x, f x ∂((ν : ProbabilityMeasure Ω) : Measure Ω) := by
   obtain ⟨μ, hμK, hμ⟩ := exists_isMinOn_lintegral hK hKc hf
   refine ⟨μ, hμK, le_antisymm ?_ (iInf_le_of_le ⟨μ, hμK⟩ le_rfl)⟩
-  exact le_iInf fun ν ↦ hμ ν.2
+  exact le_iInf fun ν ↦ hμ ν.property
 
 section Lusin
 
@@ -172,8 +172,8 @@ theorem lowerSemicontinuousOn_lintegral_comp_finiteMeasure
   intro μ₀ hμ₀ c hc
   beta_reduce at hc ⊢
   have hm₀ : AEMeasurable (fun x ↦ h (Φ x)) (μ₀ : Measure Ω) :=
-    hh.aemeasurable_comp_of_forall_exists_isClosed_continuousOn fun ε hε ↦
-      (hΦ ε hε).imp fun C hC ↦ ⟨hC.1, hC.2.1, hC.2.2 μ₀ hμ₀⟩
+    hh.aemeasurable_comp_of_forall_exists_measurableSet_continuousOn fun ε hε ↦
+      (hΦ ε hε).imp fun C hC ↦ ⟨hC.1.measurableSet, hC.2.1, hC.2.2 μ₀ hμ₀⟩
   -- Truncate `h ∘ Φ` at a finite height `M` without losing the strict inequality at `μ₀`.
   have hsup : ∫⁻ x, h (Φ x) ∂(μ₀ : Measure Ω) =
       ⨆ n : ℕ, ∫⁻ x, min (h (Φ x)) n ∂(μ₀ : Measure Ω) := by

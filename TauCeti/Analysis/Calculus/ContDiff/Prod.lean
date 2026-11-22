@@ -6,21 +6,43 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Smoothness of slices of a map on a product
 
 If a map `H` on a product is smooth near every point of `s ×ˢ I`, then each of its slices
 `H (·, t)` with `t ∈ I` is smooth on `s` (`TauCeti.contDiffOn_comp_prodMk_left`). For instance,
-the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`.
+the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`. Likewise, a field
+`J z x` that is smooth near the graph of a map `u` smooth on `s` gives a map `z ↦ J z (u z)`
+smooth on `s` (`TauCeti.contDiffOn_comp_graph`).
 
 For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 `(q, y) ↦ fderiv (F (q, ·)) y` is smooth jointly (`ContDiffAt.fderiv_slice`), smoothness persists
 along a graph over the parameter (`ContDiffAt.eventually_contDiffAt_graph`), and the vertical part
 of the derivative of a `C¹` map is continuous along a continuous graph
-(`ContDiffAt.continuousAt_fderiv_comp_inr`).
+(`ContDiffAt.continuousAt_fderiv_comp_inr`). Along two continuous graphs meeting at `p`, the
+values of a family `C¹` there differ near `p` by at most a multiple of the distance between the
+graphs (`ContDiffAt.exists_eventually_norm_sub_le`).
 The partial derivative in the second variable, applied to a fixed vector, is then `C^m` jointly
 whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`).
+
+For a scalar factor, `ContDiffAt.contDiffAt_deriv_snd` and
+`ContDiffAt.contDiffAt_deriv_fst` give joint `C^m` regularity of the corresponding partial
+derivative of a `C^n` map, for `m + 1 ≤ n`, and `ContDiffAt.contDiffAt_iterate_deriv_fst` gives
+joint `C^m` regularity of the `k`-th partial derivative in the first variable, for `m + k ≤ n`.
+
+If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then each summand is `Cⁿ` at
+its point (`ContDiffAt.of_comp_fst_add_comp_snd_left` and
+`ContDiffAt.of_comp_fst_add_comp_snd_right`). Subtracting a jointly `C^n` family of maps `g p`
+from a jointly `C^n` family `f t` gives a family that is jointly `C^n` in `(t, p)` and the point
+(`ContDiffAt.sub_uncurry_prod`).
+
+A compactly supported `C³` function on `E × ℝ` has compactly supported spatial first and second
+derivative fields and a time derivative field of lower smoothness, computing its slice derivatives
+at every point (`ContDiff.exists_derivative_fields_of_hasCompactSupport`).
 -/
 
 public section
@@ -38,6 +60,13 @@ smooth on `s`. -/
 theorem contDiffOn_comp_prodMk_left (hH : ∀ p ∈ s ×ˢ I, ContDiffAt 𝕜 n H p) {t : G}
     (ht : t ∈ I) : ContDiffOn 𝕜 n (fun x ↦ H (x, t)) s :=
   fun x hx ↦ ((hH (x, t) ⟨hx, ht⟩).comp x (contDiff_prodMk_left t).contDiffAt).contDiffWithinAt
+
+/-- **Composition with a graph**: a field `J z x` that is `Cⁿ` near the graph of a map `u` which is
+`Cⁿ` on `s` gives a map `z ↦ J z (u z)` that is `Cⁿ` on `s`. -/
+theorem contDiffOn_comp_graph {J : E → G → F} {u : E → G}
+    (hJ : ∀ z ∈ s, ContDiffAt 𝕜 n (fun p : E × G ↦ J p.1 p.2) (z, u z))
+    (hu : ContDiffOn 𝕜 n u s) : ContDiffOn 𝕜 n (fun z ↦ J z (u z)) s :=
+  fun z hz ↦ (hJ z hz).comp₂_contDiffWithinAt contDiffWithinAt_id (hu z hz)
 
 end TauCeti
 
@@ -58,6 +87,35 @@ theorem fderiv_slice {n m : WithTop ℕ∞} {F : P × E → X}
   · exact hF.comp ((p, x), x) (by fun_prop)
   · fun_prop
   · exact hmn
+
+/-- For a `C^n` map on a product with a scalar second factor, the partial derivative in the
+second variable is jointly `C^m` for `m + 1 ≤ n`. -/
+theorem contDiffAt_deriv_snd {m n : WithTop ℕ∞} {g : E × 𝕜 → X} {z : E × 𝕜}
+    (hg : ContDiffAt 𝕜 n g z) (hmn : m + 1 ≤ n) :
+    ContDiffAt 𝕜 m (fun w : E × 𝕜 ↦ deriv (fun r ↦ g (w.1, r)) w.2) z := by
+  exact ((hg.fderiv_slice hmn).clm_apply (contDiffAt_const (c := (1 : 𝕜))))
+    |>.congr_of_eventuallyEq (Filter.Eventually.of_forall fun _ ↦ fderiv_apply_one_eq_deriv.symm)
+
+/-- For a `C^n` map on a product with a scalar first factor, the partial derivative in the
+first variable is jointly `C^m` for `m + 1 ≤ n`. -/
+theorem contDiffAt_deriv_fst {m n : WithTop ℕ∞} {g : 𝕜 × E → X} {z : 𝕜 × E}
+    (hg : ContDiffAt 𝕜 n g z) (hmn : m + 1 ≤ n) :
+    ContDiffAt 𝕜 m (fun w : 𝕜 × E ↦ deriv (fun r ↦ g (r, w.2)) w.1) z := by
+  have hswap : ContDiffAt 𝕜 n (fun w : E × 𝕜 ↦ g (w.2, w.1)) (z.2, z.1) :=
+    hg.comp (z.2, z.1) (contDiffAt_snd.prodMk contDiffAt_fst)
+  exact (hswap.contDiffAt_deriv_snd hmn).comp z (contDiffAt_snd.prodMk contDiffAt_fst)
+
+/-- For a `C^n` map on a product with a scalar first factor, the `k`-th partial derivative in the
+first variable is jointly `C^m` for `m + k ≤ n`. -/
+theorem contDiffAt_iterate_deriv_fst {m n : WithTop ℕ∞} {g : 𝕜 × E → X} {z : 𝕜 × E}
+    (hg : ContDiffAt 𝕜 n g z) {k : ℕ} (hmn : m + k ≤ n) :
+    ContDiffAt 𝕜 m (fun w : 𝕜 × E ↦ deriv^[k] (fun r ↦ g (r, w.2)) w.1) z := by
+  induction k generalizing n g with
+  | zero => simpa using hg.of_le (by simpa using hmn)
+  | succ k ih =>
+    refine ih (hg.contDiffAt_deriv_fst (m := m + k) ?_) le_rfl
+    rw [add_assoc]
+    exact_mod_cast hmn
 
 /-- A function that is `C^n` at `(p, ψ p)` is `C^n` at `(q, ψ q)` for `q` near `p`, when `ψ` is
 continuous at `p`. -/
@@ -81,4 +139,112 @@ theorem fderiv_snd_apply {n m : WithTop ℕ∞} {f : P × E → X} {r : P × E}
     ContDiffAt 𝕜 m (fun r : P × E ↦ fderiv 𝕜 (fun z ↦ f (r.1, z)) r.2 v) r :=
   (hf.fderiv_slice hmn).clm_apply contDiffAt_const
 
+/-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `φ` is `Cⁿ` at `a`:
+restrict to the slice `y = b` and subtract the constant `ψ b`. -/
+theorem of_comp_fst_add_comp_snd_left {n : WithTop ℕ∞} {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {φ : E → X} {ψ : F → X} {a : E} {b : F}
+    (h : ContDiffAt 𝕜 n (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b)) : ContDiffAt 𝕜 n φ a := by
+  have hφ : ContDiffAt 𝕜 n (fun x ↦ φ x + ψ b) a := by
+    simpa [Function.comp_def] using h.comp (f := fun x : E ↦ (x, b)) a (by fun_prop)
+  simpa using hφ.sub (contDiffAt_const (c := ψ b))
+
+/-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `ψ` is `Cⁿ` at `b`:
+restrict to the slice `x = a` and subtract the constant `φ a`. -/
+theorem of_comp_fst_add_comp_snd_right {n : WithTop ℕ∞} {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {φ : E → X} {ψ : F → X} {a : E} {b : F}
+    (h : ContDiffAt 𝕜 n (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b)) : ContDiffAt 𝕜 n ψ b := by
+  have hψ : ContDiffAt 𝕜 n (fun y ↦ φ a + ψ y) b := by
+    simpa [Function.comp_def] using h.comp (f := fun y : F ↦ (a, y)) b (by fun_prop)
+  simpa using hψ.sub (contDiffAt_const (c := φ a))
+
+/-- Subtracting the members `g p` of a family of maps that is `C^n` jointly in the parameter `p`
+and the point from a family `f t` that is jointly `C^n` gives a family that is jointly `C^n` in
+both parameters and the point. -/
+theorem sub_uncurry_prod {n : WithTop ℕ∞} {T : Type*} [NormedAddCommGroup T] [NormedSpace 𝕜 T]
+    {f : T → E → X} {g : P → E → X} {t : T}
+    (hf : ContDiffAt 𝕜 n (Function.uncurry f) (t, x))
+    (hg : ContDiffAt 𝕜 n (fun q : P × E ↦ g q.1 q.2) (p, x)) :
+    ContDiffAt 𝕜 n (fun q : (T × P) × E ↦ f q.1.1 q.2 - g q.1.2 q.2) ((t, p), x) :=
+  (hf.comp ((t, p), x) (contDiffAt_fst.fst.prodMk contDiffAt_snd)).sub
+    (hg.comp ((t, p), x) (contDiffAt_fst.snd.prodMk contDiffAt_snd))
+
 end ContDiffAt
+
+namespace ContDiffAt
+
+open scoped NNReal
+
+variable {𝕂 : Type*} [RCLike 𝕂]
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕂 P]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
+  {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕂 X] {p : P}
+
+/-- **A `C¹` family is Lipschitz between two graphs meeting at a point.** If `f` is `C¹` at
+`(p, ψ p)` and two maps `ψ` and `φ`, continuous at `p`, agree at `p`, then near `p` the values of
+`f` along the two graphs differ by at most a fixed multiple of `‖ψ q - φ q‖`. -/
+theorem exists_eventually_norm_sub_le {f : P × E → X} {ψ φ : P → E}
+    (hf : ContDiffAt 𝕂 1 f (p, ψ p)) (hψ : ContinuousAt ψ p) (hφ : ContinuousAt φ p)
+    (h : ψ p = φ p) :
+    ∃ K : ℝ≥0, ∀ᶠ q in nhds p, ‖f (q, ψ q) - f (q, φ q)‖ ≤ K * ‖ψ q - φ q‖ := by
+  obtain ⟨K, t, ht, hK⟩ := hf.exists_lipschitzOnWith
+  have hψ' : ∀ᶠ q in nhds p, (q, ψ q) ∈ t := (continuousAt_id.prodMk hψ).preimage_mem_nhds ht
+  have hφ' : ∀ᶠ q in nhds p, (q, φ q) ∈ t :=
+    (continuousAt_id.prodMk hφ).preimage_mem_nhds (by simpa [h] using ht)
+  refine ⟨K, ?_⟩
+  filter_upwards [hψ', hφ'] with q h₁ h₂
+  simpa [dist_eq_norm, Prod.dist_eq] using hK.dist_le_mul _ h₁ _ h₂
+
+end ContDiffAt
+
+noncomputable section DerivativeFields
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+-- These shortcuts keep nested operator-space instance search shallow.
+private local instance : NormedAddCommGroup (E →L[ℝ] F) := inferInstance
+private local instance : NormedSpace ℝ (E →L[ℝ] F) := inferInstance
+private local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
+private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
+
+/-- The spatial first and second derivative fields and the time derivative field of a compactly
+supported `C³` function on a product with a real second factor are compactly supported, of the
+expected smoothness, and compute its slice derivatives at every point. -/
+theorem ContDiff.exists_derivative_fields_of_hasCompactSupport {f : E × ℝ → F}
+    (hf : ContDiff ℝ 3 f) (hs : HasCompactSupport f) :
+    ∃ (fx : E × ℝ → E →L[ℝ] F) (fxx : E × ℝ → E →L[ℝ] E →L[ℝ] F) (ft : E × ℝ → F),
+      ContDiff ℝ 2 fx ∧ HasCompactSupport fx ∧ ContDiff ℝ 1 fxx ∧ HasCompactSupport fxx ∧
+      ContDiff ℝ 2 ft ∧ HasCompactSupport ft ∧
+      (∀ p : E × ℝ, HasFDerivAt (fun y ↦ f (y, p.2)) (fx p) p.1) ∧
+      (∀ p : E × ℝ, HasFDerivAt (fun y ↦ fx (y, p.2)) (fxx p) p.1) ∧
+      (∀ p : E × ℝ, HasDerivAt (fun s : ℝ ↦ f (p.1, s)) (ft p) p.2) := by
+  -- Restrict the ordinary derivatives to spatial directions and to the unit time direction.
+  let ι : E →L[ℝ] E × ℝ := ContinuousLinearMap.inl ℝ E ℝ
+  let R : (E × ℝ →L[ℝ] F) →L[ℝ] E →L[ℝ] F := ι.precomp F
+  let S : (E × ℝ →L[ℝ] E →L[ℝ] F) →L[ℝ] E →L[ℝ] E →L[ℝ] F :=
+    ι.precomp (E →L[ℝ] F)
+  let fx : E × ℝ → E →L[ℝ] F := R ∘ fderiv ℝ f
+  have hfx : ContDiff ℝ 2 fx :=
+    (R.contDiff (n := 2)).comp (hf.fderiv_right (by norm_num))
+  have hsfx : HasCompactSupport fx := (hs.fderiv ℝ).comp_left (map_zero R)
+  let fxx : E × ℝ → E →L[ℝ] E →L[ℝ] F := S ∘ fderiv ℝ fx
+  have hfxx : ContDiff ℝ 1 fxx :=
+    (S.contDiff (n := 1)).comp (hfx.fderiv_right (by norm_num))
+  have hsfxx : HasCompactSupport fxx :=
+    (hsfx.fderiv ℝ).comp_left (map_zero S)
+  let ft : E × ℝ → F := (ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)) ∘ fderiv ℝ f
+  have hft : ContDiff ℝ 2 ft :=
+    ((ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)).contDiff (n := 2)).comp
+      (hf.fderiv_right (by norm_num))
+  have hsft : HasCompactSupport ft :=
+    (hs.fderiv ℝ).comp_left (map_zero (ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)))
+  refine ⟨fx, fxx, ft, hfx, hsfx, hfxx, hsfxx, hft, hsft, fun p ↦ ?_, fun p ↦ ?_, fun p ↦ ?_⟩
+  · simpa [fx, R, ι, Function.comp_def] using
+      (hf.differentiable (by norm_num) p).hasFDerivAt_slice_fst
+  · simpa [fxx, S, ι, Function.comp_def] using
+      (hfx.differentiable (by norm_num) p).hasFDerivAt_slice_fst
+  · simpa [ft, Function.comp_def] using
+      ((hf.differentiable (by simp) _).hasFDerivAt.comp p.2
+        ((hasFDerivAt_const p.1 p.2).prodMk (hasFDerivAt_id p.2))).hasDerivAt
+
+end DerivativeFields

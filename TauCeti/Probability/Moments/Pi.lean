@@ -10,6 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import Mathlib.Data.Nat.Choose.Multinomial
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Moments and moment-generating functions of sums under a product measure
@@ -20,11 +21,11 @@ of coordinate statistics in terms of their individual moments. The finite index 
 
 A statistic of the form `x ↦ ∑ j, f j (x j)` under a finite product measure `Measure.pi μ` has
 exponential `∏ j, exp (t * f j (x j))`, so Fubini's theorem turns its moment-generating function
-into the product of the coordinate ones. For a product of *probability* measures each factor is
+into the product of the coordinate ones. For a product of *nonzero* measures each factor is
 positive exactly on its exponential-integrability domain, so the domain of the sum is then the
 intersection of the domains of the coordinates. That step genuinely needs the coordinates to be
-probability measures: under the zero measure, for instance, the moment-generating function
-vanishes everywhere while the integrability domain is all of `ℝ`.
+nonzero: under the zero measure, for instance, the moment-generating function vanishes everywhere
+while the integrability domain is all of `ℝ`.
 
 These are the facts that turn a quadratic statistic of a Gaussian vector, written in
 eigen-coordinates, into a product of one-dimensional moment-generating functions.
@@ -40,12 +41,12 @@ mean by at least `t` with probability at most `Var[f] / (n t²)`.
 * `TauCeti.integral_pow_sum_pi` — the multinomial formula for natural moments of coordinate sums;
 * `TauCeti.mgf_sum_pi` — the moment-generating function of a sum of coordinate
   statistics factors over the coordinates, for every argument;
-* `TauCeti.integrableExpSet_sum_pi` — for a product of probability measures, its
+* `TauCeti.integrableExpSet_sum_pi` — for a product of nonzero σ-finite measures, its
   exponential-integrability domain is the intersection of the coordinate domains;
 * `TauCeti.meas_ge_le_variance_div_card_mul_sq_pi` — the weak law of large numbers in Chebyshev's
   form, for the average of independent copies of a square-integrable statistic;
 * `TauCeti.measureReal_pi_deviation_le` — its specialization to a statistic with values in
-  `[0, 1]`, whose variance is at most `1 / 4`.
+  `[a, b]`, whose variance is at most `((b - a) / 2) ^ 2`.
 -/
 
 public section
@@ -66,7 +67,6 @@ theorem integral_pow_sum_pi [DecidableEq ι] {𝕜 : Type*} [RCLike 𝕜]
     ∫ x, (∑ i, f i (x i)) ^ n ∂Measure.pi μ =
       ∑ k ∈ Finset.piAntidiag Finset.univ n,
         (Nat.multinomial Finset.univ k : 𝕜) * ∏ i, ∫ x, f i x ^ k i ∂μ i := by
-  classical
   -- The zeroth powers ensure finiteness of the component measures, so Fubini applies.
   have (i : ι) : IsFiniteMeasure (μ i) :=
     (integrable_const_iff_isFiniteMeasure (one_ne_zero : (1 : 𝕜) ≠ 0)).mp
@@ -82,8 +82,7 @@ theorem integral_pow_sum_pi [DecidableEq ι] {𝕜 : Type*} [RCLike 𝕜]
     exact Finset.single_le_sum (fun j _ ↦ Nat.zero_le (k j)) (Finset.mem_univ i)
   simp_rw [Finset.sum_pow_eq_sum_piAntidiag]
   rw [integral_finsetSum _ hterm]
-  apply Finset.sum_congr rfl
-  intro k hk
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [integral_const_mul, integral_fintype_prod_eq_prod (fun i x ↦ f i x ^ k i)]
 
 /-- Under a product measure the exponential of a sum of coordinate statistics factors over the
@@ -95,19 +94,16 @@ theorem mgf_sum_pi [∀ i, SigmaFinite (μ i)] (f : ∀ i, E i → ℝ) (t : ℝ
   simp only [mgf, Finset.mul_sum, Real.exp_sum]
   exact integral_fintype_prod_eq_prod fun j (u : E j) ↦ Real.exp (t * f j u)
 
-/-- Under a product of probability measures, a sum of coordinate statistics has finite
+/-- Under a product of nonzero σ-finite measures, a sum of coordinate statistics has finite
 exponential moments of order `t` exactly when every coordinate does. -/
-theorem integrableExpSet_sum_pi [∀ i, IsProbabilityMeasure (μ i)] (f : ∀ i, E i → ℝ) :
+theorem integrableExpSet_sum_pi [∀ i, SigmaFinite (μ i)] [∀ i, NeZero (μ i)]
+    (f : ∀ i, E i → ℝ) :
     integrableExpSet (fun x ↦ ∑ j, f j (x j)) (Measure.pi μ) =
       ⋂ j, integrableExpSet (f j) (μ j) := by
+  -- Each moment-generating function, including that of the product measure (nonzero by
+  -- `Measure.instNeZeroPi`), is positive exactly on its integrability domain.
   ext t
-  rw [Set.mem_iInter]
-  have hpi : t ∈ integrableExpSet (fun x ↦ ∑ j, f j (x j)) (Measure.pi μ) ↔
-      0 < ∏ j, mgf (f j) (μ j) t := by
-    rw [← mgf_sum_pi]
-    exact mgf_pos_iff.symm
-  have hj (j : ι) : t ∈ integrableExpSet (f j) (μ j) ↔ 0 < mgf (f j) (μ j) t := mgf_pos_iff.symm
-  simp only [hpi, hj]
+  simp only [Set.mem_iInter, integrableExpSet, Set.mem_ofPred_eq, ← mgf_pos_iff, mgf_sum_pi]
   refine ⟨fun h j ↦ mgf_nonneg.lt_of_ne' fun hj ↦ ?_, fun h ↦ Finset.prod_pos fun j _ ↦ h j⟩
   exact absurd (Finset.prod_eq_zero (Finset.mem_univ j) hj) h.ne'
 
@@ -153,23 +149,21 @@ theorem meas_ge_le_variance_div_card_mul_sq_pi [Nonempty ι] {f : Ω → ℝ} (h
   rwa [hvar, hmean, div_div] at h
 
 /-- **Weak law of large numbers for a bounded statistic.** For an almost everywhere measurable
-`f : Ω → ℝ` with values almost everywhere in `[0, 1]`, the average of `f` over the `|ι|`
+`f : Ω → ℝ` with values almost everywhere in `[a, b]`, the average of `f` over the `|ι|`
 coordinates of the product measure deviates from its mean by at least `δ` with probability at most
-`1 / (4 |ι| δ²)`: the variance of `f` is at most `1 / 4`. -/
+`((b - a) / 2)² / (|ι| δ²)`: by Popoviciu's inequality the variance of `f` is at most
+`((b - a) / 2)²`. -/
 theorem measureReal_pi_deviation_le [Nonempty ι] {f : Ω → ℝ} (hfm : AEMeasurable f ν)
-    (hf01 : ∀ᵐ x ∂ν, f x ∈ Set.Icc (0 : ℝ) 1) {δ : ℝ} (hδ : 0 < δ) :
+    {a b : ℝ} (hf : ∀ᵐ x ∂ν, f x ∈ Set.Icc a b) {δ : ℝ} (hδ : 0 < δ) :
     (Measure.pi fun _ : ι => ν).real
-        {x | δ ≤ |(∑ j, f (x j)) / Fintype.card ι - ∫ a, f a ∂ν|} ≤
-      1 / 4 / (Fintype.card ι * δ ^ 2) := by
-  have hvar : Var[f; ν] ≤ 1 / 4 := by
-    have := variance_le_sq_of_bounded hf01 hfm
-    norm_num at this
-    exact this
+        {x | δ ≤ |(∑ j, f (x j)) / Fintype.card ι - ∫ ω, f ω ∂ν|} ≤
+      ((b - a) / 2) ^ 2 / (Fintype.card ι * δ ^ 2) := by
   refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
   refine (meas_ge_le_variance_div_card_mul_sq_pi
-    (memLp_of_bounded hf01 hfm.aestronglyMeasurable 2) hδ).trans
+    (memLp_of_bounded hf hfm.aestronglyMeasurable 2) hδ).trans
     (ENNReal.ofReal_le_ofReal ?_)
   gcongr
+  exact variance_le_sq_of_bounded hf hfm
 
 end WeakLaw
 

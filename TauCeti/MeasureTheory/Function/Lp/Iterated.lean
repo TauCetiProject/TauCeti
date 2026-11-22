@@ -27,6 +27,10 @@ Only the second measure needs to be s-finite.
   almost-everywhere strongly measurable, function;
 * `TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm` — the `Lᵖ(μ ⊗ ν)` seminorm of `f` is the `Lᵖ(μ)`
   seminorm of its section seminorms.
+* `TauCeti.lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq` — the squared `L²(μ ⊗ ν)` seminorm
+  is the iterated integral of the squared extended norm, integrating over `μ` first.
+* `TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm` — convergence to zero in
+  `L²(μ ⊗ ν)` makes the section square energies over `μ` converge to zero in `ν`-measure.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 * `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
@@ -74,8 +78,8 @@ theorem Measurable.eLpNorm_prod_right [SFinite ν] {g : α × β → ℝ≥0∞}
   -- The finite-exponent case, for an arbitrary s-finite measure.
   have hfin (q : ℝ≥0∞) (ρ : Measure β) [SFinite ρ] (hq0 : q ≠ 0) (hq : q ≠ ∞) :
       Measurable fun x ↦ eLpNorm (fun y ↦ g (x, y)) q ρ := by
-    simp only [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq (hsec _).aestronglyMeasurable,
-      enorm_eq_self]
+    simp only [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq (hsec _).aestronglyMeasurable,
+      eNorm_eq_self]
     exact ((hg.pow_const _).lintegral_prod_right').pow_const _
   rcases eq_or_ne p 0 with rfl | hp0
   · simp only [eLpNorm_exponent_zero (hsec _).aestronglyMeasurable]
@@ -105,10 +109,10 @@ exponent including `p = ∞`. -/
 theorem AEStronglyMeasurable.eLpNorm_prod_right [SFinite ν] {f : α × β → ε}
     (hf : AEStronglyMeasurable f (μ.prod ν)) :
     AEStronglyMeasurable (fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν) μ := by
-  have hg := hf.enorm
+  have hg := hf.eNorm
   refine (hg.measurable_mk.eLpNorm_prod_right (p := p) (ν := ν)).aestronglyMeasurable.congr ?_
   filter_upwards [hf.prodMk_left, Measure.ae_ae_of_ae_prod hg.ae_eq_mk] with x hx hxg
-  rw [← eLpNorm_enorm _ hx]
+  rw [← eLpNorm_eNorm _ hx]
   exact (eLpNorm_congr_ae hxg).symm
 
 end MeasureTheory
@@ -125,20 +129,20 @@ private theorem eLpNorm_top_prod_eq_of_measurable [SFinite ν] {g : α × β →
     (hg.comp measurable_prodMk_left).aestronglyMeasurable
   rw [eLpNorm_exponent_top hg.aestronglyMeasurable,
     eLpNorm_exponent_top (hg.eLpNorm_prod_right (p := ∞) (ν := ν)).aestronglyMeasurable]
-  refine le_antisymm (eLpNormEssSup_le_of_ae_enorm_bound ?_)
-    (eLpNormEssSup_le_of_ae_enorm_bound ?_)
+  refine le_antisymm (eLpNormEssSup_le_of_ae_eNorm_bound ?_)
+    (eLpNormEssSup_le_of_ae_eNorm_bound ?_)
   · -- A bound valid for almost every section is valid almost everywhere on the product.
-    refine (Measure.ae_prod_iff_ae_ae (measurableSet_le hg.enorm measurable_const)).2 ?_
+    refine (Measure.ae_prod_iff_ae_ae (measurableSet_le hg.eNorm measurable_const)).2 ?_
     filter_upwards [ae_le_eLpNormEssSup (f := fun x ↦ eLpNorm (fun y ↦ g (x, y)) ∞ ν) (μ := μ)]
       with x hx
     filter_upwards [ae_le_eLpNormEssSup (f := fun y ↦ g (x, y)) (μ := ν)] with y hy
-    rw [enorm_eq_self, eLpNorm_exponent_top (hsec x)] at hx
+    rw [eNorm_eq_self, eLpNorm_exponent_top (hsec x)] at hx
     exact hy.trans hx
   · -- Conversely, a bound valid almost everywhere bounds almost every section seminorm.
     filter_upwards [Measure.ae_ae_of_ae_prod (ae_le_eLpNormEssSup (f := g) (μ := μ.prod ν))]
       with x hx
-    rw [enorm_eq_self, eLpNorm_exponent_top (hsec x)]
-    exact eLpNormEssSup_le_of_ae_enorm_bound hx
+    rw [eNorm_eq_self, eLpNorm_exponent_top (hsec x)]
+    exact eLpNormEssSup_le_of_ae_eNorm_bound hx
 
 /-- **Iterated `Lᵖ` seminorms.** The `Lᵖ(μ ⊗ ν)` seminorm of an almost-everywhere strongly
 measurable function is the `Lᵖ(μ)` seminorm of its section seminorms `x ↦ ‖f (x, ·)‖_{Lᵖ(ν)}`.
@@ -148,18 +152,18 @@ theorem eLpNorm_prod_eq_eLpNorm_eLpNorm [SFinite ν] {f : α × β → ε}
     (hf : AEStronglyMeasurable f (μ.prod ν)) :
     eLpNorm f p (μ.prod ν) = eLpNorm (fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν) p μ := by
   -- Reduce to a measurable representative `g` of `‖f‖ₑ`.
-  set g := hf.enorm.mk
-  have hg : Measurable g := hf.enorm.measurable_mk
-  have hfg : (fun z ↦ ‖f z‖ₑ) =ᵐ[μ.prod ν] g := hf.enorm.ae_eq_mk
+  set g := hf.eNorm.mk
+  have hg : Measurable g := hf.eNorm.measurable_mk
+  have hfg : (fun z ↦ ‖f z‖ₑ) =ᵐ[μ.prod ν] g := hf.eNorm.ae_eq_mk
   have hsec (x : α) : AEStronglyMeasurable (fun y ↦ g (x, y)) ν :=
     (hg.comp measurable_prodMk_left).aestronglyMeasurable
   have hout : AEStronglyMeasurable (fun x ↦ eLpNorm (fun y ↦ g (x, y)) p ν) μ :=
     hg.eLpNorm_prod_right.aestronglyMeasurable
-  rw [← eLpNorm_enorm f hf, eLpNorm_congr_ae hfg]
+  rw [← eLpNorm_eNorm f hf, eLpNorm_congr_ae hfg]
   rw [eLpNorm_congr_ae (g := fun x ↦ eLpNorm (fun y ↦ g (x, y)) p ν) ?_]
   swap
   · filter_upwards [hf.prodMk_left, Measure.ae_ae_of_ae_prod hfg] with x hx hxg
-    rw [← eLpNorm_enorm _ hx]
+    rw [← eLpNorm_eNorm _ hx]
     exact eLpNorm_congr_ae hxg
   rcases eq_or_ne p 0 with rfl | hp0
   · rw [eLpNorm_exponent_zero hg.aestronglyMeasurable, eLpNorm_exponent_zero hout]
@@ -168,14 +172,44 @@ theorem eLpNorm_prod_eq_eLpNorm_eLpNorm [SFinite ν] {f : α × β → ε}
   · exact eLpNorm_top_prod_eq_of_measurable hg
   -- For `0 < p < ∞` this is Tonelli's theorem for `g ^ p`.
   have hr : p.toReal ≠ 0 := (ENNReal.toReal_pos hp0 hp).ne'
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hg.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hout]
-  simp only [enorm_eq_self]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hg.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hout]
+  simp only [eNorm_eq_self]
   rw [lintegral_prod _ (hg.pow_const _).aemeasurable]
   congr 1
   refine lintegral_congr fun x ↦ ?_
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp (hsec x)]
-  simp only [enorm_eq_self, one_div, ENNReal.rpow_inv_rpow hr]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (hsec x)]
+  simp only [eNorm_eq_self, one_div, ENNReal.rpow_inv_rpow hr]
+
+/-- The squared `L²(μ ⊗ ν)` seminorm of an a.e. strongly measurable function is its iterated
+square energy, integrating over the first factor `μ` first. -/
+theorem lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq [SFinite μ] [SFinite ν]
+    {f : α × β → ε} (hf : AEStronglyMeasurable f (μ.prod ν)) :
+    ∫⁻ y, ∫⁻ x, ‖f (x, y)‖ₑ ^ 2 ∂μ ∂ν = eLpNorm f 2 (μ.prod ν) ^ 2 := by
+  rw [eLpNorm_two_sq_eq_lintegral hf, lintegral_prod_symm _ (hf.eNorm.pow_const 2)]
+
+/-- **Markov's inequality for section energies.** If `f k → 0` in `L²(μ ⊗ ν)`, then the section
+square energies `y ↦ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ` converge to zero in `ν`-measure: for each
+`δ > 0`, the `ν`-measure of the set where the energy is at least `δ` tends to zero. -/
+theorem tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm [SFinite μ] [SFinite ν]
+    {ι : Type*} {l : Filter ι} {f : ι → α × β → ε}
+    (hf : ∀ k, AEStronglyMeasurable (f k) (μ.prod ν))
+    (h : Tendsto (fun k ↦ eLpNorm (f k) 2 (μ.prod ν)) l (𝓝 0)) {δ : ℝ≥0∞} (hδ : 0 < δ) :
+    Tendsto (fun k ↦ ν {y | δ ≤ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
+  -- Markov's inequality at the finite level `min δ 1`.
+  set c := min δ 1
+  have hc : c ≠ 0 := (lt_min hδ one_pos).ne'
+  have hc' : c ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  have hbound (k : ι) : ν {y | δ ≤ ∫⁻ x, ‖f k (x, y)‖ₑ ^ 2 ∂μ} ≤
+      eLpNorm (f k) 2 (μ.prod ν) ^ 2 / c := by
+    rw [← lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq (hf k)]
+    exact (measure_mono fun y hy ↦ (min_le_left δ 1).trans hy).trans
+      (meas_ge_le_lintegral_div ((hf k).eNorm.pow_const 2).lintegral_prod_left' hc hc')
+  have hlim : Tendsto (fun k ↦ eLpNorm (f k) 2 (μ.prod ν) ^ 2 / c) l (𝓝 0) := by
+    simpa using ENNReal.Tendsto.div_const (((ENNReal.continuous_pow 2).tendsto 0).comp h)
+      (Or.inr hc)
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ bot_le)
+    hbound
 
 /-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
 is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every
@@ -190,11 +224,11 @@ theorem eLpNorm_prod_smul [SFinite ν] {𝕜 : Type*} [TopologicalSpace 𝕜] [C
     (hf.comp_fst.smul hg.comp_snd)]
   -- Each section is a constant multiple of `g`.
   have hsec (x : α) : eLpNorm (fun y ↦ f x • g y) p ν = ‖f x‖ₑ * eLpNorm g p ν := by
-    rw [← eLpNorm_enorm _ (hg.fun_const_smul (f x))]
-    simp_rw [enorm_smul]
-    rw [eLpNorm_const_mul_ennreal hg.enorm.aestronglyMeasurable, eLpNorm_enorm _ hg]
+    rw [← eLpNorm_eNorm _ (hg.fun_const_smul (f x))]
+    simp_rw [eNorm_smul]
+    rw [eLpNorm_const_mul_ennreal hg.eNorm.aestronglyMeasurable, eLpNorm_eNorm _ hg]
   simp_rw [hsec, mul_comm _ (eLpNorm g p ν)]
-  rw [eLpNorm_const_mul_ennreal hf.enorm.aestronglyMeasurable, eLpNorm_enorm _ hf, mul_comm]
+  rw [eLpNorm_const_mul_ennreal hf.eNorm.aestronglyMeasurable, eLpNorm_eNorm _ hf, mul_comm]
 
 end TauCeti
 

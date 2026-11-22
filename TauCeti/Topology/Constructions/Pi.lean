@@ -29,6 +29,8 @@ proof of Mycielski's theorem.
 In a Hausdorff space the injective tuples indexed by a finite type form an open subset of the
 product, such as the ordered triples of distinct points of the Riemann sphere.
 
+Repeating the first entry of a finite tuple, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, is an embedding.
+
 ## Main results
 
 * `TauCeti.isOpen_setOf_forall_abs_lt_one`: the finite-dimensional open unit cube is open.
@@ -37,11 +39,14 @@ product, such as the ordered triples of distinct points of the Riemann sphere.
   injective tuples for finitely many dense open sets at once.
 * `TauCeti.isOpen_setOf_injective`: in a Hausdorff space, the injective finite tuples form an open
   set.
+* `TauCeti.continuous_extend_subtypeVal`: extending functions on a subset along `Subtype.val`,
+  with a fixed fallback, is continuous.
+* `TauCeti.isEmbedding_cons_apply_zero`: repeating the first entry of a tuple is an embedding.
 -/
 
 public section
 
-open Set Function
+open Set Function Topology
 
 namespace TauCeti
 
@@ -55,6 +60,15 @@ theorem isOpen_setOf_forall_abs_lt_one {ι : Type*} [Finite ι] :
 
 variable {X : Type*} [TopologicalSpace X]
 
+/-- Extending functions on a subset `s` along `Subtype.val`, with a fixed fallback `e` outside `s`,
+is continuous for the product topologies. -/
+theorem continuous_extend_subtypeVal {ι : Type*} {s : Set ι} (e : ι → X) :
+    Continuous fun g : s → X ↦ extend Subtype.val g e := by
+  refine continuous_pi fun j ↦ ?_
+  by_cases hj : j ∈ s
+  · exact (continuous_apply _).congr fun g ↦ (extend_val_apply (g := g) (j := e) hj).symm
+  · exact continuous_const.congr fun g ↦ (extend_val_apply' (g := g) (j := e) hj).symm
+
 /-- In a Hausdorff space, the injective tuples indexed by a finite type form an open subset of the
 product: injectivity asks finitely many pairs of coordinates to differ. -/
 theorem isOpen_setOf_injective [T2Space X] {κ : Type*} [Finite κ] :
@@ -66,6 +80,16 @@ theorem isOpen_setOf_injective [T2Space X] {κ : Type*} [Finite κ] :
   rw [this]
   exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
     isOpen_iInter_of_finite fun _ ↦ isOpen_ne_fun (continuous_apply i) (continuous_apply j)
+
+/-- Repeating the first entry, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, is an embedding of tuples:
+forgetting the first entry is a continuous left inverse. -/
+theorem isEmbedding_cons_apply_zero {n : ℕ} :
+    IsEmbedding fun q : Fin (n + 1) → X ↦ (Fin.cons (q 0) q : Fin (n + 2) → X) :=
+  IsEmbedding.of_comp ((continuous_apply 0).finCons (A := fun _ ↦ X) continuous_id)
+    continuous_id.finTail <| by
+      -- forgetting the repeated first entry gives back the tuple
+      simp only [Function.comp_def, id_eq, Fin.tail_cons]
+      exact IsEmbedding.id
 
 /-- Shrinking along one injective tuple: nonempty open sets `V i` can be shrunk to nonempty open
 sets `W i ⊆ V i` so that the box `∏ j, W (t j)` along an injective finite tuple `t` of indices
@@ -99,16 +123,18 @@ theorem exists_univ_pi_subset {I κ : Type*} [Finite κ] {V : I → Set X}
 can be shrunk to nonempty open sets `W i ⊆ V i` so that for each of finitely many dense open sets
 `U c ⊆ κ c → X`, every box `∏ j, W (t j)` along an injective tuple `t : κ c → I` lies in `U c`. -/
 theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C → Type*}
-    [∀ c, Finite (κ c)] {V : I → Set X} (hVo : ∀ i, IsOpen (V i)) (hVne : ∀ i, (V i).Nonempty)
+    {V : I → Set X} (hVo : ∀ i, IsOpen (V i)) (hVne : ∀ i, (V i).Nonempty)
     {U : ∀ c, Set (κ c → X)} (hUo : ∀ c, IsOpen (U c)) (hUd : ∀ c, Dense (U c)) :
     ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧ (∀ i, W i ⊆ V i) ∧
       ∀ c (t : κ c → I), Injective t → univ.pi (fun j => W (t j)) ⊆ U c := by
   classical
   -- treat the finitely many pairs of a set `U c` and an injective tuple one at a time
   let Q := Σ c, {t : κ c → I // Injective t}
+  have : ∀ c, Finite {t : κ c → I // Injective t} := fun c ↦
+    Finite.of_equiv (κ c ↪ I) (Equiv.subtypeInjectiveEquivEmbedding (κ c) I).symm
   have : Fintype Q := Fintype.ofFinite Q
   suffices h : ∀ s : Finset Q, ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧
-      (∀ i, W i ⊆ V i) ∧ ∀ q ∈ s, univ.pi (fun j => W (q.2.1 j)) ⊆ U q.1 by
+      (∀ i, W i ⊆ V i) ∧ ∀ q ∈ s, univ.pi (fun j => W (q.2.val j)) ⊆ U q.1 by
     obtain ⟨W, hWo, hWne, hWV, hW⟩ := h Finset.univ
     exact ⟨W, hWo, hWne, hWV, fun c t ht => hW ⟨c, t, ht⟩ (Finset.mem_univ _)⟩
   intro s
@@ -116,11 +142,28 @@ theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C
   | empty => exact ⟨V, hVo, hVne, fun _ => subset_rfl, by simp⟩
   | insert q s _ ih =>
     obtain ⟨W, hWo, hWne, hWV, hW⟩ := ih
+    have := Finite.of_injective q.2.val q.2.property
     obtain ⟨W', hW'o, hW'ne, hW'W, hW'⟩ :=
-      exists_univ_pi_subset hWo hWne q.2.2 (hUo q.1) (hUd q.1)
+      exists_univ_pi_subset hWo hWne q.2.property (hUo q.1) (hUd q.1)
     refine ⟨W', hW'o, hW'ne, fun i => (hW'W i).trans (hWV i), fun q' hq' => ?_⟩
     rcases Finset.mem_insert.1 hq' with rfl | hq'
     · exact hW'
     · exact (pi_mono fun j _ => hW'W _).trans (hW q' hq')
+
+/-- An infinite product of nontrivial spaces is not discrete: every basic open set constrains only
+finitely many coordinates, so it contains a point differing from any given one in a free
+coordinate. -/
+theorem not_discreteTopology_pi {ι : Type*} {Y : ι → Type*} [∀ i, TopologicalSpace (Y i)]
+    [Infinite ι] [∀ i, Nontrivial (Y i)] : ¬DiscreteTopology (∀ i, Y i) := fun _ ↦ by
+  classical
+  choose x y hxy using fun i ↦ exists_pair_ne (Y i)
+  obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 (isOpen_discrete ({x} : Set (∀ i, Y i))) x rfl
+  obtain ⟨j, hj⟩ := Infinite.exists_notMem_finset I
+  have hmem : Function.update x j (y j) ∈ (I : Set ι).pi u := fun i hi ↦ by
+    rw [Function.update_of_ne (by rintro rfl; exact hj hi)]
+    exact (hu i hi).2
+  have := congrFun (hsub hmem) j
+  simp only [Function.update_self] at this
+  exact hxy j this.symm
 
 end TauCeti

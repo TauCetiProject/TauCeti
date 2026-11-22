@@ -129,7 +129,7 @@ modulus at most `C`. -/
 theorem house_le_iff {x : F} {C : ℝ} (hC : 0 ≤ C) :
     house x ≤ C ↔ ∀ z ∈ (minpoly ℚ x).rootSet ℂ, ‖z‖ ≤ C :=
   ⟨fun h _ hz ↦ (norm_le_house_of_mem_rootSet hz).trans h,
-    fun h ↦ Real.iSup_le (fun z ↦ h z z.2) hC⟩
+    fun h ↦ Real.iSup_le (fun z ↦ h z z.property) hC⟩
 
 /-- The house of an algebraic element is attained: it is the modulus of some complex conjugate. -/
 theorem exists_mem_rootSet_norm_eq_house {x : F} (hx : IsAlgebraic ℚ x) :
@@ -139,7 +139,7 @@ theorem exists_mem_rootSet_norm_eq_house {x : F} (hx : IsAlgebraic ℚ x) :
   have : Nonempty ((minpoly ℚ x).rootSet ℂ) :=
     ⟨⟨z, (mem_rootSet_of_ne (minpoly.ne_zero hint)).2 hz⟩⟩
   obtain ⟨w, hw⟩ := exists_eq_ciSup_of_finite (f := fun z : (minpoly ℚ x).rootSet ℂ ↦ ‖(z : ℂ)‖)
-  exact ⟨w, w.2, hw⟩
+  exact ⟨w, w.property, hw⟩
 
 /-- On a number field, the house is Mathlib's `NumberField.house`: the largest modulus of the
 image of `x` under a complex embedding. -/
@@ -150,7 +150,7 @@ theorem house_eq_numberField_house {K : Type*} [Field K] [NumberField K] (x : K)
   · obtain ⟨φ, rfl⟩ := hroots.symm.subset hz
     exact NumberField.norm_embedding_le_house x φ
   · obtain ⟨φ, -, hφ⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : K →+* ℂ ↦ ‖φ x‖₊
-    rw [NumberField.house_eq_sup', hφ, coe_nnnorm]
+    rw [NumberField.house_eq_sup', hφ, coe_nnNorm]
     exact norm_le_house_of_mem_rootSet (hroots ▸ ⟨φ, rfl⟩)
 
 open Height NumberField in
@@ -163,13 +163,8 @@ theorem _root_.NumberField.house_le_exp_logHeight₁ {K : Type*} [Field K] [Numb
   rw [NumberField.house, canonicalEmbedding]
   refine (pi_norm_le_iff_of_nonneg (Real.exp_pos _).le).mpr fun φ ↦ ?_
   let w : InfinitePlace K := InfinitePlace.mk φ
-  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
-    (Sum.inr w) x
-  simp only [TauCeti.GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow, abs_mul,
-    Nat.abs_cast] at h
-  have hm : (1 : ℝ) ≤ w.mult := by exact_mod_cast InfinitePlace.mult_pos (w := w)
   have hw : Real.log (w x) ≤ logHeight₁ x :=
-    (le_abs_self _).trans ((le_mul_of_one_le_left (abs_nonneg _) hm).trans h)
+    (le_abs_self _).trans (InfinitePlace.abs_log_le_logHeight₁ w x)
   -- The place constructed from φ evaluates x as the complex norm of φ x.
   change w x ≤ Real.exp (logHeight₁ x)
   rw [← Real.exp_log (InfinitePlace.pos_iff.mpr hx)]
@@ -258,6 +253,33 @@ theorem house_add_le {x y : F} (hx : IsAlgebraic ℚ x) (hy : IsAlgebraic ℚ y)
   rw [← IntermediateField.coe_add, house_coe, house_coe, house_coe]
   exact NumberField.house_add_le a b
 
+/-- Negation preserves the house. -/
+@[simp]
+theorem house_neg (x : F) : house (-x) = house x := by
+  have hle (y : F) : house (-y) ≤ house y := by
+    by_cases hy : IsAlgebraic ℚ y
+    · have h1 : IsAlgebraic ℚ (-1 : F) := by simpa using isAlgebraic_intCast (R := ℚ) (-1 : ℤ)
+      have hmul := house_mul_le h1 hy
+      have hh1 : house (-1 : F) = 1 := by simpa using house_intCast (F := F) (-1 : ℤ)
+      simpa [neg_one_mul, hh1] using hmul
+    · have hny : ¬IsAlgebraic ℚ (-y) := fun h ↦ hy (by simpa using h.neg)
+      simp [hy, hny]
+  exact le_antisymm (hle x) (by simpa using hle (-x))
+
+/-- The house of a finite sum of algebraic elements is at most the sum of their houses. -/
+theorem house_sum_le {ι : Type*} (s : Finset ι) {f : ι → F}
+    (hf : ∀ i ∈ s, IsAlgebraic ℚ (f i)) :
+    house (∑ i ∈ s, f i) ≤ ∑ i ∈ s, house (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih =>
+    have halg_sum : IsAlgebraic ℚ (∑ i ∈ s, f i) := by
+      rw [← mem_algebraicClosure_iff]
+      exact sum_mem fun i hi ↦ mem_algebraicClosure_iff.mpr (hf i (Finset.mem_cons_of_mem hi))
+    rw [Finset.sum_cons, Finset.sum_cons]
+    linarith [house_add_le (hf a (Finset.mem_cons_self a s)) halg_sum,
+      ih fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)]
+
 /-- The house is multiplicative on powers. For transcendental `x` and `n ≠ 0` both sides are
 `0`. -/
 @[simp]
@@ -287,7 +309,7 @@ theorem exists_algEquiv_one_le_norm {L : IntermediateField ℚ ℂ} [FiniteDimen
     ∃ τ : Gal(L/ℚ), 1 ≤ ‖((τ x : L) : ℂ)‖ := by
   have : NumberField L := ⟨⟩
   obtain ⟨σ, hσ⟩ := NumberField.exists_conjugate_one_le_norm (α := ⟨x, hx⟩)
-    fun h ↦ h0 congr($h.1)
+    fun h ↦ h0 congr(Subtype.val $h)
   refine ⟨σ.toRatAlgHom.restrictNormal' L, ?_⟩
   -- `σ` restricted to the normal field `L` and followed by the inclusion is `σ` again.
   have hτ := σ.toRatAlgHom.restrictNormal_commutes L x
@@ -427,7 +449,7 @@ theorem _root_.NumberField.eq_zero_of_norm_le_exp_of_house_le_exp {K : Type*} [F
     rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
   have hlt :
       Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (Module.finrank ℚ K - 1) < 1 := by
-    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_natCast_mul, ← Real.exp_add]
     exact Real.exp_lt_one_iff.2 (by linarith)
   refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
   exact (NumberField.one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx

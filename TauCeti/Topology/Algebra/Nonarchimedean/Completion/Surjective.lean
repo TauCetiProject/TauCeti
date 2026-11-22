@@ -54,7 +54,7 @@ private theorem image_closure_image_coe_mem_nhds {f : G →+ H} (hf : Continuous
   have hWcoe : ∀ n, (W n : Set (Completion G))
       = closure (((↑) : G → Completion G) '' (V n : Set G)) := fun n ↦ by
     rw [hW, AddSubgroup.topologicalClosure_coe, AddSubgroup.coe_map,
-      Set.image_congr' toCompl_apply, OpenAddSubgroup.coe_toAddSubgroup]
+      Set.image_congr' rfl toCompl_apply, OpenAddSubgroup.coe_toAddSubgroup]
   have hWbasis : (𝓝 (0 : Completion G)).HasAntitoneBasis fun n ↦ (W n : Set (Completion G)) :=
     ⟨by
       simpa only [hWcoe, coe_zero] using
@@ -138,7 +138,7 @@ theorem ker_completion [NonarchimedeanAddGroup G] (f : G →+ H) (hf : Continuou
     -- the image of `ker f` is contained in the closed kernel, so only the other inclusion has
     -- content: `x + W` meets the image of `ker f` for every open subgroup `W`
     obtain ⟨W, hW⟩ := NonarchimedeanAddGroup.is_nonarchimedean _ hN0
-    set V : AddSubgroup G := (W : AddSubgroup (Completion G)).comap toCompl with hV
+    set V : AddSubgroup G := (W : AddSubgroup (Completion G)).comap toCompl
     have hVopen : IsOpen (V : Set G) := W.isOpen.preimage (continuous_coe G)
     -- a point of `G` whose image lies in `x + W`
     obtain ⟨_, hgW, g, rfl⟩ := (denseRange_coe (α := G)).inter_open_nonempty

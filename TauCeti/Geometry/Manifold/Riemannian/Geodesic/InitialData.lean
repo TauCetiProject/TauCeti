@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Smooth variations of geodesic initial data
@@ -56,7 +56,7 @@ theorem _root_.TangentSpace.exists_smooth_initialData (u w : TangentSpace I p) :
       (∀ᶠ q in 𝓝 0, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent ∞ σ q) ∧
       curveVelocity I (fun q ↦ (σ q).proj) 0 = u ∧
       alongCurve (leviCivitaConnection I M) (fun q ↦ (σ q).proj)
-        (fun q ↦ (σ q).2) 0 = w := by
+        (fun q ↦ (σ q).snd) 0 = w := by
   let γ := maximalGeodesic I M p u
   let S := geodesicInterval I M p u
   have hS : S ∈ 𝓝 0 := isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval
@@ -99,7 +99,7 @@ theorem _root_.TangentSpace.exists_smooth_initialData (u w : TangentSpace I p) :
     change alongCurve (leviCivitaConnection I M) γ V 0 = w₀
     dsimp only [V]
     rw [← alongCurveWithin_univ, alongCurveWithin_add _ _ _ _ Set.univ hcoordA
-      (by rw [sectionCoord_smul]; exact differentiableWithinAt_id.fun_smul hcoordB),
+      (by rw [sectionCoord_fun_smul]; exact differentiableWithinAt_id.fun_smul hcoordB),
       alongCurveWithin_smul _ _ _ (fun q : ℝ ↦ q) Set.univ
         differentiableWithinAt_id hcoordB,
       alongCurveWithin_pullback_curveVelocityWithin _ _ _ uniqueDiffWithinAt_univ

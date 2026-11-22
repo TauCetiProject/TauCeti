@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.JointEigenspace
 public import Mathlib.LinearAlgebra.Complex.Module
+public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.Analysis.CStarAlgebra.Fuglede
 import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 import Mathlib.Tactic.Module
@@ -46,6 +47,10 @@ dimensionality.
 * `LinearMap.exists_orthonormalBasis_apply_eq_smul_of_isStarNormal`: **the spectral theorem for
   normal operators**, a normal operator on a finite-dimensional complex inner product space has
   an orthonormal basis of eigenvectors, indexed by any finite type of the right cardinality.
+
+* `LinearMap.rootMultiplicity_charpoly_of_isStarNormal`: the algebraic multiplicity of an
+  eigenvalue of a normal operator is its geometric multiplicity, since a normal operator is
+  semisimple (`LinearMap.isFinitelySemisimple_of_isStarNormal`).
 
 * `IsStarNormal.adjoint_apply_eq_smul_iff`: for a normal bounded operator `T`,
   `T† x = conj μ • x ↔ T x = μ • x`.
@@ -175,23 +180,24 @@ namespace Commute
 with its adjoint. -/
 theorem star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
     (h : Commute T S) : Commute T (star S) := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   -- Transfer commutation along the endomorphism algebra equivalence in both directions.
   have hc := h.map (Module.End.toContinuousLinearMap (𝕜 := ℂ) E)
   have hs := IsStarNormal.commute_star_right (a := S.toContinuousLinearMap) inferInstance hc
   rw [← toContinuousLinearMap_star] at hs
   exact hs.of_map (Module.End.toContinuousLinearMap (𝕜 := ℂ) E).injective
 
-/-- The real and imaginary parts of two commuting normal operators commute in all four
-combinations. -/
+/-- If `T` is normal and commutes with `S`, then the real and imaginary parts of `T` and `S`
+commute in all four combinations. -/
 theorem realPart_imaginaryPart_of_isStarNormal {T S : E →ₗ[ℂ] E}
-    [IsStarNormal T] [IsStarNormal S] (h : Commute T S) :
+    [IsStarNormal T] (h : Commute T S) :
     Commute (ℜ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
       Commute (ℜ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) ∧
       Commute (ℑ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
       Commute (ℑ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) := by
-  have h₂ := h.star_right_of_isStarNormal
   have h₃ := h.symm.star_right_of_isStarNormal.symm
+  have h₂ : Commute T (star S) := by
+    simpa using h.symm.star_right_of_isStarNormal.star_star.symm
   have h₄ := h.star_star
   -- Expand multiplication, use the four commutation relations, then normalize scalars.
   refine ⟨?_, ?_, ?_, ?_⟩
@@ -214,7 +220,7 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     ∃ (b : OrthonormalBasis κ ℂ E) (μ : ι → κ → ℂ),
       ∀ i j, T i (b j) = μ i j • b j := by
   classical
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   have hcomm (i j : ι) : Commute (T i) (T j) :=
     if h : i = j then h ▸ Commute.refl _ else hC h
   -- All real and imaginary parts are symmetric and commute with one another.
@@ -222,11 +228,10 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   have hS (p : ι × Bool) : (S p).IsSymmetric := by
     rw [isSymmetric_iff_isSelfAdjoint]
     rcases p with ⟨i, _ | _⟩
-    exacts [(ℜ (T i)).2, (ℑ (T i)).2]
+    exacts [(ℜ (T i)).property, (ℑ (T i)).property]
   have hSC : Pairwise (Commute on S) := by
     rintro ⟨i, a⟩ ⟨j, b⟩ -
     have := hT i
-    have := hT j
     have h := (hcomm i j).realPart_imaginaryPart_of_isStarNormal
     cases a <;> cases b
     exacts [h.1, h.2.1, h.2.2.1, h.2.2.2]
@@ -244,8 +249,8 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   let χ : Fin (finrank ℂ E) → J := fun j =>
     hVJ.subordinateOrthonormalBasisIndex rfl j hOJ
   let e : κ ≃ Fin (finrank ℂ E) := Fintype.equivFinOfCardEq hκ
-  refine ⟨b.reindex e.symm, fun i j => (χ (e j)).1 (i, false) +
-    Complex.I * (χ (e j)).1 (i, true), fun i j => ?_⟩
+  refine ⟨b.reindex e.symm, fun i j => (χ (e j)).val (i, false) +
+    Complex.I * (χ (e j)).val (i, true), fun i j => ?_⟩
   have hmem := hVJ.subordinateOrthonormalBasis_subordinate rfl (e j) hOJ
   rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm]
   exact (T i).apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart
@@ -265,5 +270,24 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_isStarNormal (T : E →ₗ[ℂ]
   obtain ⟨b, μ, hb⟩ := TauCeti.exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     (fun _ : Unit => T) (fun _ => inferInstance) (fun _ _ _ => Commute.refl _) hι
   exact ⟨b, μ (), hb ()⟩
+
+/-- A normal operator on a finite-dimensional complex inner product space is semisimple: by the
+spectral theorem its eigenspaces span the space. -/
+theorem isFinitelySemisimple_of_isStarNormal (T : E →ₗ[ℂ] E) [IsStarNormal T] :
+    IsFinitelySemisimple T := by
+  obtain ⟨b, ν, hb⟩ := T.exists_orthonormalBasis_apply_eq_smul_of_isStarNormal
+    (ι := Fin (finrank ℂ E)) (Fintype.card_fin _)
+  have htop : ⨆ μ, eigenspace T μ = ⊤ := by
+    rw [eq_top_iff, ← b.toBasis.span_eq, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact Submodule.mem_iSup_of_mem (ν i) (mem_eigenspace_iff.2 (by simpa using hb i))
+  exact (TauCeti.isSemisimple_of_iSup_eigenspace_eq_top htop).isFinitelySemisimple
+
+/-- For a normal operator on a finite-dimensional complex inner product space, the algebraic
+multiplicity of an eigenvalue, its multiplicity as a root of the characteristic polynomial, is its
+geometric multiplicity. -/
+theorem rootMultiplicity_charpoly_of_isStarNormal (T : E →ₗ[ℂ] E) [IsStarNormal T] (μ : ℂ) :
+    T.charpoly.rootMultiplicity μ = finrank ℂ (eigenspace T μ) :=
+  (T.isFinitelySemisimple_of_isStarNormal).rootMultiplicity_charpoly μ
 
 end LinearMap

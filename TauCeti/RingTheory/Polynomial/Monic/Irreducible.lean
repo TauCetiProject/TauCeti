@@ -118,12 +118,12 @@ theorem irreducible_map_of_natDegree_eq_three (hg : g.Monic) (hdeg : g.natDegree
     ⟨g, hg, by rwa [← eval_map]⟩
   exact hroot m ((isRoot_map_iff (IsFractionRing.injective R K)).mp hx)
 
-variable [IsDomain R] in
 /-- A monic quartic over an integrally closed domain `R` with no root in `R` and no monic
 quadratic factor over `R` is irreducible over the fraction field `K` of `R`. -/
 theorem irreducible_map_of_natDegree_eq_four (hg : g.Monic) (hdeg : g.natDegree = 4)
     (hroot : ∀ m : R, g.eval m ≠ 0) (hquad : ∀ a b : R, ¬ X ^ 2 + C a * X + C b ∣ g) :
     Irreducible (g.map (algebraMap R K)) := by
+  have : IsDomain R := Function.Injective.isDomain (algebraMap R K) (IsFractionRing.injective R K)
   rw [← hg.irreducible_iff_irreducible_map_fraction_map]
   exact hg.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd (by rw [hdeg]; decide)
     hroot hquad

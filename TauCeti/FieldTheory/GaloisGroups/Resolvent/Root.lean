@@ -346,7 +346,7 @@ private noncomputable def cosetValueEquiv (hf : f.Monic)
     ⟨fun _ _ h => cosetValue_injective spec hf hdeg e hres (congrArg Subtype.val h), by
       intro x
       obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hdeg e
-        (aeval_eq_zero_of_mem_rootSet x.2)
+        (aeval_eq_zero_of_mem_rootSet x.property)
       exact ⟨c, Subtype.ext hc⟩⟩
 
 -- The value of the root represented by a coset is its coset value.
@@ -508,7 +508,7 @@ theorem map_natDegree_normalizedFactors_specialize [Normal F E] (hf : f.Monic)
   have hg0 : spec.specialize F f ≠ 0 := (spec.monic_specialize F f).ne_zero
   have := Factors.finite hg0
   have := Fintype.ofFinite (spec.specialize F f).Factors
-  rw [Factors.normalizedFactors_eq_map_univ_val hg0 hres.specializationSeparated.squarefree,
+  rw [Factors.normalizedFactors_eq_map_univ_val hres.specializationSeparated.squarefree,
     ← Finset.map_univ_equiv (spec.orbitQuotientEquivFactors hf hdeg e hres),
     Finset.map_val, Multiset.map_map, Multiset.map_map]
   exact Multiset.map_congr rfl fun ω _ =>

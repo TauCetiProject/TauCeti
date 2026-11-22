@@ -9,10 +9,11 @@ public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 public import TauCeti.NumberTheory.LocalField.TameFrameModule.Torsion
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Rational
 import Mathlib.LinearAlgebra.TensorProduct.Prod
-import TauCeti.Algebra.MonoidAlgebra.FractionRing
+import TauCeti.Algebra.MonoidAlgebra.Maschke
 import TauCeti.NumberTheory.Padics.GroupAlgebra.RelationModule
 import TauCeti.NumberTheory.Padics.GroupAlgebra.StableIsomorphism
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Transpose
+import TauCeti.RingTheory.Flat.FractionRing
 
 /-!
 # The integral decomposition of an extension of the augmentation ideal by `A(L)`
@@ -43,7 +44,7 @@ The proof applies the cancellation theory of `ℤ_p[G]`-modules.
   most one, so they are stably isomorphic
   (`TauCeti.exists_projective_prod_linearEquiv_of_torsion`).
 * Rationally, the extensions `0 → A(L) → Y → I_G → 0` and `0 → I_G → ℤ_p[G] → ℤ_p → 0` split
-  (`TauCeti.IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact`). With the rational
+  (`TauCeti.MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact`). With the rational
   decomposition `A(L) ⊗ ℚ_p ≃ ℚ_p[G]^N ⊕ ℚ_p`
   (`TauCeti.nonempty_padicCompletionUnits_tensorRat_linearEquiv`) and `M₀ ⊗ ℚ_p ≃ ℚ_p[G]`
   (`TauCeti.nonempty_tameFrameModule_tensorRat_linearEquiv`), this gives
@@ -112,7 +113,7 @@ theorem nonempty_linearEquiv_tameFrameModule_prod [Algebra ℚ_[p] L] [Module.Fi
     Nonempty (Y ≃ₗ[Λ] (TameFrameModule ℤ_[p] (L ≃ₐ[K] L) σ τ (a : ℤ_[p]) (b : ℤ_[p]) ×
       (Fin (Module.finrank ℚ_[p] K) → Λ))) := by
   have := Module.Finite.right ℚ_[p] K L
-  have : NeZero (Nat.card (L ≃ₐ[K] L) : ℤ_[p]) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
+  have : NeZero (Nat.card (L ≃ₐ[K] L) : ℚ_[p]) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
   -- Restrict the scalars of `Y` to `ℤ_p`.
   let _ : Module ℤ_[p] Y := .compHom Y (algebraMap ℤ_[p] Λ)
   have : IsScalarTower ℤ_[p] Λ Y := .of_compHom _ _ _
@@ -137,14 +138,13 @@ theorem nonempty_linearEquiv_tameFrameModule_prod [Algebra ℚ_[p] L] [Module.Fi
   obtain ⟨eT⟩ := tameFrameModule_torsion_linearEquiv h σ τ hgen a b ha hb hcard
   -- So `Y` and `M₀` are stably isomorphic.
   obtain ⟨P, Q, _, _, _, _, _, _, _, _, hst⟩ := exists_projective_prod_linearEquiv_of_torsion
-    hdρ hd hρ hrel (tameFrameRelationMap_injective_of_card_ne_zero (isOfFinOrder_of_finite σ)
-      (isOfFinOrder_of_finite τ) hcard₁)
+    hdρ hd hρ hrel (tameFrameRelationMap_injective_of_card_ne_zero (.all σ) (.all τ) hcard₁)
     (tameFrameRelations ℤ_[p] (L ≃ₐ[K] L) σ τ (a : ℤ_[p]) (b : ℤ_[p])).surjective_toQuotient
     (((Submodule.equivMapOfInjective ι hι _).trans
       (LinearEquiv.ofEq _ _ (map_pPowerTorsion_of_exact hιπ hι hI))).symm.trans eT.symm)
   -- Rationally, `Y ≃ A(L) ⊕ I_G ≃ (ℤ_p[G]^N ⊕ ℤ_p) ⊕ I_G ≃ ℤ_p[G]^N ⊕ ℤ_p[G] ≃ ℤ_p[G]^N ⊕ M₀`.
-  obtain ⟨eY⟩ := IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p] hιπ hι hπ
-  obtain ⟨eA⟩ := IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p]
+  obtain ⟨eY⟩ := MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p] hιπ hι hπ
+  obtain ⟨eA⟩ := MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact ℚ_[p]
     (LinearMap.exact_subtype_mkQ (RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))))
     (Submodule.injective_subtype _) (Submodule.mkQ_surjective _)
   obtain ⟨eL⟩ := nonempty_padicCompletionUnits_tensorRat_linearEquiv (p := p) (L := L) (K := K)
@@ -193,7 +193,7 @@ theorem exists_relationModule_surjective_of_tameFrame_of_exact
   have hcard₁ := hcard ▸ (localRootOfUnityOrder_pos p L h).ne'
   simp only [natCast_def] at hcard₁
   have hk : Function.Injective k := tameFrameRelationMap_injective_of_card_ne_zero
-    (isOfFinOrder_of_finite σ) (isOfFinOrder_of_finite τ) hcard₁
+    (.all σ) (.all τ) hcard₁
   -- So `Y ≃ M₀ ⊕ ℤ_p[G]^N` is the quotient of `ℤ_p[G]^(N + 2) = ℤ_p[G]² ⊕ ℤ_p[G]^N` by the image
   -- of `ℤ_p[G]` under `x ↦ (x·(σ - a, τ - b), 0)`.
   let eP : (Fin (N + 2) → Λ) ≃ₗ[Λ] (rel.G →₀ Λ) × (Fin N → Λ) :=

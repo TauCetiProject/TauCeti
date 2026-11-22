@@ -46,11 +46,14 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
+* `Matrix.PosSemidef.norm_sq_toEuclideanLin_inv_sqrt` — over the reals, the squared length of
+  `(CFC.sqrt S)⁻¹ x` is the quadratic form of `S⁻¹` at `x`;
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
   positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
 * `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
+* `Matrix.PosDef.isUnit_det_sqrt` — the square root of a positive-definite matrix is invertible;
 * `Matrix.PosDef.inv_sub_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_iff` — the scale form
   `S⁻¹ - X` of the pencil and its positive-definiteness;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the same
@@ -122,6 +125,17 @@ theorem inner_toEuclideanCLM_sqrt_toEuclideanLin [DecidableEq ι] (S Θ : Matrix
   simp only [← ContinuousLinearMap.coe_coe, coe_toEuclideanCLM_eq_toEuclideanLin,
     inner_toEuclideanLin_toEuclideanLin, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq]
 
+/-- For real positive-semidefinite `S`, the squared length of `(CFC.sqrt S)⁻¹ x` is the quadratic
+form of `S⁻¹` at `x`. -/
+theorem PosSemidef.norm_sq_toEuclideanLin_inv_sqrt [DecidableEq ι] {S : Matrix ι ι ℝ}
+    (hS : S.PosSemidef) (x : EuclideanSpace ℝ ι) :
+    ‖(CFC.sqrt S)⁻¹.toEuclideanLin x‖ ^ 2 = ⟪x, S⁻¹.toEuclideanLin x⟫_ℝ := by
+  have hconj : ((CFC.sqrt S)⁻¹).conjTranspose * 1 * (CFC.sqrt S)⁻¹ = S⁻¹ := by
+    rw [mul_one, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.inv.eq,
+      ← Matrix.mul_inv_rev, CFC.sqrt_mul_sqrt_self S hS.nonneg]
+  rw [← real_inner_self_eq_norm_sq, ← hconj, ← inner_toEuclideanLin_toEuclideanLin]
+  simp
+
 /-- For positive-semidefinite `S`, the pencils of the sandwich `CFC.sqrt S * Θ * CFC.sqrt S` and
 of the product `Θ * S` have the same determinant. -/
 theorem PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul [DecidableEq ι]
@@ -158,6 +172,10 @@ theorem PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self {S : Matrix ι ι 𝕜} (hS 
 section PosDef
 
 variable [DecidableEq ι] {S : Matrix ι ι 𝕜}
+
+/-- The square root of a positive-definite matrix has a unit determinant, so it is invertible. -/
+theorem PosDef.isUnit_det_sqrt (hS : S.PosDef) : IsUnit (CFC.sqrt S).det :=
+  (isUnit_iff_isUnit_det _).1 (hS.isStrictlyPositive.isUnit_cfcSqrt S)
 
 /-- **The scale form of the pencil.** For positive-definite `S` and any `X`, the matrix `S⁻¹ - X`
 is the congruence of the sandwich pencil `1 - CFC.sqrt S * X * CFC.sqrt S` by `(CFC.sqrt S)⁻¹`. -/

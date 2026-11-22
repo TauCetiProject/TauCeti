@@ -81,27 +81,26 @@ namespace TauCeti.ClassFieldTheory
 
 open GlobalNumberFields
 
-variable {K : Type} [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
-  (S : Finset (HeightOneSpectrum (𝓞 K)))
-
 /-! ### The infinite ideles and the finite part -/
+
+section
+
+variable {K : Type} [Field K] (L : Type) [Field L] [NumberField L] [Algebra K L]
+  (S : Finset (HeightOneSpectrum (𝓞 K)))
 
 /-- The idele `(x, 1)`, as an `S`-idele. -/
 private def infiniteIdelesToSIdelesHom : (InfiniteAdeleRing L)ˣ →* sIdeles (K := K) L S :=
   (IdeleGroup.ofInfiniteIdele (𝓞 L) L).codRestrict _ (ofInfiniteIdele_mem_sIdeles _)
 
-omit [NumberField K] in
 private theorem coe_infiniteIdelesToSIdelesHom (x : (InfiniteAdeleRing L)ˣ) :
     ((infiniteIdelesToSIdelesHom L S x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L) =
       ((x : InfiniteAdeleRing L), (1 : FiniteAdeleRing (𝓞 L) L)) :=
   IdeleGroup.coe_ofInfiniteIdele _ _ x
 
-omit [NumberField K] in
 private theorem fst_infiniteIdelesToSIdelesHom (x : (InfiniteAdeleRing L)ˣ) :
     ((infiniteIdelesToSIdelesHom L S x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).1 = x := by
   rw [coe_infiniteIdelesToSIdelesHom]
 
-omit [NumberField K] in
 private theorem snd_infiniteIdelesToSIdelesHom (x : (InfiniteAdeleRing L)ˣ) :
     ((infiniteIdelesToSIdelesHom L S x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).2 = 1 := by
   rw [coe_infiniteIdelesToSIdelesHom]
@@ -117,21 +116,13 @@ private theorem infiniteIdelesToSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : (Infin
 /-- The finite part of an `S`-idele, a finite `S`-idele. -/
 private def sIdelesToFiniteSIdelesHom : sIdeles (K := K) L S →* finiteSIdeles L S :=
   ((IdeleGroup.toFiniteIdele (𝓞 L) L).comp (sIdeles L _).subtype).codRestrict _ fun x ↦
-    toFiniteIdele_mem_finiteSIdeles_iff.2 x.2
+    toFiniteIdele_mem_finiteSIdeles_iff.2 x.property
 
-omit [NumberField K] in
 private theorem coe_sIdelesToFiniteSIdelesHom (x : sIdeles (K := K) L S) :
     ((sIdelesToFiniteSIdelesHom L S x : (FiniteAdeleRing (𝓞 L) L)ˣ) : FiniteAdeleRing (𝓞 L) L) =
       ((x : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).2 :=
   IdeleGroup.coe_toFiniteIdele _ _ _
 
-private theorem sIdelesToFiniteSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : sIdeles (K := K) L S) :
-    sIdelesToFiniteSIdelesHom L S (σ • x) = σ • sIdelesToFiniteSIdelesHom L S x := by
-  refine Subtype.ext <| Units.ext ?_
-  simp only [coe_sIdelesToFiniteSIdelesHom, coe_smul_finiteSIdeles, Units.coe_map,
-    MonoidHom.coe_ofClass, coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_snd]
-
-omit [NumberField K] in
 /-- An `S`-idele with trivial finite part is the idele of its infinite part. -/
 private theorem sIdelesToFiniteSIdelesHom_eq_one_iff (x : sIdeles (K := K) L S) :
     sIdelesToFiniteSIdelesHom L S x = 1 ↔ ∃ y, infiniteIdelesToSIdelesHom L S y = x := by
@@ -151,13 +142,11 @@ private theorem sIdelesToFiniteSIdelesHom_eq_one_iff (x : sIdeles (K := K) L S) 
       simp only [coe_sIdelesToFiniteSIdelesHom, coe_infiniteIdelesToSIdelesHom,
         OneMemClass.coe_one, Units.val_one]
 
-omit [NumberField K] in
 private theorem infiniteIdelesToSIdelesHom_injective :
     Function.Injective (infiniteIdelesToSIdelesHom L S) := fun x y hxy ↦ Units.ext <| by
   simpa only [coe_infiniteIdelesToSIdelesHom] using
     congrArg (fun z : sIdeles (K := K) L S ↦ ((z : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).1) hxy
 
-omit [NumberField K] in
 private theorem sIdelesToFiniteSIdelesHom_surjective :
     Function.Surjective (sIdelesToFiniteSIdelesHom L S) := fun y ↦
   ⟨⟨IdeleGroup.ofFiniteIdele (𝓞 L) L y,
@@ -178,6 +167,19 @@ theorem infiniteIdelesToSIdeles_hom_apply (x : Additive (InfiniteAdeleRing L)ˣ)
       ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L x.toMul, ofInfiniteIdele_mem_sIdeles _ x.toMul⟩ :=
   (rfl)
 
+end
+
+section
+
+variable {K : Type} [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
+  (S : Finset (HeightOneSpectrum (𝓞 K)))
+
+private theorem sIdelesToFiniteSIdelesHom_smul (σ : L ≃ₐ[K] L) (x : sIdeles (K := K) L S) :
+    sIdelesToFiniteSIdelesHom L S (σ • x) = σ • sIdelesToFiniteSIdelesHom L S x := by
+  refine Subtype.ext <| Units.ext ?_
+  simp only [coe_sIdelesToFiniteSIdelesHom, coe_smul_finiteSIdeles, Units.coe_map,
+    MonoidHom.coe_ofClass, coe_smul_sIdeles, coe_idele_smul, adeleGaloisAction_snd]
+
 /-- The finite part `I_{L,S} → I_{L,S}^f` of an `S`-idele, as a morphism of representations of
 `Aut(L/K)`. -/
 def sIdelesToFiniteSIdeles : sIdelesRep (K := K) L S ⟶ finiteSIdelesRep L S :=
@@ -189,7 +191,8 @@ def sIdelesToFiniteSIdeles : sIdelesRep (K := K) L S ⟶ finiteSIdelesRep L S :=
 @[simp]
 theorem sIdelesToFiniteSIdeles_hom_apply (x : Additive (sIdeles (K := K) L S)) :
     (sIdelesToFiniteSIdeles L S).hom x = Additive.ofMul
-      ⟨IdeleGroup.toFiniteIdele (𝓞 L) L x.toMul, toFiniteIdele_mem_finiteSIdeles_iff.2 x.toMul.2⟩ :=
+      ⟨IdeleGroup.toFiniteIdele (𝓞 L) L x.toMul, toFiniteIdele_mem_finiteSIdeles_iff.2
+          x.toMul.property⟩ :=
   (rfl)
 
 /-- **The sequence `L_∞ˣ → I_{L,S} → I_{L,S}^f`** of representations of `Aut(L/K)`, given by the
@@ -224,7 +227,14 @@ theorem sIdelesInfiniteShortComplex_shortExact : (sIdelesInfiniteShortComplex L 
     obtain ⟨x, hx⟩ := sIdelesToFiniteSIdelesHom_surjective L S y.toMul
     exact ⟨Additive.ofMul x, congrArg Additive.ofMul hx⟩
 
+end
+
 /-! ### The splitting of the `S`-ideles -/
+
+section
+
+variable {K : Type} [Field K] (L : Type) [Field L] [NumberField L] [Algebra K L]
+  (S : Finset (HeightOneSpectrum (𝓞 K)))
 
 variable (K) in
 /-- The infinite part `I_L → L_∞ˣ` of an idele, as a morphism of representations of
@@ -235,13 +245,27 @@ def idelesToInfiniteIdeles : idelesRep K L ⟶ infiniteIdelesRep K L :=
       ).toAdditive.toIntLinearMap
     fun σ x ↦ congrArg Additive.ofMul (units_map_fst_idele_smul σ x.toMul)
 
-omit [NumberField K] in
 /-- `idelesToInfiniteIdeles` takes the infinite part of an idele. -/
 @[simp]
 theorem idelesToInfiniteIdeles_hom_apply (x : Additive (IdeleGroup (𝓞 L) L)) :
     (idelesToInfiniteIdeles K L).hom x = Additive.ofMul
       (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) x.toMul) :=
   (rfl)
+
+/-- The infinite part of the idele `(x, 1)` of an infinite idele `x` is `x`. -/
+@[reassoc (attr := simp)]
+theorem infiniteIdelesToSIdeles_comp_idelesToInfiniteIdeles :
+    infiniteIdelesToSIdeles L S ≫ sIdelesToIdeles (K := K) L S ≫ idelesToInfiniteIdeles K L =
+      𝟙 _ := by
+  ext a
+  refine (congrArg (idelesToInfiniteIdeles K L).hom (sIdelesToIdeles_hom_apply L _ _)).trans ?_
+  exact congrArg Additive.ofMul
+    (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofInfiniteIdele (𝓞 L) L _)))
+
+end
+
+variable {K : Type} [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
+  (S : Finset (HeightOneSpectrum (𝓞 K)))
 
 /-- The idele `(1, a)` of a finite `S`-idele `a`, as a morphism of representations of `Aut(L/K)`,
 a section of `sIdelesToFiniteSIdeles`. -/
@@ -250,7 +274,7 @@ def finiteSIdelesToSIdeles : finiteSIdelesRep L S ⟶ sIdelesRep (K := K) L S :=
     (((IdeleGroup.ofFiniteIdele (𝓞 L) L).comp (finiteSIdeles L S).subtype).codRestrict _
       fun a ↦ toFiniteIdele_mem_finiteSIdeles_iff.1 (by simp)).toAdditive.toIntLinearMap
     fun σ a ↦ congrArg Additive.ofMul <| Subtype.ext <|
-      ofFiniteIdele_map_finiteAdeleGaloisAction σ a.toMul.1
+      ofFiniteIdele_map_finiteAdeleGaloisAction σ a.toMul.val
 
 /-- `finiteSIdelesToSIdeles` sends a finite `S`-idele `a` to the idele `(1, a)`. -/
 @[simp]
@@ -273,27 +297,27 @@ theorem sIdeles_hom_decomp :
       ((idelesToInfiniteIdeles K L).hom
         ((sIdelesToIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))).hom x)) =
       Additive.ofMul ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
-        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
+        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.val),
         ofInfiniteIdele_mem_sIdeles _ _⟩ :=
     (congrArg (fun z ↦ (infiniteIdelesToSIdeles L S).hom ((idelesToInfiniteIdeles K L).hom z))
       (sIdelesToIdeles_hom_apply L (S : Set (HeightOneSpectrum (𝓞 K))) x)).trans <|
         (congrArg _ (idelesToInfiniteIdeles_hom_apply L _)).trans
           (infiniteIdelesToSIdeles_hom_apply L S _)
   have hb : IdeleGroup.toFiniteIdele (𝓞 L) L
-      (IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1)) ∈
+      (IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.val)) ∈
         finiteSIdeles L S := by
     rw [IdeleGroup.toFiniteIdele_ofFiniteIdele]
-    exact toFiniteIdele_mem_finiteSIdeles_iff.2 a.2
+    exact toFiniteIdele_mem_finiteSIdeles_iff.2 a.property
   have h₂ : (finiteSIdelesToSIdeles L S).hom ((sIdelesToFiniteSIdeles L S).hom x) =
-      Additive.ofMul ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1),
+      Additive.ofMul ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.val),
         toFiniteIdele_mem_finiteSIdeles_iff.1 hb⟩ :=
     (congrArg _ (sIdelesToFiniteSIdeles_hom_apply L S x)).trans
       (finiteSIdelesToSIdeles_hom_apply L S _)
   -- multiplicatively, `a = (a_∞, 1) * (1, a_f)`
   have ha : a = ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
-        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
+        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.val),
         ofInfiniteIdele_mem_sIdeles _ _⟩ *
-      ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1),
+      ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.val),
         toFiniteIdele_mem_finiteSIdeles_iff.1 hb⟩ := by
     refine Subtype.ext (Units.ext (Prod.ext ?_ ?_))
     -- the product of adeles is computed componentwise, and the infinite part of `a` has
@@ -323,16 +347,6 @@ theorem finiteSIdelesToSIdeles_comp_idelesToInfiniteIdeles :
   exact congrArg Additive.ofMul
     (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofFiniteIdele (𝓞 L) L _)))
 
-/-- The infinite part of the idele `(x, 1)` of an infinite idele `x` is `x`. -/
-@[reassoc (attr := simp)]
-theorem infiniteIdelesToSIdeles_comp_idelesToInfiniteIdeles :
-    infiniteIdelesToSIdeles L S ≫ sIdelesToIdeles (K := K) L S ≫ idelesToInfiniteIdeles K L =
-      𝟙 _ := by
-  ext a
-  refine (congrArg (idelesToInfiniteIdeles K L).hom (sIdelesToIdeles_hom_apply L _ _)).trans ?_
-  exact congrArg Additive.ofMul
-    (Units.ext (congrArg Prod.fst (IdeleGroup.coe_ofInfiniteIdele (𝓞 L) L _)))
-
 /-- The finite part of the idele `(x, 1)` of an infinite idele `x` is trivial. -/
 @[reassoc (attr := simp)]
 theorem infiniteIdelesToSIdeles_comp_sIdelesToFiniteSIdeles :
@@ -343,7 +357,8 @@ theorem infiniteIdelesToSIdeles_comp_sIdelesToFiniteSIdeles :
 
 section Herbrand
 
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] {L S}
 
@@ -373,10 +388,10 @@ theorem herbrandQuotient_sIdelesRep
     (hS : ∀ w : HeightOneSpectrum (𝓞 L), w.under (𝓞 K) ∉ S →
       Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
     (wInf : ∀ v : InfinitePlace K, {w : InfinitePlace L // w.LiesOver v})
-    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.val.asIdeal}) :
     TateCohomology.herbrandQuotient (sIdelesRep (K := K) L S) =
-      (∏ v, (finrank v.Completion (wInf v).1.Completion : ℚ)) *
-        ∏ v : S, (finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) := by
+      (∏ v, (finrank v.Completion (wInf v).val.Completion : ℚ)) *
+        ∏ v : S, (finrank (v.val.adicCompletion K) ((w v).val.adicCompletion L) : ℚ) := by
   rw [herbrandQuotient_sIdelesRep_eq_mul hS, herbrandQuotient_infiniteIdelesRep wInf,
     herbrandQuotient_finiteSIdelesRep S hS w]
 

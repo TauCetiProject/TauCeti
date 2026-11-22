@@ -75,7 +75,7 @@ is not chosen. -/
 structure Orientation where
   /-- The set of darts belonging to the orientation. -/
   carrier : Set G.Dart
-  symm_mem_iff_not_mem : ∀ d, d.symm ∈ carrier ↔ d ∉ carrier
+  symm_mem_iff_notMem : ∀ d, d.symm ∈ carrier ↔ d ∉ carrier
 
 namespace Orientation
 
@@ -85,28 +85,30 @@ instance : SetLike (Orientation G) G.Dart where
     rintro ⟨s, hs⟩ ⟨t, ht⟩ h
     congr
 
+variable {G} in
 @[ext]
 theorem ext {o₁ o₂ : Orientation G} (h : ∀ d, d ∈ o₁ ↔ d ∈ o₂) : o₁ = o₂ := by
   apply SetLike.ext
   exact h
 
-attribute [simp] Orientation.symm_mem_iff_not_mem
+attribute [simp] Orientation.symm_mem_iff_notMem
 
+variable {G} in
 /-- A reversed dart is not chosen exactly when the original dart is chosen. -/
 @[simp]
 theorem symm_notMem_iff_mem (o : Orientation G) (d : G.Dart) : d.symm ∉ o ↔ d ∈ o := by
   constructor
   · intro h
     by_contra hd
-    exact h ((o.symm_mem_iff_not_mem d).2 hd)
+    exact h ((o.symm_mem_iff_notMem d).2 hd)
   · intro hd hs
-    exact ((o.symm_mem_iff_not_mem d).1 hs) hd
+    exact ((o.symm_mem_iff_notMem d).1 hs) hd
 
 /-- The orientation induced by a linear order, with each edge directed from its smaller endpoint
 to its larger endpoint. -/
 def ofLinearOrder [LinearOrder V] : Orientation G where
   carrier := {d | d.fst < d.snd}
-  symm_mem_iff_not_mem d := by
+  symm_mem_iff_notMem d := by
     -- `Dart.symm` stores the swapped endpoint pair, which reduces the orientation law to
     -- asymmetry and totality of the chosen linear order.
     change d.snd < d.fst ↔ ¬d.fst < d.snd
@@ -157,7 +159,7 @@ instance : _root_.Quiver (OrientedQuiver G o) where
     ⟨((vertexEquiv G o).symm i, (vertexEquiv G o).symm j), h⟩ ∈ o}
 
 instance : Quiver.IsThin (OrientedQuiver G o) := fun _ _ =>
-  ⟨fun e f => Subtype.ext (Subsingleton.elim e.1 f.1)⟩
+  ⟨fun e f => Subtype.ext (Subsingleton.elim e.val f.val)⟩
 
 instance [Finite V] : Finite (OrientedQuiver G o) :=
   Finite.of_equiv V (vertexEquiv G o)
@@ -184,8 +186,8 @@ whose dart is selected by the orientation. This is the characteristic descriptio
 structure, so consumers never need to unfold the `Quiver` instance. -/
 def homEquiv (i j : V) :
     (vertex G o i ⟶ vertex G o j) ≃ {h : G.Adj i j // (⟨(i, j), h⟩ : G.Dart) ∈ o} where
-  toFun e := ⟨e.1, e.2⟩
-  invFun p := arrow G o p.1 p.2
+  toFun e := ⟨e.val, e.property⟩
+  invFun p := arrow G o p.val p.property
   left_inv _ := Subsingleton.elim _ _
   right_inv _ := Subtype.ext rfl
 
@@ -206,7 +208,7 @@ theorem homEquiv_symm_apply {i j : V} (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G
 /-- Every arrow of the oriented quiver comes from a dart selected by the orientation. -/
 theorem exists_eq_arrow {i j : V} (e : vertex G o i ⟶ vertex G o j) :
     ∃ (h : G.Adj i j) (ho : (⟨(i, j), h⟩ : G.Dart) ∈ o), e = arrow G o h ho :=
-  ⟨(homEquiv G o i j e).1, (homEquiv G o i j e).2, Subsingleton.elim _ _⟩
+  ⟨(homEquiv G o i j e).val, (homEquiv G o i j e).property, Subsingleton.elim _ _⟩
 
 /-- For the linear-order orientation, there is one arrow from `i` to `j` exactly when `i < j`
 and the vertices are adjacent. -/
@@ -219,7 +221,7 @@ theorem card_hom_ofLinearOrder [LinearOrder V] (i j : V) [Decidable (i < j ∧ G
   simp only [Orientation.mem_ofLinearOrder_iff]
   split_ifs with h
   · exact Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ ↦ Subtype.ext rfl⟩, ⟨⟨h.2, h.1⟩⟩⟩
-  · exact @Nat.card_of_isEmpty _ ⟨fun p ↦ h ⟨p.2, p.1⟩⟩
+  · exact @Nat.card_of_isEmpty _ ⟨fun p ↦ h ⟨p.property, p.val⟩⟩
 
 /-- Along any positive-length path in the linear-order orientation, the start vertex is strictly
 smaller than the end vertex. -/
@@ -236,7 +238,7 @@ theorem lt_of_path_of_length_pos_ofLinearOrder [LinearOrder V]
       have he' := (homEquiv G (Orientation.ofLinearOrder G)
         ((vertexEquiv G (Orientation.ofLinearOrder G)).symm b)
         ((vertexEquiv G (Orientation.ofLinearOrder G)).symm c)
-        (by simpa only [← vertexEquiv_apply, Equiv.apply_symm_apply] using e)).2
+        (by simpa only [← vertexEquiv_apply, Equiv.apply_symm_apply] using e)).property
       simpa only [Orientation.mem_ofLinearOrder_iff] using he'
     rcases Nat.eq_zero_or_pos p.length with h0 | hpos
     · rw [Path.eq_of_length_zero p h0]
@@ -271,22 +273,22 @@ theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
   rw [Nat.card_congr (homEquiv G o i j), Nat.card_congr (homEquiv G o j i)]
   split_ifs with h
   · by_cases ho : (⟨(i, j), h⟩ : G.Dart) ∈ o
-    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem G _).2 ho
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∉ o := (o.symm_notMem_iff_mem _).2 ho
       have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 1 :=
         Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h, ho⟩⟩⟩
       have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
-        @Nat.card_of_isEmpty _ ⟨fun p => ho' p.2⟩
+        @Nat.card_of_isEmpty _ ⟨fun p => ho' p.property⟩
       rw [h1, h2]
-    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+    · have ho' : (⟨(j, i), h.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_notMem _).2 ho
       have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
-        @Nat.card_of_isEmpty _ ⟨fun p => ho p.2⟩
+        @Nat.card_of_isEmpty _ ⟨fun p => ho p.property⟩
       have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 1 :=
         Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ => Subtype.ext rfl⟩, ⟨⟨h.symm, ho'⟩⟩⟩
       rw [h1, h2]
   · have h1 : Nat.card {h' : G.Adj i j // (⟨(i, j), h'⟩ : G.Dart) ∈ o} = 0 :=
-      @Nat.card_of_isEmpty _ ⟨fun p => h p.1⟩
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.val⟩
     have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
-      @Nat.card_of_isEmpty _ ⟨fun p => h p.1.symm⟩
+      @Nat.card_of_isEmpty _ ⟨fun p => h p.val.symm⟩
     rw [h1, h2]
 
 /-- The symmetrification of an oriented graph has one arrow between two vertices exactly when they
@@ -338,7 +340,7 @@ theorem exists_adj_of_pos_two_mul_le_sum [Finite V]
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where
   obj i := DoubledQuiver.vertexEquiv G ((vertexEquiv G o).symm i)
-  map e := Quiver.homOfEq (DoubledQuiver.arrow G e.1)
+  map e := Quiver.homOfEq (DoubledQuiver.arrow G e.val)
     (DoubledQuiver.vertexEquiv_apply G _).symm
     (DoubledQuiver.vertexEquiv_apply G _).symm
 
@@ -407,7 +409,7 @@ noncomputable def unsymmetrifyMap : DoubledQuiver G ⥤q Symmetrify (OrientedQui
         (OrientedQuiver.vertexEquiv_apply G o _).symm
         (OrientedQuiver.vertexEquiv_apply G o _).symm
     · exact Quiver.homOfEq (Sum.inr (OrientedQuiver.arrow G o d.adj.symm
-          ((o.symm_mem_iff_not_mem d).2 hd)))
+          ((o.symm_mem_iff_notMem d).2 hd)))
         (OrientedQuiver.vertexEquiv_apply G o _).symm
         (OrientedQuiver.vertexEquiv_apply G o _).symm
 
@@ -433,20 +435,20 @@ instance instIsThinSymmetrifyOrientedQuiver :
   cases e with
   | inl e =>
       cases f with
-      | inl f => exact congrArg Sum.inl (Subtype.ext (Subsingleton.elim e.1 f.1))
+      | inl f => exact congrArg Sum.inl (Subtype.ext (Subsingleton.elim e.val f.val))
       | inr f =>
           exfalso
-          exact ((o.symm_mem_iff_not_mem
+          exact ((o.symm_mem_iff_notMem
             ⟨((OrientedQuiver.vertexEquiv G o).symm i,
-              (OrientedQuiver.vertexEquiv G o).symm j), e.1⟩).1 f.2) e.2
+              (OrientedQuiver.vertexEquiv G o).symm j), e.val⟩).1 f.property) e.property
   | inr e =>
       cases f with
       | inl f =>
           exfalso
-          exact ((o.symm_mem_iff_not_mem
+          exact ((o.symm_mem_iff_notMem
             ⟨((OrientedQuiver.vertexEquiv G o).symm i,
-              (OrientedQuiver.vertexEquiv G o).symm j), f.1⟩).1 e.2) f.2
-      | inr f => exact congrArg Sum.inr (Subtype.ext (Subsingleton.elim e.1 f.1))
+              (OrientedQuiver.vertexEquiv G o).symm j), f.val⟩).1 e.property) f.property
+      | inr f => exact congrArg Sum.inr (Subtype.ext (Subsingleton.elim e.val f.val))
 
 /-- On a chosen dart, the inverse comparison returns the positive copy of the corresponding
 oriented-quiver arrow. -/
@@ -466,7 +468,7 @@ theorem unsymmetrifyMap_arrow_of_not_mem {i j : V} (h : G.Adj i j)
     (unsymmetrifyMap G o).map (DoubledQuiver.arrow G h) =
       Quiver.homOfEq
         (Sum.inr (OrientedQuiver.arrow G o h.symm
-          ((o.symm_mem_iff_not_mem ⟨(i, j), h⟩).2 ho)))
+          ((o.symm_mem_iff_notMem ⟨(i, j), h⟩).2 ho)))
         (unsymmetrifyMap_obj G o i).symm (unsymmetrifyMap_obj G o j).symm := by
   apply Subsingleton.elim
 
@@ -529,7 +531,7 @@ theorem unsymmetrifyMap_isCovering : (unsymmetrifyMap G o).IsCovering := by
   exact (Quiver.Hom.cast_heq rfl htarget _).symm.trans
     (heq_of_eq (Subsingleton.elim _ _))
 
-/-- The inverse comparison from a symmetrified orientation to the doubled graph is also a quiver
+/-- The canonical comparison from a symmetrified orientation to the doubled graph is also a quiver
 covering. -/
 theorem symmetrifyMap_isCovering : (symmetrifyMap G o).IsCovering := by
   let φ := unsymmetrifyMap G o
@@ -567,7 +569,7 @@ theorem exists_forall_exists_nonempty_reorient_hom (o : Orientation G) {f : V �
     refine ⟨reorientKeep _ (OrientedQuiver.arrow G o hadj ho) ?_⟩
     simpa only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_eq_true_eq] using hne
   · -- The edge is oriented `f u ⟶ u`, and is turned around.
-    have ho' : (⟨(f u, u), hadj.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_not_mem _).2 ho
+    have ho' : (⟨(f u, u), hadj.symm⟩ : G.Dart) ∈ o := (o.symm_mem_iff_notMem _).2 ho
     refine ⟨reorientFlip _ (OrientedQuiver.arrow G o hadj.symm ho') ?_⟩
     simp only [φ, OrientedQuiver.vertexEquiv_symm_vertex, decide_true]
 
@@ -583,7 +585,7 @@ variable {V : Type*} {G : SimpleGraph V}
 endpoint of colour `true`. -/
 def sourceSink (C : G.Coloring Bool) : Orientation G where
   carrier := {d | C d.snd = true}
-  symm_mem_iff_not_mem d := by
+  symm_mem_iff_notMem d := by
     -- Unfolding membership exposes the two endpoint colours, which `C.valid` says are unequal.
     change C d.fst = true ↔ C d.snd ≠ true
     have h := C.valid d.adj

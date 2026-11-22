@@ -108,7 +108,7 @@ private theorem character_degree_eq_of_mem_principalSeries {chi : GL (Fin 2) F �
 private theorem character_degree_eq_of_mem_cuspidal (E : Type*) [Field E] [Algebra F E]
     [Algebra.IsQuadraticExtension F E] {psi : AddChar F ℂ} {chi : GL (Fin 2) F → ℂ}
     (hchi : chi ∈
-      (fun theta : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E theta psi).1) ''
+      (fun theta : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E theta psi).val) ''
         {theta | theta.comp (powMonoidHom (Fintype.card F)) ≠ theta}) :
     chi 1 = ((Fintype.card F - 1 : ℕ) : ℂ) := by
   obtain ⟨theta, -, hchi⟩ := hchi
@@ -194,7 +194,7 @@ theorem irreducibleCharacters_GL2_degree_card_sub_one_eq_image (E : Type*) [Fiel
     (hq : 3 ≤ Fintype.card F) :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) |
       chi 1 = ((Fintype.card F - 1 : ℕ) : ℂ)} =
-      (fun theta : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E theta psi).1) ''
+      (fun theta : Eˣ →* ℂˣ => (GL2CuspidalVirtualCharacter F E theta psi).val) ''
         {theta | theta.comp (powMonoidHom (Fintype.card F)) ≠ theta} := by
   rw [irreducibleCharacters_GL2_eq_union F E hpsi]
   ext chi
@@ -246,8 +246,7 @@ theorem ncard_irreducibleCharacters_GL2_degree_card_sub_one (hq : 3 ≤ Fintype.
       Fintype.card F * (Fintype.card F - 1) / 2 := by
   rw [irreducibleCharacters_GL2_degree_card_sub_one_eq_image F (gl2QuadraticExtension F)
       (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one hq,
-    ncard_image_GL2CuspidalVirtualCharacter F (gl2QuadraticExtension F)
-      (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one]
+    ncard_image_GL2CuspidalVirtualCharacter F (gl2QuadraticExtension F)]
 
 /-- The four degree counts `q - 1`, `q - 1`, `(q - 1)(q - 2)/2`, and `q(q - 1)/2`, weighted by
 the squares of the degrees `1`, `q`, `q + 1`, and `q - 1` they count, add up to `|GL₂(F)|`. -/

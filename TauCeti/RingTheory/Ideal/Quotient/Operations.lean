@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Colon
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Module.SpanRank
@@ -47,6 +48,10 @@ map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleto
 
 A linear endomorphism commuting with multiplication by each element of a set `s` induces an
 endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap_of_map_mul`).
+
+Multiplication by `b` gives the exact sequence `B/(J : b) → B/J → B/(J + (b))` for any ideal
+`J`, without regularity of `b`. The first map `TauCeti.ColonQuotient.mulColon` is injective.
+
 -/
 
 public section
@@ -59,15 +64,15 @@ variable {R : Type*} [CommRing R]
 adjoining the kernel generator to that set generates the original ideal. -/
 theorem span_insert_eq_of_quotient (I : Ideal R) {x : R}
     (hmem : x ∈ I) (s : Set R)
-    (himage : span ((Ideal.Quotient.mk (span {x})) '' s) =
-      I.map (Ideal.Quotient.mk (span {x}))) :
+    (himage : span ((Quotient.mk (span {x})) '' s) =
+      I.map (Quotient.mk (span {x}))) :
     span (insert x s) = I := by
-  have hmap : (span (insert x s)).map (Ideal.Quotient.mk (span {x})) =
-      I.map (Ideal.Quotient.mk (span {x})) := by
-    rw [map_span, Set.image_insert_eq, Ideal.Quotient.eq_zero_iff_mem.mpr
+  have hmap : (span (insert x s)).map (Quotient.mk (span {x})) =
+      I.map (Quotient.mk (span {x})) := by
+    rw [map_span, Set.image_insert_eq, Quotient.eq_zero_iff_mem.mpr
       (mem_span_singleton_self x), span_insert_zero, himage]
-  have heq := (map_eq_iff_sup_ker_eq_of_surjective _ Ideal.Quotient.mk_surjective).mp hmap
-  rw [Ideal.mk_ker, sup_of_le_left (span_mono (Set.singleton_subset_iff.mpr
+  have heq := (map_eq_iff_sup_ker_eq_of_surjective _ Quotient.mk_surjective).mp hmap
+  rw [mk_ker, sup_of_le_left (span_mono (Set.singleton_subset_iff.mpr
     (Set.mem_insert x s))), sup_of_le_left
       ((span_singleton_le_iff_mem _).mpr hmem)] at heq
   exact heq
@@ -81,29 +86,29 @@ theorem algHom_ext_of_surjective_algebraMap_quotient (I : Ideal R)
     (hI : I ≤ RingHom.ker (algebraMap R S)) (f g : B →ₐ[R] S) : f = g := by
   have kills (a : B →ₐ[R] S) : ∀ b ∈ I.map (algebraMap R B), a b = 0 := by
     intro b hb
-    apply (Ideal.map_le_iff_le_comap.mpr ?_ : I.map (algebraMap R B) ≤
+    apply (map_le_iff_le_comap.mpr ?_ : I.map (algebraMap R B) ≤
       RingHom.ker a.toRingHom) hb
     intro r hr
     simpa using hI hr
-  let f' := Ideal.Quotient.liftₐ _ f (kills f)
-  let g' := Ideal.Quotient.liftₐ _ g (kills g)
+  let f' := Quotient.liftₐ _ f (kills f)
+  let g' := Quotient.liftₐ _ g (kills g)
   have he : f' = g' := by
     apply AlgHom.ext
     intro b
     obtain ⟨r, rfl⟩ := hB b
-    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+    obtain ⟨r, rfl⟩ := Quotient.mk_surjective r
     simp [f', g']
-  exact AlgHom.ext fun b ↦ congrArg (fun a ↦ a (Ideal.Quotient.mk _ b)) he
+  exact AlgHom.ext fun b ↦ congrArg (fun a ↦ a (Quotient.mk _ b)) he
 
 /-- If `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to the image
 of an element of `R`. -/
 theorem exists_sub_mem_of_surjective_quotientMap {S : Type*} [CommRing S] {I : Ideal R}
     {J : Ideal S} {f : R →+* S} {hIJ : I ≤ J.comap f}
     (hf : Function.Surjective (quotientMap J f hIJ)) (s : S) : ∃ r, s - f r ∈ J := by
-  obtain ⟨x, hx⟩ := hf (Ideal.Quotient.mk _ s)
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨x, hx⟩ := hf (Quotient.mk _ s)
+  obtain ⟨r, rfl⟩ := Quotient.mk_surjective x
   rw [quotientMap_mk] at hx
-  exact ⟨r, Ideal.Quotient.eq.mp hx.symm⟩
+  exact ⟨r, Quotient.eq.mp hx.symm⟩
 
 /-- If `I ≤ J` are ideals with `I` finitely generated, then `J.spanFinrank` is at most the sum
 of the `spanFinrank`s of its image in `R ⧸ I` and `I`. For finitely generated `J`, this bounds
@@ -111,13 +116,13 @@ its number of generators; for non-finitely-generated `J`, `J.spanFinrank` is def
 This is the ideal form of `Submodule.spanFinrank_le_spanFinrank_map_mkQ_add_spanFinrank`. -/
 theorem spanFinrank_le_spanFinrank_map_add_spanFinrank {I J : Ideal R} (hIJ : I ≤ J)
     (hI : I.FG) :
-    J.spanFinrank ≤ (J.map (Ideal.Quotient.mk I)).spanFinrank + I.spanFinrank := by
-  have hmap : (J.map (Ideal.Quotient.mk I)).restrictScalars R = Submodule.map I.mkQ J := by
+    J.spanFinrank ≤ (J.map (Quotient.mk I)).spanFinrank + I.spanFinrank := by
+  have hmap : (J.map (Quotient.mk I)).restrictScalars R = Submodule.map I.mkQ J := by
     ext y
-    simp [mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective]
-  have hrank : (Submodule.map I.mkQ J).spanFinrank = (J.map (Ideal.Quotient.mk I)).spanFinrank := by
+    simp [mem_map_iff_of_surjective _ Quotient.mk_surjective]
+  have hrank : (Submodule.map I.mkQ J).spanFinrank = (J.map (Quotient.mk I)).spanFinrank := by
     rw [← hmap]
-    exact Submodule.spanFinrank_restrictScalars_eq Ideal.Quotient.mk_surjective _
+    exact Submodule.spanFinrank_restrictScalars_eq Quotient.mk_surjective _
   simpa [hrank] using
     Submodule.spanFinrank_le_spanFinrank_map_mkQ_add_spanFinrank hIJ hI
 
@@ -127,51 +132,51 @@ theorem spanFinrank_le_spanFinrank_map_add_spanFinrank {I J : Ideal R} (hIJ : I 
 surjective. -/
 theorem isMaximal_comap_of_surjective_quotient_mk_comp {A S F : Type*} [Ring A] [CommRing S]
     [FunLike F A S] [RingHomClass F A S] (f : F) {m : Ideal S} [m.IsMaximal]
-    (hf : Function.Surjective (Ideal.Quotient.mk m ∘ f)) : (m.comap f).IsMaximal := by
-  let := Ideal.Quotient.field m
-  have := RingHom.ker_isMaximal_of_surjective ((Ideal.Quotient.mk m).comp (f : A →+* S)) hf
-  rwa [← RingHom.comap_ker, Ideal.mk_ker, Ideal.comap_coe] at this
+    (hf : Function.Surjective (Quotient.mk m ∘ f)) : (m.comap f).IsMaximal := by
+  let := Quotient.field m
+  have := RingHom.ker_isMaximal_of_surjective ((Quotient.mk m).comp (f : A →+* S)) hf
+  rwa [← RingHom.comap_ker, mk_ker, comap_coe] at this
 
 /-- A linear endomorphism commuting with multiplication by each element of a set `s` preserves the
 ideal spanned by `s`, so it induces a compatible endomorphism of the quotient by that ideal. -/
 theorem exists_quotient_linearMap_of_map_mul {k A : Type*} [CommRing k] [CommRing A]
     [Algebra k A] {s : Set A} (T : A →ₗ[k] A)
     (hmul : ∀ f ∈ s, ∀ x, T (f * x) = f * T x) :
-    ∃ Q : (A ⧸ Ideal.span s) →ₗ[k] (A ⧸ Ideal.span s),
-      ∀ x, Q (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (T x) := by
-  have hT : (Ideal.span s).restrictScalars k ≤ ((Ideal.span s).restrictScalars k).comap T := by
+    ∃ Q : (A ⧸ span s) →ₗ[k] (A ⧸ span s),
+      ∀ x, Q (Quotient.mk _ x) = Quotient.mk _ (T x) := by
+  have hT : (span s).restrictScalars k ≤ ((span s).restrictScalars k).comap T := by
     intro x hx
     -- Generalize over the multiplier, since `T` commutes only with multiplication by `s`.
-    suffices h : ∀ a, T (a * x) ∈ Ideal.span s by simpa using h 1
+    suffices h : ∀ a, T (a * x) ∈ span s by simpa using h 1
     induction hx using Submodule.span_induction with
     | mem f hf =>
       intro a
       rw [mul_comm, hmul f hf]
-      exact Ideal.mul_mem_right _ _ (Ideal.subset_span hf)
+      exact mul_mem_right _ _ (subset_span hf)
     | zero => simp
     | add x y _ _ hx hy => intro a; rw [mul_add, map_add]; exact add_mem (hx a) (hy a)
     | smul b x _ hx => intro a; rw [smul_eq_mul, ← mul_assoc]; exact hx (a * b)
   refine ⟨(Submodule.Quotient.restrictScalarsEquiv k _).conj (Submodule.mapQ _ _ T hT),
     fun x ↦ ?_⟩
-  rw [LinearEquiv.conj_apply_apply, ← Ideal.Quotient.mk_eq_mk,
+  rw [LinearEquiv.conj_apply_apply, ← Quotient.mk_eq_mk,
     Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.mapQ_apply,
-    Submodule.Quotient.restrictScalarsEquiv_mk, Ideal.Quotient.mk_eq_mk]
+    Submodule.Quotient.restrictScalarsEquiv_mk, Quotient.mk_eq_mk]
 
 /-- The linear combination, with coefficients in `R ⧸ I`, of the classes in `S ⧸ IS` of elements
 `b j` of `S`, evaluated at the classes of `c j`, is the class of `∑ j, c j * b j`. -/
 theorem Quotient.linearCombination_mk_map_apply {S ι : Type*} [CommRing S] [Algebra R S]
     [Fintype ι] (I : Ideal R) (b : ι → S) (c : ι → R) :
-    Fintype.linearCombination (R ⧸ I) (fun j ↦ Ideal.Quotient.mk (I.map (algebraMap R S)) (b j))
-        (fun j ↦ Ideal.Quotient.mk I (c j)) =
-      Ideal.Quotient.mk (I.map (algebraMap R S)) (∑ j, algebraMap R S (c j) * b j) := by
+    Fintype.linearCombination (R ⧸ I) (fun j ↦ Quotient.mk (I.map (algebraMap R S)) (b j))
+        (fun j ↦ Quotient.mk I (c j)) =
+      Quotient.mk (I.map (algebraMap R S)) (∑ j, algebraMap R S (c j) * b j) := by
   simp [Fintype.linearCombination_apply, map_sum, Algebra.smul_def]
 
 /-- For an element `p` of a commutative `R`-algebra `B`, the sequence `B → B → B ⧸ (p)`, whose
 first map is multiplication by `p`, is exact. -/
 theorem exact_mulLeft_mkₐ_span_singleton {B : Type*} [CommRing B] [Algebra R B] (p : B) :
-    Function.Exact (LinearMap.mulLeft R p) (Ideal.Quotient.mkₐ R (span {p})).toLinearMap :=
+    Function.Exact (LinearMap.mulLeft R p) (Quotient.mkₐ R (span {p})).toLinearMap :=
   fun x ↦ by
-    simp only [AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem,
+    simp only [AlgHom.toLinearMap_apply, Quotient.mkₐ_eq_mk, Quotient.eq_zero_iff_mem,
       mem_span_singleton', Set.mem_range, LinearMap.mulLeft_apply]
     exact exists_congr fun _ ↦ by rw [mul_comm]
 
@@ -196,11 +201,13 @@ def quotientRingAut : H →* RingAut (A ⧸ I) where
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
     simp [RingAut.mul_apply]
 
+/-- The descended action sends a residue class to the class of its image under `a h`. -/
 @[simp]
 theorem quotientRingAut_apply_mk (h : H) (x : A) :
     a.quotientRingAut I hI h (Ideal.Quotient.mk I x) = Ideal.Quotient.mk I (a h x) :=
   (rfl)
 
+/-- The inverse descended action sends a residue class to the class of the inverse image. -/
 @[simp]
 theorem quotientRingAut_symm_apply_mk (h : H) (x : A) :
     (a.quotientRingAut I hI h).symm (Ideal.Quotient.mk I x) =
@@ -219,3 +226,56 @@ theorem mk_span_singleton_one_sub_self {R : Type*} [CommRing R] (e : R) :
   exact Ideal.mem_span_singleton'.mpr ⟨-1, by ring⟩
 
 end TauCeti.Ideal.Quotient
+
+namespace TauCeti.ColonQuotient
+
+variable (R : Type*) {B : Type*} [CommSemiring R] [CommRing B] [Algebra R B]
+
+/-- Multiplication by `b` embeds the quotient by `(J : b)` into the quotient by `J`. -/
+def mulColon (J : Ideal B) (b : B) : (B ⧸ J.colon {b}) →ₗ[R] B ⧸ J :=
+  (Submodule.mapQ (J.colon {b}) J (LinearMap.mulLeft B b) (by
+    intro x hx
+    -- Membership in the comap is evaluation of the multiplication map.
+    change b * x ∈ J
+    simpa only [Submodule.mem_colon_singleton, smul_eq_mul, mul_comm] using hx)).restrictScalars R
+
+/-- On residue classes, `mulColon R J b` is multiplication by `b`. -/
+@[simp]
+theorem mulColon_mk (J : Ideal B) (b x : B) :
+    mulColon R J b (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (b * x) := by
+  rw [mulColon, LinearMap.restrictScalars_apply, ← Ideal.Quotient.mk_eq_mk,
+    Submodule.mapQ_apply, LinearMap.mulLeft_apply, Ideal.Quotient.mk_eq_mk]
+
+/-- Multiplication from the quotient by a colon ideal is injective without regularity. -/
+theorem mulColon_injective (J : Ideal B) (b : B) : Function.Injective (mulColon R J b) := by
+  rw [injective_iff_map_eq_zero]
+  intro x
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  intro hx
+  rw [mulColon_mk, Ideal.Quotient.eq_zero_iff_mem] at hx
+  apply Ideal.Quotient.eq_zero_iff_mem.mpr
+  simpa only [Submodule.mem_colon_singleton, smul_eq_mul, mul_comm] using hx
+
+/-- Multiplication followed by quotienting is the exact sequence
+`B/(J : b) → B/J → B/(J + (b))`. -/
+theorem exact_mulColon_factorₐ (J : Ideal B) (b : B) :
+    Function.Exact (mulColon R J b)
+      (Ideal.Quotient.factorₐ R (show J ≤ J ⊔ Ideal.span {b} from le_sup_left)).toLinearMap := by
+  intro x
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp only [AlgHom.toLinearMap_apply, Ideal.Quotient.factorₐ_apply_mk,
+    Ideal.Quotient.eq_zero_iff_mem]
+  constructor
+  · intro hx
+    obtain ⟨j, hj, z, hz, rfl⟩ := Submodule.mem_sup.mp hx
+    obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hz
+    refine ⟨Ideal.Quotient.mk _ c, ?_⟩
+    rw [mulColon_mk, map_add, Ideal.Quotient.eq_zero_iff_mem.mpr hj, zero_add, mul_comm]
+  · rintro ⟨y, hy⟩
+    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [mulColon_mk, Ideal.Quotient.eq] at hy
+    have hby : b * y ∈ J ⊔ Ideal.span {b} :=
+      Submodule.mem_sup_right (Ideal.mul_mem_right y _ (Ideal.mem_span_singleton_self b))
+    exact (Submodule.sub_mem_iff_right _ hby).mp (Submodule.mem_sup_left hy)
+
+end TauCeti.ColonQuotient

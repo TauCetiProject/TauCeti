@@ -8,8 +8,9 @@ module
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
--- Private: the spectral theorem is used only in proofs.
+-- Private: the spectral theorem and the distance to a cone are used only in proofs.
 import Mathlib.Analysis.InnerProductSpace.Spectrum
+import TauCeti.Analysis.Convex.Cone.InfDist
 
 /-!
 # The cone of positive `(1,1)`-forms
@@ -28,9 +29,10 @@ is a positive `(1,1)`-current exactly when `Θ` takes values in this cone at eve
 Taubes's passage from Seiberg–Witten solutions to pseudoholomorphic curves, the normalized
 curvature currents are only approximately positive: their pointwise distance to the cone is
 controlled by two quantities, the anti-`J`-invariant part of the form and the negative part of its
-Hermitian form `B(v, v) = η(v, J v)`. Conversely, a two-form `Ω` taming `J` controls the norm of
-a form by its pairing with `Ω` and its distance to the cone. These are the two pointwise
-estimates of this file.
+Hermitian form `B(v, v) = η(v, J v)`. This file proves that distance estimate and writes positive
+`(1,1)`-forms as nonnegative combinations of complex lines. The converse estimate, the control of
+the norm of a form by its pairing with a two-form `Ω` taming `J` and its distance to the cone, is
+in `TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.ComplexLineCone`.
 
 **Distance to the cone.** `D_J` satisfies `D_J³ = -4 D_J` (`lieMap_lieMap_lieMap`), so
 `η + D_J² η / 4` is `J`-invariant; it is the `(1,1)`-part of `η`, and `-D_J² η / 4` is its
@@ -46,20 +48,26 @@ Adding `s ω` to the `(1,1)`-part raises the Hermitian form by `s g`. Hence, if
 
 (`infDist_positiveCone_le`), in every dimension.
 
-**Norm control by a taming form.** For a positive `(1,1)`-form `κ`, the symmetric operator `T`
-with `⟪T u, w⟫ = κ(u, J w)` is positive semidefinite, and an orthonormal eigenbasis `b` of `T`
-writes `κ = (1 / 2) ∑ᵢ μᵢ bᵢ ∧ J bᵢ` with eigenvalues `μᵢ ≥ 0`: a nonnegative combination of unit
-complex lines. Each `bᵢ ∧ J bᵢ` has norm `1` and pairs with `ω` to `1`. Consequently, in every
-dimension:
+**Positive forms as combinations of complex lines.** For a positive `(1,1)`-form `κ`, the
+symmetric operator `T` with `⟪T u, w⟫ = κ(u, J w)` is positive semidefinite, and an orthonormal
+eigenbasis `b` of `T` writes `κ = (1 / 2) ∑ᵢ μᵢ bᵢ ∧ J bᵢ` with eigenvalues `μᵢ ≥ 0`: a
+nonnegative combination of unit complex lines (`exists_eq_smul_sum_of_mem_positiveCone`). The
+norm control of positive `(1,1)`-forms by a taming form `Ω`, and of every two-form `η` by
+`c₀ ‖η‖ ≤ ⟪Ω, η⟫ + (‖Ω‖ + c₀) dist(η, positiveCone)`, follows from this decomposition and lives in
+`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.ComplexLineCone`, where it is derived from
+the corresponding statements for the cone of complex lines of an arbitrary almost complex
+structure.
 
-* a positive `(1,1)`-form has norm at most its pairing with `ω`, `‖κ‖ ≤ ⟪ω, κ⟫`
-  (`norm_le_inner_kahlerForm_of_mem_positiveCone`);
-* positive `(1,1)`-forms pair nonnegatively with every two-form `Ω` that is nonnegative on complex
-  lines, `Ω(v, J v) ≥ 0` (`inner_nonneg_of_mem_positiveCone`); if `Ω(v, J v) ≥ c₀ ‖v‖²` then
-  `c₀ ‖κ‖ ≤ ⟪Ω, κ⟫` for `c₀ ≥ 0` (`mul_norm_le_inner_of_mem_positiveCone`);
-* for every two-form `η`,
-  `c₀ ‖η‖ ≤ ⟪Ω, η⟫ + (‖Ω‖ + c₀) dist(η, positiveCone)`
-  (`mul_norm_le_inner_add_mul_infDist_positiveCone`).
+**The two-form of a complex-valued covector.** For a real-linear `P : V → ℂ`, the two-form
+`Y(u, w) = Im (conj (P u) P w)` is `p₁ ∧ p₂` for the gradients `p₁`, `p₂` of `Re P` and `Im P`
+(`ContinuousLinearMap.inner_gradientWedge_ιMulti`). When `P` is `J`-linear, `p₂ = J p₁` and `Y`
+is positive; in general `Y` is at distance at most `‖Q‖ (‖P‖ + ‖P - Q‖)` from the cone, where `Q`
+is the `J`-antilinear part of `P` (`infDist_positiveCone_le_of_inner_ιMulti_eq_im`). Since the
+distance to the cone is subadditive and positively homogeneous, a nonnegative combination
+`a F + c Y` is then at distance at most `a dist(F, positiveCone) + c ‖Q‖ (‖P‖ + ‖P - Q‖)`
+(`infDist_positiveCone_le_of_inner_ιMulti_eq`). For a section `α` of a Hermitian line with
+`P = ∇_a α`, `Y` is the derivative term of the curvature of the cutoff current of Taubes's
+analysis.
 
 **Dimension four.** For the complex orientation, a `J`-invariant two-form is `κ = c ω + κ⁻` with
 `c = ⟪ω, κ⟫ / 2` and `κ⁻ = (κ - ⋆κ) / 2` anti-self-dual
@@ -68,11 +76,7 @@ dimension:
 `TauCeti.AlmostComplexStructure.isLeast_hermitianForm_apply_self`: the positive cone is a round
 cone about `ω`.
 
-Integrated over a tube, the last inequality bounds the mass of an approximately positive current
-by its pairing with a taming form plus its integrated distance to the positive cone. That pairing
-is topological only under boundary conditions: for instance when the current is closed with compact
-support in the interior of the tube and the taming form is closed; otherwise a boundary term
-appears. The Hodge star preserves the cone
+The Hodge star preserves the cone
 (`hodgeStar_mem_positiveCone_iff`), so the positivity of the current `ζ ↦ ∫ Θ ∧ ζ`, whose
 representing two-vector is `⋆Θ`, is the positivity of `Θ`, and both have the same distance to the
 cone (`infDist_hodgeStar_positiveCone`).
@@ -153,19 +157,15 @@ theorem isClosed_positiveCone (J : AlmostComplexStructure V) :
 /-- The Kähler form of an orthogonal `J` is a positive `(1,1)`-form. -/
 theorem kahlerForm_mem_positiveCone {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : J.kahlerForm ∈ J.positiveCone :=
-  ⟨lieMap_kahlerForm hJ, fun v ↦ by
+  ⟨lieMap_kahlerForm J, fun v ↦ by
     rw [inner_kahlerForm_ιMulti hJ]; exact real_inner_self_nonneg⟩
 
 /-- A complex line `v ∧ J v` is a positive `(1,1)`-form, for an orthogonal `J`. -/
 theorem ιMulti_mem_positiveCone {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v : V) : ιMulti ℝ 2 ![v, J v] ∈ J.positiveCone := by
-  refine ⟨?_, fun w ↦ ?_⟩
-  · rw [lieMap_two_apply_ιMulti]
-    refine ext_inner_ιMulti_two fun a b ↦ ?_
-    simp only [inner_add_left, inner_ιMulti_two, inner_zero_left, apply_apply, inner_neg_left]
-    ring
-  · rw [inner_ιMulti_two, hJ, inner_apply_left hJ]
-    nlinarith [sq_nonneg ⟪v, w⟫, sq_nonneg ⟪v, J w⟫]
+  refine ⟨lieMap_ιMulti_apply J v, fun w ↦ ?_⟩
+  rw [inner_ιMulti_two, hJ, inner_apply_left hJ]
+  nlinarith [sq_nonneg ⟪v, w⟫, sq_nonneg ⟪v, J w⟫]
 
 /-- **Distance to the cone of positive `(1,1)`-forms.** For an orthogonal `J`, if
 `η(v, J v) ≥ -s ‖v‖²` for every `v`, with `s ≥ 0`, then the distance from `η` to the cone is at
@@ -180,7 +180,7 @@ theorem infDist_positiveCone_le {J : AlmostComplexStructure V}
   set κ := η + (4⁻¹ : ℝ) • D (D η) + s • J.kahlerForm
   have hκ : κ ∈ J.positiveCone := by
     refine ⟨?_, fun v ↦ ?_⟩
-    · rw [map_add, lieMap_add_smul_lieMap_lieMap, map_smul, lieMap_kahlerForm hJ, smul_zero,
+    · rw [map_add, lieMap_add_smul_lieMap_lieMap, map_smul, lieMap_kahlerForm J, smul_zero,
         add_zero]
     · have hB := LinearMap.congr_fun₂ (hermitianForm_lieMap hJ (D η)) v v
       rw [hermitianForm_apply_self, LinearMap.zero_apply, LinearMap.zero_apply] at hB
@@ -198,7 +198,7 @@ theorem infDist_positiveCone_le {J : AlmostComplexStructure V}
         rw [norm_smul, norm_smul, Real.norm_of_nonneg (by norm_num), Real.norm_of_nonneg hs]
         ring
 
-/-! ### Norm and pairing bounds -/
+/-! ### Positive `(1,1)`-forms as combinations of complex lines -/
 
 section Orthogonal
 
@@ -208,7 +208,7 @@ include hJ
 /-- **A positive `(1,1)`-form is a nonnegative combination of complex lines**:
 `κ = (1 / 2) ∑ᵢ μᵢ bᵢ ∧ J bᵢ` with `μᵢ ≥ 0`, for an orthonormal eigenbasis `b` of the symmetric
 operator `T` with `⟪T u, w⟫ = κ(u, J w)`. -/
-private theorem exists_eq_smul_sum_of_mem_positiveCone {κ : ⋀[ℝ]^2 V}
+theorem exists_eq_smul_sum_of_mem_positiveCone {κ : ⋀[ℝ]^2 V}
     (hκ : κ ∈ J.positiveCone) :
     ∃ (b : OrthonormalBasis (Fin (finrank ℝ V)) ℝ V) (μ : Fin (finrank ℝ V) → ℝ),
       (∀ i, 0 ≤ μ i) ∧ κ = (2⁻¹ : ℝ) • ∑ i, μ i • ιMulti ℝ 2 ![b i, J (b i)] := by
@@ -245,71 +245,84 @@ private theorem exists_eq_smul_sum_of_mem_positiveCone {κ : ⋀[ℝ]^2 V}
     simp only [mul_sub, Finset.sum_sub_distrib]
     linear_combination (2⁻¹ : ℝ) * h1 - (2⁻¹ : ℝ) * h2
 
-/-- **The norm of a positive `(1,1)`-form is at most its pairing with `ω`**: `‖κ‖ ≤ ⟪ω, κ⟫`, for
-an orthogonal complex structure. -/
-theorem norm_le_inner_kahlerForm_of_mem_positiveCone {κ : ⋀[ℝ]^2 V}
-    (hκ : κ ∈ J.positiveCone) : ‖κ‖ ≤ ⟪J.kahlerForm, κ⟫ := by
-  obtain ⟨b, μ, hμ, rfl⟩ := exists_eq_smul_sum_of_mem_positiveCone hJ hκ
-  -- Each complex line `bᵢ ∧ J bᵢ` has norm `1` and pairs with `ω` to `1`.
-  have hn (i) : ‖ιMulti ℝ 2 ![b i, J (b i)]‖ = 1 := by
-    have h := norm_ιMulti_apply_sq hJ (b i)
-    rw [b.norm_eq_one, one_pow] at h
-    exact (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 (h.trans (one_pow 2).symm)
-  have hω (i) : ⟪J.kahlerForm, ιMulti ℝ 2 ![b i, J (b i)]⟫ = 1 := by
-    rw [inner_kahlerForm_ιMulti hJ, hJ, real_inner_self_eq_norm_sq, b.norm_eq_one, one_pow]
-  rw [inner_smul_right, inner_sum, norm_smul, Real.norm_of_nonneg (by norm_num)]
-  simp only [real_inner_smul_right, hω, mul_one]
+/-! ### The two-form of a complex-valued covector -/
+
+/-- **The two-form `Im (conj (P u) P w)` is nearly a positive `(1,1)`-form.** Let `P` be a
+real-linear map `V → ℂ` and `Q` its `J`-antilinear part, in the sense that `P - Q` is `J`-linear
+(`TauCeti.IsComplexLinear`), `(P - Q)(J v) = i (P - Q)(v)`. The two-form
+`Y(u, w) = Im (conj (P u) P w)` is then at distance at most `‖Q‖ (‖P‖ + ‖P - Q‖)` from the
+positive cone. For `Q = 0`, `Y` is the positive form
+`p ∧ J p` with `p` the gradient of `Re P`. For a section `α` of a Hermitian line, with `P = ∇_a α`
+and `Q = ∂bar_a α`, this is the term `Im (conj ∇_a α ∧ ∇_a α)` of the curvature of the cutoff
+current. -/
+theorem infDist_positiveCone_le_of_inner_ιMulti_eq_im {P Q : V →L[ℝ] ℂ}
+    (hPQ : IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ Complex.I)
+      ((P - Q : V →L[ℝ] ℂ) : V →ₗ[ℝ] ℂ)) {Y : ⋀[ℝ]^2 V}
+    (hY : ∀ u w, ⟪Y, ιMulti ℝ 2 ![u, w]⟫ = (starRingEnd ℂ (P u) * P w).im) :
+    infDist Y (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤ ‖Q‖ * (‖P‖ + ‖P - Q‖) := by
+  set R := P - Q
+  -- The two-vector of the `J`-linear part `R` is `a ∧ J a` with `a` the gradient of `Re R`.
+  have hJR : R.imGradient = J R.reGradient := by
+    refine ext_inner_right ℝ fun v ↦ ?_
+    have hRv : R (J v) = Complex.I * R v := by
+      simpa only [ContinuousLinearMap.coe_coe, DistribSMul.toLinearMap_apply, smul_eq_mul]
+        using hPQ.apply v
+    rw [ContinuousLinearMap.inner_imGradient, inner_apply_left hJ,
+      ContinuousLinearMap.inner_reGradient, hRv, Complex.mul_re,
+      Complex.I_re, Complex.I_im]
+    ring
+  have hmem : ιMulti ℝ 2 ![R.reGradient, R.imGradient] ∈ J.positiveCone := by
+    rw [hJR]
+    exact ιMulti_mem_positiveCone hJ _
+  -- `Y - a ∧ J a = p₁ ∧ q₂ + q₁ ∧ r₂`, with `pᵢ`, `qᵢ`, `rᵢ` the gradients of the real and
+  -- imaginary parts of `P`, `Q` and `R`.
+  have hdiff : Y - ιMulti ℝ 2 ![R.reGradient, R.imGradient] =
+      ιMulti ℝ 2 ![P.reGradient, Q.imGradient] + ιMulti ℝ 2 ![Q.reGradient, R.imGradient] := by
+    refine ext_inner_ιMulti_two fun u w ↦ ?_
+    simp only [R, inner_sub_left, inner_add_left, hY, inner_ιMulti_two,
+      ContinuousLinearMap.inner_reGradient, ContinuousLinearMap.inner_imGradient, sub_apply,
+      Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.sub_re, Complex.sub_im]
+    ring
+  calc infDist Y (J.positiveCone : Set (⋀[ℝ]^2 V))
+      ≤ dist Y (ιMulti ℝ 2 ![R.reGradient, R.imGradient]) := infDist_le_dist_of_mem hmem
+    _ ≤ ‖ιMulti ℝ 2 ![P.reGradient, Q.imGradient]‖ +
+          ‖ιMulti ℝ 2 ![Q.reGradient, R.imGradient]‖ := by
+        rw [dist_eq_norm, hdiff]
+        exact norm_add_le _ _
+    _ ≤ ‖P‖ * ‖Q‖ + ‖Q‖ * ‖R‖ := by
+        gcongr
+        · exact (norm_ιMulti_two_le _ _).trans
+            (mul_le_mul P.norm_reGradient_le Q.norm_imGradient_le (norm_nonneg _)
+              (norm_nonneg _))
+        · exact (norm_ιMulti_two_le _ _).trans
+            (mul_le_mul Q.norm_reGradient_le R.norm_imGradient_le (norm_nonneg _)
+              (norm_nonneg _))
+    _ = ‖Q‖ * (‖P‖ + ‖P - Q‖) := by ring
+
+/-- **The distance to the positive cone of a combination with the two-form of a covector.** Let
+`P : V → ℂ` be real-linear and `Q` its `J`-antilinear part, so that `P - Q` is `J`-linear. If a
+two-form `Θ` is `a F + c Im (conj (P u) P w)` with `a, c ≥ 0`, then
+
+`dist(Θ, positiveCone) ≤ a dist(F, positiveCone) + c ‖Q‖ (‖P‖ + ‖P - Q‖)`.
+
+For the cutoff current of Taubes's analysis, `a = 1 - χ(|α|²)`, `F = i F_a`, `c = 2 χ'(|α|²)`,
+`P = ∇_a α` and `Q = ∂bar_a α`. -/
+theorem infDist_positiveCone_le_of_inner_ιMulti_eq {Θ F : ⋀[ℝ]^2 V} {P Q : V →L[ℝ] ℂ} {a c : ℝ}
+    (ha : 0 ≤ a) (hc : 0 ≤ c)
+    (hPQ : IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ Complex.I)
+      ((P - Q : V →L[ℝ] ℂ) : V →ₗ[ℝ] ℂ))
+    (hΘ : ∀ u w, ⟪Θ, ιMulti ℝ 2 ![u, w]⟫ =
+      a * ⟪F, ιMulti ℝ 2 ![u, w]⟫ + c * (starRingEnd ℂ (P u) * P w).im) :
+    infDist Θ (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤
+      a * infDist F (J.positiveCone : Set (⋀[ℝ]^2 V)) + c * (‖Q‖ * (‖P‖ + ‖P - Q‖)) := by
+  have hΘ' : Θ = a • F + c • P.gradientWedge := ext_inner_ιMulti_two fun u w ↦ by
+    rw [hΘ, inner_add_left, real_inner_smul_left, real_inner_smul_left,
+      P.inner_gradientWedge_ιMulti]
+  rw [hΘ']
+  refine (AddSubmonoidClass.infDist_add_le J.positiveCone _ _).trans ?_
+  rw [J.positiveCone.infDist_smul ha, J.positiveCone.infDist_smul hc]
   gcongr
-  refine (norm_sum_le _ _).trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
-  rw [norm_smul, hn, mul_one, Real.norm_of_nonneg (hμ i)]
-
-/-- **Positive `(1,1)`-forms pair nonnegatively with forms that are nonnegative on complex
-lines**: if `Ω(v, J v) ≥ 0` for every `v`, then `⟪Ω, κ⟫ ≥ 0` for every positive `(1,1)`-form
-`κ`. The form `Ω` need not be `J`-invariant. -/
-theorem inner_nonneg_of_mem_positiveCone {Ω κ : ⋀[ℝ]^2 V}
-    (hΩ : ∀ v, 0 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (hκ : κ ∈ J.positiveCone) : 0 ≤ ⟪Ω, κ⟫ := by
-  obtain ⟨b, μ, hμ, rfl⟩ := exists_eq_smul_sum_of_mem_positiveCone hJ hκ
-  rw [real_inner_smul_right, inner_sum]
-  exact mul_nonneg (by norm_num) (Finset.sum_nonneg fun i _ ↦ by
-    rw [real_inner_smul_right]; exact mul_nonneg (hμ i) (hΩ (b i)))
-
-/-- If `Ω(v, J v) ≥ c₀ ‖v‖²` for every `v`, then `c₀ ⟪ω, κ⟫ ≤ ⟪Ω, κ⟫` for every positive
-`(1,1)`-form `κ`. -/
-theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone {Ω κ : ⋀[ℝ]^2 V} {c₀ : ℝ}
-    (hΩ : ∀ v, c₀ * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (hκ : κ ∈ J.positiveCone) :
-    c₀ * ⟪J.kahlerForm, κ⟫ ≤ ⟪Ω, κ⟫ := by
-  have h := inner_nonneg_of_mem_positiveCone hJ (Ω := Ω - c₀ • J.kahlerForm)
-    (fun v ↦ by
-      rw [inner_sub_left, real_inner_smul_left, inner_kahlerForm_ιMulti hJ, hJ,
-        real_inner_self_eq_norm_sq]
-      linarith [hΩ v]) hκ
-  rw [inner_sub_left, real_inner_smul_left] at h
-  linarith
-
-/-- **A taming form controls the norm of positive `(1,1)`-forms**: if `Ω(v, J v) ≥ c₀ ‖v‖²` for
-every `v`, with `c₀ ≥ 0`, then `c₀ ‖κ‖ ≤ ⟪Ω, κ⟫` for every positive `(1,1)`-form `κ`. -/
-theorem mul_norm_le_inner_of_mem_positiveCone {Ω κ : ⋀[ℝ]^2 V} {c₀ : ℝ} (hc₀ : 0 ≤ c₀)
-    (hΩ : ∀ v, c₀ * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (hκ : κ ∈ J.positiveCone) :
-    c₀ * ‖κ‖ ≤ ⟪Ω, κ⟫ :=
-  (mul_le_mul_of_nonneg_left (norm_le_inner_kahlerForm_of_mem_positiveCone hJ hκ) hc₀).trans
-    (mul_inner_kahlerForm_le_inner_of_mem_positiveCone hJ hΩ hκ)
-
-/-- **Norm control by a taming form and the distance to the positive cone**: if
-`Ω(v, J v) ≥ c₀ ‖v‖²` for every `v`, with `c₀ ≥ 0`, then every two-form `η` satisfies
-`c₀ ‖η‖ ≤ ⟪Ω, η⟫ + (‖Ω‖ + c₀) dist(η, positiveCone)`. -/
-theorem mul_norm_le_inner_add_mul_infDist_positiveCone {Ω : ⋀[ℝ]^2 V} {c₀ : ℝ} (hc₀ : 0 ≤ c₀)
-    (hΩ : ∀ v, c₀ * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (η : ⋀[ℝ]^2 V) :
-    c₀ * ‖η‖ ≤ ⟪Ω, η⟫ + (‖Ω‖ + c₀) * infDist η (J.positiveCone : Set (⋀[ℝ]^2 V)) := by
-  obtain ⟨κ, hκ, hd⟩ := (isClosed_positiveCone J).exists_infDist_eq_dist
-    ⟨0, zero_mem J.positiveCone⟩ η
-  rw [hd, dist_eq_norm]
-  have hκη := mul_norm_le_inner_of_mem_positiveCone hJ hc₀ hΩ hκ
-  have htri : ‖η‖ ≤ ‖κ‖ + ‖η - κ‖ := norm_le_norm_add_norm_sub' η κ
-  have hpair : ⟪Ω, κ - η⟫ ≤ ‖Ω‖ * ‖η - κ‖ := by
-    rw [← norm_neg (η - κ), neg_sub]
-    exact real_inner_le_norm Ω (κ - η)
-  rw [inner_sub_right] at hpair
-  nlinarith [norm_nonneg (η - κ)]
+  exact infDist_positiveCone_le_of_inner_ιMulti_eq_im hJ hPQ P.inner_gradientWedge_ιMulti
 
 end Orthogonal
 

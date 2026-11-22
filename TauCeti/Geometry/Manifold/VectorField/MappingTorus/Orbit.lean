@@ -274,7 +274,7 @@ theorem exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero [I'.Boundaryless] [Compa
   -- By Fermat's theorem, `τ` has zero differential at its maximum.
   have hτ0 : mfderiv I' 𝓘(ℝ) τ c₁ = 0 :=
     mem_criticalPoints_iff_mfderiv_eq_zero.1
-      ((hmax.isLocalMax univ_mem).mem_criticalPoints (I := I'))
+      (hmax.mem_criticalPoints (I := I'))
   -- Since `v c' = [τ c', x]`, the chain rule gives `dv = 0` at `c₁`.
   have hpair := (hτ0 ▸ hτd.hasMFDerivAt).prodMk (hasMFDerivAt_const (I := I') (I' := I) x c₁)
   have hq : MDifferentiableAt (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (τ c₁, x) :=
@@ -283,7 +283,7 @@ theorem exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero [I'.Boundaryless] [Compa
   refine ⟨c₁, ?_⟩
   rw [hv', (hq.hasMFDerivAt.comp c₁ hpair).mfderiv]
   -- The derivative of `(τ, x)` at `c₁` is `(0, 0)`, which the derivative of `q` sends to `0`.
-  ext w
+  ext _
   exact map_zero (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (τ c₁, x))
 
 /-- **Compact immersed curves tangent to `T` lie on closed orbits.** Let `v` be a differentiable

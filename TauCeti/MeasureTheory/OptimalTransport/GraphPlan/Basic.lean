@@ -68,6 +68,9 @@ with measurable singletons.
   the graph plan of `T` is itself a graph plan of `T`;
 * `TauCeti.comp_ae_eq_id_of_map_swap_graphPlan_eq` — when the coordinate swap of the graph plan
   of `T` is the graph plan of `R`, the maps are two-sided inverses almost everywhere;
+* `TauCeti.ae_eq_comp_of_map_prodMk_eq_graphPlan` — a pair `(U, t)` of random variables whose
+  joint law is the graph plan of `S` satisfies `t = S ∘ U` almost everywhere, with
+  `TauCeti.ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan` its form for the law of `(t, U)`;
 * `TauCeti.eq_dirac_of_hasLaw_dirac` — a transport map out of a Dirac measure forces the target
   to be a Dirac measure, so the unique plan out of an atom is deterministic only in that case.
 
@@ -357,19 +360,21 @@ theorem graphPlan_apply_compl_graph (hT : AEMeasurable T μ) (hS : AEMeasurable 
 
 /-- A graph plan of `T` is carried by the graph of `S` exactly when `S` agrees with `T`
 almost everywhere. -/
-theorem ae_snd_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S μ) :
+theorem ae_snd_eq_graphPlan_iff (hT : AEMeasurable T μ) :
     (∀ᵐ z ∂graphPlan T μ, z.2 = S z.1) ↔ T =ᵐ[μ] S := by
+  refine ⟨fun h ↦ ae_of_ae_map (aemeasurable_prodMk_self hT) h, fun h ↦ ?_⟩
+  have hS : AEMeasurable S μ := hT.congr h
   have h₁ : (∀ᵐ z ∂graphPlan T μ, z.2 = S z.1) ↔
       graphPlan T μ {z : X × Y | ¬ z.2 = S z.1} = 0 := ae_iff
   have h₂ : (∀ᵐ x ∂μ, T x = S x) ↔ μ {x | ¬ T x = S x} = 0 := ae_iff
   rw [h₁, graphPlan_apply_compl_graph hT hS, ← h₂]
-  exact Iff.rfl
+  exact h
 
 /-- A graph plan is carried by the graph of its map: almost every point of `graphPlan T μ` has
 second coordinate the value of `T` at its first. -/
 theorem ae_snd_eq_graphPlan (hT : AEMeasurable T μ) :
     ∀ᵐ z ∂graphPlan T μ, z.2 = T z.1 :=
-  (ae_snd_eq_graphPlan_iff hT hT).2 (Filter.EventuallyEq.refl _ _)
+  (ae_snd_eq_graphPlan_iff hT).2 (Filter.EventuallyEq.refl _ _)
 
 omit [MeasurableEq Y] in
 /-- A plan carried by the graph of `T` is the graph plan of `T` over its own first marginal.
@@ -398,7 +403,7 @@ theorem eq_graphPlan_iff (hT : AEMeasurable T π.fst) :
 plan exactly when they agree `μ`-almost everywhere. -/
 theorem graphPlan_eq_graphPlan_iff (hT : AEMeasurable T μ) (hS : AEMeasurable S μ) :
     graphPlan T μ = graphPlan S μ ↔ T =ᵐ[μ] S :=
-  ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT hS).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
+  ⟨fun h ↦ (ae_snd_eq_graphPlan_iff hT).1 (h ▸ ae_snd_eq_graphPlan hS), graphPlan_congr⟩
 
 /-- **A plan dominated by a graph plan is a graph plan of the same map.** If `π` is absolutely
 continuous with respect to the graph plan of `T` over `μ`, then `π` is carried by the graph of `T`,
@@ -433,6 +438,28 @@ theorem comp_ae_eq_id_of_map_swap_graphPlan_eq [MeasurableEq X] {R : Y → X} {�
     rw [h] at h₁
     filter_upwards [ae_of_ae_graphPlan hR h₁] with y hy
     simpa using hy.symm
+
+/-- **A pair of random variables with a graph plan as joint law is a graph.** If the joint law of
+`(U, t)` under `m` is the graph plan of `S` over `μ`, then `t = S ∘ U` holds `m`-almost
+everywhere. -/
+theorem ae_eq_comp_of_map_prodMk_eq_graphPlan {α : Type*} [MeasurableSpace α] {m : Measure α}
+    {U : α → X} {t : α → Y} (hS : AEMeasurable S μ) (hU : AEMeasurable U m)
+    (ht : AEMeasurable t m) (heq : m.map (fun ω ↦ (U ω, t ω)) = graphPlan S μ) :
+    t =ᵐ[m] S ∘ U := by
+  have hae := ae_snd_eq_graphPlan hS
+  rw [← heq] at hae
+  exact ae_of_ae_map (hU.prodMk ht) hae
+
+/-- The form of `TauCeti.ae_eq_comp_of_map_prodMk_eq_graphPlan` for the joint law of `(t, U)`: if
+exchanging its coordinates gives the graph plan of `S` over `μ`, then `t = S ∘ U` holds
+`m`-almost everywhere. -/
+theorem ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan {α : Type*} [MeasurableSpace α]
+    {m : Measure α} {U : α → X} {t : α → Y} (hS : AEMeasurable S μ) (ht : AEMeasurable t m)
+    (hU : AEMeasurable U m) (heq : (m.map fun ω ↦ (t ω, U ω)).map Prod.swap = graphPlan S μ) :
+    t =ᵐ[m] S ∘ U := by
+  refine ae_eq_comp_of_map_prodMk_eq_graphPlan hS hU ht ?_
+  rw [← heq, AEMeasurable.map_map_of_aemeasurable measurable_swap.aemeasurable (ht.prodMk hU)]
+  rfl
 
 end Determinism
 

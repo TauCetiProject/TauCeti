@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
+public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 public import TauCeti.Probability.Cdf
 public import Mathlib.Probability.Distributions.Poisson.Basic
 
@@ -16,10 +16,8 @@ For a rate `r : ℝ≥0` the Poisson law `Po(r)` on `ℕ` assigns to the upper t
 value `P(n + 1, r)` of the regularized lower incomplete gamma function `TauCeti.regularizedGamma`,
 and to the complementary lower half-line the value `1 - P(n + 1, r)`.
 
-This is the Poisson entry of the closed-form cdf and tail target of
-`TauCetiRoadmap/StandardDistributions/README.md`, Layer 2. It also supplies the native
-cumulative-mass formula that the Poisson family entry of Layer 4 asks for, together with the cdf
-of the cast law `Po(ℝ, r)` that the same entry derives from it.
+From these cumulative masses on `ℕ` the file also derives the cdf of the cast law `Po(ℝ, r)` on
+`ℝ`.
 
 The finite-sum identity
 `∑ k ≤ n, exp (-r) * r ^ k / k! = 1 - P(n + 1, r)` expresses the lower cumulative mass; its

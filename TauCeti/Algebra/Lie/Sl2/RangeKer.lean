@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.Morozov
+public import TauCeti.Algebra.Lie.Sl2.Associative
 public import TauCeti.RepresentationTheory.Lie.AdNilpotent
+public import Mathlib.Algebra.Lie.Sl2
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -37,10 +38,9 @@ Disjointness of `range E` and `ker F` is proved by descending induction on `k �
 vector of `range (E ^ k)` is killed by `F`. For large `k` the range is zero. For the step, let
 `v = E ^ (n + 1) w` with `F v = 0`. The commutation formula for `F` past `E ^ (n + 1)` shows that
 `H v - (n + 2) • v` lies in `range (E ^ (n + 2))`. It is also killed by `F`, so it vanishes by the
-induction hypothesis. Then `v` is a vector of `ker F` on which `H` acts by `n + 2`. Morozov's
-eigenvalue lemma, `TauCeti.Sl2.exists_eq_natCast_of_apply_eq_smul`, applied to the triple
-`(-h, f, e)`, says that `H` acts on nonzero vectors of `ker F` only by integers `≤ 0`. Hence
-`v = 0`.
+induction hypothesis. Then `v` is a vector of `ker F` on which `H` acts by `n + 2`. The
+commutation formula gives `F (E ^ (j + 1) v) = -(j + 1) (n + 2 + j) • E ^ j v`, so `E ^ j v = 0`
+forces `v = 0` by induction on `j`, and `E` is nilpotent. Hence `v = 0`.
 
 The same statement for `(-h, f, e)` gives that `range F` and `ker E` are disjoint. In finite
 dimension the two disjointness statements together with rank-nullity force
@@ -48,8 +48,8 @@ dimension the two disjointness statements together with rank-nullity force
 
 ## Main results
 
-* `TauCeti.Sl2.disjoint_range_ker`: for operators with nilpotent `E` and `F` satisfying the `sl₂`
-  relations, `range E` and `ker F` are disjoint. No finiteness is assumed.
+* `TauCeti.Sl2.disjoint_range_ker`: for operators with nilpotent `E` satisfying the `sl₂`
+  relations with `F`, `range E` and `ker F` are disjoint. No finiteness is assumed.
 * `IsSl2Triple.isNilpotent_toEnd_e` and `IsSl2Triple.isNilpotent_toEnd_f`: in a
   finite-dimensional module, `e` and `f` act nilpotently.
 * `IsSl2Triple.isCompl_range_toEnd_e_ker_toEnd_f`: **the decomposition** `M = e • M ⊕ ker f`.
@@ -64,8 +64,6 @@ dimension the two disjointness statements together with rank-nullity force
   **815**, Springer, 1980, Chapter 7, for the slice `e + ker (ad f)` and its transversality.
 * D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*, Van
   Nostrand Reinhold, 1993, Chapter 3, for the `sl₂` theory of nilpotent elements.
-* V. V. Morozov, *On a nilpotent element in a semi-simple Lie algebra*, C. R. (Doklady) Acad.
-  Sci. URSS (N.S.) **36** (1942), 83–86, for the eigenvalue lemma used in the induction.
 -/
 
 public section
@@ -107,17 +105,12 @@ private theorem apply_sub_smul_mem_range_pow_and_apply_eq_zero (hef : E * F - F 
       LinearMap.smul_apply, smul_zero, neg_zero, zero_sub, neg_eq_zero] at this
     simp [this, hFv]
 
-/-- Let `E` and `F` be nilpotent operators satisfying the `sl₂` relations with `H`. Then no nonzero
+/-- Let `E` be a nilpotent operator satisfying the `sl₂` relations with `F` and `H`. Then no nonzero
 vector in the range of `E` is killed by `F`. No finiteness is needed. -/
-theorem disjoint_range_ker (hE : IsNilpotent E) (hF : IsNilpotent F) (hef : E * F - F * E = H)
+theorem disjoint_range_ker (hE : IsNilpotent E) (hef : E * F - F * E = H)
     (hhe : H * E - E * H = 2 • E) (hhf : H * F - F * H = -(2 • F)) :
     Disjoint (LinearMap.range E) (LinearMap.ker F) := by
   obtain ⟨m, hm⟩ := hE
-  -- The triple `(-H, F, E)` satisfies the hypotheses of Morozov's eigenvalue lemma.
-  have hFE : F * E - E * F = -H := by rw [← hef, neg_sub]
-  have hHF : -H * F - F * -H = 2 • F := by
-    rw [neg_mul, mul_neg, ← neg_neg (2 • F), ← hhf]
-    abel
   -- Descending induction: `range (E ^ (k + 1))` meets `ker F` trivially.
   suffices ∀ d k, m ≤ k + 1 + d →
       ∀ v ∈ LinearMap.range (E ^ (k + 1)), F v = 0 → v = 0 by
@@ -133,10 +126,24 @@ theorem disjoint_range_ker (hE : IsNilpotent E) (hF : IsNilpotent F) (hef : E * 
     intro k hk v hv hFv
     obtain ⟨hmem, hFu⟩ := apply_sub_smul_mem_range_pow_and_apply_eq_zero hef hhe hhf hv hFv
     have hHv : H v = ((k + 2 : ℕ) : K) • v := sub_eq_zero.mp (ih (k + 1) (by omega) _ hmem hFu)
-    by_contra hv0
-    obtain ⟨n, hn⟩ := exists_eq_natCast_of_apply_eq_smul hF hFE hHF hFv hv0
-      (a := -((k + 2 : ℕ) : K)) (by rw [LinearMap.neg_apply, hHv, neg_smul])
-    exact absurd hn (by exact_mod_cast (by omega : -((k + 2 : ℕ) : ℤ) ≠ n))
+    -- `F (E ^ (j + 1) v) = -(j + 1) (k + 2 + j) E ^ j v`, so no `E ^ j v` vanishes unless `v` does.
+    have key : ∀ j : ℕ, (E ^ j) v = 0 → v = 0 := by
+      intro j
+      induction j with
+      | zero => simp
+      | succ j ihj =>
+        intro hj
+        refine ihj ?_
+        have h₁ := congr($(f_mul_e_pow_succ hef hhe j) v)
+        simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply,
+          LinearMap.add_apply, natCast_apply_eq_smul, hFv, hHv, hj, map_zero, zero_sub,
+          ← Nat.cast_smul_eq_nsmul K] at h₁
+        obtain h | h := smul_eq_zero.mp (neg_eq_zero.mp h₁.symm)
+        · exact absurd h (Nat.cast_ne_zero.mpr j.succ_ne_zero)
+        rw [← add_smul, map_smul, smul_eq_zero] at h
+        refine h.resolve_left ?_
+        exact_mod_cast (by omega : k + 2 + j ≠ 0)
+    exact key m (by rw [hm, LinearMap.zero_apply])
 
 end Sl2
 
@@ -165,7 +172,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing in
 private theorem disjoint_range_toEnd_e_ker_toEnd_f (t : IsSl2Triple h e f) :
     Disjoint (LinearMap.range (toEnd K L M e)) (LinearMap.ker (toEnd K L M f)) := by
   refine TauCeti.Sl2.disjoint_range_ker (H := toEnd K L M h) t.isNilpotent_toEnd_e
-    t.isNilpotent_toEnd_f ?_ ?_ ?_
+    ?_ ?_ ?_
   · rw [← Ring.lie_def, ← LieHom.map_lie, t.lie_e_f]
   · rw [← Ring.lie_def, ← LieHom.map_lie, t.lie_h_e_nsmul, map_nsmul]
   · rw [← Ring.lie_def, ← LieHom.map_lie, t.lie_h_f_nsmul, map_neg, map_nsmul]

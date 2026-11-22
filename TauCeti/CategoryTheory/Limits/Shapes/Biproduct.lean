@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.CommSq
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
+public import Mathlib.CategoryTheory.Limits.Shapes.CombinedProducts
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
@@ -29,22 +30,35 @@ biproduct comparison.
 In a category with zero morphisms, a zero object and binary biproducts give all finite biproducts
 (`TauCeti.hasFiniteBiproducts_of_hasBinaryBiproducts`), and a biproduct indexed by
 `Option J` splits off its `none` summand (`TauCeti.biproductOptionIso`); the latter is the
-inductive step for computing additive invariants of finite biproducts. Similarly,
-`TauCeti.biproductSumIso` splits a sum-indexed biproduct into its two indexed parts.
-A biproduct `⨁ f` is the binary biproduct of one summand `f j` and the biproduct of the remaining
-summands (`TauCeti.biproductSubtypeNeIso`), which is the inductive step of arguments that peel off
-one summand at a time; in a preadditive category the underlying decomposition of the identity is
-`TauCeti.biproduct_π_ι_add_toSubtype_fromSubtype`. A biproduct over an empty index type is zero
-(`TauCeti.isZero_biproduct_of_isEmpty`).
+inductive step for computing additive invariants of finite biproducts, with explicit factorizations
+of `biproduct.desc` and `biproduct.lift` through an isomorphism on the `some` summands
+(`TauCeti.biproductOptionIso_hom_comp_biprod_desc`,
+`TauCeti.biprod_lift_comp_biproductOptionIso_inv`). Similarly, `TauCeti.biproductSumIso` splits a
+sum-indexed biproduct into its two indexed parts. A biproduct `⨁ f` is the binary biproduct of
+one summand `f j` and the biproduct of the remaining summands (`TauCeti.biproductSubtypeNeIso`),
+which is the inductive step of arguments that peel off one summand at a time; in a preadditive
+category the underlying decomposition of the identity is
+`TauCeti.biproduct_π_ι_add_toSubtype_fromSubtype`. Restricting a biproduct to the summands
+satisfying a predicate `p` is an isomorphism whenever all excluded summands are zero objects
+(`TauCeti.biproductSubtypeIsoOfIsZero`). Reindexing the family of a biproduct descent or lift along
+an equivalence preserves and reflects being an isomorphism
+(`TauCeti.isIso_biproductDesc_iff_of_equiv`, `TauCeti.isIso_biproductLift_iff_of_equiv`). A
+biproduct over an empty index type is zero (`TauCeti.isZero_biproduct_of_isEmpty`). The comparison
+isomorphism between the points of two limit bicones of one family carries inclusions to inclusions
+(`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`).
 An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
 `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
 and compatible with lifts. Unlike the `Functor.mapBiprod` lemmas, these statements need no
-preservation hypothesis.
+preservation hypothesis. Commutative squares into the images under a functor combine into
+squares through lifts into and descents out of binary biproducts
+(`CategoryTheory.Functor.comp_map_biprod_lift` and `CategoryTheory.Functor.biprod_desc_comp_map`).
 For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
 through `biprod.opIso` has inverse given by the images of the projections
-(`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`).
+(`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`), and it identifies the lift of
+the images of two maps `f`, `g` with the image of `biprod.desc f g`
+(`CategoryTheory.Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv`).
 -/
 
 public section
@@ -172,72 +186,25 @@ family indexed by the sum of the index types has a biproduct. -/
 theorem hasBiproduct_sum_elim {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
     [HasBiproduct f] [HasBiproduct g] [HasBinaryBiproduct (⨁ f) (⨁ g)] :
     HasBiproduct (Sum.elim f g) := by
-  refine HasBiproduct.mk
+  -- Unfold the partially applied family, so that `Sum.elim f g (.inl i)` reduces to `f i` at
+  -- reducible transparency; otherwise `simp` cannot apply the biproduct lemmas for `f` and `g`.
+  dsimp +unfoldPartialApp only [Sum.elim]
+  classical
+  -- The bicone's cone and cocone are Mathlib's combined fan and cofan of the two biproducts
+  -- and their binary biproduct, so Mathlib's limit and colimit proofs for these apply directly.
+  exact HasBiproduct.mk
     { bicone :=
         { pt := (⨁ f) ⊞ (⨁ g)
-          π := fun
-            | .inl i => biprod.fst ≫ biproduct.π f i
-            | .inr j => biprod.snd ≫ biproduct.π g j
-          ι := fun
-            | .inl i => biproduct.ι f i ≫ biprod.inl
-            | .inr j => biproduct.ι g j ≫ biprod.inr
-          ι_π := by
-            rintro (i | i) (j | j)
-            · by_cases h : i = j
-              · subst h; simp; rfl
-              · simp [h]; rfl
-            · simp; rfl
-            · simp; rfl
-            · by_cases h : i = j
-              · subst h; simp; rfl
-              · simp [h]; rfl }
+          π := Fan.combPairHoms (biproduct.bicone f).toCone (biproduct.bicone g).toCone
+            (BinaryBiproduct.bicone (⨁ f) (⨁ g)).toCone
+          ι := Cofan.combPairHoms (biproduct.bicone f).toCocone (biproduct.bicone g).toCocone
+            (BinaryBiproduct.bicone (⨁ f) (⨁ g)).toCocone
+          ι_π := by rintro (i | i) (j | j) <;> simp [biproduct.ι_π] }
       isBilimit :=
-        { isLimit := Fan.IsLimit.mk _
-            (fun s => biprod.lift (biproduct.lift fun i => s.proj (.inl i))
-              (biproduct.lift fun j => s.proj (.inr j)))
-            (by
-              rintro s (i | j)
-              · simp only [Sum.elim_inl, Bicone.toCone_pt, Bicone.toCone_proj,
-                  biprod.lift_fst_assoc]
-                exact biproduct.lift_π _ _
-              · simp only [Sum.elim_inr, Bicone.toCone_pt, Bicone.toCone_proj,
-                  biprod.lift_snd_assoc]
-                exact biproduct.lift_π _ _)
-            (fun s m hm => by
-              apply biprod.hom_ext
-              · apply biproduct.hom_ext
-                intro i
-                rw [biprod.lift_fst]
-                erw [biproduct.lift_π]
-                simpa using hm (.inl i)
-              · apply biproduct.hom_ext
-                intro j
-                rw [biprod.lift_snd]
-                erw [biproduct.lift_π]
-                simpa using hm (.inr j))
-          isColimit := Cofan.IsColimit.mk _
-            (fun s => biprod.desc (biproduct.desc fun i => s.inj (.inl i))
-              (biproduct.desc fun j => s.inj (.inr j)))
-            (by
-              rintro s (i | j)
-              · simp only [Sum.elim_inl, Bicone.toCocone_pt, Bicone.toCocone_inj, Category.assoc,
-                  biprod.inl_desc]
-                exact biproduct.ι_desc _ _
-              · simp only [Sum.elim_inr, Bicone.toCocone_pt, Bicone.toCocone_inj, Category.assoc,
-                  biprod.inr_desc]
-                exact biproduct.ι_desc _ _)
-            (fun s m hm => by
-              apply biprod.hom_ext'
-              · apply biproduct.hom_ext'
-                intro i
-                rw [biprod.inl_desc]
-                erw [biproduct.ι_desc]
-                simpa using hm (.inl i)
-              · apply biproduct.hom_ext'
-                intro j
-                rw [biprod.inr_desc]
-                erw [biproduct.ι_desc]
-                simpa using hm (.inr j)) } }
+        { isLimit := Fan.combPairIsLimit (biproduct.isLimit f) (biproduct.isLimit g)
+            (BinaryBiproduct.isLimit (⨁ f) (⨁ g))
+          isColimit := Cofan.combPairIsColimit (biproduct.isColimit f) (biproduct.isColimit g)
+            (BinaryBiproduct.isColimit (⨁ f) (⨁ g)) } }
 
 /-- A biproduct indexed by a sum type is the binary biproduct of the two indexed parts. -/
 noncomputable def biproductSumIso {J : Type w} {K : Type w'} (f : J → C) (g : K → C)
@@ -375,6 +342,40 @@ theorem biproduct_ι_biprod_inr_biproductOptionIso_inv (j : J) :
   apply biproduct.hom_ext
   rintro (_ | k) <;> simp [biproductOptionIso, biproduct.ι_π]
 
+/-- Factoring `biproduct.desc φ` on an `Option`-indexed family through `biproductOptionIso` and an
+isomorphism `(⨁ fun j ↦ f (some j)) ≅ W` of the remaining summands. -/
+@[reassoc]
+theorem biproductOptionIso_hom_comp_biprod_desc {W Y : C} [HasBinaryBiproduct (f none) W]
+    (hsomeIso : (⨁ fun j ↦ f (some j)) ≅ W)
+    (g₀ : f none ⟶ Y) (g₁ : W ⟶ Y) (φ : ∀ i, f i ⟶ Y) (h0 : g₀ = φ none)
+    (hs : ∀ j, biproduct.ι (fun j ↦ f (some j)) j ≫ hsomeIso.hom ≫ g₁ = φ (some j)) :
+    (biproductOptionIso f).hom ≫ (biprod.mapIso (Iso.refl (f none)) hsomeIso).hom ≫
+      biprod.desc g₀ g₁ = biproduct.desc φ := by
+  rw [← Iso.eq_inv_comp]
+  refine biprod.hom_ext' _ _ ?_ ?_
+  · rw [biprod.mapIso_hom, Iso.refl_hom, biprod.inl_map_assoc, Category.id_comp,
+      biprod.inl_desc, ← Category.assoc, biprod_inl_biproductOptionIso_inv, biproduct.ι_desc, h0]
+  · rw [biprod.mapIso_hom, biprod.inr_map_assoc, biprod.inr_desc]
+    refine biproduct.hom_ext' _ _ fun j ↦ ?_
+    rw [hs j, ← biproduct.ι_desc φ (some j), ← biproduct_ι_biprod_inr_biproductOptionIso_inv]
+    simp only [Category.assoc]
+
+/-- Factoring `biproduct.lift ψ` on an `Option`-indexed family through `biproductOptionIso.inv` and
+an isomorphism `W ≅ ⨁ fun j ↦ f (some j)` of the remaining summands. -/
+@[reassoc]
+theorem biprod_lift_comp_biproductOptionIso_inv {X W : C} [HasBinaryBiproduct (f none) W]
+    (hsomeIso : W ≅ ⨁ fun j ↦ f (some j))
+    (p₀ : X ⟶ f none) (p₁ : X ⟶ W) (ψ : ∀ i, X ⟶ f i) (h0 : p₀ = ψ none)
+    (hs : ∀ j, p₁ ≫ hsomeIso.hom ≫ biproduct.π (fun j ↦ f (some j)) j = ψ (some j)) :
+    biprod.lift p₀ p₁ ≫ (biprod.mapIso (Iso.refl (f none)) hsomeIso).hom ≫
+      (biproductOptionIso f).inv = biproduct.lift ψ := by
+  rw [← Category.assoc, Iso.comp_inv_eq]
+  refine biprod.hom_ext _ _ ?_ (biproduct.hom_ext _ _ fun j ↦ ?_)
+  · simp only [Category.assoc, biprod.mapIso_hom, Iso.refl_hom, biprod.map_fst, Category.comp_id,
+      biprod.lift_fst, biproductOptionIso_hom_fst, biproduct.lift_π, h0]
+  · simp only [Category.assoc, biprod.mapIso_hom, biprod.map_snd_assoc, biprod.lift_snd_assoc, hs j]
+    rw [← biproduct.lift_π ψ (some j), biproductOptionIso_hom_snd_π]
+
 end TauCeti
 
 namespace TauCeti
@@ -409,17 +410,12 @@ theorem biproduct_π_ι_add_toSubtype_fromSubtype :
     biproduct.π f j ≫ biproduct.ι f j +
       biproduct.toSubtype f (· ≠ j) ≫ biproduct.fromSubtype f (· ≠ j) = 𝟙 (⨁ f) := by
   classical
-  ext a b
-  by_cases hab : b = a
-  · subst hab
-    by_cases hb : b = j
-    · subst hb
-      simp
-    · simp [biproduct.ι_π_ne_assoc _ hb, hb]
-  · by_cases hb : b = j
-    · subst hb
-      simp [biproduct.ι_π_ne _ hab, biproduct.ι_π_ne_assoc _ hab]
-    · simp [biproduct.ι_π_ne_assoc _ hb, biproduct.ι_π_ne_assoc _ hab, biproduct.ι_π_ne _ hab]
+  rw [biproduct.toSubtype_fromSubtype]
+  refine biproduct.hom_ext' _ _ fun a ↦ ?_
+  by_cases ha : a = j
+  · subst ha
+    simp
+  · simp [ha, biproduct.ι_π_ne_assoc _ ha]
 
 end Additive
 
@@ -469,6 +465,70 @@ theorem biproductSubtypeNeIso_inv :
   (rfl)
 
 end SubtypeNe
+
+section SubtypeZero
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {J : Type w} (f : J → C) (p : J → Prop)
+  [HasBiproduct f] [HasBiproduct (Subtype.restrict p f)]
+
+/-- Restricting a biproduct to the summands satisfying a predicate `p` is an isomorphism whenever
+all excluded summands are zero objects. -/
+noncomputable def biproductSubtypeIsoOfIsZero (hzero : ∀ i, ¬ p i → IsZero (f i)) :
+    (⨁ Subtype.restrict p f) ≅ ⨁ f where
+  hom := biproduct.fromSubtype f p
+  inv := biproduct.toSubtype f p
+  hom_inv_id := biproduct.fromSubtype_toSubtype f p
+  inv_hom_id := by
+    classical
+    rw [biproduct.toSubtype_fromSubtype]
+    refine biproduct.hom_ext' _ _ fun i ↦ ?_
+    rw [biproduct.ι_map, Category.comp_id]
+    split_ifs with hi
+    · exact Category.id_comp _
+    · exact (hzero i hi).eq_of_src _ _
+
+@[simp]
+theorem biproductSubtypeIsoOfIsZero_hom (hzero : ∀ i, ¬ p i → IsZero (f i)) :
+    (biproductSubtypeIsoOfIsZero f p hzero).hom = biproduct.fromSubtype f p :=
+  (rfl)
+
+@[simp]
+theorem biproductSubtypeIsoOfIsZero_inv (hzero : ∀ i, ¬ p i → IsZero (f i)) :
+    (biproductSubtypeIsoOfIsZero f p hzero).inv = biproduct.toSubtype f p :=
+  (rfl)
+
+end SubtypeZero
+
+section Reindex
+
+universe w'
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {J : Type w} {K : Type w'}
+  (e : J ≃ K) {M : K → C} [HasBiproduct M] [HasBiproduct fun a ↦ M (e a)]
+
+/-- Reindexing the family of a biproduct descent along an equivalence preserves and reflects
+being an isomorphism. -/
+theorem isIso_biproductDesc_iff_of_equiv {Y : C} {φ : ∀ b, M b ⟶ Y} :
+    IsIso (biproduct.desc fun a ↦ φ (e a)) ↔ IsIso (biproduct.desc φ) := by
+  let wIso : (⨁ fun a ↦ M (e a)) ≅ ⨁ M := biproduct.whiskerEquiv e fun _ ↦ Iso.refl _
+  have hfac : wIso.hom ≫ biproduct.desc φ = biproduct.desc fun a ↦ φ (e a) :=
+    biproduct.hom_ext' _ _ fun a ↦ by simp [wIso]
+  rw [← hfac]
+  exact ⟨fun h ↦ IsIso.of_isIso_comp_left wIso.hom _, fun _ ↦ inferInstance⟩
+
+/-- Reindexing the family of a biproduct lift along an equivalence preserves and reflects being an
+isomorphism. -/
+theorem isIso_biproductLift_iff_of_equiv {X : C} {ψ : ∀ b, X ⟶ M b} :
+    IsIso (biproduct.lift fun a ↦ ψ (e a)) ↔ IsIso (biproduct.lift ψ) := by
+  let wIso : (⨁ fun a ↦ M (e a)) ≅ ⨁ M := biproduct.whiskerEquiv e fun _ ↦ Iso.refl _
+  have hfac : biproduct.lift ψ ≫ wIso.inv = biproduct.lift fun a ↦ ψ (e a) :=
+    biproduct.hom_ext _ _ fun a ↦ by
+      rw [Category.assoc, biproduct.whiskerEquiv_inv_eq_lift]
+      simp
+  rw [← hfac]
+  exact ⟨fun h ↦ IsIso.of_isIso_comp_right _ wIso.inv, fun _ ↦ inferInstance⟩
+
+end Reindex
 
 end TauCeti
 
@@ -534,6 +594,20 @@ theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
     simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
   · rw [← F.map_comp, biprod.inl_fst, F.map_id]
 
+/-- Commutative squares `a₁ ≫ F.map x = y ≫ a₂` and `a₁ ≫ F.map x' = y' ≫ a₃` combine into a
+commutative square through the maps `biprod.lift x x'` and `biprod.lift y y'` into binary
+biproducts, where `A₂ ⊞ A₃ ⟶ F.obj (B₂ ⊞ B₃)` is assembled from `a₂`, `a₃` and the images of the
+inclusions. -/
+theorem comp_map_biprod_lift {A₁ A₂ A₃ : D} {B₁ B₂ B₃ : C} [HasBinaryBiproduct A₂ A₃]
+    [HasBinaryBiproduct B₂ B₃] {a₁ : A₁ ⟶ F.obj B₁} {a₂ : A₂ ⟶ F.obj B₂} {a₃ : A₃ ⟶ F.obj B₃}
+    {x : B₁ ⟶ B₂} {x' : B₁ ⟶ B₃} {y : A₁ ⟶ A₂} {y' : A₁ ⟶ A₃}
+    (h : a₁ ≫ F.map x = y ≫ a₂) (h' : a₁ ≫ F.map x' = y' ≫ a₃) :
+    a₁ ≫ F.map (biprod.lift x x') =
+      biprod.lift y y' ≫ biprod.desc (a₂ ≫ F.map biprod.inl) (a₃ ≫ F.map biprod.inr) := by
+  rw [biprod.lift_desc, biprod.lift_eq]
+  simp only [Functor.map_add, Functor.map_comp, Preadditive.comp_add, reassoc_of% h,
+    reassoc_of% h']
+
 section Comparison
 
 variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
@@ -557,6 +631,22 @@ theorem biprodComparison_natural {X Y X' Y' : C} [HasBinaryBiproduct X Y]
   ext <;> simp only [Category.assoc, biprodComparison_fst, biprodComparison_snd, biprod.map_fst,
     biprod.map_snd, biprodComparison_fst_assoc, biprodComparison_snd_assoc, ← F.map_comp]
 
+/-- Commutative squares `a₂ ≫ F.map z = w ≫ a₄` and `a₃ ≫ F.map z' = w' ≫ a₄` combine into a
+commutative square through the maps `biprod.desc z z'` and `biprod.desc w w'` out of binary
+biproducts, where `A₂ ⊞ A₃ ⟶ F.obj (B₂ ⊞ B₃)` is assembled from `a₂`, `a₃` and the images of the
+inclusions. -/
+theorem biprod_desc_comp_map {A₂ A₃ A₄ : D} {B₂ B₃ B₄ : C} [HasBinaryBiproduct A₂ A₃]
+    [HasBinaryBiproduct B₂ B₃] {a₂ : A₂ ⟶ F.obj B₂} {a₃ : A₃ ⟶ F.obj B₃} {a₄ : A₄ ⟶ F.obj B₄}
+    {z : B₂ ⟶ B₄} {z' : B₃ ⟶ B₄} {w : A₂ ⟶ A₄} {w' : A₃ ⟶ A₄}
+    (h : a₂ ≫ F.map z = w ≫ a₄) (h' : a₃ ≫ F.map z' = w' ≫ a₄) :
+    biprod.desc (a₂ ≫ F.map biprod.inl) (a₃ ≫ F.map biprod.inr) ≫ F.map (biprod.desc z z') =
+      biprod.desc w w' ≫ a₄ := by
+  apply biprod.hom_ext'
+  · rw [biprod.inl_desc_assoc, biprod.inl_desc_assoc, Category.assoc, ← F.map_comp,
+      biprod.inl_desc, h]
+  · rw [biprod.inr_desc_assoc, biprod.inr_desc_assoc, Category.assoc, ← F.map_comp,
+      biprod.inr_desc, h']
+
 end Comparison
 
 section Op
@@ -577,6 +667,22 @@ theorem mapIso_biprod_opIso_trans_mapBiprod_inv :
   apply biprod.hom_ext'
   · rw [biprod.inl_desc_assoc, ← F.map_comp, biprod.inl_opIso_inv, biprod.inl_desc]
   · rw [biprod.inr_desc_assoc, ← F.map_comp, biprod.inr_opIso_inv, biprod.inr_desc]
+
+variable {X Y} in
+/-- For a functor `F` out of `Cᵒᵖ` and maps `f : X ⟶ Z`, `g : Y ⟶ Z`, the lift of `F.map f.op`
+and `F.map g.op` followed by the inverse of the comparison
+`F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)` is the image of the opposite of
+`biprod.desc f g`. -/
+theorem biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv {Z : C} (f : X ⟶ Z)
+    (g : Y ⟶ Z) :
+    biprod.lift (F.map f.op) (F.map g.op) ≫
+        (F.mapIso (biprod.opIso X Y) ≪≫ F.mapBiprod (op X) (op Y)).inv =
+      F.map (biprod.desc f g).op := by
+  rw [Iso.comp_inv_eq]
+  apply biprod.hom_ext <;>
+    simp only [Iso.trans_hom, Functor.mapIso_hom, Functor.mapBiprod_hom, Category.assoc,
+      biprod.lift_fst, biprod.lift_snd, ← F.map_comp, biprod.opIso_hom_fst, biprod.opIso_hom_snd,
+      ← op_comp, biprod.inl_desc, biprod.inr_desc]
 
 end Op
 
@@ -611,3 +717,17 @@ noncomputable def isColimitBiprod (hc₁ : IsColimit c₁) (hc₂ : IsColimit c�
       · exact Cofork.IsColimit.hom_ext hc₂ (by simp))
 
 end CategoryTheory.Limits.CokernelCofork
+
+namespace CategoryTheory.Limits.Bicone
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {J : Type w} {F : J → C}
+
+/-- The comparison isomorphism between the points of two limit bicones of the same family
+carries the inclusions of the first bicone to those of the second. -/
+@[reassoc (attr := simp)]
+theorem ι_comp_conePointUniqueUpToIso_hom {c d : Bicone F} (hc : IsLimit c.toCone)
+    (hd : IsLimit d.toCone) (j : J) : c.ι j ≫ (hc.conePointUniqueUpToIso hd).hom = d.ι j :=
+  hd.hom_ext fun ⟨k⟩ => by
+    simpa [Bicone.ι_π] using c.ι j ≫= hc.conePointUniqueUpToIso_hom_comp hd ⟨k⟩
+
+end CategoryTheory.Limits.Bicone

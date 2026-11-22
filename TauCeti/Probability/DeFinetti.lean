@@ -42,7 +42,7 @@ This module declares nothing of its own; it is a curated re-export, and it build
 * `deFinetti_viaL2`, `conditionallyIID_of_contractable_viaL2` and
   `deFinetti_RyllNardzewski_equivalence_viaL2` — the same summits proved by the `L²` averaging
   route rather than the martingale one. The unsuffixed names above are the martingale route;
-  the suffixed ones name the route explicitly, and are what Layer 7 of the roadmap advertises;
+  the suffixed ones name the route explicitly;
 * `deFinetti_viaKoopman` and `conditionallyIID_of_contractable_viaKoopman` — the same summits proved
   by the Koopman route, through the shift-invariant σ-algebra rather than the tail. The three route
   modules are independent at the import level: none imports another;
@@ -92,8 +92,6 @@ both are reachable directly.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 7** (public API), which specifies
-  this facade and the symmetry facade it builds on.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005), Theorem 1.1,
   for the representation theorem this module exposes.
 -/

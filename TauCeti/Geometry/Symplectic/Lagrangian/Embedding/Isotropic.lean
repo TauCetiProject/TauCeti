@@ -134,11 +134,20 @@ theorem IsIsotropicEmbedding.two_mul_finrank_le [Nonempty N] (h : hσ.IsIsotropi
   h.isIsotropicMap.two_mul_finrank_le
     (h.isImmersion.mfderiv_injective (by simp) (Classical.arbitrary N))
 
-/-- A coisotropic embedding of a nonempty finite-dimensional manifold has at least half the
-ambient dimension: `dim M ≤ 2 dim N`. -/
-theorem IsCoisotropicEmbedding.finrank_le_two_mul_finrank [FiniteDimensional ℝ F] [Nonempty N]
-    (h : hσ.IsCoisotropicEmbedding J f) : finrank ℝ E ≤ 2 * finrank ℝ F :=
-  h.isCoisotropicMap.finrank_le_two_mul_finrank (Classical.arbitrary N)
+omit [FiniteDimensional ℝ E] in
+/-- A coisotropic embedding of a nonempty manifold has at least half the ambient dimension:
+`dim M ≤ 2 dim N`. When the ambient model space is infinite-dimensional, `finrank ℝ E` is `0`
+and the inequality holds by the junk value; otherwise the injective differential makes the model
+space of the source finite-dimensional. -/
+theorem IsCoisotropicEmbedding.finrank_le_two_mul_finrank [Nonempty N]
+    (h : hσ.IsCoisotropicEmbedding J f) : finrank ℝ E ≤ 2 * finrank ℝ F := by
+  by_cases hE : FiniteDimensional ℝ E
+  · have hinj := h.isImmersion.mfderiv_injective (by simp) (Classical.arbitrary N)
+    have : FiniteDimensional ℝ F :=
+      Module.Finite.of_injective (mfderiv J I f (Classical.arbitrary N)).toLinearMap hinj
+    exact h.isCoisotropicMap.finrank_le_two_mul_finrank (Classical.arbitrary N)
+  · rw [Module.finrank_of_not_finite hE]
+    exact Nat.zero_le _
 
 /-- An isotropic embedding of half the ambient dimension is a Lagrangian embedding. -/
 theorem IsIsotropicEmbedding.isLagrangianEmbedding_of_finrank (h : hσ.IsIsotropicEmbedding J f)
@@ -264,8 +273,7 @@ theorem IsIsotropicEmbedding.comp_subtype_val [IsManifold J ∞ N]
     (h : hσ.IsIsotropicEmbedding J f) (U : Opens N) :
     hσ.IsIsotropicEmbedding J (f ∘ (Subtype.val : U → N)) :=
   (isIsotropicEmbedding_iff_of_isSmoothEmbedding (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
-    h.isIsotropicMap.comp_subtype_val U fun _ _ ↦
-      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
+    h.isIsotropicMap.comp_subtype_val U
 
 /-- Restricting a coisotropic embedding to an open subset of its source gives a coisotropic
 embedding. -/
@@ -273,8 +281,7 @@ theorem IsCoisotropicEmbedding.comp_subtype_val [IsManifold J ∞ N]
     (h : hσ.IsCoisotropicEmbedding J f) (U : Opens N) :
     hσ.IsCoisotropicEmbedding J (f ∘ (Subtype.val : U → N)) :=
   (isCoisotropicEmbedding_iff_of_isSmoothEmbedding (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
-    h.isCoisotropicMap.comp_subtype_val U fun _ _ ↦
-      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
+    h.isCoisotropicMap.comp_subtype_val U
 
 variable {U : Opens M} {g : N → U}
 
@@ -287,13 +294,11 @@ theorem isIsotropicEmbedding_subtype_val_comp_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hg := TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 h.isSmoothEmbedding
     exact (isIsotropicEmbedding_iff_of_isSmoothEmbedding hg).2 <|
-      (hσ.isIsotropicMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).1
-        h.isIsotropicMap
+      hσ.isIsotropicMap_subtype_val_comp_iff.1 h.isIsotropicMap
   · have hg := h.isSmoothEmbedding
     exact (isIsotropicEmbedding_iff_of_isSmoothEmbedding
       (TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.2 hg)).2 <|
-      (hσ.isIsotropicMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).2
-        h.isIsotropicMap
+      hσ.isIsotropicMap_subtype_val_comp_iff.2 h.isIsotropicMap
 
 /-- A map into an open submanifold is a coisotropic embedding for the restricted form exactly when
 its composition with the inclusion is a coisotropic embedding. -/
@@ -304,13 +309,11 @@ theorem isCoisotropicEmbedding_subtype_val_comp_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hg := TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.1 h.isSmoothEmbedding
     exact (isCoisotropicEmbedding_iff_of_isSmoothEmbedding hg).2 <|
-      (hσ.isCoisotropicMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).1
-        h.isCoisotropicMap
+      hσ.isCoisotropicMap_subtype_val_comp_iff.1 h.isCoisotropicMap
   · have hg := h.isSmoothEmbedding
     exact (isCoisotropicEmbedding_iff_of_isSmoothEmbedding
       (TauCeti.isSmoothEmbedding_subtypeVal_comp_iff.2 hg)).2 <|
-      (hσ.isCoisotropicMap_subtype_val_comp_iff (hg.contMDiff.mdifferentiable (by simp))).2
-        h.isCoisotropicMap
+      hσ.isCoisotropicMap_subtype_val_comp_iff.2 h.isCoisotropicMap
 
 end Opens
 

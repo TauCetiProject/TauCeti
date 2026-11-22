@@ -36,7 +36,7 @@ This supplies the abstract reduction used in Lie--Kolchin arguments.
 
 public section
 
-namespace TauCeti
+namespace Representation
 
 universe u v w
 
@@ -52,7 +52,7 @@ acts unipotently. Such a subgroup is automatically normal.
 Kolchin first produces a nonzero vector fixed by the normal subgroup. Its entire fixed space is
 stable under the ambient group, and the induced action factors through the commutative quotient.
 -/
-theorem _root_.Representation.exists_unitHom_jointEigenvector_of_commutator_le_of_isUnipotent
+theorem exists_unitHom_jointEigenvector_of_commutator_le_of_isUnipotent
     (rho : _root_.Representation K G V) (N : Subgroup G)
     (hcomm : _root_.commutator G ≤ N)
     (hunipotent : ∀ n : N, IsNilpotent (rho n - 1)) :
@@ -78,4 +78,4 @@ theorem _root_.Representation.exists_unitHom_jointEigenvector_of_commutator_le_o
 
 end
 
-end TauCeti
+end Representation

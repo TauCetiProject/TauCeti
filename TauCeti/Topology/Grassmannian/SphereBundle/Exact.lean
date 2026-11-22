@@ -89,41 +89,27 @@ private abbrev sphereHom (n : ℕ) :
 private abbrev fiberOne (n : ℕ) : (sphereHom n).fiber (specialOrthogonalSphereMap n 1) :=
   ⟨1, rfl⟩
 
-/-- The identification `π_N(F, 1) ≃ π_N(SO(n), 1)` of the homotopy groups of the fibre `F` of
-`A ↦ A e₀` over `e₀` with those of `SO(n)`. -/
-private def fiberEquiv (n : ℕ) (N : Type*) :
-    HomotopyGroup N ((sphereHom n).fiber (specialOrthogonalSphereMap n 1)) (fiberOne n) ≃
-      HomotopyGroup N (specialOrthogonalGroup (Fin n) ℝ) 1 :=
-  HomotopyGroup.homeomorphEquivOfEq (specialOrthogonalSphereFiberHomeomorph n).symm
-    ((specialOrthogonalSphereFiberHomeomorph n).symm_apply_eq.2
-      specialOrthogonalSphereFiberHomeomorph_one.symm)
+/-- The fibre of `A ↦ A e₀` over `e₀`, homeomorphic to `SO(n)`. -/
+private def fiberHomeomorph (n : ℕ) :
+    (sphereHom n).fiber (specialOrthogonalSphereMap n 1) ≃ₜ specialOrthogonalGroup (Fin n) ℝ :=
+  (specialOrthogonalSphereFiberHomeomorph n).symm
 
-/-- The inverse of `fiberEquiv` followed by the fibre inclusion is the map induced by the block
-embedding `B ↦ diag(1, B)`. -/
-private theorem map_fiberι_fiberEquiv_symm {N : Type*}
-    (c : HomotopyGroup N (specialOrthogonalGroup (Fin n) ℝ) 1) :
-    HomotopyGroup.map ((sphereHom n).fiberι _).hom
-        (TopCat.Hom.fiberι_apply (sphereHom n) _ (fiberOne n)) ((fiberEquiv n N).symm c) =
-      HomotopyGroup.map ⟨SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n,
-        finiteOrthonormalFrame.continuous_fromBlocksOne n⟩
-        (map_one (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n)) c := by
-  rw [fiberEquiv, HomotopyGroup.homeomorphEquivOfEq_symm_apply, HomotopyGroup.map_comp_apply]
-  exact HomotopyGroup.map_congr
-    (ContinuousMap.ext fun B ↦ (TopCat.Hom.fiberι_apply (sphereHom n) _
-      (specialOrthogonalSphereFiberHomeomorph n B)).trans
-        (coe_specialOrthogonalSphereFiberHomeomorph_apply B)) _ _ c
+private theorem fiberHomeomorph_fiberOne : fiberHomeomorph n (fiberOne n) = 1 :=
+  (specialOrthogonalSphereFiberHomeomorph n).symm_apply_eq.2
+    specialOrthogonalSphereFiberHomeomorph_one.symm
 
 variable (n) in
 /-- The **boundary map** `π_{k+1}(Sⁿ, e₀) → π_k(SO(n), 1)` of the sphere bundle
 `SO(n) → SO(1 + n) → Sⁿ`, for `n ≥ 1`, where `k` is the cardinality of `N`. It is the boundary
 map of the Serre fibration `A ↦ A e₀` (`TauCeti.TopCat.fibrationBoundary`), read in `SO(n)`
-through `TauCeti.specialOrthogonalSphereFiberHomeomorph`. -/
+through `TauCeti.specialOrthogonalSphereFiberHomeomorph`
+(`TauCeti.TopCat.fibrationBoundaryOfHomeomorph`). -/
 def specialOrthogonalSphereBoundary [NeZero n] (N : Type*) [Finite N] :
     HomotopyGroup (Option N) (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1)
         (specialOrthogonalSphereMap n 1) →
       HomotopyGroup N (specialOrthogonalGroup (Fin n) ℝ) 1 :=
-  fiberEquiv n N ∘ TopCat.fibrationBoundary specialOrthogonalSphereMap_mem_serreFibrations
-    (fiberOne n)
+  TopCat.fibrationBoundaryOfHomeomorph N specialOrthogonalSphereMap_mem_serreFibrations
+    (fiberHomeomorph n) fiberHomeomorph_fiberOne
 
 variable {N : Type*} [Finite N]
 
@@ -138,14 +124,8 @@ theorem specialOrthogonalSphereBoundary_apply [NeZero n]
         ((specialOrthogonalSphereFiberHomeomorph n).symm_apply_eq.2
           specialOrthogonalSphereFiberHomeomorph_one.symm)
         (TopCat.fibrationBoundary specialOrthogonalSphereMap_mem_serreFibrations ⟨1, rfl⟩ a) :=
-  (rfl)
-
-omit [Finite N] in
-/-- `fiberEquiv` preserves the class of the constant generalized loop. -/
-private theorem fiberEquiv_mk_const :
-    fiberEquiv n N ⟦GenLoop.const⟧ =
-      (⟦GenLoop.const⟧ : HomotopyGroup N (specialOrthogonalGroup (Fin n) ℝ) 1) :=
-  congrArg _ (GenLoop.map_const _ _)
+  TopCat.fibrationBoundaryOfHomeomorph_apply specialOrthogonalSphereMap_mem_serreFibrations
+    (fiberHomeomorph n) fiberHomeomorph_fiberOne a
 
 /-- The boundary map of the sphere bundle sends the class of the constant loop to the class of
 the constant loop. -/
@@ -155,7 +135,8 @@ theorem specialOrthogonalSphereBoundary_const [NeZero n] :
         (⟦GenLoop.const⟧ : HomotopyGroup (Option N)
           (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1) (specialOrthogonalSphereMap n 1)) =
       ⟦GenLoop.const⟧ :=
-  (congrArg (fiberEquiv n N) (TopCat.fibrationBoundary_const _)).trans fiberEquiv_mk_const
+  TopCat.fibrationBoundaryOfHomeomorph_const specialOrthogonalSphereMap_mem_serreFibrations
+    (fiberHomeomorph n) fiberHomeomorph_fiberOne
 
 /-- For `k ≥ 1`, the boundary map `π_{k+1}(Sⁿ, e₀) → π_k(SO(n), 1)` of the sphere bundle is
 multiplicative. -/
@@ -167,10 +148,8 @@ theorem specialOrthogonalSphereBoundary_mul [NeZero n] [DecidableEq N] [Nonempty
   -- The group structures on the homotopy groups of `TopCat.of X` and of `X` agree only after
   -- unfolding `TopCat.of`, which `rw` does not do; checking it by `exact` times out, so the
   -- multiplicativity of the boundary is applied with `erw`.
-  rw [specialOrthogonalSphereBoundary_apply, specialOrthogonalSphereBoundary_apply,
-    specialOrthogonalSphereBoundary_apply]
-  erw [TopCat.fibrationBoundary_mul]
-  exact HomotopyGroup.map_mul _ _ _ _
+  rw [specialOrthogonalSphereBoundary]
+  erw [TopCat.fibrationBoundaryOfHomeomorph_mul]
 
 variable (n N) in
 /-- For `k ≥ 1`, the boundary map `π_{k+1}(Sⁿ, e₀) → π_k(SO(n), 1)` of the sphere bundle as a group
@@ -219,8 +198,8 @@ theorem mem_range_homotopyGroupMap_specialOrthogonalSphereMap_iff [NeZero n]
         ⟨specialOrthogonalSphereMap n, continuous_specialOrthogonalSphereMap n⟩ rfl) ↔
       specialOrthogonalSphereBoundary n N a =
         (⟦GenLoop.const⟧ : HomotopyGroup N (specialOrthogonalGroup (Fin n) ℝ) 1) :=
-  (TopCat.mem_range_homotopyGroupMap_iff_fibrationBoundary_eq _).trans
-    ((fiberEquiv n N).injective.eq_iff' fiberEquiv_mk_const).symm
+  TopCat.mem_range_homotopyGroupMap_iff_fibrationBoundaryOfHomeomorph_eq
+    specialOrthogonalSphereMap_mem_serreFibrations fiberHomeomorph_fiberOne
 
 /-- **Exactness at `π_k(SO(n))`.** A class of `π_k(SO(n), 1)` is a boundary exactly when it
 becomes trivial in `SO(1 + n)` under the block embedding `B ↦ diag(1, B)`. -/
@@ -230,9 +209,9 @@ theorem mem_range_specialOrthogonalSphereBoundary_iff [NeZero n]
       HomotopyGroup.map ⟨SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n,
           finiteOrthonormalFrame.continuous_fromBlocksOne n⟩
           (map_one (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n)) c =
-        (⟦GenLoop.const⟧ : HomotopyGroup N (specialOrthogonalGroup (Fin (1 + n)) ℝ) 1) := by
-  rw [specialOrthogonalSphereBoundary, range_comp, mem_image_equiv, ← map_fiberι_fiberEquiv_symm]
-  exact TopCat.mem_range_fibrationBoundary_iff _
+        (⟦GenLoop.const⟧ : HomotopyGroup N (specialOrthogonalGroup (Fin (1 + n)) ℝ) 1) :=
+  TopCat.mem_range_fibrationBoundaryOfHomeomorph_iff specialOrthogonalSphereMap_mem_serreFibrations
+    fiberHomeomorph_fiberOne (fun B ↦ (coe_specialOrthogonalSphereFiberHomeomorph_apply B).symm) _
 
 /-- **Exactness at `π_k(SO(1 + n))`.** A class of `π_k(SO(1 + n), 1)` comes from `SO(n)` under the
 block embedding `B ↦ diag(1, B)` exactly when it becomes trivial in `π_k(Sⁿ, e₀)`. -/
@@ -244,16 +223,9 @@ theorem mem_range_homotopyGroupMap_fromBlocksOne_iff [NeZero n]
       HomotopyGroup.map ⟨specialOrthogonalSphereMap n, continuous_specialOrthogonalSphereMap n⟩
         rfl d =
         (⟦GenLoop.const⟧ : HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1)
-          (specialOrthogonalSphereMap n 1)) := by
-  have h : range (HomotopyGroup.map (N := N) ⟨SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n,
-      finiteOrthonormalFrame.continuous_fromBlocksOne n⟩
-      (map_one (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n))) =
-      range (HomotopyGroup.map ((sphereHom n).fiberι _).hom
-        (TopCat.Hom.fiberι_apply (sphereHom n) _ (fiberOne n))) := by
-    rw [← (fiberEquiv n N).symm.surjective.range_comp]
-    exact congrArg range (funext fun c ↦ (map_fiberι_fiberEquiv_symm c).symm)
-  rw [h]
-  exact TopCat.mem_range_homotopyGroupMap_fiberι_iff specialOrthogonalSphereMap_mem_serreFibrations
+          (specialOrthogonalSphereMap n 1)) :=
+  TopCat.mem_range_homotopyGroupMap_of_homeomorph_iff specialOrthogonalSphereMap_mem_serreFibrations
+    fiberHomeomorph_fiberOne (fun B ↦ (coe_specialOrthogonalSphereFiberHomeomorph_apply B).symm) _
 
 /-! ### Classes of `SO(1 + n)` over the sphere -/
 

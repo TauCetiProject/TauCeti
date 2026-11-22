@@ -293,22 +293,12 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
         ((normalHalfSpace (E := E) (a / c) : Opens (WithLp 2 (ℝ × E))) :
           Set (WithLp 2 (ℝ × E))) =
           e ⁻¹' (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) := by
-  -- the symmetric part of `A` has the same quadratic form
-  have hS : (((2⁻¹ : ℝ) • (A + A.adjoint) : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-      WithLp 2 (ℝ × E) →ₗ[ℝ] WithLp 2 (ℝ × E)).IsSymmetric := fun x y => by
-    simp [inner_add_left, inner_add_right, inner_smul_left, inner_smul_right,
-      ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_right]
-    ring
-  have hSA (ξ : WithLp 2 (ℝ × E)) :
-      ⟪((2⁻¹ : ℝ) • (A + A.adjoint)) ξ, ξ⟫_ℝ = ⟪A ξ, ξ⟫_ℝ := by
-    simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
-      real_inner_comm (A ξ) ξ]
-    ring
   set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 (1, 0)
-  have hν : ν ≠ 0 := fun h => one_ne_zero (congrArg (fun x => (WithLp.ofLp x).1) h)
   obtain ⟨e, hee, ⟨c, hc, hcν⟩, he⟩ :=
-    ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric _ hS hlam
-      (fun ξ => (hSA ξ).symm ▸ hA ξ) hν
+    A.exists_continuousLinearEquiv_comp_adjoint_eq_two_inv_smul_add hlam
+      (fun ξ => by rw [RCLike.re_to_real]; exact hA ξ) (ν := ν)
+  -- over `ℝ` the scalar `(c : ℝ)` produced by the `RCLike` statement is `c` itself
+  rw [RCLike.ofReal_real_eq_id, id_eq] at hcν
   have hinner (x : WithLp 2 (ℝ × E)) : ⟪x, ν⟫_ℝ = (WithLp.ofLp x).1 := by
     simp [ν, WithLp.prod_inner_apply]
   -- `(e y).fst = ⟪e y, ν⟫ = ⟪y, e† ν⟫ = c y.fst`
@@ -317,7 +307,8 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
       hcν, inner_smul_right, hinner]
   refine ⟨e, c, hee, he, fun a => ?_⟩
   ext y
-  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, hfst, div_lt_iff₀' hc]
+  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, ← WithLp.ofLp_fst, hfst,
+    div_lt_iff₀' hc]
 
 /-- **The Calderón–Zygmund estimate on a half-space, for constant coefficients.** Let
 `1 < p < ∞`. There is a constant `C` such that for every operator `A` on `ℝ × E` with
@@ -349,7 +340,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
   -- `{a / c < x.fst}` onto `{a < x.fst}` and turns the equation into Poisson's equation.
   obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA
   obtain ⟨v, -, hD, h0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
-  refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee hlam he (hH a) hD ?_
+  refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee he (hH a) hD ?_
     fun g hg => hC (a / c) v g (h0 hu) hg
   filter_upwards [hf, Wkp.adjoint_iteratedGradient_one_ae_eq u] with x h1 h2
   rw [A.traceCLM_symmPart_comp _ h2, h1]

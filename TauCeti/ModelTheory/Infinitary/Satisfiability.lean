@@ -19,8 +19,9 @@ small in that universe, in particular any countable model, witnesses satisfiabil
 satisfies every entailed sentence.
 
 Entailment is reflexive, monotone and transitive, admits cut, and is refutation of the negated
-conclusion. A countable theory entails exactly what the conjunction of its sentences entails, so
-the entailments of a countable theory are entailments between two sentences. For first-order
+conclusion. An entailed `¬ ∀ x, φ x` yields the entailed `∃ x, ¬ φ x`. A countable theory
+entails exactly what the conjunction of its sentences entails, so the entailments of a countable
+theory are entailments between two sentences. For first-order
 theories and sentences, embedded into `L_{ω₁ω}` by `BoundedFormula.toOmega`, satisfiability and
 entailment agree with Mathlib's first-order notions.
 
@@ -143,6 +144,13 @@ theorem Entails.trans (h : T'.Entails φ) (hT : ∀ ψ ∈ T', T.Entails ψ) : T
 /-- **Cut.** A sentence entailed by a theory may be used as an additional hypothesis. -/
 theorem Entails.cut (hψ : T.Entails ψ) (h : (insert ψ T).Entails φ) : T.Entails φ :=
   h.trans fun _ hχ => hχ.elim (fun hχ => hχ ▸ hψ) entails_of_mem
+
+/-- A theory entailing `¬ ∀ x, φ x` entails `∃ x, ¬ φ x`. -/
+theorem Entails.ex_not_of_not_all {φ : L.BoundedFormulaω Empty 1} (h : T.Entails φ.all.not) :
+    T.Entails φ.not.ex := by
+  intro M _ _ hM
+  simpa [SentenceInf.realize_def, BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_not]
+    using h M hM
 
 /-- **Entailment is refutation.** A theory entails a sentence exactly when the theory together
 with the negation of the sentence is unsatisfiable. This is the `L_{ω₁ω}` form of Mathlib's

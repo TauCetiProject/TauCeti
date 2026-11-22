@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.Geometry.Hodge.BaseChange
+import Mathlib.Data.Int.Interval
 
 /-!
 # Graded pieces of a rational weight filtration
@@ -46,10 +47,7 @@ quotient, and the Hodge filtration is transported across that identification.
 
 The conventions for opposed and induced filtrations follow Deligne, *Théorie de Hodge II*,
 §1.2.1; the graded-piece comparison is the one used throughout Peters–Steenbrink, *Mixed Hodge
-Structures*, Ch. 3. The signatures of `weightGradedRat`, `gradedComplexEquiv` and `gradedF` are
-adapted from the proposed definitions in
-[`HodgeStructures/Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/HodgeStructures/Suggested.lean),
-whose definitive mathematical specification is the accompanying Hodge structures roadmap.
+Structures*, Ch. 3.
 -/
 
 public section
@@ -184,7 +182,7 @@ image. -/
 theorem weightGradedRatMap_mk (WQ : ℤ → Submodule ℚ Vℚ) (W'Q : ℤ → Submodule ℚ V'ℚ)
     (f : Vℚ →ₗ[ℚ] V'ℚ) (hf : ∀ k x, x ∈ WQ k → f x ∈ W'Q k) (k : ℤ) (x : WQ k) :
     weightGradedRatMap WQ W'Q f hf k (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨f x, hf k x x.2⟩ :=
+      Submodule.Quotient.mk ⟨f x, hf k x x.property⟩ :=
   (rfl)
 
 /-- The map induced on the `k`-th graded piece of a complex filtration by a complex-linear map
@@ -201,7 +199,7 @@ theorem weightGradedComplexMap_mk (WC : ℤ → Submodule ℂ Vℂ) (W'C : ℤ �
     (g : Vℂ →ₗ[ℂ] V'ℂ) (hg : ∀ k x, x ∈ WC k → g x ∈ W'C k) (k : ℤ)
     (x : WC k) :
     weightGradedComplexMap WC W'C g hg k (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨g x, hg k x x.2⟩ :=
+      Submodule.Quotient.mk ⟨g x, hg k x x.property⟩ :=
   (rfl)
 
 /-- Passage to the complex graded pieces sends the identity map to the identity. -/
@@ -360,6 +358,52 @@ theorem gradedF_of_eq_bot (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange �
   rw [gradedF, complexGradedF_of_eq_bot _ F hp, Submodule.comap_bot, LinearMap.ker_eq_bot]
   exact (gradedComplexEquiv hℚ hℂ WQ hWQ k).injective
 
+/-- Where the induced filtration on the `k`-th graded piece vanishes, the step of the Hodge
+filtration meets `W_k` inside `W_{k-1}`. -/
+theorem inf_le_of_gradedF_eq_bot (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    (WQ : ℤ → Submodule ℚ Vℚ) (hWQ : Monotone WQ) (F : ℤ → Submodule ℂ Vℂ) {k p : ℤ}
+    (hp : gradedF hℚ hℂ WQ hWQ F k p = ⊥) :
+    F p ⊓ rationalToComplexSubmodule hℚ hℂ (WQ k) ≤
+      rationalToComplexSubmodule hℚ hℂ (WQ (k - 1)) := by
+  rintro y ⟨hyF, hyk⟩
+  have hx : (gradedComplexEquiv hℚ hℂ WQ hWQ k).symm (Submodule.Quotient.mk ⟨y, hyk⟩) ∈
+      gradedF hℚ hℂ WQ hWQ F k p := by
+    rw [mem_gradedF_iff]
+    exact ⟨⟨y, hyk⟩, hyF, by simp⟩
+  simp only [hp, Submodule.mem_bot, LinearEquiv.symm_apply_eq, map_zero,
+    Submodule.Quotient.mk_eq_zero] at hx
+  exact hx
+
+/-- The Hodge filtration is separated as soon as its induced filtration is separated on every
+graded piece of a bounded weight filtration: a step that vanishes on the graded pieces of weight
+`≤ k` meets `W_k` trivially. -/
+theorem exists_eq_bot_of_forall_gradedF_eq_bot (hℚ : IsBaseChange ℚ ιℚ)
+    (hℂ : IsBaseChange ℂ ιℂ) (WQ : ℤ → Submodule ℚ Vℚ) (hWQ : Monotone WQ)
+    (F : ℤ → Submodule ℂ Vℂ) (hF : Antitone F) (hW_top : ∃ k, WQ k = ⊤)
+    (hW_bot : ∃ k, WQ k = ⊥) (h : ∀ k, ∃ p, gradedF hℚ hℂ WQ hWQ F k p = ⊥) :
+    ∃ p, F p = ⊥ := by
+  choose p hp using h
+  obtain ⟨k₀, hk₀⟩ := hW_bot
+  obtain ⟨k₁, hk₁⟩ := hW_top
+  have hK : WQ (max k₀ k₁) = ⊤ := top_unique (hk₁ ▸ hWQ (le_max_right _ _))
+  obtain ⟨P, hP⟩ := ((Finset.Icc k₀ (max k₀ k₁)).image p).bddAbove
+  refine ⟨P, ?_⟩
+  -- Climb the weights from `k₀`, where `W` is zero, to `max k₀ k₁`, where it is everything.
+  have hclimb (n : ℤ) : n ≤ max k₀ k₁ → F P ⊓ rationalToComplexSubmodule hℚ hℂ (WQ n) = ⊥ := by
+    refine Int.inductionOn' n k₀ ?_ (fun n hn ih hn1 ↦ ?_) fun n hn _ _ ↦ ?_
+    · exact fun _ ↦ by rw [hk₀, rationalToComplexSubmodule_bot, inf_bot_eq]
+    · have hpP : p (n + 1) ≤ P := hP (Finset.mem_coe.2 (Finset.mem_image_of_mem p
+        (Finset.mem_Icc.2 ⟨by omega, hn1⟩)))
+      have hz : gradedF hℚ hℂ WQ hWQ F (n + 1) P = ⊥ :=
+        le_bot_iff.1 ((gradedF_antitone hℚ hℂ WQ hWQ F hF _ hpP).trans (hp _).le)
+      have hle := inf_le_of_gradedF_eq_bot hℚ hℂ WQ hWQ F hz
+      rw [add_sub_cancel_right] at hle
+      exact eq_bot_iff.2 ((le_inf inf_le_left hle).trans (ih (by omega)).le)
+    · have : WQ (n - 1) = ⊥ := le_bot_iff.1 (hk₀ ▸ hWQ (by omega))
+      rw [this, rationalToComplexSubmodule_bot, inf_bot_eq]
+  have := hclimb (max k₀ k₁) le_rfl
+  rwa [hK, rationalToComplexSubmodule_top, inf_top_eq] at this
+
 section GradedConjugation
 
 variable (WC : ℤ → Submodule ℂ Vℂ) (ω : Conjugation Vℂ) (k : ℤ)
@@ -379,7 +423,7 @@ conjugation. -/
 theorem complexGradedConjugation_mk (hk : ∀ x ∈ WC k, ω.toEquiv x ∈ WC k)
     (hk₁ : ∀ x ∈ WC (k - 1), ω.toEquiv x ∈ WC (k - 1)) (x : WC k) :
     (complexGradedConjugation WC ω k hk hk₁).toEquiv (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨ω.toEquiv (x : Vℂ), hk (x : Vℂ) x.2⟩ := by
+      Submodule.Quotient.mk ⟨ω.toEquiv (x : Vℂ), hk (x : Vℂ) x.property⟩ := by
   rw [complexGradedConjugation, Conjugation.quotient_toEquiv_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (ω.restrict_toEquiv_apply hk x))
 
@@ -402,7 +446,7 @@ theorem map_complexGradedConjugation_complexGradedF
     obtain ⟨y, hy, rfl⟩ :=
       (mem_complexGradedF_iff WC (fun q ↦ (F q).map ω.toEquiv.toLinearMap) k p u).1 hu
     obtain ⟨w, hw, hwy⟩ := hy
-    refine ⟨Submodule.Quotient.mk ⟨ω.toEquiv (y : Vℂ), hk (y : Vℂ) y.2⟩, ?_, ?_⟩
+    refine ⟨Submodule.Quotient.mk ⟨ω.toEquiv (y : Vℂ), hk (y : Vℂ) y.property⟩, ?_, ?_⟩
     · simp only [SetLike.mem_coe, mem_complexGradedF_iff]
       refine ⟨_, ?_, rfl⟩
       simpa only [← hwy, LinearEquiv.coe_coe, ω.apply_apply, SetLike.mem_coe] using hw
@@ -436,7 +480,7 @@ theorem gradedComplexConjugation_mk (k : ℤ)
     (x : rationalToComplexSubmodule hℚ hℂ (WQ k)) :
     (gradedComplexConjugation hℚ hℂ WQ k).toEquiv (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk ⟨latticeConj hℂ (x : Vℂ),
-        (rationalToComplexSubmodule_conj hℚ hℂ (WQ k)).le ⟨x, x.2, rfl⟩⟩ := by
+        (rationalToComplexSubmodule_conj hℚ hℂ (WQ k)).le ⟨x, x.property, rfl⟩⟩ := by
   rw [gradedComplexConjugation, complexGradedConjugation_mk]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (latticeConjugation_toEquiv_apply hℂ _))
 

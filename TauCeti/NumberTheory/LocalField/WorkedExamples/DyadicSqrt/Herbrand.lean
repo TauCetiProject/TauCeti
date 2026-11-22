@@ -43,13 +43,11 @@ theorem coe_herbrand_eq (u : RamificationIndexDomain) :
     (herbrand ℚ_[2] DyadicSqrtTwo u : ℝ) =
       if (u : ℝ) ≤ 2 then (u : ℝ) else ((u : ℝ) + 2) / 2 := by
   split_ifs with h2
-  · by_cases h0 : (u : ℝ) ≤ 0
-    · rw [herbrand_of_coe_le_zero ℚ_[2] DyadicSqrtTwo h0]
-    · exact congrArg Subtype.val <|
-        herbrand_eq_self_of_forall_eq ℚ_[2] DyadicSqrtTwo (le_of_not_ge h0) <|
-          fun t _ ht ↦ by
-            rw [lowerRamificationGroupReal_eq, ite_eq_left (ht.trans h2)]
-            simp
+  · exact congrArg Subtype.val <|
+      herbrand_eq_self_of_forall_eq ℚ_[2] DyadicSqrtTwo <|
+        fun t _ ht ↦ by
+          rw [lowerRamificationGroupReal_eq, ite_eq_left (ht.trans h2)]
+          simp
   · have h := coe_herbrand_sub_coe_herbrand_of_forall_eq ℚ_[2] DyadicSqrtTwo
       (a := ⟨2, by norm_num⟩) (b := u) (by exact le_of_lt (lt_of_not_ge h2))
       (fun t ht _ ↦ by
@@ -57,7 +55,7 @@ theorem coe_herbrand_eq (u : RamificationIndexDomain) :
         simp only [ite_eq_right (by linarith : ¬t ≤ 2), ite_eq_right h2])
     have hbreak : (herbrand ℚ_[2] DyadicSqrtTwo ⟨2, by norm_num⟩ : ℝ) = 2 := by
       exact congrArg Subtype.val <|
-        herbrand_eq_self_of_forall_eq ℚ_[2] DyadicSqrtTwo (by norm_num) <|
+        herbrand_eq_self_of_forall_eq ℚ_[2] DyadicSqrtTwo <|
           fun t _ ht ↦ by
             rw [lowerRamificationGroupReal_eq, ite_eq_left ht]
             simp

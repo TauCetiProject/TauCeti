@@ -20,7 +20,7 @@ particular, the whole range is null.
 Every derivative in this dimension range is nonsurjective, so the range is exactly the set of
 critical values. The proof uses the Hausdorff-dimension route already developed in Mathlib:
 `DifferentiableOn.dimH_image_le` says that differentiable maps do not increase dimension, and
-`addHaar_eq_zero_of_dimH_lt_finrank` turns the strict dimension bound into nullity for every
+`Measure.addHaar_eq_zero_of_dimH_lt_finrank` turns the strict dimension bound into nullity for every
 normalization of additive Haar measure.
 
 Together with the equal-dimensional case, this isolates the higher-regularity Morse--Sard argument
@@ -47,40 +47,44 @@ Mathlib's `Topology.MetricSpace.HausdorffDimension`.
 
 public section
 
-open Function MeasureTheory MeasureTheory.Measure Module Set
+open Function MeasureTheory MeasureTheory.Measure Module Set TauCeti
 
-namespace TauCeti
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-variable {E F : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [MeasurableSpace F] [BorelSpace F]
-  {s : Set E} {f : E → F}
-  (ν : Measure F) [IsAddHaarMeasure ν]
+section
 
-omit [FiniteDimensional ℝ E] in
+variable [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+
 /-- A differentiable map on a set of Hausdorff dimension strictly smaller than the dimension of
 the codomain sends that set to an additive-Haar-null set.
 
-The source may be any real normed space, the codomain may carry an arbitrary finite-dimensional
-norm, and `ν` may be any normalization of additive Haar measure. -/
-theorem _root_.DifferentiableOn.addHaar_image_eq_zero_of_dimH_lt_finrank
+The source may be any real normed space, the codomain may carry an arbitrary norm, and `ν` may be
+any normalization of additive Haar measure. -/
+theorem DifferentiableOn.addHaar_image_eq_zero_of_dimH_lt_finrank {s : Set E} {f : E → F}
+    (ν : Measure F) [IsAddHaarMeasure ν]
     (hf : DifferentiableOn ℝ f s) (hsF : dimH s < finrank ℝ F) : ν (f '' s) = 0 :=
   addHaar_eq_zero_of_dimH_lt_finrank ν (hf.dimH_image_le.trans_lt hsF)
 
+end
+
+variable [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [MeasurableSpace F] [BorelSpace F] {s : Set E} {f : E → F} (ν : Measure F) [IsAddHaarMeasure ν]
+
 /-- A map differentiable on a subset of a finite-dimensional real normed space sends that set
 to an additive-Haar-null set when the codomain has strictly larger dimension. -/
-theorem _root_.DifferentiableOn.addHaar_image_eq_zero_of_finrank_lt_finrank
+theorem DifferentiableOn.addHaar_image_eq_zero_of_finrank_lt_finrank
     (hf : DifferentiableOn ℝ f s) (hEF : finrank ℝ E < finrank ℝ F) :
     ν (f '' s) = 0 := by
   apply hf.addHaar_image_eq_zero_of_dimH_lt_finrank ν
   exact (dimH_mono (subset_univ s)).trans_lt <| by
     simpa only [Real.dimH_univ_eq_finrank, Nat.cast_lt] using hEF
 
+namespace Differentiable
+
 /-- A differentiable map from a finite-dimensional real normed space to a strictly
 higher-dimensional one has additive-Haar-null range. This is the lower-dimensional-source case of
 Sard's theorem: every point of the source is critical because no derivative can be surjective. -/
-theorem _root_.Differentiable.addHaar_range_eq_zero_of_finrank_lt_finrank
+theorem addHaar_range_eq_zero_of_finrank_lt_finrank
     (hf : Differentiable ℝ f) (hEF : finrank ℝ E < finrank ℝ F) :
     ν (range f) = 0 := by
   rw [← image_univ]
@@ -90,12 +94,10 @@ theorem _root_.Differentiable.addHaar_range_eq_zero_of_finrank_lt_finrank
 strictly higher-dimensional one have additive Haar measure zero. In this dimension range every
 point is critical, but stating the result for the critical locus gives the Sard form consumed by
 later regular-value arguments. -/
-theorem _root_.Differentiable.addHaar_image_not_surjective_fderiv_eq_zero_of_finrank_lt_finrank
+theorem addHaar_image_not_surjective_fderiv_eq_zero_of_finrank_lt_finrank
     (hf : Differentiable ℝ f) (hEF : finrank ℝ E < finrank ℝ F) :
     ν (f '' {x | ¬ Surjective (fderiv ℝ f x)}) = 0 := by
   rw [setOf_not_surjective_fderiv_eq_univ_of_finrank_lt_finrank f hEF, image_univ]
   exact Differentiable.addHaar_range_eq_zero_of_finrank_lt_finrank ν hf hEF
 
-end TauCeti
-
-end
+end Differentiable

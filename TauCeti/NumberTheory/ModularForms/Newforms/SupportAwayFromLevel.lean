@@ -74,7 +74,6 @@ private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd_of_copr
   have hΓ := one_mem_strictPeriods_Gamma1_map M
   set c : ℂ := (q : ℂ) ^ (k - 1) * (χ (ZMod.unitOfCoprime q hqM) : ℂ)
   have hq0 : (q : ℂ) ^ (k - 1) ≠ 0 := zpow_ne_zero _ (Nat.cast_ne_zero.mpr hq.ne_zero)
-  have hc : c ≠ 0 := mul_ne_zero hq0 (Units.ne_zero _)
   refine ⟨c⁻¹ • (heckeTCuspNat k q A - B), Submodule.smul_mem _ _
     (Submodule.sub_mem _ (heckeTCuspNat_mem_cuspFormCharSpace k χ hq hA) hB), fun n ↦ ?_⟩
   rw [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos hΓ, PowerSeries.coeff_smul,
@@ -177,14 +176,12 @@ private theorem qExpansion_coeff_eq_zero_of_forall_coprime_prime_mul {q : ℕ} (
     (hvan : ∀ n, n.Coprime (q * M) → (qExpansion 1 h).coeff n = 0) (n : ℕ)
     (hn : n.Coprime M) : (qExpansion 1 h).coeff n = 0 := by
   have : NeZero q := ⟨hq.ne_zero⟩
-  have : NeZero (M.primeFactors.prod id * M) :=
-    ⟨mul_ne_zero (Finset.prod_ne_zero_iff.mpr fun p hp ↦ (Nat.prime_of_mem_primeFactors hp).ne_zero)
-      (NeZero.ne M)⟩
+  have hRM : ∏ p ∈ M.primeFactors, p ∣ M := Nat.prod_primeFactors_dvd M
+  have : NeZero ((∏ p ∈ M.primeFactors, p) * M) :=
+    ⟨mul_ne_zero (ne_zero_of_dvd_ne_zero (NeZero.ne M) hRM) (NeZero.ne M)⟩
   obtain ⟨g, hgχ, hgq, hg⟩ :=
     exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd χ hχ hq subset_rfl hvan
-  have hqL : q.Coprime (M.primeFactors.prod id * M) := by
-    refine Nat.Coprime.mul_right (Nat.Coprime.prod_right fun p hp ↦ ?_) hqM
-    exact hqM.coprime_dvd_right (Nat.dvd_of_mem_primeFactors hp)
+  have hqL : q.Coprime ((∏ p ∈ M.primeFactors, p) * M) := (hqM.coprime_dvd_right hRM).mul_right hqM
   have hg0 := eq_zero_of_qExpansionSupportedOnDvd_of_coprime hq.ne_one hqL hgχ hgq
   have h1 := hg n
   rw [hg0, FunLike.coe_zero, qExpansion_zero, map_zero, eq_comm, ite_eq_right_iff] at h1

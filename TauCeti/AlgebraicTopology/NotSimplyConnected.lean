@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Convex.Contractible
 
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+
 /-!
 # Consequences of a space not being simply connected
 
@@ -57,13 +59,8 @@ theorem simplyConnectedSpace_iff_forall_subsingleton_fundamentalGroup {X : Type*
     SimplyConnectedSpace X ↔
       PathConnectedSpace X ∧ ∀ x : X, Subsingleton (FundamentalGroup X x) := by
   refine ⟨fun _ => ⟨inferInstance, fun _ => inferInstance⟩, fun ⟨_, h⟩ => ?_⟩
-  refine simply_connected_iff_loops_nullhomotopic.2 ⟨inferInstance, fun x γ => ?_⟩
-  -- `FundamentalGroup.toPath` undoes `FundamentalGroup.fromPath` by definition, so the two loop
-  -- classes agree in `Path.Homotopic.Quotient x x`.
-  have hγ : Path.Homotopic.Quotient.mk γ = .mk (Path.refl x) :=
-    congrArg FundamentalGroup.toPath ((h x).elim (FundamentalGroup.fromPath (.mk γ))
-      (FundamentalGroup.fromPath (.mk (Path.refl x))))
-  exact Path.Homotopic.Quotient.exact hγ
+  exact simply_connected_iff_loops_nullhomotopic.2
+    ⟨inferInstance, fun x => subsingleton_fundamentalGroup_iff.1 (h x)⟩
 
 /-- A **not simply connected** space is **not contractible**: a contractible space is simply
 connected. -/

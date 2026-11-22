@@ -43,6 +43,8 @@ product relator determines `z` from `x` and `y` (`TauCeti.TriangleGroup.equivFre
   relations.
 * `TauCeti.TriangleGroup.rotate`: the isomorphism `Δ(a, b, c) ≃* Δ(b, c, a)` rotating the
   generators.
+* `TauCeti.TriangleGroup.mirror`: the involutive automorphism sending `x, y, z` to
+  `y * x⁻¹ * y⁻¹`, `y⁻¹`, `z⁻¹`.
 * `TauCeti.twoGeneratorTriangleRelators` and `TauCeti.TriangleGroup.equivTwoGenerator`: the
   isomorphism with the two-generator presentation `⟨x, y | x ^ a, y ^ b, (y * x) ^ c⟩`.
 * `TauCeti.TriangleGroup.equivFreeGroup`: `Δ(0, 0, 0)` is the free group on two generators.
@@ -198,7 +200,8 @@ def homEquiv :
       {g : G × G × G // g.1 ^ a = 1 ∧ g.2.1 ^ b = 1 ∧ g.2.2 ^ c = 1 ∧ g.2.2 * g.2.1 * g.1 = 1} where
   toFun f := ⟨(f (x a b c), f (y a b c), f (z a b c)), by
     simp only [← map_pow, ← map_mul, x_pow, y_pow, z_pow, z_mul_y_mul_x, map_one, and_self]⟩
-  invFun g := lift g.1.1 g.1.2.1 g.1.2.2 g.2.1 g.2.2.1 g.2.2.2.1 g.2.2.2.2
+  invFun g := lift g.val.1 g.val.2.1 g.val.2.2 g.property.1 g.property.2.1 g.property.2.2.1
+      g.property.2.2.2
   left_inv f := by ext <;> simp
   right_inv g := by ext <;> simp
 
@@ -210,7 +213,8 @@ theorem homEquiv_apply (f : TriangleGroup a b c →* G) :
 theorem homEquiv_symm_apply
     (g : {g : G × G × G // g.1 ^ a = 1 ∧ g.2.1 ^ b = 1 ∧ g.2.2 ^ c = 1 ∧
       g.2.2 * g.2.1 * g.1 = 1}) :
-    homEquiv.symm g = lift g.1.1 g.1.2.1 g.1.2.2 g.2.1 g.2.2.1 g.2.2.2.1 g.2.2.2.2 := (rfl)
+    homEquiv.symm g = lift g.val.1 g.val.2.1 g.val.2.2 g.property.1 g.property.2.1 g.property.2.2.1
+        g.property.2.2.2 := (rfl)
 
 /-- The rotation isomorphism `Δ(a, b, c) ≃* Δ(b, c, a)`, sending `x, y, z` to the generators
 `z, x, y` of `Δ(b, c, a)`. The product relator `z * y * x` of the source becomes the cyclic
@@ -247,6 +251,52 @@ theorem rotate_symm_y : rotate.symm (y b c a) = z a b c :=
 @[simp]
 theorem rotate_symm_z : rotate.symm (z b c a) = x a b c :=
   rotate.symm_apply_eq.2 (rotate_x ..).symm
+
+/-- The endomorphism of `Δ(a, b, c)` underlying `TauCeti.TriangleGroup.mirror`. -/
+private def mirrorHom : TriangleGroup a b c →* TriangleGroup a b c :=
+  lift (y a b c * (x a b c)⁻¹ * (y a b c)⁻¹) (y a b c)⁻¹ (z a b c)⁻¹
+    (by rw [conj_pow, inv_pow, x_pow, inv_one, mul_one, mul_inv_cancel])
+    (by rw [inv_pow, y_pow, inv_one]) (by rw [inv_pow, z_pow, inv_one])
+    (by simp [z_eq, mul_assoc])
+
+private theorem mirrorHom_comp_mirrorHom :
+    (mirrorHom (a := a) (b := b) (c := c)).comp mirrorHom = MonoidHom.id _ := by
+  ext <;> simp [mirrorHom, mul_assoc]
+
+/-- The mirror automorphism of `Δ(a, b, c)`, sending `x, y, z` to `y * x⁻¹ * y⁻¹`, `y⁻¹` and
+`z⁻¹`. It is an involution (`TauCeti.TriangleGroup.mirror_mirror`). On the images of the
+generators it is the mirror `(σ0, σ1, σinf) ↦ (σ1 σ0⁻¹ σ1⁻¹, σ1⁻¹, σinf⁻¹)` of permutation
+triples. -/
+def mirror : TriangleGroup a b c ≃* TriangleGroup a b c :=
+  MonoidHom.toMulEquiv mirrorHom mirrorHom mirrorHom_comp_mirrorHom mirrorHom_comp_mirrorHom
+
+/-- The mirror automorphism sends `x` to `y * x⁻¹ * y⁻¹`. -/
+@[simp]
+theorem mirror_x : mirror (x a b c) = y a b c * (x a b c)⁻¹ * (y a b c)⁻¹ := by
+  simp [mirror, mirrorHom]
+
+/-- The mirror automorphism sends `y` to `y⁻¹`. -/
+@[simp]
+theorem mirror_y : mirror (y a b c) = (y a b c)⁻¹ := by
+  simp [mirror, mirrorHom]
+
+/-- The mirror automorphism sends `z` to `z⁻¹`. -/
+@[simp]
+theorem mirror_z : mirror (z a b c) = (z a b c)⁻¹ := by
+  simp [mirror, mirrorHom]
+
+/-- The mirror automorphism is an involution. -/
+@[simp]
+theorem mirror_mirror (g : TriangleGroup a b c) : mirror (mirror g) = g := by
+  have h : (mirror.toMonoidHom.comp mirror.toMonoidHom : TriangleGroup a b c →* _) =
+      MonoidHom.id _ := by
+    ext <;> simp [mul_assoc]
+  exact DFunLike.congr_fun h g
+
+/-- The mirror automorphism is its own inverse. -/
+@[simp]
+theorem mirror_symm : (mirror : TriangleGroup a b c ≃* TriangleGroup a b c).symm = mirror :=
+  MulEquiv.ext fun g ↦ mirror.symm_apply_eq.2 (mirror_mirror g).symm
 
 /-- The first generator in the two-generator presentation satisfies its power relation. -/
 @[simp]

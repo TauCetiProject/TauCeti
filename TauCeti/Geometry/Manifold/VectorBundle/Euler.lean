@@ -82,12 +82,12 @@ variable (I) in
 at `t = 1` of the line `t ↦ t • z` in the fibre of `z`. In a bundle chart with coordinates `(x, ξ)`
 it is `ξ ∂_ξ` (`TauCeti.vectorBundleEulerField_eq_trivializationAt`). -/
 def vectorBundleEulerField (z : TotalSpace F V) : TangentSpace (I.prod 𝓘(𝕜, F)) z :=
-  mfderiv 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) 1 (1 : 𝕜)
+  mfderiv 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.snd⟩ : TotalSpace F V)) 1 (1 : 𝕜)
 
 /-- The line `t ↦ t • z` has velocity `(0, ξ)` at `t = 1`, read in the chart at `z`, where `ξ` is
 the fibre coordinate of `z`. -/
 private theorem hasMFDerivAt_smul_aux (z : TotalSpace F V) :
-    HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) 1
+    HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.snd⟩ : TotalSpace F V)) 1
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), (trivializationAt F V z.proj z).2)) := by
   simpa only [one_smul] using
     z.hasMFDerivAt_smul_curve (IB := I) (hasDerivAt_id' (1 : 𝕜))
@@ -103,7 +103,7 @@ theorem vectorBundleEulerField_eq_trivializationAt (z : TotalSpace F V) :
 
 /-- The Euler vector field at `z` is the velocity at `t = 1` of the line `t ↦ t • z`. -/
 theorem hasMFDerivAt_vectorBundleEulerField (z : TotalSpace F V) :
-    HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) 1
+    HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.snd⟩ : TotalSpace F V)) 1
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (vectorBundleEulerField I z)) := by
   rw [vectorBundleEulerField_eq_trivializationAt]
   exact hasMFDerivAt_smul_aux z
@@ -115,7 +115,7 @@ theorem mfderiv_vectorBundleEulerField {E' H' M' : Type*} [NormedAddCommGroup E'
     [ChartedSpace H' M'] {f : TotalSpace F V → M'} {z : TotalSpace F V}
     (hf : MDifferentiableAt (I.prod 𝓘(𝕜, F)) I' f z) :
     mfderiv (I.prod 𝓘(𝕜, F)) I' f z (vectorBundleEulerField I z) =
-      mfderiv 𝓘(𝕜) I' (f ∘ fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) 1 (1 : 𝕜) :=
+      mfderiv 𝓘(𝕜) I' (f ∘ fun t : 𝕜 ↦ (⟨z.proj, t • z.snd⟩ : TotalSpace F V)) 1 (1 : 𝕜) :=
   (mfderiv_comp_apply_of_eq (1 : 𝕜) hf (hasMFDerivAt_vectorBundleEulerField z).mdifferentiableAt
     (by simp) (1 : 𝕜)).symm
 
@@ -128,24 +128,30 @@ theorem mfderiv_vectorBundleEulerField_of_linear {E' H' B' F' : Type*} [NormedAd
     [∀ b, AddCommMonoid (V' b)] [∀ b, Module 𝕜 (V' b)] [∀ b, TopologicalSpace (V' b)]
     [TopologicalSpace (TotalSpace F' V')] [FiberBundle F' V']
     {f : TotalSpace F V → TotalSpace F' V'} {g : B → B'} (φ : ∀ b, V b →ₗ[𝕜] V' (g b))
-    (hfφ : ∀ w, f w = ⟨g w.proj, φ w.proj w.2⟩) {z : TotalSpace F V}
+    (hfφ : ∀ w, f w = ⟨g w.proj, φ w.proj w.snd⟩) {z : TotalSpace F V}
     (hf : MDifferentiableAt (I.prod 𝓘(𝕜, F)) (I'.prod 𝓘(𝕜, F')) f z) :
     mfderiv (I.prod 𝓘(𝕜, F)) (I'.prod 𝓘(𝕜, F')) f z (vectorBundleEulerField I z) =
       vectorBundleEulerField I' (f z) := by
   -- The image of the line `t ↦ t • z` is the line `t ↦ t • f z`.
-  have hline : (f ∘ fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) =
-      fun t ↦ (⟨(f z).proj, t • (f z).2⟩ : TotalSpace F' V') := by
+  have hline : (f ∘ fun t : 𝕜 ↦ (⟨z.proj, t • z.snd⟩ : TotalSpace F V)) =
+      fun t ↦ (⟨(f z).proj, t • (f z).snd⟩ : TotalSpace F' V') := by
     funext t
     rw [Function.comp_apply, hfφ, hfφ z, map_smul]
   rw [mfderiv_vectorBundleEulerField hf, hline, vectorBundleEulerField]
 
+omit [VectorBundle 𝕜 F V] in
 /-- The Euler vector field vanishes along the zero section. -/
 @[simp]
 theorem vectorBundleEulerField_zero (b : B) :
     vectorBundleEulerField I (⟨b, 0⟩ : TotalSpace F V) = 0 := by
-  rw [vectorBundleEulerField_eq_trivializationAt]
-  exact Prod.ext rfl (((trivializationAt F V b).linear 𝕜
-    (FiberBundle.mem_baseSet_trivializationAt F V b)).map_zero)
+  -- The line `t ↦ t • 0` is the constant curve at the zero of the fibre.
+  have hline : (fun t : 𝕜 ↦ (⟨(⟨b, 0⟩ : TotalSpace F V).proj, t • (⟨b, 0⟩ : TotalSpace F V).snd⟩ :
+      TotalSpace F V)) = fun _ ↦ ⟨b, 0⟩ :=
+    funext fun t ↦ by simp
+  rw [vectorBundleEulerField, hline, mfderiv_const]
+  -- The goal `(0 : TangentSpace _ 1 →L[𝕜] TangentSpace _ _) 1 = 0` holds by definition:
+  -- `TangentSpace` is a type synonym, so the generic `zero_apply` instance does not fire.
+  rfl
 
 /-- The Euler vector field is **vertical**: the derivative of the bundle projection kills it. -/
 @[simp]
@@ -155,7 +161,7 @@ theorem mfderiv_proj_vectorBundleEulerField (z : TotalSpace F V) :
   have h := mfderiv_comp_apply_of_eq (1 : 𝕜) (y := z)
     ((contMDiff_proj V).mdifferentiableAt (n := 1) one_ne_zero)
     (hasMFDerivAt_vectorBundleEulerField (I := I) z).mdifferentiableAt (by simp) (1 : 𝕜)
-  rw [show (π F V ∘ fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) = fun _ ↦ z.proj from rfl,
+  rw [show (π F V ∘ fun t : 𝕜 ↦ (⟨z.proj, t • z.snd⟩ : TotalSpace F V)) = fun _ ↦ z.proj from rfl,
     mfderiv_const] at h
   exact h.symm
 
@@ -167,7 +173,7 @@ theorem contMDiff_vectorBundleEulerField {m : ℕ∞ω}
       (fun z ↦ (⟨z, vectorBundleEulerField I z⟩ :
         TangentBundle (I.prod 𝓘(𝕜, F)) (TotalSpace F V))) := by
   -- The fibre dilation `(t, z) ↦ t • z` as a single map on `𝕜 × V`.
-  let Φ : 𝕜 × TotalSpace F V → TotalSpace F V := fun p ↦ ⟨p.2.proj, p.1 • p.2.2⟩
+  let Φ : 𝕜 × TotalSpace F V → TotalSpace F V := fun p ↦ ⟨p.2.proj, p.1 • p.2.snd⟩
   have hΦ : ContMDiff (𝓘(𝕜).prod (I.prod 𝓘(𝕜, F))) (I.prod 𝓘(𝕜, F)) ω Φ :=
     contMDiff_fst.smul_totalSpace contMDiff_snd
   -- The unit vector along the scalar factor, at the point `(1, z)`.
@@ -215,7 +221,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **The flow of the Euler vector field is fibre dilation.** For every vector `z` of a real vector
 bundle, the curve `t ↦ e^t • z` is an integral curve of the Euler vector field. -/
 theorem isMIntegralCurve_vectorBundleEulerField (z : TotalSpace F V) :
-    IsMIntegralCurve (fun t : ℝ ↦ (⟨z.proj, Real.exp t • z.2⟩ : TotalSpace F V))
+    IsMIntegralCurve (fun t : ℝ ↦ (⟨z.proj, Real.exp t • z.snd⟩ : TotalSpace F V))
       (vectorBundleEulerField I) := by
   intro t
   rw [vectorBundleEulerField_eq_trivializationAt]
@@ -224,11 +230,9 @@ theorem isMIntegralCurve_vectorBundleEulerField (z : TotalSpace F V) :
 
 /-- **The Euler vector field is complete**: through every vector `z` of a real vector bundle, the
 fibre dilation `t ↦ e^t • z` is an integral curve defined for all time. -/
-theorem isCompleteVectorField_vectorBundleEulerField [T2Space (TotalSpace F V)]
-    [IsManifold (I.prod 𝓘(ℝ, F)) 1 (TotalSpace F V)]
-    [BoundarylessManifold (I.prod 𝓘(ℝ, F)) (TotalSpace F V)] :
+theorem isCompleteVectorField_vectorBundleEulerField :
     IsCompleteVectorField (vectorBundleEulerField (F := F) (V := V) I) :=
-  (isCompleteVectorField_iff_exists_isMIntegralCurve contMDiff_vectorBundleEulerField).2 fun z ↦
+  isCompleteVectorField_of_forall_exists_isMIntegralCurve fun z ↦
     ⟨_, by simp, isMIntegralCurve_vectorBundleEulerField z⟩
 
 end Real

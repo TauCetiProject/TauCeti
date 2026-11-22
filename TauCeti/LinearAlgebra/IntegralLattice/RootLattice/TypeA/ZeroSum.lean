@@ -144,7 +144,7 @@ theorem sum_smul_zeroSumSimpleRoot {x : Fin (n + 1) → ℚ}
     (hx : x ∈ singleParityCheckCode ℚ (Fin (n + 1))) :
     ∑ k : Fin n, (∑ j ∈ Iic k.castSucc, x j) • zeroSumSimpleRoot n k = x := by
   rw [mem_singleParityCheckCode] at hx
-  refine (sub_eq_zero.mp (eq_zero_of_forall_sum_Iic_eq_zero n fun k ↦ ?_)).symm
+  refine (sub_eq_zero.mp (eq_zero_of_forall_sum_Iic_eq_zero fun k ↦ ?_)).symm
   simp only [Pi.sub_apply, sum_sub_distrib]
   induction k using Fin.lastCases with
   | last =>
@@ -169,7 +169,7 @@ noncomputable def zeroSumBasis : Basis (Fin n) ℚ (singleParityCheckCode ℚ (F
     fun x _ ↦ by
       rw [Submodule.mem_span_range_iff_exists_fun]
       exact ⟨fun k ↦ ∑ j ∈ Iic k.castSucc, (x : Fin (n + 1) → ℚ) j, Subtype.ext <| by
-        simpa using sum_smul_zeroSumSimpleRoot n x.2⟩
+        simpa using sum_smul_zeroSumSimpleRoot n x.property⟩
 
 @[simp]
 theorem coe_zeroSumBasis_apply (i : Fin n) :
@@ -237,7 +237,7 @@ theorem mem_zeroSumLattice_carrier_iff (x : singleParityCheckCode ℚ (Fin (n + 
     choose m hm using hx
     rw [Submodule.mem_span_range_iff_exists_fun]
     refine ⟨fun k ↦ ∑ j ∈ Iic k.castSucc, m j, Subtype.ext ?_⟩
-    conv_rhs => rw [← sum_smul_zeroSumSimpleRoot n x.2]
+    conv_rhs => rw [← sum_smul_zeroSumSimpleRoot n x.property]
     rw [Submodule.coe_sum]
     refine sum_congr rfl fun k _ ↦ ?_
     rw [Submodule.coe_smul_of_tower, coe_zeroSumBasis_apply, ← Int.cast_smul_eq_zsmul ℚ,

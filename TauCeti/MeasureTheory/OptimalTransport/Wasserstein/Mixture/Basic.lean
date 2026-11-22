@@ -117,13 +117,18 @@ theorem wassersteinEDist_add_rpow_le (μ μ' ν ν' : Measure X) :
     _ ≤ _ := add_le_add h₁.le h₂.le
     _ = _ := by rw [add_add_add_comm, ENNReal.add_halves]
 
-/-- **Convexity of `W_p ^ p` in one argument.** For a finite nonzero exponent and weights with
-`a + b = 1`, the `p`-th power of the Wasserstein distance from `μ` to the mixture `a • ν₀ + b • ν₁`
-is at most the mixture of the `p`-th powers of the distances from `μ` to `ν₀` and to `ν₁`. -/
+/-- **Convexity of `W_p ^ p` in one argument.** For weights with `a + b = 1`, the `p`-th power of
+the Wasserstein distance from `μ` to the mixture `a • ν₀ + b • ν₁` is at most the mixture of the
+`p`-th powers of the distances from `μ` to `ν₀` and to `ν₁`. At the endpoints `p = 0` and
+`p = ∞` the exponent `p.toReal` is `0` and the bound reads `1 ≤ a + b`. -/
 theorem wassersteinEDist_smul_add_smul_rpow_le (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) {a b : ℝ≥0∞} (hab : a + b = 1) (μ ν₀ ν₁ : Measure X) :
+    {a b : ℝ≥0∞} (hab : a + b = 1) (μ ν₀ ν₁ : Measure X) :
     wassersteinEDist p μ (a • ν₀ + b • ν₁) ^ p.toReal
       ≤ a * wassersteinEDist p μ ν₀ ^ p.toReal + b * wassersteinEDist p μ ν₁ ^ p.toReal := by
+  by_cases hp0 : p = 0
+  · simp [hp0, hab]
+  by_cases hp : p = ∞
+  · simp [hp, hab]
   obtain ⟨ha, hb⟩ := ENNReal.add_ne_top.1 (hab ▸ ENNReal.one_ne_top)
   simp only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
   calc transportCost _ μ (a • ν₀ + b • ν₁) = transportCost _ (a • μ + b • μ) (a • ν₀ + b • ν₁) := by

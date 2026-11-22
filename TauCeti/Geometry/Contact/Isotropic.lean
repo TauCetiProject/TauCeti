@@ -94,9 +94,8 @@ theorem IsHorizontalMap.le_orthogonalBilin [IsManifold I (n + 1) M]
     (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype ≤
       ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
         (distributionLeviForm D (f y)) := by
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
+  have : Nonempty M := ⟨f y⟩
+  have hk := hD.finrank_sub_one_add_one
   rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
   exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy w v
 
@@ -153,6 +152,13 @@ structure IsLegendrianEmbedding (D : Π x : M, Submodule ℝ (TangentSpace I x))
   /-- A Legendrian embedding is a homeomorphism onto its image. -/
   isEmbedding : Topology.IsEmbedding f
 
+/-- A one-form whose kernel admits a Legendrian immersion is a contact form: the kernel is a
+contact structure. -/
+theorem IsLegendrianImmersion.isContactForm {α : SmoothForm I M ℝ 1}
+    (h : IsLegendrianImmersion J α.kerDistribution f) : α.IsContactForm :=
+  have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
+  SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 h.isContactDistribution
+
 /-- A Legendrian embedding is a smooth embedding. -/
 theorem IsLegendrianEmbedding.isSmoothEmbedding (h : IsLegendrianEmbedding J D f) :
     Manifold.IsSmoothEmbedding J I ∞ f :=
@@ -168,15 +174,17 @@ theorem isLegendrianEmbedding_iff_of_isSmoothEmbedding (hf : Manifold.IsSmoothEm
 manifold is a Legendrian immersion exactly when its source has the largest possible dimension
 `n`, equivalently when `2 dim N + 1 ≥ dim M`. -/
 theorem isLegendrianImmersion_iff_finrank_le [IsManifold J 2 N] [Nonempty N] {n : ℕ∞ω}
-    [IsManifold I (n + 1) M] (hD : IsContactDistribution I n D) (hn : 1 ≤ n)
+    (hD : IsContactDistribution I n D) (hn : 1 ≤ n)
     (hf : Manifold.IsImmersion J I ∞ f) (hfD : IsHorizontalMap J D f) :
     IsLegendrianImmersion J D f ↔ finrank ℝ E ≤ 2 * finrank ℝ E' + 1 := by
   refine ⟨fun h ↦ h.two_mul_finrank_add_one.ge, fun h ↦
     ⟨⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩, hf, hfD,
       le_antisymm ?_ h⟩⟩
   obtain ⟨y⟩ := ‹Nonempty N›
-  exact hfD.two_mul_finrank_add_one_le hD hn ((hf.contMDiff y).of_le (by simp))
-    (hf.mfderiv_injective (by simp) y)
+  have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
+  exact hfD.two_mul_finrank_add_one_le
+    ⟨hD.isContMDiffDistribution.of_le hn, hD.ne_top, hD.bijective_distributionLeviForm⟩ le_rfl
+    ((hf.contMDiff y).of_le (by simp)) (hf.mfderiv_injective (by simp) y)
 
 
 /-- **The tangent images of a Legendrian immersion are maximal isotropic.** A vector of the contact
@@ -185,13 +193,12 @@ the contact counterpart of the fact that Lagrangian subspaces are maximal isotro
 theorem IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero
     [IsManifold J 2 N] (h : IsLegendrianImmersion J D f) {y : N} {a : D (f y)}
     (ha : ∀ u, distributionLeviForm D (f y) a ⟨_, h.isHorizontalMap.mfderiv_mem y u⟩ = 0) :
-    a.1 ∈ LinearMap.range (mfderiv J I f y).toLinearMap := by
+    a.val ∈ LinearMap.range (mfderiv J I f y).toLinearMap := by
   have : FiniteDimensional ℝ (TangentSpace I (f y)) := inferInstanceAs (FiniteDimensional ℝ E)
   have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
   have hD := h.isContactDistribution
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
+  have : Nonempty M := ⟨f y⟩
+  have hk := hD.finrank_sub_one_add_one
   -- The tangent image, as a subspace of the contact hyperplane.
   set W := (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype
   have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 := by
@@ -248,7 +255,7 @@ end Reparametrization
 section Transport
 
 variable {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂] [IsManifold I ∞ M]
-  [IsManifold I ∞ M₂] [IsManifold I 2 M₂] {D₂ : Π x : M₂, Submodule ℝ (TangentSpace I x)}
+  [IsManifold I ∞ M₂] {D₂ : Π x : M₂, Submodule ℝ (TangentSpace I x)}
 
 /-- **Transport by contactomorphisms.** If the differential of a diffeomorphism `ψ : M → M₂`
 carries the contact structure `D` onto the contact structure `D₂`, then `ψ ∘ f` is a Legendrian

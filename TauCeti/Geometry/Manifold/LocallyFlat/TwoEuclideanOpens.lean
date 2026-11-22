@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 public import TauCeti.Geometry.Manifold.Boundary.BallExterior
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
+import TauCeti.Geometry.Manifold.LocallyFlat.Separation
+import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -46,8 +48,6 @@ along their common boundary, which is a sphere by
 
 ## Main declarations
 
-* `TauCeti.exists_nonneg_forall_notMem_norm_lt`: the coordinates of the points of `U` outside `V`
-  are bounded.
 * `TauCeti.ballExterior_subset_of_forall_notMem_norm_lt`: the exterior of a coordinate ball
   containing those coordinates lies in `V`.
 * `Homeomorph.coordinateSphereBicollar`: the radial bicollar `(x, t) ↦ eU⁻¹ ((R + exp t) • x)`
@@ -76,22 +76,8 @@ open Function Metric Module Set Topology
 
 namespace TauCeti
 
-variable {X E F : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {U V : Set X} {R : ℝ}
+variable {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] {U V : Set X}
 
-omit [NormedSpace ℝ E] in
-/-- In a compact space covered by open sets `U` and `V`, the points of `U` outside `V` have
-bounded coordinates in any homeomorphism `eU : U ≃ₜ E` with a normed space. -/
-theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] (hV : IsOpen V)
-    (hUV : U ∪ V = univ) (eU : U ≃ₜ E) : ∃ R, 0 ≤ R ∧ ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R := by
-  have hK : IsCompact ((↑) ⁻¹' Vᶜ : Set U) := by
-    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe,
-      inter_eq_right.2 fun x hx ↦ (eq_univ_iff_forall.1 hUV x).resolve_right hx]
-    exact hV.isClosed_compl.isCompact
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
-  exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
-
-omit [NormedSpace ℝ E] in
 /-- In a space covered by `U` and `V`, if `r` bounds the coordinates of the points of `U` outside
 `V` in `eU : U ≃ₜ E`, then the exterior of the open coordinate ball of radius `r` lies in `V`. -/
 theorem ballExterior_subset_of_forall_notMem_norm_lt (hUV : U ∪ V = univ) {eU : U ≃ₜ E} {r : ℝ}
@@ -100,6 +86,17 @@ theorem ballExterior_subset_of_forall_notMem_norm_lt (hUV : U ∪ V = univ) {eU 
     by_contra hxV
     have hxU : x ∈ U := (eq_univ_iff_forall.1 hUV x).resolve_right hxV
     exact mem_ballExterior.1 hx ⟨eU ⟨x, hxU⟩, mem_ball_zero_iff.2 (hr ⟨x, hxU⟩ hxV), by simp⟩
+
+/-- The image under `j` of the points of `V` in the exterior of the coordinate ball of radius
+`R + 1` is compact: the exterior of the coordinate ball is compact in `X`, and it lies in `V`. -/
+private theorem isCompact_image_preimage_ballExterior [CompactSpace X] {Y : Type*}
+    [TopologicalSpace Y] {R : ℝ} (eU : U ≃ₜ E) (hR : ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R)
+    {j : V → Y} (hU : IsOpen U) (hUV : U ∪ V = univ) (hj : Continuous j) :
+    IsCompact (j '' (Subtype.val ⁻¹' ballExterior (Subtype.val ∘ eU.symm) (R + 1))) := by
+  refine IsCompact.image ?_ hj
+  rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.2
+    (ballExterior_subset_of_forall_notMem_norm_lt hUV fun x hx ↦ (hR x hx).trans (by linarith))]
+  exact (hU.isOpenEmbedding_subtypeVal.comp eU.symm.isOpenEmbedding).isCompact_ballExterior
 
 end TauCeti
 
@@ -169,14 +166,6 @@ theorem range_coordinateSphereBicollar_mk_zero (hR0 : 0 ≤ R) :
     ← Subtype.val_injective.preimage_image (range _), ← range_comp]
   simp only [comp_def, coe_coordinateSphereBicollar, Real.exp_zero]
 
-section Separation
-
-/-! In this section `C` is the image under `j` of the points of `V` in the exterior of the open
-coordinate ball of radius `R + 1`, and `P` is the image of the points of `V` outside the closed
-coordinate ball. They describe the two sides of the image `Σ` of the coordinate sphere. -/
-
-variable {Y : Type*} [TopologicalSpace Y] {j : V → Y}
-
 /-- The radial bicollar runs, at positive times, through the points of `V` outside the closed
 coordinate ball of radius `R + 1`. -/
 private theorem coordinateSphereBicollar_notMem_closedBall (hR0 : 0 ≤ R)
@@ -195,7 +184,14 @@ private theorem coordinateSphereBicollar_mem_ball (hR0 : 0 ≤ R) (p : sphere (0
     add_lt_add_iff_left]
   exact Real.exp_lt_one_iff.2 hp
 
-omit [TopologicalSpace Y] in
+section Separation
+
+/-! In this section `C` is the image under `j` of the points of `V` in the exterior of the open
+coordinate ball of radius `R + 1`, and `P` is the image of the points of `V` outside the closed
+coordinate ball. They describe the two sides of the image `Σ` of the coordinate sphere. -/
+
+variable {Y : Type*} {j : V → Y}
+
 /-- The side `C` of `Σ` is the union of the other side `P` with `Σ`. -/
 private theorem image_preimage_ballExterior_eq_union (hR0 : 0 ≤ R) :
     j '' (Subtype.val ⁻¹' ballExterior (Subtype.val ∘ eU.symm) (R + 1)) =
@@ -206,7 +202,6 @@ private theorem image_preimage_ballExterior_eq_union (hR0 : 0 ≤ R) :
   exact fun x hx ↦ mem_ballExterior.2 (disjoint_left.1 (disjoint_image_of_injective
     (Subtype.val_injective.comp eU.symm.injective) sphere_disjoint_ball) hx)
 
-omit [TopologicalSpace Y] in
 /-- The complement of `Σ` is the union of the side `P` and the complement of the side `C`. -/
 private theorem compl_range_coordinateSphereBicollar_eq_union (hR0 : 0 ≤ R)
     (hj : Injective j) : (range (j ∘ fun x ↦ coordinateSphereBicollar eU hR (x, 0)))ᶜ =
@@ -224,27 +219,20 @@ private theorem compl_range_coordinateSphereBicollar_eq_union (hR0 : 0 ≤ R)
     mem_union]
   tauto
 
+section
+variable [TopologicalSpace Y]
+
 /-- The side `P` of `Σ` is open. -/
 private theorem isOpen_image_preimage_compl_closedBall [T2Space X] [FiniteDimensional ℝ E]
     (hj : IsOpenEmbedding j) :
     IsOpen (j '' (Subtype.val ⁻¹' ((Subtype.val ∘ eU.symm) '' closedBall (0 : E) (R + 1))ᶜ)) :=
-  hj.isOpenMap _ (((isCompact_closedBall _ _).image (continuous_subtype_val.comp
-    eU.symm.continuous)).isClosed.isOpen_compl.preimage continuous_subtype_val)
+  hj.isOpenMap _ (((isCompact_closedBall _ _).image (continuous_subtypeVal.comp
+    eU.symm.continuous)).isClosed.isOpen_compl.preimage continuous_subtypeVal)
 
-omit [NormedSpace ℝ E] in
-include hR in
-/-- The side `C` of `Σ` is compact: the exterior of the coordinate ball is compact in `X`, and it
-lies in `V`. -/
-private theorem isCompact_image_preimage_ballExterior [CompactSpace X] (hU : IsOpen U)
-    (hUV : U ∪ V = univ) (hj : Continuous j) :
-    IsCompact (j '' (Subtype.val ⁻¹' ballExterior (Subtype.val ∘ eU.symm) (R + 1))) := by
-  refine IsCompact.image ?_ hj
-  rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.2
-    (ballExterior_subset_of_forall_notMem_norm_lt hUV fun x hx ↦ (hR x hx).trans (by linarith))]
-  exact (hU.isOpenEmbedding_subtypeVal.comp eU.symm.isOpenEmbedding).isCompact_ballExterior
+end
 
-omit [TopologicalSpace Y] in
-include hR in
+include hR
+
 /-- The side `P` of `Σ` is nonempty. -/
 private theorem nonempty_image_preimage_compl_closedBall [Nontrivial E] (hR0 : 0 ≤ R) :
     (j '' (Subtype.val ⁻¹' ((Subtype.val ∘ eU.symm) '' closedBall (0 : E) (R + 1))ᶜ)).Nonempty :=
@@ -252,8 +240,6 @@ private theorem nonempty_image_preimage_compl_closedBall [Nontrivial E] (hR0 : 0
   ⟨_, mem_image_of_mem j (coordinateSphereBicollar_notMem_closedBall eU hR hR0 (⟨x, hx⟩, 1)
     one_pos)⟩
 
-omit [TopologicalSpace Y] in
-include hR in
 /-- The complement of the side `C` of `Σ` is nonempty. -/
 private theorem nonempty_compl_image_preimage_ballExterior [Nontrivial E] (hR0 : 0 ≤ R)
     (hj : Injective j) :
@@ -263,7 +249,8 @@ private theorem nonempty_compl_image_preimage_ballExterior [Nontrivial E] (hR0 :
     mem_ballExterior.1 (mem_preimage.1 (hj.mem_set_image.1 h))
       (coordinateSphereBicollar_mem_ball eU hR hR0 (⟨x, hx⟩, -1) (by norm_num))⟩
 
-include hR in
+variable [TopologicalSpace Y]
+
 /-- The side `C` of `Σ` is the closure of the side `P`: `Σ` lies in the closure of the outer side
 of its bicollar. -/
 private theorem closure_image_preimage_compl_closedBall [CompactSpace X] [T2Space Y]
@@ -271,15 +258,13 @@ private theorem closure_image_preimage_compl_closedBall [CompactSpace X] [T2Spac
     (hj : IsOpenEmbedding j) :
     closure (j '' (Subtype.val ⁻¹' ((Subtype.val ∘ eU.symm) '' closedBall (0 : E) (R + 1))ᶜ)) =
       j '' (Subtype.val ⁻¹' ballExterior (Subtype.val ∘ eU.symm) (R + 1)) := by
-  have hb := (isBicollar_coordinateSphereBicollar eU hR hU hV hR0).isOpenEmbedding_comp hj
-  rw [image_preimage_ballExterior_eq_union eU hR hR0]
-  refine (closure_minimal subset_union_left ?_).antisymm (union_subset subset_closure ?_)
-  · rw [← image_preimage_ballExterior_eq_union eU hR hR0]
-    exact (isCompact_image_preimage_ballExterior eU hR hU hUV hj.continuous).isClosed
-  rintro _ ⟨x, rfl⟩
-  refine closure_mono ?_ (hb.apply_mem_closure_image (s := Ioi 0) (by simp) x)
-  rintro _ ⟨p, hp, rfl⟩
-  exact mem_image_of_mem j (coordinateSphereBicollar_notMem_closedBall eU hR hR0 p hp.2)
+  have hC := isCompact_image_preimage_ballExterior eU hR hU hUV hj.continuous
+  have hcompl := compl_range_coordinateSphereBicollar_eq_union eU hR hR0 hj.injective
+  rw [image_preimage_ballExterior_eq_union eU hR hR0] at hC hcompl ⊢
+  exact ((isBicollar_coordinateSphereBicollar eU hR hU hV hR0).isOpenEmbedding_comp
+    hj).closure_eq_union_range hC.isClosed.isOpen_compl
+    (disjoint_compl_right_iff_subset.2 subset_union_left) hcompl (s := Ioi 0) (by simp)
+    fun p hp ↦ mem_image_of_mem j (coordinateSphereBicollar_notMem_closedBall eU hR hR0 p hp.2)
 
 end Separation
 

@@ -74,7 +74,7 @@ private theorem evenCliffordEquivProdEnd_reverse_one_zero_of_finrank_eq_six
     P.finrank_W_eq_of_finrank_eq_two_mul (l := 3) (by omega)
   have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
   have hplus : finrank K (spinPlus Q P) = 4 := by
-    rw [finrank_spinPlus P hW, hWfin]
+    rw [finrank_spinPlus P, hWfin]
     norm_num
   have hminus : finrank K (spinMinus Q P) = 4 := by
     rw [finrank_spinMinus P hW, hWfin]
@@ -222,7 +222,7 @@ private theorem exists_algEquiv_op_spinPlusAction_reverseEven [NeZero (2 : K)]
     P.finrank_W_eq_of_finrank_eq_two_mul (l := 3) (by omega)
   have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
   have hplus : finrank K (spinPlus Q P) = 4 := by
-    rw [finrank_spinPlus P hW, hWfin]
+    rw [finrank_spinPlus P, hWfin]
     norm_num
   have hminus : finrank K (spinMinus Q P) = 4 := by
     rw [finrank_spinMinus P hW, hWfin]
@@ -293,7 +293,7 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
         (spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap
           (T.symm (eminus.symm s)) := by
     have h := hT (spinGroupToEven Q g⁻¹) (T.symm (eminus.symm s))
-    rw [reverseEven_spinGroupToEven_inv, LinearEquiv.apply_symm_apply] at h
+    rw [reverseEven_spinGroupToEven, inv_inv, LinearEquiv.apply_symm_apply] at h
     exact T.symm_apply_eq.2 h.symm
   have hplusAction := spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction P hline g⁻¹ p
   have hminusAction := spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction P hline g s

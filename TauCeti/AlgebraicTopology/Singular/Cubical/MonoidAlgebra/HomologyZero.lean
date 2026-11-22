@@ -145,7 +145,7 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
       (Sigma.ι (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) (.mk γ)) 1 := by
     have vertex := singularHomology₀Section_singularHomology₀Iso_hom
       (X := T) (ModuleCat.of R R) γ
-    rw [singularHomology₀Section_def, SSet.ιHomology₀_eq, ← hv] at vertex
+    rw [singularHomology₀Section_def, SSet.ιHomology₀_def, ← hv] at vertex
     exact congrArg (fun f : ModuleCat.of R R ⟶
       ∐ (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) ↦ f.hom 1) vertex
   -- Next reindex the component coproduct by fundamental-group classes and realize it

@@ -238,7 +238,7 @@ variable {δ η h : ℝ} {K : NNReal}
 private theorem FineMesh.dist_le (hF : FineMesh γ T δ η h K) {u v : ℝ} (hu : u ∈ Icc 0 T)
     (hv : v ∈ Icc 0 T) (huv : |u - v| ≤ h) : dist (γ u) (γ v) ≤ K * h :=
   (hF.lipschitz.dist_le_mul u hu v hv).trans
-    (mul_le_mul_of_nonneg_left (by rwa [Real.dist_eq]) K.2)
+    (mul_le_mul_of_nonneg_left (by rwa [Real.dist_eq]) K.property)
 
 /-- Two edges `i < j` of an inscribed polygon which are consecutive across the end of the period
 meet only at their common vertex: `i` is the successor of `j`, and `x` is the vertex `i`. -/
@@ -284,7 +284,6 @@ private theorem FineMesh.isSimple_inscribed {h₀ : ℝ} (hF : FineMesh γ T δ 
   have hh : 0 < h := div_pos hT (by exact_mod_cast hn1)
   have hnh : (n : ℝ) * h = T := by rw [hh_def]; field_simp
   have hhδ : h ≤ δ := hn.trans hF.le_delta
-  have hδ : 0 ≤ δ := hh.le.trans hhδ
   have hhη : 2 * K * h < η := lt_of_le_of_lt (by gcongr) hF.lt_sep
   have hval (k : Fin n) : (k : ℝ) * h ∈ Icc 0 T :=
     ⟨by positivity, by rw [← hnh]; gcongr; exact_mod_cast k.is_lt.le⟩
@@ -361,7 +360,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1
   have hδ : 0 < δ := by positivity
   obtain ⟨η₀, hη₀, hsep⟩ := TauCeti.exists_pos_le_dist_apply_add_uncurry hΓ.continuous
     isCompact_Icc hinj (isCompact_Icc (a := 0) (b := 2 * T)) hδ
-  set lam := min 1 lam₀ with hlam_def
+  set lam := min 1 lam₀
   have hlam : 0 < lam := lt_min one_pos hlam₀
   have hlam1 : lam ≤ 1 := min_le_left _ _
   have hlam₀' : lam ≤ lam₀ := min_le_right _ _
@@ -392,7 +391,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1
     refine (hlipΓ (hτI x) ⟨by linarith [hx.1, hc.1], by linarith [hx.2, hc.2]⟩ (hτI y)
       ⟨by linarith [hy.1, hc.1], by linarith [hy.2, hc.2]⟩).trans ?_
     rw [add_sub_add_right_eq_sub]
-    exact mul_le_mul_of_nonneg_left (max_le (hτ1 x y) le_rfl) B.2
+    exact mul_le_mul_of_nonneg_left (max_le (hτ1 x y) le_rfl) B.property
   · -- The time changes by at most `ρ`, which costs at most `B ρ ≤ η₀ / 2`.
     rw [dist_eq_norm, hα, hα]
     have h₁ := hsep (τ (a + d)) (hτI _) (a + c) ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
@@ -401,7 +400,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1
     have hac : a + c ∈ Icc 0 (2 * T) := ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
     have h₂ := hlipΓ (hτI (a + d)) hac (hτI a) hac
     rw [sub_self, abs_zero, max_eq_left (abs_nonneg _)] at h₂
-    have h₃ : B * |τ (a + d) - τ a| ≤ B * ρ := mul_le_mul_of_nonneg_left (hvar _ _) B.2
+    have h₃ : B * |τ (a + d) - τ a| ≤ B * ρ := mul_le_mul_of_nonneg_left (hvar _ _) B.property
     rw [add_right_comm a d c]
     linarith [norm_sub_le_norm_sub_add_norm_sub (Γ (τ (a + d)) (a + c + d)) (Γ (τ a) (a + c))
       (Γ (τ (a + d)) (a + c)), norm_sub_rev (Γ (τ a) (a + c)) (Γ (τ (a + d)) (a + c))]
@@ -432,7 +431,6 @@ private theorem exists_fineMesh (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hper : P
   refine ⟨δ, η, h, K, hh, hF.fineMesh_const (t := 0) (c := 0) (fun s ↦ by rw [add_zero])
     ⟨le_rfl, zero_le_one⟩ ⟨le_rfl, hT.le⟩ (min_le_left _ _) ?_⟩
   have h₁ : h * (2 * K + 1) ≤ η := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
-  have h₂ : h * (2 * K + 1) = 2 * K * h + h := by ring
   linarith
 
 /-- **Inscribed polygons of a `C¹` loop are eventually simple.** Let `γ : ℝ → E` be a `C¹` curve
@@ -737,7 +735,7 @@ private theorem FineMesh.exists_combinatoriallyEquivalent_union (hF : FineMesh �
   classical
   induction A using Finset.induction_on with
   | empty => exact ⟨N, t, ht, hp, by simp, .refl _⟩
-  | insert a A haA ih =>
+  | insert a A _ ih =>
     obtain ⟨N', t', ht', hp', hr, he⟩ := ih fun b hb ↦ hA b (Finset.mem_insert_of_mem hb)
     have haT := hA a (Finset.mem_insert_self a A)
     rw [Finset.coe_insert, union_insert, ← hr]
@@ -868,8 +866,6 @@ private theorem cosTime_mem_Icc {t t' : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (ht' :
     (h s : ℝ) : cosTime t t' h s ∈ Icc (0 : ℝ) 1 := by
   have h₁ := Real.neg_one_le_cos (2 * Real.pi * s / h)
   have h₂ := Real.cos_le_one (2 * Real.pi * s / h)
-  have hw₀ : 0 ≤ (1 - Real.cos (2 * Real.pi * s / h)) / 2 := by linarith
-  have hw₁ : (1 - Real.cos (2 * Real.pi * s / h)) / 2 ≤ 1 := by linarith
   rw [cosTime]
   constructor <;> nlinarith [ht.1, ht.2, ht'.1, ht'.2]
 
@@ -1011,7 +1007,7 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_isotopy {Γ : ℝ → ℝ 
           ⟨m, inscribed (Γ 1) T m, hm⟩ := by
   obtain ⟨δ, η, lam, ρ, K, hδ, hη, hlam, hρ, hF⟩ := exists_fineFamily hΓ hper hinj hderiv
   -- A mesh `h₀` below which every loop of the family is fine.
-  set h₀ := min δ (η / (2 * K + 1)) with hh₀_def
+  set h₀ := min δ (η / (2 * K + 1))
   have hh₀ : 0 < h₀ := lt_min hδ (by positivity)
   have hfine {h : ℝ} (hh : h ≤ h₀) : h ≤ δ ∧ 2 * K * h < η := by
     refine ⟨hh.trans (min_le_left _ _), ?_⟩
@@ -1077,7 +1073,7 @@ private theorem notMem_straightenRegion {n j k : ℕ} (hj : j < n) (hk : k < n) 
     (hx : x ∈ γ '' Icc (j * h) (j * h + h) ∪ segment ℝ (γ (j * h)) (γ (j * h + h))) :
     ¬ (φ (γ (k * h)) < φ x ∧ φ x < φ (γ (k * h + h)) ∧ ‖x - γ (k * h)‖ < 7 * (K * h)) := by
   rintro ⟨h₁, h₂, h₃⟩
-  have hK0 : 0 ≤ (K : ℝ) * h := mul_nonneg K.2 hh.le
+  have hK0 : 0 ≤ (K : ℝ) * h := mul_nonneg K.property hh.le
   have hjT : j * h + h ≤ T := by
     have : (j : ℝ) + 1 ≤ n := by exact_mod_cast hj
     nlinarith
@@ -1232,7 +1228,7 @@ private theorem exists_ambientIsotopy_image_inscribed_of_mesh {n : ℕ} (hn : 0 
       · exact ⟨⟨j, hj⟩, by rwa [add_mul, one_mul]⟩
       · omega
     · rintro ⟨i, hx⟩
-      exact ⟨i, i.2, Or.inl ⟨i.2, by rwa [add_mul, one_mul] at hx⟩⟩
+      exact ⟨i, i.isLt, Or.inl ⟨i.isLt, by rwa [add_mul, one_mul] at hx⟩⟩
   -- Straightening the arc over the step `k` carries `C k` onto `C (k + 1)`.
   have step (k : ℕ) (hk : k < n) : ∃ Ψ : TauCeti.AmbientIsotopy E, Ψ.final '' C k = C (k + 1) :=
     exists_ambientIsotopy_final_image_step hk hT hγ hper hh hnh hhδ hδT hKη hmono hK hsep

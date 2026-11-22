@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Analysis.Calculus.CoordinateDeriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import Mathlib.Analysis.Normed.Module.RCLike.Real
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Frequency cutoffs
@@ -24,6 +29,10 @@ the symbol calculus needs:
 * `FrequencyCutoff.ofContDiffBump`: `1 - f` is a frequency cutoff for a smooth bump `f` with
   `1 ≤ f.rIn` and `f.rOut ≤ 2`, so frequency cutoffs exist whenever `E` has smooth bump functions
   (for instance in every inner product space and every finite-dimensional space);
+* `FrequencyCutoff.ofSmoothTransition`: on an inner product space, the explicit cutoff
+  `ξ ↦ smoothTransition (‖ξ‖ - 1)`, built from the flat function `t ↦ exp (-1 / t)`;
+* on a nontrivial space a cutoff takes every value in `[0, 1]`
+  (`FrequencyCutoff.range_eq_Icc`); in particular it cannot jump from `0` to `1`;
 * every iterated derivative of a cutoff vanishes on the closed unit ball, and every iterated
   derivative of positive order also vanishes for `‖ξ‖ ≥ 2`, so it is supported in the closed
   annulus `1 ≤ ‖ξ‖ ≤ 2`;
@@ -32,7 +41,15 @@ the symbol calculus needs:
 * the dilated cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, `t ≥ 1`, which vanish for `‖ξ‖ ≤ t` and equal `1` for
   `‖ξ‖ ≥ 2 t`, satisfy the order-zero symbol estimates `‖D^k (χ (t⁻¹ • ·)) ξ‖ ≤ C ⟨ξ⟩^(-k)`
   uniformly in `t` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le`); cutoffs at
-  growing radii are how asymptotic sums of symbols are built.
+  growing radii are how asymptotic sums of symbols are built;
+* the pointwise product of two cutoffs is a cutoff, which is how the cut-off expansions of two
+  classical symbols multiply;
+* the rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` on a product `X × E` is smooth
+  (`FrequencyCutoff.contDiff_comp_inv_smul_snd`), multiplying by it gives a function vanishing
+  near `‖ξ / R‖ < 1` (`FrequencyCutoff.comp_inv_smul_snd_smul_eventuallyEq_zero`, and
+  `FrequencyCutoff.comp_snd_smul_eventuallyEq_zero` for `R = 1`), and on `ℝⁿ`
+  it satisfies the symbol estimates of order `0`
+  (`FrequencyCutoff.exists_bound_mixedDeriv_comp_inv_smul_snd`), for every radius `R`.
 
 ## References
 
@@ -106,6 +123,18 @@ theorem le_one (ξ : E) : χ ξ ≤ 1 :=
 theorem norm_le_one (ξ : E) : ‖χ ξ‖ ≤ 1 := by
   rw [Real.norm_of_nonneg (χ.nonneg ξ)]
   exact χ.le_one ξ
+
+/-- On a nontrivial space a frequency cutoff takes every value in `[0, 1]`: along a ray it is
+continuous from the value `0` at radius `1` to the value `1` at radius `2`. -/
+theorem range_eq_Icc [Nontrivial E] : range χ = Icc 0 1 := by
+  refine Subset.antisymm (range_subset_iff.2 fun ξ ↦ ⟨χ.nonneg ξ, χ.le_one ξ⟩) fun c hc ↦ ?_
+  obtain ⟨v, hv⟩ := exists_norm_eq E zero_le_one
+  have hcont : ContinuousOn (fun t : ℝ ↦ χ (t • v)) (Icc 1 2) :=
+    (χ.continuous.comp (continuous_id.smul continuous_const)).continuousOn
+  have h₁ : χ ((1 : ℝ) • v) = 0 := χ.apply_eq_zero_of_norm_le_one (by simp [hv])
+  have h₂ : χ ((2 : ℝ) • v) = 1 := χ.apply_eq_one_of_two_le_norm (by simp [norm_smul, hv])
+  obtain ⟨t, -, ht⟩ := intermediate_value_Icc one_le_two hcont (by rwa [h₁, h₂])
+  exact ⟨t • v, ht⟩
 
 /-- A frequency cutoff vanishes near every point of the open unit ball. -/
 theorem eventuallyEq_zero_of_norm_lt_one {ξ : E} (hξ : ‖ξ‖ < 1) : (χ : E → ℝ) =ᶠ[𝓝 ξ] 0 := by
@@ -200,6 +229,51 @@ theorem iteratedFDeriv_comp_inv_smul_eq_zero (k : ℕ) {t : ℝ} (ht : 0 < t) {�
   rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht.le)]
   exact inv_mul_le_one_of_le₀ hξ ht.le
 
+/-- If `k = 0` or `‖ξ / R‖ < 2`, then `|R⁻¹|^k ≤ |R⁻¹|^k ⟨2R⟩^k ⟨ξ⟩^(-k)`: below the radius
+`2 |R|` the weight `⟨ξ⟩^(-k)` is bounded below by `⟨2R⟩^(-k)`, and for `R = 0` both sides vanish. -/
+private theorem abs_inv_pow_le_mul_weight {R : ℝ} {k : ℕ} {ξ : E}
+    (h : k = 0 ∨ ‖R⁻¹ • ξ‖ < 2) : |R⁻¹| ^ k ≤ |R⁻¹| ^ k *
+      ((1 + 4 * R ^ 2) ^ ((k : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - k) / 2)) := by
+  rcases eq_or_ne k 0 with hk | hk
+  · simp [hk]
+  rcases eq_or_ne R 0 with hR | hR
+  · simp [hR, zero_pow hk]
+  refine le_mul_of_one_le_right (by positivity) ?_
+  have hlt := h.resolve_left hk
+  rw [norm_smul, norm_inv, Real.norm_eq_abs] at hlt
+  have hξ : ‖ξ‖ < 2 * |R| := by
+    have := (inv_mul_lt_iff₀ (abs_pos.2 hR)).1 hlt
+    linarith
+  have hw := one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ.le ((0 : ℝ) - k)
+  rw [zero_sub, abs_neg, Nat.abs_cast, mul_pow, sq_abs, ← zero_sub] at hw
+  norm_num only at hw
+  calc (1 : ℝ) = (1 + 4 * R ^ 2) ^ ((k : ℝ) / 2) * (1 + 4 * R ^ 2) ^ (((0 : ℝ) - k) / 2) := by
+        rw [← Real.rpow_add (by positivity), show (k : ℝ) / 2 + (0 - k) / 2 = 0 by ring,
+          Real.rpow_zero]
+    _ ≤ _ := mul_le_mul_of_nonneg_left hw (by positivity)
+
+/-- The dilated cutoff `ξ ↦ χ (R⁻¹ • ξ)` at any radius `R` satisfies the order-zero symbol
+estimates: a bound `B` on `D^k χ` gives `‖D^k (χ (R⁻¹ • ·)) ξ‖ ≤ B |R⁻¹|^k ⟨2R⟩^k ⟨ξ⟩^(-k)`,
+since for `k ≠ 0` the derivative vanishes outside the ball of radius `2 |R|`. -/
+private theorem norm_iteratedFDeriv_comp_inv_smul_le {k : ℕ} {B : ℝ}
+    (hB : ∀ ξ, ‖iteratedFDeriv ℝ k χ ξ‖ ≤ B) (R : ℝ) (ξ : E) :
+    ‖iteratedFDeriv ℝ k (fun η => χ (R⁻¹ • η)) ξ‖ ≤
+      B * (|R⁻¹| ^ k * (1 + 4 * R ^ 2) ^ ((k : ℝ) / 2)) *
+        (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - k) / 2) := by
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
+  rw [iteratedFDeriv_comp_const_smul _ χ.contDiff]
+  dsimp only
+  rw [norm_smul, norm_pow, Real.norm_eq_abs]
+  by_cases hz : k ≠ 0 ∧ 2 ≤ ‖R⁻¹ • ξ‖
+  · rw [χ.iteratedFDeriv_eq_zero_of_two_le_norm hz.1 hz.2, norm_zero, mul_zero]
+    positivity
+  have key := abs_inv_pow_le_mul_weight ((not_and_or.1 hz).imp not_not.1 not_le.1)
+  calc |R⁻¹| ^ k * ‖iteratedFDeriv ℝ k χ (R⁻¹ • ξ)‖ ≤ |R⁻¹| ^ k * B :=
+        mul_le_mul_of_nonneg_left (hB _) (by positivity)
+    _ ≤ |R⁻¹| ^ k * ((1 + 4 * R ^ 2) ^ ((k : ℝ) / 2) *
+          (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - k) / 2)) * B := mul_le_mul_of_nonneg_right key hB0
+    _ = _ := by ring
+
 /-- The dilated cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, `t ≥ 1`, satisfy the order-zero symbol estimates
 `‖D^k (χ (t⁻¹ • ·)) ξ‖ ≤ C ⟨ξ⟩^(-k)`, where `⟨ξ⟩ = (1 + ‖ξ‖²)^(1/2)`, with a constant `C`
 independent of `t`. -/
@@ -210,35 +284,21 @@ theorem exists_norm_iteratedFDeriv_comp_inv_smul_le [ProperSpace E] (k : ℕ) :
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
   refine ⟨B * 3 ^ k, by positivity, fun t ht ξ => ?_⟩
   have ht0 : 0 < t := one_pos.trans_le ht
-  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  rw [iteratedFDeriv_comp_const_smul _ χ.contDiff]
-  dsimp only
-  rw [norm_smul, norm_pow,
-    Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
-  rcases eq_or_ne k 0 with rfl | hk
-  · simpa using hB (t⁻¹ • ξ)
-  by_cases hξ : 2 * t ≤ ‖ξ‖
-  · rw [χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (by
-      rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht0.le), le_inv_mul_iff₀ ht0]
-      linarith), norm_zero, mul_zero]
-    positivity
-  -- Below radius `2 t` the weight `⟨ξ⟩ ≤ 3 t` controls the factor `t⁻ᵏ` from the chain rule.
-  have hle : (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ (3 * t) ^ k := by
-    have h9 : 1 + ‖ξ‖ ^ 2 ≤ (3 * t) ^ 2 := by nlinarith [norm_nonneg ξ]
-    calc (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ ((3 * t) ^ 2) ^ ((k : ℝ) / 2) :=
-          Real.rpow_le_rpow hw.le h9 (by positivity)
-      _ = (3 * t) ^ k := by
-          rw [← Real.rpow_natCast (3 * t) 2, ← Real.rpow_mul (by positivity),
-            Nat.cast_ofNat, mul_div_cancel₀ _ two_ne_zero, Real.rpow_natCast]
-  have hinv : (t⁻¹) ^ k ≤ 3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
-    rw [neg_div, Real.rpow_neg hw.le]
-    calc (t⁻¹) ^ k = 3 ^ k * ((3 * t) ^ k)⁻¹ := by
-          rw [mul_pow, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul, inv_pow]
-      _ ≤ 3 ^ k * ((1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2))⁻¹ := by gcongr
-  calc (t⁻¹) ^ k * ‖iteratedFDeriv ℝ k χ (t⁻¹ • ξ)‖
-      ≤ (3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2)) * B :=
-        mul_le_mul hinv (hB _) (norm_nonneg _) (by positivity)
-    _ = B * 3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by ring
+  -- For `t ≥ 1` the factor `t⁻ᵏ ⟨2t⟩ᵏ` is at most `3ᵏ`, since `⟨2t⟩ ≤ 3 t`.
+  have h3 : |t⁻¹| ^ k * (1 + 4 * t ^ 2) ^ ((k : ℝ) / 2) ≤ 3 ^ k := by
+    have h9 : 1 + 4 * t ^ 2 ≤ (3 * t) ^ 2 := by nlinarith
+    calc |t⁻¹| ^ k * (1 + 4 * t ^ 2) ^ ((k : ℝ) / 2)
+        ≤ t⁻¹ ^ k * ((3 * t) ^ 2) ^ ((k : ℝ) / 2) := by
+          rw [abs_of_pos (inv_pos.2 ht0)]
+          gcongr
+      _ = 3 ^ k := by
+          rw [← Real.rpow_natCast (3 * t) 2, ← Real.rpow_mul (by positivity), Nat.cast_ofNat,
+            mul_div_cancel₀ _ two_ne_zero, Real.rpow_natCast, ← mul_pow, mul_comm 3 t,
+            ← mul_assoc, inv_mul_cancel₀ ht0.ne', one_mul]
+  calc _ ≤ _ := χ.norm_iteratedFDeriv_comp_inv_smul_le hB t ξ
+    _ ≤ B * 3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+      rw [zero_sub]
+      gcongr
 
 /-- If `f` is a smooth bump function centred at `0` with `1 ≤ f.rIn` and `f.rOut ≤ 2`, then
 `1 - f` is a frequency cutoff. -/
@@ -261,6 +321,97 @@ theorem ofContDiffBump_apply [HasContDiffBump E] (f : ContDiffBump (0 : E)) (h�
 /-- Frequency cutoffs exist on every space with smooth bump functions. -/
 noncomputable instance [HasContDiffBump E] : Inhabited (FrequencyCutoff E) :=
   ⟨ofContDiffBump ⟨1, 2, one_pos, one_lt_two⟩ le_rfl le_rfl⟩
+
+section SmoothTransition
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- On an inner product space, `ξ ↦ smoothTransition (‖ξ‖ - 1)` is a frequency cutoff. With the
+flat function `h t = exp (-1 / t)` for `t > 0` and `h t = 0` for `t ≤ 0` (`expNegInvGlue`), it is
+`h (‖ξ‖ - 1) / (h (‖ξ‖ - 1) + h (2 - ‖ξ‖))`. -/
+noncomputable def ofSmoothTransition : FrequencyCutoff F where
+  toFun ξ := Real.smoothTransition (‖ξ‖ - 1)
+  contDiff' := by
+    rw [contDiff_iff_contDiffAt]
+    intro ξ
+    rcases eq_or_ne ξ 0 with rfl | hξ
+    · refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
+      filter_upwards [ball_mem_nhds (0 : F) one_pos] with η hη
+      exact Real.smoothTransition.zero_of_nonpos (by linarith [mem_ball_zero_iff.1 hη])
+    · exact Real.smoothTransition.contDiffAt.comp ξ ((contDiffAt_norm ℝ hξ).sub contDiffAt_const)
+  eq_zero_of_norm_le_one' _ hξ := Real.smoothTransition.zero_of_nonpos (by linarith)
+  eq_one_of_two_le_norm' _ hξ := Real.smoothTransition.one_of_one_le (by linarith)
+  nonneg' _ := Real.smoothTransition.nonneg _
+  le_one' _ := Real.smoothTransition.le_one _
+
+@[simp]
+theorem ofSmoothTransition_apply (ξ : F) :
+    ofSmoothTransition ξ = Real.smoothTransition (‖ξ‖ - 1) :=
+  (rfl)
+
+end SmoothTransition
+
+/-- The pointwise product of two frequency cutoffs is a frequency cutoff. -/
+instance : Mul (FrequencyCutoff E) where
+  mul χ χ' :=
+    { toFun := χ * χ'
+      contDiff' := χ.contDiff.mul χ'.contDiff
+      eq_zero_of_norm_le_one' ξ hξ := by simp [χ.apply_eq_zero_of_norm_le_one hξ]
+      eq_one_of_two_le_norm' ξ hξ := by
+        simp [χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ]
+      nonneg' ξ := mul_nonneg (χ.nonneg ξ) (χ'.nonneg ξ)
+      le_one' ξ := (mul_le_of_le_one_right (χ.nonneg ξ) (χ'.le_one ξ)).trans (χ.le_one ξ) }
+
+@[simp]
+theorem coe_mul (χ χ' : FrequencyCutoff E) : ⇑(χ * χ') = χ * χ' :=
+  (rfl)
+
+theorem mul_apply (χ χ' : FrequencyCutoff E) (ξ : E) : (χ * χ') ξ = χ ξ * χ' ξ :=
+  (rfl)
+
+/-! ### The rescaled cutoff on phase space -/
+
+section Rescaled
+
+/-- The rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` on phase space is smooth. -/
+theorem contDiff_comp_inv_smul_snd {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    (R : ℝ) : ContDiff ℝ ∞ fun p : X × E => χ (R⁻¹ • p.2) :=
+  χ.contDiff.comp (contDiff_snd.const_smul R⁻¹)
+
+/-- A function on phase space multiplied by the rescaled cutoff `χ(ξ / R)` vanishes near every
+point with `‖ξ / R‖ < 1`. -/
+theorem comp_inv_smul_snd_smul_eventuallyEq_zero {X : Type*} [TopologicalSpace X] (R : ℝ)
+    {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] (f : X × E → A) {p : X × E}
+    (hp : ‖R⁻¹ • p.2‖ < 1) :
+    (fun q => χ (R⁻¹ • q.2) • f q) =ᶠ[𝓝 p] 0 := by
+  have hc : Continuous fun q : X × E => R⁻¹ • q.2 := continuous_snd.const_smul R⁻¹
+  filter_upwards [(χ.eventuallyEq_zero_of_norm_lt_one hp).comp_tendsto hc.continuousAt]
+    with q hq
+  simp only [Function.comp_apply, Pi.zero_apply] at hq
+  simp [hq]
+
+/-- A function on phase space multiplied by the cutoff `χ(ξ)` vanishes near every point with
+`‖ξ‖ < 1`. -/
+theorem comp_snd_smul_eventuallyEq_zero {X : Type*} [TopologicalSpace X] {A : Type*}
+    [NormedAddCommGroup A] [NormedSpace ℝ A] (f : X × E → A) {p : X × E} (hp : ‖p.2‖ < 1) :
+    (fun q => χ q.2 • f q) =ᶠ[𝓝 p] 0 := by
+  simpa using χ.comp_inv_smul_snd_smul_eventuallyEq_zero 1 f (by simpa using hp)
+
+variable {n : ℕ} (χ : FrequencyCutoff (CoordinateSpace n)) (R : ℝ)
+
+/-- The rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` satisfies the symbol estimates of order `0`: every
+mixed derivative `∂_x^α ∂_ξ^β` is bounded by a multiple of `⟨ξ⟩^(-|β|)`. -/
+theorem exists_bound_mixedDeriv_comp_inv_smul_snd (α β : List (Fin n)) :
+    ∃ C, ∀ x ξ : CoordinateSpace n,
+      ‖mixedDeriv α β (fun p : CoordinateSpace n × CoordinateSpace n => χ (R⁻¹ • p.2)) x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ (((0 : ℝ) - β.length) / 2) := by
+  obtain ⟨B, hB⟩ := χ.exists_bound_iteratedFDeriv β.length
+  obtain ⟨C, -, hC⟩ := exists_bound_mixedDeriv_comp_snd
+    ((χ.contDiff.comp (contDiff_const_smul R⁻¹)).of_le (by exact_mod_cast le_top))
+    ⟨_, χ.norm_iteratedFDeriv_comp_inv_smul_le hB R⟩ α
+  exact ⟨C, hC⟩
+
+end Rescaled
 
 end FrequencyCutoff
 

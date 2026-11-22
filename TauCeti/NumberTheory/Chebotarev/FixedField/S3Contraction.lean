@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.FixedField.ExceptionalPrimes
 public import TauCeti.NumberTheory.NumberField.SplittingField
-import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.Algebra.Polynomial.XPow.SubC
 import TauCeti.FieldTheory.GaloisGroups.Cubic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
@@ -55,7 +55,7 @@ private theorem rootElementMinpoly
     {beta : L} (hbeta : beta ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) :
     let E := fixedField (stabilizer (L ≃ₐ[ℚ] L) beta)
     ∃ theta : NumberField.IntegralPrimitiveElement E,
-      minpoly ℤ theta.1 = X ^ 3 - 2 := by
+      minpoly ℤ theta.val = X ^ 3 - 2 := by
   have hbetaInt : IsIntegral ℤ beta := by
     refine ⟨X ^ 3 - 2, by monicity; norm_num, ?_⟩
     rw [← aeval_def]
@@ -73,7 +73,7 @@ private theorem rootElementMinpoly
 private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
     {K : Type*} [Field K] [NumberField K]
     (theta : NumberField.IntegralPrimitiveElement K)
-    (hmin : minpoly ℤ theta.1 = X ^ 3 - C 2)
+    (hmin : minpoly ℤ theta.val = X ^ 3 - C 2)
     (P : Ideal (𝓞 K)) [P.IsPrime] [P.LiesOver (Ideal.span {(2 : ℤ)})] :
     P.ramificationIdx ℤ = 3 := by
   let phi : Fin 1 → (ZMod 2)[X] := fun _ ↦ X
@@ -92,7 +92,7 @@ private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
   have he : ∀ i, 0 < e i := by simp [e]
   have hPhi : ∀ i, (Phi i).map (Int.castRingHom (ZMod 2)) = phi i := by
     simp [Phi, phi]
-  have hH : C (2 : ℤ) * H = minpoly ℤ theta.1 - ∏ i, Phi i ^ e i := by
+  have hH : C (2 : ℤ) * H = minpoly ℤ theta.val - ∏ i, Phi i ^ e i := by
     rw [hmin]
     simp [H, Phi, e]
   have hcrit : ∀ i, e i = 1 ∨ ¬ phi i ∣ H.map (Int.castRingHom (ZMod 2)) := by
@@ -105,7 +105,7 @@ private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
   have hindex : ¬ 2 ∣ theta.index :=
     theta.not_dvd_index_of_forall_eq_one_or_not_dvd_map
       hphi hphim hinj he hPhi hH hcrit
-  have hexp : ¬ 2 ∣ RingOfIntegers.exponent theta.1 := fun h ↦
+  have hexp : ¬ 2 ∣ NumberField.RingOfIntegers.exponent theta.val := fun h ↦
     hindex (h.trans theta.exponent_dvd_index)
   obtain ⟨⟨q, hq⟩, hqP⟩ :=
     (NumberField.Ideal.primesOverSpanEquivMonicFactorsMod hexp).symm.surjective
@@ -120,7 +120,7 @@ private theorem ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two
       C_0, sub_zero]
   rw [hmap]
   have hqX : q = X := by
-    rw [RingOfIntegers.monicFactorsMod, hmin, hmap, Multiset.mem_toFinset] at hq
+    rw [NumberField.RingOfIntegers.monicFactorsMod, hmin, hmap, Multiset.mem_toFinset] at hq
     rw [irreducible_X.normalizedFactors_pow] at hq
     simpa [monic_X.normalize_eq_self] using hq
   rw [hqX]
@@ -230,7 +230,7 @@ private theorem exists_ne_mem_rootSet_X_pow_three_sub_two :
 /-- The prime `2` has a prime of the cubic root field above it with ramification index three. -/
 private theorem exists_prime_liesOver_two_ramificationIdx_eq_three
     {K : Type*} [Field K] [NumberField K] (theta : NumberField.IntegralPrimitiveElement K)
-    (hmin : minpoly ℤ theta.1 = X ^ 3 - C 2) :
+    (hmin : minpoly ℤ theta.val = X ^ 3 - C 2) :
     ∃ P : Ideal (𝓞 K), P.IsPrime ∧ P.LiesOver (Ideal.span {(2 : ℤ)}) ∧
       P.ramificationIdx ℤ = 3 := by
   let _ : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
@@ -238,8 +238,8 @@ private theorem exists_prime_liesOver_two_ramificationIdx_eq_three
   let _ : (Ideal.span {(2 : ℤ)}).IsPrime :=
     (inferInstance : (Ideal.span {(2 : ℤ)}).IsMaximal).isPrime
   let P0 : (Ideal.span {(2 : ℤ)}).primesOver (𝓞 K) := Classical.choice inferInstance
-  exact ⟨P0.1, P0.2.1, P0.2.2,
-    ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two theta hmin P0.1⟩
+  exact ⟨P0.val, P0.property.1, P0.property.2,
+    ramificationIdx_eq_three_of_minpoly_eq_X_pow_three_sub_two theta hmin P0.val⟩
 
 /-- If `L / E` is `3`-cyclotomic and some prime of `𝓞 E` above `2` has ramification index three
 over `ℤ`, then some height-one prime of `E` above `2` lies in `primesAboveRamifiedPrimes ℚ L E`
@@ -255,9 +255,9 @@ private theorem exists_mem_primesAboveRamifiedPrimes_not_mem_ramifiedPrimes_of_i
   let _ : IsScalarTower ℚ E L := E.isScalarTower_mid'
   let p2 : Ideal ℤ := Ideal.span {(2 : ℤ)}
   let Q0 : P.primesOver (𝓞 L) := Classical.choice inferInstance
-  let Q : Ideal (𝓞 L) := Q0.1
-  let _ : Q.IsPrime := Q0.2.1
-  let _ : Q.LiesOver P := Q0.2.2
+  let Q : Ideal (𝓞 L) := Q0.val
+  let _ : Q.IsPrime := Q0.property.1
+  let _ : Q.LiesOver P := Q0.property.2
   let _ : Q.LiesOver p2 := Ideal.LiesOver.trans Q P p2
   have hthree : (3 : 𝓞 E) ∉ P := by
     intro h

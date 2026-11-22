@@ -67,7 +67,7 @@ theorem deleteVertexComponentMap_connectedComponentOf (G : Graph α β) (v x : �
 /-- A component containing a vertex other than `v` lies in the range of the component map after
 deleting `v`. -/
 theorem exists_deleteVertexComponentMap_eq_of_mem {C : G.ConnectedComponent} {z : α}
-    (hzC : z ∈ V(C.1)) (hzv : z ≠ v) :
+    (hzC : z ∈ V(C.val)) (hzv : z ≠ v) :
     ∃ D, G.deleteVertexComponentMap v D = C := by
   have hzG : z ∈ V(G) := C.property.le.vertexSet_mono hzC
   have hz : z ∈ V(G.deleteVerts {v}) := by simp [hzG, hzv]
@@ -148,7 +148,7 @@ theorem IsCutVertex.exists_ne_and_reachable (h : G.IsCutVertex v) :
     apply hdel
     exact reachable_deleteVerts_iff_exists_walk.mpr
       ⟨p, huw.left_mem, fun z hz hzv ↦ hvp (hzv ▸ hz)⟩
-  obtain ⟨q, r, hp⟩ := Walk.mem_support_iff_exists_append.mp hvp
+  obtain ⟨q, _, _⟩ := Walk.mem_support_iff_exists_append.mp hvp
   exact ⟨u, huv, q.reachable huw.left_mem⟩
 
 /-- A cut vertex is an actual vertex of the graph. -/

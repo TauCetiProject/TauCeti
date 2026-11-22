@@ -18,11 +18,12 @@ embedded submanifold `Q ⊆ M` this is the conormal bundle `N*Q` as a subset of 
 over `q` is the annihilator `TauCeti.CotangentBundle.conormalSpace J I i q` of the tangent image;
 when `di_q` is injective and `M` is finite-dimensional it has dimension `dim M - dim Q`
 (`TauCeti.CotangentBundle.finrank_add_finrank_conormalSpace`), so that `N*Q` has the dimension
-of `M`.
+of `M`. When `Q` is modelled on a space of smaller finite dimension than `M`, every conormal space
+is nonzero (`TauCeti.CotangentBundle.conormalSpace_ne_bot`).
 
 A covector is conormal exactly when the cotangent relation of `i`
-(`TauCeti.CotangentBundle.cotangentRel`) relates it to a zero covector of `T*Q`. Through the
-composition law of these relations, conormal sets are independent of the parametrization
+(`TauCeti.CotangentBundle.cotangentRel`) relates it to a zero covector of `T*Q`. By the chain
+rule, conormal sets are independent of the parametrization
 (`TauCeti.CotangentBundle.conormal_comp_diffeomorph`) and are carried to each other by cotangent
 lifts of diffeomorphisms (`TauCeti.CotangentBundle.image_cotangent_conormal`).
 
@@ -87,18 +88,27 @@ theorem finrank_add_finrank_conormalSpace [CompleteSpace 𝕜] [FiniteDimensiona
     finrank 𝕜 F + finrank 𝕜 (conormalSpace J I i q) = finrank 𝕜 E := by
   let L : F →L[𝕜] E := mfderiv J I i q
   have : FiniteDimensional 𝕜 F := FiniteDimensional.of_injective L.toLinearMap hi
-  let pre : (E →L[𝕜] 𝕜) →L[𝕜] F →L[𝕜] 𝕜 := (ContinuousLinearMap.compL 𝕜 F E 𝕜).flip L
-  have hrange : LinearMap.range (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜) = ⊤ :=
-    LinearMap.range_eq_top.mpr (ContinuousLinearMap.surjective_compL_flip_of_injective hi)
-  have hker : LinearMap.ker (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜) = conormalSpace J I i q := by
-    ext p
-    -- `TangentSpace I (i q)` is `E` by definition, and `pre p` is `p ∘L L`, so both
-    -- memberships say that `p` vanishes on the image of `L`.
-    exact LinearMap.mem_ker.trans mem_conormalSpace_iff.symm
-  have hrn := LinearMap.finrank_range_add_finrank_ker (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜)
-  rw [hrange, hker, finrank_top, ContinuousLinearMap.dual_finrank_eq,
-    ContinuousLinearMap.dual_finrank_eq] at hrn
-  exact hrn
+  -- The conormal space is the annihilator of the range of `L`, which has dimension `dim F`.
+  rw [← LinearMap.finrank_range_of_inj (f := L.toLinearMap) hi, conormalSpace]
+  -- `TangentSpace I (i q)` is `E` and `TangentSpace J q` is `F` by definition.
+  exact StrongDual.finrank_add_finrank_polarSubmodule (𝕜 := 𝕜) (E := E) _
+
+/-- **Conormal spaces in positive codimension are nonzero.** If `Q` is modelled on a space of
+smaller finite dimension than that of `M`, then every conormal space of `i : Q → M` is nonzero,
+whether or not `di_q` is injective. -/
+theorem conormalSpace_ne_bot [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+    (h : finrank 𝕜 F < finrank 𝕜 E) (i : Q → M) (q : Q) : conormalSpace J I i q ≠ ⊥ := by
+  intro hbot
+  -- The tangent image has dimension at most `dim F`, and its annihilator `dim E` minus that.
+  have hsum : finrank 𝕜 (LinearMap.range
+      (mfderiv J I i q : TangentSpace J q →ₗ[𝕜] TangentSpace I (i q))) +
+      finrank 𝕜 (conormalSpace J I i q) = finrank 𝕜 E :=
+    StrongDual.finrank_add_finrank_polarSubmodule (𝕜 := 𝕜) (E := E) _
+  rw [hbot, finrank_bot, add_zero] at hsum
+  have := LinearMap.finrank_range_le (mfderiv J I i q : TangentSpace J q →ₗ[𝕜] TangentSpace I (i q))
+  -- `TangentSpace J q` is `F` by definition.
+  have hF : finrank 𝕜 (TangentSpace J q) = finrank 𝕜 F := (rfl)
+  omega
 
 /-! ### The conormal set -/
 
@@ -107,12 +117,12 @@ annihilate the tangent image `di_q (T_q Q)`. For an embedded submanifold this is
 bundle `N*Q ⊆ T*M`. -/
 def conormal (J : ModelWithCorners 𝕜 F H') (I : ModelWithCorners 𝕜 E H) (i : Q → M) :
     Set (CotangentBundle I M) :=
-  {w | ∃ q, i q = w.proj ∧ w.2 ∘L mfderiv J I i q = 0}
+  {w | ∃ q, i q = w.proj ∧ w.snd ∘L mfderiv J I i q = 0}
 
 /-- A covector is conormal to `i` when it lies over some `i q` and vanishes on the image of
 `di_q`. -/
 theorem mem_conormal_iff {i : Q → M} {w : CotangentBundle I M} :
-    w ∈ conormal J I i ↔ ∃ q, i q = w.proj ∧ w.2 ∘L mfderiv J I i q = 0 :=
+    w ∈ conormal J I i ↔ ∃ q, i q = w.proj ∧ w.snd ∘L mfderiv J I i q = 0 :=
   Iff.rfl
 
 /-- A covector is conormal to `i` exactly when the cotangent relation of `i` relates a zero
@@ -163,7 +173,7 @@ theorem conormal_eq_range_zeroSection {i : Q → M} (hi : Function.Surjective i)
     (hdi : ∀ q, Function.Surjective (mfderiv J I i q)) :
     conormal J I i = range (zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)) := by
   refine Subset.antisymm ?_ ?_
-  · rintro w ⟨q, hq, hw⟩
+  · rintro w ⟨q, _, hw⟩
     refine ⟨w.proj, CotangentBundle.ext rfl fun v ↦ ?_⟩
     obtain ⟨u, rfl⟩ := hdi q v
     exact (DFunLike.congr_fun hw u).symm
@@ -218,43 +228,49 @@ theorem conormal_comp_of_surjective {g : P → Q} {i : Q → M}
     rw [ContinuousLinearMap.comp_apply, mfderiv_comp_apply p (hi (g p)) (hg p) v]
     exact DFunLike.congr_fun hann (mfderiv K J g p v)
 
-/-- **The conormal set does not depend on the parametrization.** Precomposing a differentiable
-map with a diffeomorphism of its source does not change its conormal set. -/
-theorem conormal_comp_diffeomorph [IsManifold J 2 Q] [IsManifold K 2 P] (φ : P ≃ₘ⟮K, J⟯ Q)
-    {i : Q → M} (hi : MDifferentiable J I i) : conormal K I (i ∘ φ) = conormal J I i := by
-  ext w
-  simp only [mem_conormal_iff_exists_cotangentRel]
+/-- **The conormal set does not depend on the parametrization.** Precomposing a map with a
+diffeomorphism of its source does not change its conormal set. -/
+theorem conormal_comp_diffeomorph (φ : P ≃ₘ⟮K, J⟯ Q) {i : Q → M} :
+    conormal K I (i ∘ φ) = conormal J I i := by
+  ext ⟨x, α⟩
+  simp only [mem_conormal_iff]
   constructor
-  · rintro ⟨p, hp⟩
-    rw [cotangentRel_comp_iff _ _ _ _ _ (φ.mdifferentiable (by simp) p) (hi _)] at hp
-    obtain ⟨z, hz, hzw⟩ := hp
-    rw [cotangentRel_diffeomorph_iff, Diffeomorph.cotangent_zeroSection] at hz
-    subst hz
-    exact ⟨φ p, hzw⟩
-  · rintro ⟨q, hq⟩
-    refine ⟨φ.symm q, ?_⟩
-    rw [cotangentRel_comp_iff _ _ _ _ _ (φ.mdifferentiable (by simp) _) (hi _)]
-    refine ⟨_, (cotangentRel_diffeomorph_iff _ _ φ _ _).mpr (Diffeomorph.cotangent_zeroSection φ _),
-      ?_⟩
-    rw [φ.apply_symm_apply]
-    exact hq
+  · rintro ⟨p, rfl, hann⟩
+    refine ⟨φ p, rfl, ?_⟩
+    ext u
+    obtain ⟨v, rfl⟩ : ∃ v, mfderiv K J φ p v = u :=
+      ⟨mfderiv J K φ.symm (φ p) u, φ.mfderiv_apply_mfderiv_symm_apply (by simp) p u⟩
+    rw [φ.mfderiv_comp_diffeomorph (by simp)] at hann
+    exact DFunLike.congr_fun hann v
+  · rintro ⟨q, rfl, hann⟩
+    obtain ⟨p, rfl⟩ : ∃ p, φ p = q := φ.surjective q
+    refine ⟨p, rfl, ?_⟩
+    rw [φ.mfderiv_comp_diffeomorph (by simp), ← ContinuousLinearMap.comp_assoc, hann,
+      ContinuousLinearMap.zero_comp]
 
 /-- **Cotangent lifts carry conormal sets to conormal sets.** For a diffeomorphism `h : M → M₂`,
-the cotangent lift of `h` maps the conormal set of a differentiable map `i` onto the conormal
+the cotangent lift of `h` maps the conormal set of a map `i` onto the conormal
 set of `h ∘ i`. -/
 theorem image_cotangent_conormal [IsManifold I 2 M] [IsManifold I₂ 2 M₂] (h : M ≃ₘ⟮I, I₂⟯ M₂)
-    {i : Q → M} (hi : MDifferentiable J I i) :
-    h.cotangent '' conormal J I i = conormal J I₂ (h ∘ i) := by
+    {i : Q → M} : h.cotangent '' conormal J I i = conormal J I₂ (h ∘ i) := by
   ext w
-  simp only [mem_conormal_iff_exists_cotangentRel, mem_image]
+  simp only [mem_conormal_iff, mem_image]
   constructor
-  · rintro ⟨z, ⟨q, hq⟩, rfl⟩
-    refine ⟨q, ?_⟩
-    rw [cotangentRel_comp_iff _ _ _ _ _ (hi _) (h.mdifferentiable (by simp) _)]
-    exact ⟨z, hq, (cotangentRel_diffeomorph_iff _ _ h _ _).mpr rfl⟩
-  · rintro ⟨q, hq⟩
-    rw [cotangentRel_comp_iff _ _ _ _ _ (hi _) (h.mdifferentiable (by simp) _)] at hq
-    obtain ⟨z, hz, hzw⟩ := hq
-    exact ⟨z, ⟨q, hz⟩, (cotangentRel_diffeomorph_iff _ _ h _ _).mp hzw⟩
+  · rintro ⟨⟨x, α⟩, ⟨q, hq, hz⟩, rfl⟩
+    obtain rfl : i q = x := hq
+    refine ⟨q, (h.proj_cotangent ⟨i q, α⟩).symm, ?_⟩
+    ext v
+    rw [h.mfderiv_diffeomorph_comp (by simp)]
+    exact (h.cotangent_snd_apply_mfderiv ⟨i q, α⟩ _).trans (DFunLike.congr_fun hz v)
+  · rintro ⟨q, hq, hw⟩
+    obtain ⟨y, β⟩ := w
+    obtain rfl : h (i q) = y := hq
+    refine ⟨TotalSpace.mk' (E →L[𝕜] 𝕜) (i q) (β ∘L mfderiv I I₂ h (i q)),
+      ⟨q, rfl, ?_⟩, ?_⟩
+    · rw [h.mfderiv_diffeomorph_comp (by simp)] at hw
+      exact hw
+    · refine CotangentBundle.ext (h.proj_cotangent _) fun v ↦ ?_
+      exact (h.cotangent_snd_apply _ v).trans
+        (congrArg β (h.mfderiv_apply_mfderiv_symm_apply (by simp) (i q) v))
 
 end TauCeti.CotangentBundle

@@ -29,9 +29,7 @@ identification of Coxeter length with the number of inversions.
 
 ## References
 
-This file implements the exchange target in Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The mathematical convention follows
-Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
+The mathematical convention follows Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
 -/
 
 public section
@@ -62,14 +60,14 @@ after right multiplication by that simple reflection. -/
 private noncomputable def puncturedInversionsEquiv {i : ι} (hi : i ∈ b.support) :
     ↥(inversions P b (w * RootPairing.weylGroup.ofIdx P i) \ {i}) ≃
       ↥(inversions P b w \ {i}) where
-  toFun x := ⟨P.reflectionPerm i x.1, by
-    obtain ⟨hx, hxi⟩ := x.2
+  toFun x := ⟨P.reflectionPerm i x.val, by
+    obtain ⟨hx, hxi⟩ := x.property
     have hx' := (mem_inversions P b _ _).mp hx
     refine reflectionPerm_mem_inversions_sdiff P b w hi hx'.1 (by simpa using hxi) ?_
     rw [RootPairing.weylGroupToPerm_mul_ofIdx_apply] at hx'
     exact hx'.2⟩
-  invFun x := ⟨P.reflectionPerm i x.1, by
-    obtain ⟨hx, hxi⟩ := x.2
+  invFun x := ⟨P.reflectionPerm i x.val, by
+    obtain ⟨hx, hxi⟩ := x.property
     have hx' := (mem_inversions P b _ _).mp hx
     refine reflectionPerm_mem_inversions_sdiff P b (w * RootPairing.weylGroup.ofIdx P i) hi
       hx'.1 (by simpa using hxi) ?_
@@ -77,10 +75,10 @@ private noncomputable def puncturedInversionsEquiv {i : ι} (hi : i ∈ b.suppor
     exact hx'.2⟩
   left_inv x := by
     apply Subtype.ext
-    exact P.reflectionPerm_self i x.1
+    exact P.reflectionPerm_self i x.val
   right_inv x := by
     apply Subtype.ext
-    exact P.reflectionPerm_self i x.1
+    exact P.reflectionPerm_self i x.val
 
 omit [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
 /-- Right multiplication by the reflection in a positive root toggles whether that root is an

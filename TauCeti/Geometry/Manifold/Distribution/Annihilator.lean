@@ -9,13 +9,12 @@ public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
+import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 
 /-!
 # Annihilating covectors of distributions and the involutivity criterion
@@ -27,11 +26,10 @@ field. In particular a smooth hyperplane distribution is locally the kernel of a
 smooth covector field. No global coorientation is assumed: the section is constructed only on a
 neighborhood of the chosen point.
 
-In tangent-bundle coordinates, a local frame gives an injective operator `A`. A fixed left
-inverse `P` of its value at the chosen point gives the nearby left inverse `(P A)⁻¹ P`.
-The projection `1 - A (P A)⁻¹ P` then turns a covector annihilating the frame at the chosen point
-into a smooth covector field annihilating the frame nearby. Nonvanishing is open, and for a
-hyperplane field the rank of the distribution makes its inclusion in the kernel an equality.
+Both statements are read off the local annihilating coframes of
+`TauCeti.IsContMDiffDistribution.exists_local_annihilating_coframe`: the distribution is locally
+the common kernel of independent covector fields, so one of them detects a vector outside it, and
+for a hyperplane field the coframe is a single nowhere-zero covector field with kernel `D`.
 
 On a Hausdorff manifold a bump function extends these local one-forms to global smooth one-forms
 annihilating the distribution everywhere. Together with the invariant formula
@@ -92,84 +90,23 @@ theorem IsContMDiffDistribution.exists_local_annihilator_apply_ne_zero
       ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
         (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y (α y)) U ∧
       α x u ≠ 0 ∧ ∀ y ∈ U, α y ≠ 0 ∧ D y ≤ LinearMap.ker (α y).toLinearMap := by
-  classical
-  let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  -- Read a local frame in one fixed tangent-bundle trivialization.
-  obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
-  let e := trivializationAt E (TangentSpace I) x
-  have hxe : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
-  let A := IsSubbundleFrameOn.trivOperator 𝕜 E X x
-  have hA := hX.contMDiffOn_trivOperator x
-  have hAx := hX.isSubbundleFrameOn.injective_trivOperator hxV
-  obtain ⟨p, hp⟩ := (A x).toLinearMap.exists_leftInverse_of_injective
-    (LinearMap.ker_eq_bot.mpr hAx)
-  let P := p.toContinuousLinearMap
-  have hP : LeftInverse P (A x) := fun v ↦ LinearMap.congr_fun hp v
-  -- Read in the trivialization, `u` lies outside the range of the frame operator at `x`.
-  have hux : (e ⟨x, u⟩).2 ∉ LinearMap.range (A x).toLinearMap := by
-    rintro ⟨c, hc⟩
-    apply hu
-    have h : (e ⟨x, ∑ i, c i • X i x⟩).2 = (e ⟨x, u⟩).2 := by
-      rw [← IsSubbundleFrameOn.trivOperator_apply hxe]
-      exact hc
-    have h' := (e.continuousLinearEquivAt 𝕜 x hxe).injective
-      (by simpa [Trivialization.continuousLinearEquivAt_apply] using h)
-    rw [← h', ← hX.span_eq hxV]
-    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-  obtain ⟨a, ha, haA⟩ := Submodule.exists_le_ker_of_notMem hux
-  let a' := a.toContinuousLinearMap
-  have ha'A : a' ∘L A x = 0 := by
-    ext c
-    exact haA (LinearMap.mem_range_self _ c)
-  have ha' : a' ≠ 0 := fun hz ↦ ha (by simpa [a'] using congr($hz (e ⟨x, u⟩).2))
-  -- Project the covector `a` at x to the annihilators of the nearby frame images.
-  obtain ⟨U, hU, hxU, hUS, hc, hUc⟩ :=
-    hA.exists_isOpen_contMDiffOn_sub_comp_inverse_comp (hV.inter e.open_baseSet) ⟨hxV, hxe⟩ hP
-      ha' ha'A
-  let c : M → E →L[𝕜] 𝕜 := fun y ↦ a' - a' ∘L A y ∘L (P ∘L A y).inverse ∘L P
-  have hcx : c x = a' := by
-    dsimp only [c]
-    rw [← ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_assoc, ha'A]
-    simp
-  let α : Π y : M, TangentSpace I y →L[𝕜] 𝕜 :=
-    fun y ↦ c y ∘L e.continuousLinearMapAt 𝕜 y
-  refine ⟨U, α, hU, hxU, ?_, ?_, ?_⟩
-  -- The cotangent-bundle coordinates of α are exactly the smooth covectors c.
-  · exact CotangentBundle.contMDiffOn_mk_comp_continuousLinearMapAt x
-      (U := U) (c := c) (fun _ hy ↦ (hUS hy).2) hc
-  · have heval : α x u = c x (e ⟨x, u⟩).2 :=
-      congrArg (c x) (e.continuousLinearMapAt_apply_of_mem 𝕜 hxe u)
-    rw [heval, hcx]
-    simpa [a'] using ha
-  · intro y hy
-    have hcy : c y ≠ 0 := (hUc y hy).2
-    have hαy : α y ≠ 0 := by
-      intro hz
-      apply hcy
-      ext v
-      have := congrArg (fun f : TangentSpace I y →L[𝕜] 𝕜 ↦ f (e.symmL 𝕜 y v)) hz
-      simpa [α, e.continuousLinearMapAt_symmL (hUS hy).2] using this
-    refine ⟨hαy, ?_⟩
-    -- The frame spans `D y` and is annihilated by `α y`.
-    rw [← hX.span_eq (hUS hy).1]
-    apply Submodule.span_le.mpr
-    rintro _ ⟨i, rfl⟩
-    have hzero : c y ∘L A y = 0 :=
-      a'.sub_comp_inverse_comp_comp_eq_zero (A y) P (hUc y hy).1
-    have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) (hUS hy).2
-      (Pi.single i (1 : 𝕜))
-    have heval : α y (X i y) = c y (e ⟨y, X i y⟩).2 :=
-      congrArg (c y) (e.continuousLinearMapAt_apply_of_mem 𝕜 (hUS hy).2 (X i y))
-    have hzeroi : α y (X i y) = 0 := by
-      rw [heval]
-      simpa [A, hAi, e] using
-        congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) hzero
-    exact hzeroi
+  have hk : k + (finrank 𝕜 E - k) = finrank 𝕜 E := by
+    have := (D x).finrank_le
+    rw [hD.finrank_eq x, finrank_tangentSpace] at this
+    omega
+  -- Some covector of a local annihilating coframe detects `u`.
+  obtain ⟨U, hU, hxU, α, hα, hαU⟩ := hD.exists_local_annihilating_coframe hk x
+  obtain ⟨j, hj⟩ : ∃ j, α j x u ≠ 0 := by
+    by_contra! h
+    exact hu (((hαU x hxU).2 u).mpr h)
+  exact ⟨U, α j, hU, hxU, hα j, hj, fun y hy ↦ ⟨(hαU y hy).1.ne_zero j,
+    fun v hv ↦ LinearMap.mem_ker.mpr (((hαU y hy).2 v).mp hv j)⟩⟩
 
+omit [FiniteDimensional 𝕜 E] in
 /-- A `C^n` hyperplane distribution is locally the kernel of a nowhere-zero `C^n` covector
 field. The covector is a section of the usual hom bundle; its regularity and nonvanishing
-are asserted only on the open neighborhood, not outside it. -/
+are asserted only on the open neighborhood, not outside it.
+Finite-dimensionality of `E` follows from the rank condition `k + 1 = finrank 𝕜 E`. -/
 theorem IsContMDiffDistribution.exists_local_annihilator
     (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank 𝕜 E) (x : M) :
     ∃ (U : Set M) (α : Π y : M, TangentSpace I y →L[𝕜] 𝕜),
@@ -177,16 +114,12 @@ theorem IsContMDiffDistribution.exists_local_annihilator
       ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
         (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y (α y)) U ∧
       ∀ y ∈ U, α y ≠ 0 ∧ LinearMap.ker (α y).toLinearMap = D y := by
-  -- A hyperplane is a proper subspace, so some tangent vector lies outside it.
-  obtain ⟨u, -, hu⟩ := IsConcreteLE.exists_of_lt
-    (Submodule.lt_top_of_finrank_lt_finrank (s := D x)
-      (by rw [hD.finrank_eq x, finrank_tangentSpace]; omega))
-  obtain ⟨U, α, hU, hxU, hα, -, hαD⟩ := hD.exists_local_annihilator_apply_ne_zero hu
-  -- Annihilation gives inclusion; codimension one upgrades it to equality.
-  exact ⟨U, α, hU, hxU, hα, fun y hy ↦ ⟨(hαD y hy).1,
-    Module.Dual.ker_eq_of_le_of_finrank_add_one (α y).toLinearMap
-      (fun hz ↦ (hαD y hy).1 (ContinuousLinearMap.coe_injective hz)) (hαD y hy).2
-      (by rw [hD.finrank_eq y, finrank_tangentSpace, hk])⟩⟩
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by omega)
+  -- A local annihilating coframe of a hyperplane field consists of one covector.
+  obtain ⟨U, hU, hxU, α, hα, hαU⟩ := hD.exists_local_annihilating_coframe hk x
+  refine ⟨U, α 0, hU, hxU, hα 0, fun y hy ↦ ⟨(hαU y hy).1.ne_zero 0, ?_⟩⟩
+  ext v
+  simp [(hαU y hy).2 v, Fin.forall_fin_one]
 
 end Annihilator
 
@@ -222,6 +155,7 @@ theorem IsContMDiffDistribution.exists_roughForm_apply_ne_zero
   · rw [RoughForm.mem_ker, hαa]
     exact (haD y hy).2 hv
 
+omit [FiniteDimensional ℝ E] in
 /-- **A hyperplane field is locally the kernel of a one-form.** Every point of a `C^n` distribution
 `D` of rank `k` with `k + 1 = dim E` has an open neighbourhood `U` on which `D` is the kernel of a
 one-form `α` of class `C^n` on `U` which vanishes nowhere on `U`. No coorientation is assumed: the
@@ -232,6 +166,7 @@ theorem IsContMDiffDistribution.exists_roughForm_ker_eq
       ContMDiffOn I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
         (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) U ∧
       ∀ y ∈ U, α y ≠ 0 ∧ α.ker y = D y := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   obtain ⟨u, -, hu⟩ := IsConcreteLE.exists_of_lt
     (Submodule.lt_top_of_finrank_lt_finrank (s := D x)
       (by rw [hD.finrank_eq x, finrank_tangentSpace]; omega))

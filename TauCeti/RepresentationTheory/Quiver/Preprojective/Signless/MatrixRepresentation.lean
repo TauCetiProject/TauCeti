@@ -38,14 +38,21 @@ A representation of a subgraph extends by zero along a copy, by
 
 ## Main definitions
 
+* `TauCeti.matrixPathAlgHom`: the algebra homomorphism from the doubled path algebra to block
+  matrices determined by a family of matrices on vertex pairs.
 * `TauCeti.signlessMatrixRepresentation`: the representation of `Π⁺(G)` determined by a family of
   matrices satisfying the signless relations.
 
 ## Main results
 
-* `TauCeti.signlessMatrixRepresentation_vertexIdempotent`,
+* `TauCeti.matrixPathAlgHom_vertexIdempotent`, `TauCeti.matrixPathAlgHom_ofPath_toPath`,
+  `TauCeti.matrixPathAlgHom_ofArrow`, and `TauCeti.matrixPathAlgHom_backtrackElem`: evaluation of
+  `matrixPathAlgHom` on vertex idempotents, arrows, and backtracks.
+* `TauCeti.signlessMatrixRepresentation_signlessPreprojectiveMk`,
+  `TauCeti.signlessMatrixRepresentation_vertexIdempotent`,
   `TauCeti.signlessMatrixRepresentation_ofPath_toPath` and
-  `TauCeti.signlessMatrixRepresentation_ofArrow`: the values on vertex idempotents and arrows.
+  `TauCeti.signlessMatrixRepresentation_ofArrow`: evaluation on the quotient map, vertex
+  idempotents, and arrows.
 * `TauCeti.signlessMatrixRepresentation_backtrackElem`: a backtrack `v → w → v` acts by the block
   `E_vv ⊗ (β w v * β v w)`.
 * `TauCeti.signlessMatrixRepresentation_list_prod_backtrackElem`: a nonempty product of
@@ -123,18 +130,41 @@ private theorem matrixArrow_mul_matrixVertex (β : V → V → Matrix m m k) {i 
   simp only [matrixVertex, matrixArrow, ← mul_kronecker_mul, single_mul_single_same, mul_one]
 
 variable (k) in
-/-- The algebra homomorphism from the doubled path algebra prescribed by the matrix family. -/
-private noncomputable def matrixPathAlgHom (β : V → V → Matrix m m k) :
+/-- The algebra homomorphism from the doubled path algebra `pathAlgebra k (DoubledQuiver G)` to
+block matrices `Matrix (V × m) (V × m) k` determined by a matrix family `β`: the vertex idempotent
+at `v` goes to `E_vv ⊗ 1` and the arrow `i → j` goes to `E_ji ⊗ β i j`. -/
+noncomputable def matrixPathAlgHom (β : V → V → Matrix m m k) :
     pathAlgebra k (DoubledQuiver G) →ₐ[k] Matrix (V × m) (V × m) k :=
   liftAlgHomOfArrows k matrixVertex completeOrthogonalIdempotents_matrixVertex
     (matrixArrow β) (matrixVertex_mul_matrixArrow β) (matrixArrow_mul_matrixVertex β)
 
-private theorem matrixPathAlgHom_ofArrow (β : V → V → Matrix m m k) {i j : V} (h : G.Adj i j) :
-    matrixPathAlgHom k β (ofArrow (arrow G h)) = single j i 1 ⊗ₖ β i j := by
-  rw [matrixPathAlgHom, ofArrow_eq_ofPath, liftAlgHomOfArrows_ofPath_toPath, matrixArrow,
-    vertexEquiv_symm_vertex, vertexEquiv_symm_vertex]
+/-- The path-algebra matrix homomorphism sends the vertex idempotent at `v` to the block
+projection `E_vv ⊗ 1`. -/
+@[simp]
+theorem matrixPathAlgHom_vertexIdempotent (β : V → V → Matrix m m k) (v : V) :
+    matrixPathAlgHom k β (vertexIdempotent k (vertex G v)) = single v v 1 ⊗ₖ 1 := by
+  rw [matrixPathAlgHom, liftAlgHomOfArrows_vertexIdempotent, matrixVertex, vertexEquiv_symm_vertex]
 
-private theorem matrixPathAlgHom_backtrackElem (β : V → V → Matrix m m k) {v w : V}
+/-- The path-algebra matrix homomorphism sends the length-one path of the arrow `i → j` to the
+block `E_ji ⊗ β i j`. This is the simp-normal form of `matrixPathAlgHom_ofArrow`. -/
+@[simp]
+theorem matrixPathAlgHom_ofPath_toPath (β : V → V → Matrix m m k) {i j : V} (h : G.Adj i j) :
+    matrixPathAlgHom k β (ofPath ⟨vertex G i, vertex G j, (arrow G h).toPath⟩) =
+      single j i 1 ⊗ₖ β i j := by
+  rw [matrixPathAlgHom, liftAlgHomOfArrows_ofPath_toPath, matrixArrow, vertexEquiv_symm_vertex,
+    vertexEquiv_symm_vertex]
+
+/-- The path-algebra matrix homomorphism sends the arrow `i → j` to the block `E_ji ⊗ β i j`.
+This is not a simp lemma: `ofArrow` is not in simp-normal form, and
+`matrixPathAlgHom_ofPath_toPath` covers its normal form. -/
+theorem matrixPathAlgHom_ofArrow (β : V → V → Matrix m m k) {i j : V} (h : G.Adj i j) :
+    matrixPathAlgHom k β (ofArrow (arrow G h)) = single j i 1 ⊗ₖ β i j := by
+  rw [ofArrow_eq_ofPath, matrixPathAlgHom_ofPath_toPath]
+
+/-- The path-algebra matrix homomorphism sends the backtrack `v → w → v` to the block
+`E_vv ⊗ (β w v * β v w)`. -/
+@[simp]
+theorem matrixPathAlgHom_backtrackElem (β : V → V → Matrix m m k) {v w : V}
     (h : G.Adj v w) :
     matrixPathAlgHom k β (backtrackElem G k h) = single v v 1 ⊗ₖ (β w v * β v w) := by
   rw [← ofArrow_symm_mul_ofArrow, map_mul, matrixPathAlgHom_ofArrow, matrixPathAlgHom_ofArrow,
@@ -174,14 +204,22 @@ noncomputable def signlessMatrixRepresentation (β : V → V → Matrix m m k)
 
 variable (β : V → V → Matrix m m k) (hβ : ∀ v, ∑ w ∈ G.neighborFinset v, β w v * β v w = 0)
 
+/-- The matrix representation agrees with `matrixPathAlgHom` on the quotient map. This is not a
+simp lemma so that the direct evaluation simp lemmas on vertex idempotents, arrows, and backtracks
+remain in simp-normal form. -/
+theorem signlessMatrixRepresentation_signlessPreprojectiveMk
+    (x : pathAlgebra k (DoubledQuiver G)) :
+    signlessMatrixRepresentation k β hβ (signlessPreprojectiveMk k _ x) =
+      matrixPathAlgHom k β x := by
+  rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk]
+
 /-- The matrix representation sends the vertex idempotent at `v` to the block projection. -/
 @[simp]
 theorem signlessMatrixRepresentation_vertexIdempotent (v : V) :
     signlessMatrixRepresentation k β hβ
         (signlessPreprojectiveMk k _ (vertexIdempotent k (vertex G v))) =
       single v v 1 ⊗ₖ 1 := by
-  rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk,
-    matrixPathAlgHom, liftAlgHomOfArrows_vertexIdempotent, matrixVertex, vertexEquiv_symm_vertex]
+  rw [signlessMatrixRepresentation_signlessPreprojectiveMk, matrixPathAlgHom_vertexIdempotent]
 
 /-- The matrix representation sends the length-one path of the arrow `i → j` to the block
 `E_ji ⊗ β i j`. This is the simp-normal form of `signlessMatrixRepresentation_ofArrow`. -/
@@ -190,8 +228,7 @@ theorem signlessMatrixRepresentation_ofPath_toPath {i j : V} (h : G.Adj i j) :
     signlessMatrixRepresentation k β hβ
         (signlessPreprojectiveMk k _ (ofPath ⟨vertex G i, vertex G j, (arrow G h).toPath⟩)) =
       single j i 1 ⊗ₖ β i j := by
-  rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk,
-    ← ofArrow_eq_ofPath, matrixPathAlgHom_ofArrow]
+  rw [signlessMatrixRepresentation_signlessPreprojectiveMk, matrixPathAlgHom_ofPath_toPath]
 
 /-- The matrix representation sends the arrow `i → j` to the block `E_ji ⊗ β i j`. This is not a
 simp lemma: `ofArrow` is not in simp-normal form, and
@@ -207,16 +244,15 @@ theorem signlessMatrixRepresentation_ofArrow {i j : V} (h : G.Adj i j) :
 theorem signlessMatrixRepresentation_backtrackElem {v w : V} (h : G.Adj v w) :
     signlessMatrixRepresentation k β hβ (signlessPreprojectiveMk k _ (backtrackElem G k h)) =
       single v v 1 ⊗ₖ (β w v * β v w) := by
-  rw [signlessMatrixRepresentation, signlessPreprojectiveLift_signlessPreprojectiveMk,
-    matrixPathAlgHom_backtrackElem]
+  rw [signlessMatrixRepresentation_signlessPreprojectiveMk, matrixPathAlgHom_backtrackElem]
 
 /-- The matrix representation sends a nonempty product of backtracks `v → w → v` at a common
 vertex `v` to the block `E_vv ⊗ ∏ (β w v * β v w)`, the blocks multiplied in the same order. -/
 theorem signlessMatrixRepresentation_list_prod_backtrackElem {v : V}
     (l : List {w // G.Adj v w}) (hl : l ≠ []) :
     signlessMatrixRepresentation k β hβ
-        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.2)).prod =
-      single v v 1 ⊗ₖ (l.map fun w => β w.1 v * β v w.1).prod := by
+        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.property)).prod =
+      single v v 1 ⊗ₖ (l.map fun w => β w.val v * β v w.val).prod := by
   induction l with
   | nil => exact absurd rfl hl
   | cons w l ih =>
@@ -229,8 +265,8 @@ is the trace of the product of their blocks at `v`. -/
 theorem trace_signlessMatrixRepresentation_list_prod_backtrackElem {v : V}
     (l : List {w // G.Adj v w}) (hl : l ≠ []) :
     trace (signlessMatrixRepresentation k β hβ
-        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.2)).prod) =
-      trace (l.map fun w => β w.1 v * β v w.1).prod := by
+        (l.map fun w => signlessPreprojectiveMk k _ (backtrackElem G k w.property)).prod) =
+      trace (l.map fun w => β w.val v * β v w.val).prod := by
   rw [signlessMatrixRepresentation_list_prod_backtrackElem β hβ l hl, trace_kronecker,
     trace_single_eq_same, one_mul]
 
@@ -245,21 +281,31 @@ variable [Fintype V] [DecidableRel G.Adj] [Fintype m] [DecidableEq m]
 
 /-- **Nonzero cyclic classes from a matrix representation of a subgraph.** Let `f` be a copy of a
 graph `H` in `G`, not necessarily induced, and let `β` be a family of matrices on `H` satisfying
-the signless relations. If a nonempty product of backtracks `c → a → c` at a vertex `c` of `H`
+the signless relations. If a product of backtracks `c → a → c` at a vertex `c` of `H`
 acts at `c` by a matrix of nonzero trace, then the corresponding product of backtracks of `G` at
 `f c` is an element of path degree `2 * l.length` of `Π⁺(G)` which does not lie in the commutator
 submodule `[Π⁺(G), Π⁺(G)]`: its class in the cyclic quotient is nonzero. -/
 theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero
     (f : H.Copy G) (β : W → W → Matrix m m k)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {c : W}
-    (l : List {a // H.Adj c a}) (hl : l ≠ [])
-    (htr : trace (l.map fun a => β a.1 c * β c a.1).prod ≠ 0) :
+    (l : List {a // H.Adj c a})
+    (htr : trace (l.map fun a => β a.val c * β c a.val).prod ≠ 0) :
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
+  -- The empty product is the vertex idempotent at `f c`, of trace `trace 1`.
+  rcases eq_or_ne l [] with rfl | hl
+  · refine ⟨_, signlessPreprojectiveMk_mem_grade k _ (vertexIdempotent_mem_grade_zero
+      (vertex G (f c))), fun hx => htr ?_⟩
+    have htrace := trace_map_eq_zero_of_mem_commutatorSubmodule
+      (signlessMatrixRepresentation k (f.extendByZero β)
+        (f.sum_extendByZero_mul_extendByZero β hβ)) hx
+    rw [signlessMatrixRepresentation_vertexIdempotent, trace_kronecker, trace_single_eq_same,
+      one_mul] at htrace
+    simpa using htrace
   -- The backtracks of `G` at `f c` along the image of the list.
   let l' : List {w // G.Adj (f c) w} :=
-    l.map fun a : {a // H.Adj c a} => ⟨f a.1, f.toHom.map_adj a.2⟩
+    l.map fun a : {a // H.Adj c a} => ⟨f a.val, f.toHom.map_adj a.property⟩
   have hgrade :=
     list_prod_signlessPreprojectiveMk_backtrackElem_mem_signlessPreprojectiveGrade (k := k) l'
   rw [List.length_map] at hgrade
@@ -269,8 +315,8 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
     hx
   rw [trace_signlessMatrixRepresentation_list_prod_backtrackElem _ _ l' (by simpa [l'] using hl)]
     at htrace
-  have h₁ (a : {a // H.Adj c a}) : H.Adj c a := a.2
-  have h₂ (a : {a // H.Adj c a}) : H.Adj a c := a.2.symm
+  have h₁ (a : {a // H.Adj c a}) : H.Adj c a := a.property
+  have h₂ (a : {a // H.Adj c a}) : H.Adj a c := a.property.symm
   simpa [l', Function.comp_def, h₁, h₂] using htrace
 
 variable (k) in
@@ -288,23 +334,23 @@ omit [DecidableRel H.Adj] in
 variable (k) in
 /-- **Nonzero cyclic classes from an integer matrix representation of a subgraph.** An integer
 matrix family on `H` which vanishes off the edges and satisfies the signless relations, together
-with a nonempty product of backtracks at a vertex `c` of `H` acting at `c` with trace one, gives
+with a product of backtracks at a vertex `c` of `H` acting at `c` with trace one, gives
 an element of path degree `2 * l.length` of `Π⁺(G)` outside `[Π⁺(G), Π⁺(G)]` along any copy of
 `H` in `G`, over every nontrivial commutative ring. -/
 theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_eq_one
     [Nontrivial k] (f : H.Copy G) (β : W → W → Matrix m m ℤ)
     (h₀ : ∀ v w, ¬H.Adj v w → β v w = 0) (h : ∀ v, ∑ w, β w v * β v w = 0) {c : W}
-    (l : List {a // H.Adj c a}) (hl : l ≠ [])
-    (htr : trace (l.map fun a => β a.1 c * β c a.1).prod = 1) :
+    (l : List {a // H.Adj c a})
+    (htr : trace (l.map fun a => β a.val c * β c a.val).prod = 1) :
     ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) (2 * l.length),
       x ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
   refine exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero f
     (fun i j => (Int.castRingHom k).mapMatrix (β i j))
-    (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) l hl ?_
-  have hmap : (l.map fun a => (Int.castRingHom k).mapMatrix (β a.1 c) *
-      (Int.castRingHom k).mapMatrix (β c a.1)) =
-      (l.map fun a => β a.1 c * β c a.1).map (Int.castRingHom k).mapMatrix := by
+    (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ h) l ?_
+  have hmap : (l.map fun a => (Int.castRingHom k).mapMatrix (β a.val c) *
+      (Int.castRingHom k).mapMatrix (β c a.val)) =
+      (l.map fun a => β a.val c * β c a.val).map (Int.castRingHom k).mapMatrix := by
     simp only [List.map_map, Function.comp_def, map_mul]
   rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
   exact one_ne_zero

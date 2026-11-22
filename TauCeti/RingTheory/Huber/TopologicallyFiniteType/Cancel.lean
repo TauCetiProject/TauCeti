@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.RingTheory.Huber.WeightedEval.Finite
@@ -22,14 +23,19 @@ series over `B` is available.
 Neither completeness of `A` nor completeness of `B` is required.
 
 This gives the cancellation assertion of Wedhorn's Proposition 6.33(2) when the original base
-`A` is Tate: topological finite type over `A` is then strict topological finite type.
+`A` is Tate (`IsTopologicallyFiniteType.of_comp_of_isTateRing`), even when `B` is merely
+nonarchimedean: topological finite type over `A` is then strict topological finite type. When `B`
+is also Huber, weighted presentations give Wedhorn's Proposition 6.33(2) without a Tate hypothesis
+(`IsTopologicallyFiniteType.of_comp`), by enlarging the coefficientwise images of the weights in
+`B` with small generators of open ideals whose products with the evaluated variables are
+power-bounded in `C`.
 
-For morphisms of Huber pairs, weighted presentations give cancellation without a Tate hypothesis
-(Wedhorn, Proposition 8.46(2)). A presentation of `g ∘ f` factors through evaluation over `B`.
-The new weights contain the images of the original weights and finitely many small generators of
-open ideals of `B`; their evaluated weighted variables lie in `C⁺`. The plus ring `C⁺` is integral
-over the image of the original completed plus ring, which is contained in the image of the new
-one, so evaluation is a quotient mapping of pairs.
+For morphisms of Huber pairs, weighted presentations likewise give cancellation without a Tate
+hypothesis (Wedhorn, Proposition 8.46(2)). A presentation of `g ∘ f` factors through evaluation
+over `B`. The new weights contain the images of the original weights and finitely many small
+generators of open ideals of `B`; their evaluated weighted variables lie in `C⁺`. The plus ring
+`C⁺` is integral over the image of the original completed plus ring, which is contained in the
+image of the new one, so evaluation is a quotient mapping of pairs.
 
 This permits shrinking the target affinoid of a finite-type chart: if
 `(A, A⁺) → (C, C⁺)` is topologically of finite type and factors through a rational localisation
@@ -40,10 +46,19 @@ when `A` is not Tate.
 
 * `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.of_comp`: strict topological finite type
   cancels on the right, over a Huber base.
-* `TauCeti.Huber.IsTopologicallyFiniteType.of_comp`: Wedhorn Proposition 6.33(2) over a Tate base.
+* `TauCeti.Huber.IsTopologicallyFiniteType.of_comp`: Wedhorn Proposition 6.33(2) over a Huber
+  base and Huber intermediate ring.
+* `TauCeti.Huber.IsTopologicallyFiniteType.of_comp_of_isTateRing`: Wedhorn Proposition 6.33(2)
+  over a Tate base when the intermediate ring is only assumed nonarchimedean.
+* `TauCeti.Huber.IsTopologicallyFiniteType.completion_mapRingHom`: if `φ : A →+* B` is
+  topologically of finite type out of a Huber ring `A` equipped with a compatible additive
+  uniformity, then so is `Completion.mapRingHom φ : Â →+* B̂`.
 * `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.of_comp`: if the composite of morphisms of
   Huber pairs `(A, A⁺) → (B, B⁺) → (C, C⁺)` is topologically of finite type, with
   `C` complete and Hausdorff, then so is `(B, B⁺) → (C, C⁺)`.
+* `TauCeti.Huber.Pair.Hom.isTopologicallyFiniteType_toRingHom_of_comp`: right-cancellation of
+  ring-level `IsTopologicallyFiniteType` along a composite of morphisms of Huber pairs into a
+  complete Hausdorff target.
 
 ## References
 
@@ -116,13 +131,76 @@ theorem IsStrictlyTopologicallyFiniteType.of_comp [IsHuberRing A]
       ((isWeightBounded_one_weight_iff_forall_isPowerBounded ψ _).mpr hb)
   exact isStrictlyTopologicallyFiniteType_iff.mpr ⟨k, ρ, hρ, hρψ⟩
 
-/-- **Wedhorn Proposition 6.33(2), over a Tate base.** If `A → B → C` are continuous ring
-homomorphisms, `A` is Tate and `C` is complete and Hausdorff, then topological
-finite type of the composite implies topological finite type of `B → C`. -/
-theorem IsTopologicallyFiniteType.of_comp [IsTateRing A]
+/-- **Wedhorn Proposition 6.33(2), over a Tate base without a Huber assumption on `B`.** If
+`A → B → C` are continuous ring homomorphisms, `A` is Tate, `B` is nonarchimedean and `C` is
+complete and Hausdorff, then topological finite type of the composite implies topological finite
+type of `B → C`. -/
+theorem IsTopologicallyFiniteType.of_comp_of_isTateRing [IsTateRing A]
     (h : IsTopologicallyFiniteType (ψ.comp φ)) (hφ : Continuous φ)
     (hψ : Continuous ψ) : IsTopologicallyFiniteType ψ := by
   exact (h.isStrictlyTopologicallyFiniteType.of_comp hφ hψ).isTopologicallyFiniteType
+
+/-- **Wedhorn Proposition 6.33(2).** If `φ : A → B` and `ψ : B → C` are continuous ring
+homomorphisms, `A` and `B` are Huber rings and `C` is complete and Hausdorff, then topological
+finite type of `ψ ∘ φ` implies topological finite type of `ψ`. Neither completeness of `A` or `B`
+nor a Tate hypothesis on `A` is required. -/
+theorem IsTopologicallyFiniteType.of_comp [IsHuberRing A] [IsHuberRing B]
+    (h : IsTopologicallyFiniteType (ψ.comp φ)) (hφ : Continuous φ)
+    (hψ : Continuous ψ) : IsTopologicallyFiniteType ψ := by
+  classical
+  obtain ⟨k, T, hTfin, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
+  have : IsHuberRing C := IsHuberRing.of_isOpenQuotientMap hπ
+  let b : Fin k → C := fun i ↦ π (weightedX T hT i)
+  have hgen (i : Fin k) (t : A) (ht : t ∈ T i) : IsPowerBounded (ψ (φ t) * b i) := by
+    have hx := (isPowerBounded_completion_coe_of_isPowerBounded
+      (isPowerBounded_weightedC_mul_weightedX hT ht)).map_of_isOpenMap
+        hπ.continuous.continuousAt hπ.isOpenMap
+    simp only [Completion.coe_mul, map_mul] at hx
+    rw [← algebraMap_completion_weightedRestrictedSubring_apply, ← RingHom.comp_apply,
+      hcomm] at hx
+    simpa only [RingHom.comp_apply, b] using hx
+  -- Power-bounded elements form an open subring of `C`, so each evaluated variable admits a
+  -- neighbourhood of small coefficients in `B` whose products with it are power-bounded.
+  have hsmall (i : Fin k) : {t : B | IsPowerBounded (ψ t * b i)} ∈ nhds (0 : B) :=
+    Filter.mem_of_superset (((isOpen_powerBoundedSubring C).preimage
+      (hψ.mul continuous_const)).mem_nhds (by simp))
+      fun _ ht ↦ mem_powerBoundedSubring.mp ht
+  choose G hG hGopen using fun i ↦ exists_finset_subset_isOpen_span (hsmall i)
+  let T' : Fin k → Set B := fun i ↦ φ '' T i ∪ (G i : Set B)
+  have hT'fin : ∀ i, (T' i).Finite := fun i ↦ ((hTfin i).image _).union (G i).finite_toSet
+  have hTT' : ∀ i, φ '' T i ⊆ T' i := fun _ ↦ Set.subset_union_left
+  have hT' : IsWeightFamily T' := isWeightFamily_iff_isOpen_span.mpr fun i ↦
+    Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono Set.subset_union_right) (hGopen i)
+  have hb : IsWeightBounded ψ T' b :=
+    isWeightBounded_of_isWeightedVarPowerBounded <|
+      (isWeightedVarPowerBounded_iff_of_finite hT'fin).mpr fun i t ht ↦ by
+        rcases ht with ⟨t, ht, rfl⟩ | ht
+        · exact hgen i t ht
+        · exact hG i ht
+  obtain ⟨ρ, hρ, hρψ, -⟩ :=
+    exists_isOpenQuotientMap_comp_weightedMapCompletion_eq hT hT' hTT' hπ hcomm hφ hψ hb
+  exact isTopologicallyFiniteType_iff.mpr ⟨k, T', hT'fin, hT', ρ, hρ, hρψ⟩
+
+/-- **Completion preserves topological finite type**: if `φ : A →+* B` is topologically of finite
+type out of a Huber ring `A` equipped with a compatible additive uniformity into a topological ring
+`B` equipped with a compatible additive uniformity, then the induced map
+`Completion.mapRingHom φ : Â →+* B̂` is topologically of finite type. -/
+theorem IsTopologicallyFiniteType.completion_mapRingHom
+    {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+    [IsHuberRing A]
+    {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+    {φ : A →+* B} (hφ : IsTopologicallyFiniteType φ) :
+    IsTopologicallyFiniteType (Completion.mapRingHom φ hφ.continuous) := by
+  obtain ⟨_, _, _, _, π, hπ, _⟩ := isTopologicallyFiniteType_iff.mp hφ
+  have : IsHuberRing B := IsHuberRing.of_isOpenQuotientMap hπ
+  have hcomp : (Completion.mapRingHom φ hφ.continuous).comp Completion.coeRingHom =
+      (Completion.coeRingHom : B →+* Completion B).comp φ :=
+    RingHom.ext fun a ↦ Completion.mapRingHom_coe hφ.continuous a
+  have htft : IsTopologicallyFiniteType ((Completion.coeRingHom : B →+* Completion B).comp φ) :=
+    isStrictlyTopologicallyFiniteType_coeRingHom.isTopologicallyFiniteType.comp hφ
+  rw [← hcomp] at htft
+  exact htft.of_comp (Completion.uniformContinuous_coe A).continuous
+    (Completion.uniformContinuous_extension).continuous
 
 namespace Pair
 
@@ -235,6 +313,14 @@ theorem Hom.IsTopologicallyFiniteType.of_comp {f : Hom S U} {g : Hom U V}
   obtain ⟨k, T, hTfin, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
   obtain ⟨T', hT'fin, hT', ρ, hρ, hρg⟩ := exists_isQuotientMapping_of_comp hTfin hT hπ hcomm
   exact isTopologicallyFiniteType_iff.mpr ⟨k, T', hT'fin, hT', ρ, hρ, hρg⟩
+
+/-- Right-cancellation of `IsTopologicallyFiniteType` on the underlying ring homomorphisms of
+Huber-pair morphisms `f : S → U` and `g : U → V` into a complete Hausdorff Huber pair `V`. -/
+theorem Hom.isTopologicallyFiniteType_toRingHom_of_comp {f : Hom S U} {g : Hom U V}
+    (h : Huber.IsTopologicallyFiniteType (g.comp f).toRingHom) :
+    Huber.IsTopologicallyFiniteType g.toRingHom := by
+  rw [Hom.toRingHom_comp] at h
+  exact h.of_comp f.continuous_toRingHom g.continuous_toRingHom
 
 end Pair
 

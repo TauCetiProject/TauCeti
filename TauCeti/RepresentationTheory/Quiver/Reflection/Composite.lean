@@ -203,7 +203,7 @@ theorem isFinDim_reflectionFunctorList_obj :
       rw [reflectionFunctor_obj]
       exact (@isFinDim_iff.{u, v, w, max v w x} k V fld (Quiver.reflectAt q i) _).mpr
         (finiteDimensional_reflectRep_obj M (Quiver.isSinkAdmissible_cons.mp hl).1
-          ((@isFinDim_iff.{u, v, w, max v w x} k V fld q M).mp hfd))
+          fun a _ ↦ (@isFinDim_iff.{u, v, w, max v w x} k V fld q M).mp hfd a)
 
 /-! ### The action on an indecomposable representation -/
 
@@ -249,7 +249,7 @@ theorem indecomposable_and_dimVector_reflectionFunctorList_or_isZero [DecidableE
         rcases indecomposable_and_dimVector_reflectionFunctorList_or_isZero l
             (Quiver.reflectAt q i) (@instFintypeReflectHom V q hq i) hl' (reflectRep M hi)
             (indecomposable_reflectRep hi hM hs)
-            (finiteDimensional_reflectRep_obj M hi hfd) with ⟨h1, h2⟩ | h
+            (finiteDimensional_reflectRep_obj M hi fun a _ ↦ hfd a) with ⟨h1, h2⟩ | h
         · refine Or.inl ⟨h1, ?_⟩
           calc (fun j : V ↦ (@dimVector k V fld (Quiver.reflectList q (i :: l))
                 ((reflectionFunctorList k l (Quiver.reflectAt q i)
@@ -353,7 +353,7 @@ Every finite acyclic quiver has such an ordering, by
 `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`; the ordering is an argument rather than a
 choice, since the Coxeter transformation it realizes on dimension vectors,
 `TauCeti.vertexPreReflectionList`, depends on it. -/
-noncomputable def coxeterFunctor (k : Type u) {V : Type v} [fld : Field k] [Fintype V]
+noncomputable def coxeterFunctor (k : Type u) {V : Type v} [Field k] [Fintype V]
     (q : _root_.Quiver.{w} V) (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l)
     (hl : Quiver.IsSinkAdmissible q l) :
@@ -478,7 +478,7 @@ theorem indecomposable_and_dimVector_coxeterFunctor_or_isZero [DecidableEq V]
 
 /-- **The Coxeter functor preserves the Tits form of the dimension vector.** The Tits form is
 unchanged by a simple reflection at a loopless vertex, hence by the whole Coxeter transformation
-(`TauCeti.titsForm_vertexPreReflectionList`), and no vertex of a repetition-free sink-admissible
+(`TauCeti.titsForm_vertexPreReflectionList`), and no vertex of a sink-admissible
 list carries a loop (`TauCeti.Quiver.IsSinkAdmissible.isEmpty_hom_self`). So on an indecomposable
 representation the Coxeter functor either annihilates it or leaves the Tits form of its dimension
 vector alone. This preserved invariant feeds the finite-orbit descent theorem
@@ -498,7 +498,7 @@ theorem titsForm_dimVector_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     ⟨-, h2⟩ | h
   · rw [h2]
     exact @titsForm_vertexPreReflectionList V q fV hq _ l
-      (fun i hi ↦ hl.isEmpty_hom_self hnd hi) _
+      (fun i hi ↦ hl.isEmpty_hom_self hi) _
   · exact absurd h hne
 
 end TauCeti

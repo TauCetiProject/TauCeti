@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
-import TauCeti.LinearAlgebra.OrthogonalGroup
+public import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # Closedness and path components of matrix orthogonal groups
@@ -53,8 +53,8 @@ continuous in the operator-norm topology.
   continuously on the vector.
 * `TauCeti.sphereRotation`: for unit vectors `b` and `y ≠ -b` of `ℝᴺ`, the reflection in `b`
   followed by the reflection in `b + y`, a rotation taking `b` to `y`
-  (`TauCeti.sphereRotation_mulVec`) that depends continuously on `y`
-  (`TauCeti.continuousOn_sphereRotation`).
+  (`TauCeti.sphereRotation_mulVec`, `TauCeti.sphereRotation_smul`) that depends continuously
+  on `y` (`TauCeti.continuousOn_sphereRotation`).
 * `TauCeti.exists_path_linearIsometryEquiv_of_det_eq`: two linear isometries of Euclidean space
   with the same determinant are joined by an operator-norm-continuous path of linear isometries.
 
@@ -198,7 +198,7 @@ instance instPathConnectedSpaceSpecialOrthogonalGroup :
       mem_pathComponent_iff.2 (joined_one_refl_mul_refl hu0 hw0), ?_⟩
     simp only [Submonoid.coe_subtype, refl, TauCeti.toMatrix'_reflection, toQuadraticForm'_apply,
       one_mulVec, invOf_eq_inv, div_eq_mul_inv]
-  obtain ⟨B, hB, hBA⟩ := hle A.2
+  obtain ⟨B, hB, hBA⟩ := hle A.property
   obtain rfl : B = A := Subtype.ext hBA
   exact mem_pathComponent_iff.1 hB
 
@@ -210,11 +210,11 @@ theorem joined_orthogonalGroup_iff_det_eq {A B : orthogonalGroup ι ℝ} :
   · -- The determinant along a path takes only the values `±1`, so it cannot change sign.
     rintro ⟨γ⟩
     have hc : Continuous fun t ↦ ((γ t : orthogonalGroup ι ℝ) : _root_.Matrix ι ι ℝ).det :=
-      (continuous_subtype_val.comp γ.continuous).matrix_det
+      (continuous_subtypeVal.comp γ.continuous).matrix_det
     have h0 : ∀ t, ((γ t : orthogonalGroup ι ℝ) : _root_.Matrix ι ι ℝ).det ≠ 0 := fun t ↦ by
-      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup (γ t).2 with h | h <;> simp [h]
-    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.2 with hA | hA <;>
-      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.2 with hB | hB
+      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup (γ t).property with h | h <;> simp [h]
+    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
+      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB
     · rw [hA, hB]
     · obtain ⟨t, ht⟩ := intermediate_value_univ 1 0 hc (show (0 : ℝ) ∈ _ by simp [hA, hB])
       exact (h0 t ht).elim
@@ -225,11 +225,11 @@ theorem joined_orthogonalGroup_iff_det_eq {A B : orthogonalGroup ι ℝ} :
     intro h
     have hdet : ((A⁻¹ * B : orthogonalGroup ι ℝ) : _root_.Matrix ι ι ℝ).det = 1 := by
       simpa [star_eq_conjTranspose, det_conjTranspose, det_mul, h] using
-        congrArg det ((mem_orthogonalGroup_iff' _ _).1 A.2)
-    let C : specialOrthogonalGroup ι ℝ := ⟨A⁻¹ * B, (A⁻¹ * B).2, hdet⟩
+        congrArg det ((mem_orthogonalGroup_iff' _ _).1 A.property)
+    let C : specialOrthogonalGroup ι ℝ := ⟨A⁻¹ * B, (A⁻¹ * B).property, hdet⟩
     have hC : Joined (1 : orthogonalGroup ι ℝ) (A⁻¹ * B) :=
       (PathConnectedSpace.joined 1 C).map (f := fun D : specialOrthogonalGroup ι ℝ ↦
-        (⟨D, D.2.1⟩ : orthogonalGroup ι ℝ)) (continuous_subtype_val.subtype_mk _)
+        (⟨D, D.property.1⟩ : orthogonalGroup ι ℝ)) (continuous_subtypeVal.subtype_mk _)
     simpa using (Joined.refl A).mul hC
 
 end TauCeti.Matrix
@@ -293,6 +293,13 @@ theorem sphereRotation_mulVec {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} 
   rw [WithLp.ofLp_add] at hv ⊢
   exact reflectionMatrix_add_mulVec_reflectionMatrix_mulVec (hunit b) (hunit y) hv
 
+/-- The rotation `sphereRotation b y` takes `b` to `y` when `y ≠ -b`, acting on the unit
+sphere. -/
+theorem sphereRotation_smul {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
+    sphereRotation b y • b = y :=
+  Subtype.ext (by
+    rw [coe_specialUnitaryGroup_smul_unitSphere, sphereRotation_mulVec h, WithLp.toLp_ofLp])
+
 /-- The rotation `sphereRotation b y` depends continuously on `y` away from `-b`. -/
 theorem continuousOn_sphereRotation (b : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
     ContinuousOn (sphereRotation b) {-b}ᶜ := by
@@ -330,15 +337,16 @@ theorem exists_path_linearIsometryEquiv_of_det_eq
         EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) ∧
       γ 0 = g ∧ γ 1 = g' := by
   classical
-  obtain ⟨A, rfl⟩ := orthogonalGroupToLinearIsometryEquiv_surjective g
-  obtain ⟨B, rfl⟩ := orthogonalGroupToLinearIsometryEquiv_surjective g'
+  obtain ⟨A, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv.surjective g
+  obtain ⟨B, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv.surjective g'
   have hAB : (A : _root_.Matrix ι ι ℝ).det = (B : _root_.Matrix ι ι ℝ).det := by
-    rw [← det_orthogonalGroupToLinearIsometryEquiv, ← det_orthogonalGroupToLinearIsometryEquiv]
+    rw [← Matrix.UnitaryGroup.det_toLinearIsometryEquiv,
+      ← Matrix.UnitaryGroup.det_toLinearIsometryEquiv]
     exact h
   obtain ⟨p⟩ := Matrix.joined_orthogonalGroup_iff_det_eq.2 hAB
-  exact ⟨fun t ↦ orthogonalGroupToLinearIsometryEquiv (p t),
-    continuous_orthogonalGroupToLinearIsometryEquiv.comp p.continuous,
-    congrArg orthogonalGroupToLinearIsometryEquiv p.source,
-    congrArg orthogonalGroupToLinearIsometryEquiv p.target⟩
+  exact ⟨fun t ↦ Matrix.UnitaryGroup.toLinearIsometryEquiv (p t),
+    Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv.comp p.continuous,
+    congrArg Matrix.UnitaryGroup.toLinearIsometryEquiv p.source,
+    congrArg Matrix.UnitaryGroup.toLinearIsometryEquiv p.target⟩
 
 end TauCeti

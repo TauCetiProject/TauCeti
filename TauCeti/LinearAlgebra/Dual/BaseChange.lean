@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 import Mathlib.LinearAlgebra.Contraction
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Evaluation after scalar extension
@@ -25,12 +26,14 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `TauCeti.Module.Dual.baseChangeEvaluation_tmul`: its value on two pure tensors.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
+* `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_one`: the value of a
+  base-changed functional at `1 ⊗ m`, and at the unit of a base-changed algebra.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv`: scalar extension commutes with the dual of a
   finite projective module.
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
   coordinates in the base-changed basis.
 * `TauCeti.Module.Dual.eq_of_baseChange_eq`: base changes of all dual elements jointly
-  separate vectors when the original module is free.
+  separate vectors when the original module is projective.
 
 ## References
 
@@ -88,6 +91,18 @@ theorem _root_.Module.Dual.baseChangeEvaluation_one_tmul_baseChange
   | add s t hs ht => simpa only [map_add] using congrArg₂ (· + ·) hs ht
   | tmul a m => simp [baseChangeEvaluation_tmul]
 
+/-- The base change of a functional `φ` takes `1 ⊗ m` to the image of `φ m` in `A`. -/
+theorem _root_.Module.Dual.baseChange_apply_one_tmul (φ : Module.Dual R M) (m : M) :
+    φ.baseChange A (1 ⊗ₜ[R] m) = algebraMap R A (φ m) := by
+  rw [Module.Dual.baseChange_apply_tmul, Algebra.algebraMap_eq_smul_one]
+
+/-- The base change of a functional `φ` on an `R`-algebra `S` takes the unit of `A ⊗[R] S` to
+the image of `φ 1` in `A`. -/
+@[simp]
+theorem _root_.Module.Dual.baseChange_apply_one {S : Type*} [Semiring S] [Algebra R S]
+    (φ : Module.Dual R S) : φ.baseChange A 1 = algebraMap R A (φ 1) := by
+  rw [Algebra.TensorProduct.one_def, Module.Dual.baseChange_apply_one_tmul]
+
 section FiniteProjective
 
 variable [Module.Finite R M] [Module.Projective R M]
@@ -144,17 +159,23 @@ theorem baseChange_coord {ι : Type*} (b : Module.Basis ι R M) (i : ι) (z : A 
         _ = Module.Dual.baseChange A (b.coord i) (a ⊗ₜ[R] m) := by
           simp [Module.Basis.coord_apply, Algebra.smul_def, mul_comm]
 
-/-- If `M` is free, the base changes of its `R`-linear functionals jointly separate vectors
-in `A ⊗[R] M`. -/
-theorem eq_of_baseChange_eq [Module.Free R M] {x y : A ⊗[R] M}
+/-- If `M` is projective, the base changes of its `R`-linear functionals jointly separate vectors
+in `A ⊗[R] M`.
+
+Since contracting against `φ` is the base change of `φ`, this is the case of
+`TensorProduct.tensor_eq_of_forall_tensorComponent_eq` with left factor `A`. -/
+theorem eq_of_baseChange_eq [Module.Projective R M] {x y : A ⊗[R] M}
     (h : ∀ φ : Module.Dual R M,
       Module.Dual.baseChange A φ x = Module.Dual.baseChange A φ y) : x = y := by
-  let b := Module.Free.chooseBasis R M
-  let bA := (TensorProduct.isBaseChange R M A).basis b
-  apply bA.ext_elem
-  intro i
-  rw [baseChange_coord b i x, baseChange_coord b i y]
-  exact h (b.coord i)
+  -- Contracting against `φ` is the base change of `φ`, viewed as an `R`-linear map.
+  have hcomponent (φ : Module.Dual R M) :
+      LinearMap.tensorComponent (M := A) φ = (Module.Dual.baseChange A φ).restrictScalars R :=
+    TensorProduct.ext' fun a m ↦ by
+      rw [LinearMap.tensorComponent_tmul, LinearMap.restrictScalars_apply,
+        Module.Dual.baseChange_apply_tmul]
+  refine TensorProduct.tensor_eq_of_forall_tensorComponent_eq fun φ ↦ ?_
+  rw [hcomponent, LinearMap.restrictScalars_apply, LinearMap.restrictScalars_apply]
+  exact h φ
 
 end TauCeti.Module.Dual
 

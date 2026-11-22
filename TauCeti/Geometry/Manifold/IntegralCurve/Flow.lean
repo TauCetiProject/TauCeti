@@ -136,15 +136,12 @@ witnesses. -/
     (ht : t ∈ maximalIntegralCurveInterval v x) :
     s ∈ maximalIntegralCurveInterval v (maximalIntegralCurve v x t) ↔
       t + s ∈ maximalIntegralCurveInterval v x := by
-  have h0 : (0 : ℝ) ∈ maximalIntegralCurveInterval v x := by
-    obtain ⟨γ, a, b, hγ, hγx, hγ0, -, -⟩ :=
-      exists_isMIntegralCurveOn_maximalIntegralCurve_eq ht
-    exact hγ.subset_maximalIntegralCurveInterval hγ0 hγx hγ0
+  have h0 := zero_mem_maximalIntegralCurveInterval_of_mem ht
   have hneg : -t ∈ maximalIntegralCurveInterval v (maximalIntegralCurve v x t) := by
     simpa only [zero_sub] using sub_mem_maximalIntegralCurveInterval hv ht h0
   have hback : maximalIntegralCurve v (maximalIntegralCurve v x t) (-t) = x := by
     rw [← maximalIntegralCurve_add hv ht]
-    · simpa only [add_neg_cancel] using maximalIntegralCurve_zero h0
+    · simpa only [add_neg_cancel] using maximalIntegralCurve_zero
     · simpa using h0
   constructor
   · intro hs
@@ -352,10 +349,10 @@ private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
     exact ⟨min_le_right _ _, le_max_right _ _⟩
   let T : Set K := {r | (r : ℝ) ∈ S}
   have hTopen : IsOpen T :=
-    hSopen.preimage continuous_subtype_val
+    hSopen.preimage continuous_subtypeVal
   have hTclosed : IsClosed T := by
     have h : IsClosed ((fun r : K ↦ (r : ℝ)) ⁻¹' (S ∩ K)) :=
-      hSKclosed.preimage continuous_subtype_val
+      hSKclosed.preimage continuous_subtypeVal
     have heq : (fun r : K ↦ (r : ℝ)) ⁻¹' (S ∩ K) = T := by
       ext r
       constructor

@@ -141,7 +141,7 @@ private theorem block_eq_mul_sum (n : ℕ) (μ : _root_.YoungDiagram) :
             X i.castSucc ^ (m + (n - 1 - j)) * X (Fin.last n) ^ (μ.rowLen j - m)) i j := by
   refine Matrix.ext fun i j => ?_
   rw [Matrix.of_apply, Matrix.of_apply, Matrix.of_apply]
-  set y : MvPolynomial (Fin (n + 1)) R := X (Fin.last n) with hy
+  set y : MvPolynomial (Fin (n + 1)) R := X (Fin.last n)
   set a := μ.rowLen ((j : ℕ) + 1)
   set b := μ.rowLen j
   set c := n - 1 - j
@@ -282,7 +282,7 @@ theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ
   induction N generalizing μ with
   | zero =>
     have hμ0 : μ = ⊥ := YoungDiagram.rowLen_injective (funext fun i => by
-      rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.zero_le i)), hbot])
+      rw [YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans (Nat.zero_le i)), hbot])
     subst hμ0
     simp [diagramSchurPoly_bot, alternant_def, YoungDiagram.betaNumber_def]
   | succ n ih =>

@@ -29,8 +29,10 @@ makes it homotopy equivalent to the loop space `Ω K k`
 no identification independent of a reference path is asserted.
 
 The full based path space is contractible by the shrinking homotopy, whereas its
-endpoint fibres generally are not. No fibration or homotopy exact-sequence theorem
-is asserted here.
+endpoint fibres generally are not. Reversing paths identifies it with the space of paths
+ending at a fixed point (`TauCeti.mappingPathFiberIdHomeomorph`), the fibre of the
+mapping-path replacement of the identity, which is therefore contractible as well. No
+fibration or homotopy exact-sequence theorem is asserted here.
 
 ## References
 
@@ -62,6 +64,19 @@ def proj : C(MappingPathFiber f k, B) :=
 @[simp]
 theorem proj_apply (p : MappingPathFiber f k) : proj f k p = p.val.1 := (rfl)
 
+/-- The path of a point of the mapping-path fibre, as a path from `f x` to `k`. -/
+def toPath (q : MappingPathFiber f k) : Path (f q.val.1) k :=
+  ⟨q.val.2, q.property.1, q.property.2⟩
+
+@[simp]
+theorem coe_toPath (q : MappingPathFiber f k) : ⇑(toPath f k q) = q.val.2 :=
+  (rfl)
+
+@[simp]
+theorem toContinuousMap_toPath (q : MappingPathFiber f k) :
+    (toPath f k q).toContinuousMap = q.val.2 :=
+  (rfl)
+
 /-- Flattening identifies the two-constraint path fibre with the literal endpoint fibre. -/
 def endpointHomeomorph :
     MappingPathFiber f k ≃ₜ {p : MappingPathSpace f // MappingPathSpace.endpoint f p = k} where
@@ -71,8 +86,8 @@ def endpointHomeomorph :
     (MappingPathSpace.endpoint_apply f p.val).symm.trans p.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_val).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtypeVal).subtype_mk _
 
 @[simp]
 theorem endpointHomeomorph_val (p : MappingPathFiber f k) :
@@ -82,6 +97,30 @@ theorem endpointHomeomorph_val (p : MappingPathFiber f k) :
 theorem endpointHomeomorph_symm_val
     (p : {p : MappingPathSpace f // MappingPathSpace.endpoint f p = k}) :
     ((endpointHomeomorph f k).symm p).val = p.val.val := (rfl)
+
+/-- Include the ordinary fibre over `k` into the mapping-path fibre by constant paths. -/
+def ofFiber : C(f ⁻¹' {k}, MappingPathFiber f k) :=
+  ⟨fun b ↦ ⟨(b.val, ContinuousMap.const I k), b.property.symm, rfl⟩,
+    (continuous_subtypeVal.prodMk continuous_const).subtype_mk _⟩
+
+@[simp]
+theorem ofFiber_val (b : f ⁻¹' {k}) :
+    (ofFiber f k b).val = (b.val, ContinuousMap.const I k) := (rfl)
+
+@[simp]
+theorem proj_comp_ofFiber :
+    (proj f k).comp (ofFiber f k) = ⟨Subtype.val, continuous_subtypeVal⟩ := by
+  ext
+  rfl
+
+@[simp]
+theorem endpointHomeomorph_ofFiber_val (b : f ⁻¹' {k}) :
+    (endpointHomeomorph f k (ofFiber f k b)).val = MappingPathSpace.incl f b.val := by
+  apply Subtype.ext
+  rw [endpointHomeomorph_val, ofFiber_val, MappingPathSpace.incl_val]
+  refine Prod.ext rfl ?_
+  ext _
+  exact b.property.symm
 
 /-- `MappingPathFiber f k` is the base change along `f` of the fixed-end path fibration
 `proj (ContinuousMap.id K) k`. -/
@@ -94,12 +133,12 @@ def pullbackHomeomorph :
   left_inv _ := rfl
   right_inv x := Subtype.ext (Prod.ext rfl (Subtype.ext (Prod.ext x.property rfl)))
   continuous_toFun := by
-    refine (continuous_subtype_val.fst.prodMk ?_).subtype_mk _
-    exact ((f.continuous.comp continuous_subtype_val.fst).prodMk
-      continuous_subtype_val.snd).subtype_mk _
+    refine (continuous_subtypeVal.fst.prodMk ?_).subtype_mk _
+    exact ((f.continuous.comp continuous_subtypeVal.fst).prodMk
+      continuous_subtypeVal.snd).subtype_mk _
   continuous_invFun :=
-    (continuous_subtype_val.fst.prodMk
-      (continuous_subtype_val.comp continuous_subtype_val.snd).snd).subtype_mk _
+    (continuous_subtypeVal.fst.prodMk
+      (continuous_subtypeVal.comp continuous_subtypeVal.snd).snd).subtype_mk _
 
 @[simp]
 theorem pullbackHomeomorph_val_fst (p : MappingPathFiber f k) :
@@ -128,7 +167,7 @@ def projFiberHomeomorphPath (b : B) :
   left_inv p := Subtype.ext (Subtype.ext (Prod.ext p.property.symm rfl))
   right_inv _ := rfl
   continuous_toFun :=
-    continuous_induced_rng.2 (continuous_subtype_val.comp continuous_subtype_val).snd
+    continuous_induced_rng.2 (continuous_subtypeVal.comp continuous_subtypeVal).snd
   continuous_invFun := ((continuous_const.prodMk continuous_induced_dom).subtype_mk _).subtype_mk _
 
 @[simp]
@@ -184,7 +223,7 @@ def mappingPathFiberConstHomeomorphPath (b k : K) :
     · exact Subsingleton.elim _ _
     · rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_induced_rng.2 continuous_subtype_val.snd
+  continuous_toFun := continuous_induced_rng.2 continuous_subtypeVal.snd
   continuous_invFun := (continuous_const.prodMk continuous_induced_dom).subtype_mk _
 
 @[simp]
@@ -213,5 +252,34 @@ theorem mappingPathFiberConstHomeomorphLoopSpace_refl (k : K) :
 /-- The based path space (without a fixed final endpoint) is contractible. -/
 instance (k : K) : ContractibleSpace (MappingPathSpace (ContinuousMap.const Unit k)) :=
   (MappingPathSpace.homotopyEquiv (ContinuousMap.const Unit k)).symm.contractibleSpace
+
+/-- Reversing paths identifies the fibre over `k` of the mapping-path replacement of the identity,
+the paths ending at `k`, with the based path space of the paths starting at `k`. -/
+def mappingPathFiberIdHomeomorph (k : K) :
+    MappingPathFiber (ContinuousMap.id K) k ≃ₜ MappingPathSpace (ContinuousMap.const Unit k) where
+  toFun p := ⟨((), p.val.2.comp ⟨σ, continuous_symm⟩),
+    (congrArg p.val.2 symm_zero).trans p.property.2⟩
+  invFun q := ⟨(q.val.2 1, q.val.2.comp ⟨σ, continuous_symm⟩), congrArg q.val.2 symm_zero,
+    (congrArg q.val.2 symm_one).trans q.property⟩
+  left_inv p := by
+    refine Subtype.ext (Prod.ext ?_ (ContinuousMap.ext fun t => by simp))
+    simpa using p.property.1
+  right_inv q := Subtype.ext (Prod.ext rfl (ContinuousMap.ext fun t => by simp))
+  continuous_toFun :=
+    (continuous_const.prodMk ((ContinuousMap.continuous_precomp _).comp
+      continuous_subtypeVal.snd)).subtype_mk _
+  continuous_invFun :=
+    ((continuous_subtypeVal.snd.eval continuous_const).prodMk
+      ((ContinuousMap.continuous_precomp _).comp continuous_subtypeVal.snd)).subtype_mk _
+
+@[simp]
+theorem mappingPathFiberIdHomeomorph_apply_val (k : K) (p : MappingPathFiber (ContinuousMap.id K) k)
+    (t : I) : (mappingPathFiberIdHomeomorph k p).val.2 t = p.val.2 (σ t) := (rfl)
+
+/-- The paths ending at a fixed point form a contractible space: this is the total space of the
+fixed-end path fibration of `K`, the source projection of
+`MappingPathFiber (ContinuousMap.id K) k`. -/
+instance (k : K) : ContractibleSpace (MappingPathFiber (ContinuousMap.id K) k) :=
+  (mappingPathFiberIdHomeomorph k).contractibleSpace
 
 end TauCeti

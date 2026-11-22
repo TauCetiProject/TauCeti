@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Regular
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Discrete
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
@@ -90,9 +92,9 @@ theorem fourierCoeff_star (hρ : Function.Injective ρ) (g : G)
       regularAlgebra α ρ Measure.count) := by
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, StarMemClass.coe_star, ContinuousLinearMap.star_eq_adjoint]
-      using ContinuousLinearMap.adjoint.continuous.comp
-        (continuous_subtype_val : Continuous fun y : regularAlgebra α ρ Measure.count =>
-          (y : Lp H 2 (Measure.count : Measure G) →L[ℂ] Lp H 2 (Measure.count : Measure G)))
+      using (continuous_subtypeVal : Continuous fun y : regularAlgebra α ρ Measure.count =>
+        (y : Lp H 2 (Measure.count : Measure G) →L[ℂ]
+          Lp H 2 (Measure.count : Measure G))).clm_adjoint
   induction x using induction_on α ρ Measure.count with
   | hp =>
     exact isClosed_eq ((fourierCoeff α ρ hρ g).continuous.comp hstar)
@@ -134,7 +136,8 @@ theorem inner_single_fourierCoeff (hρ : Function.Injective ρ)
 theorem eq_zero_of_fourierCoeff_eq_zero (hρ : Function.Injective ρ)
     (x : regularAlgebra α ρ Measure.count) (hx : ∀ g, fourierCoeff α ρ hρ g x = 0) : x = 0 := by
   apply Subtype.ext
-  apply ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton
+  refine ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton
+    ENNReal.ofNat_ne_top _ ?_
   intro s v
   refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := ℂ) _ fun r w => ?_
   rw [inner_single_fourierCoeff α ρ hρ, hx]

@@ -20,7 +20,8 @@ These are the hypotheses under which a path with velocities in `W λ` has a uniq
 presentation, and its central shift by `χ` has velocities in `W (λ + χ)`; see
 `TauCeti/RepresentationTheory/LSPath/Distinguished.lean`.
 
-For a root pairing over `ℤ`, an additive map `f` from the weight lattice to a vector space carries
+Each Weyl orbit is stable under root reflections. For a root pairing over `ℤ`, an additive map
+`f` from the weight lattice to a vector space carries
 the reflection `s_i` in the root `αᵢ` to the reflection in `f αᵢ` along a linear form agreeing
 with the coroot `αᵢ^∨`, so the image `f (W λ)` is stable under the latter. This is the hypothesis
 under which the root operators preserve paths with velocities in `f (W λ)`; see
@@ -63,6 +64,21 @@ theorem mapsTo_add_orbit_weylGroup {χ : V} (hχ : ∀ w : P.weylGroup, w • χ
   exact ⟨w, by simp only [smul_add, hχ]⟩
 
 end Field
+
+section CommRing
+
+variable {ι R V N : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+  [AddCommGroup N] [Module R N] (P : RootPairing ι R V N)
+
+/-- A Weyl orbit is stable under reflection in any root along its coroot. -/
+theorem mapsTo_preReflection_orbit_weylGroup (i : ι) (lam : V) :
+    Set.MapsTo (Module.preReflection (P.root i) (P.coroot' i))
+      (MulAction.orbit P.weylGroup lam) (MulAction.orbit P.weylGroup lam) := by
+  intro v hv
+  simpa [P.reflection_apply, Module.preReflection_apply] using
+    MulAction.mapsTo_smul_orbit (weylGroup.ofIdx P i) lam hv
+
+end CommRing
 
 section Realization
 

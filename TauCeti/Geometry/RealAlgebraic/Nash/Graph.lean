@@ -69,7 +69,7 @@ private theorem isSemialgebraic_graph_of_polynomial_relation_of_not_nullified {n
         simpa only [eval₂_id] using hsign q (Finset.mem_union_left _ hq) C hC)
     obtain ⟨i, hi⟩ := D.exists_eq_root_of_continuous (k := ⟨P, Finset.mem_singleton_self P⟩)
       (continuousOn_iff_continuous_domRestrict.mp (hf.mono hCs))
-      (fun x ↦ hne x.1 (hCs x.2)) (fun x ↦ hrel x.1 (hCs x.2))
+      (fun x ↦ hne x.val (hCs x.property)) (fun x ↦ hrel x.val (hCs x.property))
     convert (D.isSemialgebraicStack (h𝒞.isSemialgebraic hC)).isSemialgebraic_sectionSet i using 1
     ext y
     simp only [mem_ofPred_eq, mem_image_cylinder, mem_sectionSet]
@@ -130,7 +130,7 @@ theorem isSemialgebraicOn_of_polynomial_relation {σ : Type*} [Finite σ]
     IsSemialgebraicOn (fun x (_ : Unit) ↦ f x) s := by
   obtain ⟨j, hj⟩ : ∃ j, P.coeff j ≠ 0 := by
     by_contra h
-    exact hP (Polynomial.ext fun j ↦ by simpa using not_exists.mp h j)
+    exact hP (AddMonoidAlgebra.ext <| Finsupp.ext fun j ↦ by simpa using not_exists.mp h j)
   let t := s ∩ {x | eval x (P.coeff j) ≠ 0}
   have ht : IsSemialgebraic t := hs.inter (isSemialgebraic_eval_ne_zero (P.coeff j))
   have hts : t ⊆ s := inter_subset_left
@@ -143,7 +143,7 @@ theorem isSemialgebraicOn_of_polynomial_relation {σ : Type*} [Finite σ]
     (fun x hx ↦ hrel x hx.1)
   let e := Homeomorph.sumArrowHomeomorphProdArrow (X := ℝ) (ι := σ) (ι' := Unit)
   have he : ⇑e = ⇑(Equiv.sumArrowEquivProdArrow σ Unit ℝ) :=
-    coe_sumArrowHomeomorphProdArrow
+    Homeomorph.coe_sumArrowHomeomorphProdArrow
   have hfst (z : σ ⊕ Unit → ℝ) : (e z).1 = z ∘ Sum.inl := by
     rw [he]
     exact funext (Equiv.sumArrowEquivProdArrow_apply_fst z)

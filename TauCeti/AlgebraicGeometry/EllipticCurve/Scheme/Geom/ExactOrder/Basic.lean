@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.CategoryTheory.Comma.Over.StrictInitial
 
 /-!
 # Points of exact order `N` on an elliptic curve
@@ -55,6 +56,8 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.multiplesDivisor E P N`: the divisor
   `[P] + [2P] + ⋯ + [NP]`, as an ideal sheaf on `E`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.multiplesDivisorSection E P N`: the canonical
+  sections of `[P] + [2P] + ⋯ + [NP]` over `S` lifting `P, 2P, …, NP`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfExactOrder E P N`: the point `P` has exact
   order `N` in the sense of Katz and Mazur.
 
@@ -130,6 +133,20 @@ theorem isOfExactOrder_def {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : 
             Over.mk E.structureMap) :=
   Iff.rfl
 
+/-- Over an empty base every object of `Over S` is a group object and every morphism to a group
+object is a monoid homomorphism, so every point has exact order `N`. -/
+theorem isOfExactOrder_of_isEmpty [IsEmpty S]
+    {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} {N : ℕ} : E.IsOfExactOrder P N := by
+  have ht (X : Over S) : IsTerminal X := Over.isTerminalOfIsInitial isInitialOfIsEmpty X
+  rw [isOfExactOrder_def]
+  let X := Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)
+  let _ : MonObj X :=
+    { one := (ht _).from _, mul := (ht _).from _, one_mul := (ht _).hom_ext _ _,
+      mul_one := (ht _).hom_ext _ _, mul_assoc := (ht _).hom_ext _ _ }
+  let _ : GrpObj X :=
+    { inv := (ht _).from _, left_inv := (ht _).hom_ext _ _, right_inv := (ht _).hom_ext _ _ }
+  exact ⟨inferInstance, { one_hom := (ht _).hom_ext _ _, mul_hom := (ht _).hom_ext _ _ }⟩
+
 /-- **The closed-subgroup criterion for points of exact order `N`.** A point `P` has exact order
 `N` exactly when the ideal sheaf of `D = [P] + ⋯ + [NP]` vanishes on the identity, on the product
 of two points of `D` and on the inverse of a point of `D`. -/
@@ -181,6 +198,31 @@ theorem multiplesDivisor_le_ker {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} 
     (ha : a < N) : E.multiplesDivisor P N ≤ (P ^ (a + 1)).left.ker := by
   rw [multiplesDivisor_eq_pointsDivisor]
   exact pointsDivisor_le_ker (fun i : Fin N ↦ P ^ (i.val + 1)) ⟨a, ha⟩
+
+/-- The canonical lift of `P ^ (a + 1)` (`a : Fin N`) to a section of the closed subscheme cut out
+by `E.multiplesDivisor P N = [P] + [2P] + ⋯ + [NP]`. -/
+noncomputable def multiplesDivisorSection (E : EllipticCurveGeom S)
+    (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ) (a : Fin N) :
+    S ⟶ (E.multiplesDivisor P N).subscheme :=
+  IsClosedImmersion.lift (E.multiplesDivisor P N).subschemeι (P ^ (a.val + 1)).left
+    ((Scheme.IdealSheafData.ker_subschemeι _).symm ▸ E.multiplesDivisor_le_ker a.isLt)
+
+/-- Composing `multiplesDivisorSection E P N a` with the closed immersion of
+`[P] + [2P] + ⋯ + [NP]` into `E` recovers `(P ^ (a.val + 1)).left`. -/
+@[reassoc (attr := simp)]
+theorem multiplesDivisorSection_subschemeι (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ)
+    (a : Fin N) :
+    E.multiplesDivisorSection P N a ≫ (E.multiplesDivisor P N).subschemeι =
+      (P ^ (a.val + 1)).left :=
+  IsClosedImmersion.lift_fac _ _ _
+
+/-- Each `multiplesDivisorSection E P N a` is a section of `[P] + [2P] + ⋯ + [NP]` over `S`. -/
+@[reassoc]
+theorem multiplesDivisorSection_comp (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (N : ℕ)
+    (a : Fin N) :
+    E.multiplesDivisorSection P N a ≫
+      ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) = 𝟙 S := by
+  rw [← Category.assoc, multiplesDivisorSection_subschemeι, left_comp_structureMap]
 
 /-- The support of the divisor `[P] + [2P] + ⋯ + [NP]` is the union of the images of the sections
 `P, 2P, …, NP`. -/

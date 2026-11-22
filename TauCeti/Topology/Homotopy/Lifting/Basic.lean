@@ -15,9 +15,11 @@ homotopy `H : I × A → B` whose initial map lifts along `p` to `f : A → E` l
 homotopy `G : I × A → E` starting at `f`.  The property is stated for maps between topological
 spaces in arbitrary universes.  Covering maps have it for every space
 (`IsCoveringMap.hasHomotopyLiftingProperty`), as do product projections
-(`TauCeti.hasHomotopyLiftingProperty_fst`) and homeomorphisms
+(`TauCeti.hasHomotopyLiftingProperty_fst`), maps to a subsingleton
+(`TauCeti.hasHomotopyLiftingProperty_of_subsingleton`) and homeomorphisms
 (`Homeomorph.hasHomotopyLiftingProperty`); it is closed under composition
-(`TauCeti.HasHomotopyLiftingProperty.comp`), base change
+(`TauCeti.HasHomotopyLiftingProperty.comp`), products
+(`TauCeti.HasHomotopyLiftingProperty.prodMap`), base change
 (`TauCeti.HasHomotopyLiftingProperty.pullback`), restriction over a subset of the base
 (`TauCeti.HasHomotopyLiftingProperty.restrictPreimage`) and restriction to a subset of the total
 space closed under joining by paths (`TauCeti.HasHomotopyLiftingProperty.comp_subtypeVal`), and
@@ -26,7 +28,9 @@ homotopy lifting of
 (`TauCeti.HasHomotopyLiftingProperty.exists_lift_of_mem`); it depends on the space only up to
 homeomorphism (`Homeomorph.hasHomotopyLiftingProperty_iff`), passes from open subsets along open
 embeddings (`TauCeti.HasHomotopyLiftingProperty.of_isOpenEmbedding`), and a map with it lifts paths
-(`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`).
+(`TauCeti.HasHomotopyLiftingProperty.exists_path_lift`). By uniqueness of lifts, a covering map
+also lifts a free homotopy of loops to a free homotopy of loops starting at any loop lifting the
+first loop (`IsCoveringMap.exists_lift_freeHomotopy`).
 
 Serre fibrations, the maps with the homotopy lifting property with respect to every disk, are in
 `TauCeti.Topology.Homotopy.SerreFibration.Basic`.
@@ -82,6 +86,25 @@ theorem hasHomotopyLiftingProperty_fst (F : Type*) [TopologicalSpace F] (A : Typ
     [TopologicalSpace A] : HasHomotopyLiftingProperty (Prod.fst : B × F → B) A :=
   fun f H hH ↦ ⟨⟨fun x ↦ (H x, (f x.2).2), by fun_prop⟩, rfl, fun a ↦ Prod.ext (hH a) rfl⟩
 
+/-- A map to a subsingleton space has the homotopy lifting property with respect to every space:
+a homotopy lifts as the constant homotopy of the initial lift. -/
+theorem hasHomotopyLiftingProperty_of_subsingleton [Subsingleton B] (A : Type w)
+    [TopologicalSpace A] : HasHomotopyLiftingProperty p A :=
+  fun f _ _ ↦ ⟨f.comp ContinuousMap.snd, funext fun _ ↦ Subsingleton.elim _ _, fun _ ↦ rfl⟩
+
+/-- The product of two maps with the homotopy lifting property with respect to `A` has it as well:
+a homotopy lifts coordinatewise. -/
+theorem HasHomotopyLiftingProperty.prodMap {E' : Type*} {B' : Type*} [TopologicalSpace E']
+    [TopologicalSpace B'] {q : E' → B'} (hp : HasHomotopyLiftingProperty p A)
+    (hq : HasHomotopyLiftingProperty q A) : HasHomotopyLiftingProperty (Prod.map p q) A := by
+  intro f H hH
+  obtain ⟨G₁, hG₁, hG₁₀⟩ := hp (ContinuousMap.fst.comp f) (ContinuousMap.fst.comp H)
+    fun a ↦ congrArg Prod.fst (hH a)
+  obtain ⟨G₂, hG₂, hG₂₀⟩ := hq (ContinuousMap.snd.comp f) (ContinuousMap.snd.comp H)
+    fun a ↦ congrArg Prod.snd (hH a)
+  exact ⟨G₁.prodMk G₂, funext fun x ↦ Prod.ext (congrFun hG₁ x) (congrFun hG₂ x),
+    fun a ↦ Prod.ext (hG₁₀ a) (hG₂₀ a)⟩
+
 /-- A homeomorphism has the homotopy lifting property with respect to every space. -/
 theorem _root_.Homeomorph.hasHomotopyLiftingProperty (e : E ≃ₜ B) (A : Type w)
     [TopologicalSpace A] : HasHomotopyLiftingProperty e A :=
@@ -100,12 +123,12 @@ theorem HasHomotopyLiftingProperty.comp {C : Type*} [TopologicalSpace C] {q : B 
 any continuous map `g : B' → B`. -/
 theorem HasHomotopyLiftingProperty.pullback {B' : Type*} [TopologicalSpace B']
     (hp : HasHomotopyLiftingProperty p A) (g : C(B', B)) :
-    HasHomotopyLiftingProperty (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.1.1) A := by
+    HasHomotopyLiftingProperty (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.val.1) A := by
   intro f H hH
-  let f' : C(A, E) := ⟨fun a ↦ (f a).1.2, by fun_prop⟩
+  let f' : C(A, E) := ⟨fun a ↦ (f a).val.2, by fun_prop⟩
   obtain ⟨G, hG, hG₀⟩ := hp f' (g.comp H) fun a ↦ by
     simp only [ContinuousMap.comp_apply, hH a, f', ContinuousMap.coe_mk]
-    exact (f a).2
+    exact (f a).property
   refine ⟨⟨fun x ↦ ⟨(H x, G x), (congrFun hG x).symm⟩, by fun_prop⟩, funext fun x ↦ rfl, fun a ↦ ?_⟩
   exact Subtype.ext (Prod.ext (hH a) (hG₀ a))
 
@@ -114,13 +137,13 @@ theorem HasHomotopyLiftingProperty.pullback {B' : Type*} [TopologicalSpace B']
 theorem HasHomotopyLiftingProperty.restrictPreimage (hp : HasHomotopyLiftingProperty p A)
     (t : Set B) : HasHomotopyLiftingProperty (t.restrictPreimage p) A := by
   intro f H hH
-  obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(p ⁻¹' t, E)).comp f)
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
+  obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtypeVal⟩ : C(p ⁻¹' t, E)).comp f)
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
   have hGt (x : I × A) : p (G x) ∈ t := by
     have hx := congrFun hG x
     simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk] at hx
     rw [hx]
-    exact (H x).2
+    exact (H x).property
   exact ⟨⟨fun x ↦ ⟨G x, hGt x⟩, by fun_prop⟩, funext fun x ↦ Subtype.ext (congrFun hG x),
     fun a ↦ Subtype.ext (hG₀ a)⟩
 
@@ -132,14 +155,14 @@ theorem HasHomotopyLiftingProperty.comp_subtypeVal (hp : HasHomotopyLiftingPrope
     HasHomotopyLiftingProperty (p ∘ Subtype.val : S → B) A := by
   intro f H hH
   obtain ⟨G, hG, hG₀⟩ :=
-    hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(S, E)).comp f) H hH
+    hp ((⟨Subtype.val, continuous_subtypeVal⟩ : C(S, E)).comp f) H hH
   have hGS (x : I × A) : G x ∈ S := by
     have : PathConnectedSpace I :=
       (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
     have h : Joined ((0 : I), x.2) x := (PathConnectedSpace.joined _ _).prod (Joined.refl x.2)
     have h' := h.map G.continuous
     rw [hG₀] at h'
-    exact hS (f x.2).2 h'
+    exact hS (f x.2).property h'
   exact ⟨⟨fun x ↦ ⟨G x, hGS x⟩, by fun_prop⟩, hG, fun a ↦ Subtype.ext (hG₀ a)⟩
 
 /-- If the restriction `U.restrictPreimage p : p ⁻¹' U → U` over `U : Set B` has the homotopy
@@ -193,4 +216,31 @@ theorem Homeomorph.hasHomotopyLiftingProperty_iff (e : A ≃ₜ A') :
 theorem IsCoveringMap.hasHomotopyLiftingProperty (hp : IsCoveringMap p) (A : Type w)
     [TopologicalSpace A] : HasHomotopyLiftingProperty p A :=
   fun f H hH ↦ ⟨hp.liftHomotopy H f hH, hp.liftHomotopy_lifts H f hH, hp.liftHomotopy_zero H f hH⟩
+
+/-- **Lifting free homotopies of loops through a covering map.** Let `H : I × I → B` be a free
+homotopy of loops, so that each `H (·, s)` is a loop, and let `γ` be a loop in `E` lifting the
+first loop `H (·, 0)`. Then `H` lifts to a free homotopy of loops `G` starting at `γ`:
+`p ∘ G = H`, `G (·, 0) = γ`, and each `G (·, s)` is a loop. -/
+theorem IsCoveringMap.exists_lift_freeHomotopy (hp : IsCoveringMap p) (H : C(I × I, B))
+    (hH : ∀ s, H (0, s) = H (1, s)) (γ : C(I, E)) (hγ : ∀ t, p (γ t) = H (t, 0))
+    (hγ₁ : γ 0 = γ 1) :
+    ∃ G : C(I × I, E), p ∘ G = H ∧ (∀ t, G (t, 0) = γ t) ∧ ∀ s, G (0, s) = G (1, s) := by
+  -- Lift the path `s ↦ H (0, s)` of base points from `γ 0`, then the whole homotopy.
+  let c : C(I, B) := H.comp ((ContinuousMap.const I 0).prodMk (ContinuousMap.id I))
+  let c' := hp.liftPath c (γ 0) (hγ 0).symm
+  have hc' : ∀ s, H (0, s) = p (c' s) := fun s ↦
+    (congr_fun (hp.liftPath_lifts c _ (hγ 0).symm) s).symm
+  let G := hp.liftHomotopy H c' hc'
+  have hG : ∀ t s, p (G (t, s)) = H (t, s) := fun t s ↦
+    congr_fun (hp.liftHomotopy_lifts H c' hc') (t, s)
+  -- By uniqueness of lifts, the bottom edge of `G` is `γ`, and each `G (·, s)` is a loop.
+  have hbot : ∀ t, G (t, 0) = γ t := congr_fun <| hp.eq_of_comp_eq (g₁ := fun t ↦ G (t, 0))
+    (G.continuous.comp (Continuous.prodMk_left 0)) γ.continuous
+    (funext fun t ↦ (hG t 0).trans (hγ t).symm) 0
+    ((hp.liftHomotopy_zero H c' hc' 0).trans (hp.liftPath_zero c _ (hγ 0).symm))
+  refine ⟨G, funext fun ts ↦ hG ts.1 ts.2, hbot, congr_fun <| hp.eq_of_comp_eq
+    (g₁ := fun s ↦ G (0, s)) (G.continuous.comp (Continuous.prodMk_right 0))
+    (G.continuous.comp (Continuous.prodMk_right 1))
+    (funext fun s ↦ (hG 0 s).trans ((hH s).trans (hG 1 s).symm)) 0 ?_⟩
+  rw [hbot, hbot, hγ₁]
 

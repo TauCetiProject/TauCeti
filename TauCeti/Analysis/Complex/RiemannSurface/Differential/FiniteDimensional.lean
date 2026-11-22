@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.IdentityTheorem
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Sheaf
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
+import TauCeti.Analysis.Complex.RiemannSurface.Differential.Twist
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.FiniteDimensional
 
 /-!
@@ -23,6 +24,12 @@ meromorphic functions with poles bounded by `div ω`. These are precisely the im
 finite-dimensional divisor-section space `𝒪_(div ω)(X)`. Unique continuation ensures that
 `ω` has finite order everywhere. If there is no nonzero differential, the conclusion is
 immediate. No existence of a nonzero differential or meromorphic map is assumed.
+
+More generally, the global sections of the sheaf `Ω_D` of meromorphic differentials with divisor
+at least `-D` form a finite-dimensional space for every divisor `D`
+(`TauCeti.RiemannSurface.finiteDimensional_differentialSheaf_globalSections`). A nonzero global
+section `θ` has finite order everywhere by unique continuation, and `Ω_D ≅ 𝒪_(D + div θ)`
+(`TauCeti.RiemannSurface.differentialSheafIsoDivisorSheafAdd`) reduces to divisor sections.
 
 ## References
 
@@ -46,16 +53,17 @@ namespace OneForm
 as a linear map into the meromorphic function field. -/
 def ratioLinearMap (ω : OneForm X) (hω : ∀ x, ω.MeromorphicAt x) :
     holomorphicOneForms X →ₗ[ℂ] MeromorphicFunction X where
-  toFun η := ratioFunction η.1 ω (meromorphicAt_of_mem_holomorphicOneForms η.2) hω
+  toFun η := ratioFunction η.val ω (meromorphicAt_of_mem_holomorphicOneForms η.property) hω
   map_add' η θ := ratioFunction_add
-    (meromorphicAt_of_mem_holomorphicOneForms η.2) (meromorphicAt_of_mem_holomorphicOneForms θ.2) hω
-  map_smul' c η := ratioFunction_smul c (meromorphicAt_of_mem_holomorphicOneForms η.2) hω
+    (meromorphicAt_of_mem_holomorphicOneForms η.property) (meromorphicAt_of_mem_holomorphicOneForms
+        θ.property) hω
+  map_smul' c η := ratioFunction_smul c (meromorphicAt_of_mem_holomorphicOneForms η.property) hω
 
 @[simp]
 theorem ratioLinearMap_apply (ω : OneForm X) (hω : ∀ x, ω.MeromorphicAt x)
     (η : holomorphicOneForms X) :
     ratioLinearMap ω hω η =
-      ratioFunction η.1 ω (meromorphicAt_of_mem_holomorphicOneForms η.2) hω :=
+      ratioFunction η.val ω (meromorphicAt_of_mem_holomorphicOneForms η.property) hω :=
   (rfl)
 
 /-- Division by a meromorphic differential of finite order at one point loses no holomorphic
@@ -67,9 +75,9 @@ theorem ratioLinearMap_injective (ω : OneForm X) (hω : ∀ x, ω.MeromorphicAt
   apply Subtype.ext
   have hzero : ratioLinearMap ω hω (η - θ) = 0 := by
     rw [LinearMap.map_sub (M := holomorphicOneForms X) (ratioLinearMap ω hω), h, sub_self]
-  apply (order_eq_top_iff_eq_zero (mem_holomorphicOneForms.1 (η - θ).2) x).1
+  apply (order_eq_top_iff_eq_zero (mem_holomorphicOneForms.1 (η - θ).property) x).1
   have ho := order_ratioFunction_add_order
-    (meromorphicAt_of_mem_holomorphicOneForms (η - θ).2) hω hx
+    (meromorphicAt_of_mem_holomorphicOneForms (η - θ).property) hω hx
   rw [← ratioLinearMap_apply, hzero, AddValuation.map_zero, WithTop.top_add] at ho
   exact ho.symm
 
@@ -81,10 +89,11 @@ theorem ratioLinearMap_mem_range_toMeromorphic [CompactSpace X] (ω : OneForm X)
     ratioLinearMap ω hω η ∈ (divisorSections.toMeromorphic ω.divisor).range := by
   rw [divisorSections.mem_range_toMeromorphic_iff]
   intro x
-  have ho := order_ratioFunction_add_order (meromorphicAt_of_mem_holomorphicOneForms η.2) hω (hω₀ x)
+  have ho := order_ratioFunction_add_order (meromorphicAt_of_mem_holomorphicOneForms η.property) hω
+      (hω₀ x)
   rw [← ratioLinearMap_apply, ← coe_coeff_divisor hω (hω₀ x)] at ho
   simp only [AlgebraicGeometry.WeilDivisor.coeff] at ho
-  have hn := (mem_holomorphicOneForms.1 η.2 x).order_nonneg
+  have hn := (mem_holomorphicOneForms.1 η.property x).order_nonneg
   rw [← ho] at hn
   by_cases hq : MeromorphicFunction.order x (ratioLinearMap ω hω η) = ⊤
   · rw [hq]
@@ -104,17 +113,17 @@ instance finiteDimensional_holomorphicOneForms [CompactSpace X] :
   · let := h
     infer_instance
   obtain ⟨ω, hωne⟩ := exists_ne (0 : holomorphicOneForms X)
-  have hω := mem_holomorphicOneForms.1 ω.2
+  have hω := mem_holomorphicOneForms.1 ω.property
   have hω₀ (x : X) : (ω : OneForm X).order x ≠ ⊤ := by
     exact fun hx ↦ hωne (Subtype.ext ((OneForm.order_eq_top_iff_eq_zero hω x).1 hx))
   let F := OneForm.ratioLinearMap (ω : OneForm X)
-    (OneForm.meromorphicAt_of_mem_holomorphicOneForms ω.2)
+    (OneForm.meromorphicAt_of_mem_holomorphicOneForms ω.property)
   let F' := F.codRestrict (divisorSections.toMeromorphic (ω : OneForm X).divisor).range
     (OneForm.ratioLinearMap_mem_range_toMeromorphic (ω : OneForm X)
-      (OneForm.meromorphicAt_of_mem_holomorphicOneForms ω.2) hω₀)
+      (OneForm.meromorphicAt_of_mem_holomorphicOneForms ω.property) hω₀)
   exact FiniteDimensional.of_injective F' fun η θ heq ↦
     OneForm.ratioLinearMap_injective (ω : OneForm X)
-      (OneForm.meromorphicAt_of_mem_holomorphicOneForms ω.2)
+      (OneForm.meromorphicAt_of_mem_holomorphicOneForms ω.property)
       (hω₀ (Classical.arbitrary X)) (congrArg Subtype.val heq)
 
 /-- The global section space of the native holomorphic differential sheaf is finite-dimensional.
@@ -125,5 +134,24 @@ instance finiteDimensional_differentialSheaf_zero_globalSections [CompactSpace X
   Module.Finite.equiv
     ((differentialSheafSectionsEquiv (0 : AlgebraicGeometry.WeilDivisor X) ⊤).trans
       (differentialSectionsZeroEquiv (X := X))).symm
+
+/-- **Finite-dimensionality of `H⁰(X, Ω_D)`.** On a compact connected Riemann surface the global
+sections of `Ω_D` form a finite-dimensional complex vector space, for every divisor `D`. No
+nonzero meromorphic `1`-form is assumed to exist: if there is a nonzero section `θ`, it serves as
+the `1`-form in `Ω_D ≅ 𝒪_(D + div θ)`. -/
+instance finiteDimensional_differentialSheaf_globalSections [CompactSpace X]
+    (D : AlgebraicGeometry.WeilDivisor X) :
+    FiniteDimensional ℂ ((differentialSheaf D).obj.obj (Opposite.op ⊤)) := by
+  rcases subsingleton_or_nontrivial (differentialSections D ⊤) with h | h
+  · exact Module.Finite.equiv (differentialSheafSectionsEquiv D ⊤).symm
+  obtain ⟨s, hs⟩ := exists_ne (0 : differentialSections D ⊤)
+  let θ := differentialSections.toOneForm D s
+  let e : (differentialSheaf D).obj.obj (Opposite.op ⊤) ≅
+      (divisorSheaf (D + θ.divisor)).obj.obj (Opposite.op ⊤) :=
+    ((CategoryTheory.sheafToPresheaf _ _).mapIso
+      (differentialSheafIsoDivisorSheafAdd θ
+        (fun x ↦ (differentialSections.isDifferentialSectionAt_toOneForm s x).meromorphicAt)
+        (differentialSections.order_toOneForm_ne_top hs) D)).app (Opposite.op ⊤)
+  exact Module.Finite.equiv e.toLinearEquiv.symm
 
 end TauCeti.RiemannSurface

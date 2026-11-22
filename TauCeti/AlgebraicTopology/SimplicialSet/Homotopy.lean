@@ -10,37 +10,58 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.SSetPair
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 
 /-!
-# Homotopies of morphisms of pairs of simplicial sets
+# Homotopies of simplicial sets and of pairs of simplicial sets
 
-A homotopy between morphisms of a pair of simplicial sets consists of a homotopy on the
-subcomplexes and a homotopy on the total complexes which agree on the subcomplexes, that is,
-`SSetPair.Homotopy`.  This is the simplicial analogue of `TopPair.Homotopy` in
+This file supplements `Mathlib/AlgebraicTopology/SimplicialSet/Homotopy.lean` with API for
+simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pairs.
+
+## The cylinder
+
+* `SSet.whiskerLeft_stdSimplex_δ_one`, `SSet.whiskerLeft_stdSimplex_δ_zero`: the two faces
+  `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` are the ends `ι₀` and `ι₁` of the cylinder, after the projection to `X`;
+  `SSet.fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one` and `_zero` state the same after
+  the inverse isomorphism `X ≅ X ⊗ Δ[0]`.
+* `SSet.whiskerLeft_horn_one_zero_ι`: the inclusion `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` is the end `ι₀`.
+* `SSet.range_ι₀_inf_range_ι₁`: the two ends of the cylinder are disjoint.
+* `SSet.verticalEdge`: the edge `{v} × Δ[1]` of the cylinder over a vertex `v`, along which a
+  homotopy moves the image of `v`; its endpoints are `(v, 0)` and `(v, 1)`
+  (`SSet.δ_one_verticalEdge` and `SSet.δ_zero_verticalEdge`).
+
+## Constructions on homotopies
+
+* `SSet.Homotopy.mk'`: the homotopy given by a morphism on the cylinder with prescribed ends.
+* `SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`: composition of a homotopy with a map.
+* `SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`: homotopies correspond under the tensor-hom
+  adjunction.
+* `SSet.Homotopy.ulift`, `SSet.Homotopy.ofUlift`, `SSet.Homotopy.uliftEquiv`: homotopies
+  transport bijectively along `SSet.uliftFunctor`.
+* `SSet.ihomEdgeEquiv`: the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` are the
+  maps `X ⟶ Z` (`SSet.ihomObj₀Equiv`, from
+  `TauCeti/AlgebraicTopology/SimplicialSet/InternalHom.lean`), and its edges between two such
+  vertices are the homotopies between them.
+
+## The combinatorial homotopy
+
+For the combinatorial homotopy `h` that `SSet.Homotopy.toSimplicialObjectHomotopy` extracts from a
+homotopy from `f` to `g`, the file records
+
+* a formula for its values (`SSet.Homotopy.toSimplicialObjectHomotopy_h_apply`);
+* its compatibility with a commuting square of homotopies
+  (`SSet.Homotopy.toSimplicialObjectHomotopy_h_comm`), which is what makes the chain homotopies of
+  the absolute case descend to relative chains;
+* where it starts: the initial vertex of `h i x` is the image under `f` of the initial vertex of
+  `x`, the first edge of `h (i + 1) x` is the image under `f` of the first edge of `x`, and the
+  first edge of `h 0 x` is the track `h 0 x₀` of the initial vertex `x₀` of `x`.  These are what a
+  construction transporting data along the initial vertices of simplices, such as twisted chains,
+  needs to lift the combinatorial homotopy.
+
+## Homotopies of pairs
+
+A homotopy between morphisms of a pair of simplicial sets, `SSetPair.Homotopy`, consists of a
+homotopy on the subcomplexes and a homotopy on the total complexes which agree on the
+subcomplexes.  This is the simplicial analogue of `TopPair.Homotopy` in
 `Mathlib/Topology/Category/TopPair.lean` (J. Scharmberg), with the same two homotopies and the
 same whiskered commuting square.
-
-The file also records what such a commuting square gives on the combinatorial homotopies that
-`SSet.Homotopy.toSimplicialObjectHomotopy` extracts: the two families of morphisms
-`Xₙ ⟶ Y'ₙ₊₁` commute with the morphisms of the square.  That compatibility is what makes the
-chain homotopies of the absolute case descend to relative chains.
-
-Finally, it records where the combinatorial homotopy `h` from `f` to `g` starts: the initial vertex
-of `h i x` is the image under `f` of the initial vertex of `x`, the first edge of `h (i + 1) x` is
-the image under `f` of the first edge of `x`, and the first edge of `h 0 x` is the track `h 0 x₀`
-of the initial vertex `x₀` of `x`.  These are what a construction transporting data along the
-initial vertices of simplices, such as twisted chains, needs to lift the combinatorial homotopy.
-
-It also provides the constructor `SSet.Homotopy.mk'` of a homotopy from a morphism on the
-cylinder `X ⊗ Δ[1]` with prescribed ends, identifies these ends with the faces of
-`X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` (`SSet.whiskerLeft_stdSimplex_δ_one`), records that they are disjoint
-(`SSet.range_ι₀_inf_range_ι₁`), and names the edge `{v} × Δ[1]` of the cylinder over a vertex `v`
-(`SSet.verticalEdge`), along which a homotopy moves the image of `v`; its endpoints are
-`(v, 0)` and `(v, 1)` (`SSet.δ_one_verticalEdge` and `SSet.δ_zero_verticalEdge`). Homotopies can
-be precomposed and postcomposed with maps (`SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`),
-and they correspond under the tensor-hom adjunction (`SSet.Homotopy.curry`,
-`SSet.Homotopy.uncurry`). Through this adjunction, the vertices of the simplicial set
-`Fun(X, Z) = (ihom X).obj Z` of maps are the maps `X ⟶ Z` (`SSet.ihomObj₀Equiv`, from
-`TauCeti/AlgebraicTopology/SimplicialSet/InternalHom.lean`), and its edges
-between two such vertices are the homotopies between them (`SSet.ihomEdgeEquiv`).
 -/
 
 @[expose] public section
@@ -49,7 +70,7 @@ open CategoryTheory MonoidalCategory CartesianMonoidalCategory Opposite
 
 open scoped Simplicial
 
-universe w
+universe w w'
 
 namespace SSet
 
@@ -64,6 +85,25 @@ after the projection `X ⊗ Δ[0] ⟶ X`. -/
 lemma whiskerLeft_stdSimplex_δ_zero (X : SSet.{w}) :
     X ◁ stdSimplex.δ (0 : Fin 2) = fst X Δ[0] ≫ ι₁ := by
   ext : 1 <;> simp [ι₁, stdSimplex.δ_zero_eq_const]
+
+/-- The end `X ⊗ {0}` of the cylinder is the face `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` omitting the vertex `1`,
+after the isomorphism `X ≅ X ⊗ Δ[0]`. -/
+@[reassoc]
+lemma fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one (X : SSet.{w}) :
+    (fstStdSimplexZeroIso X).inv ≫ X ◁ stdSimplex.δ (1 : Fin 2) = ι₀ := by
+  rw [whiskerLeft_stdSimplex_δ_one, ← fstStdSimplexZeroIso_hom, Iso.inv_hom_id_assoc]
+
+/-- The end `X ⊗ {1}` of the cylinder is the face `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` omitting the vertex `0`,
+after the isomorphism `X ≅ X ⊗ Δ[0]`. -/
+@[reassoc]
+lemma fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero (X : SSet.{w}) :
+    (fstStdSimplexZeroIso X).inv ≫ X ◁ stdSimplex.δ (0 : Fin 2) = ι₁ := by
+  rw [whiskerLeft_stdSimplex_δ_zero, ← fstStdSimplexZeroIso_hom, Iso.inv_hom_id_assoc]
+
+/-- The inclusion `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` is the end `X ⊗ {0}` of the cylinder, after the
+projection `X ⊗ Λ[1, 0] ⟶ X`. -/
+lemma whiskerLeft_horn_one_zero_ι (X : SSet.{w}) : X ◁ Λ[1, 0].ι = fst X _ ≫ ι₀ :=
+  CartesianMonoidalCategory.hom_ext _ _ (by simp) (by simp [horn_one_ι_eq_const, comp_const])
 
 /-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
 inclusion of `A ⊗ (X ⊗ {0})` to that of `(A ⊗ X) ⊗ {0}`. -/
@@ -87,8 +127,30 @@ lemma range_ι₀_inf_range_ι₁ {X : SSet.{w}} :
   simp only [Subfunctor.min_obj, Set.mem_inter_iff, Subfunctor.range_obj, Set.mem_range,
     Subfunctor.bot_obj, Set.mem_empty_iff_false, iff_false, not_and]
   rintro ⟨x, rfl⟩ ⟨y, h⟩
-  have := congrArg (fun z : (X ⊗ Δ[1] : SSet.{w}) _⦋n⦌ ↦ z.2 0) h
-  simp at this
+  simpa using congr(($h).2 0)
+
+/-- The edge `{v} × Δ[1]` of the cylinder `X ⊗ Δ[1]` over a vertex `v` of `X`, from `(v, 0)` to
+`(v, 1)`. -/
+@[no_expose]
+noncomputable def verticalEdge {X : SSet.{w}} (v : X _⦋0⦌) : (X ⊗ Δ[1] : SSet.{w}) _⦋1⦌ :=
+  (X.σ 0 v, stdSimplex.edge 1 0 1 (by decide))
+
+/-- The component of `verticalEdge v` in `X` is the degenerate edge at `v`. -/
+lemma verticalEdge_fst {X : SSet.{w}} (v : X _⦋0⦌) : (verticalEdge v).1 = X.σ 0 v := (rfl)
+
+/-- The component of `verticalEdge v` in `Δ[1]` is the edge from `0` to `1`. -/
+lemma verticalEdge_snd {X : SSet.{w}} (v : X _⦋0⦌) :
+    (verticalEdge v).2 = stdSimplex.edge 1 0 1 (by decide) := (rfl)
+
+/-- The vertical edge over `v` starts at `(v, 0)`. -/
+lemma δ_one_verticalEdge {X : SSet.{w}} (v : X _⦋0⦌) :
+    (X ⊗ Δ[1]).δ 1 (verticalEdge v) = ι₀.app _ v :=
+  Prod.ext (δ_comp_σ_succ_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
+
+/-- The vertical edge over `v` ends at `(v, 1)`. -/
+lemma δ_zero_verticalEdge {X : SSet.{w}} (v : X _⦋0⦌) :
+    (X ⊗ Δ[1]).δ 0 (verticalEdge v) = ι₁.app _ v :=
+  Prod.ext (δ_comp_σ_self_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
 
 end SSet
 
@@ -167,6 +229,110 @@ lemma uncurry_h {A : SSet.{w}} {f g : X ⟶ (ihom A).obj Y} (H : SSet.Homotopy f
     H.uncurry.h = (α_ A X Δ[1]).hom ≫ MonoidalClosed.uncurry H.h :=
   (rfl)
 
+/-- Lifting a simplicial homotopy along `SSet.uliftFunctor`. -/
+@[no_expose]
+noncomputable def ulift (H : SSet.Homotopy f g) :
+    SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g) :=
+  mk'
+    { app m := ↾fun p ↦ ULift.up
+        (H.h.app m ⟨p.1.down, stdSimplex.objEquiv.{w}.symm (stdSimplex.objEquiv p.2)⟩)
+      naturality m _ α := by
+        ext ⟨⟨x⟩, t⟩
+        apply ULift.ext
+        dsimp
+        exact NatTrans.naturality_apply H.h α
+          (⟨x, stdSimplex.objEquiv.{w}.symm (stdSimplex.objEquiv t)⟩ :
+            (X ⊗ Δ[1]).obj m) }
+    (by
+      ext m ⟨x⟩
+      exact ULift.ext congr($(H.h₀).app m x))
+    (by
+      ext m ⟨x⟩
+      exact ULift.ext congr($(H.h₁).app m x))
+
+/-- On simplices, lifting a homotopy along `SSet.uliftFunctor` evaluates the original homotopy
+after unwrapping `ULift` and reindexing the `Δ[1]` coordinate. -/
+@[simp]
+lemma ulift_h_app_apply (H : SSet.Homotopy f g) (m : SimplexCategoryᵒᵖ)
+    (p : (uliftFunctor.{w', w}.obj X).obj m ⊗ (Δ[1] : SSet.{max w w'}).obj m) :
+    dsimp% H.ulift.{w, w'}.h.app m p =
+      ULift.up (H.h.app m ⟨p.1.down, stdSimplex.objEquiv.{w}.symm (stdSimplex.objEquiv p.2)⟩) :=
+  (rfl)
+
+/-- Lowering a simplicial homotopy along `SSet.uliftFunctor`. -/
+@[no_expose]
+noncomputable def ofUlift
+    (H : SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g)) :
+    SSet.Homotopy f g :=
+  mk'
+    { app m := ↾fun p ↦
+        (H.h.app m ⟨ULift.up p.1,
+          stdSimplex.objEquiv.{max w w'}.symm (stdSimplex.objEquiv p.2)⟩).down
+      naturality m _ α := by
+        ext ⟨x, t⟩
+        exact congrArg ULift.down (NatTrans.naturality_apply H.h α
+          (⟨ULift.up x, stdSimplex.objEquiv.{max w w'}.symm (stdSimplex.objEquiv t)⟩ :
+            (uliftFunctor.{w', w}.obj X ⊗ Δ[1]).obj m)) }
+    (by
+      ext m x
+      exact congrArg ULift.down congr($(H.h₀).app m (ULift.up x)))
+    (by
+      ext m x
+      exact congrArg ULift.down congr($(H.h₁).app m (ULift.up x)))
+
+/-- On simplices, lowering a homotopy along `SSet.uliftFunctor` evaluates the lifted homotopy on
+the wrapped simplex and unwraps `ULift`. -/
+@[simp]
+lemma ofUlift_h_app_apply
+    (H : SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g))
+    (m : SimplexCategoryᵒᵖ) (p : X.obj m ⊗ (Δ[1] : SSet.{w}).obj m) :
+    dsimp% H.ofUlift.h.app m p =
+      (H.h.app m ⟨ULift.up p.1,
+        stdSimplex.objEquiv.{max w w'}.symm (stdSimplex.objEquiv p.2)⟩).down :=
+  (rfl)
+
+/-- Lowering a lifted simplicial homotopy recovers the original homotopy. -/
+@[simp]
+lemma ofUlift_ulift (H : SSet.Homotopy f g) : H.ulift.{w, w'}.ofUlift = H := by
+  apply RelativeMorphism.Homotopy.ext
+  ext m p
+  exact (ofUlift_h_app_apply H.ulift.{w, w'} m p).trans <|
+    (congrArg ULift.down (ulift_h_app_apply.{w, w'} H m _)).trans (by simp; rfl)
+
+/-- Lifting a lowered simplicial homotopy recovers the lifted homotopy. -/
+@[simp]
+lemma ulift_ofUlift
+    (H : SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g)) :
+    H.ofUlift.ulift = H := by
+  apply RelativeMorphism.Homotopy.ext
+  ext m p
+  exact (ulift_h_app_apply H.ofUlift m p).trans <|
+    (congrArg ULift.up (ofUlift_h_app_apply H m _)).trans (by simp; rfl)
+
+/-- Simplicial homotopies between maps correspond bijectively to simplicial homotopies between
+their universe lifts along `SSet.uliftFunctor`. -/
+@[no_expose]
+noncomputable def uliftEquiv :
+    SSet.Homotopy f g ≃
+      SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g) where
+  toFun := ulift
+  invFun := ofUlift
+  left_inv := ofUlift_ulift
+  right_inv := ulift_ofUlift
+
+/-- Applying `SSet.Homotopy.uliftEquiv` lifts a homotopy along `SSet.uliftFunctor`. -/
+@[simp]
+lemma uliftEquiv_apply (H : SSet.Homotopy f g) :
+    uliftEquiv.{w, w'} H = H.ulift.{w, w'} :=
+  (rfl)
+
+/-- Applying `SSet.Homotopy.uliftEquiv.symm` lowers a homotopy along `SSet.uliftFunctor`. -/
+@[simp]
+lemma uliftEquiv_symm_apply
+    (H : SSet.Homotopy (uliftFunctor.{w', w}.map f) (uliftFunctor.{w', w}.map g)) :
+    uliftEquiv.{w, w'}.symm H = H.ofUlift :=
+  (rfl)
+
 /-- The combinatorial homotopy extracted from a simplicial homotopy sends an `n`-simplex `x` to
 the value of the homotopy at the pair formed by the `i`-th degeneracy of `x` and the `n + 1`-simplex
 of `Δ[1]` taking the value `0` exactly `i + 1` times. -/
@@ -208,7 +374,7 @@ lemma map_const_toSimplicialObjectHomotopy_h (H : SSet.Homotopy f g) {n : ℕ} (
   refine map_h_app_eq_app H _ _ _ _ ?_ ?_
   · rw [← Functor.map_comp_apply, ← op_comp, SimplexCategory.const_comp]
     rfl
-  · ext k : 1
+  · ext _ : 1
     exact stdSimplex.objMk₁_of_castSucc_lt.{w} i.succ.castSucc (0 : Fin (n + 2)) (by simp)
 
 /-- For `i ≥ 1`, the first edge of `h i x` is the image under `f` of the first edge of `x`. -/
@@ -219,14 +385,11 @@ lemma map_mkOfLe_toSimplicialObjectHomotopy_h_succ (H : SSet.Homotopy f g) {n : 
   rw [toSimplicialObjectHomotopy_h_apply]
   refine map_h_app_eq_app H _ _ _ _ ?_ ?_
   · rw [← Functor.map_comp_apply, ← op_comp]
-    refine congrArg (fun φ : ⦋1⦌ ⟶ _ ↦ X.map φ.op x)
-      (SimplexCategory.Hom.ext _ _ (OrderHom.ext _ _ (funext fun k ↦ ?_)))
+    congr 4
+    ext k : 3
     fin_cases k <;> rfl
   · ext k : 1
-    fin_cases k
-    · exact stdSimplex.objMk₁_of_castSucc_lt.{w} j.succ.succ.castSucc 0 (by simp)
-    · exact stdSimplex.objMk₁_of_castSucc_lt.{w} j.succ.succ.castSucc 1 (by
-        rw [Fin.lt_def]; simp)
+    fin_cases k <;> rfl
 
 /-- The first edge of `h 0 x` is the track of the homotopy at the initial vertex of `x`. -/
 lemma map_mkOfLe_toSimplicialObjectHomotopy_h_zero (H : SSet.Homotopy f g) {n : ℕ}
@@ -239,8 +402,8 @@ lemma map_mkOfLe_toSimplicialObjectHomotopy_h_zero (H : SSet.Homotopy f g) {n : 
   · -- The first components of the two pairs, both iterated reindexings of `x`.
     refine (prod_map_fst X Δ[1] _ _).trans ?_
     rw [← Functor.map_comp_apply, ← op_comp, ← Functor.map_comp_apply, ← op_comp]
-    refine congrArg (fun φ : ⦋1⦌ ⟶ _ ↦ X.map φ.op x)
-      (SimplexCategory.Hom.ext _ _ (OrderHom.ext _ _ (funext fun k ↦ ?_)))
+    congr 4
+    ext k : 3
     fin_cases k <;> rfl
   · ext k : 1
     fin_cases k <;> rfl
@@ -316,37 +479,3 @@ structure Homotopy {P P' : SSetPair.{w}} (f g : P ⟶ P') where
   w : P.hom ▷ Δ[1] ≫ right.h = left.h ≫ P'.hom
 
 end SSetPair
-
-end
-
-public section
-
-open CategoryTheory MonoidalCategory
-
-open scoped Simplicial
-
-namespace SSet
-
-variable {X : SSet.{w}}
-
-/-- The edge `{v} × Δ[1]` of the cylinder `X ⊗ Δ[1]` over a vertex `v` of `X`, from `(v, 0)` to
-`(v, 1)`. -/
-noncomputable def verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1] : SSet.{w}) _⦋1⦌ :=
-  (X.σ 0 v, stdSimplex.edge 1 0 1 (by decide))
-
-/-- The component of `verticalEdge v` in `X` is the degenerate edge at `v`. -/
-lemma verticalEdge_fst (v : X _⦋0⦌) : (verticalEdge v).1 = X.σ 0 v := (rfl)
-
-/-- The component of `verticalEdge v` in `Δ[1]` is the edge from `0` to `1`. -/
-lemma verticalEdge_snd (v : X _⦋0⦌) :
-    (verticalEdge v).2 = stdSimplex.edge 1 0 1 (by decide) := (rfl)
-
-/-- The vertical edge over `v` starts at `(v, 0)`. -/
-lemma δ_one_verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1]).δ 1 (verticalEdge v) = ι₀.app _ v :=
-  Prod.ext (δ_comp_σ_succ_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
-
-/-- The vertical edge over `v` ends at `(v, 1)`. -/
-lemma δ_zero_verticalEdge (v : X _⦋0⦌) : (X ⊗ Δ[1]).δ 0 (verticalEdge v) = ι₁.app _ v :=
-  Prod.ext (δ_comp_σ_self_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
-
-end SSet

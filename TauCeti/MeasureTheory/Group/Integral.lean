@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Group.LIntegral
+import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -23,21 +25,38 @@ about the origin. Only measurability of translations is needed; the measure need
 additive Haar measure, and the function need not be integrable. If the measure is also invariant
 under negation, the centre of a ball is its barycentre.
 
+For a right-invariant `s`-finite measure `μ`, integrating `z ↦ f (x * g z)` or `z ↦ f (x / g z)`
+against an `s`-finite measure `ν` (or over a set `s`) and then `x` against `μ` factors out
+`ν univ` (or `ν s`) times `∫⁻ x, f x ∂μ` by Tonelli's theorem and right-translation invariance.
+
+For a translation-invariant measure, the row and column integrals of a convolution kernel
+`k (ξ - ζ)` with integrable `k ≥ 0` all equal `∫ k`; these are the bounds that Schur's test asks
+of the kernel.
+
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
 
-The integral of the difference `w (· + a) - w` of an integrable function against a bounded
-measurable test function equals the integral of `w` against `φ (· - a) - φ`, by translation
-invariance.
+The integral of the difference `w (· + a) - w` of an integrable function against an
+a.e. strongly measurable, essentially bounded function `φ` (that is, `φ ∈ L^∞`) equals the
+integral of `w` against `φ (· - a) - φ`, by right-translation invariance. Only right translations
+need to be measurable.
 
 ## Main declarations
 
 * `TauCeti.integral_comp_add_sub_mul_eq`: moving a translation of an integrable function
-  onto a bounded measurable test function inside an integral.
+  onto an a.e. strongly measurable, essentially bounded function inside an integral.
 * `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
   origin.
 * `TauCeti.setIntegral_ball_sub_eq_zero`, `TauCeti.setAverage_ball_id`: for a measure invariant
   under translation and negation, the centre of a ball is its barycentre.
+* `TauCeti.lintegral_lintegral_mul_right`, `TauCeti.lintegral_lintegral_add_right`,
+  `TauCeti.lintegral_lintegral_div_right`, `TauCeti.lintegral_lintegral_sub_right`,
+  `TauCeti.lintegral_setLIntegral_mul_right`, `TauCeti.lintegral_setLIntegral_add_right`,
+  `TauCeti.lintegral_setLIntegral_div_right`, `TauCeti.lintegral_setLIntegral_sub_right`:
+  factoring out the parameter measure when integrating right-translated lower Lebesgue integrals.
+* `TauCeti.lintegral_ofReal_sub_left_eq_ofReal_integral`,
+  `TauCeti.lintegral_ofReal_sub_right_eq_ofReal_integral`: the row and column integrals of a
+  convolution kernel.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
 -/
@@ -46,7 +65,7 @@ public section
 
 open MeasureTheory Metric Set
 
-open scoped Pointwise
+open scoped ENNReal Pointwise
 
 namespace TauCeti
 
@@ -99,20 +118,102 @@ theorem setAverage_ball_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
   rw [setAverage_eq, h, setIntegral_ball_sub_eq_zero, setIntegral_const, zero_add,
     inv_smul_smul₀ ((measureReal_ne_zero_iff hR).2 h0)]
 
+section LIntegral
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul₂ G]
+  {μ : Measure G} [SFinite μ] [μ.IsMulRightInvariant] {f : G → ℝ≥0∞}
+
+/-- Integrating `z ↦ f (x * g z)` against an `s`-finite measure `ν` and then `x` against a
+right-invariant `s`-finite measure `μ` factors out `ν univ` by Tonelli's theorem and
+right-translation invariance of `μ`. -/
+@[to_additive
+/-- Integrating `z ↦ f (x + g z)` against an `s`-finite measure `ν` and then `x` against a
+right-invariant `s`-finite measure `μ` factors out `ν univ` by Tonelli's theorem and
+right-translation invariance of `μ`. -/]
+theorem lintegral_lintegral_mul_right (hf : AEMeasurable f μ) {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} [SFinite ν] {g : α → G} (hg : AEMeasurable g ν) :
+    ∫⁻ x, ∫⁻ z, f (x * g z) ∂ν ∂μ = ν univ * ∫⁻ x, f x ∂μ := by
+  have hqmp : QuasiMeasurePreserving (fun q : G × α ↦ q.1 * g q.2) (μ.prod ν) μ :=
+    .prod_of_left (measurable_fst.aemeasurable.mul hg.comp_snd)
+      (.of_forall fun z ↦ (measurePreserving_mul_right μ (g z)).quasiMeasurePreserving)
+  have hm : AEMeasurable (Function.uncurry fun x z ↦ f (x * g z)) (μ.prod ν) :=
+    hf.comp_quasiMeasurePreserving hqmp
+  rw [lintegral_lintegral_swap hm]
+  simp_rw [lintegral_mul_right_eq_self f]
+  rw [lintegral_const, mul_comm]
+
+/-- Integrating `z ↦ f (x / g z)` against an `s`-finite measure `ν` and then `x` against a
+right-invariant `s`-finite measure `μ` factors out `ν univ`. -/
+@[to_additive
+/-- Integrating `z ↦ f (x - g z)` against an `s`-finite measure `ν` and then `x` against a
+right-invariant `s`-finite measure `μ` factors out `ν univ`. -/]
+theorem lintegral_lintegral_div_right [MeasurableInv G] (hf : AEMeasurable f μ) {α : Type*}
+    [MeasurableSpace α] {ν : Measure α} [SFinite ν] {g : α → G} (hg : AEMeasurable g ν) :
+    ∫⁻ x, ∫⁻ z, f (x / g z) ∂ν ∂μ = ν univ * ∫⁻ x, f x ∂μ := by
+  simp_rw [div_eq_mul_inv]
+  exact lintegral_lintegral_mul_right hf hg.inv
+
+/-- Integrating `z ↦ f (x * g z)` over `s` against an `s`-finite measure `ν` and then `x` against
+a right-invariant `s`-finite measure `μ` factors out `ν s`. -/
+@[to_additive
+/-- Integrating `z ↦ f (x + g z)` over `s` against an `s`-finite measure `ν` and then `x` against
+a right-invariant `s`-finite measure `μ` factors out `ν s`. -/]
+theorem lintegral_setLIntegral_mul_right (hf : AEMeasurable f μ) {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} [SFinite ν] {g : α → G} {s : Set α} (hg : AEMeasurable g (ν.restrict s)) :
+    ∫⁻ x, ∫⁻ z in s, f (x * g z) ∂ν ∂μ = ν s * ∫⁻ x, f x ∂μ := by
+  rw [lintegral_lintegral_mul_right hf hg, Measure.restrict_apply_univ]
+
+/-- Integrating `z ↦ f (x / g z)` over `s` against an `s`-finite measure `ν` and then `x` against
+a right-invariant `s`-finite measure `μ` factors out `ν s`. -/
+@[to_additive
+/-- Integrating `z ↦ f (x - g z)` over `s` against an `s`-finite measure `ν` and then `x` against
+a right-invariant `s`-finite measure `μ` factors out `ν s`. -/]
+theorem lintegral_setLIntegral_div_right [MeasurableInv G] (hf : AEMeasurable f μ) {α : Type*}
+    [MeasurableSpace α] {ν : Measure α} [SFinite ν] {g : α → G} {s : Set α}
+    (hg : AEMeasurable g (ν.restrict s)) :
+    ∫⁻ x, ∫⁻ z in s, f (x / g z) ∂ν ∂μ = ν s * ∫⁻ x, f x ∂μ := by
+  rw [lintegral_lintegral_div_right hf hg, Measure.restrict_apply_univ]
+
+end LIntegral
+
+section ConvolutionKernel
+
+variable {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G] {μ : Measure G}
+  {k : G → ℝ}
+
+/-- **The row integrals of a convolution kernel.** For a measure invariant under translation and
+negation, every row integral `∫⁻ ζ, k (ξ - ζ)` of the kernel `k (ξ - ζ)` of an integrable `k ≥ 0`
+equals `∫ k`. -/
+theorem lintegral_ofReal_sub_left_eq_ofReal_integral [μ.IsAddLeftInvariant] [MeasurableNeg G]
+    [μ.IsNegInvariant] (hk : Integrable k μ) (hk0 : 0 ≤ᵐ[μ] k) (ξ : G) :
+    ∫⁻ ζ, ENNReal.ofReal (k (ξ - ζ)) ∂μ = ENNReal.ofReal (∫ η, k η ∂μ) := by
+  rw [lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (k η)) ξ,
+    ofReal_integral_eq_lintegral_ofReal hk hk0]
+
+/-- **The column integrals of a convolution kernel.** For a right-invariant measure, every column
+integral `∫⁻ ξ, k (ξ - ζ)` of the kernel `k (ξ - ζ)` of an integrable `k ≥ 0` equals `∫ k`. -/
+theorem lintegral_ofReal_sub_right_eq_ofReal_integral [μ.IsAddRightInvariant]
+    (hk : Integrable k μ) (hk0 : 0 ≤ᵐ[μ] k) (ζ : G) :
+    ∫⁻ ξ, ENNReal.ofReal (k (ξ - ζ)) ∂μ = ENNReal.ofReal (∫ η, k η ∂μ) := by
+  rw [lintegral_sub_right_eq_self (fun η ↦ ENNReal.ofReal (k η)) ζ,
+    ofReal_integral_eq_lintegral_ofReal hk hk0]
+
+end ConvolutionKernel
+
 section SMulSet
 
-variable {G α E : Type*} [Group G] [MulAction G α] [MeasurableSpace α] [MeasurableConstSMul G α]
-  {μ : Measure α} [SMulInvariantMeasure G α μ] [NormedAddCommGroup E]
+variable {G α ε E : Type*} [Group G] [MulAction G α] [MeasurableSpace α]
+  [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ]
 
 /-- For an invariant measure, an integrand invariant under `g` is integrable on `g • V` exactly
 when it is integrable on `V`. -/
-theorem integrableOn_smul_set_iff {g : G} {f : α → E} (hf : ∀ x, f (g • x) = f x)
-    (V : Set α) : IntegrableOn f (g • V) μ ↔ IntegrableOn f V μ := by
+theorem integrableOn_smul_set_iff [TopologicalSpace ε] [ContinuousENorm ε] {g : G} {f : α → ε}
+    (hf : ∀ x, f (g • x) = f x) (V : Set α) : IntegrableOn f (g • V) μ ↔ IntegrableOn f V μ := by
   rw [← image_smul, (measurePreserving_smul g μ).integrableOn_image
     (measurableEmbedding_const_smul g)]
   exact iff_of_eq (congrArg (IntegrableOn · V μ) (funext hf))
 
-variable [NormedSpace ℝ E]
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- For an invariant measure, an integrand invariant under `g` has the same integral over
 `g • V` as over `V`. No integrability or measurability hypothesis is needed. -/
@@ -126,29 +227,30 @@ end SMulSet
 
 section Translation
 
-variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [BorelSpace E]
-  {μ : Measure E} [μ.IsAddRightInvariant]
+variable {G 𝕜 : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableConstVAdd Gᵃᵒᵖ G]
+  {μ : Measure G} [μ.IsAddRightInvariant] [NormedCommRing 𝕜] [NormedSpace ℝ 𝕜]
 
-/-- Moving a translation from the integrable function `w` onto the bounded measurable test
-function `φ` inside an integral:
-`∫ (w (· + a) - w) * φ = ∫ (φ (· - a) - φ) * w`. -/
-theorem integral_comp_add_sub_mul_eq {w φ : E → ℝ} (hw : Integrable w μ)
-    (hφ : Measurable φ) {M : ℝ} (hM : ∀ x, ‖φ x‖ ≤ M) (a : E) :
-    ∫ x, (w (x + a) - w x) * φ x ∂μ = ∫ y, (φ (y - a) - φ y) * w y ∂μ := by
+/-- Moving a translation from the integrable function `w` onto the a.e. strongly measurable,
+essentially bounded function `φ` (the hypothesis `MemLp φ ∞ μ`) inside an integral:
+`∫ (w (· + a) - w) * φ = ∫ (φ (· - a) - φ) * w`. Only right translations need to be measurable,
+which `[MeasurableConstVAdd Gᵃᵒᵖ G]` expresses; `[MeasurableAdd G]` provides it. -/
+theorem integral_comp_add_sub_mul_eq {w φ : G → 𝕜} (hw : Integrable w μ) (hφ : MemLp φ ∞ μ)
+    (a : G) : ∫ x, (w (x + a) - w x) * φ x ∂μ = ∫ y, (φ (y - a) - φ y) * w y ∂μ := by
+  have hadd (b : G) : MeasurePreserving (· + b) μ μ :=
+    measurePreserving_vadd (AddOpposite.op b) μ
+  have hsub : MeasurePreserving (· - a) μ μ := by simpa only [sub_eq_add_neg] using hadd (-a)
   have h1 : Integrable (fun x => w (x + a) * φ x) μ :=
-    (hw.comp_add_right a).mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
-  have h2 : Integrable (fun x => w x * φ x) μ :=
-    hw.mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
+    (((hadd a).integrable_comp hw.1).2 hw).mul_of_top_left hφ
+  have h2 : Integrable (fun x => w x * φ x) μ := hw.mul_of_top_left hφ
   have h3 : Integrable (fun x => w x * φ (x - a)) μ :=
-    hw.mul_bdd (hφ.comp (continuous_sub_right a).measurable).aestronglyMeasurable
-      (ae_of_all _ fun x => hM _)
+    hw.mul_of_top_left (hφ.comp_measurePreserving hsub)
   calc ∫ x, (w (x + a) - w x) * φ x ∂μ
       = ∫ x, w (x + a) * φ x ∂μ - ∫ y, w y * φ y ∂μ := by
         rw [← integral_sub h1 h2]
         congr 1 with x
         ring
     _ = ∫ y, w y * φ (y - a) ∂μ - ∫ y, w y * φ y ∂μ := by
-        rw [← integral_add_right_eq_self (fun y => w y * φ (y - a)) a]
+        rw [← integral_vadd_eq_self (fun y => w y * φ (y - a)) (g := AddOpposite.op a)]
         simp
     _ = ∫ y, (φ (y - a) - φ y) * w y ∂μ := by
         rw [← integral_sub h3 h2]

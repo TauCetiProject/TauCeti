@@ -36,7 +36,6 @@ namespace TauCeti.Probability
 
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] [Nonempty ι]
   {P : Measure Ω} {μ : ι → Measure ℝ} {X : ι → Ω → ℝ}
-  [∀ i, IsProbabilityMeasure (μ i)]
 
 /-- **Cumulative hazards add under independent minima.** At a point where every component has
 positive survival, the negative logarithm of the minimum's survival is the sum of the component
@@ -87,12 +86,11 @@ theorem hasDerivAt_neg_log_one_sub_cdf_min_indep (hindep : iIndepFun X P)
     hasDerivAt_neg_log_one_sub_cdf (hf i) (hS i)).congr_of_eventuallyEq
       (hnear.mono fun t ht => neg_log_one_sub_cdf_min_indep hindep hlaw ht)
 
-/-- **Almost-everywhere addition of hazards.** On an interval where the marginal cdfs are
-absolutely continuous and survival is positive, the minimum's hazard is their sum almost
-everywhere with respect to Lebesgue measure. -/
+/-- **Almost-everywhere addition of hazards.** On an interval where survival is positive, the
+minimum's hazard is the sum of the component hazards almost everywhere with respect to Lebesgue
+measure; cdfs are monotone, hence almost everywhere differentiable. -/
 theorem ae_deriv_cdf_min_div_one_sub_cdf (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) (μ i) P) {a b : ℝ}
-    (hac : ∀ i, AbsolutelyContinuousOnInterval (cdf (μ i)) a b)
     (hS : ∀ t ∈ uIcc a b, ∀ i, cdf (μ i) t < 1) :
     ∀ᵐ t, t ∈ uIcc a b →
       deriv (cdf (P.map fun ω =>
@@ -101,16 +99,14 @@ theorem ae_deriv_cdf_min_div_one_sub_cdf (hindep : iIndepFun X P)
             Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) t) =
         ∑ i, deriv (cdf (μ i)) t / (1 - cdf (μ i) t) := by
   have hd : ∀ᵐ t, ∀ i, t ∈ uIcc a b → DifferentiableAt ℝ (cdf (μ i)) t :=
-    (ae_all_iff).2 fun i => (hac i).ae_differentiableAt
+    (ae_all_iff).2 fun i => (monotone_cdf (μ i)).ae_differentiableAt.mono fun _ h _ => h
   filter_upwards [hd] with t ht hmem
   exact deriv_cdf_min_div_one_sub_cdf hindep hlaw (hS t hmem) fun i => ht i hmem
 
-/-- **Integrability of the minimum's hazard.** Absolute continuity of the component cdfs and
-positive component survival on the whole compact interval make the minimum's hazard integrable.
--/
+/-- **Integrability of the minimum's hazard.** Positive component survival on the whole compact
+interval makes the minimum's hazard integrable. -/
 theorem intervalIntegrable_deriv_cdf_min_div_one_sub_cdf (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) (μ i) P) {a b : ℝ}
-    (hac : ∀ i, AbsolutelyContinuousOnInterval (cdf (μ i)) a b)
     (hS : ∀ t ∈ uIcc a b, ∀ i, cdf (μ i) t < 1) :
     IntervalIntegrable (fun t =>
       deriv (cdf (P.map fun ω =>
@@ -120,13 +116,13 @@ theorem intervalIntegrable_deriv_cdf_min_div_one_sub_cdf (hindep : iIndepFun X P
   have hi : ∀ i, IntervalIntegrable
       (fun t => deriv (cdf (μ i)) t / (1 - cdf (μ i) t)) volume a b := by
     intro i
-    apply intervalIntegrable_div_one_sub_cdf (hac i) (fun t ht => hS t ht i)
-    filter_upwards [(hac i).ae_differentiableAt] with t ht hmem
-    exact (ht (uIoc_subset_uIcc hmem)).hasDerivAt
+    apply intervalIntegrable_div_one_sub_cdf (fun t ht => hS t ht i)
+    filter_upwards [(monotone_cdf (μ i)).ae_differentiableAt] with t ht _
+    exact ht.hasDerivAt
   have hsum := IntervalIntegrable.sum Finset.univ (fun i _ => hi i)
   apply hsum.congr_ae
   rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_uIoc]
-  filter_upwards [ae_deriv_cdf_min_div_one_sub_cdf hindep hlaw hac hS] with t ht hmem
+  filter_upwards [ae_deriv_cdf_min_div_one_sub_cdf hindep hlaw hS] with t ht hmem
   simpa only [Finset.sum_apply] using (ht (uIoc_subset_uIcc hmem)).symm
 
 /-- **Pointwise addition for continuous densities.** If each marginal has a nonnegative density
@@ -142,13 +138,16 @@ theorem deriv_cdf_min_div_one_sub_cdf_of_eq_withDensity (hindep : iIndepFun X P)
         (1 - cdf (P.map fun ω =>
           Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x) =
       ∑ i, f i x / (1 - cdf (μ i) x) := by
+  have := hindep.isProbabilityMeasure
+  have _ i : IsProbabilityMeasure (μ i) := (hlaw i).isProbabilityMeasure_iff.1 this
   have hd i := hasDerivAt_cdf_of_eq_withDensity (hμ i) (hfm i) (hnn i) (hc i)
   rw [deriv_cdf_min_div_one_sub_cdf hindep hlaw hS (fun i => (hd i).differentiableAt)]
   simp_rw [(hd _).deriv]
 
 /-- **Cumulative hazard of the product-measure minimum.** This measure identity applies to any
 finite nonempty family of real probability laws, including laws with atoms. -/
-theorem neg_log_one_sub_cdf_map_min_pi {x : ℝ} (hS : ∀ i, cdf (μ i) x < 1) :
+theorem neg_log_one_sub_cdf_map_min_pi [∀ i, IsProbabilityMeasure (μ i)] {x : ℝ}
+    (hS : ∀ i, cdf (μ i) x < 1) :
     -Real.log (1 - cdf ((Measure.pi μ).map fun z =>
       Finset.univ.inf' Finset.univ_nonempty fun i => z i) x) =
       ∑ i, -Real.log (1 - cdf (μ i) x) := by
@@ -159,7 +158,7 @@ theorem neg_log_one_sub_cdf_map_min_pi {x : ℝ} (hS : ∀ i, cdf (μ i) x < 1) 
 /-- **Hazard of the product-measure minimum.** Where survival is positive and each marginal cdf
 is differentiable, the hazard of the minimum of the coordinate projections is their hazard sum.
 -/
-theorem deriv_cdf_map_min_pi_div_one_sub_cdf {x : ℝ}
+theorem deriv_cdf_map_min_pi_div_one_sub_cdf [∀ i, IsProbabilityMeasure (μ i)] {x : ℝ}
     (hS : ∀ i, cdf (μ i) x < 1) (hd : ∀ i, DifferentiableAt ℝ (cdf (μ i)) x) :
     deriv (cdf ((Measure.pi μ).map fun z =>
       Finset.univ.inf' Finset.univ_nonempty fun i => z i)) x /

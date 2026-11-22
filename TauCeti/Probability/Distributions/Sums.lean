@@ -85,7 +85,7 @@ private theorem map_sub_prod_geometricMeasure_singleton_natCast {p : unitInterva
         {(n : ℤ)} =
       ENNReal.ofReal (discreteLaplaceWeightReal 0 (1 - p) n) := by
   have hp0 : (0 : ℝ) < p := unitInterval.pos_iff_ne_zero.mpr hp
-  have hq0 : (0 : ℝ) ≤ 1 - p := by simp [p.2.2]
+  have hq0 : (0 : ℝ) ≤ 1 - p := by simp [p.property.2]
   rw [Measure.map_apply (by fun_prop) (measurableSet_singleton _),
     Measure.prod_apply_symm (by measurability), lintegral_countable']
   have hpre (j : ℕ) : (fun a : ℕ => (a : ℤ) - (j : ℤ)) ⁻¹' {(n : ℤ)} = {j + n} := by
@@ -116,13 +116,11 @@ the integer difference of the coordinates gives the centered discrete Laplace la
 theorem map_sub_prod_geometricMeasure {p : unitInterval} (hp : p ≠ 0) :
     ((geometricMeasure p).prod (geometricMeasure p)).map (fun z : ℕ × ℕ => (z.1 : ℤ) - z.2) =
       discreteLaplaceMeasure 0 (1 - p) := by
-  have hp0 : (0 : ℝ) < p := unitInterval.pos_iff_ne_zero.mpr hp
-  have hq0 : (0 : ℝ) ≤ 1 - p := by simp [p.2.2]
-  have hq1 : (1 : ℝ) - p < 1 := by simp [hp0]
+  have hq0 : (0 : ℝ) ≤ 1 - p := by simp [p.property.2]
   refine Measure.ext_of_singleton fun k => ?_
   obtain ⟨n, rfl | rfl⟩ := k.eq_nat_or_neg
   · rw [map_sub_prod_geometricMeasure_singleton_natCast hp,
-      discreteLaplaceMeasure_singleton 0 hq0 hq1]
+      discreteLaplaceMeasure_singleton 0 hq0]
   · -- Negative integers reduce to natural ones by the symmetry of both laws.
     have hpre : Neg.neg ⁻¹' {-(n : ℤ)} = {(n : ℤ)} := by ext; simp
     rw [← Measure.map_neg_map_sub_prod_self _ (f := ((↑) : ℕ → ℤ)) measurable_from_top,
@@ -130,7 +128,7 @@ theorem map_sub_prod_geometricMeasure {p : unitInterval} (hp : p ≠ 0) :
       Measure.map_apply (by fun_prop) (measurableSet_singleton _),
       Measure.map_apply (by fun_prop) (measurableSet_singleton _), hpre,
       map_sub_prod_geometricMeasure_singleton_natCast hp,
-      discreteLaplaceMeasure_singleton 0 hq0 hq1]
+      discreteLaplaceMeasure_singleton 0 hq0]
 
 /-! ### Sums of geometric variables -/
 
@@ -153,18 +151,13 @@ theorem iIndepFun.hasLaw_sum_geometricMeasure {ι : Type*} [Fintype ι]
     induction s using Finset.induction_on with
     | empty =>
         simp only [Finset.sum_empty, Finset.card_empty, Nat.cast_zero]
-        rw [negativeBinomialMeasure_zero hpR p.2.2]
+        rw [negativeBinomialMeasure_zero hpR p.property.2]
         exact hasLaw_dirac_of_ae_eq (Filter.Eventually.of_forall fun _ => rfl)
     | @insert i s hi ih =>
-        let _ : IsProbabilityMeasure (negativeBinomialMeasure 1 p) :=
-          isProbabilityMeasure_negativeBinomialMeasure zero_le_one hpR p.2.2
-        let _ : IsProbabilityMeasure (negativeBinomialMeasure (s.card : ℝ) p) :=
-          isProbabilityMeasure_negativeBinomialMeasure (Nat.cast_nonneg _) hpR p.2.2
         have hadd :=
           (hindep.indepFun_finsetSum_of_notMem₀
-            (fun j => (hlaw j).aemeasurable) hi).symm.hasLaw_add (hone i) ih
-        rw [negativeBinomialMeasure_conv_negativeBinomialMeasure zero_le_one
-          (Nat.cast_nonneg s.card)] at hadd
+            (fun j => (hlaw j).aemeasurable) hi).symm.hasLaw_add_negativeBinomialMeasure
+            (hone i) ih
         simpa only [Finset.sum_insert hi, Finset.card_insert_of_notMem hi, Nat.cast_add,
           Nat.cast_one, add_comm] using hadd
   have hX : (fun ω => ∑ i, X i ω) = ∑ i, X i := by

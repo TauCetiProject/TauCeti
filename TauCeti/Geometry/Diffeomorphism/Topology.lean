@@ -38,6 +38,7 @@ that map, and `TauCeti.Diffeotopy.toPath` in
   `C^n⟮I, M; J, N⟯`.
 * `Diffeomorph.ofSmoothFamily`: a jointly `C^n` family of diffeomorphisms, as a continuous map
   into the space of diffeomorphisms `M ≃ₘ^n⟮I, J⟯ N`.
+* `Diffeomorph.evalAt`: evaluation at a fixed point of the source, as a continuous map.
 
 ## Main results
 
@@ -110,6 +111,15 @@ theorem continuous_weakWhitney_iff {Q : Type*} [TopologicalSpace Q] {f : Q → M
 /-- Evaluation at a fixed point of the source is continuous. -/
 theorem continuous_eval_const (x : M) : Continuous fun f : M ≃ₘ^n⟮I, J⟯ N ↦ f x :=
   (ContMDiffMap.continuous_eval_const_manifoldWeakWhitney x).comp continuous_toContMDiffMap
+
+/-- Evaluation `f ↦ f x` at a fixed point of the source, as a continuous map on the
+diffeomorphisms. -/
+noncomputable def evalAt (x : M) : C(M ≃ₘ^n⟮I, J⟯ N, N) :=
+  ⟨fun f ↦ f x, continuous_eval_const x⟩
+
+@[simp]
+theorem evalAt_apply (x : M) (f : M ≃ₘ^n⟮I, J⟯ N) : evalAt x f = f x :=
+  (rfl)
 
 /-- A Hausdorff target gives a Hausdorff space of diffeomorphisms. -/
 theorem t2Space_weakWhitney [T2Space N] : T2Space (M ≃ₘ^n⟮I, J⟯ N) :=

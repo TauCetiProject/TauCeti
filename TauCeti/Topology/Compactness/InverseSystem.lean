@@ -160,8 +160,6 @@ theorem exists_forall_map_succ_eq_of_finite [∀ k, Finite (S k)] [∀ k, Nonemp
 variable {A B : ℕ → Type*} [∀ k, TopologicalSpace (A k)] [∀ k, CompactSpace (A k)]
   [∀ k, T2Space (A k)] [∀ k, TopologicalSpace (B k)] [∀ k, T1Space (B k)]
 
--- Adapted from `compactModule_limit_surjective` in
--- `TauCetiRoadmap/ProfiniteProPGroups/Suggested.lean` (`CompactModuleLimits`).
 /-- **Compatible families lift along a map of towers.** Let `α k : A (k + 1) → A k` be a tower of
 compact Hausdorff spaces with continuous maps, `β k : B (k + 1) → B k` a tower of `T1` spaces, and
 `g k : A k → B k` continuous maps commuting with the towers. Then a compatible family `b` in the
@@ -180,10 +178,10 @@ theorem exists_forall_map_succ_eq_and_forall_eq_of_forall_mem_range (α : ∀ k,
     let ⟨a, ha⟩ := hgb k
     ⟨⟨a, ha⟩⟩
   let γ : ∀ k, X (k + 1) → X k := fun k a ↦
-    ⟨α k a.1, by simp [hsq, Set.mem_singleton_iff.mp a.2, hb]⟩
+    ⟨α k a.val, by simp [hsq, Set.mem_singleton_iff.mp a.property, hb]⟩
   obtain ⟨s, hs⟩ := exists_forall_map_succ_eq_of_compact_t2 γ fun k ↦
-    ((hα k).comp continuous_subtype_val).subtype_mk _
-  exact ⟨fun k ↦ (s k).1, fun k ↦ congrArg Subtype.val (hs k), fun k ↦ (s k).2⟩
+    ((hα k).comp continuous_subtypeVal).subtype_mk _
+  exact ⟨fun k ↦ (s k).val, fun k ↦ congrArg Subtype.val (hs k), fun k ↦ (s k).property⟩
 
 end Sequence
 

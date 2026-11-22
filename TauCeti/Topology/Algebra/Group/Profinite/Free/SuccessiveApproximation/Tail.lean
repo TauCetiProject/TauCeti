@@ -116,10 +116,12 @@ private theorem exists_prod_gradedMk_eq_sum [Fintype X] (c : X → ZMod p) {l : 
   have hUL : (l.map u).prod = (L.prod : freeProP p X) := by
     rw [SubmonoidClass.coe_list_prod, List.map_map]
     rfl
-  refine ⟨u, hu, fun i ↦ pow_mem (subset_closure (Set.mem_singleton _)) _, hUL ▸ L.prod.2, ?_⟩
-  have hU_class : gradedMk p (freeProP p X) n ⟨(l.map u).prod, hUL ▸ L.prod.2⟩ =
+  refine ⟨u, hu, fun i ↦ pow_mem (subset_closure (Set.mem_singleton _)) _, hUL ▸ L.prod.property,
+      ?_⟩
+  have hU_class : gradedMk p (freeProP p X) n ⟨(l.map u).prod, hUL ▸ L.prod.property⟩ =
       (l.map fun i ↦ c i • g i).sum := by
-    have : (⟨(l.map u).prod, hUL ▸ L.prod.2⟩ : pLowerCentralSeries p (freeProP p X) n) = L.prod :=
+    have : (⟨(l.map u).prod, hUL ▸ L.prod.property⟩ : pLowerCentralSeries p
+        (freeProP p X) n) = L.prod :=
       Subtype.ext hUL
     rw [this, gradedMk_list_prod, List.map_map]
     exact congrArg List.sum (List.map_congr_left fun i _ ↦ hu_class i)
@@ -141,7 +143,8 @@ private theorem exists_gradedMk_inv_mul_basisModification_eq_basisModificationDe
         basisModificationDelta p X (le_add_self : 1 ≤ k + 1) (gradedMk p (freeProP p X) 1 a) v := by
   choose ω hω using fun i ↦ gradedMk_surjective (k + 1) (v i)
   refine ⟨ω, inv_mul_apply_mem_pLowerCentralSeries (basisModification ω).toMonoidHom
-    (basisModification ω).continuous (inv_mul_basisModification_mem_pLowerCentralSeries ω) a.2, ?_⟩
+    (basisModification ω).continuous (inv_mul_basisModification_mem_pLowerCentralSeries ω)
+        a.property, ?_⟩
   rw [gradedMk_inv_mul_basisModification (le_add_self : 1 ≤ k + 1) ω a]
   congr 1
   exact funext hω
@@ -170,11 +173,11 @@ private theorem exists_continuousMonoidHom_inv_mul_apply_mem_succ
   -- `φ r` is again a relator with class `ρ`: `φ` is congruent to the identity modulo `λ_2` on
   -- `λ_1`.
   have hφr : φ r ∈ pLowerCentralSeries p (freeProP p X) 1 :=
-    φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous 1 ⟨r, r.2, rfl⟩
+    φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous 1 ⟨r, r.property, rfl⟩
   have hρ : gradedMk p (freeProP p X) 1 ⟨φ r, hφr⟩ = gradedMk p (freeProP p X) 1 r := by
     rw [gradedMk_eq_gradedMk_iff]
     exact (QuotientGroup.eq.mpr
-      (inv_mul_apply_mem_pLowerCentralSeries φ.toMonoidHom φ.continuous hφ r.2)).symm
+      (inv_mul_apply_mem_pLowerCentralSeries φ.toMonoidHom φ.continuous hφ r.property)).symm
   -- Decompose the class of the deviation `z = (φ r)⁻¹ * T` in `gr_{k+2}(F)` as `δ_ρ(v) + y'`
   -- with `y'` in the tail, and write `y'` through tail coefficients and corrections.
   have hz := Submodule.mem_top (R := ZMod p) (x := gradedMk p (freeProP p X) (k + 1 + 1) ⟨_, hr⟩)
@@ -337,30 +340,31 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
   have : ∀ k, Nonempty (D k) := fun k ↦
     (exists_surjective_apply_eq_tailWord r w h S l₁ l₂ hnd hl hspan k).elim fun s hs ↦ ⟨⟨s, hs⟩⟩
   let C : PLowerCentralSeriesComparison p (freeProP p X) (freeProP p X) D :=
-    { map := fun _ s ↦ s.1.1
-      map_surjective := fun _ s ↦ s.2.1
-      bond := fun k s ↦ ⟨(s.1.1.pLowerCentralSeriesDesc,
-          fun i ↦ QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) (s.1.2 i)),
-        s.1.1.pLowerCentralSeriesDesc_surjective s.2.1, fun i ↦ by
-          obtain ⟨x, hx, hxs⟩ := Subgroup.mem_map.mp (s.2.2.1 i)
+    { map := fun _ s ↦ s.val.1
+      map_surjective := fun _ s ↦ s.property.1
+      bond := fun k s ↦ ⟨(s.val.1.pLowerCentralSeriesDesc,
+          fun i ↦ QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) (s.val.2 i)),
+        s.val.1.pLowerCentralSeriesDesc_surjective s.property.1, fun i ↦ by
+          obtain ⟨x, hx, hxs⟩ := Subgroup.mem_map.mp (s.property.2.1 i)
           refine ⟨x, hx, ?_⟩
           dsimp only
           rw [← hxs, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply, QuotientGroup.mapOfLE_mk], by
           dsimp only
-          rw [ContinuousMonoidHom.pLowerCentralSeriesDesc_mk, s.2.2.2, map_mul, map_mul,
+          rw [ContinuousMonoidHom.pLowerCentralSeriesDesc_mk, s.property.2.2, map_mul, map_mul,
             map_list_prod, map_list_prod, List.map_map, List.map_map, QuotientGroup.mapOfLE_mk]
           rfl⟩
-      commutes := fun _ s x ↦ (s.1.1.pLowerCentralSeriesDesc_mapOfLE x).symm }
+      commutes := fun _ s x ↦ (s.val.1.pLowerCentralSeriesDesc_mapOfLE x).symm }
   obtain ⟨s, e, hs, he, -, -⟩ := C.exists_continuousMulEquiv_preserving hP hfg hp
     (fun _ : Unit ↦ (1 : freeProP p X)) (fun _ ↦ 1) (1 : freeProP p X →ₜ* freeProP p X) 1
     (fun _ _ _ ↦ by simp) (fun _ ↦ ⟨0, fun _ _ _ _ ↦ by simp⟩)
   -- The tail elements, recovered from the compatible sequence of their classes.
-  obtain ⟨t, htH, hts⟩ := hP.exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries hp hH
-    (fun k i ↦ (s k).1.2 i) (fun k i ↦ congrArg (fun x ↦ x.1.2 i) (hs k)) fun k i ↦ (s k).2.2.1 i
+  obtain ⟨t, htH, hts⟩ := exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries hH
+    (fun k i ↦ (s k).val.2 i) (fun k i ↦ congrArg (fun x ↦ x.val.2 i) (hs k)) fun k i ↦
+        (s k).property.2.1 i
   refine ⟨e, t, fun i ↦ (Subgroup.mem_inf.mp (htH i)).1, fun i ↦ (Subgroup.mem_inf.mp (htH i)).2,
     eq_of_forall_mk_eq_of_iInf_eq_bot (hP.iInf_pLowerCentralSeries_eq_bot hp) fun k ↦ ?_⟩
   simp only [QuotientGroup.mk_mul, QuotientGroup.mk_list_prod, List.map_map, Function.comp_def,
     funext (hts k)]
-  exact (he k r).trans (s k).2.2.2
+  exact (he k r).trans (s k).property.2.2
 
 end TauCeti.freeProP

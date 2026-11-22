@@ -44,15 +44,15 @@ variable {n : ℕ} {r : ℝ}
 /-- The radial push `TauCeti.radialPush r`, for `0 ≤ r`, as a homotopy of the disk
 `TopCat.disk n`: at time `t` it sends `x` to `(1 - t) • x + t • r⁻¹ • radialRetraction r x`. -/
 def diskRadialPush (n : ℕ) (hr : 0 ≤ r) : C(I × TopCat.disk.{u} n, TopCat.disk.{u} n) where
-  toFun p := ULift.up ⟨radialPush r p.1 p.2.down.1, mem_closedBall_zero_iff.2 <|
-    norm_radialPush_le_one hr p.1 (mem_closedBall_zero_iff.1 p.2.down.2)⟩
+  toFun p := ULift.up ⟨radialPush r p.1 p.2.down.val, mem_closedBall_zero_iff.2 <|
+    norm_radialPush_le_one p.1 (mem_closedBall_zero_iff.1 p.2.down.property)⟩
   continuous_toFun := continuous_uliftUp.comp <| ((continuous_radialPush hr).comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp
+    (continuous_fst.prodMk (continuous_subtypeVal.comp
       (continuous_uliftDown.comp continuous_snd)))).subtype_mk _
 
 @[simp]
 theorem coe_diskRadialPush_apply_down (hr : 0 ≤ r) (t : I) (x : TopCat.disk.{u} n) :
-    ((diskRadialPush n hr (t, x)).down : EuclideanSpace ℝ (Fin n)) = radialPush r t x.down.1 :=
+    ((diskRadialPush n hr (t, x)).down : EuclideanSpace ℝ (Fin n)) = radialPush r t x.down.val :=
   (rfl)
 
 /-- At time `0` the radial push on the disk is the identity. -/
@@ -71,21 +71,21 @@ theorem diskRadialPush_diskBoundaryInclusion (hr : 0 < r) (hr1 : r ≤ 1) (t : I
       (norm_diskBoundaryInclusion s))))
 
 /-- At the end, the radial push on the disk sends the shell `r ≤ ‖x‖` into the boundary sphere. -/
-theorem norm_diskRadialPush_one (hr : 0 < r) {x : TopCat.disk.{u} n} (hx : r ≤ ‖x.down.1‖) :
-    ‖(diskRadialPush n hr.le (1, x)).down.1‖ = 1 := by
+theorem norm_diskRadialPush_one (hr : 0 < r) {x : TopCat.disk.{u} n} (hx : r ≤ ‖x.down.val‖) :
+    ‖(diskRadialPush n hr.le (1, x)).down.val‖ = 1 := by
   rw [coe_diskRadialPush_apply_down, norm_radialPush_one hr hx]
 
 /-- At the end, the radial push on the disk sends a point `x` of the ball of radius `r` to
 `r⁻¹ • x`. -/
 theorem coe_diskRadialPush_one_of_norm_le (hr : 0 ≤ r) {x : TopCat.disk.{u} n}
-    (hx : ‖x.down.1‖ ≤ r) : (diskRadialPush n hr (1, x)).down.1 = r⁻¹ • x.down.1 := by
+    (hx : ‖x.down.val‖ ≤ r) : (diskRadialPush n hr (1, x)).down.val = r⁻¹ • x.down.val := by
   rw [coe_diskRadialPush_apply_down, radialPush_one, radialRetraction_of_norm_le hx]
 
 /-- At the end, the radial push on the disk sends a point `x` of the shell `r ≤ ‖x‖` to
 `x / ‖x‖`. -/
 theorem coe_diskRadialPush_one_of_le_norm (hr : 0 < r) {x : TopCat.disk.{u} n}
-    (hx : r ≤ ‖x.down.1‖) :
-    (diskRadialPush n hr.le (1, x)).down.1 = ‖x.down.1‖⁻¹ • x.down.1 := by
+    (hx : r ≤ ‖x.down.val‖) :
+    (diskRadialPush n hr.le (1, x)).down.val = ‖x.down.val‖⁻¹ • x.down.val := by
   rw [coe_diskRadialPush_apply_down, radialPush_one, radialRetraction_of_le_norm hx, smul_smul,
     div_eq_mul_inv, inv_mul_cancel_left₀ hr.ne']
 

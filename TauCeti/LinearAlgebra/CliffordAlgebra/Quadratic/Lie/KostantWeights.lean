@@ -87,7 +87,7 @@ private theorem exists_rootInvolution_eq_bivector {χ : Weight K H L} (hχ : χ.
     genWeightSpaceProjection_apply_mem χ (bs i)⟩
   have hs' (i) : s i • (v : L) = genWeightSpaceProjection K H L χ (bs i) := by
     simpa using congrArg Subtype.val (hs i)
-  refine ⟨v, v.2, ∑ i, s i • y i, sum_mem fun i _ ↦ Submodule.smul_mem _ _
+  refine ⟨v, v.property, ∑ i, s i • y i, sum_mem fun i _ ↦ Submodule.smul_mem _ _
     (genWeightSpaceProjection_apply_mem _ _), ?_, ?_⟩
   · have hpair (i) : killingForm K L (v : L) (s i • y i) =
         killingForm K L (genWeightSpaceProjection K H L χ (bs i)) (y i) := by
@@ -177,7 +177,7 @@ private theorem exists_forall_rootInvolution_mul_eq {c : CliffordAlgebra (killin
   obtain ⟨v, hvW, hv0, hv⟩ := exists_mem_jointEigenvector_of_pairwise_commute_of_involutive X
     (fun a b _ ↦ LinearMap.ext fun w ↦ by
       simp only [X, mul_apply_eq_comp, LinearMap.mulLeft_apply, ← mul_assoc,
-        (commute_rootInvolution_of_mem_posRootsFinset base a.2 b.2).eq])
+        (commute_rootInvolution_of_mem_posRootsFinset base a.property b.property).eq])
     (fun a w ↦ by
       simp only [X, LinearMap.mulLeft_apply, ← mul_assoc,
         rootInvolution_mul_self H (H.isNonZero_coe_root _), one_mul])
@@ -187,7 +187,7 @@ private theorem exists_forall_rootInvolution_mul_eq {c : CliffordAlgebra (killin
           (rootInvolution H ((a : H.root) : Weight K H L)) := by
         rw [adjointCliffordHom_cartan_eq_sum_rootInvolution base h]
         exact (Commute.sum_left _ _ _ fun b hb ↦
-          (commute_rootInvolution_of_mem_posRootsFinset base hb a.2).smul_left _).smul_left _
+          (commute_rootInvolution_of_mem_posRootsFinset base hb a.property).smul_left _).smul_left _
       rw [LinearMap.mulLeft_apply, ← mul_assoc, hcomm.eq, mul_assoc, hmem.1 hw h, mul_smul_comm]
   exact ⟨v, hv0, hmem.1 hvW, fun a ha ↦ hv ⟨a, ha⟩⟩
 
@@ -242,8 +242,6 @@ theorem eq_weylVector_of_isHighestWeightVector_kostant_of_casimirScalar_eq
     (hcas : casimirScalar base lam =
       casimirScalar base (weylVector (IsKilling.rootSystem H) base)) :
     lam = weylVector (IsKilling.rootSystem H) base := by
-  -- `TauCeti.isDominantIntegral_weylVector` fixes the instance `invertibleTwo`.
-  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
   by_contra hne
   obtain ⟨S, hS, hlam⟩ := exists_eq_weylVector_sub_sum_kostant_of_forall_lie_eq_smul base
     hv.ne_zero hv.lie_eq_smul
@@ -252,8 +250,8 @@ theorem eq_weylVector_of_isHighestWeightVector_kostant_of_casimirScalar_eq
     rw [DFunLike.coe_injective hlam, sub_sub_cancel]
     exact sum_mem fun a ha ↦ root_mem_posRootCone_of_mem_posRoots _ base
       ((mem_posRootsFinset _ base a).1 (hS ha))
-  exact (isDominantIntegral_weylVector (b := base)
+  exact (hv.isDominantIntegral
     |>.casimirScalar_ne_casimirScalar_of_isDominantIntegral_of_sub_mem_posRootCone_of_ne
-      hv.isDominantIntegral hcone hne) hcas.symm
+      hcone hne) hcas.symm
 
 end CliffordAlgebra

@@ -30,7 +30,7 @@ equations `c i`. It is closed in the product of the coefficient space with proje
 Since projective space is compact, the projection of the incidence variety to the coefficient
 space is a proper map; in particular it maps closed subsets to closed subsets.
 
-For a fixed finite family of homogeneous equations, the points of projective space at which the
+For a fixed family of homogeneous equations, the points of projective space at which the
 cone Jacobian is surjective form an open set, by lower semicontinuity of the rank, so the points of
 the zero locus where the Jacobian test fails form a closed set.
 
@@ -91,13 +91,13 @@ theorem isClosed_complexProjectiveZeroLocus (p : ι → MvPolynomial (Fin N) ℂ
     IsClosed (complexProjectiveZeroLocus p) := by
   rw [← Projectivization.isQuotientMap_mk'.isClosed_preimage]
   have h : Projectivization.mk' ℂ ⁻¹' complexProjectiveZeroLocus p =
-      ⋂ i, ⋂ c : ℂ, {v : {v : Fin N → ℂ // v ≠ 0} | eval (c • v.1) (p i) = 0} := by
+      ⋂ i, ⋂ c : ℂ, {v : {v : Fin N → ℂ // v ≠ 0} | eval (c • v.val) (p i) = 0} := by
     ext v
     simp only [Set.mem_preimage, Projectivization.mk'_eq_mk,
       complexProjectiveZeroLocus_mk_iff_forall_smul, Set.mem_iInter, Set.mem_ofPred_eq]
   rw [h]
   exact isClosed_iInter fun i ↦ isClosed_iInter fun c ↦ isClosed_eq
-    ((continuous_eval (p i)).comp ((continuous_const_smul c).comp continuous_subtype_val))
+    ((continuous_eval (p i)).comp ((continuous_const_smul c).comp continuous_subtypeVal))
     continuous_const
 
 /-- The common zero locus of any family of polynomials is compact. -/
@@ -143,7 +143,7 @@ theorem mk_mem_complexProjectiveIncidence_iff (c : ∀ i, homogeneousSubmodule (
     (v : Fin N → ℂ) (hv : v ≠ 0) :
     (c, Projectivization.mk ℂ v hv) ∈ complexProjectiveIncidence N d ↔
       ∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0 :=
-  complexProjectiveZeroLocus_mk_iff (fun i ↦ (mem_homogeneousSubmodule _ _).mp (c i).2) v hv
+  complexProjectiveZeroLocus_mk_iff (fun i ↦ (mem_homogeneousSubmodule _ _).mp (c i).property) v hv
 
 /-- The incidence variety is closed in the product of the coefficient space with projective
 space. -/
@@ -153,7 +153,7 @@ theorem isClosed_complexProjectiveIncidence (d : ι → ℕ) :
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
   convert (isClosed_setOfPred_forall_eval_eq_zero_homogeneousSubmodule
     (σ := Fin N) (R := ℂ) d).preimage
-      (continuous_fst.prodMk (continuous_subtype_val.comp' continuous_snd)) using 1
+      (continuous_fst.prodMk (continuous_subtypeVal.comp' continuous_snd)) using 1
   ext ⟨c, v⟩
   simp only [Set.mem_preimage, Prod.map_apply, id_eq, Projectivization.mk'_eq_mk,
     mk_mem_complexProjectiveIncidence_iff, Set.mem_ofPred_eq]
@@ -162,27 +162,28 @@ theorem isClosed_complexProjectiveIncidence (d : ι → ℕ) :
 space is a proper map, since projective space is compact. In particular the image of every
 closed subset of the incidence variety is closed. -/
 theorem isProperMap_complexProjectiveIncidence_fst (d : ι → ℕ) :
-    IsProperMap fun x : complexProjectiveIncidence N d ↦ x.1.1 :=
+    IsProperMap fun x : complexProjectiveIncidence N d ↦ x.val.1 :=
   isProperMap_fst_of_compactSpace.restrict (isClosed_complexProjectiveIncidence d)
 
 /-! ### Full rank at a point -/
 
-/-- **Full rank is an open condition on the point.** For a finite family of homogeneous
+/-- **Full rank is an open condition on the point.** For a family of homogeneous
 equations, the points of projective space at which the cone Jacobian is surjective form an open
 set. In particular, the points of the zero locus where the cone Jacobian is not surjective form a
 closed set. -/
-theorem isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep [Finite ι]
+theorem isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep
     {p : ι → MvPolynomial (Fin N) ℂ} {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) :
     IsOpen {L : ℙ ℂ (Fin N → ℂ) | (jacobiMatrixAt p L.rep).mulVec.Surjective} := by
   rw [← Projectivization.isQuotientMap_mk'.isOpen_preimage]
-  have hJ : Continuous fun v : {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt p v.1 :=
+  have hJ : Continuous fun v : {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt p v.val :=
     continuous_matrix fun i j ↦ by
       simpa only [jacobiMatrixAt_apply, Function.comp_def] using
-        (continuous_eval _).comp continuous_subtype_val
+        (continuous_eval _).comp continuous_subtypeVal
   convert Matrix.isOpen_setOfPred_mulVec_surjective.preimage hJ using 1
   ext v
   simp only [Set.mem_preimage, Projectivization.mk'_eq_mk, Set.mem_ofPred_eq]
-  exact mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk hp (Projectivization.rep_ne_zero _) v.2
+  exact mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk hp (Projectivization.rep_ne_zero _)
+      v.property
     (Projectivization.mk_rep _)
 
 /-! ### The bad-rank locus -/
@@ -213,26 +214,27 @@ theorem complexProjectiveBadRankLocus_subset (d : ι → ℕ) :
 /-- A pair `(c, [v])` lies in the bad-rank locus exactly when every equation `c i` vanishes at
 `v` and the cone Jacobian of the equations at `v` is not surjective, for any representative
 `v`. -/
-theorem mk_mem_complexProjectiveBadRankLocus_iff [Finite ι]
+theorem mk_mem_complexProjectiveBadRankLocus_iff
     (c : ∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) (v : Fin N → ℂ) (hv : v ≠ 0) :
     (c, Projectivization.mk ℂ v hv) ∈ complexProjectiveBadRankLocus N d ↔
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) ∧
         ¬(jacobiMatrixAt (fun i ↦ (c i : MvPolynomial (Fin N) ℂ)) v).mulVec.Surjective := by
   rw [mem_complexProjectiveBadRankLocus, mk_mem_complexProjectiveIncidence_iff,
     mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk
-      (fun i ↦ (mem_homogeneousSubmodule _ _).mp (c i).2) (Projectivization.rep_ne_zero _) hv
+      (fun i ↦ (mem_homogeneousSubmodule _ _).mp (c i).property) (Projectivization.rep_ne_zero _) hv
       (Projectivization.mk_rep _)]
 
 /-- The bad-rank locus is closed: the cone Jacobian depends continuously on the coefficients and
 the point, and full rank is an open condition. -/
-theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
+theorem isClosed_complexProjectiveBadRankLocus (d : ι → ℕ) :
     IsClosed (complexProjectiveBadRankLocus N d) := by
   rw [← (IsOpenQuotientMap.id.prodMap
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
   have hJ : Continuous fun x : (∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) ×
-      {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt (fun i ↦ (x.1 i : MvPolynomial (Fin N) ℂ)) x.2.1 :=
+      {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt (fun i ↦ (x.1 i : MvPolynomial (Fin N) ℂ)) x.2.val
+          :=
     (continuous_jacobiMatrixAt_homogeneousSubmodule d).comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
   convert ((isClosed_complexProjectiveIncidence d).preimage
       (continuous_id.prodMap Projectivization.isOpenQuotientMap_mk'.continuous)).inter
     (Matrix.isOpen_setOfPred_mulVec_surjective.preimage hJ).isClosed_compl using 1
@@ -242,14 +244,14 @@ theorem isClosed_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
     Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_compl_iff]
 
 /-- The projection of the bad-rank locus to the coefficient space is closed. -/
-theorem isClosed_image_fst_complexProjectiveBadRankLocus [Finite ι] (d : ι → ℕ) :
+theorem isClosed_image_fst_complexProjectiveBadRankLocus (d : ι → ℕ) :
     IsClosed (Prod.fst '' complexProjectiveBadRankLocus N d) :=
   isClosedMap_fst_of_compactSpace _ (isClosed_complexProjectiveBadRankLocus d)
 
 /-- **Full rank is an open condition on the equations.** The families `c` of homogeneous
 equations of degrees `d` whose cone Jacobian is surjective at every nonzero common zero form an
 open subset of the coefficient space. -/
-theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt [Finite ι] (d : ι → ℕ) :
+theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt (d : ι → ℕ) :
     IsOpen {c : ∀ i, homogeneousSubmodule (Fin N) ℂ (d i) | ∀ v : Fin N → ℂ, v ≠ 0 →
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) →
         (jacobiMatrixAt (fun i ↦ (c i : MvPolynomial (Fin N) ℂ)) v).mulVec.Surjective} := by

@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+public import Mathlib.MeasureTheory.Group.Measure
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Topology.Order.LeftRight
 import Mathlib.Topology.Order.AtTopBotIxx
 
@@ -19,7 +21,8 @@ import Mathlib.Topology.Order.AtTopBotIxx
 Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(x, a]` go to
 `-∞`. This file adds the analogous limits for `(x, a)` and `[x, a]`, and the right-continuity of
 `x ↦ μ (-∞, x]` and `x ↦ μ (-∞, x)` at `a` from the right, where both tend to `μ (-∞, a]`.
-Reflection exchanges the two open tails.
+Reflection exchanges the two open tails, and a negation-invariant measure gives `(-∞, x]` and
+`(-x, ∞)` the same mass when `{-x}` is null.
 
 On `ℝ`, a uniform bound `C` on the mass of the unit windows `[a, a + 1]` bounds the mass of
 longer windows linearly in their length, and so makes the measure locally finite.
@@ -38,7 +41,20 @@ longer windows linearly in their length, and so makes the measure locally finite
   function continuous, even in the presence of immediate right-hand explosion.
 * `MeasureTheory.Measure.tendsto_measureReal_Icc_neg_mul_atTop`: the real mass of symmetric
   intervals with endpoints `±δx` tends to the total mass of a finite real measure when `δ > 0`.
+* `MeasureTheory.Measure.tendsto_measureReal_Ioi_atTop`,
+  `MeasureTheory.Measure.tendsto_rpow_mul_measureReal_Ioi_of_nonpos`: the real mass
+  `μ.real (Ioi x)` of the open right tail of a measure tends to `0` (infinite right tails have
+  real mass `0` by convention), also after weighting by `x ^ α` for `α ≤ 0`.
 * `MeasureTheory.Measure.map_neg_real_Ioi`: the right tail of a reflected measure is its left tail.
+* `MeasureTheory.Measure.measure_Iic_neg_eq_measure_Ici`, `measure_Iio_neg_eq_measure_Ioi`,
+  `measure_Iic_eq_measure_Ioi_neg`, `measureReal_Iic_eq_measureReal_Ioi_neg`: a negation-invariant
+  measure on an ordered additive group assigns equal measure to opposite half-lines (and to `Iic x`
+  and `Ioi (-x)` when `μ {-x} = 0`). For a negation-invariant probability measure on a linearly
+  ordered additive group, `Ici 0` and `Iic 0` have measure at least `2⁻¹`, `Ioi 0` and `Iio 0` have
+  measure at most `2⁻¹`, and all four have measure `2⁻¹` when `μ {0} = 0`
+  (`inv_two_le_measure_Ici_zero`, `inv_two_le_measure_Iic_zero`, `measure_Ioi_zero_le_inv_two`,
+  `measure_Iio_zero_le_inv_two`, `measure_Ioi_zero_eq_inv_two`, `measure_Iio_zero_eq_inv_two`,
+  `measure_Ici_zero_eq_inv_two`, `measure_Iic_zero_eq_inv_two`).
 * `MeasureTheory.Measure.measure_Icc_add_natCast_le`,
   `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Icc_add_one_le`: a measure on `ℝ`
   whose unit windows `[a, a + 1]` have mass at most `C` gives `[a, a + n]` mass at most
@@ -51,6 +67,104 @@ open Set Filter
 open scoped Topology ENNReal NNReal
 
 namespace MeasureTheory
+
+namespace Measure
+
+section NegInvariant
+
+variable {α : Type*} [AddCommGroup α] [MeasurableSpace α] [MeasurableNeg α]
+
+section
+variable [PartialOrder α] [IsOrderedAddMonoid α] (μ : Measure α) [μ.IsNegInvariant]
+
+/-- A negation-invariant measure on an ordered additive group gives `Iic (-x)` and `Ici x` the
+same measure. -/
+theorem measure_Iic_neg_eq_measure_Ici (x : α) : μ (Iic (-x)) = μ (Ici x) := by
+  simpa only [Set.neg_Ici] using measure_neg μ (Ici x)
+
+/-- A negation-invariant measure on an ordered additive group gives `Iio (-x)` and `Ioi x` the
+same measure. -/
+theorem measure_Iio_neg_eq_measure_Ioi (x : α) : μ (Iio (-x)) = μ (Ioi x) := by
+  simpa only [Set.neg_Ioi] using measure_neg μ (Ioi x)
+
+/-- A negation-invariant measure on an ordered additive group gives the same measure to `Iic x` as
+to `Ioi (-x)`, provided the point `-x` is null. -/
+theorem measure_Iic_eq_measure_Ioi_neg {x : α} (hnull : μ {-x} = 0) : μ (Iic x) = μ (Ioi (-x)) := by
+  rw [← neg_neg x, μ.measure_Iic_neg_eq_measure_Ici (-x), neg_neg,
+    ← measure_congr (Ioi_ae_eq_Ici' hnull)]
+
+/-- A negation-invariant measure on an ordered additive group gives the same mass to `Iic x` as to
+`Ioi (-x)`, provided the point `-x` is null. -/
+theorem measureReal_Iic_eq_measureReal_Ioi_neg {x : α} (hnull : μ {-x} = 0) :
+    μ.real (Iic x) = μ.real (Ioi (-x)) := by
+  rw [Measure.real, Measure.real, measure_Iic_eq_measure_Ioi_neg μ hnull]
+
+end
+
+section
+variable [LinearOrder α] [IsOrderedAddMonoid α] (μ : Measure α) [IsProbabilityMeasure μ]
+  [μ.IsNegInvariant]
+
+/-- A negation-invariant probability measure on a linearly ordered additive group gives `Ici 0`
+measure at least `2⁻¹`. -/
+theorem inv_two_le_measure_Ici_zero : (2⁻¹ : ℝ≥0∞) ≤ μ (Ici 0) := by
+  have hneg : μ (Iic 0) = μ (Ici 0) := by simpa [neg_zero] using μ.measure_Iic_neg_eq_measure_Ici 0
+  have h1 : (1 : ℝ≥0∞) ≤ 2 * μ (Ici 0) := by
+    simpa only [Iic_union_Ici, measure_univ, hneg, two_mul] using
+      measure_union_le (μ := μ) (Iic 0) (Ici 0)
+  simpa [ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, ← mul_assoc] using
+    mul_le_mul_of_nonneg_left h1 (bot_le : (0 : ℝ≥0∞) ≤ 2⁻¹)
+
+/-- A negation-invariant probability measure on a linearly ordered additive group gives `Iic 0`
+measure at least `2⁻¹`. -/
+theorem inv_two_le_measure_Iic_zero : (2⁻¹ : ℝ≥0∞) ≤ μ (Iic 0) := by
+  rw [← neg_zero, μ.measure_Iic_neg_eq_measure_Ici]; exact μ.inv_two_le_measure_Ici_zero
+
+section
+variable [TopologicalSpace α] [ClosedIicTopology α] [OpensMeasurableSpace α]
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with measurable
+open rays gives `Ioi 0` measure at most `2⁻¹`. -/
+theorem measure_Ioi_zero_le_inv_two : μ (Ioi 0) ≤ 2⁻¹ := by
+  have hneg : μ (Iio 0) = μ (Ioi 0) := by simpa [neg_zero] using μ.measure_Iio_neg_eq_measure_Ioi 0
+  have h2 : 2 * μ (Ioi 0) ≤ 1 := by
+    rw [two_mul]; nth_rw 1 [← hneg]
+    rw [← measure_union (disjoint_left.mpr fun _ h₁ h₂ ↦ (lt_trans h₁ h₂).false) measurableSet_Ioi]
+    exact (measure_mono (subset_univ _)).trans_eq measure_univ
+  simpa [ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, ← mul_assoc] using
+    mul_le_mul_of_nonneg_left h2 (bot_le : (0 : ℝ≥0∞) ≤ 2⁻¹)
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with measurable
+open rays gives `Iio 0` measure at most `2⁻¹`. -/
+theorem measure_Iio_zero_le_inv_two : μ (Iio 0) ≤ 2⁻¹ := by
+  rw [← neg_zero, μ.measure_Iio_neg_eq_measure_Ioi]; exact μ.measure_Ioi_zero_le_inv_two
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
+gives `Ioi 0` measure `2⁻¹`. -/
+theorem measure_Ioi_zero_eq_inv_two (h0 : μ {0} = 0) : μ (Ioi 0) = 2⁻¹ :=
+  le_antisymm μ.measure_Ioi_zero_le_inv_two
+    (measure_congr (Ioi_ae_eq_Ici' h0) ▸ μ.inv_two_le_measure_Ici_zero)
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
+gives `Iio 0` measure `2⁻¹`. -/
+theorem measure_Iio_zero_eq_inv_two (h0 : μ {0} = 0) : μ (Iio 0) = 2⁻¹ := by
+  rw [← neg_zero, μ.measure_Iio_neg_eq_measure_Ioi]; exact μ.measure_Ioi_zero_eq_inv_two h0
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
+gives `Ici 0` measure `2⁻¹`. -/
+theorem measure_Ici_zero_eq_inv_two (h0 : μ {0} = 0) : μ (Ici 0) = 2⁻¹ :=
+  (measure_congr (Ioi_ae_eq_Ici' h0)).symm.trans (μ.measure_Ioi_zero_eq_inv_two h0)
+
+/-- A negation-invariant probability measure on a linearly ordered additive group with `μ {0} = 0`
+gives `Iic 0` measure `2⁻¹`. -/
+theorem measure_Iic_zero_eq_inv_two (h0 : μ {0} = 0) : μ (Iic 0) = 2⁻¹ := by
+  rw [← neg_zero, μ.measure_Iic_neg_eq_measure_Ici]; exact μ.measure_Ici_zero_eq_inv_two h0
+
+end
+end
+end NegInvariant
+
+end Measure
 
 variable {α : Type*} {mα : MeasurableSpace α} {μ : Measure α}
 
@@ -72,9 +186,9 @@ theorem tendsto_measure_Icc_atBot (μ : Measure α) (a : α) :
 
 end Preorder
 
-section DenselyOrdered
+section LinearOrder
 
-variable [LinearOrder α] [DenselyOrdered α] [TopologicalSpace α] [OrderTopology α]
+variable [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
   [FirstCountableTopology α] [OpensMeasurableSpace α] {a : α}
 
 /-- If some `μ (-∞, r)` with `r > a` is finite, then the measure of `(-∞, x)` tends to the
@@ -84,8 +198,7 @@ theorem tendsto_measure_Iio_nhdsGT (hf : ∃ r > a, μ (Iio r) ≠ ∞) :
   have h : ⋂ r > a, Iio r = Iic a := by
     ext x
     simp only [mem_iInter, mem_Iio, mem_Iic]
-    exact ⟨fun h => le_of_forall_gt_imp_ge_of_dense fun r hr => (h r hr).le,
-      fun h r hr => h.trans_lt hr⟩
+    exact ⟨fun h => not_lt.1 fun hx => lt_irrefl x (h x hx), fun h r hr => h.trans_lt hr⟩
   rw [← h]
   exact tendsto_measure_biInter_gt (fun _ _ => measurableSet_Iio.nullMeasurableSet)
     (fun _ _ _ hij => Iio_subset_Iio hij) hf
@@ -94,10 +207,16 @@ theorem tendsto_measure_Iio_nhdsGT (hf : ∃ r > a, μ (Iio r) ≠ ∞) :
 at `a`. -/
 theorem tendsto_measure_Iic_nhdsGT (hf : ∃ r > a, μ (Iic r) ≠ ∞) :
     Tendsto (fun x => μ (Iic x)) (𝓝[>] a) (𝓝 (μ (Iic a))) := by
+  by_cases hbot : 𝓝[>] a = ⊥
+  · rw [hbot]
+    exact tendsto_bot
   have h : ⋂ r > a, Iic r = Iic a := by
     ext x
     simp only [mem_iInter, mem_Iic]
-    exact ⟨le_of_forall_gt_imp_ge_of_dense, fun h r hr => h.trans hr.le⟩
+    refine ⟨fun h => not_lt.1 fun hx => ?_, fun h r hr => h.trans hr.le⟩
+    have hcov : ¬ a ⋖ x := fun hcov => hbot (nhdsGT_eq_bot_iff.2 (.inr ⟨x, hcov⟩))
+    obtain ⟨c, hac, hcx⟩ := (not_covBy_iff hx).1 hcov
+    exact (h c hac).not_gt hcx
   rw [← h]
   exact tendsto_measure_biInter_gt (fun _ _ => measurableSet_Iic.nullMeasurableSet)
     (fun _ _ _ hij => Iic_subset_Iic.2 hij) hf
@@ -109,16 +228,21 @@ omit [OpensMeasurableSpace α] in
 `ℝ≥0∞`. No finiteness assumption is needed. -/
 theorem continuousWithinAt_Iio_measure_Iic (μ : Measure α) [NullSingletonClass μ] (a : α) :
     ContinuousWithinAt (fun x ↦ μ (Iic x)) (Iio a) a := by
+  by_cases ha : Order.IsSuccPrelimit a
+  swap
+  · obtain ⟨b, hb⟩ := Order.not_isSuccPrelimit_iff.1 ha
+    rw [ContinuousWithinAt, show 𝓝[Iio a] a = ⊥ from nhdsLT_eq_bot_iff.2 (.inr ⟨b, hb⟩)]
+    exact tendsto_bot
   have : IsCountablyGenerated (atTop : Filter (Iio a)) := by
-    rw [← comap_coe_Iio_nhdsLT a]
+    rw [← comap_coe_Iio_nhdsLT a ha]
     infer_instance
   have hUnion : (⋃ x : Iio a, Iic (x : α)) = Iio a := by
     rw [iUnion_coe_set]
-    exact isLUB_Iio.biUnion_Iic_eq_Iio (lt_irrefl a)
+    exact ha.isLUB_Iio.biUnion_Iic_eq_Iio (lt_irrefl a)
   have h := tendsto_measure_iUnion_atTop (μ := μ)
     (s := fun x : Iio a ↦ Iic (x : α)) (fun _ _ h ↦ Iic_subset_Iic.mpr h)
   rw [hUnion, measure_congr Iio_ae_eq_Iic] at h
-  exact (tendsto_comp_coe_Iio_atTop (f := fun x ↦ μ (Iic x))).mp h
+  exact (tendsto_comp_coe_Iio_atTop ha (f := fun x ↦ μ (Iic x))).mp h
 
 /-- Removing points with infinite original cumulative mass makes the cumulative function
 of an atomless measure continuous, with values in `ℝ≥0∞`. No local finiteness is assumed. -/
@@ -142,14 +266,14 @@ theorem continuous_cumulative_restrict_lt_top (μ : Measure α) [NullSingletonCl
       ext y
       simp only [mem_inter_iff, mem_Iic, mem_ofPred_eq]
       constructor
-      · rintro ⟨hyx, hy⟩
+      · rintro ⟨_, hy⟩
         exact ⟨le_of_not_gt (fun hty ↦ hfinite ⟨y, hty, hy⟩), hy⟩
       · exact fun ⟨hyt, hy⟩ ↦ ⟨hyt.trans hx.le, hy⟩
     exact continuousWithinAt_const.congr (fun x hx ↦ heq x hx) rfl
 
 end Measure
 
-end DenselyOrdered
+end LinearOrder
 
 /-- Reflection turns the real mass of an open right tail into that of the opposite left tail. -/
 @[simp]
@@ -174,6 +298,39 @@ theorem Measure.tendsto_measureReal_Icc_neg_mul_atTop (μ : Measure ℝ) [IsFini
   rw [hcover] at hm
   exact ((ENNReal.tendsto_toReal (measure_ne_top μ univ)).comp hm).comp
     (tendsto_id.const_mul_atTop hδ)
+
+/-- The real mass of the open right tail `(x, ∞)` of a measure tends to `0` at `+∞`. If every
+right tail has infinite mass, the real mass is `0` by convention. -/
+theorem Measure.tendsto_measureReal_Ioi_atTop {α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [ClosedIicTopology α] [MeasurableSpace α] [OpensMeasurableSpace α]
+    [(atTop : Filter α).IsCountablyGenerated] (μ : Measure α) :
+    Tendsto (fun x : α ↦ μ.real (Ioi x)) atTop (𝓝 0) := by
+  by_cases h : ∃ a, μ (Ioi a) ≠ ∞
+  · obtain ⟨a, ha⟩ := h
+    have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun x : α ↦ Ioi x)
+      (fun _ ↦ measurableSet_Ioi.nullMeasurableSet) (fun _ _ hab ↦ Ioi_subset_Ioi hab)
+      ⟨a, ha⟩
+    rw [Set.eq_empty_of_forall_notMem (s := ⋂ x : α, Ioi x) fun y hy ↦
+      lt_irrefl y (mem_iInter.1 hy y), measure_empty] at h
+    simpa [measureReal_def, Function.comp_def] using
+      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h
+  · push Not at h
+    simpa [measureReal_def, h] using tendsto_const_nhds
+
+/-- For a nonpositive exponent `α`, the weighted real mass `x ^ α * μ.real (Ioi x)` of the right
+tail of a measure on `ℝ` tends to `0`. As in `tendsto_measureReal_Ioi_atTop`, infinite right
+tails have real mass `0` by convention. -/
+theorem Measure.tendsto_rpow_mul_measureReal_Ioi_of_nonpos (μ : Measure ℝ)
+    {α : ℝ} (hα : α ≤ 0) :
+    Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 0) := by
+  refine squeeze_zero' ?_ ?_ (μ.tendsto_measureReal_Ioi_atTop)
+  · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+    exact mul_nonneg (Real.rpow_nonneg hx α) measureReal_nonneg
+  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+    calc x ^ α * μ.real (Ioi x) ≤ 1 * μ.real (Ioi x) := by
+          gcongr
+          exact Real.rpow_le_one_of_one_le_of_nonpos hx hα
+      _ = μ.real (Ioi x) := one_mul _
 
 namespace Measure
 

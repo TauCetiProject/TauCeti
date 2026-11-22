@@ -74,7 +74,8 @@ variable {R A M : Type*} [Field R] [CharZero R] [Ring A] [Algebra R A] [AddCommG
 idempotent polynomial with coefficients in `A`. Then `φ(e(t), …, e(t))` does not depend on the
 scalar `t`. -/
 theorem apply_const_eval_algebraMap_eq {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) {e : A[X]} (he : IsIdempotentElem e) (s t : R) :
     φ (fun _ ↦ e.eval (algebraMap R A s)) = φ (fun _ ↦ e.eval (algebraMap R A t)) := by
   refine φ.apply_eval_algebraMap_eq_of_linearDeriv_eq_zero (fun _ ↦ e) (fun r ↦ ?_) s t
@@ -92,7 +93,8 @@ theorem apply_const_eval_algebraMap_eq {n : ℕ} (hn : Even n)
 /-- Conjugating an idempotent by a square-zero unipotent `1 + N` preserves the value of an
 even-degree cyclic cocycle on constant tuples. -/
 private theorem apply_const_one_add_mul_mul_one_sub_eq {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) {e N : A} (he : IsIdempotentElem e)
     (hN : N * N = 0) :
     IsIdempotentElem ((1 + N) * e * (1 - N)) ∧
@@ -112,7 +114,8 @@ private theorem apply_const_one_add_mul_mul_one_sub_eq {n : ℕ} (hn : Even n)
 /-- Conjugating an idempotent `e` to `u⁻¹ e u` by a unit `u` preserves the value of an
 even-degree cyclic cocycle on constant tuples. -/
 private theorem apply_const_units_conj' {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) (u : Aˣ) {e : A} (he : IsIdempotentElem e) :
     φ (fun _ ↦ ↑u⁻¹ * e * ↑u) = φ (fun _ ↦ e) := by
   -- Pass to `2 × 2` matrices, where conjugation by `!![0, u; -u⁻¹, 0]`, a product of three
@@ -151,7 +154,8 @@ private theorem apply_const_units_conj' {n : ℕ} (hn : Even n)
 /-- **Conjugation invariance.** Conjugating an idempotent `e` by a unit `u` preserves the value
 `φ(e, …, e)` of a cyclic cocycle `φ` of even degree. -/
 theorem apply_const_units_conj {n : ℕ} (hn : Even n)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M n)
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} (hφ : φ ∈ cyclicCochains R A M
+        n)
     (hbφ : hochschildCoboundary R A M n φ = 0) (u : Aˣ) {e : A} (he : IsIdempotentElem e) :
     φ (fun _ ↦ ↑u * e * ↑u⁻¹) = φ (fun _ ↦ e) := by
   simpa only [inv_inv] using apply_const_units_conj' hn hφ hbφ u⁻¹ he
@@ -166,9 +170,9 @@ theorem evenPairing_eval_algebraMap_eq {e : A[X]} (he : IsIdempotentElem e) (s t
     evenPairing (R := R) (M := M) (e.eval (algebraMap R A s)) hs m =
       evenPairing (e.eval (algebraMap R A t)) ht m := by
   ext φ
-  have hb := (mem_cyclicCocycles_iff R A M).1 φ.2
+  have hb := (mem_cyclicCocycles_iff R A M).1 φ.property
   simp only [LinearMap.coe_comp, Function.comp_apply, evenPairing_mk]
-  rw [apply_const_eval_algebraMap_eq (even_two_mul m) φ.1.2 hb he s t]
+  rw [apply_const_eval_algebraMap_eq (even_two_mul m) φ.val.property hb he s t]
 
 /-- **Conjugation invariance of the even pairing.** Conjugating an idempotent by a unit does not
 change its even pairing with cyclic cohomology. -/
@@ -176,9 +180,9 @@ theorem evenPairing_units_conj (u : Aˣ) {e : A} (he : IsIdempotentElem e)
     (hue : IsIdempotentElem (↑u * e * ↑u⁻¹)) (m : ℕ) :
     evenPairing (R := R) (M := M) (↑u * e * ↑u⁻¹) hue m = evenPairing e he m := by
   ext φ
-  have hb := (mem_cyclicCocycles_iff R A M).1 φ.2
+  have hb := (mem_cyclicCocycles_iff R A M).1 φ.property
   simp only [LinearMap.coe_comp, Function.comp_apply, evenPairing_mk]
-  rw [apply_const_units_conj (even_two_mul m) φ.1.2 hb u he]
+  rw [apply_const_units_conj (even_two_mul m) φ.val.property hb u he]
 
 /-- **Murray–von Neumann invariance of the even pairing.** If idempotent matrices `e` and `f`,
 possibly of different sizes, factor as `e = a * b` and `f = b * a` through rectangular matrices,

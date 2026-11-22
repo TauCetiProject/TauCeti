@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.Category.TopCat.Pushout
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
+import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
 # Homotopy invariance of attaching along a cofibration
@@ -65,6 +67,15 @@ a two-sided homotopy inverse of `F`.
   gives spaces which are homotopy equivalent relative to `Z`.**
 * `CategoryTheory.IsPushout.exists_homotopic_id_of_homotopic_id`: **a homotopy equivalence of the
   base induces a homotopy equivalence of attachments.**
+* `ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_pushout`: the same for the pushouts in
+  `TopCat`, as a homotopy equivalence `Z ∪_a Y ≃ₕ Z' ∪_{e ∘ a} Y` which is `e` on `Z`.
+* `TauCeti.exists_homotopyEquiv_pushout_of_isPushout`: if a subspace `X` is obtained from `L ⊆ X`
+  by an attachment, given as a pushout square in `TopCat`, and `X` is a strong deformation retract
+  of `Y`, then `Y` is homotopy equivalent to the pushout, by a homotopy equivalence which is the
+  inclusion on `L`.
+* `TauCeti.TopCat.hasHomotopyExtensionProperty_range_sigmaMap`: a coproduct in `TopCat` of
+  cofibrations is a cofibration, so that several pieces can be attached at once along a coproduct
+  of cofibrations.
 
 ## References
 
@@ -279,12 +290,105 @@ theorem exists_homotopic_id_of_homotopic_id (h : IsPushout i a j k)
   simp only [TopCat.hom_comp] at hFE hEψ hFE' ⊢
   -- `ψ` is a left and `F ≫ Fg` a right homotopy inverse of `E`, so `F ≫ Fg` is a left one too.
   have hx : ((Fg.hom.comp F.hom).comp E.hom).Homotopic (ContinuousMap.id _) :=
-    ((hEψ.homotopic_of_comp_homotopic_id (r := Fg.hom.comp F.hom) hFE).symm.comp
-      (.refl E.hom)).trans hEψ
+    hFE.comp_homotopic_id_of_comp_homotopic_id (f := Fg.hom.comp F.hom) hEψ
   -- `Ff ≫ E'` is a left and `E ≫ F` a right homotopy inverse of `Fg`, so `E ≫ F` is a left one too.
-  exact ((hFE'.homotopic_of_comp_homotopic_id (r := F.hom.comp E.hom) hx).symm.comp
-    (.refl Fg.hom)).trans hFE'
+  exact hx.comp_homotopic_id_of_comp_homotopic_id (f := F.hom.comp E.hom) hFE'
 
 end ChangeOfBase
 
 end CategoryTheory.IsPushout
+
+namespace ContinuousMap.HomotopyEquiv
+
+open CategoryTheory CategoryTheory.Limits Set Topology TauCeti
+
+universe u
+
+variable {B Y : TopCat.{u}} {Z Z' : Type u} [TopologicalSpace Z] [TopologicalSpace Z']
+
+/-- **Changing the base of an attachment by a homotopy equivalence.** Let `i : B → Y` be an
+embedding whose image has the homotopy extension property, and `a : B → Z` an attaching map. A
+homotopy equivalence `e : Z ≃ₕ Z'` induces a homotopy equivalence `Z ∪_a Y ≃ₕ Z' ∪_{e ∘ a} Y`
+between the pushouts, which is `e` on `Z` and whose homotopy inverse is the homotopy inverse of
+`e` on `Z'`. -/
+theorem exists_homotopyEquiv_pushout (e : Z ≃ₕ Z') (i : B ⟶ Y) (hi : IsEmbedding i)
+    (hA : HasHomotopyExtensionProperty (range i)) (a : B ⟶ TopCat.of Z) :
+    ∃ E : ↑(pushout i a) ≃ₕ ↑(pushout i (a ≫ TopCat.ofHom e.toFun)),
+      (∀ z, E (pushout.inr i a z) = pushout.inr i (a ≫ TopCat.ofHom e.toFun) (e z)) ∧
+      ∀ z, E.symm (pushout.inr i (a ≫ TopCat.ofHom e.toFun) z) = pushout.inr i a (e.symm z) := by
+  have h := IsPushout.of_hasPushout i a
+  have h' := IsPushout.of_hasPushout i (a ≫ TopCat.ofHom e.toFun)
+  -- The map of attachments which is `e` on `Z` and the identity on `Y`.
+  let F : pushout i a ⟶ pushout i (a ≫ TopCat.ofHom e.toFun) :=
+    h.desc (pushout.inl _ _) (TopCat.ofHom e.toFun ≫ pushout.inr _ _) (by
+      rw [← Category.assoc]
+      exact h'.w)
+  obtain ⟨G, hG, hFG, hGF⟩ := h.exists_homotopic_id_of_homotopic_id h' hi hA rfl
+    (g := TopCat.ofHom e.invFun) (by simpa using e.left_inv) (by simpa using e.right_inv)
+    (h.inl_desc _ _ _) (h.inr_desc _ _ _)
+  refine ⟨⟨F.hom, G.hom, by rw [← TopCat.hom_comp]; exact hFG,
+    by rw [← TopCat.hom_comp]; exact hGF⟩, fun z ↦ ?_, fun z ↦ ?_⟩
+  · exact ConcreteCategory.congr_hom (h.inr_desc _ _ _) z
+  · exact ConcreteCategory.congr_hom hG z
+
+end ContinuousMap.HomotopyEquiv
+
+namespace TauCeti.TopCat
+
+open CategoryTheory CategoryTheory.Limits Set Topology
+
+universe u
+
+variable {ι : Type u} {A X : ι → TopCat.{u}} (φ : ∀ i, A i ⟶ X i)
+
+/-- **A coproduct of cofibrations in `TopCat` is a cofibration**: if the image of each `φ i` has
+the homotopy extension property in `X i`, then the image of `Limits.Sigma.map φ` has the homotopy
+extension property in `∐ X`. -/
+theorem hasHomotopyExtensionProperty_range_sigmaMap
+    (hφ : ∀ i, HasHomotopyExtensionProperty (range (φ i))) :
+    HasHomotopyExtensionProperty (range (Limits.Sigma.map φ)) := by
+  have hrange : range (Sigma.map id fun i ↦ φ i) = univ.sigma fun i ↦ range (φ i) := by
+    ext ⟨i, x⟩
+    refine ⟨?_, fun ⟨_, a, ha⟩ ↦ ⟨⟨i, a⟩, congrArg (Sigma.mk i) ha⟩⟩
+    rintro ⟨⟨k, a⟩, hka⟩
+    obtain ⟨rfl, ha⟩ := Sigma.mk.inj_iff.1 hka
+    exact ⟨mem_univ _, a, eq_of_heq ha⟩
+  convert (HasHomotopyExtensionProperty.sigma hφ).image
+    (TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm) using 1
+  rw [coe_sigmaMap, range_comp, range_comp, Homeomorph.range_coe, image_univ, hrange]
+
+end TauCeti.TopCat
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits Set
+
+universe u
+
+variable {M : Type u} [TopologicalSpace M]
+
+/-- **An attachment onto a strong deformation retract.** If a subset `X` of `M` is obtained from
+`L ⊆ X` by attaching `D` along `α : A → L`, as a pushout square in `TopCat`, and `X` is a strong
+deformation retract of `Y ⊇ X`, then `Y` is homotopy equivalent to the pushout of `j` and `α`, by a
+homotopy equivalence which is the inclusion on `L`. -/
+theorem exists_homotopyEquiv_pushout_of_isPushout {L X Y : Set M} (hLX : L ⊆ X)
+    (hXY : X ⊆ Y) {A D : TopCat.{u}} {j : A ⟶ D} {α : A ⟶ TopCat.of L} {χ : D ⟶ TopCat.of X}
+    (sq : IsPushout j α χ (TopCat.ofHom (ContinuousMap.inclusion hLX)))
+    (ρ : C(Y, ↥(Y ∩ X))) (hρ : ∀ y, ρ (ContinuousMap.inclusion inter_subset_left y) = y)
+    (R : ((ContinuousMap.inclusion inter_subset_left).comp ρ).HomotopyRel (ContinuousMap.id _)
+      {y | (y : M) ∈ X}) :
+    ∃ e : ↑(pushout j α) ≃ₕ Y, ∀ z, (e (pushout.inr j α z) : M) = z := by
+  -- The pushout is identified with `X` compatibly with the inclusions of `L`, and `X` is a strong
+  -- deformation retract of `Y`.
+  have hinr (w : L) : (TopCat.homeoOfIso sq.isoPushout.symm (pushout.inr j α w) : M) = w := by
+    rw [TopCat.homeoOfIso_apply, Iso.symm_hom, ← ConcreteCategory.comp_apply,
+      sq.inr_isoPushout_inv, TopCat.ofHom_apply, ContinuousMap.inclusion_apply_coe]
+  refine ⟨((TopCat.homeoOfIso sq.isoPushout.symm).trans
+    (Homeomorph.setCongr (inter_eq_right.2 hXY).symm)).toHomotopyEquiv.trans
+    (ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion _) ρ hρ
+      (ContinuousMap.HomotopicRel.homotopic ⟨R⟩)), fun z ↦ ?_⟩
+  rw [ContinuousMap.HomotopyEquiv.trans_apply,
+    ContinuousMap.HomotopyEquiv.ofDeformationRetraction_apply, ContinuousMap.inclusion_apply_coe]
+  exact hinr z
+
+end TauCeti

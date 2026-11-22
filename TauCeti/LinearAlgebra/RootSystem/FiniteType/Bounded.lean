@@ -51,10 +51,6 @@ replace them, which is what keeps the argument inside `ℚ`.
 
 ## References
 
-This supplies the root-system half of the "weight-cone bound" milestone of Layer 4, "the
-classification of finite-dimensional irreducibles", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §13.2, Lemma B.
 -/
 

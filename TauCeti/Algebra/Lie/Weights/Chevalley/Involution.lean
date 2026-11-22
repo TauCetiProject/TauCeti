@@ -154,7 +154,7 @@ private theorem exists_linearMap_neg_cartan_and_root :
       (∀ χ : Weight K H L, χ.IsNonZero → ∀ v : L, v ∈ rootSpace H χ →
         ω v ∈ rootSpace H (-χ)) := by
   classical
-  set A : Weight K H L → Submodule K L := fun χ ↦ (rootSpace H χ).toSubmodule with hA
+  set A : Weight K H L → Submodule K L := fun χ ↦ (rootSpace H χ).toSubmodule
   have hbij : Function.Bijective (DirectSum.coeLinearMap A) := isInternal_rootSpace H
   -- The component of the map on the weight space of `χ`.
   set g : ∀ χ : Weight K H L, A χ →ₗ[K] L := fun χ ↦
@@ -209,14 +209,14 @@ private theorem map_lie_eq_of_mem_rootSpace (hn : hx.IsChevalleyNormalized) (ω 
     · have hzero' : (h : L) = 0 := by
         have hmem' : (h : L) ∈ rootSpace H (0 : H → K) := by
           rw [rootSpace_zero_eq K L H]
-          exact h.2
+          exact h.property
         rw [hbot] at hmem'
         simpa using hmem'
       rw [hzero', map_zero, neg_zero]
     · have hχ0 : (⟨(0 : H → K), hbot⟩ : Weight K H L).IsZero := rfl
       refine hzero _ hχ0 _ ?_
       have := toSubmodule_rootSpace_eq_of_isZero (K := K) (L := L) (H := H) hχ0
-      exact (SetLike.ext_iff.mp this _).mpr h.2
+      exact (SetLike.ext_iff.mp this _).mpr h.property
   by_cases hχ₁ : χ₁.IsNonZero
   · by_cases hχ₂ : χ₂.IsNonZero
     · -- Both are roots: rescale to the chosen root vectors and use the sign symmetry.

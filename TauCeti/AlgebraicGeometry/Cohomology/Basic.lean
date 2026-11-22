@@ -26,15 +26,16 @@ For a scheme `X` and `M : X.Modules`, the main declarations are:
   `H⁰(X, M) ≃+ Γ(M, ⊤)` with global sections;
 * `Scheme.Modules.cohomologyOn M n U`, the cohomology `Hⁿ(U, M)` of an open subset,
   `Scheme.Modules.cohomologyOnRes` its restriction maps,
-  `Scheme.Modules.cohomologyOnMap` its functoriality in the coefficient sheaf,
+  `Scheme.Modules.cohomologyOnMap` its functoriality in the coefficient sheaf, bundled as the
+  functor `Scheme.Modules.cohomologyOnFunctor X n U`,
   `Scheme.Modules.cohomologyOnZeroEquiv` the identification of `H⁰(U, M)` with `Γ(M, U)`, and
   `Scheme.Modules.cohomologyOnTopIso` the identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`.
 
 The construction is stated for every sheaf of modules, which is the natural generality of sheaf
 cohomology. In particular it applies to finitely presented sheaves through their underlying
-objects, and hence supplies the `Hⁱ(X, ℱ)` used for coherent sheaves in
-`TauCetiRoadmap/JacobianChallenge/README.md`, Layer B. Finite-dimensionality for proper schemes,
-vanishing on curves, and the comparison with Čech cohomology remain later Layer B work.
+objects, and hence supplies the cohomology `Hⁱ(X, ℱ)` of a coherent sheaf. Finite-dimensionality
+for proper schemes, vanishing on curves, and the comparison with Čech cohomology are not treated
+in this file.
 
 No formalization is vendored. The definitions reuse Mathlib's `Sheaf.H`, `Sheaf.functorH`,
 `Sheaf.H.equiv₀` and `Sheaf.H'`, and the comparison at the terminal open subset is
@@ -144,6 +145,14 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv (U : Opens X) 
   TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) U
 
+/-- The identification of `H⁰(U, M)` with sections is the degree-zero sections equivalence
+of the underlying abelian sheaf. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_apply (U : Opens X)
+    (x : cohomologyOn M 0 U) :
+    M.cohomologyOnZeroEquiv U x = TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv
+      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) U x :=
+  (rfl)
+
 /-- The identification of degree-zero cohomology with sections commutes with restriction. -/
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_cohomologyOnRes
     {U V : Opens X} (h : U ≤ V) (x : cohomologyOn M 0 V) :
@@ -171,6 +180,24 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_comp {N P : X.Modu
   NatTrans.congr_app ((_root_.SheafOfModules.toSheaf X.ringCatSheaf ⋙
     CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n : X.Modules ⥤ _).map_comp f g)
       (Opposite.op U)
+
+variable {M} in
+/-- The maps on cohomology induced by a morphism of sheaves commute with restriction. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_cohomologyOnRes {N : X.Modules}
+    (f : M ⟶ N) (n : ℕ) {U V : Opens X} (h : U ≤ V) (x : cohomologyOn M n V) :
+    Scheme.Modules.cohomologyOnMap f n U (cohomologyOnRes M n h x) =
+      cohomologyOnRes N n h (Scheme.Modules.cohomologyOnMap f n V x) :=
+  ConcreteCategory.congr_hom (((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
+    ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).naturality (homOfLE h).op) x
+
+variable (X) in
+/-- The cohomology `Hⁿ(U, -)` of an open subset `U`, as a functor from sheaves of modules to
+abelian groups: its value on `M` is `cohomologyOn M n U` and its value on a morphism `f` is
+`Scheme.Modules.cohomologyOnMap f n U`. At `U = ⊤` it is `cohomologyFunctor X n` up to the
+isomorphisms `cohomologyOnTopIso`. -/
+abbrev cohomologyOnFunctor (n : ℕ) (U : Opens X) : X.Modules ⥤ AddCommGrpCat.{u} :=
+  _root_.SheafOfModules.toSheaf X.ringCatSheaf ⋙
+    CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n ⋙ (evaluation _ _).obj (Opposite.op U)
 
 /-- The identification of degree-zero cohomology with sections is natural in the coefficient
 sheaf. -/

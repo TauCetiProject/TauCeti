@@ -79,7 +79,7 @@ theorem mem_iff {p : C(I × (I^N), X.pair.fst)} :
   Iff.rfl
 
 instance instFunLike : FunLike (RelGenLoop N X) (I × (I^N)) X.pair.fst where
-  coe p := p.1
+  coe p := p.val
   coe_injective _ _ h := Subtype.ext (ContinuousMap.ext (congrFun h))
 
 @[simp]
@@ -112,17 +112,22 @@ theorem mk_apply (p : C(I × (I^N), X.pair.fst)) (h₀ : ∀ t, p (0, t) ∈ Set
 /-- A relative cube sends the face `{0} × I^N` into the subspace. -/
 theorem apply_zero_mem_range (p : RelGenLoop N X) (t : I^N) :
     p (0, t) ∈ Set.range X.pair.map :=
-  p.2.1 t
+  p.property.1 t
 
 /-- A relative cube sends the face `{1} × I^N` to the basepoint. -/
 @[simp]
 theorem apply_one (p : RelGenLoop N X) (t : I^N) : p (1, t) = X.pair.map X.basepoint :=
-  p.2.2 1 t (Or.inl rfl)
+  p.property.2 1 t (Or.inl rfl)
 
 /-- A relative cube sends the sides `I × ∂I^N` to the basepoint. -/
 theorem apply_of_mem_boundary (p : RelGenLoop N X) (s : I) {t : I^N}
     (ht : t ∈ Cube.boundary N) : p (s, t) = X.pair.map X.basepoint :=
-  p.2.2 s t (Or.inr ht)
+  p.property.2 s t (Or.inr ht)
+
+/-- A relative cube sends the faces `t j = 0` and `t j = 1` to the basepoint. -/
+theorem apply_update [DecidableEq N] (p : RelGenLoop N X) (s : I) (t : I^N) (j : N) {a : I}
+    (ha : a = 0 ∨ a = 1) : p (s, Function.update t j a) = X.pair.map X.basepoint :=
+  apply_of_mem_boundary p s ⟨j, by rwa [Function.update_self]⟩
 
 /-- The constant relative cube at the basepoint. -/
 def const : RelGenLoop N X :=
@@ -153,7 +158,7 @@ namespace Homotopic
 
 @[refl]
 theorem refl (p : RelGenLoop N X) : Homotopic p p :=
-  ContinuousMap.HomotopicWith.refl _ p.2
+  ContinuousMap.HomotopicWith.refl _ p.property
 
 @[symm]
 theorem symm ⦃p q : RelGenLoop N X⦄ (h : Homotopic p q) : Homotopic q p :=
@@ -188,7 +193,7 @@ theorem comp_mem (f : X ⟶ Y) {p : C(I × (I^N), X.pair.fst)} (hp : p ∈ RelGe
 
 /-- A morphism of based pairs sends relative cubes to relative cubes by postcomposition. -/
 def map (f : X ⟶ Y) (p : RelGenLoop N X) : RelGenLoop N Y :=
-  ⟨(TopPair.Hom.fst f.toTopPairHom).hom.comp p, comp_mem f p.2⟩
+  ⟨(TopPair.Hom.fst f.toTopPairHom).hom.comp p, comp_mem f p.property⟩
 
 @[simp]
 theorem map_apply (f : X ⟶ Y) (p : RelGenLoop N X) (y : I × (I^N)) :
@@ -221,7 +226,7 @@ theorem Homotopic.map {p q : RelGenLoop N X} (h : Homotopic p q) (f : X ⟶ Y) :
         (ContinuousMap.Homotopy.refl (TopPair.Hom.fst f.toTopPairHom).hom).comp F.toHomotopy
       -- Each stage of the composite homotopy is, by definition of `Homotopy.comp`, the
       -- postcomposition of the corresponding stage of `F`.
-      prop' r := (RelGenLoop.map f ⟨_, F.prop r⟩).2 }) h
+      prop' r := (RelGenLoop.map f ⟨_, F.prop r⟩).property }) h
 
 /-! ### The face in the subspace -/
 

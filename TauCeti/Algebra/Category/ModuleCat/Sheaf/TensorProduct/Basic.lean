@@ -29,14 +29,17 @@ that structure is transported to presheaves of modules over the sheaf of rings u
 * `SheafOfModules.tensorProductIso R M N` is its defining identification with the
   sheafification of the sectionwise tensor product of the underlying presheaves of modules;
 * `SheafOfModules.tensorProductCongrLeft/right` transport an isomorphism of one argument
-  through the tensor product;
+  through the tensor product, as the sheafification of the sectionwise map
+  (`SheafOfModules.tensorProductCongrLeft_hom` and `SheafOfModules.tensorProductCongrRight_hom`),
+  functorially, and transports through the two arguments commute
+  (`SheafOfModules.tensorProductCongrLeft_trans_tensorProductCongrRight`);
 * `SheafOfModules.tensorProductUnitIsoLeft/right` identify `R ⊗ M` and `M ⊗ R` with `M`;
 * `SheafOfModules.tensorProductComm` provides symmetry.
 
 The site-level construction remains available on a scheme as
 `SheafOfModules.tensorProduct X.sheaf`; the canonical tensor notation `M ⊗ N` and symmetric
 monoidal structure on `X.Modules` are in
-`TauCeti/AlgebraicGeometry/Modules/TensorProduct.lean`.
+`TauCeti/AlgebraicGeometry/Modules/Tensor/Product.lean`.
 -/
 
 public section
@@ -119,6 +122,28 @@ def tensorProductCongrRight {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : 
     tensorProduct R M N ≅ tensorProduct R M N' :=
   (tensorProductLeftFunctor R M).mapIso e
 
+/-- Transport through the first argument is the sheafification of the sectionwise map. -/
+lemma tensorProductCongrLeft_hom {M M' N : SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ M') :
+    (tensorProductCongrLeft R (N := N) e).hom =
+      (tensorProductIso R M N).hom ≫
+        (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (e.hom.val ▷ N.val) ≫
+          (tensorProductIso R M' N).inv := by
+  simp only [tensorProductCongrLeft, tensorProductIso, tensorProductRightFunctor, Iso.refl_hom,
+    Functor.mapIso_hom, Functor.comp_map, SheafOfModules.forget_map]
+  -- `tensorProduct R M N` is by definition the sheafification of `M.val ⊗ N.val`.
+  exact (Category.comp_id _).symm.trans (Category.id_comp _).symm
+
+/-- Transport through the second argument is the sheafification of the sectionwise map. -/
+lemma tensorProductCongrRight_hom {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : N ≅ N') :
+    (tensorProductCongrRight R (M := M) e).hom =
+      (tensorProductIso R M N).hom ≫
+        (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (M.val ◁ e.hom.val) ≫
+          (tensorProductIso R M N').inv := by
+  simp only [tensorProductCongrRight, tensorProductIso, tensorProductLeftFunctor, Iso.refl_hom,
+    Functor.mapIso_hom, Functor.comp_map, SheafOfModules.forget_map]
+  -- `tensorProduct R M N` is by definition the sheafification of `M.val ⊗ N.val`.
+  exact (Category.comp_id _).symm.trans (Category.id_comp _).symm
+
 /-- Tensoring with the sheaf of rings itself (on the left) does nothing. -/
 def tensorProductUnitIsoLeft (M : SheafOfModules.{u} (ringCatSheaf R)) :
     tensorProduct R (_root_.SheafOfModules.unit (ringCatSheaf R)) M ≅ M :=
@@ -139,6 +164,47 @@ def tensorProductComm (M N : SheafOfModules.{u} (ringCatSheaf R)) :
   (tensorProductIso R M N).symm ≪≫
     (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).mapIso (β_ M.val N.val) ≪≫
       tensorProductIso R N M
+
+/-- Transport through the first argument sends the identity to the identity. -/
+@[simp]
+lemma tensorProductCongrLeft_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    tensorProductCongrLeft R (N := N) (Iso.refl M) = Iso.refl _ :=
+  Functor.mapIso_refl _ _
+
+/-- Transport through the first argument respects composition. -/
+@[simp]
+lemma tensorProductCongrLeft_trans {M M' M'' N : SheafOfModules.{u} (ringCatSheaf R)}
+    (e : M ≅ M') (e' : M' ≅ M'') :
+    tensorProductCongrLeft R (N := N) (e ≪≫ e') =
+      tensorProductCongrLeft R e ≪≫ tensorProductCongrLeft R e' :=
+  Functor.mapIso_trans _ _ _
+
+/-- Transport through the second argument sends the identity to the identity. -/
+@[simp]
+lemma tensorProductCongrRight_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    tensorProductCongrRight R (M := M) (Iso.refl N) = Iso.refl _ :=
+  Functor.mapIso_refl _ _
+
+/-- Transport through the second argument respects composition. -/
+@[simp]
+lemma tensorProductCongrRight_trans {M N N' N'' : SheafOfModules.{u} (ringCatSheaf R)}
+    (e : N ≅ N') (e' : N' ≅ N'') :
+    tensorProductCongrRight R (M := M) (e ≪≫ e') =
+      tensorProductCongrRight R e ≪≫ tensorProductCongrRight R e' :=
+  Functor.mapIso_trans _ _ _
+
+/-- Transports through the two arguments commute. -/
+lemma tensorProductCongrLeft_trans_tensorProductCongrRight
+    {M M' N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ M') (f : N ≅ N') :
+    tensorProductCongrLeft R e ≪≫ tensorProductCongrRight R f =
+      tensorProductCongrRight R f ≪≫ tensorProductCongrLeft R e := by
+  ext1
+  -- By definition both transports are sheafifications of whiskerings of the underlying
+  -- presheaves of modules, which commute by `whisker_exchange`.
+  exact ((PresheafOfModules.sheafification _).map_comp _ _).symm.trans
+    (((PresheafOfModules.sheafification _).congr_map
+      (whisker_exchange e.hom.val f.hom.val).symm).trans
+    ((PresheafOfModules.sheafification _).map_comp _ _))
 
 end SheafOfModules
 

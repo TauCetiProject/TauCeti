@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Multiplication operators in seminormed algebras
@@ -13,9 +15,17 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 This file identifies the underlying linear maps of bounded left and right multiplication,
 and evaluates their powers. These identities connect the bounded-operator API with the
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
-It also records the norm of a difference of scalar-to-vector maps.
-For unital algebras we also bundle the left regular representation as a unital algebra
-homomorphism and give its inverse norm bound without assuming that the identity has norm one.
+It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
+seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
+faithful (`RegularNormedAlgebra.faithfulSMul`). On the field itself, `c • mul 𝕜 𝕜` is invertible
+exactly when `c ≠ 0` (`ContinuousLinearMap.isInvertible_smul_mul_iff`).
+For unital algebras we also specialize bounded two-sided multiplication `mulLeftRight` when one
+factor is `1`, bundle the left regular representation as a unital algebra homomorphism, and give its
+inverse norm bound without assuming that the identity has norm one.
+A scalar map `T : 𝕜 →L[𝕜] 𝕜` acts on any normed space as multiplication by `T 1`
+(`ContinuousLinearMap.scalarSMulL`), with the same operator norm.
+Finally, exponentiating bounded left or right multiplication by `x` gives multiplication by
+`exp x`, over any nontrivially normed field of characteristic zero and without completeness.
 -/
 
 public section
@@ -51,12 +61,41 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
   ext y
   simp
 
+/-- Every subsingleton seminormed algebra is trivially regular, since both the algebra and its
+bounded endomorphism ring are subsingletons. -/
+instance _root_.RegularNormedAlgebra.of_subsingleton [Subsingleton R] :
+    RegularNormedAlgebra 𝕜 R where
+  isometry_mul' := isometry_subsingleton
+
 end NonUnital
+
+variable (𝕜) in
+/-- Left multiplication in a regular normed algebra is faithful. -/
+theorem _root_.RegularNormedAlgebra.faithfulSMul [NonUnitalNormedRing R]
+    [NormedSpace 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [RegularNormedAlgebra 𝕜 R] :
+    FaithfulSMul R R where
+  eq_of_smul_eq_smul h := (isometry_mul 𝕜 R).injective <| by
+    ext c
+    simpa [smul_eq_mul] using h c
 
 section Unital
 
 variable [SeminormedRing R] [NormedSpace 𝕜 R]
   [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
+
+/-- Specializing the left factor of bounded two-sided multiplication `mulLeftRight 𝕜 R` to `1`
+gives the flipped (right-multiplication) operator `(mul 𝕜 R).flip`. -/
+@[simp]
+theorem mulLeftRight_one : mulLeftRight 𝕜 R (1 : R) = (mul 𝕜 R).flip := by
+  ext y x
+  simp
+
+/-- Specializing the right factor of `mulLeftRight 𝕜 R` to `1` gives bounded left multiplication
+by `x`. -/
+@[simp]
+theorem mulLeftRight_one_right (x : R) : mulLeftRight 𝕜 R x 1 = mul 𝕜 R x := by
+  ext z
+  simp
 
 /-- A power of bounded left multiplication acts by the corresponding algebra power. -/
 -- Simplify before the generic operator-power rule rewrites the application as an iterate.
@@ -83,6 +122,42 @@ theorem norm_le_opNorm_mul_apply_mul_norm_one (x : R) :
 
 end Unital
 
+section ScalarSMul
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+variable (𝕜 E) in
+/-- A scalar map `T : 𝕜 →L[𝕜] 𝕜` acting on `E` as multiplication by `T 1`. -/
+noncomputable def scalarSMulL : (𝕜 →L[𝕜] 𝕜) →L[𝕜] E →L[𝕜] E :=
+  (lsmul 𝕜 𝕜).comp (apply 𝕜 𝕜 (1 : 𝕜))
+
+/-- Unfolding `ContinuousLinearMap.scalarSMulL`. -/
+@[simp]
+theorem scalarSMulL_apply_apply (T : 𝕜 →L[𝕜] 𝕜) (v : E) : scalarSMulL 𝕜 E T v = T 1 • v :=
+  (rfl)
+
+/-- The scalar map `T` and its action on a nontrivial space have the same operator norm. -/
+@[simp]
+theorem norm_scalarSMulL_apply [NontrivialTopology E] (T : 𝕜 →L[𝕜] 𝕜) :
+    ‖scalarSMulL 𝕜 E T‖ = ‖T‖ := by
+  have h : scalarSMulL 𝕜 E T = T 1 • ContinuousLinearMap.id 𝕜 E := by
+    ext v
+    simp
+  rw [h, norm_smul, norm_id, mul_one, ← norm_toSpanSingleton (𝕜 := 𝕜) (T 1)]
+  congr 1
+  ext
+  simp
+
+end ScalarSMul
+
+/-- On the field itself, the bilinear map `(v, w) ↦ c v w`, viewed as a map into the dual, is
+invertible exactly when `c ≠ 0`. -/
+@[simp]
+theorem isInvertible_smul_mul_iff {c : 𝕜} : (c • mul 𝕜 𝕜).IsInvertible ↔ c ≠ 0 := by
+  refine ⟨fun h hc ↦ ?_, fun hc ↦ .of_inverse (g := c⁻¹ • apply 𝕜 𝕜 (1 : 𝕜)) ?_ ?_⟩
+  · exact one_ne_zero (h.injective (a₁ := 1) (a₂ := 0) (by simp [hc]))
+  all_goals ext; simp [hc]
+
 end ContinuousLinearMap
 
 namespace AlgHom
@@ -108,3 +183,57 @@ theorem Lmul_injective : Function.Injective (Lmul 𝕜 R) := by
   simpa using DFunLike.congr_fun h (1 : R)
 
 end AlgHom
+
+namespace TauCeti
+
+open NormedSpace
+
+variable {𝕜 R : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [NormedRing R]
+  [NormedAlgebra 𝕜 R]
+
+/-- Exponentiating the bounded left-multiplication operator gives the operator of left
+multiplication by the algebra exponential. Completeness is not needed: evaluation at `1` is a
+continuous left inverse of `ContinuousLinearMap.mul 𝕜 R`, so the exponential series of `x` and of
+its left multiplication operator are summable together, and both sides are the junk value `0`
+otherwise. -/
+theorem exp_mulLeft (x : R) :
+    exp (ContinuousLinearMap.mul 𝕜 R x) = ContinuousLinearMap.mul 𝕜 R (exp x) := by
+  have hinv : Function.LeftInverse (ContinuousLinearMap.apply 𝕜 R (1 : R))
+      (ContinuousLinearMap.mul 𝕜 R) := fun z => by simp
+  simp only [exp_eq_tsum 𝕜]
+  rw [hinv.map_tsum _ (ContinuousLinearMap.mul 𝕜 R).continuous
+    (ContinuousLinearMap.apply 𝕜 R (1 : R)).continuous]
+  refine tsum_congr fun n => ?_
+  ext z
+  simp [ContinuousLinearMap.mul_pow_apply]
+
+/-- Exponentiating the bounded right-multiplication operator gives the operator of right
+multiplication by the algebra exponential. As for `TauCeti.exp_mulLeft`, completeness is not
+needed. -/
+theorem exp_mulRight (x : R) :
+    exp ((ContinuousLinearMap.mul 𝕜 R).flip x) =
+      (ContinuousLinearMap.mul 𝕜 R).flip (exp x) := by
+  have hinv : Function.LeftInverse (ContinuousLinearMap.apply 𝕜 R (1 : R))
+      (ContinuousLinearMap.mul 𝕜 R).flip := fun z => by simp
+  simp only [exp_eq_tsum 𝕜]
+  rw [hinv.map_tsum _ (ContinuousLinearMap.mul 𝕜 R).flip.continuous
+    (ContinuousLinearMap.apply 𝕜 R (1 : R)).continuous]
+  refine tsum_congr fun n => ?_
+  ext z
+  simp [ContinuousLinearMap.flip_mul_pow_apply]
+
+/-- Exponentiating the bounded left-multiplication operator gives left multiplication by the
+algebra exponential. -/
+@[simp]
+theorem exp_mulLeft_apply (x y : R) :
+    exp (ContinuousLinearMap.mul 𝕜 R x) y = exp x * y := by
+  rw [exp_mulLeft, ContinuousLinearMap.mul_apply']
+
+/-- Exponentiating the bounded right-multiplication operator gives right multiplication by the
+algebra exponential. -/
+@[simp]
+theorem exp_mulRight_apply (x y : R) :
+    exp ((ContinuousLinearMap.mul 𝕜 R).flip x) y = y * exp x := by
+  rw [exp_mulRight, ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply']
+
+end TauCeti

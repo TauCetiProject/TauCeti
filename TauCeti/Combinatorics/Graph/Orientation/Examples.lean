@@ -77,7 +77,7 @@ abbrev parallelVertex (b : Bool) : V(twoParallel) :=
 /-- Orient the two parallel edges in opposite directions by choosing the edge named `b` to have
 head `b`. -/
 noncomputable def oppositeParallelOrientation : twoParallel.Orientation :=
-  Orientation.ofHead (fun e ↦ parallelVertex e.1) fun e ↦ by
+  Orientation.ofHead (fun e ↦ parallelVertex e.val) fun e ↦ by
     cases e with
     | mk b hb =>
       cases b <;> simp [twoParallel]
@@ -97,7 +97,7 @@ theorem oppositeParallelOrientation_indegree (v : V(twoParallel)) :
     oppositeParallelOrientation.indegree v = 1 := by
   classical
   rw [Orientation.indegree_def, Finset.card_eq_one]
-  refine ⟨⟨v.1, by simp [twoParallel]⟩, ?_⟩
+  refine ⟨⟨v.val, by simp [twoParallel]⟩, ?_⟩
   ext e
   simp [oppositeParallelOrientation, Subtype.ext_iff]
 
@@ -180,7 +180,7 @@ private def isolatedLower (_ : V(isolated)) : ℕ := 1
 private theorem incidentEdges_isolatedVertex :
     isolated.incidentEdges {isolatedVertex} = ∅ := by
   ext e
-  have he : False := by simpa [isolated] using e.2
+  have he : False := by simpa [isolated] using e.property
   exact he.elim
 
 /-- The singleton vertex set violates the lower-bound criterion for `isolatedLower`. -/
@@ -212,7 +212,7 @@ example (S : Finset V(oneLoop)) :
   classical
   refine (oneLoopOrientation.card_internalEdges_le_sum_indegree S).trans ?_
   apply Finset.sum_le_sum
-  intro v hv
+  intro v _
   have hvl : v = loopVertex := Subsingleton.elim _ _
   norm_num [hvl, excessiveLoopIndegree, oneLoopOrientation_indegree]
 
@@ -245,6 +245,6 @@ noncomputable local instance : Fintype E(emptyGraph) := Fintype.ofFinite _
 
 /-- The empty graph admits a vacuous prescribed-indegree orientation. -/
 example : ∃ o : emptyGraph.Orientation, ∀ v, o.indegree v = 0 := by
-  exact ⟨Orientation.ofEdgeEnds emptyGraph, fun v ↦ v.1.elim⟩
+  exact ⟨Orientation.ofEdgeEnds emptyGraph, fun v ↦ v.val.elim⟩
 
 end TauCeti.Examples.IndegreeOrientation

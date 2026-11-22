@@ -98,7 +98,6 @@ theorem IsTopRegularOverPolyad.of_card_sdiff_support_le (h : H.IsTopRegularOverP
   rw [isTopRegularOverPolyad_iff]
   intro c Q hQ
   have hδ : 0 ≤ δ := haveI : Nonempty κ := ⟨c⟩; h.nonneg
-  have hηε : 0 ≤ η / ε := div_nonneg hη hε.le
   -- The test is restricted to `P`; the restriction loses only triples outside `P`.
   have hU := unionSupport_restrict Q P
   have hUsub : unionSupport (fun i ↦ (Q i).restrict P) ⊆ unionSupport Q :=

@@ -28,12 +28,15 @@ Baker--Campbell--Hausdorff expansion.
 
 ## Main results
 
+* `RCLike.exp_ofReal`: the exponential on real scalars in real or complex normed fields.
+* `NormedSpace.exp_real_smul_one`: the exponential of a real scalar multiple of the unit.
 * `NormedSpace.contDiff_exp`: the exponential is smooth of every order, including analytic.
 * `NormedSpace.tendsto_exp_nhds_zero_nhds_one`: the exponential tends to `1` at the origin.
 * `NormedSpace.expSeries_partialSum_three`: the third partial sum of the exponential series is
   `1 + x + 2⁻¹ • x ^ 2`.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
   origin.
+* `NormedSpace.hasSum_exp_sub_one`: `exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
@@ -69,6 +72,20 @@ theorem expSeries_partialSum_three (x : A) :
 
 end Algebra
 
+/-- Exponentiating a real scalar multiple of the unit gives the real exponential
+multiple of the unit in every real normed algebra. -/
+@[simp]
+theorem exp_real_smul_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] (x : ℝ) :
+    exp (x • (1 : A)) = Real.exp x • 1 := by
+  simpa only [Algebra.algebraMap_eq_smul_one, ← Real.exp_eq_exp_ℝ] using
+    (NormedSpace.algebraMap_exp_comm (𝔸 := A) x).symm
+
+/-- The exponential of a real scalar in a real or complex normed field is its real exponential. -/
+@[simp]
+theorem _root_.RCLike.exp_ofReal {𝕜 : Type*} [RCLike 𝕜] (x : ℝ) :
+    exp (x : 𝕜) = (Real.exp x : 𝕜) := by
+  simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using (exp_real_smul_one (A := 𝕜) x)
+
 variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
   [CharZero 𝕂] [ContinuousSMul ℚ 𝕂] [CompleteSpace A]
 
@@ -87,6 +104,12 @@ theorem isBigO_exp_sub_quadratic :
     (fun x : A ↦ exp x - (1 + x + (2⁻¹ : 𝕂) • x ^ 2)) =O[𝓝 (0 : A)] fun x ↦ ‖x‖ ^ 3 := by
   simpa only [zero_add, expSeries_partialSum_three] using
     (exp_hasFPowerSeriesAt_zero (𝕂 := 𝕂) (𝔸 := A)).isBigO_sub_partialSum_pow 3
+
+/-- **The exponential series without its constant term.** In a complete normed algebra,
+`exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`, the form a power series without constant term takes. -/
+theorem hasSum_exp_sub_one (x : A) :
+    HasSum (fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • x ^ (n + 1)) (exp x - 1) := by
+  simpa using (hasSum_nat_add_iff' 1).2 (exp_series_hasSum_exp' (𝕂 := 𝕂) x)
 
 /-! ### Additivity and cancellation in a complete normed algebra -/
 

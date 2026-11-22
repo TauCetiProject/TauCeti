@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Holder.JetBounds
 
 /-!
 # Interpolation inequalities for derivatives
@@ -35,7 +36,8 @@ Choosing `‖w‖ = ε` in every direction gives, on the whole space,
 
 for every `ε > 0`. For `α = 1` this is the Landau-type inequality
 `‖D^(k+1) f‖_∞ ≤ 2 ε⁻¹ ‖D^k f‖_∞ + ε ‖D^(k+2) f‖_∞`. Combining the two and absorbing the
-supremum of `D^(k+2) f`, which must be finite a priori, gives
+supremum of `D^(k+2) f`, which is finite because `D^(k+2) f` is Hölder and `D^k f` is bounded
+(`HolderWith.bddAbove_norm_iteratedFDeriv_add_two`), gives
 
 `‖D^(k+2) f‖_∞ ≤ 32 ε⁻² ‖D^k f‖_∞ + 2 ε^α [D^(k+2) f]_α`.
 
@@ -73,6 +75,9 @@ linear approximation error by the difference of the Hessians.
   Hölder derivative.
 * `HolderOnWith.norm_sub_fderiv_le_of_mem_ball`: the Taylor remainder on a ball for the
   derivative of a differentiable function.
+* `Differentiable.tendstoUniformly_inv_smul_comp_add_smul_sub`: difference quotients of a function
+  with uniformly continuous derivative converge uniformly to its directional derivative, by the
+  Taylor bound at Hölder exponent `0`.
 * `HolderOnWith.norm_apply_le_of_hasFDerivWithinAt`: the resulting bound on a directional
   derivative.
 * `HolderOnWith.norm_le_of_hasFDerivWithinAt_ball`: the local interpolation inequality on a
@@ -83,11 +88,14 @@ linear approximation error by the difference of the Hessians.
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le`: the interpolation inequality on the whole
   space.
 * `ContDiff.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le`: the Landau-type inequality.
+* `HolderWith.bddAbove_norm_iteratedFDeriv_add_two`: the top derivative `D^(k+2) f` of a function
+  with bounded `D^k f` and Hölder `D^(k+2) f` is bounded.
 * `HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le` and
-  `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`: the absorbed bounds on the two
+  `HolderWith.norm_iteratedFDeriv_succ_le_of_contDiff_of_norm_le`: the absorbed bounds on the two
   derivatives above `D^k f`, and
   `HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`: both bounds with
-  one constant, for scales `ε ≤ 1`.
+  one constant, for scales `ε ≤ 1`, and `HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`:
+  its specialisation to `k = 0`, stated for a function bounded in norm.
 * `HolderOnWith.norm_image_sub_sub_sub_le_of_hasFDerivWithinAt`: the second-order Taylor bound
   for a Hölder second derivative.
 * `HolderOnWith.norm_le_of_hasFDerivWithinAt_of_closedBall_subset` and
@@ -354,7 +362,6 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_subset {s : Set E} {g : E →
   rw [hgw] at h2
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_one, div_add' _ _ _ hε.ne', le_div_iff₀ hε]
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_two, sq] at h2
-  have hre : (H : ℝ) * (ε * ε ^ (α : ℝ)) * ε = H * (ε * ε * ε ^ (α : ℝ)) := by ring
   linarith
 
 /-- **Interpolation of the second derivative on a ball.** If `g` has derivative `g'` within `s`,
@@ -388,7 +395,6 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset {s : Set E} {g
   have hxx := h1 x (by simp [hε.le])
   rw [Real.rpow_add' hε.le (by positivity), Real.rpow_one] at hD hxw hxx
   rw [div_add' _ _ _ (by positivity), le_div_iff₀ (by positivity)]
-  have hεα : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity
   have key : ε * ‖g'' x v‖ ≤ 2 * (M / ε) + 3 * (H * (ε * ε ^ (α : ℝ))) := by linarith
   have key' : ε * (ε * ‖g'' x v‖) ≤ ε * (2 * (M / ε) + 3 * (H * (ε * ε ^ (α : ℝ)))) :=
     mul_le_mul_of_nonneg_left key hε.le
@@ -430,6 +436,49 @@ theorem norm_iteratedFDeriv_two_le_of_contDiffOn {U s : Set E} {u : E → F} (hU
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset hd1 hd2 hM hε hxs
 
 end HolderOnWith
+
+/-- **Difference quotients converge uniformly.** If `u` is differentiable with a uniformly
+continuous derivative, then for every direction `v` the difference quotients
+`t⁻¹ (u(x + t v) - u(x))` converge to `Du(x) v` uniformly in `x` as `t → 0`. -/
+theorem Differentiable.tendstoUniformly_inv_smul_comp_add_smul_sub {u : E → F}
+    (hu : Differentiable ℝ u) (huc : UniformContinuous (fderiv ℝ u)) (v : E) :
+    TendstoUniformly (fun (t : ℝ) x => t⁻¹ • (u (x + t • v) - u x)) (fun x => fderiv ℝ u x v)
+      (nhdsWithin 0 {0}ᶜ) := by
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  -- Let `Du` oscillate by less than `η` over distances below `δ`, where `η ‖v‖ < ε`.
+  set η := ε / (‖v‖ + 1)
+  have hη : 0 < η := by positivity
+  have hηε : η * ‖v‖ < ε := by
+    rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith [norm_nonneg v]
+  obtain ⟨δ, hδ, hδη⟩ := Metric.uniformContinuous_iff.1 huc η hη
+  have hlim : Filter.Tendsto (fun t : ℝ => 2 * (|t| * ‖v‖)) (nhds 0) (nhds 0) :=
+    (by fun_prop : Continuous fun t : ℝ => 2 * (|t| * ‖v‖)).tendsto' 0 0 (by simp)
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hlim.eventually (gt_mem_nhds hδ))]
+    with t (ht : t ≠ 0) htδ x
+  -- On the ball of radius `|t| ‖v‖` about `x`, `Du` is `0`-Hölder with constant `η`, so the
+  -- Taylor bound controls the linear remainder by `η |t| ‖v‖`.
+  have hH : HolderOnWith ⟨η, hη.le⟩ 0 (fderiv ℝ u) (Metric.closedBall x (|t| * ‖v‖)) :=
+    HolderOnWith.of_dist_le fun y hy z hz => by
+      simp only [NNReal.coe_zero, Real.rpow_zero, mul_one]
+      refine (hδη ?_).le
+      linarith [dist_triangle_right y z x, Metric.mem_closedBall.1 hy, Metric.mem_closedBall.1 hz]
+  have hT := hH.norm_image_sub_sub_le_of_hasFDerivWithinAt (x := x) (w := t • v)
+    (fun y _ => (hu y).hasFDerivAt.hasFDerivWithinAt)
+    ((convex_closedBall x _).segment_subset (Metric.mem_closedBall_self (by positivity))
+      (by rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul,
+        Real.norm_eq_abs]))
+  simp only [NNReal.coe_zero, add_zero, Real.rpow_one, map_smul, norm_smul,
+    Real.norm_eq_abs] at hT
+  have hrw : t⁻¹ • (u (x + t • v) - u x) - fderiv ℝ u x v =
+      t⁻¹ • (u (x + t • v) - u x - t • fderiv ℝ u x v) := by
+    rw [smul_sub (t⁻¹) (u (x + t • v) - u x), smul_smul, inv_mul_cancel₀ ht, one_smul]
+  rw [dist_eq_norm', hrw, norm_smul, norm_inv, Real.norm_eq_abs]
+  refine lt_of_le_of_lt ?_ hηε
+  rw [inv_mul_le_iff₀ (abs_pos.2 ht)]
+  calc _ ≤ η * (|t| * ‖v‖) := hT
+    _ = |t| * (η * ‖v‖) := by ring
 
 namespace HolderWith
 
@@ -495,11 +544,8 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le {f : E → F} {k :
     (hM₂ : ∀ y, ‖iteratedFDeriv ℝ (k + 2) f y‖ ≤ M₂) {ε : ℝ} (hε : 0 < ε) (x : E) :
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ 2 * M₀ / ε + M₂ * ε := by
   have hM₂0 : 0 ≤ M₂ := (norm_nonneg _).trans (hM₂ x)
-  have hlip : LipschitzWith M₂.toNNReal (iteratedFDeriv ℝ (k + 1) f) := by
-    refine lipschitzWith_of_nnnorm_fderiv_le
-      (hf.differentiable_iteratedFDeriv (by norm_cast; omega)) fun y => ?_
-    rw [← NNReal.coe_le_coe, coe_nnnorm, norm_fderiv_iteratedFDeriv, Real.coe_toNNReal _ hM₂0]
-    exact hM₂ y
+  have hlip := hf.lipschitzWith_iteratedFDeriv (k := k + 2) (j := k + 1) (by omega)
+    fun y => (hM₂ y).trans (Real.le_coe_toNNReal M₂)
   have h := (holderWith_one.2 hlip).norm_iteratedFDeriv_succ_le_of_norm_le
     (hf.differentiable_iteratedFDeriv (by norm_cast; omega)) hM₀ hε x
   simpa [Real.coe_toNNReal _ hM₂0] using h
@@ -508,12 +554,27 @@ end ContDiff
 
 namespace HolderWith
 
+/-- **Boundedness of the top derivative.** If `f` is `C^(k+2)` with `‖D^k f‖ ≤ M` and `D^(k+2) f`
+is globally Hölder, then `‖D^(k+2) f‖` is bounded above. -/
+theorem bddAbove_norm_iteratedFDeriv_add_two {f : E → F} {k : ℕ} {H α : ℝ≥0}
+    (hH : HolderWith H α (iteratedFDeriv ℝ (k + 2) f)) (hf : ContDiff ℝ (k + 2) f) {M : ℝ}
+    (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M) :
+    BddAbove (range fun y => ‖iteratedFDeriv ℝ (k + 2) f y‖) :=
+  ⟨2 * M + 3 * H, by
+    rintro _ ⟨x, rfl⟩
+    have h := ((TauCeti.holderOnWith_iteratedFDeriv_two_iteratedFDeriv_iff f k).2
+      (hH.holderOnWith univ)).norm_iteratedFDeriv_two_le_of_contDiffOn isOpen_univ
+      (hf.iteratedFDeriv_right (by norm_cast; omega)).contDiffOn (subset_univ _)
+      (fun y _ => hM y) one_pos (subset_univ _) (x := x)
+    rw [TauCeti.norm_iteratedFDeriv_iteratedFDeriv, add_comm] at h
+    simpa using h⟩
+
 /-- The supremum of `‖D^(k+2) f‖` satisfies the absorbed interpolation bound. -/
 private theorem iSup_norm_iteratedFDeriv_add_two_le {f : E → F} {k : ℕ} {H α : ℝ≥0}
     (hH : HolderWith H α (iteratedFDeriv ℝ (k + 2) f)) (hf : ContDiff ℝ (k + 2) f) {M : ℝ}
-    (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M)
-    (hbdd : BddAbove (range fun y => ‖iteratedFDeriv ℝ (k + 2) f y‖)) {ε : ℝ} (hε : 0 < ε) :
+    (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) :
     ⨆ y, ‖iteratedFDeriv ℝ (k + 2) f y‖ ≤ 32 * M / ε ^ 2 + 2 * H * ε ^ (α : ℝ) := by
+  have hbdd := hH.bddAbove_norm_iteratedFDeriv_add_two hf hM
   set S := ⨆ y, ‖iteratedFDeriv ℝ (k + 2) f y‖
   have hS : ∀ y, ‖iteratedFDeriv ℝ (k + 2) f y‖ ≤ S := fun y => le_ciSup hbdd y
   -- The Landau inequality at scale `ε / 4` bounds `D^(k+1) f` in terms of `M` and `S`.
@@ -535,26 +596,24 @@ private theorem iSup_norm_iteratedFDeriv_add_two_le {f : E → F} {k : ℕ} {H �
   linarith
 
 /-- **Absorbed interpolation inequality for the top derivative.** If `f` is `C^(k+2)` with
-`‖D^k f‖ ≤ M`, `D^(k+2) f` is bounded and globally `α`-Hölder with constant `H`, then
+`‖D^k f‖ ≤ M` and `D^(k+2) f` is globally `α`-Hölder with constant `H`, then
 `‖D^(k+2) f x‖ ≤ 32 M / ε² + 2 H ε^α` for every `ε > 0`. -/
 theorem norm_iteratedFDeriv_add_two_le_of_norm_le {f : E → F} {k : ℕ} {H α : ℝ≥0}
     (hH : HolderWith H α (iteratedFDeriv ℝ (k + 2) f)) (hf : ContDiff ℝ (k + 2) f) {M : ℝ}
-    (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M)
-    (hbdd : BddAbove (range fun y => ‖iteratedFDeriv ℝ (k + 2) f y‖)) {ε : ℝ} (hε : 0 < ε)
-    (x : E) :
+    (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) (x : E) :
     ‖iteratedFDeriv ℝ (k + 2) f x‖ ≤ 32 * M / ε ^ 2 + 2 * H * ε ^ (α : ℝ) :=
-  (le_ciSup hbdd x).trans (hH.iSup_norm_iteratedFDeriv_add_two_le hf hM hbdd hε)
+  (le_ciSup (hH.bddAbove_norm_iteratedFDeriv_add_two hf hM) x).trans
+    (hH.iSup_norm_iteratedFDeriv_add_two_le hf hM hε)
 
 /-- **Absorbed interpolation inequality for the intermediate derivative.** If `f` is `C^(k+2)`
-with `‖D^k f‖ ≤ M`, `D^(k+2) f` is bounded and globally `α`-Hölder with constant `H`, then
+with `‖D^k f‖ ≤ M` and `D^(k+2) f` is globally `α`-Hölder with constant `H`, then
 `‖D^(k+1) f x‖ ≤ 34 M / ε + 2 H ε^(1 + α)` for every `ε > 0`. -/
-theorem norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove {f : E → F} {k : ℕ} {H α : ℝ≥0}
+theorem norm_iteratedFDeriv_succ_le_of_contDiff_of_norm_le {f : E → F} {k : ℕ} {H α : ℝ≥0}
     (hH : HolderWith H α (iteratedFDeriv ℝ (k + 2) f)) (hf : ContDiff ℝ (k + 2) f) {M : ℝ}
-    (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M)
-    (hbdd : BddAbove (range fun y => ‖iteratedFDeriv ℝ (k + 2) f y‖)) {ε : ℝ} (hε : 0 < ε)
-    (x : E) :
+    (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) (x : E) :
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ 34 * M / ε + 2 * H * ε ^ (1 + (α : ℝ)) := by
-  have hS := hH.iSup_norm_iteratedFDeriv_add_two_le hf hM hbdd hε
+  have hbdd := hH.bddAbove_norm_iteratedFDeriv_add_two hf hM
+  have hS := hH.iSup_norm_iteratedFDeriv_add_two_le hf hM hε
   have h := hf.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le hM
     (fun y => le_ciSup hbdd y) hε x
   have heq : 2 * M / ε + (32 * M / ε ^ 2 + 2 * H * ε ^ (α : ℝ)) * ε =
@@ -568,14 +627,13 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove {f : E → F} {k : �
     _ = 34 * M / ε + 2 * H * ε ^ (1 + (α : ℝ)) := heq
 
 /-- **Absorbed interpolation inequalities with one constant.** If `f` is `C^(k+2)` with
-`‖D^k f‖ ≤ M`, `D^(k+2) f` is bounded and globally `α`-Hölder with constant `H`, then for every
+`‖D^k f‖ ≤ M` and `D^(k+2) f` is globally `α`-Hölder with constant `H`, then for every
 scale `0 < ε ≤ 1` both `‖D^(k+1) f x‖` and `‖D^(k+2) f x‖` are at most
 `(34 / ε + 32 / ε²) M + 2 H ε^α`. -/
 theorem norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le {f : E → F} {k : ℕ}
     {H α : ℝ≥0} (hH : HolderWith H α (iteratedFDeriv ℝ (k + 2) f)) (hf : ContDiff ℝ (k + 2) f)
-    {M : ℝ} (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M)
-    (hbdd : BddAbove (range fun y => ‖iteratedFDeriv ℝ (k + 2) f y‖)) {ε : ℝ} (hε : 0 < ε)
-    (hε1 : ε ≤ 1) (x : E) :
+    {M : ℝ} (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) (hε1 : ε ≤ 1)
+    (x : E) :
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) ∧
       ‖iteratedFDeriv ℝ (k + 2) f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) := by
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
@@ -584,12 +642,29 @@ theorem norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le {f : E �
   have hc : (34 / ε + 32 / ε ^ 2) * M = 34 * M / ε + 32 * M / ε ^ 2 := by ring
   have hεα : ε ^ (1 + (α : ℝ)) ≤ ε ^ (α : ℝ) :=
     Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
-  have h1 := hH.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove hf hM hbdd hε x
-  have h2 := hH.norm_iteratedFDeriv_add_two_le_of_norm_le hf hM hbdd hε x
+  have h1 := hH.norm_iteratedFDeriv_succ_le_of_contDiff_of_norm_le hf hM hε x
+  have h2 := hH.norm_iteratedFDeriv_add_two_le_of_norm_le hf hM hε x
   rw [hc]
   constructor
   · nlinarith [H.coe_nonneg]
   · linarith
+
+/-- **Absorbed interpolation inequalities for the first two derivatives.** If `f` is `C²` with
+`‖f‖ ≤ M`, and `D²f` is globally `α`-Hölder with constant `H`, then for every scale `0 < ε ≤ 1`
+both `‖Df x‖` and `‖D²f x‖` are at most `(34 / ε + 32 / ε²) M + 2 H ε^α`. -/
+theorem norm_fderiv_le_and_norm_iteratedFDeriv_two_le {f : E → F} {H α : ℝ≥0}
+    (hH : HolderWith H α (iteratedFDeriv ℝ 2 f)) (hf : ContDiff ℝ 2 f) {M : ℝ}
+    (hM : ∀ y, ‖f y‖ ≤ M) {ε : ℝ} (hε : 0 < ε) (hε1 : ε ≤ 1) :
+    (∀ x, ‖fderiv ℝ f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ)) ∧
+      ∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) := by
+  have hM0 (y : E) : ‖iteratedFDeriv ℝ 0 f y‖ ≤ M := by
+    simpa only [norm_iteratedFDeriv_zero] using hM y
+  refine ⟨fun x => ?_, fun x => ?_⟩
+  · have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hf hM0
+      hε hε1 x).1
+    rwa [zero_add, norm_iteratedFDeriv_one] at h
+  · exact (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hf hM0 hε
+      hε1 x).2
 
 end HolderWith
 

@@ -78,7 +78,7 @@ theorem norm_sub_truncFinset_le (f : IsRestricted.subring (R := R) c) (s : Finse
     {ε : ℝ} (hε : 0 ≤ ε)
     (h : ∀ t ∉ s, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ε) :
     ‖f - polynomialToRestricted c (truncFinset R s (f : MvPowerSeries σ R))‖ ≤ ε := by
-  refine (norm_le_iff hε).mpr fun t ↦ ?_
+  refine norm_le_iff.mpr fun t ↦ ?_
   by_cases ht : t ∈ s
   · simp [coeff_truncFinset_of_mem _ ht, hε]
   · simpa [coeff_truncFinset_eq_zero _ ht] using h t ht
@@ -91,7 +91,8 @@ theorem tendsto_truncFinset_atTop (f : IsRestricted.subring (R := R) c) :
   refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
   -- only finitely many weighted coefficient norms are at least `ε / 2`
   have hF : {t | ε / 2 ≤ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)}.Finite := by
-    simpa [Filter.eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds (half_pos hε))
+    simpa [Filter.eventually_cofinite, not_lt] using f.property.eventually (gt_mem_nhds
+        (half_pos hε))
   refine (eventually_ge_atTop hF.toFinset).mono fun s hs ↦ ?_
   rw [dist_comm, dist_eq_norm]
   refine (norm_sub_truncFinset_le f s (half_pos hε).le fun t ht ↦ ?_).trans_lt (half_lt_self hε)

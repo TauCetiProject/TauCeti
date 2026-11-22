@@ -22,21 +22,34 @@ abelian group of Dirichlet rank. This structural form is what downstream countin
 consume — for instance the exact number of unit square classes in
 `TauCeti.NumberTheory.NumberField.Units.ElementaryTwoQuotient`.
 
+The file also records how the unit rank `NumberField.Units.rank` is determined by the degree
+and the infinite places, and some direct consequences of Dirichlet's theorem: the fundamental
+units are nontorsion, in unit rank one a single unit generates the units modulo torsion, in
+positive unit rank the sum of `N((a))^(-s)` over the nonzero elements `a` of a nonzero ideal
+diverges, and every subgroup of finite index contains a unit that is large at one chosen infinite
+place and small at all the others. Powers of the last unit move an element of the field along a
+unit orbit towards the chosen place; this drives the Koecher principle for Hilbert modular forms
+(M. Dimitrov, *Compactifications arithmétiques des variétés de Hilbert et formes modulaires de
+Hilbert pour Γ₁(c, n)*, proof of Théorème 8.3).
+
 ## Main results
 
 * `NumberField.unitsMulEquivTorsionProdMultiplicative`: the unit group as the product of
   its torsion subgroup and the free abelian group on the fundamental system.
-* `NumberField.rank_eq_one_of_finrank_eq_two_of_isReal`: a quadratic field with a real place
-  has unit rank one.
-* `NumberField.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of complex
-  places plus one is the degree.
+* `NumberField.Units.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of
+  complex places plus one is the degree.
+* `NumberField.Units.rank_eq_one_of_finrank_eq_two_of_isReal`: a quadratic field with a real
+  place has unit rank one.
 * `NumberField.Units.rank_eq_zero_iff_card_infinitePlace_eq_one`: the unit rank is zero exactly
   when there is a single infinite place, as for `ℚ` and the imaginary quadratic fields.
-* `NumberField.Units.fundSystem_not_mem_torsion`: fundamental units are nontorsion.
+* `NumberField.Units.fundSystem_notMem_torsion`: fundamental units are nontorsion.
 * `NumberField.Units.prod_fundSystem_zpow_mem_torsion_iff`: a product of integral powers of the
   fundamental units is torsion only when all the exponents vanish.
 * `NumberField.Units.not_summable_absNorm_of_rank_pos`: in positive unit rank, the sum of
   `N((a))^(-s)` over the nonzero elements `a` of a nonzero ideal diverges for every `s`.
+* `NumberField.Units.exists_mem_one_lt_and_forall_ne_lt_one`: when there are at least two
+  infinite places, every subgroup of finite index in the units contains a unit that exceeds `1`
+  at a chosen infinite place and is less than `1` at all the others.
 -/
 
 public section
@@ -111,38 +124,24 @@ fundamental system is sent to the pair `(ζ, e)`. -/
     torsionProdMultiplicativeToUnits_apply]
   simp
 
-open scoped Classical in
-/-- **The unit rank, the complex places and one exhaust the degree.** Dirichlet's rank is
-`#(InfinitePlace F) - 1` while the degree is `r₁ + 2 * r₂`, so restoring the complex places and
-the one place the rank drops recovers `finrank ℚ F`.
-
-Stated as an addition rather than as `rank F + nrComplexPlaces F = finrank ℚ F - 1`: the
-subtraction on `ℕ` is truncated, and the additive form needs no positivity side condition. -/
-theorem rank_add_nrComplexPlaces_add_one :
-    rank F + InfinitePlace.nrComplexPlaces F + 1 = finrank ℚ F := by
-  have h₁ := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces F
-  have h₂ := InfinitePlace.card_add_two_mul_card_eq_rank F
-  -- `rank` is a truncated subtraction, so the count of places must be known to be positive.
-  have h₃ : 0 < Fintype.card (InfinitePlace F) := Fintype.card_pos
-  simp only [Units.rank]
-  omega
-
-/-- **A real quadratic field has unit rank one.** In degree two, a real infinite place forces
-both infinite places to be real, so the unit rank is `2 - 1 = 1`. -/
-theorem rank_eq_one_of_finrank_eq_two_of_isReal {F : Type*} [Field F] [NumberField F]
-    (hdeg : finrank ℚ F = 2) {w : InfinitePlace F} (hw : w.IsReal) : rank F = 1 := by
-  classical
-  have hcard := InfinitePlace.card_add_two_mul_card_eq_rank F
-  rw [hdeg] at hcard
-  have hpos : InfinitePlace.nrRealPlaces F ≠ 0 := by
-    have : Nonempty {w : InfinitePlace F // w.IsReal} := ⟨⟨w, hw⟩⟩
-    exact Fintype.card_ne_zero
-  rw [rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
-  omega
-
 namespace Units
 
 variable (K : Type*) [Field K] [NumberField K]
+
+/-- **The unit rank, the complex places and one exhaust the degree.** Dirichlet's rank is
+`#(InfinitePlace K) - 1` while the degree is `r₁ + 2 * r₂`, so restoring the complex places and
+the one place the rank drops recovers `finrank ℚ K`.
+
+Stated as an addition rather than as `rank K + nrComplexPlaces K = finrank ℚ K - 1`: the
+subtraction on `ℕ` is truncated, and the additive form needs no positivity side condition. -/
+theorem rank_add_nrComplexPlaces_add_one :
+    rank K + InfinitePlace.nrComplexPlaces K + 1 = finrank ℚ K := by
+  have h₁ := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K
+  have h₂ := InfinitePlace.card_add_two_mul_card_eq_rank K
+  -- `rank` is a truncated subtraction, so the count of places must be known to be positive.
+  have h₃ : 0 < Fintype.card (InfinitePlace K) := Fintype.card_pos
+  simp only [rank]
+  omega
 
 /-- A number field has unit rank zero exactly when it has a single infinite place. This covers
 `ℚ` (one real place) and the imaginary quadratic fields (one complex place). -/
@@ -170,8 +169,21 @@ theorem rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two
 
 variable {K}
 
+/-- **A real quadratic field has unit rank one.** In degree two, a real infinite place forces
+both infinite places to be real, so the unit rank is `2 - 1 = 1`. -/
+theorem rank_eq_one_of_finrank_eq_two_of_isReal (hdeg : finrank ℚ K = 2) {w : InfinitePlace K}
+    (hw : w.IsReal) : rank K = 1 := by
+  classical
+  have hcard := InfinitePlace.card_add_two_mul_card_eq_rank K
+  rw [hdeg] at hcard
+  have hpos : InfinitePlace.nrRealPlaces K ≠ 0 := by
+    have : Nonempty {w : InfinitePlace K // w.IsReal} := ⟨⟨w, hw⟩⟩
+    exact Fintype.card_ne_zero
+  rw [rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+  omega
+
 /-- No member of a fundamental system is a torsion unit. -/
-theorem fundSystem_not_mem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsion K := by
+theorem fundSystem_notMem_torsion (i : Fin (rank K)) : fundSystem K i ∉ torsion K := by
   intro hi
   have hzero := dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hi
   rw [logEmbedding_fundSystem] at hzero
@@ -200,7 +212,7 @@ theorem not_summable_absNorm_of_rank_pos (h : 0 < rank K) {𝔞 : Ideal (𝓞 K)
   -- a fundamental unit has infinite order
   set u := fundSystem K ⟨0, h⟩
   have hu : ¬ IsOfFinOrder u := by
-    simpa [u, torsion, CommGroup.mem_torsion] using fundSystem_not_mem_torsion (K := K) ⟨0, h⟩
+    simpa [u, torsion, CommGroup.mem_torsion] using fundSystem_notMem_torsion (K := K) ⟨0, h⟩
   obtain ⟨a, ha𝔞, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h𝔞
   -- the elements `u ^ n * a` are pairwise distinct nonzero elements of `𝔞` generating `(a)`
   let g : ℕ → {a : 𝔞 // a ≠ 0} := fun n ↦
@@ -208,7 +220,7 @@ theorem not_summable_absNorm_of_rank_pos (h : 0 < rank K) {𝔞 : Ideal (𝓞 K)
       mul_ne_zero (Units.ne_zero _) ha congr(($h0 : 𝓞 K))⟩
   have hg : Function.Injective g := fun n m hnm ↦
     injective_pow_iff_not_isOfFinOrder.mpr hu <| Units.ext <|
-      mul_right_cancel₀ ha congr((($hnm).1 : 𝓞 K))
+      mul_right_cancel₀ ha congr((($hnm).val : 𝓞 K))
   have hN : (Ideal.absNorm (Ideal.span {a}) : ℂ) ^ (-s) ≠ 0 := by
     rw [Ne, Complex.cpow_eq_zero_iff, Nat.cast_eq_zero, Ideal.absNorm_eq_zero_iff,
       Ideal.span_singleton_eq_bot]
@@ -227,6 +239,38 @@ theorem exists_closure_sup_torsion_eq_top_of_rank_eq_one (hr : rank K = 1) :
   have hrange : Set.range (fundSystem K) = {fundSystem K i} :=
     Set.range_eq_singleton (fun j => congrArg (fundSystem K) (Fin.ext (by omega)))
   simpa only [hrange] using closure_fundSystem_sup_torsion_eq_top (K := K)
+
+/-- **Units expanding at one place and contracting at the others.** A subgroup of finite index in
+the units of a number field with at least two infinite places contains, for each infinite place
+`w₀`, a unit whose absolute value exceeds `1` at `w₀` and is less than `1` at every other infinite
+place. With a single infinite place every unit has absolute value `1`, so the hypothesis on the
+number of places cannot be dropped. -/
+theorem exists_mem_one_lt_and_forall_ne_lt_one {U : Subgroup (𝓞 K)ˣ} (hU : U.index ≠ 0)
+    (hK : 1 < Fintype.card (InfinitePlace K)) (w₀ : InfinitePlace K) :
+    ∃ u ∈ U, 1 < w₀ u ∧ ∀ w, w ≠ w₀ → w u < 1 := by
+  classical
+  -- Dirichlet's construction gives a unit `v` that is small at every place other than `w₀`.
+  obtain ⟨v, hv⟩ := dirichletUnitTheorem.exists_unit (K := K) w₀
+  have hlt : ∀ w, w ≠ w₀ → w v < 1 := fun w hw ↦
+    (Real.log_neg_iff (pos_at_place v w)).mp (hv w hw)
+  -- The product formula forces the remaining logarithm, at `w₀`, to be positive.
+  have hw₀ : 1 < w₀ v := by
+    obtain ⟨w₁, hw₁⟩ := Fintype.exists_ne_of_one_lt_card hK w₀
+    have hsum : ∑ w ∈ {w₀}ᶜ, (w.mult : ℝ) * Real.log (w v) < 0 :=
+      Finset.sum_neg' (fun w hw ↦ mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg _)
+          (hv w (Finset.mem_compl.mp hw ∘ Finset.mem_singleton.mpr)).le)
+        ⟨w₁, Finset.mem_compl.mpr (by simpa using hw₁),
+          mul_neg_of_pos_of_neg (Nat.cast_pos.mpr InfinitePlace.mult_pos) (hv w₁ hw₁)⟩
+    have h := sum_mult_mul_log v
+    rw [Fintype.sum_eq_add_sum_compl w₀] at h
+    have hlog : 0 < Real.log (w₀ v) :=
+      pos_of_mul_pos_right (by linarith) (Nat.cast_nonneg w₀.mult)
+    exact (Real.log_pos_iff (pos_at_place v w₀).le).mp hlog
+  -- A positive power of `v` lies in `U` and keeps both inequalities.
+  obtain ⟨n, hn, -, hnU⟩ := Subgroup.exists_pow_mem_of_index_ne_zero hU v
+  refine ⟨v ^ n, hnU, ?_, fun w hw ↦ ?_⟩
+  · simpa using one_lt_pow₀ hw₀ hn.ne'
+  · simpa using pow_lt_one₀ (pos_at_place v w).le (hlt w hw) hn.ne'
 
 end Units
 

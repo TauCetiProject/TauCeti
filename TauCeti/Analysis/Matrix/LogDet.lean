@@ -13,7 +13,7 @@ import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.Instances.Matrix
-import TauCeti.Analysis.Calculus.FDeriv.Det
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Matrix.PosDef
 
 /-!

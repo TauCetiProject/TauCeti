@@ -83,38 +83,38 @@ theorem rightAction_tmul (a x y : Unitization k A) :
   simp [rightAction]
 
 instance instSMulLeft : SMul (Unitization k A) (UniversalOneForms k A) where
-  smul a ω := ⟨leftAction k A a ω.1, by
+  smul a ω := ⟨leftAction k A a ω.val, by
     rw [mem_universalOneForms, leftAction, LinearMap.mul'_rTensor_mulLeft,
-      (mem_universalOneForms k A).1 ω.2, mul_zero]⟩
+      (mem_universalOneForms k A).1 ω.property, mul_zero]⟩
 
 instance instSMulRight : SMul (Unitization k A)ᵐᵒᵖ (UniversalOneForms k A) where
-  smul a ω := ⟨rightAction k A a.unop ω.1, by
+  smul a ω := ⟨rightAction k A a.unop ω.val, by
     rw [mem_universalOneForms, rightAction, LinearMap.mul'_lTensor_mulRight,
-      (mem_universalOneForms k A).1 ω.2, zero_mul]⟩
+      (mem_universalOneForms k A).1 ω.property, zero_mul]⟩
 
 /-- The coercion of the left action to the tensor model. -/
 @[simp]
 theorem coe_smul_left (a : Unitization k A) (ω : UniversalOneForms k A) :
     ((a • ω : UniversalOneForms k A) : Unitization k A ⊗[k] Unitization k A) =
-      leftAction k A a ω.1 := by
+      leftAction k A a ω.val := by
   rfl
 
 /-- The coercion of the right action to the tensor model. -/
 @[simp]
 theorem coe_smul_right (a : (Unitization k A)ᵐᵒᵖ) (ω : UniversalOneForms k A) :
     ((a • ω : UniversalOneForms k A) : Unitization k A ⊗[k] Unitization k A) =
-      rightAction k A a.unop ω.1 := by
+      rightAction k A a.unop ω.val := by
   rfl
 
 instance instModuleLeft : Module (Unitization k A) (UniversalOneForms k A) where
   one_smul ω := Subtype.ext <| by
     rw [coe_smul_left]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp
     · simp only [map_add, hx, hy]
   mul_smul a b ω := Subtype.ext <| by
     rw [coe_smul_left, coe_smul_left, coe_smul_left]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp [mul_assoc]
     · simp only [map_add, hx, hy]
   smul_zero a := Subtype.ext <| by
@@ -124,25 +124,25 @@ instance instModuleLeft : Module (Unitization k A) (UniversalOneForms k A) where
       coe_smul_left]
   add_smul a b ω := Subtype.ext <| by
     rw [coe_smul_left, Submodule.coe_add, coe_smul_left, coe_smul_left]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp [add_mul, add_tmul]
     · simp only [map_add, hx, hy]
       abel
   zero_smul ω := Subtype.ext <| by
     rw [coe_smul_left, Submodule.coe_zero]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp
     · simp only [map_add, hx, hy, add_zero]
 
 instance instModuleRight : Module (Unitization k A)ᵐᵒᵖ (UniversalOneForms k A) where
   one_smul ω := Subtype.ext <| by
     rw [coe_smul_right]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp
     · simp only [map_add, hx, hy]
   mul_smul a b ω := Subtype.ext <| by
     rw [coe_smul_right, coe_smul_right, coe_smul_right, unop_mul]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp [mul_assoc]
     · simp only [map_add, hx, hy]
   smul_zero a := Subtype.ext <| by
@@ -152,13 +152,13 @@ instance instModuleRight : Module (Unitization k A)ᵐᵒᵖ (UniversalOneForms 
       coe_smul_right]
   add_smul a b ω := Subtype.ext <| by
     rw [coe_smul_right, Submodule.coe_add, coe_smul_right, coe_smul_right, unop_add]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp [mul_add, tmul_add]
     · simp only [map_add, hx, hy]
       abel
   zero_smul ω := Subtype.ext <| by
     rw [coe_smul_right, Submodule.coe_zero, unop_zero]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp
     · simp only [map_add, hx, hy, add_zero]
 
@@ -166,7 +166,7 @@ instance instSMulCommClass :
     SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ (UniversalOneForms k A) :=
   ⟨fun a b ω ↦ Subtype.ext <| by
     simp only [coe_smul_left, coe_smul_right]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp
     · simp only [map_add, hx, hy]⟩
 
@@ -174,7 +174,7 @@ instance instIsScalarTowerLeft :
     IsScalarTower k (Unitization k A) (UniversalOneForms k A) :=
   ⟨fun r a ω ↦ Subtype.ext <| by
     simp only [coe_smul_left, Submodule.coe_smul_of_tower]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp only [leftAction_tmul]
       exact congrArg (· ⊗ₜ[k] y) (smul_mul_assoc r a x)
     · simp only [map_add, smul_add, hx, hy]⟩
@@ -183,7 +183,7 @@ instance instIsScalarTowerRight :
     IsScalarTower k (Unitization k A)ᵐᵒᵖ (UniversalOneForms k A) :=
   ⟨fun r a ω ↦ Subtype.ext <| by
     simp only [coe_smul_right, Submodule.coe_smul_of_tower]
-    refine TensorProduct.inductionOn ω.1 (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
+    refine TensorProduct.inductionOn ω.val (fun x y ↦ ?_) (fun x y hx hy ↦ ?_)
     · simp only [rightAction_tmul, unop_smul]
       rw [← TensorProduct.tmul_smul]
       exact congrArg (TensorProduct.tmul k x) (mul_smul_comm r y a.unop)
@@ -257,8 +257,6 @@ section UniversalProperty
 variable {M : Type w} [AddCommGroup M] [Module k M]
   [Module (Unitization k A) M] [Module (Unitization k A)ᵐᵒᵖ M]
   [IsScalarTower k (Unitization k A) M]
-  [IsScalarTower k (Unitization k A)ᵐᵒᵖ M]
-  [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M]
 
 attribute [local instance] TensorProduct.Algebra.module
 
@@ -279,7 +277,8 @@ private theorem tensorLift_leftAction (D : BimoduleDerivation k (Unitization k A
   | tmul x y => simp [mul_smul]
   | add x y hx hy => simp only [map_add, hx, hy, smul_add]
 
-private theorem tensorLift_rightAction (D : BimoduleDerivation k (Unitization k A) M)
+private theorem tensorLift_rightAction [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M]
+    (D : BimoduleDerivation k (Unitization k A) M)
     (b : Unitization k A) (t : Unitization k A ⊗[k] Unitization k A) :
     tensorLift k A D (rightAction k A b t) =
       op b • tensorLift k A D t + LinearMap.mul' k (Unitization k A) t • D b := by
@@ -298,21 +297,24 @@ private def liftLinear (D : BimoduleDerivation k (Unitization k A) M) :
     UniversalOneForms k A →ₗ[k] M :=
   (tensorLift k A D).comp (UniversalOneForms k A).subtype
 
+variable [IsScalarTower k (Unitization k A)ᵐᵒᵖ M]
+  [SMulCommClass (Unitization k A) (Unitization k A)ᵐᵒᵖ M]
+
 /-- The bimodule map induced by a derivation from the forced unitization. -/
 def lift (D : BimoduleDerivation k (Unitization k A) M) :
     UniversalOneForms k A →ₗ[Unitization k A ⊗[k] (Unitization k A)ᵐᵒᵖ] M :=
   TauCeti.Algebra.TensorProduct.linearMapOfFactors (UniversalOneForms k A) (liftLinear k A D)
     (fun a ω ↦ by
       simp only [TensorProduct.Algebra.smul_def, one_smul]
-      exact tensorLift_leftAction k A D a ω.1)
+      exact tensorLift_leftAction k A D a ω.val)
     (fun b ω ↦ by
       simp only [TensorProduct.Algebra.smul_def, one_smul, liftLinear, LinearMap.comp_apply,
         Submodule.subtype_apply, coe_smul_right]
-      rw [tensorLift_rightAction, (mem_universalOneForms k A).1 ω.2, zero_smul, add_zero,
+      rw [tensorLift_rightAction, (mem_universalOneForms k A).1 ω.property, zero_smul, add_zero,
         op_unop])
 
 private theorem lift_apply (D : BimoduleDerivation k (Unitization k A) M)
-    (ω : UniversalOneForms k A) : lift k A D ω = tensorLift k A D ω.1 := by
+    (ω : UniversalOneForms k A) : lift k A D ω = tensorLift k A D ω.val := by
   simp [lift, liftLinear, TauCeti.Algebra.TensorProduct.linearMapOfFactors_apply]
 
 /-- The induced bimodule map factors the derivation through the universal derivation. -/
@@ -336,9 +338,9 @@ private theorem coe_tensorLift_derivation (t : Unitization k A ⊗[k] Unitizatio
 
 /-- Lifting the universal derivation recovers a one-form from its underlying tensor. -/
 theorem tensorLift_derivation_coe (ω : UniversalOneForms k A) :
-    tensorLift k A (derivation k A) ω.1 = ω := by
+    tensorLift k A (derivation k A) ω.val = ω := by
   apply Subtype.ext
-  rw [coe_tensorLift_derivation, (mem_universalOneForms k A).1 ω.2, zero_tmul, sub_zero]
+  rw [coe_tensorLift_derivation, (mem_universalOneForms k A).1 ω.property, zero_tmul, sub_zero]
 
 /-- A bimodule map out of universal one-forms is determined by its values on differentials. -/
 theorem lift_unique (D : BimoduleDerivation k (Unitization k A) M)
@@ -347,10 +349,10 @@ theorem lift_unique (D : BimoduleDerivation k (Unitization k A) M)
   apply LinearMap.ext
   intro ω
   calc
-    f ω = f (tensorLift k A (derivation k A) ω.1) :=
+    f ω = f (tensorLift k A (derivation k A) ω.val) :=
       congrArg f (tensorLift_derivation_coe k A ω).symm
-    _ = tensorLift k A D ω.1 := by
-      induction ω.1 using TensorProduct.inductionOn with
+    _ = tensorLift k A D ω.val := by
+      induction ω.val using TensorProduct.inductionOn with
       | tmul x y =>
           simp only [tensorLift_tmul]
           rw [← hf y]

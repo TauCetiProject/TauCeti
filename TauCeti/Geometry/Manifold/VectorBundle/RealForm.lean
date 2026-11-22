@@ -6,18 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
+public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+public import TauCeti.Topology.VectorBundle.RealForm
+import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 import TauCeti.Topology.VectorBundle.RestrictScalars
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
-# Smooth conjugation determined by a maximal real form
+# Smooth conjugation and projection determined by a maximal real form
 
 A smooth real inclusion with maximal totally real image identifies a complex bundle with the
 complexification of its real source. Transporting the native tensor conjugation through this
 identification gives the smooth fiber involution fixing exactly the given real form.
 Maximality is essential: the fixed vectors of a conjugate-linear involution span the complex
 fiber. The base is a real charted space, and real and complex scalar structures are explicit.
+
+For a real subbundle `L` whose fibres are maximal totally real, `V x = L x ⊕ i L x`, and the
+projection `P x` of `V x` onto `L x` along `i L x` (`TauCeti.totallyRealProjection`, defined for
+topological bundles in `TauCeti.Topology.VectorBundle.RealForm`) is a smooth bundle endomorphism.
+This is checked in a local frame `X` of `L`: read in a trivialization, the real frame `X` becomes
+a smooth family of complex-linear isomorphisms `ℂᵏ → F`, and `P` is the conjugate by this family
+of the coordinatewise real part. The computation is local, so the projection is `C^n` wherever it
+is defined on a neighbourhood.
 
 ## Main declarations
 
@@ -33,6 +44,8 @@ fiber. The base is a real charted space, and real and complex scalar structures 
   `TauCeti.maximalRealFormConjugationDiffeomorph_natural`.
 * `TauCeti.maximalRealFormConjugationDiffeomorph_subtype_eq_self_iff`: the case of a subbundle
   given by submodules.
+* `TauCeti.contMDiffAt_totallyRealProjection`, `TauCeti.contMDiff_totallyRealProjection`: the
+  projection is a smooth bundle endomorphism.
 
 ## References
 
@@ -44,10 +57,12 @@ fiber. The base is a real charted space, and real and complex scalar structures 
 
 public noncomputable section
 
-open Bundle FiberBundle Function
+open Bundle FiberBundle Function Set
 open scoped Manifold ContDiff TensorProduct Topology
 
 namespace TauCeti
+
+section Conjugation
 
 variable {XB HB B F G : Type*} [NormedAddCommGroup XB] [NormedSpace ℝ XB]
   [TopologicalSpace HB] {IB : ModelWithCorners ℝ XB HB}
@@ -139,14 +154,12 @@ local instance realFormAmbientVectorBundleReal : VectorBundle ℝ G V :=
 complexification onto the ambient complex bundle. Smoothness of the inverse is automatic. -/
 def maximalRealFormComplexificationDiffeomorph (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range) :
     TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] W x) ≃ₘ^n⟮
       IB.prod 𝓘(ℝ, Complexification F), IB.prod 𝓘(ℝ, G)⟯ TotalSpace G V :=
-  let : FiniteDimensional ℝ (Complexification F) :=
-    (Complexification.equivProd F).symm.finiteDimensional
   bundleDiffeomorph (fun x ↦
     (maximalRealFormComplexificationEquiv (F := F) (G := G) i x (hinj x)
       (hmax x)).restrictScalars' ℝ)
@@ -159,14 +172,14 @@ def maximalRealFormComplexificationDiffeomorph (i : ∀ x, W x →L[ℝ] V x)
 @[simp]
 theorem maximalRealFormComplexificationDiffeomorph_apply (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
     (p : TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] W x)) :
     maximalRealFormComplexificationDiffeomorph i hi hinj hmax p =
       ⟨p.proj, maximalRealFormComplexificationEquiv (F := F) (G := G) i p.proj (hinj p.proj)
-        (hmax p.proj) p.2⟩ := by
+        (hmax p.proj) p.snd⟩ := by
   simp only [maximalRealFormComplexificationDiffeomorph, bundleDiffeomorph_apply,
     ContinuousLinearEquiv.coe_restrictScalars']
 
@@ -174,14 +187,14 @@ theorem maximalRealFormComplexificationDiffeomorph_apply (i : ∀ x, W x →L[�
 @[simp]
 theorem maximalRealFormComplexificationDiffeomorph_symm_apply (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
     (p : TotalSpace G V) :
     (maximalRealFormComplexificationDiffeomorph i hi hinj hmax).symm p =
       ⟨p.proj, (maximalRealFormComplexificationEquiv (F := F) (G := G) i p.proj (hinj p.proj)
-        (hmax p.proj)).symm p.2⟩ := by
+        (hmax p.proj)).symm p.snd⟩ := by
   simp only [maximalRealFormComplexificationDiffeomorph, bundleDiffeomorph_symm_apply,
     ContinuousLinearEquiv.coe_restrictScalars'_symm]
 
@@ -189,7 +202,7 @@ theorem maximalRealFormComplexificationDiffeomorph_symm_apply (i : ∀ x, W x �
 obtained by transporting the native tensor-conjugation diffeomorphism. -/
 def maximalRealFormConjugationDiffeomorph (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range) :
@@ -201,14 +214,14 @@ def maximalRealFormConjugationDiffeomorph (i : ∀ x, W x →L[ℝ] V x)
 @[simp]
 theorem maximalRealFormConjugationDiffeomorph_apply (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
     (p : TotalSpace G V) :
     maximalRealFormConjugationDiffeomorph i hi hinj hmax p =
       ⟨p.proj, (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal (hinj p.proj)
-        (hmax p.proj) p.2⟩ := by
+        (hmax p.proj) p.snd⟩ := by
   simp only [maximalRealFormConjugationDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply,
     maximalRealFormComplexificationDiffeomorph_symm_apply, tmulConjDiffeomorph_apply,
     maximalRealFormComplexificationDiffeomorph_apply]
@@ -222,7 +235,7 @@ and the fiberwise simp lemma
 `LinearMap.conjugationOfMaximalTotallyReal_conjugationOfMaximalTotallyReal`. -/
 theorem maximalRealFormConjugationDiffeomorph_apply_apply (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
@@ -235,7 +248,7 @@ theorem maximalRealFormConjugationDiffeomorph_apply_apply (i : ∀ x, W x →L[�
 /-- The smooth conjugation is an involution on the actual total space. -/
 theorem maximalRealFormConjugationDiffeomorph_involutive (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range) :
@@ -245,21 +258,20 @@ theorem maximalRealFormConjugationDiffeomorph_involutive (i : ∀ x, W x →L[�
 /-- The exact fixed locus is the given real range, rather than an assumed real-point carrier. -/
 theorem maximalRealFormConjugationDiffeomorph_eq_self_iff (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
     (p : TotalSpace G V) :
     maximalRealFormConjugationDiffeomorph i hi hinj hmax p = p ↔
-      p.2 ∈ (i p.proj).toLinearMap.range := by
+      p.snd ∈ (i p.proj).toLinearMap.range := by
   rcases p with ⟨x, v⟩
   simp only [maximalRealFormConjugationDiffeomorph_apply, TotalSpace.mk.injEq, heq_eq_eq,
     true_and, LinearMap.conjugationOfMaximalTotallyReal_eq_self_iff]
 
-
 variable (i : ∀ x, W x →L[ℝ] V x)
   (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
-    (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+    (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.snd⟩ : TotalSpace G V)))
   (hinj : ∀ x, Injective (i x))
   (hmax : ∀ x, IsMaximalTotallyReal
     ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
@@ -275,7 +287,7 @@ conjugation. No continuity or involution hypothesis on the competing family is n
 theorem maximalRealFormConjugationDiffeomorph_unique
     (K : ∀ x, V x →ₛₗ[starRingEnd ℂ] V x) (hfix : ∀ x w, K x (i x w) = i x w)
     (p : TotalSpace G V) :
-    maximalRealFormConjugationDiffeomorph i hi hinj hmax p = ⟨p.proj, K p.proj p.2⟩ := by
+    maximalRealFormConjugationDiffeomorph i hi hinj hmax p = ⟨p.proj, K p.proj p.snd⟩ := by
   rw [maximalRealFormConjugationDiffeomorph_apply,
     ← (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_unique
       (hinj p.proj) (hmax p.proj) (K p.proj) (hfix p.proj)]
@@ -292,7 +304,7 @@ smooth conjugation. The algebraic range comparison also allows distinct source c
 theorem maximalRealFormConjugationDiffeomorph_congr_range
     (j : ∀ x, W' x →L[ℝ] V x)
     (hj : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, G)) n
-      (fun p : TotalSpace F' W' ↦ (⟨p.proj, j p.proj p.2⟩ : TotalSpace G V)))
+      (fun p : TotalSpace F' W' ↦ (⟨p.proj, j p.proj p.snd⟩ : TotalSpace G V)))
     (hjinj : ∀ x, Injective (j x))
     (hjmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (j x).toLinearMap.range)
@@ -305,7 +317,6 @@ theorem maximalRealFormConjugationDiffeomorph_congr_range
   rw [(i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_congr_range
     (hinj p.proj) (hmax p.proj) (j p.proj).toLinearMap (hjinj p.proj) (hjmax p.proj)
     (hrange p.proj)]
-
 
 variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedSpace ℂ G']
   [IsScalarTower ℝ ℂ G'] {V' : B → Type*}
@@ -323,24 +334,24 @@ conjugations, even for different source and ambient bundles. -/
 theorem maximalRealFormConjugationDiffeomorph_natural
     (j : ∀ x, W' x →L[ℝ] V' x)
     (hj : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, G')) n
-      (fun p : TotalSpace F' W' ↦ (⟨p.proj, j p.proj p.2⟩ : TotalSpace G' V')))
+      (fun p : TotalSpace F' W' ↦ (⟨p.proj, j p.proj p.snd⟩ : TotalSpace G' V')))
     (hjinj : ∀ x, Injective (j x))
     (hjmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V' x) Complex.I).restrictScalars ℝ) (j x).toLinearMap.range)
     (A : ∀ x, V x →ₗ[ℂ] V' x) (b : ∀ x, W x →ₗ[ℝ] W' x)
     (hreal : ∀ x w, A x (i x w) = j x (b x w)) (p : TotalSpace G V) :
-    maximalRealFormConjugationDiffeomorph j hj hjinj hjmax ⟨p.proj, A p.proj p.2⟩ =
-      (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.2⟩ : TotalSpace G' V'))
+    maximalRealFormConjugationDiffeomorph j hj hjinj hjmax ⟨p.proj, A p.proj p.snd⟩ =
+      (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.snd⟩ : TotalSpace G' V'))
         (maximalRealFormConjugationDiffeomorph i hi hinj hmax p) := by
   calc
     _ = ⟨p.proj, A p.proj ((i p.proj).toLinearMap.conjugationOfMaximalTotallyReal
-        (hinj p.proj) (hmax p.proj) p.2)⟩ := by
+        (hinj p.proj) (hmax p.proj) p.snd)⟩ := by
       rw [maximalRealFormConjugationDiffeomorph_apply,
         (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_natural
           (hinj p.proj) (hmax p.proj) (j p.proj).toLinearMap (hjinj p.proj) (hjmax p.proj)
           (A p.proj) (b p.proj) (hreal p.proj)]
     _ = _ := (congrArg
-      (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.2⟩ : TotalSpace G' V'))
+      (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.snd⟩ : TotalSpace G' V'))
       (maximalRealFormConjugationDiffeomorph_apply i hi hinj hmax p)).symm
 
 end SmoothEquivalence
@@ -361,14 +372,14 @@ submodule bundle, with no additional real-point carrier. -/
 theorem maximalRealFormConjugationDiffeomorph_subtype_eq_self_iff
     (hL : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
       (fun p : TotalSpace F (fun x ↦ L x) ↦
-        (⟨p.proj, (L p.proj).subtypeL p.2⟩ : TotalSpace G V)))
+        (⟨p.proj, (L p.proj).subtypeL p.snd⟩ : TotalSpace G V)))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x))
     (p : TotalSpace G V) :
     maximalRealFormConjugationDiffeomorph (fun x ↦ (L x).subtypeL) hL
       (fun _ ↦ Subtype.val_injective) (fun x ↦ by
         simpa only [Submodule.toLinearMap_subtypeL, Submodule.range_subtype] using hmax x)
-        p = p ↔ p.2 ∈ L p.proj := by
+        p = p ↔ p.snd ∈ L p.proj := by
   simpa only [Submodule.toLinearMap_subtypeL, Submodule.range_subtype] using
     maximalRealFormConjugationDiffeomorph_eq_self_iff
       (fun x ↦ (L x).subtypeL) hL (fun _ ↦ Subtype.val_injective)
@@ -376,5 +387,100 @@ theorem maximalRealFormConjugationDiffeomorph_subtype_eq_self_iff
         simpa only [Submodule.toLinearMap_subtypeL, Submodule.range_subtype] using hmax x) p
 
 end Submodule
+
+end Conjugation
+
+section Projection
+
+variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+  [TopologicalSpace H] {IB : ModelWithCorners ℝ X H}
+  [TopologicalSpace B] [ChartedSpace H B]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
+  [FiniteDimensional ℂ F]
+  {V : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℂ F V]
+  {n : ℕ∞ω} {ι : Type*} [Finite ι] {L : ∀ x, Submodule ℝ (V x)}
+
+local instance realFormProjectionVectorBundleReal : VectorBundle ℝ F V :=
+  VectorBundle.restrictScalars ℝ ℂ F V
+
+section Frame
+
+variable {U : Set B} {X : ι → Π x, V x}
+
+/-- **The projection onto a totally real subbundle is smooth, locally.** Let `L` have a `C^n`
+frame on an open set `U` whose points all have maximal totally real fibres. A field of
+endomorphisms equal on `U` to the projection onto `L` along `i L` is `C^n` at each point of `U`. -/
+theorem contMDiffAt_totallyRealProjection [ContMDiffVectorBundle n F V IB] (hU : IsOpen U)
+    (hX : IsSubbundleFrameOn F L X U) (hXs : ∀ i, CMDiff[U] n (T% (X i)))
+    (hL : ∀ y ∈ U,
+      IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y))
+    {P : ∀ y, V y →L[ℝ] V y} (hP : ∀ y (hy : y ∈ U), P y = totallyRealProjection F (hL y hy))
+    {x₀ : B} (hx₀ : x₀ ∈ U) :
+    ContMDiffAt IB (IB.prod 𝓘(ℝ, F →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (F →L[ℝ] F)
+      (E := fun y ↦ V y →L[ℝ] V y) x (P x)) x₀ := by
+  let := Fintype.ofFinite ι
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_id, ?_⟩
+  set e := trivializationAt F V x₀
+  have he₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x₀
+  let A : B → (ι → ℂ) →L[ℂ] F := IsSubbundleFrameOn.trivOperator ℂ F X x₀
+  have hA : ContMDiffAt IB 𝓘(ℝ, (ι → ℂ) →L[ℂ] F) n A x₀ :=
+    IsSubbundleFrameOn.contMDiffAt_trivOperator
+      (fun i ↦ (hXs i).contMDiffAt (hU.mem_nhds hx₀)) he₀
+  have hAapply {y : B} (hy : y ∈ e.baseSet) (c : ι → ℂ) :
+      A y c = (e ⟨y, ∑ i, c i • X i y⟩).2 :=
+    IsSubbundleFrameOn.trivOperator_apply hy c
+  have hA₀ := hX.bijective_trivOperator hx₀ he₀ (hL x₀ hx₀)
+  have hleft : (A x₀).HasLeftInverse := by
+    let a := LinearEquiv.ofBijective (A x₀ : (ι → ℂ) →ₗ[ℂ] F) hA₀
+    refine ⟨(a.toContinuousLinearEquiv.symm : F →L[ℂ] (ι → ℂ)), fun c ↦ ?_⟩
+    have : a.toContinuousLinearEquiv c = A x₀ c := rfl
+    rw [ContinuousLinearEquiv.coe_coe, ← this, ContinuousLinearEquiv.symm_apply_apply]
+  obtain ⟨Linv, hLinv, hLA⟩ := hA.exists_contMDiffAt_leftInverse hleft
+  let R : (ι → ℂ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.pi fun i ↦
+    Complex.ofRealCLM ∘L Complex.reCLM ∘L ContinuousLinearMap.proj i
+  have hAr : ContMDiffAt IB 𝓘(ℝ, (ι → ℂ) →L[ℝ] F) n (fun y ↦ (A y).restrictScalars ℝ) x₀ :=
+    (ContinuousLinearMap.restrictScalarsL ℂ (ι → ℂ) F ℝ ℝ).contDiff.comp_contMDiffAt hA
+  have hLr : ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] (ι → ℂ)) n (fun y ↦ (Linv y).restrictScalars ℝ) x₀ :=
+    (ContinuousLinearMap.restrictScalarsL ℂ F (ι → ℂ) ℝ ℝ).contDiff.comp_contMDiffAt hLinv
+  refine (hAr.clm_comp ((contMDiffAt_const (c := R)).clm_comp hLr)).congr_of_eventuallyEq ?_
+  filter_upwards [hLA, hU.mem_nhds hx₀, e.open_baseSet.mem_nhds he₀] with y hyL hyU hye
+  ext w
+  obtain ⟨c, rfl⟩ : ∃ c, A y c = w := (hX.bijective_trivOperator hyU hye (hL y hyU)).2 w
+  have hc : Linv y (A y c) = c := hyL c
+  have hsymm : e.symm y (A y c) = ∑ i, c i • X i y := by
+    rw [hAapply hye, e.symm_apply_apply_mk hye]
+  rw [ContinuousLinearMap.inCoordinates_eq hye hye]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars', hc,
+    ContinuousLinearEquiv.coe_coe, Trivialization.continuousLinearEquivAt_symm_apply]
+  rw [hsymm, Trivialization.continuousLinearEquivAt_apply, hP y hyU, totallyRealProjection_apply,
+    (hL y hyU).projection_sum_smul (fun i ↦ hX.apply_mem i hyU), hAapply hye]
+  have hR : ∑ i, R c i • X i y = ∑ i, (c i).re • X i y :=
+    Finset.sum_congr rfl fun i _ ↦ by
+      simp only [R, ContinuousLinearMap.pi_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.proj_apply, Complex.reCLM_apply, Complex.ofRealCLM_apply]
+      rw [← smul_one_smul ℂ (c i).re (X i y), Complex.real_smul, mul_one]
+  rw [hR]
+
+end Frame
+
+/-- **The projection onto a smooth totally real subbundle is smooth.** If the fibres of a
+real subbundle `L` with `C^n` local frames are maximal totally real, the projection onto `L`
+along `i L` is a `C^n` section of the endomorphism bundle. -/
+theorem contMDiff_totallyRealProjection [ContMDiffVectorBundle n F V IB]
+    (hLs : HasLocalContMDiffSubbundleFrames IB n F ι L)
+    (hL : ∀ x, IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
+    ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (F →L[ℝ] F)
+      (E := fun y ↦ V y →L[ℝ] V y) x (totallyRealProjection F (hL x))) := by
+  intro x₀
+  let := Fintype.ofFinite ι
+  obtain ⟨U, hU, hx₀, X, hX, hXs⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hLs x₀
+  exact contMDiffAt_totallyRealProjection hU hX hXs (fun y _ ↦ hL y) (fun _ _ ↦ rfl) hx₀
+
+end Projection
 
 end TauCeti

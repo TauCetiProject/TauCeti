@@ -16,9 +16,11 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 # Periodic tori in symplectic suspensions
 
 A periodic point `x` of a diffeomorphism `φ`, with positive period `d`, determines the torus
-`(s, t) ↦ (s, [t, x])` in `(ℝ / ℤ) × Y_φ`. For a `C^n` diffeomorphism with `1 ≤ n` of a
-finite-dimensional boundaryless fiber manifold it is a `C^n` immersion, and is an embedding
-exactly when `d` is the least period of `x`. Its image is the product of the independent
+`(s, t) ↦ (s, [t, x])` in `(ℝ / ℤ) × Y_φ`; it is the orbit torus
+`TauCeti.SmoothMappingTorus.orbitTorus` of the closed orbit through `x`
+(`TauCeti.SmoothMappingTorus.periodicTorus_eq_orbitTorus`). For a `C^n` diffeomorphism with
+`1 ≤ n` of a finite-dimensional boundaryless fiber manifold it is a `C^n` immersion, and is an
+embedding exactly when `d` is the least period of `x`. Its image is the product of the independent
 time circle with the closed suspension orbit, so changing the starting point along the
 periodic orbit does not change this image.
 
@@ -87,6 +89,11 @@ factor. -/
 @[simp]
 theorem periodicTorus_apply (p : UnitAddCircle × AddCircle (d : ℝ)) :
     periodicTorus φ hx p = (p.1, closedOrbit φ hx p.2) := (rfl)
+
+/-- The periodic torus is the orbit torus of the same closed orbit
+(`TauCeti.SmoothMappingTorus.orbitTorus`); both send `(s, θ)` to `(s, γ θ)`. -/
+theorem periodicTorus_eq_orbitTorus : periodicTorus φ hx = orbitTorus φ hx :=
+  funext fun p ↦ by rw [periodicTorus_apply, orbitTorus_apply]
 
 /-- The image is the product of the independent time circle with the closed suspension orbit. -/
 theorem range_periodicTorus :
@@ -203,7 +210,7 @@ theorem mpullback_periodicTorus_suspensionForm :
   apply SmoothBundleForm.ext_eval₂
   intro p v w
   have htime (c : ℝ) :
-      (timeForm φ).1 (closedOrbit φ hx p.2)
+      (timeForm φ).val (closedOrbit φ hx p.2)
         ![c • timeVectorField φ (closedOrbit φ hx p.2)] = c := by
     simp only [timeForm_apply, Matrix.cons_val_zero, map_smul]
     rw [mfderiv_proj_timeVectorField]
@@ -228,12 +235,7 @@ theorem eval₂_mpullback_periodicTorus_suspensionForm
       (suspensionForm φ σ hσ)).eval₂ p v w =
         v.1 * w.2 - w.1 * v.2 := by
   rw [mpullback_periodicTorus_suspensionForm]
-  -- Read the circle tangent spaces in their real model coordinates.
-  erw [SmoothForm.eval₂_wedge_one_one]
-  simp only [SmoothForm.mpullback_fst_apply, SmoothForm.mpullback_snd_apply,
-    AddCircle.timeForm_apply]
-  erw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply]
-  rfl
+  exact AddCircle.eval₂_wedge_timeForm 1 d p v w
 
 /-- The signed area integral of the actual pulled-back form over one fundamental parameter
 rectangle is the period `d`. The tangent vectors are the positive real time directions on
@@ -253,14 +255,14 @@ embedded one, and its area is `k d₀`. -/
 theorem integralTopForm_mpullback_periodicTorus_suspensionForm :
     integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
       (SmoothForm.mpullback (periodicTorus φ hx) (contMDiff_periodicTorus hx)
-        (suspensionForm φ σ hσ)).1 = d := by
+        (suspensionForm φ σ hσ)).val = d := by
   rw [mpullback_periodicTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
 
 /-- The fiber form `σ_v` has zero area on the periodic torus, for either orientation. -/
 theorem integralTopForm_mpullback_periodicTorus_fiberForm
     (o : Manifold.Orientation (𝓘(ℝ).prod 𝓘(ℝ)) (UnitAddCircle × AddCircle (d : ℝ)) (Fin 2)) :
     integralTopForm o (SmoothForm.mpullback (periodicTorus φ hx) (contMDiff_periodicTorus hx)
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0 := by
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0 := by
   rw [mpullback_periodicTorus_fiberForm]
   exact integralTopForm_zero o
 

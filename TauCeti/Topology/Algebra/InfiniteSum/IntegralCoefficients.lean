@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
-public import Mathlib.RingTheory.PowerSeries.Basic
+public import Mathlib.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.BoundedHom
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.PowerSeries.EvalAt
@@ -230,6 +231,29 @@ theorem norm_evalIntSeries_le_of_constantCoeff_eq_zero {K : Type*} [NormedCommRi
   obtain ⟨g, rfl⟩ := X_dvd_iff.mpr hf
   rw [map_mul, evalIntSeries_X]
   exact norm_mul_evalIntSeries_le q q hq g
+
+/-- Evaluation of integral series commutes with substitution at a series with zero constant
+term. Both evaluation parameters lie in the open unit ball. -/
+theorem evalIntSeries_subst {K : Type*} [NormedCommRing K] [CompleteSpace K]
+    [IsUltrametricDist K] (q : K) (hq : ‖q‖ < 1) (f g : ℤ⟦X⟧)
+    (hg : constantCoeff g = 0) :
+    evalIntSeries q hq (f.subst g) =
+      evalIntSeries (evalIntSeries q hq g)
+        ((norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq hg).trans_lt hq) f := by
+  have hgq : ‖evalIntSeries q hq g‖ < 1 :=
+    (norm_evalIntSeries_le_of_constantCoeff_eq_zero q hq hg).trans_lt hq
+  have hs : HasSubst g := .of_constantCoeff_zero hg
+  have h := RingHom.ext_powerSeries_of_bounded
+    ((evalIntSeries q hq).comp (substAlgHom hs).toRingHom)
+    (evalIntSeries (evalIntSeries q hq g) hgq)
+    ⟨‖(1 : K)‖, fun _ ↦ norm_evalIntSeries_le_norm_one q hq _⟩
+    ⟨‖(1 : K)‖, fun _ ↦ norm_evalIntSeries_le_norm_one _ _ _⟩
+    (fun r ↦ by simp)
+    (by simp [substAlgHom_X])
+    (by simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      substAlgHom_X] using hgq)
+  simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    coe_substAlgHom] using RingHom.congr_fun h f
 
 /-- Multiplication by an integral formal unit evaluated inside the open unit ball preserves norms
 in a complete non-archimedean normed commutative ring, without requiring a normalized norm. -/

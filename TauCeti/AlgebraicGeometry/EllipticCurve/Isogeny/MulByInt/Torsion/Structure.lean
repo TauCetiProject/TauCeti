@@ -72,11 +72,11 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
   let q := (p : ℕ) ^ N.factorization p
   have hN0 : N ≠ 0 := NeZero.ne N
   have hq_dvd : q ∣ N :=
-    (Nat.prime_of_mem_primeFactors p.2).pow_dvd_iff_le_factorization hN0 |>.2 le_rfl
+    (Nat.prime_of_mem_primeFactors p.property).pow_dvd_iff_le_factorization hN0 |>.2 le_rfl
   have hp_dvd_q : (p : ℕ) ∣ q := by
     apply dvd_pow_self
-    exact (Nat.Prime.factorization_pos_of_dvd (Nat.prime_of_mem_primeFactors p.2) hN0
-      (Nat.dvd_of_mem_primeFactors p.2)).ne'
+    exact (Nat.Prime.factorization_pos_of_dvd (Nat.prime_of_mem_primeFactors p.property) hN0
+      (Nat.dvd_of_mem_primeFactors p.property)).ne'
   let : Finite G := W.finite_torsionBy (by exact_mod_cast hN0)
   let e : Submodule.torsionBy ℤ G (q : ℤ) ≃+
       AddSubgroup.torsionBy W.toAffine.Point (q : ℤ) :=
@@ -96,14 +96,14 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
     simpa only [Int.natAbs_natCast] using
       W.natCard_torsionBy (n := (p : ℤ)) (by
         exact_mod_cast ne_zero_of_dvd_ne_zero hN
-          (Nat.cast_dvd_cast (Nat.dvd_of_mem_primeFactors p.2)))
+          (Nat.cast_dvd_cast (Nat.dvd_of_mem_primeFactors p.property)))
   have hcardq' : Nat.card (Submodule.torsionBy ℤ G (q : ℤ)) =
       p ^ (2 * N.factorization p) := by
     dsimp only [q] at hcardq ⊢
     convert hcardq using 1
     rw [← pow_mul, mul_comm]
   exact (TauCeti.AddCommGroup.nonempty_addEquiv_prod_zmod_primePow
-    (Nat.prime_of_mem_primeFactors p.2) hpow hcardq' hcardp).some
+    (Nat.prime_of_mem_primeFactors p.property) hpow hcardq' hcardp).some
 
 open scoped Classical in
 /-- The primary decomposition of `E[N]`, with each component put in rank-two cyclic form. -/
@@ -130,10 +130,11 @@ open scoped Classical in
 /-- **`E[N] ≃+ (ℤ/N)²`** over a separably closed field in which `N` is invertible.
 
 The equivalence is noncanonical, so the result asserts its existence. -/
-theorem torsion_addEquiv_prod (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ) [NeZero N]
+theorem torsion_addEquiv_prod (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ)
     (hN : (N : K) ≠ 0) :
     Nonempty (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by
   classical
+  have : NeZero N := ⟨fun h ↦ hN (by simp [h])⟩
   let q : ℕ → ℕ := fun p ↦ p ^ N.factorization p
   have hN0 : N ≠ 0 := NeZero.ne N
   let primary := primaryDecompositionEquiv W N hN
@@ -149,7 +150,6 @@ trace. The basis is noncanonical, so the result asserts its existence. -/
 theorem nonempty_basis_torsionBy [DecidableEq K] (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ)
     (hN : (N : K) ≠ 0) :
     Nonempty (Module.Basis (Fin 2) (ZMod N) (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ))) := by
-  have : NeZero N := ⟨fun h ↦ hN (by simp [h])⟩
   -- `torsion_addEquiv_prod` is stated for the classical decidable-equality instance
   obtain ⟨e⟩ : Nonempty (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by
     convert W.torsion_addEquiv_prod N hN

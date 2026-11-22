@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.End.SquareZero
 /-!
 # Face germs detect the ambient ineffective kernel
 
-Consider a finite group fixing a point `x`, a chart `χ` centred at `x` in a Banach space
+Consider a finite group fixing a point `x`, a chart `χ` centred at `x` in a normed space
 over a nontrivially normed field in which the group order is invertible, and a continuous
 linear map `q` to the normal-coordinate space. Suppose the action's coordinate maps are strictly
 differentiable at the origin. An element preserving the normal coordinates near `x` acts as the
@@ -44,7 +44,7 @@ namespace OpenPartialHomeomorph
 variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype G]
   [Invertible (Fintype.card G : 𝕜)]
   [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- For a finite action fixing `x`, an element preserving linear normal coordinates in a chart

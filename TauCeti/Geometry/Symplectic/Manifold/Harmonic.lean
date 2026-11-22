@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 
@@ -31,9 +30,9 @@ since `β(j e) = dτ(j (j e)) = -dτ(e)` and `β(e) = dτ(j e)`. So `-d(τ β)` 
 form, positive wherever `dτ ≠ 0`, and Stokes' theorem gives `∫_C d(τ β) = 0`. Hence `dτ = 0`
 everywhere. No integrable complex coordinates on `C` are used, and `τ` need only be `C¹`.
 
-The pointwise positivity step,
-`TauCeti.SmoothAlmostComplexStructure.apply_basis_nonneg_of_forall_nonneg`, turns the sign of
-`-d(τ β)` on the frames `(e, j e)` into its sign on positively oriented bases.
+The positivity step,
+`TauCeti.SmoothAlmostComplexStructure.integralTopForm_pos_of_forall_nonneg`, turns the sign of
+`-d(τ β)` on the frames `(e, j e)` into the sign of its integral.
 
 ## Main results
 
@@ -73,18 +72,18 @@ theorem mvfderiv_eq_zero_of_isClosed [T2Space C] [CompactSpace C] [BoundarylessM
     (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
     {τ : C → ℝ} (hτ : ContMDiff I 𝓘(ℝ) 1 τ) {β : SmoothForm I C ℝ 1} (hβ : β.IsClosed)
-    (hτβ : ∀ c e, mvfderiv I τ c (j c e) = β.1 c ![e]) (c : C) : mvfderiv I τ c = 0 := by
+    (hτβ : ∀ c e, mvfderiv I τ c (j c e) = β.val c ![e]) (c : C) : mvfderiv I τ c = 0 := by
   -- The one-form `α = τ β`, and the top form `η = -dα`.
-  set α : RoughForm I C ℝ 1 := fun c ↦ τ c • β.1 c
+  set α : RoughForm I C ℝ 1 := fun c ↦ τ c • β.val c
   have hα : IsSmoothForm I 1 α := (β.isSmoothForm.of_le (by simp)).fun_smul hτ
   set η : RoughForm I C ℝ 2 := (-1 : ℝ) • mextDeriv α
   -- On a frame `(e, j e)`, `η` is the energy density `dτ(e)² + dτ(j e)²`.
   have hη (c : C) (e : TangentSpace I c) :
       η c ![e, j c e] = mvfderiv I τ c e ^ 2 + mvfderiv I τ c (j c e) ^ 2 := by
-    have hβ' : mextDeriv β.1 c ![e, j c e] = 0 := by
+    have hβ' : mextDeriv β.val c ![e, j c e] = 0 := by
       rw [(SmoothForm.isClosed_iff_forall_mextDeriv_apply_eq_zero β).1 hβ c]
       rfl
-    have hβj : β.1 c ![j c e] = -mvfderiv I τ c e := by
+    have hβj : β.val c ![j c e] = -mvfderiv I τ c e := by
       rw [← hτβ, apply_apply, map_neg]
     simp only [η, Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
     rw [mextDeriv_fun_smul_apply (hτ.mdifferentiableAt one_ne_zero)
@@ -99,23 +98,10 @@ theorem mvfderiv_eq_zero_of_isClosed [T2Space C] [CompactSpace C] [BoundarylessM
     by_contra h
     push Not at h
     exact hne (ContinuousLinearMap.ext h)
-  -- The frame `(e, j e)` is positive, and `η` is positive on it.
-  have he0 : e ≠ 0 := by
-    rintro rfl
-    exact he (map_zero _)
-  set b₀ := basisOfLinearIndependentOfCardEqFinrank
-    ((j.almostComplexStructureAt c).linearIndependent_pair he0)
-    (by simpa using (o.finrank_tangentSpace_eq c).symm)
-  have hb₀ : ⇑b₀ = ![e, j c e] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank, almostComplexStructureAt_apply]
-  have hpos : 0 < η c b₀ := by
-    rw [hb₀, hη]
-    positivity
-  refine (integralTopForm_pos o (hα.continuous_mextDeriv.smul (-1))
-    (isClosed_tsupport _).isCompact
-    (fun c' b hb ↦ j.apply_basis_nonneg_of_forall_nonneg (ho c')
-      (fun e' ↦ (hη c' e').symm ▸ by positivity) b hb)
-    ⟨c, b₀, ho c b₀ (by rw [hb₀]; simp), hpos⟩).ne' hint
+  -- `η` is positive on the frame `(e, j e)`.
+  refine (j.integralTopForm_pos_of_forall_nonneg ho (hα.continuous_mextDeriv.smul (-1))
+    (isClosed_tsupport _).isCompact (fun c' e' ↦ (hη c' e').symm ▸ by positivity)
+    (e₀ := e) (by rw [hη]; positivity)).ne' hint
 
 end SmoothAlmostComplexStructure
 

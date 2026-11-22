@@ -184,7 +184,7 @@ theorem thetaCoset_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A 
   have hterm := term_eq_sum_gaussTerm hL A γ τ σ hσ
   rw [hAτ, thetaCoset_vadd_eq_sum hL]
   simp_rw [hclass, thetaCoset_S_smul L hk, hterm,
-    Summable.tsum_finsetSum fun y _ => (hsum _).mul_left _, ← hfac, tsum_mul_left, Finset.mul_sum]
+    Summable.tsum_finsetSum fun _ _ => (hsum _).mul_left _, ← hfac, tsum_mul_left, Finset.mul_sum]
   -- `thetaCoset_vadd_eq_sum` sums over its own `Fintype` instance on `L / c L`.
   refine Finset.sum_congr (by congr; exact Subsingleton.elim _ _) fun y _ => ?_
   ring
@@ -262,9 +262,9 @@ private theorem tsum_gaussSumTwisted_coset_eq (A : SL(2, ℤ)) {c : ℕ} [NeZero
     have hfℓ : A 0 0 • γ + f ℓ = Submodule.inclusion hLd ℓ := add_sub_cancel _ _
     have hfℓE : ((f ℓ : dual L) : E) = -(A 0 0 • (γ : E)) + ℓ := by
       simp [f, neg_add_eq_sub]
-    obtain ⟨i, hi⟩ := mem_dual.mp γ.2 _ ℓ.2
-    obtain ⟨j, hj⟩ := isEven_iff.mp hL _ ℓ.2
-    rw [hfℓ, gaussSumTwisted_eq_of_mem hL had ℓ.2, hfℓE]
+    obtain ⟨i, hi⟩ := mem_dual.mp γ.property _ ℓ.property
+    obtain ⟨j, hj⟩ := isEven_iff.mp hL _ ℓ.property
+    rw [hfℓ, gaussSumTwisted_eq_of_mem hL had ℓ.property, hfℓE]
     simp only [Submodule.coe_inclusion]
     -- The three Gauss factors combine to `e(a b ‖γ‖² / 2 - b ⟪γ, ℓ⟫ - b d ‖ℓ‖² / 2)`.
     have h1 : cexp (2 * π * I * ((((A 0 0 : ℝ) * ‖(γ : E)‖ ^ 2 / 2 +
@@ -355,8 +355,8 @@ theorem thetaCoset_slash_eq_gaussSum_smul_of_mem_Gamma (hk : finrank ℝ E = 2 *
       rw [show A 0 0 = 1 + level L * t by linear_combination ht, add_smul, one_smul,
         add_sub_cancel_left, mul_comm, mul_smul, natCast_zsmul]
     rw [h]
-    exact L.smul_mem t (level_nsmul_mem γ.2)
-  obtain ⟨n, hn⟩ := exists_level_mul_norm_sq_eq γ.2
+    exact L.smul_mem t (level_nsmul_mem γ.property)
+  obtain ⟨n, hn⟩ := exists_level_mul_norm_sq_eq γ.property
   have he : cexp (2 * π * I * ((A 0 0 * A 0 1 * ‖(γ : E)‖ ^ 2 / 2 : ℝ) : ℂ)) = 1 := by
     rw [Complex.exp_eq_one_iff]
     refine ⟨A 0 0 * s * n, ?_⟩

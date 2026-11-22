@@ -10,8 +10,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Gener
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
-import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
+public import TauCeti.FieldTheory.FunctionField.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Affine
 
 /-!
 # The function field of the projective Weierstrass model
@@ -45,6 +46,9 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
   coordinates `[x : y : 1]`, where `x` and `y` are the affine coordinates in
   `W.toAffine.FunctionField`.
 
+* `WeierstrassCurve.isFunctionField_functionField_projModel`: over a field `K`, the function field
+  `K(E)` of the projective model is an algebraic function field of one variable over `K`.
+
 ## References
 
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], I.1 and I.2.
@@ -70,53 +74,12 @@ namespace WeierstrassCurve
 
 variable {R : Type u} [CommRing R] (W : WeierstrassCurve R)
 
-private theorem aeval_toProjective_polynomial_eq_zero :
-    aeval ![Affine.CoordinateRing.mk W.toAffine (Polynomial.C Polynomial.X),
-      Affine.CoordinateRing.mk W.toAffine Polynomial.X, 1] W.toProjective.polynomial = 0 := by
-  -- `x` and `y`, the classes of the affine coordinates, solve the affine Weierstrass equation of
-  -- `W` base changed to the coordinate ring, so `(x, y, 1)` solves its homogeneous equation
-  rw [aeval_def, ← eval_map, ← Projective.map_polynomial]
-  exact (Projective.equation_some _ _).mpr (Affine.CoordinateRing.equation_of_algHom (.id R _))
-
-private noncomputable def chartRingToCoordinateRing :
-    W.toProjective.ChartRing 2 →ₐ[R] W.toAffine.CoordinateRing :=
-  -- dehomogenization on the chart `D₊(Z)`: the map from the chart ring
-  -- `R[X, Y, Z] ⧸ (W(X, Y, Z), Z - 1)` to the affine coordinate ring sending `X, Y, Z` to `x, y, 1`
-  Ideal.Quotient.liftₐ _ (aeval ![Affine.CoordinateRing.mk W.toAffine (Polynomial.C Polynomial.X),
-      Affine.CoordinateRing.mk W.toAffine Polynomial.X, 1]) fun _ hp ↦
-    RingHom.mem_ker.mp <| Ideal.span_le.mpr (Set.range_subset_iff.mpr <| Fin.forall_fin_two.mpr
-      ⟨by rw [Projective.chartRelation_zero]; exact W.aeval_toProjective_polynomial_eq_zero,
-        by simp⟩) hp
-
-private theorem chartRingToCoordinateRing_mk (p : MvPolynomial (Fin 3) R) :
-    W.chartRingToCoordinateRing (Ideal.Quotient.mk _ p) =
-      aeval ![Affine.CoordinateRing.mk W.toAffine (Polynomial.C Polynomial.X),
-        Affine.CoordinateRing.mk W.toAffine Polynomial.X, 1] p :=
-  rfl
-
-private noncomputable def coordinateRingToChartRing :
-    W.toAffine.CoordinateRing →ₐ[R] W.toProjective.ChartRing 2 :=
-  -- homogenization on the chart `D₊(Z)`: the map from the affine coordinate ring to the chart
-  -- ring sending `x` and `y` to the classes of `X` and `Y`
-  Affine.CoordinateRing.evalAlgHom <|
-    (Projective.equation_some (Ideal.Quotient.mk _ (X 0)) (Ideal.Quotient.mk _ (X 1))).mp <| by
-      -- the homogeneous Weierstrass equation, with `Z = 1`
-      rw [Projective.Equation, Affine.baseChange, WeierstrassCurve.baseChange,
-        Projective.map_polynomial, eval_map, ← aeval_def, ← W.toProjective.chartRing_mk_X_self 2,
-        ← Projective.chartRelation_zero _ 2, ← Ideal.Quotient.mk_span_range _ 0]
-      -- evaluation at the classes of `X`, `Y`, `Z` is the quotient map
-      exact DFunLike.congr_fun (algHom_ext fun i ↦ by fin_cases i <;> simp :
-        aeval _ = Ideal.Quotient.mkₐ R _) _
-
 private noncomputable def awayEquivCoordinateRing :
     Away W.toProjective.grading (W.toProjective.coord 2) ≃+* W.toAffine.CoordinateRing :=
   -- the degree-zero part `A_(Z)` is the chart ring `R[X, Y, Z] ⧸ (W(X, Y, Z), Z - 1)` of `D₊(Z)`,
   -- which is the affine coordinate ring
-  (W.toProjective.awayEquivChartRing 2).trans <|
-    AlgEquiv.ofAlgHom W.chartRingToCoordinateRing W.coordinateRingToChartRing
-      (by ext <;> simp [coordinateRingToChartRing, chartRingToCoordinateRing_mk])
-      (Ideal.Quotient.algHom_ext R <| algHom_ext fun j ↦ by
-        fin_cases j <;> simp [chartRingToCoordinateRing_mk, coordinateRingToChartRing])
+  (W.toProjective.awayEquivChartRing 2).trans
+    W.toProjective.chartRingTwoEquivCoordinateRing.toRingEquiv
 
 private noncomputable def chartSectionsEquivCoordinateRing :
     Γ(W.projModel, Proj.basicOpen W.toProjective.grading (W.toProjective.coord 2)) ≃+*
@@ -203,8 +166,10 @@ theorem projModelFunctionFieldEquiv_germToFunctionField_awayToSection_mk [IsDoma
         Affine.CoordinateRing.mk W.toAffine Polynomial.X, 1] p) :=
   -- the germ map is the algebra map of the fraction field structure
   (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans <| congrArg _ <|
-    (W.chartSectionsEquivCoordinateRing_awayToSection _).trans <| congrArg _ <|
-      W.toProjective.awayEquivChartRing_mk 2 hp
+    (W.chartSectionsEquivCoordinateRing_awayToSection _).trans <|
+      (congrArg W.toProjective.chartRingTwoEquivCoordinateRing
+        (W.toProjective.awayEquivChartRing_mk 2 hp)).trans
+        (W.toProjective.chartRingTwoEquivCoordinateRing_mk p)
 
 -- The inclusion `Spec Γ(E, D₊(Z)) ⟶ E` of the affine chart `D₊(Z)` is `Spec` of the identification
 -- `A_(Z) ≅ Γ(E, D₊(Z))` followed by the chart `Spec A_(Z) ⟶ E`.
@@ -317,6 +282,15 @@ theorem projModelFunctionFieldBaseAlgEquiv_symm_apply [IsDomain R]
     (z : W.toAffine.FunctionField) :
     W.projModelFunctionFieldBaseAlgEquiv.symm z = W.projModelFunctionFieldEquiv.symm z :=
   AlgEquiv.ofRingEquiv_symm_apply _ z
+
+/-- The function field of the projective model of a Weierstrass curve is an algebraic function
+field of one variable over the base field. -/
+theorem isFunctionField_functionField_projModel {K : Type u} [Field K] (W : WeierstrassCurve K) :
+    TauCeti.IsFunctionField K W.projModel.functionField := by
+  have := W.toAffine.isFunctionField.essFiniteType
+  have := (Algebra.EssFiniteType.iff_of_algEquiv W.projModelFunctionFieldBaseAlgEquiv).2 this
+  rw [TauCeti.isFunctionField_iff_trdeg_eq_one, W.projModelFunctionFieldBaseAlgEquiv.trdeg_eq]
+  exact W.toAffine.isFunctionField.trdeg_eq_one
 
 end BaseAlgebra
 

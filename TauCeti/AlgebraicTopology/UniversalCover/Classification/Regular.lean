@@ -36,7 +36,7 @@ Tau Ceti's pointed-cover classification.
 
 public section
 
-namespace TauCeti
+namespace IsCoveringMap
 
 open _root_.FundamentalGroup
 
@@ -46,39 +46,39 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 locally path-connected total space and path-connected base. For any chosen lift `e` of `x`, the
 deck action is regular exactly when the recovered subgroup
 `p_* π₁(E, e) ≤ π₁(X, x)` is normal. -/
-theorem _root_.IsCoveringMap.isRegular_iff_normal_range
+theorem isRegular_iff_normal_range
     [PathConnectedSpace E] [LocallyPathConnectedSpace E] [PathConnectedSpace X]
     (hp : _root_.IsCoveringMap p) (e : p ⁻¹' {x}) :
-    Deck.IsRegular p ↔
-      (mapOfEq ⟨p, hp.continuous⟩ e.2).range.Normal := by
-  rw [Deck.isRegular_iff_fiber_isPretransitive hp e,
+    TauCeti.Deck.IsRegular p ↔
+      (mapOfEq ⟨p, hp.continuous⟩ e.property).range.Normal := by
+  rw [TauCeti.Deck.isRegular_iff_fiber_isPretransitive hp e,
     IsCoveringMap.normal_range_iff hp e]
   constructor
   · intro htrans e'
     let := htrans
     obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (deck p) e e'
     have hhome : ∃ h : E ≃ₜ E, h e = e' ∧ p ∘ h = p := by
-      refine ⟨φ.1, ?_, ?_⟩
+      refine ⟨φ.val, ?_, ?_⟩
       · simpa only [deck.fiber_smul_coe] using congrArg Subtype.val hφ
       · funext z
         exact deck.proj_smul φ z
     have hrange :=
       (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
-        hp hp e.2 e'.2).mp hhome
+        hp hp e.property e'.property).mp hhome
     simpa only using hrange.symm
   · intro hrange
     refine MulAction.IsPretransitive.mk ?_
     intro e₀ e₁
     have h₀₁ :
-        (mapOfEq ⟨p, hp.continuous⟩ e₀.2).range =
-          (mapOfEq ⟨p, hp.continuous⟩ e₁.2).range :=
+        (mapOfEq ⟨p, hp.continuous⟩ e₀.property).range =
+          (mapOfEq ⟨p, hp.continuous⟩ e₁.property).range :=
       (hrange e₀).trans (hrange e₁).symm
     obtain ⟨h, he, hcomp⟩ :=
       IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq
-        hp hp e₀.2 e₁.2 h₀₁
+        hp hp e₀.property e₁.property h₀₁
     let φ : deck p := ⟨h, hcomp⟩
     refine ⟨φ, ?_⟩
     apply Subtype.ext
     simpa only [deck.fiber_smul_coe] using he
 
-end TauCeti
+end IsCoveringMap

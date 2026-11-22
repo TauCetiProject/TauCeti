@@ -10,6 +10,8 @@ public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.Pi
+import Mathlib.Data.Fin.Rev
 
 /-!
 # Finite partial sums
@@ -28,15 +30,20 @@ This file contains basic facts about finite partial sums.
   telescope.
 * `TauCeti.eq_of_forall_prefixSum_eq`, `TauCeti.monotone_prefixSum`: a tuple is determined by its
   prefix sums, which are monotone in the length for nonnegative tuples.
-* `TauCeti.prefixSum_eq_sum_castLE`: up to `n`, prefix sums are sums over the first indices.
+* `TauCeti.prefixSum_eq_sum_castLE`, `TauCeti.prefixSum_comp_rev`: up to `n`, prefix sums are sums
+  over the first indices, and prefix sums of a reversed tuple are suffix sums.
 * `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
   partial sums over `range`, capped at `n`.
+* `TauCeti.prefixSum_sum`, `TauCeti.prefixSum_sub`, `TauCeti.prefixSum_single`: prefix sums of
+  finite sums and differences of tuples, and of a tuple supported at one coordinate.
+* `TauCeti.prefixSum_sum_single_castSucc_sub_single_succ`: prefix sums of a combination
+  `∑ᵢ cᵢ (eᵢ - eᵢ₊₁)` of consecutive coordinate differences.
 * `TauCeti.map_prefixSum`, `TauCeti.prefixSum_smul`: additive monoid homomorphisms and
   distributive scalar actions commute with prefix sums.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
-* `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a finite sequence whose inclusive partial sums
-  all vanish is zero.
+* `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a function on a locally finite order whose sums
+  over all lower intervals `Iic k` vanish is zero.
 -/
 
 public section
@@ -61,6 +68,10 @@ theorem prefixSum_def (k : ℕ) (x : Fin n → M) :
 
 @[simp]
 theorem prefixSum_zero (x : Fin n → M) : prefixSum 0 x = 0 := by
+  simp [prefixSum]
+
+@[simp]
+theorem prefixSum_zero_right (k : ℕ) : prefixSum k (0 : Fin n → M) = 0 := by
   simp [prefixSum]
 
 /-- Each further coordinate adds its value to the prefix sum. -/
@@ -111,6 +122,18 @@ theorem prefixSum_eq_sum_castLE {k : ℕ} (hk : k ≤ n) (x : Fin n → M) :
   simp only [mem_filter, mem_univ, true_and, mem_map, Fin.castLEEmb_apply]
   exact ⟨fun hi ↦ ⟨⟨i, hi⟩, rfl⟩, fun ⟨j, hj⟩ ↦ hj ▸ j.isLt⟩
 
+/-- For `k ≤ n`, the prefix sum of length `k` of `i ↦ x i.rev` is the suffix sum over indices
+`n - k ≤ j`. -/
+theorem prefixSum_comp_rev {k : ℕ} (hk : k ≤ n) (x : Fin n → M) :
+    prefixSum k (fun i ↦ x i.rev) = ∑ j : Fin n with n - k ≤ j.val, x j := by
+  rw [prefixSum_def, sum_filter, sum_filter]
+  refine (sum_congr rfl fun i _ ↦ ?_).trans
+    (Equiv.sum_comp Fin.revPerm fun j : Fin n ↦ if n - k ≤ j.val then x j else 0)
+  simp only [Fin.revPerm_apply, Fin.val_rev]
+  by_cases hi : i.val < k
+  · rw [ite_eq_left hi, ite_eq_left (by omega)]
+  · rw [ite_eq_right hi, ite_eq_right (by have := i.isLt; omega)]
+
 /-- Capping the length of a prefix sum at `n` does not change it. -/
 @[simp]
 theorem prefixSum_min (k : ℕ) (x : Fin n → M) : prefixSum (min k n) x = prefixSum k x := by
@@ -133,6 +156,37 @@ theorem prefixSum_eq_sum_range (k : ℕ) (f : ℕ → M) :
 theorem prefixSum_add (k : ℕ) (x y : Fin n → M) :
     prefixSum k (x + y) = prefixSum k x + prefixSum k y := by
   simp [prefixSum, sum_add_distrib]
+
+/-- Prefix sums of a finite sum of tuples are the sums of their prefix sums. -/
+@[simp]
+theorem prefixSum_sum {ι : Type*} (s : Finset ι) (k : ℕ) (x : ι → Fin n → M) :
+    prefixSum k (∑ j ∈ s, x j) = ∑ j ∈ s, prefixSum k (x j) := by
+  simp only [prefixSum, Finset.sum_apply]
+  exact sum_comm
+
+/-- The prefix sum of length `k` of the tuple supported at `a` with value `m` is `m` when `a` is
+among the first `k` coordinates, and `0` otherwise. -/
+@[simp]
+theorem prefixSum_single [DecidableEq (Fin n)] (k : ℕ) (a : Fin n) (m : M) :
+    prefixSum k (Pi.single a m) = if (a : ℕ) < k then m else 0 := by
+  simp [prefixSum]
+
+/-- Prefix sums are subtractive in the tuple. -/
+@[simp]
+theorem prefixSum_sub {G : Type*} [SubtractionCommMonoid G] (k : ℕ) (x y : Fin n → G) :
+    prefixSum k (x - y) = prefixSum k x - prefixSum k y := by
+  simp [prefixSum, sum_sub_distrib]
+
+/-- The prefix sums of the combination `∑ᵢ cᵢ (eᵢ - eᵢ₊₁)` of consecutive coordinate differences:
+the prefix sum of length `k` is `c (k - 1)` when `1 ≤ k ≤ n`, and `0` otherwise. -/
+theorem prefixSum_sum_single_castSucc_sub_single_succ {G : Type*} [AddCommGroup G]
+    (c : Fin n → G) (k : ℕ) :
+    prefixSum k (∑ i, (Pi.single i.castSucc (c i) - Pi.single i.succ (c i))) =
+      ∑ i : Fin n with i.val + 1 = k, c i := by
+  rw [prefixSum_sum, sum_filter]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [prefixSum_sub, prefixSum_single, prefixSum_single, Fin.val_castSucc, Fin.val_succ]
+  split_ifs <;> first | omega | simp
 
 /-- Additive monoid homomorphisms commute with prefix sums. -/
 theorem map_prefixSum {N F : Type*} [AddCommMonoid N] [FunLike F M N] [AddMonoidHomClass F M N]
@@ -188,9 +242,10 @@ theorem prefixSum_append_zero {m : ℕ} (k : ℕ) (x : Fin n → M) :
 
 end PrefixSum
 
-/-- **A finite sequence all of whose inclusive partial sums vanish is zero.** -/
-theorem eq_zero_of_forall_sum_Iic_eq_zero {M : Type*} [AddCommMonoid M] (n : ℕ)
-    {y : Fin (n + 1) → M} (hy : ∀ k, ∑ j ∈ Iic k, y j = 0) : y = 0 := by
+/-- **A function all of whose sums over the lower intervals `Iic k` vanish is zero.** The index
+type is any partial order whose lower intervals are finite, such as `Fin n` or `ℕ`. -/
+theorem eq_zero_of_forall_sum_Iic_eq_zero {ι M : Type*} [PartialOrder ι] [LocallyFiniteOrderBot ι]
+    [AddCommMonoid M] {y : ι → M} (hy : ∀ k, ∑ j ∈ Iic k, y j = 0) : y = 0 := by
   funext k
   induction k using WellFoundedLT.induction with
   | _ k ih =>

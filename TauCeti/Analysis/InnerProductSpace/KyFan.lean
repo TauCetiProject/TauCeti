@@ -8,10 +8,13 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.Analysis.Convex.Majorization
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
+public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!
 # Ky Fan sums of singular values
@@ -29,7 +32,9 @@ with equality attained by the leading singular pairs. The resulting variational 
 invariance under isometric changes of coordinates, with no comparison of individual singular
 values. The same weight argument gives Ky Fan's trace inequality for a symmetric operator: over an
 orthonormal family with `k` members, the diagonal entries `re ⟪T wᵢ, wᵢ⟫` sum to at most the sum
-of the `k` largest eigenvalues of `T`.
+of the `k` largest eigenvalues of `T`, with equality for the leading eigenvectors. Applied to `-T`
+it gives the minimum principle: these sums are at least the sum of the `k` smallest eigenvalues,
+with equality for the trailing eigenvectors.
 
 The bound expands `A` in its singular system `A x = ∑ⱼ σⱼ ⟪vⱼ', x⟫ uⱼ'`. The total weight that the
 two families place on the `j`-th singular pair is at most `1` by Bessel's inequality, and the
@@ -64,6 +69,14 @@ of singular values give at most the sum of its first `k` terms
 * `LinearMap.kyFanSum_subtype_comp_comp_orthogonalProjectionOnto`: extending a map by zero
   between source and target ambient spaces preserves its Ky Fan sums.
 * `LinearMap.IsSymmetric.sum_re_inner_apply_self_le_sum_eigenvalues`: Ky Fan's trace inequality.
+* `LinearMap.IsSymmetric.isGreatest_sum_re_inner_apply_self`: Ky Fan's maximum principle, the sum
+  of the `k` largest eigenvalues as the largest diagonal sum along `k` orthonormal vectors.
+* `LinearMap.IsSymmetric.sum_eigenvalues_rev_le_sum_re_inner_apply_self`,
+  `LinearMap.IsSymmetric.isLeast_sum_re_inner_apply_self`: Ky Fan's minimum principle, the sum
+  of the `k` smallest eigenvalues as the least such diagonal sum.
+* `LinearMap.IsSymmetric.prefixSum_eigenvalues_smul_add_smul_le`,
+  `LinearMap.IsSymmetric.prefixSum_eigenvalues_add_le`: the sum of the `k` largest eigenvalues is
+  a convex and subadditive function of a symmetric operator.
 
 ## Provenance
 
@@ -154,11 +167,12 @@ theorem sum_singularValues_mul_le_kyFanSum (A : E →ₗ[𝕜] F) {k : ℕ} {c :
   rw [hsum]
   refine le_trans ?_ ((kyFanSum_def A _).symm.trans_le
     (A.kyFanSum_mono (min_le_left k (finrank 𝕜 E))))
-  refine TauCeti.sum_range_mul_le_sum_range_of_sum_le (min_le_right _ _) (fun j hj ↦ ?_)
+  refine TauCeti.sum_range_mul_le_sum_range_of_sum_le (min_le_right _ _) (fun j _ hj ↦ ?_)
     (fun j hj ↦ ?_) ?_ (fun i _ ↦ A.singularValues_antitone (Nat.le_succ i))
     (A.singularValues_nonneg _)
   · simpa [hj] using hc0 ⟨j, hj⟩
-  · simpa [hj] using hc1 ⟨j, hj⟩
+  · have hj := hj.trans_le (min_le_right _ _)
+    simpa [hj] using hc1 ⟨j, hj⟩
   · have h1 := hsum fun _ ↦ 1
     simp only [one_mul] at h1
     rw [← h1, Nat.cast_min]
@@ -310,7 +324,8 @@ theorem sum_antitone_mul_re_inner_le_sum_mul_singularValues (B : E →ₗ[𝕜] 
             (fun i ↦ u (Fin.castLE hk i)) (fun i ↦ v (Fin.castLE hk i))
             (hu.comp _ (Fin.castLE_injective hk)) (hv.comp _ (Fin.castLE_injective hk))
     simpa [LinearMap.kyFanSum_def, g] using hreal
-  have hcross := TauCeti.sum_range_mul_le_sum_range_mul (w := w) hfg hw hw0
+  have hcross := TauCeti.sum_range_smul_le_sum_range_smul (w := w) hfg hw hw0
+  simp only [smul_eq_mul] at hcross
   rw [← Fin.sum_univ_eq_sum_range (fun i ↦ w i * f i),
     ← Fin.sum_univ_eq_sum_range (fun i ↦ w i * g i)] at hcross
   simpa [f, g] using hcross
@@ -478,7 +493,7 @@ theorem kyFanSum_comp_linearIsometryEquiv (A : E →ₗ[𝕜] F) (V : E' ≃ₗ�
 in the target ambient space, does not change its Ky Fan singular-value sums. -/
 @[simp]
 theorem kyFanSum_subtype_comp_comp_orthogonalProjectionOnto
-    (U : Submodule 𝕜 E) (W : Submodule 𝕜 F) [U.HasOrthogonalProjection]
+    (U : Submodule 𝕜 E) (W : Submodule 𝕜 F)
     (T : U →ₗ[𝕜] W) (k : ℕ) :
     (W.subtype ∘ₗ T ∘ₗ U.orthogonalProjectionOnto.toLinearMap).kyFanSum k =
       T.kyFanSum k := by
@@ -516,18 +531,18 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
     exact sum_comm
   -- Extend eigenvalues and weights by zero to `ℕ` and compare there.
   have hmass : ∑ j ∈ Finset.range n, (if h : j < n then c ⟨j, h⟩ else 0) = Fintype.card ι := by
-    rw [← sum_fin_eq_sum_range, hc, sum_comm]
-    simp [(hT.eigenvectorBasis hn).sum_sq_norm_inner_right, hw.1]
+    rw [← sum_fin_eq_sum_range, hc, hw.sum_sum_sq_norm_inner_eq_card]
   rw [hsum, sum_fin_eq_sum_range]
   calc _ = ∑ j ∈ Finset.range n, (if h : j < n then hT.eigenvalues hn ⟨j, h⟩ else 0) *
         (if h : j < n then c ⟨j, h⟩ else 0) :=
         sum_congr rfl fun j hj ↦ by simp [Finset.mem_range.mp hj]
     _ ≤ ∑ j ∈ Finset.range (Fintype.card ι), if h : j < n then hT.eigenvalues hn ⟨j, h⟩ else 0 :=
         TauCeti.sum_range_mul_le_sum_range_of_sum_eq hk
-          (fun j hj ↦ by simp only [hj, dite_true, hc]; positivity)
+          (fun j _ hj ↦ by simp only [hj, dite_true, hc]; positivity)
           (fun j hj ↦ by
-            simpa [hj, hc, norm_inner_symm] using
-              hw.sum_inner_products_le (s := univ) (hT.eigenvectorBasis hn ⟨j, hj⟩))
+            have hj : j < n := hj.trans_le hk
+            simpa [hj, hc] using
+              hw.sum_sq_norm_inner_left_le_one ((hT.eigenvectorBasis hn).orthonormal.1 ⟨j, hj⟩))
           hmass fun j hj ↦ by
             simpa [hj, (by omega : j < n)] using hT.eigenvalues_antitone hn
               (Fin.mk_le_mk.mpr (Nat.le_succ j))
@@ -536,6 +551,77 @@ theorem sum_re_inner_apply_self_le_sum_eigenvalues (hT : T.IsSymmetric) (hn : fi
         refine (sum_congr rfl fun j hj ↦ ?_).trans
           (sum_subset (Finset.range_subset_range.mpr hk) fun j _ hj ↦ by simp_all)
         simp [Finset.mem_range.mp hj]
+
+/-- **Ky Fan's maximum principle**: for a symmetric `T` on an `n`-dimensional space and `k ≤ n`,
+the sum `λ₀ + ⋯ + λₖ₋₁` of the `k` largest eigenvalues of `T` is the largest value of
+`∑ᵢ re ⟪T wᵢ, wᵢ⟫` over orthonormal families `(wᵢ)` with `k` members. -/
+theorem isGreatest_sum_re_inner_apply_self (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) {k : ℕ}
+    (hk : k ≤ n) :
+    IsGreatest {s | ∃ w : Fin k → E, Orthonormal 𝕜 w ∧ ∑ i, RCLike.re ⟪T (w i), w i⟫ = s}
+      (∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < k, hT.eigenvalues hn j) := by
+  refine ⟨⟨_, (hT.eigenvectorBasis hn).orthonormal.comp _ (Fin.castLE_injective hk), ?_⟩, ?_⟩
+  · rw [← TauCeti.prefixSum_def, TauCeti.prefixSum_eq_sum_castLE hk]
+    exact sum_congr rfl fun i _ ↦ hT.re_inner_apply_eigenvectorBasis hn _
+  · rintro _ ⟨w, hw, rfl⟩
+    simpa using hT.sum_re_inner_apply_self_le_sum_eigenvalues hn hw
+
+/-- **Ky Fan's minimum principle**, the lower bound: for a symmetric `T` and an orthonormal family
+`(wᵢ)` with `k` members, `∑ᵢ re ⟪T wᵢ, wᵢ⟫` is at least the sum `λₙ₋₁ + ⋯ + λₙ₋ₖ` of the `k`
+smallest eigenvalues of `T`. -/
+theorem sum_eigenvalues_rev_le_sum_re_inner_apply_self (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) {ι : Type*} [Fintype ι] {w : ι → E} (hw : Orthonormal 𝕜 w) :
+    ∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < Fintype.card ι, hT.eigenvalues hn j.rev ≤
+      ∑ i, RCLike.re ⟪T (w i), w i⟫ := by
+  simpa [hT.eigenvalues_neg hn] using hT.neg.sum_re_inner_apply_self_le_sum_eigenvalues hn hw
+
+/-- **Ky Fan's minimum principle**: for a symmetric `T` on an `n`-dimensional space and `k ≤ n`,
+the sum `λₙ₋₁ + ⋯ + λₙ₋ₖ` of the `k` smallest eigenvalues of `T` is the least value of
+`∑ᵢ re ⟪T wᵢ, wᵢ⟫` over orthonormal families `(wᵢ)` with `k` members. -/
+theorem isLeast_sum_re_inner_apply_self (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) {k : ℕ}
+    (hk : k ≤ n) :
+    IsLeast {s | ∃ w : Fin k → E, Orthonormal 𝕜 w ∧ ∑ i, RCLike.re ⟪T (w i), w i⟫ = s}
+      (∑ j ∈ univ.filter fun j : Fin n ↦ (j : ℕ) < k, hT.eigenvalues hn j.rev) := by
+  refine ⟨⟨fun i ↦ hT.eigenvectorBasis hn (Fin.castLE hk i).rev,
+    (hT.eigenvectorBasis hn).orthonormal.comp _ (Fin.rev_injective.comp (Fin.castLE_injective hk)),
+    ?_⟩, ?_⟩
+  · rw [← TauCeti.prefixSum_def, TauCeti.prefixSum_eq_sum_castLE hk]
+    exact sum_congr rfl fun i _ ↦ hT.re_inner_apply_eigenvectorBasis hn _
+  · rintro _ ⟨w, hw, rfl⟩
+    simpa using hT.sum_eigenvalues_rev_le_sum_re_inner_apply_self hn hw
+
+/-- **Convexity of the Ky Fan sums of eigenvalues**: for symmetric `S`, `T` and `a, b ≥ 0`, the
+sum of the `k` largest eigenvalues of `a • S + b • T` is at most `a` times the sum of the `k`
+largest eigenvalues of `S` plus `b` times that of `T`. -/
+theorem prefixSum_eigenvalues_smul_add_smul_le {S : E →ₗ[𝕜] E} (hS : S.IsSymmetric)
+    (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (k : ℕ) :
+    TauCeti.prefixSum k (((hS.smul (RCLike.conj_ofReal a)).add
+        (hT.smul (RCLike.conj_ofReal b))).eigenvalues hn) ≤
+      a * TauCeti.prefixSum k (hS.eigenvalues hn) +
+        b * TauCeti.prefixSum k (hT.eigenvalues hn) := by
+  rw [← TauCeti.prefixSum_min k, ← TauCeti.prefixSum_min k (hS.eigenvalues hn),
+    ← TauCeti.prefixSum_min k (hT.eigenvalues hn)]
+  -- The leading eigenvectors of `a • S + b • T` attain its Ky Fan sum; on the same vectors the
+  -- diagonal sums of `S` and `T` are bounded by their Ky Fan sums.
+  obtain ⟨⟨w, hw, hsum⟩, -⟩ := ((hS.smul (RCLike.conj_ofReal a)).add
+    (hT.smul (RCLike.conj_ofReal b))).isGreatest_sum_re_inner_apply_self hn (min_le_right k n)
+  have hle {U : E →ₗ[𝕜] E} (hU : U.IsSymmetric) :
+      ∑ i, RCLike.re ⟪U (w i), w i⟫ ≤ TauCeti.prefixSum (min k n) (hU.eigenvalues hn) := by
+    simpa only [Fintype.card_fin, TauCeti.prefixSum_def] using
+      hU.sum_re_inner_apply_self_le_sum_eigenvalues hn hw
+  rw [TauCeti.prefixSum_def, ← hsum]
+  simp only [LinearMap.add_apply, LinearMap.smul_apply, inner_add_left, inner_smul_left,
+    RCLike.conj_ofReal, map_add, RCLike.re_ofReal_mul, sum_add_distrib, ← mul_sum]
+  exact add_le_add (mul_le_mul_of_nonneg_left (hle hS) ha) (mul_le_mul_of_nonneg_left (hle hT) hb)
+
+/-- **Subadditivity of the Ky Fan sums of eigenvalues**: for symmetric `S`, `T`, the sum of the
+`k` largest eigenvalues of `S + T` is at most the sum of those of `S` and of `T`. -/
+theorem prefixSum_eigenvalues_add_le {S : E →ₗ[𝕜] E} (hS : S.IsSymmetric) (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) (k : ℕ) :
+    TauCeti.prefixSum k ((hS.add hT).eigenvalues hn) ≤
+      TauCeti.prefixSum k (hS.eigenvalues hn) + TauCeti.prefixSum k (hT.eigenvalues hn) := by
+  have h := hS.prefixSum_eigenvalues_smul_add_smul_le hT hn zero_le_one zero_le_one k
+  rwa [eigenvalues_congr (S₁ := ((1 : ℝ) : 𝕜) • S + ((1 : ℝ) : 𝕜) • T) (by simp) _ (hS.add hT),
+    one_mul, one_mul] at h
 
 end IsSymmetric
 

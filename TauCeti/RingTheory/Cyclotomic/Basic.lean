@@ -19,8 +19,9 @@ computations on finite lists of integers; multiplication convolves coefficient l
 `TauCeti.Polynomial.mulCoeffList` and then applies the computable cyclotomic reduction from
 `TauCeti.RingTheory.Polynomial.Cyclotomic.Computable`.
 
-The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and integer scalar
-multiplication scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`).
+The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and multiplying by an
+integer cast scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`, and
+`TauCeti.Cyclotomic.coeff_zsmul` for the scalar form).
 
 The ring is identified with Mathlib's `AdjoinRoot (Polynomial.cyclotomic e ℤ)`.  For nonzero `e`,
 evaluation at `exp (2 * π * I / e)` then gives the distinguished embedding into `ℂ` used to state
@@ -47,17 +48,19 @@ namespace TauCeti
 /-- Exact `e`-th cyclotomic integers, represented by the `e.totient` coefficients of the
 canonical polynomial representative in descending order. -/
 @[expose] def Cyclotomic (e : ℕ) : Type _ := {l : List ℤ // l.length = e.totient}
-  deriving DecidableEq
 
 namespace Cyclotomic
 
 variable {e : ℕ}
 
+instance : DecidableEq (Cyclotomic e) :=
+  inferInstanceAs (DecidableEq {l : List ℤ // l.length = e.totient})
+
 /-- The descending list of coefficients representing an exact cyclotomic integer. -/
-@[expose] def coeffs (x : Cyclotomic e) : List ℤ := x.1
+@[expose] def coeffs (x : Cyclotomic e) : List ℤ := x.val
 
 @[simp]
-theorem length_coeffs (x : Cyclotomic e) : x.coeffs.length = e.totient := x.2
+theorem length_coeffs (x : Cyclotomic e) : x.coeffs.length = e.totient := x.property
 
 /-- An exact cyclotomic integer is determined by its coefficient list. -/
 theorem ext_coeffs {x y : Cyclotomic e} (h : x.coeffs = y.coeffs) : x = y := Subtype.ext h
@@ -158,9 +161,6 @@ theorem add_def (x y : Cyclotomic e) :
 
 /-- Negation negates every coefficient. -/
 theorem neg_def (x : Cyclotomic e) : -x = ofCoeffList e (x.coeffs.map (-·)) := rfl
-
-/-- `TauCeti.Cyclotomic.neg` is the negation of the `Neg` instance. -/
-theorem neg_eq (x : Cyclotomic e) : neg x = -x := rfl
 
 /-- Multiplication convolves coefficient lists and reduces modulo `Φ_e`. -/
 theorem mul_def (x y : Cyclotomic e) :
@@ -292,6 +292,25 @@ theorem coeff_intCast [NeZero e] (z : ℤ) (j : ℕ) :
   rw [(modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).mpr hdegree]
   exact Polynomial.coeff_C
 
+/-- A natural number has only a constant power-basis coordinate when the conductor is nonzero. -/
+@[simp]
+theorem coeff_natCast [NeZero e] (n j : ℕ) :
+    (n : Cyclotomic e).coeff j = if j = 0 then (n : ℤ) else 0 := by
+  exact_mod_cast coeff_intCast (e := e) (n : ℤ) j
+
+/-- The power-basis coordinate of `1` is the Kronecker delta at `0` when the conductor is
+nonzero. -/
+@[simp]
+theorem coeff_one [NeZero e] (j : ℕ) : (1 : Cyclotomic e).coeff j = if j = 0 then 1 else 0 := by
+  exact_mod_cast coeff_intCast (e := e) 1 j
+
+/-- A numeral at least `2` has only a constant power-basis coordinate when the conductor is
+nonzero. -/
+@[simp]
+theorem coeff_ofNat [NeZero e] (n : ℕ) [n.AtLeastTwo] (j : ℕ) :
+    (ofNat(n) : Cyclotomic e).coeff j = if j = 0 then ofNat(n) else 0 :=
+  coeff_natCast (e := e) n j
+
 /-- **Multiplication by an integer constant scales every coefficient.**  A constant multiple
 raises no power of `ζ`, so no reduction modulo `Φ_e` takes place. -/
 @[simp]
@@ -307,6 +326,18 @@ theorem coeffs_intCast_mul (z : ℤ) (x : Cyclotomic e) :
     rfl
   rw [hmul]
   exact coeffs_ofCoeffList_of_length_eq (by simp)
+
+/-- Multiplication by a natural-number constant scales every coefficient. -/
+@[simp]
+theorem coeffs_natCast_mul (n : ℕ) (x : Cyclotomic e) :
+    ((n : Cyclotomic e) * x).coeffs = x.coeffs.map ((n : ℤ) * ·) := by
+  exact_mod_cast coeffs_intCast_mul (n : ℤ) x
+
+/-- Multiplication by a numeral at least `2` scales every coefficient. -/
+@[simp]
+theorem coeffs_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : Cyclotomic e) :
+    ((ofNat(n) : Cyclotomic e) * x).coeffs = x.coeffs.map (ofNat(n) * ·) :=
+  coeffs_natCast_mul n x
 
 /-! ## Comparison with `AdjoinRoot` -/
 
@@ -363,11 +394,23 @@ theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
     (z • x).coeff j = z • x.coeff j := by
   simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_zsmul z x
 
-/-- Integer scalar multiplication scales every power-basis coefficient. -/
+/-- Multiplying by an integer cast scales every power-basis coefficient. -/
 @[simp]
 theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
     ((z : Cyclotomic e) * x).coeff j = z * x.coeff j := by
   simpa [zsmul_eq_mul] using (coeffAddHom e j).map_zsmul z x
+
+/-- Multiplying by a natural-number cast scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_natCast_mul (n : ℕ) (x : Cyclotomic e) (j : ℕ) :
+    ((n : Cyclotomic e) * x).coeff j = n * x.coeff j := by
+  exact_mod_cast coeff_intCast_mul (n : ℤ) x j
+
+/-- Multiplying by a numeral at least `2` scales every power-basis coefficient. -/
+@[simp]
+theorem coeff_ofNat_mul (n : ℕ) [n.AtLeastTwo] (x : Cyclotomic e) (j : ℕ) :
+    ((ofNat(n) : Cyclotomic e) * x).coeff j = ofNat(n) * x.coeff j :=
+  coeff_natCast_mul n x j
 
 /-- A finite sum adds power-basis coefficients. -/
 @[simp]
@@ -384,8 +427,7 @@ theorem toAdjoinRoot_surjective : Function.Surjective (toAdjoinRoot : Cyclotomic
 
 private theorem toAdjoinRootRingHom_bijective :
     Function.Bijective (toAdjoinRootRingHom (e := e)) :=
-  ⟨fun _ _ h => toAdjoinRoot_injective (by simpa using h),
-    fun z => (toAdjoinRoot_surjective z).imp fun _ h => by simpa using h⟩
+  ⟨toAdjoinRoot_injective, toAdjoinRoot_surjective⟩
 
 /-- Exact cyclotomic integers are the quotient `ℤ[X] / (Φ_e)`. -/
 noncomputable def equivAdjoinRoot :
@@ -552,6 +594,10 @@ theorem reduce_zeta {p : ℕ} {r : ZMod p}
 /-- The distinguished complex `e`-th root of unity `exp (2πi/e)`.  It is primitive for `e ≠ 0`
 (`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`); at `e = 0` it is `exp 0 = 1`. -/
 noncomputable def complexRoot (e : ℕ) : ℂ := Complex.exp (2 * Real.pi * Complex.I / e)
+
+/-- The defining equation `complexRoot e = exp (2πi/e)` of the distinguished complex root. -/
+theorem complexRoot_def (e : ℕ) : complexRoot e = Complex.exp (2 * Real.pi * Complex.I / e) :=
+  (rfl)
 
 /-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e` is a primitive
 `e`-th root of unity.  Which primitive root it is, and hence which embedding

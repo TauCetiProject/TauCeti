@@ -25,9 +25,8 @@ belongs to the genuine joint-law disintegration
 `Law(ν, block) = ∫ δ_{ν ω} ⊗ (ν ω)^{⊗m} dμ(ω)` (Kallenberg 2005, §1.1 eq. (2)), which strictly
 strengthens the identity below at a fixed `ν`: for a nondegenerate mixing law an *independent
 copy* of a directing measure also witnesses `MixedIIDWith`, while the family is not
-conditionally i.i.d. given it. Following the roadmap's terminology, a `ν` witnessing only the
-mixture identity is a **mixing representative**; *directing measure* is reserved for the
-conditional predicate's witness.
+conditionally i.i.d. given it. A `ν` witnessing only the mixture identity is called a **mixing
+representative**; *directing measure* is reserved for the conditional predicate's witness.
 
 The index type is arbitrary, matching `ConditionallyIIDWith`: the definition quantifies only over
 injective selections `Fin m → ι`, and nothing in it uses the order structure of `ℕ`. Sequence-level
@@ -43,7 +42,7 @@ The other *consequences* over `ℕ` — `prefixLaw_eq_mixture`,
 representation, and mixing-law uniqueness — remain sequence-level, because those genuinely use
 prefixes, shifts, or `ℕ`-indexed products.
 
-This file adds the Layer 0 mixed-i.i.d. definitions and destructors, together with the Layer 1
+This file adds the mixed-i.i.d. definitions and destructors, together with the
 rectangle-factorization characterization used by the common de Finetti ending. The exchangeability
 implications live in two places, along the same line as above: the sequence-level
 `MixedIIDWith.exchangeable` and `.exchangeableAt`, which conclude the `ℕ`-indexed `Exchangeable`,
@@ -51,11 +50,7 @@ are in `MixedIID/Implications.lean`; the index-generic `MixedIIDWith.exchangeabl
 `MixedIID.exchangeableFamily`, which conclude `ExchangeableFamily`, are in
 `Exchangeability/Family.lean` beside the conditional analogue they mirror.
 
-These declarations follow the roadmap signatures in
-`TauCetiRoadmap/Exchangeability/README.md` and
-`TauCetiRoadmap/Exchangeability/Suggested.lean`, Layer 0, refining the existential
-`MixedIID` of the roadmap into a named-witness relation (`MixedIIDWith`) plus its existential
-wrapper. They are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned at
+These declarations are adapted from the `cameronfreer/exchangeability` sources pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
 -/
 

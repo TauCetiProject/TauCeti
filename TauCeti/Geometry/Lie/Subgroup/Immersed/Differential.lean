@@ -29,6 +29,9 @@ supplies the Hausdorff instance needed by the exponential API.
 * `TauCeti.Lie.ImmersedLieSubgroupData.injective_lieMapToHom`: the differential is injective.
 * `TauCeti.Lie.ImmersedLieSubgroupData.range_lieMapToHom_le`: its range lies in
   `TauCeti.Lie.lieSubalgebraOfSubgroup K`.
+* `TauCeti.Lie.ImmersedLieSubgroupData.range_mfderiv_toHom_one`: in the tangent space at the
+  identity, the range of the differential of the presenting homomorphism is the range of
+  `lieMapToHom`.
 
 * `TauCeti.Lie.ImmersedLieSubgroupData.toHom_lieExp`: exponential naturality.
 * `TauCeti.Lie.ImmersedLieSubgroupData.lieHomOfRangeLe`: the canonical Lie-algebra
@@ -53,7 +56,7 @@ namespace TauCeti.Lie.ImmersedLieSubgroupData
 variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type v} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  {K : Subgroup G} [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
+  {K : Subgroup G}
 
 attribute [local instance] ContMDiffMul.boundarylessManifold
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
@@ -62,7 +65,11 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
   ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.finiteDimensional
   ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
-  ImmersedLieSubgroupData.isManifold ImmersedLieSubgroupData.lieGroup
+  ImmersedLieSubgroupData.lieGroup ImmersedLieSubgroupData.connectedSpace
+
+section Morphism
+
+variable [LieGroup I ∞ G]
 
 /-- The homomorphism presenting an immersed Lie subgroup, packaged as a smooth monoid morphism. -/
 def toContMDiffMonoidMorphism (d : ImmersedLieSubgroupData I K) :
@@ -70,7 +77,6 @@ def toContMDiffMonoidMorphism (d : ImmersedLieSubgroupData I K) :
   toMonoidHom := d.toHom
   contMDiff_toFun := d.contMDiff_toHom
 
-omit [FiniteDimensional ℝ E] [T2Space G] in
 /-- The smooth monoid morphism underlying an immersed presentation is its presenting
 homomorphism. -/
 @[simp]
@@ -78,7 +84,6 @@ theorem toContMDiffMonoidMorphism_apply (d : ImmersedLieSubgroupData I K) (x : d
     d.toContMDiffMonoidMorphism x = d.toHom x :=
   (rfl)
 
-omit [FiniteDimensional ℝ E] [T2Space G] in
 /-- The monoid homomorphism underlying the smooth monoid morphism of an immersed presentation is
 its presenting homomorphism. -/
 @[simp]
@@ -86,31 +91,59 @@ theorem toContMDiffMonoidMorphism_toMonoidHom (d : ImmersedLieSubgroupData I K) 
     d.toContMDiffMonoidMorphism.toMonoidHom = d.toHom :=
   (rfl)
 
+end Morphism
+
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+
 /-- The Lie map induced by the homomorphism presenting an immersed Lie subgroup. -/
 noncomputable def lieMapToHom (d : ImmersedLieSubgroupData I K) :
     LeftInvariantDerivation d.I' d.X →ₗ⁅ℝ⁆ LeftInvariantDerivation I G :=
   lieMap d.toContMDiffMonoidMorphism
 
-omit [T2Space G] in
 /-- The immersed-presentation Lie map is the Lie functor applied to its smooth homomorphism. -/
 @[simp]
 theorem lieMapToHom_apply (d : ImmersedLieSubgroupData I K) (X : LeftInvariantDerivation d.I' d.X) :
     d.lieMapToHom X = lieMap d.toContMDiffMonoidMorphism X :=
   (rfl)
 
-omit [T2Space G] in
 /-- The Lie functor applied to the smooth homomorphism of an immersed presentation is its
 differential `lieMapToHom`. -/
 theorem lieMap_toContMDiffMonoidMorphism (d : ImmersedLieSubgroupData I K) :
     lieMap d.toContMDiffMonoidMorphism = d.lieMapToHom :=
   (rfl)
 
-omit [T2Space G] in
 /-- The Lie map induced by an immersed subgroup presentation is injective. -/
 theorem injective_lieMapToHom (d : ImmersedLieSubgroupData I K) :
     Function.Injective d.lieMapToHom := by
   apply ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective
   exact d.injective_mfderiv_toHom 1
+
+/-- In the tangent space at the identity, the range of the differential of the presenting
+homomorphism is the image of the range of `lieMapToHom`. -/
+theorem range_mfderiv_toHom_one (d : ImmersedLieSubgroupData I K) :
+    LinearMap.range (mfderiv d.I' I d.toHom 1).toLinearMap =
+      (d.lieMapToHom.range.map (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I)
+        (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) (1 : G))).toLieHom).toSubmodule := by
+  let eX := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := d.I') (G := d.X) (n := ∞) (by simp) 1)
+  have hφ : ⇑d.toContMDiffMonoidMorphism = d.toHom := funext d.toContMDiffMonoidMorphism_apply
+  have h (D : LeftInvariantDerivation d.I' d.X) :
+      leftInvariantDerivationLieEquivGroupLieAlgebra
+          (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)) (d.lieMapToHom D) =
+        mfderiv d.I' I d.toHom 1 (eX D) := by
+    rw [lieMapToHom_apply, ← hφ]
+    exact leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.toContMDiffMonoidMorphism D
+  ext v
+  constructor
+  · rintro ⟨w, rfl⟩
+    obtain ⟨D, rfl⟩ := eX.surjective w
+    exact ⟨d.lieMapToHom D, ⟨D, rfl⟩, h D⟩
+  · rintro ⟨_, ⟨D, rfl⟩, rfl⟩
+    exact ⟨eX D, (h D).symm⟩
+
+section AmbientSubalgebra
+
+variable [T2Space G]
 
 /-- The range of the differential of an immersed presentation lies in the ambient Lie subalgebra
 associated to its image subgroup. -/
@@ -127,18 +160,6 @@ theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K
     d.lieMapToHom X ∈ lieSubalgebraOfSubgroup (I := I) K :=
   d.range_lieMapToHom_le ⟨X, rfl⟩
 
-
-section Factorization
-
-variable {L M : Subgroup G}
-
-attribute [local instance] ImmersedLieSubgroupData.group
-  ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
-  ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.finiteDimensional
-  ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
-  ImmersedLieSubgroupData.isManifold ImmersedLieSubgroupData.lieGroup
-  ImmersedLieSubgroupData.connectedSpace
-
 /-- The presenting injection intertwines the Lie-group exponentials. -/
 @[simp]
 theorem toHom_lieExp (d : ImmersedLieSubgroupData I K)
@@ -149,7 +170,12 @@ theorem toHom_lieExp (d : ImmersedLieSubgroupData I K)
   simpa only [toContMDiffMonoidMorphism_apply, lieMap_toContMDiffMonoidMorphism] using
     map_lieExp d.toContMDiffMonoidMorphism X
 
-omit [T2Space G] in
+end AmbientSubalgebra
+
+section Factorization
+
+variable {L M : Subgroup G}
+
 /-- The canonical Lie-algebra factorization for included differential ranges. -/
 noncomputable def lieHomOfRangeLe (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (h : d.lieMapToHom.range ≤ e.lieMapToHom.range) :
@@ -157,7 +183,6 @@ noncomputable def lieHomOfRangeLe (d : ImmersedLieSubgroupData I K)
   (e.lieMapToHom.equivRangeOfInjective e.injective_lieMapToHom).symm.toLieHom.comp
     ((LieSubalgebra.inclusion h).comp d.lieMapToHom.rangeRestrict)
 
-omit [T2Space G] in
 /-- The canonical Lie-algebra factorization commutes with the ambient differentials. -/
 @[simp]
 theorem lieMap_lieHomOfRangeLe_apply (d : ImmersedLieSubgroupData I K)
@@ -172,7 +197,6 @@ theorem lieMap_lieHomOfRangeLe_apply (d : ImmersedLieSubgroupData I K)
     LieEquiv.coe_toLieHom, LieHom.equivRangeOfInjective_apply,
     LieSubalgebra.coe_inclusion, LieHom.rangeRestrict_apply] using hright
 
-omit [T2Space G] in
 /-- The ambient differential diagram determines the canonical Lie-algebra factorization. -/
 theorem eq_lieHomOfRangeLe (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (h : d.lieMapToHom.range ≤ e.lieMapToHom.range)
@@ -184,7 +208,6 @@ theorem eq_lieHomOfRangeLe (d : ImmersedLieSubgroupData I K)
   apply e.injective_lieMapToHom
   simpa only [lieMapToHom_apply, lieMap_lieHomOfRangeLe_apply] using hφ X
 
-omit [T2Space G] in
 /-- Factoring a differential through itself gives the identity Lie homomorphism. -/
 @[simp]
 theorem lieHomOfRangeLe_refl (d : ImmersedLieSubgroupData I K) :
@@ -194,7 +217,6 @@ theorem lieHomOfRangeLe_refl (d : ImmersedLieSubgroupData I K) :
   intro X
   simp only [LieHom.id_apply]
 
-omit [T2Space G] in
 /-- Canonical Lie-algebra factorizations compose according to range inclusion. -/
 @[simp]
 theorem lieHomOfRangeLe_comp (d : ImmersedLieSubgroupData I K)
@@ -207,7 +229,6 @@ theorem lieHomOfRangeLe_comp (d : ImmersedLieSubgroupData I K)
   intro X
   simp only [LieHom.comp_apply, lieMap_lieHomOfRangeLe_apply]
 
-omit [T2Space G] in
 /-- Successive Lie factorizations evaluate as the factorization of the composed inclusion. -/
 @[simp]
 theorem lieHomOfRangeLe_lieHomOfRangeLe (d : ImmersedLieSubgroupData I K)

@@ -81,7 +81,7 @@ theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log
   have he : (fun z ↦ Real.exp (u z + P.natDegree * Real.log ‖z‖)) =ᶠ[cocompact ℂ]
       (fun z ↦ Real.exp (u z) * ‖z‖ ^ P.natDegree) := by
     filter_upwards [hz] with z hz
-    rw [Real.exp_add, Real.exp_nat_mul, Real.exp_log (norm_pos_iff.mpr hz)]
+    rw [Real.exp_add, Real.exp_natCast_mul, Real.exp_log (norm_pos_iff.mpr hz)]
   constructor
   · intro h
     have hh := (Real.continuousAt_log one_ne_zero).tendsto.comp
@@ -102,12 +102,7 @@ theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_norm
   have hz : ∀ᶠ z : ℂ in cocompact ℂ, z ≠ 0 :=
     (isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact
   constructor
-  · intro h
-    have hh := h.norm
-    simp only [norm_one] at hh
-    apply hh.congr'
-    filter_upwards [hz] with z hz
-    simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
+  · exact tendsto_norm_sectionValue_of_tendsto_sectionValue_mul_inv_pow
   · intro h
     rw [tendsto_sectionValue_amplitudeField_mul_inv_phase_iff hP]
     obtain ⟨q, hq, hfactor⟩ := exists_amplitudeField_end_factor hP u

@@ -88,7 +88,11 @@ open PathAlgebra DoubledQuiver Polynomial
 
 universe u w
 
-variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V)
+
+section Finite
+
+variable [Finite V]
 
 /-! ### The corners of a zigzag algebra -/
 
@@ -453,6 +457,8 @@ theorem isSymm_zigzagGradedCartanMatrix : (zigzagGradedCartanMatrix k G).IsSymm 
         fun hji => h hji.symm,
         zigzagGradedCartanMatrix_apply_of_ne_of_not_adj k G hne h]
 
+end Finite
+
 section EvaluationAtZero
 
 variable [DecidableEq V]
@@ -460,7 +466,7 @@ variable [DecidableEq V]
 /-- **At `q = 0` the graded Cartan matrix is the identity matrix.** Only the degree-zero vertex
 idempotents survive this specialization. -/
 @[simp]
-theorem zigzagGradedCartanMatrix_map_eval_zero :
+theorem zigzagGradedCartanMatrix_map_eval_zero [Finite V] :
     (zigzagGradedCartanMatrix k G).map (eval 0) = 1 := by
   ext i j
   rw [Matrix.map_apply, zigzagGradedCartanMatrix_apply_eq_sum, Matrix.one_apply]
@@ -498,7 +504,7 @@ include hns
 
 section Decidable
 
-variable [DecidableEq V] [DecidableRel G.Adj]
+variable [Finite V] [DecidableEq V] [DecidableRel G.Adj]
 
 /-- **The entrywise graded Cartan formula.** The diagonal entries are `1 + q²`, the entries over an
 edge are `q`, and all the others vanish. -/

@@ -59,7 +59,9 @@ is the vanishing of the homology of the short complex `sc'` there
 (`HomologicalComplex.exactAt_iff_isZero_homology_sc'`).
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
-Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`.
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, and exactness of a mapped complex in
+degree `i` reduces to exactness of the mapped short complex `(K.sc i).map F`
+(`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
 -/
@@ -91,7 +93,7 @@ lemma pow_f_succ (m : ℕ) (i : ι) :
 /-- Homological complexes have the coproducts that the underlying category has. They are
 computed degreewise. -/
 instance hasCoproducts [HasCoproducts.{w} C] : HasCoproducts.{w} (HomologicalComplex C c) :=
-  fun _ ↦ inferInstance
+  .mk fun _ ↦ inferInstance
 
 /-! ### The maps onto the cycles -/
 
@@ -237,12 +239,12 @@ lemma epi_toCycles_of_exactAt {i j : ι} [K.HasHomology j]
     K.toCycles_cyclesIsoSc'_hom]
   exact h.epi_toCycles
 
-/-- A morphism of complexes which is an epimorphism in degree `i` induces an epimorphism on the
-cycles in degree `j`, for a relation `i → j`, when its target is exact at `j`. -/
+/-- A morphism of complexes which is an epimorphism in degree `i = c.prev j` induces an
+epimorphism on the cycles in degree `j` when its target is exact at `j`. -/
 lemma epi_cyclesMap_of_exactAt {L : HomologicalComplex C c} (φ : K ⟶ L) {i j : ι}
-    [K.HasHomology j] [L.HasHomology j] (hij : c.Rel i j) [Epi (φ.f i)] (hL : L.ExactAt j) :
+    [K.HasHomology j] [L.HasHomology j] (hij : c.prev j = i) [Epi (φ.f i)] (hL : L.ExactAt j) :
     Epi (cyclesMap φ j) := by
-  have := epi_toCycles_of_exactAt hL (c.prev_eq' hij)
+  have := epi_toCycles_of_exactAt hL hij
   refine epi_of_epi_fac (f := K.toCycles i j) (h := φ.f i ≫ L.toCycles i j) ?_
   simp [← cancel_mono (L.iCycles j)]
 
@@ -480,6 +482,14 @@ lemma quasiIso_of_acyclic {K L : HomologicalComplex C c} (f : K ⟶ L) [∀ i, K
 end HomologicalComplex
 
 namespace CategoryTheory.Functor
+
+/-- An additive functor `F` maps a homological complex `K` to one exact in degree `i` if and only
+if the mapped short complex `(K.sc i).map F` is exact. -/
+theorem mapHomologicalComplex_obj_exactAt_iff {C D ι : Type*} [Category* C] [Category* D]
+    [Preadditive C] [Preadditive D] {c : ComplexShape ι} (F : C ⥤ D) [F.Additive]
+    (K : HomologicalComplex C c) (i : ι) :
+    ((F.mapHomologicalComplex c).obj K).ExactAt i ↔ ((K.sc i).map F).Exact :=
+  Iff.rfl
 
 variable {C : Type*} [Category* C] {D : Type*} [Category* D]
   [Preadditive C] [Preadditive D] [CategoryWithHomology C] [CategoryWithHomology D]

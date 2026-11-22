@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.InteriorAngle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Ray
 import TauCeti.Analysis.Complex.Angle
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
@@ -209,7 +210,7 @@ private theorem normSq_geodesicLine_rayToward_one_sub {A : ℍ} {q : ℍ ⊕ One
   have hQm : Complex.normSq ((Q : ℂ) - m) = r := by
     rw [← hQ]
     exact hg.normSq_geodesicLine_sub hp hq (by rwa [toComplex_inl]) hqm hre' 1
-  have hlt := hg.re_toComplex_lt_iff hgQ hp hq hre'
+  have hlt := hg.re_toComplex_lt_iff hgQ hq hre'
   rw [toComplex_inl, toComplex_inl, coe_re, coe_re] at hlt
   -- `Q ≠ A` are two points of `ℍ` on the same circle, so they have different real parts
   have hAQ : A.re ≠ Q.re := fun h ↦ by
@@ -263,17 +264,21 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     rw [coe_re] at hpq ⊢
     obtain ⟨μ, hμ, h⟩ := exists_vertexAngle_inl_infty_eq hq hpm hqm hpq.ne
     have hμ' : 0 < -μ := neg_pos.2 (neg_of_mul_neg_left hμ (sub_pos.2 hpq).le)
+    have hAm : ‖(A : ℂ) - m‖ = ρ := by rw [Complex.norm_def, hpm, Real.sqrt_sq hρ.le]
     rw [h, ← neg_neg ((μ : ℂ) * _), ← neg_mul, ← Complex.ofReal_neg, ← Complex.real_smul,
       InnerProductGeometry.angle_neg_right, InnerProductGeometry.angle_smul_right_of_pos _ _ hμ',
-      Complex.angle_self_mul_right Complex.I_ne_zero,
-      Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hpm]
-    simp
-  · -- an ideal left vertex is the left endpoint `m - ρ` of the semicircle
+      Complex.angle_self_mul_right Complex.I_ne_zero]
+    simp [hAm]
+  · -- an ideal left vertex is a real point `m ± ρ` of the semicircle; it is the left endpoint
+    -- `m - ρ`, since it lies to the left of `q`, whose real part is at most `m + ρ`
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
     rw [toComplex_inr_coe] at hpm hpq ⊢
-    rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero,
-      Complex.eq_sub_of_normSq_eq_of_lt_re hρ.le hpm hqm hpq, sub_sub_cancel_left, neg_div,
-      div_self hρ.ne', Real.arccos_neg_one]
+    have hx := x.mem_sphere_of_normSq_sub_eq hρ.le hpm
+    simp only [Real.sphere_eq_pair m hρ.le, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
+    have hxρ := hpq.trans_le (Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hqm.le).2
+    simp only [Complex.ofReal_re] at hxρ
+    have hxe : x = m - ρ := hx.resolve_right hxρ.ne
+    simp [vertexAngle_inr, hxe, hρ.ne']
 
 /-- **The angle at the right vertex of a triangle with an ideal vertex at `∞`.** If `p` and `q`
 lie on the semicircle of centre `m` and radius `ρ` (or are among its ideal endpoints), with `p` to
@@ -288,16 +293,21 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
   · rw [toComplex_inl] at hqm hpq ⊢
     rw [coe_re] at hpq ⊢
     obtain ⟨μ, hμ, h⟩ := exists_vertexAngle_inl_infty_eq hp hqm hpm hpq.ne'
+    have hBm : ‖(B : ℂ) - m‖ = ρ := by rw [Complex.norm_def, hqm, Real.sqrt_sq hρ.le]
     rw [h, ← Complex.real_smul, InnerProductGeometry.angle_smul_right_of_pos _ _
         (pos_of_mul_neg_left hμ (sub_neg.2 hpq).le),
-      Complex.angle_self_mul_right Complex.I_ne_zero,
-      Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hqm]
-    simp
-  · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle
+      Complex.angle_self_mul_right Complex.I_ne_zero]
+    simp [hBm]
+  · -- an ideal right vertex is a real point `m ± ρ` of the semicircle; it is the right endpoint
+    -- `m + ρ`, since it lies to the right of `p`, whose real part is at least `m - ρ`
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
     rw [toComplex_inr_coe] at hqm hpq ⊢
-    rw [Complex.ofReal_re, vertexAngle_inr, Complex.eq_add_of_normSq_eq_of_re_lt hρ.le hqm hpm hpq,
-      add_sub_cancel_left, div_self hρ.ne', Real.arccos_one]
+    have hx := x.mem_sphere_of_normSq_sub_eq hρ.le hqm
+    simp only [Real.sphere_eq_pair m hρ.le, Set.mem_insert_iff, Set.mem_singleton_iff] at hx
+    have hxρ := (Complex.re_mem_Icc_of_normSq_sub_le _ hρ.le hpm.le).1.trans_lt hpq
+    simp only [Complex.ofReal_re] at hxρ
+    have hxe : x = m + ρ := hx.resolve_left hxρ.ne'
+    simp [vertexAngle_inr, hxe, hρ.ne']
 
 /-- **An angle split by the upward vertical.** Let `A ∈ ℍ` lie on two semicircles, of centres
 `m₁`, `m₂` and radii `ρ₁`, `ρ₂`; let `p` lie on the first, to the left of `A`, and `q` on the
@@ -305,7 +315,6 @@ second, to the right of `A` (each possibly an ideal endpoint), with `p` strictly
 second semicircle. Then the angle at `A` between the directions to `p` and `q` is the sum of the
 angles they make with the upward vertical through `A`. -/
 theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ} {m₁ ρ₁ m₂ ρ₂ : ℝ}
-    (hp : p ≠ .inr ∞) (hq : q ≠ .inr ∞)
     (hA₁ : Complex.normSq ((A : ℂ) - m₁) = ρ₁ ^ 2)
     (hp₁ : Complex.normSq (toComplex p - m₁) = ρ₁ ^ 2)
     (hA₂ : Complex.normSq ((A : ℂ) - m₂) = ρ₂ ^ 2)
@@ -314,6 +323,11 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
     (hp₂ : ρ₂ ^ 2 < Complex.normSq (toComplex p - m₂)) :
     vertexAngle (.inl A) p q =
       vertexAngle (.inl A) p (.inr ∞) + vertexAngle (.inl A) (.inr ∞) q := by
+  -- an ideal vertex `∞` among `p`, `q` makes one of the two summands vanish
+  rcases eq_or_ne p (.inr ∞) with rfl | hp
+  · rw [vertexAngle_self, zero_add]
+  rcases eq_or_ne q (.inr ∞) with rfl | hq
+  · rw [vertexAngle_self, add_zero]
   -- the angles at `A` are interior angles towards the points `B`, `C`, `D` at parameter `1` of
   -- the rays towards `q`, `∞` and `p`
   obtain ⟨hBm, hB⟩ := normSq_geodesicLine_rayToward_one_sub hq hA₂ hq₂ hAq.ne
@@ -345,7 +359,8 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
     rw [hCre, hCim, ← hA₂]
     linarith [mul_lt_mul'' h₁ h₁ A.im_pos.le A.im_pos.le]
   · -- `D` is on the first circle, to the left of `A`, like `p`
-    exact Complex.lt_normSq_sub_of_normSq_eq hA₁ hA₂ hp₁ hp₂ hDm hpA (by rwa [coe_re])
+    exact Complex.lt_normSq_sub_of_le_normSq_sub_of_sub_lt_sub _ (by linarith) (by linarith)
+      hDm.ge hpA (by rwa [coe_re])
   · rw [← hgC, mem_leftHalfPlane_iff, re_toPoint_inv_smul]
     exact div_neg_of_neg_of_pos (sub_neg.2 hDA) A.im_pos
 

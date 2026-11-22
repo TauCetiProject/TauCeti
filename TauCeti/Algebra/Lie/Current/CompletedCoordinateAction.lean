@@ -143,7 +143,7 @@ theorem limπ_coordinateCompletedEnvelopingAut (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧
         orderLeftIdeal Φ hΦ hΦs a m :=
     fun m ↦ ⟨m, coordinateEnvelopingAut_envelopingι_mem Φ hΦ hΦs a σ m⟩
   -- The lift of `σ` is by definition the extension `completedEnvelopingEquiv` of its lift to `U`.
-  (congrArg _ (AlgHom.congr_fun (completedEnvelopingEquiv_toAlgHom _ _ _ hg) x)).trans
+  (congrArg _ (AlgHom.congr_fun (completedEnvelopingEquiv_toAlgHom _ _ _) x)).trans
     (limπ_completedEnvelopingMap _ hg (coordinateEnvelopingAut_envelopingι_mem Φ hΦ hΦs a σ n) hy)
 
 theorem continuous_coordinateCompletedEnvelopingAut (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) :

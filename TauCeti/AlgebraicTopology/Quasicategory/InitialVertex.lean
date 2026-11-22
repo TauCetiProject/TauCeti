@@ -18,6 +18,9 @@ vertices of every simplex. This is the definition of an initial object of a quas
 Higher Topos Theory, and colimits of diagrams in a quasicategory are the initial vertices of its
 coslices.
 
+Equivalently, every simplex boundary whose first vertex is `x` extends to a simplex
+(`SSet.isInitialVertex_iff`). This criterion uses reversal of simplex boundaries.
+
 Through the identification of the edges and `2`-simplices of `Xᵒᵖ` with those of `X`
 (`SSet.Edge.opEquiv`, `SSet.Edge.CompStruct.opEquiv`), the properties of terminal vertices give
 an edge from an initial vertex to every vertex (`SSet.IsInitialVertex.nonempty_edge`), a
@@ -28,7 +31,8 @@ equivalence. Conversely, terminal vertices of `X` are the initial vertices of `X
 (`SSet.isInitialVertex_op_iff`). Since the nerve of `Cᵒᵖ` is the opposite of the nerve of `C`
 (`CategoryTheory.nerve.opIso`), a vertex of the nerve of a category is initial exactly when it is
 an initial object (`CategoryTheory.nerve.isInitialVertex_iff`), and the first vertex of `Δ[n]` is
-initial (`SSet.stdSimplex.isInitialVertex_zero`).
+initial (`SSet.stdSimplex.isInitialVertex_zero`). Every vertex of a terminal simplicial set, such
+as `Δ[0]`, is initial (`SSet.isInitialVertex_of_isTerminal`).
 
 ## References
 
@@ -59,6 +63,38 @@ lemma isInitialVertex_iff_isTerminalVertex_op (x : X _⦋0⦌) :
 lemma isInitialVertex_op_iff (x : X _⦋0⦌) :
     X.op.IsInitialVertex (X.opObjEquiv.symm x) ↔ X.IsTerminalVertex x :=
   isTerminalVertex_iff_of_iso (opFunctorCompOpFunctorIso.app X).symm x
+
+/-- A vertex is initial exactly when every simplex boundary starting at that vertex extends
+across the simplex. The condition uses the first vertex of the boundary. -/
+lemma isInitialVertex_iff (x : X _⦋0⦌) :
+    X.IsInitialVertex x ↔ ∀ ⦃n : ℕ⦄ (σ₀ : (∂Δ[n + 1] : SSet) ⟶ X),
+      σ₀.app _ (boundary.vertex n 0) = x →
+        ∃ σ : Δ[n + 1] ⟶ X, σ₀ = ∂Δ[n + 1].ι ≫ σ := by
+  constructor
+  · intro hx n σ₀ hσ₀
+    rw [isInitialVertex_iff_isTerminalVertex_op, isTerminalVertex_iff] at hx
+    let τ₀ := (boundary.opIso (n + 1)).inv ≫ opFunctor.map σ₀
+    obtain ⟨τ, hτ⟩ := hx τ₀ (by
+      rw [yonedaEquiv_comp, ← NatTrans.naturality_apply, boundary.map_const_yonedaEquiv_ι]
+      simp only [τ₀, NatTrans.comp_app, ConcreteCategory.comp_apply]
+      simp [opFunctor_map, hσ₀])
+    exact (boundary.exists_extension_iff_op σ₀).2 ⟨τ, hτ⟩
+  · intro hx
+    rw [isInitialVertex_iff_isTerminalVertex_op, isTerminalVertex_iff]
+    intro n σ₀ hσ₀
+    let τ₀ := (boundary.opIso (n + 1)).inv ≫ opFunctor.map σ₀ ≫
+      opFunctorCompOpFunctorIso.hom.app X
+    have hlast : σ₀.app _ (boundary.vertex n (Fin.last (n + 1))) = opObjEquiv.symm x := by
+      rw [yonedaEquiv_comp, ← NatTrans.naturality_apply, boundary.map_const_yonedaEquiv_ι]
+        at hσ₀
+      simpa using hσ₀
+    obtain ⟨τ, hτ⟩ := hx τ₀ (by
+      simp only [τ₀, NatTrans.comp_app, ConcreteCategory.comp_apply]
+      simp [opFunctor_map, hlast])
+    apply (boundary.exists_extension_iff_op σ₀).2
+    refine ⟨τ ≫ opFunctorCompOpFunctorIso.inv.app X, ?_⟩
+    rw [← Category.assoc, ← hτ]
+    simp [τ₀]
 
 namespace IsInitialVertex
 
@@ -94,6 +130,10 @@ end IsInitialVertex
 lemma isInitialVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
     Y.IsInitialVertex (e.hom.app _ x) ↔ X.IsInitialVertex x :=
   isTerminalVertex_iff_of_iso (opFunctor.mapIso e) _
+
+/-- Every vertex of a terminal simplicial set, such as `Δ[0]`, is initial. -/
+lemma isInitialVertex_of_isTerminal (hX : IsTerminal X) (x : X _⦋0⦌) : X.IsInitialVertex x :=
+  (isInitialVertex_iff x).2 fun _ _ _ ↦ ⟨hX.from _, hX.hom_ext _ _⟩
 
 end SSet
 

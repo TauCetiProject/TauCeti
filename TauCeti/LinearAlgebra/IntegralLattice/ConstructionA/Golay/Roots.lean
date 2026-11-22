@@ -88,7 +88,7 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
       exact_mod_cast hq
     have hw : hammingNorm (fun i ↦ (z i : ZMod 2)) ∈
         ({0, 8, 12, 16, 24} : Finset ℕ) := hammingNorm_mem hz
-    have hle := hammingNorm_intCast_le_sum_sq z
+    have hle := hammingNorm_intCast_le_sum_sq (ZMod 2) z
     simp only [mem_insert, mem_singleton] at hw
     have hzero : hammingNorm (fun i ↦ (z i : ZMod 2)) = 0 := by omega
     have hcast := hammingNorm_eq_zero.mp hzero
@@ -100,7 +100,7 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
         simp_rw [hw, mul_pow]
         simp [mul_sum]
       omega
-    obtain ⟨i, hi⟩ := exists_eq_single_or_neg_single_of_sum_sq_eq_one w hsumw
+    obtain ⟨i, hi⟩ := sum_sq_eq_one_iff.mp hsumw
     refine ⟨i, hi.imp (fun h ↦ ?_) (fun h ↦ ?_)⟩ <;>
       funext j <;> by_cases hj : j = i
     · subst j
@@ -118,7 +118,7 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
 theorem mem_vectorsOfNorm_two_iff (x : constructionALattice) :
     x ∈ constructionALattice.vectorsOfNorm 2 ↔
       ∃ i : Fin 24, x = coordinateRoot i ∨ x = -coordinateRoot i := by
-  rw [IntegralLattice.mem_vectorsOfNorm, norm_eq_two_iff x.2]
+  rw [IntegralLattice.mem_vectorsOfNorm, norm_eq_two_iff x.property]
   simp only [← coe_coordinateRoot, ← Submodule.coe_neg, Subtype.ext_iff]
 
 /-- The roots generate exactly the zero-code sublattice `2 ℤ²⁴`. Thus the root lattice has
@@ -196,7 +196,7 @@ noncomputable def rootsEquiv :
     constructor
     · rintro ⟨i, b⟩ ⟨j, c⟩ h
       have hi := congrArg (fun x : constructionALattice.vectorsOfNorm 2 ↦
-        (x.1 : Fin 24 → ℚ) i) h
+        (x.val : Fin 24 → ℚ) i) h
       have hij : i = j := by
         by_contra hij
         cases b <;> cases c <;>
@@ -220,7 +220,7 @@ noncomputable def rootsEquiv :
 /-- The explicit root indexing recovers the chosen signed coordinate root. -/
 @[simp]
 theorem rootsEquiv_apply (i : Fin 24) (b : Bool) :
-    (rootsEquiv (i, b)).1 = if b then -coordinateRoot i else coordinateRoot i := by
+    (rootsEquiv (i, b)).val = if b then -coordinateRoot i else coordinateRoot i := by
   rw [rootsEquiv]
   rfl
 

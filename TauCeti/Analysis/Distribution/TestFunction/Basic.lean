@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 
 /-!
-# Components of vector-valued test functions in a basis
+# Basic facts about test functions
+
+A test function on `Ω` supported in an open set `Ω' ≤ Ω` is the extension by zero
+(`TestFunction.monoCLM`) of a test function on `Ω'`.
 
 Let `F` be a finite-dimensional real normed space with a basis `(bᵢ)`. An `F`-valued test
 function `φ` has the real-valued components `bᵢ* ∘ φ`, obtained by postcomposition with the
@@ -16,12 +19,20 @@ coordinate functionals of the basis, and is recovered from them as `φ = ∑ᵢ 
 Conversely, for a real test function `ψ` and a vector `v : F`, any continuous linear functional
 `f` on `F` sends the test function `ψ • v` to the multiple `f v • ψ`; in particular the components
 of `ψ • v` are the multiples `b.repr v i • ψ`. These identities reduce statements about
-`F`-valued test functions to statements about real-valued ones.
+`F`-valued test functions to statements about real-valued ones. Pointwise complex conjugation,
+postcomposition with `Complex.conjCLE`, is an involution on complex test functions. On an
+infinite-dimensional space every test function is zero (Riesz).
 
 ## Main declarations
 
+* `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
+  open set is the extension by zero of a test function on that set.
+* `TestFunction.eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space every test
+  function is zero.
 * `TestFunction.postcompCLM_postcompCLM`: postcomposing with `L₁` and then with `L₂` is
   postcomposing with `L₂ ∘L L₁`.
+* `TestFunction.postcompCLM_conj_postcompCLM_conj`: conjugating a complex test function twice
+  gives it back.
 * `TestFunction.sum_postcompCLM_toSpanSingleton_coord`: an `F`-valued test function is the sum
   of its components in a basis, times the basis vectors.
 * `TestFunction.postcompCLM_postcompCLM_toSpanSingleton`: a continuous linear functional applied
@@ -45,6 +56,20 @@ theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
   simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
     ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
 
+/-- A test function on `Ω` supported in an open set `Ω' ≤ Ω` is the extension by zero of a test
+function on `Ω'`. -/
+theorem exists_monoCLM_eq_of_tsupport_subset {Ω' : Opens E} (h : Ω' ≤ Ω) {φ : 𝓓^{n}(Ω, F)}
+    (hφ : tsupport φ ⊆ Ω') : ∃ ψ : 𝓓^{n}(Ω', F), monoCLM ℝ ψ = φ :=
+  ⟨⟨φ, φ.contDiff, φ.hasCompactSupport, hφ⟩, TestFunction.ext fun x ↦ by simp [h]⟩
+
+/-- On an infinite-dimensional space every test function is zero: a nonzero continuous function
+with compact support forces finite dimension (Riesz,
+`HasCompactSupport.eq_zero_or_finiteDimensional`). -/
+theorem eq_zero_of_not_finiteDimensional (φ : 𝓓^{n}(Ω, F)) (hE : ¬FiniteDimensional ℝ E) :
+    φ = 0 :=
+  DFunLike.coe_injective <|
+    (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous).resolve_right hE
+
 /-- Postcomposing a test function with `L₁` and then with `L₂` is postcomposing it with
 `L₂ ∘L L₁`. Unlike `SchwartzMap.postcompCLM_postcompCLM`, this is not a simp lemma: it would merge
 the factors of the basis expansion in `sum_postcompCLM_toSpanSingleton_coord` into composites such
@@ -56,6 +81,14 @@ theorem postcompCLM_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 𝕜] [A
     (φ : 𝓓^{n}(Ω, F)) :
     postcompCLM L₂ (postcompCLM L₁ φ) = postcompCLM (L₂ ∘L L₁) φ :=
   rfl
+
+/-- Conjugating a complex test function twice gives it back. -/
+@[simp]
+theorem postcompCLM_conj_postcompCLM_conj (φ : 𝓓^{n}(Ω, ℂ)) :
+    postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
+      (postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap φ) = φ := by
+  ext y
+  simp
 
 /-- An `F`-valued test function `φ` is the sum of its components `bᵢ* ∘ φ` in a basis `b` of `F`,
 each multiplied by the corresponding basis vector `bᵢ`. -/

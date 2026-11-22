@@ -193,7 +193,7 @@ theorem isCompl_complexGradedF (h : IsHodgeBigrading hℚ hℂ WQ F I) (k p : �
       ((G q ⊓ W k).submoduleOf (W k)).map ((W (k - 1)).submoduleOf (W k)).mkQ := by
     ext x
     rw [mem_complexGradedF_iff]
-    exact ⟨fun ⟨y, hy, hyx⟩ ↦ ⟨y, ⟨hy, y.2⟩, hyx⟩, fun ⟨y, hy, hyx⟩ ↦ ⟨y, hy.1, hyx⟩⟩
+    exact ⟨fun ⟨y, hy, hyx⟩ ↦ ⟨y, ⟨hy, y.property⟩, hyx⟩, fun ⟨y, hy, hyx⟩ ↦ ⟨y, hy.1, hyx⟩⟩
   rw [hdef, hdef, Submodule.isCompl_map_mkQ_iff,
     ← Submodule.map_le_map_iff_of_injective (W k).injective_subtype,
     ← (Submodule.map_injective_of_injective (W k).injective_subtype).eq_iff]
@@ -316,17 +316,19 @@ theorem ofIsHodgeBigrading_deligneSplittingFamily (mhs : MixedHodgeStructure h�
 
 /-- **A pair of bounded filtrations is a mixed Hodge structure exactly when it admits a Hodge
 bigrading.** Precisely: the purity axiom holds for a bounded increasing rational weight filtration
-and a bounded decreasing Hodge filtration if and only if the two filtrations have a Hodge
-bigrading. -/
+and a decreasing Hodge filtration that is the whole space at some step if and only if the two
+filtrations have a Hodge bigrading. That the Hodge filtration is zero at some step follows from the
+purity axiom. -/
 theorem exists_isHodgeBigrading_iff (hWQ : Monotone WQ) (hW_top : ∃ k, WQ k = ⊤)
-    (hW_bot : ∃ k, WQ k = ⊥) (hF_anti : Antitone F) (hF_top : ∃ p, F p = ⊤)
-    (hF_bot : ∃ p, F p = ⊥) :
+    (hW_bot : ∃ k, WQ k = ⊥) (hF_anti : Antitone F) (hF_top : ∃ p, F p = ⊤) :
     (∃ I, IsHodgeBigrading hℚ hℂ WQ F I) ↔
       ∀ k, ∃ hs : HodgeStructure (isBaseChange_ratTensorMap ℂ (weightGradedRat WQ k)) k,
         hs.F = gradedF hℚ hℂ WQ hWQ F k :=
   ⟨fun ⟨_, h⟩ ↦ h.exists_hodgeStructure_F_eq_gradedF hF_top, fun hpure ↦
     ⟨_, isHodgeBigrading_deligneSplittingFamily ⟨WQ, hWQ, hW_top, hW_bot, F, hF_anti, hF_top,
-      hF_bot, hpure⟩⟩⟩
+      exists_eq_bot_of_forall_gradedF_eq_bot hℚ hℂ WQ hWQ F hF_anti hW_top hW_bot fun k ↦
+        let ⟨hs, hsF⟩ := hpure k
+        hsF ▸ hs.F_bot, hpure⟩⟩⟩
 
 end MixedHodgeStructure
 

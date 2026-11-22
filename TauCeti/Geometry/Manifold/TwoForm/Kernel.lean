@@ -109,17 +109,17 @@ private theorem contMDiffOn_trivBilin {n : ℕ∞ω} [ENat.LEInfty n] [IsManifol
       fin_cases i
       exacts [Manifold.contMDiffOn_symm_baseSet u, Manifold.contMDiffOn_symm_baseSet w]
   have heq (z : M) (hz : z ∈ e.baseSet) :
-      trivBilin σ x₀ z u w = σ.1 z ![e.symm z u, e.symm z w] := by
+      trivBilin σ x₀ z u w = σ.val z ![e.symm z u, e.symm z w] := by
     rw [trivBilin_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, e.symmL_apply hz,
       e.symmL_apply hz]
   have hfun (z : M) : (fun i ↦ ![fun y ↦ e.symm y u, fun y ↦ e.symm y w] i z) =
       ![e.symm z u, e.symm z w] := by
     funext i
     fin_cases i <;> rfl
-  have h := (contMDiffWithinAt_totalSpace.mp (hv y hy)).2
+  have h := (contMDiffWithinAt_totalSpace_iff.mp (hv y hy)).2
   simp only [hfun] at h
   exact (by simpa using h : ContMDiffWithinAt I 𝓘(ℝ, ℝ) n
-    (fun z ↦ σ.1 z ![e.symm z u, e.symm z w]) e.baseSet y).congr heq (heq y hy)
+    (fun z ↦ σ.val z ![e.symm z u, e.symm z w]) e.baseSet y).congr heq (heq y hy)
 
 /-- Over the base set of the trivialization, the kernel of `σ_y` corresponds to the kernel of its
 coordinate operator. -/
@@ -170,7 +170,7 @@ theorem isContMDiffDistribution_ker_bilinFormAt [FiniteDimensional ℝ E] {n : �
   refine ⟨W, hW, hx₀W, fun i y ↦ e.symm y (v i y), ⟨fun i y hy ↦ ?_, fun {y} hy ↦ ?_,
     fun {y} hy ↦ ?_⟩⟩
   · -- In `e`, the coordinates of the frame are the smooth maps `v i`.
-    refine (Trivialization.contMDiffWithinAt_section (e := e) W (hWe hy)).2 ?_
+    refine (Trivialization.contMDiffWithinAt_section_iff (e := e) W (hWe hy)).2 ?_
     exact (hv i y hy).congr (fun z hz ↦ by simp only [e.apply_mk_symm (hWe hz)])
       (by simp only [e.apply_mk_symm (hWe hy)])
   · rw [hsymm hy]
@@ -205,11 +205,11 @@ theorem isInvolutiveDistribution_ker_bilinFormAt [IsManifold I 2 M] (σ : Smooth
     ext v
     simp [mvfderiv, hf'.mfderiv_eq]
   have hker {X : (y : M) → TangentSpace I y} (hX : ∀ y ∈ U, X y ∈ LinearMap.ker (σ.bilinFormAt y))
-      {y : M} (hy : y ∈ U) (u : TangentSpace I y) : σ.1 y ![X y, u] = 0 := by
+      {y : M} (hy : y ∈ U) (u : TangentSpace I y) : σ.val y ![X y, u] = 0 := by
     simpa using congr($(LinearMap.mem_ker.mp (hX y hy)) u)
   have hker' {X : (y : M) → TangentSpace I y}
       (hX : ∀ y ∈ U, X y ∈ LinearMap.ker (σ.bilinFormAt y)) {y : M} (hy : y ∈ U)
-      (u : TangentSpace I y) : σ.1 y ![u, X y] = 0 := by
+      (u : TangentSpace I y) : σ.val y ![u, X y] = 0 := by
     have h := SmoothBundleForm.eval₂_swap σ y u (X y)
     simp only [SmoothBundleForm.eval₂_apply] at h
     rw [h, hker hX hy, neg_zero]

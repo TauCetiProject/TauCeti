@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
 
 /-!
 # The homotopy formula for currents
@@ -260,9 +261,9 @@ theorem homotopyPullbackCLM_apply_of_mem (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→
           (F := E') (G := F) (ι := Fin (k + 1)) 0).continuous.continuousAt.comp hD).clm_apply hω
       have hc : Continuous fun α : (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F ↦
           (α.curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) :=
-        (compContinuousLinearMapCLM (.inl ℝ E ℝ)).continuous.comp
-          ((curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := F) (n := k)).toContinuousLinearMap.flip
-            (0, 1)).continuous
+        ((compContinuousLinearMapCLM (.inl ℝ E ℝ)).continuous.comp
+          (curryLeftFlipL (𝕜 := ℝ) (F := F) (n := k) ((0, 1) : E × ℝ)).continuous).congr
+            fun α ↦ by simp
       exact (hc.continuousAt.comp hP).continuousWithinAt
     · rintro _ ⟨t, -, rfl⟩
       exact ⟨Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩
@@ -292,7 +293,7 @@ theorem tsupport_homotopyPullbackCLM_subset (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]
   refine (cylinderHomotopy_congr fun t ht ↦ ?_).trans (congrFun cylinderHomotopy_zero x)
   rw [image_eq_zero_of_notMem_tsupport fun h ↦ hxS ⟨(x, t), ⟨⟨hxΩ, ht⟩, h⟩, rfl⟩,
     Pi.zero_apply]
-  ext v
+  ext _
   simp
 
 /-- **Agreement with the pushforward of the product current**: if `H` is smooth and proper on an
@@ -341,7 +342,7 @@ private theorem pullbackCLM_prodMk_left_cutoffPullback {t : ℝ} (ht : t = 0 ∨
     ext v
     simp [reparam, hσ, Function.comp_def]
   · rw [pullbackCLM_apply_of_notMem _ hx, cutoffPullback_apply_of_notMem hHp ω hx]
-    ext v
+    ext _
     simp
 
 /-- Along `Ω × [0, 1]`, where the cutoff is one, the cut-off pullback commutes with `d`; so the

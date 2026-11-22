@@ -73,13 +73,22 @@ namespace TauCeti.Probability
 In zero-based column `j`, the number `k = p - 1 - j` is both the number of coordinates in that
 column and the index of the corresponding factor in `lkjNormalizer`. -/
 def lkjPartialCorrelationShape (p : ℕ) (η : ℝ) (ij : strictLowerTriangle p) : ℝ :=
-  η + (((p - 1 - ij.1.2.val : ℕ) : ℝ) - 1) / 2
+  η + (((p - 1 - ij.val.2.val : ℕ) : ℝ) - 1) / 2
 
 /-- The formula for the symmetric-beta shape of a partial-correlation coordinate. -/
 theorem lkjPartialCorrelationShape_def (p : ℕ) (η : ℝ) (ij : strictLowerTriangle p) :
     lkjPartialCorrelationShape p η ij =
-      η + (((p - 1 - ij.1.2.val : ℕ) : ℝ) - 1) / 2 := by
+      η + (((p - 1 - ij.val.2.val : ℕ) : ℝ) - 1) / 2 := by
   rfl
+
+/-- The shape of a partial-correlation coordinate in zero-based column `j` is
+`η + (p - j - 2) / 2`, with the dimension and column cast to the reals before subtraction. -/
+theorem lkjPartialCorrelationShape_eq (p : ℕ) (η : ℝ) (ij : strictLowerTriangle p) :
+    lkjPartialCorrelationShape p η ij = η + ((p : ℝ) - ij.val.2.val - 2) / 2 := by
+  have hcol : ij.val.2.val + 1 < p := by omega
+  rw [lkjPartialCorrelationShape_def, Nat.cast_sub (by omega), Nat.cast_sub (by omega)]
+  push_cast
+  ring
 
 /-- The product of the unnormalized symmetric-beta kernels in partial-correlation coordinates.
 
@@ -99,10 +108,10 @@ theorem lkjPartialCorrelationKernel_def (p : ℕ) (η : ℝ)
 /-- Every partial-correlation shape is positive when the LKJ shape parameter is positive. -/
 theorem lkjPartialCorrelationShape_pos {p : ℕ} {η : ℝ} (hη : 0 < η)
     (ij : strictLowerTriangle p) : 0 < lkjPartialCorrelationShape p η ij := by
-  have hcol : ij.1.2.val + 1 < p := by omega
-  have hk : 1 ≤ p - 1 - ij.1.2.val := by omega
+  have hcol : ij.val.2.val + 1 < p := by omega
+  have hk : 1 ≤ p - 1 - ij.val.2.val := by omega
   unfold lkjPartialCorrelationShape
-  have hk' : (1 : ℝ) ≤ (p - 1 - ij.1.2.val : ℕ) := by exact_mod_cast hk
+  have hk' : (1 : ℝ) ≤ (p - 1 - ij.val.2.val : ℕ) := by exact_mod_cast hk
   positivity
 
 /-- The LKJ partial-correlation kernel is nonnegative on the open coordinate cube. -/
@@ -133,7 +142,7 @@ theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
       lkjNormalizer p η := by
   unfold lkjPartialCorrelationShape
   rw [← Fintype.prod_fiberwise'
-    (fun ij : strictLowerTriangle p ↦ ij.1.2)
+    (fun ij : strictLowerTriangle p ↦ ij.val.2)
     (fun j : Fin p ↦ beta (1 / 2)
       (η + (((p - 1 - j.val : ℕ) : ℝ) - 1) / 2))]
   simp_rw [Finset.prod_const, Finset.card_univ, card_strictLowerTriangle_column]
@@ -177,7 +186,7 @@ partial-correlation kernel: both factor into one-dimensional powers of the resid
 `1 - z ij ^ 2`. -/
 theorem prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
-    (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
+    (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.val.2.val - 2)) •
         (correlationMatrix p (correlationCoordinatesOfPartialCorrelation z) :
           Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) =
       lkjPartialCorrelationKernel p η z := by
@@ -188,11 +197,11 @@ theorem prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel
     ← Real.finsetProd_rpow _ _ (fun ij _ ↦ (hpos ij).le), smul_eq_mul, ← Finset.prod_mul_distrib,
     lkjPartialCorrelationKernel_def]
   refine Finset.prod_congr rfl fun ij _ ↦ ?_
-  have hcol : ij.1.2.val + 1 < p := by omega
+  have hcol : ij.val.2.val + 1 < p := by omega
   rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (hpos ij).le,
     ← Real.rpow_add (hpos ij), lkjPartialCorrelationShape_def,
-    show p - ij.1.2.1 - 2 = p - 1 - ij.1.2.1 - 1 by omega,
-    Nat.cast_sub (show 1 ≤ p - 1 - ij.1.2.1 by omega), Nat.cast_one]
+    show p - ij.val.2.val - 2 = p - 1 - ij.val.2.val - 1 by omega,
+    Nat.cast_sub (show 1 ≤ p - 1 - ij.val.2.val by omega), Nat.cast_one]
   congr 1
   ring
 

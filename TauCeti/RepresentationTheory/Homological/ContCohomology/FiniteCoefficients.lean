@@ -140,7 +140,7 @@ theorem resolutionMap_isInducing (hι : IsInducing ι.hom) :
       ⟨_, map_continuous (resolutionMap (ContinuousMonoidHom.id G) ι n).hom⟩
       (resolutionMap_isInducing hι n)
 
-variable [DiscreteTopology X.V] [DiscreteTopology Y.V]
+variable [DiscreteTopology X.V]
 
 /-- An element of the coinduced resolution of `X` all of whose values lie in the range of an
 injective morphism `ι : Y ⟶ X` comes from the coinduced resolution of `Y`. -/
@@ -149,6 +149,8 @@ theorem exists_resolutionMap_eq_of_resolutionValues_subset (hι : Function.Injec
       ∃ y : (resolutionX Y n).V, (resolutionMap (ContinuousMonoidHom.id G) ι n).hom y = x
   | 0, x, hx => hx rfl
   | n + 1, F, hF => by
+    -- an injective continuous map into a discrete space has discrete domain
+    have : DiscreteTopology Y.V := .of_continuous_injective (map_continuous ι.hom) hι
     -- lift each value `F g` separately, then check that the lifts vary continuously
     have h : ∀ g : G, ∃ y : (resolutionX Y n).V,
         (resolutionMap (ContinuousMonoidHom.id G) ι n).hom y =
@@ -173,14 +175,15 @@ of whose values lie in the range of an injective morphism `ι : Y ⟶ X` is the 
 homogeneous cochain of `Y` under the induced cochain map. -/
 theorem exists_cochainsMap_f_eq_of_resolutionValues_subset (hι : Function.Injective ι.hom) (n : ℕ)
     (c : (homogeneousCochains X).X n)
-    (hc : resolutionValues X (n + 1) c.1 ⊆ Set.range ι.hom) :
+    (hc : resolutionValues X (n + 1) c.val ⊆ Set.range ι.hom) :
     ∃ c' : (homogeneousCochains Y).X n, (cochainsMap (ContinuousMonoidHom.id G) ι).f n c' = c := by
-  obtain ⟨y, hy⟩ := exists_resolutionMap_eq_of_resolutionValues_subset ι hι (n + 1) c.1 hc
+  have : DiscreteTopology Y.V := .of_continuous_injective (map_continuous ι.hom) hι
+  obtain ⟨y, hy⟩ := exists_resolutionMap_eq_of_resolutionValues_subset ι hι (n + 1) c.val hc
   -- `y` is invariant because its image `c.1` is and the map is injective and equivariant
   have hyinv : y ∈ (resolutionX Y (n + 1)).ρ.invariants := fun g ↦
     resolutionMap_injective (ContinuousMonoidHom.id G) ι Function.surjective_id hι (n + 1) <|
       (TopRep.hom_comm_apply (resolutionMap (X := Y) (ContinuousMonoidHom.id G) ι (n + 1))
-        g y).trans (by rw [hy]; exact c.2 g)
+        g y).trans (by rw [hy]; exact c.property g)
   exact ⟨⟨y, hyinv⟩, Subtype.ext hy⟩
 
 end Lift
@@ -200,7 +203,7 @@ theorem exists_finite_forall_mem_range_coeffMap (n : ℕ) (x : continuousCohomol
       Function.Injective ι.hom → S ⊆ Set.range ι.hom → x ∈ Set.range (coeffMap ι n).hom := by
   set K := homogeneousCochains X
   obtain ⟨c, rfl⟩ := K.homologyπ_surjective n x
-  refine ⟨resolutionValues X (n + 1) (K.iCycles n c).1, finite_resolutionValues X _ _,
+  refine ⟨resolutionValues X (n + 1) (K.iCycles n c).val, finite_resolutionValues X _ _,
     fun Y _ ι hι hS ↦ ?_⟩
   set L := homogeneousCochains Y
   obtain ⟨c', hc'⟩ := exists_cochainsMap_f_eq_of_resolutionValues_subset ι hι n (K.iCycles n c) hS

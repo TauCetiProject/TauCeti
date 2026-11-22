@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Alexandrov
 import TauCeti.Analysis.Convex.Extrema
+import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
@@ -170,10 +171,8 @@ private theorem eventually_image_subset_subgradientImage_closedBall
     hA).exists_pos_mul_norm_sq_le_re_inner
       (not_not.1 (mt LinearMap.det_eq_zero_iff_ker_ne_bot.2 hdet))
   simp only [RCLike.re_to_real, ContinuousLinearMap.coe_coe] at hcA
-  set η := 1 - s
-  have hη : 0 < η := sub_pos.2 hs
-  set δ := c * η ^ 2 / 8
-  have hδ : 0 < δ := by positivity
+  set δ := c * (1 - s) ^ 2 / 8
+  have hδ : 0 < δ := by have : 0 < 1 - s := sub_pos.2 hs; positivity
   obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff.1
     ((hT.bound hδ).and (isOpen_interior.mem_nhds hx))
   filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
@@ -190,57 +189,60 @@ private theorem eventually_image_subset_subgradientImage_closedBall
   have hsr : s * r ≤ r := by nlinarith [hr.1, norm_nonneg z]
   have hKD : closedBall x r ⊆ interior {x | f x ≠ ⊤} := fun x' hx' =>
     (hball ((mem_closedBall.1 hx').trans_lt hr.2)).2
-  -- The increment of `g = F - ⟪·, p⟫` from `x` to `x + h` is
-  -- `⟪A (h - z), h - z⟫ / 2 - ⟪A z, z⟫ / 2` up to `δ ‖h‖ ^ 2`.
   set g : E → ℝ := fun x' => (f x').toReal - ⟪x', p⟫_ℝ
   have hincr : ∀ x' ∈ closedBall x r, |g x' - g x - (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 -
-      ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2 := by
-    intro x' hx'
+      ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2 := fun x' hx' => by
     have hb := (hball ((mem_closedBall.1 hx').trans_lt hr.2)).1
     rw [norm_pow, norm_norm, Real.norm_eq_abs] at hb
-    have hsym : ⟪A z, x' - x⟫_ℝ = ⟪A (x' - x), z⟫_ℝ := by
-      rw [hA.inner_left_eq_inner_right, real_inner_comm]
-    have hexp : ⟪A (x' - x - z), x' - x - z⟫_ℝ =
-        ⟪A (x' - x), x' - x⟫_ℝ - 2 * ⟪A (x' - x), z⟫_ℝ + ⟪A z, z⟫_ℝ := by
-      generalize x' - x = h at hsym ⊢
-      rw [map_sub, inner_sub_left, inner_sub_right, inner_sub_right, hsym]
-      ring
-    have hpx : ⟪x', p⟫_ℝ - ⟪x, p⟫_ℝ = ⟪y, x' - x⟫_ℝ + ⟪A (x' - x), z⟫_ℝ := by
-      rw [← inner_sub_left, inner_add_right, ← hsym, real_inner_comm y, real_inner_comm (A z)]
-    simp only [g]
-    convert hb using 2
-    linarith
-  -- On the sphere `g` exceeds its value at `x + z`.
-  have hlt : ∀ x' ∈ closedBall x r \ ball x r, g (x + z) < g x' := by
-    rintro x' ⟨hx', hx'b⟩
-    have hnorm : ‖x' - x‖ = r := by
-      rw [← dist_eq_norm]
-      exact le_antisymm (mem_closedBall.1 hx') (not_lt.1 hx'b)
-    have hzr : x + z ∈ closedBall x r := by
-      rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left]
-      exact hz.trans hsr
-    have h₁ := hincr _ hzr
-    have h₂ := hincr x' hx'
-    rw [add_sub_cancel_left, sub_self, map_zero, inner_zero_left, zero_div, zero_sub] at h₁
-    have hηr : η * r ≤ ‖x' - x - z‖ := by
-      have := norm_sub_norm_le (x' - x) z
-      rw [hnorm] at this
-      simp only [η]
-      linarith
-    have hq := hcA (x' - x - z)
-    have hq' : c * (η * r) ^ 2 ≤ c * ‖x' - x - z‖ ^ 2 :=
-      mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (mul_pos hη hr.1).le hηr 2) hc.le
-    have hzr' : ‖z‖ ^ 2 ≤ r ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hz.trans hsr) 2
-    have hδz : δ * ‖z‖ ^ 2 ≤ δ * r ^ 2 := mul_le_mul_of_nonneg_left hzr' hδ.le
-    have hδr : δ * r ^ 2 = c * (η * r) ^ 2 / 8 := by simp only [δ]; ring
-    have hpos : 0 < c * (η * r) ^ 2 := by have := hr.1; positivity
-    rw [abs_le] at h₁ h₂
-    rw [hnorm] at h₂
-    linarith [h₁.2, h₂.1]
+    have hid := LinearMap.IsSymmetric.increment_sub_quadratic_eq (x := x) (x' := x') (y := y)
+      (z := z) (a := (f x').toReal) (b := (f x).toReal) hA.isSymmetric
+    simp only [ContinuousLinearMap.coe_coe] at hid
+    rw [hid]
+    exact hb
+  have hlt := LinearMap.lt_on_sphere_of_abs_increment_le (A := (A : E →ₗ[ℝ] E)) hc hcA hs hr.1
+    le_rfl hz hincr
+  rw [← closedBall_sdiff_ball] at hlt
   exact mem_subgradientImage_closedBall_of_forall_lt hf hbot hKD
     (mem_closedBall.2 (by rw [dist_eq_norm, add_sub_cancel_left]; exact hz.trans hsr)) hlt
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- **The upper bound for the density of the Monge–Ampère measure.** If the subgradients at points
+near `x` follow `y + A (x' - x)` up to `ε ‖x' - x‖` for every `ε > 0`, then for every `b > det A`,
+the ratio `MA_f(closedBall x r) / μ(closedBall x r)` is eventually below `b` as `r → 0⁺`.
+The subgradient image of the ball lies in `y + r • (A (closedBall 0 1))_ε`. -/
+private theorem eventually_mongeAmpereMeasure_closedBall_div_lt {x y : E} {A : E →L[ℝ] E}
+    (hA : ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+      ‖y' - y - A (x' - x)‖ ≤ ε * ‖x' - x‖)
+    (hdet0 : 0 ≤ A.det) (hB0 : μ (closedBall (0 : E) 1) ≠ 0) (hBtop : μ (closedBall (0 : E) 1) ≠ ∞)
+    (hMA : ∀ r, mongeAmpereMeasure μ f (closedBall x r) =
+      μ (subgradientImage (innerₗ E) f (closedBall x r ∩ interior {x | f x ≠ ⊤})))
+    {b : ℝ≥0∞} (hb : b > ENNReal.ofReal A.det) :
+    ∀ᶠ r in 𝓝[>] 0,
+      mongeAmpereMeasure μ f (closedBall x r) / μ (closedBall x r) < b := by
+  set K := A '' closedBall (0 : E) 1
+  have hK : IsCompact K := (isCompact_closedBall 0 1).image A.continuous
+  have hμK : μ K / μ (closedBall 0 1) = ENNReal.ofReal A.det := by
+    rw [addHaar_image_continuousLinearMap, abs_of_nonneg hdet0,
+      ENNReal.mul_div_cancel_right hB0 hBtop]
+  have hlim : Tendsto (fun ε => μ (cthickening ε K) / μ (closedBall 0 1)) (𝓝[>] 0)
+      (𝓝 (ENNReal.ofReal A.det)) := by
+    rw [← hμK]
+    exact (ENNReal.Tendsto.div_const (tendsto_measure_cthickening_of_isCompact hK)
+      (Or.inr hB0)).mono_left nhdsWithin_le_nhds
+  obtain ⟨ε, hεb, hε⟩ := ((hlim.eventually (gt_mem_nhds hb)).and self_mem_nhdsWithin).exists
+  obtain ⟨ρ, hρ, hρA⟩ := Metric.eventually_nhds_iff.1 (hA ε hε)
+  filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
+  calc mongeAmpereMeasure μ f (closedBall x r) / μ (closedBall x r)
+      ≤ μ ((fun w => y + r • w) '' cthickening ε K) / μ (closedBall x r) := by
+        rw [hMA]
+        refine ENNReal.div_le_div_right (measure_mono
+          ((subgradientImage_mono _ inter_subset_left).trans ?_)) _
+        exact subgradientImage_closedBall_subset (le_of_lt hε) hr.1 fun x' hx' =>
+          hρA ((mem_closedBall.1 hx').trans_lt hr.2)
+    _ = μ (cthickening ε K) / μ (closedBall 0 1) :=
+        addHaar_image_add_smul_div_addHaar_closedBall μ x y hr.1 _
+    _ < b := hεb
 
 /-- **The density of the Monge–Ampère measure at a point of second-order differentiability.** Let
 `f : E → EReal` be convex (convex real epigraph, never `⊥`) and `x` an interior point of its
@@ -287,30 +289,7 @@ theorem tendsto_mongeAmpereMeasure_closedBall_div (hf : Convex ℝ {p : E × ℝ
       _ ≤ mongeAmpereMeasure μ f (closedBall x r) / μ (closedBall x r) := by
         rw [hMA, inter_eq_left.2 ((closedBall_subset_closedBall hr.2.le).trans hρD)]
         exact ENNReal.div_le_div_right (measure_mono hsub) _
-  · -- Upper bound: the subgradient image of the ball lies in `y + r • (A (closedBall 0 1))_ε`.
-    set K := A '' closedBall (0 : E) 1
-    have hK : IsCompact K := (isCompact_closedBall 0 1).image A.continuous
-    have hμK : μ K / μ (closedBall 0 1) = ENNReal.ofReal A.det := by
-      rw [addHaar_image_continuousLinearMap, abs_of_nonneg hdet0,
-        ENNReal.mul_div_cancel_right hB0 hBtop]
-    have hlim : Tendsto (fun ε => μ (cthickening ε K) / μ (closedBall 0 1)) (𝓝[>] 0)
-        (𝓝 (ENNReal.ofReal A.det)) := by
-      rw [← hμK]
-      exact (ENNReal.Tendsto.div_const (tendsto_measure_cthickening_of_isCompact hK)
-        (Or.inr hB0)).mono_left nhdsWithin_le_nhds
-    obtain ⟨ε, hεb, hε⟩ := ((hlim.eventually (gt_mem_nhds hb)).and self_mem_nhdsWithin).exists
-    obtain ⟨ρ, hρ, hρA⟩ := Metric.eventually_nhds_iff.1 (hA ε hε)
-    filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
-    calc mongeAmpereMeasure μ f (closedBall x r) / μ (closedBall x r)
-        ≤ μ ((fun w => y + r • w) '' cthickening ε K) / μ (closedBall x r) := by
-          rw [hMA]
-          refine ENNReal.div_le_div_right (measure_mono
-            ((subgradientImage_mono _ inter_subset_left).trans ?_)) _
-          exact subgradientImage_closedBall_subset (le_of_lt hε) hr.1 fun x' hx' =>
-            hρA ((mem_closedBall.1 hx').trans_lt hr.2)
-      _ = μ (cthickening ε K) / μ (closedBall 0 1) :=
-          addHaar_image_add_smul_div_addHaar_closedBall μ x y hr.1 _
-      _ < b := hεb
+  · exact eventually_mongeAmpereMeasure_closedBall_div_lt μ hA hdet0 hB0 hBtop hMA hb
 
 /-- If almost every point `x` of the interior `D` of the effective domain has a first-order
 expansion of the subdifferential with derivative `H x`, then there is a measurable `S ⊆ D` of full

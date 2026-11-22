@@ -24,7 +24,7 @@ be separated by the norm of an element of `𝕜`. They are separated after raisi
 Over an algebraically closed field `m`-th roots exist, so the radii themselves are separated:
 `NormedField.exists_lt_norm_lt_of_isAlgClosed`. Iterating, the norms of a sequence decrease
 strictly inside any interval `(r, s)`: `NormedField.exists_strictAnti_norm_mem_Ioo_of_isAlgClosed`.
-If instead the norms accumulate at `1`, then for `r < 1` and `n ≠ 0` some `ϖ` with `‖ϖ‖ < 1` has
+If instead the norms accumulate at `1`, then for `r < 1` and any `n` some `ϖ` with `‖ϖ‖ < 1` has
 `r < ‖ϖ‖ ^ n`: `NormedField.exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt`.
 
 The same roots solve norm equations: over an algebraically closed normed field, for a multiset `s`
@@ -36,15 +36,35 @@ which that Gauss norm equals `‖c‖`.
 A normed field whose norm takes every positive real value is densely normed
 (`DenselyNormedField.ofForallExistsNormEq`).
 
-Finally, `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio `F / w` near `c⁻¹`
-into a relative error bound for `F - w / c`.
+Finally, `NormedField.iSup_eNorm_eq_top` records that the extended norms of a nontrivially normed
+field have supremum `⊤`, and `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio
+`F / w` near `c⁻¹` into a relative error bound for `F - w / c`, while
+`TauCeti.norm_pow_div_le_norm_inv` bounds `‖z ^ m / a‖` by `‖a⁻¹‖` when `‖z‖ ≤ 1`.
 -/
 
 public section
 
+/-- The inverse of an element of norm greater than one has norm less than one. -/
+theorem TauCeti.norm_inv_lt_one_of_one_lt_norm {K : Type*} [NormedDivisionRing K]
+    {j : K} (hj : 1 < ‖j‖) : ‖j⁻¹‖ < 1 := by
+  simpa only [norm_inv] using inv_lt_one_of_one_lt₀ hj
+
+/-- A power of an element of norm at most one, divided by `a`, has norm at most `‖a⁻¹‖`. -/
+theorem TauCeti.norm_pow_div_le_norm_inv {K : Type*} [NormedDivisionRing K] {z : K}
+    (hz : ‖z‖ ≤ 1) (m : ℕ) (a : K) : ‖z ^ m / a‖ ≤ ‖a⁻¹‖ := by
+  rw [div_eq_mul_inv, norm_mul, norm_pow]
+  exact mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hz)
+
 namespace NormedField
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+
+/-- Over a nontrivially normed field `𝕜`, the norms are unbounded, so `⨆ x : 𝕜, ‖x‖ₑ = ⊤`. -/
+@[simp]
+theorem iSup_eNorm_eq_top : (⨆ x : 𝕜, ‖x‖ₑ) = ⊤ := by
+  refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
+  obtain ⟨x, hx⟩ := exists_lt_nnNorm 𝕜 r
+  exact (ENNReal.coe_le_coe.mpr hx.le).trans (le_iSup (fun y : 𝕜 ↦ ‖y‖ₑ) x)
 
 /-- **Two radii `0 < r < s` are separated by a norm after raising to a power**: there are `m : ℕ`
 and `c : 𝕜` with `rᵐ < ‖c‖ < sᵐ`. -/
@@ -100,10 +120,13 @@ theorem exists_strictAnti_norm_mem_Ioo_of_isAlgClosed [IsAlgClosed 𝕜] {r s : 
 
 variable {𝕜} in
 /-- **If the norms of `𝕜` accumulate at `1`, some element of norm less than one has `n`-th power
-of norm above any `r < 1`**: for `n ≠ 0` some `ϖ` with `0 < ‖ϖ‖ < 1` has `r < ‖ϖ‖ ^ n`. -/
+of norm above any `r < 1`**: for every `n` some `ϖ` with `0 < ‖ϖ‖ < 1` has `r < ‖ϖ‖ ^ n`. -/
 theorem exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt
-    (hacc : ∀ ε : ℝ, 1 < ε → ∃ x : 𝕜, 1 < ‖x‖ ∧ ‖x‖ < ε) {r : ℝ} (hr : r < 1) {n : ℕ}
-    (hn : n ≠ 0) : ∃ ϖ : 𝕜, 0 < ‖ϖ‖ ∧ ‖ϖ‖ < 1 ∧ r < ‖ϖ‖ ^ n := by
+    (hacc : ∀ ε : ℝ, 1 < ε → ∃ x : 𝕜, 1 < ‖x‖ ∧ ‖x‖ < ε) {r : ℝ} (hr : r < 1) (n : ℕ) :
+    ∃ ϖ : 𝕜, 0 < ‖ϖ‖ ∧ ‖ϖ‖ < 1 ∧ r < ‖ϖ‖ ^ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · obtain ⟨ϖ, hϖ0, hϖ1⟩ := exists_norm_lt_one 𝕜
+    exact ⟨ϖ, hϖ0, hϖ1, by simpa using hr⟩
   rcases le_or_gt r 0 with hr0 | hr0
   · obtain ⟨ϖ, hϖ0, hϖ1⟩ := exists_norm_lt_one 𝕜
     exact ⟨ϖ, hϖ0, hϖ1, hr0.trans_lt (by positivity)⟩

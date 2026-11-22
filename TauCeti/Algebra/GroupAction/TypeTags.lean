@@ -7,7 +7,11 @@ module
 
 public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Algebra.Group.Pointwise.Set.Scalar
+public import Mathlib.Algebra.Group.Subgroup.Lattice
+public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
+public import Mathlib.Algebra.Ring.Action.Submonoid
+public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.GroupAction.Hom
 
 /-!
@@ -25,18 +29,48 @@ Mathlib records the same transport only as a representation,
 which is not usable where a bare `DistribMulAction M (Additive A)` instance is what typeclass
 search must find. Multiplicative coefficient modules — the units of a field, the roots of unity —
 reach the additive world of cohomology through exactly this instance, and their equivariant
-homomorphisms through `MulDistribMulActionHom.toAdditive`, which reads an `M`-equivariant monoid
-homomorphism `A →*[M] B` as an `M`-equivariant additive homomorphism `Additive A →+[M] Additive B`.
+homomorphisms through `MulDistribMulActionHom.toAdditive`, which reads a monoid homomorphism
+`A →ₑ*[φ] B` equivariant along `φ : M →* N` as an additive homomorphism
+`Additive A →ₑ+[φ] Additive B` equivariant along the same `φ` (in particular `A →*[M] B` as
+`Additive A →+[M] Additive B`).
 
 The inverse transport `Multiplicative.mulDistribMulAction` reads a distributive action on an
 additive monoid `A` as an action by monoid endomorphisms on `Multiplicative A`. It is what lets an
 additive coefficient module enter a construction stated for multiplicative ones, such as the
 twisted product of a factor set.
+
+This file also transfers cancellativity (`Additive.isLeftCancelVAdd`, `Additive.isCancelVAdd`,
+`Multiplicative.isLeftCancelSMul`, `Multiplicative.isCancelSMul`) and point stabilizers
+(`TauCeti.stabilizer_multiplicative`, `TauCeti.stabilizer_additive`) on the *acting* side,
+complementing `Additive.vadd` and `Multiplicative.smul`.
+
+The two transported actions have the same fixed points as the original ones:
+`FixedPoints.addSubgroup_additive` and `FixedPoints.subgroup_multiplicative` identify the fixed
+subgroup on a type tag with the image of the original fixed subgroup under Mathlib's subgroup
+correspondences `Subgroup.toAddSubgroup` and `AddSubgroup.toSubgroup`. Likewise
+`AddMonoidHom.toMultiplicative_map_smul` says that an additive homomorphism compatible with a map
+of acting monoids stays compatible on the multiplicative type tags.
 -/
 
 public section
 
 namespace Additive
+
+section Cancel
+
+variable {G X : Type*} [SMul G X]
+
+/-- Left-cancellative scalar multiplication becomes left-cancellative vector addition on the
+additive type tag. -/
+instance isLeftCancelVAdd [IsLeftCancelSMul G X] : IsLeftCancelVAdd (Additive G) X where
+  left_cancel' g := IsLeftCancelSMul.left_cancel (toMul g)
+
+/-- Cancellative scalar multiplication becomes cancellative vector addition on the additive type
+tag. -/
+instance isCancelVAdd [IsCancelSMul G X] : IsCancelVAdd (Additive G) X where
+  right_cancel' g h x hgh := toMul.injective (IsCancelSMul.right_cancel (toMul g) (toMul h) x hgh)
+
+end Cancel
 
 variable {M A : Type*} [Monoid M] [Monoid A] [MulDistribMulAction M A]
 
@@ -67,6 +101,22 @@ end Additive
 
 namespace Multiplicative
 
+section Cancel
+
+variable {G X : Type*} [VAdd G X]
+
+/-- Left-cancellative vector addition becomes left-cancellative scalar multiplication on the
+multiplicative type tag. -/
+instance isLeftCancelSMul [IsLeftCancelVAdd G X] : IsLeftCancelSMul (Multiplicative G) X where
+  left_cancel' g := IsLeftCancelVAdd.left_cancel (toAdd g)
+
+/-- Cancellative vector addition becomes cancellative scalar multiplication on the multiplicative
+type tag. -/
+instance isCancelSMul [IsCancelVAdd G X] : IsCancelSMul (Multiplicative G) X where
+  right_cancel' g h x hgh := toAdd.injective (IsCancelVAdd.right_cancel (toAdd g) (toAdd h) x hgh)
+
+end Cancel
+
 variable {M A : Type*} [Monoid M] [AddMonoid A] [DistribMulAction M A]
 
 /-- A monoid acting distributively on an additive monoid acts by monoid endomorphisms on the
@@ -88,30 +138,81 @@ theorem toAdd_smul (g : M) (x : Multiplicative A) : (g • x).toAdd = g • x.to
 
 end Multiplicative
 
+namespace AddMonoidHom
+
+/-- An additive homomorphism `φ` compatible with a map of acting monoids `ψ`, in the sense that
+`φ (ψ g • m) = g • φ m`, stays compatible with `ψ` on the multiplicative type tags. -/
+theorem toMultiplicative_map_smul {M N A B : Type*} [Monoid M] [Monoid N] [AddMonoid A]
+    [AddMonoid B] [DistribMulAction M A] [DistribMulAction N B] (φ : A →+ B) (ψ : N → M)
+    (h : ∀ (g : N) (a : A), φ (ψ g • a) = g • φ a) (g : N) (x : Multiplicative A) :
+    φ.toMultiplicative (ψ g • x) = g • φ.toMultiplicative x := by
+  simp only [coe_toMultiplicative, Function.comp_apply, Multiplicative.toAdd_smul, h,
+    Multiplicative.ofAdd_smul]
+
+end AddMonoidHom
+
+namespace FixedPoints
+
+/-- The fixed points of the distributive action on `Additive A` are the fixed points of the action
+on `A`, read additively. -/
+theorem addSubgroup_additive (M A : Type*) [Monoid M] [Group A] [MulDistribMulAction M A] :
+    FixedPoints.addSubgroup M (Additive A) = (FixedPoints.subgroup M A).toAddSubgroup := by
+  ext x
+  simp [← Additive.toMul_smul, Additive.toMul.injective.eq_iff]
+
+/-- The fixed points of the action on `Multiplicative A` are the fixed points of the distributive
+action on `A`, read multiplicatively. -/
+theorem subgroup_multiplicative (M A : Type*) [Monoid M] [AddGroup A] [DistribMulAction M A] :
+    FixedPoints.subgroup M (Multiplicative A) = (FixedPoints.addSubgroup M A).toSubgroup := by
+  ext x
+  simp [← Multiplicative.toAdd_smul, Multiplicative.toAdd.injective.eq_iff]
+
+end FixedPoints
+
 namespace MulDistribMulActionHom
 
-variable {M A B : Type*} [Monoid M] [Monoid A] [Monoid B] [MulDistribMulAction M A]
-  [MulDistribMulAction M B]
+variable {M N A B : Type*} [Monoid M] [Monoid N] {φ : M →* N} [Monoid A] [Monoid B]
+  [MulDistribMulAction M A] [MulDistribMulAction N B]
 
-/-- An `M`-equivariant monoid homomorphism, read on the additive type tags as an `M`-equivariant
-additive homomorphism for the distributive actions `Additive.distribMulAction`. -/
-def toAdditive (f : A →*[M] B) : Additive A →+[M] Additive B where
+/-- A monoid homomorphism equivariant along `φ`, read on the additive type tags as an additive
+homomorphism equivariant along `φ` for the distributive actions `Additive.distribMulAction`. -/
+def toAdditive (f : A →ₑ*[φ] B) : Additive A →ₑ+[φ] Additive B where
   toFun x := Additive.ofMul (f x.toMul)
-  map_smul' g x := congrArg Additive.ofMul (f.map_smul g x.toMul)
+  map_smul' g x := congrArg Additive.ofMul (map_smulₛₗ f g x.toMul)
   map_zero' := congrArg Additive.ofMul (map_one f)
   map_add' x y := congrArg Additive.ofMul (map_mul f x.toMul y.toMul)
 
 @[simp]
-theorem toAdditive_apply (f : A →*[M] B) (x : Additive A) :
+theorem toAdditive_apply (f : A →ₑ*[φ] B) (x : Additive A) :
     f.toAdditive x = Additive.ofMul (f x.toMul) :=
   (rfl)
 
 /-- Reading equivariant monoid homomorphisms additively commutes with composition. -/
 @[simp]
-theorem toAdditive_comp {C : Type*} [Monoid C] [MulDistribMulAction M C]
-    (g : B →*[M] C) (f : A →*[M] B) :
+theorem toAdditive_comp {P C : Type*} [Monoid P] [Monoid C] [MulDistribMulAction P C]
+    {ψ : N →* P} {χ : M →* P} [MonoidHom.CompTriple φ ψ χ] (g : B →ₑ*[ψ] C) (f : A →ₑ*[φ] B) :
     (g.comp f).toAdditive = g.toAdditive.comp f.toAdditive := by
   ext x
   simp
 
 end MulDistribMulActionHom
+
+namespace TauCeti
+
+/-- The stabilizer of `x` under `Multiplicative G` is the multiplicative subgroup corresponding to
+the additive stabilizer of `x` under `G`. -/
+@[simp]
+theorem stabilizer_multiplicative {G X : Type*} [AddGroup G] [AddAction G X] (x : X) :
+    MulAction.stabilizer (Multiplicative G) x = (AddAction.stabilizer G x).toSubgroup := by
+  ext g
+  simp [MulAction.mem_stabilizer_iff, AddAction.mem_stabilizer_iff]
+
+/-- The stabilizer of `x` under `Additive G` is the additive subgroup corresponding to the
+multiplicative stabilizer of `x` under `G`. -/
+@[simp]
+theorem stabilizer_additive {G X : Type*} [Group G] [MulAction G X] (x : X) :
+    AddAction.stabilizer (Additive G) x = (MulAction.stabilizer G x).toAddSubgroup := by
+  ext g
+  simp [AddAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff]
+
+end TauCeti

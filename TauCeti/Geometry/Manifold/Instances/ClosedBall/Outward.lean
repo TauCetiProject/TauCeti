@@ -44,8 +44,8 @@ private theorem neg_two_inner_tangentEquiv_nonneg (x : closedBall (0 : E) 1)
   let f : EuclideanSpace ℝ (Fin (n + 1)) → E :=
     Subtype.val ∘ (extChartAt I x).symm
   have hy0 : y 0 = 0 := by
-    have h := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-      one_ne_zero (chart_mem_atlas _ x) (mem_chart_source _ x)).mp hx
+    have h := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff
+      (mem_chart_source _ x)).mp hx
     simpa only [y, I, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
       modelWithCornersEuclideanHalfSpace_toFun] using h
   have hfy : f y = (x : E) := by
@@ -92,7 +92,9 @@ theorem isOutwardPointing_closedBall_radial (x : closedBall (0 : E) 1)
     neg_two_inner_tangentEquiv_nonneg x hx hxnorm v hv
   let a := ν (EuclideanSpace.single 0 1)
   have ha : 0 ≤ a := hnonneg _ (by simp)
-  have hfactor := ν.eq_mul_apply_zero_of_nonneg hnonneg (F.symm (x : E))
+  have hfactor : ν (F.symm (x : E)) = a * (F.symm (x : E)) 0 :=
+    Module.Dual.apply_eq_mul_apply_of_nonneg (EuclideanSpace.projₗ (𝕜 := ℝ) 0)
+      (ν : EuclideanSpace ℝ (Fin (n + 1)) →ₗ[ℝ] ℝ) (by simp) hnonneg _
   have hval : ν (F.symm (x : E)) = -2 := by
     dsimp only [ν]
     rw [neg_apply, smul_apply,

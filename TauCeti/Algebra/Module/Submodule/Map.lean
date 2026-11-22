@@ -26,10 +26,13 @@ The file also describes two maps between submodule lattices: the inverse of the 
 isomorphism `Submodule.mapIic` is the inverse image along the inclusion, and an injective map
 restricted to `B` carries the trace `A.comap B.subtype` of `A` in `B` onto the trace of `A.map f`
 in `B.map f`. The subquotient identifications in `TauCeti/Algebra/Module/Submodule/Quotient.lean`
-use both.
+use both. For a surjective semilinear map, inverse image identifies the target's submodules
+with the source's submodules containing the kernel, including when the scalar homomorphism
+is a surjection rather than an isomorphism.
 
 ## Main results
 
+* `LinearMap.submoduleComapOrderIsoOfSurjective`: submodule correspondence along a surjection.
 * `LinearMap.sup_image_map_eq_range_of_sup_eq_top`: a finite family of submodules spanning the
   whole module is carried to one spanning the range of the map.
 * `LinearMap.supIndep_image_map`: an injective linear map carries an independent finite
@@ -39,6 +42,8 @@ use both.
   vectors.
 * `Submodule.mapIic_symm_apply`: the inverse of `Submodule.mapIic` takes inverse images along the
   inclusion.
+* `Submodule.map_equiv_eq_iff`: a semilinear equivalence carries `p` onto `q` exactly when it
+  maps a vector into `q` precisely when the vector lies in `p`.
 * `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
   carries the trace of `A` in `B` onto the trace of `A.map f` in `B.map f`.
 -/
@@ -56,8 +61,12 @@ vectors. -/
 theorem map_eq_span_of_span_eq_top (p : Submodule R M) {v : ι → p}
     (hv : span R (Set.range v) = ⊤) (f : M →ₛₗ[σ₁₂] M₂) :
     p.map f = span R₂ (Set.range fun i ↦ f (v i)) := by
-  conv_lhs => rw [← (span_range_subtype_eq_top_iff p fun i ↦ (v i).2).1 hv]
+  conv_lhs => rw [← (span_range_subtype_eq_top_iff p fun i ↦ (v i).property).1 hv]
   rw [map_span, ← Set.range_comp, Function.comp_def]
+
+/-- The image of the line spanned by `x` is the line spanned by `f x`. -/
+theorem map_span_singleton (f : M →ₛₗ[σ₁₂] M₂) (x : M) : (R ∙ x).map f = R₂ ∙ f x := by
+  rw [map_span, Set.image_singleton]
 
 /-- The inverse of `Submodule.mapIic` takes the inverse image along the inclusion.  This is the
 `symm`-side counterpart of Mathlib's `Submodule.coe_mapIic_apply`.
@@ -68,9 +77,55 @@ theorem mapIic_symm_apply (p : Submodule R M) (N : Set.Iic p) :
     p.mapIic.symm N = (N : Submodule R M).comap p.subtype :=
   rfl
 
+section Equiv
+
+variable {τ₁₂ : R →+* R₂} {τ₂₁ : R₂ →+* R} [RingHomInvPair τ₁₂ τ₂₁] [RingHomInvPair τ₂₁ τ₁₂]
+
+/-- A semilinear equivalence `e` carries `p` onto `q` exactly when `e x ∈ q ↔ x ∈ p` for
+every `x`. -/
+theorem map_equiv_eq_iff {e : M ≃ₛₗ[τ₁₂] M₂} {p : Submodule R M} {q : Submodule R₂ M₂} :
+    p.map (e : M →ₛₗ[τ₁₂] M₂) = q ↔ ∀ x, e x ∈ q ↔ x ∈ p := by
+  rw [SetLike.ext_iff, e.surjective.forall]
+  simp only [mem_map_equiv, LinearEquiv.symm_apply_apply]
+  exact forall_congr' fun _ ↦ Iff.comm
+
+end Equiv
+
 end Submodule
 
 namespace LinearMap
+
+section Correspondence
+
+variable {A B V W : Type*} [Semiring A] [Semiring B]
+    [AddCommGroup V] [Module A V] [AddCommGroup W] [Module B W]
+    {σ : A →+* B} [RingHomSurjective σ]
+
+/-- Inverse image along a surjective semilinear map identifies submodules of the target with
+submodules of the source containing the kernel. -/
+def submoduleComapOrderIsoOfSurjective (f : V →ₛₗ[σ] W) (hf : Function.Surjective f) :
+    Submodule B W ≃o Set.Ici (LinearMap.ker f) where
+  toFun Q := ⟨Q.comap f, f.ker_le_comap⟩
+  invFun P := P.val.map f
+  left_inv Q := Submodule.map_comap_eq_of_surjective hf Q
+  right_inv P := Subtype.ext (Submodule.comap_map_eq_self P.property)
+  map_rel_iff' := Submodule.comap_le_comap_iff_of_surjective hf
+
+/-- The correspondence along a surjection takes inverse images. -/
+@[simp]
+theorem coe_submoduleComapOrderIsoOfSurjective (f : V →ₛₗ[σ] W) (hf : Function.Surjective f)
+    (Q : Submodule B W) :
+    (submoduleComapOrderIsoOfSurjective f hf Q : Submodule A V) = Q.comap f :=
+  (rfl)
+
+/-- The inverse correspondence along a surjection takes images. -/
+@[simp]
+theorem submoduleComapOrderIsoOfSurjective_symm_apply (f : V →ₛₗ[σ] W) (hf : Function.Surjective f)
+    (P : Set.Ici (LinearMap.ker f)) :
+    (submoduleComapOrderIsoOfSurjective f hf).symm P = P.val.map f :=
+  (rfl)
+
+end Correspondence
 
 variable {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂]

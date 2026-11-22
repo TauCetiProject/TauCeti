@@ -61,10 +61,8 @@ theorem trianglesSharingVertex_adj (u v : Fin 5) :
           Set (Sym2 (Fin 5))) ∧ u ≠ v := by
   simp only [trianglesSharingVertex, SimpleGraph.fromEdgeSet_adj]
 
-private instance : DecidableRel trianglesSharingVertex.Adj := by
-  intro x y
-  simp only [trianglesSharingVertex, SimpleGraph.fromEdgeSet_adj]
-  infer_instance
+instance : DecidableRel trianglesSharingVertex.Adj := fun _ _ ↦
+  decidable_of_iff' _ (trianglesSharingVertex_adj _ _)
 
 /-- The multigraph associated to `trianglesSharingVertex`. -/
 abbrev trianglesSharingVertexGraph : Graph (Fin 5) (Sym2 (Fin 5)) :=

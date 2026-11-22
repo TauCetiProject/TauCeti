@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Atom
 public import Mathlib.MeasureTheory.Measure.AEMeasurable
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+public import Mathlib.MeasureTheory.Measure.MutuallySingular
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 
 /-!
@@ -29,10 +31,15 @@ restricting it to the complement gives a measure with zero mass on every singlet
   many positive-mass singletons.
 * `MeasureTheory.Measure.atomicPart_apply_singleton`,
   `MeasureTheory.Measure.diffusePart_apply_singleton`: singleton evaluations of the two parts.
-* `MeasureTheory.Measure.atomicPart_eq_sum_dirac_of_countable`,
-  `MeasureTheory.Measure.atomicPart_eq_sum_dirac`: the atomic part as a sum of weighted Dirac
+* `MeasureTheory.Measure.atomicPart_eq_sum_dirac`: the atomic part as a sum of weighted Dirac
   measures.
 * `MeasureTheory.Measure.atomicPart_add_diffusePart`: `atomicPart μ + diffusePart μ = μ`.
+* `MeasureTheory.Measure.eq_atomicPart_and_eq_diffusePart_of_eq_add`: the split is unique among
+  sums of a countably carried measure and a measure with zero singleton masses.
+* `MeasureTheory.Measure.mutuallySingular_atomicPart`: the atomic part is mutually singular to
+  every measure with zero singleton masses.
+* `MeasureTheory.Measure.not_isAtom_diffusePart`: on a countably separated space, the diffuse part
+  of a σ-finite measure has no atoms.
 -/
 
 public section
@@ -109,6 +116,28 @@ instance diffusePart_isFiniteMeasure (μ : Measure X) [IsFiniteMeasure μ] :
   unfold diffusePart
   infer_instance
 
+/-- The atomic part of a σ-finite measure is σ-finite. -/
+instance atomicPart_sigmaFinite (μ : Measure X) [SigmaFinite μ] :
+    SigmaFinite (atomicPart μ) := by
+  unfold atomicPart
+  infer_instance
+
+/-- The diffuse part of a σ-finite measure is σ-finite. -/
+instance diffusePart_sigmaFinite (μ : Measure X) [SigmaFinite μ] :
+    SigmaFinite (diffusePart μ) := by
+  unfold diffusePart
+  infer_instance
+
+/-- The atomic part of an s-finite measure is s-finite. -/
+instance atomicPart_sFinite (μ : Measure X) [SFinite μ] : SFinite (atomicPart μ) := by
+  unfold atomicPart
+  infer_instance
+
+/-- The diffuse part of an s-finite measure is s-finite. -/
+instance diffusePart_sFinite (μ : Measure X) [SFinite μ] : SFinite (diffusePart μ) := by
+  unfold diffusePart
+  infer_instance
+
 variable [MeasurableSingletonClass X]
 
 /-- An s-finite measure has at most countably many positive-mass singleton sets. -/
@@ -122,38 +151,43 @@ theorem measurableSet_positiveSingletons (μ : Measure X) [SFinite μ] :
     MeasurableSet (positiveSingletons μ) :=
   (countable_positiveSingletons μ).measurableSet
 
+omit [MeasurableSingletonClass X] in
 /-- The atomic part preserves the mass of every singleton. -/
 theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
     atomicPart μ {x} = μ {x} := by
-  rw [atomicPart, restrict_apply (measurableSet_singleton x)]
-  by_cases hx : μ {x} = 0 <;> simp [hx]
+  by_cases hx : μ {x} = 0
+  · exact le_antisymm (restrict_apply_le _ _) (by simp [hx])
+  · exact restrict_eq_self μ (singleton_subset_iff.2 hx)
 
-/-- When a measure has countably many positive-mass singletons, its atomic part is the sum of the
-point masses at those points. -/
-theorem atomicPart_eq_sum_dirac_of_countable (μ : Measure X)
-    [Countable (positiveSingletons μ)] :
-    atomicPart μ = Measure.sum fun x : positiveSingletons μ ↦
-      μ {(x : X)} • Measure.dirac (x : X) := by
-  calc
-    atomicPart μ = μ.restrict (positiveSingletons μ) := rfl
-    _ = μ.restrict (⋃ x : positiveSingletons μ, ({(x : X)} : Set X)) := by
-      congr 1
-      ext y
-      simp
-    _ = Measure.sum fun x : positiveSingletons μ ↦ μ.restrict ({(x : X)} : Set X) :=
-      Measure.restrict_iUnion
-        (fun x y hxy ↦ disjoint_singleton.2 (fun h ↦ hxy (Subtype.ext h)))
-        (fun x ↦ measurableSet_singleton (x : X))
-    _ = Measure.sum fun x : positiveSingletons μ ↦
-        μ {(x : X)} • Measure.dirac (x : X) := by
-      simp only [Measure.restrict_singleton]
-
+open Function in
 /-- The atomic part is the sum of the point masses at its supporting points. -/
-theorem atomicPart_eq_sum_dirac (μ : Measure X) [SFinite μ] :
+theorem atomicPart_eq_sum_dirac (μ : Measure X) :
     atomicPart μ = Measure.sum fun x : positiveSingletons μ ↦
       μ {(x : X)} • Measure.dirac (x : X) := by
-  have := (countable_positiveSingletons μ).to_subtype
-  exact atomicPart_eq_sum_dirac_of_countable μ
+  ext s hs
+  set A := s ∩ positiveSingletons μ
+  -- both sides are the sum of the singleton masses over `A`
+  have hsum : (Measure.sum fun x : positiveSingletons μ ↦ μ {(x : X)} • dirac (x : X)) s =
+      ∑' x : A, μ {(x : X)} := by
+    rw [Measure.sum_apply _ hs, tsum_subtype (positiveSingletons μ) fun x ↦ (μ {x} • dirac x) s,
+      tsum_subtype A fun x ↦ μ {x}]
+    congr 1
+    ext x
+    by_cases hxs : x ∈ s <;> by_cases hxP : x ∈ positiveSingletons μ <;>
+      simp [A, indicator, hs, hxs, hxP]
+  have hdisj : Pairwise (Disjoint on fun x : A ↦ ({(x : X)} : Set X)) :=
+    fun x y hxy ↦ disjoint_singleton.2 fun h ↦ hxy (Subtype.ext h)
+  have hU : μ A = μ (⋃ x : A, ({(x : X)} : Set X)) := by rw [iUnion_of_singleton_coe]
+  rw [atomicPart_apply μ s hs, hsum, hU]
+  refine le_antisymm ?_
+    (tsum_meas_le_meas_iUnion_of_disjoint μ (fun x ↦ measurableSet_singleton _) hdisj)
+  rcases eq_or_ne (∑' x : A, μ {(x : X)}) ⊤ with htop | htop
+  · exact htop ▸ le_top
+  · -- a finite sum of positive masses has only countably many terms
+    have : Countable A := countable_univ_iff.1 <|
+      (Summable.countable_support_ennreal htop).mono fun x _ ↦
+        (mem_positiveSingletons_iff μ x).1 x.property.2
+    rw [measure_iUnion hdisj fun x ↦ measurableSet_singleton _]
 
 /-- The diffuse part gives zero mass to every singleton. -/
 theorem diffusePart_apply_singleton (μ : Measure X) (x : X) :
@@ -168,6 +202,15 @@ theorem atomicPart_apply_compl (μ : Measure X) [SFinite μ] :
   rw [atomicPart_apply μ _ (measurableSet_positiveSingletons μ).compl]
   simp
 
+/-- On a space with measurable singletons, the atomic part of an s-finite measure is mutually
+singular to every measure with zero singleton masses. -/
+theorem mutuallySingular_atomicPart (μ ν : Measure X) [SFinite μ] [NullSingletonClass ν] :
+    atomicPart μ ⟂ₘ ν :=
+  ⟨(positiveSingletons μ)ᶜ, (measurableSet_positiveSingletons μ).compl,
+    atomicPart_apply_compl μ, by
+      rw [compl_compl]
+      exact (countable_positiveSingletons μ).measure_zero ν⟩
+
 /-- The point-mass part and the diffuse remainder sum to the original s-finite measure. -/
 theorem atomicPart_add_diffusePart (μ : Measure X) [SFinite μ] :
     atomicPart μ + diffusePart μ = μ := by
@@ -178,6 +221,39 @@ instance diffusePart_nullSingletonClass (μ : Measure X) :
     NullSingletonClass (diffusePart μ) :=
   ⟨diffusePart_apply_singleton μ⟩
 
+omit [MeasurableSingletonClass X] in
+/-- **Uniqueness of the atomic/diffuse split.** If `μ = ν₁ + ν₂`, where `ν₁` is carried by a
+countable set and `ν₂` gives zero mass to every singleton, then `ν₁` is the atomic part and `ν₂`
+the diffuse part of `μ`. -/
+theorem eq_atomicPart_and_eq_diffusePart_of_eq_add {μ ν₁ ν₂ : Measure X} {S : Set X}
+    (hS : S.Countable) (hν₁ : ν₁ Sᶜ = 0) [NullSingletonClass ν₂] (h : μ = ν₁ + ν₂) :
+    ν₁ = atomicPart μ ∧ ν₂ = diffusePart μ := by
+  have hsing (x : X) : μ {x} = ν₁ {x} := by simp [h]
+  have hsub : positiveSingletons μ ⊆ S := fun x hx ↦ by
+    by_contra hxS
+    exact hx ((hsing x).trans (measure_mono_null (singleton_subset_iff.2 hxS) hν₁))
+  have h₁ : ν₁ (positiveSingletons μ)ᶜ = 0 := by
+    -- inside `S`, the complement consists of countably many `ν₁`-null points
+    rw [← inter_union_sdiff (positiveSingletons μ)ᶜ S]
+    refine measure_union_null ((measure_null_iff_singleton (hS.mono inter_subset_right)).2
+      fun x hx ↦ ?_) (measure_mono_null (sdiff_subset_compl _ _) hν₁)
+    simpa [hsing] using hx.1
+  have h₂ : ν₂ (positiveSingletons μ) = 0 := (hS.mono hsub).measure_zero ν₂
+  have hres (A : Set X) : μ.restrict A = ν₁.restrict A + ν₂.restrict A := by
+    rw [h, restrict_add]
+  constructor
+  · rw [atomicPart, hres, restrict_eq_zero.2 h₂, add_zero,
+      restrict_eq_self_of_ae_mem (mem_ae_iff.2 h₁)]
+  · rw [diffusePart, hres, restrict_eq_zero.2 h₁, zero_add,
+      restrict_eq_self_of_ae_mem (s := (positiveSingletons μ)ᶜ) (compl_mem_ae_iff.2 h₂)]
+
+omit [MeasurableSingletonClass X] in
+/-- The diffuse part of a σ-finite measure on a countably separated space has no atoms. -/
+theorem not_isAtom_diffusePart [MeasurableSpace.CountablySeparated X] (μ : Measure X)
+    [SigmaFinite μ] (s : Set X) : ¬ (diffusePart μ).IsAtom s :=
+  have := MeasurableSpace.measurableSingletonClass_of_countablySeparated (α := X)
+  not_isAtom_of_nullSingletonClass s
+
 end MeasureTheory.Measure
 
 namespace TauCeti
@@ -187,6 +263,7 @@ open MeasureTheory.Measure
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   [MeasurableSingletonClass X] {μ : Measure X} [SFinite μ]
 
+omit [SFinite μ] in
 /-- A measurable map sends the atomic part to the sum of the images of its point masses. -/
 theorem map_atomicPart_eq_sum_dirac {T : X → Y} (hT : Measurable T) :
     (atomicPart μ).map T = Measure.sum fun x : positiveSingletons μ ↦

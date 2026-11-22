@@ -112,11 +112,13 @@ theorem descend_qCoordinate (D : Γ.CuspDatum) (f : ℍ → ℂ)
   rw [descend_apply, coe_qCoordinate, cuspExtension_coordinate D f hf]
 
 /-- The descended function is the unique function on the punctured q-disc whose pullback along
-the normalized q-coordinate is the original invariant function. -/
+the normalized q-coordinate is the original function, which is then invariant. -/
 theorem descend_unique (D : Γ.CuspDatum) (f : ℍ → ℂ)
-    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     {F : {q : 𝔻 // q ≠ 0} → ℂ} (hF : ∀ z, F (qCoordinate D z) = f z) :
     F = descend D f := by
+  -- a function with a descent is invariant, the q-coordinate being invariant
+  have hf (g : stabilizer Γ D.cusp) (z : ℍ) : f (g • z) = f z := by
+    rw [← hF, ← hF, qCoordinate_smul]
   funext q
   obtain ⟨z, rfl⟩ := (isOpenQuotientMap_qCoordinate D).surjective q
   rw [hF, descend_qCoordinate D f hf]
@@ -145,7 +147,7 @@ theorem mdifferentiable_descend (D : Γ.CuspDatum) (f : ℍ → ℂ)
   apply MDifferentiableAt.comp q
     (DifferentiableAt.mdifferentiableAt <|
       differentiableAt_cuspExtension_of_ne_zero D f hf hhol
-        (fun h ↦ q.2 (Complex.UnitDisc.coe_injective h)) q.1.norm_lt_one)
+        (fun h ↦ q.property (Complex.UnitDisc.coe_injective h)) q.val.norm_lt_one)
   exact TauCeti.Complex.UnitDisc.mdifferentiable_coe_punctured q
 
 /-- If an invariant function is holomorphic at all sufficiently large normalized heights and

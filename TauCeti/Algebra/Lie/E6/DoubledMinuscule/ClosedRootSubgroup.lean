@@ -53,13 +53,11 @@ a pinned Chevalley--Demazure group scheme, or that the `E₆` diagram symmetry a
   `TauCeti/Algebra/Lie/E6/Minuscule/ClosedRootSubgroup.lean`, the same argument on the
   `27`-dimensional minuscule carrier.
 
-## Roadmap
+## Applications
 
 This supplies the closed-root-subgroup component of a pinning for the explicit full-weight
-doubled type-`E₆` carrier, in the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. That carrier is the one the graph-twisted family
-`²E₆(q)` of milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` needs, the `E₆` diagram
-symmetry not acting on the `27`-dimensional one.
+doubled type-`E₆` carrier. That carrier is the one the graph-twisted family `²E₆(q)` needs, the
+`E₆` diagram symmetry not acting on the `27`-dimensional one.
 -/
 
 public section
@@ -205,14 +203,14 @@ noncomputable def rootSubgroupClosedSubgroup (k : Fin 6 ⊕ Fin 6) :
 /-- The bundled closed root subgroup is represented by the numbered root-subgroup morphism. -/
 @[simp]
 theorem coe_rootSubgroupClosedSubgroup (k : Fin 6 ⊕ Fin 6) :
-    (rootSubgroupClosedSubgroup k).1 =
+    (rootSubgroupClosedSubgroup k).val =
       letI := mono_rootSubgroup k
       Subobject.mk (rootSubgroup k) :=
   ClosedSubgroupScheme.coe_mk _
 
 /-- The bundled numbered root subgroup is canonically isomorphic to the additive group scheme. -/
 noncomputable def rootSubgroupClosedSubgroupIso (k : Fin 6 ⊕ Fin 6) :
-    ((rootSubgroupClosedSubgroup k).1 :
+    ((rootSubgroupClosedSubgroup k).val :
       Grp (Over (Spec (CommRingCat.of ℤ)))) ≅ AdditiveGroup.groupScheme ℤ :=
   ClosedSubgroupScheme.mkIso (rootSubgroup k)
 
@@ -220,7 +218,7 @@ noncomputable def rootSubgroupClosedSubgroupIso (k : Fin 6 ⊕ Fin 6) :
 numbered doubled type-`E₆` root-subgroup map. -/
 @[simp]
 theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow (k : Fin 6 ⊕ Fin 6) :
-    (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).1.arrow =
+    (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).val.arrow =
       rootSubgroup k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (rootSubgroup k)
 

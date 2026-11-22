@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
-public import Mathlib.Combinatorics.Quiver.Path.Weight
+public import TauCeti.Combinatorics.Graph.Serre.Path.Group
+public import TauCeti.Combinatorics.Quiver.PathWeight
 
 /-!
 # Paths in a graph of groups and the fundamental group at a vertex
@@ -30,10 +31,19 @@ letter `1` turns any word into an alternating one, and their elementary equivale
 
 The closed `𝔸`-paths at a vertex `a` modulo homotopy form the fundamental group `π₁(𝔸, a)`,
 with concatenation as multiplication and reversal (inverting the vertex group letters) as
-inversion. An `𝔸`-path `p` from `a` to `b` conjugates the vertex group `A_b` into `π₁(𝔸, a)`, and
-reading the letters of a path as elements of `π₁(𝔸, T)` gives a homomorphism
-`π₁(𝔸, a) →* π₁(𝔸, T)` for every set `T` of darts. Over a graph without edges `π₁(𝔸, a)` is the
-vertex group `A_a`.
+inversion; more generally, `𝔸`-paths starting at `v₀` with arbitrary endpoint modulo homotopy
+form `HomotopyPathFrom`, on which `π₁(𝔸, v₀)` acts on the left by concatenation. An `𝔸`-path `p`
+from `a` to `b` conjugates the vertex group `A_b` into `π₁(𝔸, a)`; replacing `p` by another path
+from `a` to `b` conjugates the image of any subgroup of `A_b`. Over a preconnected graph any two
+vertices are joined by an `𝔸`-path. Reading the letters of a path as elements of `π₁(𝔸, T)` gives
+a homomorphism `π₁(𝔸, a) →* π₁(𝔸, T)` for every set `T` of darts. Over a graph without edges
+`π₁(𝔸, a)` is the vertex group `A_a`.
+
+An edge path of `Γ` is an `𝔸`-path with no vertex group letters, and backtrack homotopic edge
+paths are homotopic `𝔸`-paths. Hence reading reduced closed edge paths as `𝔸`-paths is a
+homomorphism from the reduced path group of `Γ` at `a` to `π₁(𝔸, a)`. It is injective, and
+bijective when all vertex groups are trivial: then `π₁(𝔸, a)` is the reduced path group of `Γ`
+at `a`.
 
 ## Main definitions
 
@@ -43,11 +53,23 @@ vertex group `A_a`.
 * `TauCeti.GraphOfGroups.π₁`: the fundamental group `π₁(𝔸, a)` of closed `𝔸`-paths.
 * `TauCeti.GraphOfGroups.π₁.vertexHom`: the homomorphism `A_b →* π₁(𝔸, a)`, `g ↦ p g p⁻¹`.
 * `TauCeti.GraphOfGroups.π₁.toπ₁Tree`: the homomorphism `π₁(𝔸, a) →* π₁(𝔸, T)`.
+* `TauCeti.GraphOfGroups.dartPrefunctor`: edge paths of `Γ` as `𝔸`-paths.
+* `TauCeti.GraphOfGroups.π₁.ofPathGroup`: the homomorphism from the reduced path group of `Γ`
+  at `a` to `π₁(𝔸, a)`.
+* `TauCeti.GraphOfGroups.Path.edgePath`: the underlying edge path of an `𝔸`-path.
+* `TauCeti.GraphOfGroups.π₁.pathGroupEquiv`: with trivial vertex groups, the reduced path group
+  of `Γ` at `a` is `π₁(𝔸, a)`.
+* `TauCeti.GraphOfGroups.HomotopyPathFrom`: based `𝔸`-paths starting at `v₀` modulo homotopy.
 
 ## Main results
 
 * `TauCeti.GraphOfGroups.π₁.mk_eq_mk_iff`: closed paths give the same element of `π₁(𝔸, a)`
   exactly when they are homotopic.
+* `TauCeti.GraphOfGroups.π₁.vertexHom_eq_conj_comp`, `π₁.map_vertexHom_eq_map_conj`: the
+  conjugations of `A_b` into `π₁(𝔸, a)` along two paths from `a` to `b` differ by an inner
+  automorphism, so the images of a subgroup of `A_b` along them are conjugate.
+* `TauCeti.GraphOfGroups.Path.nonempty_of_preconnected`: over a preconnected graph any two
+  vertices are joined by an `𝔸`-path.
 * `TauCeti.GraphOfGroups.π₁.toπ₁Tree_vertexHom`: the image of `p g p⁻¹` in `π₁(𝔸, T)`.
 * `TauCeti.GraphOfGroups.π₁.vertexEquivOfIsEmpty`: over a graph without edges,
   `A_a ≃* π₁(𝔸, a)`.
@@ -127,6 +149,22 @@ def ofVertex {a : Γ.V} (g : 𝔸.vertexGroup a) : 𝔸.Path ⟨a⟩ ⟨a⟩ :=
 def ofDart {a b : Γ.V} (e : a ⟶ b) : 𝔸.Path ⟨a⟩ ⟨b⟩ :=
   Quiver.Hom.toPath (Letter.dart e)
 
+theorem ofVertex_def {a : Γ.V} (g : 𝔸.vertexGroup a) :
+    ofVertex g = Quiver.Hom.toPath (Letter.vertex g) :=
+  (rfl)
+
+theorem ofDart_def {a b : Γ.V} (e : a ⟶ b) :
+    ofDart (𝔸 := 𝔸) e = Quiver.Hom.toPath (Letter.dart e) :=
+  (rfl)
+
+theorem ofVertex_eq_nil_cons {a : Γ.V} (g : 𝔸.vertexGroup a) :
+    ofVertex g = Quiver.Path.nil.cons (Letter.vertex g) :=
+  (rfl)
+
+theorem ofDart_eq_nil_cons {a b : Γ.V} (e : a ⟶ b) :
+    ofDart (𝔸 := 𝔸) e = Quiver.Path.nil.cons (Letter.dart e) :=
+  (rfl)
+
 @[simp] theorem comp_ofVertex {x : 𝔸.LetterVertex} {a : Γ.V} (p : 𝔸.Path x ⟨a⟩)
     (g : 𝔸.vertexGroup a) : p.comp (ofVertex g) = p.cons (Letter.vertex g) :=
   Quiver.Path.comp_toPath_eq_cons ..
@@ -142,6 +180,16 @@ def ofDart {a b : Γ.V} (e : a ⟶ b) : 𝔸.Path ⟨a⟩ ⟨b⟩ :=
 @[simp] theorem reverse_ofDart {a b : Γ.V} (e : a ⟶ b) :
     (ofDart (𝔸 := 𝔸) e).reverse = ofDart (Quiver.reverse e) :=
   (rfl)
+
+variable (𝔸) in
+/-- Over a preconnected graph any two vertices are joined by an `𝔸`-path: read the darts of a
+path of the graph as letters. -/
+theorem nonempty_of_preconnected (hΓ : Γ.Preconnected) (a b : Γ.V) :
+    Nonempty (𝔸.Path ⟨a⟩ ⟨b⟩) := by
+  obtain ⟨p⟩ := Γ.preconnected_iff.1 hΓ a b
+  induction p with
+  | nil => exact ⟨.nil⟩
+  | cons _ e ih => exact ih.map (·.cons (Letter.dart e))
 
 /-- Homotopy of `𝔸`-paths with fixed endpoints: the congruence generated by merging consecutive
 vertex group letters `g, h ~ g h`, deleting the letter `1`, deleting a dart followed by its
@@ -204,6 +252,33 @@ theorem cons_cons_reverse (p : 𝔸.Path x y) (l : 𝔸.Letter y z) :
     exact .one p
   | dart e => exact .dart_reverse p e
 
+/-- Moving an edge group element across a dart `e : b ⟶ c` of the quiver of `Γ`:
+`e, ω_e(c) ~ α_e(c), e`. -/
+theorem dart_ωArrow {b c : Γ.V} (p : 𝔸.Path x ⟨b⟩) (e : b ⟶ c)
+    (c₀ : 𝔸.edgeGroup (Γ.toGeomEdge e.val)) :
+    Homotopic ((p.cons (Letter.dart e)).cons (Letter.vertex (𝔸.ωArrow e c₀)))
+      ((p.cons (Letter.vertex (𝔸.αArrow e c₀))).cons (Letter.dart e)) := by
+  obtain ⟨e, rfl, rfl⟩ := e
+  simpa [Γ.dart_def] using Homotopic.dart_ω e c₀ p
+
+/-- Moving an edge group element across the dart of the letters `x, e, y`, for a dart
+`e : a ⟶ b` of the quiver of `Γ`: `x α_e(c)⁻¹, e, ω_e(c) y ~ x, e, y`. -/
+theorem dart_αArrow_ωArrow {a b : Γ.V} (e : a ⟶ b) (c : 𝔸.edgeGroup (Γ.toGeomEdge e.val))
+    (x : 𝔸.vertexGroup a) (y : 𝔸.vertexGroup b) :
+    Homotopic (((ofVertex (x * (𝔸.αArrow e c)⁻¹)).comp (ofDart e)).comp
+      (ofVertex (𝔸.ωArrow e c * y))) (((ofVertex x).comp (ofDart e)).comp (ofVertex y)) := by
+  simp only [ofVertex_eq_nil_cons, ofDart_eq_nil_cons, Quiver.Path.comp_cons,
+    Quiver.Path.comp_nil]
+  have h := dart_ωArrow (Quiver.Path.nil.cons (Letter.vertex (x * (𝔸.αArrow e c)⁻¹))) e c
+  refine (Homotopic.mul _ _ _).symm.trans ((h.cons _).trans ?_)
+  refine (((Homotopic.mul _ _ _).cons _).cons _).trans ?_
+  rw [inv_mul_cancel_right]
+  exact .refl _
+
+/-- The vertex group letter `1` is homotopic to the empty path. -/
+theorem ofVertex_one {a : Γ.V} : Homotopic (ofVertex (1 : 𝔸.vertexGroup a)) Quiver.Path.nil :=
+  .one .nil
+
 /-- A path followed by its reverse is homotopic to the empty path. -/
 theorem comp_reverse (p : 𝔸.Path x y) : Homotopic (p.comp p.reverse) Quiver.Path.nil := by
   induction p with
@@ -222,6 +297,16 @@ theorem comp_reverse_comp_comp {w : 𝔸.LetterVertex} (q : 𝔸.Path x y) (p : 
   rw [Quiver.Path.comp_assoc, ← Quiver.Path.comp_assoc p.reverse]
   simpa only [Quiver.Path.nil_comp] using ((reverse_comp p).comp_right r).comp_left q
 
+/-- A path followed by a path and its reverse is homotopic to the first path. -/
+theorem comp_comp_reverse (q : 𝔸.Path x y) (p : 𝔸.Path y z) :
+    Homotopic ((q.comp p).comp p.reverse) q := by
+  simpa only [Quiver.Path.comp_assoc, Quiver.Path.comp_nil] using (comp_reverse p).comp_left q
+
+/-- A path followed by the reverse of a path and then that path is homotopic to the first path. -/
+theorem comp_reverse_comp (q : 𝔸.Path x y) (p : 𝔸.Path z y) :
+    Homotopic ((q.comp p.reverse).comp p) q :=
+  comp_reverse_comp_comp q p .nil
+
 /-- Reversing homotopic paths gives homotopic paths. -/
 theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse q.reverse := by
   -- `p⁻¹ ~ p⁻¹ (q q⁻¹) = (p⁻¹ q) q⁻¹ ~ (p⁻¹ p) q⁻¹ ~ q⁻¹`.
@@ -231,7 +316,24 @@ theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse 
   rw [Quiver.Path.nil_comp] at h₂
   exact h₁.trans h₂
 
+/-- A common initial path can be cancelled from homotopic paths. -/
+theorem comp_left_iff {p : 𝔸.Path x y} {q r : 𝔸.Path y z} :
+    Homotopic (p.comp q) (p.comp r) ↔ Homotopic q r := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_left p⟩
+  -- `q ~ p⁻¹ (p q) ~ p⁻¹ (p r) ~ r`.
+  have hq := comp_reverse_comp_comp .nil p q
+  have hr := comp_reverse_comp_comp .nil p r
+  rw [Quiver.Path.nil_comp, Quiver.Path.nil_comp] at hq hr
+  exact hq.symm.trans ((h.comp_left p.reverse).trans hr)
+
 end Homotopic
+
+/-- A path is homotopic to `r p⁻¹` exactly when its concatenation with `p` is homotopic to `r`. -/
+theorem homotopic_comp_reverse_iff {x y z : 𝔸.LetterVertex} {q : 𝔸.Path x y} {p : 𝔸.Path y z}
+    {r : 𝔸.Path x z} : Homotopic q (r.comp p.reverse) ↔ Homotopic (q.comp p) r := by
+  refine ⟨fun h ↦ (h.comp_right p).trans ?_, fun h ↦ Homotopic.trans ?_ (h.comp_right p.reverse)⟩
+  · simpa using Homotopic.comp_reverse_comp_comp r p .nil
+  · simpa using (Homotopic.comp_reverse_comp_comp q p.reverse .nil).symm
 
 variable (𝔸) in
 /-- Homotopy of `𝔸`-paths as a setoid. -/
@@ -292,8 +394,20 @@ instance : Inv (π₁ 𝔸 a) where
 @[simp] theorem mk_nil : mk (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩) = 1 :=
   (rfl)
 
+@[simp] theorem mk_ofVertex_one : mk (Path.ofVertex (1 : 𝔸.vertexGroup a)) = 1 :=
+  mk_eq_mk_iff.2 Path.Homotopic.ofVertex_one
+
 @[simp] theorem mk_reverse (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : mk p.reverse = (mk p)⁻¹ :=
   (rfl)
+
+/-- Splitting a closed path `q r t⁻¹` through a path `s` with the same ends as `q`: in `π₁(𝔸, a)`,
+`[q r t⁻¹] = [q s⁻¹] [s r t⁻¹]`. -/
+theorem mk_comp_comp_reverse {y z : 𝔸.LetterVertex} (q s : 𝔸.Path ⟨a⟩ y) (r : 𝔸.Path y z)
+    (t : 𝔸.Path ⟨a⟩ z) :
+    mk ((q.comp r).comp t.reverse) = mk (q.comp s.reverse) * mk ((s.comp r).comp t.reverse) := by
+  rw [← mk_comp, mk_eq_mk_iff]
+  simpa only [Quiver.Path.comp_assoc] using
+    (Path.Homotopic.comp_reverse_comp_comp q s (r.comp t.reverse)).symm
 
 instance : Group (π₁ 𝔸 a) where
   mul_assoc g h k := induction_on g fun p => induction_on h fun q => induction_on k fun r => by
@@ -322,6 +436,14 @@ theorem vertexHom_apply (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b)
     vertexHom p g = mk ((p.comp (Path.ofVertex g)).comp p.reverse) :=
   (rfl)
 
+/-- A closed `𝔸`-path `s` at `a` satisfies `vertexHom p g = mk s` if and only if `s · p` is
+homotopic to `p · g`. -/
+theorem vertexHom_eq_mk_iff (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    vertexHom p g = mk s ↔ Path.Homotopic (s.comp p) (p.cons (Letter.vertex g)) := by
+  rw [vertexHom_apply, eq_comm, mk_eq_mk_iff, ← Path.comp_ofVertex]
+  exact ⟨fun h => (h.comp_right p).trans (Path.Homotopic.comp_reverse_comp _ p),
+    fun h => (Path.Homotopic.comp_comp_reverse s p).symm.trans (h.comp_right p.reverse)⟩
+
 @[simp] theorem vertexHom_nil_apply (g : 𝔸.vertexGroup a) :
     vertexHom Quiver.Path.nil g = mk (Path.ofVertex g) :=
   (rfl)
@@ -331,6 +453,38 @@ theorem vertexHom_congr {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} (h : p.Homotopic q) :
     vertexHom p = vertexHom q :=
   MonoidHom.ext fun _ => Quotient.sound <|
     (h.comp_right (Path.ofVertex _)).comp h.reverse
+
+/-- Prefixing a closed path `s` to the path along which `A_b` is conjugated into `π₁(𝔸, a)`
+conjugates the image by the class of `s`. -/
+theorem vertexHom_comp_apply (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (q : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    vertexHom (s.comp q) g = mk s * vertexHom q g * (mk s)⁻¹ := by
+  simp only [vertexHom_apply, ← mk_reverse, ← mk_comp, Quiver.Path.reverse_comp,
+    Quiver.Path.comp_assoc]
+
+/-- Prefixing a closed path `s` to the path along which `A_b` is conjugated into `π₁(𝔸, a)`
+composes the conjugation with the inner automorphism by the class of `s`. -/
+theorem vertexHom_comp (s : 𝔸.Path ⟨a⟩ ⟨a⟩) (q : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    vertexHom (s.comp q) = (MulAut.conj (mk s) : π₁ 𝔸 a →* π₁ 𝔸 a).comp (vertexHom q) :=
+  MonoidHom.ext (vertexHom_comp_apply s q)
+
+/-- The conjugations of `A_b` into `π₁(𝔸, a)` along two paths `q` and `r` from `a` to `b` differ
+by the inner automorphism by the class of `r q⁻¹`. -/
+theorem vertexHom_eq_conj_comp (q r : 𝔸.Path ⟨a⟩ ⟨b⟩) :
+    vertexHom r =
+      (MulAut.conj (mk (r.comp q.reverse)) : π₁ 𝔸 a →* π₁ 𝔸 a).comp (vertexHom q) := by
+  rw [← vertexHom_comp]
+  exact vertexHom_congr (by simpa using (Path.Homotopic.comp_reverse_comp_comp r q .nil).symm)
+
+theorem vertexHom_eq_conj_comp_apply (q r : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
+    vertexHom r g = mk (r.comp q.reverse) * vertexHom q g * (mk (r.comp q.reverse))⁻¹ :=
+  DFunLike.congr_fun (vertexHom_eq_conj_comp q r) g
+
+/-- The images in `π₁(𝔸, a)` of a subgroup `H` of a vertex group `A_b` along two paths `q` and
+`r` from `a` to `b` are conjugate, by the class of `r q⁻¹`. -/
+theorem map_vertexHom_eq_map_conj (q r : 𝔸.Path ⟨a⟩ ⟨b⟩) (H : Subgroup (𝔸.vertexGroup b)) :
+    H.map (vertexHom r) =
+      (H.map (vertexHom q)).map (MulAut.conj (mk (r.comp q.reverse)) : π₁ 𝔸 a →* π₁ 𝔸 a) := by
+  rw [vertexHom_eq_conj_comp q r, Subgroup.map_map]
 
 end π₁
 
@@ -342,14 +496,14 @@ variable {𝔸}
 generator for a dart. -/
 def Letter.toπ₁Tree (T : Set Γ.E) : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Letter x y → π₁Tree 𝔸 T
   | _, _, .vertex g => π₁Tree.of T _ g
-  | _, _, .dart e => π₁Tree.edge T e.1
+  | _, _, .dart e => π₁Tree.edge T e.val
 
 @[simp] theorem Letter.toπ₁Tree_vertex (T : Set Γ.E) {a : Γ.V} (g : 𝔸.vertexGroup a) :
     (Letter.vertex g).toπ₁Tree T = π₁Tree.of T a g :=
   (rfl)
 
 @[simp] theorem Letter.toπ₁Tree_dart (T : Set Γ.E) {a b : Γ.V} (e : a ⟶ b) :
-    (Letter.dart (𝔸 := 𝔸) e).toπ₁Tree T = π₁Tree.edge T e.1 :=
+    (Letter.dart (𝔸 := 𝔸) e).toπ₁Tree T = π₁Tree.edge T e.val :=
   (rfl)
 
 /-- The image of a reversed letter in `π₁(𝔸, T)` is the inverse of the image of the letter. -/
@@ -381,7 +535,7 @@ variable (T : Set Γ.E) {x y z : 𝔸.LetterVertex}
   simp [ofVertex, Quiver.Hom.toPath]
 
 @[simp] theorem toπ₁Tree_ofDart {a b : Γ.V} (e : a ⟶ b) :
-    toπ₁Tree T (ofDart (𝔸 := 𝔸) e) = π₁Tree.edge T e.1 := by
+    toπ₁Tree T (ofDart (𝔸 := 𝔸) e) = π₁Tree.edge T e.val := by
   simp [ofDart, Quiver.Hom.toPath]
 
 @[simp] theorem toπ₁Tree_reverse (p : 𝔸.Path x y) :
@@ -402,6 +556,15 @@ theorem Homotopic.toπ₁Tree_eq {p q : 𝔸.Path x y} (h : p.Homotopic q) :
   | one p => simp
   | dart_reverse p e => simp [mul_assoc]
   | dart_ω e c p => simp [mul_assoc, π₁Tree.edge_mul_of_ω]
+
+/-- Killing the darts of `S' ⊇ S` sends the element of `π₁(𝔸, S)` read off a path to the element
+of `π₁(𝔸, S')` read off the same path. -/
+theorem lift_toπ₁Tree_of_subset {S S' : Set Γ.E} (hS : S ⊆ S') (p : 𝔸.Path x y) :
+    π₁Tree.lift (π₁Tree.of S') (π₁Tree.edge S') (fun _ he => π₁Tree.edge_eq_one (hS he))
+      π₁Tree.edge_rev π₁Tree.edge_mul_of_ω_mul_edge_inv (p.toπ₁Tree S) = p.toπ₁Tree S' := by
+  induction p with
+  | nil => simp
+  | cons q l ih => cases l <;> simp [ih]
 
 end Path
 
@@ -445,7 +608,7 @@ private theorem exists_homotopic_ofVertex_aux :
     obtain ⟨h, g', hg'⟩ := exists_homotopic_ofVertex_aux p
     cases h
     exact ⟨rfl, g' * g, (hg'.cons _).trans (Path.Homotopic.mul _ g' g)⟩
-  | _, .cons _ (.dart e) => isEmptyElim e.1
+  | _, .cons _ (.dart e) => isEmptyElim e.val
 
 /-- Over a graph without edges, every closed `𝔸`-path is homotopic to a single vertex group
 letter. -/
@@ -471,6 +634,319 @@ noncomputable def vertexEquivOfIsEmpty (a : Γ.V) : 𝔸.vertexGroup a ≃* π�
 end isEmpty
 
 end π₁
+
+/-! ### Edge paths of the underlying graph -/
+
+variable (𝔸) in
+/-- The darts of `Γ` as letters of `𝔸`-paths. Its `mapPath` reads an edge path of `Γ` as the
+`𝔸`-path with the same darts and no vertex group letters. It is reducible so that the image
+of a path from `a` to `b` is an `𝔸`-path from `a` to `b` without a cast. -/
+abbrev dartPrefunctor : Γ.V ⥤q 𝔸.LetterVertex where
+  obj a := ⟨a⟩
+  map e := Letter.dart e
+
+@[simp] theorem dartPrefunctor_obj (a : Γ.V) : (dartPrefunctor 𝔸).obj a = ⟨a⟩ :=
+  (rfl)
+
+@[simp] theorem dartPrefunctor_map {a b : Γ.V} (e : a ⟶ b) :
+    (dartPrefunctor 𝔸).map e = Letter.dart e :=
+  (rfl)
+
+instance : (dartPrefunctor 𝔸).MapReverse :=
+  ⟨fun _ => rfl⟩
+
+variable (𝔸) in
+/-- Backtrack homotopic edge paths of `Γ` are homotopic as `𝔸`-paths: deleting a dart followed by
+its reverse is one of the elementary moves. -/
+theorem _root_.TauCeti.SerreGraph.Path.Homotopic.mapPath_dartPrefunctor {a b : Γ.V}
+    {p q : Γ.Path a b} (h : SerreGraph.Path.Homotopic Γ p q) :
+    GraphOfGroups.Path.Homotopic ((dartPrefunctor 𝔸).mapPath p)
+      ((dartPrefunctor 𝔸).mapPath q) := by
+  induction h with
+  | refl => exact .refl _
+  | symm _ ih => exact ih.symm
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+  | cons _ e ih => exact ih.cons _
+  | backtrack p e => exact .dart_reverse _ e
+
+/-- An edge path of `Γ`, read as an `𝔸`-path, has image in `π₁(𝔸, T)` the product of its dart
+generators. -/
+@[simp] theorem Path.toπ₁Tree_mapPath_dartPrefunctor (T : Set Γ.E) {a b : Γ.V} (p : Γ.Path a b) :
+    Path.toπ₁Tree T ((dartPrefunctor 𝔸).mapPath p) =
+      p.weight fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T e.val := by
+  simp [Path.toπ₁Tree]
+
+namespace π₁
+
+/-- Reducing an edge path does not change the class of the `𝔸`-path it defines. -/
+private theorem mk_mapPath_reduce {a : Γ.V} (p : Γ.Path a a) :
+    mk ((dartPrefunctor 𝔸).mapPath (SerreGraph.Path.reduce Γ p)) =
+      mk ((dartPrefunctor 𝔸).mapPath p) :=
+  mk_eq_mk_iff.2 ((SerreGraph.Path.homotopic_reduce Γ p).symm.mapPath_dartPrefunctor 𝔸)
+
+variable (𝔸) in
+/-- Reading reduced closed edge paths of `Γ` at `a` as `𝔸`-paths: the homomorphism from the
+reduced path group of the underlying graph to `π₁(𝔸, a)`. -/
+def ofPathGroup (a : Γ.V) : SerreGraph.PathGroup Γ a →* π₁ 𝔸 a where
+  toFun g := mk ((dartPrefunctor 𝔸).mapPath g.toPath)
+  map_one' := by simp
+  map_mul' g h := by
+    rw [SerreGraph.PathGroup.toPath_mul, mk_mapPath_reduce, Prefunctor.mapPath_comp, mk_comp]
+
+theorem ofPathGroup_apply {a : Γ.V} (g : SerreGraph.PathGroup Γ a) :
+    ofPathGroup 𝔸 a g = mk ((dartPrefunctor 𝔸).mapPath g.toPath) :=
+  (rfl)
+
+/-- A closed edge path, read as an `𝔸`-path, need not be reduced first. -/
+@[simp] theorem ofPathGroup_ofPath {a : Γ.V} (p : Γ.Path a a) :
+    ofPathGroup 𝔸 a (SerreGraph.PathGroup.ofPath p) = mk ((dartPrefunctor 𝔸).mapPath p) := by
+  rw [ofPathGroup_apply, SerreGraph.PathGroup.toPath_ofPath, mk_mapPath_reduce]
+
+/-- A reduced closed edge path, read as an `𝔸`-path, has image in `π₁(𝔸, T)` the product of its
+dart generators. -/
+@[simp] theorem toπ₁Tree_ofPathGroup (T : Set Γ.E) {a : Γ.V} (g : SerreGraph.PathGroup Γ a) :
+    toπ₁Tree 𝔸 a T (ofPathGroup 𝔸 a g) =
+      SerreGraph.PathGroup.lift (π₁Tree.edge T) π₁Tree.edge_rev g := by
+  induction g using SerreGraph.PathGroup.induction_on with
+  | h p => simp
+
+end π₁
+
+/-! ### The edge path of an `𝔸`-path -/
+
+namespace Path
+
+/-- The underlying edge path of an `𝔸`-path: forget the vertex group letters. -/
+def edgePath : ∀ {x y : 𝔸.LetterVertex}, 𝔸.Path x y → Γ.Path x.as y.as
+  | _, _, .nil => .nil
+  | _, _, .cons p (.vertex _) => edgePath p
+  | _, _, .cons p (.dart e) => (edgePath p).cons e
+
+@[simp] theorem edgePath_nil {x : 𝔸.LetterVertex} :
+    edgePath (Quiver.Path.nil : 𝔸.Path x x) = .nil := by
+  rw [edgePath]
+
+@[simp] theorem edgePath_cons_vertex {x : 𝔸.LetterVertex} {a : Γ.V} (p : 𝔸.Path x ⟨a⟩)
+    (g : 𝔸.vertexGroup a) : edgePath (p.cons (Letter.vertex g)) = edgePath p := by
+  rw [edgePath]
+
+@[simp] theorem edgePath_cons_dart {x : 𝔸.LetterVertex} {a b : Γ.V} (p : 𝔸.Path x ⟨a⟩)
+    (e : a ⟶ b) : edgePath (p.cons (Letter.dart e)) = (edgePath p).cons e := by
+  rw [edgePath]
+
+@[simp] theorem edgePath_toPath_vertex {a : Γ.V} (g : 𝔸.vertexGroup a) :
+    edgePath (Quiver.Hom.toPath (Letter.vertex g)) = .nil :=
+  (edgePath_cons_vertex .nil g).trans edgePath_nil
+
+@[simp] theorem edgePath_toPath_dart {a b : Γ.V} (e : a ⟶ b) :
+    edgePath (Quiver.Hom.toPath (Letter.dart (𝔸 := 𝔸) e)) = e.toPath :=
+  (edgePath_cons_dart .nil e).trans (congrArg (fun q : Γ.Path a a => q.cons e) edgePath_nil)
+
+@[simp] theorem edgePath_ofVertex {a : Γ.V} (g : 𝔸.vertexGroup a) :
+    edgePath (ofVertex g) = .nil :=
+  edgePath_toPath_vertex g
+
+@[simp] theorem edgePath_ofDart {a b : Γ.V} (e : a ⟶ b) :
+    edgePath (ofDart (𝔸 := 𝔸) e) = e.toPath :=
+  edgePath_toPath_dart e
+
+/-- An edge path of `Γ`, read as an `𝔸`-path, has itself as underlying edge path. -/
+@[simp] theorem edgePath_mapPath_dartPrefunctor {a b : Γ.V} (p : Γ.Path a b) :
+    edgePath ((dartPrefunctor 𝔸).mapPath p) = p := by
+  induction p with
+  | nil => exact edgePath_nil
+  | cons p e ih => simp [ih]
+
+/-- The underlying edge path of a concatenation is the concatenation of the underlying edge
+paths. -/
+@[simp] theorem edgePath_comp {x y z : 𝔸.LetterVertex} (p : 𝔸.Path x y) (q : 𝔸.Path y z) :
+    edgePath (p.comp q) = (edgePath p).comp (edgePath q) := by
+  induction q with
+  | nil => simp
+  | cons q l ih => cases l <;> simp [ih]
+
+/-- The underlying edge path of the reverse of an `𝔸`-path is the reverse of its underlying edge
+path. -/
+@[simp] theorem edgePath_reverse {x y : 𝔸.LetterVertex} (p : 𝔸.Path x y) :
+    edgePath p.reverse = (edgePath p).reverse := by
+  induction p with
+  | nil => simp
+  | cons p l ih => cases l <;> simp [Quiver.Path.reverse, Quiver.Hom.toPath, ih]
+
+/-- Homotopic `𝔸`-paths have backtrack homotopic underlying edge paths. -/
+theorem Homotopic.edgePath {x y : 𝔸.LetterVertex} {p q : 𝔸.Path x y} (h : p.Homotopic q) :
+    SerreGraph.Path.Homotopic Γ p.edgePath q.edgePath := by
+  induction h with
+  | refl => exact .refl _
+  | symm _ ih => exact ih.symm
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+  | cons _ l ih =>
+    cases l with
+    | vertex g => simpa using ih
+    | dart e => simpa using ih.cons e
+  | mul p g h => simpa using .refl _
+  | one p => simpa using .refl _
+  | dart_reverse p e => simpa using .backtrack _ e
+  | dart_ω e c p => simpa using .refl _
+
+/-- Two edge paths of `Γ` are homotopic as `𝔸`-paths exactly when they are backtrack
+homotopic. -/
+@[simp] theorem homotopic_mapPath_dartPrefunctor_iff {a b : Γ.V} {p q : Γ.Path a b} :
+    Homotopic ((dartPrefunctor 𝔸).mapPath p) ((dartPrefunctor 𝔸).mapPath q) ↔
+      SerreGraph.Path.Homotopic Γ p q :=
+  ⟨fun h => by simpa using h.edgePath, fun h => h.mapPath_dartPrefunctor 𝔸⟩
+
+/-- When all vertex groups are trivial, an `𝔸`-path is homotopic to its underlying edge path. -/
+theorem homotopic_mapPath_edgePath [∀ a, Subsingleton (𝔸.vertexGroup a)] :
+    ∀ {x y : 𝔸.LetterVertex} (p : 𝔸.Path x y),
+      p.Homotopic ((dartPrefunctor 𝔸).mapPath p.edgePath)
+  | _, _, .nil => by simpa using .refl _
+  | _, _, .cons p (.vertex g) => by
+    rw [Subsingleton.elim g 1, edgePath_cons_vertex]
+    exact (Homotopic.one p).trans (homotopic_mapPath_edgePath p)
+  | _, _, .cons p (.dart e) => by
+    rw [edgePath_cons_dart, Prefunctor.mapPath_cons]
+    exact (homotopic_mapPath_edgePath p).cons _
+
+end Path
+
+namespace π₁
+
+variable (𝔸) (a : Γ.V)
+
+/-- Reading reduced closed edge paths as `𝔸`-paths is injective: the reduced path group of the
+underlying graph embeds in `π₁(𝔸, a)`. -/
+theorem ofPathGroup_injective : Function.Injective (ofPathGroup 𝔸 a) := fun g h hgh => by
+  rw [ofPathGroup_apply, ofPathGroup_apply, mk_eq_mk_iff,
+    Path.homotopic_mapPath_dartPrefunctor_iff, ← SerreGraph.PathGroup.ofPath_eq_iff_homotopic,
+    SerreGraph.PathGroup.ofPath_toPath, SerreGraph.PathGroup.ofPath_toPath] at hgh
+  exact hgh
+
+variable [∀ b, Subsingleton (𝔸.vertexGroup b)]
+
+variable {𝔸 a} in
+/-- With trivial vertex groups, a closed `𝔸`-path has the same class as its underlying edge
+path. -/
+@[simp] theorem mk_mapPath_edgePath (p : 𝔸.Path ⟨a⟩ ⟨a⟩) :
+    mk ((dartPrefunctor 𝔸).mapPath p.edgePath) = mk p :=
+  mk_eq_mk_iff.2 (Path.homotopic_mapPath_edgePath p).symm
+
+/-- With trivial vertex groups, reading reduced closed edge paths as `𝔸`-paths is bijective. -/
+theorem ofPathGroup_bijective : Function.Bijective (ofPathGroup 𝔸 a) :=
+  ⟨ofPathGroup_injective 𝔸 a, fun g => induction_on g fun p =>
+    ⟨SerreGraph.PathGroup.ofPath p.edgePath, by rw [ofPathGroup_ofPath, mk_mapPath_edgePath]⟩⟩
+
+/-- With trivial vertex groups, the fundamental group `π₁(𝔸, a)` is the reduced path group of
+the underlying graph `Γ` at `a`: a reduced closed edge path is read as an `𝔸`-path. -/
+noncomputable def pathGroupEquiv : SerreGraph.PathGroup Γ a ≃* π₁ 𝔸 a :=
+  MulEquiv.ofBijective (ofPathGroup 𝔸 a) (ofPathGroup_bijective 𝔸 a)
+
+theorem pathGroupEquiv_apply (g : SerreGraph.PathGroup Γ a) :
+    pathGroupEquiv 𝔸 a g = ofPathGroup 𝔸 a g :=
+  (rfl)
+
+variable {a} in
+/-- With trivial vertex groups, a closed edge path, read in the reduced path group, corresponds
+to its class as an `𝔸`-path. -/
+@[simp] theorem pathGroupEquiv_ofPath (p : Γ.Path a a) :
+    pathGroupEquiv 𝔸 a (SerreGraph.PathGroup.ofPath p) = mk ((dartPrefunctor 𝔸).mapPath p) :=
+  ofPathGroup_ofPath p
+
+variable {𝔸 a} in
+/-- With trivial vertex groups, the class of a closed `𝔸`-path corresponds to the reduction of
+its underlying edge path. -/
+@[simp] theorem pathGroupEquiv_symm_mk (p : 𝔸.Path ⟨a⟩ ⟨a⟩) :
+    (pathGroupEquiv 𝔸 a).symm (mk p) = SerreGraph.PathGroup.ofPath p.edgePath := by
+  rw [MulEquiv.symm_apply_eq, pathGroupEquiv_ofPath, mk_mapPath_edgePath]
+
+end π₁
+
+/-! ### Homotopy classes of based `𝔸`-paths -/
+
+section
+
+variable (𝔸) (v₀ : Γ.V)
+
+/-- A based `𝔸`-path starting at `v₀` up to homotopy, without quotienting on the right by the
+terminal vertex group `A_v`. -/
+@[ext] structure HomotopyPathFrom : Type (max u v w) where
+  /-- The endpoint vertex in `Γ`. -/
+  vertex : Γ.V
+  /-- The homotopy class of the `𝔸`-path from `v₀` to `vertex`. -/
+  pathClass : Quotient (Path.setoid 𝔸 ⟨v₀⟩ ⟨vertex⟩)
+
+namespace HomotopyPathFrom
+
+variable {𝔸 v₀}
+
+/-- The homotopy class of an `𝔸`-path `p` from `v₀` to `v` in `𝔸.HomotopyPathFrom v₀`. -/
+def ofPath {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : 𝔸.HomotopyPathFrom v₀ :=
+  ⟨v, Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p⟩
+
+theorem ofPath_def {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    ofPath p = ⟨v, Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p⟩ := (rfl)
+
+@[simp] theorem vertex_ofPath {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : (ofPath p).vertex = v := (rfl)
+
+theorem pathClass_ofPath {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    (ofPath p).pathClass =
+      (vertex_ofPath p).symm ▸ Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p := (rfl)
+
+theorem pathClass_ofPath_heq {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    HEq (ofPath p).pathClass (Quotient.mk (Path.setoid 𝔸 ⟨v₀⟩ ⟨v⟩) p) := .rfl
+
+/-- Descend a homotopy-invariant function on `𝔸`-paths starting at `v₀` to
+`𝔸.HomotopyPathFrom v₀`. -/
+def lift {β : Sort*} (f : ∀ {v : Γ.V}, 𝔸.Path ⟨v₀⟩ ⟨v⟩ → β)
+    (hf : ∀ {v : Γ.V} (p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩), p.Homotopic q → f p = f q)
+    (x : 𝔸.HomotopyPathFrom v₀) : β :=
+  Quotient.lift (f (v := x.vertex)) (fun _ _ h => hf _ _ h) x.pathClass
+
+@[simp] theorem lift_ofPath {β : Sort*} (f : ∀ {v : Γ.V}, 𝔸.Path ⟨v₀⟩ ⟨v⟩ → β)
+    (hf : ∀ {v : Γ.V} (p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩), p.Homotopic q → f p = f q)
+    {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) : lift f hf (ofPath p) = f p := (rfl)
+
+/-- Prove a property of `𝔸.HomotopyPathFrom v₀` by checking it on `𝔸`-paths starting at `v₀`. -/
+@[elab_as_elim] theorem induction_on {P : 𝔸.HomotopyPathFrom v₀ → Prop}
+    (x : 𝔸.HomotopyPathFrom v₀) (h : ∀ {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩), P (ofPath p)) : P x := by
+  rcases x with ⟨_, q⟩; exact q.inductionOn fun p => h p
+
+theorem ofPath_eq_ofPath_iff_exists {v w : Γ.V} {p : 𝔸.Path ⟨v₀⟩ ⟨v⟩} {q : 𝔸.Path ⟨v₀⟩ ⟨w⟩} :
+    ofPath p = ofPath q ↔ ∃ h : v = w, Path.Homotopic (h ▸ p) q := by
+  refine ⟨fun h => ?_, fun ⟨h, hpq⟩ => by subst h; exact congrArg (mk v) (Quotient.sound hpq)⟩
+  obtain rfl : v = w := congrArg vertex h
+  exact ⟨rfl, by injection h with _ hq; exact Quotient.exact hq⟩
+
+@[simp] theorem ofPath_eq_ofPath_iff {v : Γ.V} {p q : 𝔸.Path ⟨v₀⟩ ⟨v⟩} :
+    ofPath p = ofPath q ↔ p.Homotopic q :=
+  ofPath_eq_ofPath_iff_exists.trans
+    ⟨fun ⟨h, hpq⟩ => by rwa [Subsingleton.elim h rfl] at hpq, fun hpq => ⟨rfl, hpq⟩⟩
+
+/-- `π₁(𝔸, v₀)` acts on `𝔸.HomotopyPathFrom v₀` on the left by concatenating closed `𝔸`-paths at
+`v₀`. -/
+instance : SMul (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
+  smul g x := ⟨x.vertex, π₁.lift (fun s => Quotient.lift (fun p => Quotient.mk _ (s.comp p))
+      fun _ _ hp => Quotient.sound (Path.Homotopic.comp_left hp s))
+    (fun _ _ hs => funext fun q => Quotient.inductionOn q fun p =>
+      Quotient.sound (Path.Homotopic.comp_right hs p)) g x.pathClass⟩
+
+@[simp] theorem vertex_smul (g : π₁ 𝔸 v₀) (x : 𝔸.HomotopyPathFrom v₀) :
+    (g • x).vertex = x.vertex := (rfl)
+
+@[simp] theorem mk_smul_ofPath (s : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩) {v : Γ.V} (p : 𝔸.Path ⟨v₀⟩ ⟨v⟩) :
+    π₁.mk s • ofPath p = ofPath (s.comp p) := (rfl)
+
+/-- `π₁(𝔸, v₀)` acts on `𝔸.HomotopyPathFrom v₀` on the left by concatenating closed `𝔸`-paths at
+`v₀`. -/
+instance : MulAction (π₁ 𝔸 v₀) (𝔸.HomotopyPathFrom v₀) where
+  one_smul x := induction_on x fun _ => by rw [← π₁.mk_nil, mk_smul_ofPath, Quiver.Path.nil_comp]
+  mul_smul g h x := π₁.induction_on g fun _ => π₁.induction_on h fun _ =>
+    induction_on x fun _ => by
+      rw [← π₁.mk_comp, mk_smul_ofPath, mk_smul_ofPath, mk_smul_ofPath, Quiver.Path.comp_assoc]
+
+end HomotopyPathFrom
+
+end
 
 end GraphOfGroups
 

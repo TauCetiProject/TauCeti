@@ -74,7 +74,7 @@ theorem weight_neg (y : ℝ) : weight (-y) = -weight y := by
 
 /-- The weight is nonnegative on `[0, ∞)`. -/
 theorem weight_nonneg {y : ℝ} (hy : 0 ≤ y) : 0 ≤ weight y :=
-  Real.tanh_nonneg (by positivity)
+  Real.tanh_nonneg_iff.2 (by positivity)
 
 /-- The weight is less than `1`. -/
 theorem weight_lt_one (y : ℝ) : weight y < 1 :=
@@ -241,7 +241,6 @@ theorem abs_realKernel_le (t : ℝ) : |realKernel t| ≤ π / (2 * (1 + t ^ 2)) 
     have hsq : 1 ≤ t ^ 2 := by
       rw [← sq_abs]
       exact one_le_pow₀ h1
-    have ht2 : 0 < t ^ 2 := by positivity
     calc |Real.sin t| / 2 * weightLaplaceTransform t
         = |Real.sin t| * weightLaplaceTransform t / 2 := by ring
       _ ≤ π / (2 * t ^ 2) / 2 := by gcongr

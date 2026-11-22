@@ -141,7 +141,7 @@ attribute [local instance] Classical.decEq
 This is the finite change-of-variables identity behind multi-marginal weak duality. -/
 theorem FiniteMultiCoupling.sum_mul_mass_eq_finiteMultiDualValue
     (π : FiniteMultiCoupling μ) (φ : ∀ i, X i → ℝ) :
-    ∑ x, (∑ i, φ i (x i)) * (π.1 x).toReal = finiteMultiDualValue μ φ := by
+    ∑ x, (∑ i, φ i (x i)) * (π.val x).toReal = finiteMultiDualValue μ φ := by
   rw [finiteMultiDualValue_def]
   simp_rw [Finset.sum_mul]
   rw [Finset.sum_comm]
@@ -150,10 +150,10 @@ theorem FiniteMultiCoupling.sum_mul_mass_eq_finiteMultiDualValue
   rw [← π.map_eval i]
   let _ : MeasurableSpace (∀ i, X i) := ⊤
   let _ : MeasurableSpace (X i) := ⊤
-  have hmap := MeasureTheory.integral_map (μ := π.1.toMeasure) (φ := Function.eval i)
+  have hmap := MeasureTheory.integral_map (μ := π.val.toMeasure) (φ := Function.eval i)
     (measurable_of_finite (Function.eval i)).aemeasurable
     (measurable_of_finite (φ i)).aestronglyMeasurable
-  rw [PMF.toMeasure_map (Function.eval i) π.1
+  rw [PMF.toMeasure_map (Function.eval i) π.val
     (measurable_of_finite (Function.eval i))] at hmap
   simpa only [PMF.integral_eq_sum, smul_eq_mul, mul_comm] using hmap.symm
 
@@ -162,7 +162,7 @@ the pointwise dual gaps. -/
 theorem FiniteMultiCoupling.cost_sub_finiteMultiDualValue (π : FiniteMultiCoupling μ)
     (c : (∀ i, X i) → ℝ) (φ : ∀ i, X i → ℝ) :
     π.cost c - finiteMultiDualValue μ φ =
-      ∑ x, (c x - ∑ i, φ i (x i)) * (π.1 x).toReal := by
+      ∑ x, (c x - ∑ i, φ i (x i)) * (π.val x).toReal := by
   rw [FiniteMultiCoupling.cost_def, ← π.sum_mul_mass_eq_finiteMultiDualValue φ]
   simp only [sub_mul, Finset.sum_sub_distrib]
 
@@ -182,7 +182,7 @@ dual constraint. -/
 theorem FiniteMultiCoupling.cost_eq_finiteMultiDualValue_iff (π : FiniteMultiCoupling μ)
     {c : (∀ i, X i) → ℝ} {φ : ∀ i, X i → ℝ} (hφ : FiniteMultiDualFeasible c φ) :
     π.cost c = finiteMultiDualValue μ φ ↔
-      ∀ x, π.1 x ≠ 0 → ∑ i, φ i (x i) = c x := by
+      ∀ x, π.val x ≠ 0 → ∑ i, φ i (x i) = c x := by
   rw [← sub_eq_zero, π.cost_sub_finiteMultiDualValue,
     Finset.sum_eq_zero_iff_of_nonneg fun x _ ↦
       mul_nonneg (sub_nonneg.2 (hφ x)) ENNReal.toReal_nonneg]
@@ -190,11 +190,11 @@ theorem FiniteMultiCoupling.cost_eq_finiteMultiDualValue_iff (π : FiniteMultiCo
   · intro h x hx
     rcases mul_eq_zero.1 (h x (Finset.mem_univ x)) with hgap | hmass
     · linarith
-    · rcases (ENNReal.toReal_eq_zero_iff (π.1 x)).1 hmass with hzero | htop
+    · rcases (ENNReal.toReal_eq_zero_iff (π.val x)).1 hmass with hzero | htop
       · exact (hx hzero).elim
-      · exact (π.1.apply_ne_top x htop).elim
+      · exact (π.val.apply_ne_top x htop).elim
   · intro h x _
-    by_cases hx : π.1 x = 0
+    by_cases hx : π.val x = 0
     · simp [hx]
     · rw [h x hx, sub_self, zero_mul]
 
@@ -236,12 +236,12 @@ private def multiCostFun (c : (∀ i, X i) → ℝ) (f : (∀ i, X i) → ℝ) :
   ∑ x, c x * f x
 
 private theorem FiniteMultiCoupling.toRealFun_mem_multiRealPlans (π : FiniteMultiCoupling μ) :
-    (fun x ↦ (π.1 x).toReal) ∈ MultiRealPlans μ := by
-  refine ⟨fun _ ↦ ENNReal.toReal_nonneg, PMF.sum_toReal_eq_one π.1, fun i a ↦ ?_⟩
+    (fun x ↦ (π.val x).toReal) ∈ MultiRealPlans μ := by
+  refine ⟨fun _ ↦ ENNReal.toReal_nonneg, PMF.sum_toReal_eq_one π.val, fun i a ↦ ?_⟩
   have h := congrArg (fun ν : PMF (X i) ↦ (ν a).toReal) (π.map_eval i)
   rw [PMF.map_apply, tsum_fintype] at h
   rw [← h, ENNReal.toReal_sum (fun x _ ↦ by
-    by_cases hx : a = x i <;> simp [hx, π.1.apply_ne_top x])]
+    by_cases hx : a = x i <;> simp [hx, π.val.apply_ne_top x])]
   simp only [Finset.sum_filter, apply_ite, ENNReal.toReal_zero, eq_comm]
 
 /-- Turn a nonnegative real plan of total mass one into a finite multi-marginal coupling. -/
@@ -257,13 +257,13 @@ private def FiniteMultiCoupling.ofRealFun {f : (∀ i, X i) → ℝ}
 
 private theorem FiniteMultiCoupling.toRealFun_ofRealFun {f : (∀ i, X i) → ℝ}
     (hf : f ∈ MultiRealPlans μ) :
-    (fun x ↦ ((FiniteMultiCoupling.ofRealFun hf).1 x).toReal) = f := by
+    (fun x ↦ ((FiniteMultiCoupling.ofRealFun hf).val x).toReal) = f := by
   funext x
   exact ENNReal.toReal_ofReal (hf.1 x)
 
 private theorem FiniteMultiCoupling.cost_eq_multiCostFun (π : FiniteMultiCoupling μ)
     (c : (∀ i, X i) → ℝ) :
-    π.cost c = multiCostFun c (fun x ↦ (π.1 x).toReal) := π.cost_def c
+    π.cost c = multiCostFun c (fun x ↦ (π.val x).toReal) := π.cost_def c
 
 private theorem FiniteMultiCoupling.cost_ofRealFun {f : (∀ i, X i) → ℝ}
     (hf : f ∈ MultiRealPlans μ) (c : (∀ i, X i) → ℝ) :
@@ -309,7 +309,7 @@ private theorem isCompact_multiRealPlans : IsCompact (MultiRealPlans μ) :=
     multiRealPlans_subset_multiStdSimplexSet
 
 private theorem multiRealPlans_nonempty : (MultiRealPlans μ).Nonempty :=
-  ⟨fun x ↦ ((FiniteMultiCoupling.independent μ).1 x).toReal,
+  ⟨fun x ↦ ((FiniteMultiCoupling.independent μ).val x).toReal,
     FiniteMultiCoupling.toRealFun_mem_multiRealPlans _⟩
 
 private theorem continuous_multiCostFun (c : (∀ i, X i) → ℝ) :
@@ -391,7 +391,7 @@ omit [∀ i, Fintype (X i)] in
 /-- A bound `B` dominating `(card ι + 2) * M` for `M ≥ 0` also dominates `M`. -/
 private theorem le_of_card_add_two_mul_le {M B : ℝ} (hM0 : 0 ≤ M)
     (hD : (Fintype.card ι + 2 : ℝ) * M ≤ B) : M ≤ B := by
-  have hcard : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
+  have _ : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
     Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
   nlinarith
 
@@ -429,7 +429,6 @@ private theorem neg_le_of_toReal_ne_zero {M B : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i
   have hw : 0 < ((μ i) x).toReal := lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hx)
   have hothers := PMF.sum_toReal_mul_le (μ i) (Finset.univ.erase x) hM0 fun y _ ↦ hψ_le i y
   rw [← Finset.add_sum_erase _ _ (Finset.mem_univ x)] at hE
-  have hprod : -((Fintype.card ι + 2 : ℝ) * M) ≤ ((μ i) x).toReal * ψ i x := by linarith
   have := (div_le_iff₀ hw).1 hquot
   nlinarith
 
@@ -841,7 +840,7 @@ theorem FiniteMultiCoupling.forall_cost_le_and_forall_finiteMultiDualValue_le_if
     ((∀ σ : FiniteMultiCoupling μ, π.cost c ≤ σ.cost c) ∧
       ∀ ψ, FiniteMultiDualFeasible c ψ →
         finiteMultiDualValue μ ψ ≤ finiteMultiDualValue μ φ) ↔
-      ∀ z, π.1 z ≠ 0 → ∑ i, φ i (z i) = c z := by
+      ∀ z, π.val z ≠ 0 → ∑ i, φ i (z i) = c z := by
   rw [← π.cost_eq_finiteMultiDualValue_iff hφ]
   constructor
   · rintro ⟨hmin, hmax⟩

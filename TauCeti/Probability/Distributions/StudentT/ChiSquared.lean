@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.Real
 public import TauCeti.Probability.Distributions.FisherSnedecor.ChiSquared
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 public import TauCeti.Probability.Distributions.StudentT.Cdf
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Probability.Distributions.FisherSnedecor.Cdf
 
 /-!
@@ -49,11 +50,15 @@ namespace TauCeti
 
 namespace Probability
 
-/-- The square of a Student t law with `ν > 0` degrees of freedom is the Fisher--Snedecor law
-with parameters `1` and `ν`. -/
+/-- The square of a Student t law with `ν` degrees of freedom is the Fisher--Snedecor law
+with parameters `1` and `ν` (both sides vanish when `ν ≤ 0`). -/
 @[simp]
-theorem studentTMeasure_map_sq {ν : ℝ} (hν : 0 < ν) :
+theorem studentTMeasure_map_sq (ν : ℝ) :
     (studentTMeasure ν).map (fun x : ℝ ↦ x ^ 2) = fisherSnedecorMeasure 1 ν := by
+  by_cases hν : 0 < ν
+  swap
+  · rw [studentTMeasure_of_nonpos (not_lt.1 hν), Measure.map_zero,
+      fisherSnedecorMeasure_of_not_pos fun h ↦ hν h.2]
   let _ : IsProbabilityMeasure (studentTMeasure ν) :=
     isProbabilityMeasure_studentTMeasure hν
   let _ : IsProbabilityMeasure (fisherSnedecorMeasure 1 ν) :=
@@ -69,14 +74,8 @@ theorem studentTMeasure_map_sq {ν : ℝ} (hν : 0 < ν) :
       exact fun hy ↦ (not_le_of_gt hx) ((sq_nonneg y).trans hy)
     rw [hpreimage, measureReal_empty, ite_eq_left hx.le]
   · have hx0 : 0 ≤ x := le_of_not_gt hx
-    have hpreimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic x = Icc (-√x) √x := by
-      ext y
-      simp only [mem_preimage, mem_Iic, mem_Icc]
-      constructor
-      · exact fun hy ↦ abs_le.mp (Real.abs_le_sqrt hy)
-      · intro hy
-        rw [← Real.sq_sqrt hx0]
-        exact sq_le_sq' hy.1 hy.2
+    have hpreimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic x = Icc (-√x) √x :=
+      Real.setOf_sq_le_eq_Icc hx0
     rw [hpreimage]
     let _ : NullSingletonClass (studentTMeasure ν) := by
       rw [studentTMeasure_def]
@@ -184,7 +183,7 @@ theorem map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
       (fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν))).eq_of_map_sq_eq_of_map_neg_eq_self
     (studentTMeasure ν) (map_neg_map_div_sqrt_chiSquaredMeasure hν)
     (studentTMeasure_map_neg ν)
-    ((map_sq_map_div_sqrt_chiSquaredMeasure hν).trans (studentTMeasure_map_sq hν).symm)
+    ((map_sq_map_div_sqrt_chiSquaredMeasure hν).trans (studentTMeasure_map_sq ν).symm)
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {Z V : Ω → ℝ}
 

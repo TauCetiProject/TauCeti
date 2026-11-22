@@ -54,10 +54,7 @@ to the inclusion, puts it back into the continuous cocycles.
 
 The maps and their normalization are those of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/LowDegree.lean`,
-`ExplicitFunctoriality.lean` and `ShortExact.lean`. This implements the eight exactness nodes of
-the long exact sequence milestone of Layer 5 of the human-authored roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, whose `Suggested.lean` fixes the eight names
-above.
+`ExplicitFunctoriality.lean` and `ShortExact.lean`.
 
 ## References
 
@@ -181,7 +178,7 @@ theorem explicitLongExact_H0B :
     have ha_fixed : a ∈ H0 G A := (FixedPoints.mem_addSubgroup G A a).2 fun g => by
       apply S.incl_injective
       rw [S.incl_equivariant, ha]
-      exact (FixedPoints.mem_addSubgroup G B (b : B)).1 b.2 g
+      exact (FixedPoints.mem_addSubgroup G B (b : B)).1 b.property g
     refine ⟨⟨a, ha_fixed⟩, Subtype.ext ?_⟩
     simpa only [coe_explicitCoeff0, inclDistribMulActionHom_apply] using ha
 
@@ -196,7 +193,7 @@ private theorem range_coeff0_le_ker_delta0 :
   rw [S.explicitDelta0_apply (explicitCoeff0 G B S.projDistribMulActionHom b) hb (a := 0)]
   · exact map_zero (H1pi G A)
   · intro g
-    rw [Pi.zero_apply, map_zero, (FixedPoints.mem_addSubgroup G B (b : B)).1 b.2 g,
+    rw [Pi.zero_apply, map_zero, (FixedPoints.mem_addSubgroup G B (b : B)).1 b.property g,
       sub_self]
 
 /-- If `δ⁰(c) = 0`, then `c` has an invariant preimage in `B`. -/
@@ -206,7 +203,7 @@ private theorem ker_delta0_le_range_coeff0 :
   obtain ⟨b, hb⟩ := S.proj_surjective (c : C)
   have hb_fixed : S.proj b ∈ H0 G C := by
     rw [hb]
-    exact c.2
+    exact c.property
   obtain ⟨a, _, ha_incl⟩ :=
     S.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b)
       (S.proj_d0_eq_zero hb_fixed)
@@ -263,7 +260,7 @@ private theorem range_delta0_le_ker_coeff1 :
       (explicitCoeff1 G A S.inclDistribMulActionHom continuous_of_discreteTopology).ker := by
   rintro _ ⟨c, rfl⟩
   obtain ⟨b, hb⟩ := S.proj_surjective (c : C)
-  have hbinv : S.proj b ∈ H0 G C := hb ▸ c.2
+  have hbinv : S.proj b ∈ H0 G C := hb ▸ c.property
   obtain ⟨a, -, haincl⟩ :=
     S.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b) (S.proj_d0_eq_zero hbinv)
   have hab : ∀ g : G, S.incl (a g) = g • b - b := fun g => (haincl g).trans (d0_apply b g)
@@ -315,8 +312,8 @@ private theorem range_coeff1_le_ker_coeff1 :
   induction x using QuotientAddGroup.induction_on with
   | _ a =>
     have hmem : (fun g => S.incl ((a : G → A) g)) ∈ Z1 G B :=
-      mem_Z1_iff.2 ⟨continuous_of_discreteTopology.comp (mem_Z1_iff.1 a.2).1, fun g h => by
-        simp only [(mem_Z1_iff.1 a.2).2 g h, map_add, S.incl_equivariant]⟩
+      mem_Z1_iff.2 ⟨continuous_of_discreteTopology.comp (mem_Z1_iff.1 a.property).1, fun g h => by
+        simp only [(mem_Z1_iff.1 a.property).2 g h, map_add, S.incl_equivariant]⟩
     refine AddMonoidHom.mem_ker.2 ?_
     rw [explicitCoeff1_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology a
         ⟨_, hmem⟩ (fun g => by rw [inclDistribMulActionHom_apply]),
@@ -345,9 +342,9 @@ private theorem ker_coeff1_le_range_coeff1 :
     have hproj : ∀ g : G, S.proj ((e' : G → B) g) = 0 := fun g => by
       rw [hcoe, Pi.sub_apply, map_sub, d0_apply, map_sub, S.proj_equivariant, hb₀,
         ← projDistribMulActionHom_apply, ← hc₀ g, sub_self]
-    obtain ⟨a, -, haincl⟩ := S.exists_continuous_incl_comp_eq (mem_Z1_iff.1 e'.2).1 hproj
+    obtain ⟨a, -, haincl⟩ := S.exists_continuous_incl_comp_eq (mem_Z1_iff.1 e'.property).1 hproj
     have ha_mem : a ∈ Z1 G A :=
-      mem_Z1_of_injective_comp_mem_Z1 S.incl_injective S.incl_equivariant haincl e'.2
+      mem_Z1_of_injective_comp_mem_Z1 S.incl_injective S.incl_equivariant haincl e'.property
     refine ⟨(⟨a, ha_mem⟩ : Z1 G A), ?_⟩
     rw [explicitCoeff1_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology
       ⟨a, ha_mem⟩ e'
@@ -389,12 +386,12 @@ private theorem range_coeff1_le_ker_delta1 :
   induction x using QuotientAddGroup.induction_on with
   | _ e =>
     have hmem : (fun g => S.proj ((e : G → B) g)) ∈ Z1 G C :=
-      mem_Z1_iff.2 ⟨continuous_of_discreteTopology.comp (mem_Z1_iff.1 e.2).1, fun g h => by
-        simp only [(mem_Z1_iff.1 e.2).2 g h, map_add, S.proj_equivariant]⟩
+      mem_Z1_iff.2 ⟨continuous_of_discreteTopology.comp (mem_Z1_iff.1 e.property).1, fun g h => by
+        simp only [(mem_Z1_iff.1 e.property).2 g h, map_add, S.proj_equivariant]⟩
     have hdelta : S.explicitDelta1 ((⟨_, hmem⟩ : Z1 G C) : H1 G C) =
         H2pi G A ⟨0, zero_mem (Z2 G A)⟩ :=
-      S.explicitDelta1_apply ⟨_, hmem⟩ (mem_Z1_iff.1 e.2).1 (fun _ => rfl) fun g h => by
-          rw [Pi.zero_apply, map_zero, (mem_Z1_iff.1 e.2).2 g h]
+      S.explicitDelta1_apply ⟨_, hmem⟩ (mem_Z1_iff.1 e.property).1 (fun _ => rfl) fun g h => by
+          rw [Pi.zero_apply, map_zero, (mem_Z1_iff.1 e.property).2 g h]
           abel
     refine AddMonoidHom.mem_ker.2 ?_
     rw [explicitCoeff1_eq_of_apply G S.projDistribMulActionHom continuous_of_discreteTopology e
@@ -411,9 +408,9 @@ private theorem ker_delta1_le_range_coeff1 :
   induction x using QuotientAddGroup.induction_on with
   | _ f =>
     intro hx
-    obtain ⟨e, hecont, hef⟩ := exists_continuous_lift S.proj_surjective (mem_Z1_iff.1 f.2).1
+    obtain ⟨e, hecont, hef⟩ := exists_continuous_lift S.proj_surjective (mem_Z1_iff.1 f.property).1
     obtain ⟨a, -, haincl⟩ := S.exists_continuous_incl_comp_eq (continuous_d1_apply hecont)
-      (proj_d1_eq_zero hef (mem_Z1_iff.1 f.2).2)
+      (proj_d1_eq_zero hef (mem_Z1_iff.1 f.property).2)
     have hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g := fun g h =>
       (haincl (g, h)).trans (d1_apply e g h)
     have ha_mem : a ∈ Z2 G A :=
@@ -457,9 +454,9 @@ private theorem range_delta1_le_ker_coeff2 :
   rintro _ ⟨x, rfl⟩
   induction x using QuotientAddGroup.induction_on with
   | _ f =>
-    obtain ⟨e, hecont, hef⟩ := exists_continuous_lift S.proj_surjective (mem_Z1_iff.1 f.2).1
+    obtain ⟨e, hecont, hef⟩ := exists_continuous_lift S.proj_surjective (mem_Z1_iff.1 f.property).1
     obtain ⟨a, -, haincl⟩ := S.exists_continuous_incl_comp_eq (continuous_d1_apply hecont)
-      (proj_d1_eq_zero hef (mem_Z1_iff.1 f.2).2)
+      (proj_d1_eq_zero hef (mem_Z1_iff.1 f.property).2)
     have hae : ∀ g h : G, S.incl (a (g, h)) = g • e h - e (g * h) + e g := fun g h =>
       (haincl (g, h)).trans (d1_apply e g h)
     have hd1 : d1 G B e ∈ B2 G B := mem_B2_iff.2 ⟨e, hecont, rfl⟩
@@ -515,9 +512,9 @@ private theorem range_coeff2_le_ker_coeff2 :
   induction x using QuotientAddGroup.induction_on with
   | _ a =>
     have hmem : (fun p => S.incl ((a : G × G → A) p)) ∈ Z2 G B :=
-      mem_Z2_iff.2 ⟨continuous_of_discreteTopology.comp (mem_Z2_iff.1 a.2).1, fun g h j => by
+      mem_Z2_iff.2 ⟨continuous_of_discreteTopology.comp (mem_Z2_iff.1 a.property).1, fun g h j => by
         simp only [← S.incl_equivariant, ← map_add]
-        exact congrArg S.incl ((mem_Z2_iff.1 a.2).2 g h j)⟩
+        exact congrArg S.incl ((mem_Z2_iff.1 a.property).2 g h j)⟩
     refine AddMonoidHom.mem_ker.2 ?_
     rw [explicitCoeff2_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology a
         ⟨_, hmem⟩ (fun p => by rw [inclDistribMulActionHom_apply]),
@@ -547,9 +544,9 @@ private theorem ker_coeff2_le_range_coeff2 :
       rw [hcoe, Pi.sub_apply, map_sub, d1_apply, map_add, map_sub, S.proj_equivariant]
       simp only [hwv]
       rw [← projDistribMulActionHom_apply, ← hvz g h, sub_self]
-    obtain ⟨a, -, haincl⟩ := S.exists_continuous_incl_comp_eq (mem_Z2_iff.1 z'.2).1 hproj
+    obtain ⟨a, -, haincl⟩ := S.exists_continuous_incl_comp_eq (mem_Z2_iff.1 z'.property).1 hproj
     have ha_mem : a ∈ Z2 G A :=
-      mem_Z2_of_injective_comp_mem_Z2 S.incl_injective S.incl_equivariant haincl z'.2
+      mem_Z2_of_injective_comp_mem_Z2 S.incl_injective S.incl_equivariant haincl z'.property
     refine ⟨(⟨a, ha_mem⟩ : Z2 G A), ?_⟩
     rw [explicitCoeff2_eq_of_apply G S.inclDistribMulActionHom continuous_of_discreteTopology
       ⟨a, ha_mem⟩ z'

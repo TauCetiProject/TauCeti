@@ -39,6 +39,9 @@ at composite good indices be read off the eigenvalues at good primes and the cha
 * `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_prime_pow_add_two`: the recurrence along the
   powers of a good prime, and its first instance
   `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_prime_sq`.
+* `HeckeRing.GL2.EigenformAwayFromLevel.eigenvalue_eq_of_comp_unitsMap_eq_of_forall_prime`: if
+  `g` of level `M ∣ N` has nebentypus inducing that of `f` modulo `N` and agrees with `f` at every
+  prime `p ∤ N`, then `g` and `f` agree at every index coprime to `N`.
 * `HeckeRing.GL2.EigenformAwayFromLevel.chi_eq_of_forall_prime_and_sq_eigenvalue_eq`: **the
   nebentypus is determined by the eigenvalues at the good primes and their squares**, with
   `HeckeRing.GL2.EigenformAwayFromLevel.chi_eq_of_forall_eigenvalue_eq` the convenience form
@@ -167,7 +170,7 @@ theorem eigenvalue_prime_pow_add_two {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : Na
     have := f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc 1)
     rwa [heckeTGeneratorRecGamma0_one, f.eigenvalue_congr (pow_one p) (hn := hpN)] at this
   -- the ring's two-step recurrence at the form, with `p • S_p` already read as `χ(p) p^{k−1}`
-  have h := heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k f.χ hp.pos hpN
+  have h := heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ_apply k f.χ hpN
     ⟨f.toCuspForm, f.mem_charSpace⟩ r
   rw [f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc r),
     f.heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0 hp (hc (r + 1)),
@@ -186,6 +189,69 @@ theorem eigenvalue_prime_sq {p : ℕ+} (hp : (p : ℕ).Prime) (hpN : Nat.Coprime
   have e₁ : f.eigenvalue (p ^ (0 + 1)) (hc (0 + 1)) = f.eigenvalue p hpN :=
     f.eigenvalue_congr (by rw [zero_add, pow_one])
   rw [f.eigenvalue_prime_pow_add_two hp hpN 0, e₀, e₁, mul_one, sq]
+
+/-- **Good-prime eigenvalues and compatible nebentypus determine all good eigenvalues.** If `g` of
+level `M ∣ N` has nebentypus inducing that of `f` modulo `N` and agrees with `f` at every prime
+`p ∤ N`, then `g` and `f` have the same eigenvalue at every positive index coprime to `N`. -/
+theorem eigenvalue_eq_of_comp_unitsMap_eq_of_forall_prime {M : ℕ} [NeZero M]
+    (g : EigenformAwayFromLevel M k) (f : EigenformAwayFromLevel N k) (hM : M ∣ N)
+    (hχ : g.χ.comp (ZMod.unitsMap hM) = f.χ)
+    (hp_eq : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
+      g.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hM) = f.eigenvalue ⟨p, hp.pos⟩ hpN)
+    (n : ℕ+) (hm : Nat.Coprime (n : ℕ) M) (hn : Nat.Coprime (n : ℕ) N) :
+    g.eigenvalue n hm = f.eigenvalue n hn := by
+  -- Induct on the positive natural number underlying `n` via prime powers and coprime products.
+  suffices ∀ (m : ℕ) (hm0 : 0 < m) (hmM : Nat.Coprime m M) (hmN : Nat.Coprime m N),
+      g.eigenvalue ⟨m, hm0⟩ hmM = f.eigenvalue ⟨m, hm0⟩ hmN from
+    this n.val n.pos hm hn
+  intro m
+  induction m using Nat.recOnPrimeCoprime with
+  | zero => intro hm0; exact absurd hm0 (lt_irrefl 0)
+  | prime_pow p r hp =>
+      intro _ hmM hmN
+      let P : ℕ+ := ⟨p, hp.pos⟩
+      have hpow : ∀ (s : ℕ) (hsM : Nat.Coprime (P ^ s : ℕ+) M) (hsN : Nat.Coprime (P ^ s : ℕ+) N),
+          g.eigenvalue (P ^ s) hsM = f.eigenvalue (P ^ s) hsN := by
+        intro s
+        induction s using Nat.twoStepInduction with
+        | zero =>
+            intro _ _
+            exact (g.eigenvalue_congr (pow_zero P) (hn := Nat.coprime_one_left M)).trans
+              (g.eigenvalue_one.trans (f.eigenvalue_one.symm.trans
+                (f.eigenvalue_congr (pow_zero P).symm)))
+        | one =>
+            intro _ hsN
+            have hpN : Nat.Coprime p N := by rwa [PNat.pow_coe, pow_one] at hsN
+            exact (g.eigenvalue_congr (pow_one P) (hn := hpN.coprime_dvd_right hM)).trans
+              ((hp_eq p hp hpN).trans (f.eigenvalue_congr (pow_one P).symm))
+        | more s ih₀ ih₁ =>
+            intro _ hsN
+            have hpN : Nat.Coprime (P : ℕ) N :=
+              (Nat.coprime_pow_left_iff (Nat.succ_pos _) (P : ℕ) N).mp
+                (PNat.pow_coe P (s + 2) ▸ hsN)
+            have hpM : Nat.Coprime (P : ℕ) M := hpN.coprime_dvd_right hM
+            have hpP : g.eigenvalue P hpM = f.eigenvalue P hpN := hp_eq p hp hpN
+            have hchr : g.χ (ZMod.unitOfCoprime P hpM) = f.χ (ZMod.unitOfCoprime P hpN) := by
+              rw [← hχ, MonoidHom.comp_apply, ZMod.unitsMap_unitOfCoprime]
+            rw [g.eigenvalue_prime_pow_add_two (p := P) hp hpM s,
+              f.eigenvalue_prime_pow_add_two (p := P) hp hpN s,
+              hpP, hchr, ih₁ _ _, ih₀ _ _]
+      have heq : (⟨p ^ r, pow_pos hp.pos r⟩ : ℕ+) = P ^ r := Subtype.ext (PNat.pow_coe P r).symm
+      exact (g.eigenvalue_congr heq (hn := PNat.pow_coe P r ▸ hmM)).trans
+        ((hpow r _ (PNat.pow_coe P r ▸ hmN)).trans (f.eigenvalue_congr heq.symm))
+  | coprime a b _ _ hab iha ihb =>
+      intro hpos hmM hmN
+      have ha0 : 0 < a := Nat.pos_of_mul_pos_right hpos
+      have hb0 : 0 < b := Nat.pos_of_mul_pos_left hpos
+      obtain ⟨haM, hbM⟩ := Nat.coprime_mul_iff_left.mp hmM
+      obtain ⟨haN, hbN⟩ := Nat.coprime_mul_iff_left.mp hmN
+      let A : ℕ+ := ⟨a, ha0⟩
+      let B : ℕ+ := ⟨b, hb0⟩
+      have heq : (⟨a * b, hpos⟩ : ℕ+) = A * B := Subtype.ext (PNat.mul_coe A B).symm
+      refine (g.eigenvalue_congr heq (hn := PNat.mul_coe A B ▸ hmM)).trans ?_
+      rw [g.eigenvalue_mul (m := A) (n := B) hab haM hbM, iha ha0 haM haN, ihb hb0 hbM hbN,
+        ← f.eigenvalue_mul (m := A) (n := B) hab haN hbN]
+      exact f.eigenvalue_congr heq.symm
 
 /-! ### The nebentypus is determined by the good eigenvalues -/
 

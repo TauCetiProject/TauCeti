@@ -206,7 +206,8 @@ theorem exists_lineMap_centroid_mem_convexHull (s : Finset E) {p : E}
     simp only [μ, sub_smul, sum_sub_distrib, ← smul_sum, mul_smul]
     module
   rw [hq]
-  exact (convex_convexHull 𝕜 _).sum_mem (fun i _ => hμ i) hμsum fun i _ => subset_convexHull 𝕜 _ i.2
+  exact (convex_convexHull 𝕜 _).sum_mem (fun i _ => hμ i) hμsum fun i _ => subset_convexHull 𝕜 _
+      i.property
 
 end Finset
 
@@ -273,7 +274,7 @@ theorem AffineIndependent.map_of_injOn_convexHull {F : Type*} [AddCommGroup F] [
   rw [affineIndependent_iff] at hp ⊢
   intro s w hw hfw
   refine hp s w hw ?_
-  rcases s.eq_empty_or_nonempty with rfl | ⟨i₀, hi₀⟩
+  rcases s.eq_empty_or_nonempty with rfl | ⟨i₀, _⟩
   · simp
   -- the combination `∑ w i • p i` is a direction of the affine span of the points `p i`
   have hsum : ∑ i ∈ s, w i • p i = ∑ i ∈ s, w i • (p i -ᵥ p i₀) := by

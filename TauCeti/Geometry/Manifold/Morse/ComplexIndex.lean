@@ -36,7 +36,7 @@ public section
 namespace TauCeti.AlmostComplexStructure
 
 variable {E H M : Type*}
-variable [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
 variable [TopologicalSpace M] [ChartedSpace H M]
 variable (J : TauCeti.AlmostComplexStructure E) (f : M → ℝ) (x : M)

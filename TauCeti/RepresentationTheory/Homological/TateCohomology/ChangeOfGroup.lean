@@ -216,24 +216,25 @@ the pulled-back character `χ ∘ φᵃᵇ : Gᵃᵇ → ℚ/ℤ`. For a quotien
 of `δχ` is `δ` of the inflated character. -/
 theorem posMap_characterConnectingClass
     (f : Rep.res φ (Rep.trivial ℤ Q ℤ) ⟶ Rep.trivial ℤ G ℤ) (hf : ∀ n : ℤ, f.hom n = n)
-    (χ : Additive (Abelianization Q) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization Q) →+ AddCircle (1 : ℚ)) :
     posMap φ f 2 (characterConnectingClass Q χ) =
-      characterConnectingClass G (χ.comp (Abelianization.map φ).toAdditive) := by
+      characterConnectingClass G (χ.comp (Group.Abelianization.map φ).toAdditive) := by
   -- In ordinary cohomology, the connecting maps of `ℤ → ℚ → ℚ/ℤ` over `Q` and over `G` are
   -- intertwined by change of group, and change of group pulls a homomorphism `Q → ℚ/ℤ` back
   -- along `φ`.
   have hδ : groupCohomology.map φ f 2
       (groupCohomology.δ (Rep.ratAddCircleShortComplex_shortExact Q) 1 2 rfl
         ((groupCohomology.H1IsoOfIsTrivial (Rep.trivial ℤ Q (AddCircle (1 : ℚ)))).inv
-          (χ.comp Abelianization.of.toAdditive))) =
+          (χ.comp Group.Abelianization.of.toAdditive))) =
       groupCohomology.δ (Rep.ratAddCircleShortComplex_shortExact G) 1 2 rfl
         ((groupCohomology.H1IsoOfIsTrivial (Rep.trivial ℤ G (AddCircle (1 : ℚ)))).inv
-          ((χ.comp (Abelianization.map φ).toAdditive).comp Abelianization.of.toAdditive)) := by
+          ((χ.comp (Group.Abelianization.map φ).toAdditive).comp
+              Group.Abelianization.of.toAdditive)) := by
     have h := congr($(TauCeti.groupCohomology.δ_naturality φ
       (Rep.ratAddCircleShortComplex_shortExact Q) (Rep.ratAddCircleShortComplex_shortExact G)
       (ratAddCircleShortComplexResHom φ f hf) 1 2 rfl)
       ((groupCohomology.H1IsoOfIsTrivial (Rep.trivial ℤ Q (AddCircle (1 : ℚ)))).inv
-          (χ.comp Abelianization.of.toAdditive)))
+          (χ.comp Group.Abelianization.of.toAdditive)))
     simp only [ModuleCat.comp_apply] at h
     refine h.trans ?_
     rw [groupCohomology.H1IsoOfIsTrivial_inv_apply, groupCohomology.H1IsoOfIsTrivial_inv_apply,

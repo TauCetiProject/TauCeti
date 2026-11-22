@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -18,7 +19,7 @@ This file extends Mathlib's improper-integral estimates with an asymptotic estim
 integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
 `(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
 closed forms `∫_A^∞ dy / y² = 1 / A` and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as
-Lebesgue integrals.
+Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` as a Bochner integral.
 
 It also evaluates the power-weighted sine integral on the positive half-line for exponents between
 zero and one.
@@ -26,6 +27,9 @@ zero and one.
 ## Main declarations
 
 * `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
+* `TauCeti.one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq` and
+  `TauCeti.integrable_one_div_sqrt_mul_sqrt`: the inverse product of two quadratic square
+  roots is dominated by a Cauchy integrand and is integrable for positive radii.
 
 * `TauCeti.integrableOn_rpow_mul_sin` and `TauCeti.integral_Ioi_rpow_mul_sin`: integrability
   and the value of `∫ x in Ioi 0, x ^ (-(alpha + 1)) * sin x` for `0 < alpha < 1`.
@@ -35,6 +39,8 @@ zero and one.
 * `TauCeti.lintegral_Iic_ofReal_exp_mul`, `TauCeti.lintegral_Ioi_ofReal_exp_neg_mul`:
   `∫⁻ s in Iic 0, ofReal (exp (a s)) = ∫⁻ s in Ioi 0, ofReal (exp (-a s)) = ofReal a⁻¹`
   for `0 < a`.
+* `TauCeti.integral_Ioi_exp_neg_mul`: the Bochner integral `∫ s in Ioi 0, exp (-a s) = a⁻¹`
+  for `0 < a`.
 
 * `TauCeti.integrableAtFilter_inv_mul_one_add_log_sq`: the function
   `t ↦ (t (1 + log t) ^ 2)⁻¹` is integrable at infinity.
@@ -43,6 +49,9 @@ zero and one.
 * `TauCeti.tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero`: if `g t → L` as `t → ∞`, then
   `ε ∫_1^∞ t ^ (-ε - 1) g t → L` as `ε → 0⁺`. Through Mathlib's `LSeries_eq_mul_integral` this
   is the Abelian theorem for Dirichlet series.
+* `TauCeti.integrableOn_Ioi_rpow_mul_log_of_lt` and `TauCeti.integral_Ioi_rpow_mul_log_of_lt`:
+  integrability and the closed form `∫ t in Ioi c, t ^ a * log t =
+  c ^ (a + 1) * (1 - (a + 1) * log c) / (a + 1) ^ 2` for `a < -1` and `0 < c`.
 -/
 
 public section
@@ -121,6 +130,41 @@ theorem integrable_inv_sq_add_sq {c : ℝ} (hc : c ≠ 0) :
     ring
   exact ((integrable_inv_one_add_sq.comp_div hc).const_mul (c ^ 2)⁻¹).congr
     (Eventually.of_forall hscale)
+
+/-- For positive radii, the inverse product of two quadratic square roots is bounded by the
+Cauchy integrand at their minimum radius. -/
+theorem one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
+    1 / (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) ≤
+      ((min a b) ^ 2 + t ^ 2)⁻¹ := by
+  have hd : 0 < min a b := lt_min ha hb
+  rw [one_div]
+  apply inv_anti₀ (add_pos_of_pos_of_nonneg (sq_pos_of_pos hd) (sq_nonneg t))
+  calc
+    (min a b) ^ 2 + t ^ 2 =
+        Real.sqrt ((min a b) ^ 2 + t ^ 2) * Real.sqrt ((min a b) ^ 2 + t ^ 2) :=
+      (Real.mul_self_sqrt (by positivity)).symm
+    _ ≤ _ := by
+      gcongr <;> nlinarith [min_le_left a b, min_le_right a b]
+
+/-- The inverse product of `sqrt (a² + t²)` and `sqrt (b² + t²)` is integrable on the whole
+real line when both radii are positive. -/
+theorem integrable_one_div_sqrt_mul_sqrt {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    Integrable (fun t : ℝ ↦ 1 /
+      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) := by
+  have hdcont : Continuous (fun t : ℝ ↦
+      Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2)) :=
+    (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2))).mul
+      (continuous_sqrt.comp (continuous_const.add (continuous_id.pow 2)))
+  have hcont : Continuous (fun t : ℝ ↦ 1 /
+      (Real.sqrt (a ^ 2 + t ^ 2) * Real.sqrt (b ^ 2 + t ^ 2))) :=
+    continuous_const.div hdcont (fun t ↦ by
+      exact (mul_pos (Real.sqrt_pos.2 (by positivity))
+        (Real.sqrt_pos.2 (by positivity))).ne')
+  have hC : Integrable (fun t : ℝ ↦ ((min a b) ^ 2 + t ^ 2)⁻¹) := by
+    simpa only [add_comm] using TauCeti.integrable_inv_sq_add_sq (lt_min ha hb).ne'
+  refine hC.mono' hcont.aestronglyMeasurable (Eventually.of_forall fun t ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq ha hb t
 
 /-- A remainder `E` that is interval integrable on `[a, b]` with `0 < a` makes `t ^ (τ - 1) * E t`
 interval integrable on `[a, b]`. -/
@@ -330,7 +374,7 @@ theorem lintegral_Ioi_inv_sq {A : ℝ} (hA : 0 < A) :
   have hy : 0 < y := hA.trans hy
   rw [← ENNReal.ofReal_coe_nnreal]
   congr 1
-  simp [Real.rpow_neg hy.le, Real.nnnorm_of_nonneg hy.le]
+  simp [Real.rpow_neg hy.le, Real.nnNorm_of_nonneg hy.le]
 
 /-- `∫_{-∞}^0 e^{a s} ds = 1 / a` for `0 < a`, as a Lebesgue integral. -/
 theorem lintegral_Iic_ofReal_exp_mul {a : ℝ} (ha : 0 < a) :
@@ -345,5 +389,69 @@ theorem lintegral_Ioi_ofReal_exp_neg_mul {a : ℝ} (ha : 0 < a) :
   rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_neg_of_pos ha) 0)
     (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_neg_of_pos ha)]
   simp
+
+/-- `∫_0^∞ e^{-a s} ds = 1 / a` for `0 < a`, as a Bochner integral. -/
+theorem integral_Ioi_exp_neg_mul {a : ℝ} (ha : 0 < a) :
+    ∫ s in Ioi 0, Real.exp (-a * s) = a⁻¹ := by
+  rw [integral_exp_mul_Ioi (neg_neg_of_pos ha)]
+  simp
+
+/-- For `a < -1` and `0 < c`, the function `t ↦ t ^ a * log t` is integrable on `(c, ∞)`. -/
+theorem integrableOn_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
+    IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi c) := by
+  set M := max c 1
+  have hM1 : 1 ≤ M := le_max_right c 1
+  have h_cpt : IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioc c M) := by
+    refine (ContinuousOn.integrableOn_Icc (a := c) (b := M) ?_).mono_set Ioc_subset_Icc_self
+    exact (continuousOn_id.rpow_const fun t (ht : t ∈ Icc c M) ↦ Or.inl (hc.trans_le ht.1).ne').mul
+      (continuousOn_log.mono fun t (ht : t ∈ Icc c M) ↦ (hc.trans_le ht.1).ne')
+  have h_tail : IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi M) := by
+    simpa only [sub_sub_cancel] using
+      (integrableOn_rpow_mul_log (η := -1 - a) (by linarith)).mono_set (Ioi_subset_Ioi hM1)
+  rw [← Ioc_union_Ioi_eq_Ioi (le_max_left c 1)]
+  exact h_cpt.union h_tail
+
+/-- **The improper integral `∫_c^∞ t ^ a * log t dt`** for `a < -1` and `0 < c`. -/
+theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
+    ∫ t in Ioi c, t ^ a * Real.log t =
+      c ^ (a + 1) * (1 - (a + 1) * Real.log c) / (a + 1) ^ 2 := by
+  have ha1 : a + 1 ≠ 0 := by linarith
+  have hd : ∀ t ∈ Ici c,
+      HasDerivAt (fun x : ℝ ↦ x ^ (a + 1) * ((a + 1) * Real.log x - 1) / (a + 1) ^ 2)
+        (t ^ a * Real.log t) t := by
+    intro t (ht : c ≤ t)
+    have ht0 : 0 < t := hc.trans_le ht
+    have h1 := Real.hasDerivAt_rpow_const (p := a + 1) (Or.inl ht0.ne')
+    have h2 := ((Real.hasDerivAt_log ht0.ne').const_mul (a + 1)).sub_const 1
+    convert (h1.mul h2).div_const ((a + 1) ^ 2) using 1
+    rw [add_sub_cancel_right]
+    have ht_mul : t ^ (a + 1) * t⁻¹ = t ^ a := by
+      rw [← Real.rpow_neg_one, ← Real.rpow_add ht0, add_neg_cancel_right]
+    calc
+      t ^ a * Real.log t = (a + 1) ^ 2 * (t ^ a * Real.log t) / (a + 1) ^ 2 := by field_simp
+      _ = ((a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
+            t ^ (a + 1) * ((a + 1) * t⁻¹)) / (a + 1) ^ 2 := by
+          congr 1
+          calc
+            (a + 1) ^ 2 * (t ^ a * Real.log t)
+                = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) + (a + 1) * t ^ a := by ring
+            _ = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
+                  t ^ (a + 1) * ((a + 1) * t⁻¹) := by rw [← ht_mul]; ring
+  have hlim_log : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * Real.log t) atTop (𝓝 0) := by
+    refine (isLittleO_log_rpow_atTop (by linarith : 0 < -(a + 1))).tendsto_div_nhds_zero.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    rw [div_eq_mul_inv, ← Real.rpow_neg ht.le, neg_neg, mul_comm]
+  have hlim_rpow : Tendsto (fun t : ℝ ↦ t ^ (a + 1)) atTop (𝓝 0) :=
+    by simpa only [neg_neg] using tendsto_rpow_neg_atTop (by linarith : 0 < -(a + 1))
+  have ht : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * ((a + 1) * Real.log t - 1) / (a + 1) ^ 2)
+      atTop (𝓝 0) := by
+    have h0 : (((a + 1) * 0 - 0) / (a + 1) ^ 2 : ℝ) = 0 := by simp
+    rw [← h0]
+    refine (((hlim_log.const_mul (a + 1)).sub hlim_rpow).div_const ((a + 1) ^ 2)).congr' ?_
+    filter_upwards with t
+    congr 1
+    ring
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto' hd (integrableOn_Ioi_rpow_mul_log_of_lt ha hc) ht]
+  ring
 
 end TauCeti

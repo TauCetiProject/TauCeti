@@ -191,21 +191,18 @@ theorem isGreatest_apply_det_of_pseudoBasis [DecidableEq ι]
   refine ⟨?_, ?_⟩
   · -- The bound is attained by the vectors `aᵢ • b i`, with `aᵢ ∈ J i` of largest value.
     choose a ha hav using fun i ↦ v.exists_mem_apply_mul_absNorm_pow_eq_one (hJ i)
-    refine ⟨fun k ↦ (a k : K) • b k, fun k _ ↦ (hΛ _).2 fun i ↦ ?_, ?_⟩
-    · rw [map_smul, b.repr_self, Finsupp.smul_single, smul_eq_mul, mul_one, Finsupp.single_apply]
-      split_ifs with h
-      · exact (IsLocalization.mem_coeSubmodule _ _).2 ⟨a k, h ▸ ha k, rfl⟩
-      · exact zero_mem _
-    · have hmat :
-          Matrix.of (fun k ↦ (a k : K) • b k) = Matrix.of fun k j ↦ (a k : K) * b k j := by
-        ext
-        simp [Algebra.smul_def]
-      dsimp only
-      have hcol := Matrix.det_mul_column (fun k ↦ (a k : K)) (Matrix.of ⇑b)
-      simp only [Matrix.of_apply] at hcol
-      rw [hmat, hcol, map_mul, map_prod, mul_comm]
-      congr 1
-      exact Finset.prod_congr rfl fun i _ ↦ eq_inv_of_mul_eq_one_left (hav i)
+    refine ⟨fun k ↦ (a k : K) • b k,
+      fun k _ ↦ (hΛ _).2 (b.repr_smul_self_mem_coeSubmodule J ⟨a k, ha k, rfl⟩), ?_⟩
+    have hmat :
+        Matrix.of (fun k ↦ (a k : K) • b k) = Matrix.of fun k j ↦ (a k : K) * b k j := by
+      ext
+      simp [Algebra.smul_def]
+    dsimp only
+    have hcol := Matrix.det_mul_column (fun k ↦ (a k : K)) (Matrix.of ⇑b)
+    simp only [Matrix.of_apply] at hcol
+    rw [hmat, hcol, map_mul, map_prod, mul_comm]
+    congr 1
+    exact Finset.prod_congr rfl fun i _ ↦ eq_inv_of_mul_eq_one_left (hav i)
   · -- The upper bound: the coordinate matrix has its `i`-th column in `J i`.
     rintro _ ⟨x, hx, rfl⟩
     have hle (i : ι) {c : K} (hc : c ∈ IsLocalization.coeSubmodule K (J i)) :
@@ -269,22 +266,16 @@ theorem covolume_mixedImage [DecidableEq ι] {Λ : Submodule (𝓞 K) (ι → K)
   -- The local factors of the norms of the coefficient ideals.
   have hsupp (i : ι) : Function.HasFiniteMulSupport fun v : FinitePlace K ↦
       (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J i) :=
-    FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (hJ i) fun I ↦ (absNorm I : ℝ)
+    FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (J i) fun I ↦ (absNorm I : ℝ)
   have hsupp' (i : ι) : Function.HasFiniteMulSupport fun v : FinitePlace K ↦
       ((v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J i))⁻¹ :=
     (hsupp i).inv
-  have hnorm (i : ι) : ∏ᶠ v : FinitePlace K,
-      (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J i) =
-        absNorm (J i) := by
-    conv_rhs => rw [← FinitePlace.finprod_finitePlace_pow_multiplicity (hJ i)]
-    rw [map_finprod _ (FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (hJ i) (·)),
-      Nat.cast_finprod']
-    simp
   rw [covolume_mixedImage_of_pseudoBasis b hJ hmem, finprod_congr hBv,
     finprod_mul_distrib (FinitePlace.hasFiniteMulSupport hdetb)
       (Function.HasFiniteMulSupport.prod hsupp' _),
     FinitePlace.prod_eq_inv_abs_norm hdetb, finprod_prod_comm _ _ fun i _ ↦ hsupp' i]
-  simp_rw [finprod_inv_distrib, hnorm]
+  simp_rw [finprod_inv_distrib,
+    fun i ↦ FinitePlace.finprod_absNorm_pow_multiplicity (R := ℝ) (hJ i)]
   push_cast
   rw [Finset.prod_inv_distrib, ← mul_inv, inv_inv]
 

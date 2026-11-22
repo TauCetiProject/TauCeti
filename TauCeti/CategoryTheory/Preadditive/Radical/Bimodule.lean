@@ -65,6 +65,15 @@ again a division ring because the opposite of a local ring is local
 * `TauCeti.irreducibleMorphismSpace_residue_smul_eq` and
   `TauCeti.irreducibleMorphismSpace_residueOp_smul_eq`: the two residue actions are postcomposition
   and precomposition by a representative, on every element of the space.
+* `TauCeti.residue_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff` and
+  `TauCeti.residueOp_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff`: a residue class
+  sends the class of `f` to the class of `u` exactly when the corresponding composite with `f`
+  differs from `u` by an element of the square of the radical.
+* `TauCeti.instIsScalarTowerResiduePostcomp` and `TauCeti.instIsScalarTowerResiduePrecomp`: over
+  a commutative base ring `k`, both residue actions are compatible with the scalars of `k`, so
+  `k → End Y / rad(End Y) → Irr(X, Y)` and its mirror image are scalar towers. This is what
+  compares dimensions over the residue rings with dimensions over `k`
+  (`TauCeti/CategoryTheory/Preadditive/Radical/Valuation.lean`).
 * `TauCeti.rank_irreducibleMorphismSpace_pos_iff`: **the target-side rank is positive exactly
   when an irreducible morphism exists** — the rank of the space of irreducible morphisms over the
   residue division ring of the target is positive exactly when there is an irreducible morphism
@@ -170,7 +179,7 @@ postcomposition descend to the residue ring of `End Y`. -/
 theorem irreducibleMorphismPostcomp_eq_zero_of_mem_jacobson {g : End Y}
     (hg : g ∈ Ring.jacobson (End Y)) : irreducibleMorphismPostcomp k X Y g = 0 := by
   ext f
-  simpa using comp_mem_jacobsonRadicalSq (mem_jacobsonRadicalSubmodule.mp f.2)
+  simpa using comp_mem_jacobsonRadicalSq (mem_jacobsonRadicalSubmodule.mp f.property)
     (mem_jacobsonRadical_self_iff_mem_jacobson.mpr hg)
 
 /-! ### Composing with an endomorphism of the source -/
@@ -244,7 +253,7 @@ theorem irreducibleMorphismPrecomp_eq_zero_of_mem_jacobson {a : End X}
     (ha : a ∈ Ring.jacobson (End X)) : irreducibleMorphismPrecomp k X Y a = 0 := by
   ext f
   simpa using comp_mem_jacobsonRadicalSq
-    (mem_jacobsonRadical_self_iff_mem_jacobson.mpr ha) (mem_jacobsonRadicalSubmodule.mp f.2)
+    (mem_jacobsonRadical_self_iff_mem_jacobson.mpr ha) (mem_jacobsonRadicalSubmodule.mp f.property)
 
 /-- The two actions commute: `a ≫ (f ≫ g)` and `(a ≫ f) ≫ g` are the same morphism. -/
 theorem irreducibleMorphismPrecomp_comp_postcomp (a : End X) (g : End Y) :
@@ -320,6 +329,26 @@ theorem irreducibleMorphismSpace_residueOp_smul_eq (a : (End X)ᵐᵒᵖ)
       irreducibleMorphismPrecomp k X Y a.unop m :=
   (rfl)
 
+/-- **The residue action of the target on a class**: the class of `g` sends the class of `f` to
+the class of `u` exactly when `f ≫ g - u` lies in the square of the radical. -/
+theorem residue_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff (g : End Y)
+    (f u : jacobsonRadicalSubmodule k X Y) :
+    (Ideal.Quotient.mk (Ring.jacobson (End Y)) g) • irreducibleMorphismMk k X Y f =
+        irreducibleMorphismMk k X Y u ↔
+      (f : X ⟶ Y) ≫ g.asHom - u ∈ jacobsonRadicalSq X Y := by
+  rw [irreducibleMorphismSpace_residue_smul_eq, irreducibleMorphismPostcomp_irreducibleMorphismMk,
+    irreducibleMorphismMk_eq_iff, coe_jacobsonRadicalPostcomp]
+
+/-- **The residue action of the source on a class**: the class of `a` sends the class of `f` to
+the class of `u` exactly when `a ≫ f - u` lies in the square of the radical. -/
+theorem residueOp_smul_irreducibleMorphismMk_eq_irreducibleMorphismMk_iff (a : (End X)ᵐᵒᵖ)
+    (f u : jacobsonRadicalSubmodule k X Y) :
+    (Ideal.Quotient.mk (Ring.jacobson (End X)ᵐᵒᵖ) a) • irreducibleMorphismMk k X Y f =
+        irreducibleMorphismMk k X Y u ↔
+      a.unop.asHom ≫ (f : X ⟶ Y) - u ∈ jacobsonRadicalSq X Y := by
+  rw [irreducibleMorphismSpace_residueOp_smul_eq, irreducibleMorphismPrecomp_irreducibleMorphismMk,
+    irreducibleMorphismMk_eq_iff, coe_jacobsonRadicalPrecomp]
+
 variable (k X Y)
 
 /-- The residue action of the target commutes with the base scalars, postcomposition being
@@ -347,6 +376,61 @@ instance instSMulCommClassResidue :
     simpa using LinearMap.congr_fun (irreducibleMorphismPrecomp_comp_postcomp k X Y a.unop g) m
 
 end Residue
+
+/-! ### Compatibility with the base scalars -/
+
+section Scalars
+
+variable (k : Type*) [CommRing k] [Linear k C] (X Y : C)
+
+/-- Postcomposition by a scalar multiple of an endomorphism is the scalar multiple of the
+postcomposition. -/
+@[simp]
+theorem irreducibleMorphismPostcomp_smul (c : k) (g : End Y) :
+    irreducibleMorphismPostcomp k X Y (c • g) = c • irreducibleMorphismPostcomp k X Y g := by
+  ext f
+  simp only [irreducibleMorphismPostcomp_irreducibleMorphismMk, LinearMap.smul_apply,
+    ← map_smul (irreducibleMorphismMk k X Y)]
+  congr 1
+  ext
+  simp [End.smul_asHom]
+
+/-- Precomposition by a scalar multiple of an endomorphism is the scalar multiple of the
+precomposition. -/
+@[simp]
+theorem irreducibleMorphismPrecomp_smul (c : k) (a : End X) :
+    irreducibleMorphismPrecomp k X Y (c • a) = c • irreducibleMorphismPrecomp k X Y a := by
+  ext f
+  simp only [irreducibleMorphismPrecomp_irreducibleMorphismMk, LinearMap.smul_apply,
+    ← map_smul (irreducibleMorphismMk k X Y)]
+  congr 1
+  ext
+  simp [End.smul_asHom]
+
+/-- The residue action of the target is compatible with the base scalars: `k → F_Y → Irr(X, Y)`
+is a scalar tower. -/
+instance instIsScalarTowerResiduePostcomp :
+    IsScalarTower k (End Y ⧸ Ring.jacobson (End Y)) (irreducibleMorphismSpace k X Y) where
+  smul_assoc c G m := by
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective G
+    rw [← Ideal.Quotient.mkₐ_eq_mk k, ← map_smul, Ideal.Quotient.mkₐ_eq_mk,
+      irreducibleMorphismSpace_residue_smul_eq,
+      irreducibleMorphismSpace_residue_smul_eq, irreducibleMorphismPostcomp_smul,
+      LinearMap.smul_apply]
+
+/-- The residue action of the source is compatible with the base scalars: `k → F_X → Irr(X, Y)`
+is a scalar tower. -/
+instance instIsScalarTowerResiduePrecomp :
+    IsScalarTower k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
+      (irreducibleMorphismSpace k X Y) where
+  smul_assoc c A m := by
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective A
+    rw [← Ideal.Quotient.mkₐ_eq_mk k, ← map_smul, Ideal.Quotient.mkₐ_eq_mk,
+      irreducibleMorphismSpace_residueOp_smul_eq,
+      irreducibleMorphismSpace_residueOp_smul_eq, MulOpposite.unop_smul,
+      irreducibleMorphismPrecomp_smul, LinearMap.smul_apply]
+
+end Scalars
 
 /-! ### The ranks over the residue division rings -/
 

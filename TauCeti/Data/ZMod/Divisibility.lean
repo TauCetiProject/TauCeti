@@ -29,9 +29,10 @@ consumed there and in `HeckeRing/GL2/Gamma1/CoprimeCosets.lean`.
 `ZMod.natCast_dvd_val_sub_of_unitsMap_eq` is adapted from the same project (Chris Birkbeck,
 `github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit `2baa76f74`, file
 `projects/LeanModularForms/LeanModularForms/Eigenforms/ConductorTheorem.lean`, declaration
-`natCast_val_sub_dvd_of_unitsMap_eq` (:665). Two departures from the source: it is stated for an
+`natCast_val_sub_dvd_of_unitsMap_eq` (:665). Three departures from the source: it is stated for an
 arbitrary divisor `d ∣ N` rather than only for the reduction modulo `N / l`, which is all its
-proof uses, and the name places the divisibility in Mathlib's operand order.
+proof uses, it drops the source's nonzero-modulus hypothesis `[NeZero N]` (so it covers `N = 0`),
+and the name places the divisibility in Mathlib's operand order.
 
 ## Main definitions
 
@@ -46,7 +47,7 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
 * `ZMod.exists_dvd_sub_val_mul`: the congruence `j b ≡ a (mod n)` has a solution `j : ZMod n`
   whenever `b` is a unit modulo `n`.
 * `ZMod.natCast_dvd_val_sub_of_unitsMap_eq`: two units with the same image under `ZMod.unitsMap`
-  along `d ∣ N` have representatives congruent modulo `d`, as integers.
+  along `d ∣ N` have `ZMod.val`s congruent modulo `d`, as integers.
 * `ZMod.intCast_lcm_eq_of_eq_of_eq`: one residue modulo `lcm a b` from the residues modulo `a`
   and `b` — the Chinese remainder theorem for a single integer.
 * `ZMod.natCast_natAbs_eq_of_mul_nonneg`: congruent integers with nonnegative product have
@@ -101,11 +102,16 @@ lemma exists_dvd_sub_val_mul (n : ℕ) [NeZero n] (a b : ℤ)
   rw [hunit, mul_one, sub_self]
 
 /-- **From equal reductions to an integer congruence.** Two units with the same image under the
-reduction `(ZMod N)ˣ → (ZMod d)ˣ` along `d ∣ N` have representatives congruent modulo `d`, as
-integers. This is the bridge from unit bookkeeping to statements about integer matrix entries. -/
-theorem natCast_dvd_val_sub_of_unitsMap_eq {N : ℕ} [NeZero N] {d : ℕ} (hd : d ∣ N)
+reduction `(ZMod N)ˣ → (ZMod d)ˣ` along `d ∣ N` have `ZMod.val`s congruent modulo `d`, as integers
+(canonical representatives when `N ≠ 0`, absolute values when `N = 0`). This is the bridge from
+unit bookkeeping to statements about integer matrix entries. -/
+theorem natCast_dvd_val_sub_of_unitsMap_eq {N : ℕ} {d : ℕ} (hd : d ∣ N)
     (u u' : (ZMod N)ˣ) (h_eq : unitsMap hd u = unitsMap hd u') :
     (d : ℤ) ∣ (((u : ZMod N).val : ℤ) - ((u' : ZMod N).val : ℤ)) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · -- `ZMod 0 = ℤ`, where `val` is `Int.natAbs`: both units have `val = 1`
+    simp [ZMod.val_unit'.mp u.isUnit, ZMod.val_unit'.mp u'.isUnit]
+  have : NeZero N := ⟨hN⟩
   have h_cast : castHom hd (ZMod d) (u : ZMod N) = castHom hd (ZMod d) (u' : ZMod N) := by
     have hh := congr_arg Units.val h_eq
     rwa [unitsMap_val, unitsMap_val] at hh

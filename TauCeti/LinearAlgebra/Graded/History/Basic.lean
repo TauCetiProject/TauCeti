@@ -16,7 +16,8 @@ Every vertex of a quiver carries a module with an internal direct-sum decomposit
 and every arrow carries a linear map. A degree history selects the whole homogeneous
 component after each arrow. The modules and degree sets may vary between vertices.
 Concatenation composes histories, and an inserted identity retains only the previously
-selected degree. These operations describe successive homogeneous coefficient transfers.
+selected degree. A selection of one degree at every vertex determines a history of every
+path. These operations describe successive homogeneous coefficient transfers.
 
 Adapted from `yuma-mizuno-lean/Mei`, commit
 `bac6f02d25746bc1c2ec808601d4e9284911c475` (Apache 2.0),
@@ -56,6 +57,21 @@ theorem Degrees.terminalDegree_nil (i₀ : ι a) (d : (nil : Path a a).Degrees �
 theorem Degrees.terminalDegree_cons (i₀ : ι a) {b c : Q} (p : Path a b) (e : b ⟶ c)
     (d : p.Degrees ι) (i : ι c) :
     Degrees.terminalDegree i₀ (p.cons e) (d, i) = i := (rfl)
+
+/-- Select at every encounter the degree assigned to its target vertex.
+Vertices may encode separate occurrences of the same chamber. -/
+def degreesOfVertices (s : ∀ q, ι q) : {b : Q} → (p : Path a b) → p.Degrees ι
+  | _, nil => PUnit.unit
+  | _, @cons _ _ _ _ c p _ => (degreesOfVertices s p, s c)
+
+@[simp]
+theorem degreesOfVertices_nil (s : ∀ q, ι q) :
+    (nil : Path a a).degreesOfVertices s = PUnit.unit := (rfl)
+
+@[simp]
+theorem degreesOfVertices_cons (s : ∀ q, ι q) {b c : Q} (p : Path a b) (e : b ⟶ c) :
+    (p.cons e).degreesOfVertices s = ((p.degreesOfVertices s, s c) :
+      (p.cons e).Degrees ι) := (rfl)
 
 /-- Degree histories have decidable equality when the degree types do. -/
 instance decidableEqDegrees [∀ q, DecidableEq (ι q)] :

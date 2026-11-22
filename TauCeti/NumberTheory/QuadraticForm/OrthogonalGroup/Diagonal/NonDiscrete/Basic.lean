@@ -96,8 +96,7 @@ theorem tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial
     (le_principal_iff.mpr (U.eventually_specialOrthogonal g))
     (Eventually.of_forall fun n p hp ↦ by
       rw [finiteAdelicSpecialOrthogonalDiagonal_apply, map_pow]
-      exact (U.specialOrthogonal p).pow_mem hp _)
-    (fun p _ ↦ (U.specialOrthogonal p).one_mem)).mpr
+      exact (U.specialOrthogonal p).pow_mem hp _)).mpr
   simpa only [finiteAdelicSpecialOrthogonalDiagonal_apply, RestrictedProduct.one_apply, g, φ]
     using hlocal
 
@@ -148,7 +147,7 @@ theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal_of_specialOrth
   let f : U.finiteAdelicSpecialOrthogonalDiagonal.range →
       U.finiteAdelicOrthogonalDiagonal.range := fun g ↦
     ⟨U.finiteAdelicSpecialOrthogonalToOrthogonal g, by
-      obtain ⟨h, hh⟩ := g.2
+      obtain ⟨h, hh⟩ := g.property
       rw [← hh]
       exact ⟨specialOrthogonalToOrthogonal Q h,
         (DFunLike.congr_fun
@@ -156,7 +155,7 @@ theorem not_discreteTopology_range_finiteAdelicOrthogonalDiagonal_of_specialOrth
           h).symm⟩⟩
   have hf : Continuous f :=
     (U.continuous_finiteAdelicSpecialOrthogonalToOrthogonal.comp
-      continuous_subtype_val).subtype_mk _
+      continuous_subtypeVal).subtype_mk _
   have hinj : Function.Injective f := fun g h hgh ↦ Subtype.ext
     (U.finiteAdelicSpecialOrthogonalToOrthogonal_injective (congrArg Subtype.val hgh))
   exact hSO (DiscreteTopology.of_continuous_injective hf hinj)

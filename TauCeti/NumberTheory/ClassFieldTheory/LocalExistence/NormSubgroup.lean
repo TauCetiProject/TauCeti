@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassField
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.FieldArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
@@ -137,6 +138,29 @@ theorem groundEquivOfOpenNormal_unitsLevelEquiv
       localGroundEquiv K V (Additive.ofMul x) :=
   Subtype.ext (by simp)
 
+open NormalLayer in
+/-- **The field Artin map on a layer.** If `σ ∈ Gal(AlgebraicClosure K/K)` represents the Artin
+symbol of `x ∈ Kˣ` for a class formation `cf` on the units of `K`, then for every open normal
+subgroup `V` of `G_K` the Artin map of `cf` on the layer `V ◁ G_K` sends `x` to the class of the
+restriction of `σ`. -/
+theorem artinMap_localGroundEquiv_of_mk_eq_fieldArtinMap (cf : ClassFormation (unitsFormation K))
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) (x : Kˣ) (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = cf.fieldArtinMap x) :
+    cf.artinMap (ofOpenNormal V) (localGroundEquiv K V (Additive.ofMul x)) =
+      Additive.ofMul (Group.Abelianization.of ((galOfOpenNormalEquiv V).symm
+        (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K ⧸ V.toSubgroup))) := by
+  have hmem : (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K)
+      ∈ (ofOpenNormal V).ground := by
+    simp
+  have hsymm : (galOfOpenNormalEquiv V).symm
+      (absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K ⧸ V.toSubgroup) =
+      ((⟨_, hmem⟩ : (ofOpenNormal V).ground) : (ofOpenNormal V).Gal) := by
+    rw [MulEquiv.symm_apply_eq, galOfOpenNormalEquiv_mk]
+  rw [← groundEquivOfOpenNormal_unitsLevelEquiv K V x,
+    ← ClassFormation.abelianizationRestrict_absoluteArtinMap,
+    cf.absoluteArtinMap_eq_of_mk_eq_fieldArtinMap x σ hσ,
+    abelianizationRestrict_mk V ⟨_, hmem⟩, hsymm]
+
 /-- Under `localGroundEquiv`, the concrete local norm subgroup is the norm subgroup of the
 corresponding layer of the units formation. -/
 theorem localGroundEquiv_mem_normSubgroup_iff
@@ -197,7 +221,7 @@ itself, whose norm to itself is the identity. This pins the direction of the loc
 correspondence. -/
 @[simp]
 theorem localNormSubgroup_top :
-    localNormSubgroup K (openNormalSubgroupTop (AbsoluteGaloisGroup K)) = ⊤ := by
+    localNormSubgroup K ⊤ = ⊤ := by
   apply (localGroundOrderIso K).injective
   rw [localGroundOrderIso_localNormSubgroup, Formation.normSubgroup_top, map_top]
 

@@ -41,7 +41,8 @@ are the `SL(2, ℤ)`-orbits, and this file works with the latter throughout: `Γ
 * `TauCeti.TraceFormulaMatrixModule.smul_eq_self_of_mem_upperTriangularReps`: an element of
   `SL(2, ℤ)` that moves one element of `ℳₙ^∞` into `ℳₙ^∞` fixes it.
 * `TauCeti.TraceFormulaMatrixModule.ncard_upperTriangularReps`: `|ℳₙ^∞| = σ₁(|n|)`.
-* `TauCeti.TraceFormulaMatrixModule.card_orbitRel_quotient`: `|Γ \ ℳₙ| = σ₁(|n|)`.
+* `TauCeti.TraceFormulaMatrixModule.card_orbitRel_quotient`: `|Γ \ ℳₙ| = σ₁(|n|)`, for every
+  integer `n` (both sides vanish for `n = 0`, where the orbit space is infinite).
 
 ## References
 
@@ -112,13 +113,13 @@ open ModularGroup in
 /-- For `n ≠ 0`, the class of an upper-triangular matrix of determinant `n` can be moved into
 `ℳₙ^∞` by a power of `T`. -/
 theorem exists_T_zpow_smul_mk_mem_upperTriangularReps (hn : n ≠ 0) {A : TraceFormulaMatrix n}
-    (hA : A.1 1 0 = 0) : ∃ m : ℤ, T ^ m • mk A ∈ upperTriangularReps n := by
+    (hA : A.val 1 0 = 0) : ∃ m : ℤ, T ^ m • mk A ∈ upperTriangularReps n := by
   -- `FixedDetMatrices.reduce A` is `T ^ m • A` or `T ^ m • S • S • A`, and `S * S = -1`
   obtain ⟨m, hm⟩ : ∃ m : ℤ, T ^ m • mk A = mk (FixedDetMatrices.reduce A) := by
-    by_cases ha : 0 < A.1 0 0
+    by_cases ha : 0 < A.val 0 0
     · exact ⟨_, by rw [FixedDetMatrices.reduce_of_pos hA ha, smul_mk]⟩
     · exact ⟨_, by rw [FixedDetMatrices.reduce_of_not_pos hA ha, ← smul_mk, ← smul_mk,
-        ← smul_mk, ← mul_smul S S, show S * S = -1 from Subtype.ext S_mul_S_eq, neg_one_smul]⟩
+        ← smul_mk, ← mul_smul S S, S_mul_S_eq, neg_one_smul]⟩
   exact ⟨m, _, FixedDetMatrices.reduce_mem_reps hn A, hm.symm⟩
 
 /-- **Uniqueness of upper-triangular representatives**: if `g : SL(2, ℤ)` moves an element of
@@ -162,12 +163,37 @@ theorem finite_orbitRel_quotient (hn : n ≠ 0) :
     Finite (MulAction.orbitRel.Quotient SL(2, ℤ) (TraceFormulaMatrixModule n)) :=
   .of_equiv _ (upperTriangularRepsEquiv hn)
 
-/-- **The number of orbits** (Popa--Zagier, Section 2): for `n ≠ 0`, `Γ \ ℳₙ` has `σ₁(|n|)`
-elements. -/
+/-- For `n = 0`, the orbit space `Γ \ ℳ₀` is infinite: the classes of `(1 k; 0 0)`, for
+`k : ℕ`, lie in different orbits. -/
+theorem infinite_orbitRel_quotient_zero :
+    Infinite (MulAction.orbitRel.Quotient SL(2, ℤ) (TraceFormulaMatrixModule 0)) := by
+  let B : ℕ → TraceFormulaMatrix 0 := fun k ↦ ⟨!![1, (k : ℤ); 0, 0], by simp⟩
+  refine Infinite.of_injective (fun k : ℕ ↦ Quotient.mk'' (mk (B k))) fun k j hkj ↦ ?_
+  obtain ⟨g, hg⟩ := Quotient.exact' hkj
+  simp only at hg
+  rw [smul_mk, mk_eq_iff] at hg
+  have key (ε : ℤ) (hε : ε = 1 ∨ ε = -1)
+      (h0 : (g • B j).val 0 0 = ε * (B k).val 0 0) (h1 : (g • B j).val 0 1 = ε * (B k).val 0 1) :
+      k = j := by
+    rw [FixedDetMatrices.smul_coe_apply] at h0 h1
+    simp only [Fin.isValue, of_apply, cons_val', cons_val_zero, cons_val_fin_one, mul_one,
+      cons_val_one, mul_zero, add_zero, B] at h0 h1
+    rw [h0] at h1
+    have := mul_left_cancel₀ (by rcases hε with rfl | rfl <;> norm_num) h1
+    omega
+  rcases hg with h | h
+  · exact key 1 (Or.inl rfl) (by simp [h]) (by simp [h])
+  · exact key (-1) (Or.inr rfl) (by simp [h]) (by simp [h])
+
+/-- **The number of orbits** (Popa--Zagier, Section 2): `Γ \ ℳₙ` has `σ₁(|n|)` elements. For
+`n = 0` both sides are `0`, the orbit space being infinite. -/
 @[simp]
-theorem card_orbitRel_quotient (hn : n ≠ 0) :
+theorem card_orbitRel_quotient :
     Nat.card (MulAction.orbitRel.Quotient SL(2, ℤ) (TraceFormulaMatrixModule n)) =
       ArithmeticFunction.sigma 1 n.natAbs := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · have := infinite_orbitRel_quotient_zero
+    simp
   rw [← Nat.card_congr (upperTriangularRepsEquiv hn), Nat.card_coe_set_eq,
     ncard_upperTriangularReps]
 

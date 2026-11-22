@@ -58,6 +58,10 @@ than to `K`.
 
 ## Main results
 
+* `TauCeti.CurrentAlgebra.envelopingι_mul_sub_mul_residuePairing`: the commutator relations of the
+  currents, with the central term written as a residue.
+* `TauCeti.CurrentAlgebra.envelopingι_single_tmul_mul_sub_mul`: the commutator relations of the
+  modes `x ⊗ tᵐ`.
 * `TauCeti.CurrentAlgebra.envelopingAction_mul_sub_mul`: the commutator relations for the action
   of the currents on a module.
 * `TauCeti.CurrentAlgebra.envelopingι_injective`: over a field, the currents embed.
@@ -116,6 +120,29 @@ theorem commute_envelopingι_of_isLieAbelian (hL : IsLieAbelian L)
         twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply]
       simp [LieAlgebra.ExtendScalars.bracket_tmul, hL.trivial, residuePairing_tmul,
         mul_left_comm a, hxy]
+
+/-- **The commutator relations of the currents.** In `U(ĝ) / (ι K - a)`, the currents satisfy
+`[u, v] = ⁅u, v⁆ + a Res(u dv)`. -/
+theorem envelopingι_mul_sub_mul_residuePairing (u v : C) :
+    envelopingι c a u * envelopingι c a v - envelopingι c a v * envelopingι c a u =
+      envelopingι c a ⁅u, v⁆ + algebraMap R UK (a * residuePairing R L Φ u v) := by
+  rw [envelopingι_mul_sub_mul, twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply,
+    LinearEquiv.apply_symm_apply]
+
+/-- **The commutator relations of the modes.** For the modes `xₘ = x ⊗ tᵐ`,
+`[xₘ, yₙ] = ⁅x, y⁆ₘ₊ₙ + a n δ_{m + n, 0} Φ(x, y)`. -/
+theorem envelopingι_single_tmul_mul_sub_mul (x y : L) (m n : ℤ) :
+    envelopingι c a (HahnSeries.single m (1 : R) ⊗ₜ[R] x) *
+        envelopingι c a (HahnSeries.single n (1 : R) ⊗ₜ[R] y) -
+      envelopingι c a (HahnSeries.single n (1 : R) ⊗ₜ[R] y) *
+        envelopingι c a (HahnSeries.single m (1 : R) ⊗ₜ[R] x) =
+      envelopingι c a (HahnSeries.single (m + n) (1 : R) ⊗ₜ[R] ⁅x, y⁆) +
+        algebraMap R UK (if m + n = 0 then a * n * Φ x y else 0) := by
+  rw [envelopingι_mul_sub_mul]
+  simp only [LieAlgebra.ExtendScalars.bracket_tmul, HahnSeries.single_mul_single, mul_one,
+    twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply,
+    residuePairing_tmul, LaurentSeries.residuePairing_single]
+  split_ifs <;> simp [mul_assoc]
 
 variable {A : Type*} [Ring A] [Algebra R A]
 

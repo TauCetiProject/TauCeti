@@ -170,7 +170,7 @@ def spinToSpecialOrthogonal (p : Nat.Primes) :
     U.spin p →* U.specialOrthogonal p :=
   ((CliffordAlgebra.spinToSpecialOrthogonal (Q.baseChange ℚ_[p])).comp
       (U.spin p).subtype).codRestrict (U.specialOrthogonal p)
-    (fun x ↦ U.mapsTo_specialOrthogonal p x.2)
+    (fun x ↦ U.mapsTo_specialOrthogonal p x.property)
 
 /-- The restricted local Spin projection has the same value as the ambient projection. -/
 @[simp]

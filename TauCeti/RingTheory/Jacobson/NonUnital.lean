@@ -140,6 +140,12 @@ theorem nonUnitalJacobson_eq_toTwoSided_jacobson :
     rw [isQuasiregular_iff_isUnit]
     simpa only [add_mul, Algebra.smul_def] using h (algebraMap R B r + b)
 
+variable {R B} in
+/-- An algebra that already has an identity has zero radical in the external-unitization sense
+exactly when its ordinary Jacobson radical is zero. -/
+theorem nonUnitalJacobson_eq_bot_iff : nonUnitalJacobson R B = ⊥ ↔ Ring.jacobson B = ⊥ := by
+  simp [TwoSidedIdeal.ext_iff, Ideal.mem_toTwoSided, Submodule.ext_iff]
+
 end Unital
 
 end TauCeti
@@ -154,7 +160,7 @@ theorem NonUnitalSubringClass.isQuasiregular_coe_iff {S A : Type*} [NonUnitalRin
   obtain ⟨y, hy₁, hy₂⟩ := isQuasiregular_iff.mp hx
   have hyS : y ∈ s := by
     rw [show y = -((x : A) + x * y) by rw [eq_neg_iff_add_eq_zero, ← add_assoc, hy₁]]
-    exact neg_mem (add_mem x.2 (hr y x.2))
+    exact neg_mem (add_mem x.property (hr y x.property))
   refine isQuasiregular_iff.mpr ⟨⟨y, hyS⟩, ?_, ?_⟩ <;> ext <;> simpa
 
 namespace NonUnitalSubalgebra
@@ -183,7 +189,7 @@ theorem coe_mem_nonUnitalJacobson_iff (hl : ∀ (b : A) {y : A}, y ∈ S → b *
   intro r b
   -- `c = r • a + b * a` lies in `S`, and `c * c = x * a` with `x = r • c + c * b ∈ S`.
   set c : A := r • (a : A) + b * a with hc
-  have hcS : c ∈ S := add_mem (S.smul_mem r a.2) (hl b a.2)
+  have hcS : c ∈ S := add_mem (S.smul_mem r a.property) (hl b a.property)
   have hxS : -(r • c + c * b) ∈ S := neg_mem (add_mem (S.smul_mem r hcS) (hr b hcS))
   have hsq : IsQuasiregular (-(c * c)) := by
     have := (ha 0 ⟨_, hxS⟩).map (NonUnitalSubalgebraClass.subtype S)
@@ -206,7 +212,7 @@ theorem image_coe_nonUnitalJacobson (hl : ∀ (b : A) {y : A}, y ∈ S → b * y
   ext x
   constructor
   · rintro ⟨a, ha, rfl⟩
-    exact ⟨a.2, (coe_mem_nonUnitalJacobson_iff hl hr).mpr ha⟩
+    exact ⟨a.property, (coe_mem_nonUnitalJacobson_iff hl hr).mpr ha⟩
   · rintro ⟨hxS, hx⟩
     exact ⟨⟨x, hxS⟩, (coe_mem_nonUnitalJacobson_iff hl hr).mp hx, rfl⟩
 
@@ -217,7 +223,7 @@ theorem nonUnitalJacobson_eq_top_iff (hl : ∀ (b : A) {y : A}, y ∈ S → b * 
     nonUnitalJacobson R S = ⊤ ↔ (S : Set A) ⊆ nonUnitalJacobson R A := by
   refine ⟨fun h a ha ↦ ?_, fun h ↦ eq_top_iff.mpr fun a _ ↦ ?_⟩
   · exact (coe_mem_nonUnitalJacobson_iff (a := ⟨a, ha⟩) hl hr).mpr (h ▸ TwoSidedIdeal.mem_top _)
-  · exact mem_nonUnitalJacobson_of_coe_mem hr (h a.2)
+  · exact mem_nonUnitalJacobson_of_coe_mem hr (h a.property)
 
 /-- Every two-sided ideal of a semisimple algebra is semisimple as a nonunital algebra. -/
 theorem nonUnitalJacobson_eq_bot_of_eq_bot (hl : ∀ (b : A) {y : A}, y ∈ S → b * y ∈ S)

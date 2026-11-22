@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Algebra.Order.Field.GeomSum
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -37,6 +38,9 @@ subsolution into an `Lᵖ` bound with `p < 2`.
 * `TauCeti.le_add_mul_of_le_add_of_le_add_mul_add_mul`: absorbs bounded lower-order terms of a
   step estimate between concentric balls into the `(t - s)⁻¹` and `(t - s)⁻²` terms, so that
   `TauCeti.sq_mul_le_of_forall_le` applies.
+* `TauCeti.exists_le_mul_add_rpow_mul_of_le`: absorbs, by Young's inequality, a step estimate
+  between concentric balls whose right-hand side carries the quantity to the power `1 - θ`, as in
+  the interior `W^{1,p}` estimate with VMO coefficients.
 
 ## References
 
@@ -231,7 +235,7 @@ Then `(R - r)² k(r)` is bounded by `R² a₀` and `z` alone. The proof absorbs 
 `sup (R - σ) h(σ)` and `sup (R - σ)² k(σ)` over `0 < σ < R`, applying both inequalities at `σ` and
 the midpoint `(σ + R) / 2`. -/
 theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} (hR0 : 0 < R)
-    (hz0 : 0 ≤ z) (ha₀ : 0 ≤ a₀) (hK1 : 1 ≤ K) (hcA : 0 ≤ cA) (hcB : 0 ≤ cB) (hN : 0 ≤ N)
+    (ha₀ : 0 ≤ a₀) (hK1 : 1 ≤ K) (hcA : 0 ≤ cA) (hcB : 0 ≤ cB) (hN : 0 ≤ N)
     (hk0 : ∀ σ, 0 ≤ k σ) (hh0 : ∀ σ, 0 ≤ h σ) (hkR : ∀ σ ∈ Set.Ioo 0 R, k σ ≤ k R)
     (hhR : ∀ σ ∈ Set.Ioo 0 R, h σ ≤ h R) (hyz : ∀ σ ∈ Set.Ioo 0 R, y σ ≤ z)
     (hA : ∀ {s t : ℝ}, 0 < s → s < t → t ≤ R →
@@ -241,6 +245,28 @@ theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} 
     {r : ℝ} (hr : 0 < r) (hrR : r < R) :
     (R - r) ^ 2 * k r ≤
       2 * (R ^ 2 * a₀) + (8 * cA + 256 * cA ^ 2 * N + 16 * cA * N * (4 * cB + 1)) * K ^ 2 * z := by
+  -- A negative `z` is excluded by `hA` unless `cA = 0`, and then `hA` gives the bound directly.
+  by_cases hz0 : 0 ≤ z
+  swap
+  · rcases hcA.eq_or_lt with rfl | hcApos
+    · have h1 : k r ≤ a₀ := by simpa using hA hr hrR le_rfl
+      calc (R - r) ^ 2 * k r ≤ R ^ 2 * a₀ :=
+            mul_le_mul (pow_le_pow_left₀ (by linarith) (by linarith) 2) h1 (hk0 r) (sq_nonneg R)
+        _ ≤ 2 * (R ^ 2 * a₀) := by nlinarith [mul_nonneg (sq_nonneg R) ha₀]
+        _ = _ := by ring
+    · exfalso
+      have hneg : K * cA * z < 0 := mul_neg_of_pos_of_neg (by positivity) (not_le.1 hz0)
+      have hc : Continuous fun u : ℝ => a₀ * u ^ 2 + K * cA * h R * u + K * cA * z := by fun_prop
+      obtain ⟨u, hu, hu0, huR⟩ := (((hc.tendsto 0).mono_left nhdsWithin_le_nhds).eventually
+        (gt_mem_nhds (by simpa using hneg))).and (Ioo_mem_nhdsGT hR0) |>.exists
+      have hstep := hA (s := R - u) (t := R) (by linarith) (by linarith) le_rfl
+      rw [sub_sub_cancel] at hstep
+      have e : a₀ * u ^ 2 + K * cA * h R * u + K * cA * z =
+          u ^ 2 * (a₀ + K * (cA / u * h R + cA / u ^ 2 * z)) := by
+        field_simp
+        ring
+      have := mul_nonneg (sq_nonneg u) ((hk0 (R - u)).trans hstep)
+      linarith
   -- The weighted suprema `Φ₁ = sup (R - σ) h(σ)` and `Φ₂ = sup (R - σ)² k(σ)` over `0 < σ < R`.
   set I := Set.Ioo (0 : ℝ) R
   have hI : R / 2 ∈ I := ⟨by positivity, by linarith⟩
@@ -336,19 +362,101 @@ theorem le_add_mul_of_le_add_of_le_add_mul_add_mul {k G F h z a K cA β γ R s t
       have := mul_le_mul_of_nonneg_left hzW hγ
       linarith
     have h2 : β * R * P + γ * R ^ 2 * W ≤ (β * R + γ * R ^ 2) * (P + W) := by
-      have hexp : (β * R + γ * R ^ 2) * (P + W) =
-          β * R * P + γ * R ^ 2 * W + (β * R * W + γ * R ^ 2 * P) := by ring
       linarith [mul_nonneg hβR hW0, mul_nonneg hγR hP0]
     rw [mul_assoc]
     exact mul_le_mul_of_nonneg_left (h1.trans h2) ha
   have haG := mul_le_mul_of_nonneg_left hG ha
   have hPW : 0 ≤ P + W := add_nonneg hP0 hW0
-  have hexp : (K + a * (β * R + γ * R ^ 2)) * ((cA + 1) * P + (cA + 1) * W) =
-      K * (cA * P + cA * W) + a * (β * R + γ * R ^ 2) * (P + W) +
-        (K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W)) := by ring
   have hrest : 0 ≤ K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W) :=
     add_nonneg (mul_nonneg hK hPW) (mul_nonneg (mul_nonneg hQ0 hcA) hPW)
-  have hdist : a * (F + β * h + γ * z) = a * F + a * (β * h + γ * z) := by ring
   linarith
+
+/-- One step of the absorption: Young's inequality turns the step estimate into
+`f s ≤ f t / 2 + A (t - s)^(-1/θ) + B`. -/
+private theorem le_half_add_of_step {θ Cs R Γ X ε : ℝ} (hθ0 : 0 < θ) (hθ1 : θ ≤ 1)
+    (hCs : 0 ≤ Cs) (hΓ : 0 ≤ Γ) (hX : 0 ≤ X) (hε : 0 ≤ ε) {f : ℝ → ℝ} (hf0 : ∀ σ, 0 ≤ f σ)
+    {s t : ℝ} (hs : R / 2 ≤ s) (hst : s < t) (htR : t ≤ R)
+    (hstep : f s ≤ Cs * ((1 + t / (t - s)) * Γ + t / (t - s) * ε * (X ^ θ * f t ^ (1 - θ)))) :
+    f s ≤ 1 / 2 * f t + ((2 * Cs * ε * R) ^ θ⁻¹ * X + Cs * Γ * R * (R / 2) ^ (θ⁻¹ - 1)) *
+      (t - s) ^ (-θ⁻¹) + Cs * Γ := by
+  set β := θ⁻¹
+  have hβ1 : 1 ≤ β := one_le_inv₀ hθ0 |>.2 hθ1
+  have hR : 0 < R := by linarith
+  have hts : 0 < t - s := sub_pos.2 hst
+  have htsR : t - s ≤ R / 2 := by linarith
+  have ht : 0 < t := by linarith
+  have hτ : t / (t - s) ≤ R * (R / 2) ^ (β - 1) * (t - s) ^ (-β) := by
+    have e : (t - s)⁻¹ = (t - s) ^ (β - 1) * (t - s) ^ (-β) := by
+      rw [← Real.rpow_add hts, show β - 1 + -β = -1 by ring, Real.rpow_neg_one]
+    calc t / (t - s) ≤ R / (t - s) := by gcongr
+      _ = R * ((t - s) ^ (β - 1) * (t - s) ^ (-β)) := by rw [div_eq_mul_inv, e]
+      _ ≤ R * ((R / 2) ^ (β - 1) * (t - s) ^ (-β)) := by
+        gcongr
+      _ = _ := by ring
+  have hK : (2 * (Cs * (t / (t - s)) * ε)) ^ β ≤ (2 * Cs * ε * R) ^ β * (t - s) ^ (-β) := by
+    rw [Real.rpow_neg hts.le, ← div_eq_mul_inv, ← Real.div_rpow (by positivity) hts.le]
+    gcongr
+    rw [le_div_iff₀ hts]
+    have : t / (t - s) * (t - s) = t := div_mul_cancel₀ _ hts.ne'
+    nlinarith [mul_nonneg hCs hε]
+  have hY := Real.mul_rpow_mul_rpow_le_half_add (K := Cs * (t / (t - s)) * ε)
+    (mul_nonneg (mul_nonneg hCs (div_nonneg ht.le hts.le)) hε) hX (hf0 t) hθ0 hθ1
+  calc f s ≤ Cs * ((1 + t / (t - s)) * Γ + t / (t - s) * ε * (X ^ θ * f t ^ (1 - θ))) :=
+        hstep
+    _ = Cs * Γ + Cs * Γ * (t / (t - s)) +
+        Cs * (t / (t - s)) * ε * (X ^ θ * f t ^ (1 - θ)) := by ring
+    _ ≤ Cs * Γ + Cs * Γ * (R * (R / 2) ^ (β - 1) * (t - s) ^ (-β)) +
+        (f t / 2 + (2 * Cs * ε * R) ^ β * (t - s) ^ (-β) * X) := by
+        refine add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hτ (by positivity)))
+          (hY.trans ?_)
+        gcongr
+    _ = _ := by ring
+
+/-- **Absorption over concentric balls.** Fix `0 < θ ≤ 1` and `Cs ≥ 0`. If a nonnegative function
+`f`, bounded on `[R/2, R]`, satisfies for `R/2 ≤ s < t ≤ R`
+
+`f s ≤ Cs ((1 + t/(t - s)) Γ + t/(t - s) ε X^θ (f t)^(1-θ))`,
+
+then `f (R/2) ≤ C₁ (Γ + ε^(1/θ) X)`, with `C₁` depending only on `θ` and `Cs`. -/
+theorem exists_le_mul_add_rpow_mul_of_le {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ ≤ 1) {Cs : ℝ}
+    (hCs : 0 ≤ Cs) :
+    ∃ C₁ : ℝ, 0 ≤ C₁ ∧ ∀ {f : ℝ → ℝ} {R Γ X ε : ℝ}, 0 < R → 0 ≤ Γ → 0 ≤ X → 0 ≤ ε →
+      (∀ σ, 0 ≤ f σ) → BddAbove (f '' Icc (R / 2) R) →
+      (∀ s t, R / 2 ≤ s → s < t → t ≤ R →
+        f s ≤ Cs * ((1 + t / (t - s)) * Γ + t / (t - s) * ε * (X ^ θ * f t ^ (1 - θ)))) →
+      f (R / 2) ≤ C₁ * (Γ + ε ^ θ⁻¹ * X) := by
+  obtain ⟨Cab, hCab, habs⟩ :=
+    exists_le_mul_mul_rpow_add_of_le_mul_add (θ := 1 / 2) (by norm_num) (by norm_num) θ⁻¹
+  refine ⟨Cab * ((4 * Cs) ^ θ⁻¹ + 3 * Cs), by positivity,
+    fun {f R Γ X ε} hR hΓ hX hε hf0 hbdd hstep => ?_⟩
+  set β := θ⁻¹
+  set A := (2 * Cs * ε * R) ^ β * X + Cs * Γ * R * (R / 2) ^ (β - 1)
+  have hA : 0 ≤ A := by positivity
+  have key : ∀ s t, R / 2 ≤ s → s < t → t ≤ R →
+      f s ≤ 1 / 2 * f t + A * (t - s) ^ (-β) + Cs * Γ := fun s t hs hst htR =>
+    le_half_add_of_step hθ0 hθ1 hCs hΓ hX hε hf0 hs hst htR (hstep s t hs hst htR)
+  have h := habs (f := f) (r₀ := R / 2) (r₁ := R) (by linarith) hA (by positivity) hbdd key
+  have hR2 : 0 < R / 2 := by positivity
+  have hAR : A * (R - R / 2) ^ (-β) = (4 * Cs) ^ β * ε ^ β * X + 2 * (Cs * Γ) := by
+    rw [show R - R / 2 = R / 2 by ring]
+    simp only [A, add_mul]
+    congr 1
+    · rw [mul_comm _ X, mul_assoc, ← Real.mul_rpow (by positivity) (by positivity),
+        Real.rpow_neg hR2.le, ← Real.inv_rpow hR2.le,
+        ← Real.mul_rpow (by positivity) (by positivity),
+        show 2 * Cs * ε * R * (R / 2)⁻¹ = 4 * Cs * ε by field_simp; ring,
+        Real.mul_rpow (by positivity) hε]
+      ring
+    · rw [mul_assoc, ← Real.rpow_add hR2, show β - 1 + -β = -1 by ring, Real.rpow_neg_one]
+      field_simp
+  rw [hAR] at h
+  calc f (R / 2) ≤ Cab * ((4 * Cs) ^ β * ε ^ β * X + 2 * (Cs * Γ) + Cs * Γ) := h
+    _ ≤ Cab * (((4 * Cs) ^ β + 3 * Cs) * (Γ + ε ^ β * X)) := by
+        gcongr
+        nlinarith [mul_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 4 * Cs) β)
+          (mul_nonneg (Real.rpow_nonneg hε β) hX), mul_nonneg hCs hΓ,
+          mul_nonneg hCs (mul_nonneg (Real.rpow_nonneg hε β) hX),
+          mul_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 4 * Cs) β) hΓ]
+    _ = _ := by ring
 
 end TauCeti

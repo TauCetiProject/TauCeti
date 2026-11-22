@@ -50,7 +50,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  [FiniteDimensional ℝ F] [J.Boundaryless] [T2Space N]
+  [FiniteDimensional ℝ F] [J.Boundaryless]
   [RiemannianBundle (fun y : N => TangentSpace J y)] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N => TangentSpace J y)]
 
@@ -65,7 +65,7 @@ theorem eqOn_connectedComponent_of_tangentMap_basis_eq {ι : Type*}
   apply ContinuousLinearMap.coe_injective
   apply b.ext
   intro i
-  exact congrArg (fun z : TangentBundle J N => (z.2 : F)) (hb i)
+  exact congrArg (fun z : TangentBundle J N => (z.snd : F)) (hb i)
 
 /-- Frame evaluation is injective if the sampled points meet every connected component.
 The bases need not be orthonormal, and neither compactness nor finiteness of the sample

@@ -89,7 +89,7 @@ theorem two_mul_genus_add_two_eq_sum_of_sq_sub_self_eq (hF : IsFunctionField k F
   let _ := ArtinSchreier.isGalois hy hgen
   -- The different has degree `2g + 2` by Hurwitz, and `∑ (m P + 1) deg P` by its local
   -- Artin–Schreier exponents.
-  have hHurwitz := degree_different_adjoin hF hex hx hdeg
+  have hHurwitz := degree_different_adjoin hex hx hdeg
   have hlocal := Divisor.finrank_mul_degree_different_of_pow_sub_self_eq
     hx.isFunctionField_adjoin hF 2 hgen hy S m hpole hreg
   rw [Module.finrank_self, hHurwitz] at hlocal

@@ -6,7 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import Mathlib.Data.Fintype.Sum
+public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.PresentedGroup
+public import Mathlib.Tactic.DeriveFintype
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.GroupTheory.SpecificGroups.Dihedral
+import Mathlib.Tactic.Group
 
 /-!
 # Surface groups with boundary
@@ -32,6 +38,11 @@ The presentations are taken as definitions. The word on the left of each definin
 available in an arbitrary group (`TauCeti.SurfaceGroup.orientableWord` and
 `TauCeti.SurfaceGroup.nonorientableWord`), so that the universal properties read: homomorphisms
 out of a surface group correspond to tuples of elements at which the surface word is trivial.
+The product of two orientable surface words is again an orientable surface word once the handle
+elements of the second are conjugated (`TauCeti.SurfaceGroup.orientableWord_mul_orientableWord`),
+and likewise for nonorientable surface words and crosscap elements
+(`TauCeti.SurfaceGroup.nonorientableWord_mul_nonorientableWord`): this is the relation of a
+surface glued from two pieces along a boundary curve.
 
 ## Main definitions
 
@@ -41,10 +52,27 @@ out of a surface group correspond to tuples of elements at which the surface wor
 * `TauCeti.SurfaceGroup.Nonorientable g m`: the nonorientable surface group `S⁻(g, m)`, with
   generators `TauCeti.SurfaceGroup.Nonorientable.c` and peripheral elements
   `TauCeti.SurfaceGroup.Nonorientable.peripheral`.
+* `TauCeti.SurfaceGroup.Orientable.eulerChar` and `TauCeti.SurfaceGroup.Nonorientable.eulerChar`:
+  the Euler characteristics `2 - 2g - m` and `2 - g - m` of the underlying surfaces.
 * `TauCeti.SurfaceGroup.Orientable.lift` and `TauCeti.SurfaceGroup.Nonorientable.lift`: the
   universal properties, and `TauCeti.SurfaceGroup.Orientable.homEquiv` and
   `TauCeti.SurfaceGroup.Nonorientable.homEquiv`, the bijections between homomorphisms out of a
   surface group and the tuples satisfying its relation.
+* `TauCeti.SurfaceGroup.OrientableGenerator.equivSum` and
+  `TauCeti.SurfaceGroup.NonorientableGenerator.equivSum`: the generators of the presentations as
+  sums of finite types.
+
+## Main results
+
+* `TauCeti.SurfaceGroup.card_orientableGenerator`: the presentation of `S⁺(g, m)` has `2g + m`
+  generators.
+* `TauCeti.SurfaceGroup.orientableRelator_mem_commutator`: the relator `[a₁, b₁] ⋯ [a_g, b_g]` of
+  the closed orientable surface group `S⁺(g, 0)` lies in the commutator subgroup of the free group.
+* `TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`: two generators `cᵢ` and `cⱼ` of `S⁻(g, m)`
+  commute only when they are equal.
+* `TauCeti.SurfaceGroup.Orientable.not_isMulCommutative_of_eulerChar_neg` and
+  `TauCeti.SurfaceGroup.Nonorientable.not_isMulCommutative`: the surface groups of compact surfaces
+  of negative Euler characteristic are not abelian, and neither is `S⁻(g, m)` for `g ≥ 2`.
 
 ## References
 
@@ -79,11 +107,48 @@ theorem orientableWord_def (α β : Fin g → G) (γ : Fin m → G) :
     orientableWord α β γ =
       (List.ofFn fun i ↦ (α i)⁻¹ * (β i)⁻¹ * α i * β i).prod * (List.ofFn γ).prod := (rfl)
 
+/-- If each `α i` commutes with `β i`, the commutators in the orientable surface word are trivial
+and only the product of the boundary elements remains. -/
+theorem orientableWord_of_commute {α β : Fin g → G} (h : ∀ i, Commute (α i) (β i))
+    (γ : Fin m → G) : orientableWord α β γ = (List.ofFn γ).prod := by
+  have (i : Fin g) : (α i)⁻¹ * (β i)⁻¹ * α i * β i = 1 := by
+    rw [(h i).inv_left.inv_right.eq, inv_mul_cancel_right, inv_mul_cancel]
+  simp [orientableWord_def, this, List.ofFn_const]
+
 /-- A homomorphism carries the orientable surface word to the surface word of the images. -/
 theorem map_orientableWord (f : G →* H) (α β : Fin g → G) (γ : Fin m → G) :
     f (orientableWord α β γ) =
       orientableWord (fun i ↦ f (α i)) (fun i ↦ f (β i)) fun j ↦ f (γ j) := by
   simp [orientableWord, map_list_prod, List.map_ofFn, Function.comp_def]
+
+/-- Appending a last boundary element multiplies the orientable surface word by it on the
+right. -/
+theorem orientableWord_snoc (α β : Fin g → G) (γ : Fin m → G) (x : G) :
+    orientableWord α β (Fin.snoc (α := fun _ ↦ G) γ x) = orientableWord α β γ * x := by
+  rw [orientableWord_def, List.ofFn_succ', List.prod_concat]
+  simp [orientableWord_def, mul_assoc]
+
+/-- **The surface word of a glued surface.** The product of the orientable surface words of two
+pieces is the orientable surface word of the concatenated families, once the handle elements of
+the second piece are conjugated by the product `P = (List.ofFn γ₁).prod` of the boundary elements
+of the first: `W(α₁, β₁, γ₁) * W(α₂, β₂, γ₂) = W(α₁ ++ P α₂ P⁻¹, β₁ ++ P β₂ P⁻¹, γ₁ ++ γ₂)`. -/
+theorem orientableWord_mul_orientableWord {g₁ g₂ m₁ m₂ : ℕ} (α₁ β₁ : Fin g₁ → G)
+    (γ₁ : Fin m₁ → G) (α₂ β₂ : Fin g₂ → G) (γ₂ : Fin m₂ → G) :
+    orientableWord α₁ β₁ γ₁ * orientableWord α₂ β₂ γ₂ =
+      orientableWord (Fin.append α₁ fun i ↦ (List.ofFn γ₁).prod * α₂ i * (List.ofFn γ₁).prod⁻¹)
+        (Fin.append β₁ fun i ↦ (List.ofFn γ₁).prod * β₂ i * (List.ofFn γ₁).prod⁻¹)
+        (Fin.append γ₁ γ₂) := by
+  have hconj (P : G) : (List.ofFn fun i ↦ (P * α₂ i * P⁻¹)⁻¹ * (P * β₂ i * P⁻¹)⁻¹ *
+      (P * α₂ i * P⁻¹) * (P * β₂ i * P⁻¹)).prod =
+        P * (List.ofFn fun i ↦ (α₂ i)⁻¹ * (β₂ i)⁻¹ * α₂ i * β₂ i).prod * P⁻¹ := by
+    rw [← MulAut.conj_apply, map_list_prod, List.map_ofFn]
+    congr 2
+    ext i
+    simp only [Function.comp_apply, MulAut.conj_apply]
+    group
+  simp only [orientableWord_def, List.ofFn_add, List.prod_append, Fin.append_left',
+    Fin.append_right, hconj]
+  group
 
 section Nonorientable
 
@@ -97,10 +162,40 @@ def nonorientableWord (κ : Fin g → M) (γ : Fin m → M) : M :=
 theorem nonorientableWord_def (κ : Fin g → M) (γ : Fin m → M) :
     nonorientableWord κ γ = (List.ofFn fun i ↦ κ i ^ 2).prod * (List.ofFn γ).prod := (rfl)
 
+/-- In a commutative monoid the nonorientable surface word is the square of the product of the
+crosscap elements times the product of the boundary elements. -/
+theorem nonorientableWord_eq_pow_two_mul {M : Type*} [CommMonoid M] (κ : Fin g → M)
+    (γ : Fin m → M) : nonorientableWord κ γ = (List.ofFn κ).prod ^ 2 * (List.ofFn γ).prod := by
+  simp [nonorientableWord_def, List.prod_ofFn, Finset.prod_pow]
+
 /-- A homomorphism carries the nonorientable surface word to the surface word of the images. -/
 theorem map_nonorientableWord (f : M →* N) (κ : Fin g → M) (γ : Fin m → M) :
     f (nonorientableWord κ γ) = nonorientableWord (fun i ↦ f (κ i)) fun j ↦ f (γ j) := by
   simp [nonorientableWord, map_list_prod, List.map_ofFn, Function.comp_def]
+
+/-- Appending a last boundary element multiplies the nonorientable surface word by it on the
+right. -/
+theorem nonorientableWord_snoc (κ : Fin g → M) (γ : Fin m → M) (x : M) :
+    nonorientableWord κ (Fin.snoc (α := fun _ ↦ M) γ x) = nonorientableWord κ γ * x := by
+  rw [nonorientableWord_def, List.ofFn_succ', List.prod_concat]
+  simp [nonorientableWord_def, mul_assoc]
+
+/-- **The nonorientable surface word of a glued surface.** The product of the nonorientable
+surface words of two pieces is the nonorientable surface word of the concatenated families, once
+the crosscap elements of the second piece are conjugated by the product `P = (List.ofFn γ₁).prod`
+of the boundary elements of the first: `W(κ₁, γ₁) * W(κ₂, γ₂) = W(κ₁ ++ P κ₂ P⁻¹, γ₁ ++ γ₂)`. -/
+theorem nonorientableWord_mul_nonorientableWord {g₁ g₂ m₁ m₂ : ℕ} (κ₁ : Fin g₁ → G)
+    (γ₁ : Fin m₁ → G) (κ₂ : Fin g₂ → G) (γ₂ : Fin m₂ → G) :
+    nonorientableWord κ₁ γ₁ * nonorientableWord κ₂ γ₂ =
+      nonorientableWord (Fin.append κ₁ fun i ↦ (List.ofFn γ₁).prod * κ₂ i * (List.ofFn γ₁).prod⁻¹)
+        (Fin.append γ₁ γ₂) := by
+  have hconj (P : G) : (List.ofFn fun i ↦ (P * κ₂ i * P⁻¹) ^ 2).prod =
+      P * (List.ofFn fun i ↦ κ₂ i ^ 2).prod * P⁻¹ := by
+    rw [← MulAut.conj_apply, map_list_prod, List.map_ofFn]
+    simp [Function.comp_def, conj_pow]
+  simp only [nonorientableWord_def, List.ofFn_add, List.prod_append, Fin.append_left',
+    Fin.append_right, hconj]
+  group
 
 end Nonorientable
 
@@ -115,6 +210,7 @@ inductive OrientableGenerator (g m : ℕ) : Type
   | b (i : Fin g) : OrientableGenerator g m
   /-- The peripheral generator `pⱼ`, a loop around the `j`-th boundary component. -/
   | peripheral (j : Fin m) : OrientableGenerator g m
+  deriving DecidableEq, Fintype
 
 /-- The generators `c₁, …, c_g, p₁, …, p_m` of the nonorientable surface group `S⁻(g, m)`. -/
 inductive NonorientableGenerator (g m : ℕ) : Type
@@ -122,16 +218,107 @@ inductive NonorientableGenerator (g m : ℕ) : Type
   | c (i : Fin g) : NonorientableGenerator g m
   /-- The peripheral generator `pⱼ`, a loop around the `j`-th boundary component. -/
   | peripheral (j : Fin m) : NonorientableGenerator g m
+  deriving DecidableEq, Fintype
+
+/-- The generators of `S⁺(g, m)` are the two families `a₁, …, a_g` and `b₁, …, b_g` together with
+the peripheral generators `p₁, …, p_m`. -/
+def OrientableGenerator.equivSum (g m : ℕ) :
+    OrientableGenerator g m ≃ (Fin g ⊕ Fin g) ⊕ Fin m where
+  toFun
+    | .a i => .inl (.inl i)
+    | .b i => .inl (.inr i)
+    | .peripheral j => .inr j
+  invFun := Sum.elim (Sum.elim .a .b) .peripheral
+  left_inv := by rintro (i | i | j) <;> rfl
+  right_inv := by rintro ((i | i) | j) <;> rfl
+
+/-- The generators of `S⁻(g, m)` are the family `c₁, …, c_g` together with the peripheral
+generators `p₁, …, p_m`. -/
+def NonorientableGenerator.equivSum (g m : ℕ) : NonorientableGenerator g m ≃ Fin g ⊕ Fin m where
+  toFun
+    | .c i => .inl i
+    | .peripheral j => .inr j
+  invFun := Sum.elim .c .peripheral
+  left_inv := by rintro (i | j) <;> rfl
+  right_inv := by rintro (i | j) <;> rfl
+
+namespace OrientableGenerator
+
+variable {g m : ℕ}
+
+@[simp]
+theorem equivSum_a (i : Fin g) : equivSum g m (.a i) = .inl (.inl i) := (rfl)
+
+@[simp]
+theorem equivSum_b (i : Fin g) : equivSum g m (.b i) = .inl (.inr i) := (rfl)
+
+@[simp]
+theorem equivSum_peripheral (j : Fin m) : equivSum g m (.peripheral j) = .inr j := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl_inl (i : Fin g) : (equivSum g m).symm (.inl (.inl i)) = .a i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl_inr (i : Fin g) : (equivSum g m).symm (.inl (.inr i)) = .b i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inr (j : Fin m) : (equivSum g m).symm (.inr j) = .peripheral j := (rfl)
+
+end OrientableGenerator
+
+/-- The presentation of `S⁺(g, m)` has `2g + m` generators. -/
+theorem card_orientableGenerator (g m : ℕ) :
+    Fintype.card (OrientableGenerator g m) = 2 * g + m := by
+  rw [Fintype.card_congr (OrientableGenerator.equivSum g m)]
+  simp [two_mul]
+
+namespace NonorientableGenerator
+
+variable {g m : ℕ}
+
+@[simp]
+theorem equivSum_c (i : Fin g) : equivSum g m (.c i) = .inl i := (rfl)
+
+@[simp]
+theorem equivSum_peripheral (j : Fin m) : equivSum g m (.peripheral j) = .inr j := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl (i : Fin g) : (equivSum g m).symm (.inl i) = .c i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inr (j : Fin m) : (equivSum g m).symm (.inr j) = .peripheral j := (rfl)
+
+end NonorientableGenerator
 
 /-- The defining relator `[a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m` of `S⁺(g, m)` in the free group on its
 generators. -/
 def orientableRelator (g m : ℕ) : FreeGroup (OrientableGenerator g m) :=
   orientableWord (fun i ↦ of (.a i)) (fun i ↦ of (.b i)) fun j ↦ of (.peripheral j)
 
+theorem orientableRelator_def (g m : ℕ) :
+    orientableRelator g m =
+      orientableWord (fun i ↦ of (.a i)) (fun i ↦ of (.b i)) fun j ↦ of (.peripheral j) := (rfl)
+
+/-- The relator `[a₁, b₁] ⋯ [a_g, b_g]` of the closed orientable surface group `S⁺(g, 0)` is a
+product of commutators. -/
+theorem orientableRelator_mem_commutator (g : ℕ) :
+    orientableRelator g 0 ∈ commutator (FreeGroup (OrientableGenerator g 0)) := by
+  rw [orientableRelator_def, orientableWord_def, List.ofFn_zero, List.prod_nil, mul_one,
+    commutator_def]
+  refine Subgroup.list_prod_mem _ fun x hx ↦ ?_
+  obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hx
+  simpa [commutatorElement_def] using Subgroup.commutator_mem_commutator
+    (Subgroup.mem_top (of (OrientableGenerator.a i : OrientableGenerator g 0))⁻¹)
+    (Subgroup.mem_top (of (OrientableGenerator.b i : OrientableGenerator g 0))⁻¹)
+
 /-- The defining relator `c₁ ^ 2 ⋯ c_g ^ 2 p₁ ⋯ p_m` of `S⁻(g, m)` in the free group on its
 generators. -/
 def nonorientableRelator (g m : ℕ) : FreeGroup (NonorientableGenerator g m) :=
   nonorientableWord (fun i ↦ of (.c i)) fun j ↦ of (.peripheral j)
+
+theorem nonorientableRelator_def (g m : ℕ) :
+    nonorientableRelator g m =
+      nonorientableWord (fun i ↦ of (.c i)) fun j ↦ of (.peripheral j) := (rfl)
 
 /-- The orientable surface group
 `S⁺(g, m) = ⟨a₁, b₁, …, a_g, b_g, p₁, …, p_m | [a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m⟩`, the fundamental
@@ -147,6 +334,12 @@ namespace Orientable
 
 variable (g m : ℕ)
 
+/-- The Euler characteristic `χ = 2 - 2g - m` of the compact orientable surface of genus `g` with
+`m` boundary components, whose fundamental group is `S⁺(g, m)`. -/
+def eulerChar : ℤ := 2 - 2 * g - m
+
+theorem eulerChar_def : eulerChar g m = 2 - 2 * g - m := (rfl)
+
 /-- The generator `aᵢ` of `S⁺(g, m)`. -/
 def a (i : Fin g) : Orientable g m := PresentedGroup.of (.a i)
 
@@ -155,6 +348,12 @@ def b (i : Fin g) : Orientable g m := PresentedGroup.of (.b i)
 
 /-- The peripheral element `pⱼ` of `S⁺(g, m)`, a loop around the `j`-th boundary component. -/
 def peripheral (j : Fin m) : Orientable g m := PresentedGroup.of (.peripheral j)
+
+theorem a_def (i : Fin g) : a g m i = PresentedGroup.of (.a i) := (rfl)
+
+theorem b_def (i : Fin g) : b g m i = PresentedGroup.of (.b i) := (rfl)
+
+theorem peripheral_def (j : Fin m) : peripheral g m j = PresentedGroup.of (.peripheral j) := (rfl)
 
 /-- The defining relation `[a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m = 1` of `S⁺(g, m)`. -/
 @[simp]
@@ -172,6 +371,13 @@ theorem peripheral_last :
   refine eq_inv_of_mul_eq_one_right ?_
   have h := orientableWord_a_b_peripheral g (m + 1)
   rwa [orientableWord, List.ofFn_succ', List.prod_concat, ← mul_assoc] at h
+
+/-- In `S⁺(g, m + 1)` the surface word of the generators other than the last peripheral element is
+the inverse of the last peripheral element. -/
+theorem orientableWord_peripheral_castSucc :
+    orientableWord (a g (m + 1)) (b g (m + 1)) (fun j ↦ peripheral g (m + 1) j.castSucc) =
+      (peripheral g (m + 1) (Fin.last m))⁻¹ := by
+  rw [peripheral_last, inv_inv, orientableWord_def]
 
 variable {g m}
 
@@ -218,7 +424,7 @@ def homEquiv :
       {t : (Fin g → G) × (Fin g → G) × (Fin m → G) // orientableWord t.1 t.2.1 t.2.2 = 1} where
   toFun f := ⟨(fun i ↦ f (a g m i), fun i ↦ f (b g m i), fun j ↦ f (peripheral g m j)), by
     rw [← map_orientableWord, orientableWord_a_b_peripheral, map_one]⟩
-  invFun t := lift t.1.1 t.1.2.1 t.1.2.2 t.2
+  invFun t := lift t.val.1 t.val.2.1 t.val.2.2 t.property
   left_inv f := by ext <;> simp
   right_inv t := by ext <;> simp
 
@@ -230,7 +436,41 @@ theorem homEquiv_apply (f : Orientable g m →* G) :
 @[simp]
 theorem homEquiv_symm_apply
     (t : {t : (Fin g → G) × (Fin g → G) × (Fin m → G) // orientableWord t.1 t.2.1 t.2.2 = 1}) :
-    homEquiv.symm t = lift t.1.1 t.1.2.1 t.1.2.2 t.2 := (rfl)
+    homEquiv.symm t = lift t.val.1 t.val.2.1 t.val.2.2 t.property := (rfl)
+
+open Equiv in
+/-- The orientable surface group of a surface of negative Euler characteristic is not
+abelian. -/
+theorem not_isMulCommutative_of_eulerChar_neg (h : eulerChar g m < 0) :
+    ¬IsMulCommutative (Orientable g m) := by
+  intro _
+  -- A homomorphism to `Perm (Fin 3)`, given by the universal property, sends two generators to
+  -- noncommuting permutations.
+  have hne : (swap 0 1 * swap 1 2 : Perm (Fin 3)) ≠ swap 1 2 * swap 0 1 := by decide
+  rw [eulerChar_def] at h
+  rcases g with _ | _ | g
+  · -- `p₁ ↦ (01)`, `p₂ ↦ (12)`, `p₃ ↦ ((01)(12))⁻¹`
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by lia⟩
+    have hw : orientableWord Fin.elim0 Fin.elim0
+        (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) (Fin.cons (swap 0 1 * swap 1 2)⁻¹ 1)) :
+          Fin (m + 3) → Perm (Fin 3)) = 1 := by
+      simp [orientableWord_def, List.ofFn_succ, mul_assoc]
+    have := congrArg (lift _ _ _ hw) (mul_comm' (peripheral 0 (m + 3) 0) (peripheral 0 (m + 3) 1))
+    exact hne (by simpa using this)
+  · -- `a₁ ↦ (01)`, `b₁ ↦ (12)`, `p₁ ↦ [(01), (12)]⁻¹`
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by lia⟩
+    have hw : orientableWord (fun _ : Fin 1 ↦ swap 0 1) (fun _ ↦ swap 1 2)
+        (Fin.cons (swap 0 1 * swap 1 2 * swap 0 1 * swap 1 2)⁻¹ 1 :
+          Fin (m + 1) → Perm (Fin 3)) = 1 := by
+      simp [orientableWord_def, List.ofFn_succ, mul_assoc]
+    have := congrArg (lift _ _ _ hw) (mul_comm' (a 1 (m + 1) 0) (b 1 (m + 1) 0))
+    exact hne (by simpa using this)
+  · -- `a₁ ↦ (01)`, `a₂ ↦ (12)`
+    have hw : orientableWord (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) 1) :
+        Fin (g + 2) → Perm (Fin 3)) 1 (1 : Fin m → Perm (Fin 3)) = 1 := by
+      simp [orientableWord_def, Pi.one_def]
+    have := congrArg (lift _ _ _ hw) (mul_comm' (a (g + 2) m 0) (a (g + 2) m 1))
+    exact hne (by simpa using this)
 
 end Orientable
 
@@ -238,11 +478,21 @@ namespace Nonorientable
 
 variable (g m : ℕ)
 
+/-- The Euler characteristic `χ = 2 - g - m` of the compact nonorientable surface of genus `g`
+with `m` boundary components, whose fundamental group is `S⁻(g, m)`. -/
+def eulerChar : ℤ := 2 - g - m
+
+theorem eulerChar_def : eulerChar g m = 2 - g - m := (rfl)
+
 /-- The generator `cᵢ` of `S⁻(g, m)`. -/
 def c (i : Fin g) : Nonorientable g m := PresentedGroup.of (.c i)
 
 /-- The peripheral element `pⱼ` of `S⁻(g, m)`, a loop around the `j`-th boundary component. -/
 def peripheral (j : Fin m) : Nonorientable g m := PresentedGroup.of (.peripheral j)
+
+theorem c_def (i : Fin g) : c g m i = PresentedGroup.of (.c i) := (rfl)
+
+theorem peripheral_def (j : Fin m) : peripheral g m j = PresentedGroup.of (.peripheral j) := (rfl)
 
 /-- The defining relation `c₁ ^ 2 ⋯ c_g ^ 2 p₁ ⋯ p_m = 1` of `S⁻(g, m)`. -/
 @[simp]
@@ -259,6 +509,13 @@ theorem peripheral_last :
   refine eq_inv_of_mul_eq_one_right ?_
   have h := nonorientableWord_c_peripheral g (m + 1)
   rwa [nonorientableWord, List.ofFn_succ', List.prod_concat, ← mul_assoc] at h
+
+/-- In `S⁻(g, m + 1)` the surface word of the generators other than the last peripheral element is
+the inverse of the last peripheral element. -/
+theorem nonorientableWord_peripheral_castSucc :
+    nonorientableWord (c g (m + 1)) (fun j ↦ peripheral g (m + 1) j.castSucc) =
+      (peripheral g (m + 1) (Fin.last m))⁻¹ := by
+  rw [peripheral_last, inv_inv, nonorientableWord_def]
 
 variable {g m}
 
@@ -297,7 +554,7 @@ def homEquiv :
       {t : (Fin g → G) × (Fin m → G) // nonorientableWord t.1 t.2 = 1} where
   toFun f := ⟨(fun i ↦ f (c g m i), fun j ↦ f (peripheral g m j)), by
     rw [← map_nonorientableWord, nonorientableWord_c_peripheral, map_one]⟩
-  invFun t := lift t.1.1 t.1.2 t.2
+  invFun t := lift t.val.1 t.val.2 t.property
   left_inv f := by ext <;> simp
   right_inv t := by ext <;> simp
 
@@ -309,7 +566,57 @@ theorem homEquiv_apply (f : Nonorientable g m →* G) :
 @[simp]
 theorem homEquiv_symm_apply
     (t : {t : (Fin g → G) × (Fin m → G) // nonorientableWord t.1 t.2 = 1}) :
-    homEquiv.symm t = lift t.1.1 t.1.2 t.2 := (rfl)
+    homEquiv.symm t = lift t.val.1 t.val.2 t.property := (rfl)
+
+/-- Two generators `cᵢ` and `cⱼ` of the nonorientable surface group `S⁻(g, m)` commute only when
+they are equal. In particular `S⁻(g, m)` is not commutative for `g ≥ 2`. -/
+@[simp]
+theorem commute_c_iff {i j : Fin g} : Commute (c g m i) (c g m j) ↔ i = j := by
+  classical
+  refine ⟨fun h ↦ by_contra fun hij ↦ ?_, fun h ↦ h ▸ .refl _⟩
+  -- Send `cᵢ` and `cⱼ` to two noncommuting reflections of the dihedral group of order `6` and
+  -- every other generator to `1`. Reflections square to `1`, so the relator is killed.
+  let κ : Fin g → DihedralGroup 3 := fun k ↦
+    if k = i then .sr 0 else if k = j then .sr 1 else 1
+  have hκ (k : Fin g) : κ k ^ 2 = 1 := by
+    simp only [κ]
+    split_ifs <;> simp [sq]
+  have := (h.map (lift κ (fun _ ↦ 1) (by simp [nonorientableWord_def, hκ, List.ofFn_const]))).eq
+  have hne : (DihedralGroup.sr 0 : DihedralGroup 3) * .sr 1 ≠ .sr 1 * .sr 0 := by decide
+  exact hne (by simpa [κ, Ne.symm hij] using this)
+
+open Equiv in
+/-- The nonorientable surface group `S⁻(g, m)` is not abelian when the surface has negative
+Euler characteristic or genus at least two. -/
+theorem not_isMulCommutative (h : 2 ≤ g ∨ eulerChar g m < 0) :
+    ¬IsMulCommutative (Nonorientable g m) := by
+  intro _
+  -- A homomorphism to `Perm (Fin 3)`, given by the universal property, sends two generators to
+  -- noncommuting permutations.
+  have hne : (swap 0 1 * swap 1 2 : Perm (Fin 3)) ≠ swap 1 2 * swap 0 1 := by decide
+  rw [eulerChar_def] at h
+  rcases g with _ | _ | g
+  · -- `p₁ ↦ (01)`, `p₂ ↦ (12)`, `p₃ ↦ ((01)(12))⁻¹`
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by lia⟩
+    have hw : nonorientableWord Fin.elim0
+        (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) (Fin.cons (swap 0 1 * swap 1 2)⁻¹ 1)) :
+          Fin (m + 3) → Perm (Fin 3)) = 1 := by
+      simp [nonorientableWord_def, List.ofFn_succ]
+    have := congrArg (lift _ _ hw) (mul_comm' (peripheral 0 (m + 3) 0) (peripheral 0 (m + 3) 1))
+    exact hne (by simpa using this)
+  · -- `c₁ ↦ (01)`, `p₁ ↦ (12)`, `p₂ ↦ (12)`
+    obtain ⟨m, rfl⟩ : ∃ k, m = k + 2 := ⟨m - 2, by lia⟩
+    have hw : nonorientableWord (fun _ : Fin 1 ↦ swap 0 1)
+        (Fin.cons (swap 1 2) (Fin.cons (swap 1 2) 1) : Fin (m + 2) → Perm (Fin 3)) = 1 := by
+      simp [nonorientableWord_def, List.ofFn_succ, Pi.one_def, pow_two]
+    have := congrArg (lift _ _ hw) (mul_comm' (c 1 (m + 2) 0) (peripheral 1 (m + 2) 0))
+    exact hne (by simpa using this)
+  · -- `c₁ ↦ (01)`, `c₂ ↦ (12)`
+    have hw : nonorientableWord (Fin.cons (swap 0 1) (Fin.cons (swap 1 2) 1) :
+        Fin (g + 2) → Perm (Fin 3)) (1 : Fin m → Perm (Fin 3)) = 1 := by
+      simp [nonorientableWord_def, List.ofFn_succ, Pi.one_def, pow_two]
+    have := congrArg (lift _ _ hw) (mul_comm' (c (g + 2) m 0) (c (g + 2) m 1))
+    exact hne (by simpa using this)
 
 end Nonorientable
 

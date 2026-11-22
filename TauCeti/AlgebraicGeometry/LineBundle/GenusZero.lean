@@ -61,7 +61,7 @@ theorem eulerDegree_eq_zero_iff_of_genus_eq_zero (a : LineBundleClass X) :
     intro x _
     exact_mod_cast Nat.pos_of_ne_zero
       (Scheme.Hom.residueDegree_ne_zero_of_isClosed (X ↘ Spec (.of k))
-        (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.2))
+        (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property))
   simpa only [hD0, SchemeWeilDivisor.toLineBundleClass_zero] using hclass.symm
 
 include hdim hφ hg in
@@ -75,7 +75,7 @@ theorem eulerDegree_injective_of_genus_eq_zero :
     rw [eulerDegree_mul k hdim, eulerDegree_inv k hdim, hab, add_neg_cancel]
   exact mul_inv_eq_one.mp ((eulerDegree_eq_zero_iff_of_genus_eq_zero hdim hφ hg _).mp h)
 
-variable [IsNoetherian X] [hX : Fact (∀ x : X, coheight x ≤ 1)]
+variable [hX : Fact (∀ x : X, coheight x ≤ 1)]
 
 include hφ hg in
 /-- The degree homomorphism on the Picard group is injective for a proper regular integral

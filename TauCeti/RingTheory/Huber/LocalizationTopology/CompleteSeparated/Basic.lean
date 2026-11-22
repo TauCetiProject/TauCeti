@@ -11,17 +11,18 @@ public import TauCeti.Topology.Category.TopCommRingCat.CompleteSeparated.Basic
 /-!
 # `A⟨T/s⟩` is a complete separated topological ring
 
-The adic structure presheaf (roadmap Layer 3.3) assigns `A⟨T/s⟩` to the rational subset
-`R(T/s)`, and its values are required to be *complete separated* topological rings (*Adic Spaces*,
-arXiv:1910.05934v1, §8.1–§8.2). This module supplies the categorical packaging that assignment
-needs: it exhibits `A⟨T/s⟩` as an object of `CompleteSeparatedTopCommRingCat`, lifts continuous
-comparison maps to morphisms, and packages mutually compatible comparisons as isomorphisms.
+The adic structure presheaf assigns `A⟨T/s⟩` to the rational subset `R(T/s)`, and its values are
+required to be *complete separated* topological rings (*Adic Spaces*, arXiv:1910.05934v1,
+§8.1–§8.2). This module supplies the categorical packaging that assignment needs: it exhibits
+`A⟨T/s⟩` as an object of `CompleteSeparatedTopCommRingCat`, lifts continuous comparison maps to
+morphisms, and packages mutually compatible comparisons as isomorphisms.
 
-No presheaf exists yet, and the objects here remain *presentationwise*: they depend on the data
-`(T, s, S, hden)` presenting the localisation, not only on the subset `R(T/s)`. The isomorphism
-constructed here is conditional on compatible comparison maps in both directions. Producing those
-maps from equality of rational subsets, and constructing restriction maps from containments, are
-separate steps.
+The objects here are *presentationwise*: they depend on the data `(T, s, S, hden)` presenting the
+localisation, not only on the subset `R(T/s)`. The isomorphism constructed here is conditional on
+compatible comparison maps in both directions. Restriction maps of refinements are made
+morphisms of `CompleteSeparatedTopCommRingCat` in
+`LocalizationTopology.CompleteSeparated.Restriction`, and a presheaf is assembled from them in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic`.
 
 Nothing here is deep — `A⟨T/s⟩` is a separated completion, so it is complete and Hausdorff for its
 own uniformity, and `CompleteSeparatedTopCommRingCat.of` bundles exactly that. What the module

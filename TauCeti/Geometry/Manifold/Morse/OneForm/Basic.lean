@@ -46,8 +46,11 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 1 M]
   {α : RoughForm I M ℝ 1} {f g : M → ℝ} {U V : Set M} {x : M}
+
+section Base
+
+variable [IsManifold I 1 M]
 
 /-- A smooth closed real one-form is Morse if each zero admits a local primitive with a
 nondegenerate critical point there. This does not require Morse--Smale transversality or
@@ -135,6 +138,26 @@ theorem IsMorseOneForm.eventually_ne_zero (hα : IsMorseOneForm α) (hx : α x =
 
 end Independence
 
+section Finite
+
+/-- A Morse one-form has finitely many zeros in every compact set. -/
+theorem IsMorseOneForm.finite_zeroSet_inter (hα : IsMorseOneForm α) {K : Set M}
+    (hK : IsCompact K) : ({x | α x = 0} ∩ K).Finite := by
+  refine (hK.inter_left hα.isSmoothForm.isClosed_zeroSet).finite ?_
+  rw [isDiscrete_iff_nhdsNE]
+  rintro x ⟨hx, -⟩
+  rw [inf_principal_eq_bot]
+  filter_upwards [hα.eventually_ne_zero hx] with y hy using fun h ↦ hy h.1
+
+/-- A Morse one-form on a compact manifold has finitely many zeros. -/
+theorem IsMorseOneForm.finite_zeroSet [CompactSpace M] (hα : IsMorseOneForm α) :
+    {x | α x = 0}.Finite := by
+  simpa using hα.finite_zeroSet_inter isCompact_univ
+
+end Finite
+
+end Base
+
 section Exact
 
 variable [IsManifold I ∞ M] [I.Boundaryless]
@@ -163,29 +186,10 @@ theorem isMorseOneForm_mextDeriv_ofFunction_iff (hf : ContMDiff I 𝓘(ℝ) ∞ 
 
 end Exact
 
-section Finite
-
-/-- A Morse one-form has finitely many zeros in every compact set. -/
-theorem IsMorseOneForm.finite_zeroSet_inter (hα : IsMorseOneForm α) {K : Set M}
-    (hK : IsCompact K) : ({x | α x = 0} ∩ K).Finite := by
-  refine (hK.inter_left hα.isSmoothForm.isClosed_zeroSet).finite ?_
-  rw [isDiscrete_iff_nhdsNE]
-  rintro x ⟨hx, -⟩
-  rw [inf_principal_eq_bot]
-  filter_upwards [hα.eventually_ne_zero hx] with y hy using fun h ↦ hy h.1
-
-/-- A Morse one-form on a compact manifold has finitely many zeros. -/
-theorem IsMorseOneForm.finite_zeroSet [CompactSpace M] (hα : IsMorseOneForm α) :
-    {x | α x = 0}.Finite := by
-  simpa using hα.finite_zeroSet_inter isCompact_univ
-
-end Finite
-
 section Pullback
 
 variable {N : Type*} [TopologicalSpace N] {π : N → M} {g : N → ℝ}
 
-omit [IsManifold I 1 M] in
 /-- **Critical points of a lifted potential.** If `π` is a local diffeomorphism and `g` is a
 function with `dg = π^* α`, the critical points of `g` are the preimages of the zeros of `α`. -/
 theorem _root_.IsLocalDiffeomorph.criticalPoints_eq_preimage_of_mextDeriv_eq_mpullback
@@ -251,7 +255,6 @@ theorem IsMorseOneForm.isMorse_of_mextDeriv_eq_mpullback (hα : IsMorseOneForm �
     (hdg : mextDeriv (RoughForm.ofFunction I g) = TauCeti.mpullback I I π α) : IsMorse I g :=
   (isMorseOneForm_mextDeriv_ofFunction_iff hg).mp (hdg ▸ hα.mpullback hπ)
 
-omit [IsManifold I 1 M] in
 /-- **Morse indices of a lifted potential.** If `π` is a smooth local diffeomorphism and `g` is a
 differentiable function with `dg = π^* α`, then at a point `x` over a zero of `α` the Morse index
 of `g` is the Morse index at `π x` of any local primitive of `α` which is `C²` at `π x`. The

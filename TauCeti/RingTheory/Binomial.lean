@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.RingTheory.Polynomial.Pochhammer
 -- Proof-only: modules over `ℚ` are torsion-free.
 import Mathlib.Algebra.Module.Torsion.Field
+-- Proof-only: `ℕ`-scalars associate with multiplication in a nonassociative semiring.
+import Mathlib.GroupTheory.GroupAction.Ring
 
 /-!
 # Products of generalized binomial coefficients
@@ -509,14 +511,26 @@ The identity combines them without division, which is the integral step needed i
 
 ## Main results
 
+* `TauCeti.Ring.choose_one_of_two_le`: `(1 choose n) = 0` for `n ≥ 2`.
+* `TauCeti.Ring.choose_neg_one` and `TauCeti.Ring.choose_neg_natCast_sub_one`: upper negation at
+  `-1` (`(-1 choose n) = (-1) ^ n`) and at `-k - 1`
+  (`(-k - 1 choose i) = (-1) ^ i * (k + i choose i)`), together with the signed cancellation
+  `TauCeti.Ring.neg_one_pow_mul_choose_neg_natCast_sub_one` and its symmetry
+  `TauCeti.Ring.neg_one_pow_mul_choose_neg_natCast_sub_one_comm`.
 * `TauCeti.Ring.choose_neg_succ_eq_sum`: the expansion of `(-r choose (n + 1))` as a signed
   Chu--Vandermonde sum of the coefficients `(r choose k)`.
 * `TauCeti.Ring.choose_neg_mem`: an additive subgroup containing the coefficients of `r` up to
   degree `n` contains the degree-`n` coefficient of `-r`.
 * `TauCeti.ringChooseSpan_neg`: negation leaves the integral span unchanged.
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
-* `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
+* `TauCeti.Ring.choose_mul_add_one_eq`: the analogue `(r choose k) (r + 1) =
+  (r + 1 choose k) (r + 1 - k)` of `Nat.choose_mul_succ_eq`.
+* `TauCeti.Ring.add_one_nsmul_choose_add_one` and `TauCeti.Ring.add_one_nsmul_multichoose_add_one`:
+  the product recursions `(k + 1) (r choose (k + 1)) = (r choose k) (r - k)` and
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
+* `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
+  `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
+  division semiring.
 
 ## References
 
@@ -563,6 +577,34 @@ theorem mul_weighted_choose_add_mul_choose (r c : R) (k : ℕ) :
   rw [mul_add]
   abel
 
+/-- The analogue of `Nat.choose_mul_succ_eq` for generalized binomial coefficients:
+`(r choose k) (r + 1) = (r + 1 choose k) (r + 1 - k)`. -/
+theorem choose_mul_add_one_eq (r : R) (k : ℕ) :
+    _root_.Ring.choose r k * (r + 1) = _root_.Ring.choose (r + 1) k * (r + 1 - k) := by
+  -- A binomial ring has no additive torsion, so multiplying by `k!` is injective.
+  have := BinomialRing.toHasUniqueDiv (R := R)
+  rw [← nsmul_right_inj (Nat.factorial_ne_zero k), ← smul_mul_assoc, ← smul_mul_assoc,
+    ← _root_.Ring.descPochhammer_eq_factorial_smul_choose,
+    ← _root_.Ring.descPochhammer_eq_factorial_smul_choose]
+  -- Both sides are the Pochhammer evaluation `(r + 1) r ⋯ (r + 1 - k)`, peeled at either end.
+  have h := congrArg (Polynomial.smeval · (r + 1)) <| (descPochhammer_succ_right ℤ k).symm.trans
+    ((descPochhammer_succ_left ℤ k).trans (mul_comm _ _))
+  simp only [Polynomial.smeval_mul, Polynomial.smeval_comp, Polynomial.smeval_sub,
+    Polynomial.smeval_X, Polynomial.smeval_one, npow_one, npow_zero, ← Polynomial.C_eq_natCast,
+    Polynomial.smeval_C] at h
+  simpa using h.symm
+
+/-- The product recursion for binomial coefficients:
+
+```text
+(k + 1) (r choose (k + 1)) = (r choose k) (r - k).
+```
+-/
+theorem add_one_nsmul_choose_add_one (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose r (k + 1) = _root_.Ring.choose r k * (r - k) := by
+  simpa [Nat.choose_succ_self_right] using
+    _root_.Ring.choose_smul_choose r (n := k + 1) (k := k) (Nat.le_succ k)
+
 end WeightedPascal
 
 /-! ## The product recursion for multiset coefficients -/
@@ -584,9 +626,55 @@ theorem add_one_nsmul_multichoose_add_one {R : Type*} [Semiring R] [BinomialRing
   simp only [_root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer,
     Polynomial.ascPochhammer_smeval_eq_eval, ascPochhammer_succ_eval]
 
+/-- Over a division semiring of characteristic zero, `Ring.multichoose x n` equals
+`(n!)⁻¹ * (ascPochhammer R n).eval x`. -/
+theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [DivisionSemiring R]
+    [CharZero R] (x : R) (n : ℕ) :
+    _root_.Ring.multichoose x n = (n.factorial : R)⁻¹ * (ascPochhammer R n).eval x := by
+  have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
+  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
+  rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
+
+/-! ## The coefficients of one -/
+
+/-- `(1 choose n) = 0` for `n ≥ 2`, the analogue of `Ring.choose_zero_pos` for `1`. -/
+theorem choose_one_of_two_le (R : Type*) [NonAssocRing R] [Pow R ℕ] [NatPowAssoc R]
+    [BinomialRing R] {n : ℕ} (hn : 2 ≤ n) : _root_.Ring.choose (1 : R) n = 0 := by
+  rw [← Nat.cast_one, _root_.Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by omega),
+    Nat.cast_zero]
+
 /-! ## Negating the argument -/
 
 variable {R : Type*} [Ring R] [BinomialRing R]
+
+/-- Upper negation at `-1`: `(-1 choose n) = (-1) ^ n`. -/
+@[simp]
+theorem choose_neg_one (n : ℕ) : _root_.Ring.choose (-1 : R) n = (-1 : R) ^ n := by
+  rw [_root_.Ring.choose_neg', _root_.Ring.multichoose_one, Units.smul_def,
+    Int.coe_negOnePow_natCast, zsmul_one, Int.cast_pow, Int.cast_neg, Int.cast_one]
+
+/-- Upper negation at `-k - 1`: `(-k - 1 choose i) = (-1) ^ i * (k + i choose i)`. -/
+theorem choose_neg_natCast_sub_one (k i : ℕ) :
+    _root_.Ring.choose (-(k : R) - 1) i = (-1 : R) ^ i * ((k + i).choose i : R) := by
+  have h₁ : -(k : R) - 1 = -((k : R) + 1) := by abel
+  have h₂ : (k : R) + 1 + (i : R) - 1 = ((k + i : ℕ) : R) := by push_cast; abel
+  rw [h₁, _root_.Ring.choose_neg, h₂, _root_.Ring.choose_natCast, Units.smul_def,
+    Int.coe_negOnePow_natCast, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
+
+/-- Multiplying `(-k - 1 choose i)` by `(-1) ^ i` cancels the upper-negation sign and gives
+`(k + i choose i)`. -/
+theorem neg_one_pow_mul_choose_neg_natCast_sub_one (k i : ℕ) :
+    (-1 : R) ^ i * _root_.Ring.choose (-(k : R) - 1) i = ((k + i).choose i : R) := by
+  rw [choose_neg_natCast_sub_one, ← mul_assoc, ← (Commute.refl (-1 : R)).mul_pow, neg_one_mul,
+    neg_neg, one_pow, one_mul]
+
+/-- Symmetry of signed negative-integer binomial coefficients:
+`(-1) ^ k * (-i - 1 choose k) = (-1) ^ i * (-k - 1 choose i)`. -/
+theorem neg_one_pow_mul_choose_neg_natCast_sub_one_comm (k i : ℕ) :
+    (-1 : R) ^ k * _root_.Ring.choose (-(i : R) - 1) k =
+      (-1 : R) ^ i * _root_.Ring.choose (-(k : R) - 1) i := by
+  rw [neg_one_pow_mul_choose_neg_natCast_sub_one, neg_one_pow_mul_choose_neg_natCast_sub_one,
+    Nat.add_comm k i, Nat.choose_symm_add]
 
 /-- Negating the argument of a generalized binomial coefficient of positive degree expands, by
 Chu--Vandermonde, into a signed sum of the coefficients of the original argument weighted by
@@ -725,6 +813,6 @@ theorem choose_mem_of_mem_span (S : G) {s : Set R}
   | zero => cases n <;> simp [_root_.Ring.choose_zero_succ]
   | add x y hx hy ihx ihy =>
     exact choose_add_mem S (hspan x hx y hy) (fun k _ ↦ ihx k) (fun k _ ↦ ihy k)
-  | smul z x hx ih => exact choose_zsmul_mem S (fun k _ ↦ ih k) z
+  | smul z x _ ih => exact choose_zsmul_mem S (fun k _ ↦ ih k) z
 
 end TauCeti.Ring

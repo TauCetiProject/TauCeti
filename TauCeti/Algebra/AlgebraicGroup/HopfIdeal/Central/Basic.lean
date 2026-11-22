@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.CentralPoint
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
+import TauCeti.Algebra.Coalgebra.Cocommutative
 import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
@@ -52,6 +55,10 @@ producing a Hopf ideal from the cocommutativity defect of `H`.
   uses the conjugation-defect version of the tensor-kernel argument in
   `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Image`.
 * `TauCeti.HopfIdeal.IsCentral.isNormal`: a central Hopf ideal is normal.
+* `TauCeti.HopfIdeal.isNormal_of_isCocomm`: every Hopf ideal of a cocommutative Hopf algebra is
+  normal.
+* `TauCeti.HopfIdeal.isNormal_of_groupLikeSetSpan_eq_top`: every Hopf ideal of a commutative Hopf
+  algebra spanned by its group-like elements is normal.
 * `TauCeti.HopfIdeal.IsCentral.isCocomm_quotient`: the coordinate Hopf algebra of a central
   closed subgroup is cocommutative.
 * `TauCeti.HopfIdeal.isCentral_bot_iff_isCocomm`: the whole group is central exactly when the
@@ -65,9 +72,8 @@ producing a Hopf ideal from the cocommutativity defect of `H`.
 
 The coordinate condition is the conjugation-triviality criterion for a central closed subgroup,
 and mirrors the normality criterion of
-`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic`. This is
-a prerequisite for the center `Z(G)` in Layer 6, "Reductive and semisimple groups", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic`. The center `Z(G)`, constructed in
+`TauCeti.Algebra.AlgebraicGroup.Center.Basic`, is central in this sense.
 -/
 
 public section
@@ -309,6 +315,24 @@ theorem IsCentral.isNormal {H : _root_.CommHopfAlgCat.{v} R} {I : HopfIdeal R H}
   have : g * n * g⁻¹ = n := by
     rw [← hcom.eq, mul_assoc, mul_inv_cancel, mul_one]
   rwa [this]
+
+/-- **Every Hopf ideal of a cocommutative commutative Hopf algebra is normal.** Contravariantly,
+every closed subgroup of a commutative affine group is normal: the whole group is central, hence
+so is each of its closed subgroups. -/
+theorem isNormal_of_isCocomm {H : _root_.CommHopfAlgCat.{v} R} [_root_.Coalgebra.IsCocomm R H]
+    (I : HopfIdeal R H) : I.IsNormal :=
+  ((isCentral_bot_iff_isCocomm.mpr ‹_›).mono bot_le).isNormal
+
+/-- Every Hopf ideal of a commutative Hopf algebra spanned by its group-like elements is normal.
+Contravariantly, every closed subgroup of a diagonalizable group is normal. -/
+theorem isNormal_of_groupLikeSetSpan_eq_top {H : _root_.CommHopfAlgCat.{v} R}
+    (hH : Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ = ⊤) (I : HopfIdeal R H) :
+    I.IsNormal :=
+  -- `H` is a quotient of the group algebra on its group-like elements, which is cocommutative.
+  have : _root_.Coalgebra.IsCocomm R H :=
+    Coalgebra.IsCocomm.of_surjective (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H))
+      ((GroupLike.liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top R H).mpr hH)
+  isNormal_of_isCocomm I
 
 /-- The coordinate Hopf algebra of a central closed subgroup is cocommutative. Equivalently,
 every central closed subgroup scheme is a commutative group scheme. -/

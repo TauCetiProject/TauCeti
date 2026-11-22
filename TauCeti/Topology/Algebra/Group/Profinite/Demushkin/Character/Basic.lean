@@ -99,7 +99,7 @@ private theorem existsUnique_character_forall_crossedHom_single_eq_zero [Finite 
   -- The matrix of the degree-one form in the dual basis of the generators, lifted to `ℤ_p` and
   -- transposed; its determinant is a unit because the form is nondegenerate.
   set M : Matrix X X ℤ_[p] := ((LinearMap.BilinForm.toMatrix (dualBasis p X)
-    (degreeOneForm (gradedMk p (freeProP p X) 1 n))).map (ZMod.cast : ZMod p → ℤ_[p]))ᵀ with hM
+    (degreeOneForm (gradedMk p (freeProP p X) 1 n))).map (ZMod.cast : ZMod p → ℤ_[p]))ᵀ
   have hMdet : IsUnit M.det := isUnit_det_transpose_map_cast _
     ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (dualBasis p X)).1 hnd)
   -- The character of `F` with values `v` on the generators, for `v ≡ 1 mod p`.
@@ -117,7 +117,7 @@ private theorem existsUnique_character_forall_crossedHom_single_eq_zero [Finite 
   have h₀ : ∀ j, (p : ℤ_[p]) ∣ A 1 j := fun j ↦ by
     rw [hA 1 hone j]
     exact (isCrossedHom_crossedHom _ _).dvd_apply_of_mem_pLowerCentralSeries_one
-      (isProP_freeProP p X) (continuous_crossedHom _ _) n.2
+      (isProP_freeProP p X) (continuous_crossedHom _ _) n.property
   -- The linearisation of the Newton map is the lifted matrix of the degree-one form.
   have hlin : ∀ v v' : X → ℤ_[p], (∀ i, (p : ℤ_[p]) ∣ v i - (1 : X → ℤ_[p]) i) →
       (∀ i, (p : ℤ_[p]) ∣ v' i - (1 : X → ℤ_[p]) i) → ∀ k : ℕ, 1 ≤ k →

@@ -78,7 +78,7 @@ noncomputable def regularDualSemigroupEquiv :
     invFun p := ⟨(b.constr ℤ (Sum.elim (fun ρ ↦ (p.1 ρ : ℤ)) p.2)).toAddMonoidHom,
       (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb _).2 fun ρ ↦ by simp⟩
     left_inv m := by
-      have hm := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m).1 m.2
+      have hm := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m).1 m.property
       refine Subtype.ext <| AddMonoidHom.toIntLinearMap_injective <| b.ext fun k ↦ ?_
       rcases k with ρ | j
       · simp [hm ρ]
@@ -86,8 +86,8 @@ noncomputable def regularDualSemigroupEquiv :
     right_inv p := by
       ext ρ <;> simp
     map_add' m m' := by
-      have hm := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m).1 m.2
-      have hm' := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m').1 m'.2
+      have hm := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m).1 m.property
+      have hm' := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m').1 m'.property
       refine Prod.ext ?_ ?_
       · ext ρ
         simp [Int.toNat_add (hm ρ) (hm' ρ)]
@@ -99,7 +99,7 @@ generators, which are natural numbers. -/
 @[simp]
 theorem coe_regularDualSemigroupEquiv_fst_apply (m : dualSemigroup hi σ) (ρ : ToricRay σ) :
     ((regularDualSemigroupEquiv hi hσ hb m).1 ρ : ℤ) = (m : N →+ ℤ) (b (Sum.inl ρ)) := by
-  have hm := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m).1 m.2 ρ
+  have hm := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m).1 m.property ρ
   simp [regularDualSemigroupEquiv, hm]
 
 /-- Evaluating the real character of a dual-semigroup element at a primitive ray generator gives
@@ -179,7 +179,7 @@ theorem regularDualSemigroupEquiv_fst_dualSemigroupCoord_inl (ρ : ToricRay σ) 
   refine Finsupp.ext fun ρ' ↦ Nat.cast_injective (R := ℤ) ?_
   -- Both bases carry the primitive generator of the ray `ρ'`, and it is unique.
   rw [coe_regularDualSemigroupEquiv_fst_apply,
-    (hb ρ').unique hi (hσ.salient.anti fun _ hx ↦ ρ'.1.isFaceOf.le hx) (hb' ρ')]
+    (hb ρ').unique hi (hσ.salient.anti fun _ hx ↦ ρ'.val.isFaceOf.le hx) (hb' ρ')]
   rcases eq_or_ne ρ' ρ with rfl | hne
   · simp
   · rw [dualSemigroupCoord_apply_basis_of_ne hi hσ hb' (by simpa using hne),
@@ -195,7 +195,7 @@ theorem regularDualSemigroupEquiv_fst_dualSemigroupCoord_inr (j : ι) :
   refine Finsupp.ext fun ρ ↦ Nat.cast_injective (R := ℤ) ?_
   -- Both bases carry the primitive generator of the ray `ρ`, and it is unique.
   rw [coe_regularDualSemigroupEquiv_fst_apply,
-    (hb ρ).unique hi (hσ.salient.anti fun _ hx ↦ ρ.1.isFaceOf.le hx) (hb' ρ),
+    (hb ρ).unique hi (hσ.salient.anti fun _ hx ↦ ρ.val.isFaceOf.le hx) (hb' ρ),
     dualSemigroupCoord_apply_basis_of_ne hi hσ hb' (by simp)]
   simp
 
@@ -267,17 +267,10 @@ theorem mem_iff_forall_realCharacter_nonneg (hi : IsIntegralLattice i) (hσ : Is
   let _ := ToricRay.finite_of_fg hσ.fg
   let _ := Fintype.ofFinite (ToricRay σ)
   let B := hi.isBaseChange.basis b
-  have hB : ∀ c, B c = i (b c) := fun c ↦ by
-    simpa using hi.isBaseChange.basis_apply b c
-  have hcoord : ∀ c, hi.realCharacter (b.coord c).toAddMonoidHom v = B.repr v c := by
-    intro c
-    have : hi.realCharacter (b.coord c).toAddMonoidHom = B.coord c := by
-      refine B.ext fun c' ↦ ?_
-      rw [Module.Basis.coord_apply, B.repr_self, hB]
-      by_cases hc : c' = c <;> simp [Module.Basis.coord_apply, hc]
-    rw [this, Module.Basis.coord_apply]
+  have hcoord : ∀ c, hi.realCharacter (b.coord c).toAddMonoidHom v = B.repr v c := fun c ↦ by
+    rw [hi.realCharacter_coord, Module.Basis.coord_apply]
   have hmem : ∀ c, (b.coord c).toAddMonoidHom ∈ dualSemigroup hi σ := fun c ↦ by
-    simpa using (dualSemigroupCoord hi hσ.toIsToricCone hb c).2
+    simpa using (dualSemigroupCoord hi hσ.toIsToricCone hb c).property
   have hinr : ∀ j, B.repr v (Sum.inr j) = 0 := by
     intro j
     have hneg : -(b.coord (Sum.inr j)).toAddMonoidHom ∈ dualSemigroup hi σ :=
@@ -290,9 +283,9 @@ theorem mem_iff_forall_realCharacter_nonneg (hi : IsIntegralLattice i) (hσ : Is
   rw [← B.sum_repr v, Fintype.sum_sum_type]
   simp only [hinr, zero_smul, Finset.sum_const_zero, add_zero]
   refine Submodule.sum_mem _ fun ρ _ ↦ ?_
-  rw [hB]
+  rw [hi.isBaseChange.basis_apply, AddMonoidHom.coe_toIntLinearMap]
   exact σ.smul_mem (hcoord (Sum.inl ρ) ▸ h _ (hmem (Sum.inl ρ)))
-    (ρ.1.isFaceOf.le (hb ρ).mem)
+    (ρ.val.isFaceOf.le (hb ρ).mem)
 
 /-- A regular cone is cut out by any generating family of its dual semigroup: a point lies in the
 cone exactly when the real extension of every character of the family is nonnegative at it. -/
@@ -300,7 +293,7 @@ theorem mem_iff_forall_realCharacter_nonneg_of_closure_range_eq_top (hi : IsInte
     (hσ : IsRegularCone i σ) {ι : Type*} {s : ι → dualSemigroup hi σ}
     (hs : AddSubmonoid.closure (Set.range s) = ⊤) {v : V} :
     v ∈ σ ↔ ∀ j, 0 ≤ hi.realCharacter (s j) v := by
-  refine ⟨fun hv j ↦ (mem_dualSemigroup hi _).1 (s j).2 hv, fun h ↦ ?_⟩
+  refine ⟨fun hv j ↦ (mem_dualSemigroup hi _).1 (s j).property hv, fun h ↦ ?_⟩
   -- Nonnegativity at `v` is preserved under sums, so it spreads from the family to its closure.
   have key (x : dualSemigroup hi σ) : 0 ≤ hi.realCharacter x v := by
     induction (hs ▸ AddSubmonoid.mem_top x : x ∈ AddSubmonoid.closure (Set.range s))

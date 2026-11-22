@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Complex
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Holomorphic
+import TauCeti.Geometry.Manifold.Complex.Compact
 
 /-!
 # Functoriality and degree zero of Dolbeault cohomology
@@ -19,7 +20,10 @@ cohomology of the Dolbeault complex `TauCeti.dolbeaultComplex E M F p`, with the
 A holomorphic map of complex manifolds is a smooth map of the underlying real manifolds which is
 pseudoholomorphic for their almost complex structures. Pullback along it preserves `∂bar`-closed
 and `∂bar`-exact forms of type `(p,q)`, so it induces complex-linear maps on Dolbeault cohomology,
-contravariantly functorial in the map.
+contravariantly functorial in the map. They are the maps induced on cohomology by the cochain
+maps `TauCeti.dolbeaultComplex.map` of Dolbeault complexes. Continuous complex-linear coefficient
+maps also induce maps on closed forms and cohomology, covariantly functorial in the coefficients
+and commuting with holomorphic pullback.
 
 In degree `q = 0` there are no `∂bar`-exact forms, so `H^(p,0)_∂bar(M; F)` is the space of
 `∂bar`-closed forms of type `(p,0)`, the holomorphic `p`-forms. For `p = 0` these are the
@@ -31,16 +35,25 @@ holomorphic functions `M → F` when the model `E` is finite-dimensional and `F`
   a holomorphic map, with `mpullback_id`, `mpullback_comp` and `mpullback_mem_exactForms`.
 * `TauCeti.dolbeaultCohomology.map`: the map induced by a holomorphic map, with `map_mk`, `map_id`
   and `map_comp`.
+* `TauCeti.dolbeaultComplex.homologyMap_map`: the map induced on cohomology by the cochain map
+  `TauCeti.dolbeaultComplex.map` of a holomorphic map is `TauCeti.dolbeaultCohomology.map`.
+* `TauCeti.Dolbeault.closedForms.mapCoeff`: coefficient change on closed forms, with identity,
+  composition, exactness preservation and compatibility with pullback.
+* `TauCeti.dolbeaultCohomology.mapCoeff`: induced coefficient change on cohomology, with
+  `mapCoeff_mk`, `mapCoeff_id`, `mapCoeff_comp` and `map_mapCoeff`.
 * `TauCeti.dolbeaultCohomology.mkZeroEquiv`: `H^(p,0)_∂bar(M; F)` is the space of `∂bar`-closed
   forms of type `(p,0)`.
 * `TauCeti.dolbeaultCohomology.zeroZeroEquiv`: `H^(0,0)_∂bar(M; F)` is the space of holomorphic
   functions `M → F`.
+* `TauCeti.dolbeaultCohomology.zeroZeroEquivOfCompactSpace`: on a compact connected complex
+  manifold, `H^(0,0)_∂bar(M; F)` is `F`, the space of constants.
 
 ## Implementation notes
 
 The map induced by a holomorphic map descends pullback of closed forms along the surjective class
 map with `LinearMap.liftOfSurjective`, as `TauCeti.deRhamCohomology.map` in
-`TauCeti.Geometry.Manifold.DeRham.Map`.
+`TauCeti.Geometry.Manifold.DeRham.Map`. The comparison `TauCeti.dolbeaultComplex.homologyMap_map`
+likewise follows `TauCeti.deRhamComplex.homologyMap_map` in the same file.
 
 ## References
 
@@ -86,9 +99,9 @@ variable (E M F) in
 private def closedFormsZeroZeroEquiv :
     closedForms E M F 0 0 ≃ₗ[ℂ] LinearMap.ker ((ofComplexManifold E M).delBar (F := F) (k := 0))
     where
-  toFun φ := ⟨φ.1.1, (mem_closedForms 0 0 φ.1).1 φ.2⟩
-  invFun φ := ⟨⟨φ.1, ((ofComplexManifold E M).mem_typeForms 0 0 φ.1).2
-    (SmoothForm.isOfType_zero_zero φ.1 _)⟩, (mem_closedForms 0 0 _).2 φ.2⟩
+  toFun φ := ⟨φ.val.val, (mem_closedForms 0 0 φ.val).1 φ.property⟩
+  invFun φ := ⟨⟨φ.val, ((ofComplexManifold E M).mem_typeForms 0 0 φ.val).2
+    (SmoothForm.isOfType_zero_zero φ.val _)⟩, (mem_closedForms 0 0 _).2 φ.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -106,10 +119,38 @@ def zeroZeroEquiv : dolbeaultCohomology E M F 0 0 ≃ₗ[ℂ] C^∞⟮𝓘(ℂ, 
 /-- The holomorphic function of the class of a `∂bar`-closed function is the function itself. -/
 @[simp]
 theorem zeroZeroEquiv_mk (φ : closedForms E M F 0 0) (x : M) :
-    zeroZeroEquiv E M F (mk 0 0 φ) x = φ.1.1.1 x 0 := by
+    zeroZeroEquiv E M F (mk 0 0 φ) x = φ.val.val.val x 0 := by
   rw [zeroZeroEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply, ← mkZeroEquiv_apply,
     LinearEquiv.symm_apply_apply, kerDelBarZeroEquiv_apply]
   rfl
+
+section CompactSpace
+
+variable [CompactSpace M] [PreconnectedSpace M] [Nonempty M]
+
+variable (E M F) in
+/-- **`H^(0,0)` of a compact connected complex manifold is the space of constants.** The
+holomorphic functions on a compact connected complex manifold with finite-dimensional model are
+constant, so evaluation identifies `H^(0,0)_∂bar(M; F)` with `F`. -/
+def zeroZeroEquivOfCompactSpace : dolbeaultCohomology E M F 0 0 ≃ₗ[ℂ] F :=
+  zeroZeroEquiv E M F ≪≫ₗ holomorphicEquivOfCompactSpace 𝓘(ℂ, E) M
+
+/-- The constant corresponding to the class of a `∂bar`-closed function on a compact connected
+complex manifold is the value of that function at any point. This is not a `simp` lemma, since the
+point `x` is free on the right. -/
+theorem zeroZeroEquivOfCompactSpace_mk (φ : closedForms E M F 0 0) (x : M) :
+    zeroZeroEquivOfCompactSpace E M F (mk 0 0 φ) = φ.val.val.val x 0 := by
+  rw [← zeroZeroEquiv_mk, zeroZeroEquivOfCompactSpace, LinearEquiv.trans_apply,
+    holomorphicEquivOfCompactSpace_apply _ x]
+
+/-- The class corresponding to a vector `c` is the class of the constant function `c`. -/
+@[simp]
+theorem zeroZeroEquiv_zeroZeroEquivOfCompactSpace_symm_apply (c : F) (x : M) :
+    zeroZeroEquiv E M F ((zeroZeroEquivOfCompactSpace E M F).symm c) x = c := by
+  rw [zeroZeroEquivOfCompactSpace, LinearEquiv.symm_trans_apply, LinearEquiv.apply_symm_apply,
+    holomorphicEquivOfCompactSpace_symm_apply]
+
+end CompactSpace
 
 end dolbeaultCohomology
 
@@ -128,28 +169,25 @@ namespace Dolbeault.closedForms
 map of the underlying real manifolds whose differential is complex-linear. -/
 def mpullback {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
     (hJ : IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' M') f) (p q : ℕ) :
-    closedForms E' M' F p q →ₗ[ℂ] closedForms E M F p q where
-  toFun φ := ⟨⟨SmoothForm.mpullback f hf φ.1.1, ((ofComplexManifold E M).mem_typeForms p q _).2
-      ((((ofComplexManifold E' M').mem_typeForms p q _).1 φ.1.2).mpullback hf hJ)⟩, by
-    rw [mem_closedForms, ← mpullback_delBar _ hf hJ, (mem_closedForms p q φ.1).1 φ.2, map_zero]⟩
-  map_add' φ ψ := Subtype.ext <| Subtype.ext <| map_add _ φ.1.1 ψ.1.1
-  map_smul' c φ := Subtype.ext <| Subtype.ext <| SmoothForm.mpullback_smul f hf c φ.1.1
+    closedForms E' M' F p q →ₗ[ℂ] closedForms E M F p q :=
+  (mpullbackType hf hJ p q).restrict fun φ hφ ↦ by
+    rw [mem_closedForms, coe_mpullbackType, ← mpullback_delBar _ hf hJ,
+      (mem_closedForms p q φ).1 hφ, map_zero]
 
 /-- The underlying smooth form of the pullback of a `∂bar`-closed form is its pullback. -/
 @[simp]
 theorem coe_mpullback {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
     (hJ : IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' M') f) (p q : ℕ)
     (φ : closedForms E' M' F p q) :
-    (mpullback hf hJ p q φ).1.1 = SmoothForm.mpullback f hf φ.1.1 :=
-  (rfl)
+    (mpullback hf hJ p q φ).val.val = SmoothForm.mpullback f hf φ.val.val :=
+  coe_mpullbackType hf hJ p q φ.val
 
 /-- Pullback of `∂bar`-closed forms along the identity is the identity. -/
 @[simp]
 theorem mpullback_id (p q : ℕ) :
     mpullback (F := F) (f := id) contMDiff_id (isPseudoholomorphic_id (ofComplexManifold E M))
       p q = LinearMap.id :=
-  LinearMap.ext fun φ ↦ Subtype.ext <| Subtype.ext <|
-    LinearMap.congr_fun SmoothForm.mpullback_id φ.1.1
+  LinearMap.ext fun φ ↦ Subtype.ext <| LinearMap.congr_fun (mpullbackType_id _ p q) φ.val
 
 /-- Pullback of `∂bar`-closed forms reverses composition. -/
 theorem mpullback_comp {f : M → M'} {g : M' → M''} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
@@ -159,25 +197,24 @@ theorem mpullback_comp {f : M → M'} {g : M' → M''} (hf : ContMDiff 𝓘(ℝ,
     (p q : ℕ) :
     mpullback (F := F) (hg.comp hf) (hJ'.comp hJ) p q =
       mpullback hf hJ p q ∘ₗ mpullback hg hJ' p q :=
-  LinearMap.ext fun φ ↦ Subtype.ext <| Subtype.ext <|
-    LinearMap.congr_fun (SmoothForm.mpullback_comp f g hf hg) φ.1.1
+  LinearMap.ext fun φ ↦ Subtype.ext <|
+    LinearMap.congr_fun (mpullbackType_comp hf hJ hg hJ' p q) φ.val
 
 /-- Pullback along a holomorphic map preserves `∂bar`-exact forms. -/
 theorem mpullback_mem_exactForms {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
     (hJ : IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' M') f) (p q : ℕ)
-    (φ : closedForms E' M' F p q) (hφ : φ.1 ∈ exactForms E' M' F p q) :
-    (mpullback hf hJ p q φ).1 ∈ exactForms E M F p q := by
+    (φ : closedForms E' M' F p q) (hφ : φ.val ∈ exactForms E' M' F p q) :
+    (mpullback hf hJ p q φ).val ∈ exactForms E M F p q := by
   cases q with
   | zero =>
     rw [exactForms_zero, Submodule.mem_bot] at hφ ⊢
     refine Subtype.ext ?_
     rw [coe_mpullback, hφ, Submodule.coe_zero, map_zero, Submodule.coe_zero]
   | succ q =>
-    obtain ⟨ψ, hψ⟩ := (mem_exactForms_succ p q φ.1).1 hφ
+    obtain ⟨ψ, hψ⟩ := (mem_exactForms_succ p q φ.val).1 hφ
     exact (mem_exactForms_succ p q _).2
-      ⟨⟨SmoothForm.mpullback f hf ψ.1, ((ofComplexManifold E M).mem_typeForms p q _).2
-        ((((ofComplexManifold E' M').mem_typeForms p q _).1 ψ.2).mpullback hf hJ)⟩, by
-        rw [← mpullback_delBar _ hf hJ, hψ, coe_mpullback]⟩
+      ⟨mpullbackType hf hJ p q ψ, by
+        rw [coe_mpullbackType, ← mpullback_delBar _ hf hJ, hψ, coe_mpullback]⟩
 
 end Dolbeault.closedForms
 
@@ -238,5 +275,174 @@ theorem map_comp {f : M → M'} {g : M' → M''} (hf : ContMDiff 𝓘(ℝ, E) �
 end dolbeaultCohomology
 
 end Pullback
+
+/-! ### Coefficient functoriality -/
+
+section Coefficients
+
+variable {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+  [NormedAddCommGroup H] [NormedSpace ℂ H]
+
+namespace Dolbeault.closedForms
+
+/-- Applying a continuous complex-linear map to the coefficients of a closed type form. -/
+def mapCoeff (L : F →L[ℂ] G) (p q : ℕ) :
+    closedForms E M F p q →ₗ[ℂ] closedForms E M G p q where
+  toFun φ := ⟨⟨SmoothForm.mapCoeff (L.restrictScalars ℝ) φ.val.val,
+    (ofComplexManifold E M).mapCoeff_mem_typeForms
+      (fun _ _ ↦ L.map_smul _ _) φ.val.property⟩, by
+      rw [mem_closedForms, ← mapCoeff_delBar _ (fun _ _ ↦ L.map_smul _ _),
+        (mem_closedForms p q φ.val).1 φ.property, map_zero]⟩
+  map_add' _ _ := Subtype.ext <| Subtype.ext <| map_add _ _ _
+  map_smul' c φ := Subtype.ext <| Subtype.ext <|
+    SmoothForm.mapCoeff_smul_of_map_smul _ (fun _ ↦ L.map_smul c _) φ.val.val
+
+/-- The underlying smooth form is obtained by applying the coefficient map pointwise. -/
+@[simp]
+theorem coe_mapCoeff (L : F →L[ℂ] G) (p q : ℕ) (φ : closedForms E M F p q) :
+    (mapCoeff L p q φ).val.val = SmoothForm.mapCoeff (L.restrictScalars ℝ) φ.val.val := (rfl)
+
+/-- The identity coefficient map fixes closed forms. -/
+@[simp]
+theorem mapCoeff_id (p q : ℕ) :
+    mapCoeff (E := E) (M := M) (ContinuousLinearMap.id ℂ F) p q = LinearMap.id := by
+  apply LinearMap.ext
+  intro φ
+  apply Subtype.ext
+  apply Subtype.ext
+  exact LinearMap.congr_fun SmoothForm.mapCoeff_id φ.val.val
+
+/-- Coefficient changes on closed forms respect composition. -/
+theorem mapCoeff_comp (L : F →L[ℂ] G) (K : G →L[ℂ] H) (p q : ℕ) :
+    mapCoeff (E := E) (M := M) (K.comp L) p q =
+      (mapCoeff K p q).comp (mapCoeff L p q) := by
+  apply LinearMap.ext
+  intro φ
+  apply Subtype.ext
+  apply Subtype.ext
+  exact LinearMap.congr_fun
+    (SmoothForm.mapCoeff_comp (K.restrictScalars ℝ) (L.restrictScalars ℝ)) φ.val.val
+
+/-- Coefficient maps carry exact type forms to exact type forms. -/
+theorem mapCoeff_mem_exactForms (L : F →L[ℂ] G) (p q : ℕ)
+    (φ : closedForms E M F p q) (hφ : φ.val ∈ exactForms E M F p q) :
+    (mapCoeff L p q φ).val ∈ exactForms E M G p q := by
+  cases q with
+  | zero =>
+    have hzero : φ.val = 0 := by simpa using hφ
+    have hφzero : φ = 0 := Subtype.ext hzero
+    rw [hφzero, map_zero, Submodule.coe_zero]
+    exact zero_mem _
+  | succ q =>
+    obtain ⟨ψ, hψ⟩ := (mem_exactForms_succ p q φ.val).1 hφ
+    refine (mem_exactForms_succ p q _).2 ⟨⟨SmoothForm.mapCoeff (L.restrictScalars ℝ) ψ.val,
+      (ofComplexManifold E M).mapCoeff_mem_typeForms
+        (fun _ _ ↦ L.map_smul _ _) ψ.property⟩, ?_⟩
+    rw [← mapCoeff_delBar _ (fun _ _ ↦ L.map_smul _ _), hψ, coe_mapCoeff]
+
+end Dolbeault.closedForms
+
+namespace dolbeaultCohomology
+
+/-- The complex-linear map on Dolbeault cohomology induced by a continuous complex-linear
+coefficient map. -/
+def mapCoeff (L : F →L[ℂ] G) (p q : ℕ) :
+    dolbeaultCohomology E M F p q →ₗ[ℂ] dolbeaultCohomology E M G p q :=
+  LinearMap.liftOfSurjective (f := mk (E := E) (M := M) (F := F) p q)
+    (mk_surjective p q) ⟨(mk p q).comp (closedForms.mapCoeff L p q), by
+      intro φ hφ
+      rw [LinearMap.mem_ker, LinearMap.comp_apply, mk_eq_zero_iff]
+      exact closedForms.mapCoeff_mem_exactForms L p q φ ((mk_eq_zero_iff p q φ).1 hφ)⟩
+
+/-- On a closed representative, the induced coefficient map is its pointwise coefficient map. -/
+@[simp]
+theorem mapCoeff_mk (L : F →L[ℂ] G) (p q : ℕ) (φ : closedForms E M F p q) :
+    mapCoeff L p q (mk p q φ) = mk p q (closedForms.mapCoeff L p q φ) :=
+  LinearMap.equivOfSurjective_apply _ _
+
+/-- The identity coefficient map induces the identity on cohomology. -/
+@[simp]
+theorem mapCoeff_id (p q : ℕ) :
+    mapCoeff (E := E) (M := M) (ContinuousLinearMap.id ℂ F) p q = LinearMap.id := by
+  apply LinearMap.ext
+  intro c
+  obtain ⟨φ, rfl⟩ := mk_surjective p q c
+  rw [mapCoeff_mk, closedForms.mapCoeff_id, LinearMap.id_apply, LinearMap.id_apply]
+
+/-- Successive coefficient changes induce the coefficient change of the composite. -/
+theorem mapCoeff_comp (L : F →L[ℂ] G) (K : G →L[ℂ] H) (p q : ℕ) :
+    mapCoeff (E := E) (M := M) (K.comp L) p q =
+      (mapCoeff K p q).comp (mapCoeff L p q) := by
+  apply LinearMap.ext
+  intro c
+  obtain ⟨φ, rfl⟩ := mk_surjective p q c
+  simp only [LinearMap.comp_apply, mapCoeff_mk, closedForms.mapCoeff_comp]
+
+end dolbeaultCohomology
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace E' M'] [IsManifold 𝓘(ℂ, E') ∞ M']
+  {f : M → M'} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ f)
+  (hJ : IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' M') f)
+
+/-- Coefficient change commutes with holomorphic pullback on closed type forms. -/
+@[simp]
+theorem Dolbeault.closedForms.mpullback_mapCoeff (L : F →L[ℂ] G) (p q : ℕ)
+    (φ : closedForms E' M' F p q) :
+    closedForms.mpullback hf hJ p q (closedForms.mapCoeff L p q φ) =
+      closedForms.mapCoeff L p q (closedForms.mpullback hf hJ p q φ) := by
+  apply Subtype.ext
+  apply Subtype.ext
+  simp only [closedForms.coe_mpullback, closedForms.coe_mapCoeff]
+  exact SmoothForm.mpullback_mapCoeff (L.restrictScalars ℝ) f hf φ.val.val
+
+/-- Coefficient change commutes with holomorphic pullback on Dolbeault cohomology. -/
+@[simp]
+theorem dolbeaultCohomology.map_mapCoeff (L : F →L[ℂ] G) (p q : ℕ)
+    (c : dolbeaultCohomology E' M' F p q) :
+    map hf hJ p q (mapCoeff L p q c) = mapCoeff L p q (map hf hJ p q c) := by
+  obtain ⟨φ, rfl⟩ := dolbeaultCohomology.mk_surjective p q c
+  simp only [dolbeaultCohomology.mapCoeff_mk, dolbeaultCohomology.map_mk,
+    closedForms.mpullback_mapCoeff]
+
+end Coefficients
+
+/-! ### The cochain map of a holomorphic map on cohomology -/
+
+section Complex
+
+/-! The induced cochain maps compare complexes in one universe, so the model spaces share a
+universe, as do the manifolds. -/
+
+open CategoryTheory
+
+universe u v
+
+variable {E₁ E₂ E₃ : Type u} [NormedAddCommGroup E₁] [NormedSpace ℂ E₁]
+  [NormedAddCommGroup E₂] [NormedSpace ℂ E₂] [NormedAddCommGroup E₃] [NormedSpace ℂ E₃]
+  {M₁ M₂ M₃ : Type v} [TopologicalSpace M₁] [ChartedSpace E₁ M₁] [IsManifold 𝓘(ℂ, E₁) ∞ M₁]
+  [TopologicalSpace M₂] [ChartedSpace E₂ M₂] [IsManifold 𝓘(ℂ, E₂) ∞ M₂]
+  [TopologicalSpace M₃] [ChartedSpace E₃ M₃] [IsManifold 𝓘(ℂ, E₃) ∞ M₃]
+
+namespace dolbeaultComplex
+
+/-- The map induced on cohomology by the cochain map of a holomorphic map is pullback on
+Dolbeault cohomology. -/
+theorem homologyMap_map {f : M₁ → M₂} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
+    (hJ : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f)
+    (p q : ℕ) :
+    HomologicalComplex.homologyMap (map (F := F) hf hJ p) q =
+      ModuleCat.ofHom (dolbeaultCohomology.map hf hJ p q) := by
+  refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
+  obtain ⟨φ, rfl⟩ := dolbeaultCohomology.mk_surjective p q c
+  rw [ModuleCat.hom_ofHom, dolbeaultCohomology.map_mk,
+    dolbeaultCohomology.mk_eq_moduleCatHomologyClass,
+    dolbeaultCohomology.mk_eq_moduleCatHomologyClass]
+  exact HomologicalComplex.homologyMap_moduleCatHomologyClass _ _ _ (map hf hJ p) _ _
+    (closedForms.mpullback hf hJ p q) (fun φ ↦ map_f_inv_apply hf hJ p q φ.val) φ
+
+end dolbeaultComplex
+
+end Complex
 
 end TauCeti

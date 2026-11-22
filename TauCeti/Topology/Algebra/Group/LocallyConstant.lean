@@ -6,16 +6,17 @@ Authors: Claude
 module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
-public import Mathlib.Topology.UniformSpace.CompactConvergence
+public import Mathlib.Topology.CompactOpen
 public import TauCeti.Topology.LocallyConstant.Compact
 import Mathlib.Topology.Separation.Connected
-import Mathlib.Topology.Separation.DisjointCover
+import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
 # Locally constant functions on topological groups
 
-An additive homomorphism from a group with separately continuous addition whose kernel is open
-is locally constant, even when its codomain is only an `AddZeroClass`. Open kernels are preserved
+A homomorphism from a group with separately continuous multiplication whose kernel is open is
+locally constant, even when its codomain is only a `MulOneClass`
+(`MonoidHom.isLocallyConstant_of_isOpen_ker`, with its additive form). Open kernels are preserved
 by taking integer multiples of additive homomorphisms into an additive commutative group.
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
@@ -23,7 +24,9 @@ the neighbourhood on which it is constant depends on the point. On a *compact* g
 dependence disappears: there is a single open subgroup `V` with `f (x * v) = f x` for **every**
 `x : G` and every `v : V`. This file records that subgroup,
 `TauCeti.rightTranslationStabilizer f`, and its openness,
-`TauCeti.isOpen_rightTranslationStabilizer`.
+`TauCeti.isOpen_rightTranslationStabilizer`. The same holds on any topological group for a
+locally constant function with compact support, which vanishes off a compact set
+(`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`).
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
 *discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
@@ -39,25 +42,30 @@ The uniformity statement itself needs only a compact *set* `K ⊆ G` and continu
 chosen point; no associativity, identity or inverse is needed.
 
 `IsLocallyConstant.exists_isOpen_forall_mul_right_eq` specializes to a compact space.
-`IsLocallyConstant.exists_isOpen_translate₂` and `IsLocallyConstant.exists_isOpen_translate₃` give
-uniformity for the families `(y, y * g)` and `(y, y * g, y * g * h)` used in cochain constructions.
 -/
 
 public section
 
+namespace MonoidHom
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- A homomorphism with open kernel is locally constant. -/
+@[to_additive /-- An additive homomorphism with open kernel is locally constant. -/]
+theorem isLocallyConstant_of_isOpen_ker [MulOneClass A] (χ : G →* A)
+    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  -- Near `x`, the quotient `x⁻¹ * y` lies in the open kernel.
+  have hopen : IsOpen ((fun y : G ↦ x⁻¹ * y) ⁻¹' (χ.ker : Set G)) :=
+    hχ.preimage (continuous_id.const_mul x⁻¹)
+  filter_upwards [hopen.mem_nhds (by simp)] with y hy
+  exact χ.eq_iff.mpr hy
+
+end MonoidHom
+
 namespace AddMonoidHom
 
 variable {G A : Type*} [AddGroup G] [TopologicalSpace G] [SeparatelyContinuousAdd G]
-
-/-- An additive homomorphism with open kernel is locally constant. -/
-theorem isLocallyConstant_of_isOpen_ker [AddZeroClass A] (χ : G →+ A)
-    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
-  -- Near `x`, the difference `-x + y` lies in the open kernel.
-  have hopen : IsOpen ((fun y : G ↦ -x + y) ⁻¹' (χ.ker : Set G)) :=
-    hχ.preimage (continuous_id.const_add (-x))
-  filter_upwards [hopen.mem_nhds (by simp)] with y hy
-  exact χ.eq_iff.mpr hy
 
 /-- The kernel of an integer multiple of an additive homomorphism with open kernel is open. -/
 theorem isOpen_ker_zsmul [AddCommGroup A] (χ : G →+ A)
@@ -95,27 +103,6 @@ theorem exists_isOpen_forall_mul_right_eq [CompactSpace G]
     ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x : G, f (x * σ p) = f (x * σ p₀) := by
   simpa using exists_isOpen_forall_mem_mul_right_eq hf isCompact_univ p₀ hσ
 
-/-- A locally constant function `N : G × G → A`, evaluated along `(y, y * g)`, is locally
-constant in `g`, uniformly in `y`, on a compact space with continuous multiplication. -/
-theorem exists_isOpen_translate₂ [CompactSpace G]
-    {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
-    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
-  simpa using (hN.comp_continuous
-    (continuous_fst.prodMk (continuous_fst.mul continuous_snd))).exists_isOpen_forall_mem_eq
-    isCompact_univ g₀
-
-/-- A locally constant function `Q : G × G × G → A`, evaluated along
-`(y, y * g, y * g * h)`, is locally constant in `(g, h)`, uniformly in `y`, on a compact space
-with continuous multiplication. -/
-theorem exists_isOpen_translate₃ [CompactSpace G]
-    {Q : G × G × G → A} (hQ : IsLocallyConstant Q) (q₀ : G × G) :
-    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
-      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
-  simpa using (hQ.comp_continuous (continuous_fst.prodMk
-    ((continuous_fst.mul (continuous_fst.comp continuous_snd)).prodMk
-      ((continuous_fst.mul (continuous_fst.comp continuous_snd)).mul
-        (continuous_snd.comp continuous_snd))))).exists_isOpen_forall_mem_eq isCompact_univ q₀
-
 end IsLocallyConstant
 
 namespace TauCeti
@@ -148,6 +135,25 @@ theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
   refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hVopen.mem_nhds hV1)
     fun g hg x => ?_)
   simpa using hV g hg x
+
+/-- A locally constant function with compact support on a topological group is *uniformly*
+locally constant: its right-translation stabilizer is an open subgroup. The group need not be
+compact, since the function vanishes off its compact support. -/
+theorem isOpen_rightTranslationStabilizer_of_hasCompactSupport [TopologicalSpace G]
+    [IsTopologicalGroup G] [Zero A] {f : G → A} (hf : IsLocallyConstant f)
+    (hfc : HasCompactSupport f) : IsOpen (rightTranslationStabilizer f : Set G) := by
+  -- Uniform local constancy on the compact support, near `1`.
+  obtain ⟨V, hVopen, hV1, hV⟩ :=
+    hf.exists_isOpen_forall_mem_mul_right_eq hfc.isCompact (1 : G) continuous_id.continuousAt
+  have hVn : V ∈ nhds (1 : G) := hVopen.mem_nhds hV1
+  refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (Filter.inter_mem hVn
+    (inv_mem_nhds_one G hVn)) fun g hg x => ?_)
+  -- If `x` or `x * g` lies in the support, translate from that point; otherwise both values vanish.
+  by_cases hx : x ∈ tsupport f
+  · simpa using hV g hg.1 x hx
+  by_cases hxg : x * g ∈ tsupport f
+  · simpa using (hV g⁻¹ hg.2 (x * g) hxg).symm
+  rw [image_eq_zero_of_notMem_tsupport hx, image_eq_zero_of_notMem_tsupport hxg]
 
 end TauCeti
 
@@ -187,19 +193,15 @@ theorem isLocallyConstant_iff_exists_comp_quotientMk_eq {A : Type*} {f : G → A
 variable [TotallyDisconnectedSpace G]
 
 /-- **Density of cylinder functions.** On a profinite group, the continuous functions that factor
-through the quotient by some open normal subgroup are dense in `C(G, R)` for every uniform
-space `R`. -/
-theorem dense_setOf_comp_quotientMk (R : Type*) [UniformSpace R] :
+through the quotient by some open normal subgroup are dense in `C(G, R)` for every topological
+space `R`, with the compact-open topology. When `R` is a uniform space, this is the topology of
+uniform convergence. -/
+theorem dense_setOf_comp_quotientMk (R : Type*) [TopologicalSpace R] :
     Dense {F : C(G, R) |
       ∃ (U : OpenNormalSubgroup G) (g : G ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
-  refine fun f ↦ (mem_closure_iff_nhds_basis
-    (nhds_basis_uniformity' ContinuousMap.hasBasis_compactConvergenceUniformity_of_compact)).mpr
-    fun V hV ↦ ?_
-  -- Approximate `f` within `V` by a function factoring through a finite discrete space.
-  obtain ⟨N, c, h, hc, hch⟩ := ContinuousMap.exists_finite_approximation_of_mem_nhds_diagonal f
-    (nhdsSet_diagonal_le_uniformity hV)
-  have hloc : IsLocallyConstant (h ∘ c) :=
-    (IsLocallyConstant.of_discrete h).comp_continuous hc
-  exact ⟨⟨h ∘ c, hloc.continuous⟩, hloc.exists_comp_quotientMk_eq, fun x ↦ hch x⟩
+  -- Locally constant functions are dense, and each one factors through a finite quotient.
+  refine LocallyConstant.denseRange_toContinuousMap.mono <| Set.range_subset_iff.mpr fun f ↦ ?_
+  rw [Set.mem_ofPred_eq, LocallyConstant.coe_continuousMap]
+  exact f.isLocallyConstant.exists_comp_quotientMk_eq
 
 end TauCeti

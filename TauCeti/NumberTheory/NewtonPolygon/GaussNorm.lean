@@ -213,30 +213,42 @@ theorem mem_supportingFace_addValuation_coeff_iff {σ : ℝ}
 /-- The distinguished degree at the radius `b ^ σ`, the last index attaining the Gauss norm, is
 the greatest contact index of the supporting line of slope `σ` with the coefficient heights. -/
 theorem isDistinguished_iff_isGreatest_supportingFace {σ : ℝ}
-    (hf : f.HasGaussNorm norm (b ^ σ)) (hf0 : f ≠ 0) (s : ℕ) :
+    (hf : f.HasGaussNorm norm (b ^ σ)) (s : ℕ) :
     TauCeti.PowerSeries.IsDistinguished (b ^ σ) s f ↔
       IsGreatest (supportingFace (fun n => v (f.coeff n)) σ
         (-Real.logb b (f.gaussNorm norm (b ^ σ)))) s := by
-  simp only [IsGreatest, mem_upperBounds,
-    mem_supportingFace_addValuation_coeff_iff f v hb hv hf hf0]
-  refine ⟨fun hs => ⟨hs.norm_coeff_mul_pow_eq, fun m hm => not_lt.mp fun hsm =>
-    (hs.norm_coeff_mul_pow_lt m hsm).ne hm⟩, fun hs => ⟨hs.1, fun m hsm => ?_⟩⟩
-  exact (le_gaussNorm norm _ f hf m).lt_of_ne fun hm => (hs.2 m hm).not_gt hsm
+  by_cases hf0 : f = 0
+  · subst hf0
+    exact iff_of_false (fun h => h.ne_zero rfl) fun h => by
+      have := mem_supportingFace.mp h.1
+      rw [map_zero, AddValuation.map_zero] at this
+      exact WithTop.top_ne_coe this
+  · simp only [IsGreatest, mem_upperBounds,
+      mem_supportingFace_addValuation_coeff_iff f v hb hv hf hf0]
+    refine ⟨fun hs => ⟨hs.norm_coeff_mul_pow_eq, fun m hm => not_lt.mp fun hsm =>
+      (hs.norm_coeff_mul_pow_lt m hsm).ne hm⟩, fun hs => ⟨hs.1, fun m hsm => ?_⟩⟩
+    exact (le_gaussNorm norm _ f hf m).lt_of_ne fun hm => (hs.2 m hm).not_gt hsm
 
 /-- The lowest dominant degree at the radius `b ^ σ`, the first index attaining the Gauss norm,
 is the least contact index of the supporting line of slope `σ` with the coefficient heights. -/
 theorem isLowestDominant_iff_isLeast_supportingFace {σ : ℝ}
-    (hf : f.HasGaussNorm norm (b ^ σ)) (hf0 : f ≠ 0) (s : ℕ) :
+    (hf : f.HasGaussNorm norm (b ^ σ)) (s : ℕ) :
     TauCeti.PowerSeries.IsLowestDominant (b ^ σ) s f ↔
       IsLeast (supportingFace (fun n => v (f.coeff n)) σ
         (-Real.logb b (f.gaussNorm norm (b ^ σ)))) s := by
-  simp only [IsLeast, mem_lowerBounds,
-    mem_supportingFace_addValuation_coeff_iff f v hb hv hf hf0]
-  refine ⟨fun hs => ⟨hs.norm_coeff_mul_pow_eq, fun m hm => not_lt.mp fun hms =>
-    (hs.norm_coeff_mul_pow_lt m hms).ne hm⟩, fun hs => ⟨?_, hs.1, fun m hms => ?_⟩⟩
-  · exact TauCeti.PowerSeries.gaussNorm_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)
-      hf hf0
-  · exact (le_gaussNorm norm _ f hf m).lt_of_ne fun hm => (hs.2 m hm).not_gt hms
+  by_cases hf0 : f = 0
+  · subst hf0
+    exact iff_of_false (fun h => h.ne_zero rfl) fun h => by
+      have := mem_supportingFace.mp h.1
+      rw [map_zero, AddValuation.map_zero] at this
+      exact WithTop.top_ne_coe this
+  · simp only [IsLeast, mem_lowerBounds,
+      mem_supportingFace_addValuation_coeff_iff f v hb hv hf hf0]
+    refine ⟨fun hs => ⟨hs.norm_coeff_mul_pow_eq, fun m hm => not_lt.mp fun hms =>
+      (hs.norm_coeff_mul_pow_lt m hms).ne hm⟩, fun hs => ⟨?_, hs.1, fun m hms => ?_⟩⟩
+    · exact TauCeti.PowerSeries.gaussNorm_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)
+        hf hf0
+    · exact (le_gaussNorm norm _ f hf m).lt_of_ne fun hm => (hs.2 m hm).not_gt hms
 
 /-- The coefficient heights of a nonzero series restricted at the radius `b ^ σ` touch a
 supporting line of slope `σ`. -/
@@ -249,7 +261,7 @@ theorem exists_isSupportingLine_mem_supportingFace_of_isRestricted {σ : ℝ}
     (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hf hf0
   exact ⟨_, s, isSupportingLine_iff.mpr
     (supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm f v hb hv hfn hf0).ge,
-    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn hf0 s).mp hs).1⟩
+    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn s).mp hs).1⟩
 
 /-- A series restricted at the radius `b ^ σ` has a Newton polygon whose supporting value at `σ`
 is above `⊥`. -/

@@ -202,7 +202,7 @@ theorem natCast_mul_hazewinkelLogCoeff_succ' (hp : p ≠ 0) (n : ℕ) :
       obtain ⟨m, hm⟩ : ∃ m, n - j = m + 1 := ⟨n - j - 1, by grind⟩
       rw [hm, hazewinkelLogCoeff_succ]
       simp only [mul_smul_comm, mul_sum, smul_sum]
-      refine sum_congr rfl fun l hl ↦ ?_
+      refine sum_congr rfl fun l _ ↦ ?_
       simp only [f, ← pow_mul, ← pow_add, mul_assoc,
         show m - l = n - 1 - (j + l) by omega]
     rw [sum_congr rfl hl, sum_congr rfl hr, sum_range_diag_flip]
@@ -240,7 +240,9 @@ theorem exists_hazewinkelLogCoeff_eq (hp : p ≠ 0) {ℓ : ℕ → K} (h₀ : �
   have hv (n : ℕ) : v n.succPNat = p * ℓ (n + 1) -
       ∑ i ∈ range n, ℓ (i + 1) * v (n - (i + 1)).succPNat ^ p ^ (i + 1) := by
     simp only [v, Nat.natPred_succPNat]
-    rw [coeffsOfHazewinkelLogCoeff, Fin.sum_univ_eq_sum_range
+    rw [coeffsOfHazewinkelLogCoeff]
+    dsimp only
+    rw [Fin.sum_univ_eq_sum_range
       (fun i ↦ ℓ (i + 1) * coeffsOfHazewinkelLogCoeff p ℓ (n - (i + 1)) ^ p ^ (i + 1))]
   refine ⟨v, funext fun n ↦ ?_⟩
   induction n using Nat.strong_induction_on with

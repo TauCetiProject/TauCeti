@@ -74,6 +74,8 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
   `TauCeti.mem_integer_iff_toAdd_normalizedValuation_nonneg` and
   `TauCeti.dvd_iff_toAdd_normalizedValuation_le`: the normalized valuation reads off the units,
   the elements and the divisibility relation of the ring of integers.
+* `TauCeti.normalizedValuation_comp_unitsMap_tower`: in a tower `M/L/K`, the normalized valuation
+  of `M` on the image of `Kˣ` factors through the units map of the step `K → L`.
 
 ## Implementation notes
 
@@ -104,8 +106,6 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
--- The declaration sequence follows the human-authored specification in
--- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.
 variable (K) in
 /-- The normalized valuation `v_K^×` of a nonarchimedean local field `K`: the composite of
 `ValuativeRel.valuation K` with the order isomorphism `valueGroupWithZeroIsoInt` of the value
@@ -442,6 +442,22 @@ theorem exists_eq_valuation_zpow_of_irreducible {π : 𝒪[K]} (hπ : Irreducibl
   refine ⟨n, ?_⟩
   simpa using congrArg Units.val hn.symm
 
+/-- In a tower `M/L/K`, the normalized valuation of `M` on the image of `Kˣ` factors through
+the units map of the step `K → L`. -/
+theorem normalizedValuation_comp_unitsMap_tower (K L M : Type*) [Field K] [Field L] [Field M]
+    [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
+    [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M] :
+    (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
+      ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M))).comp
+        (Units.map (algebraMap K L : K →* L)) := by
+  have h : Units.map (algebraMap K M : K →* M) =
+      (Units.map (algebraMap L M : L →* M)).comp (Units.map (algebraMap K L : K →* L)) := by
+    rw [← Units.map_comp]
+    congr 1
+    ext x
+    exact IsScalarTower.algebraMap_apply K L M x
+  rw [h, MonoidHom.comp_assoc]
+
 section NormalizedAbsoluteValue
 
 open scoped NNRat
@@ -457,8 +473,7 @@ For a nonzero element `x`, its value is `q ^ (-v_K(x))`, where
 noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
   (intValuation (K := K)).toAbsoluteValue
     (WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
-    (fun _ _ h ↦
-      (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone h)
+    (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone
     (fun _ ↦ map_eq_zero _)
     (fun _ ↦ (intValuation (K := K)).zero_iff)
 

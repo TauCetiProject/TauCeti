@@ -46,7 +46,6 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {s : Set ℝ}
@@ -90,7 +89,7 @@ theorem norm_curveVelocityWithin_maximalGeodesic {t : ℝ} (ht : t ∈ geodesicI
   have h := isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
   rw [h.isGeodesicCurveOn.norm_curveVelocityWithin_eq isPreconnected_geodesicInterval ht
     zero_mem_geodesicInterval]
-  exact congrArg (fun z : TangentBundle I M ↦ ‖z.2‖) h.initial_eq
+  exact congrArg (fun z : TangentBundle I M ↦ ‖z.snd‖) h.initial_eq
 
 /-- The directed length from `s` to `t` of the maximal geodesic from `p` with initial velocity `v`
 is `‖v‖ * ENNReal.ofReal (t - s)`, and hence is zero when `t < s`. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.ForkCorner
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 
 /-!
@@ -64,7 +63,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver CategoryTheory
 
 variable (k : Type*) [Field k] {n : ℕ}
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### The word operators -/
 
@@ -372,7 +371,7 @@ private theorem forkRep_relator (hn : 3 ≤ n) (v : Q) :
   simp only [backtrackElem_eq_ofPath, QuiverRep.toEnd_ofPath]
   have hzero : (∑ w : (DG).neighborSet i,
       QuiverRep.mapₗ k Q (forkRep k n)
-        (backtrackPath DG (((DG).mem_neighborSet i w).1 w.2))) = 0 := by
+        (backtrackPath DG (((DG).mem_neighborSet i w).1 w.property))) = 0 := by
     apply LinearMap.ext
     intro z
     obtain ⟨x, rfl⟩ := (forkVertexEquiv k (vertex DG i)).surjective z

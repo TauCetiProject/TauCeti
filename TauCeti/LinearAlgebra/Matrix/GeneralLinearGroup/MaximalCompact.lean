@@ -133,7 +133,7 @@ private theorem tautologicalRep_apply (K : Subgroup (GL ι 𝕜)) (k : K) :
 
 private theorem continuous_tautologicalRep (K : Subgroup (GL ι 𝕜)) :
     Continuous (tautologicalRep K) :=
-  continuous_toEuclideanCLM.comp (Units.continuous_val.comp continuous_subtype_val)
+  continuous_toEuclideanCLM.comp (Units.continuous_val.comp continuous_subtypeVal)
 
 /-- **Every compact subgroup of `GL ι 𝕜` is conjugate into the unitary subgroup.** This is Weyl's
 unitarian trick: the Haar average of the standard inner product over a compact subgroup `K` is a
@@ -143,8 +143,6 @@ theorem exists_conj_smul_le_unitarySubgroup {K : Subgroup (GL ι 𝕜)}
     (hK : IsCompact (K : Set (GL ι 𝕜))) :
     ∃ g : GL ι 𝕜, MulAut.conj g • K ≤ unitarySubgroup (GL ι 𝕜) := by
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let : MeasurableSpace K := borel K
-  have : BorelSpace K := ⟨rfl⟩
   obtain ⟨e, he⟩ := (tautologicalRep K).exists_isUnitary_congr (continuous_tautologicalRep K)
   -- The invertible matrix of the automorphism `e`.
   let B : GL ι 𝕜 := Units.map
@@ -253,7 +251,7 @@ theorem maximal_isCompact_unitarySubgroup_subgroupOf {G : Subgroup (GL ι 𝕜)}
   refine ⟨hcompact, fun K hK hUK ↦ ?_⟩
   have hmap : K.map G.subtype = G ⊓ unitarySubgroup (GL ι 𝕜) := by
     apply eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem hG
-    · exact hK.image continuous_subtype_val
+    · exact hK.image continuous_subtypeVal
     · exact Subgroup.map_subtype_le K
     · simpa only [Subgroup.subgroupOf_map_subtype, inf_comm] using
         Subgroup.map_mono (f := G.subtype) hUK
