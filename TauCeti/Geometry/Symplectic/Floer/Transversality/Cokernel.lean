@@ -195,8 +195,7 @@ private theorem eq_zero_of_mem_regularPoints_of_setIntegral_deriv_floerOperator 
   -- By the Floer equation, `∂ₛu = -J_t (∂ₜu - X_{H_t})`, which is nonzero at `z`.
   have hξ₀ : fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z) ≠ 0 := by
     intro h
-    rw [floerOperator_def, h, map_zero, add_zero, hamiltonianVectorField_const] at hF
-    exact hd (by simpa using hF)
+    exact hd (by simpa [floerOperator_def, h] using hF)
   have hξ : ∀ᶠ w in 𝓝 z, ContinuousAt
       (fun w ↦ fderiv ℝ u w stdComplexLineImag - ω.hamiltonianVectorField (H w.2) (u w)) w :=
     Eventually.of_forall fun w ↦ by

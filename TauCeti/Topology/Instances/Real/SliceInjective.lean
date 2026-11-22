@@ -40,6 +40,17 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] [T2Space X] {u : ℝ × ℝ → X} {xm xp : ℝ → X}
 
+/-- If `u(s, t)` tends to `x` along `f ×ˢ 𝓝 t₀` and `y ≠ x`, then eventually along `f` and for `t`
+near `t₀`, `u(s, t)` stays out of a neighbourhood of `y`. -/
+private theorem exists_forall_notMem_of_tendsto {f : Filter ℝ} {t₀ : ℝ} {x y : X}
+    (h : Tendsto u (f ×ˢ 𝓝 t₀) (𝓝 x)) (hne : y ≠ x) :
+    ∃ p : ℝ → Prop, (∀ᶠ s in f, p s) ∧ ∃ A ∈ 𝓝 y, ∃ q ∈ 𝓝 t₀,
+      ∀ s, p s → ∀ t ∈ q, u (s, t) ∉ A := by
+  obtain ⟨A, B, hA, hB, hAy, hBx, hAB⟩ := t2_separation hne
+  obtain ⟨p, hp, q, hq, hpq⟩ := eventually_prod_iff.1 (h (hB.mem_nhds hBx))
+  exact ⟨p, hp, A, hA.mem_nhds hAy, {t | q t}, hq, fun s hs t ht hA' ↦
+    disjoint_left.1 hAB hA' (hpq hs ht)⟩
+
 /-- **Points with a unique value on their slice persist nearby.** Let `u : ℝ × ℝ → X` be
 continuous, with values in a Hausdorff space, and suppose that `u(s, t)` tends to `xm(t₀)` and
 `xp(t₀)` as `s → -∞` and `s → +∞` and `t → t₀`. Let `z₀ = (s₀, t₀)` be a point near which
@@ -59,12 +70,11 @@ theorem eventually_forall_slice_eq_imp_eq_of_tendsto {z₀ : ℝ × ℝ} (hu : C
   have hend {l : Filter ℝ} {x : ℝ → X} (h : Tendsto u (l ×ˢ 𝓝 t₀) (𝓝 (x t₀)))
       (hne : u (s₀, t₀) ≠ x t₀) :
       ∃ p : ℝ → Prop, (∀ᶠ s in l, p s) ∧ ∀ᶠ z in 𝓝 (s₀, t₀), ∀ s, p s → u (s, z.2) ≠ u z := by
-    obtain ⟨A, B, hA, hB, hAx, hBx, hAB⟩ := t2_separation hne
-    obtain ⟨p, hp, q, hq, hpq⟩ := eventually_prod_iff.1 (h (hB.mem_nhds hBx))
+    obtain ⟨p, hp, A, hA, q, hq, hpq⟩ := exists_forall_notMem_of_tendsto h hne
     refine ⟨p, hp, ?_⟩
-    filter_upwards [hu.continuousAt.preimage_mem_nhds (hA.mem_nhds hAx),
+    filter_upwards [hu.continuousAt.preimage_mem_nhds hA,
       continuousAt_snd.preimage_mem_nhds hq] with z hzA hzq s hs heq
-    exact disjoint_left.1 hAB hzA (heq ▸ hpq hs hzq)
+    exact hpq s hs _ hzq (heq ▸ hzA)
   obtain ⟨pm, hpm, hevm⟩ := hend hm hm₀
   obtain ⟨pp, hpp, hevp⟩ := hend hp hp₀
   obtain ⟨Sm, hSm⟩ := eventually_atBot.1 hpm
@@ -108,22 +118,17 @@ theorem comap_nhds_le_nhds_of_tendsto {z₀ : ℝ × ℝ} (hu : Continuous u)
   have ht : Tendsto Prod.snd l (𝓝 t₀) := (continuous_fst.tendsto _).comp hl
   have hul : Tendsto u l (𝓝 (u (s₀, t₀))) := (continuous_snd.tendsto _).comp hl
   -- Along an end, `u` stays near the asymptotic value, away from a neighbourhood of `u z₀`.
-  have hend {f : Filter ℝ} {x : ℝ → X} (h : Tendsto u (f ×ˢ 𝓝 t₀) (𝓝 (x t₀)))
-      (hne : u (s₀, t₀) ≠ x t₀) : ∃ p : ℝ → Prop, (∀ᶠ s in f, p s) ∧ ∀ᶠ z in l, ¬p z.1 := by
-    obtain ⟨A, B, hA, hB, hAx, hBx, hAB⟩ := t2_separation hne
-    obtain ⟨p, hp, q, hq, hpq⟩ := eventually_prod_iff.1 (h (hB.mem_nhds hBx))
-    refine ⟨p, hp, ?_⟩
-    filter_upwards [hul (hA.mem_nhds hAx), ht hq] with z hzA hzq hpz
-    exact disjoint_left.1 hAB hzA (hpq hpz hzq)
-  obtain ⟨pm, hpm, hevm⟩ := hend hm hm₀
-  obtain ⟨pp, hpp, hevp⟩ := hend hp hp₀
+  obtain ⟨pm, hpm, Am, hAm, qm, hqm, hevm⟩ := exists_forall_notMem_of_tendsto hm hm₀
+  obtain ⟨pp, hpp, Ap, hAp, qp, hqp, hevp⟩ := exists_forall_notMem_of_tendsto hp hp₀
   obtain ⟨Sm, hSm⟩ := eventually_atBot.1 hpm
   obtain ⟨Sp, hSp⟩ := eventually_atTop.1 hpp
   -- So `l` lives on a compact box, and its only cluster point there is `z₀`.
   refine (isCompact_Icc.prod isCompact_Icc).le_nhds_of_unique_clusterPt
     (s := Icc Sm Sp ×ˢ Icc (t₀ - 1) (t₀ + 1)) ?_ fun w _ hw ↦ ?_
-  · filter_upwards [hevm, hevp, ht (Icc_mem_nhds (sub_one_lt t₀) (lt_add_one t₀))] with z h₁ h₂ h₃
-    exact ⟨⟨(not_le.1 fun h ↦ h₁ (hSm _ h)).le, (not_le.1 fun h ↦ h₂ (hSp _ h)).le⟩, h₃⟩
+  · filter_upwards [hul hAm, hul hAp, ht hqm, ht hqp,
+      ht (Icc_mem_nhds (sub_one_lt t₀) (lt_add_one t₀))] with z hzm hzp hqm hqp h₃
+    exact ⟨⟨(not_le.1 fun h ↦ hevm _ (hSm _ h) _ hqm hzm).le,
+      (not_le.1 fun h ↦ hevp _ (hSp _ h) _ hqp hzp).le⟩, h₃⟩
   · obtain ⟨h₂, h₁⟩ := Prod.mk.inj (eq_of_nhds_neBot
       (hw.map (f := fun z : ℝ × ℝ ↦ (z.2, u z)) (continuous_snd.prodMk hu).continuousAt hl))
     exact Prod.ext (h₀ w.1 (by rw [← h₁, ← h₂])) h₂
