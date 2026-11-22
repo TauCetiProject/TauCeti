@@ -22,7 +22,7 @@ Two facts about symmetric operators complementing Mathlib's
 
 public section
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 namespace LinearMap
 
