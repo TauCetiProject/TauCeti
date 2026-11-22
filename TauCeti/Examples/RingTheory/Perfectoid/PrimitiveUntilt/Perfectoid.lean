@@ -142,8 +142,8 @@ example :
       (untilt.pair (isPrimitive_xi p)).plus = untiltPlus p (pair p) (span {xi p}) ∧
       (p : untilt p (pair p) (span {xi p})) ≠ 0 := by
   have : Nontrivial (untilt p (pair p) (span {xi p})) := nontrivial_untilt_xi p
-  have hsp : untilt.sharpHom p (pair p) (span {xi p}) (varpi p : uniformTilt p ℂ_[p]) = p := by
-    rw [untilt.sharpHom_coe, untilt.sharp_apply, untilt.algebraMap_apply]
+  have hsp : untilt.sharp p (pair p) (span {xi p}) (varpi p : uniformTilt p ℂ_[p]) = p := by
+    rw [untilt.sharp_apply]
     have hmk : Ideal.Quotient.mk (span {xi p}) (teichmuller p (varpi p)) =
         Ideal.Quotient.mk (span {xi p}) (p : WittVector p (pair p).plus) := by
       rw [Ideal.Quotient.eq]
@@ -154,7 +154,7 @@ example :
     rw [hmk, map_natCast, map_natCast]
   have hp_ne : (p : untilt p (pair p) (span {xi p})) ≠ 0 := by
     rw [← hsp]
-    exact (untilt.isPseudoUniformizer_sharpHom (isPseudoUniformizer_varpi p)).isUnit.ne_zero
+    exact (untilt.isPseudoUniformizer_sharp (isPseudoUniformizer_varpi p)).isUnit.ne_zero
   exact ⟨untilt.isPerfectoidTateRing (isPrimitive_xi p),
     untilt.isRingOfIntegralElements_untiltPlus (isPrimitive_xi p),
     untilt.pair_plus (isPrimitive_xi p), hp_ne⟩
@@ -178,8 +178,8 @@ example :
       (untilt.tiltEquiv (isPrimitive_xi p)).symm (w 0)
     let x₁ : uniformTilt p (untilt p (pair p) (span {xi p})) :=
       (untilt.tiltEquiv (isPrimitive_xi p)).symm (w 1)
-    (∀ n, uniformTilt.coeff p _ n x₀ = untilt.sharpHom p (pair p) (span {xi p}) (w n)) ∧
-      (∀ n, uniformTilt.coeff p _ n x₁ = untilt.sharpHom p (pair p) (span {xi p}) (w (n + 1))) ∧
+    (∀ n, uniformTilt.coeff p _ n x₀ = untilt.sharp p (pair p) (span {xi p}) (w n)) ∧
+      (∀ n, uniformTilt.coeff p _ n x₁ = untilt.sharp p (pair p) (span {xi p}) (w (n + 1))) ∧
       untilt.tiltEquiv (isPrimitive_xi p) (x₀ + x₁) = w 0 + w 1 ∧
       untilt.tiltEquiv (isPrimitive_xi p) x₀ ≠ (w 0) ^ p ∧
       IsHomeomorph (untilt.tiltEquiv (isPrimitive_xi p)) := by
@@ -194,11 +194,11 @@ example :
     apply (iterateFrobeniusEquiv (uniformTilt p ℂ_[p]) p 0).injective
     rw [RingEquiv.apply_symm_apply]
     simp
-  have hx₀ : ∀ n, uniformTilt.coeff p _ n x₀ = untilt.sharpHom p (pair p) (span {xi p}) (w n) := by
+  have hx₀ : ∀ n, uniformTilt.coeff p _ n x₀ = untilt.sharp p (pair p) (span {xi p}) (w n) := by
     intro n
     rw [untilt.coeff_tiltEquiv_symm, hw0]
   have hx₁ : ∀ n, uniformTilt.coeff p _ n x₁ =
-      untilt.sharpHom p (pair p) (span {xi p}) (w (n + 1)) := by
+      untilt.sharp p (pair p) (span {xi p}) (w (n + 1)) := by
     intro n
     rw [untilt.coeff_tiltEquiv_symm]
     congr 1

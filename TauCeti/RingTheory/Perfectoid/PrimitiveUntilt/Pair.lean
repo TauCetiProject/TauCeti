@@ -155,9 +155,8 @@ private theorem theta_mem_untiltPlus_iff (hξ : ξ.IsPrimitive)
       uniformTilt.mem_plusSubring_iff_coeff_zero.mpr <| hplus_le <| by
         change uniformTilt.coeff p A 0 (e.symm a) ∈ untiltPlus p P J
         rw [coeff_tiltEquiv_symm, iterateFrobeniusEquiv_zero_symm_eq]
-        change sharpHom p P J (a : R) ∈ _
-        rw [sharpHom_coe]
-        exact sharp_mem_untiltPlus J a
+        change sharp p P J (a : R) ∈ _
+        exact sharp_mem_untiltPlus a
   have hΘ_ι (w : WittVector p P.plus) :
       (Θ (WittVector.map ι w) : A) =
         algebraMap (WittVector p P.plus ⧸ J) A (Ideal.Quotient.mk J w) := by
@@ -172,8 +171,8 @@ private theorem theta_mem_untiltPlus_iff (hξ : ξ.IsPrimitive)
           uniformTilt.coe_plusSharp, RingHom.codRestrict_apply, RingHom.comp_apply]
         change uniformTilt.coeff p A 0 (e.symm a) = _
         rw [coeff_tiltEquiv_symm, iterateFrobeniusEquiv_zero_symm_eq]
-        change sharpHom p P J (a : R) = _
-        rw [sharpHom_coe, sharp_apply, algebraMap_apply]
+        change sharp p P J (a : R) = _
+        rw [sharp_apply]
         rfl
     exact congrArg Subtype.val (RingHom.congr_fun heq w)
   have hΘ_p_mul (w₁ : WittVector p B₀) :
@@ -220,12 +219,12 @@ private theorem theta_mem_untiltPlus_iff (hξ : ξ.IsPrimitive)
   obtain ⟨w₁, hw₁⟩ := exists_eq_sum_teichmullerCoeff_add_pow_mul w 1
   simp only [Finset.range_one, Finset.sum_singleton, pow_zero, mul_one, pow_one,
     teichmullerCoeff_zero] at hw₁
-  have hw_eq : (Θ w : A) = sharpHom p P J (e (w.coeff 0 : uniformTilt p A)) +
+  have hw_eq : (Θ w : A) = sharp p P J (e (w.coeff 0 : uniformTilt p A)) +
       (Θ ((p : WittVector p B₀) * w₁) : A) := by
     conv_lhs => rw [hw₁]
     rw [map_add, Subring.coe_add, uniformTilt.theta_teichmuller, uniformTilt.coe_plusSharp,
-      sharpHom_tiltEquiv hξ]
-  rw [hw_eq, add_mem_cancel_right (hΘ_p_mul w₁), sharpHom_mem_untiltPlus_iff hξ]
+      sharp_tiltEquiv hξ]
+  rw [hw_eq, add_mem_cancel_right (hΘ_p_mul w₁), sharp_mem_untiltPlus_iff hξ]
 
 /-- **`A⁺` is integrally closed in the untilt `A`** for a primitive element `ξ`. -/
 theorem isIntegrallyClosedIn_untiltPlus (hξ : ξ.IsPrimitive) :
@@ -369,8 +368,8 @@ theorem mem_tilt_plus_iff (hξ : ξ.IsPrimitive)
   have : Fact (IsTopologicallyNilpotent (p : untilt p P (Ideal.span {ξ}))) :=
     ⟨isTopologicallyNilpotent_natCast hξ⟩
   have := isTateRing_uniformTilt hξ
-  rw [Pair.tilt_plus, uniformTilt.mem_plusSubring_iff_coeff_zero, ← sharpHom_tiltEquiv hξ y,
-    pair_plus, sharpHom_mem_untiltPlus_iff hξ]
+  rw [Pair.tilt_plus, uniformTilt.mem_plusSubring_iff_coeff_zero, ← sharp_tiltEquiv hξ y,
+    pair_plus, sharp_mem_untiltPlus_iff hξ]
 
 /-- **Identification of the tilted plus ring `A♭⁺` with `R⁺`**. -/
 noncomputable def tiltPlusEquiv (hξ : ξ.IsPrimitive) :
@@ -389,8 +388,8 @@ noncomputable def tiltPlusEquiv (hξ : ξ.IsPrimitive) :
   letI := isTateRing_uniformTilt hξ
   (tiltEquiv hξ).restrict (uniformTilt.plusSubring p (isRingOfIntegralElements_untiltPlus hξ))
     P.plus fun y ↦ by
-      rw [uniformTilt.mem_plusSubring_iff_coeff_zero, ← sharpHom_tiltEquiv hξ y,
-        sharpHom_mem_untiltPlus_iff hξ]
+      rw [uniformTilt.mem_plusSubring_iff_coeff_zero, ← sharp_tiltEquiv hξ y,
+        sharp_mem_untiltPlus_iff hξ]
 
 /-- `tiltPlusEquiv` is the restriction of `tiltEquiv`. -/
 @[simp]
@@ -475,7 +474,7 @@ theorem theta_comp_map_tiltPlusEquiv_symm (hξ : ξ.IsPrimitive)
   change uniformTilt.coeff p (untilt p P (Ideal.span {ξ})) 0 ((tiltPlusEquiv hξ).symm a) =
     (quotientEquivUntiltPlus hξ (Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p a)) : _)
   rw [quotientEquivUntiltPlus_mk_teichmuller, coe_tiltPlusEquiv_symm, coeff_tiltEquiv_symm,
-    iterateFrobeniusEquiv_zero_symm_eq, sharpHom_coe]
+    iterateFrobeniusEquiv_zero_symm_eq]
 
 /-- The kernel of `θ_A ∘ 𝕎 (tiltPlusEquiv.symm)` is `(ξ)`. -/
 theorem ker_theta_comp_map_tiltPlusEquiv_symm (hξ : ξ.IsPrimitive)
