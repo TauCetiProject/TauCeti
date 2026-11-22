@@ -20,9 +20,9 @@ In a basis of `M`, `S(M)` is a polynomial algebra (`SymmetricAlgebra.equivMvPoly
 evaluations are the evaluations of polynomials at all points, which separate polynomials over an
 infinite domain (`MvPolynomial.funext`).
 
-Far fewer linear forms suffice. Over any integral domain, an element of `S(M)` vanishing at every
-linear form whose values on a basis lie in prescribed infinite sets is zero, since a polynomial
-vanishing on a box with infinite sides is zero (`MvPolynomial.funext_set`). For a semisimple Lie
+Far fewer linear forms suffice. Over any integral domain, two elements of `S(M)` agreeing at every
+linear form whose values on a basis lie in prescribed infinite sets are equal, since polynomials
+agreeing on a box with infinite sides are equal (`MvPolynomial.funext_set`). For a semisimple Lie
 algebra this is how polynomial functions on the weights are tested on the dominant integral
 weights alone, whose values on the simple coroots are the natural numbers.
 
@@ -50,8 +50,8 @@ time.
 * `SymmetricAlgebra.isPrime_ker_lift` and `SymmetricAlgebra.isMaximal_ker_lift`: the kernel of
   `SymmetricAlgebra.lift f` into a nontrivial commutative `R`-algebra without zero divisors is
   prime, and into a field `K` (for `f : M →ₗ[K] K`) is maximal.
-* `TauCeti.SymmetricAlgebra.eq_zero_of_forall_lift_eq_zero`: an element of `S(M)` vanishing at
-  every linear form whose values on a basis lie in given infinite sets is zero.
+* `Module.Basis.symmetricAlgebra_funext_set`: two elements of `S(M)` agreeing at every linear
+  form whose values on a basis lie in given infinite sets are equal.
 * `TauCeti.SymmetricAlgebra.eq_of_forall_lift_apply_eq`: two elements of `S(M)` on which every
   evaluation `SymmetricAlgebra.lift f` agrees are equal.
 -/
@@ -121,26 +121,34 @@ theorem exists_polynomial_eval_eq_lift_add_smul (p : SymmetricAlgebra R M) (f g 
 
 end SymmetricAlgebra
 
-namespace TauCeti.SymmetricAlgebra
+namespace Module.Basis
 
-variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommMonoid M] [Module R M]
+variable {R M ι : Type*} [CommRing R] [IsDomain R] [AddCommMonoid M] [Module R M]
 
-/-- **An element of the symmetric algebra vanishing on a box of linear forms is zero.** Let `b` be
-a basis of `M` over an integral domain and let `s i` be an infinite set of scalars for each basis
-index `i`. If `SymmetricAlgebra.lift f p = 0` for every linear form `f` with `f (b i) ∈ s i` for
-all `i`, then `p = 0`. -/
-theorem eq_zero_of_forall_lift_eq_zero {ι : Type*} (b : Module.Basis ι R M) {s : ι → Set R}
-    (hs : ∀ i, (s i).Infinite) {p : SymmetricAlgebra R M}
-    (h : ∀ f : Module.Dual R M, (∀ i, f (b i) ∈ s i) → SymmetricAlgebra.lift f p = 0) :
-    p = 0 := by
+/-- **Elements of the symmetric algebra agreeing on a box of linear forms are equal.** Let `b` be a
+basis of `M` over an integral domain and let `s i` be an infinite set of scalars for each basis
+index `i`. If `SymmetricAlgebra.lift f p = SymmetricAlgebra.lift f q` for every linear form `f`
+with `f (b i) ∈ s i` for all `i`, then `p = q`. -/
+theorem symmetricAlgebra_funext_set (b : Module.Basis ι R M) {s : ι → Set R}
+    (hs : ∀ i, (s i).Infinite) {p q : SymmetricAlgebra R M}
+    (h : ∀ f : Module.Dual R M, (∀ i, f (b i) ∈ s i) →
+      SymmetricAlgebra.lift f p = SymmetricAlgebra.lift f q) :
+    p = q := by
   refine (SymmetricAlgebra.equivMvPolynomial b).injective <|
-    (MvPolynomial.funext_set s hs fun x hx ↦ ?_).trans (map_zero _).symm
+    MvPolynomial.funext_set s hs fun x hx ↦ ?_
   -- the point `x` is the coordinate vector of the linear form `b.constr R x`
   have hfx : ∀ i, b.constr R x (b i) ∈ s i := fun i ↦ by
     simpa only [Module.Basis.constr_basis] using hx i (Set.mem_univ i)
-  have hcoord := b.lift_apply_eq_eval_equivMvPolynomial (b.constr R x) p
+  have hcoord (r : SymmetricAlgebra R M) :=
+    b.lift_apply_eq_eval_equivMvPolynomial (b.constr R x) r
   simp only [Module.Basis.constr_basis] at hcoord
-  rw [← hcoord, h _ hfx, map_zero]
+  rw [← hcoord, ← hcoord, h _ hfx]
+
+end Module.Basis
+
+namespace TauCeti.SymmetricAlgebra
+
+variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommMonoid M] [Module R M]
 
 /-- **An element of the symmetric algebra of a free module over an infinite domain is determined by
 its values at all linear forms**: if `SymmetricAlgebra.lift f p = SymmetricAlgebra.lift f q` for
@@ -148,7 +156,7 @@ every `f : Module.Dual R M`, then `p = q`. -/
 theorem eq_of_forall_lift_apply_eq [Infinite R] [Module.Free R M] {p q : SymmetricAlgebra R M}
     (h : ∀ f : Module.Dual R M, SymmetricAlgebra.lift f p = SymmetricAlgebra.lift f q) :
     p = q :=
-  sub_eq_zero.mp <| eq_zero_of_forall_lift_eq_zero (Module.Free.chooseBasis R M)
-    (s := fun _ ↦ Set.univ) (fun _ ↦ Set.infinite_univ) fun f _ ↦ by rw [map_sub, h f, sub_self]
+  (Module.Free.chooseBasis R M).symmetricAlgebra_funext_set (s := fun _ ↦ Set.univ)
+    (fun _ ↦ Set.infinite_univ) fun f _ ↦ h f
 
 end TauCeti.SymmetricAlgebra
