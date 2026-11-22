@@ -121,7 +121,10 @@ theorem norm_mvCoeff_mul_prod_pow_le_of_forall_norm_coord_eq
   refine le_of_mul_le_mul_left ?_ hm_pos
   have hlhs : (m : ℝ) ^ Fintype.card ι * (‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i) =
       ‖((m : ℂ) ^ Fintype.card ι) • ((∏ i, (ρ i : ℂ) ^ α i) • p.mvCoeff α)‖ := by
-    simp [norm_smul, norm_prod, Complex.norm_real, fun i ↦ abs_of_nonneg (hρ0 i)]
+    have hprod : ∏ i, ‖(ρ i : ℂ) ^ α i‖ = ∏ i, ρ i ^ α i :=
+      Finset.prod_congr rfl fun i _ ↦ by
+        rw [norm_pow, Complex.norm_real, Real.norm_of_nonneg (hρ0 i)]
+    rw [norm_smul, norm_smul, norm_pow, Complex.norm_natCast, norm_prod, hprod]
     ring
   rw [hlhs, ← p.sum_smul_apply_grid_eq_mvCoeff α (fun i ↦ (ρ i : ℂ)) hprim]
   calc ‖∑ j : ι → Fin m,
