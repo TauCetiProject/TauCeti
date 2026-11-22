@@ -582,22 +582,8 @@ theorem exists_remainder_leftTerms_of_isAsymptoticSum (c : ClassicalAmplitude n 
     (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
     ∃ r : Symbol n V W (m - N), ∀ p, r.coefficient p =
       b.coefficient p - ∑ j ∈ range N, χ p.2 • (leftTerms c.term j).coefficient p := by
-  obtain ⟨r₀, hr₀⟩ := Symbol.isAsymptoticSum_iff.1 hb N
-  -- The remainder of `leftTerm c k` after `N - k` terms has order `m - N` for `k ≤ N`.
-  have hord (k : ℕ) : m - k - ((N - k : ℕ) : ℝ) ≤ m - N := by
-    have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
-    linarith
-  refine ⟨r₀ + ∑ k ∈ range N, Symbol.inclusion (hord k) ((c.leftTerm k).remainder χ (N - k)),
-    fun p ↦ ?_⟩
-  have hp := congrFun hr₀ p
-  simp only [Pi.sub_apply, Finset.sum_apply, Symbol.coefficient_inclusion] at hp
-  simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
-    Pi.add_apply, Finset.sum_apply, ← hp, ClassicalSymbol.coefficient_remainder, toSymbol_leftTerm,
-    term_leftTerm, coefficient_castDegree, coefficient_leftTerms, Finset.smul_sum,
-    Finset.sum_sub_distrib]
-  -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
-  rw [Finset.sum_range_diag_flip N fun k i ↦ χ p.2 • ((c.term i).leftTerm k).coefficient p]
-  abel
+  obtain ⟨r, hr⟩ := ClassicalSymbol.exists_remainder_of_isAsymptoticSum c.leftTerm hb χ N
+  exact ⟨r, fun p ↦ by simp [hr p, coefficient_leftTerms]⟩
 
 variable [CompleteSpace W]
 

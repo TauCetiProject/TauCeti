@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.FreeLoopApproximation
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.FreeLoop.Approximation
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.VertexSlide
 
 /-!
