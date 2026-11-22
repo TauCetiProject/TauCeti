@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Geometry.Lie.InvariantVectorField.Distribution
+public import TauCeti.Geometry.Lie.LeftInvariantForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
@@ -191,6 +192,18 @@ theorem mpullback_mul_right_leftInvariantForm (h : G) :
     leftInvariantForm_apply, ← hξ, mfderiv_mul_right_mulInvariantVectorField,
     mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField,
     coadjointRepresentation_apply]
+
+/-- The left-invariant one-form of `ν` is the left-invariant form `TauCeti.leftInvariantForm` of
+`ν`, read as an alternating map of degree one. -/
+theorem coe_leftInvariantForm :
+    ν.leftInvariantForm.val = TauCeti.leftInvariantForm
+      (ContinuousAlternatingMap.ofSubsingleton ℝ (GroupLieAlgebra I G) ℝ (0 : Fin 1)
+        (LinearMap.toContinuousLinearMap ν)) := by
+  funext g
+  ext v
+  rw [leftInvariantForm_apply, TauCeti.leftInvariantForm_apply]
+  exact (ContinuousAlternatingMap.ofSubsingleton_apply_apply ℝ (GroupLieAlgebra I G) ℝ (0 : Fin 1)
+    (LinearMap.toContinuousLinearMap ν) fun i ↦ mfderiv I I (g⁻¹ * ·) g (v i)).symm
 
 /-! ### The left-invariant Kirillov form -/
 
