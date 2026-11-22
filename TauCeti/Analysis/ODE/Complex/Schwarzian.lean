@@ -80,14 +80,10 @@ theorem IsSolution.schwarzian_div (hy₁ : E.IsSolution y₁) (hy₂ : E.IsSolut
   obtain ⟨r, hr, hball⟩ : ∃ r > 0, ∀ x ∈ Metric.ball z r, x ∈ U ∧ y₂ x ≠ 0 :=
     Metric.eventually_nhds_iff_ball.mp
       ((U.isOpen.eventually_mem hz).and (hy₂z.continuousAt.eventually_ne h₂))
-  have hrz : z ∈ Metric.ball z r := Metric.mem_ball_self hr
-  have hW' (x : ℂ) (hx : x ∈ U) : HasDerivAt W 0 x := by
-    simpa [hE] using hy₁.hasDerivAt_wronskian hy₂ hx
-  -- By Abel's identity the Wronskian is constant near `z`.
+  -- The Wronskian is constant near `z`.
   have hWc (x : ℂ) (hx : x ∈ Metric.ball z r) : W x = W z :=
-    Metric.isOpen_ball.is_const_of_deriv_eq_zero (convex_ball z r).isPreconnected
-      (fun x hx ↦ (hW' x (hball x hx).1).differentiableAt.differentiableWithinAt)
-      (fun x hx ↦ (hW' x (hball x hx).1).deriv) hx hrz
+    hy₁.wronskian_eq_of_coeff_one_eq_zero hy₂ hE Metric.isOpen_ball
+      (convex_ball z r).isPreconnected (fun x hx ↦ (hball x hx).1) hx (Metric.mem_ball_self hr)
   -- Hence `(y₁ / y₂)' = -W(z) / y₂ ^ 2` near `z`.
   have hd₁ : ∀ᶠ x in 𝓝 z, HasDerivAt (fun x ↦ y₁ x / y₂ x) (-W z / y₂ x ^ 2) x := by
     filter_upwards [Metric.ball_mem_nhds z hr] with x hx

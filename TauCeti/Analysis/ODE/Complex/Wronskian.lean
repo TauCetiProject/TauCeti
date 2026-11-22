@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Complex.LinearEquation
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
@@ -25,6 +26,8 @@ first-derivative term.
 ## Main results
 
 * `TauCeti.LinearEquation.IsSolution.hasDerivAt_wronskian`: Abel's identity.
+* `TauCeti.LinearEquation.IsSolution.wronskian_eq_of_coeff_one_eq_zero`: without a
+  first-derivative term the Wronskian is constant on open preconnected subsets of the domain.
 * `TauCeti.LinearEquation.linearIndependent_of_wronskian_ne_zero`: solutions whose Wronskian is
   nonzero at a point are linearly independent, and
   `TauCeti.LinearEquation.IsSolution.linearIndependent_of_wronskian_ne_zero` is the same statement
@@ -80,6 +83,19 @@ theorem IsSolution.hasDerivAt_wronskian (hy₁ : E.IsSolution y₁) (hy₂ : E.I
     (h₁.deriv.differentiableAt.hasDerivAt.mul h₂.differentiableAt.hasDerivAt) using 1
   rw [hy₁.deriv_deriv_eq hz, hy₂.deriv_deriv_eq hz]
   ring
+
+/-- For an equation `y'' + a₀ y = 0` without first-derivative term, the Wronskian
+`y₁ y₂' - y₁' y₂` of two solutions is constant on every open preconnected subset of the domain. -/
+theorem IsSolution.wronskian_eq_of_coeff_one_eq_zero (hy₁ : E.IsSolution y₁)
+    (hy₂ : E.IsSolution y₂) (hE : E.coeff 1 = 0) {V : Set ℂ} (hVo : IsOpen V)
+    (hVc : IsPreconnected V) (hVU : V ⊆ U) {x : ℂ} (hx : x ∈ V) (hz : z ∈ V) :
+    y₁ x * deriv y₂ x - deriv y₁ x * y₂ x = y₁ z * deriv y₂ z - deriv y₁ z * y₂ z := by
+  have hW (x : ℂ) (hx : x ∈ V) :
+      HasDerivAt (fun x ↦ y₁ x * deriv y₂ x - deriv y₁ x * y₂ x) 0 x := by
+    simpa [hE] using hy₁.hasDerivAt_wronskian hy₂ (hVU hx)
+  exact hVo.is_const_of_deriv_eq_zero hVc
+    (fun x hx ↦ (hW x hx).differentiableAt.differentiableWithinAt) (fun x hx ↦ (hW x hx).deriv)
+    hx hz
 
 /-- The initial jets of two solutions are linearly independent exactly when the determinant of
 their values and first derivatives is nonzero. -/
