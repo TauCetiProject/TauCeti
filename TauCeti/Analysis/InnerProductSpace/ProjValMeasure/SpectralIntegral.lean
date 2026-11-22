@@ -43,8 +43,9 @@ on `H`.
   `ProjValMeasure.spectralIntegral_hasCore_iSup_range_proj`, and
   `ProjValMeasure.spectralIntegral_hasCore_iSup_range_proj_norm_le`: the domain of
   `P.spectralIntegral f hf` is dense in `H`, and the supremum of the ranges of any family of
-  spectral projections converging strongly to the identity and mapping into the domain (in
-  particular `LinearMap.range (P.proj {‖f‖ ≤ n} _)`) is a graph core for `P.spectralIntegral f hf`.
+  spectral projections converging strongly to the identity along a nontrivial (`NeBot`) filter and
+  mapping into the domain (in particular `LinearMap.range (P.proj {‖f‖ ≤ n} _)`) is a graph core
+  for `P.spectralIntegral f hf`.
 * `ProjValMeasure.norm_sq_spectralIntegral_apply` and `ProjValMeasure.diag_spectralIntegral`: the
   second-moment norm identity `‖P.spectralIntegral f hf x‖ ^ 2 = ∫ t, ‖f t‖ ^ 2 ∂(P.diag x)` and
   the diagonal measure density `P.diag (P.spectralIntegral f hf x) = (P.diag x).withDensity _`.
@@ -512,15 +513,17 @@ theorem mem_spectralIntegral_domain_congr_ae (P : ProjValMeasure X H) {f g : X �
     lintegral_congr_ae (h.fun_comp fun z : ℂ => ‖z‖ₑ ^ 2)
   rw [P.mem_spectralIntegral_domain_iff hf, P.mem_spectralIntegral_domain_iff hg, hlin]
 
-/-- If two measurable symbols agree `P.diag x`-almost everywhere and `x` lies in both domains, then
-`P.spectralIntegral f hf` and `P.spectralIntegral g hg` agree at `x`. -/
+/-- If two measurable symbols agree `P.diag x`-almost everywhere and `x` lies in the domain of
+`P.spectralIntegral f hf`, then `x` also lies in the domain of `P.spectralIntegral g hg` and the
+two spectral integrals agree at `x`. -/
 theorem spectralIntegral_apply_congr_ae (P : ProjValMeasure X H) {f g : X → ℂ}
     (hf : Measurable f) (hg : Measurable g) {x : H} (h : f =ᵐ[P.diag x] g)
-    (hx₁ : x ∈ (P.spectralIntegral f hf).domain)
-    (hx₂ : x ∈ (P.spectralIntegral g hg).domain) :
-    P.spectralIntegral f hf ⟨x, hx₁⟩ = P.spectralIntegral g hg ⟨x, hx₂⟩ := by
-  refine P.spectralIntegral_apply_eq_of_inner hf ⟨x, hx₁⟩ fun y => ?_
-  rw [P.inner_spectralIntegral_apply hg ⟨x, hx₂⟩ y]
+    (hx : x ∈ (P.spectralIntegral f hf).domain) :
+    P.spectralIntegral f hf ⟨x, hx⟩ =
+      P.spectralIntegral g hg ⟨x, (P.mem_spectralIntegral_domain_congr_ae hf hg h).1 hx⟩ := by
+  refine P.spectralIntegral_apply_eq_of_inner hf ⟨x, hx⟩ fun y => ?_
+  rw [P.inner_spectralIntegral_apply hg
+    ⟨x, (P.mem_spectralIntegral_domain_congr_ae hf hg h).1 hx⟩ y]
   exact VectorMeasure.integral_congr_ae
     ((P.variation_polarizedComplexMeasure_absolutelyContinuous_diag y x) h.symm)
 
@@ -558,8 +561,7 @@ theorem spectralIntegral_apply_of_ae_eq_boundedBorelFunction (P : ProjValMeasure
     P.spectralIntegral f hf
         ⟨x, P.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction hf h⟩ =
       P.integral g x := by
-  refine (P.spectralIntegral_apply_congr_ae hf g.measurable h _
-    (by rw [P.spectralIntegral_coe_boundedBorelFunction g]; simp)).trans ?_
+  refine (P.spectralIntegral_apply_congr_ae hf g.measurable h _).trans ?_
   rw [LinearPMap.congr_fun (P.spectralIntegral_coe_boundedBorelFunction g) _ (by simp)]
   simp
 
@@ -703,7 +705,7 @@ theorem spectralIntegral_congr_ae (P : ProjValMeasure X H) {f g : X → ℂ} (hf
     P.spectralIntegral f hf = P.spectralIntegral g hg :=
   LinearPMap.ext
     (Submodule.ext fun x => P.mem_spectralIntegral_domain_congr_ae hf hg (P.ae_diag_of_ae x h))
-    fun x hx₁ hx₂ => P.spectralIntegral_apply_congr_ae hf hg (P.ae_diag_of_ae x h) hx₁ hx₂
+    fun x hx₁ _ => P.spectralIntegral_apply_congr_ae hf hg (P.ae_diag_of_ae x h) hx₁
 
 /-- Two measurable symbols have the same unbounded spectral integral against `P` if and only if
 they agree `P`-almost everywhere. -/

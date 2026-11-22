@@ -17,10 +17,9 @@ A normalized projection-valued measure `P` carries a finite diagonal positive me
 `P.diag ξ` for every vector `ξ`. Complex polarization produces a genuine complex vector measure
 `P.polarizedComplexMeasure ψ ξ` whose value on a measurable set `B` is
 `⟪ψ, P.proj B hB ξ⟫_ℂ`. Its dependence on `ψ` is conjugate-linear and on `ξ` linear, swapping
-the two vectors conjugates the values (`mapRangeL_conjCLE_polarizedComplexMeasure`,
-`polarizedComplexMeasure_swap_apply`), and applying `P.proj B hB` in either vector argument
-restricts the measure to `B` (`polarizedComplexMeasure_proj_left`,
-`polarizedComplexMeasure_proj_right`). On the diagonal,
+the two vectors conjugates the values (`mapRangeL_conjCLE_polarizedComplexMeasure`), and applying
+`P.proj B hB` in either vector argument restricts the measure to `B`
+(`polarizedComplexMeasure_proj_left`, `polarizedComplexMeasure_proj_right`). On the diagonal,
 `P.polarizedComplexMeasure ξ ξ` is `P.diag ξ` with the constant complex density `1`.
 
 The construction uses Mathlib's signed-measure and complex-measure conversions: countable
@@ -226,12 +225,6 @@ theorem norm_polarizedComplexMeasure_apply_le (P : ProjValMeasure X H) {ψ ξ : 
     nlinarith only [hYoung, hscale]
   rw [P.norm_sq_proj_apply B hB ψ, P.norm_sq_proj_apply B hB ξ] at hy
   exact hcs.trans hy
-
-/-- **Conjugate symmetry.** Exchanging the two vectors conjugates the polarized complex measure. -/
-theorem polarizedComplexMeasure_swap_apply (P : ProjValMeasure X H) (ψ ξ : H) (B : Set X) :
-    P.polarizedComplexMeasure ξ ψ B = star (P.polarizedComplexMeasure ψ ξ B) := by
-  rw [← P.mapRangeL_conjCLE_polarizedComplexMeasure ψ ξ, VectorMeasure.mapRangeL_apply]
-  simp
 
 end ProjValMeasure
 end TauCeti

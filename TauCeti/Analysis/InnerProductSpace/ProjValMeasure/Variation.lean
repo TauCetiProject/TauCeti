@@ -162,8 +162,7 @@ theorem polarizedComplexMeasure_variation_apply_le_enorm (P : ProjValMeasure X H
     _ = ((P.polarizedComplexMeasure ψ ξ).restrict B).variation Set.univ := by
         rw [VectorMeasure.variation_restrict hB]
     _ = (P.polarizedComplexMeasure (P.proj B hB ψ) (P.proj B hB ξ)).variation Set.univ := by
-        rw [P.polarizedComplexMeasure_proj_right, P.polarizedComplexMeasure_proj_left,
-          VectorMeasure.restrict_restrict _ hB hB, Set.inter_self]
+        simp
     _ ≤ ENNReal.ofReal (‖P.proj B hB ψ‖ * ‖P.proj B hB ξ‖) :=
         P.polarizedComplexMeasure_variation_univ_le _ _
     _ = ‖P.proj B hB ψ‖ₑ * ‖P.proj B hB ξ‖ₑ := by
