@@ -103,12 +103,7 @@ theorem roughLaplacian_eq_neg_sum_chartDualFrame (α : M) {y : M}
     (hy : y ∈ (chartAt H α).source) :
     cov.roughLaplacian covT σ y = -∑ i, cov.secondCovariantDerivative covT σ y
       (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) := by
-  by_cases hσ : CMDiff ∞ (T% σ)
-  · rw [roughLaplacian_eq_sum cov covT σ y (stdOrthonormalBasis ℝ (TangentSpace I y))]
-    simp only [secondCovariantDerivative_eq_hom_apply cov covT hσ]
-    rw [sum_apply_chartDualFrame_eq_sum α hy (covT.hom cov (cov σ) y)
-      (stdOrthonormalBasis ℝ (TangentSpace I y))]
-  · simp [hσ]
+  rw [roughLaplacian_def, metricTrace_eq_sum_chartDualFrame α hy]
 
 variable [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 

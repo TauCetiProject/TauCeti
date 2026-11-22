@@ -451,16 +451,10 @@ theorem sum_apply_chartDualFrame_eq_sum (α : M) {y : M} (hy : y ∈ (chartAt H 
     {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ (TangentSpace I y)) :
     ∑ i, B (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) =
       ∑ k, B (e k) (e k) := by
-  set F := chartLocalFrame (I := I) α
-  set D := chartDualFrame (I := I) α
-  calc ∑ i, B (F i y) (D i y) = ∑ i, B (∑ k, inner ℝ (e k) (F i y) • e k) (D i y) := by
-        simp only [e.sum_repr']
-    _ = ∑ k, B (e k) (∑ i, inner ℝ (F i y) (e k) • D i y) := by
-        simp only [map_sum, map_smul, FunLike.coe_sum, FunLike.coe_smul,
-          Finset.sum_apply, Pi.smul_apply, real_inner_comm (e _)]
-        exact Finset.sum_comm
-    _ = ∑ k, B (e k) (e k) := by
-        simp only [F, D, (sum_inner_chartDualFrame_smul α hy _).2]
+  -- Both sums are the metric trace of `B`.
+  simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] using
+    (metricTrace_eq_sum_chartDualFrame α hy B.toLinearMap₁₂).symm.trans
+      (LinearMap.BilinMap.metricTrace_eq_sum _ e)
 
 section Smooth
 
