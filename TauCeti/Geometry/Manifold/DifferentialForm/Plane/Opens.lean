@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Plane.Complex
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens.ModelSpace
@@ -158,25 +159,6 @@ private theorem planarCoordEquiv_symm_apply {U : Opens ℂ} (z : U) (a : ℂ) :
   rw [ContinuousLinearEquiv.apply_symm_apply]
   exact (planarCoordEquiv_coe z a).symm
 
-private theorem mfderiv_subtype_val_apply_eq_planarCoordEquiv {U : Opens ℂ}
-    (z : U) (v : TangentSpace 𝓘(ℝ, ℂ) z) :
-    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) z v =
-      (NormedSpace.fromTangentSpace (z : ℂ)).symm (planarCoordEquiv z v) := by
-  rw [Manifold.mfderiv_subtype_val, planarCoordEquiv_apply,
-    ContinuousLinearEquiv.symm_apply_apply]
-  rfl
-
-private theorem mpullback_planar_apply {U : Opens ℂ} {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ}
-    (η : RoughForm 𝓘(ℝ, ℂ) ℂ G k) (z : U) (v : Fin k → TangentSpace 𝓘(ℝ, ℂ) z) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) η z v =
-      η (z : ℂ) fun i ↦
-        (NormedSpace.fromTangentSpace (z : ℂ)).symm (planarCoordEquiv z (v i)) := by
-  rw [mpullback_apply]
-  congr 1
-  ext i
-  exact mfderiv_subtype_val_apply_eq_planarCoordEquiv z (v i)
-
 private theorem wedgeWith_ofFunction_mpullback_apply {U : Opens ℂ} {F₁ F₂ F₃ : Type*}
     [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
     [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
@@ -186,11 +168,10 @@ private theorem wedgeWith_ofFunction_mpullback_apply {U : Opens ℂ} {F₁ F₂ 
     (z : U) (v : Fin (0 + k) → TangentSpace 𝓘(ℝ, ℂ) z) :
     RoughForm.wedgeWith B (RoughForm.ofFunction 𝓘(ℝ, ℂ) f)
       (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) η) z v =
-      B (f z) (η (z : ℂ) fun i ↦
-        (NormedSpace.fromTangentSpace (z : ℂ)).symm
-          (planarCoordEquiv z (v (Fin.cast (zero_add k).symm i)))) := by
-  rw [RoughForm.wedgeWith_apply_zero_left, RoughForm.ofFunction_apply, mpullback_planar_apply,
+      B (f z) (η (z : ℂ) fun i ↦ v (Fin.cast (zero_add k).symm i)) := by
+  rw [RoughForm.wedgeWith_apply_zero_left, RoughForm.ofFunction_apply, mpullback_subtype_val_apply,
     Function.comp_def]
+  rfl
 
 private theorem flatOneFormEquiv_wedgeWith_ofFunction_mpullback {U : Opens ℂ}
     {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
@@ -204,10 +185,6 @@ private theorem flatOneFormEquiv_wedgeWith_ofFunction_mpullback {U : Opens ℂ}
       B (f z) (η (z : ℂ) ![(NormedSpace.fromTangentSpace (z : ℂ)).symm a]) := by
   rw [RoughForm.flatOneFormEquiv_apply, wedgeWith_ofFunction_mpullback_apply]
   congr 2
-  ext i
-  rw [Subsingleton.elim i 0]
-  simp only [Fin.cast_zero, Matrix.cons_val_zero, planarCoordEquiv_coe]
-  rfl
 
 end Helpers
 
@@ -239,9 +216,7 @@ theorem mextDeriv_ofFunction_opens_complex_real_eq {U : Opens ℂ} {F : Type*}
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.lsmul_apply,
     SmoothForm.complexDx_apply, SmoothForm.complexDy_apply, Matrix.cons_val_zero,
     ContinuousLinearEquiv.apply_symm_apply]
-  have ha : a = a.re • (1 : ℂ) + a.im • Complex.I := by simp [Complex.real_smul]
-  conv_lhs => rw [ha]
-  rw [map_add, map_smul, map_smul]
+  exact (fderiv ℝ v' (z : ℂ)).apply_eq_re_smul_one_add_im_smul_I a
 
 /-- Complex Wirtinger differential decomposition on an open subset `U ⊆ ℂ`: for any function
 `u : U → W` into a complex normed space `W` and any ambient representative `u' : ℂ → W`
@@ -317,7 +292,8 @@ private theorem planarTwoFormCoeff_wedgeWith_ofFunction_mpullback {U : Opens ℂ
   rw [planarTwoFormCoeff_eq_apply_symm, wedgeWith_ofFunction_mpullback_apply]
   congr 2
   ext i
-  fin_cases i <;> simp [Fin.cast_eq_self]
+  fin_cases i <;> simp [Fin.cast_eq_self, planarCoordEquiv_symm_apply,
+    NormedSpace.fromTangentSpace_symm_apply] <;> rfl
 
 @[simp]
 theorem planarTwoFormCoeff_zero {U : Opens ℂ} {F : Type*}
@@ -473,38 +449,23 @@ theorem isSmoothForm_iff_contMDiff_planarTwoFormCoeff {U : Opens ℂ} {F : Type*
   refine ⟨fun hη ↦ hη.contMDiff_planarTwoFormCoeff, fun hcoeff ↦ ?_⟩
   rw [roughForm_two_eq_wedgeWith_complexDx_wedge_complexDy η]
   refine (isSmoothForm_ofFunction_iff.2 hcoeff).wedgeWith _ ?_
-  let η₀ : ℂ [⋀^Fin 2]→L[ℝ] ℝ :=
-    ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-      (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-      (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.reCLM)
-      (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.imCLM)
-  refine (isSmoothForm_opens_iff (ω₀ := fun _ ↦ η₀) fun z ↦ ?_).2 contDiffOn_const
-  ext v
-  have hv : v = ![v 0, v 1] := funext fun i ↦ by fin_cases i <;> rfl
-  rw [hv]
-  have lhs_eq : mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
-      (RoughForm.wedge SmoothForm.complexDx.val SmoothForm.complexDy.val) z ![v 0, v 1] =
-      (planarCoordEquiv z (v 0)).re * (planarCoordEquiv z (v 1)).im -
-        (planarCoordEquiv z (v 1)).re * (planarCoordEquiv z (v 0)).im := by
-    rw [mpullback_planar_apply]
-    have h01 : (fun i ↦ (NormedSpace.fromTangentSpace (𝕜 := ℝ) (z : ℂ)).symm
-          (planarCoordEquiv z (![v 0, v 1] i))) =
-        ![(NormedSpace.fromTangentSpace (𝕜 := ℝ) (z : ℂ)).symm (planarCoordEquiv z (v 0)),
-          (NormedSpace.fromTangentSpace (𝕜 := ℝ) (z : ℂ)).symm (planarCoordEquiv z (v 1))] := by
-      ext i; fin_cases i <;> rfl
-    rw [h01, SmoothForm.complexDx_wedge_complexDy_apply,
-      ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
-  have hw : (![v 0, v 1] : Fin 2 → ℂ) =
-      ![planarCoordEquiv z (v 0), planarCoordEquiv z (v 1)] := by
-    ext i; fin_cases i <;> exact (planarCoordEquiv_coe z _).symm
-  have rhs_eq : η₀ ![v 0, v 1] =
-      (planarCoordEquiv z (v 0)).re * (planarCoordEquiv z (v 1)).im -
-        (planarCoordEquiv z (v 1)).re * (planarCoordEquiv z (v 0)).im := by
-    rw [hw, ContinuousAlternatingMap.pairedWedge_apply_one_one]
-    simp only [ContinuousLinearMap.mul_apply',
-      ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_zero,
-      Complex.reCLM_apply, Complex.imCLM_apply]
-  exact lhs_eq.trans rhs_eq.symm
+  have hdx_eq : SmoothForm.complexDx.val =
+      fun _ : ℂ ↦ ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.reCLM := by
+    ext z v
+    simp [NormedSpace.fromTangentSpace_apply]
+    rfl
+  have hdy_eq : SmoothForm.complexDy.val =
+      fun _ : ℂ ↦ ContinuousAlternatingMap.ofSubsingleton ℝ ℂ ℝ (0 : Fin 1) Complex.imCLM := by
+    ext z v
+    simp [NormedSpace.fromTangentSpace_apply]
+    rfl
+  have hdx : IsSmoothForm 𝓘(ℝ, ℂ) n SmoothForm.complexDx.val := by
+    rw [hdx_eq]
+    exact isSmoothForm_modelSpace_iff.2 contDiff_const
+  have hdy : IsSmoothForm 𝓘(ℝ, ℂ) n SmoothForm.complexDy.val := by
+    rw [hdy_eq]
+    exact isSmoothForm_modelSpace_iff.2 contDiff_const
+  exact (hdx.wedge hdy).mpullback contMDiff_subtypeVal
 
 end TwoFormCoeff
 
@@ -549,9 +510,9 @@ private theorem planarTwoFormCoeff_mextDeriv_wedgeWith_of_isClosed {U : Opens �
     mextDeriv_ofFunction_apply, ← mvfderiv_apply_eq_mfderiv_apply,
     mvfderiv_opens_eq_fderiv_apply hf_eq,
     ContinuousLinearEquiv.apply_symm_apply]
-  rw [SmoothForm.coe_mpullback, mpullback_planar_apply, mpullback_planar_apply]
-  congr 2 <;> congr 1 <;> ext i <;> rw [Subsingleton.elim i 0] <;>
-    simp only [Matrix.cons_val_zero, ContinuousLinearEquiv.apply_symm_apply]
+  simp only [αU, SmoothForm.coe_mpullback, mpullback_subtype_val_apply,
+    planarCoordEquiv_symm_apply, NormedSpace.fromTangentSpace_symm_apply]
+  rfl
 
 /-- For a differentiable function `g : U → W` into a complex normed space `W` with ambient
 representative `g' : ℂ → W`, the `dx ∧ dy` coefficient of `d(g dz)` at `z` is

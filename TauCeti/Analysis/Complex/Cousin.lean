@@ -133,12 +133,8 @@ theorem exists_differentiableOn_iUnion_sub_eq {U : ι → Set ℂ} (hU : ∀ i, 
     ∃ h : ℂ → W, DifferentiableOn ℂ h (⋃ i, U i) ∧
       ∀ i, ∀ z ∈ U i, b₁ i z - b₂ i z = h z := by
   have hagree (i j : ι) (z : ℂ) (hzi : z ∈ U i) (hzj : z ∈ U j) :
-      b₁ i z - b₂ i z = b₁ j z - b₂ j z := by
-    have hsub := hdiff i j z ⟨hzi, hzj⟩
-    have hrew :
-        b₁ i z - b₂ i z - (b₁ j z - b₂ j z) = (b₁ i z - b₁ j z) - (b₂ i z - b₂ j z) := by
-      abel
-    exact eq_of_sub_eq_zero (by rw [hrew, hsub, sub_self])
+      b₁ i z - b₂ i z = b₁ j z - b₂ j z :=
+    sub_eq_sub_iff_sub_eq_sub.mp (hdiff i j z ⟨hzi, hzj⟩)
   obtain ⟨h, heq, -⟩ :=
     Function.exists_eqOn_of_agree (U := U) (f := fun i z ↦ b₁ i z - b₂ i z) hagree 0
   refine ⟨h, (differentiableOn_iUnion_iff_of_isOpen hU).2 fun i ↦ ?_, fun i z hz ↦ (heq i hz).symm⟩
