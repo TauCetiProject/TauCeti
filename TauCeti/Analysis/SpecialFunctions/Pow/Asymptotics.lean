@@ -42,6 +42,10 @@ rates in a small scale `h` become inequalities for all small `h`. Power laws mul
 A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a → -∞`,
 tends to zero. This is how valuation bounds on coefficients give convergence of series.
 
+## Roots of geometrically increasing order
+
+For `q > 1` and a nonzero real base `b`, the powers `b ^ (a / q ^ n)` tend to one.
+
 ## Comparing exponents
 
 If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
@@ -170,6 +174,13 @@ theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : 
   have h := (tendsto_rpow_atBot_of_base_gt_one r hr).comp
     ((tendsto_intCast_atBot_iff (R := ℝ)).2 hg)
   simpa [Function.comp_def, Real.rpow_intCast] using h
+
+/-- For `q > 1`, the powers `b ^ (a / q ^ n)` of a fixed nonzero base `b` tend to one. -/
+theorem tendsto_const_rpow_div_pow_atTop {b q : ℝ} (hb : b ≠ 0) (hq : 1 < q) (a : ℝ) :
+    Tendsto (fun n : ℕ ↦ b ^ (a / q ^ n)) atTop (𝓝 1) := by
+  have h := (tendsto_pow_atTop_atTop_of_one_lt hq).const_div_atTop a
+  simpa only [Function.comp_def, Real.rpow_zero] using
+    (Real.continuousAt_const_rpow hb (b := 0)).tendsto.comp h
 
 /-- If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`. -/
 theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
