@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.GraphStep.AubinLions
 public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # The semi-Fredholm estimate for the trajectory operator over a compactly embedded domain
@@ -130,11 +131,6 @@ private theorem norm_le_mul_norm_restrictBaseL {b c : ℝ} (hc : 0 ≤ c)
     ‖f‖ ≤ c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
   have hμW : Measure.restrict μ₀ (Ioo (-b) b) = volume.restrict (Ioo (-b) b) := by simp
   -- The `L²` norm of `f` is its `L²` norm on the window, where it is dominated by `ι ∘ u`.
-  have hind : (f : ℝ → H) =ᵐ[μ₀] (Ioo (-b) b).indicator f := by
-    filter_upwards [ae_top_iff.2 hf₀] with s hs
-    by_cases hsW : s ∈ Ioo (-b) b
-    · rw [indicator_of_mem hsW]
-    · rw [indicator_of_notMem hsW, hs hsW]
   have hR : ∀ᵐ s ∂volume.restrict (Ioo (-b) b), ‖f s‖ ≤
       c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u s‖ := by
     have h₂ := ae_restrict_of_ae (s := Ioo (-b) b) (ι.coeFn_compLpL (μ := μ₀) (prev _ u))
@@ -144,8 +140,8 @@ private theorem norm_le_mul_norm_restrictBaseL {b c : ℝ} (hc : 0 ≤ c)
     rwa [h₁, h₂]
   have hle := eLpNorm_le_mul_eLpNorm_of_ae_le_mul
     ((Lp.aestronglyMeasurable f).restrict.mono_measure (by rw [hμW])) hR 2
-  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hind,
-    eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_Ioo.nullMeasurableSet, hμW]
+  rw [Lp.norm_def, Lp.norm_def, ← eLpNorm_restrict_eq_of_ae_compl_eq_zero
+    measurableSet_Ioo.nullMeasurableSet (ae_top_iff.2 hf₀), hμW]
   refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _))
     hle).trans_eq ?_
   rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hc]
