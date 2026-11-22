@@ -249,9 +249,10 @@ theorem exists_topRegularOverMostPolyads_scheduledRank [Finite κ] [Fintype κ�
     H.exists_strong_topRegularOverMostPolyads S (topRegularEnergyGap_pos (Nat.card κ) hδ hε)
       (fun _ ↦ topRegularFineTolerance_pos hδ) (fun _ ↦ topRegularFineProportion_pos hδ hε) r
   exact ⟨C, π, hCcard, hCV, hπ, hrev, hCpol,
-    hDreg.of_polyadEnergy_sub_le_div_sq (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
+    hDreg.of_polyadEnergy_sub_le_topRegularEnergyGap
+      (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
       (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f
-      (fun p ↦ (hf p).symm) hgap hδ hε⟩
+      (fun p ↦ (hf p).symm) hgap hδ⟩
 
 end Colored3Graph
 

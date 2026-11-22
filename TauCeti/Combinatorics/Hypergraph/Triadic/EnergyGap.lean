@@ -68,7 +68,7 @@ one instance of the refinement hypothesis.
   transfer under vertex-partition refinement with pair-color edits.
 * `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_polyadEnergy_sub_le`,
   `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_polyadEnergy_sub_le`, and
-  `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_polyadEnergy_sub_le_div_sq`:
+  `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_polyadEnergy_sub_le_topRegularEnergyGap`:
   exact-refinement specializations, including the scheduled-rank calibration.
 * `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_sum_abs_relativeDensity_sub_le` and
   `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_sum_abs_relativeDensity_sub_le`: transfer when
@@ -459,7 +459,7 @@ variable {κ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
 `topRegularFineTolerance δ` and `topRegularFineProportion δ ε` across an energy gap at most
 `topRegularEnergyGap (Nat.card κ) δ ε`, yielding `(δ, r)`-top regularity outside an `ε`-proportion
 of the injective triples. -/
-theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_div_sq [Fintype κ] {δ ε : ℝ}
+theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_topRegularEnergyGap [Fintype κ] {δ ε : ℝ}
     (h : H.TopRegularOverMostPolyads D (topRegularFineTolerance δ)
       (topRegularFineProportion δ ε) r)
     (hC : C.IsPolyadDecomposition) (hD : D.IsPolyadDecomposition)
@@ -468,12 +468,12 @@ theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_div_sq [Fintype κ] {δ
     (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
     (hgap : H.polyadEnergy D.skeleton - H.polyadEnergy C.skeleton ≤
       topRegularEnergyGap (Nat.card κ) δ ε)
-    (hδ : 0 < δ) (hε : 0 < ε) :
+    (hδ : 0 < δ) :
     H.TopRegularOverMostPolyads C δ ε r := by
   rw [topRegularEnergyGap_def] at hgap
   set q : ℝ := (Nat.card κ : ℝ)
   set γ := topRegularFineProportion δ ε / (q + 1)
-  have hγ : 0 < γ := div_pos (topRegularFineProportion_pos hδ hε) (by positivity)
+  have hγ : 0 ≤ γ := div_nonneg h.nonneg (by positivity)
   have hη : topRegularFineTolerance δ < δ ^ 2 := by
     rw [topRegularFineTolerance_def]
     linarith [pow_pos hδ 2]
@@ -483,15 +483,15 @@ theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_div_sq [Fintype κ] {δ
   -- The exceptional proportion is at most `(ε δ² / 4 + √(q γ²)) / (δ² / 2) ≤ ε`.
   rw [← Nat.card_eq_fintype_card, div_le_iff₀ (sub_pos.2 hη)]
   have hsqrt : √(q * γ ^ 2) ≤ q * γ := by
-    rw [Real.sqrt_mul (Nat.cast_nonneg _), Real.sqrt_sq hγ.le]
+    rw [Real.sqrt_mul (Nat.cast_nonneg _), Real.sqrt_sq hγ]
     exact mul_le_mul_of_nonneg_right
       (Real.sqrt_le_self_iff.2
         ((em (Nat.card κ = 0)).imp Nat.cast_eq_zero.2 Nat.one_le_cast_iff_ne_zero.2))
-      hγ.le
+      hγ
   have hqγ : q * γ ≤ topRegularFineProportion δ ε := by
     dsimp only [γ]
     rw [mul_div_left_comm]
-    exact mul_le_of_le_one_right (topRegularFineProportion_pos hδ hε).le
+    exact mul_le_of_le_one_right h.nonneg
       ((div_le_one₀ (by positivity)).2 (le_add_of_nonneg_right zero_le_one))
   rw [topRegularFineProportion_def, topRegularFineTolerance_def] at hqγ ⊢
   linarith

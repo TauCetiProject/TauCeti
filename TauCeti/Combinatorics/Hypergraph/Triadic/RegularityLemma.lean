@@ -159,8 +159,9 @@ theorem le_strongTriadicRegularityBound {F : ℕ → ℝ} {g : ℝ} (hg : 0 < g)
     _ ≤ pairApproximationBound 1 (g / 24) F l₀ :=
         pairApproximationPartsBound_le_pairApproximationBound 1 (by positivity) hF l₀
     _ ≤ max (pairApproximationBound 1 (g / 24) F l₀) 6 := le_max_left _ _
-    _ ≤ strongTriadicRegularityBound F g η μ r l₀ :=
-        le_iterate_strongTriadicRegularityStep F g η μ r _ _
+    _ ≤ strongTriadicRegularityBound F g η μ r l₀ := by
+        rw [strongTriadicRegularityBound_def]
+        exact le_iterate_strongTriadicRegularityStep F g η μ r _ _
 
 /-- `strongTriadicRegularityBound` is monotone in the starting vertex-cell count `l₀`. -/
 theorem strongTriadicRegularityBound_mono (F : ℕ → ℝ) (g : ℝ) (η μ : ℕ → ℝ) (r : ℕ → ℕ) :
@@ -457,9 +458,10 @@ theorem exists_lowerSkeletonRegular_topRegularOverMostPolyads_scheduledRank [Fin
       (fun _ ↦ topRegularFineTolerance_pos hδ) (fun _ ↦ topRegularFineProportion_pos hδ hε)
       r t₀ hV
   exact ⟨C, hcells, hCt, hCm, hCreg, hCpol,
-    hDreg.of_polyadEnergy_sub_le_div_sq (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
+    hDreg.of_polyadEnergy_sub_le_topRegularEnergyGap
+      (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
       (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) hDV.le f
-      (fun p ↦ (hf p).symm) hgap hδ hε⟩
+      (fun p ↦ (hf p).symm) hgap hδ⟩
 
 end Colored3Graph
 
