@@ -219,7 +219,7 @@ theorem exists_isAlmostSplit_of_not_projective [Small.{w} A] (M : ModuleCat.{w} 
   obtain ⟨E, _, _, _, -, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
   obtain ⟨Y, i, p, h, hY, hS⟩ := exists_isAlmostSplit_arTranslate.{u, v, w} R E hE (F.obj M)
     (F.indecomposable_obj_of_map_bijective hiM ((fullyFaithfulUliftFunctor A).map_bijective M M))
-    fun hp ↦ hpM ((projective_uliftFunctor_obj_iff.{v, w, max u v} M).mp hp)
+    fun hp ↦ hpM ((projective_of_ulift_iff.{v, w, max u v} M).mp hp)
   have : Module.Finite A (arTranslate R E (F.obj M)) := Module.Finite.of_injective i.hom
     ((ModuleCat.mono_iff_injective i).mp hS.shortExact.mono_f)
   obtain ⟨X₀, _, ⟨e₁⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} (arTranslate R E (F.obj M))
@@ -253,7 +253,7 @@ theorem exists_isAlmostSplit_of_not_injective [Small.{w} A] (N : ModuleCat.{w} A
   obtain ⟨E, _, _, _, -, hE⟩ := exists_injective_finite_length_quotient_linearMap_eq_one R
   obtain ⟨M, _, hiM, hpM, ⟨e⟩⟩ := exists_nonempty_iso_arTranslate.{u, v, w} hE (F.obj N)
     (F.indecomposable_obj_of_map_bijective hiN ((fullyFaithfulUliftFunctor A).map_bijective N N))
-    fun h ↦ hinj ((injective_uliftFunctor_obj_iff.{v, w, max u v} N).mp h)
+    fun h ↦ hinj ((injective_of_ulift_iff.{v, w, max u v} N).mp h)
   obtain ⟨Y, i, p, h, hY, hS⟩ := exists_isAlmostSplit_arTranslate R E hE M hiM hpM
   obtain ⟨Y₀, _, ⟨e₂⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} Y
   obtain ⟨M₀, _, ⟨e₃⟩⟩ := exists_uliftFunctor_obj_iso.{v, w, max u v} M
