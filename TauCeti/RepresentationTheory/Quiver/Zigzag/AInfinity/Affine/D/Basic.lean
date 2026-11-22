@@ -112,7 +112,7 @@ theorem affineDWalk_fst_eq_snd {n : ℕ} (hn : 4 ≤ n) (i : Fin 4) :
   fin_cases i <;> rfl
 
 /-- The matrix product of `affineDMatrix` along `affineDWalk` has trace `1`. -/
-private theorem trace_affineDMatrix_affineDWalk (k : Type w) [CommRing k] {n : ℕ} (hn : 4 ≤ n) :
+theorem trace_affineDMatrix_affineDWalk (k : Type w) [CommRing k] {n : ℕ} (hn : 4 ≤ n) :
     Matrix.trace (List.ofFn fun t ↦
       affineDMatrix k n (affineDWalk hn t).fst (affineDWalk hn t).snd).prod = 1 := by
   have htr := trace_affineDMatrix_backtracks k hn

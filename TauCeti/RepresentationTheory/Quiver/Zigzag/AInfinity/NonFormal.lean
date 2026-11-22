@@ -195,8 +195,37 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even
     (hodd : ¬Even (∑ w, f (List.ofFn fun t ↦ β (w t)).prod * c w)) :
     ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal :=
   not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_sum_mul hm
-    (List.apply_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
+    (List.apply_prod_ofFn_snoc β f hf)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth β f _ id SimpleGraph.Dart.symm
+      (hβ v) p u)
     c hc hodd
+
+/-- **Quartic non-formality from a linear pairing, over any nontrivial commutative ring.** If `𝒜`
+is a minimal `A∞` algebra with the grading and binary operation of `𝒵` and `m₃ = 0`, and a linear
+functional `P` on suspended Hochschild cochains vanishes on degree-zero coboundaries, maps formal
+quartic obstructions into `2 k`, and evaluates to a unit on the quartic obstruction of `𝒜`, then
+`𝒜` is not formal. -/
+private theorem not_isFormal_of_isUnit_pairing_four [Nontrivial k]
+    {𝒜 : AInfinityAlgebra k (nonisolatedZigzagQuotient k G)} (h𝒜 : 𝒜.IsMinimal)
+    (hG : 𝒜.grading = (𝒵).grading) (h₂ : 𝒜.m 2 = (𝒵).m 2) (h₃ : 𝒜.m 3 = 0)
+    (P : (ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
+      nonisolatedZigzagQuotient k G) →ₗ[k] k)
+    (hcob : ∀ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
+        nonisolatedZigzagQuotient k G,
+      LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+          ((𝒵).grading.shift 1).piece 0 → P ((𝒵).hochschildDifferential 0 φ) = 0)
+    (heven : 𝒜.IsFormal → ∃ y : k, P (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩) = 2 * y)
+    (hu : IsUnit (P (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩))) :
+    ¬𝒜.IsFormal := by
+  by_cases h2 : IsUnit (2 : k)
+  · let _ := h2.invertible
+    exact h𝒜.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four
+      isMinimal_zigzagStrictAInfinityAlgebra
+      (fun _ hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG h₂ h₃
+      fun ⟨φ, hφ, hφc⟩ ↦ hu.ne_zero (hφc ▸ hcob φ hφ)
+  · intro hF
+    obtain ⟨y, hy⟩ := heven hF
+    exact h2 (isUnit_of_dvd_unit ⟨y, hy⟩ hu)
 
 /-- **Quartic non-formality from a balanced backtrack pairing, over any nontrivial commutative
 ring.** If `𝒜` is a minimal `A∞` algebra with the grading and binary operation of `𝒵` and `m₃ = 0`,
@@ -210,18 +239,12 @@ theorem not_isFormal_of_isUnit_zigzagBacktrackPairing
     {a : Matrix G.Dart G.Dart k} (ha : a.IsSymm)
     (hhead : ∀ d e, d.snd ≠ e.snd → a d e = 0) (hbal : ∀ e, ∑ d, a d e = a e.symm e.symm)
     (hu : IsUnit (zigzagBacktrackPairing hns a (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩))) :
-    ¬𝒜.IsFormal := by
-  by_cases h2 : IsUnit (2 : k)
-  · let _ := h2.invertible
-    exact h𝒜.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four
-      isMinimal_zigzagStrictAInfinityAlgebra
-      (fun _ hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG h₂ h₃
-      fun ⟨φ, hφ, hφc⟩ ↦ hu.ne_zero
-        (hφc ▸ zigzagBacktrackPairing_hochschildDifferential_eq_zero ha hhead hbal hφ)
-  · intro hF
-    obtain ⟨y, hy⟩ := exists_zigzagBacktrackPairing_obstruction_eq_two_mul_of_isFormal
-      h𝒜 hG h₂ h₃ hF ha hhead hbal
-    exact h2 (isUnit_of_dvd_unit ⟨y, hy⟩ hu)
+    ¬𝒜.IsFormal :=
+  not_isFormal_of_isUnit_pairing_four h𝒜 hG h₂ h₃ (zigzagBacktrackPairing hns a)
+    (fun _ hφ ↦ zigzagBacktrackPairing_hochschildDifferential_eq_zero ha hhead hbal hφ)
+    (fun hF ↦ exists_zigzagBacktrackPairing_obstruction_eq_two_mul_of_isFormal
+      h𝒜 hG h₂ h₃ hF ha hhead hbal)
+    hu
 
 /-- **Quartic non-formality from an anticyclic signless word pairing, over any nontrivial
 commutative ring.** If `𝒜` is a minimal `A∞` algebra with the grading and binary operation of `𝒵`
@@ -237,17 +260,12 @@ theorem not_isFormal_of_isUnit_zigzagWordPairing_four
     (hrel : ∀ (p : Fin 3) (u : Fin 2 → G.Dart) (v : V),
       ∑ d : G.Dart with d.snd = v, a (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u)) = 0)
     (hu : IsUnit (zigzagWordPairing hns 2 a (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩))) :
-    ¬𝒜.IsFormal := by
-  by_cases h2 : IsUnit (2 : k)
-  · let _ := h2.invertible
-    exact h𝒜.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction_four
-      isMinimal_zigzagStrictAInfinityAlgebra
-      (fun _ hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG h₂ h₃
-      (not_exists_hochschildDifferential_eq_of_zigzagWordPairing_ne_zero hrot hrel hu.ne_zero)
-  · intro hF
-    obtain ⟨y, hy⟩ := exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal
-      h𝒜 hG h₂ (m := 1) (fun r hr1 hr2 ↦ (by omega : r = 3) ▸ h₃) hF hrot hrel
-    exact h2 (isUnit_of_dvd_unit ⟨y, hy⟩ hu)
+    ¬𝒜.IsFormal :=
+  not_isFormal_of_isUnit_pairing_four h𝒜 hG h₂ h₃ (zigzagWordPairing hns 2 a)
+    (fun _ hφ ↦ zigzagWordPairing_hochschildDifferential_eq_zero hrot hrel hφ)
+    (fun hF ↦ exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal
+      h𝒜 hG h₂ (m := 1) (fun r hr1 hr2 ↦ (by omega : r = 3) ▸ h₃) hF hrot hrel)
+    hu
 
 /-- **Quartic non-formality from an anticyclic functional, over any nontrivial commutative ring.**
 When `β` satisfies the signless relations, `f` is anticyclic on the `β e`, and
@@ -265,7 +283,9 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four
     (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading c hc)
     (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
     (zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by decide) (by decide))
-    (List.apply_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
+    (List.apply_prod_ofFn_snoc β f hf)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth β f _ id SimpleGraph.Dart.symm
+      (hβ v) p u)
     (by
       rw [zigzagWordPairing_obstruction (by decide : 1 ≤ 2) _ c hc]
       exact ((Units.isUnit _).map (Int.castRingHom k)).mul hu)

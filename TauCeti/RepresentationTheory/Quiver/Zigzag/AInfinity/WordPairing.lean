@@ -284,25 +284,6 @@ variable {B : Type*} [Semiring B] [Module k B]
 
 variable [Fintype G.Dart] [DecidableEq V]
 
-omit [Finite V] in
-/-- When `β : G.Dart → B` satisfies the signless preprojective relation at every vertex, the
-product weight induced by any linear functional `f : B →ₗ[k] k` satisfies the signless relation in
-every consecutive pair of positions. -/
-theorem sum_apply_prod_ofFn_insertNth_insertNth {n : ℕ} (β : G.Dart → B)
-    (hβ : ∀ v : V, ∑ d : G.Dart with d.snd = v, β d * β d.symm = 0)
-    (f : B →ₗ[k] k) (p : Fin (n + 1)) (u : Fin n → G.Dart) (v : V) :
-    ∑ d : G.Dart with d.snd = v,
-      f (List.ofFn fun t ↦
-        β ((Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u) : Fin (n + 2) → G.Dart) t)).prod =
-      0 := by
-  obtain ⟨L, R, h⟩ := List.exists_prod_ofFn_insertNth_insertNth β p u
-  simp_rw [h]
-  calc ∑ d : G.Dart with d.snd = v, f (L * β d * β d.symm * R)
-      = f (L * (∑ d : G.Dart with d.snd = v, β d * β d.symm) * R) := by
-        rw [Finset.mul_sum, Finset.sum_mul, map_sum]
-        simp only [mul_assoc]
-    _ = 0 := by rw [hβ, mul_zero, zero_mul, map_zero]
-
 /-- **Weights from an anticyclic functional.** Let `β` send each dart to an element of a semiring
 `B` with a `k`-module structure, such that the signless relation
 `∑_{d.snd = v} β d * β d.symm = 0` holds at every vertex `v`, and let `f` be a linear functional on
@@ -322,7 +303,10 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic {n : ℕ}
     zigzagWordPairing hns n (fun w ↦ f (List.ofFn fun t ↦ β (w t)).prod)
       ((𝒵).hochschildDifferential 0 φ) = 0 :=
   zigzagWordPairing_hochschildDifferential_eq_zero
-    (List.apply_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f) hφ
+    (List.apply_prod_ofFn_snoc β f hf)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth β f _ id SimpleGraph.Dart.symm
+      (hβ v) p u)
+    hφ
 
 /-- **Higher loop operations detected by an anticyclic functional are not coboundaries.** Let `β`
 satisfy the signless relations `∑_{d.snd = v} β d * β d.symm = 0` and let `f` be a linear

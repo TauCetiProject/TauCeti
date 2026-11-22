@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.List.OfFn
 
 /-!
@@ -16,7 +19,10 @@ In a monoid, the product of the letters `β (w 0) ⋯ β (w (n + 1))` of a word 
 word `u` of length `n` by inserting two consecutive letters `d, e` at the positions `p` and
 `p + 1` factors as `L * β d * β e * R`, where `L` and `R` depend only on `u` and `p`
 (`List.exists_prod_ofFn_insertNth_insertNth`). This is how a relation among the products
-`β d * β e` passes to the products of all words carrying the letters `d, e` in a fixed position.
+`β d * β e` passes to the products of all words carrying the letters `d, e` in a fixed position:
+in particular, any sum `∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0` in a semiring annihilates the induced sum
+after inserting `g₁ i` and `g₂ i` into any word and applying an additive homomorphism
+(`List.sum_apply_prod_ofFn_insertNth_insertNth`).
 Similarly, moving the first letter of a word to the end corresponds to moving its factor from the
 left to the right (`List.apply_prod_ofFn_snoc`).
 
@@ -63,6 +69,24 @@ theorem exists_prod_ofFn_insertNth_insertNth {D M : Type*} [Monoid M] (β : D �
       rw [← Fin.cons_self_tail u, Fin.insertNth_succ_cons, ← Fin.succ_castSucc,
         Fin.insertNth_succ_cons, ofFn_succ, prod_cons]
       simp only [Fin.cons_zero, Fin.cons_succ, h, mul_assoc]
+
+/-- Summing an additive homomorphism of the word product obtained by inserting consecutive letters
+`g₁ i` and `g₂ i` at positions `p` and `p + 1` vanishes whenever `∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0`.
+-/
+theorem sum_apply_prod_ofFn_insertNth_insertNth {D ι B C F : Type*} [Semiring B]
+    [AddCommMonoid C] [FunLike F B C] [AddMonoidHomClass F B C]
+    (β : D → B) (f : F) (s : Finset ι) (g₁ g₂ : ι → D)
+    (hβ : ∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0) {n : ℕ} (p : Fin (n + 1)) (u : Fin n → D) :
+    ∑ i ∈ s, f (ofFn fun t ↦
+      β ((Fin.insertNth p.castSucc (g₁ i) (Fin.insertNth p (g₂ i) u) :
+        Fin (n + 2) → D) t)).prod = 0 := by
+  obtain ⟨L, R, h⟩ := exists_prod_ofFn_insertNth_insertNth β p u
+  simp_rw [h]
+  calc ∑ i ∈ s, f (L * β (g₁ i) * β (g₂ i) * R)
+      = f (L * (∑ i ∈ s, β (g₁ i) * β (g₂ i)) * R) := by
+        rw [Finset.mul_sum, Finset.sum_mul, map_sum]
+        simp only [mul_assoc]
+    _ = 0 := by rw [hβ, mul_zero, zero_mul, map_zero]
 
 /-- Moving the first letter of a word to the end applies `g` to the image of its product under a
 map `f` satisfying `f (y * β e) = g (f (β e * y))`. -/

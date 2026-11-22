@@ -106,43 +106,27 @@ local notation "𝔞" d:max => zigzagMk k G (ofArrow (arrow G (SimpleGraph.Dart.
 
 section TraceParity
 
-/-- A homogeneous cochain `ψ` of suspended degree zero maps any nonempty subword of degree-one
-elements into path length one. -/
-private theorem apply_subword_mem_zigzagIntegerGrade_one
-    {ψ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
-    (hψ : LinearMap.IsHomogeneous ψ (gradedPiece ((𝒵).grading.shift 1))
-      ((𝒵).grading.shift 1).piece 0)
-    {N : ℕ} {x : Fin N → nonisolatedZigzagQuotient k G}
-    (hx : ∀ i, x i ∈ zigzagIntegerGrade k G 1) {p d : ℕ} (hd : 0 < d) (hpd : p + d ≤ N) :
-    ψ (subword k x p d) ∈ zigzagIntegerGrade k G 1 := by
-  rw [subword_eq_of_tprod k x hd hpd]
-  have h := hψ.map_mem (mem_gradedPiece_of_tprod ((𝒵).grading.shift 1) (n := d) hd
-    (fun j ↦ x ⟨p + j.val, by omega⟩) (fun _ ↦ 0) fun j ↦ by
-      rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, zero_add]
-      exact hx _)
-  simpa [InternalGrading.shift_piece] using h
-
 /-- For any homogeneous cochain `ψ` of suspended degree zero, the trace of the square of `ψ` on a
-nonempty subword of arrows is even. -/
+subword of arrows is even. -/
 private theorem even_zigzagTrace_mul_self_apply_subword
     {ψ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
     (hψ : LinearMap.IsHomogeneous ψ (gradedPiece ((𝒵).grading.shift 1))
       ((𝒵).grading.shift 1).piece 0)
-    {N : ℕ} (w : Fin N → G.Dart) {p d : ℕ} (hd : 0 < d) (hpd : p + d ≤ N) :
+    {N : ℕ} (w : Fin N → G.Dart) (p d : ℕ) :
     Even (zigzagTrace k G hns
       (ψ (subword k (fun t ↦ 𝔞 (w t)) p d) * ψ (subword k (fun t ↦ 𝔞 (w t)) p d))) :=
   even_zigzagTrace_mul_self k G hns fun i ↦
     zigzagBasis_coord_vertex_eq_zero_of_mem_zigzagIntegerGrade k G hns i one_ne_zero
-      (apply_subword_mem_zigzagIntegerGrade_one hψ
-        (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) hd hpd)
+      (zigzagStrictAInfinityAlgebra_apply_subword_mem_zigzagIntegerGrade_one hψ
+        (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) p d)
 
 /-- For a homogeneous cochain `ψ` of suspended degree zero, the trace of the binary Taylor
-operation of `𝒵` on two nonempty subwords of arrows is the negated trace of their product. -/
+operation of `𝒵` on two subwords of arrows is the negated trace of their product. -/
 private theorem zigzagTrace_taylor_of_tprod_two_apply_subword
     {ψ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
     (hψ : LinearMap.IsHomogeneous ψ (gradedPiece ((𝒵).grading.shift 1))
       ((𝒵).grading.shift 1).piece 0)
-    {N : ℕ} (w : Fin N → G.Dart) {p₁ d₁ p₂ d₂ : ℕ} (hd₁ : 0 < d₁) (hpd₁ : p₁ + d₁ ≤ N) :
+    {N : ℕ} (w : Fin N → G.Dart) (p₁ d₁ p₂ d₂ : ℕ) :
     zigzagTrace k G hns ((𝒵).taylor (of k _ (2 : ℕ+)
         (PiTensorProduct.tprod k
           ![ψ (subword k (fun t ↦ 𝔞 (w t)) p₁ d₁),
@@ -153,9 +137,41 @@ private theorem zigzagTrace_taylor_of_tprod_two_apply_subword
     (𝒵).grading.koszulTwist_one_apply_of_mem (e := 1)
       (by
         rw [zigzagStrictAInfinityAlgebra_grading_piece]
-        exact apply_subword_mem_zigzagIntegerGrade_one hψ
-          (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) hd₁ hpd₁)]
+        exact zigzagStrictAInfinityAlgebra_apply_subword_mem_zigzagIntegerGrade_one hψ
+          (fun _ ↦ zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _) p₁ d₁)]
   simp
+
+/-- A formal minimal `A∞` algebra with the grading and product of `𝒵` and vanishing operations in
+arities `3, …, n + 1` admits a homogeneous cochain `ψ` of suspended degree zero decomposing the
+trace of its obstruction `m_{n+2}` on arrow words into a Hochschild coboundary minus the quadratic
+cut sum. -/
+private theorem exists_obstruction_zigzagTrace_eq_sub_sum_of_isFormal
+    {𝒜 : AInfinityAlgebra k (nonisolatedZigzagQuotient k G)} (h𝒜 : 𝒜.IsMinimal)
+    (hG : 𝒜.grading = (𝒵).grading) (h₂ : 𝒜.m 2 = (𝒵).m 2) {n : ℕ}
+    (hlow : ∀ r, 3 ≤ r → r ≤ n + 1 → 𝒜.m r = 0) (hF : 𝒜.IsFormal) :
+    ∃ ψ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G,
+      LinearMap.IsHomogeneous ψ (gradedPiece ((𝒵).grading.shift 1))
+          ((𝒵).grading.shift 1).piece 0 ∧
+        ∀ w : Fin (n + 2) → G.Dart,
+          zigzagTrace k G hns (𝒜.obstruction 𝒵 ⟨n + 2, by omega⟩
+              (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) =
+            zigzagTrace k G hns ((𝒵).hochschildDifferential 0 ψ
+              (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) -
+            ∑ d ∈ Finset.Icc 2 n, zigzagTrace k G hns
+              (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 d) *
+                ψ (subword k (fun t ↦ 𝔞 (w t)) d (n + 2 - d))) := by
+  have hm𝒵 : ∀ r, 3 ≤ r → (𝒵).m r = 0 := fun _ hr ↦
+    zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)
+  have hZ := isMinimal_zigzagStrictAInfinityAlgebra (k := k) (hns := hns)
+  obtain ⟨f, hf⟩ := (h𝒜.isFormal_iff_exists_isIso hZ hm𝒵 hG h₂).1 hF
+  obtain ⟨ψ, hψ, -, hdec⟩ :=
+    hZ.exists_obstruction_of_tprod_eq_hochschildDifferential_add_sum_of_isIso
+      hm𝒵 hG h₂ (n := n) hlow hf
+  refine ⟨ψ, hψ, fun w ↦ ?_⟩
+  rw [hdec, map_add, map_sum,
+    Finset.sum_congr rfl fun d _ ↦ zigzagTrace_taylor_of_tprod_two_apply_subword hψ w 0 d d
+      (n + 2 - d),
+    Finset.sum_neg_distrib, sub_eq_add_neg]
 
 end TraceParity
 
@@ -235,7 +251,7 @@ private theorem exists_sum_word_cut_mid_eq_two_mul {m : ℕ}
   · have heq := (hsw0 w).symm
     rw [hw] at heq
     rw [AddSubmonoid.mem_even, heq]
-    exact (even_zigzagTrace_mul_self_apply_subword hψ w (by omega) (by omega)).mul_left _
+    exact (even_zigzagTrace_mul_self_apply_subword hψ w 0 (m + 1)).mul_left _
   · have haτ : a (τ w) = (-1 : k) ^ (m + 1) * a w := apply_comp_finCycle_of_anticyclic hrot rFin w
     rw [AddSubmonoid.mem_even, haτ, hsw0, hsw1,
       zigzagTrace_mul_comm k G hns (ψ (subword k (fun t ↦ 𝔞 (w t)) (m + 1) _)),
@@ -284,34 +300,10 @@ theorem exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal [DecidableEq
       ∑ d : G.Dart with d.snd = v, a (Fin.insertNth p.castSucc d (Fin.insertNth p d.symm u)) = 0) :
     ∃ y : k, zigzagWordPairing hns (2 * m) a
       (𝒜.obstruction 𝒵 ⟨2 * m + 2, by omega⟩) = 2 * y := by
-  have hm𝒵 : ∀ r, 3 ≤ r → (𝒵).m r = 0 := fun _ hr ↦
-    zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)
-  have hZ := isMinimal_zigzagStrictAInfinityAlgebra (k := k) (hns := hns)
-  obtain ⟨f, hf⟩ := (h𝒜.isFormal_iff_exists_isIso hZ hm𝒵 hG h₂).1 hF
-  obtain ⟨ψ, hψ, -, hdec⟩ :=
-    hZ.exists_obstruction_of_tprod_eq_hochschildDifferential_add_sum_of_isIso
-      hm𝒵 hG h₂ (n := 2 * m) hlow hf
+  obtain ⟨ψ, hψ, heval⟩ := exists_obstruction_zigzagTrace_eq_sub_sum_of_isFormal h𝒜 hG h₂ hlow hF
   have hcob := zigzagWordPairing_hochschildDifferential_eq_zero (hns := hns) hrot hrel hψ
   rw [zigzagWordPairing_apply] at hcob ⊢
-  have hterm (w : Fin (2 * m + 2) → G.Dart) :
-      a w * zigzagTrace k G hns (𝒜.obstruction 𝒵 ⟨2 * m + 2, by omega⟩
-          (of k _ ⟨2 * m + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) =
-        a w * zigzagTrace k G hns ((𝒵).hochschildDifferential 0 ψ
-          (of k _ ⟨2 * m + 2, by omega⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (w t)))) -
-        ∑ d ∈ Finset.Icc 2 (2 * m), a w * zigzagTrace k G hns
-          (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 d) *
-            ψ (subword k (fun t ↦ 𝔞 (w t)) d (2 * m + 2 - d))) := by
-    rw [hdec, map_add, map_sum, mul_add, Finset.mul_sum]
-    have hneg : ∀ d ∈ Finset.Icc 2 (2 * m),
-        a w * zigzagTrace k G hns ((𝒵).taylor (of k _ (2 : ℕ+)
-          (PiTensorProduct.tprod k ![ψ (subword k (fun t ↦ 𝔞 (w t)) 0 d),
-            ψ (subword k (fun t ↦ 𝔞 (w t)) d (2 * m + 2 - d))]))) =
-        -(a w * zigzagTrace k G hns (ψ (subword k (fun t ↦ 𝔞 (w t)) 0 d) *
-          ψ (subword k (fun t ↦ 𝔞 (w t)) d (2 * m + 2 - d)))) := fun d hd ↦ by
-      have hd' := Finset.mem_Icc.1 hd
-      rw [zigzagTrace_taylor_of_tprod_two_apply_subword hψ w (by omega) (by omega), mul_neg]
-    rw [Finset.sum_congr rfl hneg, Finset.sum_neg_distrib, sub_eq_add_neg]
-  simp_rw [Finset.sum_congr rfl fun w _ ↦ hterm w, Finset.sum_sub_distrib, hcob, zero_sub]
+  simp_rw [heval, mul_sub, Finset.mul_sum, Finset.sum_sub_distrib, hcob, zero_sub]
   rw [Finset.sum_comm]
   obtain ⟨y, hy⟩ := exists_sum_Icc_word_cut_eq_two_mul hrot hψ
   exact ⟨-y, by rw [hy]; ring⟩
@@ -328,7 +320,9 @@ theorem exists_zigzagWordPairing_obstruction_eq_two_mul_of_anticyclic_of_isForma
     ∃ y : k, zigzagWordPairing hns (2 * m) (fun w ↦ f (List.ofFn fun t ↦ β (w t)).prod)
       (𝒜.obstruction 𝒵 ⟨2 * m + 2, by omega⟩) = 2 * y :=
   exists_zigzagWordPairing_obstruction_eq_two_mul_of_isFormal h𝒜 hG h₂ hlow hF
-    (List.apply_prod_ofFn_snoc β f hf) (sum_apply_prod_ofFn_insertNth_insertNth β hβ f)
+    (List.apply_prod_ofFn_snoc β f hf)
+    (fun p u v ↦ List.sum_apply_prod_ofFn_insertNth_insertNth β f _ id SimpleGraph.Dart.symm
+      (hβ v) p u)
 
 end WordParity
 
@@ -364,7 +358,7 @@ private theorem exists_sum_dart_pair_cut_eq_two_mul
   · obtain ⟨d, e⟩ := p
     obtain rfl : d = e := (Prod.ext_iff.1 hp).2
     rw [AddSubmonoid.mem_even, ← hsw0 d d]
-    exact (even_zigzagTrace_mul_self_apply_subword hψ (W d d) (by decide) (by decide)).mul_left _
+    exact (even_zigzagTrace_mul_self_apply_subword hψ (W d d) 0 2).mul_left _
   · obtain ⟨d, e⟩ := p
     rw [AddSubmonoid.mem_even]
     refine ⟨a d e * zigzagTrace k G hns
@@ -384,26 +378,11 @@ theorem exists_zigzagBacktrackPairing_obstruction_eq_two_mul_of_isFormal
     (hF : 𝒜.IsFormal) {a : Matrix G.Dart G.Dart k} (ha : a.IsSymm)
     (hhead : ∀ d e, d.snd ≠ e.snd → a d e = 0) (hbal : ∀ e, ∑ d, a d e = a e.symm e.symm) :
     ∃ y : k, zigzagBacktrackPairing hns a (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩) = 2 * y := by
-  have hm𝒵 : ∀ r, 3 ≤ r → (𝒵).m r = 0 := fun _ hr ↦
-    zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)
-  have hZ := isMinimal_zigzagStrictAInfinityAlgebra (k := k) (hns := hns)
-  obtain ⟨f, hf⟩ := (h𝒜.isFormal_iff_exists_isIso hZ hm𝒵 hG h₂).1 hF
-  obtain ⟨ψ, hψ, -, hdec⟩ :=
-    hZ.exists_obstruction_of_tprod_eq_hochschildDifferential_add_sum_of_isIso hm𝒵 hG h₂
-      (n := 2) (fun r hr1 hr2 ↦ by obtain rfl : r = 3 := (by omega); exact h₃) hf
+  obtain ⟨ψ, hψ, heval⟩ := exists_obstruction_zigzagTrace_eq_sub_sum_of_isFormal h𝒜 hG h₂
+    (n := 2) (fun r hr1 hr2 ↦ by obtain rfl : r = 3 := (by omega); exact h₃) hF
   have hcob := zigzagBacktrackPairing_hochschildDifferential_eq_zero (hns := hns) ha hhead hbal hψ
   rw [zigzagBacktrackPairing_apply] at hcob ⊢
-  have heval (x : Fin 4 → G.Dart) :
-      zigzagTrace k G hns (𝒜.obstruction 𝒵 ⟨4, by norm_num⟩
-          (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (x t)))) =
-        zigzagTrace k G hns ((𝒵).hochschildDifferential 0 ψ
-          (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k fun t ↦ 𝔞 (x t)))) -
-        zigzagTrace k G hns (ψ (subword k (fun t ↦ 𝔞 (x t)) 0 2) *
-          ψ (subword k (fun t ↦ 𝔞 (x t)) 2 2)) := by
-    rw [hdec (fun t ↦ 𝔞 (x t))]
-    simp only [Finset.Icc_self, Finset.sum_singleton, Nat.add_sub_cancel]
-    rw [map_add, zigzagTrace_taylor_of_tprod_two_apply_subword hψ x (by decide) (by decide),
-      sub_eq_add_neg]
+  simp only [Finset.Icc_self, Finset.sum_singleton, Nat.add_sub_cancel] at heval
   have hswap2 (d e : G.Dart) : (fun t : Fin 4 ↦ zigzagBacktrackWalk G d.symm e t) =
       fun t ↦ zigzagBacktrackWalk G e.symm d (t + 2) :=
     funext fun t ↦ by fin_cases t <;> simp [zigzagBacktrackWalk_def]

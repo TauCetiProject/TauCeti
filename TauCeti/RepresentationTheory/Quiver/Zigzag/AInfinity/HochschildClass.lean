@@ -243,6 +243,22 @@ private theorem taylor_of_tprod_two (x : Fin 2 → nonisolatedZigzagQuotient k G
   rw [AInfinityAlgebra.taylor_of_tprod, zigzagStrictAInfinityAlgebra_m_two_apply]
   norm_num
 
+/-- A homogeneous cochain `φ` of suspended degree zero maps any subword of elements of path length
+one into path length one. -/
+theorem zigzagStrictAInfinityAlgebra_apply_subword_mem_zigzagIntegerGrade_one
+    {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
+    (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+      ((𝒵).grading.shift 1).piece 0)
+    {N : ℕ} {x : Fin N → nonisolatedZigzagQuotient k G}
+    (hx : ∀ i, x i ∈ zigzagIntegerGrade k G 1) (p d : ℕ) :
+    φ (subword k x p d) ∈ zigzagIntegerGrade k G 1 := by
+  have h := hφ.map_mem (subword_mem_gradedPiece x (fun _ ↦ 0) (fun i ↦ by
+    rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, zero_add]
+    exact hx i) p d)
+  rw [Finset.sum_const_zero, zero_add, InternalGrading.shift_piece,
+    zigzagStrictAInfinityAlgebra_grading_piece, zero_add] at h
+  exact h
+
 /-- **The Hochschild differential on words of arrows of any length.** For a suspended cochain `φ`
 of degree zero and letters `x₀, …, x_{n+1}` of path length one, such as arrows,
 
@@ -272,11 +288,8 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
     rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, zero_add]
     exact hx i
   -- `φ` sends a word of `n + 1` letters of path length one to path length one.
-  have hφx : φ (subword k x 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 := by
-    rw [subword_eq_of_tprod k x (by omega) (by omega)]
-    have h := hφ.map_mem (mem_gradedPiece_of_tprod ((𝒵).grading.shift 1) (n := n + 1)
-      (by omega) (fun j ↦ x ⟨0 + j.val, by omega⟩) (fun _ ↦ 0) fun i ↦ hx' _)
-    simpa [InternalGrading.shift_piece] using h
+  have hφx : φ (subword k x 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 :=
+    zigzagStrictAInfinityAlgebra_apply_subword_mem_zigzagIntegerGrade_one hφ hx 0 (n + 1)
   rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul,
     LinearMap.sub_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,
     gradedCoderiv_of_tprod_of_homogeneous _ _ _ _ x _ hx',
