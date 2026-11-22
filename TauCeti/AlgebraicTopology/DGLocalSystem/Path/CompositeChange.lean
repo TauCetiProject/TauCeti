@@ -87,16 +87,8 @@ theorem pathChainToLoopChain_trans_pathChainConcat (γ : MoorePathBetween B a b)
     pathChainToLoopChain R (γ.trans δ)
         (pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) x y)) =
       pathChainToLoopChain R γ (op (pathChainToLoopChain R δ y) • x) := by
-  -- The loops at `b` act from behind by the pairing induced by the action.
-  have hact (α : loopChainAlgebra B b R) :
-      cubicalChainModuleEquiv _ _ R (op α • x) =
-        cubicalChainSumPairing R (actMap (MoorePathBetween B a b) (MooreLoopSpace B b))
-          (cubicalChainModuleEquiv _ _ R x) α := by
-    have h := op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing (R := R)
-      ((cubicalChainModuleEquiv (MooreLoopSpace B b) (MooreLoopSpace B b) R).symm α) x
-    rw [LinearEquiv.apply_symm_apply] at h
-    rw [h, cubicalChainModuleEquiv_cubicalChainPairing, LinearEquiv.apply_symm_apply]
-  rw [pathChainToLoopChain_apply, pathChainToLoopChain_apply, pathChainToLoopChain_apply, hact,
+  rw [pathChainToLoopChain_apply, pathChainToLoopChain_apply, pathChainToLoopChain_apply,
+    cubicalChainModuleEquiv_op_smul,
     pathChainConcat_tmul, cubicalChainModuleEquiv_cubicalChainPairing,
     cubicalChainSumMap_cubicalChainSumPairing
       (g := (MoorePathBetween.loopAppendHomotopyEquiv γ).symm.toFun),
