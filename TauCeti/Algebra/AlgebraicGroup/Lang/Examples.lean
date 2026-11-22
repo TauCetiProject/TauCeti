@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.AlgebraicGroup.Lang.Basic
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Basic
-import Mathlib.Algebra.CharP.Algebra
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 import TauCeti.FieldTheory.Finite.Card

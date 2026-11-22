@@ -61,7 +61,51 @@ universe u v w r
 namespace TauCeti.Lang
 
 variable {F : Type u} [Field F] [Fintype F]
-variable {K : Type w} [Field K] [Algebra F K] [IsAlgClosed K]
+variable {K : Type w} [Field K] [Algebra F K]
+
+/-- The cofiltered diagram of Lang fibers `{g_i | g_i⁻¹ * F^n(g_i) = a_i}` associated to a
+compatible family `a` on a diagram `D` of finite-type commutative Hopf algebras. -/
+private noncomputable def langFiberFunctor
+    {ι : Type r} [Category* ι]
+    (D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F) (n : ℕ)
+    (a : ∀ i, WithConv (D.obj i →ₐ[F] K))
+    (ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
+      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i) :
+    ιᵒᵖ ⥤ Type (max v w) where
+  obj i :=
+    {g : WithConv (D.obj i.unop →ₐ[F] K) |
+      g⁻¹ * FiniteField.frobeniusPoints F n g = a i.unop}
+  map {i j} f := TypeCat.ofHom fun g =>
+    ⟨BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)) g.val, by
+      let φ := FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)
+      have hcomm : FiniteField.frobeniusPoints F n (BialgHom.mapDomain φ g.val) =
+          BialgHom.mapDomain φ (FiniteField.frobeniusPoints F n g.val) :=
+        (DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints φ n) g.val).symm
+      rw [Set.mem_ofPred_eq, hcomm, ← map_inv, ← map_mul, g.property]
+      exact ha f.unop⟩
+  map_id i := by
+    refine ConcreteCategory.hom_ext _ _ fun g => Subtype.ext ?_
+    simp only [TypeCat.ofHom_apply, unop_id, D.map_id, FiniteTypeCommHopfAlgCat.toBialgHom_id,
+      BialgHom.mapDomain_id, MonoidHom.id_apply, types_id_apply]
+  map_comp {i j k} f₁ f₂ := by
+    refine ConcreteCategory.hom_ext _ _ fun g => Subtype.ext ?_
+    simp only [TypeCat.ofHom_apply, unop_comp, D.map_comp,
+      FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
+      types_comp_apply]
+
+/-- Underlying `K`-point of a transition map in `langFiberFunctor`. -/
+private theorem langFiberFunctor_map_val
+    {ι : Type r} [Category* ι]
+    (D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F) (n : ℕ)
+    (a : ∀ i, WithConv (D.obj i →ₐ[F] K))
+    (ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
+      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i)
+    {i j : ιᵒᵖ} (f : i ⟶ j) (g : (langFiberFunctor D n a ha).obj i) :
+    ((langFiberFunctor D n a ha).map f g).val =
+      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)) g.val :=
+  rfl
+
+variable [IsAlgClosed K]
 
 /-- **Lang's theorem for pro-algebraic groups** (categorical form): given a filtered diagram
 `D : ι ⥤ FiniteTypeCommHopfAlgCat F` of geometrically connected finite-type coordinate Hopf
@@ -79,27 +123,7 @@ theorem lang_proAlgebraic_functor_surjective
       (∀ ⦃i j : ι⦄ (u : i ⟶ j),
         BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (g j) = g i) ∧
       ∀ i, (g i)⁻¹ * FiniteField.frobeniusPoints F n (g i) = a i := by
-  let S : ιᵒᵖ ⥤ Type (max v w) :=
-    { obj := fun i =>
-        {g : WithConv (D.obj i.unop →ₐ[F] K) |
-          g⁻¹ * FiniteField.frobeniusPoints F n g = a i.unop}
-      map := fun {i j} f => TypeCat.ofHom fun g =>
-        ⟨BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)) g.val, by
-          let φ := FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)
-          have hcomm : FiniteField.frobeniusPoints F n (BialgHom.mapDomain φ g.val) =
-              BialgHom.mapDomain φ (FiniteField.frobeniusPoints F n g.val) :=
-            (DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints φ n) g.val).symm
-          rw [Set.mem_ofPred_eq, hcomm, ← map_inv, ← map_mul, g.property]
-          exact ha f.unop⟩
-      map_id := fun i => by
-        refine ConcreteCategory.hom_ext _ _ fun g => Subtype.ext ?_
-        simp only [TypeCat.ofHom_apply, unop_id, D.map_id, FiniteTypeCommHopfAlgCat.toBialgHom_id,
-          BialgHom.mapDomain_id, MonoidHom.id_apply, types_id_apply]
-      map_comp := fun {i j k} f₁ f₂ => by
-        refine ConcreteCategory.hom_ext _ _ fun g => Subtype.ext ?_
-        simp only [TypeCat.ofHom_apply, unop_comp, D.map_comp,
-          FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
-          types_comp_apply] }
+  let S := langFiberFunctor D n a ha
   have : ∀ i : ιᵒᵖ, Finite (S.obj i) := fun i =>
     have hfin : Finite (fixedSubgroup
         (FiniteField.frobeniusPoints F n (H := D.obj i.unop) (A := K))) :=
@@ -113,8 +137,9 @@ theorem lang_proAlgebraic_functor_surjective
   obtain ⟨s, hs⟩ := nonempty_sections_of_finite_cofiltered_system S
   refine ⟨fun i => (s (Opposite.op i)).val, ?_, fun i => (s (Opposite.op i)).property⟩
   intro i j u
-  simpa only [S, TypeCat.ofHom_apply, Quiver.Hom.unop_op] using
-    congrArg Subtype.val (hs u.op)
+  have hval := congrArg Subtype.val (hs u.op)
+  rw [langFiberFunctor_map_val, Quiver.Hom.unop_op] at hval
+  exact hval
 
 /-- **Lang's theorem for pro-algebraic groups**: for a directed inverse system of geometrically
 connected finite-type affine group schemes over a finite field `F` (represented contravariantly by

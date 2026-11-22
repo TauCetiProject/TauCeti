@@ -33,6 +33,13 @@ universe u v w
 
 namespace TauCeti
 
+/-- A derivation over a base ring where `n = 0` annihilates all `n`-th powers. -/
+private theorem derivation_pow_eq_zero {R A M : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] [AddCommMonoid M] [Module R M] [Module A M]
+    (d : Derivation R A M) {n : ℕ} (hn : (n : R) = 0) (a : A) :
+    d (a ^ n) = 0 := by
+  rw [d.leibniz_pow, ← Nat.cast_smul_eq_nsmul R, hn, zero_smul]
+
 /-- The differential of the Frobenius endomorphism `TauCeti.frobeniusBialgHom F H` vanishes
 identically: every `F`-derivation annihilates `q`-th powers because `q = |F|` is zero in `F`. -/
 @[simp]
@@ -43,8 +50,7 @@ theorem derivationComp_frobeniusBialgHom_eq_zero
     derivationComp (B := B) (frobeniusBialgHom F H) = 0 := by
   ext d h : 2
   rw [derivationComp_apply, LinearMap.zero_apply, zero_apply, BialgHom.coe_toAlgHom,
-    frobeniusBialgHom_apply, d.leibniz_pow, ← Nat.cast_smul_eq_nsmul F,
-    Nat.cast_card_eq_zero, zero_smul]
+    frobeniusBialgHom_apply, derivation_pow_eq_zero d (Nat.cast_card_eq_zero F)]
 
 namespace FiniteField
 
@@ -69,8 +75,7 @@ theorem derivationComp_geometricFrobeniusBialgHom_eq_zero
           s • (((1 : K) ⊗ₜ[F] h) ^ Fintype.card F) := by
       rw [BialgHom.coe_toAlgHom, geometricFrobeniusBialgHom_tmul, Algebra.TensorProduct.tmul_pow,
         one_pow, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-    rw [htmul, Derivation.map_smul, d.leibniz_pow (a := (1 : K) ⊗ₜ[F] h) (Fintype.card F),
-      ← Nat.cast_smul_eq_nsmul K, hcardK, zero_smul, smul_zero]
+    rw [htmul, Derivation.map_smul, derivation_pow_eq_zero d hcardK, smul_zero]
 
 end FiniteField
 
