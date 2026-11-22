@@ -257,8 +257,8 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
 
-/-- An a.e. nonnegative function with a.e. integrable sections vanishes almost everywhere where
-its second marginal vanishes. -/
+/-- An a.e. nonnegative, a.e. strongly measurable function with a.e. integrable sections vanishes
+almost everywhere where its second marginal vanishes. -/
 theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero (μ : Measure α) (ν : Measure β)
     [SFinite μ] [SFinite ν] {g : α × β → ℝ}
     (hnonneg : 0 ≤ᵐ[μ.prod ν] g) (hg : AEStronglyMeasurable g (μ.prod ν))
@@ -294,9 +294,9 @@ theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero (μ : Measur
   by_contra hn
   exact hp ⟨hz, hn⟩
 
-/-- An a.e. nonnegative product function with a.e. integrable sections becomes integrable when
-multiplied by an a.e.-measurable second-factor weight if its weighted second marginal is
-integrable. -/
+/-- An a.e. nonnegative, a.e. strongly measurable product function with a.e. integrable sections
+becomes integrable when multiplied by an a.e.-measurable second-factor weight if its weighted
+second marginal is integrable. -/
 theorem _root_.MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_marginal_mul
     (μ : Measure α) (ν : Measure β)
     [SFinite μ] [SFinite ν] {g : α × β → ℝ} {w : β → ℝ}

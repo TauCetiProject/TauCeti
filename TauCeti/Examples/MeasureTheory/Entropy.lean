@@ -11,9 +11,9 @@ import TauCeti.InformationTheory.KullbackLeibler.Convex
 /-!
 # Regression examples for functional entropy
 
-The log-sum inequality applies to equal densities without a separate `x log x` integrability
-assumption. Product subadditivity applies to zero total mass and needs no marginal hypotheses
-for finite factors.
+The log-sum inequality applies to equal a.e. nonnegative integrable densities without a separate
+`x log x` integrability assumption. Product subadditivity applies to zero total mass and needs no
+marginal hypotheses for finite factors.
 -/
 
 open scoped ENNReal

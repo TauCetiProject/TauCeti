@@ -52,7 +52,7 @@ theorem entropy_prod_eq {α β : Type*} [MeasurableSpace α] [MeasurableSpace β
 
 /-- For an a.e. nonnegative function, integrability of `g` and `g log g` passes to the marginal
 and its `x log x` transform when both measures are finite. -/
-theorem integrable_marginal_mul_log {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+theorem integrable_marginal_mul_log_left {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     {g : α × β → ℝ} (hnonneg : 0 ≤ᵐ[μ.prod ν] g)
     (hg : Integrable g (μ.prod ν))
@@ -98,7 +98,8 @@ theorem integrable_marginal_mul_log {α β : Type*} [MeasurableSpace α] [Measur
   · nlinarith [le_abs_self (∫ y, g (x, y) * Real.log (g (x, y)) ∂ν),
       le_abs_self (Real.log c)]
 
-/-- Integrability of the second marginal's `x log x` transform under finite measures. -/
+/-- For an a.e. nonnegative function, integrability of `g` and `g log g` passes to the second
+marginal's `x log x` transform when both measures are finite. -/
 theorem integrable_marginal_mul_log_right {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     {g : α × β → ℝ} (hnonneg : 0 ≤ᵐ[μ.prod ν] g)
@@ -109,7 +110,7 @@ theorem integrable_marginal_mul_log_right {α β : Type*} [MeasurableSpace α] [
   have hswap : 0 ≤ᵐ[ν.prod μ] (g ∘ Prod.swap) :=
     measurePreserving_swap.quasiMeasurePreserving.ae hnonneg
   simpa only [Function.comp_apply, Prod.swap_prod_mk] using
-    integrable_marginal_mul_log ν μ hswap hg.swap hlog.swap
+    integrable_marginal_mul_log_left ν μ hswap hg.swap hlog.swap
 
 /-- Averaging out a probability-measure coordinate cannot increase functional entropy for an
 a.e. nonnegative function, when the function, its `x log x` transform, and the marginal `x log x`
@@ -141,7 +142,7 @@ theorem entropy_integral_prod_left_le_entropy_prod
     (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
     entropy μ (fun x ↦ ∫ y, g (x, y) ∂ν) ≤ entropy (μ.prod ν) g :=
   entropy_integral_prod_left_le_entropy_prod_of_integrable_marginal_mul_log μ ν g hnonneg hg hlog
-    (integrable_marginal_mul_log μ ν hnonneg hg hlog)
+    (integrable_marginal_mul_log_left μ ν hnonneg hg hlog)
 
 /-- Integrating section entropies is the difference of the joint and marginal `x log x`
 integrals. -/
@@ -245,7 +246,8 @@ private theorem entropy_integral_le_integral_entropy_aux {α β : Type*}
   exact hint'
 
 /-- Entropy is convex under mixtures for an a.e. nonnegative function, including when its total
-mass is zero. The hypotheses ensure integrability of both marginal `x log x` terms. -/
+mass is zero. The function and its `x log x` transform must be integrable on the product, and
+both marginal `x log x` transforms must be integrable. -/
 theorem entropy_integral_le_integral_entropy_of_integrable_marginals_mul_log {α β : Type*}
     [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) (ν : Measure β)
     [SFinite μ] [SFinite ν] (g : α × β → ℝ)
@@ -267,8 +269,8 @@ theorem entropy_integral_le_integral_entropy_of_integrable_marginals_mul_log {α
     (ae_ae_of_ae_prod (μ.ae_eq_zero_of_marginal_eq_zero ν hnonneg
       hg.aestronglyMeasurable hg.prod_left_ae))
 
-/-- Product entropy subadditivity for an a.e. nonnegative function under marginal `x log x`
-integrability hypotheses. -/
+/-- Product entropy subadditivity for an a.e. nonnegative function when the function and its
+`x log x` transform are integrable on the product, and both marginal transforms are integrable. -/
 theorem entropy_prod_le_of_integrable_marginals_mul_log {α β : Type*}
     [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν]
@@ -299,7 +301,7 @@ theorem entropy_integral_le_integral_entropy {α β : Type*}
     entropy μ (fun x ↦ ∫ y, g (x, y) ∂ν) ≤
       ∫ y, entropy μ (fun x ↦ g (x, y)) ∂ν := by
   exact entropy_integral_le_integral_entropy_of_integrable_marginals_mul_log μ ν g hnonneg hg hlog
-    (integrable_marginal_mul_log μ ν hnonneg hg hlog)
+    (integrable_marginal_mul_log_left μ ν hnonneg hg hlog)
     (integrable_marginal_mul_log_right μ ν hnonneg hg hlog)
 
 /-- Product entropy subadditivity for an a.e. nonnegative function under finite measures,
@@ -311,8 +313,9 @@ theorem entropy_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β
     (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
     entropy (μ.prod ν) g ≤
       (∫ x, entropy ν (fun y ↦ g (x, y)) ∂μ) +
-        ∫ y, entropy μ (fun x ↦ g (x, y)) ∂ν := by
-  rw [entropy_prod_eq μ ν g hg hlog (integrable_marginal_mul_log μ ν hnonneg hg hlog)]
-  exact add_le_add (le_refl _) (entropy_integral_le_integral_entropy μ ν g hnonneg hg hlog)
+        ∫ y, entropy μ (fun x ↦ g (x, y)) ∂ν :=
+  entropy_prod_le_of_integrable_marginals_mul_log μ ν g hnonneg hg hlog
+    (integrable_marginal_mul_log_left μ ν hnonneg hg hlog)
+    (integrable_marginal_mul_log_right μ ν hnonneg hg hlog)
 
 end MeasureTheory.Measure

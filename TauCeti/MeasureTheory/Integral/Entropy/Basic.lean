@@ -14,6 +14,9 @@ import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 # Entropy of a function with respect to a measure
 
 Defines the entropy `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)`.
+Entropy is nonnegative for an a.e. nonnegative function under a probability measure, assuming
+integrability of the function and its `x log x` transform. The file also gives formulas for
+constants, Dirac measures, and scaling the measure.
 -/
 
 public section
@@ -71,7 +74,8 @@ theorem entropy_dirac {α : Type*} [MeasurableSpace α] [MeasurableSingletonClas
     (a : α) (g : α → ℝ) : entropy (dirac a) g = 0 := by
   simp [entropy_def]
 
-/-- Scaling a measure scales entropy and adds the correction for its new total mass. -/
+/-- Scaling a measure scales entropy and subtracts the scaled integral of `g` times the logarithm
+of the scaling factor. -/
 theorem entropy_smul_measure {α : Type*} [MeasurableSpace α] (μ : Measure α)
     (c : ℝ≥0∞) (g : α → ℝ) :
     entropy (c • μ) g =
