@@ -268,11 +268,8 @@ private theorem exists_flow_eq_smul_single {q : M}
     ∃ T b : ℝ, 0 ∈ hX.linearForwardTimes φ (hX.flow T y) ∧ P (hX.flow T y) ∧ b ≠ 0 ∧
       φ.coord (φ.toChart (hX.flow T y)) = b • Pi.single j 1 := by
   obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
-  have hc : ContinuousAt (fun z ↦ ‖φ.coord (φ.toChart z)‖) q :=
-    φ.continuous_coord.norm.continuousAt.comp (φ.toChart.continuousAt φ.mem_source)
   have hnear : ∀ᶠ z in 𝓝 q, P z ∧ z ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart z)‖ < ε :=
-    hP.and ((φ.toChart.open_source.eventually_mem φ.mem_source).and
-      (hc.eventually (gt_mem_nhds (by simp [hε]))))
+    hP.and (φ.eventually_mem_source_norm_coord_lt hε)
   obtain ⟨T, hT, hPT, hsrc, hsmall⟩ := ((hX.eventually_mem_linearForwardTimes hφ hy).and
     ((Flow.mem_stableSet.1 hy).eventually hnear)).exists
   have hzs : hX.flow T y ∈ hX.flow.stableSet q := (Flow.apply_mem_stableSet_iff _ T).2 hy
