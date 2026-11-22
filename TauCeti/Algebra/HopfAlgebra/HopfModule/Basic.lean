@@ -111,6 +111,14 @@ private theorem opSMulTensor_comp_lTensor_linearMap :
 
 end Action
 
+/-- On the regular right `H`-module, `opSMulTensor` coincides with multiplication
+`LinearMap.mul' R H`. -/
+@[simp]
+theorem opSMulTensor_self {R : Type u} {H : Type v}
+    [CommSemiring R] [Semiring H] [Algebra R H] :
+    opSMulTensor R H H = LinearMap.mul' R H :=
+  TensorProduct.ext' fun a b => by simp
+
 end RightHopfModule
 
 /-- Compatibility between a right `H`-module structure and a right `H`-comodule structure on `M`
@@ -463,9 +471,7 @@ theorem coinvariantProj_idem (m : M) :
 @[simp]
 theorem coinvariantProj_self (x : H) :
     coinvariantProj R H H x = algebraMap R H (Coalgebra.counit (R := R) x) := by
-  have hop : opSMulTensor R H H = LinearMap.mul' R H :=
-    TensorProduct.ext' fun a b => by simp
-  rw [coinvariantProj_apply, Comodule.instSelf_coact, hop,
+  rw [coinvariantProj_apply, Comodule.instSelf_coact, opSMulTensor_self,
     _root_.HopfAlgebra.mul_antipode_lTensor_comul_apply]
 
 variable (R H M) in
