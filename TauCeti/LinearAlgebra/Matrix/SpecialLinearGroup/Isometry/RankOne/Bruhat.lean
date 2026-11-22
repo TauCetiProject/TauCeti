@@ -224,10 +224,10 @@ theorem torusHom_mul_unipotentHom_unitaryMk_mul_inv (hσ : Function.Involutive �
   apply Matrix.SpecialLinearGroup.ext
   intro i j
   simp only [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, coe_torusHom, coe_unipotentHom,
-    HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.coe_unitaryMk, inv_inv]
+    HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.coe_unitaryMk, inv_inv,
+    Matrix.mul_diagonal, Matrix.diagonal_mul]
   fin_cases i <;> fin_cases j <;>
-    simp [HeisenbergGroup.toMatrix_apply, Matrix.mul_apply, Matrix.diagonal_apply,
-      hσ ((t⁻¹ : Rˣ) : R)]
+    simp [HeisenbergGroup.toMatrix_apply, hσ ((t⁻¹ : Rˣ) : R)]
   · ring
   · ring
   · linear_combination σ (t : R) * σ ((t⁻¹ : Rˣ) : R) * t.mul_inv + map_mul_eq_one σ t.mul_inv
@@ -262,11 +262,10 @@ variable (K σ) in
 /-- The Borel subgroup is the stabilizer of `infinity K σ`. -/
 theorem borelSubgroup_def : borelSubgroup K σ = MulAction.stabilizer _ (infinity K σ) := (rfl)
 
-/-- Membership in `borelSubgroup` is fixing `infinity K σ`. -/
-theorem mem_borelSubgroup_iff_smul_infinity
-    {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ} :
-    g ∈ borelSubgroup K σ ↔ g • infinity K σ = infinity K σ :=
-  Iff.rfl
+private theorem vec_one_zero_zero_eq_single :
+    (![1, 0, 0] : Fin 3 → K) = Pi.single 0 1 := by
+  ext i
+  fin_cases i <;> simp
 
 /-- An element of the rank-one special isometry group lies in the Borel subgroup if and only if
 its `(2, 0)` matrix entry vanishes. -/
@@ -276,9 +275,10 @@ theorem mem_borelSubgroup_iff
       ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 = 0 := by
   have h2 : ((g : Matrix.SpecialLinearGroup (Fin 3) K) • (![1, 0, 0] : Fin 3 → K)) 2 =
       ((g : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 0 := by
-    simp [Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec, Matrix.mulVec, dotProduct,
-      Fin.sum_univ_three]
-  simp [mem_borelSubgroup_iff_smul_infinity, eq_infinity_iff, coe_infinity, Subgroup.smul_def, h2]
+    rw [Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec, vec_one_zero_zero_eq_single,
+      Matrix.mulVec_single_one, Matrix.col_apply]
+  simp [borelSubgroup_def, MulAction.mem_stabilizer_iff, eq_infinity_iff, coe_infinity,
+    Subgroup.smul_def, h2]
 
 /-- Every element of the Borel subgroup also has vanishing `(1, 0)` entry, by isotropy of the
 first column. -/
@@ -302,8 +302,8 @@ theorem apply_zero_zero_ne_zero_of_mem_borelSubgroup
   have hg10 := apply_one_zero_eq_zero_of_mem_borelSubgroup hg
   have hg20 := mem_borelSubgroup_iff.mp hg
   have hdet := g.val.prop
-  rw [Matrix.det_fin_three, hg00, hg10, hg20] at hdet
-  simp at hdet
+  rw [Matrix.det_eq_zero_of_column_eq_zero 0 fun i ↦ by fin_cases i <;> assumption] at hdet
+  exact zero_ne_one hdet
 
 variable (K σ) in
 /-- The unipotent subgroup is contained in the Borel subgroup. -/
@@ -385,14 +385,16 @@ theorem exists_torusHom_mul_unipotent_of_mem_borelSubgroup (hσ : Function.Invol
   have hu22 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 2 2 = 1 := by
     simpa [Matrix.mul_apply, Fin.sum_univ_three, hu00, hu10, hu20] using
       congrFun (congrFun hiso 0) 2
+  have htri :
+      ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K).IsUpperTriangular := by
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all
   have hu11 : ((u : Matrix.SpecialLinearGroup (Fin 3) K) : Matrix (Fin 3) (Fin 3) K) 1 1 = 1 := by
     have hdet := u.val.prop
-    rw [Matrix.det_fin_three, hu00, hu10, hu20, hu21, hu22] at hdet
+    rw [Matrix.det_of_isUpperTriangular htri, Fin.prod_univ_three, hu00, hu22] at hdet
     simpa using hdet
   rw [Matrix.isUpperUnitriangular_def]
-  refine ⟨fun i j hij ↦ ?_, fun i ↦ ?_⟩
-  · fin_cases i <;> fin_cases j <;> simp_all
-  · fin_cases i <;> simp_all
+  exact ⟨htri, fun i ↦ by fin_cases i <;> simp [hu00, hu11, hu22]⟩
 
 /-- For involutive `σ`, the Borel subgroup is the join of the diagonal torus and the unipotent
 subgroup. -/
@@ -422,12 +424,22 @@ theorem unipotentHom_mul_weyl_smul_infinity (hσ : Function.Involutive σ)
         (by simpa [hσ c.val.2] using c.property)) * weyl K σ :
         (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ) :
       Matrix.SpecialLinearGroup (Fin 3) K) • ![1, 0, 0] = ![c.val.1, c.val.2, 1] := by
-    rw [Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec]
+    rw [Matrix.SpecialLinearGroup.smul_def, smul_eq_mulVec, vec_one_zero_zero_eq_single,
+      Matrix.mulVec_single_one]
     ext i
     fin_cases i <;>
-      simp [coe_typeAGraphConjugator_two, HeisenbergGroup.toMatrix_apply, Matrix.mulVec,
-        dotProduct, Matrix.mul_apply, Fin.sum_univ_three, hσ c.val.2]
+      simp [coe_typeAGraphConjugator_two, HeisenbergGroup.toMatrix_apply, hσ c.val.2]
   simp only [hvec]
+
+/-- The unipotent subgroup meets the Weyl-conjugate of the Borel subgroup trivially. -/
+theorem disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup :
+    Disjoint (unipotentSubgroup K σ)
+      ((borelSubgroup K σ).map (MulAut.conj (weyl K σ)).toMonoidHom) := by
+  rw [Subgroup.disjoint_def]
+  rintro _ ⟨a, rfl⟩ hb
+  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, weyl_inv,
+    weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff] at hb
+  simp [hb]
 
 /-- Two big-cell products `u * weyl * b` with `u ∈ unipotentSubgroup` and `b ∈ borelSubgroup` are
 equal if and only if both factors agree. -/
@@ -438,15 +450,9 @@ theorem mul_weyl_mul_eq_iff_of_mem_unipotentSubgroup_of_mem_borelSubgroup
     u₁ * weyl K σ * b₁ = u₂ * weyl K σ * b₂ ↔ u₁ = u₂ ∧ b₁ = b₂ := by
   constructor
   · intro h
-    have hdisj : Disjoint (unipotentSubgroup K σ)
-        ((borelSubgroup K σ).map (MulAut.conj (weyl K σ)).toMonoidHom) := by
-      rw [Subgroup.disjoint_def]
-      rintro _ ⟨a, rfl⟩ hb
-      rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, weyl_inv,
-        weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff] at hb
-      simp [hb]
     have hp := (unipotentSubgroup K σ).mul_mul_injective_of_disjoint (borelSubgroup K σ)
-      hdisj (a₁ := (⟨u₁, hu₁⟩, ⟨b₁, hb₁⟩)) (a₂ := (⟨u₂, hu₂⟩, ⟨b₂, hb₂⟩)) h
+      disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup
+      (a₁ := (⟨u₁, hu₁⟩, ⟨b₁, hb₁⟩)) (a₂ := (⟨u₂, hu₂⟩, ⟨b₂, hb₂⟩)) h
     exact ⟨congrArg (fun p ↦ p.1.val) hp, congrArg (fun p ↦ p.2.val) hp⟩
   · rintro ⟨rfl, rfl⟩
     rfl
@@ -457,12 +463,14 @@ theorem exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup (hσ : Funct
     {g : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ}
     (hg : g ∉ borelSubgroup K σ) :
     ∃ u ∈ unipotentSubgroup K σ, ∃ b ∈ borelSubgroup K σ, u * weyl K σ * b = g := by
-  obtain ⟨c, hc⟩ := exists_point (mt mem_borelSubgroup_iff_smul_infinity.mpr hg)
+  have hg' : g • infinity K σ ≠ infinity K σ := by
+    simpa [borelSubgroup_def, MulAction.mem_stabilizer_iff] using hg
+  obtain ⟨c, hc⟩ := exists_point hg'
   let u := unipotentHom K σ (HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1
     (by simpa [hσ c.val.2] using c.property))
   let b := (u * weyl K σ)⁻¹ * g
   have hb : b ∈ borelSubgroup K σ := by
-    rw [mem_borelSubgroup_iff_smul_infinity, mul_smul, inv_smul_eq_iff,
+    rw [borelSubgroup_def, MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff,
       unipotentHom_mul_weyl_smul_infinity, hc]
   exact ⟨u, unipotentHom_mem_unipotentSubgroup _, b, hb, mul_inv_cancel_left _ _⟩
 
@@ -477,14 +485,16 @@ theorem existsUnique_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup
           (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ,
       p.1 ∈ unipotentSubgroup K σ ∧ p.2 ∈ borelSubgroup K σ ∧
         p.1 * weyl K σ * p.2 = g := by
-  obtain ⟨u, hu, b, hb, hub⟩ :=
-    exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup hσ hg
-  refine ⟨(u, b), ⟨hu, hb, hub⟩, ?_⟩
+  obtain ⟨⟨u, b⟩, hub, huniq⟩ :=
+    ((unipotentSubgroup K σ).mul_mul_injective_of_disjoint (borelSubgroup K σ)
+      disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup).existsUnique_iff_exists.mpr <| by
+        obtain ⟨u, hu, b, hb, hub⟩ :=
+          exists_unipotent_mul_weyl_mul_borel_of_notMem_borelSubgroup hσ hg
+        exact ⟨(⟨u, hu⟩, ⟨b, hb⟩), hub⟩
+  refine ⟨(u, b), ⟨u.property, b.property, hub⟩, ?_⟩
   rintro ⟨u', b'⟩ ⟨hu', hb', hub'⟩
-  obtain ⟨rfl, rfl⟩ :=
-    (mul_weyl_mul_eq_iff_of_mem_unipotentSubgroup_of_mem_borelSubgroup hu' hu hb' hb).mp
-      (hub'.trans hub.symm)
-  rfl
+  have heq := huniq (⟨u', hu'⟩, ⟨b', hb'⟩) hub'
+  exact Prod.ext (congrArg (fun p ↦ p.1.val) heq) (congrArg (fun p ↦ p.2.val) heq)
 
 /-- **The rank-one Bruhat decomposition** `G = B ∪ B w B` of the three-dimensional unitary group. -/
 theorem mem_borelSubgroup_or_mem_doubleCoset (hσ : Function.Involutive σ)

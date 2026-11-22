@@ -241,11 +241,8 @@ theorem normalClosure_unipotentSubgroup_eq_top (hσ : Function.Involutive σ)
 /-- The normal core of the Borel subgroup intersects the unipotent subgroup trivially. -/
 theorem normalCore_borelSubgroup_inf_unipotentSubgroup_eq_bot :
     (borelSubgroup K σ).normalCore ⊓ unipotentSubgroup K σ = ⊥ :=
-  Subgroup.normalCore_inf_eq_bot_of_conj_mem (weyl K σ) fun _ hu hconj ↦ by
-    rw [unipotentSubgroup_def] at hu
-    obtain ⟨a, rfl⟩ := hu
-    rw [weyl_inv, weyl_mul_unipotentHom_mul_weyl_mem_borelSubgroup_iff] at hconj
-    simp [hconj]
+  disjoint_iff.mp <| (disjoint_unipotentSubgroup_map_conj_weyl_borelSubgroup.mono_right <|
+    (borelSubgroup K σ).normalCore_eq_iInf_map_conj ▸ iInf_le _ (weyl K σ)).symm
 
 /-- **The normal core of the Borel subgroup is the centre** of the rank-one special isometry group
 whenever `σ` is involutive and `∃ d ≠ 0, d + σ d = 0`. -/

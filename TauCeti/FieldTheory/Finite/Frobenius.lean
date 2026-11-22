@@ -160,12 +160,9 @@ variable {K : Type*} [Field K] [Finite K] {p : ℕ} [Fact p.Prime] [CharP K p]
 
 /-- On a field of order `p ^ 2`, the Frobenius automorphism `x ↦ x ^ p` is an involution. -/
 theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
-    Function.Involutive (frobeniusEquiv K p) := by
-  let := Fintype.ofFinite K
-  have hcard : Fintype.card K = p ^ 2 := Nat.card_eq_fintype_card.symm.trans hK
-  intro x
-  simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
-    RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
+    Function.Involutive (frobeniusEquiv K p) :=
+  involutive_of_natCard_eq_sq (σ := (frobeniusEquiv K p : K →+* K)) hK
+    fun a ↦ by simp [frobenius_def]
 
 end Involutive
 
