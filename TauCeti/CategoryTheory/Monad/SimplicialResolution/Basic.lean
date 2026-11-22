@@ -80,6 +80,21 @@ def resolutionDegeneracy : ∀ n, Fin (n + 1) →
     (G.resolutionDegeneracy (n + 1) i.succ).app X =
       G.map ((G.resolutionDegeneracy n i).app X) := (rfl)
 
+variable (C) in
+/-- Every face of the resolution of the identity comonad is an identity morphism. -/
+lemma id_resolutionFace_app (n : ℕ) (i : Fin (n + 1)) (X : C) :
+    ((Comonad.id C).resolutionFace n i).app X = 𝟙 _ := by
+  -- All iterates of the identity comonad have object `X` by definition, so the identities
+  -- produced below agree up to unfolding `resolutionStage`.
+  induction n with
+  | zero =>
+    rw [Fin.eq_zero i]
+    exact (resolutionFace_zero_app _ 0 X).trans (rfl)
+  | succ n ih =>
+    induction i using Fin.cases with
+    | zero => exact (resolutionFace_zero_app _ (n + 1) X).trans (rfl)
+    | succ i => exact (resolutionFace_succ_app _ n i X).trans ((congrArg _ (ih i)).trans (rfl))
+
 -- Normalize components through the operator API, then reduce our recursive stage types
 -- (including implicit endpoints of morphisms). The separate dsimp step is necessary because
 -- simp cannot rewrite those dependent endpoints using the stage equalities.
