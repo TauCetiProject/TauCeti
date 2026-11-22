@@ -8,7 +8,11 @@ module
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Within
+import Mathlib.Analysis.Calculus.Deriv.Star
+import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Complex.HalfPlane
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import Mathlib.Tactic.Positivity
 
@@ -25,10 +29,11 @@ affine covariance under pushforward. Off the real axis the transform is analytic
 `∫ (x - z)⁻² dμ(x)`, bounded by `|Im z|⁻² μ(ℝ)`, and its first-order Taylor expansion at `z` has
 remainder at most `‖w - z‖² / (|Im z|² |Im w|) · μ(ℝ)`; these bounds are uniform over all
 measures of a given mass. No moment assumptions are needed. For real `t` the map
-`z ↦ z - t m_μ(z)` maps `{Im z > |t| μ(ℝ) + 1}` injectively into the upper half-plane.
+`z ↦ z - t m_μ(z)` maps `{Im z > |t| μ(ℝ) + 1}` injectively into the upper half-plane, so two
+functions analytic in the upper half-plane that agree at the points `z - t m_μ(z)` agree there.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
-`(z - x)⁻¹`.
+`(z - x)⁻¹`; the Stieltjes transform `∫ (z - x)⁻¹ dμ(x)` is its negative.
 
 ## References
 
@@ -108,6 +113,25 @@ theorem Measure.resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
             simp [resolvent, Ring.inverse_eq_inv']
     _ = _ := by
       simpa only [RCLike.star_def] using (integral_conj (f := resolvent (R := ℝ) z))
+
+/-- Conjugating the spectral parameter conjugates the derivative of the resolvent transform of a
+real measure. -/
+@[simp]
+theorem Measure.deriv_resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
+    deriv (resolventTransform μ) (conj z) = conj (deriv (resolventTransform μ) z) := by
+  have h : (resolventTransform μ : ℂ → ℂ) = conj ∘ resolventTransform μ ∘ conj := by
+    funext w
+    simp
+  conv_lhs => rw [h, deriv_conj_conj]
+  simp
+
+/-- The Stieltjes transform `∫ (z - x)⁻¹ dμ(x)` of a real measure is the negative of its resolvent
+transform. -/
+theorem Measure.integral_inv_sub_eq_neg_resolventTransform (μ : Measure ℝ) (z : ℂ) :
+    ∫ x : ℝ, (z - x)⁻¹ ∂μ = -resolventTransform μ z := by
+  rw [resolventTransform_apply, ← integral_neg]
+  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+  simp only [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap, ← inv_neg, neg_sub]
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
@@ -311,6 +335,40 @@ theorem eq_of_sub_mul_resolventTransform_eq {t : ℝ} {a b : ℂ}
       _ = _ := by ring
   rw [mul_div_assoc', le_div_iff₀ (by positivity)] at this
   nlinarith [mul_lt_mul_of_pos_left hlt hpos]
+
+variable (μ) in
+open Filter Topology in
+/-- Let `m_μ` be the transform of a finite measure and `t` real. If two functions analytic in the
+upper half-plane agree at every point `z - t m_μ(z)` of the upper half-plane with `z` in the upper
+half-plane, then they agree on the whole upper half-plane, since near `i ∞` the map
+`z ↦ z - t m_μ(z)` is continuous and injective. -/
+theorem eqOn_of_eq_sub_mul_resolventTransform (t : ℝ) {f g : ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f {w : ℂ | 0 < w.im}) (hg : AnalyticOnNhd ℂ g {w : ℂ | 0 < w.im})
+    (hfg : ∀ z : ℂ, 0 < z.im → 0 < (z - t * resolventTransform μ z).im →
+      f (z - t * resolventTransform μ z) = g (z - t * resolventTransform μ z)) :
+    Set.EqOn f g {w : ℂ | 0 < w.im} := by
+  set r := |t| * μ.real Set.univ + 1
+  have hr : 0 < r := by positivity
+  set z₀ : ℂ := ⟨0, 2 * r⟩
+  have hz₀ : r < z₀.im := show r < 2 * r by linarith
+  have hU : {z : ℂ | r < z.im} ∈ 𝓝 z₀ := (isOpen_im_gt _).mem_nhds hz₀
+  have hcont : ContinuousAt (fun z : ℂ ↦ z - t * resolventTransform μ z) z₀ :=
+    continuousAt_id.sub (continuousAt_const.mul
+      (hasDerivAt_resolventTransform_of_im_ne_zero (hr.trans hz₀).ne').continuousAt)
+  -- The images of a punctured neighbourhood of `z₀` accumulate at the image of `z₀`.
+  have htend : Tendsto (fun z : ℂ ↦ z - t * resolventTransform μ z) (𝓝[≠] z₀)
+      (𝓝[≠] (z₀ - t * resolventTransform μ z₀)) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (hcont.tendsto.mono_left nhdsWithin_le_nhds) ?_
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU, self_mem_nhdsWithin] with z hz hne
+    exact fun h ↦ hne (eq_of_sub_mul_resolventTransform_eq hz hz₀ h)
+  have hfreq : ∃ᶠ z in 𝓝[≠] z₀, f (z - t * resolventTransform μ z) =
+      g (z - t * resolventTransform μ z) := by
+    refine Eventually.frequently ?_
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU] with z hz
+    exact hfg z (hr.trans hz) (im_sub_mul_resolventTransform_pos hz)
+  exact hf.eqOn_of_preconnected_of_frequently_eq hg (convex_halfSpace_im_gt 0).isPreconnected
+    (im_sub_mul_resolventTransform_pos hz₀) (htend.frequently hfreq)
 
 omit [IsFiniteMeasure μ] in
 /-- The resolvent transform of the pushforward by a real affine map is obtained by the

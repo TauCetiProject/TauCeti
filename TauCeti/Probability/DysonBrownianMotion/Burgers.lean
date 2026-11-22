@@ -8,8 +8,6 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 public import TauCeti.Probability.Distributions.Semicircle.LocationScale
-import Mathlib.Analysis.Analytic.IsolatedZeros
-import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Complex.HalfPlane
 import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -47,6 +45,10 @@ equation. So they are the unique flow started at the point mass at `a`.
 
 ## Main results
 
+* `TauCeti.Probability.isBurgersFlow_iff_integral_inv_sub` and
+  `TauCeti.Probability.IsBurgersFlow.integral_inv_sub_eq`: the equation for the Stieltjes
+  transforms, `G_t(z) = G_0(z) - ∫₀ᵗ G_s(z) ∂_z G_s(z) ds`, in the upper half-plane and, along a
+  flow, at every `z` off the real axis.
 * `TauCeti.Probability.IsBurgersFlow.hasDerivWithinAt_resolventTransform`: the equation in
   differentiated form.
 * `TauCeti.Probability.IsBurgersFlow.resolventTransform_sub_mul_resolventTransform`: the
@@ -74,7 +76,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Set Complex
-open scoped NNReal Topology
+open scoped NNReal Topology ComplexConjugate
 
 namespace TauCeti.Probability
 
@@ -140,6 +142,37 @@ theorem of_hasDerivWithinAt
   ring
 
 end IsBurgersFlow
+
+/-- **The Stieltjes form of the equation.** A family is a Burgers flow exactly when, at every
+point `z` of the upper half-plane and every time `t`, the Stieltjes transforms
+`G_t(z) = ∫ (z - x)⁻¹ dμ_t(x) = -m_t(z)` have an integrable integrand `s ↦ G_s(z) ∂_z G_s(z)` on
+`[0, t]` and satisfy `G_t(z) = G_0(z) - ∫₀ᵗ G_s(z) ∂_z G_s(z) ds`. -/
+theorem isBurgersFlow_iff_integral_inv_sub : IsBurgersFlow μ ↔ ∀ z : ℂ, 0 < z.im → ∀ t : ℝ≥0,
+    IntervalIntegrable (fun s : ℝ ↦ (∫ x, (z - x)⁻¹ ∂μ s.toNNReal) *
+      deriv (fun w : ℂ ↦ ∫ x : ℝ, (w - x)⁻¹ ∂μ s.toNNReal) z) volume 0 t ∧
+    ∫ x, (z - x)⁻¹ ∂μ t = ∫ x, (z - x)⁻¹ ∂μ 0 -
+      ∫ s in (0 : ℝ)..t, (∫ x, (z - x)⁻¹ ∂μ s.toNNReal) *
+        deriv (fun w : ℂ ↦ ∫ x : ℝ, (w - x)⁻¹ ∂μ s.toNNReal) z := by
+  simp_rw [Measure.integral_inv_sub_eq_neg_resolventTransform, deriv.fun_neg', neg_mul_neg]
+  refine forall₂_congr fun z _ ↦ forall_congr' fun t ↦ and_congr Iff.rfl ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · linear_combination -h
+  · linear_combination -h
+
+/-- **The Stieltjes form of the equation off the real axis.** Along a Burgers flow the Stieltjes
+transforms `G_t(z) = ∫ (z - x)⁻¹ dμ_t(x)` satisfy `G_t(z) = G_0(z) - ∫₀ᵗ G_s(z) ∂_z G_s(z) ds` at
+every `z` off the real axis. -/
+theorem IsBurgersFlow.integral_inv_sub_eq (hμ : IsBurgersFlow μ) {z : ℂ} (hz : z.im ≠ 0)
+    (t : ℝ≥0) :
+    ∫ x, (z - x)⁻¹ ∂μ t = ∫ x, (z - x)⁻¹ ∂μ 0 -
+      ∫ s in (0 : ℝ)..t, (∫ x, (z - x)⁻¹ ∂μ s.toNNReal) *
+        deriv (fun w : ℂ ↦ ∫ x : ℝ, (w - x)⁻¹ ∂μ s.toNNReal) z := by
+  rcases hz.lt_or_gt with hz | hz
+  · have h := congrArg conj (hμ.resolventTransform_eq (z := conj z) (by simpa using hz) t)
+    simp only [Measure.resolventTransform_conj, Measure.deriv_resolventTransform_conj, ← map_mul,
+      intervalIntegral.intervalIntegral_conj, map_add, conj_conj] at h
+    simp_rw [Measure.integral_inv_sub_eq_neg_resolventTransform, deriv.fun_neg', neg_mul_neg]
+    linear_combination -h
+  · exact (isBurgersFlow_iff_integral_inv_sub.1 hμ z hz t).2
 
 /-- For a probability measure in the upper half-plane, the difference quotient of the transform
 `m` at `z` is within `‖w - z‖ / ((Im z)² Im w)` of `m'(z)`. -/
@@ -360,39 +393,6 @@ theorem resolventTransform_sub_mul_resolventTransform (hμ : IsBurgersFlow μ) {
   simpa [sub_eq_zero] using hFt
 
 end IsBurgersFlow
-
-/-- Let `m` be the transform of a probability measure and `t` real. If two functions analytic in
-the upper half-plane agree at every point `z - t m(z)` of the upper half-plane with `z` in the upper
-half-plane, then they agree on the whole upper half-plane, since near `i ∞` the map
-`z ↦ z - t m(z)` is continuous and injective. -/
-private lemma eqOn_of_eq_sub_mul_resolventTransform (ρ : Measure ℝ) [IsProbabilityMeasure ρ]
-    (t : ℝ) {f g : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f {w : ℂ | 0 < w.im})
-    (hg : AnalyticOnNhd ℂ g {w : ℂ | 0 < w.im})
-    (hfg : ∀ z : ℂ, 0 < z.im → 0 < (z - t * resolventTransform ρ z).im →
-      f (z - t * resolventTransform ρ z) = g (z - t * resolventTransform ρ z)) :
-    EqOn f g {w : ℂ | 0 < w.im} := by
-  set r := |t| * ρ.real univ + 1
-  have hr : 0 < r := by positivity
-  set z₀ : ℂ := ⟨0, 2 * r⟩
-  have hz₀ : r < z₀.im := show r < 2 * r by linarith
-  have hU : {z : ℂ | r < z.im} ∈ 𝓝 z₀ := (isOpen_im_gt _).mem_nhds hz₀
-  have hcont : ContinuousAt (fun z : ℂ ↦ z - t * resolventTransform ρ z) z₀ :=
-    continuousAt_id.sub (continuousAt_const.mul
-      (hasDerivAt_resolventTransform_of_im_ne_zero (hr.trans hz₀).ne').continuousAt)
-  -- The images of a punctured neighbourhood of `z₀` accumulate at the image of `z₀`.
-  have htend : Tendsto (fun z : ℂ ↦ z - t * resolventTransform ρ z) (𝓝[≠] z₀)
-      (𝓝[≠] (z₀ - t * resolventTransform ρ z₀)) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (hcont.tendsto.mono_left nhdsWithin_le_nhds) ?_
-    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU, self_mem_nhdsWithin] with z hz hne
-    exact fun h ↦ hne (eq_of_sub_mul_resolventTransform_eq hz hz₀ h)
-  have hfreq : ∃ᶠ z in 𝓝[≠] z₀, f (z - t * resolventTransform ρ z) =
-      g (z - t * resolventTransform ρ z) := by
-    refine Eventually.frequently ?_
-    filter_upwards [eventually_nhdsWithin_of_eventually_nhds hU] with z hz
-    exact hfg z (hr.trans hz) (im_sub_mul_resolventTransform_pos hz)
-  exact hf.eqOn_of_preconnected_of_frequently_eq hg (convex_halfSpace_im_gt 0).isPreconnected
-    (im_sub_mul_resolventTransform_pos hz₀) (htend.frequently hfreq)
 
 namespace IsBurgersFlow
 
