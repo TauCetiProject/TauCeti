@@ -31,7 +31,8 @@ for any operator `∂s + J ∂t + A` (`TauCeti.cauchyRiemann_fun_smul` in
 `TauCeti.Geometry.Symplectic.JHolomorphic.Line`), so that
 `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` where `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`
 (`norm_floerLinearization_fun_smul_sq_le`). On a direction multiplied by a cutoff `β(s)` it acts as
-`β D ξ + β' ξ` (`floerLinearization_smul_fst`); in particular, conjugated by an exponential
+`β D ξ + β' ξ` (`floerLinearization_smul_fst`), the corresponding case of the general operator
+(`TauCeti.cauchyRiemann_smul_fst`); in particular, conjugated by an exponential
 weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). Its value at
 a point depends only on the germ of the direction there
 (`floerLinearization_congr_of_eventuallyEq`), so it vanishes off the support of the direction
@@ -380,19 +381,15 @@ theorem norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
 
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the linearization at
 `z = (s, t)` sends `β(s) ξ` to `β(s) D ξ + β' ξ`: the factor only differentiates in the `s`
-direction, where the operator has the leading term `∂s`. This is the case `f = β ∘ Prod.fst` of
-`floerLinearization_fun_smul`. -/
+direction, where the operator has the leading term `∂s`. -/
 theorem floerLinearization_smul_fst (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
     (hξ : DifferentiableAt ℝ ξ z) :
     ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
       β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
-  have hf : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
-      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) β').comp (fst ℝ ℝ ℝ)) z :=
-    hβ.hasFDerivAt.comp z (hasFDerivAt_fst (p := z))
-  rw [ω.floerLinearization_fun_smul J Ks Kt u ξ hf.differentiableAt hξ, hf.fderiv]
-  simp [stdComplexLineReal, stdComplexLineImag]
+  simp only [floerLinearization_eq_add]
+  exact cauchyRiemann_smul_fst (fun z ↦ J z (u z)) (ω.floerLinearizationCoeff J Ks Kt u) hβ hξ
 
 /-- **Conjugating the linearization by an exponential weight.** On maps of the form
 `e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: this is the case
