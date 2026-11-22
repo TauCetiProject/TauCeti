@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Lift
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Positive
 
 /-!
 # The Weyl quotient of a Chevalley datum
@@ -26,8 +26,8 @@ type `G₂`) over every nontrivial commutative ring `A`, and identifies the kern
    surjective (`ChevalleyDatum.weylQuotientLift_surjective`).
 2. Over any nontrivial commutative ring `A` (`Nontrivial A` being necessary since every valid
    Dynkin type has positive rank and hence a nontrivial Weyl group),
-   `weylWord_mem_borelSubgroup_iff` forces `weylQuotientLift` to be injective
-   (`ChevalleyDatum.weylQuotientLift_injective`), yielding the canonical isomorphism
+   `ChevalleyDatum.geckWeylWordProd_eq_one_of_mem_borelSubgroup` forces `weylQuotientLift` to be
+   injective (`ChevalleyDatum.weylQuotientLift_injective`), yielding the canonical isomorphism
    `weylQuotientEquiv : N(A) ⧸ T(A) ≃* W` sending `[n_i(1)]` to `s_i`.
 3. Over any field `k` (including finite fields and bad characteristic), `weylQuotientEquiv`
    agrees on cosets with `D.weylProjection k`
@@ -75,7 +75,8 @@ theorem weylQuotientLift_injective (A : Type v) [CommRing A] [Nontrivial A] :
   obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
   rw [MonoidHom.mem_ker, D.weylQuotientLift_geckWeylWordProd A l,
     QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hw
-  exact (D.weylWord_mem_borelSubgroup_iff A l).mp (D.range_torusPoints_le_borelSubgroup A hw)
+  exact D.geckWeylWordProd_eq_one_of_mem_borelSubgroup A l
+    (D.range_torusPoints_le_borelSubgroup A hw)
 
 /-- **The Weyl quotient isomorphism** `N(A) ⧸ T(A) ≃* W`. Over every nontrivial commutative
 ring `A` (`Nontrivial A` being necessary since every valid Dynkin type has positive rank and
