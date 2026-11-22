@@ -79,12 +79,6 @@ private theorem _root_.ContMDiffMap.tsupport_mul_subset_left {f g : C^∞⟮I, M
   rw [ContMDiffMap.coe_mul]
   exact _root_.tsupport_mul_subset_left
 
-/-- A product of smooth functions is supported in the support of its right factor. -/
-private theorem _root_.ContMDiffMap.tsupport_mul_subset_right {f g : C^∞⟮I, M; ℝ⟯} :
-    tsupport (f * g : C^∞⟮I, M; ℝ⟯) ⊆ tsupport g := by
-  rw [ContMDiffMap.coe_mul]
-  exact _root_.tsupport_mul_subset_right
-
 variable {ι : Type*} (ρ : SmoothPartitionOfUnity ι I M univ)
   (T : ι → C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) (hT : ∀ i g, tsupport (T i g) ⊆ tsupport g)
 
@@ -169,7 +163,7 @@ private theorem isFormalTranspose_glue [OpensMeasurableSpace M] [IsFiniteMeasure
     have hi' := Function.mem_support.1 hi
     have hy := hT i _ (subset_tsupport _ (right_ne_zero_of_mul hi'))
     exact hF (ContMDiffMap.tsupport_mul_subset_left hy)
-      ⟨subset_tsupport _ (left_ne_zero_of_mul hi'), ContMDiffMap.tsupport_mul_subset_right hy⟩
+      ⟨subset_tsupport _ (left_ne_zero_of_mul hi'), tsupport_mulLeft_apply_subset (ρ i) g hy⟩
   simp_rw [hleft, hright]
   rw [integral_finsetSum _ fun i _ ↦ ContMDiffMap.integrable_apply_mul_of_tsupport_subset hD
       (.inr (hgcs i)),
