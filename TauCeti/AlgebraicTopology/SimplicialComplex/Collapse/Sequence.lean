@@ -148,10 +148,8 @@ theorem CollapsesTo.contractibleSpace_realization {L : AbstractSimplicialComplex
   have hLT : L ≤ T := le_top
   have := hK.contractibleSpace hKT
   obtain ⟨r, hr, hR⟩ := h.exists_strong_deformation_retraction hKT
-  have := (ContinuousMap.HomotopyEquiv.ofRetraction
-    (A := {x : Realization T | x.val.support ∈ L.toPreAbstractSimplicialComplex})
-    (B := {x : Realization T | x.val.support ∈ K})
-    (fun _ hx => h.le hx) r hr hR.homotopic.symm.some).contractibleSpace
+  have := (ContinuousMap.HomotopyEquiv.ofDeformationRetraction (.inclusion _) r hr
+    hR.homotopic.symm).contractibleSpace
   have hrange : range (realizationMap hLT) =
       {x : Realization T | x.val.support ∈ L.toPreAbstractSimplicialComplex} := by
     ext x

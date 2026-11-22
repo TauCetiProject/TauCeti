@@ -153,6 +153,15 @@ theorem hom_apply {A : Π x : M, V x →L[𝕜] W x} {s : Π x : M, V x} {x : M}
       covW (fun y ↦ A y (s y)) x v - A x (covV s x v) :=
   homValue_apply covV covW hA hs v
 
+/-- **Leibniz rule for a homomorphism applied to a section.** For a differentiable homomorphism
+`A` and a differentiable section `s`, `∇_v (A s) = (∇_v A) s + A (∇_v s)`. -/
+theorem covariantDerivative_clm_apply {A : Π x : M, V x →L[𝕜] W x} {s : Π x : M, V x} {x : M}
+    (hA : MDiffAt
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun z ↦ V z →L[𝕜] W z) y (A y)) x)
+    (hs : MDiffAt (T% s) x) (v : TangentSpace I x) :
+    covW (fun y ↦ A y (s y)) x v = covV.hom covW A x v (s x) + A x (covV s x v) := by
+  rw [hom_apply covV covW hA hs v, sub_add_cancel]
+
 /-- Evaluate the induced Hom connection on a fibre vector using its local extension. -/
 theorem hom_apply_eq_extend {A : Π x : M, V x →L[𝕜] W x} {x : M}
     (hA : MDiffAt

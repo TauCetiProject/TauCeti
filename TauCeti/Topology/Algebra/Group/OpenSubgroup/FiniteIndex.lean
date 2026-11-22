@@ -11,6 +11,7 @@ import Mathlib.Algebra.Group.Subgroup.Order
 import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 import Mathlib.Order.Atoms.Finite
 import Mathlib.Tactic.Group
+import TauCeti.GroupTheory.Index.Map
 
 /-!
 # Open subgroups of compact groups
@@ -184,13 +185,7 @@ theorem OpenNormalSubgroup.exists_le_map_subtype {H : Subgroup G} (hH : IsOpen (
   have hK : IsOpen (K : Set G) := by
     rw [Subgroup.coe_map]
     exact hH.isOpenMap_subtypeVal _ W.isOpen
-  have hHK : H ≤ Subgroup.normalizer (K : Set G) :=
-    calc H = (⊤ : Subgroup H).map H.subtype := by
-          rw [← MonoidHom.range_eq_map, Subgroup.range_subtype]
-      _ = (Subgroup.normalizer (W.toSubgroup : Set H)).map H.subtype := by
-          rw [Subgroup.normalizer_eq_top]
-      _ ≤ _ := Subgroup.le_normalizer_map _
-  have : (Subgroup.normalizer (K : Set G)).FiniteIndex := Subgroup.finiteIndex_of_le hHK
+  have := Subgroup.finiteIndex_normalizer_map_subtype H W.toSubgroup
   exact ⟨{ toSubgroup := K.normalCore, isOpen' := K.isOpen_normalCore hK }, K.normalCore_le⟩
 
 end NormalCore
