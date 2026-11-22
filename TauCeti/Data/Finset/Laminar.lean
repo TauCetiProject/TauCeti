@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finset.BooleanAlgebra
 import Mathlib.Tactic.Tauto
+import TauCeti.Data.Set.Pairwise
 
 /-!
 # Laminar families and crossing bipartitions of finite sets
@@ -20,6 +21,7 @@ side avoiding a fixed root identifies pairwise non-crossing bipartitions with la
 * `Finset.NestedOrDisjoint`: the relation defining laminar families.
 * `Finset.Crosses`: crossing of the bipartitions determined by two finite sets.
 * `Finset.sideAvoiding`: the side of a bipartition avoiding a chosen root.
+* `Finset.nestedOrDisjoint_sideAvoiding_iff`: the root convention for two cuts.
 * `Finset.pairwise_nestedOrDisjoint_image_sideAvoiding`: the root convention for a family.
 
 ## References
@@ -72,6 +74,14 @@ theorem nestedOrDisjoint_comm {S T : Finset V} :
     NestedOrDisjoint S T ↔ NestedOrDisjoint T S := by
   simp only [NestedOrDisjoint, disjoint_comm (a := S)]
   tauto
+
+/-- Every set is nested with itself. -/
+theorem NestedOrDisjoint.refl (S : Finset V) : NestedOrDisjoint S S :=
+  .of_subset subset_rfl
+
+/-- Being nested or disjoint is a reflexive relation. -/
+instance instReflNestedOrDisjoint : Std.Refl (NestedOrDisjoint (V := V)) :=
+  ⟨NestedOrDisjoint.refl⟩
 
 /-- Being nested or disjoint is a symmetric relation. -/
 theorem NestedOrDisjoint.symm {S T : Finset V} (h : NestedOrDisjoint S T) :
@@ -198,19 +208,21 @@ the cut from the root. -/
     Crosses S (sideAvoiding r T) ↔ Crosses S T := by
   by_cases h : r ∈ T <;> simp [sideAvoiding, h]
 
+/-- **Root convention.** The sides of two cuts avoiding a fixed root vertex are nested or
+disjoint exactly when the cuts do not cross. -/
+@[simp] theorem nestedOrDisjoint_sideAvoiding_iff {r : V} {S T : Finset V} :
+    NestedOrDisjoint (sideAvoiding r S) (sideAvoiding r T) ↔ ¬Crosses S T := by
+  rw [← not_crosses_iff_nestedOrDisjoint (notMem_sideAvoiding r S) (notMem_sideAvoiding r T),
+    crosses_sideAvoiding_left, crosses_sideAvoiding_right]
+
 /-- **Root convention.** A family of cuts is pairwise non-crossing exactly when representing
-each cut by its side avoiding a fixed root vertex gives a laminar family. -/
+each cut by its side avoiding a fixed root vertex gives a laminar family. Distinct cuts may have
+the same side avoiding the root, namely `S` and `Sᶜ`; they do not cross, as that side is nested
+with itself. -/
 theorem pairwise_nestedOrDisjoint_image_sideAvoiding (r : V) {𝒞 : Set (Finset V)} :
     (sideAvoiding r '' 𝒞).Pairwise NestedOrDisjoint ↔ 𝒞.Pairwise fun S T ↦ ¬Crosses S T := by
-  have key (S T : Finset V) :
-      NestedOrDisjoint (sideAvoiding r S) (sideAvoiding r T) ↔ ¬Crosses S T := by
-    rw [← not_crosses_iff_nestedOrDisjoint (notMem_sideAvoiding r S) (notMem_sideAvoiding r T),
-      crosses_sideAvoiding_left, crosses_sideAvoiding_right]
-  refine ⟨fun h S hS T hT _ ↦ (key S T).mp ?_, fun h ↦ (h.imp fun S T ↦ (key S T).mpr).image⟩
-  by_cases hST : sideAvoiding r S = sideAvoiding r T
-  · -- Cuts with the same side avoiding the root have nested sides.
-    exact hST ▸ .of_subset subset_rfl
-  · exact h (Set.mem_image_of_mem _ hS) (Set.mem_image_of_mem _ hT) hST
+  rw [Set.pairwise_image_of_refl]
+  simp only [Set.Pairwise, nestedOrDisjoint_sideAvoiding_iff]
 
 end Crossing
 
