@@ -72,7 +72,7 @@ theorem mem_smoothLocusOfDim_iff {d : ℕ} {x : X} :
         (X ↘ Spec (.of R)).smoothLocus).rank ⟨x, hx⟩ = d := by
   refine ⟨?_, fun ⟨hx, h⟩ ↦ ⟨⟨x, hx⟩, FiniteLocallyFreeSheaf.mem_rankLocus.mpr h, rfl⟩⟩
   rintro ⟨y, hy, rfl⟩
-  exact ⟨y.2, FiniteLocallyFreeSheaf.mem_rankLocus.mp hy⟩
+  exact ⟨y.property, FiniteLocallyFreeSheaf.mem_rankLocus.mp hy⟩
 
 variable (R X)
 
@@ -109,11 +109,11 @@ instance smoothOfRelativeDimension_smoothLocusOfDim (d : ℕ) :
     infer_instance
   refine smoothOfRelativeDimension_of_forall_rank_relativeDifferentials_eq R fun v ↦ ?_
   rw [FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion R (X.homOfLE hVW)]
-  obtain ⟨hv, hd⟩ := mem_smoothLocusOfDim_iff.mp v.2
+  obtain ⟨hv, hd⟩ := mem_smoothLocusOfDim_iff.mp v.property
   -- `homOfLE_apply'` describes the image of `v.1` as a point of `W` built from `v.1` and its
   -- membership proof; the type ascription states this for `v` itself, which is that point up to
   -- eta, so that `rw` finds it.
-  rwa [show X.homOfLE hVW v = ⟨v.1, hv⟩ from X.homOfLE_apply' hVW v.1 v.2]
+  rwa [show X.homOfLE hVW v = ⟨v.val, hv⟩ from X.homOfLE_apply' hVW v.val v.property]
 
 /-- The sheaf of relative differentials of the smooth locus of dimension `d` has rank `d` at every
 point. -/
@@ -137,9 +137,9 @@ theorem preimage_smoothLocusOfDim_eq {U : Scheme.{u}} [U.Over (Spec (.of R))]
   have hr : Set.range ((U ↘ Spec (.of R)).smoothLocus.ι ≫ f) ⊆
       Set.range (X ↘ Spec (.of R)).smoothLocus.ι := by
     rintro _ ⟨y, rfl⟩
-    refine ⟨⟨f y.1, ?_⟩, rfl⟩
+    refine ⟨⟨f y.val, ?_⟩, rfl⟩
     rw [← Scheme.Hom.mem_preimage, hsm]
-    exact y.2
+    exact y.property
   let g := IsOpenImmersion.lift _ _ hr
   have hg : g ≫ (X ↘ Spec (.of R)).smoothLocus.ι = (U ↘ Spec (.of R)).smoothLocus.ι ≫ f :=
     IsOpenImmersion.lift_fac _ _ hr
@@ -155,10 +155,10 @@ theorem preimage_smoothLocusOfDim_eq {U : Scheme.{u}} [U.Over (Spec (.of R))]
       (X ↘ Spec (.of R)).smoothLocus.ι (g p) = f ((U ↘ Spec (.of R)).smoothLocus.ι p) := by
     rw [← Scheme.Hom.comp_apply, hg, Scheme.Hom.comp_apply]
   have hrk (p : (U ↘ Spec (.of R)).smoothLocus.toScheme)
-      (hp : f p.1 ∈ (X ↘ Spec (.of R)).smoothLocus) :
+      (hp : f p.val ∈ (X ↘ Spec (.of R)).smoothLocus) :
       (FiniteLocallyFreeSheaf.relativeDifferentials R (U ↘ Spec (.of R)).smoothLocus).rank p =
         (FiniteLocallyFreeSheaf.relativeDifferentials R
-          (X ↘ Spec (.of R)).smoothLocus).rank ⟨f p.1, hp⟩ := by
+          (X ↘ Spec (.of R)).smoothLocus).rank ⟨f p.val, hp⟩ := by
     rw [FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion R g]
     exact congrArg _ (Subtype.ext (hgu p))
   refine ⟨fun ⟨hx, h⟩ ↦ ?_, fun ⟨hu, h⟩ ↦ ?_⟩
@@ -183,7 +183,7 @@ theorem rank_relativeDifferentials_smoothLocus_eq_topologicalKrullDimAt
       (FiniteLocallyFreeSheaf.relativeDifferentials k (X ↘ Spec (.of k)).smoothLocus).rank x = n :=
     ⟨_, rfl⟩
   set V := smoothLocusOfDim k X n
-  have hx : x.1 ∈ V := mem_smoothLocusOfDim_iff.mpr ⟨x.2, hn⟩
+  have hx : x.val ∈ V := mem_smoothLocusOfDim_iff.mpr ⟨x.property, hn⟩
   -- `V` is smooth of relative dimension `n` over `k`, hence pure of dimension `n`.
   have hV := ((pureRelativeDimension_iff_of_field (d := n) (V.toScheme ↘ Spec (.of k))).mp
     inferInstance).2
