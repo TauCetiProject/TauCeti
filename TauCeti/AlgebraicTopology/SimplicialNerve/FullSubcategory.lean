@@ -33,6 +33,8 @@ deduce that the factorization is an isomorphism via `NatIso.isIso_of_isIso_app`.
   `CategoryTheory.SimplicialNerve.fullSubcategoryIso_hom_app_val`: the isomorphism intertwines
   the full enhanced subcategory inclusion with `simplicialNerveMap F` and acts on simplices by
   postcomposition with `F`.
+* `CategoryTheory.SimplicialNerve.mono_simplicialNerveMap`: an object-injective simplicial functor
+  inducing isomorphisms on mapping spaces induces a monomorphism on simplicial nerves.
 * `CategoryTheory.SimplicialNerve.range_simplicialNerveMap`: the range of `simplicialNerveMap F`
   for a simplicial functor inducing isomorphisms on mapping spaces equals that full enhanced
   subcategory.
@@ -139,6 +141,14 @@ lemma fullSubcategoryIso_hom_ι (F : EnrichedFunctor SSet.{v} C D)
     (fullSubcategoryIso F hobj P hP).hom ≫ SSet.Subcomplex.ι _ = simplicialNerveMap F :=
   SSet.Subcomplex.lift_ι (simplicialNerveMap F)
     (range_simplicialNerveMap_le F P fun c ↦ (hP _).2 ⟨c, rfl⟩)
+
+/-- An object-injective simplicial functor inducing isomorphisms on all mapping simplicial sets
+induces a monomorphism on simplicial nerves. -/
+theorem mono_simplicialNerveMap (F : EnrichedFunctor SSet.{v} C D)
+    (hobj : Function.Injective F.obj) [∀ a b : C, IsIso (F.map a b)] :
+    Mono (simplicialNerveMap F) := by
+  rw [← fullSubcategoryIso_hom_ι F hobj (· ∈ Set.range F.obj) fun _ ↦ Iff.rfl]
+  exact mono_comp _ _
 
 /-- On arbitrary simplices, the underlying simplex of `(fullSubcategoryIso F hobj P hP).hom` is
 postcomposition with `F`. -/

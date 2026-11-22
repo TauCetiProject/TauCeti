@@ -865,6 +865,11 @@ theorem uliftIso_inv_app_coe {m : SimplexCategoryᵒᵖ}
       (joinVertex.op ⋙ uliftFunctor.{v, u}.obj X).obj m) = ULift.up s.down.val :=
   (rfl)
 
+private lemma uliftFunctor_map_app_down {A B : SSet.{u}} (f : A ⟶ B) {m : SimplexCategoryᵒᵖ}
+    (s : (uliftFunctor.{v, u}.obj A).obj m) :
+    ((uliftFunctor.{v, u}.map f).app m s).down = f.app m s.down :=
+  rfl
+
 variable (x y) in
 /-- `uliftIso.hom` is natural in the ambient simplicial set. -/
 @[reassoc]
@@ -878,12 +883,34 @@ theorem map_comp_uliftIso_hom {Y : SSet.{u}} (f : X ⟶ Y) :
         (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom).app m s).down).val
       = ((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s).val.down :=
         uliftIso_hom_app_down_coe _
-    _ = f.app (op (joinVertex.obj m.unop)) s.val.down :=
+    _ = ((uliftFunctor.{v, u}.map f).app (op (joinVertex.obj m.unop)) s.val).down :=
         congrArg ULift.down (map_app_coe (uliftFunctor.{v, u}.map f) s)
+    _ = f.app (op (joinVertex.obj m.unop)) s.val.down :=
+        uliftFunctor_map_app_down f s.val
     _ = f.app (op (joinVertex.obj m.unop)) (((uliftIso.{u, v} x y).hom.app m s).down).val := by
         rw [uliftIso_hom_app_down_coe]
-    _ = (((uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f)).app m s).down.val :=
+    _ = ((map x y f).app m ((uliftIso.{u, v} x y).hom.app m s).down).val :=
         (map_app_coe f _).symm
+    _ = (((uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f)).app m s).down.val :=
+        congrArg Subtype.val (uliftFunctor_map_app_down (map x y f) _).symm
+
+variable (x y) in
+/-- `uliftIso.inv` is natural in the ambient simplicial set. -/
+@[reassoc]
+theorem uliftIso_inv_comp_map {Y : SSet.{u}} (f : X ⟶ Y) :
+    (uliftIso.{u, v} x y).inv ≫ map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) =
+      uliftFunctor.{v, u}.map (map x y f) ≫
+        (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).inv := by
+  have h₁ : (uliftIso.{u, v} x y).inv ≫ map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) =
+      (uliftIso.{u, v} x y).inv ≫
+        (map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) ≫
+          (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom) ≫
+        (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).inv :=
+    congrArg ((uliftIso.{u, v} x y).inv ≫ ·)
+      ((Category.comp_id _).symm.trans
+        ((congrArg (_ ≫ ·) (Iso.hom_inv_id _).symm).trans (Category.assoc _ _ _).symm))
+  refine h₁.trans ?_
+  rw [map_comp_uliftIso_hom, ← Category.assoc, Iso.inv_hom_id_assoc]
 
 end ulift
 

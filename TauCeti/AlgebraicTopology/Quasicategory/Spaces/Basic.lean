@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
 public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
+import TauCeti.CategoryTheory.Enriched.Ordinary.Basic
 
 /-!
 # The simplicial category of Kan complexes and the quasicategory `Spaces`
@@ -53,11 +54,17 @@ noncomputable abbrev spaces : SSet.{u + 1} :=
 
 namespace SpacesΔ
 
+private lemma sHom_eq_ihom (A B : SSet.{u}) : sHom A B = (ihom A).obj B :=
+  rfl
+
 /-- The mapping simplicial sets of `SpacesΔ` are Kan complexes, as function complexes into Kan
 complexes. -/
-instance kanComplex_sHom (A B : SpacesΔ.{u}) : KanComplex (sHom A B) :=
+instance kanComplex_sHom (A B : SpacesΔ.{u}) : KanComplex (sHom A B) := by
   have := B.property
-  inferInstanceAs (KanComplex ((ihom A.obj).obj B.obj))
+  have hsHom : sHom A B = (ihom A.obj).obj B.obj :=
+    (ObjectProperty.FullSubcategory.eHom_eq SSet A B).trans (sHom_eq_ihom A.obj B.obj)
+  rw [hsHom]
+  infer_instance
 
 end SpacesΔ
 

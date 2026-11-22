@@ -123,10 +123,16 @@ lemma lift_comp (F : EnrichedFunctor V C D) [∀ a b : C, IsIso (F.map a b)]
     (G : EnrichedFunctor V A D) (obj : A → C) (hobj : ∀ a : A, F.obj (obj a) = G.obj a) :
     (lift F G obj hobj).comp V F = G := by
   refine EnrichedFunctor.ext V hobj fun i j ↦ ?_
-  dsimp only [lift, EnrichedFunctor.comp]
-  simp only [Category.assoc, IsIso.inv_hom_id, Category.comp_id]
-  change G.map i j ≫ eqToHom (by rw [hobj i, hobj j]) ≫ eqToHom (by rw [hobj i, hobj j]) = _
-  simp
+  -- `EnrichedFunctor.comp` and `lift` are semireducible, so `((lift F G obj hobj).comp V F).obj`
+  -- in the `eqToHom` domain from `EnrichedFunctor.ext` does not unify with `F.obj (obj _)` at
+  -- `reducible` transparency for `EnrichedFunctor.comp_map` and `eqToHom_trans`.
+  change ((lift F G obj hobj).map i j ≫
+      F.map ((lift F G obj hobj).obj i) ((lift F G obj hobj).obj j)) ≫
+      eqToHom (by simp only [lift_obj, hobj]) = G.map i j
+  rw [lift_map]
+  simp only [Category.assoc,
+    ← F.map_comp_eqToHom_assoc (lift_obj F G obj hobj i).symm (lift_obj F G obj hobj j).symm,
+    IsIso.inv_hom_id_assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 /-- Uniqueness of the lift of `G` along `F` for a prescribed object map `obj`. -/
 lemma lift_unique {F : EnrichedFunctor V C D} [∀ a b : C, IsIso (F.map a b)]
