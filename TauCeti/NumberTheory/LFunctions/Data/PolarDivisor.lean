@@ -11,9 +11,9 @@ public import Mathlib.Data.Finsupp.Basic
 /-!
 # Symmetries of the simple-pole divisor at `0` and `1`
 
-Both the Riemann zeta function and the Dedekind zeta function of any number field have simple
-poles at `0` and `1`, represented in `AnalyticLFunctionData` by the polar divisor
-`Finsupp.single 0 1 + Finsupp.single 1 1`. This file records its invariance under complex
+Both the completed Riemann zeta function and the completed Dedekind zeta function of any number
+field have simple poles at `0` and `1`, represented in `AnalyticLFunctionData` by the polar
+divisor `Finsupp.single 0 1 + Finsupp.single 1 1`. This file records its invariance under complex
 conjugation `s ↦ conj s` and functional-equation reflection `s ↦ 1 - conj s`.
 -/
 

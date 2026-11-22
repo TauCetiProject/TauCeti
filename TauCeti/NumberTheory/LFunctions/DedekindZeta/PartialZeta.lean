@@ -120,6 +120,14 @@ theorem rayClassCoeff_apply (𝔪 : Modulus K) (c : RayClassGroup 𝔪) (I : (Id
         idealClass 𝔪 ⟨I, Modulus.mem_integralIdealsPrimeTo.mpr hI⟩ = c then 1 else 0 :=
   (rfl)
 
+/-- Every ray-class indicator is real-valued, hence invariant under conjugation. -/
+@[simp]
+theorem star_rayClassCoeff (𝔪 : Modulus K) (c : RayClassGroup 𝔪) :
+    star (rayClassCoeff 𝔪 c) = rayClassCoeff 𝔪 c := by
+  funext I
+  simp only [Pi.star_apply, rayClassCoeff_apply]
+  split_ifs <;> simp
+
 open scoped Classical in
 /-- At an ideal prime to the modulus, the class indicator tests the ray class of the ideal. -/
 theorem rayClassCoeff_apply_of_isCoprimeTo {𝔪 : Modulus K} (c : RayClassGroup 𝔪)

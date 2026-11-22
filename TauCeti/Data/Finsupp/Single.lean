@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Order
-public import Mathlib.Data.Finsupp.Single
 public import Mathlib.Data.Int.Cast.Basic
 
 /-!
@@ -15,9 +14,10 @@ public import Mathlib.Data.Int.Cast.Basic
 The integer cast commutes with evaluating a finitely supported function with one-point support:
 the cast of `Finsupp.single a n b` is `Finsupp.single a (n : R) b` in any additive group with one.
 
-For a sum of two nonzero singletons `Finsupp.single a b + Finsupp.single c d` in a canonically
-ordered additive commutative monoid, the support is `{a, c}`, and evaluation vanishes away from
-`a` and `c`.
+A nonzero singleton `Finsupp.single a b` vanishes away from `a`
+(`Finsupp.single_apply_eq_zero_of_ne_zero`). For a sum of two nonzero singletons
+`Finsupp.single a b + Finsupp.single c d` in a canonically ordered additive commutative monoid, the
+support is `{a, c}`, and evaluation vanishes away from `a` and `c`.
 -/
 
 public section
@@ -30,15 +30,20 @@ theorem intCast_single_apply {α R : Type*} [AddGroupWithOne R] (a : α) (n : �
     ((single a n b : ℤ) : R) = single a (n : R) b :=
   apply_single' Int.cast Int.cast_zero a n b
 
+/-- Evaluation of a nonzero singleton `single a b` vanishes away from `a`. -/
+@[simp]
+theorem single_apply_eq_zero_of_ne_zero {α M : Type*} [Zero M] {a x : α} {b : M} (hb : b ≠ 0) :
+    single a b x = 0 ↔ x ≠ a :=
+  single_apply_eq_zero.trans ⟨fun h hxa ↦ hb (h hxa), fun h hxa ↦ (h hxa).elim⟩
+
 /-- A sum of two nonzero singletons `single a b + single c d` vanishes exactly away from `a` and
 `c`. -/
 theorem single_add_single_eq_zero_iff {α M : Type*}
     [AddCommMonoid M] [PartialOrder M] [CanonicallyOrderedAdd M]
     {a c : α} {b d : M} (hb : b ≠ 0) (hd : d ≠ 0) (x : α) :
     (single a b + single c d) x = 0 ↔ x ≠ a ∧ x ≠ c := by
-  simp only [add_apply, add_eq_zero, single_apply_eq_zero]
-  exact ⟨fun ⟨ha, hc⟩ ↦ ⟨fun h ↦ hb (ha h), fun h ↦ hd (hc h)⟩,
-    fun ⟨ha, hc⟩ ↦ ⟨fun h ↦ (ha h).elim, fun h ↦ (hc h).elim⟩⟩
+  simp only [add_apply, add_eq_zero, single_apply_eq_zero_of_ne_zero hb,
+    single_apply_eq_zero_of_ne_zero hd]
 
 /-- A sum of two nonzero singletons `single a b + single c d` is nonzero exactly at `a` and
 `c`. -/

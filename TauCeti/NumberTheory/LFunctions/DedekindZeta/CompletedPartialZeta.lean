@@ -18,7 +18,6 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
-import TauCeti.RingTheory.ClassGroup.Basic
 import TauCeti.RingTheory.FractionalIdeal.Norm
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
@@ -773,14 +772,10 @@ theorem completedPartialZeta_conj (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : �
         (TauCeti.ofReal_cpow_conj (by positivity : (0 : ℝ) ≤ (|discr K| : ℤ)) (z / 2))
       simpa only [Complex.ofReal_intCast, map_div₀, map_ofNat, Complex.conj_conj] using h
     set c : RayClassGroup (Modulus.one K) := oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹ with hc
-    have hstar : star (rayClassCoeff (Modulus.one K) c) = rayClassCoeff (Modulus.one K) c := by
-      funext 𝔟
-      simp only [Pi.star_apply, rayClassCoeff_apply]
-      split_ifs <;> simp
     have hL : conj (LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) (conj z)) =
         LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) z := by
       have h := LSeries_normCoeff_star (K := K) (rayClassCoeff (Modulus.one K) c) z
-      rw [hstar] at h
+      rw [star_rayClassCoeff] at h
       simpa [Complex.star_def] using congrArg conj h
     simp only [Function.comp_apply,
       completedPartialZeta_eq_mul_LSeries_rayClassCoeff_one I hzc,
