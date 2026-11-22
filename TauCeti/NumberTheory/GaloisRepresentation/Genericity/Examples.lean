@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.GaloisRepresentation.Genericity.Basic
+public import TauCeti.NumberTheory.GaloisRepresentation.Genericity.DecomposedGeneric
 public import Mathlib.Algebra.Field.ZMod
+import TauCeti.NumberTheory.NumberField.Frobenius
+import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 
 /-!
 # Examples of generic Frobenius eigenvalues
@@ -24,6 +26,9 @@ from each other and from pairwise distinctness, and show that genericity depends
 * Over `𝔽₇` with `q = 2`, the pair `(1, 3)` is strongly generic: its two ratios are `5` and `3`.
 * A nontrivial element in the image of `I` makes both representation conditions fail, whatever
   the eigenvalues of the Frobenius element.
+* For `F = ℚ` and the trivial representation of rank two over `𝔽₃`, the prime `2` is decomposed
+  generic but `7` is not: `7 ≡ 1 (mod 3)`, so the repeated eigenvalue `1` has ratio `7` with
+  itself in `𝔽₃`. In particular this reducible representation is decomposed generic.
 -/
 
 public section
@@ -114,5 +119,48 @@ theorem not_isGenericAt_of_mem_of_ne_one {G n K : Type*} [Group G] [Fintype n] [
     (frob : G) (q : K) :
     ¬ ρ.IsGenericAt I frob q ∧ ¬ ρ.IsStronglyGenericAt I frob q :=
   ⟨fun h ↦ hρg (h.le_ker hg), fun h ↦ hρg (h.le_ker hg)⟩
+
+section DecomposedGeneric
+
+open Ideal Module
+open scoped _root_.NumberField
+
+/-- Every rational prime splits completely in `ℚ`: there is one prime of `𝓞 ℚ` above it. -/
+private theorem ncard_primesOver_rat (p : ℕ) [Fact p.Prime] :
+    ((span {(p : ℤ)}).primesOver (𝓞 ℚ)).ncard = finrank ℚ ℚ := by
+  obtain ⟨Q, hQ⟩ : ((span {(p : ℤ)}).primesOver (𝓞 ℚ)).Nonempty :=
+    Set.nonempty_coe_sort.mp inferInstance
+  have := hQ.1
+  have := hQ.2
+  exact (_root_.NumberField.ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot ℚ ℚ _ Q).mpr
+    (Subsingleton.elim _ _)
+
+/-- For `F = ℚ`, the prime `2` is decomposed generic for the trivial representation of rank two
+over `𝔽₃`. -/
+theorem isDecomposedGenericPrime_one_two :
+    (1 : Gal(ℚ/ℚ) →* GL (Fin 2) (ZMod 3)).IsDecomposedGenericPrime 2 := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  refine MonoidHom.isDecomposedGenericPrime_iff.mpr
+    ⟨Nat.prime_two, by decide, ncard_primesOver_rat 2, fun Q _ _ σ _ ↦ ?_⟩
+  exact_mod_cast (isGenericAt_one_and_not_isGenericAt_one_one_and_not_isStronglyGenericAt_one _
+    σ).1
+
+/-- For `F = ℚ`, the prime `7` is not decomposed generic for the trivial representation of rank
+two over `𝔽₃`, although `2` is: `7 = 1` in `𝔽₃`. -/
+theorem not_isDecomposedGenericPrime_one_seven :
+    ¬ (1 : Gal(ℚ/ℚ) →* GL (Fin 2) (ZMod 3)).IsDecomposedGenericPrime 7 := by
+  have : Fact (Nat.Prime 7) := ⟨by decide⟩
+  intro h
+  obtain ⟨Q, hQ⟩ : ((span {((7 : ℕ) : ℤ)}).primesOver (𝓞 ℚ)).Nonempty :=
+    Set.nonempty_coe_sort.mp inferInstance
+  have := hQ.1
+  have := hQ.2
+  obtain ⟨σ, hσ⟩ := _root_.NumberField.exists_isArithFrobAt ℚ Q
+    (ne_bot_of_liesOver_of_ne_bot (p := span {((7 : ℕ) : ℤ)}) (by simp) Q)
+  have h7 := h.isGenericAt Q hσ
+  rw [show ((7 : ℕ) : ZMod 3) = 1 by decide] at h7
+  exact (isGenericAt_one_and_not_isGenericAt_one_one_and_not_isStronglyGenericAt_one _ σ).2.1 h7
+
+end DecomposedGeneric
 
 end TauCeti.GenericityExamples
