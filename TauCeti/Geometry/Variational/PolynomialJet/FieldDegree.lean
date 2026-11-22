@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import TauCeti.Geometry.Variational.PolynomialJet.Euler
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Derivation
 import TauCeti.Data.Finsupp.Multiset
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Field degree and the nonlinearity of Euler expressions
@@ -87,9 +88,8 @@ theorem isWeightedHomogeneous_fieldWeight_zero_iff {p : PolynomialJet R ι α} :
     rcases v with j | aI
     · exact ⟨j, rfl⟩
     · -- a field coordinate in the monomial `d` would give it positive field degree
-      have hle := Finsupp.le_weight (fieldWeight ι α) (s := Sum.inr aI) (by simp) d
-      rw [h (mem_support_iff.1 hd)] at hle
-      exact absurd (Nat.le_zero.1 hle) (Finsupp.mem_support_iff.1 hvd)
+      simpa using h.apply_eq_zero_of_coeff_ne_zero (mem_support_iff.1 hd)
+        (Finsupp.mem_support_iff.1 hvd)
   · intro h d hd
     rw [Finsupp.weight_apply, Finsupp.sum]
     refine Finset.sum_eq_zero fun v hv ↦ ?_

@@ -44,12 +44,11 @@ theorem IsWeightedHomogeneous.derivation {φ : MvPolynomial σ R} {m : M} (k : M
     | add_single_one i d ih =>
       -- `monomial (d + eᵢ) r = monomial d r * X i`, and both Leibniz terms have weight
       -- `weight d + w i + k`
-      rw [monomial_add_single, pow_one, Derivation.leibniz, smul_eq_mul, smul_eq_mul,
-        map_add, Finsupp.weight_single, one_smul]
-      have h₁ := (isWeightedHomogeneous_monomial w d r rfl).mul (hD i)
-      have h₂ := (isWeightedHomogeneous_X R w i).mul ih
-      rw [← add_assoc] at h₁
-      rw [add_left_comm, ← add_assoc] at h₂
-      exact h₁.add h₂
+      rw [monomial_add_single, Derivation.leibniz]
+      refine .add ?_ ?_
+      · convert (isWeightedHomogeneous_monomial w d r rfl).mul (hD i) using 1 <;>
+          simp [Finsupp.weight_single, add_assoc]
+      · convert (isWeightedHomogeneous_X R w i).mul ih using 1 <;>
+          simp [Finsupp.weight_single, add_assoc, add_left_comm]
 
 end MvPolynomial
