@@ -119,7 +119,8 @@ theorem comul_amiceTerm_of_lt {p : ℕ} [Fact p.Prime] {h n : ℕ}
   have hn0 : n / p ^ h = 0 := Nat.div_eq_of_lt hn
   have hi0 : ij.1 / p ^ h = 0 := Nat.div_eq_of_lt (by omega)
   have hj0 : ij.2 / p ^ h = 0 := Nat.div_eq_of_lt (by omega)
-  ext q r
-  simp [hn0, hi0, hj0, curryEquiv_prodMul, ← amiceTerm_smul]
+  simp only [hn0, hi0, hj0, Nat.factorial_zero, mul_one, Nat.div_one, one_smul]
+  rw [curryEquiv_prodMul_eq_compLeft, compLeft_amiceTerm, ContinuousLinearMap.toSpanSingleton_apply,
+    one_smul]
 
 end TauCeti.AnalyticStage
