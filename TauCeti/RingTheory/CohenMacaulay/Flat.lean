@@ -41,6 +41,8 @@ over themselves (Stacks, Definition 10.103.12 (0AAH)).
 
 * `Module.isCohenMacaulay_self_iff_of_flat`: for a flat local homomorphism `R → S` of Noetherian
   local rings, `S` is Cohen–Macaulay if and only if `R` and the closed fibre `S ⧸ 𝔪_R S` are.
+* `Module.isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq`: for a flat homomorphism
+  `R → S` of Noetherian local rings with `𝔪_R S = 𝔪_S`, `S` is Cohen–Macaulay if and only if `R` is.
 * `Module.isCohenMacaulay_localization_atPrime_of_flat`: for a flat Noetherian `R`-algebra `S` and
   a prime `q` of `S` over `p`, the local ring `S_q` is Cohen–Macaulay when `R_p` is and the local
   ring of the fibre `κ(p) ⊗[R] S` at the point corresponding to `q` is.
@@ -106,6 +108,25 @@ theorem isCohenMacaulay_self_iff_of_flat :
   omega
 
 end Local
+
+section ClosedFibreField
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [IsLocalRing R] [IsLocalRing S]
+  [IsNoetherianRing R] [IsNoetherianRing S] [Module.Flat R S]
+
+/-- Along a flat homomorphism of Noetherian local rings under which the maximal ideal of the
+source generates the maximal ideal of the target, the target is Cohen–Macaulay if and only if the
+source is: the closed fibre is the residue field of the target. -/
+theorem isCohenMacaulay_self_iff_of_flat_of_map_maximalIdeal_eq
+    (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
+    IsCohenMacaulay S S ↔ IsCohenMacaulay R R := by
+  have : IsLocalHom (algebraMap R S) := ((local_hom_tfae (algebraMap R S)).out 1 3).mpr h.le
+  rw [isCohenMacaulay_self_iff_of_flat (R := R) (S := S), h, and_iff_left]
+  let := Ideal.Quotient.field (maximalIdeal S)
+  exact (isCohenMacaulay_iff_isCohenMacaulay_of_surjective
+    (Ideal.Quotient.mk_surjective (I := maximalIdeal S))).mpr isCohenMacaulay_of_krullDimLE_zero
+
+end ClosedFibreField
 
 section Global
 

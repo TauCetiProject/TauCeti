@@ -158,6 +158,18 @@ theorem tangentCoordChange_boundaryParam {α β x : (𝓡∂ (n + 1)).boundary M
     (euclideanHalfSpaceBoundaryParam n v)) 0 = 0
   rw [ha, euclideanHalfSpaceBoundaryParam_apply_zero, mul_zero]
 
+/-- The tangent vectors of the boundary have zero normal coordinate in every preferred chart whose
+source contains their base point. -/
+theorem tangentCoordChange_mfderiv_subtypeVal_apply_zero {α : M}
+    {x : (𝓡∂ (n + 1)).boundary M} (hα : (x : M) ∈ (extChartAt (𝓡∂ (n + 1)) α).source)
+    (w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x) :
+    tangentCoordChange (𝓡∂ (n + 1)) (x : M) α (x : M)
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x w) 0 = 0 := by
+  obtain ⟨a, -, h⟩ := tangentCoordChange_normal_pos x.property (mem_extChartAt_source (x : M)) hα
+  rw [mfderiv_subtypeVal_boundary]
+  exact (h _).trans (mul_eq_zero_of_right a (euclideanHalfSpaceBoundaryParam_apply_zero w))
+
 /-- Ambient and boundary transition determinants differ by a strictly positive normal factor. -/
 theorem exists_pos_det_tangentCoordChange_boundary {α β x : (𝓡∂ (n + 1)).boundary M}
     (hα : x ∈ (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) α).source)

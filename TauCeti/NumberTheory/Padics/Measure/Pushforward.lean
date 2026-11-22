@@ -33,23 +33,6 @@ open AbstractMeasure
 
 variable {X Y R E : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
-namespace ContinuousMap
-
-/-- Pushforward is continuous for the weak topologies of test-function evaluations. -/
-theorem continuous_abstractMeasure_map_weak [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
-    [NormedAddCommGroup E] [Module R E] [ContinuousSMul R E] (f : C(X, Y)) :
-    @Continuous _ _ (WeakTopology (X := X) (R := R) (E := E))
-      (WeakTopology (X := Y) (R := R) (E := E)) (map (R := R) (E := E) f) := by
-  let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
-  let : TopologicalSpace (AbstractMeasure Y R E) := WeakTopology
-  have heval : Continuous (fun μ : AbstractMeasure X R E ↦ fun h : C(X, R) ↦ μ h) :=
-    continuous_induced_dom
-  refine continuous_induced_rng.mpr <| continuous_pi fun g ↦ ?_
-  exact ((continuous_apply (g.comp f)).comp heval).congr fun μ ↦ by
-    simp only [Function.comp_apply, map_apply]
-
-end ContinuousMap
-
 namespace AbstractMeasure
 
 /-- Under the continuous-linear-map equivalence, pushforward is precomposition. -/
@@ -61,34 +44,36 @@ theorem toCLMEquiv_map [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
   ext g
   simp
 
-end AbstractMeasure
-
-variable [CompactSpace X] [CompactSpace Y] [NontriviallyNormedField R]
-
-namespace AbstractMeasure
-
 /-- Pushforward between compact spaces does not increase the continuous-dual operator norm. -/
-theorem norm_toCLMEquiv_map_le [SeminormedAddCommGroup E] [NormedSpace R E]
-    (μ : AbstractMeasure X R E) (f : C(X, Y)) :
+theorem norm_toCLMEquiv_map_le [CompactSpace X] [CompactSpace Y] [NontriviallyNormedField R]
+    [SeminormedAddCommGroup E] [NormedSpace R E] (μ : AbstractMeasure X R E) (f : C(X, Y)) :
     ‖toCLMEquiv (map f μ)‖ ≤ ‖toCLMEquiv μ‖ := by
-  have hcomp : ‖f.compCLM R R‖ ≤ 1 := by
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g ↦ ?_
-    simpa only [one_mul, ContinuousMap.compCLM_apply] using
-      (ContinuousMap.norm_le _ (norm_nonneg g)).mpr fun x ↦
-        ContinuousMap.norm_coe_le_norm g (f x)
   rw [toCLMEquiv_map]
-  exact ((toCLMEquiv μ).opNorm_comp_le _).trans
-    (mul_le_of_le_one_right (norm_nonneg _) hcomp)
+  refine ((toCLMEquiv μ).opNorm_comp_le _).trans (mul_le_of_le_one_right (norm_nonneg _) ?_)
+  -- Precomposition with `f` does not increase the sup norm of a test function.
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g ↦ ?_
+  rw [one_mul, ContinuousMap.compCLM_apply, ContinuousMap.norm_le _ (norm_nonneg g)]
+  exact fun x ↦ g.norm_coe_le_norm (f x)
 
 end AbstractMeasure
 
 namespace ContinuousMap
 
-omit [CompactSpace X] [CompactSpace Y] in
+/-- Pushforward is continuous for the weak topologies of test-function evaluations. -/
+theorem continuous_abstractMeasure_map_weak [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+    [NormedAddCommGroup E] [Module R E] [ContinuousSMul R E] (f : C(X, Y)) :
+    @Continuous _ _ (WeakTopology (X := X) (R := R) (E := E))
+      (WeakTopology (X := Y) (R := R) (E := E)) (map (R := R) (E := E) f) := by
+  let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
+  let : TopologicalSpace (AbstractMeasure Y R E) := WeakTopology
+  refine continuous_induced_rng.mpr <| continuous_pi fun g ↦ ?_
+  simp only [Function.comp_apply, map_apply]
+  exact (continuous_apply (g.comp f)).comp continuous_induced_dom
+
 /-- Pushforward is continuous for Mathlib's strong measure topologies, which on compact
 spaces are the continuous-dual operator-norm topologies. -/
-theorem continuous_abstractMeasure_map_strong [NormedAddCommGroup E] [NormedSpace R E]
-    (f : C(X, Y)) :
+theorem continuous_abstractMeasure_map_strong [NontriviallyNormedField R] [NormedAddCommGroup E]
+    [NormedSpace R E] (f : C(X, Y)) :
     @Continuous _ _ (StrongTopology (X := X) (R := R) (E := E))
       (StrongTopology (X := Y) (R := R) (E := E)) (map (R := R) (E := E) f) := by
   let : TopologicalSpace (AbstractMeasure X R E) := StrongTopology
