@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Analysis.Convex.Extreme
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Instances.AddCircle.Defs
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
@@ -100,8 +101,9 @@ torus.
   `J(q, p) = (-p, q)`.
 * `TauCeti.complexEuclideanEquivRealProd_symm_weightRotation_apply`: in the complex coordinates
   `z_i = q_i + i p_i`, the rotation by `θ` multiplies `z_i` by `cos θ_i + i sin θ_i`.
-* `TauCeti.continuous_weightMomentMap`, `TauCeti.weightMomentMap_weightRotation`,
-  `TauCeti.weightMomentMap_torusRotation`: `μ` is continuous and invariant under every rotation.
+* `TauCeti.continuous_weightMomentMap`, `TauCeti.contDiff_weightMomentMap`,
+  `TauCeti.weightMomentMap_weightRotation`, `TauCeti.weightMomentMap_torusRotation`: `μ` is
+  continuous, smooth and invariant under every rotation.
 * `TauCeti.hamiltonianVectorField_weightMomentMap`: the Hamiltonian vector field of `μ^ξ` is the
   generator for the angles `α_i(ξ)`.
 * `TauCeti.fderiv_weightMomentMap_apply_eq_zero_iff`: the critical points of `μ^ξ` are the zeros
@@ -334,6 +336,14 @@ theorem weightMomentMap_zero (α : ι → StrongDual ℝ 𝔱) : weightMomentMap
 theorem continuous_weightMomentMap (α : ι → StrongDual ℝ 𝔱) : Continuous (weightMomentMap α) := by
   unfold weightMomentMap
   fun_prop
+
+/-- The moment map of the weight model is smooth. -/
+@[fun_prop]
+theorem contDiff_weightMomentMap (α : ι → StrongDual ℝ 𝔱) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (weightMomentMap α) :=
+  ContDiff.sum fun _ _ ↦ (contDiff_const.mul
+    ((((contDiff_piLp_apply (p := 2)).comp contDiff_fst).pow 2).add
+      (((contDiff_piLp_apply (p := 2)).comp contDiff_snd).pow 2))).fun_smul contDiff_const
 
 /-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` composed with the
 half squared radii `(q_i² + p_i²) / 2`. -/

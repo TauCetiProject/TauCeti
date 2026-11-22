@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -101,17 +102,6 @@ variable (hv : IsSmoothVertex i u c v) (hi : IsIntegralLattice i)
 
 /-! ### The lift of the inverse chart -/
 
-omit [Fintype ι] [FiniteDimensional ℝ V] in
-/-- The translated weight model of a vertex chart is smooth. -/
-private theorem contDiff_weightMomentMap_apply [Finite ι] {n : WithTop ℕ∞} (ξ : V) :
-    ContDiff ℝ n fun w : EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-        EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ↦
-      (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) ξ := by
-  simp only [add_apply, weightMomentMap_apply]
-  refine contDiff_const.add (contDiff_const.mul (ContDiff.sum fun k _ ↦
-    contDiff_const.mul ((((contDiff_piLp_apply (p := 2)).comp contDiff_fst).pow 2).add
-      (((contDiff_piLp_apply (p := 2)).comp contDiff_snd).pow 2))))
-
 /-- **The lift of the inverse vertex chart is smooth.** On the target of the vertex chart the
 coordinates of `vertexLift w` outside the active facets are square roots of positive smooth
 functions of `w`, and its other coordinates are coordinates of `w`. -/
@@ -127,7 +117,8 @@ theorem contDiffAt_vertexLift {n : WithTop ℕ∞}
       exact ((contDiff_piLp_apply (p := 2)).comp contDiff_fst).contDiffAt
     · simp only [vertexLift_fst_of_notMem hv hi _ hj]
       refine ContDiffAt.sqrt (contDiffAt_const.mul
-        ((contDiff_weightMomentMap_apply hv hi _).contDiffAt.sub contDiffAt_const)) ?_
+        (((contDiff_const.add (contDiff_weightMomentMap _)).clm_apply
+          contDiff_const).contDiffAt.sub contDiffAt_const)) ?_
       linarith [hw' j hj]
   · by_cases hj : j ∈ activeSet (facetPairing i u) c v
     · simp only [vertexLift_snd_of_mem hv hi _ hj]
@@ -220,21 +211,28 @@ private def vertexChartTargetOpens : TopologicalSpace.Opens
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) :=
   ⟨_, (vertexChart hv hi hvP).open_target⟩
 
-/-- The inverse vertex chart on its target, as a map on the open subset of `ℂ^A`: the class of the
-point `vertexLift w` of the level, where `vertexLift` is smooth. -/
-private theorem vertexChart_symm_comp_subtypeVal :
-    ∃ (_ : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
+/-- The lift of the inverse vertex chart is smooth on the open target of the chart. -/
+private theorem contMDiff_vertexLift_subtypeVal :
+    ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
         EuclideanSpace ℝ (activeSet (facetPairing i u) c v))
-        𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞
-        (fun w : vertexChartTargetOpens hv hi hvP ↦ vertexLift hv hi w))
-      (hZ : ∀ w : vertexChartTargetOpens hv hi hvP, vertexLift hv hi w ∈ delzantLevel i u c),
-      (vertexChart hv hi hvP).symm ∘ (Subtype.val : vertexChartTargetOpens hv hi hvP → _) =
-        DelzantQuotient.mk ∘ fun w : vertexChartTargetOpens hv hi hvP ↦
-          (⟨vertexLift hv hi w, hZ w⟩ : delzantLevel i u c) :=
-  ⟨fun w ↦ contMDiffAt_subtype_iff.2 (contDiffAt_vertexLift hv hi hvP w.property).contMDiffAt,
-    fun w ↦ vertexLift_mem_delzantLevel hv hi fun j hj ↦
-      ((mem_vertexChart_target_iff hv hi hvP).1 w.property j hj).le,
-    funext fun w ↦ vertexChart_symm_apply hv hi hvP w.property⟩
+      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞
+      (fun w : vertexChartTargetOpens hv hi hvP ↦ vertexLift hv hi w) :=
+  fun w ↦ contMDiffAt_subtype_iff.2 (contDiffAt_vertexLift hv hi hvP w.property).contMDiffAt
+
+/-- On the target of the vertex chart, the lift lies in the level `Z`. -/
+private theorem vertexLift_mem_delzantLevel_of_mem_target (w : vertexChartTargetOpens hv hi hvP) :
+    vertexLift hv hi w ∈ delzantLevel i u c :=
+  vertexLift_mem_delzantLevel hv hi fun j hj ↦
+    ((mem_vertexChart_target_iff hv hi hvP).1 w.property j hj).le
+
+/-- The inverse vertex chart on its target, as a map on the open subset of `ℂ^A`: the class of the
+point `vertexLift w` of the level. -/
+private theorem vertexChart_symm_comp_subtypeVal_eq :
+    (vertexChart hv hi hvP).symm ∘ (Subtype.val : vertexChartTargetOpens hv hi hvP → _) =
+      DelzantQuotient.mk ∘ fun w : vertexChartTargetOpens hv hi hvP ↦
+        (⟨vertexLift hv hi w, vertexLift_mem_delzantLevel_of_mem_target hv hi hvP w⟩ :
+          delzantLevel i u c) :=
+  funext fun w ↦ vertexChart_symm_apply hv hi hvP w.property
 
 end DelzantQuotient
 
@@ -258,11 +256,11 @@ theorem contMDiffOn_vertexChart_symm :
       (vertexChart hv hi hvP).symm (vertexChart hv hi hvP).target := by
   let _ := hΔ.delzantLevelChartedSpace hi
   let _ := hΔ.delzantQuotientChartedSpace hi
-  obtain ⟨hℓ, hZ, heq⟩ := vertexChart_symm_comp_subtypeVal hv hi hvP
   intro w hw
   have hΦ := (hΔ.isSubmersion_delzantQuotientMk hi).contMDiff.comp
-    (hΔ.contMDiff_codRestrict_delzantLevel hi hℓ hZ)
-  rw [← heq] at hΦ
+    (hΔ.contMDiff_codRestrict_delzantLevel hi (contMDiff_vertexLift_subtypeVal hv hi hvP)
+      (vertexLift_mem_delzantLevel_of_mem_target hv hi hvP))
+  rw [← vertexChart_symm_comp_subtypeVal_eq] at hΦ
   exact (contMDiffAt_subtype_iff (x := ⟨w, hw⟩)).1 (hΦ _) |>.contMDiffWithinAt
 
 /-- **The inverse vertex chart pulls the symplectic form of the Delzant quotient back to the
@@ -292,18 +290,19 @@ theorem eval₂_delzantQuotientSymplecticForm_mfderiv_vertexChart_symm
   let _ := hΔ.delzantQuotientChartedSpace hi
   have := hΔ.isManifold_delzantLevel hi ∞
   have := hΔ.isManifold_delzantQuotient hi
-  obtain ⟨hℓ, hZ, heq⟩ := vertexChart_symm_comp_subtypeVal hv hi hvP
+  have hℓ := contMDiff_vertexLift_subtypeVal hv hi hvP
   have hmk := (hΔ.isSubmersion_delzantQuotientMk hi).contMDiff
-  have hL := hΔ.contMDiff_codRestrict_delzantLevel hi hℓ hZ
+  have hL := hΔ.contMDiff_codRestrict_delzantLevel hi hℓ
+    (vertexLift_mem_delzantLevel_of_mem_target hv hi hvP)
   -- On `W`, the pullback of `ω_Δ` along the class of the lift is the pullback of the standard form
   -- of `ℂ^ι` along the lift.
   have hpull : SmoothForm.mpullback _ (hmk.comp hL) (hΔ.delzantQuotientSymplecticForm hi) =
       SmoothForm.mpullback _ hℓ stdSymplecticForm.constSmooth := by
     rw [← SmoothForm.mpullback_mpullback _ _ hL hmk,
-      hΔ.mpullback_delzantQuotientMk_delzantQuotientSymplecticForm hi,
-      SmoothForm.mpullback_mpullback]
+      hΔ.mpullback_delzantQuotientMk_delzantQuotientSymplecticForm hi]
     -- The inclusion of the level after the codomain restriction of the lift is the lift.
-    rfl
+    rw [SmoothForm.mpullback_mpullback_of_comp_eq hL (hΔ.contMDiff_coe_delzantLevel hi) hℓ
+      contMDiff_id (funext fun _ ↦ rfl), SmoothForm.mpullback_id, LinearMap.id_apply]
   -- Both sides are read through the differential of the inclusion of `W`, which is surjective.
   set x : vertexChartTargetOpens hv hi hvP := ⟨w, hw⟩
   obtain ⟨a₀, rfl⟩ := (bijective_mfderiv_subtype_val (I := 𝓘(ℝ,
@@ -323,7 +322,8 @@ theorem eval₂_delzantQuotientSymplecticForm_mfderiv_vertexChart_symm
   have h₁ := SmoothForm.eval₂_mpullback _ (hmk.comp hL) (hΔ.delzantQuotientSymplecticForm hi) x
     a₀ b₀
   rw [hpull, SmoothForm.eval₂_mpullback, SymplecticForm.fromTangentSpace_constSmooth_apply,
-    NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply, ← heq] at h₁
+    NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
+    ← vertexChart_symm_comp_subtypeVal_eq] at h₁
   -- Expose the lift as a composite with the inclusion of `W`, to apply the chain rule.
   change stdSymplecticForm (mfderiv _ _ (vertexLift hv hi ∘ Subtype.val) x a₀)
     (mfderiv _ _ (vertexLift hv hi ∘ Subtype.val) x b₀) = _ at h₁
@@ -438,6 +438,12 @@ theorem coe_vertexDarbouxChart :
   (rfl)
 
 @[simp]
+theorem coe_symm_vertexDarbouxChart :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    ⇑(hΔ.vertexDarbouxChart hi hv hvP).toPartialEquiv.symm = (vertexChart hv hi hvP).symm :=
+  (rfl)
+
+@[simp]
 theorem vertexDarbouxChart_source :
     letI := hΔ.delzantQuotientChartedSpace hi
     (hΔ.vertexDarbouxChart hi hv hvP).source = (vertexChart hv hi hvP).source :=
@@ -467,45 +473,32 @@ theorem eval₂_delzantQuotientSymplecticForm_eq_vertexDarbouxChart {q : Delzant
           (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) (hΔ.vertexDarbouxChart hi hv hvP) q b) := by
   let _ := hΔ.delzantQuotientChartedSpace hi
   have := hΔ.isManifold_delzantQuotient hi
-  set κ := vertexChart hv hi hvP
-  have hκ : MDifferentiableAt 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-      (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
-      𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-        EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) κ q :=
-    ((hΔ.contMDiffOn_vertexChart hi hv hvP).contMDiffAt
-      (κ.open_source.mem_nhds hq)).mdifferentiableAt (by simp)
-  have hκs := ((hΔ.contMDiffOn_vertexChart_symm hi hv hvP).contMDiffAt
-    (κ.open_target.mem_nhds (κ.map_source hq))).mdifferentiableAt (by simp)
-  -- The differential of `κ.symm` at `κ q` inverts that of `κ` at `q`.
+  -- The differential of the inverse chart at `κ q` inverts that of the chart at `q`.
   have hinv (a : TangentSpace 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
       (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) q) :
       mfderiv 𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
         EuclideanSpace ℝ (activeSet (facetPairing i u) c v))
         𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
-          (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) κ.symm (κ q)
+          (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
+        (vertexChart hv hi hvP).symm (vertexChart hv hi hvP q)
         (mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
           (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
           𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-            EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) κ q a) = a := by
-    have hev : ⇑κ.symm ∘ ⇑κ =ᶠ[nhds q] id :=
-      Filter.eventuallyEq_of_mem (κ.open_source.mem_nhds hq) fun _ hy ↦ κ.left_inv hy
-    rw [← mfderiv_comp_apply q hκs hκ, hev.mfderiv_eq, mfderiv_id]
-    -- The identity map of tangent vectors applied to `a`.
-    rfl
+            EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) (vertexChart hv hi hvP) q a) = a :=
+    (hΔ.vertexDarbouxChart hi hv hvP).mfderiv_symm_apply_mfderiv_apply (by simp) hq a
   have h := hΔ.eval₂_delzantQuotientSymplecticForm_mfderiv_vertexChart_symm hi hv hvP
-    (κ.map_source hq)
+    ((vertexChart hv hi hvP).map_source hq)
     (mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
       (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
       𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-        EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) κ q a)
+        EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) (vertexChart hv hi hvP) q a)
     (mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
       (Fin (Fintype.card ι + finrank ℝ V) → ℝ))
       𝓘(ℝ, EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-        EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) κ q b)
-  rw [hinv, hinv, κ.left_inv hq] at h
-  rw [h, mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply]
-  -- The Darboux chart is `κ` as a function (`coe_vertexDarbouxChart`).
-  rfl
+        EuclideanSpace ℝ (activeSet (facetPairing i u) c v)) (vertexChart hv hi hvP) q b)
+  rw [hinv, hinv, (vertexChart hv hi hvP).left_inv hq] at h
+  rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, coe_vertexDarbouxChart]
+  exact h
 
 open Classical in
 /-- **The vertex Darboux charts cover the Delzant quotient.** Every point of `M_Δ` lies in the
