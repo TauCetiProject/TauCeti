@@ -49,6 +49,14 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
   `AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality` compute the global sections of
   affine charts `Spec R ⟶ X` and their precomposites with `Spec.map φ`.
+* `AlgebraicGeometry.Spec.map_appLE_basicOpen_algebraMap`: the section map of a spectral
+  morphism on principal opens sends a numerator to its ring-map image.
+* `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal scheme morphisms induce equal section maps.
+* `CategoryTheory.CommSq.preimage_preimage_eq` and
+  `CategoryTheory.CommSq.app_comp_app_eq_app_comp_appLE`: the two paths around a commutative
+  square induce equal inverse images and equal section maps.
+* `CategoryTheory.CommSq.rightSheafMap` and `CategoryTheory.CommSq.rightSheafMap_app`: the
+  transported structure-sheaf map across an arbitrary commutative square and its components.
 * `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
   the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
   `Γ(X, V)`.
@@ -413,3 +421,92 @@ end Scheme
 end AlgebraicGeometry
 
 end TauCeti
+
+public section
+
+universe u
+
+namespace AlgebraicGeometry
+
+open CategoryTheory
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y)
+
+/-- On principal opens, the section map of `Spec.map f` sends a numerator `x` to `f x`.
+The section rings use the native structure-sheaf presentation, so their canonical localization
+algebra structures agree with those used by `StructureSheaf.comap_basicOpen`. -/
+theorem Spec.map_appLE_basicOpen_algebraMap {R S : CommRingCat.{u}} (f : R ⟶ S)
+    (a : R) (b : S) (hab : f a = b)
+    (e : PrimeSpectrum.basicOpen b ≤ Spec.map f ⁻¹ᵁ PrimeSpectrum.basicOpen a) (x : R) :
+    (Spec.map f).appLE (PrimeSpectrum.basicOpen a) (PrimeSpectrum.basicOpen b) e
+        (algebraMap R ((Spec.structureSheaf R).obj.obj (Opposite.op (PrimeSpectrum.basicOpen a)))
+          x) =
+      algebraMap S ((Spec.structureSheaf S).obj.obj (Opposite.op (PrimeSpectrum.basicOpen b)))
+        (f x) := by
+  subst b
+  exact (ConcreteCategory.congr_hom (Spec.map_appLE f e) _).trans
+    ((DFunLike.congr_fun (StructureSheaf.comap_basicOpen f.hom a) _).trans
+      (IsLocalization.map_eq _ x))
+
+/-- Equal morphisms induce the same maps on sections `Γ(Y, U) ⟶ Γ(X, V)`. Unlike rewriting along
+`f = g`, this applies when the proofs of `V ≤ f ⁻¹ᵁ U` and of `V ≤ g ⁻¹ᵁ U` are unrelated. -/
+theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Opens) (hf hg) :
+    f.appLE U V hf = g.appLE U V hg := by
+  subst e
+  rfl
+
+end AlgebraicGeometry
+
+namespace CategoryTheory
+
+open AlgebraicGeometry
+
+/-- The two paths around a commutative square of schemes give the same inverse image of
+an open of the target. -/
+theorem CommSq.preimage_preimage_eq {W X Y Z : Scheme.{u}}
+    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+    (h : CommSq i j f g) (U : Z.Opens) : i ⁻¹ᵁ f ⁻¹ᵁ U = j ⁻¹ᵁ g ⁻¹ᵁ U := by
+  rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, h.w]
+
+/-- The two paths around a commutative square give the same pullback of sections, with
+`appLE` presenting the second composite on the first path's inverse-image open. -/
+theorem CommSq.app_comp_app_eq_app_comp_appLE {W X Y Z : Scheme.{u}}
+    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+    (h : CommSq i j f g) (U : Z.Opens) :
+    f.app U ≫ i.app (f ⁻¹ᵁ U) =
+      g.app U ≫ j.appLE (g ⁻¹ᵁ U) (i ⁻¹ᵁ f ⁻¹ᵁ U) (h.preimage_preimage_eq U).le := by
+  have e := Scheme.Hom.congr_appLE _ h.w U (i ⁻¹ᵁ f ⁻¹ᵁ U)
+    (by rw [Scheme.Hom.comp_preimage])
+    (by rw [Scheme.Hom.comp_preimage]; exact (h.preimage_preimage_eq U).le)
+  simpa only [Scheme.Hom.comp_appLE, Scheme.Hom.appLE_eq_app] using e
+
+variable {W X Y Z : Scheme.{u}}
+    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
+
+/-- The structure-sheaf map along the right edge of a commutative square, pushed to its
+bottom vertex and transported to the double pushforward along the left path. -/
+noncomputable def CommSq.rightSheafMap (h : CommSq i j f g) :
+    (TopCat.Sheaf.pushforward _ g.base).obj Y.sheaf ⟶
+      (TopCat.Sheaf.pushforward _ f.base).obj
+        ((TopCat.Sheaf.pushforward _ i.base).obj W.sheaf) :=
+  ⟨(TopCat.Presheaf.pushforward _ g.base).map j.c ≫
+    (TopCat.Presheaf.Pushforward.comp j.base g.base W.presheaf).inv ≫
+    (TopCat.Presheaf.pushforwardEq
+      (congrArg (fun k : W ⟶ Z ↦ k.base) h.w.symm) W.presheaf).hom ≫
+    (TopCat.Presheaf.Pushforward.comp i.base f.base W.presheaf).hom⟩
+
+/-- The transported structure-sheaf map on an open is the pullback on sections along the
+right edge, restricted to the inverse image along the left path. -/
+theorem CommSq.rightSheafMap_app (h : CommSq i j f g) (U : Z.Opens) :
+    h.rightSheafMap.hom.app (Opposite.op U) =
+      j.appLE (g ⁻¹ᵁ U) (i ⁻¹ᵁ f ⁻¹ᵁ U) (h.preimage_preimage_eq U).le := by
+  -- Evaluate the underlying presheaf morphism through the sheaf wrapper.
+  change ((TopCat.Presheaf.pushforward _ g.base).map j.c ≫ _ ≫ _ ≫ _).app _ = _
+  simp only [TopCat.Presheaf.comp_app, TopCat.Presheaf.Pushforward.comp_inv_app,
+    TopCat.Presheaf.pushforward_map_app']
+  -- Use the native scheme section-ring presentation for the appLE composition law.
+  change j.app (g ⁻¹ᵁ U) ≫ 𝟙 _ ≫ W.presheaf.map
+    (homOfLE (h.preimage_preimage_eq U).le).op ≫ 𝟙 _ = _
+  rw [Category.id_comp, Category.comp_id, Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_map]
+
+end CategoryTheory

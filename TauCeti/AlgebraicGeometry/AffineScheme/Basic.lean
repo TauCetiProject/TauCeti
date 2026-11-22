@@ -99,22 +99,6 @@ universe u
 
 namespace AlgebraicGeometry
 
-/-- On principal opens, the section map of `Spec.map f` sends a numerator `x` to `f x`.
-The section rings use the native structure-sheaf presentation, so their canonical localization
-algebra structures agree with those used by `StructureSheaf.comap_basicOpen`. -/
-theorem Spec.map_appLE_basicOpen_algebraMap {R S : CommRingCat.{u}} (f : R ⟶ S)
-    (a : R) (b : S) (hab : f a = b)
-    (e : PrimeSpectrum.basicOpen b ≤ Spec.map f ⁻¹ᵁ PrimeSpectrum.basicOpen a) (x : R) :
-    (Spec.map f).appLE (PrimeSpectrum.basicOpen a) (PrimeSpectrum.basicOpen b) e
-        (algebraMap R ((Spec.structureSheaf R).obj.obj (Opposite.op (PrimeSpectrum.basicOpen a)))
-          x) =
-      algebraMap S ((Spec.structureSheaf S).obj.obj (Opposite.op (PrimeSpectrum.basicOpen b)))
-        (f x) := by
-  subst b
-  exact (ConcreteCategory.congr_hom (Spec.map_appLE f e) _).trans
-    ((DFunLike.congr_fun (StructureSheaf.comap_basicOpen f.hom a) _).trans
-      (IsLocalization.map_eq _ x))
-
 /-- The global sections of the inverse of `X ≅ Spec Γ(X, ⊤)`, for an affine scheme `X`. -/
 theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
     X.isoSpec.inv.appTop = (Scheme.ΓSpecIso Γ(X, ⊤)).inv := by

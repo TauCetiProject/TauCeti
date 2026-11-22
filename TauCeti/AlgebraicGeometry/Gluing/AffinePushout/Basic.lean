@@ -65,6 +65,12 @@ theorem isClosedImmersion_SpecMap_pullbackSnd (hp : Surjective p) :
     IsClosedImmersion (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))) :=
   IsClosedImmersion.spec_of_surjective _ (p.surjective_pullbackSnd_of_surjective q hp)
 
+/-- Along a surjection, the image of the second spectral projection is the zero locus
+of its kernel. Thus its complement is the open used by the first-projection isomorphism. -/
+theorem range_comap_pullbackSnd_of_surjective (hp : Surjective p) :
+    Set.range (comap (p.pullbackSnd q)) = zeroLocus (RingHom.ker (p.pullbackSnd q)) :=
+  range_comap_of_surjective _ _ (p.surjective_pullbackSnd_of_surjective q hp)
+
 /-- The map `Spec B → Spec (B ×_C D)` is finite when `p` is surjective and `q` is finite. -/
 theorem isFinite_SpecMap_pullbackFst (hp : Surjective p) (hq : q.Finite) :
     IsFinite (Spec.map (CommRingCat.ofHom (p.pullbackFst q))) :=
@@ -72,7 +78,7 @@ theorem isFinite_SpecMap_pullbackFst (hp : Surjective p) (hq : q.Finite) :
 
 /-- The first projection induces an isomorphism over the basic open of an element in the kernel
 of the second projection. -/
-theorem isIso_SpecMap_pullbackFst_restrict_basicOpen_of_mem_ker_pullbackSnd
+theorem isIso_SpecMap_morphismRestrict_pullbackFst_basicOpen_of_mem_ker_pullbackSnd
     {t : p.pullback q}
     (ht : t ∈ RingHom.ker (p.pullbackSnd q)) :
     IsIso (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ∣_ PrimeSpectrum.basicOpen t) :=
@@ -84,7 +90,7 @@ theorem isIso_SpecMap_pullbackFst_restrict_basicOpen_of_mem_ker_pullbackSnd
 /-- The map from `Spec B` is an isomorphism over the complement of
 `V(ker (p.pullbackSnd q))`, with domain the inverse image of that complement.
 When `p` is surjective, this zero locus is the image of `Spec D`. -/
-theorem isIso_SpecMap_pullbackFst_restrict_compl_zeroLocus_ker_pullbackSnd :
+theorem isIso_SpecMap_morphismRestrict_pullbackFst_compl_zeroLocus_ker_pullbackSnd :
     IsIso (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ∣_
       (⟨(zeroLocus (RingHom.ker (p.pullbackSnd q))).compl,
         (isClosed_zeroLocus _).isOpen_compl⟩ : (Spec (CommRingCat.of (p.pullback q))).Opens)) := by
@@ -97,7 +103,7 @@ theorem isIso_SpecMap_pullbackFst_restrict_compl_zeroLocus_ker_pullbackSnd :
     exact iSup_basicOpen_eq_compl_zeroLocus _
   have h : IsIso (f ∣_ iSup U) :=
     f.isIso_morphismRestrict_iSup U fun t ↦
-      p.isIso_SpecMap_pullbackFst_restrict_basicOpen_of_mem_ker_pullbackSnd q t.property
+      p.isIso_SpecMap_morphismRestrict_pullbackFst_basicOpen_of_mem_ker_pullbackSnd q t.property
   exact hU ▸ h
 
 private theorem existsUnique_comap_pullbackFst_of_notMem_zeroLocus
@@ -106,7 +112,8 @@ private theorem existsUnique_comap_pullbackFst_of_notMem_zeroLocus
   let f := Spec.map (CommRingCat.ofHom (p.pullbackFst q))
   let U : (Spec (CommRingCat.of (p.pullback q))).Opens :=
     ⟨(zeroLocus (RingHom.ker (p.pullbackSnd q))).compl, (isClosed_zeroLocus _).isOpen_compl⟩
-  have : IsIso (f ∣_ U) := p.isIso_SpecMap_pullbackFst_restrict_compl_zeroLocus_ker_pullbackSnd q
+  have : IsIso (f ∣_ U) :=
+    p.isIso_SpecMap_morphismRestrict_pullbackFst_compl_zeroLocus_ker_pullbackSnd q
   have hf : (f : PrimeSpectrum B → PrimeSpectrum (p.pullback q)) = comap (p.pullbackFst q) :=
     funext (Spec.map_apply (CommRingCat.ofHom (p.pullbackFst q)))
   rw [← hf]
@@ -116,7 +123,7 @@ private theorem surjective_sumElim_comap_pullback (hp : Surjective p) :
     Surjective (Sum.elim (comap (p.pullbackFst q)) (comap (p.pullbackSnd q))) := by
   intro x
   by_cases hx : x ∈ zeroLocus (RingHom.ker (p.pullbackSnd q))
-  · rw [← range_comap_of_surjective _ _ (p.surjective_pullbackSnd_of_surjective q hp)] at hx
+  · rw [← p.range_comap_pullbackSnd_of_surjective q hp] at hx
     obtain ⟨y, rfl⟩ := hx
     exact ⟨Sum.inr y, rfl⟩
   · obtain ⟨y, hy, -⟩ := p.existsUnique_comap_pullbackFst_of_notMem_zeroLocus q hx
@@ -180,23 +187,17 @@ private theorem isClosed_of_isClosed_preimages_comap_pullback (hp : Surjective p
       ← zeroLocus_span (q '' (J : Set D)), ← Ideal.map] at hpre
   have hRad := zeroLocus_eq_iff.mp hEq
   let K := I.comap (p.pullbackFst q) ⊓ J.comap (p.pullbackSnd q)
-  have hUnion : comap (p.pullbackFst q) '' (comap (p.pullbackFst q) ⁻¹' W) ∪
-      comap (p.pullbackSnd q) '' (comap (p.pullbackSnd q) ⁻¹' W) = W := by
-    refine Set.Subset.antisymm
-      (Set.union_subset (Set.image_preimage_subset _ _) (Set.image_preimage_subset _ _)) ?_
-    intro x hx
+  refine (isClosed_iff_zeroLocus_ideal _).mpr ⟨K, Set.Subset.antisymm ?_ ?_⟩
+  · intro x hx
     obtain ⟨y | y, rfl⟩ := p.surjective_sumElim_comap_pullback q hp x
-    · exact Or.inl ⟨y, hx, rfl⟩
-    · exact Or.inr ⟨y, hx, rfl⟩
-  have hClosure : closure W = zeroLocus (K : Set (p.pullback q)) := by
-    rw [← hUnion, hI, hJ, closure_union, closure_image_comap_zeroLocus,
-      closure_image_comap_zeroLocus, zeroLocus_inf]
-  refine (isClosed_iff_zeroLocus_ideal _).mpr ⟨K, Set.Subset.antisymm
-    (hClosure ▸ subset_closure) ?_⟩
+    · have hy : I ≤ y.asIdeal := (mem_zeroLocus y _).mp (hI ▸ hx)
+      exact (mem_zeroLocus _ _).mpr (le_trans inf_le_left (Ideal.comap_mono hy))
+    · have hy : J ≤ y.asIdeal := (mem_zeroLocus y _).mp (hJ ▸ hx)
+      exact (mem_zeroLocus _ _).mpr (le_trans inf_le_right (Ideal.comap_mono hy))
   intro x hx
   have hxK : K ≤ x.asIdeal := (mem_zeroLocus _ _).mp hx
   by_cases hker : x ∈ zeroLocus (RingHom.ker (p.pullbackSnd q))
-  · rw [← range_comap_of_surjective _ _ (p.surjective_pullbackSnd_of_surjective q hp)] at hker
+  · rw [← p.range_comap_pullbackSnd_of_surjective q hp] at hker
     obtain ⟨y, rfl⟩ := hker
     exact Set.mem_preimage.mp (hJ.symm ▸ (mem_zeroLocus y _).mpr
       (p.le_asIdeal_of_comap_pullbackSnd q hp hRad y hxK))
@@ -253,11 +254,10 @@ theorem isPushout_base_SpecMap_pullback (hp : Surjective p) :
   -- given by Mathlib's `Types.isPushout_of_isPullback_of_mono'`.
   apply IsPushout.of_isPushout_forget
   · refine (Types.isPushout_of_isPullback_of_mono' hSet ?_ ?_).flip
-    · rw [hfst, hsnd]
-      refine Set.eq_univ_of_forall fun x ↦ ?_
-      obtain ⟨y | y, hy⟩ := p.surjective_sumElim_comap_pullback q hp x
-      · exact Or.inr ⟨y, hy⟩
-      · exact Or.inl ⟨y, hy⟩
+    · change Set.range (comap (p.pullbackSnd q)) ∪
+        Set.range (comap (p.pullbackFst q)) = Set.univ
+      rw [Set.union_comm, ← Set.Sum.elim_range]
+      exact (p.surjective_sumElim_comap_pullback q hp).range_eq
     · intro x y hx _ hxy
       -- Forgetting the scheme and its topology leaves the same function on points.
       have hx' : x ∉ Set.range (Spec.map (CommRingCat.ofHom p)) := hx

@@ -8,9 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.Scheme
 public import Mathlib.RingTheory.LocalRing.Pullback
 
-import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import Mathlib.CategoryTheory.Functor.ReflectsIso.Limits
 import TauCeti.AlgebraicGeometry.Gluing.AffinePushout.Basic
-import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Localization.Pullback
 
 /-!
@@ -92,14 +92,6 @@ private def overlapSheaf :
     ((TopCat.Sheaf.pushforward _ (Spec.map (CommRingCat.ofHom p)).base).obj
       (Spec (CommRingCat.of C)).sheaf)
 
-private theorem spec_pullback_base_comm :
-    (Spec.map (CommRingCat.ofHom q)).base ≫
-        (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base =
-      (Spec.map (CommRingCat.ofHom p)).base ≫
-        (Spec.map (CommRingCat.ofHom (p.pullbackFst q))).base := by
-  exact congrArg (fun f : Spec (CommRingCat.of C) ⟶
-    Spec (CommRingCat.of (p.pullback q)) => f.base) (p.commSq_SpecMap_pullback q).w.symm
-
 private def leftSheaf :
     TopCat.Sheaf CommRingCat.{u} (Spec (CommRingCat.of (p.pullback q))) :=
   (TopCat.Sheaf.pushforward _
@@ -110,31 +102,8 @@ private def rightSheaf :
   (TopCat.Sheaf.pushforward _
     (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base).obj (Spec (CommRingCat.of D)).sheaf
 
-private def rightOverlapHom :
-    (TopCat.Presheaf.pushforward _
-      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base).obj
-      (Spec (CommRingCat.of D)).presheaf ⟶
-    (TopCat.Presheaf.pushforward _
-      (Spec.map (CommRingCat.ofHom (p.pullbackFst q))).base).obj
-      ((TopCat.Presheaf.pushforward _ (Spec.map (CommRingCat.ofHom p)).base).obj
-        (Spec (CommRingCat.of C)).presheaf) :=
-  (TopCat.Presheaf.pushforward _
-      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base).map
-      (Spec.map (CommRingCat.ofHom q)).c ≫
-    (TopCat.Presheaf.Pushforward.comp
-      (Spec.map (CommRingCat.ofHom q)).base
-      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q))).base
-      (Spec (CommRingCat.of C)).presheaf).inv ≫
-    (TopCat.Presheaf.pushforwardEq
-      (spec_pullback_base_comm p q)
-      (Spec (CommRingCat.of C)).presheaf).hom ≫
-    (TopCat.Presheaf.Pushforward.comp
-      (Spec.map (CommRingCat.ofHom p)).base
-      (Spec.map (CommRingCat.ofHom (p.pullbackFst q))).base
-      (Spec (CommRingCat.of C)).presheaf).hom
-
 private def rightOverlapMap : p.rightSheaf q ⟶ p.overlapSheaf q :=
-  ⟨p.rightOverlapHom q⟩
+  (p.commSq_SpecMap_pullback q).rightSheafMap
 
 private def leftMap : (Spec (CommRingCat.of (p.pullback q))).sheaf ⟶ p.leftSheaf q :=
   ⟨(Spec.map (CommRingCat.ofHom (p.pullbackFst q))).c⟩
@@ -169,18 +138,8 @@ private theorem rightOverlapMap_app (V : (Spec (CommRingCat.of (p.pullback q))).
         (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ V)
         (Spec.map (CommRingCat.ofHom p) ⁻¹ᵁ
           (Spec.map (CommRingCat.ofHom (p.pullbackFst q)) ⁻¹ᵁ V))
-        ((p.commSq_SpecMap_pullback q).preimage_preimage_eq V).le := by
-  -- Evaluate the underlying presheaf morphism to use the pushforward component lemmas.
-  change (p.rightOverlapHom q).app (Opposite.op V) = _
-  simp only [rightOverlapHom, TopCat.Presheaf.comp_app,
-    TopCat.Presheaf.Pushforward.comp_inv_app, TopCat.Presheaf.Pushforward.comp_hom_app,
-    TopCat.Presheaf.pushforwardEq_hom_app, TopCat.Presheaf.pushforward_map_app']
-  -- Present these components on the scheme section rings to match the appLE laws.
-  change (Spec.map (CommRingCat.ofHom q)).app
-      (Spec.map (CommRingCat.ofHom (p.pullbackSnd q)) ⁻¹ᵁ V) ≫ 𝟙 _ ≫
-    (Spec (CommRingCat.of C)).presheaf.map
-      (homOfLE ((p.commSq_SpecMap_pullback q).preimage_preimage_eq V).le).op ≫ 𝟙 _ = _
-  rw [Category.id_comp, Category.comp_id, Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_map]
+        ((p.commSq_SpecMap_pullback q).preimage_preimage_eq V).le :=
+  (p.commSq_SpecMap_pullback q).rightSheafMap_app V
 
 private theorem sheafSquare_comm :
     p.leftMap q ≫ p.leftOverlapMap q = p.rightMap q ≫ p.rightOverlapMap q := by
@@ -222,44 +181,31 @@ private theorem isPullback_sections_basicOpen_preimage (x : p.pullback q) :
 
 private theorem isPullback_sheafSquare :
     IsPullback (p.leftMap q) (p.rightMap q) (p.leftOverlapMap q) (p.rightOverlapMap q) := by
-  let l := p.leftOverlapMap q
-  let r := p.rightOverlapMap q
-  let t : (Spec (CommRingCat.of (p.pullback q))).sheaf ⟶ Limits.pullback l r :=
-    pullback.lift (p.leftMap q) (p.rightMap q) (sheafSquare_comm p q)
-  have ht : IsIso t := by
-    -- Mathlib's `TopCat.Sheaf.isIso_iff_isIso_basis` lets us check the comparison
-    -- isomorphism on the basic-open basis.
-    apply TopCat.Sheaf.isIso_iff_isIso_basis PrimeSpectrum.isBasis_basic_opens
-    intro x
-    let V : (Spec (CommRingCat.of (p.pullback q))).Opens := PrimeSpectrum.basicOpen x
-    let E := TopCat.Sheaf.forget CommRingCat (Spec (CommRingCat.of (p.pullback q))) ⋙
-      (evaluation (Opens (Spec (CommRingCat.of (p.pullback q))))ᵒᵖ CommRingCat).obj (Opposite.op V)
-    -- Evaluation identifies the sheaf morphisms with their section-ring components.
-    have hEval {F G : TopCat.Sheaf CommRingCat
-        (Spec (CommRingCat.of (p.pullback q)))} (f : F ⟶ G) :
-        E.map f = f.hom.app (Opposite.op V) := rfl
-    have h₂ : IsPullback (E.map (p.leftMap q)) (E.map (p.rightMap q))
-        (E.map l) (E.map r) := by
-      simp only [hEval, l, r, leftMap_app, rightMap_app,
-        leftOverlapMap_app, rightOverlapMap_app]
-      exact p.isPullback_sections_basicOpen_preimage q x
-    -- Record evaluation's limit preservation at the chosen open before composing functors.
+  let V (x : p.pullback q) : (Spec (CommRingCat.of (p.pullback q))).Opens :=
+    PrimeSpectrum.basicOpen x
+  let E (x : p.pullback q) :=
+    TopCat.Sheaf.forget CommRingCat (Spec (CommRingCat.of (p.pullback q))) ⋙
+      (evaluation (Opens (Spec (CommRingCat.of (p.pullback q))))ᵒᵖ CommRingCat).obj
+        (Opposite.op (V x))
+  have hE : JointlyReflectIsomorphisms E :=
+    ⟨fun φ _ ↦ TopCat.Sheaf.isIso_iff_isIso_basis PrimeSpectrum.isBasis_basic_opens
+      (fun x ↦ (inferInstance : IsIso ((E x).map φ)))⟩
+  have (x : p.pullback q) : PreservesLimitsOfShape WalkingCospan (E x) := by
     have : PreservesLimitsOfShape WalkingCospan
         ((evaluation (Opens (Spec (CommRingCat.of (p.pullback q))))ᵒᵖ CommRingCat).obj
-          (Opposite.op V)) := inferInstance
-    have : IsIso (pullbackComparison E l r) := inferInstance
-    have ht_map : E.map t ≫ pullbackComparison E l r =
-        pullback.lift (E.map (p.leftMap q)) (E.map (p.rightMap q))
-          (by simpa only [l, r, ← E.map_comp] using congrArg E.map (sheafSquare_comm p q)) :=
-      map_lift_pullbackComparison E l r (sheafSquare_comm p q)
-    have ht_comp : IsIso (E.map t ≫ pullbackComparison E l r) := by
-      rw [ht_map]
-      exact (pullbackIsPullback (E.map l) (E.map r)).nonempty_isLimit_iff_isIso_lift.mp
-        ⟨h₂.isLimit⟩
-    exact (isIso_comp_right_iff (E.map t) (pullbackComparison E l r)).mp ht_comp
-  refine .of_iso_pullback ⟨sheafSquare_comm p q⟩ (asIso t) ?_ ?_
-  · exact pullback.lift_fst (p.leftMap q) (p.rightMap q) (sheafSquare_comm p q)
-  · exact pullback.lift_snd (p.leftMap q) (p.rightMap q) (sheafSquare_comm p q)
+          (Opposite.op (V x))) := inferInstance
+    infer_instance
+  refine .of_isLimit (hE.jointlyReflectsLimit
+    (c := PullbackCone.mk (p.leftMap q) (p.rightMap q) (sheafSquare_comm p q)) ?_)
+  intro x
+  refine (PullbackCone.isLimitMapConeEquiv _ (E x)).symm ?_
+  have h : IsPullback ((E x).map (p.leftMap q)) ((E x).map (p.rightMap q))
+      ((E x).map (p.leftOverlapMap q)) ((E x).map (p.rightOverlapMap q)) := by
+    change IsPullback ((p.leftMap q).hom.app _) ((p.rightMap q).hom.app _)
+      ((p.leftOverlapMap q).hom.app _) ((p.rightOverlapMap q).hom.app _)
+    rw [leftMap_app, rightMap_app, leftOverlapMap_app, rightOverlapMap_app]
+    exact p.isPullback_sections_basicOpen_preimage q x
+  exact h.isLimit
 
 /-- For every open `U` of `Spec (B ×_C D)`, the section square on `U` and its inverse
 images in `Spec B`, `Spec D`, and `Spec C` is a pullback. No surjectivity assumption is needed. -/

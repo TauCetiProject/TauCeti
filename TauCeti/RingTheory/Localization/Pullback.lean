@@ -87,10 +87,10 @@ theorem localization {A B C D A' B' C' D' : CommRingCat.{u}}
   -- Identify each chosen localization with its categorical pushout.
   exact hm.of_iso haP.isoPushout.symm hiP.isoPushout.symm hjP.isoPushout.symm
     hdP.isoPushout.symm
-    (Under.pushout_map_isoPushout_inv ii haP hiP i' hi₀ (by simp))
-    (Under.pushout_map_isoPushout_inv jj haP hjP j' hj₀ (by simp))
-    (Under.pushout_map_isoPushout_inv ff hiP hdP f' hf₀ rfl)
-    (Under.pushout_map_isoPushout_inv gg hjP hdP g' hg₀ hw.symm)
+    (Under.pushout_map_right_isoPushout_inv ii haP hiP i' hi₀ (by simp))
+    (Under.pushout_map_right_isoPushout_inv jj haP hjP j' hj₀ (by simp))
+    (Under.pushout_map_right_isoPushout_inv ff hiP hdP f' hf₀ rfl)
+    (Under.pushout_map_right_isoPushout_inv gg hjP hdP g' hg₀ hw.symm)
 
 /-- A pullback square of commutative rings stays a pullback when localizing at an element of the
 upper-left ring. The four given maps on localizations agree with the original arrows on numerators,

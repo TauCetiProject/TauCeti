@@ -224,22 +224,20 @@ factor is finite, the first projection is finite. -/
 theorem finite_pullbackFst_of_surjective (hp : Function.Surjective p) (hq : q.Finite) :
     (p.pullbackFst q).Finite := by
   let A := ↥(p.pullback q)
-  algebraize_only [p.pullbackFst q, p.pullbackSnd q, p, q, p.comp (p.pullbackFst q)]
-  let : IsScalarTower (p.pullback q) D C :=
-    IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
+  algebraize_only [p.pullbackFst q, p, p.comp (p.pullbackFst q)]
   have hfinite : (q.comp (p.pullbackSnd q)).Finite :=
     hq.comp (Finite.of_surjective _ (p.surjective_pullbackSnd_of_surjective q hp))
   have : (p.comp (p.pullbackFst q)).Finite := by rw [p.pullback_comm_sq q]; exact hfinite
   have : Module.Finite A C := this
   let reduce := (IsScalarTower.toAlgHom A B C).toLinearMap
+  have reduce_apply (b : B) : reduce b = p b := rfl
   let coefficients := (Algebra.linearMap A B).range
   -- The quotient by the coefficient image is already a quotient of C.
   have hker : LinearMap.ker reduce ≤ LinearMap.ker coefficients.mkQ := by
     rw [Submodule.ker_mkQ]
     intro b hb
     have hb' : b ∈ ker p := by
-      simpa only [reduce, LinearMap.mem_ker, AlgHom.toLinearMap_apply,
-        IsScalarTower.toAlgHom_apply, mem_ker, RingHom.algebraMap_toAlgebra] using hb
+      exact mem_ker.mpr ((reduce_apply b).symm.trans (LinearMap.mem_ker.mp hb))
     exact ⟨(pullbackSndKerEquiv p q).symm ⟨b, hb'⟩,
       pullbackSndKerEquiv_symm_fst p q ⟨b, hb'⟩⟩
   let descend := reduce.liftOfSurjective hp ⟨coefficients.mkQ, hker⟩

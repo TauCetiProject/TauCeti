@@ -27,7 +27,7 @@ variable {C : Type u} [Category.{v} C]
 
 /-- A map between chosen pushouts represents the corresponding `Under.pushout` map if
 it commutes with both injections. Only pushouts along the base arrow `a` are required. -/
-theorem pushout_map_isoPushout_inv {E F X Y X' Y' : C}
+theorem pushout_map_right_isoPushout_inv {E F X Y X' Y' : C}
     {a : E ⟶ F} [HasPushoutsAlong a] {x : E ⟶ X} {y : E ⟶ Y}
     (u : Under.mk x ⟶ Under.mk y)
     {xx : X ⟶ X'} {yy : Y ⟶ Y'} {x' : F ⟶ X'} {y' : F ⟶ Y'}

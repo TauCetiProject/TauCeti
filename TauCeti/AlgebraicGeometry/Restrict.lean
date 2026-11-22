@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Restricting local properties of scheme morphisms
@@ -39,11 +40,6 @@ global functions of the base change.
   to an isomorphism over `U`, every point of `U` has a unique preimage under `f`.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
-* `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
-  `Γ(Y, U) ⟶ Γ(X, V)`, whatever the proofs of `V ≤ f ⁻¹ᵁ U`.
-* `CategoryTheory.CommSq.preimage_preimage_eq` and
-  `CategoryTheory.CommSq.app_comp_app_eq_app_comp_appLE`: the two paths around a square induce
-  equal inverse images of opens and equal pullback maps on sections over those opens.
 * `CategoryTheory.CommSq.appLE_app_topIso_hom`: in a commutative square over the inclusion of an
   open `U`, the two ways of pulling a function on `U` back to the source of the square agree.
 * `CategoryTheory.IsPullback.isIso_appLE`: in a pullback square of the inclusion of an open `U`
@@ -137,37 +133,11 @@ theorem HasRingHomProperty.resLE_iff (P : MorphismProperty Scheme.{u})
   exact (HasRingHomProperty.isLocal_ringHomProperty P).respectsIso.arrow_mk_iso_iff
     (arrowResLEAppIso f U V hVU)
 
-/-- Equal morphisms induce the same maps on sections `Γ(Y, U) ⟶ Γ(X, V)`. Unlike rewriting along
-`f = g`, this applies when the proofs of `V ≤ f ⁻¹ᵁ U` and of `V ≤ g ⁻¹ᵁ U` are unrelated. -/
-theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Opens) (hf hg) :
-    f.appLE U V hf = g.appLE U V hg := by
-  subst e
-  rfl
-
 end AlgebraicGeometry
 
 namespace CategoryTheory
 
 open AlgebraicGeometry
-
-/-- The two paths around a commutative square of schemes give the same inverse image of
-an open of the target. -/
-theorem CommSq.preimage_preimage_eq {W X Y Z : Scheme.{u}}
-    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
-    (h : CommSq i j f g) (U : Z.Opens) : i ⁻¹ᵁ f ⁻¹ᵁ U = j ⁻¹ᵁ g ⁻¹ᵁ U := by
-  rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, h.w]
-
-/-- The two paths around a commutative square give the same pullback of sections, with
-`appLE` presenting the second composite on the first path's inverse-image open. -/
-theorem CommSq.app_comp_app_eq_app_comp_appLE {W X Y Z : Scheme.{u}}
-    {i : W ⟶ X} {j : W ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
-    (h : CommSq i j f g) (U : Z.Opens) :
-    f.app U ≫ i.app (f ⁻¹ᵁ U) =
-      g.app U ≫ j.appLE (g ⁻¹ᵁ U) (i ⁻¹ᵁ f ⁻¹ᵁ U) (h.preimage_preimage_eq U).le := by
-  have e := Scheme.Hom.congr_appLE _ h.w U (i ⁻¹ᵁ f ⁻¹ᵁ U)
-    (by rw [Scheme.Hom.comp_preimage])
-    (by rw [Scheme.Hom.comp_preimage]; exact (h.preimage_preimage_eq U).le)
-  simpa only [Scheme.Hom.comp_appLE, Scheme.Hom.appLE_eq_app] using e
 
 variable {Z Y T : Scheme.{u}} {U : T.Opens} {j : Z ⟶ Y} {g : Z ⟶ U} {f : Y ⟶ T}
 
