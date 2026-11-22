@@ -58,14 +58,10 @@ theorem sub_two_mul_norm_add_norm_le_sub_one_mul_norm_sum_Ico_succ_of_mul_norm_l
     (c - 2) * ‖u m‖ + ‖u M‖ ≤ (c - 1) * ‖∑ j ∈ Ico M (m + 1), u j‖ := by
   have hsum : (c - 1) * ∑ j ∈ Ico M m, ‖u j‖ + ‖u M‖ ≤ ‖u m‖ :=
     sub_one_mul_sum_Ico_add_le_of_mul_le hm hstep
-  have hsplit : u m = (∑ j ∈ Ico M (m + 1), u j) - ∑ j ∈ Ico M m, u j := by
-    rw [sum_Ico_succ_top hm, add_sub_cancel_left]
-  have htri : ‖u m‖ ≤ ‖∑ j ∈ Ico M (m + 1), u j‖ + ∑ j ∈ Ico M m, ‖u j‖ :=
-    calc ‖u m‖ = ‖(∑ j ∈ Ico M (m + 1), u j) - ∑ j ∈ Ico M m, u j‖ := congrArg norm hsplit
-      _ ≤ ‖∑ j ∈ Ico M (m + 1), u j‖ + ‖∑ j ∈ Ico M m, u j‖ := norm_sub_le _ _
-      _ ≤ ‖∑ j ∈ Ico M (m + 1), u j‖ + ∑ j ∈ Ico M m, ‖u j‖ := by
-          gcongr
-          exact norm_sum_le _ _
+  have htri : ‖u m‖ ≤ ‖∑ j ∈ Ico M (m + 1), u j‖ + ∑ j ∈ Ico M m, ‖u j‖ := by
+    have h := norm_le_add_norm_add' (∑ j ∈ Ico M m, u j) (u m)
+    rw [← sum_Ico_succ_top hm] at h
+    exact h.trans (add_le_add le_rfl (norm_sum_le _ _))
   calc (c - 2) * ‖u m‖ + ‖u M‖
       = (c - 1) * ‖u m‖ - ‖u m‖ + ‖u M‖ := by ring
     _ ≤ ((c - 1) * ‖∑ j ∈ Ico M (m + 1), u j‖ + (c - 1) * ∑ j ∈ Ico M m, ‖u j‖) -
@@ -117,13 +113,10 @@ theorem tendsto_norm_sum_Ico_atTop_of_mul_norm_le {E : Type*} [SeminormedAddComm
       hM₀ k (hM₀M.trans (mem_Ico.1 hk).1)
     have htail := sub_two_mul_norm_add_norm_le_sub_one_mul_norm_sum_Ico_succ_of_mul_norm_le
       one_le_two hMm hstepM
-    have hsplit : ∑ j ∈ Ico M (m + 1), u j =
-        (∑ j ∈ Ico N (m + 1), u j) - ∑ j ∈ Ico N M, u j := by
-      rw [← sum_Ico_consecutive u hNM (hMm.trans m.le_succ), add_sub_cancel_left]
     have htri : ‖∑ j ∈ Ico M (m + 1), u j‖ ≤
         ‖∑ j ∈ Ico N (m + 1), u j‖ + ‖∑ j ∈ Ico N M, u j‖ := by
-      rw [hsplit]
-      exact norm_sub_le _ _
+      rw [← sum_Ico_consecutive u hNM (hMm.trans m.le_succ)]
+      exact norm_le_add_norm_add' _ _
     linarith [hM₁ M hM₁M]
 
 end TauCeti
