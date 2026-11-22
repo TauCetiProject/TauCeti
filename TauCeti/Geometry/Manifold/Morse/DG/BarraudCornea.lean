@@ -193,7 +193,7 @@ theorem coe_morseTrajectoryConcat_apply (hz : ∀ i, c i ≠ f z)
     (w : hX.morseTrajectorySpace c x z × hX.morseTrajectorySpace c z y) :
     (hX.morseTrajectoryConcat hz w : c ⁻¹' Ioo (f y) (f x) → M) =
       concatLevelRecords c hz w.1.val w.2.val :=
-  (rfl)
+  hX.coe_morseRecordsConcat hz _
 
 /-- **Concatenation of broken trajectories is associative.** -/
 theorem morseTrajectoryConcat_assoc {s : M} (hz : ∀ i, c i ≠ f z) (hs : ∀ i, c i ≠ f s)
@@ -201,19 +201,66 @@ theorem morseTrajectoryConcat_assoc {s : M} (hz : ∀ i, c i ≠ f z) (hs : ∀ 
     (d : hX.morseTrajectorySpace c s y) :
     hX.morseTrajectoryConcat hs (hX.morseTrajectoryConcat hz (a, b), d) =
       hX.morseTrajectoryConcat hz (a, hX.morseTrajectoryConcat hs (b, d)) :=
-  Subtype.ext <|
-    concatLevelRecords_assoc hz hs (value_lt_of_mem_morseTrajectorySpace b.property).le _ _ _
+  Subtype.ext <| by
+    simpa only [coe_morseTrajectoryConcat_apply] using
+      concatLevelRecords_assoc hz hs (value_lt_of_mem_morseTrajectorySpace b.property).le _ _ _
 
 /-- **Concatenations lie in the boundary.** If some level of `c` lies strictly between `f z` and
 `f x`, no concatenation of broken trajectories from `x` to `z` and from `z` to `y` is unbroken. -/
 theorem morseTrajectoryConcat_mem_morseTrajectoryBoundary (hz : ∀ i, c i ≠ f z)
     (hlevel : ∃ i, c i ∈ Ioo (f z) (f x))
     (w : hX.morseTrajectorySpace c x z × hX.morseTrajectorySpace c z y) :
-    hX.morseTrajectoryConcat hz w ∈ hX.morseTrajectoryBoundary c x y :=
-  hlevel.elim fun _ hi₀ ↦ hX.concatLevelRecords_notMem_morseTrajectoryRecords hz
+    hX.morseTrajectoryConcat hz w ∈ hX.morseTrajectoryBoundary c x y := by
+  obtain ⟨_, hi₀⟩ := hlevel
+  rw [mem_morseTrajectoryBoundary, coe_morseTrajectoryConcat_apply]
+  exact hX.concatLevelRecords_notMem_morseTrajectoryRecords hz
     w.1.property.2 w.2.property.2 w.2.property.1 hi₀
 
 end Spaces
+
+/-! ### The composition maps of the trajectory spaces -/
+
+section Comp
+
+variable (hX : IsAdaptedPseudoGradient f X) {c : ι → ℝ}
+  (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
+
+/-- **The composition maps of the trajectory spaces**, indexed by the critical points of `f`:
+concatenation at the middle critical point. -/
+noncomputable def morseTrajectoryComp (x y z : criticalPoints 𝓘(ℝ, E) f) :
+    C(hX.morseTrajectorySpace c x y × hX.morseTrajectorySpace c y z,
+      hX.morseTrajectorySpace c x z) :=
+  hX.morseTrajectoryConcat fun i ↦ hc i y
+
+/-- The record underlying a composite is the concatenation of the records. -/
+@[simp]
+theorem coe_morseTrajectoryComp_apply (x y z : criticalPoints 𝓘(ℝ, E) f)
+    (w : hX.morseTrajectorySpace c x y × hX.morseTrajectorySpace c y z) :
+    (hX.morseTrajectoryComp hc x y z w : c ⁻¹' Ioo (f z) (f x) → M) =
+      concatLevelRecords c (fun i ↦ hc i y) w.1.val w.2.val :=
+  hX.coe_morseTrajectoryConcat_apply _ w
+
+/-- The composition maps are associative, in the form of the hypothesis `hι` of
+`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`. -/
+theorem morseTrajectoryComp_assoc (x w z y : criticalPoints 𝓘(ℝ, E) f)
+    (a : hX.morseTrajectorySpace c x w) (b : hX.morseTrajectorySpace c w z)
+    (d : hX.morseTrajectorySpace c z y) :
+    hX.morseTrajectoryComp hc x z y (hX.morseTrajectoryComp hc x w z (a, b), d) =
+      hX.morseTrajectoryComp hc x w y (a, hX.morseTrajectoryComp hc w z y (b, d)) :=
+  hX.morseTrajectoryConcat_assoc _ _ a b d
+
+/-- The composition maps take values in the boundary, in the form of the hypothesis `hA` of
+`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`. -/
+theorem morseTrajectoryComp_mem_morseTrajectoryBoundary
+    (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
+    (x z y : criticalPoints 𝓘(ℝ, E) f)
+    (w : hX.morseTrajectorySpace c x z × hX.morseTrajectorySpace c z y) :
+    hX.morseTrajectoryComp hc x z y w ∈ hX.morseTrajectoryBoundary c x y :=
+  hX.morseTrajectoryConcat_mem_morseTrajectoryBoundary _
+    (exists_mem_Ioo_of_Ioo_subset_closure_range (value_lt_of_mem_morseTrajectorySpace w.1.property)
+      (hdense x z)) w
+
+end Comp
 
 variable (hX : IsAdaptedPseudoGradient f X) {c : ι → ℝ} (hf : IsMorse 𝓘(ℝ, E) f)
   (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
@@ -293,39 +340,6 @@ theorem barraudCorneaCocycle_m
 
 /-! ### The twisting cocycle on the trajectory spaces with boundary -/
 
-/-- **The composition maps of the trajectory spaces**, indexed by the critical points of `f`:
-concatenation at the middle critical point. -/
-noncomputable def morseTrajectoryComp (x y z : criticalPoints 𝓘(ℝ, E) f) :
-    C(hX.morseTrajectorySpace c x y × hX.morseTrajectorySpace c y z,
-      hX.morseTrajectorySpace c x z) :=
-  hX.morseTrajectoryConcat fun i ↦ hc i y
-
-/-- The record underlying a composite is the concatenation of the records. -/
-@[simp]
-theorem coe_morseTrajectoryComp_apply (x y z : criticalPoints 𝓘(ℝ, E) f)
-    (w : hX.morseTrajectorySpace c x y × hX.morseTrajectorySpace c y z) :
-    (hX.morseTrajectoryComp hc x y z w : c ⁻¹' Ioo (f z) (f x) → M) =
-      concatLevelRecords c (fun i ↦ hc i y) w.1.val w.2.val :=
-  (rfl)
-
-/-- The composition maps are associative, in the form of the hypothesis `hι` of
-`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`. -/
-theorem morseTrajectoryComp_assoc (x w z y : criticalPoints 𝓘(ℝ, E) f)
-    (a : hX.morseTrajectorySpace c x w) (b : hX.morseTrajectorySpace c w z)
-    (d : hX.morseTrajectorySpace c z y) :
-    hX.morseTrajectoryComp hc x z y (hX.morseTrajectoryComp hc x w z (a, b), d) =
-      hX.morseTrajectoryComp hc x w y (a, hX.morseTrajectoryComp hc w z y (b, d)) :=
-  hX.morseTrajectoryConcat_assoc _ _ a b d
-
-/-- The composition maps take values in the boundary, in the form of the hypothesis `hA` of
-`TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`. -/
-theorem morseTrajectoryComp_mem_morseTrajectoryBoundary (x z y : criticalPoints 𝓘(ℝ, E) f)
-    (w : hX.morseTrajectorySpace c x z × hX.morseTrajectorySpace c z y) :
-    hX.morseTrajectoryComp hc x z y w ∈ hX.morseTrajectoryBoundary c x y :=
-  hX.morseTrajectoryConcat_mem_morseTrajectoryBoundary _
-    (exists_mem_Ioo_of_Ioo_subset_closure_range (value_lt_of_mem_morseTrajectorySpace w.1.property)
-      (hdense x z)) w
-
 /-- **The twisting cocycle of a twisting chain system on the trajectory spaces**: the push-forwards
 of the chains of `S` along the restrictions of `morseLoopEvaluation` to the trajectory spaces form a
 twisting cocycle over `C^□_*(Ω_{y₀} Y; R)`. When `ind` is the Morse index, `S` is a representing
@@ -352,7 +366,9 @@ theorem morseTwistingCocycle_m (S : TwistingChainSystem ind (hX.morseTrajectoryC
     (hX.morseTwistingCocycle hf hdense hθ hc S).m x y =
       cubicalChainSumMap R ((hX.morseLoopEvaluation hf hdense hθ x y).comp
         (ContinuousMap.inclusion (morseTrajectorySpace_subset _ _))) (S.chain x y) :=
-  S.mooreTwistingCocycle_m _ _ hθ _ x y
+  (S.mooreTwistingCocycle_m _ _ hθ _ x y).trans <|
+    congrArg (cubicalChainSumMap R · (S.chain x y)) <| ContinuousMap.ext fun _ ↦
+      MooreLoopSpace.ext <| by simp
 
 end IsAdaptedPseudoGradient
 
