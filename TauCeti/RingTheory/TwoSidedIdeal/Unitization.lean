@@ -102,4 +102,20 @@ theorem smul_mem_comap_toTwoSided_annihilator {R A M : Type*} [CommRing R]
   rw [← I.annihilator_eq_comap_annihilator_unitization_of_smul_mem hsmul]
   exact I.smul_mem_annihilator c
 
+/-- For an `R`-invariant two-sided ideal `I` of a nonunital `R`-algebra `A` with proper involution,
+the preimage of `(Module.annihilator (Unitization R A) I).toTwoSided` along
+`Unitization.inrNonUnitalAlgHom R A` is closed under `star`. -/
+theorem star_mem_comap_toTwoSided_annihilator {R A : Type*} [CommRing R]
+    [NonUnitalRing A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+    [StarRing A] [IsProperStar A]
+    (I : TwoSidedIdeal A) (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) {a : A} :
+    letI := I.unitizationModuleOfSMulMem hsmul
+    a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom R A)
+          (Module.annihilator (Unitization R A) I).toTwoSided →
+      star a ∈ TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom R A)
+          (Module.annihilator (Unitization R A) I).toTwoSided := by
+  let _ : Module (Unitization R A) I := I.unitizationModuleOfSMulMem hsmul
+  rw [← I.annihilator_eq_comap_annihilator_unitization_of_smul_mem hsmul]
+  exact star_mem_annihilator
+
 end TwoSidedIdeal

@@ -12,14 +12,13 @@ public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Essential
 # Annihilators and essential ideals in C⋆-algebras
 
 C⋆-algebra annihilator theory for arbitrary two-sided ideals `I` (left/right symmetry,
-`I ⊓ I.annihilator = ⊥`, double annihilator, `I.IsClosedEssential ↔ I.IsEssential ↔
-I.annihilator = ⊥`), and `star`-invariance of `Module.annihilator`.
+`I ⊓ I.annihilator = ⊥`, double annihilator, and `I.IsClosedEssential ↔ I.IsEssential ↔
+I.annihilator = ⊥`).
 
 ## Main declarations
 
 * `TwoSidedIdeal.annihilator_eq_rightAnnihilator`, `TwoSidedIdeal.inf_annihilator_eq_bot`,
   `TwoSidedIdeal.isClosedEssential_iff_annihilator_eq_bot`.
-* `TwoSidedIdeal.star_mem_moduleAnnihilator`.
 -/
 
 public section
@@ -49,16 +48,6 @@ theorem annihilator_eq_rightAnnihilator (I : TwoSidedIdeal A) :
 theorem mem_annihilator_iff_mul_eq_zero_right {I : TwoSidedIdeal A} {a : A} :
     a ∈ I.annihilator ↔ ∀ x ∈ I, x * a = 0 := by
   rw [I.annihilator_eq_rightAnnihilator, mem_rightAnnihilator]
-
-/-- The annihilator of any two-sided ideal in a C⋆-algebra is closed under `star`. -/
-theorem star_mem_annihilator_of_cstar {I : TwoSidedIdeal A} {a : A} (ha : a ∈ I.annihilator) :
-    star a ∈ I.annihilator :=
-  I.annihilator.star_mem_of_isClosed ha
-
-/-- The right annihilator of any two-sided ideal in a C⋆-algebra is closed under `star`. -/
-theorem star_mem_rightAnnihilator {I : TwoSidedIdeal A} {a : A} (ha : a ∈ I.rightAnnihilator) :
-    star a ∈ I.rightAnnihilator :=
-  I.rightAnnihilator.star_mem_of_isClosed ha
 
 /-- Every two-sided ideal of a C⋆-algebra has trivial intersection with its annihilator. -/
 @[simp]
@@ -170,26 +159,5 @@ theorem isClosedEssential_comap_iff {B E : Type*} [NonUnitalCStarAlgebra B]
   rw [isClosedEssential_iff_isEssential, isClosedEssential_iff_isEssential, isEssential_comap_iff]
 
 end NonUnitalCStarAlgebra
-
-section UnitalCStarAlgebra
-
-variable {A : Type*} [CStarAlgebra A]
-
-/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `(Module.annihilator A I).toTwoSided` is
-closed under `star`. -/
-theorem star_mem_moduleAnnihilator_toTwoSided {I : TwoSidedIdeal A} {a : A}
-    (ha : a ∈ (Module.annihilator A I).toTwoSided) :
-    star a ∈ (Module.annihilator A I).toTwoSided := by
-  rw [← annihilator_eq_moduleAnnihilator_toTwoSided] at ha ⊢
-  exact star_mem_annihilator_of_cstar ha
-
-/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `Module.annihilator A I` is closed under
-`star`. -/
-theorem star_mem_moduleAnnihilator {I : TwoSidedIdeal A} {a : A}
-    (ha : a ∈ Module.annihilator A I) : star a ∈ Module.annihilator A I :=
-  Ideal.mem_toTwoSided.mp
-    (star_mem_moduleAnnihilator_toTwoSided (Ideal.mem_toTwoSided.mpr ha))
-
-end UnitalCStarAlgebra
 
 end TwoSidedIdeal
