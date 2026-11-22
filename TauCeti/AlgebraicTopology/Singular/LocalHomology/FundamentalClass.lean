@@ -809,11 +809,7 @@ theorem isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top {M : 
     [TopologicalSpace M] {x : M} {d : ℕ}
     {z : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) ({x} : Set M) d} :
     IsLocalOrientation x d z ↔ ℤ ∙ (TopPair.uliftIntSingularHomologyIso _ d).hom z = ⊤ := by
-  rw [ModuleCat.span_singleton_apply_eq_top_iff, Submodule.span_singleton_eq_top_iff,
-    isLocalOrientation_iff]
-  -- `IsLocalOrientation` uses the `ℤ`-action of the additive group, `span` the module action.
-  exact forall_congr' fun _ ↦ exists_congr fun c ↦
-    Eq.congr_left (int_smul_eq_zsmul _ c _).symm
+  rw [ModuleCat.span_singleton_apply_eq_top_iff, isLocalOrientation_iff_span_eq_top]
 
 /-- A class of `Hₙ(M, M ∖ S; ULift ℤ)` restricting to a local orientation at `x ∈ S` restricts,
 read with coefficients `ℤ`, to a generator of `Hₙ(M, M ∖ {x}; ℤ)`, since the change of
