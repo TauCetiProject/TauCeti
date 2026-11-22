@@ -362,23 +362,6 @@ theorem countable_setOf_fderiv_apply_eq_zero_of_floerOperator_eq_zero {ω : Symp
     isDiscrete_of_codiscreteWithin (by simpa only [compl_ofPred] using hcod)
   exact (HereditarilyLindelofSpace.isLindelof _).countable_of_isDiscrete (by simpa using hdisc)
 
-omit [NormedSpace ℝ V] in
-/-- If `u` is `(c, 0)`-periodic with `c ≠ 0` and `u(s, t)` tends to `a` as `s → -∞` and to `b`
-as `s → +∞`, then `u(z) = a` or `u(z) = b` at every point `z` of the slice `t`: translating `z` by
-multiples of `c` along its slice runs into an end. -/
-private theorem eq_or_eq_of_periodic_of_tendsto {c : ℝ} (hper : Periodic u (c, 0)) (hc : c ≠ 0)
-    {z : ℝ × ℝ} {a b : V} (hm : Tendsto (fun s ↦ u (s, z.2)) atBot (𝓝 a))
-    (hp : Tendsto (fun s ↦ u (s, z.2)) atTop (𝓝 b)) : u z = a ∨ u z = b := by
-  have hend {l : Filter ℝ} {x : V} (hx : Tendsto (fun s ↦ u (s, z.2)) l (𝓝 x))
-      (hl : Tendsto (fun n : ℕ ↦ z.1 + n * c) atTop l) : u z = x :=
-    hper.eq_of_tendsto_of_tendsto_add_nsmul (l := l.map fun s ↦ (s, z.2)) (tendsto_map'_iff.2 hx)
-      ((tendsto_map.comp hl).congr fun n ↦ by ext <;> simp)
-  rcases hc.lt_or_gt with hc | hc
-  · exact .inl (hend hm (tendsto_atBot_add_const_left _ _
-      (tendsto_natCast_atTop_atTop.atTop_mul_const_of_neg hc)))
-  · exact .inr (hend hp (tendsto_atTop_add_const_left _ _
-      (tendsto_natCast_atTop_atTop.atTop_mul_const hc)))
-
 /-- **The regular points of a nonstationary Floer trajectory are dense** (Floer, Hofer and
 Salamon). Let `u` be a `C²` solution on `ℝ × ℝ` of the Floer equation
 `∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0`, for a `C¹` family `J_t` with `J_t(u)² = -1` along `u` and a
@@ -440,6 +423,6 @@ theorem dense_regularPoints_of_floerOperator_eq_zero {ω : SymplecticForm V} [Fi
         (hφ z (hB hz).2).2.1.symm.trans (congrArg u (Prod.ext (hB hz).1 (add_zero _).symm))
   -- So `u(z₀)` is the value of an asymptotic orbit, contrary to `z₀ ∈ D`.
   obtain ⟨-, hzm, hzp⟩ := (hWU hz₀).2
-  exact (eq_or_eq_of_periodic_of_tendsto hper hc₀ (hm z₀.2) (hp z₀.2)).elim hzm hzp
+  exact (hper.eq_or_eq_of_tendsto_atBot_of_tendsto_atTop hc₀ (hm z₀.2) (hp z₀.2)).elim hzm hzp
 
 end TauCeti.Floer
