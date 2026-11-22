@@ -34,7 +34,9 @@ also identifies the dual of `H¹(X, 𝒪_X(D))` with the space `Ω(D)` of such d
 * `SchemeWeilDivisor.diagonalRationalFunctionsToRepartitions` embeds global rational functions
   as diagonal repartitions;
 * `SchemeWeilDivisor.repartitionToCohomologyOne` sends a repartition to its first cohomology
-  class;
+  class, naturally in the divisor (`SchemeWeilDivisor.repartitionToCohomologyOne_naturality`) and
+  under multiplication by a nonzero rational function
+  (`SchemeWeilDivisor.repartitionToCohomologyOne_sheafMul`);
 * `SchemeWeilDivisor.repartitionQuotientEquivCohomologyOne` identifies the quotient by the
   divisor filtration and diagonal rational functions with `H¹(X, 𝒪_X(D))`;
 * `SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration` identifies the dual of
@@ -185,6 +187,26 @@ lemma repartitionToCohomologyOne_naturality {D E : SchemeWeilDivisor X} (h : D �
     (repartitionToPrincipalParts hex hdim D a)
   erw [principalPartsShortComplexMap_τ₁, principalPartsShortComplexMap_τ₃,
     principalPartsMap_ofLE, repartitionToPrincipalParts_naturality] at hn
+  exact hn
+
+/-- The map on first sheaf cohomology induced by multiplication by a nonzero rational function,
+`𝒪(D) ⟶ 𝒪(D - div g)`, multiplies the repartition representing a class by `g`. -/
+lemma repartitionToCohomologyOne_sheafMul (hF : IsFunctionField k X.functionField)
+    (g : Additive X.functionFieldˣ) (D : SchemeWeilDivisor X)
+    (a : repartitionSpace k X.functionField) :
+    Scheme.Modules.cohomologyMapBaseLinear k X (sheafMul g D) 1
+        (repartitionToCohomologyOne hex hdim D a) =
+      repartitionToCohomologyOne hex hdim _
+        (repartitionMul hF ((Additive.toMul g : X.functionFieldˣ) : X.functionField) a) := by
+  rw [repartitionToCohomologyOne_apply, repartitionToCohomologyOne_apply]
+  have hclosed : ∀ x : CodimensionOnePoint X, IsClosed ({(x : X)} : Set X) :=
+    fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property
+  have : Epi (toPrincipalParts D) := epi_toPrincipalParts hclosed D
+  have hn := principalPartsBoundary_naturality k hclosed
+    (principalPartsShortComplexMap (sheafMul g D) _ (sheafMul_ι g D).symm)
+    (repartitionToPrincipalParts hex hdim D a)
+  erw [principalPartsShortComplexMap_τ₁, principalPartsShortComplexMap_τ₃,
+    principalPartsMap_sheafMul, repartitionToPrincipalParts_principalPartsMul hex hdim hF] at hn
   exact hn
 
 /-- Every first cohomology class is represented by a repartition. -/

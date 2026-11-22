@@ -15,7 +15,9 @@ On an integral curve over an exact constant field, with invertible differential 
 discrete valuation rings at its codimension-one points, the sheaf of relative differentials is the
 sheaf of a canonical divisor. A separating rational function `t` gives the rational basis
 `dt`; its Weil divisor `K` identifies a regular differential `f dt` with a section `f` of
-`𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula. The
+`𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula, and changing
+the separating function from `t` to `t'` composes it with multiplication by `dt/dt'`
+(`relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι`). The
 codimension-one points need not be rational, and the constant field need not be perfect: the
 local comparison only uses that the differentials of each codimension-one local ring are free of
 rank one, which follows from invertibility of the differential sheaf. In particular this applies
@@ -204,6 +206,43 @@ lemma relativeDifferentialsIsoDivisorSheaf_inv_app (U : X.Opens) [Nonempty U]
   apply (differentialCoordinateEquiv ht).injective
   rw [← differentialCoordinateEquiv_symm_apply ht, LinearEquiv.apply_symm_apply]
   exact h.symm
+
+section ChangeOfSeparatingFunction
+
+variable {t' : X.functionField} (ht' : Transcendental k t')
+  [Algebra.IsSeparable k⟮t'⟯ X.functionField] (K' : SchemeWeilDivisor X)
+  (hK' : ∀ y : CodimensionOnePoint X, WeilDivisor.coeff K' y =
+    weilDifferentialOrder hF hk
+      (weilDifferentialOfSeparating hF ht').property
+      (coe_weilDifferentialOfSeparating_ne_zero hF ht') (X.toPlace (k := k) (y : X)))
+
+/-- **Change of separating function.** Reading a differential in the basis `dt'` instead of
+`dt` multiplies its rational coefficient by `dt/dt'`: going from `𝒪_X(K)` back to `Ω_{X/k}`
+through `dt` and then to `𝒪_X(K')` through `dt'` is multiplication by `dt/dt'` on rational
+functions. -/
+@[reassoc]
+lemma relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι :
+    (relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK).inv ≫
+        (relativeDifferentialsIsoDivisorSheaf ht' hF hk hdim K' hK').hom ≫
+          SchemeWeilDivisor.sheafι K' =
+      SchemeWeilDivisor.sheafι K ≫
+        Scheme.rationalFunctionsMul X (derivativeOfSeparating ht' t) := by
+  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+  ext s
+  by_cases hU : Nonempty U
+  · apply (Scheme.rationalFunctionsEquiv U).injective
+    simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+      relativeDifferentialsIsoDivisorSheaf_hom_app, relativeDifferentialsIsoDivisorSheaf_inv_app,
+      Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app, map_smul,
+      ← derivativeOfSeparating_smul_D ht' t, ← kaehlerBasisOfSeparating_apply ht' (),
+      Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul,
+      mul_one]
+    exact mul_comm _ _
+  · have hbot : U = ⊥ := TopologicalSpace.Opens.not_nonempty_iff_eq_bot U |>.mp
+      (fun ⟨x, hx⟩ ↦ hU ⟨⟨x, hx⟩⟩)
+    exact (Scheme.subsingleton_rationalFunctions U hbot).elim _ _
+
+end ChangeOfSeparatingFunction
 
 end Comparison
 
