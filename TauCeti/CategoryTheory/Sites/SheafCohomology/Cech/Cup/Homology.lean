@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Bilinear
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic
+import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Reverse
 
 /-!
 # The cup product on fixed-family Čech cohomology
@@ -154,7 +155,7 @@ theorem cechComplexCup_assoc {P₁ P₂ P₃ P₁₂ P₂₃ P₁₂₃ : Cᵒ�
     cechCupCochain_assoc U μ₁₂ μ₁₂₃ μ₂₃ μ₁₂₃' hμ₁₂ hμ₂₃ hassoc p q r pq qr n hpq hqr hn _ _ _
 
 /-- **Graded commutativity of the cup product on fixed-family Čech cohomology.** -/
-theorem cechComplexCup_comm
+theorem cechComplexCup_comm [Quiver.IsThin C]
     (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
     (μ' : ∀ X : Cᵒᵖ, Q.obj X →ₗ[R] P.obj X →ₗ[R] S.obj X)
     (hμ : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) x y, μ Y (P.map f x) (Q.map f y) = S.map f (μ X x y))
@@ -167,10 +168,12 @@ theorem cechComplexCup_comm
       (-1 : ℤ) ^ (p * q) • cechComplexCup U μ hμ p q n h x y := by
   obtain ⟨a, rfl⟩ := moduleCat_homologyπ_surjective _ p x
   obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q y
-  trans homologyMap ((cechReverse U).app S) n
+  trans homologyMap ((cechReverse (ModuleCat.{w} R) U).app S) n
     (cechComplexCup U μ' hμ' q p n (by omega)
-      (homologyMap ((cechReverse U).app Q) q (((cechComplexFunctor U).obj Q).homologyπ q b))
-      (homologyMap ((cechReverse U).app P) p (((cechComplexFunctor U).obj P).homologyπ p a)))
+      (homologyMap ((cechReverse (ModuleCat.{w} R) U).app Q) q
+        (((cechComplexFunctor U).obj Q).homologyπ q b))
+      (homologyMap ((cechReverse (ModuleCat.{w} R) U).app P) p
+        (((cechComplexFunctor U).obj P).homologyπ p a)))
   · simp [homologyMap_cechReverse_app]
   simp only [moduleCat_homologyMap_homologyπ, cechComplexCup_homologyπ, ← map_zsmul]
   congr 1; apply moduleCat_iCycles_injective
@@ -412,22 +415,26 @@ theorem cechCupHomology_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m +
 
 /-- **Graded commutativity** of the cup product on Čech cohomology for a presheaf of commutative
 `R`-algebras. -/
-theorem cechCupHomology_comm {F : Cᵒᵖ ⥤ AlgCat.{w} R}
+theorem cechCupHomology_comm [Quiver.IsThin C] {F : Cᵒᵖ ⥤ AlgCat.{w} R}
     (hcomm : ∀ X (x y : F.obj X), x * y = y * x) {p q n : ℕ} (h : p + q = n)
     (α : (cechAlgebraComplex U F).homology p) (β : (cechAlgebraComplex U F).homology q) :
     cechCupHomology U F q p n (by omega) β α =
       (-1 : ℤ) ^ (p * q) • cechCupHomology U F p q n h α β := by
   obtain ⟨a, rfl⟩ := moduleCat_homologyπ_surjective _ p α
   obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q β
-  trans homologyMap ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) n
+  trans homologyMap
+      ((cechReverse (ModuleCat.{w} R) U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) n
     (cechCupHomology U F q p n (by omega)
-      (homologyMap ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) q
+      (homologyMap ((cechReverse (ModuleCat.{w} R) U).app
+          (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) q
         ((cechAlgebraComplex U F).homologyπ q b))
-      (homologyMap ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) p
+      (homologyMap ((cechReverse (ModuleCat.{w} R) U).app
+          (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) p
         ((cechAlgebraComplex U F).homologyπ p a)))
   · simp [homologyMap_cechReverse_app]
   simp only [moduleCat_homologyMap_homologyπ]
-  change (homologyMap ((cechReverse U).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) n).hom
+  change (homologyMap ((cechReverse (ModuleCat.{w} R) U).app
+      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) n).hom
       (cechCupHomology U F q p n (by omega)
         (((cechAlgebraComplex U F).homologyπ q).hom _)
         (((cechAlgebraComplex U F).homologyπ p).hom _)) =
@@ -441,7 +448,7 @@ theorem cechCupHomology_comm {F : Cᵒᵖ ⥤ AlgCat.{w} R}
     moduleCat_homologyMap_homologyπ, ← map_zsmul]
   congr 1
   apply moduleCat_iCycles_injective
-  simpa using cechReverse_cechCup (U := U) (F := F) (h := h) hcomm _ _
+  simpa using cechReverse_cechCup_cechReverse (U := U) hcomm h _ _
 
 /-- The **unit class** of Čech cohomology: the class in `H⁰(U, F)` of the unit cocycle, all of
 whose factors are `1`. -/

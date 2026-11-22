@@ -270,7 +270,8 @@ theorem cechCohomologyCup_assoc {P₁ P₂ P₃ P₁₂ P₂₃ P₁₂₃ : C�
         p q r pq qr n hpq hqr hn]
 
 /-- **Graded commutativity of the cup product on colimit Čech cohomology.** -/
-theorem cechCohomologyCup_comm (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
+theorem cechCohomologyCup_comm [Quiver.IsThin C]
+    (μ : ∀ X : Cᵒᵖ, P.obj X →ₗ[R] Q.obj X →ₗ[R] S.obj X)
     (μ' : ∀ X : Cᵒᵖ, Q.obj X →ₗ[R] P.obj X →ₗ[R] S.obj X)
     (hμ : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) x y, μ Y (P.map f x) (Q.map f y) = S.map f (μ X x y))
     (hμ' : ∀ {X Y : Cᵒᵖ} (f : X ⟶ Y) y x, μ' Y (Q.map f y) (P.map f x) = S.map f (μ' X y x))
