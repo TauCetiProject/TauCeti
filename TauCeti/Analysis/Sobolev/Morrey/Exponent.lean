@@ -156,7 +156,9 @@ theorem exists_le_and_ne_top_and_inv_add_inv_eq_and_lt_mul {n k : ℕ} {p : ℝ�
   rcases hpn.lt_or_eq with hlt | rfl
   · obtain ⟨q, hq⟩ := exists_ne_top_and_inv_add_inv_eq_and_lt_mul hp1.le hlt hkp
     exact ⟨p, q, hp1.le, le_rfl, hq⟩
-  have hN1 : (2 : ℝ) ≤ n := by exact_mod_cast (by exact_mod_cast hp1 : 1 < n)
+  have hN1 : (2 : ℝ) ≤ n := by
+    have : 1 < n := by exact_mod_cast hp1
+    exact_mod_cast (show 2 ≤ n by omega)
   have hkN : (n : ℝ) < (k + 1) * n := by exact_mod_cast hkp
   have hk : (1 : ℝ) ≤ k := by
     rcases Nat.eq_zero_or_pos k with rfl | hk
@@ -232,8 +234,8 @@ theorem exists_mul_lt_and_lt_mul_and_sub_div_eq {n k : ℕ} {p : ℝ≥0∞} {β
     rwa [← hkR]
   have hP1 : (1 : ℝ) < p := by exact_mod_cast hp1
   have hk2 : (2 : ℝ) ≤ k := by exact_mod_cast (by omega : 2 ≤ k)
-  have hβ0' : (0 : ℝ) < β := hβ0
-  have hβ1' : (β : ℝ) < 1 := hβ1
+  have hβ0' : (0 : ℝ) < β := NNReal.coe_pos.2 hβ0
+  have hβ1' : (β : ℝ) < 1 := NNReal.coe_lt_one.2 hβ1
   -- The integer `n = (k - 1) p` exceeds `k - 1`, so `n ≥ k`.
   have hkn : (k : ℝ) ≤ n := by
     have h : (k - 1 : ℕ) < n := by
