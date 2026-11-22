@@ -12,10 +12,12 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
@@ -48,6 +50,9 @@ a doubly (twisted) periodic map are used.
   `[c + L, d + L] × I` is the integral of the translate `z ↦ f (z + (L, 0))` over `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_neg_prod_eq`: the integral over a reflected strip `[-d, -c] × I` is
   the integral of the reflection `z ↦ f (-z.1, z.2)` over `[c, d] × I`.
+* `TauCeti.setIntegral_Icc_mul_prod_Icc_mul_eq`: the integral over a dilated rectangle
+  `[p a₁, p b₁] × [q a₂, q b₂]` is `p q` times the integral of the dilation
+  `z ↦ f (p z₁, q z₂)` over `[a₁, b₁] × [a₂, b₂]`.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.integrableOn_setIntegral_slice`,
@@ -218,6 +223,30 @@ theorem setIntegral_Icc_neg_prod_eq (f : ℝ × ℝ → E) (c d : ℝ) (I : Set 
     ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) f,
     preimage_neg_fst_Icc_prod]
   simp [Prod.map]
+
+/-- **Integrals over a dilated rectangle.** For `p, q > 0`, the integral of `f` over the rectangle
+`[p a₁, p b₁] × [q a₂, q b₂]` is `p q` times the integral of its dilation `z ↦ f (p z₁, q z₂)`
+over the rectangle `[a₁, b₁] × [a₂, b₂]`. -/
+theorem setIntegral_Icc_mul_prod_Icc_mul_eq (f : ℝ × ℝ → E) {p q : ℝ} (hp : 0 < p)
+    (hq : 0 < q) :
+    ∫ z in Icc (p * a₁) (p * b₁) ×ˢ Icc (q * a₂) (q * b₂), f z =
+      (p * q) • ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f (p * z.1, q * z.2) := by
+  let L : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
+    (p • ContinuousLinearMap.fst ℝ ℝ ℝ).prod (q • ContinuousLinearMap.snd ℝ ℝ ℝ)
+  have hL : (L : ℝ × ℝ → ℝ × ℝ) = Prod.map (p * ·) (q * ·) := (rfl)
+  have himage : L '' (Icc a₁ b₁ ×ˢ Icc a₂ b₂) = Icc (p * a₁) (p * b₁) ×ˢ Icc (q * a₂) (q * b₂) := by
+    rw [hL, prodMap_image_prod, image_mul_left_Icc' hp, image_mul_left_Icc' hq]
+  have hinj : InjOn L (Icc a₁ b₁ ×ˢ Icc a₂ b₂) := fun z _ w _ hzw ↦ by
+    rw [hL] at hzw
+    exact Prod.ext (mul_left_cancel₀ hp.ne' (congrArg Prod.fst hzw))
+      (mul_left_cancel₀ hq.ne' (congrArg Prod.snd hzw))
+  have hdet : |L.det| = p * q := by
+    rw [ContinuousLinearMap.det, LinearMap.det_finTwoProd]
+    simp [L, abs_of_pos (mul_pos hp hq)]
+  rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul volume
+    (measurableSet_Icc.prod measurableSet_Icc) (fun z _ ↦ L.hasFDerivAt.hasFDerivWithinAt) hinj f,
+    hdet, integral_smul]
+  rfl
 
 /-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
 pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`

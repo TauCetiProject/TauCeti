@@ -17,7 +17,9 @@ determinant in the change of variables formula for maps of the plane `ℝ × ℝ
 
 Consequently `A` multiplies the wedge product of two linear forms `κ` and `α` on `R × R` by its
 determinant: `κ (A e₁) α (A e₂) - κ (A e₂) α (A e₁) = det A (κ e₁ α e₂ - κ e₂ α e₁)`. This is the
-transformation rule of a two-form on the plane under pullback.
+transformation rule of a two-form on the plane under pullback. Likewise every alternating form `ω`
+of degree two on `R × R` is its value on the standard basis times the `2 × 2` determinant:
+`ω (v, w) = (v₁ w₂ - v₂ w₁) ω ((1, 0), (0, 1))`.
 
 Over a field `K`, an endomorphism `B` of `K × V` that fixes the second component of every vector is
 block triangular, with diagonal blocks the scalar `(B (1, 0)).1` on the axis `K × 0` and the
@@ -30,6 +32,8 @@ identity on the quotient `V`, so its determinant is `(B (1, 0)).1`.
   of two linear forms by its determinant.
 * `LinearMap.det_eq_fst_of_snd_eq`: the determinant of an endomorphism of `K × V` fixing the
   second component.
+* `AlternatingMap.apply_eq_mul_apply_finTwoProd`: an alternating form of degree two on `R × R` is
+  its value on the standard basis times the determinant.
 -/
 
 public section
@@ -97,3 +101,24 @@ theorem det_eq_fst_of_snd_eq (B : K × V →ₗ[K] K × V) (hB : ∀ v, (B v).2 
 end Field
 
 end LinearMap
+
+namespace AlternatingMap
+
+variable {R : Type*} [CommRing R]
+
+/-- An alternating form `ω` of degree two on `R × R` is its value on the standard basis
+`((1, 0), (0, 1))` times the `2 × 2` determinant:
+`ω (v, w) = (v₁ w₂ - v₂ w₁) ω ((1, 0), (0, 1))`. -/
+theorem apply_eq_mul_apply_finTwoProd (ω : (R × R) [⋀^Fin 2]→ₗ[R] R) (v w : R × R) :
+    ω ![v, w] = (v.1 * w.2 - v.2 * w.1) * ω ![(1, 0), (0, 1)] := by
+  have h := congrArg (· ![v, w]) (ω.eq_smul_basis_det (Module.Basis.finTwoProd R))
+  have hb : ⇑(Module.Basis.finTwoProd R) = ![((1 : R), (0 : R)), (0, 1)] := by
+    ext i : 1
+    fin_cases i <;> simp
+  simp only [_root_.smul_apply, Module.Basis.det_apply, Matrix.det_fin_two,
+    Module.Basis.toMatrix_apply, smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Module.Basis.coe_finTwoProd_repr, hb] at h
+  rw [h]
+  ring
+
+end AlternatingMap
