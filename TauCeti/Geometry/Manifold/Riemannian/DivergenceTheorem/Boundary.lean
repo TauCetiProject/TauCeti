@@ -22,7 +22,7 @@ integrates to its outward normal flux across the boundary:
 `∫ x, div X x ∂V = ∫ x : ∂M, inner ℝ (X x) (N x) ∂S`,
 where `V = TauCeti.riemannianVolume (𝓡∂ (n + 1)) M` is the ambient Riemannian volume measure,
 `S = TauCeti.halfSpaceBoundaryVolume` is the Riemannian volume measure of the induced boundary
-metric `TauCeti.halfSpaceBoundaryMetric`, and `N = TauCeti.halfSpaceOutwardUnitNormal` is the
+metric `TauCeti.halfSpaceBoundaryMetric`, and `N = TauCeti.outwardUnitNormal` is the
 unique outward-pointing unit normal along `∂M`. No orientability assumption is imposed on `M`, and
 every dimension `n ≥ 0` is included (`n = 0` gives counting measure on the boundary).
 
@@ -86,7 +86,7 @@ compact support on the boundary. -/
 theorem hasCompactSupport_boundaryFlux {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
     (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X) :
     HasCompactSupport (fun x : (𝓡∂ (n + 1)).boundary M ↦
-      inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)) := by
+      inner ℝ (X (x : M)) (outwardUnitNormal x)) := by
   have hclosed := ((𝓡∂ (n + 1)).isClosed_boundary (M := M) one_ne_zero).isClosedEmbedding_subtypeVal
   refine HasCompactSupport.intro' (hclosed.isCompact_preimage hc)
     ((isClosed_tsupport _).preimage continuous_subtypeVal) fun x hx ↦ ?_
@@ -102,14 +102,16 @@ continuous on the boundary. -/
 theorem continuous_boundaryFlux {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
     (hX : Continuous (T% X)) :
     Continuous (fun x : (𝓡∂ (n + 1)).boundary M ↦
-      inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)) := by
+      inner ℝ (X (x : M)) (outwardUnitNormal x)) := by
   let _ := isManifold_boundary (n := n) (k := 1) M
   have _ : IsManifold (𝓡∂ (n + 1)) (0 + 1) M := by simpa using ‹IsManifold (𝓡∂ (n + 1)) 1 M›
+  have _ := IsContinuousRiemannianBundle.toIsContMDiffZero (IB := 𝓡∂ (n + 1))
+    (F := EuclideanSpace ℝ (Fin (n + 1))) (V := fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)
   exact (ContMDiff.inner_bundle
     (h := IsContinuousRiemannianBundle.toIsContMDiffZero (IB := 𝓡∂ (n + 1)))
     (contMDiff_zero_iff (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))).2 (hX.comp continuous_subtypeVal))
     (contMDiff_zero_iff (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))).2
-      continuous_halfSpaceOutwardUnitNormal)).continuous
+      (contMDiff_outwardUnitNormal (n := n) (M := M) (k := 0)).continuous)).continuous
 
 variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
 
@@ -118,7 +120,7 @@ compactly supported continuous vector field is integrable against `halfSpaceBoun
 theorem integrable_boundaryFlux_of_continuous {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
     (hX : Continuous (T% X)) (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X) :
     Integrable (fun x : (𝓡∂ (n + 1)).boundary M ↦
-      inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x))
+      inner ℝ (X (x : M)) (outwardUnitNormal x))
       (halfSpaceBoundaryVolume (n := n) (M := M)) :=
   (continuous_boundaryFlux hX).integrable_of_hasCompactSupport (hasCompactSupport_boundaryFlux hc)
 
@@ -127,7 +129,7 @@ theorem integrable_boundaryFlux {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) 
     (hX : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% X))
     (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X) :
     Integrable (fun x : (𝓡∂ (n + 1)).boundary M ↦
-      inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x))
+      inner ℝ (X (x : M)) (outwardUnitNormal x))
       (halfSpaceBoundaryVolume (n := n) (M := M)) :=
   integrable_boundaryFlux_of_continuous hX.continuous hc
 
@@ -156,7 +158,7 @@ theorem integral_divergence_eq_boundaryFlux {X : (x : M) → TangentSpace (𝓡�
     (hX : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% X))
     (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin (n + 1))) X) :
     (∫ x, divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
-      ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
+      ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x)
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   classical
   let U : M → Set M := fun i ↦ (chartAt (EuclideanHalfSpace (n + 1)) i).source ∩
@@ -186,7 +188,7 @@ theorem integral_divergence_eq_boundaryFlux {X : (x : M) → TangentSpace (𝓡�
   rw [integral_congr_ae (Filter.Eventually.of_forall hdiv),
     integral_finsetSum _ fun i _ ↦ integrable_divergence (hY i) (hK i),
     integral_congr_ae (Filter.Eventually.of_forall fun x : (𝓡∂ (n + 1)).boundary M ↦
-      (congrArg (inner ℝ · (halfSpaceOutwardUnitNormal x)) (hsum x)).trans (sum_inner _ _ _)),
+      (congrArg (inner ℝ · (outwardUnitNormal x)) (hsum x)).trans (sum_inner _ _ _)),
     integral_finsetSum _ fun i _ ↦ integrable_boundaryFlux (hY i) (hK i)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hsub_i : tsupport (α := EuclideanSpace ℝ (Fin (n + 1))) (fun x ↦ ρ i x • X x) ⊆ U i :=
@@ -215,7 +217,7 @@ private theorem integral_mul_divergence_eq_boundaryFlux_of_integrable {f : M →
     (∫ x, f x * divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
       -(∫ x, mvfderiv (𝓡∂ (n + 1)) f x (X x) ∂riemannianVolume (𝓡∂ (n + 1)) M) +
         ∫ x : (𝓡∂ (n + 1)).boundary M,
-          f (x : M) * inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
+          f (x : M) * inner ℝ (X (x : M)) (outwardUnitNormal x)
           ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   have hfX : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent 1 (T% fun x ↦ f x • X x) :=
     hf.smul_section hX
@@ -238,7 +240,7 @@ theorem integral_mul_divergence_eq_boundaryFlux {f : M → ℝ}
     (∫ x, f x * divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
       -(∫ x, mvfderiv (𝓡∂ (n + 1)) f x (X x) ∂riemannianVolume (𝓡∂ (n + 1)) M) +
         ∫ x : (𝓡∂ (n + 1)).boundary M,
-          f (x : M) * inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
+          f (x : M) * inner ℝ (X (x : M)) (outwardUnitNormal x)
           ∂halfSpaceBoundaryVolume (n := n) (M := M) :=
   integral_mul_divergence_eq_boundaryFlux_of_integrable hf hX
     (hfc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_left _ _))
@@ -254,7 +256,7 @@ theorem integral_mul_divergence_eq_boundaryFlux_of_hasCompactSupport_right {f : 
     (∫ x, f x * divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
       -(∫ x, mvfderiv (𝓡∂ (n + 1)) f x (X x) ∂riemannianVolume (𝓡∂ (n + 1)) M) +
         ∫ x : (𝓡∂ (n + 1)).boundary M,
-          f (x : M) * inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
+          f (x : M) * inner ℝ (X (x : M)) (outwardUnitNormal x)
           ∂halfSpaceBoundaryVolume (n := n) (M := M) :=
   integral_mul_divergence_eq_boundaryFlux_of_integrable hf hX
     (hXc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _))
@@ -269,7 +271,7 @@ theorem integral_laplaceBeltrami_eq_boundaryFlux {f : M → ℝ}
     (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) 2 f) (hfc : HasCompactSupport f) :
     (∫ x, laplaceBeltrami (𝓡∂ (n + 1)) f x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
       ∫ x : (𝓡∂ (n + 1)).boundary M,
-        inner ℝ (mgradient (𝓡∂ (n + 1)) f (x : M)) (halfSpaceOutwardUnitNormal x)
+        inner ℝ (mgradient (𝓡∂ (n + 1)) f (x : M)) (outwardUnitNormal x)
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   simp only [laplaceBeltrami_def]
   exact integral_divergence_eq_boundaryFlux
@@ -285,7 +287,7 @@ theorem integral_mul_laplaceBeltrami_eq_boundaryFlux {f g : M → ℝ}
       -(∫ x, inner ℝ (mgradient (𝓡∂ (n + 1)) f x) (mgradient (𝓡∂ (n + 1)) g x)
           ∂riemannianVolume (𝓡∂ (n + 1)) M) +
         ∫ x : (𝓡∂ (n + 1)).boundary M,
-          f (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) g (x : M)) (halfSpaceOutwardUnitNormal x)
+          f (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) g (x : M)) (outwardUnitNormal x)
           ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   simp_rw [laplaceBeltrami_def]
   rw [integral_mul_divergence_eq_boundaryFlux hf hfc
@@ -303,7 +305,7 @@ theorem integral_mul_laplaceBeltrami_eq_boundaryFlux_of_hasCompactSupport_right 
       -(∫ x, inner ℝ (mgradient (𝓡∂ (n + 1)) f x) (mgradient (𝓡∂ (n + 1)) g x)
           ∂riemannianVolume (𝓡∂ (n + 1)) M) +
         ∫ x : (𝓡∂ (n + 1)).boundary M,
-          f (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) g (x : M)) (halfSpaceOutwardUnitNormal x)
+          f (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) g (x : M)) (outwardUnitNormal x)
           ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   simp_rw [laplaceBeltrami_def]
   rw [integral_mul_divergence_eq_boundaryFlux_of_hasCompactSupport_right hf
@@ -320,8 +322,8 @@ theorem integral_mul_laplaceBeltrami_sub_eq_boundaryFlux {f g : M → ℝ}
     (∫ x, (f x * laplaceBeltrami (𝓡∂ (n + 1)) g x - laplaceBeltrami (𝓡∂ (n + 1)) f x * g x)
         ∂riemannianVolume (𝓡∂ (n + 1)) M) =
       ∫ x : (𝓡∂ (n + 1)).boundary M,
-        (f (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) g (x : M)) (halfSpaceOutwardUnitNormal x) -
-          g (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) f (x : M)) (halfSpaceOutwardUnitNormal x))
+        (f (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) g (x : M)) (outwardUnitNormal x) -
+          g (x : M) * inner ℝ (mgradient (𝓡∂ (n + 1)) f (x : M)) (outwardUnitNormal x))
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   have hf1 := hf.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)
   have hg1 := hg.of_le (by norm_num : (1 : ℕ∞ω) ≤ 2)
@@ -366,7 +368,7 @@ theorem integral_divergence_eq_tsum_boundaryFlux {X : (x : M) → TangentSpace (
     (hX : ContMDiff (𝓡∂ 1) (𝓡∂ 1).tangent 1 (T% X))
     (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin 1)) X) :
     (∫ x, divergence (𝓡∂ 1) X x ∂riemannianVolume (𝓡∂ 1) M) =
-      ∑' x : (𝓡∂ 1).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x) := by
+      ∑' x : (𝓡∂ 1).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x) := by
   have _ := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0)) ((𝓡∂ 1).boundary M)
   have _ : Countable ((𝓡∂ 1).boundary M) := countable_of_Lindelof_of_discrete
   have _ : T1Space ((𝓡∂ 1).boundary M) := ChartedSpace.t1Space (EuclideanSpace ℝ (Fin 0)) _
@@ -384,7 +386,7 @@ theorem integral_divergence_eq_sum_boundaryFlux [Fintype ((𝓡∂ 1).boundary M
     {X : (x : M) → TangentSpace (𝓡∂ 1) x} (hX : ContMDiff (𝓡∂ 1) (𝓡∂ 1).tangent 1 (T% X))
     (hc : HasCompactSupport (β := EuclideanSpace ℝ (Fin 1)) X) :
     (∫ x, divergence (𝓡∂ 1) X x ∂riemannianVolume (𝓡∂ 1) M) =
-      ∑ x : (𝓡∂ 1).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x) := by
+      ∑ x : (𝓡∂ 1).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x) := by
   rw [integral_divergence_eq_tsum_boundaryFlux hX hc, tsum_fintype]
 
 end OneDim
@@ -430,7 +432,7 @@ theorem integralTopForm_mextDeriv_interior_riemannianVolumeForm
         (∫ x, Manifold.divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M) ∧
       integralTopForm (boundaryOrientation o)
           (boundaryRestriction ((riemannianVolumeForm o).interior X)) =
-        ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
+        ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x)
           ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   refine ⟨?_, ?_⟩
   · rw [mextDeriv_interior_riemannianVolumeForm o (hX.mdifferentiable one_ne_zero)]
@@ -457,8 +459,8 @@ theorem integrable_divergence_and_boundaryFlux [T2Space M] {k : ℕ∞ω}
     Integrable (Manifold.divergence (𝓡∂ (n + 1)) X) (riemannianVolume (𝓡∂ (n + 1)) M) ∧
       Integrable (fun x : (𝓡∂ (n + 1)).boundary M ↦ inner ℝ (X (x : M)) (N x))
         (halfSpaceBoundaryVolume (n := n) (M := M)) := by
-  obtain rfl : N = halfSpaceOutwardUnitNormal :=
-    funext fun x ↦ eq_halfSpaceOutwardUnitNormal_of_norm_eq_one (hN x).1 (hN x).2.1 (hN x).2.2
+  obtain rfl : N = outwardUnitNormal :=
+    funext fun x ↦ eq_outwardUnitNormal_iff.2 ⟨(hN x).1, (hN x).2.1, (hN x).2.2⟩
   have hc := hasCompactSupport_of_isCompact_univ_or_exists_compact hSupport
   exact ⟨Manifold.integrable_divergence (hX.of_le hk) hc,
     Manifold.integrable_boundaryFlux (hX.of_le hk) hc⟩
@@ -491,8 +493,8 @@ theorem integral_divergence_eq_boundaryFlux {k : ℕ∞ω} {X : (x : M) → Tang
     (∫ x, Manifold.divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
       ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (N x)
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
-  obtain rfl : N = halfSpaceOutwardUnitNormal :=
-    funext fun x ↦ eq_halfSpaceOutwardUnitNormal_of_norm_eq_one (hN x).1 (hN x).2.1 (hN x).2.2
+  obtain rfl : N = outwardUnitNormal :=
+    funext fun x ↦ eq_outwardUnitNormal_iff.2 ⟨(hN x).1, (hN x).2.1, (hN x).2.2⟩
   exact Manifold.integral_divergence_eq_boundaryFlux (hX.of_le hk)
     (hasCompactSupport_of_isCompact_univ_or_exists_compact hSupport)
 

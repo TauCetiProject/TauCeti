@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Group.Real
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Continuity of parametric integrals with compactly supported integrand
@@ -24,10 +25,14 @@ many disjoint measurable subsets, that an almost everywhere positive function ha
 integral, bounds for the integral of the reciprocal of a function bounded below by a positive
 constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and supported in a closed
 ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extension `f₀` of `f`
-from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
+from `s` and an integrand `Φ` vanishing at `0`, the pairing `∫ h φ = ∫_B (φ - c) h` of a function
+`h` of integral zero vanishing off `B`, and that a continuous square-integrable function
 `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
 It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
-and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`.
+that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, that a pointwise
+bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` integrates to the same bound for the integrals, and turns a bound
+on the Lebesgue integral of a nonnegative function into integrability and a bound on its Bochner
+integral.
 
 ## Main statements
 
@@ -43,10 +48,14 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
   bound `a ≥ λ` alone gives `∫_s a⁻¹ > 0` when `μ s > 0`.
 * `TauCeti.le_setIntegral_Icc_add_of_le_mul`: if `m ≤ K σ` on `[a, a + K]`, with `K > 0`, then
   `m ≤ ∫_a^{a+K} σ`.
+* `TauCeti.setIntegral_le_mul_add_mul_of_le`: a pointwise bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` on a
+  measurable set integrates to `∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
 * `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
   extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
+* `TauCeti.integral_mul_eq_setIntegral_sub_mul`: if `h` vanishes off `B` and has integral zero,
+  then `∫ h φ = ∫_B (φ - c) h` for every constant `c`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
@@ -57,6 +66,9 @@ and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K}
 * `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
   over `A` is `ofReal` of the Bochner integral of `‖f‖ ^ 2`, and
   `MeasureTheory.setLIntegral_enorm_sq_le_ofReal` the corresponding bound.
+* `MeasureTheory.integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le`: a function nonnegative
+  on `Ω ⊆ S` whose Lebesgue integral over `S` is at most `ENNReal.ofReal E` is integrable on `Ω`
+  with Bochner integral at most `E`.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
@@ -225,6 +237,19 @@ theorem le_setIntegral_Icc_add_of_le_mul {σ : ℝ → ℝ} {a K m : ℝ} (hK : 
     (fun r hr ↦ (div_le_iff₀' hK).2 (hm r hr)) hσ
   simpa [hK.le, hK.ne'] using h
 
+/-- **Integrating a bound by a combination of two functions.** If `0 ≤ f ≤ c₁ g₁ + c₂ g₂` on a
+measurable set `s`, with `g₁` and `g₂` integrable on `s`, then
+`∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`. -/
+theorem setIntegral_le_mul_add_mul_of_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {s : Set α} {f g₁ g₂ : α → ℝ} {c₁ c₂ : ℝ} (hs : MeasurableSet s) (hf : ∀ x ∈ s, 0 ≤ f x)
+    (hg₁ : IntegrableOn g₁ s μ) (hg₂ : IntegrableOn g₂ s μ)
+    (h : ∀ x ∈ s, f x ≤ c₁ * g₁ x + c₂ * g₂ x) :
+    ∫ x in s, f x ∂μ ≤ c₁ * (∫ x in s, g₁ x ∂μ) + c₂ * ∫ x in s, g₂ x ∂μ := by
+  rw [← integral_const_mul, ← integral_const_mul,
+    ← integral_add (hg₁.const_mul c₁) (hg₂.const_mul c₂)]
+  exact integral_mono_of_nonneg (ae_restrict_of_forall_mem hs hf)
+    ((hg₁.const_mul c₁).add (hg₂.const_mul c₂)) (ae_restrict_of_forall_mem hs h)
+
 open Metric in
 /-- A function bounded by `K` on a closed ball and vanishing off it has `∫_s ψ² ≤ K² |B|` over
 every set `s`, where `B` is the closed ball. -/
@@ -262,6 +287,22 @@ theorem integral_eq_setIntegral_of_ae_eq_indicator {X E G : Type*} [MeasurableSp
   rw [← integral_indicator₀ hs]
   refine integral_congr_ae (h.mono fun x hx => ?_)
   by_cases hx' : x ∈ s <;> simp [hx, hx', hΦ]
+
+/-- If `h` vanishes off `B` and has integral zero, its pairing with `φ` only sees `φ - c` on `B`,
+for any constant `c`: `∫ h φ = ∫_B (φ - c) h`. -/
+theorem integral_mul_eq_setIntegral_sub_mul {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {B : Set α} {h φ : α → ℝ}
+    (hh : Integrable h (μ.restrict B)) (hsupp : ∀ᵐ x ∂μ, x ∉ B → h x = 0)
+    (hmean : ∫ x, h x ∂μ = 0) (c : ℝ)
+    (hint : Integrable (fun x => (φ x - c) * h x) (μ.restrict B)) :
+    ∫ x, h x * φ x ∂μ = ∫ x in B, (φ x - c) * h x ∂μ := by
+  rw [← setIntegral_eq_integral_of_ae_compl_eq_zero (s := B)
+    (by filter_upwards [hsupp] with x hx hxB; rw [hx hxB, zero_mul])]
+  calc ∫ x in B, h x * φ x ∂μ = ∫ x in B, ((φ x - c) * h x + c * h x) ∂μ :=
+        integral_congr_ae (ae_of_all _ fun x => by ring)
+    _ = _ := by
+        rw [integral_add hint (hh.const_mul c), integral_const_mul,
+          (setIntegral_eq_integral_of_ae_compl_eq_zero hsupp).trans hmean, mul_zero, add_zero]
 
 end TauCeti
 
@@ -330,6 +371,18 @@ theorem setLIntegral_enorm_sq_le_ofReal {α E : Type*} [MeasurableSpace α]
     (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) A ν) (h : ∫ x in A, ‖f x‖ ^ 2 ∂ν ≤ c) :
     ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν ≤ ENNReal.ofReal c :=
   (setLIntegral_enorm_sq_eq_ofReal_setIntegral hf).trans_le (ENNReal.ofReal_le_ofReal h)
+
+/-- Let `f` be almost everywhere strongly measurable and almost everywhere nonnegative on `Ω ⊆ S`.
+If the Lebesgue integral of `ENNReal.ofReal ∘ f` over `S` is at most `ENNReal.ofReal E` with
+`E ≥ 0`, then `f` is integrable on `Ω` and its Bochner integral over `Ω` is at most `E`. -/
+theorem integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le {α : Type*}
+    [MeasurableSpace α] {ν : Measure α} {S Ω : Set α} {f : α → ℝ}
+    (hf : AEStronglyMeasurable f (ν.restrict Ω)) (hf0 : 0 ≤ᵐ[ν.restrict Ω] f) (hΩS : Ω ⊆ S)
+    {E : ℝ} (hE0 : 0 ≤ E) (hE : ∫⁻ x in S, ENNReal.ofReal (f x) ∂ν ≤ ENNReal.ofReal E) :
+    IntegrableOn f Ω ν ∧ ∫ x in Ω, f x ∂ν ≤ E := by
+  have h := TauCeti.MeasureTheory.integrable_and_integral_le_of_lintegral_ofReal_le hf hf0
+    (E := E.toNNReal) ((lintegral_mono_set hΩS).trans hE)
+  exact ⟨h.1, h.2.trans_eq (Real.coe_toNNReal _ hE0)⟩
 
 variable {α : Type*} {m : MeasurableSpace α} {μ : Measure α} {E : Type*} [NormedAddCommGroup E]
   [NormedSpace ℝ E]

@@ -34,6 +34,12 @@ side is the same argument for `W^s(b)` and `W^u(x)`, the plane `u = 0`, which is
 
 ## Main results
 
+* `TauCeti.exists_hasStrictFDerivAt_splitCoord`: a set flattened by a chart and
+  transverse, at a point of a Morse chart, to the kernel of a surjection of the split coordinates
+  contains a disc through that point whose derivative, read in the split coordinates, is a section
+  of the surjection. The discs below are the cases of `W^u(a)` against `W^s(x)` and of `W^s(b)`
+  against `W^u(x)`.
+
 In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
 * `exists_hasStrictFDerivAt_mem_unstableSet`: near `x`, each point of `W^u(a) ∩ W^s(x)` is the
@@ -94,7 +100,7 @@ of the chart, the set where `pr` vanishes on the split coordinates. A set `s₁`
 `q` near `y`, and meeting `s₂` transversally at `y`, contains a disc through `y` which, read in the
 split coordinates, is a map `ψ` with `ψ 0 = (u, v)(y)`, strictly differentiable at `0`, whose
 derivative is a section of `pr`. -/
-private theorem exists_hasStrictFDerivAt_splitCoord {G : Type*} [NormedAddCommGroup G]
+theorem exists_hasStrictFDerivAt_splitCoord {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [FiniteDimensional ℝ G] (φ : MorseChart E f x)
     {pr : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) →L[ℝ] G}
     (hpr : Function.Surjective pr) {s₁ s₂ : Set M} {y : M}

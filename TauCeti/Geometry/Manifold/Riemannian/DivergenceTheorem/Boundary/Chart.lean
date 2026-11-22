@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.OutwardUnitNormal
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Divergence
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Boundary
@@ -289,7 +290,7 @@ private theorem stdChartVolumeDensity_mul_localFrameCoeff_zero_boundary
     (u : TangentSpace (𝓡∂ (n + 1)) (q : M)) :
     stdChartVolumeDensity (I := 𝓡∂ (n + 1)) (α : M) (q : M) *
       (ambTriv (α : M)).localFrameCoeff (𝓡∂ (n + 1)) (stdBasis (n + 1)) 0 (q : M) u =
-      -(stdChartVolumeDensity (I := bdryI n) α q * inner ℝ u (halfSpaceOutwardUnitNormal q)) := by
+      -(stdChartVolumeDensity (I := bdryI n) α q * inner ℝ u (outwardUnitNormal q)) := by
   have _ : Fact (Module.finrank ℝ (TangentSpace (𝓡∂ (n + 1)) (q : M)) = n + 1) :=
     ⟨by rw [TauCeti.finrank_tangentSpace]; simp⟩
   have _ : Fact (Module.finrank ℝ (TangentSpace (bdryI n) q) = n) :=
@@ -335,7 +336,7 @@ private theorem stdChartFluxE_zero_boundaryParam (α₀ : (𝓡∂ (n + 1)).boun
       -((extChartAt (bdryI n) α₀).target.indicator (fun w ↦
         stdChartVolumeDensity (I := bdryI n) α₀ ((extChartAt (bdryI n) α₀).symm w) *
         inner ℝ (X (((extChartAt (bdryI n) α₀).symm w : (𝓡∂ (n + 1)).boundary M) : M))
-          (halfSpaceOutwardUnitNormal ((extChartAt (bdryI n) α₀).symm w))) w) := by
+          (outwardUnitNormal ((extChartAt (bdryI n) α₀).symm w))) w) := by
   set e₀ := extChartAt (bdryI n) α₀; set ec := extChartAt (𝓡∂ (n + 1)) (α₀ : M)
   by_cases hw : w ∈ e₀.target
   · have hw' := (boundaryParam_mem_extChartAt_target_iff α₀ w).2 hw
@@ -432,13 +433,13 @@ private theorem neg_integral_stdChartFlux_zero_eq_boundaryFlux (α₀ : (𝓡∂
     {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
     (hKs : ambTsupport X ⊆ (chartAt (EuclideanHalfSpace (n + 1)) (α₀ : M)).source) :
     -(∫ y : Fin n → ℝ, stdChartFluxE (α₀ : M) X 0 (piToE (n + 1) (Fin.cons 0 y))) =
-      ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
+      ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x)
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   set e₀ := extChartAt (bdryI n) α₀
   let bE : Espace n → ℝ := e₀.target.indicator fun w ↦
     stdChartVolumeDensity (I := bdryI n) α₀ (e₀.symm w) *
       inner ℝ (X ((e₀.symm w : (𝓡∂ (n + 1)).boundary M) : M))
-        (halfSpaceOutwardUnitNormal (e₀.symm w))
+        (outwardUnitNormal (e₀.symm w))
   have htrace (y : Fin n → ℝ) :
       stdChartFluxE (α₀ : M) X 0 (piToE (n + 1) (Fin.cons 0 y)) = -bE (piToE n y) :=
     piToE_cons_zero n y ▸ stdChartFluxE_zero_boundaryParam α₀ X (piToE n y)
@@ -462,7 +463,7 @@ private theorem neg_integral_stdChartFlux_zero_eq_boundaryFlux_of_disjoint {α :
     {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
     (hdisj : Disjoint (ambTsupport X) ((𝓡∂ (n + 1)).boundary M)) :
     -(∫ y : Fin n → ℝ, stdChartFluxE α X 0 (piToE (n + 1) (Fin.cons 0 y))) =
-      ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
+      ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x)
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   set ec := extChartAt (𝓡∂ (n + 1)) α
   have htrace_zero (y : Fin n → ℝ) : stdChartFluxE α X 0 (piToE (n + 1) (Fin.cons 0 y)) = 0 := by
@@ -479,7 +480,7 @@ private theorem neg_integral_stdChartFlux_zero_eq_boundaryFlux_of_disjoint {α :
         apply_eq_zero_of_notMem_ambTsupport (disjoint_right.1 hdisj hp_bdry), map_zero, mul_zero]
     · exact chartFlux_apply_of_notMem _ _ 0 hw'
   have hbdry_zero (q : (𝓡∂ (n + 1)).boundary M) :
-      inner ℝ (X (q : M)) (halfSpaceOutwardUnitNormal q) = 0 := by
+      inner ℝ (X (q : M)) (outwardUnitNormal q) = 0 := by
     simp [apply_eq_zero_of_notMem_ambTsupport (disjoint_right.1 hdisj q.property)]
   simp_rw [htrace_zero, hbdry_zero]; simp
 
@@ -541,7 +542,7 @@ theorem integral_divergence_eq_boundaryFlux_of_tsupport_subset_chart {α : M}
     (hcase : α ∈ (𝓡∂ (n + 1)).boundary M ∨
       Disjoint (tsupport (α := EuclideanSpace ℝ (Fin (n + 1))) X) ((𝓡∂ (n + 1)).boundary M)) :
     (∫ x, divergence (𝓡∂ (n + 1)) X x ∂riemannianVolume (𝓡∂ (n + 1)) M) =
-      ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)
+      ∫ x : (𝓡∂ (n + 1)).boundary M, inner ℝ (X (x : M)) (outwardUnitNormal x)
         ∂halfSpaceBoundaryVolume (n := n) (M := M) := by
   have hKs' : ambTsupport X ⊆ (extChartAt (𝓡∂ (n + 1)) α).source := by rwa [extChartAt_source]
   have hKc := hK.image_of_continuousOn ((continuousOn_extChartAt α).mono hKs')

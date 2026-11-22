@@ -39,7 +39,8 @@ For `f` continuously mapping a preconnected set `s` into `u`, with `x ∈ s` and
 
 A continuous injection on a compact set into a Hausdorff space is a closed embedding of that set,
 so preconnectedness of the image is equivalent to preconnectedness of the set
-(`IsCompact.isPreconnected_image_iff_of_injOn`).
+(`IsCompact.isPreconnected_image_iff_of_injOn`). An inducing map, such as the inclusion of a
+subspace, reflects connectedness of images (`Topology.IsInducing.isConnected_image`).
 
 A continuous function on a preconnected set that is locally constant near each point where it
 takes a given value `f z`, for some `z` in the set, is constant
@@ -212,6 +213,13 @@ theorem IsCompact.isPreconnected_image_iff_of_injOn {β : Type*} [TopologicalSpa
   rw [isPreconnected_iff_preconnectedSpace (s := K), preconnectedSpace_iff_univ,
     ← (hf.domRestrict.isClosedEmbedding hinj.injective).isInducing.isPreconnected_image, image_univ,
     range_domRestrict]
+
+/-- **Connectedness pulls back along an inducing map.** For an inducing map `f`, for instance the
+inclusion of a subspace, `f '' s` is connected exactly when `s` is. -/
+theorem Topology.IsInducing.isConnected_image {β : Type*} [TopologicalSpace β] {f : α → β}
+    {s : Set α} (hf : IsInducing f) : IsConnected (f '' s) ↔ IsConnected s :=
+  ⟨fun h ↦ ⟨h.nonempty.of_image, hf.isPreconnected_image.1 h.isPreconnected⟩,
+    fun h ↦ h.image f hf.continuous.continuousOn⟩
 
 namespace TauCeti
 

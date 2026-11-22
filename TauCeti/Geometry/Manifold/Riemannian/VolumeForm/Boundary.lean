@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.InducedOrientation
 public import TauCeti.Geometry.Manifold.Boundary.Integration
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary
+public import TauCeti.Geometry.Manifold.Riemannian.OutwardUnitNormal
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 import TauCeti.LinearAlgebra.Alternating.Uncurry.Fin
 
@@ -54,25 +55,25 @@ private abbrev bdryI (n : ℕ) := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
 
 /-- At a boundary point `x`, an orthonormal basis `b` of `T_x (∂M)` extends by `N` to an
 orthonormal basis `b'` of `T_x M` whose orientation matches `o` iff `b` matches `∂o`. -/
-private theorem exists_orthonormalBasis_cons_halfSpaceOutwardUnitNormal
+private theorem exists_orthonormalBasis_cons_outwardUnitNormal
     (x : (𝓡∂ (n + 1)).boundary M)
     (o : Orientation ℝ (TangentSpace (𝓡∂ (n + 1)) (x : M)) (Fin (n + 1))) :
     ∃ (b : OrthonormalBasis (Fin n) ℝ (TangentSpace (bdryI n) x))
       (b' : OrthonormalBasis (Fin (n + 1)) ℝ (TangentSpace (𝓡∂ (n + 1)) (x : M))),
-      ⇑b'.toBasis = Fin.cons (halfSpaceOutwardUnitNormal x) (fun i ↦
+      ⇑b'.toBasis = Fin.cons (outwardUnitNormal x) (fun i ↦
           mfderiv (bdryI n) (𝓡∂ (n + 1)) (Subtype.val : _ → M) x (b i)) ∧
         (b.toBasis.orientation = Orientation.halfSpaceBoundaryOrientation o ↔
           b'.toBasis.orientation = o) := by
   set dι := mfderiv (bdryI n) (𝓡∂ (n + 1)) (Subtype.val : _ → M) x
-  set N := halfSpaceOutwardUnitNormal x
+  set N := outwardUnitNormal x
   let b : OrthonormalBasis (Fin n) ℝ (TangentSpace (bdryI n) x) :=
     (stdOrthonormalBasis ℝ _).reindex (finCongr (by rw [TauCeti.finrank_tangentSpace]; simp))
   have hf_orth : Orthonormal ℝ (Fin.cons N fun i ↦ dι (b i)) := by
     rw [orthonormal_iff_ite]; intro i j
     refine Fin.cases ?_ (fun i ↦ ?_) i <;> refine Fin.cases ?_ (fun j ↦ ?_) j
-    · simp [N, norm_halfSpaceOutwardUnitNormal]
-    · simp [N, dι, inner_halfSpaceOutwardUnitNormal_mfderiv_subtypeVal, (Fin.succ_ne_zero j).symm]
-    · simp [N, dι, inner_mfderiv_subtypeVal_halfSpaceOutwardUnitNormal]
+    · simp [N, norm_outwardUnitNormal]
+    · simp [N, dι, inner_outwardUnitNormal_mfderiv_subtypeVal, (Fin.succ_ne_zero j).symm]
+    · simp [N, dι, inner_mfderiv_subtypeVal_outwardUnitNormal]
     · simp only [Fin.cons_succ, Fin.succ_inj]; rw [← inner_tangentSpace_boundary]
       exact orthonormal_iff_ite.1 b.orthonormal i j
   let b' : OrthonormalBasis (Fin (n + 1)) ℝ (TangentSpace (𝓡∂ (n + 1)) (x : M)) :=
@@ -82,7 +83,7 @@ private theorem exists_orthonormalBasis_cons_halfSpaceOutwardUnitNormal
   have hb'_coe : ⇑b'.toBasis = Fin.cons N fun i ↦ dι (b i) := by
     rw [Module.Basis.toBasis_toOrthonormalBasis, coe_basisOfLinearIndependentOfCardEqFinrank]
   have hN_neg : (fun w : EuclideanSpace ℝ (Fin (n + 1)) ↦ w 0) N < 0 := by
-    have h := (isOutwardPointing_halfSpaceOutwardUnitNormal x).coordinate_deriv_neg
+    have h := (isOutwardPointing_outwardUnitNormal x).coordinate_deriv_neg
     rwa [mfderiv_extChartAt_self] at h
   refine ⟨b, b', hb'_coe, Orientation.halfSpaceBoundaryOrientation_spec o hN_neg b.toBasis
     b'.toBasis (funext fun k ↦ Fin.cases (congrFun hb'_coe 0) (fun i ↦ ?_) k)⟩
@@ -102,13 +103,13 @@ theorem volumeForm_cons_mfderiv_subtypeVal_boundary (x : (𝓡∂ (n + 1)).bound
     o.volumeForm (Fin.cons u fun i ↦
         mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x (v i)) =
-      inner ℝ u (halfSpaceOutwardUnitNormal x) *
+      inner ℝ u (outwardUnitNormal x) *
         Orientation.volumeForm (E := TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x)
           (Orientation.halfSpaceBoundaryOrientation o) v := by
   set dι := mfderiv (bdryI n) (𝓡∂ (n + 1)) (Subtype.val : _ → M) x
-  set N := halfSpaceOutwardUnitNormal x
+  set N := outwardUnitNormal x
   set o_b := Orientation.halfSpaceBoundaryOrientation o
-  obtain ⟨b, b', hb'_coe, horient⟩ := exists_orthonormalBasis_cons_halfSpaceOutwardUnitNormal x o
+  obtain ⟨b, b', hb'_coe, horient⟩ := exists_orthonormalBasis_cons_outwardUnitNormal x o
   -- Reduce evaluation of the boundary `n`-form `η := ι_u (o.volumeForm) ∘ dι` to the basis `b`.
   let η : AlternatingMap ℝ (TangentSpace (bdryI n) x) ℝ (Fin n) :=
     (o.volumeForm.curryLeft u).compLinearMap dι.toLinearMap
@@ -139,7 +140,7 @@ theorem boundaryRestriction_interior_riemannianVolumeForm
     (o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1)))
     (X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x) (x : (𝓡∂ (n + 1)).boundary M) :
     boundaryRestriction ((riemannianVolumeForm o).interior X) x =
-      inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x) •
+      inner ℝ (X (x : M)) (outwardUnitNormal x) •
         riemannianVolumeForm (boundaryOrientation o) x := by
   let _ := o.fact_finrank_tangentSpace (x : M)
   let _ := (boundaryOrientation o).fact_finrank_tangentSpace x

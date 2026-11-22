@@ -42,6 +42,8 @@ manifolds. No orientation is used: the measure is the orientation-free `TauCeti.
   `∫ f Δg dV = -∫ ⟪grad f, grad g⟫ dV`.
 * `TauCeti.Manifold.integral_mul_laplaceBeltrami_right_eq_left`: Green's second identity
   `∫ f Δg dV = ∫ (Δf) g dV`.
+* `TauCeti.Manifold.integral_mul_eq_zero_of_laplaceBeltrami_eq_neg_mul`: `L²`-orthogonality of
+  `C²` Laplace–Beltrami eigenfunctions with distinct eigenvalues.
 * `TauCeti.Manifold.integrable_divergence`: the divergence of a compactly supported `C¹` field is
   integrable.
 
@@ -330,5 +332,22 @@ theorem integral_mul_laplaceBeltrami_right_eq_left {f g : M → ℝ} (hf : ContM
   congr 1
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
   exact (inner_mgradient_right _).symm.trans (inner_mgradient _)
+
+/-- **Orthogonality of Laplace–Beltrami eigenfunctions with distinct eigenvalues**: on a manifold
+without boundary, if `f` and `g` are `C²` functions with `f` compactly supported satisfying
+`Δf = -λ₁ f` and `Δg = -λ₂ g` for `λ₁ ≠ λ₂`, then `∫ f g dV = 0`. -/
+theorem integral_mul_eq_zero_of_laplaceBeltrami_eq_neg_mul {f g : M → ℝ} {lam₁ lam₂ : ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hfc : HasCompactSupport f) (hg : ContMDiff I 𝓘(ℝ) 2 g)
+    (hlam₁ : ∀ x, laplaceBeltrami I f x = -lam₁ * f x)
+    (hlam₂ : ∀ x, laplaceBeltrami I g x = -lam₂ * g x) (hne : lam₁ ≠ lam₂) :
+    ∫ x, f x * g x ∂riemannianVolume I M = 0 := by
+  have hgreen := integral_mul_laplaceBeltrami_right_eq_left hf hfc hg
+  have hL : (fun x ↦ f x * laplaceBeltrami I g x) = fun x ↦ -lam₂ * (f x * g x) := by
+    ext x; rw [hlam₂]; ring
+  have hR : (fun x ↦ laplaceBeltrami I f x * g x) = fun x ↦ -lam₁ * (f x * g x) := by
+    ext x; rw [hlam₁]; ring
+  rw [hL, hR, integral_const_mul, integral_const_mul] at hgreen
+  have hmul : (lam₁ - lam₂) * ∫ x, f x * g x ∂riemannianVolume I M = 0 := by linarith
+  exact (mul_eq_zero.1 hmul).resolve_left (sub_ne_zero.2 hne)
 
 end TauCeti.Manifold

@@ -46,7 +46,8 @@ microlocal elliptic regularity, `WF(u) ⊆ WF(P u) ∪ Char(P)`.
 ## Main declarations
 
 * `TauCeti.HomogeneousSymbol.microlocalCutoff`: the homogeneous symbol `φ(x) ψ(ξ / ‖ξ‖) • id`.
-* `TauCeti.ClassicalSymbol.exists_microlocalCutoff`: existence of microlocal cutoffs.
+* `TauCeti.ClassicalSymbol.exists_microlocalCutoff`: existence of microlocal cutoffs, and
+  `TauCeti.Symbol.exists_microlocalCutoff`: cutoffs that also vanish below a given frequency radius.
 * `TauCeti.Symbol.isSmoothing_sharp_sub_of_eventuallyEq_id_left`,
   `TauCeti.Symbol.isSmoothing_sharp_sub_of_eventuallyEq_id_right`: `c # b` and `b # c` agree with
   `b` modulo smoothing symbols when, at every large frequency, `b` vanishes or `c` is the identity
@@ -234,5 +235,43 @@ theorem exists_microlocalCutoff {K U F Γ : Set (CoordinateSpace n)} (hK : IsCom
   · simpa using hΓcone _ (norm_pos_iff.2 hξ0) _ (hψΓ (hξ.resolve_left hξ0))
 
 end ClassicalSymbol
+
+namespace Symbol
+
+/-- **Microlocal cutoffs vanishing at small frequencies.** Let `K` be a compact set inside an open
+set `U` of positions, `F` a closed cone inside an open cone `Γ` of frequencies, and `R` a radius.
+There is a symbol `c` of order `0` that is the identity at every `(x, ξ) ∈ K × F` of large
+frequency, and vanishes unless `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`. It is the cutoff of
+`TauCeti.ClassicalSymbol.exists_microlocalCutoff`, cut off below the radius `R` by a frequency
+cutoff `χ(ξ / R)`; this makes it vanish outside a set `{x ∈ U, ξ ∈ Γ, ‖ξ‖ ≥ R}` on which a symbol
+is elliptic, as microlocal parametrix symbols require
+(`TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left`). -/
+theorem exists_microlocalCutoff {K U F Γ : Set (CoordinateSpace n)}
+    (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (hF : IsClosed F)
+    (hFcone : ∀ r : ℝ, 0 < r → ∀ ξ ∈ F, r • ξ ∈ F) (hΓ : IsOpen Γ)
+    (hΓcone : ∀ r : ℝ, 0 < r → ∀ ξ ∈ Γ, r • ξ ∈ Γ) (hFΓ : ∀ ξ ∈ F, ξ ≠ 0 → ξ ∈ Γ) (R : ℝ) :
+    ∃ c : Symbol n V V 0, (∀ p, c.coefficient p ≠ 0 → p.1 ∈ U ∧ p.2 ∈ Γ ∧ R ≤ ‖p.2‖) ∧
+      ∃ R', ∀ x ∈ K, ∀ ξ ∈ F, R' ≤ ‖ξ‖ → c.coefficient (x, ξ) = ContinuousLinearMap.id ℂ V := by
+  obtain ⟨c₀, hc₀, -, -, L, G, -, hLU, -, -, hGΓ, hc₀0⟩ :=
+    ClassicalSymbol.exists_microlocalCutoff (V := V) hK hU hKU hF hFcone hΓ hΓcone hFΓ
+  -- Cut `c₀` off below the radius `R₁ = max R 1` by the frequency cutoff `χ(ξ / R₁)`.
+  set R₁ := max R 1
+  have hR₁ : 0 < R₁ := lt_max_of_lt_right one_pos
+  set χ : FrequencyCutoff (CoordinateSpace n) := default
+  have hR₁1 : 1 ≤ R₁ := le_max_right R 1
+  have hd := coefficient_dilatedCutoff_comp χ hR₁1 c₀.toSymbol
+  refine ⟨inclusion (by norm_num) ((dilatedCutoff χ hR₁1).comp c₀.toSymbol), fun p hp ↦ ?_,
+    2 * R₁ + 2, fun x hx ξ hξ hR ↦ ?_⟩
+  · simp only [coefficient_inclusion, hd, ne_eq, smul_eq_zero, not_or] at hp
+    obtain ⟨hχ, hc⟩ := hp
+    obtain ⟨hL, hG, h1⟩ := hc₀0 p.1 p.2 hc
+    refine ⟨hLU hL, hGΓ _ hG (norm_pos_iff.1 (one_pos.trans h1)), ?_⟩
+    by_contra hlt
+    exact hχ (χ.apply_inv_smul_eq_zero hR₁ ((not_le.1 hlt).le.trans (le_max_left _ _)))
+  · simp only [coefficient_inclusion, hd]
+    rw [χ.apply_inv_smul_eq_one hR₁ (by linarith), one_smul]
+    exact (hc₀ x hx ξ hξ (by linarith)).self_of_nhds
+
+end Symbol
 
 end TauCeti
