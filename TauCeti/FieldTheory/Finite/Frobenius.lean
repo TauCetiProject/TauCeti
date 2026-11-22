@@ -154,12 +154,17 @@ theorem finite_of_natCard_eq_pow {R : Type*} [AddMonoidWithOne R] {p m : ℕ} [E
     (hR : Nat.card R = p ^ m) : Finite R :=
   Nat.finite_of_card_ne_zero (hR ▸ (expChar_pow_pos R p m).ne')
 
-/-- A nontrivial object of exponential characteristic `p` with `q ^ 2` elements, `q = p ^ n`, has
-`1 < q`. -/
-theorem one_lt_pow_of_natCard_eq_sq {R : Type*} [AddMonoidWithOne R] [Nontrivial R] {p n : ℕ}
-    [ExpChar R p] (hR : Nat.card R = (p ^ n) ^ 2) : 1 < p ^ n :=
+/-- An object of exponential characteristic `p` with `q ^ 2` elements, `q = p ^ n`, has `1 < q`.
+It is nontrivial, since `1 ≠ 0` both in characteristic zero and in prime characteristic. -/
+theorem one_lt_pow_of_natCard_eq_sq {R : Type*} [AddMonoidWithOne R] {p n : ℕ} [ExpChar R p]
+    (hR : Nat.card R = (p ^ n) ^ 2) : 1 < p ^ n := by
   have := finite_of_natCard_eq_pow (hR.trans (pow_mul p n 2).symm)
-  (Nat.one_lt_pow_iff two_ne_zero).mp (hR ▸ Finite.one_lt_card)
+  have : Nontrivial R := nontrivial_of_ne 1 0 <| by
+    rcases ‹ExpChar R p› with _ | hp
+    · exact one_ne_zero
+    · rw [← Nat.cast_one, Ne, CharP.cast_eq_zero_iff R p, Nat.dvd_one]
+      exact hp.ne_one
+  exact (Nat.one_lt_pow_iff two_ne_zero).mp (hR ▸ Finite.one_lt_card)
 
 variable {K : Type*} [Field K] {p : ℕ} [ExpChar K p]
 
