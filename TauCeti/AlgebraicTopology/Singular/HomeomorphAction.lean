@@ -100,6 +100,7 @@ theorem singularHomologyAction_apply (φ : X ≃ₜ X)
 variable {m} in
 /-- The map induced on singular homology by the inverse of a homeomorphism `e` undoes the map
 induced by `e`. -/
+@[simp]
 theorem singularHomologyMap_symm_apply_apply {Y : Type u} [TopologicalSpace Y] (e : X ≃ₜ Y)
     (x : ((TauCeti.singularChains k).obj (TopCat.of X)).homology m) :
     ContinuousMap.singularHomologyMap k m (e.symm : C(Y, X))
@@ -110,6 +111,7 @@ theorem singularHomologyMap_symm_apply_apply {Y : Type u} [TopologicalSpace Y] (
 variable {m} in
 /-- The map induced on singular homology by a homeomorphism `e` undoes the map induced by its
 inverse. -/
+@[simp]
 theorem singularHomologyMap_apply_symm_apply {Y : Type u} [TopologicalSpace Y] (e : X ≃ₜ Y)
     (y : ((TauCeti.singularChains k).obj (TopCat.of Y)).homology m) :
     ContinuousMap.singularHomologyMap k m (e : C(X, Y))
