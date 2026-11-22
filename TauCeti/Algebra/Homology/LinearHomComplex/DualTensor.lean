@@ -123,6 +123,15 @@ lemma cochainFromTensorUnitLinearEquiv_apply (K : CochainComplex (ModuleCat.{v} 
         z.v 0 n (zero_add n)).hom 1 :=
   (rfl)
 
+/-- The tensor unit `𝟙_ (ModuleCat R)` is the module `ModuleCat.of R R`, so the identifications
+`HomologicalComplex.singleObjXSelf` of the degree-zero term of the single complexes on the two
+cancel, although the two single complexes are presented differently. -/
+lemma singleObjXSelf_hom_singleObjXSelf_inv_apply (r : R) :
+    (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (ModuleCat.of R R)).hom.hom
+      ((HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv.hom r) = r :=
+  congrArg (fun u => u.hom r)
+    (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv_hom_id
+
 /-- A cochain from the tensor unit given by a map `f : R ⟶ Kⁿ` corresponds to `f 1`. -/
 lemma cochainFromTensorUnitLinearEquiv_fromSingleMk (K : CochainComplex (ModuleCat.{v} R) ℤ)
     (n : ℤ) (f : 𝟙_ (ModuleCat.{v} R) ⟶ K.X n) :
@@ -528,19 +537,13 @@ theorem _root_.CochainComplex.HomComplex.Cochain.uncurry_comp_cochainFromTensorU
       Cochain.toSingleMk_v_eq_zero _ _ _ _ _ ha]
     simp
   subst ha
-  -- The tensor unit `𝟙_ (ModuleCat R)` of the target of `φ` and the module `ModuleCat.of R R`
-  -- through which `cochainFromTensorUnitLinearEquiv` reads elements are the same module.
-  have hs (r : R) : (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (ModuleCat.of R R)).hom.hom
-      ((HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv.hom r) = r :=
-    congrArg (fun u => u.hom r)
-      (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv_hom_id
   rw [Cochain.uncurry_v_hom_ιTensorObj_apply _ hkl hab x y (show -j + n = i by omega),
     Cochain.comp_v _ _ _ (-j) 0 i (by omega) (by omega), Cochain.toSingleMk_v,
     cochainFromTensorUnitLinearEquiv_symm_apply, Cochain.fromSingleMk_v]
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
-    LinearMap.toSpanSingleton_apply, hs]
-  rw [Cochain.smul_v, ModuleCat.hom_smul, LinearMap.smul_apply, ← LinearMap.comp_apply,
-    ← ModuleCat.hom_comp]
+    LinearMap.toSpanSingleton_apply]
+  rw [singleObjXSelf_hom_singleObjXSelf_inv_apply, Cochain.smul_v, ModuleCat.hom_smul,
+    LinearMap.smul_apply, ← LinearMap.comp_apply, ← ModuleCat.hom_comp]
   by_cases hb : b = -i
   swap
   · rw [Cochain.ιTensorObj_dualDistrib_v _ _ h (-j) b k l 0 (b + i) hab hkl (by omega) rfl,
@@ -613,12 +616,8 @@ noncomputable def linearHomComplexTensorDualIso (A B : CochainComplex (ModuleCat
     [∀ p, Module.IsReflexive R (B.X p)] :
     linearHomComplex R (A ⊗ linearHomComplex R B (𝟙_ _)) (𝟙_ _) ≅ linearHomComplex R A B :=
   linearHomComplexCurryIso A (linearHomComplex R B (𝟙_ _)) (𝟙_ _) ≪≫
-    { hom := linearHomComplexPostcomp R A (inv (CochainComplex.bidualHom B))
-      inv := linearHomComplexPostcomp R A (CochainComplex.bidualHom B)
-      hom_inv_id := by
-        rw [← linearHomComplexPostcomp_comp, IsIso.inv_hom_id, linearHomComplexPostcomp_id]
-      inv_hom_id := by
-        rw [← linearHomComplexPostcomp_comp, IsIso.hom_inv_id, linearHomComplexPostcomp_id] }
+    ((linearHomComplexFunctor R).obj (Opposite.op A)).mapIso
+      (asIso (CochainComplex.bidualHom B)).symm
 
 variable (A B : CochainComplex (ModuleCat.{v} R) ℤ) [∀ p, Module.IsReflexive R (B.X p)]
 
