@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Fourier.LpSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -37,6 +38,9 @@ Fourier multipliers are additive in their symbol and commute with the Laplacian.
 bilinear pairing `∫ M (f x) (h x)` of Schwartz functions, the transpose of the multiplier with
 symbol `g` is the multiplier with the reflected symbol `g (-ξ)`; in particular a multiplier with an
 even symbol, such as the Bessel potential `⟨ξ⟩ ^ s`, is symmetric.
+The bilinear pairing of two Fourier transforms is the spatial pairing
+with the reflection `R g (x) = g (-x)`, `∫ M (𝓕 f) (𝓕 g) = ∫ M f (R g)`, so an operator with
+spatial transpose `S` has the Fourier-side transpose `R ∘ S ∘ R`.
 
 For the inverse Fourier transform, iterating Mathlib's `SchwartzMap.fourierInv_lineDerivOp_eq`
 gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, the inverse Fourier transform commutes with
@@ -68,6 +72,10 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g (-·) • 𝓕 f)`.
 * `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: the transpose of a Fourier multiplier for
   bilinear pairings has the reflected symbol, `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`.
+* `SchwartzMap.integral_bilin_fourier_fourier`: bilinear Plancherel,
+  `∫ M (𝓕 f ξ) (𝓕 g ξ) dξ = ∫ M (f x) (g (-x)) dx`.
+* `SchwartzMap.integral_bilin_fourier_fourier_eq_of_forall_integral_bilin_eq`: an operator with
+  transpose `S` for the spatial pairing has the transpose `R ∘ S ∘ R` for the Fourier-side pairing.
 
 * `SchwartzMap.fourier_lineDerivOp_apply`: the Fourier transform of a directional derivative.
 * `SchwartzMap.support_fourier_lineDerivOp_subset`,
@@ -75,6 +83,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   support of the Fourier transform.
 * `SchwartzMap.fourier_compSubConstCLM_apply`, `SchwartzMap.support_fourier_compSubConstCLM`:
   translation multiplies the Fourier transform by a phase and keeps its support.
+* `SchwartzMap.fourierMultiplierCLM_compSubConstCLM`: Fourier multipliers commute with
+  translations.
 * `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply`: composition with a linear isometry
   equivalence commutes with the Fourier transform, `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
@@ -100,6 +110,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   homogeneous polynomials of degree `n`.
 * `SchwartzMap.cutoffExponential`: the cut-off exponential `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v`.
 * `SchwartzMap.fourier_cutoffExponential`: its Fourier transform.
+* `SchwartzMap.tendsto_integral_mul_cutoffExponential`: as `ε → 0`, it tends to the exponential
+  `φ(0) exp(i ⟪y, ξ⟫)` as a tempered distribution, tested against integrable functions.
 
 ## References
 
@@ -274,6 +286,39 @@ theorem integral_bilin_fourierMultiplierCLM_eq {G K : Type*} [NormedAddCommGroup
 
 end FourierMultiplier
 
+section BilinearPlancherel
+
+variable [NormedSpace ℂ F] [CompleteSpace F] {G K : Type*} [NormedAddCommGroup G]
+  [NormedSpace ℂ G] [CompleteSpace G] [NormedAddCommGroup K] [NormedSpace ℂ K]
+
+/-- **Bilinear Plancherel**: the bilinear pairing of the Fourier transforms of two Schwartz
+functions is the pairing of the first with the reflection of the second,
+`∫ M (𝓕 f ξ) (𝓕 g ξ) dξ = ∫ M (f x) (g (-x)) dx`. No complex conjugation is involved; the
+reflection comes from `𝓕 (𝓕 g) x = g (-x)`. -/
+theorem integral_bilin_fourier_fourier (f : 𝓢(E, F)) (g : 𝓢(E, G)) (M : F →L[ℂ] G →L[ℂ] K) :
+    ∫ ξ, M (𝓕 f ξ) (𝓕 g ξ) = ∫ x, M (f x) (g (-x)) := by
+  rw [integral_bilin_fourier_eq]
+  congr 1 with x
+  have h := fourierInv_apply_eq_fourier_neg (𝓕 g) (-x)
+  rw [FourierTransform.fourierInv_fourier_eq, neg_neg] at h
+  rw [← h]
+
+/-- **Transposes for the Fourier-side pairing.** Write `R g (x) = g (-x)` for the reflection. If
+`S` is the transpose of `T` for the spatial bilinear pairing, `∫ M (T f) g = ∫ M f (S g)`, then
+`R ∘ S ∘ R` is its transpose for the Fourier-side pairing `(f, g) ↦ ∫ M (𝓕 f) (𝓕 g)`. -/
+theorem integral_bilin_fourier_fourier_eq_of_forall_integral_bilin_eq (M : F →L[ℂ] G →L[ℂ] K)
+    {T : 𝓢(E, F) → 𝓢(E, F)} {S : 𝓢(E, G) → 𝓢(E, G)}
+    (hTS : ∀ f g, ∫ x, M (T f x) (g x) = ∫ x, M (f x) (S g x)) (f : 𝓢(E, F)) (g : 𝓢(E, G)) :
+    ∫ ξ, M (𝓕 (T f) ξ) (𝓕 g ξ) = ∫ ξ, M (𝓕 f ξ) (𝓕 (compCLMOfContinuousLinearEquiv ℂ
+      (LinearIsometryEquiv.neg ℝ (E := E)).toContinuousLinearEquiv
+        (S (compCLMOfContinuousLinearEquiv ℂ
+          (LinearIsometryEquiv.neg ℝ (E := E)).toContinuousLinearEquiv g))) ξ) := by
+  rw [integral_bilin_fourier_fourier, integral_bilin_fourier_fourier]
+  simpa using hTS f (compCLMOfContinuousLinearEquiv ℂ
+    (LinearIsometryEquiv.neg ℝ (E := E)).toContinuousLinearEquiv g)
+
+end BilinearPlancherel
+
 section normed
 
 variable [NormedSpace ℂ F]
@@ -328,6 +373,19 @@ theorem support_fourier_compSubConstCLM (u : 𝓢(E, F)) (a : E) :
       Function.support ⇑(𝓕 u : 𝓢(E, F)) := by
   rw [fourier_coe, fourier_coe, funext (compSubConstCLM_apply u a),
     TauCeti.support_fourier_comp_sub_const]
+
+/-- **Fourier multipliers commute with translations**: the multiplier with a temperate-growth
+symbol `g` of the translate `u (· - a)` is the translate of the multiplier of `u`. -/
+theorem fourierMultiplierCLM_compSubConstCLM [CompleteSpace F] {g : E → ℂ}
+    (hg : g.HasTemperateGrowth) (u : 𝓢(E, F)) (a : E) :
+    fourierMultiplierCLM F g (u.compSubConstCLM ℂ a) =
+      (fourierMultiplierCLM F g u).compSubConstCLM ℂ a := by
+  have hinv (v : 𝓢(E, F)) : 𝓕⁻ (𝓕 v : 𝓢(E, F)) = v := fourierInv_fourier_eq v
+  rw [← hinv ((fourierMultiplierCLM F g u).compSubConstCLM ℂ a), fourierMultiplierCLM_apply]
+  congr 1
+  ext ξ
+  rw [smulLeftCLM_apply_apply hg, fourier_compSubConstCLM_apply, fourier_compSubConstCLM_apply,
+    fourierMultiplierCLM_apply, fourier_fourierInv_eq, smulLeftCLM_apply_apply hg, smul_comm]
 
 /-- The Fourier transform commutes with composition by a linear isometry equivalence:
 `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`. -/
@@ -449,10 +507,8 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 @[simp]
 theorem cutoffExponential_apply (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ξ : E) (v : F) (y : E) :
     φ.cutoffExponential ε ξ v y = (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ (ε • y)) • v := by
-  have hg : (fun y : E ↦ Complex.exp (⟪y, ξ⟫ * Complex.I)).HasTemperateGrowth :=
-    Complex.hasTemperateGrowth_exp_mul_I.comp
-      (by fun_prop : (inner ℝ · ξ : E → ℝ).HasTemperateGrowth)
-  simp [cutoffExponential, hε, smulLeftCLM_apply_apply hg]
+  simp [cutoffExponential, hε,
+    smulLeftCLM_apply_apply (Function.hasTemperateGrowth_exp_inner_mul_I ξ)]
 
 /-- **The Fourier transform of a cut-off exponential** is the rescaled Fourier transform of the
 cutoff, translated to the frequency `ξ / 2π`:
@@ -469,6 +525,33 @@ theorem fourier_cutoffExponential [CompleteSpace F] (φ : 𝓢(E, ℂ)) {ε : �
       smul_smul]
   rw [fourier_coe, hmod, TauCeti.fourier_fourierChar_smul,
     TauCeti.fourier_comp_smul (fun z ↦ φ z • v), TauCeti.fourier_smul_const, fourier_coe]
+
+open scoped Topology in
+/-- **The cut-off exponentials tend to the exponential as tempered distributions.** For an
+integrable `g`, as `ε → 0` the pairing of `g` with the cut-off exponential
+`y ↦ exp(i ⟪y, ξ⟫) φ(ε y)` tends to `φ(0) ∫ g(y) exp(i ⟪y, ξ⟫) dy`. -/
+theorem tendsto_integral_mul_cutoffExponential (φ : 𝓢(E, ℂ)) {g : E → ℂ} (hg : Integrable g)
+    (ξ : E) :
+    Filter.Tendsto (fun ε ↦ ∫ y, g y * φ.cutoffExponential ε ξ (1 : ℂ) y) (𝓝[≠] 0)
+      (𝓝 (φ 0 * ∫ y, g y * Complex.exp (⟪y, ξ⟫ * Complex.I))) := by
+  rw [← integral_const_mul]
+  refine tendsto_integral_filter_of_dominated_convergence
+    (fun y ↦ ‖g y‖ * SchwartzMap.seminorm ℂ 0 0 φ)
+    (.of_forall fun ε ↦ hg.aestronglyMeasurable.mul
+      (φ.cutoffExponential ε ξ 1).continuous.aestronglyMeasurable)
+    (eventually_mem_nhdsWithin.mono fun ε hε ↦ .of_forall fun y ↦ ?_) (hg.norm.mul_const _)
+    (.of_forall fun y ↦ ?_)
+  · rw [cutoffExponential_apply φ hε, smul_eq_mul, mul_one, norm_mul, norm_mul,
+      Complex.norm_exp_ofReal_mul_I, one_mul]
+    exact mul_le_mul_of_nonneg_left (φ.norm_le_seminorm ℂ _) (norm_nonneg _)
+  · have hc : Continuous fun ε : ℝ ↦ g y * (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ (ε • y)) :=
+      continuous_const.mul (continuous_const.mul (φ.continuous.comp (by fun_prop)))
+    have h := (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
+    rw [zero_smul, show g y * (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ 0) =
+      φ 0 * (g y * Complex.exp (⟪y, ξ⟫ * Complex.I)) by ring] at h
+    refine h.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    rw [cutoffExponential_apply φ hε, smul_eq_mul, mul_one]
 
 end CutoffExponential
 
