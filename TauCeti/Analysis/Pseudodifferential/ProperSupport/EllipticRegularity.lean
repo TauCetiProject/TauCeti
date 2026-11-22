@@ -184,8 +184,8 @@ theorem quantizeTempered_cutoffTempered (ha : a.HasNearDiagonalKernel R) (hp : p
 /-- **Cutoffs for local elliptic regularity.** Let `Op(a)` have kernel supported within distance
 `R` of the diagonal, and let `U` be a neighbourhood of `x`. There are test functions `φ`, `ψ` and
 `χ`, with `φ = 1` near `x` and `ψ` supported in `U`, and a compactly supported Schwartz function
-equal to `φ`, such that `ψ a` agrees with `a` near the support of `φ` and, for every distribution
-`T`, `Op(ψ a) (χ T) = ψ Op(a) T` and `φ (χ T) = φ T`. They reduce local elliptic regularity of
+`φS`, such that `ψ a` agrees with `a` near the support of `φS` and, for every distribution `T`,
+`Op(ψ a) (χ T) = ψ Op(a) T` and `φS (χ T) = φ T`. They reduce local elliptic regularity of
 `Op(a)` at `x` to interior regularity for the tempered distribution `χ T`. -/
 theorem HasNearDiagonalKernel.exists_cutoffs_of_mem_nhds (ha : a.HasNearDiagonalKernel R)
     {U : Set (CoordinateSpace n)} {x : CoordinateSpace n} (hU : U ∈ 𝓝 x) :

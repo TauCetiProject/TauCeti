@@ -133,6 +133,35 @@ private theorem norm_copy_sub_copy_le [CompleteSpace V] {p : ℝ≥0∞} [Fact (
 
 end NormBound
 
+/-! ### The remainder of the local parametrix -/
+
+section Remainder
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
+
+/-- The remainder of the local parametrix behind every interior regularity statement: `ψ b # c - ψ`
+is smoothing, so for every order `μ` its coefficient is that of a symbol `R` of order `μ`, which
+has compact spatial support. -/
+private theorem exists_coefficient_eq_sharp_sub_ofSpatial {a : Symbol n V W m}
+    {b : Symbol n W V (-m)} {ψ : 𝓢(CoordinateSpace n, ℂ)} {c : Symbol n V W m}
+    (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
+    (hψ : HasCompactSupport ψ) (hc : c.HasCompactSpatialSupport)
+    (hca : ∀ᶠ x in 𝓝ˢ (tsupport ψ), ∀ ξ, c.coefficient (x, ξ) = a.coefficient (x, ξ))
+    (μ : ℝ) :
+    ∃ R : Symbol n V V μ, R.HasCompactSpatialSupport ∧
+      R.coefficient = ((smulLeft (ψ.smooth ⊤) b).sharp c hc - inclusion (neg_add_cancel m).ge
+        (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
+          ((ψ.smooth ⊤).smul contDiff_const))).coefficient := by
+  obtain ⟨R, hR⟩ := isSmoothing_iff.1 (isSmoothing_sharp_sub_ofSpatial hab (ψ.smooth ⊤)
+    (fun x ξ ↦ coefficient_smulLeft (ψ.smooth ⊤) b (x, ξ)) hc hca) μ
+  exact ⟨R, (((hasCompactSpatialSupport_smulLeft _ hψ b).sharp hc).sub
+    (((hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right).inclusion _)).of_coefficient_eq
+      hR, hR⟩
+
+end Remainder
+
 /-! ### Interior regularity -/
 
 section Regularity
@@ -162,11 +191,7 @@ private theorem exists_toDistr_quantizeSobolev_localize
     (hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right
   have hq := hasCompactSpatialSupport_smulLeft hψ' hψ b
   have hqp := hq.sharp hp
-  have hsmooth := isSmoothing_sharp_sub_ofSpatial hab hψ'
-    (fun x ξ ↦ coefficient_smulLeft hψ' b (x, ξ)) hp hpa
-  obtain ⟨R, hR⟩ := isSmoothing_iff.1 hsmooth μ
-  have hRc : R.HasCompactSpatialSupport :=
-    (hqp.sub (hψs.inclusion _)).of_coefficient_eq hR
+  obtain ⟨R, hRc, hR⟩ := exists_coefficient_eq_sharp_sub_ofSpatial hab hψ hp hpa μ
   refine ⟨R, hRc, fun r u ↦ ?_⟩
   have hcomp := congrArg (fun T ↦ (T u).toDistr) (quantizeSobolev_sharp hq hp hqp r)
   have hsub := congrArg (fun T ↦ (T u).toDistr)
@@ -269,11 +294,7 @@ private theorem exists_toDistr_quantizeBesselPotentialSpace_localize
   have hq := hasCompactSpatialSupport_smulLeft hψ' hψ b
   have hqc := hq.sharp hc
   have hψs' := hψs.inclusion (neg_add_cancel m).ge
-  -- `q # c - ψ` is smoothing, so it has a representative `R` of order `μ`.
-  obtain ⟨R, hR⟩ := isSmoothing_iff.1
-    (isSmoothing_sharp_sub_ofSpatial hab hψ' (fun x ξ ↦ coefficient_smulLeft hψ' b (x, ξ)) hc
-      hca) μ
-  have hRc : R.HasCompactSpatialSupport := (hqc.sub hψs').of_coefficient_eq hR
+  obtain ⟨R, hRc, hR⟩ := exists_coefficient_eq_sharp_sub_ofSpatial hab hψ hc hca μ
   refine ⟨R, hRc, fun r u ↦ ?_⟩
   -- `Op(R) u = Op(q # c) u - ψ u = Op(q) (Op(c) u) - ψ u`.
   have hRu : (R.quantizeBesselPotentialSpace hRc r p u).toDistr =
@@ -400,11 +421,7 @@ theorem exists_smulLeftCLM_eq_quantizeTempered_sub_quantizeTempered
   have hψs' := hψs.inclusion (neg_add_cancel m).ge
   have hq := hasCompactSpatialSupport_smulLeft hψ' hψ b
   have hqc := hq.sharp hc
-  -- `q # c - ψ` is smoothing, so it has a representative `R` of order `μ`.
-  obtain ⟨R, hR⟩ := isSmoothing_iff.1
-    (isSmoothing_sharp_sub_ofSpatial hab hψ' (fun x ξ ↦ coefficient_smulLeft hψ' b (x, ξ)) hc
-      hca) μ
-  have hRc : R.HasCompactSpatialSupport := (hqc.sub hψs').of_coefficient_eq hR
+  obtain ⟨R, hRc, hR⟩ := exists_coefficient_eq_sharp_sub_ofSpatial hab hψ hc hca μ
   -- `Op(q) ∘ Op(c) = Op(q # c) = Op(R) + Op(ψ)`, and `Op(ψ)` is the multiplication by `ψ`.
   have hsum : quantizeTempered F (smulLeft hψ' b) hq.isUniform ∘L
       quantizeTempered F c hc.isUniform =
