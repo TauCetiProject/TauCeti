@@ -49,6 +49,10 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   bound with one constant `K` for all balls, `‖u‖_{L^q} ≤ K R ^ (1 - n δ) ‖∇u‖_{Lᵖ}`.
 * `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
   exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_forall_norm_le_mul_norm_gradient_of_measure_ne_top`: a constant `S` with
+  `‖u‖_{W^{1,p}} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_mem_w1p0Submodule_tendsto_of_cauchySeq_gradient`: a sequence in
+  `W^{1,p}_0(Ω)` whose gradients are Cauchy in `Lᵖ(Ω)` converges in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.integrable_mul_value_of_memLp`: for `r > max 1 (2n/(n+2))`, an `Lʳ(Ω)` function
   times a `W^{1,2}_0(Ω)` function is integrable.
 * `TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`: for `r > max 1 (2n/(n+2))`,
@@ -322,6 +326,60 @@ theorem W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top 
   rw [ENNReal.coe_toNNReal hC]
   exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega hpq.le
     (by rw [hq, inv_inv]; ring) hδn hu
+
+/-- **The Poincaré inequality on `W^{1,p}_0(Ω)` in the full Sobolev norm.** If `Ω` has finite
+measure, `n ≥ 1` and `p < ∞`, there is a constant `S` with `‖u‖_{W^{1,p}} ≤ S ‖∇u‖_{Lᵖ}` for every
+`u ∈ W^{1,p}_0(Ω)`: the gradient norm is an equivalent norm on `W^{1,p}_0(Ω)`. This is the case
+`q = p` of `TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt`. -/
+theorem W1p.exists_forall_norm_le_mul_norm_gradient_of_measure_ne_top [Nontrivial E]
+    (hp : p ≠ ∞) (hOmega : mu Omega ≠ ∞) :
+    ∃ S : ℝ≥0, ∀ u ∈ w1p0Submodule mu Omega p, ‖u‖ ≤ S * ‖W1p.gradient u‖ := by
+  have hn : (0 : ℝ) < (finrank ℝ E : ℝ)⁻¹ := by
+    have : 0 < finrank ℝ E := finrank_pos
+    positivity
+  -- The explicit bound with `q = p`, so `δ = 0`; its constant `C` does not depend on `u`.
+  obtain ⟨C, hC, hbound⟩ : ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ u ∈ w1p0Submodule mu Omega p,
+      eLpNorm (W1p.value u) p (mu.restrict Omega) ≤ C * ‖W1p.gradient u‖ₑ := by
+    refine ⟨?C, ?hC, fun u hu => ?hb⟩
+    case hb =>
+      have h := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega
+        (q := p.toNNReal) (by rw [ENNReal.coe_toNNReal hp]) (δ := 0)
+        (by rw [ENNReal.coe_toNNReal_eq_toReal, sub_self]) hn hu
+      rwa [ENNReal.coe_toNNReal hp] at h
+    case hC =>
+      exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+        (ENNReal.rpow_ne_top_of_nonneg (by rw [sub_zero]; positivity) hOmega)
+  refine ⟨(C.toReal + 1).toNNReal, fun u hu ↦ ?_⟩
+  have hv : ‖W1p.value u‖ ≤ C.toReal * ‖W1p.gradient u‖ := by
+    rw [Lp.norm_def, ← toReal_eNorm (W1p.gradient u), ← ENNReal.toReal_mul]
+    exact ENNReal.toReal_mono (ENNReal.mul_ne_top hC eNorm_ne_top) (hbound u hu)
+  rw [Real.coe_toNNReal _ (by positivity)]
+  linarith [W1p.norm_le_norm_value_add_norm_gradient u]
+
+/-- **Completeness of `W^{1,p}_0(Ω)` in the gradient norm.** If `Ω` has finite measure, `n ≥ 1` and
+`p < ∞`, a sequence in `W^{1,p}_0(Ω)` whose gradients form a Cauchy sequence in `Lᵖ(Ω)` converges in
+`W^{1,p}(Ω)` to an element of `W^{1,p}_0(Ω)`. -/
+theorem W1p.exists_mem_w1p0Submodule_tendsto_of_cauchySeq_gradient [Nontrivial E]
+    (hp : p ≠ ∞) (hOmega : mu Omega ≠ ∞) {u : ℕ → W1p mu Omega p}
+    (hu : ∀ n, u n ∈ w1p0Submodule mu Omega p)
+    (hcau : CauchySeq fun n => W1p.gradient (u n)) :
+    ∃ v ∈ w1p0Submodule mu Omega p, Filter.Tendsto u Filter.atTop (nhds v) := by
+  obtain ⟨S, hS⟩ := W1p.exists_forall_norm_le_mul_norm_gradient_of_measure_ne_top hp hOmega
+  have hcau' : CauchySeq u := by
+    refine Metric.cauchySeq_iff.2 fun ε hε => ?_
+    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hcau (ε / (S + 1)) (by positivity)
+    refine ⟨N, fun m hm n hn => ?_⟩
+    have hd := hN m hm n hn
+    rw [dist_eq_norm, ← W1p.gradient_sub] at hd
+    rw [dist_eq_norm]
+    calc ‖u m - u n‖ ≤ S * ‖W1p.gradient (u m - u n)‖ :=
+          hS _ ((w1p0Submodule mu Omega p).toSubmodule.sub_mem (hu m) (hu n))
+      _ ≤ S * (ε / (S + 1)) := by gcongr
+      _ < (S + 1) * (ε / (S + 1)) := by gcongr; linarith
+      _ = ε := mul_div_cancel₀ _ (by positivity)
+  obtain ⟨v, hv⟩ := cauchySeq_tendsto_of_complete hcau'
+  exact ⟨v, (w1p0Submodule mu Omega p).isClosed.mem_of_tendsto hv (Filter.Eventually.of_forall hu),
+    hv⟩
 
 end W1p0
 

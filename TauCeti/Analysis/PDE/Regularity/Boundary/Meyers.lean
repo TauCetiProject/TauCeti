@@ -26,8 +26,9 @@ Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ` with
 that is `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ H¹₀(Ω)`, with `F ∈ L²(Ω; ℝⁿ)`. Suppose that the
 complement of `Ω` has density at least `θ > 0` at its points up to a scale `r₀ > 0`:
 `θ |B(z, r)| ≤ |B(z, r) \ Ω|` for `z ∉ Ω` and `0 < r ≤ r₀`, as for Lipschitz domains. This file
-proves the two global estimates of Meyers' Theorem 1, for exponents near `2` on either side, with
-`ε₀ > 0` and the constants depending only on `n`, `K` and `θ`.
+proves the two global estimates of Meyers' Theorem 1, for exponents near `2` on either side, and
+the existence of solutions in `W^{1,p}_0(Ω)` for data in `Lᵖ(Ω)` below `2`, with `ε₀ > 0` and the
+constants depending only on `n`, `K` and `θ`.
 
 * **Above `2`.** For `0 < ε ≤ ε₀`,
 
@@ -47,6 +48,11 @@ proves the two global estimates of Meyers' Theorem 1, for exponents near `2` on 
   (`TauCeti.PDE.exists_eLpNorm_gradient_conjExponent_le_divergence`). The right-hand side only
   involves `‖F‖_{Lᵖ}`, a weaker norm than `‖F‖_{L²}`, so this is not a regularity statement but
   the a priori estimate behind the `W^{1,p}` theory of the Dirichlet problem for `p < 2`.
+* **Solutions for `Lᵖ` data below `2`.** In the same setting, for every `F ∈ Lᵖ(Ω; ℝⁿ)`, which need
+  not be square integrable, the Dirichlet problem has a solution `u ∈ W^{1,p}_0(Ω)` in the sense
+  that `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ W^{1,q}_0(Ω)`, `q = 2 + ε`, with the same bound:
+  `TauCeti.PDE.exists_forall_energyFormIntegral_eq_divergence_and_eLpNorm_gradient_conjExponent_le`.
+  Uniqueness in `W^{1,p}_0(Ω)` is not proved here.
 
 The local estimate up to the boundary
 (`TauCeti.PDE.exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence`) bounds the
@@ -63,6 +69,15 @@ has the same ellipticity constants. Testing the two equations with each other gi
 `‖F‖_p ‖∇v‖_{2+ε} ≤ C' ‖F‖_p ‖g‖_{2+ε} / λ`. Such fields `g` norm `Lᵖ`
 (`MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`).
 
+The solutions for `Lᵖ` data are obtained by density. Simple fields `Gₖ → F` in `Lᵖ(Ω)` are square
+integrable, since `Ω` has finite measure, and their solutions `uₖ ∈ H¹₀(Ω) ⊆ W^{1,p}_0(Ω)` satisfy
+`‖∇(uₖ - uₗ)‖_p ≤ C' ‖Gₖ - Gₗ‖_p` by the estimate below `2`. By the Poincaré inequality on
+`W^{1,p}_0(Ω)` (`TauCeti.W1p.exists_forall_norm_le_mul_norm_gradient_of_measure_ne_top`) they
+converge in `W^{1,p}_0(Ω)` (`TauCeti.W1p.exists_mem_w1p0Submodule_tendsto_of_cauchySeq_gradient`),
+and the equation passes to the limit since `aᵀ ∇v ∈ L^q` for `v ∈ W^{1,q}_0(Ω)`.
+This density argument holds for any such estimate on square integrable data and is
+`TauCeti.PDE.exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le`.
+
 ## Main declarations
 
 * `TauCeti.PDE.exists_lintegral_enorm_gradient_rpow_le_divergence`: the global estimate above
@@ -71,6 +86,8 @@ has the same ellipticity constants. Testing the two equations with each other gi
   place of the `L²` norm of `F`.
 * `TauCeti.PDE.exists_eLpNorm_gradient_conjExponent_le_divergence`: the global estimate below
   `2`.
+* `TauCeti.PDE.exists_forall_energyFormIntegral_eq_divergence_and_eLpNorm_gradient_conjExponent_le`:
+  solutions in `W^{1,p}_0(Ω)` for data in `Lᵖ(Ω)` below `2`, with the estimate.
 
 ## References
 
@@ -278,6 +295,62 @@ theorem exists_eLpNorm_gradient_conjExponent_le_divergence [Nonempty ι] (K : �
     (q := ENNReal.ofReal (2 + ε))).trans ((mul_le_mul_of_nonneg_left hvq zero_le).trans_eq ?_)
   simp only [div_eq_mul_inv]
   ring
+
+/-- **Meyers' `W^{1,p}` solutions of the Dirichlet problem below `2`.** Let `K` bound the
+ellipticity ratio and let `θ > 0`. There is `ε₀ > 0`, and for each `0 < ε ≤ ε₀` a constant `C`, both
+depending only on the dimension, `K` and `θ`, with the following property for the exponent
+`p = (2+ε)/(1+ε)` and its conjugate `q = 2 + ε`. Let `Ω ⊆ ℝⁿ` be open of finite measure, and suppose
+that its complement has density at least `θ` at its points up to a scale `r₀ > 0`:
+`θ |B(z, r)| ≤ |B(z, r) \ Ω|` for `z ∉ Ω` and `0 < r ≤ r₀`. Let `a` be measurable and uniformly
+elliptic on `Ω` with constants `0 < λ ≤ Λ ≤ K λ`, and let `F ∈ Lᵖ(Ω; ℝⁿ)`, which need not be square
+integrable. Then the Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` in `Ω`, `u = 0` on `∂Ω` has a solution
+`u ∈ W^{1,p}_0(Ω)`, in the sense that `a(u, v) = -∫_Ω ⟪F, ∇v⟫` for every `v ∈ W^{1,q}_0(Ω)`, with
+
+`‖∇u‖_{Lᵖ(Ω)} ≤ (C (1 + (|Ω| / |B_{r₀}|)^(ε/2)))^(1/(2+ε)) ‖F‖_{Lᵖ(Ω)} / λ`,
+
+where `B_{r₀}` is a ball of radius `r₀`. -/
+theorem exists_forall_energyFormIntegral_eq_divergence_and_eLpNorm_gradient_conjExponent_le
+    [Nonempty ι] (K : ℝ) {θ : ℝ} (hθ : 0 < θ) :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ → ∃ C : ℝ≥0,
+      ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)], p = ENNReal.ofReal (2 + ε).conjExponent →
+      q = ENNReal.ofReal (2 + ε) →
+      ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+        {lam Lam : ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {r₀ : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam → Lam ≤ K * lam →
+      AEStronglyMeasurable a (mu.restrict Omega) → MemLp F p (mu.restrict Omega) →
+      (∀ z ∉ (Omega : Set (EuclideanSpace ℝ ι)), ∀ r, 0 < r → r ≤ r₀ →
+        θ * mu.real (ball z r) ≤ mu.real (ball z r \ (Omega : Set (EuclideanSpace ℝ ι)))) →
+      0 < r₀ → mu Omega ≠ ∞ →
+      ∃ u : W1p0 mu Omega p,
+        (∀ v : W1p0 mu Omega q, energyFormIntegral (mu.restrict Omega) a 0 0
+            (jetField (u : W1p mu Omega p)) (jetField (v : W1p mu Omega q)) =
+          -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega q) x⟫_ℝ ∂mu) ∧
+        eLpNorm (W1p.gradient (u : W1p mu Omega p)) p (mu.restrict Omega) ≤
+          (C * (1 + (mu Omega / mu (ball 0 r₀)) ^ (ε / 2))) ^ (2 + ε)⁻¹ *
+            eLpNorm F p (mu.restrict Omega) / ENNReal.ofReal lam := by
+  obtain ⟨ε₀, hε₀, hM⟩ := exists_eLpNorm_gradient_conjExponent_le_divergence (mu := mu) K hθ
+  refine ⟨ε₀, hε₀, fun ε hε hεle => ?_⟩
+  obtain ⟨C, hC⟩ := hM ε hε hεle
+  refine ⟨C, fun {p q} _ _ hp hq {Omega a lam Lam F r₀} h hK ha hF hdens hr₀ hfin => ?_⟩
+  subst hp hq
+  have := ENNReal.holderConjugate_iff.2
+    (Real.HolderConjugate.conjExponent (by linarith : 1 < 2 + ε)).symm.inv_add_inv_ennreal
+  have hp2 : ENNReal.ofReal (2 + ε).conjExponent ≤ 2 := by
+    rw [← ENNReal.ofReal_ofNat 2]
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [Real.conjExponent, div_le_iff₀ (by linarith)]
+    linarith
+  -- The constant of Meyers' estimate below `2` is finite.
+  have hD : (C * (1 + (mu Omega / mu (ball 0 r₀)) ^ (ε / 2))) ^ (2 + ε)⁻¹ /
+      ENNReal.ofReal lam ≠ ∞ :=
+    ENNReal.div_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+      (ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.add_ne_top.2 ⟨ENNReal.one_ne_top,
+        ENNReal.rpow_ne_top_of_nonneg (by positivity) (ENNReal.div_ne_top hfin
+          (measure_ball_pos mu 0 hr₀).ne')⟩))) (ENNReal.ofReal_pos.2 h.pos).ne'
+  obtain ⟨u, hu, hle⟩ := exists_forall_energyFormIntegral_eq_divergence_of_eLpNorm_gradient_le
+    (q := ENNReal.ofReal (2 + ε)) hp2 h ha hfin hD
+    (fun _ hu => (hC h hK ha hu hdens hr₀ hfin).trans_eq (ENNReal.mul_div_right_comm ..)) hF
+  exact ⟨u, hu, hle.trans_eq (ENNReal.mul_div_right_comm ..).symm⟩
 
 end PDE
 
