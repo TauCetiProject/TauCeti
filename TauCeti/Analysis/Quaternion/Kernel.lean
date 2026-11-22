@@ -279,7 +279,7 @@ open MeasureTheory TauCeti.Quaternion in
 /-- For an a.e. strongly measurable pole map `φ : X → ℍ`, the `m`-th derivative of
 `cauchyFueterKernel (φ z)` at any point `p : ℍ` is a.e. strongly measurable. No pole-avoidance
 hypothesis is needed. -/
-theorem aestronglyMeasurable_iteratedFDeriv_cauchyFueterKernel_right
+theorem _root_.MeasureTheory.AEStronglyMeasurable.iteratedFDeriv_cauchyFueterKernel_right
     {X : Type*} [MeasurableSpace X] {μ : Measure X}
     {φ : X → ℍ} (hφ : AEStronglyMeasurable φ μ) (m : ℕ) (p : ℍ) :
     AEStronglyMeasurable (fun z ↦ iteratedFDeriv ℝ m (cauchyFueterKernel (φ z)) p) μ := by
@@ -304,7 +304,7 @@ theorem aestronglyMeasurable_iteratedFDeriv_cauchyFueterKernel_right
   refine hcomp.congr (ae_of_all _ fun z ↦ ?_)
   have hdq : dq (dqEquiv.symm (φ z - p)) = φ z - p := by
     rw [← dqEquiv_apply, dqEquiv.apply_symm_apply]
-  simp only [K₀, hdq, iteratedFDeriv_cauchyFueterKernel_right]
+  simp only [K₀, hdq, TauCeti.iteratedFDeriv_cauchyFueterKernel_right]
 
 /-- Uniform bounds through any prescribed finite order for spatial derivatives of
 the kernel, with a positive constant independent of the pole and evaluation point. -/

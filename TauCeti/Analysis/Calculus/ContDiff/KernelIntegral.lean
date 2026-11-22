@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
-import TauCeti.Analysis.Calculus.IteratedFDeriv.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Dominated
 
 /-!
 # Smoothness and Taylor series of separated translation-kernel integrals
@@ -181,8 +181,8 @@ theorem hasFTaylorSeriesUpToOn_integral_bilin_kernel_sub
         (fun y m ↦ ∫ z, iteratedFDeriv ℝ m (fun p ↦ B (K (φ z - p)) (w z)) y ∂μ)
         (ball q₀ r) := by
     choose C hC using fun i : ℕ ↦ hK_bd i (sub_pos.2 hr)
-    refine hasFTaylorSeriesUpToOn_integral_of_dominated (bound := fun i z ↦ (‖B‖ * C i) * ‖w z‖)
-      isOpen_ball ?_ ?_ ?_ (fun i _ ↦ hw.norm.const_mul _)
+    refine isOpen_ball.hasFTaylorSeriesUpToOn_integral_of_dominated
+      (bound := fun i z ↦ (‖B‖ * C i) * ‖w z‖) ?_ ?_ ?_ (fun i _ ↦ hw.norm.const_mul _)
     · filter_upwards [hδ] with z hz y hy
       have hy_lt : ‖y - q₀‖ < r := by simpa [mem_ball, dist_eq_norm] using hy
       have hne : φ z ≠ y := fun heq ↦ by linarith [heq ▸ hz]
