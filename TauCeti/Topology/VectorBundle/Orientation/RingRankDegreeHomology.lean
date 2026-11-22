@@ -662,8 +662,7 @@ private theorem exists_thomPair_twistedDesc :
     { pt := LocalCoefficientSystem.twistedHomology.{w, w, w} (signLocalSystem F E K hι) 0
       ι :=
         { app s := eqToHom (singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionDiagram_obj
-              (ModuleCat.of K K) (finrank ℝ F) s) ≫
-            φ s
+              (ModuleCat.of K K) (finrank ℝ F) s) ≫ φ s
           naturality s t f := by
             dsimp only [Functor.comp_obj, Functor.comp_map, Functor.const_obj_map]
             simp only [thomPairFiniteTrivializingUnionDiagram_map,
@@ -689,10 +688,9 @@ private theorem exists_thomPair_twistedDesc :
   have h := congr($(hleg {b}) (TopPair.singularHomologyMap (fiberThomPairOverMap F E hb)
     (ModuleCat.of K K) (finrank ℝ F) (orientedFiberGenerator K ω o)))
   rw [ConcreteCategory.comp_apply, hφ {b} b hb] at h
-  rw [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom,
+  rwa [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom,
     ← fiberThomPairOverMap_comp_thomPairOverMap F E (subset_univ _) hb, Category.assoc,
     TopPair.singularHomologyMap_comp]
-  exact h
 
 variable (K F E) in
 /-- **The homology of the Thom pair in the rank degree, with twisted coefficients.** For a real
