@@ -125,6 +125,12 @@ only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_ze
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
 
+## Constancy on the real line
+
+A function on a preconnected subset of `ℝ` whose derivative within the set vanishes is constant
+there (`IsPreconnected.eq_of_hasDerivWithinAt_zero`); in particular a function `ℝ → G` with zero
+derivative at every point is constant (`TauCeti.is_const_of_hasDerivAt_zero`).
+
 ## Signs from monotonicity on the real line
 
 A real function continuous on `[x, ∞)`, with nonpositive (negative) derivative on `(x, ∞)` and
@@ -700,6 +706,13 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+/-- A function `ℝ → G` with zero derivative at every point is constant. This is the `HasDerivAt`
+form of Mathlib's `is_const_of_deriv_eq_zero`. -/
+theorem TauCeti.is_const_of_hasDerivAt_zero {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : ℝ → G} (hf : ∀ t, HasDerivAt f 0 t) (t s : ℝ) : f t = f s :=
+  isPreconnected_univ.eq_of_hasDerivWithinAt_zero (fun t _ ↦ (hf t).hasDerivWithinAt)
+    (Set.mem_univ t) (Set.mem_univ s)
 
 namespace TauCeti
 

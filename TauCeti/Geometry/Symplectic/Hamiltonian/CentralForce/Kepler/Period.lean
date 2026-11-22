@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Kepler's equation and the period of bound Kepler motions
@@ -80,11 +81,6 @@ open scoped InnerProductSpace
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {m κ a : ℝ}
-
-/-- A function on `ℝ` with zero derivative everywhere is constant. -/
-private theorem eq_of_forall_hasDerivAt_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : ℝ → E} (h : ∀ t, HasDerivAt f 0 t) (t s : ℝ) : f t = f s :=
-  is_const_of_deriv_eq_zero (fun t ↦ (h t).differentiableAt) (fun t ↦ (h t).deriv) t s
 
 /-! ### Newton's equations of the Kepler problem -/
 
@@ -178,7 +174,7 @@ private theorem exists_anomaly_kepler (hm : 0 < m) (ha : 0 < a) (hc0 : 0 < c)
     refine ((hz t).mul ((((hψ t).ofReal_comp).neg.mul_const Complex.I).cexp)).congr_deriv ?_
     ring
   have hconst (t : ℝ) : z t * Complex.exp (-(ψ t : ℂ) * Complex.I) = ‖z 0‖ := by
-    rw [eq_of_forall_hasDerivAt_zero hw t 0]
+    rw [is_const_of_hasDerivAt_zero hw t 0]
     calc z 0 * Complex.exp (-(ψ 0 : ℂ) * Complex.I)
         = ‖z 0‖ * Complex.exp ((z 0).arg * Complex.I) * Complex.exp (-(ψ 0 : ℂ) * Complex.I) := by
           rw [Complex.norm_mul_exp_arg_mul_I]
@@ -263,7 +259,7 @@ private theorem keplerEquation_kepler (hm : 0 < m) (ha : 0 < a) (h0 : ∀ t, q t
     rw [hr] at hr0 ⊢
     field_simp
     ring
-  have := eq_of_forall_hasDerivAt_zero hd t 0
+  have := is_const_of_hasDerivAt_zero hd t 0
   simp only [mul_zero, sub_zero] at this
   linarith
 
@@ -295,9 +291,9 @@ private theorem exists_eq_smul_add_smul_kepler (hm : 0 < m) (ha : 0 < a) (hc0 : 
     (hr : ∀ t, ‖q t‖ = a - ρ * cos (ψ t)) (hs : ∀ t, ⟪q t, p t⟫_ℝ = c * ρ * sin (ψ t) / a) :
     ∃ P Q : V, ∀ t, q t = (cos (ψ t) - ρ / a) • P + sin (ψ t) • Q ∧
       p t = (c / (a ^ 2 * (1 - ρ / a * cos (ψ t)))) • (cos (ψ t) • Q - sin (ψ t) • P) := by
-  have hP (t : ℝ) := eq_of_forall_hasDerivAt_zero
+  have hP (t : ℝ) := is_const_of_hasDerivAt_zero
     (hasDerivAt_frame_fst_kepler hm ha hc0 hκ hq' hp' h0 hψ hr hs) t 0
-  have hQ (t : ℝ) := eq_of_forall_hasDerivAt_zero
+  have hQ (t : ℝ) := is_const_of_hasDerivAt_zero
     (hasDerivAt_frame_snd_kepler hm ha hc0 hκ hq' hp' h0 hψ hr hs) t 0
   refine ⟨(a * ‖q 0‖⁻¹ * cos (ψ 0)) • q 0 - (a ^ 2 / c * sin (ψ 0)) • p 0,
     (a * ‖q 0‖⁻¹ * sin (ψ 0)) • q 0 + (a ^ 2 / c * (cos (ψ 0) - ρ / a)) • p 0,
