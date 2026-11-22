@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.MorphismProperty.Composition
+public import Mathlib.CategoryTheory.MorphismProperty.IsInvertedBy
 public import Mathlib.CategoryTheory.MorphismProperty.Retract
 public import Mathlib.Topology.Category.TopCat.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
+import TauCeti.Topology.Category.TopCat.Interval
+import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 
 /-!
 # Weak homotopy equivalences in `TopCat`
@@ -22,6 +25,7 @@ structure on simplicial sets.
 
 This file records the closure properties of this class required of the weak equivalences of a model
 category: it contains the isomorphisms, satisfies two out of three, and is stable under retracts.
+It also records homotopy invariance for functors inverting weak homotopy equivalences.
 
 ## Main declarations
 
@@ -29,6 +33,8 @@ category: it contains the isomorphisms, satisfies two out of three, and is stabl
 * The instances `HasTwoOutOfThreeProperty`, `IsMultiplicative` and `IsStableUnderRetracts` for
   `TauCeti.TopCat.weakEquivalences`; the isomorphisms belong to the class through
   `MorphismProperty.isomorphisms_le_of_containsIdentities`.
+* `TauCeti.TopCat.map_eq_of_homotopy`: any functor inverting weak homotopy equivalences maps freely
+  homotopic continuous maps to equal morphisms.
 
 ## References
 
@@ -40,8 +46,9 @@ category: it contains the isomorphisms, satisfies two out of three, and is stabl
 public section
 
 open CategoryTheory MorphismProperty
+open scoped ContinuousMap
 
-universe u
+universe u v w
 
 namespace TauCeti.TopCat
 
@@ -81,5 +88,44 @@ instance : weakEquivalences.{u}.IsStableUnderRetracts where
       (by rw [← _root_.TopCat.hom_comp, ← _root_.TopCat.hom_comp, h.r_w])
 
 example : weakEquivalences.{u}.RespectsIso := inferInstance
+
+/-- Any functor inverting weak homotopy equivalences maps freely homotopic continuous maps to equal
+morphisms. -/
+theorem map_eq_of_homotopy {C : Type v} [Category.{w} C] {F : _root_.TopCat.{u} ⥤ C}
+    (hF : weakEquivalences.{u}.IsInvertedBy F) {X Y : _root_.TopCat.{u}} {f₀ f₁ : X ⟶ Y}
+    (H : ContinuousMap.Homotopy f₀.hom f₁.hom) :
+    F.map f₀ = F.map f₁ := by
+  let IX := _root_.TopCat.of (_root_.TopCat.I.{u} × X)
+  let snd : IX ⟶ X := _root_.TopCat.ofHom ContinuousMap.snd
+  let i₀ : X ⟶ IX := _root_.TopCat.ofHom ⟨fun x ↦ (0, x), by fun_prop⟩
+  let i₁ : X ⟶ IX := _root_.TopCat.ofHom ⟨fun x ↦ (1, x), by fun_prop⟩
+  let Hmap : IX ⟶ Y :=
+    _root_.TopCat.ofHom ⟨fun q ↦ H (_root_.TopCat.I.homeomorph q.1, q.2), by fun_prop⟩
+  let e : (_root_.TopCat.I.{u} × X) ≃ₕ X :=
+    { toFun := ContinuousMap.snd
+      invFun := i₀.hom
+      left_inv := Nonempty.intro
+        { toContinuousMap :=
+            ⟨fun q ↦ (_root_.TopCat.I.homeomorph.symm (q.1 * _root_.TopCat.I.homeomorph q.2.1),
+              q.2.2), by fun_prop⟩
+          map_zero_left q := by
+            simp [i₀, _root_.TopCat.I.homeomorph.symm_apply_eq, _root_.TopCat.I.homeomorph_zero]
+          map_one_left q := by simp }
+      right_inv := ContinuousMap.Homotopic.refl _ }
+  have hsnd : IsIso (F.map snd) :=
+    hF _ ((mem_weakEquivalences_iff _).2 e.isWeakHomotopyEquivalence)
+  have hi : F.map i₀ = F.map i₁ := by
+    refine (cancel_mono (F.map snd)).1 ?_
+    rw [← F.map_comp, ← F.map_comp]
+    have h₀ : i₀ ≫ snd = 𝟙 X := rfl
+    have h₁ : i₁ ≫ snd = 𝟙 X := rfl
+    rw [h₀, h₁]
+  have hf₀ : i₀ ≫ Hmap = f₀ := by
+    ext x
+    exact H.apply_zero x
+  have hf₁ : i₁ ≫ Hmap = f₁ := by
+    ext x
+    exact H.apply_one x
+  rw [← hf₀, ← hf₁, F.map_comp, F.map_comp, hi]
 
 end TauCeti.TopCat

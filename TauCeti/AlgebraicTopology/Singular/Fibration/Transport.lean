@@ -57,10 +57,17 @@ variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p)
 `b₁` in `B` induces an isomorphism `H_n(p⁻¹(b₀); M) ≅ H_n(p⁻¹(b₁); M)` in every degree `n` for any
 coefficient module `M`, obtained by specializing `TauCeti.TopCat.fiberIsoOfPath` to singular
 homology. -/
-@[expose] noncomputable def fiberSingularHomologyIsoOfPath {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
+noncomputable def fiberSingularHomologyIsoOfPath {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
     (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj (p.fiber b₀)) ≅
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).obj (p.fiber b₁)) :=
   fiberIsoOfPath (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ
+
+/-- Path transport on singular homology is `TauCeti.TopCat.fiberIsoOfPath` specialized to
+singular homology. -/
+theorem fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
+    fiberSingularHomologyIsoOfPath hp M γ n =
+      fiberIsoOfPath (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ := by
+  simp [fiberSingularHomologyIsoOfPath]
 
 /-- Path transport along `γ : Path b₀ b₁` followed by the homology map of the fibre inclusion at
 `1` into the base change along `γ` equals the homology map of the fibre inclusion at `0`. -/
@@ -73,9 +80,9 @@ theorem fiberSingularHomologyIsoOfPath_hom_comp_map_pullbackFiberι {b₀ b₁ :
             (_root_.TopCat.pathEquiv.symm γ).hom₁) =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
         (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 0)
-          (_root_.TopCat.pathEquiv.symm γ).hom₀) :=
-  fiberIsoOfPath_hom_comp_map_pullbackFiberι
-    (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ
+          (_root_.TopCat.pathEquiv.symm γ).hom₀) := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberIsoOfPath_hom_comp_map_pullbackFiberι]
 
 /-- The inverse of `fiberSingularHomologyIsoOfPath` followed by the homology map of the fibre
 inclusion at `0` into the base change along `γ` equals the homology map of the fibre inclusion at
@@ -89,9 +96,9 @@ theorem fiberSingularHomologyIsoOfPath_inv_comp_map_pullbackFiberι {b₀ b₁ :
             (_root_.TopCat.pathEquiv.symm γ).hom₀) =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
         (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 1)
-          (_root_.TopCat.pathEquiv.symm γ).hom₁) :=
-  fiberIsoOfPath_inv_comp_map_pullbackFiberι
-    (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ
+          (_root_.TopCat.pathEquiv.symm γ).hom₁) := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberIsoOfPath_inv_comp_map_pullbackFiberι]
 
 /-- Characterization of `(fiberSingularHomologyIsoOfPath hp M γ n).hom`: a morphism equals it if
 and only if postcomposing with the fibre inclusion at `1` into the base change along `γ` gives the
@@ -105,9 +112,8 @@ theorem eq_fiberSingularHomologyIsoOfPath_hom_iff {b₀ b₁ : B} (γ : Path b�
             (_root_.TopCat.pathEquiv.symm γ).hom₁) =
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
           (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 0)
-            (_root_.TopCat.pathEquiv.symm γ).hom₀) :=
-  eq_fiberIsoOfPath_hom_iff
-    (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ f
+            (_root_.TopCat.pathEquiv.symm γ).hom₀) := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, eq_fiberIsoOfPath_hom_iff]
 
 /-- Path transport along `γ : Path b₀ b₁` commutes with the homology maps induced by the fibre
 inclusions `p⁻¹(b₀) ⟶ E` and `p⁻¹(b₁) ⟶ E`. -/
@@ -115,9 +121,8 @@ inclusions `p⁻¹(b₀) ⟶ E` and `p⁻¹(b₁) ⟶ E`. -/
 theorem fiberSingularHomologyIsoOfPath_hom_comp_map_fiberι {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
     (fiberSingularHomologyIsoOfPath hp M γ n).hom ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₁) =
-      ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₀) :=
-  fiberIsoOfPath_hom_comp_map_fiberι
-    (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ
+      ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₀) := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, fiberIsoOfPath_hom_comp_map_fiberι]
 
 /-- The inverse of `fiberSingularHomologyIsoOfPath` commutes with the homology maps induced by the
 fibre inclusions `p⁻¹(b₁) ⟶ E` and `p⁻¹(b₀) ⟶ E`. -/
@@ -125,9 +130,8 @@ fibre inclusions `p⁻¹(b₁) ⟶ E` and `p⁻¹(b₀) ⟶ E`. -/
 theorem fiberSingularHomologyIsoOfPath_inv_comp_map_fiberι {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
     (fiberSingularHomologyIsoOfPath hp M γ n).inv ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₀) =
-      ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₁) :=
-  fiberIsoOfPath_inv_comp_map_fiberι
-    (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ
+      ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₁) := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, fiberIsoOfPath_inv_comp_map_fiberι]
 
 /-- Over a contractible base, path transport on fibre singular homology along any path
 `γ : Path b₀ b₁` equals the homology map of `p.fiberι b₀` followed by the inverse of the homology
@@ -140,9 +144,8 @@ theorem fiberSingularHomologyIsoOfPath_eq_of_contractibleSpace [ContractibleSpac
       M n
     fiberSingularHomologyIsoOfPath hp M γ n =
       asIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₀)) ≪≫
-        (asIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₁))).symm :=
-  fiberIsoOfPath_eq_of_contractibleSpace
-    (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ
+        (asIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.fiberι b₁))).symm := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, fiberIsoOfPath_eq_of_contractibleSpace]
 
 /-- Naturality of `fiberSingularHomologyIsoOfPath` in maps of Serre fibrations. -/
 @[reassoc]
@@ -152,9 +155,9 @@ theorem fiberSingularHomologyIsoOfPath_naturality {E' B' : _root_.TopCat.{u}} {p
     (fiberSingularHomologyIsoOfPath hp M γ n).hom ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (sq.fiberMap b₁) =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (sq.fiberMap b₀) ≫
-        (fiberSingularHomologyIsoOfPath hp' M (γ.map g.hom.continuous) n).hom :=
-  fiberIsoOfPath_naturality
-    (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp hp' sq γ
+        (fiberSingularHomologyIsoOfPath hp' M (γ.map g.hom.continuous) n).hom := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, fiberIsoOfPath_naturality]
 
 /-- Base change compatibility of `fiberSingularHomologyIsoOfPath` along a morphism `f : B' ⟶ B`:
 if a path `γ'` in `B'` lifts `γ` in `B` along `f`, then path transport along `γ` for `p` is
@@ -168,8 +171,10 @@ theorem fiberSingularHomologyIsoOfPath_pullbackFst {B' : _root_.TopCat.{u}} (f :
           (eqToIso (congrArg p.fiber hb₀.symm) ≪≫ (p.fiberPullbackFstIso f x₀).symm) ≪≫
         fiberSingularHomologyIsoOfPath (mem_serreFibrations_pullbackFst hp f) M γ' n ≪≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).mapIso
-          (p.fiberPullbackFstIso f x₁ ≪≫ eqToIso (congrArg p.fiber hb₁)) :=
-  fiberIsoOfPath_pullbackFst
+          (p.fiberPullbackFstIso f x₁ ≪≫ eqToIso (congrArg p.fiber hb₁)) := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath]
+  exact fiberIsoOfPath_pullbackFst
     (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp f γ' γ hb₀ hb₁ hγ
 
 /-- Naturality of `fiberSingularHomologyIsoOfPath` in morphisms of coefficient modules
@@ -180,23 +185,26 @@ theorem fiberSingularHomologyIsoOfPath_naturality_coefficients {M' : ModuleCat.{
     (fiberSingularHomologyIsoOfPath hp M γ n).hom ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).map φ).app (p.fiber b₁) =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).map φ).app (p.fiber b₀) ≫
-        (fiberSingularHomologyIsoOfPath hp M' γ n).hom :=
-  fiberIsoOfPath_hom_comp_app (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp
+        (fiberSingularHomologyIsoOfPath hp M' γ n).hom := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath]
+  exact fiberIsoOfPath_hom_comp_app (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp
     (weakEquivalences_isInvertedBy_singularHomologyFunctor M' n)
     ((singularHomologyFunctor (ModuleCat.{u} R) n).map φ) γ
 
 /-- Path transport along the constant path `Path.refl b` is the identity isomorphism. -/
 @[simp]
 theorem fiberSingularHomologyIsoOfPath_refl (b : B) (n : ℕ) :
-    fiberSingularHomologyIsoOfPath hp M (Path.refl b) n = Iso.refl _ :=
-  fiberIsoOfPath_refl (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp b
+    fiberSingularHomologyIsoOfPath hp M (Path.refl b) n = Iso.refl _ := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, fiberIsoOfPath_refl]
 
 /-- Path transport along the reversed path `γ.symm` is the inverse isomorphism. -/
 @[simp]
 theorem fiberSingularHomologyIsoOfPath_symm {b₀ b₁ : B} (γ : Path b₀ b₁) (n : ℕ) :
     fiberSingularHomologyIsoOfPath hp M γ.symm n =
-      (fiberSingularHomologyIsoOfPath hp M γ n).symm :=
-  fiberIsoOfPath_symm (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ
+      (fiberSingularHomologyIsoOfPath hp M γ n).symm := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, fiberIsoOfPath_symm]
 
 /-- Path transport along a concatenation `γ.trans δ` is the composition of the path transport
 isomorphisms along `γ` and `δ`. -/
@@ -204,14 +212,18 @@ isomorphisms along `γ` and `δ`. -/
 theorem fiberSingularHomologyIsoOfPath_trans {b₀ b₁ b₂ : B} (γ : Path b₀ b₁) (δ : Path b₁ b₂)
     (n : ℕ) :
     fiberSingularHomologyIsoOfPath hp M (γ.trans δ) n =
-      fiberSingularHomologyIsoOfPath hp M γ n ≪≫ fiberSingularHomologyIsoOfPath hp M δ n :=
-  fiberIsoOfPath_trans (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp γ δ
+      fiberSingularHomologyIsoOfPath hp M γ n ≪≫ fiberSingularHomologyIsoOfPath hp M δ n := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, fiberIsoOfPath_trans]
 
 /-- Homotopic paths with fixed endpoints induce the same isomorphism on the singular homology of the
 fibres. -/
 theorem fiberSingularHomologyIsoOfPath_congr {b₀ b₁ : B} {γ₀ γ₁ : Path b₀ b₁}
     (h : γ₀.Homotopic γ₁) (n : ℕ) :
-    fiberSingularHomologyIsoOfPath hp M γ₀ n = fiberSingularHomologyIsoOfPath hp M γ₁ n :=
-  fiberIsoOfPath_congr (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp h
+    fiberSingularHomologyIsoOfPath hp M γ₀ n = fiberSingularHomologyIsoOfPath hp M γ₁ n := by
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath,
+    fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath]
+  exact fiberIsoOfPath_congr (weakEquivalences_isInvertedBy_singularHomologyFunctor M n) hp h
 
 end TauCeti.TopCat

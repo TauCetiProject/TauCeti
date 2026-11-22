@@ -458,12 +458,10 @@ theorem isWeakHomotopyEquivalence_pullbackFiberι (hp : serreFibrations p) {K : 
     (p.pullbackFiberι g h).hom.IsWeakHomotopyEquivalence := by
   subst h
   -- Up to the identification of the fibres of the base change, this is the inclusion of the fibre
-  -- of the base change over `k`, which is `n`-connected for every `n` since `K` has no homotopy.
+  -- of the base change over `k`.
   rw [TopCat.Hom.pullbackFiberι_eq_fiberPullbackFstIso_inv_comp_fiberι, TopCat.hom_comp]
-  refine ContinuousMap.IsWeakHomotopyEquivalence.comp ?_
+  exact (isWeakHomotopyEquivalence_fiberι_of_contractibleSpace
+    (mem_serreFibrations_pullbackFst hp g) k).comp
     ((mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _))
-  exact ContinuousMap.isWeakHomotopyEquivalence_iff_forall_isNConnected.2 fun _ ↦
-    isNConnected_fiberι_of_mem_serreFibrations (mem_serreFibrations_pullbackFst hp g)
-      fun _ _ ↦ inferInstance
 
 end TauCeti.TopCat

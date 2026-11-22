@@ -34,10 +34,11 @@ invariance of the Euler characteristic across the pages of a finitely supported 
 * `CategoryTheory.SpectralSequence.eulerChar_page_add_one`,
   `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le_of_finite`, and
   `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le`: Euler characteristic invariance across
-  one step (needing only finitely generated terms on page `s`), across a finite interval
-  `r ≤ s < r'` with finitely generated terms and adjacent sign agreement, and across arbitrarily
-  many pages (assuming Noetherian terms on page `r` over a ring satisfying the strong rank
-  condition and rank--nullity).
+  one step, across a finite interval `r ≤ s < r'`, and across arbitrarily many pages. All three
+  assume finite support on the starting page and adjacent sign agreement (`(c s).χ = (c (s + 1)).χ`)
+  across the step or interval; for one step finite generation is needed only on the source page `s`,
+  across `[r, r')` on every page in that interval, and across arbitrarily many pages via Noetherian
+  terms on page `r` over a ring satisfying the strong rank condition and rank--nullity.
 
 ## References
 

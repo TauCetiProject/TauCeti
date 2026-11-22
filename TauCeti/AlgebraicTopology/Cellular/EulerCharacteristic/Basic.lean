@@ -204,30 +204,15 @@ theorem sum_range_finrank_cellularHomology {n : ℕ}
     ∑ i ∈ Finset.range (n + 1),
         (-1 : ℤ) ^ i * finrank k ((cellularChainComplex C M).homology i) =
       finrank k M * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * Nat.card (cell C i) := by
-  have hfinite' : ∀ i ∈ Finset.range (n + 1), Module.Finite k ((cellularChainComplex C M).X i) :=
+  have hfinite' : ∀ i ≤ n, Module.Finite k ((cellularChainComplex C M).X i) :=
     fun i hi ↦
-      have := hfinite i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
+      have := hfinite i hi
       finite_cellularChainComplex_X C M i
   have hX : IsZero ((cellularChainComplex C M).X (n + 1)) := by
     rw [cellularChainComplex_X]
     exact isZero_cellularChainGroup C (n + 1) M
-  have hsum := HomologicalComplex.sum_finrank_X_eq_sum_finrank_homology (cellularChainComplex C M)
-    (Finset.range (n + 1)) hfinite'
-    (fun i hi hnot ↦ by
-      by_cases hrel : (ComplexShape.down ℕ).Rel ((ComplexShape.down ℕ).prev i) i
-      · rw [ComplexShape.down_Rel] at hrel
-        have hprev : (ComplexShape.down ℕ).prev i = n + 1 := by
-          have := Finset.mem_range.1 hi
-          have := Finset.mem_range.not.1 hnot
-          lia
-        rw [hprev]
-        exact hX.eq_of_src _ 0
-      · exact (cellularChainComplex C M).shape _ _ hrel)
-    (fun i hi hnot ↦ (cellularChainComplex C M).shape _ _ fun hrel ↦ by
-      rw [ComplexShape.down_Rel] at hrel
-      exact hnot (Finset.mem_range.2 (by have := Finset.mem_range.1 hi; lia)))
-  simp only [ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
-    Units.val_one] at hsum
+  have hsum := (cellularChainComplex C M).sum_range_finrank_X_eq_sum_range_finrank_homology
+    hfinite' (hX.eq_of_src _ 0)
   rw [← hsum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   have := hfinite i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))

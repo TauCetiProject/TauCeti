@@ -29,11 +29,11 @@ Noetherian assumption), using `HomologicalComplex.finrank_X_eq`:
 * `HomologicalComplex.finite_not_isZero_X_of_eventually_isZero`: an `ℕ`-indexed complex vanishing
   from some degree on has finite support.
 * `HomologicalComplex.sum_finrank_X_eq_sum_finrank_homology`: on any finite set `s : Finset ι`
-  whose boundary differentials into and out of `s` vanish, the signed sums of term finranks and
-  homology finranks over `s` agree; the boundary ranks cancel pairwise across `s × s` via
-  `c.χ_next`.
+  on which the terms of `K` are finitely generated and whose boundary differentials into and out
+  of `s` vanish, the signed sums of term finranks and homology finranks over `s` agree; the
+  boundary ranks cancel pairwise across `s × s` via `c.χ_next`.
 * `HomologicalComplex.sum_finrank_X_eq_sum_finrank_homology_of_isZero`: specialization to a
-  complex vanishing outside `s`.
+  complex vanishing outside `s` whose terms on `s` are finitely generated.
 * `HomologicalComplex.eulerChar_eq_homologyEulerChar`: if every term `K.X i` is finitely generated
   and `K.X i` is nonzero for only finitely many indices `i`, then
   `K.eulerChar = K.homologyEulerChar`.

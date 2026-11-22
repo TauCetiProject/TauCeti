@@ -27,26 +27,29 @@ For complexes in `ModuleCat R` with finitely generated terms, the same identity 
 by `HomologicalComplex.eulerChar_eq_homologyEulerChar` together with
 `CochainComplex.finite_not_isZero_X`.
 
-The coefficient ring `R` is Noetherian and satisfies the rank-nullity theorem (`HasRankNullity`).
-This covers division rings, where finrank is dimension, and Noetherian commutative domains such as
-`ℤ`, where finrank is the rank of the free part of a finitely generated abelian group, so that
-torsion in the terms or in the homology contributes nothing.  Noetherianity keeps the homology
-finitely generated, and rank-nullity makes finrank additive on short exact sequences.
+The coefficient ring `R` satisfies the strong rank condition (`StrongRankCondition`) and the
+rank-nullity theorem (`HasRankNullity`), covering division rings, where finrank is dimension, and
+commutative domains such as `ℤ`, where finrank is the rank of the free part of a finitely
+generated abelian group, so that torsion in the terms or in the homology contributes nothing.
+Rank-nullity makes finrank additive on short exact sequences, while
+`HomologicalComplex.homologyEulerChar_forgetFG_eq_sum_finrank` additionally assumes `R` is
+Noetherian so that homology can be computed inside `FGModuleCat R`.
 
 Finite generation is encoded by taking the original complex in `FGModuleCat R`, with the
 characteristics evaluated after applying the forgetful functor to `ModuleCat R` as required by
-Mathlib's definitions. Finite generation ensures that every term and every homology object has
-finite rank, without requiring freeness, and boundedness is retained as explicit lower and upper
-bounds.  Thus neither possible junk value is used in the Euler--Poincaré identity.
+Mathlib's definitions. Finite generation ensures that every term has finite rank, without requiring
+freeness, and boundedness is retained as explicit lower and upper bounds.  Thus neither possible
+junk value is used in the Euler--Poincaré identity.
 
 ## Main results
 
 * `HomologicalComplex.eulerChar_forgetFG_eq_sum_finrank`: Mathlib's term Euler characteristic is
   the finite sum over any finite set containing the bounding interval.
-* `HomologicalComplex.homologyEulerChar_forgetFG_eq_sum_finrank`: Mathlib's homology Euler
-  characteristic is the corresponding finite sum of the homology finranks in `FGModuleCat R`.
 * `HomologicalComplex.eulerChar_forgetFG_eq_homologyEulerChar`: the Euler--Poincaré identity for a
   bounded complex in `FGModuleCat R`, in Mathlib's Euler-characteristic API.
+* `HomologicalComplex.homologyEulerChar_forgetFG_eq_sum_finrank`: Mathlib's homology Euler
+  characteristic is the corresponding finite sum of the homology finranks in `FGModuleCat R`
+  (when `R` is Noetherian).
 
 ## References
 
@@ -106,6 +109,31 @@ theorem eulerChar_forgetFG_eq_sum_finrank (K : CochainComplex (FGModuleCat.{v} R
 
 end Ring
 
+/-- **Euler--Poincaré for a bounded cochain complex of finitely generated modules.**  Over a ring
+satisfying the strong rank condition and the rank-nullity property, Mathlib's Euler characteristic
+of the terms agrees with its homology Euler characteristic after forgetting a bounded complex from
+`FGModuleCat R` to `ModuleCat R`.
+
+The source category makes every term finitely generated, while the explicit bounds make the support
+of the forgotten complex finite.  Consequently this equality does not rely on either totalized
+junk value.
+-/
+theorem eulerChar_forgetFG_eq_homologyEulerChar {R : Type u} [Ring R] [StrongRankCondition R]
+    [HasRankNullity.{v} R] (K : CochainComplex (FGModuleCat.{v} R) ℤ) (a b : ℤ)
+    [K.IsStrictlyGE a] [K.IsStrictlyLE b] :
+    eulerChar
+        (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj K) =
+      homologyEulerChar
+        (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj K) := by
+  let F := forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)
+  let K' := (F.mapHomologicalComplex _).obj K
+  have (i : ℤ) : Module.Finite R (K'.X i) := inferInstanceAs (Module.Finite R (K.X i))
+  have hK' : {i : ℤ | ¬ IsZero (K'.X i)}.Finite :=
+    (Finset.Icc a b).finite_toSet.subset fun i hi ↦ by
+      by_contra h
+      exact hi (F.map_isZero (K.isZero_X_of_notMem_Icc a b (by simpa using h)))
+  exact K'.eulerChar_eq_homologyEulerChar hK'
+
 variable {R : Type u} [Ring R] [IsNoetherianRing R]
 
 /-- Forgetting an `FGModuleCat` complex before taking homology does not change homology finrank. -/
@@ -149,27 +177,5 @@ theorem homologyEulerChar_forgetFG_eq_sum_finrank [Nontrivial R] (a b : ℤ) [K.
   · exact (finrankSupport_homology_subset_Icc
       (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj K)
       a b).trans hs
-
-/-- **Euler--Poincaré for a bounded cochain complex of finitely generated modules.**  Over a
-Noetherian ring with the rank-nullity property, Mathlib's Euler characteristic of the terms agrees
-with its homology Euler characteristic after forgetting a bounded complex from `FGModuleCat R` to
-`ModuleCat R`.
-
-The source category makes every term and homology object finitely generated, hence of finite
-rank, while the explicit bounds make both `finsum`s finite.  Consequently this equality does not
-rely on either totalized junk value.
--/
-theorem eulerChar_forgetFG_eq_homologyEulerChar [HasRankNullity.{v} R] (a b : ℤ)
-    [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] :
-    eulerChar
-        (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj K) =
-      homologyEulerChar
-        (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj K) := by
-  rw [eulerChar_forgetFG_eq_sum_finrank K a b (s := Finset.Icc a b) subset_rfl,
-    homologyEulerChar_forgetFG_eq_sum_finrank K a b (s := Finset.Icc a b) subset_rfl]
-  have h := TauCeti.AbelianK0.AdditiveInvariant.sum_negOnePow_obj_X_eq_sum_negOnePow_obj_homology
-    (TauCeti.AbelianK0.AdditiveInvariant.finrank R) K a b (s := Finset.Icc a b) subset_rfl
-  simpa only [TauCeti.AbelianK0.AdditiveInvariant.finrank_obj, smul_eq_mul] using h
 
 end HomologicalComplex

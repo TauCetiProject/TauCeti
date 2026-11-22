@@ -21,8 +21,10 @@ not have a transport map between its fibres, but it has one on homology via path
 homotopy class of `γ` relative to its end points, sends constant paths to identities and
 concatenations to composites, `b ↦ Hₙ(p⁻¹(b); M)` is a local coefficient system on `B`
 (`TauCeti.TopCat.serreFiberLocalSystem`), the local system of fibre homology of `p`. With path
-transport as its monodromy (`TauCeti.TopCat.serreFiberLocalSystem_map_mk`), it is the coefficient
-system of the second page `E²_{s,t} = H_s(B; H_t(F))` of the Serre spectral sequence of `p`.
+transport as its monodromy (`TauCeti.TopCat.serreFiberLocalSystem_map_mk`), it provides the
+coefficient system for the classical second page `E²_{s,t} = H_s(B; H_t(F))` of the Serre
+spectral sequence of `p` (in `TauCeti.TopCat.serreSpectralSequence`, `page 2` is the skeletal `E¹`
+page while `page 3` corresponds to the classical `E²` page).
 
 When `p` has a lifting function `Λ`, so that it is a Hurewicz fibration with a transport map
 `Λ.transport γ` between its fibres, the transport on homology is the map induced by

@@ -18,9 +18,10 @@ import TauCeti.Topology.Homotopy.Contractible
 
 Let `p : E ⟶ B` be a Serre fibration (`TauCeti.TopCat.serreFibrations`), and let
 `F : TopCat.{u} ⥤ C` be any functor that inverts weak homotopy equivalences
-(`TauCeti.TopCat.weakEquivalences.IsInvertedBy F`), such as singular homology or cohomology with
-arbitrary coefficients. Over a contractible base `B`, every fibre inclusion `p.fiberι b` is a weak
-homotopy equivalence (`TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_contractibleSpace`), so
+(`TauCeti.TopCat.weakEquivalences.IsInvertedBy F`), such as singular homology with arbitrary
+coefficients (or singular cohomology viewed as a covariant functor into the opposite coefficient
+category). Over a contractible base `B`, every fibre inclusion `p.fiberι b` is a weak homotopy
+equivalence (`TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_contractibleSpace`), so
 `F.map (p.fiberι b)` is an isomorphism (`TauCeti.TopCat.isIso_map_fiberι_of_contractibleSpace`).
 
 More generally, for any map `g : K ⟶ B` from a contractible parameter space `K` and points
@@ -82,44 +83,6 @@ namespace TauCeti.TopCat
 
 variable {C : Type v} [Category.{w} C] {F : _root_.TopCat.{u} ⥤ C}
   {E B : _root_.TopCat.{u}} {p : E ⟶ B}
-
-/-- Any functor inverting weak homotopy equivalences maps freely homotopic continuous maps to equal
-morphisms. -/
-private theorem map_eq_of_homotopy (hF : weakEquivalences.{u}.IsInvertedBy F)
-    {X Y : _root_.TopCat.{u}} {f₀ f₁ : X ⟶ Y} (H : ContinuousMap.Homotopy f₀.hom f₁.hom) :
-    F.map f₀ = F.map f₁ := by
-  let IX := _root_.TopCat.of (_root_.TopCat.I.{u} × X)
-  let snd : IX ⟶ X := _root_.TopCat.ofHom ContinuousMap.snd
-  let i₀ : X ⟶ IX := _root_.TopCat.ofHom ⟨fun x ↦ (0, x), by fun_prop⟩
-  let i₁ : X ⟶ IX := _root_.TopCat.ofHom ⟨fun x ↦ (1, x), by fun_prop⟩
-  let Hmap : IX ⟶ Y :=
-    _root_.TopCat.ofHom ⟨fun q ↦ H (_root_.TopCat.I.homeomorph q.1, q.2), by fun_prop⟩
-  let e : (_root_.TopCat.I.{u} × X) ≃ₕ X :=
-    { toFun := ContinuousMap.snd
-      invFun := i₀.hom
-      left_inv := Nonempty.intro
-        { toContinuousMap :=
-            ⟨fun q ↦ (_root_.TopCat.I.homeomorph.symm (q.1 * _root_.TopCat.I.homeomorph q.2.1),
-              q.2.2), by fun_prop⟩
-          map_zero_left q := by
-            simp [i₀, _root_.TopCat.I.homeomorph.symm_apply_eq, _root_.TopCat.I.homeomorph_zero]
-          map_one_left q := by simp }
-      right_inv := ContinuousMap.Homotopic.refl _ }
-  have hsnd : IsIso (F.map snd) :=
-    hF _ ((mem_weakEquivalences_iff _).2 e.isWeakHomotopyEquivalence)
-  have hi : F.map i₀ = F.map i₁ := by
-    refine (cancel_mono (F.map snd)).1 ?_
-    rw [← F.map_comp, ← F.map_comp]
-    have h₀ : i₀ ≫ snd = 𝟙 X := rfl
-    have h₁ : i₁ ≫ snd = 𝟙 X := rfl
-    rw [h₀, h₁]
-  have hf₀ : i₀ ≫ Hmap = f₀ := by
-    ext x
-    exact H.apply_zero x
-  have hf₁ : i₁ ≫ Hmap = f₁ := by
-    ext x
-    exact H.apply_one x
-  rw [← hf₀, ← hf₁, F.map_comp, F.map_comp, hi]
 
 /-- Over a contractible base, any functor inverting weak homotopy equivalences sends every fibre
 inclusion of a Serre fibration to an isomorphism. -/
@@ -206,6 +169,14 @@ theorem pullbackFiberIso_trans (g : K ⟶ B) {k₀ k₁ k₂ : K} {b₀ b₁ b�
       pullbackFiberIso hF hp g h₀ h₂ :=
   Iso.ext ((eq_pullbackFiberIso_hom_iff hF hp g h₀ h₂ _).2 (by simp))
 
+/-- Consecutive forward morphisms of `pullbackFiberIso` compose to the direct transport. -/
+@[reassoc (attr := simp)]
+theorem pullbackFiberIso_hom_comp_hom (g : K ⟶ B) {k₀ k₁ k₂ : K} {b₀ b₁ b₂ : B}
+    (h₀ : g k₀ = b₀) (h₁ : g k₁ = b₁) (h₂ : g k₂ = b₂) :
+    (pullbackFiberIso hF hp g h₀ h₁).hom ≫ (pullbackFiberIso hF hp g h₁ h₂).hom =
+      (pullbackFiberIso hF hp g h₀ h₂).hom := by
+  rw [← Iso.trans_hom, pullbackFiberIso_trans]
+
 /-- **Transport along a path in `K` on which `g` is constant is the identity.** If `γ : Path k₀ k₁`
 in `K` is mapped constantly to `b` by `g`, the endpoint fibre inclusions into the base change are
 homotopic, so `pullbackFiberIso` is `Iso.refl _`. -/
@@ -277,7 +248,7 @@ inverts weak homotopy equivalences and a Serre fibration `p : E ⟶ B`, a path `
 induces a canonical isomorphism `F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)` by pulling `p` back to
 the contractible interval `TopCat.I` along `(TopCat.pathEquiv.symm γ).hom` and inverting the
 induced maps of the endpoint fibre inclusions. -/
-@[expose] noncomputable def fiberIsoOfPath (hF : weakEquivalences.{u}.IsInvertedBy F)
+noncomputable def fiberIsoOfPath (hF : weakEquivalences.{u}.IsInvertedBy F)
     (hp : serreFibrations p) {b₀ b₁ : B} (γ : Path b₀ b₁) :
     F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁) :=
   pullbackFiberIso hF hp (_root_.TopCat.pathEquiv.symm γ).hom (k₀ := 0) (k₁ := 1)
@@ -290,8 +261,8 @@ from `0` to `1`. -/
 theorem fiberIsoOfPath_eq_pullbackFiberIso {b₀ b₁ : B} (γ : Path b₀ b₁) :
     fiberIsoOfPath hF hp γ =
       pullbackFiberIso hF hp (_root_.TopCat.pathEquiv.symm γ).hom (k₀ := 0) (k₁ := 1)
-        (_root_.TopCat.pathEquiv.symm γ).hom₀ (_root_.TopCat.pathEquiv.symm γ).hom₁ :=
-  rfl
+        (_root_.TopCat.pathEquiv.symm γ).hom₀ (_root_.TopCat.pathEquiv.symm γ).hom₁ := by
+  simp [fiberIsoOfPath]
 
 /-- Path transport along `γ : Path b₀ b₁` followed by the fibre inclusion at `1` into the base
 change along `γ` equals the fibre inclusion at `0`. -/
@@ -301,8 +272,8 @@ theorem fiberIsoOfPath_hom_comp_map_pullbackFiberι {b₀ b₁ : B} (γ : Path b
         F.map (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 1)
           (_root_.TopCat.pathEquiv.symm γ).hom₁) =
       F.map (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 0)
-        (_root_.TopCat.pathEquiv.symm γ).hom₀) :=
-  pullbackFiberIso_hom_comp_map_pullbackFiberι hF hp _ _ _
+        (_root_.TopCat.pathEquiv.symm γ).hom₀) := by
+  rw [fiberIsoOfPath_eq_pullbackFiberIso, pullbackFiberIso_hom_comp_map_pullbackFiberι]
 
 /-- The inverse of `fiberIsoOfPath` followed by the fibre inclusion at `0` into the base change
 along `γ` equals the fibre inclusion at `1`. -/
@@ -312,8 +283,8 @@ theorem fiberIsoOfPath_inv_comp_map_pullbackFiberι {b₀ b₁ : B} (γ : Path b
         F.map (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 0)
           (_root_.TopCat.pathEquiv.symm γ).hom₀) =
       F.map (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 1)
-        (_root_.TopCat.pathEquiv.symm γ).hom₁) :=
-  pullbackFiberIso_inv_comp_map_pullbackFiberι hF hp _ _ _
+        (_root_.TopCat.pathEquiv.symm γ).hom₁) := by
+  rw [fiberIsoOfPath_eq_pullbackFiberIso, pullbackFiberIso_inv_comp_map_pullbackFiberι]
 
 /-- **Characterization of path transport.** A morphism equals `(fiberIsoOfPath hF hp γ).hom` if and
 only if postcomposing with the fibre inclusion at `1` into the base change along `γ` gives the
@@ -324,8 +295,8 @@ theorem eq_fiberIsoOfPath_hom_iff {b₀ b₁ : B} (γ : Path b₀ b₁)
       f ≫ F.map (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 1)
           (_root_.TopCat.pathEquiv.symm γ).hom₁) =
         F.map (p.pullbackFiberι (_root_.TopCat.pathEquiv.symm γ).hom (k := 0)
-          (_root_.TopCat.pathEquiv.symm γ).hom₀) :=
-  eq_pullbackFiberIso_hom_iff hF hp _ _ _ f
+          (_root_.TopCat.pathEquiv.symm γ).hom₀) := by
+  rw [fiberIsoOfPath_eq_pullbackFiberIso, eq_pullbackFiberIso_hom_iff]
 
 /-- Path transport along `γ : Path b₀ b₁` commutes with the maps induced by the fibre inclusions
 `p.fiber b₀ ⟶ E` and `p.fiber b₁ ⟶ E`. -/
@@ -367,8 +338,9 @@ theorem fiberIsoOfPath_naturality {E' B' : _root_.TopCat.{u}} {p' : E' ⟶ B'}
     (hp' : serreFibrations p') {f : E ⟶ E'} {g : B ⟶ B'} (sq : CommSq f p p' g)
     {b₀ b₁ : B} (γ : Path b₀ b₁) :
     (fiberIsoOfPath hF hp γ).hom ≫ F.map (sq.fiberMap b₁) =
-      F.map (sq.fiberMap b₀) ≫ (fiberIsoOfPath hF hp' (γ.map g.hom.continuous)).hom :=
-  pullbackFiberIso_naturality hF hp sq hp' (_root_.TopCat.pathEquiv.symm γ).hom
+      F.map (sq.fiberMap b₀) ≫ (fiberIsoOfPath hF hp' (γ.map g.hom.continuous)).hom := by
+  rw [fiberIsoOfPath_eq_pullbackFiberIso, fiberIsoOfPath_eq_pullbackFiberIso]
+  exact pullbackFiberIso_naturality hF hp sq hp' (_root_.TopCat.pathEquiv.symm γ).hom
     (_root_.TopCat.pathEquiv.symm (γ.map g.hom.continuous)).hom (𝟙 _)
     (by rw [Category.id_comp, _root_.TopCat.pathEquiv_symm_map_hom])
     (_root_.TopCat.pathEquiv.symm γ).hom₀ (_root_.TopCat.pathEquiv.symm γ).hom₁
@@ -409,14 +381,16 @@ homotopy equivalences. -/
 theorem fiberIsoOfPath_hom_comp_app {G : _root_.TopCat.{u} ⥤ C}
     (hG : weakEquivalences.{u}.IsInvertedBy G) (α : F ⟶ G) {b₀ b₁ : B} (γ : Path b₀ b₁) :
     (fiberIsoOfPath hF hp γ).hom ≫ α.app (p.fiber b₁) =
-      α.app (p.fiber b₀) ≫ (fiberIsoOfPath hG hp γ).hom :=
-  pullbackFiberIso_hom_comp_app hF hp hG α (_root_.TopCat.pathEquiv.symm γ).hom _ _
+      α.app (p.fiber b₀) ≫ (fiberIsoOfPath hG hp γ).hom := by
+  rw [fiberIsoOfPath_eq_pullbackFiberIso, fiberIsoOfPath_eq_pullbackFiberIso]
+  exact pullbackFiberIso_hom_comp_app hF hp hG α (_root_.TopCat.pathEquiv.symm γ).hom _ _
 
 /-- Path transport along the constant path `Path.refl b` is the identity isomorphism. -/
 @[simp]
 theorem fiberIsoOfPath_refl (b : B) :
-    fiberIsoOfPath hF hp (Path.refl b) = Iso.refl _ :=
-  pullbackFiberIso_eq_refl hF hp (_root_.TopCat.pathEquiv.symm (Path.refl b)).hom
+    fiberIsoOfPath hF hp (Path.refl b) = Iso.refl _ := by
+  rw [fiberIsoOfPath_eq_pullbackFiberIso]
+  exact pullbackFiberIso_eq_refl hF hp (_root_.TopCat.pathEquiv.symm (Path.refl b)).hom
     ⟨⟨fun t ↦ _root_.TopCat.I.homeomorph.symm t, by fun_prop⟩,
       _root_.TopCat.I.homeomorph.symm_apply_eq.2 _root_.TopCat.I.homeomorph_zero.symm,
       _root_.TopCat.I.homeomorph.symm_apply_eq.2 _root_.TopCat.I.homeomorph_one.symm⟩
@@ -484,12 +458,14 @@ theorem fiberIsoOfPath_congr {b₀ b₁ : B} {γ₀ γ₁ : Path b₀ b₁} (h :
       Path (ULift.up ((0 : unitInterval), t)) (ULift.up ((1 : unitInterval), t)) :=
     ⟨⟨fun s ↦ ULift.up (s, t), by fun_prop⟩, rfl, rfl⟩
   have hl : fiberIsoOfPath hF hp γ₀ = pullbackFiberIso hF hp g
-      (k₀ := ULift.up (0, 0)) (k₁ := ULift.up (0, 1)) (H.source 0) (H.target 0) :=
-    pullbackFiberIso_comp_left hF hp g _ (φ 0)
+      (k₀ := ULift.up (0, 0)) (k₁ := ULift.up (0, 1)) (H.source 0) (H.target 0) := by
+    rw [fiberIsoOfPath_eq_pullbackFiberIso]
+    exact pullbackFiberIso_comp_left hF hp g _ (φ 0)
       (by ext t; simp [g, φ]) (by simp [φ]) (by simp [φ]) _ _ _ _
   have hr : fiberIsoOfPath hF hp γ₁ = pullbackFiberIso hF hp g
-      (k₀ := ULift.up (1, 0)) (k₁ := ULift.up (1, 1)) (H.source 1) (H.target 1) :=
-    pullbackFiberIso_comp_left hF hp g _ (φ 1)
+      (k₀ := ULift.up (1, 0)) (k₁ := ULift.up (1, 1)) (H.source 1) (H.target 1) := by
+    rw [fiberIsoOfPath_eq_pullbackFiberIso]
+    exact pullbackFiberIso_comp_left hF hp g _ (φ 1)
       (by ext t; simp [g, φ]) (by simp [φ]) (by simp [φ]) _ _ _ _
   have hb := pullbackFiberIso_eq_refl hF hp g (edge 0) (fun s ↦ H.source s) (H.source 0)
     (H.source 1)

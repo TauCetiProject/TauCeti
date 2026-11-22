@@ -36,9 +36,12 @@ Chapter II, Section 4, Proposition 3; see also Klein--Malkiewich--Ramzi, Introdu
 * **Vanishing in large degrees and finite generation.** Over a base `B` of finite CW type, if the
   singular homology of each fibre vanishes in large degrees, then so does `H_*(E; R)` over any ring
   `R` (`TauCeti.TopCat.eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall`); over
-  a Noetherian ring `R`, if `H_q(p⁻¹(b); R)` is finitely generated for every `b` and every `q ≤ n`
-  (with no boundedness assumption on fibre homology), then `H_n(E; R)` is finitely generated
-  (`TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_forall`). Over a path-connected
+  a Noetherian ring `R`, if `B` has a CW model with finitely many cells in degrees `≤ n` (for
+  instance if `B` has finite CW type) and `H_q(p⁻¹(b); R)` is finitely generated for every `b` and
+  every `q ≤ n` (with no boundedness assumption on fibre homology), then `H_n(E; R)` is finitely
+  generated
+  (`TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivalence`,
+  `TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_forall`). Over a path-connected
   base `B`, hypotheses on a single fibre `p.fiber b` suffice
   (`TauCeti.TopCat.eventually_isZero_singularHomology_of_mem_serreFibrations_of_eventually_isZero`,
   `TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_finite`).
@@ -154,10 +157,12 @@ private lemma isZero_or_eq_serreFirstPagePos (pq : ℤ × ℤ) :
     · refine Or.inr ⟨(pq.2 + 1).toNat, (-1 - pq.1 - 2 * pq.2).toNat, ?_⟩
       ext <;> dsimp [serreFirstPagePos] <;> lia
 
-/-- Over a CW complex `C` with finitely many cells in each dimension, the object at position `pq`
-on page `2` of the pullback Serre spectral sequence is finitely generated whenever the fibres of
-`p` have finitely generated singular homology in the corresponding fibre degree. -/
-private lemma finite_serreSpectralSequence_page_two_X [FiniteType C] (pq : ℤ × ℤ)
+/-- Over a CW complex `C` with finitely many cells in dimension `k` when
+`pq = serreFirstPagePos k q`, the object at position `pq` on page `2` of the pullback Serre
+spectral sequence is finitely generated whenever the fibres of `p` have finitely generated singular
+homology in the corresponding fibre degree. -/
+private lemma finite_serreSpectralSequence_page_two_X (pq : ℤ × ℤ)
+    (hcell : ∀ (k q : ℕ), pq = serreFirstPagePos k q → _root_.Finite (cell C k))
     (hfin : ∀ (k q : ℕ), pq = serreFirstPagePos k q → ∀ b : B, Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b))) :
     Module.Finite R
@@ -167,7 +172,7 @@ private lemma finite_serreSpectralSequence_page_two_X [FiniteType C] (pq : ℤ �
   · have := ModuleCat.subsingleton_of_isZero hz
     infer_instance
   · subst hpq
-    have : _root_.Finite (cell C k) := FiniteType.finite_cell k
+    have : _root_.Finite (cell C k) := hcell k q rfl
     have (j : cell C k) : Module.Finite R
         (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
           (p.fiber (g (map k j 0)))) := hfin k q rfl _
@@ -367,7 +372,8 @@ private lemma eulerChar_serreSpectralSequence_page_top [FiniteType C]
       Finset.mem_product.2 ⟨Finset.mem_range.2 (by lia), Finset.mem_Ico.2 ⟨by lia, by lia⟩⟩,
       by dsimp [serrePagePos, serreFirstPagePos]; ext <;> lia⟩
   have (pq : ℤ × ℤ) : Module.Finite R ((S.page 2).X pq) :=
-    finite_serreSpectralSequence_page_two_X hp C g R pq fun _ q _ b ↦ hfin b q
+    finite_serreSpectralSequence_page_two_X hp C g R pq (fun k _ _ ↦ FiniteType.finite_cell k)
+      fun _ q _ b ↦ hfin b q
   have (pq : ℤ × ℤ) : Module.Finite R ((S.page r hr).X pq) :=
     S.finite_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) r hr
   rw [(S.page r hr).eulerChar_eq_sum_finSet_of_finrankSupport_subset s_rect
@@ -394,6 +400,54 @@ private lemma eulerChar_serreSpectralSequence_page_top [FiniteType C]
     Int.negOnePow_neg, Int.coe_negOnePow_natCast, (hcok_iso b hb).toLinearEquiv.finrank_eq]
 
 end PageTwo
+
+/-- **Finite generation of singular homology for a Serre fibration over a CW model.** Let
+`p : E ⟶ B` be a Serre fibration, let `g : B' ⟶ B` be a weak homotopy equivalence from a space
+with a CW complex `C ⊆ B'` covering the projection of the base change `B' ×_B E` (for instance
+`C = univ`), and let `R` be a Noetherian ring. If `C` has finitely many `k`-cells for every
+`k ≤ n` and `H_q(p⁻¹(b); R)` is finitely generated for every `b : B` and every `q ≤ n`, then
+`H_n(E; R)` is finitely generated. -/
+theorem finite_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivalence
+    {E B B' : _root_.TopCat.{u}} {p : E ⟶ B} (hp : serreFibrations p)
+    [T2Space B'] (C : Set B') [CWComplex C] (g : B' ⟶ B) (hg : g.hom.IsWeakHomotopyEquivalence)
+    (hC : range (_root_.TopCat.pullbackFst g p) ⊆ C)
+    (R : Type u) [Ring R] [IsNoetherianRing R] (n : ℕ)
+    (hcell : ∀ k ≤ n, _root_.Finite (cell C k))
+    (hfin : ∀ b : B, ∀ q ≤ n, Module.Finite R
+      (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b))) :
+    Module.Finite R
+      (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) := by
+  let p' := _root_.TopCat.pullbackFst g p
+  let S := serreSpectralSequence C p' R
+  let O := serreSpectralObject C p' R
+  let r : ℤ := (n : ℤ) + 3
+  have hr : (2 : ℤ) ≤ r := by lia
+  have : IsIso (O.abutmentFiltrationι (n : ℤ) (-n)) :=
+    isIso_serreSpectralObject_abutmentFiltrationι
+      (mem_serreFibrations_pullbackFst hp g) R C hC n le_rfl
+  have hcok (b : ℤ) (hb : b ∈ Finset.Ico (-1 : ℤ) (n : ℤ)) :
+      Module.Finite R ↑(cokernel (O.abutmentFiltrationMap b (-n))) := by
+    have hb' := Finset.mem_Ico.1 hb
+    have : Module.Finite R ((S.page 2).X (serrePagePos n b)) :=
+      finite_serreSpectralSequence_page_two_X hp C g R _
+        (fun k q hpq ↦ hcell k (by
+          have h1 := congrArg Prod.fst hpq
+          have h2 := congrArg Prod.snd hpq
+          dsimp [serreFirstPagePos, serrePagePos] at h1 h2
+          lia))
+        (fun k q hpq b' ↦ hfin b' q (by
+          have h1 := congrArg Prod.fst hpq
+          have h2 := congrArg Prod.snd hpq
+          dsimp [serreFirstPagePos, serrePagePos] at h1 h2
+          lia))
+    have : Module.Finite R ((S.page r hr).X (serrePagePos n b)) :=
+      S.finite_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) r hr
+    exact Module.Finite.equiv
+      (serreSpectralSequencePageXIsoCokernel hp C g R hC r hr n b (by lia) (by lia)).toLinearEquiv
+  have := O.finite_abutment_of_finite_cokernel
+    (isZero_serreSpectralObject_abutmentFiltration p' R C (by lia : (-1 : ℤ) < 0) (-n)) hcok
+  exact Module.Finite.equiv
+    (serreSpectralObjectPullbackAbutmentIso hp R C hg n).toLinearEquiv
 
 section Main
 
@@ -429,35 +483,9 @@ theorem finite_singularHomology_of_mem_serreFibrations_of_forall
     Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) := by
   obtain ⟨Z, _, _, _, _, ⟨e⟩⟩ := FiniteCWType.exists_homotopyEquiv_univ B
-  let g : _root_.TopCat.of Z ⟶ B := _root_.TopCat.ofHom e.symm.toFun
-  have hg : g.hom.IsWeakHomotopyEquivalence := e.symm.isWeakHomotopyEquivalence
-  let p' := _root_.TopCat.pullbackFst g p
-  let S := serreSpectralSequence (univ : Set Z) p' R
-  let O := serreSpectralObject (univ : Set Z) p' R
-  let r : ℤ := (n : ℤ) + 3
-  have hr : (2 : ℤ) ≤ r := by lia
-  have : IsIso (O.abutmentFiltrationι (n : ℤ) (-n)) :=
-    isIso_serreSpectralObject_abutmentFiltrationι
-      (mem_serreFibrations_pullbackFst hp g) R univ (subset_univ _) n le_rfl
-  have hcok (b : ℤ) (hb : b ∈ Finset.Ico (-1 : ℤ) (n : ℤ)) :
-      Module.Finite R ↑(cokernel (O.abutmentFiltrationMap b (-n))) := by
-    have hb' := Finset.mem_Ico.1 hb
-    have : Module.Finite R ((S.page 2).X (serrePagePos n b)) :=
-      finite_serreSpectralSequence_page_two_X hp univ g R _ fun k q hpq b' ↦
-        hfin b' q (by
-          have h1 := congrArg Prod.fst hpq
-          have h2 := congrArg Prod.snd hpq
-          dsimp [serreFirstPagePos, serrePagePos] at h1 h2
-          lia)
-    have : Module.Finite R ((S.page r hr).X (serrePagePos n b)) :=
-      S.finite_page_X_of_le (le_rfl : (2 : ℤ) ≤ 2) r hr
-    exact Module.Finite.equiv
-      (serreSpectralSequencePageXIsoCokernel hp univ g R (subset_univ _) r hr n b
-        (by lia) (by lia)).toLinearEquiv
-  have := O.finite_abutment_of_finite_cokernel
-    (isZero_serreSpectralObject_abutmentFiltration p' R univ (by lia : (-1 : ℤ) < 0) (-n)) hcok
-  exact Module.Finite.equiv
-    (serreSpectralObjectPullbackAbutmentIso hp R univ hg n).toLinearEquiv
+  exact finite_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivalence hp univ
+    (_root_.TopCat.ofHom e.symm.toFun) e.symm.isWeakHomotopyEquivalence (subset_univ _) R n
+    (fun k _ ↦ FiniteType.finite_cell k) hfin
 
 /-- **Euler characteristic of a Serre fibration with homologically finite fibres.** Let `p : E ⟶ B`
 be a Serre fibration over a space `B` of finite CW type, and let `R` be a Noetherian ring
@@ -484,7 +512,8 @@ theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall
   obtain ⟨K, Q, hK, hQ⟩ := exists_cell_and_fiber_bounds (univ : Set Z) g R hvanish
   let S := serreSpectralSequence (univ : Set Z) (_root_.TopCat.pullbackFst g p) R
   have (pq : ℤ × ℤ) : Module.Finite R ((S.page 2).X pq) :=
-    finite_serreSpectralSequence_page_two_X hp univ g R pq fun _ q _ b ↦ hfin b q
+    finite_serreSpectralSequence_page_two_X hp univ g R pq
+      (fun k _ _ ↦ FiniteType.finite_cell k) fun _ q _ b ↦ hfin b q
   have hsupp : {pq : ℤ × ℤ | ¬ IsZero ((S.page 2).X pq)}.Finite := by
     classical
     exact ((Finset.range K ×ˢ Finset.range Q).image

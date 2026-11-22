@@ -215,8 +215,7 @@ private lemma fiberHomologyTransport_cellPath (q : ℕ) (j : cell C 1) :
         hp (cellULiftMap C 1 j)
         (cellULiftMap_ballPoint j (-1) (by norm_num))
         (cellULiftMap_ballPoint j 1 (by norm_num))).hom := by
-  dsimp only [fiberSingularHomologyIsoOfPath]
-  rw [fiberIsoOfPath_eq_pullbackFiberIso]
+  rw [fiberSingularHomologyIsoOfPath_eq_fiberIsoOfPath, fiberIsoOfPath_eq_pullbackFiberIso]
   -- The interval `I` maps to the ball by `t ↦ 2t - 1`, over `B`.
   let φ : _root_.TopCat.I.{u} ⟶ _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin 1 → ℝ)) 1) :=
     _root_.TopCat.ofHom ⟨fun t ↦ ballPoint (2 * (_root_.TopCat.I.homeomorph t : ℝ) - 1)

@@ -99,6 +99,22 @@ noncomputable def fiberIso {E B : _root_.TopCat.{u}} {F : Type u} [TopologicalSp
     p.fiber b ≅ _root_.TopCat.of F :=
   _root_.TopCat.isoOfHomeo (e.preimageSingletonHomeomorph hb)
 
+/-- Evaluating the forward map of `Bundle.Trivialization.fiberIso` reads the second coordinate of
+the trivialization. -/
+@[simp]
+theorem fiberIso_hom_apply {E B : _root_.TopCat.{u}} {F : Type u} [TopologicalSpace F]
+    {p : E ⟶ B} (e : Trivialization F p) {b : B} (hb : b ∈ e.baseSet) (x : p.fiber b) :
+    (e.fiberIso hb).hom x = (e x.val).2 := by
+  simp [fiberIso]
+
+/-- Evaluating the inverse map of `Bundle.Trivialization.fiberIso` recovers the point of the total
+space given by `e.toOpenPartialHomeomorph.symm`. -/
+@[simp]
+theorem coe_fiberIso_inv_apply {E B : _root_.TopCat.{u}} {F : Type u} [TopologicalSpace F]
+    {p : E ⟶ B} (e : Trivialization F p) {b : B} (hb : b ∈ e.baseSet) (v : F) :
+    ((e.fiberIso hb).inv v : E) = e.toOpenPartialHomeomorph.symm (b, v) := by
+  simp [fiberIso]
+
 end TopCat
 
 variable {B F Z : Type*} [TopologicalSpace B] [TopologicalSpace F] [TopologicalSpace Z]
