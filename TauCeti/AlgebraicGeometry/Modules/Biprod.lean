@@ -47,7 +47,7 @@ variable {X : Scheme.{u}} (M N : X.Modules)
 
 /-- `𝒪ₓ`-modules have finite biproducts, since they form an abelian category. -/
 instance hasFiniteBiproducts (X : Scheme.{u}) : HasFiniteBiproducts X.Modules :=
-  .of_hasFiniteProducts
+  inferInstanceAs (HasFiniteBiproducts (SheafOfModules X.ringCatSheaf))
 
 /-- The direct sum of two quasi-coherent `𝒪ₓ`-modules is quasi-coherent. -/
 instance isQuasicoherent_biprod [M.IsQuasicoherent]

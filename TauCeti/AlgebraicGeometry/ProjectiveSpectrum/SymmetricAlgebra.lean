@@ -5,15 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.KrullDimension
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
 
@@ -29,8 +26,7 @@ The convention is that `M` consists of homogeneous linear coordinates. For the s
 lines in a finite locally free representation `V`, use `M = V∨`.
 
 `SymmetricAlgebra.projToSpec` is the structural morphism over `R`, which makes
-`Proj(Sym M)` a scheme over `Spec R`; morphisms `Proj.map (gradedMap R g)` induced by linear maps
-lie over `Spec R` (`instIsOverProjMapGradedMap`). Its properness and
+`Proj(Sym M)` a scheme over `Spec R`. Its properness and
 quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
 also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
 standard affine charts, and the standard opens of a spanning family of linear forms cover
@@ -130,21 +126,6 @@ noncomputable instance instOverProj : (Proj (homogeneousSubmodule R M)).Over (Sp
 /-- The structure morphism of the projective spectrum of a symmetric algebra is `projToSpec`. -/
 theorem over_eq_projToSpec : Proj (homogeneousSubmodule R M) ↘ Spec (.of R) = projToSpec R M :=
   (rfl)
-
-/-- The morphism on projective spectra induced by a linear map `g : M' →ₗ[R] M` lies over
-`Spec R`. -/
-instance instIsOverProjMapGradedMap {M' : Type u} [AddCommMonoid M'] [Module R M']
-    (g : M' →ₗ[R] M)
-    (hg : HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) ≤
-      (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M')).map
-        (_root_.SymmetricAlgebra.gradedMap R g)) :
-    (Proj.map (_root_.SymmetricAlgebra.gradedMap R g) hg).IsOver (Spec (.of R)) where
-  comp_over := by
-    rw [over_eq_projToSpec, over_eq_projToSpec, projToSpec_def, projToSpec_def,
-      Proj.map_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    congr 2
-    ext r
-    simp [GradedRingHom.gradedZeroRingHom]
 
 /-- The projective spectrum of a finite module is proper over the coefficient ring, as a scheme
 over it. -/

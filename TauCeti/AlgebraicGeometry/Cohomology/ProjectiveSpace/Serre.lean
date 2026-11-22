@@ -98,9 +98,6 @@ private lemma exists_kernel_shortExact_biproduct_twistingSheaf
   obtain ⟨m, hm⟩ := Proj.exists_epi_biproduct_twistingSheaf (_root_.SymmetricAlgebra.ι R M)
     (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) G
   obtain ⟨k, p, hp⟩ := hm m le_rfl
-  have : (Proj.twistingSheaf (homogeneousSubmodule R M) (-(m : ℤ))).IsFinitePresentation :=
-    TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
-      (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) (M := _)
   exact ⟨m, k, p, Scheme.Modules.isFinitePresentation_kernel p, TauCeti.kernelSequence_shortExact p⟩
 
 /-- Serre's finiteness theorem on positive-dimensional projective space `Proj (Sym_R M)` over a
@@ -179,12 +176,6 @@ private theorem exists_subsingleton_cohomology_tensor_twistingSheaf_of_basis
       refine ⟨max n₁ ((m : ℤ) + 1 - Fintype.card κ), fun n hn ↦ ?_⟩
       let L : (Proj (homogeneousSubmodule R M)).Modules :=
         Proj.twistingSheaf (homogeneousSubmodule R M) n
-      have : L.IsLocallyFree :=
-        TauCeti.SheafOfModules.IsInvertible.isLocallyFree
-          (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) L
-      have : L.IsFinitePresentation :=
-        TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
-          (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) (M := L)
       have hSn : ((ShortComplex.mk (kernel.ι p) p (kernel.condition p)).map
           (tensorLeft L)).ShortExact :=
         Scheme.Modules.shortExact_map_tensorLeft L hS
@@ -245,7 +236,7 @@ theorem finite_cohomology_of_isProjectiveOver (R : Type u) [CommRing R] [IsNoeth
     Module.Finite R (Cohomology F q) := by
   obtain ⟨M, _, _, _, i₀, hi₀, hi₀R⟩ :=
     Scheme.IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
-  obtain ⟨d, j, _, _, -⟩ := exists_closedImmersion_proj_fin_add R M 2
+  obtain ⟨d, j, _, _, -⟩ := exists_isClosedImmersion_proj_fin_add R M 2
   let i : X ⟶ Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := i₀ ≫ j
   have : ((pushforward i).obj F).IsFinitePresentation :=
     isFinitePresentation_pushforward_of_isFinite i F
@@ -264,7 +255,7 @@ theorem exists_subsingleton_cohomology_pullback_twistingSheaf_tensor
     ∃ n₀ : ℤ, ∀ n ≥ n₀, ∀ q > 0,
       Subsingleton (Cohomology
         ((pullback i).obj (Proj.twistingSheaf (homogeneousSubmodule R M) n) ⊗ F) q) := by
-  obtain ⟨d, j, _, _, hjPull⟩ := exists_closedImmersion_proj_fin_add R M 2
+  obtain ⟨d, j, _, _, hjPull⟩ := exists_isClosedImmersion_proj_fin_add R M 2
   let ι : X ⟶ Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := i ≫ j
   have : ((pushforward ι).obj F).IsFinitePresentation :=
     isFinitePresentation_pushforward_of_isFinite ι F

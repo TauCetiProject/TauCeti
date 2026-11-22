@@ -342,8 +342,7 @@ def tildeCohomologyIsoHigherDirectImage (R : Type u) [CommRing R] {X : Scheme.{u
     [QuasiSeparated (X ↘ Spec (.of R))] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     tilde (ModuleCat.of (CommRingCat.of R) (Cohomology M n)) ≅
       ((X ↘ Spec (.of R)).higherDirectImage n).obj M :=
-  (tilde.functor (.of R)).mapIso (cohomologyEquivHigherDirectImageSections R M n).toModuleIso ≪≫
-    @asIso _ _ _ _ (((X ↘ Spec (.of R)).higherDirectImage n).obj M).fromTildeΓ
-      (isIso_fromTildeΓ_of_isQuasicoherent _)
+  let e := asIso (((X ↘ Spec (.of R)).higherDirectImage n).obj M).fromTildeΓ
+  (tilde.functor (.of R)).mapIso (cohomologyEquivHigherDirectImageSections R M n).toModuleIso ≪≫ e
 
 end AlgebraicGeometry.Scheme.Modules

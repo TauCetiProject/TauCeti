@@ -26,7 +26,8 @@ The point action is selected explicitly, since a scheme can admit many linear ac
 This file constructs individual scheme automorphisms; it does not construct a morphism
 from a product of schemes representing a family of translations.
 
-The construction combines `SymmetricAlgebra.gradedMap` with `Proj.mapIso`.
+The construction combines `SymmetricAlgebra.gradedMap` with `Proj.mapIso`, and
+`Proj.instIsOverProjMapGradedMap` records that induced morphisms lie over `Spec R`.
 
 ## References
 
@@ -63,8 +64,7 @@ theorem symmetricAlgebraMapIso_hom (e : M ≃ₗ[R] N) :
     (symmetricAlgebraMapIso R e).hom =
       map (SymmetricAlgebra.gradedMap R e.toLinearMap)
         (HomogeneousIdeal.irrelevant_le_map_of_surjective _
-          (by simpa only [Function.Surjective, SymmetricAlgebra.gradedMap_apply] using
-            SymmetricAlgebra.map_surjective R e.toLinearMap e.surjective)) := by
+          (SymmetricAlgebra.gradedMap_surjective R e.surjective)) := by
   rw [symmetricAlgebraMapIso, mapIso_hom]
 
 /-- The inverse projective map pulls coordinates back by the inverse linear equivalence. -/
@@ -73,8 +73,7 @@ theorem symmetricAlgebraMapIso_inv (e : M ≃ₗ[R] N) :
     (symmetricAlgebraMapIso R e).inv =
       map (SymmetricAlgebra.gradedMap R e.symm.toLinearMap)
         (HomogeneousIdeal.irrelevant_le_map_of_surjective _
-          (by simpa only [Function.Surjective, SymmetricAlgebra.gradedMap_apply] using
-            SymmetricAlgebra.map_surjective R e.symm.toLinearMap e.symm.surjective)) := by
+          (SymmetricAlgebra.gradedMap_surjective R e.symm.surjective)) := by
   rw [symmetricAlgebraMapIso, mapIso_inv]
 
 /-- A projective linear automorphism fixes the degree-zero structural morphism. -/
@@ -98,6 +97,15 @@ theorem map_gradedMap_projToSpec (f : M →ₗ[R] N)
   intro r
   apply Subtype.ext
   simp [GradedRingHom.gradedZeroRingHom]
+
+/-- The morphism on projective spectra induced by a linear map `f : M →ₗ[R] N` lies over
+`Spec R`. -/
+instance instIsOverProjMapGradedMap (f : M →ₗ[R] N)
+    (hf : HomogeneousIdeal.irrelevant (homogeneousSubmodule R N) ≤
+      (HomogeneousIdeal.irrelevant (homogeneousSubmodule R M)).map
+        (SymmetricAlgebra.gradedMap R f)) :
+    (map (SymmetricAlgebra.gradedMap R f) hf).IsOver (Spec (.of R)) :=
+  ⟨map_gradedMap_projToSpec R f hf⟩
 
 /-- The projective isomorphism induced by a linear equivalence lies over the coefficient ring:
 it commutes with the structure morphisms `TauCeti.SymmetricAlgebra.projToSpec`. -/

@@ -84,6 +84,17 @@ variable {X : Scheme.{u}} (F : X.Modules) {L : X.Modules}
 
 variable [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L]
 
+/-- If `e` vanishes nowhere on `U`, then `tensorPowSection e n` also vanishes nowhere on `U`. -/
+private theorem le_nonvanishingLocus_tensorPowSection {U : X.Opens} (e : Γ(L, U))
+    (he : U ≤ L.nonvanishingLocus e) (n : ℕ) :
+    U ≤ (tensorPow L n).nonvanishingLocus (tensorPowSection e n) := by
+  rw [le_nonvanishingLocus_iff _ (𝟙 U)]
+  intro W j
+  rw [Category.comp_id]
+  have he_basis := (le_nonvanishingLocus_iff e (𝟙 U)).mp he
+  simp only [Category.comp_id] at he_basis
+  exact bijective_smul_tensorPowSection e he_basis n W j
+
 /-- For a positive integer `k`, the nonvanishing locus of the tensor power section `sᵏ` equals the
 nonvanishing locus of `s`. -/
 theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(L, U)) {k : ℕ} (hk : 0 < k) :
@@ -99,15 +110,11 @@ theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(L, U)) {k : ℕ
     have he : W ≤ L.nonvanishingLocus e := by
       rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
       exact le_inf le_rfl inf_le_right
+    -- Locally on `W = U ⊓ V`, write `s = f • e`; then both loci equal `D(f)` on `W`.
     obtain ⟨f, hf⟩ := surjective_smul_of_le_nonvanishingLocus he (L.presheaf.map iWU.op s)
-    beta_reduce at hf
-    have hek : W ≤ (tensorPow L k).nonvanishingLocus (tensorPowSection e k) := by
-      rw [le_nonvanishingLocus_iff _ (𝟙 W)]
-      intro W' j
-      simpa only [Category.comp_id] using
-        bijective_smul_tensorPowSection e (fun W'' l ↦ by
-          simpa only [Category.comp_id] using (le_nonvanishingLocus_iff e (𝟙 W)).mp he W'' l)
-          k W' j
+    change f • e = L.presheaf.map iWU.op s at hf
+    have hek : W ≤ (tensorPow L k).nonvanishingLocus (tensorPowSection e k) :=
+      le_nonvanishingLocus_tensorPowSection e he k
     have hLHS : W ⊓ (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = X.basicOpen f := by
       rw [← nonvanishingLocus_map iWU, map_tensorPowSection, ← hf, tensorPowSection_smul,
         nonvanishingLocus_smul, X.basicOpen_pow f hk,
@@ -115,8 +122,10 @@ theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(L, U)) {k : ℕ
     have hRHS : W ⊓ L.nonvanishingLocus s = X.basicOpen f := by
       rw [← nonvanishingLocus_map iWU, ← hf, nonvanishingLocus_smul,
         inf_eq_left.mpr ((X.basicOpen_le f).trans he)]
-    have hmem := congrArg (fun O : X.Opens ↦ x ∈ (O : Set X)) (hLHS.trans hRHS.symm)
-    simpa only [Opens.coe_inf, Set.mem_inter_iff, hxW, true_and] using iff_of_eq hmem
+    have hmem : x ∈ W ⊓ (tensorPow L k).nonvanishingLocus (tensorPowSection s k) ↔
+        x ∈ W ⊓ L.nonvanishingLocus s :=
+      SetLike.ext_iff.mp (hLHS.trans hRHS.symm) x
+    exact ⟨fun h ↦ (hmem.mp ⟨hxW, h⟩).2, fun h ↦ (hmem.mpr ⟨hxW, h⟩).2⟩
   · exact ⟨fun h ↦ (hxU (nonvanishingLocus_le _ h)).elim,
       fun h ↦ (hxU (nonvanishingLocus_le _ h)).elim⟩
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Serre
-import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
@@ -90,9 +89,7 @@ theorem exists_isZero_higherDirectImage_pullback_twistingSheaf_tensor
     (Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) n) ⊗ F
   have : G.IsQuasicoherent := isQuasicoherent_tensorObj X _ F
   have : Subsingleton (Cohomology G q) := hn₀ n hn q hq
-  have hzero (A : CommRingCat.{u}) (N : ModuleCat.{u} A) [Subsingleton N] : IsZero (tilde N) :=
-    (tilde.functor A).map_isZero (ModuleCat.isZero_of_subsingleton N)
-  exact (hzero (.of R) (ModuleCat.of (CommRingCat.of R) (Cohomology G q))).of_iso
+  exact (isZero_tilde_of_subsingleton (ModuleCat.of (CommRingCat.of R) (Cohomology G q))).of_iso
     (tildeCohomologyIsoHigherDirectImage R G q).symm
 
 end AlgebraicGeometry.Scheme.Modules

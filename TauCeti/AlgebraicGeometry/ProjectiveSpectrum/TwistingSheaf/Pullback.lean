@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
 import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 
 /-!
 # Pullback of the twisting sheaves along `Proj.map`
@@ -60,7 +61,7 @@ The comparison sends it to `(f a)ⁿ`, which freely generates `Γ(D₊(f a), �
   degree-one standard opens cover `Proj 𝒜`.
 * `AlgebraicGeometry.Proj.pullbackTwistingSheafIso`: the resulting isomorphism
   `(Proj.map f hf)^* 𝒪(n) ≅ 𝒪(n)`.
-* `TauCeti.SymmetricAlgebra.exists_closedImmersion_proj_fin_add`: every `Proj (Sym_R M)` for a
+* `TauCeti.SymmetricAlgebra.exists_isClosedImmersion_proj_fin_add`: every `Proj (Sym_R M)` for a
   finite `R`-module `M` embeds as a closed subscheme over `Spec R` into
   `Proj (Sym_R (Fin (d + k) → R))` with twisting sheaves pulling back to twisting sheaves.
 
@@ -269,7 +270,7 @@ end
 into a projective space `Proj (Sym_R (Fin (d + k) → R))` of ambient rank at least `k` so that
 twisting sheaves pull back to twisting sheaves. Taking `k = 2` ensures the indexing type is
 nontrivial. -/
-theorem exists_closedImmersion_proj_fin_add (R M : Type u) [CommRing R]
+theorem exists_isClosedImmersion_proj_fin_add (R M : Type u) [CommRing R]
     [AddCommMonoid M] [Module R M] [Module.Finite R M] (k : ℕ) :
     ∃ (d : ℕ) (j : Proj (homogeneousSubmodule R M) ⟶
         Proj (homogeneousSubmodule R (Fin (d + k) → R))),
