@@ -162,8 +162,10 @@ theorem IsRestricted.subst_of_totalDegree_le [Finite σ] {a : σ → MvPolynomia
         refine (MvPolynomial.totalDegree_monomial_le d 1).trans_eq ?_
         rw [Finsupp.degree_apply, Finsupp.sum]
         simp only [id]
-      exact (MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)).trans <|
-        h.trans <| (Nat.mul_le_mul_right A hd).trans_eq (mul_comm _ _)
+      have he' : e.degree ≤ (d.prod fun s n ↦ a s ^ n).totalDegree := by
+        simpa only [Finsupp.degree_apply, Finsupp.sum] using
+          MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr he)
+      exact he'.trans <| h.trans <| (Nat.mul_le_mul_right A hd).trans_eq (mul_comm _ _)
     calc ρ' ^ e.degree ≤ ρ' ^ (A * d.degree) := pow_le_pow_right₀ hρ' hle
       _ = (ρ' ^ A) ^ d.degree := pow_mul _ _ _
       _ ≤ ρ ^ d.degree := pow_le_pow_left₀ (by positivity) hρ _

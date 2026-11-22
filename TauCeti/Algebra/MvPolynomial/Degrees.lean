@@ -94,7 +94,8 @@ theorem totalDegree_eval₂_C_comp_le {σ τ R S : Type*} [CommSemiring R] [Comm
   calc ∑ i ∈ s.support, (f i ^ s i).totalDegree ≤ ∑ i ∈ s.support, s i * D :=
         Finset.sum_le_sum fun i hi ↦ (totalDegree_pow _ _).trans <|
           Nat.mul_le_mul_left _ <| hf i <| (mem_vars_iff_mem_support i).2 ⟨s, hs, hi⟩
-    _ = (s.sum fun _ e ↦ e) * D := (Finsupp.sum_mul D s (f := fun _ e ↦ e)).symm
+    _ = (s.sum fun _ e ↦ e) * D := by
+        simpa only [Finsupp.sum] using (Finsupp.sum_mul D s (f := fun _ e ↦ e)).symm
     _ ≤ p.totalDegree * D := Nat.mul_le_mul_right _ (le_totalDegree hs)
 
 /-- Substituting polynomials of total degree at most `D` for the variables of `p` multiplies the
