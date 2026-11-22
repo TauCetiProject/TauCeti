@@ -17,6 +17,7 @@ import TauCeti.Analysis.Complex.Conformal.Jordan.Annulus
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
+import TauCeti.Data.Set.Prod
 import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
@@ -70,8 +71,8 @@ Jordan curves, which cobound an annulus by the planar annulus theorem
 
 ## Main results
 
-* `TauCeti.coboundAnnulus_iff`, `TauCeti.annulusConjecture_iff`: unfolding lemmas exposing
-  `TauCeti.CoboundAnnulus` and `TauCeti.AnnulusConjecture` across module boundaries.
+* `TauCeti.coboundAnnulus_iff`, `TauCeti.coboundAnnulus_congr`, `TauCeti.annulusConjecture_iff`:
+  unfolding and congruence lemmas for `TauCeti.CoboundAnnulus` and `TauCeti.AnnulusConjecture`.
 * `TauCeti.CoboundAnnulus.comp_homeomorph`, `TauCeti.coboundAnnulus_comp_homeomorph_iff`:
   cobounding an annulus is invariant under precomposition by a homeomorphism of the domain.
 * `TauCeti.CoboundAnnulus.homeomorph_comp`, `TauCeti.coboundAnnulus_homeomorph_comp_iff`:
@@ -129,6 +130,11 @@ theorem coboundAnnulus_iff {f g : X → E} :
         range h = filledHull (range f) \ (filledHull (range g) \ range g) ∧
         h '' (univ ×ˢ {0}) = range f ∧ h '' (univ ×ˢ {1}) = range g :=
   Iff.rfl
+
+/-- Cobounding an annulus depends on the two maps only through their ranges. -/
+theorem coboundAnnulus_congr {f f' g g' : X → E} (hf : range f = range f')
+    (hg : range g = range g') : CoboundAnnulus f g ↔ CoboundAnnulus f' g' := by
+  simp only [coboundAnnulus_iff, hf, hg]
 
 /-- Cobounding an annulus is preserved by precomposing both maps with a homeomorphism of the
 domain. -/
@@ -279,16 +285,6 @@ section LowDim
 
 open Function
 
-private theorem range_comp_subset_filledHull_sdiff
-    {X Y E F : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [TopologicalSpace E] [Bornology E] [TopologicalSpace F] [Bornology F]
-    {f g : X → E} (hsub : range g ⊆ filledHull (range f) \ range f)
-    (e : E ≃ₜ F) (he : ∀ s : Set E, IsBounded (e '' s) ↔ IsBounded s) (es : Y ≃ₜ X) :
-    range (e ∘ g ∘ es) ⊆ filledHull (range (e ∘ f ∘ es)) \ range (e ∘ f ∘ es) := by
-  rw [range_comp, es.surjective.range_comp, range_comp, es.surjective.range_comp,
-    ← e.image_filledHull he, ← Set.image_sdiff e.injective]
-  exact image_mono hsub
-
 private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → ℝ}
     (hf : Injective f) (hg : Injective g) (hsub : range g ⊆ filledHull (range f) \ range f) :
     CoboundAnnulus f g := by
@@ -297,16 +293,15 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
   have hu_eq (u : sphere (0 : ℝ) 1) : u = um ∨ u = up := by
     simpa [Subtype.ext_iff, um, up] using (Real.sphere_eq_pair 0 zero_le_one).subset u.property
   have hu_ne : um ≠ up := by intro h; have := congrArg Subtype.val h; norm_num [um, up] at this
+  have huniv : (univ : Set (sphere (0 : ℝ) 1)) = {um, up} := by
+    ext u
+    simpa [mem_insert_iff, mem_singleton_iff] using hu_eq u
   have hrange_pair (k : sphere (0 : ℝ) 1 → ℝ) :
       range k = {min (k um) (k up), max (k um) (k up)} := by
-    ext x
-    simp only [mem_range, mem_insert_iff, mem_singleton_iff]
-    constructor
-    · rintro ⟨u, rfl⟩
-      rcases hu_eq u with rfl | rfl <;> rcases le_total (k um) (k up) with h | h <;> simp [h]
-    · rintro (rfl | rfl)
-      · rcases min_choice (k um) (k up) with h | h <;> [exact ⟨um, h.symm⟩; exact ⟨up, h.symm⟩]
-      · rcases max_choice (k um) (k up) with h | h <;> [exact ⟨um, h.symm⟩; exact ⟨up, h.symm⟩]
+    rw [← image_univ, huniv, image_pair]
+    rcases le_total (k um) (k up) with h | h
+    · rw [min_eq_left h, max_eq_right h]
+    · rw [min_eq_right h, max_eq_left h, pair_comm]
   set a : ℝ := min (f um) (f up)
   set b : ℝ := max (f um) (f up)
   set c : ℝ := min (g um) (g up)
@@ -377,30 +372,10 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
       by_cases hxc : x ≤ c
       · exact Or.inl ⟨hax, hxc⟩
       · exact Or.inr ⟨hnot (not_le.mp hxc), hxb⟩
-  · rw [hrf]
-    ext x
-    simp only [mem_image, mem_prod, mem_univ, mem_singleton_iff, true_and, Prod.exists,
-      exists_eq_left, mem_insert_iff]
-    constructor
-    · rintro ⟨u, rfl⟩
-      rcases hu_eq u with rfl | rfl
-      · left; simp [hh_neg]
-      · right; simp [hh_pos]
-    · rintro (rfl | rfl)
-      · exact ⟨um, by simp [hh_neg]⟩
-      · exact ⟨up, by simp [hh_pos]⟩
-  · rw [hrg]
-    ext x
-    simp only [mem_image, mem_prod, mem_univ, mem_singleton_iff, true_and, Prod.exists,
-      exists_eq_left, mem_insert_iff]
-    constructor
-    · rintro ⟨u, rfl⟩
-      rcases hu_eq u with rfl | rfl
-      · left; simp [hh_neg]
-      · right; simp [hh_pos]
-    · rintro (rfl | rfl)
-      · exact ⟨um, by simp [hh_neg]⟩
-      · exact ⟨up, by simp [hh_pos]⟩
+  · rw [Set.image_univ_prod_singleton, ← image_univ, huniv, image_pair, hh_neg, hh_pos,
+      (Path.segment a c).source, (Path.segment b d).source, hrf]
+  · rw [Set.image_univ_prod_singleton, ← image_univ, huniv, image_pair, hh_neg, hh_pos,
+      (Path.segment a c).target, (Path.segment b d).target, hrg]
 
 /-- **The one-dimensional annulus theorem in any one-dimensional real normed space.** Any two
 injective maps `f g : sphere (0 : E) 1 → E` with `range g ⊆ filledHull (range f) \ range f`
@@ -419,7 +394,8 @@ theorem coboundAnnulus_of_injective_of_finrank_eq_one
   exact coboundAnnulus_of_injective_real
     (e.injective.comp (hf.comp es.symm.injective))
     (e.injective.comp (hg.comp es.symm.injective))
-    (range_comp_subset_filledHull_sdiff hsub e he es.symm)
+    (by simpa only [range_comp, es.symm.surjective.range_comp] using
+      (e.image_subset_filledHull_sdiff_iff he (range g) (range f)).mpr hsub)
 
 /-- **The annulus conjecture holds in dimension `1` (`n = 0`).** -/
 theorem annulusConjecture_zero : AnnulusConjecture 0 := fun _ _ hf hg hsub =>
@@ -429,15 +405,27 @@ private theorem coboundAnnulus_of_continuous_injective_complex {f g : sphere (0 
     (hfc : Continuous f) (hfi : Injective f) (hgc : Continuous g) (hgi : Injective g)
     (hsub : range g ⊆ filledHull (range f) \ range f) :
     CoboundAnnulus f g := by
-  have : CompactSpace (sphere (0 : ℂ) 1) := isCompact_iff_compactSpace.mp (isCompact_sphere 0 1)
-  have hC₁ : IsJordanCurve (range f) :=
-    isJordanCurve_iff.mpr
-      ⟨(hfc.isClosedEmbedding hfi).isEmbedding.toHomeomorph.symm.trans
-        (sphereCircleHomeomorph 0 one_pos)⟩
-  have hC₂ : IsJordanCurve (range g) :=
-    isJordanCurve_iff.mpr
-      ⟨(hgc.isClosedEmbedding hgi).isEmbedding.toHomeomorph.symm.trans
-        (sphereCircleHomeomorph 0 one_pos)⟩
+  classical
+  let r : ℂ → sphere (0 : ℂ) 1 := fun z =>
+    if hz : z ∈ sphere (0 : ℂ) 1 then ⟨z, hz⟩ else ⟨1, by simp⟩
+  have hcurve (k : sphere (0 : ℂ) 1 → ℂ) (hkc : Continuous k) (hki : Injective k) :
+      IsJordanCurve (range k) := by
+    have hcont : ContinuousOn (k ∘ r) (sphere 0 1) :=
+      continuousOn_iff_continuous_domRestrict.mpr <| by
+        convert hkc
+        ext u
+        simp [r]
+    have hinj : InjOn (k ∘ r) (sphere 0 1) := fun z₁ hz₁ z₂ hz₂ heq => by
+      have hr := hki heq
+      simp only [r, hz₁, hz₂, ↓reduceDIte, Subtype.mk.injEq] at hr
+      exact hr
+    have himg : (k ∘ r) '' sphere 0 1 = range k := by
+      refine Subset.antisymm ?_ ?_
+      · rintro _ ⟨z, _, rfl⟩; exact ⟨r z, rfl⟩
+      · rintro _ ⟨u, rfl⟩; exact ⟨u, u.property, by simp [r]⟩
+    simpa only [himg] using (isJordanCurve_sphere 0 one_pos).image hcont hinj
+  have hC₁ : IsJordanCurve (range f) := hcurve f hfc hfi
+  have hC₂ : IsJordanCurve (range g) := hcurve g hgc hgi
   obtain ⟨Φ, hΦ0, hΦ1⟩ := hC₁.exists_homeomorph_sphere_prod_unitInterval hC₂ hsub
   refine ⟨Subtype.val ∘ Φ, IsEmbedding.subtypeVal.comp Φ.isEmbedding, ?_, hΦ0, hΦ1⟩
   rw [Φ.surjective.range_comp, Subtype.range_coe]
@@ -463,7 +451,8 @@ theorem coboundAnnulus_of_continuous_injective_of_finrank_eq_two
     (e.injective.comp (hfi.comp es.symm.injective))
     (e.continuous.comp (hgc.comp es.symm.continuous))
     (e.injective.comp (hgi.comp es.symm.injective))
-    (range_comp_subset_filledHull_sdiff hsub e he es.symm)
+    (by simpa only [range_comp, es.symm.surjective.range_comp] using
+      (e.image_subset_filledHull_sdiff_iff he (range g) (range f)).mpr hsub)
 
 /-- **The annulus conjecture holds in dimension `2` (`n = 1`).** -/
 theorem annulusConjecture_one : AnnulusConjecture 1 := fun _ _ hf hg hsub =>

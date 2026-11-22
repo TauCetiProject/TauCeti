@@ -39,9 +39,11 @@ extension used in the Alexander trick.
 * `TauCeti.norm_sphereCone`: the cone over a map into the unit sphere preserves norms.
 * `TauCeti.sphereCone_sphereCone`, `Homeomorph.sphereCone_trans`: the cone over a composite is the
   composite of the cones.
-* `Homeomorph.bijOn_sphereCone_closedBall`, `Homeomorph.tendsto_sphereCone_cobounded`: the cone
-  over a homeomorphism of unit spheres maps each closed ball about the origin onto itself and tends
-  to infinity at infinity.
+* `Homeomorph.bijOn_sphereCone_closedBall`, `Homeomorph.image_sphereCone_closedBall`,
+  `Homeomorph.image_sphereCone_ball`, `Homeomorph.image_sphereCone_sphere`,
+  `Homeomorph.tendsto_sphereCone_cobounded`: the cone over a homeomorphism of unit spheres maps
+  each closed ball, open ball, and sphere about the origin onto itself and tends to infinity at
+  infinity.
 -/
 
 public section
@@ -224,6 +226,31 @@ theorem bijOn_sphereCone_closedBall (r : ℝ) :
     BijOn σ.sphereCone (closedBall 0 r) (closedBall 0 r) := by
   refine ⟨fun x hx => by simpa using hx, σ.sphereCone.injective.injOn, fun y hy => ?_⟩
   exact ⟨σ.sphereCone.symm y, by simpa using hy, σ.sphereCone.apply_symm_apply y⟩
+
+/-- The cone over a homeomorphism of unit spheres maps each closed ball about the origin onto
+itself. -/
+@[simp]
+theorem image_sphereCone_closedBall (r : ℝ) :
+    σ.sphereCone '' closedBall 0 r = closedBall 0 r :=
+  (σ.bijOn_sphereCone_closedBall r).image_eq
+
+/-- The cone over a homeomorphism of unit spheres maps each open ball about the origin onto
+itself. -/
+@[simp]
+theorem image_sphereCone_ball (r : ℝ) :
+    σ.sphereCone '' ball 0 r = ball 0 r := by
+  rw [σ.sphereCone.image_eq_preimage_symm]
+  ext y
+  simp
+
+/-- The cone over a homeomorphism of unit spheres maps each sphere about the origin onto
+itself. -/
+@[simp]
+theorem image_sphereCone_sphere (r : ℝ) :
+    σ.sphereCone '' sphere 0 r = sphere 0 r := by
+  rw [σ.sphereCone.image_eq_preimage_symm]
+  ext y
+  simp
 
 /-- The cone over a homeomorphism of unit spheres tends to infinity at infinity. -/
 theorem tendsto_sphereCone_cobounded :

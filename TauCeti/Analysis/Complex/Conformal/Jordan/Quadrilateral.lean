@@ -11,6 +11,9 @@ public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Conformal.Jordan.Schoenflies
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Data.Set.InjOnUnion
+import TauCeti.Topology.Homeomorph.SetCongr
+import TauCeti.Topology.Homotopy.Cube.Basic
 import TauCeti.Topology.Homotopy.Cube.Radius
 
 /-!
@@ -24,14 +27,14 @@ along the four sides (`TauCeti.exists_homeomorph_unitInterval_prod_filledHull`).
 
 ## The argument
 
-The cube homeomorphism `TauCeti.cubeHomeomorphClosedBall (Fin 2)` followed by
-`TauCeti.closedBallHomeomorphOfFinrankEq` identifies `I × I` with `closedBall (0 : ℂ) 1`, carrying
-the boundary `∂(I × I)` onto the unit circle `sphere (0 : ℂ) 1`. Gluing the four paths along the
-four closed sides of `I × I` defines a continuous bijection from the compact boundary `∂(I × I)`
-onto `C`, hence a homeomorphism. Transferring to `sphere (0 : ℂ) 1` proves that `C` is a Jordan
-curve and supplies the boundary data for the prescribed-boundary Schoenflies theorem
-(`TauCeti.IsJordanCurve.exists_homeomorph_sphere_eq`), whose extension restricts to the required
-homeomorphism `I × I ≃ₜ filledHull C`.
+The square-to-disc homeomorphism `TauCeti.squareHomeomorphClosedBall` identifies `I × I` with
+`closedBall (0 : ℂ) 1`, carrying the boundary `TauCeti.squareBoundary` onto the unit circle
+`sphere (0 : ℂ) 1` (`TauCeti.norm_squareHomeomorphClosedBall_eq_one_iff`). Gluing the four paths
+along the four closed sides of `I × I` defines a continuous bijection from the compact boundary
+`TauCeti.squareBoundary` onto `C`, hence a homeomorphism. Transferring to `sphere (0 : ℂ) 1`
+supplies the boundary data for the prescribed-boundary Schoenflies theorem
+(`TauCeti.exists_homeomorph_sphere_eq`), whose extension restricts to the required homeomorphism
+`I × I ≃ₜ filledHull C`.
 
 ## Main results
 
@@ -51,35 +54,6 @@ noncomputable section
 open Function Metric Set Topology unitInterval
 
 namespace TauCeti
-
-/-- The boundary of the unit square `I × I`, consisting of its four sides. -/
-private def squareBoundary : Set (I × I) :=
-  {p | p.1 = 0 ∨ p.1 = 1 ∨ p.2 = 0 ∨ p.2 = 1}
-
-private theorem squareBoundary_eq_preimage_cubeBoundary :
-    squareBoundary = Homeomorph.finTwoArrow.symm ⁻¹' Cube.boundary (Fin 2) := by
-  ext p
-  simp [squareBoundary, Cube.boundary, Fin.exists_fin_two, or_assoc]
-
-private theorem isClosed_squareBoundary : IsClosed squareBoundary :=
-  squareBoundary_eq_preimage_cubeBoundary ▸
-    Cube.isClosed_boundary.preimage Homeomorph.finTwoArrow.symm.continuous
-
-/-- Identification of the unit square `I × I` with the closed unit disc in `ℂ`, carrying the
-boundary of the square onto the unit circle. -/
-private def squareHomeomorphClosedBall : (I × I) ≃ₜ closedBall (0 : ℂ) 1 :=
-  Homeomorph.finTwoArrow.symm.trans <|
-    (cubeHomeomorphClosedBall (Fin 2)).trans <|
-      closedBallHomeomorphOfFinrankEq (by simp [Complex.finrank_real_complex])
-
-private theorem norm_squareHomeomorphClosedBall_eq_one_iff (p : I × I) :
-    ‖(squareHomeomorphClosedBall p : ℂ)‖ = 1 ↔ p ∈ squareBoundary := by
-  simp only [squareHomeomorphClosedBall, Homeomorph.trans_apply,
-    coe_closedBallHomeomorphOfFinrankEq_apply,
-    ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff,
-    norm_cubeHomeomorphClosedBall_eq_one_iff, Cube.boundary, Fin.exists_fin_two,
-    Homeomorph.finTwoArrow_symm_apply, Fin.isValue, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one, squareBoundary, mem_ofPred_eq, or_assoc]
 
 /-- **Four-sided Jordan domains are homeomorphic to the unit square.** Given four injective paths
 `top : Path a b`, `bot : Path c d`, `left : Path a c`, and `right : Path b d` in `ℂ` whose opposite
@@ -142,7 +116,7 @@ theorem exists_homeomorph_unitInterval_prod_filledHull {a b c d : ℂ}
     have heq : squareBoundary =
         ({p : I × I | p.1 = 0} ∪ {p : I × I | p.1 = 1}) ∪
           ({p : I × I | p.2 = 0} ∪ {p : I × I | p.2 = 1}) := by
-      ext p; simp [squareBoundary, or_assoc]
+      ext p; simp [mem_squareBoundary_iff, or_assoc]
     rw [heq]
     exact (h1.union_of_isClosed h2 hc1 hc2).union_of_isClosed
       (h3.union_of_isClosed h4 hc3 hc4) (hc1.union hc2) (hc3.union hc4)
@@ -166,76 +140,93 @@ theorem exists_homeomorph_unitInterval_prod_filledHull {a b c d : ℂ}
   -- `f` maps `squareBoundary` bijectively onto `C`.
   have hbij : BijOn f squareBoundary C := by
     refine ⟨?_, ?_, ?_⟩
-    · rintro ⟨s, t⟩ (rfl | rfl | rfl | rfl)
+    · rintro ⟨s, t⟩ hst
+      rw [mem_squareBoundary_iff] at hst
+      rcases hst with rfl | rfl | rfl | rfl
       · rw [hf_left]; exact Or.inl (Or.inr (mem_range_self t))
       · rw [hf_right]; exact Or.inr (mem_range_self t)
       · rw [hf_top]; exact Or.inl (Or.inl (Or.inl (mem_range_self s)))
       · rw [hf_bot]; exact Or.inl (Or.inl (Or.inr (mem_range_self s)))
-    · rintro ⟨s₁, t₁⟩ hp ⟨s₂, t₂⟩ hq heq
-      rcases hp with rfl | rfl | rfl | rfl <;> rcases hq with rfl | rfl | rfl | rfl
-      · rw [hf_left, hf_left] at heq; exact Prod.ext rfl (hleft heq)
-      · rw [hf_left, hf_right] at heq
-        exact (hlr.ne_of_mem (mem_range_self t₁) (mem_range_self t₂) heq).elim
-      · rw [hf_left, hf_top] at heq
-        obtain ⟨hs, ht⟩ := hmeet_tl heq.symm; exact Prod.ext hs.symm ht
-      · rw [hf_left, hf_bot] at heq
-        obtain ⟨hs, ht⟩ := hmeet_bl heq.symm; exact Prod.ext hs.symm ht
-      · rw [hf_right, hf_left] at heq
-        exact (hlr.ne_of_mem (mem_range_self t₂) (mem_range_self t₁) heq.symm).elim
-      · rw [hf_right, hf_right] at heq; exact Prod.ext rfl (hright heq)
-      · rw [hf_right, hf_top] at heq
-        obtain ⟨hs, ht⟩ := hmeet_tr heq.symm; exact Prod.ext hs.symm ht
-      · rw [hf_right, hf_bot] at heq
-        obtain ⟨hs, ht⟩ := hmeet_br heq.symm; exact Prod.ext hs.symm ht
-      · rw [hf_top, hf_left] at heq
-        obtain ⟨hs, ht⟩ := hmeet_tl heq; exact Prod.ext hs ht.symm
-      · rw [hf_top, hf_right] at heq
-        obtain ⟨hs, ht⟩ := hmeet_tr heq; exact Prod.ext hs ht.symm
-      · rw [hf_top, hf_top] at heq; exact Prod.ext (htop heq) rfl
-      · rw [hf_top, hf_bot] at heq
-        exact (htb.ne_of_mem (mem_range_self s₁) (mem_range_self s₂) heq).elim
-      · rw [hf_bot, hf_left] at heq
-        obtain ⟨hs, ht⟩ := hmeet_bl heq; exact Prod.ext hs ht.symm
-      · rw [hf_bot, hf_right] at heq
-        obtain ⟨hs, ht⟩ := hmeet_br heq; exact Prod.ext hs ht.symm
-      · rw [hf_bot, hf_top] at heq
-        exact (htb.ne_of_mem (mem_range_self s₂) (mem_range_self s₁) heq.symm).elim
-      · rw [hf_bot, hf_bot] at heq; exact Prod.ext (hbot heq) rfl
+    · let S : Fin 4 → Set (I × I) :=
+        ![{p | p.1 = 0}, {p | p.1 = 1}, {p | p.2 = 0}, {p | p.2 = 1}]
+      refine injOn_of_subset_iUnion (S := S) ?_ ?_ ?_
+      · rintro ⟨s, t⟩ hst
+        rw [mem_squareBoundary_iff] at hst
+        rcases hst with rfl | rfl | rfl | rfl
+        · exact mem_iUnion.2 ⟨0, rfl⟩
+        · exact mem_iUnion.2 ⟨1, rfl⟩
+        · exact mem_iUnion.2 ⟨2, rfl⟩
+        · exact mem_iUnion.2 ⟨3, rfl⟩
+      · intro i
+        fin_cases i
+        · rintro ⟨s₁, t₁⟩ (rfl : s₁ = 0) ⟨s₂, t₂⟩ (rfl : s₂ = 0) heq
+          rw [hf_left, hf_left] at heq; exact Prod.ext rfl (hleft heq)
+        · rintro ⟨s₁, t₁⟩ (rfl : s₁ = 1) ⟨s₂, t₂⟩ (rfl : s₂ = 1) heq
+          rw [hf_right, hf_right] at heq; exact Prod.ext rfl (hright heq)
+        · rintro ⟨s₁, t₁⟩ (rfl : t₁ = 0) ⟨s₂, t₂⟩ (rfl : t₂ = 0) heq
+          rw [hf_top, hf_top] at heq; exact Prod.ext (htop heq) rfl
+        · rintro ⟨s₁, t₁⟩ (rfl : t₁ = 1) ⟨s₂, t₂⟩ (rfl : t₂ = 1) heq
+          rw [hf_bot, hf_bot] at heq; exact Prod.ext (hbot heq) rfl
+      · intro i j hij ⟨s₁, t₁⟩ ⟨s₂, t₂⟩ hi hj heq
+        fin_cases i <;> fin_cases j <;>
+          first
+            | exact absurd hij (by decide)
+            | (dsimp only [S, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val,
+                mem_ofPred_eq] at hi hj
+               subst hi hj)
+        · rw [hf_left, hf_right] at heq
+          exact (hlr.ne_of_mem (mem_range_self t₁) (mem_range_self t₂) heq).elim
+        · rw [hf_left, hf_top] at heq
+          exact Or.inl (hmeet_tl heq.symm).2
+        · rw [hf_left, hf_bot] at heq
+          exact Or.inl (hmeet_bl heq.symm).2
+        · rw [hf_right, hf_top] at heq
+          exact Or.inl (hmeet_tr heq.symm).2
+        · rw [hf_right, hf_bot] at heq
+          exact Or.inl (hmeet_br heq.symm).2
+        · rw [hf_top, hf_bot] at heq
+          exact (htb.ne_of_mem (mem_range_self s₁) (mem_range_self s₂) heq).elim
     · rintro z (((⟨s, rfl⟩ | ⟨s, rfl⟩) | ⟨t, rfl⟩) | ⟨t, rfl⟩)
-      · exact ⟨(s, 0), Or.inr (Or.inr (Or.inl rfl)), hf_top s⟩
-      · exact ⟨(s, 1), Or.inr (Or.inr (Or.inr rfl)), hf_bot s⟩
-      · exact ⟨(0, t), Or.inl rfl, hf_left t⟩
-      · exact ⟨(1, t), Or.inr (Or.inl rfl), hf_right t⟩
+      · exact ⟨(s, 0), mem_squareBoundary_iff.2 (Or.inr (Or.inr (Or.inl rfl))), hf_top s⟩
+      · exact ⟨(s, 1), mem_squareBoundary_iff.2 (Or.inr (Or.inr (Or.inr rfl))), hf_bot s⟩
+      · exact ⟨(0, t), mem_squareBoundary_iff.2 (Or.inl rfl), hf_left t⟩
+      · exact ⟨(1, t), mem_squareBoundary_iff.2 (Or.inr (Or.inl rfl)), hf_right t⟩
   have : CompactSpace squareBoundary :=
     isCompact_iff_compactSpace.mp isClosed_squareBoundary.isCompact
   let ψ : squareBoundary ≃ₜ C :=
     Continuous.homeoOfEquivCompactToT2 (f := hbij.equiv f) (hfc.mapsToRestrict hbij.mapsTo)
   -- Restrict `squareHomeomorphClosedBall` to a boundary homeomorphism `∂(I × I) ≃ₜ S¹`.
+  have hfin : Module.finrank ℝ ℂ = 2 := by simp [Complex.finrank_real_complex]
+  let sq : (I × I) ≃ₜ closedBall (0 : ℂ) 1 := squareHomeomorphClosedBall hfin
   let eSub : {z : closedBall (0 : ℂ) 1 // (z : ℂ) ∈ sphere (0 : ℂ) 1} ≃ₜ sphere (0 : ℂ) 1 :=
     { toEquiv := Equiv.subtypeSubtypeEquivSubtype fun hx => sphere_subset_closedBall hx
       continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   let eQ : squareBoundary ≃ₜ sphere (0 : ℂ) 1 :=
-    (squareHomeomorphClosedBall.subtype fun p =>
-      (norm_squareHomeomorphClosedBall_eq_one_iff p).symm.trans
+    (sq.subtype fun p =>
+      (norm_squareHomeomorphClosedBall_eq_one_iff hfin p).symm.trans
         mem_sphere_zero_iff_norm.symm).trans eSub
   let φ : sphere (0 : ℂ) 1 ≃ₜ C := eQ.symm.trans ψ
   have hC : IsJordanCurve C :=
     isJordanCurve_iff.mpr ⟨φ.symm.trans (sphereCircleHomeomorph 0 one_pos)⟩
-  obtain ⟨e, heφ, -, -, heCB⟩ := hC.exists_homeomorph_sphere_eq φ
+  obtain ⟨e, heφ, -, -, heCB⟩ := exists_homeomorph_sphere_eq φ
   let Φ : I × I ≃ₜ filledHull C :=
-    squareHomeomorphClosedBall.trans ((e.image (closedBall 0 1)).trans (Homeomorph.setCongr heCB))
+    sq.trans ((e.image (closedBall 0 1)).trans (Homeomorph.setCongr heCB))
   have hΦb (p : I × I) (hp : p ∈ squareBoundary) : (Φ p : ℂ) = f p := by
-    have hcoe : (Φ p : ℂ) = e (squareHomeomorphClosedBall p) := rfl
-    rw [hcoe]
-    have hQ : (squareHomeomorphClosedBall p : ℂ) = (eQ ⟨p, hp⟩ : ℂ) := rfl
-    rw [hQ, heφ (eQ ⟨p, hp⟩)]
-    simp only [φ, Homeomorph.trans_apply, Homeomorph.symm_apply_apply]
+    have hcoe : (Φ p : ℂ) = e (sq p) := by
+      simp [Φ, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
+    have heSub (z : {z : closedBall (0 : ℂ) 1 // (z : ℂ) ∈ sphere (0 : ℂ) 1}) :
+        (eSub z : ℂ) = z :=
+      (rfl)
+    have hQ : (sq p : ℂ) = (eQ ⟨p, hp⟩ : ℂ) := by
+      simp [eQ, Homeomorph.trans_apply, heSub]
+    rw [hcoe, hQ, heφ (eQ ⟨p, hp⟩)]
+    simp [φ, ψ, Homeomorph.trans_apply]
     rfl
   refine ⟨hC, Φ, ?_, ?_, ?_, ?_⟩
-  · intro s; rw [hΦb (s, 0) (Or.inr (Or.inr (Or.inl rfl))), hf_top]
-  · intro s; rw [hΦb (s, 1) (Or.inr (Or.inr (Or.inr rfl))), hf_bot]
-  · intro t; rw [hΦb (0, t) (Or.inl rfl), hf_left]
-  · intro t; rw [hΦb (1, t) (Or.inr (Or.inl rfl)), hf_right]
+  · intro s; rw [hΦb (s, 0) (mem_squareBoundary_iff.2 (Or.inr (Or.inr (Or.inl rfl)))), hf_top]
+  · intro s; rw [hΦb (s, 1) (mem_squareBoundary_iff.2 (Or.inr (Or.inr (Or.inr rfl)))), hf_bot]
+  · intro t; rw [hΦb (0, t) (mem_squareBoundary_iff.2 (Or.inl rfl)), hf_left]
+  · intro t; rw [hΦb (1, t) (mem_squareBoundary_iff.2 (Or.inr (Or.inl rfl))), hf_right]
 
 end TauCeti

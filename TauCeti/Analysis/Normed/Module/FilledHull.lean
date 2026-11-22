@@ -276,11 +276,7 @@ theorem filledHull_subset_interior_filledHull (h : 1 < Module.rank ℝ E) (hK : 
   have hunb : ¬ IsBounded (interior (filledHull K))ᶜ := fun hb =>
     NormedSpace.unbounded_univ ℝ E <| by
       simpa using ((isBounded_filledHull.mpr hK).subset interior_subset).union hb
-  intro x hx
-  by_contra hx'
-  have hsub : (interior (filledHull K))ᶜ ⊆ connectedComponentIn Lᶜ x :=
-    hconn.isPreconnected.subset_connectedComponentIn hx' (compl_subset_compl.mpr hL)
-  exact hunb ((mem_filledHull_iff.mp hx).subset hsub)
+  exact (filledHull_mono hL).trans_eq (filledHull_eq_self hconn.isPreconnected hunb)
 
 /-- The filled hull of a compact subset of an open ball stays inside that open ball in any
 nontrivial real normed space. -/

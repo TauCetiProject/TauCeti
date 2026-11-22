@@ -44,6 +44,8 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
 * `TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_forall_exists_le`: such a nested
   exhaustion of `Ω`, every member of which has closure inside `Ω`, eventually containing every open
   set whose closure is compact and contained in `Ω`.
+* `TauCeti.isBounded_iff_isCompact_closure`: in a proper pseudometric space, a set is bounded
+  exactly when its closure is compact.
 * `Homeomorph.isBounded_image_iff`: a homeomorphism between proper pseudometric spaces preserves
   and reflects boundedness of subsets.
 
@@ -208,8 +210,9 @@ theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_foral
     (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hVmono h))
   exact ⟨n, SetLike.coe_subset_coe.1 (subset_closure.trans hn)⟩
 
-private theorem isBounded_iff_isCompact_closure {γ : Type*} [PseudoMetricSpace γ] [ProperSpace γ]
-    {t : Set γ} : Bornology.IsBounded t ↔ IsCompact (closure t) :=
+/-- In a proper pseudometric space, a set is bounded if and only if its closure is compact. -/
+theorem isBounded_iff_isCompact_closure [ProperSpace α] {s : Set α} :
+    Bornology.IsBounded s ↔ IsCompact (closure s) :=
   ⟨Bornology.IsBounded.isCompact_closure, fun h => h.isBounded.subset subset_closure⟩
 
 /-- A homeomorphism between proper pseudometric spaces preserves boundedness of sets. -/

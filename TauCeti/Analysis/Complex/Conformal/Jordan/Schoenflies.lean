@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 import TauCeti.Logic.Equiv.Set
 import TauCeti.Topology.Homeomorph.Piecewise
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # The Schoenflies theorem
@@ -55,8 +56,8 @@ of `ℂ` restricted to its unit circle, and a homeomorphism `τ` of the circle
   `0` to a given point of the inside of `C` and the unit circle, open disc and closed disc onto
   `C`, its inside and its closure.
 * `TauCeti.IsJordanCurve.exists_homeomorph_image_sphere`: **the Schoenflies theorem**.
-* `TauCeti.IsJordanCurve.exists_homeomorph_sphere_eq_of_mem` and
-  `TauCeti.IsJordanCurve.exists_homeomorph_sphere_eq`: the Schoenflies theorem with a prescribed
+* `TauCeti.exists_homeomorph_sphere_eq_of_mem` and
+  `TauCeti.exists_homeomorph_sphere_eq`: the Schoenflies theorem with a prescribed
   homeomorphism `sphere (0 : ℂ) 1 ≃ₜ C` on the boundary circle (and optionally a prescribed image
   of `0`).
 * `TauCeti.IsJordanCurve.exists_homeomorph_image_inner_eq_zero`: the Schoenflies theorem on the
@@ -131,53 +132,45 @@ theorem IsJordanCurve.exists_homeomorph_image_sphere (hC : IsJordanCurve C) :
   exact ⟨e, he⟩
 
 /-- **The Schoenflies theorem with prescribed boundary parametrization, centred at a point of the
-inside.** Given a Jordan curve `C ⊆ ℂ`, a point `p ∈ filledHull C \ C`, and any homeomorphism
+inside.** Given a set `C ⊆ ℂ`, a point `p ∈ filledHull C \ C`, and any homeomorphism
 `φ : sphere (0 : ℂ) 1 ≃ₜ C`, there is a homeomorphism `e : ℂ ≃ₜ ℂ` extending `φ` on the unit circle,
 sending `0` to `p`, and carrying the unit circle, open unit disc, and closed unit disc onto `C`, its
 inside, and `filledHull C`. -/
-theorem IsJordanCurve.exists_homeomorph_sphere_eq_of_mem (hC : IsJordanCurve C)
+theorem exists_homeomorph_sphere_eq_of_mem
     (hp : p ∈ filledHull C \ C) (φ : sphere (0 : ℂ) 1 ≃ₜ C) :
     ∃ e : ℂ ≃ₜ ℂ, e 0 = p ∧ (∀ u : sphere (0 : ℂ) 1, e u = φ u) ∧
       e '' sphere 0 1 = C ∧ e '' ball 0 1 = filledHull C \ C ∧
       e '' closedBall 0 1 = filledHull C := by
+  have hC : IsJordanCurve C :=
+    isJordanCurve_iff.mpr ⟨φ.symm.trans (sphereCircleHomeomorph 0 one_pos)⟩
   obtain ⟨e₀, he₀0, he₀S, he₀B, he₀CB⟩ := hC.exists_homeomorph_image_sphere_of_mem hp
   let ψ : sphere (0 : ℂ) 1 ≃ₜ C :=
     (e₀.image (sphere 0 1)).trans (Homeomorph.setCongr he₀S)
   let τ : sphere (0 : ℂ) 1 ≃ₜ sphere (0 : ℂ) 1 := φ.trans ψ.symm
+  have hcomp : ⇑(τ.sphereCone.trans e₀) = e₀ ∘ τ.sphereCone :=
+    funext fun z => Homeomorph.trans_apply _ _ z
   refine ⟨τ.sphereCone.trans e₀, ?_, ?_, ?_, ?_, ?_⟩
   · simp [he₀0]
   · intro u
     have hψ : (ψ (τ u) : ℂ) = φ u := congrArg Subtype.val (ψ.apply_symm_apply (φ u))
-    have hcoe : (ψ (τ u) : ℂ) = e₀ (τ u) := rfl
+    have hcoe : (ψ (τ u) : ℂ) = e₀ (τ u) := by
+      simp [ψ, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
     rw [Homeomorph.trans_apply, Homeomorph.sphereCone_apply_coe, ← hcoe, hψ]
-  · have hS : τ.sphereCone '' sphere (0 : ℂ) 1 = sphere (0 : ℂ) 1 := by
-      rw [Homeomorph.image_eq_preimage_symm]
-      ext z
-      simp
-    -- Unfold `Homeomorph.trans` to `Function.comp` to rewrite with `Set.image_comp`.
-    change (e₀ ∘ τ.sphereCone) '' sphere 0 1 = C
-    rw [image_comp, hS, he₀S]
-  · have hB : τ.sphereCone '' ball (0 : ℂ) 1 = ball (0 : ℂ) 1 := by
-      rw [Homeomorph.image_eq_preimage_symm]
-      ext z
-      simp
-    -- Unfold `Homeomorph.trans` to `Function.comp` to rewrite with `Set.image_comp`.
-    change (e₀ ∘ τ.sphereCone) '' ball 0 1 = filledHull C \ C
-    rw [image_comp, hB, he₀B]
-  · -- Unfold `Homeomorph.trans` to `Function.comp` to rewrite with `Set.image_comp`.
-    change (e₀ ∘ τ.sphereCone) '' closedBall 0 1 = filledHull C
-    rw [image_comp, (τ.bijOn_sphereCone_closedBall 1).image_eq, he₀CB]
+  · rw [hcomp, image_comp, Homeomorph.image_sphereCone_sphere, he₀S]
+  · rw [hcomp, image_comp, Homeomorph.image_sphereCone_ball, he₀B]
+  · rw [hcomp, image_comp, Homeomorph.image_sphereCone_closedBall, he₀CB]
 
 /-- **The Schoenflies theorem with prescribed boundary parametrization.** Every homeomorphism
-`φ : sphere (0 : ℂ) 1 ≃ₜ C` onto a Jordan curve `C ⊆ ℂ` extends to a homeomorphism of `ℂ` carrying
-the unit circle, open unit disc, and closed unit disc onto `C`, its inside, and `filledHull C`. -/
-theorem IsJordanCurve.exists_homeomorph_sphere_eq (hC : IsJordanCurve C)
-    (φ : sphere (0 : ℂ) 1 ≃ₜ C) :
+`φ : sphere (0 : ℂ) 1 ≃ₜ C` into `ℂ` extends to a homeomorphism of `ℂ` carrying the unit circle,
+open unit disc, and closed unit disc onto `C`, its inside, and `filledHull C`. -/
+theorem exists_homeomorph_sphere_eq (φ : sphere (0 : ℂ) 1 ≃ₜ C) :
     ∃ e : ℂ ≃ₜ ℂ, (∀ u : sphere (0 : ℂ) 1, e u = φ u) ∧
       e '' sphere 0 1 = C ∧ e '' ball 0 1 = filledHull C \ C ∧
       e '' closedBall 0 1 = filledHull C := by
+  have hC : IsJordanCurve C :=
+    isJordanCurve_iff.mpr ⟨φ.symm.trans (sphereCircleHomeomorph 0 one_pos)⟩
   obtain ⟨p, hp⟩ := hC.nonempty_filledHull_sdiff
-  obtain ⟨e, -, he⟩ := hC.exists_homeomorph_sphere_eq_of_mem hp φ
+  obtain ⟨e, -, he⟩ := exists_homeomorph_sphere_eq_of_mem hp φ
   exact ⟨e, he⟩
 
 /-! ### The Schoenflies theorem on the 2-sphere -/

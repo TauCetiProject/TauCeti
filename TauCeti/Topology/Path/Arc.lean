@@ -19,6 +19,8 @@ sphere is the pair of endpoints.
 ## Main declarations
 
 * `Path.closure_image_Ioo`: the closure of the set traced by a path on `(0, 1)` is its range.
+* `Path.image_Ioo_subset_range_sdiff_endpoints`: an injective path on `(0, 1)` avoids its
+  endpoints.
 * `Path.exists_homeomorph_range_closedBall`: the range of an injective path is homeomorphic to the
   closed unit ball of a one-dimensional real normed space, by a homeomorphism carrying the
   endpoints onto the unit sphere.
@@ -44,6 +46,16 @@ theorem closure_image_Ioo (γ : Path x y) : closure (γ '' Ioo 0 1) = range γ :
     rw [closure_Ioo zero_ne_one, unitInterval.univ_eq_Icc]
   rw [← image_univ, ← h]
   exact image_closure_subset_closure_image γ.continuous
+
+omit [T2Space X] in
+/-- On the open unit interval `(0, 1)`, an injective path avoids its endpoints. -/
+theorem image_Ioo_subset_range_sdiff_endpoints {γ : Path x y} (hγ : Injective γ) :
+    γ '' Ioo 0 1 ⊆ range γ \ {x, y} := by
+  rintro _ ⟨t, ht, rfl⟩
+  refine ⟨mem_range_self t, ?_⟩
+  rintro (h | h)
+  · exact ht.1.ne' (hγ (h.trans γ.source.symm))
+  · exact ht.2.ne (hγ (h.trans γ.target.symm))
 
 /-- **An arc is a closed one-dimensional disc.** The range of an injective path in a Hausdorff
 space is homeomorphic to the closed unit ball of a one-dimensional real normed space, by a

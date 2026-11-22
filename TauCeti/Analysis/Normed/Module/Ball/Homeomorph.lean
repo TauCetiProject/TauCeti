@@ -53,6 +53,8 @@ valued in the closed unit ball.
   is homeomorphic to a closed ball of the same dimension.
 * `TauCeti.nonempty_homeomorph_Icc_prod_closedBall`: a nondegenerate closed rectangle is
   homeomorphic to the closed unit ball of any two-dimensional real normed space.
+* `TauCeti.squareHomeomorphClosedBall`: identification of the unit square `I × I` with the closed
+  unit ball of any two-dimensional real normed space.
 -/
 
 public section
@@ -338,5 +340,27 @@ theorem nonempty_homeomorph_Icc_prod_closedBall {F : Type*} [NormedAddCommGroup 
     (by rw [interior_prod_eq, interior_Icc, interior_Icc]
         exact (nonempty_Ioo.mpr hab).prod (nonempty_Ioo.mpr hcd))
     (by simp [hF])
+
+/-- Identification of the unit square `I × I` with the closed unit ball of any two-dimensional real
+normed space, carrying the boundary of the square onto the unit sphere. -/
+def squareHomeomorphClosedBall {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hF : Module.finrank ℝ F = 2) :
+    (unitInterval × unitInterval) ≃ₜ closedBall (0 : F) 1 :=
+  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  Homeomorph.finTwoArrow.symm.trans <|
+    (cubeHomeomorphClosedBall (Fin 2)).trans <|
+      closedBallHomeomorphOfFinrankEq (by simp [hF])
+
+/-- `TauCeti.squareHomeomorphClosedBall` sends `p` to the image of `Homeomorph.finTwoArrow.symm p`
+under `TauCeti.cubeHomeomorphClosedBall` and `ContinuousLinearEquiv.unitBallHomeomorph`. -/
+@[simp]
+theorem coe_squareHomeomorphClosedBall_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] (hF : Module.finrank ℝ F = 2)
+    (p : unitInterval × unitInterval) :
+    (squareHomeomorphClosedBall hF p : F) =
+      (ContinuousLinearEquiv.ofFinrankEq (E := Fin 2 → ℝ) (F := F)
+        (by simp [hF])).unitBallHomeomorph
+        (cubeHomeomorphClosedBall (Fin 2) (Homeomorph.finTwoArrow.symm p)) :=
+  (rfl)
 
 end TauCeti

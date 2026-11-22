@@ -11,6 +11,7 @@ import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
 import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Compactification.OnePoint.FilledHull
 import TauCeti.Topology.Frontier
@@ -47,9 +48,11 @@ components of `Jᶜ`.
   hence of its outside.
 * `TauCeti.IsJordanCurve.filledHull_frontier_eq` — conversely, a compact set with nonempty
   interior whose frontier is a Jordan curve is the filled hull of its frontier.
-* `TauCeti.IsJordanCurve.interior_filledHull`, `TauCeti.IsJordanCurve.closure_filledHull_sdiff` and
-  `TauCeti.IsJordanCurve.closure_compl_filledHull` — the inside is the interior of the filled hull,
-  whose closure it is, and the closure of the outside is the complement of the inside.
+* `TauCeti.IsJordanCurve.interior_filledHull`, `TauCeti.IsJordanCurve.closure_filledHull_sdiff`,
+  `TauCeti.IsJordanCurve.closure_compl_filledHull`, and
+  `TauCeti.IsJordanCurve.filledHull_subset_filledHull_sdiff` — the inside is the interior of the
+  filled hull, whose closure it is, the closure of the outside is the complement of the inside, and
+  any subset of the inside has its filled hull inside as well.
 * `TauCeti.IsJordanCurve.frontier_insert_zero_image_inv_sub_compl_filledHull` — the outside,
   inverted about a point `p` of the inside by `z ↦ (z - p)⁻¹` and completed by `0`, the image of
   infinity, is bounded by the inverted curve.
@@ -164,6 +167,15 @@ theorem IsJordanCurve.filledHull_frontier_eq {D : Set ℂ} (hJ : IsJordanCurve (
 theorem IsJordanCurve.interior_filledHull {C : Set ℂ} (hC : IsJordanCurve C) :
     interior (filledHull C) = filledHull C \ C := by
   rw [← self_sdiff_frontier, hC.frontier_filledHull]
+
+/-- If a subset `K ⊆ ℂ` lies inside the open region `filledHull C \ C` bounded by a Jordan
+curve `C ⊆ ℂ`, then its whole filled hull `filledHull K` lies inside `filledHull C \ C`. -/
+theorem IsJordanCurve.filledHull_subset_filledHull_sdiff {C K : Set ℂ}
+    (hC : IsJordanCurve C) (hsub : K ⊆ filledHull C \ C) :
+    filledHull K ⊆ filledHull C \ C := by
+  rw [← hC.interior_filledHull] at hsub ⊢
+  exact filledHull_subset_interior_filledHull
+    (by rw [Complex.rank_real_complex]; exact Cardinal.one_lt_two) hC.isCompact.isBounded hsub
 
 /-- The closure of the inside `filledHull C \ C` of a Jordan curve `C ⊆ ℂ` is its filled hull. -/
 @[simp]

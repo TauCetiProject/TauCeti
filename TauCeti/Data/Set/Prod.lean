@@ -16,6 +16,8 @@ This file adds to Mathlib's API for graphs of functions over a set and for the f
 ## Main results
 
 * `Set.graphOn_const`: the graph of a constant function over `s` is a horizontal slice `s ×ˢ {b}`.
+* `Set.image_univ_prod_singleton`: the image of a product slice `univ ×ˢ {b}` is the range of
+  `fun a => f (a, b)`.
 * `Function.Pullback.ext`: a point of the fibre product is determined by its two coordinates.
 * `Function.Pullback.fstPreimageEquiv`: the fibre of the projection `X ×_Y Z → X` over `x` is the
   fibre of `g` over `f x`.
@@ -31,6 +33,13 @@ theorem Set.graphOn_const {α β : Type*} (s : Set α) (b : β) :
     s.graphOn (Function.const α b) = s ×ˢ {b} := by
   ext ⟨x, y⟩
   simp [eq_comm]
+
+/-- The image of a horizontal slice `Set.univ ×ˢ {b}` under a map `f : α × β → γ` is the range
+of `fun a => f (a, b)`. -/
+theorem Set.image_univ_prod_singleton {α β γ : Type*} (f : α × β → γ) (b : β) :
+    f '' (Set.univ ×ˢ {b}) = Set.range (fun a => f (a, b)) := by
+  ext
+  simp
 
 variable {X Y Z : Type*} {f : X → Y} {g : Z → Y}
 

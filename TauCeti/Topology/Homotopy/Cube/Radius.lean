@@ -58,6 +58,8 @@ splitting off the first coordinate identifies the closed unit ball with the cube
   ball of the sup norm carries `Cube.boundary N` onto the unit sphere.
 * `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
   homeomorphic to `I × I^(Fin n)`, carrying the unit sphere onto `Cube.prodBoundary (Fin n)`.
+* `TauCeti.norm_squareHomeomorphClosedBall_eq_one_iff`: `TauCeti.squareHomeomorphClosedBall`
+  carries `TauCeti.squareBoundary` onto the unit sphere.
 -/
 
 public section
@@ -386,5 +388,16 @@ theorem closedBallHomeomorphProd_mem_prodBoundary_iff {n : ℕ}
     rw [← norm_cubeHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
   rw [mem_sphere_zero_iff_norm, hx, closedBallHomeomorphProd, Homeomorph.trans_apply,
     cubeSplitHomeomorph_mem_prodBoundary_iff]
+
+/-- `TauCeti.squareHomeomorphClosedBall` carries a point of the unit square onto the unit sphere
+exactly when it lies on `TauCeti.squareBoundary`. -/
+theorem norm_squareHomeomorphClosedBall_eq_one_iff {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) (p : I × I) :
+    ‖(squareHomeomorphClosedBall hF p : F)‖ = 1 ↔ p ∈ squareBoundary := by
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  simp only [coe_squareHomeomorphClosedBall_apply,
+    ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff,
+    norm_cubeHomeomorphClosedBall_eq_one_iff, ← Set.mem_preimage,
+    ← squareBoundary_eq_preimage_cubeBoundary]
 
 end TauCeti

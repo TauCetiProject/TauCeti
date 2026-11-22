@@ -58,8 +58,8 @@ at `0` while releasing the first.
   quotient is the cube modulo its boundary.
 * `TauCeti.isPathConnected_cubeBoundary`: for `[Nontrivial N]`, `Cube.boundary N` is path
   connected.
-* `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`: the boundaries of `I^(Option N)`
-  and `I^(Fin (n + 1))`.
+* `Cube.boundary_option_iff`, `Cube.boundary_fin_succ_iff`, `Cube.boundary_fin_two_iff`: the
+  boundaries of `I^(Option N)`, `I^(Fin (n + 1))`, and `I^(Fin 2)`.
 * `Cube.append_mem_boundary_iff`, `Cube.preimage_appendHomeomorph_boundary`: the boundary of
   `I^(Fin (m + n))` is `∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ`.
 * `Cube.dense_boundary`: for an infinite index set the boundary of `I^N` is dense.
@@ -71,6 +71,9 @@ at `0` while releasing the first.
   of `I^(Option N)`.
 * `TauCeti.Cube.prodBoundary`: the boundary of the cube `I × I^N`, matching the boundary of
   `I^(Option N)` by `TauCeti.piOptionEquivProdHomeomorph_mem_prodBoundary_iff`.
+* `TauCeti.squareBoundary`, `TauCeti.squareBoundary_eq_preimage_cubeBoundary`,
+  `TauCeti.isClosed_squareBoundary`: the four sides of the unit square `I × I`, identified with
+  `Cube.boundary (Fin 2)`.
 * `TauCeti.Cube.update_mem_prodBoundary`: changing a coordinate of the second component of a
   boundary point of `I × I^N`, keeping its endpoint values, stays on the boundary.
 * `GenLoop.ofProd`: a map `I × I^N → X` taking the value `x` on `TauCeti.Cube.prodBoundary N`,
@@ -148,6 +151,14 @@ theorem Cube.boundary_fin_one_iff {y : I^(Fin 1)} :
   simp
 
 open scoped Topology unitInterval in
+/-- A point of the cube `I^(Fin 2)` lies on its boundary exactly when either of its coordinates is
+`0` or `1`. -/
+theorem Cube.boundary_fin_two_iff {y : I^(Fin 2)} :
+    y ∈ Cube.boundary (Fin 2) ↔ y 0 = 0 ∨ y 0 = 1 ∨ y 1 = 0 ∨ y 1 = 1 := by
+  rw [Cube.boundary_fin_succ_iff, Cube.boundary_fin_one_iff]
+  simp [Fin.tail, or_assoc]
+
+open scoped Topology unitInterval in
 /-- A point `Fin.append x y` of the cube `I^(Fin (m + n))` lies on its boundary exactly when `x`
 lies on the boundary of `I^(Fin m)` or `y` lies on the boundary of `I^(Fin n)`. This is the
 `Fin`-indexed form of Mathlib's `Cube.boundary_sum_iff`. -/
@@ -211,6 +222,32 @@ theorem Cube.mk_zero_mem_prodBoundary (t : I^N) : ((0, t) : I × I^N) ∈ Cube.p
 theorem Cube.mk_mem_prodBoundary {s : I} {t : I^N} (h : s = 1 ∨ t ∈ Cube.boundary N) :
     ((s, t) : I × I^N) ∈ Cube.prodBoundary N :=
   h.elim (fun hs => .inl (.inr hs)) .inr
+
+/-- The boundary of the unit square `I × I`, consisting of its four sides. -/
+def squareBoundary : Set (I × I) :=
+  {p | p.1 = 0 ∨ p.1 = 1 ∨ p.2 = 0 ∨ p.2 = 1}
+
+@[simp]
+theorem mem_squareBoundary_iff {p : I × I} :
+    p ∈ squareBoundary ↔ p.1 = 0 ∨ p.1 = 1 ∨ p.2 = 0 ∨ p.2 = 1 :=
+  Iff.rfl
+
+/-- Under `Homeomorph.finTwoArrow.symm : I × I ≃ₜ I^(Fin 2)`, `TauCeti.squareBoundary` is the
+preimage of `Cube.boundary (Fin 2)`. -/
+theorem squareBoundary_eq_preimage_cubeBoundary :
+    squareBoundary = Homeomorph.finTwoArrow.symm ⁻¹' Cube.boundary (Fin 2) := by
+  ext p
+  rw [Set.mem_preimage, Cube.boundary_fin_two_iff, mem_squareBoundary_iff]
+  have hp : (Homeomorph.finTwoArrow.symm p 0, Homeomorph.finTwoArrow.symm p 1) = p :=
+    (congrFun Homeomorph.finTwoArrow_apply _).symm.trans (Homeomorph.finTwoArrow.apply_symm_apply p)
+  have hp₀ : Homeomorph.finTwoArrow.symm p 0 = p.1 := congrArg Prod.fst hp
+  have hp₁ : Homeomorph.finTwoArrow.symm p 1 = p.2 := congrArg Prod.snd hp
+  rw [hp₀, hp₁]
+
+/-- The boundary of the unit square `I × I` is closed. -/
+theorem isClosed_squareBoundary : IsClosed squareBoundary :=
+  squareBoundary_eq_preimage_cubeBoundary ▸
+    Cube.isClosed_boundary.preimage Homeomorph.finTwoArrow.symm.continuous
 
 /-- Changing the coordinate `j` of the second component of a point on the boundary of `I × I^N`
 keeps it on the boundary, provided an endpoint value of that coordinate is left unchanged. -/
