@@ -31,8 +31,9 @@ work with a dominating measure that is itself a mixture of the laws of the model
 * `TauCeti.tsum_mixtureWeight`: the weights sum to `1`.
 * `TauCeti.countableMixture_apply_eq_zero_iff`: a set is null for a mixture iff it is null for
   every component.
-* `TauCeti.map_countableMixture`, `TauCeti.countableMixture_compProd`: pushforwards and
-  composition products commute with countable mixtures.
+* `TauCeti.map_countableMixture`, `TauCeti.countableMixture_compProd`,
+  `TauCeti.map_prodMk_countableMixture_eq_compProd`: pushforwards, composition products, and
+  disintegrations commute with countable mixtures.
 * `TauCeti.countableMixture_eq_withDensity`, `TauCeti.countableMixture_eq_withDensity_mul`,
   `TauCeti.HasDensity.countableMixture`: a mixture of measures with densities has the mixed
   density.
@@ -136,6 +137,25 @@ theorem countableMixture_compProd {Y : Type*} [MeasurableSpace Y] [∀ n, SFinit
     countableMixture P θs ⊗ₘ κ = countableMixture (fun θ ↦ P θ ⊗ₘ κ) θs := by
   rw [countableMixture_def, countableMixture_def, Measure.compProd_sum_left]
   exact Measure.sum_congr fun n ↦ Measure.compProd_smul_left _
+
+/-- If an s-finite kernel `K` disintegrates each component `P (θs n)` along a measurable map `T`,
+then `K` also disintegrates the countable mixture `countableMixture P θs` along `T`. -/
+theorem map_prodMk_countableMixture_eq_compProd {S : Type*} [MeasurableSpace S]
+    [∀ n, SFinite (P (θs n))] {T : X → S} (hT : Measurable T)
+    {K : ProbabilityTheory.Kernel S X} [ProbabilityTheory.IsSFiniteKernel K]
+    (h : ∀ n, (P (θs n)).map (fun x ↦ (T x, x)) = (P (θs n)).map T ⊗ₘ K) :
+    (countableMixture P θs).map (fun x ↦ (T x, x)) =
+      (countableMixture P θs).map T ⊗ₘ K := by
+  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
+  calc (countableMixture P θs).map (fun x ↦ (T x, x))
+    _ = countableMixture (fun θ ↦ (P θ).map (fun x ↦ (T x, x))) θs :=
+        map_countableMixture hpair.aemeasurable
+    _ = countableMixture (fun θ ↦ (P θ).map T ⊗ₘ K) θs := by
+        rw [countableMixture_def, countableMixture_def]
+        exact Measure.sum_congr fun n ↦ by rw [h n]
+    _ = countableMixture (fun θ ↦ (P θ).map T) θs ⊗ₘ K :=
+        (countableMixture_compProd K).symm
+    _ = (countableMixture P θs).map T ⊗ₘ K := by rw [← map_countableMixture hT.aemeasurable]
 
 /-- A countable mixture of measures with densities `g n` in `ℝ≥0∞` has the mixed density
 `∑ₙ mixtureWeight n * g n`. -/

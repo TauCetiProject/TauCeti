@@ -77,6 +77,8 @@ requiring the reference measure itself to be sigma-finite.
   does not change the mass of that set.
 * `MeasureTheory.absolutelyContinuous_withDensity_ofReal`: a measure is absolutely continuous with
   respect to itself weighted by an almost-everywhere positive real density.
+* `MeasureTheory.ae_of_ae_restrict_withDensity_ne_top`: weighted σ-finite localization
+  principle reducing a global a.e. goal to restrictions of finite weighted mass.
 * `MeasureTheory.withDensity_eq_iff_of_sigmaFinite_withDensity`: two a.e. measurable densities
   presenting the same sigma-finite weighted measure agree almost everywhere against the reference
   measure.
@@ -363,7 +365,10 @@ theorem absolutelyContinuous_withDensity_ofReal {α : Type*} [MeasurableSpace α
     μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
   withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
 
-private theorem ae_of_ae_restrict_withDensity_ne_top {α : Type*} [MeasurableSpace α]
+/-- **Weighted σ-finite localization principle.** To prove a property `p` holds `μ`-almost
+everywhere, it suffices to prove it on every measurable set `s` of finite `μ.withDensity w`-mass,
+provided `μ.withDensity w` is σ-finite. -/
+theorem ae_of_ae_restrict_withDensity_ne_top {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {w : α → ℝ≥0∞} [SigmaFinite (μ.withDensity w)] {p : α → Prop}
     (hp : ∀ s : Set α, MeasurableSet s → ∫⁻ x, w x ∂μ.restrict s ≠ ∞ → ∀ᵐ x ∂μ.restrict s, p x) :
     ∀ᵐ x ∂μ, p x := by

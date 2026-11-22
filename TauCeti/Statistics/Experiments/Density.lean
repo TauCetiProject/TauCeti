@@ -32,7 +32,8 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
 ## Main results
 
 * `TauCeti.hasDensity_def`, `TauCeti.hasDensity_of_measure_apply`,
-  `TauCeti.hasDensity_toReal_rnDeriv`: unfolding and introduction lemmas for `HasDensity`.
+  `TauCeti.ofReal_toReal_rnDeriv`, `TauCeti.hasDensity_toReal_rnDeriv`: unfolding and
+  introduction lemmas for `HasDensity`.
 * `TauCeti.HasDensity.congr_ae`, `TauCeti.HasDensity.ae_eq`,
   `TauCeti.HasDensity.ae_eq_of_sigmaFinite`, `TauCeti.HasDensity.ae_eq_toReal_rnDeriv`: a
   density may be changed on a `μ`-null set, is unique up to a `μ`-null set for σ-finite `μ` or
@@ -96,6 +97,12 @@ theorem hasDensity_withDensity_ofReal (hf : Measurable f) (hf₀ : 0 ≤ᵐ[μ] 
     HasDensity (μ.withDensity fun x ↦ ENNReal.ofReal (f x)) μ f :=
   ⟨hf, hf₀, rfl⟩
 
+/-- For a σ-finite measure `P`, embedding the real-valued Radon–Nikodym derivative
+`(P.rnDeriv μ ·).toReal` back into `ℝ≥0∞` recovers `P.rnDeriv μ` `μ`-almost everywhere. -/
+theorem ofReal_toReal_rnDeriv (P μ : Measure X) [SigmaFinite P] :
+    (fun x ↦ ENNReal.ofReal (P.rnDeriv μ x).toReal) =ᵐ[μ] P.rnDeriv μ :=
+  (Measure.rnDeriv_lt_top P μ).mono fun _ hx ↦ ENNReal.ofReal_toReal hx.ne
+
 /-- The real-valued Radon–Nikodym derivative `(P.rnDeriv μ ·).toReal` is a real density of a
 σ-finite measure `P` with respect to `μ`, provided `P ≪ μ` and `P` has a Lebesgue decomposition
 with respect to `μ`. -/
@@ -106,8 +113,7 @@ theorem hasDensity_toReal_rnDeriv [SigmaFinite P] [P.HaveLebesgueDecomposition �
     ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg, ?_⟩
   calc P = μ.withDensity (P.rnDeriv μ) := (Measure.withDensity_rnDeriv_eq P μ hPμ).symm
     _ = μ.withDensity fun x ↦ ENNReal.ofReal (P.rnDeriv μ x).toReal :=
-        withDensity_congr_ae ((Measure.rnDeriv_lt_top P μ).mono fun _ hx ↦
-          (ENNReal.ofReal_toReal hx.ne).symm)
+        withDensity_congr_ae (ofReal_toReal_rnDeriv P μ).symm
 
 namespace HasDensity
 

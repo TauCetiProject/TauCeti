@@ -234,32 +234,6 @@ theorem map_prodMk_comp_eq_compProd [MeasurableSpace Θ] {P : Kernel Θ X} [IsSF
   dsimp only
   rw [Kernel.map_apply _ hpair, Kernel.map_apply _ hT, hθ, Measure.compProd_apply hA]
 
-/-- If `P ≪ L` share a disintegrating kernel `K` given a measurable map `T`, then `P` has
-`L`-density `((P.map T).rnDeriv (L.map T)) ∘ T`. -/
-theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X} [SFinite L]
-    {T : X → S} (hT : Measurable T) [(P.map T).HaveLebesgueDecomposition (L.map T)]
-    {K : Kernel S X} [IsSFiniteKernel K] (hPL : P ≪ L)
-    (hP : P.map (fun x ↦ (T x, x)) = P.map T ⊗ₘ K)
-    (hL : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K) :
-    P = L.withDensity ((P.map T).rnDeriv (L.map T) ∘ T) := by
-  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
-  let q : S → ℝ≥0∞ := (P.map T).rnDeriv (L.map T)
-  have hq : Measurable q := Measure.measurable_rnDeriv _ _
-  have hjoint : P.map (fun x ↦ (T x, x)) =
-      (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) := by
-    calc P.map (fun x ↦ (T x, x))
-      _ = P.map T ⊗ₘ K := hP
-      _ = (L.map T).withDensity q ⊗ₘ K := by
-          rw [Measure.withDensity_rnDeriv_eq (P.map T) (L.map T) (hPL.map hT)]
-      _ = (L.map T ⊗ₘ K).withDensity (fun p ↦ q p.1) := Measure.withDensity_compProd hq
-      _ = (L.map (fun x ↦ (T x, x))).withDensity (fun p ↦ q p.1) := by rw [hL]
-      _ = (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) :=
-          (Measure.map_withDensity_comp hpair.aemeasurable
-            (hq.comp measurable_fst).aemeasurable).symm
-  have hsnd := congrArg Measure.snd hjoint
-  rwa [Measure.snd_map_prodMk hT measurable_id', Measure.snd_map_prodMk hT measurable_id',
-    Measure.map_id', Measure.map_id'] at hsnd
-
 /-- Reweighting a measure `L` by a measurable density `q ∘ T` factoring through `T` preserves any
 disintegrating kernel `K` given `T`. -/
 theorem map_prodMk_withDensity_comp_eq_compProd {L : Measure X} [SFinite L] {T : X → S}
@@ -274,5 +248,24 @@ theorem map_prodMk_withDensity_comp_eq_compProd {L : Measure X} [SFinite L] {T :
     _ = (L.map T).withDensity q ⊗ₘ K := (Measure.withDensity_compProd hq).symm
     _ = (L.withDensity (q ∘ T)).map T ⊗ₘ K := by
         rw [← Measure.map_withDensity_comp hT.aemeasurable hq.aemeasurable]
+
+/-- If `P ≪ L` share a disintegrating kernel `K` given a measurable map `T`, then `P` has
+`L`-density `((P.map T).rnDeriv (L.map T)) ∘ T`. -/
+theorem eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd {P L : Measure X} [SFinite L]
+    {T : X → S} (hT : Measurable T) [(P.map T).HaveLebesgueDecomposition (L.map T)]
+    {K : Kernel S X} [IsSFiniteKernel K] (hPL : P ≪ L)
+    (hP : P.map (fun x ↦ (T x, x)) = P.map T ⊗ₘ K)
+    (hL : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K) :
+    P = L.withDensity ((P.map T).rnDeriv (L.map T) ∘ T) := by
+  let q : S → ℝ≥0∞ := (P.map T).rnDeriv (L.map T)
+  have hq : Measurable q := Measure.measurable_rnDeriv _ _
+  have hmarg : (L.withDensity (q ∘ T)).map T = P.map T := by
+    rw [Measure.map_withDensity_comp hT.aemeasurable hq.aemeasurable,
+      Measure.withDensity_rnDeriv_eq (P.map T) (L.map T) (hPL.map hT)]
+  have hjoint : P.map (fun x ↦ (T x, x)) = (L.withDensity (q ∘ T)).map (fun x ↦ (T x, x)) := by
+    rw [map_prodMk_withDensity_comp_eq_compProd hT hL hq, hmarg, hP]
+  have hsnd := congrArg Measure.snd hjoint
+  rwa [Measure.snd_map_prodMk hT measurable_id', Measure.snd_map_prodMk hT measurable_id',
+    Measure.map_id', Measure.map_id'] at hsnd
 
 end ProbabilityTheory

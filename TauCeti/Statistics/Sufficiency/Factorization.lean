@@ -60,19 +60,11 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
       (∀ θ, Measurable (g θ) ∧ ∀ s, 0 ≤ g θ s) ∧ Measurable h ∧ (∀ x, 0 ≤ h x) ∧
       ∀ θ, ∀ᵐ x ∂μ, f θ x = g θ (T x) * h x := by
   obtain ⟨hT, K, hK, hdis⟩ := isSufficientStatistic_def.mp hs
-  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
   obtain ⟨θs, hdom⟩ := exists_absolutelyContinuous_countableMixture P μ
     fun θ ↦ (hf θ).absolutelyContinuous
   let L : Measure X := countableMixture P θs
-  have hLdis : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K := by
-    calc L.map (fun x ↦ (T x, x))
-      _ = countableMixture (fun θ ↦ (P θ).map (fun x ↦ (T x, x))) θs :=
-          map_countableMixture hpair.aemeasurable
-      _ = countableMixture (fun θ ↦ (P θ).map T ⊗ₘ K) θs := by
-          simp_rw [hdis]
-      _ = countableMixture (fun θ ↦ (P θ).map T) θs ⊗ₘ K :=
-          (countableMixture_compProd K).symm
-      _ = L.map T ⊗ₘ K := by rw [← map_countableMixture hT.aemeasurable]
+  have hLdis : L.map (fun x ↦ (T x, x)) = L.map T ⊗ₘ K :=
+    map_prodMk_countableMixture_eq_compProd hT fun n ↦ hdis (θs n)
   let h : X → ℝ := fun x ↦ (∑' n, mixtureWeight n * ENNReal.ofReal (f (θs n) x)).toReal
   have hh_dens : HasDensity L μ h := HasDensity.countableMixture fun n ↦ hf (θs n)
   let g : Θ → S → ℝ := fun θ s ↦ (((P θ).map T).rnDeriv (L.map T) s).toReal
@@ -83,11 +75,8 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
     refine ⟨((Measure.measurable_rnDeriv _ _).ennreal_toReal).comp hT,
       ae_of_all _ fun _ ↦ ENNReal.toReal_nonneg, ?_⟩
     rw [eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd hT (hdom θ) (hdis θ) hLdis]
-    refine withDensity_congr_ae ?_
-    have hlt : ∀ᵐ s ∂L.map T, ((P θ).map T).rnDeriv (L.map T) s < ∞ :=
-      Measure.rnDeriv_lt_top _ _
-    filter_upwards [ae_of_ae_map hT.aemeasurable hlt] with x hx
-    exact (ENNReal.ofReal_toReal hx.ne).symm
+    exact withDensity_congr_ae
+      (ae_of_ae_map hT.aemeasurable (ofReal_toReal_rnDeriv ((P θ).map T) (L.map T)).symm)
   exact (hf θ).ae_eq_of_sigmaFinite (hPL_dens.trans hh_dens)
 
 /-- Converse direction of the factorization theorem: on a standard Borel space `X`, if the
