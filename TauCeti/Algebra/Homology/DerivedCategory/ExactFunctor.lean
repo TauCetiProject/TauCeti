@@ -10,64 +10,50 @@ public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
-# Exact functors and homology on unbounded derived categories
+# Homology of the functor induced by an exact functor on derived categories
 
-An exact functor `F : C₁ ⥤ C₂` between abelian categories commutes naturally with
-`DerivedCategory.homologyFunctor` in every degree
-(`CategoryTheory.Functor.mapDerivedCategoryCompHomologyFunctorIso`), characterized on
-`DerivedCategory.Q.obj K` by `mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj`.
-
-## References
-
-* Mathlib's `Mathlib/Algebra/Homology/DerivedCategory/ExactFunctor.lean`.
-* `TauCeti/Algebra/Homology/HomotopyCategory/PreservesHomology.lean`, the homotopy-category
-  counterpart whose lifting pattern is followed here.
+An exact functor `F : C₁ ⥤ C₂` between abelian categories induces a functor
+`F.mapDerivedCategory : D(C₁) ⥤ D(C₂)`. Taking homology commutes with it: the homology in degree
+`n` of `F.mapDerivedCategory.obj K` is `F` applied to the homology of `K`
+(`CategoryTheory.Functor.mapDerivedCategoryCompHomologyFunctorIso`). This is the derived-category
+form of `CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`; it shows for instance
+that derived restriction of module sheaves to an open subscheme preserves quasi-coherence of
+homology sheaves.
 -/
 
 public section
 
-noncomputable section
+open CategoryTheory Limits DerivedCategory
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.Functor
+universe w₁ w₂
 
-universe w₁ w₂ v₁ v₂ u₁ u₂
+variable {C₁ : Type*} [Category* C₁] [Abelian C₁] [HasDerivedCategory.{w₁} C₁]
+  {C₂ : Type*} [Category* C₂] [Abelian C₂] [HasDerivedCategory.{w₂} C₂]
 
 namespace CategoryTheory.Functor
 
-variable {C₁ : Type u₁} [Category.{v₁} C₁] [Abelian C₁] [HasDerivedCategory.{w₁} C₁]
-  {C₂ : Type u₂} [Category.{v₂} C₂] [Abelian C₂] [HasDerivedCategory.{w₂} C₂]
-  (F : C₁ ⥤ C₂) [F.Additive] [PreservesFiniteLimits F] [PreservesFiniteColimits F]
+variable (F : C₁ ⥤ C₂) [F.Additive] [PreservesFiniteLimits F] [PreservesFiniteColimits F]
 
-/-- An exact functor commutes with `DerivedCategory.homologyFunctor` in every degree. -/
-def mapDerivedCategoryCompHomologyFunctorIso (n : ℤ) :
-    F.mapDerivedCategory ⋙ DerivedCategory.homologyFunctor C₂ n ≅
-      DerivedCategory.homologyFunctor C₁ n ⋙ F :=
-  Localization.liftNatIso DerivedCategory.Q (HomologicalComplex.quasiIso C₁ (ComplexShape.up ℤ))
-    (DerivedCategory.Q ⋙ F.mapDerivedCategory ⋙ DerivedCategory.homologyFunctor C₂ n)
-    (DerivedCategory.Q ⋙ DerivedCategory.homologyFunctor C₁ n ⋙ F)
-    (F.mapDerivedCategory ⋙ DerivedCategory.homologyFunctor C₂ n)
-    (DerivedCategory.homologyFunctor C₁ n ⋙ F)
-    ((Functor.associator _ _ _).symm ≪≫
-      isoWhiskerRight F.mapDerivedCategoryFactors (DerivedCategory.homologyFunctor C₂ n) ≪≫
-      Functor.associator _ _ _ ≪≫
-      isoWhiskerLeft (F.mapHomologicalComplex _)
-        (DerivedCategory.homologyFunctorFactors C₂ n) ≪≫
-      F.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℤ) n ≪≫
-      isoWhiskerRight (DerivedCategory.homologyFunctorFactors C₁ n).symm F ≪≫
-      Functor.associator _ _ _)
+/-- The homology of the functor induced by an exact functor `F` on derived categories is `F`
+applied to homology. -/
+noncomputable def mapDerivedCategoryCompHomologyFunctorIso (n : ℤ) :
+    F.mapDerivedCategory ⋙ homologyFunctor C₂ n ≅ homologyFunctor C₁ n ⋙ F :=
+  Localization.liftNatIso Q (HomologicalComplex.quasiIso C₁ (.up ℤ))
+    (Q ⋙ F.mapDerivedCategory ⋙ homologyFunctor C₂ n) (Q ⋙ homologyFunctor C₁ n ⋙ F) _ _
+    ((associator _ _ _).symm ≪≫ isoWhiskerRight F.mapDerivedCategoryFactors _ ≪≫
+      associator _ _ _ ≪≫ isoWhiskerLeft _ (homologyFunctorFactors C₂ n) ≪≫
+      F.mapHomologicalComplexCompHomologyFunctorIso _ n ≪≫
+      isoWhiskerRight (homologyFunctorFactors C₁ n).symm F ≪≫ associator _ _ _)
 
-/-- On a cochain complex `K`, the comparison `mapDerivedCategoryCompHomologyFunctorIso` is given by
-`F.mapDerivedCategoryFactors`, `DerivedCategory.homologyFunctorFactors`, and
-`F.mapHomologicalComplexCompHomologyFunctorIso`. -/
-@[reassoc]
-lemma mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj
-    (K : CochainComplex C₁ ℤ) (n : ℤ) :
-    (F.mapDerivedCategoryCompHomologyFunctorIso n).hom.app (DerivedCategory.Q.obj K) =
-      (DerivedCategory.homologyFunctor C₂ n).map (F.mapDerivedCategoryFactors.hom.app K) ≫
-        (DerivedCategory.homologyFunctorFactors C₂ n).hom.app
-          ((F.mapHomologicalComplex _).obj K) ≫
-        (F.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℤ) n).hom.app K ≫
-        F.map ((DerivedCategory.homologyFunctorFactors C₁ n).inv.app K) := by
-  simp [mapDerivedCategoryCompHomologyFunctorIso]
+/-- On a complex, `mapDerivedCategoryCompHomologyFunctorIso` is the comparison of homology of
+complexes `CategoryTheory.ShortComplex.mapHomologyIso`, up to the identifications of homology in
+the derived category with homology of complexes. -/
+@[simp]
+lemma mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj (n : ℤ) (K : CochainComplex C₁ ℤ) :
+    (F.mapDerivedCategoryCompHomologyFunctorIso n).hom.app (Q.obj K) =
+      (homologyFunctor C₂ n).map (F.mapDerivedCategoryFactors.hom.app K) ≫
+        (homologyFunctorFactors C₂ n).hom.app _ ≫ ((K.sc n).mapHomologyIso F).hom ≫
+          F.map ((homologyFunctorFactors C₁ n).inv.app K) := by
+  simp [mapDerivedCategoryCompHomologyFunctorIso, Localization.liftNatTrans_app]
 
 end CategoryTheory.Functor

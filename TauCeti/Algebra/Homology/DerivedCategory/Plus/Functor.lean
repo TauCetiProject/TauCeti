@@ -246,9 +246,11 @@ lemma mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app_Q_obj
           (F.mapCochainComplexPlus.obj K) ≫
         (F.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℤ) n).hom.app K.obj ≫
         F.map ((TauCeti.DerivedCategory.Plus.homologyFunctorFactors C₁ n).inv.app K) := by
+    have hQ' : (F.mapHomologicalComplexCompHomologyFunctorIso (ComplexShape.up ℤ) n).hom.app
+        K.obj = ((K.obj.sc n).mapHomologyIso F).hom := by simp
     rw [CochainComplex.Plus.homologyFunctorFactors_hom_app,
-      CochainComplex.Plus.homologyFunctorFactors_inv_app]
-    exact F.mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj K.obj n
+      CochainComplex.Plus.homologyFunctorFactors_inv_app, hQ']
+    exact F.mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj n K.obj
   exact (F.mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app n _).trans
     ((congrArg (_ ≫ ·) hQ).trans ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hH.symm)))
 

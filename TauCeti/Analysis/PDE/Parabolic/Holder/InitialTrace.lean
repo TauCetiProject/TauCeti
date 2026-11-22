@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.InitialTrace
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # The rate of attainment of the initial trace
@@ -145,14 +146,6 @@ theorem exists_abs_sub_le_of_abs_euclideanParabolicOperatorL_le (Λ β γ : ℝ)
     hsT (p : ParabolicSpaceTime _).space
   simpa only [hτ, slabMk_space_slabTime, zero_add, projIcc_left, hωs] using key
 
-/-- `X ε / (2 (X + 1)) < ε / 2` for `X ≥ 0` and `ε > 0`. -/
-private theorem mul_div_two_mul_add_one_lt {ε : ℝ} (hε : 0 < ε) (X : ℝ) (hX : 0 ≤ X) :
-    X * (ε / (2 * (X + 1))) < ε / 2 := by
-  have hX1 : X / (X + 1) < 1 := (div_lt_one (by positivity)).2 (by linarith)
-  calc X * (ε / (2 * (X + 1))) = ε / 2 * (X / (X + 1)) := by field_simp
-    _ < ε / 2 * 1 := mul_lt_mul_of_pos_left hX1 (by positivity)
-    _ = ε / 2 := mul_one _
-
 /-- **Uniform attainment for equicontinuous families.** Let `P` have degenerate elliptic Hölder
 coefficients on the slab `ℝⁿ × [t₀, t₁]`, and let `(u_k)` be a family in `C_b^{2+α,1+α/2}` with
 `|P u_k| ≤ K` and `|u_k(·, t₀)| ≤ M`, whose initial traces `u_k(·, t₀)` are uniformly
@@ -171,39 +164,8 @@ theorem exists_forall_abs_sub_lt_of_uniformEquicontinuous {α : ℝ≥0} (hα : 
       |u k p - u k (slabMk (p : ParabolicSpaceTime _).space ⟨t₀, left_mem_Icc.2 ht.le⟩)| < ε := by
   obtain ⟨C, hC0, hC⟩ := exists_abs_sub_le_of_abs_euclideanParabolicOperatorL_le (ι := ι)
     (ht := ht) (∑ i, ∑ j, ‖a i j‖) (∑ i, ‖b i‖) ‖c‖
-  -- The Hölder norms of the coefficients bound them pointwise.
-  have hΛ : ∀ p i j, |a i j p| ≤ ∑ i, ∑ j, ‖a i j‖ := fun p i j ↦ by
-    have h : |a i j p| ≤ ‖a i j‖ := by simpa using HolderSpace.norm_apply_le (a i j) p
-    exact h.trans ((Finset.single_le_sum (fun j _ ↦ norm_nonneg (a i j)) (Finset.mem_univ j)).trans
-        (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖)
-          (fun i _ ↦ by positivity) (Finset.mem_univ i)))
-  have hβ : ∀ p i, |b i p| ≤ ∑ i, ‖b i‖ := fun p i ↦ by
-    have h : |b i p| ≤ ‖b i‖ := by simpa using HolderSpace.norm_apply_le (b i) p
-    exact h.trans (Finset.single_le_sum (fun i _ ↦ norm_nonneg (b i)) (Finset.mem_univ i))
-  have hγ : ∀ p, |c p| ≤ ‖c‖ := fun p ↦ by simpa using HolderSpace.norm_apply_le c p
-  set R := C * |M + K|
-  set η := ε / (2 * (C + 1))
-  have hη : 0 < η := by positivity
-  obtain ⟨δ₁, hδ₁, hδ₁η⟩ := Metric.uniformEquicontinuous_iff.1 hu η hη
-  refine ⟨min (δ₁ ^ 2) (ε / (2 * (R + 1))), by positivity, fun k p hp ↦ ?_⟩
-  have hs0 : 0 ≤ (slabTime p : ℝ) - t₀ := sub_nonneg.2 (slabTime p).property.1
-  have hsδ : √(slabTime p - t₀) < δ₁ := by
-    rw [← sqrt_sq hδ₁.le]
-    exact sqrt_lt_sqrt hs0 (hp.trans_le (min_le_left _ _))
-  have key := hC hα (u k) ha hΛ hβ hγ (hP k) (hM k) p fun x y hxy ↦ by
-    simpa [Real.dist_eq] using (hδ₁η x y (hxy.trans_lt hsδ) k).le
-  have hR : C * ((slabTime p - t₀) * (M + K)) ≤ R * (slabTime p - t₀) := by
-    calc _ = C * (slabTime p - t₀) * (M + K) := by ring
-      _ ≤ C * (slabTime p - t₀) * |M + K| :=
-        mul_le_mul_of_nonneg_left (le_abs_self _) (mul_nonneg hC0 hs0)
-      _ = _ := by ring
-  have hRs : R * (slabTime p - t₀) ≤ R * (ε / (2 * (R + 1))) :=
-    mul_le_mul_of_nonneg_left (hp.le.trans (min_le_right _ _)) (by positivity)
-  -- Each of the two terms is less than `ε / 2`.
-  have h₁ := mul_div_two_mul_add_one_lt hε C hC0
-  have h₂ := mul_div_two_mul_add_one_lt hε R (by positivity)
-  calc _ ≤ C * (η + (slabTime p - t₀) * (M + K)) := key
-    _ = C * η + C * ((slabTime p - t₀) * (M + K)) := by ring
-    _ < ε := by linarith
+  exact hu.exists_forall_lt_of_le_mul_add_mul (fun p ↦ sub_nonneg.2 (slabTime p).property.1)
+    hC0 (fun η k p ↦ hC hα (u k) ha (HolderSpace.abs_apply_le_sum_sum_norm a)
+      (HolderSpace.abs_apply_le_sum_norm b) (HolderSpace.abs_apply_le_norm c) (hP k) (hM k) p) hε
 
 end TauCeti.ParabolicC2HolderSpace

@@ -94,9 +94,8 @@ theorem IsHorizontalMap.le_orthogonalBilin [IsManifold I (n + 1) M]
     (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype ≤
       ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
         (distributionLeviForm D (f y)) := by
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
+  have : Nonempty M := ⟨f y⟩
+  have hk := hD.finrank_sub_one_add_one
   rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
   exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy w v
 
@@ -198,9 +197,8 @@ theorem IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero
   have : FiniteDimensional ℝ (TangentSpace I (f y)) := inferInstanceAs (FiniteDimensional ℝ E)
   have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
   have hD := h.isContactDistribution
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
+  have : Nonempty M := ⟨f y⟩
+  have hk := hD.finrank_sub_one_add_one
   -- The tangent image, as a subspace of the contact hyperplane.
   set W := (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype
   have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 := by

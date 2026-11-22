@@ -18,7 +18,9 @@ import TauCeti.Topology.Separation.InvFunOn
 General lemmas about compact and σ-compact subsets of topological spaces, limits along
 ultrafilters of families eventually in a compact set, families whose values tend to the
 cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
-valid near each point of a compact set to one constant valid on all of it.
+valid near each point of a compact set to one constant valid on all of it. Maps converging
+continuously on a compact set eventually map it into any open set containing the image under the
+limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`).
 
 A continuous injection on a compact set `K` restricts to a closed embedding of `K`
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
@@ -220,6 +222,29 @@ theorem _root_.IsCompact.inter_preimage {Y : Type*} [TopologicalSpace Y] {C : Se
   rw [← Subtype.image_preimage_coe]
   exact (hK.preimage hΦ.domRestrict).isCompact.image continuous_subtypeVal
 
+/-- **Solutions on an isolating set are compact.** Let `Φ` be a continuous family of maps
+`X → Y` parametrized by a compact space `P`, and let `U` be a set with compact closure on whose
+frontier no map of the family takes the value `y`. Then the solutions in `P × U` of
+`Φ (p, x) = y` form a compact set. -/
+theorem isCompact_setOf_apply_eq_of_frontier {P Y : Type*} [TopologicalSpace P] [CompactSpace P]
+    [TopologicalSpace Y] [T1Space Y] {U : Set X} (hU : IsCompact (closure U))
+    {Φ : P × X → Y} (hΦc : Continuous Φ) {y : Y} (hΦ : ∀ p, ∀ x ∈ frontier U, Φ (p, x) ≠ y) :
+    IsCompact {z : P × U | Φ (z.1, z.2) = y} := by
+  have hK : IsCompact ((univ : Set P) ×ˢ closure U ∩ Φ ⁻¹' {y}) :=
+    (isCompact_univ.prod hU).inter_right (isClosed_singleton.preimage hΦc)
+  let j : P × U → P × X := Prod.map id Subtype.val
+  have hj : IsInducing j := IsInducing.id.prodMap IsInducing.subtypeVal
+  -- The solutions in `P × closure U` avoid `P × frontier U`, so they lie in `P × U`.
+  have hsub : (univ : Set P) ×ˢ closure U ∩ Φ ⁻¹' {y} ⊆ range j := by
+    rintro ⟨p, x⟩ ⟨⟨-, hxc⟩, hxy⟩
+    have hxU : x ∈ U := by
+      by_contra hxU
+      exact hΦ p x ⟨hxc, fun h ↦ hxU (interior_subset h)⟩ hxy
+    exact ⟨(p, ⟨x, hxU⟩), rfl⟩
+  convert (hj.isCompact_preimage_iff hsub).2 hK using 1
+  ext ⟨p, x⟩
+  simp [j, subset_closure x.property]
+
 /-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
 be closed, hence compact, and discrete. -/
 theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
@@ -264,6 +289,18 @@ theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Spac
     (hU.preimage continuous_subtypeVal).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
   exact hwU (h w hwS (by simpa [image_singleton] using
     hS.isClosedEmbedding_subtypeVal.isClosedMap _ hwcl))
+
+/-- If maps `f i` converge to `g` continuously at every point of a compact set `A`, that is
+`f p.1 p.2 → g a` as `p → (l, a)`, and `g` maps `A` into an open set `t`, then eventually along
+`l` the map `f i` maps `A` into `t`. -/
+theorem _root_.IsCompact.eventually_forall_mem_of_tendsto_prod_nhds {Y ι : Type*}
+    [TopologicalSpace Y] {l : Filter ι} {f : ι → X → Y} {g : X → Y} {A : Set X} {t : Set Y}
+    (hA : IsCompact A) (ht : IsOpen t)
+    (hconv : ∀ a ∈ A, Tendsto (fun p : ι × X ↦ f p.1 p.2) (l ×ˢ 𝓝 a) (𝓝 (g a)))
+    (hmem : ∀ a ∈ A, g a ∈ t) : ∀ᶠ i in l, ∀ a ∈ A, f i a ∈ t := by
+  have h := hA.mem_prod_nhdsSet_of_forall (s := {p : ι × X | f p.1 p.2 ∈ t})
+    fun a ha ↦ (hconv a ha).eventually (ht.mem_nhds (hmem a ha))
+  exact (Filter.Eventually.curry h).mono fun _ hi ↦ hi.self_of_nhdsSet
 
 section TubeLemma
 
