@@ -22,8 +22,8 @@ so on a compact Riemann surface every open cover is refined by a finite cover by
 `H¹(X, 𝒪)`, and the refinement maps between two such covers are isomorphisms in degree one
 (`TauCeti.Topology.isIso_homologyMap_cechComplexMap_one`).
 
-The vanishing on plane discs,
-`TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules_eball`, is proved from the
+The vanishing on open subsets of the plane,
+`TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules`, is proved from the
 Dolbeault lemma for the cover-colimit Čech cohomology with complex vector space
 coefficients. It is carried to a coordinate disc by the general fact that the vanishing of
 Čech `H¹(Y, 𝒪)` is invariant under biholomorphisms (precomposition with a biholomorphism `W ≃ₜ Y`
@@ -195,7 +195,7 @@ theorem subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
     ((contMDiffOn_symm_of_mem_maximalAtlas he).mdifferentiableOn one_ne_zero).contMDiffOn
       e.open_target
   refine φ.subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph (Y := D) ?_ ?_
-    (isZero_cechCohomology_one_holomorphicStructureSheafModules_eball c R)
+    (isZero_cechCohomology_one_holomorphicStructureSheafModules D)
   · rw [← ContMDiff.subtypeVal_comp_iff]
     exact he₁.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property.1
   · rw [← ContMDiff.subtypeVal_comp_iff]
