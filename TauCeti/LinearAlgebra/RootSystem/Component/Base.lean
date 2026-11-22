@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Basis.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
+public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.Algebra.Group.Submonoid.Closure
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Irreducible components from a base
@@ -35,6 +38,10 @@ Heights and positivity of roots of the component are the same for both bases.
   components.
 * `RootPairing.Base.componentBase`: the base of the component pairing formed by the simple roots in
   the component.
+* `RootPairing.Base.componentWeightBasis`: the simple roots of `b` in `C` as a basis of
+  `P.componentSpace C`.
+* `RootPairing.Equiv.supportEquiv`, `RootPairing.Equiv.diagramGraphIso`: the simple-root bijection
+  and Dynkin-diagram isomorphism induced by a base-preserving equivalence.
 
 ## Main results
 
@@ -52,6 +59,8 @@ Heights and positivity of roots of the component are the same for both bases.
 * `RootPairing.Base.mem_closure_root_componentBase_iff`,
   `RootPairing.Base.height_componentBase`: the base of a component has the positive cone and the
   heights cut out by the whole base.
+* `RootPairing.Equiv.componentEquiv_base_componentEquiv`: a base-preserving equivalence agrees
+  between `componentEquiv` and `diagramGraphIso`.
 
 ## References
 
@@ -411,3 +420,178 @@ theorem cartanMatrix_componentBase [P.IsCrystallographic] (i j : (b.componentBas
 end ComponentPairing
 
 end RootPairing.Base
+
+namespace RootPairing
+
+section ProjectionBase
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [P.IsRootSystem]
+
+private theorem toWeightBasis_repr_componentProj_aux (b : P.Base) (C : P.Component) (x : M)
+    (i : b.support) :
+    b.toWeightBasis.repr (P.componentProj C x : M) i =
+      open Classical in if P.componentOf (i : ι) = C then b.toWeightBasis.repr x i else 0 := by
+  classical
+  conv_lhs => rw [← b.toWeightBasis.sum_repr x]
+  simp only [b.toWeightBasis_apply, map_sum, map_smul, Submodule.coe_sum,
+    Submodule.coe_smul_of_tower, Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul]
+  rw [Finset.sum_eq_single i]
+  · by_cases hi : P.componentOf (i : ι) = C
+    · rw [P.coe_componentProj_root_of_eq hi, ← b.toWeightBasis_apply]; simp [hi]
+    · rw [P.componentProj_root_of_ne hi]; simp [hi]
+  · intro j _ hji
+    by_cases hj : P.componentOf (j : ι) = C
+    · rw [P.coe_componentProj_root_of_eq hj, ← b.toWeightBasis_apply]
+      simp [Finsupp.single_eq_of_ne (Ne.symm hji)]
+    · rw [P.componentProj_root_of_ne hj]; simp
+  · simp
+
+/-- On a simple root in `C`, the simple-root coordinate of the `C`-projection equals the original
+simple-root coordinate. -/
+theorem toWeightBasis_repr_componentProj_of_eq (b : P.Base) {C : P.Component} {i : b.support}
+    (hi : P.componentOf (i : ι) = C) (x : M) :
+    b.toWeightBasis.repr (P.componentProj C x : M) i = b.toWeightBasis.repr x i := by
+  rw [P.toWeightBasis_repr_componentProj_aux]; simp [hi]
+
+/-- On a simple root outside `C`, the simple-root coordinate of the `C`-projection is zero. -/
+theorem toWeightBasis_repr_componentProj_of_ne (b : P.Base) {C : P.Component} {i : b.support}
+    (hi : P.componentOf (i : ι) ≠ C) (x : M) :
+    b.toWeightBasis.repr (P.componentProj C x : M) i = 0 := by
+  rw [P.toWeightBasis_repr_componentProj_aux]; simp [hi]
+
+variable {P} in
+/-- A vector in `P.componentSpace C` has zero coordinates along simple roots outside `C`. -/
+theorem toWeightBasis_repr_eq_zero_of_mem_componentSpace (b : P.Base) {C : P.Component} {x : M}
+    (hx : x ∈ P.componentSpace C) {i : b.support} (hi : P.componentOf (i : ι) ≠ C) :
+    b.toWeightBasis.repr x i = 0 := by
+  have hproj : (P.componentProj C x : M) = x :=
+    congrArg Subtype.val (P.componentProj_apply_of_mem hx)
+  rw [← hproj, P.toWeightBasis_repr_componentProj_of_ne b hi]
+
+/-- Component projections preserve the positive root cone of any base. -/
+theorem componentProj_mem_posRootCone (b : P.Base) (C : P.Component) {x : M}
+    (hx : x ∈ TauCeti.posRootCone P b) : (P.componentProj C x : M) ∈ TauCeti.posRootCone P b := by
+  obtain ⟨f, rfl⟩ := (TauCeti.mem_posRootCone P b).mp hx
+  rw [map_sum, Submodule.coe_sum]
+  refine AddSubmonoid.sum_mem _ fun j hj ↦ ?_
+  rw [map_nsmul, Submodule.coe_smul_of_tower]
+  by_cases hjC : P.componentOf j = C
+  · rw [P.coe_componentProj_root_of_eq hjC]
+    exact AddSubmonoid.nsmul_mem _ (TauCeti.root_mem_posRootCone_of_mem_support P b hj) _
+  · simp [P.componentProj_root_of_ne hjC]
+
+end ProjectionBase
+
+namespace Base
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [P.IsRootSystem] (b : P.Base)
+
+/-- The simple roots of `b` lying in `C` form an `R`-basis of `P.componentSpace C`. -/
+noncomputable def componentWeightBasis (C : P.Component) :
+    Module.Basis {i : b.support // P.componentOf (i : ι) = C} R (P.componentSpace C) :=
+  b.toWeightBasis.restrict {i : b.support | P.componentOf (i : ι) = C} (P.componentSpace C)
+    (fun i hi ↦ by
+      rw [b.toWeightBasis_apply]
+      exact P.root_mem_componentSpace_of_mem_supp ((C.mem_supp_iff _).mpr hi))
+    (fun hx hi ↦ P.toWeightBasis_repr_eq_zero_of_mem_componentSpace b hx hi)
+
+/-- The coordinates of a vector in `b.componentWeightBasis C` are its `b.toWeightBasis`
+coordinates at the simple roots in `C`. -/
+@[simp] theorem componentWeightBasis_repr_apply (C : P.Component) (x : P.componentSpace C)
+    (i : {i : b.support // P.componentOf (i : ι) = C}) :
+    (b.componentWeightBasis C).repr x i = b.toWeightBasis.repr (x : M) i.val := by
+  rw [componentWeightBasis, Module.Basis.restrict_repr]
+
+/-- The basis vectors of `b.componentWeightBasis C` are the simple roots of `b` in `C`. -/
+@[simp] theorem coe_componentWeightBasis_apply (C : P.Component)
+    (i : {i : b.support // P.componentOf (i : ι) = C}) :
+    (b.componentWeightBasis C i : M) = P.root (i.val : ι) := by
+  rw [componentWeightBasis, Module.Basis.coe_restrict, b.toWeightBasis_apply]
+
+end Base
+
+section EquivBase
+
+variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
+  (e : P.Equiv Q) {b : P.Base} {b' : Q.Base}
+  (hb : ∀ i, i ∈ b.support ↔ e.indexEquiv i ∈ b'.support)
+
+/-- The bijection `b.support ≃ b'.support` induced by a base-preserving equivalence. -/
+def Equiv.supportEquiv : b.support ≃ b'.support where
+  toFun i := ⟨e.indexEquiv i, (hb i).mp i.property⟩
+  invFun j := ⟨e.indexEquiv.symm j, (hb _).mpr (by simp [j.property])⟩
+  left_inv i := Subtype.ext (e.indexEquiv.symm_apply_apply i)
+  right_inv j := Subtype.ext (e.indexEquiv.apply_symm_apply j)
+
+/-- `Equiv.supportEquiv` acts on root indices by `e.indexEquiv`. -/
+@[simp] theorem Equiv.coe_supportEquiv_apply (i : b.support) :
+    (e.supportEquiv hb i : ι₂) = e.indexEquiv i := (rfl)
+
+/-- `(Equiv.supportEquiv hb).symm` acts on root indices by `e.indexEquiv.symm`. -/
+@[simp] theorem Equiv.coe_supportEquiv_symm_apply (j : b'.support) :
+    ((e.supportEquiv hb).symm j : ι) = e.indexEquiv.symm j := (rfl)
+
+/-- A base-preserving automorphism's powers act on simple roots via `supportEquiv`. -/
+theorem Equiv.coe_supportEquiv_pow {σ : P.Aut} {b : P.Base}
+    (hb : ∀ i, i ∈ b.support ↔ σ.indexEquiv i ∈ b.support) (n : ℕ) (j : b.support) :
+    (((σ.supportEquiv hb ^ n) j : b.support) : ι) = (σ.indexEquiv ^ n) (j : ι) :=
+  Function.Semiconj.perm_pow_right (fun i ↦ σ.coe_supportEquiv_apply hb i) n j
+
+section CrystallographicBase
+
+variable [CharZero R] [P.IsCrystallographic] [Q.IsCrystallographic]
+
+/-- A base-preserving equivalence preserves Cartan matrix entries along `supportEquiv`. -/
+@[simp] theorem Equiv.cartanMatrix_supportEquiv (i j : b.support) :
+    b'.cartanMatrix (e.supportEquiv hb i) (e.supportEquiv hb j) = b.cartanMatrix i j := by
+  refine FaithfulSMul.algebraMap_injective ℤ R ?_
+  rw [b'.algebraMap_cartanMatrixIn_apply ℤ, b.algebraMap_cartanMatrixIn_apply ℤ]
+  exact e.toHom.pairing
+
+/-- The Dynkin-diagram isomorphism induced by a base-preserving equivalence. -/
+def Equiv.diagramGraphIso : diagramGraph b.cartanMatrix ≃g diagramGraph b'.cartanMatrix where
+  toEquiv := e.supportEquiv hb
+  map_rel_iff' {i j} := by
+    simp only [diagramGraph_adj, ne_eq, (e.supportEquiv hb).apply_eq_iff_eq,
+      e.cartanMatrix_supportEquiv hb]
+
+/-- `Equiv.diagramGraphIso` evaluates via `Equiv.supportEquiv`. -/
+@[simp] theorem Equiv.diagramGraphIso_apply (i : b.support) :
+    e.diagramGraphIso hb i = e.supportEquiv hb i := (rfl)
+
+/-- **For a base-preserving equivalence, `componentEquiv` agrees with `diagramGraphIso`.** -/
+theorem Equiv.componentEquiv_base_componentEquiv [IsDomain R] [Finite ι] [Finite ι₂]
+    [P.IsReduced] [Q.IsReduced] (K : (diagramGraph b.cartanMatrix).ConnectedComponent) :
+    e.componentEquiv (b.componentEquiv K) =
+      b'.componentEquiv ((e.diagramGraphIso hb).connectedComponentEquiv K) :=
+  K.ind fun _ ↦ by simp
+
+end CrystallographicBase
+
+end EquivBase
+
+section EquivComponentBase
+
+variable {ι ι₂ K M N M₂ N₂ : Type*} [Field K]
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+  [AddCommGroup M₂] [Module K M₂] [AddCommGroup N₂] [Module K N₂]
+  {P : RootPairing ι K M N} {Q : RootPairing ι₂ K M₂ N₂}
+  [Finite ι] [Finite ι₂] [P.IsRootSystem] [Q.IsRootSystem]
+
+/-- A base-preserving equivalence carries the simple roots of `b.componentBase C` onto the simple
+roots of `b'.componentBase (e.componentEquiv C)`. -/
+theorem Equiv.mem_support_componentPairingEquiv_indexEquiv_iff (e : P.Equiv Q) {b : P.Base}
+    {b' : Q.Base} (hb : ∀ i, i ∈ b.support ↔ e.indexEquiv i ∈ b'.support) (C : P.Component)
+    (i : C.supp) :
+    (e.componentPairingEquiv C).indexEquiv i ∈ (b'.componentBase (e.componentEquiv C)).support ↔
+      i ∈ (b.componentBase C).support := by
+  simp [hb]
+
+end EquivComponentBase
+
+end RootPairing

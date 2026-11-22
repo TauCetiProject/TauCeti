@@ -45,6 +45,8 @@ vectors indexed by `ι`.
   coordinate sum of any finite basis of `U`.
 * `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
   zero coordinate at every basis vector outside the submodule.
+* `Module.Basis.restrict`: restricting a basis to a subset of indices whose vectors lie in a
+  submodule `U`, when vectors of `U` have zero coordinates outside that subset.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
@@ -198,6 +200,47 @@ theorem repr_eq_zero_of_mem_of_notMem (cb : Basis ι R M) {S : Submodule R M}
     (hz : z ∈ S) : cb.repr z j = 0 := by
   by_contra hn
   exact hj ((cb.mem_span_image.mp (hS ▸ hz)) (Finsupp.mem_support_iff.mpr hn))
+
+/-- A basis `b` restricted to a subset `s` of indices spans a submodule `U` as a basis of `U`
+whenever `b i ∈ U` for all `i ∈ s` and every `x ∈ U` has zero `b`-coordinates outside `s`. -/
+noncomputable def restrict (b : Basis n R M) (s : Set n) (U : Submodule R M)
+    (hmem : ∀ i ∈ s, b i ∈ U) (hzero : ∀ {x : M} {i : n}, x ∈ U → i ∉ s → b.repr x i = 0) :
+    Basis s R U := by
+  refine ofSpanEq (b.linearIndependent.comp (↑) Subtype.val_injective) (le_antisymm ?_ ?_)
+  · rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact hmem i.val i.property
+  · intro x hx
+    rw [← b.linearCombination_repr x, Finsupp.linearCombination_apply, Finsupp.sum]
+    refine Submodule.sum_mem _ fun i hi ↦ Submodule.smul_mem _ _ ?_
+    by_cases his : i ∈ s
+    · exact Submodule.subset_span ⟨⟨i, his⟩, rfl⟩
+    · exfalso
+      exact Finsupp.mem_support_iff.mp hi (hzero hx his)
+
+/-- The vectors of `Module.Basis.restrict` in the ambient module are the original basis vectors. -/
+@[simp]
+theorem coe_restrict (b : Basis n R M) (s : Set n) (U : Submodule R M)
+    (hmem : ∀ i ∈ s, b i ∈ U) (hzero : ∀ {x : M} {i : n}, x ∈ U → i ∉ s → b.repr x i = 0)
+    (i : s) : (b.restrict s U hmem hzero i : M) = b i := by
+  simp [restrict]
+
+/-- The coordinates of a vector in `Module.Basis.restrict` are its original `b`-coordinates. -/
+@[simp]
+theorem restrict_repr (b : Basis n R M) (s : Set n) (U : Submodule R M)
+    (hmem : ∀ i ∈ s, b i ∈ U) (hzero : ∀ {x : M} {i : n}, x ∈ U → i ∉ s → b.repr x i = 0)
+    (x : U) (i : s) : (b.restrict s U hmem hzero).repr x i = b.repr (x : M) i := by
+  let c := b.restrict s U hmem hzero
+  have hlin : (x : M) = Finsupp.linearCombination R b ((c.repr x).mapDomain (↑)) := by
+    rw [Finsupp.linearCombination_mapDomain]
+    have h := congrArg U.subtype (c.linearCombination_repr x).symm
+    simpa only [c, Submodule.subtype_apply, Finsupp.linearCombination_apply, map_finsuppSum,
+      map_smul, Function.comp_apply, coe_restrict] using h
+  have hrepr : b.repr (x : M) = (c.repr x).mapDomain (↑) := by
+    rw [hlin, ← Basis.repr_symm_apply, Basis.repr_symm_apply]
+    exact b.repr_linearCombination _
+  exact ((DFunLike.congr_fun hrepr (i : n)).trans
+    (Finsupp.mapDomain_apply_of_injective Subtype.val_injective (c.repr x) i)).symm
 
 end Submodule
 

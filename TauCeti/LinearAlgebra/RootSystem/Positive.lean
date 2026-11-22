@@ -410,6 +410,12 @@ theorem mem_posRootCone_iff_exists_nat_of_bijOn {κ : Type*} [Fintype κ] {e : �
     exact (posRootCone P b).sum_mem fun i _ ↦ (posRootCone P b).nsmul_mem
       (AddSubmonoid.subset_closure ⟨e i, he.mapsTo trivial, rfl⟩) _
 
+omit [CharZero R] in
+/-- Every simple root lies in the positive root cone. -/
+theorem root_mem_posRootCone_of_mem_support {j : ι} (hj : j ∈ b.support) :
+    P.root j ∈ posRootCone P b :=
+  AddSubmonoid.subset_closure ⟨j, hj, rfl⟩
+
 /-- Every positive root lies in the positive root cone. -/
 theorem root_mem_posRootCone_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
     P.root i ∈ posRootCone P b :=

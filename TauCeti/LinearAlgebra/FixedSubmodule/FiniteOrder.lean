@@ -42,6 +42,18 @@ open TensorProduct
 
 namespace LinearMap
 
+/-- If `(f ^ n) x = x`, then the cyclic sum `∑ i ∈ Finset.range n, (f ^ i) x` is fixed by `f`. -/
+theorem sum_range_pow_apply_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {f : M →ₗ[R] M} {n : ℕ} {x : M} (hx : (f ^ n) x = x) :
+    ∑ i ∈ Finset.range n, (f ^ i) x ∈ f.fixedSubmodule := by
+  rw [mem_fixedSubmodule_iff, map_sum]
+  simp_rw [← LinearMap.comp_apply (f := f), ← Module.End.mul_eq_comp, ← pow_succ']
+  cases n with
+  | zero => simp
+  | succ m =>
+    rw [Finset.sum_range_succ, hx, Finset.sum_range_succ' (fun i ↦ (f ^ i) x) m, pow_zero,
+      Module.End.one_eq_id, LinearMap.id_apply, add_comm]
+
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
   (f : M →ₗ[R] M) {n : ℕ}
 
@@ -49,16 +61,9 @@ variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 submodule. No invertibility of `n` is needed. -/
 def fixedNorm (hn : f ^ n = 1) : M →ₗ[R] f.fixedSubmodule :=
   (∑ i ∈ Finset.range n, f ^ i).codRestrict _ fun x ↦ by
-    rw [mem_fixedSubmodule_iff]
-    have h : f * (∑ i ∈ Finset.range n, f ^ i) = ∑ i ∈ Finset.range n, f ^ i := by
-      cases n with
-      | zero => simp
-      | succ n =>
-        rw [Finset.mul_sum]
-        simp_rw [← pow_succ']
-        rw [Finset.sum_range_succ, hn, Finset.sum_range_succ']
-        simp
-    exact LinearMap.congr_fun h x
+    simpa only [LinearMap.sum_apply] using
+      sum_range_pow_apply_mem_fixedSubmodule (f := f)
+        (by rw [hn, Module.End.one_eq_id, LinearMap.id_apply])
 
 /-- On ambient vectors, the norm is the sum of the powers. -/
 @[simp]

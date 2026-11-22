@@ -10,6 +10,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Range
 public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Enumerating a finite set along the cycles of a permutation
@@ -266,11 +267,8 @@ theorem prod_filter_quotient_eq_prod_range {J β M : Type*} [Fintype J] [CommMon
     ∏ j ∈ Finset.univ.filter (fun j ↦ (⟦j⟧ : Quotient (SameCycle.setoid π)) = O), g (f j) =
       ∏ r ∈ Finset.range (minimalPeriod τ (f O.out)), g ((τ ^ r) (f O.out)) := by
   classical
-  have hτ_pow (k : ℕ) (j : J) : f ((π ^ k) j) = (τ ^ k) (f j) := by
-    simpa only [coe_pow] using hτ.iterate_right k j
-  have hper : minimalPeriod π O.out = minimalPeriod τ (f O.out) :=
-    minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
-      simp only [IsPeriodicPt, IsFixedPt, ← coe_pow, ← hf.eq_iff, hτ_pow]
+  have hτ_pow (k : ℕ) (j : J) : f ((π ^ k) j) = (τ ^ k) (f j) := hτ.perm_pow_right k j
+  have hper : minimalPeriod π O.out = minimalPeriod τ (f O.out) := hτ.minimalPeriod_eq hf O.out
   have hfilt : Finset.univ.filter (fun j ↦ (⟦j⟧ : Quotient (SameCycle.setoid π)) = O) =
       Finset.univ.filter (SameCycle π O.out) := by
     ext j; simp [sameCycle_out_iff]

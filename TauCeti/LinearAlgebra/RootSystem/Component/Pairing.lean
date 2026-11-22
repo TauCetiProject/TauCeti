@@ -230,28 +230,94 @@ theorem coe_componentPairingEquiv_indexEquiv_apply (e : P.Equiv Q) (C : P.Compon
     (i : C.supp) : ((e.componentPairingEquiv C).indexEquiv i : ι₂) = e.indexEquiv i :=
   (rfl)
 
+/-- The equivalence of component pairings intertwines the weight equivalences on ambient vectors. -/
+theorem coe_componentPairingEquiv_weightEquiv_apply (e : P.Equiv Q) (C : P.Component)
+    (x : P.componentSpace C) :
+    ((e.componentPairingEquiv C).weightEquiv x : M₂) = e.toHom.weightMap x :=
+  (rfl)
+
+/-- The inverse weight equivalence of component pairings acts as `e.weightEquiv.symm`. -/
+@[simp]
+theorem coe_componentPairingEquiv_weightEquiv_symm_apply (e : P.Equiv Q) (C : P.Component)
+    (x : Q.componentSpace (e.componentEquiv C)) :
+    ((e.componentPairingEquiv C).weightEquiv.symm x : M) = e.weightEquiv.symm x :=
+  e.weightEquiv.injective (by simp [← coe_componentPairingEquiv_weightMap_apply])
+
+/-- The equivalence of component pairings intertwines the coweight equivalences on ambient
+vectors. -/
+theorem coe_componentPairingEquiv_coweightEquiv_apply (e : P.Equiv Q) (C : P.Component)
+    (y : Q.corootComponentSpace (e.componentEquiv C)) :
+    ((e.componentPairingEquiv C).coweightEquiv y : N) = e.toHom.coweightMap y :=
+  (rfl)
+
+/-- The inverse coweight equivalence of component pairings acts as `e.coweightEquiv.symm`. -/
+@[simp]
+theorem coe_componentPairingEquiv_coweightEquiv_symm_apply (e : P.Equiv Q) (C : P.Component)
+    (y : P.corootComponentSpace C) :
+    ((e.componentPairingEquiv C).coweightEquiv.symm y : N₂) = e.coweightEquiv.symm y :=
+  e.coweightEquiv.injective (by simp [← coe_componentPairingEquiv_coweightMap_apply])
+
+/-- The inverse index bijection of component pairings acts as `e.indexEquiv.symm`. -/
+@[simp]
+theorem coe_componentPairingEquiv_indexEquiv_symm_apply (e : P.Equiv Q) (C : P.Component)
+    (j : (e.componentEquiv C).supp) :
+    ((e.componentPairingEquiv C).indexEquiv.symm j : ι) = e.indexEquiv.symm j :=
+  (rfl)
+
 /-- **The equivalence of component pairings intertwines the component projections**: projecting
 onto the component space of `C` and then applying the equivalence of component pairings is
 applying `e` and then projecting onto the component space of the corresponding component. -/
 theorem componentPairingEquiv_weightMap_componentProj (e : P.Equiv Q) (C : P.Component) (x : M) :
     (e.componentPairingEquiv C).toHom.weightMap (P.componentProj C x) =
-      Q.componentProj (e.componentEquiv C) (e.toHom.weightMap x) := by
-  suffices h : e.toHom.weightMap ∘ₗ (P.componentSpace C).subtype ∘ₗ P.componentProj C =
-      (Q.componentSpace (e.componentEquiv C)).subtype ∘ₗ
-        Q.componentProj (e.componentEquiv C) ∘ₗ e.toHom.weightMap from
-    Subtype.ext (LinearMap.congr_fun h x)
-  refine LinearMap.ext_on_range (IsRootSystem.span_root_eq_top (P := P)) fun i ↦ ?_
-  simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-    Hom.root_weightMap_apply]
-  by_cases h : P.componentOf i = C
-  · subst h
-    rw [componentProj_root_self, componentEquiv_componentOf, componentProj_root_self,
-      Hom.root_weightMap_apply]
-  · rw [componentProj_root_of_ne h, componentProj_root_of_ne (by
-      rw [← componentEquiv_componentOf]
-      exact e.componentEquiv.injective.ne h)]
-    simp
+      Q.componentProj (e.componentEquiv C) (e.toHom.weightMap x) :=
+  Subtype.ext (e.coe_componentProj_weightMap C x).symm
 
 end Equiv
+
+section Congr
+
+variable [Finite ι] [P.IsRootSystem]
+
+/-- The canonical equivalence between the component pairings of equal components `C = D`, whose
+coercions to `M`, `N`, and `ι` are definitionally the identity. -/
+noncomputable def componentPairingCongr {C D : P.Component} (h : C = D) :
+    (P.componentPairing C).Equiv (P.componentPairing D) where
+  weightMap := (LinearEquiv.ofEq _ _ (congrArg P.componentSpace h)).toLinearMap
+  coweightMap := (LinearEquiv.ofEq _ _ (congrArg P.corootComponentSpace h.symm)).toLinearMap
+  indexEquiv := _root_.Equiv.subtypeEquivRight fun _ ↦ by rw [h]
+  weight_coweight_transpose := by subst h; ext y x; simp
+  root_weightMap := by subst h; ext i; simp
+  coroot_coweightMap := by subst h; ext i; simp
+  bijective_weightMap := (LinearEquiv.ofEq _ _ _).bijective
+  bijective_coweightMap := (LinearEquiv.ofEq _ _ _).bijective
+
+section CongrLemmas
+
+variable {C D : P.Component} (h : C = D)
+
+/-- The weight map of `componentPairingCongr` preserves ambient vectors. -/
+@[simp] theorem coe_componentPairingCongr_weightMap (x : P.componentSpace C) :
+    ((P.componentPairingCongr h).weightMap x : M) = x := (rfl)
+
+/-- The coweight map of `componentPairingCongr` preserves ambient covectors. -/
+@[simp] theorem coe_componentPairingCongr_coweightMap (y : P.corootComponentSpace D) :
+    ((P.componentPairingCongr h).coweightMap y : N) = y := (rfl)
+
+/-- The index bijection of `componentPairingCongr` preserves root indices. -/
+@[simp] theorem coe_componentPairingCongr_indexEquiv (i : C.supp) :
+    ((P.componentPairingCongr h).indexEquiv i : ι) = i := (rfl)
+
+/-- The inverse index bijection of `componentPairingCongr` preserves root indices. -/
+@[simp] theorem coe_componentPairingCongr_indexEquiv_symm (j : D.supp) :
+    ((P.componentPairingCongr h).indexEquiv.symm j : ι) = j := (rfl)
+
+end CongrLemmas
+
+/-- Component-pairing congruence along `rfl` is the identity equivalence. -/
+@[simp] theorem componentPairingCongr_refl (C : P.Component) :
+    P.componentPairingCongr (rfl : C = C) = Equiv.id (P.componentPairing C) := by
+  ext x <;> rfl
+
+end Congr
 
 end RootPairing

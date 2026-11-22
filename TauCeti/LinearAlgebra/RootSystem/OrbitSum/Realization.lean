@@ -49,8 +49,7 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 /-- The canonical embedding of `P.foldedIndices σ` into `LinearMap.fixedSubmodule σ.weightMap`. -/
 def foldedRootEmb (P : RootPairing ι R M N) [Finite ι] (σ : P.Aut) :
     P.foldedIndices σ ↪ LinearMap.fixedSubmodule σ.weightMap where
-  toFun u := ⟨(u : M),
-    let ⟨r, hr⟩ := mem_foldedIndices.mp u.property; hr ▸ P.orbitSum_mem_fixedSubmodule σ r⟩
+  toFun u := ⟨(u : M), P.foldedIndices_subset_fixedSubmodule σ u.property⟩
   inj' _ _ h := Subtype.ext (Subtype.mk.inj h)
 
 @[simp] theorem coe_foldedRootEmb_apply (P : RootPairing ι R M N) [Finite ι] (σ : P.Aut)

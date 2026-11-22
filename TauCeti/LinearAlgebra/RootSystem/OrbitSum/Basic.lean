@@ -372,6 +372,21 @@ theorem orbitSum_ne_zero (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.suppo
     exact hpos ((isPos_reflectionPerm_self_iff_mem_negRoots P b i).mpr
       ((mem_negRoots P b i).mpr hi))
 
+variable (P) in
+/-- For an automorphism permuting the simple roots of `b`, an orbit sum lies in the positive
+root cone if and only if its root is positive. -/
+theorem orbitSum_mem_posRootCone_iff_isPos (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    (i : ι) : P.orbitSum σ i ∈ posRootCone P b ↔ b.IsPos i := by
+  refine ⟨fun hcone ↦ ?_, P.orbitSum_mem_posRootCone hσ⟩
+  by_contra hni
+  have hneg : b.IsPos (P.reflectionPerm i i) :=
+    (isPos_reflectionPerm_self_iff_mem_negRoots P b i).mpr ((mem_negRoots P b i).mpr hni)
+  have hneg_cone : -P.orbitSum σ i ∈ posRootCone P b := by
+    rw [← P.orbitSum_reflectionPerm_self]
+    exact P.orbitSum_mem_posRootCone hσ hneg
+  exact P.orbitSum_ne_zero hσ i
+    ((isPointed_posRootCone P b).eq_zero_of_mem_of_neg_mem hcone hneg_cone)
+
 end Base
 
 /-! ### The set of orbit sums -/
@@ -383,6 +398,12 @@ noncomputable def foldedIndices : Set M :=
 
 theorem orbitSum_mem_foldedIndices : P.orbitSum σ i ∈ P.foldedIndices σ :=
   ⟨i, rfl⟩
+
+/-- Every folded index is fixed by `σ.weightMap`. -/
+theorem foldedIndices_subset_fixedSubmodule :
+    P.foldedIndices σ ⊆ LinearMap.fixedSubmodule σ.weightMap := by
+  rintro _ ⟨i, rfl⟩
+  exact P.orbitSum_mem_fixedSubmodule σ i
 
 /-- For the identity automorphism the orbit sums are exactly the roots. -/
 @[simp]

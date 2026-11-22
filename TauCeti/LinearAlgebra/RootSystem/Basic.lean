@@ -35,6 +35,11 @@ lemma nonempty_of_isRootSystem [Nontrivial M] (P : RootPairing ι R M N) [P.IsRo
   rw [Set.range_eq_empty, Submodule.span_empty] at hspan
   exact bot_ne_top hspan
 
+/-- The weight module of an empty root system is subsingleton. -/
+theorem subsingleton_weight_of_isEmpty (P : RootPairing ι R M N) [IsEmpty ι] [P.IsRootSystem] :
+    Subsingleton M :=
+  not_nontrivial_iff_subsingleton.mp fun _ ↦ (P.nonempty_of_isRootSystem).elim IsEmpty.false
+
 /-- On a finite root system, the weight module is finitely generated because it is spanned by the
 finite set of roots. -/
 theorem finite_weight_of_isRootSystem (P : RootPairing ι R M N) [Finite ι] [P.IsRootSystem] :
