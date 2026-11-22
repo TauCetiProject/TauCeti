@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.SpecialLine
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.RepresentationTheory.ClassicalGroups.Restriction
 public import TauCeti.RepresentationTheory.ExteriorPower
+import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
@@ -307,7 +308,8 @@ private theorem closure_range_spinSixTransvectionLift :
       spinSixTransvectionLift P hline b t.hij t.c) = ⊤ := by
   let B := b.spinSixEvenMonomialBasis (spinPlus_def P)
   have hW : finrank K P.W = 3 := (finrank_eq_card_basis b).trans (Fintype.card_fin 3)
-  have hV : finrank K V = 6 := (P.finrank_eq_two_mul_card b hline).trans (by simp)
+  have hV : finrank K V = 6 :=
+    (finrank_eq_two_mul_card_of_basis_sum (P.typeDBasis b hline)).trans (by simp)
   let ψ : spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K :=
     { toFun s := ⟨LinearMap.toMatrix B B (spinPlusAction Q P hline (spinGroupToEven Q s)), by
         rw [LinearMap.det_toMatrix]

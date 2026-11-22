@@ -77,15 +77,6 @@ theorem typeDBasis_inr (hline : P.line = ⊥) (i : ι) :
     P.typeDBasis b hline (.inr i) = (P.dualVector b i : V) := by
   simp [typeDBasis, P.evenDecompositionEquiv_apply]
 
-omit [DecidableEq ι] in
-include b in
-/-- An even polarization with isotropic basis indexed by `ι` has dimension `2 * Fintype.card ι`,
-read off from its hyperbolic basis. -/
-theorem finrank_eq_two_mul_card [StrongRankCondition K] (hline : P.line = ⊥) :
-    Module.finrank K V = 2 * Fintype.card ι := by
-  classical
-  rw [Module.finrank_eq_card_basis (P.typeDBasis b hline), Fintype.card_sum, two_mul]
-
 /-- In the hyperbolic basis, the polar form has the standard split type-`D` Gram matrix. -/
 theorem polarBilin_toMatrix_typeDBasis (hline : P.line = ⊥) :
     LinearMap.BilinForm.toMatrix (P.typeDBasis b hline) Q.polarBilin =

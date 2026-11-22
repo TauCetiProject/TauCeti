@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 import TauCeti.Algebra.Lie.SpecialLinear.Root.Generation
+import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.SpecialLinear
 import TauCeti.RepresentationTheory.Spin.Exceptional.Six.HalfSpinDual
 
@@ -96,7 +97,7 @@ private theorem finrank_typeD_of_card_eq_three (hι : Fintype.card ι = 3) :
   have : Module.Finite K V := Module.Finite.of_basis (P.typeDBasis b hline)
   rw [(P.typeDQuadraticEquiv b hline).toLinearEquiv.finrank_eq,
     ← (bivectorExteriorEquivQuadraticLieSubalgebra Q).finrank_eq, exteriorPower.finrank_eq,
-    P.finrank_eq_two_mul_card b hline, hι]
+    finrank_eq_two_mul_card_of_basis_sum (P.typeDBasis b hline), hι]
   rfl
 
 /-! ### The image of `so₆` in `End S⁺` -/
@@ -281,7 +282,7 @@ theorem exists_linearEquiv_intertwines_dual_typeDSpinPlusLieRep_typeDSpinMinusLi
   have : NeZero (2 : K) := ⟨Invertible.ne_zero 2⟩
   obtain ⟨T, hT⟩ :=
     exists_linearEquiv_intertwines_dual_spinPlusAction_spinMinusAction_reverseEven P hline
-      (by rw [P.finrank_eq_two_mul_card b hline, hι])
+      (by rw [finrank_eq_two_mul_card_of_basis_sum (P.typeDBasis b hline), hι])
   refine ⟨T, fun x φ ↦ ?_, fun g φ ↦ ?_⟩
   · -- Reversal negates the even Clifford image of `x`, which supplies the sign.
     have h := hT (-P.typeDToEvenLieHom b hline x) φ
