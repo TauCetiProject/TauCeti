@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.GroupTheory.CoprodI.Basic
+public import TauCeti.NumberTheory.Modular.Abelianization
 public import TauCeti.NumberTheory.Modular.Generators
 import TauCeti.Algebra.Group.Equiv.Pow
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
-import TauCeti.GroupTheory.Coprod.Conj
 import TauCeti.GroupTheory.TriangleGroup.FreeProduct
+import TauCeti.NumberTheory.Modular.Torsion
 
 /-!
 # Free-product structure, torsion classes, and abelianization of `PSL(2, ℤ)`
@@ -24,17 +25,19 @@ generator `S` corresponds to the canonical generator of `ℤ/2ℤ`, the order-th
 corresponds to the canonical generator of `ℤ/3ℤ`, and the cusp translation `T = S R` corresponds to
 their product in `ℤ/2ℤ ∗ ℤ/3ℤ`.
 
-From this decomposition we derive the fundamental group-theoretic invariants of `PSL(2, ℤ)`:
+Together with the abelianization (`TauCeti.ModularGroup.abelianizationMulEquiv`) and torsion
+conjugacy classification (`TauCeti.ModularGroup.isOfFinOrder_iff_eq_one_or_isConj`) in
+`TauCeti.NumberTheory.Modular.Abelianization` and `TauCeti.NumberTheory.Modular.Torsion`, we
+obtain:
 
-* **Abelianization**: `Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6` sending the class of
-  `T` to `1`, `U = S T⁻¹` to `2`, `S` to `3`, and `R = S T` to `4`; hence the commutator subgroup
-  of `PSL(2, ℤ)` has index `6`.
-* **Conjugacy of order-three generators**: `R` and `R²` (and likewise `U` and `U²`, as well as `R`
-  and `U`) lie in distinct conjugacy classes of `PSL(2, ℤ)`, whereas `U` is conjugate to `R²` and
-  `R` is conjugate to `U²`.
-* **Torsion classification**: every finite-order element of `PSL(2, ℤ)` has order `1`, `2`, or `3`;
-  elements of order `2` form the single conjugacy class of `S`, and elements of order `3` split into
-  the two conjugacy classes of `R` and `R²` (equivalently `U²` and `U`).
+* **Additive abelianization and commutator index**:
+  `Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6` sending the class of `T` to `1`,
+  `U = S T⁻¹` to `2`, `S` to `3`, and `R = S T` to `4`; hence the commutator subgroup of
+  `PSL(2, ℤ)` has index `6`.
+* **Conjugacy of `U` and `R`**: `U` and `U²` (as well as `R` and `U`) lie in distinct conjugacy
+  classes of `PSL(2, ℤ)`, whereas `U` is conjugate to `R²` and `R` is conjugate to `U²`.
+* **Torsion classification for `U`**: every finite-order element of `PSL(2, ℤ)` has order `1`, `2`,
+  or `3`; elements of order `3` split into the two conjugacy classes of `U` and `U²`.
 * **Index divisibility and sharpness**: every torsion-free subgroup of `PSL(2, ℤ)` has index
   divisible by `6`, and the commutator subgroup `[PSL(2, ℤ), PSL(2, ℤ)]` is itself torsion-free of
   index `6`.
@@ -45,22 +48,20 @@ From this decomposition we derive the fundamental group-theoretic invariants of 
   `PSL(2, ℤ) ≃* Multiplicative (ZMod 2) ∗ Multiplicative (ZMod 3)`.
 * `TauCeti.ModularGroup.coprodIEquiv`: the indexed-coproduct isomorphism
   `PSL(2, ℤ) ≃* Monoid.CoprodI fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))`.
-* `TauCeti.ModularGroup.abelianizationAddEquiv`, `TauCeti.ModularGroup.abelianizationMulEquiv`:
-  the abelianization of `PSL(2, ℤ)` as `ZMod 6`.
+* `TauCeti.ModularGroup.abelianizationAddEquiv`: the additive abelianization of `PSL(2, ℤ)` as
+  `ZMod 6`.
 
 ## Main results
 
 * `TauCeti.ModularGroup.natCard_abelianization`, `TauCeti.ModularGroup.index_commutator`,
   `TauCeti.ModularGroup.instIsMulTorsionFreeCommutator`: `Nat.card (Group.Abelianization PSL(2, ℤ))`
   and `(commutator PSL(2, ℤ)).index` equal `6`, and `commutator PSL(2, ℤ)` is torsion-free.
-* `TauCeti.ModularGroup.not_isConj_coe_R_sq`, `TauCeti.ModularGroup.not_isConj_coe_U_sq`,
-  `TauCeti.ModularGroup.not_isConj_coe_R_coe_U`: non-conjugacy among order-three representatives.
-* `TauCeti.ModularGroup.isOfFinOrder_iff_isConj_coe_R`,
-  `TauCeti.ModularGroup.isOfFinOrder_iff_isConj_coe_U`,
-  `TauCeti.ModularGroup.orderOf_eq_two_iff`,
-  `TauCeti.ModularGroup.orderOf_eq_three_iff_isConj_coe_R`,
+* `TauCeti.ModularGroup.not_isConj_coe_U_sq`, `TauCeti.ModularGroup.not_isConj_coe_R_coe_U`:
+  non-conjugacy among order-three representatives.
+* `TauCeti.ModularGroup.isOfFinOrder_iff_isConj_coe_U`,
   `TauCeti.ModularGroup.orderOf_eq_three_iff_isConj_coe_U`,
-  `TauCeti.ModularGroup.orderOf_mem_of_isOfFinOrder`: complete torsion and order classification.
+  `TauCeti.ModularGroup.orderOf_mem_of_isOfFinOrder`: `U`-conjugacy torsion classification and
+  finite-order possibilities `{1, 2, 3}`.
 * `TauCeti.ModularGroup.six_dvd_index_of_isMulTorsionFree`: `6` divides the index of any
   torsion-free subgroup of `PSL(2, ℤ)`.
 
@@ -196,45 +197,33 @@ theorem coprodIEquiv_symm_of_one_ofAdd_one :
           ((Multiplicative.ofAdd (α := ZMod 3)) 1)) = (R : PSL(2, ℤ)) :=
   coprodIEquiv.symm_apply_eq.mpr coprodIEquiv_coe_R.symm
 
-/-! ### Abelianization of `PSL(2, ℤ)` and index of the commutator subgroup -/
+/-! ### Additive abelianization of `PSL(2, ℤ)` and index of the commutator subgroup -/
 
 /-- **Additive abelianization of `PSL(2, ℤ)`.** The abelianization of the modular group is cyclic of
 order `6`, canonically normalized so that the cusp translation `T` maps to `1 : ZMod 6` (and hence
 `U = S T⁻¹ ↦ 2`, `S ↦ 3`, and `R = S T ↦ 4`). -/
 def abelianizationAddEquiv : Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6 :=
-  (triangleGroupEquiv.symm.abelianizationCongr.toAdditive.trans
-    (TriangleGroup.abelianizationAddEquivProd 3 2)).trans
-    (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)).symm.toAddEquiv
+  abelianizationMulEquiv.toAdditiveLeft
 
 @[simp]
 theorem abelianizationAddEquiv_ofMul_of_coe_R :
     abelianizationAddEquiv (.ofMul (Group.Abelianization.of (R : PSL(2, ℤ)))) = 4 := by
-  simp only [abelianizationAddEquiv, AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply,
-    toMul_ofMul, Group.abelianizationCongr_of, triangleGroupEquiv_symm_coe_R,
-    TriangleGroup.abelianizationAddEquivProd_ofMul_of_x]
-  exact (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)).symm_apply_eq.mpr (by decide)
+  simp [abelianizationAddEquiv]
 
 @[simp]
 theorem abelianizationAddEquiv_ofMul_of_coe_S :
     abelianizationAddEquiv (.ofMul (Group.Abelianization.of (S : PSL(2, ℤ)))) = 3 := by
-  simp only [abelianizationAddEquiv, AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply,
-    toMul_ofMul, Group.abelianizationCongr_of, triangleGroupEquiv_symm_coe_S,
-    TriangleGroup.abelianizationAddEquivProd_ofMul_of_y]
-  exact (ZMod.chineseRemainder (by decide : Nat.Coprime 3 2)).symm_apply_eq.mpr (by decide)
+  simp [abelianizationAddEquiv]
 
 @[simp]
 theorem abelianizationAddEquiv_ofMul_of_coe_T :
     abelianizationAddEquiv (.ofMul (Group.Abelianization.of (T : PSL(2, ℤ)))) = 1 := by
-  rw [← coe_S_mul_coe_R, map_mul, ofMul_mul, map_add, abelianizationAddEquiv_ofMul_of_coe_S,
-    abelianizationAddEquiv_ofMul_of_coe_R]
-  decide
+  simp [abelianizationAddEquiv]
 
 @[simp]
 theorem abelianizationAddEquiv_ofMul_of_coe_U :
     abelianizationAddEquiv (.ofMul (Group.Abelianization.of (U : PSL(2, ℤ)))) = 2 := by
-  rw [coe_U_eq_coe_S_mul_coe_T_inv, map_mul, map_inv, ofMul_mul, ofMul_inv, map_add, map_neg,
-    abelianizationAddEquiv_ofMul_of_coe_S, abelianizationAddEquiv_ofMul_of_coe_T]
-  decide
+  simp [abelianizationAddEquiv]
 
 @[simp]
 theorem abelianizationAddEquiv_symm_one :
@@ -246,31 +235,6 @@ theorem abelianizationAddEquiv_symm_intCast (k : ℤ) :
     abelianizationAddEquiv.symm (k : ZMod 6) =
       .ofMul (Group.Abelianization.of ((T : PSL(2, ℤ)) ^ k)) := by
   rw [← zsmul_one k, map_zsmul, abelianizationAddEquiv_symm_one, map_zpow, ofMul_zpow]
-
-/-- **Multiplicative abelianization of `PSL(2, ℤ)`.** `Group.Abelianization PSL(2, ℤ)` is isomorphic
-to `Multiplicative (ZMod 6)`. -/
-def abelianizationMulEquiv : Group.Abelianization PSL(2, ℤ) ≃* Multiplicative (ZMod 6) :=
-  abelianizationAddEquiv.toMultiplicativeRight
-
-@[simp]
-theorem abelianizationMulEquiv_of_coe_T :
-    abelianizationMulEquiv (Group.Abelianization.of (T : PSL(2, ℤ))) = .ofAdd 1 := by
-  simp [abelianizationMulEquiv]
-
-@[simp]
-theorem abelianizationMulEquiv_of_coe_U :
-    abelianizationMulEquiv (Group.Abelianization.of (U : PSL(2, ℤ))) = .ofAdd 2 := by
-  simp [abelianizationMulEquiv]
-
-@[simp]
-theorem abelianizationMulEquiv_of_coe_S :
-    abelianizationMulEquiv (Group.Abelianization.of (S : PSL(2, ℤ))) = .ofAdd 3 := by
-  simp [abelianizationMulEquiv]
-
-@[simp]
-theorem abelianizationMulEquiv_of_coe_R :
-    abelianizationMulEquiv (Group.Abelianization.of (R : PSL(2, ℤ))) = .ofAdd 4 := by
-  simp [abelianizationMulEquiv]
 
 /-- The abelianization of `PSL(2, ℤ)` has order `6`. -/
 @[simp]
@@ -285,63 +249,14 @@ theorem index_commutator : (commutator PSL(2, ℤ)).index = 6 :=
 
 /-! ### Conjugacy of order-three generators and torsion classification -/
 
-/-- In `PSL(2, ℤ)`, `R` is not conjugate to `R²`, since they map into `ℤ/3ℤ` with distinct
-images `1` and `2` under `coprodEquiv`. -/
-theorem not_isConj_coe_R_sq : ¬ IsConj (R : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := by
-  intro h
-  have hc := coprodEquiv.toMonoidHom.map_isConj h
-  rw [MulEquiv.coe_toMonoidHom, map_pow, coprodEquiv_coe_R, ← map_pow,
-    Monoid.Coprod.isConj_inr_iff, isConj_iff_eq] at hc
-  have h12 : (1 : ZMod 3) = 2 := by
-    simpa [← ofAdd_nsmul] using congrArg Multiplicative.toAdd hc
-  revert h12
-  decide
-
 /-- In `PSL(2, ℤ)`, `U` is not conjugate to `U²`. -/
 theorem not_isConj_coe_U_sq : ¬ IsConj (U : PSL(2, ℤ)) ((U : PSL(2, ℤ)) ^ 2) :=
-  fun h ↦ not_isConj_coe_R_sq ((isConj_coe_R_coe_U_sq.trans h.symm).trans isConj_coe_U_coe_R_sq)
+  fun h ↦ not_isConj_coe_R_coe_R_sq
+    ((isConj_coe_R_coe_U_sq.trans h.symm).trans isConj_coe_U_coe_R_sq)
 
 /-- In `PSL(2, ℤ)`, `R = S T` and `U = S T⁻¹` are not conjugate. -/
 theorem not_isConj_coe_R_coe_U : ¬ IsConj (R : PSL(2, ℤ)) (U : PSL(2, ℤ)) :=
-  fun h ↦ not_isConj_coe_R_sq (h.trans isConj_coe_U_coe_R_sq)
-
-/-- **Torsion classification in `PSL(2, ℤ)` (in terms of `S` and `R`).** An element of `PSL(2, ℤ)`
-has finite order if and only if it is `1` or conjugate to `S`, `R`, or `R²`. -/
-theorem isOfFinOrder_iff_isConj_coe_R {g : PSL(2, ℤ)} :
-    IsOfFinOrder g ↔
-      g = 1 ∨ IsConj g (S : PSL(2, ℤ)) ∨ IsConj g (R : PSL(2, ℤ)) ∨
-        IsConj g ((R : PSL(2, ℤ)) ^ 2) := by
-  rw [← triangleGroupEquiv.symm.injective.isOfFinOrder_iff
-      (f := triangleGroupEquiv.symm.toMonoidHom),
-    MulEquiv.coe_toMonoidHom, TriangleGroup.isOfFinOrder_iff_of_neZero]
-  refine ⟨?_, ?_⟩
-  · rintro (⟨k, hk, hconj⟩ | ⟨k, hk, hconj⟩)
-    · have hc := triangleGroupEquiv.toMonoidHom.map_isConj hconj
-      rw [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, map_pow,
-        triangleGroupEquiv_x, ← coe_R_eq_coe_S_mul_coe_T] at hc
-      interval_cases k
-      · exact Or.inl (by simpa using hc)
-      · rw [pow_one] at hc; exact Or.inr (Or.inr (Or.inl hc))
-      · exact Or.inr (Or.inr (Or.inr hc))
-    · have hc := triangleGroupEquiv.toMonoidHom.map_isConj hconj
-      rw [MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply, map_pow,
-        triangleGroupEquiv_y] at hc
-      interval_cases k
-      · exact Or.inl (by simpa using hc)
-      · rw [pow_one] at hc; exact Or.inr (Or.inl hc)
-  · rintro (rfl | hc | hc | hc)
-    · exact Or.inl ⟨0, by omega, by simp⟩
-    · refine Or.inr ⟨1, by omega, ?_⟩
-      have h1 := triangleGroupEquiv.symm.toMonoidHom.map_isConj hc
-      rwa [MulEquiv.coe_toMonoidHom, triangleGroupEquiv_symm_coe_S,
-        ← pow_one (TriangleGroup.y 3 2 0)] at h1
-    · refine Or.inl ⟨1, by omega, ?_⟩
-      have h1 := triangleGroupEquiv.symm.toMonoidHom.map_isConj hc
-      rwa [MulEquiv.coe_toMonoidHom, triangleGroupEquiv_symm_coe_R,
-        ← pow_one (TriangleGroup.x 3 2 0)] at h1
-    · refine Or.inl ⟨2, by omega, ?_⟩
-      have h1 := triangleGroupEquiv.symm.toMonoidHom.map_isConj hc
-      rwa [MulEquiv.coe_toMonoidHom, map_pow, triangleGroupEquiv_symm_coe_R] at h1
+  fun h ↦ not_isConj_coe_R_coe_R_sq (h.trans isConj_coe_U_coe_R_sq)
 
 /-- **Torsion classification in `PSL(2, ℤ)` (in terms of `S` and `U`).** An element of `PSL(2, ℤ)`
 has finite order if and only if it is `1` or conjugate to `S`, `U`, or `U²`. -/
@@ -349,7 +264,7 @@ theorem isOfFinOrder_iff_isConj_coe_U {g : PSL(2, ℤ)} :
     IsOfFinOrder g ↔
       g = 1 ∨ IsConj g (S : PSL(2, ℤ)) ∨ IsConj g (U : PSL(2, ℤ)) ∨
         IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [isOfFinOrder_iff_isConj_coe_R]
+  rw [isOfFinOrder_iff_eq_one_or_isConj]
   refine ⟨?_, ?_⟩
   · rintro (rfl | hc | hc | hc)
     · exact Or.inl rfl
@@ -362,35 +277,10 @@ theorem isOfFinOrder_iff_isConj_coe_U {g : PSL(2, ℤ)} :
     · exact Or.inr (Or.inr (Or.inr (hc.trans isConj_coe_U_coe_R_sq)))
     · exact Or.inr (Or.inr (Or.inl (hc.trans isConj_coe_R_coe_U_sq.symm)))
 
-/-- An element of `PSL(2, ℤ)` has order `2` if and only if it is conjugate to `S`. -/
-theorem orderOf_eq_two_iff {g : PSL(2, ℤ)} :
-    orderOf g = 2 ↔ IsConj g (S : PSL(2, ℤ)) := by
-  refine ⟨fun hg ↦ ?_, fun ⟨_, hc⟩ ↦ by rw [hc.orderOf_eq, orderOf_coe_S]⟩
-  have hfin : IsOfFinOrder g := orderOf_pos_iff.mp (by omega)
-  rcases isOfFinOrder_iff_isConj_coe_R.mp hfin with rfl | hc | ⟨_, hc⟩ | ⟨_, hc⟩
-  · simp at hg
-  · exact hc
-  · rw [hc.orderOf_eq, orderOf_coe_R] at hg; omega
-  · rw [hc.orderOf_eq, ← coe_R_inv, orderOf_inv, orderOf_coe_R] at hg; omega
-
-/-- An element of `PSL(2, ℤ)` has order `3` if and only if it is conjugate to `R` or `R²`. -/
-theorem orderOf_eq_three_iff_isConj_coe_R {g : PSL(2, ℤ)} :
-    orderOf g = 3 ↔ IsConj g (R : PSL(2, ℤ)) ∨ IsConj g ((R : PSL(2, ℤ)) ^ 2) := by
-  refine ⟨fun hg ↦ ?_, ?_⟩
-  · have hfin : IsOfFinOrder g := orderOf_pos_iff.mp (by omega)
-    rcases isOfFinOrder_iff_isConj_coe_R.mp hfin with rfl | ⟨_, hc⟩ | hc | hc
-    · simp at hg
-    · rw [hc.orderOf_eq, orderOf_coe_S] at hg; omega
-    · exact Or.inl hc
-    · exact Or.inr hc
-  · rintro (⟨_, hc⟩ | ⟨_, hc⟩)
-    · rw [hc.orderOf_eq, orderOf_coe_R]
-    · rw [hc.orderOf_eq, ← coe_R_inv, orderOf_inv, orderOf_coe_R]
-
 /-- An element of `PSL(2, ℤ)` has order `3` if and only if it is conjugate to `U` or `U²`. -/
 theorem orderOf_eq_three_iff_isConj_coe_U {g : PSL(2, ℤ)} :
     orderOf g = 3 ↔ IsConj g (U : PSL(2, ℤ)) ∨ IsConj g ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [orderOf_eq_three_iff_isConj_coe_R]
+  rw [orderOf_eq_three_iff_isConj]
   exact ⟨fun h ↦ h.elim (fun hc ↦ Or.inr (hc.trans isConj_coe_R_coe_U_sq))
       (fun hc ↦ Or.inl (hc.trans isConj_coe_U_coe_R_sq.symm)),
     fun h ↦ h.elim (fun hc ↦ Or.inr (hc.trans isConj_coe_U_coe_R_sq))
@@ -399,11 +289,11 @@ theorem orderOf_eq_three_iff_isConj_coe_U {g : PSL(2, ℤ)} :
 /-- Every finite-order element of `PSL(2, ℤ)` has order `1`, `2`, or `3`. -/
 theorem orderOf_mem_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) :
     orderOf g ∈ ({1, 2, 3} : Set ℕ) := by
-  rcases isOfFinOrder_iff_isConj_coe_R.mp hg with rfl | ⟨_, hc⟩ | ⟨_, hc⟩ | ⟨_, hc⟩
+  rcases isOfFinOrder_iff_eq_one_or_isConj.mp hg with rfl | ⟨_, hc⟩ | ⟨_, hc⟩ | ⟨_, hc⟩
   · simp
   · simp [hc.orderOf_eq]
   · simp [hc.orderOf_eq]
-  · simp [hc.orderOf_eq, ← coe_R_inv]
+  · simp [hc.orderOf_eq, coe_R_sq]
 
 /-- Every nonidentity finite-order element of `PSL(2, ℤ)` has nontrivial image in the
 abelianization (`3`, `4`, or `2` in `ZMod 6`). -/
@@ -411,7 +301,7 @@ theorem abelianization_of_ne_one_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFin
     (hne : g ≠ 1) : Group.Abelianization.of g ≠ 1 := by
   intro hab
   have hzero : abelianizationAddEquiv (.ofMul (Group.Abelianization.of g)) = 0 := by simp [hab]
-  rcases isOfFinOrder_iff_isConj_coe_R.mp hg with rfl | hc | hc | hc
+  rcases isOfFinOrder_iff_eq_one_or_isConj.mp hg with rfl | hc | hc | hc
   · exact hne rfl
   · have heq := isConj_iff_eq.mp (Group.Abelianization.of.map_isConj hc)
     rw [heq, abelianizationAddEquiv_ofMul_of_coe_S] at hzero

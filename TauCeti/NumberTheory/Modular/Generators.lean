@@ -91,6 +91,10 @@ theorem conjJ_R : SpecialLinearGroup.conjJ R = -U := by
 theorem S_inv_mul_R_inv_mul_S : S⁻¹ * (R⁻¹ * S) = SpecialLinearGroup.conjJ R := by
   rw [conjJ_R]; decide
 
+/-- The square of `R` is the rotation `T⁻¹ S` fixing `ρ`, with no central sign. -/
+theorem R_sq : R ^ 2 = T⁻¹ * S := by
+  decide
+
 /-- Recovering the translation from `R`, with the inverse of `S`. -/
 theorem S_inv_mul_R : S⁻¹ * R = T := by
   simp [R]
@@ -135,9 +139,9 @@ theorem coe_R_pow_three : (R : PSL(2, ℤ)) ^ 3 = 1 := by
 theorem coe_U_pow_three : (U : PSL(2, ℤ)) ^ 3 = 1 := by
   rw [← QuotientGroup.mk_pow, U_pow_three, QuotientGroup.mk_one]
 
-/-- In `PSL(2, ℤ)`, the inverse of the order-three generator `R = S T` is `R²`. -/
-theorem coe_R_inv : (R : PSL(2, ℤ))⁻¹ = (R : PSL(2, ℤ)) ^ 2 :=
-  inv_eq_of_mul_eq_one_right (by rw [← pow_succ', coe_R_pow_three])
+/-- Projectively, the square of `R` is its inverse. -/
+theorem coe_R_sq : (R : PSL(2, ℤ)) ^ 2 = (R : PSL(2, ℤ))⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← pow_succ, coe_R_pow_three])
 
 /-- In `PSL(2, ℤ)`, the inverse of the order-three generator `U = S T⁻¹` is `U²`. -/
 theorem coe_U_inv : (U : PSL(2, ℤ))⁻¹ = (U : PSL(2, ℤ)) ^ 2 :=
@@ -166,7 +170,7 @@ theorem coe_S_mul_coe_U_inv_mul_coe_S :
 
 /-- In `PSL(2, ℤ)`, `U = S T⁻¹` is conjugate to `R² = (S T)⁻¹` (namely by `S`). -/
 theorem isConj_coe_U_coe_R_sq : IsConj (U : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := by
-  rw [← coe_R_inv]
+  rw [coe_R_sq]
   exact (isConj_iff.mpr ⟨(S : PSL(2, ℤ)), coe_S_mul_coe_R_inv_mul_coe_S_inv⟩).symm
 
 /-- In `PSL(2, ℤ)`, `R = S T` is conjugate to `U² = (S T⁻¹)⁻¹` (namely by `S`). -/

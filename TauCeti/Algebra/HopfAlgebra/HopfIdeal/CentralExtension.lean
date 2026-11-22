@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
-public import TauCeti.RingTheory.Ideal.Extended
 public import TauCeti.Algebra.Subalgebra.Center
+
+import TauCeti.RingTheory.Ideal.KrullIntersection
 
 /-!
 # The central augmentation ideal as an extended ideal
@@ -89,9 +90,9 @@ theorem iInf_centralAugmentationIdeal_pow_eq_bot
   have h : ⨅ n : ℕ,
       Ideal.map (algebraMap (Subalgebra.center K H) H)
         (centralAugmentationCenterIdeal K H) ^ n = ⊥ := by
-    apply @Ideal.iInf_map_algebraMap_pow_eq_bot (Subalgebra.center K H) H _ _ _ _
-      hFinite _
-    intro z hz heq
+    refine (@Ideal.iInf_map_algebraMap_pow_eq_bot_iff (Subalgebra.center K H) H _ _ _ _
+      hFinite _).mpr fun z hz ↦ ?_
+    refine IsLeftCancelMulZero.mul_left_cancel_of_ne_zero fun heq ↦ ?_
     have hzero := (mem_centralAugmentationCenterIdeal K H z).mp hz
     have hone := congrArg (Coalgebra.counit (R := K)) heq
     simp [hzero] at hone

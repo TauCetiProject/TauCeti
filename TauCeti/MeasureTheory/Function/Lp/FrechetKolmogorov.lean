@@ -39,7 +39,11 @@ set, which is the form
 that Rellich--Kondrachov for `W^{1,p}_0(Ω)` consumes: extending by zero makes a function vanish off
 `Ω`, and its translation increments are controlled by `‖h‖ ‖∇u‖_p` through
 `TauCeti.W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient`. The corresponding theorem for
-`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity.
+`W^{1,p}(Ω)` additionally needs an extension operator and boundary regularity. For `C¹`
+functions the translation increments are controlled in the same way by the `Lᵖ` norm of the
+derivative (`ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`), so `C¹` functions vanishing
+off a fixed bounded set with uniformly bounded values and derivatives in `Lᵖ` form a totally
+bounded family (`TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`).
 
 ## The proof
 

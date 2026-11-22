@@ -478,15 +478,23 @@ theorem vec_ne_zero (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ) : vec q μ j ≠ 0
 
 /-! ### Singular vectors -/
 
-/-- The singular-vector criterion: at a generic parameter and for nonzero `μ`, the vector
-`v_(j + 1)` is killed by `E` exactly when `μ² = q^(2j)`. -/
-theorem e_smul_vec_succ_eq_zero_iff (hq : IsGenericQuantumParameter q) (hμ : μ ≠ 0) (j : ℕ) :
-    e q • vec q μ (j + 1) = 0 ↔ μ ^ 2 = q ^ (2 * j) := by
-  have hq0 := hq.ne_zero
-  rw [e_smul_vec_succ, smul_eq_zero, or_iff_left (vec_ne_zero hq0 hμ j),
-    div_eq_zero_iff, or_iff_left hq.sub_inv_ne_zero, mul_eq_zero,
-    or_iff_right (quantumInteger_ne_zero hq (by omega)), sub_eq_zero, inv_pow, pow_mul']
-  have hx : q ^ j ≠ 0 := pow_ne_zero _ hq0
+/-- The singular-vector criterion: for `q ≠ 0` with `q ^ (2 * (j + 1)) ≠ 1` (for instance at a
+generic parameter) and nonzero `μ`, the vector `v_(j + 1)` is killed by `E` exactly when
+`μ² = q^(2j)`. -/
+theorem e_smul_vec_succ_eq_zero_iff (hq : q ≠ 0) (hμ : μ ≠ 0) (j : ℕ)
+    (hj : q ^ (2 * (j + 1)) ≠ 1) : e q • vec q μ (j + 1) = 0 ↔ μ ^ 2 = q ^ (2 * j) := by
+  have hsub : q - q⁻¹ ≠ 0 := by
+    intro h
+    have hsq : q ^ 2 = 1 := by
+      field_simp at h
+      linear_combination h
+    exact hj (by rw [pow_mul, hsq, one_pow])
+  have hqi : quantumInteger q (j + 1) ≠ 0 := fun h => hj (by
+    exact_mod_cast (quantumInteger_eq_zero_iff hq (j + 1)).mp h)
+  rw [e_smul_vec_succ, smul_eq_zero, or_iff_left (vec_ne_zero hq hμ j),
+    div_eq_zero_iff, or_iff_left hsub, mul_eq_zero, or_iff_right hqi, sub_eq_zero, inv_pow,
+    pow_mul']
+  have hx : q ^ j ≠ 0 := pow_ne_zero _ hq
   generalize q ^ j = x at hx ⊢
   constructor <;> intro h <;> field_simp at h ⊢ <;> linear_combination h
 
