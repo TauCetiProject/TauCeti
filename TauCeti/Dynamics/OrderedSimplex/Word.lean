@@ -22,6 +22,7 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import TauCeti.Order.Fin.Basic
+import TauCeti.Order.Northcott.Basic
 
 /-!
 # Words of accelerated branches, delays, renewal counting, and semigroup freeness
@@ -375,10 +376,11 @@ theorem wordCount_simplexChart_smul {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) �
 
 /-- Only finitely many letters `(A, j)` have `A + 3 ≤ c`. -/
 private theorem finite_setOf_fst_add_three_le (c : ℝ) :
-    {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ c}.Finite :=
-  ((finite_Iic ⌊c⌋₊).prod finite_univ).subset fun a ha => by
-    rw [mem_ofPred_eq] at ha
-    exact ⟨Nat.le_floor (by linarith), mem_univ _⟩
+    {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ c}.Finite := by
+  have : Northcott (Prod.fst : ℕ × Fin d → ℕ) :=
+    ⟨fun b => ((finite_Iic b).prod finite_univ).subset fun _ ha => ⟨ha, mem_univ _⟩⟩
+  exact (TauCeti.finite_setOf_natCast_le (Prod.fst : ℕ × Fin d → ℕ) (c - 3)).subset
+    fun _ ha => by rw [mem_ofPred_eq] at ha ⊢; linarith
 
 /-- On the simplex only finitely many words have delay at most `r`: such a word has length at
 most `r / log (3 / 2)`, and each of its letters `(A, j)` has `A + 3 ≤ 2 e^r`. -/
@@ -436,57 +438,48 @@ theorem wordCount_eq_sum_indicator {x : Fin d → ℝ} (hx : x ∈ orderedSimple
   simp only [Set.Finite.mem_toFinset, mem_ofPred_eq, Finset.mem_filter]
   exact ⟨fun h => ⟨h.trans hr, h⟩, fun h => h.2⟩
 
+private theorem wordCount_eventuallyEq_nhdsGE {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
+    (r : ℝ) : ∀ᶠ t in 𝓝[≥] r, wordCount d x t = wordCount d x r := by
+  have hS : {u : List (ℕ × Fin d) | wordDelay u x ≤ r + 1}.Finite :=
+    finite_setOf_wordDelay_le hx (r + 1)
+  have hfin : ∀ᶠ t in 𝓝[≥] r,
+      ∀ u ∈ {u : List (ℕ × Fin d) | wordDelay u x ≤ r + 1},
+        wordDelay u x ≤ t ↔ wordDelay u x ≤ r :=
+    (Filter.eventually_all_finite hS).2 fun u _ => by
+      by_cases hu : wordDelay u x ≤ r
+      · filter_upwards [self_mem_nhdsWithin] with t ht
+        exact iff_of_true (hu.trans ht) hu
+      · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.1 hu))] with t ht
+        exact iff_of_false (not_le.2 ht) hu
+  filter_upwards [hfin, nhdsWithin_le_nhds (Iio_mem_nhds (lt_add_one r))] with t ht hlt
+  rw [wordCount_def, wordCount_def]
+  congr 1; ext u
+  by_cases hu : wordDelay u x ≤ r + 1
+  · exact ht u hu
+  · have hlt_u : r + 1 < wordDelay u x := not_le.1 hu
+    exact iff_of_false (not_le.2 (hlt.trans hlt_u)) (not_le.2 ((lt_add_one r).trans hlt_u))
+
 /-- The renewal count `r ↦ wordCount d x r` is locally constant on the right at every `r : ℝ`. -/
 theorem eventually_wordCount_eq_of_Ici {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
     ∃ δ > 0, ∀ r' ∈ Ico r (r + δ), wordCount d x r' = wordCount d x r := by
-  let S : Set (List (ℕ × Fin d)) := {u | r < wordDelay u x ∧ wordDelay u x ≤ r + 1}
-  have hSfin : S.Finite := (finite_setOf_wordDelay_le hx (r + 1)).subset fun _ hu => hu.2
-  have hgap : ∃ δ > 0, ∀ u, r < wordDelay u x → r + δ ≤ wordDelay u x := by
-    by_cases hS : S.Nonempty
-    · classical
-      let T : Finset ℝ := hSfin.toFinset.image fun u => wordDelay u x
-      have hT : T.Nonempty := by
-        rcases hS with ⟨u, hu⟩
-        exact ⟨_, Finset.mem_image_of_mem _ (hSfin.mem_toFinset.2 hu)⟩
-      have hm_gt : r < T.min' hT := by
-        rcases Finset.mem_image.1 (Finset.min'_mem T hT) with ⟨u, hu, hmu⟩
-        exact hmu ▸ (hSfin.mem_toFinset.1 hu).1
-      refine ⟨min 1 (T.min' hT - r), lt_min zero_lt_one (sub_pos.2 hm_gt), fun u hu => ?_⟩
-      by_cases h1 : wordDelay u x ≤ r + 1
-      · have := Finset.min'_le T _ (Finset.mem_image_of_mem _ (hSfin.mem_toFinset.2 ⟨hu, h1⟩))
-        linarith [min_le_right 1 (T.min' hT - r)]
-      · linarith [min_le_left 1 (T.min' hT - r)]
-    · rw [Set.not_nonempty_iff_eq_empty] at hS
-      refine ⟨1, zero_lt_one, fun u hu => by_contra fun h => ?_⟩
-      have hmem : u ∈ S := ⟨hu, le_of_not_ge h⟩
-      rw [hS] at hmem
-      exact hmem
-  rcases hgap with ⟨δ, hδ, hno⟩
-  refine ⟨δ, hδ, fun r' hr' => ?_⟩
-  rw [wordCount_def, wordCount_def]
-  congr 1; ext u
-  simp only [mem_ofPred_eq]
-  exact ⟨fun hu => by_contra fun hlt => by linarith [hno u (not_le.1 hlt), hr'.2],
-    fun hu => hu.trans hr'.1⟩
+  rcases mem_nhdsGE_iff_exists_Ico_subset.1 (wordCount_eventuallyEq_nhdsGE hx r) with
+    ⟨b, hrb, hb⟩
+  refine ⟨b - r, sub_pos.2 hrb, fun r' hr' => hb ?_⟩
+  rwa [add_sub_cancel] at hr'
 
 /-- The renewal count is right-continuous in time: it is locally constant to the right of each
 `r`, since only finitely many delays lie in `(r, r + 1]`. -/
 theorem continuousWithinAt_wordCount_Ici {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
-    ContinuousWithinAt (wordCount d x) (Ici r) r := by
-  rcases eventually_wordCount_eq_of_Ici hx r with ⟨δ, hδ, hconst⟩
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [Ico_mem_nhdsGE (lt_add_of_pos_right r hδ)] with t ht
-  exact (hconst t ht).symm
+    ContinuousWithinAt (wordCount d x) (Ici r) r :=
+  continuousWithinAt_const.congr_of_eventuallyEq (wordCount_eventuallyEq_nhdsGE hx r) rfl
 
 /-- The real-valued renewal count `r ↦ (wordCount d x r : ℝ)` is right-continuous at every
 `r : ℝ`. -/
 theorem continuousWithinAt_wordCount_Ici_real {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) :
-    ContinuousWithinAt (fun t => (wordCount d x t : ℝ)) (Ici r) r := by
-  rcases eventually_wordCount_eq_of_Ici hx r with ⟨δ, hδ, hconst⟩
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [Ico_mem_nhdsGE (lt_add_of_pos_right r hδ)] with t ht
-  exact congrArg Nat.cast (hconst t ht).symm
+    ContinuousWithinAt (fun t => (wordCount d x t : ℝ)) (Ici r) r :=
+  continuousWithinAt_const.congr_of_eventuallyEq
+    ((wordCount_eventuallyEq_nhdsGE hx r).mono fun _ h => congrArg Nat.cast h) rfl
 
 /-- The renewal count is a measurable function of time. -/
 theorem measurable_wordCount {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
@@ -498,24 +491,23 @@ theorem measurable_wordCount_real {x : Fin d → ℝ} (hx : x ∈ orderedSimplex
     Measurable fun r => (wordCount d x r : ℝ) :=
   (Nat.mono_cast.comp (wordCount_mono hx)).measurable
 
+/-- On `orderedSimplex d`, the renewal count is nonzero exactly at nonnegative times. -/
+theorem wordCount_ne_zero_iff {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
+    wordCount d x r ≠ 0 ↔ 0 ≤ r := by
+  refine ⟨fun hne => not_lt.1 fun hr => hne (wordCount_eq_zero_of_neg hx hr), fun hr => ?_⟩
+  have hpos : 0 < wordCount d x r := by
+    calc 0 < 1 := one_pos
+      _ = wordCount d x 0 := (wordCount_zero hx).symm
+      _ ≤ wordCount d x r := wordCount_mono hx hr
+  exact hpos.ne'
+
 /-- Exact membership criterion for the support of the renewal sum at `(x, r)`. -/
 theorem mem_support_wordCount_branchMap_iff {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) (a : ℕ × Fin d) :
     a ∈ Function.support (fun a : ℕ × Fin d =>
       wordCount d (branchMap a x) (r - branchDelay a x)) ↔
       branchDelay a x ≤ r := by
-  simp only [Function.mem_support, ne_eq]
-  refine ⟨fun hne => ?_, fun ha => ?_⟩
-  · rw [wordCount_def] at hne
-    obtain ⟨v, hv⟩ := Set.nonempty_of_ncard_ne_zero hne
-    rw [mem_ofPred_eq] at hv
-    linarith [wordDelay_nonneg v (branchMap_mem_orderedSimplex a hx)]
-  · rw [wordCount_def]
-    have hnil : ([] : List (ℕ × Fin d)) ∈
-        {v | wordDelay v (branchMap a x) ≤ r - branchDelay a x} := by
-      simp [sub_nonneg.2 ha]
-    exact Set.ncard_ne_zero_of_mem hnil
-      (finite_setOf_wordDelay_le (branchMap_mem_orderedSimplex a hx) _)
+  rw [Function.mem_support, wordCount_ne_zero_iff (branchMap_mem_orderedSimplex a hx), sub_nonneg]
 
 /-- A letter `a` with `branchDelay a x ≤ r` on `orderedSimplex d` satisfies `A + 3 ≤ 2 e^r`. -/
 private theorem fst_add_three_le_of_branchDelay_le {x : Fin d → ℝ}
@@ -540,8 +532,9 @@ counts at `F_a w` with the delay `τ_a (w)` subtracted. The sum is finite
 theorem wordCount_eq_add_finsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (r : ℝ) :
     wordCount d x r = (if 0 ≤ r then 1 else 0) +
       ∑ᶠ a : ℕ × Fin d, wordCount d (branchMap a x) (r - branchDelay a x) := by
-  set T := {a : ℕ × Fin d | (a.1 : ℝ) + 3 ≤ 2 * Real.exp r}
-  have hT : T.Finite := finite_setOf_fst_add_three_le _
+  set T := Function.support fun a : ℕ × Fin d =>
+    wordCount d (branchMap a x) (r - branchDelay a x)
+  have hT : T.Finite := finite_support_wordCount_branchMap hx r
   set S : ℕ × Fin d → Set (List (ℕ × Fin d)) := fun a =>
     {u | wordDelay u (branchMap a x) ≤ r - branchDelay a x}
   have hS : ∀ a, (S a).Finite := fun a =>
@@ -554,9 +547,10 @@ theorem wordCount_eq_add_finsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d
     | cons a u =>
       simp only [mem_ofPred_eq, wordDelay_cons, mem_union, reduceCtorEq, false_and, false_or,
         mem_iUnion, mem_image, List.cons.injEq, exists_prop, S]
-      refine ⟨fun h => ⟨a, fst_add_three_le_of_branchDelay_le hx
-          (by linarith [wordDelay_nonneg u (branchMap_mem_orderedSimplex a hx)]),
-          u, by linarith, rfl, rfl⟩, ?_⟩
+      refine ⟨fun h => ?_, ?_⟩
+      · have hu : u ∈ S a := by simp only [S, mem_ofPred_eq]; linarith
+        have ha : a ∈ T := Set.ncard_ne_zero_of_mem hu (hS a)
+        exact ⟨a, ha, u, hu, rfl, rfl⟩
       · rintro ⟨b, -, v, hv, rfl, rfl⟩
         linarith
   have hdisj : Disjoint {u : List (ℕ × Fin d) | u = [] ∧ 0 ≤ r} (⋃ a ∈ T, List.cons a '' S a) := by
@@ -574,10 +568,8 @@ theorem wordCount_eq_add_finsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d
   congr 1
   · split_ifs with h <;> simp [h]
   · simp only [ncard_image_of_injective _ List.cons_injective]
-    rw [← finsum_mem_univ fun a => wordCount d (branchMap a x) (r - branchDelay a x)]
-    exact finsum_mem_inter_support_eq' _ T univ fun a ha =>
-      ⟨fun _ => mem_univ _, fun _ =>
-        fst_add_three_le_of_branchDelay_le hx ((mem_support_wordCount_branchMap_iff hx r a).1 ha)⟩
+    rw [finsum_mem_eq_finite_toFinset_sum _ hT, finsum_eq_sum _ hT]
+    rfl
 
 private theorem hasSum_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) :

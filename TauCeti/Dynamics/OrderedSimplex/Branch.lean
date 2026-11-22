@@ -56,14 +56,16 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
 * `TauCeti.add_three_div_two_le_branchDenom`, `TauCeti.branchDenom_le_add_two`,
   `TauCeti.log_three_halves_le_branchDelay`: on the simplex `(A + 3) / 2 ≤ q_a ≤ A + 2`, so
   every delay is at least `log (3 / 2)`.
-* `TauCeti.branchWeight_eq_cpow`, `TauCeti.norm_branchWeight`, `TauCeti.hasFDerivAt_branchWeight`,
-  `TauCeti.hasDerivAt_branchWeight`: on the simplex `exp (-s * τ_a)` agrees with `q_a^{-s}`, has
-  norm `exp (-Re s * τ_a) = q_a^{-Re s}`, and differentiates in both variables.
+* `TauCeti.branchWeight_eq_cpow`, `TauCeti.norm_branchWeight`, `TauCeti.contDiffOn_branchWeight`,
+  `TauCeti.hasFDerivAt_branchWeight`, `TauCeti.hasDerivAt_branchWeight`: on the simplex
+  `exp (-s * τ_a)` agrees with `q_a^{-s}`, has norm `exp (-Re s * τ_a) = q_a^{-Re s}`, is smooth,
+  and differentiates in both variables.
 * `TauCeti.hasFDerivAt_branchDelay`, `TauCeti.norm_fderiv_branchDelay`,
   `TauCeti.norm_fderiv_branchDelay_lt_two`: the delay depends only on `w_j`, with
   `‖D τ_a‖ = (A + 1) / q_a < 2` on the simplex, uniformly in the letter.
-* `TauCeti.contDiffAt_branchMap`: each branch is smooth wherever its denominator is nonzero, in
-  particular on a neighbourhood of the simplex.
+* `TauCeti.contDiffAt_branchMap`, `TauCeti.contDiffOn_unaccelBranchMap`,
+  `TauCeti.branchMap_succ`: each accelerated and unaccelerated branch is smooth on the simplex, and
+  acceleration steps by applying `unaccelBranchMap (Fin.last d)`.
 
 ## References
 
@@ -390,6 +392,15 @@ theorem hasDerivAt_branchWeight (a : ℕ × Fin d) (s : ℂ) (x : Fin d → ℝ)
     simpa using (hasDerivAt_id s).neg.mul_const (branchDelay a x : ℂ)
   simpa [branchWeight_def, mul_comm] using harg.cexp
 
+/-- Each complex branch weight is smooth on the ordered simplex. -/
+theorem contDiffOn_branchWeight (a : ℕ × Fin d) (s : ℂ) {n : WithTop ℕ∞} :
+    ContDiffOn ℝ n (branchWeight a s) (orderedSimplex d) := by
+  have h : branchWeight a s = fun x => Complex.exp (-s * Complex.ofRealCLM (branchDelay a x)) :=
+    funext fun x => branchWeight_def a s x
+  rw [h]
+  exact ((Complex.ofRealCLM.contDiff.comp_contDiffOn
+    (contDiffOn_branchDelay a)).const_smul (-s)).cexp
+
 /-! ### The linear moves and the homogeneous identity -/
 
 /-- The linear map `γ_{j+1}` of `ℝ^{d+2}`: delete the coordinate at index `j` and append the sum
@@ -493,6 +504,7 @@ theorem unaccelBranchMap_castSucc (j : Fin d) (x : Fin d → ℝ) :
   ring
 
 /-- At `Fin.last d`, `unaccelBranchMap (Fin.last d)` divides chart coordinates by `1 + ∑ k, x k`. -/
+@[simp]
 theorem unaccelBranchMap_last (x : Fin d → ℝ) :
     unaccelBranchMap (Fin.last d) x = fun i => x i / (1 + ∑ k, x k) := by
   ext i
@@ -522,6 +534,26 @@ theorem unaccelBranchMap_mem_orderedSimplex (j : Fin (d + 1)) {x : Fin d → ℝ
 theorem mapsTo_unaccelBranchMap (j : Fin (d + 1)) :
     MapsTo (unaccelBranchMap j) (orderedSimplex d) (orderedSimplex d) :=
   fun _ hx => unaccelBranchMap_mem_orderedSimplex j hx
+
+/-- Each unaccelerated branch is smooth at every point where `2 - simplexPoint x j ≠ 0`, in
+particular on a neighbourhood of the ordered simplex. -/
+theorem contDiffAt_unaccelBranchMap (j : Fin (d + 1)) {x : Fin d → ℝ}
+    (hx : 2 - simplexPoint x j ≠ 0) {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n (unaccelBranchMap j) x := by
+  rw [contDiffAt_pi]
+  intro i
+  have h : (fun y => unaccelBranchMap j y i) =
+      fun y => simplexPoint y (j.succAbove i) / (2 - simplexPoint y j) :=
+    funext fun y => unaccelBranchMap_apply j y i
+  rw [h]
+  exact (contDiff_simplexPoint_apply _).contDiffAt.div
+    ((contDiff_const.sub (contDiff_simplexPoint_apply j)).contDiffAt) hx
+
+/-- Each unaccelerated branch is smooth on the ordered simplex. -/
+theorem contDiffOn_unaccelBranchMap (j : Fin (d + 1)) {n : WithTop ℕ∞} :
+    ContDiffOn ℝ n (unaccelBranchMap j) (orderedSimplex d) := fun _ hx =>
+  (contDiffAt_unaccelBranchMap j
+    (by linarith [simplexPoint_le_one hx j])).contDiffWithinAt
 
 /-- Projective normalisation intertwines `linearMove (Fin.last d)` on `orderedCone d` with
 dividing chart coordinates by `1 + ∑ k, w k`. -/
@@ -580,6 +612,19 @@ theorem accelMove_zero (j : Fin d) : accelMove (0, j) = linearMove j.castSucc :=
 theorem accelMove_succ (A : ℕ) (j : Fin d) :
     accelMove (A + 1, j) = (linearMove (Fin.last d)).comp (accelMove (A, j)) := by
   ext y k; simp [accelMove, pow_succ']
+
+/-- Stepping acceleration by `1` applies the last unaccelerated branch `F_{d+1}` in chart
+coordinates wherever `q_{(A, j)} (x) ≠ 0`, in particular on `orderedSimplex d`. -/
+theorem branchMap_succ (A : ℕ) (j : Fin d) {x : Fin d → ℝ}
+    (hx : branchDenom (A, j) x ≠ 0) :
+    branchMap (A + 1, j) x = unaccelBranchMap (Fin.last d) (branchMap (A, j) x) := by
+  ext i
+  rw [unaccelBranchMap_last]
+  dsimp only
+  rw [sum_branchMap, branchMap_apply, branchMap_apply, div_div, mul_add, mul_one,
+    mul_div_cancel₀ _ hx, branchDenom_def, branchDenom_def]
+  push_cast
+  ring
 
 /-- The image of the lift `(w, 1)` under `γ_j` for `j ≤ n - 2`. -/
 private theorem linearMove_castSucc_simplexLift (x : Fin d → ℝ) (j : Fin d) :
