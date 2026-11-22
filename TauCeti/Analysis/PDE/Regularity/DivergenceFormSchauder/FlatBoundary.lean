@@ -138,6 +138,25 @@ private theorem holderOnWith_conormalShiftL {p : EuclideanSpace ℝ (Fin (n + 1)
     exact norm_conormalShiftL_apply_le p (A - B)
   exact hL.comp_holderOnWith hF
 
+/-- If `L ∈ H¹(B)` has constant gradient `p`, then the energy form of `L` against a test function
+`φ` is `∫_B ⟪(a p)^♯ - c, ∇φ⟫` for every constant `c`, where `(a p)^♯` represents `η ↦ ηᵀ a p`. -/
+private theorem energyFormH1_eq_inner_toLp_gradient_of_gradient_ae_eq
+    {B : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {L : W1p volume B 2}
+    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {p c : EuclideanSpace ℝ (Fin (n + 1))}
+    (hLg : W1p.gradient L =ᵐ[volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))]
+      fun _ => p)
+    (hP2 : MemLp (fun x => conormalShiftL p (matrixBilinearForm (a x)) - c) 2
+      (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))))
+    (φ : 𝓓(B, ℝ)) :
+    energyFormH1 a 0 0 L (W1p.ofTestFunctionₗ volume B 2 φ) =
+      ⟪hP2.toLp, W1p.gradient (W1p.ofTestFunctionₗ volume B 2 φ)⟫_ℝ := by
+  rw [inner_toLp_gradient_ofTestFunctionₗ hP2 φ, energyFormH1_def]
+  refine integral_congr_ae ?_
+  filter_upwards [jetField_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ, hLg] with x hx hL
+  rw [hx, jetField_apply, hL, energyIntegrand_apply, inner_conormalShiftL_apply]
+  simp
+
 /-- **Subtracting a linear function from a solution.** Let `u ∈ H¹(U)` solve
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on `U ∩ H`, let `B = ball x₀ ρ ⊆ U ∩ H`, let `a` be uniformly
 elliptic on `B`, let `a` and `G` be `α`-Hölder on `B`, and let `f ∈ L²(B)`. For every vector `p`,
@@ -195,13 +214,7 @@ private theorem exists_gradient_ae_eq_sub_and_forall_energyFormH1_eq
     ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
   rw [W1p.restrictL_restrictL] at h1
   -- The energy form of the linear function against `φ`.
-  have h2 : energyFormH1 a 0 0 L (W1p.ofTestFunctionₗ volume B 2 φ) =
-      ⟪hP2.toLp, W1p.gradient (W1p.ofTestFunctionₗ volume B 2 φ)⟫_ℝ := by
-    rw [inner_toLp_gradient_ofTestFunctionₗ hP2 φ, energyFormH1_def]
-    refine integral_congr_ae ?_
-    filter_upwards [jetField_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ, hLg] with x hx hL
-    rw [hx, jetField_apply, hL, energyIntegrand_apply, inner_conormalShiftL_apply]
-    simp
+  have h2 := energyFormH1_eq_inner_toLp_gradient_of_gradient_ae_eq hLg hP2 φ
   have hsub : hGP.toLp = hG2.toLp - hP2.toLp := by
     rw [← MemLp.toLp_sub]
     exact MemLp.toLp_congr _ _ (ae_of_all _ fun x => by simp only [Pi.sub_apply]; abel)
@@ -363,6 +376,59 @@ private theorem rpow_mul_add_sq_mul_add_le {r R α e Ka KG P I V K₂ M : ℝ} (
         positivity
     _ = _ := by ring
 
+/-- **The half-ball average at a boundary centre.** Let `H = {y | c₀ < ⟪y, ν⟫}`, let `z` lie in its
+closure, let `d > 0`, and let `g ∈ L²(U)` with `B(z, 2d) ⊆ U`. If
+`∫_{B(z, 2d) ∩ H} ‖g‖² ≤ C_m V (4d / R)^{n+1}`, then the average `A` of `g` over `B(z, 2d) ∩ H`
+satisfies `‖A‖² R^{n+1} ≤ 2^{n+2} C_m V / ω`, where `ω` is the volume of the unit ball: the
+half-ball `B(z, 2d) ∩ H` has at least half the volume of `B(z, 2d)`. -/
+private theorem norm_setAverage_ball_inter_sq_mul_rpow_le
+    {U H : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    {g : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict U)}
+    {ν z : EuclideanSpace ℝ (Fin (n + 1))} {c₀ d R V Cm : ℝ} (hν : ν ≠ 0)
+    (hH : ∀ y, y ∈ H ↔ c₀ < ⟪y, ν⟫_ℝ) (hz : c₀ ≤ ⟪z, ν⟫_ℝ) (hd : 0 < d) (hR : 0 < R)
+    (hzU : ball z (2 * d) ⊆ U)
+    (hM : ∫ y in ball z (2 * d) ∩ H, ‖g y‖ ^ 2 ≤ Cm * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1)) :
+    ‖⨍ w in ball z (2 * d) ∩ H, g w‖ ^ 2 * R ^ ((n : ℝ) + 1) ≤
+      2 ^ (n + 2) * Cm / volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * V := by
+  set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
+  have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
+  have hg2 : MemLp (g : EuclideanSpace ℝ (Fin (n + 1)) → _) 2
+      (volume.restrict (ball z (2 * d) ∩ H)) :=
+    (Lp.memLp g).mono_measure (Measure.restrict_mono (inter_subset_left.trans hzU) le_rfl)
+  set A := ⨍ w in ball z (2 * d) ∩ H, g w
+  -- The half-ball has density `1 / 2` in the ball, so `‖A‖²` is at most twice the mean of `‖g‖²`.
+  have hA : ‖A‖ ^ 2 * (ω * (2 * d) ^ (n + 1) / 2) ≤
+      Cm * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1) := by
+    have hdens : (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall z (2 * d)) ≤
+        volume (closedBall z (2 * d) ∩ H) := by
+      rw [show H = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
+      exact volume.two_inv_mul_addHaar_closedBall_le_addHaar_inter_setOf_lt_inner hν hz _
+    have h := mul_sq_norm_setAverage_ball_inter_le (by positivity) le_rfl hdens hg2 hM
+    rw [div_self (by positivity), one_pow, one_mul, volume.addHaar_real_ball_of_pos z
+      (by positivity), finrank_euclideanSpace_fin] at h
+    push_cast at h
+    linear_combination h
+  -- Multiply by `R^{n+1}` and divide by the volume of the half-ball.
+  have hq : (2 * d / (R / 2)) ^ ((n : ℝ) + 1) * R ^ ((n : ℝ) + 1) =
+      2 ^ (n + 1) * (2 * d) ^ (n + 1) := by
+    rw [← Real.mul_rpow (by positivity) hR.le,
+      show 2 * d / (R / 2) * R = 2 * (2 * d) by field_simp,
+      show ((n : ℝ) + 1) = ((n + 1 : ℕ) : ℝ) by push_cast; ring, Real.rpow_natCast, mul_pow]
+  have hR0 : 0 < R ^ ((n : ℝ) + 1) := by positivity
+  have h1 : ‖A‖ ^ 2 * R ^ ((n : ℝ) + 1) * (ω * (2 * d) ^ (n + 1) / 2) ≤
+      Cm * V * (2 ^ (n + 1) * (2 * d) ^ (n + 1)) := by
+    rw [← hq]
+    calc _ = ‖A‖ ^ 2 * (ω * (2 * d) ^ (n + 1) / 2) * R ^ ((n : ℝ) + 1) := by ring
+      _ ≤ Cm * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1) * R ^ ((n : ℝ) + 1) :=
+        mul_le_mul_of_nonneg_right hA hR0.le
+      _ = _ := by ring
+  have h2 : Cm * V * (2 ^ (n + 1) * (2 * d) ^ (n + 1)) =
+      2 ^ (n + 2) * Cm / ω * V * (ω * (2 * d) ^ (n + 1) / 2) := by
+    field_simp
+    ring
+  rw [h2] at h1
+  exact le_of_mul_le_mul_right h1 (by positivity)
+
 /-- **The normal vector at a boundary centre.** Let `H = {y | c₀ < ⟪y, ν⟫}`, let `z` lie on its
 boundary hyperplane, let `d > 0`, and let `g ∈ L²(U)` with `B(z, 2d) ⊆ U`. Let `p₀` be the multiple
 of `ν` closest to `g` in `L²(B(z, 2d) ∩ H)`. If `∫_{B(z, 2d) ∩ H} ‖g‖² ≤ C_m V (4d / R)^{n+1}` and
@@ -382,8 +448,6 @@ private theorem exists_norm_sq_mul_rpow_le_and_setIntegral_ball_norm_sub_sq_le
     ∃ p : EuclideanSpace ℝ (Fin (n + 1)), ‖p‖ ^ 2 * R ^ ((n : ℝ) + 1) ≤
         2 ^ (n + 2) * Cm / volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * V ∧
       ∫ y in ball x d, ‖g y - p‖ ^ 2 ≤ Cb * 4 ^ e * V * (d / R) ^ e := by
-  set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-  have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
   have hg2 : MemLp (g : EuclideanSpace ℝ (Fin (n + 1)) → _) 2
       (volume.restrict (ball z (2 * d) ∩ H)) :=
     (Lp.memLp g).mono_measure (Measure.restrict_mono (inter_subset_left.trans hzU) le_rfl)
@@ -395,37 +459,8 @@ private theorem exists_norm_sq_mul_rpow_le_and_setIntegral_ball_norm_sub_sq_le
       rw [norm_smul, Real.norm_eq_abs, abs_div, abs_of_pos (by positivity : 0 < ‖ν‖ ^ 2),
         div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
       nlinarith [abs_real_inner_le_norm A ν, norm_nonneg A]
-    have hA : ‖A‖ ^ 2 * (ω * (2 * d) ^ (n + 1) / 2) ≤
-        Cm * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1) := by
-      have hdens : (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall z (2 * d)) ≤
-          volume (closedBall z (2 * d) ∩ H) := by
-        rw [show H = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
-        exact volume.two_inv_mul_addHaar_closedBall_le_addHaar_inter_setOf_lt_inner hν hz.ge _
-      have h := mul_sq_norm_setAverage_ball_inter_le (by positivity) le_rfl hdens hg2 hM
-      rw [div_self (by positivity), one_pow, one_mul, volume.addHaar_real_ball_of_pos z
-        (by positivity), finrank_euclideanSpace_fin] at h
-      push_cast at h
-      linear_combination h
-    have hq : (2 * d / (R / 2)) ^ ((n : ℝ) + 1) * R ^ ((n : ℝ) + 1) =
-        2 ^ (n + 1) * (2 * d) ^ (n + 1) := by
-      rw [← Real.mul_rpow (by positivity) hR.le,
-        show 2 * d / (R / 2) * R = 2 * (2 * d) by field_simp,
-        show ((n : ℝ) + 1) = ((n + 1 : ℕ) : ℝ) by push_cast; ring, Real.rpow_natCast, mul_pow]
-    have hR0 : 0 < R ^ ((n : ℝ) + 1) := by positivity
-    have h1 : ‖A‖ ^ 2 * R ^ ((n : ℝ) + 1) * (ω * (2 * d) ^ (n + 1) / 2) ≤
-        Cm * V * (2 ^ (n + 1) * (2 * d) ^ (n + 1)) := by
-      rw [← hq]
-      calc _ = ‖A‖ ^ 2 * (ω * (2 * d) ^ (n + 1) / 2) * R ^ ((n : ℝ) + 1) := by ring
-        _ ≤ Cm * V * (2 * d / (R / 2)) ^ ((n : ℝ) + 1) * R ^ ((n : ℝ) + 1) :=
-          mul_le_mul_of_nonneg_right hA hR0.le
-        _ = _ := by ring
-    have h2 : Cm * V * (2 ^ (n + 1) * (2 * d) ^ (n + 1)) =
-        2 ^ (n + 2) * Cm / ω * V * (ω * (2 * d) ^ (n + 1) / 2) := by
-      field_simp
-      ring
-    rw [h2] at h1
-    exact (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) hpA 2) hR0.le).trans
-      (le_of_mul_le_mul_right h1 (by positivity))
+    exact (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) hpA 2)
+      (by positivity)).trans (norm_setAverage_ball_inter_sq_mul_rpow_le hν hH hz.ge hd hR hzU hM)
   · -- The boundary excess decay bounds `∫_{B(x, d)} ‖g - p₀‖²`.
     calc _ ≤ _ := setIntegral_mono_set (hg2.integrableOn_norm_sub_sq_of_subset subset_rfl
           measure_ball_inter_ne_top _) (ae_of_all _ fun _ => by positivity)
