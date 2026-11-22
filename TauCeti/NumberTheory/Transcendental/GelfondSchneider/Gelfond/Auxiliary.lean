@@ -36,12 +36,12 @@ upper bound for `|R⁽ʳ⁾(t₀)| = |λ| ^ r |σ ρ|`.
 
 **Construction.** For a number field `K` and `m ≥ 1`, the conditions `y_k(t) = 0` for `k < n`
 and `1 ≤ t ≤ m` are `m n` linear equations in the `q ^ 2` unknowns `η_{ab}`. When `q ^ 2 = 2 m n`,
-Mathlib's Siegel lemma over `𝓞 K` (`NumberField.house.exists_ne_zero_int_vec_house_le`), whose
-exponent `m n / (q ^ 2 - m n)` is then `1`, solves them with algebraic integers of house at most
-`c ^ n n ^ ((n + 1) / 2)`, for a constant `c` depending only on `K`, `α`, `β`, `γ` and `m`. To
-apply it, each equation is multiplied by `c₀ ^ (n - 1 + 2 q m)` for a nonzero integer `c₀` such
-that `c₀ α`, `c₀ β` and `c₀ γ` are algebraic integers; the entries of the resulting system have
-house at most `q ^ (n - 1) H ^ (n - 1 + 2 q m)`.
+the linear form of Siegel's lemma over `𝓞 K` (`NumberField.exists_siegelConstant_linear`, built
+on Mathlib's `NumberField.house.exists_ne_zero_int_vec_house_le`) solves them with algebraic
+integers of house at most `c ^ n n ^ ((n + 1) / 2)`, for a constant `c` depending only on `K`,
+`α`, `β`, `γ` and `m`. To apply it, each equation is multiplied by `c₀ ^ (n - 1 + 2 q m)` for a
+nonzero integer `c₀` such that `c₀ α`, `c₀ β` and `c₀ γ` are algebraic integers; the entries of
+the resulting system have house at most `q ^ (n - 1) H ^ (n - 1 + 2 q m)`.
 
 **First nonvanishing derivative.** This part makes no arithmetic assumption on `K`: it proves
 that such `r` and `t₀` exist, with `n ≤ r < q ^ 2`, as soon as `λ ≠ 0` and `η ≠ 0`. For each fixed
@@ -168,78 +168,34 @@ theorem gelfond_index_le {q m t k K₀ : ℕ} (a b : Fin q) (ht : t ≤ m) (hk :
   rw [mul_assoc, two_mul]
   omega
 
-/-- The coefficient bound of Gelfond's auxiliary function: if `q ^ 2 = 2 m n` with `m, n ≥ 1`,
-then the bound `C (C q ^ 2 A)` of Siegel's lemma, for entries of house at most
+/-- The coefficient bound of Gelfond's auxiliary function: if `q ^ 2 = 2 m n` with `m, n ≥ 1`
+and `C ≥ 1`, then the bound `C q ^ 2 A` of Siegel's lemma, for entries of house at most
 `A = q ^ (n - 1) H ^ (n - 1 + 2 q m)`, is at most `c ^ n n ^ ((n + 1) / 2)` with
-`c = max(1, C ^ 2) (2 m) H ^ (1 + 4 m ^ 2)`. -/
+`c = C (2 m) H ^ (1 + 4 m ^ 2)`. -/
 private theorem gelfond_siegel_bound_le {C H : ℝ} {m n q : ℕ} (hm : 1 ≤ m) (hn : 1 ≤ n)
-    (hq : q * q = 2 * m * n) (hH : 1 ≤ H) :
-    C * (C * ((q * q : ℕ) : ℝ) * ((q : ℝ) ^ (n - 1) * H ^ (n - 1 + 2 * q * m))) ≤
-      (max 1 (C ^ 2) * (2 * m) * H ^ (1 + 4 * m ^ 2)) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
+    (hq : q * q = 2 * m * n) (hC : 1 ≤ C) (hH : 1 ≤ H) :
+    C * ((q * q : ℕ) : ℝ) * ((q : ℝ) ^ (n - 1) * H ^ (n - 1 + 2 * q * m)) ≤
+      (C * (2 * m) * H ^ (1 + 4 * m ^ 2)) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
   have hqpow : (q : ℝ) ^ (n + 1) ≤ (2 * m) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
     simpa using gelfond_natCast_pow_le (k := n + 1) (j := n) hm hq (by omega)
   have hexp : n - 1 + 2 * q * m ≤ (1 + 4 * m ^ 2) * n := by
     have := gelfond_two_mul_mul_le hq le_rfl
     rw [add_mul, one_mul]
     omega
-  have hC : C * C ≤ max 1 (C ^ 2) ^ n := by
-    rw [← sq]
-    exact (le_max_right _ _).trans (le_self_pow₀ (le_max_left _ _) (by omega))
-  calc C * (C * ((q * q : ℕ) : ℝ) * ((q : ℝ) ^ (n - 1) * H ^ (n - 1 + 2 * q * m)))
-      = C * C * ((q : ℝ) ^ (n + 1) * H ^ (n - 1 + 2 * q * m)) := by
+  calc C * ((q * q : ℕ) : ℝ) * ((q : ℝ) ^ (n - 1) * H ^ (n - 1 + 2 * q * m))
+      = C * ((q : ℝ) ^ (n + 1) * H ^ (n - 1 + 2 * q * m)) := by
         obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
         push_cast
         ring
-    _ ≤ max 1 (C ^ 2) ^ n * ((2 * m) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) *
-          (H ^ (1 + 4 * m ^ 2)) ^ n) := by
+    _ ≤ C ^ n * ((2 * m) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) * (H ^ (1 + 4 * m ^ 2)) ^ n) := by
         rw [← pow_mul]
         gcongr
-    _ = (max 1 (C ^ 2) * (2 * m) * H ^ (1 + 4 * m ^ 2)) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
+        exact le_self_pow₀ hC (by omega)
+    _ = (C * (2 * m) * H ^ (1 + 4 * m ^ 2)) ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) := by
         rw [mul_pow, mul_pow]
         ring
 
 variable {K : Type*} [Field K] [NumberField K]
-
-variable (K) in
-/-- Siegel's lemma for Gelfond's system: there is `C` such that whenever `q ^ 2 = 2 m n` with
-`m, n ≥ 1`, every `m n × q ^ 2` matrix over `𝓞 K` with entries of house at most `A` has a nonzero
-kernel vector `ξ` with `house ξ_u ≤ max(1, C (C q ^ 2 A))`. This is Mathlib's Siegel lemma
-(`NumberField.house.exists_ne_zero_int_vec_house_le`), whose exponent is `1` here, with the
-constant vector `1` covering the zero matrix. -/
-private theorem exists_ne_zero_mulVec_eq_zero_house_le (m : ℕ) :
-    ∃ C : ℝ, ∀ (n q : ℕ) (e : Matrix (Fin n × Fin m) (Fin q × Fin q) (𝓞 K)) (A : ℝ),
-      1 ≤ m → 1 ≤ n → q * q = 2 * m * n →
-      (∀ i j, house (algebraMap (𝓞 K) K (e i j)) ≤ A) →
-      ∃ ξ : Fin q × Fin q → 𝓞 K, ξ ≠ 0 ∧ e *ᵥ ξ = 0 ∧
-        ∀ u, house (ξ u : K) ≤ max 1 (C * (C * ((q * q : ℕ) : ℝ) * A)) := by
-  classical
-  -- Mathlib's constant depends only on `K` but is not exported by name, so it is quantified
-  -- here before `n` and `q` are chosen.
-  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ (n q : ℕ) (e : Matrix (Fin n × Fin m) (Fin q × Fin q) (𝓞 K))
-      (A : ℝ), e ≠ 0 → 0 < n * m → n * m < q * q →
-      (∀ i j, house (algebraMap (𝓞 K) K (e i j)) ≤ A) →
-      ∃ ξ : Fin q × Fin q → 𝓞 K, ξ ≠ 0 ∧ e *ᵥ ξ = 0 ∧
-        ∀ j, house (ξ j : K) ≤ C * (C * (q * q : ℕ) * A) ^ ((n * m : ℕ) / ((q * q : ℕ) -
-          (n * m : ℕ)) : ℝ) :=
-    ⟨_, fun n q e A he h0 hlt hA ↦ house.exists_ne_zero_int_vec_house_le K e he h0 hlt
-      (by simp) hA (by simp)⟩
-  refine ⟨C, fun n q e A hm hn hq hA ↦ ?_⟩
-  have hq₀ : 1 ≤ q := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hq; omega
-  by_cases he : e = 0
-  · refine ⟨fun _ ↦ 1, fun h ↦ ?_, by rw [he, Matrix.zero_mulVec], fun _ ↦ ?_⟩
-    · exact one_ne_zero (congr_fun h (⟨0, hq₀⟩, ⟨0, hq₀⟩))
-    · have hone : house ((1 : 𝓞 K) : K) = 1 := by simpa using house_intCast (K := K) 1
-      exact hone.trans_le (le_max_left _ _)
-  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC n q e A he (Nat.mul_pos hn hm) (by nlinarith) hA
-  refine ⟨ξ, hξ0, hξ, fun u ↦ (hξle u).trans (le_of_eq_of_le ?_ (le_max_right _ _))⟩
-  -- Siegel's exponent is `n m / (q ^ 2 - n m) = 1`, since `q ^ 2 = 2 n m`.
-  have hexp : (((n * m : ℕ) : ℝ) / ((q * q : ℕ) - (n * m : ℕ)) : ℝ) = 1 := by
-    have : ((q * q : ℕ) : ℝ) = 2 * ((n * m : ℕ) : ℝ) := by
-      rw [hq]
-      push_cast
-      ring
-    rw [this, two_mul, add_sub_cancel_right, div_self (by positivity)]
-  rw [hexp, Real.rpow_one]
 
 /-- **Gelfond's auxiliary function, algebraic form** (Karatarakis–Wiedijk, §3). Let `K` be a
 number field, `α, β, γ ∈ K` and `m ≥ 1`. There is `c ≥ 1` such that for all positive integers `n`
@@ -256,11 +212,10 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
             (α ^ ((a + 1 : ℕ) * t) * γ ^ ((b + 1 : ℕ) * t)) = 0 := by
   classical
   obtain ⟨c₀, hc₀, H, hH, -, hterm⟩ := exists_intCast_pow_mul_schneider_term α β γ
-  obtain ⟨C, hC⟩ := exists_ne_zero_mulVec_eq_zero_house_le K m
-  set c := max 1 (C ^ 2) * (2 * m) * H ^ (1 + 4 * m ^ 2)
-  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
+  obtain ⟨C, hC₁, hC⟩ := exists_siegelConstant_linear.{0, 0} K
+  set c := C * (2 * m) * H ^ (1 + 4 * m ^ 2)
   have hc : 1 ≤ c := one_le_mul_of_one_le_of_one_le
-    (one_le_mul_of_one_le_of_one_le (le_max_left _ _) (by linarith)) (one_le_pow₀ hH)
+    (one_le_mul_of_one_le_of_one_le hC₁ (by norm_cast; omega)) (one_le_pow₀ hH)
   refine ⟨c, hc, fun n q hn hq ↦ ?_⟩
   rw [sq] at hq
   have hq₀ : 1 ≤ q := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hq; omega
@@ -276,11 +231,13 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
     (he p u).2.trans (by gcongr; exacts [by exact_mod_cast hq₀, by have := p.1.is_lt; omega])
   let e' : Matrix (Fin n × Fin m) (Fin q × Fin q) (𝓞 K) := fun p u ↦ ⟨e p u, (he p u).1⟩
   -- A nonzero solution `ξ` of the system with the required house bound.
-  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC n q e' ((q : ℝ) ^ (n - 1) * H ^ N) hm hn hq heA
+  have hA : 1 ≤ (q : ℝ) ^ (n - 1) * H ^ N :=
+    one_le_mul_of_one_le_of_one_le (one_le_pow₀ (by exact_mod_cast hq₀)) (one_le_pow₀ hH)
+  have hcard : Fintype.card (Fin q × Fin q) = q * q := by rw [Fintype.card_prod, Fintype.card_fin]
+  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC e' hA (by rw [hcard]; exact Nat.mul_le_mul hq₀ hq₀)
+    (by rw [hcard, hq, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin]; linarith) heA
   replace hξle (u) : house (ξ u : K) ≤ c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) :=
-    (hξle u).trans (max_le (one_le_mul_of_one_le_of_one_le (one_le_pow₀ hc)
-      (Real.one_le_rpow (by exact_mod_cast hn) (by positivity)))
-      (gelfond_siegel_bound_le hm hn hq hH))
+    (hξle u).trans (by rw [hcard]; exact gelfond_siegel_bound_le hm hn hq hC₁ hH)
   refine ⟨fun a b ↦ ξ (a, b), fun h ↦ hξ0 (funext fun u ↦ congr_fun₂ h u.1 u.2),
     fun a b ↦ hξle (a, b), fun k hk t ht ↦ ?_⟩
   -- The equation of `(k, t)`, divided by `c₀ ^ N`.
@@ -340,14 +297,13 @@ theorem iteratedDeriv_gelfond_auxiliary_natCast {R : Type*} [Ring R] (σ : R →
   ring
 
 /-- **The first nonvanishing derivative of Gelfond's auxiliary function.** Let `K` be a field with
-an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `α, β, γ ∈ K` with `β` irrational,
-`σ α = exp λ` and `σ γ = exp (σ β λ)`. Let `η : Fin q → Fin q → K` be nonzero, and suppose that
+an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `β ∈ K` be irrational. Let `η : Fin q → Fin q → K`
+be nonzero, and suppose that
 `R(z) = ∑_{a, b} σ η_{ab} exp (((a + 1) + (b + 1) σ β) λ z)` vanishes to order `n` at every point
 of a nonempty finite set `T` of natural numbers. Then there are `r` with `n ≤ r < q ^ 2` and
 `t₀ ∈ T` such that `R` vanishes to order `r` at every point of `T` and `R⁽ʳ⁾(t₀) ≠ 0`. -/
 theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ : K →+* ℂ)
-    {l : ℂ} (hl : l ≠ 0) {α β γ : K} (hα : σ α = Complex.exp l)
-    (hγ : σ γ = Complex.exp (σ β * l)) (hβ : ∀ r : ℚ, (r : K) ≠ β) {q : ℕ}
+    {l : ℂ} (hl : l ≠ 0) {β : K} (hβ : ∀ r : ℚ, (r : K) ≠ β) {q : ℕ}
     {η : Fin q → Fin q → K} (hη : η ≠ 0) {T : Finset ℕ} (hT : T.Nonempty) {n : ℕ}
     (hn : ∀ k < n, ∀ t ∈ T, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
       Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0) :
@@ -357,17 +313,26 @@ theorem exists_iteratedDeriv_gelfond_auxiliary_ne_zero {K : Type*} [Field K] (σ
       iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
         Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
   have := σ.charZero
-  have hα₀ : α ≠ 0 := fun h ↦ Complex.exp_ne_zero l (by rw [← hα, h, map_zero])
-  have hγ₀ : γ ≠ 0 := fun h ↦ Complex.exp_ne_zero (σ β * l) (by rw [← hγ, h, map_zero])
-  obtain ⟨r, hrq, t₀, ht₀, hzero, hr⟩ := TauCeti.exists_gelfond_value_ne_zero hα₀ hγ₀ hβ hη hT
-  have hr' : iteratedDeriv r (fun z ↦ ∑ a, ∑ b, σ (η a b) *
-      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t₀ ≠ 0 := by
-    rw [σ.iteratedDeriv_gelfond_auxiliary_natCast hα hγ]
-    exact mul_ne_zero (pow_ne_zero _ hl) ((map_ne_zero σ).2 hr)
-  refine ⟨r, ?_, hrq, t₀, ht₀, fun k hk t ht ↦ ?_, hr'⟩
-  · by_contra! h
-    exact hr' (hn r h t₀ ht₀)
-  · rw [σ.iteratedDeriv_gelfond_auxiliary_natCast hα hγ, hzero k hk t ht, map_zero, mul_zero]
+  have hβ' : ∀ r : ℚ, (r : ℂ) ≠ σ β := fun r h ↦ hβ r (σ.injective (by rw [map_ratCast, h]))
+  obtain ⟨r, hrq, t₀, ht₀, hzero, hr⟩ := TauCeti.exists_gelfond_value_ne_zero (K := ℂ)
+    (Complex.exp_ne_zero l) (Complex.exp_ne_zero (σ β * l)) hβ' (η := fun a b ↦ σ (η a b))
+    (fun h ↦ hη (by
+      ext a b
+      exact σ.injective (by simpa using congrFun (congrFun h a) b))) hT
+  have key : ∀ k t : ℕ, iteratedDeriv k (fun z ↦ ∑ a, ∑ b, σ (η a b) *
+      Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * z)) t = 0 ↔
+      ∑ a, ∑ b, σ (η a b) * (((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) ^ k *
+        (Complex.exp l ^ ((a + 1 : ℕ) * t) * Complex.exp (σ β * l) ^ ((b + 1 : ℕ) * t)) = 0 := by
+    intro k t
+    have h := (RingHom.id ℂ).iteratedDeriv_gelfond_auxiliary_natCast (l := l)
+      (α := Complex.exp l) (β := σ β) (γ := Complex.exp (σ β * l)) rfl rfl
+      (fun a b ↦ σ (η a b)) k t
+    simp only [RingHom.id_apply] at h
+    rw [h, mul_eq_zero, or_iff_right (pow_ne_zero _ hl)]
+  have hr' := (key r t₀).not.2 hr
+  refine ⟨r, ?_, hrq, t₀, ht₀, fun k hk t ht ↦ (key k t).2 (hzero k hk t ht), hr'⟩
+  by_contra! h
+  exact hr' (hn r h t₀ ht₀)
 
 open NumberField in
 /-- **Gelfond's auxiliary function** (Karatarakis–Wiedijk, §3). Let `K` be a number field with an

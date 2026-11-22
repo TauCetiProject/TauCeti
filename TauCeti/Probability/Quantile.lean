@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-public import Mathlib.Topology.Instances.EReal.Lemmas
 public import TauCeti.MeasureTheory.Function.Monotone
 public import TauCeti.MeasureTheory.Measure.Mod0MeasureIso
 public import TauCeti.Probability.Cdf
@@ -33,11 +31,12 @@ which is also the interval the uniform law is taken on.
 The *upper quantile* `μ.upperQuantile t = sInf {x | t < cdf μ x}` uses the strict inequality
 instead. Where `cdf μ` has a plateau at the level `t`, the lower and upper quantiles are the two
 ends of that plateau; elsewhere they agree. The upper quantile is characterized through the left
-limit of the cumulative distribution function, `x ≤ μ.upperQuantile t ↔ μ.real (Iio x) ≤ t`,
-which is why the quantiles of a law pushed forward along a decreasing map are expressed through
-the upper quantile of the original law. The lower quantile is left continuous and the upper
-quantile right continuous, and at both of them the level lies between the left limit and the
-value of the cumulative distribution function.
+limit of the cumulative distribution function: for a probability measure `μ` and a level
+`0 < t < 1`, `x ≤ μ.upperQuantile t ↔ μ.real (Iio x) ≤ t`, which is why the quantiles of a law
+pushed forward along a decreasing map are expressed through the upper quantile of the original
+law. At interior levels the lower quantile is left continuous and the upper quantile right
+continuous, and at both of them the level lies between the left limit and the value of the
+cumulative distribution function.
 
 The main result is **inverse transform sampling**: for a probability measure `μ` the quantile
 function pushes the uniform law on the open unit interval forward to `μ`. It presents every real
@@ -61,8 +60,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.cdf_quantile` and `MeasureTheory.Measure.quantile_cdf` — the exact
   inverse laws, when the cumulative distribution function is continuous, respectively strictly
   increasing where its values lie strictly between `0` and `1`; together they give
-  `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
-  `MeasureTheory.Measure.continuousOn_quantile`;
+  `MeasureTheory.Measure.quantile_lt_iff`, while `MeasureTheory.Measure.strictMonoOn_quantile`
+  follows from the first and `MeasureTheory.Measure.continuousOn_quantile` from the second
+  alone, so that it also covers laws with atoms;
 * `MeasureTheory.Measure.cdf_quantile_of_noAtoms` and
   `MeasureTheory.Measure.strictMonoOn_quantile_of_noAtoms` — the same two statements for an
   atomless law, without a continuity hypothesis;
@@ -90,7 +90,7 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.measureReal_Iio_quantile_le` and `MeasureTheory.Measure.le_cdf_quantile`
   — the level lies between the left limit and the value of the cumulative distribution function
   at the quantile, with the same bounds at the upper quantile; for an atomless law
-  `MeasureTheory.Measure.cdf_quantile` gives equality;
+  `MeasureTheory.Measure.cdf_quantile_of_noAtoms` gives equality;
 * `Set.OrdConnected.quantile_mem` and `Set.OrdConnected.upperQuantile_mem` — interior quantiles
   lie in every interval carrying the full mass of the measure;
 * `MeasureTheory.Measure.quantile_le_upperQuantile` and
@@ -184,31 +184,7 @@ theorem quantile_eq_of_le_cdf_iff (ν μ : Measure ℝ) {u t : ℝ}
   ext x
   exact h x
 
-/-- **The quantile of a symmetric fold.** At a positive level `u`, the quantile of the image of a
-symmetric law `μ` under absolute value is the quantile of `μ` at level `(1 + u) / 2`. -/
-theorem quantile_map_abs (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant] {u : ℝ}
-    (hu : 0 < u) : (μ.map (|·|)).quantile u = μ.quantile ((1 + u) / 2) := by
-  refine quantile_eq_of_le_cdf_iff _ _ fun x => ?_
-  rcases le_or_gt 0 x with hx | hx
-  · rw [μ.cdf_map_abs_of_isNegInvariant hx]
-    constructor <;> intro h <;> linarith
-  · rw [μ.cdf_map_abs_of_neg hx]
-    -- Below `0`, the cdf of a symmetric law is at most `1 / 2`.
-    have hle : cdf μ x ≤ 1 - cdf μ x := by
-      rw [← μ.measureReal_Iio_neg x, cdf_eq_real]
-      exact measureReal_mono (Iic_subset_Iio.2 (by linarith))
-    constructor <;> intro h <;> linarith
-
 variable {t x : ℝ}
-
-/-- Above the level `0` the points whose cumulative mass reaches the level are bounded below,
-because the cumulative distribution function tends to `0` at `-∞`. -/
-theorem bddBelow_setOf_le_cdf (μ : Measure ℝ) (ht : 0 < t) : BddBelow {x : ℝ | t ≤ cdf μ x} := by
-  obtain ⟨a, ha⟩ :=
-    eventually_atBot.mp ((tendsto_cdf_atBot μ).eventually (eventually_lt_nhds ht))
-  refine ⟨a, fun x hx ↦ ?_⟩
-  by_contra hxa
-  exact absurd (ha x (not_le.mp hxa).le) (not_lt.mpr hx)
 
 /-- At a nonpositive level the quantile function takes the junk value `0`: every point has
 cumulative mass at least the level. -/
@@ -237,6 +213,24 @@ theorem quantile_zero (t : ℝ) : (0 : Measure ℝ).quantile t = 0 := by
     rw [quantile_def, hset, csInf_Ici]
   · exact quantile_of_one_lt 0 h1
 
+/-- **The quantile of a symmetric fold.** At a positive level `u`, the quantile of the image of a
+symmetric law `μ` (of mass `1`, or the zero measure) under absolute value is the quantile of `μ`
+at level `(1 + u) / 2`. -/
+theorem quantile_map_abs (μ : Measure ℝ) [IsZeroOrProbabilityMeasure μ] [μ.IsNegInvariant]
+    {u : ℝ} (hu : 0 < u) : (μ.map (|·|)).quantile u = μ.quantile ((1 + u) / 2) := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | h
+  · simp
+  refine quantile_eq_of_le_cdf_iff _ _ fun x => ?_
+  rcases le_or_gt 0 x with hx | hx
+  · rw [μ.cdf_map_abs_of_isNegInvariant hx]
+    constructor <;> intro h <;> linarith
+  · rw [μ.cdf_map_abs_of_neg hx]
+    -- Below `0`, the cdf of a symmetric law is at most `1 / 2`.
+    have hle : cdf μ x ≤ 1 - cdf μ x := by
+      rw [← μ.measureReal_Iio_neg x, cdf_eq_real]
+      exact measureReal_mono (Iic_subset_Iio.2 (by linarith))
+    constructor <;> intro h <;> linarith
+
 /-- The cumulative distribution function at the quantile reaches every level strictly below
 `1`. -/
 theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quantile t) := by
@@ -261,28 +255,14 @@ comparison of their quantiles at every level strictly between zero and one. -/
 theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) :
     (∀ x, cdf ν x ≤ cdf μ x) ↔
       ∀ u, 0 < u → u < 1 → μ.quantile u ≤ ν.quantile u := by
-  constructor
-  · intro hcdf u hu0 hu1
-    rw [quantile_le_iff μ hu0 hu1]
-    exact (le_cdf_quantile ν hu1).trans (hcdf _)
-  · intro hquant x
-    by_contra hle
-    let u := (cdf μ x + cdf ν x) / 2
-    have hu0 : 0 < u := by
-      dsimp [u]
-      linarith [cdf_nonneg μ x]
-    have hu1 : u < 1 := by
-      dsimp [u]
-      linarith [cdf_le_one ν x]
-    have hμu : cdf μ x < u := by
-      dsimp [u]
-      linarith
-    have huν : u ≤ cdf ν x := by
-      dsimp [u]
-      linarith
-    have hνq : ν.quantile u ≤ x := (quantile_le_iff ν hu0 hu1).2 huν
-    have hμq : μ.quantile u ≤ x := (hquant u hu0 hu1).trans hνq
-    exact (not_le_of_gt hμu) ((quantile_le_iff μ hu0 hu1).1 hμq)
+  refine ⟨fun hcdf u hu0 hu1 ↦ ?_, fun hquant x ↦ le_of_not_gt fun hlt ↦ ?_⟩
+  · rw [Measure.quantile_le_iff μ hu0 hu1]
+    exact (Measure.le_cdf_quantile ν hu1).trans (hcdf _)
+  · obtain ⟨u, hμu, huν⟩ := exists_between hlt
+    have hu0 : 0 < u := (cdf_nonneg μ x).trans_lt hμu
+    have hu1 : u < 1 := huν.trans_le (cdf_le_one ν x)
+    exact hμu.not_ge ((Measure.quantile_le_iff μ hu0 hu1).1
+      ((hquant u hu0 hu1).trans ((Measure.quantile_le_iff ν hu0 hu1).2 huν.le)))
 
 /-- The set of points whose cumulative mass reaches a level strictly between `0` and `1` is the
 closed ray to the right of the quantile at that level. -/
@@ -344,8 +324,10 @@ theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1
 the quantile has cumulative mass below the level. For `0 < t < 1`, together with
 `le_cdf_quantile` this traps the level between the left limit and the value of the cumulative
 distribution function at the quantile; the mass bound itself holds for every positive level. -/
-theorem measureReal_Iio_quantile_le (μ : Measure ℝ) [IsProbabilityMeasure μ] (h0 : 0 < t) :
+theorem measureReal_Iio_quantile_le (μ : Measure ℝ) [IsZeroOrProbabilityMeasure μ] (h0 : 0 < t) :
     μ.real (Iio (μ.quantile t)) ≤ t := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | h
+  · simpa using h0.le
   rcases lt_or_ge t 1 with h1 | h1
   · exact (measureReal_Iio_le_iff_forall_cdf_le μ).mpr fun _ hy ↦
       ((lt_quantile_iff μ h0 h1).mp hy).le
@@ -468,9 +450,14 @@ theorem continuousOn_quantile (μ : Measure ℝ)
       eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hc)] with w hw hwc
     exact ((quantile_le_iff μ hw.1 hw.2).2 hwc.le).trans_lt hcb
 
-/-- The quantile function is left continuous at every level strictly between `0` and `1`. -/
-theorem continuousWithinAt_Iio_quantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+/-- The quantile function is left continuous at every level below `1`: at levels `t ≤ 0` it is the
+constant junk value `0` to the left of `t`. -/
+theorem continuousWithinAt_Iio_quantile (μ : Measure ℝ) (h1 : t < 1) :
     ContinuousWithinAt μ.quantile (Iio t) t := by
+  rcases le_or_gt t 0 with h0 | h0
+  · refine (continuousWithinAt_const (b := (0 : ℝ))).congr (fun s hs ↦ ?_) ?_
+    · exact quantile_of_nonpos μ (hs.out.le.trans h0)
+    · exact quantile_of_nonpos μ h0
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · -- Below the quantile at `t` the cumulative mass is below `t`, so every level strictly between
     -- that mass and `t` already has its quantile above `a`.
@@ -504,16 +491,6 @@ downstream modules should rewrite with. -/
 theorem upperQuantile_def (μ : Measure ℝ) (t : ℝ) :
     μ.upperQuantile t = sInf {x : ℝ | t < cdf μ x} := (rfl)
 
-/-- Below the level `1` some point has cumulative mass strictly above the level, because the
-cumulative distribution function tends to `1` at `+∞`. -/
-theorem nonempty_setOf_lt_cdf (μ : Measure ℝ) (ht : t < 1) : {x : ℝ | t < cdf μ x}.Nonempty :=
-  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists
-
-/-- Above the level `0` the points whose cumulative mass strictly exceeds the level are bounded
-below, because the cumulative distribution function tends to `0` at `-∞`. -/
-theorem bddBelow_setOf_lt_cdf (μ : Measure ℝ) (ht : 0 < t) : BddBelow {x : ℝ | t < cdf μ x} :=
-  (bddBelow_setOf_le_cdf μ ht).mono (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
-
 /-- At a negative level the upper quantile function takes the junk value `0`: every point has
 cumulative mass strictly above the level. -/
 @[simp]
@@ -523,7 +500,7 @@ theorem upperQuantile_of_neg (μ : Measure ℝ) (ht : t < 0) : μ.upperQuantile 
   rw [upperQuantile_def, hset, Real.sInf_univ]
 
 /-- At a level of at least `1` the upper quantile function takes the junk value `0`: no point has
-cumulative mass that large. -/
+cumulative mass strictly above the level. -/
 @[simp]
 theorem upperQuantile_of_one_le (μ : Measure ℝ) (ht : 1 ≤ t) : μ.upperQuantile t = 0 := by
   have hset : {x : ℝ | t < cdf μ x} = ∅ :=
@@ -589,14 +566,36 @@ theorem upperQuantile_le_quantile (μ : Measure ℝ) {s : ℝ} (hs0 : 0 < s) (hs
     (ht1 : t < 1) : μ.upperQuantile s ≤ μ.quantile t :=
   upperQuantile_le_of_lt_cdf μ hs0 (hst.trans_le (le_cdf_quantile μ ht1))
 
-/-- Where the lower quantile is right continuous, the upper quantile agrees with it: the upper
-quantile is squeezed between the quantile at the level and the quantiles at larger levels. -/
-theorem upperQuantile_eq_quantile_of_continuousWithinAt (μ : Measure ℝ) (h0 : 0 < t)
-    (h1 : t < 1) (h : ContinuousWithinAt μ.quantile (Ioi t) t) :
-    μ.upperQuantile t = μ.quantile t := by
-  refine le_antisymm (ge_of_tendsto h ?_) (quantile_le_upperQuantile μ h0 h1)
-  filter_upwards [Ioo_mem_nhdsGT h1] with s hs
-  exact upperQuantile_le_quantile μ h0 hs.1 hs.2
+/-- If the lower quantile tends to a limit `a` as the level decreases to `0`, then the upper
+quantile at `0` is `a`. -/
+theorem upperQuantile_zero_of_tendsto_quantile (μ : Measure ℝ) {a : ℝ}
+    (h : Tendsto μ.quantile (𝓝[>] 0) (𝓝 a)) : μ.upperQuantile 0 = a := by
+  have hle : ∀ y ∈ {x : ℝ | 0 < cdf μ x}, a ≤ y := fun y hy ↦ by
+    refine le_of_tendsto h ?_
+    filter_upwards [Ioo_mem_nhdsGT hy, Ioo_mem_nhdsGT zero_lt_one] with s hs hs'
+    exact (quantile_le_iff μ hs.1 hs'.2).2 hs.2.le
+  refine le_antisymm (le_of_forall_gt_imp_ge_of_dense fun c hc ↦ ?_)
+    (le_csInf (nonempty_setOf_lt_cdf μ zero_lt_one) hle)
+  obtain ⟨s, hs, hs'⟩ := ((h.eventually (eventually_lt_nhds hc)).and
+    (Ioo_mem_nhdsGT zero_lt_one)).exists
+  exact csInf_le ⟨a, hle⟩ (hs'.1.trans_le ((quantile_le_iff μ hs'.1 hs'.2).1 hs.le))
+
+/-- Where the lower quantile is right continuous, the upper quantile agrees with it. -/
+theorem upperQuantile_eq_quantile_of_continuousWithinAt (μ : Measure ℝ)
+    (h : ContinuousWithinAt μ.quantile (Ioi t) t) : μ.upperQuantile t = μ.quantile t := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · rw [upperQuantile_of_neg μ ht, quantile_of_nonpos μ ht.le]
+  · exact upperQuantile_zero_of_tendsto_quantile μ h.tendsto
+  · rcases lt_or_ge t 1 with h1 | h1
+    · refine le_antisymm (ge_of_tendsto h ?_) (quantile_le_upperQuantile μ ht h1)
+      filter_upwards [Ioo_mem_nhdsGT h1] with s hs
+      exact upperQuantile_le_quantile μ ht hs.1 hs.2
+    · rw [upperQuantile_of_one_le μ h1]
+      have h0 : Tendsto μ.quantile (𝓝[>] t) (𝓝 0) := by
+        refine tendsto_const_nhds.congr' ?_
+        filter_upwards [self_mem_nhdsWithin] with s hs
+        exact (quantile_of_one_lt μ (h1.trans_lt hs)).symm
+      exact tendsto_nhds_unique h0 h
 
 /-- The upper quantile function is monotone on the levels where it is an honest generalized
 inverse. -/
@@ -613,8 +612,10 @@ theorem le_cdf_upperQuantile (μ : Measure ℝ) (h1 : t < 1) :
   · exact (le_cdf_quantile μ h1).trans (monotone_cdf μ (quantile_le_upperQuantile μ h0 h1))
 
 /-- The mass strictly to the left of the upper quantile does not exceed the level. -/
-theorem measureReal_Iio_upperQuantile_le (μ : Measure ℝ) [IsProbabilityMeasure μ] (h0 : 0 < t) :
-    μ.real (Iio (μ.upperQuantile t)) ≤ t := by
+theorem measureReal_Iio_upperQuantile_le (μ : Measure ℝ) [IsZeroOrProbabilityMeasure μ]
+    (h0 : 0 < t) : μ.real (Iio (μ.upperQuantile t)) ≤ t := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | h
+  · simpa using h0.le
   rcases lt_or_ge t 1 with h1 | h1
   · exact (le_upperQuantile_iff μ h0 h1).mp le_rfl
   · exact measureReal_le_one.trans h1
@@ -700,13 +701,13 @@ theorem tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one (μ : Measure ℝ)
 taken in `EReal`, so this also states convergence to minus infinity for support unbounded below. -/
 theorem tendsto_upperQuantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.upperQuantile u : EReal)) (𝓝[>] 0)
-      (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
+      (𝓝 (⨅ x : μ.support, (x.val : EReal))) := by
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨c, hac, hc⟩ := EReal.exists_between_coe_real ha
     have hbound : ∀ᵐ x ∂μ, c < x := by
       filter_upwards [μ.support_mem_ae] with x hx
       exact EReal.coe_lt_coe_iff.mp
-        (hc.trans_le (iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩))
+        (hc.trans_le (iInf_le (fun y : μ.support ↦ (y.val : EReal)) ⟨x, hx⟩))
     have hcdf : cdf μ c = 0 := cdf_eq_zero_of_ae_lt μ hbound
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
     have hq : c < μ.quantile u :=
@@ -716,7 +717,7 @@ theorem tendsto_upperQuantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasu
   · obtain ⟨y, hy⟩ := iInf_lt_iff.mp hb
     obtain ⟨c, hyc, hcb⟩ := EReal.exists_between_coe_real hy
     have hcdf : 0 < cdf μ c :=
-      cdf_pos_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hyc)
+      cdf_pos_of_mem_support_of_lt μ y.property (EReal.coe_lt_coe_iff.mp hyc)
     filter_upwards [Ioo_mem_nhdsGT hcdf] with u hu
     exact EReal.coe_le_coe_iff.2 (upperQuantile_le_of_lt_cdf μ hu.1 hu.2) |>.trans_lt hcb
 
@@ -724,12 +725,12 @@ theorem tendsto_upperQuantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasu
 taken in `EReal`, so this also states convergence to plus infinity for support unbounded above. -/
 theorem tendsto_upperQuantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.upperQuantile u : EReal)) (𝓝[<] 1)
-      (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
+      (𝓝 (⨆ x : μ.support, (x.val : EReal))) := by
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨y, hy⟩ := lt_iSup_iff.mp ha
     obtain ⟨c, hac, hcy⟩ := EReal.exists_between_coe_real hy
     have hcdf : cdf μ c < 1 :=
-      cdf_lt_one_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hcy)
+      cdf_lt_one_of_mem_support_of_lt μ y.property (EReal.coe_lt_coe_iff.mp hcy)
     filter_upwards [Ioo_mem_nhdsLT hcdf] with u hu
     have hq : c < μ.quantile u :=
       (lt_quantile_iff μ ((cdf_nonneg μ c).trans_lt hu.1) hu.2).2 hu.1
@@ -739,7 +740,7 @@ theorem tendsto_upperQuantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasur
     have hbound : ∀ᵐ x ∂μ, x ≤ c := by
       filter_upwards [μ.support_mem_ae] with x hx
       exact EReal.coe_le_coe_iff.mp
-        ((le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩).trans hc.le)
+        ((le_iSup (fun y : μ.support ↦ (y.val : EReal)) ⟨x, hx⟩).trans hc.le)
     have hcdf : cdf μ c = 1 := cdf_eq_one_of_ae_le μ hbound
     filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
     exact EReal.coe_le_coe_iff.2
@@ -749,71 +750,40 @@ theorem tendsto_upperQuantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasur
 taken in `EReal`, so this also states convergence to minus infinity for support unbounded below. -/
 theorem tendsto_quantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0)
-      (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
-  let a := ⨅ x : μ.support, (x.1 : EReal)
-  -- Fold the displayed support infimum into the abbreviation used throughout the proof.
-  change Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 a)
-  have hs : μ.support.Nonempty := μ.nonempty_support (IsProbabilityMeasure.ne_zero μ)
-  have ha_top : a ≠ ⊤ := by
-    obtain ⟨x, hx⟩ := hs
-    exact ne_of_lt ((iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩).trans_lt
-      (EReal.coe_lt_top x))
-  by_cases ha_bot : a = ⊥
-  · rw [ha_bot]
-    apply tendsto_quantile_nhdsGT_zero_of_cdf_pos
-    intro x
-    have hax : a < (x : EReal) := ha_bot.symm ▸ EReal.bot_lt_coe x
-    obtain ⟨y, hy⟩ := iInf_lt_iff.mp hax
-    exact cdf_pos_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hy)
-  · have ha_coe : (a.toReal : EReal) = a := EReal.coe_toReal ha_top ha_bot
-    rw [← ha_coe]
-    apply tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos
-    · filter_upwards [μ.support_mem_ae] with x hx
-      have hle : a ≤ (x : EReal) :=
-        iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩
-      rw [← ha_coe] at hle
-      exact EReal.coe_le_coe_iff.mp hle
-    · intro x hax
-      have hlt : a < (x : EReal) := by
-        rw [← ha_coe, EReal.coe_lt_coe_iff]
-        exact hax
-      obtain ⟨y, hy⟩ := iInf_lt_iff.mp hlt
-      exact cdf_pos_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hy)
+      (𝓝 (⨅ x : μ.support, (x.val : EReal))) := by
+  have hU := Measure.tendsto_upperQuantile_nhdsGT_zero μ
+  have hhalf : Tendsto (fun u : ℝ ↦ u / 2) (𝓝[>] 0) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · simpa using ((continuous_id.div_const (2 : ℝ)).tendsto 0).mono_left
+        (nhdsWithin_le_nhds (s := Ioi (0 : ℝ)))
+    · filter_upwards [self_mem_nhdsWithin] with u hu using half_pos (mem_Ioi.mp hu)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (hU.comp hhalf) hU ?_ ?_ <;>
+    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+  · exact EReal.coe_le_coe_iff.2
+      (Measure.upperQuantile_le_quantile μ (half_pos hu.1) (half_lt_self hu.1) hu.2)
+  · exact EReal.coe_le_coe_iff.2 (Measure.quantile_le_upperQuantile μ hu.1 hu.2)
 
 /-- The lower quantile tends at one to the supremum of the topological support. The supremum is
 taken in `EReal`, so this also states convergence to plus infinity for support unbounded above. -/
 theorem tendsto_quantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasure μ] :
     Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1)
-      (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
-  let b := ⨆ x : μ.support, (x.1 : EReal)
-  -- Fold the displayed support supremum into the abbreviation used throughout the proof.
-  change Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1) (𝓝 b)
-  have hs : μ.support.Nonempty := μ.nonempty_support (IsProbabilityMeasure.ne_zero μ)
-  have hb_bot : b ≠ ⊥ := by
-    obtain ⟨x, hx⟩ := hs
-    exact ne_of_gt ((EReal.bot_lt_coe x).trans_le
-      (le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩))
-  by_cases hb_top : b = ⊤
-  · rw [hb_top]
-    apply tendsto_quantile_nhdsLT_one_of_cdf_lt_one
-    intro x
-    have hxb : (x : EReal) < b := hb_top.symm ▸ EReal.coe_lt_top x
-    obtain ⟨y, hy⟩ := lt_iSup_iff.mp hxb
-    exact cdf_lt_one_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hy)
-  · have hb_coe : (b.toReal : EReal) = b := EReal.coe_toReal hb_top hb_bot
-    rw [← hb_coe]
-    apply tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one
-    · filter_upwards [μ.support_mem_ae] with x hx
-      have hle : (x : EReal) ≤ b :=
-        le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩
-      rw [← hb_coe] at hle
-      exact EReal.coe_le_coe_iff.mp hle
-    · intro x hxb
-      have hlt : (x : EReal) < b := by
-        rw [← hb_coe, EReal.coe_lt_coe_iff]
-        exact hxb
-      obtain ⟨y, hy⟩ := lt_iSup_iff.mp hlt
-      exact cdf_lt_one_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hy)
+      (𝓝 (⨆ x : μ.support, (x.val : EReal))) := by
+  have hU := Measure.tendsto_upperQuantile_nhdsLT_one μ
+  have htwo : Tendsto (fun u : ℝ ↦ 2 * u - 1) (𝓝[<] 1) (𝓝[<] 1) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have : Tendsto (fun u : ℝ ↦ 2 * u - 1) (𝓝 1) (𝓝 (2 * 1 - 1)) :=
+        ((continuous_const.mul continuous_id).sub continuous_const).tendsto 1
+      norm_num at this
+      exact this.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with u hu
+      simp only [mem_Iio] at hu ⊢
+      linarith
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (hU.comp htwo) hU ?_ ?_ <;>
+    filter_upwards [Ioo_mem_nhdsLT (show (1 / 2 : ℝ) < 1 by norm_num)] with u hu
+  · exact EReal.coe_le_coe_iff.2
+      (Measure.upperQuantile_le_quantile μ (by linarith [hu.1]) (by linarith [hu.2]) hu.2)
+  · exact EReal.coe_le_coe_iff.2
+      (Measure.quantile_le_upperQuantile μ (by linarith [hu.1]) hu.2)
 
 /-- The cumulative distribution function at the upper quantile is exactly the level when the law
 has no atom at the upper quantile. -/
@@ -830,10 +800,15 @@ theorem cdf_upperQuantile (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSing
     (h0 : 0 < t) (h1 : t < 1) : cdf μ (μ.upperQuantile t) = t :=
   cdf_upperQuantile' μ h0 h1 (measure_singleton _)
 
-/-- The upper quantile function is right continuous at every level strictly between `0`
-and `1`. -/
-theorem continuousWithinAt_Ioi_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
+/-- The upper quantile function is right continuous at every positive level: at levels `t ≥ 1` it is
+the constant junk value `0` to the right of `t`. -/
+theorem continuousWithinAt_Ioi_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) :
     ContinuousWithinAt μ.upperQuantile (Ioi t) t := by
+  rcases lt_or_ge t 1 with h1 | h1
+  swap
+  · refine (continuousWithinAt_const (b := (0 : ℝ))).congr (fun s hs ↦ ?_) ?_
+    · exact upperQuantile_of_one_le μ (h1.trans hs.out.le)
+    · exact upperQuantile_of_one_le μ h1
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · filter_upwards [Ioo_mem_nhdsGT h1] with s hs
     exact ha.trans_le (monotoneOn_upperQuantile μ ⟨h0, h1⟩ ⟨h0.trans hs.1, hs.2⟩ hs.1.le)
@@ -869,15 +844,15 @@ theorem measurable_quantile_probabilityMeasure :
   have hcdf : Measurable fun P : ProbabilityMeasure ℝ ↦ cdf (P : Measure ℝ) x := by
     simp only [cdf_eq_real, Measure.real]
     exact ((Measure.measurable_coe measurableSet_Iic).comp
-      measurable_subtype_coe).ennreal_toReal
+      measurable_subtypeVal).ennreal_toReal
   have hset :
       (fun q : ProbabilityMeasure ℝ × Ioo (0 : ℝ) 1 ↦
         (q.1 : Measure ℝ).quantile q.2) ⁻¹' Iic x =
         {q | (q.2 : ℝ) ≤ cdf (q.1 : Measure ℝ) x} := by
     ext q
-    exact quantile_le_iff (q.1 : Measure ℝ) q.2.2.1 q.2.2.2
+    exact quantile_le_iff (q.1 : Measure ℝ) q.2.property.1 q.2.property.2
   rw [hset]
-  exact measurableSet_le (measurable_subtype_coe.comp measurable_snd)
+  exact measurableSet_le (measurable_subtypeVal.comp measurable_snd)
     (hcdf.comp measurable_fst)
 
 /-- The upper quantile is jointly measurable in a probability measure and a level in `(0, 1)`. -/
@@ -893,15 +868,15 @@ theorem measurable_upperQuantile_probabilityMeasure :
       (P : Measure ℝ).real (Iio x) := by
     simp only [Measure.real]
     exact ((Measure.measurable_coe measurableSet_Iio).comp
-      measurable_subtype_coe).ennreal_toReal
+      measurable_subtypeVal).ennreal_toReal
   have hset :
       (fun q : ProbabilityMeasure ℝ × Ioo (0 : ℝ) 1 ↦
         (q.1 : Measure ℝ).upperQuantile q.2) ⁻¹' Iio x =
         {q | (q.2 : ℝ) < (q.1 : Measure ℝ).real (Iio x)} := by
     ext q
-    exact upperQuantile_lt_iff (q.1 : Measure ℝ) q.2.2.1 q.2.2.2
+    exact upperQuantile_lt_iff (q.1 : Measure ℝ) q.2.property.1 q.2.property.2
   rw [hset]
-  exact measurableSet_lt (measurable_subtype_coe.comp measurable_snd)
+  exact measurableSet_lt (measurable_subtypeVal.comp measurable_snd)
     (hleft.comp measurable_fst)
 
 /-- Quantiles of a measurable family of probability measures are jointly measurable in the
@@ -954,17 +929,22 @@ theorem measurePreserving_quantile (μ : Measure ℝ) [IsProbabilityMeasure μ] 
     MeasurePreserving μ.quantile (volume.restrict (Ioo (0 : ℝ) 1)) μ :=
   ⟨measurable_quantile μ, map_quantile_volume_Ioo μ⟩
 
-/-- The quantile function of a real probability law is integrable on the levels `Ioo 0 1` exactly
-when the law has a finite first moment. -/
-theorem integrableOn_quantile_iff (μ : Measure ℝ) [IsProbabilityMeasure μ] :
-    IntegrableOn μ.quantile (Ioo 0 1) ↔ Integrable id μ :=
-  (measurePreserving_quantile μ).integrable_comp aestronglyMeasurable_id
+/-- The quantile function of a real probability law (or the zero measure) is integrable on the
+levels `Ioo 0 1` exactly when the law has a finite first moment. -/
+theorem integrableOn_quantile_iff (μ : Measure ℝ) [IsZeroOrProbabilityMeasure μ] :
+    IntegrableOn μ.quantile (Ioo 0 1) ↔ Integrable id μ := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | h
+  · have h0 : (0 : Measure ℝ).quantile = fun _ ↦ 0 := funext Measure.quantile_zero
+    simp [IntegrableOn, h0]
+  exact (measurePreserving_quantile μ).integrable_comp aestronglyMeasurable_id
 
-/-- **The mean as the average quantile.** By inverse transform sampling, the average over the levels
-`Ioo 0 1` of the quantile function of a real probability law is its mean. Both sides vanish when
-the law has no finite first moment. -/
-theorem setIntegral_quantile_eq_integral (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+/-- **The mean as the average quantile.** The average over the levels
+`Ioo 0 1` of the quantile function of a real probability law (or the zero measure) is its mean.
+Both sides vanish when the law has no finite first moment. -/
+theorem setIntegral_quantile_eq_integral (μ : Measure ℝ) [IsZeroOrProbabilityMeasure μ] :
     ∫ t in Ioo 0 1, μ.quantile t = ∫ x, x ∂μ := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | h
+  · simp
   rw [← integral_map (f := fun x ↦ x) (measurable_quantile μ).aemeasurable
     aestronglyMeasurable_id, map_quantile_volume_Ioo]
 
@@ -1029,24 +1009,23 @@ theorem cdf_map_eq_volume_restrict (ν : Measure ℝ) [IsProbabilityMeasure ν]
       rintro ⟨_, hx1⟩; exact le_trans hx1 hy1
     rw [hset, hrset, measure_univ, Real.volume_Icc, sub_zero, ENNReal.ofReal_one]
 
-/-- On the closed unit interval, the CDF and quantile are inverse almost everywhere. -/
+/-- For an atomless probability law, the cumulative distribution function is a left inverse of the
+quantile function at almost every level of the closed unit interval. -/
 theorem cdf_quantile_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingletonClass ν] :
     (fun u => cdf ν (ν.quantile u)) =ᵐ[volume.restrict (Set.Icc 0 1)] id := by
-  refine (ae_restrict_iff' measurableSet_Icc).mpr ?_
-  filter_upwards [Set.Countable.ae_notMem
-      ((Set.countable_singleton (1 : ℝ)).insert 0) volume] with u hu huIcc
-  have hu0 : u ≠ 0 := fun h => hu (by simp [h])
-  have hu1 : u ≠ 1 := fun h => hu (by simp [h])
-  have h0 : 0 < u := lt_of_le_of_ne huIcc.1 (Ne.symm hu0)
-  have h1 : u < 1 := lt_of_le_of_ne huIcc.2 hu1
-  exact cdf_quantile_of_noAtoms ν h0 h1
+  rw [← restrict_Ioo_eq_restrict_Icc]
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with u hu
+  exact Measure.cdf_quantile_of_noAtoms ν hu.1 hu.2
 
-/-- The quantile of the CDF is the identity almost everywhere, for every real probability measure.
-The cumulative distribution function of a law with atoms has plateaus, but the part of a plateau
-strictly to the right of a point whose cumulative mass is below `1` is null, so almost every
-point is the least point reaching its own level. -/
-theorem quantile_cdf_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+/-- The quantile of the CDF is the identity almost everywhere, for every real probability
+measure (or the zero measure). The cumulative distribution function of a law with atoms has
+plateaus, but the part of a plateau strictly to the right of a point whose cumulative mass is
+below `1` is null, so almost every point is the least point reaching its own level. -/
+theorem quantile_cdf_ae (ν : Measure ℝ) [IsZeroOrProbabilityMeasure ν] :
     (fun x => ν.quantile (cdf ν x)) =ᵐ[ν] id := by
+  rcases eq_zero_or_isProbabilityMeasure ν with rfl | h
+  · simp only [ae_zero]
+    exact Filter.eventually_bot
   have hplateau : ∀ᵐ (x : ℝ) ∂ν, ∀ q : ℚ, ¬ (q < x ∧ cdf ν q = cdf ν x) :=
     (eventually_countable_forall (l := ae ν) (ι := ℚ) (α := ℝ)
       (p := fun x q ↦ ¬ (q < x ∧ cdf ν q = cdf ν x))).2 fun q ↦ ae_not_of_lt_of_cdf_eq ν q

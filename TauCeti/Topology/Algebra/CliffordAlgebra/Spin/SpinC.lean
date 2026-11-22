@@ -23,7 +23,8 @@ For definite real coordinate forms in positive dimension, this file proves that 
 actual product of the rotation homomorphism and determinant character is a covering map for the
 native coordinate topology on `SO(n)`. Its kernel is `{1, [1, -1]}`. The determinant character
 and rotation map are continuous; compactness of `Spin(n)` makes their surjective product a
-quotient map, and its finite kernel gives the covering.
+quotient map, and its finite kernel gives the covering. Charge conjugation `[s, z] ↦ [s, z⁻¹]`
+is a continuous automorphism (`CliffordAlgebra.spinCGroup.chargeConjContinuousMulEquiv`).
 
 These are topological group covers. No smoothness or covering statement about classifying
 spaces is asserted.
@@ -88,6 +89,28 @@ theorem continuous_ofCircle : Continuous (ofCircle Q hQ) := by
       (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous.comp
         (continuous_const.prodMk continuous_id)
   exact h.congr fun z ↦ (ofCircle_apply Q hQ z).symm
+
+/-- Charge conjugation `[s, z] ↦ [s, z⁻¹]` is continuous for the quotient topology. -/
+@[fun_prop]
+theorem continuous_chargeConj : Continuous (chargeConj Q hQ) := by
+  apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous_iff.mpr
+  simp only [Function.comp_def, ← mk_apply, chargeConj_mk]
+  simpa only [coe_mk, Function.comp_def] using
+    (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous.comp
+      (continuous_fst.prodMk (continuous_inv.comp continuous_snd))
+
+/-- Charge conjugation as a continuous automorphism of the Spinᶜ quotient. -/
+def chargeConjContinuousMulEquiv : spinCGroup Q hQ ≃ₜ* spinCGroup Q hQ where
+  toMulEquiv := chargeConj Q hQ
+  continuous_toFun := continuous_chargeConj Q hQ
+  continuous_invFun := by
+    rw [MulEquiv.invFun_eq_symm, chargeConj_symm]
+    exact continuous_chargeConj Q hQ
+
+/-- The bundled continuous charge conjugation is charge conjugation. -/
+@[simp]
+theorem chargeConjContinuousMulEquiv_apply (x : spinCGroup Q hQ) :
+    chargeConjContinuousMulEquiv Q hQ x = chargeConj Q hQ x := (rfl)
 
 /-- The determinant character as a continuous homomorphism on the Spinᶜ quotient. -/
 def detContinuousMonoidHom : spinCGroup Q hQ →ₜ* Circle where

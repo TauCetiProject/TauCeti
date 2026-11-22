@@ -138,7 +138,7 @@ theorem sectionZeroChart_apply
     (hf : HasStrictFDerivAt (fun y ↦ (e ⟨b y, s y⟩).2) T x)
     (hT : T.range = ⊤) (hker : T.ker.ClosedComplemented) (hz : s x = 0)
     (y : ↥{y | s y = 0}) :
-    sectionZeroChart hf hT hker hz y = Classical.choose hker (y.1 - x) := by
+    sectionZeroChart hf hT hker hz y = Classical.choose hker (y.val - x) := by
   unfold sectionZeroChart
   dsimp only
   rw [OpenPartialHomeomorph.subtypeCoord_apply, OpenPartialHomeomorph.coe_restrOpen,

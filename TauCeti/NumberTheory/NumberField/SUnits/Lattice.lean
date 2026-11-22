@@ -122,7 +122,7 @@ instance : DiscreteTopology (unitLattice S) := by
   · refine Set.Finite.of_finite_image ?_ Subtype.val_injective.injOn
     refine (unitLattice_inter_ball_finite S 1).subset ?_
     rintro _ ⟨x, hx, rfl⟩
-    exact ⟨x.2, by simpa [mem_closedBall_zero_iff] using hx⟩
+    exact ⟨x.property, by simpa [mem_closedBall_zero_iff] using hx⟩
 
 /-! ### Spanning -/
 
@@ -135,14 +135,14 @@ private theorem exists_logEmbedding_inr (v : S) :
   classical
   set n := Nat.card (ClassGroup (𝓞 K))
   set f : ↥(S : Set (HeightOneSpectrum (𝓞 K))) → Multiplicative ℤ :=
-    Pi.mulSingle ⟨v.1, v.2⟩ (Multiplicative.ofAdd 1) with hf
+    Pi.mulSingle ⟨v.val, v.property⟩ (Multiplicative.ofAdd 1) with hf
   obtain ⟨x, hx⟩ := pow_mem_range_unitValuation (𝓞 K) K (S : Set (HeightOneSpectrum (𝓞 K))) n
     (fun _ ↦ pow_card_eq_one') f
   -- The finite coordinate at `v'` vanishes exactly when the valuation of `x` at `v'` is trivial.
   have hlog (v' : S) :
-      logEmbedding S (Additive.ofMul x) (Sum.inr v') = 0 ↔ (f ^ n) ⟨v'.1, v'.2⟩ = 1 := by
-    have hpos : 0 < FinitePlace.mk v'.1 ((x : Kˣ) : K) := FinitePlace.pos_iff.mpr (x : Kˣ).ne_zero
-    rw [← congrFun hx ⟨v'.1, v'.2⟩, Set.unitValuation_apply,
+      logEmbedding S (Additive.ofMul x) (Sum.inr v') = 0 ↔ (f ^ n) ⟨v'.val, v'.property⟩ = 1 := by
+    have hpos : 0 < FinitePlace.mk v'.val ((x : Kˣ) : K) := FinitePlace.pos_iff.mpr (x : Kˣ).ne_zero
+    rw [← congrFun hx ⟨v'.val, v'.property⟩, Set.unitValuation_apply,
       HeightOneSpectrum.valuationOfNeZero_eq_one_iff, ← FinitePlace.mk_apply_eq_one_iff,
       logEmbedding_apply_inr]
     exact ⟨Real.eq_one_of_pos_of_log_eq_zero hpos, fun h ↦ by rw [h, Real.log_one]⟩
@@ -150,7 +150,8 @@ private theorem exists_logEmbedding_inr (v : S) :
   · rw [hlog, Pi.pow_apply, hf, Pi.mulSingle_eq_same, ← ofAdd_nsmul, ofAdd_eq_one, nsmul_one,
       Nat.cast_eq_zero] at h
     exact Nat.card_pos.ne' h
-  · have hne : (⟨v'.1, v'.2⟩ : ↥(S : Set (HeightOneSpectrum (𝓞 K)))) ≠ ⟨v.1, v.2⟩ :=
+  · have hne : (⟨v'.val, v'.property⟩ : ↥(S : Set (HeightOneSpectrum (𝓞 K)))) ≠ ⟨v.val, v.property⟩
+      :=
       fun h ↦ hv' (Subtype.ext (congrArg Subtype.val h))
     rw [Pi.pow_apply, hf, Pi.mulSingle_eq_of_ne hne, one_pow]
 
@@ -333,10 +334,10 @@ theorem exists_forall_abs_log_sub_le :
   set n := Fintype.card ({w : InfinitePlace K // w ≠ w₀} ⊕ S)
   have hR₀ : 0 ≤ R₀ := Finset.sum_nonneg fun i _ ↦ norm_nonneg _
   refine ⟨(n + 1) * R₀, by positivity, fun z z' hz ↦ ?_⟩
-  let y : logSpace S := Sum.elim (fun w ↦ z w.1) (fun v ↦ z' v.1)
+  let y : logSpace S := Sum.elim (fun w ↦ z w.val) (fun v ↦ z' v.val)
   have hmem : (ZSpan.floor b y : logSpace S) ∈ unitLattice S := by
     rw [← Basis.ofZLatticeBasis_span ℝ (unitLattice S) (basisUnitLattice S)]
-    exact (ZSpan.floor b y).2
+    exact (ZSpan.floor b y).property
   obtain ⟨u, hu⟩ := mem_unitLattice_iff.mp hmem
   -- every coordinate of `y` is within `R₀` of the corresponding coordinate of the image of `u`
   have hcoord (i) : |y i - logEmbedding S (Additive.ofMul u) i| ≤ R₀ := by

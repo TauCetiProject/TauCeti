@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
-public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Group.Real
@@ -19,12 +19,16 @@ a set. This file records its global form: a jointly continuous integrand which v
 integration variable lies in a fixed compact set has a continuous parametric integral, against any
 measure which is finite on compact sets. It also records that the indicator function of a
 bounded interval `[a, b)` is integrable against a locally finite measure, that the integral of
-`|f|` over a set splits along the sign of `f`, that an almost everywhere positive function has
-positive integral, bounds for the integral of the reciprocal of a function bounded below by a
-positive constant, and that a continuous
-square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
-on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets.
+`|f|` over a set splits along the sign of `f`, that an integral over a set splits along finitely
+many disjoint measurable subsets, that an almost everywhere positive function has positive
+integral, bounds for the integral of the reciprocal of a function bounded below by a positive
+constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and supported in a closed
+ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extension `f₀` of `f`
+from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
+`h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
+It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
+that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, and that a pointwise
+bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` integrates to the same bound for the integrals.
 
 ## Main statements
 
@@ -38,9 +42,19 @@ unions with disjoint sets.
 * `TauCeti.div_le_setIntegral_inv` and `TauCeti.setIntegral_inv_pos`: if `λ ≤ a ≤ M` almost
   everywhere on a set `s` of finite measure, with `λ > 0`, then `∫_s a⁻¹ ≥ μ(s) / M`; the lower
   bound `a ≥ λ` alone gives `∫_s a⁻¹ > 0` when `μ s > 0`.
+* `TauCeti.le_setIntegral_Icc_add_of_le_mul`: if `m ≤ K σ` on `[a, a + K]`, with `K > 0`, then
+  `m ≤ ∫_a^{a+K} σ`.
+* `TauCeti.setIntegral_le_mul_add_mul_of_le`: a pointwise bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` on a
+  measurable set integrates to `∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`.
+* `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
+  ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
+* `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
+  extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
+* `MeasureTheory.setIntegral_eq_setIntegral_sdiff_iUnion_add_sum`: an integral over `T` splits along
+  finitely many pairwise disjoint measurable subsets of `T` and the rest of `T`.
 * `MeasureTheory.setIntegral_mul_le_mul_setIntegral_abs`: the pairing of an integrable `f` on `Ω`
   with a function `g` bounded by `S` on `V ⊆ Ω` is at most `S ∫_Ω |f|`.
 * `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
@@ -50,6 +64,9 @@ unions with disjoint sets.
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
+* `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
+  integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
+  measure finite on compact sets.
 -/
 
 public section
@@ -107,15 +124,15 @@ theorem integral_norm_add_const_sub_le {α E : Type*} [MeasurableSpace α] {μ :
   rw [he]
   exact norm_add_le _ _
 
-/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a countable set
+/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a set of seams
 `Z`, and `g` is injective on `s`, the integral over `g '' s` is the sum of the integrals over the
 images `(g ∘ Q i) '' (D ∩ Q i ⁻¹' s)` of the pieces cut out by each parametrization, up to the
 transport identity `hpiece` for each piece. The integrand need only be integrable on `g '' s`, and
-the measure needs null singletons only to discard the seams. -/
+the seams need only have a null image `g '' (s ∩ Z)`. -/
 theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [Fintype ι]
-    {Q : ι → E → M} {D : Set E} {Z : Set M} (hZ : Z.Countable) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    {Q : ι → E → M} {D : Set E} {Z : Set M} (himage : (⋃ i, Q i '' D) = Zᶜ)
     (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D))) {g : M → E} {s : Set M}
-    (hg : InjOn g s) (μ : Measure E) [NullSingletonClass μ] {C : E → ℝ}
+    (hg : InjOn g s) (μ : Measure E) (hZ : μ (g '' (s ∩ Z)) = 0) {C : E → ℝ}
     (hC : IntegrableOn C (g '' s) μ)
     (c : ℝ) (V : ι → E → ℝ)
     (hT : ∀ i, MeasurableSet ((g ∘ Q i) '' (D ∩ Q i ⁻¹' s)))
@@ -137,7 +154,13 @@ theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [F
   have hsub : ∀ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s) ⊆ g '' s := fun i ↦ by
     rw [image_comp, image_inter_preimage]
     exact image_mono inter_subset_right
-  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ).symm, ← hcover,
+  -- The seams contribute only the null image `g '' (s ∩ Z)`.
+  have hae : g '' (s \ Z) =ᵐ[μ] g '' s := by
+    have hsplit : g '' s = g '' (s \ Z) ∪ g '' (s ∩ Z) := by
+      rw [← image_union, sdiff_union_inter]
+    rw [hsplit]
+    exact (union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.mpr hZ)).symm
+  rw [setIntegral_congr_set hae.symm, ← hcover,
     integral_iUnion_fintype hT hpair (fun i ↦ hC.mono_set (hsub i)), Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ ↦ hpiece i
 
@@ -195,6 +218,67 @@ theorem setIntegral_inv_pos (hs₀ : μ s ≠ 0) (hs : μ s ≠ ∞) (hlam : 0 <
 
 end Reciprocal
 
+/-- If `m ≤ K σ(r)` for every `r ∈ [a, a + K]`, with `K > 0` and `σ` integrable there, then `m` is
+at most the integral of `σ` over `[a, a + K]`: the average of `σ` over the interval is at least
+`m / K`. -/
+theorem le_setIntegral_Icc_add_of_le_mul {σ : ℝ → ℝ} {a K m : ℝ} (hK : 0 < K)
+    (hσ : IntegrableOn σ (Icc a (a + K))) (hm : ∀ r ∈ Icc a (a + K), m ≤ K * σ r) :
+    m ≤ ∫ r in Icc a (a + K), σ r := by
+  have h := setIntegral_ge_of_const_le_real measurableSet_Icc (by simp)
+    (fun r hr ↦ (div_le_iff₀' hK).2 (hm r hr)) hσ
+  simpa [hK.le, hK.ne'] using h
+
+/-- **Integrating a bound by a combination of two functions.** If `0 ≤ f ≤ c₁ g₁ + c₂ g₂` on a
+measurable set `s`, with `g₁` and `g₂` integrable on `s`, then
+`∫_s f ≤ c₁ ∫_s g₁ + c₂ ∫_s g₂`. -/
+theorem setIntegral_le_mul_add_mul_of_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {s : Set α} {f g₁ g₂ : α → ℝ} {c₁ c₂ : ℝ} (hs : MeasurableSet s) (hf : ∀ x ∈ s, 0 ≤ f x)
+    (hg₁ : IntegrableOn g₁ s μ) (hg₂ : IntegrableOn g₂ s μ)
+    (h : ∀ x ∈ s, f x ≤ c₁ * g₁ x + c₂ * g₂ x) :
+    ∫ x in s, f x ∂μ ≤ c₁ * (∫ x in s, g₁ x ∂μ) + c₂ * ∫ x in s, g₂ x ∂μ := by
+  rw [← integral_const_mul, ← integral_const_mul,
+    ← integral_add (hg₁.const_mul c₁) (hg₂.const_mul c₂)]
+  exact integral_mono_of_nonneg (ae_restrict_of_forall_mem hs hf)
+    ((hg₁.const_mul c₁).add (hg₂.const_mul c₂)) (ae_restrict_of_forall_mem hs h)
+
+open Metric in
+/-- A function bounded by `K` on a closed ball and vanishing off it has `∫_s ψ² ≤ K² |B|` over
+every set `s`, where `B` is the closed ball. -/
+theorem setIntegral_sq_le_of_support_subset_closedBall {E : Type*} [PseudoMetricSpace E]
+    [ProperSpace E] [MeasurableSpace E] [OpensMeasurableSpace E] {mu : Measure E}
+    [IsFiniteMeasureOnCompacts mu] {s : Set E} {ψ : E → ℝ} {x₀ : E} {R K : ℝ}
+    (hψs : support ψ ⊆ closedBall x₀ R) (hψK : ∀ x ∈ closedBall x₀ R, ‖ψ x‖ ≤ K) :
+    ∫ x in s, ψ x ^ 2 ∂mu ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
+  have hmeasB : MeasurableSet (closedBall x₀ R) := measurableSet_closedBall
+  calc ∫ x in s, ψ x ^ 2 ∂mu
+      ≤ ∫ x in s, (closedBall x₀ R).indicator (fun _ => K ^ 2) x ∂mu := by
+        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
+          ((integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
+            hmeasB).restrict
+          (Filter.Eventually.of_forall fun x => ?_)
+        by_cases hx : x ∈ closedBall x₀ R
+        · rw [indicator_of_mem hx]
+          have := pow_le_pow_left₀ (norm_nonneg _) (hψK x hx) 2
+          rwa [Real.norm_eq_abs, sq_abs] at this
+        · simp [indicator_of_notMem hx, notMem_support.1 fun hx' => hx (hψs hx')]
+    _ ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
+        rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
+        gcongr
+        rw [measureReal_restrict_apply hmeasB]
+        exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
+
+/-- If `f₀` is almost everywhere the zero extension `1_s f` of `f` and `Φ x 0 = 0` for every
+`x`, then the integral of `Φ x (f₀ x)` over the whole space is the integral of `Φ x (f x)`
+over `s`. -/
+theorem integral_eq_setIntegral_of_ae_eq_indicator {X E G : Type*} [MeasurableSpace X] [Zero E]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure X} {s : Set X}
+    (hs : NullMeasurableSet s μ) {f f₀ : X → E} (Φ : X → E → G) (hΦ : ∀ x, Φ x 0 = 0)
+    (h : f₀ =ᵐ[μ] s.indicator f) :
+    ∫ x, Φ x (f₀ x) ∂μ = ∫ x in s, Φ x (f x) ∂μ := by
+  rw [← integral_indicator₀ hs]
+  refine integral_congr_ae (h.mono fun x hx => ?_)
+  by_cases hx' : x ∈ s <;> simp [hx, hx', hΦ]
+
 end TauCeti
 
 /-- A continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
@@ -213,6 +297,18 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
   exact hpos.ne' h0
 
 namespace MeasureTheory
+
+/-- An integral over `T` splits along finitely many pairwise disjoint measurable sets `A i ⊆ T`
+into the integral over the rest `T \ ⋃ i, A i` plus the sum of the integrals over the `A i`. -/
+theorem setIntegral_eq_setIntegral_sdiff_iUnion_add_sum {α E ι : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [Fintype ι] {ν : Measure α} {T : Set α}
+    {A : ι → Set α} (hAm : ∀ i, MeasurableSet (A i)) (hAd : Pairwise (Disjoint on A))
+    (hAT : ∀ i, A i ⊆ T) {f : α → E} (hf : IntegrableOn f T ν) :
+    ∫ x in T, f x ∂ν = (∫ x in T \ ⋃ i, A i, f x ∂ν) + ∑ i, ∫ x in A i, f x ∂ν := by
+  conv_lhs => rw [← sdiff_union_of_subset (iUnion_subset hAT)]
+  rw [setIntegral_union disjoint_sdiff_left (MeasurableSet.iUnion hAm)
+    (hf.mono_set sdiff_subset) (hf.mono_set (iUnion_subset hAT)),
+    integral_iUnion_fintype hAm hAd fun i ↦ hf.mono_set (hAT i)]
 
 /-- The pairing of an integrable function `f` on `Ω` with a function `g` bounded by `S` on
 `V ⊆ Ω` is at most `S ∫_Ω |f|`. -/
@@ -274,3 +370,20 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
 
 end MeasureTheory
+
+/-- Continuity of `f` on the closed box `Set.Icc a b` gives integrability on every slice `x i = c`
+for `c ∈ Set.Icc (a i) (b i)`, against any measure finite on compact sets. -/
+theorem ContinuousOn.integrableOn_insertNth_Icc {n : ℕ} {α : Fin (n + 1) → Type*}
+    [∀ j, Preorder (α j)] [∀ j, TopologicalSpace (α j)]
+    {E : Type*} [NormedAddCommGroup E]
+    {a b : ∀ j, α j} {f : (∀ j, α j) → E}
+    (hf : ContinuousOn f (Icc a b)) (i : Fin (n + 1))
+    [MeasurableSpace (∀ j, α (i.succAbove j))]
+    [OpensMeasurableSpace (∀ j, α (i.succAbove j))]
+    [CompactIccSpace (∀ j, α (i.succAbove j))] [T2Space (∀ j, α (i.succAbove j))]
+    {μ : Measure (∀ j, α (i.succAbove j))} [IsFiniteMeasureOnCompacts μ]
+    {c : α i} (hc : c ∈ Icc (a i) (b i)) :
+    IntegrableOn (fun x ↦ f (i.insertNth c x))
+      (Icc (fun j ↦ a (i.succAbove j)) (fun j ↦ b (i.succAbove j))) μ :=
+  (hf.comp (continuousOn_const.finInsertNth i continuousOn_id) fun _ hx ↦
+    Fin.insertNth_mem_Icc.mpr ⟨hc, hx⟩).integrableOn_Icc

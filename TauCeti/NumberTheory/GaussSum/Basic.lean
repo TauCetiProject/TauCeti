@@ -10,12 +10,15 @@ public import Mathlib.LinearAlgebra.SModEq.Basic
 public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.RingTheory.Trace.Defs
 import Mathlib.Algebra.CharP.Quotient
+import TauCeti.Algebra.Group.AddChar
 
 /-!
 # Gauss sums over finite fields
 
-This file adds four classical facts about Gauss sums `g(χ, ψ)` of characters of a finite field `F`
-to Mathlib's theory in `Mathlib.NumberTheory.GaussSum`.
+This file extends Mathlib's theory of Gauss sums `g(χ, ψ)` in `Mathlib.NumberTheory.GaussSum`:
+pushing a Gauss sum along a ring homomorphism of the coefficients (`MulChar.gaussSum_ringHomComp`,
+the counterpart of `jacobiSum_ringHomComp`) and four properties over finite fields and rings of
+prime characteristic.
 
 Let `χ` be a nontrivial multiplicative character and `ψ` a primitive additive character, both
 with complex values. Mathlib's `gaussSum_mul_gaussSum_eq_card` computes
@@ -45,6 +48,9 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
   characteristic `p`, `q = p ^ n` and `χ ^ q = χ`.
 * `TauCeti.apply_pow_char_of_trace`: `ψ (x ^ p) = ψ x` when `ψ` factors through the trace to
   `𝔽_p`.
+* `MulChar.gaussSum_ringHomComp`: `g(f ∘ χ, f ∘ ψ) = f (g(χ, ψ))` for a ring homomorphism `f` of
+  the coefficients.
+* `MulChar.gaussSum_pow_eq_sum`: `g(χ, ψ) ^ k = ∑_{x : Fin k → R} χ (∏ xᵢ) ψ (∑ xᵢ)`.
 * `MulChar.gaussSum_pow_char_left`: `g(χ ^ p, ψ) = g(χ, ψ)` when `ψ (x ^ p) = ψ x`.
 
 ## References
@@ -126,6 +132,23 @@ theorem apply_pow_char_of_trace {p : ℕ} [Fact p.Prime] [Algebra (ZMod p) F]
 end TauCeti
 
 namespace MulChar
+
+/-- Pushing a multiplicative and an additive character along a ring homomorphism `f` of the
+coefficients pushes their Gauss sum along `f`: `g(f ∘ χ, f ∘ ψ) = f (g(χ, ψ))`. This is the
+Gauss-sum counterpart of `jacobiSum_ringHomComp`. -/
+theorem gaussSum_ringHomComp {R R' R'' : Type*} [CommRing R] [Fintype R] [CommRing R']
+    [CommRing R''] (χ : MulChar R R') (ψ : AddChar R R') (f : R' →+* R'') :
+    gaussSum (χ.ringHomComp f) (f.toMonoidHom.compAddChar ψ) = f (gaussSum χ ψ) := by
+  simp [gaussSum, MonoidHom.coe_compAddChar]
+
+/-- The `k`-th power of a Gauss sum, expanded over `k`-tuples:
+`g(χ, ψ) ^ k = ∑_{x : Fin k → R} χ (x₁ ⋯ xₖ) ψ (x₁ + ⋯ + xₖ)`. -/
+theorem gaussSum_pow_eq_sum {R R' : Type*} [CommRing R] [Fintype R] [CommRing R']
+    (χ : MulChar R R') (ψ : AddChar R R') (k : ℕ) :
+    gaussSum χ ψ ^ k = ∑ x : Fin k → R, χ (∏ i, x i) * ψ (∑ i, x i) := by
+  rw [gaussSum, Fintype.sum_pow]
+  refine Fintype.sum_congr _ _ fun x ↦ ?_
+  rw [Finset.prod_mul_distrib, map_prod, AddChar.map_sum_eq_prod]
 
 variable {F : Type*} [Field F] [Fintype F]
 

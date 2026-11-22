@@ -13,9 +13,10 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 # Trigonometric bounds and nonvanishing criteria
 
 The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
+The sine of `π * x` is positive for `0 < x < 1`.
 The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
-Schwarz–Christoffel turns. The sine is
-nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
+Schwarz–Christoffel turns. The sine is nonpositive on `[π, 2π]` and negative on `(π, 2π)`. For
+real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
 `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Jordan's inequality gives `θ ≤ π / 2 * sin θ` on
 `[0, π / 2]`. Cosine is positive strictly between two
@@ -37,6 +38,20 @@ open Real
 
 namespace TauCeti
 
+/-- The point `(a + b) / 2 + (b - a) / 2 · sin θ` of the substitution lies in `[a, b]`. -/
+theorem mem_Icc_add_mul_sin {a b : ℝ} (hab : a ≤ b) (θ : ℝ) :
+    (a + b) / 2 + (b - a) / 2 * sin θ ∈ Set.Icc a b :=
+  ⟨by nlinarith [neg_one_le_sin θ], by nlinarith [sin_le_one θ]⟩
+
+/-- The denominator after a sine substitution is positive when the interval lies inside
+`(-1, 1)` and the remaining square-root root lies above the interval. -/
+theorem one_sub_sq_mul_sqrt_sub_add_mul_sin_pos {a b c : ℝ} (ha : -1 < a) (hab : a ≤ b)
+    (hb : b < 1) (hc : b < c) (θ : ℝ) :
+    0 < (1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
+      √(2 * (c - ((a + b) / 2 + (b - a) / 2 * sin θ))) := by
+  have hx := mem_Icc_add_mul_sin hab θ
+  exact mul_pos (by nlinarith [hx.1, hx.2]) (sqrt_pos.2 (by linarith [hx.2]))
+
 /-- Cosine is positive strictly between two angles in `[-π/2, π/2]`, in either orientation. -/
 theorem cos_pos_of_mem_uIoo {a b θ : ℝ}
     (ha : |a| ≤ π / 2) (hb : |b| ≤ π / 2) (hθ : θ ∈ Set.uIoo a b) :
@@ -47,6 +62,11 @@ theorem cos_pos_of_mem_uIoo {a b θ : ℝ}
 theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤ 2 * π) : sin x ≤ 0 := by
   rw [← sin_sub_two_pi]
   exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
+
+/-- The sine is negative on `(π, 2π)`. -/
+theorem sin_neg_of_pi_lt_of_lt_two_pi {x : ℝ} (hpx : π < x) (hxp : x < 2 * π) : sin x < 0 := by
+  rw [← sin_sub_two_pi]
+  exact sin_neg_of_neg_of_neg_pi_lt (by linarith) (by linarith)
 
 /-- A step of nonnegative length whose direction `x` lies in `[θ, θ + π]` does not lower the
 height. -/
@@ -123,6 +143,10 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
     sin (π * x) ≠ 0 := by
   rw [Ne, sin_eq_zero_iff_of_lt_of_lt (by nlinarith [hx.1, pi_pos]) (by nlinarith [hx.2, pi_pos])]
   exact mul_ne_zero pi_ne_zero hx0
+
+/-- For `0 < x < 1`, the sine of `π * x` is positive. -/
+theorem sin_pi_mul_pos_of_pos_of_lt_one {x : ℝ} (h₀ : 0 < x) (h₁ : x < 1) : 0 < sin (π * x) :=
+  sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
 
 /-- For a real denominator greater than one, the sine of `π / x` is positive. -/
 theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=

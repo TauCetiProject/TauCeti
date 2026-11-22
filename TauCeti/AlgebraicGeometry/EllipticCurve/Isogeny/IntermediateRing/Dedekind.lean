@@ -61,11 +61,11 @@ ring it is `WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegra
 
 ## Provenance
 
-⚠ *mathlib-track*. D. Angdinata's shared isogeny development carries the `IntermediateRing` with
-`intermediateRingFinite` and `intermediateRingIsIntegrallyClosed`, on the way to `pushClass` and
-`toPointHom`; the Dedekind property is what those two facts are combined for. That development's
-hypotheses are minimal — neither fact needs separability — and dropping separability here keeps
-the Dedekind property in line with them.
+D. Angdinata's isogeny development carries the `IntermediateRing` with `intermediateRingFinite`
+and `intermediateRingIsIntegrallyClosed`, on the way to `pushClass` and `toPointHom`; the Dedekind
+property is what those two facts are combined for. That development's hypotheses are minimal —
+neither fact needs separability — and dropping separability here keeps the Dedekind property in
+line with them.
 
 AINTLIB proves the same statement about the same object as
 `NormConormIntegralClosure.instDedekindB` (`github.com/CBirkbeck/AINTLIB`, Apache-2.0,

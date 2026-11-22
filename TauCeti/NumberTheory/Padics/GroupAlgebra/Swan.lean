@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.GroupAlgebra.Rational
+import Mathlib.Algebra.Module.Projective
 import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.RepresentationTheory.Basic
 import TauCeti.Algebra.Module.Projective.Reduction
-import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Invariants
@@ -184,14 +184,14 @@ private theorem natCard_linearMap_reduction_eq_of_tensorRat (p : ℕ) [Fact p.Pr
   let _ : Module.Projective (MonoidAlgebra ℤ_[p] G) XN := hXNp
   let _ : Module.Finite ℤ_[p] XM := .trans (MonoidAlgebra ℤ_[p] G) XM
   let _ : Module.Finite ℤ_[p] XN := .trans (MonoidAlgebra ℤ_[p] G) XN
-  let _ : Module.Projective ℤ_[p] XM := Module.Projective.trans (MonoidAlgebra ℤ_[p] G) XM
-  let _ : Module.Projective ℤ_[p] XN := Module.Projective.trans (MonoidAlgebra ℤ_[p] G) XN
+  let _ : Module.Projective ℤ_[p] XM := Module.Projective.trans ℤ_[p] (MonoidAlgebra ℤ_[p] G) XM
+  let _ : Module.Projective ℤ_[p] XN := Module.Projective.trans ℤ_[p] (MonoidAlgebra ℤ_[p] G) XN
   refine Representation.natCard_invariants_eq_of_trace_eq p _ _ XM XN fM hfM fN hfN
     (trace_ofModule'_eq_of_forall_equiv_comp_zpowers p _ _ XM XN fM hfM fN hfN fun g hg ↦ ?_)
   obtain ⟨e, he⟩ := exists_linearEquiv_commute_reduction_of_not_dvd p (Subgroup.zpowers g)
     (by simpa only [Nat.card_zpowers] using hg) M N h
   exact ⟨Representation.Equiv.linHomComp (ρ := ρM) (ρ' := ρN) (f := (Subgroup.zpowers g).subtype)
-    (.mk e fun c ↦ LinearMap.ext fun x ↦ he c c.2 x) σ⟩
+    (.mk e fun c ↦ LinearMap.ext fun x ↦ he c c.property x) σ⟩
 
 end Helpers
 

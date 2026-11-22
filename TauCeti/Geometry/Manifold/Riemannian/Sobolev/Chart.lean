@@ -239,9 +239,9 @@ private theorem exists_compL_extChartAt_symm {p : M} {r m : ℝ} (L : E ≃L[ℝ
       (measurable_ballChartInv hr).aemeasurable]
   have hK : (c : ℝ≥0∞) * ENNReal.ofReal m⁻¹ ≠ ⊤ :=
     ENNReal.mul_ne_top ENNReal.coe_ne_top ENNReal.ofReal_ne_top
-  refine ⟨Lp.compOfMapLeSmul ℝ hf hK hmap, fun {g G} hg ↦ ?_⟩
-  filter_upwards [Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hf hK hmap g,
-    (QuasiMeasurePreserving.of_map_le_smul hf hmap).ae_eq_comp hg,
+  refine ⟨Lp.compOfMapLeSmul ℝ hf.aemeasurable hK hmap, fun {g G} hg ↦ ?_⟩
+  filter_upwards [Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hf.aemeasurable hK hmap g,
+    (QuasiMeasurePreserving.of_map_le_smul hf.aemeasurable hmap).ae_eq_comp hg,
     ae_restrict_mem (coordBall (I := I) L p r).isOpen.measurableSet] with y h1 h2 hy
   simp only [Function.comp_apply] at h1 h2
   rw [h1, h2, ballChartInv_of_mem (mem_coordBall.1 hy)]

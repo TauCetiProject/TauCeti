@@ -30,6 +30,10 @@ A monoid endomorphism fixing every letter of a word, or fixing the product of tw
 letters and every other letter, fixes the product of the word (`List.map_prod_ofFn_of_forall`,
 `List.map_prod_ofFn_of_adjacent`). In a division monoid the inverse of a product is the product
 of the inverses in the reverse order (`List.inv_prod_ofFn`).
+
+For a natural-indexed family `b`, the product `b 0 ⋯ b (n - 1)` of its first `n` entries splits
+off its last entry (`List.prod_ofFn_val_succ`), only reads the entries below `n`
+(`List.prod_ofFn_val_congr`) and splits along a concatenation (`List.prod_ofFn_val_add`).
 -/
 
 public section
@@ -97,6 +101,17 @@ theorem map_prod_ofFn_of_forall {F M : Type*} [Monoid M] [FunLike F M M] [Monoid
     f (List.ofFn g).prod = (List.ofFn g).prod := by
   simp [map_list_prod, List.map_ofFn, Function.comp_def, h]
 
+/-- The product of a word, split around two adjacent letters: the letters before them, the two
+letters, and the letters after them. -/
+theorem prod_ofFn_eq_take_mul_mul_drop {M : Type*} [Monoid M] {k : ℕ} (g : Fin k → M)
+    {i i' : Fin k} (hi : (i : ℕ) + 1 = i') :
+    (ofFn g).prod = ((ofFn g).take i).prod * (g i * g i') * ((ofFn g).drop (i' + 1)).prod := by
+  have hi₁ : (i : ℕ) < (ofFn g).length := by simp
+  have hi₂ : (i : ℕ) + 1 < (ofFn g).length := by simp [hi]
+  conv_lhs => rw [← take_append_drop i (ofFn g), drop_eq_getElem_cons hi₁,
+    drop_eq_getElem_cons hi₂]
+  simp [hi, mul_assoc]
+
 /-- A monoid endomorphism fixing the product of two adjacent letters of a word, and every other
 letter, fixes the product of the word. -/
 theorem map_prod_ofFn_of_adjacent {F M : Type*} [Monoid M] [FunLike F M M] [MonoidHomClass F M M]
@@ -105,14 +120,7 @@ theorem map_prod_ofFn_of_adjacent {F M : Type*} [Monoid M] [FunLike F M M] [Mono
     f (List.ofFn g).prod = (List.ofFn g).prod := by
   have hmap (L : List M) (hL : ∀ a ∈ L, f a = a) : f L.prod = L.prod := by
     rw [map_list_prod, List.map_congr_left hL, List.map_id']
-  have hi₁ : (i : ℕ) < (List.ofFn g).length := by simp
-  have hi₂ : (i : ℕ) + 1 < (List.ofFn g).length := by simp [hi]
-  have hprod : (List.ofFn g).prod = ((List.ofFn g).take i).prod * (g i * g i') *
-      ((List.ofFn g).drop (i' + 1)).prod := by
-    conv_lhs => rw [← List.take_append_drop i (List.ofFn g), List.drop_eq_getElem_cons hi₁,
-      List.drop_eq_getElem_cons hi₂]
-    simp [hi, mul_assoc]
-  rw [hprod, map_mul, map_mul, h, hmap, hmap]
+  rw [prod_ofFn_eq_take_mul_mul_drop g hi, map_mul, map_mul, h, hmap, hmap]
   · intro a ha
     obtain ⟨j, hj, rfl⟩ := List.mem_drop_iff_getElem.1 ha
     rw [List.getElem_ofFn]
@@ -131,5 +139,31 @@ theorem inv_prod_ofFn {M : Type*} [DivisionMonoid M] :
     rw [List.ofFn_succ, List.ofFn_succ', List.concat_eq_append, List.prod_cons, List.prod_append,
       mul_inv_rev, inv_prod_ofFn]
     simp [Fin.rev_castSucc]
+
+section Nat
+
+variable {M : Type*} [Monoid M]
+
+/-- The product of the first `n + 1` entries of a natural-indexed family splits off its last
+entry. -/
+theorem prod_ofFn_val_succ (b : ℕ → M) (n : ℕ) :
+    (ofFn fun j : Fin (n + 1) ↦ b j).prod = (ofFn fun j : Fin n ↦ b j).prod * b n := by
+  rw [ofFn_succ', prod_concat]
+  simp
+
+/-- The product of the first `n` entries of a natural-indexed family only reads the entries
+below `n`. -/
+theorem prod_ofFn_val_congr {n : ℕ} {b b' : ℕ → M} (h : ∀ i < n, b i = b' i) :
+    (ofFn fun j : Fin n ↦ b j).prod = (ofFn fun j : Fin n ↦ b' j).prod :=
+  congrArg prod (ofFn_inj.2 (funext fun j ↦ h j j.isLt))
+
+/-- The product of the first `p + d` entries of a natural-indexed family is the product of the
+first `p` entries times the product of the `d` entries after them. -/
+theorem prod_ofFn_val_add (b : ℕ → M) (p d : ℕ) :
+    (ofFn fun j : Fin (p + d) ↦ b j).prod =
+      (ofFn fun j : Fin p ↦ b j).prod * (ofFn fun j : Fin d ↦ b (p + j)).prod := by
+  simp only [ofFn_add, prod_append, Fin.val_castLE, Fin.val_natAdd]
+
+end Nat
 
 end List

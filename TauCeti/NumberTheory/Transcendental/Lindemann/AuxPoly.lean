@@ -164,7 +164,7 @@ private theorem exists_isIntegral_factorial_mul_eval_iterate_derivative_auxPoly 
       (prod_mem fun γ' hγ' ↦ pow_mem (hlift γ' (hS γ' (mem_of_mem_erase hγ'))) _)
   obtain ⟨g, -, hg⟩ := exists_iterate_derivative_eq_factorial_smul Q j
   set w : R := ⟨_, hz⟩
-  have hw : IsIntegral ℤ (algebraMap R K (g.eval w)) := (g.eval w).2
+  have hw : IsIntegral ℤ (algebraMap R K (g.eval w)) := (g.eval w).property
   refine ⟨(l : K) ^ (j + 1) * algebraMap R K (g.eval w), ((isIntegral_natCast l).pow _).mul hw, ?_⟩
   -- Differentiate `q (l X) = l ^ (t (p + 1) + p) h` `j` times and evaluate at `z`.
   have hder := congrArg (fun P ↦ (derivative^[j] P).eval z) hcomp
