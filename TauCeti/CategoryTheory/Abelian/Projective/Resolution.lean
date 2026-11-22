@@ -19,8 +19,9 @@ lift of the identity of `X`, so it is homotopic to Mathlib's comparison
 (`CategoryTheory.ProjectiveResolution.homotopyOfComm`) and is a homotopy equivalence
 (`CategoryTheory.ProjectiveResolution.homotopyEquivOfComm`).
 
-`ChainComplex.toProjectiveResolution` packages an augmented projective chain complex
-which is exact in positive degrees and exact at its augmentation. That its augmentation is a
+`ChainComplex.toProjectiveResolution` packages an augmented projective chain complex `K`
+which is exact in positive degrees, with an epimorphic augmentation `ε : K.X 0 ⟶ X` exact at
+`K.X 0`. That the chain map induced by `ε` from `K` to `X` placed in degree `0` is a
 quasi-isomorphism, which needs no projectivity, is `ChainComplex.quasiIso_toSingle₀Equiv_symm`.
 
 A complex of projectives whose differentials factor through short exact sequences
