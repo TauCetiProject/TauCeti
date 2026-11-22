@@ -229,9 +229,8 @@ theorem isCoprime_map (K : Type*) [CommSemiring K] [Algebra D K] [IsFractionRing
   let L := FractionRing D
   have h : IsCoprime (b.map (algebraMap D L)) (b'.map (algebraMap D L)) :=
     ((hB.isRelPrime b hb b' hb' hne).map_localization_map (nonZeroDivisors D)).isCoprime
-  have := h.map (mapRingHom (IsLocalization.algEquiv (nonZeroDivisors D) L K).toAlgHom.toRingHom)
-  rwa [coe_mapRingHom, Polynomial.map_map, Polynomial.map_map, AlgHom.toRingHom_eq_coe,
-    AlgHom.comp_algebraMap] at this
+  have e : L →ₐ[D] K := (IsLocalization.algEquiv (nonZeroDivisors D) L K).toAlgHom
+  simpa [Polynomial.map_map, e.comp_algebraMap] using h.map (mapRingHom (e : L →+* K))
 
 /-- The resultant of two distinct members of a squarefree basis is nonzero. -/
 theorem resultant_ne_zero [IsDomain D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B)

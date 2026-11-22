@@ -21,6 +21,12 @@ ring `R[X]` (Mathlib's `Polynomial.isLocalization`), so these results transfer r
 and squarefreeness of polynomials from `R[X]` to `S[X]` for every localization `S` of `R`, such as
 the fraction field of a GCD domain (`IsRelPrime.map_localization_map`,
 `Squarefree.map_localization_map`).
+
+## Implementation notes
+
+Both proofs rest on Mathlib's description of divisibility and units in a localization,
+`Submonoid.LocalizationMap.map_dvd_map` and `Submonoid.LocalizationMap.map_isUnit_iff`. The
+squarefree transfer also uses Mathlib's `Squarefree.dvd_of_squarefree_of_mul_dvd_mul_left`.
 -/
 
 public section
