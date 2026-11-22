@@ -108,7 +108,9 @@ proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine compani
 Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over a
 complete nontrivially normed field `𝕜` is by continuous maps:
 `FiniteDimensional.continuousConstSMul`. This is not an instance, since the field cannot be inferred
-from the action.
+from the action. It is one for the action of the linear automorphisms themselves, where the type
+`E ≃ₗ[𝕜] E` names the field (`LinearEquiv.continuousConstSMul`), and so, through
+`TauCeti.Subgroup.continuousConstSMul`, for any of their subgroups.
 -/
 
 public section
@@ -225,6 +227,14 @@ theorem FiniteDimensional.continuousConstSMul (𝕜 G E : Type*) [NontriviallyNo
     [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] [DistribSMul G E]
     [SMulCommClass G 𝕜 E] : ContinuousConstSMul G E :=
   ⟨fun g ↦ (DistribSMul.toLinearMap 𝕜 E g).continuous_of_finiteDimensional⟩
+
+/-- The linear automorphisms of a finite-dimensional Hausdorff topological vector space over a
+complete nontrivially normed field act by continuous maps. -/
+instance LinearEquiv.continuousConstSMul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] :
+    ContinuousConstSMul (E ≃ₗ[𝕜] E) E :=
+  FiniteDimensional.continuousConstSMul 𝕜 _ E
 
 namespace MultilinearMap
 
