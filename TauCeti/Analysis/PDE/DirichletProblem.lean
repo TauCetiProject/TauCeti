@@ -233,6 +233,17 @@ theorem divergenceForcing_apply_eq_neg_setIntegral
     divergenceForcing F v = -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
   rw [divergenceForcing_apply, L2.inner_def]
 
+/-- The divergence-form forcing functional of a vector field `F ∈ L²(Ω; ℝⁿ)`, given as a function,
+is `v ↦ -∫_Ω ⟪F, ∇v⟫`. -/
+theorem divergenceForcing_toLp_apply {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hF : MemLp F 2 (mu.restrict Omega)) (v : W1p0 mu Omega 2) :
+    divergenceForcing (hF.toLp F) v =
+      -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+  rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
+  refine integral_congr_ae ?_
+  filter_upwards [hF.coeFn_toLp] with x hx
+  rw [hx]
+
 /-- The divergence-form forcing functional is bounded by the `L²` norm of its vector field,
 because the gradient component of a Sobolev jet is dominated by the graph norm. -/
 theorem norm_divergenceForcing_apply_le (F : Lp (EuclideanSpace ℝ ι) 2 (mu.restrict Omega))
@@ -922,9 +933,7 @@ theorem UniformlyEllipticOn.exists_forall_energyFormH1_eq_divergence_of_measure_
   obtain ⟨v, hv, -⟩ := h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
     (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hOmega
     (divergenceForcing (hH.toLp H))
-  refine ⟨v, fun w => ?_⟩
-  rw [hv w, divergenceForcing_apply_eq_neg_setIntegral]
-  exact congrArg Neg.neg (integral_congr_ae (hH.coeFn_toLp.mono fun x hx => by simp only [hx]))
+  exact ⟨v, fun w => (hv w).trans (divergenceForcing_toLp_apply hH w)⟩
 
 /-- **Weak solvability of the Dirichlet problem with `Lʳ` data.** Let `n ≥ 1` be the dimension
 and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`. On a domain `Ω` of finite

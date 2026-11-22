@@ -25,7 +25,11 @@ colimits. Applying the homology sequence to its image gives
 `CategoryTheory.ShortComplex.ShortExact.twistedHomologyδ`, the coefficient connecting morphism
 `Hₙ(X; L₃) ⟶ Hₘ(X; L₁)` for `m + 1 = n`. The three exactness statements and naturality use the
 existing maps `TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap`. In degree zero,
-the map `H₀(X; L₂) ⟶ H₀(X; L₃)` is an epimorphism.
+the map `H₀(X; L₂) ⟶ H₀(X; L₃)` is an epimorphism. The coefficient maps commute with negation,
+on absolute and on relative twisted homology
+(`TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap_neg`,
+`TopPair.twistedHomologyCoefficientMap_neg`), and on absolute twisted homology also with
+subtraction (`TauCeti.LocalCoefficientSystem.twistedHomologyCoefficientMap_sub`).
 
 These are sequences varying the coefficients on one space. They supply the geometric connecting
 maps needed to compare local-coefficient homology with algebraic homology theories, in particular
@@ -144,6 +148,40 @@ lemma twistedHomologyConstantIso_inv_naturality {M N : ModuleCat.{max v w} R} (�
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{max v w} R) k).map φ).app X ≫
         (twistedHomologyConstantIso X N k).inv := by
   rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv, twistedHomologyConstantIso_hom_naturality]
+
+end TauCeti.LocalCoefficientSystem
+
+namespace TopPair
+
+open TauCeti
+
+variable {R : Type u} [Ring R] {P : TopPair.{v}}
+
+/-- The map on relative twisted chains induced by the negative of a morphism of local systems is
+the negative of the induced map. -/
+lemma twistedChainComplexCoefficientMap_neg
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ K) :
+    P.twistedChainComplexCoefficientMap (-η) = -P.twistedChainComplexCoefficientMap η := by
+  rw [← cancel_epi (P.twistedChainComplexπ L),
+    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, Preadditive.comp_neg,
+    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, ← Preadditive.neg_comp]
+  exact congrArg (· ≫ _)
+    ((LocalCoefficientSystem.twistedChainComplexFunctor.{u, v, w} R P.fst).map_neg (f := η))
+
+/-- The map on relative twisted homology induced by the negative of a morphism of local systems is
+the negative of the induced map. -/
+@[simp]
+lemma twistedHomologyCoefficientMap_neg
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap (-η) k = -P.twistedHomologyCoefficientMap η k :=
+  (congrArg (HomologicalComplex.homologyMap · k)
+    (twistedChainComplexCoefficientMap_neg η)).trans (HomologicalComplex.homologyMap_neg _ k)
+
+end TopPair
+
+namespace TauCeti.LocalCoefficientSystem
+
+variable {R : Type u} [Ring R] {X : TopCat.{v}}
 
 -- Evaluation in a chain degree is restriction to the initial vertices of singular simplices,
 -- followed by the coproduct functor. The discrete-diagram comparison accounts for the two
@@ -273,24 +311,3 @@ lemma epi_twistedHomologyCoefficientMap_zero : Epi (twistedHomologyCoefficientMa
     (twistedChainComplexCoefficientMap S.g) 0 (by simp)
 
 end CategoryTheory.ShortComplex.ShortExact
-
-namespace TopPair
-
-variable {R : Type u} [Ring R] (P : TopPair.{v})
-
-/-- The map on relative twisted homology induced by the negative of a morphism of local systems
-is the negative of the induced map. -/
-@[simp]
-lemma twistedHomologyCoefficientMap_neg
-    {L K : TauCeti.LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ K) (k : ℕ) :
-    P.twistedHomologyCoefficientMap (-η) k = -P.twistedHomologyCoefficientMap η k := by
-  have h : P.twistedChainComplexCoefficientMap (-η) = -P.twistedChainComplexCoefficientMap η := by
-    refine (cancel_epi (P.twistedChainComplexπ L)).1 ?_
-    rw [twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, Preadditive.comp_neg,
-      twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, ← Preadditive.neg_comp]
-    exact congrArg (· ≫ _)
-      ((TauCeti.LocalCoefficientSystem.twistedChainComplexFunctor.{u, v, w} R P.fst).map_neg)
-  exact (congrArg (HomologicalComplex.homologyMap · k) h).trans
-    (HomologicalComplex.homologyMap_neg _ k)
-
-end TopPair

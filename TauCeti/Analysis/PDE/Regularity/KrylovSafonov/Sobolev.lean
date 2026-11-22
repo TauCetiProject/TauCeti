@@ -122,6 +122,16 @@ private theorem le_ofReal_mul_rpow_neg_mul_of_forall_div {C ε t : ℝ} (ht : 0 
     (ENNReal.continuous_ofReal.continuousAt.comp hφ)
   simpa using hg.continuousWithinAt.le_of_forall_gt_le h
 
+omit [DecidableEq ι] in
+/-- In dimension `n ≥ 1`, the exponent `n` of `W^{2,n}` exceeds half the dimension, so the precise
+representative of a `W^{2,n}` function is continuous
+(`TauCeti.Wkp.continuousOn_preciseRepresentative`). -/
+private theorem finrank_lt_two_mul_card [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] :
+    (Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ≥0∞) < 2 * Fintype.card ι := by
+  have h : 1 ≤ Fintype.card ι := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ Fintype.card ι)
+  rw [finrank_euclideanSpace]
+  exact_mod_cast (by omega : Fintype.card ι < 2 * Fintype.card ι)
+
 /-- **Power decay of the superlevel sets of a strong supersolution** (Gilbarg–Trudinger,
 Section 9.7; Caffarelli–Cabré, Lemma 4.6). Let `κ > 0`. There are constants `C > 0`, `ε > 0` and
 `ε₀ > 0`, depending only on the dimension `n ≥ 1` and on `κ`, with the following property. Let
@@ -276,7 +286,7 @@ theorem exists_preciseRepresentative_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
   have hlam : 0 < lam := ha.pos
   set ū := preciseRepresentative mu (Wkp.value 2 u)
   have hcont : ContinuousOn ū Ω :=
-    Wkp.continuousOn_preciseRepresentative (by simp [finrank_euclideanSpace]) u
+    Wkp.continuousOn_preciseRepresentative (finrank_lt_two_mul_card (ι := ι)) u
   have hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Ω] ū :=
     Wkp.ae_eq_preciseRepresentative 2 u
   have hup : MemLp (fun y ↦ (Wkp.value 2 u y)⁺) (ENNReal.ofReal p) (mu.restrict (ball c R)) := by
@@ -409,11 +419,11 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_preciseRepresentative_add_of_wkp
   have hlam : 0 < lam := ha.pos
   set ū := preciseRepresentative mu (Wkp.value 2 u)
   have hcont : ContinuousOn ū Ω :=
-    Wkp.continuousOn_preciseRepresentative (by simp [finrank_euclideanSpace]) u
+    Wkp.continuousOn_preciseRepresentative (finrank_lt_two_mul_card (ι := ι)) u
   have hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Ω] ū :=
     Wkp.ae_eq_preciseRepresentative 2 u
   have hū_nn : ∀ z ∈ ball x₀ R, 0 ≤ ū z :=
-    Wkp.le_preciseRepresentative_of_ae_le (by simp [finrank_euclideanSpace]) u isOpen_ball hBΩ
+    Wkp.le_preciseRepresentative_of_ae_le (finrank_lt_two_mul_card (ι := ι)) u isOpen_ball hBΩ
       continuousOn_const hnn
   -- Work on `B(x₀, s)` with `s = √θ R < R`, so `closedBall x₀ s ⊆ B(x₀, R)` and `θ' s = θ R`.
   set s : ℝ := θ' * R
@@ -525,11 +535,11 @@ theorem exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_
   have hlam : 0 < lam := ha.pos
   set ū := preciseRepresentative mu (Wkp.value 2 u)
   have hcont : ContinuousOn ū Ω :=
-    Wkp.continuousOn_preciseRepresentative (by simp [finrank_euclideanSpace]) u
+    Wkp.continuousOn_preciseRepresentative (finrank_lt_two_mul_card (ι := ι)) u
   have hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Ω] ū :=
     Wkp.ae_eq_preciseRepresentative 2 u
   have hū_nn : ∀ z ∈ ball x₀ (2 * r), 0 ≤ ū z :=
-    Wkp.le_preciseRepresentative_of_ae_le (by simp [finrank_euclideanSpace]) u isOpen_ball hBΩ
+    Wkp.le_preciseRepresentative_of_ae_le (finrank_lt_two_mul_card (ι := ι)) u isOpen_ball hBΩ
       continuousOn_const hnn
   -- Choose `r / 2 < s < r` with `x, y ∈ B(x₀, s)` so `closedBall x₀ (2 s) ⊆ B(x₀, 2 r) ⊆ Ω`.
   obtain ⟨s, -, hs_lt, hxs, hys⟩ :=
@@ -648,11 +658,11 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
     hLam.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hlam.le)
   set ū := preciseRepresentative mu (Wkp.value 2 u)
   have hcont : ContinuousOn ū Ω :=
-    Wkp.continuousOn_preciseRepresentative (by simp [finrank_euclideanSpace]) u
+    Wkp.continuousOn_preciseRepresentative (finrank_lt_two_mul_card (ι := ι)) u
   have hū : (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Ω] ū :=
     Wkp.ae_eq_preciseRepresentative 2 u
   have hū_abs : ∀ z ∈ ball x₀ (2 * r), |ū z| ≤ M := fun z hz ↦
-    Wkp.abs_preciseRepresentative_le (by simp [finrank_euclideanSpace]) u isOpen_ball hBΩ hM hz
+    Wkp.abs_preciseRepresentative_le (finrank_lt_two_mul_card (ι := ι)) u isOpen_ball hBΩ hM hz
   have hM0 : 0 ≤ M := (abs_nonneg _).trans (hū_abs x (ball_subset_ball (by linarith) hx))
   -- Choose `r / 2 < s < r` with `x, y ∈ B(x₀, s)` so `closedBall x₀ (2 s) ⊆ B(x₀, 2 r) ⊆ Ω`.
   obtain ⟨s, hs_r2, hs_lt, hxs, hys⟩ :=
