@@ -97,6 +97,14 @@ theorem criticalExponent_pos {n : ℕ} (hn : 2 < n) : 0 < criticalExponent n := 
   rw [criticalExponent_def]
   exact div_pos (by linarith) (by linarith)
 
+/-- The critical exponent is positive exactly in the dimensions `n > 2`; it is `0` for `n = 0` and
+`n = 2`, and `-2` for `n = 1`. -/
+theorem criticalExponent_pos_iff {n : ℕ} : 0 < criticalExponent n ↔ 2 < n := by
+  refine ⟨fun h ↦ ?_, criticalExponent_pos⟩
+  by_contra hn
+  obtain rfl | rfl | rfl : n = 0 ∨ n = 1 ∨ n = 2 := by omega
+  all_goals norm_num [criticalExponent_def] at h
+
 /-- The critical exponent exceeds `2` in every dimension `n > 2`. -/
 theorem two_lt_criticalExponent {n : ℕ} (hn : 2 < n) : 2 < criticalExponent n := by
   have h : (2 : ℝ) < n := by exact_mod_cast hn

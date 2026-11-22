@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 import TauCeti.Analysis.Convex.Continuous
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # A reciprocal-weighted convex integral comparison
@@ -66,7 +66,7 @@ theorem mul_map_div_le_integral_div {α : Type*} [MeasurableSpace α] {ν : Meas
   have : IsFiniteMeasure μ := isFiniteMeasure_withDensity
     ((lintegral_ofReal_ne_top_iff_integrable hi.aestronglyMeasurable hgn).mpr hi)
   have hμm : μ.real univ = m := by
-    simpa using TauCeti.Probability.integral_withDensity_ofReal hiae hgn (fun _ ↦ (1 : ℝ))
+    simpa using TauCeti.MeasureTheory.integral_withDensity_ofReal hiae hgn (fun _ ↦ (1 : ℝ))
   have : NeZero μ := ⟨fun h ↦ by simpa [h] using hμm.trans_ne hm.ne'⟩
   have hweight : (fun x ↦ g x / g x) =ᵐ[ν] fun _ ↦ (1 : ℝ) := by
     filter_upwards [hg] with x hx using div_self hx.ne'
@@ -74,16 +74,16 @@ theorem mul_map_div_le_integral_div {α : Type*} [MeasurableSpace α] {ν : Meas
     ext x
     rw [smul_eq_mul, inv_mul_eq_div]
   have hμg : Integrable g μ := by
-    rw [TauCeti.Probability.integrable_withDensity_ofReal_iff hiae hgn, hdiv]
+    rw [TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hiae hgn, hdiv]
     exact (integrable_const (1 : ℝ)).congr hweight.symm
   have hμΦ : Integrable (fun x ↦ Φ (g x)) μ := by
-    rw [TauCeti.Probability.integrable_withDensity_ofReal_iff hiae hgn, hdiv]
+    rw [TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hiae hgn, hdiv]
     exact hΦi
   have hμint : ∫ x, g x ∂μ = ν.real univ := by
-    rw [TauCeti.Probability.integral_withDensity_ofReal hiae hgn, hdiv]
+    rw [TauCeti.MeasureTheory.integral_withDensity_ofReal hiae hgn, hdiv]
     simpa only [integral_const, smul_eq_mul, mul_one] using integral_congr_ae hweight
   have hμΦint : ∫ x, Φ (g x) ∂μ = ∫ x, Φ (g x) / g x ∂ν := by
-    rw [TauCeti.Probability.integral_withDensity_ofReal hiae hgn, hdiv]
+    rw [TauCeti.MeasureTheory.integral_withDensity_ofReal hiae hgn, hdiv]
   have hgμ : ∀ᵐ x ∂μ, 0 ≤ g x :=
     (withDensity_absolutelyContinuous ν _).ae_le (hg.mono fun _ hx ↦ hx.le)
   have hJ := hΦ.map_average_le_of_monotoneOn_Ici hΦm hgμ hμg hμΦ
