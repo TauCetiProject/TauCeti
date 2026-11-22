@@ -186,11 +186,6 @@ lemma ofAbelianVarietyProdIso_hom_snd (A B : AbelianVariety K) :
   (ofAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
     (abelianSchemeProdIsLimit (ofAbelianVariety A) (ofAbelianVariety B)) ⟨WalkingPair.right⟩
 
-private lemma toOverHom_eqToHom {L : Type u} [Field L] {A B : AbelianVariety L} (h : A = B) :
-    AbelianVariety.Hom.toOverHom (eqToHom h) = eqToHom (congrArg AbelianVariety.toOver h) := by
-  subst h
-  exact AbelianVariety.Hom.toOverHom_id A
-
 private lemma toOverHom_abelianVarietyBaseChangeFunctor_map {A B : AbelianVariety K} (f : A ⟶ B)
     (L : Type u) [Field L] [Algebra K L] :
     AbelianVariety.Hom.toOverHom ((AbelianVariety.baseChangeFunctor L).map f) =
@@ -200,9 +195,10 @@ private lemma toOverHom_abelianVarietyBaseChangeFunctor_map {A B : AbelianVariet
         eqToHom (by
           rw [AbelianVariety.baseChangeFunctor_obj, AbelianVariety.baseChange_toOver]) := by
   rw [AbelianVariety.baseChangeFunctor_map, AbelianVariety.Hom.toOverHom_comp,
-    AbelianVariety.Hom.toOverHom_comp, toOverHom_eqToHom, toOverHom_eqToHom,
-    AbelianVariety.Hom.toOverHom_baseChange]
-  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_trans]
+    AbelianVariety.Hom.toOverHom_comp, AbelianVariety.Hom.toOverHom_baseChange]
+  dsimp only [AbelianVariety.Hom.toOverHom]
+  rw [eqToHom_map AbelianVariety.Hom.toOverFunctor, eqToHom_map AbelianVariety.Hom.toOverFunctor]
+  erw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_trans]
 
 private lemma toOverHom_toAbelianVarietyBaseChange_map {A B : AbelianScheme (Spec (.of K))}
     (φ : A ⟶ B) (L : Type u) [Field L] [Algebra K L] :
@@ -231,12 +227,13 @@ def toAbelianVarietyBaseChangeNatIso (L : Type u) [Field L] [Algebra K L] :
     fun {A B} φ ↦ by
       apply AbelianVariety.Hom.toOverHom_injective
       rw [eqToIso.hom, eqToIso.hom, AbelianVariety.Hom.toOverHom_comp,
-        AbelianVariety.Hom.toOverHom_comp, toOverHom_eqToHom, toOverHom_eqToHom,
-        toOverHom_toAbelianVarietyBaseChange_map, Functor.comp_map,
-        toOverHom_abelianVarietyBaseChangeFunctor_map]
-      simp only [eqToHom_trans_assoc]
-      rw [toOverHom_toAbelianVarietyFunctor_map]
-      simp only [eqToHom_refl, Category.id_comp]
+        AbelianVariety.Hom.toOverHom_comp, toOverHom_toAbelianVarietyBaseChange_map,
+        Functor.comp_map, toOverHom_abelianVarietyBaseChangeFunctor_map,
+        toOverHom_toAbelianVarietyFunctor_map]
+      dsimp only [AbelianVariety.Hom.toOverHom]
+      rw [eqToHom_map AbelianVariety.Hom.toOverFunctor,
+        eqToHom_map AbelianVariety.Hom.toOverFunctor]
+      erw [Category.assoc, Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
       rfl
 
 end

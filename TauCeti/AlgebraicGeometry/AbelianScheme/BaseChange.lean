@@ -16,9 +16,7 @@ along an arbitrary morphism of base schemes `f : T ⟶ S`, and provides:
 
 * `TauCeti.GroupScheme.baseChangePointMulEquiv` applies directly to `A.baseChange f` via
   `AbelianScheme.grpMk_baseChange_toOver`;
-* `AbelianScheme.baseChange_one`, `AbelianScheme.baseChange_mul`, `AbelianScheme.baseChange_inv`,
-  and `AbelianScheme.baseChange_mulBy`: compatibility of the group operations and `[n]` with base
-  change;
+* `AbelianScheme.baseChange_mulBy`: compatibility of `[n]` with base change;
 * `AbelianScheme.baseChangeIdNatIso`, `AbelianScheme.baseChangeCompNatIso`,
   `AbelianScheme.baseChangeIdIso`, `AbelianScheme.baseChangeCompIso`, and
   `AbelianScheme.baseChangeIdentityIso`: canonical natural and componentwise isomorphisms for
@@ -82,14 +80,11 @@ lemma zeroSection_baseChange (A : AbelianScheme S) (f : T ⟶ S) :
       rw [Category.assoc, zeroSection_comp_toOver_hom, Category.comp_id, Category.id_comp]) := by
   refine pullback.hom_ext ?_ ((A.baseChange f).zeroSection_comp_toOver_hom.trans
     (pullback.lift_snd _ _ _).symm)
-  -- The unit of the transported group law is `ε (Over.pullback f) ≫ (Over.pullback f).map η`.
-  have hη : η[(A.baseChange f).toOver] =
-      Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map η[A.toOver] :=
-    Functor.obj.η_def _
-  rw [zeroSection, hη, Over.comp_left, Over.ε_pullback_left, Category.assoc, IsIso.inv_comp_eq,
-    pullback.lift_fst]
-  simp only [Over.pullback_map_left, pullback.lift_fst, Over.tensorUnit_hom]
-  rw [← pullback.condition_assoc, Category.id_comp]
+  rw [pullback.lift_fst]
+  have h1 := GroupScheme.pullback_mapGrp_one_left_fst f (Grp.mk A.toOver) (𝟙_ (Over T))
+  simp only [Hom.one_def, Over.comp_left, Over.tensorUnit_hom] at h1
+  rw [toUnit_unique (toUnit (𝟙_ (Over T))) (𝟙 _), Over.id_left, Category.id_comp] at h1
+  exact h1
 
 /-- The base-change functor along `f : T ⟶ S`, sending an abelian scheme `A` to `A.baseChange f`
 and a homomorphism to its pullback. -/
@@ -116,28 +111,6 @@ lemma toSchemeHom_baseChangeFunctor_map {A B : AbelianScheme S} (f : T ⟶ S) (�
     toSchemeHom ((baseChangeFunctor f).map φ) = ((Over.pullback f).map (toOverHom φ)).left :=
   (rfl)
 
-/-- The unit of a base-changed abelian scheme is the pullback of the original unit. -/
-@[simp]
-lemma baseChange_one (A : AbelianScheme S) (f : T ⟶ S) :
-    η[(A.baseChange f).toOver] =
-      Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map η[A.toOver] :=
-  Functor.obj.η_def _
-
-/-- The multiplication of a base-changed abelian scheme is the pullback of the original
-multiplication. -/
-@[simp]
-lemma baseChange_mul (A : AbelianScheme S) (f : T ⟶ S) :
-    μ[(A.baseChange f).toOver] =
-      Functor.LaxMonoidal.μ (Over.pullback f) A.toOver A.toOver ≫
-        (Over.pullback f).map μ[A.toOver] :=
-  Functor.obj.μ_def _
-
-/-- The inversion of a base-changed abelian scheme is the pullback of the original inversion. -/
-@[simp]
-lemma baseChange_inv (A : AbelianScheme S) (f : T ⟶ S) :
-    ι[(A.baseChange f).toOver] = (Over.pullback f).map ι[A.toOver] :=
-  rfl
-
 /-- Multiplication by `n` on a base-changed abelian scheme is the pullback of multiplication by
 `n` on the original abelian scheme. -/
 @[simp]
@@ -151,13 +124,10 @@ lemma baseChange_mulBy (A : AbelianScheme S) (f : T ⟶ S) (n : ℤ) :
 /-- Base change along the identity morphism is naturally isomorphic to the identity functor. -/
 def baseChangeIdNatIso (S : Scheme.{u}) :
     baseChangeFunctor (𝟙 S) ≅ 𝟭 (AbelianScheme S) :=
-  NatIso.ofComponents
-    (fun A ↦ (fullyFaithfulInducedFunctor fun X : AbelianScheme S ↦ Grp.mk X.toOver).preimageIso
-      ((Functor.mapGrpNatIso (Over.pullbackId (X := S)) ≪≫
-        Functor.mapGrpIdIso).app (Grp.mk A.toOver)))
-    fun φ ↦ InducedCategory.hom_ext <|
-      (Functor.mapGrpNatIso (Over.pullbackId (X := S)) ≪≫
-        Functor.mapGrpIdIso).hom.naturality φ.hom
+  ((fullyFaithfulInducedFunctor fun X : AbelianScheme S ↦ Grp.mk X.toOver).whiskeringRight
+    (AbelianScheme S)).preimageIso
+    (Functor.isoWhiskerLeft (inducedFunctor fun X : AbelianScheme S ↦ Grp.mk X.toOver)
+      (Functor.mapGrpNatIso (Over.pullbackId (X := S)) ≪≫ Functor.mapGrpIdIso))
 
 /-- Base change along the identity morphism is canonically isomorphic to the original abelian
 scheme. -/
@@ -172,13 +142,10 @@ lemma toOverHom_baseChangeIdIso_hom (A : AbelianScheme S) :
 /-- Base change along a composite `g ≫ f` is naturally isomorphic to iterated base change. -/
 def baseChangeCompNatIso (g : U ⟶ T) (f : T ⟶ S) :
     baseChangeFunctor (g ≫ f) ≅ baseChangeFunctor f ⋙ baseChangeFunctor g :=
-  NatIso.ofComponents
-    (fun A ↦ (fullyFaithfulInducedFunctor fun X : AbelianScheme U ↦ Grp.mk X.toOver).preimageIso
-      ((Functor.mapGrpNatIso (Over.pullbackComp g f) ≪≫
-        Functor.mapGrpCompIso).app (Grp.mk A.toOver)))
-    fun φ ↦ InducedCategory.hom_ext <|
-      (Functor.mapGrpNatIso (Over.pullbackComp g f) ≪≫
-        Functor.mapGrpCompIso).hom.naturality φ.hom
+  ((fullyFaithfulInducedFunctor fun X : AbelianScheme U ↦ Grp.mk X.toOver).whiskeringRight
+    (AbelianScheme S)).preimageIso
+    (Functor.isoWhiskerLeft (inducedFunctor fun X : AbelianScheme S ↦ Grp.mk X.toOver)
+      (Functor.mapGrpNatIso (Over.pullbackComp g f) ≪≫ Functor.mapGrpCompIso))
 
 /-- Base change along a composite `g ≫ f` is canonically isomorphic to iterated base change. -/
 def baseChangeCompIso (A : AbelianScheme S) (g : U ⟶ T) (f : T ⟶ S) :

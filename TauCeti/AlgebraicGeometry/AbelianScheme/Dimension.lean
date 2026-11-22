@@ -201,33 +201,16 @@ theorem relativeDimension_prod (A B : AbelianScheme S) (s : S) :
       (As.prod Bs).toOver.hom := by
     rw [hprodHom, Nat.add_comm, ← Nat.zero_add (B.relativeDimension s + A.relativeDimension s)]
     exact inferInstance
-  have hcompHom : ((A.prod B).baseChange i).toOver.hom =
-      toSchemeHom (baseChangeProdIso A B i).hom ≫ (As.prod Bs).toOver.hom :=
-    (toSchemeHom_comp_hom (baseChangeProdIso A B i).hom).symm
-  have : IsIso (toSchemeHom (baseChangeProdIso A B i).hom) :=
-    ⟨toSchemeHom (baseChangeProdIso A B i).inv,
-      by rw [← toSchemeHom_comp, Iso.hom_inv_id, toSchemeHom_id],
-      by rw [← toSchemeHom_comp, Iso.inv_hom_id, toSchemeHom_id]⟩
-  have hbcSm : SmoothOfRelativeDimension (A.relativeDimension s + B.relativeDimension s)
-      ((A.prod B).baseChange i).toOver.hom := by
-    rw [hcompHom, ← Nat.zero_add (A.relativeDimension s + B.relativeDimension s)]
-    exact inferInstance
-  have hfibHom : (A.prod B).toOver.hom.fiberToSpecResidueField s =
-      eqToHom (baseChange_toScheme (A.prod B) i).symm ≫ ((A.prod B).baseChange i).toOver.hom := by
-    have h := (eqToHom (baseChange_toOver (A.prod B) i)).w
-    rw [Over.eqToHom_left (baseChange_toOver (A.prod B) i)] at h
-    rw [← h, ← Category.assoc, eqToHom_trans, eqToHom_refl, Category.id_comp]
-    rfl
-  have hfibSm : SmoothOfRelativeDimension (A.relativeDimension s + B.relativeDimension s)
-      ((A.prod B).toOver.hom.fiberToSpecResidueField s) := by
-    rw [hfibHom, ← Nat.zero_add (A.relativeDimension s + B.relativeDimension s)]
-    exact smoothOfRelativeDimension_comp (n := 0)
-      (m := A.relativeDimension s + B.relativeDimension s)
-      (f := eqToHom (baseChange_toScheme (A.prod B) i).symm)
-      (g := ((A.prod B).baseChange i).toOver.hom)
-  rw [relativeDimension_eq_iff]
-  exact topologicalKrullDim_eq_of_smoothOfRelativeDimension (k := S.residueField s)
-    ((A.prod B).toOver.hom.fiberToSpecResidueField s)
+  obtain ⟨pt⟩ := (inferInstance : Nonempty (Spec (S.residueField s)))
+  calc
+    (A.prod B).relativeDimension s = (A.prod B).relativeDimension (i pt) := by
+      rw [S.fromSpecResidueField_apply s pt]
+    _ = ((A.prod B).baseChange i).relativeDimension pt :=
+      (relativeDimension_baseChange (A.prod B) i pt).symm
+    _ = (As.prod Bs).relativeDimension pt :=
+      relativeDimension_eq_of_iso (baseChangeProdIso A B i) pt
+    _ = A.relativeDimension s + B.relativeDimension s :=
+      relativeDimension_eq_of_smoothOfRelativeDimension (As.prod Bs) _ pt
 
 /-- Over a field, the relative dimension of `ofAbelianVariety A` agrees with `A.dim`. -/
 theorem relativeDimension_ofAbelianVariety {K : Type u} [Field K] (A : AbelianVariety K)

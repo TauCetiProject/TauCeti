@@ -305,10 +305,7 @@ theorem isIso_of_comp_eq_id_of_topologicalKrullDim_fiber_eq_zero [Smooth f]
   have : Etale e := Etale.of_comp e f
   have : Mono e := (SplitMono.mk f he).mono
   have : IsOpenImmersion e := IsOpenImmersion.of_flat_of_mono e
-  refine isIso_of_isOpenImmersion_of_opensRange_eq_top e (TopologicalSpace.Opens.ext ?_)
-  ext x
-  simp only [Scheme.Hom.coe_opensRange, TopologicalSpace.Opens.coe_top, Set.mem_univ, iff_true,
-    Set.mem_range]
+  refine (isIso_iff_isOpenImmersion_and_surjective e).2 ⟨inferInstance, ⟨fun x ↦ ?_⟩⟩
   have hsub : Subsingleton (f.fiber (f x)) :=
     (topologicalKrullDim_eq_zero_iff_subsingleton (X := f.fiber (f x))).mp (h0 (f x))
   have hpre : Subsingleton (f ⁻¹' {f x}) := (f.fiberHomeo (f x)).symm.injective.subsingleton
