@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Complex.Pompeiu.Newtonian
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
@@ -48,7 +49,11 @@ estimate for harmonic functions
 (`InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le`) bounds `‖Dh(x)‖` by `8 / ρ` times
 this, and `Du(x) = Dh(x) - Dp(x)`.
 
-The classical Poisson equation for `p` needs `χ Δu` to be `C²`, so `u` is assumed `C⁴`.
+The classical Poisson equation for `p` needs `χ Δu` to be `C²`, so `u` is assumed `C⁴` near the
+closed disc of radius `3ρ` about `x`. Since the estimate only sees `u` on that disc, it is first
+proved for globally `C⁴` functions and then applied to a globally `C⁴` function agreeing with `u`
+near the disc (`IsCompact.exists_contDiff_eventuallyEq`). This allows `u` to be singular away
+from the disc, as `log |α|²` is at the zeros of a section `α`.
 
 ## Main results
 
@@ -115,11 +120,10 @@ private theorem exists_harmonicOnNhd_add_and_norm_fderiv_le {u : ℂ → ℝ} (h
     rw [RCLike.I_to_complex, Real.norm_eq_abs, Real.norm_eq_abs] at hL
     linarith
 
-/-- **Interior gradient estimate for Poisson's equation in the plane.** If `u` is `C⁴`, with
-`|u| ≤ ε` on `B(x, 2ρ)` and `|Δu| ≤ K` on `B(x, 3ρ)`, then `‖Du(x)‖ ≤ 8 ε / ρ + 340 K ρ`. -/
-theorem norm_fderiv_le_of_abs_le_of_abs_laplacian_le {u : ℂ → ℝ} (hu : ContDiff ℝ 4 u) {x : ℂ}
-    {ρ ε K : ℝ} (hρ : 0 < ρ) (hε : ∀ y ∈ ball x (2 * ρ), |u y| ≤ ε)
-    (hK : ∀ y ∈ ball x (3 * ρ), |Δ u y| ≤ K) :
+/-- The interior gradient estimate for a globally `C⁴` function. -/
+private theorem norm_fderiv_le_of_abs_le_of_abs_laplacian_le_of_contDiff {u : ℂ → ℝ}
+    (hu : ContDiff ℝ 4 u) {x : ℂ} {ρ ε K : ℝ} (hρ : 0 < ρ)
+    (hε : ∀ y ∈ ball x (2 * ρ), |u y| ≤ ε) (hK : ∀ y ∈ ball x (3 * ρ), |Δ u y| ≤ K) :
     ‖fderiv ℝ u x‖ ≤ 8 * ε / ρ + 340 * K * ρ := by
   obtain ⟨p, hp, hharm, hDp⟩ := exists_harmonicOnNhd_add_and_norm_fderiv_le hu hρ hK
   -- The oscillation of `p` on `B(x, 2ρ)` is at most `40 K ρ²`.
@@ -150,6 +154,26 @@ theorem norm_fderiv_le_of_abs_le_of_abs_laplacian_le {u : ℂ → ℝ} (hu : Con
         add_le_add (by exact_mod_cast hDh) (hDp x (mem_closedBall_self (by positivity)))
     _ = 8 * ε / ρ + 340 * K * ρ := by field_simp; ring
 
+/-- **Interior gradient estimate for Poisson's equation in the plane.** If `u` is `C⁴` near every
+point of the closed disc of radius `3ρ` about `x`, with `|u| ≤ ε` on `B(x, 2ρ)` and `|Δu| ≤ K` on
+`B(x, 3ρ)`, then `‖Du(x)‖ ≤ 8 ε / ρ + 340 K ρ`. Nothing is assumed about `u` outside that disc. -/
+theorem norm_fderiv_le_of_abs_le_of_abs_laplacian_le {u : ℂ → ℝ} {x : ℂ} {ρ ε K : ℝ}
+    (hu : ∀ y ∈ closedBall x (3 * ρ), ContDiffAt ℝ 4 u y) (hρ : 0 < ρ)
+    (hε : ∀ y ∈ ball x (2 * ρ), |u y| ≤ ε) (hK : ∀ y ∈ ball x (3 * ρ), |Δ u y| ≤ K) :
+    ‖fderiv ℝ u x‖ ≤ 8 * ε / ρ + 340 * K * ρ := by
+  -- A globally `C⁴` function `v` agreeing with `u` near the closed disc.
+  obtain ⟨v, hv, -, hvu⟩ := (isCompact_closedBall x (3 * ρ)).exists_contDiff_eventuallyEq 4 hu
+  have hvu' (y : ℂ) (hy : y ∈ ball x (3 * ρ)) : v =ᶠ[𝓝 y] u :=
+    hvu y (ball_subset_closedBall hy)
+  rw [← (hvu x (mem_closedBall_self (by positivity))).fderiv_eq]
+  refine norm_fderiv_le_of_abs_le_of_abs_laplacian_le_of_contDiff hv hρ (fun y hy ↦ ?_)
+    fun y hy ↦ ?_
+  · have hy' : y ∈ ball x (3 * ρ) := ball_subset_ball (by linarith) hy
+    rw [(hvu' y hy').self_of_nhds]
+    exact hε y hy
+  · rw [(laplacian_congr_nhds (hvu' y hy)).self_of_nhds]
+    exact hK y hy
+
 end TauCeti
 
 open TauCeti InnerProductSpace Laplacian Metric in
@@ -174,7 +198,7 @@ theorem TendstoUniformly.fderiv_of_abs_laplacian_sub_le {ι : Type*} {l : Filter
   filter_upwards [h (ε * ρ / 16) (by positivity), hu, hK] with i hi hui hKi z
   -- Apply the interior gradient estimate to `u i - v`.
   have hd := norm_fderiv_le_of_abs_le_of_abs_laplacian_le (u := u i - v) (x := z) (ρ := ρ)
-    (ε := ε * ρ / 16) (K := K₀) (hui.sub hv) hρ
+    (ε := ε * ρ / 16) (K := K₀) (fun y _ ↦ (hui.sub hv).contDiffAt) hρ
     (fun y _ ↦ by rw [Pi.sub_apply, abs_sub_comm, ← Real.dist_eq]; exact (hi y).le)
     (fun y _ ↦ by
       rw [ContDiffAt.laplacian_sub (hui.of_le (by norm_num)).contDiffAt

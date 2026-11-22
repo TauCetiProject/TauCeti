@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
-import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 
@@ -236,15 +235,6 @@ private theorem toSphere_symm_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p �
     eq_inv_of_mul_eq_one_left hprod]
 
 /-! ### Smoothness -/
-
-/-- The inclusion `ℂ → OnePoint ℂ` is smooth for the underlying real structure. -/
-private theorem contMDiff_coe_real : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω ((↑) : ℂ → OnePoint ℂ) := by
-  simpa using (contMDiff_coe (𝕜 := ℂ)).restrictScalars ℝ
-
-/-- The inverse of the inverted chart is smooth for the underlying real structure. -/
-private theorem contMDiff_invChart_symm_real :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω (invChart.symm : ℂ → OnePoint ℂ) := by
-  simpa using (contMDiff_invChart_symm (𝕜 := ℂ)).restrictScalars ℝ
 
 private theorem contMDiff_coe_toSphere :
     ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ω fun x : OnePoint ℂ ↦ (toSphere v ι x : E) := by

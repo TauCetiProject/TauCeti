@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
-public import TauCeti.Analysis.PDE.Regularity.Interior
+public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Localization
 

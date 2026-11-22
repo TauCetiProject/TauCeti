@@ -36,7 +36,10 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_eq_of_isMIntegralCurve`: every integral curve is an
   orbit, and `TauCeti.IsAdaptedPseudoGradient.eqOn_flow_of_isMIntegralCurveOn`: so is every
-  integral curve on an open interval, on that interval.
+  integral curve on an open interval, on that interval;
+  `TauCeti.IsAdaptedPseudoGradient.eqOn_flow_of_isMIntegralCurveOn_Iio` and
+  `TauCeti.IsAdaptedPseudoGradient.eqOn_flow_of_isMIntegralCurveOn_Ioi` are the versions for
+  open half-lines.
 * `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_inter_stableSet_of_isMIntegralCurve`: an
   integral curve from `p` to `q` is the orbit of a point of `W^u(p) ∩ W^s(q)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
@@ -168,6 +171,24 @@ theorem eqOn_flow_of_isMIntegralCurveOn {γ : ℝ → M} {a b t₀ : ℝ}
   isMIntegralCurveOn_Ioo_eqOn_of_contMDiff_boundaryless ht₀ (hX.contMDiff.of_le (by simp)) hγ
     ((((hX.isMIntegralCurve_flow (γ t₀)).comp_add (-t₀)).isMIntegralCurveOn _).congr fun t _ ↦ by
       simp [sub_eq_add_neg]) (by simp)
+
+/-- **Integral curves on a left half-line are orbits up to any earlier time.** An integral curve of
+an adapted pseudo-gradient on `(-∞, b)` is, up to any time `a < b`, the orbit of its value at `a`,
+shifted by `a`. -/
+theorem eqOn_flow_of_isMIntegralCurveOn_Iio {γ : ℝ → M} {a b : ℝ}
+    (hγ : IsMIntegralCurveOn γ X (Iio b)) (hab : a < b) :
+    EqOn γ (fun t ↦ hX.flow (t - a) (γ a)) (Iic a) := fun t (ht : t ≤ a) ↦
+  hX.eqOn_flow_of_isMIntegralCurveOn (hγ.mono Ioo_subset_Iio_self) (a := t - 1)
+    ⟨(sub_one_lt t).trans_le ht, hab⟩ ⟨sub_one_lt t, ht.trans_lt hab⟩
+
+/-- **Integral curves on a right half-line are orbits from any later time on.** An integral curve
+of an adapted pseudo-gradient on `(a, ∞)` is, from any time `b > a` on, the orbit of its value at
+`b`, shifted by `b`. -/
+theorem eqOn_flow_of_isMIntegralCurveOn_Ioi {γ : ℝ → M} {a b : ℝ}
+    (hγ : IsMIntegralCurveOn γ X (Ioi a)) (hab : a < b) :
+    EqOn γ (fun t ↦ hX.flow (t - b) (γ b)) (Ici b) := fun t (ht : b ≤ t) ↦
+  hX.eqOn_flow_of_isMIntegralCurveOn (hγ.mono Ioo_subset_Ioi_self) (b := t + 1)
+    ⟨hab, ht.trans_lt (lt_add_one t)⟩ ⟨hab.trans_le ht, lt_add_one t⟩
 
 /-- An integral curve of an adapted pseudo-gradient from `p` to `q` is the orbit of a point of
 `W^u(p) ∩ W^s(q)`. -/

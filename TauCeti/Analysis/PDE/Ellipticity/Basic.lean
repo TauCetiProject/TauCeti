@@ -271,6 +271,11 @@ lemma matrixBilinearForm_smul (c : ℝ) (A : Matrix n n ℝ) :
     matrixBilinearForm (c • A) = c • matrixBilinearForm A := by
   simp only [← matrixBilinearFormLinear_apply, map_smul]
 
+/-- The zero coefficient matrix has the zero bilinear form. -/
+@[simp]
+lemma matrixBilinearForm_zero : matrixBilinearForm (0 : Matrix n n ℝ) = 0 := by
+  simp only [← matrixBilinearFormLinear_apply, map_zero]
+
 /-- The principal coefficient-to-bilinear-form map is continuous. -/
 lemma continuous_matrixBilinearForm :
     Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=

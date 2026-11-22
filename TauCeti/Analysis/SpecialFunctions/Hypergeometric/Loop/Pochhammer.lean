@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
