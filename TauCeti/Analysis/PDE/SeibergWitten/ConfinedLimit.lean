@@ -321,7 +321,11 @@ theorem exists_vortex_norm_eq_one_and_eq_normalConnection_sub_phaseForm (hb : Co
     exists_vortex_eq_mul_sectionValue_normalCoord h₀ h₂₃ hb hJF hα hdbar (K := R)
       fun y hy hαy ↦ by simpa [hαy] using hR (Set.mem_Ici.2 hy)
   have hnorm := Vortex.tendsto_norm_sectionValue_of_tendsto_sectionValue_mul_inv_pow hframe
-  have hdense := hzero.dense_setOf_ne_zero
+  have hdense := Vortex.dense_setOf_sectionValue_ne_zero (k := ⊤) le_top
+    ((contDiff_piLp 2).1 hx 0) ((contDiff_piLp 2).1 hx 1)
+    (((contDiff_piLp 2).1 hx 2).differentiable (by simp))
+    (((contDiff_piLp 2).1 hx 3).differentiable (by simp)) (fun w ↦ by simp [hsol w])
+    (Vortex.tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
   have hbdd := isBounded_range_log_norm_sq_of_eq_mul_sectionValue_normalCoord h₀ h₂₃
     (hb.differentiable (by simp)) hdbar hC hlim (hx.of_le (by simp)) hsol hnorm hdense
     (hh.of_le (by simp)) hh₀ hαh
