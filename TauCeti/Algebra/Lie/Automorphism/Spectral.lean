@@ -31,8 +31,6 @@ brackets `[B i, B j]` via bilinear basis extensionality (`LinearMap.ext_basis`).
 
 ## Main results
 
-* `LieEquiv.diagEnd_comp_apply_of_eigenvector`: `B.diagEnd (fun i ↦ g (lam i))` acts by `g μ`
-  on any `μ`-eigenvector of `P`.
 * `LieEquiv.diagEnd_rpow_comp`, `LieEquiv.diagEnd_rpow_map_lie`: composition law and bracket
   preservation for diagonal real powers.
 * `LieEquiv.rpowLieEquiv_apply`, `LieEquiv.rpowLieEquiv_symm_apply`, `LieEquiv.rpowLieEquiv_one`,
@@ -58,15 +56,6 @@ private theorem apply_lie_basis_of_apply_basis (B : Basis ι R L) {lam : ι → 
     (hB : ∀ i, P (B i) = lam i • B i) (i j : ι) :
     P ⁅B i, B j⁆ = (lam i * lam j) • ⁅B i, B j⁆ := by
   rw [P.map_lie, hB i, hB j, smul_lie, lie_smul, smul_smul]
-
-/-- A diagonal operator `B.diagEnd (fun i ↦ g (lam i))` acts by `g μ` on any `μ`-eigenvector of an
-automorphism diagonalized by `B` with eigenvalues `lam`. -/
-theorem diagEnd_comp_apply_of_eigenvector [IsCancelMulZero R] (B : Basis ι R L)
-    {lam : ι → R} {P : L ≃ₗ⁅R⁆ L} (hB : ∀ i, P (B i) = lam i • B i)
-    (g : R → R) {y : L} {μ : R} (hy : P y = μ • y) :
-    B.diagEnd (fun i ↦ g (lam i)) y = g μ • y :=
-  B.apply_eq_smul_of_apply_basis (f := (P : L →ₗ[R] L)) (g := B.diagEnd (fun i ↦ g (lam i)))
-    hB (B.diagEnd_apply_self _) hy fun _ hi ↦ congrArg g hi
 
 end Diagonal
 
@@ -98,7 +87,7 @@ theorem diagEnd_rpow_map_lie (B : Basis ι ℝ L)
     refine LinearMap.ext_basis B B fun i j ↦ ?_
     simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, ad_apply,
       adL, ds]
-    rw [diagEnd_comp_apply_of_eigenvector B hB (· ^ s)
+    rw [B.diagEnd_comp_apply_of_eigenvector (f := (P : L →ₗ[ℝ] L)) hB (· ^ s)
         (apply_lie_basis_of_apply_basis B hB i j),
       B.diagEnd_apply_self, B.diagEnd_apply_self, smul_lie, lie_smul, smul_smul,
       Real.mul_rpow (hlam i).le (hlam j).le]
@@ -168,7 +157,7 @@ theorem diagEnd_log_leibniz (B : Basis ι ℝ L)
     refine LinearMap.ext_basis B B fun i j ↦ ?_
     simp only [LinearMap.compr₂_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
       LinearMap.id_apply, LieHom.coe_toLinearMap, ad_apply, adL, D]
-    rw [diagEnd_comp_apply_of_eigenvector B hB Real.log
+    rw [B.diagEnd_comp_apply_of_eigenvector (f := (P : L →ₗ[ℝ] L)) hB Real.log
         (apply_lie_basis_of_apply_basis B hB i j),
       B.diagEnd_apply_self, B.diagEnd_apply_self,
       Real.log_mul (hlam i).ne' (hlam j).ne', add_smul, lie_smul, smul_lie, add_comm]

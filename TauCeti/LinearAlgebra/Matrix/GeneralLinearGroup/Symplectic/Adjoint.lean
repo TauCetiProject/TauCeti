@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.TraceForm
 public import TauCeti.Algebra.Lie.Symplectic.Cartan
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Cartan
 public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 public import TauCeti.LinearAlgebra.SymplecticGroup
+import TauCeti.Algebra.Lie.CartanInvolution.Symplectic
 
 /-!
 # The adjoint action of the symplectic group and its compact part

@@ -193,28 +193,30 @@ theorem map_maximal_abelian_cartanP {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅
     Maximal
       (fun 𝔟 : Submodule R L' ↦ 𝔟 ≤ θ'.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0)
       (𝔞.map (e : L →ₗ[R] L')) := by
-  have hmapP : θ.cartanP.map (e : L →ₗ[R] L') = θ'.cartanP := map_cartanP e he
-  refine ⟨⟨?_, ?_⟩, fun 𝔟' ⟨h𝔟'P, h𝔟'ab⟩ hle ↦ ?_⟩
-  · rw [← hmapP]
-    exact Submodule.map_mono h𝔞.prop.left
-  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-    simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.map_lie,
-      h𝔞.prop.right x hx y hy, map_zero]
-  · let 𝔟 : Submodule R L := 𝔟'.map (e.symm : L' →ₗ[R] L)
-    have he_symm : ∀ y, θ (e.symm y) = e.symm (θ' y) := fun y ↦ e.injective <| by
-      simp only [coe_toLieHom]
-      rw [← he, e.apply_symm_apply, e.apply_symm_apply]
-    have h𝔟P : 𝔟 ≤ θ.cartanP := by
-      rw [← map_cartanP e.symm he_symm]
-      exact Submodule.map_mono h𝔟'P
-    have h𝔟ab : ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0 := by
-      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-      simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.symm.map_lie, h𝔟'ab x hx y hy,
-        map_zero]
-    have h𝔞_le : 𝔞 ≤ 𝔟 := fun x hx ↦ ⟨e x, hle ⟨x, hx, rfl⟩, by simp⟩
-    have h𝔟_le : 𝔟 ≤ 𝔞 := h𝔞.le_of_ge ⟨h𝔟P, h𝔟ab⟩ h𝔞_le
-    intro y hy
-    exact ⟨e.symm y, h𝔟_le ⟨y, hy, rfl⟩, by simp⟩
+  let o := Submodule.orderIsoMapComap (e : L ≃ₗ[R] L')
+  have hmax : Maximal
+      (· ∈ o '' {𝔟 : Submodule R L | 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0})
+      (o 𝔞) :=
+    maximal_mem_image_monotone (fun _ _ _ _ ↦ o.map_rel_iff) h𝔞
+  have himg : o '' {𝔟 : Submodule R L | 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0} =
+      {𝔟' : Submodule R L' | 𝔟' ≤ θ'.cartanP ∧ ∀ x ∈ 𝔟', ∀ y ∈ 𝔟', ⁅x, y⁆ = 0} := by
+    ext 𝔟'
+    constructor
+    · rintro ⟨𝔟, ⟨h𝔟P, h𝔟ab⟩, rfl⟩
+      refine ⟨?_, ?_⟩
+      · rw [← map_cartanP e he]
+        exact o.monotone h𝔟P
+      · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+        simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.map_lie, h𝔟ab x hx y hy, map_zero]
+    · rintro ⟨h𝔟'P, h𝔟'ab⟩
+      refine ⟨o.symm 𝔟', ⟨?_, ?_⟩, o.apply_symm_apply 𝔟'⟩
+      · rw [o.symm_apply_le]
+        change 𝔟' ≤ θ.cartanP.map (e : L →ₗ[R] L')
+        rwa [map_cartanP e he]
+      · intro x hx y hy
+        apply e.injective
+        simpa only [coe_toLieHom, map_lie, map_zero] using h𝔟'ab (e x) hx (e y) hy
+  exact (by simpa only [himg, Set.mem_ofPred_eq] using hmax : Maximal _ (o 𝔞))
 
 /-- The inverse of a Lie automorphism has the same `-1`-eigenspace. -/
 @[simp]

@@ -17,8 +17,10 @@ public import TauCeti.Algebra.Lie.Weights.Central
 public import TauCeti.Algebra.Lie.LeviDecomposition.Abelian
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.Algebra.Lie.Basic
 import Mathlib.Algebra.Lie.Normalizer
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Reductive Lie algebras: the structure theorem
@@ -134,6 +136,8 @@ the derived ideal is isomorphic to `L ⧸ Z(L)`, hence Killing and semisimple.
   centre and the derived ideal of a reductive Lie algebra are Killing, hence semisimple.
 * `TauCeti.hasCentralRadical_iff_isCompl_center_derivedSeries`: **the structure theorem**, `L` is
   reductive if and only if `L = Z(L) ⊕ ⁅L, L⁆` with `⁅L, L⁆` semisimple.
+* `LieEquiv.existsUnique_center_add_derivedSeries_of_apply_eq_smul`: unique decomposition of an
+  automorphism eigenvector along a centre–derived complement.
 
 ## References
 
@@ -571,3 +575,48 @@ theorem isIrreducible_restrict_derivedSeries :
 end Modules
 
 end TauCeti
+
+namespace LieEquiv
+
+open LieAlgebra
+
+section CommRing
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- When a Lie algebra splits as the direct sum of its centre and its derived ideal, every
+eigenvector of a Lie algebra automorphism decomposes uniquely into a central eigenvector and a
+derived-ideal eigenvector with the same eigenvalue. -/
+theorem existsUnique_center_add_derivedSeries_of_apply_eq_smul (e : L ≃ₗ⁅R⁆ L)
+    (hc : IsCompl (center R L) (derivedSeries R L 1)) {c : R} {x : L} (hx : e x = c • x) :
+    ∃! p : (center R L) × derivedSeries R L 1,
+      e p.1 = c • p.1 ∧ e p.2 = c • p.2 ∧ (p.1 : L) + p.2 = x := by
+  let a := Submodule.prodEquivOfIsCompl (center R L).toSubmodule
+    (derivedSeries R L 1).toSubmodule (LieSubmodule.isCompl_toSubmodule.mpr hc)
+  obtain ⟨p, hp⟩ := a.surjective x
+  have hsum : (p.1 : L) + p.2 = x := by
+    simpa only [a, Submodule.coe_prodEquivOfIsCompl'] using hp
+  -- Uniqueness of the centre/derived decomposition makes both components `c`-eigenvectors.
+  have hz : e p.1 ∈ center R L := e.apply_mem_center p.1.property
+  have hd : e p.2 ∈ derivedSeries R L 1 :=
+    (LieIdeal.derivedSeries_map_le (f := e.toLieHom) 1) (LieIdeal.mem_map p.2.property)
+  have hsmul : (⟨e p.1, hz⟩, ⟨e p.2, hd⟩) = (c • p.1, c • p.2) := by
+    apply a.injective
+    calc
+      a (⟨e p.1, hz⟩, ⟨e p.2, hd⟩) = e p.1 + e p.2 :=
+        Submodule.coe_prodEquivOfIsCompl' _ _ _ _
+      _ = e ((p.1 : L) + p.2) := (map_add e _ _).symm
+      _ = c • x := by rw [hsum, hx]
+      _ = c • ((p.1 : L) + p.2) := by rw [hsum]
+      _ = (c • (p.1 : L)) + (c • (p.2 : L)) := smul_add c _ _
+      _ = a (c • p.1, c • p.2) :=
+        (Submodule.coe_prodEquivOfIsCompl' _ _ _ (c • p.1, c • p.2)).symm
+  refine ⟨p, ⟨congrArg (fun q => (q.1 : L)) hsmul,
+    congrArg (fun q => (q.2 : L)) hsmul, hsum⟩, ?_⟩
+  intro q hq
+  apply a.injective
+  simpa only [a, Submodule.coe_prodEquivOfIsCompl'] using hq.2.2.trans hsum.symm
+
+end CommRing
+
+end LieEquiv

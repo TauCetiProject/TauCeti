@@ -50,8 +50,9 @@ reductive Cartan involutions are in `TauCeti/Algebra/Lie/CartanInvolution/Reduct
 ## Main results
 
 * `LieEquiv.IsCartanInvolution.isKilling`, `LieEquiv.IsCartanInvolution.finiteDimensional`,
-  `LieEquiv.IsCartanInvolution.isSemisimple`: a Lie algebra with a Cartan involution is Killing,
-  hence finite-dimensional and semisimple over a field.
+  `LieEquiv.IsCartanInvolution.isSemisimple`, `LieEquiv.IsCartanInvolution.restrict`: a Lie
+  algebra with a Cartan involution is Killing, hence finite-dimensional and semisimple over a field,
+  and Cartan involutions restrict to Lie ideals over a PID.
 * `LieEquiv.IsCartanInvolution.killingForm_apply_self_neg_of_mem_fixedSubalgebra`,
   `LieEquiv.IsCartanInvolution.killingForm_apply_self_pos_of_mem_cartanP`: the Killing form is
   negative definite on `𝔨` and positive definite on `𝔭`.
@@ -135,6 +136,107 @@ theorem isKilling (hθ : θ.IsCartanInvolution) : IsKilling R L := by
     (LieIdeal.coe_killingCompl_top R L).trans (eq_bot_iff.mpr fun x hx ↦ ?_)⟩
   exact hθ.twistedKillingForm_nondegenerate.left x fun y ↦ by
     rw [twistedKillingForm_apply, LinearMap.mem_ker.mp hx, LinearMap.zero_apply, neg_zero]
+
+/-- Restricting a Cartan involution to a Lie ideal yields a Cartan involution of that ideal,
+over a partially ordered principal ideal domain. -/
+theorem restrict [IsDomain R] [IsPrincipalIdealRing R] (hθ : θ.IsCartanInvolution)
+    {I : LieIdeal R L} (θI : I ≃ₗ⁅R⁆ I) (hθI : ∀ x : I, (θI x : L) = θ x) :
+    θI.IsCartanInvolution where
+  involutive x := Subtype.ext (by simp [hθI, hθ.involutive x])
+  posDef_twistedKillingForm x hx := by
+    have := hθ.isKilling
+    have := TauCeti.free_of_isKilling (R := R) (L := L)
+    have := TauCeti.finite_of_isKilling (R := R) (L := L)
+    have hkf : killingForm R I x (θI x) = killingForm R L x (θ x) := by
+      have h := LinearMap.congr_fun₂ (LieIdeal.killingForm_eq (R := R) (L := L) (I := I))
+        x (θI x)
+      change killingForm R I x (θI x) = killingForm R L x (θI x) at h
+      rwa [hθI x] at h
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, twistedKillingForm_apply, hkf,
+      ← twistedKillingForm_apply]
+    exact hθ.twistedKillingForm_pos (fun h ↦ hx (Subtype.ext h))
+
+omit [PartialOrder R] in
+private theorem killingForm_eq_zero_of_isUnit_two (h2 : IsUnit (2 : R))
+    {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
+    killingForm R L x y = 0 := by
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hx
+  rw [mem_cartanP] at hy
+  have h : killingForm R L x y = -killingForm R L x y := by
+    conv_lhs => rw [← killingForm_of_equiv_apply θ, hx, hy, map_neg]
+  have hmul : killingForm R L x y * 2 = 0 := by
+    rw [mul_two, eq_neg_iff_add_eq_zero.mp h]
+  exact h2.mul_left_eq_zero.mp hmul
+
+/-- The `-1`-eigenspace `𝔭` of a Cartan involution is the Killing-orthogonal complement of its
+fixed subalgebra `𝔨`. -/
+theorem orthogonal_fixedSubalgebra_eq_cartanP (hθ : θ.IsCartanInvolution)
+    (h2 : IsUnit (2 : R)) :
+    (killingForm R L).orthogonal θ.toLieHom.fixedSubalgebra.toSubmodule = θ.cartanP := by
+  refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ ?_
+  · have hsup := (θ.isCompl_fixedSubalgebra_cartanP h2 hθ.involutive).sup_eq_top
+    obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp (hsup ▸ Submodule.mem_top (x := x))
+    have hk' := (LieSubalgebra.mem_toSubmodule _).mp hk
+    have hkk : killingForm R L k k = 0 := by
+      have := (killingForm R L).mem_orthogonal_iff.mp hx k hk
+      rwa [map_add, killingForm_eq_zero_of_isUnit_two h2 hk' hp, add_zero] at this
+    obtain rfl : k = 0 := by
+      by_contra hk₀
+      have hpos := hθ.twistedKillingForm_pos hk₀
+      have hθk : θ k = k := LieHom.mem_fixedSubalgebra.mp hk'
+      rw [twistedKillingForm_apply, hθk, hkk, neg_zero] at hpos
+      exact lt_irrefl 0 hpos
+    rwa [zero_add]
+  · exact (killingForm R L).mem_orthogonal_iff.mpr fun k hk ↦
+      killingForm_eq_zero_of_isUnit_two h2 ((LieSubalgebra.mem_toSubmodule _).mp hk) hx
+
+/-- The Killing-orthogonal complement of `θ.cartanP` is the fixed subalgebra `𝔨`. -/
+theorem orthogonal_cartanP_eq_fixedSubalgebra (hθ : θ.IsCartanInvolution)
+    (h2 : IsUnit (2 : R)) :
+    (killingForm R L).orthogonal θ.cartanP = θ.toLieHom.fixedSubalgebra.toSubmodule := by
+  refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ ?_
+  · have hsup := (θ.isCompl_fixedSubalgebra_cartanP h2 hθ.involutive).sup_eq_top
+    obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp (hsup ▸ Submodule.mem_top (x := x))
+    have hk' := (LieSubalgebra.mem_toSubmodule _).mp hk
+    have hpp : killingForm R L p p = 0 := by
+      have := (killingForm R L).mem_orthogonal_iff.mp hx p hp
+      rw [map_add] at this
+      have hpk : killingForm R L p k = 0 := by
+        rw [traceForm_comm]
+        exact killingForm_eq_zero_of_isUnit_two h2 hk' hp
+      rwa [hpk, zero_add] at this
+    obtain rfl : p = 0 := by
+      by_contra hp₀
+      have hpos := hθ.twistedKillingForm_pos hp₀
+      rw [twistedKillingForm_apply, mem_cartanP.mp hp, map_neg, neg_neg, hpp] at hpos
+      exact lt_irrefl 0 hpos
+    rwa [add_zero]
+  · exact (killingForm R L).mem_orthogonal_iff.mpr fun p hp ↦ by
+      rw [traceForm_comm]
+      exact killingForm_eq_zero_of_isUnit_two h2 ((LieSubalgebra.mem_toSubmodule _).mp hx) hp
+
+/-- A Cartan involution is determined by its fixed subalgebra `𝔨`. -/
+theorem eq_of_fixedSubalgebra_eq {θ' : L ≃ₗ⁅R⁆ L} (hθ : θ.IsCartanInvolution)
+    (hθ' : θ'.IsCartanInvolution) (h2 : IsUnit (2 : R))
+    (h : θ.toLieHom.fixedSubalgebra = θ'.toLieHom.fixedSubalgebra) : θ = θ' := by
+  have hp : θ.cartanP = θ'.cartanP := by
+    rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP h2,
+      ← hθ'.orthogonal_fixedSubalgebra_eq_cartanP h2, h]
+  exact LinearMap.ext_on_codisjoint
+    (θ.isCompl_fixedSubalgebra_cartanP h2 hθ.involutive).codisjoint
+    (fun k hk ↦ (LieHom.mem_fixedSubalgebra.mp ((LieSubalgebra.mem_toSubmodule _).mp hk)).trans
+      (LieHom.mem_fixedSubalgebra.mp (h ▸ (LieSubalgebra.mem_toSubmodule _).mp hk)).symm)
+    fun p hp' ↦ (mem_cartanP.mp hp').trans (mem_cartanP.mp (hp ▸ hp')).symm
+
+/-- A Cartan involution is uniquely determined by its `-1`-eigenspace `𝔭`: two Cartan involutions
+with the same `-1`-eigenspace are equal. -/
+theorem eq_of_cartanP_eq {θ' : L ≃ₗ⁅R⁆ L} (hθ : θ.IsCartanInvolution)
+    (hθ' : θ'.IsCartanInvolution) (h2 : IsUnit (2 : R)) (h : θ.cartanP = θ'.cartanP) :
+    θ = θ' := by
+  apply hθ.eq_of_fixedSubalgebra_eq hθ' h2
+  apply LieSubalgebra.toSubmodule_injective
+  rw [← hθ.orthogonal_cartanP_eq_fixedSubalgebra h2,
+    ← hθ'.orthogonal_cartanP_eq_fixedSubalgebra h2, h]
 
 end IsCartanInvolution
 
@@ -291,72 +393,6 @@ theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
   have := hθ.isKilling
   have := hθ.finiteDimensional
   inferInstance
-
-section Orthogonal
-
-variable [IsAddTorsionFree K]
-
-omit [PartialOrder K] in
-private theorem isUnit_two : IsUnit (2 : K) :=
-  isUnit_iff_ne_zero.mpr <| by
-    simpa using (IsAddTorsionFree.nsmul_left_injective (M := K) one_ne_zero).ne
-      (by decide : (2 : ℕ) ≠ 0)
-
-/-- The `-1`-eigenspace `𝔭` of a Cartan involution is the Killing-orthogonal complement of its
-fixed subalgebra `𝔨`. -/
-theorem orthogonal_fixedSubalgebra_eq_cartanP (hθ : θ.IsCartanInvolution) :
-    (killingForm K L).orthogonal θ.toLieHom.fixedSubalgebra.toSubmodule = θ.cartanP := by
-  refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ ?_
-  · have hsup := (θ.isCompl_fixedSubalgebra_cartanP isUnit_two hθ.involutive).sup_eq_top
-    obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp (hsup ▸ Submodule.mem_top (x := x))
-    have hk' := (LieSubalgebra.mem_toSubmodule _).mp hk
-    have hkk : killingForm K L k k = 0 := by
-      have := (killingForm K L).mem_orthogonal_iff.mp hx k hk
-      rwa [map_add,
-        killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP hk' hp, add_zero] at this
-    obtain rfl : k = 0 := by
-      by_contra hk₀
-      have hpos := hθ.twistedKillingForm_pos hk₀
-      have hθk : θ k = k := LieHom.mem_fixedSubalgebra.mp hk'
-      rw [twistedKillingForm_apply, hθk, hkk, neg_zero] at hpos
-      exact lt_irrefl 0 hpos
-    rwa [zero_add]
-  · exact (killingForm K L).mem_orthogonal_iff.mpr fun k hk ↦
-      killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP
-        ((LieSubalgebra.mem_toSubmodule _).mp hk) hx
-
-/-- The Killing-orthogonal complement of `θ.cartanP` is the fixed subalgebra `𝔨`. -/
-theorem orthogonal_cartanP_eq_fixedSubalgebra (hθ : θ.IsCartanInvolution) :
-    (killingForm K L).orthogonal θ.cartanP = θ.toLieHom.fixedSubalgebra.toSubmodule := by
-  have := hθ.isKilling
-  have := hθ.finiteDimensional
-  rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP]
-  exact (killingForm K L).orthogonal_orthogonal (IsKilling.killingForm_nondegenerate K L)
-    (traceForm_isSymm K L L).isRefl _
-
-/-- A Cartan involution is determined by its fixed subalgebra `𝔨`. -/
-theorem eq_of_fixedSubalgebra_eq {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInvolution)
-    (hθ' : θ'.IsCartanInvolution)
-    (h : θ.toLieHom.fixedSubalgebra = θ'.toLieHom.fixedSubalgebra) : θ = θ' := by
-  have hp : θ.cartanP = θ'.cartanP := by
-    rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP, ← hθ'.orthogonal_fixedSubalgebra_eq_cartanP, h]
-  exact LinearMap.ext_on_codisjoint
-    (θ.isCompl_fixedSubalgebra_cartanP isUnit_two hθ.involutive).codisjoint
-    (fun k hk ↦ (LieHom.mem_fixedSubalgebra.mp ((LieSubalgebra.mem_toSubmodule _).mp hk)).trans
-      (LieHom.mem_fixedSubalgebra.mp (h ▸ (LieSubalgebra.mem_toSubmodule _).mp hk)).symm)
-    fun p hp' ↦ (mem_cartanP.mp hp').trans (mem_cartanP.mp (hp ▸ hp')).symm
-
-/-- A Cartan involution is uniquely determined by its `-1`-eigenspace `𝔭`: two Cartan involutions
-with the same `-1`-eigenspace are equal. -/
-theorem eq_of_cartanP_eq {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInvolution)
-    (hθ' : θ'.IsCartanInvolution) (h : θ.cartanP = θ'.cartanP) :
-    θ = θ' := by
-  apply hθ.eq_of_fixedSubalgebra_eq hθ'
-  apply LieSubalgebra.toSubmodule_injective
-  rw [← hθ.orthogonal_cartanP_eq_fixedSubalgebra,
-    ← hθ'.orthogonal_cartanP_eq_fixedSubalgebra, h]
-
-end Orthogonal
 
 /-! ### The fixed subalgebra `𝔨` -/
 

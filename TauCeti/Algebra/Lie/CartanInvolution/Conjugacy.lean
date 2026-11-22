@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 import Mathlib.Algebra.Lie.Derivation.Killing
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Algebra.Lie.Automorphism.Spectral
 import TauCeti.Algebra.Lie.CartanInvolution.Spectral
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
@@ -57,12 +56,6 @@ section RealConjugacy
 
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
 
-/-- The inverse of the composition `θ.trans θ'` of two involutions is `y ↦ θ (θ' y)`. -/
-private theorem trans_symm_apply_of_involutive {θ θ' : L ≃ₗ⁅ℝ⁆ L}
-    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (y : L) :
-    (θ.trans θ').symm y = θ (θ' y) :=
-  (θ.trans θ').symm_apply_eq.mpr (by rw [trans_apply, hθ (θ' y), hθ' y])
-
 /-- For two Cartan involutions `θ` and `θ'` of a real Lie algebra, `P = (θ' ∘ θ)²` admits a
 basis of eigenvectors with strictly positive eigenvalues. -/
 private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
@@ -93,9 +86,9 @@ private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
     hθ.twistedKillingForm_isSymm (fun v hv ↦ hθ.twistedKillingForm_pos hv)
   let P_E :
       EuclideanSpace ℝ (Fin (finrank ℝ L)) →ₗ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ L)) :=
-    (e.symm.toLinearMap.comp (P : L →ₗ[ℝ] L)).comp e.toLinearMap
+    e.symm.conj (P : L →ₗ[ℝ] L)
   have hP_E_apply (u : EuclideanSpace ℝ (Fin (finrank ℝ L))) : e (P_E u) = P (e u) := by
-    simp [P_E]
+    simp [P_E, LinearEquiv.conj_apply_apply]
   have hP_E_symm : P_E.IsSymmetric := fun u v ↦ by
     rw [← he, ← he, hP_E_apply, hP_E_apply, hP_symm_form]
   have hn : finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ L))) = finrank ℝ L := by simp
@@ -139,15 +132,13 @@ private theorem rpowLieEquiv_apply_involutive {ι : Type*} (B : Basis ι ℝ L)
     (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i)
     (s : ℝ) (y : L) :
     rpowLieEquiv B hlam hB s (θ y) = θ (rpowLieEquiv B hlam hB (-s) y) := by
-  suffices h : (B.diagEnd (fun i ↦ lam i ^ s)).comp (θ : L →ₗ[ℝ] L) =
-      (θ : L →ₗ[ℝ] L).comp (B.diagEnd (fun i ↦ lam i ^ (-s))) by
-    simpa only [rpowLieEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      coe_toLinearEquiv] using congr($h y)
-  refine B.ext fun i ↦ ?_
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
-  rw [diagEnd_comp_apply_of_eigenvector B hB (· ^ s)
-      (trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i)),
-    B.diagEnd_apply_self, map_smul, Real.inv_rpow (hlam i).le, Real.rpow_neg (hlam i).le]
+  have h := B.diagEnd_comp_eq_comp_diagEnd
+    (f := (((θ.trans θ').trans (θ.trans θ') : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
+    (φ := (θ : L →ₗ[ℝ] L)) hB (·⁻¹) (· ^ s) (· ^ (-s))
+    (fun i ↦ trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i))
+    fun i ↦ by rw [Real.inv_rpow (hlam i).le, Real.rpow_neg (hlam i).le]
+  simpa only [rpowLieEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    coe_toLinearEquiv] using congr($h y)
 
 /-- `θ.trans θ'` commutes with all real powers of `P = (θ.trans θ')²`. -/
 private theorem rpowLieEquiv_comm_trans {ι : Type*} (B : Basis ι ℝ L)
@@ -156,19 +147,18 @@ private theorem rpowLieEquiv_comm_trans {ι : Type*} (B : Basis ι ℝ L)
     (s : ℝ) (y : L) :
     (θ.trans θ') (rpowLieEquiv B hlam hB s y) =
       rpowLieEquiv B hlam hB s ((θ.trans θ') y) := by
-  suffices h : ((θ.trans θ' : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L).comp (B.diagEnd (fun i ↦ lam i ^ s)) =
-      (B.diagEnd (fun i ↦ lam i ^ s)).comp ((θ.trans θ' : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L) by
-    simpa only [rpowLieEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      coe_toLinearEquiv] using congr($h y)
-  refine B.ext fun i ↦ ?_
-  have hω_eig : ((θ.trans θ').trans (θ.trans θ')) ((θ.trans θ') (B i)) =
-      lam i • (θ.trans θ') (B i) := by
-    have hcomm : ((θ.trans θ').trans (θ.trans θ')) ((θ.trans θ') (B i)) =
-        (θ.trans θ') (((θ.trans θ').trans (θ.trans θ')) (B i)) := by
-      simp only [trans_apply]
-    rw [hcomm, hB i, map_smul]
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
-  rw [B.diagEnd_apply_self, map_smul, diagEnd_comp_apply_of_eigenvector B hB (· ^ s) hω_eig]
+  have h := B.diagEnd_comp_eq_comp_diagEnd
+    (f := (((θ.trans θ').trans (θ.trans θ') : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
+    (φ := ((θ.trans θ' : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L)) hB id (· ^ s) (· ^ s)
+    (fun i ↦ by
+      simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
+      have hcomm : ((θ.trans θ').trans (θ.trans θ')) ((θ.trans θ') (B i)) =
+          (θ.trans θ') (((θ.trans θ').trans (θ.trans θ')) (B i)) := by
+        simp only [trans_apply]
+      rw [hcomm, hB i, map_smul, id_eq])
+    fun _ ↦ rfl
+  simpa only [rpowLieEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    coe_toLinearEquiv] using congr($h y).symm
 
 /-- `log P` anticommutes with `θ` for `P = (θ' ∘ θ)²`. -/
 private theorem logLieDerivation_apply_involutive {ι : Type*} (B : Basis ι ℝ L)
@@ -177,15 +167,14 @@ private theorem logLieDerivation_apply_involutive {ι : Type*} (B : Basis ι ℝ
     (hlam : ∀ i, 0 < lam i)
     (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i) (y : L) :
     logLieDerivation B hlam hB (θ y) = -θ (logLieDerivation B hlam hB y) := by
-  suffices h : (B.diagEnd (fun i ↦ Real.log (lam i))).comp (θ : L →ₗ[ℝ] L) =
-      -(θ : L →ₗ[ℝ] L).comp (B.diagEnd (fun i ↦ Real.log (lam i))) by
-    simpa only [logLieDerivation_apply, LinearMap.comp_apply, LinearMap.neg_apply,
-      LinearEquiv.coe_coe, coe_toLinearEquiv] using congr($h y)
-  refine B.ext fun i ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.neg_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
-  rw [diagEnd_comp_apply_of_eigenvector B hB Real.log
-      (trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i)),
-    B.diagEnd_apply_self, Real.log_inv, neg_smul, map_smul]
+  have h := B.diagEnd_comp_eq_comp_diagEnd
+    (f := (((θ.trans θ').trans (θ.trans θ') : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
+    (φ := (θ : L →ₗ[ℝ] L)) hB (·⁻¹) Real.log (fun r ↦ -Real.log r)
+    (fun i ↦ trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i))
+    fun i ↦ Real.log_inv (lam i)
+  rw [B.diagEnd_neg, LinearMap.comp_neg] at h
+  simpa only [logLieDerivation_apply, LinearMap.comp_apply, LinearMap.neg_apply,
+    LinearEquiv.coe_coe, coe_toLinearEquiv] using congr($h y)
 
 /-- If `ad Z` anticommutes with an involution `θ` on a centerless Lie algebra, then
 `Z ∈ θ.cartanP`. -/
@@ -243,7 +232,7 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
       _ = Ppow (-(1 / 2)) (Ppow 1 (ω.symm y)) := by rw [← trans_apply θ θ' y, hω_eq]
       _ = Ppow (1 / 2) (ω.symm y) := by dsimp only [Ppow]; rw [rpowLieEquiv_add]; norm_num
       _ = Ppow (1 / 2) (θ (θ' y)) := by
-          rw [trans_symm_apply_of_involutive hθ.involutive hθ'.involutive]
+          simp only [ω, LieEquiv.symm_trans, hθ.symm_eq, hθ'.symm_eq, LieEquiv.trans_apply]
       _ = θ'' (θ' y) := (hθ''_apply (θ' y)).symm
   have hθ'_eq_θ'' : θ' = θ'' :=
     hθ'.eq_of_commute (hθ.conj φ) hcomm_θ'
@@ -280,36 +269,17 @@ theorem exists_conj_exp_ad
   obtain ⟨φ, hφ, Z, hZ, hspec⟩ := hθ.exists_conj_spectral hθ'
   refine ⟨Z, hZ, fun y ↦ ?_⟩
   let A : L →L[ℝ] L := LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ L Z)
-  let e : EuclideanSpace ℝ (Fin (finrank ℝ L)) ≃L[ℝ] L :=
-    ((EuclideanSpace.basisFun (Fin (finrank ℝ L)) ℝ).toBasis.equiv (Module.finBasis ℝ L)
-      (Equiv.refl _)).toContinuousLinearEquiv
-  let B :
-      EuclideanSpace ℝ (Fin (finrank ℝ L)) →L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ L)) :=
-    e.symm.conjContinuousAlgEquiv A
-  have hexpA : NormedSpace.exp A = e.conjContinuousAlgEquiv (NormedSpace.exp B) := by
-    have hconj_B : e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap) = A := by
-      ext x
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, B,
-        ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-        ContinuousLinearEquiv.symm_symm, e.apply_symm_apply]
-    rw [← hconj_B]
-    exact NormedSpace.exp_conj_continuousLinearEquiv_of_finiteDimensional e B
   have hexp_eq : ∀ w : L, NormedSpace.exp A w = φ w := by
     have htop : LinearMap.eqLocus (NormedSpace.exp A).toLinearMap (φ : L →ₗ[ℝ] L) = ⊤ := by
       rw [eq_top_iff, ← hθ.iSup_eigenspace_ad_eq_top hZ]
       refine iSup_le fun μ w hw ↦ ?_
       rw [Module.End.mem_eigenspace_iff, LieAlgebra.ad_apply] at hw
-      have hAw : A w = μ • w := by
-        rw [LinearMap.coe_toContinuousLinearMap', LieAlgebra.ad_apply]
-        exact hw
-      have hBw : B (e.symm w) = μ • e.symm w := by
-        simp only [B, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-          ContinuousLinearEquiv.symm_symm, e.apply_symm_apply, hAw, map_smul]
-      have h1 : NormedSpace.exp B (e.symm w) = Real.exp μ • e.symm w := by
-        simpa only [← Real.exp_eq_exp_ℝ] using B.exp_apply_of_apply_eq_smul hBw
+      have h1 : NormedSpace.exp A w = Real.exp μ • w := by
+        simpa only [← Real.exp_eq_exp_ℝ] using
+          A.exp_apply_of_apply_eq_smul_of_finiteDimensional
+            (by simpa only [A, LinearMap.coe_toContinuousLinearMap', LieAlgebra.ad_apply] using hw)
       rw [LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
-        LieEquiv.coe_toLinearEquiv, hexpA, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-        h1, map_smul, e.apply_symm_apply, hspec μ w hw]
+        LieEquiv.coe_toLinearEquiv, h1, hspec μ w hw]
     intro w
     exact LinearMap.mem_eqLocus.mp (htop ▸ Submodule.mem_top)
   rw [hexp_eq y, hexp_eq (θ y), hφ y]

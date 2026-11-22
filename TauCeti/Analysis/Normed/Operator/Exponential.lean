@@ -36,8 +36,10 @@ space. The norm bounds for exponentials in a general normed algebra live in
   automorphism with inverse `exp (-B)`, with `ContinuousLinearMap.coe_expEquiv` and
   `ContinuousLinearMap.coe_expEquiv_symm` identifying it and its inverse with `exp B` and
   `exp (-B)`.
-* `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
-  eigenvector by the scalar exponential of the eigenvalue.
+* `ContinuousLinearMap.exp_apply_of_apply_eq_smul` and
+  `ContinuousLinearMap.exp_apply_of_apply_eq_smul_of_finiteDimensional`: the exponential of an
+  operator acts on an eigenvector by the scalar exponential of the eigenvalue, in a Banach space
+  and in a finite-dimensional Hausdorff topological vector space.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_zero`: the exponential of an operator fixes its kernel.
 * `ContinuousLinearMap.exp_apply_eq_self_iff`: if `‖B‖ < log 2`, the fixed vectors of `exp B` are
   the kernel of `B`.
@@ -298,5 +300,40 @@ theorem exp_conj_continuousLinearEquiv_of_finiteDimensional {𝕜 E F : Type*}
       (E →L[𝕜] E) →ₗ[𝕜] (F →L[𝕜] F)).continuous_of_finiteDimensional B
 
 end NormedSpace
+
+namespace ContinuousLinearMap
+
+/-- **Eigenvectors of the operator exponential in a finite-dimensional TVS.** For a continuous
+endomorphism `A` of a finite-dimensional Hausdorff topological vector space `F` over `ℝ` or `ℂ`
+whose endomorphism ring carries a Hausdorff topological-ring and topological-module topology,
+if `A w = μ • w` then `exp A w = exp μ • w`. -/
+theorem exp_apply_of_apply_eq_smul_of_finiteDimensional {𝕜 F : Type*} [RCLike 𝕜]
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
+    [TopologicalSpace (F →L[𝕜] F)] [IsTopologicalRing (F →L[𝕜] F)]
+    [ContinuousSMul 𝕜 (F →L[𝕜] F)] [T2Space (F →L[𝕜] F)]
+    (A : F →L[𝕜] F) {w : F} {μ : 𝕜} (hw : A w = μ • w) :
+    exp A w = exp μ • w := by
+  let e : EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F)) ≃L[𝕜] F :=
+    ((EuclideanSpace.basisFun (Fin (Module.finrank 𝕜 F)) 𝕜).toBasis.equiv
+      (Module.finBasis 𝕜 F) (Equiv.refl _)).toContinuousLinearEquiv
+  let B : EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F)) →L[𝕜]
+      EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F)) :=
+    e.symm.conjContinuousAlgEquiv A
+  have hexpA : exp A = e.conjContinuousAlgEquiv (exp B) := by
+    have hconj_B : e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap) = A := by
+      ext x
+      simp [B]
+    rw [← hconj_B]
+    exact exp_conj_continuousLinearEquiv_of_finiteDimensional e B
+  have hBw : B (e.symm w) = μ • e.symm w := by
+    simp [B, hw]
+  have : CompleteSpace (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F))) :=
+    FiniteDimensional.completeSpace 𝕜 _
+  have h1 : exp B (e.symm w) = exp μ • e.symm w := B.exp_apply_of_apply_eq_smul hBw
+  rw [hexpA, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply, h1, map_smul,
+    e.apply_symm_apply]
+
+end ContinuousLinearMap
 
 end
