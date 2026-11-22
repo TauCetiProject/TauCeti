@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.GelfandTriple
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.Analysis.ODE.Gronwall.Basic
+import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
@@ -48,6 +48,8 @@ No measurability of `t ↦ A(t)` is assumed: the equation and the integrability 
 
 ## Main declarations
 
+* `TauCeti.HasWeakLineDerivOn.norm_sq_add_two_mul_integral_eq_of_gelfandDual`: the energy
+  identity `‖w t‖² + 2 ∫ₛᵗ A(r) u u = ‖w s‖² + 2 ∫ₛᵗ f(u)`, for the equation tested with `u`.
 * `TauCeti.HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual`: the energy estimate.
 * `TauCeti.HasWeakLineDerivOn.eqOn_of_gelfandDual`: two weak solutions with the same initial
   value have the same continuous representative.
@@ -63,6 +65,7 @@ No measurability of `t ↦ A(t)` is assumed: the equation and the integrability 
 public section
 
 open MeasureTheory Filter Set Real
+open scoped Interval
 
 namespace TauCeti
 
@@ -117,6 +120,40 @@ private theorem integral_two_mul_apply_le_of_ae_le
   simp only [intervalIntegral.integral_const_mul]
 
 variable [CompleteSpace V]
+
+/-- **The energy identity for linear parabolic equations.** Let `ι : V →L[ℝ] H` define a Gelfand
+triple, and let `u ∈ L²(a, b; V)` be such that `t ↦ ι.gelfandDual (ι (u t))` has weak derivative
+`u' ∈ L²(a, b; V*)`, with `w` continuous on `[a, b]` and equal to `ι ∘ u` almost everywhere on
+`(a, b)`. If `u'(t)(u(t)) + e(t) = g(t)` for almost every `t ∈ (a, b)`, with `g` integrable on
+`(a, b)`, then for all `s, t ∈ [a, b]`,
+
+`‖w t‖² + 2 ∫ₛᵗ e = ‖w s‖² + 2 ∫ₛᵗ g`.
+
+For a weak solution of `u' + A(t) u = f` this is the equation tested with `u(t)`:
+`e(t) = A(t) u(t) u(t)` and `g(t) = f(t)(u(t))`. No boundedness, measurability or Gårding
+inequality is needed for `e`, which need not come from a family of bounded operators. -/
+theorem HasWeakLineDerivOn.norm_sq_add_two_mul_integral_eq_of_gelfandDual {e g : ℝ → ℝ}
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι.gelfandDual (ι (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo a b))) (hu' : MemLp u' 2 (volume.restrict (Ioo a b)))
+    (hg : IntegrableOn g (Ioo a b))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo a b), u' t (u t) + e t = g t)
+    (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
+    {s t : ℝ} (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖w t‖ ^ 2 + 2 * ∫ r in s..t, e r = ‖w s‖ ^ 2 + 2 * ∫ r in s..t, g r := by
+  have hid := h.norm_sq_sub_norm_sq_eq_of_gelfandDual hu hu' hw hae hs ht
+  have hp : IntegrableOn (fun r ↦ u' r (u r)) (Ioo a b) :=
+    memLp_one_iff_integrable.1 ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).memLp_of_bilin 1 hu' hu)
+  -- On the interval between `s` and `t`, which lies in `(a, b]`, `e = g - u'(u)` almost everywhere.
+  have hsub : Ι s t ⊆ Ioc a b := fun r hr ↦
+    ⟨lt_of_le_of_lt (le_min hs.1 ht.1) hr.1, hr.2.trans (max_le hs.2 ht.2)⟩
+  have he : ∀ᵐ r ∂volume, r ∈ Ι s t → e r = g r - u' r (u r) := by
+    rw [Measure.restrict_congr_set Ioo_ae_eq_Ioc, ae_restrict_iff' measurableSet_Ioc] at heq
+    filter_upwards [heq] with r hr hrst
+    rw [← hr (hsub hrst)]
+    ring
+  rw [intervalIntegral.integral_congr_ae he, intervalIntegral.integral_sub
+    (hg.intervalIntegrable_of_mem_Icc hs ht) (hp.intervalIntegrable_of_mem_Icc hs ht)]
+  linarith
 
 /-- **The energy estimate for linear parabolic equations.** Let `ι : V →L[ℝ] H` define a Gelfand
 triple, and let `A(t)` satisfy Gårding's inequality `α ‖v‖² - β ‖ι v‖² ≤ A(t) v v` with `α > 0`
@@ -185,8 +222,9 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
     rw [hχs]
     nlinarith [mul_le_mul_of_nonneg_left hfmono hα', mul_le_mul_of_nonneg_left hχmono
       (by positivity : 0 ≤ 2 * β)]
-  have := le_mul_exp_of_le_add_mul_integral (hχ.mono htb) (by positivity) hbound t
-    (right_mem_Icc.2 ht.1)
+  have := le_mul_exp_of_le_add_mul_integral (hχ.mono htb).integrableOn_Icc (by positivity)
+    (ae_restrict_of_forall_mem measurableSet_Icc hbound) (right_mem_Icc.2 ht.1)
+    (hbound t (right_mem_Icc.2 ht.1))
   simpa only [hχ_def, mul_comm (exp _)] using this
 
 /-- The energy estimate for the difference of two weak solutions with the same initial value and

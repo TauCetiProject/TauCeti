@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Monotone
 public import TauCeti.Analysis.GradientFlow.EVI.Basic
 public import TauCeti.Analysis.GradientFlow.MaximalSlope.Basic
-import TauCeti.Analysis.ODE.Gronwall.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # EVI solutions are curves of maximal slope

@@ -38,7 +38,8 @@ be unique, so the solutions are described as a set. This file shows that this se
 ## The argument
 
 By the energy bound
-(`TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball`) the functions
+(`PDE.norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_quasilinear_eq_of_subset_ball`)
+the functions
 `uₖ - gₖ` are bounded in `H¹₀(Ω)`, so by the Rellich–Kondrachov theorem
 (`TauCeti.W1p0.isCompactOperator_valueL`) a subsequence of the values `uₖ` converges in `L²(Ω)`,
 to `v` say, and a further subsequence converges almost everywhere. Along it the frozen
@@ -98,8 +99,8 @@ private theorem bddAbove_range_norm_sub
       (𝓝 (2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam)) :=
     ((hℓn.add (hg.norm.const_mul Lam)).const_mul _).div_const _
   exact hK.bddAbove_range.range_mono _ fun k =>
-    norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball (hAn k) (hAnm k) (hAnc k)
-      hball (hun k).1 (hun k).2
+    norm_sub_le_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_quasilinear_eq_of_subset_ball
+      (hAn k) (hAnm k) (hAnc k) hball (hun k).1 (hun k).2
 
 /-- **Stability of the quasilinear Dirichlet problem under perturbation of the data.** Let
 `Ω ⊆ ℝⁿ⁺¹` be a bounded open set. Let `Aₖ` be Carathéodory coefficients on `Ω`, uniformly elliptic

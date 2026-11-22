@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Uniqueness
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
-import TauCeti.Analysis.ODE.Gronwall.Basic
+import TauCeti.Analysis.ODE.Gronwall
 
 /-!
 # Horizontal geodesics and horizontal lifting under Riemannian submersions
