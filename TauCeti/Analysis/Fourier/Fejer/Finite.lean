@@ -58,7 +58,7 @@ theorem sum_Icc_max_sub_abs_mul_fourierChar {M K : ℕ} (hMK : M ≤ K) (t : ℝ
   rw [hcount, nsmul_eq_mul]
   congr 1
   have habs : (n.natAbs : ℝ) = |(n : ℝ)| := by
-    rw [← Int.cast_natCast, Int.natCast_natAbs, Int.cast_abs]
+    rw [Nat.cast_natAbs, Int.cast_abs]
   have hcast : ((M - n.natAbs : ℕ) : ℝ) = max (0 : ℝ) ((M : ℝ) - |(n : ℝ)|) := by
     rw [← habs]
     by_cases hn : n.natAbs ≤ M

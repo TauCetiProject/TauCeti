@@ -29,7 +29,7 @@ This file proves:
   real division.
 * `Finset.sum_norm_inner_sq_le_of_sum_norm_inner_le`: the uniform Gram-row inequality,
   `∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤ C * ‖x‖ ^ 2` whenever `0 ≤ C` and `r i ≤ C` for all `i ∈ s`.
-* `TauCeti.sum_norm_inner_sq_le_sup'_sum_norm_inner_mul_norm_sq`: the maximum-row Gram inequality
+* `Finset.sum_norm_inner_sq_le_sup'_sum_norm_inner_mul_norm_sq`: the maximum-row Gram inequality
   for nonempty `s`.
 * `Finset.sum_norm_inner_sq_le_of_diag_offDiag`: the diagonal/off-diagonal Gram inequality when
   `‖y i‖ ^ 2 ≤ D` and `∑ j ∈ s.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O` with `0 ≤ D + O`.
@@ -191,14 +191,10 @@ theorem sum_norm_inner_sq_le_of_sum_norm_inner_le (s : Finset ι) (y : ι → E)
     _ = C * ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 / ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖ := (Finset.mul_sum _ _ _).symm
     _ ≤ C * ‖x‖ ^ 2 := mul_le_mul_of_nonneg_left (s.sum_norm_inner_sq_div_le y x) hC
 
-end Finset
-
-namespace TauCeti
-
 /-- **Maximum-row Gram inequality** (Bennett–Siksek 2020, Theorem 7): for a nonempty finite family
 `y : ι → E` on `s : Finset ι`, the sum of squared inner products with `x` is at most `‖x‖ ^ 2`
 times the maximum Gram row sum. -/
-theorem sum_norm_inner_sq_le_sup'_sum_norm_inner_mul_norm_sq {s : Finset ι} (hs : s.Nonempty)
+theorem sum_norm_inner_sq_le_sup'_sum_norm_inner_mul_norm_sq (s : Finset ι) (hs : s.Nonempty)
     (y : ι → E) (x : E) :
     ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤
       s.sup' hs (fun i ↦ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) * ‖x‖ ^ 2 := by
@@ -207,10 +203,6 @@ theorem sum_norm_inner_sq_le_sup'_sum_norm_inner_mul_norm_sq {s : Finset ι} (hs
     (fun i hi ↦ Finset.le_sup' (f := fun i ↦ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) hi)
   exact le_trans (Finset.sum_nonneg fun j _ ↦ norm_nonneg _)
     (Finset.le_sup' (f := fun i ↦ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖) hi₀)
-
-end TauCeti
-
-namespace Finset
 
 /-- **Diagonal/off-diagonal Gram inequality**: if `0 ≤ D + O`, `‖y i‖ ^ 2 ≤ D`, and
 `∑ j ∈ s.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O` for all `i ∈ s`, then

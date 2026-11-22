@@ -46,7 +46,8 @@ theorem two_mul_norm_unitAddCircle_le_abs_sin (t : ℝ) :
   have habs_t : |Real.sin (Real.pi * u)| = |Real.sin (Real.pi * t)| := by
     have hsub : Real.pi * u = Real.pi * t - (round t : ℤ) * Real.pi := by
       simp only [u]; ring
-    rw [hsub, Real.sin_sub_int_mul_pi, abs_mul, abs_zpow, abs_neg, abs_one, one_zpow, one_mul]
+    rw [hsub]
+    simp [Real.sin_sub_int_mul_pi, abs_mul]
   calc
     2 * ‖(t : UnitAddCircle)‖ = 2 * |u| := by rw [hu]
     _ ≤ Real.sin (Real.pi * |u|) := harg ▸ hsin_le

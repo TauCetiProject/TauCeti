@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Group.Nat.Even
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Int.Interval
+import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Order.SuccPred.Int
@@ -45,6 +46,9 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
 * `Finset.sum_Icc_eq_add_sum_range`: `(∑ i ∈ Icc (-(a : ℤ)) b, F i) + F 0` equals the sum of `F j`
   over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
+* `Finset.sum_Icc_neg_eq_sum_fin`, `Finset.sum_Ico_int_add_eq_sum_range`, and
+  `Finset.sum_Ico_int_add_eq_sum_fin`: reindex symmetric integer intervals `[-K, K]` by
+  `Fin (2 * K + 1)` and shifted integer intervals `[M, M + H)` by `range H` or `Fin H`.
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
   `Finset.sum_range_natCast_sq_mul_six`: Gauss's sum in a ring and the sum of squares below `n`.
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
@@ -149,6 +153,54 @@ theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (
   rw [hunion, hinter, sum_singleton] at hkey
   rw [hkey, hs, ht, sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
     sum_image (fun _ _ _ _ h ↦ by omega)]
+
+/-- Reindex a sum over the symmetric integer interval `[-K, K]` by `Fin (2 * K + 1)`. -/
+theorem sum_Icc_neg_eq_sum_fin {M : Type*} [AddCommMonoid M] (K : ℕ) (g : ℤ → M) :
+    ∑ n ∈ Icc (-(K : ℤ)) K, g n = ∑ k : Fin (2 * K + 1), g ((k : ℤ) - K) := by
+  rw [Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ g ((k : ℤ) - K)) (2 * K + 1)]
+  refine sum_nbij' (fun n ↦ (n + K).toNat) (fun k ↦ (k : ℤ) - K) ?_ ?_ ?_ ?_ ?_
+  · intro n hn
+    simp only [mem_Icc, mem_range] at hn ⊢
+    omega
+  · intro k hk
+    simp only [mem_range, mem_Icc] at hk ⊢
+    omega
+  · intro n hn
+    simp only [mem_Icc] at hn
+    omega
+  · intro k _
+    omega
+  · intro n hn
+    simp only [mem_Icc] at hn
+    congr 1
+    omega
+
+/-- Reindex a sum over `Ico M (M + H)` by `range H`. -/
+theorem sum_Ico_int_add_eq_sum_range {α : Type*} [AddCommMonoid α]
+    (M : ℤ) (H : ℕ) (g : ℤ → α) :
+    ∑ n ∈ Ico M (M + H), g n = ∑ j ∈ range H, g (M + (j : ℤ)) := by
+  refine sum_nbij' (fun n ↦ (n - M).toNat) (fun j ↦ M + (j : ℤ)) ?_ ?_ ?_ ?_ ?_
+  · intro n hn
+    simp only [mem_Ico, mem_range] at hn ⊢
+    omega
+  · intro j hj
+    simp only [mem_range, mem_Ico] at hj ⊢
+    omega
+  · intro n hn
+    simp only [mem_Ico] at hn
+    omega
+  · intro j _
+    omega
+  · intro n hn
+    simp only [mem_Ico] at hn
+    congr 1
+    omega
+
+/-- Reindex a sum over `Ico M (M + H)` by `Fin H`. -/
+theorem sum_Ico_int_add_eq_sum_fin {α : Type*} [AddCommMonoid α]
+    (M : ℤ) (H : ℕ) (g : ℤ → α) :
+    ∑ n ∈ Ico M (M + H), g n = ∑ j : Fin H, g (M + (j : ℤ)) := by
+  rw [sum_Ico_int_add_eq_sum_range, ← Fin.sum_univ_eq_sum_range (fun j : ℕ ↦ g (M + (j : ℤ)))]
 
 /-- Gauss's sum cast into a not necessarily associative ring: twice the sum of the natural numbers
 below `n` is `n (n - 1)`. -/

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Group.AddCircle
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Real.Pi.Bounds
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Fourier.Fejer.Finite
 import TauCeti.Analysis.InnerProductSpace.Gram.Selberg
 import TauCeti.Analysis.Normed.Group.AddCircle.Basic
@@ -41,6 +42,8 @@ tapered Fourier vectors.
 * `TauCeti.icoCorePadVec_eq_zero_of_lt_abs`, `TauCeti.norm_icoCorePadVec_sq`,
   `TauCeti.fourierChar_mul_sum_icoCorePadVec`, and `TauCeti.norm_sum_icoCorePadVec_fourierChar`:
   support, squared-norm, and Fourier phase identities for `icoCorePadVec`.
+* `TauCeti.norm_sum_Ico_fourierChar_sq_le_mul_sum`: one-point Cauchy–Schwarz bound
+  `‖∑ n ∈ Finset.Ico M (M + H), a n * e(n * t)‖ ^ 2 ≤ H * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2`.
 * `Finset.sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le`: the cosecant-row large sieve for
   core-supported vectors.
 * `Finset.sum_norm_sum_fourierChar_sq_le_of_support`: centered core additive large sieve for
@@ -60,48 +63,6 @@ public section
 open scoped InnerProductSpace ComplexConjugate
 
 namespace TauCeti
-
-/-! ### Integer interval sum reindexing helpers -/
-
-private theorem sum_Icc_neg_eq_sum_fin {α : Type*} [AddCommMonoid α] (K : ℕ) (g : ℤ → α) :
-    ∑ n ∈ Finset.Icc (-(K : ℤ)) K, g n = ∑ k : Fin (2 * K + 1), g ((k : ℤ) - K) := by
-  rw [Fin.sum_univ_eq_sum_range (fun k : ℕ ↦ g ((k : ℤ) - K)) (2 * K + 1)]
-  refine Finset.sum_nbij' (fun n ↦ (n + K).toNat) (fun k ↦ (k : ℤ) - K) ?_ ?_ ?_ ?_ ?_
-  · intro n hn
-    simp only [Finset.mem_Icc, Finset.mem_range] at hn ⊢
-    omega
-  · intro k hk
-    simp only [Finset.mem_range, Finset.mem_Icc] at hk ⊢
-    omega
-  · intro n hn
-    simp only [Finset.mem_Icc] at hn
-    omega
-  · intro k _
-    omega
-  · intro n hn
-    simp only [Finset.mem_Icc] at hn
-    congr 1
-    omega
-
-private theorem sum_Ico_int_add_eq_sum_range {α : Type*} [AddCommMonoid α]
-    (M : ℤ) (H : ℕ) (g : ℤ → α) :
-    ∑ n ∈ Finset.Ico M (M + H), g n = ∑ j ∈ Finset.range H, g (M + (j : ℤ)) := by
-  refine Finset.sum_nbij' (fun n ↦ (n - M).toNat) (fun j ↦ M + (j : ℤ)) ?_ ?_ ?_ ?_ ?_
-  · intro n hn
-    simp only [Finset.mem_Ico, Finset.mem_range] at hn ⊢
-    omega
-  · intro j hj
-    simp only [Finset.mem_range, Finset.mem_Ico] at hj ⊢
-    omega
-  · intro n hn
-    simp only [Finset.mem_Ico] at hn
-    omega
-  · intro j _
-    omega
-  · intro n hn
-    simp only [Finset.mem_Ico] at hn
-    congr 1
-    omega
 
 /-! ### Bombieri's tapered Fourier vectors -/
 
@@ -232,7 +193,7 @@ theorem inner_taperedFourierVec (N L : ℕ) (x y : ℝ) :
             (Real.fourierChar (((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * (x - y))) : ℂ)) =
         ∑ n ∈ Finset.Icc (-((N + L : ℕ) : ℤ)) (N + L : ℕ),
           (taperWeight N L n : ℂ) * (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ) :=
-    (sum_Icc_neg_eq_sum_fin (N + L) fun n ↦
+    (Finset.sum_Icc_neg_eq_sum_fin (N + L) fun n ↦
       (taperWeight N L n : ℂ) * (Real.fourierChar ((n : ℝ) * (x - y)) : ℂ)).symm
   rw [hsum, hreindex]
   simp_rw [taperWeight_def, Complex.ofReal_div, Complex.ofReal_sub, div_mul_eq_mul_div,
@@ -339,7 +300,7 @@ private theorem sum_fin_ite_sub_eq_sum_range {α : Type*} [AddCommMonoid α]
 `ℓ²` norm of `a` on `Finset.Ico M (M + H)`. -/
 theorem norm_icoCorePadVec_sq {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ) (a : ℤ → ℂ) :
     ‖icoCorePadVec M H N L a‖ ^ 2 = ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
-  rw [EuclideanSpace.norm_sq_eq, sum_Ico_int_add_eq_sum_range M H (fun n ↦ ‖a n‖ ^ 2),
+  rw [EuclideanSpace.norm_sq_eq, Finset.sum_Ico_int_add_eq_sum_range M H (fun n ↦ ‖a n‖ ^ 2),
     ← sum_fin_ite_sub_eq_sum_range hHN (fun j ↦ ‖a (M + (j : ℤ))‖ ^ 2)]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [icoCorePadVec_apply]
@@ -355,7 +316,7 @@ theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 *
           icoCorePadVec M H N L a k *
             (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ) =
       ∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ) := by
-  rw [Finset.mul_sum, sum_Ico_int_add_eq_sum_range M H
+  rw [Finset.mul_sum, Finset.sum_Ico_int_add_eq_sum_range M H
     (fun n ↦ a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)),
     ← sum_fin_ite_sub_eq_sum_range hHN (fun j ↦
       a (M + (j : ℤ)) * (Real.fourierChar (((M + (j : ℤ) : ℤ) : ℝ) * t) : ℂ))]
@@ -379,6 +340,25 @@ theorem norm_sum_icoCorePadVec_fourierChar {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 
           (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)‖ =
       ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ := by
   rw [← fourierChar_mul_sum_icoCorePadVec hHN L a t, norm_mul, Circle.norm_coe, one_mul]
+
+/-- One-point Cauchy–Schwarz bound for an exponential sum over `Finset.Ico M (M + H)`:
+`‖∑ n ∈ Finset.Ico M (M + H), a n * e(n * t)‖ ^ 2 ≤ H * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2`. -/
+theorem norm_sum_Ico_fourierChar_sq_le_mul_sum (M : ℤ) (H : ℕ) (a : ℤ → ℂ) (t : ℝ) :
+    ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ^ 2 ≤
+      (H : ℝ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
+  have htri :
+      ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ≤
+        ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ := by
+    refine le_trans (norm_sum_le _ _) ?_
+    simp [Circle.norm_coe]
+  have hIco : ((Finset.Ico M (M + (H : ℤ))).card : ℝ) = (H : ℝ) := by
+    rw [Int.card_Ico, add_sub_cancel_left, Int.toNat_natCast]
+  calc
+    ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * t) : ℂ)‖ ^ 2
+        ≤ (∑ n ∈ Finset.Ico M (M + H), ‖a n‖) ^ 2 :=
+      pow_le_pow_left₀ (norm_nonneg _) htri 2
+    _ ≤ (H : ℝ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
+      simpa [hIco] using sq_sum_le_card_mul_sum_sq (s := Finset.Ico M (M + H)) (f := fun n ↦ ‖a n‖)
 
 end TauCeti
 
@@ -514,25 +494,9 @@ theorem sum_norm_sum_Ico_fourierChar_sq_le {ι : Type*} (s : Finset ι) (M : ℤ
       ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * x i) : ℂ)‖ ^ 2 ≤
         ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
     intro i _
-    have htri :
-        ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * x i) : ℂ)‖ ≤
-          ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ := by
-      refine le_trans (norm_sum_le _ _) ?_
-      simp [Circle.norm_coe]
-    have hcs :
-        (∑ n ∈ Finset.Ico M (M + H), ‖a n‖) ^ 2 ≤
-          (H : ℝ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
-      have hIco : ((Finset.Ico M (M + (H : ℤ))).card : ℝ) = (H : ℝ) := by
-        rw [Int.card_Ico, add_sub_cancel_left, Int.toNat_natCast]
-      simpa [hIco] using sq_sum_le_card_mul_sum_sq (s := Finset.Ico M (M + H)) (f := fun n ↦ ‖a n‖)
-    calc
-      ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * x i) : ℂ)‖ ^ 2
-          ≤ (∑ n ∈ Finset.Ico M (M + H), ‖a n‖) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) htri 2
-      _ ≤ (H : ℝ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := hcs
-      _ ≤ ((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 :=
-        mul_le_mul_of_nonneg_right (by linarith [div_pos (two_pos : (0 : ℝ) < 2) hδ])
-          (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
+    exact (norm_sum_Ico_fourierChar_sq_le_mul_sum M H a (x i)).trans
+      (mul_le_mul_of_nonneg_right (by linarith [div_pos (two_pos : (0 : ℝ) < 2) hδ])
+        (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _))
   calc
     ∑ i ∈ s, ‖∑ n ∈ Finset.Ico M (M + H), a n * (Real.fourierChar ((n : ℝ) * x i) : ℂ)‖ ^ 2
         ≤ ∑ _i ∈ s, (((H : ℝ) + 2 / δ) * ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2) :=
@@ -561,21 +525,16 @@ theorem sum_norm_sum_fourierChar_sq_le {ι : Type*} (s : Finset ι) (M : ℤ) (H
     have h2 : (M + (j : ℤ) - M).toNat < H := by omega
     simp only [b, h1, h2, and_self, ↓reduceDIte]
     congr 1; ext; dsimp; omega
-  have hbij : ∀ {α : Type} [AddCommMonoid α] (g : ℤ → α),
-      (∑ j : Fin H, g (M + (j : ℤ))) = ∑ n ∈ Finset.Ico M (M + H), g n := by
-    intro α _ g
-    rw [Fin.sum_univ_eq_sum_range (fun j : ℕ ↦ g (M + (j : ℤ))) H,
-      ← sum_Ico_int_add_eq_sum_range M H g]
   have hsum_norm_sq : (∑ n ∈ Finset.Ico M (M + H), ‖b n‖ ^ 2) = ∑ j : Fin H, ‖a j‖ ^ 2 := by
-    rw [← hbij (fun n ↦ ‖b n‖ ^ 2)]
+    rw [Finset.sum_Ico_int_add_eq_sum_fin]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [hb j]
   have hsum_fourier : ∀ t : ℝ,
       (∑ n ∈ Finset.Ico M (M + H), b n * (Real.fourierChar ((n : ℝ) * t) : ℂ)) =
         ∑ j : Fin H, a j * (Real.fourierChar (((M : ℝ) + (j : ℕ)) * t) : ℂ) := by
     intro t
-    rw [← hbij (fun n ↦ b n * (Real.fourierChar ((n : ℝ) * t) : ℂ))]
+    rw [Finset.sum_Ico_int_add_eq_sum_fin]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [hb j]; push_cast; rfl
+    simp [hb j]
   simpa only [hsum_fourier, hsum_norm_sq] using
     s.sum_norm_sum_Ico_fourierChar_sq_le M H b x hδ hsep
 
