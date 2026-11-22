@@ -86,8 +86,7 @@ theorem hasCompactoidImage_iff {u : E →L[K] F} :
 
 @[simp]
 theorem hasCompactoidImage_zero : (0 : E →L[K] F).HasCompactoidImage :=
-  ((Set.finite_singleton 0).isCompactoidSet (one_smul K) (zero_smul K)).mono
-    (Set.image_subset_iff.2 fun _ _ ↦ rfl)
+  (Set.finite_singleton 0).isCompactoidSet.mono (Set.image_subset_iff.2 fun _ _ ↦ rfl)
 
 /-- The sum of two maps with compactoid image has compactoid image. -/
 theorem HasCompactoidImage.add {u v : E →L[K] F} (hu : u.HasCompactoidImage)
@@ -179,7 +178,7 @@ theorem IsCompactOperator.hasCompactoidImage {K E F : Type*} [NontriviallyNormed
     {u : E →L[K] F} (hu : IsCompactOperator u) : u.HasCompactoidImage := by
   obtain ⟨C, hC, hsub⟩ := IsCompactOperator.image_closedBall_subset_compact
     (f := (u : E →ₗ[K] F)) hu 1
-  exact (hC.isCompactoidSet (one_smul K) (zero_smul K)).mono hsub
+  exact hC.isCompactoidSet.mono hsub
 
 section Complete
 
@@ -218,7 +217,6 @@ totally bounded, so its closure is compact. -/
 theorem ContinuousLinearMap.IsCompletelyContinuous.isCompactOperator [ProperSpace K]
     [CompleteSpace F] {u : E →L[K] F} (hu : u.IsCompletelyContinuous) : IsCompactOperator u :=
   (isCompactOperator_iff_totallyBounded_image_closedBall _ one_pos).mpr
-    (hu.hasCompactoidImage.totallyBounded (isCompact_closedBall 0 1) fun _ ↦
-      (continuous_id.smul continuous_const).continuousOn)
+    hu.hasCompactoidImage.totallyBounded
 
 end Complete
