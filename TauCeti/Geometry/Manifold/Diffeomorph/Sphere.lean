@@ -204,7 +204,7 @@ theorem hasDerivAt_boostRotate_comp {v A W : E} {α : ℝ → ℝ}
   have hval := fderiv_boostRotate_apply_zero hv' hα hQ t (by rw [neg_neg, hQv]) (ξ := A)
     (by rw [inner_neg_right, ← hQv, LinearIsometryEquiv.inner_map_map, hAv, neg_zero])
   rw [neg_neg, hαt, Real.exp_log (div_pos (norm_pos_iff.2 hW) (norm_pos_iff.2 hA0))] at hval
-  rwa [hval, norm_div_smul_eq_of_inv_smul_eq_normalize hdir] at hD
+  rwa [hval, div_eq_mul_inv, mul_smul, hdir, smul_inv_smul₀ (norm_ne_zero_iff.2 hW)] at hD
 
 /-- **The rotation and boost.** For a smooth family `A t` of nonzero vectors orthogonal to the unit
 vector `v` (in dimension at least `3`), there is a diffeomorphism `Ψ` of `Sⁿ × ℝ` preserving the

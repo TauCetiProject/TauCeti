@@ -21,11 +21,6 @@ point `e` of the unit sphere.
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
 * `NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem`: the cone `{0} ∪ {x ≠ 0 | x / ‖x‖ ∈ S}`
   over a closed set `S` of directions is closed.
-* `TauCeti.norm_div_smul_eq_of_inv_smul_eq_normalize`: rescaling a multiple `x` of the direction
-  of `w` by `‖w‖` over the multiplier recovers `w`.
-* `TauCeti.norm_div_norm_smul_le`, `Continuous.div_norm_smul`: rescaling `y` to length `τ` by
-  `(τ / ‖y‖) • y` is bounded by `τ`, and continuous, also where `‖y‖` vanishes, provided `τ`
-  vanishes there too.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
 
 ## Main definitions
@@ -78,44 +73,6 @@ theorem coe_normalizeToSphere_apply {Y : Type*} [TopologicalSpace Y] (f : Y → 
     (hf : Continuous f) (h0 : ∀ y, f y ≠ 0) (y : Y) :
     ((normalizeToSphere f hf h0 y : sphere (0 : E) 1) : E) = normalize (f y) :=
   (rfl)
-
-/-- **Rescaling to a prescribed vector.** If `r⁻¹ • x = normalize w`, so that `x` is `r` times the
-direction of `w`, then stretching `x` by `‖w‖ / r` gives `w`. For `r = 0` the hypothesis forces
-`w = 0`, and both sides vanish. -/
-theorem norm_div_smul_eq_of_inv_smul_eq_normalize {r : ℝ} {w x : E}
-    (hx : r⁻¹ • x = normalize w) : (‖w‖ / r) • x = w := by
-  rcases eq_or_ne r 0 with rfl | hr
-  · rw [inv_zero, zero_smul, eq_comm, normalize_eq_zero_iff] at hx
-    simp [hx]
-  · rw [← smul_inv_smul₀ hr x, hx, smul_smul, div_mul_cancel₀ _ hr, norm_smul_normalize]
-
-section RadialRescaling
-
-variable {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The norm of `(τ / ‖y‖) • y` is at most `τ`, for `0 ≤ τ`. -/
-theorem norm_div_norm_smul_le (y : F) {τ : ℝ} (hτ : 0 ≤ τ) : ‖(τ / ‖y‖) • y‖ ≤ τ := by
-  rcases eq_or_ne ‖y‖ 0 with hy | hy
-  · simpa [hy] using hτ
-  · rw [norm_smul, Real.norm_of_nonneg (div_nonneg hτ (norm_nonneg _)), div_mul_cancel₀ _ hy]
-
-/-- The map `p ↦ (τ p / ‖y p‖) • y p` is continuous when `τ` vanishes wherever `‖y‖` does: near
-such a point its norm is at most `‖τ‖`, which tends to `0`. -/
-theorem _root_.Continuous.div_norm_smul {X : Type*} [TopologicalSpace X] {τ : X → ℝ} {y : X → F}
-    (hτ : Continuous τ) (hy : Continuous y) (hτ0 : ∀ p, ‖y p‖ = 0 → τ p = 0) :
-    Continuous fun p ↦ (τ p / ‖y p‖) • y p := by
-  -- `(τ q / ‖y q‖) • y q` has the norm of `(‖τ q‖ / ‖y q‖) • y q`, which is at most `‖τ q‖`
-  have hle (q : X) : ‖(τ q / ‖y q‖) • y q‖ ≤ ‖τ q‖ := by
-    simpa only [norm_smul, norm_div, norm_norm] using
-      norm_div_norm_smul_le (y q) (norm_nonneg (τ q))
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rcases eq_or_ne ‖y p‖ 0 with hp | hp
-  · have hlim : Tendsto (fun q ↦ (τ q / ‖y q‖) • y q) (𝓝 p) (𝓝 0) :=
-      squeeze_zero_norm hle (by simpa [hτ0 p hp] using hτ.norm.tendsto p)
-    simpa [ContinuousAt, hp] using hlim
-  · exact (hτ.continuousAt.div hy.norm.continuousAt hp).smul hy.continuousAt
-
-end RadialRescaling
 
 section Direction
 
