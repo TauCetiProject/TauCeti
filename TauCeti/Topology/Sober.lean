@@ -36,7 +36,13 @@ open Set Topology
 
 namespace TauCeti
 
-variable {X : Type*} [TopologicalSpace X] [QuasiSober X] [T0Space X]
+variable {X : Type*} [TopologicalSpace X]
+
+private theorem closure_singleton_eq_of_specializes_of_mem_genericPoints {x y : X}
+    (hy : y ⤳ x) (hx : x ∈ genericPoints X) : closure {y} = closure {x} :=
+  (hx.2 isIrreducible_singleton.closure hy.closure_subset).antisymm hy.closure_subset
+
+variable [QuasiSober X] [T0Space X]
 
 /-- In a sober space, the generic points of irreducible components are exactly the points
 with no proper generization. -/
@@ -44,10 +50,8 @@ theorem mem_genericPoints_iff {x : X} :
     x ∈ genericPoints X ↔ ∀ y : X, y ⤳ x → y = x := by
   constructor
   · intro hx y hy
-    have hle : closure ({x} : Set X) ⊆ closure {y} :=
-      specializes_iff_closure_subset.mp hy
-    exact (hy.antisymm (specializes_iff_closure_subset.mpr
-      (hx.2 isIrreducible_singleton.closure hle))).eq
+    exact (inseparable_iff_closure_eq.mpr
+      (closure_singleton_eq_of_specializes_of_mem_genericPoints hy hx)).eq
   · intro hx
     refine ⟨isIrreducible_singleton.closure, fun t ht hxt ↦ ?_⟩
     have hgen := ht.isGenericPoint_genericPoint_closure
@@ -72,9 +76,8 @@ end TauCeti
 theorem TauCeti.stableUnderGeneralization_genericPoints {X : Type*} [TopologicalSpace X] :
     StableUnderGeneralization (genericPoints X) := by
   intro x y hyx hx
-  have hle := specializes_iff_closure_subset.mp hyx
-  have heq : closure {y} = closure {x} := (hx.2 isIrreducible_singleton.closure hle).antisymm hle
-  rw [genericPoints, mem_ofPred_eq, heq]
+  rw [genericPoints, mem_ofPred_eq,
+    TauCeti.closure_singleton_eq_of_specializes_of_mem_genericPoints hyx hx]
   exact hx
 
 /-- In a quasi-sober space with finitely many irreducible components, a set stable under
