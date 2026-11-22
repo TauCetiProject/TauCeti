@@ -21,11 +21,13 @@ import TauCeti.Topology.MetricSpace.SeparatedBalls
 # Canonical separating-contour continuation and joint four-variable holomorphy
 
 This module defines the canonical abscissa-independent separating-contour Mellin–Barnes integral
-`Complex.mellinBarnesIntegral` representing `Γ(a) Γ(b) 𝐅(a, b; c; z)` (and hence
-`(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`) and proves its joint four-variable holomorphy
+`Complex.mellinBarnesIntegral` representing `Γ(a) Γ(b) 𝐅(a, b; c; z)` for all `c : ℂ` (and hence
+`(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when `c ∉ -ℕ`) and proves its joint four-variable holomorphy
 `Complex.analyticOnNhd_mellinBarnesIntegral` on
 `{(a, b, c, z) | a ∉ -ℕ ∧ b ∉ -ℕ ∧ -z ∈ Complex.slitPlane}` across all lower parameters `c : ℂ`,
-including resonant integer differences `a - b ∈ ℤ` where simple poles coalesce into double poles.
+including resonant integer differences `a - b ∈ ℤ` where simple pole candidates coalesce
+(potentially producing double poles, though reciprocal Gamma zeros can lower their order or
+cancel the pole).
 
 Locally around `(a₀, b₀, c₀, z₀)`, fixing `σ < 0` avoiding `-Re a₀ - ℕ` and `-Re b₀ - ℕ`, joint
 holomorphy of the vertical integral follows from compact-segment holomorphy, uniform Stirling decay,
@@ -43,8 +45,9 @@ circle integrals around isolating circles.
   `Complex.mellinBarnesIntegral_of_neg_re_lt`.
 * `Complex.analyticOnNhd_integral_mellinBarnesIntegrand`: joint four-variable holomorphy of the
   vertical-line integral along any fixed `Re t = σ` (`σ ∉ ℕ`).
-* `Complex.analyticOnNhd_mellinBarnesIntegral`: joint four-variable holomorphy of
-  `mellinBarnesIntegral` in `(a, b, c, z)`.
+* `Complex.analyticOnNhd_mellinBarnesSeparatingIntegral`,
+  `Complex.analyticOnNhd_mellinBarnesIntegral`: joint four-variable holomorphy of
+  `mellinBarnesSeparatingIntegral` (for fixed `σ < 0`) and `mellinBarnesIntegral` in `(a, b, c, z)`.
 
 ## References
 
@@ -109,10 +112,10 @@ private theorem mellinBarnesAbscissa_avoid (a b : ℂ) :
     · exact hx_av
 
 /-- **Canonical separating-contour Mellin–Barnes integral**, representing
-`Γ(a) Γ(b) 𝐅(a, b; c; z)` (and hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`). Evaluated at a
-canonical negative abscissa avoiding `-Re a - ℕ` and `-Re b - ℕ`, this agrees with
-`mellinBarnesSeparatingIntegral a b c z σ` for every admissible negative abscissa `σ < 0` when
-`-z ∈ slitPlane`. -/
+`Γ(a) Γ(b) 𝐅(a, b; c; z)` for all `c : ℂ` (and hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when
+`c ∉ -ℕ`). Evaluated at a canonical negative abscissa avoiding `-Re a - ℕ` and `-Re b - ℕ`, this
+agrees with `mellinBarnesSeparatingIntegral a b c z σ` for every admissible negative abscissa
+`σ < 0` when `-z ∈ slitPlane`. -/
 def mellinBarnesIntegral (a b c z : ℂ) : ℂ :=
   mellinBarnesSeparatingIntegral a b c z (mellinBarnesAbscissa a b)
 
@@ -203,7 +206,7 @@ private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ �
   let R₂ : ℝ := max (‖p₀.2.2.1‖ + 1) |σ|
   let R : ℝ := max R₁ R₂ + 1
   obtain ⟨B, Y₀, _, _, hdom, htail⟩ := exists_norm_mellinBarnesIntegrand_vertical_le (R := R)
-    (r₂ := 2 * ‖p₀.2.2.2‖) (by positivity) hr₁ hδ
+    (r₂ := 2 * ‖p₀.2.2.2‖) hr₁ hδ
   have hcov : AECover (volume : Measure ℝ) atTop (fun n : ℕ => Ioc (-(n : ℝ)) n) :=
     aecover_Ioc (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
       tendsto_natCast_atTop_atTop
@@ -435,6 +438,24 @@ private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × 
       ((hav₁ p.2.1 (ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _)) hp.2.1)).2
         k).1)).symm
 
+/-- **Joint four-variable holomorphy of the fixed-abscissa separating-contour Mellin–Barnes
+integral.** For any fixed `σ < 0`, `mellinBarnesSeparatingIntegral a b c z σ` is jointly analytic in
+`(a, b, c, z)` on `{p | (∀ k : ℕ, p.1 ≠ -k) ∧ (∀ k : ℕ, p.2.1 ≠ -k) ∧
+(∀ k : ℕ, p.1.re + σ ≠ -k) ∧ (∀ k : ℕ, p.2.1.re + σ ≠ -k) ∧ -p.2.2.2 ∈ slitPlane}`,
+across all lower parameters `c : ℂ` and across integer differences `a - b ∈ ℤ`. -/
+theorem analyticOnNhd_mellinBarnesSeparatingIntegral {σ : ℝ} (hσ : σ < 0) :
+    AnalyticOnNhd ℂ
+      (fun p : ℂ × ℂ × ℂ × ℂ => mellinBarnesSeparatingIntegral p.1 p.2.1 p.2.2.1 p.2.2.2 σ)
+      {p | (∀ k : ℕ, p.1 ≠ -k) ∧ (∀ k : ℕ, p.2.1 ≠ -k) ∧
+        (∀ k : ℕ, p.1.re + σ ≠ -k) ∧ (∀ k : ℕ, p.2.1.re + σ ≠ -k) ∧
+        -p.2.2.2 ∈ slitPlane} := by
+  rintro p₀ ⟨ha₀, hb₀, ha₀_σ, hb₀_σ, hz₀⟩
+  simp_rw [mellinBarnesSeparatingIntegral_def]
+  exact ((analyticAt_const (v := (2 * π : ℂ)⁻¹)).mul
+    (analyticAt_vertical_mellinBarnes (fun m _ => by linarith [m.cast_nonneg (α := ℝ)])
+      ha₀_σ hb₀_σ hz₀)).add
+    (analyticAt_residueSum_mellinBarnes ha₀ hb₀ ha₀_σ hb₀_σ hz₀)
+
 /-- **Joint four-variable holomorphy of the separating-contour Mellin–Barnes integral.** On
 `{p | (∀ k : ℕ, a ≠ -k) ∧ (∀ k : ℕ, b ≠ -k) ∧ -z ∈ slitPlane}`, `mellinBarnesIntegral a b c z` is
 jointly analytic in `(a, b, c, z)` across all lower parameters `c : ℂ` and across integer
@@ -452,14 +473,10 @@ theorem analyticOnNhd_mellinBarnesIntegral :
     (isOpen_ball.prod (isOpen_ball.prod (isOpen_univ.prod
       (isOpen_slitPlane.preimage continuous_neg)))).mem_nhds
       ⟨mem_ball_self hδ₀, mem_ball_self hδ₁, mem_univ _, hz₀⟩
-  refine (((analyticAt_const (v := (2 * π : ℂ)⁻¹)).mul
-    (analyticAt_vertical_mellinBarnes (fun m _ => by linarith [m.cast_nonneg (α := ℝ)])
-      ha₀_σ hb₀_σ hz₀)).add
-    (analyticAt_residueSum_mellinBarnes ha₀ hb₀ ha₀_σ hb₀_σ hz₀)).congr ?_
+  refine (analyticOnNhd_mellinBarnesSeparatingIntegral hσ p₀
+    ⟨ha₀, hb₀, ha₀_σ, hb₀_σ, hz₀⟩).congr ?_
   filter_upwards [hU_nhds] with p hp
-  dsimp only [Pi.add_apply, Pi.mul_apply]
-  rw [mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral p.2.2.1 hσ
-    (hav₀ p.1 hp.1).1 (hav₁ p.2.1 hp.2.1).1 hp.2.2.2,
-    mellinBarnesSeparatingIntegral_def]
+  exact (mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral p.2.2.1 hσ
+    (hav₀ p.1 hp.1).1 (hav₁ p.2.1 hp.2.1).1 hp.2.2.2).symm
 
 end Complex

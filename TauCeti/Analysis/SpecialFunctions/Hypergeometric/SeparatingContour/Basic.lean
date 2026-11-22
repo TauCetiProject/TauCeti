@@ -26,11 +26,11 @@ as the totalized separating-contour Mellin–Barnes functional: the vertical-lin
 finite pole set `Complex.mellinBarnesLeftPoles a b σ` of candidate left-family poles `-a - k`,
 `-b - k` that have crossed to the right of `Re t = σ`. Under the admissibility conditions `σ < 0`,
 `-z ∈ Complex.slitPlane`, `a, b ∉ -ℕ`, and `∀ k : ℕ, a.re + σ ≠ -k ∧ b.re + σ ≠ -k` (a vertical
-line passing through a pole is not a valid contour), it represents `Γ(a) Γ(b) 𝐅(a, b; c; z)` (and
-hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`). Using the uniform vertical-strip Stirling bound for
-`Γ` and `1 / Γ`, we prove exponential vertical decay on `-z ∈ Complex.slitPlane`, vertical
-integrability, and independence of the choice of admissible abscissa `σ < 0` via the rectangle
-residue theorem.
+line passing through a pole is not a valid contour), it represents `Γ(a) Γ(b) 𝐅(a, b; c; z)` for
+all `c : ℂ` (and hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when `c ∉ -ℕ`). Using the uniform
+vertical-strip Stirling bound for `Γ` and `1 / Γ`, we prove exponential vertical decay on
+`-z ∈ Complex.slitPlane`, vertical integrability, and independence of the choice of admissible
+abscissa `σ < 0` via the rectangle residue theorem.
 
 ## Main definitions and results
 
@@ -145,10 +145,10 @@ theorem abs_im_le_of_mem_mellinBarnesLeftPoles {a b : ℂ} {σ : ℝ} {s : ℂ}
 /-- The separating-contour Mellin–Barnes functional at abscissa `σ`: the vertical-line integral
 `(2πi)⁻¹ ∫_{Re t = σ} ... dt = (2π)⁻¹ ∫_{-∞}^∞ ... (σ + i y) dy` plus the sum of residues at the
 candidate left-family poles strictly to the right of `Re t = σ`. This definition is totalized
-across all `(a, b, c, z : ℂ)` and `σ : ℝ`; it represents `Γ(a) Γ(b) 𝐅(a, b; c; z)` (hence
-`(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`) under the admissibility conditions `σ < 0`,
-`-z ∈ Complex.slitPlane`, `a, b ∉ -ℕ`, and `∀ k : ℕ, a.re + σ ≠ -k ∧ b.re + σ ≠ -k` (a vertical
-line passing through a pole is not a valid contour). -/
+across all `(a, b, c, z : ℂ)` and `σ : ℝ`; it represents `Γ(a) Γ(b) 𝐅(a, b; c; z)` for all `c : ℂ`
+(and hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when `c ∉ -ℕ`) under the admissibility conditions
+`σ < 0`, `-z ∈ Complex.slitPlane`, `a, b ∉ -ℕ`, and `∀ k : ℕ, a.re + σ ≠ -k ∧ b.re + σ ≠ -k`
+(a vertical line passing through a pole is not a valid contour). -/
 def mellinBarnesSeparatingIntegral (a b c z : ℂ) (σ : ℝ) : ℂ :=
   (2 * π : ℂ)⁻¹ * (∫ y : ℝ, mellinBarnesIntegrand a b c z (σ + y * I)) +
     ∑ s ∈ mellinBarnesLeftPoles a b σ, TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) s
@@ -170,8 +170,8 @@ theorem mellinBarnesSeparatingIntegral_symm (a b c z : ℂ) (σ : ℝ) :
 /-- Algebraic reduction of `mellinBarnesSeparatingIntegral` when `-Re a ≤ σ` and `-Re b ≤ σ`:
 no left-family pole lies strictly to the right of `Re t = σ`, so the finite residue sum vanishes
 and the functional reduces to the vertical-line integral expression. This is an algebraic identity
-of totalized expressions and does not assert vertical integrability or convergence (in particular,
-equality at the boundary `-Re a = σ` or `-Re b = σ` holds only in the Bochner-junk sense). -/
+of totalized expressions and makes no convergence or integrability claim at the boundary
+`-Re a = σ` or `-Re b = σ`. -/
 theorem mellinBarnesSeparatingIntegral_of_neg_re_le {a b : ℂ} (c z : ℂ) {σ : ℝ}
     (ha : -a.re ≤ σ) (hb : -b.re ≤ σ) :
     mellinBarnesSeparatingIntegral a b c z σ =
@@ -309,7 +309,7 @@ theorem residue_mellinBarnesIntegrand_neg_sub_natCast_right (a b c z : ℂ) (k :
 /-- Uniform vertical-strip exponential decay bound for `mellinBarnesIntegrand` on bounded parameter
 balls and compact sectorial subsets of `-z ∈ slitPlane`. -/
 theorem exists_norm_mellinBarnesIntegrand_vertical_le {R r₁ r₂ δ : ℝ}
-    (hR : 0 ≤ R) (hr₁ : 0 < r₁) (hδ : 0 < δ) :
+    (hr₁ : 0 < r₁) (hδ : 0 < δ) :
     ∃ B Y₀ : ℝ, 0 ≤ B ∧ 1 ≤ Y₀ ∧ Integrable (fun y : ℝ => B * Real.exp (-δ * |y|)) ∧
       ∀ (a b c z : ℂ) (σ y : ℝ),
         ‖a‖ ≤ R → ‖b‖ ≤ R → ‖c‖ ≤ R → r₁ ≤ ‖z‖ → ‖z‖ ≤ r₂ → |(-z).arg| ≤ π - 2 * δ →
@@ -322,6 +322,7 @@ theorem exists_norm_mellinBarnesIntegrand_vertical_le {R r₁ r₂ δ : ℝ}
     simpa only [neg_mul] using TauCeti.integrable_exp_neg_mul_abs hδ
   refine ⟨Real.exp (4 * A + R * Mz), Y₀, (Real.exp_pos _).le, hY₀, hint_exp.const_mul _,
     fun a b c z σ y ha hb hc hzr₁ hzr₂ harg hσ hy => ?_⟩
+  have hR : 0 ≤ R := (norm_nonneg a).trans ha
   have hGshift {w : ℂ} (hw : ‖w‖ ≤ R) :
       ‖Gamma (w + (σ + y * I))‖ ≤ Real.exp (A + (-π / 2 + δ / 4) * |y|) ∧
         ‖(Gamma (w + (σ + y * I)))⁻¹‖ ≤ Real.exp (A + (π / 2 + δ / 4) * |y|) := by
@@ -376,7 +377,7 @@ private theorem exists_norm_mellinBarnesIntegrand_tail_le (a b c : ℂ) {z : ℂ
   let δ : ℝ := (π - |(-z).arg|) / 2
   have hδ : 0 < δ := by dsimp [δ]; linarith [abs_arg_lt_pi_of_mem_slitPlane hz]
   obtain ⟨B, Y₀, hB, hY₀, hdom, htail⟩ := exists_norm_mellinBarnesIntegrand_vertical_le (R := R)
-    (r₂ := ‖z‖) (by positivity) (norm_pos_iff.2 (neg_ne_zero.1 (slitPlane_ne_zero hz))) hδ
+    (r₂ := ‖z‖) (norm_pos_iff.2 (neg_ne_zero.1 (slitPlane_ne_zero hz))) hδ
   refine ⟨B, Y₀, δ, hB, hY₀, hδ, hdom, fun x hx y hy => ?_⟩
   have hxR : |x| ≤ R := (abs_le_max_abs_abs hx.1 hx.2).trans
     ((le_max_right _ _).trans ((le_max_right _ _).trans (by dsimp [R]; linarith)))

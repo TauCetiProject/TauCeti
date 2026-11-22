@@ -239,6 +239,19 @@ private theorem analyticAt_mellinBarnesIntegral_comp {f : ℂ → ℂ × ℂ × 
     AnalyticAt ℂ (fun x => mellinBarnesIntegral (f x).1 (f x).2.1 (f x).2.2.1 (f x).2.2.2) w :=
   (analyticOnNhd_mellinBarnesIntegral (f w) ⟨ha, hb, hz⟩).comp_of_eq (hf.analyticAt w) rfl
 
+private theorem eq_of_analyticOnNhd_forall_ne_neg_natCast_of_re_pos {f g : ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f {w | ∀ k : ℕ, w ≠ -k})
+    (hg : AnalyticOnNhd ℂ g {w | ∀ k : ℕ, w ≠ -k})
+    (hpos : ∀ {w : ℂ}, 0 < w.re → f w = g w) {w : ℂ} (hw : ∀ k : ℕ, w ≠ -k) :
+    f w = g w := by
+  have hev : f =ᶠ[𝓝 (1 : ℂ)] g := by
+    filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
+      (by simp : (0 : ℝ) < (1 : ℂ).re)] with u hu
+    exact hpos hu
+  exact hf.eqOn_of_preconnected_of_eventuallyEq hg
+    isConnected_setOf_forall_ne_neg_natCast.isPreconnected
+    (ne_neg_natCast_of_re_pos (by simp)) hev hw
+
 private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -k) (hb : 0 < b.re) (hbc : b.re < c.re) (hz : -z ∈ slitPlane) :
     Gamma a * Gamma b * eulerIntegral a b c z = mellinBarnesIntegral a b c z := by
@@ -256,24 +269,14 @@ private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
         (ne_neg_natCast_of_re_pos ha') hb_ne (by simpa using hu)
     simpa only [neg_neg] using hf.eqOn_slitPlane_of_ofReal_pos_eq hg
       (fun x hx => eulerIntegral_neg_ofReal_eq_mellinBarnesIntegral ha' hb hbc hx) hz'
-  have hf2 : AnalyticOnNhd ℂ (fun w => Gamma w * Gamma b * eulerIntegral w b c z)
-      {w | ∀ k : ℕ, w ≠ -k} := fun w hw =>
-    ((analyticAt_Gamma hw).mul analyticAt_const).mul
+  refine eq_of_analyticOnNhd_forall_ne_neg_natCast_of_re_pos ?_ ?_ (fun hw => hstep1 hw hz) ha
+  · exact fun w hw => ((analyticAt_Gamma hw).mul analyticAt_const).mul
       ((analyticOnNhd_eulerIntegral hb hbc (w, z)
         (by simpa [sub_eq_add_neg] using
           TauCeti.ofReal_add_mem_slitPlane hz zero_le_one)).comp_of_eq
         ((by fun_prop : Differentiable ℂ fun x : ℂ => (x, z)).analyticAt w) rfl)
-  have hg2 : AnalyticOnNhd ℂ (fun w => mellinBarnesIntegral w b c z) {w | ∀ k : ℕ, w ≠ -k} :=
-    fun w hw => analyticAt_mellinBarnesIntegral_comp (f := fun x => (x, b, c, z)) (by fun_prop)
-      hw hb_ne hz
-  have hev : (fun w => Gamma w * Gamma b * eulerIntegral w b c z) =ᶠ[𝓝 (1 : ℂ)]
-      (fun w => mellinBarnesIntegral w b c z) := by
-    filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
-      (by simp : (0 : ℝ) < (1 : ℂ).re)] with w hw
-    exact hstep1 hw hz
-  exact hf2.eqOn_of_preconnected_of_eventuallyEq hg2
-    isConnected_setOf_forall_ne_neg_natCast.isPreconnected
-    (ne_neg_natCast_of_re_pos (by simp)) hev ha
+  · exact fun w hw => analyticAt_mellinBarnesIntegral_comp (f := fun x => (x, b, c, z))
+      (by fun_prop) hw hb_ne hz
 
 /-! ### Section 1: Normalized cut-plane continuations and holomorphy -/
 
@@ -468,20 +471,11 @@ private theorem regularizedGaussHGFun_mul_Gamma_eq_mellinBarnesIntegral {a b : �
       rw [regularizedGaussHGFun_eq_eulerIntegral a hb' hw hz_norm]
       exact eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral ha hb' hw hz_slit
     exact congrFun (hfc.eq_of_eventuallyEq hgc hevc) c
-  have hfb : AnalyticOnNhd ℂ (fun w => Gamma a * Gamma w * regularizedGaussHGFun a w c z)
-      {w | ∀ k : ℕ, w ≠ -k} := fun w hw => (analyticAt_const.mul (analyticAt_Gamma hw)).mul
-    (analyticAt_regularizedGaussHGFun_comp (f := fun x => (a, x, c, z)) (by fun_prop) hz_norm)
-  have hgb : AnalyticOnNhd ℂ (fun w => mellinBarnesIntegral a w c z)
-      {w | ∀ k : ℕ, w ≠ -k} := fun w hw =>
-    analyticAt_mellinBarnesIntegral_comp (f := fun x => (a, x, c, z)) (by fun_prop) ha hw hz_slit
-  have hevb : (fun w => Gamma a * Gamma w * regularizedGaussHGFun a w c z) =ᶠ[𝓝 (1 : ℂ)]
-      (fun w => mellinBarnesIntegral a w c z) := by
-    filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
-      (by simp : (0 : ℝ) < (1 : ℂ).re)] with w hw
-    exact hstep_c hw
-  exact hfb.eqOn_of_preconnected_of_eventuallyEq hgb
-    isConnected_setOf_forall_ne_neg_natCast.isPreconnected
-    (ne_neg_natCast_of_re_pos (by simp)) hevb hb
+  refine eq_of_analyticOnNhd_forall_ne_neg_natCast_of_re_pos ?_ ?_ hstep_c hb
+  · exact fun w hw => (analyticAt_const.mul (analyticAt_Gamma hw)).mul
+      (analyticAt_regularizedGaussHGFun_comp (f := fun x => (a, x, c, z)) (by fun_prop) hz_norm)
+  · exact fun w hw => analyticAt_mellinBarnesIntegral_comp (f := fun x => (a, x, c, z))
+      (by fun_prop) ha hw hz_slit
 
 /-- **Overlap with the regularized Gauss hypergeometric series (DLMF 15.6.6).** For all
 `a, b ∉ -ℕ`, arbitrary `c : ℂ`, `‖z‖ < 1`, and `-z ∈ slitPlane`, `regularizedGaussHGFun a b c z`
