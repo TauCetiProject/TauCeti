@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Basic
+public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Manin
 
 /-!
 # Modular symbols with values in a representation
@@ -27,27 +27,21 @@ paths between cusps, which is the form in which the period symbol of a cusp form
 map to group cohomology, and the overconvergent symbols of `p`-adic interpolation are written.
 
 The divisor `{b} - {a}` with `+1` at `b` and `-1` at `a` is the oriented path from `a` to `b`
-(`TauCeti.ModularSymbol.divisor a b`). The unimodular divisors `{g 0} - {g ∞}`, `g ∈ SL(2, ℤ)`,
-span `Δ₀` by Manin's lemma, so an additive map on `Δ₀` is determined by its values on them, and a
-modular symbol by its values on the unimodular divisors of a set of representatives of the right
-cosets `Γ \ SL(2, ℤ)`. They satisfy the two-term and three-term Manin relations, from which
+(`TauCeti.ModularSymbols.divisor`). The unimodular divisors `{g 0} - {g ∞}`, `g ∈ SL(2, ℤ)`
+(`TauCeti.ModularSymbols.unimodularDivisor`), span `Δ₀` by Manin's lemma
+(`TauCeti.ModularSymbols.span_degreeZeroRep_eq_top`), so an additive map on `Δ₀` is determined by
+its values on them, and a modular symbol by its values on the unimodular divisors of a set of
+representatives of the right cosets `Γ \ SL(2, ℤ)`. With the two-term and three-term Manin
+relations among them (`TauCeti.ModularSymbols.unimodularDivisor_mul_S`,
+`TauCeti.ModularSymbols.unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq`), this shows that
 the module of modular symbols of the full modular group with trivial coefficients is zero.
 
 ## Main definitions
 
-* `TauCeti.ModularSymbol.divisor a b`: the oriented divisor `{b} - {a}` of the path from `a` to
-  `b`.
-* `TauCeti.ModularSymbol.unimodularDivisor g`: the unimodular divisor `{g 0} - {g ∞}`.
 * `TauCeti.ModularSymbol.symb ρ`: the `R`-module `Symb_Γ(V)` of `V`-valued modular symbols.
 
 ## Main results
 
-* `TauCeti.ModularSymbol.divisor_add_divisor`, `TauCeti.ModularSymbol.degreeZeroGLRep_divisor`:
-  paths compose additively and are moved by `GL(2, ℚ)`.
-* `TauCeti.ModularSymbol.unimodularDivisor_mul_S`,
-  `TauCeti.ModularSymbol.unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq`: the two-term and
-  three-term Manin relations among unimodular divisors.
-* `TauCeti.ModularSymbol.span_unimodularDivisor_eq_top`: the unimodular divisors span `Δ₀`.
 * `TauCeti.ModularSymbol.addMonoidHom_ext`: an additive map on `Δ₀` is determined by its values on
   the unimodular divisors.
 * `TauCeti.ModularSymbol.eq_of_forall_unimodularDivisor_eq`: a modular symbol is determined by its
@@ -73,109 +67,6 @@ namespace TauCeti.ModularSymbol
 
 open ModularSymbols
 
-/-! ### Oriented cusp divisors -/
-
-section Divisor
-
-variable (R : Type*) [Ring R]
-
-/-- The oriented divisor `{b} - {a}` of the path from the cusp `a` to the cusp `b`: the
-degree-zero divisor with coefficient `1` at `b` and `-1` at `a`. -/
-noncomputable def divisor (a b : OnePoint ℚ) : degreeZero R :=
-  ⟨single b 1 - single a 1, single_sub_single_mem_degreeZero b a⟩
-
-variable {R}
-
-@[simp]
-theorem coe_divisor (a b : OnePoint ℚ) :
-    (divisor R a b : R[OnePoint ℚ]) = single b 1 - single a 1 :=
-  (rfl)
-
-/-- The constant path is the zero divisor. -/
-@[simp]
-theorem divisor_self (a : OnePoint ℚ) : divisor R a a = 0 := by
-  ext1
-  simp
-
-/-- Reversing a path negates its divisor. -/
-@[simp]
-theorem neg_divisor (a b : OnePoint ℚ) : -divisor R a b = divisor R b a := by
-  ext1
-  simp
-
-/-- Composing the path from `a` to `b` with the path from `b` to `c` gives the path from `a` to
-`c`. -/
-theorem divisor_add_divisor (a b c : OnePoint ℚ) :
-    divisor R a b + divisor R b c = divisor R a c := by
-  ext1
-  simp only [Submodule.coe_add, coe_divisor]
-  abel
-
-/-- `GL(2, ℚ)` moves the path from `a` to `b` to the path from `g a` to `g b`. -/
-@[simp]
-theorem degreeZeroGLRep_divisor (g : GL (Fin 2) ℚ) (a b : OnePoint ℚ) :
-    degreeZeroGLRep R g (divisor R a b) = divisor R (g • a) (g • b) := by
-  ext1
-  simp
-
-variable (R) in
-/-- The unimodular divisor `{g 0} - {g ∞}` of `g ∈ SL(2, ℤ)`: the divisor of the path from
-`g ∞` to `g 0`, the translate by `g` of the path from `∞` to `0`. -/
-noncomputable def unimodularDivisor (g : SL(2, ℤ)) : degreeZero R :=
-  divisor R (mapGL ℚ g • ∞) (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ))
-
-/-- The unimodular divisor of `g` is the divisor of the path from `g ∞` to `g 0`. -/
-theorem unimodularDivisor_def (g : SL(2, ℤ)) :
-    unimodularDivisor R g =
-      divisor R (mapGL ℚ g • ∞) (mapGL ℚ g • ((0 : ℚ) : OnePoint ℚ)) :=
-  (rfl)
-
-/-- `SL(2, ℤ)` permutes the unimodular divisors by left multiplication. -/
-@[simp]
-theorem degreeZeroGLRep_mapGL_unimodularDivisor (h g : SL(2, ℤ)) :
-    degreeZeroGLRep R (mapGL ℚ h) (unimodularDivisor R g) = unimodularDivisor R (h * g) := by
-  simp [unimodularDivisor_def, mul_smul]
-
-/-- The two-term Manin relation: right multiplication by `S` reverses the path. -/
-@[simp]
-theorem unimodularDivisor_mul_S (g : SL(2, ℤ)) :
-    unimodularDivisor R (g * S) = -unimodularDivisor R g := by
-  simp [unimodularDivisor_def, mul_smul]
-
-/-- The unimodular divisor is unchanged when its matrix is multiplied by the central element
-`-1`. -/
-@[simp]
-theorem unimodularDivisor_neg (g : SL(2, ℤ)) :
-    unimodularDivisor R (-g) = unimodularDivisor R g := by
-  have hg : -g = g * S * S := by rw [mul_assoc, S_mul_S_eq, mul_neg_one]
-  rw [hg, unimodularDivisor_mul_S, unimodularDivisor_mul_S, neg_neg]
-
-/-- The three-term Manin relation: the paths `g ∞ → g 0`, `g 0 → g 1` and `g 1 → g ∞` around
-the ideal triangle with vertices `g 0`, `g 1`, `g ∞`, permuted cyclically by `T * S`, sum to
-zero. -/
-theorem unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq (g : SL(2, ℤ)) :
-    unimodularDivisor R g + unimodularDivisor R (g * (T * S)) +
-      unimodularDivisor R (g * (T * S) ^ 2) = 0 := by
-  simp only [unimodularDivisor_def, map_mul, map_pow, mul_smul (mapGL ℚ g),
-    mapGL_T_mul_S_smul_infty, mapGL_T_mul_S_smul_zero, mapGL_T_mul_S_sq_smul_infty,
-    mapGL_T_mul_S_sq_smul_zero]
-  rw [add_right_comm, divisor_add_divisor, divisor_add_divisor, divisor_self]
-
-/-- **Manin's lemma.** The unimodular divisors `{g 0} - {g ∞}`, `g ∈ SL(2, ℤ)`, span the
-degree-zero divisors on the cusps. -/
-theorem span_unimodularDivisor_eq_top :
-    Submodule.span R (Set.range (unimodularDivisor R)) = ⊤ := by
-  refine eq_top_iff.2 (span_degreeZeroRep_eq_top.symm.le.trans
-    (Submodule.span_le.2 (Set.range_subset_iff.2 fun g ↦ ?_)))
-  have h : degreeZeroRep R g ⟨_, single_sub_single_mem_degreeZero ∞ ((0 : ℚ) : OnePoint ℚ)⟩ =
-      -unimodularDivisor R g := by
-    ext1
-    simp [unimodularDivisor_def]
-  rw [h]
-  exact neg_mem (Submodule.subset_span ⟨g, rfl⟩)
-
-end Divisor
-
 /-! ### Modular symbols -/
 
 section Symbol
@@ -185,8 +76,13 @@ variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 /-- An additive map on the degree-zero divisors is determined by its values on the unimodular
 divisors `{g 0} - {g ∞}`, which span by Manin's lemma. -/
 theorem addMonoidHom_ext {φ ψ : degreeZero ℤ →+ V}
-    (h : ∀ g : SL(2, ℤ), φ (unimodularDivisor ℤ g) = ψ (unimodularDivisor ℤ g)) : φ = ψ :=
-  AddMonoidHom.toIntLinearMap_injective (LinearMap.ext_on_range span_unimodularDivisor_eq_top h)
+    (h : ∀ g : SL(2, ℤ), φ (unimodularDivisor ℤ g) = ψ (unimodularDivisor ℤ g)) : φ = ψ := by
+  refine AddMonoidHom.toIntLinearMap_injective
+    (LinearMap.ext_on_range span_degreeZeroRep_eq_top fun g ↦ ?_)
+  -- The translate `g ({∞} - {0})` is the reversed unimodular divisor of `g`.
+  have hg : degreeZeroRep ℤ g (divisor ℤ ((0 : ℚ) : OnePoint ℚ) ∞) = -unimodularDivisor ℤ g := by
+    rw [degreeZeroRep_apply, degreeZeroGLRep_divisor, unimodularDivisor_def, neg_divisor]
+  simp only [AddMonoidHom.coe_toIntLinearMap, hg, map_neg, h g]
 
 variable {Γ : Subgroup SL(2, ℤ)} (ρ : Representation R Γ V)
 
