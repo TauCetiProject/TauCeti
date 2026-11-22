@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.Algebra.MvPolynomial.Variables
 
 /-!
@@ -84,7 +83,7 @@ theorem exists_totalDegree_le_one_aeval_eq_of_mem_span {σ R S : Type*} [CommSem
 the coefficients along a ring homomorphism `φ`, multiplies the total degree by at most `D`. Only
 the variables that occur in `p` need to be bounded. -/
 theorem totalDegree_eval₂_C_comp_le {σ τ R S : Type*} [CommSemiring R] [CommSemiring S]
-    (φ : R →+* S) {f : σ → MvPolynomial τ S} {D : ℕ} (p : MvPolynomial σ R)
+    (p : MvPolynomial σ R) (φ : R →+* S) {f : σ → MvPolynomial τ S} {D : ℕ}
     (hf : ∀ i ∈ p.vars, (f i).totalDegree ≤ D) :
     (p.eval₂ (C.comp φ) f).totalDegree ≤ p.totalDegree * D := by
   rw [eval₂_eq]
@@ -93,7 +92,7 @@ theorem totalDegree_eval₂_C_comp_le {σ τ R S : Type*} [CommSemiring R] [Comm
   refine (totalDegree_smul_le _ _).trans <| (totalDegree_finsetProd _ _).trans ?_
   calc ∑ i ∈ s.support, (f i ^ s i).totalDegree ≤ ∑ i ∈ s.support, s i * D :=
         Finset.sum_le_sum fun i hi ↦ (totalDegree_pow _ _).trans <|
-          Nat.mul_le_mul_left _ <| hf i <| (mem_vars_iff_mem_support i).2 ⟨s, hs, hi⟩
+          Nat.mul_le_mul_left _ <| hf i <| support_subset_vars_of_mem_support hs hi
     _ = (s.sum fun _ e ↦ e) * D := by
         simpa only [Finsupp.sum] using (Finsupp.sum_mul D s (f := fun _ e ↦ e)).symm
     _ ≤ p.totalDegree * D := Nat.mul_le_mul_right _ (le_totalDegree hs)
@@ -105,6 +104,6 @@ theorem totalDegree_aeval_le {σ τ R S : Type*} [CommSemiring R] [CommSemiring 
     (hf : ∀ i ∈ p.vars, (f i).totalDegree ≤ D) :
     (aeval f p).totalDegree ≤ p.totalDegree * D := by
   rw [aeval_def, IsScalarTower.algebraMap_eq R S (MvPolynomial τ S), algebraMap_eq]
-  exact totalDegree_eval₂_C_comp_le (algebraMap R S) p hf
+  exact totalDegree_eval₂_C_comp_le p (algebraMap R S) hf
 
 end MvPolynomial

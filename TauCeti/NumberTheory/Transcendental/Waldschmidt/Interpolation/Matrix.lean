@@ -139,7 +139,7 @@ private theorem exists_row_waldschmidtInterpolationMatrix_mem_map {ι κ : Type*
   refine ⟨fun t' ↦ LinearMap.pi fun c ↦ (∏ j, α j ^ (t' * s c j)) •
     ∑ k ∈ range ((P c).natDegree + 1), (Polynomial.hasseDeriv k (P c)).eval (t' : K) •
       ((aeval (u c)).toLinearMap ∘ₗ D.toLinearMap ^ k), fun r ↦ ?_⟩
-  refine ⟨aeval f (F r), aeval_mem_restrictTotalDegree (fun i _ ↦ hf i) (hF r), ?_⟩
+  refine ⟨aeval f (F r), aeval_mem_restrictTotalDegree (F r) (fun i _ ↦ hf i) (hF r), ?_⟩
   ext c
   simp [waldschmidtOperatorEntry_eq_sum_hasseDeriv, pow_apply_eq_iterate, hDk, heval, mul_comm]
 

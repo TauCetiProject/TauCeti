@@ -270,7 +270,7 @@ end Coordinates
 variables of `p` does not raise the total degree, also when the substituted polynomials have
 coefficients in an `R`-algebra `S`. Only the variables that occur in `p` need to be bounded. -/
 theorem aeval_mem_restrictTotalDegree {τ S : Type*} [CommSemiring S] [Algebra R S]
-    {f : σ → MvPolynomial τ S} {m : ℕ} {p : MvPolynomial σ R}
+    (p : MvPolynomial σ R) {f : σ → MvPolynomial τ S} {m : ℕ}
     (hf : ∀ i ∈ p.vars, (f i).totalDegree ≤ 1) (hp : p ∈ restrictTotalDegree σ R m) :
     aeval f p ∈ restrictTotalDegree τ S m := by
   rw [mem_restrictTotalDegree] at hp ⊢

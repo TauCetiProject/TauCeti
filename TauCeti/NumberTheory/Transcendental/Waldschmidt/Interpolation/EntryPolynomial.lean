@@ -124,7 +124,7 @@ theorem totalDegree_waldschmidtEntryPolynomial_le (t : ℤ) (s : Fin (n + 1) →
     (waldschmidtEntryPolynomial t s P F).totalDegree ≤ F.totalDegree := by
   rw [← mem_restrictTotalDegree, waldschmidtEntryPolynomial_apply]
   refine Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ ?_
-  exact aeval_mem_restrictTotalDegree (fun i _ ↦ totalDegree_waldschmidtPoint_X_le s i)
+  exact aeval_mem_restrictTotalDegree _ (fun i _ ↦ totalDegree_waldschmidtPoint_X_le s i)
     ((mem_restrictTotalDegree _ _ _).2 ((totalDegree_iterate_pderiv_le 0 k F).trans tsub_le_self))
 
 /-- **The entry as a value of the entry polynomial.** Let `K` be a field that is an algebra over
