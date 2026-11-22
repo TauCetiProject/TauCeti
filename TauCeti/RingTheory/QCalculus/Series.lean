@@ -15,6 +15,7 @@ import TauCeti.RingTheory.PowerSeries.Evaluation
 import TauCeti.RingTheory.PowerSeries.Exp.Basic
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Order
+import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
 # Formal q-exponential, infinite q-Pochhammer series, and Euler's identities
@@ -278,10 +279,7 @@ theorem qPochhammerSeries_eq_one_sub_X_mul_rescale {q : A} (hq : ∀ n, IsUnit (
   · simp
   · rw [sub_mul, one_mul, map_sub, coeff_succ_X_mul, coeff_rescale, coeff_rescale]
     have htri : (n + 1) * n / 2 = n * (n - 1) / 2 + n := by
-      rcases n with _ | m
-      · rfl
-      · have h : (m + 2) * (m + 1) = (m + 1) * m + 2 * (m + 1) := by ring
-        rw [Nat.add_sub_cancel, h, Nat.add_mul_div_left _ _ two_pos]
+      simpa only [Nat.add_sub_cancel] using Nat.triangle_succ n
     have hstep : (1 - q ^ (n + 1)) * coeff (n + 1) (qPochhammerSeries q) =
         -q ^ n * coeff n (qPochhammerSeries q) := by
       rw [coeff_qPochhammerSeries, coeff_qPochhammerSeries, qPochhammer_succ, ← pow_succ',
@@ -464,11 +462,9 @@ theorem integralQPochhammer_eq_one_sub_X_mul_rescale :
   ext k m
   rw [coeff_coeff_integralQPochhammer_eq_of_lt m k (N := m + 2) (by omega),
     qPochhammer_succ' (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) (m + 1)]
-  have hresC : rescale (X : R⟦X⟧) (C (X : R⟦X⟧)) = C (X : R⟦X⟧) := by
-    ext (_ | n) <;> simp
   have hres : qPochhammer ((X : (R⟦X⟧)⟦X⟧) * C (X : R⟦X⟧)) (C (X : R⟦X⟧)) (m + 1) =
       rescale (X : R⟦X⟧) (qPochhammer (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) (m + 1)) := by
-    rw [map_qPochhammer, rescale_X, hresC, mul_comm]
+    rw [map_qPochhammer, rescale_X, rescale_C, mul_comm]
   rw [hres]
   rcases k with _ | k
   · simp [coeff_zero_eq_constantCoeff_apply, map_qPochhammer]
@@ -679,10 +675,9 @@ theorem eulerSqSeries_eq_eulerOddProd : eulerSqSeries R = eulerOddProd R := by
   ext k
   let p : (R⟦X⟧)[X] := qPochhammer Polynomial.X (Polynomial.C (X ^ 2 : R⟦X⟧)) (k + 1)
   have hp_eval : p.eval (-X : R⟦X⟧) = ∏ i ∈ range (k + 1), (1 + (X : R⟦X⟧) ^ (2 * i + 1)) := by
-    simp only [p, qPochhammer_def, Polynomial.eval_prod]
+    rw [Polynomial.eval_qPochhammer, Polynomial.eval_X, Polynomial.eval_C, qPochhammer_def]
     refine prod_congr rfl fun i _ ↦ ?_
-    rw [Polynomial.eval_sub, Polynomial.eval_one, Polynomial.eval_mul, Polynomial.eval_X,
-      Polynomial.eval_pow, Polynomial.eval_C, ← pow_mul, neg_mul, sub_neg_eq_add, ← pow_succ']
+    rw [← pow_mul, neg_mul, sub_neg_eq_add, ← pow_succ']
   rw [eulerSqSeries, eulerOddProd, coeff_mk, coeff_mk, ← hp_eval, map_sum,
     coeff_eval_eq_sum_range p (by simp)]
   refine sum_congr rfl fun n _ ↦ ?_

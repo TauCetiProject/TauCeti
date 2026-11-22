@@ -152,14 +152,8 @@ theorem adamsExpand_subst_exp {A : Type*} [CommRing A] [Algebra ℚ A] (n : ℕ+
     {G : (A⸨X⸩)⟦X⟧} (hG : HasSubst G) :
     adamsExpand A n ((PowerSeries.exp A⸨X⸩).subst G) =
       (PowerSeries.exp A⸨X⸩).subst (adamsExpand A n G) := by
-  have hsub' : HasSubst (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) := by
-    obtain ⟨m, hm⟩ := hG
-    refine ⟨m, ?_⟩
-    suffices constantCoeff (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) ^ m = 0 from
-      this
-    rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
-      ← map_pow]
-    exact (congrArg _ hm).trans (map_zero _)
+  have hsub' : HasSubst (PowerSeries.map (LaurentSeries.expand A n).toRingHom G) :=
+    PowerSeries.hasSubst_iff.mpr (hG.const.map (LaurentSeries.expand A n).toRingHom)
   calc adamsExpand A n ((PowerSeries.exp A⸨X⸩).subst G)
       = PowerSeries.expand (n : ℕ) n.ne_zero
           ((PowerSeries.exp A⸨X⸩).subst
@@ -444,9 +438,12 @@ private theorem exists_inv_one_sub_single_mul_X_pow (i : ℤ) {j : ℕ} (hj : j 
   · have hunit : IsUnit (1 - C (single i (1 : ℚ)) * X ^ j) :=
       isUnit_iff_constantCoeff.mpr (by simp [hj])
     apply hunit.mul_right_cancel
+    have hsingle : ι (single i (1 : ℤ)) = single i (1 : ℚ) := by
+      rw [HahnSeries.mapRingHom_apply]
+      exact (HahnSeries.map_single ((Int.castRingHom ℚ : ℤ →+* ℚ) : ZeroHom ℤ ℚ)).trans
+        (by simp)
     have hmap := congrArg (PowerSeries.map ι) hU_mul
-    simp only [ι, map_mul, map_sub, map_one, map_C, map_pow, map_X,
-      HahnSeries.mapRingHom_single] at hmap
+    simp only [map_mul, map_sub, map_one, map_C, map_pow, map_X, hsingle] at hmap
     rw [hmap, plethysticExp_single_mul_X_pow_mul i hj]
   · intro a s hs
     rw [coeff_expand]
@@ -474,16 +471,20 @@ private theorem exists_plethysticExp_zsmul_single (i : ℤ) {j : ℕ} (hj : j �
       have : (1 : ℤ) ≤ a := by exact_mod_cast Nat.pos_of_ne_zero hj
       rw [HahnSeries.coeff_single, ite_eq_right (by nlinarith), neg_zero]
     · simp
+  have hsingle :
+      HahnSeries.mapRingHom (Int.castRingHom ℚ) (single i (1 : ℤ)) = single i (1 : ℚ) := by
+    rw [HahnSeries.mapRingHom_apply]
+    exact (HahnSeries.map_single ((Int.castRingHom ℚ : ℤ →+* ℚ) : ZeroHom ℤ ℚ)).trans (by simp)
   rcases Int.eq_nat_or_neg z with ⟨n, rfl | rfl⟩
   · obtain ⟨U, hU_map, hU_bound⟩ := exists_inv_one_sub_single_mul_X_pow i hj hm hi
     refine ⟨U ^ n, ?_, coeff_coeff_pow_eq_zero_of_lt_mul hU_bound n⟩
     simp only [map_pow, hU_map, ← plethysticExp_nsmul, natCast_zsmul, map_nsmul, map_mul, map_C,
-      map_X, HahnSeries.mapRingHom_single, map_one]
+      map_X, hsingle]
   · refine ⟨(1 - C (single i (1 : ℤ)) * X ^ j) ^ n, ?_,
         coeff_coeff_pow_eq_zero_of_lt_mul hV_bound n⟩
     simp only [neg_smul, natCast_zsmul, map_neg, map_nsmul, map_mul, map_C, map_pow, map_X,
-      HahnSeries.mapRingHom_single, map_one, ← smul_neg, plethysticExp_nsmul,
-      plethysticExp_neg_single_mul_X_pow i hj, map_sub]
+      hsingle, map_one, ← smul_neg, plethysticExp_nsmul, plethysticExp_neg_single_mul_X_pow i hj,
+      map_sub]
 
 /-- Integral realization and slope-`m` support bound for a finite integral double polynomial
 supported in `1 ≤ j ≤ k` and `m ≤ i < N`. -/

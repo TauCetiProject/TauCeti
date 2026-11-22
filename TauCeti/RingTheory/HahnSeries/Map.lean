@@ -139,13 +139,6 @@ theorem coeff_mapRingHom (f : R →+* S) (x : R⟦Γ⟧) (g : Γ) :
     (mapRingHom f x).coeff g = f (x.coeff g) :=
   (rfl)
 
-/-- Coefficientwise ring homomorphisms map a single-term Hahn series to the single-term series at
-the same exponent with mapped coefficient. -/
-@[simp]
-theorem mapRingHom_single (f : R →+* S) (g : Γ) (r : R) :
-    mapRingHom f (single g r) = single g (f r) :=
-  HahnSeries.map_single (f : ZeroHom R S)
-
 @[simp]
 theorem mapRingHom_id : mapRingHom (RingHom.id R) = RingHom.id R⟦Γ⟧ :=
   RingHom.ext fun _ ↦ HahnSeries.ext rfl
