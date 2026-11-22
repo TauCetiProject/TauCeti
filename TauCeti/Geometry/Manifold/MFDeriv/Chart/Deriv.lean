@@ -19,10 +19,10 @@ from `𝕜` to the model space of `M'`, with an ordinary derivative and second d
 chart coordinate of `x`.
 
 * The derivative of the chart expression is the manifold derivative on the tangent vector `1`
-  (`MDifferentiableAt.mfderiv_apply_one_eq_deriv_writtenInExtChartAt`). If the chart expression
-  agrees near the chart coordinate of `x` with a map of derivative `c`, the manifold derivative
-  sends `v` to `v • c`, also on a manifold with boundary
-  (`MDifferentiableAt.mfderiv_apply_eq_of_hasDerivAt`).
+  (`MDifferentiableAt.mfderiv_apply_one_eq_deriv_writtenInExtChartAt`). If `f` is continuous at
+  `x` and its chart expression agrees near the chart coordinate of `x`, within the model range,
+  with a map of derivative `c` within that range, the manifold derivative sends `v` to `v • c`,
+  also on a manifold with boundary (`ContinuousAt.mfderiv_apply_eq_of_hasDerivWithinAt`).
 * **Chain rules.** If `M'` is also boundaryless and modelled on `𝕜`, then, read in the preferred
   charts, the derivative of `g ∘ f : M → M''` at `x` is `f'(x) • g'(f x)`
   (`TauCeti.Manifold.deriv_writtenInExtChartAt_comp`), while its second derivative is
@@ -60,18 +60,20 @@ theorem MDifferentiableAt.mfderiv_apply_one_eq_deriv_writtenInExtChartAt
   exact fderiv_apply_one_eq_deriv (𝕜 := 𝕜) (F := E')
 
 omit [I.Boundaryless] in
-/-- On a source modelled on `𝕜`, if the coordinate expression of `f` in the extended charts at `x`
-and at `f x` agrees near the chart coordinate of `x` with a map `φ` of derivative `c` there, then
-the manifold derivative of `f` at `x` sends `v` to `v • c`. -/
-theorem MDifferentiableAt.mfderiv_apply_eq_of_hasDerivAt (hf : MDifferentiableAt I I' f x)
-    {φ : 𝕜 → E'} {c : E'} (hφ : writtenInExtChartAt I I' x f =ᶠ[𝓝 (extChartAt I x x)] φ)
-    (hc : HasDerivAt φ c (extChartAt I x x)) (v : 𝕜) :
+/-- On a source modelled on `𝕜`, if `f` is continuous at `x` and its coordinate expression in the
+extended charts at `x` and at `f x` agrees near the chart coordinate of `x`, within the range of
+`I`, with a map `φ` of derivative `c` there within that range, then the manifold derivative of `f`
+at `x` sends `v` to `v • c`. -/
+theorem ContinuousAt.mfderiv_apply_eq_of_hasDerivWithinAt (hf : ContinuousAt f x)
+    {φ : 𝕜 → E'} {c : E'}
+    (hφ : writtenInExtChartAt I I' x f =ᶠ[𝓝[range I] (extChartAt I x x)] φ)
+    (hc : HasDerivWithinAt φ c (range I) (extChartAt I x x)) (v : 𝕜) :
     (mfderiv I I' f x v : E') = v • c := by
-  -- The coordinate expression has derivative `c` within the range of `I`, where derivatives are
-  -- unique, because it agrees with `φ` near the chart coordinate of `x`.
-  have h := (hc.hasFDerivAt.congr_of_eventuallyEq hφ).hasFDerivWithinAt (s := range I)
-  -- `mfderiv_abuse` reads the tangent spaces at `x` and `f x` as the model spaces `𝕜` and `E'`.
-  rw [hf.mfderiv_abuse, h.fderivWithin (I.uniqueDiffOn _ (mem_range_self _))]
+  -- The coordinate expression has derivative `c` within the range of `I`, because it agrees with
+  -- `φ` there near the chart coordinate of `x`, which lies in that range.
+  have h : HasMFDerivAt I I' f x (ContinuousLinearMap.toSpanSingleton 𝕜 c) :=
+    ⟨hf, hc.hasFDerivWithinAt.congr_of_eventuallyEq hφ (hφ.eq_of_nhdsWithin (mem_range_self _))⟩
+  rw [h.mfderiv]
   exact ContinuousLinearMap.toSpanSingleton_apply 𝕜 c v
 
 end Curve

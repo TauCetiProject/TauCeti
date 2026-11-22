@@ -152,8 +152,8 @@ charts at `z` and at its image. -/
 theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 1 ≠ 0) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) z v =
       ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2 * v : 𝕜) := by
-  refine (((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).mdifferentiable (by simp) _)
-    |>.mfderiv_apply_eq_of_hasDerivAt EventuallyEq.rfl ?_ v).trans (mul_comm v _)
+  refine ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).continuous.continuousAt
+    |>.mfderiv_apply_eq_of_hasDerivWithinAt EventuallyEq.rfl ?_ v).trans (mul_comm v _)
   simpa using hasDerivAt_writtenInExtChartAt_smul_coe g hz
 
 end Matrix.GeneralLinearGroup
@@ -166,9 +166,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [Prope
 theorem mfderiv_pglFixingZeroInftyEquiv_symm_zero (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       ((0 : 𝕜) : OnePoint 𝕜) v = (a * v : 𝕜) := by
-  refine ((mdifferentiableAt_pgl_smul _ _).mfderiv_apply_eq_of_hasDerivAt
+  refine ((mdifferentiableAt_pgl_smul _ _).continuousAt.mfderiv_apply_eq_of_hasDerivWithinAt
     (Eventually.of_forall fun w ↦ ?_) (φ := fun w : 𝕜 ↦ (a : 𝕜) * w)
-    (((hasDerivAt_id _).const_mul (a : 𝕜)).congr_deriv (mul_one _)) v).trans (mul_comm v _)
+    (((hasDerivAt_id _).const_mul (a : 𝕜)).congr_deriv (mul_one _)).hasDerivWithinAt v).trans
+    (mul_comm v _)
   simp [writtenInExtChartAt]
 
 /-- **The dilation `z ↦ a z` has derivative `a⁻¹` at `∞`**, read in the inverted chart, in which
@@ -176,10 +177,10 @@ it is `w ↦ a⁻¹ w`. -/
 theorem mfderiv_pglFixingZeroInftyEquiv_symm_infty (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       (∞ : OnePoint 𝕜) v = (((a⁻¹ : 𝕜ˣ) : 𝕜) * v : 𝕜) := by
-  refine ((mdifferentiableAt_pgl_smul _ _).mfderiv_apply_eq_of_hasDerivAt
+  refine ((mdifferentiableAt_pgl_smul _ _).continuousAt.mfderiv_apply_eq_of_hasDerivWithinAt
     (Eventually.of_forall fun w ↦ ?_) (φ := fun w : 𝕜 ↦ ((a⁻¹ : 𝕜ˣ) : 𝕜) * w)
-    (((hasDerivAt_id _).const_mul ((a⁻¹ : 𝕜ˣ) : 𝕜)).congr_deriv (mul_one _)) v).trans
-    (mul_comm v _)
+    (((hasDerivAt_id _).const_mul ((a⁻¹ : 𝕜ˣ) : 𝕜)).congr_deriv (mul_one _)).hasDerivWithinAt
+    v).trans (mul_comm v _)
   simp only [writtenInExtChartAt, extChartAt_coe, modelWithCornersSelf_coe, Function.comp_apply]
   rw [pglFixingZeroInftyEquiv_symm_smul_infty, chartAt_infty]
   by_cases hw : w = 0
