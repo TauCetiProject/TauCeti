@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Defs
-public import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Analysis.Normed.Group.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.IcoMulLe
+import TauCeti.Analysis.SpecificLimits.Basic
 
 /-!
 # Norm divergence of partial sums of rapidly growing sequences
@@ -36,8 +36,6 @@ Pincherle's theorem.
 * `TauCeti.sub_two_mul_norm_add_norm_le_sub_one_mul_norm_sum_Ico_succ_of_mul_norm_le`: if `1 ≤ c`
   and `c * ‖u k‖ ≤ ‖u (k + 1)‖` for `k ∈ Finset.Ico M m` (`M ≤ m`), then
   `(c - 2) * ‖u m‖ + ‖u M‖ ≤ (c - 1) * ‖∑ j ∈ Finset.Ico M (m + 1), u j‖`.
-* `TauCeti.tendsto_atTop_of_mul_le`: if `1 < c`, `c * v m ≤ v (m + 1)` eventually, and `0 < v m`
-  frequently, then `v n → ∞`.
 * `TauCeti.tendsto_norm_sum_Ico_atTop_iff`: divergence in norm of partial sums
   `∑ m ∈ Finset.Ico N n, T m` does not depend on the starting index `N`.
 * `TauCeti.tendsto_norm_sum_Ico_atTop_of_mul_norm_le`: if `2 ≤ c`, `c * ‖u m‖ ≤ ‖u (m + 1)‖`
@@ -72,17 +70,6 @@ theorem sub_two_mul_norm_add_norm_le_sub_one_mul_norm_sum_Ico_succ_of_mul_norm_l
         rw [← mul_add]
         exact mul_le_mul_of_nonneg_left htri (sub_nonneg.2 hc)
     _ = (c - 1) * ‖∑ j ∈ Ico M (m + 1), u j‖ := by ring
-
-/-- If `1 < c`, `c * v m ≤ v (m + 1)` eventually, and `0 < v m` frequently, then `v n → +∞` as
-`n → ∞`. -/
-theorem tendsto_atTop_of_mul_le {v : ℕ → ℝ} {c : ℝ} (hc : 1 < c)
-    (hstep : ∀ᶠ m in atTop, c * v m ≤ v (m + 1)) (hne : ∃ᶠ m in atTop, 0 < v m) :
-    Tendsto v atTop atTop := by
-  obtain ⟨M₀, hM₀⟩ := eventually_atTop.1 hstep
-  obtain ⟨M, hpos, _⟩ := (hne.and_eventually (eventually_ge_atTop M₀)).exists
-  exact (tendsto_add_atTop_iff_nat M).1 <|
-    tendsto_atTop_of_geom_le (v := fun n ↦ v (n + M)) (by simpa using hpos) hc
-      fun n ↦ by simpa only [Nat.add_right_comm] using hM₀ (n + M) (by omega)
 
 /-- Divergence in norm of partial sums `∑ m ∈ Ico N n, T m` does not depend on the starting index
 `N`. -/
