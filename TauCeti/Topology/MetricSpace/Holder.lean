@@ -423,6 +423,14 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
     exact (hf a (Finset.mem_insert_self a s)).add
       (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)
 
+/-- A finite sum of functions Hölder on a set `t` with a common exponent is Hölder on `t`, with the
+sum of the constants. -/
+theorem HolderOnWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {s : Finset ι} {C : ι → ℝ≥0} {r : ℝ≥0} {f : ι → X → Y} {t : Set X}
+    (hf : ∀ i ∈ s, HolderOnWith (C i) r (f i) t) :
+    HolderOnWith (∑ i ∈ s, C i) r (fun x => ∑ i ∈ s, f i x) t :=
+  HolderWith.restrict_iff.1 (HolderWith.sum fun i hi => (hf i hi).holderWith)
+
 /-- A natural multiple `n • f` of an `r`-Hölder map `f` with constant `C` is `r`-Hölder with
 constant `n C`. Compare Mathlib's `HolderWith.smul`, which needs a normed scalar group. -/
 theorem HolderWith.nsmul {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Segment
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 
@@ -64,6 +65,8 @@ constant never matters for cutting off, where one is free to shrink the radius i
 * `TauCeti.dist_centeredRadialRetraction_eq_abs_min`,
   `TauCeti.dist_centeredRadialRetraction_le_abs_min`: for any radius, the distance from the centre
   is at most `|min (dist x x₀) r|`, with equality unless `dist x x₀ = 0` and `r < 0`.
+* `TauCeti.centeredRadialRetraction_mem_segment`: for `0 ≤ r`, the centred retraction moves a
+  point along the segment towards the centre, so it preserves convex sets containing the centre.
 * `TauCeti.lipschitzWith_centeredRadialRetraction`: for `0 ≤ r`, the centred retraction is
   `2`-Lipschitz.
 * `LipschitzOnWith.comp_centeredRadialRetraction`: precomposing with the centred retraction makes a
@@ -325,6 +328,15 @@ theorem centeredRadialRetraction_mem_closedBall {x₀ : E} (hr : 0 ≤ r) (x : E
     centeredRadialRetraction x₀ r x ∈ closedBall x₀ r := by
   rw [mem_closedBall, dist_centeredRadialRetraction hr]
   exact min_le_right _ _
+
+/-- For nonnegative radius, the centred radial retraction moves a point along the segment towards
+the centre; in particular it maps every convex set containing the centre into itself. -/
+theorem centeredRadialRetraction_mem_segment {x₀ : E} (hr : 0 ≤ r) (x : E) :
+    centeredRadialRetraction x₀ r x ∈ segment ℝ x₀ x := by
+  refine ⟨1 - min 1 (r / ‖x - x₀‖), min 1 (r / ‖x - x₀‖), sub_nonneg.2 (min_le_left _ _),
+    le_min zero_le_one (div_nonneg hr (norm_nonneg _)), by ring, ?_⟩
+  rw [centeredRadialRetraction_def, radialRetraction_def, sub_smul, one_smul, smul_sub]
+  abel
 
 /-- The radial retraction is idempotent for nonnegative radius. -/
 theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
