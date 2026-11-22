@@ -397,6 +397,13 @@ end Homeomorph
 
 namespace TauCeti
 
+/-- A space with at most one connected component is preconnected. This is the converse of
+Mathlib's instance `ConnectedComponents.subsingleton`. -/
+theorem preconnectedSpace_of_subsingleton_connectedComponents
+    [Subsingleton (ConnectedComponents X)] : PreconnectedSpace X :=
+  preconnectedSpace_iff_connectedComponent.2 fun _ ↦ eq_univ_of_forall fun _ ↦
+    ConnectedComponents.coe_eq_coe'.1 (Subsingleton.elim _ _)
+
 /-- Restricting a connected component to a set covered by preconnected pieces selects exactly
 those pieces contained in the component. The pieces need not be disjoint. -/
 theorem connectedComponentIn_inter_eq_sUnion {s U : Set X} {𝒞 : Set (Set X)}

@@ -12,6 +12,7 @@ import Mathlib.AlgebraicGeometry.ResidueField
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Topology.Connected.CardComponents
 import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
+import TauCeti.Topology.ConnectedComponents
 
 /-!
 # Geometric connectedness: affine products and rational points
@@ -112,9 +113,7 @@ private theorem connectedSpace_pullback_of_isIntegralHom (hs : s ≫ f = 𝟙 _)
       ((p.isOpenMap.enatCard_connectedComponents_le_encard_preimage_singleton p.isClosedMap
         (s default)).trans (Set.encard_le_one_iff_subsingleton.mpr hfib))
   have : PreconnectedSpace (pullback f g : Scheme.{u}) :=
-    preconnectedSpace_iff_connectedComponent.mpr fun x ↦ Set.eq_univ_of_forall fun y ↦
-      ConnectedComponents.coe_eq_coe.mp (Subsingleton.elim
-        (y : _root_.ConnectedComponents (pullback f g : Scheme.{u})) x) ▸ mem_connectedComponent
+    preconnectedSpace_of_subsingleton_connectedComponents
   exact ⟨inferInstance⟩
 
 /-- **A connected scheme with a rational point is geometrically connected.** If `X` is a
