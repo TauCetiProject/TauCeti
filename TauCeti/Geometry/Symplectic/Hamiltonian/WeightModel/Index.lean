@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Hessian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Hessian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.NormalForm
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Geometry.Manifold.Morse.Submersion
 
 /-!
 # Morse indices of moment map components at a fixed point, from the weights
@@ -102,32 +102,6 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
     M (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞}
   {f : M → ℝ} {c : ℝ} {x : M}
 
-/-- The component `μ^ξ` of the weight-model moment map is smooth. -/
-private theorem contDiff_weightMomentMap_apply :
-    ContDiff ℝ ∞ fun z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ weightMomentMap α z ξ := by
-  have hq (k : ι) : ContDiff ℝ ∞ fun z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ z.1 k :=
-    (contDiff_piLp_apply (p := 2)).comp contDiff_fst
-  have hp (k : ι) : ContDiff ℝ ∞ fun z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ z.2 k :=
-    (contDiff_piLp_apply (p := 2)).comp contDiff_snd
-  simp only [weightMomentMap_apply]
-  exact contDiff_const.mul (ContDiff.sum fun k _ ↦ contDiff_const.mul (((hq k).pow 2).add
-    ((hp k).pow 2)))
-
-/-- Adding a constant does not change the derivative of the model component. -/
-private theorem fderiv_const_add_weightMomentMap_apply :
-    fderiv ℝ (fun z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ c + weightMomentMap α z ξ) =
-      fderiv ℝ fun z ↦ weightMomentMap α z ξ :=
-  funext fun _ ↦ fderiv_const_add c
-
-/-- Adding a constant does not change the Hessian of the model component. -/
-private theorem hessianQuadraticForm_const_add_weightMomentMap_apply
-    (y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    hessianQuadraticForm (fun z ↦ c + weightMomentMap α z ξ) y =
-      hessianQuadraticForm (fun z ↦ weightMomentMap α z ξ) y := by
-  ext v
-  rw [hessianQuadraticForm_apply, hessianQuadraticForm_apply,
-    fderiv_const_add_weightMomentMap_apply]
-
 variable (hf : ∀ y ∈ chart.source, f y = c + weightMomentMap α (chart y) ξ)
   (hx : x ∈ chart.source)
 include hf hx
@@ -141,16 +115,17 @@ private theorem eventuallyEq_comp_weightMomentMap :
 omit [I'.Boundaryless] in
 /-- In a weight chart, `f` is smooth at every point of the chart. -/
 private theorem contMDiffAt_of_weightMomentMap : ContMDiffAt I' 𝓘(ℝ) ∞ f x :=
-  (((contDiff_const.add contDiff_weightMomentMap_apply).contMDiff.comp_contMDiffOn
+  (((contDiff_const.add (contDiff_weightMomentMap_apply α ξ)).contMDiff.comp_contMDiffOn
     chart.contMDiffOn).contMDiffAt (chart.open_source.mem_nhds hx)).congr_of_eventuallyEq
       (eventuallyEq_comp_weightMomentMap hf hx)
 
 omit [I'.Boundaryless] hf in
-/-- The differential of the chart, read in the model space, is surjective. -/
-private theorem surjective_mvfderiv_chart :
-    Function.Surjective (mvfderiv I' chart x :
-      TangentSpace I' x →ₗ[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
-  (chart.bijective_mvfderiv (by simp) hx).2
+/-- The differential of the chart is onto at every point of the chart. -/
+private theorem isRegularPoint_chart :
+    IsRegularPoint I' 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) chart x := by
+  obtain ⟨L, hL⟩ := chart.isInvertible_mfderiv (by simp) hx
+  rw [isRegularPoint_iff, ← hL]
+  exact L.surjective
 
 omit [I'.Boundaryless] in
 /-- **Critical points in a weight chart.** If `f` is a constant plus the weight-model component
@@ -159,24 +134,22 @@ the model generator `ξ_M` vanishes at its coordinates `z(x)`, that is, when `z�
 `k` with `αₖ(ξ) ≠ 0` (`TauCeti.weightGenerator_apply_eq_zero_iff`). -/
 theorem mem_criticalPoints_iff_weightGenerator_eq_zero :
     x ∈ criticalPoints I' f ↔ weightGenerator (fun k ↦ α k ξ) (chart x) = 0 := by
-  have hg : DifferentiableAt ℝ (fun z ↦ c + weightMomentMap α z ξ) (chart x) :=
-    ((contDiff_const.add contDiff_weightMomentMap_apply).differentiable (by simp)).differentiableAt
-  -- The differential of `f` at `x` is the model differential composed with that of the chart.
-  have hfd : HasMFDerivAt I' 𝓘(ℝ) f x
-      ((fderiv ℝ (fun z ↦ weightMomentMap α z ξ) (chart x)).comp
-        (mfderiv I' 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) chart x)) := by
-    have h := hg.hasFDerivAt.hasMFDerivAt.comp x (chart.mdifferentiableAt (by simp) hx).hasMFDerivAt
-    rw [fderiv_const_add_weightMomentMap_apply] at h
-    exact h.congr_of_eventuallyEq (eventuallyEq_comp_weightMomentMap hf hx)
-  rw [mem_criticalPoints_iff_mfderiv_eq_zero, hfd.mfderiv,
-    ← fderiv_weightMomentMap_apply_eq_zero_iff]
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ by
-    rw [h]
-    exact ContinuousLinearMap.zero_comp _⟩
-  obtain ⟨u, hu⟩ := surjective_mvfderiv_chart hx v
-  rw [ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply] at hu
-  rw [← hu]
-  exact congr($h u)
+  rw [(eventuallyEq_comp_weightMomentMap hf hx).mem_criticalPoints_iff,
+    (isRegularPoint_chart hx).mem_criticalPoints_comp_iff (chart.mdifferentiableAt (by simp) hx)
+      ((contDiff_const.add (contDiff_weightMomentMap_apply α ξ)).contMDiff.mdifferentiableAt
+        (by simp)),
+    mem_criticalPoints_iff_fderiv_eq_zero, fderiv_const_add,
+    fderiv_weightMomentMap_apply_eq_zero_iff]
+
+omit [I'.Boundaryless] in
+/-- At a critical point `x` of `f` in the chart, its coordinates `z(x)` are a critical point of
+the constant plus the model component. -/
+private theorem mem_criticalPoints_chart (hcrit : x ∈ criticalPoints I' f) :
+    chart x ∈ criticalPoints 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+      (fun z ↦ c + weightMomentMap α z ξ) := by
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, fderiv_const_add,
+    fderiv_weightMomentMap_apply_eq_zero_iff]
+  exact (mem_criticalPoints_iff_weightGenerator_eq_zero hf hx).1 hcrit
 
 /-- **The critical Hessian in a weight chart.** If `f` is a constant plus the weight-model
 component `μ^ξ`, read in the chart, then at a critical point `x` of `f` in the chart the quadratic
@@ -189,20 +162,16 @@ theorem toQuadraticMap_toBilinForm_criticalHessian_eq_comp_of_weightMomentMap
       (hessianQuadraticForm (fun z ↦ weightMomentMap α z ξ) (chart x)).comp
         (mvfderiv I' chart x :
           TangentSpace I' x →ₗ[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) := by
-  have hcrit' : chart x ∈ criticalPoints 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-      (fun z ↦ c + weightMomentMap α z ξ) := by
-    rw [mem_criticalPoints_iff_fderiv_eq_zero, fderiv_const_add_weightMomentMap_apply,
-      fderiv_weightMomentMap_apply_eq_zero_iff]
-    exact (mem_criticalPoints_iff_weightGenerator_eq_zero hf hx).1 hcrit
+  rw [criticalHessian_congr_of_eventuallyEq (eventuallyEq_comp_weightMomentMap hf hx),
+    toQuadraticMap_toBilinForm_criticalHessian_comp
+      ((contDiff_const.add (contDiff_weightMomentMap_apply α ξ)).contMDiff.contMDiffAt.of_le
+        (by simp))
+      ((chart.contMDiffOn.contMDiffAt (chart.open_source.mem_nhds hx)).of_le (by simp))
+      (mem_criticalPoints_chart hf hx hcrit)]
   ext u
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
-    criticalHessian_congr_of_eventuallyEq (eventuallyEq_comp_weightMomentMap hf hx),
-    criticalHessian_comp_apply rfl
-      ((contDiff_const.add contDiff_weightMomentMap_apply).contMDiff.contMDiffAt.of_le (by simp))
-      ((chart.contMDiffOn.contMDiffAt (chart.open_source.mem_nhds hx)).of_le (by simp)) hcrit' u u,
-    QuadraticMap.comp_apply, ← hessianQuadraticForm_const_add_weightMomentMap_apply (c := c),
-    hessianQuadraticForm_apply, criticalHessian_modelSpace, ContinuousLinearMap.coe_coe,
-    mvfderiv_apply_eq_mfderiv_apply]
+  rw [QuadraticMap.comp_apply, QuadraticMap.comp_apply, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply,
+    toQuadraticMap_toBilinForm_criticalHessian_modelSpace, hessianQuadraticForm_const_add]
   -- The two sides differ only in reading the model space as the tangent space at `chart x`.
   rfl
 
@@ -262,15 +231,22 @@ theorem ker_criticalHessian_eq_comap_ker_weightGenerator (hcrit : x ∈ critical
       (LinearMap.ker (weightGenerator fun k ↦ α k ξ).toLinearMap).comap
         (mvfderiv I' chart x :
           TangentSpace I' x →ₗ[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) := by
-  rw [← radical_toQuadraticMap_toBilinForm_criticalHessian
-      ((contMDiffAt_of_weightMomentMap hf hx).of_le (by simp)),
-    ← radical_hessianQuadraticForm_weightMomentMap_apply α ξ (chart x),
-    ← (criticalHessianIsometryEquiv hf hx hcrit).map_radical]
+  have hg : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) 𝓘(ℝ) 2
+      (fun z ↦ c + weightMomentMap α z ξ) (chart x) :=
+    (contDiff_const.add (contDiff_weightMomentMap_apply α ξ)).contMDiff.contMDiffAt.of_le
+      (by simp)
+  rw [criticalHessian_congr_of_eventuallyEq (eventuallyEq_comp_weightMomentMap hf hx),
+    (isRegularPoint_chart hx).ker_criticalHessian_comp hg
+      ((chart.contMDiffOn.contMDiffAt (chart.open_source.mem_nhds hx)).of_le (by simp))
+      (mem_criticalPoints_chart hf hx hcrit),
+    ← radical_toQuadraticMap_toBilinForm_criticalHessian hg]
   ext u
-  rw [Submodule.mem_comap, Submodule.mem_map]
-  refine ⟨fun hu ↦ ⟨u, hu, rfl⟩, ?_⟩
-  rintro ⟨w, hw, hwu⟩
-  rwa [← (criticalHessianIsometryEquiv hf hx hcrit).injective hwu]
+  rw [Submodule.mem_comap, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply,
+    ← radical_hessianQuadraticForm_weightMomentMap_apply α ξ (chart x),
+    toQuadraticMap_toBilinForm_criticalHessian_modelSpace, hessianQuadraticForm_const_add]
+  -- The two sides differ only in reading the model space as the tangent space at `chart x`.
+  rfl
 
 /-- **The nullity in a weight chart.** If `f` is a constant plus the weight-model component `μ^ξ`,
 read in the chart, then at every critical point of `f` in the chart the null space of its critical

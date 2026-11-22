@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Analysis.Convex.Extreme
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Instances.AddCircle.Defs
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
@@ -102,6 +103,8 @@ torus.
   `z_i = q_i + i p_i`, the rotation by `θ` multiplies `z_i` by `cos θ_i + i sin θ_i`.
 * `TauCeti.continuous_weightMomentMap`, `TauCeti.weightMomentMap_weightRotation`,
   `TauCeti.weightMomentMap_torusRotation`: `μ` is continuous and invariant under every rotation.
+* `TauCeti.contDiff_weightMomentMap`, `TauCeti.contDiff_weightMomentMap_apply`: `μ` and its
+  components `μ^ξ` are smooth.
 * `TauCeti.hamiltonianVectorField_weightMomentMap`: the Hamiltonian vector field of `μ^ξ` is the
   generator for the angles `α_i(ξ)`.
 * `TauCeti.fderiv_weightMomentMap_apply_eq_zero_iff`: the critical points of `μ^ξ` are the zeros
@@ -163,6 +166,7 @@ noncomputable section
 namespace TauCeti
 
 open Real
+open scoped ContDiff
 
 variable {ι : Type*}
 
@@ -393,6 +397,22 @@ theorem hasFDerivAt_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ 
   refine ((ContinuousLinearMap.apply ℝ ℝ ξ).hasFDerivAt.comp x
     (hasFDerivAt_weightMomentMap α x)).congr_fderiv ?_
   ext v <;> simp [PiLp.inner_apply, mul_comm, mul_assoc]
+
+/-- The moment map of the weight model is smooth. -/
+theorem contDiff_weightMomentMap (α : ι → StrongDual ℝ 𝔱) : ContDiff ℝ ∞ (weightMomentMap α) := by
+  have hq (i : ι) : ContDiff ℝ ∞ fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ x.1 i :=
+    (contDiff_piLp_apply (p := 2)).comp contDiff_fst
+  have hp (i : ι) : ContDiff ℝ ∞ fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ x.2 i :=
+    (contDiff_piLp_apply (p := 2)).comp contDiff_snd
+  rw [show weightMomentMap α = fun x ↦ ∑ i, (-(1 / 2) * (x.1 i ^ 2 + x.2 i ^ 2)) • α i from
+    funext (weightMomentMap_def α)]
+  exact ContDiff.sum fun i _ ↦
+    (contDiff_const.mul (((hq i).pow 2).add ((hp i).pow 2))).smul contDiff_const
+
+/-- The component `μ^ξ = ⟨μ, ξ⟩` of the moment map of the weight model is smooth. -/
+theorem contDiff_weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱) (ξ : 𝔱) :
+    ContDiff ℝ ∞ fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ weightMomentMap α x ξ :=
+  (ContinuousLinearMap.apply ℝ ℝ ξ).contDiff.comp (contDiff_weightMomentMap α)
 
 /-- **The weight model is Hamiltonian.** The Hamiltonian vector field of the component
 `μ^ξ = ⟨μ, ξ⟩` of the moment map is the generator of the rotation by the angles `α_i(ξ)`. -/

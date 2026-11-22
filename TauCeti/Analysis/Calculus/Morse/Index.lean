@@ -138,6 +138,20 @@ theorem hessianQuadraticForm_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt �
   simpa [iteratedFDeriv_two_apply] using
     congr($(iteratedFDeriv_add_apply (i := 2) hf hg) ![v, v])
 
+/-- Adding a constant to a function does not change its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_const_add (c : ℝ) (f : E → ℝ) (x : E) :
+    hessianQuadraticForm (fun y ↦ c + f y) x = hessianQuadraticForm f x := by
+  rw [hessianQuadraticForm, hessianQuadraticForm,
+    funext fun y ↦ (fderiv_const_add c : fderiv ℝ (fun z ↦ c + f z) y = _)]
+
+/-- Adding a constant to a function does not change its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_add_const (f : E → ℝ) (c : ℝ) (x : E) :
+    hessianQuadraticForm (fun y ↦ f y + c) x = hessianQuadraticForm f x := by
+  rw [hessianQuadraticForm, hessianQuadraticForm,
+    funext fun y ↦ (fderiv_add_const c : fderiv ℝ (fun z ↦ f z + c) y = _)]
+
 /-- Negating a function negates its Hessian quadratic form. -/
 @[simp]
 theorem hessianQuadraticForm_neg (f : E → ℝ) (x : E) :
