@@ -482,7 +482,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_half
   -- Straighten `A` to the identity by a linear change of variables `e`, which maps the
   -- half-space `{y | c₀ < ⟪y, e† ν⟫}` onto `H`, apply the estimate for the Laplacian up to the
   -- flat boundary to `v = u ∘ e`, and transfer the Hölder bound for `D²v` back to `D²u`.
-  obtain ⟨e, he, he', hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
+  obtain ⟨e, -, he, he', hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
   have hlamLam : lam ≤ Lam := by
     simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _)
   have hLam : 0 < Lam := hlam.trans_le hlamLam
