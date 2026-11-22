@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
-public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class
 public import TauCeti.Geometry.Manifold.Morse.Generic.Inequalities
 import Mathlib.Order.Interval.Set.Union
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Geometry.Manifold.Morse.Bott.Adjunction
+import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 
@@ -65,16 +65,17 @@ its companions), once the homology of each band is computed:
 
 So `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ b_{n - r a}(S a; K)` over the pieces on the only critical level
 `c ∈ (a, b)` of the band, of index at most `n`
-(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass`),
+(`IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass`),
 and summing over the bands counts every piece once. The inequalities are proved once, from Thom
-classes of the negative normal bundles (the `_of_isThomClass` versions), and the `𝔽₂` and oriented
-versions supply these Thom classes.
+classes of the negative normal bundles (the `_of_hasNegativeNormalThomClass` versions), and the
+`𝔽₂` and oriented versions supply these Thom classes.
 
 The negative normal bundles depend on a choice of fibre metrics on the normal bundles of the
-pieces, so the `_of_isThomClass` and oriented versions take such metrics `g a` and Thom classes or
-orientations of the negative normal bundles relative to them
+pieces, so the `_of_hasNegativeNormalThomClass` and oriented versions take such metrics `g a` and
+Thom classes or orientations of the negative normal bundles relative to them
 (`SmoothEmbedding.IsNondegenerateCriticalSubmanifold.HasNegativeNormalThomClass` and
-`SmoothEmbedding.IsNondegenerateCriticalSubmanifold.NegativeNormalBundleOrientation`). The
+`SmoothEmbedding.IsNondegenerateCriticalSubmanifold.NegativeNormalBundleOrientation`, in
+`TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class`). The
 homology Thom isomorphism needs the model fibre `Fin r → ℝ` of the negative normal bundle in the
 universe of its base, so the manifolds, their models and the coefficient field here live in
 `Type`.
@@ -83,30 +84,25 @@ universe of its base, so the manifolds, their models and the coefficient field h
 
 In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
-* `NegativeNormalBundleOrientation` and `HasNegativeNormalThomClass`: the orientations of the
-  negative normal bundle of a Morse–Bott submanifold, and the existence of a Thom class of it over
-  a commutative ring `K`.
-* `hasNegativeNormalThomClass_of_orientation` and
-  `hasNegativeNormalThomClass_of_subsingleton_units`: such a Thom class exists over every
-  commutative ring when the negative normal bundle is oriented, and over `𝔽₂` in any case.
-* `finrank_singularHomology_negativeDiscSpherePair_of_isThomClass`: for a Morse–Bott submanifold
-  of index `r` whose negative normal bundle has a Thom class over `K`,
+* `finrank_singularHomology_negativeDiscSpherePair_of_hasNegativeNormalThomClass`: for a
+  Morse–Bott submanifold of index `r` whose negative normal bundle has a Thom class over `K`,
   `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)` if `r ≤ n`, and `0` otherwise.
 * `finrank_singularHomology_negativeDiscSpherePair`: the same over `𝔽₂`, with no Thom class
   assumed.
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
-* `finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass`: the dimension of the homology of
-  a band with a single critical value, when the negative normal bundles have Thom classes over `K`;
+* `finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass`: the dimension of
+  the homology of a band with a single critical value, when the negative normal bundles have Thom
+  classes over `K`;
   `finrank_singularHomology_sublevelPair_eq_sum` and
   `finrank_singularHomology_sublevelPair_eq_sum_of_orientation` are its `𝔽₂` and oriented cases.
-* `bettiNumber_le_sum_of_isThomClass`,
-  `sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass`,
-  `sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_isThomClass` and
-  `exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass`: the weak and strong Morse–Bott
-  inequalities, Euler's equality and the Morse–Bott polynomial identity over a field `K`, when the
-  negative normal bundles have Thom classes over `K`.
+* `bettiNumber_le_sum_of_hasNegativeNormalThomClass`,
+  `sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_hasNegativeNormalThomClass`,
+  `sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_hasNegativeNormalThomClass` and
+  `exists_sum_range_monomial_sum_eq_add_mul_of_hasNegativeNormalThomClass`: the weak and strong
+  Morse–Bott inequalities, Euler's equality and the Morse–Bott polynomial identity over a field
+  `K`, when the negative normal bundles have Thom classes over `K`.
 * `bettiNumber_le_sum`, `sum_range_neg_one_pow_mul_bettiNumber_le_sum`,
   `sum_range_neg_one_pow_mul_bettiNumber_eq_sum` and `exists_sum_range_monomial_sum_eq_add_mul`:
   the same over `𝔽₂`, with no orientation needed.
@@ -152,72 +148,6 @@ variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [Nor
     ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
   (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
 
-/-- **The orientations of the negative normal bundle.** Let `i` be a nondegenerate critical
-submanifold of a smooth function `f`, with Morse index `r` at every point, and let `g` be a smooth
-fibre metric on its normal bundle. The negative normal spaces relative to `g` form a vector bundle
-`ν⁻` of rank `r` (`hasLocalSubbundleFrames_negativeNormalSpace`), and this is the type of
-orientations of `ν⁻`. -/
-abbrev NegativeNormalBundleOrientation :=
-  letI := i.normalSpaceFiberBundle hn hdim
-  letI := i.normalSpaceVectorBundle hn hdim
-  letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  letI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
-  haveI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
-  VectorBundleOrientation (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
-    (Fin r)
-
-/-- **The negative normal bundle has a Thom class.** Let `i` be a nondegenerate critical
-submanifold of a smooth function `f`, with Morse index `r` at every point, and let `g` be a smooth
-fibre metric on its normal bundle. This says that the negative normal bundle `ν⁻` relative to `g`,
-a vector bundle of rank `r` (`hasLocalSubbundleFrames_negativeNormalSpace`), has a Thom class with
-coefficients in the commutative ring `K`. -/
-def HasNegativeNormalThomClass (K : Type) [CommRing K] : Prop :=
-  letI := i.normalSpaceFiberBundle hn hdim
-  haveI := i.normalSpaceVectorBundle hn hdim
-  letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  letI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
-  ∃ u : (thomPair (Fin r → ℝ) fun s ↦
-      h.negativeNormalSpace hn g.toRiemannianMetric s).singularCohomology
-      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ (Fin r → ℝ)),
-    IsThomClass (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) u
-
-/-- `HasNegativeNormalThomClass` says that the negative normal bundle has a Thom class over `K`. -/
-theorem hasNegativeNormalThomClass_iff (K : Type) [CommRing K] :
-    h.HasNegativeNormalThomClass hn hfs hdim g hr K ↔
-      letI := i.normalSpaceFiberBundle hn hdim
-      haveI := i.normalSpaceVectorBundle hn hdim
-      letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-      letI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
-      ∃ u : (thomPair (Fin r → ℝ) fun s ↦
-          h.negativeNormalSpace hn g.toRiemannianMetric s).singularCohomology
-          (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ (Fin r → ℝ)),
-        IsThomClass (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) u :=
-  Iff.rfl
-
-/-- **An oriented negative normal bundle has a Thom class** with coefficients in every commutative
-ring `K` (`TauCeti.VectorBundleOrientation.exists_isThomClass`). -/
-theorem hasNegativeNormalThomClass_of_orientation
-    (o : h.NegativeNormalBundleOrientation hn hfs hdim g hr) (K : Type) [CommRing K] :
-    h.HasNegativeNormalThomClass hn hfs hdim g hr K := by
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
-  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
-  exact VectorBundleOrientation.exists_isThomClass (by simp) o K
-
-/-- **The negative normal bundle has a Thom class mod `2`**, with coefficients in every commutative
-ring `K` whose only unit is `1`, such as `ZMod 2`, with no orientation needed
-(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). -/
-theorem hasNegativeNormalThomClass_of_subsingleton_units (K : Type) [CommRing K]
-    [Subsingleton Kˣ] : h.HasNegativeNormalThomClass hn hfs hdim g hr K := by
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
-  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
-  exact (existsUnique_isThomClass_of_subsingleton_units K).exists
-
 /-- **The homology of the negative disc bundle of a Morse–Bott submanifold, from a Thom class.**
 Let `i` be a nondegenerate critical submanifold of a smooth function `f`, with Morse index `r` at
 every point, and let `g` be a smooth fibre metric on its normal bundle. Let `K` be a nontrivial
@@ -225,9 +155,9 @@ commutative ring such that the negative normal bundle `ν⁻` relative to `g`, a
 rank `r`, has a Thom class with coefficients in `K`. For `ε > 0`, the negative disc bundle `D_ε`
 relative to `g`, taken relative to its boundary `S_ε`, has `dim Hₙ(D_ε, S_ε; K) = b_{n - r}(S; K)`
 when `r ≤ n`, and `0` when `n < r`. -/
-theorem finrank_singularHomology_negativeDiscSpherePair_of_isThomClass {ε : ℝ} (hε : 0 < ε)
-    {K : Type} [CommRing K] [Nontrivial K] (hu : h.HasNegativeNormalThomClass hn hfs hdim g hr K)
-    (n : ℕ) :
+theorem finrank_singularHomology_negativeDiscSpherePair_of_hasNegativeNormalThomClass {ε : ℝ}
+    (hε : 0 < ε) {K : Type} [CommRing K] [Nontrivial K]
+    (hu : h.HasNegativeNormalThomClass hn hfs hdim g hr K) (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     finrank K ((h.negativeDiscSpherePair hn P g.toRiemannianMetric ε).singularHomology
@@ -270,8 +200,8 @@ theorem finrank_singularHomology_negativeDiscSpherePair {ε : ℝ} (hε : 0 < ε
     finrank K ((h.negativeDiscSpherePair hn P g.toRiemannianMetric ε).singularHomology
         (ModuleCat.of K K) n : ModuleCat K) =
       if r ≤ n then bettiNumber K S (n - r) else 0 :=
-  h.finrank_singularHomology_negativeDiscSpherePair_of_isThomClass hn hfs hdim g hr hε
-    (h.hasNegativeNormalThomClass_of_subsingleton_units hn hfs hdim g hr K) n
+  h.finrank_singularHomology_negativeDiscSpherePair_of_hasNegativeNormalThomClass hn hfs hdim g hr
+    hε (h.hasNegativeNormalThomClass_of_subsingleton_units hn hfs hdim g hr K) n
 
 end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
@@ -412,7 +342,7 @@ the pieces. Let `K` be a field such that the negative normal bundle of every pie
 `g j` has a Thom class with coefficients in `K`. Let `a < c < b` be such that `c` is the only
 critical value of `f` in `[a, b]`. Then `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ b_{n - r j}(S j; K)`,
 the sum running over the pieces on the level `f = c` of index at most `n`. -/
-theorem finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass
+theorem finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass
     (hu : ∀ j, (h.isNondegenerateCriticalSubmanifold j).HasNegativeNormalThomClass hn h.contMDiff
       (hdim j) (g j) (hr j) K)
     {a b c : ℝ} (hac : a < c) (hcb : c < b)
@@ -459,8 +389,8 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass
       (g j).toRiemannianMetric ε).singularHomology (ModuleCat.of K K) n)
   rw [e.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct]
   simp only [fun j : {j // ∀ s, f (i j s) = c} ↦ (h.isNondegenerateCriticalSubmanifold j
-    ).finrank_singularHomology_negativeDiscSpherePair_of_isThomClass hn h.contMDiff (hdim j) (g j)
-      (hr j) hε0 (hu j) n]
+    ).finrank_singularHomology_negativeDiscSpherePair_of_hasNegativeNormalThomClass hn h.contMDiff
+      (hdim j) (g j) (hr j) hε0 (hu j) n]
   rw [← Finset.filter_filter, Finset.sum_filter]
   exact (Finset.sum_subtype _ (fun j ↦ by simp)
     fun j ↦ if r j ≤ n then bettiNumber K (S j) (n - r j) else 0).symm
@@ -481,7 +411,7 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_of_orientation
     finrank K ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n :
         ModuleCat K) =
       ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n, bettiNumber K (S j) (n - r j) :=
-  h.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass hn hr K hdim g
+  h.finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass hn hr K hdim g
     (fun j ↦ (h.isNondegenerateCriticalSubmanifold j).hasNegativeNormalThomClass_of_orientation hn
       h.contMDiff (hdim j) (g j) (hr j) (o j) K) hac hcb hcrit n
 
@@ -520,8 +450,8 @@ theorem finrank_singularHomology_sublevelPair_eq_sum [Subsingleton Kˣ] {a b c :
         ModuleCat K) =
       ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n, bettiNumber K (S j) (n - r j) := by
   obtain ⟨hdim, g, hu⟩ := h.exists_hasNegativeNormalThomClass (by simp) hr K
-  exact h.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass (by simp) hr K hdim g hu hac
-    hcb hcrit n
+  exact h.finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass (by simp)
+    hr K hdim g hu hac hcb hcrit n
 
 /-! #### The inequalities -/
 
@@ -593,13 +523,14 @@ private theorem exists_cut_sum_finrank_sublevelPair
 field such that the negative normal bundle of every piece relative to `g j` has a Thom class with
 coefficients in `K`. Then `bₙ(M; K) ≤ ∑ b_{n - r j}(S j; K)`, the sum running over the pieces of
 index at most `n`. -/
-theorem bettiNumber_le_sum_of_isThomClass
+theorem bettiNumber_le_sum_of_hasNegativeNormalThomClass
     (hu : ∀ j, (h.isNondegenerateCriticalSubmanifold j).HasNegativeNormalThomClass hn h.contMDiff
       (hdim j) (g j) (hr j) K) (n : ℕ) :
     bettiNumber K M n ≤ ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) := by
   obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair K
     fun hac hcb hcrit ↦
-      h.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass hn hr K hdim g hu hac hcb hcrit
+      h.finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass hn hr K hdim
+        g hu hac hcb hcrit
   rw [bettiNumber_def, ← hsum]
   exact finrank_singularHomology_le_sum_sublevelPair_of_contMDiff (ModuleCat.of K K) h.contMDiff
     hs hs₀ hsN hreg n
@@ -611,7 +542,7 @@ field such that the negative normal bundle of every piece relative to `g j` has 
 coefficients in `K`. Write `bₖ = bₖ(M; K)` and `cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of
 index at most `k`, the coefficient of `tᵏ` in the Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j}(t)`.
 Then `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`. -/
-theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass
+theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_hasNegativeNormalThomClass
     (hu : ∀ j, (h.isNondegenerateCriticalSubmanifold j).HasNegativeNormalThomClass hn h.contMDiff
       (hdim j) (g j) (hr j) K) (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) * bettiNumber K M k ≤
@@ -619,15 +550,16 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) := by
   obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair K
     fun hac hcb hcrit ↦
-      h.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass hn hr K hdim g hu hac hcb hcrit
+      h.finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass hn hr K hdim
+        g hu hac hcb hcrit
   simpa only [← bettiNumber_def, hsum] using
     sum_range_neg_one_pow_mul_finrank_singularHomology_le_sum_sublevelPair_of_contMDiff
       (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg n
 
 /-- **Euler's equality for a Morse–Bott function, from Thom classes.** Under the hypotheses of
-`TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass`, for
-every `n` at least the dimension of `M`, `∑ₖ₌₀ⁿ (-1)ᵏ bₖ = ∑ₖ₌₀ⁿ (-1)ᵏ cₖ`. -/
-theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_isThomClass
+`IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_hasNegativeNormalThomClass`,
+for every `n` at least the dimension of `M`, `∑ₖ₌₀ⁿ (-1)ᵏ bₖ = ∑ₖ₌₀ⁿ (-1)ᵏ cₖ`. -/
+theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_hasNegativeNormalThomClass
     (hu : ∀ j, (h.isNondegenerateCriticalSubmanifold j).HasNegativeNormalThomClass hn h.contMDiff
       (hdim j) (g j) (hr j) K) {n : ℕ} (hdimn : finrank ℝ E ≤ n) :
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k * bettiNumber K M k =
@@ -635,17 +567,18 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_isThomClass
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) := by
   obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair K
     fun hac hcb hcrit ↦
-      h.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass hn hr K hdim g hu hac hcb hcrit
+      h.finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass hn hr K hdim
+        g hu hac hcb hcrit
   simpa only [← bettiNumber_def, hsum] using
     sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_of_contMDiff
       (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
 
 /-- **The Morse–Bott polynomial identity, from Thom classes.** Under the hypotheses of
-`TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass`, for
-every `n` at least the dimension of `M`, `∑ₖ₌₀ⁿ cₖ tᵏ = ∑ₖ₌₀ⁿ bₖ tᵏ + (1 + t) Q(t)` for a
+`IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_hasNegativeNormalThomClass`,
+for every `n` at least the dimension of `M`, `∑ₖ₌₀ⁿ cₖ tᵏ = ∑ₖ₌₀ⁿ bₖ tᵏ + (1 + t) Q(t)` for a
 polynomial `Q` with natural number coefficients: the Morse–Bott polynomial `∑ⱼ t^{r j} P_{S j}(t)`
 exceeds the Poincaré polynomial of `M` by `(1 + t) Q(t)`. -/
-theorem exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass
+theorem exists_sum_range_monomial_sum_eq_add_mul_of_hasNegativeNormalThomClass
     (hu : ∀ j, (h.isNondegenerateCriticalSubmanifold j).HasNegativeNormalThomClass hn h.contMDiff
       (hdim j) (g j) (hr j) K) {n : ℕ} (hdimn : finrank ℝ E ≤ n) :
     ∃ Q : ℕ[X], ∑ k ∈ Finset.range (n + 1),
@@ -653,7 +586,8 @@ theorem exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass
       ∑ k ∈ Finset.range (n + 1), monomial k (bettiNumber K M k) + (1 + Polynomial.X) * Q := by
   obtain ⟨s, hs, N, hs₀, hsN, hreg, hsum⟩ := h.exists_cut_sum_finrank_sublevelPair K
     fun hac hcb hcrit ↦
-      h.finrank_singularHomology_sublevelPair_eq_sum_of_isThomClass hn hr K hdim g hu hac hcb hcrit
+      h.finrank_singularHomology_sublevelPair_eq_sum_of_hasNegativeNormalThomClass hn hr K hdim
+        g hu hac hcb hcrit
   obtain ⟨Q, hQ, -⟩ := exists_sum_range_monomial_sum_sublevelPair_eq_add_mul_of_contMDiff
     (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
   simp only [← bettiNumber_def, hsum] at hQ
@@ -667,7 +601,7 @@ let `K` be a field whose only unit is `1`, such as `ZMod 2`. Then
 theorem bettiNumber_le_sum [Subsingleton Kˣ] (n : ℕ) :
     bettiNumber K M n ≤ ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) := by
   obtain ⟨hdim, g, hu⟩ := h.exists_hasNegativeNormalThomClass (by simp) hr K
-  exact h.bettiNumber_le_sum_of_isThomClass (by simp) hr K hdim g hu n
+  exact h.bettiNumber_le_sum_of_hasNegativeNormalThomClass (by simp) hr K hdim g hu n
 
 include hr in
 /-- **The strong Morse–Bott inequalities over `𝔽₂`.** Let the family `i j : S j → M` exhibit `f`
@@ -680,7 +614,8 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum [Subsingleton Kˣ] (n : ℕ
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) *
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) := by
   obtain ⟨hdim, g, hu⟩ := h.exists_hasNegativeNormalThomClass (by simp) hr K
-  exact h.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass (by simp) hr K hdim g hu n
+  exact h.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_hasNegativeNormalThomClass (by simp)
+    hr K hdim g hu n
 
 include hr in
 /-- **Euler's equality for a Morse–Bott function over `𝔽₂`.** Under the hypotheses of
@@ -692,8 +627,8 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum [Subsingleton Kˣ] {n : ℕ
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k *
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) := by
   obtain ⟨hdim, g, hu⟩ := h.exists_hasNegativeNormalThomClass (by simp) hr K
-  exact h.sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_isThomClass (by simp) hr K hdim g hu
-    hdimn
+  exact h.sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_hasNegativeNormalThomClass (by simp)
+    hr K hdim g hu hdimn
 
 include hr in
 /-- **The Morse–Bott polynomial identity over `𝔽₂`.** Under the hypotheses of
@@ -707,7 +642,8 @@ theorem exists_sum_range_monomial_sum_eq_add_mul [Subsingleton Kˣ] {n : ℕ}
         monomial k (∑ p with r p ≤ k, bettiNumber K (S p) (k - r p)) =
       ∑ k ∈ Finset.range (n + 1), monomial k (bettiNumber K M k) + (1 + Polynomial.X) * Q := by
   obtain ⟨hdim, g, hu⟩ := h.exists_hasNegativeNormalThomClass (by simp) hr K
-  exact h.exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass (by simp) hr K hdim g hu hdimn
+  exact h.exists_sum_range_monomial_sum_eq_add_mul_of_hasNegativeNormalThomClass (by simp)
+    hr K hdim g hu hdimn
 
 /-- **The weak Morse–Bott inequalities with oriented negative normal bundles.** Let the family
 `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece
@@ -719,8 +655,9 @@ theorem bettiNumber_le_sum_of_orientation
     (o : ∀ j, (h.isNondegenerateCriticalSubmanifold j).NegativeNormalBundleOrientation hn
       h.contMDiff (hdim j) (g j) (hr j)) (n : ℕ) :
     bettiNumber K M n ≤ ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) :=
-  h.bettiNumber_le_sum_of_isThomClass hn hr K hdim g (fun j ↦ (h.isNondegenerateCriticalSubmanifold
-    j).hasNegativeNormalThomClass_of_orientation hn h.contMDiff (hdim j) (g j) (hr j) (o j) K) n
+  h.bettiNumber_le_sum_of_hasNegativeNormalThomClass hn hr K hdim g
+    (fun j ↦ (h.isNondegenerateCriticalSubmanifold j).hasNegativeNormalThomClass_of_orientation hn
+      h.contMDiff (hdim j) (g j) (hr j) (o j) K) n
 
 /-- **The strong Morse–Bott inequalities with oriented negative normal bundles.** Let the family
 `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, the piece
@@ -735,7 +672,7 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_orientation
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) * bettiNumber K M k ≤
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) *
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) :=
-  h.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_isThomClass hn hr K hdim g
+  h.sum_range_neg_one_pow_mul_bettiNumber_le_sum_of_hasNegativeNormalThomClass hn hr K hdim g
     (fun j ↦ (h.isNondegenerateCriticalSubmanifold j).hasNegativeNormalThomClass_of_orientation hn
       h.contMDiff (hdim j) (g j) (hr j) (o j) K) n
 
@@ -749,7 +686,7 @@ theorem sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_orientation
     ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k * bettiNumber K M k =
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ k *
         ((∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) : ℕ) : ℤ) :=
-  h.sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_isThomClass hn hr K hdim g
+  h.sum_range_neg_one_pow_mul_bettiNumber_eq_sum_of_hasNegativeNormalThomClass hn hr K hdim g
     (fun j ↦ (h.isNondegenerateCriticalSubmanifold j).hasNegativeNormalThomClass_of_orientation hn
       h.contMDiff (hdim j) (g j) (hr j) (o j) K) hdimn
 
@@ -765,7 +702,7 @@ theorem exists_sum_range_monomial_sum_eq_add_mul_of_orientation
     ∃ Q : ℕ[X], ∑ k ∈ Finset.range (n + 1),
         monomial k (∑ p with r p ≤ k, bettiNumber K (S p) (k - r p)) =
       ∑ k ∈ Finset.range (n + 1), monomial k (bettiNumber K M k) + (1 + Polynomial.X) * Q :=
-  h.exists_sum_range_monomial_sum_eq_add_mul_of_isThomClass hn hr K hdim g
+  h.exists_sum_range_monomial_sum_eq_add_mul_of_hasNegativeNormalThomClass hn hr K hdim g
     (fun j ↦ (h.isNondegenerateCriticalSubmanifold j).hasNegativeNormalThomClass_of_orientation hn
       h.contMDiff (hdim j) (g j) (hr j) (o j) K) hdimn
 
