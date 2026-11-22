@@ -12,6 +12,7 @@ public import TauCeti.Data.Set.PowersetCard
 
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.FinCases
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Data.Finset.Sort
 import TauCeti.GroupTheory.Perm.Inversion
 import TauCeti.Order.Hom.Basic
@@ -80,13 +81,13 @@ noncomputable def ofLtPair : {p : I × I // p.1 < p.2} ≃ powersetCard I 2 :=
 
 /-- The inverse of `ofLtPair` reads the two coordinates of the increasing enumeration. -/
 @[simp]
-theorem ofLtPair_symm_apply (s : powersetCard I 2) :
+theorem val_ofLtPair_symm_apply (s : powersetCard I 2) :
     (ofLtPair.symm s).val = (ofFinEmbEquiv.symm s 0, ofFinEmbEquiv.symm s 1) := by
   simp [ofLtPair, OrderEmbedding.equivSubtypeStrictMono]
 
 /-- The increasing enumeration of `ofLtPair p` is `![p.val.1, p.val.2]`. -/
 @[simp]
-theorem ofFinEmbEquiv_symm_ofLtPair (p : {p : I × I // p.1 < p.2}) :
+theorem coe_ofFinEmbEquiv_symm_ofLtPair (p : {p : I × I // p.1 < p.2}) :
     ⇑(ofFinEmbEquiv.symm (ofLtPair p)) = ![p.val.1, p.val.2] := by
   simp [ofLtPair, OrderEmbedding.equivSubtypeStrictMono]
 
@@ -98,7 +99,19 @@ theorem val_ofLtPair (p : {p : I × I // p.1 < p.2}) :
   have h := (mem_range_ofFinEmbEquiv_symm_iff_mem (ofLtPair p) a).symm
   rw [← mem_coe_iff] at h
   rw [h]
-  simp [ofFinEmbEquiv_symm_ofLtPair, or_comm]
+  simp [coe_ofFinEmbEquiv_symm_ofLtPair, or_comm]
+
+/-- A symmetric double sum of a function vanishing on the diagonal is twice its sum over
+two-element subsets via their increasing enumerations. -/
+theorem sum_two_of_symm_of_diag_eq_zero {G : Type*} [Fintype I] [AddCommMonoid G]
+    (F : I → I → G) (hsymm : ∀ i j, F i j = F j i) (hdiag : ∀ i, F i i = 0) :
+    (∑ i, ∑ j, F i j) = 2 • ∑ s : powersetCard I 2,
+      F (ofFinEmbEquiv.symm s 0) (ofFinEmbEquiv.symm s 1) := by
+  rw [TauCeti.sum_symmetric_pairs F hsymm]
+  simp only [hdiag, Finset.sum_const_zero, zero_add]
+  congr 1
+  exact (Fintype.sum_equiv (ofLtPair (I := I)).symm _ _ fun s ↦ by
+    simp [val_ofLtPair_symm_apply]).symm
 
 /-- An increasing triple, as an order embedding of `Fin 3`. -/
 private def ltTripleEmb (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) : Fin 3 ↪o I :=

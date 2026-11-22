@@ -13,9 +13,12 @@ import Mathlib.Tactic.Ring
 # Metric properties of the symmetric exterior product on the exterior square
 
 On real inner product spaces, the inner product of `symmMap₂ f g (a ∧ b)` with `u ∧ w` is half
-the Kulkarni–Nomizu expression in the matrix coefficients of `f` and `g`. On finite-dimensional
-real inner product spaces, it follows that `(symmMap₂ f g)* = symmMap₂ f* g*`, so symmetric
-endomorphisms `f, g` have a symmetric exterior product `symmMap₂ f g`.
+the curvature four-tensor Kulkarni–Nomizu expression (`TauCeti.FourTensor.kulkarniNomizu`, i.e.
+`LinearMap.BilinForm.kulkarniNomizu` with the final two slots swapped:
+`(h ⊙ k)(a, b, u, w) = h(a, u) k(b, w) + h(b, w) k(a, u) - h(a, w) k(b, u) - h(b, u) k(a, w)`)
+in the matrix coefficients of `f` and `g`. On finite-dimensional real inner product spaces, it
+follows that `(symmMap₂ f g)* = symmMap₂ f* g*`, so symmetric endomorphisms `f, g` have a
+symmetric exterior product `symmMap₂ f g`.
 
 ## Main results
 
@@ -41,8 +44,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
 omit [FiniteDimensional ℝ E] in
-/-- The inner product of `symmMap₂ f g (a ∧ b)` with `u ∧ w` is half the Kulkarni–Nomizu
-combination of the inner products `⟪f ·, ·⟫` and `⟪g ·, ·⟫`. -/
+/-- The inner product of `symmMap₂ f g (a ∧ b)` with `u ∧ w` is half the curvature four-tensor
+Kulkarni–Nomizu combination (`LinearMap.BilinForm.kulkarniNomizu` with the final two slots swapped)
+of the bilinear forms `(x, y) ↦ ⟪f x, y⟫` and `(x, y) ↦ ⟪g x, y⟫`. -/
 theorem inner_symmMap₂_ιMulti_two (f g : E →ₗ[ℝ] F) (a b : E) (u w : F) :
     ⟪symmMap₂ f g (ιMulti ℝ 2 ![a, b]), ιMulti ℝ 2 ![u, w]⟫ =
       (⟪f a, u⟫ * ⟪g b, w⟫ + ⟪g a, u⟫ * ⟪f b, w⟫ -

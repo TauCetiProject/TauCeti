@@ -47,6 +47,10 @@ four-tensor equals `(Scal / 2) • constantCurvature V` and satisfies `Ric = (Sc
   `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent`,
   `TauCeti.FourTensor.eq_zero_of_finrank_le_one_of_antisymm_first`,
   `TauCeti.FourTensor.kulkarniNomizu_eq_zero_of_finrank_le_one`,
+  `TauCeti.FourTensor.ofExteriorSquareBilin_antisymm_first`,
+  `TauCeti.FourTensor.ofExteriorSquareBilin_antisymm_last`,
+  `TauCeti.FourTensor.ofExteriorSquareBilin_injective`,
+  `TauCeti.FourTensor.mem_range_ofExteriorSquareBilin_iff`,
   `TauCeti.FourTensor.isBivectorSymmetric_ofExteriorSquareBilin_iff`,
   `TauCeti.FourTensor.finrank_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm`.
@@ -259,10 +263,44 @@ def ofExteriorSquareBilin : BilinForm ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor 
       B (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) := by
   simp [ofExteriorSquareBilin]
 
+/-- Every four-tensor pulled back from `⋀[ℝ]^2 V` is antisymmetric in its first pair. -/
+theorem ofExteriorSquareBilin_antisymm_first (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
+    ofExteriorSquareBilin B ![u, v, z, w] = -ofExteriorSquareBilin B ![v, u, z, w] := by
+  simp only [ofExteriorSquareBilin_apply, exteriorPower.ιMulti_two_swap v u, map_neg,
+    LinearMap.neg_apply]
+
+/-- Every four-tensor pulled back from `⋀[ℝ]^2 V` is antisymmetric in its last pair. -/
+theorem ofExteriorSquareBilin_antisymm_last (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
+    ofExteriorSquareBilin B ![u, v, z, w] = -ofExteriorSquareBilin B ![u, v, w, z] := by
+  simp only [ofExteriorSquareBilin_apply, exteriorPower.ιMulti_two_swap w z, map_neg]
+
+/-- `ofExteriorSquareBilin` is injective. -/
+theorem ofExteriorSquareBilin_injective : Function.Injective (ofExteriorSquareBilin (V := V)) :=
+  fun _ _ h ↦ exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
+    exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
+      rw [← ofExteriorSquareBilin_apply, ← ofExteriorSquareBilin_apply, h]
+
+/-- The range of `ofExteriorSquareBilin` consists of the pair-antisymmetric four-tensors. -/
+theorem mem_range_ofExteriorSquareBilin_iff {r : FourTensor V} :
+    r ∈ LinearMap.range (ofExteriorSquareBilin (V := V)) ↔
+      (∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) ∧
+        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) := by
+  refine ⟨?_, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  · rintro ⟨B, rfl⟩
+    exact ⟨ofExteriorSquareBilin_antisymm_first B, ofExteriorSquareBilin_antisymm_last B⟩
+  · refine ⟨(toLinearMap₄ r).exteriorSquareBilinear
+      (fun x z w ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ x x z w))
+      (fun u v z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₂ u v z z)),
+      ext_vec fun u v z w ↦ ?_⟩
+    rw [ofExteriorSquareBilin_apply]
+    exact (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti
+      (toLinearMap₄ r) _ _ ![u, v] ![z, w]).trans (toLinearMap₄_apply r u v z w)
+
 /-- `ofExteriorSquareBilin B` is bivector-symmetric if and only if `B` is symmetric. -/
 @[simp] theorem isBivectorSymmetric_ofExteriorSquareBilin_iff {B : BilinForm ℝ (⋀[ℝ]^2 V)} :
     IsBivectorSymmetric (ofExteriorSquareBilin B) ↔ B.IsSymm := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨ofExteriorSquareBilin_antisymm_first B,
+    ofExteriorSquareBilin_antisymm_last B, fun u v z w ↦ ?_⟩⟩
   · have hflip : B.flip = B :=
       exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
         exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
@@ -270,10 +308,6 @@ def ofExteriorSquareBilin : BilinForm ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor 
             ← ofExteriorSquareBilin_apply]
           exact h.swap_pairs z w u v
     exact ⟨fun x y ↦ LinearMap.congr_fun₂ hflip y x⟩
-  · simp only [ofExteriorSquareBilin_apply]
-    rw [exteriorPower.ιMulti_two_swap v u, map_neg, LinearMap.neg_apply]
-  · simp only [ofExteriorSquareBilin_apply]
-    rw [exteriorPower.ιMulti_two_swap w z, map_neg]
   · simp only [ofExteriorSquareBilin_apply]
     exact h.eq _ _
 

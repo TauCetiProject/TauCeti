@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Dimension
 public import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 public import TauCeti.LinearAlgebra.ExteriorPower.SymmetricProduct
 import Mathlib.Tactic.Ring
+import TauCeti.Analysis.InnerProductSpace.ExteriorPower.SymmetricProduct
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 import TauCeti.LinearAlgebra.ExteriorPower.Square
@@ -169,13 +170,13 @@ theorem ofBivectorEnd_apply (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
 
 /-- Every four-tensor in the image of `ofBivectorEnd` is antisymmetric in its first pair. -/
 theorem ofBivectorEnd_antisymm_first (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    ofBivectorEnd T ![u, v, z, w] = -ofBivectorEnd T ![v, u, z, w] := by
-  simp only [ofBivectorEnd_apply, exteriorPower.ιMulti_two_swap v u, map_neg, inner_neg_left]
+    ofBivectorEnd T ![u, v, z, w] = -ofBivectorEnd T ![v, u, z, w] :=
+  ofExteriorSquareBilin_antisymm_first _ u v z w
 
 /-- Every four-tensor in the image of `ofBivectorEnd` is antisymmetric in its last pair. -/
 theorem ofBivectorEnd_antisymm_last (T : Module.End ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
-    ofBivectorEnd T ![u, v, z, w] = -ofBivectorEnd T ![u, v, w, z] := by
-  simp only [ofBivectorEnd_apply, exteriorPower.ιMulti_two_swap w z, inner_neg_right]
+    ofBivectorEnd T ![u, v, z, w] = -ofBivectorEnd T ![u, v, w, z] :=
+  ofExteriorSquareBilin_antisymm_last _ u v z w
 
 /-- `ofBivectorEnd T` is bivector-symmetric if and only if `T` is symmetric. -/
 @[simp]
@@ -264,9 +265,12 @@ def bivectorSymmetricEquivSelfAdjoint :
 /-- Evaluation of `bivectorSymmetricEquivSelfAdjoint.symm` is `ofBivectorEnd`. -/
 @[simp] theorem coe_bivectorSymmetricEquivSelfAdjoint_symm
     (L : selfAdjoint.submodule ℝ (Module.End ℝ (⋀[ℝ]^2 V))) :
-    (bivectorSymmetricEquivSelfAdjoint.symm L : FourTensor V) = ofBivectorEnd L.val :=
-  ext_vec fun u v z w ↦ by
-    simp [bivectorSymmetricEquivSelfAdjoint, LinearEquiv.ofSubmodules_symm_apply]
+    (bivectorSymmetricEquivSelfAdjoint.symm L : FourTensor V) = ofBivectorEnd L.val := by
+  have h : curvatureEndomorphism (bivectorSymmetricEquivSelfAdjoint.symm L : FourTensor V) =
+      L.val := by
+    rw [← coe_bivectorSymmetricEquivSelfAdjoint, LinearEquiv.apply_symm_apply]
+  have hr := mem_bivectorSymmetricSubmodule.mp (bivectorSymmetricEquivSelfAdjoint.symm L).property
+  rw [← ofBivectorEnd_curvatureEndomorphism_of_antisymm hr.antisymm_first hr.antisymm_last, h]
 
 /-- Predicate characterizing bivector operators `L ∈ Sym²_B(⋀²V)`: symmetric and Bianchi. -/
 structure IsAlgebraicCurvatureEndomorphism (L : Module.End ℝ (⋀[ℝ]^2 V)) : Prop where
@@ -326,7 +330,9 @@ theorem bianchiEndAlternatingMap_surjective :
     Function.Surjective (bianchiEndAlternatingMap (V := V)) :=
   bianchiAlternatingMap_surjective.comp bivectorSymmetricEquivSelfAdjoint.symm.surjective
 
-/-- The kernel of `bianchiEndAlternatingMap` is `algebraicCurvatureEndomorphismSubmodule V`. -/
+/-- The kernel of `bianchiEndAlternatingMap` is the comap of
+`algebraicCurvatureEndomorphismSubmodule V` along the inclusion of
+`selfAdjoint.submodule ℝ (Module.End ℝ (⋀[ℝ]^2 V))`. -/
 theorem ker_bianchiEndAlternatingMap :
     LinearMap.ker (bianchiEndAlternatingMap (V := V)) =
       (algebraicCurvatureEndomorphismSubmodule V).comap
@@ -371,8 +377,12 @@ theorem curvatureEndomorphism_kulkarniNomizu (h k : BilinForm ℝ V) :
     curvatureEndomorphism (kulkarniNomizu h k) =
       (2 : ℝ) • exteriorPower.symmMap₂ (bilinFormToEnd h) (bilinFormToEnd k) :=
   exteriorPower.linearMap_ext_inner_ιMulti_two fun u v z w ↦ by
-    simp [inner_curvatureEndomorphism_ιMulti, kulkarniNomizu_apply, inner_add_left,
-      exteriorPower.inner_ιMulti_two]; ring
+    rw [inner_curvatureEndomorphism_ιMulti_of_antisymm (kulkarniNomizu_antisymm_first h k)
+        (kulkarniNomizu_antisymm_last h k),
+      kulkarniNomizu_apply, LinearMap.smul_apply, real_inner_smul_left,
+      exteriorPower.inner_symmMap₂_ιMulti_two]
+    simp only [LinearMap.BilinForm.inner_bilinFormToEnd_left]
+    ring
 
 /-- Lowering endomorphisms `A, B` and taking `kulkarniNomizu` gives `2 • symmMap₂ A B`. -/
 theorem curvatureEndomorphism_kulkarniNomizu_innerₗ_comp (A B : Module.End ℝ V) :

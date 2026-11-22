@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
+import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Decomposition
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor
 
 /-!
 # The Schouten tensor of a smooth connection
@@ -67,9 +69,7 @@ local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
 /-- The Schouten tensor `P = (Ric - Scal g / (2 (n - 1))) / (n - 2)` of a smooth connection on
 a Riemannian tangent bundle of real dimension `n`. -/
 def schoutenTensor (x : M) : TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] ℝ :=
-  ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 2)⁻¹ •
-    (cov.ricciTensor x - (cov.scalarCurvature x /
-      (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1))) • innerₗ (TangentSpace I x))
+  TauCeti.FourTensor.schouten (cov.curvatureFourTensor x)
 
 /-- Evaluation of the Schouten tensor. -/
 @[simp]
@@ -77,21 +77,22 @@ theorem schoutenTensor_apply (x : M) (u v : TangentSpace I x) :
     cov.schoutenTensor x u v =
       ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 2)⁻¹ *
         (cov.ricciTensor x u v - cov.scalarCurvature x /
-          (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) * inner ℝ u v) :=
-  (rfl)
+          (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) * inner ℝ u v) := by
+  rw [schoutenTensor, TauCeti.FourTensor.schouten_apply_apply,
+    cov.ricci_curvatureFourTensor, cov.scalar_curvatureFourTensor]
 
 /-- The metric trace of the Schouten tensor is `Scal / (2 (n - 1))`, away from dimension `2`. -/
 theorem bilinFormTrace_schoutenTensor (x : M)
     (hn : Module.finrank ℝ (TangentSpace I x) ≠ 2) :
     TauCeti.bilinFormTrace (cov.schoutenTensor x) =
       cov.scalarCurvature x / (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) := by
-  -- `map_sub` is applied as a term: the subtraction in `schoutenTensor` uses the model-space
-  -- instances of `TangentSpace I x`, which `rw` does not match against those of the metric.
-  have hsub := map_sub TauCeti.bilinFormTrace (cov.ricciTensor x)
-    ((cov.scalarCurvature x / (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1))) •
-      innerₗ (TangentSpace I x))
-  rw [map_smul, TauCeti.bilinFormTrace_inner, smul_eq_mul, ← scalarCurvature_apply] at hsub
-  rw [schoutenTensor, map_smul, hsub, smul_eq_mul]
+  -- `map_sub` is applied as a term so Lean unifies the subtraction instances on `TangentSpace I x`.
+  have hsub := map_sub TauCeti.bilinFormTrace (TauCeti.FourTensor.ricci (cov.curvatureFourTensor x))
+    ((TauCeti.FourTensor.scalar (cov.curvatureFourTensor x) /
+      (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1))) • innerₗ (TangentSpace I x))
+  rw [schoutenTensor, TauCeti.FourTensor.schouten_apply, map_smul, hsub, map_smul,
+    TauCeti.bilinFormTrace_inner, cov.ricci_curvatureFourTensor, cov.scalar_curvatureFourTensor,
+    ← scalarCurvature_apply, smul_eq_mul, smul_eq_mul]
   have hn2 : (Module.finrank ℝ (TangentSpace I x) : ℝ) - 2 ≠ 0 :=
     sub_ne_zero.mpr (by exact_mod_cast hn)
   by_cases hn1 : Module.finrank ℝ (TangentSpace I x) = 1
