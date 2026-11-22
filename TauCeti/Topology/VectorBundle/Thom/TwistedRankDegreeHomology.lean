@@ -12,9 +12,9 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Equivalence
-import TauCeti.AlgebraicTopology.Singular.MayerVietoris.FiniteUnion
 import TauCeti.Topology.Connected.PathConnected
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
+import TauCeti.Topology.Category.TopCat.Limits.Basic
 
 /-!
 # The Thom pair in the rank degree with coefficients in the orientation local system
@@ -129,9 +129,8 @@ variable (F E K) in
 /-- The restriction `Hₙ(E|_W, E₀|_W; o(E)) ⟶ Hₙ(E|_{W'}, E₀|_{W'}; o(E))` induced by `W ⊆ W'`. -/
 noncomputable abbrev thomPairOverSignHomologyMap {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
     thomPairOverSignHomology F E hι K W n ⟶ thomPairOverSignHomology F E hι K W' n :=
-  HomologicalComplex.homologyMap (subsetPairTwistedChainComplexMap (thomPairSignSystem F E hι K)
-    inter_subset_left inter_subset_left (preimage_mono h)
-    (inter_subset_inter_left _ (preimage_mono h))) n
+  subsetPairTwistedHomologyMap (thomPairSignSystem F E hι K) inter_subset_left inter_subset_left
+    (preimage_mono h) (inter_subset_inter_left _ (preimage_mono h)) n
 
 variable (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (ω : Orientation ℝ F ι)
 
@@ -232,7 +231,8 @@ theorem thomPairOverSignHomologyMap_eq {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
               (inter_subset_inter_left (zeroSectionCompl F E) (preimage_mono (f := π F E) h))))
             rfl)
           (thomPairOverSignSystem F E hι K W') n := by
-  rw [thomPairOverSignHomologyMap, subsetPairTwistedChainComplexMap_def]
+  rw [thomPairOverSignHomologyMap, subsetPairTwistedHomologyMap,
+    subsetPairTwistedChainComplexMap_def]
   exact HomologicalComplex.homologyMap_comp _ _ n
 
 /-- The trivializations of the orientation local system over `W ⊆ W'` commute with the
@@ -693,10 +693,13 @@ theorem isIso_thomPairOverSignHomologyFinrankInv_biUnion {κ : Type*} (s : Finse
     {W : κ → Set B} (hWo : ∀ i ∈ s, IsOpen (W i))
     (hWe : ∀ i ∈ s, ∃ e ∈ trivializationAtlas F E, W i ⊆ e.baseSet) :
     IsIso (thomPairOverSignHomologyFinrankInv F E hι K ω (⋃ i ∈ s, W i)) :=
-  isIso_biUnion_of_mayerVietoris (ModuleCat.of K K)
+  isIso_biUnion_of_mayerVietoris
+    (A := TopCat.subspaceDiagram (A := (id : Set B → Set B)) monotone_id ⋙
+      (singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K))
     (fun _ _ h ↦ thomPairOverSignHomologyMap F E hι K h (finrank ℝ F))
     (thomPairOverSignHomologyFinrankInv F E hι K ω)
     (fun _ _ h ↦ thomPairOverSignHomologyFinrankInv_naturality hι ω h)
+    (fun U V _ _ ↦ epi_biprod_desc_singularHomologyMap_inclusion _ U V)
     (fun W ↦ ∃ e ∈ trivializationAtlas F E, W ⊆ e.baseSet)
     (fun _ _ h ⟨e, he, hW⟩ ↦ ⟨e, he, h.trans hW⟩)
     (fun _ ⟨e, he, hW⟩ ↦ have : MemTrivializationAtlas e := ⟨he⟩
