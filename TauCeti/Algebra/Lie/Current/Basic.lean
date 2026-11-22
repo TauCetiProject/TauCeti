@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
 public import TauCeti.RingTheory.HahnSeries.TensorProduct
 -- Non-public: used only inside proofs.
 import TauCeti.Algebra.Lie.BaseChange.Perfect
+import TauCeti.RingTheory.HahnSeries.Addition
 
 /-!
 # Formal currents and their order filtration
@@ -295,8 +296,7 @@ theorem truncSubmodule_def (N : ℤ) : truncSubmodule R L N =
 theorem single_tmul_mem_truncSubmodule {m N : ℤ} (h : m < N) (r : R) (x : L) :
     HahnSeries.single m r ⊗ₜ[R] x ∈ truncSubmodule R L N := by
   have hr : HahnSeries.single m r = r • HahnSeries.single m (1 : R) := by
-    ext n
-    by_cases hn : n = m <;> simp [hn]
+    simpa only [smul_eq_mul, mul_one] using TauCeti.hahnSeries_single_smul m r (1 : R)
   rw [hr, TensorProduct.smul_tmul]
   exact Submodule.subset_span ⟨m, h, r • x, rfl⟩
 
