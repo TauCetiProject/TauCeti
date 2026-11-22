@@ -45,7 +45,9 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.IntertwiningMap.stabilizer_apply_of_injective`
 * `Representation.Equiv.stabilizer_apply`
 * `Subrepresentation.stabilizer_toRepresentation`
-* `Representation.mem_invariants_comp_subtype_iff`
+* `Representation.mem_invariants_comp_subtype_iff`,
+  `Representation.antitone_invariants_comp_subtype`, `Representation.map_invariants_comp_subtype`:
+  invariants of subgroups, their monotonicity, and their transport under conjugation.
 * `Representation.stabilizer_ofMulAction_single`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
   `Representation.range_orbitMap`
@@ -112,6 +114,30 @@ its stabilizer. -/
 theorem mem_invariants_comp_subtype_iff {H : Subgroup G} {v : V} :
     v ∈ invariants (ρ.comp H.subtype) ↔ H ≤ ρ.stabilizer v := by
   simp [mem_invariants, IsConcreteLE.le_iff]
+
+/-- The invariants of the restriction to a subgroup shrink as the subgroup grows. -/
+theorem antitone_invariants_comp_subtype :
+    Antitone fun H : Subgroup G ↦ invariants (ρ.comp H.subtype) := fun _ _ hHK _ hv ↦
+  mem_invariants_comp_subtype_iff.2 (hHK.trans (mem_invariants_comp_subtype_iff.1 hv))
+
+/-- `ρ g` maps the invariants of a subgroup `H` onto the invariants of its conjugate `g H g⁻¹`. -/
+theorem map_invariants_comp_subtype (g : G) (H : Subgroup G) :
+    (invariants (ρ.comp H.subtype)).map (ρ g) =
+      invariants (ρ.comp (H.map (MulAut.conj g)).subtype) := by
+  ext w
+  constructor
+  · rintro ⟨v, hv, rfl⟩
+    rw [SetLike.mem_coe, mem_invariants_comp_subtype_iff] at hv
+    rw [mem_invariants_comp_subtype_iff, stabilizer_conj]
+    exact Subgroup.map_mono hv
+  · intro hw
+    refine ⟨ρ g⁻¹ w, ?_, by rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
+      one_apply_eq_self]⟩
+    rw [mem_invariants_comp_subtype_iff] at hw
+    rw [SetLike.mem_coe, mem_invariants_comp_subtype_iff, stabilizer_conj]
+    intro h hh
+    exact Subgroup.mem_map.2 ⟨g * h * g⁻¹, hw (Subgroup.mem_map.2 ⟨h, hh, rfl⟩), by
+      simp [mul_assoc]⟩
 
 end CommRing
 

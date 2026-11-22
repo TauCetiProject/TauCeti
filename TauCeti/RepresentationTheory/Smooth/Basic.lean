@@ -35,6 +35,9 @@ open subgroups `U` of `G`.
   representation is smooth when every vector is fixed by a compact open subgroup.
 * `Representation.coe_smoothVectors_eq_iUnion`: for a locally profinite group, `V^∞` is the
   union of the invariants of the compact open subgroups.
+* `Representation.iSup_invariants_eq_smoothVectors`,
+  `Representation.isSmooth_iff_iSup_invariants_eq_top`: for any basis of neighbourhoods of `1`
+  made of subgroups, `V^∞` is the supremum of their invariants.
 * `Representation.le_smoothVectors_iff`: `V^∞` is the largest smooth subrepresentation.
 * `Representation.smoothVectors_eq_top_iff`: `V^∞ = V` exactly when the representation is smooth.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
@@ -60,7 +63,7 @@ open subgroups `U` of `G`.
 
 public section
 
-open Set
+open Set Topology
 open scoped MonoidAlgebra
 
 namespace Representation
@@ -240,6 +243,38 @@ theorem smoothVectors_eq_top [IsSmooth ρ] : ρ.smoothVectors = ⊤ :=
   smoothVectors_eq_top_iff.2 inferInstance
 
 end SmoothVectors
+
+/-! ### Invariants of a basis of open subgroups -/
+
+section Basis
+
+variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
+  {ρ : Representation A G V} [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- For any family of subgroups forming a basis of neighbourhoods of `1`, the smooth vectors are
+the supremum of the invariants of the members of the family. -/
+theorem iSup_invariants_eq_smoothVectors {ι : Type*} {p : ι → Prop} {U : ι → Subgroup G}
+    (hU : (𝓝 (1 : G)).HasBasis p fun i ↦ (U i : Set G)) :
+    ⨆ (i) (_ : p i), invariants (ρ.comp (U i).subtype) = ρ.smoothVectors.toSubmodule := by
+  refine le_antisymm (iSup₂_le fun i hi v hv ↦ ?_) fun v hv ↦ ?_
+  · have hUi : IsOpen (U i : Set G) := (U i).isOpen_of_mem_nhds (hU.mem_of_mem hi)
+    exact (mem_smoothVectors_iff_exists_openSubgroup (ρ := ρ)).2
+      ⟨⟨U i, hUi⟩, mem_invariants_comp_subtype_iff.1 hv⟩
+  · obtain ⟨i, hi, hsub⟩ := hU.mem_iff.1
+      ((mem_smoothVectors_iff (ρ := ρ)).1 hv |>.mem_nhds (ρ.stabilizer v).one_mem)
+    exact Submodule.mem_iSup_of_mem i <| Submodule.mem_iSup_of_mem hi <|
+      mem_invariants_comp_subtype_iff.2 hsub
+
+/-- For any family of subgroups forming a basis of neighbourhoods of `1`, a representation is
+smooth exactly when the invariants of the members of the family span `V`. -/
+theorem isSmooth_iff_iSup_invariants_eq_top {ι : Type*} {p : ι → Prop} {U : ι → Subgroup G}
+    (hU : (𝓝 (1 : G)).HasBasis p fun i ↦ (U i : Set G)) :
+    IsSmooth ρ ↔ ⨆ (i) (_ : p i), invariants (ρ.comp (U i).subtype) = ⊤ := by
+  rw [iSup_invariants_eq_smoothVectors hU, isSmooth_iff_forall_mem_smoothVectors,
+    Submodule.eq_top_iff']
+  rfl
+
+end Basis
 
 /-! ### Invariants of compact open subgroups -/
 
