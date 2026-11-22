@@ -247,51 +247,32 @@ private theorem triv_one_triv_zero_symm {b : ComplexProjectiveSpace (n + 1)}
 /-- The diagonal automorphism `v ↦ a * v` of `Fin m → ℂ`, for coefficients `a` with no zero. -/
 private def diagEquiv {m : ℕ} (a : Fin m → ℂ) (ha : ∀ j, a j ≠ 0) :
     (Fin m → ℂ) ≃L[ℂ] (Fin m → ℂ) :=
-  (LinearMap.toContinuousLinearMap
-      (Matrix.toLin' (Matrix.diagonal a))).toContinuousLinearEquivOfDetNeZero
-    (by simpa [LinearMap.det_toLin', Matrix.det_diagonal] using
-      Finset.prod_ne_zero_iff.2 fun j _ ↦ ha j)
+  ContinuousLinearEquiv.piCongrRight fun j ↦
+    ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 (a j) (ha j))
 
 private theorem diagEquiv_apply {m : ℕ} (a : Fin m → ℂ) (ha : ∀ j, a j ≠ 0) (v : Fin m → ℂ) :
     diagEquiv a ha v = a * v := by
   ext j
-  simp [diagEquiv, Matrix.mulVec_diagonal]
+  simp [diagEquiv, mul_comm]
 
 private theorem det_diagEquiv {m : ℕ} (a : Fin m → ℂ) (ha : ∀ j, a j ≠ 0) :
     LinearMap.det ((diagEquiv a ha).toLinearEquiv : (Fin m → ℂ) →ₗ[ℂ] (Fin m → ℂ)) =
       ∏ j, a j := by
   have h : ((diagEquiv a ha).toLinearEquiv : (Fin m → ℂ) →ₗ[ℂ] (Fin m → ℂ)) =
       Matrix.toLin' (Matrix.diagonal a) :=
-    LinearMap.ext fun v ↦ by simp [diagEquiv]
+    LinearMap.ext fun v ↦ by
+      ext j
+      simp [diagEquiv, Matrix.mulVec_diagonal, mul_comm]
   rw [h, LinearMap.det_toLin', Matrix.det_diagonal]
 
-/-- The scale `s = (1 - r²)^(-1/2)` of the standard sphere at a point of the square of sup
-radius `r`. -/
-private def lineScale (y : Fin 2 → I) : ℝ :=
-  (√(1 - cubeRadius y ^ 2))⁻¹
-
-private theorem one_sub_cubeRadius_sq_pos {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
-    0 < 1 - cubeRadius y ^ 2 := by
-  have h := (cubeRadius_le_one y).lt_of_ne (mt (cubeRadius_eq_one_iff y).1 hy)
-  nlinarith [cubeRadius_nonneg y]
-
-private theorem lineScale_ne_zero {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
-    (lineScale y : ℂ) ≠ 0 :=
-  Complex.ofReal_ne_zero.2 (inv_ne_zero (Real.sqrt_ne_zero'.2 (one_sub_cubeRadius_sq_pos hy)))
-
-private theorem continuousAt_lineScale {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
-    ContinuousAt lineScale y :=
-  ((continuous_const.sub (continuous_cubeRadius.pow 2)).sqrt.continuousAt).inv₀
-    (Real.sqrt_ne_zero'.2 (one_sub_cubeRadius_sq_pos hy))
-
-private theorem lineSquare_apply_of_notMem' {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
+private theorem lineSquare_eq_sphereScale {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
     lineSquare n y =
-      affineParam 0 (Pi.single 0 ((lineScale y : ℂ) * (2 * squareCenterOffset y))) := by
-  rw [lineSquare_apply_of_notMem hy, lineScale, Complex.ofReal_inv, inv_mul_eq_div]
+      affineParam 0 (Pi.single 0 ((sphereScale y : ℂ) * (2 * squareCenterOffset y))) := by
+  rw [lineSquare_apply, riemannSphereSquare_eq_sphereScale hy, coordinateLine_coe]
 
 /-- The coefficients `(s², s, …, s)` of the frame in the chart `X₀ ≠ 0`. -/
 private def innerCoeff (y : Fin 2 → I) : Fin (n + 1) → ℂ :=
-  Fin.cons ((lineScale y : ℂ) ^ 2) fun _ ↦ (lineScale y : ℂ)
+  Fin.cons ((sphereScale y : ℂ) ^ 2) fun _ ↦ (sphereScale y : ℂ)
 
 /-- The coefficients `(-(2 c)⁻², (2 c)⁻¹, …, (2 c)⁻¹)` of the frame in the chart `X₁ ≠ 0`. -/
 private def outerCoeff (y : Fin 2 → I) : Fin (n + 1) → ℂ :=
@@ -299,7 +280,7 @@ private def outerCoeff (y : Fin 2 → I) : Fin (n + 1) → ℂ :=
 
 private theorem innerCoeff_ne_zero {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2))
     (j : Fin (n + 1)) : innerCoeff y j ≠ 0 := by
-  induction j using Fin.cases <;> simp [innerCoeff, lineScale_ne_zero hy]
+  induction j using Fin.cases <;> simp [innerCoeff, sphereScale_ne_zero hy]
 
 private theorem outerCoeff_ne_zero {y : Fin 2 → I} (hy : squareCenterOffset y ≠ 0)
     (j : Fin (n + 1)) : outerCoeff y j ≠ 0 := by
@@ -314,9 +295,10 @@ private theorem lineSquare_mem_affineOpen_one {y : Fin 2 → I} (hy : squareCent
     lineSquare n y ∈ affineOpen 1 := by
   by_cases hb : y ∈ Cube.boundary (Fin 2)
   · rw [lineSquare_apply_of_mem hb, affineParam_zero_mem_affineOpen_iff]
-  · rw [lineSquare_apply_of_notMem' hb]
+  · rw [lineSquare_eq_sphereScale hb]
     exact affineParam_zero_single_mem_affineOpen_one
-      (mul_ne_zero (lineScale_ne_zero hb) (mul_ne_zero two_ne_zero hy))
+      (mul_ne_zero (Complex.ofReal_ne_zero.2 (sphereScale_ne_zero hb))
+        (mul_ne_zero two_ne_zero hy))
 
 open Classical in
 /-- The frame `diag(s², s, …, s)` of the tangent bundle along the line, in the chart `X₀ ≠ 0` on
@@ -351,9 +333,9 @@ private theorem triv_one_frame {y : Fin 2 → I} (hc : squareCenterOffset y ≠ 
   · -- At `z = 2 c s`, `diag(-z⁻², z⁻¹, …) diag(s², s, …) = diag(-(2 c)⁻², (2 c)⁻¹, …)`.
     have h₀ : lineSquare n y ∈ (triv n 0).baseSet :=
       (mem_triv_baseSet_iff _ _).2 (lineSquare_mem_affineOpen_zero hy)
-    have hs := lineScale_ne_zero hy
+    have hs := Complex.ofReal_ne_zero.2 (sphereScale_ne_zero hy)
     simp only [frame, hy, dite_false, ContinuousLinearEquiv.trans_apply]
-    rw [triv_one_triv_zero_symm h₀ h, lineSquare_apply_of_notMem' hy,
+    rw [triv_one_triv_zero_symm h₀ h, lineSquare_eq_sphereScale hy,
       tangentCoordChange_affineParam_zero_single (mul_ne_zero hs (mul_ne_zero two_ne_zero hc)),
       diagEquiv_apply]
     ext j
@@ -400,9 +382,9 @@ private theorem continuous_frame :
         (lineSquare n q.1, innerCoeff q.1 * q.2)) q₀ := by
       refine hproj.prodMk (ContinuousAt.mul ?_ continuousAt_snd)
       have hs : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦
-          (lineScale q.1 : ℂ)) q₀ :=
+          (sphereScale q.1 : ℂ)) q₀ :=
         Complex.continuous_ofReal.continuousAt.comp
-          ((continuousAt_lineScale hb).comp continuous_fst.continuousAt)
+          ((continuousAt_sphereScale hb).comp continuous_fst.continuousAt)
       exact (hs.pow 2).finCons (continuousAt_pi.2 fun _ ↦ hs)
     refine hcont.congr (hev.mono fun q hq ↦ ?_)
     have h0 := (mem_triv_baseSet_iff _ _).2 (lineSquare_mem_affineOpen_zero (n := n) hq)
@@ -428,18 +410,23 @@ private theorem clutchingFunction_frame {y : Fin 2 → I} (hy : y ∈ Cube.bound
     rw [Fin.prod_univ_succ]
     simp only [outerCoeff, Fin.cons_zero, Fin.cons_succ, Finset.prod_const, Finset.card_univ,
       Fintype.card_fin]
-    rw [inv_pow, neg_mul, ← mul_inv, ← pow_add, add_comm 2 n]
-  have hn : ((‖squareCenterOffset y‖ : ℝ) : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 hc
+    -- Treat `2 c` as an atom, so that `ring` does not split off the numeral `2⁻¹`.
+    generalize 2 * squareCenterOffset y = w
+    ring
+  -- Its normalization `-(2 c)^(-(n + 2)) / |2 c|^(-(n + 2))` is the inverse of `-ω^(n + 2)`.
+  have hphase : (-((2 * squareCenterOffset y) ^ (n + 2))⁻¹ /
+      (((2 * ‖squareCenterOffset y‖) ^ (n + 2))⁻¹ : ℝ))⁻¹ =
+        -(squareCenterOffset y / (‖squareCenterOffset y‖ : ℂ)) ^ (n + 2) := by
+    have hn : ((‖squareCenterOffset y‖ : ℝ) : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 hc
+    push_cast
+    simp only [mul_pow, div_pow]
+    field_simp
   rw [clutchingFunction_of_mem hb, heq]
   refine Circle.ext ?_
   rw [Circle.coe_inv, ContinuousLinearEquiv.coe_normalizedDet, det_diagEquiv, hdet,
     Circle.coe_neg, Circle.coe_pow, coe_squareCenterDirection hc]
   simp only [norm_neg, norm_inv, norm_pow, norm_mul, Complex.norm_ofNat]
-  push_cast
-  field_simp
-  rw [← mul_pow]
-  congr 2
-  field_simp
+  exact hphase
 
 /-- **The clutching first Chern number of complex projective space on a line.** The clutching
 number of the holomorphic tangent bundle of `CPⁿ⁺¹` on the coordinate line is `n + 2`. This is the
