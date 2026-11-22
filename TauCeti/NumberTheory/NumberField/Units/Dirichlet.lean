@@ -24,9 +24,13 @@ consume — for instance the exact number of unit square classes in
 
 The file also records how the unit rank `NumberField.Units.rank` is determined by the degree
 and the infinite places, and some direct consequences of Dirichlet's theorem: the fundamental
-units are nontorsion, in unit rank one a single unit generates the units modulo torsion, and in
+units are nontorsion, in unit rank one a single unit generates the units modulo torsion, in
 positive unit rank the sum of `N((a))^(-s)` over the nonzero elements `a` of a nonzero ideal
-diverges.
+diverges, and every subgroup of finite index contains a unit that is large at one chosen infinite
+place and small at all the others. Powers of the last unit move an element of the field along a
+unit orbit towards the chosen place; this drives the Koecher principle for Hilbert modular forms
+(M. Dimitrov, *Compactifications arithmétiques des variétés de Hilbert et formes modulaires de
+Hilbert pour Γ₁(c, n)*, proof of Théorème 8.3).
 
 ## Main results
 
@@ -45,6 +49,9 @@ diverges.
   fundamental units is torsion only when all the exponents vanish.
 * `NumberField.Units.not_summable_absNorm_of_rank_pos`: in positive unit rank, the sum of
   `N((a))^(-s)` over the nonzero elements `a` of a nonzero ideal diverges for every `s`.
+* `NumberField.Units.exists_mem_one_lt_and_forall_ne_lt_one`: when there are at least two
+  infinite places, every subgroup of finite index in the units contains a unit that exceeds `1`
+  at a chosen infinite place and is less than `1` at all the others.
 -/
 
 public section
@@ -240,6 +247,38 @@ theorem exists_closure_sup_torsion_eq_top_of_rank_eq_one (hr : rank K = 1) :
   have hrange : Set.range (fundSystem K) = {fundSystem K i} :=
     Set.range_eq_singleton (fun j => congrArg (fundSystem K) (Fin.ext (by omega)))
   simpa only [hrange] using closure_fundSystem_sup_torsion_eq_top (K := K)
+
+/-- **Units expanding at one place and contracting at the others.** A subgroup of finite index in
+the units of a number field with at least two infinite places contains, for each infinite place
+`w₀`, a unit whose absolute value exceeds `1` at `w₀` and is less than `1` at every other infinite
+place. With a single infinite place every unit has absolute value `1`, so the hypothesis on the
+number of places cannot be dropped. -/
+theorem exists_mem_one_lt_and_forall_ne_lt_one {U : Subgroup (𝓞 K)ˣ} (hU : U.index ≠ 0)
+    (hK : 1 < Fintype.card (InfinitePlace K)) (w₀ : InfinitePlace K) :
+    ∃ u ∈ U, 1 < w₀ u ∧ ∀ w, w ≠ w₀ → w u < 1 := by
+  classical
+  -- Dirichlet's construction gives a unit `v` that is small at every place other than `w₀`.
+  obtain ⟨v, hv⟩ := dirichletUnitTheorem.exists_unit (K := K) w₀
+  have hlt : ∀ w, w ≠ w₀ → w v < 1 := fun w hw ↦
+    (Real.log_neg_iff (pos_at_place v w)).mp (hv w hw)
+  -- The product formula forces the remaining logarithm, at `w₀`, to be positive.
+  have hw₀ : 1 < w₀ v := by
+    obtain ⟨w₁, hw₁⟩ := Fintype.exists_ne_of_one_lt_card hK w₀
+    have hsum : ∑ w ∈ {w₀}ᶜ, (w.mult : ℝ) * Real.log (w v) < 0 :=
+      Finset.sum_neg' (fun w hw ↦ mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg _)
+          (hv w (Finset.mem_compl.mp hw ∘ Finset.mem_singleton.mpr)).le)
+        ⟨w₁, Finset.mem_compl.mpr (by simpa using hw₁),
+          mul_neg_of_pos_of_neg (Nat.cast_pos.mpr InfinitePlace.mult_pos) (hv w₁ hw₁)⟩
+    have h := sum_mult_mul_log v
+    rw [Fintype.sum_eq_add_sum_compl w₀] at h
+    have hlog : 0 < Real.log (w₀ v) :=
+      pos_of_mul_pos_right (by linarith) (Nat.cast_nonneg w₀.mult)
+    exact (Real.log_pos_iff (pos_at_place v w₀).le).mp hlog
+  -- A positive power of `v` lies in `U` and keeps both inequalities.
+  obtain ⟨n, hn, -, hnU⟩ := Subgroup.exists_pow_mem_of_index_ne_zero hU v
+  refine ⟨v ^ n, hnU, ?_, fun w hw ↦ ?_⟩
+  · simpa using one_lt_pow₀ hw₀ hn.ne'
+  · simpa using pow_lt_one₀ (pos_at_place v w).le (hlt w hw) hn.ne'
 
 end Units
 

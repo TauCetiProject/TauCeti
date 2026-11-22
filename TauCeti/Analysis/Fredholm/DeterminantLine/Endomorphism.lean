@@ -50,9 +50,11 @@ This is the finite-dimensional model of the determinant signs of twisted periodi
 operator `w ↦ w' - M w` on loops twisted by a sign `ε` has the kernel and cokernel of `ε - P`, `P`
 its return map (`TauCeti.detLineTwistedLinearOperatorEquiv`). For the untwisted normal operator
 of an orbit torus, the complex-linear reference operator has `P = 1`, and the results here give the
-sign `sgn det (1 - P)` for the path of finite endomorphisms `1 - P`. Comparing this with the
-transport along the twisted operators themselves needs the identification of their determinant
-lines with those of `ε - P` to be coherent along families, which is not proved here.
+sign `sgn det (1 - P)` for the path of finite endomorphisms `1 - P`. For the periodic loop
+operators on the circle Sobolev spaces, the identification of their determinant lines with those of
+`1 - P` is coherent along families
+(`TauCeti.CircleSobolev.isDetLineCoherentOn_detLineLoopOperatorEquiv_symm`), so the transport along
+the loop operators themselves follows these generators.
 
 ## Main results
 
