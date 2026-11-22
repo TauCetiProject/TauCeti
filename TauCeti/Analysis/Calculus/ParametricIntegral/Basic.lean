@@ -365,7 +365,7 @@ theorem contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv {G : Type*}
   have hW : IsOpen (U ×ˢ (univ : Set α)) := hU.prod isOpen_univ
   have hmem : ∀ y, (x₀, id y) ∈ U ×ˢ (univ : Set α) := fun y ↦ ⟨hx₀, mem_univ y⟩
   choose C hC using fun k : Iic m ↦ isCompact_univ.exists_eventually_norm_le hW
-    (fun y _ ↦ (hcont k (hkn k k.2)).continuousAt (hW.mem_nhds (hmem y))) (fun y _ ↦ hmem y)
+    (fun y _ ↦ (hcont k (hkn k k.property)).continuousAt (hW.mem_nhds (hmem y))) (fun y _ ↦ hmem y)
   obtain ⟨V, hV, hVo, hx₀V⟩ := mem_nhds_iff.1 (eventually_all.2 hC)
   refine ⟨V, hVo, hx₀V, ?_⟩
   have hs : IsOpen (U ∩ V) := hU.inter hVo

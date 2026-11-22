@@ -142,7 +142,7 @@ theorem evenWeightedSumSquaresOneAlgHom_apply (x : even (weightedSumSquares K ![
   let _ : Invertible (weightedSumSquares K ![(1 : K), 1] ![1, 0]) :=
     invertibleOfNonzero (by simp)
   obtain ⟨w, hw⟩ := (mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two _ (Module.finrank_fin_fun K)
-    ![1, 0]).1 x.2
+    ![1, 0]).1 x.property
   have hx : x = (even.ι _).bilin ![1, 0] w := Subtype.ext (by simp [hw, even.ι])
   rw [hw, ← mul_assoc, ι_sq_scalar, hx, evenWeightedSumSquaresOneAlgHom_ι]
   simp

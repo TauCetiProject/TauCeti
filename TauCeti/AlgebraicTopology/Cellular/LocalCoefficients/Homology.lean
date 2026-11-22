@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Basic
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Chains
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Equivalence
-import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport
+import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 import TauCeti.Topology.CWComplex.Classical.CompactSupport
 
 /-!
@@ -38,9 +38,9 @@ triples `(Xⁿ⁺¹, Xⁿ, X⁻¹)`.
   (`TauCeti.twistedCellularSingularHomologyIso`).
 
 The comparison with the whole complex is the compact-support argument of
-`TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport`, made on relative chains. A relative
-chain of `(C, X⁻¹)` is the class of a chain of `C` supported on finitely many simplices. Their
-images form a compact set, which lies in a skeleton
+`TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic`, made on relative chains. A
+relative chain of `(C, X⁻¹)` is the class of a chain of `C` supported on finitely many simplices.
+Their images form a compact set, which lies in a skeleton
 (`TauCeti.exists_subset_skeletonLT_of_isCompact`). The relative chains of the pairs `(Xʲ, X⁻¹)`
 inject into those of `(C, X⁻¹)`, because the subspace is the same
 (`TopPair.twistedChainComplexMap_f_injective`). So a class of `Hₖ(C, X⁻¹; L)` comes from some
@@ -533,11 +533,8 @@ theorem isIso_twistedHomologySkeletonBasePairToComplex_of_eq {m : ℕ}
     (hm : (skeletonLT C ((m + 1 : ℕ) : ℕ∞) : Set X) = C) (k : ℕ) :
     IsIso (twistedHomologySkeletonBasePairToComplex C L m k) := by
   have := isIso_skeletonBasePairToComplex_of_eq C m hm
-  have : IsIso (TopPair.twistedHomologyMap (skeletonBasePairToComplex C m) L k) :=
-    LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_homotopyInverse _ _
-      (inv (skeletonBasePairToComplex C m))
-      ⟨(IsIso.hom_inv_id (skeletonBasePairToComplex C m)) ▸ TopPair.Homotopy.refl _⟩
-      ⟨(IsIso.inv_hom_id (skeletonBasePairToComplex C m)) ▸ TopPair.Homotopy.refl _⟩ k
+  have := LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_isIso L
+    (skeletonBasePairToComplex C m) k
   have := @TopPair.isIso_twistedHomologyCoefficientMap _ _ (skeletonBasePair C m) _ _
     (eqToHom (skeletonSystem_eq_pullback C L m))
     (Iso.isIso_hom (eqToIso (skeletonSystem_eq_pullback C L m))) k
@@ -558,13 +555,13 @@ private lemma exists_twistedChainSkeletonBasePairToComplex_f_eq (n : ℕ) {k : �
   obtain ⟨K, hK, hc⟩ :=
     LocalCoefficientSystem.exists_isCompact_forall_mem_range_twistedChainComplexMap_f L c
   obtain ⟨d, hd⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
-    (hK.image continuous_subtype_val) (by rintro _ ⟨x, -, rfl⟩; exact x.2)
+    (hK.image continuous_subtypeVal) (by rintro _ ⟨x, -, rfl⟩; exact x.property)
   set m := n + d
   let ι : skeletonObj C (m + 1) ⟶ TopCat.of C :=
     TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C ((m + 1 : ℕ) : ℕ∞)).subset_complex)
   have hι : Set.range ι = {x : C | (x : X) ∈ skeletonLT C ((m + 1 : ℕ) : ℕ∞)} := by
     ext x
-    exact ⟨by rintro ⟨y, rfl⟩; exact y.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+    exact ⟨by rintro ⟨y, rfl⟩; exact y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
   -- So `c` is the pushforward of a chain `c'` of the skeleton.
   obtain ⟨c', hc'⟩ : c ∈ LinearMap.range ((LocalCoefficientSystem.twistedChainComplexMap
       (TopPair.Hom.fst (skeletonBasePairToComplex C m)) L).f k).hom := by

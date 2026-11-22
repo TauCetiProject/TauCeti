@@ -210,16 +210,16 @@ private theorem smoothTensorInducedGradedResolutionContraction_proj_cupPairing
     (w : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj B).obj.V)
     (hw : w ∈ smoothTensorInducedGradedResolutionPiece U hU s B (0 : ℕ))
     (hxw : P.smoothTensorInducedGradedResolutionCupPairing U hU s
-      ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1 w ∈
+      ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val w ∈
         smoothTensorInducedGradedResolutionPiece U hU s C (0 : ℕ)) :
     (smoothTensorInducedGradedResolutionContraction U hU s C hC).proj
         ⟨P.smoothTensorInducedGradedResolutionCupPairing U hU s
-          ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1 w, hxw⟩ =
+          ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val w, hxw⟩ =
       (P.smoothTensorInduced U hU s).bil x
         ((smoothTensorInducedGradedResolutionContraction U hU s B hB).proj ⟨w, hw⟩) := calc
   _ = smoothTensorInducedGradedResolutionProjection U C
         (P.tensorInducedGradedResolutionCupPairing
-          ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1 w) :=
+          ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val w) :=
       smoothTensorInducedGradedResolutionContraction_proj_apply U hU s C hC _
   _ = smoothTensorInducedGradedResolutionProjection U C
         (P.tensorInducedGradedResolutionCupPairing
@@ -242,17 +242,17 @@ private theorem smoothTensorInducedGradedResolutionContraction_hom_cupPairing
     (w : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj B).obj.V)
     (hw : w ∈ smoothTensorInducedGradedResolutionPiece U hU s B (q + 1 : ℕ))
     (hxw : P.smoothTensorInducedGradedResolutionCupPairing U hU s
-      ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1 w ∈
+      ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val w ∈
         smoothTensorInducedGradedResolutionPiece U hU s C (q + 1 : ℕ)) :
     ((smoothTensorInducedGradedResolutionContraction U hU s C hC).hom q
         ⟨P.smoothTensorInducedGradedResolutionCupPairing U hU s
-          ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1 w, hxw⟩).1 =
+          ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val w, hxw⟩).val =
       P.smoothTensorInducedGradedResolutionCupPairing U hU s
-        ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1
-        ((smoothTensorInducedGradedResolutionContraction U hU s B hB).hom q ⟨w, hw⟩).1 := calc
+        ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val
+        ((smoothTensorInducedGradedResolutionContraction U hU s B hB).hom q ⟨w, hw⟩).val := calc
   _ = smoothTensorInducedGradedResolutionHomotopy U C
         (P.tensorInducedGradedResolutionCupPairing
-          ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1 w) :=
+          ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val w) :=
       smoothTensorInducedGradedResolutionContraction_hom_apply U hU s C hC q _
   _ = smoothTensorInducedGradedResolutionHomotopy U C
         (P.tensorInducedGradedResolutionCupPairing

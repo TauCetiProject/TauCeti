@@ -45,7 +45,8 @@ any choice of orientation.
   orientation.
 * `SimpleGraph.Coloring.signlessPreprojectiveAlgebraEquiv` and
   `SimpleGraph.IsBipartite.signlessPreprojectiveAlgebraEquiv`: the comparison between the graph's
-  signless algebra and the preprojective algebra of any orientation.
+  signless algebra and the preprojective algebra of any orientation, preserving and reflecting the
+  path-length grading (`signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff`).
 * `SimpleGraph.Coloring.sourceSinkSignlessPreprojectiveAlgebraEquiv`: the comparison between the
   graph's signless algebra and the preprojective algebra of the source--sink orientation.
 * `TauCeti.DoubledQuiver.Orientation.not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite`:
@@ -149,6 +150,39 @@ theorem orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator
     mapAlgHom_signlessPreprojectiveRelator k _ _
       ((symmetrifyMap_isCovering G o).star_bijective i)]
 
+private theorem orientationPathAlgebraEquiv_mem_grade {n : ℕ}
+    {x : pathAlgebra k (DoubledQuiver G)} (hx : x ∈ grade k (DoubledQuiver G) n) :
+    orientationPathAlgebraEquiv o k x ∈ grade k (Symmetrify (OrientedQuiver G o)) n := by
+  rw [← gradeBy_const_one] at hx ⊢
+  rw [orientationPathAlgebraEquiv_apply]
+  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hx
+
+private theorem orientationPathAlgebraEquiv_symm_mem_grade {n : ℕ}
+    {x : pathAlgebra k (Symmetrify (OrientedQuiver G o))}
+    (hx : x ∈ grade k (Symmetrify (OrientedQuiver G o)) n) :
+    (orientationPathAlgebraEquiv o k).symm x ∈ grade k (DoubledQuiver G) n := by
+  rw [← gradeBy_const_one] at hx ⊢
+  rw [orientationPathAlgebraEquiv_symm_apply]
+  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hx
+
+/-- **Restoring an orientation preserves the path-length grading.** -/
+@[simp]
+theorem orientationPathAlgebraEquiv_mem_grade_iff {n : ℕ}
+    {x : pathAlgebra k (DoubledQuiver G)} :
+    orientationPathAlgebraEquiv o k x ∈ grade k (Symmetrify (OrientedQuiver G o)) n ↔
+      x ∈ grade k (DoubledQuiver G) n :=
+  ⟨fun h => by simpa using orientationPathAlgebraEquiv_symm_mem_grade o k h,
+   orientationPathAlgebraEquiv_mem_grade o k⟩
+
+/-- **Forgetting an orientation preserves the path-length grading.** -/
+@[simp]
+theorem orientationPathAlgebraEquiv_symm_mem_grade_iff {n : ℕ}
+    {x : pathAlgebra k (Symmetrify (OrientedQuiver G o))} :
+    (orientationPathAlgebraEquiv o k).symm x ∈ grade k (DoubledQuiver G) n ↔
+      x ∈ grade k (Symmetrify (OrientedQuiver G o)) n :=
+  ⟨fun h => by simpa using orientationPathAlgebraEquiv_mem_grade o k h,
+   orientationPathAlgebraEquiv_symm_mem_grade o k⟩
+
 end PathAlgebra
 
 /-! ### Transporting the signless quotient -/
@@ -164,57 +198,23 @@ private theorem orientationSignlessPreprojectiveIdeal_map_eq :
         (Symmetrify (OrientedQuiver G o))).asIdeal =
       (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
         (orientationPathAlgebraEquiv o k : _ →+* _) := by
-  have hforward : signlessPreprojectiveIdeal k (DoubledQuiver G) ≤
-      (signlessPreprojectiveIdeal k
-        (Symmetrify (OrientedQuiver G o))).comap
-          (orientationPathAlgebraEquiv o k).toRingHom := by
-    rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
-    rintro _ ⟨i, rfl⟩
-    apply (TwoSidedIdeal.mem_comap
-      (orientationPathAlgebraEquiv o k).toRingHom).mpr
-    -- Expose the algebra equivalence hidden by the underlying ring-hom coercion.
-    change orientationPathAlgebraEquiv o k
-      (signlessPreprojectiveRelator k i) ∈ _
-    rw [orientationPathAlgebraEquiv_signlessPreprojectiveRelator]
-    exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
-  have hbackward :
-      signlessPreprojectiveIdeal k
-          (Symmetrify (OrientedQuiver G o)) ≤
-        (signlessPreprojectiveIdeal k (DoubledQuiver G)).comap
-          (orientationPathAlgebraEquiv o k).symm.toRingHom := by
-    rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
-    rintro _ ⟨i, rfl⟩
-    apply (TwoSidedIdeal.mem_comap
-      (orientationPathAlgebraEquiv o k).symm.toRingHom).mpr
-    -- Expose the algebra equivalence hidden by the underlying ring-hom coercion.
-    change (orientationPathAlgebraEquiv o k).symm
-      (signlessPreprojectiveRelator k i) ∈ _
-    rw [orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator]
-    exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
-  have hforward' : (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal ≤
-      (signlessPreprojectiveIdeal k
-        (Symmetrify (OrientedQuiver G o))).asIdeal.comap
-          (orientationPathAlgebraEquiv o k).toRingHom :=
-    fun _ hx => by
-      simpa only [Ideal.mem_comap, TwoSidedIdeal.mem_asIdeal,
-        TwoSidedIdeal.mem_comap] using hforward hx
-  have hbackward' :
-      (signlessPreprojectiveIdeal k
-        (Symmetrify (OrientedQuiver G o))).asIdeal ≤
-      (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.comap
-        (orientationPathAlgebraEquiv o k).symm.toRingHom :=
-    fun _ hx => by
-      simpa only [Ideal.mem_comap, TwoSidedIdeal.mem_asIdeal,
-        TwoSidedIdeal.mem_comap] using hbackward hx
   apply le_antisymm
   · calc
       _ ≤ (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.comap
-          (orientationPathAlgebraEquiv o k).symm.toRingHom := hbackward'
-      _ = (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
-          (orientationPathAlgebraEquiv o k).toRingHom :=
-        (Ideal.map_comap_of_equiv
-          (orientationPathAlgebraEquiv o k).toRingEquiv).symm
-  · exact Ideal.map_le_iff_le_comap.mpr hforward'
+          (orientationPathAlgebraEquiv o k).symm :=
+        (signlessPreprojectiveIdeal_asIdeal_le_iff k).2 fun i => by
+          rw [Ideal.mem_comap, orientationPathAlgebraEquiv_symm_signlessPreprojectiveRelator,
+            TwoSidedIdeal.mem_asIdeal]
+          exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
+      _ ≤ (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
+          (orientationPathAlgebraEquiv o k : _ →+* _) :=
+        Ideal.comap_le_map_of_inverse _ _ _ fun x => by
+          rw [RingHom.coe_coe, AlgEquiv.apply_symm_apply]
+  · refine Ideal.map_le_iff_le_comap.mpr
+      ((signlessPreprojectiveIdeal_asIdeal_le_iff k).2 fun i => ?_)
+    rw [Ideal.mem_comap, RingHom.coe_coe, orientationPathAlgebraEquiv_signlessPreprojectiveRelator,
+      TwoSidedIdeal.mem_asIdeal]
+    exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
 
 /-- Restoring an orientation identifies the signless algebra of the doubled graph with the
 signless algebra of the symmetrified oriented quiver. -/
@@ -304,14 +304,14 @@ theorem orientedColor_vertex (o : Orientation G) (i : V) :
 /-- Every arrow of an orientation of a two-coloured graph has differently coloured endpoints. -/
 theorem orientedColor_ne (o : Orientation G) {i j : OrientedQuiver G o} (a : i ⟶ j) :
     C.orientedColor o i ≠ C.orientedColor o j :=
-  C.valid a.1
+  C.valid a.val
 
 /-- Every arrow of the source--sink orientation ends at a vertex of colour `true`. -/
 theorem orientedColor_sourceSink_target_eq_true
     {i j : OrientedQuiver G C.sourceSink} (a : i ⟶ j) :
     C.orientedColor C.sourceSink j = true := by
   rw [orientedColor]
-  exact (mem_sourceSink_iff C _).mp a.2
+  exact (mem_sourceSink_iff C _).mp a.property
 
 /-! ### The preprojective comparison -/
 
@@ -363,10 +363,7 @@ theorem signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade (o : Orientatio
   obtain ⟨p, hp, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver G)).1 hx
   rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
   apply preprojectiveMk_mem_preprojectiveGrade
-  apply rescale_mem_grade
-  rw [orientationPathAlgebraEquiv_apply]
-  rw [← gradeBy_const_one] at hp ⊢
-  exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hp
+  exact rescale_mem_grade _ ((orientationPathAlgebraEquiv_mem_grade_iff o k).2 hp)
 
 /-- The inverse bipartite comparison for an arbitrary orientation rescales by the head-colour sign
 and applies the inverse orientation path-algebra identification. -/
@@ -382,6 +379,26 @@ theorem signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk (o : Orientation 
   rw [signlessPreprojectiveAlgebraEquiv, AlgEquiv.symm_trans_apply,
     symmetrifySignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk,
     orientationSignlessPreprojectiveAlgebraEquiv_symm_signlessPreprojectiveMk]
+
+/-- The inverse bipartite comparison preserves every path-length graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade (o : Orientation G)
+    {n : ℕ} {x : preprojectiveAlgebra k (OrientedQuiver G o)}
+    (hx : x ∈ preprojectiveGrade k (OrientedQuiver G o) n) :
+    (C.signlessPreprojectiveAlgebraEquiv k o).symm x ∈
+      signlessPreprojectiveGrade k (DoubledQuiver G) n := by
+  obtain ⟨p, hp, rfl⟩ := (mem_preprojectiveGrade_iff k (OrientedQuiver G o)).1 hx
+  rw [signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk]
+  exact signlessPreprojectiveMk_mem_grade k _
+    ((orientationPathAlgebraEquiv_symm_mem_grade_iff o k).2 (rescale_mem_grade _ hp))
+
+/-- **The bipartite comparison preserves path degree**: an element of the signless algebra has
+degree `n` if and only if its image in the preprojective algebra of `o` does. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff (o : Orientation G)
+    {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
+    C.signlessPreprojectiveAlgebraEquiv k o x ∈ preprojectiveGrade k (OrientedQuiver G o) n ↔
+      x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n := by
+  refine ⟨fun h => ?_, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o⟩
+  simpa using C.signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade k o h
 
 /-- **The signless algebra of a bipartite graph is the additive preprojective algebra of its
 source--sink orientation.** The isomorphism first identifies the doubled quiver with the
@@ -468,6 +485,45 @@ theorem signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk (o : Orientation 
             if hG.coloringBool.orientedColor o j then (1 : k) else -1) x)) :=
   hG.coloringBool.signlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk k o x
 
+/-- The bipartite comparison preserves every path-length graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade (o : Orientation G)
+    {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)}
+    (hx : x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n) :
+    hG.signlessPreprojectiveAlgebraEquiv k o x ∈ preprojectiveGrade k (OrientedQuiver G o) n :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hx
+
+/-- The inverse bipartite comparison preserves every path-length graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade (o : Orientation G)
+    {n : ℕ} {x : preprojectiveAlgebra k (OrientedQuiver G o)}
+    (hx : x ∈ preprojectiveGrade k (OrientedQuiver G o) n) :
+    (hG.signlessPreprojectiveAlgebraEquiv k o).symm x ∈
+      signlessPreprojectiveGrade k (DoubledQuiver G) n :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv_symm_mem_signlessPreprojectiveGrade k o hx
+
+/-- **The bipartite comparison preserves path degree**: an element of the signless algebra has
+degree `n` if and only if its image in the preprojective algebra of `o` does. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff (o : Orientation G)
+    {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
+    hG.signlessPreprojectiveAlgebraEquiv k o x ∈ preprojectiveGrade k (OrientedQuiver G o) n ↔
+      x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n :=
+  hG.coloringBool.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade_iff k o
+
+include hG in
+/-- **Path vanishing transfers from the signless algebra of a bipartite graph to every
+orientation.** If every path of length at least `N` vanishes in the signless algebra, then every
+path of length at least `N` vanishes in the preprojective algebra of every orientation. -/
+theorem preprojectiveMk_ofPath_eq_zero_of_le
+    [inst : ∀ x : DoubledQuiver G, Fintype (Quiver.Star x)] {N : ℕ}
+    (hN : ∀ x : Quiver.TotalPath (DoubledQuiver G), N ≤ x.2.2.length →
+      signlessPreprojectiveMk k _ (ofPath x) = 0)
+    (o : Orientation G) (x : Quiver.TotalPath (Symmetrify (OrientedQuiver G o)))
+    (hx : N ≤ x.2.2.length) :
+    preprojectiveMk k (OrientedQuiver G o) (ofPath x) = 0 := by
+  obtain rfl : inst = instFintypeStar G := Subsingleton.elim _ _
+  exact preprojectiveMk_ofPath_eq_zero_of_signless o k
+    (fun {_ _} a => hG.coloringBool.orientedColor_ne o a) x
+    (hN _ (by rwa [Prefunctor.length_mapTotalPath]))
+
 end SimpleGraph.IsBipartite
 
 namespace TauCeti.DoubledQuiver.Orientation
@@ -500,7 +556,7 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
     hG (SimpleGraph.isBipartite_iff_forall_walk_even_length.mpr h)
   push Not at hwalk
   obtain ⟨v, p, hp⟩ := hwalk
-  have hpodd : Odd p.length := Nat.not_even_iff_odd.mp hp
+  have hpodd : Odd p.length := hp
   let q₀ := (unsymmetrifyMap G o).mapPath (walkToPath G p)
   have hq₀odd : Odd q₀.length := by simpa [q₀] using hpodd
   have hobj : (unsymmetrifyMap G o).obj (vertex G v) =

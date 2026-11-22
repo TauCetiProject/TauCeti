@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.MetricSpace.ProperSpace
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
@@ -40,6 +42,8 @@ agrees with such a homogeneous map outside a ball has bounded derivatives of eve
 
 ## Main results
 
+* `TauCeti.iteratedFDeriv_two_self_eq_smul_of_eventuallyEq`: second-order local Euler homogeneity
+  identity `iteratedFDeriv 𝕜 2 f x ![x, x] = w'' • f x` when `f (t • x) = w t • f x` near `t = 1`.
 * `TauCeti.iteratedFDeriv_smul_snd_of_smul_snd_eq`: homogeneity of the derivatives.
 * `TauCeti.norm_iteratedFDeriv_smul_of_homogeneous`: operator-norm scaling for a homogeneous
   map on an arbitrary normed source, without a parameter or properness assumption.
@@ -68,6 +72,36 @@ open scoped NNReal Topology
 open Metric
 
 namespace TauCeti
+
+/-- **Second-order local Euler homogeneity identity.** If `f` is differentiable at `t • x` for `t`
+near `1`, `fderiv 𝕜 f` is differentiable at `x`, and `f (t • x) = w t • f x` near `t = 1` where `w`
+has derivative `w'` near `1` and `w'` has derivative `w''` at `1`, then
+`iteratedFDeriv 𝕜 2 f x ![x, x] = w'' • f x`. -/
+theorem iteratedFDeriv_two_self_eq_smul_of_eventuallyEq
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : E → F} {x : E} {w w' : 𝕜 → 𝕜} {w'' : 𝕜}
+    (hf : ∀ᶠ t in 𝓝 (1 : 𝕜), DifferentiableAt 𝕜 f (t • x))
+    (hf' : DifferentiableAt 𝕜 (fderiv 𝕜 f) x)
+    (hw : ∀ᶠ t in 𝓝 (1 : 𝕜), HasDerivAt w (w' t) t)
+    (hw' : HasDerivAt w' w'' 1)
+    (hhom : (fun t : 𝕜 ↦ f (t • x)) =ᶠ[𝓝 (1 : 𝕜)] fun t ↦ w t • f x) :
+    iteratedFDeriv 𝕜 2 f x ![x, x] = w'' • f x := by
+  have h1 : (fun t : 𝕜 ↦ fderiv 𝕜 f (t • x) x) =ᶠ[𝓝 (1 : 𝕜)] fun t ↦ w' t • f x := by
+    filter_upwards [hhom.eventuallyEq_nhds, hf, hw] with t ht hft hwt
+    have hL : HasDerivAt (fun s : 𝕜 ↦ f (s • x)) (fderiv 𝕜 f (t • x) x) t := by
+      simpa [Function.comp_def] using
+        hft.hasFDerivAt.comp_hasDerivAt t ((hasDerivAt_id' t).smul_const x)
+    exact (hL.congr_of_eventuallyEq ht.symm).unique (hwt.smul_const (f x))
+  have h2 : HasDerivAt (fun t : 𝕜 ↦ fderiv 𝕜 f (t • x) x) (fderiv 𝕜 (fderiv 𝕜 f) x x x) 1 := by
+    have heval : HasFDerivAt (fun y : E ↦ fderiv 𝕜 f y x)
+        ((ContinuousLinearMap.apply 𝕜 F x).comp (fderiv 𝕜 (fderiv 𝕜 f) x)) x :=
+      (ContinuousLinearMap.apply 𝕜 F x).hasFDerivAt.comp x hf'.hasFDerivAt
+    simpa [Function.comp_def, ContinuousLinearMap.comp_apply] using
+      heval.comp_hasDerivAt_of_eq (1 : 𝕜) ((hasDerivAt_id' (1 : 𝕜)).smul_const x)
+        (one_smul 𝕜 x).symm
+  rw [iteratedFDeriv_two_apply]
+  exact (h2.congr_of_eventuallyEq h1.symm).unique (hw'.smul_const (f x))
 
 variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {f : E × F → G} {m : ℝ}
@@ -327,7 +361,7 @@ theorem exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq {W G : Type*} [NormedAddC
     (C := A)
     (fun ξ hξ ↦ hfm ξ ((le_max_left R 1).trans_lt hξ)) (fun ξ hξ ↦ ?_)
   have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans ((le_max_right R 1).trans_lt hξ))
-  refine (hA k hk ξ hξ0).trans (mul_le_of_le_one_right A.2 ?_)
+  refine (hA k hk ξ hξ0).trans (mul_le_of_le_one_right A.property ?_)
   exact zpow_le_one_of_nonpos₀ ((le_max_right R 1).trans hξ.le) (by omega)
 
 end TauCeti

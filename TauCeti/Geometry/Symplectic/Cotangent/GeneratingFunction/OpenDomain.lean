@@ -67,10 +67,10 @@ theorem exists_partialDiffeomorph_of_isInvertible_mixedHessian
           Φ z = generatingTarget J S (β z)) ∧
         (∀ z ∈ Φ.source,
           mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) Φ
-            (symplecticForm J N).1 z = (symplecticForm I M).1 z) ∧
-        (∀ z ∈ Φ.source, (liouvilleForm I M).1 z -
+            (symplecticForm J N).val z = (symplecticForm I M).val z) ∧
+        (∀ z ∈ Φ.source, (liouvilleForm I M).val z -
           mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) Φ
-            (liouvilleForm J N).1 z =
+            (liouvilleForm J N).val z =
           mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (S ∘ β)) z) ∧
         (∀ γ : CotangentBundle I M → M × N,
           ContinuousAt γ (generatingSource I S x) → γ (generatingSource I S x) = x →

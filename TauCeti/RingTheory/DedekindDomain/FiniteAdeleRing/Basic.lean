@@ -307,7 +307,8 @@ would say that the whole finite adele ring carries the product topology. -/
 theorem isEmbedding_coe_sIntegralAdeles {S : Set (HeightOneSpectrum R)} (hS : S.Finite) :
     Topology.IsEmbedding fun a : sIntegralAdeles R K S ↦ ⇑(a : FiniteAdeleRing R K) :=
   TauCeti.isEmbedding_restrictedProduct_coe_comp
-    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite) Topology.IsEmbedding.subtypeVal fun a ↦ a.2
+    (Filter.le_principal_iff.mpr hS.compl_mem_cofinite) Topology.IsEmbedding.subtypeVal fun a ↦
+        a.property
 
 /-- The diagonal image of an element of `K` in the finite adele ring is `S`-integral exactly when
 the element is an `S`-integer: the `S`-integral finite adeles meet `K` in `S.integer K`. It takes
@@ -354,7 +355,8 @@ theorem mul_nonZeroDivisor_mem_integralAdeles (a : FiniteAdeleRing R K) :
     ∃ b ∈ nonZeroDivisors R, a * algebraMap R (FiniteAdeleRing R K) b ∈ integralAdeles R K := by
   classical
   -- `a` is integral outside a finite set of places, and each of those has its own denominator
-  have hT : {v | a v ∉ v.adicCompletionIntegers K}.Finite := Filter.eventually_cofinite.mp a.2
+  have hT : {v | a v ∉ v.adicCompletionIntegers K}.Finite := Filter.eventually_cofinite.mp
+      a.property
   choose b hb0 hb using fun v ↦
     adicCompletion.mul_nonZeroDivisor_mem_adicCompletionIntegers v (a v)
   refine ⟨∏ v ∈ hT.toFinset, b v, prod_mem fun v _ ↦ hb0 v, mem_integralAdeles.mpr fun v ↦ ?_⟩

@@ -138,7 +138,7 @@ theorem apply_generator_nonpos_of_mem_dualitySet (S : ContractionSemigroup X)
   obtain ⟨hfx, hnorm⟩ := mem_dualitySet_iff.mp hf
   simp only [RCLike.ofReal_real_eq_id, id_eq] at hfx
   refine le_of_tendsto ((f.continuous.tendsto _).comp
-    (S.toStronglyContinuousSemigroup.generator_tendsto ⟨x, by simpa using x.2⟩)) ?_
+    (S.toStronglyContinuousSemigroup.generator_tendsto ⟨x, by simpa using x.property⟩)) ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
   -- `x' (S(t) x) ≤ ‖x'‖ ‖S(t) x‖ ≤ ‖x‖ ‖x‖ = x' x`.
   have hSx : ‖S.realOperator t (x : X)‖ ≤ ‖(x : X)‖ :=

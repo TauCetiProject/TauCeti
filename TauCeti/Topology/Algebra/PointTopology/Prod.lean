@@ -16,7 +16,7 @@ public import TauCeti.Topology.Algebra.PointTopology.Group
 For a `k`-algebra `A` and topological `k`-algebras, the point topology on `A →ₐ[k] R × S` and
 `A →ₐ[k] ∀ i, R i` agrees with the product topology (`prodHomeomorph` and `piHomeomorph`).
 For a `k`-bialgebra `H`, conjugating by `WithConv.ofConv` upgrades `AlgHom.prodPointsMulEquiv` and
-`AlgHom.piPointsMulEquiv` to topological multiplicative equivalences
+`AlgHom.piValueMulEquiv` to topological multiplicative equivalences
 `prodPointsContinuousMulEquiv` and `piPointsContinuousMulEquiv`.
 
 ## Main declarations
@@ -152,13 +152,12 @@ isomorphic as topological monoids (and topological groups when `H` is a Hopf alg
 `∀ i, WithConv (H →ₐ[k] R i)`. -/
 noncomputable def piPointsContinuousMulEquiv :
     WithConv (H →ₐ[k] ∀ i, R i) ≃ₜ* ∀ i, WithConv (H →ₐ[k] R i) where
-  toMulEquiv := AlgHom.piPointsMulEquiv
+  toMulEquiv := AlgHom.piValueMulEquiv
   continuous_toFun := continuous_pi fun i ↦
-    (AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)).congr
-      fun x ↦ (AlgHom.piPointsMulEquiv_apply x i).symm
+    AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)
   continuous_invFun := continuous_withConv_iff.2 fun h ↦
     (continuous_pi fun i ↦ (continuous_eval_ofConv h).comp (continuous_apply i)).congr fun f ↦
-      funext fun i ↦ (AlgHom.piPointsMulEquiv_symm_apply_ofConv f h i).symm
+      funext fun i ↦ (AlgHom.piValueMulEquiv_symm_apply f h i).symm
 
 variable {k H R}
 
@@ -166,7 +165,7 @@ variable {k H R}
 @[simp]
 theorem piPointsContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) :
     piPointsContinuousMulEquiv k H R x i = AlgHom.mapValue (Pi.evalAlgHom k R i) x :=
-  AlgHom.piPointsMulEquiv_apply x i
+  (rfl)
 
 /-- Evaluating `(piPointsContinuousMulEquiv k H R).symm f` on `h : H` at `i` gives
 `(f i).ofConv h`. -/
@@ -174,7 +173,7 @@ theorem piPointsContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] ∀ i, R i))
 theorem piPointsContinuousMulEquiv_symm_apply_ofConv
     (f : ∀ i, WithConv (H →ₐ[k] R i)) (h : H) (i : ι) :
     ((piPointsContinuousMulEquiv k H R).symm f).ofConv h i = (f i).ofConv h :=
-  AlgHom.piPointsMulEquiv_symm_apply_ofConv f h i
+  AlgHom.piValueMulEquiv_symm_apply f h i
 
 end BialgebraPi
 

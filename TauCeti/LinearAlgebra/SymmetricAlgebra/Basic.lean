@@ -20,9 +20,11 @@ and so do the images of any spanning family
 (`SymmetricAlgebra.adjoin_range_ι_comp_eq_top_of_span_eq_top`).
 
 For the symmetric algebra of the base semiring itself, every generator `ι R R r` is a scalar
-multiple of the degree-one generator `ι R R 1` (`SymmetricAlgebra.ι_self_eq_smul_ι_one`). An
-algebra morphism whose range contains this element is therefore surjective, a criterion used for
-coordinate morphisms of additive root subgroups.
+multiple of the degree-one generator `ι R R 1` (`SymmetricAlgebra.ι_self_eq_smul_ι_one`), and
+every subset containing `ι R R 1` generates the whole algebra
+(`SymmetricAlgebra.adjoin_eq_top_of_ι_one_mem`). An algebra morphism whose range contains this
+element is therefore surjective, a criterion used for coordinate morphisms of additive root
+subgroups.
 
 A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
 generators (`SymmetricAlgebra.ringHom_ext`), even when its target is nonassociative, and an
@@ -63,6 +65,15 @@ theorem adjoin_range_ι_comp_eq_top_of_span_eq_top {ι : Type*} (x : ι → M)
     Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M ∘ x)) = ⊤ := by
   rw [Set.range_comp, ← Algebra.adjoin_span, Submodule.span_image, hx, Submodule.map_top,
     LinearMap.coe_range, adjoin_range_ι]
+
+/-- Every subset of `R[x] = SymmetricAlgebra R R` containing the degree-one generator
+`x = ι R R 1` generates it as an `R`-algebra. -/
+theorem adjoin_eq_top_of_ι_one_mem {s : Set (SymmetricAlgebra R R)} (h : ι R R 1 ∈ s) :
+    Algebra.adjoin R s = ⊤ := by
+  rw [eq_top_iff, ← adjoin_range_ι R R, Algebra.adjoin_le_iff]
+  rintro _ ⟨r, rfl⟩
+  simpa only [SetLike.mem_coe, ← map_smul, smul_eq_mul, mul_one] using
+    Subalgebra.smul_mem _ (Algebra.subset_adjoin h) r
 
 /-- A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
 generators. See note [partially-applied ext lemmas]. -/
@@ -112,12 +123,12 @@ private theorem liftOfCommuteHom_ι {A : Type*} [Semiring A] [Algebra R A] (f : 
 `M →ₗ[R] A` with pairwise-commuting values. -/
 def liftOfCommute {A : Type*} [Semiring A] [Algebra R A] :
     {f : M →ₗ[R] A // ∀ x y, Commute (f x) (f y)} ≃ (SymmetricAlgebra R M →ₐ[R] A) where
-  toFun f := liftOfCommuteHom f.1 f.2
+  toFun f := liftOfCommuteHom f.val f.property
   invFun F :=
     ⟨F.toLinearMap.comp (ι R M), fun x y ↦ by
       simpa only [Commute, SemiconjBy, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
         ← map_mul] using congrArg F (mul_comm (ι R M x) (ι R M y))⟩
-  left_inv f := Subtype.ext <| LinearMap.ext fun m ↦ liftOfCommuteHom_ι f.1 f.2 m
+  left_inv f := Subtype.ext <| LinearMap.ext fun m ↦ liftOfCommuteHom_ι f.val f.property m
   right_inv F := by
     ext m
     simp [liftOfCommuteHom_ι]

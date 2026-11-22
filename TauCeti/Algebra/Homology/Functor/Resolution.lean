@@ -184,7 +184,6 @@ lemma map_augmentationShortComplex (Y : D) :
             comp_zero) := by
   dsimp only [augmentationShortComplex, ShortComplex.map]
   simp only [evaluation_obj_map, augmentationι_app, Functor.toCycles_app]
-  rfl
 
 end Augmentation
 
