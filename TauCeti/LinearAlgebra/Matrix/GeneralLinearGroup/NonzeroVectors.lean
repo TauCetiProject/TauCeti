@@ -17,6 +17,11 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Data.Set.Card
 -- Non-public: extending an isomorphism of lines to the whole space, inside the transitivity proof.
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+-- Non-public: a faithful action stays faithful on a spanning invariant subset, inside the
+-- faithfulness proof.
+import TauCeti.GroupTheory.GroupAction.SubMulAction
+-- Non-public: a right-linear map of coordinate vectors is a matrix, inside the transitivity proof.
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # The general linear group permuting the nonzero vectors
@@ -27,12 +32,11 @@ An invertible matrix carries a nonzero vector to a nonzero vector, because it ha
 `Mathlib.LinearAlgebra.Matrix.Action`, and the permutation representation it carries is Mathlib's
 `MulAction.toPermHom`.
 
-That representation is faithful: over a nontrivial semiring the standard basis vector `eⱼ` is
-nonzero and `g • eⱼ` is the `j`-th column of `g`, so an element acting trivially on the nonzero
-vectors has the columns of the identity matrix, while over the trivial semiring `GL n R` is
-trivial. Over a finite semiring the set being
-permuted has `|R| ^ |n| - 1` elements, which can make the representation surjective in small
-cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
+That representation is faithful: a matrix commutes with right scalar multiplication, so it is
+determined by its values on any set spanning `n → R` as a right `R`-module, and the nonzero
+vectors span (over the trivial semiring there are none, but then `n → R` is zero). Over a finite
+semiring the set being permuted has `|R| ^ |n| - 1` elements, which can make the representation
+surjective in small cases; the two-dimensional worked case, `GL₂(𝔽₂) ≅ S₃`, is in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/FieldCardTwo.lean`.
 
 ## Main definitions
@@ -72,16 +76,14 @@ theorem mem_nonzeroVectors {v : n → R} : v ∈ nonzeroVectors n R ↔ v ≠ 0 
 
 /-- **The action of `GL n R` on the nonzero vectors of `n → R` is faithful.** Over the trivial
 semiring there are no nonzero vectors, but then `GL n R` is trivial as well. -/
-instance faithfulSMulNonzeroVectors : FaithfulSMul (GL n R) (nonzeroVectors n R) where
-  eq_of_smul_eq_smul {g h} H := by
-    cases subsingleton_or_nontrivial R
-    · exact Units.ext (Subsingleton.elim _ _)
-    -- Over a nontrivial semiring, the standard basis vector `eⱼ` is nonzero, and `g • eⱼ` is the
-    -- `j`-th column of `g`.
-    refine Units.ext (Matrix.ext_of_mulVec_single fun j ↦ ?_)
-    have hcol := congrArg Subtype.val
-      (H ⟨Pi.single j 1, mem_nonzeroVectors.2 (Pi.single_ne_zero_iff.2 one_ne_zero)⟩)
-    simpa only [SubMulAction.val_smul, Units.smul_def, Matrix.smul_eq_mulVec] using hcol
+instance faithfulSMulNonzeroVectors : FaithfulSMul (GL n R) (nonzeroVectors n R) :=
+  -- Matrices act faithfully on `n → R`, commuting with right scalars, and the nonzero vectors
+  -- span `n → R` over `Rᵐᵒᵖ`.
+  have : FaithfulSMul (Matrix n n R) (n → R) := ⟨Matrix.ext_iff_smul.2⟩
+  SubMulAction.faithfulSMul_of_span_eq_top (R := Rᵐᵒᵖ) _ <| Submodule.eq_top_iff'.2 fun v ↦ by
+    by_cases hv : v = 0
+    · exact hv ▸ zero_mem _
+    · exact Submodule.subset_span hv
 
 /-- **The number of nonzero vectors** is `|R| ^ |n| - 1`. Over an infinite semiring both sides are
 `0`: `Nat.card R = 0`, and `nonzeroVectors n R` is empty (when `n` is empty) or infinite. -/
@@ -126,14 +128,10 @@ theorem exists_smul_eq_of_ne_zero {v w : n → D} (hv : v ≠ 0) (hw : w ≠ 0) 
       LinearEquiv.coord_self Dᵐᵒᵖ _ v hv
     simpa [h1] using (hf ⟨v, Submodule.mem_span_singleton_self v⟩).symm
   -- A `Dᵐᵒᵖ`-linear automorphism `e` of `n → D` is `Matrix.mulVec` by the matrix whose `j`-th
-  -- column is `e eⱼ`, since both are determined by their values on the `eⱼ`.
+  -- column is `e eⱼ`.
   have key (e : (n → D) ≃ₗ[Dᵐᵒᵖ] n → D) (x : n → D) :
-      Matrix.of (fun i j ↦ e (Pi.single j 1) i) *ᵥ x = e x := by
-    have h : Matrix.mulVecBilin D Dᵐᵒᵖ (Matrix.of fun i j ↦ e (Pi.single j 1) i) = e.toLinearMap :=
-      LinearMap.pi_ext' fun j ↦ LinearMap.ext_ring_op <| by
-        ext i
-        simp
-    exact LinearMap.congr_fun h x
+      Matrix.of (fun i j ↦ e (Pi.single j 1) i) *ᵥ x = e x :=
+    e.toLinearMap.of_apply_single_mulVec x
   refine ⟨⟨.of fun i j ↦ f (Pi.single j 1) i, .of fun i j ↦ f.symm (Pi.single j 1) i,
     Matrix.ext_of_mulVec_single fun j ↦ ?_, Matrix.ext_of_mulVec_single fun j ↦ ?_⟩, ?_⟩
   · rw [← Matrix.mulVec_mulVec, key, key, f.apply_symm_apply, Matrix.one_mulVec]
