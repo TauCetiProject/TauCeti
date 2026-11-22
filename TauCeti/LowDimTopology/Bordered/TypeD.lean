@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Dual
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.StrictMono
+import TauCeti.Data.Matrix.Mul
 
 /-!
 # Type `D` structures and the box tensor product
@@ -424,6 +425,40 @@ theorem restrict_idem (x : {x // p x}) : (N.restrict p hp).idem x = N.idem x :=
 @[simp]
 theorem restrict_coeff (x y : {x // p x}) : (N.restrict p hp).coeff x y = N.coeff x y :=
   (rfl)
+
+/-- The identity morphism of the restriction is the identity morphism of `N` on the generators
+satisfying `p`. -/
+theorem submatrix_idMorphism [DecidableEq X] :
+    N.idMorphism.submatrix Subtype.val Subtype.val = (N.restrict p hp).idMorphism := by
+  ext x y
+  simp only [Matrix.submatrix_apply, idMorphism_apply, restrict_idem, Subtype.ext_iff]
+
+/-- **Restriction commutes with the differential of morphisms.** Let `N` and `N'` be restricted to
+the generators satisfying `p` and `p'`, and let `F` be a matrix from `N` to `N'` with no
+coefficient from a generator satisfying `p` to one that does not satisfy `p'`. Then the
+differential of the restriction of `F` is the restriction of `∂F`: the products in
+`∂F = d F + F * δ' + δ * F` from a generator satisfying `p` to one satisfying `p'` only pass
+through generators satisfying `p` or `p'`. -/
+theorem morphismDifferential_submatrix {p' : X' → Prop} [DecidablePred p']
+    {hp' : ∀ x y, p' x → ¬p' y → N'.coeff x y = 0} {F : Matrix X X' A}
+    (hF : ∀ x x', p x → ¬p' x' → F x x' = 0) :
+    morphismDifferential (N.restrict p hp) (N'.restrict p' hp')
+        (F.submatrix Subtype.val Subtype.val) =
+      (morphismDifferential N N' F).submatrix Subtype.val Subtype.val := by
+  have hcoeff : (N.restrict p hp).coeff = N.coeff.submatrix Subtype.val Subtype.val :=
+    Matrix.ext (restrict_coeff N)
+  have hcoeff' : (N'.restrict p' hp').coeff = N'.coeff.submatrix Subtype.val Subtype.val :=
+    Matrix.ext (restrict_coeff N')
+  -- The products only pass through generators satisfying `p'`, respectively `p`.
+  have hmul' := Matrix.submatrix_mul_of_injective F N'.coeff (Subtype.val : {x // p x} → X)
+    (Subtype.val : {x' // p' x'} → X') (Subtype.val : {x' // p' x'} → X') Subtype.val_injective
+    fun x x' hx => ⟨⟨x', by_contra fun hx' => hx (hF x x' x.property hx')⟩, rfl⟩
+  have hmul := Matrix.submatrix_mul_of_injective N.coeff F (Subtype.val : {x // p x} → X)
+    (Subtype.val : {x // p x} → X) (Subtype.val : {x' // p' x'} → X') Subtype.val_injective
+    fun x y hxy => ⟨⟨y, by_contra fun hy => hxy (hp x y x.property hy)⟩, rfl⟩
+  rw [morphismDifferential_apply, morphismDifferential_apply, hcoeff, hcoeff', ← hmul', ← hmul,
+    ← Matrix.submatrix_map]
+  rfl
 
 end Restrict
 

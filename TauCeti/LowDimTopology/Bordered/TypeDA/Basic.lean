@@ -637,6 +637,15 @@ theorem boxTensorTypeD_coeff (p q : {p : Y × X // idemA p.1 = N.idem p.2}) :
     (P.boxTensorTypeD N hP hιA hdB h).coeff p q = P.boxCoeff N p q := by
   rw [boxTensorTypeD, TypeDStructure.restrict_coeff, boxTypeD_coeff]
 
+/-- `P ⊠_I N` is the restriction of `P ⊠ N` to the generators `(y, x)` with matching idempotents
+`idemA y = idem x`. -/
+theorem boxTensorTypeD_eq_restrict :
+    P.boxTensorTypeD N hP hιA hdB h =
+      (P.boxTypeD N hdB h).restrict (fun p => idemA p.1 = N.idem p.2) fun _ _ hp hq => by
+        rw [boxTypeD_coeff]
+        exact P.boxCoeff_eq_zero_of_isRightIdemCompatible N hP hιA hp hq :=
+  (rfl)
+
 end BoxTensor
 
 /-! ### The identity bimodule -/
