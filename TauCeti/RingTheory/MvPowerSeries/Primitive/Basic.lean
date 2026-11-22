@@ -121,7 +121,7 @@ variable {σ R : Type*} [CommSemiring R] [Algebra ℚ R]
 theorem pderiv_primitive (i : σ) (f : MvPowerSeries σ R) : pderiv i (primitive i f) = f := by
   ext n
   rw [coeff_pderiv, coeff_add_single_primitive,
-    TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one]
+    TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one _ _ (Nat.cast_add_one_ne_zero _)]
 
 /-- Differentiation in another variable commutes with termwise integration. -/
 @[simp]
@@ -145,7 +145,7 @@ theorem coeff_primitive_pderiv (i : σ) (f : MvPowerSeries σ R) (n : σ →₀ 
   · exact coeff_primitive_of_eq_zero i _ h
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + single i 1 := ⟨_, (sub_add_single_one_cancel h).symm⟩
     rw [coeff_add_single_primitive, coeff_pderiv, ← smul_mul_assoc,
-      TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one]
+      TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one _ _ (Nat.cast_add_one_ne_zero _)]
 
 /-- **Characterisation of the primitive**: `g = ∫ f dXᵢ` iff `∂g/∂Xᵢ = f` and `g` has no terms
 free of `Xᵢ`. -/

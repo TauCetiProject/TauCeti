@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
-import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Data.Nat.Cast.IsUnit
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.Basic
 

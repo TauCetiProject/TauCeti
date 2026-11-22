@@ -187,7 +187,7 @@ theorem aHatSeries_mul_sub :
   set B := bernoulliPowerSeries A
   set B₂ := rescale c B
   -- `2 · (1 / 2) = 1`, in `A` and through the constant embedding in `A⟦X⟧`.
-  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (A := A) two_ne_zero
+  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (A := A) (K := ℚ) (m := 2) two_ne_zero
   have h2C : (2 : A⟦X⟧) * C c = 1 := by rw [← map_ofNat C 2, ← map_mul, h2, map_one]
   have hk : h * k = 1 := rescale_exp_mul_rescale_neg_exp c
   have hh : h * h = exp A := by
@@ -242,7 +242,7 @@ theorem bernoulli'PowerSeries_eq_rescale_exp_mul_aHatSeries :
     bernoulli'PowerSeries A = rescale (algebraMap ℚ A 2⁻¹) (exp A) * aHatSeries A := by
   set c := algebraMap ℚ A 2⁻¹
   rw [eq_comm, eq_bernoulli'PowerSeries_iff]
-  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (A := A) two_ne_zero
+  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (A := A) (K := ℚ) (m := 2) two_ne_zero
   have hk := rescale_exp_mul_rescale_neg_exp c
   have hkk : rescale (-c) (exp A) * rescale (-c) (exp A) = rescale (-1) (exp A) := by
     rw [rescale_exp_mul_self, mul_neg, h2]
@@ -254,7 +254,7 @@ theorem bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries :
     bernoulliPowerSeries A * rescale (algebraMap ℚ A 2⁻¹) (exp A) = aHatSeries A := by
   set c := algebraMap ℚ A 2⁻¹
   rw [eq_aHatSeries_iff]
-  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (A := A) two_ne_zero
+  have h2 : 2 * c = 1 := mod_cast natCast_mul_algebraMap_inv (A := A) (K := ℚ) (m := 2) two_ne_zero
   have hk := rescale_exp_mul_rescale_neg_exp c
   have hh : rescale c (exp A) * rescale c (exp A) = exp A := by
     rw [rescale_exp_mul_self, h2, rescale_one, RingHom.id_apply]
@@ -267,7 +267,7 @@ theorem rescale_two_bernoulliPowerSeries_mul_exp :
   have h := congrArg (rescale (2 : A)) (bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries A)
   have h2 : algebraMap ℚ A 2⁻¹ * 2 = 1 := by
     rw [mul_comm]
-    exact_mod_cast natCast_mul_algebraMap_inv (A := A) two_ne_zero
+    exact_mod_cast natCast_mul_algebraMap_inv (A := A) (K := ℚ) (m := 2) two_ne_zero
   simpa [map_mul, rescale_rescale, h2] using h
 
 /-- **The rescaled Â series is `X / sinh X`**: `Â(2X) · (e^X - e^{-X}) = 2X`. -/
@@ -276,7 +276,7 @@ theorem rescale_two_aHatSeries_mul_sub :
   have h := congrArg (rescale (2 : A)) (aHatSeries_mul_sub A)
   have h2 : algebraMap ℚ A 2⁻¹ * 2 = 1 := by
     rw [mul_comm]
-    exact_mod_cast natCast_mul_algebraMap_inv (A := A) two_ne_zero
+    exact_mod_cast natCast_mul_algebraMap_inv (A := A) (K := ℚ) (m := 2) two_ne_zero
   have hn2 : -algebraMap ℚ A 2⁻¹ * 2 = -1 := by linear_combination -h2
   simpa [map_mul, map_sub, rescale_rescale, rescale_X, map_ofNat, h2, hn2] using h
 
@@ -311,7 +311,8 @@ theorem logOf_aHatSeries :
   set k := rescale (-c) (exp A)
   set Â := aHatSeries A
   set T : A⟦X⟧ := mk fun n ↦ s (n + 1)
-  have h2 : (2 : A) * c = 1 := mod_cast natCast_mul_algebraMap_inv (A := A) two_ne_zero
+  have h2 : (2 : A) * c = 1 :=
+    mod_cast natCast_mul_algebraMap_inv (A := A) (K := ℚ) (m := 2) two_ne_zero
   have h2C : (2 : A⟦X⟧) * C c = 1 := by rw [← map_ofNat C 2, ← map_mul, h2, map_one]
   have hhk : h * k = 1 := rescale_exp_mul_rescale_neg_exp c
   -- `Â (e^{X/2} - e^{-X/2}) = X`, and its derivative

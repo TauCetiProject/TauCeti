@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Coeff
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
+import Mathlib.Data.Nat.Factorial.NatCast
 import TauCeti.Algebra.MvPolynomial.Coeff
 
 /-!
@@ -142,7 +143,7 @@ private theorem sum_smul_prod_pow_mem_adjoin_of_finite [Finite ι] (x : ι → A
   have hmem (k : ℕ) : ∑ g, y g ^ k ∈ T := by
     rw [← hps]
     refine s.sum_map_pow_mem_of_sum_map_pow_mem
-      (TauCeti.isUnit_natCast_of_ne_zero ℚ (Nat.factorial_ne_zero _)) (fun j _ hj ↦ ?_) k
+      (IsUnit.natCast_factorial_of_algebra ℚ _) (fun j _ hj ↦ ?_) k
     rw [hps, hT]
     intro e
     rw [hcoeff]
