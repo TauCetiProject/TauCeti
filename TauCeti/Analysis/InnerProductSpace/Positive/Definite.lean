@@ -47,6 +47,8 @@ half-space.
   factorization for the symmetric part `(A + A†) / 2` of a coercive operator `A` that need not be
   symmetric (`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`), which has the same real
   quadratic form as `A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
+* `LinearMap.toMatrix_orthonormalBasis_apply`: the entries of the matrix of a linear map in
+  orthonormal bases `(bⱼ)` and `(cᵢ)` are `⟪cᵢ, T bⱼ⟫`.
 * `ContinuousLinearMap.posDef_toMatrix_symmPart`: over the reals, the matrix of the symmetric part
   of a positive-definite operator in an orthonormal basis is positive definite.
 * `TauCeti.exists_linearEquiv_inner_eq_of_posDef`: a symmetric positive-definite bilinear form on a
@@ -242,6 +244,19 @@ theorem exists_linearEquiv_inner_eq_of_posDef {W E : Type*} [AddCommGroup W] [Mo
 
 end TauCeti
 
+namespace LinearMap
+
+/-- The `(i, j)` entry of the matrix of `T : V → W` with respect to orthonormal bases `(bⱼ)` of
+`V` and `(cᵢ)` of `W` is `⟪cᵢ, T bⱼ⟫`. -/
+theorem toMatrix_orthonormalBasis_apply {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] [Fintype κ] (b : OrthonormalBasis ι 𝕜 V)
+    (c : OrthonormalBasis κ 𝕜 W) (T : V →ₗ[𝕜] W) (i : κ) (j : ι) :
+    toMatrix b.toBasis c.toBasis T i j = ⟪c i, T (b j)⟫_𝕜 := by
+  simp [toMatrix_apply, OrthonormalBasis.repr_apply_apply]
+
+end LinearMap
+
 namespace ContinuousLinearMap
 
 open scoped Matrix in
@@ -254,11 +269,6 @@ theorem posDef_toMatrix_symmPart {V : Type*} [NormedAddCommGroup V] [InnerProduc
       (((2⁻¹ : ℝ) • (A + A.adjoint) : V →L[ℝ] V) : V →ₗ[ℝ] V)).PosDef := by
   set S : V →L[ℝ] V := (2⁻¹ : ℝ) • (A + A.adjoint)
   have hS : ∀ x y, ⟪S x, y⟫_ℝ = ⟪x, S y⟫_ℝ := A.isSymmetric_two_inv_smul_add_adjoint
-  have hM : ∀ i j, LinearMap.toMatrix b.toBasis b.toBasis (S : V →ₗ[ℝ] V) i j = ⟪S (b i), b j⟫_ℝ :=
-    fun i j => by
-      rw [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-        OrthonormalBasis.coe_toBasis, OrthonormalBasis.repr_apply_apply, coe_coe, hS,
-        real_inner_comm]
   refine Matrix.posDef_iff_dotProduct_mulVec.2
     ⟨(LinearMap.isHermitian_toMatrix_iff b).2 A.isSymmetric_two_inv_smul_add_adjoint,
       fun x hx => ?_⟩
@@ -272,6 +282,7 @@ theorem posDef_toMatrix_symmPart {V : Type*} [NormedAddCommGroup V] [InnerProduc
         simp only [b.sum_inner_mul_inner]
         simp only [hS, b.sum_inner_mul_inner]
     _ = star x ⬝ᵥ (LinearMap.toMatrix b.toBasis b.toBasis (S : V →ₗ[ℝ] V) *ᵥ x) := by
-        simp only [dotProduct, Matrix.mulVec, star_trivial, hM, hxv, real_inner_comm v]
+        simp only [dotProduct, Matrix.mulVec, star_trivial,
+          LinearMap.toMatrix_orthonormalBasis_apply, coe_coe, ← hS, hxv, real_inner_comm v]
 
 end ContinuousLinearMap

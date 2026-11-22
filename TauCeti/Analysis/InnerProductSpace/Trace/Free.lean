@@ -143,16 +143,13 @@ theorem sum_toMatrix_symmPart_mul_repr {V : Type*} [NormedAddCommGroup V]
     ∑ i, ∑ j, LinearMap.toMatrix b.toBasis b.toBasis
         (((2⁻¹ : ℝ) • (A + A.adjoint) : V →L[ℝ] V) : V →ₗ[ℝ] V) i j * b.repr (H (b j)) i =
       traceCLM ℝ V (A ∘L H) := by
-  set S : V →L[ℝ] V := (2⁻¹ : ℝ) • (A + A.adjoint)
   rw [← traceCLM_symmPart_comp A H hH, traceCLM_apply, LinearMap.trace_eq_sum_inner _ b,
     Finset.sum_comm]
+  set S : V →L[ℝ] V := (2⁻¹ : ℝ) • (A + A.adjoint)
   refine Finset.sum_congr rfl fun j _ => ?_
-  simp only [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-    OrthonormalBasis.coe_toBasis, OrthonormalBasis.repr_apply_apply, coe_coe, coe_comp,
-    Function.comp_apply]
-  have hS : ∀ x y, ⟪S x, y⟫_ℝ = ⟪x, ((2⁻¹ : ℝ) • (A + A.adjoint)) y⟫_ℝ :=
-    A.isSymmetric_two_inv_smul_add_adjoint
-  rw [← hS]
+  have hS : ∀ x y, ⟪S x, y⟫_ℝ = ⟪x, S y⟫_ℝ := A.isSymmetric_two_inv_smul_add_adjoint
+  simp only [LinearMap.toMatrix_orthonormalBasis_apply, b.repr_apply_apply, coe_coe, coe_comp,
+    Function.comp_apply, ← hS (b j)]
   simpa only [real_inner_comm (b _) (S (b j))] using b.sum_inner_mul_inner (S (b j)) (H (b j))
 
 open TauCeti in
