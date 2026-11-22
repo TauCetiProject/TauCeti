@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
 # From continuously differentiable boundary graphs to Lipschitz charts
@@ -26,7 +27,7 @@ When the frontier is compact, `C¹` graphs at every frontier point, with no boun
 derivatives, already give a Lipschitz domain with some uniform constant
 (`TauCeti.exists_isLipschitzDomainWith_of_contDiffAt`), since finitely many charts cover the
 frontier; this applies to every bounded open set with `C¹` boundary when `E` is
-finite-dimensional.
+finite-dimensional (`TauCeti.exists_isLipschitzDomainWith_of_isBounded_of_contDiff`).
 
 The analytic inputs are Mathlib's
 `ContDiffAt.exists_lipschitzOnWith_of_nnNorm_lt` and `LipschitzOnWith.extend_real`.
@@ -127,5 +128,21 @@ theorem exists_isLipschitzDomainWith_of_contDiffAt (hc : IsCompact (frontier Ome
     exists_isLipschitzChartWith_of_contDiffAt (L := ‖fderiv ℝ φ 0‖₊ + 1) ha hb hφ0 hφ
       (lt_add_one _) hgraph
   exact ⟨_, (Set.isLipschitzDomainAtWith_iff ..).2 ⟨e, ψ, a, b', hex, hchart⟩⟩
+
+/-- **A bounded open set with `Cⁿ` boundary, `n ≥ 1`, is a Lipschitz domain.** When `E` is
+finite-dimensional, a bounded set whose frontier has a `Cⁿ` local graph description at every
+point is a Lipschitz domain with some uniform constant `L`. This is
+`TauCeti.exists_isLipschitzDomainWith_of_contDiffAt`, since the frontier of a bounded set is
+compact. -/
+theorem exists_isLipschitzDomainWith_of_isBounded_of_contDiff [FiniteDimensional ℝ E]
+    {n : WithTop ℕ∞} (hn : 1 ≤ n) (hΩ : Bornology.IsBounded Omega)
+    (h : ∀ x ∈ frontier Omega,
+      ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (a b : ℝ),
+        e x = 0 ∧ 0 < a ∧ 0 < b ∧ φ 0 = 0 ∧ ContDiff ℝ n φ ∧
+          ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ φ z.snd < z.fst)) :
+    ∃ L, Omega.IsLipschitzDomainWith L :=
+  exists_isLipschitzDomainWith_of_contDiffAt hΩ.isCompact_frontier fun x hx ↦ by
+    obtain ⟨e, φ, a, b, hex, ha, hb, hφ0, hφ, hgraph⟩ := h x hx
+    exact ⟨e, φ, a, b, hex, ha, hb, hφ0, hφ.contDiffAt.of_le hn, hgraph⟩
 
 end TauCeti

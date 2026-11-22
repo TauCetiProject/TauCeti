@@ -31,7 +31,7 @@ a priori estimates of the Dirichlet problem `L u = f` in `Ω`, `u ∈ W^{2,p}(Ω
 * **Gilbarg–Trudinger, Theorem 9.14.** `‖u‖_{W^{2,p}} ≤ C (‖L u‖ + ‖u‖_{Lᵖ})`
   (`TauCeti.exists_norm_le_of_continuousWithinAt_of_contDiff_graph`). The lower-order terms are
   absorbed by Ehrling's inequality, which holds since `Ω` is a bounded Lipschitz domain
-  (`TauCeti.exists_isLipschitzDomainWith_of_contDiffAt`).
+  (`TauCeti.exists_isLipschitzDomainWith_of_isBounded_of_contDiff`).
 * **Uniqueness.** For `b = 0`, `c ≤ 0` and `p ≥ n = dim (ℝ × E)`, a solution of `L u = 0` in
   `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` vanishes
   (`TauCeti.eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero`). This needs neither the
@@ -77,21 +77,6 @@ open Wkp
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A bounded open set with `C²` boundary charts is a Lipschitz domain. -/
-private theorem exists_isLipschitzDomainWith_of_contDiff_graph
-    {Omega : Opens (WithLp 2 (ℝ × E))} (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
-    (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
-      ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (h₀ r₀ : ℝ),
-        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
-          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst)) :
-    ∃ L, (Omega : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L :=
-  exists_isLipschitzDomainWith_of_contDiffAt
-    (hΩ.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure)
-    fun x hx => by
-      obtain ⟨e, φ, h₀, r₀, hex, hh₀, hr₀, hφ0, hφ, hgraph⟩ := hbdry x hx
-      exact ⟨e, φ, h₀, r₀, hex, hh₀, hr₀, hφ0, hφ.contDiffAt.of_le one_le_two, hgraph⟩
-
 /-- **The global estimate for the Dirichlet problem** (Gilbarg–Trudinger, Theorem 9.14). Let
 `1 < p < ∞` and let `Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary. Let `A` be measurable
 on `Ω`, continuous within `Ω` and elliptic at every point of `closure Ω`, and let `b`, `c` be
@@ -125,7 +110,7 @@ theorem exists_norm_le_of_continuousWithinAt_of_contDiff_graph (hp : 1 < p) (hp_
       ‖u‖ ≤ C * (‖f‖ + ‖value 2 u‖) := by
   obtain ⟨C₀, hC₀⟩ := exists_norm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_graph hp
     hp_top hΩ hbdry hA hcont hell hb hbβ hc hcγ
-  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_of_contDiff_graph hΩ hbdry
+  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_of_isBounded_of_contDiff one_le_two hΩ hbdry
   -- Ehrling's inequality `‖u‖_{W^{1,p}} ≤ ε ‖D²u‖ + C₁ ‖u‖_{Lᵖ}` with `2 C ε ≤ 1 / 2`.
   set C := max C₀ 0
   have hC : 0 ≤ C := le_max_right _ _
@@ -183,21 +168,26 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
   have : IsFiniteMeasure (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
     isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
   set v := ofExponentLEL hpn 2 u
-  have hvū := (value_ofExponentLEL_ae hpn 2 u).trans huū
-  have hD := iteratedGradient_ofExponentLEL_ae hpn 1 u
+  have hv : ⇑(value 2 v) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] ⇑(value 2 u) :=
+    value_ofExponentLEL_ae hpn 2 u
+  have hvū := hv.trans huū
+  have hD : ⇑(iteratedGradient 1 v) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))]
+      ⇑(iteratedGradient 1 u) :=
+    iteratedGradient_ofExponentLEL_ae hpn 1 u
   have hle : ∀ x ∈ Omega, ū x ≤ 0 := fun x hx =>
     PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier hb rfl v hcont hvū hA hc
       (by
-        filter_upwards [heq, hD, value_ofExponentLEL_ae hpn 2 u] with y hy hDy hvy
+        filter_upwards [heq, hD, hv] with y hy hDy hvy
         rw [hDy, hvy, hy]) le_rfl (fun z hz => (hfr hz).le) hx
   have hge : ∀ x ∈ Omega, -ū x ≤ 0 := fun x hx =>
     PDE.le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier (ū := -ū) hb rfl (-v)
       hcont.neg ((value_neg_ae 2 v).trans hvū.neg) hA hc
       (by
-        filter_upwards [heq, hD, value_ofExponentLEL_ae hpn 2 u, value_neg_ae 2 v,
+        filter_upwards [heq, hD, hv, value_neg_ae 2 v,
           iteratedGradient_neg_ae 1 v] with y hy hDy hvy hnv hnD
-        rw [hnD, hnv, Pi.neg_apply, Pi.neg_apply, hDy, hvy, ContinuousLinearMap.comp_neg,
-          map_neg, mul_neg, ← neg_add, hy, neg_zero])
+        simp only [hnD, hnv, Pi.neg_apply, hDy, hvy]
+        rw [ContinuousLinearMap.comp_neg, map_neg]
+        linarith)
       le_rfl (fun z hz => by simp [hfr hz]) hx
   refine valueL_injective 2 ?_
   rw [map_zero, valueL_apply]
@@ -235,7 +225,7 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
         traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x =
           f x) →
       ‖u‖ ≤ C * ‖f‖ := by
-  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_of_contDiff_graph hΩ hbdry
+  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_of_isBounded_of_contDiff one_le_two hΩ hbdry
   -- `A` is bounded on `Ω`, by continuity up to the compact boundary.
   obtain ⟨U, hKU, -, hbdd⟩ :=
     exists_isOpen_isBounded_image_inter_of_isCompact_of_forall_continuousWithinAt (f := A)
@@ -246,11 +236,14 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
     exact hΛ _ ⟨x, ⟨hKU (subset_closure hx), hx⟩, rfl⟩
   obtain ⟨T, hTae⟩ := exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul (p := p) hA hAΛ
     (b := 0) (β := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp) hc hcγ
+  have hTae' : ∀ u, ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
+      T u x = traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x :=
+    fun u => (hTae u).mono fun x hx => by rwa [Pi.zero_apply, inner_zero_left, add_zero] at hx
   have hT : ∀ u f, (∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
       traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x =
         f x) → T u = f := fun u f heq => Lp.ext <| by
-    filter_upwards [hTae u, heq] with x h1 h2
-    rw [h1, Pi.zero_apply, inner_zero_left, add_zero, h2]
+    filter_upwards [hTae' u, heq] with x h1 h2
+    exact h1.trans h2
   -- Theorem 9.14 with `b = 0`, with a nonnegative constant `D`.
   obtain ⟨D₀, hD₀⟩ := exists_norm_le_of_continuousWithinAt_of_contDiff_graph hp hp_top hΩ hbdry
     hA hcont hell (b := 0) (β := 0) aestronglyMeasurable_const (ae_of_all _ fun _ => by simp) hc
@@ -267,10 +260,9 @@ theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq (hp : 1 < p)
       exact hx.symm))
     (fun u hu0 hTu => eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero hp_top hpn hL hΩ
       hpos hc0 hu0 (by
-        filter_upwards [hTae u, Lp.coeFn_zero ℝ p
+        filter_upwards [hTae' u, Lp.coeFn_zero ℝ p
           ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)] with x h1 h2
-        rw [Pi.zero_apply, inner_zero_left, add_zero, hTu] at h1
-        rw [← h1]
+        rw [← h1, hTu]
         exact h2))
   refine ⟨κ⁻¹, fun u f hu0 heq => ?_⟩
   have h := hκb u hu0

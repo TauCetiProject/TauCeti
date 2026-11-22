@@ -294,11 +294,12 @@ theorem exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul {μ : Measure
       (Wkp.iteratedGradientL 0 (Wkp.lowerOrderL 1 u)),
     (ContinuousLinearMap.mul ℝ ℝ).coeFn_holder (r := p) (hc'.toLp c) (Wkp.valueL 2 u),
     hb'.coeFn_toLp, hc'.coeFn_toLp] with x h1 h2 h3 h4 h5 h6 h7
-  simp only [add_apply, ContinuousLinearMap.comp_apply] at h1 ⊢
-  rw [h1, Pi.add_apply, h2, Pi.add_apply, h3, ContinuousLinearMap.holderL_apply_apply, h4,
-    ContinuousLinearMap.holderL_apply_apply, h5, h6, h7, innerSL_apply_apply,
-    ContinuousLinearMap.mul_apply', Wkp.iteratedGradientL_apply, Wkp.lowerOrderL_apply,
-    Wkp.iteratedGradientL_apply, Wkp.valueL_apply]
+  simp only [add_apply, ContinuousLinearMap.comp_apply, B, M,
+    ContinuousLinearMap.holderL_apply_apply, Wkp.iteratedGradientL_apply 1 u,
+    Wkp.lowerOrderL_apply 1 u, Wkp.iteratedGradientL_apply 0 (Wkp.lowerOrder 1 u),
+    Wkp.valueL_apply 2 u] at h1 h2 h3 h4 h5 ⊢
+  simp only [h1, Pi.add_apply, h2, h3, h4, h5, h6, h7, ContinuousLinearMap.mul_apply']
+  rw [innerSL_apply_apply]
 
 end InnerProductSpace
 

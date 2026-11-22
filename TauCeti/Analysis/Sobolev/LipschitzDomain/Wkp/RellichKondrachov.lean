@@ -107,9 +107,9 @@ theorem exists_pos_mul_norm_le_of_mem_w1p0Submodule
     fun w => by
       have hn := mul_le_mul_of_nonneg_right (le_max_left D 0) (add_nonneg (norm_nonneg (T w))
         (norm_nonneg (value 2 (w : Wkp volume Ω p 2))))
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-        smul_apply, valueL_apply, norm_smul,
-        Real.norm_of_nonneg (le_max_right D 0), ← Submodule.norm_coe]
+      simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, smul_apply,
+        valueL_apply 2 (w : Wkp volume Ω p 2), norm_smul, Real.norm_of_nonneg (le_max_right D 0),
+        ← Submodule.norm_coe]
       linarith [hest w ((hmemM _).1 w.property)]
   have hker : Disjoint (T.comp M.subtypeL).ker ⊤ := by
     rw [disjoint_top, LinearMap.ker_eq_bot']

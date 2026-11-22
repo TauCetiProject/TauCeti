@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.LinearIsometry
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Topology.Frontier
 
 /-!
 # The weak maximum principle for strong subsolutions in trace form
@@ -161,12 +162,7 @@ theorem le_of_nonneg_traceCLM_comp_iteratedGradient_add_mul_le_frontier
       rw [hūy]
       exact mul_nonpos_of_nonpos_of_nonneg hcy (hm0.trans hyV.2.le)
     linarith
-  · -- A frontier point of `V` lies in `closure Ω` but not in `V`.
-    have hzV : z ∉ (V : Set F) := fun h => (V.isOpen.inter_frontier_eq ▸ ⟨h, hz⟩ :
-      z ∈ (∅ : Set F))
-    by_cases hzΩ : z ∈ Ω
-    · exact not_lt.1 fun h => hzV ⟨hzΩ, h⟩
-    · exact hm z (Ω.isOpen.frontier_eq ▸ ⟨closure_mono hVΩ (frontier_subset_closure hz), hzΩ⟩)
+  · exact le_of_mem_frontier_inter_preimage_Ioi Ω.isOpen (hcont.mono subset_closure) hm hz
 
 end PDE
 
