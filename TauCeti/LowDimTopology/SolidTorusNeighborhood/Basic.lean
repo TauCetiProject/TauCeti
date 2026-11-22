@@ -131,7 +131,7 @@ subset `U` of `S¹ × S¹` is the trace of the open collar of points `(w, z)` wi
 theorem SolidTorus.extendsDisjointOpens_boundaryInclusion :
     TopCat.extendsDisjointOpens (TopCat.ofHom
       ⟨SolidTorus.boundaryInclusion, SolidTorus.isEmbedding_boundaryInclusion.continuous⟩) := by
-  have hw : Continuous fun p : SolidTorus ↦ (p.1 : ℂ) := continuous_subtype_val.comp continuous_fst
+  have hw : Continuous fun p : SolidTorus ↦ (p.1 : ℂ) := continuous_subtypeVal.comp continuous_fst
   refine TopCat.extendsDisjointOpens_of_continuousOn _
     (μ := fun q : Circle × Circle ↦ ((q.1 : ℂ), q.2)) (IsInducing.subtypeVal.prodMap .id)
     (N := {p | 1 / 2 < ‖(p.1 : ℂ)‖}) (ρ := fun p ↦ (‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ), p.2))
@@ -159,7 +159,7 @@ theorem SolidTorus.range_boundaryInclusion :
 private noncomputable def SolidTorus.twistMap (n : ℤ) (p : SolidTorus) : SolidTorus :=
   (⟨(p.1 : ℂ) * ((p.2 ^ n : Circle) : ℂ), by
     rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one]
-    exact mem_closedBall_zero_iff.mp p.1.2⟩, p.2)
+    exact mem_closedBall_zero_iff.mp p.1.property⟩, p.2)
 
 private theorem SolidTorus.twistMap_twistMap (m n : ℤ) (p : SolidTorus) :
     twistMap n (twistMap m p) = twistMap (m + n) p :=
@@ -169,7 +169,7 @@ private theorem SolidTorus.twistMap_zero (p : SolidTorus) : twistMap 0 p = p :=
   Prod.ext (Subtype.ext (by simp [twistMap])) rfl
 
 private theorem SolidTorus.continuous_twistMap (n : ℤ) : Continuous (twistMap n) :=
-  (((continuous_subtype_val.comp continuous_fst).mul (continuous_subtype_val.comp
+  (((continuous_subtypeVal.comp continuous_fst).mul (continuous_subtypeVal.comp
     ((continuous_zpow (G := Circle) n).comp continuous_snd))).subtype_mk _).prodMk continuous_snd
 
 /-- The twist `(w, z) ↦ (w zⁿ, z)` of the solid torus `D² × S¹` along its meridian discs. -/
@@ -365,7 +365,7 @@ theorem frontier_image [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
     SolidTorus.range_boundaryInclusion]
   congr 1
   ext p
-  have hp : ‖(p.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.mp p.1.2
+  have hp : ‖(p.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.mp p.1.property
   simp only [mem_sdiff, mem_univ, mem_ofPred_eq, true_and, not_lt]
   exact ⟨fun h' => le_antisymm hp h', fun h' => h'.ge⟩
 
@@ -588,8 +588,8 @@ private theorem exists_normalDisc {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1
         rw [ContinuousLinearMap.coe_coe, hφ, ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _),
           Complex.sq_norm, Complex.normSq_apply, ← real_inner_self_eq_norm_sq, inner_add_left,
           real_inner_smul_left, real_inner_smul_left, h₁, h₂] }
-  refine ⟨ψ, ((ContinuousLinearMap.smulRightL ℝ ℂ ℝ³ Complex.reCLM).continuous.comp hc₁).add
-    ((ContinuousLinearMap.smulRightL ℝ ℂ ℝ³ Complex.imCLM).continuous.comp hc₂),
+  refine ⟨ψ, ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ ℝ³ Complex.reCLM).continuous.comp hc₁).add
+    ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ ℝ³ Complex.imCLM).continuous.comp hc₂),
     fun z => ⟨fun w => ?_, fun v hv => ⟨⟪n₁ z, v⟫ + ⟪n₂ z, v⟫ * Complex.I, ?_⟩⟩⟩
   · rw [(hn z).2.2.2, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, hφ, h₁, h₂]
   · rw [(hn z).2.2.2] at hv
@@ -648,7 +648,7 @@ private theorem isOpen_image_normalDisc {f : Circle → ℝ³} {ε r : ℝ} (hr 
   have hnorm : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ = r * ‖(q.1 : ℂ)‖ := fun q => by
     rw [norm_smul, (ψ q.2).norm_map, Real.norm_of_nonneg hr.le]
   convert hemb.isOpenMap {q | ‖(q : Circle × ℝ³).2‖ < r}
-    (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtype_val))
+    (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtypeVal))
       continuous_const) using 1
   ext x
   constructor
@@ -683,12 +683,12 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
   -- `Φ (w, z)` is the point `r w` of the normal disc at `z`.
   obtain ⟨ψ, hψc, hψ⟩ := exists_normalDisc hf himm
   have hψc' : Continuous fun q : SolidTorus => ψ q.2 q.1 :=
-    (hψc.comp continuous_snd).clm_apply (continuous_subtype_val.comp continuous_fst)
+    (hψc.comp continuous_snd).clm_apply (continuous_subtypeVal.comp continuous_fst)
   have hnorm : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ = r * ‖(q.1 : ℂ)‖ := fun q => by
     rw [norm_smul, (ψ q.2).norm_map, Real.norm_of_nonneg hr.le]
   have hle : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ ≤ r := fun q => by
     rw [hnorm]
-    exact mul_le_of_le_one_right hr.le (mem_closedBall_zero_iff.mp q.1.2)
+    exact mul_le_of_le_one_right hr.le (mem_closedBall_zero_iff.mp q.1.property)
   have hmem : ∀ q : SolidTorus, (q.2, r • ψ q.2 q.1) ∈ normalTube (𝓡 1) f ε := fun q =>
     mem_normalTube.mpr ⟨Submodule.smul_mem _ _ ((hψ q.2).1 _), (hle q).trans_lt hrε⟩
   have hinj : Injective fun q : SolidTorus => f q.2 + r • ψ q.2 q.1 := fun q q' h => by

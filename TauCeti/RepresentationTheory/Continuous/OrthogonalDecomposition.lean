@@ -194,7 +194,7 @@ theorem exists_orthogonal_irreducible_decomposition (hπ : IsUnitary π) :
       (le_of_eq (by rw [Subrepresentation.toSubmodule_top, finrank_top]))
   have hfamily :
       OrthogonalFamily 𝕜 (fun i ↦ (U i).toSubmodule) (fun i ↦ ((U i).toSubmodule).subtypeₗᵢ) :=
-    fun i j hij v w ↦ horth hij v v.2 w w.2
+    fun i j hij v w ↦ horth hij v v.property w w.property
   have htop : ⨆ i, (U i).toSubmodule = ⊤ := by
     rw [hiSup, Subrepresentation.toSubmodule_top]
   have hinternal : DirectSum.IsInternal (fun i ↦ (U i).toSubmodule) :=

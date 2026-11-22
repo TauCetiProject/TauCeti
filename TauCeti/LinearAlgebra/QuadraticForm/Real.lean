@@ -13,6 +13,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+public import TauCeti.LinearAlgebra.QuadraticForm.UInvariant
 
 /-!
 # Classification of real quadratic forms by their signature
@@ -70,6 +71,7 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
   isometric to a prescribed normal form exactly when it has the prescribed signature.
 * `QuadraticForm.equivalent_realSignatureForm_iff`: distinct signatures give non-isometric normal
   forms.
+* `TauCeti.uInvariant_real`: `u(ℝ) = ⊤`.
 
 ## References
 
@@ -432,5 +434,11 @@ theorem nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef (hQ : Q.PosDef) :
     rw [hwone, weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
   rw [hstandard] at e
   exact ⟨e⟩
+
+/-- The `u`-invariant of `ℝ` is infinite: the standard sum of squares is anisotropic in every
+dimension. -/
+@[simp]
+theorem uInvariant_real : uInvariant ℝ = ⊤ :=
+  uInvariant_eq_top_of_isStrictOrderedRing ℝ
 
 end TauCeti

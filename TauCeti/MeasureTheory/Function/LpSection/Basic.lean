@@ -170,15 +170,15 @@ def mk (s : ∀ x, E x) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
 
 /-- A representative section of a class in `Lᵖ(E, μ)`. -/
 instance : CoeFun (LpSection 𝕜 F E p μ) (fun _ ↦ ∀ x, E x) :=
-  ⟨fun f ↦ (Quotient.out f : memLpSections 𝕜 F E p μ).1⟩
+  ⟨fun f ↦ (Quotient.out f : memLpSections 𝕜 F E p μ).val⟩
 
 variable (f g : LpSection 𝕜 F E p μ)
 
 theorem aestronglyMeasurableSection : AEStronglyMeasurableSection 𝕜 F μ f :=
-  (Quotient.out f : memLpSections 𝕜 F E p μ).2.1
+  (Quotient.out f : memLpSections 𝕜 F E p μ).property.1
 
 theorem memLp_norm : MemLp (fun x ↦ ‖f x‖) p μ :=
-  (Quotient.out f : memLpSections 𝕜 F E p μ).2.2
+  (Quotient.out f : memLpSections 𝕜 F E p μ).property.2
 
 theorem aestronglyMeasurable_norm : AEStronglyMeasurable (fun x ↦ ‖f x‖) μ :=
   (memLp_norm f).aestronglyMeasurable
@@ -274,6 +274,17 @@ theorem coeFn_sub : ∀ᵐ x ∂μ, (f - g) x = f x - g x := by
   rw [e]
   exact coeFn_mk _ _
 
+/-- The pointwise sum of finitely many `Lᵖ` sections represents their sum. -/
+theorem coeFn_sum {ι : Type*} (s : Finset ι) (f : ι → LpSection 𝕜 F E p μ) :
+    ∀ᵐ x ∂μ, (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simpa using coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)
+  | insert a s ha ih =>
+    filter_upwards [coeFn_add (f a) (∑ i ∈ s, f i), ih] with x h₁ h₂
+    rw [Finset.sum_insert ha, h₁, h₂, Finset.sum_insert ha]
+
 /-- The `Lᵖ` norm of the fibre norm of a representative. -/
 instance : Norm (LpSection 𝕜 F E p μ) :=
   ⟨fun f ↦ (eLpNorm (fun x ↦ ‖f x‖) p μ).toReal⟩
@@ -309,6 +320,9 @@ theorem norm_eq_integral (hp0 : p ≠ 0) (hp : p ≠ ∞) :
 
 variable [hp : Fact (1 ≤ p)]
 
+-- The additive structure is `instAddCommGroup` itself, so that it agrees at instance reducibility
+-- with the one in `LpSection 𝕜 F E p μ →L[𝕜] LpSection 𝕜 F E p μ` and operator norms of maps into
+-- spaces of such operators are found by instance search.
 instance : NormedAddCommGroup (LpSection 𝕜 F E p μ) :=
   { AddGroupNorm.toNormedAddCommGroup {
   toFun := norm
@@ -337,7 +351,7 @@ instance : NormedAddCommGroup (LpSection 𝕜 F E p μ) :=
     refine ext _ _ ?_
     filter_upwards [hf, coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)] with x hx h0
     rw [h0]
-    simpa using hx } with }
+    simpa using hx } with toAddCommGroup := instAddCommGroup }
 
 instance : NormedSpace 𝕜 (LpSection 𝕜 F E p μ) where
   norm_smul_le c f := by

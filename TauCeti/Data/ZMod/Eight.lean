@@ -24,6 +24,8 @@ rank at least four.
 
 * `ZMod.four_le_of_forall_eq_or_eq`: nonempty families in `{y, 5y}` and `{-y, -5y}` modulo `8`
   with the same product and the same sum have at least four members.
+* `ZMod.add_add_eq_neg_or_eq_neg_five_mul`: the sum of three residues from `{y, 5y}` lies in
+  `{-y, -5y}` modulo `8`.
 -/
 
 public section
@@ -84,5 +86,15 @@ theorem four_le_of_forall_eq_or_eq {N : ℕ} (hN : N ≠ 0) {y : ZMod (2 ^ 3)}
     rw [hN2.neg_pow, ← hP, neg_mul, hpe] at hpf
     have key : ∀ x z : ZMod (2 ^ 3), 2 * x = 0 → 2 * z = 0 → -(1 + x) ≠ 1 + z := by decide
     exact (key _ _ hE hF hpf).elim
+
+/-- Modulo `8`, the sum of three residues from `{y, 5 y}` lies in `{-y, -5 y}`. -/
+theorem add_add_eq_neg_or_eq_neg_five_mul {y a b c : ZMod (2 ^ 3)}
+    (ha : a = y ∨ a = 5 * y) (hb : b = y ∨ b = 5 * y) (hc : c = y ∨ c = 5 * y) :
+    a + b + c = -y ∨ a + b + c = -(5 * y) := by
+  have key₂ : ∀ y a b : ZMod (2 ^ 3), (a = y ∨ a = 5 * y) → (b = y ∨ b = 5 * y) →
+      (a + b = 2 * y ∨ a + b = 6 * y) := by decide
+  have key₃ : ∀ y s c : ZMod (2 ^ 3), (s = 2 * y ∨ s = 6 * y) →
+      (c = y ∨ c = 5 * y) → (s + c = -y ∨ s + c = -(5 * y)) := by decide
+  exact key₃ y _ _ (key₂ y _ _ ha hb) hc
 
 end ZMod

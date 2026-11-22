@@ -81,7 +81,7 @@ theorem coe_projZeroAlgHom_apply (hneg : ∀ i < 0, 𝒜 i = ⊥) (a : A) :
 /-- `projZeroAlgHom` restricts to the identity on `𝒜 0`. -/
 theorem projZeroAlgHom_apply_coe (hneg : ∀ i < 0, 𝒜 i = ⊥) (a : 𝒜 0) :
     projZeroAlgHom hneg (a : A) = a :=
-  Subtype.ext (decompose_of_mem_same 𝒜 a.2)
+  Subtype.ext (decompose_of_mem_same 𝒜 a.property)
 
 /-- Homogeneous elements of strictly positive degree map to zero under `projZeroAlgHom`. -/
 theorem projZeroAlgHom_eq_zero_of_mem_pos (hneg : ∀ i < 0, 𝒜 i = ⊥) {i : ℤ} (hi : 0 < i)
@@ -99,11 +99,11 @@ theorem projZeroAlgHom_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥) {a : A} :
     refine Submodule.sum_mem _ fun i _ ↦ ?_
     rcases lt_trichotomy i 0 with hi | rfl | hi
     · have hz : (decompose 𝒜 a i : A) = 0 := by
-        simpa [hneg i hi] using (decompose 𝒜 a i).2
+        simpa [hneg i hi] using (decompose 𝒜 a i).property
       simp [hz]
     · rw [← coe_projZeroAlgHom_apply hneg, ha0, ZeroMemClass.coe_zero]
       exact Submodule.zero_mem _
-    · exact Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem hi (decompose 𝒜 a i).2)
+    · exact Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem hi (decompose 𝒜 a i).property)
   · intro ha
     refine Submodule.iSup_induction _ (motive := fun x ↦ projZeroAlgHom hneg x = 0) ha
       (fun i x hx ↦ ?_) (map_zero _) (fun _ _ hx hy ↦ by rw [map_add, hx, hy, add_zero])
@@ -124,7 +124,7 @@ def gradeZeroAlgEquiv [FaithfulSMul R A]
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) : R ≃ₐ[R] 𝒜 0 :=
   AlgEquiv.ofBijective (Algebra.ofId R (𝒜 0)) ⟨fun c₁ c₂ h ↦
     FaithfulSMul.algebraMap_injective R A (congrArg Subtype.val h), fun x ↦ by
-      obtain ⟨c, hc⟩ := hzero x.1 x.2
+      obtain ⟨c, hc⟩ := hzero x.val x.property
       exact ⟨c, Subtype.ext hc⟩⟩
 
 /-- Applying `gradeZeroAlgEquiv` embeds scalars via `algebraMap R A`. -/

@@ -314,7 +314,7 @@ theorem quadraticDefect_eq_zero_iff {a : Kˣ} : quadraticDefect a = 0 ↔ IsSqua
     sub_eq_zero, ← Units.isSquare_coe_iff]
   refine ⟨fun h => ⟨ξ₀, by rw [h, sq]⟩, fun ⟨r, hr⟩ => ?_⟩
   have h := h₀ r
-  rwa [sq r, ← hr, sub_self, map_zero, le_zero_iff, map_eq_zero, sub_eq_zero] at h
+  rwa [sq r, ← hr, sub_self, map_zero, nonpos_iff_eq_zero, map_eq_zero, sub_eq_zero] at h
 
 /-- The quadratic defect of an integral element is an integral ideal. -/
 theorem quadraticDefect_le_one {a : Kˣ} (ha : (a : K) ∈ 𝒪[K]) : quadraticDefect a ≤ 1 := by
@@ -490,7 +490,7 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
     have hξ1 : valuation K ξ ≤ 1 :=
       valuation_le_one_of_sub_sq_le_one hu
         (hξ.trans (pow_le_one₀ zero_le hπ1.le))
-    have hs1 : valuation K (s : K) ≤ 1 := (Valuation.mem_integer_iff _ _).mp s.2
+    have hs1 : valuation K (s : K) ≤ 1 := (Valuation.mem_integer_iff _ _).mp s.property
     calc valuation K (2 * ξ * ((π : K) ^ k * (s : K)))
         = valuation K (2 : K) * valuation K ξ *
             (valuation K (π : K) ^ k * valuation K (s : K)) := by

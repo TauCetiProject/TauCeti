@@ -128,7 +128,7 @@ private noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (
         rw [add_zero]
         exact (InternalGrading.mem_submodule_piece _ _ _).mpr (GradedModuleCat.map_mem p' hx))
     retract := GradedModuleCat.hom_ext <| LinearMap.ext fun z ↦
-      Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hp').mp z.2) }
+      Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hp').mp z.property) }
 
 /-- **Homogeneous splitting of a degree-zero idempotent on a finite shifted free module `I → A`.**
 Over a connected nonnegatively graded algebra `A` over a PID `k`, any degree-zero idempotent
@@ -252,7 +252,7 @@ theorem multiset_map_eq_of_homogeneous_basis_range_idempotent
         (GradedModuleCat.free 𝒜 (d ∘ ULift.down) ≅ rangeObjOfPiEnd s p hhom) :=
     fun b d hb ↦ ((b.reindex Equiv.ulift.symm).map equivRange).isoGradedFree fun i ↦
       (InternalGrading.mem_submodule_piece _ _ _).mpr <| by
-        have hval : (((b.reindex Equiv.ulift.symm).map equivRange) i).1 =
+        have hval : (((b.reindex Equiv.ulift.symm).map equivRange) i).val =
             (DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm (b i.down).val := by
           rw [Module.Basis.map_apply, Module.Basis.reindex_apply]
           exact LinearEquiv.ofSubmodules_apply _ _ (b i.down)

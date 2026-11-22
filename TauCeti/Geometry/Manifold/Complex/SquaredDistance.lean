@@ -158,7 +158,7 @@ from any point is strictly plurisubharmonic at every point. -/
 theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal (U : Opens F) (a : F)
     (x : U) : IsManifoldStrictlyPlurisubharmonicAt F (fun y : U ↦ ‖(y : F) - a‖ ^ 2) x := by
   rw [isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff
-    (contMDiff_subtype_val (I := 𝓘(ℂ, F)) x)]
+    (contMDiff_subtypeVal (I := 𝓘(ℂ, F)) x)]
   exact Manifold.injective_mvfderiv_subtype_val x
 
 section Immersion

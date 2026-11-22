@@ -104,7 +104,7 @@ theorem hom_kernelι : (kernelι f).hom = (LinearMap.ker f.hom).subtype :=
 
 @[reassoc (attr := simp)]
 theorem kernelι_comp : kernelι f ≫ f = 0 :=
-  hom_ext <| LinearMap.ext fun z ↦ z.2
+  hom_ext <| LinearMap.ext fun z ↦ z.property
 
 /-- The kernel fork of a morphism of graded modules. -/
 @[expose]

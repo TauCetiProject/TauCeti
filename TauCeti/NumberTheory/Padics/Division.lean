@@ -58,7 +58,7 @@ def mulPHomeomorph : ℤ_[p] ≃ₜ multiplesClopen p := by
     apply mul_left_cancel₀ (NeZero.ne (p : ℤ_[p]))
     exact congrArg Subtype.val h
   have hsurj : Function.Surjective f := fun y ↦ by
-    obtain ⟨x, hx⟩ := (mem_multiplesClopen_iff (p := p)).mp y.2
+    obtain ⟨x, hx⟩ := (mem_multiplesClopen_iff (p := p)).mp y.property
     exact ⟨x, Subtype.ext hx.symm⟩
   let e := Equiv.ofBijective f ⟨hinj, hsurj⟩
   exact

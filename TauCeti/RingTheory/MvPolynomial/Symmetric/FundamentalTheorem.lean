@@ -116,7 +116,7 @@ changing coefficients along a ring homomorphism `f : R →+* S`. -/
 theorem map_esymmAlgEquiv_symm {σ R S : Type*} [Fintype σ] [CommRing R] [CommRing S] {n : ℕ}
     (hn : Fintype.card σ = n) (f : R →+* S) (p : symmetricSubalgebra σ R) :
     map f ((esymmAlgEquiv σ R hn).symm p) =
-      (esymmAlgEquiv σ S hn).symm ⟨map f p, p.2.map f⟩ := by
+      (esymmAlgEquiv σ S hn).symm ⟨map f p, p.property.map f⟩ := by
   apply (esymmAlgEquiv σ S hn).injective
   apply Subtype.ext
   rw [(esymmAlgEquiv σ S hn).apply_symm_apply]

@@ -90,11 +90,11 @@ def freeHeadCoord (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
     {I : Type uI} (s : I → ℤ) (q : ℤ) :
     (free 𝒜 s).grading.piece q →ₗ[k] ({j : I // s j = q} → k) where
-  toFun x j := connectedAugmentation hneg hzero (x.1 j.1)
+  toFun x j := connectedAugmentation hneg hzero (x.val j.val)
   map_add' x y := funext fun j ↦ by
     rw [Submodule.coe_add, DirectSum.add_apply, map_add, Pi.add_apply]
   map_smul' c x := funext fun j ↦ by
-    rw [Submodule.coe_smul_of_tower, ← algebraMap_smul A c x.1, DirectSum.smul_apply, smul_eq_mul,
+    rw [Submodule.coe_smul_of_tower, ← algebraMap_smul A c x.val, DirectSum.smul_apply, smul_eq_mul,
       map_mul, connectedAugmentation_algebraMap, Pi.smul_apply, smul_eq_mul, RingHom.id_apply]
 
 /-- `freeHeadCoord` evaluates `connectedAugmentation` on each shift-`q` coordinate. -/
@@ -103,7 +103,7 @@ theorem freeHeadCoord_apply (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
     {I : Type uI} (s : I → ℤ) (q : ℤ) (x : (free 𝒜 s).grading.piece q)
     (j : {j : I // s j = q}) :
-    freeHeadCoord hneg hzero s q x j = connectedAugmentation hneg hzero (x.1 j.1) :=
+    freeHeadCoord hneg hzero s q x j = connectedAugmentation hneg hzero (x.val j.val) :=
   (rfl)
 
 omit [FaithfulSMul k A] in
@@ -126,33 +126,33 @@ theorem freeHeadCoord_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥)
   constructor
   · intro hx0
     classical
-    rw [eq_sum_support_smul_freeGenerator s x.1]
+    rw [eq_sum_support_smul_freeGenerator s x.val]
     refine Submodule.sum_mem _ fun j _ ↦ ?_
-    have hxj : x.1 j ∈ 𝒜 (q - s j) := (mem_free_piece_iff 𝒜 s q x.1).mp x.2 j
+    have hxj : x.val j ∈ 𝒜 (q - s j) := (mem_free_piece_iff 𝒜 s q x.val).mp x.property j
     rcases lt_trichotomy (s j) q with hlt | hsq | hgt
     · exact Submodule.smul_mem_smul
         (Submodule.mem_iSup_of_mem (q - s j) (Submodule.mem_iSup_of_mem (by omega) hxj))
         Submodule.mem_top
-    · have hxj0 : x.1 j ∈ 𝒜 0 := by simpa [hsq] using hxj
-      have haug : connectedAugmentation hneg hzero (x.1 j) = 0 := congrFun hx0 ⟨j, hsq⟩
-      have hzero_coord : x.1 j = 0 := by
+    · have hxj0 : x.val j ∈ 𝒜 0 := by simpa [hsq] using hxj
+      have haug : connectedAugmentation hneg hzero (x.val j) = 0 := congrFun hx0 ⟨j, hsq⟩
+      have hzero_coord : x.val j = 0 := by
         rw [← algebraMap_connectedAugmentation_of_mem_zero hneg hzero hxj0, haug, map_zero]
       simp [hzero_coord]
-    · have hzero_coord : x.1 j = 0 := by simpa [hneg (q - s j) (by omega)] using hxj
+    · have hzero_coord : x.val j = 0 := by simpa [hneg (q - s j) (by omega)] using hxj
       simp [hzero_coord]
   · intro hx
     ext j
     exact (connectedAugmentation_eq_zero_iff hneg hzero).mpr
-      (coord_mem_positive_of_mem_positive_smul_top hneg s hx j.1)
+      (coord_mem_positive_of_mem_positive_smul_top hneg s hx j.val)
 
 omit [FaithfulSMul k A] in
 /-- Canonical `k`-linear section of `freeHeadCoord` when the shift-`q` fiber is finite. -/
 private def freeHeadLift {I : Type uI} (s : I → ℤ) (q : ℤ) [Fintype {j : I // s j = q}] :
     ({j : I // s j = q} → k) →ₗ[k] (free 𝒜 s).grading.piece q where
   toFun c :=
-    ⟨∑ j : {j : I // s j = q}, c j • freeGenerator (𝒜 := 𝒜) (d := s) j.1, by
+    ⟨∑ j : {j : I // s j = q}, c j • freeGenerator (𝒜 := 𝒜) (d := s) j.val, by
       refine Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ (c j) ?_
-      simpa [j.2] using freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := s) j.1⟩
+      simpa [j.property] using freeGenerator_mem_free_piece (𝒜 := 𝒜) (d := s) j.val⟩
   map_add' c₁ c₂ := Subtype.ext (by simp [add_smul, Finset.sum_add_distrib])
   map_smul' r c := Subtype.ext (by simp [Finset.smul_sum, mul_smul])
 
@@ -164,14 +164,14 @@ private theorem freeHeadCoord_freeHeadLift (hneg : ∀ i < 0, 𝒜 i = ⊥)
   classical
   ext i
   rw [freeHeadCoord_apply]
-  have hcoord : (freeHeadLift (𝒜 := 𝒜) s q c).1 i.1 = algebraMap k A (c i) := by
+  have hcoord : (freeHeadLift (𝒜 := 𝒜) s q c).val i.val = algebraMap k A (c i) := by
     dsimp only [freeHeadLift, LinearMap.coe_mk, AddHom.coe_mk]
     rw [DFinsupp.finsetSum_apply]
     simp_rw [← algebraMap_smul A, DirectSum.smul_apply, smul_eq_mul]
     rw [Finset.sum_eq_single i]
     · simp [freeGenerator_apply]
     · intro j _ hji
-      have hij : j.1 ≠ i.1 := fun h ↦ hji (Subtype.ext h)
+      have hij : j.val ≠ i.val := fun h ↦ hji (Subtype.ext h)
       simp [freeGenerator_apply, hij]
     · exact fun hi ↦ absurd (Finset.mem_univ i) hi
   simp [hcoord]
@@ -196,7 +196,7 @@ private def freeHeadHom (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (LinearMap.codRestrict ((free 𝒜 t).grading.piece q)
       ((f.hom.restrictScalars k).comp (((free 𝒜 s).grading.piece q).subtype.comp
         (freeHeadLift s q)))
-      fun c ↦ map_mem f (freeHeadLift s q c).2)
+      fun c ↦ map_mem f (freeHeadLift s q c).property)
 
 private theorem freeHeadHom_id (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
@@ -215,7 +215,7 @@ private theorem freeHeadHom_comp (hneg : ∀ i < 0, 𝒜 i = ⊥)
       (freeHeadHom hneg hzero g q).comp (freeHeadHom hneg hzero f q) := by
   ext c j
   set y : (free 𝒜 d₂).grading.piece q :=
-    ⟨f.hom (freeHeadLift d₁ q c).1, map_mem f (freeHeadLift d₁ q c).2⟩
+    ⟨f.hom (freeHeadLift d₁ q c).val, map_mem f (freeHeadLift d₁ q c).property⟩
   set y' : (free 𝒜 d₂).grading.piece q :=
     freeHeadLift d₂ q (freeHeadCoord hneg hzero d₂ q y)
   have hdiff : ((y - y' : (free 𝒜 d₂).grading.piece q) : free 𝒜 d₂) ∈
@@ -223,11 +223,11 @@ private theorem freeHeadHom_comp (hneg : ∀ i < 0, 𝒜 i = ⊥)
     rw [← freeHeadCoord_eq_zero_iff hneg hzero d₂ q (y - y'), map_sub,
       freeHeadCoord_freeHeadLift, sub_self]
   have hgdiff : freeHeadCoord hneg hzero d₃ q
-      ⟨g.hom (y - y').1, map_mem g (y - y').2⟩ = 0 :=
+      ⟨g.hom (y - y').val, map_mem g (y - y').property⟩ = 0 :=
     (freeHeadCoord_eq_zero_iff hneg hzero d₃ q _).mpr (map_mem_positive_smul_top g hdiff)
-  have hg_sub : (⟨g.hom (y - y').1, map_mem g (y - y').2⟩ : (free 𝒜 d₃).grading.piece q) =
-      ⟨g.hom y.1, map_mem g y.2⟩ - ⟨g.hom y'.1, map_mem g y'.2⟩ :=
-    Subtype.ext (map_sub g.hom y.1 y'.1)
+  have hg_sub : (⟨g.hom (y - y').val, map_mem g (y - y').property⟩ : (free 𝒜 d₃).grading.piece q) =
+      ⟨g.hom y.val, map_mem g y.property⟩ - ⟨g.hom y'.val, map_mem g y'.property⟩ :=
+    Subtype.ext (map_sub g.hom y.val y'.val)
   rw [hg_sub, map_sub] at hgdiff
   dsimp [freeHeadHom]
   exact congrFun (sub_eq_zero.mp hgdiff) j

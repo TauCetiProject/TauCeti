@@ -58,7 +58,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (p : E → Posit
 /-- A `C^n` positive period function is `C^n` as a real-valued function. -/
 private theorem contDiff_coe_period (hp : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) n p) :
     ContDiff ℝ n (fun x ↦ (p x : ℝ)) :=
-  contMDiff_iff_contDiff.mp (contMDiff_subtype_val.comp hp)
+  contMDiff_iff_contDiff.mp (contMDiff_subtypeVal.comp hp)
 
 /-- The bound `(k!)^2 C^k / ε^(k+1)` of `TauCeti.norm_iteratedFDeriv_inv_comp_le` is at least one
 when `0 < ε ≤ 1` and `1 ≤ C`. -/
@@ -115,10 +115,11 @@ theorem norm_iteratedFDeriv_realNormalization_le (hp : ContMDiff 𝓘(ℝ, E) �
   set X : ℝ := ((m + 1) ! : ℝ) ^ 2 * C ^ (m + 1) / ε ^ (m + 1 + 1) with hX
   have hX₁ : 1 ≤ X := one_le_factorial_sq_mul_pow_div_pow (m + 1) hε hε₁ hC
   have hlast : ‖iteratedFDeriv ℝ (m + 1) (fun x ↦ (p x : ℝ)⁻¹) z.1‖ ≤ X :=
-    norm_iteratedFDeriv_inv_comp_le hq hε hε₁ hpz hC hD
+    norm_iteratedFDeriv_inv_comp_le hq hε hε₁ (hpz.trans (Real.le_norm_self _)) hC hD
   have hprev : ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv ℝ m (fun x ↦ (p x : ℝ)⁻¹) z.1‖ ≤ X := by
     have h := norm_iteratedFDeriv_inv_comp_le (hq.of_le (by exact_mod_cast Nat.le_succ m))
-      hε hε₁ hpz hC fun i hi₁ hi ↦ hD i hi₁ (hi.trans (Nat.le_succ m))
+      hε hε₁ (hpz.trans (Real.le_norm_self _)) hC fun i hi₁ hi ↦
+        hD i hi₁ (hi.trans (Nat.le_succ m))
     calc ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv ℝ m (fun x ↦ (p x : ℝ)⁻¹) z.1‖
         ≤ ((m + 1 : ℕ) : ℝ) * ((m ! : ℝ) ^ 2 * C ^ m / ε ^ (m + 1)) := by gcongr
       _ ≤ X := succ_mul_factorial_sq_mul_pow_div_pow_le m hε hε₁ hC
