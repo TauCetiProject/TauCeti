@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Gluing
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CLMApply
 public import Mathlib.Topology.ContinuousMap.LocallyConvex
@@ -24,8 +25,10 @@ For a cover, the coefficient map `TauCeti.Manifold.sectionFrameCoordinates` is a
 embedding into the product of weak Whitney coefficient spaces. Its image consists exactly
 of tuples satisfying the actual bundle transition law, as proved in `Section.Gluing`.
 Thus this topology retains the gluing equations when taking coefficient limits.
-Point evaluation is continuous, and the section space is Hausdorff. When the source model is
-locally compact, evaluation is jointly continuous in the section and base point.
+Point evaluation is continuous, pointwise multiplication by a fixed `C^n` scalar function is
+continuous (`ContMDiffSection.continuous_smulLinearMap_frameTopology`), and the section space
+is Hausdorff. When the source model is locally compact, evaluation is jointly continuous in the
+section and base point.
 
 The topology is supplied explicitly, rather than installed globally, since the frame domains
 are parameters. The results here concern a specified family of frame domains. Cover comparison
@@ -300,6 +303,25 @@ theorem continuous_eval_const (hcover : ∀ x, ∃ i, x ∈ U i) (x : M) :
   let _ := frameTopology (I := I) (n := n) e U hU
   obtain ⟨i, hi⟩ := hcover x
   exact continuous_eval_const_of_mem e U hU i hi
+
+/-- Pointwise multiplication by a fixed `C^n` scalar function is continuous in the compact
+derivative frame topology. -/
+theorem continuous_smulLinearMap_frameTopology (f : C^n⟮I, M; 𝕜⟯) :
+    letI := frameTopology (I := I) (n := n) e U hU
+    Continuous (smulLinearMap (I := I) (F := F) (V := V) (n := n) f) := by
+  let := frameTopology (I := I) (n := n) e U hU
+  refine (continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦ ?_
+  let A : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+    ⟨fun x ↦ f x • ContinuousLinearMap.id 𝕜 F,
+      (f.contMDiff.comp contMDiff_subtypeVal).smul contMDiff_const⟩
+  convert (ContMDiffMap.continuous_clmApplyLinearMap A).comp
+    (continuous_frameCoordinates e U hU i) using 1
+  funext s
+  ext x
+  simp only [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply,
+    Trivialization.frameCoordinates_apply, smulLinearMap_eq_smul, smul_apply,
+    ← (e i).continuousLinearMapAt_apply_of_mem (R := 𝕜) (hU i x.property), map_smul]
+  rfl
 
 section Evaluation
 

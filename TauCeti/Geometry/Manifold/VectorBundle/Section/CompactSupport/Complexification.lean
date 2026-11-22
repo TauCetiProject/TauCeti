@@ -15,8 +15,8 @@ public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 The algebraic comparisons in `CompactSupport.Complexification.Basic` identify native sections
 of a complexified real bundle with real pairs at all orders `n : ℕ∞ω`. This module adds
 continuity at orders `n : ℕ∞`, including every prescribed compact-support stage.
-On a finite-dimensional boundaryless smooth
-Hausdorff sigma-compact base, this is a real continuous linear equivalence for the existing
+On a finite-dimensional boundaryless Hausdorff `C^n`
+base, this is a real continuous linear equivalence for the existing
 compactly-supported final locally convex topologies. The fibre model can be arbitrary normed,
 infinite dimensional or incomplete. These results make no LF or strict inductive-limit assertion.
 
@@ -171,8 +171,7 @@ end Charts
 
 
 section Topology
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [SigmaCompactSpace M]
-  [IsManifold I ∞ M]
+variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I n M] [BoundarylessManifold I M]
   {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   (hcover : ∀ x : M, ∃ i, x ∈ U i)

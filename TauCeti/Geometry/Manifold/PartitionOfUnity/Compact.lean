@@ -130,62 +130,59 @@ theorem IsCompact.exists_finset_contMDiff_sum_eq_one
   have hW : ∀ x ∈ K, W x ∈ 𝓝 x := fun x hx ↦ by
     simpa only [W, dite_eq_left hx] using (hU _).mem_nhds (hcover x hx).choose_spec
   obtain ⟨ι, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I hW
-  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
-  let j₀ : Fin (Fintype.card ι) → κ := fun k ↦ (hcover (f.c (e k)) (f.c_mem' (e k))).choose
-  -- Standard finite partition of unity built from the ordered bump functions.
-  let g : Fin (Fintype.card ι) → C^n⟮I, M; ℝ⟯ := fun k ↦
-    ⟨fun x ↦ f (e k) x * ∏ l ∈ Finset.univ with l < k, (1 - f (e l) x),
-      (f (e k)).contMDiff_of_isManifold.mul <|
-        ContMDiff.prod fun l _ ↦ contMDiff_const.sub (f (e l)).contMDiff_of_isManifold⟩
-  have hg_nonneg (k : Fin (Fintype.card ι)) (x : M) : 0 ≤ g k x :=
-    mul_nonneg (f (e k)).nonneg <| Finset.prod_nonneg fun l _ ↦ sub_nonneg.2 (f (e l)).le_one
-  have hg_tsupp (k : Fin (Fintype.card ι)) : tsupport (g k) ⊆ tsupport (f (e k)) :=
-    closure_minimal (fun x hx ↦ subset_tsupport _ fun h0 ↦ hx (by simp [g, h0]))
-      (isClosed_tsupport _)
-  have hg_sub (k : Fin (Fintype.card ι)) : tsupport (g k) ⊆ U (j₀ k) := by
-    have hfk : tsupport (f (e k)) ⊆ W (f.c (e k)) := hf (e k)
-    simpa only [W, dite_eq_left (f.c_mem' (e k)), j₀] using (hg_tsupp k).trans hfk
-  have hg_cpt (k : Fin (Fintype.card ι)) : HasCompactSupport (g k) :=
-    (f (e k)).hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) (hg_tsupp k)
+  let b : BumpCovering ι M K :=
+    { toFun := fun i ↦ ⟨f i, ((f i).contMDiff_of_isManifold (n := n)).continuous⟩
+      locallyFinite' := f.locallyFinite
+      nonneg' := fun i _ ↦ (f i).nonneg
+      le_one' := fun i _ ↦ (f i).le_one
+      eventuallyEq_one' := f.eventuallyEq_one' }
+  let P := b.toPartitionOfUnity
+  have hP_cont (i : ι) : CMDiff n (P i) := by
+    have heq : (P i : M → ℝ) = fun x ↦ f i x * ∏ᶠ (j) (_ : WellOrderingRel j i), (1 - f j x) :=
+      funext (b.toPartitionOfUnity_apply i)
+    rw [heq]
+    refine (f i).contMDiff_of_isManifold.mul <|
+      (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (f j).contMDiff_of_isManifold) ?_
+    simpa only [mulSupport_one_sub] using f.locallyFinite
+  have hP_tsupp (i : ι) : tsupport (P i) ⊆ tsupport (f i) :=
+    closure_mono (b.support_toPartitionOfUnity_subset i)
+  let j₀ : ι → κ := fun i ↦ (hcover (f.c i) (f.c_mem' i)).choose
+  have hP_sub (i : ι) : tsupport (P i) ⊆ U (j₀ i) := by
+    have hfi : tsupport (f i) ⊆ W (f.c i) := hf i
+    simpa only [W, dite_eq_left (f.c_mem' i), j₀] using (hP_tsupp i).trans hfi
+  have hP_cpt (i : ι) : HasCompactSupport (P i) :=
+    (f i).hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) (hP_tsupp i)
   -- Group the partition functions by their assigned cover index.
   let s : Finset κ := Finset.univ.image j₀
   let ρ : κ → C^n⟮I, M; ℝ⟯ := fun j ↦
-    ⟨fun x ↦ ∑ k ∈ Finset.univ with j₀ k = j, g k x,
-      ContMDiff.sum fun k _ ↦ (g k).contMDiff⟩
-  have hρ (j : κ) (x : M) : ρ j x = ∑ k ∈ Finset.univ with j₀ k = j, g k x := rfl
+    ⟨fun x ↦ ∑ i ∈ Finset.univ with j₀ i = j, P i x,
+      ContMDiff.sum fun i _ ↦ hP_cont i⟩
+  have hρ (j : κ) (x : M) : ρ j x = ∑ i ∈ Finset.univ with j₀ i = j, P i x := rfl
   have hsupp (j : κ) :
-      tsupport (ρ j) ⊆ ⋃ k ∈ Finset.univ.filter (fun k ↦ j₀ k = j), tsupport (g k) :=
+      tsupport (ρ j) ⊆ ⋃ i ∈ Finset.univ.filter (fun i ↦ j₀ i = j), tsupport (P i) :=
     closure_minimal (fun x hx ↦ by
-      obtain ⟨k, hk, hgk⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hρ j x ▸ mem_support.1 hx)
-      exact mem_biUnion hk (subset_tsupport _ hgk))
+      obtain ⟨i, hi, hPi⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hρ j x ▸ mem_support.1 hx)
+      exact mem_biUnion hi (subset_tsupport _ hPi))
       (isClosed_biUnion_finset fun _ _ ↦ isClosed_tsupport _)
-  have hsum_eq (x : M) :
-      ∑ j ∈ s, ρ j x = 1 - ∏ k : Fin (Fintype.card ι), (1 - f (e k) x) := by
-    have hgroup : ∑ j ∈ s, ρ j x = ∑ k : Fin (Fintype.card ι), g k x := by
-      simp_rw [hρ]
-      exact Finset.sum_fiberwise_of_maps_to
-        (fun k _ ↦ Finset.mem_image_of_mem j₀ (Finset.mem_univ k)) (fun k ↦ g k x)
-    rw [hgroup, Finset.prod_one_sub_ordered (Finset.univ : Finset (Fin (Fintype.card ι)))
-      (fun k ↦ f (e k) x), sub_sub_cancel]
-    rfl
+  have hsum_eq (x : M) : ∑ j ∈ s, ρ j x = ∑ᶠ i, P i x := by
+    simp_rw [hρ]
+    rw [Finset.sum_fiberwise_of_maps_to
+      (fun i _ ↦ Finset.mem_image_of_mem j₀ (Finset.mem_univ i)) (fun i ↦ P i x),
+      finsum_eq_sum_of_fintype]
   refine ⟨s, ρ, ?_, ?_, ?_, ?_, ?_⟩
   · intro j
-    refine (hsupp j).trans (iUnion₂_subset fun k hk ↦ ?_)
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
-    exact hk ▸ hg_sub k
+    refine (hsupp j).trans (iUnion₂_subset fun i hi ↦ ?_)
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
+    exact hi ▸ hP_sub i
   · intro j
-    exact (Finset.isCompact_biUnion _ fun k _ ↦ hg_cpt k).of_isClosed_subset
+    exact (Finset.isCompact_biUnion _ fun i _ ↦ hP_cpt i).of_isClosed_subset
       (isClosed_tsupport _) (hsupp j)
   · intro j x
     rw [hρ]
-    exact Finset.sum_nonneg fun k _ ↦ hg_nonneg k x
+    exact Finset.sum_nonneg fun i _ ↦ P.nonneg i x
   · intro x
     rw [hsum_eq]
-    exact sub_le_self 1 <| Finset.prod_nonneg fun k _ ↦ sub_nonneg.2 (f (e k)).le_one
+    exact P.sum_le_one x
   · intro x hx
     rw [hsum_eq]
-    obtain ⟨i, hi⟩ := f.eventuallyEq_one' x hx
-    have hfi : f i x = 1 := hi.self_of_nhds
-    have hprod : ∏ k : Fin (Fintype.card ι), (1 - f (e k) x) = 0 :=
-      Finset.prod_eq_zero (Finset.mem_univ (e.symm i)) (by rw [e.apply_symm_apply, hfi, sub_self])
-    rw [hprod, sub_zero]
+    exact P.sum_eq_one hx
