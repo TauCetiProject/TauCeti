@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hom
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondCovariantDerivative
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ThirdCovariantDerivative
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 
 /-!
@@ -42,15 +39,13 @@ Both sides are computed through the third covariant derivative
 `Hom(TM, Hom(TM, V))`:
 
 * `∇*∇(∇σ)(v) = -∑ᵢ ∇³σ(eᵢ, eᵢ, v)`, since the second covariant derivative of `∇σ` is `∇³σ`
-  (`CovariantDerivative.roughLaplacian_covariantDerivative_apply_eq_sum`);
+  (`CovariantDerivative.secondCovariantDerivative_covariantDerivative`,
+  `CovariantDerivative.roughLaplacian_covariantDerivative_apply_eq_sum`);
 * `∇_v(∇*∇σ) = -∑ᵢ ∇³σ(v, eᵢ, eᵢ)`, since a metric connection commutes with the metric trace
   (`CovariantDerivative.covariantDerivative_roughLaplacian_eq_sum`), read in the smooth chart frame
   and its metric-dual frame (`CovariantDerivative.roughLaplacian_eq_neg_sum_chartDualFrame`);
-* the Ricci identity for the section `∇σ` swaps the first two slots of `∇³σ`, at the cost of the
-  curvature of `Hom(TM, V)`
-  (`CovariantDerivative.covariantDerivative_secondCovariantDerivative_sub_swap_left`);
-* differentiating the Ricci identity `∇²σ(w, z) - ∇²σ(z, w) = R(w, z) σ` swaps the last two slots
-  (`CovariantDerivative.covariantDerivative_secondCovariantDerivative_sub_swap_right`).
+* the Ricci identities for `∇³σ` swap its first two and its last two slots
+  (`Curvature/ThirdCovariantDerivative.lean`).
 
 ## References
 
@@ -82,102 +77,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   (covT : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
   [ContMDiffCovariantDerivative covT ∞]
   {σ : Π y : M, V y}
-
-/-! ### The third covariant derivative and the Ricci identities -/
-
-section Ricci
-
-variable {covT}
-
-/-- The second covariant derivative of the section `∇σ` of `Hom(TM, V)` is the third covariant
-derivative of `σ`: `∇²(∇σ)(u, w) = ∇³σ(u, w, ·)`, where `∇³σ` is the covariant derivative of the
-section `∇²σ` of `Hom(TM, Hom(TM, V))`. -/
-theorem secondCovariantDerivative_covariantDerivative (hσ : CMDiff ∞ (T% σ)) (x : M)
-    (u w : TangentSpace I x) :
-    (covT.hom cov).secondCovariantDerivative covT (cov σ) x u w =
-      covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x u w :=
-  secondCovariantDerivative_eq_hom_apply (covT.hom cov) covT
-    (contMDiffOn_univ.mp ((ContMDiffCovariantDerivative.contMDiff (cov := cov) (k := ∞)).contMDiff
-      (by simpa using hσ.contMDiffOn))) x u w
-
-/-- The second covariant derivative `∇²σ` of a smooth section, read as the covariant derivative of
-`∇σ`, is a smooth section of `Hom(TM, Hom(TM, V))`. -/
-private theorem contMDiff_hom_covariantDerivative (hσ : CMDiff ∞ (T% σ)) :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] F)) ∞
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] F)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] V x) x
-        (covT.hom cov (cov σ) x)) :=
-  contMDiff_hom covT cov (contMDiffOn_univ.mp
-    ((ContMDiffCovariantDerivative.contMDiff (cov := cov) (k := ∞)).contMDiff
-      (by simpa using hσ.contMDiffOn)))
-
-variable [FiniteDimensional ℝ F]
-
-/-- **The Ricci identity in the first two slots of the third covariant derivative.** For a
-torsion-free connection `∇ᵀ`,
-`∇³σ(u, w, z) - ∇³σ(w, u, z) = R(u, w) ∇_z σ - ∇_{Rᵀ(u, w) z} σ`, where `R` and `Rᵀ` are the
-curvatures of `∇` and `∇ᵀ`: this is the Ricci identity for the section `∇σ` of `Hom(TM, V)`. -/
-theorem covariantDerivative_secondCovariantDerivative_sub_swap_left (ht : covT.IsTorsionFree)
-    (hσ : CMDiff ∞ (T% σ)) (x : M) (u w z : TangentSpace I x) :
-    covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x u w z -
-        covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x w u z =
-      cov.curvatureTensor x u w (cov σ x z) - cov σ x (covT.curvatureTensor x u w z) := by
-  have h := (covT.hom cov).secondCovariantDerivative_sub_swap_of_isTorsionFree covT ht
-    (contMDiffOn_univ.mp ((ContMDiffCovariantDerivative.contMDiff (cov := cov) (k := ∞)).contMDiff
-      (by simpa using hσ.contMDiffOn))) x u w
-  rw [secondCovariantDerivative_covariantDerivative cov hσ,
-    secondCovariantDerivative_covariantDerivative cov hσ] at h
-  simpa only [sub_apply, curvatureTensor_hom_apply] using
-    congrArg (fun B : TangentSpace I x →L[ℝ] V x ↦ B z) h
-
-omit [ContMDiffCovariantDerivative covT ∞] in
-/-- The Ricci identity for the second covariant derivative, read on the section `∇²σ` of
-`Hom(TM, Hom(TM, V))`: `∇²σ(w, z) - ∇²σ(z, w) = R(w, z) σ`. -/
-private theorem hom_covariantDerivative_sub_swap (ht : covT.IsTorsionFree)
-    (hσ : CMDiff ∞ (T% σ)) (y : M) (w z : TangentSpace I y) :
-    covT.hom cov (cov σ) y w z - covT.hom cov (cov σ) y z w = cov.curvatureTensor y w z (σ y) := by
-  rw [← secondCovariantDerivative_eq_hom_apply cov covT hσ,
-    ← secondCovariantDerivative_eq_hom_apply cov covT hσ,
-    cov.secondCovariantDerivative_sub_swap_of_isTorsionFree covT ht hσ]
-
-/-- **The Ricci identity in the last two slots of the third covariant derivative.** For a
-torsion-free connection `∇ᵀ`,
-`∇³σ(u, w, z) - ∇³σ(u, z, w) = (∇_u R)(w, z) σ + R(w, z) ∇_u σ`, where `∇R` is the covariant
-derivative of the curvature `R` of `∇` (`CovariantDerivative.derivCurvatureTensor`): this is the
-covariant derivative of the Ricci identity `∇²σ(w, z) - ∇²σ(z, w) = R(w, z) σ`. -/
-theorem covariantDerivative_secondCovariantDerivative_sub_swap_right (ht : covT.IsTorsionFree)
-    (hσ : CMDiff ∞ (T% σ)) (x : M) (u w z : TangentSpace I x) :
-    covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x u w z -
-        covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x u z w =
-      cov.derivCurvatureTensor covT x u w z (σ x) + cov.curvatureTensor x w z (cov σ x u) := by
-  obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ z
-  have hWx : MDiffAt (T% W) x := hW.mdifferentiable (by simp) x
-  have hZx : MDiffAt (T% Z) x := hZ.mdifferentiable (by simp) x
-  have hD2x :=
-    (contMDiff_hom_covariantDerivative cov (covT := covT) hσ).mdifferentiableAt (x := x) (by simp)
-  -- Expand both sides by the Leibniz rule for the iterated Hom connection.
-  rw [hom_hom_apply covT covT cov hD2x hWx hZx, hom_hom_apply covT covT cov hD2x hZx hWx,
-    cov.derivCurvatureTensor_apply covT x u hW hZ hσ]
-  -- Differentiate the Ricci identity for `σ` along `u`.
-  have hWZ : MDiffAt (T% fun y ↦ covT.hom cov (cov σ) y (W y) (Z y)) x :=
-    (hD2x.clm_bundle_apply hWx).clm_bundle_apply hZx
-  have hZW : MDiffAt (T% fun y ↦ covT.hom cov (cov σ) y (Z y) (W y)) x :=
-    (hD2x.clm_bundle_apply hZx).clm_bundle_apply hWx
-  have hdiff : cov (fun y ↦ covT.hom cov (cov σ) y (W y) (Z y)) x u -
-      cov (fun y ↦ covT.hom cov (cov σ) y (Z y) (W y)) x u =
-        cov (curvatureOperator cov W Z σ) x u := by
-    rw [← sub_apply, ← cov.isCovariantDerivativeOnUniv.sub hWZ hZW]
-    congr 2
-    funext y
-    rw [Pi.sub_apply, hom_covariantDerivative_sub_swap cov ht hσ y (W y) (Z y),
-      curvatureTensor_apply cov y hW hZ hσ]
-  have h₁ := hom_covariantDerivative_sub_swap cov ht hσ x (covT W x u) (Z x)
-  have h₂ := hom_covariantDerivative_sub_swap cov ht hσ x (W x) (covT Z x u)
-  rw [← hdiff, ← h₁, ← h₂]
-  abel
-
-end Ricci
 
 /-! ### The two traces -/
 
@@ -266,7 +165,7 @@ theorem covariantDerivative_roughLaplacian_eq_sum
     abel
   have hcancel : ∑ i, covT.hom cov (cov σ) x (Fr i x) (covT (Du i) x v) =
       -∑ i, covT.hom cov (cov σ) x (covT (Fr i) x v) (Du i x) :=
-    sum_apply_chartDualFrame_cancel hcov x (covT.hom cov (cov σ) x) v hU hF hD
+    hcov.sum_apply_chartDualFrame_cancel x (covT.hom cov (cov σ) x) v hU hF hD
   have htr : ∑ i, covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (Fr i x) (Du i x) =
       ∑ i, covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (b i) (b i) :=
     sum_apply_chartDualFrame_eq_sum x (mem_chart_source H x) _ b
@@ -300,8 +199,10 @@ theorem roughLaplacian_covariantDerivative_apply_sub_covariantDerivative_roughLa
     ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   -- Move `v` from the first slot to the last one, one transposition at a time.
-  have h₁ := covariantDerivative_secondCovariantDerivative_sub_swap_left cov ht hσ x v (b i) (b i)
-  have h₂ := covariantDerivative_secondCovariantDerivative_sub_swap_right cov ht hσ x (b i) v (b i)
+  have h₁ := covariantDerivative_secondCovariantDerivative_sub_swap_left_of_isTorsionFree cov ht
+    hσ x v (b i) (b i)
+  have h₂ := covariantDerivative_secondCovariantDerivative_sub_swap_right_of_isTorsionFree cov ht
+    hσ x (b i) v (b i)
   rw [two_smul]
   calc _ = (covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x v (b i) (b i) -
           covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x (b i) v (b i)) +

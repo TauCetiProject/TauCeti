@@ -18,6 +18,9 @@ of `∇σ`, regarded as a section of `Hom(TM, V)` with the connection induced by
 identification connects the tensor `∇²σ` with the product rule for a bundle map acting on a
 field along a curve. The bundle `V` need not have finite rank or a norm.
 
+Applied to the section `∇σ` of `Hom(TM, V)`, the identification gives `∇²(∇σ) = ∇³σ`, the
+covariant derivative of `∇²σ` (`CovariantDerivative.secondCovariantDerivative_covariantDerivative`).
+
 For a smooth homomorphism `A` from a finite-rank bundle `V'` to `V` and a smooth section `s` of
 `V'`, the second covariant derivative of `A s` obeys the Leibniz rule
 (`CovariantDerivative.secondCovariantDerivative_clm_apply`)
@@ -64,6 +67,23 @@ theorem secondCovariantDerivative_eq_hom_apply (hσ : CMDiff ∞ (T% σ))
   obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
   rw [secondCovariantDerivative_apply cov covT hσ x hY,
     hom_apply covT cov (hD.mdifferentiable (by simp) x) (hY.mdifferentiable (by simp) x)]
+
+section Third
+
+variable [ContMDiffVectorBundle ∞ F V I] [ContMDiffCovariantDerivative covT ∞] {covT}
+
+/-- The second covariant derivative of the section `∇σ` of `Hom(TM, V)` is the third covariant
+derivative of `σ`: `∇²(∇σ)(u, w) = ∇³σ(u, w, ·)`, where `∇³σ` is the covariant derivative of the
+section `∇²σ` of `Hom(TM, Hom(TM, V))`. -/
+theorem secondCovariantDerivative_covariantDerivative (hσ : CMDiff ∞ (T% σ)) (x : M)
+    (u w : TangentSpace I x) :
+    (covT.hom cov).secondCovariantDerivative covT (cov σ) x u w =
+      covT.hom (covT.hom cov) (covT.hom cov (cov σ)) x u w :=
+  secondCovariantDerivative_eq_hom_apply (covT.hom cov) covT
+    (contMDiffOn_univ.mp ((ContMDiffCovariantDerivative.contMDiff (cov := cov) (k := ∞)).contMDiff
+      (by simpa using hσ.contMDiffOn))) x u w
+
+end Third
 
 section Leibniz
 
