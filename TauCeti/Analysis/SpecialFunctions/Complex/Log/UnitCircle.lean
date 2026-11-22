@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.Complex.AbelLimit
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # The logarithmic series on the closed unit disc
@@ -23,11 +24,14 @@ evaluates the Hurwitz and Dirichlet L-functions at `s = 0`.
 
 ## Main results
 
+* `Complex.norm_sum_range_pow_succ_le`: on the closed unit disc away from `1`, the partial sums
+  of `∑ zⁿ⁺¹` are bounded by `2 / ‖z - 1‖`.
+* `Complex.re_one_sub_pos`: on the closed unit disc away from `1`, `0 < re (1 - z)`.
 * `Complex.tendsto_sum_range_taylorSeries_neg_log`: the partial sums of `∑ zⁿ / n` tend to
   `-log (1 - z)` for `‖z‖ ≤ 1` and `z ≠ 1`.
-* `Complex.arg_one_sub_exp_mul_I`: `arg (1 - exp (θ i)) = (θ - π) / 2` for `0 < θ < 2π`.
 * `Real.tendsto_sum_Icc_sin_mul_div`: the sawtooth series
-  `∑_{n=1}^N sin (n θ) / n → (π - θ) / 2` for `0 < θ < 2π`.
+  `∑_{n=1}^N sin (n θ) / n → (π - θ) / 2` for `0 < θ < 2π`, using the argument
+  `Complex.arg_one_sub_exp_mul_I` of `1 - exp (θ i)`.
 -/
 
 public section
@@ -38,7 +42,7 @@ open scoped Topology Real
 namespace Complex
 
 /-- The partial sums of `∑ zⁿ⁺¹` are bounded by `2 / ‖z - 1‖` on the closed unit disc. -/
-private theorem norm_sum_range_pow_succ_le {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) (n : ℕ) :
+theorem norm_sum_range_pow_succ_le {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) (n : ℕ) :
     ‖∑ i ∈ range n, z ^ (i + 1)‖ ≤ 2 / ‖z - 1‖ := by
   have hpos : 0 < ‖z - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz1)
   have hpow : ‖z ^ n - 1‖ ≤ 2 := by
@@ -53,7 +57,7 @@ private theorem norm_sum_range_pow_succ_le {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 :
     _ = 2 / ‖z - 1‖ := mul_one _
 
 /-- On the closed unit disc away from `1`, the point `1 - z` has positive real part. -/
-private theorem re_one_sub_pos {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) : 0 < (1 - z).re := by
+theorem re_one_sub_pos {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1) : 0 < (1 - z).re := by
   rw [sub_re, one_re, sub_pos]
   refine (re_le_norm z).trans hz |>.lt_of_ne fun h ↦ hz1 ?_
   have him : z.im = 0 := by
@@ -113,31 +117,6 @@ theorem tendsto_sum_range_taylorSeries_neg_log {z : ℂ} (hz : ‖z‖ ≤ 1) (h
   refine hl.congr fun n ↦ ?_
   rw [sum_range_succ']
   simp [hf]
-
-/-- The argument of `1 - exp (θ i)` for `0 < θ < 2π`: since
-`1 - exp (θ i) = 2 sin (θ / 2) exp ((θ - π) i / 2)` with `sin (θ / 2) > 0`, it is `(θ - π) / 2`. -/
-theorem arg_one_sub_exp_mul_I {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
-    arg (1 - exp (θ * I)) = (θ - π) / 2 := by
-  obtain ⟨t, rfl⟩ : ∃ t, θ = 2 * t := ⟨θ / 2, by ring⟩
-  have hsin : 0 < Real.sin t :=
-    Real.sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2])
-  have hcos : Real.cos ((2 * t - π) / 2) = Real.sin t := by
-    rw [show (2 * t - π) / 2 = t - π / 2 by ring, Real.cos_sub_pi_div_two]
-  have hsin' : Real.sin ((2 * t - π) / 2) = -Real.cos t := by
-    rw [show (2 * t - π) / 2 = t - π / 2 by ring, Real.sin_sub_pi_div_two]
-  have hfac : 1 - exp ((2 * t : ℝ) * I) =
-      ((2 * Real.sin t : ℝ) : ℂ) *
-        (Real.cos ((2 * t - π) / 2) + Real.sin ((2 * t - π) / 2) * I) := by
-    have h1 : 1 - Real.cos (2 * t) = 2 * Real.sin t * Real.sin t := by
-      rw [Real.cos_two_mul]; nlinarith [Real.sin_sq_add_cos_sq t]
-    have h2 : -Real.sin (2 * t) = 2 * Real.sin t * -Real.cos t := by
-      rw [Real.sin_two_mul]; ring
-    rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin, hcos, hsin']
-    apply Complex.ext <;>
-      simp only [sub_re, one_re, add_re, mul_re, ofReal_re, ofReal_im, I_re, I_im, sub_im, one_im,
-        add_im, mul_im] <;> linarith
-  rw [hfac, arg_ofReal_mul (by positivity), ofReal_cos, ofReal_sin,
-    arg_cos_add_sin_mul_I ⟨by linarith [hθ.1, Real.pi_pos], by linarith [hθ.2, Real.pi_pos]⟩]
 
 end Complex
 

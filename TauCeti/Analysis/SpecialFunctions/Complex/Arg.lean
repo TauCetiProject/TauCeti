@@ -24,7 +24,8 @@ common instances: two points of the open upper half-plane, of the open lower hal
 open right half-plane have arguments in a common open interval of length `π`, so the argument of
 their quotient is the difference of their arguments. It also records that every
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number,
-and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`.
+and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`, and that of
+`1 - e^{iθ}` for `0 < θ < 2π`.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. On the slit plane `|arg z| < π`,
 rotating `z` by `-arg z / 2` lands in the open right half-plane, and the exponential maps the
@@ -55,6 +56,7 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   rectangle.
 * `Complex.arg_neg_exp_of_div_pi_ne`: if `φ / π` is not an integer, then
   `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
+* `Complex.arg_one_sub_exp_mul_I`: `arg (1 - exp (θ i)) = (θ - π) / 2` for `0 < θ < 2π`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`, `Complex.abs_arg_div_two_le_pi_div_two`,
   `Complex.abs_arg_div_two_lt_pi_div_two`: `|arg z / 2| ≤ π / 2` for every `z`, with strict
@@ -187,6 +189,31 @@ theorem arg_neg_exp_of_div_pi_ne {φ : ℝ} (hφ : ∀ k : ℤ, φ / π ≠ k) :
       exp_int_mul_two_pi_mul_I]
     ring
   rw [hneg, arg_exp_mul_I, (toIocMod_eq_self _).2 ⟨hψlo, by linarith⟩]
+
+/-- The argument of `1 - exp (θ i)` for `0 < θ < 2π`: since
+`1 - exp (θ i) = 2 sin (θ / 2) exp ((θ - π) i / 2)` with `sin (θ / 2) > 0`, it is `(θ - π) / 2`. -/
+theorem arg_one_sub_exp_mul_I {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
+    arg (1 - exp (θ * I)) = (θ - π) / 2 := by
+  obtain ⟨t, rfl⟩ : ∃ t, θ = 2 * t := ⟨θ / 2, by ring⟩
+  have hsin : 0 < Real.sin t :=
+    Real.sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2])
+  have hcos : Real.cos ((2 * t - π) / 2) = Real.sin t := by
+    rw [show (2 * t - π) / 2 = t - π / 2 by ring, Real.cos_sub_pi_div_two]
+  have hsin' : Real.sin ((2 * t - π) / 2) = -Real.cos t := by
+    rw [show (2 * t - π) / 2 = t - π / 2 by ring, Real.sin_sub_pi_div_two]
+  have hfac : 1 - exp ((2 * t : ℝ) * I) =
+      ((2 * Real.sin t : ℝ) : ℂ) *
+        (Real.cos ((2 * t - π) / 2) + Real.sin ((2 * t - π) / 2) * I) := by
+    have h1 : 1 - Real.cos (2 * t) = 2 * Real.sin t * Real.sin t := by
+      rw [Real.cos_two_mul]; nlinarith [Real.sin_sq_add_cos_sq t]
+    have h2 : -Real.sin (2 * t) = 2 * Real.sin t * -Real.cos t := by
+      rw [Real.sin_two_mul]; ring
+    rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin, hcos, hsin']
+    apply Complex.ext <;>
+      simp only [sub_re, one_re, add_re, mul_re, ofReal_re, ofReal_im, I_re, I_im, sub_im, one_im,
+        add_im, mul_im] <;> linarith
+  rw [hfac, arg_ofReal_mul (by positivity), ofReal_cos, ofReal_sin,
+    arg_cos_add_sin_mul_I ⟨by linarith [hθ.1, Real.pi_pos], by linarith [hθ.2, Real.pi_pos]⟩]
 
 /-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
 theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
