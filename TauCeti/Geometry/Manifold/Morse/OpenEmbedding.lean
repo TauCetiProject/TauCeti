@@ -144,18 +144,23 @@ theorem IsMorse.exists_relCWComplex_sublevel_of_isOpenEmbedding {X : Type u} [To
     (fun _ hx ↦ le_trans hx.out (by linarith))
     (by rintro _ ⟨x, hx, rfl⟩; exact hC hx)
   have hD' : IsClosed {x | F x ≤ c - ε} := isClosed_le hF continuous_const
-  have hcompl : (range j)ᶜ ⊆ interior {x | F x ≤ c - ε} :=
-    Subset.trans (b := {x | F x < c - ε}) (fun x hx ↦ (hA x hx).trans_le (by linarith))
-      ((isOpen_lt hF continuous_const).subset_interior_iff.2 fun _ hx ↦ hx.out.le)
-  let instCW : RelCWComplex C' {x | F x ≤ c - ε} := hj.relCWComplex hD' rfl hcompl rfl
+  have hpre : j ⁻¹' {x | F x ≤ c - ε} ∩ C = {x | (F ∘ j) x ≤ c - ε} :=
+    inter_eq_left.2 RelCWComplex.base_subset_complex
+  -- The cells of `C` off its base lie in `{c - ε ≤ F}`, which misses the complement of `range j`.
+  have hcl : closure (j '' (C \ {x | (F ∘ j) x ≤ c - ε})) ⊆ range j := fun y hy ↦ by
+    by_contra hyj
+    have hy' : c - ε ≤ F y := closure_minimal (by rintro _ ⟨x, hx, rfl⟩; exact (not_le.1 hx.2).le)
+      (isClosed_le continuous_const hF) hy
+    linarith [hA y hyj]
+  let instCW : RelCWComplex C' {x | F x ≤ c - ε} := hj.isEmbedding.relCWComplex hD' hpre hcl rfl
   let instFin : @RelCWComplex.Finite X _ C' {x | F x ≤ c - ε} instCW :=
-    hj.finite_relCWComplex hD' rfl hcompl rfl
+    hj.isEmbedding.finite_relCWComplex hD' hpre hcl rfl
   let r' : C({x | F x ≤ c + ε}, C') := (ContinuousMap.inclusion inter_subset_right).comp r
   have hcomp : (ContinuousMap.inclusion hC').comp r' =
       (ContinuousMap.inclusion inter_subset_left).comp r :=
     ContinuousMap.ext fun _ ↦ rfl
   refine ⟨ε, hε, hεδ, C', instCW, instFin, hC',
-    fun m ↦ ⟨(hj.relCWComplexCellEquiv hD' rfl hcompl rfl m).trans (hcell m).some⟩,
+    fun m ↦ ⟨(hj.isEmbedding.relCWComplexCellEquiv hD' hpre hcl rfl m).trans (hcell m).some⟩,
     r', fun x ↦ ?_, ⟨hcomp.symm ▸ G⟩⟩
   have hx := congrArg Subtype.val (hr ⟨x.val, hC' x.property, x.property⟩)
   exact Subtype.ext hx
