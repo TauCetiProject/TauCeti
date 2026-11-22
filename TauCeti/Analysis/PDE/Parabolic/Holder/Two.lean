@@ -105,6 +105,13 @@ theorem timeExtension_smul (hab : a ≤ b) (c : ℝ) (f : slab (E := E) a b → 
   funext x t
   simp only [timeExtension_def, Pi.smul_apply]
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- Clamped time extension commutes with postcomposition. -/
+@[simp]
+theorem timeExtension_comp {G : Type*} (hab : a ≤ b) (L : F → G) (f : slab (E := E) a b → F)
+    (x : E) : timeExtension hab (L ∘ f) x = L ∘ timeExtension hab f x :=
+  (rfl)
+
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
 /-- The clamped time extension of a continuous slab map is jointly continuous. -/
 theorem continuous_timeExtension (hab : a ≤ b) {f : slab (E := E) a b → F}

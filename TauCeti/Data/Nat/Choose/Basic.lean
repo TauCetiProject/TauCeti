@@ -10,9 +10,11 @@ public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Qify
 import Mathlib.Tactic.Ring
 
 /-!
@@ -34,11 +36,16 @@ the summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.mul_add_succ_self_div_two_eq_succ_choose_two_add`:
   `p * (q + (p + 1)) / 2 = C(p + 1, 2) + p * q / 2`.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
+* `Nat.two_mul_choose_two_add_mul`: `2 C(a, 2) + ab = a(a + b - 1)`, and its form
+  `Nat.two_mul_choose_two_add_mul_sub`: `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`.
+* `Nat.add_choose_two_add_choose_two`: `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
 * `Nat.neg_one_pow_succ_choose_two_mul_neg_one_pow`: the step
   `(-1) ^ C(m + 1, 2) * (-1) ^ m = (-1) ^ C(m, 2)`.
+* `Nat.neg_one_pow_add_add_one_choose_two_mul`: the Koszul sign
+  `(-1) ^ C(p + q + 1, 2) * (-1) ^ C(q + 1, 2) * (-1) ^ C(p + 1, 2) = (-1) ^ (p q)`.
 * `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
   sum to `2ⁿ - 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
@@ -100,6 +107,28 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
       rw [h1, h2, ih, choose_one_right, choose_one_right]
       ring
 
+/-- Twice `C(a, 2)`, plus `ab`, is `a(a + b - 1)`, with truncated subtraction. -/
+theorem two_mul_choose_two_add_mul (a b : ℕ) : 2 * a.choose 2 + a * b = a * (a + b - 1) := by
+  rcases a with _ | a
+  · simp
+  · have := add_one_mul_choose_eq a 1
+    simp only [choose_one_right, Nat.add_right_comm a 1 b, Nat.add_sub_cancel] at this ⊢
+    linarith
+
+/-- `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`, that is `i(i-1) + i(n-i) = i(n-1)`. -/
+theorem two_mul_choose_two_add_mul_sub {n i : ℕ} (hi : i ≤ n) :
+    2 * i.choose 2 + i * (n - i) = (n - 1) * i := by
+  rw [two_mul_choose_two_add_mul, Nat.add_sub_cancel' hi, mul_comm]
+
+/-- `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`. -/
+theorem add_choose_two_add_choose_two (m i : ℕ) :
+    (m + i).choose 2 + i.choose 2 = (m + i - 1) * i + m.choose 2 := by
+  rcases Nat.eq_zero_or_pos (m + i) with h | h
+  · simp [Nat.eq_zero_of_add_eq_zero_left h, Nat.eq_zero_of_add_eq_zero_right h]
+  qify [h]
+  push_cast [Nat.cast_choose_two]
+  ring
+
 /-- `g³ - g = (2g + 2) · C(g, 2)`. -/
 theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
     g ^ 3 - g = (2 * g + 2) * g.choose 2 := by
@@ -139,6 +168,17 @@ theorem neg_one_pow_succ_choose_two_mul_neg_one_pow {R : Type*} [Monoid R] [HasD
     (m : ℕ) : (-1 : R) ^ (m + 1).choose 2 * (-1) ^ m = (-1) ^ m.choose 2 := by
   rw [choose_succ_succ', choose_one_right, add_comm, pow_add, mul_assoc, ← pow_add,
     Even.neg_one_pow ⟨m, rfl⟩, mul_one]
+
+/-- The signs `(-1) ^ C(p + q + 1, 2)`, `(-1) ^ C(q + 1, 2)` and `(-1) ^ C(p + 1, 2)` of the
+reversals of `p + q + 1`, `q + 1` and `p + 1` letters multiply to the Koszul sign `(-1) ^ (p q)`,
+since `C(p + q + 1, 2) = C(p + 1, 2) + C(q + 1, 2) + p q`. -/
+theorem neg_one_pow_add_add_one_choose_two_mul {R : Type*} [Monoid R] [HasDistribNeg R]
+    (p q : ℕ) :
+    (-1 : R) ^ (p + q + 1).choose 2 * ((-1) ^ (q + 1).choose 2 * (-1) ^ (p + 1).choose 2) =
+      (-1) ^ (p * q) := by
+  rw [← pow_add, ← pow_add, choose_succ_succ' (p + q), add_choose_two, choose_succ_succ' q,
+    choose_succ_succ' p, choose_one_right, choose_one_right, choose_one_right]
+  exact neg_one_pow_congr (by simp only [Nat.reduceAdd, Nat.even_iff]; omega)
 
 /-- The binomial coefficients `C(n, i)` with `0 < i < n` sum to `2ⁿ - 2`. -/
 theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :

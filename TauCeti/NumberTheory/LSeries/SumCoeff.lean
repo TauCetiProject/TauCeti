@@ -140,9 +140,11 @@ theorem norm_mul_integral_le_of_bound (f : ℕ → ℂ) {C : ℝ}
     (hf : ∀ n, ‖∑ k ∈ Icc 1 n, f k‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
     ‖s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) *
       (t : ℂ) ^ (-(s + 1))‖ ≤ C * ‖s‖ / s.re := by
+  have h := norm_integral_mul_cpow_le_of_bound (g := fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) one_pos
+    (fun _ _ ↦ hf _) hs
+  rw [Real.one_rpow, mul_one] at h
   rw [norm_mul, mul_comm C, mul_div_assoc]
-  exact mul_le_mul_of_nonneg_left (norm_integral_mul_cpow_le_of_bound (fun _ _ ↦ hf _) hs)
-    (norm_nonneg _)
+  exact mul_le_mul_of_nonneg_left h (norm_nonneg _)
 
 /-- **Continuation of an L-series with its pole at `s = 1` removed.** If the partial sums
 `∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` and `LSeries f` converges absolutely on

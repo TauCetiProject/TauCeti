@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
@@ -22,6 +23,9 @@ morphisms of the category; the version here accepts any colimit cofan with any i
 instance a coproduct of a sequence of modules indexed by `ℕ` in `ModuleCat.{v} R`. In particular,
 any biproduct `⨁ f` of projective objects over an arbitrary index type is projective
 (`CategoryTheory.Projective.of_hasBiproduct`).
+
+Objects that are both projective and injective are closed under binary biproducts
+(`CategoryTheory.projective_and_injective_biprod`).
 -/
 
 public section
@@ -51,5 +55,13 @@ theorem of_hasBiproduct [HasZeroMorphisms C] {ι : Type*} (f : ι → C) [HasBip
   of_isColimit_cofan (biproduct.isColimit f)
 
 end Projective
+
+/-- Objects that are both projective and injective are closed under binary biproducts. -/
+theorem projective_and_injective_biprod {C : Type*} [Category* C] [HasZeroMorphisms C] (A B : C)
+    [HasBinaryBiproduct A B] (hA : Projective A ∧ Injective A) (hB : Projective B ∧ Injective B) :
+    Projective (A ⊞ B) ∧ Injective (A ⊞ B) := by
+  obtain ⟨_, _⟩ := hA
+  obtain ⟨_, _⟩ := hB
+  exact ⟨inferInstance, inferInstance⟩
 
 end CategoryTheory
