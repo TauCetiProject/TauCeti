@@ -150,8 +150,8 @@ private theorem chart_c1_on_ball {P : Type*} [NormedAddCommGroup P] [NormedSpace
         ((hu (n + N)).mdifferentiableOn (by simp)).mdifferentiableAt (hΩ.mem_nhds hzΩ)
       exact (ω.transported_floerEquation_iff α LP LE (J := J) (Ks := Ks) (Kt := Kt)
         (p (n + N)) (e ∘ u (n + N)) y).2 <|
-        (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp hdiff hsrc).1
-          (hfl (n + N) (eℂ y) hzΩ))
+        (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+          hdiff hsrc).1 (hfl (n + N) (eℂ y) hzΩ))
     (fun C'' _ hC''U ↦ ⟨‖(LE : E →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))‖ *
         max M₀ 0 * ‖(eℂ : ℂ →L[ℝ] ℝ × ℝ)‖, fun n y hy ↦ by
       have hzcl : eℂ y ∈ closedBall z₀ r := ball_subset_closedBall (hC''U hy)
@@ -276,8 +276,8 @@ theorem contMDiffOn_one_and_isComplexLinearMap_of_tendsto_floer_parametric
         (mem_extChartAt_source (v z₀))
     have hdiff : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I v z₀ :=
       (hv_cmd.mdifferentiableOn one_ne_zero).mdifferentiableAt (hΩ.mem_nhds hz₀)
-    exact (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp hdiff
-      (mem_extChartAt_source (v z₀))).2 hCR
+    exact (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+      hdiff (mem_extChartAt_source (v z₀))).2 hCR
   · intro α C' hC' hC'Ω hvα
     set U := Ω ∩ v ⁻¹' (extChartAt I α).source
     have hU : IsOpen U := hvc.isOpen_inter_preimage hΩ (isOpen_extChartAt_source α)

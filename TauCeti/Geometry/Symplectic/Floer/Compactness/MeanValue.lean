@@ -400,8 +400,8 @@ theorem IsNondegenerate.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_in
       have hzc : eℂ y ∈ closedBall c r := hcl_sub (ball_subset_closedBall hy)
       exact (ω.transported_floerEquation_iff α (ContinuousLinearEquiv.refl ℝ P) L (J := J)
         (Ks := Ks) (Kt := Kt) p (e ∘ u) y).2 <|
-        (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp (hdiff _ hzc)
-          (huK hzc).1).1 (hfl _ hzc))
+        (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+          (hdiff _ hzc) (huK hzc).1).1 (hfl _ hzc))
     (fun y hy ↦ ⟨e (u (eℂ y)), (huK (hcl_sub (ball_subset_closedBall hy))).2, rfl⟩)
     (by linarith)
   have hc_mem : c ∈ closedBall c r := mem_closedBall_self hr
