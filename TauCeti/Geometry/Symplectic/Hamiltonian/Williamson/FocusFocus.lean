@@ -18,6 +18,7 @@ import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Spectrum
 import TauCeti.LinearAlgebra.Dimension.DirectSum
 import TauCeti.LinearAlgebra.Eigenspace.Commute
+import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
 # Williamson's classification: the focus-focus type
@@ -364,19 +365,51 @@ theorem IsDarbouxBasis.hamiltonianEnd_focusFocusBlocks_one_apply (hb : ω.IsDarb
     fin_cases i <;> fin_cases c <;> simp
   · simp [hj, Ne.symm hj]
 
-/-- In a Darboux basis, the focus-focus blocks Poisson-commute. -/
+/-- In a Darboux basis, the Hamiltonian endomorphisms of focus-focus blocks `j ≠ j'` compose to
+zero: each kills the other blocks, and maps its own block into itself. -/
+private theorem IsDarbouxBasis.hamiltonianEnd_focusFocusBlocks_mul_of_ne
+    (hb : ω.IsDarbouxBasis b) {j j' : Fin n} (hjj' : j ≠ j') (l l' : Fin 2) :
+    ω.hamiltonianEnd (focusFocusBlocks b (j, l)) * ω.hamiltonianEnd (focusFocusBlocks b (j', l')) =
+      0 := by
+  refine b.ext fun ⟨m, c⟩ ↦ ?_
+  obtain ⟨⟨j'', i⟩, rfl⟩ := finProdFinEquiv.surjective m
+  rcases eq_or_ne j'' j' with rfl | hj''
+  · fin_cases l <;> fin_cases l' <;> fin_cases i <;> fin_cases c <;>
+      simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
+        hb.hamiltonianEnd_focusFocusBlocks_one_apply, Ne.symm hjj']
+  · fin_cases l' <;> simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
+      hb.hamiltonianEnd_focusFocusBlocks_one_apply, hj'']
+
+/-- In a Darboux basis, the Hamiltonian endomorphisms of the two forms of one focus-focus block
+commute. -/
+private theorem IsDarbouxBasis.commute_hamiltonianEnd_focusFocusBlocks
+    (hb : ω.IsDarbouxBasis b) (j : Fin n) :
+    Commute (ω.hamiltonianEnd (focusFocusBlocks b (j, 0)))
+      (ω.hamiltonianEnd (focusFocusBlocks b (j, 1))) := by
+  refine b.ext fun ⟨m, c⟩ ↦ ?_
+  obtain ⟨⟨j', i⟩, rfl⟩ := finProdFinEquiv.surjective m
+  rcases eq_or_ne j' j with rfl | hj'
+  · fin_cases i <;> fin_cases c <;>
+      simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
+        hb.hamiltonianEnd_focusFocusBlocks_one_apply]
+  · simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
+      hb.hamiltonianEnd_focusFocusBlocks_one_apply, hj']
+
+/-- In a Darboux basis, the focus-focus blocks Poisson-commute: within one block this is the
+commutation of its two forms, and the Hamiltonian endomorphisms of distinct blocks compose to zero
+in both orders. -/
 theorem IsDarbouxBasis.quadraticPoissonBracket_focusFocusBlocks (hb : ω.IsDarbouxBasis b)
     (k l : Fin n × Fin 2) :
     ω.quadraticPoissonBracket (focusFocusBlocks b k) (focusFocusBlocks b l) = 0 := by
-  refine (quadraticPoissonBracket_eq_zero_iff ω).2 (b.ext fun ⟨m, c⟩ ↦ ?_)
-  obtain ⟨⟨j'', i⟩, rfl⟩ := finProdFinEquiv.surjective m
   obtain ⟨j, l₁⟩ := k
   obtain ⟨j', l₂⟩ := l
-  -- Both sides vanish unless the basis vector lies in the blocks `j` and `j'`.
-  rcases eq_or_ne j'' j with rfl | h₁ <;> rcases eq_or_ne j'' j' with rfl | h₂ <;>
-    fin_cases l₁ <;> fin_cases l₂ <;> fin_cases i <;> fin_cases c <;>
-    simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
-      hb.hamiltonianEnd_focusFocusBlocks_one_apply, *]
+  refine (quadraticPoissonBracket_eq_zero_iff ω).2 ?_
+  rcases eq_or_ne j j' with rfl | hjj'
+  · fin_cases l₁ <;> fin_cases l₂
+    exacts [Commute.refl _, hb.commute_hamiltonianEnd_focusFocusBlocks j,
+      (hb.commute_hamiltonianEnd_focusFocusBlocks j).symm, Commute.refl _]
+  · exact (hb.hamiltonianEnd_focusFocusBlocks_mul_of_ne hjj' l₁ l₂).trans
+      (hb.hamiltonianEnd_focusFocusBlocks_mul_of_ne hjj'.symm l₂ l₁).symm
 
 /-! ### The focus-focus type in every dimension -/
 
@@ -495,13 +528,13 @@ private theorem four_le_finrank_block {A : Module.End ℝ V}
   -- On a plane, `A² = κ` and the polynomial acts as `(κ + a² + b²)² - 4a²κ > 0`.
   have hne2 : finrank ℝ G ≠ 2 := by
     intro h2
-    have hmaps : Set.MapsTo A G G :=
-      Module.End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) _ 0 ⊤
+    have hmaps : ∀ x ∈ G, A x ∈ G := fun _ hx ↦
+      Module.End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) _ 0 ⊤ hx
     obtain ⟨κ, hκ⟩ := exists_mul_self_eq_smul_one (ω := ω.restrict G hGs.nondegenerate_restrict)
       h2 ⟨_, restrict_mem_skewAdjointLieSubalgebra hA hGs.nondegenerate_restrict hmaps⟩
-    -- The restrictions of `A` and of `κ • 1` evaluate on `G` as on `V`, definitionally.
-    have hAAv' : A (A v) = κ • v := congrArg Subtype.val (LinearMap.congr_fun hκ ⟨v, hvG⟩)
-    have hAAv : (A ^ 2) v = κ • v := by rw [pow_two, mul_apply_eq_comp, hAAv']
+    have hAAv : (A ^ 2) v = κ • v := by
+      simpa [pow_two, mul_apply_eq_comp, LinearMap.coe_restrict_apply] using
+        congrArg Subtype.val (LinearMap.congr_fun hκ ⟨v, hvG⟩)
     have hf : ffPoly a b = ((X + C (a ^ 2 + b ^ 2)) ^ 2 - C (4 * a ^ 2) * X).comp (X ^ 2) := by
       simp only [ffPoly, add_comp, sub_comp, mul_comp, pow_comp, X_comp, C_comp]
       simp only [map_mul, map_add, map_pow, map_ofNat]
@@ -527,60 +560,6 @@ private theorem finrank_eq_four_of_four_le {k : ℕ} (hk : k * 4 = finrank ℝ V
   have := Finset.sum_lt_sum (s := Finset.univ) (fun j _ ↦ h4 j) ⟨j, Finset.mem_univ _, hlt⟩
   simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at this
   omega
-
-/-- **Darboux bases of orthogonal four-dimensional blocks assemble.** If `dim V = 4k` and the
-pairwise `ω`-orthogonal symplectic subspaces `G j` carry Darboux bases `b' j` of the restricted
-forms, these form a Darboux basis of `V`, the `j`-th one on the planes `2j` and `2j + 1`. -/
-private theorem exists_isDarbouxBasis_of_blocks {k : ℕ} (hk : k * 4 = finrank ℝ V)
-    {G : Fin k → Submodule ℝ V} (hGs : ∀ j, ω.IsSymplectic (G j))
-    (horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0)
-    (b' : ∀ j, Basis (Fin 2 × Fin 2) ℝ (G j))
-    (hb' : ∀ j, (ω.restrict (G j) (hGs j).nondegenerate_restrict).IsDarbouxBasis (b' j)) :
-    ∃ bas : Basis (Fin (k * 2) × Fin 2) ℝ V, ω.IsDarbouxBasis bas ∧
-      ∀ j i x, bas (finProdFinEquiv (j, i), x) = b' j (i, x) := by
-  -- `w (j, i) x` is the vector `b' j (i, x)` of `V`; unlike `b'`, it is not dependent in `j`.
-  set w : Fin k × Fin 2 → Fin 2 → V := fun ji x ↦ (b' ji.1 (ji.2, x) : V)
-  set v : Fin (k * 2) × Fin 2 → V := fun p ↦ w (finProdFinEquiv.symm p.1) p.2 with hv
-  have hv_apply (j : Fin k) (i x : Fin 2) : v (finProdFinEquiv (j, i), x) = b' j (i, x) := by
-    simp only [hv, Equiv.symm_apply_apply]
-    rfl
-  -- Within a block `ω` pairs as the restricted form; across blocks it vanishes.
-  have hpair (j j' : Fin k) (x y : Fin 2 × Fin 2) :
-      ω (b' j x : V) (b' j' y) =
-        if j = j' then (ω.restrict (G j) (hGs j).nondegenerate_restrict) (b' j x) (b' j y)
-        else 0 := by
-    split_ifs with hjj'
-    · subst hjj'
-      exact (restrict_apply _ _ _ _ _).symm
-    · exact horth hjj' _ (b' j x).property _ (b' j' y).property
-  have h₁ (m m' : Fin (k * 2)) : ω (v (m, 0)) (v (m', 0)) = 0 := by
-    obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective m
-    obtain ⟨⟨j', i'⟩, rfl⟩ := finProdFinEquiv.surjective m'
-    rw [hv_apply, hv_apply, hpair]
-    split_ifs with hjj'
-    · subst hjj'
-      exact (hb' j).apply_fst_fst i i'
-    · rfl
-  have h₂ (m m' : Fin (k * 2)) : ω (v (m, 1)) (v (m', 1)) = 0 := by
-    obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective m
-    obtain ⟨⟨j', i'⟩, rfl⟩ := finProdFinEquiv.surjective m'
-    rw [hv_apply, hv_apply, hpair]
-    split_ifs with hjj'
-    · subst hjj'
-      exact (hb' j).apply_snd_snd i i'
-    · rfl
-  have h₃ (m m' : Fin (k * 2)) : ω (v (m, 0)) (v (m', 1)) = if m = m' then 1 else 0 := by
-    obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective m
-    obtain ⟨⟨j', i'⟩, rfl⟩ := finProdFinEquiv.surjective m'
-    rw [hv_apply, hv_apply, hpair]
-    simp only [EmbeddingLike.apply_eq_iff_eq, Prod.mk.injEq]
-    rcases eq_or_ne j j' with rfl | hjj'
-    · simp only [true_and, ↓reduceIte]
-      exact (hb' j).apply_fst_snd i i'
-    · simp [hjj']
-  obtain ⟨bas, hbas, hbasv⟩ := exists_isDarbouxBasis_coe_eq (ω := ω) (n := k * 2)
-    (by rw [← hk]; ring) h₁ h₂ h₃
-  exact ⟨bas, hbas, fun j i x ↦ by rw [hbasv, hv_apply]⟩
 
 variable {ι : Type*} {Q : ι → QuadraticForm ℝ V}
 
@@ -608,7 +587,7 @@ private theorem exists_isDarbouxBasis_block (h : ω.IsNondegenerateQuadraticFami
   have hnd := h.restrict_maxGenEigenspace_aeval hP (ffPoly_comp_neg_X a b)
   have hcomm {R : QuadraticForm ℝ V} (hR : R ∈ Submodule.span ℝ (Set.range Q)) (p : ℝ[X]) :
       Commute (aeval A p) (ω.hamiltonianEnd R) :=
-    h.commute_aeval_hamiltonianEnd hP hR p
+    commute_aeval_hamiltonianEnd_of_mem_span h.quadraticPoissonBracket_eq_zero hP hR p
   have hmaps (p : ℝ[X]) : Set.MapsTo (aeval A p) G G :=
     Module.End.mapsTo_genEigenspace_aeval_of_comm (hA_def ▸ (hcomm hP p).symm) _ 0 ⊤
   -- The focus-focus pair on `G`: odd polynomials `p₁`, `p₂` with `p₁(A)² = 1`, `p₂(A)² = -1`.
@@ -617,7 +596,9 @@ private theorem exists_isDarbouxBasis_block (h : ω.IsNondegenerateQuadraticFami
   have hsq {p r s : ℝ[X]} (hp : p * p = r + s * ffPoly a b) {v : V} (hv : v ∈ G) :
       aeval A p (aeval A p v) = aeval A r v := by
     rw [← mul_apply_eq_comp, ← map_mul, hp, map_add, map_mul, LinearMap.add_apply,
-      mul_apply_eq_comp, h.aeval_apply_eq_zero_of_mem_maxGenEigenspace hP hv, map_zero, add_zero]
+      mul_apply_eq_comp,
+      (h.isSemisimple_hamiltonianEnd hP).aeval_apply_eq_zero_of_mem_maxGenEigenspace hv, map_zero,
+      add_zero]
   -- The forms on `G` whose Hamiltonian endomorphisms are the restrictions of `p₁(A)`, `p₂(A)`.
   have hmem (p : ℝ[X]) (hp : p.comp (-X) = -p) :
       (aeval A p).restrict (hmaps p) ∈ skewAdjointLieSubalgebra ω'.toBilinForm :=
@@ -723,11 +704,17 @@ theorem exists_isDarbouxBasis_span_eq_span_focusFocusBlocks
   -- A Darboux basis of each block in which the restricted family spans the focus-focus pair; they
   -- assemble to a Darboux basis of `V`.
   choose b' hb' hspan' using fun j ↦ exists_isDarbouxBasis_block h hP (ha j) (hc j) (hG4 j)
-  obtain ⟨bas, hbas, hbas_apply⟩ := exists_isDarbouxBasis_of_blocks hs hGs horth b' hb'
+  obtain ⟨bas, hbas, hbas_apply⟩ := exists_isDarbouxBasis_of_blocks
+    ((Equiv.sigmaEquivProd (Fin k) (Fin 2)).trans finProdFinEquiv) (by rw [← hs]; ring) horth
+    (v := fun j a ↦ (b' j a : V)) (fun j a ↦ (b' j a).property)
+    (fun j i i' ↦ by simpa using (hb' j).apply_fst_fst i i')
+    (fun j i i' ↦ by simpa using (hb' j).apply_snd_snd i i')
+    (fun j i i' ↦ by simpa using (hb' j).apply_fst_snd i i')
   refine ⟨k, bas, hbas, h.span_eq_of_span_le hbas.quadraticPoissonBracket_focusFocusBlocks
     (Submodule.span_le.2 ?_)⟩
   rintro _ ⟨i, rfl⟩
-  refine mem_span_focusFocusBlocks_of_blocks hGs hb' hbas hbas_apply (fun j ↦ ?_) fun j ↦ ?_
+  refine mem_span_focusFocusBlocks_of_blocks hGs hb' hbas
+    (fun j i x ↦ by simpa using hbas_apply j i x) (fun j ↦ ?_) fun j ↦ ?_
   · exact Module.End.mapsTo_genEigenspace_aeval_of_comm (ω.quadraticPoissonBracket_eq_zero_iff.1
       (ω.quadraticPoissonBracket_eq_zero_of_mem_span h.quadraticPoissonBracket_eq_zero hP
         (Submodule.subset_span ⟨i, rfl⟩))) _ 0 ⊤
