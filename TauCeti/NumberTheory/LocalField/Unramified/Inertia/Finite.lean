@@ -117,10 +117,11 @@ restriction to a finite Galois subextension `L/K`. For every `τ` in the inertia
 `L/K`, the tame character satisfies `θ_0(σ_L τ σ_L⁻¹) = θ_0(τ) ^ q`, where `q` is the
 cardinality of the residue field of `K`. -/
 theorem IsArithFrobeniusLift.tameCharacter_conj_restrictNormal {σ : Gal(AlgebraicClosure K/K)}
-    (hσ : IsArithFrobeniusLift K σ) {π : 𝒪[L]} (hπ : Irreducible π)
+    (hσ : IsArithFrobeniusLift K σ)
     (τ : IsLocalRing.ramificationGroup Gal(L/K) 𝒪[L] 0) :
-    tameCharacter hπ (MulAut.conjNormal (AlgEquiv.restrictNormal σ L) τ) =
-      tameCharacter hπ τ ^ Nat.card 𝓀[K] :=
-  tameCharacter_conj_of_smul_eq_pow hπ (hσ.restrictNormal_smul_residueField_eq_pow L) τ
+    IsDiscreteValuationRing.tameCharacter Gal(L/K) 𝒪[L]
+        (MulAut.conjNormal (AlgEquiv.restrictNormal σ L) τ) =
+      IsDiscreteValuationRing.tameCharacter Gal(L/K) 𝒪[L] τ ^ Nat.card 𝓀[K] :=
+  tameCharacter_conj_of_smul_eq_pow (hσ.restrictNormal_smul_residueField_eq_pow L) τ
 
 end TauCeti

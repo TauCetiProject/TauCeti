@@ -88,13 +88,11 @@ vanishes in residue characteristic zero.
   group induces an automorphism of each successive quotient, and
   `TauCeti.IsLocalRing.ramificationGroupGradedConj_self` records that elements of `G_i` act
   trivially whenever `G_i / G_{i+1}` is commutative.
-* `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker`,
-  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker_of_finite`, and
-  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker`: over a Noetherian local ring the
-  filtration cuts out the kernel of the action, and reaches it at a finite index once some `G_{i₀}`
-  is finite; `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_bot`,
-  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot_of_finite`, and
-  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot` are the faithful case.
+* `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker` and
+  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker_of_finite`: over a Noetherian local
+  ring the filtration cuts out the kernel of the action, and reaches it at a finite index once
+  some `G_{i₀}` is finite; `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_bot` and
+  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot_of_finite` are the faithful case.
 * `TauCeti.IsLocalRing.instIsMulCommutativeRamificationGroupGradedNatCastSucc`,
   `TauCeti.IsLocalRing.ramificationGroupGraded_natCast_succ_pow_char_eq_one`,
   `TauCeti.IsLocalRing.isPGroup_ramificationGroupGraded_natCast_succ`,
@@ -183,6 +181,12 @@ theorem mem_ramificationGroup_natCast_iff {n : ℕ} {σ : G} :
     σ ∈ ramificationGroup G S n ↔ ∀ x : S, σ • x - x ∈ maximalIdeal S ^ (n + 1) := by
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
   rw [mem_ramificationGroup_iff, h]
+
+/-- At a shifted nonnegative index `(n : ℤ) + 1`, the membership criterion has exponent `n + 2`. -/
+theorem mem_ramificationGroup_add_one_iff {n : ℕ} {σ : G} :
+    σ ∈ ramificationGroup G S ((n : ℤ) + 1) ↔
+      ∀ x : S, σ • x - x ∈ maximalIdeal S ^ (n + 2) := by
+  rw [← Nat.cast_succ, mem_ramificationGroup_natCast_iff]
 
 /-- At a nonnegative index, the ramification group of the local ring is the ramification group
 `Ideal.ramificationGroup` of its maximal ideal. -/
@@ -384,20 +388,6 @@ theorem exists_forall_ramificationGroup_eq_bot_of_finite (i₀ : ℤ) [FaithfulS
   simpa only [TauCeti.MulSemiringAction.ker_toRingAut_eq_bot] using
     exists_forall_ramificationGroup_eq_ker_of_finite G S i₀
 
-/-- Once the zeroth ramification group is finite, the filtration over a Noetherian local ring
-reaches the kernel of the action at a finite index. -/
-theorem exists_forall_ramificationGroup_eq_ker [Finite (ramificationGroup G S 0)] :
-    ∃ N : ℤ, ∀ i : ℤ, N ≤ i →
-      ramificationGroup G S i = MonoidHom.ker (MulSemiringAction.toRingAut G S) :=
-  exists_forall_ramificationGroup_eq_ker_of_finite G S 0
-
-/-- For a faithful action whose zeroth ramification group is finite, the ramification groups over
-a Noetherian local ring vanish from some index on. -/
-theorem exists_forall_ramificationGroup_eq_bot [FaithfulSMul G S]
-    [Finite (ramificationGroup G S 0)] :
-    ∃ N : ℤ, ∀ i : ℤ, N ≤ i → ramificationGroup G S i = ⊥ :=
-  exists_forall_ramificationGroup_eq_bot_of_finite G S 0
-
 end Separated
 
 section DiscreteValuationRing
@@ -543,7 +533,7 @@ theorem sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one [Fintype G]
   classical
   -- The filtration vanishes from some natural index `N` on.
   obtain ⟨N, hN⟩ : ∃ N : ℕ, ∀ i : ℕ, N ≤ i → ramificationGroup G S i = ⊥ := by
-    obtain ⟨N₀, hN₀⟩ := exists_forall_ramificationGroup_eq_bot G S
+    obtain ⟨N₀, hN₀⟩ := exists_forall_ramificationGroup_eq_bot_of_finite G S 0
     exact ⟨N₀.toNat, fun i hi ↦ hN₀ i (by omega)⟩
   -- For `σ ≠ 1`, the valuation `v (σ • ξ - ξ)` counts the indices `i < N` with `σ ∈ G_i`.
   have hval : ∀ σ ∈ univ.erase (1 : G), IsDiscreteValuationRing.addVal S (σ • ξ - ξ) =
@@ -762,33 +752,6 @@ section PositiveDepth
 
 variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 
-private theorem smul_sub_mem_maximalIdeal_pow_add_three {G S : Type*} [Group G] [CommRing S]
-    [IsLocalRing S] [MulSemiringAction G S] {n : ℕ} {σ : G}
-    (hσ : σ ∈ ramificationGroup G S ((n : ℤ) + 1)) {y : S} (hy : y ∈ maximalIdeal S ^ 2) :
-    σ • y - y ∈ maximalIdeal S ^ (n + 3) := by
-  rw [pow_two] at hy
-  refine Submodule.mul_induction_on hy (fun a ha b hb ↦ ?_) (fun y₁ y₂ hy₁ hy₂ ↦ ?_)
-  · have hsplit : σ • (a * b) - a * b = (σ • a - a) * (σ • b) + a * (σ • b - b) := by
-      rw [smul_mul']
-      ring
-    have hσa : σ • a - a ∈ maximalIdeal S ^ (n + 2) := by
-      simpa [show ((n : ℤ) + 1 + 1).toNat = n + 2 by omega] using
-        mem_ramificationGroup_iff.mp hσ a
-    have hσb : σ • b - b ∈ maximalIdeal S ^ (n + 2) := by
-      simpa [show ((n : ℤ) + 1 + 1).toNat = n + 2 by omega] using
-        mem_ramificationGroup_iff.mp hσ b
-    have hσb_mem : σ • b ∈ maximalIdeal S := by
-      simpa only [pow_one] using
-        (smul_mem_maximalIdeal_pow_iff (n := 1) σ).mpr (by simpa using hb)
-    rw [hsplit]
-    refine add_mem ?_ ?_
-    · rw [show n + 3 = (n + 2) + 1 by omega, pow_succ]
-      exact Ideal.mul_mem_mul hσa hσb_mem
-    · rw [show n + 3 = (n + 2) + 1 by omega, pow_succ']
-      exact Ideal.mul_mem_mul ha hσb
-  · rw [smul_add, add_sub_add_comm]
-    exact add_mem hy₁ hy₂
-
 /-- At positive depth `n + 1`, sending `σ ∈ G_{n+1}` to the function
 `x ↦ [σ • x - x] ∈ 𝔪 ^ (n + 2) ⧸ 𝔪 • ⊤` is a group homomorphism into the multiplicative form of an
 additive `ResidueField S`-vector space, with kernel `G_{n+2}`
@@ -801,26 +764,25 @@ def ramificationGroupToMaximalIdealGraded (n : ℕ) :
         (S → ↥(maximalIdeal S ^ (n + 2)) ⧸
           (maximalIdeal S • ⊤ : Submodule S ↥(maximalIdeal S ^ (n + 2)))) :=
   MonoidHom.mk'
-    (fun σ ↦ .ofAdd fun x ↦ Submodule.Quotient.mk ⟨(σ : G) • x - x, by
-      simpa [show ((n : ℤ) + 1 + 1).toNat = n + 2 by omega] using
-        mem_ramificationGroup_iff.mp σ.2 x⟩)
+    (fun σ ↦ .ofAdd fun x ↦ Submodule.Quotient.mk ⟨(σ : G) • x - x,
+      mem_ramificationGroup_add_one_iff.mp σ.2 x⟩)
     fun σ τ ↦ by
       rw [← ofAdd_add]
       refine congrArg Multiplicative.ofAdd (funext fun x ↦ ?_)
       rw [Pi.add_apply, ← Submodule.Quotient.mk_add, Submodule.Quotient.eq,
         Ideal.smul_top_eq_comap_mul, Submodule.mem_comap, Submodule.coe_subtype,
-        Submodule.coe_sub, Submodule.coe_add, ← pow_succ]
-      have hτx : (τ : G) • x - x ∈ maximalIdeal S ^ (n + 2) := by
-        simpa [show ((n : ℤ) + 1 + 1).toNat = n + 2 by omega] using
-          mem_ramificationGroup_iff.mp τ.2 x
+        Submodule.coe_sub, Submodule.coe_add]
       have hdiff : ((σ * τ : ramificationGroup G S ((n : ℤ) + 1)) : G) • x - x -
           (((σ : G) • x - x) + ((τ : G) • x - x)) =
           (σ : G) • ((τ : G) • x - x) - ((τ : G) • x - x) := by
         rw [Subgroup.coe_mul, mul_smul, smul_sub]
         ring
       rw [hdiff]
-      exact smul_sub_mem_maximalIdeal_pow_add_three σ.2
-        (Ideal.pow_le_pow_right (by omega : 2 ≤ n + 2) hτx)
+      exact TauCeti.Ideal.smul_sub_mem_mul_of_mem_sq
+        (fun w hw ↦ by simpa only [pow_one] using
+          (smul_mem_maximalIdeal_pow_iff (n := 1) (σ : G)).mpr (by simpa only [pow_one] using hw))
+        (fun w _ ↦ mem_ramificationGroup_add_one_iff.mp σ.2 w)
+        (Ideal.pow_le_pow_right (by omega : 2 ≤ n + 2) (mem_ramificationGroup_add_one_iff.mp τ.2 x))
 
 /-- Evaluating `ramificationGroupToMaximalIdealGraded` at `σ` and `x` yields the class of
 `σ • x - x` in `𝔪 ^ (n + 2) ⧸ 𝔪 • ⊤`. -/
@@ -828,9 +790,7 @@ def ramificationGroupToMaximalIdealGraded (n : ℕ) :
 theorem toAdd_ramificationGroupToMaximalIdealGraded_apply (n : ℕ)
     (σ : ramificationGroup G S ((n : ℤ) + 1)) (x : S) :
     Multiplicative.toAdd (ramificationGroupToMaximalIdealGraded G S n σ) x =
-      Submodule.Quotient.mk ⟨(σ : G) • x - x, by
-        simpa [show ((n : ℤ) + 1 + 1).toNat = n + 2 by omega] using
-          mem_ramificationGroup_iff.mp σ.2 x⟩ :=
+      Submodule.Quotient.mk ⟨(σ : G) • x - x, mem_ramificationGroup_add_one_iff.mp σ.2 x⟩ :=
   (rfl)
 
 /-- **The kernel of `ramificationGroupToMaximalIdealGraded` is `G_{n+2}`.** -/
@@ -838,12 +798,13 @@ theorem ker_ramificationGroupToMaximalIdealGraded (n : ℕ) :
     (ramificationGroupToMaximalIdealGraded G S n).ker =
       (ramificationGroup G S (((n : ℤ) + 1) + 1)).subgroupOf
         (ramificationGroup G S ((n : ℤ) + 1)) := by
+  have hidx : ((n : ℤ) + 1) + 1 = ((n + 2 : ℕ) : ℤ) := by push_cast; ring
   ext σ
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, ← toAdd_eq_zero, funext_iff,
-    mem_ramificationGroup_iff]
+    hidx, mem_ramificationGroup_natCast_iff]
   simp only [toAdd_ramificationGroupToMaximalIdealGraded_apply, Pi.zero_apply,
     Submodule.Quotient.mk_eq_zero, Ideal.smul_top_eq_comap_mul, Submodule.mem_comap,
-    Submodule.coe_subtype, ← pow_succ, show (((n : ℤ) + 1 + 1) + 1).toNat = n + 3 by omega]
+    Submodule.coe_subtype, ← pow_succ]
 
 /-- The canonical positive-depth embedding
 `G_{n+1} / G_{n+2} →* Multiplicative (S → 𝔪 ^ (n + 2) ⧸ 𝔪 • ⊤)`. -/

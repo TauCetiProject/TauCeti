@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
-public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
+public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
 
 /-!
@@ -29,12 +29,10 @@ at `P` built in `TauCeti/FieldTheory/FunctionField/Place/Filtration.lean`.
 
 The structure of the successive quotients comes from a single map.  Fix a uniformizer `t` at `P`.
 For `σ ∈ G_{i+1}(P)` the function `z ↦ (σ z - z) / t^{i+2}` takes values in `𝒪_P`, and reducing it
-at `P` gives a function `𝒪_P → F'_P`; the resulting
-`TauCeti.Place.ramificationResidueHom` is a group homomorphism from `G_{i+1}(P)` to the *additive*
-group of such functions, and its kernel is exactly `G_{i+2}(P)`.  Its being a homomorphism is
-where the hypothesis `i + 1 ≥ 1` enters: an automorphism in `G_1(P)` moves `t` by a unit
-congruent to `1` at `P`, and one in `G_0(P)` does not move residues at all, so the two error terms
-produced by expanding `(στ) z - z` disappear on reduction.
+at `P` gives a function `𝒪_P → F'_P`; the resulting `TauCeti.Place.ramificationResidueHom` is
+obtained by composing `TauCeti.IsLocalRing.ramificationGroupToMaximalIdealGraded` with the
+uniformizer identification `TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer`, and its
+kernel is exactly `G_{i+2}(P)`.
 
 Consequently every quotient `G_{i+1}(P) / G_{i+2}(P)` embeds in the additive group of functions
 from `𝒪_P` to the residue field: it is abelian, and in characteristic `p` it is killed by `p`, while
@@ -187,9 +185,11 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
 on** (Stichtenoth, Proposition 3.8.5). -/
 theorem exists_forall_ramificationGroup_eq_bot [Finite (ramificationGroup F P 0)] :
     ∃ N : ℕ, ∀ i, N ≤ i → ramificationGroup F P i = ⊥ := by
-  exact TauCeti.Subgroup.exists_forall_eq_bot_of_antitone_iInf_eq_bot
-    (ramificationGroup F P) (ramificationGroup_antitone F P)
-    (iInf_ramificationGroup_eq_bot F P)
+  have : Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) :=
+    by rw [← Nat.cast_zero, ← ramificationGroup_def]; infer_instance
+  obtain ⟨N, hN⟩ := IsLocalRing.exists_forall_ramificationGroup_eq_bot_of_finite
+    (P.integers.decompositionSubgroup F) P.integers 0
+  exact ⟨N.toNat, fun i hi ↦ by rw [ramificationGroup_def]; exact hN i (by omega)⟩
 
 end Defs
 
@@ -197,90 +197,33 @@ section Residue
 
 variable (F) (P : Place k F') {t : F'}
 
-private theorem ord_inv_pow_add_two (ht : P.ord t = 1) (i : ℕ) :
-    P.ord ((t ^ (i + 2))⁻¹) = -((i : ℤ) + 2) := by
-  rw [ord_inv, ord_pow, ht, mul_one]
-  push_cast
-  ring
-
-private theorem sub_mem_filtration_add_two {i : ℕ} (g : ramificationGroup F P (i + 1)) {x : F'}
-    (hx : x ∈ P.integers) :
-    ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') x - x ∈
-      P.filtration ((i : ℤ) + 2) := by
-  have h := (mem_ramificationGroup_iff F P).mp g.2 x hx
-  -- Normalize the coerced natural-number index to the integer index used by `filtration`.
-  rwa [show (((i + 1 : ℕ) : ℤ) + 1) = (i : ℤ) + 2 by push_cast; ring] at h
-
 /-- **The ramification residue** (Stichtenoth, Proposition 3.8.5): for a uniformizer `t` at `P`,
 the map sending an automorphism `σ` of `G_{i+1}(P)` to the function `z ↦ ((σ z - z)/t^{i+2})(P)`
-on `𝒪_P`.  It is a homomorphism into the *additive* group of functions `𝒪_P → F'_P`, which is
-therefore written multiplicatively here.  The map depends on the choice of `t`; its kernel,
-`TauCeti.Place.ker_ramificationResidueHom`, does not. -/
+on `𝒪_P`, obtained by composing `TauCeti.IsLocalRing.ramificationGroupToMaximalIdealGraded` with
+the uniformizer coordinate `TauCeti.residueFieldEquivMaximalIdealGradedOfUniformizer`.  The map
+depends on the choice of `t`; its kernel, `TauCeti.Place.ker_ramificationResidueHom`, does not. -/
 noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     ramificationGroup F P (i + 1) →* Multiplicative (P.integers → P.ResidueField) :=
-  MonoidHom.mk'
-    (fun g ↦ Multiplicative.ofAdd fun x ↦
-      filtrationResidue (P := P) (a := (i : ℤ) + 2) (s := (t ^ (i + 2))⁻¹)
-        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.2⟩)
-    (by
-      intro g h
-      rw [← ofAdd_add]
-      refine congrArg Multiplicative.ofAdd (funext fun x ↦ ?_)
-      have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0, ord_zero] at ht
-      set s : F' := (t ^ (i + 2))⁻¹ with hs
-      set σ : F' ≃ₐ[F] F' := ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F')
-      set τ : F' ≃ₐ[F] F' := ((h : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F')
-      -- Normalize the error of `τ` by the chosen power of the uniformizer.
-      have hw : τ (x : F') - (x : F') ∈ P.filtration ((i : ℤ) + 2) :=
-        sub_mem_filtration_add_two F P h x.2
-      have hc : s * (τ (x : F') - (x : F')) ∈ P.integers :=
-        mul_mem_integers_of_mem_filtration (ord_inv_pow_add_two P ht i) hw
-      set c : F' := s * (τ (x : F') - (x : F')) with hcdef
-      have hwc : τ (x : F') - (x : F') = t ^ (i + 2) * c := by
-        rw [hcdef, hs, ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero _ ht0), one_mul]
-      have htmem : t ∈ P.integers := by
-        rw [mem_integers_iff_ord_nonneg, ht]
-        norm_num
-      have hσt : σ t - t ∈ P.filtration ((i : ℤ) + 2) := sub_mem_filtration_add_two F P g htmem
-      set u : F' := σ t * t⁻¹ with hu
-      have hu1 : u - 1 ∈ P.filtration 1 := by
-        -- Rewrite the uniformizer ratio so its filtration follows from `σ t - t`.
-        rw [show u - 1 = (σ t - t) * t⁻¹ by rw [hu]; field_simp]
-        have hord : P.ord t⁻¹ = -1 := by rw [ord_inv, ht]
-        have h2 : (2 : ℤ) ≤ (i : ℤ) + 2 := by omega
-        have h3 := P.mul_mem_filtration (P.filtration_antitone h2 hσt)
-          (P.mem_filtration_ord t⁻¹)
-        -- The filtration indices add to `2 + (-1) = 1`.
-        rwa [hord, show (2 : ℤ) + -1 = 1 by ring] at h3
-      have humem : u ∈ P.integers := by
-        -- Recover integrality of `u` from the integral summands `u - 1` and `1`.
-        rw [show u = (u - 1) + 1 by ring]
-        have h0 : (0 : ℤ) ≤ 1 := by norm_num
-        exact add_mem (P.mem_filtration_zero_iff.mp (P.filtration_antitone h0 hu1)) (one_mem _)
-      have hσc : σ c - c ∈ P.filtration 1 := by
-        have h1 := (mem_ramificationGroup_iff F P).mp g.2 c hc
-        have h2 : (1 : ℤ) ≤ ((i + 1 : ℕ) : ℤ) + 1 := by push_cast; omega
-        exact P.filtration_antitone h2 h1
-      have hσcmem : σ c ∈ P.integers := (mem_integers_decompositionSubgroup_apply F P _).mpr hc
-      -- Expand the composite-action error using `σ t = u * t`.
-      have hexp : s * (σ (τ (x : F')) - σ (x : F')) = u ^ (i + 2) * σ c := by
-        rw [← map_sub, hwc, map_mul, map_pow, hu, mul_pow, inv_pow, hs]
-        ring
-      have hkey : s * (σ (τ (x : F')) - σ (x : F')) - c ∈ P.filtration 1 := by
-        -- Separate the two error terms: `u^(i+2) - 1` and `σ c - c`.
-        rw [hexp, show u ^ (i + 2) * σ c - c = (u ^ (i + 2) - 1) * σ c + (σ c - c) by ring]
-        refine Submodule.add_mem _ ?_ hσc
-        simpa using P.mul_mem_filtration (P.pow_sub_one_mem_filtration humem hu1 (i + 2))
-          (P.mem_filtration_zero_iff.mpr hσcmem)
-      simp only [Pi.add_apply, filtrationResidue_apply, ← map_add]
-      refine (P.residue_eq_iff_sub_mem_filtration_one).mpr ?_
-      convert hkey using 1
-      -- Unfold the three residue numerators to the field identity supplied by `hkey`.
-      change s * (σ (τ (x : F')) - (x : F')) -
-          (s * (σ (x : F') - (x : F')) + s * (τ (x : F') - (x : F'))) =
-        s * (σ (τ (x : F')) - σ (x : F')) - c
-      rw [hcdef]
-      ring)
+  let π : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
+  let hπ : Irreducible π :=
+    P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
+  let e :
+      (↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)) ⧸
+        (IsLocalRing.maximalIdeal P.integers • ⊤ :
+          Submodule P.integers ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)))) →+
+        P.ResidueField :=
+    (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm.toAddMonoidHom
+  let post :
+      Multiplicative (P.integers →
+        ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)) ⧸
+          (IsLocalRing.maximalIdeal P.integers • ⊤ :
+            Submodule P.integers ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)))) →*
+        Multiplicative (P.integers → P.ResidueField) :=
+    (e.compLeft P.integers).toMultiplicative
+  post.comp
+    ((IsLocalRing.ramificationGroupToMaximalIdealGraded
+        (P.integers.decompositionSubgroup F) P.integers i).comp
+      (MulEquiv.subgroupCongr (by rw [ramificationGroup_def, Nat.cast_succ])).toMonoidHom)
 
 /-- The value of the ramification residue at a function `x` integral at `P`, computed on any
 representative `y` of `(σ x - x)/t^{i+2}` in `𝒪_P`. -/
@@ -290,11 +233,40 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
       (((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') (x : F') - (x : F'))) :
     Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
       IsLocalRing.residue P.integers y := by
-  have hrfl : Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
-      filtrationResidue (P := P) (a := (i : ℤ) + 2) (s := (t ^ (i + 2))⁻¹)
-        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.2⟩ := rfl
-  rw [hrfl, filtrationResidue_apply]
-  exact congrArg _ (Subtype.ext hy.symm)
+  have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0, ord_zero] at ht
+  let π : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
+  let hπ : Irreducible π :=
+    P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
+  let g' : IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
+      ((i : ℤ) + 1) :=
+    ⟨(g : P.integers.decompositionSubgroup F), (Nat.cast_succ (R := ℤ) i).symm ▸ g.2⟩
+  have heval : Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
+      (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm
+        (Submodule.Quotient.mk ⟨(g' : P.integers.decompositionSubgroup F) • x - x,
+          IsLocalRing.mem_ramificationGroup_add_one_iff.mp g'.2 x⟩) := by
+    have hg' : (MulEquiv.subgroupCongr (by rw [ramificationGroup_def, Nat.cast_succ])) g = g' :=
+      Subtype.ext (MulEquiv.subgroupCongr_apply _ _)
+    rw [ramificationResidueHom, MonoidHom.comp_apply, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom, hg']
+    exact congrArg
+      (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm
+      (IsLocalRing.toAdd_ramificationGroupToMaximalIdealGraded_apply
+        (P.integers.decompositionSubgroup F) P.integers i g' x)
+  have hsub : (g' : P.integers.decompositionSubgroup F) • x - x = y * π ^ (i + 2) :=
+    Subtype.ext <| by
+      rw [AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
+        MulMemClass.coe_mul, SubmonoidClass.coe_pow, hy]
+      change ((g : F' ≃ₐ[F] F') (x : F') - (x : F')) =
+        (t ^ (i + 2))⁻¹ * ((g : F' ≃ₐ[F] F') (x : F') - (x : F')) * t ^ (i + 2)
+      rw [mul_assoc, mul_comm _ (t ^ (i + 2)), ← mul_assoc,
+        inv_mul_cancel₀ (pow_ne_zero _ ht0), one_mul]
+  rw [heval]
+  have hmk := congrArg (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm
+    (residueFieldEquivMaximalIdealGradedOfUniformizer_mk π hπ (i + 2) y)
+  rw [LinearEquiv.symm_apply_apply] at hmk
+  rw [hmk]
+  exact congrArg (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm
+    (congrArg Submodule.Quotient.mk (Subtype.ext hsub))
 
 /-- **The kernel of the ramification residue is the next ramification group** (Stichtenoth,
 Proposition 3.8.5): so `G_{i+1}(P) / G_{i+2}(P)` embeds into the additive group of functions from
@@ -302,27 +274,28 @@ Proposition 3.8.5): so `G_{i+1}(P) / G_{i+2}(P)` embeds into the additive group 
 theorem ker_ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     (ramificationResidueHom F P ht i).ker =
       (ramificationGroup F P (i + 2)).subgroupOf (ramificationGroup F P (i + 1)) := by
-  have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0, ord_zero] at ht
-  have hinv : (t ^ (i + 2))⁻¹ ≠ 0 := inv_ne_zero (pow_ne_zero _ ht0)
-  have hidx : (((i + 2 : ℕ) : ℤ) + 1) = (i : ℤ) + 2 + 1 := by push_cast; ring
-  ext g
-  have hval : ∀ x : P.integers, Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
-      filtrationResidue (P := P) (a := (i : ℤ) + 2) (s := (t ^ (i + 2))⁻¹)
-        (ord_inv_pow_add_two P ht i) ⟨_, sub_mem_filtration_add_two F P g x.2⟩ := fun _ ↦ rfl
-  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, mem_ramificationGroup_iff, ← toAdd_eq_zero]
-  constructor
-  · intro hg x hx
-    have h1 : Multiplicative.toAdd (ramificationResidueHom F P ht i g) ⟨x, hx⟩ = 0 := by
-      rw [hg, Pi.zero_apply]
-    rw [hval] at h1
-    have h2 := (filtrationResidue_eq_zero_iff (ord_inv_pow_add_two P ht i) hinv _).mp h1
-    rwa [hidx]
-  · intro hg
+  let π : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
+  let hπ : Irreducible π :=
+    P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
+  let e :
+      (↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)) ⧸
+        (IsLocalRing.maximalIdeal P.integers • ⊤ :
+          Submodule P.integers ↥(IsLocalRing.maximalIdeal P.integers ^ (i + 2)))) →+
+        P.ResidueField :=
+    (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm.toAddMonoidHom
+  have hpost_inj : Function.Injective ((e.compLeft P.integers).toMultiplicative) := by
+    intro a b hab
+    apply Multiplicative.toAdd.injective
     funext x
-    rw [hval, Pi.zero_apply]
-    refine (filtrationResidue_eq_zero_iff (ord_inv_pow_add_two P ht i) hinv _).mpr ?_
-    have := hg (x : F') x.2
-    rwa [hidx] at this
+    exact (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (i + 2)).symm.injective
+      (congrFun (congrArg Multiplicative.toAdd hab) x)
+  have hker := IsLocalRing.ker_ramificationGroupToMaximalIdealGraded
+    (P.integers.decompositionSubgroup F) P.integers i
+  ext g
+  rw [ramificationResidueHom, MonoidHom.mem_ker, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    map_eq_one_iff _ hpost_inj, ← MonoidHom.mem_ker, hker, Subgroup.mem_subgroupOf,
+    MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_apply, Subgroup.mem_subgroupOf]
+  simp [ramificationGroup_def, Nat.cast_succ]
 
 end Residue
 
@@ -335,19 +308,19 @@ variable (F) (P : Place k F')
 theorem commutator_ramificationGroup_le (i : ℕ) :
     ⁅ramificationGroup F P (i + 1), ramificationGroup F P (i + 1)⁆ ≤
       ramificationGroup F P (i + 2) := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
   rw [Subgroup.commutator_le]
   intro a ha b hb
-  rw [commutatorElement_def]
-  have hmem : (⟨a, ha⟩ * ⟨b, hb⟩ * ⟨a, ha⟩⁻¹ * ⟨b, hb⟩⁻¹ :
-      ramificationGroup F P (i + 1)) ∈ (ramificationResidueHom F P ht i).ker := by
-    rw [MonoidHom.mem_ker, ← toAdd_eq_zero]
-    funext x
-    simp only [map_mul, map_inv, toAdd_mul, toAdd_inv, Pi.add_apply, Pi.neg_apply, Pi.zero_apply]
-    ring
-  rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
+  let a' : IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
+      ((i : ℤ) + 1) := ⟨a, (Nat.cast_succ (R := ℤ) i).symm ▸ ha⟩
+  let b' : IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
+      ((i : ℤ) + 1) := ⟨b, (Nat.cast_succ (R := ℤ) i).symm ▸ hb⟩
+  have hcomm : (QuotientGroup.mk (a' * b' * a'⁻¹ * b'⁻¹) :
+      IsLocalRing.RamificationGroupGraded (P.integers.decompositionSubgroup F) P.integers
+        ((i : ℤ) + 1)) = 1 := by
+    simp only [QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+    rw [mul_comm' (QuotientGroup.mk a'), mul_inv_cancel_right, mul_inv_cancel]
+  rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hcomm
+  simpa [ramificationGroup_def, Nat.cast_succ, commutatorElement_def, a', b'] using hcomm
 
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in
@@ -355,16 +328,14 @@ theorem commutator_ramificationGroup_le (i : ℕ) :
 theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i : ℕ)
     {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P (i + 1)) :
     g ^ p ∈ ramificationGroup F P (i + 2) := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  have hp : (p : P.ResidueField) = 0 := CharP.cast_eq_zero P.ResidueField p
-  have hmem : (⟨g, hg⟩ : ramificationGroup F P (i + 1)) ^ p ∈
-      (ramificationResidueHom F P ht i).ker := by
-    rw [MonoidHom.mem_ker, map_pow, ← toAdd_eq_zero]
-    funext x
-    rw [toAdd_pow, Pi.smul_apply, Pi.zero_apply, nsmul_eq_mul, hp, zero_mul]
-  rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
+  let g' : IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
+      ((i : ℤ) + 1) := ⟨g, (Nat.cast_succ (R := ℤ) i).symm ▸ hg⟩
+  have hpow : (QuotientGroup.mk g' :
+      IsLocalRing.RamificationGroupGraded (P.integers.decompositionSubgroup F) P.integers
+        ((i : ℤ) + 1)) ^ p = 1 :=
+    IsLocalRing.ramificationGroupGraded_natCast_succ_pow_char_eq_one p i _
+  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hpow
+  exact_mod_cast hpow
 
 /-- **In characteristic zero a finite first ramification group is trivial** (Stichtenoth,
 Proposition 3.8.5): each successive quotient embeds in a
@@ -372,44 +343,11 @@ torsion-free additive group, so the filtration is constant from `1` on and meets
 theorem ramificationGroup_one_eq_bot [Finite (ramificationGroup F P 1)]
     [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  have hstep : ∀ i : ℕ, ramificationGroup F P (i + 1) ≤ ramificationGroup F P (i + 2) := by
-    intro i g hg
-    let _ : Finite (ramificationGroup F P (i + 1)) :=
-      Finite.of_injective
-        (fun g : ramificationGroup F P (i + 1) ↦
-          (⟨g, ramificationGroup_antitone F P (Nat.succ_le_succ (Nat.zero_le i)) g.2⟩ :
-            ramificationGroup F P 1))
-        (fun _ _ h ↦ Subtype.ext (congrArg
-          (fun g : ramificationGroup F P 1 ↦ (g : P.integers.decompositionSubgroup F)) h))
-    have hfin : (0 : ℕ) < orderOf (⟨g, hg⟩ : ramificationGroup F P (i + 1)) := orderOf_pos _
-    have hmem : (⟨g, hg⟩ : ramificationGroup F P (i + 1)) ∈
-        (ramificationResidueHom F P ht i).ker := by
-      rw [MonoidHom.mem_ker, ← toAdd_eq_zero]
-      funext x
-      set n := orderOf (⟨g, hg⟩ : ramificationGroup F P (i + 1))
-      have hpow : (ramificationResidueHom F P ht i ⟨g, hg⟩) ^ n = 1 := by
-        rw [← map_pow, pow_orderOf_eq_one, map_one]
-      have hval := congrFun (congrArg Multiplicative.toAdd hpow) x
-      rw [toAdd_pow, toAdd_one, Pi.zero_apply, Pi.smul_apply, nsmul_eq_mul] at hval
-      have hncast : (n : P.ResidueField) ≠ 0 := Nat.cast_ne_zero.mpr hfin.ne'
-      rw [Pi.zero_apply]
-      exact (mul_eq_zero.mp hval).resolve_left hncast
-    rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-    simpa using hmem
-  have hle : ∀ i : ℕ, ramificationGroup F P 1 ≤ ramificationGroup F P i := by
-    intro i
-    induction i with
-    | zero => exact ramificationGroup_antitone F P (Nat.zero_le 1)
-    | succ i ih =>
-      rcases Nat.eq_zero_or_pos i with rfl | hi
-      · exact le_rfl
-      · obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
-        exact le_trans ih (hstep j)
-  refine le_antisymm ?_ bot_le
-  rw [← iInf_ramificationGroup_eq_bot F P]
-  exact le_iInf hle
+  have : Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 1) :=
+    ‹_›
+  simpa only [ramificationGroup_def, Nat.cast_one] using
+    IsLocalRing.ramificationGroup_one_eq_bot_of_charZero
+      (P.integers.decompositionSubgroup F) P.integers
 
 end Structure
 

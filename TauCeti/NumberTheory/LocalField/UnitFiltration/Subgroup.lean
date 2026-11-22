@@ -50,17 +50,18 @@ variable {H : Subgroup G}
 `H_i/H_{i+1}` into `G_i/G_{i+1}` and then applying `θ_i` gives the same class in
 `U(L,i)/U(L,i+1)` as applying the quotient embedding for the restricted `H`-action. -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_comp_subgroupHom
-    (n : ℕ) {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) :
-    (ramificationGroupGradedToUnitFiltrationGraded (G := G) n hϖ).comp
+    (n : ℕ) :
+    (ramificationGroupGradedToUnitFiltrationGraded L G n).comp
         (ramificationGroupGradedSubgroupHom G 𝒪[L] H n) =
-      ramificationGroupGradedToUnitFiltrationGraded (G := H) n hϖ := by
+      ramificationGroupGradedToUnitFiltrationGraded L H n := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   apply MonoidHom.ext
   intro x
   induction x using QuotientGroup.induction_on with
   | _ σ =>
     rw [MonoidHom.comp_apply, ramificationGroupGradedSubgroupHom_mk,
-      ramificationGroupGradedToUnitFiltrationGraded_mk,
-      ramificationGroupGradedToUnitFiltrationGraded_mk]
+      ramificationGroupGradedToUnitFiltrationGraded_mk hϖ,
+      ramificationGroupGradedToUnitFiltrationGraded_mk hϖ]
     congr 1
     apply Subtype.ext
     apply Units.ext

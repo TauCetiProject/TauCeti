@@ -48,13 +48,13 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The positive-depth unit-filtration coordinate associated to a uniformizer.  The class of
-`u ∈ U(K,n+1)` is sent to the residue of `(u - 1) / π^(n+1)`. -/
+/-- The positive-depth unit-filtration coordinate associated to a uniformizer, transported from
+`TauCeti.principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer`. The class of `u ∈ U(K,n+1)`
+is sent to the residue of `(u - 1) / π^(n+1)`. -/
 noncomputable def unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (n : ℕ)
     (π : 𝒪[K]) (hπ : Irreducible π) : Additive (UnitFiltrationGraded K (n + 1)) ≃+ 𝓀[K] :=
-  (unitFiltrationGradedSuccEquivMaximalIdealGraded (K := K) n).toAdditive.trans <|
-    (AddEquiv.additiveMultiplicative (MaximalIdealGraded K (n + 1))).trans <|
-      (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)).symm.toAddEquiv
+  (principalUnitGroupGradedEquivUnitFiltrationGraded K (n + 1)).toAdditive.symm.trans
+    (principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer n π hπ)
 
 /-- The uniformizer coordinate of the class of `u` is characterized by multiplying it by
 `π^(n+1)`: the result is the class of `u - 1` in the maximal-ideal graded piece. -/
@@ -65,10 +65,17 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk (n : ℕ
         (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ
           (Additive.ofMul (QuotientGroup.mk x))) =
       Submodule.Quotient.mk (unitFiltrationDifference n x) := by
-  rw [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer]
-  simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
-    unitFiltrationGradedSuccEquivMaximalIdealGraded_mk]
-  exact LinearEquiv.apply_symm_apply _ _
+  rw [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer, AddEquiv.trans_apply]
+  change residueFieldEquivMaximalIdealGradedOfUniformizer π hπ (n + 1)
+      (principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer n π hπ
+        (Additive.ofMul ((principalUnitGroupGradedEquivUnitFiltrationGraded K (n + 1)).symm
+          (QuotientGroup.mk x)))) = _
+  rw [principalUnitGroupGradedEquivUnitFiltrationGraded_symm_mk,
+    principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk]
+  refine congrArg Submodule.Quotient.mk (Subtype.ext (Subtype.ext ?_))
+  change ((((principalUnitGroupEquivUnitFiltration K (n + 1)).symm x : 𝒪[K]ˣ) : 𝒪[K]) : K) - 1 =
+    (((unitFiltrationDifference n x : 𝒪[K]) : K))
+  rw [coe_coe_principalUnitGroupEquivUnitFiltration_symm, coe_coe_unitFiltrationDifference]
 
 /-- If `u - 1 = y * π^(n+1)`, then the uniformizer coordinate of the class of `u` is the
 residue of `y`. This is the representative form of the positive-depth graded equivalence used in
@@ -92,7 +99,9 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_change (n : ℕ)
     unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ x =
       IsLocalRing.residue 𝒪[K] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[K]) ^ (n + 1) *
         unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π' hπ' x := by
-  exact residueFieldEquivMaximalIdealGradedOfUniformizer_symm_change π π' hπ hπ'
-    (n + 1) _
+  rw [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer,
+    unitFiltrationGradedSuccEquivResidueFieldOfUniformizer, AddEquiv.trans_apply,
+    AddEquiv.trans_apply]
+  exact principalUnitGroupGradedSuccEquivResidueFieldOfUniformizer_change n π π' hπ hπ' _
 
 end TauCeti

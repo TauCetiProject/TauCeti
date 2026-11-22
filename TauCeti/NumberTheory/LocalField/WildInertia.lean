@@ -505,9 +505,11 @@ theorem isProP_wildInertiaSubgroup : IsProP p (wildInertiaSubgroup K) := by
   have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) E
   have : CharP 𝓀[E] p := charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[E]).injective _
   -- The restriction of `σ` to `E` lies in the `p`-group `G_1` of `E/K`.
+  have : Module.Finite K E := hEfin
   have hG1 := restrictNormal_mem_lowerRamificationGroup_one E hσ
   rw [lowerRamificationGroup_def] at hG1
-  obtain ⟨n, hn⟩ := isPGroup_ramificationGroup (L := E) (E ≃ₐ[K] E) p (i := 1) one_pos ⟨_, hG1⟩
+  obtain ⟨n, hn⟩ := IsLocalRing.isPGroup_ramificationGroup (E ≃ₐ[K] E) 𝒪[E] p (i := 1)
+    one_pos ⟨_, hG1⟩
   -- State the kernel computation on `Gal(K^{alg}/K)`, whose group structure is not reducibly that
   -- of `Field.absoluteGaloisGroup K`.
   have hker (τ : Gal(AlgebraicClosure K/K)) (hτ : AlgEquiv.restrictNormal τ E ^ p ^ n = 1) :
@@ -699,7 +701,7 @@ theorem map_wildInertiaSubgroup_restrictNormalHom :
     (f.subgroupMap_surjective I)
   have hG1 : IsProP p ((lowerRamificationGroup K L 1).subgroupOf A) := by
     rw [isProP_iff_isPGroup]
-    have := isPGroup_ramificationGroup (L := L) (L ≃ₐ[K] L) p (i := 1) one_pos
+    have := IsLocalRing.isPGroup_ramificationGroup (L ≃ₐ[K] L) 𝒪[L] p (i := 1) one_pos
     rw [← lowerRamificationGroup_def] at this
     exact this.of_equiv (Subgroup.subgroupOfEquivOfLe h1A).symm
   have hle : ((wildInertiaSubgroup K).subgroupOf I).map (f.subgroupMap I) ≤

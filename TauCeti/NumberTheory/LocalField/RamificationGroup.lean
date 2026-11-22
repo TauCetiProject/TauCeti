@@ -220,7 +220,7 @@ theorem iInf_lowerRamificationGroup_eq_bot : ⨅ i : ℤ, lowerRamificationGroup
 /-- The lower ramification groups are trivial from some index on. -/
 theorem exists_forall_lowerRamificationGroup_eq_bot :
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i → lowerRamificationGroup K L i = ⊥ :=
-  TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot _ _
+  TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot_of_finite _ _ 0
 
 /-- The lower ramification groups are trivial from some natural index on. -/
 theorem exists_forall_lowerRamificationGroup_natCast_eq_bot :
