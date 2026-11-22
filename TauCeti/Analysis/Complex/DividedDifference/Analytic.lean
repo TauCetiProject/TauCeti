@@ -12,16 +12,21 @@ import TauCeti.Analysis.Calculus.DSlope.Integral
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
-# Local analyticity of coordinate divided differences
+# Analyticity and integral representation of coordinate divided differences
 
 Whenever `f : (ι → ℂ) → E` (with `ι` finite and `E` complete) is analytic at `z` and
 `update z i ζ`, `TauCeti.partialDslope i f ζ` is analytic at `z`
-(`TauCeti.analyticAt_partialDslope`).
+(`TauCeti.analyticAt_partialDslope`). In particular, the divided difference of an entire function
+is entire (`TauCeti.differentiable_partialDslope`) and admits the integral representation
+`g z = ∫₀¹ ∂ᵢ f (update z i (ζ + t (z i - ζ))) dt` (`TauCeti.partialDslope_eq_integral`).
 
 ## Main results
 
 * `TauCeti.analyticAt_partialDslope`: `partialDslope i f ζ` is analytic at `z` when `f` is
   analytic at `z` and `update z i ζ`.
+* `TauCeti.partialDslope_eq_integral`: integral representation of `partialDslope i f ζ` for
+  entire `f`.
+* `TauCeti.differentiable_partialDslope`: `partialDslope i f ζ` is entire when `f` is.
 -/
 
 public section
@@ -108,5 +113,25 @@ theorem analyticAt_partialDslope [Fintype ι] {f : (ι → ℂ) → E} {z : ι �
     refine MeasureTheory.setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
     simp only [one_smul, Function.comp_apply, projIcc_of_mem zero_le_one (Ioc_subset_Icc_self ht),
       Complex.real_smul]
+
+/-- **Integral representation of the divided difference.** For an entire `f`,
+`partialDslope i f ζ z = ∫₀¹ ∂ᵢ f (update z i (ζ + t (z i - ζ))) dt`. -/
+theorem partialDslope_eq_integral [Finite ι] {f : (ι → ℂ) → E} (hf : Differentiable ℂ f)
+    (i : ι) (ζ : ℂ) (z : ι → ℂ) :
+    partialDslope i f ζ z =
+      ∫ t in (0 : ℝ)..1, partialDeriv i f (update z i (ζ + t * (z i - ζ))) := by
+  rw [partialDslope_apply, dslope_eq_integral_deriv isOpen_univ
+    (differentiable_comp_update hf z i).contDiff.contDiffOn (subset_univ _)]
+  congr 1 with t
+  rw [Complex.real_smul, (hasDerivAt_comp_update (hf _)).deriv]
+
+/-- **The divided difference of an entire function is entire.** -/
+theorem differentiable_partialDslope [Finite ι] {f : (ι → ℂ) → E} (hf : Differentiable ℂ f)
+    (i : ι) (ζ : ℂ) : Differentiable ℂ (partialDslope i f ζ) := by
+  have := Fintype.ofFinite ι
+  intro z
+  exact (analyticAt_partialDslope
+    (hf.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem)
+    (hf.differentiableOn.analyticAt_of_finiteDimensional Filter.univ_mem)).differentiableAt
 
 end TauCeti

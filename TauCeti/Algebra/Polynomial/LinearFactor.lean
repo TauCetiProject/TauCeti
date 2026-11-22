@@ -45,8 +45,6 @@ that does not vanish at the root.
   `X - C x` leaves the root multiplicity at `x` unchanged.
 * `Polynomial.rootMultiplicity_neg`: negating a polynomial leaves its root multiplicities
   unchanged.
-* `Polynomial.degree_C_add_X_sub_C_mul_lt`: adding a constant to `(X - C ζ) * Q` raises a strict
-  degree bound by at most one.
 
 ## Provenance
 
@@ -126,24 +124,6 @@ theorem rootMultiplicity_neg (p : R[X]) (a : R) :
     (-p).rootMultiplicity a = p.rootMultiplicity a := by
   classical
   simp [rootMultiplicity_eq_multiplicity, multiplicity_neg]
-
-/-- Adding a constant to `(X - C ζ) * Q` raises a strict degree bound `< d` by at most `1`. -/
-theorem degree_C_add_X_sub_C_mul_lt {a ζ : R} {Q : R[X]} {d : ℕ} (hQ : Q.degree < d) :
-    (C a + (X - C ζ) * Q).degree < ((d + 1 : ℕ) : WithBot ℕ) := by
-  nontriviality R
-  refine (degree_add_le _ _).trans_lt (max_lt
-    (degree_C_le.trans_lt (WithBot.coe_lt_coe.mpr (Nat.succ_pos d))) ?_)
-  rcases eq_or_ne Q 0 with rfl | hQ0
-  · simp
-  · rw [degree_eq_natDegree hQ0] at hQ
-    have hlt : Q.natDegree < d := Nat.cast_lt.mp hQ
-    calc ((X - C ζ) * Q).degree
-        ≤ (X - C ζ).degree + Q.degree := degree_mul_le _ _
-      _ = ((Q.natDegree + 1 : ℕ) : WithBot ℕ) := by
-          rw [degree_X_sub_C, degree_eq_natDegree hQ0]
-          norm_cast
-          ring
-      _ < ((d + 1 : ℕ) : WithBot ℕ) := Nat.cast_lt.mpr (Nat.add_lt_add_right hlt 1)
 
 /-- A polynomial of degree at most one has constant nonzero sign on an interval without a root. -/
 theorem eval_mul_pos_of_natDegree_le_one_of_no_roots {R : Type*} [Field R] [LinearOrder R]

@@ -6,18 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
-# Polydiscs centred at real points and coordinate-replacement bounds
+# Polydiscs centred at real points
 
 A ball in `ι → ℂ` for the sup norm is a polydisc: each coordinate of a point of `ball 0 r` has
 modulus less than `r`. When its centre is a real point
 `fun i ↦ (a i : ℂ)`, taking real parts maps it into the ball of the same radius around `a` in
 `ι → ℝ`, and it is invariant under complex conjugation.
-
-Over any finite index type, replacing one coordinate of a point in `closedBall c R` by a point of
-`closedBall (c i) R` keeps any bound on `closedBall c R` (`TauCeti.norm_update_le`).
 
 ## Main declarations
 
@@ -30,8 +26,6 @@ Over any finite index type, replacing one coordinate of a point in `closedBall c
   conjugation.
 * `Complex.pi_ofReal_mem_iUnion_ball_iff`: the real points of a union of polydiscs centred at the
   points of `U ⊆ ι → ℝ`, whose real points lie in `U`, are exactly the points of `U`.
-* `TauCeti.norm_update_le`: pointwise polydisc bound `‖f (Function.update z i ζ)‖ ≤ M` for the
-  frozen-coordinate term.
 -/
 
 public section
@@ -98,17 +92,3 @@ theorem pi_ofReal_mem_iUnion_ball_iff {U : Set (ι → ℝ)} {s : U → ℝ} (hs
   simpa using hsU x (pi_re_mem_ball hx)
 
 end Complex
-
-namespace TauCeti
-
-/-- Pointwise polydisc bound for the frozen-coordinate term: if `f : (ι → ℂ) → E` is bounded by
-`M` on `closedBall c R`, and `ζ ∈ closedBall (c i) R` and `z ∈ closedBall c R`, then
-`‖f (Function.update z i ζ)‖ ≤ M`. -/
-theorem norm_update_le {ι E : Type*} [DecidableEq ι] [Fintype ι] [NormedAddCommGroup E]
-    {f : (ι → ℂ) → E} {c : ι → ℂ} {R M : ℝ} {i : ι} {ζ : ℂ}
-    (hζ : ζ ∈ closedBall (c i) R) (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M)
-    {z : ι → ℂ} (hz : z ∈ closedBall c R) :
-    ‖f (Function.update z i ζ)‖ ≤ M :=
-  hM _ (update_mem_closedBall hζ hz)
-
-end TauCeti

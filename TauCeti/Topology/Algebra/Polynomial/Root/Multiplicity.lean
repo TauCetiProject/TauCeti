@@ -11,7 +11,6 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -27,7 +26,7 @@ decrease.
 This transfers the multiplicities of root sections of a product to its individual factors,
 including factors sharing roots and roots of multiplicity greater than one. For fixed polynomials
 over Hausdorff topological domains without isolated points, the same continuity of evaluation yields
-vanishing and root-multiplicity comparison for `Q.eval w + g w * P.eval w = 0`.
+root-multiplicity comparison and vanishing for `Q.eval w + g w * P.eval w = 0`.
 
 ## References
 
@@ -104,20 +103,6 @@ theorem eventually_rootMultiplicity_eq_of_prod [IsDomain R] [T1Space R]
   filter_upwards [hle, hnonzero, hmult] with x hx hxne hxm
   rw [hsum x hxne, hsum x₀ hne] at hxm
   exact (Finset.sum_eq_sum_iff_of_le hx).1 hxm
-
-omit [IsTopologicalSemiring R] in
-/-- If `g : R → R` is continuous at a non-isolated point `w₀` of a Hausdorff integral domain `R`
-and `g w * P.eval w = 0` everywhere for a nonzero polynomial `P : R[X]`, then `g w₀ = 0`. -/
-theorem eq_zero_of_mul_eval_eq_zero [IsDomain R] [T2Space R]
-    {g : R → R} {w₀ : R} [(𝓝[≠] w₀).NeBot] (hg : ContinuousAt g w₀) {P : R[X]} (hP0 : P ≠ 0)
-    (hgP : ∀ w, g w * P.eval w = 0) : g w₀ = 0 := by
-  have hne : ∀ᶠ w in 𝓝[≠] w₀, P.eval w ≠ 0 :=
-    (eventually_eval_ne_zero_codiscrete hP0).filter_mono (nhdsNE_le_codiscrete w₀)
-  have heq : g =ᶠ[𝓝[≠] w₀] fun _ ↦ (0 : R) := by
-    filter_upwards [hne] with w hw
-    exact (mul_eq_zero.mp (hgP w)).resolve_right hw
-  exact tendsto_nhds_unique (hg.tendsto.mono_left nhdsWithin_le_nhds)
-    (tendsto_const_nhds.congr' heq.symm)
 
 omit [IsTopologicalSemiring R] in
 /-- If `Q.eval w + g w * P.eval w = 0` everywhere on a Hausdorff topological integral domain `R`,

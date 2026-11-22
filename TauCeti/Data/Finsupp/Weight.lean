@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finsupp.Indicator
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
@@ -39,6 +40,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
+* `Finsupp.degree_indicator`: the degree of `Finsupp.indicator s f` is
+  `∑ i ∈ s.attach, f i.val i.property`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
 * `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
@@ -100,6 +103,16 @@ the degree of `t`. -/
 theorem prod_pow_eq_pow_degree {σ M : Type*} [CommMonoid M] (t : σ →₀ ℕ) (a : M) :
     (t.prod fun _ n ↦ a ^ n) = a ^ t.degree := by
   rw [Finsupp.prod, Finset.prod_pow_eq_pow_sum, degree_apply]
+
+/-- The degree of a finitely supported function built with `Finsupp.indicator` is the sum of its
+values over the finite support set. -/
+@[simp]
+theorem degree_indicator {ι R : Type*} [AddCommMonoid R] (s : Finset ι) (f : ∀ i ∈ s, R) :
+    (Finsupp.indicator s f).degree = ∑ i ∈ s.attach, f i.val i.property := by
+  classical
+  rw [degree_apply, Finset.sum_subset (support_indicator_subset _ _)
+    fun _ _ h ↦ notMem_support_iff.mp h, ← Finset.sum_attach s (Finsupp.indicator s f)]
+  exact Finset.sum_congr rfl fun i _ ↦ indicator_of_mem i.property _
 
 /-- Extending `f` to `Option σ` by the value `y` at `none` adds `y` to the degree. -/
 @[simp]

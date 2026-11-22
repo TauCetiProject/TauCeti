@@ -6,20 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Roots
-public import TauCeti.Analysis.Complex.PartialDeriv.Basic
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.Algebra.Polynomial.Eval.Degree
 import TauCeti.Algebra.Polynomial.Eval.Pi
-import TauCeti.Algebra.Polynomial.LinearFactor
+import TauCeti.Analysis.Complex.DividedDifference.Analytic
 import TauCeti.Analysis.Complex.DividedDifference.Basic
 import TauCeti.Analysis.Complex.DividedDifference.Degree
 import TauCeti.Analysis.Complex.DividedDifference.Estimate
-import TauCeti.Analysis.Complex.PartialDeriv.Roots
-import TauCeti.Analysis.Complex.PartialDslope
-import TauCeti.Analysis.Complex.PiBall
 import TauCeti.RingTheory.Polynomial.DegreeLT
+import TauCeti.Topology.Algebra.Polynomial.Basic
 import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
+import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
 # Division of entire functions by coordinate polynomials
@@ -37,8 +38,7 @@ decompositions with `f_k` continuous and `deg_{z_k} f₀ < deg P`, and any coord
 degree bound on `f` transfers to both `f₀` and `f_k`. When `P` is monic and all its roots lie in
 `closedBall (c k) r` with `5 r ≤ R` and `0 < R`, any bound `‖f‖ ≤ M` on the closed polydisc
 `closedBall c R` propagates to `‖f₀‖ ≤ 3 ^ deg P * M` and `‖f_k‖ ≤ (3 / R) ^ deg P * M` on
-`closedBall c R`. Moreover, if at every root `ζ` of `P` the partial derivatives `∂_k^m f` of order
-`m < P.rootMultiplicity ζ` vanish along the hyperplane `z_k = ζ`, then `f₀ = 0`.
+`closedBall c R`.
 
 For any finite linearly ordered index type `ι`, applying univariate coordinate division backwards
 across the coordinates yields Waldschmidt's multivariate polynomial division
@@ -53,8 +53,6 @@ degree `< deg (P j)` in every coordinate `z_j` with `i < j`, and when each `P i`
 
 ## Main results
 
-* `TauCeti.eq_zero_of_eq_add_mul_eval_of_iterate_partialDeriv_eq_zero`: vanishing of the univariate
-  division remainder under root-multiplicity derivative conditions.
 * `TauCeti.eq_of_eq_add_mul_eval`: uniqueness of univariate coordinate division for continuous
   quotients.
 * `TauCeti.exists_eq_add_mul_eval_of_ne_zero`: univariate coordinate division by a nonzero
@@ -88,27 +86,6 @@ namespace TauCeti
 section Univariate
 
 variable {ι : Type*} [DecidableEq ι]
-
-/-- If `f(y) = f₀(y) + fk(y) P(y k)` with `f₀, fk` entire and `deg_{z_k} f₀ < deg P` along the
-line through `z` in coordinate `k`, and if `∂_k^m f` vanishes at `update z k ζ` for every root `ζ`
-of `P` and every `m < P.rootMultiplicity ζ`, then `f₀ z = 0`. -/
-theorem eq_zero_of_eq_add_mul_eval_of_iterate_partialDeriv_eq_zero [Finite ι]
-    {f f₀ fk : (ι → ℂ) → ℂ} (hf₀ : Differentiable ℂ f₀) (hfk : Differentiable ℂ fk) {k : ι}
-    {P : ℂ[X]} (hdiv : ∀ y, f y = f₀ y + fk y * P.eval (y k)) {z : ι → ℂ}
-    (hdeg : ∃ Q : ℂ[X], Q.degree < P.degree ∧ ∀ w, f₀ (update z k w) = Q.eval w)
-    (hzero : ∀ ζ, P.IsRoot ζ → ∀ m < P.rootMultiplicity ζ,
-      (partialDeriv k)^[m] f (update z k ζ) = 0) :
-    f₀ z = 0 := by
-  have := Fintype.ofFinite ι
-  have hf_eq : f = f₀ + fun y ↦ fk y * P.eval (y k) := funext hdiv
-  have hterm : Differentiable ℂ (fun y ↦ fk y * P.eval (y k)) :=
-    hfk.mul (P.differentiable.comp (differentiable_apply k))
-  refine eq_zero_of_degree_lt_of_iterate_partialDeriv_eq_zero hf₀ hdeg fun ζ hζ m hm ↦ ?_
-  have hfz : (partialDeriv k)^[m] f (update z k ζ) = 0 := hzero ζ hζ m hm
-  rw [hf_eq, iterate_partialDeriv_add hf₀ hterm k m, Pi.add_apply,
-    iterate_partialDeriv_mul_eval_eq_zero_of_lt_rootMultiplicity hfk (by simpa using hm),
-    add_zero] at hfz
-  exact hfz
 
 /-- **Uniqueness of univariate coordinate division.** A function `f` admits at most one
 decomposition `f(z) = f₀(z) + fk(z) P(z k)` with `fk` continuous and `deg_{z_k} f₀ < deg P` along
@@ -175,7 +152,7 @@ private lemma norm_update_add_sub_mul_le [Fintype ι] {f r' : (ι → ℂ) → �
     ‖f (update z k ζ) + (z k - ζ) * r' z‖ ≤ ((3 : ℝ) ^ (d + 1) - 1) / 2 * M := by
   have hr_lt_R : r < R := by linarith [dist_nonneg.trans (mem_closedBall.mp hζ)]
   have hfζ : ‖f (update z k ζ)‖ ≤ M :=
-    norm_update_le (closedBall_subset_closedBall hr_lt_R.le hζ) hM hz
+    hM _ (update_mem_closedBall (closedBall_subset_closedBall hr_lt_R.le hζ) hz)
   have hzk : ‖z k - c k‖ ≤ R := by
     simpa [dist_eq_norm] using (dist_le_pi_dist z c k).trans (mem_closedBall.mp hz)
   have hζc : ‖ζ - c k‖ ≤ r := by simpa [dist_eq_norm] using mem_closedBall.mp hζ
@@ -228,8 +205,8 @@ private theorem exists_eq_add_mul_prod_of_list [Fintype ι] {f : (ι → ℂ) �
       · simpa [hj] using differentiable_apply j
     refine ⟨f₀, q', hf₀, hq', ?_, ?_, ?_, ?_⟩
     · intro z
-      have hstep := eq_update_add_sub_mul_partialDslope k f ζ z
-      rw [hdiv' z] at hstep
+      have hstep := (add_sub_smul_partialDslope k f ζ z).symm
+      rw [smul_eq_mul, hdiv' z] at hstep
       simp only [f₀, List.map_cons, List.prod_cons, eval_mul, eval_sub, eval_X, eval_C]
       linear_combination hstep
     · intro z

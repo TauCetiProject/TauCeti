@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.Instances.Matrix
 
 /-!
@@ -42,6 +43,8 @@ the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its co
 * `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
 * `Polynomial.tendsto_resultant`: continuity of the resultant at fixed formal degrees in the
   coefficients of its arguments.
+* `Polynomial.eq_zero_of_mul_eval_eq_zero`: if `g w * P.eval w = 0` everywhere for `P ≠ 0` and
+  `g` is continuous at a non-isolated point `w₀`, then `g w₀ = 0`.
 * `TauCeti.Polynomial.continuous_coeff_monicOfCoeff`: the coefficients of `monicOfCoeff a` are
   continuous in `a`.
 * `TauCeti.Polynomial.continuous_coeff_prod_X_sub_C`: the coefficients of `∏ i ∈ s, (X - C (f i))`
@@ -163,6 +166,19 @@ theorem tendsto_resultant [CommRing R] [IsTopologicalRing R] {l : Filter ι} {f 
     split_ifs with h
     · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
     · exact tendsto_const_nhds
+
+/-- If `g : R → R` is continuous at a non-isolated point `w₀` of a Hausdorff integral domain `R`
+and `g w * P.eval w = 0` everywhere for a nonzero polynomial `P : R[X]`, then `g w₀ = 0`. -/
+theorem eq_zero_of_mul_eval_eq_zero [CommRing R] [IsDomain R] [T2Space R]
+    {g : R → R} {w₀ : R} [(𝓝[≠] w₀).NeBot] (hg : ContinuousAt g w₀) {P : R[X]} (hP0 : P ≠ 0)
+    (hgP : ∀ w, g w * P.eval w = 0) : g w₀ = 0 := by
+  have hne : ∀ᶠ w in 𝓝[≠] w₀, P.eval w ≠ 0 :=
+    (eventually_eval_ne_zero_codiscrete hP0).filter_mono (nhdsNE_le_codiscrete w₀)
+  have heq : g =ᶠ[𝓝[≠] w₀] fun _ ↦ (0 : R) := by
+    filter_upwards [hne] with w hw
+    exact (mul_eq_zero.mp (hgP w)).resolve_right hw
+  exact tendsto_nhds_unique (hg.tendsto.mono_left nhdsWithin_le_nhds)
+    (tendsto_const_nhds.congr' heq.symm)
 
 end Polynomial
 

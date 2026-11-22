@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.MDeriv.Basic
-import Mathlib.Data.Finsupp.Indicator
-import Mathlib.Data.Finsupp.Multiset
-import Mathlib.Data.Finsupp.Weight
 import TauCeti.Analysis.Complex.CoordinateDivision.Basic
 import TauCeti.Analysis.Complex.CoordinateDivision.MDeriv
 import TauCeti.Analysis.Polynomial.OfMultiset
+import TauCeti.Data.Finsupp.Multiset
+import TauCeti.Data.Finsupp.Weight
 import TauCeti.Data.Nat.Pow
 
 /-!
@@ -74,15 +73,13 @@ private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (F
   have hM0 : 0 ≤ M := (norm_nonneg (f z)).trans (hM z hzR)
   let K (i : Fin n) : ℂ →₀ ℕ := Finsupp.indicator (E i) fun a _ ↦ k i a
   have hK_deg (i : Fin n) : (K i).degree = ∑ ζ ∈ E i, k i ζ := by
-    rw [Finsupp.degree_apply, Finset.sum_subset (Finsupp.support_indicator_subset _ _)
-      fun _ _ h ↦ Finsupp.notMem_support_iff.mp h]
-    exact sum_congr rfl fun ζ hζ ↦ by simp [hζ]
+    simp [K, Finset.sum_attach]
   choose k' hk'_le hk'_deg using fun i ↦
     Finsupp.exists_le_degree_eq (K i) p ((hK_deg i).symm ▸ hsum i)
   let P (i : Fin n) : ℂ[X] := Polynomial.ofMultiset (k' i).toMultiset
   have hP_monic (i : Fin n) : (P i).Monic := monic_multisetProd_X_sub_C _
-  have hcard (i : Fin n) : (k' i).toMultiset.card = p := by
-    rw [Finsupp.card_toMultiset]; simpa [Finsupp.degree_apply, Finsupp.sum] using hk'_deg i
+  have hcard (i : Fin n) : (k' i).toMultiset.card = p :=
+    (Finsupp.card_toMultiset_eq_degree (k' i)).trans (hk'_deg i)
   have hP_deg (i : Fin n) : (P i).natDegree = p :=
     (natDegree_multiset_prod_X_sub_C_eq_card _).trans (hcard i)
   have hmem (i : Fin n) {ζ : ℂ} (hζ : ζ ∈ (k' i).toMultiset) : ζ ∈ E i :=

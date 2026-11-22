@@ -10,7 +10,6 @@ import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.Normed.Module.HahnBanach
-import TauCeti.Analysis.Complex.PiBall
 import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
@@ -47,7 +46,7 @@ theorem norm_partialDslope_le_of_mem_closedBall {ι E : Type*} [DecidableEq ι] 
   have hRr : 0 < R - r := sub_pos.mpr hrR
   have hζ_ball : ζ ∈ ball (c i) R := mem_ball.mpr ((mem_closedBall.mp hζ).trans_lt hrR)
   have hζM : ‖f (update z i ζ)‖ ≤ M :=
-    norm_update_le (closedBall_subset_closedBall hrR.le hζ) hM hz
+    hM _ (update_mem_closedBall (closedBall_subset_closedBall hrR.le hζ) hz)
   set h : ℂ → E := fun u ↦ f (update z i u)
   have hh_diff : DifferentiableOn ℂ h (closedBall (c i) R) :=
     hf.comp (fun u _ ↦ (hasFDerivAt_update z u).differentiableAt.differentiableWithinAt)
@@ -67,7 +66,8 @@ theorem norm_partialDslope_le_of_mem_closedBall {ι E : Type*} [DecidableEq ι] 
     have huR : ‖u - c i‖ = R := by simpa [dist_eq_norm] using mem_sphere.mp hu
     have hζr : ‖ζ - c i‖ ≤ r := by simpa [dist_eq_norm] using mem_closedBall.mp hζ
     have huζ : R - r ≤ ‖u - ζ‖ := by linarith [norm_sub_le_norm_sub_add_norm_sub u ζ (c i)]
-    have hfuM : ‖f (update z i u)‖ ≤ M := norm_update_le (sphere_subset_closedBall hu) hM hz
+    have hfuM : ‖f (update z i u)‖ ≤ M :=
+      hM _ (update_mem_closedBall (sphere_subset_closedBall hu) hz)
     rw [le_div_iff₀ hRr, mul_comm]
     calc (R - r) * ‖g u‖
         ≤ ‖u - ζ‖ * ‖g u‖ := mul_le_mul_of_nonneg_right huζ (norm_nonneg _)
