@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 public import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Complex.OperatorNorm
 
@@ -17,13 +18,14 @@ import TauCeti.Analysis.Complex.OperatorNorm
 Near a point `x` where `d` sheets of a curve over the complex plane come together, the curve is
 parametrized after the substitution `y = x + zᵈ`: its sheets are the values of a single function
 `u` of `z`, and a branch over a region of `y` is a function `V` with `V (x + zᵈ) = u z` for `z` in
-a sheet `s` of the substitution. Such a branch is no more regular than `y ↦ (y - x) ^ (1 / d)`: its
-derivative blows up like `‖y - x‖ ^ (1 / d - 1)` at `x`. This file computes that singularity and
-the resulting integrability of the derivative.
+a sheet `s` of the substitution. Such a branch is no worse than `y ↦ (y - x) ^ (1 / d)`: its
+derivative is `(‖du‖ / d) ‖y - x‖ ^ (1 / d - 1)`, which is at most `C ‖y - x‖ ^ (1 / d - 1)` when
+`du` is bounded and blows up at exactly that rate at `x` when `‖du‖` is bounded below. This file
+computes that singularity and the resulting integrability of the derivative.
 
-* **The branch derivative.** If `s` is open and `u` is real differentiable at `z ∈ s`, `z ≠ 0`,
-  then `V` is real differentiable at `x + zᵈ`, and its derivative is the derivative of `u`
-  composed with multiplication by `(d z ^ (d - 1))⁻¹`, the inverse of the derivative of the
+* **The branch derivative.** If `s` is a neighbourhood of `z ≠ 0` and `u` is real differentiable
+  at `z`, then `V` is real differentiable at `x + zᵈ`, and its derivative is the derivative of
+  `u` composed with multiplication by `(d z ^ (d - 1))⁻¹`, the inverse of the derivative of the
   substitution (`TauCeti.hasFDerivAt_of_forall_add_pow_eq`). Multiplication by a complex number
   is a similarity (`ContinuousLinearMap.norm_comp_restrictScalars_smulRight_one`), so
   `‖dV‖ = ‖du‖ / ‖d z ^ (d - 1)‖ = (‖du‖ / d) ‖y - x‖ ^ (1 / d - 1)` exactly
@@ -90,11 +92,8 @@ theorem mul_two_add_two_div_mul_one_sub_inv_lt_two_iff {m : ℝ} (hm : m ≠ 0) 
     K * ((2 + 2 / m) * (1 - m⁻¹)) < 2 ↔ K * (m ^ 2 - 1) < m ^ 2 := by
   have hm2 : 0 < m ^ 2 := by positivity
   rw [two_add_two_div_mul_one_sub_inv hm, ← mul_lt_mul_iff_of_pos_right hm2]
-  constructor <;> intro h
-  · have : K * (2 - 2 / m ^ 2) * m ^ 2 = 2 * (K * (m ^ 2 - 1)) := by field_simp
-    nlinarith
-  · have : K * (2 - 2 / m ^ 2) * m ^ 2 = 2 * (K * (m ^ 2 - 1)) := by field_simp
-    nlinarith
+  have : K * (2 - 2 / m ^ 2) * m ^ 2 = 2 * (K * (m ^ 2 - 1)) := by field_simp
+  constructor <;> intro h <;> nlinarith
 
 /-! ### The branch derivative -/
 
@@ -108,11 +107,11 @@ private theorem natCast_mul_pow_sub_one_ne_zero (hd : d ≠ 0) {z : ℂ} (hz : z
   mul_ne_zero (Nat.cast_ne_zero.2 hd) (pow_ne_zero _ hz)
 
 /-- **The derivative of a branch through a power substitution.** Let `V (x + zᵈ) = u z` for all
-`z` in an open set `s`. At a point `z ∈ s` other than `0` where `u` has derivative `u'`, the
-branch `V` has derivative `u'` composed with multiplication by `(d z ^ (d - 1))⁻¹`, the inverse
-of the derivative of the substitution. -/
-theorem hasFDerivAt_of_forall_add_pow_eq (hd : d ≠ 0) (hs : IsOpen s)
-    (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {z : ℂ} (hz : z ∈ s) (hz0 : z ≠ 0) {u' : ℂ →L[ℝ] E}
+`z` in a set `s`. At a point `z ≠ 0` of which `s` is a neighbourhood and where `u` has derivative
+`u'`, the branch `V` has derivative `u'` composed with multiplication by `(d z ^ (d - 1))⁻¹`, the
+inverse of the derivative of the substitution. -/
+theorem hasFDerivAt_of_forall_add_pow_eq (hd : d ≠ 0) (hV : ∀ z ∈ s, V (x + z ^ d) = u z)
+    {z : ℂ} (hs : s ∈ 𝓝 z) (hz0 : z ≠ 0) {u' : ℂ →L[ℝ] E}
     (hu : HasFDerivAt u u' z) :
     HasFDerivAt V (u'.comp ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ)
       ((d : ℂ) * z ^ (d - 1))⁻¹).restrictScalars ℝ)) (x + z ^ d) := by
@@ -126,18 +125,17 @@ theorem hasFDerivAt_of_forall_add_pow_eq (hd : d ≠ 0) (hs : IsOpen s)
   have hcont : Tendsto g (𝓝 (x + z ^ d)) (𝓝 z) := by
     simpa only [hgz] using hg.continuousAt.tendsto
   have heq : V =ᶠ[𝓝 (x + z ^ d)] u ∘ g := by
-    filter_upwards [hf.eventually_right_inverse hf', hcont (hs.mem_nhds hz)] with y hy hys
+    filter_upwards [hf.eventually_right_inverse hf', hcont hs] with y hy hys
     rw [Function.comp_apply, ← hV _ hys, hy]
   have hu' : HasFDerivAt u u' (g (x + z ^ d)) := by rwa [hgz]
   exact (hu'.comp (x + z ^ d) (hg.hasFDerivAt.restrictScalars ℝ)).congr_of_eventuallyEq heq
 
-/-- **The size of the branch derivative.** If `V (x + zᵈ) = u z` on an open set `s` and `u` is
-differentiable at `z ∈ s`, `z ≠ 0`, then `‖dV‖ = ‖du‖ / ‖d z ^ (d - 1)‖` at `x + zᵈ`. -/
-theorem norm_fderiv_add_pow_eq (hd : d ≠ 0) (hs : IsOpen s)
-    (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {z : ℂ} (hz : z ∈ s) (hz0 : z ≠ 0)
-    (hu : DifferentiableAt ℝ u z) :
+/-- **The size of the branch derivative.** If `V (x + zᵈ) = u z` on a neighbourhood `s` of
+`z ≠ 0` and `u` is differentiable at `z`, then `‖dV‖ = ‖du‖ / ‖d z ^ (d - 1)‖` at `x + zᵈ`. -/
+theorem norm_fderiv_add_pow_eq (hd : d ≠ 0) (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {z : ℂ}
+    (hs : s ∈ 𝓝 z) (hz0 : z ≠ 0) (hu : DifferentiableAt ℝ u z) :
     ‖fderiv ℝ V (x + z ^ d)‖ = ‖fderiv ℝ u z‖ / ‖(d : ℂ) * z ^ (d - 1)‖ := by
-  rw [(hasFDerivAt_of_forall_add_pow_eq hd hs hV hz hz0 hu.hasFDerivAt).fderiv,
+  rw [(hasFDerivAt_of_forall_add_pow_eq hd hV hs hz0 hu.hasFDerivAt).fderiv,
     ContinuousLinearMap.norm_comp_restrictScalars_smulRight_one, norm_inv, div_eq_mul_inv]
 
 /-- The inverse of the stretching factor `‖d z ^ (d - 1)‖` of the substitution, as a power of the
@@ -154,14 +152,13 @@ private theorem inv_norm_natCast_mul_pow_sub_one (d : ℕ) (z : ℂ) :
   rw [norm_mul, norm_pow, norm_pow, Complex.norm_natCast, mul_inv, ← Real.rpow_natCast ‖z‖ d,
     ← Real.rpow_mul (norm_nonneg z), hexp, Real.rpow_neg (norm_nonneg z), Real.rpow_natCast]
 
-/-- **The singularity of the branch derivative.** If `V (x + zᵈ) = u z` on an open set `s` and
-`u` is differentiable at `z ∈ s`, `z ≠ 0`, then at `y = x + zᵈ`,
+/-- **The singularity of the branch derivative.** If `V (x + zᵈ) = u z` on a neighbourhood `s` of
+`z ≠ 0` and `u` is differentiable at `z`, then at `y = x + zᵈ`,
 `‖dV(y)‖ = (‖du(z)‖ / d) ‖y - x‖ ^ (1 / d - 1)`, with `‖y - x‖ = ‖zᵈ‖`. -/
-theorem norm_fderiv_add_pow_eq_mul_rpow (hd : d ≠ 0) (hs : IsOpen s)
-    (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {z : ℂ} (hz : z ∈ s) (hz0 : z ≠ 0)
-    (hu : DifferentiableAt ℝ u z) :
+theorem norm_fderiv_add_pow_eq_mul_rpow (hd : d ≠ 0) (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {z : ℂ}
+    (hs : s ∈ 𝓝 z) (hz0 : z ≠ 0) (hu : DifferentiableAt ℝ u z) :
     ‖fderiv ℝ V (x + z ^ d)‖ = ‖fderiv ℝ u z‖ / d * ‖z ^ d‖ ^ ((d : ℝ)⁻¹ - 1) := by
-  rw [norm_fderiv_add_pow_eq hd hs hV hz hz0 hu, div_eq_mul_inv,
+  rw [norm_fderiv_add_pow_eq hd hV hs hz0 hu, div_eq_mul_inv,
     inv_norm_natCast_mul_pow_sub_one, div_eq_mul_inv, mul_assoc]
 
 /-! ### Change of variables -/
@@ -191,7 +188,7 @@ theorem lintegral_image_add_pow_enorm_fderiv_rpow (hs : IsOpen s)
   have hc := natCast_mul_pow_sub_one_ne_zero hd hz0
   have hc0 : ‖(d : ℂ) * z ^ (d - 1)‖ₑ ≠ 0 := eNorm_ne_zero.2 hc
   have hcV : ‖fderiv ℝ V (x + z ^ d)‖ₑ = ‖fderiv ℝ u z‖ₑ / ‖(d : ℂ) * z ^ (d - 1)‖ₑ := by
-    rw [← ofReal_norm, norm_fderiv_add_pow_eq hd hs hV hz hz0 (hu z hz),
+    rw [← ofReal_norm, norm_fderiv_add_pow_eq hd hV (hs.mem_nhds hz) hz0 (hu z hz),
       ENNReal.ofReal_div_of_pos (norm_pos_iff.2 hc), ofReal_norm, ofReal_norm]
   rw [(hasStrictDerivAt_add_pow x z d).hasDerivAt.deriv, hcV, div_eq_mul_inv,
     ENNReal.mul_rpow_of_ne_top eNorm_ne_top (ENNReal.inv_ne_top.2 hc0), ENNReal.inv_rpow,
@@ -250,21 +247,23 @@ theorem memLp_norm_fderiv_image_add_pow [CompleteSpace E] (hs : IsOpen s)
     linarith
   filter_upwards [ae_restrict_image_add_pow hd hs] with y ⟨z, hz, hz0, hzy⟩
   subst hzy
-  rw [norm_norm, norm_fderiv_add_pow_eq_mul_rpow hd hs hV hz hz0 (hu z hz), sub_add_cancel_left,
-    norm_neg]
+  rw [norm_norm, norm_fderiv_add_pow_eq_mul_rpow hd hV (hs.mem_nhds hz) hz0 (hu z hz),
+    sub_add_cancel_left, norm_neg]
   gcongr
   exact hM z hz
 
-/-- **Sharpness of the `Lᵖ` margin.** Let `V (x + zᵈ) = u z` on an open set `s`, with `u`
-differentiable on `s` and `c ≤ ‖du‖` there for some `c > 0`, and let the image of `s` contain a
-disc about `x` up to a null set. If `‖dV‖` is `Lʳ` on the image of `s`, then
+/-- **Sharpness of the `Lᵖ` margin.** Let `V (x + zᵈ) = u z` on an open set `s`, with
+`c ≤ ‖du‖` on `s` for some `c > 0` (so `u` is differentiable on `s`), and let the image of `s`
+contain a disc about `x` up to a null set. If `‖dV‖` is `Lʳ` on the image of `s`, then
 `r (1 - 1 / d) < 2`; this is automatic for `r = 0` and `r = ∞`, where `r.toReal = 0`. -/
 theorem toReal_mul_one_sub_inv_lt_two_of_memLp_norm_fderiv_image_add_pow (hs : IsOpen s)
-    (hu : ∀ z ∈ s, DifferentiableAt ℝ u z) (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {c : ℝ}
+    (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {c : ℝ}
     (hc : 0 < c) (hcu : ∀ z ∈ s, c ≤ ‖fderiv ℝ u z‖) {ρ : ℝ} (hρ : 0 < ρ)
     (hball : ball x ρ ≤ᵐ[volume] (fun z ↦ x + z ^ d) '' s) {r : ℝ≥0∞}
     (hdV : MemLp (fun y ↦ ‖fderiv ℝ V y‖) r (volume.restrict ((fun z ↦ x + z ^ d) '' s))) :
     r.toReal * (1 - (d : ℝ)⁻¹) < 2 := by
+  have hu z (hz : z ∈ s) :=
+    differentiableAt_of_fderiv_ne_zero (norm_pos_iff.1 (hc.trans_le (hcu z hz)))
   rcases eq_or_ne r 0 with rfl | hr0
   · simp
   rcases eq_or_ne r ∞ with rfl | hr
@@ -285,8 +284,8 @@ theorem toReal_mul_one_sub_inv_lt_two_of_memLp_norm_fderiv_image_add_pow (hs : I
     subst hzy
     have hpow : 0 ≤ ‖z ^ d‖ ^ ((d : ℝ)⁻¹ - 1) := Real.rpow_nonneg (norm_nonneg _) _
     rw [Real.norm_of_nonneg (by positivity), sub_add_cancel_left, norm_neg, norm_norm,
-      norm_fderiv_add_pow_eq_mul_rpow hd hs hV hz hz0 (hu z hz), Real.rpow_mul (norm_nonneg _),
-      ← Real.mul_rpow (div_nonneg hc.le (Nat.cast_nonneg d)) hpow]
+      norm_fderiv_add_pow_eq_mul_rpow hd hV (hs.mem_nhds hz) hz0 (hu z hz),
+      Real.rpow_mul (norm_nonneg _), ← Real.mul_rpow (div_nonneg hc.le (Nat.cast_nonneg d)) hpow]
     gcongr
     exact hcu z hz
   have hball' : IntegrableOn (fun y ↦ ‖x - y‖ ^ q) (ball x ρ) :=
@@ -297,18 +296,20 @@ theorem toReal_mul_one_sub_inv_lt_two_of_memLp_norm_fderiv_image_add_pow (hs : I
   linarith
 
 /-- **The `Lᵖ` margin of a branch derivative, both directions.** Let `V (x + zᵈ) = u z` on an open
-set `s`, with `u` differentiable on `s` and `c ≤ ‖du‖ ≤ M` there for some `c > 0`, and let the
-image of `s` be bounded and contain a disc about `x` up to a null set. Then for a finite `r`,
+set `s`, with `c ≤ ‖du‖ ≤ M` on `s` for some `c > 0` (so `u` is differentiable on `s`), and let
+the image of `s` be bounded and contain a disc about `x` up to a null set. Then for a finite `r`,
 `‖dV‖` is `Lʳ` on the image of `s` exactly when `r (1 - 1 / d) < 2`. -/
 theorem memLp_norm_fderiv_image_add_pow_iff [CompleteSpace E] (hs : IsOpen s)
-    (hu : ∀ z ∈ s, DifferentiableAt ℝ u z) (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {c M : ℝ}
+    (hV : ∀ z ∈ s, V (x + z ^ d) = u z) {c M : ℝ}
     (hc : 0 < c) (hcu : ∀ z ∈ s, c ≤ ‖fderiv ℝ u z‖) (hM : ∀ z ∈ s, ‖fderiv ℝ u z‖ ≤ M)
     (hb : IsBounded ((fun z ↦ x + z ^ d) '' s)) {ρ : ℝ} (hρ : 0 < ρ)
     (hball : ball x ρ ≤ᵐ[volume] (fun z ↦ x + z ^ d) '' s) {r : ℝ≥0∞} (hr : r ≠ ∞) :
     MemLp (fun y ↦ ‖fderiv ℝ V y‖) r (volume.restrict ((fun z ↦ x + z ^ d) '' s)) ↔
       r.toReal * (1 - (d : ℝ)⁻¹) < 2 :=
-  ⟨toReal_mul_one_sub_inv_lt_two_of_memLp_norm_fderiv_image_add_pow hs hu hV hc hcu hρ hball,
-    memLp_norm_fderiv_image_add_pow hs hu hV hM hb hr⟩
+  ⟨toReal_mul_one_sub_inv_lt_two_of_memLp_norm_fderiv_image_add_pow hs hV hc hcu hρ hball,
+    memLp_norm_fderiv_image_add_pow hs
+      (fun z hz ↦ differentiableAt_of_fderiv_ne_zero (norm_pos_iff.1 (hc.trans_le (hcu z hz))))
+      hV hM hb hr⟩
 
 /-- **Branch derivatives lie in `L^{p_d}`.** Let `V (x + zᵈ) = u z` on an open set `s`, with `u`
 differentiable on `s` and `‖du‖ ≤ M` there, and let the image of `s` be bounded. Then `‖dV‖` is
