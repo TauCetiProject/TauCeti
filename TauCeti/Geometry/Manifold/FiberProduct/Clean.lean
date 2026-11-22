@@ -230,9 +230,10 @@ theorem exists_diffeomorph_assoc (hf : ContMDiff K₁ (I₁.prod I₂) ∞ f)
     ⟨hL.isImmersion (h₁₂.contMDiff hf hg) hk, hjL⟩
   have hR' : IsSmoothEmbedding KQR (I₁.prod I₄) ∞ jR :=
     ⟨hR.isImmersion hf (h₂₃.contMDiff hg hk), hjR⟩
-  refine hL'.exists_diffeomorph_of_range_eq hR' ?_
-  rw [hL.range_eq habL, hR.range_eq habR, h₁₂.range_eq hab₁₂, h₂₃.range_eq hab₂₃,
-    SetRel.comp_assoc]
+  have hrange : range jL = range jR := by
+    rw [hL.range_eq habL, hR.range_eq habR, h₁₂.range_eq hab₁₂, h₂₃.range_eq hab₂₃,
+      SetRel.comp_assoc]
+  exact ⟨hL'.diffeomorphOfRangeEq hR' hrange, hL'.apply_diffeomorphOfRangeEq hR' hrange⟩
 
 end Assoc
 

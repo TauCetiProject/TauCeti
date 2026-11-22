@@ -96,6 +96,13 @@ theorem apply_ofRangeEq {α β : Sort*} {γ : Type*} {f : α → γ} {g : β →
   simp only [ofRangeEq, trans_apply, apply_ofInjective_symm,
     Set.equivOfEq_apply, ofInjective_apply]
 
+/-- Postcomposing `Equiv.ofRangeEq hf hg h` with `g` gives `f`. -/
+@[simp]
+theorem comp_ofRangeEq {α β : Sort*} {γ : Type*} {f : α → γ} {g : β → γ}
+    (hf : f.Injective) (hg : g.Injective) (h : Set.range f = Set.range g) :
+    g ∘ ofRangeEq hf hg h = f :=
+  funext (apply_ofRangeEq hf hg h)
+
 /-- Applying `f` after the inverse of `Equiv.ofRangeEq hf hg h` recovers `g`.
 
 Not a `simp` lemma: the left-hand side has the bare function variable `f` at the head. -/
