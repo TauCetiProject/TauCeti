@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Complex.Inner
+import TauCeti.Analysis.Complex.Isometry
 import TauCeti.Geometry.Symplectic.Complex.Line
 
 /-!
@@ -489,7 +490,7 @@ built in three steps: an initial complex-linear symplectic frame at `t = 0`
 (`TauCeti.exists_frame_of_tame_of_finrank_eq_two`); its transport by the equation `Φ' = A Φ`
 with `A = -K' K / 2`, which preserves `K Φ = Φ J₀` and `σ`; and a rotation `z ↦ exp(-i θ t / d) z`
 removing the monodromy `exp(i θ)` of the transported frame across the seam
-(`Complex.exists_apply_eq_mul_exp`). -/
+(`TauCeti.exists_apply_eq_mul_exp`). -/
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {K : ℝ → V →L[ℝ] V}
   {σ : V →L[ℝ] V →L[ℝ] ℝ}
@@ -633,7 +634,7 @@ theorem exists_unitary_frame_of_finrank_eq_two [FiniteDimensional ℝ V]
     have h := hσ₁ d 1 Complex.I
     rw [← hPσ, ← hΦ₀C, ← hΦ₀C, hσ₀] at h
     simpa using h
-  obtain ⟨θ, hθ⟩ := Complex.exists_apply_eq_mul_exp (C := (C : ℂ →ₗ[ℝ] ℂ)) (by simpa using hCI)
+  obtain ⟨θ, hθ⟩ := exists_apply_eq_mul_exp (C := (C : ℂ →ₗ[ℝ] ℂ)) (by simpa using hCI 1)
     (by simpa using hCω)
   have hC (w : ℂ) : Φ₀.inverse (P (Φ₁ d w)) = w * Complex.exp (θ * Complex.I) := by
     simpa [C] using hθ w
