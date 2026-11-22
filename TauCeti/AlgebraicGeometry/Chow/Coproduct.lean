@@ -253,7 +253,6 @@ variable {X k} [∀ i, IsLocallyNoetherian (X i)]
 
 /-- A `k`-cycle on a coproduct of locally Noetherian schemes is rationally equivalent to zero
 exactly when its restriction to every summand is. -/
-@[stacks 02RW "rational equivalence on a disjoint union is computed summandwise"]
 theorem mem_ratEquiv_sigma_iff {α : cyclesOfDimension (∐ X) k} :
     α ∈ RatEquiv (∐ X) k ↔ ∀ i, cyclesSigmaEquiv X k α i ∈ RatEquiv (X i) k := by
   refine ⟨fun hα i ↦ ?_, fun h ↦ ?_⟩
