@@ -48,10 +48,12 @@ Rescaling the form `Ψ = r • Φ` induces the Lie algebra homomorphisms `levelH
 
 ## Main definitions
 
+* `TauCeti.LieAlgebra.LoopAlgebra.degreeDerivationOf`: the graded degree derivation on
+  `loopAlgebra R A L` associated with an additive homomorphism `χ : A →+ R`.
 * `TauCeti.LieAlgebra.LoopAlgebra.degreeDerivation`: the degree derivation `t d/dt` on
   `loopAlgebra R ℤ L`.
 * `TauCeti.LieAlgebra.LoopAlgebra.constantTermPairing`: the constant-term bilinear form
-  `(x_m, y_n) ↦ Φ(x, y) δ_{m + n, 0}` on `loopAlgebra R ℤ L`.
+  `(x_m, y_n) ↦ Φ(x, y) δ_{m + n, 0}` on `loopAlgebra R A L` for any additive group `A`.
 * `TauCeti.LieAlgebra.LoopAlgebra.extensionDegreeDerivation`: the lift of `degreeDerivation` to
   `ofTwoCocycle c`.
 * `TauCeti.LieAlgebra.LoopAlgebra.extendedResidueExtension`: the extended affine loop algebra
@@ -72,13 +74,17 @@ Rescaling the form `Ψ = r • Φ` induces the Lie algebra homomorphisms `levelH
   `TauCeti.LieAlgebra.LoopAlgebra.lie_degreeElement_mode`, and
   `TauCeti.LieAlgebra.LoopAlgebra.toExtendedResidueExtension_centralElement_mem_center`: the
   defining bracket relations of the extended affine loop algebra.
+* `TauCeti.LieAlgebra.LoopAlgebra.mode_injective` and
+  `TauCeti.LieAlgebra.LoopAlgebra.constHom_injective`: injectivity of modes and constant loops.
 * `TauCeti.LieAlgebra.LoopAlgebra.extendedBilinForm_isSymm`,
   `TauCeti.LieAlgebra.LoopAlgebra.extendedBilinForm_lieInvariant`, and
   `TauCeti.LieAlgebra.LoopAlgebra.extendedBilinForm_nondegenerate`: `extendedBilinForm` is
   symmetric, invariant, and nondegenerate whenever `Φ` is.
-* `TauCeti.LieAlgebra.LoopAlgebra.extendedBilinForm_extendedLevelHom` and
-  `TauCeti.LieAlgebra.LoopAlgebra.extendedBilinForm_extendedLevelEquiv`: level transport scales the
-  invariant form by `r`.
+* `TauCeti.LieAlgebra.LoopAlgebra.extendedBilinForm_extendedLevelHom`,
+  `TauCeti.LieAlgebra.LoopAlgebra.extendedBilinForm_extendedLevelEquiv`,
+  `TauCeti.LieAlgebra.LoopAlgebra.levelEquiv_symm`, and
+  `TauCeti.LieAlgebra.LoopAlgebra.extendedLevelEquiv_symm`: level transport scales the invariant
+  form by `r` and inverts via the reciprocal unit.
 
 ## References
 
@@ -103,103 +109,89 @@ section Base
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- The underlying linear map of the degree derivation `t d/dt` on `loopAlgebra R ℤ L`. -/
-private def degreeLinearMap (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] :
-    loopAlgebra R ℤ L →ₗ[R] loopAlgebra R ℤ L :=
-  (Finsupp.lsum R fun n : ℤ ↦
-      (n : R) • ((toFinsupp R ℤ L).symm.toLinearMap ∘ₗ Finsupp.lsingle n)) ∘ₗ
-    (toFinsupp R ℤ L).toLinearMap
+/-- Linear induction on `loopAlgebra R A L` reduced to `0`, `+`, and pure modes `tᵃ ⊗ x`. -/
+private theorem loopAlgebra_induction_linear {A : Type*}
+    (P : loopAlgebra R A L → Prop)
+    (zero : P 0) (add : ∀ u v, P u → P v → P (u + v))
+    (single : ∀ (a : A) (x : L), P (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x))
+    (u : loopAlgebra R A L) : P u := by
+  obtain ⟨f, rfl⟩ := (toFinsupp R A L).symm.surjective u
+  induction f using Finsupp.induction_linear with
+  | zero => simpa using zero
+  | add f₁ f₂ h₁ h₂ =>
+    rw [map_add]
+    exact add _ _ h₁ h₂
+  | single a x =>
+    rw [toFinsupp_symm_single]
+    exact single a x
 
-private theorem degreeLinearMap_single_tmul (n : ℤ) (x : L) :
-    degreeLinearMap R L (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x) =
-      n • (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x) := by
-  have h : toFinsupp R ℤ L (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x) = Finsupp.single n x := by
-    rw [← toFinsupp_symm_single, LinearEquiv.apply_symm_apply]
-  simp only [degreeLinearMap, LinearMap.comp_apply, LinearEquiv.coe_coe, h, Finsupp.lsum_single,
-    LinearMap.smul_apply, Finsupp.lsingle_apply, toFinsupp_symm_single, Int.cast_smul_eq_zsmul]
+open DirectSum in
+/-- Every pure mode `tᵃ ⊗ x` lies in the `a`-th graded piece of `loopAlgebra R A L`. -/
+private theorem single_tmul_mem_decomposeTensor {A : Type*} (a : A) (x : L) :
+    (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x : loopAlgebra R A L) ∈
+      decomposeTensor (AddMonoidAlgebra.grade R) L a := by
+  rw [decomposeTensor_apply]
+  exact ⟨⟨AddMonoidAlgebra.single a 1, AddMonoidAlgebra.single_mem_grade a 1⟩ ⊗ₜ[R] x, by simp⟩
+
+variable (R L) in
+/-- **The generalized degree derivation** on `loopAlgebra R A L` associated with an additive
+homomorphism `χ : A →+ R`, acting on modes by `D_χ (tᵃ ⊗ x) = χ a • (tᵃ ⊗ x)`. -/
+def degreeDerivationOf {A : Type*} [AddCommMonoid A] [DecidableEq A] (χ : A →+ R) :
+    LieDerivation R (loopAlgebra R A L) (loopAlgebra R A L) :=
+  LieDerivation.ofGrading
+    (fun a : A ↦ DirectSum.decomposeTensor (AddMonoidAlgebra.grade R) L a) χ
+
+/-- On modes, `degreeDerivationOf R L χ` scales `tᵃ ⊗ x` by `χ a`. -/
+theorem degreeDerivationOf_single_tmul {A : Type*} [AddCommMonoid A] [DecidableEq A]
+    (χ : A →+ R) (a : A) (x : L) :
+    degreeDerivationOf R L χ (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x) =
+      χ a • (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x) :=
+  LieDerivation.ofGrading_apply_apply _ χ (single_tmul_mem_decomposeTensor a x)
+
+/-- `degreeDerivationOf R L χ` vanishes on constant loops `1 ⊗ x`. -/
+@[simp]
+theorem degreeDerivationOf_one_tmul {A : Type*} [AddCommMonoid A] [DecidableEq A]
+    (χ : A →+ R) (x : L) :
+    degreeDerivationOf R L χ (1 ⊗ₜ[R] x) = 0 := by
+  rw [AddMonoidAlgebra.one_def, degreeDerivationOf_single_tmul, map_zero, zero_smul]
 
 variable (R L) in
 /-- **The degree derivation `d = t d/dt`** on the polynomial loop algebra `loopAlgebra R ℤ L`,
 acting on modes by `d (tⁿ ⊗ x) = n (tⁿ ⊗ x)`. -/
-def degreeDerivation : LieDerivation R (loopAlgebra R ℤ L) (loopAlgebra R ℤ L) where
-  toLinearMap := degreeLinearMap R L
-  leibniz' u v := by
-    obtain ⟨f, rfl⟩ := (toFinsupp R ℤ L).symm.surjective u
-    obtain ⟨g, rfl⟩ := (toFinsupp R ℤ L).symm.surjective v
-    induction f using Finsupp.induction_linear with
-    | zero => simp
-    | add f₁ f₂ h₁ h₂ =>
-      simp only [map_add, add_lie, lie_add, h₁, h₂]
-      abel
-    | single m x =>
-      induction g using Finsupp.induction_linear with
-      | zero => simp
-      | add g₁ g₂ h₁ h₂ =>
-        simp only [map_add, add_lie, lie_add, h₁, h₂]
-        abel
-      | single n y =>
-        simp only [toFinsupp_symm_single, ExtendScalars.bracket_tmul,
-          AddMonoidAlgebra.single_mul_single, mul_one, degreeLinearMap_single_tmul, lie_zsmul,
-          add_zsmul, add_comm m n]
-        rw [← lie_skew x y, TensorProduct.tmul_neg, smul_neg, smul_neg, sub_eq_add_neg]
+def degreeDerivation : LieDerivation R (loopAlgebra R ℤ L) (loopAlgebra R ℤ L) :=
+  degreeDerivationOf R L (Int.castAddHom R)
 
 /-- On modes, the degree derivation multiplies `tⁿ ⊗ x` by `n`. -/
 theorem degreeDerivation_single_tmul (n : ℤ) (x : L) :
     degreeDerivation R L (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x) =
-      n • (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x) :=
-  degreeLinearMap_single_tmul n x
+      n • (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x) := by
+  rw [degreeDerivation, degreeDerivationOf_single_tmul]
+  exact Int.cast_smul_eq_zsmul R n (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x)
 
 /-- The degree derivation vanishes on constant loops `1 ⊗ x`. -/
 @[simp]
 theorem degreeDerivation_one_tmul (x : L) :
-    degreeDerivation R L (1 ⊗ₜ[R] x) = 0 := by
-  rw [AddMonoidAlgebra.one_def, degreeDerivation_single_tmul, zero_zsmul]
+    degreeDerivation R L (1 ⊗ₜ[R] x) = 0 :=
+  degreeDerivationOf_one_tmul (Int.castAddHom R) x
 
-/-- The degree derivation is skew for the residue pairing of every bilinear form on `L`:
-`Res(d(u) dv) + Res(u d(dv)) = 0`. -/
-theorem residuePairing_degreeDerivation_add (Φ : LinearMap.BilinForm R L)
-    (u v : loopAlgebra R ℤ L) :
-    residuePairing R ℤ L Φ (degreeDerivation R L u) v +
-      residuePairing R ℤ L Φ u (degreeDerivation R L v) = 0 := by
-  obtain ⟨f, rfl⟩ := (toFinsupp R ℤ L).symm.surjective u
-  obtain ⟨g, rfl⟩ := (toFinsupp R ℤ L).symm.surjective v
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f₁ f₂ h₁ h₂ =>
-    simp only [map_add, LinearMap.add_apply]
-    linear_combination h₁ + h₂
-  | single m x =>
-    induction g using Finsupp.induction_linear with
-    | zero => simp
-    | add g₁ g₂ h₁ h₂ =>
-      simp only [map_add]
-      linear_combination h₁ + h₂
-    | single n y =>
-      simp only [toFinsupp_symm_single, degreeDerivation_single_tmul, map_zsmul,
-        LinearMap.smul_apply, residuePairing_single_tmul]
-      split_ifs with h
-      · rw [← add_zsmul, h, zero_zsmul]
-      · simp
-
-/-- **The constant-term pairing** on `loopAlgebra R ℤ L` induced by a bilinear form `Φ` on `L`:
+/-- **The constant-term pairing** on `loopAlgebra R A L` induced by a bilinear form `Φ` on `L`:
 it pairs `tᵐ ⊗ x` with `tⁿ ⊗ y` to `Φ(x, y)` if `m + n = 0` and `0` otherwise. -/
-def constantTermPairing (Φ : LinearMap.BilinForm R L) :
-    LinearMap.BilinForm R (loopAlgebra R ℤ L) :=
+def constantTermPairing {A : Type*} [AddCommGroup A] [DecidableEq A]
+    (Φ : LinearMap.BilinForm R L) :
+    LinearMap.BilinForm R (loopAlgebra R A L) :=
   LinearMap.mk₂ R
-    (fun u v ↦ (toFinsupp R ℤ L u).sum fun m x ↦ Φ x (toFinsupp R ℤ L v (-m)))
+    (fun u v ↦ (toFinsupp R A L u).sum fun m x ↦ Φ x (toFinsupp R A L v (-m)))
     (fun u₁ u₂ v ↦ by
       rw [map_add, Finsupp.sum_add_index (by simp) (fun _ _ _ _ ↦ by simp)])
     (fun r u v ↦ by
       rw [map_smul, Finsupp.sum_smul_index' (by simp), Finsupp.smul_sum]
-      refine Finset.sum_congr rfl fun m _ ↦ ?_
-      simp)
-    (fun u v₁ v₂ ↦ by
-      simp only [map_add, Finsupp.add_apply, Finsupp.sum_add])
-    (fun r u v ↦ by
-      simp only [map_smul, Finsupp.smul_apply, Finsupp.smul_sum])
+      exact Finset.sum_congr rfl fun m _ ↦ by simp)
+    (fun u v₁ v₂ ↦ by simp only [map_add, Finsupp.add_apply, Finsupp.sum_add])
+    (fun r u v ↦ by simp only [map_smul, Finsupp.smul_apply, Finsupp.smul_sum])
 
 /-- On modes, `constantTermPairing Φ` pairs `tᵐ ⊗ x` with `tⁿ ⊗ y` to `Φ(x, y) δ_{m + n, 0}`. -/
-theorem constantTermPairing_single_tmul (Φ : LinearMap.BilinForm R L) (m n : ℤ) (x y : L) :
+theorem constantTermPairing_single_tmul {A : Type*} [AddCommGroup A] [DecidableEq A]
+    (Φ : LinearMap.BilinForm R L) (m n : A) (x y : L) :
     constantTermPairing Φ (AddMonoidAlgebra.single m (1 : R) ⊗ₜ[R] x)
         (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] y) =
       if m + n = 0 then Φ x y else 0 := by
@@ -211,120 +203,138 @@ theorem constantTermPairing_single_tmul (Φ : LinearMap.BilinForm R L) (m n : �
 
 /-- Rescaling `Φ` rescales `constantTermPairing Φ`. -/
 @[simp]
-theorem constantTermPairing_smul (r : R) (Φ : LinearMap.BilinForm R L) :
-    constantTermPairing (r • Φ) = r • constantTermPairing Φ := by
+theorem constantTermPairing_smul {A : Type*} [AddCommGroup A] [DecidableEq A]
+    (r : R) (Φ : LinearMap.BilinForm R L) :
+    constantTermPairing (A := A) (r • Φ) = r • constantTermPairing (A := A) Φ := by
   refine LinearMap.ext₂ fun u v ↦ ?_
   simp only [constantTermPairing, LinearMap.mk₂_apply, LinearMap.smul_apply, smul_eq_mul,
     Finsupp.mul_sum]
 
 /-- If `Φ` is symmetric, then `constantTermPairing Φ` is symmetric. -/
-theorem constantTermPairing_isSymm {Φ : LinearMap.BilinForm R L} (hΦs : Φ.IsSymm) :
-    (constantTermPairing Φ).IsSymm := by
+theorem constantTermPairing_isSymm {A : Type*} [AddCommGroup A] [DecidableEq A]
+    {Φ : LinearMap.BilinForm R L} (hΦs : Φ.IsSymm) :
+    (constantTermPairing (A := A) Φ).IsSymm := by
   refine LinearMap.BilinForm.isSymm_def.mpr fun u v ↦ ?_
-  obtain ⟨f, rfl⟩ := (toFinsupp R ℤ L).symm.surjective u
-  obtain ⟨g, rfl⟩ := (toFinsupp R ℤ L).symm.surjective v
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f₁ f₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-  | single m x =>
-    induction g using Finsupp.induction_linear with
-    | zero => simp
-    | add g₁ g₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-    | single n y =>
-      simp only [toFinsupp_symm_single, constantTermPairing_single_tmul, add_comm m n, hΦs.eq x y]
+  refine loopAlgebra_induction_linear
+    (fun u ↦ constantTermPairing Φ u v = constantTermPairing Φ v u)
+    (by simp) (fun _ _ h₁ h₂ ↦ by simp [h₁, h₂]) (fun m x ↦ ?_) u
+  refine loopAlgebra_induction_linear
+    (fun v ↦ constantTermPairing Φ (AddMonoidAlgebra.single m 1 ⊗ₜ[R] x) v =
+      constantTermPairing Φ v (AddMonoidAlgebra.single m 1 ⊗ₜ[R] x))
+    (by simp) (fun _ _ h₁ h₂ ↦ by simp [h₁, h₂]) (fun n y ↦ ?_) v
+  simp only [constantTermPairing_single_tmul, add_comm m n, hΦs.eq x y]
 
 /-- If `Φ` is invariant on `L`, then `constantTermPairing Φ` is invariant on
-`loopAlgebra R ℤ L`. -/
-theorem constantTermPairing_lieInvariant {Φ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) :
-    (constantTermPairing Φ).lieInvariant (loopAlgebra R ℤ L) := by
+`loopAlgebra R A L`. -/
+theorem constantTermPairing_lieInvariant {A : Type*} [AddCommGroup A] [DecidableEq A]
+    {Φ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) :
+    (constantTermPairing (A := A) Φ).lieInvariant (loopAlgebra R A L) := by
+  have hzl := @zero_lie (loopAlgebra R A L) (loopAlgebra R A L) _ _
+  have hlz := @lie_zero (loopAlgebra R A L) (loopAlgebra R A L) _ _
+  have hal := @add_lie (loopAlgebra R A L) (loopAlgebra R A L) _ _
+  have hla := @lie_add (loopAlgebra R A L) (loopAlgebra R A L) _ _
   intro u v w
-  obtain ⟨f, rfl⟩ := (toFinsupp R ℤ L).symm.surjective u
-  obtain ⟨g, rfl⟩ := (toFinsupp R ℤ L).symm.surjective v
-  obtain ⟨h, rfl⟩ := (toFinsupp R ℤ L).symm.surjective w
-  induction f using Finsupp.induction_linear with
-  | zero => simp only [map_zero, zero_lie, LinearMap.zero_apply, neg_zero]
-  | add f₁ f₂ h₁ h₂ =>
-    simp only [map_add, add_lie, LinearMap.add_apply]
-    linear_combination h₁ + h₂
-  | single k x =>
-    induction g using Finsupp.induction_linear with
-    | zero => simp only [map_zero, lie_zero, LinearMap.zero_apply, neg_zero]
-    | add g₁ g₂ h₁ h₂ =>
-      simp only [map_add, lie_add, LinearMap.add_apply]
-      linear_combination h₁ + h₂
-    | single m y =>
-      induction h using Finsupp.induction_linear with
-      | zero => simp only [map_zero, lie_zero, neg_zero]
-      | add h₁ h₂ ih₁ ih₂ =>
-        simp only [map_add, lie_add]
-        linear_combination ih₁ + ih₂
-      | single n z =>
-        simp only [toFinsupp_symm_single, ExtendScalars.bracket_tmul,
-          AddMonoidAlgebra.single_mul_single, mul_one, constantTermPairing_single_tmul]
-        by_cases hsum : k + m + n = 0
-        · simp only [hsum, show m + (k + n) = 0 by omega, ↓reduceIte, hΦ x y z]
-        · simp only [hsum, show ¬(m + (k + n) = 0) by omega, ↓reduceIte, neg_zero]
+  refine loopAlgebra_induction_linear
+    (fun u ↦ constantTermPairing Φ ⁅u, v⁆ w = -constantTermPairing Φ v ⁅u, w⁆)
+    (by simp only [hzl, map_zero, LinearMap.zero_apply, neg_zero])
+    (fun _ _ h₁ h₂ ↦ by
+      simp only [hal, map_add, LinearMap.add_apply]; linear_combination h₁ + h₂)
+    (fun k x ↦ ?_) u
+  refine loopAlgebra_induction_linear
+    (fun v ↦ constantTermPairing Φ ⁅AddMonoidAlgebra.single k 1 ⊗ₜ[R] x, v⁆ w =
+      -constantTermPairing Φ v ⁅AddMonoidAlgebra.single k 1 ⊗ₜ[R] x, w⁆)
+    (by simp only [hlz, map_zero, LinearMap.zero_apply, neg_zero])
+    (fun _ _ h₁ h₂ ↦ by
+      simp only [hla, map_add, LinearMap.add_apply]; linear_combination h₁ + h₂)
+    (fun m y ↦ ?_) v
+  refine loopAlgebra_induction_linear
+    (fun w ↦ constantTermPairing Φ ⁅AddMonoidAlgebra.single k 1 ⊗ₜ[R] x,
+        AddMonoidAlgebra.single m 1 ⊗ₜ[R] y⁆ w =
+      -constantTermPairing Φ (AddMonoidAlgebra.single m 1 ⊗ₜ[R] y)
+        ⁅AddMonoidAlgebra.single k 1 ⊗ₜ[R] x, w⁆)
+    (by simp only [hlz, map_zero, neg_zero])
+    (fun _ _ h₁ h₂ ↦ by simp only [hla, map_add]; linear_combination h₁ + h₂)
+    (fun n z ↦ ?_) w
+  simp only [ExtendScalars.bracket_tmul, AddMonoidAlgebra.single_mul_single, mul_one,
+    constantTermPairing_single_tmul]
+  have hiff : m + (k + n) = 0 ↔ k + m + n = 0 := by rw [add_left_comm, add_assoc]
+  simp only [hiff]
+  split_ifs <;> simp [hΦ x y z]
 
 /-- If `Φ` is left-separating on `L`, then `constantTermPairing Φ` is left-separating on
-`loopAlgebra R ℤ L`. -/
-theorem constantTermPairing_separatingLeft {Φ : LinearMap.BilinForm R L}
-    (hΦ : Φ.SeparatingLeft) : (constantTermPairing Φ).SeparatingLeft := by
+`loopAlgebra R A L`. -/
+theorem constantTermPairing_separatingLeft {A : Type*} [AddCommGroup A] [DecidableEq A]
+    {Φ : LinearMap.BilinForm R L} (hΦ : Φ.SeparatingLeft) :
+    (constantTermPairing (A := A) Φ).SeparatingLeft := by
   intro u hu
-  apply (toFinsupp R ℤ L).injective
-  ext m
-  rw [map_zero, Finsupp.zero_apply]
+  apply (toFinsupp R A L).injective; ext m; rw [map_zero, Finsupp.zero_apply]
   refine hΦ _ fun y ↦ ?_
   have h := hu (AddMonoidAlgebra.single (-m) (1 : R) ⊗ₜ[R] y)
-  rw [constantTermPairing, LinearMap.mk₂_apply, toFinsupp_single_tmul] at h
-  rw [Finsupp.sum_eq_single m (fun k _ hkm ↦ by
-      rw [Finsupp.single_eq_of_ne (fun hk ↦ hkm (neg_inj.mp hk)), map_zero])
+  rw [constantTermPairing, LinearMap.mk₂_apply, toFinsupp_single_tmul, Finsupp.sum_eq_single m
+    (fun k _ hkm ↦ by rw [Finsupp.single_eq_of_ne (fun hk ↦ hkm (neg_inj.mp hk)), map_zero])
     (by simp)] at h
   simpa using h
+
+/-- The generalized degree derivation is skew for `constantTermPairing Φ`:
+`(D_χ u, v)_0 + (u, D_χ v)_0 = 0`. -/
+theorem constantTermPairing_degreeDerivationOf_add_eq_zero {A : Type*} [AddCommGroup A]
+    [DecidableEq A] (χ : A →+ R) (Φ : LinearMap.BilinForm R L) (u v : loopAlgebra R A L) :
+    constantTermPairing Φ (degreeDerivationOf R L χ u) v +
+      constantTermPairing Φ u (degreeDerivationOf R L χ v) = 0 := by
+  refine loopAlgebra_induction_linear
+    (fun u ↦ constantTermPairing Φ (degreeDerivationOf R L χ u) v +
+      constantTermPairing Φ u (degreeDerivationOf R L χ v) = 0)
+    (by simp)
+    (fun _ _ h₁ h₂ ↦ by simp only [map_add, LinearMap.add_apply]; linear_combination h₁ + h₂)
+    (fun m x ↦ ?_) u
+  refine loopAlgebra_induction_linear
+    (fun v ↦ constantTermPairing Φ
+        (degreeDerivationOf R L χ (AddMonoidAlgebra.single m 1 ⊗ₜ[R] x)) v +
+      constantTermPairing Φ (AddMonoidAlgebra.single m 1 ⊗ₜ[R] x)
+        (degreeDerivationOf R L χ v) = 0)
+    (by simp)
+    (fun _ _ h₁ h₂ ↦ by simp only [map_add]; linear_combination h₁ + h₂)
+    (fun n y ↦ ?_) v
+  simp only [degreeDerivationOf_single_tmul, map_smul, LinearMap.smul_apply,
+    constantTermPairing_single_tmul, smul_eq_mul]
+  split_ifs with h
+  · rw [← add_mul, ← map_add, h, map_zero, zero_mul]
+  · simp
+
+/-- The degree derivation is skew for `constantTermPairing Φ`:
+`(d u, v)_0 + (u, d v)_0 = 0`. -/
+theorem constantTermPairing_degreeDerivation_add_eq_zero (Φ : LinearMap.BilinForm R L)
+    (u v : loopAlgebra R ℤ L) :
+    constantTermPairing Φ (degreeDerivation R L u) v +
+      constantTermPairing Φ u (degreeDerivation R L v) = 0 :=
+  constantTermPairing_degreeDerivationOf_add_eq_zero (Int.castAddHom R) Φ u v
 
 /-- **Constant-term pairing against the degree derivation equals the residue pairing**:
 `(u, d v)_0 = Res(u dv)`. -/
 theorem constantTermPairing_degreeDerivation_right (Φ : LinearMap.BilinForm R L)
     (u v : loopAlgebra R ℤ L) :
     constantTermPairing Φ u (degreeDerivation R L v) = residuePairing R ℤ L Φ u v := by
-  obtain ⟨f, rfl⟩ := (toFinsupp R ℤ L).symm.surjective u
-  obtain ⟨g, rfl⟩ := (toFinsupp R ℤ L).symm.surjective v
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f₁ f₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-  | single m x =>
-    induction g using Finsupp.induction_linear with
-    | zero => simp
-    | add g₁ g₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-    | single n y =>
-      simp only [toFinsupp_symm_single, degreeDerivation_single_tmul, map_zsmul,
-        constantTermPairing_single_tmul, residuePairing_single_tmul]
-      split_ifs <;> simp
+  refine loopAlgebra_induction_linear
+    (fun u ↦ constantTermPairing Φ u (degreeDerivation R L v) = residuePairing R ℤ L Φ u v)
+    (by simp)
+    (fun _ _ h₁ h₂ ↦ by simp only [map_add, LinearMap.add_apply]; rw [h₁, h₂])
+    (fun m x ↦ ?_) u
+  refine loopAlgebra_induction_linear
+    (fun v ↦ constantTermPairing Φ (AddMonoidAlgebra.single m 1 ⊗ₜ[R] x) (degreeDerivation R L v) =
+      residuePairing R ℤ L Φ (AddMonoidAlgebra.single m 1 ⊗ₜ[R] x) v)
+    (by simp) (fun _ _ h₁ h₂ ↦ by simp only [map_add]; rw [h₁, h₂]) (fun n y ↦ ?_) v
+  simp only [degreeDerivation_single_tmul, map_zsmul, constantTermPairing_single_tmul,
+    residuePairing_single_tmul]
+  split_ifs <;> simp
 
-/-- The degree derivation is skew for `constantTermPairing Φ`:
-`(d u, v)_0 + (u, d v)_0 = 0`. -/
-theorem constantTermPairing_degreeDerivation_add (Φ : LinearMap.BilinForm R L)
+/-- The degree derivation is skew for the residue pairing of every bilinear form on `L`:
+`Res(d(u) dv) + Res(u d(dv)) = 0`. -/
+theorem residuePairing_degreeDerivation_add_eq_zero (Φ : LinearMap.BilinForm R L)
     (u v : loopAlgebra R ℤ L) :
-    constantTermPairing Φ (degreeDerivation R L u) v +
-      constantTermPairing Φ u (degreeDerivation R L v) = 0 := by
-  obtain ⟨f, rfl⟩ := (toFinsupp R ℤ L).symm.surjective u
-  obtain ⟨g, rfl⟩ := (toFinsupp R ℤ L).symm.surjective v
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f₁ f₂ h₁ h₂ =>
-    simp only [map_add, LinearMap.add_apply]
-    linear_combination h₁ + h₂
-  | single m x =>
-    induction g using Finsupp.induction_linear with
-    | zero => simp
-    | add g₁ g₂ h₁ h₂ =>
-      simp only [map_add]
-      linear_combination h₁ + h₂
-    | single n y =>
-      simp only [toFinsupp_symm_single, degreeDerivation_single_tmul, map_zsmul,
-        LinearMap.smul_apply, constantTermPairing_single_tmul]
-      split_ifs with h
-      · rw [← add_zsmul, h, zero_zsmul]
-      · simp
+    residuePairing R ℤ L Φ (degreeDerivation R L u) v +
+      residuePairing R ℤ L Φ u (degreeDerivation R L v) = 0 := by
+  rw [← constantTermPairing_degreeDerivation_right, ← constantTermPairing_degreeDerivation_right]
+  exact constantTermPairing_degreeDerivation_add_eq_zero Φ u (degreeDerivation R L v)
 
 end Base
 
@@ -347,7 +357,7 @@ on loop modes and annihilating the central element `K`. -/
 def extensionDegreeDerivation : LieDerivation R E E :=
   ofTwoCocycle.derivation c (degreeDerivation R L) fun u v ↦ by
     simp only [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, ← map_add,
-      residuePairing_degreeDerivation_add Φ u v, map_zero]
+      residuePairing_degreeDerivation_add_eq_zero Φ u v, map_zero]
 
 @[simp]
 theorem extensionDegreeDerivation_ofProd (u : P) (z : TrivialLieModule R P R) :
@@ -357,9 +367,8 @@ theorem extensionDegreeDerivation_ofProd (u : P) (z : TrivialLieModule R P R) :
 
 @[simp]
 theorem extensionDegreeDerivation_centralElement :
-    extensionDegreeDerivation Φ hΦ hΦs (centralElement c) = 0 := by
-  apply (ofProd c).symm.injective
-  simp [extensionDegreeDerivation]
+    extensionDegreeDerivation Φ hΦ hΦs (centralElement c) = 0 :=
+  ofTwoCocycle.derivation_centralElement c (degreeDerivation R L) _
 
 local notation "δ" => extensionDegreeDerivation Φ hΦ hΦs
 local notation "ψ" => LieDerivation.lineHom (extensionDegreeDerivation Φ hΦ hΦs)
@@ -431,8 +440,7 @@ theorem range_toExtendedResidueExtension_eq_ker_degreeProj :
 `t ∈ R`. -/
 theorem exists_eq_add_smul_degreeElement (y : E') :
     ∃ (x : E) (t : R), y = toExtendedResidueExtension Φ hΦ hΦs x + t • degreeElement Φ hΦ hΦs :=
-  have h (y : E ⋊⁅ψ⁆ R) : y = inl ψ y.left + y.right • inr ψ 1 := by ext <;> simp
-  ⟨_, _, h y⟩
+  LieDerivation.exists_eq_add_smul_inr_one δ y
 
 /-- **The degree element acts by the degree derivation**: `⁅d, x⁆ = δ x` for `x ∈ ĝ`. -/
 theorem lie_degreeElement_toExtendedResidueExtension (x : E) :
@@ -444,17 +452,15 @@ theorem lie_degreeElement_toExtendedResidueExtension (x : E) :
 @[simp]
 theorem lie_degreeElement_centralElement :
     ⁅degreeElement Φ hΦ hΦs,
-      toExtendedResidueExtension Φ hΦ hΦs (centralElement c)⁆ = 0 := by
-  rw [lie_degreeElement_toExtendedResidueExtension, extensionDegreeDerivation_centralElement,
-    map_zero]
+      toExtendedResidueExtension Φ hΦ hΦs (centralElement c)⁆ = 0 :=
+  LieDerivation.lie_inr_lineHom_one_inl_eq_zero δ
+    (extensionDegreeDerivation_centralElement Φ hΦ hΦs)
 
 /-- **`K` is central in the extended affine loop algebra.** -/
 theorem toExtendedResidueExtension_centralElement_mem_center :
-    toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' := by
-  refine (LieModule.mem_maxTrivSubmodule R E' E' _).2 fun y ↦ ?_
-  obtain ⟨x, t, rfl⟩ := exists_eq_add_smul_degreeElement Φ hΦ hΦs y
-  rw [add_lie, smul_lie, lie_degreeElement_centralElement, smul_zero, add_zero, ← LieHom.map_lie,
-    (LieModule.mem_maxTrivSubmodule R E E _).1 (centralElement_mem_center c) x, map_zero]
+    toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' :=
+  LieDerivation.inl_lineHom_mem_center δ (centralElement_mem_center c)
+    (extensionDegreeDerivation_centralElement Φ hΦ hΦs)
 
 /-- **The `n`-th mode map** `x ↦ tⁿ ⊗ x` from `L` into the extended affine loop algebra. -/
 def mode (n : ℤ) : L →ₗ[R] E' :=
@@ -468,6 +474,17 @@ theorem mode_apply (n : ℤ) (x : L) :
       toExtendedResidueExtension Φ hΦ hΦs
         (ofProd c (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x, 0)) := by
   simp [mode]
+
+/-- Each mode map `x ↦ tⁿ ⊗ x` into `ĝ'` is injective. -/
+theorem mode_injective (n : ℤ) : Function.Injective (mode Φ hΦ hΦs n) := by
+  intro x y h
+  have h' := congrArg
+    (fun v ↦ toFinsupp R ℤ L ((ofProd c).symm (extendedToProd Φ hΦ hΦs v).fst).fst n) h
+  rw [mode_apply, mode_apply, extendedToProd_toExtendedResidueExtension,
+    extendedToProd_toExtendedResidueExtension, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
+    toFinsupp_single_tmul, toFinsupp_single_tmul, Finsupp.single_eq_same,
+    Finsupp.single_eq_same] at h'
+  exact h'
 
 /-- The degree projection vanishes on every loop mode `tⁿ ⊗ x`. -/
 @[simp]
@@ -499,14 +516,16 @@ def constHom : L →ₗ⁅R⁆ E' where
 @[simp]
 theorem constHom_apply (x : L) : constHom Φ hΦ hΦs x = mode Φ hΦ hΦs 0 x := (rfl)
 
+/-- The constant loop embedding `L →ₗ⁅R⁆ ĝ'` is injective. -/
+theorem constHom_injective : Function.Injective (constHom Φ hΦ hΦs) :=
+  mode_injective Φ hΦ hΦs 0
+
 /-- **The degree element on modes**: `⁅d, tⁿ ⊗ x⁆ = n (tⁿ ⊗ x)`. -/
 @[simp]
 theorem lie_degreeElement_mode (n : ℤ) (x : L) :
     ⁅degreeElement Φ hΦ hΦs, mode Φ hΦ hΦs n x⁆ = n • mode Φ hΦ hΦs n x := by
-  have h : ofProd c (n • (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x), 0) =
-      n • ofProd c (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x, 0) := by
-    simpa [coe_ofProdLinearEquiv] using
-      map_zsmul (ofProdLinearEquiv c) n (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x, 0)
+  have h := map_zsmul (ofProdLinearEquiv c) n (AddMonoidAlgebra.single n (1 : R) ⊗ₜ[R] x, 0)
+  simp only [coe_ofProdLinearEquiv, Prod.smul_mk, zsmul_zero] at h
   rw [mode_apply, lie_degreeElement_toExtendedResidueExtension, extensionDegreeDerivation_ofProd,
     degreeDerivation_single_tmul, h, map_zsmul]
 
@@ -531,15 +550,16 @@ def extendedBilinForm : LinearMap.BilinForm R E' :=
     (LinearMap.mul R R).compl₁₂ dProj zProj -
     (constantTermPairing Φ).compl₁₂ loopProj loopProj
 
-private theorem extendedBilinForm_apply_aux (x y : E') :
+/-- Coordinate formula for `extendedBilinForm Φ` in `(P × R) × R` coordinates. -/
+theorem extendedBilinForm_apply (x y : E') :
     extendedBilinForm Φ hΦ hΦs x y =
       -constantTermPairing Φ
-          ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).1).1
-          ((ofProd c).symm (extendedToProd Φ hΦ hΦs y).1).1 +
-        TrivialLieModule.equiv R P R ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).1).2 *
-          (extendedToProd Φ hΦ hΦs y).2 +
-        (extendedToProd Φ hΦ hΦs x).2 *
-          TrivialLieModule.equiv R P R ((ofProd c).symm (extendedToProd Φ hΦ hΦs y).1).2 := by
+          ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).fst).fst
+          ((ofProd c).symm (extendedToProd Φ hΦ hΦs y).fst).fst +
+        TrivialLieModule.equiv R P R ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).fst).snd *
+          (extendedToProd Φ hΦ hΦs y).snd +
+        (extendedToProd Φ hΦ hΦs x).snd *
+          TrivialLieModule.equiv R P R ((ofProd c).symm (extendedToProd Φ hΦ hΦs y).fst).snd := by
   simp only [extendedBilinForm, LinearMap.sub_apply, LinearMap.add_apply,
     LinearMap.compl₁₂_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LieHom.coe_toLinearMap,
     LinearMap.fst_apply, LinearMap.snd_apply, coe_ofProdLinearEquiv_symm, ofTwoCocycle.proj_apply,
@@ -551,7 +571,7 @@ private theorem extendedBilinForm_apply_aux (x y : E') :
 theorem extendedBilinForm_mode_mode (m n : ℤ) (x y : L) :
     extendedBilinForm Φ hΦ hΦs (mode Φ hΦ hΦs m x) (mode Φ hΦ hΦs n y) =
       if m + n = 0 then -Φ x y else 0 := by
-  rw [extendedBilinForm_apply_aux, mode_apply, mode_apply,
+  rw [extendedBilinForm_apply, mode_apply, mode_apply,
     extendedToProd_toExtendedResidueExtension, extendedToProd_toExtendedResidueExtension]
   simp only [Equiv.symm_apply_apply, map_zero, mul_zero, add_zero, constantTermPairing_single_tmul]
   split_ifs <;> simp
@@ -561,131 +581,113 @@ theorem extendedBilinForm_mode_mode (m n : ℤ) (x y : L) :
 theorem extendedBilinForm_centralElement_mode (n : ℤ) (x : L) :
     extendedBilinForm Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs (centralElement c))
       (mode Φ hΦ hΦs n x) = 0 := by
-  rw [extendedBilinForm_apply_aux, mode_apply, extendedToProd_toExtendedResidueExtension,
-    extendedToProd_toExtendedResidueExtension]
-  simp
+  simp [extendedBilinForm_apply, mode_apply]
 
 /-- Every mode is orthogonal to `K`. -/
 @[simp]
 theorem extendedBilinForm_mode_centralElement (n : ℤ) (x : L) :
     extendedBilinForm Φ hΦ hΦs (mode Φ hΦ hΦs n x)
       (toExtendedResidueExtension Φ hΦ hΦs (centralElement c)) = 0 := by
-  rw [extendedBilinForm_apply_aux, mode_apply, extendedToProd_toExtendedResidueExtension,
-    extendedToProd_toExtendedResidueExtension]
-  simp
+  simp [extendedBilinForm_apply, mode_apply]
 
 /-- `d` is orthogonal to every mode. -/
 @[simp]
 theorem extendedBilinForm_degreeElement_mode (n : ℤ) (x : L) :
     extendedBilinForm Φ hΦ hΦs (degreeElement Φ hΦ hΦs) (mode Φ hΦ hΦs n x) = 0 := by
-  rw [extendedBilinForm_apply_aux, mode_apply, extendedToProd_degreeElement,
-    extendedToProd_toExtendedResidueExtension]
-  simp
+  simp [extendedBilinForm_apply, mode_apply]
 
 /-- Every mode is orthogonal to `d`. -/
 @[simp]
 theorem extendedBilinForm_mode_degreeElement (n : ℤ) (x : L) :
     extendedBilinForm Φ hΦ hΦs (mode Φ hΦ hΦs n x) (degreeElement Φ hΦ hΦs) = 0 := by
-  rw [extendedBilinForm_apply_aux, mode_apply, extendedToProd_toExtendedResidueExtension,
-    extendedToProd_degreeElement]
-  simp
+  simp [extendedBilinForm_apply, mode_apply]
 
 /-- `(K, d) = 1`. -/
 @[simp]
 theorem extendedBilinForm_centralElement_degreeElement :
     extendedBilinForm Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs (centralElement c))
       (degreeElement Φ hΦ hΦs) = 1 := by
-  rw [extendedBilinForm_apply_aux, extendedToProd_toExtendedResidueExtension,
-    extendedToProd_degreeElement]
-  simp
+  simp [extendedBilinForm_apply]
 
 /-- `(d, K) = 1`. -/
 @[simp]
 theorem extendedBilinForm_degreeElement_centralElement :
     extendedBilinForm Φ hΦ hΦs (degreeElement Φ hΦ hΦs)
       (toExtendedResidueExtension Φ hΦ hΦs (centralElement c)) = 1 := by
-  rw [extendedBilinForm_apply_aux, extendedToProd_degreeElement,
-    extendedToProd_toExtendedResidueExtension]
-  simp
+  simp [extendedBilinForm_apply]
 
 /-- `(K, K) = 0`. -/
 @[simp]
 theorem extendedBilinForm_centralElement_centralElement :
     extendedBilinForm Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs (centralElement c))
       (toExtendedResidueExtension Φ hΦ hΦs (centralElement c)) = 0 := by
-  rw [extendedBilinForm_apply_aux, extendedToProd_toExtendedResidueExtension]
-  simp
+  simp [extendedBilinForm_apply]
 
 /-- `(d, d) = 0`. -/
 @[simp]
 theorem extendedBilinForm_degreeElement_degreeElement :
     extendedBilinForm Φ hΦ hΦs (degreeElement Φ hΦ hΦs) (degreeElement Φ hΦ hΦs) = 0 := by
-  rw [extendedBilinForm_apply_aux, extendedToProd_degreeElement]
-  simp
+  simp [extendedBilinForm_apply]
 
 /-- **`extendedBilinForm` is symmetric.** -/
 theorem extendedBilinForm_isSymm : (extendedBilinForm Φ hΦ hΦs).IsSymm := by
   refine LinearMap.BilinForm.isSymm_def.mpr fun x y ↦ ?_
-  rw [extendedBilinForm_apply_aux, extendedBilinForm_apply_aux,
-    (constantTermPairing_isSymm hΦs).eq]
+  rw [extendedBilinForm_apply, extendedBilinForm_apply, (constantTermPairing_isSymm hΦs).eq]
   ring
 
-/-- The bracket in `extendedResidueExtension` read in `P × R × R` coordinates. -/
-private theorem extendedToProd_lie (x y : E') :
-    let px := (ofProd c).symm (extendedToProd Φ hΦ hΦs x).1
-    let py := (ofProd c).symm (extendedToProd Φ hΦ hΦs y).1
-    let ax := (extendedToProd Φ hΦ hΦs x).2
-    let ay := (extendedToProd Φ hΦ hΦs y).2
+/-- The bracket in `extendedResidueExtension` read in `(P × R) × R` coordinates. -/
+theorem extendedToProd_lie (x y : E') :
+    let px := (ofProd c).symm (extendedToProd Φ hΦ hΦs x).fst
+    let py := (ofProd c).symm (extendedToProd Φ hΦ hΦs y).fst
+    let ax := (extendedToProd Φ hΦ hΦs x).snd
+    let ay := (extendedToProd Φ hΦ hΦs y).snd
     extendedToProd Φ hΦ hΦs ⁅x, y⁆ =
-      (ofProd c (⁅px.1, py.1⁆ + ax • degreeDerivation R L py.1 - ay • degreeDerivation R L px.1,
-        (TrivialLieModule.equiv R P R).symm (residuePairing R ℤ L Φ px.1 py.1)), 0) := by
-  revert x y
-  -- Read `x` and `y` in the underlying semidirect sum `E ⋊⁅ψ⁆ R`.
-  change ∀ x y : E ⋊⁅ψ⁆ R,
-    let px := (ofProd c).symm x.left
-    let py := (ofProd c).symm y.left
-    (⁅x, y⁆.left, ⁅x, y⁆.right) =
-      (ofProd c (⁅px.1, py.1⁆ + x.right • degreeDerivation R L py.1 -
-          y.right • degreeDerivation R L px.1,
-        (TrivialLieModule.equiv R P R).symm (residuePairing R ℤ L Φ px.1 py.1)), 0)
-  rintro ⟨xl, xr⟩ ⟨yl, yr⟩
+      (ofProd c (⁅px.fst, py.fst⁆ + ax • degreeDerivation R L py.fst -
+          ay • degreeDerivation R L px.fst,
+        (TrivialLieModule.equiv R P R).symm (residuePairing R ℤ L Φ px.fst py.fst)), 0) := by
+  obtain ⟨xl, ax, rfl⟩ := exists_eq_add_smul_degreeElement Φ hΦ hΦs x
+  obtain ⟨yl, ay, rfl⟩ := exists_eq_add_smul_degreeElement Φ hΦ hΦs y
   obtain ⟨⟨ux, cx⟩, rfl⟩ := (ofProd c).surjective xl
   obtain ⟨⟨uy, cy⟩, rfl⟩ := (ofProd c).surjective yl
-  refine Prod.ext ((ofProd c).symm.injective ?_) (by simp [Ring.lie_def, mul_comm])
-  dsimp only
-  rw [SemiDirectSum.lie_eq_mk]
-  dsimp only
-  rw [LieDerivation.lineHom_apply, LieDerivation.lineHom_apply,
-    LieDerivation.smul_apply, LieDerivation.smul_apply]
-  have hsub (a b : E) : (ofProd c).symm (a - b) = (ofProd c).symm a - (ofProd c).symm b := rfl
-  have hδ (u : P) (z : TrivialLieModule R P R) :
-      (ofProd c).symm (δ (ofProd c (u, z))) = (degreeDerivation R L u, 0) := by
-    simp [extensionDegreeDerivation]
-  rw [hsub, of_symm_add, bracket_ofTwoCocycle, of_symm_smul, of_symm_smul, hδ, hδ]
-  simp only [Equiv.symm_apply_apply]
-  refine Prod.ext ?_ ?_
-  · simp
-  · simp [trivial_lie_zero, twoCocycleOfBilinear_coe, twoCochain_val_apply,
-      twoCochainOfBilinear_apply_apply]
+  have hbra :
+      ⁅toExtendedResidueExtension Φ hΦ hΦs (ofProd c (ux, cx)) + ax • degreeElement Φ hΦ hΦs,
+        toExtendedResidueExtension Φ hΦ hΦs (ofProd c (uy, cy)) + ay • degreeElement Φ hΦ hΦs⁆ =
+        toExtendedResidueExtension Φ hΦ hΦs (⁅ofProd c (ux, cx), ofProd c (uy, cy)⁆ +
+          ax • δ (ofProd c (uy, cy)) - ay • δ (ofProd c (ux, cx))) := by
+    simp only [add_lie, lie_add, smul_lie, lie_smul, lie_self, smul_zero, add_zero,
+      lie_degreeElement_toExtendedResidueExtension, ← LieHom.map_lie]
+    rw [← lie_skew _ (degreeElement Φ hΦ hΦs), lie_degreeElement_toExtendedResidueExtension]
+    simp only [map_sub, map_add, map_smul, smul_neg]
+    abel
+  have hprod (w : E) (a : R) :
+      extendedToProd Φ hΦ hΦs (toExtendedResidueExtension Φ hΦ hΦs w + a • degreeElement Φ hΦ hΦs) =
+        (w, a) := by simp [map_add, map_smul]
+  rw [hbra, hprod, hprod]
+  simp only [Equiv.symm_apply_apply, extendedToProd_toExtendedResidueExtension, Prod.mk.injEq,
+    and_true]
+  apply (ofProd c).symm.injective
+  rw [← coe_ofProdLinearEquiv_symm, map_sub, map_add, map_smul, map_smul]
+  simp [bracket_ofTwoCocycle, trivial_lie_zero, sub_eq_add_neg,
+    twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply]
 
 /-- **`extendedBilinForm` is `ĝ'`-invariant**: `B(⁅x, y⁆, w) + B(y, ⁅x, w⁆) = 0`. -/
 theorem extendedBilinForm_lieInvariant : (extendedBilinForm Φ hΦ hΦs).lieInvariant E' := by
   intro x y w
-  rw [extendedBilinForm_apply_aux, extendedBilinForm_apply_aux,
+  rw [extendedBilinForm_apply, extendedBilinForm_apply,
     extendedToProd_lie Φ hΦ hΦs x y, extendedToProd_lie Φ hΦ hΦs x w]
-  set u := ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).1).1
-  set v := ((ofProd c).symm (extendedToProd Φ hΦ hΦs y).1).1
-  set p := ((ofProd c).symm (extendedToProd Φ hΦ hΦs w).1).1
-  set a := (extendedToProd Φ hΦ hΦs x).2
-  set b := (extendedToProd Φ hΦ hΦs y).2
-  set q := (extendedToProd Φ hΦ hΦs w).2
+  set u := ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).fst).fst
+  set v := ((ofProd c).symm (extendedToProd Φ hΦ hΦs y).fst).fst
+  set p := ((ofProd c).symm (extendedToProd Φ hΦ hΦs w).fst).fst
+  set a := (extendedToProd Φ hΦ hΦs x).snd
+  set b := (extendedToProd Φ hΦ hΦs y).snd
+  set q := (extendedToProd Φ hΦ hΦs w).snd
   simp only [Equiv.symm_apply_apply, LinearEquiv.apply_symm_apply, map_sub, map_add, map_smul,
     LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, zero_mul,
     mul_zero, add_zero]
   have hinv := constantTermPairing_lieInvariant hΦ u v p
-  have hD1 := constantTermPairing_degreeDerivation_add Φ v p
-  have hD2 := constantTermPairing_degreeDerivation_add Φ u p
-  have hD3 := constantTermPairing_degreeDerivation_add Φ u v
+  have hD1 := constantTermPairing_degreeDerivation_add_eq_zero Φ v p
+  have hD2 := constantTermPairing_degreeDerivation_add_eq_zero Φ u p
+  have hD3 := constantTermPairing_degreeDerivation_add_eq_zero Φ u v
   have hR1 := constantTermPairing_degreeDerivation_right Φ u p
   have hR2 := constantTermPairing_degreeDerivation_right Φ u v
   have hsym := (constantTermPairing_isSymm hΦs).eq v (degreeDerivation R L u)
@@ -694,27 +696,21 @@ theorem extendedBilinForm_lieInvariant : (extendedBilinForm Φ hΦ hΦs).lieInva
 /-- **`extendedBilinForm` is nondegenerate** whenever `Φ` is nondegenerate on `L`. -/
 theorem extendedBilinForm_nondegenerate (hΦn : Φ.Nondegenerate) :
     (extendedBilinForm Φ hΦ hΦs).Nondegenerate := by
-  have hleft : (extendedBilinForm Φ hΦ hΦs).SeparatingLeft := by
-    intro x hx
-    apply (extendedToProd Φ hΦ hΦs).injective
-    have ha : (extendedToProd Φ hΦ hΦs x).2 = 0 := by
-      have hK := hx (toExtendedResidueExtension Φ hΦ hΦs (centralElement c))
-      rw [extendedBilinForm_apply_aux, extendedToProd_toExtendedResidueExtension] at hK
-      simpa using hK
-    have hz : ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).1).2 = 0 := by
-      have hd := hx (degreeElement Φ hΦ hΦs)
-      rw [extendedBilinForm_apply_aux, extendedToProd_degreeElement] at hd
-      apply (TrivialLieModule.equiv R P R).injective
-      simpa using hd
-    have hu : ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).1).1 = 0 := by
-      refine constantTermPairing_separatingLeft hΦn.1 _ fun v ↦ ?_
-      have hv := hx (toExtendedResidueExtension Φ hΦ hΦs (ofProd c (v, 0)))
-      rw [extendedBilinForm_apply_aux, extendedToProd_toExtendedResidueExtension] at hv
-      simpa using hv
-    rw [map_zero]
-    refine Prod.ext ((ofProd c).symm.injective ?_) ha
-    rw [Prod.fst_zero, of_symm_zero]
-    exact Prod.ext hu hz
+  have hleft : (extendedBilinForm Φ hΦ hΦs).SeparatingLeft := fun x hx ↦
+    (extendedToProd Φ hΦ hΦs).injective <| by
+      have ha : (extendedToProd Φ hΦ hΦs x).snd = 0 := by
+        simpa [extendedBilinForm_apply] using
+          hx (toExtendedResidueExtension Φ hΦ hΦs (centralElement c))
+      have hz : ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).fst).snd = 0 :=
+        (TrivialLieModule.equiv R P R).injective <| by
+          simpa [extendedBilinForm_apply] using hx (degreeElement Φ hΦ hΦs)
+      have hu : ((ofProd c).symm (extendedToProd Φ hΦ hΦs x).fst).fst = 0 :=
+        constantTermPairing_separatingLeft hΦn.1 _ fun v ↦ by
+          simpa [extendedBilinForm_apply] using
+            hx (toExtendedResidueExtension Φ hΦ hΦs (ofProd c (v, 0)))
+      rw [map_zero]
+      exact Prod.ext
+        ((ofProd c).symm.injective (by rw [Prod.fst_zero, of_symm_zero]; exact Prod.ext hu hz)) ha
   exact ⟨hleft, fun y hy ↦ hleft y fun x ↦ by
     rw [(extendedBilinForm_isSymm Φ hΦ hΦs).eq]; exact hy x⟩
 
@@ -736,98 +732,94 @@ local notation "Z" => TrivialLieModule R P R
 local notation "cΦ" => twoCocycleOfBilinear R ℤ L Φ hΦ hΦs
 local notation "cΨ" => twoCocycleOfBilinear R ℤ L Ψ hΨ hΨs
 
+private theorem twoCocycleOfBilinear_eq_smul {r : R} (h : Ψ = r • Φ) : cΨ = r • cΦ := by
+  subst h
+  exact Subtype.ext (twoCochainOfBilinear_smul r hΦs hΨs)
+
 /-- Rescaling the level of the polynomial loop central extension: if `Ψ = r • Φ`, the Lie algebra
 homomorphism `ofTwoCocycle cΦ →ₗ⁅R⁆ ofTwoCocycle cΨ` fixing loops and sending `K ↦ r • K`. -/
 def levelHom {r : R} (h : Ψ = r • Φ) : ofTwoCocycle cΦ →ₗ⁅R⁆ ofTwoCocycle cΨ :=
-  ofTwoCocycle.map cΦ LieHom.id (r • LinearMap.id) cΨ fun u v ↦ by
-    subst h
-    simp [twoCocycleOfBilinear_coe, twoCochainOfBilinear_smul r hΦs hΨs, smul_apply_apply]
+  ofTwoCocycle.smulMap cΦ cΨ r (twoCocycleOfBilinear_eq_smul hΦ hΦs hΨ hΨs h)
 
 @[simp]
 theorem levelHom_ofProd {r : R} (h : Ψ = r • Φ) (u : P) (z : Z) :
     levelHom hΦ hΦs hΨ hΨs h (ofProd cΦ (u, z)) = ofProd cΨ (u, r • z) :=
-  ofTwoCocycle.map_ofProd cΦ LieHom.id (r • LinearMap.id) cΨ _ u z
+  ofTwoCocycle.smulMap_ofProd cΦ cΨ r _ u z
 
 @[simp]
 theorem ofProd_symm_levelHom {r : R} (h : Ψ = r • Φ) (v : ofTwoCocycle cΦ) :
     (ofProd cΨ).symm (levelHom hΦ hΦs hΨ hΨs h v) =
-      (((ofProd cΦ).symm v).1, r • ((ofProd cΦ).symm v).2) :=
-  ofTwoCocycle.ofProd_symm_map cΦ LieHom.id (r • LinearMap.id) cΨ _ v
+      (((ofProd cΦ).symm v).fst, r • ((ofProd cΦ).symm v).snd) :=
+  ofTwoCocycle.ofProd_symm_smulMap cΦ cΨ r _ v
 
 @[simp]
 theorem levelHom_centralElement {r : R} (h : Ψ = r • Φ) :
-    levelHom hΦ hΦs hΨ hΨs h (centralElement cΦ) = r • centralElement cΨ := by
-  apply (ofProd cΨ).symm.injective
-  simp
+    levelHom hΦ hΦs hΨ hΨs h (centralElement cΦ) = r • centralElement cΨ :=
+  ofTwoCocycle.smulMap_centralElement cΦ cΨ r _
 
 /-- If `Ψ = u • Φ` for a unit `u`, the central extensions `ofTwoCocycle cΦ` and `ofTwoCocycle cΨ`
 are isomorphic via `(v, z) ↦ (v, u • z)`. -/
 def levelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) : ofTwoCocycle cΦ ≃ₗ⁅R⁆ ofTwoCocycle cΨ :=
-  ofTwoCocycle.mapEquiv cΦ (LieEquiv.refl : P ≃ₗ⁅R⁆ P) (LinearEquiv.smulOfUnit u) cΨ fun v w ↦ by
-    subst h
-    simp [twoCocycleOfBilinear_coe, twoCochainOfBilinear_smul (u : R) hΦs hΨs, smul_apply_apply,
-      LinearEquiv.smulOfUnit, Units.smul_def]
+  ofTwoCocycle.smulMapEquiv cΦ cΨ u (twoCocycleOfBilinear_eq_smul hΦ hΦs hΨ hΨs h)
 
 @[simp]
 theorem levelEquiv_ofProd {u : Rˣ} (h : Ψ = (u : R) • Φ) (v : P) (z : Z) :
-    levelEquiv hΦ hΦs hΨ hΨs h (ofProd cΦ (v, z)) = ofProd cΨ (v, (u : R) • z) :=
-  ofTwoCocycle.mapEquiv_ofProd cΦ LieEquiv.refl (LinearEquiv.smulOfUnit u) cΨ _ v z
+    levelEquiv hΦ hΦs hΨ hΨs h (ofProd cΦ (v, z)) = ofProd cΨ (v, (u : R) • z) := by
+  rw [levelEquiv]
+  simp [Units.smul_def]
 
 @[simp]
 theorem levelEquiv_centralElement {u : Rˣ} (h : Ψ = (u : R) • Φ) :
-    levelEquiv hΦ hΦs hΨ hΨs h (centralElement cΦ) = (u : R) • centralElement cΨ := by
-  apply (ofProd cΨ).symm.injective
-  simp [levelEquiv, LinearEquiv.smulOfUnit, Units.smul_def]
+    levelEquiv hΦ hΦs hΨ hΨs h (centralElement cΦ) = (u : R) • centralElement cΨ :=
+  ofTwoCocycle.smulMapEquiv_centralElement cΦ cΨ u _
+
+/-- The inverse of `levelEquiv` is the level isomorphism for the reciprocal scalar `u⁻¹`. -/
+theorem levelEquiv_symm {u : Rˣ} (h : Ψ = (u : R) • Φ) :
+    (levelEquiv hΦ hΦs hΨ hΨs h).symm =
+      levelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs (by rw [h, smul_smul, Units.inv_mul, one_smul]) := by
+  rw [levelEquiv, levelEquiv]
+  exact ofTwoCocycle.smulMapEquiv_symm cΦ cΨ u _
 
 /-- **Level transport on extended affine loop algebras**: if `Ψ = r • Φ`, the Lie algebra
 homomorphism `extendedResidueExtension Φ →ₗ⁅R⁆ extendedResidueExtension Ψ` fixing all loop modes
 and `d` while sending `K ↦ r • K`. -/
 def extendedLevelHom {r : R} (h : Ψ = r • Φ) :
-    extendedResidueExtension Φ hΦ hΦs →ₗ⁅R⁆ extendedResidueExtension Ψ hΨ hΨs :=
-  let f := levelHom hΦ hΦs hΨ hΨs h
-  { toFun x :=
-      (extendedToProd Ψ hΨ hΨs).symm
-        (f (extendedToProd Φ hΦ hΦs x).1, (extendedToProd Φ hΦ hΦs x).2)
-    map_add' x y := by
-      simp only [map_add, Prod.fst_add, Prod.snd_add, ← Prod.mk_add_mk]
-    map_smul' a x := by
-      simp only [map_smul, Prod.smul_fst, Prod.smul_snd, ← Prod.smul_mk, RingHom.id_apply]
-    map_lie' {x y} := by
-      apply (extendedToProd Ψ hΨ hΨs).injective
-      rw [LinearEquiv.apply_symm_apply, extendedToProd_lie Ψ hΨ hΨs,
-        extendedToProd_lie Φ hΦ hΦs]
-      simp only [LinearEquiv.apply_symm_apply, ofProd_symm_levelHom, f, levelHom_ofProd]
-      refine Prod.ext (congrArg (ofProd cΨ) (Prod.ext rfl ?_)) rfl
-      apply (TrivialLieModule.equiv R P R).injective
-      have hr (u v : P) : residuePairing R ℤ L Ψ u v = r * residuePairing R ℤ L Φ u v := by
-        rw [← constantTermPairing_degreeDerivation_right,
-          ← constantTermPairing_degreeDerivation_right, h, constantTermPairing_smul,
-          LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul]
-      simp [hr] }
+    extendedResidueExtension Φ hΦ hΦs →ₗ⁅R⁆ extendedResidueExtension Ψ hΨ hΨs where
+  __ := (extendedToProd Ψ hΨ hΨs).symm.toLinearMap ∘ₗ
+    LinearMap.prodMap (levelHom hΦ hΦs hΨ hΨs h).toLinearMap LinearMap.id ∘ₗ
+    (extendedToProd Φ hΦ hΦs).toLinearMap
+  map_lie' {x y} := by
+    apply (extendedToProd Ψ hΨ hΨs).injective
+    simp only [LinearMap.toFun_eq_coe, LinearMap.coe_comp, LinearEquiv.coe_coe,
+      Function.comp_apply, LinearMap.prodMap_apply, LieHom.coe_toLinearMap, LinearMap.id_coe,
+      id_eq, LinearEquiv.apply_symm_apply, extendedToProd_lie Ψ hΨ hΨs,
+      extendedToProd_lie Φ hΦ hΦs, ofProd_symm_levelHom, levelHom_ofProd]
+    refine Prod.ext (congrArg (ofProd cΨ) (Prod.ext rfl ?_)) rfl
+    apply (TrivialLieModule.equiv R P R).injective
+    simp [h, residuePairing_smul]
 
 @[simp]
 theorem extendedToProd_extendedLevelHom {r : R} (h : Ψ = r • Φ)
     (x : extendedResidueExtension Φ hΦ hΦs) :
     extendedToProd Ψ hΨ hΨs (extendedLevelHom hΦ hΦs hΨ hΨs h x) =
-      (levelHom hΦ hΦs hΨ hΨs h (extendedToProd Φ hΦ hΦs x).1,
-        (extendedToProd Φ hΦ hΦs x).2) := by
-  simp [extendedLevelHom]
+      (levelHom hΦ hΦs hΨ hΨs h (extendedToProd Φ hΦ hΦs x).fst,
+        (extendedToProd Φ hΦ hΦs x).snd) :=
+  (extendedToProd Ψ hΨ hΨs).apply_symm_apply _
 
 /-- `extendedLevelHom` restricts to `levelHom` on the derived central extension. -/
-@[simp]
 theorem extendedLevelHom_toExtendedResidueExtension {r : R} (h : Ψ = r • Φ) (x : ofTwoCocycle cΦ) :
     extendedLevelHom hΦ hΦs hΨ hΨs h (toExtendedResidueExtension Φ hΦ hΦs x) =
-      toExtendedResidueExtension Ψ hΨ hΨs (levelHom hΦ hΦs hΨ hΨs h x) := by
-  apply (extendedToProd Ψ hΨ hΨs).injective
-  simp
+      toExtendedResidueExtension Ψ hΨ hΨs (levelHom hΦ hΦs hΨ hΨs h x) :=
+  (extendedToProd Ψ hΨ hΨs).injective (by simp)
 
 /-- `extendedLevelHom` fixes every loop mode `tⁿ ⊗ x`. -/
 @[simp]
 theorem extendedLevelHom_mode {r : R} (h : Ψ = r • Φ) (n : ℤ) (x : L) :
     extendedLevelHom hΦ hΦs hΨ hΨs h (mode Φ hΦ hΦs n x) = mode Ψ hΨ hΨs n x := by
-  simp [mode_apply]
+  simp [mode_apply, extendedLevelHom_toExtendedResidueExtension]
 
 /-- `extendedLevelHom` scales the canonical central element by `r`. -/
+@[simp]
 theorem extendedLevelHom_centralElement {r : R} (h : Ψ = r • Φ) :
     extendedLevelHom hΦ hΦs hΨ hΨs h (toExtendedResidueExtension Φ hΦ hΦs (centralElement cΦ)) =
       r • toExtendedResidueExtension Ψ hΨ hΨs (centralElement cΨ) := by
@@ -836,9 +828,8 @@ theorem extendedLevelHom_centralElement {r : R} (h : Ψ = r • Φ) :
 /-- `extendedLevelHom` preserves the degree element `d`. -/
 @[simp]
 theorem extendedLevelHom_degreeElement {r : R} (h : Ψ = r • Φ) :
-    extendedLevelHom hΦ hΦs hΨ hΨs h (degreeElement Φ hΦ hΦs) = degreeElement Ψ hΨ hΨs := by
-  apply (extendedToProd Ψ hΨ hΨs).injective
-  simp
+    extendedLevelHom hΦ hΦs hΨ hΨs h (degreeElement Φ hΦ hΦs) = degreeElement Ψ hΨ hΨs :=
+  (extendedToProd Ψ hΨ hΨs).injective (by simp)
 
 /-- **Level transport scales the invariant bilinear form by `r`**: for `Ψ = r • Φ`,
 `B_Ψ(f x, f y) = r * B_Φ(x, y)`. -/
@@ -847,9 +838,9 @@ theorem extendedBilinForm_extendedLevelHom {r : R} (h : Ψ = r • Φ)
     extendedBilinForm Ψ hΨ hΨs (extendedLevelHom hΦ hΦs hΨ hΨs h x)
         (extendedLevelHom hΦ hΦs hΨ hΨs h y) =
       r * extendedBilinForm Φ hΦ hΦs x y := by
-  have hct : constantTermPairing Ψ = r • constantTermPairing Φ := by
+  have hct : constantTermPairing (A := ℤ) Ψ = r • constantTermPairing Φ := by
     rw [h, constantTermPairing_smul]
-  rw [extendedBilinForm_apply_aux, extendedBilinForm_apply_aux, extendedToProd_extendedLevelHom,
+  rw [extendedBilinForm_apply, extendedBilinForm_apply, extendedToProd_extendedLevelHom,
     extendedToProd_extendedLevelHom, ofProd_symm_levelHom, ofProd_symm_levelHom, hct]
   simp only [LinearMap.smul_apply, smul_eq_mul, map_smul]
   ring
@@ -861,14 +852,17 @@ def extendedLevelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     extendedResidueExtension Φ hΦ hΦs ≃ₗ⁅R⁆ extendedResidueExtension Ψ hΨ hΨs where
   __ := extendedLevelHom hΦ hΦs hΨ hΨs h
   invFun := extendedLevelHom hΨ hΨs hΦ hΦs (by rw [h, smul_smul, Units.inv_mul, one_smul])
-  left_inv x := by
-    apply (extendedToProd Φ hΦ hΦs).injective
-    refine Prod.ext ((ofProd cΦ).symm.injective ?_) (by simp)
-    simp [smul_smul]
-  right_inv y := by
-    apply (extendedToProd Ψ hΨ hΨs).injective
-    refine Prod.ext ((ofProd cΨ).symm.injective ?_) (by simp)
-    simp [smul_smul]
+  left_inv x := (extendedToProd Φ hΦ hΦs).injective <|
+    Prod.ext ((ofProd cΦ).symm.injective (by simp [smul_smul])) (by simp)
+  right_inv y := (extendedToProd Ψ hΨ hΨs).injective <|
+    Prod.ext ((ofProd cΨ).symm.injective (by simp [smul_smul])) (by simp)
+
+/-- The inverse of `extendedLevelEquiv` is the extended level isomorphism for `u⁻¹`. -/
+theorem extendedLevelEquiv_symm {u : Rˣ} (h : Ψ = (u : R) • Φ) :
+    (extendedLevelEquiv hΦ hΦs hΨ hΨs h).symm =
+      extendedLevelEquiv (u := u⁻¹) hΨ hΨs hΦ hΦs
+        (by rw [h, smul_smul, Units.inv_mul, one_smul]) :=
+  LieEquiv.ext fun _ ↦ rfl
 
 @[simp]
 theorem extendedLevelEquiv_mode {u : Rˣ} (h : Ψ = (u : R) • Φ) (n : ℤ) (x : L) :

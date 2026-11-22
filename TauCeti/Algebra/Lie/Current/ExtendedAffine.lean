@@ -121,9 +121,7 @@ theorem toExtendedResidueExtension_injective :
 /-- Every element of the extended affine algebra is `x + t • d` for some `x ∈ ĝ` and `t ∈ R`. -/
 theorem exists_eq_add_smul_degreeElement (y : E') :
     ∃ (x : E) (t : R), y = toExtendedResidueExtension Φ hΦ hΦs x + t • degreeElement Φ hΦ hΦs :=
-  -- The decomposition `y = inl y.left + y.right • inr 1` of the underlying semidirect sum.
-  have h (y : E ⋊⁅ψ⁆ R) : y = inl ψ y.left + y.right • inr ψ 1 := by ext <;> simp
-  ⟨_, _, h y⟩
+  LieDerivation.exists_eq_add_smul_inr_one δ y
 
 /-- **The degree element acts by the degree derivation**: `⁅d, x⁆ = t x'` for `x ∈ ĝ`. -/
 theorem lie_degreeElement_toExtendedResidueExtension (x : E) :
@@ -144,17 +142,15 @@ theorem lie_degreeElement_toExtendedResidueExtension_ofProd_single_tmul (n : ℤ
 @[simp]
 theorem lie_degreeElement_centralElement :
     ⁅degreeElement Φ hΦ hΦs,
-      toExtendedResidueExtension Φ hΦ hΦs (centralElement c)⁆ = 0 := by
-  rw [lie_degreeElement_toExtendedResidueExtension, vectorFieldExtensionDerivation_centralElement,
-    map_zero]
+      toExtendedResidueExtension Φ hΦ hΦs (centralElement c)⁆ = 0 :=
+  LieDerivation.lie_inr_lineHom_one_inl_eq_zero δ
+    (vectorFieldExtensionDerivation_centralElement Φ hΦ hΦs (single 1 1))
 
 /-- **`K` is central in the extended affine algebra.** -/
 theorem toExtendedResidueExtension_centralElement_mem_center :
-    toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' := by
-  refine (LieModule.mem_maxTrivSubmodule R E' E' _).2 fun y ↦ ?_
-  obtain ⟨x, t, rfl⟩ := exists_eq_add_smul_degreeElement Φ hΦ hΦs y
-  rw [add_lie, smul_lie, lie_degreeElement_centralElement, smul_zero, add_zero, ← LieHom.map_lie,
-    (LieModule.mem_maxTrivSubmodule R E E _).1 (centralElement_mem_center c) x, map_zero]
+    toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' :=
+  LieDerivation.inl_lineHom_mem_center δ (centralElement_mem_center c)
+    (vectorFieldExtensionDerivation_centralElement Φ hΦ hΦs (single 1 1))
 
 end Extension
 

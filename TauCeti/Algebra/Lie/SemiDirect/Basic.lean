@@ -363,4 +363,24 @@ theorem lie_inr_lineHom_one_inl (D : LieDerivation R L L) (x : L) :
   simp only [inl_eq_mk, inr_eq_mk, lie_eq_mk]
   ext <;> simp [Ring.lie_def]
 
+/-- Every element of `L ⋊⁅D.lineHom⁆ R` is the sum of an element of `L` and a multiple of the
+adjoined generator `inr D.lineHom 1`. -/
+theorem exists_eq_add_smul_inr_one (D : LieDerivation R L L) (y : L ⋊⁅D.lineHom⁆ R) :
+    ∃ (x : L) (t : R), y = inl D.lineHom x + t • inr D.lineHom (1 : R) :=
+  ⟨y.left, y.right, by ext <;> simp⟩
+
+/-- When `D` kills `z`, the adjoined generator commutes with `inl D.lineHom z`. -/
+theorem lie_inr_lineHom_one_inl_eq_zero (D : LieDerivation R L L) {z : L} (hz : D z = 0) :
+    ⁅inr D.lineHom (1 : R), inl D.lineHom z⁆ = 0 := by
+  rw [lie_inr_lineHom_one_inl, hz, map_zero]
+
+/-- A central element of `L` killed by `D` remains central in `L ⋊⁅D.lineHom⁆ R`. -/
+theorem inl_lineHom_mem_center (D : LieDerivation R L L) {z : L}
+    (hz_cent : z ∈ LieAlgebra.center R L) (hz : D z = 0) :
+    inl D.lineHom z ∈ LieAlgebra.center R (L ⋊⁅D.lineHom⁆ R) := by
+  refine (LieModule.mem_maxTrivSubmodule R _ _ _).2 fun y ↦ ?_
+  obtain ⟨x, t, rfl⟩ := exists_eq_add_smul_inr_one D y
+  rw [add_lie, smul_lie, lie_inr_lineHom_one_inl_eq_zero D hz, smul_zero, add_zero,
+    ← LieHom.map_lie, (LieModule.mem_maxTrivSubmodule R L L _).1 hz_cent x, map_zero]
+
 end LieDerivation

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.RootPositive
 public import TauCeti.LinearAlgebra.Matrix.Submatrix
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
+import TauCeti.LinearAlgebra.RootSystem.Flip
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 
@@ -89,10 +90,10 @@ restriction to the simple nodes and extension by fixing the affine node.
   `RootPairing.Base.affineMarks_some_eq_of_root_highestRoot_eq_sum`: the marks are the
   coefficients of the highest root in the simple roots.
 * `RootPairing.Base.coroot_highestRoot_eq_sum_affineComarks`,
-  `RootPairing.Base.affineComarks_mul_form_highestRoot`, `RootPairing.Base.affineComarks_pos`, and
-  `RootPairing.Base.sum_affineComarks`: the comarks expand `θ^∨` in the simple coroots, satisfy
-  `aᵢ^∨ B(θ, θ) = aᵢ B(αᵢ, αᵢ)` for every invariant form `B`, are positive, and sum to the dual
-  Coxeter number `ht(θ^∨) + 1`.
+  `RootPairing.Base.affineComarks_zsmul_form_highestRoot`, `RootPairing.Base.affineComarks_pos`,
+  and `RootPairing.Base.sum_affineComarks`: the comarks expand `θ^∨` in the simple coroots,
+  satisfy `aᵢ^∨ • B(θ, θ) = aᵢ • B(αᵢ, αᵢ)` for every invariant form `B`, are positive, and sum
+  to the dual Coxeter number `ht(θ^∨) + 1`.
 * `RootPairing.Base.affineMarks_vecMul_affineCartanMatrix` and
   `RootPairing.Base.affineCartanMatrix_mulVec_affineComarks`: the marks and comarks are left and
   right null vectors of `A`.
@@ -461,11 +462,10 @@ private theorem pairingIn_highestRoot_eq_sum_affineMarks (l : ι) :
 private theorem pairingIn_apply_highestRoot_eq_sum_affineComarks (k : ι) :
     P.pairingIn ℤ k b.highestRoot =
       ∑ i : b.support, P.pairingIn ℤ k i * b.affineComarks (some i) := by
-  apply FaithfulSMul.algebraMap_injective ℤ R
-  simp only [RootPairing.algebraMap_pairingIn, map_sum, map_mul,
-    ← RootPairing.root_coroot_eq_pairing, b.coroot_highestRoot_eq_sum_affineComarks, map_zsmul,
-    zsmul_eq_mul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  classical
+  rw [← RootPairing.pairingIn_flip ℤ P b.highestRoot k,
+    RootPairing.pairingIn_eq_sum_of_root_eq_sum (P := P.flip) b.coroot_highestRoot_eq_sum_dite,
+    ← Finset.sum_coe_sort b.support]
   simp [mul_comm]
 
 /-- **The null-root relation**: the marks are a left null vector of the affine Cartan matrix,

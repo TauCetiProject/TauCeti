@@ -262,6 +262,69 @@ lemma toLieHom_mapEquiv :
     (mapEquiv c φ e c' h).toLieHom = map c φ.toLieHom e.toLinearMap c' h :=
   (rfl)
 
+section Smul
+
+/-- Scaling a 2-cocycle by `r : R` induces the morphism `(x, m) ↦ (x, r • m)` of central
+extensions. -/
+def smulMap (c' : twoCocycle R L M) (r : R) (hc : c' = r • c) :
+    ofTwoCocycle c →ₗ⁅R⁆ ofTwoCocycle c' :=
+  map c LieHom.id (r • LinearMap.id) c' fun x y ↦ by subst hc; simp
+
+@[simp]
+lemma smulMap_ofProd (c' : twoCocycle R L M) (r : R) (hc : c' = r • c) (x : L) (m : M) :
+    smulMap c c' r hc (ofProd c (x, m)) = ofProd c' (x, r • m) :=
+  map_ofProd c LieHom.id (r • LinearMap.id) c' _ x m
+
+@[simp]
+lemma ofProd_symm_smulMap (c' : twoCocycle R L M) (r : R) (hc : c' = r • c) (v : ofTwoCocycle c) :
+    (ofProd c').symm (smulMap c c' r hc v) =
+      (((ofProd c).symm v).fst, r • ((ofProd c).symm v).snd) :=
+  ofProd_symm_map c LieHom.id (r • LinearMap.id) c' _ v
+
+lemma proj_smulMap (c' : twoCocycle R L M) (r : R) (hc : c' = r • c) (v : ofTwoCocycle c) :
+    proj c' (smulMap c c' r hc v) = proj c v :=
+  proj_map c LieHom.id (r • LinearMap.id) c' _ v
+
+/-- Scaling a 2-cocycle by a unit `u : Rˣ` induces the isomorphism `(x, m) ↦ (x, u • m)` of
+central extensions. -/
+def smulMapEquiv (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c) :
+    ofTwoCocycle c ≃ₗ⁅R⁆ ofTwoCocycle c' :=
+  mapEquiv c LieEquiv.refl (LinearEquiv.smulOfUnit u) c' fun x y ↦ by
+    subst hc; simp [LinearEquiv.smulOfUnit, Units.smul_def]
+
+@[simp]
+lemma smulMapEquiv_ofProd (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c)
+    (x : L) (m : M) :
+    smulMapEquiv c c' u hc (ofProd c (x, m)) = ofProd c' (x, u • m) :=
+  mapEquiv_ofProd c LieEquiv.refl (LinearEquiv.smulOfUnit u) c' _ x m
+
+@[simp]
+lemma ofProd_symm_smulMapEquiv (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c)
+    (v : ofTwoCocycle c) :
+    (ofProd c').symm (smulMapEquiv c c' u hc v) =
+      (((ofProd c).symm v).fst, u • ((ofProd c).symm v).snd) :=
+  ofProd_symm_mapEquiv c LieEquiv.refl (LinearEquiv.smulOfUnit u) c' _ v
+
+@[simp]
+lemma smulMapEquiv_symm_ofProd (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c)
+    (x : L) (m : M) :
+    (smulMapEquiv c c' u hc).symm (ofProd c' (x, m)) = ofProd c (x, u⁻¹ • m) :=
+  mapEquiv_symm_ofProd c LieEquiv.refl (LinearEquiv.smulOfUnit u) c' _ x m
+
+@[simp]
+lemma toLieHom_smulMapEquiv (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c) :
+    (smulMapEquiv c c' u hc).toLieHom = smulMap c c' (u : R) hc :=
+  LieHom.ext fun v ↦ by
+    obtain ⟨⟨x, m⟩, rfl⟩ := (ofProd c).surjective v; simp [Units.smul_def]
+
+/-- The inverse of `smulMapEquiv` is the transport by the reciprocal unit `u⁻¹`. -/
+theorem smulMapEquiv_symm (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c) :
+    (smulMapEquiv c c' u hc).symm =
+      smulMapEquiv c' c u⁻¹ (by rw [hc, smul_smul, Units.inv_mul, one_smul]) := by
+  ext v; obtain ⟨⟨x, m⟩, rfl⟩ := (ofProd c').surjective v; simp
+
+end Smul
+
 section Derivation
 
 variable (D : LieDerivation R L L)
@@ -491,5 +554,27 @@ theorem ofProd_eq_add_smul_centralElement (u : L) (z : TrivialLieModule R L R) :
     smul_zero, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.injEq, true_and]
   apply (TrivialLieModule.equiv R L R).injective
   simp
+
+/-- Scaling a 2-cocycle by `r` sends the canonical central element `K` to `r • K`. -/
+@[simp]
+theorem smulMap_centralElement (c' : twoCocycle R L (TrivialLieModule R L R)) (r : R)
+    (hc : c' = r • c) :
+    smulMap c c' r hc (centralElement c) = r • centralElement c' :=
+  (ofProd c').symm.injective (by simp)
+
+/-- Scaling a 2-cocycle by a unit `u` sends the canonical central element `K` to `u • K`. -/
+@[simp]
+theorem smulMapEquiv_centralElement (c' : twoCocycle R L (TrivialLieModule R L R)) (u : Rˣ)
+    (hc : c' = (u : R) • c) :
+    smulMapEquiv c c' u hc (centralElement c) = (u : R) • centralElement c' :=
+  (ofProd c').symm.injective (by simp [Units.smul_def])
+
+/-- The lifted derivation `derivation c D hD` kills the canonical central element `K`. -/
+@[simp]
+theorem derivation_centralElement (D : LieDerivation R L L)
+    (hD : ∀ x y, (c : twoCochain R L (TrivialLieModule R L R)) (D x) y +
+      (c : twoCochain R L (TrivialLieModule R L R)) x (D y) = 0) :
+    derivation c D hD (centralElement c) = 0 :=
+  (ofProd c).symm.injective (by simp)
 
 end LieAlgebra.ofTwoCocycle

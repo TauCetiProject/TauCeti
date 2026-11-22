@@ -46,12 +46,13 @@ When `P` is a root system, the Cartan center is precisely the line `K ∙ c`
 
 * `RootPairing.Base.affineCartanSymmetrizableDatum`: `b.affineCartanMatrixᵀ` as a
   `TauCeti.SymmetrizableDatum`.
-* `RootPairing.Base.affineCoroot`: the simple coroots `hₖ` in `N × K × K`.
-* `RootPairing.Base.affineRoot`: the simple roots `αₖ` in `Module.Dual K (N × K × K)`.
+* `RootPairing.Base.affineCoroot`: the simple coroots `hₖ` in `N × R × R`.
+* `RootPairing.Base.affineRoot`: the simple roots `αₖ` in `Module.Dual R (N × R × R)`.
 * `RootPairing.Base.affineRealization`: the standard realization of `b.affineCartanMatrixᵀ` on
   `N × K × K`.
 * `RootPairing.Base.affineCentralElement`: the canonical central element `c = ∑ₖ aₖ^∨ hₖ`.
-* `RootPairing.Base.affineNullRoot`: the null root `δ = ∑ₖ aₖ αₖ`.
+* `RootPairing.Base.affineNullRoot`: the null root `δ = ∑ₖ aₖ αₖ`
+  (`RootPairing.Base.affineNullRoot_def`).
 
 ## Main results
 
@@ -111,26 +112,42 @@ theorem affineCartanSymmetrizableDatum_cartan :
     b.affineCartanSymmetrizableDatum.cartan = b.affineCartanMatrixᵀ :=
   (rfl)
 
+/-- The symmetrizer of `affineCartanSymmetrizableDatum` is the root length of the corresponding
+affine simple root under `P.posRootForm ℤ`. -/
+@[simp]
+theorem affineCartanSymmetrizableDatum_symmetrizer (k : Option b.support) :
+    letI : Fintype ι := Fintype.ofFinite ι
+    b.affineCartanSymmetrizableDatum.symmetrizer k =
+      ((P.posRootForm ℤ).rootLength (b.affineSimpleRootIndex k)).toNat :=
+  (rfl)
+
 end Symmetrizable
+
+section CorootsAndRoots
+
+variable {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [Finite ι] [Nonempty ι] (b : P.Base)
+
+/-- The simple coroots in the standard affine realization `N × R × R`: `hᵢ = (αᵢ^∨, 0, 0)` for a
+finite simple root `i` and `h₀ = (-θ^∨, 1, 0)` at the affine node. -/
+noncomputable def affineCoroot : Option b.support → N × R × R
+  | none => (-P.coroot b.highestRoot, 1, 0)
+  | some i => (P.coroot i, 0, 0)
+
+/-- The simple roots in the standard affine realization `N × R × R`: `αᵢ(h, a, t) = ⟨αᵢ, h⟩` for a
+finite simple root `i` and `α₀(h, a, t) = t - ⟨θ, h⟩` at the affine node. -/
+noncomputable def affineRoot : Option b.support → Module.Dual R (N × R × R)
+  | none =>
+      LinearMap.snd R R R ∘ₗ LinearMap.snd R N (R × R) -
+        P.toLinearMap (P.root b.highestRoot) ∘ₗ LinearMap.fst R N (R × R)
+  | some i => P.toLinearMap (P.root i) ∘ₗ LinearMap.fst R N (R × R)
+
+end CorootsAndRoots
 
 section Realization
 
 variable {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M] [AddCommGroup N]
   [Module K N] {P : RootPairing ι K M N} [Finite ι] [Nonempty ι] (b : P.Base)
-
-/-- The simple coroots in the standard affine realization `N × K × K`: `hᵢ = (αᵢ^∨, 0, 0)` for a
-finite simple root `i` and `h₀ = (-θ^∨, 1, 0)` at the affine node. -/
-noncomputable def affineCoroot : Option b.support → N × K × K
-  | none => (-P.coroot b.highestRoot, 1, 0)
-  | some i => (P.coroot i, 0, 0)
-
-/-- The simple roots in the standard affine realization `N × K × K`: `αᵢ(h, a, t) = ⟨αᵢ, h⟩` for a
-finite simple root `i` and `α₀(h, a, t) = t - ⟨θ, h⟩` at the affine node. -/
-noncomputable def affineRoot : Option b.support → Module.Dual K (N × K × K)
-  | none =>
-      LinearMap.snd K K K ∘ₗ LinearMap.snd K N (K × K) -
-        P.toLinearMap (P.root b.highestRoot) ∘ₗ LinearMap.fst K N (K × K)
-  | some i => P.toLinearMap (P.root i) ∘ₗ LinearMap.fst K N (K × K)
 
 variable [P.IsCrystallographic]
 
@@ -141,33 +158,29 @@ noncomputable def affineRealization :
   coroot := b.affineCoroot
   root := b.affineRoot
   coroot_linearIndependent := by
-    rw [Fintype.linearIndependent_iff]
-    intro g hg
-    have hg0 : g none = 0 := by
-      have h2 := congrArg (fun v : N × K × K ↦ v.2.1) hg
-      simpa [Fintype.sum_option, affineCoroot, Prod.fst_sum, Prod.snd_sum] using h2
-    have hg1 : ∑ i : b.support, g (some i) • P.coroot i = 0 := by
-      have h1 := congrArg Prod.fst hg
-      simpa [Fintype.sum_option, affineCoroot, hg0, Prod.fst_sum] using h1
-    intro k
-    rcases k with _ | i
-    · exact hg0
-    · exact Fintype.linearIndependent_iff.mp b.linearIndepOn_coroot (fun j ↦ g (some j)) hg1 i
+    rw [linearIndependent_option]
+    refine ⟨?_, fun hmem ↦ ?_⟩
+    · exact b.linearIndepOn_coroot.map' (LinearMap.inl K N (K × K))
+        (LinearMap.ker_eq_bot.mpr fun _ _ h ↦ (Prod.ext_iff.mp h).1)
+    · let πc : N × K × K →ₗ[K] K := LinearMap.fst K K K ∘ₗ LinearMap.snd K N (K × K)
+      have hker : Submodule.span K (Set.range (b.affineCoroot ∘ some)) ≤ LinearMap.ker πc :=
+        Submodule.span_le.mpr (by rintro _ ⟨i, rfl⟩; simp [πc, affineCoroot])
+      have h0 := LinearMap.mem_ker.mp (hker hmem)
+      simp [πc, affineCoroot] at h0
   root_linearIndependent := by
-    rw [Fintype.linearIndependent_iff]
-    intro g hg
-    have hg0 : g none = 0 := by
-      have hd := congrArg (fun f : Module.Dual K (N × K × K) ↦ f ((0 : N), 0, 1)) hg
-      simpa [Fintype.sum_option, affineRoot] using hd
-    have hg1 : ∑ i : b.support, g (some i) • P.root i = 0 := by
-      apply P.toPerfPair.injective
-      ext h
-      have hh := congrArg (fun f : Module.Dual K (N × K × K) ↦ f (h, 0, 0)) hg
-      simpa [Fintype.sum_option, affineRoot, hg0] using hh
-    intro k
-    rcases k with _ | i
-    · exact hg0
-    · exact Fintype.linearIndependent_iff.mp b.linearIndepOn_root (fun j ↦ g (some j)) hg1 i
+    rw [linearIndependent_option]
+    refine ⟨?_, fun hmem ↦ ?_⟩
+    · let emb : M →ₗ[K] Module.Dual K (N × K × K) :=
+        (LinearMap.fst K N (K × K)).dualMap.comp P.toPerfPair.toLinearMap
+      have hemb_ker : LinearMap.ker emb = ⊥ := LinearMap.ker_eq_bot.mpr fun x y hxy ↦
+        P.toPerfPair.injective <| by ext h; simpa [emb] using LinearMap.congr_fun hxy (h, 0, 0)
+      exact b.linearIndepOn_root.map' emb hemb_ker
+    · let ev : Module.Dual K (N × K × K) →ₗ[K] K :=
+        Module.Dual.eval K (N × K × K) ((0 : N), 0, 1)
+      have hker : Submodule.span K (Set.range (b.affineRoot ∘ some)) ≤ LinearMap.ker ev :=
+        Submodule.span_le.mpr (by rintro _ ⟨i, rfl⟩; simp [ev, affineRoot])
+      have h0 := LinearMap.mem_ker.mp (hker hmem)
+      simp [ev, affineRoot] at h0
   root_coroot k l := by
     rcases k with _ | i <;> rcases l with _ | j <;>
       simp [affineCoroot, affineRoot, RootPairing.root_coroot_eq_pairing,
@@ -204,12 +217,10 @@ theorem affineCentralElement_def :
 theorem affineCentralElement_eq : b.affineCentralElement = (0, 1, 0) := by
   unfold affineCentralElement
   rw [Fintype.sum_option]
-  refine Prod.ext ?_ (Prod.ext ?_ ?_)
-  · simp only [Prod.fst_add, Prod.smul_fst, Prod.fst_sum, affineRealization_coroot_none,
-      affineRealization_coroot_some, affineComarks_none, Int.cast_one, one_smul,
-      Int.cast_smul_eq_zsmul, ← b.coroot_highestRoot_eq_sum_affineComarks, neg_add_cancel]
-  · simp [Prod.snd_sum]
-  · simp [Prod.snd_sum]
+  refine Prod.ext ?_ (Prod.ext (by simp [Prod.snd_sum]) (by simp [Prod.snd_sum]))
+  simp only [Prod.fst_add, Prod.smul_fst, Prod.fst_sum, affineRealization_coroot_none,
+    affineRealization_coroot_some, affineComarks_none, Int.cast_one, one_smul,
+    Int.cast_smul_eq_zsmul, ← b.coroot_highestRoot_eq_sum_affineComarks, neg_add_cancel]
 
 /-- The central element belongs to the coroot span of `b.affineRealization`. -/
 theorem affineCentralElement_mem_corootSpan :
@@ -220,6 +231,12 @@ theorem affineCentralElement_mem_corootSpan :
 /-- The null root `δ = ∑ₖ aₖ αₖ` of `b.affineRealization`. -/
 noncomputable def affineNullRoot : Module.Dual K (N × K × K) :=
   ∑ k : Option b.support, (b.affineMarks k : K) • b.affineRealization.root k
+
+/-- The defining sum formula `δ = ∑ₖ aₖ αₖ` for `b.affineNullRoot`. -/
+theorem affineNullRoot_def :
+    b.affineNullRoot =
+      ∑ k : Option b.support, (b.affineMarks k : K) • b.affineRealization.root k :=
+  (rfl)
 
 /-- **The null root evaluates to the degree coordinate**: `δ (h, a, t) = t`. -/
 @[simp]
@@ -232,8 +249,7 @@ theorem affineNullRoot_apply (h : N) (a t : K) : b.affineNullRoot (h, a, t) = t 
   have hθ : P.toLinearMap (P.root b.highestRoot) h =
       ∑ i : b.support, (b.affineMarks (some i) : K) * P.toLinearMap (P.root i) h := by
     rw [b.root_highestRoot_eq_sum_affineMarks, map_sum, LinearMap.coe_sum, Finset.sum_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [map_zsmul, LinearMap.smul_apply, zsmul_eq_mul]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_zsmul, LinearMap.smul_apply, zsmul_eq_mul]
   rw [hθ]
   ring
 
@@ -246,19 +262,13 @@ theorem cartanCenter_affineRealization [P.IsRootSystem] :
     b.affineCentralElement_eq]
   constructor
   · intro hzero
-    have hh : h = 0 := by
-      apply P.flip.toPerfPair.injective
-      rw [map_zero]
-      refine b.toWeightBasis.ext fun i ↦ ?_
-      have hi := hzero (some i)
-      simpa using hi
-    have ht : t = 0 := by
-      have h0 := hzero none
-      simpa [hh] using h0
+    have hh : h = 0 := P.flip.toPerfPair.injective <| by
+      rw [map_zero]; exact b.toWeightBasis.ext fun i ↦ by simpa using hzero (some i)
+    have ht : t = 0 := by simpa [hh] using hzero none
     exact ⟨a, by simp [hh, ht]⟩
   · rintro ⟨c, hc⟩ k
     have hfst : h = 0 := by simpa using (congrArg Prod.fst hc).symm
-    have ht : t = 0 := by simpa using (congrArg (fun v ↦ v.2.2) hc).symm
+    have ht : t = 0 := by simpa using (congrArg (fun v ↦ v.snd.snd) hc).symm
     rcases k with _ | i <;> simp [hfst, ht]
 
 /-- **The standard affine realization on `N × K × K` is minimal** for any finite crystallographic
