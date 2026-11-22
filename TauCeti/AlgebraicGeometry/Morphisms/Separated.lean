@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 
 /-!
-# Separatedness from an open cover of the source
+# Separated morphisms: a criterion from an open cover, and rigidity
 
 A morphism `f : X ⟶ S` is separated when its diagonal `X ⟶ X ×_S X` is a closed immersion.
 Given an open cover `{Uᵢ}` of `X`, the products `Uᵢ ×_S Uⱼ` cover `X ×_S X`, and the diagonal
@@ -30,6 +30,18 @@ charts, such as the two-chart model of an algebraic function field, is separated
 Separated morphisms compose, so a scheme separated over a separated scheme is itself separated;
 in particular a scheme proper over a separated base, such as a field, is a separated scheme.
 
+Morphisms from a reduced scheme to a separated one are determined by their values on a dense
+set of points. Mathlib states this for a single dominant test morphism
+(`AlgebraicGeometry.ext_of_isDominant_of_isSeparated`) and for the residue-field points
+(`AlgebraicGeometry.ext_of_fromSpecResidueField_eq`); here the test points form an arbitrary
+family, such as a Zariski-dense set of rational points. If the source is moreover irreducible,
+the same holds up to a finite ambiguity: a morphism that agrees at each test point with some
+member of a finite set `W` of morphisms is a member of `W`. The proof covers the source by the
+finitely many closures of the sets of test points on which it agrees with a given member; by
+irreducibility one of these is the whole space. This is the rigidity lemma of Kisin, Madapusi,
+Pappas and Shin (KMPS22, Lemma 2.2.11), used to compare automorphisms of a torus that agree
+pointwise with members of a finite group on a dense set of rational points.
+
 ## Main results
 
 * `AlgebraicGeometry.IsSeparated.of_openCover`: `f` is separated if each piece of an open cover of
@@ -40,6 +52,16 @@ in particular a scheme proper over a separated base, such as a field, is a separ
 * `AlgebraicGeometry.isAffineHom_hasOfPostcompProperty`: since affine morphisms are separated,
   `f` is affine whenever `f ≫ g` and `g` are; this gives finite limits of affine schemes over a
   base, computed in schemes.
+* `AlgebraicGeometry.ext_of_dense_iUnion_range_of_isSeparated`: morphisms from a reduced scheme
+  agreeing over a separated morphism are equal if they agree on a family of morphisms with dense
+  images.
+* `AlgebraicGeometry.exists_mem_eq_of_dense_iUnion_range_of_isSeparated` and its variant `'` over
+  a base scheme: rigidity under a finite set of morphisms from a reduced irreducible scheme.
+
+## References
+
+* [M. Kisin, K. Madapusi Pera, G. Pappas, S. W. Shin, *Honda–Tate theory for Shimura varieties*]
+  (KMPS22), Lemma 2.2.11.
 -/
 
 public section
@@ -88,5 +110,74 @@ theorem Scheme.IsSeparated.of_isSeparated (f : X ⟶ S) [IsSeparated f] [S.IsSep
 instance isAffineHom_hasOfPostcompProperty :
     MorphismProperty.HasOfPostcompProperty @IsAffineHom @IsAffineHom :=
   .of_le _ @IsSeparated fun _ _ _ _ ↦ inferInstance
+
+section Rigidity
+
+variable {Y Z : Scheme.{u}}
+
+/-- **Morphisms agreeing on a dense family of points are equal.** Let `X` be reduced and let
+`f g : X ⟶ Y` agree over some separated `s : Y ⟶ Z`. If `γ i ≫ f = γ i ≫ g` for a family of
+morphisms `γ i : T i ⟶ X` whose images together are dense, then `f = g`.
+
+This generalizes `AlgebraicGeometry.ext_of_fromSpecResidueField_eq`, which tests on the canonical
+residue-field points: here the test points may be arbitrary, for instance rational points
+`Spec k ⟶ X` of a scheme over a field `k`. The proof adapts that of
+`AlgebraicGeometry.ext_of_fromSpecResidueField_eq` in Mathlib. -/
+theorem ext_of_dense_iUnion_range_of_isSeparated [IsReduced X] {f g : X ⟶ Y} (s : Y ⟶ Z)
+    [IsSeparated s] (h : f ≫ s = g ≫ s) {ι : Type*} {T : ι → Scheme.{u}} (γ : ∀ i, T i ⟶ X)
+    (hγ : Dense (⋃ i, Set.range (γ i))) (hfg : ∀ i, γ i ≫ f = γ i ≫ g) : f = g := by
+  suffices IsDominant (equalizer.ι f g) from
+    ext_of_isDominant_of_isSeparated s h (equalizer.ι f g) (equalizer.condition _ _)
+  refine ⟨hγ.mono ?_⟩
+  rintro _ ⟨_, ⟨i, rfl⟩, t, rfl⟩
+  exact ⟨equalizer.lift (γ i) (hfg i) t, by rw [← Scheme.Hom.comp_apply, equalizer.lift_ι]⟩
+
+/-- **Rigidity under a finite set of morphisms.** Let `X` be reduced and irreducible, `W` a finite
+set of morphisms `X ⟶ Y` agreeing with `f` over some separated `s : Y ⟶ Z`, and `γ i : T i ⟶ X` a
+family of morphisms whose images together are dense. If `f` agrees with some member of `W` on each
+`γ i`, then `f` is a member of `W`.
+
+The member may depend on `i`; the conclusion is that one member works everywhere. Typically `X`
+is an algebraic torus over a field `k`, the `γ i` are a Zariski-dense set of `k`-points, and `W` a
+finite group of automorphisms (KMPS22, Lemma 2.2.11). Reducedness is needed: on
+`Spec k[ε]/(ε²)`, `ε ↦ 2ε` fixes the unique point. So is separatedness: on the affine line with
+doubled origin, exchanging the origins fixes the dense punctured line. -/
+theorem exists_mem_eq_of_dense_iUnion_range_of_isSeparated [IsReduced X] [IrreducibleSpace X]
+    (s : Y ⟶ Z) [IsSeparated s] (f : X ⟶ Y) {W : Set (X ⟶ Y)} (hW : W.Finite)
+    (hWs : ∀ w ∈ W, w ≫ s = f ≫ s) {ι : Type*} {T : ι → Scheme.{u}} (γ : ∀ i, T i ⟶ X)
+    (hγ : Dense (⋃ i, Set.range (γ i))) (hfγ : ∀ i, ∃ w ∈ W, γ i ≫ f = γ i ≫ w) :
+    ∃ w ∈ W, f = w := by
+  classical
+  -- The points of the family on which `f` agrees with `w`.
+  let A (w : X ⟶ Y) : Set X := ⋃ i : {i // γ i ≫ f = γ i ≫ w}, Set.range (γ i)
+  have hcover : (Set.univ : Set X) ⊆ ⋃₀ ↑(hW.toFinset.image fun w ↦ closure (A w)) := by
+    rw [← hγ.closure_eq, Finset.coe_image, Set.sUnion_image, Set.Finite.coe_toFinset,
+      ← hW.closure_biUnion]
+    refine closure_mono (Set.iUnion_subset fun i ↦ ?_)
+    obtain ⟨w, hw, hiw⟩ := hfγ i
+    exact (Set.subset_iUnion_of_subset ⟨i, hiw⟩ subset_rfl).trans
+      (Set.subset_biUnion_of_mem (u := A) hw)
+  obtain ⟨_, hz, hsub⟩ := isIrreducible_iff_sUnion_isClosed.mp
+    (IrreducibleSpace.isIrreducible_univ X) _ (by simp) hcover
+  obtain ⟨w, hw, rfl⟩ := Finset.mem_image.mp hz
+  rw [Set.Finite.mem_toFinset] at hw
+  exact ⟨w, hw, ext_of_dense_iUnion_range_of_isSeparated s (hWs w hw).symm
+    (fun i : {i // γ i ≫ f = γ i ≫ w} ↦ γ i) (fun x ↦ hsub (Set.mem_univ x)) fun i ↦ i.property⟩
+
+variable (S) in
+/-- **Rigidity under a finite set of `S`-morphisms.** Let `X` be a reduced, irreducible
+`S`-scheme and `Y` a separated `S`-scheme, for instance over `S = Spec k` for a field `k`. If an
+`S`-morphism `f : X ⟶ Y` agrees, on each member of a family of morphisms `γ i : T i ⟶ X` with
+dense images, with some member of a finite set `W` of `S`-morphisms, then `f` is a member of `W`.
+See `exists_mem_eq_of_dense_iUnion_range_of_isSeparated`. -/
+theorem exists_mem_eq_of_dense_iUnion_range_of_isSeparated' [X.Over S] [Y.Over S] [IsReduced X]
+    [IrreducibleSpace X] [IsSeparated (Y ↘ S)] (f : X ⟶ Y) [f.IsOver S] {W : Set (X ⟶ Y)}
+    (hW : W.Finite) (hWS : ∀ w ∈ W, w.IsOver S) {ι : Type*} {T : ι → Scheme.{u}}
+    (γ : ∀ i, T i ⟶ X) (hγ : Dense (⋃ i, Set.range (γ i)))
+    (hfγ : ∀ i, ∃ w ∈ W, γ i ≫ f = γ i ≫ w) : ∃ w ∈ W, f = w :=
+  exists_mem_eq_of_dense_iUnion_range_of_isSeparated (Y ↘ S) f hW
+    (fun w hw ↦ by have := hWS w hw; simp) γ hγ hfγ
+
+end Rigidity
 
 end AlgebraicGeometry

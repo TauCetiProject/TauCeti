@@ -98,25 +98,25 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_cartierDivisor_restrict_e
         (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU t)) := by
   let ι := {p : Σ V : X.Opens, (SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅
     M.over V) // Nonempty p.1}
-  let W : ι → X.Opens := fun p ↦ p.1.1
+  let W : ι → X.Opens := fun p ↦ p.val.1
   let sf : ∀ p : ι, ((Scheme.cartierDivisorSheaf X).obj.obj (op (W p)) : Type u) := fun p ↦
-    have := p.2
-    Scheme.rationalUnitClass X p.1.1
-      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU p.1.2))
+    have := p.property
+    Scheme.rationalUnitClass X p.val.1
+      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU p.val.2))
   have hcompat : TopCat.Presheaf.IsCompatible (Scheme.cartierDivisorSheaf X).obj W sf := by
     intro p q
-    have := p.2
-    have := q.2
+    have := p.property
+    have := q.property
     have : Nonempty (W p ⊓ W q : X.Opens) := by
       simpa using nonempty_preirreducible_inter (W p).isOpen (W q).isOpen
-        (by simpa using p.2) (by simpa using q.2)
+        (by simpa using p.property) (by simpa using q.property)
     have hp := Scheme.rationalUnitClass_restrict X (U := W p) (V := W p ⊓ W q) inf_le_left
-      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU p.1.2))
+      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU p.val.2))
     have hq := Scheme.rationalUnitClass_restrict X (U := W q) (V := W p ⊓ W q) inf_le_right
-      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU q.1.2))
+      (-Additive.ofMul (trivializationGeneratorRationalUnit M e hU q.val.2))
     refine hp.trans (hq.trans ?_).symm
     rw [map_neg, map_neg, rationalUnitClass_trivializationGeneratorRationalUnit_eq M e hU
-      p.1.2 q.1.2 (homOfLE inf_le_left) (homOfLE inf_le_right)]
+      p.val.2 q.val.2 (homOfLE inf_le_left) (homOfLE inf_le_right)]
   have hcover : ⊤ ≤ iSup W := fun x _ ↦ by
     obtain ⟨V, t, hx⟩ := M.exists_mem_trivialization x
     exact Opens.mem_iSup.mpr ⟨⟨⟨V, t⟩, ⟨⟨x, hx⟩⟩⟩, hx⟩
