@@ -10,9 +10,11 @@ public import Mathlib.Probability.Martingale.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.MeasureTheory.Function.Lp.Bounded
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.Probability.Martingale.Basic
 import TauCeti.Probability.Martingale.QuadraticVariation
+import TauCeti.Probability.Process.Adapted
 import TauCeti.Probability.Process.QuadraticVariation
 import TauCeti.Topology.Instances.Real.UniformGrid
 

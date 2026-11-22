@@ -125,17 +125,14 @@ theorem exists_isStronglyPredictable_indist_sub_initialValue_isFilteredPreBrowni
   obtain ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
     hM.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub (A := fun t _ ↦ (t : ℝ)) hQ
       NNReal.continuous_coe.isStronglyPredictable_fst hcont (ae_of_all P fun _ _ ↦ rfl)
-  have hY0 : StronglyMeasurable[ℱ ⊥] (Y 0) := by
-    simpa only [bot_eq_zero] using hYp.isStronglyProgressive.stronglyAdapted 0
-  have hY0' : StronglyMeasurable[ℱ 0] (Y 0) := by simpa only [← bot_eq_zero] using hY0
-  have hWp : IsStronglyPredictable ℱ (fun t ω ↦ Y t ω - Y 0 ω) :=
-    StronglyMeasurable.sub hYp hY0.isStronglyPredictable_snd
+  have hWp : IsStronglyPredictable ℱ (fun t ω ↦ Y t ω - Y 0 ω) := by
+    simpa only [bot_eq_zero] using hYp.sub_initialValue
   have hFW : IsFilteredPreBrownianReal ℱ (fun t ω ↦ Y t ω - Y 0 ω) P :=
     isFilteredPreBrownianReal_sub_initialValue hYl hQY hYc
       hYp.isStronglyProgressive.stronglyAdapted.adapted
   have hWc : ∀ᵐ ω ∂P, Continuous (fun t ↦ Y t ω - Y 0 ω) :=
     hYc.mono fun _ h ↦ h.sub continuous_const
-  exact ⟨Y 0, fun t ω ↦ Y t ω - Y 0 ω, hY0', hWp,
+  exact ⟨Y 0, fun t ω ↦ Y t ω - Y 0 ω, hYp.stronglyAdapted 0, hWp,
     hYM.mono fun _ hω t ↦ by simp [hω t], hYM.mono fun _ hω t ↦ by simp [hω t, hω 0],
     ⟨hFW.toIsPreBrownianReal, hWc⟩, hFW⟩
 

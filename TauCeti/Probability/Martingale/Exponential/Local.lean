@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.LocalProperty
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Algebra.Order.AddGroupWithTop
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Basic
+import TauCeti.Order.WithBot
 import TauCeti.Probability.Martingale.ContinuousStopping
 import TauCeti.Probability.Martingale.Exponential.Bounded
 import TauCeti.Probability.Martingale.Local.Bounded
@@ -54,6 +56,11 @@ private abbrev expLoc (N : ℝ≥0 → Ω → ℝ) (c α : ℝ) (t : ℝ≥0) (�
 private abbrev stopExp (N : ℝ≥0 → Ω → ℝ) (c α : ℝ) (τ : Ω → WithTop ℝ≥0) (t : ℝ≥0) (ω : Ω) : ℂ :=
   exp (I * α * stopPos N τ t ω + ((α ^ 2 / 2 * stopPos (linProc c) τ t ω : ℝ) : ℂ))
 
+private lemma stopPos_zero (X : ℝ≥0 → Ω → ℝ) (τ : Ω → WithTop ℝ≥0) (ω : Ω) :
+    stopPos X τ 0 ω = {ω | 0 < τ ω}.indicator (X 0) ω := by
+  dsimp only [stopPos]
+  rw [← NNReal.bot_eq_zero, stoppedProcess_bot]
+
 private lemma norm_exp_I_mul_mul_add (α x y : ℝ) :
     ‖exp (I * (α : ℂ) * (x : ℂ) + (y : ℂ))‖ = Real.exp y := by simp [Complex.norm_exp]
 private lemma stronglyMeasurable_exp_I_mul_add {m : MeasurableSpace Ω} {f : Ω → ℝ}
@@ -68,11 +75,41 @@ private lemma stoppedProcess_indicator_linear (c : ℝ) (τ : Ω → WithTop ℝ
   · rfl
   · rw [not_lt, le_bot_iff] at h
     rw [h, min_eq_right bot_le]
-    simp only [untopA_bot, NNReal.bot_eq_zero, NNReal.coe_zero, mul_zero]
+    simp only [WithTop.untopA_bot, NNReal.bot_eq_zero, NNReal.coe_zero, mul_zero]
 
 variable {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 
 variable {P : Measure Ω} [IsFiniteMeasure P]
+
+private lemma tendsto_integral_stopPos_linProc (c : ℝ) {τ : ℕ → Ω → WithTop ℝ≥0}
+    (hτ : IsLocalizingSequence ℱ τ P)
+    (hAn_m : ∀ n, AEStronglyMeasurable (stopPos (linProc c) (τ n) 1) P)
+    (hAn_bd : ∀ n ω, ‖stopPos (linProc c) (τ n) 1 ω‖ ≤ |c|) :
+    Tendsto (fun n ↦ ∫ ω, stopPos (linProc c) (τ n) 1 ω ∂P) atTop (𝓝 (c * P.real univ)) := by
+  simpa only [integral_const, smul_eq_mul, mul_comm, Measure.real] using
+    tendsto_integral_of_dominated_convergence (F := fun n ↦ stopPos (linProc c) (τ n) 1)
+      (f := fun _ ↦ c) (fun _ ↦ |c|) hAn_m (integrable_const _) (fun n ↦ ae_of_all P (hAn_bd n))
+      (hτ.tendsto_top.mono fun _ hω ↦ tendsto_const_nhds.congr' <|
+        (eventually_stoppedProcess_indicator_pos_eq_of_tendsto (X := linProc c) (u := 1)
+          hω).mono fun _ h ↦ by
+          simpa only [stopPos, bot_eq_zero, linProc, NNReal.coe_one, mul_one] using h.symm)
+
+private lemma integral_stopPos_linProc_nonneg {N : ℝ≥0 → Ω → ℝ} {c : ℝ}
+    (hN0 : ∀ ω, N 0 ω = 0) (τ : Ω → WithTop ℝ≥0)
+    (hQ : Martingale (fun t ω ↦ stopPos N τ t ω ^ 2 - stopPos (linProc c) τ t ω) ℱ P)
+    (hAm : AEStronglyMeasurable (stopPos (linProc c) τ 1) P)
+    (hAbd : ∀ ω, ‖stopPos (linProc c) τ 1 ω‖ ≤ |c|) :
+    0 ≤ ∫ ω, stopPos (linProc c) τ 1 ω ∂P := by
+  have h0 := hQ.setIntegral_eq (i := 0) (j := 1) bot_le MeasurableSet.univ
+  have h0_eq : (fun ω ↦ stopPos N τ 0 ω ^ 2 - stopPos (linProc c) τ 0 ω) = fun _ ↦ 0 := by
+    ext ω
+    simp [stopPos_zero, Set.indicator_apply, hN0, linProc]
+  rw [Measure.restrict_univ, h0_eq, integral_zero] at h0
+  have hle := integral_mono (hQ.integrable 1).neg
+    ((integrable_const |c|).mono' hAm (ae_of_all P hAbd)) fun ω ↦ by
+      dsimp only [Pi.neg_apply]; linarith [sq_nonneg (stopPos N τ 1 ω)]
+  dsimp only [Pi.neg_apply] at hle
+  rwa [integral_neg, ← h0, neg_zero] at hle
 
 private lemma nonneg_of_stopped_sq_sub_linear (hP : P ≠ 0) {N : ℝ≥0 → Ω → ℝ} {c : ℝ}
     (hN0 : ∀ ω, N 0 ω = 0) {τ : ℕ → Ω → WithTop ℝ≥0} (hτ : IsLocalizingSequence ℱ τ P)
@@ -86,32 +123,11 @@ private lemma nonneg_of_stopped_sq_sub_linear (hP : P ≠ 0) {N : ℝ≥0 → Ω
   have hAn_bd n ω : ‖stopPos (linProc c) (τ n) 1 ω‖ ≤ |c| := by
     simpa [stoppedProcess_indicator_linear, Real.norm_eq_abs, abs_mul,
       abs_of_nonneg (NNReal.coe_nonneg _)] using
-      mul_le_mul_of_nonneg_left (NNReal.coe_le_coe.2 (untopA_coe_min_le 1 (τ n ω))) (abs_nonneg c)
-  refine nonneg_of_mul_nonneg_left (ge_of_tendsto' (by
-    simpa only [integral_const, smul_eq_mul, mul_comm, Measure.real] using
-      tendsto_integral_of_dominated_convergence (F := fun n ↦ stopPos (linProc c) (τ n) 1)
-        (f := fun _ ↦ c) (fun _ ↦ |c|) hAn_m (integrable_const _) (fun n ↦ ae_of_all P (hAn_bd n))
-        (hτ.tendsto_top.mono fun _ hω ↦ tendsto_const_nhds.congr' <|
-          (eventually_stoppedProcess_indicator_pos_eq_of_tendsto (X := linProc c) (u := 1)
-            hω).mono fun _ h ↦ by
-            simpa only [stopPos, bot_eq_zero, linProc, NNReal.coe_one, mul_one] using h.symm))
-      fun n ↦ by
-        have h0 := (hQn n).setIntegral_eq (i := 0) (j := 1) bot_le MeasurableSet.univ
-        have h0_eq : (fun ω ↦ stopPos N (τ n) 0 ω ^ 2 - stopPos (linProc c) (τ n) 0 ω) =
-            fun _ ↦ 0 := by
-          ext ω
-          have hN0' : stopPos N (τ n) 0 ω = 0 := by
-            dsimp only [stopPos]; rw [← NNReal.bot_eq_zero, stoppedProcess_bot]; simp [hN0]
-          have hL0' : stopPos (linProc c) (τ n) 0 ω = 0 := by
-            dsimp only [stopPos]; rw [← NNReal.bot_eq_zero, stoppedProcess_bot]
-            simp only [Set.indicator_apply, linProc, NNReal.bot_eq_zero, NNReal.coe_zero,
-              mul_zero, ite_self]
-          rw [hN0', hL0']; norm_num
-        rw [Measure.restrict_univ, h0_eq, integral_zero] at h0
-        have hle := integral_mono ((hQn n).integrable 1).neg ((integrable_const |c|).mono' (hAn_m n)
-          (ae_of_all P (hAn_bd n))) fun ω ↦ by
-            dsimp only [Pi.neg_apply]; linarith [sq_nonneg (stopPos N (τ n) 1 ω)]
-        dsimp only [Pi.neg_apply] at hle; rwa [integral_neg, ← h0, neg_zero] at hle)
+      mul_le_mul_of_nonneg_left (NNReal.coe_le_coe.2 (WithTop.untopA_coe_min_le 1 (τ n ω)))
+        (abs_nonneg c)
+  exact nonneg_of_mul_nonneg_left
+    (ge_of_tendsto' (tendsto_integral_stopPos_linProc c hτ hAn_m hAn_bd) fun n ↦
+      integral_stopPos_linProc_nonneg hN0 (τ n) (hQn n) (hAn_m n) (hAn_bd n))
     (ENNReal.toReal_pos (Measure.measure_univ_ne_zero.2 hP) (measure_ne_top P _))
 
 /-- **Nonnegativity of a linear bracket coefficient.**
@@ -150,15 +166,23 @@ private lemma martingale_stopped_exp {N : ℝ≥0 → Ω → ℝ} {c : ℝ} (hc 
       split_ifs
       · exact hω (min (u : WithTop ℝ≥0) (σ ω)).untopA
       · simpa only [Real.norm_eq_abs, abs_zero] using hR)
-    (ae_of_all P fun ω ↦ by
-      dsimp only [stopPos]
-      rw [← NNReal.bot_eq_zero, stoppedProcess_bot]
-      simp only [Set.indicator_apply, linProc, NNReal.bot_eq_zero, NNReal.coe_zero,
-        mul_zero, ite_self])
+    (ae_of_all P fun ω ↦ by simp [stopPos_zero])
     (fun _ _ huv ↦ ae_of_all P fun ω ↦ by
+      have hmap (t : ℝ≥0) : ((min (t : WithTop ℝ≥0) (σ ω)).untopA : ℝ) =
+          (min ((t : ℝ) : WithTop ℝ) ((σ ω).map NNReal.toReal)).untopA := by
+        by_cases htop : σ ω = ⊤
+        · rw [htop, WithTop.map_top, min_eq_left le_top, min_eq_left le_top, WithTop.untopA,
+            WithTop.untopA, WithTop.untopD_coe, WithTop.untopD_coe]
+        · obtain ⟨a, ha⟩ := WithTop.ne_top_iff_exists.mp htop
+          rw [← ha, WithTop.map_coe, ← WithTop.coe_min, ← WithTop.coe_min, WithTop.untopA,
+            WithTop.untopA, WithTop.untopD_coe, WithTop.untopD_coe, NNReal.coe_min]
       simp only [stoppedProcess_indicator_linear, ← mul_sub]
-      exact ⟨mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 (untopA_coe_min_mono _ huv))),
-        mul_le_mul_of_nonneg_left (coe_untopA_coe_min_sub_le (σ ω) huv) hc⟩) α
+      refine ⟨mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2
+          (WithTop.monotone_untopA_min_coe _ huv))), ?_⟩
+      rw [hmap, hmap]
+      exact mul_le_mul_of_nonneg_left
+        (WithTop.untopA_coe_min_sub_le ((σ ω).map NNReal.toReal) (NNReal.coe_le_coe.2 huv)) hc)
+    α
 
 private lemma martingale_of_tendsto_stopped_exp {N : ℝ≥0 → Ω → ℝ} {c : ℝ} (hc : 0 ≤ c) (α : ℝ)
     {τ : ℕ → Ω → WithTop ℝ≥0} (hτ : IsLocalizingSequence ℱ τ P)
@@ -176,7 +200,7 @@ private lemma martingale_of_tendsto_stopped_exp {N : ℝ≥0 → Ω → ℝ} {c 
         rw [stopExp, norm_exp_I_mul_mul_add, stoppedProcess_indicator_linear]
         exact Real.exp_le_exp.2 (by
           nlinarith [sq_nonneg α, mul_le_mul_of_nonneg_left
-            (NNReal.coe_le_coe.2 (untopA_coe_min_le u (τ n ω))) hc])))
+            (NNReal.coe_le_coe.2 (WithTop.untopA_coe_min_le u (τ n ω))) hc])))
       (ae_restrict_of_ae <| hτ.tendsto_top.mono fun _ hω ↦ tendsto_const_nhds.congr' <|
         (eventually_stoppedProcess_indicator_pos_eq_of_tendsto (X := N) (u := u) hω).mp
           ((eventually_stoppedProcess_indicator_pos_eq_of_tendsto (X := linProc c) (u := u)

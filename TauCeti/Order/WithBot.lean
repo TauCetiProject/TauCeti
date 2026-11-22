@@ -21,6 +21,8 @@ of several meromorphic functions. In a nonempty linear order, truncating a `With
 
 * `WithTop.exists_le_and_coe_le`: for `x : WithTop α` and `a : α` there is `b ≤ a` with `↑b ≤ x`.
 * `WithTop.monotone_untopA_min_coe`: `s ↦ (min (s : WithTop α) τ).untopA` is monotone.
+* `WithTop.untopA_coe_min_le`: `(min (t : WithTop α) x).untopA ≤ t`.
+* `WithTop.untopA_bot`: `(⊥ : WithTop α).untopA = ⊥`.
 -/
 
 public section
@@ -44,5 +46,15 @@ theorem monotone_untopA_min_coe [LinearOrder α] [Nonempty α] (τ : WithTop α)
     Monotone fun s : α ↦ (min (s : WithTop α) τ).untopA :=
   fun _ _ hst ↦ WithTop.untopA_mono (ne_top_of_le_ne_top WithTop.coe_ne_top inf_le_left)
     (inf_le_inf_right τ (WithTop.coe_le_coe.mpr hst))
+
+/-- Truncating `t` at `x : WithTop α` is bounded above by `t`. -/
+theorem untopA_coe_min_le [LinearOrder α] [Nonempty α] (t : α) (x : WithTop α) :
+    (min (t : WithTop α) x).untopA ≤ t :=
+  WithTop.untopA_le (min_le_left _ _)
+
+/-- Unwrapping `⊥ : WithTop α` yields `⊥ : α`. -/
+@[simp]
+theorem untopA_bot [Bot α] [Nonempty α] : (⊥ : WithTop α).untopA = (⊥ : α) := by
+  rw [← WithTop.coe_bot, WithTop.untopA, WithTop.untopD_coe]
 
 end WithTop

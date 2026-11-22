@@ -444,6 +444,27 @@ theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_snd {ι Ω E : Ty
     IsStronglyPredictable ℱ (fun _ ω ↦ ξ ω) :=
   hξ.comp_measurable ℱ.measurable_snd_bot_predictable
 
+/-- The initial value of a strongly predictable process is `ℱ ⊥`-strongly measurable. -/
+theorem MeasureTheory.IsStronglyPredictable.stronglyMeasurable_bot {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι] [TopologicalSpace E]
+    {ℱ : Filtration ι m} {H : ι → Ω → E} (hH : IsStronglyPredictable ℱ H) :
+    StronglyMeasurable[ℱ ⊥] (H ⊥) := by
+  let : MeasurableSpace Ω := ℱ ⊥
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  refine hH.comp_measurable (measurable_generateFrom (f := fun ω : Ω ↦ (⊥, ω)) fun u hu ↦ ?_)
+  rcases hu with ⟨A, hA, rfl⟩ | ⟨s, A, _, rfl⟩
+  · simpa [Set.preimage] using hA
+  · simp [Set.preimage, not_lt_of_ge (bot_le : ⊥ ≤ s)]
+
+/-- Centering a strongly predictable process by its initial value preserves strong
+predictability. -/
+theorem MeasureTheory.IsStronglyPredictable.sub_initialValue {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [PartialOrder ι] [OrderBot ι] [TopologicalSpace E]
+    [Sub E] [ContinuousSub E] {ℱ : Filtration ι m} {H : ι → Ω → E}
+    (hH : IsStronglyPredictable ℱ H) :
+    IsStronglyPredictable ℱ (fun t ω ↦ H t ω - H ⊥ ω) :=
+  StronglyMeasurable.sub hH hH.stronglyMeasurable_bot.isStronglyPredictable_snd
+
 /-- A predictably measurable function, extended by zero outside a measurable set of times,
 defines a strongly predictable process. In particular, the time predicate can impose a
 deterministic maturity cutoff without any continuity assumption at maturity. -/

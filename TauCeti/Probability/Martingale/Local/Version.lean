@@ -109,12 +109,12 @@ theorem TauCeti.Probability.exists_isStronglyPredictable_indist_prod_sub_initial
         (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω - A i j t ω) P) := by
   choose Y hYp hYc hYM hYl using fun i ↦
     (hM i).exists_isStronglyPredictable_indist_locally_martingale_of_ae_continuous (hcont i)
-  have hY0 i : StronglyMeasurable[ℱ ⊥] (Y i 0) := by
-    simpa only [bot_eq_zero] using (hYp i).isStronglyProgressive.stronglyAdapted 0
   have hQp i j : IsStronglyPredictable ℱ
-      (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω - A i j t ω) :=
-    StronglyMeasurable.sub (StronglyMeasurable.sub ((hYp i).mul (hYp j))
-      ((hY0 i).mul (hY0 j)).isStronglyPredictable_snd) (hA i j)
+      (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω - A i j t ω) := by
+    have hmul_sub : IsStronglyPredictable ℱ
+        (fun t ω ↦ Y i t ω * Y j t ω - Y i 0 ω * Y j 0 ω) := by
+      simpa only [bot_eq_zero] using ((hYp i).mul (hYp j)).sub_initialValue
+    exact StronglyMeasurable.sub hmul_sub (hA i j)
   exact ⟨Y, hYp, hYM, hYc, hYl, hQp, fun i j ↦
     (hQp i j).isStronglyProgressive.locally_martingale_of_indist (hQ i j) <|
       (hYM i).mp <| (hYM j).mp <| (hQM i j).mono fun _ hq hj hi t ↦ by
@@ -163,18 +163,17 @@ theorem ProbabilityTheory.Locally.exists_isStronglyPredictable_indist_centered_s
       Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦ N t ω ^ 2 - A t ω) P := by
   obtain ⟨Y, hYp, hYM, hYc, hYl, hQp, hQY⟩ :=
     hM.exists_isStronglyPredictable_indist_sq_sub_initialValue_sub hQ hA hcont hQM
-  have hY0 : StronglyMeasurable[ℱ ⊥] (Y 0) := by
-    simpa only [bot_eq_zero] using hYp.isStronglyProgressive.stronglyAdapted 0
-  have hNp : IsStronglyPredictable ℱ (fun t ω ↦ Y t ω - Y 0 ω) :=
-    StronglyMeasurable.sub hYp hY0.isStronglyPredictable_snd
+  have hNp : IsStronglyPredictable ℱ (fun t ω ↦ Y t ω - Y 0 ω) := by
+    simpa only [bot_eq_zero] using hYp.sub_initialValue
   have hNAp : IsStronglyPredictable ℱ (fun t ω ↦ (Y t ω - Y 0 ω) ^ 2 - A t ω) := by
     simp_rw [sq]; exact StronglyMeasurable.sub (hNp.mul hNp) hA
   refine ⟨fun t ω ↦ Y t ω - Y 0 ω, hNp, fun _ ↦ sub_self _,
     hYM.mono fun _ hω t ↦ by simp [hω t, hω 0], hYc.mono fun _ h ↦ h.sub continuous_const,
     hYl.martingale_sub_initialValue, hNAp, ?_⟩
-  have h2Y0 : StronglyMeasurable[ℱ ⊥] (fun ω ↦ 2 * Y 0 ω) := stronglyMeasurable_const.mul hY0
-  have h2Y0' : StronglyMeasurable[ℱ 0] (fun ω ↦ 2 * Y 0 ω) := by
-    simpa only [← bot_eq_zero] using h2Y0
+  have h2Y0' : StronglyMeasurable[ℱ 0] (fun ω ↦ 2 * Y 0 ω) :=
+    stronglyMeasurable_const.mul (hYp.stronglyAdapted 0)
+  have h2Y0 : StronglyMeasurable[ℱ ⊥] (fun ω ↦ 2 * Y 0 ω) := by
+    simpa only [← bot_eq_zero] using h2Y0'
   convert hQY.martingale_sub (by simpa only [smul_eq_mul, bot_eq_zero] using
       hYl.martingale_sub_initialValue.martingale_smul_initial h2Y0') hQp.isStronglyProgressive
     (h2Y0.isStronglyPredictable_snd.mul hNp).isStronglyProgressive

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Stopping
+import TauCeti.Order.WithBot
 
 /-!
 # Stopping times and stopped paths
@@ -28,8 +29,7 @@ fact requires a stopping-time or measurability assumption. Restricting a strongl
 process to `{⊥ < τ}` before stopping preserves strong progressivity
 (`MeasureTheory.IsStronglyProgressive.stoppedProcess_indicator_pos`). Under a finite measure,
 truncating an almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound
-`T : ℝ≥0` yields an integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`),
-with monotonicity and increment bounds for `fun t ↦ (min (t : WithTop ι) x).untopA`.
+`T : ℝ≥0` yields an integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
@@ -59,6 +59,15 @@ theorem Finset.isStoppingTime_sup {κ ι Ω : Type*}
 
 open Filter Set TopologicalSpace
 open scoped Topology
+
+/-- Stopping a process restricted to an event yields the stopped path on that event and the zero
+path outside it. -/
+theorem MeasureTheory.stoppedProcess_indicator_path {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [Zero E] (X : ι → Ω → E) (s : Set Ω) (τ : Ω → WithTop ι) (ω : Ω) [Decidable (ω ∈ s)] :
+    (fun t ↦ MeasureTheory.stoppedProcess (fun u ↦ s.indicator (X u)) τ t ω) =
+      if ω ∈ s then (fun t ↦ MeasureTheory.stoppedProcess X τ t ω) else 0 := by
+  ext t
+  by_cases h : ω ∈ s <;> simp [MeasureTheory.stoppedProcess_indicator_comm, h]
 
 /-- Stopping preserves continuity of a path, without any measurability or stopping-time
 assumption on the random time. At an infinite stopping time the path is unchanged. -/
@@ -101,15 +110,8 @@ theorem Continuous.stoppedProcess_indicator {ι Ω E : Type*} [LinearOrder ι] [
     {X : ι → Ω → E} {s : Set Ω} {τ : Ω → WithTop ι} {ω : Ω} (hX : Continuous (X · ω)) :
     Continuous (MeasureTheory.stoppedProcess (fun t ↦ s.indicator (X t)) τ · ω) := by
   classical
-  by_cases h : ω ∈ s
-  · have heq : (fun t ↦ MeasureTheory.stoppedProcess (fun u ↦ s.indicator (X u)) τ t ω) =
-        fun t ↦ MeasureTheory.stoppedProcess X τ t ω := by
-      ext t; simp [MeasureTheory.stoppedProcess_indicator_comm, h]
-    rw [heq]; exact hX.stoppedProcess
-  · have heq : (fun t ↦ MeasureTheory.stoppedProcess (fun u ↦ s.indicator (X u)) τ t ω) =
-        fun _ ↦ (0 : E) := by
-      ext t; simp [MeasureTheory.stoppedProcess_indicator_comm, h]
-    rw [heq]; exact continuous_const
+  rw [MeasureTheory.stoppedProcess_indicator_path]
+  split_ifs <;> [exact hX.stoppedProcess; exact continuous_const]
 
 /-- Stopping a process restricted to an event preserves right continuity of a path at each
 time. -/
@@ -120,15 +122,8 @@ theorem ContinuousWithinAt.stoppedProcess_indicator {ι Ω E : Type*} [LinearOrd
     ContinuousWithinAt
       (MeasureTheory.stoppedProcess (fun u ↦ s.indicator (X u)) τ · ω) (Ioi t) t := by
   classical
-  by_cases h : ω ∈ s
-  · have heq : (fun u ↦ MeasureTheory.stoppedProcess (fun v ↦ s.indicator (X v)) τ u ω) =
-        fun u ↦ MeasureTheory.stoppedProcess X τ u ω := by
-      ext u; simp [MeasureTheory.stoppedProcess_indicator_comm, h]
-    rw [heq]; exact hX.stoppedProcess
-  · have heq : (fun u ↦ MeasureTheory.stoppedProcess (fun v ↦ s.indicator (X v)) τ u ω) =
-        fun _ ↦ (0 : E) := by
-      ext u; simp [MeasureTheory.stoppedProcess_indicator_comm, h]
-    rw [heq]; exact continuousWithinAt_const
+  rw [MeasureTheory.stoppedProcess_indicator_path]
+  split_ifs <;> [exact hX.stoppedProcess; exact continuousWithinAt_const]
 
 namespace MeasureTheory
 
@@ -299,41 +294,7 @@ theorem IsStronglyProgressive.stoppedProcess_indicator_pos
   rw [stoppedProcess_indicator_comm]
   by_cases hω : (⊥ : WithTop ι) < τ ω <;> simp [hω]
 
-/-- Truncating `t` at `x : WithTop ι` is bounded above by `t`. -/
-theorem untopA_coe_min_le {ι : Type*} [LinearOrder ι] [Nonempty ι] (t : ι) (x : WithTop ι) :
-    (min (t : WithTop ι) x).untopA ≤ t :=
-  WithTop.untopA_le (min_le_left _ _)
-
-/-- Truncating `t` at `x : WithTop ι` is monotone in `t`. -/
-theorem untopA_coe_min_mono {ι : Type*} [LinearOrder ι] [Nonempty ι] (x : WithTop ι) :
-    Monotone (fun t : ι ↦ (min (t : WithTop ι) x).untopA) := by
-  cases x with
-  | top => intro _ _ h; simpa [WithTop.untopA] using h
-  | coe a =>
-    intro _ _ h
-    simp only [← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe]
-    gcongr
-
-/-- Unwrapping `⊥ : WithTop ι` yields `⊥ : ι`. -/
-@[simp]
-theorem untopA_bot {ι : Type*} [LinearOrder ι] [OrderBot ι] :
-    (⊥ : WithTop ι).untopA = ⊥ := by
-  rw [← WithTop.coe_bot, WithTop.untopA, WithTop.untopD_coe]
-
 open scoped NNReal
-
-/-- Truncating `u ≤ v` in `ℝ≥0` at `x : WithTop ℝ≥0` has increment at most `v - u`. -/
-theorem coe_untopA_coe_min_sub_le (x : WithTop ℝ≥0) {u v : ℝ≥0} (huv : u ≤ v) :
-    ((min (v : WithTop ℝ≥0) x).untopA : ℝ) - ((min (u : WithTop ℝ≥0) x).untopA : ℝ) ≤
-      (v : ℝ) - u := by
-  cases x with
-  | top => rw [min_eq_left le_top, min_eq_left le_top, WithTop.untopA, WithTop.untopD_coe,
-      WithTop.untopD_coe]
-  | coe a =>
-    simp only [← WithTop.coe_min, WithTop.untopA, WithTop.untopD_coe, NNReal.coe_min]
-    simp only [min_def]
-    have hvu : (u : ℝ) ≤ v := huv
-    split_ifs <;> linarith
 
 /-- For any almost everywhere measurable `WithTop ℝ≥0`-valued function and deterministic horizon
 `T`, the truncated value `(min T (τ ω)).untopA` is integrable under any finite measure. -/
@@ -346,6 +307,6 @@ theorem integrable_untopA_const_min {Ω : Type*} {_ : MeasurableSpace Ω} {P : M
       (hτ.ae_eq_mk.symm.fun_comp fun x : WithTop ℝ≥0 ↦ ((min (T : WithTop ℝ≥0) x).untopA : ℝ))) T
     (.of_forall fun ω ↦ by
       rw [Real.norm_eq_abs, abs_of_nonneg (NNReal.coe_nonneg _), NNReal.coe_le_coe]
-      exact untopA_coe_min_le T (τ ω))
+      exact WithTop.untopA_coe_min_le T (τ ω))
 
 end MeasureTheory

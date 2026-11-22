@@ -19,6 +19,8 @@ directly since `WithTop G` is not a group.
 
 * `WithTop.coe_le_add_coe_iff`: `k ≤ x + c ↔ k - c ≤ x`.
 * `WithTop.coe_sub_le_sub_coe_iff`: `k - c ≤ x - c ↔ k ≤ x`.
+* `WithTop.untopA_coe_min_sub_le`:
+  `(min (v : WithTop G) x).untopA - (min (u : WithTop G) x).untopA ≤ v - u`.
 -/
 
 public section
@@ -37,5 +39,20 @@ theorem coe_le_add_coe_iff : (k : WithTop G) ≤ x + c ↔ ((k - c : G) : WithTo
 theorem coe_sub_le_sub_coe_iff : ((k - c : G) : WithTop G) ≤ x - c ↔ (k : WithTop G) ≤ x := by
   rw [LinearOrderedAddCommGroup.coe_sub,
     LinearOrderedAddCommGroupWithTop.sub_le_sub_iff_left_of_ne_top coe_ne_top]
+
+/-- Truncating `u ≤ v` in a linearly ordered additive commutative group at `x : WithTop G` has
+increment at most `v - u`. -/
+theorem untopA_coe_min_sub_le (x : WithTop G) {u v : G} (huv : u ≤ v) :
+    (min (v : WithTop G) x).untopA - (min (u : WithTop G) x).untopA ≤ v - u := by
+  cases x with
+  | top => simp
+  | coe a =>
+    simp only [← coe_min, untopA, untopD_coe, sub_eq_add_neg]
+    rcases le_total u a with hua | hau
+    · rw [min_eq_left hua]
+      exact add_le_add_left (min_le_left _ _) _
+    · rw [min_eq_right hau, min_eq_right (hau.trans huv), add_neg_cancel, add_comm v (-u),
+        ← neg_add_cancel u]
+      exact add_le_add_right huv (-u)
 
 end WithTop
