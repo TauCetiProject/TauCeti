@@ -35,9 +35,11 @@ to a diffeomorphism
 
 `(ι → ℝ) ⧸ ℤ 1 ≃ (ℝ / ℤ) × ({i // i ≠ i₀} → ℝ)`
 
-(`TauCeti.diagonalQuotientDiffeomorph`), whose inverse sends `(t mod 1, v)` to the class of the
-configuration with `q_(i₀) = t` and `q_i = t + v_i`
-(`TauCeti.diagonalQuotientDiffeomorph_symm_coe`).
+(`TauCeti.diagonalQuotientDiffeomorph`). As a map it is the additive equivalence
+`TauCeti.diagonalQuotientAddEquiv` (`TauCeti.coe_diagonalQuotientDiffeomorph`), which sends the
+class of `q` to these coordinates (`TauCeti.diagonalQuotientAddEquiv_coe`), and whose inverse sends
+`(t mod 1, v)` to the class of the configuration with `q_(i₀) = t` and `q_i = t + v_i`
+(`TauCeti.diagonalQuotientAddEquiv_symm_coe`).
 So the quotient is the product of a circle with a vector space of one dimension less than `ι → ℝ`.
 
 **The cyclic action.** For generating functions `S_i`, `i ∈ ℤ/N`, invariant under the diagonal
@@ -66,7 +68,7 @@ image (`TauCeti.isCompact_image_mk_of_forall_abs_sub_le`): every class has a rep
 
 ## Main results
 
-* `TauCeti.diagonalQuotientDiffeomorph_coe`, `TauCeti.diagonalQuotientDiffeomorph_symm_coe`: the
+* `TauCeti.diagonalQuotientAddEquiv_coe`, `TauCeti.diagonalQuotientAddEquiv_symm_coe`: the
   coordinates of the diagonal quotient and their inverse.
 * `TauCeti.isCompact_image_mk_of_forall_abs_sub_le`: compact subsets of the diagonal quotient.
 * `TauCeti.contMDiffAt_quotientCyclicAction`, `TauCeti.contMDiff_quotientCyclicAction`: the
@@ -266,25 +268,6 @@ theorem coe_diagonalQuotientDiffeomorph :
 theorem coe_diagonalQuotientDiffeomorph_symm :
     ⇑(diagonalQuotientDiffeomorph i₀ n).symm = (diagonalQuotientAddEquiv i₀).symm :=
   (rfl)
-
-/-- The diffeomorphism sends the class of `q` to `(q_(i₀) mod 1, (q_i - q_(i₀))_(i ≠ i₀))`. -/
-theorem diagonalQuotientDiffeomorph_coe (q : ι → ℝ) :
-    diagonalQuotientDiffeomorph i₀ n (q : (ι → ℝ) ⧸ AddSubgroup.zmultiples (1 : ι → ℝ)) =
-      ((q i₀ : AddCircle (1 : ℝ)), fun i : {i // i ≠ i₀} ↦ q i - q i₀) :=
-  diagonalQuotientAddEquiv_coe i₀ q
-
-/-- The inverse diffeomorphism sends `(t mod 1, v)` to the class of the configuration
-`q_(i₀) = t`, `q_i = t + v_i`. -/
-theorem diagonalQuotientDiffeomorph_symm_coe (t : ℝ) (v : {i // i ≠ i₀} → ℝ) :
-    (diagonalQuotientDiffeomorph i₀ n).symm ((t : AddCircle (1 : ℝ)), v) =
-      (diagonalSection i₀ (t, v) : (ι → ℝ) ⧸ AddSubgroup.zmultiples (1 : ι → ℝ)) :=
-  diagonalQuotientAddEquiv_symm_coe i₀ t v
-
-/-- The diffeomorphism is additive. -/
-theorem diagonalQuotientDiffeomorph_add (x y : (ι → ℝ) ⧸ AddSubgroup.zmultiples (1 : ι → ℝ)) :
-    diagonalQuotientDiffeomorph i₀ n (x + y) =
-      diagonalQuotientDiffeomorph i₀ n x + diagonalQuotientDiffeomorph i₀ n y :=
-  map_add (diagonalQuotientAddEquiv i₀) x y
 
 end Coordinates
 
