@@ -46,6 +46,9 @@ exactly when `f` is nilpotent modulo `I`.
 * `TauCeti.FormalScheme.Spf.carrier_eq_zeroLocus`, `TauCeti.FormalScheme.Spf.isClosed_carrier`,
   `TauCeti.FormalScheme.Spf.compactSpace_carrier`: the underlying space is the Zariski closed set
   `V(I)`, hence quasi-compact.
+* `TauCeti.FormalScheme.Spf.isClosed_singleton_iff_isMaximal`,
+  `TauCeti.FormalScheme.Spf.mem_carrier_of_isMaximal`: the closed points are the maximal ideals,
+  and for a complete adic ring every maximal ideal is a point.
 * `TauCeti.FormalScheme.Spf.carrier_eq_empty_iff_subsingleton`: the formal spectrum of a
   separated ring with an ideal of definition is empty exactly when the ring is zero.
 * `TauCeti.FormalScheme.Spf.isBasis_basicOpen`, `TauCeti.FormalScheme.Spf.exists_basicOpen_le`,
@@ -103,6 +106,22 @@ theorem isClosed_carrier (hI : IsAdic I) : IsClosed (carrier A) :=
 /-- If `I` defines the topology of `A`, the underlying space of `Spf A` is quasi-compact. -/
 theorem compactSpace_carrier (hI : IsAdic I) : CompactSpace (carrier A) :=
   isCompact_iff_compactSpace.mp (isClosed_carrier hI).isCompact
+
+/-- If `I` defines the topology of `A`, a point of the formal spectrum is closed exactly when it
+is a maximal ideal of `A`: the underlying space is closed in `Spec A`. -/
+theorem isClosed_singleton_iff_isMaximal (hI : IsAdic I) {p : carrier A} :
+    IsClosed ({p} : Set (carrier A)) ↔ (p : PrimeSpectrum A).asIdeal.IsMaximal := by
+  rw [(isClosed_carrier hI).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed,
+    Set.image_singleton, PrimeSpectrum.isClosed_singleton_iff_isMaximal]
+
+/-- If `I` defines the topology of `A` and lies in the Jacobson radical of `A`, every maximal
+ideal of `A` is open. This applies when `A` is `I`-adically complete, by
+`IsAdicComplete.le_jacobson`. Together with `isClosed_singleton_iff_isMaximal`, the closed
+points of `Spf A` are then exactly the maximal ideals of `A`. -/
+theorem mem_carrier_of_isMaximal (hI : IsAdic I) (hIJ : I ≤ Ring.jacobson A)
+    {m : PrimeSpectrum A} (hm : m.asIdeal.IsMaximal) : m ∈ carrier A :=
+  have := hm
+  (mem_carrier_iff_le hI).mpr (hIJ.trans (Ring.jacobson_le_of_isMaximal _))
 
 /-- For a discrete ring every prime is open, so the formal spectrum has the same points as the
 spectrum. -/
