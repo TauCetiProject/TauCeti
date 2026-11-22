@@ -34,6 +34,8 @@ Mathlib's functor `CategoryTheory.Over.pullback j : Over S ⥤ Over η`.
   smooth test object extends uniquely, and two morphisms from a smooth test object agreeing
   generically are equal.
 * `neronMappingProperty_iff_existsUnique`: the property is unique extension of generic morphisms.
+* `neronMappingProperty_iff_bijective_counit_comp`: the property is bijectivity of precomposition
+  with the projection `Y ×_S η ⟶ Y`, viewed in `Over S`.
 * `NeronMappingProperty.of_iso`: the property is invariant under isomorphism in `Over S`.
 * `NeronMappingProperty.of_isTerminal`: the base `S` itself, the Néron model of the trivial
   group, has the property for every `j`.
@@ -154,5 +156,24 @@ theorem neronMappingProperty_iff_existsUnique {j : η ⟶ S} {X : Over S} :
       ∃! g : Y ⟶ X, (Over.pullback j).map g = f :=
   ⟨fun h Y _ f ↦ h.existsUnique Y f,
     fun h ↦ ⟨fun Y _ ↦ Function.bijective_iff_existsUnique _ |>.2 (h Y)⟩⟩
+
+/-- The Néron mapping property through the adjunction `Over.map j ⊣ Over.pullback j`: `X` has
+the property exactly when, for every smooth test object `Y`, precomposition with the counit
+`(Over.map j).obj ((Over.pullback j).obj Y) ⟶ Y`, the projection `Y ×_S η ⟶ Y` regarded as an
+`S`-morphism, is a bijection onto the `S`-morphisms `Y ×_S η ⟶ X`. -/
+theorem neronMappingProperty_iff_bijective_counit_comp {j : η ⟶ S} {X : Over S} :
+    NeronMappingProperty j X ↔ ∀ (Y : Over S) [Smooth Y.hom],
+      Function.Bijective fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f := by
+  -- Precomposition with the counit is base change followed by the adjunction bijection.
+  have key (Y : Over S) : (fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f) =
+      ((Over.mapPullbackAdj j).homEquiv _ _).symm ∘ (Over.pullback j).map := by
+    ext1 f
+    rw [Function.comp_apply, Adjunction.homEquiv_counit]
+    exact ((Over.mapPullbackAdj j).counit.naturality f).symm
+  refine ⟨fun h Y _ ↦ ?_, fun h ↦ ⟨fun Y _ ↦ ?_⟩⟩
+  · rw [key]
+    exact (Equiv.bijective _).comp (h.bijective Y)
+  · rw [← (Equiv.bijective ((Over.mapPullbackAdj j).homEquiv _ _).symm).of_comp_iff', ← key]
+    exact h Y
 
 end TauCeti.AlgebraicGeometry.Neron
