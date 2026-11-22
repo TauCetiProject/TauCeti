@@ -61,7 +61,8 @@ disc.
 * `TauCeti.discAnalytic.eq_zero_of_eventuallyEq_zero` and `TauCeti.discAnalytic.eq_of_eqOn`: the
   identity principle on the disc.
 * `TauCeti.domRestrict_deriv_mem_discAnalytic`: the derivative of a function analytic on the disc
-  is analytic on the disc.
+  is analytic on the disc; `TauCeti.discAnalytic.series_deriv`: for `0 < r`, its series is the
+  formal derivative of the series.
 
 ## References
 
@@ -216,6 +217,20 @@ theorem domRestrict_deriv_mem_discAnalytic {a : K} {r : ℝ≥0∞} {F : K → K
   obtain ⟨g, hg, hFg⟩ := hF
   exact (domRestrict_mem_discAnalytic_iff hr).mpr
     ⟨_, (hasFPowerSeriesOnBall_of_forall_eq_evalAt_sub hr hg hFg).deriv_ofScalars⟩
+
+/-- **Termwise differentiation.** For `0 < r`, the representing series of the derivative of a
+function analytic on the open disc is the formal derivative of its representing series. -/
+theorem discAnalytic.series_deriv {a : K} {r : ℝ≥0∞} (hr : 0 < r) {F : K → K}
+    (hF : (eball a r).domRestrict F ∈ discAnalytic K a r) :
+    discAnalytic.series ⟨_, domRestrict_deriv_mem_discAnalytic hF⟩ =
+      d⁄dX (discAnalytic.series ⟨_, hF⟩) := by
+  have hD := (hasFPowerSeriesOnBall_of_forall_eq_evalAt_sub hr
+    (discAnalytic.le_radius_series ⟨_, hF⟩)
+    (discAnalytic.apply_eq_evalAt_series ⟨_, hF⟩)).deriv_ofScalars
+  rw [discAnalytic.series_eq hr _ hD.le_radius_mk_coeff
+    fun z ↦ (hD.evalAt_mk_coeff_sub z.property).symm]
+  ext n
+  simp [coeff_derivative, mul_comm]
 
 variable [IsUltrametricDist K]
 
