@@ -38,6 +38,10 @@ omitting types theorem, specialize to first-order logic.
   formation-closed fragment, so it is the least one, the formation closure of the empty set.
 * `FirstOrder.Language.Fragment.firstOrder_countable`: over a language with countably many
   function and relation symbols, the first-order image is countable.
+* `FirstOrder.Language.Fragment.map_firstOrder_le`,
+  `FirstOrder.Language.Fragment.firstOrder_le_comap` and
+  `FirstOrder.Language.LEquiv.map_firstOrder`: language homomorphisms map finitary formulas to
+  finitary formulas, and language equivalences preserve the first-order image.
 
 ## References
 
@@ -48,7 +52,7 @@ omitting types theorem, specialize to first-order logic.
 
 public section
 
-universe u v u'
+universe u v u' v'
 
 namespace FirstOrder
 
@@ -197,7 +201,46 @@ theorem firstOrder_countable [Countable (Σ l, L.Functions l)] [Countable (Σ l,
   obtain ⟨ψ, rfl⟩ := mem_firstOrder_iff.1 hφ
   exact ⟨⟨n, ψ⟩, rfl⟩
 
+section LanguageMap
+
+variable {L' : Language.{u', v'}}
+
+/-- Every finitary formula of `L` translates along `g : L →ᴸ L'` to a finitary formula of `L'`. -/
+theorem firstOrder_le_comap (g : L →ᴸ L') : firstOrder L ≤ (firstOrder L').comap g :=
+  (formationClosed_firstOrder.comap g).firstOrder_le
+
+/-- The image of the first-order fragment under a language homomorphism lies in the first-order
+fragment of the target language. -/
+theorem map_firstOrder_le (g : L →ᴸ L') : (firstOrder L).map g ≤ firstOrder L' :=
+  map_le_iff_le_comap.2 (firstOrder_le_comap g)
+
+end LanguageMap
+
 end Fragment
+
+namespace LEquiv
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}}
+
+/-- Mapping along a language equivalence takes the first-order image to the first-order image. -/
+@[simp]
+theorem map_firstOrder (e : L ≃ᴸ L') :
+    (Fragment.firstOrder L).map e.toLHom = Fragment.firstOrder L' := by
+  refine le_antisymm (Fragment.map_firstOrder_le e.toLHom) ?_
+  calc Fragment.firstOrder L'
+      = ((Fragment.firstOrder L').map e.invLHom).map e.toLHom := by
+          rw [Fragment.map_map, e.right_inv, Fragment.map_id]
+    _ ≤ (Fragment.firstOrder L).map e.toLHom :=
+          Fragment.monotone_map e.toLHom (Fragment.map_firstOrder_le e.invLHom)
+
+/-- Pulling back the first-order image along a language equivalence gives the first-order image. -/
+@[simp]
+theorem comap_firstOrder (e : L ≃ᴸ L') :
+    (Fragment.firstOrder L').comap e.toLHom = Fragment.firstOrder L := by
+  rw [e.comap_toLHom_eq_map_invLHom]
+  exact e.symm.map_firstOrder
+
+end LEquiv
 
 end Language
 

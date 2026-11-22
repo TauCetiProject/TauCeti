@@ -74,10 +74,10 @@ theorem index_add_one_eq {i j : LineQuiver n} (e : i ⟶ j) :
     simpa only [← OrientedQuiver.vertexEquiv_apply, Equiv.apply_symm_apply] using e
   have h := OrientedQuiver.homEquiv (SimpleGraph.pathGraph n)
     (Orientation.ofLinearOrder _) _ _ e'
-  have hadj := SimpleGraph.pathGraph_adj.mp h.1
+  have hadj := SimpleGraph.pathGraph_adj.mp h.val
   have hlt : ((OrientedQuiver.vertexEquiv _ _).symm i : Fin n).val <
       ((OrientedQuiver.vertexEquiv _ _).symm j : Fin n).val :=
-    (Orientation.mem_ofLinearOrder_iff _ _).mp h.2
+    (Orientation.mem_ofLinearOrder_iff _ _).mp h.property
   omega
 
 /-- An arrow exists exactly when the target index is the successor of the source index. -/

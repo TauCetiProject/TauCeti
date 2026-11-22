@@ -125,7 +125,7 @@ private def unitsToSUnits : sUnitsRep L ∅ ⟶ sUnitsRep L S :=
 
 /-- An automorphism `σ` carries the valuation at `σ⁻¹ • w` to the valuation at `w`. -/
 private theorem valuation_apply_smul (σ : L ≃ₐ[K] L) (w : ↥(primesAbove (𝓞 K) (𝓞 L) S))
-    (x : L) : w.1.valuation L (σ x) = (σ⁻¹ • w).1.valuation L x :=
+    (x : L) : w.val.valuation L (σ x) = (σ⁻¹ • w).val.valuation L x :=
   valuation_apply_eq_of_asIdeal_eq_smul σ (by
     rw [asIdeal_smul_primesAbove_ringOfIntegers, smul_inv_smul]) x
 
@@ -180,14 +180,14 @@ private def sUnitsValuationShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L))
     -- definition, which `ext` does not see through
     refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext
       fun (x : Additive ((primesAbove (𝓞 K) (𝓞 L) ∅).unit L)) ↦ ?_))
-    exact (sUnitsValuationHom_eq_zero_iff S _).2 x.toMul.2
+    exact (sUnitsValuationHom_eq_zero_iff S _).2 x.toMul.property
 
 private theorem sUnitsValuationShortComplex_exact : (sUnitsValuationShortComplex L S).Exact := by
   rw [Rep.exact_iff_function_exact]
   intro (x : Additive ((primesAbove (𝓞 K) (𝓞 L) S).unit L))
   refine ⟨fun hx ↦ ⟨Additive.ofMul ⟨_, (sUnitsValuationHom_eq_zero_iff S x).1 hx⟩, rfl⟩, ?_⟩
   rintro ⟨(y : Additive ((primesAbove (𝓞 K) (𝓞 L) ∅).unit L)), rfl⟩
-  exact (sUnitsValuationHom_eq_zero_iff S _).2 y.toMul.2
+  exact (sUnitsValuationHom_eq_zero_iff S _).2 y.toMul.property
 
 private instance : Mono (sUnitsValuationShortComplex L S).f :=
   (Rep.mono_iff_injective _).2 fun (_ _ : Additive ((primesAbove (𝓞 K) (𝓞 L) ∅).unit L)) h ↦
@@ -259,10 +259,10 @@ where `U_{L,∅}` is the group of units at every finite place. The places `w` ab
 chosen arbitrarily. -/
 theorem herbrandQuotient_sUnitsRep [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)]
     (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.val.asIdeal}) :
     TateCohomology.herbrandQuotient (sUnitsRep L (S : Set (HeightOneSpectrum (𝓞 K)))) =
       TateCohomology.herbrandQuotient (sUnitsRep L (∅ : Set (HeightOneSpectrum (𝓞 K)))) *
-        ∏ v : S, (Module.finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) := by
+        ∏ v : S, (Module.finrank (v.val.adicCompletion K) ((w v).val.adicCompletion L) : ℚ) := by
   rw [herbrandQuotient_sUnitsRep_eq_mul, herbrandQuotient_ofMulAction_primesAbove S w]
 
 end TauCeti.ClassFieldTheory

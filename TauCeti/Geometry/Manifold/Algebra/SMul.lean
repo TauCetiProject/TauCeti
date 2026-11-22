@@ -37,7 +37,10 @@ underlying real manifold.
 * `ContMDiffMul.contMDiffConstSMul`: smooth multiplication gives smooth left translations.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
+* `ContMDiffSMul.contMDiffConstSMul`: a `C^n` action is by `C^n` maps.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
+* `Subgroup.contMDiff_subtypeVal_of_contMDiffSMul`: a subgroup whose left multiplication on the
+  ambient group is a `C^n` action has a `C^n` inclusion.
 * `ContMDiffSMul.mdifferentiableAt_smul_const`: the orbit maps of a `C^1` action are
   differentiable.
 * `ContMDiffConstSMul.mdifferentiable_const_smul`, `ContMDiffSMul.mdifferentiable_const_smul`: the
@@ -85,6 +88,21 @@ instance SetLike.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜
     [ContMDiffConstSMul I n G M] (s : S) : ContMDiffConstSMul I n s M where
   contMDiff_const_smul g := contMDiff_const_smul (g : G)
 
+/-- A `C^n` action is by `C^n` maps. This has to be a theorem instead of an instance because
+`ContMDiffSMul` depends on the model `I` of the acting type, which `ContMDiffConstSMul` doesn't. -/
+@[to_additive /-- A `C^n` additive action is by `C^n` maps. This has to be a theorem instead of an
+instance because `ContMDiffVAdd` depends on the model `I` of the acting type, which
+`ContMDiffConstVAdd` doesn't. -/]
+theorem ContMDiffSMul.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] : ContMDiffConstSMul I' n G M :=
+  ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+
 /-- The orbit map `g ↦ g • x` of a `C^n` action is `C^n`. -/
 @[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^n` additive action is `C^n`. -/]
 theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -96,6 +114,18 @@ theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedFie
     {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
     [ContMDiffSMul I I' n G M] (x : M) : ContMDiff I I' n fun g : G ↦ g • x :=
   contMDiff_id.smul contMDiff_const
+
+/-- The inclusion of a subgroup acting smoothly on the ambient group by left multiplication is
+smooth, since it is the action on `1`. -/
+theorem Subgroup.contMDiff_subtypeVal_of_contMDiffSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [Group G] [TopologicalSpace G] [ChartedSpace H G] {n : ℕ∞ω} (K : Subgroup G)
+    [ChartedSpace H' K] [ContMDiffSMul I' I n K G] : ContMDiff I' I n (fun h : K ↦ (h : G)) := by
+  simpa [Subgroup.smul_def] using ContMDiffSMul.contMDiff_smul_const (I := I') (I' := I) (n := n)
+    (G := K) (1 : G)
 
 /-- The orbit map `g ↦ g • x` of a `C^1` action is differentiable. -/
 @[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^1` additive action is differentiable. -/]
