@@ -54,17 +54,16 @@ theorem extendCoefficients_unitRestriction {O K : Type*} [NormedCommRing O] [Nor
   rw [← map_unitsVal_restrictUnits, extendCoefficients_map, extendCoefficients_restrictUnits,
     map_unitsVal_restrictUnits]
 
-section Examples
-
--- The canonical map also extends coefficients into rings whose unit need not have norm one.
-example {R : Type*} [NormedCommRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R]
-    [CompleteSpace R] [IsUltrametricDist R] (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
-    let hj := PadicInt.norm_algebraMap_le_norm_one (p := p) (R := R)
-    extendCoefficients (algebraMap ℤ_[p] R) hj μ =
-      restrictUnits (extendCoefficients (algebraMap ℤ_[p] R) hj
-        (map ⟨Units.val, Units.continuous_val⟩ μ)) := by
-  dsimp only
+/-- Coefficient extension on the unit group can be computed by pushing the measure to the p-adic
+integers, extending its coefficients there, and restricting to the units. -/
+theorem extendCoefficients_eq_restrictUnits_map {O K : Type*} [NormedCommRing O]
+    [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
+    (μ : D(ℤ_[p]ˣ, O)) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) :
+    extendCoefficients j hj μ =
+      restrictUnits (extendCoefficients j hj (map ⟨Units.val, Units.continuous_val⟩ μ)) := by
   rw [← extendCoefficients_restrictUnits, restrictUnits_map_unitsVal]
+
+section Examples
 
 -- Scaling the unit Dirac measure by the inverse of p puts its norm above one.
 example :

@@ -9,7 +9,13 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 
 /-!
-# Factoring an operator through the range of a dominating operator
+# Bounded extensions and factorizations of linear maps
+
+A linear map `f : V →ₗ[R] F` with `‖f x‖ ≤ C * ‖e x‖` extends along an injective linear
+map `e : V →ₗ[R] E` with dense range when `F` is complete. The construction
+`LinearMap.extendOfBound` works over any ring with continuous constant scalar actions on `E`
+and `F`; the source `V` needs no norm or topology. It uses `ContinuousLinearMap.extend` on
+the range of `e`.
 
 Let `σ₁₂ : 𝕜 →+* 𝕜₂` be a ring homomorphism, let `g : E →L[𝕜] G` be a continuous linear map and
 `f : E →SL[σ₁₂] F` a continuous `σ₁₂`-semilinear map (for instance a conjugate-linear map, or a map
@@ -29,6 +35,9 @@ group, each a module over its scalars, while `E` is any module over `𝕜`.
 
 ## Main results
 
+* `LinearMap.extendOfBound_apply`: the extension agrees with the original map on dense tests.
+* `LinearMap.norm_extendOfBound_apply_le`: the extension preserves the original bound.
+
 * `LinearMap.norm_compLeftInverse_apply_le`: the pointwise bound `C` for `f.compLeftInverse g`.
 * `LinearMap.opNorm_compLeftInverse_le`: for `0 ≤ C`, the norm of `f.compLeftInverse g` is at
   most `C`.
@@ -40,6 +49,57 @@ group, each a module over its scalars, while `E` is any module over `𝕜`.
 -/
 
 public section
+
+namespace LinearMap
+
+open Topology
+
+variable {R V E F : Type*} [Ring R] [AddCommMonoid V] [Module R V]
+  [SeminormedAddCommGroup E] [Module R E] [ContinuousConstSMul R E]
+  [NormedAddCommGroup F] [Module R F] [ContinuousConstSMul R F] [CompleteSpace F]
+
+/-- Extend a bounded linear map along an injective linear map with dense range.
+
+The bound is measured in the ambient domain `E`, so the source `V` needs no norm or topology.
+The density hypothesis is used in `extendOfBound_apply` and `norm_extendOfBound_apply_le`.
+This construction works over rings that need not be fields. -/
+noncomputable def extendOfBound (f : V →ₗ[R] F) (e : V →ₗ[R] E)
+    (he : Function.Injective e) (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) : E →L[R] F :=
+  ((f.comp (LinearEquiv.ofInjective e he).symm.toLinearMap).mkContinuous C (by
+    intro x
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      LinearEquiv.ofInjective_symm_apply, Submodule.norm_coe] using
+      h ((LinearEquiv.ofInjective e he).symm x))).extend e.range.subtypeL
+
+/-- The bounded extension agrees with the original map on the dense range. -/
+theorem extendOfBound_apply (f : V →ₗ[R] F) (e : V →ₗ[R] E) (he : Function.Injective e)
+    (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖) (hd : DenseRange e) (x : V) :
+    f.extendOfBound e he C h (e x) = f x := by
+  have hd' : DenseRange e.range.subtypeL := by
+    rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
+    have hrange : Dense (e.range : Set E) := by
+      rw [LinearMap.coe_range]
+      exact hd
+    exact hrange.isDenseInducing_val.dense
+  have hi : IsUniformInducing e.range.subtypeL := by
+    rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
+    exact isUniformInducing_val _
+  have hh : e.range.subtypeL ((LinearEquiv.ofInjective e he) x) = e x :=
+    LinearEquiv.ofInjective_apply e (h := he) x
+  rw [← hh, extendOfBound, ContinuousLinearMap.extend_eq _ hd' hi]
+  simp only [LinearMap.mkContinuous_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply]
+
+/-- Extending a bounded linear map along a dense injection preserves its bound. -/
+theorem norm_extendOfBound_apply_le (f : V →ₗ[R] F) (e : V →ₗ[R] E)
+    (he : Function.Injective e) (C : ℝ) (h : ∀ x, ‖f x‖ ≤ C * ‖e x‖)
+    (hd : DenseRange e) (x : E) : ‖f.extendOfBound e he C h x‖ ≤ C * ‖x‖ := by
+  refine hd.induction_on x (isClosed_le (by fun_prop) (by fun_prop)) ?_
+  intro y
+  rw [extendOfBound_apply f e he C h hd]
+  exact h y
+
+end LinearMap
 
 variable {𝕜 𝕜₂ E F G : Type*}
 

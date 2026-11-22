@@ -12,6 +12,7 @@ public import Mathlib.Topology.DiscreteQuotient
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+import TauCeti.Analysis.Normed.Operator.Extend
 import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
@@ -40,8 +41,8 @@ no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integ
 
 The dense-extension construction and its norm proof follow the formal pattern of
 `TauCeti.ofUnitCoordinates` and `TauCeti.ofUnitCoordinates_norm_le` in
-`TauCeti/NumberTheory/Padics/Measure/UnitCoordinates.lean`. The extension mechanism is
-Mathlib’s `ContinuousLinearMap.extend`.
+`TauCeti/NumberTheory/Padics/Measure/UnitCoordinates.lean`. The extension uses
+`LinearMap.extendOfBound`, built on Mathlib’s `ContinuousLinearMap.extend`.
 
 ## Main definitions
 
@@ -63,6 +64,10 @@ Mathlib’s `ContinuousLinearMap.extend`.
 * `AbstractMeasure.eq_extendCoefficients_of_apply_comp`: this property characterises `ι_j(μ)`.
 * `RingHom.exists_apply_comp_eq_of_mem_range`: restrict coefficients through an embedding when
   every transported test has its integral in the coefficient image.
+* `AbstractMeasure.mem_range_extendCoefficients_iff_apply_comp_mem_range`: a measure belongs to
+  the range exactly when the integrals of transported tests lie in the coefficient image.
+* `RingHom.isClosed_range_extendCoefficients_weak`: a bounded embedding with closed image gives
+  a weakly closed range.
 * `AbstractMeasure.exists_apply_comp_eq_of_norm_le_one`: over a nontrivially normed field `K`,
   for an embedding `j` onto its closed unit ball and compact `X`, a `K`-valued measure of norm at
   most `1` restricts to an `O`-valued measure.
@@ -91,6 +96,56 @@ open ContinuousMap
 namespace AbstractMeasure
 
 variable {X : Type*} [TopologicalSpace X]
+
+/-- Restrict a measure through a coefficient embedding when every transported test has its
+integral in the coefficient image. -/
+theorem _root_.RingHom.exists_apply_comp_eq_of_mem_range {O K : Type*}
+    [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
+    [CommRing K] [TopologicalSpace K] [IsTopologicalRing K]
+    (j : O →+* K) (hje : Topology.IsEmbedding j)
+    (ν : D(X, K))
+    (hmem : ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j) :
+    ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
+  let := j.toAlgebra
+  have halg : algebraMap O K = j := j.algebraMap_toAlgebra
+  have hlin : ⇑(Algebra.linearMap O K) = j := by
+    funext a
+    rw [Algebra.linearMap_apply, halg]
+  have hlinj : Function.Injective (Algebra.linearMap O K) := by
+    rw [hlin]
+    exact hje.injective
+  let : ContinuousSMul O K := continuousSMul_of_algebraMap O K (by rw [halg]; exact hje.continuous)
+  have hlin_cont : Continuous (Algebra.linearMap O K) := by
+    rw [hlin]
+    exact hje.continuous
+  let J : O →L[O] K := ⟨Algebra.linearMap O K, hlin_cont⟩
+  have hJ : ⇑J = j := by
+    rw [ContinuousLinearMap.coe_mk', hlin]
+  let F : C(X, O) →L[O] K :=
+    ((toCLMEquiv ν).restrictScalars O).comp (J.compLeftContinuous O X)
+  have hF (f : C(X, O)) : F f = ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) := by
+    have hcomp : J.compLeftContinuous O X f = (⟨j, hje.continuous⟩ : C(O, K)).comp f := by
+      have hcomp' := (ContinuousLinearMap.compLeftContinuous_apply O X J f).trans
+        (AddMonoidHom.compLeftContinuous_apply X J.toLinearMap.toAddMonoidHom J.continuous f)
+      rw [hcomp']
+      ext x
+      simp only [ContinuousMap.coe_mk, ContinuousMap.comp_apply, LinearMap.toAddMonoidHom_coe,
+        ContinuousLinearMap.coe_coe, hJ]
+    simp only [F, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+      coe_toCLMEquiv, hcomp]
+  have hmem' (f : C(X, O)) : F.toLinearMap f ∈ (Algebra.linearMap O K).range := by
+    rw [LinearMap.mem_range]
+    obtain ⟨a, ha⟩ := hmem f
+    exact ⟨a, by rw [hlin, ContinuousLinearMap.coe_coe, hF]; exact ha⟩
+  let L := F.toLinearMap.codRestrictOfInjective (Algebra.linearMap O K) hlinj hmem'
+  have hLj (f : C(X, O)) : j (L f) = F f := by
+    rw [← hlin]
+    exact LinearMap.codRestrictOfInjective_comp_apply F.toLinearMap (Algebra.linearMap O K)
+      hlinj hmem' f
+  have hL : Continuous L := hje.continuous_iff.mpr <| by
+    simpa only [Function.comp_def, hLj] using F.continuous
+  exact ⟨toCLMEquiv.symm ⟨L, hL⟩, fun f ↦ by
+    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', hLj, hF]⟩
 
 section TopologicalRing
 
@@ -216,56 +271,15 @@ private theorem norm_locallyConstantIntegral_le (hj : ∀ a, ‖j a‖ ≤ B)
 
 variable [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K]
 
-variable (K) in
-private abbrev locallyConstantTests :=
-  (LocallyConstant.toContinuousMapLinearMap K (X := X) (Y := K)).range
-
-variable (K) in
-private def locallyConstantTestEquiv : LocallyConstant X K ≃ₗ[K] locallyConstantTests (X := X) K :=
-  LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap K)
-    LocallyConstant.toContinuousMap_injective
-
-private def integralOnLocallyConstantTests (hj : ∀ a, ‖j a‖ ≤ B) :
-    locallyConstantTests (X := X) K →L[K] K :=
-  ((locallyConstantIntegral j μ).comp (locallyConstantTestEquiv K).symm.toLinearMap).mkContinuous B
-    (by
-      intro f
-      have hf := LinearEquiv.ofInjective_symm_apply (LocallyConstant.toContinuousMapLinearMap K)
-        (h := LocallyConstant.toContinuousMap_injective) f
-      simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, locallyConstantTestEquiv, hf,
-        Submodule.norm_coe] using
-        norm_locallyConstantIntegral_le j μ hj ((locallyConstantTestEquiv K).symm f))
-
 /-- The extension of `μ` as a continuous linear functional on `C(X, K)`. -/
 private def extendCoefficientsCLM (hj : ∀ a, ‖j a‖ ≤ B) : C(X, K) →L[K] K :=
-  (integralOnLocallyConstantTests j μ hj).extend (locallyConstantTests (X := X) K).subtypeL
+  (locallyConstantIntegral j μ).extendOfBound (LocallyConstant.toContinuousMapLinearMap K)
+    LocallyConstant.toContinuousMap_injective B (norm_locallyConstantIntegral_le j μ hj)
 
 private theorem extendCoefficientsCLM_apply_test (hj : ∀ a, ‖j a‖ ≤ B) (φ : LocallyConstant X K) :
     extendCoefficientsCLM j μ hj (LocallyConstant.toContinuousMapLinearMap K φ) =
-      locallyConstantIntegral j μ φ := by
-  let e := locallyConstantTestEquiv (X := X) K
-  have hφ : (locallyConstantTests (X := X) K).subtypeL (e φ) =
-      LocallyConstant.toContinuousMapLinearMap K φ := by
-    rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
-    exact LinearEquiv.ofInjective_apply (LocallyConstant.toContinuousMapLinearMap K)
-      (h := LocallyConstant.toContinuousMap_injective) φ
-  have hd : DenseRange (locallyConstantTests (X := X) K).subtypeL := by
-    rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
-    have hdense : Dense (locallyConstantTests (X := X) K : Set C(X, K)) := by
-      have hcoe : ⇑(LocallyConstant.toContinuousMapLinearMap K) =
-          fun φ : LocallyConstant X K ↦ (φ : C(X, K)) :=
-        funext (LocallyConstant.toContinuousMapLinearMap_apply K)
-      rw [locallyConstantTests, LinearMap.coe_range, hcoe]
-      exact LocallyConstant.denseRange_toContinuousMap
-    exact hdense.isDenseInducing_val.dense
-  have he : IsUniformInducing (locallyConstantTests (X := X) K).subtypeL := by
-    rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
-    exact isUniformInducing_val _
-  rw [← hφ, extendCoefficientsCLM, (integralOnLocallyConstantTests j μ hj).extend_eq
-    (e := (locallyConstantTests (X := X) K).subtypeL)
-    hd he (e φ)]
-  simp only [integralOnLocallyConstantTests, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_toLinearMap, e, LinearEquiv.symm_apply_apply]
+      locallyConstantIntegral j μ φ :=
+  LinearMap.extendOfBound_apply _ _ _ _ _ LocallyConstant.denseRange_toContinuousMap φ
 
 private theorem extendCoefficientsCLM_apply_comp (hj : ∀ a, ‖j a‖ ≤ B) {A : Type*}
     [TopologicalSpace A] [DiscreteTopology A] [Fintype A] (q : C(X, A)) (g : A → K) :
@@ -350,13 +364,7 @@ theorem norm_extendCoefficients_apply_le (μ : D(X, O)) (j : O →+* K)
     (hj : ∀ a, ‖j a‖ ≤ B) (f : C(X, K)) :
     ‖extendCoefficients j hj μ f‖ ≤ B * ‖f‖ := by
   rw [← coe_toCLMEquiv, toCLMEquiv_extendCoefficients]
-  refine (LocallyConstant.denseRange_toContinuousMap (X := X) (V := K)).induction_on
-    (p := fun g : C(X, K) ↦ ‖extendCoefficientsCLM j μ hj g‖ ≤ B * ‖g‖) f
-    (isClosed_le ((extendCoefficientsCLM j μ hj).continuous.norm)
-      (continuous_const.mul continuous_norm)) ?_
-  intro φ
-  rw [← LocallyConstant.toContinuousMapLinearMap_apply K, extendCoefficientsCLM_apply_test]
-  exact norm_locallyConstantIntegral_le j μ hj φ
+  exact LinearMap.norm_extendOfBound_apply_le _ _ _ _ _ LocallyConstant.denseRange_toContinuousMap f
 
 /-- Extension agrees with the coefficient homomorphism on locally constant source-valued tests,
 without assuming that the coefficient homomorphism is continuous. -/
@@ -432,51 +440,6 @@ theorem eq_extendCoefficients_of_apply_comp (hjc : Continuous j) {ν : D(X, K)}
     classical
     by_cases hx : q x = a <;> simp [fiberIndicator_apply, hx]
 
-omit [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K]
-  [IsUltrametricDist K] in
-/-- Restrict a measure through a coefficient embedding when every transported test has its
-integral in the coefficient image. -/
-theorem _root_.RingHom.exists_apply_comp_eq_of_mem_range (hje : Topology.IsEmbedding j)
-    (ν : D(X, K))
-    (hmem : ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j) :
-    ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
-  let := j.toAlgebra
-  have halg : algebraMap O K = j := j.algebraMap_toAlgebra
-  have hlin : ⇑(Algebra.linearMap O K) = j := by
-    funext a
-    rw [Algebra.linearMap_apply, halg]
-  have hlinj : Function.Injective (Algebra.linearMap O K) := by
-    rw [hlin]
-    exact hje.injective
-  let : ContinuousSMul O K := continuousSMul_of_algebraMap O K (by rw [halg]; exact hje.continuous)
-  let J : O →L[O] K :=
-    ⟨Algebra.linearMap O K,
-      show Continuous ⇑(Algebra.linearMap O K) from hlin.symm ▸ hje.continuous⟩
-  have hJ : ⇑J = j := by
-    rw [ContinuousLinearMap.coe_mk', hlin]
-  let F : C(X, O) →L[O] K :=
-    ((toCLMEquiv ν).restrictScalars O).comp (J.compLeftContinuous O X)
-  have hF (f : C(X, O)) : F f = ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) := by
-    have hcomp : J.compLeftContinuous O X f = (⟨j, hje.continuous⟩ : C(O, K)).comp f := by
-      have hcomp' := (ContinuousLinearMap.compLeftContinuous_apply O X J f).trans
-        (AddMonoidHom.compLeftContinuous_apply X J.toLinearMap.toAddMonoidHom J.continuous f)
-      exact hcomp'.trans (by ext x; exact congrFun hJ (f x))
-    simp only [F, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-      coe_toCLMEquiv, hcomp]
-  have hmem' (f : C(X, O)) : F.toLinearMap f ∈ (Algebra.linearMap O K).range := by
-    rw [LinearMap.mem_range]
-    obtain ⟨a, ha⟩ := hmem f
-    exact ⟨a, by rw [hlin, ContinuousLinearMap.coe_coe, hF]; exact ha⟩
-  let L := F.toLinearMap.codRestrictOfInjective (Algebra.linearMap O K) hlinj hmem'
-  have hLj (f : C(X, O)) : j (L f) = F f := by
-    rw [← hlin]
-    exact LinearMap.codRestrictOfInjective_comp_apply F.toLinearMap (Algebra.linearMap O K)
-      hlinj hmem' f
-  have hL : Continuous L := hje.continuous_iff.mpr <| by
-    simpa only [Function.comp_def, hLj] using F.continuous
-  exact ⟨toCLMEquiv.symm ⟨L, hL⟩, fun f ↦ by
-    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', hLj, hF]⟩
-
 /-- Extension of coefficients along an injective `j` is injective. -/
 theorem extendCoefficients_injective [T2Space O] (hinj : Function.Injective j) :
     Function.Injective (extendCoefficients (X := X) j hj) := fun μ ν h ↦
@@ -485,12 +448,41 @@ theorem extendCoefficients_injective [T2Space O] (hinj : Function.Injective j) :
     rw [finiteProjection_extendCoefficients, finiteProjection_extendCoefficients] at this
     exact Finsupp.mapRange_injective _ (map_zero j) hinj this
 
+/-- A measure is in the range of coefficient extension along an embedding exactly when its
+integrals against transported tests lie in the image of the coefficient map. -/
+theorem mem_range_extendCoefficients_iff_apply_comp_mem_range (hje : Topology.IsEmbedding j)
+    {ν : D(X, K)} :
+    ν ∈ (extendCoefficients j hj).range ↔
+      ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j := by
+  constructor
+  · rintro ⟨μ, rfl⟩ f
+    exact ⟨μ f, (extendCoefficients_apply_comp j μ hj hje.continuous f).symm⟩
+  · intro hν
+    obtain ⟨μ, hμ⟩ := j.exists_apply_comp_eq_of_mem_range hje ν hν
+    exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
+
+/-- On a profinite space, extension along a bounded coefficient embedding with closed image has
+weakly closed range. -/
+theorem _root_.RingHom.isClosed_range_extendCoefficients_weak (hje : Topology.IsEmbedding j)
+    (hjr : IsClosed (Set.range j)) :
+    @IsClosed D(X, K) WeakTopology (extendCoefficients (X := X) j hj).range := by
+  have hrange : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =
+      ⋂ f : C(X, O), {ν | ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j} := by
+    ext ν
+    simpa only [SetLike.mem_coe, Set.mem_iInter, Set.mem_ofPred_eq] using
+      mem_range_extendCoefficients_iff_apply_comp_mem_range j hj hje (ν := ν)
+  rw [hrange]
+  let : TopologicalSpace D(X, K) := WeakTopology
+  have heval : Continuous (fun μ : D(X, K) ↦ fun f : C(X, K) ↦ μ f) :=
+    continuous_induced_dom
+  exact isClosed_iInter fun f ↦ hjr.preimage
+    ((continuous_apply ((⟨j, hje.continuous⟩ : C(O, K)).comp f)).comp heval)
+
 /-- Extension of coefficients is surjective when `j` is a surjective topological embedding. -/
 theorem _root_.RingHom.extendCoefficients_surjective (hje : Topology.IsEmbedding j)
     (hsurj : Function.Surjective j) : Function.Surjective (extendCoefficients (X := X) j hj) := by
   intro ν
-  obtain ⟨μ, hμ⟩ := j.exists_apply_comp_eq_of_mem_range hje ν fun _ ↦ hsurj _
-  exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
+  exact (mem_range_extendCoefficients_iff_apply_comp_mem_range j hj hje).2 fun _ ↦ hsurj _
 
 /-- Extending coefficients along the identity preserves the measure. -/
 @[simp]

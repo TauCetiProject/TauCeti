@@ -43,6 +43,10 @@ Combined with `@[simp]` lemmas `AbstractMeasure.baseChangeLinearEquiv_tmul`,
 `AbstractMeasure.amiceTransform_extendScalars`, and
 `AbstractMeasure.amiceTransform_extendCoefficients_algebraMap`, `simp` automatically simplifies
 coefficient extensions, character evaluations, and Amice transforms on base-changed pure tensors.
+The character and Amice coefficient-extension APIs require a complete ultrametric normed field
+target and a unit-ball bound `∀ a, ‖j a‖ ≤ 1`. For Amice transforms, the coefficient rings carry
+continuous `ℤ_[p]`-algebra actions and `j` is a `ℤ_[p]`-algebra map; the `algebraMap O K` version
+additionally uses the compatible scalar tower `ℤ_[p] → O → K`.
 
 ## References
 
@@ -90,17 +94,19 @@ theorem extendCoefficients_algHom_extendScalars [Algebra R K] (j : O →ₐ[R] K
   (extendCoefficients_extendScalars (j : O →+* K) hj μ).trans <| by
     simp only [j.comp_algebraMap]
 
-omit [Module.Free R O] in
+omit [Module.Free R O] [Module.Finite R O] in
 /-- In any finite `R`-basis `b` of `O`, the coefficient extension of an arbitrary `O`-valued
 measure `ν ∈ D(X, O)` decomposes as a `K`-linear combination of the extensions of its `R`-valued
 coordinate retractions `mapScalars (b.coord i) ν`. -/
 theorem extendCoefficients_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι R O)
     (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (ν : D(X, O)) :
+    letI : Module.Finite R O := Module.Finite.of_basis b
     extendCoefficients j hj ν =
       ∑ i : ι, j (b i) •
         extendCoefficients (j.comp (algebraMap R O)) (fun r ↦ hj (algebraMap R O r))
           (mapScalars (b.coord i) ν) := by
   have : Module.Free R O := Module.Free.of_basis b
+  have : Module.Finite R O := Module.Finite.of_basis b
   have hν : ν = baseChangeLinearEquiv O (∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν) := by
     rw [← baseChangeLinearEquiv_symm_apply b ν, LinearEquiv.apply_symm_apply]
   conv_lhs => rw [hν]
@@ -121,22 +127,21 @@ variable {G R O K : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
   [Algebra R O] [ContinuousSMul R O] [Module.Free R O] [Module.Finite R O]
   [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
-omit [Module.Free R O] in
+omit [Module.Free R O] [Module.Finite R O] in
 /-- In any finite `R`-basis `b` of `O`, extended character integration of an arbitrary `O`-valued
 measure `ν ∈ D(G, O)` decomposes as a `K`-linear combination of the extended character integrals
 of its `R`-valued coordinate retractions `mapScalars (b.coord i) ν`. -/
 theorem extendedCharacterRingHom_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι R O)
     (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (ν : D(G, O)) :
+    letI : Module.Finite R O := Module.Finite.of_basis b
     χ.extendedCharacterRingHom j hj ν =
       ∑ i : ι, j (b i) *
         χ.extendedCharacterRingHom (j.comp (algebraMap R O))
           (fun r ↦ hj (algebraMap R O r)) (mapScalars (b.coord i) ν) := by
-  have : Module.Free R O := Module.Free.of_basis b
-  have hν : ν = baseChangeAlgEquiv O (∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν) := by
-    rw [← baseChangeLinearEquiv_symm_apply b ν, ← coe_symm_baseChangeAlgEquiv,
-      AlgEquiv.apply_symm_apply]
-  conv_lhs => rw [hν]
-  simp [map_sum]
+  have h := congrArg (fun μ : D(G, K) ↦ toCLMEquiv μ χ)
+    (extendCoefficients_eq_sum_basis b j hj ν)
+  rw [map_sum] at h
+  simpa using h
 
 end ContinuousMonoidHom
 

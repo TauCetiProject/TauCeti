@@ -11,11 +11,9 @@ public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Basic
 /-!
 # Integral lattices of measures
 
-Let `X` be a profinite space and let `j : O →+* K` be a bounded topological embedding with closed
-image in a complete ultrametric normed commutative ring. Extending coefficients along `j` gives a
-weakly closed set of `K`-valued measures. For `ℚ_p`-valued measures, a single power of `p` carries
-the whole measure into this integral lattice. After scaling, its values on all continuous
-`ℤ_p`-valued test functions are integral.
+For measures on a profinite space with coefficients in `ℚ_p`, a single power of `p` carries
+the whole measure into the range of coefficient extension from `ℤ_p`. After scaling, its values
+on all continuous `ℤ_p`-valued test functions are integral.
 
 ## References
 
@@ -27,39 +25,6 @@ the whole measure into this integral lattice. After scaling, its values on all c
 public section
 
 open scoped AbstractMeasure
-
-namespace RingHom
-
-open AbstractMeasure
-
-/-- On a profinite space, extension along a bounded coefficient embedding with closed image has
-weakly closed range. -/
-theorem isClosed_range_extendCoefficients_weak
-    {X : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
-    [TotallyDisconnectedSpace X] {O K : Type*}
-    [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
-    [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K]
-    (j : O →+* K) {B : ℝ} (hj : ∀ a, ‖j a‖ ≤ B) (hje : Topology.IsEmbedding j)
-    (hjr : IsClosed (Set.range j)) :
-    @IsClosed D(X, K) WeakTopology (extendCoefficients (X := X) j hj).range := by
-  have hrange : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =
-      ⋂ f : C(X, O), {ν | ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j} := by
-    ext ν
-    simp only [Set.mem_iInter, Set.mem_ofPred_eq]
-    constructor
-    · rintro ⟨μ, rfl⟩ f
-      exact ⟨μ f, (extendCoefficients_apply_comp j μ hj hje.continuous f).symm⟩
-    · intro hν
-      obtain ⟨μ, hμ⟩ := j.exists_apply_comp_eq_of_mem_range hje ν hν
-      exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
-  rw [hrange]
-  let : TopologicalSpace D(X, K) := WeakTopology
-  have heval : Continuous (fun μ : D(X, K) ↦ fun f : C(X, K) ↦ μ f) :=
-    continuous_induced_dom
-  exact isClosed_iInter fun f ↦ hjr.preimage
-    ((continuous_apply ((⟨j, hje.continuous⟩ : C(O, K)).comp f)).comp heval)
-
-end RingHom
 
 namespace AbstractMeasure
 
