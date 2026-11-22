@@ -44,18 +44,23 @@ This module establishes the algebraic properties of `realCliffordSpinDiagonalLif
 ## Main results
 
 * `TauCeti.realCliffordSpinDiagonalLift_spinToSpecialOrthogonal`,
+  `TauCeti.eq_realCliffordSpinDiagonalLift_of_comp_spinToSpecialOrthogonal`,
   `TauCeti.spinToSpecialOrthogonal_realCliffordSpinDiagonalLift`,
   `TauCeti.spinVectorAction_realCliffordSpinDiagonalLift_append`, and
-  `TauCeti.realCliffordSpinDiagonalLift_injective`: characterizing equations and injectivity.
+  `TauCeti.realCliffordSpinDiagonalLift_injective`: characterizing equations, algebraic descent
+  uniqueness, and injectivity.
 * `TauCeti.realCliffordSpinDiagonalLift_zero` and `TauCeti.realCliffordSpinDiagonalLift_one`:
   low-rank triviality in ranks `0` and `1`.
 * `TauCeti.realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation`,
   `TauCeti.coe_realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation`, and
   `TauCeti.realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation_pi`: coordinate-plane
   rotation formula and full-turn closure.
-* `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinDiagonalLift` and
-  `TauCeti.spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinDiagonalLift`: block-swap
-  invariance and ordered direct-sum coherence of `realCliffordSpinDiagonalLift`.
+* `TauCeti.realCliffordSpinDiagonalLift_congr`,
+  `TauCeti.realCliffordSpinDiagonalLift_zero_add`,
+  `TauCeti.spinGroupEquiv_realCliffordBlockSwapIsometry_realCliffordSpinDiagonalLift`, and
+  `TauCeti.spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinDiagonalLift`: rank
+  congruence (including left-unit transport from `0 + k` to `k`), block-swap invariance, and
+  ordered direct-sum coherence of `realCliffordSpinDiagonalLift`.
 
 ## References
 
@@ -101,6 +106,20 @@ theorem realCliffordSpinDiagonalLift_spinToSpecialOrthogonal (k : ℕ)
       realCliffordSpinBlockSum k k (x, x) := by
   rw [realCliffordSpinDiagonalLift_apply, spinDiagonalLift_spinToSpecialOrthogonal,
     realCliffordSpinBlockSum_apply]
+
+/-- **Algebraic descent uniqueness for `realCliffordSpinDiagonalLift`**: any homomorphism
+`SO(k) →* Spin(k + k)` agreeing with `x ↦ realCliffordSpinBlockSum k k (x, x)` after
+precomposition with `spinToSpecialOrthogonal` equals `realCliffordSpinDiagonalLift k`. -/
+theorem eq_realCliffordSpinDiagonalLift_of_comp_spinToSpecialOrthogonal (k : ℕ)
+    (f : specialOrthogonalGroup (realCliffordForm k 0) →* realCliffordSpinGroupZero (k + k))
+    (hf : ∀ x : realCliffordSpinGroupZero k,
+      f (spinToSpecialOrthogonal (realCliffordForm k 0) x) =
+        realCliffordSpinBlockSum k k (x, x)) :
+    f = realCliffordSpinDiagonalLift k := by
+  refine MonoidHom.ext fun g ↦ ?_
+  obtain ⟨x, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
+    (realCliffordForm k 0) (posDef_realCliffordForm_zero k) g
+  rw [hf, realCliffordSpinDiagonalLift_spinToSpecialOrthogonal]
 
 /-- Evaluating `realCliffordSpinDiagonalLift` on the projection of `x ∈ Spin(k)` multiplies the
 left- and right-block Spin images of `x`. -/
@@ -188,22 +207,10 @@ theorem realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation {k : �
   rw [realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_eq_mul,
     (realCliffordSpinBlockInlIsometry k k).spinGroupMap_spinRotation
       (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-      (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1)
-      (by rw [realCliffordSpinBlockInlIsometry_single]; exact realCliffordForm_zero_single_one _ _)
-      (by rw [realCliffordSpinBlockInlIsometry_single]; exact realCliffordForm_zero_single_one _ _)
-      (by
-        rw [realCliffordSpinBlockInlIsometry_single, realCliffordSpinBlockInlIsometry_single]
-        exact isOrtho_realCliffordForm_single (p := k + k) (q := 0)
-          ((Fin.castAdd_injective k k).ne hij) 1 1),
+      (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) t,
     (realCliffordSpinBlockInrIsometry k k).spinGroupMap_spinRotation
       (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-      (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1)
-      (by rw [realCliffordSpinBlockInrIsometry_single]; exact realCliffordForm_zero_single_one _ _)
-      (by rw [realCliffordSpinBlockInrIsometry_single]; exact realCliffordForm_zero_single_one _ _)
-      (by
-        rw [realCliffordSpinBlockInrIsometry_single, realCliffordSpinBlockInrIsometry_single]
-        exact isOrtho_realCliffordForm_single (p := k + k) (q := 0)
-          ((Fin.natAdd_injective k k).ne hij) 1 1)]
+      (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) t]
   simp only [realCliffordSpinBlockInlIsometry_single, realCliffordSpinBlockInrIsometry_single]
 
 /-- **Explicit Clifford-algebra expansion of the doubled coordinate-plane rotation**:
@@ -241,6 +248,37 @@ theorem realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation_pi {k 
   rw [spinRotation_pi, spinGroup.spinToSpecialOrthogonal_negOne, map_one]
 
 /-! ### Block-swap invariance and ordered direct-sum coherence -/
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Rank-congruence naturality of `realCliffordSpinDiagonalLift`**: transporting along an
+equality `hk : k₁ = k₂` via `realCliffordFormCongr` on source and target commutes with
+`realCliffordSpinDiagonalLift`. -/
+theorem realCliffordSpinDiagonalLift_congr {k₁ k₂ : ℕ} (hk : k₁ = k₂)
+    (g : specialOrthogonalGroup (realCliffordForm k₁ 0)) :
+    (realCliffordFormCongr (congrArg₂ (· + ·) hk hk) rfl).spinGroupEquiv
+        (realCliffordSpinDiagonalLift k₁ g) =
+      realCliffordSpinDiagonalLift k₂
+        ((realCliffordFormCongr hk rfl).specialOrthogonalGroupCongr g) := by
+  subst hk
+  have hcongr (m : ℕ) : realCliffordFormCongr (rfl : m = m) (rfl : (0 : ℕ) = 0) =
+      QuadraticMap.IsometryEquiv.refl (realCliffordForm m 0) :=
+    DFunLike.ext _ _ fun _ ↦ funext fun _ ↦ by
+      rw [realCliffordFormCongr_apply, QuadraticMap.IsometryEquiv.refl_apply]
+      rfl
+  rw [hcongr k₁, hcongr (k₁ + k₁), IsometryEquiv.spinGroupEquiv_refl,
+    IsometryEquiv.specialOrthogonalGroupCongr_refl, MulEquiv.refl_apply, MulEquiv.refl_apply]
+
+-- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
+/-- **Left-unit rank transport for `realCliffordSpinDiagonalLift`**: transporting from rank `0 + k`
+to rank `k` via `realCliffordFormCongr (Nat.zero_add k) rfl` commutes with the diagonal lift (the
+right-unit rank equality `k + 0 = k` is definitional). -/
+theorem realCliffordSpinDiagonalLift_zero_add (k : ℕ)
+    (g : specialOrthogonalGroup (realCliffordForm (0 + k) 0)) :
+    (realCliffordFormCongr (congrArg₂ (· + ·) (Nat.zero_add k) (Nat.zero_add k)) rfl).spinGroupEquiv
+        (realCliffordSpinDiagonalLift (0 + k) g) =
+      realCliffordSpinDiagonalLift k
+        ((realCliffordFormCongr (Nat.zero_add k) rfl).specialOrthogonalGroupCongr g) :=
+  realCliffordSpinDiagonalLift_congr (Nat.zero_add k) g
 
 -- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` simplifies the LHS head to `spinGroupMap`.
 /-- **Block-swap invariance of `realCliffordSpinDiagonalLift`**: swapping the two `k`-blocks of

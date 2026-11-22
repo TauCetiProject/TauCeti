@@ -11,48 +11,44 @@ import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 
 /-!
-# Topology, uniqueness, and obstruction for the compact real diagonal Spin lift
+# Topology, uniqueness, and full-turn loop for the compact real diagonal Spin lift
 
 This module develops the topological properties of the compact real diagonal Spin lift
 `TauCeti.realCliffordSpinDiagonalLift k : SO(k) →* Spin(k + k)`:
 
-* **Continuity and closed embedding**: because the compact Spin projection `Spin(k) → SO(k)` is a
-  continuous surjection from a compact space to a Hausdorff space, it is a quotient map; continuity
-  of `realCliffordSpinDiagonalLift k` descends immediately from
-  `continuous_realCliffordSpinBlockSum` along the projection square. Compactness of `SO(k)` and
-  injectivity yield a closed topological embedding.
+* **Continuity and closed embedding**: `realCliffordSpinDiagonalLift k` is continuous and a closed
+  topological embedding `SO(k) → Spin(k + k)`, and is bundled as the continuous homomorphism
+  `TauCeti.realCliffordSpinDiagonalLiftContinuousMonoidHom k : SO(k) →ₜ* Spin(k + k)`. Composing
+  this bundled lift with continuous `SO(k)`-valued transition functions lifts doubled transition
+  functions continuously to `Spin(k + k)`.
 * **Carrier and matrix models**: transporting across the closed unit-group carrier equivalences of
   `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Projection` gives the continuous carrier lift
-  `TauCeti.realCliffordSpecialOrthogonalRangeDiagonalLift k`, and precomposing with
+  `TauCeti.realCliffordSpecialOrthogonalRangeDiagonalLift k` out of the closed image of `SO(k)` in
+  `GL(k, ℝ)`, and precomposing with
   `TauCeti.QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm k` gives the
   matrix-group lift
   `TauCeti.matrixSpecialOrthogonalSpinDiagonalLift k : SO(Fin k, ℝ) →ₜ* Spin(k + k)`.
-* **Uniqueness of continuous lifts**: because `SO(k)` is connected and `Spin(k + k) → SO(k + k)`
-  is a covering map in positive rank, any continuous map `SO(k) → Spin(k + k)` lifting
+* **Uniqueness of continuous lifts**: any continuous map `SO(k) → Spin(k + k)` lifting
   `g ↦ diag(g, g)` and sending `1` to `1` (in particular, any continuous homomorphism lifting
-  `g ↦ diag(g, g)`) must equal `realCliffordSpinDiagonalLift k`, and any continuous lift without
-  basepoint normalization equals either `realCliffordSpinDiagonalLift k` or its translate by the
-  central element `-1`.
-* **Obstruction to one-block lifts**: for `k = n + 2 ≥ 2`, no continuous map lifts the identity
-  `SO(n + 2) → SO(n + 2)`, either one-block embedding `g ↦ diag(g, I_m)` or `g ↦ diag(I_m, g)`, or
-  the first-coordinate stabilization `SO(n + 2) → SO(n + 3)` to the corresponding Spin group. This
-  follows from covering-space lift uniqueness applied to a path from `1` to `-1` in `Spin(n + 2)`;
-  in particular, a full `2π` coordinate-plane rotation loop lifts under
-  `realCliffordSpinDiagonalLift` to a closed loop (`1` to `1`), whereas under the one-block
-  embedding `g ↦ diag(g, I_m)` it lifts from `1` to `-1 ≠ 1`.
+  `g ↦ diag(g, g)`) equals `realCliffordSpinDiagonalLift k`. In positive rank, any continuous lift
+  without basepoint normalization equals either `realCliffordSpinDiagonalLift k` or its left
+  translate by `-1`; in rank zero, `Spin(0)` is trivial and the continuous lift is unique.
+* **Closed full-turn rotation loop**: a full `2π` coordinate-plane rotation loop lifts under
+  `realCliffordSpinDiagonalLift k` to a closed loop (`1` to `1`) in `Spin(k + k)`, contrasting with
+  the open path (`1` to `-1`) under a one-block embedding in
+  `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Stabilization`.
 
 ## Main definitions
 
 * `TauCeti.realCliffordSpinDiagonalLiftContinuousMonoidHom`: the bundled continuous homomorphism
   `SO(k) →ₜ* Spin(k + k)`.
-* `TauCeti.realCliffordSpecialOrthogonalRangeDiagonalLift`: the continuous diagonal lift between
-  the closed `GL(k, ℝ)` and Clifford-unit range carriers.
+* `TauCeti.realCliffordSpecialOrthogonalRangeDiagonalLift`: the continuous diagonal lift from the
+  closed image of `SO(k)` in `GL(k, ℝ)` to the closed Clifford-unit range carrier of
+  `Spin(k + k)`.
 * `TauCeti.matrixSpecialOrthogonalSpinDiagonalLift`: the continuous diagonal lift from the matrix
   group `Matrix.specialOrthogonalGroup (Fin k) ℝ` to `Spin(k + k)`.
-* `TauCeti.realCliffordSpinDiagonalLiftRotationLoop` and
-  `TauCeti.realCliffordSpinBlockSumRotationPath`: explicit path lifts of a full `2π`
-  coordinate-plane rotation under the diagonal lift (closed, `1` to `1`) versus a one-block
-  embedding (open, `1` to `-1`).
+* `TauCeti.realCliffordSpinDiagonalLiftRotationLoop`: explicit closed loop lift (`1` to `1`) of a
+  full `2π` coordinate-plane rotation under the diagonal lift.
 
 ## Main results
 
@@ -65,12 +61,9 @@ This module develops the topological properties of the compact real diagonal Spi
   `TauCeti.eq_or_eq_negOne_mul_realCliffordSpinDiagonalLift_of_continuous_lift`, and
   `TauCeti.eq_realCliffordSpinDiagonalLift_of_continuous_monoidHom_lift`: uniqueness of continuous
   and homomorphic diagonal lifts.
-* `TauCeti.not_exists_continuous_lift_of_spinLift_ne`,
-  `TauCeti.not_exists_continuous_section_realCliffordSpin`,
-  `TauCeti.not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_mk_one`,
-  `TauCeti.not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_one_mk`, and
-  `TauCeti.not_exists_continuous_lift_realCliffordSpecialOrthogonalFirstInclusion`: non-existence
-  of continuous lifts for the identity, one-block embeddings, and stabilization in rank `≥ 2`.
+* `TauCeti.realCliffordSpinDiagonalLiftRotationLoop_apply` and
+  `TauCeti.spinToSpecialOrthogonal_realCliffordSpinDiagonalLiftRotationLoop`: evaluation and
+  projection of the closed diagonal rotation loop.
 
 ## References
 
@@ -138,8 +131,8 @@ theorem realCliffordSpinDiagonalLiftContinuousMonoidHom_apply (k : ℕ)
 
 /-! ### Compatibility with closed unit-range carriers and matrix `SO(Fin k, ℝ)` -/
 
-/-- **The compact diagonal Spin lift on the closed unit-range carriers**, mapping the closed
-`SO(k)` carrier in `GL(k, ℝ)` into the closed `Spin(k + k)` carrier in Clifford units. -/
+/-- **The compact diagonal Spin lift on the closed unit-range carriers**, mapping the closed image
+of `SO(k)` in `GL(k, ℝ)` into the closed `Spin(k + k)` carrier in Clifford units. -/
 def realCliffordSpecialOrthogonalRangeDiagonalLift (k : ℕ) :
     -- `realCliffordForm k 0` lives on `Fin (k + 0) → ℝ`, which is `Fin k → ℝ` by definition;
     -- stating the carrier over `Fin k → ℝ` matches `realCliffordSpinToSpecialOrthogonalRange`.
@@ -166,8 +159,8 @@ theorem realCliffordSpecialOrthogonalRangeDiagonalLift_apply (k : ℕ)
 
 -- Not `@[simp]`: `realCliffordSpecialOrthogonalContinuousMulEquivRange_apply` simplifies the inner
 -- argument, and `realCliffordSpecialOrthogonalRangeDiagonalLift_apply` handles general inputs.
-/-- Evaluating `realCliffordSpecialOrthogonalRangeDiagonalLift` on a canonical matrix-range
-representative applies `realCliffordSpinDiagonalLift`. -/
+/-- Evaluating `realCliffordSpecialOrthogonalRangeDiagonalLift` on a canonical representative in
+the closed image of `SO(k)` in `GL(k, ℝ)` applies `realCliffordSpinDiagonalLift`. -/
 theorem realCliffordSpecialOrthogonalRangeDiagonalLift_apply_equiv (k : ℕ)
     (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm k 0)) :
     realCliffordSpecialOrthogonalRangeDiagonalLift k
@@ -295,110 +288,7 @@ theorem eq_realCliffordSpinDiagonalLift_of_continuous_monoidHom_lift (k : ℕ)
   ContinuousMonoidHom.ext <| congrFun <|
     eq_realCliffordSpinDiagonalLift_of_continuous_lift k f.continuous hlift (map_one f)
 
-/-! ### Obstruction to lifting one-block inclusions and full-turn loop comparison -/
-
-/-- **General Spin-lift obstruction in rank `≥ 2`**: if a map `φ : SO(n + 2) → SO(N)` is covered by
-a continuous map `ψ : Spin(n + 2) → Spin(N)` satisfying `ψ (-1) ≠ ψ 1`, then `φ` admits no
-continuous lift `SO(n + 2) → Spin(N)`. -/
-theorem not_exists_continuous_lift_of_spinLift_ne {n N : ℕ}
-    {φ : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
-      QuadraticMap.specialOrthogonalGroup (realCliffordForm N 0)}
-    {ψ : realCliffordSpinGroupZero (n + 2) → realCliffordSpinGroupZero N}
-    (hψ_cont : Continuous ψ)
-    (hψ_lift : ∀ x, spinToSpecialOrthogonal (realCliffordForm N 0) (ψ x) =
-      φ (spinToSpecialOrthogonal (realCliffordForm (n + 2) 0) x))
-    (hψ_ne : ψ (spinGroup.negOne (realCliffordForm (n + 2) 0)
-        (nondegenerate_realCliffordForm (n + 2) 0).ne_zero) ≠ ψ 1) :
-    ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
-        realCliffordSpinGroupZero N,
-      Continuous f ∧ ∀ g, spinToSpecialOrthogonal (realCliffordForm N 0) (f g) = φ g := by
-  obtain rfl | hN := Nat.eq_zero_or_pos N
-  · have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
-    exact absurd (Subsingleton.elim _ _) hψ_ne
-  have : NeZero N := ⟨hN.ne'⟩
-  rintro ⟨f, hf_cont, hf_lift⟩
-  -- Normalize `f` so that it sends `1` to `ψ 1` while lifting the same map `φ`.
-  have hφ1 : spinToSpecialOrthogonal (realCliffordForm N 0) (ψ 1) = φ 1 := by
-    simpa using hψ_lift 1
-  let f' : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
-      realCliffordSpinGroupZero N := fun g ↦ ψ 1 * (f 1)⁻¹ * f g
-  have hf'_lift : ∀ g, spinToSpecialOrthogonal (realCliffordForm N 0) (f' g) = φ g := fun g ↦ by
-    simp [f', hf_lift, hφ1]
-  -- Pull both lifts back along a path from `1` to `-1` in `Spin(n + 2)`.
-  obtain ⟨γ⟩ := joined_one_negOne_realCliffordSpinGroupZero_add_two n
-  have heq : (fun t : unitInterval ↦ f' (spinToSpecialOrthogonal (realCliffordForm (n + 2) 0)
-      (γ t))) = fun t ↦ ψ (γ t) := by
-    refine (isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom N).eq_of_comp_eq
-      ((continuous_const.mul hf_cont).comp
-        ((continuous_spinToSpecialOrthogonal_pi (realCliffordForm (n + 2) 0)).comp γ.continuous))
-      (hψ_cont.comp γ.continuous) ?_ 0 ?_
-    · funext t
-      simpa using (hf'_lift _).trans (hψ_lift (γ t)).symm
-    · simp [f', γ.source]
-  have h1 := congrFun heq 1
-  simp only [γ.target, spinGroup.spinToSpecialOrthogonal_negOne, f', mul_assoc,
-    inv_mul_cancel, mul_one] at h1
-  exact hψ_ne h1.symm
-
-/-- **The Spin double cover `Spin(n + 2) → SO(n + 2)` has no continuous section.** -/
-theorem not_exists_continuous_section_realCliffordSpin (n : ℕ) :
-    ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
-        realCliffordSpinGroupZero (n + 2),
-      Continuous f ∧
-        ∀ g, spinToSpecialOrthogonal (realCliffordForm (n + 2) 0) (f g) = g :=
-  not_exists_continuous_lift_of_spinLift_ne (ψ := id) continuous_id (fun _ ↦ rfl)
-    (spinGroup.negOne_ne_one _ _)
-
-/-- **No continuous lift of the left one-block embedding `g ↦ diag(g, I_m)`** for rank `n + 2`:
-unlike the doubled map `g ↦ diag(g, g)`, the one-block embedding sends the double-cover kernel
-`-1` to `-1` rather than `1`. -/
-theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_mk_one (n m : ℕ) :
-    ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
-        realCliffordSpinGroupZero ((n + 2) + m),
-      Continuous f ∧
-        ∀ g, spinToSpecialOrthogonal (realCliffordForm ((n + 2) + m) 0) (f g) =
-          realCliffordSpecialOrthogonalBlockSum (n + 2) m (g, 1) := by
-  have : NeZero ((n + 2) + m) := ⟨by omega⟩
-  refine not_exists_continuous_lift_of_spinLift_ne
-    (ψ := fun x ↦ realCliffordSpinBlockSum (n + 2) m (x, 1))
-    ((continuous_realCliffordSpinBlockSum (n + 2) m).comp (continuous_id.prodMk continuous_const))
-    (fun x ↦ by simp) ?_
-  rw [realCliffordSpinBlockSum_mk_one, realCliffordSpinBlockSum_mk_one, map_one,
-    (realCliffordSpinBlockInlIsometry (n + 2) m).spinGroupMap_negOne
-      (nondegenerate_realCliffordForm (n + 2) 0).ne_zero]
-  exact spinGroup.negOne_ne_one _ _
-
-/-- **No continuous lift of the right one-block embedding `g ↦ diag(I_m, g)`** for rank `n + 2`. -/
-theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_one_mk (m n : ℕ) :
-    ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
-        realCliffordSpinGroupZero (m + (n + 2)),
-      Continuous f ∧
-        ∀ g, spinToSpecialOrthogonal (realCliffordForm (m + (n + 2)) 0) (f g) =
-          realCliffordSpecialOrthogonalBlockSum m (n + 2) (1, g) := by
-  have : NeZero (m + (n + 2)) := ⟨by omega⟩
-  refine not_exists_continuous_lift_of_spinLift_ne
-    (ψ := fun x ↦ realCliffordSpinBlockSum m (n + 2) (1, x))
-    ((continuous_realCliffordSpinBlockSum m (n + 2)).comp (continuous_const.prodMk continuous_id))
-    (fun x ↦ by simp) ?_
-  rw [realCliffordSpinBlockSum_one_mk, realCliffordSpinBlockSum_one_mk, map_one,
-    (realCliffordSpinBlockInrIsometry m (n + 2)).spinGroupMap_negOne
-      (nondegenerate_realCliffordForm (n + 2) 0).ne_zero]
-  exact spinGroup.negOne_ne_one _ _
-
-/-- **No continuous lift of first-coordinate stabilization `SO(n + 2) → SO(n + 3)` to
-`Spin(n + 3)`.** -/
-theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalFirstInclusion (n : ℕ) :
-    ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
-        realCliffordSpinGroupZero ((n + 2) + 1),
-      Continuous f ∧
-        ∀ g, spinToSpecialOrthogonal (realCliffordForm ((n + 2) + 1) 0) (f g) =
-          realCliffordSpecialOrthogonalFirstInclusion (n + 2) g := by
-  refine not_exists_continuous_lift_of_spinLift_ne
-    (ψ := realCliffordSpinFirstInclusion (n + 2))
-    (continuous_realCliffordSpinFirstInclusion (n + 2))
-    (fun x ↦ spinToSpecialOrthogonal_realCliffordSpinFirstInclusion (n + 2) x) ?_
-  rw [map_one, realCliffordSpinFirstInclusion_negOne]
-  exact spinGroup.negOne_ne_one _ _
+/-! ### Closed full-turn rotation loop -/
 
 /-- **Closed loop lift of a full `2π` coordinate-plane rotation under the diagonal Spin lift**:
 in the ordered `(e_i, e_j)` coordinate plane (where `Q(e_i) = Q(e_j) = 1`, so `spinRotation` at
@@ -443,52 +333,6 @@ theorem spinToSpecialOrthogonal_realCliffordSpinDiagonalLiftRotationLoop {k : �
             (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) (Real.pi * (t : ℝ)))) := by
   rw [realCliffordSpinDiagonalLiftRotationLoop_apply,
     spinToSpecialOrthogonal_realCliffordSpinDiagonalLift]
-
-/-- **Open path lift of a full `2π` coordinate-plane rotation under the one-block embedding
-`g ↦ diag(g, I_m)`**: starting at `1`, the lifted path in `Spin(k + m)` ends at `-1 ≠ 1`. -/
-def realCliffordSpinBlockSumRotationPath {k : ℕ} (m : ℕ) {i j : Fin k} (hij : i ≠ j) :
-    Path (1 : realCliffordSpinGroupZero (k + m))
-      (spinGroup.negOne (realCliffordForm (k + m) 0) (by
-        have : NeZero (k + m) := ⟨Nat.add_pos_left (Fin.pos i) m |>.ne'⟩
-        exact (nondegenerate_realCliffordForm (k + m) 0).ne_zero)) :=
-  ((spinRotationPath (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
-      (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-      (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1)).map
-    (f := fun x ↦ realCliffordSpinBlockSum k m (x, 1))
-    ((continuous_realCliffordSpinBlockSum k m).comp
-      (continuous_id.prodMk continuous_const))).cast
-    (map_one (realCliffordSpinBlockSum k m)).symm (by
-      rw [realCliffordSpinBlockSum_mk_one]
-      exact ((realCliffordSpinBlockInlIsometry k m).spinGroupMap_negOne _).symm)
-
-/-- Evaluating `realCliffordSpinBlockSumRotationPath` at `t` embeds the coordinate-plane rotation
-at Spin angle `π t` into the left block of `Spin(k + m)`. -/
-@[simp]
-theorem realCliffordSpinBlockSumRotationPath_apply {k : ℕ} (m : ℕ) {i j : Fin k} (hij : i ≠ j)
-    (t : unitInterval) :
-    realCliffordSpinBlockSumRotationPath m hij t =
-      realCliffordSpinBlockSum k m
-        (spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
-          (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-          (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) (Real.pi * (t : ℝ)), 1) := by
-  simp [realCliffordSpinBlockSumRotationPath]
-
-/-- The open path `realCliffordSpinBlockSumRotationPath` projects to the one-block embedding
-`t ↦ diag(R(−2π t), I_m)` of the full-turn rotation loop in the ordered `(e_i, e_j)` coordinate
-plane (where `Q(e_i) = Q(e_j) = 1`, so `spinRotation` at Spin angle `π t` projects to
-`R(−2π t)`). -/
-theorem spinToSpecialOrthogonal_realCliffordSpinBlockSumRotationPath {k : ℕ} (m : ℕ)
-    {i j : Fin k} (hij : i ≠ j) (t : unitInterval) :
-    spinToSpecialOrthogonal (realCliffordForm (k + m) 0)
-        (realCliffordSpinBlockSumRotationPath m hij t) =
-      realCliffordSpecialOrthogonalBlockSum k m
-        (spinToSpecialOrthogonal (realCliffordForm k 0)
-          (spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
-            (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-            (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) (Real.pi * (t : ℝ))),
-          1) := by
-  rw [realCliffordSpinBlockSumRotationPath_apply, spinToSpecialOrthogonal_realCliffordSpinBlockSum,
-    map_one]
 
 end
 

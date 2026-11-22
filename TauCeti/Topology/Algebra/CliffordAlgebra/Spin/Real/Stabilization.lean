@@ -8,7 +8,9 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilization
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Prod
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Projection
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
 
 /-!
 # Topology of compact real Spin stabilization and block sums
@@ -30,7 +32,10 @@ Finally, conjugating by `realCliffordSpinContinuousMulEquivUnitsRange` and
 `realCliffordSpecialOrthogonalContinuousMulEquivRange` yields the corresponding continuous
 homomorphisms on the closed unit-range carriers in `(CliffordAlgebra (realCliffordForm n 0))ˣ` and
 `GL(n, ℝ)`, together with their compatibility squares with
-`realCliffordSpinToSpecialOrthogonalRange`.
+`realCliffordSpinToSpecialOrthogonalRange`. In rank `n + 2 ≥ 2`, neither the one-block embeddings
+nor first-coordinate stabilization admits a continuous lift to `Spin`, and a full `2π`
+coordinate-plane rotation loop lifts along the one-block embedding to an open path from `1` to
+`-1`.
 
 ## Main definitions
 
@@ -45,6 +50,8 @@ homomorphisms on the closed unit-range carriers in `(CliffordAlgebra (realCliffo
   `TauCeti.realCliffordSpinUnitsRangeBlockSum`, and
   `TauCeti.realCliffordSpecialOrthogonalRangeBlockSum`: the corresponding continuous
   homomorphisms on the closed unit-range carriers.
+* `TauCeti.realCliffordSpinBlockSumRotationPath`: explicit open path lift from `1` to `-1` of a
+  full `2π` coordinate-plane rotation under the one-block embedding `g ↦ diag(g, I_m)`.
 
 ## Main results
 
@@ -66,6 +73,14 @@ homomorphisms on the closed unit-range carriers in `(CliffordAlgebra (realCliffo
   `TauCeti.realCliffordSpinToSpecialOrthogonalRange_comp_blockSum`: compatibility
   of the unit-range stabilization and block-sum homomorphisms with the native Spin-to-`SO` carrier
   projection.
+* `TauCeti.not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_mk_one`,
+  `TauCeti.not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_one_mk`, and
+  `TauCeti.not_exists_continuous_lift_realCliffordSpecialOrthogonalFirstInclusion`: non-existence
+  of continuous Spin lifts for the one-block embeddings and first-coordinate stabilization in rank
+  `≥ 2`.
+* `TauCeti.realCliffordSpinBlockSumRotationPath_apply` and
+  `TauCeti.spinToSpecialOrthogonal_realCliffordSpinBlockSumRotationPath`: evaluation and
+  projection of the open one-block rotation path lift.
 
 ## References
 
@@ -449,6 +464,107 @@ theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
         ((realCliffordSpinToSpecialOrthogonalRange p).prodMap
           (realCliffordSpinToSpecialOrthogonalRange q)) :=
   ContinuousMonoidHom.ext fun _ ↦ by simp
+
+/-! ### Obstructions to continuous lifts and open one-block rotation path -/
+
+/-- **No continuous lift of the left one-block embedding `g ↦ diag(g, I_m)`** for rank `n + 2`:
+the corresponding Spin block inclusion `x ↦ realCliffordSpinBlockSum (n + 2) m (x, 1)` sends `-1`
+to `-1`, whereas the doubled Spin map `x ↦ realCliffordSpinBlockSum (n + 2) (n + 2) (x, x)` sends
+`-1` to `1`. -/
+theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_mk_one (n m : ℕ) :
+    ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
+        realCliffordSpinGroupZero ((n + 2) + m),
+      Continuous f ∧
+        ∀ g, spinToSpecialOrthogonal (realCliffordForm ((n + 2) + m) 0) (f g) =
+          realCliffordSpecialOrthogonalBlockSum (n + 2) m (g, 1) := by
+  have : NeZero ((n + 2) + m) := ⟨by omega⟩
+  exact not_exists_continuous_lift_of_spinLift_monoidHom
+    ((realCliffordSpinBlockSum (n + 2) m).comp (MonoidHom.inl _ _))
+    ((continuous_realCliffordSpinBlockSum (n + 2) m).comp (continuous_id.prodMk continuous_const))
+    (fun x ↦ by simp)
+    (by
+      dsimp [MonoidHom.inl]
+      rw [realCliffordSpinBlockSum_mk_one,
+        (realCliffordSpinBlockInlIsometry (n + 2) m).spinGroupMap_negOne])
+
+/-- **No continuous lift of the right one-block embedding `g ↦ diag(I_m, g)`** for rank `n + 2`:
+the corresponding Spin block inclusion `x ↦ realCliffordSpinBlockSum m (n + 2) (1, x)` sends `-1`
+to `-1`. -/
+theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalBlockSum_one_mk (m n : ℕ) :
+    ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
+        realCliffordSpinGroupZero (m + (n + 2)),
+      Continuous f ∧
+        ∀ g, spinToSpecialOrthogonal (realCliffordForm (m + (n + 2)) 0) (f g) =
+          realCliffordSpecialOrthogonalBlockSum m (n + 2) (1, g) := by
+  have : NeZero (m + (n + 2)) := ⟨by omega⟩
+  exact not_exists_continuous_lift_of_spinLift_monoidHom
+    ((realCliffordSpinBlockSum m (n + 2)).comp (MonoidHom.inr _ _))
+    ((continuous_realCliffordSpinBlockSum m (n + 2)).comp (continuous_const.prodMk continuous_id))
+    (fun x ↦ by simp)
+    (by
+      dsimp [MonoidHom.inr]
+      rw [realCliffordSpinBlockSum_one_mk,
+        (realCliffordSpinBlockInrIsometry m (n + 2)).spinGroupMap_negOne])
+
+/-- **No continuous lift of first-coordinate stabilization `SO(n + 2) → SO(n + 3)` to
+`Spin(n + 3)`.** -/
+theorem not_exists_continuous_lift_realCliffordSpecialOrthogonalFirstInclusion (n : ℕ) :
+    ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
+        realCliffordSpinGroupZero ((n + 2) + 1),
+      Continuous f ∧
+        ∀ g, spinToSpecialOrthogonal (realCliffordForm ((n + 2) + 1) 0) (f g) =
+          realCliffordSpecialOrthogonalFirstInclusion (n + 2) g :=
+  not_exists_continuous_lift_of_spinLift_monoidHom
+    (realCliffordSpinFirstInclusion (n + 2))
+    (continuous_realCliffordSpinFirstInclusion (n + 2))
+    (spinToSpecialOrthogonal_realCliffordSpinFirstInclusion (n + 2))
+    (realCliffordSpinFirstInclusion_negOne (n + 2))
+
+/-- **Open path lift of a full `2π` coordinate-plane rotation under the one-block embedding
+`g ↦ diag(g, I_m)`**: starting at `1`, the lifted path in `Spin(k + m)` ends at `-1 ≠ 1`. -/
+def realCliffordSpinBlockSumRotationPath {k : ℕ} (m : ℕ) {i j : Fin k} (hij : i ≠ j) :
+    Path (1 : realCliffordSpinGroupZero (k + m))
+      (spinGroup.negOne (realCliffordForm (k + m) 0) (by
+        have : NeZero (k + m) := ⟨Nat.add_pos_left (Fin.pos i) m |>.ne'⟩
+        exact (nondegenerate_realCliffordForm (k + m) 0).ne_zero)) :=
+  ((spinRotationPath (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
+      (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
+      (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1)).map
+    (f := fun x ↦ realCliffordSpinBlockSum k m (x, 1))
+    ((continuous_realCliffordSpinBlockSum k m).comp
+      (continuous_id.prodMk continuous_const))).cast
+    (map_one (realCliffordSpinBlockSum k m)).symm (by
+      rw [realCliffordSpinBlockSum_mk_one]
+      exact ((realCliffordSpinBlockInlIsometry k m).spinGroupMap_negOne _).symm)
+
+/-- Evaluating `realCliffordSpinBlockSumRotationPath` at `t` embeds the coordinate-plane rotation
+at Spin angle `π t` into the left block of `Spin(k + m)`. -/
+@[simp]
+theorem realCliffordSpinBlockSumRotationPath_apply {k : ℕ} (m : ℕ) {i j : Fin k} (hij : i ≠ j)
+    (t : unitInterval) :
+    realCliffordSpinBlockSumRotationPath m hij t =
+      realCliffordSpinBlockSum k m
+        (spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
+          (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
+          (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) (Real.pi * (t : ℝ)), 1) := by
+  simp [realCliffordSpinBlockSumRotationPath]
+
+/-- The open path `realCliffordSpinBlockSumRotationPath` projects to the one-block embedding
+`t ↦ diag(R(−2π t), I_m)` of the full-turn rotation loop in the ordered `(e_i, e_j)` coordinate
+plane (where `Q(e_i) = Q(e_j) = 1`, so `spinRotation` at Spin angle `π t` projects to
+`R(−2π t)`). -/
+theorem spinToSpecialOrthogonal_realCliffordSpinBlockSumRotationPath {k : ℕ} (m : ℕ)
+    {i j : Fin k} (hij : i ≠ j) (t : unitInterval) :
+    spinToSpecialOrthogonal (realCliffordForm (k + m) 0)
+        (realCliffordSpinBlockSumRotationPath m hij t) =
+      realCliffordSpecialOrthogonalBlockSum k m
+        (spinToSpecialOrthogonal (realCliffordForm k 0)
+          (spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
+            (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
+            (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) (Real.pi * (t : ℝ))),
+          1) := by
+  rw [realCliffordSpinBlockSumRotationPath_apply, spinToSpecialOrthogonal_realCliffordSpinBlockSum,
+    map_one]
 
 end
 

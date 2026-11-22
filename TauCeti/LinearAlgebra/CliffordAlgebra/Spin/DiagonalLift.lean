@@ -14,7 +14,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.LowRank
 
 Let `Q` be a finite-dimensional nondegenerate quadratic form over a field `K` with `2` invertible,
 and suppose the Spin projection `Spin(Q) →* SO(Q)` is surjective (for instance, `Q` is
-positive-definite over `ℝ`, or `K` is quadratically closed). Although the double cover
+positive-definite over `ℝ`, or `K` is quadratically closed). Although the Spin projection
 `Spin(Q) →* SO(Q)` generally admits no section, the doubled orthogonal sum `Q ⊕ Q` canonically
 receives the diagonal homomorphism
 
@@ -44,8 +44,9 @@ summands of `Q ⊕ Q`. At the half-turn `z = -1` (angle `t = π` in `Spin`, corr
 
 ## Main results
 
-* `CliffordAlgebra.spinDiagonalLift_spinToSpecialOrthogonal`: evaluating `spinDiagonalLift` on the
-  projection of `x ∈ Spin(Q)` gives `spinGroupProd Q Q (x, x)`.
+* `CliffordAlgebra.spinDiagonalLift_spinToSpecialOrthogonal` and
+  `CliffordAlgebra.eq_spinDiagonalLift_of_comp_spinToSpecialOrthogonal`: evaluation on Spin
+  preimages and algebraic descent uniqueness of `spinDiagonalLift`.
 * `CliffordAlgebra.spinToSpecialOrthogonal_spinDiagonalLift`,
   `CliffordAlgebra.spinVectorAction_spinDiagonalLift`, and
   `CliffordAlgebra.spinDiagonalLift_injective`: `spinDiagonalLift` lifts `g ↦ (g, g)`, acts
@@ -126,6 +127,18 @@ theorem spinDiagonalLift_spinToSpecialOrthogonal (Q : QuadraticForm K V) (hQ : Q
   rw [spinDiagonalLift, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsymm,
     QuotientGroup.lift_mk]
   rfl
+
+/-- **Algebraic descent uniqueness for `spinDiagonalLift`**: any homomorphism
+`SO(Q) →* Spin(Q ⊕ Q)` agreeing with `x ↦ spinGroupProd Q Q (x, x)` after precomposition with
+`spinToSpecialOrthogonal` equals `spinDiagonalLift`. -/
+theorem eq_spinDiagonalLift_of_comp_spinToSpecialOrthogonal (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hsurj : Function.Surjective (spinToSpecialOrthogonal Q))
+    (f : specialOrthogonalGroup Q →* spinGroup (Q.prod Q))
+    (hf : ∀ x : spinGroup Q, f (spinToSpecialOrthogonal Q x) = spinGroupProd Q Q (x, x)) :
+    f = spinDiagonalLift Q hQ hsurj := by
+  refine MonoidHom.ext fun g ↦ ?_
+  obtain ⟨x, rfl⟩ := hsurj g
+  rw [hf, spinDiagonalLift_spinToSpecialOrthogonal]
 
 /-- Evaluating `spinDiagonalLift` on the projection of `x ∈ Spin(Q)` multiplies the images of `x`
 under the two orthogonal summand inclusions. -/
@@ -282,8 +295,8 @@ theorem spinDiagonalLift_spinToSpecialOrthogonal_spinRotation {u w : V}
         spinRotation (Q.prod Q) (0, u) (0, w) (by simpa using hu) (by simpa using hw)
           (by simpa [QuadraticMap.isOrtho_def] using huw) t := by
   rw [spinDiagonalLift_spinToSpecialOrthogonal_eq_mul,
-    (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinRotation hu hw huw _ _ _ t,
-    (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinRotation hu hw huw _ _ _ t]
+    (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinRotation hu hw huw t,
+    (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinRotation hu hw huw t]
   rfl
 
 /-- At Spin angle `π` (a full `2π` rotation in `SO(Q)`), each single-summand rotation equals `-1`,

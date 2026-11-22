@@ -794,53 +794,68 @@ private def middleSwapPerm (p q : ℕ) : Equiv.Perm (Fin ((p + q) + (p + q))) :=
     (Equiv.Perm.sumCongr 1
       (Equiv.Perm.sumCongr (finAddFlip.trans (finCongr (add_comm q p))) 1))
 
+private theorem middleSwapIndexEquiv_cast_and_perm_inl (p q : ℕ) (a : Fin p) :
+    (middleSwapIndexEquiv p q (Sum.inl a)).cast (add_add_add_comm p p q q).symm =
+        Fin.castAdd (q + q) (Fin.castAdd p a) ∧
+      middleSwapPerm p q (middleSwapIndexEquiv p q (Sum.inl a)) =
+        Fin.castAdd (p + q) (Fin.castAdd q a) :=
+  ⟨Fin.ext (by simp [middleSwapIndexEquiv]),
+    Fin.ext (by simp [middleSwapPerm, middleSwapIndexEquiv])⟩
+
+private theorem middleSwapIndexEquiv_cast_and_perm_inr_inl_castAdd (p q : ℕ) (a : Fin p) :
+    (middleSwapIndexEquiv p q (Sum.inr (Sum.inl (Fin.castAdd q a)))).cast
+          (add_add_add_comm p p q q).symm =
+        Fin.castAdd (q + q) (Fin.natAdd p a) ∧
+      middleSwapPerm p q (middleSwapIndexEquiv p q (Sum.inr (Sum.inl (Fin.castAdd q a)))) =
+        Fin.natAdd (p + q) (Fin.castAdd q a) :=
+  ⟨Fin.ext (by simp [middleSwapIndexEquiv]; omega),
+    Fin.ext (by simp [middleSwapPerm, middleSwapIndexEquiv, finAddFlip_apply_castAdd]; omega)⟩
+
+private theorem middleSwapIndexEquiv_cast_and_perm_inr_inl_natAdd (p q : ℕ) (b : Fin q) :
+    (middleSwapIndexEquiv p q (Sum.inr (Sum.inl (Fin.natAdd p b)))).cast
+          (add_add_add_comm p p q q).symm =
+        Fin.natAdd (p + p) (Fin.castAdd q b) ∧
+      middleSwapPerm p q (middleSwapIndexEquiv p q (Sum.inr (Sum.inl (Fin.natAdd p b)))) =
+        Fin.castAdd (p + q) (Fin.natAdd p b) :=
+  ⟨Fin.ext (by simp [middleSwapIndexEquiv]; omega),
+    Fin.ext (by simp [middleSwapPerm, middleSwapIndexEquiv, finAddFlip_apply_natAdd])⟩
+
+private theorem middleSwapIndexEquiv_cast_and_perm_inr_inr (p q : ℕ) (c : Fin q) :
+    (middleSwapIndexEquiv p q (Sum.inr (Sum.inr c))).cast (add_add_add_comm p p q q).symm =
+        Fin.natAdd (p + p) (Fin.natAdd q c) ∧
+      middleSwapPerm p q (middleSwapIndexEquiv p q (Sum.inr (Sum.inr c))) =
+        Fin.natAdd (p + q) (Fin.natAdd p c) :=
+  ⟨Fin.ext (by simp [middleSwapIndexEquiv]; omega),
+    Fin.ext (by simp [middleSwapPerm, middleSwapIndexEquiv]; omega)⟩
+
 private theorem realCliffordMiddleSwapIsometry_trans_congr_eq_reindex (p q : ℕ) :
     (realCliffordMiddleSwapIsometry p q).trans
         (realCliffordFormCongr (add_add_add_comm p p q q) rfl) =
       realCliffordFormZeroReindex (middleSwapPerm p q) := by
-  have hsplit (a b : ℕ) (y : Fin (a + b) → ℝ) : ∃ u v, y = Fin.append u v :=
-    ⟨(realCliffordSplitIsometry a b 0 0 y).1, (realCliffordSplitIsometry a b 0 0 y).2,
-      ((realCliffordSplitIsometry a b 0 0).symm_apply_apply y).symm.trans
-        (realCliffordSplitIsometry_zero_symm_apply a b _)⟩
-  refine DFunLike.ext _ _ fun x ↦ ?_
-  obtain ⟨y₁, y₂, rfl⟩ := hsplit (p + q) (p + q) x
-  obtain ⟨u₁, v₁, rfl⟩ := hsplit p q y₁
-  obtain ⟨u₂, v₂, rfl⟩ := hsplit p q y₂
-  funext (i : Fin ((p + q) + (p + q)))
+  refine DFunLike.ext _ _ fun x ↦ funext fun (i : Fin ((p + q) + (p + q))) ↦ ?_
+  let u₁ : Fin p → ℝ := fun a ↦ x (Fin.castAdd (p + q) (Fin.castAdd q a))
+  let v₁ : Fin q → ℝ := fun b ↦ x (Fin.castAdd (p + q) (Fin.natAdd p b))
+  let u₂ : Fin p → ℝ := fun a ↦ x (Fin.natAdd (p + q) (Fin.castAdd q a))
+  let v₂ : Fin q → ℝ := fun b ↦ x (Fin.natAdd (p + q) (Fin.natAdd p b))
+  have hx : x = Fin.append (Fin.append u₁ v₁) (Fin.append u₂ v₂) := by
+    dsimp only [u₁, v₁, u₂, v₂]
+    rw [Fin.append_castAdd_natAdd (f := fun j ↦ x (Fin.castAdd (p + q) j)),
+      Fin.append_castAdd_natAdd (f := fun j ↦ x (Fin.natAdd (p + q) j)),
+      Fin.append_castAdd_natAdd]
   rw [QuadraticMap.IsometryEquiv.trans_apply, realCliffordFormCongr_apply,
-    realCliffordMiddleSwapIsometry_append, realCliffordFormZeroReindex_apply]
+    realCliffordFormZeroReindex_apply]
+  conv_lhs => rw [hx, realCliffordMiddleSwapIsometry_append]
   obtain ⟨k, rfl⟩ := (middleSwapIndexEquiv p q).surjective i
   rcases k with a | (b | c)
-  · have hcast : (middleSwapIndexEquiv p q (Sum.inl a)).cast (by omega) =
-        Fin.castAdd (q + q) (Fin.castAdd p a) := Fin.ext (by simp [middleSwapIndexEquiv])
-    have hperm : middleSwapPerm p q (middleSwapIndexEquiv p q (Sum.inl a)) =
-        Fin.castAdd (p + q) (Fin.castAdd q a) :=
-      Fin.ext (by simp [middleSwapPerm, middleSwapIndexEquiv])
-    rw [hcast, hperm, Fin.append_left, Fin.append_left, Fin.append_left, Fin.append_left]
+  · obtain ⟨hcast, hperm⟩ := middleSwapIndexEquiv_cast_and_perm_inl p q a
+    rw [hcast, hperm, Fin.append_left, Fin.append_left]
   · refine Fin.addCases (fun a ↦ ?_) (fun b' ↦ ?_) b
-    · have hcast : (middleSwapIndexEquiv p q (Sum.inr (Sum.inl (Fin.castAdd q a)))).cast
-          (by omega) = Fin.castAdd (q + q) (Fin.natAdd p a) :=
-        Fin.ext (by simp [middleSwapIndexEquiv]; omega)
-      have hperm : middleSwapPerm p q
-            (middleSwapIndexEquiv p q (Sum.inr (Sum.inl (Fin.castAdd q a)))) =
-          Fin.natAdd (p + q) (Fin.castAdd q a) :=
-        Fin.ext (by simp [middleSwapPerm, middleSwapIndexEquiv, finAddFlip_apply_castAdd]; omega)
-      rw [hcast, hperm, Fin.append_left, Fin.append_right, Fin.append_right, Fin.append_left]
-    · have hcast : (middleSwapIndexEquiv p q (Sum.inr (Sum.inl (Fin.natAdd p b')))).cast
-          (by omega) = Fin.natAdd (p + p) (Fin.castAdd q b') :=
-        Fin.ext (by simp [middleSwapIndexEquiv]; omega)
-      have hperm : middleSwapPerm p q
-            (middleSwapIndexEquiv p q (Sum.inr (Sum.inl (Fin.natAdd p b')))) =
-          Fin.castAdd (p + q) (Fin.natAdd p b') :=
-        Fin.ext (by simp [middleSwapPerm, middleSwapIndexEquiv, finAddFlip_apply_natAdd])
-      rw [hcast, hperm, Fin.append_right, Fin.append_left, Fin.append_left, Fin.append_right]
-  · have hcast : (middleSwapIndexEquiv p q (Sum.inr (Sum.inr c))).cast (by omega) =
-        Fin.natAdd (p + p) (Fin.natAdd q c) :=
-      Fin.ext (by simp [middleSwapIndexEquiv]; omega)
-    have hperm : middleSwapPerm p q (middleSwapIndexEquiv p q (Sum.inr (Sum.inr c))) =
-        Fin.natAdd (p + q) (Fin.natAdd p c) :=
-      Fin.ext (by simp [middleSwapPerm, middleSwapIndexEquiv]; omega)
-    rw [hcast, hperm, Fin.append_right, Fin.append_right, Fin.append_right, Fin.append_right]
+    · obtain ⟨hcast, hperm⟩ := middleSwapIndexEquiv_cast_and_perm_inr_inl_castAdd p q a
+      rw [hcast, hperm, Fin.append_left, Fin.append_right]
+    · obtain ⟨hcast, hperm⟩ := middleSwapIndexEquiv_cast_and_perm_inr_inl_natAdd p q b'
+      rw [hcast, hperm, Fin.append_right, Fin.append_left]
+  · obtain ⟨hcast, hperm⟩ := middleSwapIndexEquiv_cast_and_perm_inr_inr p q c
+    rw [hcast, hperm, Fin.append_right, Fin.append_right]
 
 /-- **The determinant of the middle-block exchange `realCliffordMiddleSwapIsometry p q` is
 `(-1) ^ (p * q)`.** -/
