@@ -1,55 +1,46 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Riccardo Brasca
+Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Grassmannian.Oriented
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
+public import TauCeti.Topology.Grassmannian.Tautological
 
 /-!
 # Unoriented Grassmannians as quotients of orientation covers
 
-The orientation cover of the tautological bundle has two orientation rays over every plane,
-including a zero-dimensional plane. Its deck action identifies these rays. The quotient is
-homeomorphic to the existing finite real Grassmannian in every rank.
+The orientation cover of the tautological bundle modulo reversal is the finite real
+Grassmannian in every rank. This includes rank zero: the cover has two orientation rays
+over each zero-dimensional plane by
+`TauCeti.VectorBundleOrientationCover.encard_preimage_proj_singleton`.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
-open Topology
-
 namespace TauCeti.finiteGrassmannian
 
-/-- The unoriented Grassmannian is the quotient of the tautological orientation cover by
-orientation reversal. This comparison includes rank zero, where the orientation cover still
-has two rays over each plane. -/
+/-- The unoriented Grassmannian is the deck quotient of the tautological orientation
+cover in every rank. -/
 def orientationCoverQuotientHomeomorph (r N : ℕ) :
     MulAction.orbitRel.Quotient ℤˣ
       (VectorBundleOrientationCover (Fin r → ℝ) (Tautological ℝ r N) (Fin r)) ≃ₜ
-        finiteGrassmannian ℝ r N := by
-  let q : VectorBundleOrientationCover (Fin r → ℝ) (Tautological ℝ r N) (Fin r) →
-      finiteGrassmannian ℝ r N := VectorBundleOrientationCover.proj
-  have hcover : IsQuotientCoveringMap q ℤˣ :=
-    VectorBundleOrientationCover.isQuotientCoveringMap_proj
-      (F := Fin r → ℝ) (E := Tautological ℝ r N) (ι := Fin r) (by simp)
-  have hq : IsQuotientMap q :=
-    hcover.toIsQuotientMap
-  exact (Homeomorph.Quotient.congrRight
-    (r' := Setoid.ker q)
-    (fun _ _ ↦ MulAction.orbitRel_apply.trans
-      hcover.apply_eq_iff_mem_orbit.symm)).trans
-      (IsQuotientMap.homeomorph (f := ⟨q, hq.continuous⟩) hq)
+        finiteGrassmannian ℝ r N :=
+  VectorBundleOrientationCover.orbitQuotientHomeomorph (by simp)
 
-/-- Even a zero-dimensional plane has two orientation rays in the orientation cover.
-The quotient homeomorphism above identifies them. -/
-theorem encard_orientationCover_preimage_zero (N : ℕ)
-    (V : finiteGrassmannian ℝ 0 N) :
-    (VectorBundleOrientationCover.proj ⁻¹' {V} :
-      Set (VectorBundleOrientationCover (Fin 0 → ℝ) (Tautological ℝ 0 N) (Fin 0))).encard = 2 :=
-  VectorBundleOrientationCover.encard_preimage_proj_singleton (by simp) V
+@[simp]
+theorem orientationCoverQuotientHomeomorph_mk (r N : ℕ)
+    (p : VectorBundleOrientationCover (Fin r → ℝ) (Tautological ℝ r N) (Fin r)) :
+    orientationCoverQuotientHomeomorph r N (Quotient.mk _ p) = p.proj :=
+  VectorBundleOrientationCover.orbitQuotientHomeomorph_mk (by simp) p
+
+@[simp]
+theorem orientationCoverQuotientHomeomorph_symm_proj (r N : ℕ)
+    (p : VectorBundleOrientationCover (Fin r → ℝ) (Tautological ℝ r N) (Fin r)) :
+    (orientationCoverQuotientHomeomorph r N).symm p.proj = Quotient.mk _ p :=
+  VectorBundleOrientationCover.orbitQuotientHomeomorph_symm_proj (by simp) p
 
 end TauCeti.finiteGrassmannian
