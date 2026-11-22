@@ -527,7 +527,9 @@ private theorem exists_basis_of_linearIndependent_integerPoints
       ∀ j i, (b j : ι' → K') i ∈ range (algebraMap (𝓞 K') K') := by
   cases nonempty_fintype ι'
   let v : Fin n → W := fun j ↦ ⟨fun i ↦ (x j i : K'), mem_integerPoints.mp (hx_mem j)⟩
-  have hv_li : LinearIndependent K' v := LinearIndependent.of_comp W.subtype hx_li
+  have hv_li : LinearIndependent K' v := by
+    refine LinearIndependent.of_comp W.subtype ?_
+    simpa only [Function.comp_def, Submodule.coe_subtype, v] using hx_li
   let b : Basis (Fin n) K' W :=
     basisOfLinearIndependentOfCardEqFinrank' v hv_li ((Fintype.card_fin n).trans hn.symm)
   have hb (j : Fin n) : (b j : ι' → K') = fun i ↦ (x j i : K') := by

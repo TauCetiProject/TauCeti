@@ -336,8 +336,9 @@ theorem exists_ne_zero_integer_height2_le {K m ι : Type*} [Field K] [NumberFiel
         √(Fintype.card ι : ℝ) * |(discr K : ℝ)| ^ (2 * finrank ℚ K : ℝ)⁻¹ *
           (∏ i, height2 (L i)) ^ ((Fintype.card ι : ℝ) - Fintype.card m)⁻¹ := by
   obtain ⟨z, hz0, hLz, hle⟩ :=
-    Matrix.exists_ne_zero_mulVec_eq_zero_height2_le_of_card_lt (A := Matrix.of L) hL hm
-  refine ⟨z, hz0, fun i ↦ ?_, hle⟩
+    Matrix.exists_ne_zero_mulVec_eq_zero_height2_le_of_card_lt (A := Matrix.of L)
+      (by simpa only [Matrix.row_of] using hL) hm
+  refine ⟨z, hz0, fun i ↦ ?_, by simpa only [Matrix.row_of] using hle⟩
   simpa only [Matrix.mulVec_apply_eq_sum, Matrix.of_apply, Pi.zero_apply] using congrFun hLz i
 
 /-- **Fixed-field Siegel's lemma for linear forms, in Euclidean height** (Evertse–Ferretti,
