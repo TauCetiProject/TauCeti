@@ -57,6 +57,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   differentiability hypothesis.
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
+* `TauCeti.mvfderiv_smul_left`: for a group acting on a normed space by continuous linear maps,
+  the derivative of `k • ·` is `k • ·`.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
   differentiability hypothesis.
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
@@ -351,6 +353,16 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp] at h ⊢
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
+
+/-- For a group acting on a normed space by continuous linear maps, the derivative of `k • ·`, read
+in the space, is `k • ·` at every point. -/
+theorem mvfderiv_smul_left {K : Type*} [Group K] [DistribMulAction K F] [SMulCommClass K 𝕜 F]
+    [ContinuousConstSMul K F] (k : K) (p : F) (v : TangentSpace 𝓘(𝕜, F) p) :
+    mvfderiv 𝓘(𝕜, F) (fun x ↦ k • x) p v = k • NormedSpace.fromTangentSpace p v := by
+  have h : HasFDerivAt (fun x : F ↦ k • x)
+      (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F) k : F →L[𝕜] F) p :=
+    (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F) k).hasFDerivAt
+  simp [mvfderiv_eq_fderiv, h.fderiv]
 
 /-- Adding a constant does not change the derivative of a vector-valued function, read in the
 target space. No differentiability is needed: `g` and `g + c` are differentiable at the same

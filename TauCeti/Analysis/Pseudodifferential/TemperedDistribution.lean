@@ -47,7 +47,9 @@ transposes is detected by testing against Schwartz functions:
 * `x_j Op(a) T = Op(a) (x_j T) + i Op(∂_{ξ_j} a) T` (`TauCeti.Symbol.smulLeftCLM_quantizeTempered`);
 * for `b` with compact spatial support, `Op(a # b) = Op(a) ∘ Op(b)` on tempered distributions
   (`TauCeti.Symbol.quantizeTempered_sharp`), from the same identity on Schwartz space
-  (`TauCeti.Symbol.quantizeUniformCLM_sharp`).
+  (`TauCeti.Symbol.quantizeUniformCLM_sharp`);
+* the symbol `φ(x)` acts as multiplication by `φ`
+  (`TauCeti.Symbol.quantizeTempered_ofSpatial_smul_id`).
 
 In particular, for a symbol of order `m` with compact spatial support, `Op(a)` maps tempered
 distributions of Sobolev order `s` to tempered distributions of Sobolev order `s - m`
@@ -210,6 +212,25 @@ theorem quantizeTempered_sharp {a : Symbol n ℂ ℂ m'} {b : Symbol n ℂ ℂ m
   ext T φ
   simp only [quantizeTempered_apply_apply, transposeUniformCLM_sharp ha hb,
     ContinuousLinearMap.comp_apply]
+
+/-- **Multiplication operators.** For a Schwartz function `φ` such that the symbol `φ(x) id` of
+order `0` is uniform, for instance a compactly supported `φ`
+(`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`), this symbol quantizes to
+multiplication by `φ` on tempered distributions. -/
+theorem quantizeTempered_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, ℂ))
+    (h : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ ℂ)
+      ((φ.smooth ⊤).smul contDiff_const)).IsUniform) :
+    quantizeTempered F (ofSpatial _ _) h = TemperedDistribution.smulLeftCLM F φ := by
+  have key : transposeUniformCLM (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ ℂ)
+      ((φ.smooth ⊤).smul contDiff_const)) h = SchwartzMap.smulLeftCLM ℂ φ := by
+    refine (eq_transposeUniformCLM fun u ψ ↦ integral_congr_ae (.of_forall fun x ↦ ?_)).symm
+    dsimp only
+    rw [quantizeUniformCLM_ofSpatial_apply _ h u x,
+      SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth]
+    simp only [_root_.smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
+    ring
+  ext T ψ
+  simp only [quantizeTempered_apply_apply, TemperedDistribution.smulLeftCLM_apply_apply, key]
 
 end Tempered
 
