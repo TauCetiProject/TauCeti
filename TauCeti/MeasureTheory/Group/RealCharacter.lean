@@ -162,10 +162,10 @@ theorem finite_of_forall_continuous_eq_one [ConnectedSpace G] (hΓ : Γ ≤ cent
 /-- **A central extension of a compact group without real characters is compact.** Let `Γ` be a
 discrete central subgroup of a connected locally compact group `G`, with `G ⧸ Γ`
 compact. If every continuous homomorphism `G → ℝ` is trivial, then `G` is compact, since `Γ` is
-finite (`Subgroup.compactSpace_of_finite`). -/
+finite (`Subgroup.compactSpace_of_compactSpace_subgroup`). -/
 theorem compactSpace_of_forall_continuous_eq_one [ConnectedSpace G] (hΓ : Γ ≤ center G)
     (h : ∀ F : G →* Multiplicative ℝ, Continuous F → F = 1) : CompactSpace G := by
   have := Γ.finite_of_forall_continuous_eq_one hΓ h
-  exact Γ.compactSpace_of_finite
+  exact Γ.compactSpace_of_compactSpace_subgroup
 
 end Subgroup
