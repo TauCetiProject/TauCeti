@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
