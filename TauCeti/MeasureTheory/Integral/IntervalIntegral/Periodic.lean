@@ -75,6 +75,8 @@ integrable on `[0, T/2]`, then `f` is not integrable from `t` to `t + n T` for a
   `0` to `T / 2`, with no integrability hypothesis.
 * `Function.Periodic.intervalIntegral_add_int_mul_eq_add_of_even`: quasi-periodicity of the
   integral of an even `T`-periodic function which is interval integrable on `[0, T/2]`.
+* `intervalIntegral.integral_nsmul_eq_geom_sum_smul`: if `f (x + T) = c • f x`, the integral of
+  `f` over `m` periods is `1 + c + ⋯ + c ^ (m - 1)` times its integral over one period.
 -/
 
 public section
@@ -410,3 +412,47 @@ theorem intervalIntegral_add_int_mul_eq_add_of_even (hper : Periodic f T)
     hper.intervalIntegral_add_int_mul_eq_of_even heven x n]
 
 end Function.Periodic
+
+/-- **Integrals of a function with a multiplier over several periods.** If `f (x + T) = c • f x`
+for every `x`, then the integral of `f` over the `m` periods `[0, m T]` is
+`1 + c + ⋯ + c ^ (m - 1)` times its integral over `[0, T]`. No integrability hypothesis is needed:
+if `f` is not interval integrable on `[0, T]`, then for `m ≥ 1` it is not interval integrable on
+`[0, m T]`, and both sides are `0`. -/
+theorem intervalIntegral.integral_nsmul_eq_geom_sum_smul {𝕜 E : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
+    [SMulCommClass ℝ 𝕜 E] {f : ℝ → E} {T : ℝ} {c : 𝕜} (hf : ∀ x, f (x + T) = c • f x) (m : ℕ) :
+    ∫ x in (0 : ℝ)..m • T, f x = (∑ j ∈ Finset.range m, c ^ j) • ∫ x in (0 : ℝ)..T, f x := by
+  have hpow (j : ℕ) (x : ℝ) : f (x + j • T) = c ^ j • f x := by
+    induction j generalizing x with
+    | zero => simp
+    | succ j ih => rw [succ_nsmul, ← add_assoc, hf, ih, ← mul_smul, ← pow_succ']
+  have hpiece (j : ℕ) :
+      ∫ x in j • T..(j + 1) • T, f x = c ^ j • ∫ x in (0 : ℝ)..T, f x := by
+    have h := intervalIntegral.integral_comp_add_right f (j • T) (a := 0) (b := T)
+    rw [zero_add] at h
+    rw [← intervalIntegral.integral_smul, succ_nsmul, add_comm (j • T) T, ← h]
+    exact intervalIntegral.integral_congr fun x _ ↦ hpow j x
+  rw [Finset.sum_smul]
+  by_cases hint : IntervalIntegrable f volume 0 T
+  · have hint' (j : ℕ) : IntervalIntegrable f volume (j • T) ((j + 1) • T) := by
+      have h := (hint.smul (c ^ j)).comp_sub_right (j • T)
+      simp only [zero_add] at h
+      rw [succ_nsmul, add_comm (j • T) T]
+      refine h.congr fun x _ ↦ ?_
+      simp only [Pi.smul_apply]
+      rw [← hpow, sub_add_cancel]
+    rw [← zero_nsmul T, ← intervalIntegral.sum_integral_adjacent_intervals
+      (a := fun j ↦ j • T) fun j _ ↦ hint' j]
+    exact Finset.sum_congr rfl fun j _ ↦ hpiece j
+  · rcases Nat.eq_zero_or_pos m with rfl | hm
+    · simp
+    rw [intervalIntegral.integral_undef hint]
+    simp only [smul_zero, Finset.sum_const_zero]
+    refine intervalIntegral.integral_undef fun h ↦ hint (h.mono_set ?_)
+    have hT : T ∈ Set.uIcc 0 (m • T) := by
+      rw [nsmul_eq_mul, Set.mem_uIcc]
+      have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
+      rcases le_total 0 T with hT | hT
+      · exact Or.inl ⟨hT, by nlinarith⟩
+      · exact Or.inr ⟨by nlinarith, hT⟩
+    exact Set.uIcc_subset_uIcc Set.left_mem_uIcc hT
