@@ -51,10 +51,13 @@ operator `w ↦ w' - M w` on loops twisted by a sign `ε` has the kernel and cok
 its return map (`TauCeti.detLineTwistedLinearOperatorEquiv`). For the untwisted normal operator
 of an orbit torus, the complex-linear reference operator has `P = 1`, and the results here give the
 sign `sgn det (1 - P)` for the path of finite endomorphisms `1 - P`. For the periodic loop
-operators on the circle Sobolev spaces, the identification of their determinant lines with those of
-`1 - P` is coherent along families
-(`TauCeti.CircleSobolev.isDetLineCoherentOn_detLineLoopOperatorEquiv_symm`), so the transport along
-the loop operators themselves follows these generators.
+operators on the circle Sobolev spaces (`ε = 1`), the identification of their determinant lines
+with those of `1 - P` is coherent along families
+(`TauCeti.CircleSobolev.isDetLineCoherentOn_detLineLoopOperatorEquiv_symm`), so transport along
+the loop operators themselves follows the sign of `det (1 - P)`
+(`TauCeti.CircleSobolev.detLineOrientationTransport_detLineEquivOfBijective_loopOperator_of_pos`,
+`TauCeti.CircleSobolev.detLineOrientationTransport_detLineEquivOfBijective_loopOperator_of_neg`).
+The corresponding coherence for the antiperiodic twist `ε = -1` is not proved here.
 
 ## Main results
 
@@ -294,28 +297,6 @@ theorem detLineOrientationTransport_rayOfNeZero_detLineEndGenerator
       rayOfNeZero ℝ _ (T b : V →ₗ[ℝ] V).detLineEndGenerator_ne_zero :=
   detLineOrientationTransport_rayOfNeZero hT hF (isDetLineCoherentOn_detLineEndGenerator T _)
 
-/-- The orientation of the determinant line of a bijective `T a` given by invertibility is
-transported to the ray of `det (T a) * det (T b)` times the generator of the bijective
-trivialization at a bijective `T b`. -/
-private theorem detLineOrientationTransport_detLineEquivOfBijective
-    (hT : ContinuousOn T (uIcc a b)) (hF : ∀ t ∈ uIcc a b, IsFredholm (T t))
-    (ha : Function.Bijective (T a)) (hb : Function.Bijective (T b))
-    (hc : (LinearMap.det (T a : V →ₗ[ℝ] V) * LinearMap.det (T b : V →ₗ[ℝ] V)) •
-      (LinearMap.detLineEquivOfBijective hb).symm 1 ≠ 0) :
-    detLineOrientationTransport a b hT hF
-        (rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective ha).symm.map_ne_zero_iff.2
-          one_ne_zero)) =
-      rayOfNeZero ℝ _ hc := by
-  have hda : LinearMap.det (T a : V →ₗ[ℝ] V) ≠ 0 := fun h ↦
-    LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 ha.1)
-  -- Scaling the normalized generators by `det (T a)` gives `det (T a) ^ 2` times the generator
-  -- of invertibility at `a`, which has the same ray.
-  have hv := (isDetLineCoherentOn_detLineEndGenerator T (uIcc a b)).smul hda
-  have key := detLineOrientationTransport_rayOfNeZero hT hF hv
-  simp only [LinearMap.detLineEndGenerator_eq_det_smul _ ha,
-    LinearMap.detLineEndGenerator_eq_det_smul _ hb, smul_smul] at key
-  rwa [(ray_eq_iff _ _).2 (SameRay.sameRay_pos_smul_left _ (mul_self_pos.2 hda))] at key
-
 /-- **Transport preserves the orientations of invertibility when the determinants have the same
 sign.** Along a continuous path of endomorphisms of a real finite-dimensional normed space from a
 bijective `T a` to a bijective `T b` with `det (T a) * det (T b) > 0`, transport of orientations
@@ -329,10 +310,10 @@ theorem detLineOrientationTransport_detLineEquivOfBijective_of_pos
         (rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective ha).symm.map_ne_zero_iff.2
           one_ne_zero)) =
       rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2
-        one_ne_zero) := by
-  have hb₀ := (LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2 (one_ne_zero (α := ℝ))
-  rw [detLineOrientationTransport_detLineEquivOfBijective hT hF ha hb (smul_ne_zero h.ne' hb₀)]
-  exact (ray_eq_iff _ _).2 (SameRay.sameRay_pos_smul_left _ h)
+        one_ne_zero) :=
+  detLineOrientationTransport_rayOfNeZero_of_mul_pos hT hF
+    (isDetLineCoherentOn_detLineEndGenerator T _) (LinearMap.detLineEndGenerator_eq_det_smul _ ha)
+    (LinearMap.detLineEndGenerator_eq_det_smul _ hb) _ _ h
 
 /-- **Transport reverses the orientations of invertibility when the determinants have opposite
 signs.** Along a continuous path of endomorphisms of a real finite-dimensional normed space from a
@@ -348,14 +329,10 @@ theorem detLineOrientationTransport_detLineEquivOfBijective_of_neg
         (rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective ha).symm.map_ne_zero_iff.2
           one_ne_zero)) =
       -rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2
-        one_ne_zero) := by
-  have hb₀ := (LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2 (one_ne_zero (α := ℝ))
-  rw [detLineOrientationTransport_detLineEquivOfBijective hT hF ha hb (smul_ne_zero h.ne hb₀)]
-  -- Negation of orientations of determinant lines is `Module.Ray`'s negation for the additive
-  -- group structure of the tensor product (`LinearMap.instNegRayDetLine`).
-  let : AddCommGroup (T b : V →ₗ[ℝ] V).detLine := TensorProduct.addCommGroup
-  exact ((ray_eq_iff _ (neg_ne_zero.2 hb₀)).2
-    ((sameRay_neg_smul_left_iff_of_ne hb₀ h.ne).2 h)).trans (neg_rayOfNeZero ℝ _ hb₀).symm
+        one_ne_zero) :=
+  detLineOrientationTransport_rayOfNeZero_of_mul_neg hT hF
+    (isDetLineCoherentOn_detLineEndGenerator T _) (LinearMap.detLineEndGenerator_eq_det_smul _ ha)
+    (LinearMap.detLineEndGenerator_eq_det_smul _ hb) _ _ h
 
 end Transport
 
