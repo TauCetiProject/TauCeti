@@ -49,6 +49,7 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.coe_eq_coe_iff_exists_zsmul`: two elements have the same class in `AddCircle p`
   exactly when they differ by an integer multiple of `p`, and
   `AddCircle.eq_of_coe_eq_of_abs_sub_lt`: two such elements closer than `p` are equal.
+* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`.
 * `AddCircle.intCast_floor_equivIco_add`: the floor of the sum of two representatives in
   `[0, 1)` is their defect of additivity.
 * `AddCircle.natCard_torsionBy_le` and `AddCircle.natCard_torsionBy_pi_le`: when
@@ -166,6 +167,19 @@ theorem eq_of_coe_eq_of_abs_sub_lt {𝕜 : Type*} [AddCommGroup 𝕜] [LinearOrd
     exact hd
   exact injOn_coe_Ico p (min a b) ⟨min_le_left a b, (le_max_left a b).trans_lt hd'⟩
     ⟨min_le_right a b, (le_max_right a b).trans_lt hd'⟩ hab
+
+/-- Every point of a torus `(𝕜 / pℤ)^ι` is the class of a family of representatives in `𝕜^ι`.
+This is `Function.Surjective.comp_left` for the quotient map, stated with the coordinatewise
+coercion so that `obtain ⟨t, rfl⟩` leaves terms that lemmas about coerced angles rewrite. -/
+theorem exists_pi_coe_eq {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} (θ : ι → AddCircle p) :
+    ∃ t : ι → 𝕜, (fun j ↦ (t j : AddCircle p)) = θ :=
+  QuotientAddGroup.mk_surjective.comp_left θ
+
+/-- An integer reduces to zero in `AddCircle (1 : 𝕜)`. -/
+@[simp]
+theorem coe_intCast_eq_zero {𝕜 : Type*} [Ring 𝕜] (n : ℤ) :
+    ((n : 𝕜) : AddCircle (1 : 𝕜)) = 0 :=
+  (coe_eq_zero_iff (1 : 𝕜)).mpr ⟨n, by simp⟩
 
 /-- The floor of the sum of the representatives in `[0, 1)` of two points of `AddCircle (1 : 𝕜)`
 is the defect of additivity of the representatives. -/

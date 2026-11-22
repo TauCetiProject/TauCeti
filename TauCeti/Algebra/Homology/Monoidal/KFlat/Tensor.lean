@@ -34,6 +34,10 @@ by any object of `C` (`CochainComplex.quasiIso_mapHomologicalComplex_tensorLeft_
 isomorphism of derived tensor endofunctors `CochainComplex.kFlatTensor`
 (`CochainComplex.isIso_kFlatTensorMap`).
 
+No boundedness or termwise flatness is required of either input. Complexes of modules over a
+commutative ring and complexes of sheaves of modules over a sheaf of commutative rings satisfy
+these hypotheses.
+
 ## References
 
 * The Stacks Project, More on Algebra, Section 15.60, Tags 064L and 064M.
@@ -74,8 +78,8 @@ instance quasiIso_tensorHom_id (A : CochainComplex C ℤ) [A.IsKFlat]
     QuasiIso (tensorHom f (𝟙 A)) := by
   rw [HomologicalComplex.tensorHom, ← whiskerRight_eq_mapBifunctorMap]
   exact quasiIso_of_arrow_mk_iso (A ◁ f) (f ▷ A)
-    (Arrow.isoMk (TauCeti.koszulBraiding C A K) (TauCeti.koszulBraiding C A L)
-      (by simp [TauCeti.koszulBraidingHom_naturality_right]))
+    (Arrow.isoMk (HomologicalComplex.tensorBraiding A K) (HomologicalComplex.tensorBraiding A L)
+      (HomologicalComplex.tensorBraiding_hom_naturality (𝟙 A) f).symm)
 
 /-- Tensoring a quasi-isomorphism on the right with a K-flat complex via `▷` is a
 quasi-isomorphism. -/
@@ -140,8 +144,8 @@ instance quasiIso_id_tensorHom_of_isKFlat (A : CochainComplex C ℤ)
     rw [whiskerRight_eq_mapBifunctorMap]
     exact inferInstanceAs (QuasiIso (tensorHom f (𝟙 A)))
   exact quasiIso_of_arrow_mk_iso (f ▷ A) (A ◁ f)
-    (Arrow.isoMk (TauCeti.koszulBraiding C P A) (TauCeti.koszulBraiding C Q A)
-      (by simp [TauCeti.koszulBraidingHom_naturality_left]))
+    (Arrow.isoMk (HomologicalComplex.tensorBraiding P A) (HomologicalComplex.tensorBraiding Q A)
+      (HomologicalComplex.tensorBraiding_hom_naturality f (𝟙 A)).symm)
 
 /-- Whiskering a quasi-isomorphism between K-flat complexes on the right by an arbitrary complex
 gives a quasi-isomorphism. -/
