@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue
 public import TauCeti.Geometry.Symplectic.Floer.Rescaling.Manifold
 public import TauCeti.MeasureTheory.Integral.EnergyConcentration
+import TauCeti.Geometry.Manifold.ExtChartAt.ClosedBall
 import TauCeti.Topology.Compactness.Compact
-import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Floer solutions in a manifold converge off finitely many bubbling points
@@ -76,8 +76,9 @@ the compactness theorem.
 
 The `C¹` statement is local. Near a point `y ∈ Ω \ Z`, the injectivity of `e` on `K` and the
 convergence through `e` keep the values of `v` and of the tail of the sequence on a small disc
-about `y` in a compact coordinate ball of a chart. There the bounds on the energy densities bound
-the derivatives of the coordinate expressions
+about `y` in a compact coordinate ball of a chart
+(`IsCompact.exists_closedBall_forall_mem_extChartAt_source`). There the bounds on the energy
+densities bound the derivatives of the coordinate expressions
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le`), and the
 `C¹` convergence theorem for the coordinate Floer equation
 (`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`) applies.
@@ -501,56 +502,6 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_
     fun z hz r hr ↦ hψ.tendsto_atTop.eventually (hZ z hz r hr),
     fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ h n ↦ h (ψ n), v, hv, hvK, hconv, hpt⟩
 
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [NormedSpace ℝ F] in
-/-- **Localization in a chart.** Let `uₙ` and `v` map an open set `S` into `K`, with `v`
-continuous and `e ∘ uₙ → e ∘ v` locally uniformly on `S`. If `v y` lies in the source of the
-chart at `α`, there are a closed coordinate ball `B` about `extChartAt I α (v y)` inside the chart
-target, a closed disc about `y` inside `S` and an index `N` such that on the disc `v`, and `uₙ` for
-`n ≥ N`, take values in the chart source with coordinates in `B`. -/
-private theorem exists_closedBall_forall_mem_extChartAt_source (hK : IsCompact K)
-    (he : ContinuousOn e K) (he_inj : InjOn e K) {S : Set (ℝ × ℝ)} (hS : IsOpen S)
-    {u : ℕ → ℝ × ℝ → M} {v : ℝ × ℝ → M} (huK : ∀ n, MapsTo (u n) S K) (hv : ContinuousOn v S)
-    (hvK : MapsTo v S K) (hconv : TendstoLocallyUniformlyOn (fun n ↦ e ∘ u n) (e ∘ v) atTop S)
-    {α : M} {y : ℝ × ℝ} (hy : y ∈ S) (hyα : v y ∈ (extChartAt I α).source) :
-    ∃ κ > 0, closedBall (extChartAt I α (v y)) κ ⊆ (extChartAt I α).target ∧
-      ∃ r > 0, closedBall y r ⊆ S ∧ ∃ N, ∀ z ∈ closedBall y r,
-        (v z ∈ (extChartAt I α).source ∧
-          extChartAt I α (v z) ∈ closedBall (extChartAt I α (v y)) κ) ∧
-        ∀ n ≥ N, u n z ∈ (extChartAt I α).source ∧
-          extChartAt I α (u n z) ∈ closedBall (extChartAt I α (v y)) κ := by
-  set φ := extChartAt I α
-  -- A closed coordinate ball about `φ (v y)` inside the chart target, and a radius `ε` such that
-  -- points of `K` with images through `e` within `ε` of `e (v y)` have coordinates in it.
-  obtain ⟨κ, hκ, hκT⟩ := Metric.isOpen_iff.1 (isOpen_extChartAt_target (I := I) α) (φ (v y))
-    (φ.map_source hyα)
-  have hN : φ.source ∩ φ ⁻¹' ball (φ (v y)) (κ / 2) ∈ 𝓝 (v y) :=
-    inter_mem (extChartAt_source_mem_nhds' hyα)
-      ((continuousAt_extChartAt' hyα).preimage_mem_nhds (ball_mem_nhds _ (half_pos hκ)))
-  obtain ⟨V, hV, hVN⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj (hvK hy) hN
-  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
-  have hin {x : M} (hxK : x ∈ K) (hx : dist (e x) (e (v y)) < ε) :
-      x ∈ φ.source ∧ φ x ∈ closedBall (φ (v y)) (κ / 2) :=
-    have h := hVN ⟨hxK, hεV (mem_ball.2 hx)⟩
-    ⟨h.1, ball_subset_closedBall h.2⟩
-  -- A closed disc about `y` on which `e ∘ v` stays within `ε / 2` of `e (v y)`, and an index from
-  -- which `e ∘ uₙ` stays within `ε / 2` of `e ∘ v` on it.
-  have hev : ContinuousAt (e ∘ v) y :=
-    ((he (v y) (hvK hy)).comp (hv y hy) hvK).continuousAt (hS.mem_nhds hy)
-  obtain ⟨r₀, hr₀, hr₀S⟩ := Metric.mem_nhds_iff.1 (inter_mem (hS.mem_nhds hy)
-    (hev.preimage_mem_nhds (ball_mem_nhds _ (half_pos hε))))
-  have hcl : closedBall y (r₀ / 2) ⊆ S ∩ (e ∘ v) ⁻¹' ball (e (v y)) (ε / 2) :=
-    (closedBall_subset_ball (half_lt_self hr₀)).trans hr₀S
-  obtain ⟨N, hNe⟩ := eventually_atTop.1 (hconv.eventually_forall_dist_lt
-    (isCompact_closedBall y _) (fun z hz ↦ (hcl hz).1) (half_pos hε))
-  refine ⟨κ / 2, half_pos hκ, (closedBall_subset_ball (half_lt_self hκ)).trans hκT, r₀ / 2,
-    half_pos hr₀, fun z hz ↦ (hcl hz).1, N, fun z hz ↦
-      ⟨hin (hvK (hcl hz).1) ((mem_ball.1 (hcl hz).2).trans (half_lt_self hε)), fun n hn ↦ ?_⟩⟩
-  refine hin (huK _ (hcl hz).1) ((dist_triangle _ (e (v z)) _).trans_lt ?_)
-  have h₁ := hNe n hn z hz
-  have h₂ := mem_ball.1 (hcl hz).2
-  simp only [Function.comp_apply] at h₁ h₂
-  linarith
-
 omit [NormedSpace ℝ F] in
 /-- **The limit near a point, read in a chart.** Let `uₙ` be smooth solutions of the Floer
 equation on an open set `S ⊆ D` with values in `K`, with energy densities bounded on compact
@@ -587,7 +538,7 @@ private theorem IsNondegenerate.exists_ball_tendstoLocallyUniformlyOn_fderiv_ext
             ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ v) z)
               stdComplexLineReal) := by
   set φ := extChartAt I α
-  obtain ⟨κ, -, hKcT, r, hr, hcl, N, hN⟩ := exists_closedBall_forall_mem_extChartAt_source hK he
+  obtain ⟨κ, -, hKcT, r, hr, hcl, N, hN⟩ := hK.exists_closedBall_forall_mem_extChartAt_source he
     he_inj hS huK hv hvK hconv hy hyα
   have hvN {z : ℝ × ℝ} (hz : z ∈ closedBall y r) := (hN z hz).1
   have huN (n : ℕ) {z : ℝ × ℝ} (hz : z ∈ closedBall y r) :=

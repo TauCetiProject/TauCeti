@@ -32,8 +32,8 @@ The first point is the `C¹` convergence theorem for the coordinate equation
 `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)`
 (`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`), read in the coordinate
 `Complex.equivRealProdCLM` of the domain. For the equation
-`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on `ℝ × ℝ`, with any `C¹` data `J` and `X` and
-a finite-dimensional normed target, it is
+`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on `ℝ × ℝ`, with `C¹` data `J` and `X`, where
+`J² = -1` along the solutions, and a finite-dimensional normed target, it is
 `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`; this form also applies
 to the coordinate expressions of Floer solutions in a chart of a manifold. In the form of the Floer
 equation used here it is `TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`.
@@ -98,20 +98,9 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub
       TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) atTop Ω ∧
       ∀ z ∈ Ω, fderiv ℝ v z stdComplexLineImag - X (z, v z) stdComplexLineImag =
         J (z, v z) (fderiv ℝ v z stdComplexLineReal - X (z, v z) stdComplexLineReal) := by
-  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
-  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2) with hg_def
+  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM
+  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
   have hg {n : WithTop ℕ∞} : ContDiff ℝ n g := (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
-  -- In the coordinate `e`, the coordinate equation at `e y` is the equation of `w ∘ e` at `y`.
-  have hcoord (w : ℝ × ℝ → V) (y : ℂ) :
-      fderiv ℝ (w ∘ e) y I - (X (g (y, w (e y))) ∘L (e : ℂ →L[ℝ] ℝ × ℝ)) I =
-          J (g (y, w (e y))) (fderiv ℝ (w ∘ e) y 1 -
-            (X (g (y, w (e y))) ∘L (e : ℂ →L[ℝ] ℝ × ℝ)) 1) ↔
-        fderiv ℝ w (e y) stdComplexLineImag - X (e y, w (e y)) stdComplexLineImag =
-          J (e y, w (e y)) (fderiv ℝ w (e y) stdComplexLineReal -
-            X (e y, w (e y)) stdComplexLineReal) := by
-    simp only [he, hg_def, fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
-      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
-      equivRealProdCLM_I]
   -- Derivatives of `u n ∘ e` are bounded on compact subsets of `e ⁻¹' Ω`.
   have hbd' : ∀ C, IsCompact C → C ⊆ e ⁻¹' Ω →
       ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u n ∘ e) y‖ ≤ M := by
@@ -129,8 +118,9 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub
     ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp contDiffOn_const)
     (hΩ.preimage e.continuous) (fun y hy ↦ hvW (e y) hy)
     (fun n ↦ (hu n).comp e.contDiff.contDiffOn (mapsTo_preimage e Ω))
-    (fun n y hy w ↦ hJsq n (e y) hy w) (fun n y hy ↦ (hcoord (u n) y).2 (hfl n (e y) hy)) hbd'
-    (fun y hy ↦ hlim (e y) hy)
+    (fun n y hy w ↦ hJsq n (e y) hy w)
+    (fun n y hy ↦ fderiv_comp_equivRealProdCLM_I_sub_iff_fderiv_stdComplexLineImag_sub.2
+      (hfl n (e y) hy)) hbd' (fun y hy ↦ hlim (e y) hy)
   -- Back to the original coordinates.
   have hmaps : MapsTo e.symm Ω (e ⁻¹' Ω) := fun z hz ↦ by simpa using hz
   have hfd (w : ℝ × ℝ → V) (z : ℝ × ℝ) :
@@ -144,7 +134,9 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub
       (e.symm : ℝ × ℝ →L[ℝ] ℂ)).uniformContinuous.comp_tendstoLocallyUniformlyOn
         (hconv'.comp e.symm hmaps e.symm.continuous.continuousOn)
     convert h using 1 <;> funext <;> exact hfd _ _
-  · simpa only [e.apply_symm_apply] using (hcoord v (e.symm z)).1 (heq' (e.symm z) (hmaps hz))
+  · have h := (fderiv_comp_equivRealProdCLM_I_sub_iff_fderiv_stdComplexLineImag_sub
+      (u := v) (y := e.symm z)).1 (heq' (e.symm z) (hmaps hz))
+    rwa [show equivRealProdCLM (e.symm z) = z from e.apply_symm_apply z] at h
 
 end TauCeti.Floer
 
