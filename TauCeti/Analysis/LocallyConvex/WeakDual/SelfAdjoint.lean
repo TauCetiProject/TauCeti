@@ -18,10 +18,12 @@ For a topological complex star module `A`, taking the real part restricts a comp
 functional `φ : WeakDual ℂ A` to a real-linear functional on `selfAdjoint A`
 (`WeakDual.restrictToSelfAdjoint`), defined by composing `WeakDual.extendRCLikeL.symm` with
 pullback along the inclusion `selfAdjoint A →L[ℝ] A`. Conversely, any real-linear functional
-`ψ : WeakDual ℝ (selfAdjoint A)` extends uniquely to a complex-linear functional on `A` via
-`a ↦ ψ (ℜ a) + I * ψ (ℑ a)` (`WeakDual.extendFromSelfAdjoint`), defined by composing pullback
-along `selfAdjointPartL ℝ A` with `WeakDual.extendRCLikeL`, and restricting the extension
-recovers `ψ` (`WeakDual.restrictToSelfAdjoint_extendFromSelfAdjoint`).
+`ψ : WeakDual ℝ (selfAdjoint A)` extends uniquely to a complex-linear functional on `A` whose
+value at each self-adjoint `a` is `(ψ a : ℂ)`, given by `a ↦ ψ (ℜ a) + I * ψ (ℑ a)`
+(`WeakDual.extendFromSelfAdjoint`). Restricting the extension recovers `ψ`
+(`WeakDual.restrictToSelfAdjoint_extendFromSelfAdjoint`), and any complex-linear functional that is
+real-valued on `selfAdjoint A` is the extension of its restriction
+(`WeakDual.extendFromSelfAdjoint_restrictToSelfAdjoint`).
 
 ## Main definitions and results
 
@@ -30,7 +32,12 @@ recovers `ψ` (`WeakDual.restrictToSelfAdjoint_extendFromSelfAdjoint`).
 * `WeakDual.extendFromSelfAdjoint`: weak-star continuous real-linear extension
   `WeakDual ℝ (selfAdjoint A) →L[ℝ] WeakDual ℂ A`.
 * `WeakDual.restrictToSelfAdjoint_apply`, `WeakDual.extendFromSelfAdjoint_apply`,
-  `WeakDual.restrictToSelfAdjoint_extendFromSelfAdjoint`: evaluation and left-inverse identities.
+  `WeakDual.extendFromSelfAdjoint_apply_coe`,
+  `WeakDual.eq_extendFromSelfAdjoint_of_forall_apply_coe`,
+  `WeakDual.existsUnique_forall_apply_coe_eq`,
+  `WeakDual.restrictToSelfAdjoint_extendFromSelfAdjoint`,
+  `WeakDual.extendFromSelfAdjoint_restrictToSelfAdjoint`: evaluation, uniqueness, and
+  restriction-extension identities.
 -/
 
 public section
@@ -67,8 +74,9 @@ section Extend
 variable {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A] [StarModule ℂ A]
   [TopologicalSpace A] [ContinuousAdd A] [ContinuousStar A] [ContinuousConstSMul ℂ A]
 
-/-- Unique complex-linear extension of a real-linear functional on `selfAdjoint A` to `A`,
-given by `a ↦ ψ (ℜ a) + I * ψ (ℑ a)`, as a weak-star continuous real-linear map. -/
+/-- The unique complex-linear extension of `ψ : WeakDual ℝ (selfAdjoint A)` to `A` whose value at
+every self-adjoint element `a : selfAdjoint A` is `(ψ a : ℂ)`, defined by
+`a ↦ ψ (ℜ a) + I * ψ (ℑ a)` as a weak-star continuous real-linear map. -/
 noncomputable def extendFromSelfAdjoint : WeakDual ℝ (selfAdjoint A) →L[ℝ] WeakDual ℂ A :=
   have : ContinuousConstSMul ℝ A :=
     ⟨fun r => by simpa only [← Complex.coe_smul] using continuous_const_smul (r : ℂ)⟩
@@ -88,11 +96,45 @@ theorem extendFromSelfAdjoint_apply (ψ : WeakDual ℝ (selfAdjoint A)) (a : A) 
     (ψ (ℜ a) : ℂ) + Complex.I * (ψ (ℑ a) : ℂ)
   rw [realPart_I_smul, map_neg, Complex.ofReal_neg, mul_neg, sub_neg_eq_add]
 
+/-- On a self-adjoint element `a`, `extendFromSelfAdjoint ψ` evaluates to `(ψ a : ℂ)`. -/
+theorem extendFromSelfAdjoint_apply_coe (ψ : WeakDual ℝ (selfAdjoint A)) (a : selfAdjoint A) :
+    extendFromSelfAdjoint ψ (a : A) = (ψ a : ℂ) := by
+  rw [extendFromSelfAdjoint_apply, selfAdjoint.realPart_coe, selfAdjoint.imaginaryPart_coe,
+    map_zero, Complex.ofReal_zero, mul_zero, add_zero]
+
+/-- Any complex-linear functional on `A` that agrees with `(ψ · : ℂ)` on `selfAdjoint A` equals
+`extendFromSelfAdjoint ψ`. -/
+theorem eq_extendFromSelfAdjoint_of_forall_apply_coe {φ : WeakDual ℂ A}
+    {ψ : WeakDual ℝ (selfAdjoint A)} (h : ∀ a : selfAdjoint A, φ (a : A) = (ψ a : ℂ)) :
+    φ = extendFromSelfAdjoint ψ := by
+  refine DFunLike.ext _ _ fun a => ?_
+  calc
+    φ a = φ ((ℜ a : A) + Complex.I • (ℑ a : A)) := by rw [realPart_add_I_smul_imaginaryPart]
+    _ = φ (ℜ a : A) + Complex.I * φ (ℑ a : A) := by rw [map_add, map_smul, smul_eq_mul]
+    _ = (ψ (ℜ a) : ℂ) + Complex.I * (ψ (ℑ a) : ℂ) := by rw [h (ℜ a), h (ℑ a)]
+    _ = extendFromSelfAdjoint ψ a := (extendFromSelfAdjoint_apply ψ a).symm
+
+/-- `extendFromSelfAdjoint ψ` is the unique complex-linear functional on `A` whose value at each
+self-adjoint element `a` is `(ψ a : ℂ)`. -/
+theorem existsUnique_forall_apply_coe_eq (ψ : WeakDual ℝ (selfAdjoint A)) :
+    ∃! φ : WeakDual ℂ A, ∀ a : selfAdjoint A, φ (a : A) = (ψ a : ℂ) :=
+  ⟨extendFromSelfAdjoint ψ, extendFromSelfAdjoint_apply_coe ψ,
+    fun _ h => eq_extendFromSelfAdjoint_of_forall_apply_coe h⟩
+
 /-- Restricting the complex-linear extension of `ψ` recovers `ψ`. -/
 @[simp]
 theorem restrictToSelfAdjoint_extendFromSelfAdjoint (ψ : WeakDual ℝ (selfAdjoint A)) :
     restrictToSelfAdjoint (extendFromSelfAdjoint ψ) = ψ :=
   DFunLike.ext _ _ fun a => by simp
+
+/-- Any complex-linear functional that is real-valued on `selfAdjoint A` is recovered by extending
+its restriction `restrictToSelfAdjoint φ`. -/
+theorem extendFromSelfAdjoint_restrictToSelfAdjoint {φ : WeakDual ℂ A}
+    (hre : ∀ a : selfAdjoint A, (φ (a : A)).im = 0) :
+    extendFromSelfAdjoint (restrictToSelfAdjoint φ) = φ := by
+  refine (eq_extendFromSelfAdjoint_of_forall_apply_coe fun a => ?_).symm
+  rw [restrictToSelfAdjoint_apply]
+  exact Complex.ext rfl (by simp [hre a])
 
 end Extend
 

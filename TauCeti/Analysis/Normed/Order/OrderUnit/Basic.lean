@@ -8,15 +8,10 @@ module
 public import Mathlib.Algebra.Order.Module.Defs
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Convex.Cone.Basic
-public import Mathlib.Analysis.CStarAlgebra.Classes
+public import Mathlib.Analysis.Convex.Gauge
 public import Mathlib.Analysis.Normed.Module.Completion
-public import Mathlib.Topology.ContinuousMap.Algebra
-public import Mathlib.Topology.ContinuousMap.Compact
-public import Mathlib.Topology.ContinuousMap.Ordered
 public import Mathlib.Topology.Order.Basic
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.Normed.Order.Lattice
-import TauCeti.Analysis.CStarAlgebra.SelfAdjointSpectrumInterval
 
 /-!
 # Order-unit spaces and the order-unit norm
@@ -53,11 +48,10 @@ norm characterization of positivity `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖
 * Constructions preserving `IsOrderUnitNorm`: unital submodules (`submodule`), binary and finite
   products (`prod`, `pi`), automatic isometry of unital order embeddings
   (`IsOrderUnitNorm.norm_map_eq_of_map_nonneg_iff`,
-  `IsOrderUnitNorm.linearIsometryEquivOfOrderIso`), and the norm completion
+  `IsOrderUnitNorm.linearIsometryEquivOfMapNonnegIff`), and the norm completion
   (`completionPosCone`, `completionPartialOrder`, `completion_le_iff`,
   `isOrderUnitNorm_completion`).
-* Standard examples: `ℝ`, `ι → ℝ` for finite nonempty `ι`, `C(K, ℝ)` for nonempty compact `K`, and
-  `selfAdjoint A` for a nontrivial unital C⋆-algebra `A`.
+* Basic examples: `ℝ` and `ι → ℝ` for finite nonempty `ι`.
 
 ## References
 
@@ -99,6 +93,11 @@ structure IsOrderUnitNorm {E : Type*} [Norm E] [SMul ℝ E] [LE E] (e : E) : Pro
 noncomputable def orderUnitNorm {E : Type*} [SMul ℝ E] [LE E] (e : E) (a : E) : ℝ :=
   sInf {r : ℝ | 0 ≤ r ∧ -r • e ≤ a ∧ a ≤ r • e}
 
+/-- Unfolding lemma for `orderUnitNorm`. -/
+theorem orderUnitNorm_def {E : Type*} [SMul ℝ E] [LE E] (e a : E) :
+    orderUnitNorm e a = sInf {r : ℝ | 0 ≤ r ∧ -r • e ≤ a ∧ a ≤ r • e} :=
+  (rfl)
+
 /-! ### Construction of the order-unit norm from an Archimedean order unit -/
 
 section Archimedean
@@ -118,11 +117,13 @@ theorem orderUnitNorm_le_of_mem {E : Type*} [SMul ℝ E] [LE E] {e a : E} {r : �
   csInf_le (bddBelow_orderUnitSet e a) ⟨hr, hlo, hhi⟩
 
 /-- The order-unit norm of `0` is `0`. -/
+@[simp]
 theorem orderUnitNorm_zero {E : Type*} [AddCommGroup E] [Module ℝ E] [PartialOrder E] (e : E) :
     orderUnitNorm e 0 = 0 :=
   le_antisymm (orderUnitNorm_le_of_mem le_rfl (by simp) (by simp)) (orderUnitNorm_nonneg e 0)
 
 /-- The order-unit norm is invariant under negation. -/
+@[simp]
 theorem orderUnitNorm_neg {E : Type*} [AddCommGroup E] [Module ℝ E] [PartialOrder E]
     [IsOrderedAddMonoid E] (e a : E) : orderUnitNorm e (-a) = orderUnitNorm e a := by
   unfold orderUnitNorm
@@ -130,6 +131,32 @@ theorem orderUnitNorm_neg {E : Type*} [AddCommGroup E] [Module ℝ E] [PartialOr
   ext r
   simp only [Set.mem_ofPred_eq, neg_smul, neg_le_neg_iff, neg_le]
   tauto
+
+/-- `orderUnitNorm e` coincides with the Minkowski gauge of `Set.Icc (-e) e`. -/
+theorem orderUnitNorm_eq_gauge {E : Type*} [AddCommGroup E] [Module ℝ E] [PartialOrder E]
+    [PosSMulMono ℝ E] (e a : E) :
+    orderUnitNorm e a = gauge (Set.Icc (-e) e) a := by
+  by_cases ha : a = 0
+  · subst ha
+    simp
+  rw [orderUnitNorm_def, gauge_def']
+  congr 1
+  ext r
+  refine ⟨fun ⟨hr, hlo, hhi⟩ => ?_, fun ⟨hr, hlo, hhi⟩ => ?_⟩
+  · have hrpos : 0 < r := lt_of_le_of_ne hr fun h0 => by
+      subst h0
+      simp only [neg_zero, zero_smul] at hlo hhi
+      exact ha (le_antisymm hhi hlo)
+    refine ⟨hrpos, ?_, ?_⟩
+    · have h := smul_le_smul_of_nonneg_left hlo (inv_nonneg.mpr hrpos.le)
+      simpa [smul_smul, hrpos.ne'] using h
+    · have h := smul_le_smul_of_nonneg_left hhi (inv_nonneg.mpr hrpos.le)
+      simpa [smul_smul, hrpos.ne'] using h
+  · refine ⟨hr.le, ?_, ?_⟩
+    · have h := smul_le_smul_of_nonneg_left hlo hr.le
+      simpa [smul_smul, hr.ne', neg_smul] using h
+    · have h := smul_le_smul_of_nonneg_left hhi hr.le
+      simpa [smul_smul, hr.ne'] using h
 
 private theorem IsArchimedeanOrderUnit.nonempty_set {E : Type*} [Zero E] [SMul ℝ E] [LE E]
     {e : E} (he : IsArchimedeanOrderUnit e) (a : E) :
@@ -149,12 +176,6 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [PartialOrder E]
 
 include he
 
-/-- Monotonicity of scalar multiples of an Archimedean order unit. -/
-theorem IsArchimedeanOrderUnit.smul_le_smul {r s : ℝ} (hrs : r ≤ s) : r • e ≤ s • e := by
-  have h0 : 0 ≤ (s - r) • e := smul_nonneg (sub_nonneg.mpr hrs) he.nonneg_unit
-  rw [sub_smul, sub_nonneg] at h0
-  exact h0
-
 /-- Every element is bounded above by `orderUnitNorm e a • e`. -/
 theorem IsArchimedeanOrderUnit.le_orderUnitNorm_smul (a : E) :
     a ≤ orderUnitNorm e a • e := by
@@ -163,7 +184,7 @@ theorem IsArchimedeanOrderUnit.le_orderUnitNorm_smul (a : E) :
   rw [sub_le_iff_le_add, add_comm, ← add_smul]
   have hlt : orderUnitNorm e a < orderUnitNorm e a + ε := lt_add_of_pos_right _ hε
   obtain ⟨r, hr, hrl⟩ := (csInf_lt_iff (bddBelow_orderUnitSet e a) (he.nonempty_set a)).mp hlt
-  exact hr.2.2.trans (he.smul_le_smul hrl.le)
+  exact hr.2.2.trans (smul_le_smul_of_nonneg_right hrl.le he.nonneg_unit)
 
 /-- Every element is bounded below by `-orderUnitNorm e a • e`. -/
 theorem IsArchimedeanOrderUnit.neg_orderUnitNorm_smul_le (a : E) :
@@ -176,8 +197,9 @@ theorem IsArchimedeanOrderUnit.neg_orderUnitNorm_smul_le (a : E) :
 theorem IsArchimedeanOrderUnit.orderUnitNorm_le_iff (a : E) {r : ℝ} (hr : 0 ≤ r) :
     orderUnitNorm e a ≤ r ↔ -r • e ≤ a ∧ a ≤ r • e := by
   refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨hlo, hhi⟩ => orderUnitNorm_le_of_mem hr hlo hhi⟩
-  · exact (he.smul_le_smul (neg_le_neg h)).trans (he.neg_orderUnitNorm_smul_le a)
-  · exact (he.le_orderUnitNorm_smul a).trans (he.smul_le_smul h)
+  · exact (smul_le_smul_of_nonneg_right (neg_le_neg h) he.nonneg_unit).trans
+      (he.neg_orderUnitNorm_smul_le a)
+  · exact (he.le_orderUnitNorm_smul a).trans (smul_le_smul_of_nonneg_right h he.nonneg_unit)
 
 /-- The order-unit norm vanishes only at `0`. -/
 theorem IsArchimedeanOrderUnit.orderUnitNorm_eq_zero_iff {a : E} :
@@ -205,44 +227,61 @@ theorem IsArchimedeanOrderUnit.orderUnitNorm_unit : orderUnitNorm e e = 1 := by
       simpa [smul_smul, hpos.ne'] using h
     exact he.ne_zero (le_antisymm he0 he.nonneg_unit)
 
-private theorem IsArchimedeanOrderUnit.orderUnitNorm_smul_pos {c : ℝ} (hc : 0 < c) (a : E) :
-    orderUnitNorm e (c • a) ≤ c * orderUnitNorm e a := by
-  have hnonneg : 0 ≤ c * orderUnitNorm e a := mul_nonneg hc.le (orderUnitNorm_nonneg e a)
-  refine (he.orderUnitNorm_le_iff (c • a) hnonneg).mpr ⟨?_, ?_⟩
-  · have h := smul_le_smul_of_nonneg_left (he.neg_orderUnitNorm_smul_le a) hc.le
-    simpa [smul_smul, neg_mul] using h
-  · have h := smul_le_smul_of_nonneg_left (he.le_orderUnitNorm_smul a) hc.le
-    simpa [smul_smul] using h
+private theorem IsArchimedeanOrderUnit.balanced_Icc_neg_unit :
+    Balanced ℝ (Set.Icc (-e) e) := by
+  refine balanced_iff_smul_mem.mpr fun {r} hr {x} hx => ?_
+  have hrabs : |r| ≤ 1 := by simpa [Real.norm_eq_abs] using hr
+  have hnonneg : ∀ (c : ℝ), 0 ≤ c → c ≤ 1 → ∀ z : E,
+      -e ≤ z → z ≤ e → c • z ∈ Set.Icc (-e) e := fun c hc0 hc1 z hzlo hzhi => by
+    refine ⟨?_, ?_⟩
+    · calc
+        -e = (-1 : ℝ) • e := by simp
+        _ ≤ (-c) • e := smul_le_smul_of_nonneg_right (neg_le_neg hc1) he.nonneg_unit
+        _ = c • (-e) := by rw [neg_smul, smul_neg]
+        _ ≤ c • z := smul_le_smul_of_nonneg_left hzlo hc0
+    · calc
+        c • z ≤ c • e := smul_le_smul_of_nonneg_left hzhi hc0
+        _ ≤ (1 : ℝ) • e := smul_le_smul_of_nonneg_right hc1 he.nonneg_unit
+        _ = e := one_smul ℝ e
+  rcases le_total 0 r with hr0 | hr0
+  · exact hnonneg r hr0 (le_of_abs_le hrabs) x hx.1 hx.2
+  · rw [← neg_smul_neg]
+    exact hnonneg (-r) (neg_nonneg.mpr hr0) (by simpa [abs_of_nonpos hr0] using hrabs)
+      (-x) (neg_le_neg hx.2) (by simpa using neg_le_neg hx.1)
 
-private theorem IsArchimedeanOrderUnit.orderUnitNorm_smul_eq_of_pos {c : ℝ} (hc : 0 < c) (a : E) :
-    orderUnitNorm e (c • a) = c * orderUnitNorm e a := by
-  refine le_antisymm (he.orderUnitNorm_smul_pos hc a) ?_
-  have h2 := he.orderUnitNorm_smul_pos (inv_pos.mpr hc) (c • a)
-  rw [smul_smul, inv_mul_cancel₀ hc.ne', one_smul] at h2
-  calc
-    c * orderUnitNorm e a ≤ c * (c⁻¹ * orderUnitNorm e (c • a)) :=
-      mul_le_mul_of_nonneg_left h2 hc.le
-    _ = orderUnitNorm e (c • a) := by rw [← mul_assoc, mul_inv_cancel₀ hc.ne', one_mul]
+private theorem IsArchimedeanOrderUnit.absorbent_Icc_neg_unit :
+    Absorbent ℝ (Set.Icc (-e) e) := by
+  intro x
+  obtain ⟨r, hr, hlo, hhi⟩ := he.orderUnit x
+  have hrx : r⁻¹ • x ∈ Set.Icc (-e) e := by
+    refine ⟨?_, ?_⟩
+    · have h := smul_le_smul_of_nonneg_left hlo (inv_nonneg.mpr hr.le)
+      simpa [smul_smul, hr.ne'] using h
+    · have h := smul_le_smul_of_nonneg_left hhi (inv_nonneg.mpr hr.le)
+      simpa [smul_smul, hr.ne'] using h
+  refine Absorbs.of_norm ⟨r, fun c hc => ?_⟩
+  have hc0 : c ≠ 0 := by
+    intro h0
+    simp [h0] at hc
+    linarith
+  rw [Set.singleton_subset_iff, Set.mem_smul_set_iff_inv_smul_mem₀ hc0]
+  have hnorm : ‖r * c⁻¹‖ ≤ 1 := by
+    rw [norm_mul, norm_inv, Real.norm_of_nonneg hr.le]
+    exact mul_inv_le_one_of_le₀ hc (norm_nonneg c)
+  have hmem := he.balanced_Icc_neg_unit.smul_mem hnorm hrx
+  rwa [smul_smul, mul_comm r c⁻¹, mul_assoc, mul_inv_cancel₀ hr.ne', mul_one] at hmem
 
 /-- The order-unit norm is absolutely homogeneous. -/
 theorem IsArchimedeanOrderUnit.orderUnitNorm_smul (c : ℝ) (a : E) :
     orderUnitNorm e (c • a) = |c| * orderUnitNorm e a := by
-  rcases lt_trichotomy c 0 with hc | rfl | hc
-  · rw [abs_of_neg hc, ← he.orderUnitNorm_smul_eq_of_pos (neg_pos.mpr hc) a, neg_smul,
-      orderUnitNorm_neg]
-  · simp [orderUnitNorm_zero]
-  · rw [abs_of_pos hc, he.orderUnitNorm_smul_eq_of_pos hc a]
+  rw [orderUnitNorm_eq_gauge, orderUnitNorm_eq_gauge,
+    gauge_smul he.balanced_Icc_neg_unit, Real.norm_eq_abs]
 
 /-- The order-unit norm satisfies the triangle inequality. -/
 theorem IsArchimedeanOrderUnit.orderUnitNorm_add_le (a b : E) :
     orderUnitNorm e (a + b) ≤ orderUnitNorm e a + orderUnitNorm e b := by
-  have hnonneg : 0 ≤ orderUnitNorm e a + orderUnitNorm e b :=
-    add_nonneg (orderUnitNorm_nonneg e a) (orderUnitNorm_nonneg e b)
-  refine (he.orderUnitNorm_le_iff (a + b) hnonneg).mpr ⟨?_, ?_⟩
-  · have h := add_le_add (he.neg_orderUnitNorm_smul_le a) (he.neg_orderUnitNorm_smul_le b)
-    rwa [← add_smul, ← neg_add] at h
-  · have h := add_le_add (he.le_orderUnitNorm_smul a) (he.le_orderUnitNorm_smul b)
-    rwa [← add_smul] at h
+  rw [orderUnitNorm_eq_gauge, orderUnitNorm_eq_gauge, orderUnitNorm_eq_gauge]
+  exact gauge_add_le (convex_Icc (-e) e) he.absorbent_Icc_neg_unit a b
 
 /-- The `NormedSpace.Core` data for the order-unit norm `orderUnitNorm e`. -/
 theorem IsArchimedeanOrderUnit.normedSpaceCore :
@@ -280,6 +319,17 @@ theorem IsArchimedeanOrderUnit.isOrderUnitNorm :
 end Archimedean
 
 /-! ### Fundamental properties of `IsOrderUnitNorm` -/
+
+/-- Any norm satisfying `IsOrderUnitNorm e` coincides with `orderUnitNorm e`. -/
+theorem IsOrderUnitNorm.norm_eq_orderUnitNorm {E : Type*} [SeminormedAddCommGroup E]
+    [SMul ℝ E] [LE E] {e : E} (he : IsOrderUnitNorm e) (a : E) :
+    ‖a‖ = orderUnitNorm e a := by
+  have hset : {r : ℝ | 0 ≤ r ∧ -r • e ≤ a ∧ a ≤ r • e} = Set.Ici ‖a‖ := by
+    ext r
+    exact ⟨fun ⟨hr, hlo, hhi⟩ => (he.norm_le_iff a r hr).mpr ⟨hlo, hhi⟩,
+      fun hr => let h0 : 0 ≤ r := (norm_nonneg a).trans hr
+        ⟨h0, (he.norm_le_iff a r h0).mp hr⟩⟩
+  rw [orderUnitNorm_def, hset, csInf_Ici]
 
 section BasicMinimal
 
@@ -424,15 +474,6 @@ theorem IsOrderUnitNorm.isArchimedeanOrderUnit : IsArchimedeanOrderUnit e where
     (he.norm_le_iff a (‖a‖ + 1) (by linarith [norm_nonneg a])).mp (by linarith)⟩
   archimedean _ := he.archimedean
 
-/-- Any norm satisfying `IsOrderUnitNorm e` coincides with `orderUnitNorm e`. -/
-theorem IsOrderUnitNorm.norm_eq_orderUnitNorm (a : E) : ‖a‖ = orderUnitNorm e a := by
-  have : PosSMulMono ℝ E := he.posSMulMono
-  have ha := he.isArchimedeanOrderUnit
-  refine le_antisymm ?_ ?_
-  · exact (he.norm_le_iff a (orderUnitNorm e a) (orderUnitNorm_nonneg e a)).mpr
-      ⟨ha.neg_orderUnitNorm_smul_le a, ha.le_orderUnitNorm_smul a⟩
-  · exact orderUnitNorm_le_of_mem (norm_nonneg a) (he.neg_norm_smul_le a) (he.le_norm_smul a)
-
 /-- The positive cone `{a : E | 0 ≤ a}` is norm closed. -/
 theorem IsOrderUnitNorm.isClosed_nonneg : IsClosed {a : E | 0 ≤ a} := by
   have hset : {a : E | 0 ≤ a} = {a : E | ‖‖a‖ • e - a‖ ≤ ‖a‖} :=
@@ -458,12 +499,6 @@ theorem IsOrderUnitNorm.closedBall_subset_nonneg : closedBall e 1 ⊆ {a : E | 0
 theorem IsOrderUnitNorm.mem_interior_nonneg : e ∈ interior {a : E | 0 ≤ a} :=
   mem_interior.mpr ⟨ball e 1, ball_subset_closedBall.trans he.closedBall_subset_nonneg,
     isOpen_ball, mem_ball_self zero_lt_one⟩
-
-/-- The positive cone `{a : E | 0 ≤ a}` is convex. -/
-theorem IsOrderUnitNorm.convex_nonneg : Convex ℝ {a : E | 0 ≤ a} := by
-  have : PosSMulMono ℝ E := he.posSMulMono
-  intro x hx y hy a b ha hb _
-  exact add_nonneg (smul_nonneg ha hx) (smul_nonneg hb hy)
 
 end BasicOrdered
 
@@ -529,26 +564,26 @@ theorem IsOrderUnitNorm.norm_map_eq_of_map_nonneg_iff {e : E} {f : F} (he : IsOr
 
 /-- A unital linear order isomorphism between order-unit spaces is automatically a linear
 isometry equivalence. -/
-def IsOrderUnitNorm.linearIsometryEquivOfOrderIso {e : E} {f : F} (he : IsOrderUnitNorm e)
+def IsOrderUnitNorm.linearIsometryEquivOfMapNonnegIff {e : E} {f : F} (he : IsOrderUnitNorm e)
     (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F) (hTe : T e = f)
     (hpos : ∀ a : E, 0 ≤ T a ↔ 0 ≤ a) : E ≃ₗᵢ[ℝ] F where
   toLinearEquiv := T
   norm_map' := he.norm_map_eq_of_map_nonneg_iff hf T.toLinearMap hTe hpos
 
-/-- Evaluating `linearIsometryEquivOfOrderIso` agrees with the underlying linear equivalence. -/
+/-- Evaluating `linearIsometryEquivOfMapNonnegIff` agrees with the underlying linear equivalence. -/
 @[simp]
-theorem IsOrderUnitNorm.linearIsometryEquivOfOrderIso_apply {e : E} {f : F}
+theorem IsOrderUnitNorm.linearIsometryEquivOfMapNonnegIff_apply {e : E} {f : F}
     (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F) (hTe : T e = f)
     (hpos : ∀ a : E, 0 ≤ T a ↔ 0 ≤ a) (a : E) :
-    he.linearIsometryEquivOfOrderIso hf T hTe hpos a = T a :=
+    he.linearIsometryEquivOfMapNonnegIff hf T hTe hpos a = T a :=
   (rfl)
 
-/-- Evaluating the inverse of `linearIsometryEquivOfOrderIso` agrees with `T.symm`. -/
+/-- Evaluating the inverse of `linearIsometryEquivOfMapNonnegIff` agrees with `T.symm`. -/
 @[simp]
-theorem IsOrderUnitNorm.linearIsometryEquivOfOrderIso_symm_apply {e : E} {f : F}
+theorem IsOrderUnitNorm.linearIsometryEquivOfMapNonnegIff_symm_apply {e : E} {f : F}
     (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F) (hTe : T e = f)
     (hpos : ∀ a : E, 0 ≤ T a ↔ 0 ≤ a) (b : F) :
-    (he.linearIsometryEquivOfOrderIso hf T hTe hpos).symm b = T.symm b :=
+    (he.linearIsometryEquivOfMapNonnegIff hf T hTe hpos).symm b = T.symm b :=
   (rfl)
 
 /-- Transport of `IsOrderUnitNorm` back along a linear isometric order embedding. -/
@@ -570,7 +605,7 @@ end Constructions
 
 section Completion
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e)
 
 include he
@@ -582,7 +617,8 @@ noncomputable def IsOrderUnitNorm.completionPosCone : ProperCone ℝ (UniformSpa
   have : OrderClosedTopology E := he.orderClosedTopology
   (ProperCone.positive ℝ E).map (UniformSpace.Completion.toComplL (S := ℝ) (α := E))
 
-private theorem IsOrderUnitNorm.coe_completionPosCone :
+/-- As a set, `he.completionPosCone` is the closure of the image of the positive cone of `E`. -/
+theorem IsOrderUnitNorm.coe_completionPosCone :
     (he.completionPosCone : Set (UniformSpace.Completion E)) =
       closure (((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)) := by
   let : PosSMulMono ℝ E := he.posSMulMono
@@ -611,38 +647,40 @@ theorem IsOrderUnitNorm.coe_mem_completionPosCone_iff {a : E} :
   rw [he.coe_completionPosCone]
   exact Set.ext_iff.mp h.symm a
 
+private theorem IsOrderUnitNorm.norm_sub_le_norm_add_of_mem_completionPosCone
+    {u v : UniformSpace.Completion E}
+    (hu : u ∈ he.completionPosCone) (hv : v ∈ he.completionPosCone) :
+    ‖u - v‖ ≤ ‖u + v‖ := by
+  change u ∈ (he.completionPosCone : Set _) at hu
+  change v ∈ (he.completionPosCone : Set _) at hv
+  rw [he.coe_completionPosCone] at hu hv
+  let S : Set (UniformSpace.Completion E) :=
+    ((↑) : E → UniformSpace.Completion E) '' Set.Ici (0 : E)
+  have huv : (u, v) ∈ closure (S ×ˢ S) := by
+    rw [closure_prod_eq]
+    exact ⟨hu, hv⟩
+  refine closure_minimal ?_
+    (isClosed_le (continuous_fst.sub continuous_snd).norm
+      (continuous_fst.add continuous_snd).norm) huv
+  rintro ⟨u', v'⟩ ⟨⟨p, hp, hup⟩, ⟨q, hq, hvq⟩⟩
+  dsimp only at hup hvq
+  change ‖u' - v'‖ ≤ ‖u' + v'‖
+  rw [← hup, ← hvq, ← UniformSpace.Completion.coe_sub, ← UniformSpace.Completion.coe_add,
+    UniformSpace.Completion.norm_coe, UniformSpace.Completion.norm_coe]
+  refine he.norm_le_norm_of_le ?_ ?_
+  · rw [neg_add, sub_eq_add_neg]
+    exact add_le_add ((neg_nonpos.mpr hp).trans hp) le_rfl
+  · rw [sub_eq_add_neg]
+    exact add_le_add le_rfl ((neg_nonpos.mpr hq).trans hq)
+
 /-- The completion positive cone is pointed (`x ∈ C` and `-x ∈ C` imply `x = 0`). -/
 theorem IsOrderUnitNorm.eq_zero_of_mem_completionPosCone_of_neg_mem
     {x : UniformSpace.Completion E} (hx : x ∈ he.completionPosCone)
     (hneg : -x ∈ he.completionPosCone) : x = 0 := by
-  change x ∈ (he.completionPosCone : Set _) at hx
-  change -x ∈ (he.completionPosCone : Set _) at hneg
-  rw [he.coe_completionPosCone] at hx hneg
-  rw [← norm_eq_zero]
-  refine le_antisymm ?_ (norm_nonneg x)
-  refine le_of_forall_pos_le_add fun ε hε => ?_
-  rw [zero_add]
-  have hε3 : 0 < ε / 3 := by positivity
-  obtain ⟨_, ⟨a, ha, rfl⟩, hxa⟩ := Metric.mem_closure_iff.mp hx (ε / 3) hε3
-  obtain ⟨_, ⟨b, hb, rfl⟩, hxb⟩ := Metric.mem_closure_iff.mp hneg (ε / 3) hε3
-  rw [dist_eq_norm] at hxa hxb
-  have hsum : ‖(a + b : E)‖ < 2 * (ε / 3) := by
-    rw [← UniformSpace.Completion.norm_coe, UniformSpace.Completion.coe_add]
-    have heq : (a : UniformSpace.Completion E) + b = -((x - a) + (-x - b)) := by abel
-    rw [heq, norm_neg]
-    calc
-      ‖(x - a) + (-x - b)‖ ≤ ‖x - a‖ + ‖-x - b‖ := norm_add_le _ _
-      _ < ε / 3 + ε / 3 := add_lt_add hxa hxb
-      _ = 2 * (ε / 3) := by ring
-  have ha_le : ‖a‖ ≤ ‖a + b‖ :=
-    he.norm_le_norm_of_nonneg_le ha (le_add_of_nonneg_right hb)
-  calc
-    ‖x‖ = ‖(x - a) + (a : UniformSpace.Completion E)‖ := by abel_nf
-    _ ≤ ‖x - a‖ + ‖(a : UniformSpace.Completion E)‖ := norm_add_le _ _
-    _ = ‖x - a‖ + ‖a‖ := by rw [UniformSpace.Completion.norm_coe]
-    _ ≤ ‖x - a‖ + ‖a + b‖ := add_le_add le_rfl ha_le
-    _ ≤ ε / 3 + 2 * (ε / 3) := by linarith
-    _ = ε := by ring
+  have h := he.norm_sub_le_norm_add_of_mem_completionPosCone hx hneg
+  rw [sub_neg_eq_add, add_neg_cancel, norm_zero, ← two_smul ℝ x, norm_smul,
+    Real.norm_eq_abs, abs_of_pos two_pos] at h
+  exact norm_eq_zero.mp (le_antisymm (by linarith) (norm_nonneg x))
 
 private theorem IsOrderUnitNorm.salient_completionPosCone :
     (he.completionPosCone : ConvexCone ℝ (UniformSpace.Completion E)).Salient :=
@@ -682,74 +720,15 @@ theorem IsOrderUnitNorm.completion_coe_le_coe_iff {a b : E} :
 private theorem IsOrderUnitNorm.add_norm_smul_mem_completionPosCone
     (x : UniformSpace.Completion E) :
     x + ‖x‖ • (e : UniformSpace.Completion E) ∈ he.completionPosCone := by
-  change x + ‖x‖ • (e : UniformSpace.Completion E) ∈ (he.completionPosCone : Set _)
-  rw [he.coe_completionPosCone, Metric.mem_closure_iff]
-  intro ε hε
-  obtain ⟨_, ⟨a, rfl⟩, ha⟩ := Metric.mem_closure_iff.mp
-    (UniformSpace.Completion.denseRange_coe x) (ε / 2) (by positivity)
-  rw [dist_eq_norm] at ha
-  have hmem : a + ‖a‖ • e ∈ Set.Ici (0 : E) := by
+  refine UniformSpace.Completion.denseRange_coe.induction_on x ?_ fun a => ?_
+  · exact he.completionPosCone.isClosed.preimage
+      (continuous_id.add (continuous_norm.smul continuous_const))
+  · rw [UniformSpace.Completion.norm_coe, ← UniformSpace.Completion.coe_smul,
+      ← UniformSpace.Completion.coe_add]
+    refine he.coe_mem_completionPosCone_iff.mpr ?_
     have hlo := he.neg_norm_smul_le a
     rw [neg_smul] at hlo
     exact neg_le_iff_add_nonneg.mp hlo
-  refine ⟨((a + ‖a‖ • e : E) : UniformSpace.Completion E), ⟨a + ‖a‖ • e, hmem, rfl⟩, ?_⟩
-  rw [dist_eq_norm, UniformSpace.Completion.coe_add, UniformSpace.Completion.coe_smul]
-  have hdiff : x + ‖x‖ • (e : UniformSpace.Completion E) -
-      ((a : UniformSpace.Completion E) + ‖a‖ • (e : UniformSpace.Completion E)) =
-      (x - a) + (‖x‖ - ‖a‖) • (e : UniformSpace.Completion E) := by
-    rw [sub_smul]
-    abel
-  rw [hdiff]
-  calc
-    ‖(x - a) + (‖x‖ - ‖a‖) • (e : UniformSpace.Completion E)‖
-        ≤ ‖x - a‖ + ‖(‖x‖ - ‖a‖) • (e : UniformSpace.Completion E)‖ := norm_add_le _ _
-    _ = ‖x - a‖ + |‖x‖ - ‖a‖| := by
-        rw [norm_smul, Real.norm_eq_abs, UniformSpace.Completion.norm_coe, he.norm_e, mul_one]
-    _ = ‖x - a‖ + |‖x‖ - ‖(a : UniformSpace.Completion E)‖| := by
-        rw [UniformSpace.Completion.norm_coe]
-    _ ≤ ‖x - a‖ + ‖x - a‖ := add_le_add le_rfl (abs_norm_sub_norm_le x a)
-    _ < ε / 2 + ε / 2 := add_lt_add ha ha
-    _ = ε := add_halves ε
-
-private theorem IsOrderUnitNorm.norm_sub_le_norm_add_of_mem_completionPosCone
-    {u v : UniformSpace.Completion E}
-    (hu : u ∈ he.completionPosCone) (hv : v ∈ he.completionPosCone) :
-    ‖u - v‖ ≤ ‖u + v‖ := by
-  change u ∈ (he.completionPosCone : Set _) at hu
-  change v ∈ (he.completionPosCone : Set _) at hv
-  rw [he.coe_completionPosCone] at hu hv
-  refine le_of_forall_pos_le_add fun ε hε => ?_
-  have hε4 : 0 < ε / 4 := by positivity
-  obtain ⟨_, ⟨p, hp, rfl⟩, hup⟩ := Metric.mem_closure_iff.mp hu (ε / 4) hε4
-  obtain ⟨_, ⟨q, hq, rfl⟩, hvq⟩ := Metric.mem_closure_iff.mp hv (ε / 4) hε4
-  rw [dist_eq_norm] at hup hvq
-  have hpq : ‖p - q‖ ≤ ‖p + q‖ := by
-    refine he.norm_le_norm_of_le ?_ ?_
-    · rw [neg_add, sub_eq_add_neg]
-      exact add_le_add ((neg_nonpos.mpr hp).trans hp) le_rfl
-    · rw [sub_eq_add_neg]
-      exact add_le_add le_rfl ((neg_nonpos.mpr hq).trans hq)
-  have h1 : ‖u - v‖ ≤ ‖u - p‖ + ‖p - q‖ + ‖v - q‖ := by
-    have heq : u - v = (u - p) + ((p - q : E) : UniformSpace.Completion E) - (v - q) := by
-      rw [UniformSpace.Completion.coe_sub]
-      abel
-    rw [heq]
-    calc
-      ‖(u - p) + ((p - q : E) : UniformSpace.Completion E) - (v - q)‖
-          ≤ ‖(u - p) + ((p - q : E) : UniformSpace.Completion E)‖ + ‖v - q‖ := norm_sub_le _ _
-      _ ≤ ‖u - p‖ + ‖((p - q : E) : UniformSpace.Completion E)‖ + ‖v - q‖ :=
-          add_le_add (norm_add_le _ _) le_rfl
-      _ = ‖u - p‖ + ‖p - q‖ + ‖v - q‖ := by rw [UniformSpace.Completion.norm_coe]
-  have h2 : ‖p + q‖ ≤ ‖u - p‖ + ‖u + v‖ + ‖v - q‖ := by
-    rw [← UniformSpace.Completion.norm_coe, UniformSpace.Completion.coe_add]
-    have heq : (p : UniformSpace.Completion E) + q = -(u - p) + (u + v) - (v - q) := by abel
-    rw [heq]
-    calc
-      ‖-(u - p) + (u + v) - (v - q)‖
-          ≤ ‖-(u - p) + (u + v)‖ + ‖v - q‖ := norm_sub_le _ _
-      _ ≤ ‖-(u - p)‖ + ‖u + v‖ + ‖v - q‖ := add_le_add (norm_add_le _ _) le_rfl
-      _ = ‖u - p‖ + ‖u + v‖ + ‖v - q‖ := by rw [norm_neg]
-  linarith
 
 /-- The norm completion of an order-unit space, with the closed positive cone and the image of `e`,
 is an order-unit space with its completion norm. -/
@@ -805,37 +784,6 @@ theorem isOrderUnitNorm_one_real : IsOrderUnitNorm (1 : ℝ) where
 theorem isOrderUnitNorm_one_pi {ι : Type*} [Fintype ι] [Nonempty ι] :
     IsOrderUnitNorm (1 : ι → ℝ) :=
   IsOrderUnitNorm.pi fun _ => isOrderUnitNorm_one_real
-
-/-- `C(K, ℝ)` for a nonempty compact space `K`, with `e = 1`, is an order-unit space with the
-supremum norm. -/
-theorem isOrderUnitNorm_one_continuousMap {K : Type*} [TopologicalSpace K] [CompactSpace K]
-    [Nonempty K] : IsOrderUnitNorm (1 : C(K, ℝ)) where
-  norm_e := norm_one
-  norm_le_iff f r hr := by
-    rw [ContinuousMap.norm_le f hr]
-    simp only [Real.norm_eq_abs, abs_le, ContinuousMap.le_def, ContinuousMap.coe_smul,
-      ContinuousMap.coe_one, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
-    exact forall_and
-
-/-- The self-adjoint part `selfAdjoint A` of a nontrivial unital C⋆-algebra `A`, with `e = 1`,
-is an order-unit space whose order-unit norm is the inherited C⋆-norm. -/
-theorem isOrderUnitNorm_one_selfAdjoint {A : Type*} [CStarAlgebra A] [Nontrivial A]
-    [PartialOrder A] [StarOrderedRing A] : IsOrderUnitNorm (1 : selfAdjoint A) where
-  norm_e := by
-    -- Expose the norm on the subtype `selfAdjoint A` as the ambient C⋆-norm of `1`.
-    change ‖(1 : A)‖ = 1
-    exact norm_one
-  norm_le_iff a r hr := by
-    -- Expose the subtype norm and order on `selfAdjoint A` in terms of `A`.
-    change ‖(a : A)‖ ≤ r ↔ ((-r • (1 : selfAdjoint A) : selfAdjoint A) : A) ≤ (a : A) ∧
-      (a : A) ≤ ((r • (1 : selfAdjoint A) : selfAdjoint A) : A)
-    rw [a.2.norm_le_iff_spectrum_subset_Icc hr]
-    have hlo : ((-r • (1 : selfAdjoint A) : selfAdjoint A) : A) = algebraMap ℝ A (-r) := by
-      simp [Algebra.algebraMap_eq_smul_one]
-    have hhi : ((r • (1 : selfAdjoint A) : selfAdjoint A) : A) = algebraMap ℝ A r := by
-      simp [Algebra.algebraMap_eq_smul_one]
-    rw [hlo, hhi, algebraMap_le_iff_le_spectrum a.2, le_algebraMap_iff_spectrum_le a.2]
-    simp [Set.subset_def, Set.mem_Icc, forall_and]
 
 end Examples
 

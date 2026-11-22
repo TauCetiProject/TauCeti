@@ -16,12 +16,14 @@ scalar multiplication, the imaginary part `ℑ : A →ₗ[ℝ] selfAdjoint A` is
 
 ## Main results
 
-* `continuous_imaginaryPart`: continuity of `imaginaryPart : A →ₗ[ℝ] selfAdjoint A`.
+* `TauCeti.continuous_imaginaryPart`: continuity of `imaginaryPart : A →ₗ[ℝ] selfAdjoint A`.
 -/
 
 public section
 
 open scoped ComplexStarModule
+
+namespace TauCeti
 
 /-- The imaginary part `ℑ : A →ₗ[ℝ] selfAdjoint A` is continuous on any complex star module with
 continuous subtraction, star operation, and complex scalar multiplication. -/
@@ -34,3 +36,5 @@ theorem continuous_imaginaryPart {A : Type*} [AddCommGroup A] [Module ℂ A] [St
   have hnegI : Continuous (skewAdjoint.negISMul (A := A)) :=
     ((continuous_const_smul (-Complex.I)).comp continuous_subtype_val).subtype_mk _
   exact hnegI.comp (continuous_skewAdjointPart ℝ A)
+
+end TauCeti
