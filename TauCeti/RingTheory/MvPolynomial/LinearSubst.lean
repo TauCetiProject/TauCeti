@@ -12,6 +12,8 @@ public import TauCeti.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.Algebra.MvPolynomial.Coeff
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.RingTheory.Localization.FractionRing
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -51,6 +53,9 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
+* `MvPolynomial.linearSubst_injective_of_isUnit`, `MvPolynomial.linearSubst_injective`:
+  linear substitutions with unit determinant (or nonzero determinant over a domain) are
+  injective.
 * `MvPolynomial.pderiv_linearSubst`: the chain rule
   `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
 * `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: a substitution with nonzero
@@ -66,6 +71,7 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `MvPolynomial.coeff_linearSubst_upperTriangular_monomial`: under an upper-triangular
   substitution in two variables, the coefficient of `X₀ᵏ X₁ˡ` in its own image is `aᵏ dˡ`.
 * `MvPolynomial.IsHomogeneous.linearSubst`: the substitution preserves homogeneity.
+* `MvPolynomial.totalDegree_linearSubst_le`: linear substitution does not increase total degree.
 * `MvPolynomial.IsHomogeneous.linearSubst_smul`: rescaling the matrix by `c` rescales a form
   of degree `n` by `cⁿ`.
 * `MvPolynomial.homogeneousComponent_linearSubst`: the substitution commutes with taking
@@ -261,6 +267,34 @@ theorem homogeneousComponent_linearSubst (M : Matrix σ σ R) (n : ℕ) (p : MvP
     homogeneousComponent n (linearSubst M p) = linearSubst M (homogeneousComponent n p) :=
   weightedHomogeneousComponent_aeval (w := 1)
     (fun i ↦ IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j) p n
+
+/-- Linear substitution does not increase the total degree of a multivariate polynomial. -/
+theorem totalDegree_linearSubst_le (M : Matrix σ σ R) (p : MvPolynomial σ R) :
+    (linearSubst M p).totalDegree ≤ p.totalDegree := by
+  conv_lhs => rw [← sum_homogeneousComponent p, map_sum]
+  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun i hi ↦ ?_)
+  have hi_le : i ≤ p.totalDegree := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+  exact ((homogeneousComponent_isHomogeneous i p).linearSubst M).totalDegree_le.trans hi_le
+
+/-- A linear change of variables with unit determinant is injective over any commutative ring. -/
+theorem linearSubst_injective_of_isUnit [DecidableEq σ] {R : Type*} [CommRing R]
+    {M : Matrix σ σ R} (hM : IsUnit M.det) : Function.Injective (linearSubst M) := by
+  have hcomp : (linearSubst M⁻¹).comp (linearSubst M) = AlgHom.id R (MvPolynomial σ R) := by
+    rw [← linearSubst_mul, Matrix.mul_nonsing_inv M hM, linearSubst_one]
+  exact Function.LeftInverse.injective (g := linearSubst M⁻¹) fun p ↦ by
+    simpa using AlgHom.congr_fun hcomp p
+
+/-- A linear change of variables with nonzero determinant is injective over any integral domain. -/
+theorem linearSubst_injective [DecidableEq σ] {R : Type*} [CommRing R] [IsDomain R]
+    {M : Matrix σ σ R} (hM : M.det ≠ 0) : Function.Injective (linearSubst M) := by
+  have hinj := IsFractionRing.injective R (FractionRing R)
+  have hM' : IsUnit (M.map (algebraMap R (FractionRing R))).det := by
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, isUnit_iff_ne_zero]
+    exact (map_ne_zero_iff _ hinj).mpr hM
+  intro p q hpq
+  apply map_injective _ hinj
+  apply linearSubst_injective_of_isUnit hM'
+  rw [← map_linearSubst, ← map_linearSubst, hpq]
 
 variable (σ R) in
 /-- The linear changes of variables restricted to the forms of degree `n`, as a representation

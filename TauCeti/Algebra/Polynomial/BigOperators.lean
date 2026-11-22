@@ -72,16 +72,6 @@ end Semiring
 
 section MapProd
 
-/-- Over a nontrivial ring without zero divisors, the image of a list product of polynomials
-under a ring homomorphism is nonzero whenever every factor's image is nonzero. -/
-theorem map_list_prod_ne_zero {R S : Type*} [Semiring R] [Semiring S] [NoZeroDivisors S]
-    [Nontrivial S] (f : R →+* S) (l : List R[X]) (hl : ∀ p ∈ l, p.map f ≠ 0) :
-    l.prod.map f ≠ 0 := by
-  rw [← coe_mapRingHom, map_list_prod]
-  exact List.prod_ne_zero fun h0 ↦ by
-    obtain ⟨p, hp, hp0⟩ := List.mem_map.mp h0
-    exact hl p hp hp0
-
 variable {ι R S : Type*} [CommSemiring R] [CommSemiring S] [NoZeroDivisors S] (f : R →+* S)
 
 /-- Over a ring without zero divisors, the degree of the image of a finite product of polynomials

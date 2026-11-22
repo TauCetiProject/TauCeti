@@ -94,6 +94,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
 * `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
   has nonzero discriminant.
+* `Polynomial.resultant_deriv_ne_zero_of_squarefree`: a squarefree polynomial over a GCD domain
+  of characteristic zero has nonzero resultant with its derivative.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
@@ -793,6 +795,17 @@ theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
   apply (p.separable_map_iff_map_discr_ne_zero _ ?_).mp
   · exact PerfectField.separable_iff_squarefree.mpr hp.map_fraction_map
   · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
+
+/-- Over a GCD domain of characteristic zero, a squarefree polynomial has nonzero resultant with
+its derivative. -/
+theorem resultant_deriv_ne_zero_of_squarefree {D : Type*} [CommRing D] [IsDomain D]
+    [IsGCDMonoid D] [CharZero D] {f : D[X]} (hf : Squarefree f) :
+    f.resultant f.derivative f.natDegree (f.natDegree - 1) ≠ 0 := by
+  by_cases hdeg : f.natDegree = 0
+  · simp [hdeg]
+  · rw [resultant_deriv (natDegree_pos_iff_degree_pos.mp (Nat.pos_of_ne_zero hdeg))]
+    exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ (by simp))
+      (leadingCoeff_ne_zero.mpr hf.ne_zero)) hf.discr_ne_zero
 
 /-- An integral polynomial whose leading coefficient is not divisible by a prime `p` has separable
 reduction modulo `p` exactly when `p` does not divide its discriminant. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.Algebra.Polynomial.Degree.Operations
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 
 /-!
 # Resultant lemmas
@@ -61,6 +62,8 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
   the valid degree bound supplied for the right argument.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
+* `Polynomial.resultant_taylor_of_natDegree_le`: translating the variable by `a` preserves the
+  resultant at any valid explicit degree bounds.
 * `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
   at `a` is a unit.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
@@ -150,37 +153,23 @@ theorem natDegree_resultant_le {f g : R[X][X]} {m n df dg : ℕ}
     (hf : ∀ i ≤ m, (f.coeff i).natDegree ≤ df)
     (hg : ∀ i ≤ n, (g.coeff i).natDegree ≤ dg) :
     (f.resultant g m n).natDegree ≤ m * dg + n * df := by
-  rw [resultant, Matrix.det_apply]
-  refine (natDegree_sum_le _ _).trans (Finset.sup_le fun σ _ ↦ ?_)
-  have hsmul : (Equiv.Perm.sign σ • ∏ j : Fin (m + n), sylvester f g m n (σ j) j).natDegree ≤
-      (∏ j : Fin (m + n), sylvester f g m n (σ j) j).natDegree := by
-    rw [Units.smul_def, zsmul_eq_mul]
-    exact (natDegree_mul_le).trans (by simp [natDegree_intCast])
-  refine hsmul.trans ((natDegree_prod_le Finset.univ _).trans ?_)
-  rw [Fin.sum_univ_add]
-  have hleft :
-      ∑ j : Fin m, (sylvester f g m n (σ (Fin.castAdd n j)) (Fin.castAdd n j)).natDegree ≤
-        m * dg := by
-    calc ∑ j : Fin m, (sylvester f g m n (σ (Fin.castAdd n j)) (Fin.castAdd n j)).natDegree
-        ≤ ∑ _j : Fin m, dg := by
-          refine Finset.sum_le_sum fun j _ ↦ ?_
-          rw [sylvester_apply_of_lt f g _ _ (by simp [j.isLt])]
-          split_ifs with h
-          · exact hg _ (by simp only [Fin.val_castAdd] at h ⊢; omega)
-          · simp
-      _ = m * dg := by simp
-  have hright :
-      ∑ j : Fin n, (sylvester f g m n (σ (Fin.natAdd m j)) (Fin.natAdd m j)).natDegree ≤
-        n * df := by
-    calc ∑ j : Fin n, (sylvester f g m n (σ (Fin.natAdd m j)) (Fin.natAdd m j)).natDegree
-        ≤ ∑ _j : Fin n, df := by
-          refine Finset.sum_le_sum fun j _ ↦ ?_
-          rw [sylvester_apply_of_le f g _ _ (by simp)]
-          split_ifs with h
-          · exact hf _ (by simp only [Fin.val_natAdd] at h ⊢; omega)
-          · simp
-      _ = n * df := by simp
-  exact add_le_add hleft hright
+  rw [resultant]
+  refine (Matrix.natDegree_det_le_of_natDegree_le (sylvester f g m n)
+    (Fin.addCases (fun _ ↦ dg) (fun _ ↦ df)) fun i j ↦ ?_).trans_eq ?_
+  · induction j using Fin.addCases with
+    | left j =>
+      simp only [Fin.addCases_left]
+      rw [sylvester_apply_of_lt f g i (Fin.castAdd n j) (by simp [j.isLt])]
+      split_ifs with h
+      · exact hg _ (by simp only [Fin.val_castAdd] at h ⊢; omega)
+      · simp
+    | right j =>
+      simp only [Fin.addCases_right]
+      rw [sylvester_apply_of_le f g i (Fin.natAdd m j) (by simp)]
+      split_ifs with h
+      · exact hf _ (by simp only [Fin.val_natAdd] at h ⊢; omega)
+      · simp
+  · simp [Fin.sum_univ_add]
 
 /-- The resultant of `f` with the reversed linear polynomial `C x - X` is `f.eval x`. Note the
 absence of a sign: `C x - X` is `-(X - C x)`, and the two signs cancel. -/
@@ -363,5 +352,25 @@ theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
     split_ifs with h
     · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
     · rfl
+
+/-- Translating the variable by `a` preserves the resultant at any valid explicit degree bounds. -/
+theorem resultant_taylor_of_natDegree_le (f g : R[X]) (a : R) {m n : ℕ}
+    (hf : f.natDegree ≤ m) (hg : g.natDegree ≤ n) :
+    (taylor a f).resultant (taylor a g) m n = f.resultant g m n := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hf
+  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hg
+  have hcg : (taylor a g).coeff (g.natDegree + l) = g.coeff (g.natDegree + l) := by
+    rcases l with _ | l
+    · simp
+    · rw [coeff_eq_zero_of_natDegree_lt (by rw [natDegree_taylor]; omega),
+        coeff_eq_zero_of_natDegree_lt (by omega)]
+  conv_lhs =>
+    rw [← natDegree_taylor f a, resultant_add_left_deg _ _ _ _ _ (by rw [natDegree_taylor]),
+      natDegree_taylor, hcg, ← natDegree_taylor g a,
+      resultant_add_right_deg _ _ _ _ _ le_rfl, coeff_taylor_natDegree,
+      ← natDegree_taylor f a, resultant_taylor, natDegree_taylor]
+  conv_rhs =>
+    rw [resultant_add_left_deg _ _ _ _ _ le_rfl, resultant_add_right_deg _ _ _ _ _ le_rfl,
+      coeff_natDegree]
 
 end Polynomial

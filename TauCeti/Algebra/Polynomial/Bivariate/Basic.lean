@@ -7,33 +7,35 @@ module
 
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Taylor
-import Mathlib.RingTheory.Polynomial.UniqueFactorization
 
 /-!
 # Coefficient maps, variable swaps, and evaluation of bivariate polynomials
 
 Evaluating a bivariate polynomial at a point `(x, y)` is `eval₂` of the evaluation at `x`
 of its coefficients, read at `y`. The bivariate-to-multivariate equivalence also commutes
-with coefficient maps and evaluation. The coefficients of `f(X + Y)` are binomial multiples of
-those of `f`.
+with coefficient maps, evaluation, and total-degree bounds. The coefficients of `f(X + Y)` are
+binomial multiples of those of `f`.
 
-This file also provides coefficient and degree formulas for `Bivariate.swap`, nonzero
-specialization of irreducible bivariate polynomials of positive degree, and factorization
-of bivariate polynomials over a UFD into `Y`-content and positive-degree irreducibles.
+This file also provides coefficient and natural-degree formulas for `Bivariate.swap`, and shows
+that specializing an irreducible bivariate polynomial of positive outer natural degree at any
+scalar yields a nonzero univariate polynomial.
 
 ## Main results
 
 * `Polynomial.aevalAeval_eq_eval₂`: `φ(x, y) = eval₂ (aeval x) y φ`.
+* `Polynomial.Bivariate.eval_equivMvPolynomial`: evaluating `equivMvPolynomial R F` at `v`
+  evaluates `F` at `(v 0, v 1)`.
+* `Polynomial.Bivariate.totalDegree_equivMvPolynomial_le`: total-degree bound for
+  `equivMvPolynomial R F` from outer and coefficient natural-degree bounds.
 * `Polynomial.coeff_coeff_aeval_C_X_add_Y`: the coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is
   `(a + b).choose b * f_{a+b}`.
 * `Polynomial.coeff_coeff_swap`: coefficients of `Bivariate.swap P` swap indices.
-* `Polynomial.natDegree_swap_le_iff`: degree of `Bivariate.swap P` bounds the coefficient degrees.
-* `Polynomial.natDegree_swap_C`, `Polynomial.natDegree_swap_mul`: swap degrees of constants and
-  products.
-* `Polynomial.map_evalRingHom_ne_zero_of_irreducible`: specializations of positive-degree
-  irreducible bivariate polynomials are nonzero.
-* `Polynomial.exists_C_mul_list_prod_irreducible`: factorization into `Y`-content and
-  positive-degree irreducible factors over a unique factorization domain.
+* `Polynomial.natDegree_swap_le_iff`: natural degree of `Bivariate.swap P` bounds the coefficient
+  natural degrees.
+* `Polynomial.natDegree_swap_C`, `Polynomial.natDegree_swap_mul`: natural degrees of
+  `Bivariate.swap` on constants and products.
+* `Polynomial.map_evalRingHom_ne_zero_of_irreducible`: specializations of irreducible bivariate
+  polynomials of positive outer natural degree are nonzero.
 -/
 
 public section
@@ -70,6 +72,52 @@ theorem Bivariate.aevalAeval_comp_equivMvPolynomial_symm {R A : Type*}
       MvPolynomial.aeval ![x, y] :=
   MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp
 
+/-- Evaluating `Bivariate.equivMvPolynomial R F` at `v : Fin 2 → R` evaluates the inner variable
+at `v 0` and the outer variable at `v 1`. -/
+@[simp]
+theorem Bivariate.eval_equivMvPolynomial {R : Type*} [CommSemiring R] (F : R[X][Y])
+    (v : Fin 2 → R) :
+    MvPolynomial.eval v (Bivariate.equivMvPolynomial R F) =
+      (F.map (evalRingHom (v 0))).eval (v 1) := by
+  have h := AlgHom.congr_fun (Bivariate.aevalAeval_comp_equivMvPolynomial_symm (R := R) (v 0) (v 1))
+    (Bivariate.equivMvPolynomial R F)
+  have hv : ![v 0, v 1] = v := by ext i; fin_cases i <;> rfl
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply,
+    aevalAeval_eq_eval₂, eval₂_eq_eval_map, hv] at h
+  simpa [coe_evalRingHom] using h.symm
+
+/-- If `F : R[X][Y]` has outer natural degree at most `a` and every coefficient `F.coeff i` has
+natural degree at most `b`, then `Bivariate.equivMvPolynomial R F` has total degree at most
+`a + b`. -/
+theorem Bivariate.totalDegree_equivMvPolynomial_le {R : Type*} [CommSemiring R] (F : R[X][Y])
+    {a b : ℕ} (ha : F.natDegree ≤ a) (hb : ∀ i, (F.coeff i).natDegree ≤ b) :
+    (Bivariate.equivMvPolynomial R F).totalDegree ≤ a + b := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · rw [Subsingleton.elim (Bivariate.equivMvPolynomial R F) 0, MvPolynomial.totalDegree_zero]
+    exact Nat.zero_le _
+  rw [F.as_sum_support_C_mul_X_pow, map_sum]
+  refine (MvPolynomial.totalDegree_finsetSum _ _).trans (Finset.sup_le fun r hr ↦ ?_)
+  have hr_le : r ≤ a := (le_natDegree_of_mem_supp r hr).trans ha
+  rw [map_mul, map_pow, Bivariate.equivMvPolynomial_X]
+  refine (MvPolynomial.totalDegree_mul _ _).trans ?_
+  have hC : (Bivariate.equivMvPolynomial R (C (F.coeff r))).totalDegree ≤ b := by
+    rw [(F.coeff r).as_sum_support_C_mul_X_pow, map_sum, map_sum]
+    refine (MvPolynomial.totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs ↦ ?_)
+    have hs_le : s ≤ b := (le_natDegree_of_mem_supp s hs).trans (hb r)
+    rw [map_mul, map_mul, map_pow, map_pow, Bivariate.equivMvPolynomial_C_X]
+    refine (MvPolynomial.totalDegree_mul _ _).trans ?_
+    have hcoeff :
+        (Bivariate.equivMvPolynomial R (C (C ((F.coeff r).coeff s)))).totalDegree = 0 := by
+      have h : C (C ((F.coeff r).coeff s)) = algebraMap R R[X][Y] ((F.coeff r).coeff s) := rfl
+      rw [h, AlgEquiv.commutes]
+      exact MvPolynomial.totalDegree_C _
+    rw [hcoeff, zero_add]
+    exact (MvPolynomial.totalDegree_pow _ s).trans (by
+      simpa [MvPolynomial.totalDegree_X] using hs_le)
+  have hX : ((MvPolynomial.X 1 : MvPolynomial (Fin 2) R) ^ r).totalDegree ≤ r :=
+    (MvPolynomial.totalDegree_pow _ r).trans (by simp [MvPolynomial.totalDegree_X])
+  exact (Nat.add_le_add hC hX).trans (by omega)
+
 /-- The coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is `(a + b).choose b * f_{a+b}`. -/
 @[simp]
 theorem coeff_coeff_aeval_C_X_add_Y {R : Type*} [CommSemiring R] (f : R[X]) (a b : ℕ) :
@@ -96,8 +144,8 @@ theorem coeff_coeff_swap {R : Type*} [CommSemiring R] (P : R[X][Y]) (r s : ℕ) 
       simp
     · simp [hkr]
 
-/-- The degree of `Bivariate.swap P` is at most `d` if and only if every coefficient of `P` has
-degree at most `d`. -/
+/-- The natural degree of `Bivariate.swap P` is at most `d` if and only if every coefficient of
+`P` has natural degree at most `d`. -/
 theorem natDegree_swap_le_iff {R : Type*} [CommSemiring R] (P : R[X][Y]) (d : ℕ) :
     (Bivariate.swap P).natDegree ≤ d ↔ ∀ i, (P.coeff i).natDegree ≤ d := by
   constructor
@@ -110,14 +158,14 @@ theorem natDegree_swap_le_iff {R : Type*} [CommSemiring R] (P : R[X][Y]) (d : �
     rw [coeff_coeff_swap, coeff_zero]
     exact coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt (h r) hs)
 
-/-- The degree of `Bivariate.swap (C p)` equals `p.natDegree`. -/
+/-- The natural degree of `Bivariate.swap (C p)` equals `p.natDegree`. -/
 @[simp]
 theorem natDegree_swap_C {R : Type*} [CommSemiring R] (p : R[X]) :
     (Bivariate.swap (C p)).natDegree = p.natDegree := by
   rw [Bivariate.swap_C, natDegree_map_eq_of_injective C_injective]
 
-/-- Over a ring without zero divisors, the degree of `Bivariate.swap` is additive on products of
-nonzero bivariate polynomials. -/
+/-- Over a ring without zero divisors, the natural degree of `Bivariate.swap` is additive on
+products of nonzero bivariate polynomials. -/
 theorem natDegree_swap_mul {R : Type*} [CommSemiring R] [NoZeroDivisors R]
     {A B : R[X][Y]} (hA : A ≠ 0) (hB : B ≠ 0) :
     (Bivariate.swap (A * B)).natDegree =
@@ -125,7 +173,7 @@ theorem natDegree_swap_mul {R : Type*} [CommSemiring R] [NoZeroDivisors R]
   rw [map_mul, natDegree_mul (by simpa using hA) (by simpa using hB)]
 
 /-- Over an integral domain, specializing an irreducible bivariate polynomial of positive outer
-degree at any scalar yields a nonzero univariate polynomial. -/
+natural degree at any scalar yields a nonzero univariate polynomial. -/
 theorem map_evalRingHom_ne_zero_of_irreducible {R : Type*} [CommRing R] [IsDomain R]
     {F : R[X][Y]} (hF : Irreducible F) (hdeg : 0 < F.natDegree) (b : R) :
     F.map (evalRingHom b) ≠ 0 := by
@@ -146,36 +194,5 @@ theorem map_evalRingHom_ne_zero_of_irreducible {R : Type*} [CommRing R] [IsDomai
       rw [hQ]
       exact Nat.eq_zero_of_le_zero ((natDegree_C_mul_le _ _).trans (by omega))
     omega
-
-/-- Every nonzero bivariate polynomial over a unique factorization domain factors as `C c * l.prod`,
-where `c : R[X]` is nonzero and every factor in `l` is irreducible of positive degree in the
-outer variable. -/
-theorem exists_C_mul_list_prod_irreducible {R : Type*} [CommRing R] [IsDomain R]
-    [UniqueFactorizationMonoid R] (P : R[X][Y]) (hP : P ≠ 0) :
-    ∃ (c : R[X]) (l : List R[X][Y]), c ≠ 0 ∧
-      (∀ F ∈ l, Irreducible F ∧ 0 < F.natDegree) ∧ P = C c * l.prod := by
-  induction P using WfDvdMonoid.induction_on_irreducible with
-  | zero => exact absurd rfl hP
-  | unit u hu =>
-    refine ⟨u.coeff 0, [], ?_, by simp, ?_⟩
-    · intro h0
-      exact hu.ne_zero (by rw [eq_C_of_natDegree_eq_zero (natDegree_eq_zero_of_isUnit hu), h0,
-        map_zero])
-    · rw [List.prod_nil, mul_one]
-      exact eq_C_of_natDegree_eq_zero (natDegree_eq_zero_of_isUnit hu)
-  | mul a b ha hb ih =>
-    obtain ⟨c, l, hc0, hl, haeq⟩ := ih ha
-    by_cases hbdeg : b.natDegree = 0
-    · have hb0 : b.coeff 0 ≠ 0 := fun h0 ↦
-        hb.ne_zero (by rw [eq_C_of_natDegree_eq_zero hbdeg, h0, map_zero])
-      refine ⟨b.coeff 0 * c, l, mul_ne_zero hb0 hc0, hl, ?_⟩
-      rw [haeq, map_mul, mul_assoc]
-      congr 1
-      exact eq_C_of_natDegree_eq_zero hbdeg
-    · refine ⟨c, b :: l, hc0, ?_, ?_⟩
-      · simp only [List.mem_cons, forall_eq_or_imp]
-        exact ⟨⟨hb, Nat.pos_of_ne_zero hbdeg⟩, hl⟩
-      · rw [haeq, List.prod_cons]
-        ring
 
 end Polynomial
