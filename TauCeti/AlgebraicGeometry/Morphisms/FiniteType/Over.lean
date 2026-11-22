@@ -27,6 +27,7 @@ open AlgebraicGeometry
 
 /-- Locally finite-type, quasi-compact morphisms remain so after base change. This instance
 lets the morphism-property pullback functor act on the finite-type over-category. -/
+-- The generic intersection instance needs explicit property arguments at this boundary.
 instance : MorphismProperty.IsStableUnderBaseChange
     (@LocallyOfFiniteType ⊓ @QuasiCompact : MorphismProperty Scheme.{u}) :=
   .inf (P := @LocallyOfFiniteType) (Q := @QuasiCompact)

@@ -93,7 +93,8 @@ instance : hPrecoverage.{u}.IsStableUnderBaseChange where
   mem_coverings_of_isPullback {ι} S X f hf Y g P p₁ p₂ h := by
     rcases hf with hf | hf
     · exact Or.inl (Precoverage.mem_coverings_of_isPullback f hf g p₁ p₂ h)
-    · let : MorphismProperty.IsStableUnderBaseChange
+    · -- The generic intersection instance needs explicit property arguments here.
+      let : MorphismProperty.IsStableUnderBaseChange
           (@IsProper ⊓ @Surjective : MorphismProperty Scheme.{u}) :=
         MorphismProperty.IsStableUnderBaseChange.inf (P := @IsProper) (Q := @Surjective)
       exact Or.inr (Precoverage.mem_coverings_of_isPullback
@@ -155,9 +156,10 @@ lemma hTopology_le_jointlySurjectiveTopology :
 /-- Every point lifts along some arrow of an h-covering sieve. -/
 lemma exists_mem_range_of_mem_hTopology {X : Scheme.{u}} {R : Sieve X}
     (hR : R ∈ hTopology X) (x : X) :
-    ∃ (Y : Scheme.{u}) (f : Y ⟶ X), R f ∧ x ∈ Set.range f :=
-  (Presieve.mem_comap_jointlySurjectivePrecoverage_iff Scheme.forget).mp
-    (hTopology_le_jointlySurjectiveTopology _ hR) x
+    ∃ (Y : Scheme.{u}) (f : Y ⟶ X), R f ∧ x ∈ Set.range f := by
+  have hR := hTopology_le_jointlySurjectiveTopology _ hR
+  rw [mem_jointlySurjectiveTopology_iff_jointlySurjectivePretopology] at hR
+  exact (Presieve.mem_comap_jointlySurjectivePrecoverage_iff Scheme.forget).mp hR x
 
 /-- Every h-covering family is jointly surjective on scheme points. -/
 lemma jointlySurjective_of_mem_hTopology {X : Scheme.{u}} {ι : Type v}
@@ -182,7 +184,10 @@ private lemma exists_finite_refinement_of_mem_hPrecoverage {X : Scheme.{u}} [Com
     · intro i
       exact compactSpace_of_isAffine (𝒜.openCover.finiteSubcover.X i)
     · intro i
-      have hi : 𝒜.openCover.sieve₀ (𝒱.f i) := 𝒜.openCover.sieve₀_f (𝒜.openCover.idx i.val)
+      have hi : 𝒜.openCover.sieve₀ (𝒱.f i) := by
+        dsimp only [𝒱]
+        rw [OpenCover.finiteSubcover_f 𝒜.openCover i]
+        exact 𝒜.openCover.sieve₀_f (𝒜.openCover.idx i.val)
       exact (OpenCover.fromAffineRefinement.{u, u + 1} 𝒰).sieve₀_le_sieve₀ _ hi
     · exact zariskiTopology_le_hTopology _ 𝒱.mem_grothendieckTopology
   · have := (hR hf).1
