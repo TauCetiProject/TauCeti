@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Basic
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
-public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
@@ -24,10 +23,6 @@ that pole and meromorphic on the whole complex plane.
 * `DirichletCharacter.analyticAt_LFunction`: `χ.LFunction` is analytic at `s` whenever `s ≠ 1` or
   `χ ≠ 1`.
 * `DirichletCharacter.meromorphic_LFunction`: `χ.LFunction` is meromorphic on `ℂ`.
-* `DirichletCharacter.differentiable_LFunction_primitiveCharacter`: for `χ ≠ 1`,
-  `χ.primitiveCharacter.LFunction` is entire.
-* `DirichletCharacter.analyticAt_LFunction_primitiveCharacter`: `χ.primitiveCharacter.LFunction`
-  is analytic at `s` whenever `χ ≠ 1` or `s ≠ 1`.
 
 ## References
 
@@ -70,20 +65,5 @@ theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
       field_simp [sub_ne_zero.mpr hs]
     · exact (χ.analyticAt_LFunction (.inr hχ)).meromorphicAt
   · exact (χ.analyticAt_LFunction (.inl hz)).meromorphicAt
-
-/-- For a nonprincipal character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is
-entire. -/
-theorem differentiable_LFunction_primitiveCharacter {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter ℂ N} (hχ : χ ≠ 1) :
-    Differentiable ℂ χ.primitiveCharacter.LFunction :=
-  differentiable_LFunction (χ.primitiveCharacter_eq_one_iff.not.mpr hχ)
-
-/-- For every character `χ` of nonzero level, `χ.primitiveCharacter.LFunction` is analytic at every
-point `s ≠ 1`, and at `s = 1` as well when `χ ≠ 1`. -/
-theorem analyticAt_LFunction_primitiveCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-    {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) :
-    AnalyticAt ℂ χ.primitiveCharacter.LFunction s :=
-  analyticAt_LFunction χ.primitiveCharacter
-    (h.symm.imp_right χ.primitiveCharacter_eq_one_iff.not.mpr)
 
 end DirichletCharacter
