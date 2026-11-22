@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
-import TauCeti.Combinatorics.CoboundaryExpansion.Replication
+public import TauCeti.Combinatorics.CoboundaryExpansion.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
@@ -25,7 +25,10 @@ For every finite linearly ordered `V` with `3 ≤ Fintype.card V`:
 * `h1_complete_movedNorm_fin_three`: `h1 (complete V) (movedNorm (Fin 3)) = card V / 3`;
 * `h1Norm_complete_movedNorm_fin_three`: in the normalized convention the value is
   `card V / (card V - 2)`;
-* `h1_complete_fin_four`: the seed value `h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3`.
+* `h1_complete_fin_four` through `h1_complete_fin_eight`: the values `4 / 3`, `5 / 3`, `6 / 3`,
+  `7 / 3` and `8 / 3`;
+* `h1_complete_movedNorm_fin_three_of_four_dvd`: the same identity when `4 ∣ card V` and
+  `4 ≤ card V` (Beasley, Corollary 7).
 
 The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
 For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`.
@@ -41,10 +44,10 @@ For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`
   has defect `8 q ^ 3` and gauge distance `6 q ^ 2` (`defect_replicatedSeed`,
   `gaugeDist_replicatedSeed`, from `Cochain.defect_replicate` and `Cochain.gaugeDist_replicate`),
   and the identity gauge costs `6 q ^ 2` (`cost_one_replicatedSeed`).
-  `Sym3.replicatedSeedOfCardEq` carries that cochain to any `V` with `card V = 4 q`, preserving
-  defect, gauge distance and identity-gauge cost, and `Sym3.replicatedSeedOfCardEq_attains` is
-  the resulting ratio `card V / 3`, equal to `h1`. `h1_complete_lex_le_card_mul_div` gives the
-  upper bound `h1 ≤ q * (8 / 6) = 4 q / 3`.
+  `Sym3.replicatedSeedOfCardEq` carries that cochain to any `V` with `card V = 4 q`.
+  `Sym3.defect_div_gaugeDist_replicatedSeedOfCardEq` is the ratio `card V / 3`, and
+  `Sym3.defect_div_gaugeDist_replicatedSeedOfCardEq_eq_h1` identifies it with `h1`.
+  `h1_complete_lex_le_card_mul_div` gives the upper bound `h1 ≤ q * (8 / 6) = 4 q / 3`.
 
 ## References
 
@@ -74,44 +77,17 @@ def seed (u v : Fin 4) : Perm (Fin 3) :=
   if u = 1 ∧ v = 2 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
   else if u = 2 ∧ v = 3 then swap 0 2 else 1
 
-/-- The moved-point defect of `Cochain.ofLt (complete (Fin k)) f` is the sum, over `u < v < w`,
-of the number of points moved by `f u v * f v w * (f u w)⁻¹`. -/
-theorem defect_ofLt_movedNorm {k : ℕ} (f : Fin k → Fin k → Perm (Fin 3)) :
-    (Cochain.ofLt (complete (Fin k)) f).defect (movedNorm (Fin 3)) =
-      (∑ p ∈ univ.filter fun p : Fin k × Fin k × Fin k => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-        (f p.1 p.2.1 * f p.2.1 p.2.2 * (f p.1 p.2.2)⁻¹).support.card : ℝ) := by
-  rw [Cochain.defect_complete]
-  have h :
-      ∀ p ∈ univ.filter fun p : Fin k × Fin k × Fin k => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-        movedNorm (Fin 3)
-            ((Cochain.ofLt (complete (Fin k)) f).holonomy p.1 p.2.1 p.2.2) =
-          (((f p.1 p.2.1 * f p.2.1 p.2.2 * (f p.1 p.2.2)⁻¹).support.card : ℕ) : ℝ) := by
-    intro p hp
-    rw [mem_filter] at hp
-    rw [Cochain.holonomy_ofLt_complete _ hp.2.1 hp.2.2, movedNorm_apply]
-  rw [sum_congr rfl h, ← Nat.cast_sum]
-
-/-- The moved-point cost of a gauge `β` against `Cochain.ofLt (complete (Fin k)) α` is the sum,
-over `u < v`, of the number of points moved by `(β u)⁻¹ * α u v * β v`. -/
-theorem cost_ofLt_movedNorm {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3))
-    (β : Fin k → Perm (Fin 3)) :
-    (Cochain.ofLt (complete (Fin k)) α).cost (movedNorm (Fin 3)) β =
-      (∑ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2,
-        ((β p.1)⁻¹ * α p.1 p.2 * β p.2).support.card : ℝ) := by
-  rw [Cochain.cost_complete]
-  have h : ∀ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2,
-      movedNorm (Fin 3) ((β p.1)⁻¹ *
-        (Cochain.ofLt (complete (Fin k)) α) p.1 p.2 * β p.2) =
-        (((β p.1)⁻¹ * α p.1 p.2 * β p.2).support.card : ℝ) := by
-    intro p hp
-    rw [mem_filter] at hp
-    rw [Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr hp.2.ne) hp.2, movedNorm_apply]
-  rw [sum_congr rfl h, ← Nat.cast_sum]
+/-- `seed` is `swap 1 2`, `swap 0 1`, `swap 0 2` on `(1, 2)`, `(1, 3)`, `(2, 3)`, and `1`
+elsewhere. -/
+theorem seed_apply (u v : Fin 4) : seed u v =
+    if u = 1 ∧ v = 2 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
+    else if u = 2 ∧ v = 3 then swap 0 2 else 1 :=
+  (rfl)
 
 /-- The seed has moved-point defect `8`. -/
 theorem defect_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).defect (movedNorm (Fin 3)) = 8 := by
-  rw [defect_ofLt_movedNorm]
+  rw [Cochain.defect_ofLt_complete_movedNorm]
   have h8 : ∑ p ∈ univ.filter fun p : Fin 4 × Fin 4 × Fin 4 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (seed p.1 p.2.1 * seed p.2.1 p.2.2 * (seed p.1 p.2.2)⁻¹).support.card = 8 := by
     decide +kernel
@@ -121,7 +97,7 @@ theorem defect_seed :
 transpositions. -/
 theorem cost_one_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
-  rw [cost_ofLt_movedNorm]
+  rw [Cochain.cost_ofLt_complete_movedNorm]
   simp only [inv_one, one_mul, mul_one]
   have h6 : ∑ p ∈ univ.filter fun p : Fin 4 × Fin 4 => p.1 < p.2,
       (seed p.1 p.2).support.card = 6 := by
@@ -139,7 +115,6 @@ theorem gaugeDist_seed :
     ext σ
     simp only [seed, Set.mem_insert_iff, Set.mem_singleton_iff]
     decide +revert
-  have hinf := ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap seed h0 hsw
   refine (Cochain.le_gaugeDist_iff _ _).mpr fun β => ?_
   rw [Cochain.cost_complete]
   have hS : univ.filter (fun p : Fin 4 × Fin 4 => p.1 < p.2) =
@@ -156,14 +131,7 @@ theorem gaugeDist_seed :
       ← mul_distErr_mul_inv_eq_movedNorm]
     norm_num
   rw [sum_congr rfl hterm, ← mul_sum]
-  have hbdd : BddBelow (Set.range fun β' : Fin 4 → Perm (Fin 3) =>
-      ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
-        distErr (seed e.1 e.2) (β' e.1 * (β' e.2)⁻¹)) :=
-    ⟨0, by rintro _ ⟨β', rfl⟩; exact sum_nonneg fun _ _ => distErr_nonneg _ _⟩
-  have hle : (2 : ℝ) ≤ ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
-      distErr (seed e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
-    rw [← hinf]
-    exact ciInf_le hbdd β
+  have hle := two_le_sum_distErr_fin_four_of_eq_setOf_isSwap seed h0 hsw β
   linarith
 
 /-- The replicated seed on `Fin 4 ×ₗ Fin q`: the balanced replication of the cochain of `seed`,
@@ -171,6 +139,11 @@ so `seed` between clusters and `1` inside a cluster. -/
 noncomputable def replicatedSeed (q : ℕ) :
     Cochain (complete (Fin 4 ×ₗ Fin q)) (Perm (Fin 3)) :=
   (Cochain.ofLt (complete (Fin 4)) seed).replicate (Fin q)
+
+/-- `replicatedSeed q` is the balanced replication of the cochain of `seed`. -/
+theorem replicatedSeed_def (q : ℕ) : replicatedSeed q =
+    (Cochain.ofLt (complete (Fin 4)) seed).replicate (Fin q) :=
+  (rfl)
 
 /-- Replication multiplies the seed defect `8` by `q ^ 3`. -/
 theorem defect_replicatedSeed (q : ℕ) :
@@ -213,7 +186,7 @@ private theorem h1_complete_le_of_card_eq_four_mul {V : Type*} [Fintype V] [Line
   rw [h1_complete_eq_of_card_eq isConjInvariant_movedNorm (W := Fin 4 ×ₗ Fin q)
     (by rw [hV, Fintype.card_lex, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin])]
   refine (h1_complete_lex_le_card_mul_div (ι := Fin q)
-    (gaugeDist_seed.symm ▸ (by norm_num : (0 : ℝ) < 6))).trans_eq ?_
+    (by rw [gaugeDist_seed]; norm_num)).trans_eq ?_
   rw [defect_seed, gaugeDist_seed, Fintype.card_fin, hV]
   push_cast
   ring
@@ -227,25 +200,13 @@ noncomputable def replicatedSeedOfCardEq {q : ℕ} (hV : Fintype.card V = 4 * q)
   (replicatedSeed q).relabelComplete (Fintype.equivOfCardEq <| by
     rw [Fintype.card_lex, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin, hV])
 
-/-- The carried seed has the same defect `8 q ^ 3` as `replicatedSeed q`. -/
-theorem defect_replicatedSeedOfCardEq {q : ℕ} (hV : Fintype.card V = 4 * q) :
-    (replicatedSeedOfCardEq hV).defect (movedNorm (Fin 3)) = 8 * (q : ℝ) ^ 3 := by
-  rw [replicatedSeedOfCardEq, Cochain.defect_relabelComplete isConjInvariant_movedNorm,
-    defect_replicatedSeed]
-
-/-- The carried seed has the same gauge distance `6 q ^ 2` as `replicatedSeed q`. -/
-theorem gaugeDist_replicatedSeedOfCardEq {q : ℕ} (hV : Fintype.card V = 4 * q) :
-    (replicatedSeedOfCardEq hV).gaugeDist (movedNorm (Fin 3)) = 6 * (q : ℝ) ^ 2 := by
-  rw [replicatedSeedOfCardEq, Cochain.gaugeDist_relabelComplete, gaugeDist_replicatedSeed]
-
-/-- The identity gauge costs `6 q ^ 2` against the carried seed. -/
-theorem cost_one_replicatedSeedOfCardEq {q : ℕ} (hV : Fintype.card V = 4 * q) :
-    (replicatedSeedOfCardEq hV).cost (movedNorm (Fin 3)) (fun _ => 1) = 6 * (q : ℝ) ^ 2 := by
-  rw [replicatedSeedOfCardEq, Cochain.cost_relabelComplete]
-  refine (congrArg ((replicatedSeed q).cost (movedNorm (Fin 3))) ?_).trans
-    (cost_one_replicatedSeed q)
-  funext _
-  simp only [Function.comp_apply]
+omit [LinearOrder V] in
+/-- `replicatedSeedOfCardEq` is `replicatedSeed q` relabelled along a cardinality bijection. -/
+theorem replicatedSeedOfCardEq_def {q : ℕ} (hV : Fintype.card V = 4 * q) :
+    replicatedSeedOfCardEq hV =
+      (replicatedSeed q).relabelComplete (Fintype.equivOfCardEq <| by
+        rw [Fintype.card_lex, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin, hV]) :=
+  (rfl)
 
 end Sym3
 
@@ -285,27 +246,55 @@ theorem h1Norm_complete_movedNorm_fin_three (hV : 3 ≤ Fintype.card V) :
 theorem h1_complete_fin_four : h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3 := by
   simpa using h1_complete_movedNorm_fin_three (V := Fin 4) (by simp)
 
+/-- `h1 (complete (Fin 5)) (movedNorm (Fin 3)) = 5 / 3` (Beasley, Theorem 4). -/
+theorem h1_complete_fin_five : h1 (complete (Fin 5)) (movedNorm (Fin 3)) = 5 / 3 := by
+  simpa using h1_complete_movedNorm_fin_three (V := Fin 5) (by simp)
+
+/-- `h1 (complete (Fin 6)) (movedNorm (Fin 3)) = 6 / 3` (Beasley, Theorem 4). -/
+theorem h1_complete_fin_six : h1 (complete (Fin 6)) (movedNorm (Fin 3)) = 6 / 3 := by
+  simpa using h1_complete_movedNorm_fin_three (V := Fin 6) (by simp)
+
+/-- `h1 (complete (Fin 7)) (movedNorm (Fin 3)) = 7 / 3` (Beasley, Theorem 4). -/
+theorem h1_complete_fin_seven : h1 (complete (Fin 7)) (movedNorm (Fin 3)) = 7 / 3 := by
+  simpa using h1_complete_movedNorm_fin_three (V := Fin 7) (by simp)
+
+/-- `h1 (complete (Fin 8)) (movedNorm (Fin 3)) = 8 / 3` (Beasley, Theorem 4). -/
+theorem h1_complete_fin_eight : h1 (complete (Fin 8)) (movedNorm (Fin 3)) = 8 / 3 := by
+  simpa using h1_complete_movedNorm_fin_three (V := Fin 8) (by simp)
+
+/-- Whenever `4 ∣ Fintype.card V` and `4 ≤ Fintype.card V`,
+`h1 (complete V) (movedNorm (Fin 3)) = card V / 3` (Beasley, Corollary 7). This is the
+`4 ∣ card V` case of `h1_complete_movedNorm_fin_three`. -/
+theorem h1_complete_movedNorm_fin_three_of_four_dvd (h4 : 4 ∣ Fintype.card V)
+    (hV : 4 ≤ Fintype.card V) :
+    h1 (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / 3 := by
+  obtain ⟨q, hq⟩ := h4
+  rw [h1_complete_movedNorm_fin_three (by omega), hq]
+
 namespace Sym3
 
-/-- The relabelled replicated seed attains `h1`: its ratio is `card V / 3`, hence equal to
-`h1 (complete V) (movedNorm (Fin 3))`. -/
-theorem replicatedSeedOfCardEq_attains {q : ℕ} (hq : 0 < q) (hV : Fintype.card V = 4 * q) :
+/-- `defect / gaugeDist` of the carried seed equals `Fintype.card V / 3`. -/
+theorem defect_div_gaugeDist_replicatedSeedOfCardEq {q : ℕ} (hq : 0 < q)
+    (hV : Fintype.card V = 4 * q) :
     (replicatedSeedOfCardEq hV).defect (movedNorm (Fin 3)) /
         (replicatedSeedOfCardEq hV).gaugeDist (movedNorm (Fin 3)) =
-      (Fintype.card V : ℝ) / 3 ∧
+      (Fintype.card V : ℝ) / 3 := by
+  have hq' : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
+  simp only [replicatedSeedOfCardEq, Cochain.defect_relabelComplete isConjInvariant_movedNorm,
+    Cochain.gaugeDist_relabelComplete, replicatedSeed, Cochain.defect_div_gaugeDist_replicate,
+    defect_seed, gaugeDist_seed, Fintype.card_fin, hV]
+  field_simp [hq']
+  push_cast
+  ring
+
+/-- `defect / gaugeDist` of the carried seed equals `h1 (complete V) (movedNorm (Fin 3))`. -/
+theorem defect_div_gaugeDist_replicatedSeedOfCardEq_eq_h1 {q : ℕ} (hq : 0 < q)
+    (hV : Fintype.card V = 4 * q) :
     (replicatedSeedOfCardEq hV).defect (movedNorm (Fin 3)) /
         (replicatedSeedOfCardEq hV).gaugeDist (movedNorm (Fin 3)) =
       h1 (complete V) (movedNorm (Fin 3)) := by
   have h3 : 3 ≤ Fintype.card V := by omega
-  have hq' : (q : ℝ) ≠ 0 := by exact_mod_cast hq.ne'
-  have hr : (replicatedSeedOfCardEq hV).defect (movedNorm (Fin 3)) /
-      (replicatedSeedOfCardEq hV).gaugeDist (movedNorm (Fin 3)) =
-      (Fintype.card V : ℝ) / 3 := by
-    rw [defect_replicatedSeedOfCardEq, gaugeDist_replicatedSeedOfCardEq, hV]
-    field_simp [hq']
-    push_cast
-    ring
-  exact ⟨hr, hr.trans (h1_complete_movedNorm_fin_three h3).symm⟩
+  rw [defect_div_gaugeDist_replicatedSeedOfCardEq hq hV, h1_complete_movedNorm_fin_three h3]
 
 end Sym3
 

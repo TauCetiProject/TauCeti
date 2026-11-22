@@ -17,6 +17,9 @@ For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complet
 transposition `swap 0 1` on the edges of `G` and `1` elsewhere has moved-point defect twice the
 number of odd triangles of `G` (`SimpleGraph.defect_ofLt_ite_adj`).
 
+`Cochain.defect_ofLt_complete_movedNorm` and `Cochain.cost_ofLt_complete_movedNorm` expand the
+moved-point defect and cost of `Cochain.ofLt` on `complete V` as sums of support cardinalities.
+
 Balanced replication multiplies defect by `(Fintype.card ι) ^ 3`
 (`Cochain.defect_replicate`, in `TauCeti.Combinatorics.CoboundaryExpansion.Replication`).
 
@@ -49,6 +52,42 @@ private theorem card_support_ite_mul_ite_mul_ite_inv (p r s : Prop) [Decidable p
   by_cases hp : p <;> by_cases hr : r <;> by_cases hs : s <;> simp [hp, hr, hs]
 
 end Sym3
+
+namespace Cochain
+
+variable {α : Type*} [Fintype α] [DecidableEq α]
+
+/-- The moved-point defect of `Cochain.ofLt (complete V) f` is the sum, over `u < v < w`, of the
+number of points moved by `f u v * f v w * (f u w)⁻¹`. -/
+theorem defect_ofLt_complete_movedNorm (f : V → V → Perm α) :
+    (ofLt (complete V) f).defect (Perm.movedNorm α) =
+      (∑ p ∈ univ.filter fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
+        (f p.1 p.2.1 * f p.2.1 p.2.2 * (f p.1 p.2.2)⁻¹).support.card : ℝ) := by
+  rw [defect_complete]
+  have h : ∀ p ∈ univ.filter fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
+      Perm.movedNorm α ((ofLt (complete V) f).holonomy p.1 p.2.1 p.2.2) =
+        (((f p.1 p.2.1 * f p.2.1 p.2.2 * (f p.1 p.2.2)⁻¹).support.card : ℕ) : ℝ) := by
+    intro p hp
+    rw [mem_filter] at hp
+    rw [holonomy_ofLt_complete _ hp.2.1 hp.2.2, Perm.movedNorm_apply]
+  rw [sum_congr rfl h, ← Nat.cast_sum]
+
+/-- The moved-point cost of a gauge `β` against `Cochain.ofLt (complete V) g` is the sum, over
+`u < v`, of the number of points moved by `(β u)⁻¹ * g u v * β v`. -/
+theorem cost_ofLt_complete_movedNorm (g : V → V → Perm α) (β : V → Perm α) :
+    (ofLt (complete V) g).cost (Perm.movedNorm α) β =
+      (∑ p ∈ univ.filter fun p : V × V => p.1 < p.2,
+        ((β p.1)⁻¹ * g p.1 p.2 * β p.2).support.card : ℝ) := by
+  rw [cost_complete]
+  have h : ∀ p ∈ univ.filter fun p : V × V => p.1 < p.2,
+      Perm.movedNorm α ((β p.1)⁻¹ * (ofLt (complete V) g) p.1 p.2 * β p.2) =
+        (((β p.1)⁻¹ * g p.1 p.2 * β p.2).support.card : ℝ) := by
+    intro p hp
+    rw [mem_filter] at hp
+    rw [ofLt_apply_of_lt _ ((adj_complete _ _).mpr hp.2.ne) hp.2, Perm.movedNorm_apply]
+  rw [sum_congr rfl h, ← Nat.cast_sum]
+
+end Cochain
 
 end TauCeti
 
