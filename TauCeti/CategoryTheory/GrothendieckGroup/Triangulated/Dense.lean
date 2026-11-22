@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated.Basic
 public import TauCeti.CategoryTheory.Triangulated.Dense
 import TauCeti.CategoryTheory.ObjectProperty.Retract
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Classification of dense triangulated subcategories via `K₀`
@@ -139,12 +140,6 @@ noncomputable def equivQuotientK0 (A : ObjectProperty C) [A.IsTriangulated]
     (QuotientAddGroup.quotientKerEquivOfSurjective (fromK0 A hdense)
       (fromK0_surjective A hdense))).symm
 
-private lemma quotientKerEquivOfSurjective_mk {G H : Type*} [AddGroup G] [AddGroup H]
-    (φ : G →+ H) (hφ : Function.Surjective φ) (x : G) :
-    QuotientAddGroup.quotientKerEquivOfSurjective φ hφ (QuotientAddGroup.mk x) = φ x := by
-  rw [QuotientAddGroup.quotientKerEquivOfSurjective,
-    QuotientAddGroup.quotientKerEquivOfRightInverse_apply, QuotientAddGroup.kerLift_mk]
-
 /-- The inverse of `TauCeti.StableClasses.equivQuotientK0` sends the coset of `x` to
 `fromK0 A hdense x`. -/
 @[simp]
@@ -154,7 +149,8 @@ theorem equivQuotientK0_symm_mk (A : ObjectProperty C) [A.IsTriangulated]
     (equivQuotientK0 A hdense).symm (QuotientAddGroup.mk x) = fromK0 A hdense x := by
   let _ : AddCommGroup (StableClasses A) := addCommGroup A hdense
   simp only [equivQuotientK0, AddEquiv.symm_symm, AddEquiv.trans_apply,
-    QuotientAddGroup.quotientAddEquivOfEq_mk, quotientKerEquivOfSurjective_mk]
+    QuotientAddGroup.quotientAddEquivOfEq_mk,
+    TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- `TauCeti.StableClasses.equivQuotientK0` sends the stable class of `X` to the coset of
 `TriangulatedK0.of X`. -/

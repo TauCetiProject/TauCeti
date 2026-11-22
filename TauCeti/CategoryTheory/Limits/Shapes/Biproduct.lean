@@ -56,7 +56,9 @@ For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (
 through `biprod.opIso` has inverse given by the images of the projections
 (`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`), and it identifies the lift of
 the images of two maps `f`, `g` with the image of `biprod.desc f g`
-(`CategoryTheory.Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv`).
+(`CategoryTheory.Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv`). Finally,
+a surjective, isomorphism-invariant object map preserving binary biproducts and zero induces an
+`AddCommMonoid` structure on its target (`TauCeti.addCommMonoidOfBiprod`).
 -/
 
 public section
@@ -527,6 +529,44 @@ theorem isIso_biproductLift_iff_of_equiv {X : C} {ψ : ∀ b, X ⟶ M b} :
   exact ⟨fun h ↦ IsIso.of_isIso_comp_right _ wIso.inv, fun _ ↦ inferInstance⟩
 
 end Reindex
+
+section AddCommMonoid
+
+open ZeroObject
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasZeroObject C]
+  [HasBinaryBiproducts C]
+
+/-- Construct an `AddCommMonoid` structure on a type `M` already equipped with `Add` and `Zero`
+from a surjective, isomorphism-invariant object map `f : C → M` sending binary biproducts to
+addition and the zero object to `0`. -/
+@[expose, instance_reducible]
+def addCommMonoidOfBiprod {M : Type w} [Add M] [Zero M] (f : C → M)
+    (hsurj : Function.Surjective f) (hiso : ∀ ⦃X Y : C⦄, (X ≅ Y) → f X = f Y)
+    (hbiprod : ∀ X Y : C, f (X ⊞ Y) = f X + f Y) (hzero : f 0 = 0) :
+    AddCommMonoid M where
+  nsmul := nsmulRec
+  add_assoc a b c := by
+    obtain ⟨X, rfl⟩ := hsurj a
+    obtain ⟨Y, rfl⟩ := hsurj b
+    obtain ⟨Z, rfl⟩ := hsurj c
+    rw [← hbiprod, ← hbiprod, ← hbiprod, ← hbiprod]
+    exact hiso (biprod.associator X Y Z)
+  add_comm a b := by
+    obtain ⟨X, rfl⟩ := hsurj a
+    obtain ⟨Y, rfl⟩ := hsurj b
+    rw [← hbiprod, ← hbiprod]
+    exact hiso (biprod.braiding X Y)
+  add_zero a := by
+    obtain ⟨X, rfl⟩ := hsurj a
+    rw [← hzero, ← hbiprod]
+    exact hiso (isoBiprodZero (isZero_zero C)).symm
+  zero_add a := by
+    obtain ⟨X, rfl⟩ := hsurj a
+    rw [← hzero, ← hbiprod]
+    exact hiso (isoZeroBiprod (isZero_zero C)).symm
+
+end AddCommMonoid
 
 end TauCeti
 

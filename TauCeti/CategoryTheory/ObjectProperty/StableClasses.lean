@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Shift
 public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
@@ -218,23 +219,8 @@ theorem mk_zero : mk A (0 : C) = 0 :=
 
 /-- The commutative monoid structure on `TauCeti.StableClasses A`, with addition given by binary
 biproducts and zero given by the class of `0`. -/
-noncomputable instance : AddCommMonoid (StableClasses A) where
-  add_assoc x y z := by
-    induction x using induction_on with | h X =>
-    induction y using induction_on with | h Y =>
-    induction z using induction_on with | h Z =>
-    simpa only [← mk_biprod] using mk_congr (biprod.associator X Y Z)
-  zero_add x := by
-    induction x using induction_on with | h X =>
-    simpa only [← mk_biprod, ← mk_zero] using mk_congr (isoZeroBiprod (isZero_zero C)).symm
-  add_zero x := by
-    induction x using induction_on with | h X =>
-    simpa only [← mk_biprod, ← mk_zero] using mk_congr (isoBiprodZero (isZero_zero C)).symm
-  add_comm x y := by
-    induction x using induction_on with | h X =>
-    induction y using induction_on with | h Y =>
-    simpa only [← mk_biprod] using mk_congr (biprod.braiding X Y)
-  nsmul := nsmulRec
+noncomputable instance : AddCommMonoid (StableClasses A) :=
+  addCommMonoidOfBiprod (mk A) mk_surjective (fun _ _ => mk_congr) mk_biprod (mk_zero A)
 
 variable {A}
 
