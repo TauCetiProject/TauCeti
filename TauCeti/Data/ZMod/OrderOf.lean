@@ -69,7 +69,6 @@ decides which `q ^ k + 1` are divisible by `p`.
   a prime `p`, then `p ∣ a ^ k + b ^ k` iff `m ∣ k` and `¬ 2 * m ∣ k`.
 * `Nat.Prime.dvd_pow_add_one_iff_of_orderOf_natCast_eq_two_mul`: if `q` has order `2 * m ≠ 0`
   modulo a prime `p`, then `p ∣ q ^ k + 1` iff `m ∣ k` and `¬ 2 * m ∣ k`.
-* `TauCeti.orderOf_ofAdd_one_zmod`: `Multiplicative.ofAdd (1 : ZMod n)` has order `n`.
 
 ## References
 
@@ -333,12 +332,3 @@ theorem dvd_pow_add_one_iff_of_orderOf_natCast_eq_two_mul {p q m : ℕ} (hp : p.
   simpa using hp.dvd_pow_add_pow_iff_of_orderOf_eq_two_mul (b := 1) (by simpa using h) hm k
 
 end Nat.Prime
-
-namespace TauCeti
-
-/-- In `Multiplicative (ZMod n)`, the generator `ofAdd 1` has order `n`. -/
-theorem orderOf_ofAdd_one_zmod (n : ℕ) :
-    orderOf (Multiplicative.ofAdd (1 : ZMod n)) = n := by
-  rw [orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
-
-end TauCeti

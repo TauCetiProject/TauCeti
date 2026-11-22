@@ -50,17 +50,10 @@ attribute [local instance] Subgroup.quotientConjugationAction invMulDistribMulAc
 theorem quaternionRotationsMulEquiv_symm_smul (n : ℕ)
     (q : QuaternionGroup n ⧸ quaternionRotations n) (m : Multiplicative (ZMod (2 * n))) :
     (quaternionRotationsMulEquiv n).symm (quaternionQuotientEquiv n q • m) =
-      q • (quaternionRotationsMulEquiv n).symm m := by
-  refine QuotientGroup.induction_on q fun g ↦ ?_
-  cases g with
-  | a i =>
-    have h1 : (QuaternionGroup.a i : QuaternionGroup n ⧸ quaternionRotations n) = 1 :=
-      (QuotientGroup.eq_one_iff _).2 (a_mem_quaternionRotations i)
-    rw [h1, map_one, one_smul, one_smul]
-  | xa i =>
-    rw [quaternionQuotientEquiv_mk, quaternionCosetParity_xa,
-      invMulDistribMulAction_ofAdd_one_smul, map_inv, Subgroup.quotientConjugationAction_mk_smul,
-      conjNormal_eq_inv_of_notMem_quaternionRotations (xa_notMem_quaternionRotations i)]
+      q • (quaternionRotationsMulEquiv n).symm m :=
+  (quaternionRotations n).quotientConjugationAction_smul_eq_of_mulEquiv_zmodTwo
+    (quaternionRotationsMulEquiv n).symm (quaternionQuotientEquiv n)
+    (fun _ hg ↦ conjNormal_eq_inv_of_notMem_quaternionRotations hg) q m
 
 /-- The quotient extension of `QuaternionGroup n` by its rotation subgroup, relabelled to
 kernel `Multiplicative (ZMod (2 * n))` and quotient `Multiplicative (ZMod 2)`. -/

@@ -49,17 +49,10 @@ attribute [local instance] Subgroup.quotientConjugationAction invMulDistribMulAc
 theorem dihedralRotationsMulEquiv_symm_smul (n : ℕ)
     (q : DihedralGroup n ⧸ dihedralRotations n) (m : Multiplicative (ZMod n)) :
     (dihedralRotationsMulEquiv n).symm (dihedralQuotientEquiv n q • m) =
-      q • (dihedralRotationsMulEquiv n).symm m := by
-  refine QuotientGroup.induction_on q fun g ↦ ?_
-  cases g with
-  | r i =>
-    have h1 : (DihedralGroup.r i : DihedralGroup n ⧸ dihedralRotations n) = 1 :=
-      (QuotientGroup.eq_one_iff _).2 (r_mem_dihedralRotations i)
-    rw [h1, map_one, one_smul, one_smul]
-  | sr i =>
-    rw [dihedralQuotientEquiv_mk, dihedralReflectionParity_sr,
-      invMulDistribMulAction_ofAdd_one_smul, map_inv, Subgroup.quotientConjugationAction_mk_smul,
-      conjNormal_eq_inv_of_notMem_dihedralRotations (sr_notMem_dihedralRotations i)]
+      q • (dihedralRotationsMulEquiv n).symm m :=
+  (dihedralRotations n).quotientConjugationAction_smul_eq_of_mulEquiv_zmodTwo
+    (dihedralRotationsMulEquiv n).symm (dihedralQuotientEquiv n)
+    (fun _ hg ↦ conjNormal_eq_inv_of_notMem_dihedralRotations hg) q m
 
 /-- The quotient extension of `DihedralGroup n` by its rotation subgroup, relabelled to kernel
 `Multiplicative (ZMod n)` and quotient `Multiplicative (ZMod 2)`. -/

@@ -81,6 +81,14 @@ theorem invMulDistribMulAction_ofAdd_one_smul (a : M) :
   rw [invMulDistribMulAction_smul]
   simp [h]
 
+/-- Any monoid homomorphism intertwines the inversion actions of `C₂`. -/
+theorem _root_.MonoidHom.map_invMulDistribMulAction_smul {N : Type*} [CommGroup N]
+    (φ : M →* N) (g : Multiplicative (ZMod 2)) (m : M) :
+    φ (g • m) = (letI := invMulDistribMulAction N; g • φ m) := by
+  let _ := invMulDistribMulAction N
+  rw [invMulDistribMulAction_smul, invMulDistribMulAction_smul]
+  split_ifs <;> simp
+
 end InvActionSmul
 
 end TauCeti

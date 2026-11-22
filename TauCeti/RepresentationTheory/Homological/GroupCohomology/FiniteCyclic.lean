@@ -10,11 +10,16 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyc
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.Algebra.GroupAction.Inversion
+public import TauCeti.Data.ZMod.MonoidHomEquiv
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
 public import TauCeti.RepresentationTheory.Cyclic.Norm
 public import TauCeti.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.Rep.OfMulDistribMulAction
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.Nat.Carry
+import TauCeti.Data.ZMod.Torsion
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
@@ -97,6 +102,8 @@ canonically isomorphic to `QuotSMulTop 2 A`
   `g` has even order and acts by negation is `A[2]`.
 * `Rep.FiniteCyclicGroup.groupCohomologyOddEquivQuotSMulTop`: odd-degree cohomology when `g` has
   even order and acts by negation is `A ⧸ 2 A`.
+* `Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo`: `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2`
+  for `n ≠ 0`.
 
 ## Main results
 
@@ -127,6 +134,9 @@ canonically isomorphic to `QuotSMulTop 2 A`
 * `Rep.FiniteCyclicGroup.groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven`,
   `Rep.FiniteCyclicGroup.groupCohomologyOddEquivQuotSMulTop_groupCohomologyπOdd`: evaluation of
   the negation-action isomorphisms on classes represented by `2`-torsion elements and cosets.
+* `Rep.FiniteCyclicGroup.natCard_groupCohomologyTwoInv`,
+  `Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven`: cardinality and
+  evaluation of `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2`.
 
 ## References
 
@@ -973,5 +983,71 @@ theorem finrank_groupCohomology_trivial_of_isTorsionBy
         hM.quotSMulTopEquiv.finrank_eq]
   · rw [(groupCohomologyTrivialLinearEquivOdd k g hg M i hi).finrank_eq,
       (Module.isTorsionBy_iff_torsionBy_eq_top _).1 hM, finrank_top]
+
+/-! ### Explicit identification `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2` -/
+
+section Inversion
+
+open groupCohomology TauCeti
+
+attribute [local instance] invMulDistribMulAction
+
+/-- **Second cohomology of the inversion action on `C_{2n}`.** For every nonzero `n`,
+`H²(C₂, C_{2n}^{inv})` is additively isomorphic to `ZMod 2`, obtained by composing the
+`2`-torsion identification `Rep.FiniteCyclicGroup.groupCohomologyEvenEquivTorsionBy` with
+`TauCeti.submoduleTorsionByEquivAddSubgroup`, `AddEquiv.torsionByCongr`, and
+`TauCeti.zmodTorsionByEquiv`. -/
+noncomputable def groupCohomologyTwoInvEquivZModTwo (n : ℕ) [NeZero n] :
+    groupCohomology
+        (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))) 2 ≃+
+      ZMod 2 :=
+  let e₁ :=
+    (groupCohomologyEvenEquivTorsionBy
+      (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n))))
+      (Multiplicative.ofAdd (1 : ZMod 2)) Multiplicative.mem_zpowers_ofAdd_one
+      ((orderOf_ofAdd_one_zmod 2).symm ▸ even_two)
+      (Rep.ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv invMulDistribMulAction_ofAdd_one_smul)
+      2 even_two).toAddEquiv
+  let e₁₂ :=
+    submoduleTorsionByEquivAddSubgroup
+      (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))).V 2
+  let e₂ :=
+    AddEquiv.torsionByCongr
+      ((Rep.toAdditive (M := Multiplicative (ZMod 2)) (G := Multiplicative (ZMod (2 * n)))).trans
+        (AddEquiv.additiveMultiplicative (ZMod (2 * n))))
+      2
+  ((e₁.trans e₁₂).trans e₂).trans (zmodTorsionByEquiv 2 n).symm
+
+/-- `H²(C₂, C_{2n}^{inv})` has order `2` for every nonzero `n`. -/
+theorem natCard_groupCohomologyTwoInv (n : ℕ) [NeZero n] :
+    Nat.card (groupCohomology
+      (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n)))) 2) =
+      2 := by
+  rw [Nat.card_congr (groupCohomologyTwoInvEquivZModTwo n).toEquiv, Nat.card_zmod]
+
+/-- Under `groupCohomologyTwoInvEquivZModTwo n`, the periodic-resolution class of a `1`-fixed
+element `y` corresponds to the unique residue `x : ZMod 2` satisfying `x.val * n = a` in
+`ZMod (2 * n)`. -/
+theorem groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven (n : ℕ) [NeZero n]
+    (y : LinearMap.ker
+      ((Rep.applyAsHom
+        (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n))))
+        (Multiplicative.ofAdd (1 : ZMod 2)) - 𝟙 _).hom.toLinearMap))
+    (x : ZMod 2) :
+    groupCohomologyTwoInvEquivZModTwo n
+      (groupCohomologyπEven
+        (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n))))
+        (Multiplicative.ofAdd (1 : ZMod 2)) Multiplicative.mem_zpowers_ofAdd_one 2 even_two y) =
+      x ↔
+      ((x.val * n : ℕ) : ZMod (2 * n)) =
+        Multiplicative.toAdd (Additive.toMul (Rep.toAdditive y.val)) := by
+  rw [groupCohomologyTwoInvEquivZModTwo]
+  simp only [AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
+  rw [groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven,
+    zmodTorsionByEquiv_symm_apply_eq_iff, AddEquiv.torsionByCongr_apply_coe,
+    submoduleTorsionByEquivAddSubgroup_apply_coe, AddEquiv.trans_apply,
+    AddEquiv.additiveMultiplicative_apply]
+
+end Inversion
 
 end Rep.FiniteCyclicGroup

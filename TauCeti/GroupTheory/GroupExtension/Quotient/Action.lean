@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.Inversion
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Basic
 public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
 
@@ -16,7 +17,12 @@ If `N` is abelian and normal in `G`, conjugation on `N` factors through `G ⧸ N
 instance. The quotient extension induces precisely this action, so its normalized sections
 have factor sets with coefficients in this conjugation module.
 
-The construction descends Mathlib's `MulAut.conjNormal` along the quotient homomorphism.
+The construction descends Mathlib's `MulAut.conjNormal` along the quotient homomorphism. When the
+quotient `G ⧸ N` is identified with `Multiplicative (ZMod 2)` and elements outside `N` conjugate `N`
+by inversion, the quotient conjugation action agrees with `TauCeti.invMulDistribMulAction`
+(`Subgroup.invMulDistribMulAction_smul_eq_quotientConjugationAction`), and transports along any
+kernel equivalence `eN : M ≃* N`
+(`Subgroup.quotientConjugationAction_smul_eq_of_mulEquiv_zmodTwo`).
 -/
 
 public section
@@ -56,5 +62,39 @@ theorem quotientExtension_inducesAction :
   have h := GroupExtension.inl_conjAct_comm N.quotientExtension (e := g) (n := n)
   simpa only [quotientExtension_inl, quotientExtension_rightHom, subtype_apply,
     QuotientGroup.mk'_apply, quotientConjugationAction_mk_smul, MulAut.conjNormal_apply] using h
+
+section Inversion
+
+attribute [local instance] TauCeti.invMulDistribMulAction
+
+/-- If `G ⧸ N` is identified with `Multiplicative (ZMod 2)` and elements outside `N` conjugate
+`N` by inversion, then the quotient conjugation action on `N` equals
+`TauCeti.invMulDistribMulAction` pulled back along `eG`. -/
+theorem invMulDistribMulAction_smul_eq_quotientConjugationAction
+    (eG : G ⧸ N ≃* Multiplicative (ZMod 2))
+    (hinv : ∀ g ∉ N, ∀ x : N, MulAut.conjNormal g x = x⁻¹)
+    (q : G ⧸ N) (x : N) :
+    eG q • x = q • x := by
+  refine QuotientGroup.induction_on q fun g ↦ ?_
+  by_cases hg : g ∈ N
+  · have h1 : (g : G ⧸ N) = 1 := (QuotientGroup.eq_one_iff _).2 hg
+    rw [h1, map_one, one_smul, one_smul]
+  · have hne : eG (g : G ⧸ N) ≠ 1 := fun h ↦
+      hg ((QuotientGroup.eq_one_iff _).1 (eG.injective (h.trans (map_one eG).symm)))
+    rw [TauCeti.invMulDistribMulAction_smul, ite_eq_right_iff.mpr (fun h ↦ absurd h hne),
+      quotientConjugationAction_mk_smul, hinv g hg x]
+
+/-- Identifying `N` with `M` via `eN` and `G ⧸ N` with `C₂` via `eG` intertwines
+`TauCeti.invMulDistribMulAction` on `M` with the quotient conjugation action on `N` whenever
+elements outside `N` conjugate `N` by inversion. -/
+theorem quotientConjugationAction_smul_eq_of_mulEquiv_zmodTwo {M : Type*} [CommGroup M]
+    (eN : M ≃* N) (eG : G ⧸ N ≃* Multiplicative (ZMod 2))
+    (hinv : ∀ g ∉ N, ∀ x : N, MulAut.conjNormal g x = x⁻¹)
+    (q : G ⧸ N) (m : M) :
+    eN (eG q • m) = q • eN m :=
+  (eN.toMonoidHom.map_invMulDistribMulAction_smul (eG q) m).trans
+    (N.invMulDistribMulAction_smul_eq_quotientConjugationAction eG hinv q (eN m))
+
+end Inversion
 
 end Subgroup

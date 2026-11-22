@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.PGroup
 public import Mathlib.GroupTheory.SpecificGroups.Quaternion
 import Mathlib.Algebra.Group.TypeTags.Finite
 import Mathlib.Data.ZMod.QuotientGroup
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Quaternion-group infrastructure
@@ -261,7 +262,7 @@ noncomputable def quaternionQuotientEquiv (n : ℕ) :
 theorem quaternionQuotientEquiv_mk (n : ℕ) (g : QuaternionGroup n) :
     quaternionQuotientEquiv n (g : QuaternionGroup n ⧸ quaternionRotations n) =
       quaternionCosetParity n g :=
-  (rfl)
+  TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk _ _ g
 
 /-- The quaternion group of order eight has exponent four. -/
 @[simp]

@@ -9,6 +9,8 @@ public import TauCeti.GroupTheory.GroupExtension.Cohomology
 public import TauCeti.GroupTheory.GroupExtension.Cyclic.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import TauCeti.RepresentationTheory.Rep.OfMulDistribMulAction
+import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.GroupTheory.GroupAction.Norm
 import TauCeti.GroupTheory.GroupExtension.Splitting
 
 /-!
@@ -46,6 +48,7 @@ class, the cohomology class of any normalized section of `S` in `H²(G, M)` is
 * `TauCeti.GroupExtension.nonempty_equiv_iff_exists_prod_smul_eq`: norm criterion for equivalence
   of cyclic-quotient extensions.
 * `GroupExtension.Section.groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet`,
+  `GroupExtension.Section.groupCohomologyTwoInvEquivZModTwo_cohomologyClass_factorSet_iff`,
   `GroupExtension.Section.cohomologyClass_factorSet_eq_zero_iff_eq_one_of_smul_eq_inv`,
   `TauCeti.GroupExtension.nonempty_splitting_iff_pow_orderOf_eq_one_of_smul_eq_inv`,
   `TauCeti.GroupExtension.nonempty_equiv_iff_eq_of_smul_eq_inv`: explicit evaluation, splitting,
@@ -211,6 +214,34 @@ theorem nonempty_equiv_iff_eq_of_smul_eq_inv [Finite G] {E' : Type*} [Group E']
   rw [nonempty_equiv_iff_exists_prod_smul_eq hact hact' hg he ha he' ha']
   simp only [TauCeti.prod_smul_eq_one_of_smul_eq_inv hg hord hinv, exists_const]
   rw [eq_comm, div_eq_one]
+
+section InversionTwo
+
+attribute [local instance] TauCeti.invMulDistribMulAction
+
+/-- **Evaluation of `groupCohomologyTwoInvEquivZModTwo` on an extension class.** For any extension
+`S` of `C₂` by `C_{2n}` inducing the inversion action, if `e` lifts `ofAdd 1` and
+`S.inl (ofAdd a) = e ^ 2`, then `groupCohomologyTwoInvEquivZModTwo n` maps the cohomology class
+of any normalized section of `S` to the unique `x : ZMod 2` satisfying `x.val * n = a` in
+`ZMod (2 * n)`. -/
+theorem
+    _root_.GroupExtension.Section.groupCohomologyTwoInvEquivZModTwo_cohomologyClass_factorSet_iff
+    {n : ℕ} [NeZero n] {E : Type*} [Group E]
+    {S : GroupExtension (Multiplicative (ZMod (2 * n))) E (Multiplicative (ZMod 2))}
+    (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
+    {e : E} (he : S.rightHom e = Multiplicative.ofAdd 1) {a : ZMod (2 * n)}
+    (ha : S.inl (Multiplicative.ofAdd a) = e ^ 2) (x : ZMod 2) :
+    groupCohomologyTwoInvEquivZModTwo n (factorSet σ hσ hact).cohomologyClass = x ↔
+      (x.val * n : ℕ) = a := by
+  have ha' : S.inl (Multiplicative.ofAdd a) =
+      e ^ orderOf (Multiplicative.ofAdd (1 : ZMod 2)) := by
+    rw [TauCeti.orderOf_ofAdd_one_zmod, ha]
+  rw [σ.cohomologyClass_factorSet_eq_groupCohomologyπEven hσ hact
+      Multiplicative.mem_zpowers_ofAdd_one he ha',
+    groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven]
+  simp
+
+end InversionTwo
 
 end InversionAction
 

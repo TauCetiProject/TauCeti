@@ -249,8 +249,8 @@ splitting at `eG.symm g'`. -/
   original splitting at `eG.symm g'`. -/]
 theorem splittingRelabelEquiv_apply (S : GroupExtension N E G) (eN : N' ≃* N) (eG : G ≃* G')
     (s : S.Splitting) (g' : G') :
-    S.splittingRelabelEquiv eN eG s g' = s (eG.symm g') :=
-  (rfl)
+    S.splittingRelabelEquiv eN eG s g' = s (eG.symm g') := by
+  rw [splittingRelabelEquiv, splittingEquivOfMulEquiv_apply, MulEquiv.refl_apply]
 
 /-- Evaluating the inverse relabelling equivalence on a splitting at `g` evaluates the relabelled
 splitting at `eG g`. -/
@@ -259,8 +259,9 @@ splitting at `eG g`. -/
   relabelled splitting at `eG g`. -/]
 theorem splittingRelabelEquiv_symm_apply (S : GroupExtension N E G) (eN : N' ≃* N)
     (eG : G ≃* G') (s' : (S.relabel eN eG).Splitting) (g : G) :
-    (S.splittingRelabelEquiv eN eG).symm s' g = s' (eG g) :=
-  (rfl)
+    (S.splittingRelabelEquiv eN eG).symm s' g = s' (eG g) := by
+  rw [splittingRelabelEquiv, splittingEquivOfMulEquiv_symm_apply, MulEquiv.refl_symm,
+    MulEquiv.refl_apply]
 
 /-- Transport a splitting of `S` to a splitting of `S.relabel eN eG` by precomposing with
 `eG.symm`. -/
@@ -277,7 +278,7 @@ def Splitting.relabel (s : S.Splitting) (eN : N' ≃* N) (eG : G ≃* G') :
   `eG.symm g'`. -/]
 theorem Splitting.relabel_apply (s : S.Splitting) (eN : N' ≃* N) (eG : G ≃* G') (g' : G') :
     s.relabel eN eG g' = s (eG.symm g') :=
-  (rfl)
+  S.splittingRelabelEquiv_apply eN eG s g'
 
 /-- The underlying section of a relabelled splitting is the relabelled underlying section. -/
 @[to_additive (attr := simp)

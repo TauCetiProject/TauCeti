@@ -28,8 +28,6 @@ the odd-degree cohomology of a finite cyclic group.
   negation, the norm vanishes identically.
 * `Rep.mem_ker_norm_of_ρ_eq_neg`, `Rep.mem_range_norm_iff_of_ρ_eq_neg`: kernel and range of
   `A.norm.asHom` under an even-order negation action.
-* `TauCeti.prod_smul_eq_one_of_smul_eq_inv`: multiplicative norm vanishing under an even-order
-  inversion action.
 -/
 
 public section
@@ -127,17 +125,3 @@ theorem mem_range_norm_iff_of_ρ_eq_neg (A : Rep k G) (g : G) (hg : ∀ x, x ∈
 end Negation
 
 end Rep
-
-namespace TauCeti
-
-/-- Under an even-order inversion action of a cyclic group, the multiplicative norm is `1`. -/
-theorem prod_smul_eq_one_of_smul_eq_inv {G M : Type*} [Group G] [Fintype G] [CommGroup M]
-    [MulDistribMulAction G M] {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g)
-    (hord : Even (orderOf g)) (hinv : ∀ m : M, g • m = m⁻¹) (m : M) :
-    ∏ x : G, x • m = 1 := by
-  rw [← toMul_ofMul m, ← Representation.norm_ofMulDistribMulAction_eq]
-  rw [Representation.norm_apply_eq_zero_of_apply_eq_neg _ hg hord (fun v ↦ ?_)
-    (Additive.ofMul m), toMul_zero]
-  simp [hinv]
-
-end TauCeti

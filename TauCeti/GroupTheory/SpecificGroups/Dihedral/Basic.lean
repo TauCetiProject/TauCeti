@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.Solvable.DerivedLength
 import Mathlib.Algebra.Group.TypeTags.Finite
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Torsion
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The dihedral groups: an enumeration, a recognition criterion, and the rotation subgroup
@@ -622,7 +623,7 @@ noncomputable def dihedralQuotientEquiv (n : ℕ) :
 theorem dihedralQuotientEquiv_mk (n : ℕ) (g : DihedralGroup n) :
     dihedralQuotientEquiv n (g : DihedralGroup n ⧸ dihedralRotations n) =
       dihedralReflectionParity n g :=
-  (rfl)
+  TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk _ _ g
 
 end Rotations
 

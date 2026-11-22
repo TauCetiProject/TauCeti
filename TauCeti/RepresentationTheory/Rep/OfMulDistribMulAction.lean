@@ -156,11 +156,11 @@ theorem ofMulDistribMulActionLinearEquiv_isIntertwining {G M G' M' : Type*}
       (Rep.ofMulDistribMulAction G' M').ρ (eG g) ∘ₗ
         (ofMulDistribMulActionLinearEquiv G G' eM : _ →ₗ[ℤ] _) :=
   LinearMap.ext fun a ↦ (Rep.toAdditive (M := G') (G := M')).injective <| by
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    have hsymm (m : M) : eM.symm (g • m) = eG g • eM.symm m :=
+      eM.symm_apply_eq.2 ((hsmul g (eM.symm m)).trans (by simp)).symm
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe,
       toAdditive_ofMulDistribMulActionLinearEquiv, toAdditive_ofMulDistribMulAction_ρ_apply,
-      toAdditive_ofMulDistribMulAction_ρ_apply, toAdditive_ofMulDistribMulActionLinearEquiv,
-      toMul_ofMul, toMul_ofMul]
-    exact congrArg Additive.ofMul (eM.injective (by simp [hsmul]))
+      toMul_ofMul] using congrArg Additive.ofMul (hsymm _)
 
 /-- The intertwining morphism `Rep.res eG.symm (Rep.ofMulDistribMulAction G M) ⟶
 Rep.ofMulDistribMulAction G' M'` induced by action-intertwining equivalences `eM` and `eG`. -/
