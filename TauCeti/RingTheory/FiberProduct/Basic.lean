@@ -16,6 +16,8 @@ import Mathlib.Algebra.Category.Ring.Constructions
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.RingTheory.Finiteness.Finsupp
 import Mathlib.RingTheory.TensorProduct.Quotient
+import Mathlib.Tactic.Algebraize
+import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # Fiber products along a surjection
@@ -120,12 +122,7 @@ theorem isPushout_pullback_algebra {B C D : Type*} [CommRing B] [CommRing C] [Co
     letI : IsScalarTower (p.pullback q) D C :=
       IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
     Algebra.IsPushout (p.pullback q) B D C := by
-  let : Algebra (p.pullback q) B := (p.pullbackFst q).toAlgebra
-  let : Algebra (p.pullback q) D := (p.pullbackSnd q).toAlgebra
-  let : Algebra (p.pullback q) C := (p.comp (p.pullbackFst q)).toAlgebra
-  let : Algebra B C := p.toAlgebra
-  let : Algebra D C := q.toAlgebra
-  let : IsScalarTower (p.pullback q) B C := IsScalarTower.of_algebraMap_eq' rfl
+  algebraize_only [p.pullbackFst q, p.pullbackSnd q, p, q, p.comp (p.pullbackFst q)]
   let : IsScalarTower (p.pullback q) D C :=
     IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
   let eD := Ideal.quotientKerAlgEquivOfSurjective
@@ -137,6 +134,9 @@ theorem isPushout_pullback_algebra {B C D : Type*} [CommRing B] [CommRing C] [Co
   refine ⟨IsBaseChange.of_equiv ((eT.trans (eQ.symm.trans (eI.trans eC))).toLinearEquiv) ?_⟩
   intro d
   obtain ⟨a, rfl⟩ := p.surjective_pullbackSnd_of_surjective q hp d
+  -- Expose the composite equivalence on `1 ⊗ d`: `IsBaseChange.of_equiv` asks for
+  -- its underlying linear map, whereas the quotient evaluation lemmas below apply to
+  -- the algebra equivalence components. These coercions and the tower map reduce here.
   change eC (eI (eQ.symm (eT (TensorProduct.tmul (p.pullback q) 1
     (p.pullbackSnd q a))))) = q (p.pullbackSnd q a)
   have hD : eD.symm (p.pullbackSnd q a) = Ideal.Quotient.mk _ a :=
@@ -162,12 +162,7 @@ theorem isPushout_pullback {B C D : Type u} [CommRing B] [CommRing C] [CommRing 
     (p : B →+* C) (q : D →+* C) (hp : Function.Surjective p) :
     IsPushout (CommRingCat.ofHom (p.pullbackFst q)) (CommRingCat.ofHom (p.pullbackSnd q))
       (CommRingCat.ofHom p) (CommRingCat.ofHom q) := by
-  let : Algebra (p.pullback q) B := (p.pullbackFst q).toAlgebra
-  let : Algebra (p.pullback q) D := (p.pullbackSnd q).toAlgebra
-  let : Algebra (p.pullback q) C := (p.comp (p.pullbackFst q)).toAlgebra
-  let : Algebra B C := p.toAlgebra
-  let : Algebra D C := q.toAlgebra
-  let : IsScalarTower (p.pullback q) B C := IsScalarTower.of_algebraMap_eq' rfl
+  algebraize_only [p.pullbackFst q, p.pullbackSnd q, p, q, p.comp (p.pullbackFst q)]
   let : IsScalarTower (p.pullback q) D C :=
     IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
   exact CommRingCat.isPushout_iff_isPushout.mpr (isPushout_pullback_algebra p q hp)
@@ -198,6 +193,27 @@ theorem bijective_away_map_pullbackFst_of_mem_ker_pullbackSnd {B C D : Type*}
       rw [mem_ker, map_mul, hzero, zero_mul]
     exact ⟨(pullbackSndKerEquiv p q).symm ⟨_, hb⟩, 1, by simp⟩
 
+/-- On a numerator `b`, the inverse of the localized first projection is `a/t`,
+where `a` is the canonical kernel lift of `pullbackFst q t * b`. This is the representative
+formula in Ferrand's localization comparison, on arbitrary away-localization carriers. -/
+theorem away_map_pullbackFst_symm_algebraMap {B C D : Type*}
+    [CommRing B] [Semiring C] [CommRing D]
+    (p : B →+* C) (q : D →+* C) (Aₜ Bₜ : Type*) [CommRing Aₜ] [CommSemiring Bₜ]
+    [Algebra (p.pullback q) Aₜ] [Algebra B Bₜ] {t : p.pullback q}
+    [IsLocalization.Away t Aₜ] [IsLocalization.Away (p.pullbackFst q t) Bₜ]
+    (ht : t ∈ ker (p.pullbackSnd q)) (b : B) :
+    let a : ker p := ⟨p.pullbackFst q t * b,
+      (ker p).mul_mem_right b (by
+        simpa only [pullbackSndKerEquiv_apply_coe] using
+          (pullbackSndKerEquiv p q ⟨t, ht⟩).property)⟩
+    (RingEquiv.ofBijective (IsLocalization.Away.map Aₜ Bₜ (p.pullbackFst q) t)
+      (bijective_away_map_pullbackFst_of_mem_ker_pullbackSnd p q Aₜ Bₜ ht)).symm
+        (algebraMap B Bₜ b) =
+      IsLocalization.mk' Aₜ ((pullbackSndKerEquiv p q).symm a : p.pullback q)
+        ⟨t, Submonoid.mem_powers t⟩ := by
+  apply IsLocalization.Away.map_symm_algebraMap
+  exact pullbackSndKerEquiv_symm_fst p q _
+
 universe u v w
 
 variable {B : Type u} {C : Type v} {D : Type w} [CommRing B] [CommRing C] [CommRing D]
@@ -208,13 +224,9 @@ factor is finite, the first projection is finite. -/
 theorem finite_pullbackFst_of_surjective (hp : Function.Surjective p) (hq : q.Finite) :
     (p.pullbackFst q).Finite := by
   let A := ↥(p.pullback q)
-  let : Algebra A B := (p.pullbackFst q).toAlgebra
-  let : Algebra A D := (p.pullbackSnd q).toAlgebra
-  let : Algebra A C := (p.comp (p.pullbackFst q)).toAlgebra
-  let : Algebra B C := p.toAlgebra
-  let : Algebra D C := q.toAlgebra
-  have : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' rfl
-  have : IsScalarTower A D C := IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
+  algebraize_only [p.pullbackFst q, p.pullbackSnd q, p, q, p.comp (p.pullbackFst q)]
+  let : IsScalarTower (p.pullback q) D C :=
+    IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
   have hfinite : (q.comp (p.pullbackSnd q)).Finite :=
     hq.comp (Finite.of_surjective _ (p.surjective_pullbackSnd_of_surjective q hp))
   have : (p.comp (p.pullbackFst q)).Finite := by rw [p.pullback_comm_sq q]; exact hfinite

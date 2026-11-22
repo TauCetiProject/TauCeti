@@ -61,7 +61,7 @@ theorem localization {A B C D A' B' C' D' : CommRingCat.{u}}
     CommRingCat.isPushout_of_isLocalization j.hom j'.hom (congrArg CommRingCat.Hom.hom hj₀) M
   -- Reassociate the two numerator squares to obtain the composite square.
   have hdComm : a ≫ (i' ≫ f') = (i ≫ f) ≫ d := by
-    rw [← Category.assoc, hi₀, Category.assoc, hf₀, Category.assoc]
+    simpa only [Category.assoc, hf₀] using (reassoc_of% hi₀) f'
   have hdP : IsPushout (i ≫ f) a d (i' ≫ f') :=
     CommRingCat.isPushout_of_isLocalization (i ≫ f).hom (i' ≫ f').hom
       (congrArg CommRingCat.Hom.hom hdComm) M
@@ -82,7 +82,8 @@ theorem localization {A B C D A' B' C' D' : CommRingCat.{u}}
   have : Epi a := IsLocalization.epi M A'
   have hw : i' ≫ f' = j' ≫ g' := by
     apply (cancel_epi a).mp
-    rw [hdComm, h.w, Category.assoc, ← hg₀, ← Category.assoc, ← hj₀, Category.assoc]
+    simpa only [Category.assoc, reassoc_of% hi₀, hf₀, reassoc_of% hj₀, hg₀] using
+      (reassoc_of% h.w) d
   -- Identify each chosen localization with its categorical pushout.
   exact hm.of_iso haP.isoPushout.symm hiP.isoPushout.symm hjP.isoPushout.symm
     hdP.isoPushout.symm
