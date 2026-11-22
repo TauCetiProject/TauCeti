@@ -69,7 +69,8 @@ theorem integrable_log_abs_sub_semicircleReal (x a : ℝ) (v : ℝ≥0) :
   · let l := a - 2 * Real.sqrt v
     let u := a + 2 * Real.sqrt v
     apply Measure.integrable_log_abs_sub_of_le_smul_volume_restrict
-      (semicircleReal a v) x l u _ ENNReal.ofReal_ne_top
+      (semicircleReal a v) x l u (ENNReal.ofReal (Real.pi * Real.sqrt v)⁻¹)
+      ENNReal.ofReal_ne_top
     have hrestr : (semicircleReal a v).restrict (Icc l u) = semicircleReal a v :=
       restrict_Icc_semicircleReal a v
     rw [← hrestr]
