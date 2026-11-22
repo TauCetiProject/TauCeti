@@ -9,12 +9,15 @@ public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
-# Multiples in natural intervals
+# Counting in natural intervals
 
 The exact number of multiples of `d` in `(a, b]` is `b / d - a / d`.
 This supplies the exact local counts for interval sieves.
 The counting argument is adapted from [Arend Mellendijk, PNT+, BrunTitchmarsh.lean]
 (https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/7c7892801a0937aa6925e531a5e2c105bd20690b/PrimeNumberTheoremAnd/BrunTitchmarsh.lean).
+
+The window `[a + 1 - b, a + b)` of the natural numbers `k` with `|k - a| < b` has at most `2 * b`
+elements; dyadic decompositions sum over such windows of neighbouring scales.
 -/
 
 public section
@@ -33,5 +36,12 @@ theorem Ioc_filter_dvd_card (a b d : ℕ) :
       Nat.Ioc_filter_dvd_card_eq_div, Nat.Ioc_filter_dvd_card_eq_div] at hcard
     omega
   · simp [Finset.Ioc_eq_empty_of_le h, Nat.div_le_div_right h]
+
+/-- The window `[a + 1 - b, a + b)` of the natural numbers `k` with `|k - a| < b` has at most
+`2 * b` elements. -/
+theorem card_Ico_add_one_sub_add_le (a b : ℕ) :
+    (Finset.Ico (a + 1 - b) (a + b)).card ≤ 2 * b := by
+  rw [card_Ico]
+  omega
 
 end Nat

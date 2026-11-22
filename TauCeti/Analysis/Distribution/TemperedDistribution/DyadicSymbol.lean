@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Data.Nat.Interval
 
 /-!
 # Fourier multipliers of order `m` on Littlewood–Paley blocks
@@ -186,8 +187,7 @@ theorem exists_fourierMultiplierCLM_enlargedLittlewoodPaleyBlock_eq_and_norm_le 
           rw [Finset.sum_const, nsmul_eq_mul]
       _ ≤ 2 * L * (K * 2 ^ (m * j) * ‖f‖) := by
           gcongr
-          rw [Nat.card_Ico]
-          exact_mod_cast (by omega : j + L - (j + 1 - L) ≤ 2 * L)
+          exact_mod_cast Nat.card_Ico_add_one_sub_add_le j L
       _ = 2 * L * K * 2 ^ (m * j) * ‖f‖ := by ring
 
 /-- **Bessel potentials on Littlewood–Paley blocks.** There is a constant `C` such that for every
