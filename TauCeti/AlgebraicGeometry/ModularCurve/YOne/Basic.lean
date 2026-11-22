@@ -479,7 +479,7 @@ variable (N : ℕ)
 form over `B`. -/
 theorem natCast_residueField_universalTate_ne_zero (hN : ∀ b : B, (N : B.residueField b) ≠ 0)
     (s : (universalTate B).base) : (N : (universalTate B).base.residueField s) ≠ 0 :=
-  Scheme.Hom.natCast_residueField_ne_zero prod.fst (hN _)
+  (Scheme.Hom.natCast_residueField_ne_zero_iff prod.fst).mpr (hN _)
 
 variable [NeZero N]
 

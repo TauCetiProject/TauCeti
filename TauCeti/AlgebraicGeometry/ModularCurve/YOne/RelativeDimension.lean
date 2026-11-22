@@ -78,7 +78,7 @@ private theorem smoothOfRelativeDimension_one_yOne_restrict_basicOpen_two (B : S
     SmoothOfRelativeDimension 1 ((yOne B N).structureMap ∣_ B.basicOpen (2 : Γ(B, ⊤))) := by
   let U : B.Opens := B.basicOpen (2 : Γ(B, ⊤))
   have hNU (x : U.toScheme) : (N : U.toScheme.residueField x) ≠ 0 :=
-    Scheme.Hom.natCast_residueField_ne_zero U.ι (hN _)
+    (Scheme.Hom.natCast_residueField_ne_zero_iff U.ι).mpr (hN _)
   have h4U (x : U.toScheme) : (4 : U.toScheme.residueField x) ≠ 0 := fun h4 ↦
     mul_ne_zero (B.natCast_residueField_basicOpen_ne_zero 2 x)
       (B.natCast_residueField_basicOpen_ne_zero 2 x) (by linear_combination h4)
@@ -99,7 +99,7 @@ private theorem smoothOfRelativeDimension_one_yOne_restrict_basicOpen_three (B :
     SmoothOfRelativeDimension 1 ((yOne B N).structureMap ∣_ B.basicOpen (3 : Γ(B, ⊤))) := by
   let U : B.Opens := B.basicOpen (3 : Γ(B, ⊤))
   have hNU (x : U.toScheme) : (N : U.toScheme.residueField x) ≠ 0 :=
-    Scheme.Hom.natCast_residueField_ne_zero U.ι (hN _)
+    (Scheme.Hom.natCast_residueField_ne_zero_iff U.ι).mpr (hN _)
   have h3U (x : U.toScheme) : (3 : U.toScheme.residueField x) ≠ 0 :=
     B.natCast_residueField_basicOpen_ne_zero 3 x
   have : Smooth (yOne U.toScheme N).structureMap :=
