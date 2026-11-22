@@ -36,7 +36,7 @@ the integral to `z`.
 * Congruence, uniqueness, and linearity: `HasLaplace.unique`, `HasLaplace.congr_ae`,
   `hasLaplace_congr_Ioi`, `hasLaplace_restrict_Ici_iff`, `hasLaplace_zero`, `hasLaplace_zero_iff`,
   `hasLaplace_fun_zero_iff`, `HasLaplace.add`, `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`,
-  `HasLaplace.const_smul`, `HasLaplace.smul_const`, and `ContinuousLinearMap.hasLaplace`.
+  `HasLaplace.const_smul`, and `ContinuousLinearMap.hasLaplace`.
 * Scaling, shifts, and half-plane convergence: `hasLaplace_cexp_mul_smul_iff` (frequency shift),
   `HasLaplace.comp_mul_left` and `hasLaplace_comp_mul_left_iff` (positive time dilation),
   `HasLaplace.indicator_Ici_comp_sub_right` (right-shift on `[a, ∞)` for `0 ≤ a`),
@@ -44,10 +44,9 @@ the integral to `z`.
   `integrableOn_cexp_neg_mul_ofReal_pow_smul_of_re_lt` (polynomial moments to the right of
   convergence), `exists_hasLaplace_neg_smul_and_hasDerivAt`, `hasDerivAt_of_hasLaplace`,
   `hasDerivAt_integral_cexp_neg_mul_smul`, `hasLaplace_neg_smul_deriv_of_hasLaplace`,
-  `differentiableOn_of_hasLaplace`, `differentiableOn_of_hasLaplace_re_gt`,
-  `analyticOnNhd_of_hasLaplace`, and `analyticOnNhd_of_forall_hasLaplace` (holomorphic
-  differentiation under the integral sign with respect to `s`, producing the transform of
-  `t ↦ -(t : ℂ) • f t`, and analyticity on open sets / right half-planes).
+  `differentiableOn_of_hasLaplace`, `differentiableOn_of_hasLaplace_re_gt`, and
+  `analyticOnNhd_of_hasLaplace` (holomorphic differentiation under the integral sign with respect
+  to `s`, producing the transform of `t ↦ -(t : ℂ) • f t`, and analyticity on open sets).
 * Transform of a derivative: `intervalIntegral_cexp_neg_mul_smul_of_eq_add_intervalIntegral`
   establishes the finite-cutoff identity on `[0, T]`; `TauCeti.hasLaplace_deriv_of_primitive` proves
   `HasLaplace g s (s • z - f 0)` for a primitive `f(t) = f(0) + ∫₀ᵗ g(u) du` on `[0, ∞)` assuming
@@ -282,14 +281,6 @@ theorem _root_.ContinuousLinearMap.hasLaplace {E F : Type*}
   · rw [← hL, (L.restrictScalars ℝ).integral_comp_comm hf.1, hf.2,
       ContinuousLinearMap.coe_restrictScalars']
 
-/-- Scaling a complex-valued function by a fixed vector in a complex Banach space scales its
-Laplace transform by the same vector. -/
-theorem HasLaplace.smul_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [CompleteSpace E] {f : ℝ → ℂ} {s z : ℂ} {μ : Measure ℝ}
-    (hf : HasLaplace f s z μ) (a : E) :
-    HasLaplace (fun t : ℝ ↦ f t • a) s (z • a) μ := by
-  simpa using (ContinuousLinearMap.toSpanSingleton ℂ a).hasLaplace hf
-
 /-- Multiplying `f(t)` by `exp (w * t)` shifts the Laplace parameter from `s` to `s - w`. -/
 theorem hasLaplace_cexp_mul_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [MulAction ℂ E] {f : ℝ → E} {s w : ℂ} {z : E} {μ : Measure ℝ} :
@@ -410,8 +401,6 @@ theorem integrableOn_cexp_neg_mul_ofReal_pow_smul_of_re_lt {E : Type*}
     (hs : s₀.re < s.re) (k : ℕ) :
     Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • ((t : ℂ) ^ k • f t))
       (volume.restrict (Ioi 0)) := by
-  obtain ⟨M, _, hM⟩ := exists_rpow_mul_exp_neg_mul_le (σ := (k : ℝ)) (c := s.re - s₀.re)
-    (Nat.cast_nonneg k) (sub_pos.mpr hs)
   have hre : (fun t : ℝ ↦ Complex.exp (-s * t) • ((t : ℂ) ^ k • f t)) =
       fun t : ℝ ↦ (Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k) • (Complex.exp (-s₀ * t) • f t) := by
     ext t
@@ -419,13 +408,14 @@ theorem integrableOn_cexp_neg_mul_ofReal_pow_smul_of_re_lt {E : Type*}
     congr 3
     ring
   rw [hre]
-  refine hf.bdd_smul M (by fun_prop : Continuous fun t : ℝ ↦
-    Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k).aestronglyMeasurable ?_
+  refine hf.bdd_smul ((k.factorial : ℝ) / (s.re - s₀.re) ^ k)
+    (by fun_prop : Continuous fun t : ℝ ↦
+      Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k).aestronglyMeasurable ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
   have ht0 : 0 ≤ t := (Set.mem_Ioi.mp ht).le
   rw [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re,
-    norm_pow, Complex.norm_real, Real.norm_of_nonneg ht0]
-  simpa only [Real.rpow_natCast, mul_comm, neg_mul, mul_neg] using hM t ht0
+    norm_pow, Complex.norm_real, Real.norm_of_nonneg ht0, mul_comm]
+  simpa only [neg_mul] using pow_mul_exp_neg_mul_le (sub_pos.mpr hs) ht0 k
 
 /-- Pointwise domination of `exp (-w * t) • (-(t : ℂ) • v)` by `δ⁻¹ * ‖exp (-s₀ * t) • v‖`
 whenever `0 < t`, `0 < δ`, and `s₀.re + δ ≤ w.re`. -/
@@ -575,15 +565,6 @@ theorem analyticOnNhd_of_hasLaplace {E : Type*}
     (hF : ∀ s ∈ U, HasLaplace f s (F s)) :
     AnalyticOnNhd ℂ F U :=
   (differentiableOn_of_hasLaplace hU hF).analyticOnNhd hU
-
-/-- In a complex Banach space, a function representing a convergent one-sided Laplace transform on
-the open right half-plane `{s : ℂ | a < s.re}` is analytic there. -/
-theorem analyticOnNhd_of_forall_hasLaplace {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
-    {f : ℝ → E} {F : ℂ → E} {a : ℝ}
-    (hF : ∀ s : ℂ, a < s.re → HasLaplace f s (F s)) :
-    AnalyticOnNhd ℂ F {s : ℂ | a < s.re} :=
-  analyticOnNhd_of_hasLaplace (isOpen_lt continuous_const Complex.continuous_re) hF
 
 end HalfPlane
 
