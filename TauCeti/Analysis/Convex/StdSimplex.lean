@@ -25,11 +25,12 @@ import Mathlib.Tactic.Ring
 /-!
 # The standard simplex as a join with its barycentre or a vertex
 
-The standard simplex, the set of weight vectors of `Convexity.StdSimplex ℝ ι`, is the convex join
-of its relative boundary, the points with some vanishing coordinate, and its barycentre, the
-constant point `(card ι)⁻¹`. Along the segment from a boundary point to the barycentre, the
-position is recovered as `card ι` times the least coordinate. So the segments meet only at the
-barycentre, and every point of the simplex other than the barycentre lies on exactly one of them.
+Over a linearly ordered field `R`, the standard simplex, the set of weight vectors of
+`Convexity.StdSimplex R ι`, is the convex join of its relative boundary, the points with some
+vanishing coordinate, and its barycentre, the constant point `(card ι)⁻¹`. Along the segment from
+a boundary point to the barycentre, the position is recovered as `card ι` times the least
+coordinate. So the segments meet only at the barycentre, and every point of the simplex other than
+the barycentre lies on exactly one of them.
 
 This is pseudo-radial projection of a simplex from its barycentre onto its boundary. It identifies
 the cone on the boundary of a simplex, with apex at the barycentre, with the whole simplex; this is
@@ -55,7 +56,7 @@ likewise separated by at least `(card ι)⁻¹`.
 * `LinearMap.sum_apply_eq_of_mapsTo_range_weights`: a linear map carrying the standard simplex
   into a standard simplex preserves coordinate sums.
 * `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
-  the standard simplex, the points with some vanishing coordinate, and its compactness.
+  the standard simplex, the points with some vanishing coordinate, and its compactness over `ℝ`.
 * `TauCeti.mem_convexHull_pi_single_iff`: membership in the face of the standard simplex spanned
   by a set of vertices, in coordinates.
 * `TauCeti.norm_sub_le_one_of_mem_convexHull_pi_single`: points of faces of the standard
@@ -153,60 +154,58 @@ theorem LinearMap.sum_apply_eq_of_mapsTo_range_weights {R α β : Type*} [Semiri
 
 namespace TauCeti
 
-variable {ι : Type*}
+variable {R ι : Type*}
 
 section Boundary
 
-variable (ι) in
+variable (R ι) in
 /-- The relative boundary of the standard simplex: its points with some vanishing coordinate. -/
-def stdSimplexBoundary : Set (ι → ℝ) :=
-  {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0}
+def stdSimplexBoundary [Semiring R] [PartialOrder R] : Set (ι → R) :=
+  {y ∈ (range fun s : StdSimplex R ι => ⇑s.weights) | ∃ i, y i = 0}
 
-variable (ι) in
+variable (R ι) in
 /-- The relative boundary of the standard simplex is the set of its points with some vanishing
 coordinate. -/
-theorem stdSimplexBoundary_def :
-    stdSimplexBoundary ι = {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0} :=
+theorem stdSimplexBoundary_def [Semiring R] [PartialOrder R] :
+    stdSimplexBoundary R ι = {y ∈ (range fun s : StdSimplex R ι => ⇑s.weights) | ∃ i, y i = 0} :=
   (rfl)
 
 /-- Membership in the relative boundary of the standard simplex. -/
 @[simp]
-theorem mem_stdSimplexBoundary {x : ι → ℝ} :
-    x ∈ stdSimplexBoundary ι ↔ x ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) ∧ ∃ i, x i = 0 :=
+theorem mem_stdSimplexBoundary [Semiring R] [PartialOrder R] {x : ι → R} :
+    x ∈ stdSimplexBoundary R ι ↔
+      x ∈ (range fun s : StdSimplex R ι => ⇑s.weights) ∧ ∃ i, x i = 0 :=
   Iff.rfl
 
 /-- The relative boundary lies in the standard simplex. -/
-theorem stdSimplexBoundary_subset :
-    stdSimplexBoundary ι ⊆ range fun s : StdSimplex ℝ ι => ⇑s.weights :=
+theorem stdSimplexBoundary_subset [Semiring R] [PartialOrder R] :
+    stdSimplexBoundary R ι ⊆ range fun s : StdSimplex R ι => ⇑s.weights :=
   fun _ hx => hx.1
+
+/-- A point of the standard simplex lies on its relative boundary or in its open part. -/
+theorem mem_stdSimplexBoundary_or_forall_pos [Semiring R] [PartialOrder R] {x : ι → R}
+    (hx : x ∈ range fun s : StdSimplex R ι => ⇑s.weights) :
+    x ∈ stdSimplexBoundary R ι ∨ ∀ i, 0 < x i := by
+  refine or_iff_not_imp_left.2 fun h i => ?_
+  obtain ⟨s, rfl⟩ := hx
+  exact (s.weights_nonneg i).lt_of_ne' fun h0 => h ⟨mem_range_self s, i, h0⟩
 
 variable [Finite ι]
 
-/-- The relative boundary of the standard simplex is compact. -/
-theorem isCompact_stdSimplexBoundary : IsCompact (stdSimplexBoundary ι) := by
+/-- The relative boundary of the real standard simplex is compact. -/
+theorem isCompact_stdSimplexBoundary : IsCompact (stdSimplexBoundary ℝ ι) := by
   have hZ : IsClosed {y : ι → ℝ | ∃ i, y i = 0} := by
     simpa only [ofPred_exists] using
       isClosed_iUnion_of_finite fun i => isClosed_eq (continuous_apply i) continuous_const
   exact (isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights ℝ ι).continuous).inter_right
     hZ
 
-/-- A point of the standard simplex lies on its relative boundary or in its open part. -/
-theorem mem_stdSimplexBoundary_or_forall_pos {x : ι → ℝ}
-    (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) :
-    x ∈ stdSimplexBoundary ι ∨ ∀ i, 0 < x i := by
-  have := Fintype.ofFinite ι
-  by_cases h : ∀ i, 0 < x i
-  · exact Or.inr h
-  · obtain ⟨i, hi⟩ := not_forall.1 h
-    exact Or.inl ⟨hx, i,
-      le_antisymm (not_lt.1 hi) ((StdSimplex.mem_range_toFun_comp_weights_iff.1 hx).1 i)⟩
-
 end Boundary
 
 /-- A face of the standard simplex, the convex hull of a set of vertices `Pi.single i 1`,
 consists of weight vectors of `Convexity.StdSimplex`. -/
-theorem convexHull_pi_single_subset_range_toFun_comp_weights {R : Type*} [Semiring R]
-    [PartialOrder R] [IsOrderedRing R] [DecidableEq ι] (s : Set ι) :
+theorem convexHull_pi_single_subset_range_toFun_comp_weights [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] [DecidableEq ι] (s : Set ι) :
     convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) ⊆
       range fun t : StdSimplex R ι => ⇑t.weights := by
   refine convexHull_min (fun _ hi => ?_) (StdSimplex.convex_range_toFun_comp_weights R ι)
@@ -218,8 +217,8 @@ variable [Fintype ι]
 /-- Membership in a face of the standard simplex is nonnegativity, total mass one,
 and vanishing of the coordinates outside the face. The empty face has empty convex hull. -/
 @[simp]
-theorem mem_convexHull_pi_single_iff {R : Type*} [Field R] [LinearOrder R]
-    [IsStrictOrderedRing R] [DecidableEq ι] {s : Set ι} {x : ι → R} :
+theorem mem_convexHull_pi_single_iff [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+    [DecidableEq ι] {s : Set ι} {x : ι → R} :
     x ∈ convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) ↔
       (∀ i, 0 ≤ x i) ∧ (∑ i, x i = 1) ∧ ∀ i ∉ s, x i = 0 := by
   constructor
@@ -325,9 +324,8 @@ end Faces
 
 /-- Along the segment from a point `y` with nonnegative coordinates, one of them zero, to the
 barycentre of the standard simplex, `card ι` times the least coordinate is the parameter `t`. -/
-theorem card_mul_inf'_smul_add_smul_barycenter {R : Type*} [Field R] [LinearOrder R]
-    [IsStrictOrderedRing R] [Nonempty ι] {y : ι → R} (hy : 0 ≤ y) {i : ι} (hi : y i = 0) {t : R}
-    (ht : t ≤ 1) :
+theorem card_mul_inf'_smul_add_smul_barycenter [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+    [Nonempty ι] {y : ι → R} (hy : 0 ≤ y) {i : ι} (hi : y i = 0) {t : R} (ht : t ≤ 1) :
     (Fintype.card ι : R) * univ.inf' univ_nonempty
       ((1 - t) • y + t • ⇑(StdSimplex.barycenter : StdSimplex R ι).weights) = t := by
   have hc : (0 : R) < Fintype.card ι := Nat.cast_pos.mpr Fintype.card_pos
@@ -342,22 +340,23 @@ theorem card_mul_inf'_smul_add_smul_barycenter {R : Type*} [Field R] [LinearOrde
 
 /-- **Pseudo-radial decomposition of the standard simplex.** The standard simplex is the convex
 join of its relative boundary, the points with some vanishing coordinate, with its barycentre. -/
-theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
-    convexJoin ℝ (stdSimplexBoundary ι) {⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights} =
-      range fun s : StdSimplex ℝ ι => ⇑s.weights := by
+theorem convexJoin_boundary_stdSimplex_barycenter [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+    [Nontrivial ι] :
+    convexJoin R (stdSimplexBoundary R ι) {⇑(StdSimplex.barycenter : StdSimplex R ι).weights} =
+      range fun s : StdSimplex R ι => ⇑s.weights := by
   classical
   rw [stdSimplexBoundary_def]
-  set c : ℝ := (Fintype.card ι : ℝ)
+  set c : R := (Fintype.card ι : R)
   have hc : 0 < c := Nat.cast_pos.mpr Fintype.card_pos
-  have hS : (range fun s : StdSimplex ℝ ι => ⇑s.weights) =
+  have hS : (range fun s : StdSimplex R ι => ⇑s.weights) =
       {z | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
     Set.ext fun _ => StdSimplex.mem_range_toFun_comp_weights_iff
-  have hconv := StdSimplex.convex_range_toFun_comp_weights ℝ ι
-  have hbar : ⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights = fun _ => c⁻¹ :=
+  have hconv := StdSimplex.convex_range_toFun_comp_weights R ι
+  have hbar : ⇑(StdSimplex.barycenter : StdSimplex R ι).weights = fun _ => c⁻¹ :=
     funext StdSimplex.weights_barycenter_apply
   rw [hS] at hconv
   rw [hbar, hS]
-  have hb : (fun _ => c⁻¹) ∈ {z : ι → ℝ | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
+  have hb : (fun _ => c⁻¹) ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} :=
     hbar ▸ hS ▸ mem_range_self _
   refine Subset.antisymm (convexJoin_subset (fun y hy => hy.1)
     (singleton_subset_iff.mpr hb) hconv) fun z hz => ?_
@@ -386,8 +385,8 @@ theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
     have hzb : z = fun _ => c⁻¹ := funext fun j => by
       linarith [hzero j (Finset.mem_univ j)]
     obtain ⟨j, k, hjk⟩ := exists_pair_ne ι
-    have hj : ⇑(StdSimplex.single j : StdSimplex ℝ ι).weights ∈
-        {y ∈ {z : ι → ℝ | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | ∃ i, y i = 0} :=
+    have hj : ⇑(StdSimplex.single j : StdSimplex R ι).weights ∈
+        {y ∈ {z : ι → R | (∀ i, 0 ≤ z i) ∧ ∑ i, z i = 1} | ∃ i, y i = 0} :=
       ⟨hS ▸ mem_range_self _, k, by simp [hjk]⟩
     rw [hzb]
     exact subset_convexJoin_right ⟨_, hj⟩ (mem_singleton _)
@@ -396,8 +395,8 @@ omit [Fintype ι] in
 /-- **The standard simplex as a cone on a facet.** The standard simplex is the convex join of the
 facet opposite a vertex `i`, the points with vanishing `i`-th coordinate, with that vertex. Along
 the segment from a point of the facet to the vertex, the `i`-th coordinate is the parameter. -/
-theorem convexJoin_facet_stdSimplex_single {R : Type*} [Field R] [LinearOrder R]
-    [IsStrictOrderedRing R] [Finite ι] [Nontrivial ι] [DecidableEq ι] (i : ι) :
+theorem convexJoin_facet_stdSimplex_single [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+    [Finite ι] [Nontrivial ι] [DecidableEq ι] (i : ι) :
     convexJoin R {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} {Pi.single i 1} =
       range fun s : StdSimplex R ι => ⇑s.weights := by
   have := Fintype.ofFinite ι
