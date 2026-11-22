@@ -280,11 +280,19 @@ theorem isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top (hp : p
   · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hm ⊢
     exact fun i hi ↦ hm i (hi.trans_le hnm)
   · have hn1 : IsWeaklyRegular M (F.landweberSequence p (n + 1)) := by
-      rw [F.landweberSequence_succ, isWeaklyRegular_append_iff']
-      refine ⟨hn, ?_⟩
-      rw [F.ofList_landweberSequence hp]
-      simpa using ((F.isUnit_mk_coeff_nsmulSeries_iff hp n).mpr hI).isSMulRegular
-        (M ⧸ (F.heightIdeal p n • ⊤ : Submodule R M))
+      rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hn ⊢
+      intro i hi
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hin | hi_eq
+      · exact hn i hin
+      · rw [hi_eq]
+        have hreg := ((F.isUnit_mk_coeff_nsmulSeries_iff hp n).mpr hI).isSMulRegular
+          (M ⧸ (F.heightIdeal p n • ⊤ : Submodule R M))
+        intro x y hxy
+        apply hreg
+        dsimp only
+        rw [Module.IsTorsionBySet.mk_smul (Module.isTorsionBySet_quotient_ideal_smul M _),
+          Module.IsTorsionBySet.mk_smul (Module.isTorsionBySet_quotient_ideal_smul M _)]
+        exact hxy
     exact (F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top hp M hI).mpr hn1 m
 
 /-- If `I_(n+1)(F) = ⊤`, weak regularity of `F.landweberSequence p m` on `M` for every `m : ℕ`
@@ -462,14 +470,9 @@ Landweber regular for `𝔾ₘ` if and only if multiplication by every prime `p`
 theorem isLandweberRegular_𝔾ₘ_iff (M : Type*) [AddCommGroup M] [Module R M] :
     (𝔾ₘ : FormalGroup R).IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) := by
   refine forall₂_congr fun p hp ↦ ?_
-  rw [(𝔾ₘ : FormalGroup R).forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top
+  rw [(𝔾ₘ : FormalGroup R).forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top
     hp M (heightIdeal_𝔾ₘ_eq_top hp.one_lt (le_refl 2)),
-    landweberSequence_two, isWeaklyRegular_cons_iff, isWeaklyRegular_singleton_iff]
-  have hcoeff : PowerSeries.coeff p ((𝔾ₘ : FormalGroup R).nsmulSeries p) = 1 := by
-    rw [nsmulSeries_𝔾ₘ, map_sub, add_comm, add_pow]
-    simp [PowerSeries.coeff_X_pow, PowerSeries.coeff_one, hp.ne_zero]
-  rw [hcoeff]
-  exact and_iff_left (isUnit_one.isSMulRegular _)
+    landweberSequence_one, isWeaklyRegular_singleton_iff]
 
 /-- **Landweber regularity for the additive formal group law `𝔾ₐ`.** An `R`-module `M` is
 Landweber regular for `𝔾ₐ` if and only if for every prime `p`, multiplication by `p` on `M` is
