@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.AlgebraicGeometry.Birational.KrullDimension
 import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.Spec
-import TauCeti.AlgebraicGeometry.Curves.Cohomology
+import TauCeti.AlgebraicGeometry.Curves.Cohomology.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Modification.Finite
 import TauCeti.AlgebraicGeometry.Morphisms.Separated
 import TauCeti.AlgebraicGeometry.Normalization.Regular

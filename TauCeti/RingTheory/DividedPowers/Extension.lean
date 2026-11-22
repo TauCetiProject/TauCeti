@@ -612,7 +612,7 @@ private theorem flatDpow_mul (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat
     flatDpow_sum_eq hI hf n b fun i _ ↦ hx i, extCoeff_smul]
 
 private noncomputable def flatCandidate (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) :
-    TauCeti.AdditivePowers (I.map f) where
+    TauCeti.PD.AdditivePowers (I.map f) where
   dpow := flatDpow hI f
   dpow_null {n z} hz := by classical simp [flatDpow, hz]
   dpow_zero {z} hz := by
@@ -640,13 +640,13 @@ private theorem flatDpow_map_eq (hI : DividedPowers I) {f : A →+* B} (hf : f.F
 noncomputable def ofFlat (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) :
     DividedPowers (I.map f) :=
   (hI.flatCandidate hf).toDividedPowers (S := f '' (I : Set A)) (by rw [Ideal.map])
-    (fun m n _ hs ↦ by
+    (fun _ hs m n ↦ by
       rcases hs with ⟨x, hx, rfl⟩
       change flatDpow hI f m (f x) * flatDpow hI f n (f x) =
         ((m + n).choose m : B) * flatDpow hI f (m + n) (f x)
       simp only [flatDpow_map_eq hI hf _ hx]
       rw [← map_mul, hI.mul_dpow hx, map_mul, map_natCast])
-    (fun m n hn _ hs ↦ by
+    (fun _ hs m n hn ↦ by
       rcases hs with ⟨x, hx, rfl⟩
       change flatDpow hI f m (flatDpow hI f n (f x)) =
         (Nat.uniformBell m n : B) * flatDpow hI f (m * n) (f x)
@@ -658,7 +658,7 @@ theorem ofFlat_dpow_sum (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) (n 
     {ι : Type*} [DecidableEq ι] {s : Finset ι} (b : ι → B) {x : ι → A}
     (hx : ∀ i ∈ s, x i ∈ I) :
     (hI.ofFlat hf).dpow n (∑ i ∈ s, b i * f (x i)) = hI.extCoeff f n s b x := by
-  rw [ofFlat, TauCeti.AdditivePowers.toDividedPowers_dpow]
+  rw [ofFlat, TauCeti.PD.AdditivePowers.toDividedPowers_dpow]
   exact flatDpow_sum_eq hI hf n b hx
 
 /-- Evaluation of `ofFlat` on the image of an element of `I`. -/
@@ -666,7 +666,7 @@ theorem ofFlat_dpow_sum (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) (n 
 theorem ofFlat_dpow_map (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat)
     (n : ℕ) {x : A} (hx : x ∈ I) :
     (hI.ofFlat hf).dpow n (f x) = f (hI.dpow n x) := by
-  rw [ofFlat, TauCeti.AdditivePowers.toDividedPowers_dpow]
+  rw [ofFlat, TauCeti.PD.AdditivePowers.toDividedPowers_dpow]
   exact flatDpow_map_eq hI hf n hx
 
 /-- The flat ring homomorphism `f` is a divided power morphism into `hI.ofFlat hf`. -/

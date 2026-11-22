@@ -8,10 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Module.Defs
-public import Mathlib.Data.Finset.Sym
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.BigOperators.Intervals
-import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Sums and products over the antidiagonals of `ℕ × ℕ`
@@ -40,8 +38,6 @@ The sum over all antidiagonals `i + j = k` with `k < N` is the sum over the tria
   `i + j = k + 1`.
 * `Finset.Nat.sum_range_sum_antidiagonal`: the sum over the antidiagonals below `N` as a sum over a
   triangle.
-* `Finset.Nat.sum_count_mul_fst_add_sum_count_mul_snd_antidiagonal`: the count-weighted coordinate
-  sums of a symmetric `m`-tuple from `antidiagonal n` add to `m * n`.
 -/
 
 public section
@@ -88,23 +84,5 @@ theorem sum_range_sum_antidiagonal [AddCommMonoid M] (g : ℕ → ℕ → M) (N 
       ∑ i ∈ range N, ∑ j ∈ range (N - i), g i j := by
   simp_rw [sum_antidiagonal_eq_sum_range_succ g]
   exact sum_range_diag_flip N g
-
-/-- For a symmetric `m`-tuple `k` of pairs in `antidiagonal n`, the count-weighted sums of the
-first and second coordinates add to `m * n`. -/
-theorem sum_count_mul_fst_add_sum_count_mul_snd_antidiagonal {m n : ℕ} {k : Sym (ℕ × ℕ) m}
-    (hk : k ∈ (antidiagonal n).sym m) :
-    (∑ p ∈ antidiagonal n, Multiset.count p k * p.1) +
-      (∑ p ∈ antidiagonal n, Multiset.count p k * p.2) = m * n := by
-  simp_rw [← sum_add_distrib, ← mul_add]
-  have hsum : ∑ p ∈ antidiagonal n, Multiset.count p k * (p.1 + p.2) =
-      (∑ p ∈ antidiagonal n, Multiset.count p k) * n := by
-    rw [Finset.sum_mul]
-    exact sum_congr rfl fun p hp ↦ by rw [mem_antidiagonal.mp hp]
-  have hcard : ∑ p ∈ antidiagonal n, Multiset.count p (k : Multiset (ℕ × ℕ)) = m := by
-    have hsub : ∀ p ∈ (k : Multiset (ℕ × ℕ)), p ∈ antidiagonal n := fun p hp ↦
-      mem_sym_iff.mp hk p hp
-    rw [Multiset.sum_count_eq_card hsub]
-    exact k.prop
-  rw [hsum, hcard]
 
 end Finset.Nat

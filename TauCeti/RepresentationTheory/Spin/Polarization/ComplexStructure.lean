@@ -73,7 +73,7 @@ pairing field identifies the `-i`-eigenspace with the dual of the `i`-eigenspace
 polar form. -/
 noncomputable def spinPolarizationData [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
     (hQ : Q.Nondegenerate) : SpinPolarizationData (Q.baseChange ℂ) :=
-  SpinPolarizationData.ofIsCompl (QuadraticForm.Nondegenerate.baseChange hQ)
+  SpinPolarizationData.ofIsCompl (QuadraticForm.Nondegenerate.baseChange hQ).radical_eq_bot
     J.isCompl_eigenspace_baseChange_I_neg_I (J.isTotallyIsotropic_eigenspace_baseChange_I hQJ)
     (J.isTotallyIsotropic_eigenspace_baseChange_neg_I hQJ)
 
