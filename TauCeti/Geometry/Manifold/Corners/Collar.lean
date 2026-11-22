@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Topological
+public import TauCeti.Geometry.Manifold.Corners.Boundary
 
 /-!
 # The collar of the boundary of a manifold with corners

@@ -332,29 +332,6 @@ theorem integral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : ℝ × ℝ �
     linarith
   · exact setIntegral_cylindricalWeight_mul_add_le p hξ hξc R
 
-/-- On the disc `|w| ≤ r`, the `L²` norm of a section is controlled by its weighted `L²` norm:
-`∫ ‖ξ‖² ≤ (1 + r²) ∫ ‖√ρ ξ‖²`, since `ρ ≥ (1 + r²)⁻¹` there. -/
-private theorem setIntegral_norm_sq_le_mul_setIntegral_norm_sqrt_smul_sq {ξ : ℝ × ℝ → V}
-    (hξ : Continuous ξ) (r : ℝ) :
-    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ r}, ‖ξ z‖ ^ 2 ≤
-      (1 + r ^ 2) * ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ r},
-        ‖√(cylindricalWeight z) • ξ z‖ ^ 2 := by
-  have hK := isCompact_setOf_norm_equivRealProdCLM_symm_le r
-  have hρc : Continuous cylindricalWeight :=
-    continuousOn_univ.1 isWeight_cylindricalWeight.continuousOn
-  rw [← integral_const_mul]
-  refine setIntegral_mono_on ((hξ.norm.pow 2).continuousOn.integrableOn_compact hK)
-    ((continuous_const.mul ((hρc.sqrt.smul hξ).norm.pow 2)).continuousOn.integrableOn_compact hK)
-    hK.isClosed.measurableSet fun z hz ↦ ?_
-  have hpos : 0 < 1 + ‖Complex.equivRealProdCLM.symm z‖ ^ 2 := by positivity
-  -- On the disc, `(1 + r²) ρ ≥ 1`.
-  have hρz : 1 ≤ (1 + r ^ 2) * cylindricalWeight z := by
-    rw [cylindricalWeight_apply, ← div_eq_mul_inv, one_le_div hpos]
-    nlinarith [pow_le_pow_left₀ (norm_nonneg _) hz 2]
-  rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
-    Real.sq_sqrt (isWeight_cylindricalWeight.pos z (mem_univ _)).le, ← mul_assoc]
-  nlinarith [sq_nonneg ‖ξ z‖]
-
 end Energy
 
 end Floer.PSSPlane
@@ -596,7 +573,10 @@ private theorem exists_norm_le_floerConformalSobolevOperator_pssPlane (ω : Symp
           ‖restrictWeightedValue V univ
             {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (R + 1))} x‖) := by
   set K := {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (R + 1))}
-  set cK := 1 + Real.exp (2 * π * (R + 1)) ^ 2
+  -- On `K` the `L²` norm of a section is controlled by its weighted value.
+  obtain ⟨B, hB⟩ := exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (V := V)
+    isWeight_cylindricalWeight (isCompact_setOf_norm_equivRealProdCLM_symm_le _) (subset_univ K)
+  set cK := 1 + |B|
   set A₀ := 4 * π ^ 2 * max C 0 * cK
   have hA₀ : 0 ≤ A₀ := by positivity
   refine ⟨√A₀, fun x hx ↦ ?_⟩
@@ -608,12 +588,10 @@ private theorem exists_norm_le_floerConformalSobolevOperator_pssPlane (ω : Symp
       ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) :=
     (sq_norm_le_integral isWeight_cylindricalWeight hξ hxξ).trans_eq setIntegral_univ
   have h₂ := integral_cylindricalWeight_mul_add_le p (hξs.of_le one_le_two) hξc R
-  have hD := ω.sq_norm_floerConformalSobolevOperator_of_ae_eq_jet isWeight_cylindricalWeight hM hξ
-    hxξ
-  rw [setIntegral_univ] at hD
-  have hW := sq_norm_restrictWeightedValue_of_ae_eq_jet (subset_univ K) hxξ
-  have hKξ := setIntegral_norm_sq_le_mul_setIntegral_norm_sqrt_smul_sq hξs.continuous
-    (Real.exp (2 * π * (R + 1)))
+  have hD := ω.norm_floerConformalSobolevOperator_sq isWeight_cylindricalWeight hM hξ hxξ
+  have hKξ : ∫ z in K, ‖ξ z‖ ^ 2 ≤ cK * ‖restrictWeightedValue V univ K x‖ ^ 2 :=
+    (hB hξs.continuous hxξ).trans
+      (mul_le_mul_of_nonneg_right (by linarith [le_abs_self B]) (sq_nonneg _))
   have hDx0 : 0 ≤ ∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 :=
     integral_nonneg fun _ ↦ by positivity
   have hK0 : 0 ≤ ∫ z in K, ‖ξ z‖ ^ 2 :=
@@ -626,8 +604,8 @@ private theorem exists_norm_le_floerConformalSobolevOperator_pssPlane (ω : Symp
   have hπ : 1 ≤ 4 * π ^ 2 := by nlinarith [Real.two_le_pi]
   have hsq : ‖x‖ ^ 2 ≤ A₀ * (‖ω.floerConformalSobolevOperator univ PSSPlane.cylindricalWeight
       J Ks Kt u x‖ ^ 2 + ‖restrictWeightedValue V univ K x‖ ^ 2) := by
-    rw [hD, hW]
-    have hcK : 1 ≤ cK := le_add_of_nonneg_right (sq_nonneg _)
+    rw [hD]
+    have hcK : 1 ≤ cK := le_add_of_nonneg_right (abs_nonneg _)
     nlinarith [mul_le_mul_of_nonneg_left hest' (show (0 : ℝ) ≤ 4 * π ^ 2 by positivity),
       mul_le_mul_of_nonneg_left hEp0 (show (0 : ℝ) ≤ 4 * π ^ 2 - 1 by linarith),
       mul_le_mul_of_nonneg_left hKξ (show (0 : ℝ) ≤ 4 * π ^ 2 * max C 0 by positivity),

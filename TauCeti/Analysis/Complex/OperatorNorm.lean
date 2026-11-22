@@ -17,6 +17,10 @@ A real-linear map is the sum of its values at `1` and `I` weighted by the real a
 parts (`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`, and for families
 `ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`).
 
+Multiplication by `c : ℂ` is a similarity of ratio `‖c‖`, so precomposing a real-linear map with
+it multiplies the operator norm by `‖c‖`
+(`ContinuousLinearMap.norm_comp_restrictScalars_smulRight_one`).
+
 The norm bounds in terms of the values on `1` and `I` hold over any `RCLike` field and live in
 `TauCeti.Analysis.RCLike.OperatorNorm`.
 -/
@@ -49,6 +53,26 @@ theorem fun_eq_smulRightL_reCLM_add_smulRightL_imCLM {X V : Type*} [SeminormedAd
   conv_lhs => rw [(D x).eq_reCLM_smulRight_add_imCLM_smulRight]
   ext z
   simp
+
+/-- Precomposing a real-linear map out of the complex plane with multiplication by `c`, a
+similarity of ratio `‖c‖`, multiplies its operator norm by `‖c‖`. -/
+theorem norm_comp_restrictScalars_smulRight_one {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (L : ℂ →L[ℝ] V) (c : ℂ) :
+    ‖L.comp ((smulRight (1 : ℂ →L[ℂ] ℂ) c).restrictScalars ℝ)‖ = ‖L‖ * ‖c‖ := by
+  have hnorm (a : ℂ) : ‖(smulRight (1 : ℂ →L[ℂ] ℂ) a).restrictScalars ℝ‖ = ‖a‖ := by
+    rw [norm_restrictScalars, norm_smulRight_apply, norm_one, one_mul]
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  refine le_antisymm ((L.opNorm_comp_le _).trans_eq (by rw [hnorm])) ?_
+  -- Multiplying back by `c⁻¹` recovers `L`, which gives the reverse inequality.
+  have hL : L = (L.comp ((smulRight (1 : ℂ →L[ℂ] ℂ) c).restrictScalars ℝ)).comp
+      ((smulRight (1 : ℂ →L[ℂ] ℂ) c⁻¹).restrictScalars ℝ) := by
+    ext w
+    simp [hc]
+  rw [← le_div_iff₀ (norm_pos_iff.2 hc), div_eq_mul_inv, ← norm_inv, ← hnorm c⁻¹]
+  calc ‖L‖ = ‖(L.comp ((smulRight (1 : ℂ →L[ℂ] ℂ) c).restrictScalars ℝ)).comp
+        ((smulRight (1 : ℂ →L[ℂ] ℂ) c⁻¹).restrictScalars ℝ)‖ := congrArg norm hL
+    _ ≤ _ := opNorm_comp_le _ _
 
 end ContinuousLinearMap
 

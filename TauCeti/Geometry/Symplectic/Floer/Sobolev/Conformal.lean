@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The linearized Floer operator on the Sobolev space of a conformal metric
@@ -37,7 +36,9 @@ first two terms are bounded where `J` is, so the condition is that `C(z)` grows 
 factor of the metric `ds² + dt²`, this says that the zeroth-order part of `D_u` in the end
 coordinates is bounded. The realization is
 `TauCeti.SymplecticForm.floerConformalSobolevOperator`, which agrees with `D_u` on test sections
-(`TauCeti.SymplecticForm.floerConformalSobolevOperator_toLp_jet_ae_eq`).
+(`TauCeti.SymplecticForm.floerConformalSobolevOperator_toLp_jet_ae_eq`), so that its norm on the jet
+of a test section `ξ` is the `L²` norm of `D_u ξ`
+(`TauCeti.SymplecticForm.norm_floerConformalSobolevOperator_sq`).
 
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
 `(0, 1)`-form `(dξ + …)^(0,1)` for the conformal metric, since the conformal factors of a
@@ -175,24 +176,26 @@ theorem floerConformalSobolevOperator_toLp_jet_ae_eq (ω : SymplecticForm V) (h�
   rw [floerConformalSobolevOperator_def, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
     h, floerConformalJetCoeff_jet ω J Ks Kt u ξ (hρ.pos z hz)]
 
-/-- On an element `x` of `H1` represented by the jet of a test section `ξ`, the squared `L²` norm
-of the conformal Sobolev realization of the linearized Floer operator is `∫_U ‖D_u ξ‖²`, when the
-coefficient field on conformal jets is essentially bounded on `U`. -/
-theorem sq_norm_floerConformalSobolevOperator_of_ae_eq_jet (ω : SymplecticForm V)
-    (hρ : IsWeight U ρ) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
+/-- On the jet `x ∈ H1` of a test section `ξ`, the squared norm of the conformal Sobolev realization
+of the linearized Floer operator is `∫ ‖D_u ξ‖²`, when the coefficient field on conformal jets is
+essentially bounded on `U`. -/
+theorem norm_floerConformalSobolevOperator_sq (ω : SymplecticForm V) (hρ : IsWeight U ρ)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V}
     (hM : MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict U))
     (hξ : ξ ∈ testSection V U) {x : H1 V U ρ}
     (hx : (x : Lp (V × V × V) 2 (volume.restrict U)) =ᵐ[volume.restrict U] jet ρ ξ) :
     ‖ω.floerConformalSobolevOperator U ρ J Ks Kt u x‖ ^ 2 =
-      ∫ z in U, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 := by
-  have hxeq : x = ⟨(memLp_jet hρ hξ).toLp (jet ρ ξ),
+      ∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 := by
+  have hxe : x = ⟨(memLp_jet hρ hξ).toLp (jet ρ ξ),
       jetSubmodule_le_H1 (toLp_jet_mem_jetSubmodule hρ hξ)⟩ :=
     Subtype.ext (Lp.ext (hx.trans (memLp_jet hρ hξ).coeFn_toLp.symm))
-  have hae := ω.floerConformalSobolevOperator_toLp_jet_ae_eq hρ hM hξ
-  rw [← hxeq] at hae
-  have hm : MemLp (ω.floerLinearization J Ks Kt u ξ) 2 (volume.restrict U) :=
-    (Lp.memLp _).ae_eq hae
-  rw [show ω.floerConformalSobolevOperator U ρ J Ks Kt u x = hm.toLp _ from
-    Lp.ext (hae.trans hm.coeFn_toLp.symm), hm.norm_toLp_sq]
+  have hae := floerConformalSobolevOperator_toLp_jet_ae_eq ω hρ hM hξ
+  rw [← hxe] at hae
+  rw [← Lp.integral_norm_sq_eq_norm_sq, integral_congr_ae (hae.mono fun z hz ↦
+    congrArg (‖·‖ ^ 2) hz)]
+  -- `D_u ξ` vanishes outside the support of `ξ`, which lies in `U`.
+  exact setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
+    rw [ω.floerLinearization_of_notMem_tsupport J Ks Kt u
+      fun h ↦ hz ((mem_testSection_iff.1 hξ).2.2 h), norm_zero, zero_pow two_ne_zero]
 
 end TauCeti.SymplecticForm
