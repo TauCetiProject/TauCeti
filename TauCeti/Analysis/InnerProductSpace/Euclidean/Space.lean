@@ -24,7 +24,9 @@ Mathlib puts a manifold structure on the unit sphere of `E`
 quotients, to be manifolds of dimension `2k + 1`. Likewise,
 `TauCeti.instFactCardEqFinrankEuclideanSpace` records `Fintype.card ι = Module.finrank 𝕜
 (EuclideanSpace 𝕜 ι)` as a `Fact` for rank-indexed APIs such as
-`TauCeti.OrthonormalFrameBundle.orientedFrames`.
+`TauCeti.OrthonormalFrameBundle.orientedFrames`, and
+`TauCeti.instFactFinrankEuclideanSpaceFin` records `Module.finrank 𝕜 (EuclideanSpace 𝕜 (Fin n)) = n`
+for dimension-indexed APIs such as the Hodge star of an orientation of `ℝⁿ`.
 
 The real coordinates of `ℂⁱ` (`TauCeti.complexEuclideanRealCoords`) identify it `ℝ`-linearly with
 `ℝ²ⁱ`, the real parts of the coordinates first and then their imaginary parts. They carry the
@@ -67,6 +69,12 @@ rank-indexed APIs such as `TauCeti.OrthonormalFrameBundle.orientedFrames`. -/
 instance instFactCardEqFinrankEuclideanSpace (𝕜 ι : Type*) [RCLike 𝕜] [Fintype ι] :
     Fact (Fintype.card ι = Module.finrank 𝕜 (EuclideanSpace 𝕜 ι)) :=
   ⟨(finrank_euclideanSpace (𝕜 := 𝕜) (ι := ι)).symm⟩
+
+/-- The dimension of `EuclideanSpace 𝕜 (Fin n)` is `n`, recorded as a `Fact` for APIs indexed by
+the dimension, such as the volume form and the Hodge star of an orientation of `ℝⁿ`. -/
+instance instFactFinrankEuclideanSpaceFin (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
+    Fact (Module.finrank 𝕜 (EuclideanSpace 𝕜 (Fin n)) = n) :=
+  ⟨finrank_euclideanSpace_fin⟩
 
 /-- The real coordinates of `ℂⁱ`, as a continuous `ℝ`-linear isomorphism onto `ℝᵐ` for `m = 2i`:
 coordinate `j + i * a` of the image of `v` is the real part of `vⱼ` for `a = 0` and its imaginary
