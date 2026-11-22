@@ -36,8 +36,8 @@ it reflects isomorphisms. Nothing here uses rigidity, linearity or a strong mono
 structure on `F`.
 
 The relative centre is where the coefficients of Davydov–Yetter cohomology of a tensor functor
-live; for fusion categories of nonzero global dimension the vanishing of this cohomology is
-Ocneanu rigidity.
+live; for fusion categories of nonzero global dimension the vanishing of this cohomology in
+positive degrees is Ocneanu rigidity.
 
 ## Main declarations
 
@@ -239,11 +239,8 @@ def isoMk {X Y : F.RelativeCenter} (e : X.obj ≅ Y.obj)
     (comm : ∀ U, e.hom ▷ F.obj U ≫ (Y.halfBraiding.β U).hom =
       (X.halfBraiding.β U).hom ≫ F.obj U ◁ e.hom) : X ≅ Y where
   hom := ⟨e.hom, comm⟩
-  inv := ⟨e.inv, fun U ↦ by
-    rw [← cancel_epi (e.hom ▷ F.obj U), ← comp_whiskerRight_assoc, e.hom_inv_id,
-      id_whiskerRight, Category.id_comp, reassoc_of% (comm U),
-      ← MonoidalCategory.whiskerLeft_comp, e.hom_inv_id, MonoidalCategory.whiskerLeft_id,
-      Category.comp_id]⟩
+  inv := ⟨e.inv, fun U ↦ (CommSq.horiz_inv (f := MonoidalCategory.whiskerRightIso e (F.obj U))
+    (i := MonoidalCategory.whiskerLeftIso (F.obj U) e) ⟨comm U⟩).w⟩
   hom_inv_id := by ext; exact e.hom_inv_id
   inv_hom_id := by ext; exact e.inv_hom_id
 
@@ -382,33 +379,30 @@ theorem rightUnitor_hom_f (X : F.RelativeCenter) : Hom.f (ρ_ X).hom = (ρ_ X.ob
 theorem rightUnitor_inv_f (X : F.RelativeCenter) : Hom.f (ρ_ X).inv = (ρ_ X.obj).inv :=
   rfl
 
-/-- The data transporting the monoidal structure of `D` to the centre of `F` along `forget F`:
-the forgetful functor preserves all the monoidal operations on the nose. -/
-@[expose]
-def inducingFunctorData : Monoidal.InducingFunctorData (forget F) where
-  μIso _ _ := Iso.refl _
-  εIso := Iso.refl _
-  -- Each law holds by definition once the identity structure isomorphisms are cancelled. The
-  -- objects `(forget F).obj X` and `X.obj` agree only up to unfolding `forget`, so the coherence
-  -- laws are first restated in terms of `X.obj`, where `simp` can cancel the identities.
-  whiskerLeft_eq _ _ _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
-  whiskerRight_eq _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
-  tensorHom_eq _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
-  associator_eq X Y Z := by
-    change (α_ X.obj Y.obj Z.obj).hom =
-      (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (α_ X.obj Y.obj Z.obj).hom ≫ (𝟙 _ ⊗ₘ 𝟙 _) ≫ 𝟙 _
-    simp
-  leftUnitor_eq X := by
-    change (λ_ X.obj).hom = (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (λ_ X.obj).hom
-    simp
-  rightUnitor_eq X := by
-    change (ρ_ X.obj).hom = (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (ρ_ X.obj).hom
-    simp
-
 /-- The centre of a lax monoidal functor is a monoidal category, with tensor product, unit and
-structure isomorphisms computed in the target. -/
+structure isomorphisms computed in the target. Its coherence laws are transported along the
+faithful functor `forget F`, which preserves all the monoidal operations on the nose. -/
 instance : MonoidalCategory F.RelativeCenter :=
-  Monoidal.induced (forget F) inducingFunctorData
+  Monoidal.induced (forget F)
+    { μIso _ _ := Iso.refl _
+      εIso := Iso.refl _
+      -- Each law holds by definition once the identity structure isomorphisms are cancelled. The
+      -- objects `(forget F).obj X` and `X.obj` agree only up to unfolding `forget`, so the
+      -- coherence laws are first restated in terms of `X.obj`, where `simp` can cancel the
+      -- identities.
+      whiskerLeft_eq _ _ _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+      whiskerRight_eq _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+      tensorHom_eq _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+      associator_eq X Y Z := by
+        change (α_ X.obj Y.obj Z.obj).hom =
+          (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (α_ X.obj Y.obj Z.obj).hom ≫ (𝟙 _ ⊗ₘ 𝟙 _) ≫ 𝟙 _
+        simp
+      leftUnitor_eq X := by
+        change (λ_ X.obj).hom = (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (λ_ X.obj).hom
+        simp
+      rightUnitor_eq X := by
+        change (ρ_ X.obj).hom = (𝟙 _ ≫ (𝟙 _ ⊗ₘ 𝟙 _)) ≫ (ρ_ X.obj).hom
+        simp }
 
 section
 
@@ -416,7 +410,8 @@ variable (F)
 
 /-- The forgetful functor from the centre of `F` is monoidal, with identity tensorator and unit. -/
 instance : (forget F).Monoidal :=
-  Monoidal.fromInducedMonoidal (forget F) inducingFunctorData
+  -- The transport data is recovered by unification with the `MonoidalCategory` instance above.
+  Monoidal.fromInducedMonoidal (forget F) _
 
 @[simp] lemma forget_ε : ε (forget F) = 𝟙 _ := rfl
 @[simp] lemma forget_η : OplaxMonoidal.η (forget F) = 𝟙 _ := rfl
