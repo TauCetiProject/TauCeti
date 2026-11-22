@@ -8,11 +8,11 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.FocusFocus
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
-import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.Lie.SkewAdjoint
+import TauCeti.Geometry.Symplectic.Hamiltonian.Hyperbolic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Splitting
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Spectrum
@@ -333,16 +333,6 @@ theorem focusFocusBlocks_one_apply {n : ℕ} (b : Basis (Fin (n * 2) × Fin 2) �
         b.coord (finProdFinEquiv (j, 1), 0) x * b.coord (finProdFinEquiv (j, 0), 1) x := by
   simp [focusFocusBlocks]
 
-/-- In a Darboux basis, the Hamiltonian endomorphism of the product `qᵢ pⱼ` of two coordinates
-sends `u` to `qᵢ(u) qⱼ - pⱼ(u) pᵢ`. -/
-theorem IsDarbouxBasis.hamiltonianEnd_linMulLin_coord_apply {m : ℕ}
-    {b : Basis (Fin m × Fin 2) ℝ V} (hb : ω.IsDarbouxBasis b) (i j : Fin m) (u : V) :
-    ω.hamiltonianEnd (QuadraticMap.linMulLin (b.coord (i, 0)) (b.coord (j, 1))) u =
-      b.coord (i, 0) u • b (j, 0) - b.coord (j, 1) u • b (i, 1) := by
-  refine ω.hamiltonianEnd_apply_eq_of_basis b fun c ↦ ?_
-  simp [hb.apply_fst, hb.apply_snd, QuadraticMap.polar]
-  ring
-
 variable {n : ℕ} {b : Basis (Fin (n * 2) × Fin 2) ℝ V}
 
 /-- In a Darboux basis, the Hamiltonian endomorphism of the first form `Q₁ⱼ` of the `j`-th
@@ -554,14 +544,14 @@ private theorem exists_isDarbouxBasis_of_blocks {k : ℕ} (hk : k * 4 = finrank 
   have hv_apply (j : Fin k) (i x : Fin 2) : v (finProdFinEquiv (j, i), x) = b' j (i, x) := by
     simp only [hv, Equiv.symm_apply_apply]
     rfl
-  -- Within a block `ω` pairs as the restricted form, definitionally; across blocks it vanishes.
+  -- Within a block `ω` pairs as the restricted form; across blocks it vanishes.
   have hpair (j j' : Fin k) (x y : Fin 2 × Fin 2) :
       ω (b' j x : V) (b' j' y) =
         if j = j' then (ω.restrict (G j) (hGs j).nondegenerate_restrict) (b' j x) (b' j y)
         else 0 := by
     split_ifs with hjj'
     · subst hjj'
-      rfl
+      exact (restrict_apply _ _ _ _ _).symm
     · exact horth hjj' _ (b' j x).property _ (b' j' y).property
   have h₁ (m m' : Fin (k * 2)) : ω (v (m, 0)) (v (m', 0)) = 0 := by
     obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective m
@@ -593,31 +583,6 @@ private theorem exists_isDarbouxBasis_of_blocks {k : ℕ} (hk : k * 4 = finrank 
   exact ⟨bas, hbas, fun j i x ↦ by rw [hbasv, hv_apply]⟩
 
 variable {ι : Type*} {Q : ι → QuadraticForm ℝ V}
-
-namespace IsNondegenerateQuadraticFamily
-
-/-- For `P` and `R` in the span of a nondegenerate family, every polynomial in `A_P` commutes with
-`A_R`. -/
-private theorem commute_aeval_hamiltonianEnd (h : ω.IsNondegenerateQuadraticFamily Q)
-    {P R : QuadraticForm ℝ V} (hP : P ∈ Submodule.span ℝ (Set.range Q))
-    (hR : R ∈ Submodule.span ℝ (Set.range Q)) (p : ℝ[X]) :
-    Commute (aeval (ω.hamiltonianEnd P) p) (ω.hamiltonianEnd R) :=
-  (Algebra.commute_of_mem_adjoin_singleton_of_commute (aeval_mem_adjoin_singleton ℝ _)
-    (ω.quadraticPoissonBracket_eq_zero_iff.1 <| ω.quadraticPoissonBracket_eq_zero_of_mem_span
-      h.quadraticPoissonBracket_eq_zero hR hP)).symm
-
-/-- For `P` in the span of a nondegenerate family, `A_P` is semisimple, so every vector killed by
-a power of `f(A_P)` is killed by `f(A_P)`. -/
-private theorem aeval_apply_eq_zero_of_mem_maxGenEigenspace
-    (h : ω.IsNondegenerateQuadraticFamily Q) {P : QuadraticForm ℝ V}
-    (hP : P ∈ Submodule.span ℝ (Set.range Q)) {f : ℝ[X]} {v : V}
-    (hv : v ∈ (aeval (ω.hamiltonianEnd P) f).maxGenEigenspace 0) :
-    aeval (ω.hamiltonianEnd P) f v = 0 := by
-  have hss := ((h.isSemisimple_hamiltonianEnd hP).aeval f).isFinitelySemisimple
-  rw [hss.maxGenEigenspace_eq_eigenspace, Module.End.mem_eigenspace_iff] at hv
-  simpa using hv
-
-end IsNondegenerateQuadraticFamily
 
 /-- **The focus-focus pair on one block.** Let `P` lie in the span of a nondegenerate family `Q`,
 let `a, b > 0`, and suppose that the vectors killed by a power of
@@ -698,12 +663,12 @@ private theorem mem_span_focusFocusBlocks_of_blocks {k : ℕ} {G : Fin k → Sub
   have hRd : R = ∑ j, ∑ l, d j l • focusFocusBlocks bas (j, l) := by
     refine ω.hamiltonianEnd_injective (bas.ext fun ⟨m, x⟩ ↦ ?_)
     obtain ⟨⟨j', i'⟩, rfl⟩ := finProdFinEquiv.surjective m
-    -- The restricted Hamiltonian endomorphism evaluates on `G j'` as `A_R`, definitionally.
+    -- The restricted Hamiltonian endomorphism evaluates on `G j'` as `A_R`.
     have hL : ω.hamiltonianEnd R (bas (finProdFinEquiv (j', i'), x)) =
         ((ω.restrict (G j') (hGs j').nondegenerate_restrict).hamiltonianEnd
           (R.comp (G j').subtype) (b' j' (i', x)) : V) := by
-      rw [hbas_apply, hamiltonianEnd_comp_subtype (hGs j') fun v hv ↦ hRG j' hv]
-      rfl
+      rw [hbas_apply, hamiltonianEnd_comp_subtype (hGs j') fun v hv ↦ hRG j' hv,
+        LinearMap.coe_restrict_apply]
     rw [hL, ← hd j']
     simp only [Fin.sum_univ_two, map_sum, map_add, map_smul, LinearMap.sum_apply,
       LinearMap.add_apply, LinearMap.smul_apply,
@@ -806,7 +771,7 @@ theorem exists_mem_span_card_mul_four_eq_finrank_iff (h : ω.IsNondegenerateQuad
     Finset.univ.image z, ?_, ?_, ?_⟩
   · rw [Finset.card_image_of_injective _ hz, Finset.card_univ, Fintype.card_fin,
       finrank_eq_card_basis b]
-    simp
+    simp only [Fintype.card_prod, Fintype.card_fin]
     ring
   · simp only [Finset.mem_image, Finset.mem_univ, true_and, forall_exists_index]
     rintro _ j rfl

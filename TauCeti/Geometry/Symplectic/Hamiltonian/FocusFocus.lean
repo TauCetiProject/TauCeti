@@ -13,6 +13,7 @@ import Mathlib.Tactic.Module
 import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Algebra.Lie.Subalgebra.Engel
+import TauCeti.Geometry.Symplectic.Hamiltonian.Hyperbolic
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.LinearAlgebra.End.CyclicVector
 
@@ -285,30 +286,18 @@ fixes the `qᵢ` and negates the `pᵢ`. -/
 theorem IsDarbouxBasis.hamiltonianEnd_focusFocus_zero_apply (hb : ω.IsDarbouxBasis b)
     (a : Fin 2 × Fin 2) :
     ω.hamiltonianEnd (focusFocus b 0) (b a) = if a.2 = 0 then b a else -b a := by
-  refine ω.hamiltonianEnd_apply_eq_of_basis b fun c ↦ ?_
   obtain ⟨i, j⟩ := a
-  obtain ⟨k, l⟩ := c
-  have h₁ := hb.apply_fst_fst
-  have h₂ := hb.apply_snd_snd
-  have h₃ := hb.apply_fst_snd
-  have h₄ := hb.apply_snd_fst
-  fin_cases i <;> fin_cases j <;> fin_cases k <;> fin_cases l <;>
-    simp [QuadraticMap.polar, h₁, h₂, h₃, h₄]
+  fin_cases i <;> fin_cases j <;>
+    simp [focusFocus, hb.hamiltonianEnd_linMulLin_coord_apply]
 
 /-- In a Darboux basis `(q₁, p₁, q₂, p₂)`, the Hamiltonian endomorphism of `Q₂ = q₁ p₂ - q₂ p₁`
 sends `q₁ ↦ q₂ ↦ -q₁` and `p₁ ↦ p₂ ↦ -p₁`. -/
 theorem IsDarbouxBasis.hamiltonianEnd_focusFocus_one_apply (hb : ω.IsDarbouxBasis b)
     (a : Fin 2 × Fin 2) :
     ω.hamiltonianEnd (focusFocus b 1) (b a) = if a.1 = 0 then b (1, a.2) else -b (0, a.2) := by
-  refine ω.hamiltonianEnd_apply_eq_of_basis b fun c ↦ ?_
   obtain ⟨i, j⟩ := a
-  obtain ⟨k, l⟩ := c
-  have h₁ := hb.apply_fst_fst
-  have h₂ := hb.apply_snd_snd
-  have h₃ := hb.apply_fst_snd
-  have h₄ := hb.apply_snd_fst
-  fin_cases i <;> fin_cases j <;> fin_cases k <;> fin_cases l <;>
-    simp [QuadraticMap.polar, h₁, h₂, h₃, h₄]
+  fin_cases i <;> fin_cases j <;>
+    simp [focusFocus, hb.hamiltonianEnd_linMulLin_coord_apply]
 
 /-- In a Darboux basis, the Hamiltonian endomorphism `A₁` of `Q₁ = q₁ p₁ + q₂ p₂` satisfies
 `A₁² = 1`. -/

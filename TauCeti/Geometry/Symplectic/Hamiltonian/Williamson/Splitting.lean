@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
 public import TauCeti.Geometry.Symplectic.Restrict
 public import TauCeti.Geometry.Symplectic.Spectrum
+import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.LinearAlgebra.Semisimple
 import TauCeti.LinearAlgebra.Eigenspace.Commute
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
@@ -45,9 +46,11 @@ nondegenerate (`TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict`,
 the span of the family and an even polynomial `p`, the vectors killed by a power of `p(A_P)` form
 such a subspace (`IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`). The
 Hamiltonian endomorphism of the restriction of a form to such a subspace is the restriction of its
-Hamiltonian endomorphism (`TauCeti.SymplecticForm.hamiltonianEnd_comp_subtype`), and
-pairwise `ω`-orthogonal symplectic subspaces are independent
-(`TauCeti.SymplecticForm.iSupIndep_of_pairwise_apply_eq_zero`).
+Hamiltonian endomorphism (`TauCeti.SymplecticForm.hamiltonianEnd_comp_subtype`). Since `A_P` is
+semisimple, `p(A_P)` vanishes on that subspace
+(`IsNondegenerateQuadraticFamily.aeval_apply_eq_zero_of_mem_maxGenEigenspace`), and polynomials in
+`A_P` commute with the Hamiltonian endomorphisms of the family
+(`IsNondegenerateQuadraticFamily.commute_aeval_hamiltonianEnd`).
 
 On a product of two symplectic planes, any two nondegenerate forms on the planes, extended by zero,
 form a nondegenerate family
@@ -69,8 +72,11 @@ form a nondegenerate family
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily.restrict_maxGenEigenspace_aeval`:
   restrictions of a nondegenerate family to the generalized eigenspaces cut out by even
   polynomials in one of its Hamiltonian endomorphisms are nondegenerate.
-* `TauCeti.SymplecticForm.iSupIndep_of_pairwise_apply_eq_zero`: pairwise `ω`-orthogonal
-  symplectic subspaces are independent.
+* `IsNondegenerateQuadraticFamily.aeval_apply_eq_zero_of_mem_maxGenEigenspace`: a polynomial in
+  `A_P`, for `P` in the span of a nondegenerate family, vanishes on the vectors killed by a power
+  of it.
+* `IsNondegenerateQuadraticFamily.commute_aeval_hamiltonianEnd`: for `P` and `R` in the span of a
+  nondegenerate family, polynomials in `A_P` commute with `A_R`.
 
 ## References
 
@@ -384,15 +390,26 @@ theorem hamiltonianEnd_comp_subtype (hL : ω.IsSymplectic L) {R : QuadraticForm 
   ((ω.restrict L hL.nondegenerate_restrict).eq_hamiltonianEnd_iff.2 fun v w ↦ by
     simp [QuadraticMap.polar]).symm
 
-omit [FiniteDimensional ℝ V] in
-/-- **Pairwise orthogonal symplectic subspaces are independent.** If the symplectic subspaces
-`G j` are pairwise `ω`-orthogonal, each meets the sum of the others only in zero. -/
-theorem iSupIndep_of_pairwise_apply_eq_zero {G : ι → Submodule ℝ V}
-    (hG : ∀ j, ω.IsSymplectic (G j))
-    (horth : Pairwise fun j k ↦ ∀ v ∈ G j, ∀ w ∈ G k, ω v w = 0) : iSupIndep G := fun j ↦
-  -- The sum of the other subspaces is `ω`-orthogonal to the symplectic subspace `G j`.
-  (isSymplectic_iff_disjoint.1 (hG j)).mono_right <| iSup₂_le fun _ hk w hw ↦
-    mem_orthogonal_iff.2 fun y hy ↦ horth (Ne.symm hk) y hy w hw
+/-- For `P` and `R` in the span of a nondegenerate family, every polynomial in `A_P` commutes with
+`A_R`. -/
+theorem IsNondegenerateQuadraticFamily.commute_aeval_hamiltonianEnd
+    (h : ω.IsNondegenerateQuadraticFamily Q) {P R : QuadraticForm ℝ V}
+    (hP : P ∈ Submodule.span ℝ (Set.range Q)) (hR : R ∈ Submodule.span ℝ (Set.range Q))
+    (p : ℝ[X]) : Commute (aeval (ω.hamiltonianEnd P) p) (ω.hamiltonianEnd R) :=
+  (Algebra.commute_of_mem_adjoin_singleton_of_commute (aeval_mem_adjoin_singleton ℝ _)
+    (ω.quadraticPoissonBracket_eq_zero_iff.1 <| ω.quadraticPoissonBracket_eq_zero_of_mem_span
+      h.quadraticPoissonBracket_eq_zero hR hP)).symm
+
+/-- **Semisimplicity on generalized eigenspaces.** For `P` in the span of a nondegenerate family,
+`A_P` is semisimple, so every vector killed by a power of `f(A_P)` is killed by `f(A_P)`. -/
+theorem IsNondegenerateQuadraticFamily.aeval_apply_eq_zero_of_mem_maxGenEigenspace
+    (h : ω.IsNondegenerateQuadraticFamily Q) {P : QuadraticForm ℝ V}
+    (hP : P ∈ Submodule.span ℝ (Set.range Q)) {f : ℝ[X]} {v : V}
+    (hv : v ∈ (aeval (ω.hamiltonianEnd P) f).maxGenEigenspace 0) :
+    aeval (ω.hamiltonianEnd P) f v = 0 := by
+  have hss := ((h.isSemisimple_hamiltonianEnd hP).aeval f).isFinitelySemisimple
+  rw [hss.maxGenEigenspace_eq_eigenspace, Module.End.mem_eigenspace_iff] at hv
+  simpa using hv
 
 end Restrict
 
