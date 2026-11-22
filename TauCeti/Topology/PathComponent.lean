@@ -30,6 +30,8 @@ gives local path connectedness of the subspace.
 * `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component, with
   `TauCeti.PathComponentBasepoints.choose` giving one. Each chosen basepoint is joined to the
   points of its component (`TauCeti.PathComponentBasepoints.joined_point_mk`).
+* `Continuous.pathComponent_subset_preimage`: the preimage of a union of path components under a
+  continuous map is a union of path components.
 * `Path.subtypeHomeomorphOfPathComponentSubset`: paths in a subspace containing the path component
   of their source are the paths in the ambient space. In particular the loop space of a path
   component, at any of its points, is the loop space of the ambient space at that point.
@@ -150,6 +152,14 @@ theorem PathComponentBasepoints.mk_apply_point_mk {Y : Type*} [TopologicalSpace 
   Quotient.sound ((β.joined_point_mk y).map hf)
 
 end TauCeti
+
+/-- **The preimage of a union of path components is a union of path components.** A continuous map
+sends the path component of `x` into the path component of its image. -/
+theorem Continuous.pathComponent_subset_preimage {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {t : Set Y} {f : X → Y} (hf : Continuous f)
+    (ht : ∀ y ∈ t, pathComponent y ⊆ t) {x : X} (hx : x ∈ f ⁻¹' t) :
+    pathComponent x ⊆ f ⁻¹' t :=
+  fun _ hz ↦ ht _ hx (hf.mapsTo_pathComponent x hz)
 
 namespace Path
 

@@ -19,10 +19,8 @@ component of `f₀ x`. Hence if `f₀ x` lies in `t`, so does every `F (τ, x)`
 (`ContinuousMap.Homotopic.apply_mem`). So homotopic maps with values in `t` are homotopic as maps
 into `t` (`ContinuousMap.Homotopic.codRestrict`): the homotopy itself takes values in `t`.
 
-Unions of path components are stable under preimages by continuous maps
-(`Continuous.pathComponent_subset_preimage`), since continuous maps send path components into path
-components. Examples are a single path component, such as the free loops that are contractible, or
-a free homotopy class of loops.
+Examples are a single path component, such as the free loops that are contractible, or a free
+homotopy class of loops.
 
 ## Main results
 
@@ -31,8 +29,6 @@ a free homotopy class of loops.
   components takes its values there as well.
 * `ContinuousMap.Homotopic.codRestrict`: homotopic maps into a union of path components are
   homotopic as maps into it.
-* `Continuous.pathComponent_subset_preimage`: the preimage of a union of path components under a
-  continuous map is a union of path components.
 -/
 
 public section
@@ -40,13 +36,6 @@ public section
 open Set unitInterval
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {t : Set Y}
-
-/-- **The preimage of a union of path components is a union of path components.** A continuous map
-sends the path component of `x` into the path component of its image. -/
-theorem Continuous.pathComponent_subset_preimage {f : X → Y} (hf : Continuous f)
-    (ht : ∀ y ∈ t, pathComponent y ⊆ t) {x : X} (hx : x ∈ f ⁻¹' t) :
-    pathComponent x ⊆ f ⁻¹' t :=
-  fun _ hz ↦ ht _ hx (hf.mapsTo_pathComponent x hz)
 
 namespace ContinuousMap
 

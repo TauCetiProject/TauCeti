@@ -574,7 +574,7 @@ theorem brokenGeodesicLoop_cons (n : ℕ) (q : Fin (n + 1) → M)
 
 /-- Repeating the first vertex of a cyclic tuple `k` more times, `(q 0, …, q 0, q 1, …, q n)` with
 `q 0` repeated `k + 1` times, does not change its closed broken geodesic. -/
-theorem brokenGeodesicLoop_repeatFirst (n k : ℕ) (q : Fin (n + 1) → M)
+theorem brokenGeodesicLoop_repeatFirstIterate (n k : ℕ) (q : Fin (n + 1) → M)
     (h : ∀ i, dist (q i) (q (i - 1)) < r)
     (h' : ∀ i : Fin (n + k + 1), dist (q ⟨i - k, by omega⟩)
       (q ⟨(i - 1 : Fin (n + k + 1)) - k, by omega⟩) < r) :
@@ -720,7 +720,7 @@ theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate {n k
     cyclicDistanceCutBrokenGeodesic hr hδ' (cyclicDistanceCutRepeatFirstIterate k h q) =
       cyclicDistanceCutBrokenGeodesic hr hδ q := by
   rw [cyclicDistanceCutBrokenGeodesic_apply, cyclicDistanceCutBrokenGeodesic_apply]
-  refine Eq.trans ?_ (brokenGeodesicLoop_repeatFirst hr n k q.val _ fun i ↦
+  refine Eq.trans ?_ (brokenGeodesicLoop_repeatFirstIterate hr n k q.val _ fun i ↦
     (mem_cyclicDistanceCut.1 (repeatFirstIterate_mem_cyclicDistanceCut h q.property) i).trans_lt
       (hδ' i))
   -- The underlying tuple of `ιⁿ⁺ᵏ⁻¹ ∘ ⋯ ∘ ιⁿ q` repeats the first vertex of `q`.

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.FreeLoopApproximation
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.VertexSlide
 public import TauCeti.Topology.Homotopy.Homotopic.PathComponent
+public import TauCeti.Topology.PathComponent
 
 /-!
 # Approximating the components of the free loop space by broken geodesics
