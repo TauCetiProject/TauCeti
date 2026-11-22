@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Conjneg
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -28,7 +29,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
-* `SchwartzMap.integrable_mul`: `f x * g x` is integrable for scalar Schwartz functions.
+* `SchwartzMap.integrable_mul`: `f x * g x` is integrable for Schwartz functions with values in a
+  normed ring.
 * `SchwartzMap.integrable_norm_rpow_mul_norm`: `‖x‖ ^ s ‖f x‖` is integrable for real `s ≥ 0`.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
@@ -40,9 +42,14 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
   envelope in `z`, uniformly for `‖h‖ ≤ 1`, so convolutions with `f` can be differentiated under
   the integral.
+* `SchwartzMap.postcompCLM_re_add_I_smul_im`: a complex Schwartz function is its real part plus `I`
+  times its imaginary part, so complex-linear maps out of `𝓢(E, ℂ)` are determined by real
+  Schwartz functions.
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
+  with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
   conjugate-linear map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
@@ -162,19 +169,27 @@ theorem integral_norm_sq_eq_zero_iff [μ.IsOpenPosMeasure] {f : 𝓢(E, F)} :
   exact SchwartzMap.ext fun x => by simpa using congrFun this x
 
 omit [SecondCountableTopology E] in
+/-- For Schwartz functions `f` and `g` with values in a normed ring `A` (for instance `ℝ` or `ℂ`),
+the pointwise product `f x * g x` is integrable. -/
+theorem integrable_mul {A : Type*} [NonUnitalNormedRing A] [NormedSpace ℝ A]
+    [SecondCountableTopologyEither E A] (f g : 𝓢(E, A)) : Integrable (fun x ↦ f x * g x) μ :=
+  -- `‖f x * g x‖ ≤ ‖f x‖ * sup ‖g‖`, and `f` is integrable since it lies in `L¹`.
+  ((memLp_one_iff_integrable.1 (f.memLp 1 μ)).norm.mul_const (SchwartzMap.seminorm ℝ 0 0 g)).mono'
+    (f.continuous.mul g.continuous).aestronglyMeasurable
+    (.of_forall fun x ↦ (norm_mul_le _ _).trans (by gcongr; exact g.norm_le_seminorm ℝ x))
+
+omit [SecondCountableTopology E] in
 /-- Two `𝕜`-valued Schwartz functions that have the same integral pairing against every `𝕜`-valued
 Schwartz function are equal, for a measure of temperate growth that charges every nonempty open
 set. -/
 theorem eq_of_forall_integral_mul_eq {𝕜 : Type*} [RCLike 𝕜] [μ.IsOpenPosMeasure] {f g : 𝓢(E, 𝕜)}
     (h : ∀ θ : 𝓢(E, 𝕜), ∫ x, f x * θ x ∂μ = ∫ x, g x * θ x ∂μ) : f = g := by
-  have hmul_int (s₁ s₂ : 𝓢(E, 𝕜)) : Integrable (fun x ↦ s₁ x * s₂ x) μ :=
-    memLp_one_iff_integrable.1 ((s₁.pairing (ContinuousLinearMap.mul ℝ 𝕜) s₂).memLp 1 μ)
   set δ : 𝓢(E, 𝕜) := f - g
   set θ : 𝓢(E, 𝕜) := δ.postcompCLM (RCLike.conjCLE (K := 𝕜)).toContinuousLinearMap
   have hδ0 : ∫ x, δ x * θ x ∂μ = 0 := by
     have hsub : (fun x ↦ δ x * θ x) = fun x ↦ f x * θ x - g x * θ x :=
       funext fun x ↦ sub_mul (f x) (g x) (θ x)
-    rw [hsub, integral_sub (hmul_int f θ) (hmul_int g θ), h θ, sub_self]
+    rw [hsub, integral_sub (f.integrable_mul θ) (g.integrable_mul θ), h θ, sub_self]
   have hnorm : ∫ x, ‖δ x‖ ^ 2 ∂μ = 0 := by
     have hcongr : (fun x ↦ δ x * θ x) = fun x ↦ ((‖δ x‖ ^ 2 : ℝ) : 𝕜) :=
       funext fun x ↦ by simp [θ, mul_comm (δ x), RCLike.conj_mul]
@@ -182,33 +197,16 @@ theorem eq_of_forall_integral_mul_eq {𝕜 : Type*} [RCLike 𝕜] [μ.IsOpenPosM
   exact sub_eq_zero.1 ((integral_norm_sq_eq_zero_iff (μ := μ)).1 hnorm)
 
 omit [SecondCountableTopology E] in
-/-- For Schwartz functions `f` and `g` with values in a real inner product space, the pointwise
-inner product `⟪f x, g x⟫` is integrable. -/
-theorem integrable_inner {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
-    (f g : 𝓢(E, H)) : Integrable (fun x ↦ ⟪f x, g x⟫_ℝ) μ := by
+/-- For Schwartz functions `f` and `g` with values in an inner product space over `𝕜`, the
+pointwise inner product `⟪f x, g x⟫_𝕜` is integrable. -/
+theorem integrable_inner {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+    [NormedSpace ℝ H] (f g : 𝓢(E, H)) : Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ := by
   have hf := f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) 0 0
   simp only [pow_zero, one_mul, norm_iteratedFDeriv_zero] at hf
   refine (hf.const_mul (SchwartzMap.seminorm ℝ 0 0 g)).mono'
     (f.continuous.inner g.continuous).aestronglyMeasurable (.of_forall fun x ↦ ?_)
   rw [mul_comm]
   exact (norm_inner_le_norm _ _).trans (by gcongr; exact g.norm_le_seminorm ℝ x)
-
-/-- For scalar Schwartz functions `f` and `g`, the pointwise product `f x * g x` is integrable. -/
-theorem integrable_mul {𝕜 : Type*} [RCLike 𝕜] (f g : 𝓢(E, 𝕜)) :
-    Integrable (fun x ↦ f x * g x) μ :=
-  (pairing (ContinuousLinearMap.mul 𝕜 𝕜) f g).integrable
-
-/-- For a Schwartz function `f` and every real `r`, the function `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is
-integrable. With `r = s / 2` this is the Japanese bracket weight `⟨x⟩ ^ s ‖f x‖`. -/
-theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [MeasurableSpace V] [BorelSpace V] [SecondCountableTopology V]
-    {ν : Measure V} [ν.HasTemperateGrowth] (r : ℝ) (f : 𝓢(V, F)) :
-    Integrable (fun x ↦ (1 + ‖x‖ ^ 2) ^ r * ‖f x‖) ν := by
-  have hg := Function.hasTemperateGrowth_one_add_norm_sq_rpow V r
-  refine ((smulLeftCLM F (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ r) f).integrable (μ := ν)).norm.congr
-    (.of_forall fun x ↦ ?_)
-  dsimp only
-  rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
 
 omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and real `c`, `m`, the function
@@ -222,6 +220,14 @@ theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F
     (.of_forall fun x ↦ by
       rw [Real.norm_of_nonneg (by positivity)]
       exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
+
+omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f` and every real `r`, the function `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is
+integrable. With `r = s / 2` this is the Japanese bracket weight `⟨x⟩ ^ s ‖f x‖`. -/
+theorem integrable_one_add_norm_sq_rpow_mul_norm (r : ℝ) (f : 𝓢(E, F)) :
+    Integrable (fun x ↦ (1 + ‖x‖ ^ 2) ^ r * ‖f x‖) μ := by
+  simpa only [one_smul, mul_div_cancel_left₀ r two_ne_zero] using
+    f.integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := μ) 1 (2 * r)
 
 omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and real `s ≥ 0`, the moment weight `‖x‖ ^ s ‖f x‖` is
@@ -260,9 +266,7 @@ theorem exists_integrable_norm_iteratedFDeriv_add_le (f : 𝓢(E, F)) (n : ℕ) 
   -- Decay at `z + h`, and `1 + ‖z‖ ≤ 2 (1 + ‖z + h‖)` since `‖h‖ ≤ 1`.
   have hdecay := f.one_add_le_sup_seminorm_apply (𝕜 := ℝ) (m := (p, n)) le_rfl le_rfl (z + h)
   have hcomp : 1 + ‖z‖ ≤ 2 * (1 + ‖z + h‖) := by
-    have := norm_sub_le (z + h) h
-    rw [add_sub_cancel_right] at this
-    linarith [norm_nonneg (z + h)]
+    linarith [norm_le_add_norm_add z h, norm_nonneg (z + h)]
   dsimp only
   rw [Real.rpow_neg hz.le, Real.rpow_natCast, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
   calc ‖iteratedFDeriv ℝ n f (z + h)‖ * (1 + ‖z‖) ^ p
@@ -317,6 +321,20 @@ theorem closure_range_toLp_eq {E F : Type*} [NormedAddCommGroup E] [NormedSpace 
   have hcoe : ⇑(toLpCLM ℝ F p μ) = fun f ↦ f.toLp p μ := funext fun _ ↦ toLpCLM_apply
   rw [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe, hcoe]
 
+section RealImag
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A complex Schwartz function is its real part plus `I` times its imaginary part, both embedded
+back into complex Schwartz space by `Complex.ofRealCLM`. -/
+theorem postcompCLM_re_add_I_smul_im (φ : 𝓢(E, ℂ)) :
+    (φ.postcompCLM Complex.reCLM).postcompCLM Complex.ofRealCLM +
+      Complex.I • (φ.postcompCLM Complex.imCLM).postcompCLM Complex.ofRealCLM = φ := by
+  ext x
+  simpa [mul_comm] using Complex.re_add_im (φ x)
+
+end RealImag
+
 section Conj
 
 open ComplexConjugate
@@ -346,23 +364,78 @@ theorem conjCLM_conjCLM (f : 𝓢(E, 𝕜)) : conjCLM (conjCLM f) = f := by
   ext x
   simp
 
+/-- Reversed conjugation on Schwartz functions, the involution of convolution kernels.
+It is conjugate-linear and continuous for the original Schwartz topology. -/
+noncomputable def conjnegCLM : 𝓢(E, 𝕜) →L⋆[𝕜] 𝓢(E, 𝕜) :=
+  conjCLM.comp (compCLMOfContinuousLinearEquiv 𝕜
+    (LinearIsometryEquiv.neg ℝ).toContinuousLinearEquiv)
+
+/-- Reversed conjugation evaluates to the conjugate at the opposite point. -/
+@[simp]
+theorem conjnegCLM_apply (f : 𝓢(E, 𝕜)) (x : E) : conjnegCLM f x = conj (f (-x)) := by
+  simp [conjnegCLM, conjCLM_apply]
+
+/-- Forgetting the Schwartz structure recovers Mathlib's function-level reversed conjugation. -/
+theorem coe_conjnegCLM (f : 𝓢(E, 𝕜)) : ⇑(conjnegCLM f) = conjneg (f : E → 𝕜) := by
+  funext x
+  exact conjnegCLM_apply f x
+
+/-- Reversed conjugation is an algebraic involution. -/
+@[simp]
+theorem conjnegCLM_conjnegCLM (f : 𝓢(E, 𝕜)) : conjnegCLM (conjnegCLM f) = f := by
+  ext x
+  simpa only [conjnegCLM_apply, conjneg_apply] using congrFun (conjneg_conjneg (f : E → 𝕜)) x
+
+open scoped Pointwise in
+/-- The support is the reflected support, by Mathlib's function-level support law. -/
+theorem support_conjnegCLM (f : 𝓢(E, 𝕜)) :
+    Function.support (conjnegCLM f) = -Function.support f := by
+  rw [coe_conjnegCLM]
+  exact support_conjneg f
+
+/-- Reversal and conjugation preserve a support bound by a ball about zero. -/
+theorem support_conjnegCLM_subset_ball {f : 𝓢(E, 𝕜)} {R : ℝ}
+    (hf : Function.support f ⊆ Metric.ball 0 R) :
+    Function.support (conjnegCLM f) ⊆ Metric.ball 0 R := by
+  intro x hx
+  have hh : f (-x) ≠ 0 := by
+    intro hh
+    exact hx (by simp only [conjnegCLM_apply, hh, map_zero])
+  simpa only [Metric.mem_ball, dist_zero_right, norm_neg] using hf hh
+
+/-- Reversed conjugation preserves compact support. -/
+theorem hasCompactSupport_conjnegCLM {f : 𝓢(E, 𝕜)} (hf : HasCompactSupport f) :
+    HasCompactSupport (conjnegCLM f) := by
+  have h := (hf.comp_homeomorph (LinearIsometryEquiv.neg ℝ).toHomeomorph).comp_left
+    (map_zero (starRingEnd 𝕜))
+  convert h using 1
+  funext x
+  exact conjnegCLM_apply f x
+
+open scoped Topology in
+/-- Reversed conjugation preserves the normalization equal to one near the origin. -/
+theorem conjnegCLM_eventually_one {f : 𝓢(E, 𝕜)} (hf : ⇑f =ᶠ[𝓝 0] 1) :
+    ⇑(conjnegCLM f) =ᶠ[𝓝 0] 1 := by
+  have ht : Filter.Tendsto (fun x : E ↦ -x) (𝓝 0) (𝓝 0) := by
+    simpa only [neg_zero] using continuous_neg.tendsto (0 : E)
+  filter_upwards [ht.eventually hf] with x hx
+  simp only [conjnegCLM_apply, hx, Pi.one_apply, map_one]
+
 end Conj
 
 section Polynomial
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {μ : Measure E} [μ.HasTemperateGrowth]
+variable {𝕜 : Type*} [NormedRing 𝕜] [NormedSpace ℝ 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F]
 
-/-- A Schwartz function times a homogeneous polynomial, `y ↦ K y • A (y, …, y)` for a continuous
-multilinear map `A`, is integrable. -/
-theorem integrable_smul_apply (K : 𝓢(E, ℂ)) {n : ℕ} (A : E [×n]→L[ℝ] F) :
+/-- A scalar Schwartz function times a homogeneous polynomial, `y ↦ K y • A (y, …, y)` for a
+continuous multilinear map `A`, is integrable. -/
+theorem integrable_smul_apply (K : 𝓢(E, 𝕜)) {n : ℕ} (A : E [×n]→L[ℝ] F) :
     Integrable (fun y ↦ K y • A (fun _ ↦ y)) μ :=
   ((K.integrable_pow_mul μ n).const_mul ‖A‖).mono'
     (K.continuous.smul (A.coe_continuous.comp
       (continuous_pi fun _ ↦ continuous_id))).aestronglyMeasurable
-    (.of_forall fun y ↦ by
-      rw [norm_smul, mul_comm, ← mul_assoc]
+    (.of_forall fun y ↦ (norm_smul_le _ _).trans <| by
+      rw [mul_comm, ← mul_assoc]
       refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
       simpa using A.le_opNorm (fun _ ↦ y))
 
