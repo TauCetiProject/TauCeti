@@ -11,8 +11,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
-import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -127,6 +127,12 @@ theorem chartComponent_apply (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F)
     t.chartComponent c hc hct T v φ =
       (T (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) φ)) : ℂ) := by
   simp [chartComponent]
+
+@[simp]
+theorem chartComponent_zero (v : F) :
+    t.chartComponent c hc hct (0 : BundleTest I F V →L_c[ℝ] ℝ) v = 0 := by
+  ext φ
+  simp
 
 /-! ### Changes of chart and frame -/
 
@@ -425,38 +431,13 @@ theorem mem_waveFrontSet_iff {T : BundleTest I F V →L_c[ℝ] ℝ} {p : Cotange
     p ∈ waveFrontSet I T ↔ p.snd ≠ 0 ∧ ¬ IsMicrolocallySmoothAt T p.proj p.snd :=
   Iff.rfl
 
-omit [FiniteDimensional ℝ E] [T2Space M] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle ∞ F V I] in
-/-- On a manifold without boundary, every point lies in the source of a smooth chart into `E` with
-smooth inverse, over which the bundle has a frame. -/
-private theorem exists_chart [I.Boundaryless] (x : M) :
-    ∃ (t : Trivialization F (π F V)) (_ : MemTrivializationAtlas t)
-      (c : OpenPartialHomeomorph M E), ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source ∧
-      ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target ∧ c.source ⊆ t.baseSet ∧ x ∈ c.source := by
-  have hmem : (chartAt H x).restr (trivializationAt F V x).baseSet ∈
-      IsManifold.maximalAtlas I ∞ M :=
-    restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
-      (trivializationAt F V x).open_baseSet
-  refine ⟨trivializationAt F V x, inferInstance,
-    ((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I (Homeomorph.refl E),
-    OpenPartialHomeomorph.contMDiffOn_extendTrans _ hmem contDiff_id,
-    OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ hmem contDiff_id, ?_, ?_⟩ <;>
-  rw [OpenPartialHomeomorph.extendTrans_source,
-    OpenPartialHomeomorph.restr_source' _ _ (trivializationAt F V x).open_baseSet]
-  · exact inter_subset_right
-  · exact ⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x⟩
-
 /-- On a manifold without boundary, the zero functional has empty wave front set. -/
 @[simp]
 theorem waveFrontSet_zero [I.Boundaryless] : waveFrontSet I (0 : BundleTest I F V →L_c[ℝ] ℝ) = ∅ :=
   eq_empty_iff_forall_notMem.2 fun p hp ↦ hp.2 <| by
-    obtain ⟨t, _, c, hc, hcs, hct, hx⟩ := exists_chart (I := I) (F := F) (V := V) p.proj
-    refine ⟨t, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
-    -- The components of the zero functional vanish, and the empty sum is microlocally smooth.
-    have h := IsMicrolocallySmoothAt.sum (∅ : Finset Unit) (T := fun _ ↦ 0)
-      (ξ := (toDual ℝ E).symm (p.snd ∘L mfderiv 𝓘(ℝ, E) I c.symm (c p.proj)))
-      (show c p.proj ∈ (⟨c.target, c.open_target⟩ : Opens E) from c.map_source hx) (by simp)
-    simpa [chartComponent] using h
+    obtain ⟨c, hc, hcs, hct, hx⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) p.proj
+    refine ⟨trivializationAt F V p.proj, inferInstance, c, hc, hcs, hct, hx, fun v ↦ ?_⟩
+    rw [chartComponent_zero]
+    exact Distribution.isMicrolocallySmoothAt_zero (c.map_source hx) _
 
 end TauCeti.BundleTest

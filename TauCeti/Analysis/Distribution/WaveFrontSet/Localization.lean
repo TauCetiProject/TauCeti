@@ -649,11 +649,8 @@ theorem IsMicrolocallySmoothAt.sum {ι : Type*} (s : Finset ι) {T : ι → 𝓓
   classical
   induction s using Finset.induction_on with
   | empty =>
-    -- The zero distribution has vanishing localized Fourier transforms.
-    obtain ⟨φ, -, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤) (Ω := Ω)
-      (Ω.isOpen.mem_nhds hx) subset_rfl (1 : ℂ)
-    exact isMicrolocallySmoothAt_iff.2 ⟨φ, by simp [hφx], univ, isOpen_univ, mem_univ _,
-      fun _ _ _ _ ↦ mem_univ _, fun _ ↦ ⟨0, fun η _ ↦ by simp⟩⟩
+    rw [Finset.sum_empty]
+    exact isMicrolocallySmoothAt_zero hx ξ
   | insert i s hi ih =>
     rw [Finset.sum_insert hi]
     exact (h i (Finset.mem_insert_self i s)).add
