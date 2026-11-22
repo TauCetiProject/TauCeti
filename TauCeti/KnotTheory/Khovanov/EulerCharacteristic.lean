@@ -247,10 +247,9 @@ theorem khovanovEulerChar_ne_zero : D.khovanovEulerChar hD R ≠ 0 := by
 nonzero coefficient in `D.khovanovEulerChar hD R`. -/
 theorem exists_coeff_khovanovEulerChar_ne_zero :
     ∃ j : ℤ, j % 2 = (D.componentCount : ℤ) % 2 ∧ (D.khovanovEulerChar hD R).coeff j ≠ 0 := by
-  have ⟨j, hj⟩ : ∃ j : ℤ, (D.khovanovEulerChar hD R).coeff j ≠ 0 := by
-    by_contra! hall
-    exact D.khovanovEulerChar_ne_zero hD R
-      (AddMonoidAlgebra.coeff_injective <| Finsupp.ext hall)
+  have ⟨j, hj⟩ := Finsupp.ne_iff.mp
+    (AddMonoidAlgebra.coeff_eq_zero.not.mpr (D.khovanovEulerChar_ne_zero hD R))
+  simp only [Finsupp.zero_apply] at hj
   exact ⟨j, by_contra fun hmod ↦ hj (D.coeff_khovanovEulerChar_eq_zero_of_mod_two_ne hD R hmod), hj⟩
 
 end Ring

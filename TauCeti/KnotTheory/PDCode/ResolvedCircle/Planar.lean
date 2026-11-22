@@ -431,25 +431,6 @@ end PDCode
 
 namespace OrientedPDCode
 
-/-- Two oriented PD-codes sharing the same underlying planar PD-code have the same number of
-negative crossings modulo `2`. -/
-theorem negativeCrossingCount_mod_two_congr_toPDCode {n : ℕ} {D₁ D₂ : OrientedPDCode n}
-    (hD₁ : D₁.toPDCode.IsPlanar) (h : D₁.toPDCode = D₂.toPDCode) :
-    D₁.negativeCrossingCount % 2 = D₂.negativeCrossingCount % 2 := by
-  have hD₂ : D₂.toPDCode.IsPlanar := h ▸ hD₁
-  have hcube₁ := hD₁.card_false_add_stateLoopCount_mod_two_eq D₁.seifertState (fun _ ↦ true)
-  have hcube₂ := hD₂.card_false_add_stateLoopCount_mod_two_eq D₂.seifertState (fun _ ↦ true)
-  have hseif₁ := Int.even_iff.mp D₁.even_seifertCircleCount_sub_crossingCount_add_componentCount
-  have hseif₂ := Int.even_iff.mp D₂.even_seifertCircleCount_sub_crossingCount_add_componentCount
-  have hneg (D : OrientedPDCode n) : #{i | D.seifertState i = false} = D.negativeCrossingCount := by
-    simp [negativeCrossingCount_def]
-  have hloop : D₁.toPDCode.stateLoopCount (fun _ ↦ true) =
-      D₂.toPDCode.stateLoopCount (fun _ ↦ true) := by rw [h]
-  have hcomp : D₁.toPDCode.componentCount = D₂.toPDCode.componentCount := by rw [h]
-  rw [hneg] at hcube₁ hcube₂
-  simp only [Bool.true_eq_false, filter_false, card_empty, zero_add] at hcube₁ hcube₂
-  omega
-
 /-- For a planar oriented PD-code `D`, the parity of `#{i | s i = false} + D.negativeCrossingCount +
 D.stateLoopCount s` equals that of `n + D.componentCount`, independently of the state `s`. -/
 theorem card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two {n : ℕ}
@@ -461,6 +442,20 @@ theorem card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two {n : ℕ
   have hneg : #{i | D.seifertState i = false} = D.negativeCrossingCount := by
     simp [negativeCrossingCount_def]
   rw [hneg] at hcube
+  omega
+
+/-- Two oriented PD-codes sharing the same underlying planar PD-code have the same number of
+negative crossings modulo `2`. -/
+theorem negativeCrossingCount_mod_two_congr_toPDCode {n : ℕ} {D₁ D₂ : OrientedPDCode n}
+    (hD₁ : D₁.toPDCode.IsPlanar) (h : D₁.toPDCode = D₂.toPDCode) :
+    D₁.negativeCrossingCount % 2 = D₂.negativeCrossingCount % 2 := by
+  have h₁ := D₁.card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two hD₁ (fun _ ↦ true)
+  have h₂ := D₂.card_false_add_negativeCrossingCount_add_stateLoopCount_mod_two (h ▸ hD₁)
+    (fun _ ↦ true)
+  have hloop : D₁.toPDCode.stateLoopCount (fun _ ↦ true) =
+      D₂.toPDCode.stateLoopCount (fun _ ↦ true) := by rw [h]
+  have hcomp : D₁.componentCount = D₂.componentCount := congrArg PDCode.componentCount h
+  simp only [Bool.true_eq_false, filter_false, card_empty, zero_add] at h₁ h₂
   omega
 
 /-- For a planar oriented PD-code `D`, the normalization sign `(-1) ^ (|S(s)| + n₋)` equals
