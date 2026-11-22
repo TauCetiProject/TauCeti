@@ -178,11 +178,11 @@ theorem hasDerivAt_inner_acceleration_fst_curveVelocity {u t : ℝ}
   have hγt : ContMDiffAt 𝓘(ℝ, ℝ) I 2 (F u) t :=
     (hf.of_le (by norm_num)).comp t (contDiff_prodMk_right u).contMDiff.contMDiffAt
   obtain ⟨v, hv, hγv⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hγt
-  have hγcoord := differentiableAt_sectionCoord_curveVelocity (I := I) (E := E) (γ := F u)
-    (hγv.mono interior_subset) isOpen_interior (mem_interior_iff_mem_nhds.mpr hv)
   rw [acceleration_def (γ := F u)]
-  exact (isMetricCompatible_leviCivitaConnection (I := I) (M := M))
-    |>.hasDerivAt_inner_alongCurve (hγt.mdifferentiableAt two_ne_zero) hAcoord hγcoord
+  exact (isMetricCompatible_leviCivitaConnection (I := I) (M := M)).hasDerivAt_inner_alongCurve
+    (hγt.mdifferentiableAt two_ne_zero) hAcoord
+    (differentiableAt_sectionCoord_curveVelocity (I := I) (E := E) (γ := F u)
+      (hγv.mono interior_subset) isOpen_interior (mem_interior_iff_mem_nhds.mpr hv))
 
 /-- At a parameter `(u, t)` where `F` is `C³`, the pairing
 `r ↦ ⟪D_r (D_s ∂_s F) (u, r), ∂_r F (u, r)⟫` along `F u` is continuous at `t`. -/
@@ -231,15 +231,12 @@ theorem integral_inner_alongCurve_acceleration_fst_curveVelocity {u a b : ℝ}
   have : IsManifold I 2 M := IsManifold.of_le (n := 3) (by norm_num)
   have : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.of_le (n := 2) (by norm_num)
-  have hintDA : IntervalIntegrable (fun t ↦ inner ℝ
-      (alongCurve (leviCivitaConnection I M) (F u)
-        (fun r ↦ acceleration (leviCivitaConnection I M) (fun s ↦ F s r) u) t)
-      (curveVelocity I (F u) t)) volume a b :=
-    ContinuousOn.intervalIntegrable fun t ht ↦
-      (continuousAt_inner_alongCurve_acceleration_fst_curveVelocity (hF t ht)).continuousWithinAt
-  have hintAA : IntervalIntegrable (fun t ↦ inner ℝ
-      (acceleration (leviCivitaConnection I M) (fun s ↦ F s t) u)
-      (acceleration (leviCivitaConnection I M) (F u) t)) volume a b :=
+  have hintDA : IntervalIntegrable (fun t ↦ inner ℝ (alongCurve (leviCivitaConnection I M) (F u)
+      (fun r ↦ acceleration (leviCivitaConnection I M) (fun s ↦ F s r) u) t)
+      (curveVelocity I (F u) t)) volume a b := ContinuousOn.intervalIntegrable fun t ht ↦
+    (continuousAt_inner_alongCurve_acceleration_fst_curveVelocity (hF t ht)).continuousWithinAt
+  have hintAA : IntervalIntegrable (fun t ↦ inner ℝ (acceleration (leviCivitaConnection I M)
+      (fun s ↦ F s t) u) (acceleration (leviCivitaConnection I M) (F u) t)) volume a b :=
     ContinuousOn.intervalIntegrable fun t ht ↦
       (continuousAt_inner_acceleration_fst_acceleration
         ((hF t ht).of_le (by norm_num))).continuousWithinAt
@@ -277,21 +274,18 @@ private theorem alongCurve_alongCurve_curveVelocity_snd_zero {t : ℝ}
   have htor : cov.IsTorsionFree :=
     (isTorsionFree_iff_torsion_eq_zero _).2 (torsion_leviCivitaConnection_eq_zero I)
   have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
-  have hnear : ∀ᶠ s in 𝓝 0, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (s, t) :=
-    ((continuous_id.prodMk continuous_const).tendsto 0).eventually
-      ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hf)
   have hswap : ∀ᶠ s in 𝓝 0,
       alongCurve cov (fun q ↦ F q t) (fun q ↦ curveVelocity I (F q) t) s =
-        alongCurve cov (F s) (fun r ↦ curveVelocity I (fun q ↦ F q r) s) t := by
-    filter_upwards [hnear] with s hs
-    exact (alongCurve_curveVelocity_comm cov htor (f := F) (u := s) (v := t)
-      (hs.of_le (by rw [minSmoothness_of_isRCLikeNormedField]; norm_num))).symm
+        alongCurve cov (F s) (fun r ↦ curveVelocity I (fun q ↦ F q r) s) t :=
+    (((continuous_id.prodMk continuous_const).tendsto 0).eventually
+      ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hf)).mono fun s hs ↦
+      (alongCurve_curveVelocity_comm cov htor (f := F) (u := s) (v := t)
+        (hs.of_le (by rw [minSmoothness_of_isRCLikeNormedField]; norm_num))).symm
   have hcomm := alongCurve_alongCurve_sub_alongCurve_alongCurve cov
     (W := fun q r ↦ curveVelocity I (fun p ↦ F p r) q) (u := 0) (v := t)
     (hf.contMDiffAt_curveVelocity_fst (by norm_num))
   rw [alongCurve_congr cov (fun s ↦ F s t) _ hswap, sub_eq_iff_eq_add.mp hcomm]
-  dsimp only [cov]
-  simp only [acceleration_def, variationField_def, add_comm]
+  dsimp only [cov]; simp only [acceleration_def, variationField_def, add_comm]
 
 /-- **Pointwise second variation of the squared speed.** At a parameter `t` where `F` is `C³` at
 `(0, t)`, the transverse derivative `s ↦ d/ds ‖∂_t F (s, t)‖²` is differentiable at `s = 0`, with
@@ -317,15 +311,12 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
   have hPnear : ∀ᶠ s in 𝓝 (0 : ℝ),
       ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 1 (fun q ↦ TotalSpace.mk' E (σ q) (P q)) s :=
     (contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp (hP.of_le one_le_two)
-  have hσ : ∀ᶠ s in 𝓝 (0 : ℝ), MDifferentiableAt 𝓘(ℝ, ℝ) I σ s :=
-    hPnear.mono fun s hs ↦
-      ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hs).mdifferentiableAt one_ne_zero
-  have hPcoord : ∀ᶠ s in 𝓝 (0 : ℝ), DifferentiableAt ℝ (sectionCoord ℝ (F := E) σ P (σ s)) s :=
-    hPnear.mono fun s hs ↦ differentiableAt_sectionCoord σ P (hs.mdifferentiableAt one_ne_zero)
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (σ s))
-  have hDPcoord : DifferentiableAt ℝ (sectionCoord ℝ (F := E) σ (alongCurve cov σ P) (σ 0)) 0 :=
-    differentiableAt_sectionCoord_alongCurve_leviCivitaConnection hP
-  have hd₂ := hm.hasDerivAt_deriv_norm_sq_alongCurve hσ hPcoord hDPcoord
+  have hd₂ := hm.hasDerivAt_deriv_norm_sq_alongCurve
+    (hPnear.mono fun s hs ↦
+      ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hs).mdifferentiableAt one_ne_zero)
+    (hPnear.mono fun s hs ↦ differentiableAt_sectionCoord σ P (hs.mdifferentiableAt one_ne_zero)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (σ s)))
+    (differentiableAt_sectionCoord_alongCurve_leviCivitaConnection hP)
   -- Use curvature skew-symmetry and torsion-free symmetry `D_s γ' = D_t V` to match `I_t(V, V)`.
   have hcurv : inner ℝ (cov.curvatureTensor (F 0 t) (variationField I F t)
         (curveVelocity I (F 0) t) (variationField I F t)) (curveVelocity I (F 0) t) =
@@ -335,11 +326,10 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
       (curveVelocity I (F 0) t) (variationField I F t) (curveVelocity I (F 0) t)
     rwa [real_inner_comm _ (variationField I F t)] at hskew
   have hswap0 : alongCurve cov σ P 0 = alongCurve cov (F 0) (variationField I F) t := by
-    simpa only [variationField_def] using
-      (alongCurve_curveVelocity_comm cov htor (f := F) (u := 0) (v := t)
-        (hf.of_le (by rw [minSmoothness_of_isRCLikeNormedField]; norm_num))).symm
+    simpa only [variationField_def] using (alongCurve_curveVelocity_comm cov htor (f := F)
+      (u := 0) (v := t) (hf.of_le (by rw [minSmoothness_of_isRCLikeNormedField]; norm_num))).symm
   refine hd₂.congr_deriv ?_
-  dsimp only [σ, P, cov]
+  dsimp only [σ, P, cov, Function.comp_def]
   rw [alongCurve_alongCurve_curveVelocity_snd_zero hf, hswap0, inner_add_left, hcurv,
     indexFormIntegrand_def, ← real_inner_self_eq_norm_sq]
   ring
@@ -356,7 +346,6 @@ private theorem hasDerivAt_deriv_energy_eq_integral {a b : ℝ}
           inner ℝ (alongCurve (leviCivitaConnection I M) (F 0)
             (fun r ↦ acceleration (leviCivitaConnection I M) (fun s ↦ F s r) 0) t)
             (curveVelocity I (F 0) t))) 0 := by
-  -- Build a `C²` squared-speed representative `G` on an open product neighbourhood `U ×ˢ V`.
   obtain ⟨U, V, hUo, hVo, h0U, hV, hfUV⟩ :=
     TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hF
   have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
@@ -365,28 +354,23 @@ private theorem hasDerivAt_deriv_energy_eq_integral {a b : ℝ}
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
   have hG : ContDiffOn ℝ 2 G (U ×ˢ V) :=
     hfUV.contDiffOn_inner_mfderiv (by norm_num) hUVo ((0 : ℝ), (1 : ℝ)) ((0 : ℝ), (1 : ℝ))
-  have hGeq : ∀ {s t : ℝ}, s ∈ U → t ∈ V → G (s, t) = ‖curveVelocity I (F s) t‖ ^ 2 := by
-    intro s t hs ht
+  have hGeq {s t : ℝ} (hs : s ∈ U) (ht : t ∈ V) : G (s, t) = ‖curveVelocity I (F s) t‖ ^ 2 := by
     dsimp only [G]
     rw [← curveVelocity_eq_mfderiv_snd
       ((hfUV.contMDiffAt (hUVo.mem_nhds ⟨hs, ht⟩)).mdifferentiableAt (by norm_num)),
       real_inner_self_eq_norm_sq]
-  -- Differentiate `s ↦ (∫ t in a..b, G (s, t)) / 2` twice under the integral sign.
   have hdG := (TauCeti.hasDerivAt_deriv_intervalIntegral_of_contDiffOn hUVo hG
     (prod_mono (singleton_subset_iff.mpr h0U) hV)).2
   have henergy : (fun s ↦ energy I (F s) a b) =ᶠ[𝓝 0] fun s ↦ (∫ t in a..b, G (s, t)) / 2 := by
     filter_upwards [hUo.mem_nhds h0U] with s hs
     rw [energy_def]
     exact congrArg (· / 2) (intervalIntegral.integral_congr fun t ht ↦ (hGeq hs (hV ht)).symm)
-  have hdE : (deriv fun s ↦ energy I (F s) a b) =ᶠ[𝓝 0]
-      fun s ↦ deriv (fun q ↦ ∫ t in a..b, G (q, t)) s / 2 := by
-    filter_upwards [henergy.deriv] with s hs
-    rw [hs, deriv_div_const]
-  refine ((hdG.div_const 2).congr_of_eventuallyEq hdE).congr_deriv ?_
+  refine ((hdG.div_const 2).congr_of_eventuallyEq (henergy.deriv.mono fun s hs ↦ by
+    rw [hs, deriv_div_const])).congr_deriv ?_
   rw [← intervalIntegral.integral_div]
   refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  have hsq : (fun s ↦ G (s, t)) =ᶠ[𝓝 0] fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2 := by
-    filter_upwards [hUo.mem_nhds h0U] with s hs using hGeq hs (hV ht)
+  have hsq : (fun s ↦ G (s, t)) =ᶠ[𝓝 0] fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2 :=
+    eventually_of_mem (hUo.mem_nhds h0U) fun s hs ↦ hGeq hs (hV ht)
   rw [hsq.deriv.deriv.self_of_nhds, (hasDerivAt_deriv_norm_sq_curveVelocity (hF t ht)).deriv]
   ring
 
@@ -442,10 +426,9 @@ theorem hasDerivAt_deriv_energy_of_acceleration_eq_zero {a b : ℝ}
         inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q a) 0)
           (curveVelocity I (F 0) a)) 0 := by
   have hzero : ∫ t in a..b, inner ℝ (acceleration (leviCivitaConnection I M) (fun q ↦ F q t) 0)
-      (acceleration (leviCivitaConnection I M) (F 0) t) = 0 := by
-    refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ 0) fun t ht ↦ ?_).trans
-      intervalIntegral.integral_zero
-    rw [hγ t ht, inner_zero_right]
+      (acceleration (leviCivitaConnection I M) (F 0) t) = 0 :=
+    (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ 0) fun t ht ↦ by
+      rw [hγ t ht, inner_zero_right]).trans intervalIntegral.integral_zero
   simpa only [hzero, sub_zero] using hasDerivAt_deriv_energy hF
 
 /-- **The second variation of energy of a geodesic.** If `F` is `C³` along `{0} × [a, b]` and its
@@ -466,8 +449,8 @@ theorem hasDerivAt_deriv_energy_of_isGeodesicCurveOn {a b : ℝ}
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
-  refine (hasDerivAt_deriv_energy hF).congr_deriv ?_
-  rw [hγ.integral_inner_acceleration_eq_zero Subset.rfl, sub_zero]
+  simpa only [hγ.integral_inner_acceleration_eq_zero Subset.rfl, sub_zero] using
+    hasDerivAt_deriv_energy hF
 
 /-! ### Fixed-endpoint, periodic, and exponential variations -/
 
@@ -480,14 +463,10 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy {a b : ℝ}
       (indexForm I (F 0) (variationField I F) (variationField I F) a b -
         ∫ t in a..b, inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ F s t) 0)
           (acceleration (leviCivitaConnection I M) (F 0) t)) 0 := by
-  have ha : acceleration (leviCivitaConnection I M) (fun s ↦ F s a) 0 = 0 :=
-    (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M) hF.eventually_apply_left).trans
-      (acceleration_const (leviCivitaConnection I M) (F 0 a) 0)
-  have hb : acceleration (leviCivitaConnection I M) (fun s ↦ F s b) 0 = 0 :=
-    (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M) hF.eventually_apply_right).trans
-      (acceleration_const (leviCivitaConnection I M) (F 0 b) 0)
   refine (TauCeti.Manifold.hasDerivAt_deriv_energy hF.contMDiffAt).congr_deriv ?_
-  rw [ha, hb, inner_zero_left, inner_zero_left]
+  rw [Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_left,
+    Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_right,
+    acceleration_const, acceleration_const, inner_zero_left, inner_zero_left]
   ring
 
 /-- **The second variation of energy at a geodesic with fixed endpoints is the index form.** For
@@ -499,11 +478,9 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_acceleration_eq_zero
     (hγ : ∀ t ∈ uIoo a b, acceleration (leviCivitaConnection I M) (F 0) t = 0) :
     HasDerivAt (deriv fun s ↦ energy I (F s) a b)
       (indexForm I (F 0) (variationField I F) (variationField I F) a b) 0 := by
-  have hA {t : ℝ} (h : (fun q ↦ F q t) =ᶠ[𝓝 0] fun _ ↦ F 0 t) :
-      acceleration (leviCivitaConnection I M) (fun q ↦ F q t) 0 = 0 := by
-    rw [h.acceleration_eq, acceleration_const]
-  simpa only [hA hF.eventually_apply_left, hA hF.eventually_apply_right, inner_zero_left,
-    add_zero, sub_zero] using
+  simpa only [Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_left,
+    Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_right,
+    acceleration_const, inner_zero_left, add_zero, sub_zero] using
     TauCeti.Manifold.hasDerivAt_deriv_energy_of_acceleration_eq_zero hF.contMDiffAt hγ
 
 /-- **Second variation of energy of a geodesic for fixed endpoints.** For a `C³` fixed-endpoint
@@ -516,8 +493,8 @@ theorem IsFixedEndpointVariation.hasDerivAt_deriv_energy_of_isGeodesicCurveOn {a
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
-  refine hF.hasDerivAt_deriv_energy.congr_deriv ?_
-  rw [hγ.integral_inner_acceleration_eq_zero Subset.rfl, sub_zero]
+  simpa only [hγ.integral_inner_acceleration_eq_zero Subset.rfl, sub_zero] using
+    hF.hasDerivAt_deriv_energy
 
 /-- **Second variation of energy of a smoothly closed geodesic.** If `F` is `C³` along
 `{0} × [a, b]`, its nearby curves are closed (`F s a = F s b` for `s` near `0`), and its central
@@ -534,8 +511,7 @@ theorem hasDerivAt_deriv_energy_of_isGeodesicCurveOn_of_curveVelocityLift_eq {a 
   refine (hasDerivAt_deriv_energy_of_isGeodesicCurveOn hF hγ).congr_deriv ?_
   have hA := Filter.EventuallyEq.totalSpaceMk_acceleration_eq (leviCivitaConnection I M) hper
   rw [curveVelocityLift_apply, curveVelocityLift_apply] at hvel
-  rw [TauCeti.inner_eq_of_totalSpaceMk_eq hA hvel]
-  ring
+  rw [TauCeti.inner_eq_of_totalSpaceMk_eq hA hvel]; ring
 
 section ExponentialVariation
 
@@ -557,12 +533,11 @@ theorem hasDerivAt_deriv_energy_exponentialVariation {a b : ℝ}
     fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t ht)
   have hd' : HasDerivAt (deriv fun s ↦ energy I (exponentialVariation I γ' V' s) a b)
       (indexForm I γ' V' V' a b) 0 := by
-    have h0 : exponentialVariation I γ' V' 0 = γ' := exponentialVariation_zero γ' V'
+    have h0 := exponentialVariation_zero γ' V'
     have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ' V') t) (V' t) :=
       fun t ↦ heq_of_eq (variationField_exponentialVariation γ' V' t)
     have hA := acceleration_exponentialVariation_zero γ' V'
-    generalize exponentialVariation I γ' V' = G at hF h0 hVF hA ⊢
-    subst h0
+    generalize exponentialVariation I γ' V' = G at hF h0 hVF hA ⊢; subst h0
     simpa only [funext fun t ↦ eq_of_heq (hVF t), hA, inner_zero_left,
       intervalIntegral.integral_zero, add_zero, sub_zero] using hasDerivAt_deriv_energy hF
   have henergy : (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
@@ -591,11 +566,9 @@ theorem indexForm_nonneg_of_isLocalMin_energy {a b : ℝ}
         (curveVelocity I (F 0) a))
     (hmin : IsLocalMin (fun s ↦ energy I (F s) a b) 0) :
     0 ≤ indexForm I (F 0) (variationField I F) (variationField I F) a b := by
-  have hcont : ContinuousAt (fun s ↦ energy I (F s) a b) 0 :=
-    (hasDerivAt_energy (fun t ht ↦ (hF t ht).of_le (by norm_num))).continuousAt
-  have hnn := TauCeti.deriv_deriv_nonneg_of_isLocalMin hcont hmin
-  rw [(hasDerivAt_deriv_energy_of_isGeodesicCurveOn hF hγ).deriv] at hnn
-  linarith
+  have hnn := TauCeti.deriv_deriv_nonneg_of_isLocalMin
+    (hasDerivAt_energy (fun t ht ↦ (hF t ht).of_le (by norm_num))).continuousAt hmin
+  rw [(hasDerivAt_deriv_energy_of_isGeodesicCurveOn hF hγ).deriv] at hnn; linarith
 
 /-- **Nonnegativity of the index form at a local minimum of the energy for fixed endpoints.** If `F`
 is a `C³` fixed-endpoint variation of a geodesic `γ = F 0` on `uIoo a b` and `s ↦ E(F s)` has a
@@ -604,15 +577,11 @@ theorem IsFixedEndpointVariation.indexForm_nonneg_of_isLocalMin_energy {a b : �
     (hF : IsFixedEndpointVariation I 3 F a b)
     (hγ : IsGeodesicCurveOn I (F 0) (uIoo a b))
     (hmin : IsLocalMin (fun s ↦ energy I (F s) a b) 0) :
-    0 ≤ indexForm I (F 0) (variationField I F) (variationField I F) a b := by
-  have ha : acceleration (leviCivitaConnection I M) (fun s ↦ F s a) 0 = 0 :=
-    (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M) hF.eventually_apply_left).trans
-      (acceleration_const (leviCivitaConnection I M) (F 0 a) 0)
-  have hb : acceleration (leviCivitaConnection I M) (fun s ↦ F s b) 0 = 0 :=
-    (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M) hF.eventually_apply_right).trans
-      (acceleration_const (leviCivitaConnection I M) (F 0 b) 0)
-  exact TauCeti.Manifold.indexForm_nonneg_of_isLocalMin_energy hF.contMDiffAt hγ
-    (by rw [ha, hb, inner_zero_left, inner_zero_left]) hmin
+    0 ≤ indexForm I (F 0) (variationField I F) (variationField I F) a b :=
+  TauCeti.Manifold.indexForm_nonneg_of_isLocalMin_energy hF.contMDiffAt hγ (by
+    rw [Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_left,
+      Filter.EventuallyEq.acceleration_eq _ hF.eventually_apply_right,
+      acceleration_const, acceleration_const, inner_zero_left, inner_zero_left]) hmin
 
 /-- **Nonnegativity of the index form at a local minimum of the energy for closed geodesics.** If
 `F` is `C³` along `{0} × uIcc a b` with `F s a = F s b` near `0`, `γ = F 0` is a geodesic on
@@ -642,9 +611,8 @@ theorem indexForm_nonneg_of_isLocalMin_energy_exponentialVariation {a b : ℝ}
       (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc a b))
     (hmin : IsLocalMin (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0) :
     0 ≤ indexForm I γ V V a b := by
-  have hcont : ContinuousAt (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 :=
-    (hasDerivAt_energy_exponentialVariation (hV.of_le (by norm_num))).continuousAt
-  have hnn := TauCeti.deriv_deriv_nonneg_of_isLocalMin hcont hmin
+  have hnn := TauCeti.deriv_deriv_nonneg_of_isLocalMin
+    (hasDerivAt_energy_exponentialVariation (hV.of_le (by norm_num))).continuousAt hmin
   rwa [(hasDerivAt_deriv_energy_exponentialVariation hV).deriv] at hnn
 
 /-- **Negative index form strictly decreases energy.** Let `γ` be a geodesic on `uIoo a b` and `V`

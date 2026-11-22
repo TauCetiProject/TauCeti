@@ -135,11 +135,10 @@ theorem hasDerivAt_energy_exponentialVariation {a b : ℝ}
   have hderiv' : HasDerivAt (fun s ↦ energy I (exponentialVariation I γ' V' s) a b)
       (inner ℝ (V' b) (curveVelocity I γ' b) - inner ℝ (V' a) (curveVelocity I γ' a) -
         ∫ t in a..b, inner ℝ (V' t) (acceleration (leviCivitaConnection I M) γ' t)) 0 := by
-    have h0 : exponentialVariation I γ' V' 0 = γ' := exponentialVariation_zero γ' V'
+    have h0 := exponentialVariation_zero γ' V'
     have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ' V') t) (V' t) :=
       fun t ↦ heq_of_eq (variationField_exponentialVariation γ' V' t)
-    generalize exponentialVariation I γ' V' = G at hF h0 hVF ⊢
-    subst h0
+    generalize exponentialVariation I γ' V' = G at hF h0 hVF ⊢; subst h0
     simpa only [funext fun t ↦ eq_of_heq (hVF t)] using hasDerivAt_energy hF
   have henergy : (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
       fun s ↦ energy I (exponentialVariation I γ' V' s) a b :=
@@ -171,10 +170,7 @@ theorem hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn {a b : 
   have hτ_mono : Monotone τ := hτ_strict.monotone
   have hpi (i : Fin (n + 1)) : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2
       (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc (τ i.castSucc) (τ i.succ)) := by
-    rw [uIcc_of_le (hτ i).le]
-    exact hpieces i
-  -- Extend each closed piece to a two-sided `C²` section lift to sum energies and check
-  -- integrability of `⟪V, D_t γ'⟫` on each piece.
+    rw [uIcc_of_le (hτ i).le]; exact hpieces i
   choose γi Vi hVi hEqi hExpi using
     fun i : Fin (n + 1) ↦ exists_contMDiffAt_exponentialVariation_eqOn γ V (hpi i)
   let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
@@ -186,16 +182,19 @@ theorem hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn {a b : 
       (F := exponentialVariation I γ V) (G := fun i ↦ exponentialVariation I (γi i) (Vi i))
       (fun i t ht ↦ (contMDiffAt_exponentialVariation_zero (γi i) (Vi i)
         (hVi i t (by rwa [uIcc_of_le (hτ i).le]))).of_le (by norm_num))
-      (Eventually.of_forall fun s i t ht ↦
-        (hExpi i s (by rwa [uIcc_of_le (hτ i).le])).symm)
+      (Eventually.of_forall fun s i t ht ↦ (hExpi i s (by rwa [uIcc_of_le (hτ i).le])).symm)
     rw [hτa, hτb] at hsum
     filter_upwards [hsum] with s hs
-    rw [hs]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    exact energy_congr ((hExpi i s).mono uIoo_subset_uIcc_self)
+    exact hs.trans (Finset.sum_congr rfl fun i _ ↦
+      energy_congr ((hExpi i s).mono uIoo_subset_uIcc_self))
   have hd := HasDerivAt.fun_sum (u := Finset.univ) fun i _ ↦
     hasDerivAt_energy_exponentialVariation (I := I) (γ := γ) (V := V) (hpi i)
   -- Match each piece endpoint velocity to `curveVelocityWithin I γ (Icc a b)`.
+  have hvel_int {c d x : ℝ} (hcd : c < d) (hx : x ∈ Ioo a b) (hxc : x ∈ Icc c d) :
+      curveVelocityWithin I γ (Icc c d) x = curveVelocityWithin I γ (Icc a b) x := by
+    rw [curveVelocityWithin_subset (subset_univ _) (uniqueDiffOn_Icc hcd _ hxc)
+        (hγ _ hx).mdifferentiableWithinAt,
+      curveVelocityWithin_univ, curveVelocityWithin_of_mem_nhds (Icc_mem_nhds hx.1 hx.2)]
   have hvel_left (i : Fin (n + 1)) :
       curveVelocityWithin I γ (uIcc (τ i.castSucc) (τ i.succ)) (τ i.castSucc) =
         curveVelocityWithin I γ (Icc a b) (τ i.castSucc) := by
@@ -204,17 +203,12 @@ theorem hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn {a b : 
     · rw [Fin.castSucc_zero, hτa]
       have hset : Icc a (τ (0 : Fin (n + 1)).succ) =ᶠ[𝓝 a] Icc a b := by
         filter_upwards [Iio_mem_nhds (by simpa only [Fin.castSucc_zero, hτa] using hτ 0)] with t ht
-        have htb : t ≤ b := ht.le.trans (hτb ▸ hτ_mono (Fin.le_last _))
-        exact ⟨fun h ↦ ⟨h.1, htb⟩, fun h ↦ ⟨h.1, ht.le⟩⟩
+        exact ⟨fun h ↦ ⟨h.1, ht.le.trans (hτb ▸ hτ_mono (Fin.le_last _))⟩, fun h ↦ ⟨h.1, ht.le⟩⟩
       simp only [curveVelocityWithin_apply, mfderivWithin_congr_set hset]
     · have h0lt : (0 : Fin (n + 2)) < i.castSucc :=
         Fin.pos_iff_ne_zero.mpr fun h ↦ hi (Fin.ext (by simpa using congrArg Fin.val h))
-      have hmem : τ i.castSucc ∈ Ioo a b :=
-        ⟨hτa ▸ hτ_strict h0lt, hτb ▸ hτ_strict (Fin.castSucc_lt_last i)⟩
-      rw [curveVelocityWithin_subset (subset_univ _)
-          (uniqueDiffOn_Icc (hτ i) _ ⟨le_rfl, (hτ i).le⟩)
-          (hγ _ hmem).mdifferentiableWithinAt,
-        curveVelocityWithin_univ, curveVelocityWithin_of_mem_nhds (Icc_mem_nhds hmem.1 hmem.2)]
+      exact hvel_int (hτ i) ⟨hτa ▸ hτ_strict h0lt, hτb ▸ hτ_strict (Fin.castSucc_lt_last i)⟩
+        ⟨le_rfl, (hτ i).le⟩
   have hvel_right (i : Fin (n + 1)) :
       curveVelocityWithin I γ (uIcc (τ i.castSucc) (τ i.succ)) (τ i.succ) =
         curveVelocityWithin I γ (Icc a b) (τ i.succ) := by
@@ -224,53 +218,40 @@ theorem hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn {a b : 
       have hset : Icc (τ (Fin.last n).castSucc) b =ᶠ[𝓝 b] Icc a b := by
         filter_upwards [Ioi_mem_nhds
           (by simpa only [Fin.succ_last, hτb] using hτ (Fin.last n))] with t ht
-        have hat : a ≤ t := (hτa ▸ hτ_mono (Fin.zero_le (Fin.last n).castSucc)).trans ht.le
-        exact ⟨fun h ↦ ⟨hat, h.2⟩, fun h ↦ ⟨ht.le, h.2⟩⟩
+        exact ⟨fun h ↦ ⟨(hτa ▸ hτ_mono (Fin.zero_le (Fin.last n).castSucc)).trans ht.le, h.2⟩,
+          fun h ↦ ⟨ht.le, h.2⟩⟩
       simp only [curveVelocityWithin_apply, mfderivWithin_congr_set hset]
     · have hlt_last : i.succ < Fin.last (n + 1) := by
-        rw [Fin.lt_def, Fin.val_succ, Fin.val_last]
         have : i.val < n :=
           lt_of_le_of_ne (Nat.lt_succ_iff.mp i.isLt) (by simpa [Fin.ext_iff] using hi)
-        omega
-      have hmem : τ i.succ ∈ Ioo a b :=
-        ⟨hτa ▸ hτ_strict (Fin.succ_pos i), hτb ▸ hτ_strict hlt_last⟩
-      rw [curveVelocityWithin_subset (subset_univ _)
-          (uniqueDiffOn_Icc (hτ i) _ ⟨(hτ i).le, le_rfl⟩)
-          (hγ _ hmem).mdifferentiableWithinAt,
-        curveVelocityWithin_univ, curveVelocityWithin_of_mem_nhds (Icc_mem_nhds hmem.1 hmem.2)]
+        rw [Fin.lt_def, Fin.val_succ, Fin.val_last]; omega
+      exact hvel_int (hτ i) ⟨hτa ▸ hτ_strict (Fin.succ_pos i), hτb ▸ hτ_strict hlt_last⟩
+        ⟨(hτ i).le, le_rfl⟩
   -- Each piece acceleration integrand is interval integrable by comparison with `(γi i, Vi i)`.
   have hint (i : Fin (n + 1)) : IntervalIntegrable
       (fun t ↦ inner ℝ (V t) (acceleration (leviCivitaConnection I M) γ t)) volume
       (τ i.castSucc) (τ i.succ) := by
     have hcont : ContinuousOn (fun t ↦ inner ℝ (Vi i t)
-        (acceleration (leviCivitaConnection I M) (γi i) t)) (uIcc (τ i.castSucc) (τ i.succ)) := by
-      intro t ht
-      have hc := continuousAt_inner_variationField_acceleration
-        (contMDiffAt_exponentialVariation_zero (γi i) (Vi i) (hVi i t ht))
-      have heq_f : (fun r ↦ inner ℝ (variationField I (exponentialVariation I (γi i) (Vi i)) r)
-          (acceleration (leviCivitaConnection I M) (exponentialVariation I (γi i) (Vi i) 0) r)) =
-          fun r ↦ inner ℝ (Vi i r) (acceleration (leviCivitaConnection I M) (γi i) r) :=
-        funext fun r ↦ TauCeti.inner_eq_of_totalSpaceMk_eq
-          (TotalSpace.ext (congrFun (exponentialVariation_zero (γi i) (Vi i)) r)
-            (heq_of_eq (variationField_exponentialVariation (γi i) (Vi i) r)))
-          ((EventuallyEq.of_eq
-            (exponentialVariation_zero (γi i) (Vi i))).totalSpaceMk_acceleration_eq
-            (leviCivitaConnection I M))
-      rw [heq_f] at hc
-      exact hc.continuousWithinAt
+        (acceleration (leviCivitaConnection I M) (γi i) t)) (uIcc (τ i.castSucc) (τ i.succ)) :=
+      fun t ht ↦ ((continuousAt_inner_variationField_acceleration
+        (contMDiffAt_exponentialVariation_zero (γi i) (Vi i) (hVi i t ht))).congr
+          (Eventually.of_forall fun r ↦ TauCeti.inner_eq_of_totalSpaceMk_eq
+            (TotalSpace.ext (congrFun (exponentialVariation_zero (γi i) (Vi i)) r)
+              (heq_of_eq (variationField_exponentialVariation (γi i) (Vi i) r)))
+            ((EventuallyEq.of_eq
+              (exponentialVariation_zero (γi i) (Vi i))).totalSpaceMk_acceleration_eq
+              (leviCivitaConnection I M)))).continuousWithinAt
     refine hcont.intervalIntegrable.congr_uIoo fun t ht ↦ ?_
-    have hγEq : EqOn (γi i) γ (uIcc (τ i.castSucc) (τ i.succ)) :=
+    have hnear : γi i =ᶠ[𝓝 t] γ := eventuallyEq_of_mem
+      (mem_of_superset (isOpen_Ioo.mem_nhds ht) uIoo_subset_uIcc_self)
       fun r hr ↦ congrArg TotalSpace.proj (hEqi i r hr)
-    have hnear : γi i =ᶠ[𝓝 t] γ :=
-      eventuallyEq_of_mem (mem_of_superset (isOpen_Ioo.mem_nhds ht) uIoo_subset_uIcc_self) hγEq
     exact TauCeti.inner_eq_of_totalSpaceMk_eq (hEqi i t (uIoo_subset_uIcc_self ht))
       (hnear.totalSpaceMk_acceleration_eq (leviCivitaConnection I M))
   refine (hd.congr_of_eventuallyEq heq).congr_deriv ?_
   have hsum_int := TauCeti.intervalIntegral.sum_integral_adjacent_intervals_fin τ hint
-  rw [hτa, hτb] at hsum_int
   have htele := Fin.sum_univ_succ_sub_castSucc
     (fun k ↦ inner ℝ (V (τ k)) (curveVelocityWithin I γ (Icc a b) (τ k)))
-  rw [hτa, hτb] at htele
+  rw [hτa, hτb] at hsum_int htele
   simp only [hvel_left, hvel_right, Finset.sum_sub_distrib, htele, hsum_int]
 
 /-- **First variation of energy along a bundled piecewise smooth section.** Specialization of
@@ -308,15 +289,14 @@ theorem hasDerivAt_toReal_pathELength_exponentialVariation {a b : ℝ} (hab : a 
       sub_self, zero_div]
     exact hasDerivAt_const (0 : ℝ) (0 : ℝ)
   have hVu : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2
-      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc a b) := by
-    rwa [uIcc_of_le hab]
+      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc a b) := by rwa [uIcc_of_le hab]
   obtain ⟨γ', V', hV', hEq, hExp⟩ := exists_contMDiffAt_exponentialVariation_eqOn γ V hVu
   have hγEq : EqOn γ' γ (Icc a b) := fun r hr ↦
     congrArg TotalSpace.proj (hEq r (by rwa [uIcc_of_le hab]))
-  have hspeed' : ∀ t ∈ Icc a b, ‖curveVelocity I γ' t‖ = C := by
-    have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-      IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-    exact norm_curveVelocity_eq_Icc_of_Ioo hlt
+  have hspeed' : ∀ t ∈ Icc a b, ‖curveVelocity I γ' t‖ = C :=
+    let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+      (F := E) (V := fun x : M ↦ TangentSpace I x)
+    norm_curveVelocity_eq_Icc_of_Ioo hlt
       (fun t ht ↦ (contMDiff_proj (TangentSpace I)).contMDiffAt.comp t
         ((hV' t (by rwa [uIcc_of_le hab])).of_le one_le_two))
       fun t ht ↦ by
@@ -328,11 +308,10 @@ theorem hasDerivAt_toReal_pathELength_exponentialVariation {a b : ℝ} (hab : a 
       (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal)
       ((⟪V' b, curveVelocity I γ' b⟫_ℝ - ⟪V' a, curveVelocity I γ' a⟫_ℝ -
         ∫ t in a..b, ⟪V' t, acceleration (leviCivitaConnection I M) γ' t⟫_ℝ) / C) 0 := by
-    have h0 : exponentialVariation I γ' V' 0 = γ' := exponentialVariation_zero γ' V'
+    have h0 := exponentialVariation_zero γ' V'
     have hVF : ∀ t, HEq (variationField I (exponentialVariation I γ' V') t) (V' t) :=
       fun t ↦ heq_of_eq (variationField_exponentialVariation γ' V' t)
-    generalize exponentialVariation I γ' V' = G at hF h0 hVF ⊢
-    subst h0
+    generalize exponentialVariation I γ' V' = G at hF h0 hVF ⊢; subst h0
     simpa only [funext fun t ↦ eq_of_heq (hVF t)] using
       hasDerivAt_toReal_pathELength hab hF hC hspeed'
   have hlen : (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal) =

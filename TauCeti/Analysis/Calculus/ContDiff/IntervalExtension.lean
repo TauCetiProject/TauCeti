@@ -107,20 +107,15 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
   let f : ℝ → E := fun x ↦ r ^ k • φ (r⁻¹ * x)
   have hf : ContDiff ℝ ∞ f :=
     (hφ.comp (contDiff_const.mul contDiff_id)).const_smul (r ^ k)
-  have hfsupp : HasCompactSupport f := by
-    exact (hsupp.comp_smul (inv_ne_zero hr.ne')).smul_left
+  have hfsupp : HasCompactSupport f := (hsupp.comp_smul (inv_ne_zero hr.ne')).smul_left
   have hderiv (m : ℕ) (x : ℝ) :
-      iteratedFDeriv ℝ m f x =
-        (r ^ k * (r⁻¹) ^ m) • iteratedFDeriv ℝ m φ (r⁻¹ * x) := by
+      iteratedFDeriv ℝ m f x = (r ^ k * (r⁻¹) ^ m) • iteratedFDeriv ℝ m φ (r⁻¹ * x) := by
     have hm : (m : ℕ∞ω) ≤ ∞ := WithTop.coe_le_coe.mpr le_top
     have hc : ContDiff ℝ ∞ (fun y : ℝ ↦ φ (r⁻¹ • y)) :=
       hφ.comp ((contDiff_id : ContDiff ℝ ∞ (id : ℝ → ℝ)).const_smul r⁻¹)
-    -- Real scalar action on ℝ is multiplication; expose the local scaled function.
-    have hfdef : f = (fun x ↦ r ^ k • φ (r⁻¹ • x)) := rfl
-    rw [hfdef]
-    rw [iteratedFDeriv_const_smul_apply' (i := m) (a := r ^ k)
-      (hc.of_le hm).contDiffAt]
-    rw [iteratedFDeriv_comp_const_smul r⁻¹ (hφ.of_le hm)]
+    change iteratedFDeriv ℝ m (fun x ↦ r ^ k • φ (r⁻¹ • x)) x = _
+    rw [iteratedFDeriv_const_smul_apply' (i := m) (a := r ^ k) (hc.of_le hm).contDiffAt,
+      iteratedFDeriv_comp_const_smul r⁻¹ (hφ.of_le hm)]
     simp only [smul_smul, smul_eq_mul]
   have hsmall (m : ℕ) (hm : m < k) (x : ℝ) : ‖iteratedFDeriv ℝ m f x‖ ≤ ε := by
     have hfactor : r ^ k * (r⁻¹) ^ m = r ^ (k - m) := by
@@ -128,8 +123,7 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
     have hpow : r ^ (k - m) ≤ r := by
       simpa only [pow_one] using
         pow_le_pow_of_le_one hr.le hr1 (show 1 ≤ k - m by omega)
-    rw [hderiv, hfactor, norm_smul, Real.norm_eq_abs,
-      abs_of_nonneg (pow_nonneg hr.le _)]
+    rw [hderiv, hfactor, norm_smul, Real.norm_eq_abs, abs_of_nonneg (pow_nonneg hr.le _)]
     calc
       r ^ (k - m) * ‖iteratedFDeriv ℝ m φ (r⁻¹ * x)‖ ≤ r ^ (k - m) * C :=
         mul_le_mul_of_nonneg_left
@@ -138,18 +132,12 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
       _ ≤ ε := hrC
   have hnear : f =ᶠ[𝓝 0] endpointJetPolynomial k A := by
     have hc : Tendsto (fun x : ℝ ↦ r⁻¹ * x) (𝓝 0) (𝓝 0) := by
-      have hc : Continuous (fun x : ℝ ↦ r⁻¹ * x) :=
-        continuous_const.mul continuous_id
-      simpa only [ContinuousAt, mul_zero] using
-        hc.continuousAt (x := (0 : ℝ))
+      simpa only [ContinuousAt, mul_zero] using (continuous_const_mul r⁻¹).continuousAt (x := 0)
     filter_upwards [hc.eventually (endpointJetBase_eventually_eq k A)] with x hx
-    -- The local f is the scaled endpointJetBase, and φ denotes that base.
     change r ^ k • endpointJetBase k A (r⁻¹ * x) = endpointJetPolynomial k A x
     rw [hx]
     unfold endpointJetPolynomial
-    rw [smul_smul]
-    congr 1
-    rw [mul_pow, ← mul_div_assoc, ← mul_assoc, ← mul_pow,
+    rw [smul_smul, mul_pow, ← mul_div_assoc, ← mul_assoc, ← mul_pow,
       mul_inv_cancel₀ hr.ne', one_pow, one_mul]
   exact ⟨f, hf, hfsupp, hsmall, fun m ↦
     (hnear.iteratedDeriv_eq m).trans (endpointJetPolynomial_deriv k m A)⟩
@@ -293,6 +281,32 @@ private theorem pasteEndpointDerivatives_hasDerivAt {a b : ℝ} (hab : a < b)
     · rw [pasteEndpointDerivatives_eq_right hab hrb' hbx.le]
       exact (hr x).congr_of_eventuallyEq (eventuallyEq_of_mem (Ici_mem_nhds hbx) hR)
 
+/-- One-step differentiation of the pasted `iteratedDeriv` / `iteratedDerivWithin` tower below
+regularity `N`. -/
+private theorem pasteEndpointDerivatives_hasDerivAt_iteratedDeriv {N : ℕ∞ω} {a b : ℝ} (hab : a < b)
+    (f l r : ℝ → E) (hf : ContDiffOn ℝ N f (Icc a b)) (hl : ContDiff ℝ N l) (hr : ContDiff ℝ N r)
+    {k : ℕ} (hk : (k : ℕ∞ω) < N)
+    (hla : iteratedDeriv k l a = iteratedDerivWithin k f (Icc a b) a)
+    (hla' : iteratedDeriv (k + 1) l a = iteratedDerivWithin (k + 1) f (Icc a b) a)
+    (hrb : iteratedDeriv k r b = iteratedDerivWithin k f (Icc a b) b)
+    (hrb' : iteratedDeriv (k + 1) r b = iteratedDerivWithin (k + 1) f (Icc a b) b) (x : ℝ) :
+    HasDerivAt (pasteEndpointDerivatives a b (fun m ↦ iteratedDerivWithin m f (Icc a b))
+      (fun m ↦ iteratedDeriv m l) (fun m ↦ iteratedDeriv m r) k)
+      (pasteEndpointDerivatives a b (fun m ↦ iteratedDerivWithin m f (Icc a b))
+        (fun m ↦ iteratedDeriv m l) (fun m ↦ iteratedDeriv m r) (k + 1) x) x :=
+  pasteEndpointDerivatives_hasDerivAt hab _ _ _
+    (fun y hy ↦ by
+      rw [iteratedDerivWithin_succ]
+      exact ((hf.differentiableOn_iteratedDerivWithin hk (uniqueDiffOn_Icc hab)) y
+        hy).hasDerivWithinAt)
+    (fun y ↦ by
+      rw [iteratedDeriv_succ]
+      exact (hl.differentiable_iteratedDeriv k hk y).hasDerivAt)
+    (fun y ↦ by
+      rw [iteratedDeriv_succ]
+      exact (hr.differentiable_iteratedDeriv k hk y).hasDerivAt)
+    hla hla' hrb hrb' x
+
 /-- Smooth functions with all matching left and right endpoint jets paste to a globally smooth
 representative of the closed-interval function. -/
 theorem smooth_pasting_of_matching_endpoint_jets {a b : ℝ} (hab : a < b)
@@ -304,26 +318,11 @@ theorem smooth_pasting_of_matching_endpoint_jets {a b : ℝ} (hab : a < b)
   let F := pasteEndpointDerivatives a b
     (fun k ↦ iteratedDerivWithin k f (Icc a b)) (fun k ↦ iteratedDeriv k l)
       (fun k ↦ iteratedDeriv k r)
-  have hk (k : ℕ) : (k : ℕ∞ω) < ∞ := by
-    -- ℕ∞ω is a second WithTop; compare the embedded finite order below smoothness.
-    change (↑(k : ℕ∞) : ℕ∞ω) < ↑(⊤ : ℕ∞)
-    exact WithTop.coe_lt_coe.mpr (WithTop.coe_lt_top k)
   have hF (k : ℕ) (x : ℝ) : HasDerivAt (F k) (F (k + 1) x) x :=
-    pasteEndpointDerivatives_hasDerivAt hab _ _ _
-      (fun y hy ↦ by
-        rw [iteratedDerivWithin_succ]
-        exact ((hf.differentiableOn_iteratedDerivWithin (hk k)
-          (uniqueDiffOn_Icc hab)) y hy).hasDerivWithinAt)
-      (fun y ↦ by
-        rw [iteratedDeriv_succ]
-        exact (hl.differentiable_iteratedDeriv k (hk k) y).hasDerivAt)
-      (fun y ↦ by
-        rw [iteratedDeriv_succ]
-        exact (hr.differentiable_iteratedDeriv k (hk k) y).hasDerivAt)
-      (hla k) (hla (k + 1)) (hrb k) (hrb (k + 1)) x
-  refine ⟨F 0, contDiff_of_derivative_tower F hF, ?_⟩
-  intro x hx
-  exact (pasteEndpointDerivatives_eq_middle (hla 0) hx).trans (by simp [iteratedDerivWithin_zero])
+    pasteEndpointDerivatives_hasDerivAt_iteratedDeriv hab f l r hf hl hr
+      (WithTop.coe_lt_coe.mpr (WithTop.coe_lt_top k)) (hla k) (hla (k + 1)) (hrb k) (hrb (k + 1)) x
+  refine ⟨F 0, contDiff_of_derivative_tower F hF, fun _ hx ↦
+    (pasteEndpointDerivatives_eq_middle (hla 0) hx).trans (by simp [iteratedDerivWithin_zero])⟩
 
 /-- Globally `C^n` functions `l` and `r` whose derivatives up to order `n` match a `C^n` function
 `f` on `[a, b]` (`a < b`) at `a` and `b` paste to a globally `C^n` representative of `f` on
@@ -337,40 +336,25 @@ theorem contDiff_pasting_of_matching_endpoint_jets {n : ℕ} {a b : ℝ} (hab : 
   let F := pasteEndpointDerivatives a b
     (fun k ↦ iteratedDerivWithin k f (Icc a b)) (fun k ↦ iteratedDeriv k l)
       (fun k ↦ iteratedDeriv k r)
-  have hF : ∀ k < n, ∀ x, HasDerivAt (F k) (F (k + 1) x) x := by
-    intro k hk x
-    have hkn : (k : ℕ∞ω) < (n : ℕ∞ω) := by exact_mod_cast hk
-    exact pasteEndpointDerivatives_hasDerivAt hab _ _ _
-      (fun y hy ↦ by
-        rw [iteratedDerivWithin_succ]
-        exact ((hf.differentiableOn_iteratedDerivWithin hkn
-          (uniqueDiffOn_Icc hab)) y hy).hasDerivWithinAt)
-      (fun y ↦ by
-        rw [iteratedDeriv_succ]
-        exact (hl.differentiable_iteratedDeriv k hkn y).hasDerivAt)
-      (fun y ↦ by
-        rw [iteratedDeriv_succ]
-        exact (hr.differentiable_iteratedDeriv k hkn y).hasDerivAt)
+  have hF (k : ℕ) (hk : k < n) (x : ℝ) : HasDerivAt (F k) (F (k + 1) x) x :=
+    pasteEndpointDerivatives_hasDerivAt_iteratedDeriv hab f l r hf hl hr (by exact_mod_cast hk)
       (hla k hk.le) (hla (k + 1) hk) (hrb k hk.le) (hrb (k + 1) hk) x
-  have hL : ContinuousOn (F n) (Iic a) :=
-    (hl.continuous_iteratedDeriv n le_rfl).continuousOn.congr fun _ hx ↦
-      pasteEndpointDerivatives_eq_left n hx
-  have hC : ContinuousOn (F n) (Icc a b) :=
-    (hf.continuousOn_iteratedDerivWithin le_rfl (uniqueDiffOn_Icc hab)).congr fun _ hx ↦
-      pasteEndpointDerivatives_eq_middle (hla n le_rfl) hx
-  have hR : ContinuousOn (F n) (Ici b) :=
-    (hr.continuous_iteratedDeriv n le_rfl).continuousOn.congr fun _ hx ↦
-      pasteEndpointDerivatives_eq_right hab (hrb n le_rfl) hx
-  have hLC : ContinuousOn (F n) (Iic b) := by
-    rw [← Iic_union_Icc_eq_Iic hab.le]
-    exact hL.union_of_isClosed hC isClosed_Iic isClosed_Icc
   have hFn : Continuous (F n) := continuousOn_univ.1 <| by
-    rw [← Iic_union_Ici (a := b)]
-    exact hLC.union_of_isClosed hR isClosed_Iic isClosed_Ici
-  refine ⟨F 0, contDiff_of_finite_derivative_tower F n hF hFn, ?_⟩
-  intro x hx
-  exact (pasteEndpointDerivatives_eq_middle (hla 0 (Nat.zero_le n)) hx).trans
-    (by simp [iteratedDerivWithin_zero])
+    have hL : ContinuousOn (F n) (Iic a) :=
+      (hl.continuous_iteratedDeriv n le_rfl).continuousOn.congr fun _ hx ↦
+        pasteEndpointDerivatives_eq_left n hx
+    have hC : ContinuousOn (F n) (Icc a b) :=
+      (hf.continuousOn_iteratedDerivWithin le_rfl (uniqueDiffOn_Icc hab)).congr fun _ hx ↦
+        pasteEndpointDerivatives_eq_middle (hla n le_rfl) hx
+    have hR : ContinuousOn (F n) (Ici b) :=
+      (hr.continuous_iteratedDeriv n le_rfl).continuousOn.congr fun _ hx ↦
+        pasteEndpointDerivatives_eq_right hab (hrb n le_rfl) hx
+    rw [← Iic_union_Ici (a := b), ← Iic_union_Icc_eq_Iic hab.le]
+    exact (hL.union_of_isClosed hC isClosed_Iic isClosed_Icc).union_of_isClosed
+      hR (isClosed_Iic.union isClosed_Icc) isClosed_Ici
+  refine ⟨F 0, contDiff_of_finite_derivative_tower F n hF hFn, fun _ hx ↦
+    (pasteEndpointDerivatives_eq_middle (hla 0 (Nat.zero_le n)) hx).trans
+      (by simp [iteratedDerivWithin_zero])⟩
 
 end Pasting
 
@@ -389,18 +373,14 @@ theorem exists_contDiff_extension_Icc {n : ℕ} {a b : ℝ}
       (fun k ↦ iteratedDerivWithin k f (Icc a b) a)
     obtain ⟨R, hR, hRb⟩ := exists_contDiff_finite_endpoint_jets n
       (fun k ↦ iteratedDerivWithin k f (Icc a b) b)
-    apply contDiff_pasting_of_matching_endpoint_jets hab f
+    exact contDiff_pasting_of_matching_endpoint_jets hab f
       (fun x ↦ L (x - a)) (fun x ↦ R (x - b)) hf
       ((hL.comp (contDiff_id.sub contDiff_const)).of_le (by simp))
       ((hR.comp (contDiff_id.sub contDiff_const)).of_le (by simp))
-    · intro k hk
-      simpa only [iteratedDeriv_comp_sub_const, sub_self] using hLa k hk
-    · intro k hk
-      simpa only [iteratedDeriv_comp_sub_const, sub_self] using hRb k hk
-  · refine ⟨fun _ ↦ f a, contDiff_const, ?_⟩
-    intro x hx
-    have hxa : x = a := le_antisymm (hx.2.trans (le_of_not_gt hab)) hx.1
-    simp only [hxa]
+      (fun k hk ↦ by simpa only [iteratedDeriv_comp_sub_const, sub_self] using hLa k hk)
+      (fun k hk ↦ by simpa only [iteratedDeriv_comp_sub_const, sub_self] using hRb k hk)
+  · exact ⟨fun _ ↦ f a, contDiff_const, fun x hx ↦ by
+      rw [le_antisymm (hx.2.trans (le_of_not_gt hab)) hx.1]⟩
 
 end FiniteOrder
 
@@ -418,17 +398,13 @@ theorem exists_smooth_extension_Icc {a b : ℝ}
       (fun k ↦ iteratedDerivWithin k f (Icc a b) a)
     obtain ⟨R, hR, hRb⟩ := exists_smooth_endpoint_jets
       (fun k ↦ iteratedDerivWithin k f (Icc a b) b)
-    apply smooth_pasting_of_matching_endpoint_jets hab f
+    exact smooth_pasting_of_matching_endpoint_jets hab f
       (fun x ↦ L (x - a)) (fun x ↦ R (x - b)) hf
       (hL.comp (contDiff_id.sub contDiff_const)) (hR.comp (contDiff_id.sub contDiff_const))
-    · intro k
-      simpa only [iteratedDeriv_comp_sub_const, sub_self] using hLa k
-    · intro k
-      simpa only [iteratedDeriv_comp_sub_const, sub_self] using hRb k
-  · refine ⟨fun _ ↦ f a, contDiff_const, ?_⟩
-    intro x hx
-    have hxa : x = a := le_antisymm (hx.2.trans (le_of_not_gt hab)) hx.1
-    simp only [hxa]
+      (fun k ↦ by simpa only [iteratedDeriv_comp_sub_const, sub_self] using hLa k)
+      (fun k ↦ by simpa only [iteratedDeriv_comp_sub_const, sub_self] using hRb k)
+  · exact ⟨fun _ ↦ f a, contDiff_const, fun x hx ↦ by
+      rw [le_antisymm (hx.2.trans (le_of_not_gt hab)) hx.1]⟩
 
 end Euclidean
 

@@ -84,30 +84,29 @@ theorem IsGeodesicCurveOn.indexFormIntegrand_sub_starProjection_singleton
   have hγb : IsGeodesicCurveOn I γ (Metric.ball t r) :=
     hγ.mono Metric.isOpen_ball.uniqueDiffOn hball
   have ht : t ∈ Metric.ball t r := Metric.mem_ball_self hr
-  have hconn : IsPreconnected (Metric.ball t r) := (convex_ball t r).isPreconnected
   -- Covariant differentiation commutes with the normal projection on `Metric.ball t r`.
   have hDN (U : ∀ q, TangentSpace I (γ q))
       (hU : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ U (γ t)) t) :
       alongCurve cov γ (fun q ↦ U q - (ℝ ∙ curveVelocity I γ q).starProjection (U q)) t =
         alongCurve cov γ U t -
           (ℝ ∙ curveVelocity I γ t).starProjection (alongCurve cov γ U t) := by
+    have hmem : Metric.ball t r ∈ 𝓝 t := Metric.isOpen_ball.mem_nhds ht
     have hnear : ∀ᶠ q in 𝓝 t,
         U q - (ℝ ∙ curveVelocity I γ q).starProjection (U q) =
           U q - (ℝ ∙ curveVelocityWithin I γ (Metric.ball t r) q).starProjection (U q) := by
-      filter_upwards [Metric.isOpen_ball.mem_nhds ht] with q hq
+      filter_upwards [hmem] with q hq
       rw [curveVelocityWithin_of_mem_nhds (Metric.isOpen_ball.mem_nhds hq)]
-    rw [alongCurve_congr cov γ _ hnear,
-      ← alongCurveWithin_of_mem_nhds cov γ _ (Metric.isOpen_ball.mem_nhds ht),
-      hγb.alongCurveWithin_sub_starProjection_singleton hconn ht hU.differentiableWithinAt,
-      alongCurveWithin_of_mem_nhds cov γ U (Metric.isOpen_ball.mem_nhds ht),
-      curveVelocityWithin_of_mem_nhds (Metric.isOpen_ball.mem_nhds ht)]
+    rw [alongCurve_congr cov γ _ hnear, ← alongCurveWithin_of_mem_nhds cov γ _ hmem,
+      hγb.alongCurveWithin_sub_starProjection_singleton (convex_ball t r).isPreconnected ht
+        hU.differentiableWithinAt,
+      alongCurveWithin_of_mem_nhds cov γ U hmem, curveVelocityWithin_of_mem_nhds hmem]
   -- The curvature term ignores tangential components in both slots.
   have hself : ⟪cov.curvatureTensor (γ t) (V t) (curveVelocity I γ t)
       (curveVelocity I γ t), curveVelocity I γ t⟫_ℝ = 0 := by
     have hskew := hm.inner_curvatureTensor_eq_neg (γ t) (V t) (curveVelocity I γ t)
       (curveVelocity I γ t) (curveVelocity I γ t)
-    rw [real_inner_comm _ (curveVelocity I γ t)] at hskew
-    linarith
+    linarith [real_inner_comm (cov.curvatureTensor (γ t) (V t) (curveVelocity I γ t)
+      (curveVelocity I γ t)) (curveVelocity I γ t)]
   have hcurv : ⟪cov.curvatureTensor (γ t)
         (V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t))
         (curveVelocity I γ t) (curveVelocity I γ t),
@@ -140,8 +139,6 @@ theorem IsGeodesicCurveOn.indexForm_sub_starProjection_singleton
             ‖curveVelocity I γ t‖ ^ 2 := by
   rcases eq_or_ne a b with rfl | hab
   · simp
-  have hintI : IntervalIntegrable (indexFormIntegrand I γ V W) volume a b :=
-    intervalIntegrable_indexFormIntegrand hV hW
   have hintT : IntervalIntegrable (fun t ↦
       ⟪alongCurve (leviCivitaConnection I M) γ V t, curveVelocity I γ t⟫_ℝ *
         ⟪alongCurve (leviCivitaConnection I M) γ W t, curveVelocity I γ t⟫_ℝ /
@@ -155,23 +152,18 @@ theorem IsGeodesicCurveOn.indexForm_sub_starProjection_singleton
       simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ (uIcc a b))] using
         hγc.contMDiffOn_curveVelocityLiftWithin (m := 0) (by simp)
           (uniqueDiffOn_uIcc hab).uniqueMDiffOn
-    have hDV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 0
-        (fun r ↦ TotalSpace.mk' E (γ r)
-          (alongCurveWithin (leviCivitaConnection I M) γ V (uIcc a b) r)) (uIcc a b) :=
-      contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) (m := ∞) (k := ∞)
-        (by simp) (by simp) (uniqueDiffOn_uIcc hab) (by simpa using hV)
-    have hDW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 0
-        (fun r ↦ TotalSpace.mk' E (γ r)
-          (alongCurveWithin (leviCivitaConnection I M) γ W (uIcc a b) r)) (uIcc a b) :=
-      contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) (m := ∞) (k := ∞)
-        (by simp) (by simp) (uniqueDiffOn_uIcc hab) (by simpa using hW)
-    have hVcont := (ContMDiffOn.inner_bundle (IB := I) (F := E)
-      (E := fun x : M ↦ TangentSpace I x) (b := γ)
-      (h := IsContMDiffRiemannianBundle.of_le (n := ∞) zero_le) hDV hvel).continuousOn
-    have hWcont := (ContMDiffOn.inner_bundle (IB := I) (F := E)
-      (E := fun x : M ↦ TangentSpace I x) (b := γ)
-      (h := IsContMDiffRiemannianBundle.of_le (n := ∞) zero_le) hDW hvel).continuousOn
-    refine ((hVcont.mul hWcont).div_const (c ^ 2)).intervalIntegrable.congr_uIoo fun t ht ↦ ?_
+    have hcont (U : ∀ r, TangentSpace I (γ r))
+        (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+          (fun r ↦ TotalSpace.mk' E (γ r) (U r)) (uIcc a b)) :
+        ContinuousOn (fun r ↦ ⟪alongCurveWithin (leviCivitaConnection I M) γ U (uIcc a b) r,
+          curveVelocityWithin I γ (uIcc a b) r⟫_ℝ) (uIcc a b) :=
+      (ContMDiffOn.inner_bundle (IB := I) (F := E)
+        (E := fun x : M ↦ TangentSpace I x) (b := γ)
+        (h := IsContMDiffRiemannianBundle.of_le (n := ∞) zero_le)
+        (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) (m := ∞) (k := ∞)
+          (by simp) (by simp) (uniqueDiffOn_uIcc hab) (by simpa using hU)) hvel).continuousOn
+    refine (((hcont V hV).mul (hcont W hW)).div_const (c ^ 2)).intervalIntegrable.congr_uIoo
+      fun t ht ↦ ?_
     have hmemIoo : uIoo a b ∈ 𝓝 t := (isOpen_Ioo : IsOpen (uIoo a b)).mem_nhds ht
     have hmemIcc : uIcc a b ∈ 𝓝 t := mem_of_superset hmemIoo uIoo_subset_uIcc_self
     have hnorm : ‖curveVelocity I γ t‖ = c := by
@@ -180,16 +172,17 @@ theorem IsGeodesicCurveOn.indexForm_sub_starProjection_singleton
     dsimp only [Pi.mul_apply]
     rw [alongCurveWithin_of_mem_nhds _ γ _ hmemIcc, alongCurveWithin_of_mem_nhds _ γ _ hmemIcc,
       curveVelocityWithin_of_mem_nhds hmemIcc, hnorm]
-  rw [indexForm_def, indexForm_def, ← intervalIntegral.integral_sub hintI hintT]
+  rw [indexForm_def, indexForm_def,
+    ← intervalIntegral.integral_sub (intervalIntegrable_indexFormIntegrand hV hW) hintT]
   refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
   have hmemIoo : uIoo a b ∈ 𝓝 t := (isOpen_Ioo : IsOpen (uIoo a b)).mem_nhds ht
   have hmemIcc : uIcc a b ∈ 𝓝 t := mem_of_superset hmemIoo uIoo_subset_uIcc_self
-  have hVt := (hV t (uIoo_subset_uIcc_self ht)).contMDiffAt hmemIcc
-  have hWt := (hW t (uIoo_subset_uIcc_self ht)).contMDiffAt hmemIcc
   exact hγ.indexFormIntegrand_sub_starProjection_singleton hmemIoo
-    (differentiableAt_sectionCoord γ V (hVt.mdifferentiableAt one_ne_zero)
+    (differentiableAt_sectionCoord γ V ((hV t (uIoo_subset_uIcc_self ht)).contMDiffAt
+      hmemIcc |>.mdifferentiableAt one_ne_zero)
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
-    (differentiableAt_sectionCoord γ W (hWt.mdifferentiableAt one_ne_zero)
+    (differentiableAt_sectionCoord γ W ((hW t (uIoo_subset_uIcc_self ht)).contMDiffAt
+      hmemIcc |>.mdifferentiableAt one_ne_zero)
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
 
 /-- **Tangential fields are `indexForm`-orthogonal to normal fields along a geodesic.** If `γ` is a
@@ -210,31 +203,26 @@ theorem IsGeodesicCurveOn.indexForm_eq_zero_of_mem_span_curveVelocity_of_orthogo
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hmem : uIoo a b ∈ 𝓝 t := (isOpen_Ioo : IsOpen (uIoo a b)).mem_nhds ht
   -- Differentiate `⟪W, γ'⟫ = 0` along the geodesic to get `⟪D_t W, γ'⟫ = 0`.
-  have hvel_coord := differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn
-    hγ.contMDiffOn ht (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hprod := hm.hasDerivWithinAt_inner_alongCurveWithin (hγ.mdifferentiableOn t ht)
-    (hW t ht).differentiableWithinAt hvel_coord
+    (hW t ht).differentiableWithinAt
+    (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
   rw [← accelerationWithin_def, hγ.accelerationWithin_eq_zero t ht, inner_zero_right,
     add_zero] at hprod
-  have hzero_deriv : HasDerivWithinAt
-      (fun r ↦ ⟪W r, curveVelocityWithin I γ (uIoo a b) r⟫_ℝ) 0 (uIoo a b) t :=
-    (hasDerivWithinAt_const t (uIoo a b) (0 : ℝ)).congr_of_mem
-      (fun r hr ↦ by
+  have hDW0 : ⟪alongCurve (leviCivitaConnection I M) γ W t, curveVelocity I γ t⟫_ℝ = 0 := by
+    have h := (hγ.uniqueDiffOn t ht).eq_deriv _ hprod
+      ((hasDerivWithinAt_const t (uIoo a b) (0 : ℝ)).congr_of_mem (fun r hr ↦ by
         have hmemr : uIoo a b ∈ 𝓝 r := (isOpen_Ioo : IsOpen (uIoo a b)).mem_nhds hr
         rw [curveVelocityWithin_of_mem_nhds hmemr]
-        exact horth r hr)
-      ht
-  have hDW0 : ⟪alongCurve (leviCivitaConnection I M) γ W t, curveVelocity I γ t⟫_ℝ = 0 := by
-    have h := (hγ.uniqueDiffOn t ht).eq_deriv _ hprod hzero_deriv
-    rwa [alongCurveWithin_of_mem_nhds (leviCivitaConnection I M) γ W hmem,
-      curveVelocityWithin_of_mem_nhds hmem] at h
+        exact horth r hr) ht)
+    rwa [alongCurveWithin_of_mem_nhds _ γ W hmem, curveVelocityWithin_of_mem_nhds hmem] at h
   -- The normal component of `V` vanishes near `t`, while `⟪D_t W, γ'⟫ = 0` kills the projection
   -- term in the bilinear normal-projection identity.
   have hsplit := hγ.indexFormIntegrand_sub_starProjection_singleton hmem (hV t ht) (hW t ht)
   have hVperp : ∀ᶠ r in 𝓝 t, HEq (V r - (ℝ ∙ curveVelocity I γ r).starProjection (V r))
-      ((0 : ∀ q, TangentSpace I (γ q)) r) := by
-    filter_upwards [hmem] with r hr
-    simp [Submodule.starProjection_eq_self_iff.mpr (htan r hr)]
+      ((0 : ∀ q, TangentSpace I (γ q)) r) :=
+    eventually_of_mem hmem fun r hr ↦ by
+      simp [Submodule.starProjection_eq_self_iff.mpr (htan r hr)]
   have hlhs : indexFormIntegrand I γ
       (fun r ↦ V r - (ℝ ∙ curveVelocity I γ r).starProjection (V r))
       (fun r ↦ W r - (ℝ ∙ curveVelocity I γ r).starProjection (W r)) t = 0 := by
@@ -253,16 +241,13 @@ theorem IsGeodesicCurveOn.indexForm_smul_curveVelocity_eq_zero_of_orthogonal
     (hW : ∀ t ∈ uIoo a b, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t)
     (horth : ∀ t ∈ uIoo a b, ⟪W t, curveVelocity I γ t⟫_ℝ = 0) :
     indexForm I γ (fun t ↦ f t • curveVelocity I γ t) W a b = 0 := by
-  refine hγ.indexForm_eq_zero_of_mem_span_curveVelocity_of_orthogonal
-    (fun t ht ↦ ?_) hW
+  refine hγ.indexForm_eq_zero_of_mem_span_curveVelocity_of_orthogonal (fun t ht ↦ ?_) hW
     (fun t _ ↦ Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)) horth
   have hmem : uIoo a b ∈ 𝓝 t := (isOpen_Ioo : IsOpen (uIoo a b)).mem_nhds ht
-  have hvel_coord : DifferentiableAt ℝ
-      (sectionCoord ℝ (F := E) γ (curveVelocityWithin I γ (uIoo a b)) (γ t)) t :=
-    (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hγ.uniqueDiffOn hγ.contMDiffOn ht
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))).differentiableAt hmem
-  refine ((hf t ht).smul hvel_coord).congr_of_eventuallyEq ?_
-  filter_upwards [hmem] with r hr
+  refine ((hf t ht).smul ((differentiableWithinAt_sectionCoord_curveVelocityWithin γ
+    hγ.uniqueDiffOn hγ.contMDiffOn ht
+    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))).differentiableAt
+    hmem)).congr_of_eventuallyEq (eventually_of_mem hmem fun r hr ↦ ?_)
   have hmemr : uIoo a b ∈ 𝓝 r := (isOpen_Ioo : IsOpen (uIoo a b)).mem_nhds hr
   simp [sectionCoord_apply, curveVelocityWithin_of_mem_nhds hmemr]
 

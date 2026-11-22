@@ -196,38 +196,30 @@ private theorem exists_contMDiffAt_left_Icc [I.Boundaryless] {k : ℕ} [IsManifo
   set c := min b (a + r / 2)
   have hac : a < c := lt_min hab (by linarith)
   have hcb : c ≤ b := min_le_left _ _
-  have hsub : MapsTo γ (Icc a c) e.source := fun t ht ↦ by
-    refine hball ⟨?_, ht.1, ht.2.trans hcb⟩
+  have hsub : MapsTo γ (Icc a c) e.source := fun t ht ↦ hball ⟨by
     rw [Metric.mem_ball, Real.dist_eq, abs_of_nonneg (sub_nonneg.2 ht.1)]
-    have : t ≤ a + r / 2 := ht.2.trans (min_le_right _ _)
-    linarith
+    linarith [ht.2, min_le_right b (a + r / 2)], ht.1, ht.2.trans hcb⟩
   have hchart : ContDiffOn ℝ k (e ∘ γ) (Icc a c) :=
     contMDiffOn_iff_contDiffOn.1 <|
       (contMDiffOn_extChartAt (I := I) (x := γ a)).comp (hγ.mono (Icc_subset_Icc_right hcb))
         (fun t ht ↦ by simpa only [e, extChartAt_source, mem_preimage] using hsub ht)
   obtain ⟨g, hg, hgeq⟩ := TauCeti.exists_contDiff_extension_Icc (e ∘ γ) hchart
   have hga : g a = e (γ a) := hgeq ⟨le_rfl, hac.le⟩
-  have hgtgt : g ⁻¹' e.target ∈ 𝓝 a := by
-    refine hg.continuous.continuousAt.preimage_mem_nhds ?_
-    rw [hga]
-    exact (isOpen_extChartAt_target (I := I) (γ a)).mem_nhds (mem_extChartAt_target (I := I) (γ a))
-  obtain ⟨ε, hε, hεball⟩ := Metric.mem_nhds_iff.1 hgtgt
-  set d := min c (a + ε)
-  have had : a < d := lt_min hac (by linarith)
-  have hdc : d ≤ c := min_le_left _ _
+  have hgtgt : g ⁻¹' e.target ∈ 𝓝 a := hg.continuous.continuousAt.preimage_mem_nhds <|
+    hga ▸ (isOpen_extChartAt_target (I := I) (γ a)).mem_nhds (mem_extChartAt_target (I := I) (γ a))
+  obtain ⟨ε, hε, -⟩ := Metric.mem_nhds_iff.1 hgtgt
   let δ : ℝ → M := fun t ↦ if t ≤ a then e.symm (g t) else γ t
   have hEqOn : EqOn δ γ (Icc a b) := fun t ht ↦ by
     by_cases hta : t ≤ a
-    · have hta' : t = a := le_antisymm hta ht.1
-      subst hta'
-      simp only [δ, le_refl, ↓reduceIte, hga]
-      exact e.left_inv (mem_extChartAt_source (I := I) _)
+    · simp only [δ, le_antisymm hta ht.1, le_refl, ↓reduceIte, hga,
+        e.left_inv (mem_extChartAt_source (I := I) _)]
     · simp only [δ, hta, ↓reduceIte]
   have hnear : δ =ᶠ[𝓝 a] e.symm ∘ g := by
-    refine eventuallyEq_of_mem (Ioo_mem_nhds (by linarith : a - ε < a) had) fun t ht ↦ ?_
+    refine eventuallyEq_of_mem
+      (Ioo_mem_nhds (sub_lt_self a hε) (lt_min hac (lt_add_of_pos_right a hε))) fun t ht ↦ ?_
     by_cases hta : t ≤ a
     · simp only [δ, hta, ↓reduceIte, Function.comp_apply]
-    · have htc : t ∈ Icc a c := ⟨le_of_not_ge hta, ht.2.le.trans hdc⟩
+    · have htc : t ∈ Icc a c := ⟨le_of_not_ge hta, ht.2.le.trans (min_le_left _ _)⟩
       simp only [δ, hta, ↓reduceIte, Function.comp_apply, hgeq htc, e.left_inv (hsub htc)]
   have hsymm : ContMDiffAt 𝓘(ℝ, E) I k e.symm (g a) :=
     (contMDiffOn_extChartAt_symm (I := I) (x := γ a)).contMDiffAt
@@ -248,32 +240,27 @@ theorem _root_.ContMDiffOn.exists_contMDiffAt_Icc [I.Boundaryless] {k : ℕ} [Is
         ⟨by linarith [ht.2], by linarith [ht.1]⟩
     obtain ⟨δ₂, hδ₂b, -, hEq₂⟩ := exists_contMDiffAt_left_Icc (neg_lt_neg hab) hrev
     let m := (a + b) / 2
-    have ham : a < m := by dsimp only [m]; linarith
-    have hmb : m < b := by dsimp only [m]; linarith
     let δ : ℝ → M := fun t ↦ if t < m then δ₁ t else δ₂ (-t)
     have hEq : EqOn δ γ (Icc a b) := fun t ht ↦ by
       by_cases htm : t < m
       · simpa only [δ, htm, ↓reduceIte] using hEq₁ ht
-      · have hnt : -t ∈ Icc (-b) (-a) := ⟨by linarith [ht.2], by linarith [ht.1]⟩
-        have h2 : δ₂ (-t) = δ₁ t := by simpa only [neg_neg] using hEq₂ hnt
+      · have h2 : δ₂ (-t) = δ₁ t := by
+          simpa only [neg_neg] using
+            hEq₂ (show -t ∈ Icc (-b) (-a) from ⟨by linarith [ht.2], by linarith [ht.1]⟩)
         simpa only [δ, htm, ↓reduceIte] using h2.trans (hEq₁ ht)
     refine ⟨δ, fun t ht ↦ ?_, hEq⟩
-    rcases eq_or_lt_of_le ht.1 with hta | hat
-    · rw [← hta]
-      refine hδ₁a.congr_of_eventuallyEq <|
-        eventuallyEq_of_mem (Iio_mem_nhds ham) fun s hs ↦ ?_
-      simp only [δ, mem_Iio.1 hs, ↓reduceIte]
+    rcases eq_or_lt_of_le ht.1 with rfl | hat
+    · exact hδ₁a.congr_of_eventuallyEq <| eventuallyEq_of_mem
+        (Iio_mem_nhds (show a < m by dsimp only [m]; linarith))
+        fun s hs ↦ by simp only [δ, mem_Iio.1 hs, ↓reduceIte]
     · rcases eq_or_lt_of_le ht.2 with rfl | htb
-      · have hneg : ContMDiffAt 𝓘(ℝ, ℝ) I k (fun s ↦ δ₂ (-s)) t :=
-          hδ₂b.comp t contDiff_neg.contMDiff.contMDiffAt
-        refine hneg.congr_of_eventuallyEq <|
-          eventuallyEq_of_mem (Ioi_mem_nhds hmb) fun s hs ↦ ?_
-        simp only [δ, not_lt.2 (mem_Ioi.1 hs).le, ↓reduceIte]
+      · exact (hδ₂b.comp t contDiff_neg.contMDiff.contMDiffAt).congr_of_eventuallyEq <|
+          eventuallyEq_of_mem (Ioi_mem_nhds (show m < t by dsimp only [m]; linarith))
+            fun s hs ↦ by
+              simp only [δ, not_lt.2 (mem_Ioi.1 hs).le, ↓reduceIte, Function.comp_apply]
       · exact (hγ.contMDiffAt (Icc_mem_nhds hat htb)).congr_of_eventuallyEq
           (eventuallyEq_of_mem (Icc_mem_nhds hat htb) hEq)
-  · exact ⟨fun _ ↦ γ a, fun _ _ ↦ contMDiffAt_const, fun t ht ↦ by
-      have : t = a := le_antisymm ht.2 ht.1
-      rw [this]⟩
+  · exact ⟨fun _ ↦ γ a, fun _ _ ↦ contMDiffAt_const, fun t ht ↦ by rw [le_antisymm ht.2 ht.1]⟩
   · exact ⟨γ, fun _ ht ↦ absurd (ht.1.trans ht.2) (not_le.2 hba), fun _ _ ↦ rfl⟩
 
 /-- Unordered-interval version of `ContMDiffOn.exists_contMDiffAt_Icc`. -/

@@ -117,8 +117,6 @@ theorem hasDerivAt_deriv_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
   have hGu (i : Fin (n + 1)) (t : ℝ) (ht : t ∈ uIcc (τ i.castSucc) (τ i.succ)) :
       ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ G i z.1 z.2) (0, t) :=
     hG i t (by simpa only [uIcc_of_le (hτ (Fin.castSucc_le_succ i))] using ht)
-  have hd := HasDerivAt.fun_sum (u := Finset.univ) fun i _ ↦
-    hasDerivAt_deriv_energy (I := I) (F := G i) (a := τ i.castSucc) (b := τ i.succ) (hGu i)
   -- Near `s = 0`, `E(F s)` is the sum of `E(G i s)` and each `s ↦ E(G i s)` is differentiable.
   let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
@@ -132,7 +130,9 @@ theorem hasDerivAt_deriv_energy_piecewise {n : ℕ} (τ : Fin (n + 2) → ℝ)
       fun s ↦ ∑ i : Fin (n + 1), deriv (fun q ↦ energy I (G i q) (τ i.castSucc) (τ i.succ)) s := by
     filter_upwards [heq.deriv, hdiff] with s hs hds
     rw [hs, (HasDerivAt.fun_sum fun i _ ↦ (hds i).hasDerivAt).deriv]
-  refine (hd.congr_of_eventuallyEq hdeq).congr_deriv ?_
+  refine ((HasDerivAt.fun_sum (u := Finset.univ) fun i _ ↦
+    hasDerivAt_deriv_energy (I := I) (F := G i) (a := τ i.castSucc) (b := τ i.succ)
+      (hGu i)).congr_of_eventuallyEq hdeq).congr_deriv ?_
   have hboundary := Fin.sum_univ_sub_eq_boundary_add_sum_jump (fun i j ↦ A i (τ j))
   dsimp only [A] at hboundary ⊢
   simp only [add_sub_assoc, Finset.sum_sub_distrib, Finset.sum_add_distrib, hboundary]
@@ -160,16 +160,13 @@ theorem hasDerivAt_deriv_energy_piecewise_of_fixed_endpoints {n : ℕ} (τ : Fin
           inner ℝ (acceleration (leviCivitaConnection I M) (fun s ↦ G i s t) 0)
             (acceleration (leviCivitaConnection I M) (G i 0) t)) 0 := by
   intro A
-  have ha0 : acceleration (leviCivitaConnection I M) (fun s ↦ G 0 s (τ 0)) 0 = 0 :=
-    (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M)
-      (eventually_eq_left_of_piecewise hτ hFG ha)).trans (acceleration_const _ _ 0)
-  have hb0 : acceleration (leviCivitaConnection I M)
-      (fun s ↦ G (Fin.last n) s (τ (Fin.last (n + 1)))) 0 = 0 :=
-    (Filter.EventuallyEq.acceleration_eq (leviCivitaConnection I M)
-      (eventually_eq_right_of_piecewise hτ hFG hb)).trans (acceleration_const _ _ 0)
   refine (hasDerivAt_deriv_energy_piecewise τ hτ hG hFG).congr_deriv ?_
   dsimp only [A]
-  rw [ha0, hb0, inner_zero_left, inner_zero_left]
+  rw [(Filter.EventuallyEq.acceleration_eq _ (eventually_eq_left_of_piecewise hτ hFG ha)).trans
+      (acceleration_const _ _ 0),
+    (Filter.EventuallyEq.acceleration_eq _ (eventually_eq_right_of_piecewise hτ hFG hb)).trans
+      (acceleration_const _ _ 0),
+    inner_zero_left, inner_zero_left]
   ring
 
 /-- **Second variation of energy of a broken geodesic.** When each smooth extension's central curve
@@ -243,7 +240,6 @@ theorem hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn {
     HasDerivAt (deriv fun s ↦ energy I (exponentialVariation I γ V s) a b)
       (indexForm I γ V V a b) 0 := by
   obtain ⟨n, τ, hτa, hτb, hτ, hpieces⟩ := hV.exists_partition
-  have hτ_mono : Monotone τ := (Fin.strictMono_iff_lt_succ.mpr hτ).monotone
   have hpi (i : Fin (n + 1)) : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 3
       (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc (τ i.castSucc) (τ i.succ)) := by
     rw [uIcc_of_le (hτ i).le]
@@ -251,19 +247,15 @@ theorem hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn {
   -- Extend each closed piece to a two-sided `C³` lift with matching exponential variation.
   choose γi Vi hVi hEqi hExpi using
     fun i : Fin (n + 1) ↦ exists_contMDiffAt_exponentialVariation_eqOn γ V (hpi i)
-  let G : Fin (n + 1) → ℝ → ℝ → M := fun i ↦ exponentialVariation I (γi i) (Vi i)
-  have hG : ∀ i t, t ∈ Icc (τ i.castSucc) (τ i.succ) →
-      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ G i z.1 z.2) (0, t) :=
-    fun i t ht ↦ contMDiffAt_exponentialVariation_zero (γi i) (Vi i)
-      (hVi i t (by rwa [uIcc_of_le (hτ i).le]))
-  have hFG : ∀ᶠ s in 𝓝 0, ∀ i : Fin (n + 1),
-      EqOn (exponentialVariation I γ V s) (G i s) (Icc (τ i.castSucc) (τ i.succ)) :=
-    Eventually.of_forall fun s i t ht ↦ (hExpi i s (by rwa [uIcc_of_le (hτ i).le])).symm
-  have hd := hasDerivAt_deriv_energy_piecewise τ hτ_mono hG hFG
+  have hd := hasDerivAt_deriv_energy_piecewise τ (Fin.strictMono_iff_lt_succ.mpr hτ).monotone
+    (F := exponentialVariation I γ V) (G := fun i ↦ exponentialVariation I (γi i) (Vi i))
+    (fun i t ht ↦ contMDiffAt_exponentialVariation_zero (γi i) (Vi i)
+      (hVi i t (by rwa [uIcc_of_le (hτ i).le])))
+    (Eventually.of_forall fun s i t ht ↦ (hExpi i s (by rwa [uIcc_of_le (hτ i).le])).symm)
   rw [hτa, hτb] at hd
   refine hd.congr_deriv ?_
   -- Every transverse curve of `G i` is a geodesic, so all transverse-acceleration terms vanish.
-  simp only [G, acceleration_exponentialVariation_zero, inner_zero_left, sub_self,
+  simp only [acceleration_exponentialVariation_zero, inner_zero_left, sub_self,
     Finset.sum_const_zero, intervalIntegral.integral_zero, add_zero, sub_zero]
   -- Match each piece index form with `indexForm I γ V V` and reassemble over `[a, b]`.
   have hpiece (i : Fin (n + 1)) :
@@ -277,11 +269,9 @@ theorem hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn {
       (fun t ht ↦ ?_) (fun t ht ↦ ?_) <;>
     exact (heq_of_eq (variationField_exponentialVariation (γi i) (Vi i) t)).trans
       (Bundle.TotalSpace.ext_iff.mp (hEqi i t (uIoo_subset_uIcc_self ht))).2
-  have hint (i : Fin (n + 1)) :
-      IntervalIntegrable (indexFormIntegrand I γ V V) volume (τ i.castSucc) (τ i.succ) :=
-    intervalIntegrable_indexFormIntegrand
-      ((hpi i).of_le (by norm_num)) ((hpi i).of_le (by norm_num))
-  rw [Finset.sum_congr rfl fun i _ ↦ hpiece i, sum_indexForm_adjacent_intervals τ hint, hτa, hτb]
+  rw [Finset.sum_congr rfl fun i _ ↦ hpiece i, sum_indexForm_adjacent_intervals τ fun i ↦
+    intervalIntegrable_indexFormIntegrand ((hpi i).of_le (by norm_num))
+      ((hpi i).of_le (by norm_num)), hτa, hτb]
 
 /-- **Second variation of energy along a bundled piecewise smooth section.** Specialization of
 `hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn` to a bundled section
@@ -304,7 +294,6 @@ theorem indexForm_nonneg_of_isLocalMin_energy_exponentialVariation_of_isPiecewis
     (hmin : IsLocalMin (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0) :
     0 ≤ indexForm I γ V V a b := by
   obtain ⟨n, τ, hτa, hτb, hτ, hpieces⟩ := hV.exists_partition
-  have hτ_mono : Monotone τ := (Fin.strictMono_iff_lt_succ.mpr hτ).monotone
   have hpi (i : Fin (n + 1)) : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2
       (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc (τ i.castSucc) (τ i.succ)) := by
     rw [uIcc_of_le (hτ i).le]
@@ -313,23 +302,22 @@ theorem indexForm_nonneg_of_isLocalMin_energy_exponentialVariation_of_isPiecewis
     fun i : Fin (n + 1) ↦ exists_contMDiffAt_exponentialVariation_eqOn γ V (hpi i)
   let _ := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+  have hsum := eventually_energy_eq_sum_of_piecewise τ (Fin.strictMono_iff_lt_succ.mpr hτ).monotone
+    (F := exponentialVariation I γ V) (G := fun i ↦ exponentialVariation I (γi i) (Vi i))
+    (fun i t ht ↦ (contMDiffAt_exponentialVariation_zero (γi i) (Vi i)
+      (hVi i t (by rwa [uIcc_of_le (hτ i).le]))).of_le (by norm_num))
+    (Eventually.of_forall fun s i t ht ↦ (hExpi i s (by rwa [uIcc_of_le (hτ i).le])).symm)
+  rw [hτa, hτb] at hsum
   have heq : (fun s ↦ energy I (exponentialVariation I γ V s) a b) =ᶠ[𝓝 0]
       fun s ↦ ∑ i : Fin (n + 1),
         energy I (exponentialVariation I γ V s) (τ i.castSucc) (τ i.succ) := by
-    have hsum := eventually_energy_eq_sum_of_piecewise τ hτ_mono
-      (F := exponentialVariation I γ V) (G := fun i ↦ exponentialVariation I (γi i) (Vi i))
-      (fun i t ht ↦ (contMDiffAt_exponentialVariation_zero (γi i) (Vi i)
-        (hVi i t (by rwa [uIcc_of_le (hτ i).le]))).of_le (by norm_num))
-      (Eventually.of_forall fun s i t ht ↦ (hExpi i s (by rwa [uIcc_of_le (hτ i).le])).symm)
-    rw [hτa, hτb] at hsum
     filter_upwards [hsum] with s hs
     rw [hs]
     exact Finset.sum_congr rfl fun i _ ↦ energy_congr ((hExpi i s).mono uIoo_subset_uIcc_self)
-  have hcont : ContinuousAt (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 :=
-    ((HasDerivAt.fun_sum (u := Finset.univ) fun i _ ↦
-      hasDerivAt_energy_exponentialVariation (I := I) (γ := γ) (V := V) (hpi i))
-        |>.congr_of_eventuallyEq heq).continuousAt
-  have hnn := TauCeti.deriv_deriv_nonneg_of_isLocalMin hcont hmin
+  have hnn := TauCeti.deriv_deriv_nonneg_of_isLocalMin
+    (((HasDerivAt.fun_sum (u := Finset.univ) fun i _ ↦
+      hasDerivAt_energy_exponentialVariation (I := I) (γ := γ) (V := V)
+        (hpi i)).congr_of_eventuallyEq heq).continuousAt) hmin
   rwa [(hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn hV).deriv] at hnn
 
 /-- **Nonnegativity of the index form on a bundled piecewise smooth section at a local minimum of
@@ -359,16 +347,15 @@ theorem eventually_energy_exponentialVariation_lt_of_indexForm_neg_of_isPiecewis
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
-  have hγd : ∀ t ∈ Ioo a b, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t :=
-    fun t ht ↦ (hγ.mdifferentiableOn t ht).mdifferentiableAt (isOpen_Ioo.mem_nhds ht)
-  have hd₁ := hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn hγd
+  have hd₁ := hasDerivAt_energy_exponentialVariation_of_isPiecewiseContMDiffOn
+    (fun t ht ↦ (hγ.mdifferentiableOn t ht).mdifferentiableAt (isOpen_Ioo.mem_nhds ht))
     (hV.of_le (by norm_num))
   have hd₁_zero : deriv (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 = 0 := by
     rw [hd₁.deriv, hγ.integral_inner_acceleration_eq_zero (by rw [uIoo_of_le hV.lt.le]),
       hbdry, sub_self, sub_zero]
-  have hd₂ := hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn hV
-  simpa only [exponentialVariation_zero] using
-    TauCeti.eventually_gt_of_deriv_deriv_neg (hd₂.deriv.symm ▸ hneg) hd₁_zero hd₁.continuousAt
+  simpa only [exponentialVariation_zero] using TauCeti.eventually_gt_of_deriv_deriv_neg
+    ((hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn hV).deriv.symm ▸ hneg)
+    hd₁_zero hd₁.continuousAt
 
 /-- **Broken-field energy shortening along a geodesic for a bundled piecewise smooth section.**
 Specialization of
