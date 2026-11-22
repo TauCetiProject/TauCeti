@@ -43,15 +43,22 @@ private theorem exists_scaled_gauge_sub_pow_le [IsPerfectoidTateRing p R]
   obtain ⟨y, hy⟩ := IsPerfectoidTateRing.exists_natCast_dvd_sub_pow
     (p := p) (⟨_, hx⟩ : powerBoundedSubring R)
   have hradius : (2 : ℝ) ^ (-((p : ℝ) / p ^ 0)) = (1 / 2 : ℝ) ^ p := by
-    simp only [pow_zero, div_one, Real.rpow_neg_eq_inv_rpow, Real.rpow_natCast, one_div]
+    calc
+      (2 : ℝ) ^ (-((p : ℝ) / p ^ 0)) = ((2 : ℝ) ^ p)⁻¹ := by
+        rw [pow_zero, div_one, Real.rpow_neg zero_le_two, Real.rpow_natCast]
+      _ = (1 / 2 : ℝ) ^ p := by rw [← inv_pow, one_div]
   have he : ϖ.gauge ((ϖ.zpow (-m) n : R) * x - (y : R) ^ p) ≤ (1 / 2 : ℝ) ^ p := by
     rw [← hradius]
     exact (ϖ.gauge_le_root_radius_iff _ 0).mpr ((ϖ.rootPB_pow_dvd 0).trans hy)
   refine ⟨(ϖ.zpow m (n + 1) : R) * (y : R), ?_⟩
   -- Undo the scaling using the next root, so its `p`-th power supplies the original scale.
   have hpow : (ϖ.zpow m (n + 1) : R) ^ p = (ϖ.zpow m n : R) := by
-    simpa only [zpow_def, _root_.zpow_mul, zpow_natCast, Units.val_pow_eq_pow_val] using
-      congrArg Units.val (ϖ.zpow_mul_p m n)
+    have hscale : ϖ.zpow m (n + 1) ^ p = ϖ.zpow m n := by
+      calc
+        ϖ.zpow m (n + 1) ^ p = ϖ.zpow (m * p) (n + 1) := by
+          rw [zpow_def, zpow_def, _root_.zpow_mul, zpow_natCast]
+        _ = ϖ.zpow m n := ϖ.zpow_mul_p m n
+    exact (Units.val_pow_eq_pow_val _ _).symm.trans (congrArg Units.val hscale)
   have heq : x - ((ϖ.zpow m (n + 1) : R) * (y : R)) ^ p =
       (ϖ.zpow m n : R) * ((ϖ.zpow (-m) n : R) * x - (y : R) ^ p) := by
     rw [mul_pow, hpow, mul_sub, zpow_neg, ← mul_assoc]
