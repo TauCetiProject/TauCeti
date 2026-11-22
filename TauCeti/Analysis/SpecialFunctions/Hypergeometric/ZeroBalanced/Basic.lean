@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
+public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Real.Pi.Bounds
@@ -15,6 +16,7 @@ import TauCeti.Analysis.Complex.NegNatTopology
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.DigammaBounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -137,8 +139,8 @@ private theorem norm_zeroBalancedCoeff_le {a : ℂ} {R : ℝ} (ha : ‖a‖ ≤ 
 theorem summable_zeroBalancedSeries_pochhammer (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     Summable fun k : ℕ ↦
       (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) * x ^ k := by
-  refine (summable_multichoose_sq_mul_pow (max ‖a‖ 1) (r := ‖x‖)
-    (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).of_norm_bounded fun k ↦ ?_
+  refine (hasSum_multichoose_sq_mul_pow (max ‖a‖ 1) (x := ‖x‖)
+    (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).summable.of_norm_bounded fun k ↦ ?_
   rw [norm_mul, norm_pow]
   exact mul_le_mul_of_nonneg_right
     (norm_zeroBalancedCoeff_le (le_max_left _ _) k) (pow_nonneg (norm_nonneg x) k)
@@ -150,8 +152,8 @@ theorem summable_zeroBalancedSeries_digamma (a : ℂ) {x : ℂ} (hx : ‖x‖ < 
       (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) *
         (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k := by
   let R := max ‖a‖ 1
-  refine ((summable_multichoose_sq_mul_pow R (r := ‖x‖)
-      (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).mul_left
+  refine ((hasSum_multichoose_sq_mul_pow R (x := ‖x‖)
+      (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).summable.mul_left
     (2 * (1 + R) * (Real.pi ^ 2 / 6))).of_norm_bounded_eventually_nat ?_
   filter_upwards [eventually_ge_atTop (⌈R⌉₊ + 1)] with k hk
   have hdig := Complex.norm_digamma_add_one_sub_digamma_add_le (z := (k : ℂ)) (b := a)
@@ -212,17 +214,21 @@ private theorem tsum_zeroBalancedTerm_eq_split (a : ℂ) {x : ℂ} (hx : ‖x‖
     (summable_zeroBalancedSeries_digamma a hx).hasSum).congr_fun fun k ↦ by
       dsimp [zeroBalancedTerm, zeroBalancedCoeff]; ring).tsum_eq
 
-/-- On the open unit disc, `zeroBalancedSeries a x` separates into `-log x` times the squared
-Pochhammer power series plus the holomorphic digamma-weighted power series. -/
+/-- On the open unit disc, `zeroBalancedSeries a x` separates into `-log x * ₂F₁(a, a; 1; x)`
+plus the holomorphic digamma-weighted power series. -/
 theorem zeroBalancedSeries_eq_log_mul_add (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     zeroBalancedSeries a x =
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
-        (-Complex.log x *
-          (∑' k : ℕ, (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) *
-            x ^ k) +
+        (-Complex.log x * ordinaryHypergeometric a a 1 x +
         ∑' k : ℕ, (Polynomial.eval a (ascPochhammer ℂ k)) ^ 2 / ((k.factorial : ℂ) ^ 2) *
           (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k) := by
-  rw [zeroBalancedSeries_eq_tsum_term, tsum_zeroBalancedTerm_eq_split a hx]; rfl
+  rw [zeroBalancedSeries_eq_tsum_term, tsum_zeroBalancedTerm_eq_split a hx,
+    ← (hasSum_ordinaryHypergeometric (𝔸 := ℂ) a a 1 hx).tsum_eq]
+  congr 1; congr 1; congr 1
+  refine tsum_congr fun k ↦ ?_
+  simp only [zeroBalancedCoeff, ordinaryHypergeometricCoefficient_eq_div, ascPochhammer_eval_one,
+    smul_eq_mul]
+  ring
 
 /-- On the open unit disc, `zeroBalancedSeries a x` splits into its `k = 0` logarithmic term
 `-log x - 2γ - 2ψ(a)` and `zeroBalancedTail a x`. -/
@@ -289,8 +295,8 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
     let C := ‖Complex.log x‖ + 2 * (1 + R) * (Real.pi ^ 2 / 6)
     apply HasSumUniformlyOn.of_norm_le_summable_eventually
       (((summable_nat_add_iff 1).mpr
-        (summable_multichoose_sq_mul_pow R (r := ‖x‖)
-          (by simpa [abs_of_nonneg (norm_nonneg x)] using hx))).mul_left C)
+        (hasSum_multichoose_sq_mul_pow R (x := ‖x‖)
+          (by simpa [abs_of_nonneg (norm_nonneg x)] using hx)).summable).mul_left C)
     rw [Nat.cofinite_eq_atTop]
     filter_upwards [eventually_ge_atTop (⌈R⌉₊ + 1)] with k hk b hbK
     have hbR : ‖b‖ ≤ R := (hB b hbK).trans (le_max_left _ _)
@@ -439,8 +445,8 @@ theorem exists_norm_mul_zeroBalancedTail_and_deriv_le :
 private theorem analyticOnNhd_zeroBalancedCoeffSeries (a : ℂ) :
     AnalyticOnNhd ℂ (fun z : ℂ ↦ ∑' k : ℕ, zeroBalancedCoeff a k * z ^ k) (Metric.ball 0 1) :=
   FormalMultilinearSeries.analyticOnNhd_tsum_mul_pow_of_eventually_le zero_lt_one fun r hr ↦
-    ⟨_, summable_multichoose_sq_mul_pow (max ‖a‖ 1) (r := (r : ℝ))
-      (by simpa [abs_of_nonneg r.coe_nonneg] using hr),
+    ⟨_, (hasSum_multichoose_sq_mul_pow (max ‖a‖ 1) (x := (r : ℝ))
+      (by simpa [abs_of_nonneg r.coe_nonneg] using hr)).summable,
       Eventually.of_forall fun k ↦ mul_le_mul_of_nonneg_right
         (norm_zeroBalancedCoeff_le (le_max_left _ _) k) (pow_nonneg r.coe_nonneg k)⟩
 
@@ -449,8 +455,8 @@ private theorem analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) :
       (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * z ^ k) (Metric.ball 0 1) := by
   let R := max ‖a‖ 1
   refine FormalMultilinearSeries.analyticOnNhd_tsum_mul_pow_of_eventually_le zero_lt_one fun r hr ↦
-    ⟨_, (summable_multichoose_sq_mul_pow R (r := (r : ℝ))
-        (by simpa [abs_of_nonneg r.coe_nonneg] using hr)).mul_left
+    ⟨_, (hasSum_multichoose_sq_mul_pow R (x := (r : ℝ))
+        (by simpa [abs_of_nonneg r.coe_nonneg] using hr)).summable.mul_left
       (2 * (1 + R) * (Real.pi ^ 2 / 6)), ?_⟩
   filter_upwards [eventually_ge_atTop (⌈R⌉₊ + 1)] with k hk
   have hdig := Complex.norm_digamma_add_one_sub_digamma_add_le (z := (k : ℂ)) (b := a)

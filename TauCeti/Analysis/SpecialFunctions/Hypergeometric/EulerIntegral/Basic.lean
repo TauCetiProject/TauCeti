@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
-import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 

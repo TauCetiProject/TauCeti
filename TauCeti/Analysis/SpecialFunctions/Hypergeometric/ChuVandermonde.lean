@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 public import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!

@@ -28,10 +28,6 @@ complex vertical line by the evaluated ascending Pochhammer polynomial.
   `‖(ascPochhammer R n).eval x‖ ≤ (ascPochhammer ℝ n).eval ‖x‖`.
 * `TauCeti.norm_ascPochhammer_eval_le_ascFactorial`: if `‖x‖ ≤ M` for `M : ℕ`, then
   `‖(ascPochhammer R n).eval x‖ ≤ M.ascFactorial n`.
-* `TauCeti.norm_ascPochhammer_eval_div_factorial_le`: if `‖x‖ ≤ r` in `ℝ` or `ℂ`, then
-  `‖(ascPochhammer 𝕜 n).eval x / (n ! : 𝕜)‖ ≤ (ascPochhammer ℝ n).eval r / n !`.
-* `TauCeti.norm_ascPochhammer_eval_div_factorial_le_one`: if `‖x‖ ≤ 1` in `ℝ` or `ℂ`, then
-  `‖(ascPochhammer 𝕜 n).eval x / (n ! : 𝕜)‖ ≤ 1`.
 * `TauCeti.norm_endpoints_le_norm_ascPochhammer_eval`: the first and last factor norms are
   bounded by the polynomial norm when every intermediate real factor has absolute value at
   least one.
@@ -40,8 +36,6 @@ complex vertical line by the evaluated ascending Pochhammer polynomial.
 public section
 
 namespace TauCeti
-
-open scoped Nat
 
 /-- If `‖x‖ ≤ r` in a seminormed ring with `‖1‖ = 1`, then the evaluated ascending Pochhammer
 polynomial `(x)ₙ = x (x + 1) ⋯ (x + n - 1)` has norm at most `(r)ₙ`. -/
@@ -72,23 +66,6 @@ theorem norm_ascPochhammer_eval_le_ascFactorial {R : Type*} [SeminormedRing R] [
     ‖(ascPochhammer R n).eval x‖ ≤ M.ascFactorial n :=
   (norm_ascPochhammer_eval_le_of_norm_le n hx).trans_eq
     (ascPochhammer_nat_eq_natCast_ascFactorial ℝ M n)
-
-/-- If `‖x‖ ≤ r` in `ℝ` or `ℂ`, then the normalized ascending Pochhammer polynomial
-`(x)ₙ / n!` has norm at most `(r)ₙ / n!`. -/
-theorem norm_ascPochhammer_eval_div_factorial_le {𝕜 : Type*} [RCLike 𝕜]
-    (n : ℕ) {x : 𝕜} {r : ℝ} (hx : ‖x‖ ≤ r) :
-    ‖(ascPochhammer 𝕜 n).eval x / (n ! : 𝕜)‖ ≤ (ascPochhammer ℝ n).eval r / n ! := by
-  rw [norm_div, RCLike.norm_natCast]
-  exact div_le_div_of_nonneg_right (norm_ascPochhammer_eval_le_of_norm_le n hx) (by positivity)
-
-/-- If `‖x‖ ≤ 1` in `ℝ` or `ℂ`, then the normalized ascending Pochhammer polynomial
-`(x)ₙ / n!` has norm at most `1`. -/
-theorem norm_ascPochhammer_eval_div_factorial_le_one {𝕜 : Type*} [RCLike 𝕜]
-    (n : ℕ) {x : 𝕜} (hx : ‖x‖ ≤ 1) :
-    ‖(ascPochhammer 𝕜 n).eval x / (n ! : 𝕜)‖ ≤ 1 := by
-  refine (norm_ascPochhammer_eval_div_factorial_le n hx).trans_eq ?_
-  rw [ascPochhammer_eval_one]
-  exact div_self (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n))
 
 /-- If the intermediate real factors have absolute value at least one, the norm of the
 ascending Pochhammer polynomial bounds the product of its first and last factor norms on a

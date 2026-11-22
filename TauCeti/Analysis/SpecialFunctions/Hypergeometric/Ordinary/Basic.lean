@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Analytic.OfScalars
 public import TauCeti.RingTheory.Binomial
 import Mathlib.Analysis.Analytic.ChangeOrigin
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Analytic.Binomial
 
 /-!
@@ -53,9 +55,11 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
   are products of generalized multichoose numbers, so `∑ (a)ₙ (b)ₙ / (n!)² xⁿ = ₂F₁(a, b; 1; x)`.
   For `a = b` over `𝕂` this is `TauCeti.hasSum_multichoose_sq_mul_pow`.
 * `TauCeti.ordinaryHypergeometric_eq_one_add_sq_mul_add_tsum`,
-  `TauCeti.one_add_sq_mul_le_ordinaryHypergeometric`, `TauCeti.exists_ordinaryHypergeometric_le`:
-  `₂F₁(a, a; 1; x) = 1 + a² x + O(x²)`, with the explicit tail on the open unit disc and two-sided
-  bounds for real `0 ≤ x ≤ r < 1`.
+  `TauCeti.one_add_sq_mul_le_ordinaryHypergeometric`,
+  `TauCeti.one_le_ordinaryHypergeometric_self_one`,
+  `TauCeti.norm_ordinaryHypergeometric_one_le`, `TauCeti.exists_ordinaryHypergeometric_le`:
+  `₂F₁(a, a; 1; x) = 1 + a² x + O(x²)` and uniform bounds on `₂F₁(a, b; 1; x)` inside the unit
+  disc.
 * `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`: a terminating `₂F₁(−n, b; c; z)` is the sum of
   its first `n + 1` terms.
 * `TauCeti.ordinaryHypergeometricCoefficient_eq_div`: the coefficient as `(a)ₙ (b)ₙ / ((c)ₙ n!)`.
@@ -64,8 +68,10 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
   particular `TauCeti.deriv_ordinaryHypergeometric_zero` gives `(₂F₁ a b c)' 0 = a b / c`.
 * `TauCeti.ordinaryHypergeometric_gaussEquation`: Gauss's hypergeometric equation inside the disc
   of convergence, with the special cases
-  `TauCeti.ordinaryHypergeometric_gaussEquation_of_norm_lt_one` (the open unit disc) and
-  `TauCeti.ordinaryHypergeometric_gaussEquation_of_neg_nat` (terminating series, everywhere).
+  `TauCeti.ordinaryHypergeometric_gaussEquation_of_norm_lt_one` (the open unit disc),
+  `TauCeti.ordinaryHypergeometric_gaussEquation_of_neg_nat` (terminating series, everywhere), and
+  `TauCeti.hasDerivAt_mul_one_sub_rpow_deriv_ordinaryHypergeometric` (Sturm–Liouville form for
+  `c = 1` on `(-1, 1)`).
 
 ## References
 
@@ -241,6 +247,27 @@ theorem one_add_sq_mul_le_ordinaryHypergeometric (a : ℝ) {x : ℝ} (hx₀ : 0 
     (by rw [Real.norm_eq_abs, abs_of_nonneg hx₀]; exact hx₁)]
   exact le_add_of_nonneg_right (tsum_nonneg fun n ↦ by positivity)
 
+/-- For `0 ≤ x < 1`, `1 ≤ ₂F₁(a, a; 1; x)`. -/
+theorem one_le_ordinaryHypergeometric_self_one (a : ℝ) {x : ℝ} (hx₀ : 0 ≤ x) (hx₁ : x < 1) :
+    1 ≤ ₂F₁ a a 1 x :=
+  (le_add_of_nonneg_right (mul_nonneg (sq_nonneg a) hx₀)).trans
+    (one_add_sq_mul_le_ordinaryHypergeometric a hx₀ hx₁)
+
+/-- Over `ℝ` or `ℂ`, if `‖a‖ ≤ 1`, `‖b‖ ≤ 1`, and `‖x‖ < 1`, then
+`‖₂F₁(a, b; 1; x)‖ ≤ (1 - ‖x‖)⁻¹`. -/
+theorem norm_ordinaryHypergeometric_one_le {𝕜 : Type*} [RCLike 𝕜] {a b x : 𝕜}
+    (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (hx : ‖x‖ < 1) :
+    ‖₂F₁ a b 1 x‖ ≤ (1 - ‖x‖)⁻¹ := by
+  have hs := hasSum_ordinaryHypergeometric a b 1 hx
+  have hgeom : HasSum (fun n : ℕ ↦ ‖x‖ ^ n) (1 - ‖x‖)⁻¹ :=
+    hasSum_geometric_of_lt_one (norm_nonneg x) hx
+  rw [← hs.tsum_eq, ← hgeom.tsum_eq]
+  refine (norm_tsum_le_tsum_norm hs.summable.norm).trans ?_
+  refine hs.summable.norm.tsum_le_tsum (fun n ↦ ?_) hgeom.summable
+  rw [smul_eq_mul, norm_mul, norm_pow]
+  exact mul_le_of_le_one_left (pow_nonneg (norm_nonneg x) n)
+    (norm_ordinaryHypergeometricCoefficient_one_le_one ha hb n)
+
 /-- On `[0, r]` with `0 < r < 1`, `₂F₁(a, a; 1; x)` is `1 + a² x + O(x²)`: it is at most
 `1 + a² x + C x²` for some constant `C ≥ 0`. -/
 theorem exists_ordinaryHypergeometric_le (a : ℝ) {r : ℝ} (hr₀ : 0 < r) (hr₁ : r < 1) :
@@ -387,5 +414,28 @@ theorem ordinaryHypergeometric_gaussEquation_of_neg_nat (a b c : 𝕂) {k : ℕ}
     exact eNorm_lt_top
 
 end Scalar
+
+/-- **Sturm–Liouville form of Gauss's hypergeometric equation for `c = 1`**: on `(-1, 1)`,
+`y = ₂F₁(a, b; 1; ·)` satisfies
+`(x (1 - x) ^ (a + b) y')' = a b (1 - x) ^ (a + b - 1) y`. -/
+theorem hasDerivAt_mul_one_sub_rpow_deriv_ordinaryHypergeometric (a b : ℝ) {x : ℝ}
+    (hx : |x| < 1) :
+    HasDerivAt (fun y ↦ y * (1 - y) ^ (a + b) * deriv (₂F₁ a b 1) y)
+      (a * b * (1 - x) ^ (a + b - 1) * ₂F₁ a b 1 x) x := by
+  have hx_e : x ∈ Metric.eball (0 : ℝ) 1 := by
+    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one, Real.norm_eq_abs]
+  have hf := hasFPowerSeriesOnBall_ordinaryHypergeometric ℝ a b 1
+  have hd2 := (hf.deriv_ofScalars.analyticAt_of_mem hx_e).differentiableAt.hasDerivAt
+  have h1x : 0 < 1 - x := sub_pos.mpr (abs_lt.mp hx).2
+  have hd1 := (hasDerivAt_id x).mul ((Real.hasDerivAt_rpow_const (p := a + b)
+    (Or.inl h1x.ne')).comp x ((hasDerivAt_id x).const_sub 1))
+  refine (hd1.mul hd2).congr_deriv ?_
+  have hode := ordinaryHypergeometric_gaussEquation_of_norm_lt_one (𝕂 := ℝ) a b 1
+    (fun k hk ↦ by linarith [show (0 : ℝ) ≤ k by positivity])
+    (Real.norm_eq_abs x ▸ hx)
+  have hpow : (1 - x) ^ (a + b) = (1 - x) ^ (a + b - 1) * (1 - x) := by
+    simpa only [sub_add_cancel] using Real.rpow_add_one h1x.ne' (a + b - 1)
+  simp only [Pi.mul_apply, Function.comp_apply, id_eq, hpow]
+  linear_combination (1 - x) ^ (a + b - 1) * hode
 
 end TauCeti

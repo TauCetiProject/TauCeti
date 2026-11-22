@@ -36,8 +36,6 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
 * `TauCeti.norm_multichoose_le_of_norm_le` — norm bound
   `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
-* `TauCeti.summable_multichoose_sq_mul_pow` — unconditional summability of
-  `∑ k, (Ring.multichoose R k) ^ 2 * r ^ k` for `|r| < 1`.
 * `TauCeti.exists_abs_one_add_rpow_sub_sum_le` — the remainder of the real binomial series of
   `(1 + u) ^ r` after `K` terms is `O(|u| ^ K)` as `u → 0`.
 * `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
@@ -127,38 +125,6 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
   refine ⟨fun hs => not_le.1 fun hq => hnot (hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le)
     fun n => le_mul_of_one_le_right (hcoeff_pos n).le (one_le_pow₀ hq)), fun hq => ?_⟩
   exact (hasSum_multichoose_mul_geometric_of_abs_lt_one (by simpa using hq)).summable
-
-/-- The squared generalized multichoose power series converges unconditionally inside the open unit
-disc. -/
-theorem summable_multichoose_sq_mul_pow (R : ℝ) {r : ℝ} (hr : |r| < 1) :
-    Summable fun k : ℕ ↦ (Ring.multichoose R k) ^ 2 * r ^ k := by
-  set R' : ℝ := max |R| 1
-  have hR' : 0 < R' := lt_of_lt_of_le zero_lt_one (le_max_right |R| 1)
-  have hs : Summable fun k : ℕ ↦ Ring.multichoose R' k * (Real.sqrt |r|) ^ k :=
-    (summable_multichoose_mul_geometric_iff_norm_lt_one (𝕂 := ℝ) hR').mpr <| by
-      rw [Real.norm_of_nonneg (Real.sqrt_nonneg |r|)]
-      nlinarith [Real.sqrt_nonneg |r|, Real.sq_sqrt (abs_nonneg r)]
-  have hsq_sum : Summable fun k : ℕ ↦ (Ring.multichoose R' k) ^ 2 * |r| ^ k := by
-    refine hs.of_norm_bounded_eventually_nat ?_
-    filter_upwards [hs.tendsto_atTop_zero.eventually (Metric.closedBall_mem_nhds 0 zero_lt_one)]
-      with k hk
-    have hmc0 : 0 ≤ Ring.multichoose R' k := (norm_nonneg _).trans
-      (norm_multichoose_le_of_norm_le (𝕂 := ℝ) (w := R') (r := R')
-        (Real.norm_of_nonneg hR'.le).le k)
-    have hu0 : 0 ≤ Ring.multichoose R' k * (Real.sqrt |r|) ^ k :=
-      mul_nonneg hmc0 (pow_nonneg (Real.sqrt_nonneg |r|) k)
-    have hsq : (Ring.multichoose R' k * (Real.sqrt |r|) ^ k) ^ 2 =
-        (Ring.multichoose R' k) ^ 2 * |r| ^ k := by
-      rw [mul_pow, ← pow_mul, mul_comm k 2, pow_mul, Real.sq_sqrt (abs_nonneg r)]
-    rw [Real.norm_of_nonneg (by positivity), ← hsq, sq]
-    exact mul_le_of_le_one_right hu0
-      (by simpa [Real.norm_of_nonneg hu0] using mem_closedBall_zero_iff.mp hk)
-  refine hsq_sum.of_norm_bounded fun k ↦ ?_
-  rw [Real.norm_eq_abs, abs_mul, abs_pow, abs_pow]
-  have hle : |Ring.multichoose R k| ≤ Ring.multichoose R' k :=
-    norm_multichoose_le_of_norm_le (𝕂 := ℝ) (w := R) (r := R') (le_max_left |R| 1) k
-  exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (abs_nonneg _) hle 2)
-    (pow_nonneg (abs_nonneg r) k)
 
 /-- The remainder of the binomial series of `(1 + u) ^ r` after `K` terms is `O(|u| ^ K)` for
 small `u`. -/
