@@ -24,8 +24,6 @@ covering family along `Bundle.Trivialization.toMapFiber` equips `TauCeti.MapFibe
 
 ## Main definitions and results
 
-* `Bundle.Trivialization.isEquivariant_toMapFiber_iff`: equivariance characterization for
-  `t.toMapFiber`.
 * `TauCeti.PrincipalBundle.actionDivision`, `actionDivision_eq_iff`,
   `division_mapFiber_eq_actionDivision`: fibrewise torsor division and cocycle identities.
 * `TauCeti.PrincipalBundle.sectionCoord`, `actionTrivializationOfSection`: fibre coordinate and
@@ -42,28 +40,6 @@ public section
 
 open Bundle Function MulOpposite Set Topology
 
-namespace Bundle.Trivialization
-
-variable {G E B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G] [TopologicalSpace E]
-  [MulAction Gᵐᵒᵖ E] {f : E → B}
-
-/-- `t.toMapFiber` is `G`-equivariant iff `t` intertwines the right `G`-action on
-`f ⁻¹' t.baseSet` with right multiplication on the second factor `G`. -/
-theorem isEquivariant_toMapFiber_iff (t : Trivialization G f)
-    (hinv : ∀ (g : Gᵐᵒᵖ) (x : E), f (g • x) = f x) :
-    (letI := TauCeti.MapFiber.mulAction hinv; t.toMapFiber.IsEquivariant) ↔
-      ∀ x : E, f x ∈ t.baseSet → ∀ g : G, (t (op g • x)).2 = (t x).2 * g :=
-  letI := TauCeti.MapFiber.mulAction hinv
-  isEquivariant_iff_of_equiv t.toMapFiber t (TauCeti.MapFiber.totalSpaceHomeomorph G f).toEquiv
-    t.toMapFiber_baseSet
-    (fun p ↦ TauCeti.MapFiber.proj_totalSpaceHomeomorph p)
-    (fun p ↦ t.toMapFiber_apply p)
-    fun g p ↦ by
-      simp only [Homeomorph.coe_toEquiv, TauCeti.MapFiber.totalSpaceHomeomorph_apply]
-      exact TauCeti.MapFiber.coe_smul hinv (op g) p.snd
-
-end Bundle.Trivialization
-
 namespace TauCeti.PrincipalBundle
 
 variable {G E B : Type*} [Group G] [MulAction Gᵐᵒᵖ E] {f : E → B}
@@ -76,12 +52,12 @@ include horbit
 
 /-- If the fibres of `f : E → B` are the `G`-orbits (`f x = f y ↔ ∃ g, op g • x = y`), then `f` is
 invariant under the right `G`-action. -/
-theorem map_op_smul_of_orbit_iff (g : G) (x : E) : f (op g • x) = f x :=
+theorem apply_op_smul_eq_of_orbit_eq_fiber (g : G) (x : E) : f (op g • x) = f x :=
   ((horbit x (op g • x)).2 ⟨g, rfl⟩).symm
 
-/-- `Gᵐᵒᵖ`-form of `map_op_smul_of_orbit_iff`, suitable for `MapFiber.mulAction`. -/
-theorem map_smul_of_orbit_iff (g : Gᵐᵒᵖ) (x : E) : f (g • x) = f x :=
-  map_op_smul_of_orbit_iff horbit (unop g) x
+/-- `Gᵐᵒᵖ`-form of `apply_op_smul_eq_of_orbit_eq_fiber`, suitable for `MapFiber.mulAction`. -/
+theorem apply_smul_eq_of_orbit_eq_fiber (g : Gᵐᵒᵖ) (x : E) : f (g • x) = f x :=
+  apply_op_smul_eq_of_orbit_eq_fiber horbit (unop g) x
 
 /-- Given `horbit : ∀ x y, f x = f y ↔ ∃ g : G, op g • x = y` and `hxy : f x = f y`, an element
 `g : G` carrying `x` to `y` (`op g • x = y`). When the action is free, this is the unique torsor
@@ -103,7 +79,7 @@ include hfree
 `op g • x = y`. -/
 theorem actionDivision_eq_iff {x y : E} (hxy : f x = f y) {g : G} :
     actionDivision horbit hxy = g ↔ op g • x = y := by
-  rw [← op_smul_eq_op_smul_iff_of_op_smul_eq_self_imp (hfree x), op_actionDivision_smul]
+  rw [← op_smul_left_inj_of_op_smul_eq_self_imp (hfree x), op_actionDivision_smul]
   exact eq_comm
 
 /-- Dividing a point `x` by itself under a free action yields `1`. -/
@@ -113,13 +89,13 @@ theorem actionDivision_self (x : E) : actionDivision horbit (rfl : f x = f x) = 
 /-- Right equivariance of `actionDivision` in the second argument. -/
 theorem actionDivision_op_smul_right {x y : E} (g : G) (hxy : f x = f (op g • y)) :
     actionDivision horbit hxy =
-      actionDivision horbit (hxy.trans (map_op_smul_of_orbit_iff horbit g y)) * g :=
+      actionDivision horbit (hxy.trans (apply_op_smul_eq_of_orbit_eq_fiber horbit g y)) * g :=
   (actionDivision_eq_iff horbit hfree hxy).2 (by rw [op_mul, mul_smul, op_actionDivision_smul])
 
 /-- Equivariance of `actionDivision` in the first argument. -/
 theorem actionDivision_op_smul_left {x y : E} (g : G) (hxy : f (op g • x) = f y) :
-    actionDivision horbit hxy =
-      g⁻¹ * actionDivision horbit ((map_op_smul_of_orbit_iff horbit g x).symm.trans hxy) :=
+    actionDivision horbit hxy = g⁻¹ *
+      actionDivision horbit ((apply_op_smul_eq_of_orbit_eq_fiber horbit g x).symm.trans hxy) :=
   (actionDivision_eq_iff horbit hfree hxy).2
     (by rw [op_mul, mul_smul, op_inv, inv_smul_smul, op_actionDivision_smul])
 
@@ -142,13 +118,13 @@ end Free
 `actionDivision` on the underlying points in `E`. -/
 theorem division_mapFiber_eq_actionDivision [TopologicalSpace B] [TopologicalSpace G]
     [TopologicalSpace E] [FiberBundle G (MapFiber f)] {b : B} :
-    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit)
+    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
     ∀ [PrincipalBundle G (MapFiber f)] (p q : MapFiber f b),
       division G p q = actionDivision horbit (p.property.trans q.property.symm) := by
-  let := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit)
+  let := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
   intro _ p q
   exact division_eq_iff.2 (Subtype.ext
-    ((MapFiber.coe_smul (map_smul_of_orbit_iff horbit) _ _).trans
+    ((MapFiber.coe_smul (apply_smul_eq_of_orbit_eq_fiber horbit) _ _).trans
       (op_actionDivision_smul horbit _)))
 
 end ActionDivision
@@ -170,6 +146,11 @@ noncomputable def sectionCoord (x : E) : G := by
 theorem sectionCoord_of_mem {x : E} (hx : f x ∈ U) :
     sectionCoord horbit hs x = actionDivision horbit (hs (f x) hx) := by simp [sectionCoord, hx]
 
+/-- Outside `f ⁻¹' U`, `sectionCoord` defaults to `1`. -/
+@[simp]
+theorem sectionCoord_of_not_mem {x : E} (hx : f x ∉ U) :
+    sectionCoord horbit hs x = 1 := by simp [sectionCoord, hx]
+
 /-- Acting on `s (f x)` by `sectionCoord horbit hs x` recovers `x` for `x ∈ f ⁻¹' U`. -/
 @[simp]
 theorem op_sectionCoord_smul {x : E} (hx : f x ∈ U) :
@@ -189,13 +170,14 @@ include hfree
 /-- Under a free action, `sectionCoord` recovers `g` on `op g • s b` for `b ∈ U`. -/
 theorem sectionCoord_op_smul_section {b : B} (hb : b ∈ U) (g : G) :
     sectionCoord horbit hs (op g • s b) = g := by
-  have hfb : f (op g • s b) = b := (map_op_smul_of_orbit_iff horbit g (s b)).trans (hs b hb)
+  have hfb : f (op g • s b) = b :=
+    (apply_op_smul_eq_of_orbit_eq_fiber horbit g (s b)).trans (hs b hb)
   rw [sectionCoord_of_mem horbit hs (by rwa [hfb]), actionDivision_eq_iff horbit hfree, hfb]
 
 /-- Right `G`-equivariance of `sectionCoord` on `f ⁻¹' U`. -/
 theorem sectionCoord_op_smul {x : E} (hx : f x ∈ U) (g : G) :
     sectionCoord horbit hs (op g • x) = sectionCoord horbit hs x * g := by
-  have hfx : f (op g • x) = f x := map_op_smul_of_orbit_iff horbit g x
+  have hfx : f (op g • x) = f x := apply_op_smul_eq_of_orbit_eq_fiber horbit g x
   rw [sectionCoord_of_mem horbit hs (by rwa [hfx]), actionDivision_eq_iff horbit hfree, hfx,
     op_mul, mul_smul, op_sectionCoord_smul horbit hs hx]
 
@@ -204,9 +186,12 @@ their `sectionCoord` coordinates relative to a local section `s`. -/
 theorem actionDivision_eq_inv_sectionCoord_mul_sectionCoord {x y : E} (hx : f x ∈ U)
     (hxy : f x = f y) :
     actionDivision horbit hxy = (sectionCoord horbit hs x)⁻¹ * sectionCoord horbit hs y := by
-  rw [actionDivision_eq_iff horbit hfree]
-  nth_rw 2 [← op_sectionCoord_smul horbit hs hx]
-  rw [← mul_smul, ← op_mul, mul_inv_cancel_left, hxy, op_sectionCoord_smul horbit hs (hxy ▸ hx)]
+  have hcongr {b₁ b₂ : B} (hb₁ : f (s b₁) = f y) (hb₂ : f (s b₂) = f y) (h : b₁ = b₂) :
+      actionDivision horbit hb₁ = actionDivision horbit hb₂ := by
+    subst h; rfl
+  rw [sectionCoord_of_mem horbit hs hx, sectionCoord_of_mem horbit hs (hxy ▸ hx),
+    eq_inv_mul_iff_mul_eq, actionDivision_mul_actionDivision horbit hfree]
+  exact hcongr _ _ hxy
 
 end FreeCoord
 
@@ -228,10 +213,10 @@ noncomputable def actionTrivializationOfSection : Trivialization G f where
   source := f ⁻¹' U
   target := U ×ˢ univ
   map_source' _ hx := ⟨hx, mem_univ _⟩
-  map_target' q hq := by simpa [map_op_smul_of_orbit_iff horbit, hs q.1 hq.1] using hq.1
+  map_target' q hq := by simpa [apply_op_smul_eq_of_orbit_eq_fiber horbit, hs q.1 hq.1] using hq.1
   left_inv' _ hx := op_sectionCoord_smul horbit hs hx
   right_inv' q hq := Prod.ext
-    ((map_op_smul_of_orbit_iff horbit q.2 (s q.1)).trans (hs q.1 hq.1))
+    ((apply_op_smul_eq_of_orbit_eq_fiber horbit q.2 (s q.1)).trans (hs q.1 hq.1))
     (sectionCoord_op_smul_section horbit hfree hs hq.1 q.2)
   open_source := hU.preimage hf
   open_target := hU.prod isOpen_univ
@@ -263,11 +248,11 @@ theorem baseSet_actionTrivializationOfSection :
 /-- Every `actionTrivializationOfSection` transports to an equivariant trivialization of
 `MapFiber f`. -/
 theorem isEquivariant_toMapFiber_actionTrivializationOfSection :
-    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (map_smul_of_orbit_iff horbit)
+    letI := MapFiber.mulAction (M := Gᵐᵒᵖ) (apply_smul_eq_of_orbit_eq_fiber horbit)
     (actionTrivializationOfSection hf horbit hfree hU hs hcoord
       hsmul).toMapFiber.IsEquivariant :=
   ((actionTrivializationOfSection hf horbit hfree hU hs hcoord
-    hsmul).isEquivariant_toMapFiber_iff (map_smul_of_orbit_iff horbit)).2
+    hsmul).isEquivariant_toMapFiber_iff (apply_smul_eq_of_orbit_eq_fiber horbit)).2
       fun _ hx g ↦ sectionCoord_op_smul horbit hfree hs hx g
 
 end ActionTriv

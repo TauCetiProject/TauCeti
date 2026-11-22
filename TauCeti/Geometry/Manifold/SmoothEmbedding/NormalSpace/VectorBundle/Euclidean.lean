@@ -64,7 +64,8 @@ def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M 
       normalBundleTrivialization
         (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
         (f.isImmersion.mfderiv_injective hn) hdim x₀
-        (f.normalBundleHomeomorphOrthogonal hn p) := (rfl)
+        (f.normalBundleHomeomorphOrthogonal hn p) :=
+  Trivialization.compHomeomorphOfEq_apply _ _ _ p
 
 /-- Intrinsic and orthogonal normal coordinates have the same base set. -/
 @[simp] theorem orthogonalNormalSpaceTrivialization_baseSet
@@ -73,7 +74,8 @@ def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M 
     (f.orthogonalNormalSpaceTrivialization hn hdim x₀).baseSet =
       (normalBundleTrivialization
         (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
-        (f.isImmersion.mfderiv_injective hn) hdim x₀).baseSet := (rfl)
+        (f.isImmersion.mfderiv_injective hn) hdim x₀).baseSet :=
+  Trivialization.compHomeomorphOfEq_baseSet _ _ _
 
 /-- Inverse intrinsic coordinates take the normal class of inverse orthogonal coordinates. -/
 @[simp] theorem orthogonalNormalSpaceTrivialization_symm_apply
@@ -84,7 +86,8 @@ def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M 
       (f.normalBundleHomeomorphOrthogonal hn).symm
         ((normalBundleTrivialization
           (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
-          (f.isImmersion.mfderiv_injective hn) hdim x₀).toOpenPartialHomeomorph.symm p) := (rfl)
+          (f.isImmersion.mfderiv_injective hn) hdim x₀).toOpenPartialHomeomorph.symm p) :=
+  Trivialization.compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply _ _ _ p
 
 /-- Intrinsic normal coordinates are fibrewise linear. -/
 instance instIsLinearOrthogonalNormalSpaceTrivialization
@@ -158,6 +161,7 @@ theorem orthogonalNormalSpaceVectorBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n 
   · rintro e e' ⟨x, rfl⟩ ⟨x', rfl⟩
     have : IsManifold I ((0 : ℕ∞ω) + 1) M := by
       simpa using (inferInstance : IsManifold I 1 M)
+    simp only [orthogonalNormalSpaceTrivialization_baseSet]
     refine (contMDiffOn_normalBundleTrivialization_coordChangeL (n := 0)
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn) hdim x x').continuousOn.congr ?_
@@ -180,6 +184,7 @@ theorem orthogonalNormalSpaceContMDiffVectorBundle {m : ℕ∞ω}
   let := f.orthogonalNormalSpaceVectorBundle hn hdim
   constructor
   rintro e e' ⟨x, rfl⟩ ⟨x', rfl⟩
+  simp only [orthogonalNormalSpaceTrivialization_baseSet]
   refine (contMDiffOn_normalBundleTrivialization_coordChangeL
     (f.contMDiff.of_le hm) (f.isImmersion.mfderiv_injective hn) hdim x x').congr ?_
   intro y hy

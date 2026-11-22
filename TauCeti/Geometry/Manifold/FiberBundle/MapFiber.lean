@@ -297,13 +297,13 @@ theorem existsUnique_contMDiff_comp_eq_of_smul {A : Atlas G proj}
       (A.trivAt b (op g • p)).2 = (A.trivAt b p).2 * g)
     {f : P → M} (hf : ContMDiff IP IM n f) (hinv : ∀ (g : G) (p : P), f (op g • p) = f p) :
     ∃! h : B → M, ContMDiff IB IM n h ∧ h ∘ proj = f := by
-  let A' : Atlas G proj := ⟨A.trivAt, A.mem_baseSet_trivAt, range A.trivAt, mem_range_self⟩
+  let A' : Atlas G proj := ofTrivAt A.trivAt A.mem_baseSet_trivAt
   have hA' : A'.IsContMDiff n IB IF IP :=
-    ⟨by rintro _ ⟨b, rfl⟩; exact hA.contMDiffOn_trivAt b,
-      by rintro _ ⟨b, rfl⟩; exact hA.contMDiffOn_trivAt_symm b⟩
+    ⟨by simpa [A'] using hA.contMDiffOn_trivAt,
+      by simpa [A'] using hA.contMDiffOn_trivAt_symm⟩
   let := A'.fiberBundle
   let := mulAction hproj
-  have := A'.principalBundle hproj (by rintro _ ⟨b, rfl⟩; exact hequiv b)
+  have := A'.principalBundle hproj (by simpa [A'] using hequiv)
   refine hA'.existsUnique_contMDiff_comp_eq hf fun p q hpq ↦ ?_
   -- In the fibre over `proj p`, `q` is obtained from `p` by the action of `division p q`.
   let p' : MapFiber proj (proj p) := ⟨p, rfl⟩

@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.Measure
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Analysis.Calculus.Sard.LowDimension
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
+import TauCeti.Geometry.Manifold.RegularValue.ManifoldLevel
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # Sard's theorem for maps between manifolds of arbitrary dimensions
@@ -43,6 +45,10 @@ case, which needs only first derivatives and allows boundary in the source, is
 
 * `TauCeti.isNullSet_image_of_finrank_lt_finrank`: the image of a differentiable map from a
   manifold of smaller dimension is null.
+* `MDifferentiable.finrank_le_finrank_of_surjective`: a differentiable surjection from a Lindelöf
+  manifold onto a nonempty manifold forces `dim N ≤ dim M`.
+* `TauCeti.finrank_sub_le_finrank_of_isRegularValue_of_surjective`: a `C¹` surjection from a
+  Lindelöf manifold onto a nonempty regular fibre forces `dim P - dim B ≤ dim M`.
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_isInteriorPoint`: Sard's theorem on a set
   of interior critical points, for an arbitrary model with corners.
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_contMDiffAt`: Sard's theorem at the sharp
@@ -102,6 +108,18 @@ theorem _root_.MDifferentiable.isNullSet_range_of_finrank_lt_finrank
     IsNullSet J (range f) := by
   rw [← image_univ]
   exact isNullSet_image_of_finrank_lt_finrank hdim fun x _ ↦ hf x
+
+omit [MeasurableSpace E'] [BorelSpace E'] in
+/-- A differentiable surjection from a Lindelöf manifold onto a nonempty manifold forces the
+dimension of the target to be at most that of the source. -/
+theorem _root_.MDifferentiable.finrank_le_finrank_of_surjective [Nonempty N]
+    (hf : MDifferentiable I J f) (hsurj : Surjective f) :
+    finrank ℝ E' ≤ finrank ℝ E := by
+  borelize E'
+  by_contra hlt
+  have hnull := hf.isNullSet_range_of_finrank_lt_finrank (not_le.1 hlt)
+  have hdense : Dense (∅ : Set N) := by simpa [hsurj.range_eq] using hnull.dense_compl
+  exact Set.not_nonempty_empty hdense.nonempty
 
 end LowDimension
 
@@ -202,5 +220,44 @@ theorem _root_.ContMDiff.dense_isRegularValue (hf : ContMDiff I J n f)
   exact (hf.isNullSet_image_criticalPoints hk).dense_compl
 
 end Boundaryless
+
+section RegularFiber
+
+/-- **Dimension lower bound for a smooth surjection onto a nonempty regular fibre.** If `p : P → B`
+is `C¹` from a finite-dimensional boundaryless real manifold `P` to a finite-dimensional real
+manifold `B`, `c : B` is a regular value of `p` with nonempty fibre, and `θ : M → P` is a `C¹` map
+from a Lindelöf manifold surjecting onto `p ⁻¹' {c}`, then `finrank ℝ EP - finrank ℝ EB ≤
+finrank ℝ EM`. -/
+theorem finrank_sub_le_finrank_of_isRegularValue_of_surjective
+    {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [FiniteDimensional ℝ EP]
+    {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP} [IP.Boundaryless]
+    {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
+    {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB] [FiniteDimensional ℝ EB]
+    {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+    {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] [IsManifold IB 1 B]
+    {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [FiniteDimensional ℝ EM]
+    {HM : Type*} [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace HM M] [IsManifold IM 1 M] [LindelofSpace M]
+    {p : P → B} (hp : ContMDiff IP IB 1 p) {c : B} (hne : (p ⁻¹' {c}).Nonempty)
+    (hreg : IsRegularValue IP IB p c) {θ : M → P} (hθ : ContMDiff IM IP 1 θ)
+    (hmem : ∀ m : M, p (θ m) = c) (hsurj : ∀ y : P, p y = c → ∃ m : M, θ m = y) :
+    finrank ℝ EP - finrank ℝ EB ≤ finrank ℝ EM := by
+  obtain ⟨x, rfl⟩ := hne
+  have hc : IB.IsInteriorPoint (p x) :=
+    ((hp x).mdifferentiableAt one_ne_zero).isInteriorPoint_of_surjective_mfderiv
+      (isRegularPoint_iff.1 (hreg.isRegularPoint rfl)) BoundarylessManifold.isInteriorPoint
+  let := regularFiberChartedSpace (le_refl 1) hp hc hreg
+  have := isManifold_regularFiber (le_refl 1) hp hc hreg
+  let θ' : M → {y : P // p y = p x} := fun m ↦ ⟨θ m, hmem m⟩
+  have hθ' : ContMDiff IM 𝓘(ℝ, Fin (finrank ℝ EP - finrank ℝ EB) → ℝ) 1 θ' :=
+    (isSmoothEmbedding_coe_regularFiber (le_refl 1) hp hc hreg).contMDiff_iff_comp.2 hθ
+  have hθ'_surj : Surjective θ' := fun ⟨y, hy⟩ ↦ by
+    obtain ⟨m, hm⟩ := hsurj y hy
+    exact ⟨m, Subtype.ext hm⟩
+  have : Nonempty {y : P // p y = p x} := ⟨⟨x, rfl⟩⟩
+  simpa [Module.finrank_fin_fun] using
+    (hθ'.mdifferentiable one_ne_zero).finrank_le_finrank_of_surjective hθ'_surj
+
+end RegularFiber
 
 end TauCeti

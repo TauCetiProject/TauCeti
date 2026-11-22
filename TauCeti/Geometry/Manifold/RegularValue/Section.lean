@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # Local sections through regular points
@@ -15,7 +16,10 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 Let `f : M → N` be a `C^n` map, `1 ≤ n`, from a boundaryless manifold to a manifold modelled on a
 finite-dimensional real space, and let `x` be a regular point of `f`. Then `f` has a `C^n` local
 section through `x`: a map `s`, `C^n` on an open neighbourhood `t` of `f x`, with `s (f x) = x` and
-`f (s y) = y` for `y ∈ t` (`TauCeti.IsRegularPoint.exists_contMDiffOn_section`).
+`f (s y) = y` for `y ∈ t` (`TauCeti.IsRegularPoint.exists_contMDiffOn_section`). Conversely, for
+general manifolds over any nontrivially normed field, any point in the image of a `C^n` local
+section (`n ≠ 0`) where `f` is `C^n` is a regular point
+(`TauCeti.isRegularPoint_of_contMDiffOn_section`).
 
 Such sections show that near a regular point the level sets of `f` are transverse to a smooth
 family of points meeting each level once. For instance, a group action preserving `f` whose orbits
@@ -25,6 +29,8 @@ fill out the tangent spaces of the levels sweeps out a neighbourhood from the se
 
 * `TauCeti.IsRegularPoint.exists_contMDiffOn_section`: a `C^n` map has a `C^n` local section
   through each of its regular points.
+* `TauCeti.isRegularPoint_of_contMDiffOn_section`: a `C^n` map admitting a `C^n` local section
+  (`n ≠ 0`) is regular at points of the section.
 
 ## References
 
@@ -159,5 +165,23 @@ theorem IsRegularPoint.exists_contMDiffOn_section [IsManifold J n N] {f : M → 
   · exact (hs₀.mono inter_subset_left).comp (hφs.mono inter_subset_left) fun _ hy ↦ hy.2
   · rw [Function.comp_apply]
     exact φ.injOn (mem_preimage.1 hy.2.2.2) hy.1 (hgs₀ (φ y) hy.2.1)
+
+/-- If `s : B → P` is a `C^n` local section (`n ≠ 0`) of `p : P → B` on an open neighbourhood `U`
+of `b` and `p` is `C^n` at `s b`, then `s b` is a regular point of `p`. -/
+theorem isRegularPoint_of_contMDiffOn_section {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {EP : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP]
+    {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
+    {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+    {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+    {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+    {n : ℕ∞ω} (hn : n ≠ 0) {p : P → B}
+    {U : Set B} (hU : IsOpen U) {s : B → P} (hs_smooth : ContMDiffOn IB IP n s U)
+    (hs : ∀ b' ∈ U, p (s b') = b') {b : B} (hb : b ∈ U)
+    (hp : ContMDiffAt IP IB n p (s b)) :
+    IsRegularPoint IP IB p (s b) :=
+  isRegularPoint_iff.2 (surjective_mfderiv_of_eventuallyEq_id (hp.mdifferentiableAt hn)
+    ((hs_smooth.contMDiffAt (hU.mem_nhds hb)).mdifferentiableAt hn)
+    (Filter.eventually_of_mem (hU.mem_nhds hb) hs))
 
 end TauCeti

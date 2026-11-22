@@ -105,7 +105,7 @@ theorem continuousOn_coordChange (e₁ e₂ : Trivialization F proj) :
 
 /-- Pre-compose a trivialization `t : Trivialization F proj` with a homeomorphism `h : Z' ≃ₜ Z`
 intertwining `proj` with another projection `proj' : Z' → B`. -/
-@[expose] def compHomeomorphOfEq {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
+def compHomeomorphOfEq {Z' : Type*} [TopologicalSpace Z'] {proj' : Z' → B}
     (t : Trivialization F proj) (h : Z' ≃ₜ Z) (hproj : ∀ p, proj (h p) = proj' p) :
     Trivialization F proj' where
   toOpenPartialHomeomorph := (t.compHomeomorph h).toOpenPartialHomeomorph

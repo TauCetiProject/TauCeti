@@ -61,7 +61,8 @@ vector field `-mulRightInvariantVectorField ξ`, which preserves the Lie bracket
 * `TauCeti.mfderiv_op_smul_mulInvariantVectorField`,
   `TauCeti.mfderiv_op_smul_const_apply`, `TauCeti.injective_mfderiv_op_smul_const_iff`: each orbit
   map `g ↦ x · g` relates `mulInvariantVectorField ξ` on `G` to `ξ♯` on `M`, and its differential at
-  `g` reduces to that of `x · g` at `1` along left multiplication by `g⁻¹`.
+  `g` reduces to the differential of `h ↦ (x · g) · h` at `1`, precomposed with the differential of
+  left multiplication by `g⁻¹`.
 * `TauCeti.mfderiv_op_smul_rightFundamentalVectorField`: right-translation equivariance
   `d(R_g)_x (ξ♯ x) = (Ad(g⁻¹) ξ)♯ (x · g)`.
 * `TauCeti.mlieBracket_rightFundamentalVectorField`: Lie bracket homomorphism
@@ -252,38 +253,38 @@ theorem mfderiv_op_smul_mulInvariantVectorField [ContMDiffMul I 1 G] {x : M} {g 
 theorem mfderiv_op_smul_const_apply [ContMDiffMul I 1 G] {x : M} {g : G} (v : TangentSpace I g) :
     mfderiv I I' (fun h : G => op h • x) g v =
       mfderiv I I' (fun h : G => op h • (op g • x)) 1 (mfderiv I I (g⁻¹ * ·) g v) := by
-  by_cases horbit : MDifferentiableAt I I' (fun h : G => op h • (op g • x)) 1
-  · have hfun : (fun h : G => op h • x) =
-        (fun h : G => op h • (op g • x)) ∘ ((g⁻¹ * ·) : G → G) :=
-      funext fun h => by simp [← mul_smul, ← op_mul]
-    rw [hfun]
-    exact mfderiv_comp_apply_of_eq g horbit (mdifferentiableAt_mul_left (a := g⁻¹))
-      (inv_mul_cancel g) v
-  · have hnot : ¬ MDifferentiableAt I I' (fun h : G => op h • x) g := fun hdiff => by
-      apply horbit
-      have hfun : (fun h : G => op h • (op g • x)) =
-          (fun h : G => op h • x) ∘ ((g * ·) : G → G) :=
-        funext fun h => by simp [← mul_smul, ← op_mul]
-      rw [hfun]
-      exact (by simpa [mul_one] using hdiff :
-          MDifferentiableAt I I' (fun h : G => op h • x) (g * 1)).comp (1 : G)
-        (mdifferentiableAt_mul_left (a := g))
-    rw [mfderiv_zero_of_not_mdifferentiableAt hnot, mfderiv_zero_of_not_mdifferentiableAt horbit]
-    -- Both sides evaluate the zero linear map into the same model space `E'`.
-    exact Eq.refl _
+  let φ : G ≃ₘ^(1 : ℕ∞ω)⟮I, I⟯ G := Diffeomorph.smul I I 1 g⁻¹
+  have hfun : (fun h : G => op h • x) = (fun h : G => op h • (op g • x)) ∘ φ :=
+    funext fun h => by simp [φ, ← mul_smul, ← op_mul]
+  have hcoe : (⇑φ : G → G) = (g⁻¹ * ·) := funext fun _ => rfl
+  have h1 : φ g = 1 := inv_mul_cancel g
+  have hcomp := congrArg (· v) (φ.mfderiv_comp_diffeomorph (K := I') one_ne_zero
+    (fun h : G => op h • (op g • x)) g)
+  rw [ContinuousLinearMap.comp_apply] at hcomp
+  have hlhs : ∀ {f₁ f₂ : G → M}, f₁ = f₂ → mfderiv I I' f₁ g v = mfderiv I I' f₂ g v := by
+    rintro f₁ _ rfl; rfl
+  have hrhs : ∀ {y₁ y₂ : G}, y₁ = y₂ → ∀ {ψ₁ ψ₂ : G → G}, ψ₁ = ψ₂ →
+      mfderiv I I' (fun h : G => op h • (op g • x)) y₁ (mfderiv I I ψ₁ g v) =
+        mfderiv I I' (fun h : G => op h • (op g • x)) y₂ (mfderiv I I ψ₂ g v) := by
+    rintro y₁ _ rfl ψ₁ _ rfl; rfl
+  exact (hlhs hfun).trans (hcomp.trans (hrhs h1 hcoe))
 
 /-- For a `C¹` group manifold `G`, the derivative at `g` of `h ↦ op h • x` is injective if and only
 if the derivative at `1` of `h ↦ op h • (op g • x)` is injective. -/
 theorem injective_mfderiv_op_smul_const_iff [ContMDiffMul I 1 G] {x : M} {g : G} :
     Injective (mfderiv I I' (fun h : G => op h • x) g) ↔
       Injective (mfderiv I I' (fun h : G => op h • (op g • x)) 1) := by
-  have hbij : Bijective (mfderiv I I (g⁻¹ * ·) g) :=
-    (((Diffeomorph.smul I I 1 g⁻¹).isLocalDiffeomorph g).isInvertible_mfderiv one_ne_zero).bijective
-  have hcomp : ⇑(mfderiv I I' (fun h : G => op h • x) g) =
-      ⇑(mfderiv I I' (fun h : G => op h • (op g • x)) 1) ∘ ⇑(mfderiv I I (g⁻¹ * ·) g) :=
-    funext mfderiv_op_smul_const_apply
-  rw [hcomp]
-  exact Injective.of_comp_iff' _ hbij
+  let φ : G ≃ₘ^(1 : ℕ∞ω)⟮I, I⟯ G := Diffeomorph.smul I I 1 g⁻¹
+  have hfun : (fun h : G => op h • x) = (fun h : G => op h • (op g • x)) ∘ φ :=
+    funext fun h => by simp [φ, ← mul_smul, ← op_mul]
+  have h1 : φ g = 1 := inv_mul_cancel g
+  have hinj := φ.mfderiv_comp_diffeomorph_injective_iff (K := I') one_ne_zero
+    (f := fun h : G => op h • (op g • x)) (x := g)
+  have hcongr {f₁ f₂ : G → M} {y₁ y₂ : G} (hf : f₁ = f₂) (hy : y₁ = y₂) :
+      Injective (mfderiv I I' f₁ y₁) ↔ Injective (mfderiv I I' f₂ y₂) := by
+    subst hf hy
+    rfl
+  exact (hcongr hfun rfl).trans (hinj.trans (hcongr rfl h1))
 
 /-- **Equivariance under right translation.** For a `C¹` Lie group `G`, the derivative of right
 translation `y ↦ op g • y` at `x` carries the right fundamental vector field of `ξ` at `x` to that
