@@ -220,17 +220,18 @@ theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) :
   (hB.squarefree b hb).discr_ne_zero
 
 /-- Distinct members of a squarefree basis are coprime over the fraction field. -/
-theorem isCoprime_map (K : Type*) [CommRing K] [Algebra D K] [IsFractionRing D K]
+theorem isCoprime_map (K : Type*) [CommSemiring K] [Algebra D K] [IsFractionRing D K]
     (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
     IsCoprime (b.map (algebraMap D K)) (b'.map (algebraMap D K)) := by
-  cases subsingleton_or_nontrivial D
-  · have := IsLocalization.subsingleton (M := nonZeroDivisors D) (S := K)
-      (Subsingleton.elim (1 : D) 0 ▸ one_mem _)
-    exact ⟨0, 0, Subsingleton.elim _ _⟩
+  have : Nontrivial D := Polynomial.Nontrivial.of_polynomial_ne hne
   have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
   have : IsDomain D := ⟨⟩
-  let : Field K := IsFractionRing.toField D
-  exact ((hB.isRelPrime b hb b' hb' hne).map_localization_map (nonZeroDivisors D)).isCoprime
+  let L := FractionRing D
+  have h : IsCoprime (b.map (algebraMap D L)) (b'.map (algebraMap D L)) :=
+    ((hB.isRelPrime b hb b' hb' hne).map_localization_map (nonZeroDivisors D)).isCoprime
+  have := h.map (mapRingHom (IsLocalization.algEquiv (nonZeroDivisors D) L K).toAlgHom.toRingHom)
+  rwa [coe_mapRingHom, Polynomial.map_map, Polynomial.map_map, AlgHom.toRingHom_eq_coe,
+    AlgHom.comp_algebraMap] at this
 
 /-- The resultant of two distinct members of a squarefree basis is nonzero. -/
 theorem resultant_ne_zero [IsDomain D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B)

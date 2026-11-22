@@ -35,13 +35,21 @@ open Polynomial
 variable {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
 
 attribute [local instance] Polynomial.algebra Polynomial.isLocalization in
+/-- The localization map `R[X] → S[X]` induced by a localization `S` of `R` maps the coefficients
+with `algebraMap R S`. -/
+private theorem toLocalizationMap_polynomial_apply (M : Submonoid R) [IsLocalization M S]
+    (p : R[X]) : IsLocalization.toLocalizationMap (M.map C) S[X] p = p.map (algebraMap R S) := by
+  rw [IsLocalization.toLocalizationMap_apply, Polynomial.algebraMap_def, coe_mapRingHom]
+
+attribute [local instance] Polynomial.algebra Polynomial.isLocalization in
 /-- If polynomials over `R` form a cancellative decomposition monoid, as over a GCD domain, a
 squarefree polynomial over `R` stays squarefree over every localization of `R`, in particular
 over the fraction field. -/
 theorem Squarefree.map_localization_map [IsCancelMulZero R[X]] [DecompositionMonoid R[X]]
     (M : Submonoid R) [IsLocalization M S] {p : R[X]} (hp : Squarefree p) :
-    Squarefree (p.map (algebraMap R S)) :=
-  (IsLocalization.toLocalizationMap (M.map C) S[X]).map_squarefree hp
+    Squarefree (p.map (algebraMap R S)) := by
+  rw [← toLocalizationMap_polynomial_apply M p]
+  exact (IsLocalization.toLocalizationMap (M.map C) S[X]).map_squarefree hp
 
 attribute [local instance] Polynomial.algebra Polynomial.isLocalization in
 /-- If polynomials over `R` form a decomposition monoid, as over a GCD domain, relatively prime
@@ -49,5 +57,6 @@ polynomials over `R` stay relatively prime over every localization of `R`, in pa
 the fraction field. -/
 theorem IsRelPrime.map_localization_map [DecompositionMonoid R[X]] (M : Submonoid R)
     [IsLocalization M S] {p q : R[X]} (h : IsRelPrime p q) :
-    IsRelPrime (p.map (algebraMap R S)) (q.map (algebraMap R S)) :=
-  (IsLocalization.toLocalizationMap (M.map C) S[X]).map_isRelPrime h
+    IsRelPrime (p.map (algebraMap R S)) (q.map (algebraMap R S)) := by
+  rw [← toLocalizationMap_polynomial_apply M p, ← toLocalizationMap_polynomial_apply M q]
+  exact (IsLocalization.toLocalizationMap (M.map C) S[X]).map_isRelPrime h

@@ -11,11 +11,16 @@ public import Mathlib.GroupTheory.MonoidLocalization.Divisibility
 /-!
 # Relative primality and squarefreeness in localizations of monoids
 
-In a decomposition monoid, relatively prime elements stay relatively prime in every
-localization (`Submonoid.LocalizationMap.map_isRelPrime`), and with cancellation squarefree
-elements stay squarefree (`Submonoid.LocalizationMap.map_squarefree`). Both lift divisibility
-in the localization with Mathlib's `Submonoid.LocalizationMap.map_dvd_map` and detect units with
-`Submonoid.LocalizationMap.map_isUnit_iff`.
+In a commutative decomposition monoid, relatively prime elements stay relatively prime in every
+localization (`Submonoid.LocalizationMap.map_isRelPrime`). In a commutative decomposition monoid
+with zero in which nonzero elements cancel (`IsCancelMulZero`), squarefree elements stay
+squarefree in every localization (`Submonoid.LocalizationMap.map_squarefree`).
+
+Localizing a commutative semiring `R` also localizes the multiplicative monoid of its polynomial
+ring `R[X]` (Mathlib's `Polynomial.isLocalization`), so these results transfer relative primality
+and squarefreeness of polynomials from `R[X]` to `S[X]` for every localization `S` of `R`, such as
+the fraction field of a GCD domain (`IsRelPrime.map_localization_map`,
+`Squarefree.map_localization_map`).
 -/
 
 public section
@@ -48,16 +53,18 @@ section CommMonoidWithZero
 variable {M N : Type*} [CommMonoidWithZero M] {S : Submonoid M} [CommMonoid N]
   (f : LocalizationMap S N)
 
-/-- In a cancellative decomposition monoid, squarefree elements stay squarefree in every
-localization. -/
+/-- In a commutative decomposition monoid with zero in which nonzero elements cancel, squarefree
+elements stay squarefree in every localization. -/
 theorem map_squarefree [IsCancelMulZero M] [DecompositionMonoid M] {x : M} (hx : Squarefree x) :
     Squarefree (f x) := by
   intro d hd
   obtain ⟨⟨a, s⟩, hda⟩ := f.surj d
   have hs := f.map_units s
   refine isUnit_of_mul_isUnit_left (hda ▸ f.map_isUnit_iff.2 ?_)
-  obtain ⟨m, hm, ham⟩ := f.map_dvd_map.1 (show f (a * a) ∣ f x by
-    rwa [map_mul, ← hda, mul_mul_mul_comm, (hs.mul hs).mul_right_dvd])
+  -- `f (a * a)` is `d * d` times the unit `f s * f s`, so it divides `f x` as `d * d` does.
+  have ha : f (a * a) ∣ f x := by
+    rwa [map_mul, ← hda, mul_mul_mul_comm, (hs.mul hs).mul_right_dvd]
+  obtain ⟨m, hm, ham⟩ := f.map_dvd_map.1 ha
   exact ⟨m, hm, hx.dvd_of_squarefree_of_mul_dvd_mul_left ham⟩
 
 end CommMonoidWithZero
