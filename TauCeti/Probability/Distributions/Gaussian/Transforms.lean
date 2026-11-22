@@ -45,9 +45,9 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
   `2π` is orthogonal to every integer-exponent exponential under the standard Gaussian law.
 * `TauCeti.Probability.integral_cos_gaussianReal` computes the cosine transform of a real Gaussian
   law.
-* `TauCeti.Probability.integral_exp_mul_gaussianReal`, `integral_mul_exp_mul_gaussianReal` and
-  `integrable_mul_exp_mul_gaussianReal` give the exponential and first tilted moments of a real
-  Gaussian law.
+* `TauCeti.Probability.integral_mul_exp_mul_gaussianReal` and
+  `integrable_mul_exp_mul_gaussianReal` give the first exponentially tilted moment of a real
+  Gaussian law and its integrability.
 
 ## References
 
@@ -107,18 +107,6 @@ open ProbabilityTheory
 open scoped RealInnerProductSpace NNReal
 
 namespace TauCeti.Probability
-
-/-- The exponential moment of a real Gaussian law: the integral form of
-`ProbabilityTheory.mgf_fun_id_gaussianReal`. -/
-theorem integral_exp_mul_gaussianReal (μ : ℝ) (v : ℝ≥0) (t : ℝ) :
-    ∫ x, Real.exp (t * x) ∂gaussianReal μ v = Real.exp (μ * t + v * t ^ 2 / 2) := by
-  simpa only [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := μ) (v := v)) t
-
-/-- A Gaussian exponential normalized by its cumulant-generating function has mean one. -/
-theorem integral_exp_mul_sub_gaussianReal (μ b : ℝ) (v : ℝ≥0) :
-    ∫ y, Real.exp (b * y - (μ * b + (v : ℝ) * b ^ 2 / 2)) ∂gaussianReal μ v = 1 := by
-  simp_rw [Real.exp_sub, integral_div]
-  rw [integral_exp_mul_gaussianReal, div_self (Real.exp_pos _).ne']
 
 /-- The first exponentially tilted moment of a real Gaussian law:
 `∫ x exp (t x) ∂N(μ, v) = (μ + v t) exp (μ t + v t² / 2)`, the derivative of its

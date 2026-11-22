@@ -14,7 +14,7 @@ public import Mathlib.MeasureTheory.Measure.Tilted
 import TauCeti.MeasureTheory.Measure.Tilted
 import TauCeti.Probability.Distributions.Binomial.Basic
 import TauCeti.Probability.Distributions.Gamma.Basic
-import TauCeti.Probability.Distributions.Gaussian.Transforms
+import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Poisson.Basic
 
 /-!

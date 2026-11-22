@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.SkewNormal.Construction
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Gaussian.Moments
-import TauCeti.Probability.Distributions.Gaussian.Transforms
+import TauCeti.Probability.Distributions.Gaussian.Basic
 
 /-!
 # Moments and transforms of the skew-normal distribution

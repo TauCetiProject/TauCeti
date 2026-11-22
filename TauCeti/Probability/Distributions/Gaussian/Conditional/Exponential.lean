@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Independence.CondExp
-public import TauCeti.Probability.Distributions.Gaussian.Transforms
+public import TauCeti.Probability.Distributions.Gaussian.Basic
 
 /-!
 # Gaussian exponential moments with a random known coefficient

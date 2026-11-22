@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Moments.SubGaussian

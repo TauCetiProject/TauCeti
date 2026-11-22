@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Measure.LogLikelihoodRatio
 import TauCeti.InformationTheory.KullbackLeibler.Basic
 import TauCeti.InformationTheory.KullbackLeibler.Pi
 import TauCeti.Probability.Distributions.Gaussian.Affine
-import TauCeti.Probability.Distributions.Gaussian.Transforms
+import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Tilted
 
 /-!

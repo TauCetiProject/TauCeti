@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Independence.CondExp
 public import TauCeti.Probability.Distributions.Tilted
 
-import TauCeti.Probability.Distributions.Gaussian.Transforms
+import TauCeti.Probability.Distributions.Gaussian.Basic
 
 /-!
 # Gaussian change of measure with a known random drift
