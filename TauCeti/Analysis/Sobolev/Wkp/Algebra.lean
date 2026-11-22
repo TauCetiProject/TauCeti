@@ -11,6 +11,7 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Holder
 import TauCeti.Analysis.Sobolev.GagliardoNirenberg
 import TauCeti.Analysis.Sobolev.Wkp.BilinOfAeMul
 import TauCeti.Analysis.Sobolev.Wkp.Density
+import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -80,14 +81,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
 
 namespace Wkp
-
-/-- An exponent `q` with `d < k q.toReal` for a natural number `d` is finite, since
-`∞.toReal = 0`. -/
-private theorem ne_top_of_natCast_lt_mul_toReal {d : ℕ} {q : ℝ≥0∞} (h : (d : ℝ) < k * q.toReal) :
-    q ≠ ∞ := by
-  rintro rfl
-  rw [ENNReal.toReal_top, mul_zero] at h
-  exact h.not_ge (Nat.cast_nonneg _)
 
 /-- For `k p > n`, the values of the elements of `W^{k,p}(E)` are represented by a continuous linear
 map into `L^∞`: the Sobolev embedding into bounded Hölder functions, followed by the inclusion of
@@ -277,7 +270,7 @@ theorem exists_norm_mul_le (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.to
     ∃ C, ∀ u v : Wkp (volume : Measure E) ⊤ p k, ∃ w : Wkp (volume : Measure E) ⊤ p k,
       (value k w : E → ℝ) =ᵐ[volume] (fun x ↦ value k u x * value k v x) ∧
         ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
-  have hp' : p ≠ ∞ := ne_top_of_natCast_lt_mul_toReal hk
+  have hp' : p ≠ ∞ := ENNReal.ne_top_of_pos_mul_toReal ((Nat.cast_nonneg _).trans_lt hk)
   set T := ofTestFunctionₗ (mu := (volume : Measure E)) (Omega := ⊤) (p := p) k
   obtain ⟨J, hJ⟩ := exists_toLpTop (ENNReal.one_lt_two.trans_le hp) hp' hk
   obtain ⟨C, P, hP, hPn, hPsub⟩ := exists_value_ae_eq_mul_testFunction hp hp' hJ
@@ -332,7 +325,7 @@ def mulOfFinrankLtL (hp : 2 ≤ p) (hk : (finrank ℝ E : ℝ) < k * p.toReal) :
     fun u ↦ by
       -- The value of `u` is bounded by the `L^∞` norm of its image under the Sobolev embedding.
       obtain ⟨J, hJ⟩ := exists_toLpTop (ENNReal.one_lt_two.trans_le hp)
-        (ne_top_of_natCast_lt_mul_toReal hk) hk
+        (ENNReal.ne_top_of_pos_mul_toReal ((Nat.cast_nonneg _).trans_lt hk)) hk
       refine ⟨‖J u‖, ?_⟩
       filter_upwards [hJ u, Lp.ae_norm_le_norm_top (J u)] with x h₁ h₂
       rwa [← h₁]
