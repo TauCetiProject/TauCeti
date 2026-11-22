@@ -247,17 +247,15 @@ theorem finite_integralClosure_polynomial_of_isSeparable {R K F : Type*} [CommRi
     Module.Finite R[X] (integralClosure R[X] F) := by
   set y : F := algebraMap R[X] F Polynomial.X
   have : IsScalarTower R K⟮y⟯ F := .of_algebraMap_eq fun r ↦ by
-    rw [IsScalarTower.algebraMap_apply R K F, IsScalarTower.algebraMap_apply K K⟮y⟯ F,
-      ← IsScalarTower.algebraMap_apply R K K⟮y⟯]
+    simp [IsScalarTower.algebraMap_apply R K F, IsScalarTower.algebraMap_apply R K K⟮y⟯]
   let : Algebra R[X] K⟮y⟯ :=
     (Polynomial.aeval (R := R) (IntermediateField.AdjoinSimple.gen K y)).toRingHom.toAlgebra
   have : IsScalarTower R[X] K⟮y⟯ F := .of_algebraMap_eq fun p ↦ by
-    rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      ← IsScalarTower.coe_toAlgHom' R K⟮y⟯ F, ← Polynomial.aeval_algHom_apply,
-      IsScalarTower.coe_toAlgHom', IntermediateField.AdjoinSimple.algebraMap_gen]
-    dsimp only [y]
-    rw [← IsScalarTower.coe_toAlgHom' R R[X] F, Polynomial.aeval_algHom_apply,
-      Polynomial.aeval_X_left_apply]
+    have h : (IsScalarTower.toAlgHom R K⟮y⟯ F).comp
+        (Polynomial.aeval (R := R) (IntermediateField.AdjoinSimple.gen K y)) =
+        IsScalarTower.toAlgHom R R[X] F :=
+      Polynomial.algHom_ext (by simp [y])
+    simpa [RingHom.algebraMap_toAlgebra] using AlgHom.congr_fun h.symm p
   have : IsFractionRing R[X] K⟮y⟯ := isFractionRing_polynomial_adjoin hX
   exact Ring.finite_integralClosure_of_isSeparable K⟮y⟯ K⟮y⟯ F
 

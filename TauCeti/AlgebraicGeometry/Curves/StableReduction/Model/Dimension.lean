@@ -13,6 +13,7 @@ import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
+import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
 # Relative dimension of models over a discrete valuation ring
@@ -78,8 +79,7 @@ private lemma relativeDimensionLE_fromSpec_toBase (M : Model R K C toK) {d : ℕ
   have : Algebra.IsPushout R Γ(M.total, U) K Γ(C, M.genericι ⁻¹ᵁ U) := hpush.symm
   have : Algebra.FiniteType R Γ(M.total, U) :=
     hRX ▸ finiteType_sections_of_locallyOfFiniteType R M.total ⟨U, hU⟩
-  have : FaithfulSMul R K :=
-    (faithfulSMul_iff_algebraMap_injective R K).mpr (IsFractionRing.injective R K)
+  have : FaithfulSMul R K := TauCeti.IsFractionRing.faithfulSMul R K
   have : Module.IsTorsionFree R Γ(C, M.genericι ⁻¹ᵁ U) := .trans K
   have hinj : Function.Injective (IsScalarTower.toAlgHom R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U)) :=
     hXY ▸ M.genericι.app_injective U

@@ -75,16 +75,10 @@ private theorem with_quotient_map_isFractionRing {k B S : Type*} [Field k] [Comm
   let : Algebra (S ⧸ P.map (algebraMap B S)) P.ResidueField := g.toRingHom.toAlgebra
   have : IsScalarTower S (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
     .of_algebraMap_eq fun s ↦ by
-      rw [Ideal.Quotient.algebraMap_eq, RingHom.algebraMap_toAlgebra (i := g.toRingHom),
-        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← Ideal.Quotient.mkₐ_eq_mk k]
-      exact (AlgHom.congr_fun
-        (Ideal.Quotient.liftₐ_comp (P.map (algebraMap B S))
-          (IsScalarTower.toAlgHom k S P.ResidueField)
-          Ideal.map_le_ker_of_isScalarTower_quotient) s).symm
+      simp [g, RingHom.algebraMap_toAlgebra, Ideal.Quotient.algebraMap_eq]
+      rfl
   have : IsScalarTower k (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
-    .of_algebraMap_eq fun c ↦ by
-      rw [RingHom.algebraMap_toAlgebra (i := g.toRingHom), AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe, g.commutes]
+    .of_algebraMap_eq fun c ↦ by simp [g, RingHom.algebraMap_toAlgebra]
   have : IsFractionRing (S ⧸ P.map (algebraMap B S)) P.ResidueField :=
     IsFractionRing.quotient_map_of_isLocalization M hdisj
   exact h

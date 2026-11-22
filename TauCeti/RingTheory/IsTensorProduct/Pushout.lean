@@ -46,8 +46,8 @@ This identifies extension of ideals with extension of the underlying submodule.
 * `Ideal.restrictScalars_map_eq_span`: the extension to `S'` of an ideal `J` of `R'` is the
   `S`-span of the image of `J`.
 * `Module.Finite.of_isPushout`, `Module.Projective.of_isPushout`,
-  `Algebra.FinitePresentation.of_isPushout`: finiteness, projectivity and finite presentation are
-  stable under pushout.
+  `Algebra.FiniteType.of_isPushout`, `Algebra.FinitePresentation.of_isPushout`: finiteness,
+  projectivity, finite type and finite presentation are stable under pushout.
 * `Algebra.IsPushout.adjoin_image_eq_top`: generators of `S` over `R` map to generators of `S'`
   over `R'`; `Algebra.IsPushout.adjoin_zero_union_one_eq_top` is the case of generation in degrees
   `0` and `1` along a graded ring homomorphism.
@@ -189,6 +189,15 @@ theorem adjoin_image_eq_top {s : Set S} (hs : Algebra.adjoin R s = ⊤) :
     Algebra.TensorProduct.adjoin_one_tmul_image_eq_top (A := R') s hs, Algebra.map_top,
     AlgHom.range_eq_top]
   exact (equiv R R' S S').surjective
+
+variable (R S R' S') in
+/-- Finite type is stable under pushout: if `S` is a finite-type `R`-algebra, then the pushout
+`S'` is a finite-type `R'`-algebra. -/
+theorem _root_.Algebra.FiniteType.of_isPushout [Algebra.FiniteType R S] :
+    Algebra.FiniteType R' S' := by
+  obtain ⟨s, hs⟩ := ‹Algebra.FiniteType R S›.out
+  classical
+  exact ⟨⟨s.image (algebraMap S S'), by simpa [Finset.coe_image] using adjoin_image_eq_top hs⟩⟩
 
 /-- Generation in degrees `0` and `1` passes to the pushout along a graded ring homomorphism: if
 `S` is generated over `R` by its homogeneous elements of degrees `0` and `1`, and `S → S'`

@@ -11,12 +11,13 @@ public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 
 import Mathlib.RingTheory.FiniteStability
+import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.RingTheory.AlgebraicIndependent.DiscreteValuationRing
 import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
-import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
+import TauCeti.RingTheory.IsTensorProduct.Pushout
 import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
@@ -85,10 +86,15 @@ private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPri
     intro a ha
     rw [← Algebra.smul_def] at ha
     exact (smul_eq_zero_iff_right hπ.ne_zero).mp ha
-  obtain ⟨p, hp, hpq, hdisj, _, hp_comap⟩ :=
-    exists_minimalPrime_le_and_map_isPrime (B := B) (Submonoid.powers (algebraMap R A π))
-      (Submonoid.powers_le.mpr hπ_nzd) q
+  obtain ⟨p, hp, hpq⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ q)
   have : p.IsPrime := hp.1.1
+  have hdisj : Disjoint (Submonoid.powers (algebraMap R A π) : Set A) p :=
+    (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp).symm.mono_left
+      (Submonoid.powers_le.mpr hπ_nzd)
+  have : (p.map (algebraMap A B)).IsPrime :=
+    IsLocalization.isPrime_of_isPrime_disjoint _ B p ‹_› hdisj
+  have hp_comap : (p.map (algebraMap A B)).comap (algebraMap A B) = p :=
+    IsLocalization.under_map_of_isPrime_disjoint _ B ‹_› hdisj
   have hπp : algebraMap R A π ∉ p :=
     Set.disjoint_left.mp hdisj (Submonoid.mem_powers _)
   let pB := p.map (algebraMap A B)
@@ -115,10 +121,7 @@ private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPri
     convert hginj
     ext i
     simp [hy i]
-  have : Algebra.IsPushout R K A B := Algebra.IsPushout.symm ‹_›
-  have : Algebra.FiniteType K B :=
-    .of_surjective (Algebra.IsPushout.equiv R K A B).toAlgHom
-      (Algebra.IsPushout.equiv R K A B).surjective
+  have : Algebra.FiniteType K B := .of_isPushout R A K B
   calc ringKrullDim (A ⧸ q)
       = ringKrullDim ((A ⧸ p) ⧸ qD) :=
         (ringKrullDim_eq_of_ringEquiv (DoubleQuot.quotQuotEquivQuotOfLE hpq)).symm

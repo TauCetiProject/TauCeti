@@ -18,12 +18,15 @@ import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.IntegralClosure.MvPolynomial
 import TauCeti.RingTheory.IntegralClosure.Pi
 import TauCeti.RingTheory.IntegralClosure.QuasiFinite
+import TauCeti.RingTheory.IntegralClosure.Transfer
+import TauCeti.RingTheory.IsTensorProduct.Pushout
 import TauCeti.RingTheory.Kaehler.FormallyEtale
 import TauCeti.RingTheory.Kaehler.SeparatingLift
 import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.Localization.Away.Quotient
 import TauCeti.RingTheory.Localization.Finiteness
+import TauCeti.RingTheory.Localization.FractionRing
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.Localization.TensorProduct
 import TauCeti.RingTheory.QuasiFinite.Parameter
@@ -110,21 +113,12 @@ private lemma exists_separating_perturbation [IsReduced B] [Finite (minimalPrime
       letI : Algebra R[X] B :=
         (Polynomial.aeval (R := R) (algebraMap A B (a + π • b))).toRingHom.toAlgebra
       Module.Finite R[X] (integralClosure R[X] B) := by
-  let F (i : minimalPrimes B) : Type _ := letI := i.property.1.1; i.val.ResidueField
-  let (i : minimalPrimes B) : Field (F i) := by letI := i.property.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra K (F i) := by letI := i.property.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra R (F i) := by letI := i.property.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra B (F i) := by letI := i.property.1.1; infer_instance
-  let (i : minimalPrimes B) : Algebra A (F i) := by letI := i.property.1.1; infer_instance
-  have (i : minimalPrimes B) : IsScalarTower R K (F i) := by have := i.property.1.1; infer_instance
-  have (i : minimalPrimes B) : IsScalarTower R A (F i) := by have := i.property.1.1; infer_instance
-  have (i : minimalPrimes B) : IsScalarTower A B (F i) := by have := i.property.1.1; infer_instance
-  have (i : minimalPrimes B) : Algebra.EssFiniteType K (F i) := by
-    have := i.property.1.1; exact (hF i.val i.property).essFiniteType
+  let F := minimalPrimeResidueField B
+  have (i : minimalPrimes B) : Algebra.EssFiniteType K (F i) :=
+    (hF i.val i.property).essFiniteType
   have (i : minimalPrimes B) : Algebra.Transcendental K (F i) :=
     trdeg_ne_zero_iff.mp ((hF i.val i.property).trdeg_eq_one ▸ one_ne_zero)
   have (i : minimalPrimes B) : Algebra.FormallyUnramified A (F i) := by
-    have : i.val.IsPrime := i.property.1.1
     have : IsLocalization.AtPrime (F i) i.val :=
       isLocalization_atPrime_residueField_of_mem_minimalPrimes i.property
     have : Algebra.FormallyUnramified A B :=
@@ -132,8 +126,7 @@ private lemma exists_separating_perturbation [IsReduced B] [Finite (minimalPrime
     have : Algebra.FormallyUnramified B (F i) :=
       Algebra.FormallyUnramified.of_isLocalization i.val.primeCompl
     exact Algebra.FormallyUnramified.comp A B (F i)
-  have : FaithfulSMul R K := (faithfulSMul_iff_algebraMap_injective R K).mpr
-    (IsFractionRing.injective R K)
+  have : FaithfulSMul R K := TauCeti.IsFractionRing.faithfulSMul R K
   obtain ⟨b, hb⟩ := exists_forall_transcendental_and_isSeparable_adjoin_add_smul F
     (fun i ↦ hΩ i.val i.property) a hπ0
   refine ⟨b, ?_⟩
@@ -143,16 +136,13 @@ private lemma exists_separating_perturbation [IsReduced B] [Finite (minimalPrime
   refine finite_integralClosure_of_isReduced_of_forall_minimalPrimes fun Q hQ ↦ ?_
   have : Q.IsPrime := hQ.1.1
   have : IsScalarTower R R[X] Q.ResidueField := .of_algebraMap_eq fun r ↦ by
-    rw [IsScalarTower.algebraMap_apply R[X] B Q.ResidueField, RingHom.algebraMap_toAlgebra,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Polynomial.algebraMap_eq, Polynomial.aeval_C,
-      ← IsScalarTower.algebraMap_apply R B Q.ResidueField]
+    simp [IsScalarTower.algebraMap_apply R[X] B Q.ResidueField, RingHom.algebraMap_toAlgebra,
+      Polynomial.algebraMap_eq, ← IsScalarTower.algebraMap_apply R B Q.ResidueField]
   have hX : algebraMap R[X] Q.ResidueField Polynomial.X =
       algebraMap A Q.ResidueField (a + π • b) := by
-    rw [IsScalarTower.algebraMap_apply R[X] B Q.ResidueField, RingHom.algebraMap_toAlgebra,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Polynomial.aeval_X,
+    simp [IsScalarTower.algebraMap_apply R[X] B Q.ResidueField, RingHom.algebraMap_toAlgebra,
       ← IsScalarTower.algebraMap_apply A B Q.ResidueField]
   obtain ⟨htr, hsep⟩ := hb ⟨Q, hQ⟩
-  dsimp only [F] at htr hsep
   rw [← hX] at htr hsep
   have : FiniteDimensional K⟮algebraMap R[X] Q.ResidueField Polynomial.X⟯ Q.ResidueField :=
     (hF Q hQ).finiteDimensional_adjoin htr
@@ -169,10 +159,7 @@ private lemma finite_integralClosure_of_isTorsionFree [IsReduced B]
     Module.Finite A (integralClosure A B) := by
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
   have : IsLocalization.Away (algebraMap R A π) B := hπ.isLocalizationAway_of_isPushout (K := K)
-  have : Algebra.IsPushout R K A B := Algebra.IsPushout.symm ‹_›
-  have : Algebra.FiniteType K B :=
-    .of_surjective (Algebra.IsPushout.equiv R K A B).toAlgHom
-      (Algebra.IsPushout.equiv R K A B).surjective
+  have : Algebra.FiniteType K B := .of_isPushout R A K B
   have : IsNoetherianRing B := Algebra.FiniteType.isNoetherianRing K B
   have : Finite (minimalPrimes B) := minimalPrimes.finite_of_isNoetherianRing B
   have : Ring.KrullDimLE 1 B :=
@@ -241,9 +228,8 @@ theorem finite_integralClosure_of_isReduced_of_isFunctionField [IsReduced B]
   let : Algebra A' B := f'.toRingHom.toAlgebra
   have : IsScalarTower A A' B := .of_algebraMap_eq fun _ ↦ rfl
   have : IsScalarTower R A' B := .of_algebraMap_eq fun r ↦ by
-    rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f'.commutes]
-  have : FaithfulSMul R K := (faithfulSMul_iff_algebraMap_injective R K).mpr
-    (IsFractionRing.injective R K)
+    simp [RingHom.algebraMap_toAlgebra]
+  have : FaithfulSMul R K := TauCeti.IsFractionRing.faithfulSMul R K
   have : Module.IsTorsionFree R B := Module.IsTorsionFree.trans K
   have : Module.IsTorsionFree R A' := hf'_inj.moduleIsTorsionFree f' (map_smul f')
   have : Algebra.FiniteType R A' :=
@@ -253,22 +239,10 @@ theorem finite_integralClosure_of_isReduced_of_isFunctionField [IsReduced B]
     exact IsLocalization.Away.of_quotient (algebraMap R A π) I
   have : Algebra.IsPushout R A' K B :=
     (Algebra.isLocalization_away_iff_isPushout (A := K) π).mp inferInstance
-  have hfinA' : Module.Finite A' (integralClosure A' B) :=
+  have : Module.Finite A' (integralClosure A' B) :=
     finite_integralClosure_of_isTorsionFree (R := R) (K := K) (A := A') (B := B) hF hΩ
-  have hAA' : (algebraMap A A').Finite :=
-    RingHom.Finite.of_surjective _ Ideal.Quotient.mk_surjective
-  have : Algebra.IsIntegral A A' :=
-    have : Module.Finite A A' := hAA'
-    Algebra.IsIntegral.of_finite A A'
-  let g : integralClosure A' B →+* integralClosure A B :=
-    { toFun x := ⟨x.val, isIntegral_trans _ x.property⟩
-      map_one' := rfl, map_mul' _ _ := rfl, map_zero' := rfl, map_add' _ _ := rfl }
-  have hg : g.Finite :=
-    RingHom.Finite.of_surjective g fun y ↦ ⟨⟨y.val, y.property.tower_top⟩, rfl⟩
-  have hcomp : g.comp ((algebraMap A' (integralClosure A' B)).comp (algebraMap A A')) =
-      algebraMap A (integralClosure A B) := by ext; rfl
-  exact RingHom.finite_algebraMap.mp
-    (hcomp ▸ hg.comp ((RingHom.finite_algebraMap.mpr hfinA').comp hAA'))
+  have : Module.Finite A A' := RingHom.Finite.of_surjective _ Ideal.Quotient.mk_surjective
+  exact IsIntegralClosure.finite_of_finite_of_tower A' B (integralClosure A' B)
 
 include R K in
 /-- **Finiteness of the integral closure over a discrete valuation ring** when the generic fibre is
@@ -280,10 +254,7 @@ theorem finite_integralClosure_of_exists_isStandardSmoothOfRelativeDimension_one
       ∀ t ∈ s, Algebra.IsStandardSmoothOfRelativeDimension 1 K (Localization.Away t)) :
     Module.Finite A (integralClosure A B) := by
   obtain ⟨s, hspan, hsmooth⟩ := hs
-  have : Algebra.IsPushout R K A B := Algebra.IsPushout.symm ‹_›
-  have : Algebra.FiniteType K B :=
-    .of_surjective (Algebra.IsPushout.equiv R K A B).toAlgHom
-      (Algebra.IsPushout.equiv R K A B).surjective
+  have : Algebra.FiniteType K B := .of_isPushout R A K B
   have : Algebra.FinitePresentation K B := Algebra.FinitePresentation.of_finiteType.mp ‹_›
   have : Algebra.FormallySmooth K B := by
     rw [← Algebra.smoothLocus_eq_univ_iff, ← Set.univ_subset_iff,

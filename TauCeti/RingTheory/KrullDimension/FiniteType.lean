@@ -17,7 +17,6 @@ import Mathlib.RingTheory.Ideal.UFD
 import Mathlib.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Ideal.Height
 import TauCeti.RingTheory.KrullDimension.Basic
-import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!

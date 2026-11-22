@@ -31,6 +31,8 @@ General facts for transporting `IsIntegralClosure` and descending finiteness:
   equivalences of all three rings.
 * `TauCeti.IsIntegralClosure.tower_bot`: the integral closure of `A` in `B` is the integral
   closure of `R` in `B` when `A` is integral over `R`.
+* `TauCeti.IsIntegralClosure.finite_of_finite_of_tower`: finiteness of the integral closure over
+  a finite `R`-algebra `A` implies finiteness of the integral closure over `R`.
 * `TauCeti.IsIntegralClosure.finite_of_injective`: an integral `A`-algebra with an injective
   `A`-algebra map into `K'` is a finite `A`-module when the integral closure of `A` in `K'` is a
   Noetherian `A`-module.
@@ -86,6 +88,25 @@ theorem IsIntegralClosure.tower_bot {R A B C : Type*} [CommRing R] [CommRing A] 
   ⟨IsIntegralClosure.algebraMap_injective C A B,
     fun hx ↦ IsIntegralClosure.isIntegral_iff.mp (hx.tower_top (A := A)),
     fun hx ↦ isIntegral_trans _ ((IsIntegralClosure.isIntegral_iff (R := A)).mpr hx)⟩
+
+/-- If `A` is a finite `R`-algebra and an integral closure `C'` of `A` in `B` is a finite
+`A`-module, then any integral closure `C` of `R` in `B` is a finite `R`-module. -/
+theorem IsIntegralClosure.finite_of_finite_of_tower {R : Type*} (A B : Type*) {C : Type*}
+    (C' : Type*) [CommRing R] [CommRing A]
+    [CommRing B] [CommRing C] [CommRing C'] [Algebra R A] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] [Algebra R C] [Algebra C B] [IsScalarTower R C B]
+    [IsIntegralClosure C R B] [Algebra A C'] [Algebra C' B] [IsScalarTower A C' B]
+    [IsIntegralClosure C' A B] [Module.Finite R A] [Module.Finite A C'] :
+    Module.Finite R C := by
+  let _ : Algebra R C' := ((algebraMap A C').comp (algebraMap R A)).toAlgebra
+  have : IsScalarTower R A C' := .of_algebraMap_eq' rfl
+  have : IsScalarTower R C' B := .of_algebraMap_eq fun r ↦ by
+    simp [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply R A B,
+      ← IsScalarTower.algebraMap_apply A C' B]
+  have : Algebra.IsIntegral R A := .of_finite R A
+  have : IsIntegralClosure C' R B := tower_bot (A := A)
+  have : Module.Finite R C' := .trans A _
+  exact .equiv (IsIntegralClosure.equiv R C' B C).toLinearEquiv
 
 /-- An integral `A`-algebra `C` with an injective `A`-algebra map into `K'` is a finite `A`-module
 as soon as an integral closure `C'` of `A` in `K'` is a Noetherian `A`-module (for instance, a

@@ -111,8 +111,6 @@ theorem isIso_normalizedBlowupHom_iff [TauCeti.AlgebraicGeometry.IsNormalScheme 
     have : IsIso (M.blowupHom I hC).hom := (isIso_iff_isIso_hom _).mp ‹_›
     have : TauCeti.AlgebraicGeometry.IsNormalScheme (M.blowup I hC).total :=
       .of_isOpenImmersion (M.blowupHom I hC).hom
-    have : IsIso (M.blowup I hC).normalizationHom :=
-      (M.blowup I hC).isIso_normalizationHom_of_isNormalScheme
     rw [normalizedBlowupHom]
     infer_instance
 

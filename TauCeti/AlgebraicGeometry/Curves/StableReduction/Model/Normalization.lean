@@ -137,7 +137,7 @@ instance isNormalScheme_normalization_of_smooth [Smooth toK] :
 
 /-- If the total space of `M` is already normal, then `M.genericι.fromNormalization` is an
 isomorphism. -/
-theorem isIso_fromNormalization_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
+instance isIso_fromNormalization_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
     IsIso M.genericι.fromNormalization := by
   rw [Scheme.Hom.isIso_fromNormalization_iff]
   refine fun U hU ↦ ⟨M.genericι.app_injective U, fun s hs ↦ ?_⟩
@@ -210,7 +210,7 @@ lemma genericι_normalization : M.normalization.genericι = M.genericι.toNormal
   exact IsPullback.isoPullback_hom_fst _
 
 /-- The normalization of a proper model is a proper model. -/
-lemma isProper_normalization [hM : M.IsProper] : M.normalization.IsProper := by
+instance isProper_normalization [hM : M.IsProper] : M.normalization.IsProper := by
   have : AlgebraicGeometry.IsProper M.toBase := hM
   rw [Model.IsProper, normalization_toBase]
   infer_instance
@@ -245,10 +245,10 @@ theorem isIso_normalizationHom_iff : IsIso M.normalizationHom ↔
   exact forall₂_congr fun U _ ↦ and_iff_right (M.genericι.app_injective U)
 
 /-- If the total space of `M` is already normal, then `M.normalizationHom` is an isomorphism. -/
-theorem isIso_normalizationHom_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
+instance isIso_normalizationHom_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
     IsIso M.normalizationHom := by
   rw [isIso_iff_isIso_hom, normalizationHom_hom]
-  exact M.isIso_fromNormalization_of_isNormalScheme
+  infer_instance
 
 variable {M} {N : Model R K C toK}
 
@@ -292,18 +292,15 @@ models `f : N ⟶ M` from a model `N` with normal total space factors uniquely t
 def liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
     N ⟶ M.normalization where
   hom :=
-    have := N.isIso_fromNormalization_of_isNormalScheme
     inv N.genericι.fromNormalization ≫
       N.genericι.normalizationDesc (pullback.lift M.genericι.toNormalization N.genericι (by simp))
         (pullback.snd M.genericι.fromNormalization f.hom) (pullback.lift_snd _ _ _).symm ≫
       pullback.fst M.genericι.fromNormalization f.hom
   overBase := by
-    have := N.isIso_fromNormalization_of_isNormalScheme
     rw [normalization_toBase, Category.assoc, Category.assoc,
       pullback.condition_assoc, Scheme.Hom.normalizationDesc_comp_assoc,
       IsIso.inv_hom_id_assoc, f.overBase]
   genericFiber := by
-    have := N.isIso_fromNormalization_of_isNormalScheme
     refine baseChangeHom_genericFiberIso_hom_left _ _ ?_
     have hgeneric : N.genericι ≫ inv N.genericι.fromNormalization = N.genericι.toNormalization := by
       rw [IsIso.comp_inv_eq, Scheme.Hom.toNormalization_fromNormalization]
@@ -316,7 +313,6 @@ def liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M)
 lemma liftToNormalization_normalizationHom [AlgebraicGeometry.IsNormalScheme N.total]
     (f : N ⟶ M) :
     liftToNormalization f ≫ M.normalizationHom = f := by
-  have := N.isIso_fromNormalization_of_isNormalScheme
   refine Hom.ext ?_
   simp only [comp_hom, liftToNormalization, normalizationHom_hom, Category.assoc,
     pullback.condition, Scheme.Hom.normalizationDesc_comp_assoc, IsIso.inv_hom_id_assoc]

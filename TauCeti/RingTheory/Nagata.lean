@@ -12,10 +12,9 @@ import Mathlib.RingTheory.Finiteness.Quotient
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Submodule
-import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
-import TauCeti.RingTheory.IntegralClosure.Map
 import TauCeti.RingTheory.IntegralClosure.Pi
 import TauCeti.RingTheory.IntegralClosure.Transfer
+import TauCeti.RingTheory.Localization.FractionRing
 import TauCeti.RingTheory.Localization.Reduced
 
 /-!
@@ -111,15 +110,23 @@ instance (priority := 100) isJapanese [IsDomain R] [IsNagata R] : IsJapanese R :
   (RingEquiv.quotientBot R).isJapanese
 
 /-- For a prime `q` of an `R`-algebra `S` essentially of finite type over a Nagata ring `R`, the
-integral closure of `R` in the fraction field of `S ⧸ q` is a finite `R`-module. -/
+integral closure of `R` in any fraction field `L` of `S ⧸ q` is a finite `R`-module. -/
 private theorem finite_integralClosure_fractionRing_quotient [IsNagata R] (S : Type v)
-    [CommRing S] [Algebra R S] [Algebra.EssFiniteType R S] (q : Ideal S) [q.IsPrime] :
-    Module.Finite R (integralClosure R (FractionRing (S ⧸ q))) := by
+    [CommRing S] [Algebra R S] [Algebra.EssFiniteType R S] (q : Ideal S) [q.IsPrime]
+    (L : Type*) [Field L] [Algebra R L] [Algebra (S ⧸ q) L] [IsScalarTower R (S ⧸ q) L]
+    [IsFractionRing (S ⧸ q) L] :
+    Module.Finite R (integralClosure R L) := by
   set R' := R ⧸ q.under R
-  set L := FractionRing (S ⧸ q)
   -- `L` is a finitely generated field extension of the fraction field of the Japanese domain `R'`.
+  let : Algebra R' L := ((algebraMap (S ⧸ q) L).comp (algebraMap R' (S ⧸ q))).toAlgebra
+  have : IsScalarTower R' (S ⧸ q) L := .of_algebraMap_eq' rfl
+  have : IsScalarTower R R' L := .of_algebraMap_eq fun r ↦ by
+    simp [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply R R' (S ⧸ q),
+      ← IsScalarTower.algebraMap_apply R (S ⧸ q) L]
   have : FaithfulSMul R' (S ⧸ q) :=
     (faithfulSMul_iff_algebraMap_injective _ _).mpr Ideal.algebraMap_quotient_injective
+  have : FaithfulSMul (S ⧸ q) L := TauCeti.IsFractionRing.faithfulSMul (S ⧸ q) L
+  have : FaithfulSMul R' L := .trans R' (S ⧸ q) L
   let : Algebra (FractionRing R') L := FractionRing.liftAlgebra R' L
   have : Algebra.EssFiniteType R' (S ⧸ q) := .of_comp R R' (S ⧸ q)
   have : Algebra.EssFiniteType (S ⧸ q) L := .of_isLocalization (S := L) (nonZeroDivisors (S ⧸ q))
@@ -127,34 +134,18 @@ private theorem finite_integralClosure_fractionRing_quotient [IsNagata R] (S : T
   have : Algebra.EssFiniteType (FractionRing R') L := .of_comp R' (FractionRing R') L
   have := IsJapanese.finite_integralClosure (R := R') (FractionRing R') L
   -- `R'` is integral over `R`, so the integral closure of `R'` in `L` is that of `R`.
-  have : IsIntegralClosure (integralClosure R' L) R L :=
-    TauCeti.IsIntegralClosure.tower_bot (A := R')
-  have : Module.Finite R (integralClosure R' L) := .trans R' _
-  exact .equiv
-    (IsIntegralClosure.equiv R (integralClosure R' L) L (integralClosure R L)).toLinearEquiv
+  exact TauCeti.IsIntegralClosure.finite_of_finite_of_tower R' L (integralClosure R' L)
 
 /-- **Finiteness of integral closures over a Nagata ring.** For a Nagata ring `R` and a reduced
 `R`-algebra `S` essentially of finite type, the integral closure of `R` in `S` is a finite
 `R`-module. Stacks, Lemma 10.162.2 (03GH). -/
 theorem finite_integralClosure [IsNagata R] (S : Type v) [CommRing S] [IsReduced S] [Algebra R S]
-    [Algebra.EssFiniteType R S] : Module.Finite R (integralClosure R S) := by
+    [Algebra.EssFiniteType R S] : Module.Finite R (integralClosure R S) :=
   have : IsNoetherianRing S := Algebra.EssFiniteType.isNoetherianRing R S
   have : Finite (minimalPrimes S) := (minimalPrimes.finite_of_isNoetherianRing S).to_subtype
-  have (q : minimalPrimes S) : q.val.IsPrime := q.property.1.1
-  let L (q : minimalPrimes S) := FractionRing (S ⧸ q.val)
-  -- The reduced ring `S` embeds into the product of the fraction fields of its quotients by its
-  -- finitely many minimal primes.
-  let g : S →ₐ[R] ∀ q, L q := AlgHom.pi fun q ↦
-    (IsScalarTower.toAlgHom R (S ⧸ q.val) (L q)).comp (Ideal.Quotient.mkₐ R q.val)
-  have hg : Function.Injective g := by
-    have := (Function.Injective.piMap fun q ↦ IsFractionRing.injective (S ⧸ q.val) (L q)).comp
-      (Ideal.injective_pi_quotient_mk_minimalPrimes S)
-    exact this
-  have (q : minimalPrimes S) : Module.Finite R (integralClosure R (L q)) :=
-    finite_integralClosure_fractionRing_quotient S q.val
-  have : Module.Finite R (integralClosure R (∀ q, L q)) :=
-    .equiv (integralClosurePiAlgEquiv R L).symm.toLinearEquiv
-  exact .of_injective g.mapIntegralClosure.toLinearMap (AlgHom.mapIntegralClosure_injective hg)
+  finite_integralClosure_of_isReduced_of_forall_minimalPrimes fun Q hQ ↦
+    have := hQ.1.1
+    finite_integralClosure_fractionRing_quotient S Q Q.ResidueField
 
 /-- For a Nagata ring `R`, a reduced `R`-algebra `S` essentially of finite type, and any integral
 closure `C` of `R` in `S`, `C` is a finite `R`-module. -/

@@ -20,6 +20,7 @@ fraction field of the domain itself. The non-zero-divisor hypothesis holds whene
 localized to a nontrivial ring (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`, in
 `TauCeti.RingTheory.Localization.Defs`).
 
+A ring embeds faithfully into any ring of fractions (`TauCeti.IsFractionRing.faithfulSMul`).
 Similarly, if `S` is a localization of `B` at a submonoid `M` disjoint from a prime `P`, then any
 fraction ring `F` of `B ⧸ P` receiving a compatible `S ⧸ P S`-algebra structure is a fraction ring
 of `S ⧸ P S` (`TauCeti.IsFractionRing.quotient_map_of_isLocalization`).
@@ -28,6 +29,11 @@ of `S ⧸ P S` (`TauCeti.IsFractionRing.quotient_map_of_isLocalization`).
 public section
 
 namespace TauCeti.IsFractionRing
+
+/-- A ring embeds faithfully into any ring of fractions. -/
+theorem faithfulSMul (R K : Type*) [CommRing R] [CommRing K] [Algebra R K]
+    [IsFractionRing R K] : FaithfulSMul R K :=
+  (faithfulSMul_iff_algebraMap_injective R K).mpr (IsFractionRing.injective R K)
 
 variable {R : Type*} [CommRing R] (M : Submonoid R) (S T : Type*) [CommRing S] [CommRing T]
   [Algebra R S] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
@@ -56,11 +62,13 @@ theorem quotient_map_of_isLocalization {B S F : Type*} [CommRing B] {P : Ideal B
     IsFractionRing (S ⧸ P.map (algebraMap B S)) F := by
   have : IsScalarTower (B ⧸ P) (S ⧸ P.map (algebraMap B S)) F := .of_algebraMap_eq fun x ↦ by
     obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ideal.Quotient.algebraMap_quotient_map_quotient,
-      ← Ideal.Quotient.algebraMap_eq (I := P.map (algebraMap B S)),
+    have hb : algebraMap (B ⧸ P) (S ⧸ P.map (algebraMap B S)) (algebraMap B (B ⧸ P) b) =
+        algebraMap S (S ⧸ P.map (algebraMap B S)) (algebraMap B S b) := by
+      rw [Ideal.Quotient.algebraMap_eq, Ideal.Quotient.algebraMap_quotient_map_quotient,
+        ← Ideal.Quotient.algebraMap_eq]
+    simp [hb, ← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply B (B ⧸ P) F,
       ← IsScalarTower.algebraMap_apply S (S ⧸ P.map (algebraMap B S)) F,
-      ← IsScalarTower.algebraMap_apply B S F, IsScalarTower.algebraMap_apply B (B ⧸ P) F,
-      Ideal.Quotient.algebraMap_eq]
+      ← IsScalarTower.algebraMap_apply B S F]
   have hM : Algebra.algebraMapSubmonoid (B ⧸ P) M ≤ (B ⧸ P)⁰ := by
     rintro _ ⟨m, hm, rfl⟩
     rw [mem_nonZeroDivisors_iff_ne_zero, Ideal.Quotient.algebraMap_eq, ne_eq,

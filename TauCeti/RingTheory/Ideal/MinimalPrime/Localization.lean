@@ -27,8 +27,6 @@ primes:
   of the localization at every prime minimal over `f`. For `I = ⊥` in a reduced ring, the maximal
   ideal of `A_P` is zero at every minimal prime `P`, so `P.ResidueField` is itself a localization
   of `A` at `P`.
-* Every prime ideal `q` contains a minimal prime `p` disjoint from any submonoid `M` of
-  non-zero-divisors, so `p` extends to a prime of `M⁻¹ A` contracting back to `p`.
 * If `p` is minimal over an ideal `I`, then every element `x ∈ p` becomes nilpotent modulo `I` in
   the localization at `p`: some `s ∉ p` carries a power of `x` into `I`. This is how a property of
   `I` preserved under such multipliers passes to the minimal primes over `I`.
@@ -37,9 +35,6 @@ primes:
 
 * `TauCeti.le_of_mem_minimalPrimes_of_isDomain_localization`: if `A_m` is a domain, a minimal
   prime `P ≤ m` lies below every prime `q ≤ m`.
-* `TauCeti.exists_minimalPrime_le_and_map_isPrime`: every prime `q` contains a minimal prime `p`
-  disjoint from a submonoid `M` of non-zero-divisors, extending to a prime of `M⁻¹ A` that
-  contracts back to `p`.
 * `TauCeti.isCoprime_of_mem_minimalPrimes_of_isDomain_localization`: distinct minimal primes
   are coprime when all maximal localizations are domains.
 * `IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes`: if `m` is minimal over a
@@ -70,22 +65,6 @@ theorem le_of_mem_minimalPrimes_of_isDomain_localization {A : Type*} [CommSemiri
     exact (‹q'.IsPrime›.mem_or_mem (hsa ▸ q'.zero_mem)).resolve_left fun h ↦ hs (hq' h)
   have := hP.1.1
   exact (hP.2 ⟨RingHom.ker_isPrime _, bot_le⟩ (hker hPm)).trans (hker hqm)
-
-open scoped nonZeroDivisors in
-/-- Every prime ideal `q` of `A` contains a minimal prime `p` that is disjoint from any submonoid
-`M` of non-zero-divisors; hence `p` extends to a prime of `M⁻¹ A` contracting back to `p`. -/
-theorem exists_minimalPrime_le_and_map_isPrime {A B : Type*} [CommRing A] [CommRing B]
-    [Algebra A B] (M : Submonoid A) [IsLocalization M B] (hM : M ≤ A⁰) (q : Ideal A) [q.IsPrime] :
-    ∃ p : Ideal A, p ∈ minimalPrimes A ∧ p ≤ q ∧ Disjoint (M : Set A) p ∧
-      (p.map (algebraMap A B)).IsPrime ∧
-      (p.map (algebraMap A B)).comap (algebraMap A B) = p := by
-  obtain ⟨p, hp, hpq⟩ := Ideal.exists_minimalPrimes_le (bot_le : ⊥ ≤ q)
-  have hp_prime : p.IsPrime := hp.1.1
-  have hdisj : Disjoint (M : Set A) p :=
-    (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp).symm.mono_left hM
-  exact ⟨p, hp, hpq, hdisj,
-    IsLocalization.isPrime_of_isPrime_disjoint M B p hp_prime hdisj,
-    IsLocalization.under_map_of_isPrime_disjoint M B hp_prime hdisj⟩
 
 /-- Over a semiring whose localizations at maximal ideals are domains, distinct minimal primes are
 coprime: a maximal ideal containing both would contain two minimal primes of a local domain. -/
