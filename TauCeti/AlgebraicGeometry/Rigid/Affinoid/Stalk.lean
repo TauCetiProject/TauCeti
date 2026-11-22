@@ -73,6 +73,12 @@ variable (K A) in
 noncomputable abbrev ringPresheaf : (AffinoidSubdomain K A)ᵒᵖ ⥤ CommRingCat.{u} :=
   presheaf (K := K) (A := A) ⋙ forget₂ (CommAlgCat.{u} K) CommRingCat.{u}
 
+omit hA in
+/-- The restriction maps of `ringPresheaf` are `restrict`. -/
+theorem ringPresheaf_map_apply {U V : AffinoidSubdomain K A} (h : U ≤ V) (f : V.sections) :
+    (ringPresheaf K A).map (homOfLE h).op f = restrict h f :=
+  DFunLike.congr_fun (presheaf_map_hom h) f
+
 variable (K) in
 /-- The analytic stalk `𝒪_{Sp A,x}`: the fibre of the presheaf of coordinate rings at the site
 point of `x` for the weak affinoid G-topology. -/
@@ -101,7 +107,8 @@ theorem toStalk_apply (a : A) :
 @[simp]
 theorem germ_restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) (hx : x ∈ U) (f : V.sections) :
     germ U hx (restrict h f) = germ V (h hx) f :=
-  (weakGTopology.point x).toPresheafFiber_w_apply (homOfLE h) _ (ringPresheaf K A) f
+  ringPresheaf_map_apply h f ▸
+    (weakGTopology.point x).toPresheafFiber_w_apply (homOfLE h) _ (ringPresheaf K A) f
 
 /-- The germ of the restriction of `a ∈ A` is the germ of `a`. -/
 @[simp]
@@ -130,8 +137,8 @@ theorem germ_eq_germ_iff {U V : AffinoidSubdomain K A} (hU : x ∈ U) (hV : x �
         restrict hWU f = restrict hWV g := by
   have := weakGTopology.toPresheafFiber_pointElement_eq_iff (P := ringPresheaf K A)
     (by simpa using hU) (by simpa using hV) f g
-  simp only [setEmbedding_apply, SetLike.mem_coe] at this
-  -- The fibre maps of `ringPresheaf` are `germ` and its restriction maps are `restrict`.
+  simp only [setEmbedding_apply, SetLike.mem_coe, ringPresheaf_map_apply] at this
+  -- The fibre maps of `ringPresheaf` are `germ`, by definition.
   exact this
 
 /-- The germ of a section in `J 𝒪(U)` lies in `J 𝒪_{Sp A,x}`. -/
