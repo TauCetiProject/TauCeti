@@ -208,7 +208,7 @@ theorem not_isCommTransitive_zpowers_of_isProperPower [IsMulTorsionFree G] {u : 
     (hu : Group.IsProperPower u) (hu1 : u ≠ 1) :
     ¬ Group.IsCommTransitive
       (HNNExtension G (zpowers u) (zpowers u) (MulEquiv.refl (zpowers u))) := fun h =>
-  Group.not_isProperPower_of_zpowers_eq_centralizer hu1
+  Group.not_isProperPower_of_zpowers_eq_centralizer (not_isOfFinOrder_of_isMulTorsionFree hu1)
     (le_antisymm (zpowers_le.2 (mem_centralizer_singleton_iff.2 rfl))
       (centralizer_le_of_isCommTransitive h (mem_zpowers _) hu1)) hu
 

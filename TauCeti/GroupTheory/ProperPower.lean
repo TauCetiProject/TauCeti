@@ -159,19 +159,18 @@ theorem exists_maximalRoot_of_bddAbove {x : G}
   exact (hmax y _ ((pow_mul y m _).trans hr)).not_gt
     (lt_mul_of_one_lt_left (Nat.pos_of_ne_zero hk) (by omega))
 
-/-- In a torsion-free group, a nontrivial element generating the centralizer of some element is
-not a proper power. -/
-theorem not_isProperPower_of_zpowers_eq_centralizer [IsMulTorsionFree G] {x r : G} (hr1 : r ≠ 1)
-    (hr : Subgroup.zpowers r = Subgroup.centralizer {x}) : ¬IsProperPower r := by
+/-- An element of infinite order generating the centralizer of some element is not a proper
+power. In a torsion-free group, every nontrivial element has infinite order. -/
+theorem not_isProperPower_of_zpowers_eq_centralizer {x r : G} (hr : ¬IsOfFinOrder r)
+    (hc : Subgroup.zpowers r = Subgroup.centralizer {x}) : ¬IsProperPower r := by
   rintro ⟨s, n, hn, rfl⟩
   obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.1
-    (hr ▸ Subgroup.mem_centralizer_singleton_iff.2 rfl : x ∈ _)
+    (hc ▸ Subgroup.mem_centralizer_singleton_iff.2 rfl : x ∈ _)
   have hs : s ∈ Subgroup.zpowers (s ^ n) :=
-    hr ▸ Subgroup.mem_centralizer_singleton_iff.2 ((Commute.self_pow s n).zpow_right m).eq
-  have hs1 : s ≠ 1 := fun hs1 => hr1 (by simp [hs1])
+    hc ▸ Subgroup.mem_centralizer_singleton_iff.2 ((Commute.self_pow s n).zpow_right m).eq
   have hn1 : n = 1 := by
-    simpa only [orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree hs1),
-      Nat.gcd_zero_right] using mem_zpowers_pow_iff.mp hs
+    simpa only [orderOf_eq_zero fun h => hr h.pow, Nat.gcd_zero_right] using
+      mem_zpowers_pow_iff.mp hs
   omega
 
 end Group
