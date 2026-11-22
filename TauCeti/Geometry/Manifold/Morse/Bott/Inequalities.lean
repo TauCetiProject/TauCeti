@@ -32,8 +32,10 @@ Morse–Bott polynomial `∑ₐ t^{r a} P_{S a}(t)`. This file proves the **Mors
 for `b` and `c`: the weak inequalities `bⱼ ≤ cⱼ`, the strong inequalities
 `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`, Euler's equality in degrees at least `dim M`, and the
 polynomial identity `∑ⱼ cⱼ tʲ = ∑ⱼ bⱼ tʲ + (1 + t) Q(t)` with `Q` having natural number
-coefficients. For a Morse function every piece is a point of index the Morse index, so `cⱼ` is the
-number of critical points of index `j`, and these are the Morse inequalities over `𝔽₂`.
+coefficients. When no two consecutive `cⱼ` are both nonzero the inequalities force `bⱼ = cⱼ`, the
+lacunary principle: the function is perfect over `𝔽₂`. For a Morse function every piece is a point
+of index the Morse index, so `cⱼ` is the number of critical points of index `j`, and these are the
+Morse inequalities over `𝔽₂`.
 
 Over `𝔽₂` no orientation of the negative normal bundles is needed. Over another field the
 contribution of a piece is its homology twisted by the orientation local system of its negative
@@ -76,6 +78,8 @@ models and the coefficient field here live in `Type`.
   `TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_eq_sum` and
   `TauCeti.IsMorseBottFamily.exists_sum_range_monomial_sum_eq_add_mul`: the weak and strong
   Morse–Bott inequalities, Euler's equality and the Morse–Bott polynomial identity over `𝔽₂`.
+* `TauCeti.IsMorseBottFamily.bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero`: the lacunary
+  principle over `𝔽₂`, `bₙ = cₙ` when no two consecutive `cₙ` are both nonzero.
 
 ## References
 
@@ -456,6 +460,18 @@ theorem exists_sum_range_monomial_sum_eq_add_mul {n : ℕ} (hdimn : finrank ℝ 
     (ModuleCat.of K K) h.contMDiff hs hs₀ hsN hreg hdimn
   simp only [← bettiNumber_def, hsum] at hQ
   exact ⟨Q, hQ⟩
+
+/-- **The lacunary principle for a Morse–Bott function over `𝔽₂`.** Under the hypotheses of
+`TauCeti.IsMorseBottFamily.sum_range_neg_one_pow_mul_bettiNumber_le_sum`, write
+`cₖ = ∑ b_{k - r j}(S j; K)` over the pieces of index at most `k`. If of any two consecutive counts
+`cₖ` and `cₖ₊₁` one vanishes, then `bₙ(M; K) = cₙ` for every `n`: the Morse–Bott function is
+perfect over `K`. -/
+theorem bettiNumber_eq_sum_of_forall_eq_zero_or_eq_zero
+    (hlac : ∀ k, ∑ p with r p ≤ k, bettiNumber K (S p) (k - r p) = 0 ∨
+      ∑ p with r p ≤ k + 1, bettiNumber K (S p) (k + 1 - r p) = 0) (n : ℕ) :
+    bettiNumber K M n = ∑ p with r p ≤ n, bettiNumber K (S p) (n - r p) :=
+  congrFun (eq_of_forall_sum_range_neg_one_pow_mul_le
+    (h.sum_range_neg_one_pow_mul_bettiNumber_le_sum hr K) hlac) n
 
 end IsMorseBottFamily
 
