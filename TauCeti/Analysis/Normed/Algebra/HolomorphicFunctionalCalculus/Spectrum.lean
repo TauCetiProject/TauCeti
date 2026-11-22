@@ -13,10 +13,11 @@ public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basi
 For an element `a` of a complex Banach algebra, the holomorphic germ calculus
 `holomorphicCalculus a` reflects units: `f(a)` is invertible exactly when the germ `f` has no
 zero on the spectrum of `a`. Consequently the calculus commutes with `Ring.inverse` and satisfies
-the spectral mapping theorem `σ(f(a)) = f(σ(a))`. Related reciprocal and quotient evaluation
-formulas (including rational evaluation `TauCeti.holomorphicCalculus_ofFun_div` and
-`TauCeti.holomorphicCalculus_div_polynomial` in `Basic.lean`) likewise follow from the algebraic
-germ quotient formula `AlgHom.map_holomorphicGermsOfFun_div`.
+the spectral mapping theorem `σ(f(a)) = f(σ(a))`. Related reciprocal
+(`TauCeti.holomorphicCalculus_ofFun_inv`), quotient (`TauCeti.holomorphicCalculus_ofFun_div`), and
+rational (`TauCeti.holomorphicCalculus_div_polynomial`) evaluation formulas live in `Basic.lean`,
+following from the algebraic inverse-germ and quotient formulas
+`AlgHom.map_holomorphicGermsOfFun_inv` and `AlgHom.map_holomorphicGermsOfFun_div`.
 
 The key step is that a germ vanishing at `λ ∈ σ(a)` factors as `(z - λ) h(z)`, so that
 `f(a) = (a - λ) h(a) = h(a) (a - λ)` cannot be invertible. The zero algebra, where the spectrum

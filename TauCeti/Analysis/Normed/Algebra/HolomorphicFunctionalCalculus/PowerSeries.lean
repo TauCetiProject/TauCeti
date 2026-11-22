@@ -112,9 +112,8 @@ theorem holomorphicCalculus_ofScalarsSum (c : ℕ → ℂ) (z₀ : ℂ) {a : A}
         ((analyticOnNhd_ofScalarsSum_sub c z₀).mono ha)) =
       FormalMultilinearSeries.ofScalarsSum c (a - algebraMap ℂ A z₀) := by
   nontriviality A
-  obtain ⟨w, hw, _⟩ := spectrum.exists_eNorm_eq_spectralRadius a
-  have hr : 0 < (FormalMultilinearSeries.ofScalars ℂ c).radius :=
-    bot_le.trans_lt (Metric.mem_eball.mp (ha hw))
+  obtain ⟨w, hw⟩ := spectrum.nonempty a
+  have hr := Metric.pos_of_mem_eball (ha hw)
   rw [holomorphicCalculus_eq_tsum_of_hasFPowerSeriesOnBall a
       (hasFPowerSeriesOnBall_ofScalarsSum_sub c z₀ hr) ha,
     FormalMultilinearSeries.ofScalars_sum_eq]

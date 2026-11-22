@@ -34,9 +34,10 @@ multilinear series is `ofScalars` of its `coeff` sequence
 (`FormalMultilinearSeries.ofScalars_coeff`). Over a topological field `𝕜`, the scalar series
 `FormalMultilinearSeries.ofScalars 𝕜 c` agrees with `TauCeti.mkPiRingSeries 𝕜 c`
 (`TauCeti.mkPiRingSeries_eq_ofScalars`). Shifting a scalar power series around a base point `z₀`
-in a complete normed algebra yields a power series expansion and analyticity on the shifted open
-ball of convergence (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`,
-`TauCeti.analyticOnNhd_ofScalarsSum_sub`).
+in a complete normed algebra yields a `HasFPowerSeriesOnBall` expansion around `z₀` whenever the
+convergence radius is positive (`TauCeti.hasFPowerSeriesOnBall_ofScalarsSum_sub`), and yields
+analyticity on the shifted open ball of convergence unconditionally, even when that ball is empty
+(`TauCeti.analyticOnNhd_ofScalarsSum_sub`).
 -/
 
 public section
@@ -297,7 +298,7 @@ theorem mkPiRingSeries_eq_ofScalars {𝕜 : Type*} [Field 𝕜] [TopologicalSpac
   simp [FormalMultilinearSeries.ofScalars]
 
 /-- Shifting a scalar power series `FormalMultilinearSeries.ofScalarsSum c` by `z₀` gives a
-`HasFPowerSeriesOnBall` expansion around `z₀`. -/
+`HasFPowerSeriesOnBall` expansion around `z₀`, provided its convergence radius is positive. -/
 theorem hasFPowerSeriesOnBall_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [NormedRing E] [NormedAlgebra 𝕜 E] [CompleteSpace E] (c : ℕ → 𝕜) (z₀ : E)
     (hr : 0 < (FormalMultilinearSeries.ofScalars E c).radius) :

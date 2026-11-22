@@ -23,12 +23,9 @@ suffices; for general `u`, the germ must vanish at its scalar coordinate
 
 ## Main results
 
-* `WithLp.unitizationFstA_holomorphicCalculus`: the scalar coordinate of `g(u)` is
+* `WithLp.unitizationFstA_holomorphicCalculus`: specialization of
+  `AlgHom.map_holomorphicCalculus_eq_eval` showing that the scalar coordinate of `g(u)` is
   `g(WithLp.unitizationFstA ℂ A u)`.
-* `WithLp.unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_eq_zero`: for general `u`,
-  projecting and re-embedding recovers the unitized calculus value when the germ vanishes at the
-  scalar coordinate `WithLp.unitizationFstA ℂ A u` (in particular, at `0` when
-  `u = WithLp.unitizationInrL ℂ A a`).
 * `WithLp.holomorphicCalculus_mem_range_unitizationInrL_iff` and
   `WithLp.holomorphicCalculusOn_mem_range_unitizationInrL_iff`: membership in the image of `A` is
   equivalent to vanishing at the scalar coordinate `WithLp.unitizationFstA ℂ A u` (and at `0`
@@ -57,22 +54,8 @@ theorem unitizationFstA_holomorphicCalculus (u : WithLp 1 (Unitization ℂ A))
     (g : holomorphicGerms (spectrum ℂ u)) :
     unitizationFstA ℂ A (holomorphicCalculus u g) =
       holomorphicGerms.eval (unitizationFstA ℂ A u)
-        (AlgHom.apply_mem_spectrum (unitizationFstA ℂ A) u) g := by
-  rw [ContinuousAlgHom.map_holomorphicCalculus, holomorphicCalculus_complex]
-  obtain ⟨U, haU, f, rfl⟩ := holomorphicGerms.exists_toGerm_eq g
-  simp
-
-/-- When a holomorphic germ vanishes at the scalar coordinate of `u`, projecting the unitized
-calculus value to `A` and re-embedding recovers it. -/
-theorem unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_eq_zero
-    (u : WithLp 1 (Unitization ℂ A)) {g : holomorphicGerms (spectrum ℂ u)}
-    (hg : holomorphicGerms.eval (unitizationFstA ℂ A u)
-      (AlgHom.apply_mem_spectrum (unitizationFstA ℂ A) u) g = 0) :
-    unitizationInrL ℂ A (unitizationSndL ℂ A (holomorphicCalculus u g)) =
-      holomorphicCalculus u g :=
-  unitizationInrL_unitizationSndL_of_fst_eq_zero <| by
-    simpa only [unitizationFstA_apply] using
-      (u.unitizationFstA_holomorphicCalculus g).trans hg
+        (AlgHom.apply_mem_spectrum (unitizationFstA ℂ A) u) g :=
+  AlgHom.map_holomorphicCalculus_eq_eval (unitizationFstA ℂ A) u g
 
 /-- **Unitized holomorphic calculus range criterion (germ form).** The holomorphic calculus of
 `u : WithLp 1 (Unitization ℂ A)` lies in the image of `A` if and only if the germ vanishes at

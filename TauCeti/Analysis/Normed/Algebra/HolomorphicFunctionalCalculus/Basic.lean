@@ -28,8 +28,10 @@ Multiplicativity uses two nested grid cycles, not a connectedness assumption on 
 spectrum. The zero algebra and its empty spectrum are included. No normalization of
 the norm of the identity is assumed.
 
-This file also establishes the core algebraic and functorial properties directly from the contour
-definition:
+This file also establishes the core algebraic and functorial properties—commutation, naturality,
+and scalar specialization from the contour definition, together with character evaluation and
+resolvent/rational evaluation formulas as algebraic consequences of coordinate evaluation (via
+`AlgHom.map_holomorphicGermsOfFun_*`):
 * **Commutation**: every element commuting with `a` commutes with `f(a)`, and values of the
   calculus at commuting elements commute with one another.
 * **Naturality**: continuous unital complex-algebra homomorphisms and equivalences commute with
@@ -38,7 +40,8 @@ definition:
   `resolvent a w` for `w ∉ spectrum ℂ a` (and `holomorphicCalculusOn a U ha` does so for `w ∉ U`),
   and sends reciprocals, quotients `f(z) / g(z)`, and rational functions `p(z) / q(z)` (with
   denominator nonvanishing on `spectrum ℂ a`) to `f(a)⁻¹`, `f(a) g(a)⁻¹`, and `p(a) q(a)⁻¹`.
-* **Scalar specialization**: on `ℂ`, the calculus is point evaluation.
+* **Scalar specialization**: on `ℂ`, the calculus is point evaluation, so any complex character on
+  a Banach algebra evaluates the calculus by point evaluation at the character value.
 
 ## References
 
@@ -468,10 +471,8 @@ of its value. -/
 theorem holomorphicCalculus_ofFun_inv (a : A) (f : ℂ → ℂ)
     (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) (hne : ∀ x ∈ spectrum ℂ a, f x ≠ 0) :
     holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne)) =
-      Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) := by
-  have hu : IsUnit (holomorphicGerms.ofFun f hf) :=
-    (holomorphicGerms.isUnit_iff _).mpr fun x hx ↦ by simpa using hne x hx
-  rw [holomorphicGerms.ofFun_inv hf hne, hu.map_ringInverse (holomorphicCalculus a)]
+      Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) :=
+  (holomorphicCalculus a).map_holomorphicGermsOfFun_inv hf hne
 
 /-- The calculus sends a quotient by a function with no zero on the spectrum to the product with
 the inverse of the denominator's value. -/
@@ -540,3 +541,20 @@ theorem holomorphicCalculus_complex (c : ℂ) (g : holomorphicGerms (spectrum �
 end Scalar
 
 end TauCeti
+
+namespace AlgHom
+
+open TauCeti HolomorphicFunctions
+
+/-- Any complex character on a unital complex Banach algebra `B` evaluates the holomorphic germ
+calculus by point evaluation at `φ b`. -/
+theorem map_holomorphicCalculus_eq_eval {F B : Type*} [NormedRing B] [NormedAlgebra ℂ B]
+    [CompleteSpace B] [FunLike F B ℂ] [AlgHomClass F ℂ B ℂ] (φ : F) (b : B)
+    (g : holomorphicGerms (spectrum ℂ b)) :
+    φ (holomorphicCalculus b g) =
+      holomorphicGerms.eval (φ b) (AlgHom.apply_mem_spectrum φ b) g := by
+  rw [AlgHom.map_holomorphicCalculus φ (map_continuous φ), holomorphicCalculus_complex]
+  obtain ⟨U, hbU, f, rfl⟩ := holomorphicGerms.exists_toGerm_eq g
+  simp
+
+end AlgHom
