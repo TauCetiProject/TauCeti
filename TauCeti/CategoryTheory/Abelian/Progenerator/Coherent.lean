@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Coherent
+public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Coherent.Basic
 public import TauCeti.CategoryTheory.Abelian.Progenerator.Basic
 
 /-!

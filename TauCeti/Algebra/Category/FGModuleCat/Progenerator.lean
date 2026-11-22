@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.FGModuleCat.Projective
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Progenerator
+
+import Mathlib.Algebra.Module.Shrink
 
 /-!
 # Progenerators in `FGModuleCat`
@@ -57,7 +59,9 @@ variable {R : Type u} [Ring R]
 `FGModuleCat R`. -/
 theorem isProgenerator_of_projective_of_isGenerator (P : FGModuleCat.{v} R)
     [Module.Projective R P] [TauCeti.Module.IsGenerator R P] : IsProgenerator P :=
-  have := FGModuleCat.projective_of_moduleProjective R P
+  have : (ModuleCat.isFG.{v} R).ι.PreservesEpimorphisms :=
+    inferInstanceAs (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesEpimorphisms
+  have := (ModuleCat.isFG.{v} R).projective_of_moduleProjective P
   (ModuleCat.isFG.{v} R).isProgenerator_of_projective_of_isGenerator le_rfl P
 
 /-- **Characterization of progenerators in `FGModuleCat R`.** When `R` is `v`-small (automatic for

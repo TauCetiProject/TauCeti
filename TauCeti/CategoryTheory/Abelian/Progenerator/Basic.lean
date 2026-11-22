@@ -7,7 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Basic
 public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic
-public import TauCeti.CategoryTheory.Preadditive.Projectivization
+public import TauCeti.CategoryTheory.Preadditive.Projectivization.Basic
+public import TauCeti.CategoryTheory.Preadditive.Projectivization.Progenerator
 
 /-!
 # The progenerator equivalence for abelian categories
@@ -190,6 +191,7 @@ theorem progeneratorFunctorCompιIso_inv_app (hP : IsProgenerator P) (X : C) :
 
 /-- The action of `hP.progeneratorFunctor` on morphisms agrees with `Hom(P, -)` modulo the
 comparison isomorphism `hP.progeneratorFunctorCompιIso`. -/
+@[simp]
 theorem progeneratorFunctor_map_hom (hP : IsProgenerator P) {X Y : C} (f : X ⟶ Y) :
     (hP.progeneratorFunctor.map f).hom =
       hP.progeneratorFunctorCompιIso.hom.app X ≫ (preadditiveCoyonedaObj P).map f ≫
@@ -229,19 +231,12 @@ theorem progeneratorEquivalence_functor (hP : IsProgenerator P) :
     hP.progeneratorEquivalence.functor = hP.progeneratorFunctor :=
   (rfl)
 
-/-- The underlying module of `hP.progeneratorEquivalence.functor.obj X` is
-`(preadditiveCoyonedaObj P).obj X`. -/
-theorem progeneratorEquivalence_functor_obj_obj (hP : IsProgenerator P) (X : C) :
-    (hP.progeneratorEquivalence.functor.obj X).obj = (preadditiveCoyonedaObj P).obj X :=
-  (rfl)
-
 /-- The action of `hP.progeneratorEquivalence.functor` on morphisms agrees with `Hom(P, -)` up
 to the definitional identification of objects. -/
+@[simp]
 theorem progeneratorEquivalence_functor_map_hom (hP : IsProgenerator P) {X Y : C} (f : X ⟶ Y) :
     (hP.progeneratorEquivalence.functor.map f).hom =
-      eqToHom (hP.progeneratorEquivalence_functor_obj_obj X) ≫
-        (preadditiveCoyonedaObj P).map f ≫
-        eqToHom (hP.progeneratorEquivalence_functor_obj_obj Y).symm :=
+      eqToHom (by simp) ≫ (preadditiveCoyonedaObj P).map f ≫ eqToHom (by simp) :=
   hP.progeneratorFunctor_map_hom f
 
 instance additive_progeneratorEquivalence_functor (hP : IsProgenerator P) :
@@ -282,9 +277,6 @@ noncomputable def isProjectiveCompProgeneratorEquivalenceFunctorIso (hP : IsProg
   NatIso.ofComponents
     (fun X ↦ ObjectProperty.isoMk _ (eqToIso (by simp)))
     fun {X Y} f ↦ ObjectProperty.hom_ext _ <| by
-      simp only [Functor.comp_map, ObjectProperty.ι_map, ObjectProperty.ιOfLE_map]
-      dsimp
-      rw [progeneratorEquivalence_functor_map_hom, projectiveEquivalence_functor_map_hom]
       simp [-preadditiveCoyonedaObj_map, Category.assoc]
 
 @[simp]

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.WeakLimits.WeakKernels
 public import TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic
-public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.WeakKernels
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.RingTheory.Coherent.Basic
 
@@ -15,41 +15,30 @@ public import TauCeti.RingTheory.Coherent.Basic
 
 Over any ring `R`, `TauCeti.finitePresentationModules R` contains zero and is closed under finite
 products, cokernels and retracts (`TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic`).
-Closing the finitely presented `R`-modules under kernels requires a condition on `R`. By Chase's
-theorem, the following properties of `R` are equivalent (`TauCeti.isCoherentRing_tfae`):
+Closing the finitely presented `R`-modules under kernels is equivalent to `R` being left coherent
+(`TauCeti.IsCoherentRing R`), and likewise to
+`(TauCeti.finitePresentationModules R).FullSubcategory` having kernels or being abelian, and to
+`proj R` (`(TauCeti.finiteProjectiveModules R).FullSubcategory`) having weak kernels.
 
-* `R` is left coherent (`TauCeti.IsCoherentRing R`), i.e., every finitely generated left ideal of
-  `R` is finitely presented;
-* `TauCeti.finitePresentationModules R` is closed under kernels in `ModuleCat R`;
-* the full subcategory of finitely presented `R`-modules is abelian;
-* the full subcategory of finitely presented `R`-modules has kernels;
-* the category `proj R` (`(TauCeti.finiteProjectiveModules R).FullSubcategory`) of finitely
-  generated projective `R`-modules has weak kernels;
-* the category `mod (proj R)` of finitely presented functors on `proj R` is closed under kernels in
-  the functor category.
-
-In particular, when `[TauCeti.IsCoherentRing R]` holds,
-`(finitePresentationModules R).FullSubcategory` is automatically an abelian category whose kernels
-and cokernels are computed in `ModuleCat R`, and `(finiteProjectiveModules R).FullSubcategory` has
-weak kernels.
+The six-way equivalence including closure of finitely presented functors on `proj R` under kernels
+is in `TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Coherent.FinitelyPresentedFunctor`.
 
 ## Main results
 
-* `TauCeti.isCoherentRing_tfae`: the six-way equivalence between left coherence of `R`, closure of
-  `finitePresentationModules R` under kernels, `Abelian` and `HasKernels` on
-  `(finitePresentationModules R).FullSubcategory`, `HasWeakKernels` on `proj R`, and closure of
-  `mod (proj R)` under kernels.
+* `TauCeti.hasWeakKernels_finiteProjectiveModules_of_hasKernels` and
+  `TauCeti.isCoherentRing_of_hasWeakKernels_finiteProjectiveModules`: the forward and backward steps
+  relating kernels in `finitePresentationModules R`, weak kernels in `proj R`, and
+  `IsCoherentRing R`.
 * `TauCeti.hasWeakKernels_finiteProjectiveModules_iff_isCoherentRing`,
   `TauCeti.isClosedUnderKernels_finitePresentationModules_iff_isCoherentRing`,
   `TauCeti.hasKernels_finitePresentationModules_iff_isCoherentRing`,
   `TauCeti.nonempty_abelian_finitePresentationModules_iff_isCoherentRing`, and
-  `TauCeti.nonempty_abelian_finitePresentationModules_iff_hasWeakKernels`: pairwise equivalences.
+  `TauCeti.nonempty_abelian_finitePresentationModules_iff_hasWeakKernels`: pairwise equivalences
+  between left coherence of `R`, the module criteria, and `HasWeakKernels` on `proj R`.
 
 ## References
 
 * S. U. Chase, *Direct products of modules*, Trans. Amer. Math. Soc. 97 (1960), 457–473.
-* M. Auslander, *Coherent functors*, Proceedings of the Conference on Categorical Algebra
-  (La Jolla, 1965), Springer (1966), 189–231.
 * N. Bourbaki, *Algèbre Commutative*, Ch. I, §2, Exercise 12.
 * [The Stacks Project, Section 10.90, Tag 05CU](https://stacks.math.columbia.edu/tag/05CU).
 -/
@@ -65,7 +54,7 @@ namespace TauCeti
 
 variable (R : Type u) [Ring R]
 
-/-! ### Chase's coherence theorem -/
+/-! ### Coherence criteria for modules and projective modules -/
 
 /-- Over a left coherent ring `R`, finitely presented `R`-modules are closed under kernels in
 `ModuleCat R`. Combined with `ContainsZero`, `IsClosedUnderCokernels` and
@@ -165,65 +154,45 @@ theorem isCoherentRing_of_hasWeakKernels_finiteProjectiveModules
     simpa only [φ, ObjectProperty.homMk_hom, Category.assoc, Iso.inv_hom_id, Category.comp_id,
       ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom] using hw
 
-/-- **Chase's coherence theorem and categorical characterizations of left coherence.** For any ring
-`R`, the following are equivalent:
-1. `R` is left coherent (`TauCeti.IsCoherentRing R`);
-2. `TauCeti.finitePresentationModules R` is closed under kernels in `ModuleCat R`;
-3. `(TauCeti.finitePresentationModules R).FullSubcategory` is an abelian category;
-4. `(TauCeti.finitePresentationModules R).FullSubcategory` has kernels;
-5. `(TauCeti.finiteProjectiveModules R).FullSubcategory` (`proj R`) has weak kernels;
-6. `TauCeti.isFinitelyPresentedFunctor (TauCeti.finiteProjectiveModules R).FullSubcategory`
-   (`mod (proj R)`) is closed under kernels in the functor category. -/
-theorem isCoherentRing_tfae :
-    List.TFAE
-      [IsCoherentRing R,
-        (finitePresentationModules R).IsClosedUnderKernels,
-        Nonempty (Abelian (finitePresentationModules R).FullSubcategory),
-        HasKernels (finitePresentationModules R).FullSubcategory,
-        HasWeakKernels (finiteProjectiveModules R).FullSubcategory,
-        (isFinitelyPresentedFunctor
-          (finiteProjectiveModules R).FullSubcategory).IsClosedUnderKernels] := by
-  tfae_have 1 → 2 := fun _ ↦ inferInstance
-  tfae_have 2 → 3 := fun _ ↦ ⟨inferInstance⟩
-  tfae_have 3 → 4 := fun ⟨_⟩ ↦ inferInstance
-  tfae_have 4 → 5 := fun _ ↦ hasWeakKernels_finiteProjectiveModules_of_hasKernels R
-  tfae_have 5 → 6 := fun _ ↦
-    have : HasBinaryBiproducts (finiteProjectiveModules R).FullSubcategory := .of_hasBinaryProducts
-    inferInstance
-  tfae_have 6 → 5 := fun _ ↦ hasWeakKernels_of_isClosedUnderKernels
-  tfae_have 5 → 1 := fun _ ↦ isCoherentRing_of_hasWeakKernels_finiteProjectiveModules R
-  tfae_finish
-
 variable {R}
 
 /-- `proj R` has weak kernels if and only if `R` is left coherent. -/
 theorem hasWeakKernels_finiteProjectiveModules_iff_isCoherentRing :
     HasWeakKernels (finiteProjectiveModules R).FullSubcategory ↔ IsCoherentRing R :=
-  (isCoherentRing_tfae R).out 5 1
+  ⟨fun _ ↦ isCoherentRing_of_hasWeakKernels_finiteProjectiveModules R, fun _ ↦ inferInstance⟩
 
 /-- `finitePresentationModules R` is closed under kernels in `ModuleCat R` if and only if `R` is
 left coherent. -/
 theorem isClosedUnderKernels_finitePresentationModules_iff_isCoherentRing :
     (finitePresentationModules R).IsClosedUnderKernels ↔ IsCoherentRing R :=
-  (isCoherentRing_tfae R).out 2 1
+  ⟨fun _ ↦
+    have : HasKernels (finitePresentationModules R).FullSubcategory := inferInstance
+    have := hasWeakKernels_finiteProjectiveModules_of_hasKernels R
+    isCoherentRing_of_hasWeakKernels_finiteProjectiveModules R,
+   fun _ ↦ inferInstance⟩
 
 /-- `(finitePresentationModules R).FullSubcategory` has kernels if and only if `R` is left
 coherent. -/
 theorem hasKernels_finitePresentationModules_iff_isCoherentRing :
     HasKernels (finitePresentationModules R).FullSubcategory ↔ IsCoherentRing R :=
-  (isCoherentRing_tfae R).out 4 1
+  ⟨fun _ ↦
+    have := hasWeakKernels_finiteProjectiveModules_of_hasKernels R
+    isCoherentRing_of_hasWeakKernels_finiteProjectiveModules R,
+   fun _ ↦ inferInstance⟩
 
 /-- `(finitePresentationModules R).FullSubcategory` is abelian if and only if `R` is left coherent.
 -/
 theorem nonempty_abelian_finitePresentationModules_iff_isCoherentRing :
     Nonempty (Abelian (finitePresentationModules R).FullSubcategory) ↔ IsCoherentRing R :=
-  (isCoherentRing_tfae R).out 3 1
+  ⟨fun ⟨_⟩ ↦ hasKernels_finitePresentationModules_iff_isCoherentRing.mp inferInstance,
+   fun _ ↦ ⟨inferInstance⟩⟩
 
 /-- `(finitePresentationModules R).FullSubcategory` is abelian if and only if `proj R` has weak
 kernels. -/
 theorem nonempty_abelian_finitePresentationModules_iff_hasWeakKernels :
     Nonempty (Abelian (finitePresentationModules R).FullSubcategory) ↔
       HasWeakKernels (finiteProjectiveModules R).FullSubcategory :=
-  (isCoherentRing_tfae R).out 3 5
+  nonempty_abelian_finitePresentationModules_iff_isCoherentRing.trans
+    hasWeakKernels_finiteProjectiveModules_iff_isCoherentRing.symm
 
 end TauCeti

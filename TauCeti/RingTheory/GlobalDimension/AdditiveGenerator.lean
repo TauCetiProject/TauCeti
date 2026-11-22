@@ -13,7 +13,7 @@ import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 import TauCeti.Algebra.Category.ModuleCat.Algebra
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
-import TauCeti.CategoryTheory.Preadditive.Projectivization
+import TauCeti.CategoryTheory.Preadditive.Projectivization.Basic
 import TauCeti.RingTheory.GlobalDimension.MulOpposite
 
 /-!
