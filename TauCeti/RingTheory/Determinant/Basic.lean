@@ -88,6 +88,7 @@ theorem isUnit_map (D : Determinant A R d) {x : R} (hx : IsUnit x) : IsUnit (D x
   hx.map D.toMonoidHom
 
 /-- Scalar multiplication on the source has weight `d`. -/
+@[simp]
 theorem map_smul (D : Determinant A R d) (a : A) (x : R) :
     D (a • x) = a ^ d * D x :=
   D.isHomogeneous.ground_smul a x
@@ -138,7 +139,7 @@ def degreeZero (A : Type u) [CommSemiring A] (R : Type v) [Semiring R] [Algebra 
     { toFun' _ _ _ _ := 1
       isCompat' φ := by
         funext _
-        exact (Algebra.TensorProduct.map φ (AlgHom.id A A)).map_one }
+        simp [Algebra.TensorProduct.one_def] }
   isHomogeneous := PolynomialLaw.isHomogeneousOfDegree_iff.mpr fun S _ _ s x ↦ by simp
   isMultiplicative :=
     { toFun'_one _ := rfl
@@ -156,7 +157,7 @@ theorem degreeZero_toFun (S : Type*) [CommSemiring S] [Algebra A S] (x : S ⊗[A
     (degreeZero A R).toLaw.toFun S x = 1 := by
   obtain ⟨n, φ, y, rfl⟩ := PolynomialLaw.exists_lift x
   rw [← PolynomialLaw.isCompat_apply, ← PolynomialLaw.toFun'_eq_toFun, degreeZero_toFun']
-  exact (Algebra.TensorProduct.map φ (AlgHom.id A A)).map_one
+  simp [Algebra.TensorProduct.one_def]
 
 /-- Every degree-zero determinant is the constant-one law. -/
 theorem eq_degreeZero (D : Determinant A R 0) : D = degreeZero A R := by
@@ -208,6 +209,18 @@ def algHomEquiv (A : Type u) [CommSemiring A] (R : Type v) [Semiring R] [Algebra
 theorem algHomEquiv_apply {A : Type u} [CommSemiring A] {R : Type v} [Semiring R]
     [Algebra A R] (φ : R →ₐ[A] A) : algHomEquiv A R φ = φ.toDeterminant :=
   (rfl)
+
+/-- Recovering the algebra map of a determinant built from `φ` gives back `φ`. -/
+@[simp]
+theorem algHomEquiv_symm_toDeterminant {A : Type u} [CommSemiring A] {R : Type v} [Semiring R]
+    [Algebra A R] (φ : R →ₐ[A] A) : (algHomEquiv A R).symm φ.toDeterminant = φ := by
+  simpa only [algHomEquiv_apply] using (algHomEquiv A R).symm_apply_apply φ
+
+/-- Bundling the algebra map recovered from a degree-one determinant gives back that determinant. -/
+@[simp]
+theorem toDeterminant_algHomEquiv_symm {A : Type u} [CommSemiring A] {R : Type v} [Semiring R]
+    [Algebra A R] (D : Determinant A R 1) : ((algHomEquiv A R).symm D).toDeterminant = D := by
+  simpa only [algHomEquiv_apply] using (algHomEquiv A R).apply_symm_apply D
 
 /-- The algebra map recovered from a degree-one determinant has the same ground values. -/
 @[simp]
