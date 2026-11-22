@@ -52,6 +52,7 @@ theorem mem_atlas_iff (e : OpenPartialHomeomorph (ComplexProjectiveSpace n) (Fin
 
 /-- The preferred chart at the point `affineParam k 0`, whose only nonzero homogeneous coordinate is
 the coordinate `k`, is the homogeneous-ratio chart `X_k ≠ 0`: it is the only chart containing it. -/
+@[simp]
 theorem chartAt_affineParam_zero (k : Fin (n + 1)) :
     chartAt (Fin n → ℂ) (affineParam k 0) = affineChart k := by
   have h := (exists_mem_affineOpen (affineParam k (0 : Fin n → ℂ))).choose_spec

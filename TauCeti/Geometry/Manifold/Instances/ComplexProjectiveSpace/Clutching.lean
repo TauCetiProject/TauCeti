@@ -207,11 +207,10 @@ private theorem tangentCoordChange_affineParam_zero_single {z : ℂ} (hz : z ≠
     exact ⟨by simp [affineParam_mem_affineOpen_iff], affineParam_zero_single_mem_affineOpen_one hz⟩
   have h := hasFDerivWithinAt_tangentCoordChange hb
   have hw : (Pi.single 0 z : Fin (n + 1) → ℂ) 0 ≠ 0 := by simpa using hz
-  simp only [extChartAt, chartAt_affineParam_zero, modelWithCornersSelf_partialEquiv,
-    PartialEquiv.trans_refl, OpenPartialHomeomorph.extend] at h
-  rw [modelWithCornersSelf_coe, range_id, hasFDerivWithinAt_univ] at h
-  have h0 : (affineChart 0).toPartialEquiv (affineParam 0 (Pi.single 0 z : Fin (n + 1) → ℂ)) =
-      Pi.single 0 z := by
+  simp only [extChartAt_coe, extChartAt_coe_symm, chartAt_affineParam_zero,
+    modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.id_comp, Function.comp_id,
+    Function.comp_apply, range_id, hasFDerivWithinAt_univ] at h
+  have h0 : affineChart 0 (affineParam 0 (Pi.single 0 z : Fin (n + 1) → ℂ)) = Pi.single 0 z := by
     rw [← affineChart_symm_apply]
     exact (affineChart 0).right_inv (by simp)
   rw [h0] at h
@@ -229,7 +228,7 @@ private abbrev triv (n : ℕ) (k : Fin (n + 2)) :=
 
 private theorem mem_triv_baseSet_iff (k : Fin (n + 2)) (b : ComplexProjectiveSpace (n + 1)) :
     b ∈ (triv n k).baseSet ↔ b ∈ affineOpen k := by
-  simp [chartAt_affineParam_zero]
+  simp
 
 /-- A vector given in the trivialization of the chart `X₀ ≠ 0` reads in the trivialization of the
 chart `X₁ ≠ 0` through the tangent coordinate change. -/
@@ -243,27 +242,6 @@ private theorem triv_one_triv_zero_symm {b : ComplexProjectiveSpace (n + 1)}
   exact TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange h₀ h₁ w
 
 /-! ### A frame of the tangent bundle along the line -/
-
-/-- The diagonal automorphism `v ↦ a * v` of `Fin m → ℂ`, for coefficients `a` with no zero. -/
-private def diagEquiv {m : ℕ} (a : Fin m → ℂ) (ha : ∀ j, a j ≠ 0) :
-    (Fin m → ℂ) ≃L[ℂ] (Fin m → ℂ) :=
-  ContinuousLinearEquiv.piCongrRight fun j ↦
-    ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 (a j) (ha j))
-
-private theorem diagEquiv_apply {m : ℕ} (a : Fin m → ℂ) (ha : ∀ j, a j ≠ 0) (v : Fin m → ℂ) :
-    diagEquiv a ha v = a * v := by
-  ext j
-  simp [diagEquiv, mul_comm]
-
-private theorem det_diagEquiv {m : ℕ} (a : Fin m → ℂ) (ha : ∀ j, a j ≠ 0) :
-    LinearMap.det ((diagEquiv a ha).toLinearEquiv : (Fin m → ℂ) →ₗ[ℂ] (Fin m → ℂ)) =
-      ∏ j, a j := by
-  have h : ((diagEquiv a ha).toLinearEquiv : (Fin m → ℂ) →ₗ[ℂ] (Fin m → ℂ)) =
-      Matrix.toLin' (Matrix.diagonal a) :=
-    LinearMap.ext fun v ↦ by
-      ext j
-      simp [diagEquiv, Matrix.mulVec_diagonal, mul_comm]
-  rw [h, LinearMap.det_toLin', Matrix.det_diagonal]
 
 private theorem lineSquare_eq_sphereScale {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
     lineSquare n y =
@@ -307,11 +285,13 @@ the chart `X₁ ≠ 0`. -/
 private def frame (y : Fin 2 → I) :
     (Fin (n + 1) → ℂ) ≃L[ℂ] TangentSpace 𝓘(ℂ, Fin (n + 1) → ℂ) (lineSquare n y) :=
   if hy : y ∈ Cube.boundary (Fin 2) then
-    (diagEquiv (outerCoeff y) (outerCoeff_ne_zero (squareCenterOffset_ne_zero_of_mem hy))).trans
+    (ContinuousLinearEquiv.piCongrRight fun j ↦ ContinuousLinearEquiv.unitsEquivAut ℂ
+        (Units.mk0 _ (outerCoeff_ne_zero (squareCenterOffset_ne_zero_of_mem hy) j))).trans
       ((triv n 1).continuousLinearEquivAt ℂ _ ((mem_triv_baseSet_iff _ _).2
         (lineSquare_mem_affineOpen_one (squareCenterOffset_ne_zero_of_mem hy)))).symm
   else
-    (diagEquiv (innerCoeff y) (innerCoeff_ne_zero hy)).trans
+    (ContinuousLinearEquiv.piCongrRight fun j ↦ ContinuousLinearEquiv.unitsEquivAut ℂ
+        (Units.mk0 _ (innerCoeff_ne_zero hy j))).trans
       ((triv n 0).continuousLinearEquivAt ℂ _ ((mem_triv_baseSet_iff _ _).2
         (lineSquare_mem_affineOpen_zero hy))).symm
 
@@ -320,7 +300,9 @@ private theorem triv_zero_frame {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin
     (h : lineSquare n y ∈ (triv n 0).baseSet) (v : Fin (n + 1) → ℂ) :
     (triv n 0).continuousLinearEquivAt ℂ _ h (frame y v) = innerCoeff y * v := by
   simp only [frame, hy, dite_false, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.apply_symm_apply, diagEquiv_apply]
+    ContinuousLinearEquiv.apply_symm_apply]
+  ext j
+  simp [mul_comm]
 
 /-- Away from the centre of the square, the frame reads as `diag(-(2 c)⁻², (2 c)⁻¹, …, (2 c)⁻¹)`
 in the chart `X₁ ≠ 0`. -/
@@ -329,19 +311,44 @@ private theorem triv_one_frame {y : Fin 2 → I} (hc : squareCenterOffset y ≠ 
     (triv n 1).continuousLinearEquivAt ℂ _ h (frame y v) = outerCoeff y * v := by
   by_cases hy : y ∈ Cube.boundary (Fin 2)
   · simp only [frame, hy, dite_true, ContinuousLinearEquiv.trans_apply,
-      ContinuousLinearEquiv.apply_symm_apply, diagEquiv_apply]
+      ContinuousLinearEquiv.apply_symm_apply]
+    ext j
+    simp [mul_comm]
   · -- At `z = 2 c s`, `diag(-z⁻², z⁻¹, …) diag(s², s, …) = diag(-(2 c)⁻², (2 c)⁻¹, …)`.
     have h₀ : lineSquare n y ∈ (triv n 0).baseSet :=
       (mem_triv_baseSet_iff _ _).2 (lineSquare_mem_affineOpen_zero hy)
     have hs := Complex.ofReal_ne_zero.2 (sphereScale_ne_zero hy)
     simp only [frame, hy, dite_false, ContinuousLinearEquiv.trans_apply]
     rw [triv_one_triv_zero_symm h₀ h, lineSquare_eq_sphereScale hy,
-      tangentCoordChange_affineParam_zero_single (mul_ne_zero hs (mul_ne_zero two_ne_zero hc)),
-      diagEquiv_apply]
+      tangentCoordChange_affineParam_zero_single (mul_ne_zero hs (mul_ne_zero two_ne_zero hc))]
     ext j
     induction j using Fin.cases <;>
-    · simp only [innerCoeff, outerCoeff, Pi.mul_apply, Fin.cons_zero, Fin.cons_succ]
+    · simp only [innerCoeff, outerCoeff, ContinuousLinearEquiv.piCongrRight_apply,
+        ContinuousLinearEquiv.unitsEquivAut_apply, Units.val_mk0, Pi.mul_apply, Fin.cons_zero,
+        Fin.cons_succ]
       field_simp
+
+/-- If, near `q₀`, the frame lies over the chart `X_k ≠ 0` and reads there as `a y * v` for
+coefficients `a` continuous at `q₀`, then the frame is continuous at `q₀` as a map into the total
+space of the tangent bundle. -/
+private theorem continuousAt_frame_of_triv (k : Fin (n + 2)) {p : (Fin 2 → I) → Prop}
+    (hmem : ∀ y, p y → lineSquare n y ∈ affineOpen k) {a : (Fin 2 → I) → Fin (n + 1) → ℂ}
+    (hread : ∀ y, p y → ∀ (h : lineSquare n y ∈ (triv n k).baseSet) v,
+      (triv n k).continuousLinearEquivAt ℂ _ h (frame y v) = a y * v)
+    {q₀ : (Fin 2 → I) × (Fin (n + 1) → ℂ)} (hp : ∀ᶠ q in 𝓝 q₀, p q.1)
+    (ha : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦ a q.1) q₀) :
+    ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦
+      TotalSpace.mk' (Fin (n + 1) → ℂ) (E := TangentSpace 𝓘(ℂ, Fin (n + 1) → ℂ))
+        (lineSquare n q.1) (frame q.1 q.2)) q₀ := by
+  have hproj : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦ lineSquare n q.1) q₀ :=
+    ((lineSquare n).val.continuous.comp continuous_fst).continuousAt
+  refine (triv n k).continuousAt_of_comp_left hproj
+    ((mem_triv_baseSet_iff _ _).2 (hmem _ hp.self_of_nhds)) ?_
+  refine (hproj.prodMk (ha.mul continuousAt_snd)).congr (hp.mono fun q hq ↦ ?_)
+  have h := (mem_triv_baseSet_iff _ _).2 (hmem _ hq)
+  rw [Function.comp_apply, Trivialization.apply_eq_prod_continuousLinearEquivAt ℂ _ _ h,
+    hread _ hq h]
+  rfl
 
 /-- **The frame is continuous** as a map into the total space of the tangent bundle, including at
 the boundary of the square. -/
@@ -350,46 +357,28 @@ private theorem continuous_frame :
       TotalSpace.mk' (Fin (n + 1) → ℂ) (E := TangentSpace 𝓘(ℂ, Fin (n + 1) → ℂ))
         (lineSquare n q.1) (frame q.1 q.2) := by
   refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
-  have hproj : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦ lineSquare n q.1) q₀ :=
-    ((lineSquare n).val.continuous.comp continuous_fst).continuousAt
   by_cases hb : q₀.1 ∈ Cube.boundary (Fin 2)
   · -- Near the boundary, read the frame in the chart `X₁ ≠ 0`.
     have hc : squareCenterOffset q₀.1 ≠ 0 := squareCenterOffset_ne_zero_of_mem hb
-    have hev : ∀ᶠ q in 𝓝 q₀, squareCenterOffset q.1 ≠ 0 :=
-      (continuous_squareCenterOffset.comp continuous_fst).continuousAt.eventually_ne hc
-    refine (triv n 1).continuousAt_of_comp_left hproj
-      ((mem_triv_baseSet_iff _ _).2 (lineSquare_mem_affineOpen_one hc)) ?_
-    have hcont : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦
-        (lineSquare n q.1, outerCoeff q.1 * q.2)) q₀ := by
-      refine hproj.prodMk (ContinuousAt.mul ?_ continuousAt_snd)
-      have h2c : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦
-          2 * squareCenterOffset q.1) q₀ :=
-        (continuous_const.mul (continuous_squareCenterOffset.comp continuous_fst)).continuousAt
-      have h2c0 : 2 * squareCenterOffset q₀.1 ≠ 0 := mul_ne_zero two_ne_zero hc
-      exact ((h2c.pow 2).inv₀ (pow_ne_zero 2 h2c0)).neg.finCons
-        (continuousAt_pi.2 fun _ ↦ h2c.inv₀ h2c0)
-    refine hcont.congr (hev.mono fun q hq ↦ ?_)
-    have h1 := (mem_triv_baseSet_iff _ _).2 (lineSquare_mem_affineOpen_one (n := n) hq)
-    rw [Function.comp_apply, Trivialization.apply_eq_prod_continuousLinearEquivAt ℂ _ _ h1,
-      triv_one_frame hq]
+    have h2c : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦
+        2 * squareCenterOffset q.1) q₀ :=
+      (continuous_const.mul (continuous_squareCenterOffset.comp continuous_fst)).continuousAt
+    have h2c0 : 2 * squareCenterOffset q₀.1 ≠ 0 := mul_ne_zero two_ne_zero hc
+    exact continuousAt_frame_of_triv 1 (fun _ ↦ lineSquare_mem_affineOpen_one)
+      (fun _ ↦ triv_one_frame)
+      ((continuous_squareCenterOffset.comp continuous_fst).continuousAt.eventually_ne hc)
+      (((h2c.pow 2).inv₀ (pow_ne_zero 2 h2c0)).neg.finCons
+        (continuousAt_pi.2 fun _ ↦ h2c.inv₀ h2c0))
   · -- In the open square, read the frame in the chart `X₀ ≠ 0`.
-    have hev : ∀ᶠ q in 𝓝 q₀, q.1 ∉ Cube.boundary (Fin 2) :=
-      continuous_fst.continuousAt.preimage_mem_nhds
-        (Cube.isClosed_boundary.isOpen_compl.mem_nhds hb)
-    refine (triv n 0).continuousAt_of_comp_left hproj
-      ((mem_triv_baseSet_iff _ _).2 (lineSquare_mem_affineOpen_zero hb)) ?_
-    have hcont : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦
-        (lineSquare n q.1, innerCoeff q.1 * q.2)) q₀ := by
-      refine hproj.prodMk (ContinuousAt.mul ?_ continuousAt_snd)
-      have hs : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦
-          (sphereScale q.1 : ℂ)) q₀ :=
-        Complex.continuous_ofReal.continuousAt.comp
-          ((continuousAt_sphereScale hb).comp continuous_fst.continuousAt)
-      exact (hs.pow 2).finCons (continuousAt_pi.2 fun _ ↦ hs)
-    refine hcont.congr (hev.mono fun q hq ↦ ?_)
-    have h0 := (mem_triv_baseSet_iff _ _).2 (lineSquare_mem_affineOpen_zero (n := n) hq)
-    rw [Function.comp_apply, Trivialization.apply_eq_prod_continuousLinearEquivAt ℂ _ _ h0,
-      triv_zero_frame hq]
+    have hs : ContinuousAt (fun q : (Fin 2 → I) × (Fin (n + 1) → ℂ) ↦
+        (sphereScale q.1 : ℂ)) q₀ :=
+      Complex.continuous_ofReal.continuousAt.comp
+        ((continuousAt_sphereScale hb).comp continuous_fst.continuousAt)
+    exact continuousAt_frame_of_triv 0 (fun _ ↦ lineSquare_mem_affineOpen_zero)
+      (fun _ ↦ triv_zero_frame)
+      (continuous_fst.continuousAt.preimage_mem_nhds
+        (Cube.isClosed_boundary.isOpen_compl.mem_nhds hb))
+      ((hs.pow 2).finCons (continuousAt_pi.2 fun _ ↦ hs))
 
 /-! ### The clutching number -/
 
@@ -401,13 +390,19 @@ private theorem clutchingFunction_frame {y : Fin 2 → I} (hy : y ∈ Cube.bound
   have hc := squareCenterOffset_ne_zero_of_mem hy
   have hb : lineSquare n y ∈ (triv n 1).baseSet :=
     (mem_triv_baseSet_iff _ _).2 (lineSquare_mem_affineOpen_one hc)
-  have heq : (frame y).trans ((triv n 1).continuousLinearEquivAt ℂ _ hb) =
-      diagEquiv (outerCoeff y) (outerCoeff_ne_zero hc) := by
-    refine ContinuousLinearEquiv.ext <| funext fun v ↦ ?_
-    rw [ContinuousLinearEquiv.trans_apply, triv_one_frame hc, diagEquiv_apply]
-  -- The determinant is `-(2 c)^(-(n + 2))`.
-  have hdet : ∏ j, outerCoeff (n := n) y j = -((2 * squareCenterOffset y) ^ (n + 2))⁻¹ := by
-    rw [Fin.prod_univ_succ]
+  -- In the chart `X₁ ≠ 0` the frame is the diagonal matrix of `outerCoeff y`, so its determinant
+  -- is `-(2 c)^(-(n + 2))`.
+  have hdet : LinearMap.det
+      (((frame y).trans ((triv n 1).continuousLinearEquivAt ℂ _ hb)).toLinearEquiv :
+        (Fin (n + 1) → ℂ) →ₗ[ℂ] (Fin (n + 1) → ℂ)) =
+        -((2 * squareCenterOffset y) ^ (n + 2))⁻¹ := by
+    have h : (((frame y).trans ((triv n 1).continuousLinearEquivAt ℂ _ hb)).toLinearEquiv :
+        (Fin (n + 1) → ℂ) →ₗ[ℂ] (Fin (n + 1) → ℂ)) =
+          Matrix.toLin' (Matrix.diagonal (outerCoeff y)) :=
+      LinearMap.ext fun v ↦ by
+        ext j
+        simp [triv_one_frame hc, Matrix.mulVec_diagonal]
+    rw [h, LinearMap.det_toLin', Matrix.det_diagonal, Fin.prod_univ_succ]
     simp only [outerCoeff, Fin.cons_zero, Fin.cons_succ, Finset.prod_const, Finset.card_univ,
       Fintype.card_fin]
     -- Treat `2 c` as an atom, so that `ring` does not split off the numeral `2⁻¹`.
@@ -421,12 +416,10 @@ private theorem clutchingFunction_frame {y : Fin 2 → I} (hy : y ∈ Cube.bound
     push_cast
     simp only [mul_pow, div_pow]
     field_simp
-  rw [clutchingFunction_of_mem hb, heq]
+  rw [clutchingFunction_of_mem hb]
   refine Circle.ext ?_
-  rw [Circle.coe_inv, ContinuousLinearEquiv.coe_normalizedDet, det_diagEquiv, hdet,
-    Circle.coe_neg, Circle.coe_pow, coe_squareCenterDirection hc]
-  simp only [norm_neg, norm_inv, norm_pow, norm_mul, Complex.norm_ofNat]
-  exact hphase
+  rw [Circle.coe_inv, ContinuousLinearEquiv.coe_normalizedDet, hdet]
+  simpa [coe_squareCenterDirection hc] using hphase
 
 /-- **The clutching first Chern number of complex projective space on a line.** The clutching
 number of the holomorphic tangent bundle of `CPⁿ⁺¹` on the coordinate line is `n + 2`. This is the

@@ -87,6 +87,10 @@ private theorem one_sub_cubeRadius_sq_pos {y : Fin 2 → I} (hy : y ∉ Cube.bou
 def sphereScale (y : Fin 2 → I) : ℝ :=
   (√(1 - cubeRadius y ^ 2))⁻¹
 
+/-- The value of the scale of the standard sphere. -/
+theorem sphereScale_def (y : Fin 2 → I) : sphereScale y = (√(1 - cubeRadius y ^ 2))⁻¹ :=
+  (rfl)
+
 /-- Off the boundary of the square, the scale of the standard sphere is nonzero. -/
 theorem sphereScale_ne_zero {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
     sphereScale y ≠ 0 :=
@@ -129,14 +133,14 @@ theorem riemannSphereSquare_eq_sphereScale {y : Fin 2 → I}
     exact (cubeRadius_le_one y).lt_of_ne (mt (cubeRadius_eq_one_iff y).1 hy)
   rw [riemannSphereSquare_apply, cubeToOnePoint_apply, unitBallToOnePoint_apply_of_norm_lt hr]
   simp [OpenPartialHomeomorph.univUnitBall_symm_apply, norm_cubeHomeomorphClosedBall,
-    squarePlaneEquiv_cubeHomeomorphClosedBall, sphereScale]
+    squarePlaneEquiv_cubeHomeomorphClosedBall, sphereScale_def]
 
 /-- At a point of the open square, the standard sphere is `2 c / √(1 - r²)`, for the offset `c`
 from the centre and the sup radius `r = cubeRadius y`. -/
 theorem riemannSphereSquare_apply_of_notMem {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
     riemannSphereSquare y =
       ((2 * squareCenterOffset y / (√(1 - cubeRadius y ^ 2) : ℝ) : ℂ) : OnePoint ℂ) := by
-  rw [riemannSphereSquare_eq_sphereScale hy, sphereScale, Complex.ofReal_inv, inv_mul_eq_div]
+  rw [riemannSphereSquare_eq_sphereScale hy, sphereScale_def, Complex.ofReal_inv, inv_mul_eq_div]
 
 /-- **The standard sphere maps the open square bijectively onto `ℂ`.** -/
 theorem bijOn_riemannSphereSquare :

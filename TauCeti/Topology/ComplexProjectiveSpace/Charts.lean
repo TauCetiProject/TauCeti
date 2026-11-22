@@ -300,6 +300,7 @@ theorem affineParam_mem_affineOpen_iff (k l : Fin (n + 1)) (z : Fin n → ℂ) :
 
 /-- The point `affineParam k 0`, whose only nonzero homogeneous coordinate is the coordinate `k`,
 lies in the affine open `X_l ≠ 0` exactly when `l = k`. -/
+@[simp↓ high]
 theorem affineParam_zero_mem_affineOpen_iff (k l : Fin (n + 1)) :
     affineParam k 0 ∈ affineOpen l ↔ l = k := by
   rw [affineParam_mem_affineOpen_iff]
