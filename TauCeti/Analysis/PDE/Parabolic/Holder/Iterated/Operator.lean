@@ -288,7 +288,8 @@ theorem initialDataL_apply (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
 /-- The first data component is the parabolic operator. -/
 @[simp]
 theorem initialDataL_fst (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
-    (initialDataL hα A B C u).1 = parabolicOperatorL hα A B C u := (rfl)
+    (initialDataL hα A B C u).1 = parabolicOperatorL hα A B C u := by
+  simp [initialDataL_def]
 
 /-- The second data component is the initial spatial trace. -/
 @[simp]

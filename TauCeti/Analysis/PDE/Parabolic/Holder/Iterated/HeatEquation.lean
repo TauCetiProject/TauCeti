@@ -213,44 +213,6 @@ theorem heatInitialDataL_injective (hα : α ≤ 1) :
   rw [← equivParabolicC2HolderSpace_inclusionOfLEL_apply hα u p, h2,
     equivParabolicC2HolderSpace_inclusionOfLEL_apply]
 
-/-- **The heat equation's initial-data isomorphism** of order `k`: for `0 < α < 1`,
-`u ↦ (∂ₜu - Δu, u(·, 0))` is an isomorphism from `C_{par,b}^{(k+2)+α}` onto
-`C_{par,b}^{k+α} × C_b^{k+2,α}` on the slab `ℝⁿ × [0, T]`. Its inverse is the Duhamel potential
-of the forcing plus the Cauchy potential of the initial datum. -/
-def heatInitialDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T) :
-    ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT ≃L[ℝ]
-      ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT ×
-        CkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ :=
-  ContinuousLinearEquiv.ofContinuousLinearMap (heatInitialDataL k hα₁.le hT)
-    (heatSolutionL k hα₀ hα₁ hT)
-    (ContinuousLinearMap.ext (heatInitialDataL_heatSolutionL hα₀ hα₁))
-    (ContinuousLinearMap.ext fun _ ↦ heatInitialDataL_injective hα₁.le
-      (heatInitialDataL_heatSolutionL hα₀ hα₁ _))
-
-/-- The forward isomorphism is the heat data operator. -/
-@[simp]
-theorem heatInitialDataCLE_apply (hα₀ : 0 < α) (hα₁ : α < 1)
-    (u : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT) :
-    heatInitialDataCLE (k := k) (ι := ι) hα₀ hα₁ hT u = heatInitialDataL k hα₁.le hT u :=
-  -- The forward map of `ContinuousLinearEquiv.ofContinuousLinearMap` is the given map.
-  (rfl)
-
-/-- The inverse isomorphism is the heat solution operator. -/
-@[simp]
-theorem heatInitialDataCLE_symm_apply (hα₀ : 0 < α) (hα₁ : α < 1)
-    (d : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT ×
-      CkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ) :
-    (heatInitialDataCLE (ι := ι) hα₀ hα₁ hT).symm d = heatSolutionL k hα₀ hα₁ hT d := by
-  apply (heatInitialDataCLE (ι := ι) hα₀ hα₁ hT).injective
-  rw [ContinuousLinearEquiv.apply_symm_apply, heatInitialDataCLE_apply,
-    heatInitialDataL_heatSolutionL]
-
-/-- The heat data operator of order `k` is invertible for `0 < α < 1`. -/
-@[simp]
-theorem isInvertible_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
-    (heatInitialDataL k (E := EuclideanSpace ℝ ι) (F := ℝ) hα₁.le hT).IsInvertible :=
-  ⟨heatInitialDataCLE hα₀ hα₁ hT, ContinuousLinearMap.ext (heatInitialDataCLE_apply hα₀ hα₁)⟩
-
 /-- Solving the heat equation with the data of a function recovers that function. -/
 @[simp]
 theorem heatSolutionL_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1)
@@ -264,6 +226,44 @@ theorem heatSolutionL_comp_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) 
     (heatSolutionL k (E := EuclideanSpace ℝ ι) (F := ℝ) hα₀ hα₁ hT).comp
       (heatInitialDataL k hα₁.le hT) = ContinuousLinearMap.id ℝ _ :=
   ContinuousLinearMap.ext (heatSolutionL_heatInitialDataL hα₀ hα₁)
+
+/-- **The heat equation's initial-data isomorphism** of order `k`: for `0 < α < 1`,
+`u ↦ (∂ₜu - Δu, u(·, 0))` is an isomorphism from `C_{par,b}^{(k+2)+α}` onto
+`C_{par,b}^{k+α} × C_b^{k+2,α}` on the slab `ℝⁿ × [0, T]`. Its inverse is the Duhamel potential
+of the forcing plus the Cauchy potential of the initial datum. -/
+def heatInitialDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T) :
+    ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT ≃L[ℝ]
+      ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT ×
+        CkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ :=
+  ContinuousLinearEquiv.ofContinuousLinearMap (heatInitialDataL k hα₁.le hT)
+    (heatSolutionL k hα₀ hα₁ hT) (heatInitialDataL_comp_heatSolutionL hα₀ hα₁)
+    (heatSolutionL_comp_heatInitialDataL hα₀ hα₁)
+
+/-- The forward isomorphism is the heat data operator. -/
+@[simp]
+theorem heatInitialDataCLE_apply (hα₀ : 0 < α) (hα₁ : α < 1)
+    (u : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT) :
+    heatInitialDataCLE (k := k) (ι := ι) hα₀ hα₁ hT u = heatInitialDataL k hα₁.le hT u := by
+  -- `delta` exposes the `ContinuousLinearEquiv.ofContinuousLinearMap` body without generating the
+  -- definition's equation lemma, whose statement is too expensive for the type-check linter.
+  delta heatInitialDataCLE
+  rw [ContinuousLinearEquiv.coe_ofContinuousLinearMap]
+
+/-- The inverse isomorphism is the heat solution operator. -/
+@[simp]
+theorem heatInitialDataCLE_symm_apply (hα₀ : 0 < α) (hα₁ : α < 1)
+    (d : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT ×
+      CkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ) :
+    (heatInitialDataCLE (ι := ι) hα₀ hα₁ hT).symm d = heatSolutionL k hα₀ hα₁ hT d := by
+  delta heatInitialDataCLE
+  rw [ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
+
+/-- The heat data operator of order `k` is invertible for `0 < α < 1`. -/
+@[simp]
+theorem isInvertible_heatInitialDataL (hα₀ : 0 < α) (hα₁ : α < 1) :
+    (heatInitialDataL k (E := EuclideanSpace ℝ ι) (F := ℝ) hα₁.le hT).IsInvertible :=
+  ⟨heatInitialDataCLE hα₀ hα₁ hT, ContinuousLinearMap.ext (heatInitialDataCLE_apply hα₀ hα₁)⟩
 
 /-- The inverse of the heat data operator is the heat solution operator. -/
 @[simp]
