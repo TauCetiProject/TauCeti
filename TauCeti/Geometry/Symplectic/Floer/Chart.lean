@@ -151,6 +151,16 @@ theorem almostComplexInChartAt_apply (z : P) (y v : E) :
   rw [almostComplexInChartAt, inCoordinates, comp_apply, comp_apply,
     LinearMap.coe_toContinuousLinearMap']
 
+/-- For a family `J_p(q)` of structures depending on a parameter `p` and a point `q`, the
+uncurried family read in the chart at `((p, q), y)` is the family `J_p` read in the chart at
+`(q, y)`. -/
+@[simp]
+theorem almostComplexInChartAt_uncurry {Q : Type*}
+    (J : P → Q → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : P) (q : Q) (y : E) :
+    almostComplexInChartAt I α (Function.uncurry J) ((p, q), y) =
+      almostComplexInChartAt I α (J p) (q, y) :=
+  (rfl)
+
 /-- On the chart target, the structure in the chart squares to `-1`. -/
 theorem almostComplexInChartAt_apply_apply {y : E} (hy : y ∈ (extChartAt I α).target)
     (z : P) (v : E) :
@@ -344,6 +354,21 @@ theorem contDiffOn_hamiltonianOneFormInChartAt {n : WithTop ℕ∞} {W : Set ((�
     (hXs : ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α Ks) W)
     (hXt : ContDiffOn ℝ n (ω.hamiltonianVectorFieldInChartAt α Kt) W) :
     ContDiffOn ℝ n (ω.hamiltonianOneFormInChartAt α Ks Kt) W :=
+  (contDiffOn_const.smulRight hXs).add (contDiffOn_const.smulRight hXt)
+
+omit [FiniteDimensional ℝ E] in
+/-- For families `K_{s,p}`, `K_{t,p}` of Hamiltonians depending on a parameter `p`, the Hamiltonian
+one-form of `K_p` in a chart is as regular, jointly in the parameter, as the two Hamiltonian vector
+fields. -/
+theorem contDiffOn_hamiltonianOneFormInChartAt_parametric {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {n : WithTop ℕ∞}
+    {Ks Kt : P → ℝ × ℝ → M → ℝ} {W : Set ((P × (ℝ × ℝ)) × E)}
+    (hXs : ContDiffOn ℝ n (fun q : (P × (ℝ × ℝ)) × E ↦
+      ω.hamiltonianVectorFieldInChartAt α (Ks q.1.1) (q.1.2, q.2)) W)
+    (hXt : ContDiffOn ℝ n (fun q : (P × (ℝ × ℝ)) × E ↦
+      ω.hamiltonianVectorFieldInChartAt α (Kt q.1.1) (q.1.2, q.2)) W) :
+    ContDiffOn ℝ n (fun q : (P × (ℝ × ℝ)) × E ↦
+      ω.hamiltonianOneFormInChartAt α (Ks q.1.1) (Kt q.1.1) (q.1.2, q.2)) W :=
   (contDiffOn_const.smulRight hXs).add (contDiffOn_const.smulRight hXt)
 
 omit [FiniteDimensional ℝ E] in

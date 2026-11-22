@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
@@ -90,7 +91,11 @@ inequality for such a target on a ball `B_r(z₀)` of `ℝ × ℝ`, a square for
 the disc of `ℂ` of radius `r` read in the coordinate `Complex.equivRealProdCLM`:
 `r² ‖∂ₛu(z₀)‖² ≤ C (r² + ∫_{B_r(z₀)} ‖∂ₛu‖²)` once `r² + ∫_{B_r(z₀)} ‖∂ₛu‖²` is small (in the
 namespace `TauCeti.Floer`,
-`exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional`).
+`exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional`), and its form
+over a compact window of parameters in a finite-dimensional normed space, with a threshold and a
+constant uniform over the window
+(`exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional_parametric`),
+which serves the mean-value inequality for families of data in a chart of a manifold.
 
 The same holds uniformly over a compact parameter window
 (`TauCeti.Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`): if `J_p`
@@ -1142,6 +1147,136 @@ theorem exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDime
   gcongr
   simpa using (L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) →L[ℝ] F).le_opNorm
     (L (fderiv ℝ u z₀ stdComplexLineReal))
+
+/-! ### The mean-value inequality over a compact parameter window
+
+Let `J` and `X` depend on a parameter `p` of a finite-dimensional normed space `P` as well as on
+the domain point `z` and the target point `x`. Adjoin the parameter to the target as a constant
+coordinate: a solution `u` for the parameter `p` is the second component of the map
+`z ↦ ((p, 0), u z)` into `(P × P) × F`, which solves the coordinate Floer equation for the
+structure `(a, b) ↦ (-b, a)` on the parameter block, `J` at the parameter `a` on `F`, and the
+one-form `X` at the parameter `a` with values in `F`. The parameter block has zero derivative, so
+the energy density is unchanged. -/
+
+section Parameter
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+
+/-- The standard complex structure `(a, b) ↦ (-b, a)` on `P × P`. -/
+private noncomputable def rotationL : P × P →L[ℝ] P × P :=
+  (-ContinuousLinearMap.snd ℝ P P).prod (ContinuousLinearMap.fst ℝ P P)
+
+private theorem rotationL_rotationL (ζ : P × P) : rotationL (rotationL ζ) = -ζ := by
+  ext <;> simp [rotationL]
+
+/-- The point of `(P × (ℝ × ℝ)) × F` read off from a point `(z, ((a, b), x))`: the parameter `a`,
+the domain point `z` and the target point `x`. -/
+private noncomputable def augmentedPoint :
+    (ℝ × ℝ) × ((P × P) × F) →L[ℝ] (P × (ℝ × ℝ)) × F :=
+  ((ContinuousLinearMap.fst ℝ P P ∘L ContinuousLinearMap.fst ℝ (P × P) F ∘L
+      ContinuousLinearMap.snd ℝ (ℝ × ℝ) ((P × P) × F)).prod
+    (ContinuousLinearMap.fst ℝ (ℝ × ℝ) ((P × P) × F))).prod
+    (ContinuousLinearMap.snd ℝ (P × P) F ∘L ContinuousLinearMap.snd ℝ (ℝ × ℝ) ((P × P) × F))
+
+omit [FiniteDimensional ℝ F] in
+@[simp]
+private theorem augmentedPoint_apply (z : ℝ × ℝ) (a b : P) (x : F) :
+    augmentedPoint (z, ((a, b), x)) = ((a, z), x) := (rfl)
+
+/-- The structure on `(P × P) × F` adjoining the parameter. -/
+private noncomputable def augmentedJ (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
+    (q : (ℝ × ℝ) × ((P × P) × F)) : (P × P) × F →L[ℝ] (P × P) × F :=
+  ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) F F (rotationL, J (augmentedPoint q))
+
+omit [FiniteDimensional ℝ F] in
+@[simp]
+private theorem augmentedJ_apply (J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F)
+    (q : (ℝ × ℝ) × ((P × P) × F)) (ζ : (P × P) × F) :
+    augmentedJ J q ζ = (rotationL ζ.1, J (augmentedPoint q) ζ.2) := (rfl)
+
+/-- The one-form with values in `(P × P) × F` adjoining the parameter. -/
+private noncomputable def augmentedX (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
+    (q : (ℝ × ℝ) × ((P × P) × F)) : ℝ × ℝ →L[ℝ] (P × P) × F :=
+  ContinuousLinearMap.inr ℝ (P × P) F ∘L X (augmentedPoint q)
+
+omit [FiniteDimensional ℝ F] in
+@[simp]
+private theorem augmentedX_apply (X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F)
+    (q : (ℝ × ℝ) × ((P × P) × F)) (v : ℝ × ℝ) :
+    augmentedX X q v = (0, X (augmentedPoint q) v) := (rfl)
+
+omit [FiniteDimensional ℝ F] in
+private theorem contDiffOn_augmentedJ {J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F}
+    {W : Set ((P × (ℝ × ℝ)) × F)} {n : WithTop ℕ∞} (hJ : ContDiffOn ℝ n J W) :
+    ContDiffOn ℝ n (augmentedJ J) (augmentedPoint ⁻¹' W) :=
+  (ContinuousLinearMap.prodMapL ℝ (P × P) (P × P) F F).contDiff.comp_contDiffOn
+    (contDiffOn_const.prodMk (hJ.comp (augmentedPoint (P := P) (F := F)).contDiff.contDiffOn
+      (mapsTo_preimage _ _)))
+
+omit [FiniteDimensional ℝ F] in
+private theorem contDiffOn_augmentedX {X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F}
+    {W : Set ((P × (ℝ × ℝ)) × F)} {n : WithTop ℕ∞} (hX : ContDiffOn ℝ n X W) :
+    ContDiffOn ℝ n (augmentedX X) (augmentedPoint ⁻¹' W) :=
+  contDiffOn_const.clm_comp
+    (hX.comp (augmentedPoint (P := P) (F := F)).contDiff.contDiffOn (mapsTo_preimage _ _))
+
+variable [FiniteDimensional ℝ P]
+
+/-- **The mean-value inequality over a compact parameter window, in a finite-dimensional normed
+space.** Let `J` and `X` depend on a parameter `p` of a finite-dimensional normed space `P`, on the
+domain point `z ∈ ℝ × ℝ` and on the target point `x ∈ F`, jointly `C²` on an open set
+`W ⊆ (P × (ℝ × ℝ)) × F` containing `(C × D) × K` for compact `C ⊆ P`, `D ⊆ ℝ × ℝ` and `K ⊆ F`, with
+`J((p, z), x)² = -1` there. There are a threshold `δ > 0` and a constant `C'`, the same for every
+parameter `p ∈ C`, such that every solution `u` of the coordinate Floer equation
+`∂ₜu - X((p, z), u)(0, 1) = J((p, z), u)(∂ₛu - X((p, z), u)(1, 0))` on a ball `B_r(z₀) ⊆ D` of
+`ℝ × ℝ`, with values in `K`, `C³` on the ball and with `∂ₛu` continuous on its closure, satisfies
+
+`r² ‖∂ₛu(z₀)‖² ≤ C' (r² + ∫_{B_r(z₀)} ‖∂ₛu‖²)`
+
+as soon as `r² + ∫_{B_r(z₀)} ‖∂ₛu‖² < δ`. -/
+theorem exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional_parametric
+    {J : (P × (ℝ × ℝ)) × F → F →L[ℝ] F} {X : (P × (ℝ × ℝ)) × F → ℝ × ℝ →L[ℝ] F}
+    {W : Set ((P × (ℝ × ℝ)) × F)} {C : Set P} {D : Set (ℝ × ℝ)} {K : Set F}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hCDKW : (C ×ˢ D) ×ˢ K ⊆ W)
+    (hJsq : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, ∀ v, J ((p, z), x) (J ((p, z), x) v) = -v) :
+    ∃ δ > 0, ∃ C' ≥ 0, ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → F⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, p ∈ C → 0 ≤ r →
+      ball z₀ r ⊆ D → ContDiffOn ℝ 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ u y stdComplexLineReal) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y stdComplexLineImag - X ((p, y), u y) stdComplexLineImag =
+        J ((p, y), u y) (fderiv ℝ u y stdComplexLineReal - X ((p, y), u y) stdComplexLineReal)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      r ^ 2 + ∫ y in ball z₀ r, ‖fderiv ℝ u y stdComplexLineReal‖ ^ 2 < δ →
+      r ^ 2 * ‖fderiv ℝ u z₀ stdComplexLineReal‖ ^ 2 ≤
+        C' * (r ^ 2 + ∫ y in ball z₀ r, ‖fderiv ℝ u y stdComplexLineReal‖ ^ 2) := by
+  -- Apply the mean-value inequality to `z ↦ ((p, 0), u z)`, with values in the compact image `K'`
+  -- of `C × K`.
+  set K' : Set ((P × P) × F) := (fun a : P × F ↦ ((a.1, 0), a.2)) '' (C ×ˢ K)
+  obtain ⟨δ, hδ, C', hC', hmean⟩ :=
+    exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional
+      (J := augmentedJ J) (X := augmentedX X) (W := augmentedPoint ⁻¹' W) (K := K')
+      (hW.preimage augmentedPoint.continuous) (contDiffOn_augmentedJ hJ) (contDiffOn_augmentedX hX)
+      hD ((hC.prod hK).image (by fun_prop))
+      (by
+        rintro ⟨z, _⟩ ⟨hz, ⟨a, x⟩, ⟨ha, hx⟩, rfl⟩
+        exact hCDKW ⟨⟨ha, hz⟩, hx⟩)
+      (by
+        rintro z hz _ ⟨⟨a, x⟩, ⟨ha, hx⟩, rfl⟩ ζ
+        ext <;> simp [rotationL_rotationL, hJsq a ha z hz x hx])
+  refine ⟨δ, hδ, C', hC', fun p u z₀ r hp hr hrD hu hu' hfl huK hE ↦ ?_⟩
+  -- The constant parameter coordinate does not change the derivative in `F`.
+  have hderiv (y v : ℝ × ℝ) : fderiv ℝ (fun w ↦ ((p, (0 : P)), u w)) y v = (0, fderiv ℝ u y v) := by
+    simp [fderiv_const_prodMk]
+  have hnorm (y : ℝ × ℝ) : ‖fderiv ℝ (fun w ↦ ((p, (0 : P)), u w)) y stdComplexLineReal‖ =
+      ‖fderiv ℝ u y stdComplexLineReal‖ := by
+    simp [hderiv]
+  have h := hmean (u := fun w ↦ ((p, 0), u w)) hr hrD (contDiffOn_const.prodMk hu)
+    ((continuousOn_const.prodMk hu').congr fun y _ ↦ hderiv y _)
+    (fun y hy ↦ by simp [hderiv, hfl y hy, rotationL, Prod.zero_eq_mk])
+    (fun y hy ↦ ⟨(p, u y), ⟨hp, huK y hy⟩, rfl⟩) (by simpa only [hnorm] using hE)
+  simpa only [hnorm] using h
+
+end Parameter
 
 end FiniteDimensional
 

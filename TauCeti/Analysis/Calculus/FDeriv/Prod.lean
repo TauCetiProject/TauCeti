@@ -70,6 +70,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
+  second coordinate, with no differentiability assumption.
 * `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
   derivative `(σ, τ) ↦ τ • x'`.
 * `HasDerivAt.hasFDerivAt_comp_fst_sub_comp_snd`: the map `p ↦ u₁ p.1 - u₂ p.2` of two scalar
@@ -191,6 +193,15 @@ differentiability is needed: otherwise the derivative is zero. -/
 theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
     fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
   simp [← Function.comp_def f Prod.snd, fderiv_comp_snd]
+
+/-- A map `w ↦ (c, g w)` with a constant first coordinate has the derivative of `g` in the second
+coordinate, with no differentiability assumption. -/
+theorem fderiv_const_prodMk (c : F) (g : E → G) (x : E) :
+    fderiv 𝕜 (fun w ↦ (c, g w)) x = (ContinuousLinearMap.inr 𝕜 F G).comp (fderiv 𝕜 g x) := by
+  have h : (fun w ↦ (c, g w)) = fun w ↦ (c, 0) + (ContinuousLinearMap.inr 𝕜 F G ∘ g) w := by
+    ext w <;> simp
+  rw [h, fderiv_const_add, (ContinuousLinearMap.inr 𝕜 F G).fderiv_comp_left_of_leftInverse
+    (ContinuousLinearMap.snd 𝕜 F G) (fun _ ↦ rfl)]
 
 /-- A function `p ↦ x p.2` of a scalar second variable alone, where `x` has derivative `x'` at
 `z.2`, has derivative `(σ, τ) ↦ τ • x'` at `z`. -/
