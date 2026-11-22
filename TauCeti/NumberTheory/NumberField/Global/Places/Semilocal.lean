@@ -217,4 +217,11 @@ theorem infiniteSemilocalContinuousEquiv_symm_algebraMap (x : L) :
     infiniteSemilocalContinuousEquiv_toAlgEquiv]
   exact infiniteSemilocalEquiv_symm_algebraMap L v x
 
+/-- The continuous semilocal comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem infiniteSemilocalContinuousEquiv_one_tmul (x : L) :
+    infiniteSemilocalContinuousEquiv L v (1 ⊗ₜ[K] x) =
+      algebraMap L ((w : {w : InfinitePlace L // w.LiesOver v}) → w.val.Completion) x := by
+  ext w
+  simp
+
 end TauCeti.GlobalNumberFields

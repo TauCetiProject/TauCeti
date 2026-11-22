@@ -81,38 +81,6 @@ private local instance instIsModuleTopologyBaseChange {F T E : Type*} [Field F]
 
 namespace TauCeti.Algebra.WeilRestriction
 
-section Lemmas
-
-variable (F E : Type*) [Field F] [NumberField F] [Field E] [NumberField E] [Algebra F E]
-
-private theorem adeleBaseChangeEquiv_one_tmul (b : E) :
-    adeleBaseChangeEquiv F E (1 ⊗ₜ[F] b) = algebraMap E (AdeleRing (𝓞 E) E) b := by
-  simp
-
-private theorem finiteAdeleBaseChangeEquiv_one_tmul (b : E) :
-    finiteAdeleBaseChangeEquiv F E (1 ⊗ₜ[F] b) = algebraMap E (FiniteAdeleRing (𝓞 E) E) b := by
-  simp
-
-private theorem infiniteAdeleBaseChangeEquiv_one_tmul (b : E) :
-    infiniteAdeleBaseChangeEquiv F E (1 ⊗ₜ[F] b) = algebraMap E (InfiniteAdeleRing E) b := by
-  simp
-
-private theorem semilocalContinuousEquiv_one_tmul (v : HeightOneSpectrum (𝓞 F)) (b : E) :
-    TauCeti.semilocalContinuousEquiv E v (1 ⊗ₜ[F] b) =
-      algebraMap E
-        ((w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal}) →
-          w.val.adicCompletion E) b := by
-  ext w
-  simp
-
-private theorem infiniteSemilocalContinuousEquiv_one_tmul (v : InfinitePlace F) (b : E) :
-    infiniteSemilocalContinuousEquiv E v (1 ⊗ₜ[F] b) =
-      algebraMap E ((w : {w : InfinitePlace E // w.LiesOver v}) → w.val.Completion) b := by
-  ext w
-  simp
-
-end Lemmas
-
 section Adelic
 
 variable (F E H : Type*) [Field F] [NumberField F] [Field E] [NumberField E] [Algebra F E]
@@ -432,7 +400,7 @@ def adicCompletionPointsContinuousMulEquiv (v : HeightOneSpectrum (𝓞 F)) :
       ∀ w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal},
         WithConv (H →ₐ[E] w.val.adicCompletion E) :=
   (pointsContinuousMulEquivOfBaseChange F E H (TauCeti.semilocalContinuousEquiv E v)
-    (semilocalContinuousEquiv_one_tmul F E v)).trans
+    TauCeti.semilocalContinuousEquiv_one_tmul).trans
     (TauCeti.PointTopology.piPointsContinuousMulEquiv
       fun w : {w : HeightOneSpectrum (𝓞 E) // w.asIdeal.LiesOver v.asIdeal} ↦
         w.val.adicCompletion E)
@@ -444,7 +412,7 @@ def infiniteCompletionPointsContinuousMulEquiv (v : InfinitePlace F) :
     WithConv (WeilRestriction F E H →ₐ[F] v.Completion) ≃ₜ*
       ∀ w : {w : InfinitePlace E // w.LiesOver v}, WithConv (H →ₐ[E] w.val.Completion) :=
   (pointsContinuousMulEquivOfBaseChange F E H (infiniteSemilocalContinuousEquiv E v)
-    (infiniteSemilocalContinuousEquiv_one_tmul F E v)).trans
+    infiniteSemilocalContinuousEquiv_one_tmul).trans
     (TauCeti.PointTopology.piPointsContinuousMulEquiv
       fun w : {w : InfinitePlace E // w.LiesOver v} ↦ w.val.Completion)
 
@@ -519,7 +487,7 @@ theorem adicCompletionPointsContinuousMulEquiv_mapValue_proj (v : HeightOneSpect
         w'.val.adicCompletion E :=
     AlgHom.pi fun w' ↦ (FiniteAdeleRing.proj E w'.val : _ →ₐ[E] _)
   have hloc : pointsContinuousMulEquivOfBaseChange F E H
-        (TauCeti.semilocalContinuousEquiv E v) (semilocalContinuousEquiv_one_tmul F E v)
+        (TauCeti.semilocalContinuousEquiv E v) TauCeti.semilocalContinuousEquiv_one_tmul
         (AlgHom.mapValue pT x) =
       AlgHom.mapValue pS (finiteAdelicPointsContinuousMulEquiv F E H x) := by
     rw [finiteAdelicPointsContinuousMulEquiv_eq_pointsMulEquivOfBaseChange]
@@ -567,7 +535,7 @@ theorem infiniteCompletionPointsContinuousMulEquiv_mapValue_eval (v : InfinitePl
       ∀ w' : {w' : InfinitePlace E // w'.LiesOver v}, w'.val.Completion :=
     AlgHom.pi fun w' ↦ Pi.evalAlgHom E (fun u : InfinitePlace E ↦ u.Completion) w'.val
   have hloc : pointsContinuousMulEquivOfBaseChange F E H
-        (infiniteSemilocalContinuousEquiv E v) (infiniteSemilocalContinuousEquiv_one_tmul F E v)
+        (infiniteSemilocalContinuousEquiv E v) infiniteSemilocalContinuousEquiv_one_tmul
         (AlgHom.mapValue pT x) =
       AlgHom.mapValue pS (infiniteAdelicPointsContinuousMulEquiv F E H x) := by
     rw [infiniteAdelicPointsContinuousMulEquiv_eq_pointsMulEquivOfBaseChange]

@@ -236,6 +236,11 @@ theorem infiniteAdeleBaseChangeEquiv_tmul (a : InfiniteAdeleRing K) (x : L) :
   exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans
     (infiniteAdeleBaseChangeHom_tmul K L a x)
 
+/-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem infiniteAdeleBaseChangeEquiv_one_tmul (x : L) :
+    infiniteAdeleBaseChangeEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (InfiniteAdeleRing L) x := by
+  simp
+
 /-- At a place of `L`, the continuous comparison evaluates a pure tensor using the completion
 map from the place below it and the local embedding of the field element. -/
 @[simp]

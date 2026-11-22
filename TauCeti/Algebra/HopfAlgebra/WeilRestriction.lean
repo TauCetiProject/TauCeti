@@ -603,6 +603,24 @@ variable {A B C H}
 theorem compBialgEquiv_toAlgEquiv {hfin : Module.Finite A C} {hproj : Module.Projective A C} :
     (compBialgEquiv A B C H hfin hproj).toAlgEquiv = compAlgEquiv A B C H hfin hproj := (rfl)
 
+/-- The algebra homomorphism underlying `WeilRestriction.compBialgEquiv` is that of
+`WeilRestriction.compAlgEquiv`. -/
+@[simp]
+theorem compBialgEquiv_toAlgHom {hfin : Module.Finite A C} {hproj : Module.Projective A C} :
+    ((compBialgEquiv A B C H hfin hproj :
+        WeilRestriction A B (WeilRestriction B C H) →ₐc[A] WeilRestriction A C H) :
+        WeilRestriction A B (WeilRestriction B C H) →ₐ[A] WeilRestriction A C H) =
+      (compAlgEquiv A B C H hfin hproj).toAlgHom := (rfl)
+
+/-- The algebra homomorphism underlying the inverse of `WeilRestriction.compBialgEquiv` is that
+of the inverse of `WeilRestriction.compAlgEquiv`. -/
+@[simp]
+theorem compBialgEquiv_symm_toAlgHom {hfin : Module.Finite A C} {hproj : Module.Projective A C} :
+    (((compBialgEquiv A B C H hfin hproj).symm :
+        WeilRestriction A C H →ₐc[A] WeilRestriction A B (WeilRestriction B C H)) :
+        WeilRestriction A C H →ₐ[A] WeilRestriction A B (WeilRestriction B C H)) =
+      (compAlgEquiv A B C H hfin hproj).symm.toAlgHom := (rfl)
+
 /-- `WeilRestriction.compBialgEquiv` agrees pointwise with `WeilRestriction.compAlgEquiv`. -/
 @[simp]
 theorem compBialgEquiv_apply {hfin : Module.Finite A C} {hproj : Module.Projective A C}
@@ -630,12 +648,7 @@ theorem pointsMulEquiv_mapDomain_compBialgEquiv {T : Type*} [CommRing T] [Algebr
             (BialgHom.mapDomain (compBialgEquiv A B C H :
               WeilRestriction A B (WeilRestriction B C H) →ₐc[A] WeilRestriction A C H) x))) =
       pointsMulEquiv A C H T x := by
-  have hcoe :
-      ((compBialgEquiv A B C H :
-        WeilRestriction A B (WeilRestriction B C H) →ₐc[A] WeilRestriction A C H) :
-        WeilRestriction A B (WeilRestriction B C H) →ₐ[A] WeilRestriction A C H) =
-      (compAlgEquiv A B C H).toAlgHom := rfl
-  rw [BialgHom.mapDomain_apply, hcoe]
+  rw [BialgHom.mapDomain_apply, compBialgEquiv_toAlgHom]
   exact compPointsMulEquiv_comp_compAlgEquiv (B := B) x
 
 /-- `WeilRestriction.compBialgEquiv` is natural in bialgebra morphisms `φ : H →ₐc[C] H'`. -/

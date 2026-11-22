@@ -247,6 +247,11 @@ theorem adeleBaseChangeEquiv_tmul_one (a : AdeleRing (𝓞 K) K) :
     adeleBaseChangeEquiv K L (a ⊗ₜ 1) = adeleExtension (𝓞 K) K (𝓞 L) L a := by
   rw [adeleBaseChangeEquiv_tmul, map_one, mul_one]
 
+/-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem adeleBaseChangeEquiv_one_tmul (x : L) :
+    adeleBaseChangeEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (AdeleRing (𝓞 L) L) x := by
+  simp
+
 /-- The continuous comparison is the pair of the infinite- and finite-adele comparisons, after
 splitting the source tensor product into its two components. -/
 theorem adeleBaseChangeEquiv_apply_prod (t : AdeleRing (𝓞 K) K ⊗[K] L) :

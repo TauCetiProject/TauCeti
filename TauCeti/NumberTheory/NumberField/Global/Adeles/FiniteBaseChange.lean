@@ -312,6 +312,11 @@ theorem finiteAdeleBaseChangeEquiv_tmul (a : FiniteAdeleRing (𝓞 K) K) (x : L)
   have h : (finiteAdeleBaseChangeEquiv K L).toAlgHom = finiteAdeleBaseChangeHom K L := by simp
   exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans (finiteAdeleBaseChangeHom_tmul K L a x)
 
+/-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem finiteAdeleBaseChangeEquiv_one_tmul (x : L) :
+    finiteAdeleBaseChangeEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
+  simp
+
 /-- The inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
 theorem finiteAdeleBaseChangeEquiv_symm_algebraMap (x : L) :
