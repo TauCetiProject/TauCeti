@@ -62,7 +62,12 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.denseRange_zpow_of_not_isOfFinOrder`: the integer powers of a point of infinite order are
   dense in the circle.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
-* `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
+* `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`,
+  and `Circle.sq_eq_one_iff`: so are its square roots of unity.
+* `Circle.finite_setOf_sq_eq_one_pi`, `Circle.infinite_setOf_sq_eq_one_pi`: a power of the circle
+  has finitely many elements of order at most two exactly when the exponent is finite. Hence an
+  infinite power of the circle does not embed in a finite one
+  (`MonoidHom.not_injective_pi_circle`, `Circle.isEmpty_pi_mulEquiv_pi`).
 * `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
@@ -306,6 +311,11 @@ theorem coordinate_mem_unitary : coordinate ∈ unitary C(Circle, ℂ) :=
 theorem inv_eq_self_iff (v : Circle) : v⁻¹ = v ↔ v = 1 ∨ v = -1 := by
   simp [inv_eq_iff_mul_eq_one, ← Circle.coe_inj, mul_self_eq_one_iff]
 
+/-- The square roots of unity on the circle are `1` and `-1`. -/
+@[simp]
+theorem sq_eq_one_iff (v : Circle) : v ^ 2 = 1 ↔ v = 1 ∨ v = -1 := by
+  rw [← inv_eq_self_iff, inv_eq_iff_mul_eq_one, sq]
+
 /-- A point of the circle is real exactly when it is `1` or `-1`. -/
 theorem im_coe_eq_zero_iff (v : Circle) : (v : ℂ).im = 0 ↔ v = 1 ∨ v = -1 := by
   -- Being real means being fixed by conjugation, which on the circle is inversion.
@@ -388,7 +398,49 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
 theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
   simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
 
+/-! ### Elements of order two in powers of the circle -/
+
+/-- In a finite power of the circle only finitely many elements square to `1`: each of their
+coordinates is `1` or `-1`. -/
+theorem finite_setOf_sq_eq_one_pi {κ : Type*} [Finite κ] :
+    {g : κ → Circle | g ^ 2 = 1}.Finite := by
+  refine (Set.Finite.pi (t := fun _ ↦ ({1, -1} : Set Circle)) fun _ ↦ Set.toFinite _).subset ?_
+  intro g hg i _
+  simpa using congrFun hg i
+
+/-- In an infinite power of the circle infinitely many elements square to `1`, for instance all
+the elements whose coordinates are `1` or `-1`. -/
+theorem infinite_setOf_sq_eq_one_pi {ι : Type*} [Infinite ι] :
+    {g : ι → Circle | g ^ 2 = 1}.Infinite := by
+  have hne : (-1 : Circle) ≠ 1 := by
+    simpa [← coe_inj] using (by norm_num : (-1 : ℂ) ≠ 1)
+  have hinj : Function.Injective fun c : Bool ↦ if c then (-1 : Circle) else 1 := by
+    rintro (_ | _) (_ | _) h
+    exacts [rfl, (hne h.symm).elim, (hne h).elim, rfl]
+  refine Set.infinite_of_injective_forall_mem (f := ((fun c : Bool ↦
+    if c then (-1 : Circle) else 1) ∘ ·)) (hinj.comp_left (α := ι)) fun b ↦ ?_
+  funext i
+  rw [Pi.pow_apply, Pi.one_apply, Function.comp_apply]
+  split_ifs <;> simp
+
 end Circle
+
+/-- **An infinite power of the circle does not embed in a finite one**: no homomorphism
+`(ι → S¹) → (κ → S¹)` with `ι` infinite and `κ` finite is injective, since it would map the
+infinitely many elements of the source that square to `1` injectively to elements of the target
+that square to `1`, of which there are finitely many. -/
+theorem MonoidHom.not_injective_pi_circle {ι κ : Type*} [Infinite ι] [Finite κ]
+    (f : (ι → Circle) →* (κ → Circle)) : ¬ Function.Injective f := fun hf ↦
+  Set.infinite_of_injOn_mapsTo (s := {g | g ^ 2 = 1}) (t := {g | g ^ 2 = 1}) hf.injOn
+    (fun g (hg : g ^ 2 = 1) ↦ (by rw [← map_pow, hg, map_one] : f g ^ 2 = 1))
+    Circle.infinite_setOf_sq_eq_one_pi Circle.finite_setOf_sq_eq_one_pi
+
+/-- An infinite power of the circle is not isomorphic, even as an abstract group, to a finite
+one: it has infinitely many elements of order at most two, and a finite power has finitely many
+(`MonoidHom.not_injective_pi_circle`). -/
+theorem Circle.isEmpty_pi_mulEquiv_pi {ι κ : Type*} [Infinite ι] [Finite κ] :
+    IsEmpty ((ι → Circle) ≃* (κ → Circle)) :=
+  ⟨fun e ↦ e.toMonoidHom.not_injective_pi_circle e.injective⟩
 
 namespace TauCeti
 

@@ -231,7 +231,8 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_inte
   set D := ω.floerConformalSobolevOperator U ρ J Ks Kt u
   set R := restrictWeightedValue V U K
   have hY : ∫ z in K, ‖ξ z‖ ^ 2 ≤ |B| * ‖R x‖ ^ 2 :=
-    (hB (mem_testSection_iff.1 hξ).1.continuous hxξ).trans (by gcongr; exact le_abs_self B)
+    (hB (mem_testSection_iff.1 hξ).1.continuous.continuousOn hxξ).trans
+      (by gcongr; exact le_abs_self B)
   -- Assemble: `‖x‖² ≤ k (‖D x‖ + ‖R x‖)²`.
   have hx2 : ‖x‖ ^ 2 ≤ k * (‖D x‖ + ‖R x‖) ^ 2 := by
     have h₁ : C * ((∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2) ≤
