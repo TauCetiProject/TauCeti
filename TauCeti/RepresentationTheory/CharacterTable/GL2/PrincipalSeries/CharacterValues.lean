@@ -113,7 +113,7 @@ private theorem indTerm_character_GL2BorelRep_eq (a b : Fˣ) {g x : GL (Fin 2) F
     (h0 : ((c : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) 0 0 = (a : F))
     (h1 : ((c : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) 1 1 = (b : F)) :
     Function.indTerm (GL2BorelRep F α β).character g x = (α a : ℂ) * (β b : ℂ) := by
-  have hmem : x⁻¹ * g * x ∈ GL2Borel F := hc ▸ c.2
+  have hmem : x⁻¹ * g * x ∈ GL2Borel F := hc ▸ c.property
   -- After the case split, the summand is the Borel character at the *subgroup* element
   -- `⟨x⁻¹ * g * x, hmem⟩`, whereas `hc` equates underlying matrices.  Rewriting by `hc` there
   -- would have to move the membership proof `hmem` along with it, so it is the equality of

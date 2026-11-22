@@ -75,7 +75,7 @@ private def preModularConjugation (α : CStarAction (Multiplicative ℝ) A) (β 
     (f : A →ₚ[ℂ] ℂ) : α.entireAnalytic →ₛₗ[starRingEnd ℂ] f.GNS where
   toFun a := f.toGNS (α.entireExtension (star (a : A)) ((β / 2 : ℝ) * I))
   map_add' a b := by
-    have ha := mem_entireAnalytic.mp a.2; have hb := mem_entireAnalytic.mp b.2
+    have ha := mem_entireAnalytic.mp a.property; have hb := mem_entireAnalytic.mp b.property
     simp only [NonUnitalStarSubalgebra.coe_add, star_add, ha.star.entireExtension_add hb.star,
       map_add]
   map_smul' c a := by
@@ -86,7 +86,7 @@ private theorem inner_preModularConjugation (hω : α.IsKMSState β ω) (a b : �
     ⟪preModularConjugation α β ω.toPositiveLinearMap a,
         preModularConjugation α β ω.toPositiveLinearMap b⟫_ℂ =
       ⟪ω.toPositiveLinearMap.toGNS (b : A), ω.toPositiveLinearMap.toGNS (a : A)⟫_ℂ := by
-  have ha := mem_entireAnalytic.mp a.2; have hb := mem_entireAnalytic.mp b.2
+  have ha := mem_entireAnalytic.mp a.property; have hb := mem_entireAnalytic.mp b.property
   have hstar : star (α.entireExtension (star (a : A)) ((β / 2 : ℝ) * I)) =
       α.entireExtension (a : A) (-((β / 2 : ℝ) * I)) := by
     simp only [entireExtension_star, star_star, map_mul, Complex.conj_ofReal, Complex.conj_I,
@@ -135,7 +135,7 @@ private theorem modularConjugationIsometry_involutive (hω : α.IsKMSState β ω
     modularConjugationIsometry hω (modularConjugationIsometry hω v) = v := by
   refine (denseRange_toGNS_entireAnalytic α ω.toPositiveLinearMap).induction_on v
     (isClosed_eq (by fun_prop) continuous_id) fun a => ?_
-  have ha := mem_entireAnalytic.mp a.2
+  have ha := mem_entireAnalytic.mp a.property
   rw [modularConjugationIsometry_apply_toGNS hω ha,
     modularConjugationIsometry_apply_toGNS hω (isEntireAnalytic_entireExtension α _ _)]
   simp only [entireExtension_star, star_star, map_mul, Complex.conj_ofReal, Complex.conj_I,
@@ -177,8 +177,8 @@ theorem IsKMSState.inner_modularConjugation (hω : α.IsKMSState β ω)
     (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
   refine (denseRange_toGNS_entireAnalytic α ω.toPositiveLinearMap).induction_on v
     (isClosed_eq (by fun_prop) (by fun_prop)) fun b => ?_
-  rw [hω.modularConjugation_apply_toGNS (mem_entireAnalytic.mp a.2),
-    hω.modularConjugation_apply_toGNS (mem_entireAnalytic.mp b.2)]
+  rw [hω.modularConjugation_apply_toGNS (mem_entireAnalytic.mp a.property),
+    hω.modularConjugation_apply_toGNS (mem_entireAnalytic.mp b.property)]
   exact inner_preModularConjugation hω a b
 
 /-- Moving the modular conjugation across an inner product reverses the entries:
@@ -215,7 +215,7 @@ theorem IsKMSState.modularConjugation_gnsImplementingGroup (hω : α.IsKMSState 
     fun s a => hω.apply_action hβ s a
   refine (denseRange_toGNS_entireAnalytic α ω.toPositiveLinearMap).induction_on v
     (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
-  have ha := mem_entireAnalytic.mp a.2; set r : ℝ := Multiplicative.toAdd t
+  have ha := mem_entireAnalytic.mp a.property; set r : ℝ := Multiplicative.toAdd t
   rw [show t = Multiplicative.ofAdd r from (ofAdd_toAdd t).symm]
   have hU_toGNS (x : A) :
       α.gnsImplementingGroup hinv (.ofAdd r) (ω.toPositiveLinearMap.toGNS x) =
@@ -326,7 +326,7 @@ theorem IsKMSState.conjModularConjugation_gnsNonUnitalStarAlgHom_mem_centralizer
       ρ c * hω.conjModularConjugation (ρ b) = hω.conjModularConjugation (ρ b) * ρ c := by
     ext v; refine (denseRange_toGNS_entireAnalytic α f).induction_on v
       (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
-    have ha := mem_entireAnalytic.mp a.2
+    have ha := mem_entireAnalytic.mp a.property
     have hρ (x y : A) : ρ x (f.toGNS y) = f.toGNS (x * y) := by
       simp [ρ, toGNS_apply, gnsNonUnitalStarAlgHom_apply_coe]
     simp only [mul_apply_eq_comp]

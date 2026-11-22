@@ -118,7 +118,7 @@ theorem eqLocus_eq_adjoin_of_isPushout [Module.Flat R R']
   -- base change carries the kernel of `g` to the kernel of `g'`, by flatness
   let h₁ : LinearMap.ker g →ₗ[R] LinearMap.ker g' :=
     { toFun x := ⟨algebraMap A A' x, by
-        have hx : algebraMap A B x = t x := mem_eqLocus.mp ((hg x).mpr x.2)
+        have hx : algebraMap A B x = t x := mem_eqLocus.mp ((hg x).mpr x.property)
         rw [LinearMap.mem_ker, diff_apply, ht₁', ← hx, ← IsScalarTower.algebraMap_apply,
           ← IsScalarTower.algebraMap_apply, sub_self]⟩
       map_add' x y := by ext; simp
@@ -138,7 +138,7 @@ theorem eqLocus_eq_adjoin_of_isPushout [Module.Flat R R']
     have hx' : (⟨x, (hg' x).mp hx⟩ : LinearMap.ker g') ∈ Submodule.span R' (Set.range h₁) :=
       hbc.span_range_eq_top ▸ Submodule.mem_top
     have := Submodule.apply_mem_span_image_of_mem_span (LinearMap.ker g').subtype hx'
-    exact adjoin_mono (by rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩; exact ⟨a, (hg a).mpr a.2, rfl⟩)
+    exact adjoin_mono (by rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩; exact ⟨a, (hg a).mpr a.property, rfl⟩)
       (Algebra.span_le_adjoin R' _ this)
   · -- the images of the invariants of `A` and of `R'` are invariants of `A'`
     refine adjoin_image_eqLocus_subset (ψ := algebraMap B B') ?_ ht₁ ht₂.symm hx

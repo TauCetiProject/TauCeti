@@ -169,7 +169,7 @@ theorem IsKMSState.gnsRadonNikodym_mem_center (hω : α.IsKMSState β ω) {φ : 
     rw [sub_apply, sub_eq_zero]
     refine ext_inner_left ℂ fun u => (denseRange_toGNS_entireAnalytic α f).induction_on u
       (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
-    have ha := mem_entireAnalytic.mp a.2
+    have ha := mem_entireAnalytic.mp a.property
     calc ⟪f.toGNS (a : A), (B * π c) (f.toPreGNS 1)⟫_ℂ
         = ⟪(f.toPreGNS (a : A) : f.GNS), B (f.toPreGNS c)⟫_ℂ := by
           simp [π, mul_apply_eq_comp, toGNS_apply, ← gnsVector_def]

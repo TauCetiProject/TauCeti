@@ -27,14 +27,16 @@ records the derivative of the pairing `(x, φ) ↦ φ x` of a space with its con
 linear map to a fixed vector (or of a varying bilinear map to two fixed vectors, together with the
 second derivative of the latter), the product rule
 for a varying bilinear map applied to two varying vectors, and the fact that the derivative of a
-field of symmetric bilinear maps takes symmetric values. A continuous linear map vanishing on a
-function near a point vanishes on its derivative there. Finally, a family of continuous linear maps
-out of a finite-dimensional space is differentiable, or has a given derivative in a scalar variable,
-within a set or at a point, exactly when each of its evaluations does; this is how derivatives of
-families of linear and bilinear maps are tested on vectors. Composing a family of continuous linear
-maps on the left with a fixed one composes its derivative with that map. An injective operator
-also recovers a vanishing vector derivative when the position derivative and the derivative of
-the corresponding affine expression vanish.
+field of symmetric bilinear maps takes symmetric values. If an endomorphism field has locally
+constant square on a fixed vector, its derivative anticommutes with its value on that vector; in
+particular each derivative of a family squaring to `-1` anticommutes with it. A continuous linear
+map vanishing on a function near a point vanishes on its derivative there. Finally, a family of
+continuous linear maps out of a finite-dimensional space is differentiable, or has a given scalar
+derivative, within a set or at a point, exactly when each of its evaluations does; this is
+how derivatives of families of linear and bilinear maps are tested on vectors. Composing a family
+of continuous linear maps on the left with a fixed one composes its derivative with that map. An
+injective operator also recovers a vanishing vector derivative when the position derivative and the
+derivative of the corresponding affine expression vanish.
 
 ## Main declarations
 
@@ -48,6 +50,8 @@ the corresponding affine expression vanish.
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
 * `TauCeti.fderiv_apply_apply_comm`: the derivative of a field of bilinear maps that is symmetric
   near a point takes symmetric values there.
+* `TauCeti.fderiv_apply_apply_eq_neg_of_eventually_sq`: each derivative of a family of continuous
+  linear maps squaring to `-1` near a point anticommutes with its value there.
 * `TauCeti.clm_apply_fderiv_eq_zero`: a continuous linear map that vanishes on `g` near a point
   vanishes on the derivative of `g` there.
 * `TauCeti.differentiableWithinAt_clm_apply`: a family of continuous linear maps out of a
@@ -172,6 +176,31 @@ theorem fderiv_apply_apply_comm {c : E → F →L[𝕜] F →L[𝕜] G} {x : E}
     have heq : (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ c y w v := hc.mono fun y hy ↦ hy v w
     rw [← fderiv_clm_apply_const_apply₂ hd, ← fderiv_clm_apply_const_apply₂ hd, heq.fderiv_eq]
   · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- If the square of an endomorphism field is locally constant on a fixed vector, its
+derivative anticommutes with its value on that vector, including for totalized derivatives. -/
+theorem fderiv_apply_apply_eq_neg_of_eventually_const
+    {J : E → F →L[𝕜] F} {p : E} {v c : F}
+    (hJ : ∀ᶠ y in 𝓝 p, J y (J y v) = c) (w : E) :
+    fderiv 𝕜 J p w (J p v) = -J p (fderiv 𝕜 J p w v) := by
+  by_cases hd : DifferentiableAt 𝕜 J p
+  · have hder := hd.hasFDerivAt.clm_apply
+      (hd.hasFDerivAt.clm_apply (hasFDerivAt_const (x := p) v))
+    have hzero := congrArg (fun L : E →L[𝕜] F ↦ L w)
+      (hder.unique ((hasFDerivAt_const c p).congr_of_eventuallyEq hJ))
+    simp only [add_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.flip_apply, zero_apply, map_zero, zero_add] at hzero
+    exact eq_neg_of_add_eq_zero_right hzero
+  · simp [fderiv_zero_of_not_differentiableAt hd]
+
+/-- **Derivatives of a square-minus-one family anticommute with it.** If `J y` squares to `-1` for
+`y` near `x`, differentiating `J ∘ J = -1` gives `J' u (J v) = -J (J' u v)` for the derivative
+`J'` of `J` at `x`. Where `J` is not differentiable its derivative is zero, and the identity is
+trivial. -/
+theorem fderiv_apply_apply_eq_neg_of_eventually_sq {J : E → F →L[𝕜] F} {x : E}
+    (hJsq : ∀ᶠ y in 𝓝 x, ∀ w, J y (J y w) = -w) (u : E) (v : F) :
+    fderiv 𝕜 J x u (J x v) = -J x (fderiv 𝕜 J x u v) :=
+  fderiv_apply_apply_eq_neg_of_eventually_const (hJsq.mono fun _ hy ↦ hy v) u
 
 /-- If a continuous linear map `L` vanishes on `g` near `x`, then `L` vanishes on every directional
 derivative of `g` at `x`. -/

@@ -165,7 +165,7 @@ private theorem IsAnalyticCommutantFamily.modularConjugation_apply_gnsVector
   have hUΩ (r : ℝ) : U (.ofAdd r) f.gnsVector = f.gnsVector := by simp [U, f, gnsVector_def]
   refine ext_inner_left ℂ fun u => (denseRange_toGNS_entireAnalytic α f).induction_on u
     (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
-  have ha := mem_entireAnalytic.mp a.2
+  have ha := mem_entireAnalytic.mp a.property
   let F : ℂ → ℂ := fun z => ⟪f.toGNS (a : A), star (S (conj z)) f.gnsVector⟫_ℂ
   let G : ℂ → ℂ := fun z => ⟪S 0 f.gnsVector, f.toGNS (α.entireExtension (star (a : A)) (-z))⟫_ℂ
   have hF : Differentiable ℂ F := (innerSL ℂ (f.toGNS (a : A))).differentiable.comp
@@ -345,7 +345,7 @@ private theorem commute_conjModularConjugation_of_isAnalyticCommutantFamily
   let f := ω.toPositiveLinearMap; let ρ := f.gnsStarAlgHom; ext v
   refine (denseRange_toGNS_entireAnalytic α f).induction_on v
     (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
-  have ha := mem_entireAnalytic.mp a.2
+  have ha := mem_entireAnalytic.mp a.property
   let La : ℂ → (f.GNS →L[ℂ] f.GNS) := fun z =>
     hω.conjModularConjugation (ρ (α.entireExtension (a : A) (conj z)))
   let S' : ℂ → (f.GNS →L[ℂ] f.GNS) := fun z => star (R' (conj z + (β / 2 : ℝ) * I))

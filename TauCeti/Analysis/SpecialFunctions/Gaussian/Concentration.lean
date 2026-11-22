@@ -73,22 +73,13 @@ of variance `(2 c²)⁻¹`. -/
 theorem gaussianDensity_eq_gaussianPDFReal {c : ℝ} (hc : 0 < c) :
     gaussianDensity c = ProbabilityTheory.gaussianPDFReal 0 (2 * c ^ 2)⁻¹.toNNReal := by
   ext t
-  have hv : (0 : ℝ) ≤ (2 * c ^ 2)⁻¹ := by positivity
-  -- Normalize the variance factor before simplifying its square root.
-  have hvariance : 2 * π * (2 * c ^ 2)⁻¹ = π / c ^ 2 := by field_simp
-  -- Express the Gaussian exponent in terms of the scaled variable.
-  have hexponent : -t ^ 2 / (2 * (2 * c ^ 2)⁻¹) = -(c * t) ^ 2 := by field_simp
-  rw [gaussianDensity, ProbabilityTheory.gaussianPDFReal, Real.coe_toNNReal _ hv, sub_zero]
-  rw [hvariance, Real.sqrt_div' _ (sq_nonneg c), Real.sqrt_sq hc.le]
-  rw [hexponent]
+  simp [gaussianDensity, ProbabilityTheory.gaussianPDFReal, hc.le]
   field_simp
 
 /-- For `c > 0`, the Gaussian density of width `c⁻¹` has total mass one. -/
 theorem integral_gaussianDensity {c : ℝ} (hc : 0 < c) : ∫ t, gaussianDensity c t = 1 := by
   rw [gaussianDensity_eq_gaussianPDFReal hc]
-  refine ProbabilityTheory.integral_gaussianPDFReal_eq_one 0 ?_
-  simpa using pow_pos hc 2
-
+  exact ProbabilityTheory.integral_gaussianPDFReal_eq_one 0 (by positivity)
 
 end Real
 
