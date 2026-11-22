@@ -21,7 +21,7 @@ evaluates every trace fibre of positive determinant:
 
 * if `t² - 4 n = u²` with `u > 0` and `n > 0`, the weights sum to `12 u` for `t > 0` and to `0` for
   `t < 0`;
-* if `t² - 4 n > 0` is not a square, the weights sum to `0`.
+* if `t² - 4 n ≥ 0` is not a square, the weights sum to `0`.
 
 Popa and Zagier's coefficients are a twelfth of the weights, so in the split case the two fibres
 of traces `±t` together carry coefficient `u`. Weighted by the binary-form trace `P_{w+2}(t, n)`,
@@ -31,8 +31,8 @@ nothing.
 ## Main results
 
 * `TauCeti.PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_sq`: the split hyperbolic fibres.
-* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare`: the nonsplit hyperbolic
-  fibres.
+* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_not_isSquare`: the nonsplit
+  hyperbolic fibres.
 
 ## Proof
 
@@ -248,11 +248,14 @@ theorem finsum_weight_traceDetFiber_of_discrim_eq_sq {u : ℤ} (hn : 0 < n) (hu 
     rw [hone, one_mul] at hprod
     omega
 
-/-- **The nonsplit hyperbolic trace fibres of Popa–Zagier's element.** If `t² - 4 n > 0` is not a
+/-- **The nonsplit hyperbolic trace fibres of Popa–Zagier's element.** If `t² - 4 n ≥ 0` is not a
 square, the weights of the integral matrices of trace `t` and determinant `n` sum to `0`. -/
-theorem finsum_weight_traceDetFiber_of_not_isSquare (hD : 0 < t ^ 2 - 4 * n)
+theorem finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (hD : 4 * n ≤ t ^ 2)
     (h : ¬IsSquare (t ^ 2 - 4 * n)) :
     ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
+  -- the discriminant is positive, since `0 = 0 * 0` is a square
+  replace hD : 0 < t ^ 2 - 4 * n :=
+    lt_of_le_of_ne (by linarith) fun h0 ↦ h ⟨0, by linarith⟩
   rcases le_or_gt n 0 with hn | hn
   · exact finsum_weight_traceDetFiber_eq_zero_of_det_nonpos hn
   rcases le_or_gt t 0 with ht | ht

@@ -105,11 +105,11 @@ private lemma fibreWeight_pair_of_factorPair (n : ℕ) (hn : 0 < n) (p : ℕ × 
   simp [hspos]
 
 private lemma fibreWeight_pair_of_not_isSquare (n : ℕ) (t : ℤ)
-    (hD : 4 * (n : ℤ) < t ^ 2) (hnsq : ¬IsSquare (t ^ 2 - 4 * (n : ℤ))) :
+    (hD : 4 * (n : ℤ) ≤ t ^ 2) (hnsq : ¬IsSquare (t ^ 2 - 4 * (n : ℤ))) :
     fibreWeight t n + fibreWeight (-t) n = 0 := by
   rw [fibreWeight_cast, fibreWeight_cast,
-    PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by omega) hnsq,
-    PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by nlinarith)
+    PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_not_isSquare hD hnsq,
+    PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (by nlinarith)
       (by simpa using hnsq)]
   norm_num
 
