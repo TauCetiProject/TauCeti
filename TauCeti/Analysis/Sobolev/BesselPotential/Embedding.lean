@@ -128,6 +128,8 @@ spaces.
 * `TauCeti.exists_norm_le_mul_sum_lpNorm_iteratedFDeriv`: the bound
   `sup_x |f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂` for `Cᵏ` functions `f` with square-integrable derivatives
   through order `k`, `2k > n`.
+* `TauCeti.not_memSobolev_indicator_Icc`: `1_{[0,1]} ∉ H^{s,2}(ℝ)` for `s > 1 / 2`, in particular
+  `1_{[0,1]} ∉ H^{1,2}(ℝ)`, since it has no continuous representative.
 
 ## References
 
@@ -180,22 +182,12 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
     {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
     eLpNorm (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 volume =
       ‖hf.toBesselPotentialSpace‖ₑ := by
-  set U := hf.toBesselPotentialSpace.toLp
-  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
-    fun_prop
-  have hwc : Continuous fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
-    (by fun_prop : Continuous fun ξ : E => 1 + ‖ξ‖ ^ 2).rpow_const fun ξ =>
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
-  -- The `L²` function `𝓕 U` represents the weight times `v`.
-  have hae : ((𝓕 U : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
-      fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
-    refine Lp.ae_eq_of_toTemperedDistribution_apply_eq (𝓕 U) ?_ fun φ => ?_
-    · refine locallyIntegrable_iff.2 fun K hK => ?_
-      exact (L1.integrable_coeFn v).integrableOn.continuousOn_smul hwc.continuousOn hK
-    · rw [BesselPotentialSpace.toTemperedDistribution_fourier_toLp,
-        MemSobolev.toBesselPotentialSpace_toDistr, hv,
-        Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
-      simp only [Complex.coe_smul]
+  -- The `L²` function `𝓕 (J^s f)` represents the weight times `v`.
+  have hae : ((𝓕 hf.toBesselPotentialSpace.toLp : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
+      fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ :=
+    (BesselPotentialSpace.fourier_toLp_ae_eq hf.toBesselPotentialSpace (v := v)
+      (by rwa [MemSobolev.toBesselPotentialSpace_toDistr])).mono fun ξ h =>
+        h.trans (Complex.coe_smul _ _)
   rw [eLpNorm_congr_ae hae.symm, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm,
     BesselPotentialSpace.norm_fourier_toLp_eq]
 
@@ -283,9 +275,7 @@ theorem exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto {s : ℝ} (hs : fin
     ∃ g : Lp F 2 (volume : Measure E), ∃ hg : MemSobolev s 2 (g : 𝓢'(E, F)),
       hg.toBesselPotentialSpace = ∑' n, a n • (hd n).toBesselPotentialSpace ∧
       ∀ᵐ x ∂volume, Tendsto (fun N ↦ ∑ n ∈ Finset.range N, a n • d n x) atTop (𝓝 (g x)) := by
-  have hs0 : 0 ≤ s := by
-    have := (finrank ℝ E).cast_nonneg (α := ℝ)
-    linarith
+  have hs0 : 0 ≤ s := TauCeti.nonneg_of_finrank_lt_two_mul hs
   set L := ∑' n, a n • (hd n).toBesselPotentialSpace
   -- The limit `L` is the `H^s` element of an `L²` function `g`.
   obtain ⟨g, hLg⟩ := memSobolev_zero_iff.1 (L.memSobolev_toDistr.mono hs0)
@@ -726,5 +716,42 @@ theorem exists_norm_le_mul_sum_lpNorm_iteratedFDeriv {k : ℕ} (hk : finrank ℝ
       exact (S u).toBCF.norm_coe_le_norm x
     _ ≤ ‖S‖ * ‖u‖ := S.le_opNorm u
     _ ≤ ‖S‖ * ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by gcongr
+
+open Set in
+/-- **The indicator function of `[0, 1]` is not in `H^{s,2}(ℝ)` for `s > 1 / 2`**, in particular
+not in `H^{1,2}(ℝ)`. Every function in `H^{s,2}(ℝ)` with `s > 1 / 2` has a continuous
+representative (`TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`), while
+the indicator function jumps at `0`. For `s = 1` this reflects that its distributional derivative
+`δ₀ - δ₁` is not a function. -/
+theorem not_memSobolev_indicator_Icc {s : ℝ} (hs : 1 / 2 < s) :
+    ¬ TemperedDistribution.MemSobolev s 2 (Complex.ofRealCLM.compLp (indicatorConstLp 2
+      (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne (1 : ℝ) :
+        Lp ℝ 2 (volume : Measure ℝ)) : 𝓢'(ℝ, ℂ)) := by
+  set g : Lp ℝ 2 (volume : Measure ℝ) :=
+    indicatorConstLp 2 (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne 1
+  have hg : (g : ℝ → ℝ) =ᵐ[volume] (Icc (0 : ℝ) 1).indicator fun _ ↦ 1 := indicatorConstLp_coeFn
+  intro hu
+  obtain ⟨f, hf⟩ :=
+    hu.exists_zeroAtInftyContinuousMap_ae_eq (by rw [Module.finrank_self, Nat.cast_one]; linarith)
+  have hae : (f : ℝ → ℂ) =ᵐ[volume]
+      fun x ↦ (((Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ)) x : ℂ) := by
+    filter_upwards [hf, Complex.ofRealCLM.coeFn_compLp g, hg] with x h₁ h₂ h₃
+    rw [← h₁, h₂, Complex.ofRealCLM_apply, h₃]
+  -- So the continuous function `f` is `1` on `(0, 1)` and `0` on `(-1, 0)`, and both at `0`.
+  have h₁ : EqOn f (fun _ ↦ 1) (Ioo 0 1) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ isOpen_Ioo f.continuous.continuousOn
+      continuousOn_const
+    filter_upwards [ae_restrict_of_ae hae, ae_restrict_mem measurableSet_Ioo] with x hx hxI
+    rw [hx, indicator_of_mem (Ioo_subset_Icc_self hxI), Complex.ofReal_one]
+  have h₀ : EqOn f (fun _ ↦ 0) (Ioo (-1) 0) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ isOpen_Ioo f.continuous.continuousOn
+      continuousOn_const
+    filter_upwards [ae_restrict_of_ae hae, ae_restrict_mem measurableSet_Ioo] with x hx hxI
+    rw [hx, indicator_of_notMem fun h : x ∈ Icc (0 : ℝ) 1 ↦ (not_le.2 hxI.2) h.1,
+      Complex.ofReal_zero]
+  have h₁0 : f 0 = 1 := h₁.closure f.continuous continuous_const (by simp [closure_Ioo zero_ne_one])
+  have h₀0 : f 0 = 0 :=
+    h₀.closure f.continuous continuous_const (by simp [closure_Ioo (by norm_num : (-1 : ℝ) ≠ 0)])
+  exact one_ne_zero (h₁0.symm.trans h₀0)
 
 end TauCeti

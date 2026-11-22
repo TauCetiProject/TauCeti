@@ -39,6 +39,10 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
 * `TauCeti.Symbol.quantizeSchwartzValue_sharp`: **composition of quantizations**. For a Schwartz
   function `u`, `Op(a # b) u (x) = ∫ exp(2πi ⟪ζ, x⟫) a(x, 2πζ) (𝓕 (Op(b) u) ζ) dζ`, the Fourier
   integral defining `Op(a)` applied to the function `Op(b) u`.
+* `TauCeti.Symbol.coefficient_sharp_of_coefficient_eq_smul`: at a position `x`, `a # b` only
+  involves `a(x, ·)`. In particular, for a Schwartz function `ψ`, the composition `ψ # b` vanishes
+  at positions outside `tsupport ψ`
+  (`TauCeti.Symbol.coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport`).
 * `TauCeti.Symbol.spatialDeriv_sharp`, `TauCeti.Symbol.coefficient_frequencyDeriv_sharp`: the
   Leibniz rules `∂(a # b) = (∂a) # b + a # (∂b)` for position and frequency derivatives.
 * `TauCeti.Symbol.sharp_add`, `TauCeti.Symbol.add_sharp`, `TauCeti.Symbol.sharp_smul`,
@@ -68,6 +72,9 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   for the test function `w = Op(b) u`, and
   `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
   symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
+* `TauCeti.Symbol.smul_quantizeSchwartzValue_sharp_eq_add`: a symbol identity
+  `ψ(x) (c # b) = ψ(x) (1 + R)` gives the operator identity
+  `ψ · Op(c) (Op(b) u) = ψ · u + Op(ψ R) u`, the form of a local right parametrix.
 * `TauCeti.Symbol.coordSub_smul_coefficient_sharp`: **commutator with a coordinate function**,
   `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`, where `(y - z)ⱼ b` is the composition
   with the symbol `TauCeti.Symbol.coordSubSymbol z j` of multiplication by `(y - z)ⱼ`.
@@ -756,6 +763,18 @@ theorem coefficient_sharp_of_coefficient_eq_smul {a' : Symbol n W U m'}
   simp only [h, ContinuousLinearMap.smul_comp]
   exact smul_comm _ _ _
 
+/-- The composition `ψ # a` of multiplication by a Schwartz function `ψ` with a symbol `a`
+vanishes at positions outside `tsupport ψ`. -/
+theorem coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)} {x : CoordinateSpace n}
+    (hx : x ∉ tsupport ψ) (ξ : CoordinateSpace n) :
+    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) = 0 := by
+  set F := ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W) ((ψ.smooth ⊤).smul contDiff_const)
+  -- At a position where `ψ` vanishes, so does the left factor `F`, and with it `F # a`.
+  rw [coefficient_sharp_of_coefficient_eq_smul (a := F) (a' := F) ha (t := 0)
+    (fun η ↦ by simp [F, image_eq_zero_of_notMem_tsupport hx]), zero_smul]
+
 /-- **Leibniz rule in the position** for the composition symbol. -/
 theorem spatialDeriv_sharp (hb : b.HasCompactSpatialSupport) (j : Fin n) :
     Symbol.spatialDeriv j (a.sharp b hb) =
@@ -1060,6 +1079,36 @@ theorem quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue [CompleteSpace W] [
     funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   rw [quantizeSchwartzValue_sharp hb, quantizeSchwartzValue_def, SchwartzMap.fourier_coe, hw]
 
+/-- **A right parametrix identity from a symbol identity.** If at the position `x` the
+composition `c # b` with a compactly supported `b` is the identity plus `R` after multiplication
+by `ψ(x)`, then `ψ · Op(c) (Op(b) u) = ψ · u + Op(ψ R) u` at `x`. -/
+theorem smul_quantizeSchwartzValue_sharp_eq_add [CompleteSpace V] [CompleteSpace W]
+    {c : Symbol n W V m'} (hb : b.HasCompactSpatialSupport) {m'' : ℝ} (R : Symbol n V V m'')
+    {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n)
+    (h : ∀ ξ, (ψ x : ℂ) • (c.sharp b hb).coefficient (x, ξ) =
+      (ψ x : ℂ) • (ContinuousLinearMap.id ℂ V + R.coefficient (x, ξ))) :
+    (ψ x : ℂ) • quantizeSchwartzValue c.coefficient
+        ((hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (b.contDiff_quantizeSchwartzValue u)) x =
+      (ψ x : ℂ) • u x + quantizeSchwartzValue ((ofSpatial
+        (fun x => ψ x • ContinuousLinearMap.id ℂ V) (hψ.smul contDiff_const)).comp R).coefficient
+          u x := by
+  -- The identity as the coefficient of a symbol, so that the quantization is additive in it.
+  have hId : (ofSpatial (n := n) (fun _ => ContinuousLinearMap.id ℂ V)
+      contDiff_const).coefficient = fun _ => ContinuousLinearMap.id ℂ V :=
+    funext fun p => coefficient_ofSpatial _ _ p
+  calc _ = quantizeSchwartzValue ((ψ x : ℂ) • (c.sharp b hb).coefficient) u x := by
+        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
+    _ = quantizeSchwartzValue ((ψ x : ℂ) • ((ofSpatial (fun _ => ContinuousLinearMap.id ℂ V)
+          contDiff_const).coefficient + R.coefficient)) u x :=
+        quantizeSchwartzValue_congr_left (fun ξ => by simpa [hId] using h ξ) u
+    _ = _ := by
+        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_coefficient_add, hId,
+          quantizeSchwartzValue_id, smul_add, ← quantizeSchwartzValue_smul_left]
+        exact congrArg _ (quantizeSchwartzValue_congr_left (fun ξ ↦ by
+          simp [coefficient_comp, ← Complex.coe_smul]) u)
+
 /-- **Composition of uniform quantizations.** For a symbol `b` with compact spatial support,
 `Op(a # b) = Op(a) ∘ Op(b)` on Schwartz space. -/
 theorem quantizeUniformCLM_sharp [CompleteSpace W] [CompleteSpace U] (ha : a.IsUniform)
@@ -1109,8 +1158,9 @@ theorem coefficient_coordSubSymbol (z : CoordinateSpace n) (j : Fin n)
 theorem quantizeSchwartzValue_coordSubSymbol_comp (b : Symbol n V W m) (z : CoordinateSpace n)
     (j : Fin n) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue ((coordSubSymbol z j).comp b).coefficient u x =
-      ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x :=
-  quantizeSchwartzValue_ofSpatial_smul_id_comp b _ u x
+      ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x := by
+  rw [quantizeSchwartzValue_congr_left (b := ((x - z) j : ℂ) • b.coefficient) (fun ξ ↦ by
+      simp [coefficient_comp, ← Complex.coe_smul]), quantizeSchwartzValue_smul_left]
 
 /-- **Commutator with a coordinate function.** For a symbol `b` with compact spatial support,
 `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`: multiplying `Op(a) (Op(b) u)` by

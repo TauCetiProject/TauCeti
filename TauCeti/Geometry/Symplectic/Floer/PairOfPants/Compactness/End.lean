@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
+import TauCeti.Order.Interval.Set.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Compactness along the ends of pairs of pants
@@ -141,11 +143,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
   -- The translated windows lie in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
   -- chart.
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
-      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) := by
-    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
-    refine ⟨?_, by simpa using h₂⟩
-    simp only [Prod.fst_add, mem_Ioi]
-    linarith [hR k, mem_Ioi.1 h₁]
+      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) :=
+    add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
   have hvC (k : ℕ) : ContDiffOn ℝ 3 (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω :=
     (hu k).comp ((contDiff_positiveEndChart q 3).comp (contDiff_id.add contDiff_const)).contDiffOn
       fun z hz ↦ positiveEndChart_mem_thricePuncturedSphereReal
@@ -159,15 +158,10 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
   -- The energy of the translated end over `Ω` is at most the energy of `uₖ` over `S`.
   have hlin (k : ℕ) := (setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le hKH hH hHd
     ((hu k).differentiableOn (by norm_num)) q (R k) hΩ.measurableSet (hΩT k)).trans (hE k)
-  have hint (k : ℕ) : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0)
-      (fun w ↦ positiveEndHamiltonian H q w.2)
-      (fun z ↦ u k (positiveEndChart q (z + (R k, 0))))) Ω :=
-    ⟨(ω.continuousOn_floerEnergyDensity hΩ ((hvC k).of_le (by norm_num))
+  have h (k : ℕ) := integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    ((ω.continuousOn_floerEnergyDensity hΩ ((hvC k).of_le (by norm_num))
       contDiffOn_const (hKt.of_le (by norm_num)).contDiffOn).aestronglyMeasurable
-        hΩ.measurableSet,
-      (hasFiniteIntegral_iff_ofReal (hf0 k)).2 ((hlin k).trans_lt ENNReal.ofReal_lt_top)⟩
-  exact hconv hΩ hΩD hvC hvfl huK hint fun k ↦ by
-    rw [integral_eq_lintegral_of_nonneg_ae (hf0 k) (hint k).aestronglyMeasurable]
-    exact ENNReal.toReal_le_of_le_ofReal hE0 (hlin k)
+        hΩ.measurableSet) (hf0 k) subset_rfl hE0 (hlin k)
+  exact hconv hΩ hΩD hvC hvfl huK (fun k ↦ (h k).1) fun k ↦ (h k).2
 
 end TauCeti.SymplecticForm

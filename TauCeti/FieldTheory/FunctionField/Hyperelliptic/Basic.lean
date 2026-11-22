@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
+public import TauCeti.FieldTheory.FunctionField.Gonality.Basic
 public import TauCeti.FieldTheory.Separable.PrimeDegree
 -- Proof-only: `[k(x) : k(x ^ 2)] = 2` for the rational function field in genus zero.
 import TauCeti.FieldTheory.RatFunc.PowerTower
@@ -56,6 +56,8 @@ is hyperelliptic.
   a perfect field, the predicate agrees with Stichtenoth's Definition 6.2.1.
 * `TauCeti.isHyperellipticFunctionField_of_genus_eq_two_of_perfectField`: over a perfect field,
   every function field of genus two is hyperelliptic, in every characteristic.
+* `TauCeti.gonality_eq_two_iff_isHyperellipticFunctionField`: over a perfect field and in genus
+  at least two, hyperelliptic means gonality two.
 
 ## References
 
@@ -103,17 +105,12 @@ and it needs no hypothesis on the characteristic. -/
 theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
     (hhyp : IsHyperellipticFunctionField k F) :
     ∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A := by
-  -- The pole divisor of an index-two generator `x` has degree `[F : k(x)]` by the product
-  -- formula, and its Riemann--Roch space contains the two independent functions `1` and `x`.
+  -- The pole divisor of an index-two generator `x` has degree `[F : k(x)] = 2` and `ℓ ≥ 2`.
   obtain ⟨x, hx, hrank, -⟩ := hhyp.exists_separable_finrank_adjoin_eq_two
   have _ : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos (by omega)
   have hF : IsFunctionField k F := hx.isFunctionField_adjoin.finite_extension
-  have hx0 : x ≠ 0 := fun h ↦ hx (h ▸ isAlgebraic_zero)
-  refine ⟨Divisor.poles hF (Units.mk0 x hx0), ?_, ?_⟩
-  · rw [Divisor.degree_poles hF (Units.mk0 x hx0) hx, Units.val_mk0, hrank]
-    norm_num
-  · simpa using le_dim_zsmul_poles hF (Units.mk0 x hx0) hx (n := 1 + 1) (m := ((1 : ℕ) : ℤ))
-      (by omega)
+  exact (exists_nonneg_and_degree_eq_finrank_and_two_le_dim hF hx).imp fun D h ↦
+    ⟨by rw [h.2.1, hrank]; norm_num, h.2.2⟩
 
 /-! ### From a divisor of degree two to the index-two subfield -/
 
@@ -127,36 +124,10 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {A : Divisor k F} (hA : Divisor.degree A = 2) (hdim : 2 ≤ Divisor.dim A) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
-  -- The subfield is `k(x)` for a nonconstant `x` in the Riemann--Roch space of an effective
-  -- divisor `B` linearly equivalent to `A`; its index is at most two.  If it is one, so
-  -- `k(x) = F`, replace `x` by `x ^ 2`, whose subfield has index two.
-  -- Move `A` inside its class to an effective divisor `B`, which has the same degree and `ℓ`.
-  obtain ⟨z, hzA, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF A).mp (by omega))
-  set B : Divisor k F := Divisor.principal hF (Units.mk0 z hz0) + A with hB
-  have hBrw : B = A - Divisor.principal hF (Units.mk0 z hz0)⁻¹ := by
-    rw [hB, Divisor.principal_inv]; abel
-  have hBeff : 0 ≤ B := (mem_riemannRochSpace_units_iff hF).mp hzA
-  have hBdeg : Divisor.degree B = 2 := by rw [hB]; simp [hA]
-  have hBdim : 2 ≤ Divisor.dim B := by rwa [hBrw, Divisor.dim_sub_principal]
-  -- `L(B)` has dimension at least two, so it holds a transcendental function `x`.
-  obtain ⟨x, hxB, hx⟩ := Divisor.exists_mem_riemannRochSpace_transcendental hF hex hBdim
-  have hx0 : x ≠ 0 := fun h ↦ hx (h ▸ isAlgebraic_zero)
-  -- The poles of `x` are bounded by `B`, so `[F : k(x)] = deg (x)_∞ ≤ deg B = 2`.
-  have hle : Divisor.poles hF (Units.mk0 x hx0) ≤ B := by
-    rw [WeilDivisor.le_iff]
-    intro P
-    have hBP : (0 : ℤ) ≤ B.coeff P := by simpa using WeilDivisor.le_iff.mp hBeff P
-    have hord := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp hxB P
-    rw [Divisor.coeff_poles, Units.val_mk0, sup_le_iff]
-    exact ⟨by omega, hBP⟩
-  have hdegle : Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) ≤ 2 := by
-    rw [← hBdeg]
-    exact Divisor.degree_le_of_le hle
+  -- The pencil gives a transcendental `x` with `[F : k(x)] ≤ deg A = 2`.  If the index is one,
+  -- so `k(x) = F`, replace `x` by `x ^ 2`, whose subfield has index two.
+  obtain ⟨x, hx, hle⟩ := exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim hF hex hdim
   have _ : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
-  have hrank : (Module.finrank k⟮x⟯ F : ℤ) =
-      Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) :=
-    (Divisor.degree_poles hF (Units.mk0 x hx0) hx).symm
   have hpos : 0 < Module.finrank k⟮x⟯ F := Module.finrank_pos
   by_cases h1 : Module.finrank k⟮x⟯ F = 1
   · -- `F = k(x)`, and `k(x ^ 2)` has index two in it
@@ -244,5 +215,15 @@ theorem isHyperellipticFunctionField_of_genus_eq_two_of_perfectField [PerfectFie
     IsHyperellipticFunctionField k F :=
   isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two.mpr
     ⟨hg.ge, exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two hF hex hg⟩
+
+/-- **Over a perfect field, hyperelliptic means gonality two** in genus at least two: a field of
+positive genus is not rational, so gonality two is a rational subfield of index two, and over a
+perfect field that is Tau Ceti's hyperelliptic predicate. -/
+theorem gonality_eq_two_iff_isHyperellipticFunctionField [PerfectField k]
+    (hF : IsFunctionField k F) (hg : 2 ≤ genus k F) :
+    gonality k F = 2 ↔ IsHyperellipticFunctionField k F := by
+  rw [gonality_eq_two_iff hF (isEmpty_algEquiv_ratFunc_of_genus_ne_zero (by omega)),
+    isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two,
+    and_iff_right hg]
 
 end TauCeti
