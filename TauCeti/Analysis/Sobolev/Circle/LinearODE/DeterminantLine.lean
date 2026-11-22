@@ -86,6 +86,9 @@ return map. For them the orientation comparison above is expressed by the sign o
   `TauCeti.CircleSobolev.sign_detLineEndEquiv_detLineLoopOperatorEquiv`: for bijective `L_S`, the
   trivialization of `det L_S` through `1 - Ψ(T)` is `(det (1 - Ψ(T)))⁻¹` times the trivialization
   given by bijectivity, so the two orientations differ by the sign of `det (1 - Ψ(T))`.
+* `TauCeti.CircleSobolev.sign_detLineEquivOfBijective_eq_sign_det_of_sameRay`: for bijective
+  `L_S`, the transported normalized generator of `1 - Ψ(T)` reads with the sign of
+  `det (1 - Ψ(T))` in the trivialization given by bijectivity.
 * `TauCeti.CircleSobolev.isDetLineCoherentOn_detLineLoopOperatorEquiv_symm`: for a continuous family
   of coefficient loops, the transported normalized generators form a coherent family.
 * `TauCeti.CircleSobolev.detLineOrientationTransport_rayOfNeZero_detLineLoopOperatorEquiv_symm`:
@@ -398,6 +401,47 @@ theorem sign_detLineEndEquiv_detLineLoopOperatorEquiv
           ((loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective
             hL x) := by
   rw [detLineEndEquiv_detLineLoopOperatorEquiv T S hL, sign_mul, TauCeti.sign_inv]
+
+/-- **The sign of the transported generator at a nondegenerate loop.** Let `L_S` be bijective,
+equivalently `det (1 - Ψ(T)) ≠ 0`. Every nonzero element `x` of the determinant line of `L_S` on
+the ray of the normalized generator of `1 - Ψ(T)` transported along
+`TauCeti.CircleSobolev.detLineLoopOperatorEquiv` reads, in the trivialization given by
+bijectivity (`LinearMap.detLineEquivOfBijective`), with the sign of `det (1 - Ψ(T))`. -/
+theorem sign_detLineEquivOfBijective_eq_sign_det_of_sameRay
+    (hL : Function.Bijective (loopOperator T S))
+    {x : (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLine} (hx : x ≠ 0)
+    (hxy : SameRay ℝ x ((detLineLoopOperatorEquiv T S).symm
+      (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator)) :
+    SignType.sign
+        ((loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective
+          hL x) =
+      SignType.sign
+        (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E))) := by
+  set A := 1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)
+  -- `x` is a positive multiple of the transported normalized generator of `A`.
+  have hy : (detLineLoopOperatorEquiv T S).symm A.detLineEndGenerator ≠ 0 :=
+    (LinearEquiv.map_ne_zero_iff _).2 (LinearMap.detLineEndGenerator_ne_zero A)
+  obtain ⟨r, hr, hrx⟩ := SameRay.exists_pos_left (R := ℝ)
+    (M := (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLine) hxy hx hy
+  -- `A` is injective, so the canonical trivialization takes the value `1` at its generator.
+  have hA : Function.Injective A := (injective_loopOperator_iff T S).1 hL.1
+  have hdet : LinearMap.det A ≠ 0 := fun h ↦
+    LinearMap.det_eq_zero_iff_ker_ne_bot.1 h (LinearMap.ker_eq_bot.2 hA)
+  have hgen : LinearMap.detLineEndEquiv A A.detLineEndGenerator = 1 := by
+    rw [LinearMap.detLineEndEquiv_detLineEndGenerator,
+      LinearMap.finrank_ker_eq_zero_of_injective hA, zero_mul, pow_zero]
+  have hx' : x = r⁻¹ • (detLineLoopOperatorEquiv T S).symm A.detLineEndGenerator := by
+    rw [← hrx, smul_smul, inv_mul_cancel₀ hr.ne', one_smul]
+  have hl : LinearMap.detLineEndEquiv A (detLineLoopOperatorEquiv T S x) = r⁻¹ := by
+    rw [hx', map_smul, map_smul, LinearEquiv.apply_symm_apply, hgen, smul_eq_mul, mul_one]
+  -- By `detLineEndEquiv_detLineLoopOperatorEquiv`, `r⁻¹ = (det A)⁻¹ * bij x`.
+  have hbx : (loopOperator T S :
+      CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective hL x =
+        LinearMap.det A * r⁻¹ := by
+    have key := detLineEndEquiv_detLineLoopOperatorEquiv T S hL x
+    rw [hl, eq_comm, inv_mul_eq_iff_eq_mul₀ hdet] at key
+    exact key
+  rw [hbx, sign_mul, sign_pos (inv_pos.2 hr), mul_one]
 
 /-! ### Coherence along families -/
 

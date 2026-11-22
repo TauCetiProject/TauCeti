@@ -278,8 +278,7 @@ theorem detLineRestrictScalarsEquiv_detLineCongrKerCoker
     rw [← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans, hc,
       LinearEquiv.detLineCongr_trans, LinearEquiv.trans_apply]
   induction z using TensorProduct.inductionOn with
-  | add a b ha hb => rw [LinearEquiv.map_add, LinearEquiv.map_add, ha, hb, LinearEquiv.map_add,
-      LinearEquiv.map_add]
+  | add a b ha hb => simp only [map_add, ha, hb]
   | tmul x φ =>
     rw [detLineCongrKerCoker_tmul, detLineRestrictScalarsEquiv_tmul,
       detLineRestrictScalarsEquiv_tmul, TensorProduct.congr_tmul, ← hk']
@@ -353,16 +352,22 @@ theorem detLineRestrictScalarsEquiv_detLineCongr (z : (f.restrictScalars ℝ).de
       TensorProduct.congr (LinearEquiv.detLineCongr (kerCongrOfComp f e₁ e₂ h))
         (LinearEquiv.detLineCongr (cokerCongrOfComp f e₁ e₂ h)).symm.dualMap
         (f.detLineRestrictScalarsEquiv z) := by
-  rw [detLineCongr_eq_detLineCongrKerCoker, detLineRestrictScalarsEquiv_detLineCongrKerCoker]
   -- The composites of the kernel and cokernel isomorphisms are those induced by the square.
-  congr 5
-  · exact LinearEquiv.ext fun x ↦ Subtype.ext (by
+  have hk : ((f.kerRestrictScalarsEquiv ℝ).trans (e₁.ofSubmodules _ _
+      ((f.restrictScalars ℝ).map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h))).trans
+      (f'.kerRestrictScalarsEquiv ℝ).symm = kerCongrOfComp f e₁ e₂ h :=
+    LinearEquiv.ext fun x ↦ Subtype.ext (by
       simp only [LinearEquiv.trans_apply, coe_kerRestrictScalarsEquiv_symm_apply,
         coe_kerCongrOfComp_apply, LinearEquiv.ofSubmodules_apply,
         coe_kerRestrictScalarsEquiv_apply])
-  · refine LinearEquiv.ext fun y ↦ ?_
+  have hc : ((f.cokerRestrictScalarsEquiv ℝ).symm.trans (Submodule.Quotient.equiv _ _ e₂
+      ((f.restrictScalars ℝ).map_range_eq_range_of_comp_eq e₁.surjective h))).trans
+      (f'.cokerRestrictScalarsEquiv ℝ) = cokerCongrOfComp f e₁ e₂ h := by
+    refine LinearEquiv.ext fun y ↦ ?_
     induction y using Submodule.Quotient.induction_on
     simp
+  rw [detLineCongr_eq_detLineCongrKerCoker, detLineRestrictScalarsEquiv_detLineCongrKerCoker, hk,
+    hc]
 
 /-- Transport along a commuting square of real isomorphisms commuting with `I`, that is, of
 complex-linear isomorphisms, preserves the complex orientation of the determinant line of a
@@ -373,13 +378,11 @@ theorem IsComplexPositiveDetLine.detLineCongr {z : (f.restrictScalars ℝ).detLi
     f'.IsComplexPositiveDetLine ((f.restrictScalars ℝ).detLineCongr e₁ e₂ h z) := by
   rw [detLineCongr_eq_detLineCongrKerCoker]
   refine hz.detLineCongrKerCoker _ _ (fun x y hxy ↦ ?_) fun x y hxy ↦ ?_
-  · change e₁ x = I • e₁ y
-    rw [hxy, he₁]
-  · change Submodule.Quotient.mk (e₂ x) = Submodule.Quotient.mk y at hxy
-    change Submodule.Quotient.mk (e₂ (I • x)) = Submodule.Quotient.mk (I • y)
+  · rw [LinearEquiv.ofSubmodules_apply, LinearEquiv.ofSubmodules_apply, hxy, he₁]
+  · rw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply] at hxy ⊢
     obtain ⟨m, hm⟩ := (Submodule.Quotient.eq _).1 hxy
     refine (Submodule.Quotient.eq _).2 ⟨I • m, ?_⟩
-    simp only [restrictScalars_apply] at hm ⊢
+    simp only [restrictScalars_apply, LinearEquiv.coe_coe] at hm ⊢
     rw [map_smul, hm, he₂, smul_sub]
 
 /-- **The determinant sign of a conjugate-linear transport.** Transport along a commuting square
