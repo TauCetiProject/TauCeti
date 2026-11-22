@@ -8,7 +8,6 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.CategoryTheory.Triangulated.Adjunction
-public import Mathlib.CategoryTheory.Triangulated.Subcategory
 public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
 /-!
@@ -62,10 +61,9 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
   defining relation.
 * `TauCeti.TriangulatedK0.of_shift_one` and `TauCeti.TriangulatedK0.of_shift`: the class of a
   shift, `[X⟦1⟧] = -[X]` and `[X⟦n⟧] = (-1)ⁿ[X]`.
-* `TauCeti.TriangulatedK0.exists_eq_of` and `TauCeti.TriangulatedK0.of_surjective`: every element of
-  triangulated `K₀` is the class of a single object, with `TauCeti.TriangulatedK0.mem_range_map_iff`
-  and `TauCeti.TriangulatedK0.mem_range_map_ι_iff` characterizing the ranges of `map F` and
-  `map P.ι`.
+* `TauCeti.TriangulatedK0.of_surjective`: every element of triangulated `K₀` is the class of a
+  single object, with `TauCeti.TriangulatedK0.mem_range_map_iff` and
+  `TauCeti.TriangulatedK0.mem_range_map_ι_iff` characterizing the ranges of `map F` and `map P.ι`.
 * `TauCeti.TriangulatedK0.liftEquiv`: the universal property. Triangle-additive invariants with
   values in `G` correspond bijectively to homomorphisms `TriangulatedK0 C →+ G`.
 * `TauCeti.TriangulatedK0.BiadditiveInvariant.bilift_of_of` and
@@ -241,24 +239,19 @@ theorem induction_on {motive : TriangulatedK0 C → Prop} (x : TriangulatedK0 C)
     (neg : ∀ a, motive a → motive (-a)) : motive x :=
   PresentedK0.induction_on x zero of add neg
 
-/-- **Every element of triangulated `K₀` is the class of an object**: sums are realised by
+/-- **Every element of triangulated `K₀` is the class of a single object**: sums are realised by
 biproducts and negatives by shifts, since `[X⟦1⟧] = -[X]`. -/
-theorem exists_eq_of (x : TriangulatedK0 C) : ∃ X : C, x = of X := by
+theorem of_surjective : Function.Surjective (of : C → TriangulatedK0 C) := fun x => by
   induction x using induction_on with
-  | zero => exact ⟨0, of_zero.symm⟩
+  | zero => exact ⟨0, of_zero⟩
   | of X => exact ⟨X, rfl⟩
   | add x y hx hy =>
       obtain ⟨X, rfl⟩ := hx
       obtain ⟨Y, rfl⟩ := hy
-      exact ⟨X ⊞ Y, (of_biprod X Y).symm⟩
+      exact ⟨X ⊞ Y, of_biprod X Y⟩
   | neg x hx =>
       obtain ⟨X, rfl⟩ := hx
-      exact ⟨X⟦(1 : ℤ)⟧, (of_shift_one X).symm⟩
-
-/-- `TriangulatedK0.of` is surjective: every element of triangulated `K₀` is the class of a
-single object. -/
-theorem of_surjective : Function.Surjective (of : C → TriangulatedK0 C) := fun x =>
-  let ⟨X, h⟩ := exists_eq_of x; ⟨X, h.symm⟩
+      exact ⟨X⟦(1 : ℤ)⟧, of_shift_one X⟩
 
 section HomExt
 

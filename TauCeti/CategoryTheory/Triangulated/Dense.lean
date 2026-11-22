@@ -139,23 +139,21 @@ Exposed alongside `instance_reducible` so that downstream callers installing thi
 get definitional agreement of its underlying `AddCommMonoid` with the global instance. -/
 @[expose, instance_reducible]
 noncomputable def addCommGroup (hdense : A.retractClosure = ⊤) : AddCommGroup (StableClasses A) :=
-  let negFn : StableClasses A → StableClasses A := fun x =>
-    x.liftOn (fun X => mk A (X⟦(1 : ℤ)⟧)) fun _ _ h => mk_eq_iff.2 (h.shift (1 : ℤ))
-  let _ : Neg (StableClasses A) := ⟨negFn⟩
+  let _ : Neg (StableClasses A) := ⟨shift (1 : ℤ)⟩
   { (inferInstance : AddCommMonoid (StableClasses A)) with
-    neg := negFn
-    sub := fun x y => x + negFn y
+    neg := shift (1 : ℤ)
+    sub := fun x y => x + shift (1 : ℤ) y
     sub_eq_add_neg := fun _ _ => rfl
     zsmul := zsmulRec
     neg_add_cancel := fun x => by
       induction x using induction_on with | h X =>
-      simpa only [negFn, liftOn_mk, add_comm] using mk_add_mk_shift_one (hdense.ge X trivial) }
+      simpa only [shift_mk, add_comm] using mk_add_mk_shift_one (hdense.ge X trivial) }
 
 /-- In the abelian group structure `TauCeti.StableClasses.addCommGroup`, negation sends the class
 of `X` to the class of `X⟦1⟧`. -/
 @[simp]
 theorem addCommGroup_neg_mk (hdense : A.retractClosure = ⊤) (X : C) :
     (addCommGroup A hdense).neg (mk A X) = mk A (X⟦(1 : ℤ)⟧) :=
-  liftOn_mk ..
+  shift_mk (1 : ℤ) X
 
 end TauCeti.StableClasses

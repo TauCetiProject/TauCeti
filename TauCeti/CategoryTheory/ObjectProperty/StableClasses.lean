@@ -21,7 +21,7 @@ The quotient `TauCeti.StableClasses A` is a commutative monoid under binary bipr
 universal property `TauCeti.StableClasses.lift` characterizing additive homomorphisms out of
 `StableClasses A` in terms of isomorphism-invariant, biproduct-additive functions vanishing on `A`.
 When `A` is stable under a shift `n`, `TauCeti.StableEquiv.shift` shows that `X ↦ X⟦n⟧` descends
-to stable equivalence.
+to stable equivalence, giving `TauCeti.StableClasses.shift`.
 
 ## Main definitions
 
@@ -29,10 +29,12 @@ to stable equivalence.
   for some `A₁, A₂` in `A`.
 * `TauCeti.StableClasses A`: the commutative monoid of stable classes of objects modulo `A`, with
   quotient map `TauCeti.StableClasses.mk` and universal property `TauCeti.StableClasses.lift`.
+* `TauCeti.StableClasses.shift`: the shift action on `TauCeti.StableClasses A`.
 
 ## Main results
 
-* `TauCeti.StableEquiv.shift`: stable equivalence is preserved by shifts leaving `A` stable.
+* `TauCeti.StableEquiv.shift` and `TauCeti.StableClasses.shift_mk`: stable equivalence and stable
+  classes are compatible with shifts leaving `A` stable.
 * `TauCeti.StableClasses.mk_eq_zero_of_prop`: every object satisfying `A` has zero stable class
   modulo `A`.
 * `TauCeti.StableClasses.lift_mk` and `TauCeti.StableClasses.lift_unique`: computation and
@@ -67,7 +69,7 @@ variable {A : ObjectProperty C}
 
 /-- Isomorphic objects are stably equivalent modulo any nonempty property. -/
 theorem of_iso [A.Nonempty] {X Y : C} (e : X ≅ Y) : StableEquiv A X Y :=
-  ⟨A.arbitrary, A.arbitrary, A.prop_arbitrary, A.prop_arbitrary,
+  (stableEquiv_iff A X Y).mpr ⟨A.arbitrary, A.arbitrary, A.prop_arbitrary, A.prop_arbitrary,
     ⟨biprod.mapIso e (Iso.refl A.arbitrary)⟩⟩
 
 /-- Stable equivalence is reflexive when `A` is nonempty. -/
@@ -76,15 +78,15 @@ theorem refl [A.Nonempty] (X : C) : StableEquiv A X X :=
 
 /-- Stable equivalence is symmetric. -/
 theorem symm {X Y : C} (h : StableEquiv A X Y) : StableEquiv A Y X := by
-  obtain ⟨A₁, A₂, h₁, h₂, ⟨e⟩⟩ := h
-  exact ⟨A₂, A₁, h₂, h₁, ⟨e.symm⟩⟩
+  obtain ⟨A₁, A₂, h₁, h₂, ⟨e⟩⟩ := (stableEquiv_iff A X Y).mp h
+  exact (stableEquiv_iff A Y X).mpr ⟨A₂, A₁, h₂, h₁, ⟨e.symm⟩⟩
 
 /-- Stable equivalence is transitive when `A` is closed under binary products. -/
 theorem trans [A.IsClosedUnderBinaryProducts] {X Y Z : C}
     (h₁ : StableEquiv A X Y) (h₂ : StableEquiv A Y Z) : StableEquiv A X Z := by
-  obtain ⟨A₁, A₂, hA₁, hA₂, ⟨e₁⟩⟩ := h₁
-  obtain ⟨A₃, A₄, hA₃, hA₄, ⟨e₂⟩⟩ := h₂
-  refine ⟨A₁ ⊞ A₃, A₄ ⊞ A₂,
+  obtain ⟨A₁, A₂, hA₁, hA₂, ⟨e₁⟩⟩ := (stableEquiv_iff A X Y).mp h₁
+  obtain ⟨A₃, A₄, hA₃, hA₄, ⟨e₂⟩⟩ := (stableEquiv_iff A Y Z).mp h₂
+  refine (stableEquiv_iff A X Z).mpr ⟨A₁ ⊞ A₃, A₄ ⊞ A₂,
     A.prop_biprod_of_isClosedUnderBinaryProducts hA₁ hA₃,
     A.prop_biprod_of_isClosedUnderBinaryProducts hA₄ hA₂,
     ⟨?_⟩⟩
@@ -101,19 +103,13 @@ products. -/
 theorem biprod [A.IsClosedUnderBinaryProducts] {X₁ Y₁ X₂ Y₂ : C}
     (h₁ : StableEquiv A X₁ Y₁) (h₂ : StableEquiv A X₂ Y₂) :
     StableEquiv A (X₁ ⊞ X₂) (Y₁ ⊞ Y₂) := by
-  obtain ⟨A₁, B₁, hA₁, hB₁, ⟨e₁⟩⟩ := h₁
-  obtain ⟨A₂, B₂, hA₂, hB₂, ⟨e₂⟩⟩ := h₂
-  refine ⟨A₁ ⊞ A₂, B₁ ⊞ B₂,
+  obtain ⟨A₁, B₁, hA₁, hB₁, ⟨e₁⟩⟩ := (stableEquiv_iff A X₁ Y₁).mp h₁
+  obtain ⟨A₂, B₂, hA₂, hB₂, ⟨e₂⟩⟩ := (stableEquiv_iff A X₂ Y₂).mp h₂
+  refine (stableEquiv_iff A (X₁ ⊞ X₂) (Y₁ ⊞ Y₂)).mpr ⟨A₁ ⊞ A₂, B₁ ⊞ B₂,
     A.prop_biprod_of_isClosedUnderBinaryProducts hA₁ hA₂,
     A.prop_biprod_of_isClosedUnderBinaryProducts hB₁ hB₂,
-    ⟨?_⟩⟩
-  let swapIso (W X Y Z : C) : (W ⊞ X) ⊞ (Y ⊞ Z) ≅ (W ⊞ Y) ⊞ (X ⊞ Z) :=
-    biprod.associator W X (Y ⊞ Z)
-      ≪≫ biprod.mapIso (Iso.refl W) ((biprod.associator X Y Z).symm
-        ≪≫ biprod.mapIso (biprod.braiding X Y) (Iso.refl Z)
-        ≪≫ biprod.associator Y X Z)
-      ≪≫ (biprod.associator W Y (X ⊞ Z)).symm
-  exact swapIso X₁ X₂ A₁ A₂ ≪≫ biprod.mapIso e₁ e₂ ≪≫ (swapIso Y₁ Y₂ B₁ B₂).symm
+    ⟨biprodFourMiddleIso X₁ X₂ A₁ A₂ ≪≫ biprod.mapIso e₁ e₂ ≪≫
+      (biprodFourMiddleIso Y₁ Y₂ B₁ B₂).symm⟩⟩
 
 end StableEquiv
 
@@ -230,9 +226,10 @@ theorem mk_eq_zero_of_isZero {X : C} (hX : IsZero X) : mk A X = 0 := by
   rw [mk_congr (hX.iso (isZero_zero C)), mk_zero]
 
 /-- Every object satisfying `A` has zero stable class modulo `A`. -/
+@[simp]
 theorem mk_eq_zero_of_prop {X : C} (hX : A X) : mk A X = 0 := by
   rw [← mk_zero, mk_eq_iff]
-  exact ⟨A.arbitrary, X ⊞ A.arbitrary, A.prop_arbitrary,
+  exact (stableEquiv_iff A X 0).mpr ⟨A.arbitrary, X ⊞ A.arbitrary, A.prop_arbitrary,
     A.prop_biprod_of_isClosedUnderBinaryProducts hX A.prop_arbitrary,
     ⟨isoZeroBiprod (isZero_zero C)⟩⟩
 
@@ -253,7 +250,8 @@ def lift {G : Type*} [AddMonoid G] (f : C → G)
     (hiso : ∀ ⦃X Y : C⦄, (X ≅ Y) → f X = f Y)
     (hbiprod : ∀ X Y : C, f (X ⊞ Y) = f X + f Y)
     (hA : ∀ ⦃X : C⦄, A X → f X = 0) : StableClasses A →+ G where
-  toFun x := x.liftOn f fun X Y ⟨A₁, A₂, h₁, h₂, ⟨e⟩⟩ => by
+  toFun x := x.liftOn f fun X Y h => by
+    obtain ⟨A₁, A₂, h₁, h₂, ⟨e⟩⟩ := (stableEquiv_iff A X Y).mp h
     simpa only [hbiprod, hA h₁, hA h₂, add_zero] using hiso e
   map_zero' := by
     rw [← mk_zero, liftOn_mk]
@@ -305,13 +303,30 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
 theorem StableEquiv.shift {A : ObjectProperty C} (n : M) [A.IsStableUnderShiftBy n]
     [(shiftFunctor C n).PreservesZeroMorphisms] {X Y : C} (h : StableEquiv A X Y) :
     StableEquiv A (X⟦n⟧) (Y⟦n⟧) := by
-  obtain ⟨A₁, A₂, h₁, h₂, ⟨e⟩⟩ := h
+  obtain ⟨A₁, A₂, h₁, h₂, ⟨e⟩⟩ := (stableEquiv_iff A X Y).mp h
   let : PreservesBinaryBiproducts (shiftFunctor C n) :=
     preservesBinaryBiproducts_of_preservesBinaryProducts _
-  refine ⟨A₁⟦n⟧, A₂⟦n⟧, A.le_shift n _ h₁, A.le_shift n _ h₂, ⟨?_⟩⟩
+  refine (stableEquiv_iff A (X⟦n⟧) (Y⟦n⟧)).mpr
+    ⟨A₁⟦n⟧, A₂⟦n⟧, A.le_shift n _ h₁, A.le_shift n _ h₂, ⟨?_⟩⟩
   exact ((shiftFunctor C n).mapBiprod X A₁).symm
     ≪≫ (shiftFunctor C n).mapIso e
     ≪≫ (shiftFunctor C n).mapBiprod Y A₂
+
+/-- The shift `n` on `TauCeti.StableClasses A` induced by `shiftFunctor C n` when `A` is stable
+under `⟦n⟧`. -/
+def StableClasses.shift {A : ObjectProperty C} [A.Nonempty] [A.IsClosedUnderBinaryProducts]
+    (n : M) [A.IsStableUnderShiftBy n] [(shiftFunctor C n).PreservesZeroMorphisms]
+    (x : StableClasses A) : StableClasses A :=
+  x.liftOn (fun X => StableClasses.mk A (X⟦n⟧)) fun _ _ h =>
+    StableClasses.mk_eq_iff.2 (h.shift n)
+
+/-- Shifting the stable class of an object computes as the stable class of its shift. -/
+@[simp]
+theorem StableClasses.shift_mk {A : ObjectProperty C} [A.Nonempty]
+    [A.IsClosedUnderBinaryProducts] (n : M) [A.IsStableUnderShiftBy n]
+    [(shiftFunctor C n).PreservesZeroMorphisms] (X : C) :
+    StableClasses.shift n (StableClasses.mk A X) = StableClasses.mk A (X⟦n⟧) :=
+  StableClasses.liftOn_mk ..
 
 end Shift
 
