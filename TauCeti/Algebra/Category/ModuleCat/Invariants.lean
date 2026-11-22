@@ -14,9 +14,9 @@ public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 A functor `J : SingleObj G ⥤ ModuleCat R` is an `R`-module `J.obj *` with an action of the monoid
 `G` by the linear maps `J.map g`, and its limit is the module of invariants. This file reads a
 given limit cone concretely: its leg `c.pt ⟶ J.obj *` is injective
-(`ModuleCat.injective_π_app_star_of_isLimit`), and its range consists of the elements fixed by every
-`J.map g` (`ModuleCat.mem_range_π_app_star_of_isLimit_iff`). So the cone point is identified with
-the invariants.
+(`ModuleCat.injective_π_app_star_of_isLimit`), and its range is the submodule
+`ModuleCat.invariants J` of the elements fixed by every `J.map g`
+(`ModuleCat.range_π_app_star_of_isLimit`). So the cone point is identified with the invariants.
 
 This is the form in which limit cones over an action, such as the one by which the transfer of a
 finite quotient covering exhibits the homology of the base as the invariants of the homology of the
@@ -37,23 +37,30 @@ namespace ModuleCat
 variable {G : Type w} [Monoid G] {R : Type u} [Ring R] {J : SingleObj G ⥤ ModuleCat.{v} R}
   {c : Cone J} (hc : IsLimit c)
 
-/-- The submodule of the elements of `J.obj *` fixed by every `J.map g`. -/
-private abbrev fixed : Submodule R (J.obj (SingleObj.star G)) :=
-  ⨅ g : G, LinearMap.ker ((J.map g).hom - LinearMap.id)
+variable (J) in
+/-- The invariants of an action `J : SingleObj G ⥤ ModuleCat R`: the submodule of the elements of
+`J.obj *` fixed by every `J.map g`. -/
+def invariants : Submodule R (J.obj (SingleObj.star G)) where
+  carrier := {y | ∀ g : G, (J.map g).hom y = y}
+  add_mem' hx hy g := by simp [hx g, hy g]
+  zero_mem' _ := map_zero _
+  smul_mem' r _ hx g := by simp [hx g]
 
-private theorem map_apply_of_mem_fixed {y : J.obj (SingleObj.star G)} (hy : y ∈ fixed (J := J))
-    (g : G) : (J.map g).hom y = y := by
-  have := Submodule.mem_iInf _ |>.1 hy g
-  rwa [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.id_apply, sub_eq_zero] at this
+/-- An element lies in the invariants of `J` exactly when every `J.map g` fixes it. -/
+@[simp]
+theorem mem_invariants_iff {y : J.obj (SingleObj.star G)} :
+    y ∈ invariants J ↔ ∀ g : G, (J.map g).hom y = y :=
+  Iff.rfl
 
-/-- The cone over `J` given by the inclusion of the submodule of fixed elements. -/
-private def fixedCone : Cone J where
-  pt := ModuleCat.of R (fixed (J := J))
+variable (J) in
+/-- The cone over `J` given by the inclusion of its invariants. -/
+def invariantsCone : Cone J where
+  pt := ModuleCat.of R (invariants J)
   π :=
-    { app _ := ModuleCat.ofHom (fixed (J := J)).subtype
+    { app _ := ModuleCat.ofHom (invariants J).subtype
       naturality _ _ g := by
         ext y
-        exact (map_apply_of_mem_fixed y.property g).symm }
+        exact (y.property g).symm }
 
 include hc in
 /-- **The leg of a limit cone over an action is injective.** For a limit cone `c` over
@@ -70,16 +77,14 @@ theorem injective_π_app_star_of_isLimit : Function.Injective (c.π.app (SingleO
 
 include hc in
 /-- **The range of the leg of a limit cone over an action is the invariants.** For a limit cone `c`
-over `J : SingleObj G ⥤ ModuleCat R`, an element of `J.obj *` lies in the range of the leg
-`c.pt ⟶ J.obj *` exactly when every `J.map g` fixes it. -/
-theorem mem_range_π_app_star_of_isLimit_iff (y : J.obj (SingleObj.star G)) :
-    y ∈ LinearMap.range (c.π.app (SingleObj.star G)).hom ↔ ∀ g : G, (J.map g).hom y = y := by
-  refine ⟨?_, fun hy ↦ ?_⟩
-  · rintro ⟨x, rfl⟩ g
+over `J : SingleObj G ⥤ ModuleCat R`, the range of the leg `c.pt ⟶ J.obj *` is the submodule
+`ModuleCat.invariants J` of the elements fixed by every `J.map g`. -/
+theorem range_π_app_star_of_isLimit :
+    LinearMap.range (c.π.app (SingleObj.star G)).hom = invariants J := by
+  refine le_antisymm ?_ fun y hy ↦ ?_
+  · rintro _ ⟨x, rfl⟩ g
     exact congr($(c.w g).hom x)
-  · have hy' : y ∈ fixed (J := J) := Submodule.mem_iInf _ |>.2 fun g ↦ by
-      rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.id_apply, sub_eq_zero, hy g]
-    exact ⟨(hc.lift fixedCone).hom (⟨y, hy'⟩ : fixed (J := J)),
-      congr($(hc.fac fixedCone (SingleObj.star G)).hom (⟨y, hy'⟩ : fixed (J := J)))⟩
+  · exact ⟨(hc.lift (invariantsCone J)).hom ⟨y, hy⟩,
+      congr($(hc.fac (invariantsCone J) (SingleObj.star G)).hom (⟨y, hy⟩ : invariants J))⟩
 
 end ModuleCat

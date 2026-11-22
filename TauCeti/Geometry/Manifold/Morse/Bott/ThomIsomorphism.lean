@@ -41,8 +41,9 @@ base, shifted up by the index.
   (`TauCeti.nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSystem`).
 
 Together with the case of `ZMod 2`, this computes the contribution of a critical submanifold over
-every field, whether or not its negative bundle is orientable. The homology Thom isomorphisms used
-here (`TauCeti.homologyThomIso` and
+`ZMod 2` and over every field in which `2` is invertible, whether or not its negative bundle is
+orientable. Over the remaining fields of characteristic `2` it is computed only when `V` is
+oriented. The homology Thom isomorphisms used here (`TauCeti.homologyThomIso` and
 `TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyEquivTwistedHomology`) hold in every
 rank and over any base, so neither the rank nor compactness of `B` is restricted.
 
