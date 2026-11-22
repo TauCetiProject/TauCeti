@@ -26,9 +26,11 @@ with value `a` has norm the degree-zero class of `a ^ |G ⧸ U| = a`
 The construction uses `TauCeti.smoothTensorInducedDiagonalClass` and its change-of-coboundary
 theorem. These operate on the total graded resolution; `TopRep.cochainToGradedResolution`
 transfers the canonical differential and invariance to that presentation. In degree zero there
-are no coboundaries, so cocycles with equal classes are equal. Transversal independence is
-`TauCeti.smoothTensorInducedDiagonalClass_trivialF2_changeTransversal`. No choice of a
-representative of a cohomology class is made here.
+are no coboundaries, so cocycles with equal classes are equal. For any coefficients of
+characteristic two, `TauCeti.smoothTensorInducedDiagonalClass_eq_of_cochainClass_eq` records that
+the diagonal class of a homogeneous cocycle depends only on its cohomology class. Transversal
+independence is `TauCeti.smoothTensorInducedDiagonalClass_trivialF2_changeTransversal`. No choice
+of a representative of a cohomology class is made here.
 
 ## References
 
@@ -38,11 +40,57 @@ representative of a cohomology class is made here.
 
 public section
 
+universe u
+
+namespace TauCeti
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  (U : Subgroup G) (hU : IsOpen (U : Set G)) (t : U.LeftTransversal) [U.FiniteIndex]
+  [CompactSpace U] [Fintype (G ⧸ U)] (A : SmoothDiscreteTopRep.{0, u, u} ℤ U)
+  (hA : ∀ a : A.obj.V, a + a = 0)
+
+/-- **The norm of a homogeneous cocycle depends only on its class.** For coefficients `A` of
+characteristic two, homogeneous cocycles with the same class in `Hⁿ(U, A)` have diagonal tensors
+with the same class in `H^{l n}(G, Ind⊗ A)`. In degree zero there are no coboundaries, and in
+positive degree this is `TauCeti.smoothTensorInducedDiagonalClass_eq_of_sub_eq_d`. -/
+theorem smoothTensorInducedDiagonalClass_eq_of_cochainClass_eq {n : ℕ}
+    (z z' : (TopRep.homogeneousCochains A.obj).X n)
+    (hz : ((TopRep.homogeneousCochains A.obj).d n (n + 1)).hom z = 0)
+    (hz' : ((TopRep.homogeneousCochains A.obj).d n (n + 1)).hom z' = 0)
+    (h : A.obj.cochainClass n z hz = A.obj.cochainClass n z' hz') :
+    smoothTensorInducedDiagonalClass.{0, u, u} U hU t A hA
+        (A.obj.cochainToGradedResolution n z)
+        (A.obj.cochainToGradedResolution_mem n z) (A.obj.cochainToGradedResolution_invariant n z)
+        ((A.obj.gradedResolutionDifferential_cochainToGradedResolution_eq_zero_iff n z).2 hz) =
+      smoothTensorInducedDiagonalClass.{0, u, u} U hU t A hA
+        (A.obj.cochainToGradedResolution n z')
+        (A.obj.cochainToGradedResolution_mem n z')
+        (A.obj.cochainToGradedResolution_invariant n z')
+        ((A.obj.gradedResolutionDifferential_cochainToGradedResolution_eq_zero_iff n z').2
+          hz') := by
+  cases n with
+  | zero =>
+    -- In degree zero there are no coboundaries: the class map is injective.
+    rw [TopRep.cochainClass_def, TopRep.cochainClass_def] at h
+    have hc := (CategoryTheory.ConcreteCategory.bijective_of_isIso
+      ((TopRep.homogeneousCochains A.obj).homologyπ 0)).1 h
+    obtain rfl : z = z' := by
+      simpa only [HomologicalComplex.iCycles_cyclesMkOfEq] using
+        congrArg ((TopRep.homogeneousCochains A.obj).iCycles 0).hom hc
+    rfl
+  | succ n =>
+    let : (Ideal.span {(2 : ℤ)}).IsMaximal :=
+      @Int.ideal_span_isMaximal_of_prime 2 ⟨Nat.prime_two⟩
+    obtain ⟨y, hy⟩ := (A.obj.cochainClass_eq_cochainClass_iff rfl hz hz').1 h
+    apply smoothTensorInducedDiagonalClass_eq_of_sub_eq_d U hU t A hA _ _ _ _ _ _
+      (A.obj.cochainToGradedResolution_mem n y) (A.obj.cochainToGradedResolution_invariant n y)
+    rw [← map_sub, hy, TopRep.gradedResolutionDifferential_cochainToGradedResolution]
+
+end TauCeti
+
 namespace OpenSubgroup
 
 open TauCeti
-
-universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup]
@@ -100,31 +148,12 @@ theorem tensorNormCocycleClass_eq_of_cochainClass_eq {n : ℕ}
     (hz' : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z' = 0)
     (h : (trivialF2 U.toSubgroup).cochainClass n z hz =
       (trivialF2 U.toSubgroup).cochainClass n z' hz') :
-    tensorNormCocycleClass U t z hz = tensorNormCocycleClass U t z' hz' := by
-  cases n with
-  | zero =>
-    -- In degree zero there are no coboundaries: the class map is injective.
-    rw [TopRep.cochainClass_def, TopRep.cochainClass_def] at h
-    have hc := (CategoryTheory.ConcreteCategory.bijective_of_isIso
-      ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).homologyπ 0)).1 h
-    obtain rfl : z = z' := by
-      simpa only [HomologicalComplex.iCycles_cyclesMkOfEq] using
-        congrArg ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).iCycles 0).hom hc
-    rfl
-  | succ n =>
-    let : (Ideal.span {(2 : ℤ)}).IsMaximal :=
-      @Int.ideal_span_isMaximal_of_prime 2 ⟨Nat.prime_two⟩
-    obtain ⟨y, hy⟩ := ((trivialF2 U.toSubgroup).cochainClass_eq_cochainClass_iff rfl hz hz').1 h
-    rw [tensorNormCocycleClass_def, tensorNormCocycleClass_def]
-    congr 1
-    apply smoothTensorInducedDiagonalClass_eq_of_sub_eq_d
-      U.toSubgroup U.isOpen' t
+    tensorNormCocycleClass U t z hz = tensorNormCocycleClass U t z' hz' :=
+  congrArg (ContinuousCohomology.coeffMap
+      (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' t).hom.hom _)
+    (smoothTensorInducedDiagonalClass_eq_of_cochainClass_eq U.toSubgroup U.isOpen' t
       ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
-      (trivialF2_add_self U.toSubgroup)
-      _ _ _ _ _ _
-      ((trivialF2 U.toSubgroup).cochainToGradedResolution_mem n y)
-      ((trivialF2 U.toSubgroup).cochainToGradedResolution_invariant n y)
-    rw [← map_sub, hy, TopRep.gradedResolutionDifferential_cochainToGradedResolution]
+      (trivialF2_add_self U.toSubgroup) z z' hz hz' h)
 
 /-- The zero cocycle has zero tensor norm, including in degree zero. -/
 @[simp]

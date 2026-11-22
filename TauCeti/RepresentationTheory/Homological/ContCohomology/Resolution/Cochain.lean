@@ -43,6 +43,11 @@ theorem cochainToGradedResolution_mem (n : ℕ) (z : (homogeneousCochains X).X n
     X.cochainToGradedResolution n z ∈ X.gradedResolutionPiece n :=
   X.lof_mem_gradedResolutionPiece n z.val
 
+/-- The inclusion of homogeneous cochains into the total resolution is injective. -/
+theorem cochainToGradedResolution_injective (n : ℕ) :
+    Function.Injective (X.cochainToGradedResolution n) := fun _ _ h ↦
+  Subtype.ext (DirectSum.of_injective (β := fun n ↦ (resolutionX X (n + 1)).V) n h)
+
 variable [DiscreteTopology R]
 
 /-- The included cochain is invariant under the group action on the total resolution. -/
@@ -64,5 +69,26 @@ theorem gradedResolutionDifferential_cochainToGradedResolution (n : ℕ)
         (((homogeneousCochains X).d n (n + 1)).hom z) := by
   rw [cochainToGradedResolution_apply, gradedResolutionDifferential_lof,
     cochainToGradedResolution_apply, homogeneousCochains.d_apply]
+
+omit [DiscreteTopology R] in
+/-- A homogeneous cochain is a cocycle exactly when its inclusion into the total resolution is
+annihilated by the total differential. -/
+theorem gradedResolutionDifferential_cochainToGradedResolution_eq_zero_iff (n : ℕ)
+    (z : (homogeneousCochains X).X n) :
+    X.gradedResolutionDifferential (X.cochainToGradedResolution n z) = 0 ↔
+      ((homogeneousCochains X).d n (n + 1)).hom z = 0 := by
+  rw [gradedResolutionDifferential_cochainToGradedResolution,
+    ← map_zero (X.cochainToGradedResolution (n + 1)),
+    (X.cochainToGradedResolution_injective (n + 1)).eq_iff]
+
+/-- Every element of the total resolution that is homogeneous of degree `n` and invariant under the
+group is the inclusion of a homogeneous `n`-cochain. -/
+theorem exists_cochainToGradedResolution_eq {n : ℕ} {w : X.gradedResolutionModule}
+    (hw : w ∈ X.gradedResolutionPiece n) (hinv : ∀ g, X.gradedResolutionTopRep.ρ g w = w) :
+    ∃ z : (homogeneousCochains X).X n, X.cochainToGradedResolution n z = w := by
+  obtain ⟨F, rfl⟩ := (SetLike.ext_iff.1 (X.gradedResolutionPiece_natCast n) w).1 hw
+  exact ⟨⟨F, fun g ↦ DirectSum.of_injective (β := fun n ↦ (resolutionX X (n + 1)).V) n
+      ((gradedResolutionTopRep_ρ_lof _ n g F).symm.trans (hinv g))⟩,
+    cochainToGradedResolution_apply _ n _⟩
 
 end TopRep
