@@ -8,6 +8,7 @@ module
 import TauCeti.ModelTheory.RelationalConfiguration.WellOrder
 import TauCeti.SetTheory.Descriptive.Tree.Descending
 import Mathlib.ModelTheory.Order
+import TauCeti.ModelTheory.Order
 import Mathlib.Logic.Equiv.Nat
 
 /-!
@@ -26,39 +27,44 @@ relation is a strict well-order of `ℕ`:
 open FirstOrder FirstOrder.Language TauCeti RelationalConfiguration Descriptive Tree
 
 -- `(ℕ, <)`: a coded well-order of order type `ω`.
-example :
-    let S : Language.order.Structure ℕ :=
-      ⟨fun f => isEmptyElim f, fun {_} R xs => match R with | .le => xs 0 < xs 1⟩
-    ∃ h : IsWellOrder ℕ (codeRel leSymb (@ofStructure Language.order ℕ S)),
-      @Ordinal.type ℕ (codeRel leSymb (@ofStructure Language.order ℕ S)) h = Ordinal.omega0 := by
-  intro S
-  let f : codeRel leSymb (@ofStructure Language.order ℕ S) ≃r (· < · : ℕ → ℕ → Prop) :=
-    ⟨Equiv.refl ℕ, fun {x y} => (@codeRel_ofStructure _ _ S leSymb x y).symm⟩
-  have hwo : IsWellOrder ℕ (codeRel leSymb (@ofStructure Language.order ℕ S)) :=
-    f.toRelEmbedding.isWellOrder
+example : ∃ h : IsWellOrder ℕ
+      (codeRel leSymb (@ofStructure Language.order ℕ (relStructure leSymb (· < ·) 0))),
+    @Ordinal.type ℕ _ h = Ordinal.omega0 := by
+  -- the code interprets the order symbol by `<`
+  have hS (x y : ℕ) :
+      codeRel leSymb (@ofStructure Language.order ℕ (relStructure leSymb (· < ·) 0)) x y ↔
+        x < y :=
+    (@codeRel_ofStructure _ _ (relStructure leSymb (· < ·) 0) leSymb x y).trans
+      (relMap_relStructure_self leSymb (· < ·) 0 x y)
+  let f : codeRel leSymb (@ofStructure Language.order ℕ (relStructure leSymb (· < ·) 0)) ≃r
+      (· < · : ℕ → ℕ → Prop) := ⟨Equiv.refl ℕ, fun {x y} => (hS x y).symm⟩
+  have hwo := f.toRelEmbedding.isWellOrder
   exact ⟨hwo, (Ordinal.type_eq.2 ⟨f⟩).trans Ordinal.type_nat_lt⟩
 
 -- `(ℤ, <)` transported to `ℕ`: strict, but `0 > -1 > -2 > ⋯` is an infinite descending chain.
-example :
-    let S : Language.order.Structure ℕ := ⟨fun f => isEmptyElim f, fun {_} R xs => match R with
-      | .le => Equiv.intEquivNat.symm (xs 0) < Equiv.intEquivNat.symm (xs 1)⟩
-    @ofStructure Language.order ℕ S ∉ wellOrderClass leSymb := by
-  intro S h
+example : @ofStructure Language.order ℕ (relStructure leSymb
+      (fun x y => Equiv.intEquivNat.symm x < Equiv.intEquivNat.symm y) 0) ∉
+    wellOrderClass leSymb := by
+  -- the code interprets the order symbol by the order of `ℤ`
+  have hS (x y : ℕ) : codeRel leSymb (@ofStructure Language.order ℕ (relStructure leSymb
+      (fun x y => Equiv.intEquivNat.symm x < Equiv.intEquivNat.symm y) 0)) x y ↔
+        Equiv.intEquivNat.symm x < Equiv.intEquivNat.symm y :=
+    (@codeRel_ofStructure _ _ (relStructure leSymb
+      (fun x y => Equiv.intEquivNat.symm x < Equiv.intEquivNat.symm y) 0) leSymb x y).trans
+      (relMap_relStructure_self leSymb _ 0 x y)
+  intro h
   refine (wellFounded_iff_isEmpty_descending_chain.1 (mem_wellOrderClass.1 h).wf).false
     ⟨fun n => Equiv.intEquivNat (-(n : ℤ)), fun n => ?_⟩
-  rw [@codeRel_ofStructure _ _ S]
-  change Equiv.intEquivNat.symm (Equiv.intEquivNat _) < Equiv.intEquivNat.symm (Equiv.intEquivNat _)
-  simp
+  simp [hS]
 
 -- `(ℕ, ≤)`: not strict, and the constant sequence `0, 0, …` is a branch of its descending tree.
-example :
-    let S : Language.order.Structure ℕ :=
-      ⟨fun f => isEmptyElim f, fun {_} R xs => match R with | .le => xs 0 ≤ xs 1⟩
-    ¬ IsWellFounded (descendingTree (codeRel leSymb (@ofStructure Language.order ℕ S))) ∧
-      @ofStructure Language.order ℕ S ∉ wellOrderClass leSymb := by
-  intro S
-  have h0 : codeRel leSymb (@ofStructure Language.order ℕ S) 0 0 :=
-    (@codeRel_ofStructure _ _ S leSymb 0 0).2 (le_refl 0)
+example : ¬ IsWellFounded
+      (descendingTree (codeRel leSymb (@ofStructure Language.order ℕ (orderStructure ℕ)))) ∧
+    @ofStructure Language.order ℕ (orderStructure ℕ) ∉ wellOrderClass leSymb := by
+  -- the code interprets the order symbol by `≤`, which relates `0` to itself
+  have h0 : codeRel leSymb (@ofStructure Language.order ℕ (orderStructure ℕ)) 0 0 := by
+    let := orderStructure ℕ
+    exact (codeRel_ofStructure leSymb 0 0).2 ((relMap_leSymb ![0, 0]).2 le_rfl)
   have hbranch := not_isWellFounded_iff.2
     ⟨fun _ => 0, (forall_ofFn_mem_descendingTree_iff _).2 fun _ => h0⟩
   exact ⟨hbranch, fun h => hbranch (isWellFounded_descendingTree_iff.2 (mem_wellOrderClass.1 h).wf)⟩
