@@ -67,7 +67,7 @@ omit [DecidableEq B] in
 private lemma apply_le_neg_one_of_adj (h : IsFiniteType A) {i j : B}
     (hij : (diagramGraph A).Adj i j) : A i j ≤ -1 := by
   have hij' := h.diagramGraph_adj_iff.mp hij
-  have hle := h.apply_le_zero_of_ne hij'.1
+  have hle := h.isGeneralizedCartan.offDiag_nonpos i j hij'.1
   omega
 
 /-- Add an off-path vertex to a path, using `none` for the extra vertex. -/
@@ -114,7 +114,7 @@ private lemma submatrix_forkedPath_le_affineBCartanMatrix
   intro i j
   rcases i with _ | i <;> rcases j with _ | j
   · simp only [Matrix.submatrix_apply, forkedPathEmbedding,
-      affineBCartanMatrix_diag, h.apply_self]
+      affineBCartanMatrix_diag, h.isGeneralizedCartan.diag]
     norm_num
   · simp only [Matrix.submatrix_apply, forkedPathEmbedding,
       affineBCartanMatrix_none_some]
@@ -123,7 +123,7 @@ private lemma submatrix_forkedPath_le_affineBCartanMatrix
       rw [this]
       exact h.apply_le_neg_one_of_adj hx1
     · have hne : x ≠ r.getVert j := fun hEq ↦ hx (hEq ▸ r.getVert_mem_support j)
-      exact h.apply_le_zero_of_ne hne
+      exact h.isGeneralizedCartan.offDiag_nonpos _ _ hne
   · simp only [Matrix.submatrix_apply, forkedPathEmbedding,
       affineBCartanMatrix_some_none]
     split_ifs with hi
@@ -131,14 +131,14 @@ private lemma submatrix_forkedPath_le_affineBCartanMatrix
       rw [this]
       exact h.apply_le_neg_one_of_adj hx1.symm
     · have hne : r.getVert i ≠ x := fun hEq ↦ hx (hEq.symm ▸ r.getVert_mem_support i)
-      exact h.apply_le_zero_of_ne hne
+      exact h.isGeneralizedCartan.offDiag_nonpos _ _ hne
   · rw [affineBCartanMatrix_some_some, ← chainBEntry_eq_cartanMatrix_B,
       chainBEntry_def]
     simp only [Matrix.submatrix_apply, forkedPathEmbedding]
     split_ifs with hij hsucc hlastIdx hpred
     · have : i = j := Fin.ext hij
       subst j
-      exact le_of_eq (h.apply_self _)
+      exact le_of_eq (h.isGeneralizedCartan.diag _)
     · have hi : (i : ℕ) = n + 1 := by omega
       have hj : (j : ℕ) = n + 2 := by omega
       simpa only [hi, hj] using le_of_eq hlast
@@ -146,7 +146,7 @@ private lemma submatrix_forkedPath_le_affineBCartanMatrix
       simpa only [hsucc] using h.apply_le_neg_one_of_adj (r.adj_getVert_succ hijLt)
     · have hijLt : (j : ℕ) < r.length := by omega
       simpa only [hpred] using h.apply_le_neg_one_of_adj (r.adj_getVert_succ hijLt).symm
-    · apply h.apply_le_zero_of_ne
+    · apply h.isGeneralizedCartan.offDiag_nonpos
       exact fun hEq ↦ hij (congrArg Fin.val (Option.some.inj (he hEq)))
 
 omit [DecidableEq B] in
@@ -256,7 +256,7 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : Is
     omega
   have huvNe : u ≠ v := by
     rintro rfl
-    rw [h.apply_self] at huv
+    rw [h.isGeneralizedCartan.diag] at huv
     norm_num at huv
   have huvAdj : (diagramGraph A).Adj u v := h.diagramGraph_adj_iff.mpr
     ⟨huvNe, fun hzero ↦ by rw [hzero] at huv; norm_num at huv⟩
@@ -272,7 +272,8 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : Is
     exact hdegree
   rcases h.isAcyclic_diagramGraph.dist_eq_dist_add_one_of_adj_of_reachable
       c huvAdj hreach with hdist | hdist
-  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
+  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
+      (h.isGeneralizedCartan.offDiag_nonpos u v huvNe) huv with
       ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
         (c := c) (near := v) (far := u) h hreachV hc huvAdj.symm hdist hvuEntry
@@ -281,7 +282,8 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : Is
         (by rw [hgraph]; exact hreachV) (by rw [hdegree]; exact hc)
         (by rw [hgraph]; exact huvAdj.symm) (by rw [hgraph]; exact hdist)
         (by simpa using huvEntry)
-  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
+  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
+      (h.isGeneralizedCartan.offDiag_nonpos u v huvNe) huv with
       ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two h.transpose
         (c := c) (near := u) (far := v)

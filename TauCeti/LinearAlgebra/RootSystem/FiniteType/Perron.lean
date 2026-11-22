@@ -59,7 +59,7 @@ private theorem map_intCast_eq_two_smul_one_sub [DecidableEq B] (h : IsFiniteTyp
   ext i j
   by_cases hij : i = j
   · subst hij
-    simp [offDiagNeg, h.apply_self]
+    simp [offDiagNeg, h.isGeneralizedCartan.diag]
   · simp [offDiagNeg, hij]
 
 /-- For an indecomposable finite-type matrix on at least two indices, the matrix `2 - A` is
@@ -70,7 +70,7 @@ private theorem isIrreducible_offDiagNeg [DecidableEq B] [Nontrivial B] (h : IsF
   have hnonneg (i j : B) : 0 ≤ offDiagNeg A i j := by
     by_cases hij : i = j
     · simp [offDiagNeg, hij]
-    · simpa [offDiagNeg, hij] using h.apply_le_zero_of_ne hij
+    · simpa [offDiagNeg, hij] using h.isGeneralizedCartan.offDiag_nonpos i j hij
   refine (isIrreducible_iff_forall_transGen hnonneg).2 ?_
   -- The nonzero entries of `A` connect all indices; off the diagonal they are positive entries
   -- of `2 - A`, and the diagonal steps can be dropped.
@@ -81,7 +81,8 @@ private theorem isIrreducible_offDiagNeg [DecidableEq B] [Nontrivial B] (h : IsF
       by_cases hkl' : k = l
       · exact hkl' ▸ ih
       · refine ih.tail ?_
-        simpa [offDiagNeg, hkl'] using lt_of_le_of_ne (h.apply_le_zero_of_ne hkl') hkl
+        simpa [offDiagNeg, hkl'] using
+          lt_of_le_of_ne (h.isGeneralizedCartan.offDiag_nonpos k l hkl') hkl
   have htrans {i j : B} (hij : i ≠ j) : TransGen (fun i j ↦ 0 < offDiagNeg A i j) i j := by
     rcases (hrefl i j).cases_head with rfl | ⟨k, hik, hkj⟩
     · exact absurd rfl hij

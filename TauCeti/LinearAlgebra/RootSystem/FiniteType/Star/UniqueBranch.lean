@@ -130,7 +130,7 @@ private lemma submatrix_doubleForkEmbedding_eq (h : IsFiniteType A)
   apply Matrix.ext
   intro i j
   rcases eq_or_ne i j with rfl | hij
-  · simp only [Matrix.submatrix_apply, h.apply_self, doubleForkCartanMatrix_diag]
+  · simp only [Matrix.submatrix_apply, h.isGeneralizedCartan.diag, doubleForkCartanMatrix_diag]
   rw [Matrix.submatrix_apply, hA _ _ hij]
   -- The nine cases are the row-major left/path/right blocks of the double-fork matrix.
   -- Endpoint blocks use the supplied leaf adjacencies; the middle block uses path chordlessness.

@@ -280,36 +280,40 @@ theorem frobeniusOrder_dvd_frobeniusOrder_mul_cartan (L : ℕ) (i j : I) :
 entries `aᵢⱼ* = (ℓⱼ aᵢⱼ) / ℓᵢ` and symmetrizer `dᵢ* = ℓᵢ² dᵢ`. -/
 def modifiedDatum (L : ℕ) (hL : 0 < L) : SymmetrizableDatum I where
   cartan := Matrix.of fun i j ↦ (A.frobeniusOrder L j * A.cartan i j) / A.frobeniusOrder L i
-  diag i := by
-    have hli : (A.frobeniusOrder L i : ℤ) ≠ 0 :=
-      Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i)
-    simp [Int.mul_ediv_cancel_left _ hli]
-  offDiag_nonpos i j hij := by
-    have hli : (0 : ℤ) < A.frobeniusOrder L i :=
-      Int.natCast_pos.mpr (A.frobeniusOrder_pos hL i)
-    have hmul : (A.frobeniusOrder L i : ℤ) *
-        (((A.frobeniusOrder L j : ℤ) * A.cartan i j) / A.frobeniusOrder L i) =
-        (A.frobeniusOrder L j : ℤ) * A.cartan i j :=
-      Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
-    have hle : (A.frobeniusOrder L j : ℤ) * A.cartan i j ≤ 0 :=
-      mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg _) (A.offDiag_nonpos i j hij)
-    simp only [Matrix.of_apply]
-    exact nonpos_of_mul_nonpos_right (hmul.trans_le hle) hli
-  zero_comm i j := by
-    have hli : (A.frobeniusOrder L i : ℤ) ≠ 0 :=
-      Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i)
-    have hlj : (A.frobeniusOrder L j : ℤ) ≠ 0 :=
-      Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL j)
-    have hij := Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
-    have hji := Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L j i)
-    simp only [Matrix.of_apply]
-    constructor <;> intro h0
-    · rw [h0, mul_zero, eq_comm, mul_eq_zero] at hij
-      have ha : A.cartan j i = 0 := (A.zero_comm i j).mp (hij.resolve_left hlj)
-      simp [ha]
-    · rw [h0, mul_zero, eq_comm, mul_eq_zero] at hji
-      have ha : A.cartan i j = 0 := (A.zero_comm j i).mp (hji.resolve_left hli)
-      simp [ha]
+  isGeneralizedCartan :=
+    { diag i := by
+        have hli : (A.frobeniusOrder L i : ℤ) ≠ 0 :=
+          Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i)
+        simp [A.isGeneralizedCartan.diag, Int.mul_ediv_cancel_left _ hli]
+      offDiag_nonpos i j hij := by
+        have hli : (0 : ℤ) < A.frobeniusOrder L i :=
+          Int.natCast_pos.mpr (A.frobeniusOrder_pos hL i)
+        have hmul : (A.frobeniusOrder L i : ℤ) *
+            (((A.frobeniusOrder L j : ℤ) * A.cartan i j) / A.frobeniusOrder L i) =
+            (A.frobeniusOrder L j : ℤ) * A.cartan i j :=
+          Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
+        have hle : (A.frobeniusOrder L j : ℤ) * A.cartan i j ≤ 0 :=
+          mul_nonpos_of_nonneg_of_nonpos (Nat.cast_nonneg _)
+            (A.isGeneralizedCartan.offDiag_nonpos i j hij)
+        simp only [Matrix.of_apply]
+        exact nonpos_of_mul_nonpos_right (hmul.trans_le hle) hli
+      zero_comm i j := by
+        have hli : (A.frobeniusOrder L i : ℤ) ≠ 0 :=
+          Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i)
+        have hlj : (A.frobeniusOrder L j : ℤ) ≠ 0 :=
+          Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL j)
+        have hij := Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
+        have hji := Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L j i)
+        simp only [Matrix.of_apply]
+        constructor <;> intro h0
+        · rw [h0, mul_zero, eq_comm, mul_eq_zero] at hij
+          have ha : A.cartan j i = 0 :=
+            (A.isGeneralizedCartan.zero_comm i j).mp (hij.resolve_left hlj)
+          simp [ha]
+        · rw [h0, mul_zero, eq_comm, mul_eq_zero] at hji
+          have ha : A.cartan i j = 0 :=
+            (A.isGeneralizedCartan.zero_comm j i).mp (hji.resolve_left hli)
+          simp [ha] }
   symmetrizer i := A.frobeniusOrder L i ^ 2 * A.symmetrizer i
   symmetrizer_pos i := by
     have := A.frobeniusOrder_pos hL i

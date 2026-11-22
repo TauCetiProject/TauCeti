@@ -342,11 +342,11 @@ private theorem submatrix_eq_twoDoubleEdgeCartanMatrix (h : IsFiniteType A) {v :
         rw [htop', hlast]
         split_ifs <;> first | omega | simp_all
   · -- The diagonal.
-    rw [heq, h.apply_self, chainEntry_self]
+    rw [heq, h.isGeneralizedCartan.diag, chainEntry_self]
     split_ifs <;> omega
   · -- Above the diagonal, the same three cases read backwards.
     rcases Nat.lt_or_ge ((j : ℕ) + 1) (i : ℕ) with hfar | hnear
-    · rw [h.apply_eq_zero_symm (hzero _ _ hfar hi),
+    · rw [(h.isGeneralizedCartan.zero_comm _ _).mpr (hzero _ _ hfar hi),
         chainEntry_eq_zero (by omega) (by omega) (by omega)]
       split_ifs <;> omega
     · have hsucc : (i : ℕ) = (j : ℕ) + 1 := by omega
@@ -375,7 +375,7 @@ private theorem not_two_le_of_chain_of_apply_eq_neg_two (h : IsFiniteType A)
   have hne : v (m + 1) ≠ v (m + 2) := fun hc ↦ by
     simpa using hv (Set.mem_Iio.2 (by omega)) (Set.mem_Iio.2 (by omega)) hc
   obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
-    (h.apply_le_zero_of_ne hne) hlast
+    (h.isGeneralizedCartan.offDiag_nonpos _ _ hne) hlast
   · -- The two double edges point the same way along the chain.
     refine not_isFiniteType_twoDoubleEdgeCartanMatrix m false ?_
     rw [← submatrix_eq_twoDoubleEdgeCartanMatrix h hzero hsimple hfirst hfirst'
@@ -435,17 +435,18 @@ theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le (h : IsFiniteType
   -- The interior edges are single, so both of their entries are `-1`.
   have hsimple' : ∀ s, 0 < s → s < m + 1 → A (v s) (v (s + 1)) = -1 ∧ A (v (s + 1)) (v s) = -1 := by
     intro s hpos hlt
-    have h1 := h.apply_le_zero_of_ne (hvne s (s + 1) (by omega) (by omega) (by omega))
+    have h1 := h.isGeneralizedCartan.offDiag_nonpos _ _
+      (hvne s (s + 1) (by omega) (by omega) (by omega))
     rcases Int.mul_eq_one_iff_eq_one_or_neg_one.1 (hsimple s hpos hlt) with ⟨e1, _⟩ | ⟨e1, e2⟩
     · omega
     · exact ⟨e1, e2⟩
   -- Both orientations of the first edge are excluded, the second by transposition.
   have hne01 := hvne 0 1 (by omega) (by omega) (by omega)
   obtain ⟨h1, h2⟩ | ⟨h1, h2⟩ := Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
-    (h.apply_le_zero_of_ne hne01) hfirst2
+    (h.isGeneralizedCartan.offDiag_nonpos _ _ hne01) hfirst2
   · exact not_two_le_of_chain_of_apply_eq_neg_two h hv hzero hsimple' h2 h1 hlast2
   · refine not_two_le_of_chain_of_apply_eq_neg_two h.transpose hv
-      (fun s t hst ht ↦ h.apply_eq_zero_symm (hzero s t hst ht))
+      (fun s t hst ht ↦ (h.isGeneralizedCartan.zero_comm _ _).mpr (hzero s t hst ht))
       (fun s hpos hlt ↦ ⟨(hsimple' s hpos hlt).2, (hsimple' s hpos hlt).1⟩) h1 h2 ?_
     rw [Matrix.transpose_apply, Matrix.transpose_apply, mul_comm]
     exact hlast2

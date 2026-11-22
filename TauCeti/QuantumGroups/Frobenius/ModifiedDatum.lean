@@ -364,10 +364,10 @@ def modifiedDatum (L : ℕ) (hL : 0 < L) [IsReflexive ℤ (D.modifiedWeightLatti
   linearIndependent_coroot := D.linearIndependent_modifiedCoroot hL
   pairing_root_coroot_self i := by
     rw [Dual.eval_apply, D.modifiedCoroot_modifiedRoot hL]
-    exact (D.toSymmetrizableDatum.modifiedDatum L hL).diag i
+    exact (D.toSymmetrizableDatum.modifiedDatum L hL).isGeneralizedCartan.diag i
   pairing_root_coroot_nonpos {i j} hij := by
     rw [Dual.eval_apply, D.modifiedCoroot_modifiedRoot hL]
-    exact (D.toSymmetrizableDatum.modifiedDatum L hL).offDiag_nonpos i j hij
+    exact (D.toSymmetrizableDatum.modifiedDatum L hL).isGeneralizedCartan.offDiag_nonpos i j hij
   symmetrizer i := (D.toSymmetrizableDatum.modifiedDatum L hL).symmetrizer i
   symmetrizer_pos i := (D.toSymmetrizableDatum.modifiedDatum L hL).symmetrizer_pos i
   symmetrizer_mul_pairing i j := by

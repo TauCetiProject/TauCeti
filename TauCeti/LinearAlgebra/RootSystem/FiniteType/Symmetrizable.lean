@@ -55,7 +55,7 @@ theorem connected_diagramGraph_iff [Finite I] :
       rcases eq_or_ne k l with rfl | hne
       · exact ih
       · exact ih.trans (SimpleGraph.Adj.reachable
-          (diagramGraph_adj.mpr ⟨hne, hkl, (A.zero_comm k l).not.mp hkl⟩))
+          (diagramGraph_adj.mpr ⟨hne, hkl, (A.isGeneralizedCartan.zero_comm k l).not.mp hkl⟩))
 
 /-- Explicit normalized symmetrizer of a datum reindexed from a valid `DynkinType`, given by
 `r / rootLength` where `r` is the lacing number. -/

@@ -99,7 +99,7 @@ theorem isFiniteType_modifiedDatum_iff {L : ℕ} (hL : 0 < L) :
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have := h.finite
     obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-    refine isFiniteType_of A.diag A.offDiag_nonpos
+    refine isFiniteType_of A.isGeneralizedCartan.diag A.isGeneralizedCartan.offDiag_nonpos
       (d := fun i ↦ d i / (A.frobeniusOrder L i : ℚ) ^ 2)
       (fun i ↦ div_pos (hd i) (pow_pos (hw i) 2))
       ((A.posDef_mul_modifiedDatum_cartan_iff hL _).mp ?_)
@@ -109,7 +109,8 @@ theorem isFiniteType_modifiedDatum_iff {L : ℕ} (hL : 0 < L) :
       mul_div_cancel₀ _ (pow_ne_zero 2 (hw i).ne')]
   · have := h.finite
     obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-    exact isFiniteType_of (A.modifiedDatum L hL).diag (A.modifiedDatum L hL).offDiag_nonpos
+    exact isFiniteType_of (A.modifiedDatum L hL).isGeneralizedCartan.diag
+      (A.modifiedDatum L hL).isGeneralizedCartan.offDiag_nonpos
       (d := fun i ↦ (A.frobeniusOrder L i : ℚ) ^ 2 * d i)
       (fun i ↦ mul_pos (pow_pos (hw i) 2) (hd i))
       ((A.posDef_mul_modifiedDatum_cartan_iff hL d).mpr hpd)
@@ -118,8 +119,8 @@ theorem isFiniteType_modifiedDatum_iff {L : ℕ} (hL : 0 < L) :
 theorem isFiniteCartan_modifiedDatum [Fintype I] [DecidableEq I]
     (hM : A.cartan.IsFiniteCartan) {L : ℕ} (hL : 0 < L) :
     (A.modifiedDatum L hL).cartan.IsFiniteCartan := by
-  refine .mk_of_exists_posDef (A.modifiedDatum L hL).diag
-    (A.modifiedDatum L hL).offDiag_nonpos ?_
+  refine .mk_of_exists_posDef (A.modifiedDatum L hL).isGeneralizedCartan.diag
+    (A.modifiedDatum L hL).isGeneralizedCartan.offDiag_nonpos ?_
   obtain ⟨d, hd, hpd⟩ := hM.exists_posDef
   refine ⟨fun i ↦ (A.frobeniusOrder L i : ℤ) ^ 2 * d i,
     fun i ↦ mul_pos (pow_pos (Int.natCast_pos.mpr (A.frobeniusOrder_pos hL i)) 2) (hd i), ?_⟩
@@ -267,9 +268,10 @@ open TauCeti TauCeti.SymmetrizableDatum
 /-- Normalized `G₂` datum with `A = [[2, -3], [-1, 2]]` and `d = (1, 3)`. -/
 private def g2NormDatum : SymmetrizableDatum (Fin 2) where
   cartan := !![2, -3; -1, 2]
-  diag := by decide
-  offDiag_nonpos := by simp [Fin.forall_fin_two]
-  zero_comm := by simp [Fin.forall_fin_two]
+  isGeneralizedCartan :=
+    { diag := by decide
+      offDiag_nonpos := by simp [Fin.forall_fin_two]
+      zero_comm := by simp [Fin.forall_fin_two] }
   symmetrizer := ![1, 3]
   symmetrizer_pos := by simp [Fin.forall_fin_two]
   symmetrizes := by decide
@@ -277,9 +279,10 @@ private def g2NormDatum : SymmetrizableDatum (Fin 2) where
 /-- Non-normalized `G₂` datum with `d = (2, 6)`. -/
 private def g2ScaledDatum : SymmetrizableDatum (Fin 2) where
   cartan := !![2, -3; -1, 2]
-  diag := by decide
-  offDiag_nonpos := by simp [Fin.forall_fin_two]
-  zero_comm := by simp [Fin.forall_fin_two]
+  isGeneralizedCartan :=
+    { diag := by decide
+      offDiag_nonpos := by simp [Fin.forall_fin_two]
+      zero_comm := by simp [Fin.forall_fin_two] }
   symmetrizer := ![2, 6]
   symmetrizer_pos := by simp [Fin.forall_fin_two]
   symmetrizes := by decide
@@ -287,9 +290,10 @@ private def g2ScaledDatum : SymmetrizableDatum (Fin 2) where
 /-- Normalized `B₂` datum with `A = [[2, -2], [-1, 2]]` and `d = (1, 2)`. -/
 private def b2NormDatum : SymmetrizableDatum (Fin 2) where
   cartan := !![2, -2; -1, 2]
-  diag := by decide
-  offDiag_nonpos := by simp [Fin.forall_fin_two]
-  zero_comm := by simp [Fin.forall_fin_two]
+  isGeneralizedCartan :=
+    { diag := by decide
+      offDiag_nonpos := by simp [Fin.forall_fin_two]
+      zero_comm := by simp [Fin.forall_fin_two] }
   symmetrizer := ![1, 2]
   symmetrizer_pos := by simp [Fin.forall_fin_two]
   symmetrizes := by decide
@@ -297,9 +301,10 @@ private def b2NormDatum : SymmetrizableDatum (Fin 2) where
 /-- Non-normalized `B₂` datum with `d = (2, 4)`. -/
 private def b2ScaledDatum : SymmetrizableDatum (Fin 2) where
   cartan := !![2, -2; -1, 2]
-  diag := by decide
-  offDiag_nonpos := by simp [Fin.forall_fin_two]
-  zero_comm := by simp [Fin.forall_fin_two]
+  isGeneralizedCartan :=
+    { diag := by decide
+      offDiag_nonpos := by simp [Fin.forall_fin_two]
+      zero_comm := by simp [Fin.forall_fin_two] }
   symmetrizer := ![2, 4]
   symmetrizer_pos := by simp [Fin.forall_fin_two]
   symmetrizes := by decide
@@ -307,9 +312,10 @@ private def b2ScaledDatum : SymmetrizableDatum (Fin 2) where
 /-- Non-normalized `A₁` datum with `A = [[2]]` and `d = (2)`. -/
 private def a1ScaledDatum : SymmetrizableDatum (Fin 1) where
   cartan := !![2]
-  diag := by decide
-  offDiag_nonpos := by simp
-  zero_comm := by simp
+  isGeneralizedCartan :=
+    { diag := by decide
+      offDiag_nonpos := by simp
+      zero_comm := by simp }
   symmetrizer := ![2]
   symmetrizer_pos := by simp
   symmetrizes := by decide

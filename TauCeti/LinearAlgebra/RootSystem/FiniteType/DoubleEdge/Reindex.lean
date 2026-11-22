@@ -130,7 +130,7 @@ private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
         (finSumFinRevEquiv p q n hpq (e i) : ℕ)) ↔ (diagramGraph A).Adj i j := by
     rw [hge, hge, hk]
   rcases eq_or_ne i j with rfl | hij
-  · rw [ite_eq_left rfl, h.apply_self]
+  · rw [ite_eq_left rfl, h.isGeneralizedCartan.diag]
   have heij : e i ≠ e j := fun he ↦ hij (e.injective he)
   rw [ite_eq_right heij]
   by_cases hpair : i = v ∧ j = u
@@ -160,7 +160,7 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
   obtain ⟨iso⟩ := (h.isTree_diagramGraph hconn).nonempty_iso_pathGraph_of_degree_le_two hdeg
   have hvu_ne : v ≠ u := by
     rintro rfl
-    rw [h.apply_self] at hvu
+    rw [h.isGeneralizedCartan.diag] at hvu
     omega
   have hadj : (diagramGraph A).Adj u v :=
     (h.diagramGraph_adj_iff.mpr ⟨hvu_ne, by simp [hvu]⟩).symm
@@ -332,10 +332,10 @@ theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [Fintype B] [
   have hconn' : (diagramGraph A).Connected := ⟨hconn⟩
   have hvu_ne : v ≠ u := by
     rintro rfl
-    rw [h.apply_self] at hvu
+    rw [h.isGeneralizedCartan.diag] at hvu
     omega
   have hAuv : A u v ≠ 0 := fun hz => by
-    have := h.apply_eq_zero_symm hz
+    have := (h.isGeneralizedCartan.zero_comm _ _).mp hz
     rw [hvu] at this
     omega
   have hadj : (diagramGraph A).Adj u v :=
@@ -367,7 +367,7 @@ theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [Fintype B] [
     exact hAuv_eq
   have hadj' := h.diagramGraph_adj_iff.mpr ⟨hij, hAij⟩
   have hone := hsingle hadj' (by tauto)
-  have hnonpos := h.apply_le_zero_of_ne hij
+  have hnonpos := h.isGeneralizedCartan.offDiag_nonpos i j hij
   rcases Int.eq_one_or_neg_one_of_mul_eq_one' hone with hpos | hneg
   · exact absurd hpos.1 (by omega)
   · exact hneg.1

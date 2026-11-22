@@ -127,7 +127,7 @@ carrying an instance argument of their own.
 For finite `B` the Cartan matrices of finite root systems are exactly the matrices of this kind, up
 to irreducibility; `TauCeti.isFiniteType_cartanMatrix` proves one direction. -/
 def IsFiniteType (A : Matrix B B ℤ) : Prop :=
-  Finite B ∧ (∀ i, A i i = 2) ∧ (∀ i j, i ≠ j → A i j ≤ 0) ∧ (∀ i j, A i j = 0 → A j i = 0) ∧
+  Finite B ∧ A.IsGeneralizedCartan ∧
     ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef
 
 
@@ -140,12 +140,13 @@ theorem isFiniteType_of [Finite B] (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠
     {d : B → ℚ} (hd : ∀ i, 0 < d i)
     (hpd : (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef) :
     IsFiniteType A := by
-  refine ⟨‹Finite B›, h2, hle, fun i j hij ↦ ?_, d, hd, hpd⟩
-  have hsymm := hpd.isHermitian.apply i j
-  simp only [Matrix.of_apply, star_trivial] at hsymm
-  rw [hij] at hsymm
-  have : ((A j i : ℤ) : ℚ) = 0 := by simpa [(hd j).ne'] using hsymm
-  exact_mod_cast this
+  have hzero {i j : B} (hij : A i j = 0) : A j i = 0 := by
+    have hsymm := hpd.isHermitian.apply i j
+    simp only [Matrix.of_apply, star_trivial] at hsymm
+    rw [hij] at hsymm
+    have : ((A j i : ℤ) : ℚ) = 0 := by simpa [(hd j).ne'] using hsymm
+    exact_mod_cast this
+  exact ⟨‹Finite B›, ⟨h2, hle, fun _ _ ↦ ⟨hzero, hzero⟩⟩, d, hd, hpd⟩
 
 /-- **A generalized Cartan matrix that is positive definite over `ℚ` is of finite type.** The
 symmetrizer is the constant-one vector, whose symmetrization of `A` is `A` itself read over `ℚ`;
@@ -187,24 +188,12 @@ namespace IsFiniteType
 finiteness from their finite-type hypothesis instead of assuming it separately. -/
 lemma finite (h : IsFiniteType A) : Finite B := h.1
 
-/-- The diagonal entries of a finite-type matrix are `2`. -/
-lemma apply_self (h : IsFiniteType A) (i : B) : A i i = 2 := h.2.1 i
-
-/-- The off-diagonal entries of a finite-type matrix are nonpositive. -/
-lemma apply_le_zero_of_ne (h : IsFiniteType A) {i j : B} (hij : i ≠ j) : A i j ≤ 0 :=
-  h.2.2.1 i j hij
-
-/-- The vanishing pattern of a finite-type matrix is symmetric. -/
-lemma apply_eq_zero_symm (h : IsFiniteType A) {i j : B} (hij : A i j = 0) : A j i = 0 :=
-  h.2.2.2.1 i j hij
-
-/-- An entry of a finite-type matrix vanishes exactly when its transpose does. -/
-lemma apply_eq_zero_iff (h : IsFiniteType A) {i j : B} : A i j = 0 ↔ A j i = 0 :=
-  ⟨h.apply_eq_zero_symm, h.apply_eq_zero_symm⟩
+/-- A finite-type matrix is a generalized Cartan matrix. -/
+lemma isGeneralizedCartan (h : IsFiniteType A) : A.IsGeneralizedCartan := h.2.1
 
 /-- The symmetrizer of a finite-type matrix, together with its defining properties. -/
 lemma exists_symmetrizer (h : IsFiniteType A) :
-    ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef := h.2.2.2.2
+    ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef := h.2.2
 
 /-- **The symmetrizer intertwines the two entries of a transposed pair.** The symmetrization is
 symmetric, being positive definite, and this is what that says entrywise. -/
@@ -223,9 +212,11 @@ theorem submatrix {C : Type*} (h : IsFiniteType A) {e : C → B}
   -- finite because it injects into the finite index type of `A`.
   have := h.finite
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-  refine ⟨Finite.of_injective e he, fun i ↦ h.apply_self _,
-    fun i j hij ↦ h.apply_le_zero_of_ne fun hc ↦ hij (he hc),
-    fun i j hij ↦ h.apply_eq_zero_symm hij, d ∘ e, fun i ↦ hd _, ?_⟩
+  refine ⟨Finite.of_injective e he,
+    ⟨fun i ↦ h.isGeneralizedCartan.diag _,
+     fun i j hij ↦ h.isGeneralizedCartan.offDiag_nonpos _ _ fun hc ↦ hij (he hc),
+     fun i j ↦ h.isGeneralizedCartan.zero_comm (e i) (e j)⟩,
+    d ∘ e, fun i ↦ hd _, ?_⟩
   exact hpd.submatrix he
 
 /-- **Finite type is invariant under transposition.** The reciprocal vector is a symmetrizer for
@@ -236,8 +227,8 @@ theorem transpose (h : IsFiniteType A) : IsFiniteType A.transpose := by
   have := h.finite
   have : Fintype B := Fintype.ofFinite B
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-  refine isFiniteType_of (fun i ↦ h.apply_self i)
-    (fun i j hij ↦ h.apply_le_zero_of_ne hij.symm) (d := fun i ↦ (d i)⁻¹)
+  refine isFiniteType_of (fun i ↦ h.isGeneralizedCartan.diag i)
+    (fun i j hij ↦ h.isGeneralizedCartan.offDiag_nonpos j i hij.symm) (d := fun i ↦ (d i)⁻¹)
     (fun i ↦ inv_pos.mpr (hd i)) ?_
   have hdiag : Function.Injective (Matrix.diagonal fun i ↦ (d i)⁻¹).mulVec := by
     intro x y hxy
@@ -260,11 +251,11 @@ pattern is symmetric. On the diagonal the product is `2 * 2`. -/
 theorem one_le_apply_mul_apply (h : IsFiniteType A) {i j : B} (hne : A i j ≠ 0) :
     1 ≤ A i j * A j i := by
   rcases eq_or_ne i j with rfl | hij
-  · rw [h.apply_self]; norm_num
-  have hi : A i j ≤ -1 := by have := h.apply_le_zero_of_ne hij; omega
+  · rw [h.isGeneralizedCartan.diag]; norm_num
+  have hi : A i j ≤ -1 := by have := h.isGeneralizedCartan.offDiag_nonpos i j hij; omega
   have hj : A j i ≤ -1 := by
-    have hle := h.apply_le_zero_of_ne hij.symm
-    have hne' : A j i ≠ 0 := fun hc ↦ hne (h.apply_eq_zero_symm hc)
+    have hle := h.isGeneralizedCartan.offDiag_nonpos j i hij.symm
+    have hne' : A j i ≠ 0 := fun hc ↦ hne ((h.isGeneralizedCartan.zero_comm i j).mpr hc)
     omega
   nlinarith
 
@@ -353,7 +344,8 @@ theorem sum_apply_mul_apply_lt_four (h : IsFiniteType A) {i : B} {s : Finset B}
     simp [hx, hki, hk]
   have hq := hpd.dotProduct_mulVec_pos (x := x) fun hc ↦ by simpa [hxi] using congrFun hc i
   rw [star_trivial, dotProduct_mulVec_symmetrization_eq_of_pairwise_apply_eq_zero
-    (fun p _ ↦ (hd p).ne') (h.apply_self i) (fun p _ ↦ h.apply_self p) (fun p _ ↦ hsymm i p) his
+    (fun p _ ↦ (hd p).ne') (h.isGeneralizedCartan.diag i)
+    (fun p _ ↦ h.isGeneralizedCartan.diag p) (fun p _ ↦ hsymm i p) his
     hs hxi hxs fun k hki hks ↦ by simp [hx, hki, hks]] at hq
   -- Positive definiteness now reads off the bound, the factor `dᵢ` being positive.
   have hcast : ((∑ j ∈ s, A i j * A j i : ℤ) : ℚ) < 4 := by
@@ -372,7 +364,8 @@ theorem apply_mul_apply_mem_of_ne (h : IsFiniteType A) {i j : B} (hij : i ≠ j)
     (by simp [Set.pairwise_singleton])
   rw [Finset.sum_singleton] at hlt
   have hnonneg : 0 ≤ A i j * A j i :=
-    mul_nonneg_of_nonpos_of_nonpos (h.apply_le_zero_of_ne hij) (h.apply_le_zero_of_ne hij.symm)
+    mul_nonneg_of_nonpos_of_nonpos (h.isGeneralizedCartan.offDiag_nonpos i j hij)
+      (h.isGeneralizedCartan.offDiag_nonpos j i hij.symm)
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
   omega
 
@@ -391,13 +384,14 @@ theorem isSimplyLaced_iff (h : IsFiniteType A) :
   · intro hle i j hij
     have hbound := hle i j hij
     have hnonneg : 0 ≤ A i j * A j i :=
-      mul_nonneg_of_nonpos_of_nonpos (h.apply_le_zero_of_ne hij) (h.apply_le_zero_of_ne hij.symm)
+      mul_nonneg_of_nonpos_of_nonpos (h.isGeneralizedCartan.offDiag_nonpos i j hij)
+        (h.isGeneralizedCartan.offDiag_nonpos j i hij.symm)
     rcases (by omega : A i j * A j i = 0 ∨ A i j * A j i = 1) with hzero | hone
     · rcases mul_eq_zero.mp hzero with hij' | hji
       · exact Or.inl hij'
-      · exact Or.inl (h.apply_eq_zero_symm hji)
+      · exact Or.inl ((h.isGeneralizedCartan.zero_comm i j).mpr hji)
     · rcases Int.eq_one_or_neg_one_of_mul_eq_one' hone with ⟨hij', -⟩ | ⟨hij', -⟩
-      · have := h.apply_le_zero_of_ne hij
+      · have := h.isGeneralizedCartan.offDiag_nonpos i j hij
         omega
       · exact Or.inr hij'
 
@@ -490,19 +484,20 @@ private theorem exists_apply_succ_eq_zero_fin {m : ℕ} [NeZero m] (hm : 3 ≤ m
     linear_combination -hsymm i j
   have hdiag : ∀ i, f i i = 2 / d i := by
     intro i
-    rw [hf, h.apply_self]
+    rw [hf, h.isGeneralizedCartan.diag]
     norm_num
   have hnonpos : ∀ i j : Fin m, j ≠ i → f i j ≤ 0 := by
     intro i j hji
-    have h1 : ((T i j : ℤ) : ℚ) ≤ 0 := by exact_mod_cast h.apply_le_zero_of_ne (Ne.symm hji)
+    have h1 : ((T i j : ℤ) : ℚ) ≤ 0 := by
+      exact_mod_cast h.isGeneralizedCartan.offDiag_nonpos i j (Ne.symm hji)
     rw [hf, div_eq_mul_inv]
     simpa using mul_le_mul_of_nonneg_right h1 (inv_nonneg.mpr (hd j).le)
   -- Along an edge of the cycle the contribution is at most `-1/dᵢ`, at either of its two entries.
   have hedge : ∀ i : Fin m, f i (i + 1) ≤ -(d i)⁻¹ := by
     intro i
-    have h0 : T (i + 1) i ≠ 0 := fun hc ↦ hcon i (h.apply_eq_zero_symm hc)
+    have h0 : T (i + 1) i ≠ 0 := fun hc ↦ hcon i ((h.isGeneralizedCartan.zero_comm i _).mpr hc)
     have hle : T (i + 1) i ≤ -1 := by
-      have := h.apply_le_zero_of_ne (cyclic_neighbors_pairwise_ne hm i).1
+      have := h.isGeneralizedCartan.offDiag_nonpos _ _ (cyclic_neighbors_pairwise_ne hm i).1
       omega
     have hcast : ((T (i + 1) i : ℤ) : ℚ) ≤ -1 := by exact_mod_cast hle
     calc f i (i + 1) = (T (i + 1) i : ℚ) * (d i)⁻¹ := by rw [hfsymm, hf, div_eq_mul_inv]
@@ -555,7 +550,7 @@ theorem apply_eq_zero_of_apply_ne_zero (h : IsFiniteType A) {i j k : B} (hij : i
     A j k = 0 := by
   by_contra hjk0
   -- Were the three indices pairwise joined they would close up into a cycle of length three.
-  have hki : A k i ≠ 0 := fun hc ↦ hk (h.apply_eq_zero_symm hc)
+  have hki : A k i ≠ 0 := fun hc ↦ hk ((h.isGeneralizedCartan.zero_comm i k).mpr hc)
   have hv : Function.Injective ![i, j, k] := by
     intro p q hpq
     fin_cases p <;> fin_cases q <;> simp_all
@@ -600,7 +595,7 @@ theorem apply_mul_apply_add_apply_mul_apply_lt_four (h : IsFiniteType A) {i j k 
   -- Otherwise `j` and `k` are both neighbours of `i`, so the no-triangle theorem separates them and
   -- the star bound applies to the star `{j, k}`.
   have h0 : A j k = 0 := h.apply_eq_zero_of_apply_ne_zero hij hik hjk hnej hnek
-  have hkj : A k j = 0 := h.apply_eq_zero_symm h0
+  have hkj : A k j = 0 := (h.isGeneralizedCartan.zero_comm j k).mp h0
   have hi : i ∉ ({j, k} : Finset B) := by simp [hij, hik]
   have hp : ((({j, k} : Finset B) : Set B)).Pairwise fun p q ↦ A p q = 0 := by
     intro p hp' q hq' hpq
@@ -631,7 +626,7 @@ theorem apply_eq_zero_of_apply_mul_apply_eq_three (h : IsFiniteType A) {i j k : 
     A i k = 0 := by
   have hij : i ≠ j := by
     rintro rfl
-    rw [h.apply_self] at hj
+    rw [h.isGeneralizedCartan.diag] at hj
     omega
   -- A triple edge already exhausts the two-index case of the star bound, leaving no room for `k`.
   by_contra h0

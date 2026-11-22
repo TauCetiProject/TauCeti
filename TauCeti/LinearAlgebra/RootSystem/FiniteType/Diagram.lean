@@ -200,7 +200,7 @@ theorem diagramGraph_adj_iff (h : IsFiniteType A) {i j : B} :
     (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0 := by
   rw [diagramGraph_adj]
   exact ⟨fun hadj ↦ ⟨hadj.1, hadj.2.1⟩,
-    fun hadj ↦ ⟨hadj.1, hadj.2, fun hc ↦ hadj.2 (h.apply_eq_zero_symm hc)⟩⟩
+    fun hadj ↦ ⟨hadj.1, hadj.2, fun hc ↦ hadj.2 ((h.isGeneralizedCartan.zero_comm _ _).mpr hc)⟩⟩
 
 /-- **The diagram of a finite-type matrix is a forest.** No walk of the diagram that returns to its
 start is a cycle.

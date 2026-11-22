@@ -141,7 +141,8 @@ theorem form_coroot_coroot (i j : I) :
   rw [B.form_coroot_right, R.root_coroot, Matrix.map_apply]
 
 /-- The squared norm of the `i`-th simple coroot is `2 / d i`. -/
-theorem form_coroot_self (i : I) : B.form (R.coroot i) (R.coroot i) = 2 / A.symmetrizer i := by simp
+theorem form_coroot_self (i : I) : B.form (R.coroot i) (R.coroot i) = 2 / A.symmetrizer i := by
+  simp [A.isGeneralizedCartan.diag]
 
 /-- Every simple coroot is non-isotropic for a standard invariant form. -/
 theorem form_coroot_self_ne_zero (i : I) : B.form (R.coroot i) (R.coroot i) ≠ 0 := by
@@ -264,7 +265,8 @@ theorem form_corootMap_right [Fintype I] (h : H) (c : I → K) :
 
 /-- Every standard invariant form is preserved by the simple reflection
 `x ↦ x - αᵢ(x) • hᵢ` (`Module.reflection`). -/
-theorem isOrthogonal_reflection (i : I) (h : R.root i (R.coroot i) = 2 := by simp) :
+theorem isOrthogonal_reflection (i : I)
+    (h : R.root i (R.coroot i) = 2 := by simp [A.isGeneralizedCartan.diag]) :
     B.form.IsOrthogonal (Module.reflection h) := by
   intro x y
   simp only [Module.reflection_apply, map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
@@ -273,11 +275,11 @@ theorem isOrthogonal_reflection (i : I) (h : R.root i (R.coroot i) = 2 := by sim
 
 /-- The simple reflection on `H` bundled as an isometric equivalence of `B.form`. -/
 noncomputable def reflectionIsometryEquiv (i : I) : B.form.IsometryEquiv B.form :=
-  { Module.reflection (f := R.root i) (x := R.coroot i) (by simp) with
+  { Module.reflection (f := R.root i) (x := R.coroot i) (by simp [A.isGeneralizedCartan.diag]) with
     map_app' := B.isOrthogonal_reflection i }
 
 theorem reflectionIsometryEquiv_toLinearEquiv (i : I)
-    (h : R.root i (R.coroot i) = 2 := by simp) :
+    (h : R.root i (R.coroot i) = 2 := by simp [A.isGeneralizedCartan.diag]) :
     (B.reflectionIsometryEquiv i).toLinearEquiv = Module.reflection h :=
   (rfl)
 

@@ -69,7 +69,7 @@ private theorem lie_positive_positive_eq_zero {i j : Fin (n + 1)}
     (hij : CM i j = 0) :
     ⁅rootGen (.inl i), rootGen (.inl j)⁆ = 0 := by
   have hji : CM j i = 0 :=
-    (TauCeti.isFiniteType_cartanMatrix_B (n + 1)).apply_eq_zero_symm hij
+    ((TauCeti.isFiniteType_cartanMatrix_B (n + 1)).isGeneralizedCartan.zero_comm i j).mp hij
   simpa [TauCeti.typeBSimpleRootGeneratorFamily_inl, hji] using
     TauCeti.ad_pow_lie_typeBSimpleRootGenerator_typeBSimpleRootGenerator
       (K := ℚ) i j
@@ -78,7 +78,7 @@ private theorem lie_negative_negative_eq_zero {i j : Fin (n + 1)}
     (hij : CM i j = 0) :
     ⁅rootGen (.inr i), rootGen (.inr j)⁆ = 0 := by
   have hji : CM j i = 0 :=
-    (TauCeti.isFiniteType_cartanMatrix_B (n + 1)).apply_eq_zero_symm hij
+    ((TauCeti.isFiniteType_cartanMatrix_B (n + 1)).isGeneralizedCartan.zero_comm i j).mp hij
   simpa [TauCeti.typeBSimpleRootGeneratorFamily_inr, hji] using
     TauCeti.ad_pow_lie_typeBSimpleNegativeRootGenerator_typeBSimpleNegativeRootGenerator
       (K := ℚ) i j

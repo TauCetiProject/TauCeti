@@ -235,11 +235,11 @@ theorem existsUnique_dynkinType_of_card_eq_two (h : IsFiniteType A) (hcard : Fin
   set y := e₀.symm 1
   have hxy : x ≠ y := fun hc ↦ by simpa using e₀.symm.injective hc
   have hxy0 : A x y ≤ -1 := by
-    have := h.apply_le_zero_of_ne hxy
+    have := h.isGeneralizedCartan.offDiag_nonpos x y hxy
     have := hconn x y hxy
     omega
   have hyx0 : A y x ≤ -1 := by
-    have := h.apply_le_zero_of_ne hxy.symm
+    have := h.isGeneralizedCartan.offDiag_nonpos y x hxy.symm
     have := hconn y x hxy.symm
     omega
   have hprod : 1 ≤ A x y * A y x := h.one_le_apply_mul_apply (hconn x y hxy)
@@ -251,11 +251,11 @@ theorem existsUnique_dynkinType_of_card_eq_two (h : IsFiniteType A) (hcard : Fin
     have hcases : A x y * A y x = 1 ∨ A x y * A y x = 2 ∨ A x y * A y x = 3 := by omega
     rcases hcases with hp | hp | hp
     · exact ⟨.A 2, Or.inl rfl,
-        exists_equiv_A_two_of_apply_mul_apply_eq_one h.apply_self e₀ hxy0 hyx0 hp⟩
+        exists_equiv_A_two_of_apply_mul_apply_eq_one h.isGeneralizedCartan.diag e₀ hxy0 hyx0 hp⟩
     · exact ⟨.B 2, Or.inr (Or.inl rfl),
-        exists_equiv_B_two_of_apply_mul_apply_eq_two h.apply_self e₀ hxy0 hyx0 hp⟩
+        exists_equiv_B_two_of_apply_mul_apply_eq_two h.isGeneralizedCartan.diag e₀ hxy0 hyx0 hp⟩
     · exact ⟨.G2, Or.inr (Or.inr rfl),
-        exists_equiv_G2_of_apply_mul_apply_eq_three h.apply_self e₀ hxy0 hyx0 hp⟩
+        exists_equiv_G2_of_apply_mul_apply_eq_three h.isGeneralizedCartan.diag e₀ hxy0 hyx0 hp⟩
   -- Uniqueness is the general fact that a matrix has at most one valid Dynkin type.
   obtain ⟨t, ht, et, het⟩ := hex
   have htv : t.Valid := by rcases ht with rfl | rfl | rfl <;> simp

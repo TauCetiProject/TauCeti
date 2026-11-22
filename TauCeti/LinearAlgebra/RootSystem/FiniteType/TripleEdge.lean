@@ -97,7 +97,7 @@ theorem card_eq_two_of_apply_mul_apply_eq_three [Fintype B] (h : IsFiniteType A)
     Fintype.card B = 2 := by
   have hij_ne : i ≠ j := by
     rintro rfl
-    rw [h.apply_self] at hij
+    rw [h.isGeneralizedCartan.diag] at hij
     omega
   rw [← Nat.card_eq_fintype_card]
   refine Nat.card_eq_two_iff.mpr ⟨i, j, hij_ne, Set.eq_univ_of_forall ?_⟩
@@ -117,7 +117,7 @@ theorem exists_equiv_cartanMatrix_eq_G2_of_apply_mul_apply_eq_three (h : IsFinit
   have : Fintype B := Fintype.ofFinite B
   have hij_ne : i ≠ j := by
     rintro rfl
-    rw [h.apply_self] at hij
+    rw [h.isGeneralizedCartan.diag] at hij
     omega
   have hcard := h.card_eq_two_of_apply_mul_apply_eq_three hconn hij
   have hnonzero : ∀ x y : B, x ≠ y → A x y ≠ 0 := by

@@ -79,12 +79,8 @@ consists of positive integers `d i` with `d i * cartan i j = d j * cartan j i`. 
 structure SymmetrizableDatum (I : Type*) where
   /-- The generalized Cartan matrix, with `cartan i j = α_j(h_i)`. -/
   cartan : Matrix I I ℤ
-  /-- The diagonal entries of the generalized Cartan matrix are `2`. -/
-  diag : ∀ i, cartan i i = 2
-  /-- The off-diagonal entries of the generalized Cartan matrix are nonpositive. -/
-  offDiag_nonpos : ∀ i j, i ≠ j → cartan i j ≤ 0
-  /-- An entry vanishes exactly when the entry in the transposed position does. -/
-  zero_comm : ∀ i j, cartan i j = 0 ↔ cartan j i = 0
+  /-- The matrix is a generalized Cartan matrix. -/
+  isGeneralizedCartan : cartan.IsGeneralizedCartan
   /-- The symmetrizer `d i`. -/
   symmetrizer : I → ℕ
   /-- The symmetrizer is positive. -/
@@ -93,8 +89,6 @@ structure SymmetrizableDatum (I : Type*) where
   symmetrizes : ∀ i j, (symmetrizer i : ℤ) * cartan i j = symmetrizer j * cartan j i
 
 namespace SymmetrizableDatum
-
-attribute [simp] diag
 
 variable {I J K I' I'' : Type*} (A : SymmetrizableDatum I)
 
@@ -123,7 +117,7 @@ theorem symmetrizedMatrix_apply (i j : I) :
 /-- The diagonal entries of the symmetrized matrix are `2 * d i`. -/
 theorem symmetrizedMatrix_apply_self (i : I) :
     A.symmetrizedMatrix i i = 2 * A.symmetrizer i := by
-  rw [symmetrizedMatrix_apply, A.diag, mul_comm]
+  rw [symmetrizedMatrix_apply, A.isGeneralizedCartan.diag, mul_comm]
 
 /-- The symmetrized matrix is symmetric. -/
 theorem isSymm_symmetrizedMatrix : A.symmetrizedMatrix.IsSymm :=
@@ -151,9 +145,11 @@ the symmetrizer `d (f i)`. For the inclusion of a subset `J ⊆ I` this is the L
 `J`. -/
 def restrict (f : J ↪ I) : SymmetrizableDatum J where
   cartan := A.cartan.submatrix f f
-  diag i := A.diag (f i)
-  offDiag_nonpos i j hij := A.offDiag_nonpos (f i) (f j) (f.injective.ne hij)
-  zero_comm i j := A.zero_comm (f i) (f j)
+  isGeneralizedCartan :=
+    { diag i := A.isGeneralizedCartan.diag (f i)
+      offDiag_nonpos i j hij :=
+        A.isGeneralizedCartan.offDiag_nonpos (f i) (f j) (f.injective.ne hij)
+      zero_comm i j := A.isGeneralizedCartan.zero_comm (f i) (f j) }
   symmetrizer := A.symmetrizer ∘ f
   symmetrizer_pos i := A.symmetrizer_pos (f i)
   symmetrizes i j := A.symmetrizes (f i) (f j)
@@ -216,14 +212,17 @@ theorem reindex_reindex (e : I ≃ I') (e' : I' ≃ I'') :
 block-diagonal matrix of the two matrices, with the two symmetrizers side by side. -/
 def sum (A' : SymmetrizableDatum J) : SymmetrizableDatum (I ⊕ J) where
   cartan := fromBlocks A.cartan 0 0 A'.cartan
-  diag := by rintro (i | i) <;> simp
-  offDiag_nonpos := by
-    rintro (i | i) (j | j) hij
-    · simpa using A.offDiag_nonpos i j fun h => hij (congrArg Sum.inl h)
-    · simp
-    · simp
-    · simpa using A'.offDiag_nonpos i j fun h => hij (congrArg Sum.inr h)
-  zero_comm := by rintro (i | i) (j | j) <;> simp [A.zero_comm, A'.zero_comm]
+  isGeneralizedCartan :=
+    { diag := by rintro (i | i) <;> simp [A.isGeneralizedCartan.diag, A'.isGeneralizedCartan.diag]
+      offDiag_nonpos := by
+        rintro (i | i) (j | j) hij
+        · simpa using A.isGeneralizedCartan.offDiag_nonpos i j fun h => hij (congrArg Sum.inl h)
+        · simp
+        · simp
+        · simpa using A'.isGeneralizedCartan.offDiag_nonpos i j fun h => hij (congrArg Sum.inr h)
+      zero_comm := by
+        rintro (i | i) (j | j) <;>
+          simp [A.isGeneralizedCartan.zero_comm, A'.isGeneralizedCartan.zero_comm] }
   symmetrizer := Sum.elim A.symmetrizer A'.symmetrizer
   symmetrizer_pos := by rintro (i | i) <;> simp [A.symmetrizer_pos, A'.symmetrizer_pos]
   symmetrizes := by rintro (i | i) (j | j) <;> simp [A.symmetrizes, A'.symmetrizes]
@@ -261,7 +260,8 @@ private theorem mul_symmetrizer_eq_of_cartan_ne_zero {R : Type*} [CommRing R] [I
     [CharZero R] {x : I → R} (hx : ∀ i j, x i * A.cartan i j = x j * A.cartan j i) {i j : I}
     (hij : A.cartan i j ≠ 0) :
     x i * A.symmetrizer j = x j * A.symmetrizer i := by
-  have hji : (A.cartan j i : R) ≠ 0 := Int.cast_ne_zero.mpr ((A.zero_comm i j).not.mp hij)
+  have hji : (A.cartan j i : R) ≠ 0 :=
+    Int.cast_ne_zero.mpr ((A.isGeneralizedCartan.zero_comm i j).not.mp hij)
   have hd : (A.symmetrizer i : R) * A.cartan i j = A.symmetrizer j * A.cartan j i := by
     exact_mod_cast A.symmetrizes i j
   apply mul_right_cancel₀ hji
@@ -317,9 +317,7 @@ theorem gcd_symmetrizer_pos [Nonempty I] : 0 < Finset.univ.gcd A.symmetrizer :=
 greatest common divisor of its entries. -/
 def normalizeSymmetrizer : SymmetrizableDatum I where
   cartan := A.cartan
-  diag := A.diag
-  offDiag_nonpos := A.offDiag_nonpos
-  zero_comm := A.zero_comm
+  isGeneralizedCartan := A.isGeneralizedCartan
   symmetrizer i := A.symmetrizer i / Finset.univ.gcd A.symmetrizer
   symmetrizer_pos i :=
     have : Nonempty I := ⟨i⟩
@@ -396,9 +394,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {M : Matrix ι ι ℤ}
 positive diagonal matrix `D` for which `D * M` is positive definite. -/
 noncomputable def toSymmetrizableDatum (hM : M.IsFiniteCartan) : TauCeti.SymmetrizableDatum ι where
   cartan := M
-  diag := hM.diag
-  offDiag_nonpos := hM.offDiag_nonpos
-  zero_comm := hM.zero_comm
+  isGeneralizedCartan := hM.toIsGeneralizedCartan
   symmetrizer i := (hM.exists_posDef.choose i).toNat
   symmetrizer_pos i := Int.pos_iff_toNat_pos.mp (hM.exists_posDef.choose_spec.1 i)
   symmetrizes i j := by
@@ -433,9 +429,10 @@ end Matrix.IsFiniteCartan
 example : ∃ A : TauCeti.SymmetrizableDatum (Fin 1),
     A.cartan = !![2] ∧ A.symmetrizer = 1 ∧ A.symmetrizedMatrix = !![2] :=
   ⟨{ cartan := !![2]
-     diag := by decide
-     offDiag_nonpos := by simp [Fin.forall_fin_one]
-     zero_comm := by simp
+     isGeneralizedCartan :=
+       { diag := by decide
+         offDiag_nonpos := by simp [Fin.forall_fin_one]
+         zero_comm := by simp }
      symmetrizer := 1
      symmetrizer_pos := by decide
      symmetrizes := by decide }, rfl, rfl, by ext i j; fin_cases i; fin_cases j; rfl⟩
@@ -446,9 +443,10 @@ example : ∃ A : TauCeti.SymmetrizableDatum (Fin 2),
     A.cartan = !![2, -2; -2, 2] ∧ A.symmetrizer = 1 ∧ A.cartan.det = 0 ∧
       A.symmetrizedMatrix = A.cartan :=
   ⟨{ cartan := !![2, -2; -2, 2]
-     diag := by decide
-     offDiag_nonpos := by simp [Fin.forall_fin_two]
-     zero_comm := by simp [Fin.forall_fin_two]
+     isGeneralizedCartan :=
+       { diag := by decide
+         offDiag_nonpos := by simp [Fin.forall_fin_two]
+         zero_comm := by simp [Fin.forall_fin_two] }
      symmetrizer := 1
      symmetrizer_pos := by decide
      symmetrizes := by decide }, rfl, rfl, by simp [det_fin_two], by ext i j; simp⟩
@@ -456,9 +454,10 @@ example : ∃ A : TauCeti.SymmetrizableDatum (Fin 2),
 /-- The empty index set carries a datum, with the empty matrix. -/
 example : Nonempty (TauCeti.SymmetrizableDatum (Fin 0)) :=
   ⟨{ cartan := !![]
-     diag := nofun
-     offDiag_nonpos := nofun
-     zero_comm := nofun
+     isGeneralizedCartan :=
+       { diag := nofun
+         offDiag_nonpos := nofun
+         zero_comm := nofun }
      symmetrizer := nofun
      symmetrizer_pos := nofun
      symmetrizes := nofun }⟩
