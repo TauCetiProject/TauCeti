@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.Data.List.TFAE
-public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
-public import TauCeti.NumberTheory.Equidistribution.Basic
 public import TauCeti.NumberTheory.Equidistribution.Weyl
+public import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 import TauCeti.Algebra.Group.PolynomialSequence
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.SpecificLimits.Cesaro.Basic
 import TauCeti.Analysis.SpecificLimits.VanDerCorput
 
 /-!
@@ -22,6 +21,8 @@ import TauCeti.Analysis.SpecificLimits.VanDerCorput
 * `TauCeti.vanDerCorput_difference`: van der Corput's difference theorem for torus sequences.
 * `TauCeti.weyl_polynomial`: Weyl's polynomial equidistribution theorem for `s ≥ 1` and
   `TorusIrrational (α s)`.
+* `TauCeti.asympEquidistributed_poly_comp_affine_addCircle`: affine equidistribution of a 1D
+  polynomial sequence with a non-constant infinite-order coefficient.
 * `TauCeti.polynomial_equidistribution_tfae`, `TauCeti.polynomial_equidistribution_iff`,
   `TauCeti.polynomial_total_equidistribution_iff`,
   `TauCeti.polynomial_total_equidistributionInt_iff`: characterization of equidistribution and
@@ -51,9 +52,8 @@ private theorem asympEquidistributed_linear_of_torusIrrational {α : UnitAddToru
       (volume : Measure (UnitAddTorus d)).toProbabilityMeasure := by
   rw [weyl_criterion]; intro k hk; set ζ : ℂ := UnitAddTorus.mFourier k α
   have hζne : ζ ≠ 1 := torusIrrational_iff_mFourier.mp hα k hk
-  refine squeeze_zero_norm (fun n ↦ ?_) (by
-    simpa [one_div] using
-      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).mul_const (2 / ‖ζ - 1‖))
+  refine squeeze_zero_norm (fun n ↦ ?_) (by simpa [one_div] using
+    (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).mul_const (2 / ‖ζ - 1‖))
   have hterm (i : ℕ) : UnitAddTorus.mFourier k (i • α + β) = UnitAddTorus.mFourier k β * ζ ^ i :=
     by rw [UnitAddTorus.mFourier_apply_add, UnitAddTorus.mFourier_apply_nsmul, mul_comm]
   simp_rw [hterm, ← mul_sum, geom_sum_eq hζne, norm_mul, norm_inv, Complex.norm_natCast,
@@ -70,8 +70,7 @@ theorem linear_equidistribution_tfae (α β : UnitAddTorus d) :
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure,
       TotallyAsympEquidistributed (fun n : ℕ ↦ n • α + β)
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure,
-      TorusIrrational α
-    ] := by
+      TorusIrrational α] := by
   tfae_have 3 → 2 := fun hα ↦ totallyAsympEquidistributed_def.mpr fun q r hq ↦ by
     rw [(funext fun n ↦ by rw [add_nsmul, mul_nsmul, add_assoc] :
       (fun n : ℕ ↦ (q * n + r) • α + β) = fun n : ℕ ↦ n • (q • α) + (r • α + β))]
@@ -80,8 +79,9 @@ theorem linear_equidistribution_tfae (α β : UnitAddTorus d) :
   tfae_have 1 → 3 := fun h ↦ torusIrrational_iff_mFourier.mpr fun k hk h1 ↦ by
     have hlim := ((weyl_criterion.mp h) k hk).congr fun n ↦ by
       simp_rw [UnitAddTorus.mFourier_apply_add, UnitAddTorus.mFourier_apply_nsmul, h1, one_pow,
-        one_mul, sum_const, card_range, nsmul_eq_mul, ← mul_assoc]
-      rw [inv_mul_cancel₀ (Nat.cast_ne_zero (R := ℂ).mpr (Nat.succ_ne_zero n)), one_mul]
+        one_mul]
+      simpa only [Nat.succ_eq_add_one, smul_eq_mul] using
+        inv_natCast_smul_sum_const (𝕜 := ℂ) (Nat.succ_ne_zero n) (UnitAddTorus.mFourier k β)
     simpa [tendsto_nhds_unique tendsto_const_nhds hlim] using UnitAddTorus.norm_mFourier_apply k β
   tfae_finish
 
@@ -94,18 +94,17 @@ theorem linear_equidistributionInt_tfae (α β : UnitAddTorus d) :
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure,
       TotallyAsympEquidistributedInt (fun n : ℤ ↦ n • α + β)
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure,
-      TorusIrrational α
-    ] := by
-  tfae_have 3 → 2 := fun hα ↦
-    totallyAsympEquidistributedInt_def.mpr fun q hq r ↦ asympEquidistributedInt_def.mpr ⟨by
-      rw [(funext fun n ↦ (by
-          rw [← add_assoc, ← natCast_zsmul, ← natCast_zsmul, ← mul_zsmul, ← add_zsmul]; congr 2
-          ring) :
+      TorusIrrational α] := by
+  tfae_have 3 → 2 := fun hα ↦ totallyAsympEquidistributedInt_def.mpr fun q hq r ↦
+    asympEquidistributedInt_def.mpr ⟨by
+      rw [(funext fun n ↦ by
+        rw [← add_assoc, ← natCast_zsmul, ← natCast_zsmul, ← mul_zsmul, ← add_zsmul]
+        congr 2; ring :
         (fun n : ℕ ↦ ((q : ℤ) * ((n : ℤ) + 1) + r) • α + β) =
           fun n : ℕ ↦ n • (q • α) + (((q : ℤ) + r) • α + β))]
       exact asympEquidistributed_linear_of_torusIrrational (hα.nsmul hq.ne') _, by
-      rw [(funext fun n ↦ (by
-          rw [← add_assoc, ← natCast_zsmul, ← mul_zsmul, ← add_zsmul]; congr 2; ring) :
+      rw [(funext fun n ↦ by
+        rw [← add_assoc, ← natCast_zsmul, ← mul_zsmul, ← add_zsmul]; congr 2; ring :
         (fun n : ℕ ↦ ((q : ℤ) * -((n : ℤ) + 1) + r) • α + β) =
           fun n : ℕ ↦ n • ((-(q : ℤ)) • α) + ((r - (q : ℤ)) • α + β))]
       exact asympEquidistributed_linear_of_torusIrrational
@@ -154,8 +153,8 @@ theorem weyl_polynomial {d : Type*} [Fintype d] (s : ℕ) (hs : 1 ≤ s) (α : �
     rw [(funext (poly_sub_shift (m + 2) h α) :
       (fun n : ℕ ↦ (∑ j ∈ range (m + 3), (n + h) ^ j • α j) - ∑ j ∈ range (m + 3), n ^ j • α j)
         = _)]
-    exact ih β ((by simp [β, Nat.choose_succ_self_right] : β (m + 1) = (h * (m + 2)) • α (m + 2)) ▸
-      hα.nsmul (Nat.mul_ne_zero hh.ne' (Nat.succ_ne_zero _)))
+    exact ih β ((by simp [β, Nat.choose_succ_self_right] : β (m + 1) = (h * (m + 2)) • α (m + 2))
+      ▸ hα.nsmul (Nat.mul_ne_zero hh.ne' (Nat.succ_ne_zero _)))
 
 /-- One-dimensional Weyl polynomial equidistribution on `UnitAddCircle`. -/
 private theorem weyl_polynomial_addCircle (s : ℕ) (hs : 1 ≤ s) (c : ℕ → UnitAddCircle)
@@ -167,9 +166,9 @@ private theorem weyl_polynomial_addCircle (s : ℕ) (hs : 1 ≤ s) (c : ℕ → 
       (weyl_polynomial (d := Unit) s hs (fun j _ ↦ c j) (torusIrrational_unique_iff.mpr hc)))
       (fun _ ↦ 1) (fun h0 ↦ one_ne_zero (congrFun h0 ()))
 
-/-- 1D polynomial sequences with an infinite-order non-constant coefficient stay equidistributed
-along `Q * n + R` (`Q ≠ 0`). -/
-private theorem asympEquidistributed_poly_comp_affine_addCircle {s : ℕ} (c : ℕ → UnitAddCircle)
+/-- One-dimensional polynomial sequences with an infinite-order non-constant coefficient are
+equidistributed on `UnitAddCircle` along every affine progression `Q * n + R` (`Q ≠ 0`). -/
+theorem asympEquidistributed_poly_comp_affine_addCircle {s : ℕ} (c : ℕ → UnitAddCircle)
     (hex : ∃ j ∈ Icc 1 s, addOrderOf (c j) = 0) {Q : ℤ} (hQ : Q ≠ 0) (R : ℤ) :
     AsympEquidistributed (fun n : ℕ ↦ ∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • c j)
       AddCircle.haarAddCircle.toProbabilityMeasure := by
@@ -183,23 +182,19 @@ private theorem asympEquidistributed_poly_comp_affine_addCircle {s : ℕ} (c : �
       ⟨mem_Icc.mpr ⟨by have := (mem_Ioc.mp hj).1; omega, (mem_Ioc.mp hj).2⟩, h0⟩
   refine asympEquidistributed_of_forall_mod hDpos fun r _ ↦ ?_
   obtain ⟨γ, hγ_lead, hγ_eq⟩ := poly_comp_affine_kill_high hj₀_ge (mem_Icc.mp hj₀_mem.1).2 c
-    (fun j hj ↦ by
-      rw [natCast_zsmul, ← addOrderOf_dvd_iff_nsmul_eq_zero]
-      exact dvd_prod_of_mem (fun j ↦ addOrderOf (c j)) hj) Q R r
-  rw [(funext hγ_eq :
-    (fun n : ℕ ↦ ∑ j ∈ range (s + 1), (Q * ((D * n + r : ℕ) : ℤ) + R) ^ j • c j) = _)]
+    (q := Q * (D : ℤ)) (fun j hj ↦ by rw [mul_zsmul, natCast_zsmul,
+      addOrderOf_dvd_iff_nsmul_eq_zero.mp (dvd_prod_of_mem (fun j ↦ addOrderOf (c j)) hj),
+      smul_zero]) (Q * (r : ℤ) + R)
+  rw [(funext fun n ↦ by
+    have heq : Q * ((D * n + r : ℕ) : ℤ) + R = (Q * (D : ℤ)) * (n : ℤ) + (Q * (r : ℤ) + R) := by
+      push_cast; ring
+    simp_rw [heq, hγ_eq (n : ℤ), ← Int.natCast_pow, natCast_zsmul] :
+    (fun n : ℕ ↦ ∑ j ∈ range (s + 1), (Q * ((D * n + r : ℕ) : ℤ) + R) ^ j • c j) =
+      fun n : ℕ ↦ ∑ t ∈ range (j₀ + 1), n ^ t • γ t)]
   exact weyl_polynomial_addCircle j₀ hj₀_ge γ <| by
     rw [hγ_lead, ← torusIrrational_unique_iff (d := Unit) (α := fun _ ↦ (Q * (D : ℤ)) ^ j₀ • c j₀)]
     exact ((torusIrrational_unique_iff (d := Unit) (α := fun _ ↦ c j₀)).mpr hj₀_mem.2).zsmul
       (pow_ne_zero j₀ (mul_ne_zero hQ (Int.natCast_ne_zero.mpr hDpos.ne')))
-
-/-- Linear pairing commutes with finite integer-weighted polynomial sums on `UnitAddTorus d`. -/
-private theorem pairing_sum_zsmul {d : Type*} [Fintype d] (k : d → ℤ) (s : ℕ) (w : ℕ → ℤ)
-    (α : ℕ → UnitAddTorus d) :
-    ∑ i, k i • (∑ j ∈ range (s + 1), w j • α j) i =
-      ∑ j ∈ range (s + 1), w j • (∑ i, k i • α j i) := by
-  simp_rw [Finset.sum_apply, Pi.smul_apply, smul_sum]; rw [sum_comm]
-  exact sum_congr rfl fun _ _ ↦ sum_congr rfl fun _ _ ↦ zsmul_comm _ _ _
 
 /-- Sufficient condition for total two-sided equidistribution of a polynomial sequence. -/
 private theorem totallyAsympEquidistributedInt_poly_of_forall_addOrderOf {d : Type*} [Fintype d]
@@ -211,7 +206,10 @@ private theorem totallyAsympEquidistributedInt_poly_of_forall_addOrderOf {d : Ty
       AsympEquidistributed (fun n : ℕ ↦ ∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • α j)
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure :=
     asympEquidistributed_unitAddTorus_iff_forall_linear_comb.mpr fun k hk ↦ by
-      simp_rw [pairing_sum_zsmul]
+      simp_rw [(fun n : ℕ ↦
+        (by change UnitAddTorus.pairing k _ = _; simp [map_sum, map_zsmul] :
+          ∑ i, k i • (∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • α j) i =
+            ∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • ∑ i, k i • α j i))]
       exact asympEquidistributed_poly_comp_affine_addCircle _ (h6 k hk) hQ R
   refine totallyAsympEquidistributedInt_def.mpr fun q hq r ↦
     asympEquidistributedInt_def.mpr ⟨?_, ?_⟩
@@ -235,37 +233,21 @@ private theorem forall_pairing_ne_zero_of_asympEquidistributed_poly {d : Type*} 
       UnitAddTorus.mFourier k (∑ j ∈ range (s + 1), n ^ j • α j) =
         UnitAddTorus.mFourier k (α 0) := by
     rw [UnitAddTorus.mFourier_eq_fourier_sum, UnitAddTorus.mFourier_eq_fourier_sum]; congr 1
-    rw [← (sum_congr rfl fun _ _ ↦ by rw [← Int.natCast_pow, natCast_zsmul] :
-        ∑ j ∈ range (s + 1), ((n : ℤ) ^ j) • α j = _), pairing_sum_zsmul, sum_range_succ',
-      pow_zero, one_zsmul, sum_eq_zero fun j hj ↦ by
-        rw [hnone (j + 1) (mem_Icc.mpr ⟨by omega, by have := mem_range.mp hj; omega⟩), smul_zero],
+    change UnitAddTorus.pairing k _ = UnitAddTorus.pairing k (α 0)
+    rw [map_sum, sum_range_succ', pow_zero, one_nsmul, sum_eq_zero fun j hj ↦ by
+      rw [map_nsmul, UnitAddTorus.pairing_apply,
+        hnone (j + 1) (mem_Icc.mpr ⟨by omega, by have := mem_range.mp hj; omega⟩), smul_zero],
       zero_add]
   have hlim := ((weyl_criterion.mp h1) k hk).congr fun n ↦ by
-    simp_rw [hconst_term, sum_const, card_range, nsmul_eq_mul, ← mul_assoc]
-    rw [inv_mul_cancel₀ (Nat.cast_ne_zero (R := ℂ).mpr (Nat.succ_ne_zero n)), one_mul]
+    simp_rw [hconst_term]; simpa only [Nat.succ_eq_add_one, smul_eq_mul] using
+      inv_natCast_smul_sum_const (𝕜 := ℂ) (Nat.succ_ne_zero n) (UnitAddTorus.mFourier k (α 0))
   simpa [tendsto_nhds_unique tendsto_const_nhds hlim] using UnitAddTorus.norm_mFourier_apply k (α 0)
-
-/-- Non-annihilation implies existence of an infinite-order pairing for every nonzero frequency. -/
-private theorem exists_addOrderOf_eq_zero_of_forall_pairing {d : Type*} [Fintype d]
-    (s : ℕ) (α : ℕ → UnitAddTorus d)
-    (h5 : ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ Icc 1 s, ∑ i, k i • α j i ≠ 0) :
-    ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ Icc 1 s, addOrderOf (∑ i, k i • α j i) = 0 := by
-  intro k hk; by_contra hfin; push Not at hfin
-  let M : ℕ := ∏ j ∈ Icc 1 s, addOrderOf (∑ i, k i • α j i)
-  have hMpos : 0 < M := prod_pos fun j hj ↦ Nat.pos_of_ne_zero (hfin j hj)
-  obtain ⟨j, hj, hne⟩ := h5 ((M : ℤ) • k) (smul_ne_zero (Int.natCast_ne_zero.mpr hMpos.ne') hk)
-  refine hne ?_
-  rw [(sum_congr rfl fun _ _ ↦ by simp [mul_zsmul] :
-    ∑ i, ((M : ℤ) • k) i • α j i = ∑ i, (M : ℤ) • (k i • α j i)),
-    ← smul_sum, natCast_zsmul, ← addOrderOf_dvd_iff_nsmul_eq_zero]
-  exact dvd_prod_of_mem _ hj
 
 /-- **Full equidistribution criterion for polynomial sequences on `UnitAddTorus d`**: for any
 `s : ℕ` and `α : ℕ → UnitAddTorus d`, equidistribution on `ℕ`, total equidistribution on `ℕ`,
 two-sided equidistribution on `ℤ`, total two-sided equidistribution on `ℤ`, non-annihilation of
 `α 1, …, α s` by nonzero frequencies, and existence of an infinite-order pairing are equivalent. -/
-theorem polynomial_equidistribution_tfae {d : Type*} [Fintype d] (s : ℕ)
-    (α : ℕ → UnitAddTorus d) :
+theorem polynomial_equidistribution_tfae {d : Type*} [Fintype d] (s : ℕ) (α : ℕ → UnitAddTorus d) :
     List.TFAE [
       AsympEquidistributed (fun n : ℕ ↦ ∑ j ∈ range (s + 1), n ^ j • α j)
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure,
@@ -276,8 +258,7 @@ theorem polynomial_equidistribution_tfae {d : Type*} [Fintype d] (s : ℕ)
       TotallyAsympEquidistributedInt (fun n : ℤ ↦ ∑ j ∈ range (s + 1), n ^ j • α j)
         (volume : Measure (UnitAddTorus d)).toProbabilityMeasure,
       ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ Icc 1 s, ∑ i, k i • α j i ≠ 0,
-      ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ Icc 1 s, addOrderOf (∑ i, k i • α j i) = 0
-    ] := by
+      ∀ k : d → ℤ, k ≠ 0 → ∃ j ∈ Icc 1 s, addOrderOf (∑ i, k i • α j i) = 0] := by
   have hcast (n : ℕ) :
       ∑ j ∈ range (s + 1), ((n : ℤ) ^ j) • α j = ∑ j ∈ range (s + 1), n ^ j • α j :=
     sum_congr rfl fun j _ ↦ by rw [← Int.natCast_pow, natCast_zsmul]
@@ -287,7 +268,7 @@ theorem polynomial_equidistribution_tfae {d : Type*} [Fintype d] (s : ℕ)
   tfae_have 3 → 1 := fun h ↦ by simpa only [hcast] using h.natCast
   tfae_have 2 → 1 := TotallyAsympEquidistributed.asympEquidistributed
   tfae_have 1 → 5 := forall_pairing_ne_zero_of_asympEquidistributed_poly s α
-  tfae_have 5 → 6 := exists_addOrderOf_eq_zero_of_forall_pairing s α
+  tfae_have 5 → 6 := UnitAddTorus.exists_addOrderOf_eq_zero_of_forall_pairing (Icc 1 s) α
   tfae_finish
 
 /-- A polynomial sequence `n ↦ ∑_{j=0}^s n^j • α j` in `UnitAddTorus d` is equidistributed for

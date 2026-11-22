@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.DiracProba
 public import Mathlib.MeasureTheory.Measure.Portmanteau
 public import TauCeti.Probability.Process.EmpiricalMeasure
-import TauCeti.Analysis.SpecificLimits.Cesaro
+import TauCeti.Analysis.SpecificLimits.Cesaro.Basic
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 /-!
@@ -17,7 +17,8 @@ import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 Defines asymptotic equidistribution (`TauCeti.AsympEquidistributed`), total equidistribution
 (`TauCeti.TotallyAsympEquidistributed`), and their two-sided `ℤ`-indexed counterparts
 (`TauCeti.AsympEquidistributedInt`, `TauCeti.TotallyAsympEquidistributedInt`), together with Cesàro
-and portmanteau characterizations, residue-class criteria, and invariance properties.
+and portmanteau characterizations, residue-class criteria (including mixtures of residue-dependent
+limits), pushforwards, and finite-modification congruence properties.
 
 ## References
 
@@ -54,16 +55,8 @@ theorem asympEquidistributed_iff_integral_rclike_tendsto (𝕜 : Type*) [RCLike 
       Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : 𝕜)⁻¹ * ∑ i ∈ range (n + 1), f (x i))
         atTop (𝓝 (∫ y, f y ∂(μ : Measure X))) := by
   rw [asympEquidistributed_def, ProbabilityMeasure.tendsto_iff_forall_integral_rclike_tendsto 𝕜]
-  refine forall_congr' fun f ↦ ?_
-  have hf : StronglyMeasurable (f : X → 𝕜) := by
-    rw [(funext fun y ↦ (RCLike.re_add_im (f y)).symm :
-      (f : X → 𝕜) = fun y ↦ (RCLike.re (f y) : 𝕜) + (RCLike.im (f y) : 𝕜) * RCLike.I)]
-    exact (RCLike.continuous_ofReal.comp_stronglyMeasurable
-      (RCLike.continuous_re.comp f.continuous).stronglyMeasurable).add
-      ((RCLike.continuous_ofReal.comp_stronglyMeasurable
-        (RCLike.continuous_im.comp f.continuous).stronglyMeasurable).mul_const _)
-  simp_rw [TauCeti.Probability.integral_empiricalMeasure hf, RCLike.real_smul_eq_coe_mul,
-    RCLike.ofReal_inv, RCLike.ofReal_natCast]
+  exact forall_congr' fun f ↦ by simp_rw [← BoundedContinuousFunction.coe_toContinuousMap f,
+    TauCeti.Probability.integral_empiricalMeasure_rclike (𝕜 := 𝕜)]
 
 /-- Asymptotic equidistribution is equivalent to convergence of Cesàro averages for every real
 bounded continuous test function. -/
@@ -101,8 +94,8 @@ equidistributed for the pushforward probability measure. -/
 theorem AsympEquidistributed.map {Y : Type*} [TopologicalSpace Y] [MeasurableSpace Y]
     [OpensMeasurableSpace Y] {x : ℕ → X} {μ : ProbabilityMeasure X}
     (hx : AsympEquidistributed x μ) {f : X → Y} (hf : Continuous f) (hm : Measurable f) :
-    AsympEquidistributed (f ∘ x) (μ.map f) := by
-  refine ((ProbabilityMeasure.continuous_map_of_measurable hf hm).tendsto μ |>.comp hx).congr
+    AsympEquidistributed (f ∘ x) (μ.map f) :=
+  ((ProbabilityMeasure.continuous_map_of_measurable hf hm).tendsto μ |>.comp hx).congr
     fun n ↦ TauCeti.Probability.map_empiricalMeasure hm x n
 
 /-- Two sequences that agree eventually are equidistributed for the same measures. -/
@@ -126,17 +119,40 @@ theorem asympEquidistributed_comp_add_iff {x : ℕ → X} {μ : ProbabilityMeasu
   exact forall_congr' fun f ↦ by
     simpa only [smul_eq_mul] using tendsto_cesaro_comp_add_iff (f := fun i ↦ f (x i)) m
 
+omit [TopologicalSpace X] [OpensMeasurableSpace X] in
+/-- The uniform mixture `(q : ℝ≥0∞)⁻¹ • ∑ r : Fin q, (μr r : Measure X)` of `q > 0` probability
+measures is a probability measure. -/
+theorem isProbabilityMeasure_inv_natCast_smul_sum {q : ℕ} (hq : 0 < q)
+    (μr : Fin q → ProbabilityMeasure X) :
+    IsProbabilityMeasure ((q : ℝ≥0∞)⁻¹ • ∑ r : Fin q, (μr r : Measure X)) := ⟨by
+  simp [ENNReal.inv_mul_cancel (Nat.cast_ne_zero.mpr hq.ne') (ENNReal.natCast_ne_top q)]⟩
+
+/-- If a sequence is equidistributed for `μr r` along every residue class `r : Fin q` (`q > 0`),
+then it is equidistributed for the uniform mixture `ν` of the `μr`. -/
+theorem asympEquidistributed_of_forall_mod_average {x : ℕ → X} {q : ℕ} (hq : 0 < q)
+    {μr : Fin q → ProbabilityMeasure X} {ν : ProbabilityMeasure X}
+    (hν : (ν : Measure X) = (q : ℝ≥0∞)⁻¹ • ∑ r : Fin q, (μr r : Measure X))
+    (h : ∀ r : Fin q, AsympEquidistributed (fun n ↦ x (q * n + r)) (μr r)) :
+    AsympEquidistributed x ν := by
+  rw [asympEquidistributed_iff_integral_tendsto]; intro f
+  let L : ℕ → ℝ := fun r ↦ if hr : r < q then ∫ y, f y ∂(μr ⟨r, hr⟩ : Measure X) else 0
+  have havg : ∫ y, f y ∂(ν : Measure X) = (q : ℝ)⁻¹ • ∑ r ∈ range q, L r := by
+    rw [hν, integral_smul_measure, integral_finsetSum_measure (fun r _ ↦ f.integrable _),
+      ENNReal.toReal_inv, ENNReal.toReal_natCast, ← Fin.sum_univ_eq_sum_range L]
+    exact congrArg _ (sum_congr rfl fun r _ ↦ by simp [L, r.isLt])
+  rw [havg]; simpa only [smul_eq_mul] using
+    tendsto_cesaro_of_forall_mod hq (f := fun i ↦ f (x i)) (L := L) fun r hr ↦ by
+      rw [(by simp [L, hr] : L r = ∫ y, f y ∂(μr ⟨r, hr⟩ : Measure X))]
+      simpa only [smul_eq_mul] using (asympEquidistributed_iff_integral_tendsto.mp (h ⟨r, hr⟩)) f
+
 /-- If a sequence is equidistributed for `μ` along every residue class modulo `q > 0`, then it is
 equidistributed for `μ`. -/
 theorem asympEquidistributed_of_forall_mod {x : ℕ → X} {μ : ProbabilityMeasure X}
     {q : ℕ} (hq : 0 < q) (h : ∀ r < q, AsympEquidistributed (fun n ↦ x (q * n + r)) μ) :
-    AsympEquidistributed x μ := by
-  rw [asympEquidistributed_iff_integral_tendsto]; intro f
-  simpa only [sum_const, card_range, nsmul_eq_mul, smul_eq_mul, ← mul_assoc,
-    inv_mul_cancel₀ (Nat.cast_ne_zero (R := ℝ).mpr hq.ne'), one_mul] using
-    tendsto_cesaro_of_forall_mod hq (f := fun i ↦ f (x i)) (L := fun _ ↦ ∫ y, f y ∂(μ : Measure X))
-      fun r hr ↦ (by
-        simpa only [smul_eq_mul] using (asympEquidistributed_iff_integral_tendsto.mp (h r hr)) f)
+    AsympEquidistributed x μ :=
+  asympEquidistributed_of_forall_mod_average hq (μr := fun _ ↦ μ) (by ext s _; simp [← mul_assoc,
+    ENNReal.inv_mul_cancel (Nat.cast_ne_zero.mpr hq.ne') (ENNReal.natCast_ne_top q)])
+    fun r ↦ h r.val r.isLt
 
 /-- For a measurable set whose frontier is `μ`-null, the asymptotic visit frequency of an
 equidistributed sequence equals the `μ`-measure of the set. -/
@@ -212,8 +228,7 @@ totally equidistributed sequence for the pushforward measure. -/
 theorem TotallyAsympEquidistributed.map {Y : Type*} [TopologicalSpace Y] [MeasurableSpace Y]
     [OpensMeasurableSpace Y] {x : ℕ → X} {μ : ProbabilityMeasure X}
     (hx : TotallyAsympEquidistributed x μ) {f : X → Y} (hf : Continuous f) (hm : Measurable f) :
-    TotallyAsympEquidistributed (f ∘ x) (μ.map f) :=
-  fun q r hq ↦ (hx q r hq).map hf hm
+    TotallyAsympEquidistributed (f ∘ x) (μ.map f) := fun q r hq ↦ (hx q r hq).map hf hm
 
 /-- A constant sequence at `p` is totally equidistributed for `diracProba p`. -/
 theorem totallyAsympEquidistributed_const (p : X) :
@@ -231,8 +246,7 @@ theorem totallyAsympEquidistributed_congr_of_eventuallyEq {x y : ℕ → X} {μ 
 equidistributed for the same measure. -/
 theorem TotallyAsympEquidistributed.congr_of_eventuallyEq {x y : ℕ → X} {μ : ProbabilityMeasure X}
     (hx : TotallyAsympEquidistributed x μ) (hxy : x =ᶠ[atTop] y) :
-    TotallyAsympEquidistributed y μ :=
-  (totallyAsympEquidistributed_congr_of_eventuallyEq hxy).mp hx
+    TotallyAsympEquidistributed y μ := (totallyAsympEquidistributed_congr_of_eventuallyEq hxy).mp hx
 
 end TotallyAsympEquidistributed
 
@@ -249,9 +263,8 @@ def AsympEquidistributedInt (x : ℤ → X) (μ : ProbabilityMeasure X) : Prop :
 
 /-- Unfolding characterization of `AsympEquidistributedInt`. -/
 theorem asympEquidistributedInt_def {x : ℤ → X} {μ : ProbabilityMeasure X} :
-    AsympEquidistributedInt x μ ↔
-      AsympEquidistributed (fun n : ℕ ↦ x (n + 1)) μ ∧
-        AsympEquidistributed (fun n : ℕ ↦ x (-(n + 1 : ℤ))) μ := Iff.rfl
+    AsympEquidistributedInt x μ ↔ AsympEquidistributed (fun n : ℕ ↦ x (n + 1)) μ ∧
+      AsympEquidistributed (fun n : ℕ ↦ x (-(n + 1 : ℤ))) μ := Iff.rfl
 
 /-- The positive half of a doubly infinite equidistributed sequence is equidistributed. -/
 theorem AsympEquidistributedInt.pos_half {x : ℤ → X} {μ : ProbabilityMeasure X}
@@ -274,15 +287,39 @@ theorem asympEquidistributedInt_neg_iff {x : ℤ → X} {μ : ProbabilityMeasure
     AsympEquidistributedInt (fun n : ℤ ↦ x (-n)) μ ↔ AsympEquidistributedInt x μ := by
   simp only [asympEquidistributedInt_def, neg_neg, and_comm]
 
+/-- Pushing a doubly infinite equidistributed sequence forward along a continuous measurable map
+yields a doubly infinite equidistributed sequence for the pushforward probability measure. -/
+theorem AsympEquidistributedInt.map {Y : Type*} [TopologicalSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace Y] {x : ℤ → X} {μ : ProbabilityMeasure X}
+    (hx : AsympEquidistributedInt x μ) {f : X → Y} (hf : Continuous f) (hm : Measurable f) :
+    AsympEquidistributedInt (f ∘ x) (μ.map f) := ⟨hx.1.map hf hm, hx.2.map hf hm⟩
+
+/-- Two doubly infinite sequences that agree near `+∞` and `-∞` are two-sided equidistributed
+for the same measures. -/
+theorem asympEquidistributedInt_congr_of_eventuallyEq {x y : ℤ → X} {μ : ProbabilityMeasure X}
+    (hxy_top : x =ᶠ[atTop] y) (hxy_bot : x =ᶠ[atBot] y) :
+    AsympEquidistributedInt x μ ↔ AsympEquidistributedInt y μ :=
+  and_congr (asympEquidistributed_congr_of_eventuallyEq <|
+    let ⟨N, hN⟩ := eventually_atTop.mp hxy_top
+    eventually_atTop.mpr ⟨N.toNat, fun n hn ↦ hN _ (by omega)⟩)
+    (asympEquidistributed_congr_of_eventuallyEq <|
+      let ⟨N, hN⟩ := eventually_atBot.mp hxy_bot
+      eventually_atTop.mpr ⟨(-N).toNat, fun n hn ↦ hN _ (by omega)⟩)
+
+/-- A doubly infinite sequence agreeing near `+∞` and `-∞` with a two-sided equidistributed
+sequence is two-sided equidistributed for the same measure. -/
+theorem AsympEquidistributedInt.congr_of_eventuallyEq {x y : ℤ → X} {μ : ProbabilityMeasure X}
+    (hx : AsympEquidistributedInt x μ) (hxy_top : x =ᶠ[atTop] y) (hxy_bot : x =ᶠ[atBot] y) :
+    AsympEquidistributedInt y μ :=
+  (asympEquidistributedInt_congr_of_eventuallyEq hxy_top hxy_bot).mp hx
+
 /-- Changing the value of `x` at `0` does not affect two-sided equidistribution. -/
 @[simp]
 theorem asympEquidistributedInt_update_zero {x : ℤ → X} {μ : ProbabilityMeasure X} (y : X) :
-    AsympEquidistributedInt (Function.update x 0 y) μ ↔ AsympEquidistributedInt x μ := by
-  rw [asympEquidistributedInt_def, asympEquidistributedInt_def,
-    (funext fun _ ↦ Function.update_of_ne (by omega) _ _ :
-      (fun n : ℕ ↦ Function.update x 0 y (n + 1)) = _),
-    (funext fun _ ↦ Function.update_of_ne (by omega) _ _ :
-      (fun n : ℕ ↦ Function.update x 0 y (-(n + 1 : ℤ))) = _)]
+    AsympEquidistributedInt (Function.update x 0 y) μ ↔ AsympEquidistributedInt x μ :=
+  asympEquidistributedInt_congr_of_eventuallyEq
+    (eventually_atTop.mpr ⟨1, fun _ hk ↦ Function.update_of_ne (by omega) _ _⟩)
+    (eventually_atBot.mpr ⟨-1, fun _ hk ↦ Function.update_of_ne (by omega) _ _⟩)
 
 /-- A doubly infinite sequence `x : ℤ → X` is totally asymptotically equidistributed for `μ` when
 every progression `n ↦ x (q * n + r)` with `q > 0` and `r : ℤ` is `AsympEquidistributedInt` for
@@ -298,8 +335,7 @@ theorem totallyAsympEquidistributedInt_def {x : ℤ → X} {μ : ProbabilityMeas
 /-- Total two-sided equidistribution implies plain two-sided equidistribution. -/
 theorem TotallyAsympEquidistributedInt.asympEquidistributedInt
     {x : ℤ → X} {μ : ProbabilityMeasure X} (hx : TotallyAsympEquidistributedInt x μ) :
-    AsympEquidistributedInt x μ := by
-  simpa using hx 1 Nat.one_pos 0
+    AsympEquidistributedInt x μ := by simpa using hx 1 Nat.one_pos 0
 
 /-- Restricting a totally equidistributed doubly infinite sequence to `ℕ` yields a totally
 equidistributed sequence on `ℕ`. -/
@@ -318,6 +354,43 @@ theorem TotallyAsympEquidistributedInt.comp_affine
     (fun n : ℤ ↦ x ((q : ℤ) * ((q' : ℤ) * n + r') + r)) =
       fun n : ℤ ↦ x (((q * q' : ℕ) : ℤ) * n + ((q : ℤ) * r' + r)))]
   exact hx (q * q') (Nat.mul_pos hq hq') ((q : ℤ) * r' + r)
+
+/-- Pushing a totally two-sided equidistributed sequence forward along a continuous measurable map
+yields a totally two-sided equidistributed sequence for the pushforward measure. -/
+theorem TotallyAsympEquidistributedInt.map {Y : Type*} [TopologicalSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace Y] {x : ℤ → X} {μ : ProbabilityMeasure X}
+    (hx : TotallyAsympEquidistributedInt x μ) {f : X → Y} (hf : Continuous f) (hm : Measurable f) :
+    TotallyAsympEquidistributedInt (f ∘ x) (μ.map f) := fun q hq r ↦ (hx q hq r).map hf hm
+
+/-- Two doubly infinite sequences that agree near `+∞` and `-∞` are totally two-sided
+equidistributed for the same measures. -/
+theorem totallyAsympEquidistributedInt_congr_of_eventuallyEq {x y : ℤ → X}
+    {μ : ProbabilityMeasure X} (hxy_top : x =ᶠ[atTop] y) (hxy_bot : x =ᶠ[atBot] y) :
+    TotallyAsympEquidistributedInt x μ ↔ TotallyAsympEquidistributedInt y μ :=
+  forall₃_congr fun q hq r ↦ asympEquidistributedInt_congr_of_eventuallyEq
+    (let ⟨N, hN⟩ := eventually_atTop.mp hxy_top
+    eventually_atTop.mpr ⟨max 0 (N - r), fun n hn ↦ hN _ (by
+      nlinarith [le_max_left 0 (N - r), le_max_right 0 (N - r)])⟩)
+    (let ⟨N, hN⟩ := eventually_atBot.mp hxy_bot
+    eventually_atBot.mpr ⟨min 0 (N - r), fun n hn ↦ hN _ (by
+      nlinarith [min_le_left 0 (N - r), min_le_right 0 (N - r)])⟩)
+
+/-- A doubly infinite sequence agreeing near `+∞` and `-∞` with a totally two-sided
+equidistributed sequence is totally two-sided equidistributed for the same measure. -/
+theorem TotallyAsympEquidistributedInt.congr_of_eventuallyEq {x y : ℤ → X}
+    {μ : ProbabilityMeasure X} (hx : TotallyAsympEquidistributedInt x μ)
+    (hxy_top : x =ᶠ[atTop] y) (hxy_bot : x =ᶠ[atBot] y) :
+    TotallyAsympEquidistributedInt y μ :=
+  (totallyAsympEquidistributedInt_congr_of_eventuallyEq hxy_top hxy_bot).mp hx
+
+/-- Changing the value of `x` at `0` does not affect total two-sided equidistribution. -/
+@[simp]
+theorem totallyAsympEquidistributedInt_update_zero {x : ℤ → X} {μ : ProbabilityMeasure X}
+    (y : X) : TotallyAsympEquidistributedInt (Function.update x 0 y) μ ↔
+      TotallyAsympEquidistributedInt x μ :=
+  totallyAsympEquidistributedInt_congr_of_eventuallyEq
+    (eventually_atTop.mpr ⟨1, fun _ hk ↦ Function.update_of_ne (by omega) _ _⟩)
+    (eventually_atBot.mpr ⟨-1, fun _ hk ↦ Function.update_of_ne (by omega) _ _⟩)
 
 end AsympEquidistributedInt
 

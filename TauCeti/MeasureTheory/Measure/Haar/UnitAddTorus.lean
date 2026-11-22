@@ -23,6 +23,7 @@ those results can be read for `volume`.
   the Haar probability measures on its circle factors.
 * `TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume`: the Fourier coefficients on the unit
   torus are integrals for the volume.
+* `TauCeti.UnitAddTorus.integral_mFourier`: `∫ mFourier n` is `1` for `n = 0` and `0` otherwise.
 -/
 
 public section
@@ -55,6 +56,18 @@ theorem mFourierCoeff_eq_integral_volume {E : Type*} [NormedAddCommGroup E] [Nor
     mFourierCoeff f n = ∫ z, mFourier (-n) z • f z := by
   rw [volume_eq_pi_haarAddCircle]
   -- Mathlib defines `mFourierCoeff` with its file-local normalization
+  -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
+  rfl
+
+/-- The integral of the monomial `mFourier n` over the unit torus is `1` for `n = 0` and `0`
+otherwise. -/
+@[simp]
+theorem integral_mFourier (n : d → ℤ) : ∫ x, mFourier n x = if n = 0 then 1 else 0 := by
+  have h := (orthonormal_iff_ite.mp orthonormal_mFourier) 0 n
+  simp only [ContinuousMap.inner_toLp, mFourier_zero, ContinuousMap.one_apply, map_one,
+    mul_one, eq_comm (a := (0 : d → ℤ))] at h
+  rw [volume_eq_pi_haarAddCircle, ← h]
+  -- Mathlib states `orthonormal_mFourier` for its file-local normalization
   -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
   rfl
 

@@ -8,12 +8,13 @@ module
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Topology.Algebra.Module.Matrix
+public import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
-import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
 # Pointwise identities and estimates for the Fourier monomials
@@ -46,6 +47,8 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
   `TauCeti.UnitAddTorus.mFourier_coe_apply` and `UnitAddTorus.norm_mFourier_apply`: the same
   pointwise facts for the multivariate monomials `mFourier n` on the torus `UnitAddTorus d`, whose
   value at the image of `x : d → ℝ` is `exp (2πi ∑ i, n i * x i)`.
+* `TauCeti.torusIrrational_iff_mFourier`: `TorusIrrational α` iff every nontrivial `mFourier k`
+  takes a value other than `1` at `α`.
 * `TauCeti.UnitAddTorus.contDiff_mFourier_coe` and
   `TauCeti.UnitAddTorus.norm_iteratedFDeriv_mFourier_coe_le`: this lift of `mFourier n` is smooth,
   and its `k`-th derivative is bounded by `(2π ∑ i, |n i|) ^ k`.
@@ -105,7 +108,9 @@ theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
     fourier n (x - y) = fourier n x * fourier (-n) y := by
   simp [sub_eq_add_neg, AddCircle.toCircle_add]
 
-/-- For `T ≠ 0`, the fundamental character on `AddCircle T` evaluates to `1` only at `0`. -/
+/-- For `T ≠ 0`, the fundamental character on `AddCircle T` evaluates to `1` only at `0`.
+
+Not `@[simp]`, because `simp` already reduces `fourier 1 y` via `fourier_apply` and `one_smul`. -/
 theorem fourier_one_eq_one_iff (hT : T ≠ 0) (y : AddCircle T) :
     fourier 1 y = 1 ↔ y = 0 := by
   rw [fourier_one]
@@ -234,21 +239,19 @@ theorem norm_mFourier_apply (n : d → ℤ) (z : UnitAddTorus d) : ‖mFourier n
 character on the integer pairing `∑ i, k i • x i`. -/
 theorem mFourier_eq_fourier_sum (k : d → ℤ) (x : UnitAddTorus d) :
     mFourier k x = fourier 1 (∑ i, k i • x i) := by
-  classical
-  have hprod (s : Finset d) :
-      ∏ i ∈ s, fourier (k i) (x i) = fourier 1 (∑ i ∈ s, k i • x i) := by
-    induction s using Finset.induction_on with
-    | empty => simp
-    | insert a s ha ih =>
-      rw [Finset.prod_insert ha, Finset.sum_insert ha, ih, TauCeti.fourier_apply_add,
-        fourier_apply, fourier_one, fourier_one]
-  exact hprod Finset.univ
+  have h : ∏ i, AddCircle.toCircle (k i • x i) = AddCircle.toCircle (∑ i, k i • x i) := by
+    have h' := (map_prod (AddCircle.toCircle_addChar (T := (1 : ℝ))).toMonoidHom
+      (fun i ↦ Multiplicative.ofAdd (k i • x i)) Finset.univ).symm
+    simp only [AddChar.toMonoidHom_apply, toAdd_ofAdd, ← ofAdd_sum] at h'; exact h'
+  rw [mFourier, ContinuousMap.coe_mk, fourier_one]; simp only [fourier_apply]
+  change ∏ i, Circle.coeHom (AddCircle.toCircle (k i • x i)) =
+    Circle.coeHom (AddCircle.toCircle (∑ i, k i • x i))
+  rw [← map_prod Circle.coeHom, h]
 
 /-- Negating the argument conjugates a multivariate Fourier monomial. -/
 theorem mFourier_apply_neg (k : d → ℤ) (x : UnitAddTorus d) :
     mFourier k (-x) = starRingEnd ℂ (mFourier k x) := by
-  rw [← mFourier_neg, mFourier_eq_fourier_sum, mFourier_eq_fourier_sum]
-  simp
+  rw [← mFourier_neg, mFourier_eq_fourier_sum, mFourier_eq_fourier_sum]; simp
 
 /-- A multivariate Fourier monomial sends a difference of points to the product with the
 conjugate. -/
@@ -260,22 +263,29 @@ theorem mFourier_apply_sub (k : d → ℤ) (x y : UnitAddTorus d) :
 power. -/
 theorem mFourier_apply_nsmul (k : d → ℤ) (n : ℕ) (x : UnitAddTorus d) :
     mFourier k (n • x) = mFourier k x ^ n := by
-  induction n with
-  | zero => simp [mFourier]
-  | succ n ih =>
-    rw [succ_nsmul, mFourier_apply_add, ih, pow_succ]
+  rw [mFourier_eq_fourier_sum, mFourier_eq_fourier_sum, fourier_one, fourier_one,
+    (by simp [Finset.smul_sum, ← natCast_zsmul, zsmul_comm] :
+      ∑ i, k i • (n • x) i = n • ∑ i, k i • x i)]
+  simpa [AddCircle.toCircle_addChar] using congrArg ((↑) : Circle → ℂ)
+    (AddChar.map_nsmul_eq_pow AddCircle.toCircle_addChar n (∑ i, k i • x i))
 
 /-- Scaling the frequency vector by an integer `m` corresponds to evaluating `fourier m` on the
 integer pairing `∑ i, k i • x i`. -/
 theorem mFourier_zsmul (m : ℤ) (k : d → ℤ) (x : UnitAddTorus d) :
     mFourier (m • k) x = fourier m (∑ i, k i • x i) := by
-  rw [mFourier_eq_fourier_sum, fourier_one, fourier_apply,
-    Finset.smul_sum (r := m) (s := Finset.univ)]
-  congr 2
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Pi.smul_apply, smul_eq_mul, mul_zsmul]
+  rw [mFourier_eq_fourier_sum, fourier_one, fourier_apply, Finset.smul_sum (r := m)]
+  congr 2; exact Finset.sum_congr rfl fun i _ ↦ by rw [Pi.smul_apply, smul_eq_mul, mul_zsmul]
 
 end UnitAddTorus
+
+/-- A torus point `α` is irrational iff every nontrivial Fourier character takes a value other
+than `1` at `α`. -/
+theorem TauCeti.torusIrrational_iff_mFourier {d : Type*} [Fintype d] {α : _root_.UnitAddTorus d} :
+    TauCeti.TorusIrrational α ↔ ∀ k : d → ℤ, k ≠ 0 → _root_.UnitAddTorus.mFourier k α ≠ 1 := by
+  rw [TauCeti.torusIrrational_def]
+  exact forall₂_congr fun _ _ ↦ by
+    rw [_root_.UnitAddTorus.mFourier_eq_fourier_sum, not_iff_not,
+      TauCeti.fourier_one_eq_one_iff one_ne_zero]
 
 namespace TauCeti.UnitAddTorus
 

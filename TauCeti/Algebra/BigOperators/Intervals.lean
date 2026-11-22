@@ -56,8 +56,8 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   sum of `2 L` shifts of `f`.
 * `Finset.sum_range_sum_Ico_sub`: reindex pairs `0 ≤ h₁ < h₂ < H` by lag `h = h₂ - h₁` with
   multiplicity `H - h`.
-* `Finset.sum_range_sum_range_eq_diag_add_Ico`, `Finset.sum_range_hermitian_split`: split a
-  square sum over `range H × range H` into its diagonal and upper triangle.
+* `Finset.sum_range_sum_range_eq_diag_add_Ico`: split a square sum over `range H × range H` into
+  its diagonal and upper triangle.
 -/
 
 public section
@@ -246,20 +246,18 @@ theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f 
 
 /-- Counting pairs `0 ≤ h₁ < h₂ < H` by their lag `h = h₂ - h₁` gives multiplicity `H - h`. -/
 theorem sum_range_sum_Ico_sub {M : Type*} [AddCommMonoid M] (H : ℕ) (φ : ℕ → M) :
-    ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, φ (h₂ - h₁) =
-      ∑ h ∈ Ico 1 H, (H - h) • φ h := by
-  have hrhs : ∑ h ∈ Ico 1 H, (H - h) • φ h =
-      ∑ q ∈ (Ico 1 H).sigma (fun h ↦ range (H - h)), φ q.1 := by
-    rw [← sum_sigma' (Ico 1 H) (fun h ↦ range (H - h)) (fun h _ ↦ φ h)]
-    exact sum_congr rfl fun h _ ↦ by rw [sum_const, card_range]
-  rw [sum_sigma', hrhs]
-  refine sum_nbij' (fun p ↦ ⟨p.2 - p.1, p.1⟩) (fun q ↦ ⟨q.2, q.2 + q.1⟩)
-    (fun _ _ ↦ ?_) (fun _ _ ↦ ?_) (fun _ _ ↦ ?_) (fun _ _ ↦ ?_) (fun _ _ ↦ rfl)
-  all_goals simp only [mem_sigma, mem_range, mem_Ico] at *
-  · omega
-  · omega
-  · exact Sigma.ext rfl (heq_of_eq (by dsimp; omega))
-  · exact Sigma.ext (by dsimp; omega) (heq_of_eq rfl)
+    ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, φ (h₂ - h₁) = ∑ h ∈ Ico 1 H, (H - h) • φ h := by
+  cases H with
+  | zero => simp
+  | succ n =>
+    simp_rw [← Nat.Ico_zero_eq_range]; rw [sum_Ico_Ico_comm']
+    simp_rw [Nat.Ico_zero_eq_range]; rw [sum_range_succ', range_zero, sum_empty, add_zero]
+    have hrefl (m : ℕ) : ∑ h₁ ∈ range (m + 1), φ (m + 1 - h₁) = ∑ k ∈ range (m + 1), φ (k + 1) := by
+      rw [← sum_range_reflect (fun k ↦ φ (k + 1)) (m + 1)]
+      exact sum_congr rfl fun k hk ↦ by have hk' := mem_range.mp hk; congr 1; omega
+    simp_rw [hrefl]; rw [sum_range_diag_flip n (fun i _ ↦ φ (i + 1)), sum_Ico_eq_sum_range,
+      add_tsub_cancel_right]
+    exact sum_congr rfl fun m _ ↦ by rw [sum_const, card_range, add_comm 1 m, Nat.succ_sub_succ]
 
 /-- Splitting a square sum over `range H × range H` into its diagonal and upper triangle. -/
 theorem sum_range_sum_range_eq_diag_add_Ico {M : Type*} [AddCommMonoid M] (H : ℕ)
@@ -272,19 +270,9 @@ theorem sum_range_sum_range_eq_diag_add_Ico {M : Type*} [AddCommMonoid M] (H : �
     ∑ h₂ ∈ range H, S h₁ h₂ =
       S h₁ h₁ + (∑ h₂ ∈ range h₁, S h₁ h₂) + ∑ h₂ ∈ Ico (h₁ + 1) H, S h₁ h₂),
     sum_add_distrib, sum_add_distrib, add_assoc]
-  congr 1
-  simp_rw [← Nat.Ico_zero_eq_range]
+  congr 1; simp_rw [← Nat.Ico_zero_eq_range]
   rw [(sum_Ico_Ico_comm' 0 H fun h₂ h₁ ↦ S h₁ h₂).symm]
   simp_rw [Nat.Ico_zero_eq_range, ← sum_add_distrib]
   exact sum_congr rfl fun _ _ ↦ sum_congr rfl fun _ _ ↦ add_comm _ _
-
-/-- Diagonal plus star-upper-triangle decomposition for a star-Hermitian matrix on `range H`. -/
-theorem sum_range_hermitian_split {M : Type*} [AddCommMonoid M] [Star M] (H : ℕ)
-    (S : ℕ → ℕ → M) (hconj : ∀ h₁ h₂, S h₂ h₁ = star (S h₁ h₂)) :
-    ∑ h₁ ∈ range H, ∑ h₂ ∈ range H, S h₁ h₂ =
-      (∑ h₁ ∈ range H, S h₁ h₁) +
-        ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + star (S h₁ h₂)) := by
-  rw [sum_range_sum_range_eq_diag_add_Ico]; congr 1
-  exact sum_congr rfl fun h₁ _ ↦ sum_congr rfl fun h₂ _ ↦ by rw [hconj h₁ h₂]
 
 end Finset

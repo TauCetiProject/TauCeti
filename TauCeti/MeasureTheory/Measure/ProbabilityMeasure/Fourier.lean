@@ -5,11 +5,8 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
-public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
-import TauCeti.Analysis.Fourier.Kronecker
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.DenseSpan
 
 /-!
@@ -57,22 +54,17 @@ theorem tendsto_haarAddCircle_iff :
       congrFun (fourierCoeff_fourier (T := T) n) 0
   rw [tendsto_iff_forall_integral_fourier_tendsto]
   simp only [Measure.coe_toProbabilityMeasure, hhaar]
-  constructor
-  · intro h n hn
-    simpa [hn] using h n
-  · intro h n
-    by_cases hn : n = 0
-    · subst n
-      simpa using (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℂ)) L (𝓝 1))
-    · simpa [hn] using h n hn
+  refine ⟨fun h n hn ↦ by simpa [hn] using h n, fun h n ↦ ?_⟩
+  by_cases hn : n = 0
+  · subst n; simpa using (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℂ)) L (𝓝 1))
+  · simpa [hn] using h n hn
 
 /-- A probability measure on an additive circle is determined by its integer Fourier moments. -/
 theorem ext_of_forall_integral_fourier_eq {ν : ProbabilityMeasure (AddCircle T)}
     (h : ∀ n : ℤ, ∫ x, fourier n x ∂(μ : Measure (AddCircle T)) =
       ∫ x, fourier n x ∂(ν : Measure (AddCircle T))) :
     μ = ν :=
-  ext_of_forall_integral_eq_of_span_closure_eq_top ℂ span_fourier_closure_eq_top
-    (by simpa using h)
+  ext_of_forall_integral_eq_of_span_closure_eq_top ℂ span_fourier_closure_eq_top (by simpa using h)
 
 end AddCircle
 

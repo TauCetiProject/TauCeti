@@ -11,12 +11,17 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.SpecificLimits.Cesaro.Basic
 
 /-!
 # Van der Corput's inequality and correlation lemma
 
-* `TauCeti.vanDerCorput_inequality`: bounds `H² ‖∑_{n < N} b n‖²` in terms of `∑_{n < N} ‖b n‖²`
-  and the positive-lag correlations `∑_{n < N - h} b (n + h) conj (b n)` (`1 ≤ h < H`).
+* `TauCeti.vanDerCorput_sum_shift`: additive shifted-sum identity for `N` terms and `H` shifts.
+* `TauCeti.vanDerCorput_inner_corr`: overlap correlation identity for a zero-preserving pairing.
+* `TauCeti.vanDerCorput_expand_sq`: exact expansion of the shifted window-sum `L²` energy.
+* `TauCeti.vanDerCorput_inequality_re`, `TauCeti.vanDerCorput_inequality`: bounds
+  `H² ‖∑_{n < N} b n‖²` in terms of `∑_{n < N} ‖b n‖²` and the positive-lag correlations
+  `∑_{n < N - h} b (n + h) conj (b n)` (`1 ≤ h < H`).
 * `TauCeti.tendsto_cesaro_zero_of_forall_correlation`: if `b : ℕ → ℂ` is bounded and all its
   positive-lag correlation averages tend to `0`, then the Cesàro averages of `b` tend to `0`.
 
@@ -32,13 +37,13 @@ open Filter Finset Topology
 
 namespace TauCeti
 
-/-- Shifted-sum identity for van der Corput's inequality. -/
-private theorem vanDerCorput_sum_shift {N H : ℕ} (hN : 1 ≤ N) (hH : 1 ≤ H) (b : ℕ → ℂ) :
+/-- Shifted-sum identity for van der Corput's inequality over any additive commutative monoid. -/
+theorem vanDerCorput_sum_shift {M : Type*} [AddCommMonoid M] (N H : ℕ) (b : ℕ → M) :
     ∑ m ∈ range (N + H - 1),
         ∑ h ∈ range H, (if h ≤ m then (if m - h < N then b (m - h) else 0) else 0) =
-      (H : ℂ) * ∑ n ∈ range N, b n := by
+      H • ∑ n ∈ range N, b n := by
   rw [sum_comm]; refine (sum_congr rfl (g := fun _ ↦ ∑ n ∈ range N, b n) fun h hh ↦ ?_).trans
-    (by simp [nsmul_eq_mul])
+    (by rw [sum_const, card_range])
   have hhH : h < H := mem_range.mp hh
   rw [← sum_range_add_sum_Ico _ (by omega : h ≤ N + H - 1),
     sum_eq_zero fun m hm ↦ by simp [(mem_range.mp hm).not_ge], zero_add, sum_Ico_eq_sum_range,
@@ -47,32 +52,32 @@ private theorem vanDerCorput_sum_shift {N H : ℕ} (hN : 1 ≤ N) (hH : 1 ≤ H)
     add_zero]
   exact sum_congr rfl fun n hn ↦ by simp [mem_range.mp hn]
 
-/-- Inner correlation identity for two shifts `h₁ ≤ h₂ < H` in van der Corput's inequality. -/
-private theorem vanDerCorput_inner_corr {N H : ℕ} (hN : 1 ≤ N) (b : ℕ → ℂ)
-    {h₁ h₂ : ℕ} (h12 : h₁ ≤ h₂) (h2H : h₂ < H) :
+/-- Inner correlation identity for two shifts `h₁ ≤ h₂ < H` and any pairing vanishing when either
+argument is zero. -/
+theorem vanDerCorput_inner_corr {A M : Type*} [Zero A] [AddCommMonoid M]
+    (P : A → A → M) (hP₀ : ∀ y, P 0 y = 0) (hP₁ : ∀ x, P x 0 = 0)
+    {N H : ℕ} (b : ℕ → A) {h₁ h₂ : ℕ} (h12 : h₁ ≤ h₂) (h2H : h₂ < H) :
     ∑ m ∈ range (N + H - 1),
-        (if h₁ ≤ m then (if m - h₁ < N then b (m - h₁) else 0) else 0) *
-          starRingEnd ℂ (if h₂ ≤ m then (if m - h₂ < N then b (m - h₂) else 0) else 0) =
-      ∑ n ∈ range (N - (h₂ - h₁)), b (n + (h₂ - h₁)) * starRingEnd ℂ (b n) := by
+        P (if h₁ ≤ m then (if m - h₁ < N then b (m - h₁) else 0) else 0)
+          (if h₂ ≤ m then (if m - h₂ < N then b (m - h₂) else 0) else 0) =
+      ∑ n ∈ range (N - (h₂ - h₁)), P (b (n + (h₂ - h₁))) (b n) := by
   rw [← sum_range_add_sum_Ico _ (by omega : h₂ ≤ N + H - 1),
-    sum_eq_zero fun m hm ↦ by simp [(mem_range.mp hm).not_ge], zero_add, sum_Ico_eq_sum_range,
+    sum_eq_zero fun m hm ↦ by simp [(mem_range.mp hm).not_ge, hP₁], zero_add, sum_Ico_eq_sum_range,
     ← sum_range_add_sum_Ico _ (by omega : N - (h₂ - h₁) ≤ N + H - 1 - h₂),
     sum_eq_zero (s := Ico (N - (h₂ - h₁)) (N + H - 1 - h₂)) fun n hn ↦ by
       have hge := (mem_Ico.mp hn).1
-      rw [ite_eq_right_iff.mpr fun _ ↦ ite_eq_right_iff.mpr fun _ ↦ False.elim (by omega),
-        zero_mul],
+      rw [ite_eq_right_iff.mpr fun _ ↦ ite_eq_right_iff.mpr fun _ ↦ False.elim (by omega), hP₀],
     add_zero]
   refine sum_congr rfl fun n hn ↦ ?_; have hlt := mem_range.mp hn
   simp [(by omega : h₂ + n - h₁ = n + (h₂ - h₁)), (by omega : n + (h₂ - h₁) < N),
     (by omega : n < N), (by omega : h₁ ≤ h₂ + n)]
 
-/-- Expanding the squared norm sum of the shifted window sums in van der Corput's inequality. -/
-private theorem vanDerCorput_expand_sq {N H : ℕ} (hN : 1 ≤ N) (b : ℕ → ℂ) :
+/-- Exact square-expansion identity for the shifted window sums in van der Corput's inequality. -/
+theorem vanDerCorput_expand_sq (N H : ℕ) (b : ℕ → ℂ) :
     ∑ m ∈ range (N + H - 1),
-        ‖∑ h ∈ range H, (if h ≤ m then (if m - h < N then b (m - h) else 0) else 0)‖ ^ 2 ≤
-      (H : ℝ) * ∑ n ∈ range N, ‖b n‖ ^ 2 +
-        2 * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
-          ‖∑ n ∈ range (N - h), b (n + h) * starRingEnd ℂ (b n)‖ := by
+        ‖∑ h ∈ range H, (if h ≤ m then (if m - h < N then b (m - h) else 0) else 0)‖ ^ 2 =
+      (H : ℝ) * ∑ n ∈ range N, ‖b n‖ ^ 2 + 2 * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
+        (∑ n ∈ range (N - h), b (n + h) * starRingEnd ℂ (b n)).re := by
   let a : ℕ → ℕ → ℂ := fun m h ↦ if h ≤ m then (if m - h < N then b (m - h) else 0) else 0
   let S : ℕ → ℕ → ℂ := fun h₁ h₂ ↦ ∑ m ∈ range (N + H - 1), a m h₁ * starRingEnd ℂ (a m h₂)
   let C : ℕ → ℂ := fun h ↦ ∑ n ∈ range (N - h), b (n + h) * starRingEnd ℂ (b n)
@@ -83,64 +88,71 @@ private theorem vanDerCorput_expand_sq {N H : ℕ} (hN : 1 ≤ N) (b : ℕ → �
       push_cast; rw [← Complex.mul_conj', map_sum, sum_mul]
       exact sum_congr rfl fun _ _ ↦ mul_sum _ _ _
     rw [Complex.ofReal_sum]; simp_rw [hcm]; rw [sum_comm]; exact sum_congr rfl fun _ _ ↦ sum_comm
-  have hsplit := sum_range_hermitian_split H S fun h₁ h₂ ↦ by
-    simp only [S, map_sum, map_mul, starRingEnd_self_apply, mul_comm, Complex.star_def]
   have hdiag : (∑ h₁ ∈ range H, S h₁ h₁).re = (H : ℝ) * ∑ n ∈ range N, ‖b n‖ ^ 2 := by
     rw [sum_congr rfl fun h₁ hh₁ ↦ (by
         simpa only [S, a, Nat.sub_self, Nat.sub_zero, add_zero, Complex.mul_conj',
           Complex.ofReal_sum, Complex.ofReal_pow] using
-          vanDerCorput_inner_corr hN b le_rfl (mem_range.mp hh₁) :
-        S h₁ h₁ = ((∑ n ∈ range N, ‖b n‖ ^ 2 : ℝ) : ℂ)),
+          vanDerCorput_inner_corr (fun x y ↦ x * starRingEnd ℂ y) (by simp) (by simp)
+            b le_rfl (mem_range.mp hh₁) : S h₁ h₁ = ((∑ n ∈ range N, ‖b n‖ ^ 2 : ℝ) : ℂ)),
       sum_const, card_range, nsmul_eq_mul, ← Complex.ofReal_natCast, ← Complex.ofReal_mul,
       Complex.ofReal_re]
-  have hoff : (∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + star (S h₁ h₂))).re ≤
-      2 * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) * ‖C h‖ := by
+  have hoff : (∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + S h₂ h₁)).re =
+      2 * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) * (C h).re := by
     rw [(by rw [← sum_range_sum_Ico_sub H (fun h ↦ C h + star (C h))]
             refine sum_congr rfl fun h₁ _ ↦ sum_congr rfl fun h₂ hh₂ ↦ ?_
-            dsimp only [S, a, C]
-            rw [vanDerCorput_inner_corr hN b (by have := (mem_Ico.mp hh₂).1; omega)
-              (mem_Ico.mp hh₂).2] :
-        ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + star (S h₁ h₂)) =
+            rw [(by simp only [S, map_sum, map_mul, starRingEnd_self_apply, mul_comm,
+                  Complex.star_def] : S h₂ h₁ = star (S h₁ h₂))]
+            congr 1 <;> dsimp only [S, a, C] <;>
+              [exact vanDerCorput_inner_corr (fun x y ↦ x * starRingEnd ℂ y) (by simp) (by simp)
+                b (by have := (mem_Ico.mp hh₂).1; omega) (mem_Ico.mp hh₂).2;
+               exact congrArg star (vanDerCorput_inner_corr (fun x y ↦ x * starRingEnd ℂ y)
+                (by simp) (by simp) b (by have := (mem_Ico.mp hh₂).1; omega)
+                (mem_Ico.mp hh₂).2)] :
+        ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + S h₂ h₁) =
           ∑ h ∈ Ico 1 H, (H - h) • (C h + star (C h))), Complex.re_sum, mul_sum]
-    refine sum_le_sum fun h _ ↦ ?_
+    refine sum_congr rfl fun h _ ↦ ?_
     simp only [nsmul_eq_mul, Complex.mul_re, Complex.natCast_re, Complex.natCast_im, zero_mul,
-      sub_zero, Complex.add_re, Complex.star_def, Complex.conj_re]
-    nlinarith [Complex.re_le_norm (C h), Nat.cast_nonneg (α := ℝ) (H - h)]
-  have hre := congrArg Complex.re (hexpand.trans hsplit)
-  rw [Complex.ofReal_re, Complex.add_re, hdiag] at hre; linarith
+      sub_zero, Complex.add_re, Complex.star_def, Complex.conj_re]; ring
+  have hre := congrArg Complex.re (hexpand.trans (sum_range_sum_range_eq_diag_add_Ico H S))
+  rwa [Complex.ofReal_re, Complex.add_re, hdiag, hoff] at hre
+
+/-- **Van der Corput's finite lag inequality (signed real-part form)**: for any `N H : ℕ` and
+`b : ℕ → ℂ`,
+`H² ‖∑_{n < N} b n‖² ≤ (N + H - 1) (H ∑_{n < N} ‖b n‖² + 2 ∑_{1 ≤ h < H} (H - h) Re C(h))`,
+where `C(h) = ∑_{n < N - h} b (n + h) conj (b n)`. -/
+theorem vanDerCorput_inequality_re (N H : ℕ) (b : ℕ → ℂ) :
+    (H : ℝ) ^ 2 * ‖∑ n ∈ range N, b n‖ ^ 2 ≤ ((N + H - 1 : ℕ) : ℝ) *
+      ((H : ℝ) * ∑ n ∈ range N, ‖b n‖ ^ 2 +
+        2 * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
+          (∑ n ∈ range (N - h), b (n + h) * starRingEnd ℂ (b n)).re) := by
+  let c : ℕ → ℂ := fun m ↦
+    ∑ h ∈ range H, (if h ≤ m then (if m - h < N then b (m - h) else 0) else 0)
+  have hnorm : (H : ℝ) * ‖∑ n ∈ range N, b n‖ ≤ ∑ m ∈ range (N + H - 1), ‖c m‖ := by
+    rw [← Complex.norm_natCast, ← norm_mul, ← nsmul_eq_mul, ← vanDerCorput_sum_shift N H b]
+    exact norm_sum_le _ _
+  have hCS : (H : ℝ) ^ 2 * ‖∑ n ∈ range N, b n‖ ^ 2 ≤
+      ((N + H - 1 : ℕ) : ℝ) * ∑ m ∈ range (N + H - 1), ‖c m‖ ^ 2 := by
+    rw [← mul_pow]; exact (pow_le_pow_left₀ (by positivity) hnorm 2).trans (by
+      simpa using sum_mul_sq_le_sq_mul_sq (range (N + H - 1)) (fun _ ↦ (1 : ℝ)) (fun m ↦ ‖c m‖))
+  exact hCS.trans_eq (congrArg (((N + H - 1 : ℕ) : ℝ) * ·) (vanDerCorput_expand_sq N H b))
 
 /-- **Van der Corput's finite lag inequality**: for any `N H : ℕ` and any complex sequence
 `b : ℕ → ℂ`,
 `H² ‖∑_{n < N} b n‖² ≤ (N + H - 1) (H ∑_{n < N} ‖b n‖² + 2 ∑_{1 ≤ h < H} (H - h) ‖C(h)‖)`,
 where `C(h) = ∑_{n < N - h} b (n + h) conj (b n)`. -/
 theorem vanDerCorput_inequality (N H : ℕ) (b : ℕ → ℂ) :
-    (H : ℝ) ^ 2 * ‖∑ n ∈ range N, b n‖ ^ 2 ≤
-      ((N + H - 1 : ℕ) : ℝ) *
-        ((H : ℝ) * ∑ n ∈ range N, ‖b n‖ ^ 2 +
-          2 * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
-            ‖∑ n ∈ range (N - h), b (n + h) * starRingEnd ℂ (b n)‖) := by
-  rcases eq_or_ne H 0 with rfl | hH0; · simp
-  rcases eq_or_ne N 0 with rfl | hN0; · simp
-  have hN : 1 ≤ N := Nat.one_le_iff_ne_zero.mpr hN0
-  let c : ℕ → ℂ := fun m ↦
-    ∑ h ∈ range H, (if h ≤ m then (if m - h < N then b (m - h) else 0) else 0)
-  have hnorm : (H : ℝ) * ‖∑ n ∈ range N, b n‖ ≤ ∑ m ∈ range (N + H - 1), ‖c m‖ := by
-    rw [← Complex.norm_natCast, ← norm_mul,
-      ← vanDerCorput_sum_shift hN (Nat.one_le_iff_ne_zero.mpr hH0) b]; exact norm_sum_le _ _
-  have hCS : (H : ℝ) ^ 2 * ‖∑ n ∈ range N, b n‖ ^ 2 ≤
-      ((N + H - 1 : ℕ) : ℝ) * ∑ m ∈ range (N + H - 1), ‖c m‖ ^ 2 := by
-    rw [← mul_pow]
-    exact (pow_le_pow_left₀ (by positivity) hnorm 2).trans (by
-      simpa using sum_mul_sq_le_sq_mul_sq (range (N + H - 1)) (fun _ ↦ (1 : ℝ)) (fun m ↦ ‖c m‖))
-  exact hCS.trans (mul_le_mul_of_nonneg_left (vanDerCorput_expand_sq hN b) (Nat.cast_nonneg _))
+    (H : ℝ) ^ 2 * ‖∑ n ∈ range N, b n‖ ^ 2 ≤ ((N + H - 1 : ℕ) : ℝ) *
+      ((H : ℝ) * ∑ n ∈ range N, ‖b n‖ ^ 2 +
+        2 * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
+          ‖∑ n ∈ range (N - h), b (n + h) * starRingEnd ℂ (b n)‖) :=
+  (vanDerCorput_inequality_re N H b).trans <| by gcongr; exact Complex.re_le_norm _
 
 /-- Truncating a bounded lag-`h` correlation sum keeps its normalized norm tending to `0`. -/
 private theorem tendsto_vanDerCorput_lag {b : ℕ → ℂ} {C : ℝ} (hC : ∀ n, ‖b n‖ ≤ C) {h : ℕ}
     (hcorr : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ *
         ∑ i ∈ range (n + 1), b (i + h) * starRingEnd ℂ (b i)) atTop (𝓝 0)) :
-    Tendsto (fun n : ℕ ↦
-        ‖∑ i ∈ range (n + 1 - h), b (i + h) * starRingEnd ℂ (b i)‖ / ((n + 1 : ℕ) : ℝ))
-      atTop (𝓝 0) := by
+    Tendsto (fun n : ℕ ↦ ‖∑ i ∈ range (n + 1 - h), b (i + h) * starRingEnd ℂ (b i)‖ /
+        ((n + 1 : ℕ) : ℝ)) atTop (𝓝 0) := by
   have hC0 : 0 ≤ C := (norm_nonneg (b 0)).trans (hC 0)
   have hfull : Tendsto (fun n : ℕ ↦
       ‖∑ i ∈ range (n + 1), b (i + h) * starRingEnd ℂ (b i)‖ / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 0) :=
@@ -188,41 +200,34 @@ private theorem vanDerCorput_avg_sq_le {b : ℕ → ℂ} {C : ℝ} (hC : ∀ n, 
 its positive-lag correlation averages `n ↦ (n + 1)⁻¹ ∑_{i ≤ n} b (i + h) conj (b i)` tend to `0`,
 then the Cesàro averages of `b` tend to `0`. -/
 theorem tendsto_cesaro_zero_of_forall_correlation {b : ℕ → ℂ} (hb : ∃ C : ℝ, ∀ n, ‖b n‖ ≤ C)
-    (hcorr : ∀ h : ℕ, 0 < h →
-      Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ *
-          ∑ i ∈ range (n + 1), b (i + h) * starRingEnd ℂ (b i))
-        atTop (𝓝 0)) :
+    (hcorr : ∀ h : ℕ, 0 < h → Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ *
+        ∑ i ∈ range (n + 1), b (i + h) * starRingEnd ℂ (b i)) atTop (𝓝 0)) :
     Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ * ∑ i ∈ range (n + 1), b i) atTop (𝓝 0) := by
   obtain ⟨C, hC⟩ := hb; rw [Metric.tendsto_atTop]; intro ε hε
   obtain ⟨H₀, hH₀⟩ := exists_nat_gt (2 * C ^ 2 / ε ^ 2); set H : ℕ := H₀ + 1
   have hHpos : 0 < H := Nat.succ_pos H₀
   have hHreal : (0 : ℝ) < (H : ℝ) := Nat.cast_pos.mpr hHpos
   have hCH : C ^ 2 / (H : ℝ) < ε ^ 2 := by
-    rw [div_lt_iff₀ hHreal]
-    nlinarith [(div_lt_iff₀ (sq_pos_of_pos hε)).mp
+    rw [div_lt_iff₀ hHreal]; nlinarith [(div_lt_iff₀ (sq_pos_of_pos hε)).mp
       (hH₀.trans (Nat.cast_lt.mpr (Nat.lt_succ_self H₀))), sq_nonneg C]
   have hratio : Tendsto (fun n : ℕ ↦ (((n + 1 + H - 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)))
-      atTop (𝓝 1) := by
-    have hlim : Tendsto (fun n : ℕ ↦ ((H : ℝ) + 1 * (n : ℝ)) / (1 + 1 * (n : ℝ))) atTop (𝓝 1) := by
-      simpa using tendsto_add_mul_div_add_mul_atTop_nhds (H : ℝ) 1 1 (one_ne_zero : (1 : ℝ) ≠ 0)
-    refine hlim.congr fun n ↦ ?_
-    rw [(by omega : n + 1 + H - 1 = H + n)]; push_cast; ring_nf
+      atTop (𝓝 1) :=
+    (tendsto_natCast_add_div_add_one (H : ℝ)).congr fun n ↦ by
+      rw [(by omega : n + 1 + H - 1 = n + H)]; push_cast; rfl
   have hsum0 : Tendsto (fun n : ℕ ↦ ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
       (‖∑ i ∈ range (n + 1 - h), b (i + h) * starRingEnd ℂ (b i)‖ / ((n + 1 : ℕ) : ℝ)))
       atTop (𝓝 0) := by
     rw [← sum_const_zero (s := Ico 1 H)]
     exact tendsto_finsetSum (Ico 1 H) fun h hh ↦ by simpa only [mul_zero] using
       (tendsto_vanDerCorput_lag hC (hcorr h (mem_Ico.mp hh).1)).const_mul ((H - h : ℕ) : ℝ)
-  have hrhs : Tendsto (fun n : ℕ ↦
-      (((n + 1 + H - 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) * (C ^ 2 / (H : ℝ) +
-        (2 / (H : ℝ) ^ 2) * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
-          (‖∑ i ∈ range (n + 1 - h), b (i + h) * starRingEnd ℂ (b i)‖ / ((n + 1 : ℕ) : ℝ))))
+  have hrhs : Tendsto (fun n : ℕ ↦ (((n + 1 + H - 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) *
+      (C ^ 2 / (H : ℝ) + (2 / (H : ℝ) ^ 2) * ∑ h ∈ Ico 1 H, ((H - h : ℕ) : ℝ) *
+        (‖∑ i ∈ range (n + 1 - h), b (i + h) * starRingEnd ℂ (b i)‖ / ((n + 1 : ℕ) : ℝ))))
       atTop (𝓝 (C ^ 2 / (H : ℝ))) := by
     simpa using hratio.mul (tendsto_const_nhds.add (hsum0.const_mul (2 / (H : ℝ) ^ 2)))
   obtain ⟨N, hN⟩ := eventually_atTop.mp (hrhs.eventually (gt_mem_nhds hCH))
   exact ⟨N, fun n hn ↦ by
-    rw [dist_zero_right]
-    nlinarith [(vanDerCorput_avg_sq_le hC hHpos n).trans_lt (hN n hn),
+    rw [dist_zero_right]; nlinarith [(vanDerCorput_avg_sq_le hC hHpos n).trans_lt (hN n hn),
       norm_nonneg (((n + 1 : ℕ) : ℂ)⁻¹ * ∑ i ∈ range (n + 1), b i)]⟩
 
 end TauCeti

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.Topology.MetricSpace.UniformConvergence
 
@@ -74,8 +73,7 @@ dense. -/
 theorem ext_of_forall_integral_eq_of_span_closure_eq_top [T2Space (ProbabilityMeasure X)]
     (𝕜 : Type*) [RCLike 𝕜] {ν : ProbabilityMeasure X} {S : Set C(X, 𝕜)}
     (hS : (Submodule.span 𝕜 S).topologicalClosure = ⊤)
-    (h : ∀ f ∈ S, ∫ x, f x ∂(μ : Measure X) = ∫ x, f x ∂(ν : Measure X)) :
-    μ = ν :=
+    (h : ∀ f ∈ S, ∫ x, f x ∂(μ : Measure X) = ∫ x, f x ∂(ν : Measure X)) : μ = ν :=
   tendsto_nhds_unique (tendsto_const_nhds (f := (atTop : Filter ℕ)) (x := μ))
     ((tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top 𝕜 hS).2 fun f hf ↦ by
       simpa only [h f hf] using tendsto_const_nhds)

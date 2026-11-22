@@ -35,7 +35,6 @@ invariant torus in action–angle coordinates, fills that torus densely.
 
 ## Main results
 
-* `TauCeti.UnitAddTorus.integral_mFourier`: `∫ mFourier n` is `1` for `n = 0` and `0` otherwise.
 * `TauCeti.UnitAddTorus.tendsto_inv_smul_intervalIntegral`: Weyl's theorem, time averages along a
   nonresonant line tend to the space average.
 * `TauCeti.AddCircle.denseRange_coe_add_mul_iff`: Kronecker's theorem, a line in `(ℝ / pℤ)^ι` is
@@ -61,18 +60,6 @@ namespace TauCeti
 namespace UnitAddTorus
 
 variable {d : Type*} [Fintype d]
-
-/-- The integral of the monomial `mFourier n` over the unit torus is `1` for `n = 0` and `0`
-otherwise. -/
-@[simp]
-theorem integral_mFourier (n : d → ℤ) : ∫ x, mFourier n x = if n = 0 then 1 else 0 := by
-  have h := (orthonormal_iff_ite.mp orthonormal_mFourier) 0 n
-  simp only [ContinuousMap.inner_toLp, mFourier_zero, ContinuousMap.one_apply, map_one,
-    mul_one, eq_comm (a := (0 : d → ℤ))] at h
-  rw [volume_eq_pi_haarAddCircle, ← h]
-  -- Mathlib states `orthonormal_mFourier` for its file-local normalization
-  -- `volume = haarAddCircle` on `UnitAddCircle`, whose product measure is the measure above.
-  rfl
 
 /-- Along the line `t ↦ θ + t ν` of the unit torus, the monomial `mFourier n` is the product of its
 value at `θ` with the exponential `exp (2πi ⟪n, ν⟫ t)`. -/
