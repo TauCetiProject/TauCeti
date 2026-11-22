@@ -54,7 +54,7 @@ variable [Fintype (G ⧸ U)]
 
 /-- The coefficient map on tensor-induced total resolutions preserves total degree. -/
 theorem isHomogeneous_smoothTensorInducedGradedResolutionFunctor_map :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom.toLinearMap
       (smoothTensorInducedGradedResolutionPiece U hU s A)
       (smoothTensorInducedGradedResolutionPiece U hU s B) 0 := by
@@ -62,7 +62,7 @@ theorem isHomogeneous_smoothTensorInducedGradedResolutionFunctor_map :
     (g := fun _ ↦ TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom)
     (fun _ ↦ TopRep.isHomogeneous_gradedResolutionMap (ContinuousMonoidHom.id U) f.hom)
   rw [Finset.sum_const_zero] at h
-  exact TauCeti.LinearMap.isHomogeneous_def.2 fun p x hx ↦
+  exact LinearMap.isHomogeneous_def.2 fun p x hx ↦
     (congrArg (· ∈ _)
       (smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply U hU s f x)).mpr
         (h.map_mem hx)

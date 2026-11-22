@@ -12,9 +12,11 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 /-!
 # Witt-vector Frobenius on Teichmüller representatives and the `(p, [ϖ])`-adic topology
 
-Let `R` be a ring of characteristic `p`. The Witt-vector Frobenius `φ` of `𝕎 R` sends the
-Teichmüller representative `[r]` to `[r ^ p] = [r] ^ p`, and when `R` is perfect its inverse sends
-`[r]` to `[r ^ (1 / p)]`. Consequently `φ` carries the ideal `(p, [ϖ])` into itself, and `φ⁻¹`
+Let `R` be a ring of characteristic `p`. The Witt-vector Frobenius `φ` of `𝕎 R` raises every
+Witt coordinate to its `p`-th power, so its fixed points are the Witt vectors whose coordinates are
+all fixed by the `p`-power map. It sends the Teichmüller representative `[r]` to
+`[r ^ p] = [r] ^ p`, and when `R` is perfect its inverse sends `[r]` to `[r ^ (1 / p)]`.
+Consequently `φ` carries the ideal `(p, [ϖ])` into itself, and `φ⁻¹`
 carries it into its radical, so both are continuous for the `(p, [ϖ])`-adic topology. For a perfect
 ring of integers `𝒪_F` this is the continuity of Frobenius on `A_inf = W(𝒪_F)`, which lets
 Frobenius act on its adic spectrum.
@@ -22,6 +24,8 @@ Frobenius act on its adic spectrum.
 ## Main results
 
 * `WittVector.frobenius_teichmuller` : `φ [r] = [r] ^ p` in characteristic `p`.
+* `WittVector.frobenius_eq_self_iff_forall_coeff` : `φ x = x` iff every coordinate of `x` is fixed
+  by the `p`-power map, in characteristic `p`.
 * `WittVector.frobeniusEquiv_symm_teichmuller` : `φ⁻¹ [r] = [r ^ (1 / p)]` for perfect `R`.
 * `TauCeti.WittVector.continuous_frobenius` : `φ` is continuous for the `(p, [ϖ])`-adic topology.
 * `TauCeti.WittVector.continuous_frobeniusEquiv_symm` : so is `φ⁻¹`, for perfect `R`.
@@ -42,6 +46,12 @@ its `p`-th power `[r ^ p]`. -/
 @[simp]
 theorem frobenius_teichmuller (r : R) : frobenius (teichmuller p r) = teichmuller p r ^ p := by
   rw [frobenius_eq_map_frobenius, map_teichmuller, frobenius_def, map_pow]
+
+/-- In characteristic `p`, a Witt vector is fixed by the Witt-vector Frobenius if and only if each
+of its coordinates is fixed by the `p`-power map. -/
+theorem frobenius_eq_self_iff_forall_coeff (x : WittVector p R) :
+    frobenius x = x ↔ ∀ n, x.coeff n ^ p = x.coeff n := by
+  simp [frobenius_eq_map_frobenius, WittVector.ext_iff, map_coeff, frobenius_def]
 
 /-- For a perfect ring of characteristic `p`, the inverse of the Witt-vector Frobenius sends a
 Teichmüller representative `[r]` to the Teichmüller representative of the `p`-th root of `r`. -/

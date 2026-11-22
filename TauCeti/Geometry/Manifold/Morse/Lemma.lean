@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Geometry.Manifold.Morse.Bott.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.LinearAlgebra.Pi
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
@@ -24,7 +25,10 @@ coordinates `L : E ≃ (Fin n → ℝ)`,
 `f y = f x + (1/2) Σᵢ wᵢ (L (ψ y))ᵢ²`, with every `wᵢ = ±1`,
 
 and the number of negative weights is the manifold Morse index of `f` at `x`. Such a chart is
-recorded as a `TauCeti.MorseChart`. A Morse chart puts the function in quadratic form; it is
+recorded as a `TauCeti.MorseChart`. It is a Morse–Bott chart (`TauCeti.MorseBottChart`) all of
+whose weights are nonzero, so the chart calculus of Morse–Bott charts (the quadratic normal form
+`TauCeti.MorseBottChart.quadratic`, its derivative, and the smoothness of `f` on the chart) applies
+to it. A Morse chart puts the function in quadratic form; it is
 used to choose an adapted pseudo-gradient field that is linear near the critical point, whose
 stable and unstable manifolds are then studied.
 
@@ -49,10 +53,8 @@ stable and unstable manifolds are then studied.
   `TauCeti.MorseChart.finrank_fst_splitCoord_add_manifoldMorseIndex`: the expanding factor of the
   split coordinates has dimension the Morse index, and the contracting factor the complementary
   dimension.
-* `TauCeti.MorseChart.quadratic`: the quadratic normal form of a Morse chart, with
-  `TauCeti.MorseChart.eqOn_quadratic` and `TauCeti.MorseChart.contDiff_quadratic`.
-* `TauCeti.MorseChart.contMDiffOn` and `TauCeti.MorseChart.contMDiffAt`: a function is smooth on
-  the source of a Morse chart.
+* `TauCeti.MorseChart.toMorseBottChart_restr` and `TauCeti.MorseChart.toMorseBottChart_neg`: the
+  underlying Morse–Bott chart of a restricted or negated Morse chart.
 * `TauCeti.MorseChart.neg`: a Morse chart for `f` is a Morse chart for `-f`, with the opposite
   weights.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.nonempty_morseChart`: the Morse lemma on a
@@ -81,23 +83,11 @@ variable (E) in
 /-- A **Morse chart** for `f` at `x`: a chart of the maximal atlas, centred at `x`, together with
 a linear change of coordinates `L : E ≃ (Fin n → ℝ)` and weights `wᵢ = ±1`, such that on the source
 of the chart `f y = f x + (1/2) Σᵢ wᵢ (L (ψ y))ᵢ²`. The number of negative weights is the manifold
-Morse index of `f` at `x`. -/
-structure MorseChart (f : M → ℝ) (x : M) where
-  /-- The chart. -/
-  toChart : OpenPartialHomeomorph M E
-  mem_maximalAtlas : toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M
-  mem_source : x ∈ toChart.source
-  apply_self : toChart x = 0
-  /-- The linear change of coordinates that diagonalizes the Hessian. -/
-  coord : E ≃ₗ[ℝ] (Fin (Module.finrank ℝ E) → ℝ)
-  /-- The diagonal weights of the Hessian. -/
-  weight : Fin (Module.finrank ℝ E) → ℝ
+Morse index of `f` at `x`. It is a Morse–Bott chart all of whose weights are nonzero. -/
+structure MorseChart (f : M → ℝ) (x : M) extends MorseBottChart E f x where
   weight_eq_neg_one_or_eq_one : ∀ i, weight i = -1 ∨ weight i = 1
+  weight_eq_neg_one_or_eq_zero_or_eq_one i := (weight_eq_neg_one_or_eq_one i).imp_right .inr
   ncard_weight_neg : {i | weight i < 0}.ncard = manifoldMorseIndex 𝓘(ℝ, E) f x
-  eq_quadratic : ∀ y ∈ toChart.source,
-    f y = f x + (2 : ℝ)⁻¹ * ∑ i, weight i * (coord (toChart y) i) ^ 2
-
-attribute [simp] MorseChart.mem_source MorseChart.apply_self
 
 namespace MorseChart
 
@@ -105,103 +95,41 @@ namespace MorseChart
 restricted to `s`, and the coordinates and weights are unchanged. -/
 noncomputable def restr (φ : MorseChart E f x) {s : Set M} (hs : IsOpen s) (hx : x ∈ s) :
     MorseChart E f x where
-  toChart := φ.toChart.restr s
-  mem_maximalAtlas := restr_mem_maximalAtlas _ φ.mem_maximalAtlas hs
-  mem_source := by rw [φ.toChart.restr_source' s hs]; exact ⟨φ.mem_source, hx⟩
-  apply_self := φ.apply_self
-  coord := φ.coord
-  weight := φ.weight
-  weight_eq_neg_one_or_eq_one := φ.weight_eq_neg_one_or_eq_one
-  ncard_weight_neg := φ.ncard_weight_neg
-  eq_quadratic y hy := φ.eq_quadratic y (by rw [φ.toChart.restr_source' s hs] at hy; exact hy.1)
+  toMorseBottChart := φ.toMorseBottChart.restr hs hx
+  weight_eq_neg_one_or_eq_one := by
+    rw [MorseBottChart.restr_weight]
+    exact φ.weight_eq_neg_one_or_eq_one
+  ncard_weight_neg := by
+    rw [MorseBottChart.restr_weight]
+    exact φ.ncard_weight_neg
 
 variable (φ : MorseChart E f x) {s : Set M} (hs : IsOpen s) (hx : x ∈ s)
 
-/-- The chart of a restricted Morse chart is the restricted chart. -/
+/-- The Morse–Bott chart underlying a restricted Morse chart is the restricted Morse–Bott chart. -/
 @[simp]
-theorem restr_toChart : (φ.restr hs hx).toChart = φ.toChart.restr s := by
+theorem toMorseBottChart_restr :
+    (φ.restr hs hx).toMorseBottChart = φ.toMorseBottChart.restr hs hx := by
   rw [restr]
+
+/-- The chart of a restricted Morse chart is the restricted chart. -/
+theorem restr_toChart : (φ.restr hs hx).toChart = φ.toChart.restr s := by
+  rw [toMorseBottChart_restr, MorseBottChart.restr_toChart]
 
 /-- Restricting a Morse chart does not change its coordinates. -/
-@[simp]
 theorem restr_coord : (φ.restr hs hx).coord = φ.coord := by
-  rw [restr]
+  rw [toMorseBottChart_restr, MorseBottChart.restr_coord]
 
 /-- Restricting a Morse chart does not change its weights. -/
-@[simp]
 theorem restr_weight : (φ.restr hs hx).weight = φ.weight := by
-  rw [restr]
+  rw [toMorseBottChart_restr, MorseBottChart.restr_weight]
 
 /-- The source of a restricted Morse chart. -/
-theorem restr_source : (φ.restr hs hx).toChart.source = φ.toChart.source ∩ s :=
-  φ.toChart.restr_source' s hs
+theorem restr_source : (φ.restr hs hx).toChart.source = φ.toChart.source ∩ s := by
+  rw [toMorseBottChart_restr, MorseBottChart.restr_source]
 
-/-- A point of the chart is the point with its own coordinates. -/
-theorem toChart_symm_coord_symm_coord {y : M} (hy : y ∈ φ.toChart.source) :
-    φ.toChart.symm (φ.coord.symm (φ.coord (φ.toChart y))) = y := by
-  rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
-
-/-- The chart sends `0` back to the critical point. -/
-@[simp]
-theorem toChart_symm_zero : φ.toChart.symm 0 = x := by
-  rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
-
-/-- The centre is the only point of the source sent to `0`. -/
-theorem toChart_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) : φ.toChart y = 0 ↔ y = x := by
-  refine ⟨fun h ↦ φ.toChart.injOn hy φ.mem_source ?_, fun h ↦ h ▸ φ.apply_self⟩
-  rw [h, φ.apply_self]
-
-/-- The critical point is the point with coordinates `0`. -/
-theorem toChart_symm_coord_symm_zero : φ.toChart.symm (φ.coord.symm 0) = x := by
-  rw [map_zero, toChart_symm_zero]
-
-/-- The chart of a Morse chart lies in the maximal atlas of class `C¹`. -/
-theorem mem_maximalAtlas_one : φ.toChart ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
-  IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas
-
-/-- The chart of a Morse chart is differentiable on its source. -/
-theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
-    MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
-  mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
-
-include φ in
-/-- A space with a Morse chart is finite-dimensional. -/
-theorem finiteDimensional : FiniteDimensional ℝ E :=
-  Module.Finite.equiv φ.coord.symm
-
-/-- The quadratic normal form of a Morse chart, as a function on the model space. -/
-noncomputable def quadratic (z : E) : ℝ :=
-  f x + (2 : ℝ)⁻¹ * ∑ i, φ.weight i * (φ.coord z i) ^ 2
-
-/-- The value of the quadratic normal form of a Morse chart. -/
-theorem quadratic_apply (z : E) :
-    φ.quadratic z = f x + (2 : ℝ)⁻¹ * ∑ i, φ.weight i * (φ.coord z i) ^ 2 :=
-  (rfl)
-
-/-- On the source of a Morse chart, `f` is the quadratic normal form read in the chart. -/
-theorem eqOn_quadratic : EqOn f (φ.quadratic ∘ φ.toChart) φ.toChart.source := fun y hy ↦ by
-  simp only [comp_apply, quadratic_apply]
-  exact φ.eq_quadratic y hy
-
-/-- The quadratic normal form is smooth. -/
-theorem contDiff_quadratic : ContDiff ℝ ∞ φ.quadratic := by
-  have := φ.finiteDimensional
-  have hL : ContDiff ℝ ∞ (φ.coord : E → Fin (Module.finrank ℝ E) → ℝ) :=
-    (LinearMap.toContinuousLinearMap (φ.coord : E →ₗ[ℝ] Fin (Module.finrank ℝ E) → ℝ)).contDiff
-  have hi (i : Fin (Module.finrank ℝ E)) : ContDiff ℝ ∞ fun z ↦ φ.coord z i := contDiff_pi.1 hL i
-  exact contDiff_const.add (contDiff_const.mul (ContDiff.sum fun i _ ↦
-    contDiff_const.mul ((hi i).pow 2)))
-
-/-- A function is smooth on the source of a Morse chart: there, it is a quadratic polynomial in
-the coordinates of a chart of the maximal atlas. -/
-theorem contMDiffOn : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f φ.toChart.source :=
-  (φ.contDiff_quadratic.contMDiff.comp_contMDiffOn
-    (contMDiffOn_of_mem_maximalAtlas φ.mem_maximalAtlas)).congr φ.eqOn_quadratic
-
-/-- A function is smooth at every point of the source of a Morse chart, in particular at its
-centre. -/
-theorem contMDiffAt {y : M} (hy : y ∈ φ.toChart.source) : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ f y :=
-  φ.contMDiffOn.contMDiffAt (φ.toChart.open_source.mem_nhds hy)
+/-- Every weight of a Morse chart is nonzero. -/
+theorem weight_ne_zero (i : Fin (Module.finrank ℝ E)) : φ.weight i ≠ 0 := by
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
 
 /-- A coordinate of a Morse chart has weight different from `1` exactly when it has negative
 weight. -/
@@ -211,6 +139,14 @@ theorem weight_ne_one_iff (i : Fin (Module.finrank ℝ E)) : ¬φ.weight i = 1 �
 /-- A coordinate of a Morse chart has weight `1` exactly when it has positive weight. -/
 theorem weight_eq_one_iff (i : Fin (Module.finrank ℝ E)) : φ.weight i = 1 ↔ 0 < φ.weight i := by
   rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> norm_num [hi]
+
+/-- Every weight of a Morse chart at a point of Morse index `0` is `1`. -/
+theorem weight_eq_one_of_manifoldMorseIndex_eq_zero (h : manifoldMorseIndex 𝓘(ℝ, E) f x = 0)
+    (i : Fin (Module.finrank ℝ E)) : φ.weight i = 1 := by
+  have hempty : {i | φ.weight i < 0} = ∅ :=
+    (Set.ncard_eq_zero (toFinite _)).1 (φ.ncard_weight_neg.trans h)
+  by_contra hi
+  exact (Set.eq_empty_iff_forall_notMem.1 hempty) i ((φ.weight_ne_one_iff i).1 hi)
 
 /-- The **split coordinates** of a Morse chart: the pair formed by the coordinates of positive
 weight and the remaining coordinates, of weight `-1`. Each factor carries the sup norm. -/
@@ -365,15 +301,12 @@ end SplitBox
 opposite weights. -/
 noncomputable def neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     MorseChart E (-f) x where
-  toChart := φ.toChart
-  mem_maximalAtlas := φ.mem_maximalAtlas
-  mem_source := φ.mem_source
-  apply_self := φ.apply_self
-  coord := φ.coord
-  weight := -φ.weight
+  toMorseBottChart := φ.toMorseBottChart.neg
   weight_eq_neg_one_or_eq_one i := by
+    rw [MorseBottChart.neg_weight]
     rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
   ncard_weight_neg := by
+    rw [MorseBottChart.neg_weight]
     have hidx := h.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     have hset : {i | (-φ.weight) i < 0} = {i | φ.weight i < 0}ᶜ := by
       ext i
@@ -382,28 +315,27 @@ noncomputable def neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x
     rw [Nat.card_eq_fintype_card, Fintype.card_fin, φ.ncard_weight_neg] at hc
     rw [hset]
     omega
-  eq_quadratic y hy := by
-    rw [Pi.neg_apply, Pi.neg_apply, φ.eq_quadratic y hy]
-    simp only [Pi.neg_apply, neg_mul, Finset.sum_neg_distrib]
-    ring
+
+/-- The Morse–Bott chart underlying a negated Morse chart is the negated Morse–Bott chart. -/
+@[simp]
+theorem toMorseBottChart_neg (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    (φ.neg h).toMorseBottChart = φ.toMorseBottChart.neg := by
+  rw [neg]
 
 /-- The negated Morse chart has the same chart. -/
-@[simp]
 theorem neg_toChart (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).toChart = φ.toChart := by
-  rw [neg]
+  rw [toMorseBottChart_neg, MorseBottChart.neg_toChart]
 
 /-- The negated Morse chart has the same coordinates. -/
-@[simp]
 theorem neg_coord (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).coord = φ.coord := by
-  rw [neg]
+  rw [toMorseBottChart_neg, MorseBottChart.neg_coord]
 
 /-- The negated Morse chart has the opposite weights. -/
-@[simp]
 theorem neg_weight (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
     (φ.neg h).weight = -φ.weight := by
-  rw [neg]
+  rw [toMorseBottChart_neg, MorseBottChart.neg_weight]
 
 variable [FiniteDimensional ℝ E]
 
@@ -467,7 +399,16 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     simp only [hgdef, comp_apply, ← hext, (extChartAt 𝓘(ℝ, E) x).left_inv hy']
   have hxc : x ∈ c.source := mem_chart_source E x
   have hca : c x = a := (hext x).symm
-  refine ⟨⟨c.trans φ, ?_, ?_, ?_, e.toLinearEquiv, w, hw, ?_, ?_⟩⟩
+  refine ⟨{
+    toChart := c.trans φ
+    mem_maximalAtlas := ?_
+    mem_source := ?_
+    apply_self := ?_
+    coord := e.toLinearEquiv
+    weight := w
+    weight_eq_neg_one_or_eq_one := hw
+    eq_quadratic := ?_
+    ncard_weight_neg := ?_ }⟩
   · rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
     constructor
     · exact hφ.contMDiffOn.comp (contMDiffOn_chart.mono fun y hy ↦ hy.1) fun y hy ↦ hy.2
@@ -477,8 +418,6 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     rw [mem_preimage, OpenPartialHomeomorph.symm_symm, hca]
     exact haφ
   · simp [hca, hφa]
-  · rw [manifoldMorseIndex_def, morseIndex_def]
-    exact (QuadraticForm.sigNeg_of_equiv_weightedSumSquares ⟨e⟩).symm
   · intro y hy
     have hy1 : y ∈ c.source := hy.1
     have hy2 : c y ∈ φ.source := hy.2
@@ -488,6 +427,8 @@ theorem IsManifoldNondegenerateCriticalPoint.nonempty_morseChart
     rw [hessianQuadraticForm_apply] at hQ
     rw [← hQ, QuadraticMap.weightedSumSquares_apply]
     simp [sq]
+  · rw [manifoldMorseIndex_def, morseIndex_def]
+    exact (QuadraticForm.sigNeg_of_equiv_weightedSumSquares ⟨e⟩).symm
 
 /-- Every critical point of a Morse function has a Morse chart. -/
 theorem IsMorse.nonempty_morseChart (hf : IsMorse 𝓘(ℝ, E) f) {x : M}

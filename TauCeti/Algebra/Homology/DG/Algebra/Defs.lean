@@ -90,16 +90,18 @@ The next lemma uses only the graded Leibniz rule, and not that `d` raises degree
 to zero.  It is stated with that rule as a hypothesis so that differential graded algebras and the
 curved differential graded algebras of `TauCeti.Algebra.Homology.Curved.Algebra.Defs` share one
 proof.  The corresponding consequence of the degree law alone, that `d` commutes with homogeneous
-projections up to the degree shift, is `TauCeti.LinearMap.IsHomogeneous.map_decompose`.
+projections up to the degree shift, is `LinearMap.IsHomogeneous.map_decompose`.
 -/
 
-variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
-  {𝒜 : ℤ → Submodule R A} [DirectSum.Decomposition 𝒜] {d : A →ₗ[R] A}
+variable {ι A σ F : Type*} [DecidableEq ι] [NonUnitalNonAssocRing A]
+  [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ι → σ} [DirectSum.Decomposition 𝒜]
+  [FunLike F A A] [AddMonoidHomClass F A A] {d : F} {s : ι → ℤˣ}
 
-/-- The graded Leibniz rule against a cycle in the right factor.  The vanishing signed term permits
-an arbitrary left factor, without a homogeneity hypothesis. -/
+/-- The graded Leibniz rule against a cycle in the right factor, for any index type and sign
+family. The vanishing signed term permits an arbitrary left factor, without a homogeneity
+hypothesis. -/
 theorem map_mul_of_leibniz_of_map_eq_zero
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b))
     (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
@@ -144,7 +146,7 @@ theorem map_decompose (h : IsNonUnitalDGAlgebra 𝒜 d) (p : ℤ) (a : A) :
 arbitrary left factor, without a homogeneity hypothesis. -/
 theorem leibniz_of_map_eq_zero (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) {b : A}
     (hb : d b = 0) : d (a * b) = d a * b :=
-  map_mul_of_leibniz_of_map_eq_zero h.leibniz a hb
+  map_mul_of_leibniz_of_map_eq_zero (𝒜 := 𝒜) h.leibniz a hb
 
 /-- The Leibniz rule for a left factor of degree zero, where the sign is trivial. -/
 theorem leibniz_of_mem_zero (h : IsNonUnitalDGAlgebra 𝒜 d) {a : A} (ha : a ∈ 𝒜 0) (b : A) :
@@ -188,8 +190,8 @@ end UnitalLeibniz
 
 section AlgebraLeibniz
 
-variable {R A ι σ : Type*} [CommSemiring R] [Ring A] [Algebra R A] [Zero ι] [SetLike σ A]
-  (𝒜 : ι → σ) [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} {d : A →ₗ[R] A}
+variable {R A ι σ F : Type*} [CommSemiring R] [Ring A] [Algebra R A] [Zero ι] [SetLike σ A]
+  (𝒜 : ι → σ) [SetLike.GradedOne 𝒜] {s : ι → ℤˣ} [FunLike F A A] [LinearMapClass F R A A] {d : F}
 
 /-- A linear map satisfying a graded Leibniz rule with arbitrary unit signs `s : ι → ℤˣ`
 annihilates the image of the ground semiring. Only the unit's degree-zero membership is needed from

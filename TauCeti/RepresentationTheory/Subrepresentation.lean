@@ -16,9 +16,11 @@ Mathlib's `Subrepresentation` API records how `toSubmodule` interacts with the l
 operations — `Subrepresentation.toSubmodule_sup` and `Subrepresentation.toSubmodule_inf`, both
 `@[simp]` and both true by `rfl` — but not how it interacts with the bounded-lattice structure,
 nor how it interacts with the order relations themselves, nor how it interacts with membership.
-This file adds the six missing counterparts, in the same shape. It also records that the
-representation action on a subrepresentation is the restriction of the original action, when an
-intertwining map is zero and when it is surjective in terms of the subrepresentation its range is,
+This file adds the six missing counterparts, in the same shape, together with the carriers of
+`⊥` and `⊤` and membership in them. It also records that the
+representation action on a subrepresentation is the restriction of the original action and
+coerces to it, when an intertwining map is zero and when it is surjective in terms of the
+subrepresentation its range is,
 the inclusion of a subrepresentation as an intertwining map, that the group-algebra action on a
 subrepresentation coerces to the original action, the canonical equivalence between the module of
 the restricted representation and the corresponding submodule, and that a subrepresentation is
@@ -43,7 +45,9 @@ semisimple-module API applies to minimal subrepresentations; being about `asSubm
 the coefficients to be a commutative ring, as `Subrepresentation.asSubmodule` and
 `IsSimpleModule` between them do.  `Subrepresentation.isCompl_toSubmodule` is one more entry in
 the lattice dictionary, moving `IsCompl` across it, and stated with the rest of that dictionary at
-the typeclasses `Subrepresentation` itself asks for.  Finally,
+the typeclasses `Subrepresentation` itself asks for. The same dictionary shows that the
+subrepresentations of a representation on a module over a ring form a modular lattice
+(`Subrepresentation.instIsModularLattice`), as the submodules do.  Finally,
 `Subrepresentation.equivProdOfIsCompl` upgrades a complement to an equivalence of representations
 `ρ ≃ ρ₁ × ρ₂`: `Submodule.prodEquivOfIsCompl` supplies the linear isomorphism and each `ρ g`,
 being additive and preserving both summands, supplies the equivariance.  Being about
@@ -70,7 +74,9 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.toSubmodule_le_toSubmodule`
 * `Subrepresentation.toSubmodule_lt_toSubmodule`
 * `Subrepresentation.isCompl_toSubmodule`
+* `Subrepresentation.instIsModularLattice`
 * `Subrepresentation.toRepresentation_apply`
+* `Subrepresentation.coe_toRepresentation_apply`
 * `Representation.IntertwiningMap.eq_zero_iff_range_eq_bot`
 * `Representation.IntertwiningMap.surjective_iff_range_eq_top`
 * `Subrepresentation.subtype`
@@ -84,6 +90,7 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.isIntertwiningMap_dualRestrict`
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
+* `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
 * `Subrepresentation.instSemilatticeSupFG`
@@ -109,6 +116,22 @@ lemma toSubmodule_bot : (⊥ : Subrepresentation ρ).toSubmodule = ⊥ := rfl
 /-- The top subrepresentation carries the top subspace. -/
 @[simp]
 lemma toSubmodule_top : (⊤ : Subrepresentation ρ).toSubmodule = ⊤ := rfl
+
+/-- The bottom subrepresentation consists of the zero vector. -/
+@[simp, norm_cast]
+lemma coe_bot : ((⊥ : Subrepresentation ρ) : Set W) = {0} := Submodule.bot_coe
+
+/-- The top subrepresentation consists of every vector. -/
+@[simp, norm_cast]
+lemma coe_top : ((⊤ : Subrepresentation ρ) : Set W) = Set.univ := Submodule.top_coe
+
+/-- A vector lies in the bottom subrepresentation exactly when it is zero. -/
+@[simp, grind =]
+lemma mem_bot {v : W} : v ∈ (⊥ : Subrepresentation ρ) ↔ v = 0 := Submodule.mem_bot A
+
+/-- Every vector lies in the top subrepresentation. -/
+@[simp]
+lemma mem_top {v : W} : v ∈ (⊤ : Subrepresentation ρ) := Submodule.mem_top
 
 /-- The subrepresentation lattice of a nontrivial representation is nontrivial. -/
 instance instNontrivial [Nontrivial W] : Nontrivial (Subrepresentation ρ) :=
@@ -137,9 +160,26 @@ theorem isCompl_toSubmodule {ρ₁ ρ₂ : Subrepresentation ρ} :
   simp only [isCompl_iff, disjoint_iff, codisjoint_iff, ← toSubmodule_inf, ← toSubmodule_sup,
     ← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), toSubmodule_injective.eq_iff]
 
+/-- The subrepresentations of a representation on a module over a ring form a modular lattice, as
+the submodules they carry do. So Mathlib's modular-lattice API applies to them: in a semisimple
+representation, for instance, a subrepresentation has a complement inside any larger one
+(`IsModularLattice.exists_disjoint_and_sup_eq`). -/
+instance instIsModularLattice {A W : Type*} [Ring A] [AddCommGroup W] [Module A W]
+    {ρ : Representation A G W} : IsModularLattice (Subrepresentation ρ) :=
+  ⟨fun {_} _ {_} h ↦ by
+    rw [← toSubmodule_le_toSubmodule, toSubmodule_inf, toSubmodule_sup, toSubmodule_sup,
+      toSubmodule_inf]
+    exact IsModularLattice.sup_inf_le_assoc_of_le _ (toSubmodule_le_toSubmodule.2 h)⟩
+
 /-- The action on a subrepresentation is the restriction of the original action. -/
 theorem toRepresentation_apply (S : Subrepresentation ρ) (g : G) :
     S.toRepresentation g = (ρ g).restrict (S.apply_mem_toSubmodule g) :=
+  rfl
+
+/-- The action on a subrepresentation coerces to the original action. -/
+@[simp]
+theorem coe_toRepresentation_apply (S : Subrepresentation ρ) (g : G) (v : S.toSubmodule) :
+    (S.toRepresentation g v : W) = ρ g v :=
   rfl
 
 /-- An intertwining map is zero exactly when its range is the bottom subrepresentation. -/
@@ -275,6 +315,24 @@ theorem coe_asModuleEquivAsSubmodule_symm_apply (σ : Subrepresentation ρ)
       _root_.Representation.asModuleEquiv ρ x.val := by
   exact (coe_asModuleEquivAsSubmodule_apply σ (σ.asModuleEquivAsSubmodule.symm x)).symm.trans
     (congrArg Subtype.val (σ.asModuleEquivAsSubmodule.apply_symm_apply x))
+
+/-- **Intertwining maps out of a subrepresentation are module maps out of its submodule**: the
+`A[G]`-linear maps out of `σ.asSubmodule`, read through `Subrepresentation.asModuleEquivAsSubmodule`
+and `Representation.IntertwiningMap.equivLinearMapAsModule`. -/
+noncomputable def intertwiningMapEquivLinearMapAsSubmodule (σ : Subrepresentation ρ)
+    {U : Type*} [AddCommMonoid U] [Module A U] (τ : Representation A G U) :
+    Representation.IntertwiningMap σ.toRepresentation τ ≃ₗ[A] (σ.asSubmodule →ₗ[A[G]] τ.asModule) :=
+  (Representation.IntertwiningMap.equivLinearMapAsModule _ τ).trans
+    (LinearEquiv.congrLeft _ A σ.asModuleEquivAsSubmodule)
+
+@[simp]
+theorem intertwiningMapEquivLinearMapAsSubmodule_apply (σ : Subrepresentation ρ)
+    {U : Type*} [AddCommMonoid U] [Module A U] (τ : Representation A G U)
+    (f : Representation.IntertwiningMap σ.toRepresentation τ) (x : σ.asSubmodule) :
+    σ.intertwiningMapEquivLinearMapAsSubmodule τ f x =
+      Representation.IntertwiningMap.equivLinearMapAsModule _ τ f
+        (σ.asModuleEquivAsSubmodule.symm x) :=
+  (rfl)
 
 end AsSubmoduleEquiv
 

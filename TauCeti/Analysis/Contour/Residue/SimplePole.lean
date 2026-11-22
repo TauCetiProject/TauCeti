@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, Arend Mellendijk, OpenAI Codex
 -/
 module
 
@@ -44,21 +44,30 @@ direction one uses in practice to read off a residue.
   `(z − z₀) · f z` forces `−1 ≤ meromorphicOrderAt f z₀`, with no meromorphy hypothesis: if `f` is
   not meromorphic at `z₀` the order is `0` by convention. When `MeromorphicAt f z₀` holds, this
   says the pole is at worst simple.
-* `TauCeti.Contour.residue_mul_of_analyticAt` — simple-pole product rule: if `g` is analytic at
-  `z₀` and `−1 ≤ meromorphicOrderAt f z₀`, then
-  `residue (fun z => g z * f z) z₀ = g z₀ * residue f z₀`.
 * `TauCeti.Contour.residue_sub_inv` — `residue (fun z => (z − z₀)⁻¹) z₀ = 1`, and
   `TauCeti.Contour.residue_const_mul_sub_inv` — `residue (fun z => c · (z − z₀)⁻¹) z₀ = c`: the
   elementary simple-pole residues, read off from the converse rule.
 * `TauCeti.Contour.analyticAt_const_mul_sub_inv` — the principal part `A · (z − s)⁻¹` is analytic
   at every point where it is not a genuine pole: whenever `A = 0` or `z ≠ s`.
+* `TauCeti.Contour.residue_eq_of_eventuallyEq_div_sub` — a function of the form `φ(z)/(z − z₀)`
+  near `z₀`, with `φ` analytic at `z₀`, has residue `φ(z₀)`.
+* `MeromorphicAt.isBigO_sub_inv_smul_residue` — for a function into a complex Banach space,
+  subtracting the residue term leaves a bounded remainder whenever the meromorphic pole order is
+  at most one, including removable points.
 
 ## Provenance
 
 Adapted from the AINTLIB `LeanModularForms` project (the residue material of
 `ForMathlib/GeneralizedResidueTheory/Residue.lean`), and built on Mathlib's trailing-coefficient
 limit API (`MeromorphicAt.tendsto_nhds_meromorphicTrailingCoeffAt`) and the order/convergence
-dictionary in `Mathlib/Analysis/Meromorphic/Order.lean`.
+dictionary in `Mathlib/Analysis/Meromorphic/Order.lean`. The `div_sub` residue lemma follows the
+lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMFMathlib/Analysis/Complex/VerticalResidues.lean`.
+
+The bounded-remainder argument adapts `simplePole_sub_residue_isBigO_one` from
+[Arend Mellendijk, PrimeNumberTheoremAnd, ResidueCalcOnRectangles.lean]
+(https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/b97f1b43583156849d48c5615fa39a7090bf9133/PrimeNumberTheoremAnd/ResidueCalcOnRectangles.lean),
+using the native residue and allowing a zero analytic numerator.
 
 ## References
 
@@ -70,7 +79,7 @@ public section
 
 noncomputable section
 
-open Filter Topology
+open Asymptotics Filter Topology
 
 namespace TauCeti.Contour
 
@@ -167,28 +176,6 @@ theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
   exact tendsto_nhds_unique
     (tendsto_sub_mul_nhds_residue hf (neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul h)) h
 
-/-- **Simple-pole product rule with an analytic weight.** Multiplying a function `f` with at most a
-simple pole at `z₀` (`−1 ≤ meromorphicOrderAt f z₀`) by an analytic factor `g` scales the residue
-at `z₀` by `g z₀`. No meromorphy hypothesis on `f` is needed: when `f` is not meromorphic at `z₀`,
-both sides vanish. -/
-theorem residue_mul_of_analyticAt {g : ℂ → ℂ} (hg : AnalyticAt ℂ g z₀)
-    (hord : -1 ≤ meromorphicOrderAt f z₀) :
-    residue (fun z => g z * f z) z₀ = g z₀ * residue f z₀ := by
-  by_cases hf : MeromorphicAt f z₀
-  · have hlim : Tendsto (fun z => (z - z₀) * (g z * f z)) (𝓝[≠] z₀) (𝓝 (g z₀ * residue f z₀)) :=
-      ((hg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).mul
-        (tendsto_sub_mul_nhds_residue hf hord)).congr fun z => by ring
-    exact residue_eq_of_tendsto_sub_mul (hg.meromorphicAt.mul hf) hlim
-  · rw [residue_of_not_meromorphicAt hf, mul_zero]
-    rcases hg.eventually_eq_zero_or_eventually_ne_zero with h0 | hne
-    · rw [residue_congr_nhdsNE (g := fun _ => (0 : ℂ))
-        ((h0.filter_mono nhdsWithin_le_nhds).mono fun z hz => by simp [hz])]
-      exact residue_eq_zero_of_analyticAt analyticAt_const
-    · refine residue_of_not_meromorphicAt fun hgf => hf ?_
-      refine (hg.meromorphicAt.inv.mul hgf).congr ?_
-      filter_upwards [hne] with z hz
-      simp [inv_mul_cancel_left₀ hz]
-
 /-- The reciprocal `(· − z₀)⁻¹` of the simple factor `(· − z₀)` is meromorphic at `z₀`. -/
 theorem meromorphicAt_sub_inv (z₀ : ℂ) : MeromorphicAt (fun z => (z - z₀)⁻¹) z₀ :=
   ((analyticAt_id.sub analyticAt_const).meromorphicAt).inv
@@ -239,6 +226,32 @@ theorem analyticAt_const_mul_sub_inv {A s z : ℂ} (h : A = 0 ∨ z ≠ s) :
   · simpa using analyticAt_const
   · fun_prop (disch := exact sub_ne_zero.2 h)
 
+/-- At a simple pole written as `F(z) = φ(z)/(z - z₀)` with `φ` analytic at `z₀`, the residue of
+`F` is `φ(z₀)`. Removable singularities are included, with `φ(z₀) = 0`. -/
+theorem residue_eq_of_eventuallyEq_div_sub {F φ : ℂ → ℂ} (hφ : AnalyticAt ℂ φ z₀)
+    (hF : ∀ᶠ z in 𝓝[≠] z₀, F z = φ z / (z - z₀)) : residue F z₀ = φ z₀ := by
+  rw [residue_congr_nhdsNE hF]
+  simpa using residue_div_sub_pow_of_analyticAt hφ 0
+
 end TauCeti.Contour
+
+open TauCeti.Contour in
+/-- Subtracting the simple residue term from a meromorphic function into a complex Banach space
+with pole order at most one leaves a bounded remainder on a punctured neighbourhood. This includes
+zero residue and removable points, and imposes no condition on the function's value at the centre.
+Completeness is needed because `TauCeti.Contour.residue` is defined to be zero for incomplete
+codomains, even at a nonzero simple pole. -/
+theorem MeromorphicAt.isBigO_sub_inv_smul_residue {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
+    (horder : ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f z₀) :
+    (f - fun z ↦ (z - z₀)⁻¹ • residue f z₀) =O[𝓝[≠] z₀] (1 : ℂ → ℂ) := by
+  obtain ⟨g, hg, hfg⟩ := exists_analyticAt_eventuallyEq_zpow_smul hf horder
+  have hres : residue f z₀ = g z₀ := by
+    simpa using residue_eq_of_eventuallyEq_zpow_smul (n := -1) (by decide) hg hfg
+  have hbound := hg.differentiableAt.hasDerivAt.tendsto_slope.isBigO_one ℂ
+  refine hbound.congr' ?_ .rfl
+  filter_upwards [hfg] with z hz
+  simp only [Pi.sub_apply, slope_def_module, zpow_neg_one] at hz ⊢
+  rw [hz, hres, smul_sub]
 
 end

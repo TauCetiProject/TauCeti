@@ -7,13 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
-import Mathlib.Analysis.Convex.Jensen
 
 /-!
 # Elementary Gamma upper bounds on the positive real axis
-
-Convexity of `Real.Gamma` on `(0, ∞)` together with `Γ(1) = Γ(2) = 1` gives `Γ(x) ≤ 1` on `[1, 2]`,
-and the functional equation `Γ(x + 1) = x Γ(x)` transfers this to `Γ(x) ≤ x⁻¹` on `(0, 1]`.
 
 Monotonicity and the factorial values bound Gamma by `exp (O(x log x))`.
 The recurrence extends this to every half-line with positive lower endpoint.
@@ -22,14 +18,6 @@ are bounded by `exp (C (1+R) log (2+R))` uniformly for `R ≥ 0`.
 
 These estimates suffice for order-one growth of split Mellin integrals.
 They require no sectorial asymptotic expansion.
-
-## Main results
-
-* `Real.Gamma_le_one`: `Γ(x) ≤ 1` for `x ∈ [1, 2]`.
-* `Real.Gamma_le_inv`: `Γ(x) ≤ x⁻¹` for `x ∈ (0, 1]`.
-* `Real.Gamma_le_add_one_rpow`, `Real.Gamma_le_exp_mul_log`, `Real.Gamma_le_exp_mul_log_add`,
-  `Real.exists_rpow_mul_Gamma_div_le_exp_mul_log`: factorial-order upper bounds on `[2, ∞)` and
-  positive half-lines.
 
 ## References
 
@@ -41,18 +29,6 @@ public section
 open Real Set
 
 namespace Real
-
-/-- By convexity of `Γ` on `(0, ∞)` and `Γ(1) = Γ(2) = 1`, `Γ(x) ≤ 1` on `[1, 2]`. -/
-theorem Gamma_le_one {x : ℝ} (hx1 : 1 ≤ x) (hx2 : x ≤ 2) : Gamma x ≤ 1 := by
-  have hmax := convexOn_Gamma.le_max_of_mem_Icc (x := 1) (y := 2) (z := x)
-    zero_lt_one two_pos ⟨hx1, hx2⟩
-  simpa [Gamma_one, Gamma_two] using hmax
-
-/-- On `(0, 1]`, the real Gamma function satisfies `Γ(x) ≤ x⁻¹`. -/
-theorem Gamma_le_inv {x : ℝ} (hx0 : 0 < x) (hx1 : x ≤ 1) : Gamma x ≤ x⁻¹ := by
-  have h2 : Gamma (x + 1) ≤ 1 := Gamma_le_one (by linarith) (by linarith)
-  rw [Gamma_add_one hx0.ne', ← le_div_iff₀' hx0, one_div] at h2
-  exact h2
 
 /-- For real arguments at least two, Gamma is bounded by the next power of the argument. -/
 theorem Gamma_le_add_one_rpow {x : ℝ} (hx : 2 ≤ x) :

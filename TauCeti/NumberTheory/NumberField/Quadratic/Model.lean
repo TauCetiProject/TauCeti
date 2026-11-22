@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.FundamentalDiscriminant
 public import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
-import TauCeti.Algebra.Squarefree
 
 /-!
 # The ring of integers of the model `ℚ(√d)`
@@ -33,9 +31,7 @@ Through the equivalences, the field norm and trace of an algebraic integer becom
 forms of the integral models, an element of `ℚ(√d)` is integral exactly when its coordinates pass
 an explicit integrality test, and the field discriminant is `4d`, respectively `d`. For `d < 0` the
 distinguished complex embedding `QuadraticAlgebra.complexEmbedding` maps the ring of integers onto
-the lattice `ℤ + ℤ √(-d) i`, respectively `ℤ + ℤ (1 + √(-d) i)/2`. Conversely, every fundamental
-discriminant `D ≠ 1` arises as the discriminant of `QuadraticAlgebra ℚ d 0` for a squarefree
-nonsquare integer `d` of the same sign.
+the lattice `ℤ + ℤ √(-d) i`, respectively `ℤ + ℤ (1 + √(-d) i)/2`.
 
 ## Main definitions and results
 
@@ -53,9 +49,6 @@ nonsquare integer `d` of the same sign.
   of the model satisfies the hypotheses of the intrinsic quadratic API, and
   `ringOfIntegersEquiv_symm_omega`, `ringOfIntegersEquivHalf_symm_omega` identify the generators
   of the integral models with `NumberField.integralSqrt` and `NumberField.halfGen`.
-* `Int.IsFundamentalDiscr.exists_squarefree_discr_quadraticAlgebra_eq`: every fundamental
-  discriminant `D ≠ 1` is the field discriminant of `QuadraticAlgebra ℚ d 0` for a squarefree
-  nonsquare integer `d` of the same sign as `D`.
 
 ## References
 
@@ -364,27 +357,3 @@ theorem discr_eq_of_mod_four_eq_one : NumberField.discr (QuadraticAlgebra ℚ (d
 end ModFourEqOne
 
 end QuadraticAlgebra
-
-namespace Int.IsFundamentalDiscr
-
-/-- **Realization of fundamental discriminants by squarefree quadratic models.** Every fundamental
-discriminant `D ≠ 1` is the field discriminant of `QuadraticAlgebra ℚ d 0` for a squarefree
-nonsquare integer `d` of the same sign as `D`. -/
-theorem exists_squarefree_discr_quadraticAlgebra_eq {D : ℤ} (hD : Int.IsFundamentalDiscr D)
-    (hD1 : D ≠ 1) :
-    ∃ d : ℤ, Squarefree d ∧ (D < 0 ↔ d < 0) ∧
-      ∃ (_ : Fact (¬ IsSquare d)), NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) = D := by
-  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨hmod1, hsf⟩ | ⟨hmod0, hmsf, hm4⟩
-  · have hns : Fact (¬ IsSquare D) :=
-      ⟨mt Rat.isSquare_intCast_iff.mpr (not_isSquare_intCast_of_squarefree_of_ne_one hsf hD1)⟩
-    exact ⟨D, hsf, Iff.rfl, hns, QuadraticAlgebra.discr_eq_of_mod_four_eq_one hsf hmod1⟩
-  · set m : ℤ := D / 4
-    have hDm : D = 4 * m := (Int.mul_ediv_cancel' (Int.dvd_of_emod_eq_zero hmod0)).symm
-    have hm_ne1 : m ≠ 1 := by omega
-    have hm_mod : m % 4 ≠ 1 := by omega
-    have hns : Fact (¬ IsSquare m) :=
-      ⟨mt Rat.isSquare_intCast_iff.mpr (not_isSquare_intCast_of_squarefree_of_ne_one hmsf hm_ne1)⟩
-    refine ⟨m, hmsf, by omega, hns, ?_⟩
-    rw [QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one hmsf hm_mod, ← hDm]
-
-end Int.IsFundamentalDiscr

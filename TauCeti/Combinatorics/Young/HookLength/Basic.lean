@@ -40,6 +40,8 @@ for such a junk value carry the hypothesis `c ∈ μ` explicitly.
 * `YoungDiagram.hookLength_eq_one_iff`: a cell has hook length `1` exactly when neither the
   cell to its right nor the cell below it lies in the diagram; for a cell of the diagram this says
   that it is a corner, which is `YoungDiagram.isCorner_iff_hookLength_eq_one`.
+* `YoungDiagram.abs_cellContent_sub_lt_card`: two cells of a diagram have contents differing by
+  less than the number of cells, a consequence of the hook of the cell `(0, 0)`.
 * `YoungDiagram.prod_hookLength_eq_factorial_of_colLen_le_one`: the hook lengths of a
   one-row diagram multiply to `μ.card !`.
 
@@ -195,6 +197,22 @@ theorem rowLen_zero_add_colLen_zero_le : μ.rowLen 0 + μ.colLen 0 ≤ μ.card +
       rw [← Nat.le_zero, ← not_lt, ← mem_iff_lt_colLen, mem_iff_lt_rowLen, h]
       exact Nat.lt_irrefl 0
     omega
+
+/-- Two cells of a Young diagram have contents differing by less than the number of cells: the
+difference is at most the hook length of the cell `(0, 0)` minus one. -/
+theorem abs_cellContent_sub_lt_card (hc : c ∈ μ) {d : ℕ × ℕ} (hd : d ∈ μ) :
+    |cellContent c - cellContent d| < μ.card := by
+  have hc₁ : c.2 < μ.rowLen 0 :=
+    mem_iff_lt_rowLen.mp (μ.up_left_mem (Nat.zero_le c.1) le_rfl hc)
+  have hc₂ : c.1 < μ.colLen 0 :=
+    mem_iff_lt_colLen.mp (μ.up_left_mem le_rfl (Nat.zero_le c.2) hc)
+  have hd₁ : d.2 < μ.rowLen 0 :=
+    mem_iff_lt_rowLen.mp (μ.up_left_mem (Nat.zero_le d.1) le_rfl hd)
+  have hd₂ : d.1 < μ.colLen 0 :=
+    mem_iff_lt_colLen.mp (μ.up_left_mem le_rfl (Nat.zero_le d.2) hd)
+  have := rowLen_zero_add_colLen_zero_le μ
+  rw [abs_sub_lt_iff, cellContent_def, cellContent_def]
+  omega
 
 /-! ### Transposition -/
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
-import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 
 /-!
@@ -22,9 +21,7 @@ real and positive there. For nontrivial `χ` the continued `L`-function is conti
 
 Positivity is stated with `ComplexOrder`, where `0 < z` means that `z` is a positive real number.
 The value `L(1, χ)` is the one that enters the analytic class number formula of a quadratic field,
-where it is compared with real quantities. Finiteness of the family of characters of level up to a
-fixed bound `Q` yields a uniform positive lower bound on `Re L(1, χ)` across all nonprincipal
-quadratic characters of positive level `M ≤ Q`.
+where it is compared with real quantities.
 
 To the left of `1` the continued `L`-function is still real on the real axis, so by the
 intermediate value theorem it stays positive until its first real zero. This is the sign
@@ -42,8 +39,6 @@ information about possible exceptional zeros used in Siegel's theorem.
   `DirichletCharacter.LFunction_nonneg_of_forall_ne_zero`: positivity persists to the left of `1`
   up to the first real zero. If `L(σ, χ) ≠ 0` for `β ≤ σ < 1`, then `0 < L(β, χ)`; if only
   `L(σ, χ) ≠ 0` for `β < σ < 1`, then `0 ≤ L(β, χ)`.
-* `TauCeti.DirichletCharacter.exists_pos_forall_le_LFunction_one_re_of_le`: uniform positive lower
-  bound for `Re L(1, χ)` over all nonprincipal quadratic characters of positive level `M ≤ Q`.
 
 ## References
 
@@ -149,36 +144,3 @@ theorem LFunction_nonneg_of_forall_ne_zero (hχ : χ.IsQuadratic) (hχ₁ : χ �
   · exact h σ ⟨h', hσ.2⟩
 
 end DirichletCharacter
-
-namespace TauCeti.DirichletCharacter
-
-/-- **Uniform positive lower bound for `Re L(1, χ)` over a finite family of quadratic characters.**
-For any level bound `Q`, there exists `c > 0` such that every nonprincipal quadratic Dirichlet
-character `χ` of positive level `M ≤ Q` satisfies `c ≤ Re L(1, χ)`. -/
-theorem exists_pos_forall_le_LFunction_one_re_of_le (Q : ℕ) :
-    ∃ c : ℝ, 0 < c ∧ ∀ (M : ℕ) [NeZero M], M ≤ Q → ∀ (χ : DirichletCharacter ℂ M),
-      χ.IsQuadratic → χ ≠ 1 → c ≤ (χ.LFunction 1).re := by
-  classical
-  induction Q with
-  | zero =>
-    exact ⟨1, one_pos, fun M _ hM _ _ _ ↦ absurd (Nat.eq_zero_of_le_zero hM) (NeZero.ne M)⟩
-  | succ Q ih =>
-    obtain ⟨c₀, hc₀, hih⟩ := ih
-    set S : Finset (DirichletCharacter ℂ (Q + 1)) :=
-      Finset.univ.filter fun χ ↦ χ.IsQuadratic ∧ χ ≠ 1
-    by_cases hS : S.Nonempty
-    · set c₁ : ℝ := S.inf' hS fun χ ↦ (χ.LFunction 1).re
-      have hc₁ : 0 < c₁ := (Finset.lt_inf'_iff hS).mpr fun χ hχ ↦ by
-        obtain ⟨hχq, hχ1⟩ := (Finset.mem_filter.mp hχ).2
-        exact (Complex.pos_iff.mp (DirichletCharacter.LFunction_apply_one_pos hχq hχ1)).1
-      refine ⟨min c₀ c₁, lt_min hc₀ hc₁, fun M _ hM χ hχq hχ1 ↦ ?_⟩
-      rcases Nat.of_le_succ hM with hle | rfl
-      · exact (min_le_left _ _).trans (hih M hle χ hχq hχ1)
-      · exact (min_le_right _ _).trans
-          (Finset.inf'_le _ (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχq, hχ1⟩))
-    · refine ⟨c₀, hc₀, fun M _ hM χ hχq hχ1 ↦ ?_⟩
-      rcases Nat.of_le_succ hM with hle | rfl
-      · exact hih M hle χ hχq hχ1
-      · exact absurd ⟨χ, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hχq, hχ1⟩⟩ hS
-
-end TauCeti.DirichletCharacter
