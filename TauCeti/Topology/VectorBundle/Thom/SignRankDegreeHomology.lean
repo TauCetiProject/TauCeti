@@ -815,6 +815,7 @@ def thomPairTwistedFiberClass (b : B) :
       (finrank ℝ F) (signFiberClassOver (E := E) hι ω γ (mem_univ b)))
 
 /-- Reversing the orientation `ω` of the model fibre negates the twisted fibre classes. -/
+@[simp]
 theorem thomPairTwistedFiberClass_neg (b : B) :
     thomPairTwistedFiberClass E hι (-ω) γ b = -thomPairTwistedFiberClass E hι ω γ b := by
   simp only [thomPairTwistedFiberClass, signFiberClassOver, signFiberClass_neg, map_neg]
