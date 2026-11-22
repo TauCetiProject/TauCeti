@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.Measure.BaseChange.Basic
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Algebra
-import TauCeti.NumberTheory.Padics.Measure.IntegralUnitBall
 
 /-!
 # Compatibility of finite free base change with bounded coefficient extension
@@ -38,18 +37,11 @@ This file proves that these constructions are compatible without assuming contin
   `ContinuousMonoidHom.extendedCharacterRingHom` decomposes correspondingly in any finite `R`-basis
   `b` of `O` (`ContinuousMonoidHom.extendedCharacterRingHom_eq_sum_basis`).
 
-Combined with `@[simp]` lemmas `AbstractMeasure.baseChangeLinearEquiv_tmul`,
-`AbstractMeasure.coe_baseChangeAlgEquiv`, `AbstractMeasure.extendCoefficients_smul`,
-`AbstractMeasure.amiceTransform_extendScalars`, and
-`AbstractMeasure.amiceTransform_extendCoefficients_algebraMap`, `simp` automatically simplifies
-coefficient extensions and character evaluations on base-changed pure tensors. For the corresponding
-Amice-transform identity of power series, use `ext n <;> simp` to simplify each coefficient.
-Character integration allows a complete ultrametric normed commutative ring target and any
-uniform bound `∀ a, ‖j a‖ ≤ B`. The Amice simplification applies to measures on `X = ℤ_[p]`
-with `O` finite over `ℤ_[p]` and `K` a complete ultrametric normed field. Both coefficient
-rings carry continuous `ℤ_[p]`-algebra actions and `j` is a `ℤ_[p]`-algebra map with image in
-the closed unit ball. The `algebraMap O K` version uses the compatible scalar tower
-`ℤ_[p] → O → K`. The base-change equivalence on pure tensors also uses freeness of `O`.
+Use `simp` with `AbstractMeasure.baseChangeLinearEquiv_tmul`,
+`AbstractMeasure.coe_baseChangeAlgEquiv`, and `AbstractMeasure.extendCoefficients_smul` to
+evaluate coefficient extension and character integration on base-changed pure tensors.
+Examples for `ℤ_[p]`-algebras, including the Amice-transform calculation, are in
+`TauCeti/NumberTheory/Padics/Measure/ExtendCoefficients/Examples.lean`.
 
 ## References
 
@@ -61,7 +53,6 @@ the closed unit ball. The `algebraMap O K` version uses the compatible scalar to
 public noncomputable section
 
 open ContinuousMap
-open scoped PowerSeries TensorProduct
 
 namespace AbstractMeasure
 
@@ -147,39 +138,3 @@ theorem extendedCharacterRingHom_eq_sum_basis {ι : Type*} [Fintype ι] (b : Mod
   simpa using h
 
 end ContinuousMonoidHom
-
-namespace TauCeti
-
-open AbstractMeasure _root_.ContinuousMonoidHom
-
-section Examples
-
-variable {p : ℕ} [Fact p.Prime] {O : Type*} [NormedCommRing O] [Algebra ℤ_[p] O]
-  [ContinuousSMul ℤ_[p] O] [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
-  {K : Type*} [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
-
-/-! Sanity checks on Dirac tensors, character evaluations, and Amice transforms. -/
-
-example (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (a : O) (x : ℤ_[p]) :
-    extendCoefficients j hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x)) =
-      j a • dirac K x := by
-  simp
-
-example {G : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
-    [TotallyDisconnectedSpace G] [Monoid G] [ContinuousMul G]
-    (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (a : O) (x : G) :
-    χ.extendedCharacterRingHom j hj (baseChangeAlgEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x)) =
-      j a * χ x := by
-  simp
-
-example {L : Type*} [NormedField L] [CompleteSpace L] [IsUltrametricDist L]
-    [Algebra ℤ_[p] L] [ContinuousSMul ℤ_[p] L] (j : O →ₐ[ℤ_[p]] L) (hj : ∀ a, ‖j a‖ ≤ 1)
-    (a : O) (μ : D(ℤ_[p], ℤ_[p])) :
-    (extendCoefficients (j : O →+* L) hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] μ))).amiceTransform =
-      j a • PowerSeries.map (algebraMap ℤ_[p] L) μ.amiceTransform := by
-  ext n
-  simp
-
-end Examples
-
-end TauCeti

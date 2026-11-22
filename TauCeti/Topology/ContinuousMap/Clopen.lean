@@ -85,7 +85,9 @@ private theorem continuous_zeroExtendClopenFn (s : Clopens X) :
     · rintro ⟨hf, hzero⟩ x hx
       by_cases hxs : x ∈ s
       · rw [zeroExtendClopenFn_apply_mem s f hxs]
-        exact hf (show (⟨x, hxs⟩ : s) ∈ Subtype.val ⁻¹' K from hx)
+        apply hf
+        rw [Set.mem_preimage, Subtype.coe_mk]
+        exact hx
       · rw [zeroExtendClopenFn_apply_not_mem s f hxs]
         exact hzero x hx hxs
   rw [heq]

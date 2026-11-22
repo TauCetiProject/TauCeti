@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.DiscreteQuotient
+public import TauCeti.NumberTheory.Padics.Measure.CoefficientRestriction
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
-import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.Analysis.Normed.Operator.Extend
 import TauCeti.Topology.ContinuousMap.LocallyConstant
@@ -35,9 +35,11 @@ the `K`-valued measures of operator norm at most `1`: such a measure sends test 
 `j ∘ f` into the closed unit ball, hence into the image of `j`.
 
 A uniform bound on `‖j a‖` is needed. Give `O = ℚ_p` the norm `max(1, |a|_p)` for `a ≠ 0`, so
-that its topology is discrete. Then Haar averaging `f ↦ p^{-n} Σ_{a mod p^n} f(a)` is an
-`O`-valued measure on `ℤ_p` with `μ(1_{p^n ℤ_p}) = p^{-n}`, and for `j = id` into the usual `ℚ_p`
-no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integral `1`.
+that its topology is discrete. For each continuous test `f`, choose `n` so that `f` factors
+through `ℤ/p^nℤ`. The Haar average `p^{-n} Σ_{a mod p^n} f(a)` is unchanged on further refinement
+because every summand is repeated equally often and the normalizing factor compensates.
+This defines an `O`-valued measure on `ℤ_p` with `μ(1_{p^n ℤ_p}) = p^{-n}`. For `j = id` into the
+usual `ℚ_p`, no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integral `1`.
 
 The dense-extension construction and its norm proof follow the formal pattern of
 `TauCeti.ofUnitCoordinates` and `TauCeti.ofUnitCoordinates_norm_le` in
@@ -94,56 +96,6 @@ open ContinuousMap
 namespace AbstractMeasure
 
 variable {X : Type*} [TopologicalSpace X]
-
-/-- Restrict a measure through a coefficient embedding when every transported test has its
-integral in the coefficient image. -/
-theorem _root_.RingHom.exists_apply_comp_eq_of_mem_range {O K : Type*}
-    [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
-    [CommRing K] [TopologicalSpace K] [IsTopologicalRing K]
-    (j : O →+* K) (hje : Topology.IsEmbedding j)
-    (ν : D(X, K))
-    (hmem : ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j) :
-    ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
-  let := j.toAlgebra
-  have halg : algebraMap O K = j := j.algebraMap_toAlgebra
-  have hlin : ⇑(Algebra.linearMap O K) = j := by
-    funext a
-    rw [Algebra.linearMap_apply, halg]
-  have hlinj : Function.Injective (Algebra.linearMap O K) := by
-    rw [hlin]
-    exact hje.injective
-  let : ContinuousSMul O K := continuousSMul_of_algebraMap O K (by rw [halg]; exact hje.continuous)
-  have hlin_cont : Continuous (Algebra.linearMap O K) := by
-    rw [hlin]
-    exact hje.continuous
-  let J : O →L[O] K := ⟨Algebra.linearMap O K, hlin_cont⟩
-  have hJ : ⇑J = j := by
-    rw [ContinuousLinearMap.coe_mk', hlin]
-  let F : C(X, O) →L[O] K :=
-    ((toCLMEquiv ν).restrictScalars O).comp (J.compLeftContinuous O X)
-  have hF (f : C(X, O)) : F f = ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) := by
-    have hcomp : J.compLeftContinuous O X f = (⟨j, hje.continuous⟩ : C(O, K)).comp f := by
-      have hcomp' := (ContinuousLinearMap.compLeftContinuous_apply O X J f).trans
-        (AddMonoidHom.compLeftContinuous_apply X J.toLinearMap.toAddMonoidHom J.continuous f)
-      rw [hcomp']
-      ext x
-      simp only [ContinuousMap.coe_mk, ContinuousMap.comp_apply, LinearMap.toAddMonoidHom_coe,
-        ContinuousLinearMap.coe_coe, hJ]
-    simp only [F, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-      coe_toCLMEquiv, hcomp]
-  have hmem' (f : C(X, O)) : F.toLinearMap f ∈ (Algebra.linearMap O K).range := by
-    rw [LinearMap.mem_range]
-    obtain ⟨a, ha⟩ := hmem f
-    exact ⟨a, by rw [hlin, ContinuousLinearMap.coe_coe, hF]; exact ha⟩
-  let L := F.toLinearMap.codRestrictOfInjective (Algebra.linearMap O K) hlinj hmem'
-  have hLj (f : C(X, O)) : j (L f) = F f := by
-    rw [← hlin]
-    exact LinearMap.codRestrictOfInjective_comp_apply F.toLinearMap (Algebra.linearMap O K)
-      hlinj hmem' f
-  have hL : Continuous L := hje.continuous_iff.mpr <| by
-    simpa only [Function.comp_def, hLj] using F.continuous
-  exact ⟨toCLMEquiv.symm ⟨L, hL⟩, fun f ↦ by
-    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', hLj, hF]⟩
 
 section TopologicalRing
 
@@ -581,28 +533,5 @@ theorem existsUnique_apply_comp_eq_iff_norm_le_one (hje : Topology.IsEmbedding j
     exact ⟨μ, hμ, fun μ' hμ' ↦ ext fun f ↦ hje.injective ((hμ' f).symm.trans (hμ f))⟩
 
 end OperatorNorm
-
-section Examples
-
-variable {p : ℕ} [Fact p.Prime]
-
-/- The arithmetic case: coefficients extended from `ℤ_p` to `ℚ_p`. The extension of a Dirac measure
-evaluates test functions at its point, and it does not forget multiplicities. -/
-
-example (x : ℤ_[p]) (f : C(ℤ_[p], ℚ_[p])) :
-    extendCoefficients PadicInt.Coe.ringHom (by simpa using PadicInt.norm_le_one)
-      (dirac ℤ_[p] x) f = f x := by
-  simp
-
-example (x : ℤ_[p]) :
-    extendCoefficients PadicInt.Coe.ringHom (by simpa using PadicInt.norm_le_one)
-        (dirac ℤ_[p] x + dirac ℤ_[p] x) ≠
-      extendCoefficients PadicInt.Coe.ringHom (by simpa using PadicInt.norm_le_one)
-        (dirac ℤ_[p] x) := by
-  intro h
-  have := congrArg (fun ν : D(ℤ_[p], ℚ_[p]) ↦ ν 1) h
-  norm_num at this
-
-end Examples
 
 end AbstractMeasure

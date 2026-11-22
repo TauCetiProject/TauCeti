@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.Measure.Clopen.Basic
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
+import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 
 /-!
 # Topologies on clopen measure decompositions
@@ -38,7 +39,8 @@ variable {X R E : Type*} [TopologicalSpace X]
 
 section Weak
 
-variable [NormedCommRing R] [NormedAddCommGroup E] [Module R E] [ContinuousSMul R E]
+variable [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+  [NormedAddCommGroup E] [Module R E] [ContinuousSMul R E]
 
 /-- Restriction to a clopen subset is continuous for the weak measure topologies. -/
 theorem continuous_restrictClopen_weak (s : Clopens X) :
@@ -46,10 +48,8 @@ theorem continuous_restrictClopen_weak (s : Clopens X) :
       (WeakTopology (X := s) (R := R) (E := E)) (restrictClopen s) := by
   let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
   let : TopologicalSpace (AbstractMeasure s R E) := WeakTopology
-  have heval : Continuous (fun μ : AbstractMeasure X R E ↦ fun f : C(X, R) ↦ μ f) :=
-    continuous_induced_dom
-  refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
-  exact ((continuous_apply (zeroExtendClopen R s f)).comp heval).congr fun μ ↦
+  refine (continuous_weak_iff _).mpr fun f ↦ ?_
+  exact (continuous_apply_weak (zeroExtendClopen R s f)).congr fun μ ↦
     (restrictClopen_apply s μ f).symm
 
 /-- Inclusion of measures from a clopen subset is a closed embedding for the weak topologies.
@@ -61,7 +61,7 @@ theorem isClosedEmbedding_map_subtype_weak (s : Clopens X) :
   let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
   let : TopologicalSpace (AbstractMeasure s R E) := WeakTopology
   have heval : Continuous (fun μ : AbstractMeasure X R E ↦ fun f : C(X, R) ↦ μ f) :=
-    continuous_induced_dom
+    continuous_pi fun f ↦ continuous_apply_weak f
   let : T2Space (AbstractMeasure X R E) :=
     T2Space.of_injective_continuous DFunLike.coe_injective heval
   exact Function.LeftInverse.isClosedEmbedding
@@ -81,15 +81,11 @@ theorem isHomeomorph_clopenDecomposition_weak (s : Clopens X) :
   constructor
   · exact ((continuous_restrictClopen_weak s).prodMk
       (continuous_restrictClopen_weak sᶜ)).congr fun μ ↦ (clopenDecomposition_apply s μ).symm
-  · have heval (t : Clopens X) :
-        @Continuous _ _ (WeakTopology (X := t) (R := R) (E := E)) inferInstance
-          (fun μ : AbstractMeasure t R E ↦ fun f : C(t, R) ↦ μ f) :=
-      continuous_induced_dom
-    refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
-    exact (((continuous_apply (f.comp (subtypeVal (s : Set X)))).comp
-      ((heval s).comp continuous_fst)).add
-      ((continuous_apply (f.comp (subtypeVal ((sᶜ : Clopens X) : Set X)))).comp
-        ((heval sᶜ).comp continuous_snd))).congr fun μ ↦ by
+  · refine (continuous_weak_iff _).mpr fun f ↦ ?_
+    exact (((continuous_apply_weak (f.comp (subtypeVal (s : Set X)))).comp
+      continuous_fst).add
+      ((continuous_apply_weak (f.comp (subtypeVal ((sᶜ : Clopens X) : Set X)))).comp
+        continuous_snd)).congr fun μ ↦ by
           simp only [Pi.add_apply, Function.comp_apply, clopenDecomposition_symm_apply,
             _root_.add_apply, map_apply]
 

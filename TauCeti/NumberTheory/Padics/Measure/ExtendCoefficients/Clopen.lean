@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Basic
 public import TauCeti.NumberTheory.Padics.Measure.Clopen.Basic
-import Mathlib.NumberTheory.Padics.ProperSpace
 
 /-!
 # Coefficient extension and clopen restriction
@@ -72,20 +71,6 @@ theorem extendCoefficients_restrictClopen (s : Clopens X) (μ : D(X, O)) :
   rw [hO, hK, extendCoefficients_apply_locallyConstant]
 
 section Examples
-
-variable {p : ℕ} [Fact p.Prime]
-
--- On the two-point space the restriction keeps the coefficient at zero
--- and discards the atom outside the clopen.
-example :
-    let s : Clopens (Fin 2) := ⟨{0}, isClopen_discrete {0}⟩
-    restrictClopen s
-        (extendCoefficients PadicInt.Coe.ringHom (by simpa using PadicInt.norm_le_one)
-          (2 • dirac ℤ_[p] (0 : Fin 2) - 3 • dirac ℤ_[p] 1)) =
-      2 • dirac ℚ_[p] ⟨0, by simp⟩ := by
-  dsimp only
-  rw [← extendCoefficients_restrictClopen]
-  simp
 
 -- Empty clopens require neither a chosen point nor a nonempty subtype.
 example (μ : D(X, O)) :

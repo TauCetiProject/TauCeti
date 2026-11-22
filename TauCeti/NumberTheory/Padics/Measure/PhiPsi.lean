@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.Division
 public import TauCeti.NumberTheory.Padics.Measure.Moments
 public import TauCeti.NumberTheory.Padics.Measure.Multiples
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
+import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
@@ -32,7 +33,10 @@ substitution `T ↦ (1 + T) ^ p - 1`, the coefficientwise form of
 `(1 + T) ^ (p x) = ((1 + T) ^ p) ^ x`.
 
 The algebraic statements are made on `D(ℤ_p, R)` for a topological commutative ring `R`.
-The Amice-transform statement also uses an `ℤ_p`-algebra structure on `R`.
+The Amice-transform substitution formula for `φ` also uses an `ℤ_p`-algebra structure on `R`
+with continuous scalar action. The series operator `psiSeries`, its left-inverse formula, and
+the series projector formula for restriction to units use the integral Amice equivalence and
+are stated only for coefficients in `ℤ_p`.
 Over a nontrivially normed field, `φ` preserves and `ψ` does not increase the continuous-dual
 norm.
 
@@ -264,12 +268,10 @@ theorem continuous_psiMeasure_weak :
     @Continuous _ _ (WeakTopology (X := ℤ_[p]) (R := R) (E := R))
       (WeakTopology (X := ℤ_[p]) (R := R) (E := R)) (psiMeasure (p := p) (R := R)) := by
   let : TopologicalSpace D(ℤ_[p], R) := WeakTopology
-  have heval : Continuous (fun μ : D(ℤ_[p], R) ↦ fun f : C(ℤ_[p], R) ↦ μ f) :=
-    continuous_induced_dom
-  refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
-  simpa only [psiMeasure_apply, Function.comp_def] using
-    (continuous_apply (pMultiplesIndicator (p := p) (R := R) *
-      f.comp (PadicInt.divideByP p))).comp heval
+  refine (continuous_weak_iff _).mpr fun f ↦ ?_
+  simpa only [psiMeasure_apply] using
+    continuous_apply_weak (pMultiplesIndicator (p := p) (R := R) *
+      f.comp (PadicInt.divideByP p))
 
 end WeakTopology
 
