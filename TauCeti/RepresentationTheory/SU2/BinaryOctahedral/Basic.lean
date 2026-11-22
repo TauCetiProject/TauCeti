@@ -380,13 +380,26 @@ instance : (binaryTetrahedralSubgroup.subgroupOf binaryOctahedralSubgroup).Norma
 
 /-! ### Generators, coset action, and presentation -/
 
-@[simp]
-theorem binaryDihedralRotation_four_mem_binaryOctahedralSubgroup :
-    binaryDihedralRotation 4 ∈ binaryOctahedralSubgroup := by
-  refine .inr ⟨![1, 1, 0, 0], by decide, ?_⟩
+private theorem binaryDihedralRotation_four_exists_cosetCoords :
+    ∃ w ∈ binaryOctahedralCosetCoords,
+      ((binaryDihedralRotation 4 : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
+        toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ := by
+  refine ⟨![1, 1, 0, 0], by decide, ?_⟩
   rw [coe_binaryDihedralRotation_four_eq_toComplexMatrix]
   congr 1
   ext <;> simp
+
+@[simp]
+theorem binaryDihedralRotation_four_mem_binaryOctahedralSubgroup :
+    binaryDihedralRotation 4 ∈ binaryOctahedralSubgroup :=
+  .inr binaryDihedralRotation_four_exists_cosetCoords
+
+private theorem binaryDihedralRotation_four_notMem_binaryTetrahedralSubgroup :
+    binaryDihedralRotation 4 ∉ binaryTetrahedralSubgroup := by
+  intro hT
+  obtain ⟨v, hv⟩ := mem_binaryTetrahedralSubgroup_iff_exists_int.mp hT
+  obtain ⟨w, hw, hcoe⟩ := binaryDihedralRotation_four_exists_cosetCoords
+  exact toComplexMatrix_ne_of_mem_binaryOctahedralCosetCoords hw (hv.symm.trans hcoe)
 
 /-- The central involution `-1 = torusHom (-1)` belongs to the binary octahedral subgroup. -/
 @[simp]
@@ -408,15 +421,7 @@ theorem mem_binaryOctahedralSubgroup_iff_mem_binaryTetrahedralSubgroup_or_mul {g
       (a := ⟨binaryDihedralRotation 4, binaryDihedralRotation_four_mem_binaryOctahedralSubgroup⟩)
       (b := ⟨g, hg⟩)
     simp only [Subgroup.mem_subgroupOf, Subgroup.coe_mul] at hmul
-    have hnot : binaryDihedralRotation 4 ∉ binaryTetrahedralSubgroup := by
-      intro hT
-      obtain ⟨v, hv⟩ := mem_binaryTetrahedralSubgroup_iff_exists_int.mp hT
-      refine toComplexMatrix_ne_of_mem_binaryOctahedralCosetCoords (v := v) (w := ![1, 1, 0, 0])
-        (by decide) ?_
-      rw [← hv, coe_binaryDihedralRotation_four_eq_toComplexMatrix]
-      congr 1
-      ext <;> simp
-    rw [iff_false_left hnot] at hmul
+    rw [iff_false_left binaryDihedralRotation_four_notMem_binaryTetrahedralSubgroup] at hmul
     exact or_iff_not_imp_left.mpr hmul.mpr
   · rintro (hT | hτg)
     · exact binaryTetrahedralSubgroup_le_binaryOctahedralSubgroup hT

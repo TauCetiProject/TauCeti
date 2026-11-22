@@ -66,36 +66,28 @@ theorem natCard_map_toSO3_binaryOctahedralSubgroup :
 /-- The image of the eighth-turn `τ = (1 + i) / √2` under `toSO3` is a cube rotation. -/
 private theorem toSO3_binaryDihedralRotation_four_mem_range :
     toSO3 (binaryDihedralRotation 4) ∈ (cubeRotationToSpecialOrthogonalGroup ℝ).range := by
-  let A : cubeRotationGroup :=
-    ⟨⟨!![0, 1, 0; -1, 0, 0; 0, 0, 1], by simp [Matrix.det_fin_three]⟩,
-      mem_cubeRotationGroup_iff.mpr
-        ⟨Equiv.swap 0 1, ![-1, 1, 1], fun i j => by fin_cases i <;> fin_cases j <;> rfl⟩⟩
-  refine ⟨A, Subtype.ext ?_⟩
+  refine ⟨cubeEdgeHalfTurn * cubeFaceQuarterTurn * cubeEdgeHalfTurn, Subtype.ext ?_⟩
   rw [coe_cubeRotationToSpecialOrthogonalGroup, binaryDihedralRotation_def, coe_toSO3_torusHom]
   have hz : ((ZMod.toCircle (1 : ZMod (2 * 4)) : ℂ) ^ 2) = Complex.I := by
-    have hsq := congrArg (fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)
-      (binaryDihedralRotation_two_mul_sq 2)
-    rw [binaryDihedralRotation_def, ← map_pow, coe_torusHom, coe_binaryDihedralRotation 2] at hsq
-    simpa [torusMatrix_apply_zero_zero, mul_div_right_comm, Complex.exp_pi_div_two_mul_I] using hsq
+    have h1 := ZMod.toCircle_natCast (N := 2 * 4) 1
+    rw [Nat.cast_one] at h1
+    rw [h1, ← Complex.exp_natCast_mul]
+    exact (congrArg Complex.exp (by push_cast; ring)).trans Complex.exp_pi_div_two_mul_I
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [A, hz]
+  fin_cases i <;> fin_cases j <;> simp [hz]
 
 /-- The image of `ω = (-1 + i + j + k) / 2` under `toSO3` is a cube rotation. -/
 private theorem toSO3_binaryTetrahedralOmega_mem_range :
     toSO3 binaryTetrahedralOmega ∈ (cubeRotationToSpecialOrthogonalGroup ℝ).range := by
-  let A : cubeRotationGroup :=
-    ⟨⟨!![0, 0, 1; 1, 0, 0; 0, 1, 0], by simp [Matrix.det_fin_three]⟩,
-      mem_cubeRotationGroup_iff.mpr
-        ⟨[0, 1, 2].formPerm, ![1, 1, 1], fun i j => by fin_cases i <;> fin_cases j <;> rfl⟩⟩
-  refine ⟨A, Subtype.ext ?_⟩
+  refine ⟨cubeFaceQuarterTurn * cubeDiagonalThirdTurn * cubeFaceQuarterTurn⁻¹, Subtype.ext ?_⟩
   rw [coe_cubeRotationToSpecialOrthogonalGroup]
   refine Matrix.ext_iff_mulVec.mpr fun x => ?_
   rw [coe_toSO3, pauliRotation_mulVec, Submonoid.coe_inclusion, coe_binaryTetrahedralOmega,
     ← map_star]
   ext i
   fin_cases i <;>
-    simp [A, pauliCoord_apply, pauli_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three,
-      toComplexMatrix_apply] <;> ring
+    simp [Matrix.adjugate_fin_three, pauliCoord_apply, pauli_apply, Matrix.mulVec, dotProduct,
+      Fin.sum_univ_three, toComplexMatrix_apply] <;> ring
 
 /-- **The `SO(3)` image of the binary octahedral subgroup is the cube rotation group** embedded
 into `SO(3, ℝ)` by `TauCeti.cubeRotationToSpecialOrthogonalGroup ℝ`. -/

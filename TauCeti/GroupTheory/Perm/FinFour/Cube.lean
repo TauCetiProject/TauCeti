@@ -490,6 +490,30 @@ def cubeFaceQuarterTurn : cubeRotationGroup :=
     mem_cubeRotationGroup_iff.mpr
       ⟨swap 0 2, ![1, 1, -1], fun i j ↦ by fin_cases i <;> fin_cases j <;> rfl⟩⟩
 
+/-- The underlying matrix of `TauCeti.cubeEdgeHalfTurn`. -/
+@[simp]
+theorem coe_cubeEdgeHalfTurn :
+    (cubeEdgeHalfTurn.val : Matrix (Fin 3) (Fin 3) ℤ) = !![-1, 0, 0; 0, 0, 1; 0, 1, 0] :=
+  (rfl)
+
+/-- The underlying matrix of `TauCeti.cubeFaceHalfTurn`. -/
+@[simp]
+theorem coe_cubeFaceHalfTurn :
+    (cubeFaceHalfTurn.val : Matrix (Fin 3) (Fin 3) ℤ) = !![1, 0, 0; 0, -1, 0; 0, 0, -1] :=
+  (rfl)
+
+/-- The underlying matrix of `TauCeti.cubeDiagonalThirdTurn`. -/
+@[simp]
+theorem coe_cubeDiagonalThirdTurn :
+    (cubeDiagonalThirdTurn.val : Matrix (Fin 3) (Fin 3) ℤ) = !![0, 1, 0; 0, 0, -1; -1, 0, 0] :=
+  (rfl)
+
+/-- The underlying matrix of `TauCeti.cubeFaceQuarterTurn`. -/
+@[simp]
+theorem coe_cubeFaceQuarterTurn :
+    (cubeFaceQuarterTurn.val : Matrix (Fin 3) (Fin 3) ℤ) = !![0, 0, -1; 0, 1, 0; 1, 0, 0] :=
+  (rfl)
+
 /-- The edge half-turn exchanges the diagonals `0` and `1` and fixes the other two. -/
 @[simp]
 theorem cubeBodyDiagonalHom_cubeEdgeHalfTurn : cubeBodyDiagonalHom cubeEdgeHalfTurn = swap 0 1 := by
@@ -613,29 +637,22 @@ in `R` as soon as `2 ≠ 0`. -/
 theorem cubeRotationToSpecialOrthogonalGroup_injective (R : Type*) [CommRing R] [NeZero (2 : R)] :
     Function.Injective (cubeRotationToSpecialOrthogonalGroup R) := by
   have h2 : (2 : R) ≠ 0 := NeZero.ne 2
-  have h1 : (1 : R) ≠ 0 := fun h => h2 (by rw [← one_add_one_eq_two, h, add_zero])
-  have h1neg : (1 : R) ≠ -1 := fun h =>
-    h2 (by rw [← one_add_one_eq_two]; exact add_eq_zero_iff_eq_neg.mpr h)
+  have : Nontrivial R := nontrivial_of_ne 2 0 h2
+  have hchar : ringChar R ≠ 2 := fun h => h2 <| by
+    simpa [h] using ringChar.Nat.cast_ringChar (R := R)
   have hmem (A : cubeRotationGroup) (i j : Fin 3) :
-      A.val i j = -1 ∨ A.val i j = 0 ∨ A.val i j = 1 := by
+      A.val i j ∈ ({0, 1, -1} : Set ℤ) := by
     obtain ⟨σ, ε, hσ⟩ := mem_cubeRotationGroup_iff.mp A.property
     rw [hσ]
     split_ifs
     · rcases Int.units_eq_one_or (ε j) with h | h <;> simp [h]
-    · exact Or.inr (Or.inl rfl)
+    · simp
   intro A B hAB
   refine Subtype.ext (Subtype.ext (Matrix.ext fun i j => ?_))
   have hij : ((A.val i j : ℤ) : R) = ((B.val i j : ℤ) : R) := by
     simpa [RingHom.mapMatrix_apply, Matrix.map_apply] using
       congrFun (congrFun (congrArg Subtype.val hAB) i) j
-  rcases hmem A i j with hA | hA | hA <;> rcases hmem B i j with hB | hB | hB <;>
-    rw [hA, hB] at hij ⊢
-  · exact absurd (neg_eq_zero.mp (by simpa using hij)) h1
-  · exact absurd (by simpa using hij.symm) h1neg
-  · exact absurd (neg_eq_zero.mp (by simpa using hij.symm)) h1
-  · exact absurd (by simpa using hij.symm) h1
-  · exact absurd (by simpa using hij) h1neg
-  · exact absurd (by simpa using hij) h1
+  exact Int.cast_injOn_of_ringChar_ne_two hchar (hmem A i j) (hmem B i j) hij
 
 /-! ### The two inscribed tetrahedra -/
 
