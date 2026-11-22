@@ -23,13 +23,21 @@ without choosing one: an element of `𝒪[K]` has valuation at least that of eve
 valuation below `1` exactly when it does not lie in `𝓂[K] ^ 2`
 (`TauCeti.forall_valuation_le_iff_notMem_maximalIdeal_sq`); for an element of `𝓂[K]` this says it
 has the valuation of a uniformizer.
+
+Mathlib names that valuation without choosing an element: `ValuativeRel.uniformizer K` is the
+largest value below `1`. An irreducible element of `𝒪[K]` has this valuation
+(`TauCeti.valuation_eq_uniformizer_of_irreducible`), for any valued field with a discrete value
+group. In a nonarchimedean local field the valuation of a unit `x` is therefore
+`uniformizer K ^ v_K(x)` (`TauCeti.valuation_eq_uniformizer_zpow`), and the closed balls
+`{x | valuation K x ≤ uniformizer K ^ m}`, the fractional ideals `𝓂[K] ^ m` for `m : ℤ`, form a
+neighbourhood basis of `0` (`TauCeti.hasBasis_nhds_zero_valuation_le_uniformizer_zpow`).
 -/
 
 public section
 noncomputable section
 
-open Set
-open scoped WithZero Pointwise
+open Set Filter
+open scoped WithZero Pointwise Topology
 open ValuativeRel IsNonarchimedeanLocalField
 
 namespace TauCeti
@@ -41,6 +49,24 @@ theorem irreducible_of_valuation_eq {ϖ c : 𝒪[K]} (hϖ : Irreducible ϖ)
     (h : valuation K (c : K) = valuation K (ϖ : K)) : Irreducible c :=
   have hv := Valuation.integer.integers (valuation K)
   (associated_of_dvd_dvd (hv.dvd_iff_le.2 h.le) (hv.dvd_iff_le.2 h.ge)).irreducible hϖ
+
+/-- An irreducible element of `𝒪[K]` has valuation `ValuativeRel.uniformizer K`, the largest
+value below `1`. -/
+theorem valuation_eq_uniformizer_of_irreducible [IsDiscrete K] {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
+    valuation K (ϖ : K) = uniformizer K := by
+  have hv := Valuation.integer.integers (valuation K)
+  refine le_antisymm (le_uniformizer_iff.2 (Valuation.integer.v_irreducible_lt_one hϖ)) ?_
+  obtain ⟨y, hy⟩ := valuation_surjective (uniformizer K)
+  have hy1 : valuation K y < 1 := hy ▸ uniformizer_lt_one
+  let c : 𝒪[K] := ⟨y, (Valuation.mem_integer_iff _ _).2 hy1.le⟩
+  rw [← hy]
+  by_contra! hlt
+  -- `c` divides `ϖ`, and neither factor of `ϖ = c * d` can be a unit.
+  obtain ⟨d, hd⟩ := (hv.dvd_iff_le (x := c) (y := ϖ)).2 hlt.le
+  rcases hϖ.isUnit_or_isUnit hd with hc | hd'
+  · exact hy1.ne (hv.isUnit_iff_valuation_eq_one.1 hc)
+  · have hd1 : valuation K (d : K) = 1 := hv.isUnit_iff_valuation_eq_one.1 hd'
+    exact hlt.ne (by rw [hd, MulMemClass.coe_mul, map_mul, hd1, mul_one])
 
 section LocalField
 
@@ -100,6 +126,55 @@ theorem exists_isUniformizer : ∃ π : Kˣ, IsUniformizer (K := K) π := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (𝒪[K])
   refine ⟨Units.mk0 (ϖ : K) (fun h => hϖ.ne_zero (Subtype.ext h)), ?_⟩
   exact (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖ, hϖ, rfl⟩
+
+/-- A uniformizer has valuation `ValuativeRel.uniformizer K`. -/
+theorem IsUniformizer.valuation_eq {π : Kˣ} (hπ : IsUniformizer K π) :
+    valuation K (π : K) = uniformizer K := by
+  obtain ⟨ϖ, hϖ, h⟩ := (isUniformizer_iff_exists_irreducible K π).1 hπ
+  rw [← h]
+  exact valuation_eq_uniformizer_of_irreducible hϖ
+
+/-- The valuation of a unit `x` is `uniformizer K ^ v_K(x)`, for the normalized valuation `v_K`. -/
+theorem valuation_eq_uniformizer_zpow (x : Kˣ) :
+    valuation K (x : K) = uniformizer K ^ (normalizedValuation K x).toAdd := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  rw [← hπ.valuation_eq]
+  exact (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow hπ _ x).1 rfl
+
+/-- A unit `x` lies in the fractional ideal `𝓂[K] ^ m`, the closed ball of radius
+`uniformizer K ^ m`, exactly when `m ≤ v_K(x)`. -/
+theorem valuation_le_uniformizer_zpow_iff (x : Kˣ) (m : ℤ) :
+    valuation K (x : K) ≤ uniformizer K ^ m ↔ m ≤ (normalizedValuation K x).toAdd := by
+  rw [valuation_eq_uniformizer_zpow, zpow_le_zpow_iff_right_of_lt_one₀ uniformizer_pos
+    uniformizer_lt_one]
+
+/-- Multiplication by a unit `b` maps the fractional ideal `𝓂[K] ^ m` onto
+`𝓂[K] ^ (m + v_K(b))`. -/
+theorem valuation_mul_le_uniformizer_zpow_iff (b : Kˣ) (x : K) (m : ℤ) :
+    valuation K (b * x) ≤ uniformizer K ^ (m + (normalizedValuation K b).toAdd) ↔
+      valuation K x ≤ uniformizer K ^ m := by
+  rw [map_mul, valuation_eq_uniformizer_zpow, zpow_add₀ uniformizer_ne_zero,
+    mul_comm (uniformizer K ^ m)]
+  exact mul_le_mul_iff_right₀ (zpow_pos uniformizer_pos _)
+
+variable (K) in
+/-- The closed balls `{x | valuation K x ≤ uniformizer K ^ m}`, for `m : ℤ`, which are the
+fractional ideals `𝓂[K] ^ m`, form a neighbourhood basis of `0`. -/
+theorem hasBasis_nhds_zero_valuation_le_uniformizer_zpow :
+    (𝓝 (0 : K)).HasBasis (fun _ : ℤ ↦ True)
+      fun m ↦ {x | valuation K x ≤ uniformizer K ^ m} := by
+  refine (IsValuativeTopology.hasBasis_nhds_zero' K).to_hasBasis (fun γ hγ ↦ ?_) fun m _ ↦ ?_
+  · -- Write `γ = valuation K y`; the ball of radius `uniformizer K ^ (v_K(y) + 1)` lies inside.
+    obtain ⟨y, rfl⟩ := valuation_surjective γ
+    have hy : y ≠ 0 := by simpa using hγ
+    refine ⟨(normalizedValuation K (Units.mk0 y hy)).toAdd + 1, trivial,
+      fun x (hx : valuation K x ≤ _) ↦ hx.trans_lt ?_⟩
+    have hvy := valuation_eq_uniformizer_zpow (Units.mk0 y hy)
+    rw [Units.val_mk0] at hvy
+    rw [hvy]
+    exact zpow_lt_zpow_right_of_lt_one₀ uniformizer_pos uniformizer_lt_one (lt_add_one _)
+  · exact ⟨uniformizer K ^ m, (zpow_pos uniformizer_pos m).ne',
+      fun x (hx : valuation K x < _) ↦ hx.le⟩
 
 end LocalField
 

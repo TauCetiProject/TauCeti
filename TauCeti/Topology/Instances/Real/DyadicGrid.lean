@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -25,6 +26,9 @@ The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a
   the dyadic grids of all levels `n ≥ m`.
 * `TauCeti.dense_setOfPred_eq_add_mul_div_two_pow`: the points of the dyadic grids of `[a, b]`,
   of all levels, are dense in `[a, b]` for `a ≤ b`.
+* `TauCeti.dist_dyadicTime_succ`: consecutive dyadic times of level `n` are `T / 2 ^ n` apart.
+* `TauCeti.exists_dyadicTime_mem_open`: every open set of `ℝ≥0` meeting `[0, T]` contains a
+  dyadic time.
 -/
 
 public section
@@ -168,5 +172,36 @@ theorem exists_dyadicTime_eq_of_le (T : ℝ≥0) {m n : ℕ} (k : Fin (2 ^ m + 1
   obtain ⟨j, hj⟩ := exists_dyadicPoint_eq_of_le T.coe_nonneg k hmn
   exact ⟨j, NNReal.eq (by rw [coe_dyadicTime_eq_coe_dyadicPoint,
     coe_dyadicTime_eq_coe_dyadicPoint, hj])⟩
+
+/-- Every dyadic time of the degenerate horizon `0` is `0`. -/
+@[simp] theorem dyadicTime_zero_left (n : ℕ) (k : Fin (2 ^ n + 1)) : dyadicTime 0 n k = 0 := by
+  ext; simp
+
+/-- Consecutive dyadic times of level `n` on `[0, T]` differ by `T / 2 ^ n` in `ℝ≥0`. -/
+@[simp] theorem dyadicTime_succ_sub_castSucc (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
+    dyadicTime T n k.succ - dyadicTime T n k.castSucc = T / 2 ^ n := by
+  ext; rw [NNReal.coe_sub (dyadicTime_monotone T n k.castSucc_le_succ)]
+  simp only [coe_dyadicTime, Fin.val_succ, Fin.val_castSucc, NNReal.coe_div, NNReal.coe_pow,
+    NNReal.coe_ofNat]; push_cast; ring
+
+/-- Consecutive dyadic times of level `n` on `[0, T]` are at distance `T / 2 ^ n`. -/
+@[simp] theorem dist_dyadicTime_succ (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
+    dist (dyadicTime T n k.succ) (dyadicTime T n k.castSucc) = (T : ℝ) / 2 ^ n := by
+  rw [NNReal.dist_eq, ← NNReal.coe_sub (dyadicTime_monotone T n k.castSucc_le_succ),
+    dyadicTime_succ_sub_castSucc, abs_of_nonneg (NNReal.coe_nonneg _)]; simp
+
+/-- Forward-indexed distance between consecutive dyadic times of level `n` on `[0, T]`. -/
+@[simp] theorem dist_dyadicTime_castSucc_succ (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
+    dist (dyadicTime T n k.castSucc) (dyadicTime T n k.succ) = (T : ℝ) / 2 ^ n :=
+  (dist_comm _ _).trans (dist_dyadicTime_succ T n k)
+
+/-- Any open set of `ℝ≥0` meeting `[0, T]` contains a dyadic time of `[0, T]`. -/
+theorem exists_dyadicTime_mem_open {T s : ℝ≥0} (hsT : s ≤ T) {U : Set ℝ≥0} (hU : IsOpen U)
+    (hs : s ∈ U) : ∃ n : ℕ, ∃ k : Fin (2 ^ n + 1), dyadicTime T n k ∈ U := by
+  obtain ⟨x, hx_grid, hxU⟩ := (dense_iUnion_range_dyadicPoint T.coe_nonneg).exists_mem_open
+    (hU.preimage (Continuous.subtype_mk continuous_subtypeVal _ :
+      Continuous fun x : Icc (0 : ℝ) T ↦ NNReal.mk x.val x.property.1))
+    ⟨⟨s, s.coe_nonneg, hsT⟩, hs⟩
+  rcases mem_iUnion.mp hx_grid with ⟨n, k, rfl⟩; exact ⟨n, k, hxU⟩
 
 end TauCeti

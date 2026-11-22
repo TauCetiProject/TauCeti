@@ -59,6 +59,19 @@ theorem residue_coordinate_inv (a : ℂ) : residue a (coordinate a)⁻¹ = 1 := 
     exact (Germ.coe_inv (fun z : ℂ ↦ z - a)).symm
   rw [heq, residue_mk, Contour.residue_sub_inv]
 
+/-- For an analytic germ `g`, the residue of `g/(z-a)` at `a` is `g a`; that is, the coefficient
+of `(z-a)^0` of an analytic germ is its value at `a`. -/
+theorem residue_coordinate_inv_mul_mk_of_analyticAt {g : ℂ → ℂ} (hg : AnalyticAt ℂ g a) :
+    residue a ((coordinate a)⁻¹ * mk g hg.meromorphicAt) = g a := by
+  have hc : coordinate a = mk (fun z ↦ z - a) ((MeromorphicAt.id a).sub (.const a a)) :=
+    Subtype.ext (by rw [coe_coordinate, coe_mk])
+  rw [hc, ← mk_inv, ← mk_mul, residue_mk]
+  have hfun : (fun z ↦ z - a)⁻¹ * g = fun z ↦ g z / (z - a) ^ (0 + 1) := by
+    funext z
+    simp [div_eq_inv_mul]
+  rw [hfun, Contour.residue_div_sub_pow_of_analyticAt hg 0]
+  simp
+
 /-- For an at-most-simple pole, vanishing residue is equivalent to removability. -/
 theorem residue_eq_zero_iff_of_mem_orderGE_neg_one (φ : meromorphicGerms ℂ a)
     (hφ : φ ∈ orderGE a (-1)) : residue a φ = 0 ↔ φ ∈ orderGE a 0 := by

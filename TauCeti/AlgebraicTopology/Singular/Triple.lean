@@ -33,7 +33,9 @@ zero composite and the degree-zero epimorphism also hold for preadditive coeffic
 coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
 to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when `H_{d+1}(X, A) = 0` it
 propagates projectivity over hereditary coefficient categories
-(`TopTriple.projective_singularHomology_totalPair`).
+(`TopTriple.projective_singularHomology_totalPair`). When morphisms into `Hₙ(X, B)` and
+`Hₙ₊₁(X, B)` split `H_*(X, B) ⟶ H_*(X, A)` up to isomorphism, the triple sequence splits as a
+binary biproduct (`TopTriple.isIso_biprod_desc_singularHomology`).
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -68,20 +70,9 @@ lemma singularChainComplexπ_comp_innerToTotal :
 lemma singularChainComplexπ_comp_totalToOuter :
     (totalPair.obj T).singularChainComplexπ R ≫
         TopPair.singularChainComplexMap (totalToOuter.app T) R =
-      (outerPair.obj T).singularChainComplexπ R := by
-  -- The map of pairs `(X, B) ⟶ (X, A)` is the identity on the ambient space `X`, so the map
-  -- it induces on the chains of that ambient space is the identity.  The two pairs share that
-  -- ambient space only definitionally, so the identity is taken at the outer pair, which is the
-  -- form the rewrite below needs.
-  have key : SSet.chainComplexMap (TopPair.toSSetPair.map (totalToOuter.app T)).right R =
-      𝟙 ((TopPair.toSSetPair.obj (outerPair.obj T)).right.chainComplex R) := by
-    have h : TopCat.toSSet.map (TopPair.Hom.fst (totalToOuter.app T)) = 𝟙 _ := by
-      rw [totalToOuter_app_fst, TopCat.toSSet.map_id]
-    exact (congrArg (((SSet.chainComplexFunctor C).obj R).map) h).trans
-      (((SSet.chainComplexFunctor C).obj R).map_id _)
-  conv_rhs => rw [← Category.id_comp ((outerPair.obj T).singularChainComplexπ R), ← key]
-  exact (((SSetPair.chainComplexFunctorπ C).app R).naturality
-    (TopPair.toSSetPair.map (totalToOuter.app T))).symm
+      (outerPair.obj T).singularChainComplexπ R :=
+  TopPair.singularChainComplexπ_comp_singularChainComplexMap_of_fst_eq_id R (totalToOuter.app T)
+    totalToOuter_app_fst
 
 lemma singularChainComplexMap_innerToTotal_comp_totalToOuter :
     TopPair.singularChainComplexMap (innerToTotal.app T) R ≫
@@ -335,6 +326,39 @@ theorem projective_singularHomology_totalPair [∀ V : A, HasProjectiveDimension
   have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R d) :=
     (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g (h.eq_of_src _ 0)
   exact (T.singularHomology_exact_total R d).projective_X₂_of_mono_f
+
+/-- **Splitting the homology sequence of a triple.** In a triple `T = (X, A, B)`, if morphisms
+into `Hₙ(X, B)` and `Hₙ₊₁(X, B)` compose with `H_*(X, B) ⟶ H_*(X, A)` to isomorphisms, then
+`B₀ ⊞ Hₙ(A, B) ⟶ Hₙ(X, B)` is an isomorphism. -/
+theorem isIso_biprod_desc_singularHomology (n : ℕ) {B₀ B₁ : A}
+    (s₀ : B₀ ⟶ (totalPair.obj T).singularHomology R n)
+    (s₁ : B₁ ⟶ (totalPair.obj T).singularHomology R (n + 1))
+    (hs₀ : IsIso (s₀ ≫ TopPair.singularHomologyMap (totalToOuter.app T) R n))
+    (hs₁ : IsIso (s₁ ≫ TopPair.singularHomologyMap (totalToOuter.app T) R (n + 1))) :
+    IsIso (biprod.desc s₀ (TopPair.singularHomologyMap (innerToTotal.app T) R n)) := by
+  let i₀ := TopPair.singularHomologyMap (innerToTotal.app T) R n
+  let q₀ := TopPair.singularHomologyMap (totalToOuter.app T) R n
+  let q₁ := TopPair.singularHomologyMap (totalToOuter.app T) R (n + 1)
+  have hδ : T.singularHomologyδ R (n + 1) n rfl = 0 := by
+    rw [← Category.id_comp (T.singularHomologyδ R (n + 1) n rfl), ← IsIso.inv_hom_id (s₁ ≫ q₁),
+      Category.assoc, Category.assoc, T.comp_singularHomologyδ R (n + 1) n rfl,
+      comp_zero, comp_zero]
+  have hmono : Mono i₀ := (T.singularHomology_exact_inner R (n + 1) n rfl).mono_g hδ
+  let S := ShortComplex.mk i₀ q₀ (T.singularHomologyMap_innerToTotal_comp_totalToOuter R n)
+  let s' : S.X₃ ⟶ S.X₂ := inv (s₀ ≫ q₀) ≫ s₀
+  have hs' : s' ≫ S.g = 𝟙 _ := by
+    dsimp only [S, s']
+    rw [Category.assoc]
+    exact IsIso.inv_hom_id _
+  let spl := ShortComplex.Splitting.ofExactOfSection S (T.singularHomology_exact_total R n)
+    s' hs' hmono
+  have hspl : IsIso (biprod.desc i₀ s') := spl.isoBinaryBiproduct.isIso_inv
+  have hfac : (biprod.braiding' B₀ S.X₁).hom ≫
+      (biprod.mapIso (Iso.refl _) (asIso (s₀ ≫ q₀))).hom ≫ biprod.desc i₀ s' =
+      biprod.desc s₀ i₀ :=
+    biprod.hom_ext' _ _ (by simp [s']) (by simp)
+  rw [← hfac]
+  infer_instance
 
 end
 

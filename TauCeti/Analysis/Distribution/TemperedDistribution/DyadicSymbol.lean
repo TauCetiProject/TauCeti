@@ -31,17 +31,23 @@ smoothness by `m`.
 
 * `TemperedDistribution.exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq`: there is `C`
   such that for every `j` the operator `g(D) Δⱼ` factors as `T_{σⱼ} Δⱼ`, where `T_{σⱼ}` is the
-  Fourier multiplier by a Schwartz symbol `σⱼ` whose kernel satisfies `‖𝓕⁻ σⱼ‖₁ ≤ C 2^{jm}`. The
+  Fourier multiplier by a Schwartz symbol `σⱼ` whose kernel satisfies `‖𝓕⁻ σⱼ‖₁ ≤ C W 2^{jm}`
+  when `W` is a constant in the symbol estimates of `g` of order at most `dim E + 1`; `C` depends
+  neither on `g` nor on `W`. The
   symbol is `σⱼ = Ψⱼ g` for the enlarged cutoff `Ψⱼ` (`ContDiffBump.enlargedLittlewoodPaley`),
   which equals `1` on the support of the piece `ψⱼ`. The kernel bound is
   `TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le` applied at the scale `R = 2^j`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le`: the
   localized estimates themselves. A Fourier multiplier with Schwartz symbol `σ` is the convolution
   with `𝓕⁻ σ`, so Young's inequality bounds it on every `Lᵖ` by `‖𝓕⁻ σ‖₁`; applied to `Δⱼ u`, the
-  factorization gives `‖g(D) Δⱼ u‖_p ≤ C 2^{jm} ‖Δⱼ u‖_p` whenever `Δⱼ u` is an `Lᵖ` function.
-* `TemperedDistribution.exists_besselPotential_compL_littlewoodPaleyBlock_eq` and
-  `TemperedDistribution.exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le`: the two
-  statements for the Bessel potential `J^s`, whose symbol is of order `s`
+  factorization gives `‖g(D) Δⱼ u‖_p ≤ C W 2^{jm} ‖Δⱼ u‖_p` whenever `Δⱼ u` is an `Lᵖ` function.
+  Summing over the finite window `[j + 1 - L, j + L)` gives the corresponding `Lᵖ` estimate on
+  enlarged Littlewood–Paley blocks
+  (`TemperedDistribution.exists_fourierMultiplierCLM_enlargedLittlewoodPaleyBlock_eq_and_norm_le`).
+* `TemperedDistribution.exists_besselPotential_compL_littlewoodPaleyBlock_eq`,
+  `TemperedDistribution.exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le`, and
+  `TemperedDistribution.exists_besselPotential_enlargedLittlewoodPaleyBlock_eq_and_norm_le`: the
+  corresponding statements for the Bessel potential `J^s`, whose symbol is of order `s`
   (`TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`).
 * `TemperedDistribution.exists_besselPotential_eq_and_norm_le_of_isVanishingOn`: the same estimate
   `‖J^s v‖_p ≤ C 2^{js} ‖v‖_p` for any `v ∈ Lᵖ` whose Fourier transform lives in a dyadic annulus
@@ -67,41 +73,42 @@ namespace TemperedDistribution
 
 variable [NormedSpace ℂ F] (φ : ContDiffBump (0 : E))
 
-/-- **Fourier multipliers on Littlewood–Paley blocks.** Let `g` be a smooth symbol of order `m`,
-`‖D^i g ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)`. There is a constant `C` such that for every `j`
-the Fourier multiplier `g(D)`, applied after the Littlewood–Paley block `Δⱼ`, is the Fourier
-multiplier by a Schwartz symbol `σⱼ` applied after `Δⱼ`, where the kernel of `σⱼ` satisfies
+/-- **Fourier multipliers on Littlewood–Paley blocks.** For every real `m` there is a constant `C`
+with the following property. Let `g` be a function of temperate growth with the symbol estimates
+`‖D^i g ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for `i ≤ n + 1`, where `n = dim E`. For
+every `j` the Fourier multiplier `g(D)`, applied after the Littlewood–Paley block `Δⱼ`, is the
+Fourier multiplier by a Schwartz symbol `σⱼ` applied after `Δⱼ`, where the kernel of `σⱼ` satisfies
 
-`∫ ‖𝓕⁻ σⱼ x‖ dx ≤ C 2^{jm}`.
+`∫ ‖𝓕⁻ σⱼ x‖ dx ≤ C W 2^{jm}`.
 
 The symbol `σⱼ` is `g` cut off to the frequencies of `Δⱼ` by the enlarged cutoff `Ψⱼ`, and the
 factorization `g(D) Δⱼ = T_{σⱼ} Δⱼ` holds because `Ψⱼ ψⱼ = ψⱼ`. -/
-theorem exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq {g : E → ℂ}
-    (hg : ContDiff ℝ ∞ g) {m : ℝ}
-    (hgm : ∀ i : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i g ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) :
-    ∃ C, ∀ j : ℕ, ∃ σ : 𝓢(E, ℂ),
-      fourierMultiplierCLM F g ∘L littlewoodPaleyBlock F φ j =
-          fourierMultiplierCLM F σ ∘L littlewoodPaleyBlock F φ j ∧
-        ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * (2 ^ j) ^ m := by
+theorem exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq (m : ℝ) :
+    ∃ C, ∀ {g : E → ℂ} {W : ℝ}, g.HasTemperateGrowth →
+      (∀ i ≤ finrank ℝ E + 1, ∀ ξ,
+        ‖iteratedFDeriv ℝ i g ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) →
+      ∀ j : ℕ, ∃ σ : 𝓢(E, ℂ),
+        fourierMultiplierCLM F g ∘L littlewoodPaleyBlock F φ j =
+            fourierMultiplierCLM F σ ∘L littlewoodPaleyBlock F φ j ∧
+          ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * W * (2 ^ j) ^ m := by
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   choose B _ hB using fun k : ℕ ↦ φ.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le L k
   obtain ⟨a, b, ha, hab⟩ := φ.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley L
-  obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le (E := E) hg
-    (N := finrank ℝ E + 1) (by omega) (fun i _ ↦ hgm i) (b := b) ha B
-  refine ⟨C, fun j ↦ ?_⟩
+  obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le (E := E) (H := ℂ) m
+    (N := finrank ℝ E + 1) (by omega) (b := b) ha B
+  refine ⟨C, fun {g W} hg hgW j ↦ ?_⟩
   -- The symbol `σⱼ = Ψⱼ g`.
   set χ : E → ℝ := φ.enlargedLittlewoodPaley L j
   have hχ : ContDiff ℝ ∞ χ := φ.contDiff_enlargedLittlewoodPaley L j
   set σ : 𝓢(E, ℂ) :=
     ((φ.hasCompactSupport_enlargedLittlewoodPaley L j).smul_right (f' := g)).toSchwartzMap
-      (hχ.smul hg)
+      (hχ.smul hg.1)
   have hσ : ⇑σ = fun ξ ↦ χ ξ • g ξ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   refine ⟨σ, ?_, ?_⟩
   · -- Both sides are Fourier multipliers; their symbols agree since `Ψⱼ ψⱼ = ψⱼ`.
     rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM,
       fourierMultiplierCLM_compL_fourierMultiplierCLM
-        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)
-        (.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hg hgm),
+        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) hg,
       fourierMultiplierCLM_compL_fourierMultiplierCLM
         (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) σ.hasTemperateGrowth]
     congr 1
@@ -111,35 +118,103 @@ theorem exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq {g : E → ℂ
     simp only [Pi.mul_apply, hσ, Complex.real_smul]
     linear_combination (-g ξ) * h
   · rw [hσ]
-    exact hC (2 ^ j) χ (by positivity) hχ (hab j) fun k _ ξ ↦ hB k j ξ
+    exact hC g W hg.1 hgW (2 ^ j) χ (by positivity) hχ (hab j) fun k _ ξ ↦ hB k j ξ
 
-/-- **Fourier multipliers of Littlewood–Paley blocks in `Lᵖ`.** Let `g` be a smooth symbol of
-order `m`, `‖D^i g ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)`. There is a constant `C ≥ 0`, depending
-only on `g`, `m` and `φ`, such that for every `1 ≤ p ≤ ∞` and every `j`: if the block `Δⱼ u` of a
+/-- **Fourier multipliers of Littlewood–Paley blocks in `Lᵖ`.** For every real `m` there is a
+constant `C ≥ 0`, depending only on `m` and `φ`, with the following property. Let `g` be a function
+of temperate growth with the symbol estimates `‖D^i g ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of
+order `m` for `i ≤ n + 1`, where `n = dim E`, and let `1 ≤ p ≤ ∞`. If the block `Δⱼ u` of a
 tempered distribution `u` is an `Lᵖ` function `f`, then `g(D) Δⱼ u` is an `Lᵖ` function `h` with
 
-`‖h‖_p ≤ C 2^{jm} ‖f‖_p`. -/
+`‖h‖_p ≤ C W 2^{jm} ‖f‖_p`. -/
 theorem exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F]
-    {g : E → ℂ} (hg : ContDiff ℝ ∞ g) {m : ℝ}
-    (hgm : ∀ i : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i g ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (u : 𝓢'(E, F))
+    (m : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {g : E → ℂ} {W : ℝ}, g.HasTemperateGrowth →
+      (∀ i ≤ finrank ℝ E + 1, ∀ ξ,
+        ‖iteratedFDeriv ℝ i g ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) →
+      ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (u : 𝓢'(E, F))
       (f : Lp F p (volume : Measure E)), littlewoodPaleyBlock F φ j u = f →
       ∃ h : Lp F p (volume : Measure E),
         fourierMultiplierCLM F g (littlewoodPaleyBlock F φ j u) = h ∧
-          ‖h‖ ≤ C * 2 ^ (m * j) * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq (F := F) φ hg hgm
-  refine ⟨max C 0, le_max_right _ _, fun {p} _ j u f hf ↦ ?_⟩
-  obtain ⟨σ, hσ, hσC⟩ := hC j
+          ‖h‖ ≤ C * W * 2 ^ (m * j) * ‖f‖ := by
+  obtain ⟨C, hC⟩ := exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq (F := F) φ m
+  refine ⟨max C 0, le_max_right _ _, fun {g W} hg hgW {p} _ j u f hf ↦ ?_⟩
+  have hW : 0 ≤ W :=
+    TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hgW 0 (Nat.zero_le _))
+  obtain ⟨σ, hσ, hσC⟩ := hC hg hgW j
   obtain ⟨h, hh, hhf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
   refine ⟨h, ?_, ?_⟩
   · rw [← ContinuousLinearMap.comp_apply, hσ, ContinuousLinearMap.comp_apply, hf, hh]
   · have h2 : ((2 : ℝ) ^ j) ^ m = 2 ^ (m * j) := by
       rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, mul_comm]
     calc ‖h‖ ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * ‖f‖ := hhf
-      _ ≤ max C 0 * 2 ^ (m * j) * ‖f‖ := by
+      _ ≤ max C 0 * W * 2 ^ (m * j) * ‖f‖ := by
         rw [← h2]
         gcongr
         exact hσC.trans (by gcongr; exact le_max_left _ _)
+
+/-- **Fourier multipliers of enlarged Littlewood–Paley blocks in `Lᵖ`.** For every width `L` and
+every real `m` there is a constant `C ≥ 0`, depending only on `m`, `φ`, and `L`, with the following
+property. Let `g` be a function of temperate growth with the symbol estimates
+`‖D^i g ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for `i ≤ n + 1`, where `n = dim E`. For
+every `1 ≤ p ≤ ∞`, every `j`, and every `f ∈ Lᵖ`, the distribution `g(D) Δ'ⱼ f` is an `Lᵖ`
+function `h` with
+
+`‖h‖_p ≤ C W 2^{jm} ‖f‖_p`. -/
+theorem exists_fourierMultiplierCLM_enlargedLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F]
+    (L : ℕ) (m : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {g : E → ℂ} {W : ℝ}, g.HasTemperateGrowth →
+      (∀ i ≤ finrank ℝ E + 1, ∀ ξ,
+        ‖iteratedFDeriv ℝ i g ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) →
+      ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (f : Lp F p (volume : Measure E)),
+      ∃ h : Lp F p (volume : Measure E),
+        fourierMultiplierCLM F g (enlargedLittlewoodPaleyBlock F φ L j (f : 𝓢'(E, F))) = h ∧
+          ‖h‖ ≤ C * W * 2 ^ (m * j) * ‖f‖ := by
+  obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  obtain ⟨C₁, hC₁, hJ⟩ :=
+    exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ m
+  set K : ℝ := C₁ * 2 ^ (|m| * L) * max C₀ 0
+  refine ⟨2 * L * K, by positivity, fun {g W} hg hgW {p} _ j f ↦ ?_⟩
+  have hW : 0 ≤ W :=
+    TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hgW 0 (Nat.zero_le _))
+  choose u hu huC using fun k ↦ hC₀ (p := p) k f
+  choose h hh hhC using fun k ↦ hJ hg hgW (p := p) k (f : 𝓢'(E, F)) (u k) (hu k)
+  refine ⟨∑ k ∈ Finset.Ico (j + 1 - L) (j + L), h k, ?_, ?_⟩
+  · rw [enlargedLittlewoodPaleyBlock_eq_sum_Ico, _root_.sum_apply, map_sum,
+      Lp.toTemperedDistribution_sum]
+    exact Finset.sum_congr rfl fun k _ ↦ hh k
+  · have hhk (k : ℕ) (hk : k ∈ Finset.Ico (j + 1 - L) (j + L)) :
+        ‖h k‖ ≤ K * W * 2 ^ (m * j) * ‖f‖ := by
+      have hk' : k ∈ Finset.Ico (j - L) (j + L) :=
+        Finset.mem_Ico.2 ⟨by have := (Finset.mem_Ico.1 hk).1; omega, (Finset.mem_Ico.1 hk).2⟩
+      calc ‖h k‖ ≤ C₁ * W * 2 ^ (m * k) * ‖u k‖ := hhC k
+        _ ≤ C₁ * W * (2 ^ (|m| * L) * 2 ^ (m * j)) * (max C₀ 0 * ‖f‖) := by
+          gcongr
+          · exact Real.rpow_mul_natCast_le_of_mem_Ico one_le_two m hk'
+          · exact (huC k).trans (by gcongr; exact le_max_left _ _)
+        _ = K * W * 2 ^ (m * j) * ‖f‖ := by ring
+    calc ‖∑ k ∈ Finset.Ico (j + 1 - L) (j + L), h k‖
+        ≤ ∑ _ ∈ Finset.Ico (j + 1 - L) (j + L), K * W * 2 ^ (m * j) * ‖f‖ :=
+          (norm_sum_le _ _).trans (Finset.sum_le_sum hhk)
+      _ = (Finset.Ico (j + 1 - L) (j + L)).card * (K * W * 2 ^ (m * j) * ‖f‖) := by
+          rw [Finset.sum_const, nsmul_eq_mul]
+      _ ≤ 2 * L * (K * W * 2 ^ (m * j) * ‖f‖) := by
+          gcongr
+          rw [Nat.card_Ico]
+          exact_mod_cast (by omega : j + L - (j + 1 - L) ≤ 2 * L)
+      _ = 2 * L * K * W * 2 ^ (m * j) * ‖f‖ := by ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The symbol `(1 + ‖ξ‖ ^ 2) ^ (s / 2)` of the Bessel potential of order `s` has temperate growth
+and the symbol estimates of order `s` up to order `finrank ℝ E + 1`, with a common constant. -/
+private theorem hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (s : ℝ) :
+    (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth ∧
+      ∃ W, ∀ i ≤ finrank ℝ E + 1, ∀ ξ : E,
+        ‖iteratedFDeriv ℝ i (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) ξ‖ ≤
+          W * (1 + ‖ξ‖ ^ 2) ^ ((s - i) / 2) :=
+  ⟨Complex.ofRealCLM.hasTemperateGrowth.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _),
+    TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow fun i _ ↦
+      TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s i⟩
 
 /-- **Bessel potentials on Littlewood–Paley blocks.** There is a constant `C` such that for every
 `j` the Bessel potential `J^s` of order `s`, applied after the Littlewood–Paley block `Δⱼ`, is the
@@ -150,10 +225,10 @@ theorem exists_besselPotential_compL_littlewoodPaleyBlock_eq (s : ℝ) :
     ∃ C, ∀ j : ℕ, ∃ σ : 𝓢(E, ℂ),
       besselPotential E F s ∘L littlewoodPaleyBlock F φ j =
           fourierMultiplierCLM F σ ∘L littlewoodPaleyBlock F φ j ∧
-        ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * (2 ^ j) ^ s :=
-  exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq φ
-    (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow (s / 2))
-    (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s)
+        ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * (2 ^ j) ^ s := by
+  obtain ⟨C, hC⟩ := exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq (F := F) φ s
+  obtain ⟨hg, W, hW⟩ := hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (E := E) s
+  exact ⟨C * W, hC hg hW⟩
 
 /-- **Bessel potentials of Littlewood–Paley blocks in `Lᵖ`.** There is a constant `C ≥ 0`,
 depending only on `s` and `φ`, such that for every `1 ≤ p ≤ ∞` and every `j`: if the block
@@ -166,10 +241,31 @@ theorem exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpac
       (f : Lp F p (volume : Measure E)), littlewoodPaleyBlock F φ j u = f →
       ∃ g : Lp F p (volume : Measure E),
         besselPotential E F s (littlewoodPaleyBlock F φ j u) = g ∧
-          ‖g‖ ≤ C * 2 ^ (s * j) * ‖f‖ :=
-  exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le φ
-    (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow (s / 2))
-    (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s)
+          ‖g‖ ≤ C * 2 ^ (s * j) * ‖f‖ := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_fourierMultiplierCLM_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ s
+  obtain ⟨hg, W, hW⟩ := hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (E := E) s
+  have hW0 : 0 ≤ W :=
+    TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hW 0 (Nat.zero_le _))
+  exact ⟨C * W, by positivity, hC hg hW⟩
+
+/-- **Bessel potentials of enlarged Littlewood–Paley blocks in `Lᵖ`.** For every width `L`, there
+is a constant `C ≥ 0`, depending only on `s`, `φ`, and `L`, such that for every `1 ≤ p ≤ ∞`, every
+`j`, and every `f ∈ Lᵖ`, the distribution `J^s Δ'ⱼ f` is an `Lᵖ` function `g` with
+
+`‖g‖_p ≤ C 2^{js} ‖f‖_p`. -/
+theorem exists_besselPotential_enlargedLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F]
+    (L : ℕ) (s : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (f : Lp F p (volume : Measure E)),
+      ∃ g : Lp F p (volume : Measure E),
+        besselPotential E F s (enlargedLittlewoodPaleyBlock F φ L j (f : 𝓢'(E, F))) = g ∧
+          ‖g‖ ≤ C * 2 ^ (s * j) * ‖f‖ := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_fourierMultiplierCLM_enlargedLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ L s
+  obtain ⟨hg, W, hW⟩ := hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (E := E) s
+  have hW0 : 0 ≤ W :=
+    TauCeti.nonneg_of_forall_norm_le_mul_one_add_norm_sq_rpow (hW 0 (Nat.zero_le _))
+  exact ⟨C * W, by positivity, hC hg hW⟩
 
 open Distribution in
 /-- **Bessel potentials on a dyadic annulus.** For `t : ℝ`, `a > 0` and every `b` there is a

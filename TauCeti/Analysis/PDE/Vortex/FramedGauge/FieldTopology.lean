@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Divisor
+public import TauCeti.Analysis.PDE.Vortex.Divisor.Basic
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Limit
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Normed.Lp.PiLp
@@ -30,8 +30,13 @@ function, and the topology is the one induced by this map. For `s ≥ 0` this ma
 For `s > 1`, convergence in this topology implies uniform convergence of the fields
 (`TauCeti.Vortex.SobolevFieldSpace.tendstoUniformly_of_tendsto`), by the quantitative Sobolev
 embedding `|g(z)| ≤ C ‖g‖_{H^s}` for continuous representatives
-(`TemperedDistribution.tendstoUniformly_of_tendsto_toBesselPotentialSpace`). Two consequences
-for the gauge theory of `A_m^k` follow from the locally uniform statements already available.
+(`TemperedDistribution.tendstoUniformly_of_tendsto_toBesselPotentialSpace`). For `s ≥ 0`,
+convergence gives `L²` convergence of the coordinates of the fields
+(`TauCeti.Vortex.SobolevFieldSpace.tendsto_eLpNorm_sub_of_tendsto`). For `s > 1`, the points
+where the section of a field has modulus at most `c < 1` form a compact set
+(`TauCeti.Vortex.SobolevFieldSpace.isCompact_setOf_norm_sectionValue_le`), since `|α| → 1` at
+infinity. Two consequences for the gauge theory of `A_m^k` follow from the locally uniform
+statements already available.
 
 * **The divisor is continuous.** If fields converge in `A_m^s`, `s > 1`, the zero divisors of
   their sections converge in `Sym ℂ m`
@@ -46,14 +51,15 @@ for the gauge theory of `A_m^k` follow from the locally uniform statements alrea
   This is the Hausdorff property of the quotient `A_m^k / G_(k+1)` once the quotient map is
   known to be open.
 
-Continuity of the gauge action on `A_m^k`, the slice theorem and the openness of the quotient map
-are not treated here.
+The continuity of the gauge action on `A_m^k` and the resulting Hausdorff quotient are in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient`; the slice theorem is not treated here.
 
 ## Main definitions
 
 * `TauCeti.Vortex.SobolevFieldSpace f m s`: the continuous fields of `A_m^s`, with the topology
   of `A_m^s`.
-* `TauCeti.Vortex.SobolevFieldSpace.subRef`: the coordinates of `x - x_m` in `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevFieldSpace.subRef`: the coordinates of `x - x_m` in `H^s(ℂ)`, each
+  determined by its `L²` function (`TauCeti.Vortex.SobolevFieldSpace.subRef_eq_iff`).
 * `TauCeti.Vortex.SobolevFieldSpace.toFramedFieldSpace`: a continuous field as an element of
   `A_m^s`.
 
@@ -194,6 +200,16 @@ theorem coeFn_toLp_inclusion_subRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) 
   rw [← hux, toLp_inclusion_toBesselPotentialSpace h _ rfl]
   exact hae
 
+/-- **The coordinate `subRef x j` is characterized by its `L²` function**: for `s ≥ 0`, an element
+`e ∈ H^s(ℂ)` is the coordinate `j` of `x - x_m` exactly when its `L²` function is almost
+everywhere the complexification of `z ↦ x(z)ⱼ - x_m(z)ⱼ`. -/
+theorem subRef_eq_iff (h : 0 ≤ s) (x : SobolevFieldSpace f m s) (j : Fin 4) (e : H^{s}(ℂ)) :
+    subRef x j = e ↔
+      ⇑(inclusion h e).toLp =ᵐ[volume] fun z ↦ ((x z j - referenceField f m z j : ℝ) : ℂ) := by
+  refine ⟨fun hxe ↦ hxe ▸ coeFn_toLp_inclusion_subRef h x j, fun he ↦ ?_⟩
+  rw [subRef_eq_toBesselPotentialSpace x j (memSobolev_inclusionLp h e) (by rwa [← toLp_inclusion])]
+  exact toBesselPotentialSpace_memSobolev_inclusionLp h e
+
 /-- For `s ≥ 0`, a continuous field of `A_m^s` is determined by the coordinates of `x - x_m` in
 `H^s(ℂ)`. -/
 theorem subRef_injective (h : 0 ≤ s) :
@@ -252,6 +268,67 @@ theorem tendstoUniformly_of_tendsto (hs : 1 < s) {ι : Type*} {l : Filter ι}
     rw [Complex.isometry_ofReal.dist_eq, dist_sub_right]
   rw [Metric.tendstoUniformly_iff] at hj ⊢
   simpa only [hdist] using hj
+
+/-- The `j`-th coordinate of the difference of two continuous fields of `A_m^s` is continuous. -/
+theorem continuous_apply_sub (x y : SobolevFieldSpace f m s) (j : Fin 4) :
+    Continuous fun z ↦ x z j - y z j :=
+  ((EuclideanSpace.proj j).continuous.comp x.continuous).sub
+    ((EuclideanSpace.proj j).continuous.comp y.continuous)
+
+/-- The `L²` function of `subRef x j - subRef y j` is the complexification of the coordinate
+difference `z ↦ x(z)ⱼ - y(z)ⱼ`. -/
+theorem coeFn_inclusionLp_subRef_sub_subRef (h : 0 ≤ s) (x y : SobolevFieldSpace f m s)
+    (j : Fin 4) :
+    ⇑(inclusionLp h (subRef x j - subRef y j)) =ᵐ[volume] fun z ↦ ((x z j - y z j : ℝ) : ℂ) := by
+  filter_upwards [coeFn_toLp_inclusion_subRef h x j, coeFn_toLp_inclusion_subRef h y j,
+    Lp.coeFn_sub (inclusionLp h (subRef x j)) (inclusionLp h (subRef y j))] with z h₁ h₂ h₃
+  rw [toLp_inclusion] at h₁ h₂
+  rw [map_sub, h₃, Pi.sub_apply, h₁, h₂]
+  push_cast
+  ring
+
+/-- **Convergence in `A_m^s` gives `L²` convergence of the coordinates**, for `s ≥ 0`: if fields
+`xᵢ → x` in `A_m^s`, then each coordinate `xᵢ(z)ⱼ - x(z)ⱼ` tends to zero in `L²`. -/
+theorem tendsto_eLpNorm_sub_of_tendsto (h : 0 ≤ s) {ι : Type*} {l : Filter ι}
+    {xs : ι → SobolevFieldSpace f m s} {x : SobolevFieldSpace f m s} (hx : Tendsto xs l (𝓝 x))
+    (j : Fin 4) : Tendsto (fun i ↦ eLpNorm (fun z ↦ xs i z j - x z j) 2 volume) l (𝓝 0) := by
+  set T : ι → Lp ℂ 2 (volume : Measure ℂ) := fun i ↦
+    (inclusion h (subRef (xs i) j - subRef x j)).toLp
+  have hT : Tendsto T l (𝓝 0) := by
+    rw [tendsto_iff_norm_sub_tendsto_zero]
+    have hsub := tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_iff.1 hx j)
+    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ ?_) hsub
+    rw [sub_zero, norm_toLp_eq]
+    exact norm_inclusion_apply_le h _
+  have hae (i : ι) : (T i : ℂ → ℂ) =ᵐ[volume] fun z ↦ ((xs i z j - x z j : ℝ) : ℂ) := by
+    simpa only [T, toLp_inclusion] using coeFn_inclusionLp_subRef_sub_subRef h (xs i) x j
+  have hlim := ((continuous_eNorm.tendsto 0).comp hT)
+  rw [eNorm_zero] at hlim
+  refine hlim.congr fun i ↦ ?_
+  simp only [Function.comp_apply, Lp.eNorm_def]
+  rw [eLpNorm_congr_ae (hae i)]
+  have hc := continuous_apply_sub (xs i) x j
+  exact eLpNorm_congr_norm_ae (Complex.continuous_ofReal.comp hc).aestronglyMeasurable
+    hc.aestronglyMeasurable (Eventually.of_forall fun z ↦ by rw [Complex.norm_real])
+
+/-- **The set where the section is small is compact.** For `s > 1` and `c < 1`, the points where
+the section of a field of `A_m^s` has modulus at most `c` form a compact set, since `|α| → 1` at
+infinity. -/
+theorem isCompact_setOf_norm_sectionValue_le (hs : 1 < s) (x : SobolevFieldSpace f m s)
+    {c : ℝ} (hc : c < 1) : IsCompact {z | ‖sectionValue x z‖ ≤ c} := by
+  have hev : ∀ᶠ z in cocompact ℂ, c < ‖sectionValue x z‖ := by
+    rcases lt_or_ge c 0 with hc0 | hc0
+    · exact Eventually.of_forall fun z ↦ hc0.trans_le (norm_nonneg _)
+    filter_upwards [(tendsto_normSq_of_mem_framedFieldSpace hs x.mem_framedFieldSpace
+      x.continuous).eventually (lt_mem_nhds (by nlinarith : c ^ 2 < 1))] with z hz
+    rw [← sq_norm_sectionValue] at hz
+    nlinarith [norm_nonneg (sectionValue x z)]
+  obtain ⟨t, ht, hts⟩ := mem_cocompact.1 hev
+  refine ht.of_isClosed_subset
+    (isClosed_le (continuous_sectionValue x.continuous).norm continuous_const) fun z hz ↦ ?_
+  by_contra hzt
+  have h1 : c < ‖sectionValue x z‖ := hts hzt
+  exact absurd hz (not_le.2 h1)
 
 /-- **Continuity of the divisor on `A_m^s`**, `s > 1`. If fields `xs i` converge to `x` in `A_m^s`,
 and the zero multiplicities of their sections are the counts of `E i` and of `D` in `Sym ℂ m`,

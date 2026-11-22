@@ -121,6 +121,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Rep.ρ_apply_of_mem_ker`: a vector killed by `ρ(g) - 1` is fixed by `g`.
 * `Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg`, `Rep.mem_range_applyAsHom_sub_iff_of_ρ_eq_neg`:
   kernel and image of `ρ(g) - 𝟙` when `g` acts by negation.
+* `Rep.applyAsHom_trivial_sub_id_apply`, `Rep.norm_trivial_hom_apply`: for the trivial
+  representation, `ρ(g) - 𝟙` vanishes and the norm is multiplication by the group order.
 * `Rep.trivialHomEquivInvariants`: the intertwiners out of the trivial line are the invariant
   vectors.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
@@ -518,6 +520,20 @@ theorem mem_range_applyAsHom_sub_iff_of_ρ_eq_neg {k G : Type*} [CommSemiring k]
     rw [applyAsHom_sub_id_apply, hneg, neg_neg, sub_neg_eq_add, ← two_smul k, hy]
 
 end Negation
+
+/-- For the trivial representation, `ρ(g) - 𝟙` vanishes. -/
+@[simp]
+theorem applyAsHom_trivial_sub_id_apply {k G : Type*} [Semiring k] [CommMonoid G] (g : G)
+    (M : Type*) [AddCommGroup M] [Module k M] (x : M) :
+    (applyAsHom (Rep.trivial k G M) g - 𝟙 (Rep.trivial k G M)).hom x = 0 := by
+  simp [Rep.applyAsHom, sub_hom]
+
+/-- For the trivial representation, the norm is multiplication by the group order. -/
+@[simp]
+theorem norm_trivial_hom_apply (k : Type*) {G : Type*} [Semiring k] [Group G] [Fintype G]
+    {M : Type*} [AddCommGroup M] [Module k M] (x : M) :
+    (Rep.trivial k G M).norm.asHom.hom x = (Nat.card G : k) • x :=
+  (Rep.norm_apply _).trans (Representation.norm_trivial_apply k G x)
 
 variable {k G : Type*} [CommRing k] [Group G]
 
