@@ -90,10 +90,7 @@ theorem zmultiples_hurewiczIntHom_riemannSphereSquare :
     AddSubgroup.zmultiples (hurewiczIntHom (OnePoint ℂ) ∞ 1
       (Additive.ofMul (⟦riemannSphereSquare⟧ : π_ 2 (OnePoint ℂ) ∞))) = ⊤ := by
   have := isIso_hurewicz_riemannSphereSquare
-  refine (AddSubgroup.eq_top_iff' _).2 fun b ↦ AddSubgroup.mem_zmultiples_iff.2
-    ⟨(inv (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) riemannSphereSquare)).hom b, ?_⟩
-  -- The Hurewicz morphism `ℤ ⟶ H₂(OnePoint ℂ; ℤ)` is `ℤ`-linear, so it sends `k` to `k` times the
-  -- image of `1`.
-  rw [hurewiczIntHom_mk, ← map_zsmul, smul_eq_mul, mul_one, IsIso.inv_hom_id_apply]
+  rw [hurewiczIntHom_mk]
+  exact GenLoop.zmultiples_hurewicz_of_isIso _
 
 end TauCeti

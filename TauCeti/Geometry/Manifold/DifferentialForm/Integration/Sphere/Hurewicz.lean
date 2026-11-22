@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
 Let `M` be a simply connected compact boundaryless manifold and `φ` a closed `C¹` two-form on
 `M`. The Hurewicz map `π₂(M, x) → H₂(M; ℤ)` is then an isomorphism at every base point
 (`HomotopyGroup.hurewiczAddEquiv`), so the integral of `φ` over the second homotopy group
-(`TauCeti.sphereIntegralHom`) descends to a homomorphism
+(`TauCeti.sphereIntegralHom`) descends (`HomotopyGroup.hurewiczLift`) to a homomorphism
 `TauCeti.homologySphereIntegralHom : H₂(M; ℤ) →+ F`. Since both the sphere integral and the
 Hurewicz map are invariant under base-point change, it agrees with the sphere integral on the
 Hurewicz class of every sphere, at every base point
@@ -60,22 +60,15 @@ the Hurewicz class of every sphere, at every base point
 def homologySphereIntegralHom (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) :
     ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj (TopCat.of M) →+
       F :=
-  (sphereIntegralHom (Classical.arbitrary M) hφ hdφ).comp
-    (hurewiczAddEquiv (n := 0) fun _ ↦ subsingleton_homotopyGroup_of_lt_two _).symm.toAddMonoidHom
+  hurewiczLift fun x ↦ sphereIntegralHom x hφ hdφ
 
 /-- **The integral of a closed `C¹` two-form on `H₂(M; ℤ)` is the sphere integral on Hurewicz
 classes**, at every base point. -/
 @[simp]
 theorem homologySphereIntegralHom_hurewiczIntHom (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) (x : M) (a : Additive (π_ 2 M x)) :
-    homologySphereIntegralHom hφ hdφ (hurewiczIntHom M x 1 a) = sphereIntegralHom x hφ hdφ a := by
-  -- Transport the class to the base point of the definition; both sides are invariant.
-  let γ : Path x (Classical.arbitrary M) := PathConnectedSpace.somePath _ _
-  rw [← ofMul_toMul a, ← hurewiczIntHom_homotopyGroupTransport γ a.toMul,
-    ← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0)
-      fun _ ↦ subsingleton_homotopyGroup_of_lt_two _]
-  -- Keep `hurewiczAddEquiv` folded, so that it cancels against its inverse.
-  simp [homologySphereIntegralHom, -hurewiczAddEquiv_apply,
-    sphereIntegral_homotopyGroupTransport hφ hdφ]
+    homologySphereIntegralHom hφ hdφ (hurewiczIntHom M x 1 a) = sphereIntegralHom x hφ hdφ a :=
+  hurewiczLift_hurewiczIntHom
+    (fun γ a ↦ by simp [sphereIntegral_homotopyGroupTransport hφ hdφ]) x a
 
 end TauCeti

@@ -15,7 +15,8 @@ Let `σ` be a fiberwise nondegenerate two-form on a simply connected Hausdorff �
 `M`, for instance a symplectic form. Its first Chern number
 (`TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom`) is defined on the second homotopy group
 `π₂(M, x)` by clutching. The Hurewicz map `π₂(M, x) → H₂(M; ℤ)` is an isomorphism at every base
-point (`HomotopyGroup.hurewiczAddEquiv`), so the first Chern number descends to a homomorphism
+point (`HomotopyGroup.hurewiczAddEquiv`), so the first Chern number descends
+(`HomotopyGroup.hurewiczLift`) to a homomorphism
 `TauCeti.SmoothTwoForm.IsNondegenerate.homologyFirstChernHom : H₂(M; ℤ) →+ ℤ`. Since both the
 first Chern number and the Hurewicz map are invariant under base-point change, it agrees with the
 first Chern number on the Hurewicz class of every sphere, at every base point
@@ -65,21 +66,14 @@ Chern number on the Hurewicz class of every sphere, at every base point
 def homologyFirstChernHom (h : σ.IsNondegenerate) :
     ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj (TopCat.of M) →+
       ℤ :=
-  (h.firstChernHom (Classical.arbitrary M)).comp
-    (hurewiczAddEquiv (n := 0) fun _ ↦ subsingleton_homotopyGroup_of_lt_two _).symm.toAddMonoidHom
+  hurewiczLift h.firstChernHom
 
 /-- **The first Chern number on `H₂(M; ℤ)` is the first Chern number on Hurewicz classes**, at
 every base point. -/
 @[simp]
 theorem homologyFirstChernHom_hurewiczIntHom (h : σ.IsNondegenerate) (x : M)
     (a : Additive (π_ 2 M x)) :
-    h.homologyFirstChernHom (hurewiczIntHom M x 1 a) = h.firstChernHom x a := by
-  -- Transport the class to the base point of the definition; both sides are invariant.
-  let γ : Path x (Classical.arbitrary M) := PathConnectedSpace.somePath _ _
-  rw [← ofMul_toMul a, ← hurewiczIntHom_homotopyGroupTransport γ a.toMul,
-    ← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0)
-      fun _ ↦ subsingleton_homotopyGroup_of_lt_two _]
-  -- Keep `hurewiczAddEquiv` folded, so that it cancels against its inverse.
-  simp [homologyFirstChernHom, -hurewiczAddEquiv_apply]
+    h.homologyFirstChernHom (hurewiczIntHom M x 1 a) = h.firstChernHom x a :=
+  hurewiczLift_hurewiczIntHom h.firstChernHom_homotopyGroupTransport x a
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
