@@ -14,10 +14,11 @@ import TauCeti.Probability.LargeDeviations.LargestTerm
 # Weak large deviation principles and exponential tightness
 
 A *weak* large deviation principle asks for the upper bound only on compact sets. A family of
-measures is *exponentially tight* if, for every level `L`, a single compact set carries all but
-an `exp (-L / ε)` fraction of the mass. The two notions combine to the full principle: an
-exponentially tight family satisfying a weak principle satisfies the full one, and the rate
-function is then good.
+measures is *exponentially tight* if, for every level `L`, there is a single compact set `K` whose
+complement has mass decaying at rate at least `L`: `limsup ε i * log (μ i Kᶜ) ≤ -L`. The two
+notions combine to the full principle: at a speed tending to `0`, an exponentially tight family
+satisfying a weak principle satisfies the full one. In an `R₁` space, along a nontrivial filter,
+the rate function of such a family is then good.
 
 Weak principles are usually obtained from local estimates. If the measures of small
 neighbourhoods of each point `x` decay at the rate `I x`, from above and from below, then the
@@ -34,15 +35,17 @@ ensembles are proved.
 
 ## Main results
 
-* `TauCeti.Probability.HasLDP.hasWeakLDP`: a large deviation principle is a weak one.
+* `TauCeti.Probability.HasLDP.hasWeakLDP`: in an `R₁` space a large deviation principle is a weak
+  one.
 * `TauCeti.Probability.IsExponentiallyTight.limsup_le_of_isClosed`: under exponential tightness
-  the compact-set upper bound extends to closed sets.
-* `TauCeti.Probability.IsExponentiallyTight.isGoodRateFunction`: under exponential tightness the
-  open-set lower bound forces the rate function to be good.
-* `TauCeti.Probability.HasWeakLDP.hasLDP`: an exponentially tight family satisfying a weak
-  principle satisfies the full principle.
-* `TauCeti.Probability.hasWeakLDP_of_forall_nhds`: local estimates at every point give the weak
-  principle.
+  at a speed tending to `0`, the compact-set upper bound extends to closed sets.
+* `TauCeti.Probability.IsExponentiallyTight.isGoodRateFunction`: under exponential tightness in an
+  `R₁` space, along a nontrivial filter, the open-set lower bound forces a lower semicontinuous
+  rate function to be good.
+* `TauCeti.Probability.HasWeakLDP.hasLDP`: at a speed tending to `0`, an exponentially tight
+  family satisfying a weak principle satisfies the full principle.
+* `TauCeti.Probability.hasWeakLDP_of_forall_nhds`: at an eventually positive speed tending to `0`,
+  local estimates at every point give the weak principle.
 
 ## References
 
@@ -88,9 +91,22 @@ theorem isExponentiallyTight_iff : IsExponentiallyTight l ε μ ↔ ∀ L : ℝ,
     IsCompact K ∧ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i Kᶜ)) l ≤ -(L : EReal) :=
   Iff.rfl
 
-/-- In a Hausdorff space a large deviation principle is a weak one. -/
-theorem HasLDP.hasWeakLDP [T2Space X] (h : HasLDP l ε μ I) : HasWeakLDP l ε μ I :=
-  ⟨h.lowerSemicontinuous, h.lower_bound, fun K hK => h.upper_bound K hK.isClosed⟩
+/-- In an `R₁` space, for instance a Hausdorff space, a large deviation principle is a weak one. -/
+theorem HasLDP.hasWeakLDP [R1Space X] (h : HasLDP l ε μ I) : HasWeakLDP l ε μ I := by
+  refine ⟨h.lowerSemicontinuous, h.lower_bound, fun K hK => ?_⟩
+  -- The closure of `K` lies in every open superlevel set `{c < I}` containing `K`, so the
+  -- infimum of `I` over the closed set `closure K` is still the infimum over `K`.
+  have hinf : ⨅ x ∈ K, I x ≤ ⨅ x ∈ closure K, I x :=
+    le_iInf₂ fun _ hx => le_of_forall_lt fun c hc =>
+      hK.closure_subset_of_isOpen (h.lowerSemicontinuous.isOpen_preimage c)
+        (fun y hy => hc.trans_le (biInf_le _ hy)) hx
+  calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l
+      ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (closure K))) l :=
+        limsup_le_limsup (.of_forall fun i => mul_le_mul_of_nonneg_left
+          (ENNReal.log_monotone (measure_mono subset_closure)) (by exact_mod_cast (ε i).coe_nonneg))
+    _ ≤ -((⨅ x ∈ closure K, I x : ℝ≥0∞) : EReal) := h.upper_bound _ isClosed_closure
+    _ ≤ -((⨅ x ∈ K, I x : ℝ≥0∞) : EReal) :=
+        EReal.neg_le_neg_iff.2 (EReal.coe_ennreal_le_coe_ennreal_iff.2 hinf)
 
 namespace IsExponentiallyTight
 

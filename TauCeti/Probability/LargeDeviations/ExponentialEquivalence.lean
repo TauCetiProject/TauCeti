@@ -18,9 +18,12 @@ import TauCeti.Probability.LargeDeviations.LargestTerm
 Two families of random variables `Z i` and `Z' i` on measure spaces `(Ω i, P i)`, with values in
 a metric space, are *exponentially equivalent* at speed `ε` if the probability that they are more
 than `δ` apart decays faster than every exponential:
-`limsup ε i * log (P i {δ < dist (Z i) (Z' i)}) = ⊥` for each `δ > 0`. Exponentially equivalent
-families satisfy the same large deviation principles with good rate functions. This allows a
-principle to be transferred to truncated, rounded or slightly perturbed random variables.
+`limsup ε i * log (P i {δ < dist (Z i) (Z' i)}) = ⊥` for each `δ > 0`. The relation is symmetric,
+reflexive at an eventually positive speed and transitive at a speed tending to `0`; so it is an
+equivalence relation at an eventually positive speed tending to `0`. At a speed tending to `0`,
+exponentially equivalent families satisfy the same large deviation principles with good rate
+functions. This allows a principle to be transferred to truncated, rounded or slightly perturbed
+random variables.
 
 For a good rate function `I` and a closed set `F`, the infimum of `I` over the closed
 `δ`-thickening of `F` increases to its infimum over `F` as `δ` decreases to `0`.
@@ -32,10 +35,14 @@ For a good rate function `I` and a closed set `F`, the infimum of `I` over the c
 
 ## Main results
 
+* `TauCeti.Probability.ExponentiallyEquivalent.refl`,
+  `TauCeti.Probability.ExponentiallyEquivalent.symm` and
+  `TauCeti.Probability.ExponentiallyEquivalent.trans`: exponential equivalence is reflexive at an
+  eventually positive speed, symmetric, and transitive at a speed tending to `0`.
 * `TauCeti.Probability.IsGoodRateFunction.iSup_iInf_cthickening`: the infima of a good rate
   function over the closed thickenings of a closed set increase to its infimum over the set.
-* `TauCeti.Probability.HasLDP.of_exponentiallyEquivalent`: a large deviation principle with a good
-  rate function passes to exponentially equivalent families.
+* `TauCeti.Probability.HasLDP.of_exponentiallyEquivalent`: at a speed tending to `0`, a large
+  deviation principle with a good rate function passes to exponentially equivalent families.
 
 ## References
 
@@ -94,7 +101,9 @@ variable [PseudoMetricSpace X] {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i
 
 /-- The families `Z i` and `Z' i` of random variables on `(Ω i, P i)` are *exponentially
 equivalent* at speed `ε` along `l`: for every `δ > 0`, the probability that `Z i` and `Z' i` are
-more than `δ` apart has limsup rate `⊥`. -/
+more than `δ` apart has limsup rate `⊥`. This relation is symmetric; it is reflexive at an
+eventually positive speed and transitive at a speed tending to `0`, see
+`ExponentiallyEquivalent.refl` and `ExponentiallyEquivalent.trans`. -/
 def ExponentiallyEquivalent (l : Filter ι) (ε : ι → ℝ≥0) (P : ∀ i, Measure (Ω i))
     (Z Z' : ∀ i, Ω i → X) : Prop :=
   ∀ δ : ℝ, 0 < δ → limsup (fun i => ((ε i : ℝ) : EReal) *
@@ -114,6 +123,26 @@ theorem ExponentiallyEquivalent.symm (h : ExponentiallyEquivalent l ε P Z Z') :
   intro δ hδ
   simpa only [dist_comm] using h δ hδ
 
+/-- Exponential equivalence is transitive at a speed tending to `0`. -/
+theorem ExponentiallyEquivalent.trans {Z'' : ∀ i, Ω i → X} (h : ExponentiallyEquivalent l ε P Z Z')
+    (h' : ExponentiallyEquivalent l ε P Z' Z'') (hε : Tendsto ε l (𝓝 0)) :
+    ExponentiallyEquivalent l ε P Z Z'' := by
+  intro δ hδ
+  -- If `Z i` and `Z'' i` are more than `δ` apart, one of the two pairs is more than `δ / 2` apart.
+  have hsub (i : ι) : ((ε i : ℝ) : EReal) * ENNReal.log (P i {ω | δ < dist (Z i ω) (Z'' i ω)}) ≤
+      ((ε i : ℝ) : EReal) * ENNReal.log (P i {ω | δ / 2 < dist (Z i ω) (Z' i ω)} +
+        P i {ω | δ / 2 < dist (Z' i ω) (Z'' i ω)}) := by
+    refine mul_le_mul_of_nonneg_left (ENNReal.log_monotone ?_)
+      (by exact_mod_cast (ε i).coe_nonneg)
+    refine (measure_mono fun ω hω => ?_).trans (measure_union_le _ _)
+    have hω' : δ < dist (Z i ω) (Z'' i ω) := hω
+    by_cases hd : δ / 2 < dist (Z i ω) (Z' i ω)
+    · exact Or.inl hd
+    · refine Or.inr (show δ / 2 < dist (Z' i ω) (Z'' i ω) from ?_)
+      linarith [dist_triangle (Z i ω) (Z' i ω) (Z'' i ω)]
+  refine le_bot_iff.1 ((limsup_le_limsup (.of_forall hsub)).trans_eq ?_)
+  rw [limsup_coe_mul_log_add _ _ hε, h _ (half_pos hδ), h' _ (half_pos hδ), max_self]
+
 /-- Random variables that are uniformly within every positive distance of each other eventually
 are exponentially equivalent at an eventually positive speed. -/
 theorem ExponentiallyEquivalent.of_eventually_forall_dist_le
@@ -126,6 +155,12 @@ theorem ExponentiallyEquivalent.of_eventually_forall_dist_le
   have hempty : {ω | δ < dist (Z i ω) (Z' i ω)} = ∅ :=
     Set.eq_empty_of_forall_notMem fun ω hω => (hδi ω).not_gt hω
   simpa [hempty] using EReal.mul_bot_of_pos (by exact_mod_cast hi)
+
+/-- Exponential equivalence is reflexive at an eventually positive speed. -/
+protected theorem ExponentiallyEquivalent.refl (Z : ∀ i, Ω i → X) (hpos : ∀ᶠ i in l, 0 < ε i) :
+    ExponentiallyEquivalent l ε P Z Z :=
+  .of_eventually_forall_dist_le
+    (fun _ hδ => .of_forall fun i ω => (dist_self (Z i ω)).trans_le hδ.le) hpos
 
 variable [MeasurableSpace X] [OpensMeasurableSpace X] {I : X → ℝ≥0∞}
 

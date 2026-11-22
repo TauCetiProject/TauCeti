@@ -17,9 +17,10 @@ import TauCeti.Probability.Moments.SubGaussian
 /-!
 # Large deviations of Gaussian laws with vanishing variance
 
-The Gaussian laws `gaussianReal m (ε i * v)`, with `v ≠ 0` and a speed `ε i` tending to `0`,
-satisfy a large deviation principle at speed `ε` with the good rate function
-`x ↦ (x - m)² / (2v)`. They are exponentially tight at every bounded speed.
+The Gaussian laws `gaussianReal m (ε i * v)`, with `v ≠ 0` and an eventually positive speed `ε i`
+tending to `0`, satisfy a large deviation principle at speed `ε` with the good rate function
+`x ↦ (x - m)² / (2v)`. They are exponentially tight at every eventually positive and eventually
+bounded speed.
 
 In particular, the sample means `(X 0 + ⋯ + X (n - 1)) / n` of independent standard Gaussians,
 whose law is `gaussianReal 0 (1 / n)`, satisfy the large deviation principle at speed `1 / n`
@@ -29,7 +30,8 @@ with rate `x ↦ x² / 2`. This is Cramér's theorem for the standard Gaussian.
 
 * `TauCeti.Probability.hasLDP_gaussianReal`: the large deviation principle for
   `gaussianReal m (ε i * v)`.
-* `TauCeti.Probability.isExponentiallyTight_gaussianReal`: these laws are exponentially tight.
+* `TauCeti.Probability.isExponentiallyTight_gaussianReal`: these laws are exponentially tight at
+  every eventually positive and eventually bounded speed.
 * `TauCeti.Probability.isGoodRateFunction_ofReal_sq_sub_div`: the rate function is good.
 * `ProbabilityTheory.iIndepFun.hasLDP_map_sum_range_div_gaussianReal`: the large deviation
   principle for the sample means of independent standard Gaussians.
