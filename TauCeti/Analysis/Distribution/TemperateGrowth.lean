@@ -81,6 +81,8 @@ need not be bounded. A measure of temperate growth is finite on compact sets.
 * `Function.HasTemperateGrowth.basis_repr_fderiv_apply`: so do the coordinates of `Df(x) v` in a
   basis.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
+* `ContinuousLinearEquiv.hasTemperateGrowth_comp_iff`: precomposing with a continuous linear
+  equivalence preserves and reflects temperate growth.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
 * `Function.HasTemperateGrowth.abs`: `|f|` has temperate growth if `f` has no zeros.
@@ -271,6 +273,14 @@ theorem abs {f : E → ℝ} (hf : f.HasTemperateGrowth) (h0 : ∀ x, f x ≠ 0) 
   simpa only [abs_eq_sign_mul hf.1.continuous h0] using (HasTemperateGrowth.const _).fun_mul hf
 
 end Function.HasTemperateGrowth
+
+/-- Precomposing with a continuous linear equivalence preserves and reflects temperate growth. -/
+theorem ContinuousLinearEquiv.hasTemperateGrowth_comp_iff {D V W : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (e : D ≃L[ℝ] V) {g : V → W} :
+    (g ∘ e).HasTemperateGrowth ↔ g.HasTemperateGrowth :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp e.symm.hasTemperateGrowth,
+    fun h ↦ h.comp e.hasTemperateGrowth⟩
 
 /-- On a finite-dimensional space the determinant has temperate growth, being a polynomial in the
 matrix entries. -/
