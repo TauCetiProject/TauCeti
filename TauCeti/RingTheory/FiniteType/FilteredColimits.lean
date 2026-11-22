@@ -6,6 +6,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.RingTheory.TensorProduct.DirectLimit
+public import TauCeti.Algebra.Category.Ring.DirectLimit
 public import Mathlib.Algebra.Category.Ring.Colimits
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
@@ -66,7 +67,7 @@ theorem exists_integral_tensor_generators_of_colimit
   let T : J → Type u := fun j ↦ F.obj j.val
   let : ∀ j, CommRing (T j) := fun j ↦ inferInstance
   let : ∀ j, Algebra S (T j) := fun j ↦ (F.map (homOfLE j.property)).hom.toAlgebra
-  obtain ⟨trans, htrans, ⟨e⟩⟩ := F.exists_directLimit_tail_algEquiv_colimit i₀
+  obtain ⟨trans, htrans, -, e, -⟩ := F.exists_directLimit_tail_algEquiv_colimit i₀
   have : DirectedSystem T (trans · · ·) := htrans
   have hsingle (x : C₀) (hx : x ∈ s) :
       ∃ j, (Algebra.TensorProduct.map (AlgHom.id S (T j)) φ₀).IsIntegralElem
