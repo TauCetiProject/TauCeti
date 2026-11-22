@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Basic.Complex.Basic
-import Mathlib.Algebra.Star.Prod
-import Mathlib.Algebra.Star.Orthogonal
+public import Mathlib.Algebra.Star.StarProjection
+public import Mathlib.Basic.Complex.Basic
+public import TauCeti.Algebra.Star.Prod
 import TauCeti.Algebra.Group.Idempotent
 import TauCeti.LinearAlgebra.Matrix.StarProjection.Transpose
 
@@ -29,16 +29,15 @@ example {n : Type*} [Fintype n] :
     ∃ e : Equiv.Perm {p : Matrix n n ℂ // IsStarProjection p},
       (∀ p, (e p).val = p.valᵀ) ∧
         ∀ p q, p.val * q.val = 0 ↔ (e p).val * (e q).val = 0 := by
-  let e := (Matrix.transposeAddEquiv n n ℂ).toEquiv.subtypeEquiv
-    (p := IsStarProjection) (q := IsStarProjection)
-    fun p ↦ (Matrix.isStarProjection_transpose_iff (p := p)).symm
-  refine ⟨e, fun _ ↦ rfl, ?_⟩
-  intro p q
-  rw [← p.property.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero q.property.isSelfAdjoint,
-    ← (e p).property.isSelfAdjoint.isStarOrtho_iff_mul_eq_zero (e q).property.isSelfAdjoint]
-  exact Matrix.isStarOrtho_transpose_iff.symm
+  exact ⟨Matrix.transposeStarProjection n ℂ, Matrix.transposeStarProjection_apply,
+    fun p q ↦ (Matrix.transposeStarProjection_mul_eq_zero_iff p q).symm⟩
 
-example {x : ℂ × ℂ} :
+public section
+
+namespace TauCeti
+
+/-- The star projections of `ℂ × ℂ` are zero, one, and the two coordinate projections. -/
+theorem isStarProjection_complex_prod_iff (x : ℂ × ℂ) :
     IsStarProjection x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1 := by
   constructor
   · intro h
@@ -48,17 +47,39 @@ example {x : ℂ × ℂ} :
     tauto
   · rintro (rfl | rfl | rfl | rfl) <;> simp [isStarProjection_iff', Prod.ext_iff]
 
+/-- The coordinate swap permutes the star projections of `ℂ × ℂ`. -/
+def complexProdSwapStarProjection : Equiv.Perm {p : ℂ × ℂ // IsStarProjection p} :=
+  let φ : ℂ × ℂ ≃⋆ₐ[ℂ] ℂ × ℂ := StarAlgEquiv.prodComm ℂ
+  φ.toEquiv.subtypeEquiv (p := IsStarProjection) (q := IsStarProjection) fun p ↦ by
+    have hcoe : (⇑φ.toEquiv : ℂ × ℂ → ℂ × ℂ) = ⇑φ := rfl
+    rw [hcoe]
+    exact ⟨fun hp ↦ hp.map φ, fun hp ↦ by
+      simpa only [StarAlgEquiv.symm_apply_apply] using hp.map φ.symm⟩
+
+@[simp]
+theorem complexProdSwapStarProjection_apply (p : {p : ℂ × ℂ // IsStarProjection p}) :
+    (complexProdSwapStarProjection p).val =
+      (StarAlgEquiv.prodComm ℂ : ℂ × ℂ ≃⋆ₐ[ℂ] ℂ × ℂ) p.val := by
+  have hcoe (φ : ℂ × ℂ ≃⋆ₐ[ℂ] ℂ × ℂ) : (⇑φ.toEquiv : ℂ × ℂ → ℂ × ℂ) = ⇑φ := rfl
+  simp only [complexProdSwapStarProjection, Equiv.subtypeEquiv_apply, hcoe]
+
+/-- The coordinate swap preserves zero products of star projections in both directions. -/
+theorem complexProdSwapStarProjection_mul_eq_zero_iff
+    (p q : {p : ℂ × ℂ // IsStarProjection p}) :
+    (complexProdSwapStarProjection p).val * (complexProdSwapStarProjection q).val = 0 ↔
+      p.val * q.val = 0 := by
+  simp only [complexProdSwapStarProjection_apply, ← map_mul,
+    map_eq_zero_iff (StarAlgEquiv.prodComm ℂ) (StarAlgEquiv.prodComm ℂ).injective]
+
 example :
     ∃ (e : Equiv.Perm {p : ℂ × ℂ // IsStarProjection p})
       (φ : ℂ × ℂ ≃⋆ₐ[ℂ] ℂ × ℂ),
-      (∀ x, φ x = x.swap) ∧ (∀ p, (e p).val = φ p.val) ∧
-        ∀ p q, p.val * q.val = 0 ↔ (e p).val * (e q).val = 0 := by
-  let φ : ℂ × ℂ ≃⋆ₐ[ℂ] ℂ × ℂ :=
-    { RingEquiv.prodComm with map_star' := fun _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
-  let e := φ.toEquiv.subtypeEquiv (p := IsStarProjection) (q := IsStarProjection) fun p ↦
-    ⟨fun hp ↦ hp.map φ, fun hp ↦ by
-      have hφ : IsStarProjection (φ p) := hp
-      simpa only [StarAlgEquiv.symm_apply_apply] using hφ.map φ.symm⟩
-  have hExt (p : {p : ℂ × ℂ // IsStarProjection p}) : (e p).val = φ p.val := rfl
-  refine ⟨e, φ, fun _ ↦ rfl, hExt, fun p q ↦ ?_⟩
-  simp only [hExt, ← map_mul, map_eq_zero_iff φ φ.injective]
+      (∀ x, φ x = (RingEquiv.prodComm : ℂ × ℂ ≃+* ℂ × ℂ) x) ∧
+        (∀ p, (e p).val = φ p.val) ∧
+          ∀ p q, p.val * q.val = 0 ↔ (e p).val * (e q).val = 0 := by
+  exact ⟨complexProdSwapStarProjection, StarAlgEquiv.prodComm ℂ,
+    fun x ↦ by simp only [StarAlgEquiv.prodComm_apply, RingEquiv.coe_prodComm],
+    complexProdSwapStarProjection_apply,
+    fun p q ↦ (complexProdSwapStarProjection_mul_eq_zero_iff p q).symm⟩
+
+end TauCeti

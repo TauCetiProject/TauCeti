@@ -40,6 +40,6 @@ end IsIdempotentElem
 
 /-- A pair is idempotent exactly when both coordinates are idempotent. -/
 @[simp]
-theorem Prod.isIdempotentElem_iff {M N : Type*} [Mul M] [Mul N] {x : M × N} :
+theorem Prod.isIdempotentElem_iff {M N : Type*} [Mul M] [Mul N] (x : M × N) :
     IsIdempotentElem x ↔ IsIdempotentElem x.1 ∧ IsIdempotentElem x.2 := by
   simp only [_root_.isIdempotentElem_iff, Prod.ext_iff, Prod.fst_mul, Prod.snd_mul]
