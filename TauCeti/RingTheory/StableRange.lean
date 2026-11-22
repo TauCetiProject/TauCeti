@@ -44,6 +44,8 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * `TauCeti.hasStableRangeLE_one_of_isLocalRing`: a local ring has stable range at most `1`.
 * `TauCeti.HasStableRangeLE.exists_isUnimodular_add_mul_of_subset`: shortening into any finite
   subset of cardinality at least `s`.
+* `TauCeti.HasStableRangeLE.exists_add_smul_dotProduct_eq_one`: the same shortening in
+  coordinates, with a functional vanishing at the shortened coordinate.
 * `TauCeti.hasStableRangeLE_iff_forall_le`: equivalence with shortening all rows of length at least
   `s + 1` (Vaserstein).
 * `TauCeti.HasStableRangeLE.mono`: monotonicity in the bound `s`.
@@ -249,6 +251,24 @@ theorem HasStableRangeLE.exists_isUnimodular_add_mul_subtype_ne {R ι : Type*} [
     rw [hcomp, LinearEquiv.isUnimodular_apply_iff]
     exact ha
   exact hR.exists_isUnimodular_add_mul hcard ha'
+
+/-- Shortening a chosen coordinate, in coordinates: over a ring of stable range at most `s`, a
+unimodular vector `a : ι → R` with `s + 1 ≤ Fintype.card ι` becomes unimodular through a
+functional `b` vanishing at `i₀` after adding the multiples `a i₀ * c i` of its coordinate `i₀` to
+the others, where `c i₀ = 0`. -/
+theorem HasStableRangeLE.exists_add_smul_dotProduct_eq_one {R ι : Type*} [Ring R] [Fintype ι]
+    {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι)
+    {a : ι → R} (ha : Module.IsUnimodular R a) (i₀ : ι) :
+    ∃ b c : ι → R, b i₀ = 0 ∧ c i₀ = 0 ∧ (a + a i₀ • c) ⬝ᵥ b = 1 := by
+  classical
+  obtain ⟨c, hc⟩ := hR.exists_isUnimodular_add_mul_subtype_ne hι ha i₀
+  obtain ⟨b, hb⟩ := TauCeti.Module.isUnimodular_pi_iff.mp hc
+  -- extend functions on the coordinates other than `i₀` by zero
+  let ext : ({i // i ≠ i₀} → R) → ι → R := fun f i => if h : i = i₀ then 0 else f ⟨i, h⟩
+  refine ⟨ext b, ext c, by simp [ext], by simp [ext], ?_⟩
+  rw [dotProduct, Fintype.sum_eq_add_sum_subtype_ne _ i₀, ← hb]
+  simp only [ext, ↓reduceDIte, mul_zero, zero_add]
+  exact Finset.sum_congr rfl fun i _ => by simp [i.property]
 
 /-- **Vaserstein's first theorem:** `HasStableRangeLE R s` holds if and only if every unimodular
 `(m + 1)`-row of length `m ≥ s` can be shortened to a unimodular `m`-row. -/
