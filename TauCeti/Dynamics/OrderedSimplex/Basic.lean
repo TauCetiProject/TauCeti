@@ -46,6 +46,8 @@ operators of the accelerated branches act on `C¹` functions.
 * `TauCeti.isCompact_orderedSimplex`, `TauCeti.convex_orderedSimplex`,
   `TauCeti.interior_orderedSimplex_nonempty`, `TauCeti.uniqueDiffOn_orderedSimplex`: the chart is
   a compact convex body.
+* `TauCeti.mem_interior_orderedSimplex_iff`: the interior of the chart consists of the points
+  with `0 < w₁ < ⋯ < w_{d+1}`.
 * `TauCeti.le_one_half_of_mem_orderedSimplex`, `TauCeti.inv_succ_le_one_sub_sum`: every chart
   coordinate is at most `1 / 2`, and the last coordinate `w_{d+1}` is at least `1 / (d + 1)`.
 * `TauCeti.pos_last_of_mem_orderedCone`, `TauCeti.simplexChart_eq_simplexChart_iff`,
@@ -134,6 +136,21 @@ theorem mem_orderedSimplex_iff_simplexPoint {x : Fin d → ℝ} :
   · simpa using hmono (Fin.castSucc_le_castSucc_iff.mpr hij)
   · simpa using hmono (Fin.le_last i.castSucc)
 
+/-- The full point of a chart point is strictly increasing exactly when the chart coordinates
+are strictly increasing and all lie below the last coordinate `1 - ∑ xᵢ`. -/
+theorem strictMono_simplexPoint_iff {x : Fin d → ℝ} :
+    StrictMono (simplexPoint x) ↔ StrictMono x ∧ ∀ i, x i < 1 - ∑ k, x k := by
+  refine ⟨fun h => ⟨fun i j hij => ?_, fun i => by simpa using h (Fin.castSucc_lt_last i)⟩,
+    fun ⟨hmono, hlast⟩ i j hij => ?_⟩
+  · simpa using h (Fin.castSucc_lt_castSucc_iff.mpr hij)
+  · induction j using Fin.lastCases with
+    | last => induction i using Fin.lastCases with
+      | last => exact absurd hij (lt_irrefl _)
+      | cast i => simpa using hlast i
+    | cast j => induction i using Fin.lastCases with
+      | last => exact absurd hij (not_lt.mpr (Fin.castSucc_lt_last j).le)
+      | cast i => simpa using hmono (Fin.castSucc_lt_castSucc_iff.mp hij)
+
 /-- The coordinates of the full point of a chart point of the ordered simplex are at most `1`. -/
 theorem simplexPoint_le_one {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (i : Fin (d + 1)) :
     simplexPoint x i ≤ 1 := by
@@ -195,6 +212,35 @@ theorem mem_interior_orderedSimplex {x : Fin d → ℝ} (h0 : ∀ i, 0 < x i) (h
   obtain ⟨hy0, hymono, hylast⟩ := hy
   exact ⟨fun i => (hy0 i).le, StrictMono.monotone fun i j hij => hymono i j hij,
     fun i => (hylast i).le⟩
+
+open Filter Topology in
+/-- The interior of the ordered simplex consists of the chart points with positive, strictly
+increasing coordinates, all below the last coordinate `1 - ∑ xᵢ`: these are the points `w` with
+`0 < w₁ < ⋯ < w_{d+1}`. -/
+theorem mem_interior_orderedSimplex_iff {x : Fin d → ℝ} :
+    x ∈ interior (orderedSimplex d) ↔
+      (∀ i, 0 < x i) ∧ StrictMono x ∧ ∀ i, x i < 1 - ∑ k, x k := by
+  refine ⟨fun hx => ?_, fun ⟨h0, hmono, hlast⟩ => mem_interior_orderedSimplex h0 hmono hlast⟩
+  -- An interior point can be moved by a small positive multiple of any vector.
+  have hmove (v : Fin d → ℝ) : ∃ ε : ℝ, 0 < ε ∧ x + ε • v ∈ orderedSimplex d := by
+    have ht : Tendsto (fun ε : ℝ => x + ε • v) (𝓝 0) (𝓝 x) :=
+      (by fun_prop : Continuous fun ε : ℝ => x + ε • v).tendsto' 0 x (by simp)
+    obtain ⟨ε, hε, hε0⟩ := (((ht.eventually (mem_interior_iff_mem_nhds.mp hx)).filter_mono
+      nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
+    exact ⟨ε, hε0, hε⟩
+  refine ⟨fun i => ?_, fun i j hij => ?_, fun i => ?_⟩
+  · obtain ⟨ε, hε, h⟩ := hmove (-Pi.single i 1)
+    have := h.1 i
+    simp at this
+    linarith
+  · obtain ⟨ε, hε, h⟩ := hmove (Pi.single i 1)
+    have := h.2.1 hij.le
+    simp [Pi.single_eq_of_ne hij.ne'] at this
+    linarith
+  · obtain ⟨ε, hε, h⟩ := hmove (Pi.single i 1)
+    have := h.2.2 i
+    simp [Finset.sum_add_distrib, ← Finset.mul_sum] at this
+    linarith
 
 /-- The ordered simplex has nonempty interior in `ℝ^d`: the point `wᵢ = 2 i / (n (n - 1))`,
 `n = d + 2`, is an interior point. -/
