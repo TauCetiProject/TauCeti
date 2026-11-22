@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Operator.Mul
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Hyperregular
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ModelSpace
 public import TauCeti.Geometry.Symplectic.Cotangent.SignConvention
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
 
 /-!
 # Hamilton's equations on the cotangent bundle of a normed space
@@ -147,28 +149,15 @@ theorem mfderiv_lineDiffeomorph_symplecticForm_hamiltonianVectorField_comp_lineD
       (lineDiffeomorph ℝ z)) :
     mfderiv (𝓘(ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) 𝓘(ℝ, ℝ × ℝ) (lineDiffeomorph ℝ) z
         ((symplecticForm 𝓘(ℝ) ℝ).hamiltonianVectorField (h ∘ lineDiffeomorph ℝ) z) = (b, -a) := by
-  -- In the coordinates `(q, p)` of `T*ℝ ≃ ℝ × ℝ'`, the Hamiltonian is `h(q, p 1)`.
-  set P : ℝ × StrongDual ℝ ℝ →L[ℝ] ℝ × ℝ := (ContinuousLinearMap.fst ℝ ℝ (StrongDual ℝ ℝ)).prod
-    ((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).comp (ContinuousLinearMap.snd ℝ ℝ (StrongDual ℝ ℝ)))
-  have hPapply (q : ℝ) (p : StrongDual ℝ ℝ) : P (q, p) = (q, p 1) := by simp [P]
-  have hP : h ∘ lineDiffeomorph ℝ = (h ∘ P) ∘ modelSpaceDiffeomorph ℝ :=
-    funext fun w ↦ by
-      simp only [Function.comp_apply, lineDiffeomorph_apply, modelSpaceDiffeomorph_apply]
-      exact congrArg h (hPapply w.proj w.snd).symm
-  have hz : P (modelSpaceDiffeomorph ℝ z) = lineDiffeomorph ℝ z := by
-    rw [modelSpaceDiffeomorph_apply, lineDiffeomorph_apply]
-    exact hPapply z.proj z.snd
-  rw [← hz] at hh
-  have hd : HasFDerivAt (h ∘ P) ((a • ContinuousLinearMap.id ℝ ℝ).comp
-      (ContinuousLinearMap.fst ℝ ℝ (StrongDual ℝ ℝ)) + (ContinuousLinearMap.apply ℝ ℝ b).comp
-      (ContinuousLinearMap.snd ℝ ℝ (StrongDual ℝ ℝ))) (modelSpaceDiffeomorph ℝ z) := by
-    refine (hh.comp (modelSpaceDiffeomorph ℝ z) P.hasFDerivAt).congr_fderiv ?_
-    ext v
-    · simp [P]
-    · simpa [P, mul_comm] using Dual.apply_one_mul_eq (v : Module.Dual ℝ ℝ) b
-  rw [hP, symplecticForm_hamiltonianVectorField_comp_modelSpaceDiffeomorph_of_hasFDerivAt hd,
-    mfderiv_lineDiffeomorph_apply]
-  exact Prod.ext rfl (by simp)
+  -- `lineDiffeomorph` carries `ω` to the standard area form, so Hamiltonian vector fields are
+  -- natural along it.
+  rw [isSymplectic_symplecticForm.isNondegenerate.mfderiv_hamiltonianVectorField_comp
+    (SymplecticForm.isNondegenerate_constSmooth stdSymplecticForm) (lineDiffeomorph ℝ).contMDiff
+    mpullback_lineDiffeomorph_constSmooth
+    ((lineDiffeomorph ℝ).isInvertible_mfderiv (x := z) (by simp)).surjective
+    hh.differentiableAt.mdifferentiableAt, SymplecticForm.hamiltonianVectorField_constSmooth]
+  refine stdSymplecticForm_hamiltonianVectorField (hh.congr_fderiv ?_)
+  ext <;> simp [mul_comm]
 
 variable {m : ℝ} {V : ℝ → ℝ}
 
@@ -234,15 +223,6 @@ private theorem smul_mul_symm (_ : ℝ) (v w : ℝ) :
     (m • ContinuousLinearMap.mul ℝ ℝ) v w = (m • ContinuousLinearMap.mul ℝ ℝ) w v := by
   simp only [smul_apply, ContinuousLinearMap.mul_apply', mul_comm v w]
 
-/-- The kinetic form `g(v, w) = m v w` is invertible onto the dual exactly when `m ≠ 0`. -/
-private theorem isInvertible_smul_mul_iff :
-    (m • ContinuousLinearMap.mul ℝ ℝ).IsInvertible ↔ m ≠ 0 := by
-  refine ⟨fun h hm ↦ ?_, fun hm ↦
-    .of_inverse (g := m⁻¹ • ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)) ?_ ?_⟩
-  · exact one_ne_zero (h.injective (a₁ := 1) (a₂ := 0) (by simp [hm]))
-  · ext; simp [hm]
-  · ext; simp [hm]
-
 /-- **The particle Lagrangian is hyperregular exactly for nonzero mass.** The Lagrangian
 `(m / 2) v² - V(q)` on the line is hyperregular exactly when `m ≠ 0`, for every potential `V`. -/
 theorem isHyperregularLagrangian_mul_sq_sub_iff :
@@ -251,7 +231,8 @@ theorem isHyperregularLagrangian_mul_sq_sub_iff :
       m ≠ 0 := by
   rw [mul_sq_sub_eq_mechanicalLagrangian, isHyperregularLagrangian_mechanicalLagrangian_iff
     smul_mul_symm]
-  exact ⟨fun h ↦ isInvertible_smul_mul_iff.1 (h 0), fun hm _ ↦ isInvertible_smul_mul_iff.2 hm⟩
+  exact ⟨fun h ↦ ContinuousLinearMap.isInvertible_smul_mul_iff.1 (h 0),
+    fun hm _ ↦ ContinuousLinearMap.isInvertible_smul_mul_iff.2 hm⟩
 
 /-- **The Legendre map of the particle Lagrangian** `(m / 2) v² - V(q)` is `(q, v) ↦ (q, m v)` in
 the coordinates `(q, p 1)` of `T*ℝ`. -/
@@ -282,8 +263,8 @@ theorem IsHyperregularLagrangian.hamiltonian_mul_sq_sub
   -- covector `p` is `g(u, ·)` for the velocity `u = p 1 / m`.
   have key (p : ℝ →L[ℝ] ℝ) (c : ℝ) :
       2⁻¹ * p ((m • ContinuousLinearMap.mul ℝ ℝ).inverse p) + c = p 1 ^ 2 / (2 * m) + c := by
-    obtain ⟨u, rfl⟩ := (isInvertible_smul_mul_iff.2 hm).surjective p
-    rw [(isInvertible_smul_mul_iff.2 hm).inverse_apply_self]
+    obtain ⟨u, rfl⟩ := (ContinuousLinearMap.isInvertible_smul_mul_iff.2 hm).surjective p
+    rw [(ContinuousLinearMap.isInvertible_smul_mul_iff.2 hm).inverse_apply_self]
     simp only [smul_apply, ContinuousLinearMap.mul_apply', smul_eq_mul]
     field_simp
   exact key z.snd (V z.proj)
@@ -360,14 +341,10 @@ theorem IsHyperregularLagrangian.mfderiv_legendreMap_mul_sq_sub_eq_hamiltonianVe
   rw [lineDiffeomorph_apply, Prod.mk.injEq] at hz
   set L := fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ m / 2 * @HPow.hPow ℝ ℕ ℝ _ v.snd 2 - V v.proj
   -- Compare both sides in the coordinates `(q, p 1)` of `T*ℝ`, which are injective on tangent
-  -- vectors since a covector `p` of the line is determined by `p 1`.
+  -- vectors since `lineDiffeomorph` is a diffeomorphism.
   have hinj : Function.Injective (mfderiv (𝓘(ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) 𝓘(ℝ, ℝ × ℝ)
       (lineDiffeomorph ℝ) (legendreMap L v)) :=
-    fun x y hxy ↦ by
-      have hxy' := (mfderiv_lineDiffeomorph_apply ℝ _ x).symm.trans
-        (hxy.trans (mfderiv_lineDiffeomorph_apply ℝ _ y))
-      obtain ⟨h1, h2⟩ := Prod.mk.inj hxy'
-      exact Prod.ext h1 (ContinuousLinearMap.ext_ring h2)
+    ((lineDiffeomorph ℝ).isInvertible_mfderiv (x := legendreMap L v) (by simp)).injective
   -- Left side in coordinates: `d(ℓ ∘ FL)(v, -V'/m) = (v, m (-V'/m)) = (v, -V')`.
   have hlhs : mfderiv (𝓘(ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) 𝓘(ℝ, ℝ × ℝ) (lineDiffeomorph ℝ)
       (legendreMap L v) (mfderiv 𝓘(ℝ, ℝ).tangent (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ →L[ℝ] ℝ)) (legendreMap L) v

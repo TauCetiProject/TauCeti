@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Operator.Mul
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Multiplication operators in seminormed algebras
@@ -16,7 +17,8 @@ and evaluates their powers. These identities connect the bounded-operator API wi
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
 seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
-faithful (`RegularNormedAlgebra.faithfulSMul`).
+faithful (`RegularNormedAlgebra.faithfulSMul`). On the field itself, `c • mul 𝕜 𝕜` is invertible
+exactly when `c ≠ 0` (`ContinuousLinearMap.isInvertible_smul_mul_iff`).
 For unital algebras we also specialize bounded two-sided multiplication `mulLeftRight` when one
 factor is `1`, bundle the left regular representation as a unital algebra homomorphism, and give its
 inverse norm bound without assuming that the identity has norm one.
@@ -123,6 +125,14 @@ theorem norm_le_opNorm_mul_apply_mul_norm_one (x : R) :
   simpa only [mul_apply', mul_one] using (mul 𝕜 R x).le_opNorm (1 : R)
 
 end Unital
+
+/-- On the field itself, the bilinear map `(v, w) ↦ c v w`, viewed as a map into the dual, is
+invertible exactly when `c ≠ 0`. -/
+@[simp]
+theorem isInvertible_smul_mul_iff {c : 𝕜} : (c • mul 𝕜 𝕜).IsInvertible ↔ c ≠ 0 := by
+  refine ⟨fun h hc ↦ ?_, fun hc ↦ .of_inverse (g := c⁻¹ • apply 𝕜 𝕜 (1 : 𝕜)) ?_ ?_⟩
+  · exact one_ne_zero (h.injective (a₁ := 1) (a₂ := 0) (by simp [hc]))
+  all_goals ext; simp [hc]
 
 end ContinuousLinearMap
 
