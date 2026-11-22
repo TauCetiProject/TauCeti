@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import TauCeti.Algebra.MonoidAlgebra.Finite
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness
 public import TauCeti.Geometry.Toric.Algebraic.FaceLocalization
@@ -21,7 +20,8 @@ finite index, and a cone `σ` is lattice rational for `N'` exactly when it is fo
 has two dual semigroups `S = σ^∨ ∩ M` and `S' = σ^∨ ∩ M'`, for the character lattices
 `M = N →+ ℤ` and `M' = N' →+ ℤ`. Restriction of characters along `f` maps `S` into `S'` and
 induces the chart map `R[S] → R[S']`, that is, the toric morphism `U'_σ → U_σ` from the chart of
-`σ` for the finer lattice `N'` to its chart for `N`. In rank one with `f = e •`, it is `q ↦ q'^e`.
+`σ` for the finite-index sublattice `N'` to its chart for `N` (so the character lattice `M'` is the
+finer one). In rank one with `f = e •`, it is `q ↦ q'^e`.
 
 The index `e` of `f` kills `N / f(N')`, so `e` times every character in `S'` is the restriction
 of a character in `S`, and every monomial of `R[S']` is integral over `R[S]`. Since `S'` is
@@ -35,12 +35,10 @@ with the open immersions of faces, which are the maps along which the charts of 
 
 ## Main declarations
 
-* `TauCeti.Toric.IsIntegralLattice.finiteIndex_range`: a compatible map of integral lattices in
-  the same vector space has image of finite index.
 * `TauCeti.Toric.isLatticeRational_iff_of_comp`: lattice rationality of a cone is the same for
   both lattices.
-* `TauCeti.Toric.mem_nsmulSaturation_mrange_dualSemigroupMap`: every character of the finer
-  lattice nonnegative on `σ` has a positive multiple restricted from the coarser lattice.
+* `TauCeti.Toric.mem_nsmulSaturation_mrange_dualSemigroupMap`: every character of `N'`
+  nonnegative on `σ` has a positive multiple restricted from `N`.
 * `TauCeti.Toric.finite_mapDomainRingHom_dualSemigroupMap`: the chart map `R[S] → R[S']` is
   finite over every commutative ring `R`.
 * `TauCeti.Toric.isIntegralClosure_dualSemigroupMap`: over an integrally closed domain, `R[S']`
@@ -67,20 +65,6 @@ namespace TauCeti.Toric
 
 variable {N N' V : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {i' : N' →+ V} {f : N' →+ N}
-
-/-- A map `f : N' →+ N` compatible with integral lattices `i'` and `i` in the same real vector
-space has image of finite index: the two lattices have the same rank. -/
-theorem IsIntegralLattice.finiteIndex_range (hi : IsIntegralLattice i)
-    (hi' : IsIntegralLattice i') (hf : ∀ n, i' n = i (f n)) : f.range.FiniteIndex := by
-  have := hi.free
-  have := hi.finite
-  have hinj : Function.Injective f.toIntLinearMap := fun a b hab ↦
-    hi'.injective (by simp only [hf, AddMonoidHom.coe_toIntLinearMap] at hab ⊢; rw [hab])
-  have : Finite (N ⧸ LinearMap.range f.toIntLinearMap) :=
-    Submodule.finiteQuotientOfFreeOfRankEq _
-      (by rw [LinearMap.finrank_range_of_inj hinj, hi'.finrank_eq, hi.finrank_eq])
-  have : Finite (N ⧸ f.range) := this
-  exact AddSubgroup.finiteIndex_of_finite_quotient
 
 variable {σ : PointedCone ℝ V}
 
@@ -194,13 +178,9 @@ theorem isFinite_affineToricSchemeMap (hi : IsIntegralLattice i) (hi' : IsIntegr
   have := ((isLatticeRational_iff_of_comp hi hi' hf).2 hσ).fg_dualSemigroup hi'
   rw [affineToricSchemeMap_def, IsFinite.SpecMap_iff, CommRingCat.hom_ofHom,
     affineCoordinateRingMap_def]
-  refine TauCeti.MonoidAlgebra.mapDomainRingHom_finite_of_forall_mem_powSaturation _
-    (fun x ↦ ?_) ℂ
-  obtain ⟨n, hn, m, hm⟩ := AddSubmonoid.mem_nsmulSaturation.1
-    (mem_nsmulSaturation_mrange_dualSemigroupMap hi hi' hf x.toAdd)
-  exact Submonoid.mem_powSaturation.2 ⟨n, hn, Multiplicative.ofAdd m, by
-    simp only [AddMonoidHom.coe_toMultiplicative, Function.comp_apply, toAdd_ofAdd]
-    rw [hm, ofAdd_nsmul, ofAdd_toAdd]⟩
+  exact TauCeti.MonoidAlgebra.mapDomainRingHom_finite_of_forall_mem_powSaturation _
+    (fun x ↦ (AddMonoidHom.mem_powSaturation_mrange_toMultiplicative _).2
+      (mem_nsmulSaturation_mrange_dualSemigroupMap hi hi' hf x.toAdd)) ℂ
 
 /-- Changing the lattice commutes with face inclusions: for a face `τ` of `σ`, the morphism of
 complex affine toric charts of `τ` for `N'` into the chart of `σ` for `N` factors through the
