@@ -13,9 +13,9 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.LocalRing.Pullback
 
 import Mathlib.Algebra.Category.Ring.Constructions
-import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.RingTheory.Finiteness.Finsupp
+import Mathlib.RingTheory.TensorProduct.Quotient
 
 /-!
 # Fiber products along a surjection
@@ -107,43 +107,9 @@ theorem map_pullbackFst_ker_pullbackSnd_eq {B C D : Type*} [Ring B] [Semiring C]
   rw [hfst, ← Ideal.map_map, hker,
     Ideal.map_comap_of_surjective e.toRingHom e.surjective, map_pullbackSnd_ker_pullbackFst_eq]
 
-universe u in
-/-- For a surjective map out of the first factor, the ring fiber product square is
-also a pushout. -/
-theorem isPushout_pullback {B C D : Type u} [CommRing B] [CommRing C] [CommRing D]
-    (p : B →+* C) (q : D →+* C) (hp : Function.Surjective p) :
-    IsPushout (CommRingCat.ofHom (p.pullbackFst q)) (CommRingCat.ofHom (p.pullbackSnd q))
-      (CommRingCat.ofHom p) (CommRingCat.ofHom q) := by
-  refine IsPushout.mk' (CommRingCat.hom_ext (p.pullback_comm_sq q)) ?_ ?_
-  · intro T f g h _
-    have : Epi (CommRingCat.ofHom p) := ConcreteCategory.epi_of_surjective _ hp
-    exact (cancel_epi (CommRingCat.ofHom p)).mp h
-  · intro T f g h
-    have hfg (x : p.pullback q) : f (p.pullbackFst q x) = g (p.pullbackSnd q x) := by
-      have hx : (CommRingCat.ofHom (p.pullbackFst q) ≫ f).hom x =
-          (CommRingCat.ofHom (p.pullbackSnd q) ≫ g).hom x :=
-        ConcreteCategory.congr_hom h x
-      simpa only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply] using hx
-    have hker : ker p ≤ ker f.hom := by
-      rw [← map_pullbackFst_ker_pullbackSnd_eq p q, Ideal.map_le_iff_le_comap]
-      intro x hx
-      rw [Ideal.mem_comap, mem_ker]
-      rw [hfg, mem_ker.mp hx, map_zero]
-    let l := p.liftOfSurjective hp ⟨f.hom, hker⟩
-    have hl : l.comp p = f.hom := p.liftOfSurjective_comp hp _
-    refine ⟨CommRingCat.ofHom l, CommRingCat.hom_ext hl, ?_⟩
-    apply CommRingCat.hom_ext
-    ext d
-    obtain ⟨x, rfl⟩ := p.surjective_pullbackSnd_of_surjective q hp d
-    have hx : p (p.pullbackFst q x) = q (p.pullbackSnd q x) := x.property
-    simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply]
-    exact (congrArg l hx).symm.trans
-      ((congrArg (fun k : B →+* T ↦ k (p.pullbackFst q x)) hl).trans (hfg x))
-
-universe u in
 /-- If `p` is surjective, the canonical map `B ⊗[B ×_C D] D → C` is an isomorphism.
 The algebra and tower data are determined by the four ring maps. -/
-theorem isPushout_pullback_algebra {B C D : Type u} [CommRing B] [CommRing C] [CommRing D]
+theorem isPushout_pullback_algebra {B C D : Type*} [CommRing B] [CommRing C] [CommRing D]
     (p : B →+* C) (q : D →+* C) (hp : Function.Surjective p) :
     letI : Algebra (p.pullback q) B := (p.pullbackFst q).toAlgebra
     letI : Algebra (p.pullback q) D := (p.pullbackSnd q).toAlgebra
@@ -162,7 +128,49 @@ theorem isPushout_pullback_algebra {B C D : Type u} [CommRing B] [CommRing C] [C
   let : IsScalarTower (p.pullback q) B C := IsScalarTower.of_algebraMap_eq' rfl
   let : IsScalarTower (p.pullback q) D C :=
     IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
-  exact CommRingCat.isPushout_iff_isPushout.mp (isPushout_pullback p q hp)
+  let eD := Ideal.quotientKerAlgEquivOfSurjective
+    (f := Algebra.ofId (p.pullback q) D) (p.surjective_pullbackSnd_of_surjective q hp)
+  let eQ := Algebra.TensorProduct.quotIdealMapEquivTensorQuot B (ker (p.pullbackSnd q))
+  let eI := Ideal.quotientEquivAlgOfEq B (map_pullbackFst_ker_pullbackSnd_eq p q)
+  let eC := Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId B C) hp
+  let eT := Algebra.TensorProduct.congr (AlgEquiv.refl : B ≃ₐ[B] B) eD.symm
+  refine ⟨IsBaseChange.of_equiv ((eT.trans (eQ.symm.trans (eI.trans eC))).toLinearEquiv) ?_⟩
+  intro d
+  obtain ⟨a, rfl⟩ := p.surjective_pullbackSnd_of_surjective q hp d
+  change eC (eI (eQ.symm (eT (TensorProduct.tmul (p.pullback q) 1
+    (p.pullbackSnd q a))))) = q (p.pullbackSnd q a)
+  have hD : eD.symm (p.pullbackSnd q a) = Ideal.Quotient.mk _ a :=
+    Ideal.quotientKerAlgEquivOfSurjective_symm_apply _ a
+  have hTensor : eT (TensorProduct.tmul (p.pullback q) 1 (p.pullbackSnd q a)) =
+      TensorProduct.tmul (p.pullback q) 1 (Ideal.Quotient.mk _ a) :=
+    (Algebra.TensorProduct.map_tmul _ _ _ _).trans (congrArg _ hD)
+  have hSquare : p (p.pullbackFst q a) = q (p.pullbackSnd q a) := a.property
+  rw [hTensor]
+  calc
+    _ = eC (eI (Ideal.Quotient.mk _ (a • (1 : B)))) := congrArg (fun x ↦ eC (eI x))
+      (Algebra.TensorProduct.quotIdealMapEquivTensorQuot_symm_tmul B _ 1 a)
+    _ = eC (Ideal.Quotient.mk _ (a • (1 : B))) := congrArg eC
+      (Ideal.quotientEquivAlgOfEq_mk B (map_pullbackFst_ker_pullbackSnd_eq p q) _)
+    _ = p (a • (1 : B)) := Ideal.quotientKerAlgEquivOfSurjective_mk hp _
+    _ = q (p.pullbackSnd q a) := by
+      simpa only [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra] using hSquare
+
+universe u in
+/-- For a surjective map out of the first factor, the ring fiber product square is
+also a pushout. -/
+theorem isPushout_pullback {B C D : Type u} [CommRing B] [CommRing C] [CommRing D]
+    (p : B →+* C) (q : D →+* C) (hp : Function.Surjective p) :
+    IsPushout (CommRingCat.ofHom (p.pullbackFst q)) (CommRingCat.ofHom (p.pullbackSnd q))
+      (CommRingCat.ofHom p) (CommRingCat.ofHom q) := by
+  let : Algebra (p.pullback q) B := (p.pullbackFst q).toAlgebra
+  let : Algebra (p.pullback q) D := (p.pullbackSnd q).toAlgebra
+  let : Algebra (p.pullback q) C := (p.comp (p.pullbackFst q)).toAlgebra
+  let : Algebra B C := p.toAlgebra
+  let : Algebra D C := q.toAlgebra
+  let : IsScalarTower (p.pullback q) B C := IsScalarTower.of_algebraMap_eq' rfl
+  let : IsScalarTower (p.pullback q) D C :=
+    IsScalarTower.of_algebraMap_eq' (p.pullback_comm_sq q)
+  exact CommRingCat.isPushout_iff_isPushout.mpr (isPushout_pullback_algebra p q hp)
 
 /-- For `t ∈ ker (p.pullbackSnd q)`, the first projection induces a bijection between
 arbitrary localizations of `B ×_C D` away from `t` and of `B` away from
