@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.Analysis.Normed.Module.RCLike.Extend
 import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Operator.Compact.Pi
@@ -177,6 +178,17 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
+private def shiftForm (P : CompactFormPair 𝕜 E H) (α : ℝ) : E →L⋆[𝕜] E →L[𝕜] 𝕜 :=
+  P.form + (α : 𝕜) • (innerSL 𝕜).bilinearComp P.inclusion P.inclusion
+
+private theorem shiftForm_apply (P : CompactFormPair 𝕜 E H) (α : ℝ) (u v : E) :
+    shiftForm P α u v = P.form u v + (α : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 :=
+  rfl
+
+private theorem re_shiftForm_self (P : CompactFormPair 𝕜 E H) (α : ℝ) (u : E) :
+    RCLike.re (shiftForm P α u u) = P.energy u + α * ‖P.inclusion u‖ ^ 2 := by
+  rw [shiftForm_apply, map_add, RCLike.re_ofReal_mul, inner_self_eq_norm_sq, ← energy_def]
+
 /-- Shift a compact form pair by a real multiple `α` of the ambient inner product:
 `a_α(u, v) = a(u, v) + α ⟪j u, j v⟫_𝕜`. -/
 def shift (P : CompactFormPair 𝕜 E H) (α : ℝ) : CompactFormPair 𝕜 E H where
@@ -184,22 +196,17 @@ def shift (P : CompactFormPair 𝕜 E H) (α : ℝ) : CompactFormPair 𝕜 E H w
   injective := P.injective
   dense := P.dense
   compact := P.compact
-  form := P.form + (α : 𝕜) • (innerSL 𝕜).bilinearComp P.inclusion P.inclusion
+  form := shiftForm P α
   hermitian u v := by
-    simp only [add_apply, smul_apply, ContinuousLinearMap.bilinearComp_apply, innerSL_apply_apply,
-      smul_eq_mul, star_add, star_mul', RCLike.star_def, RCLike.conj_ofReal, inner_conj_symm,
-      P.hermitian u v]
+    simp only [shiftForm_apply, star_add, star_mul', RCLike.star_def, RCLike.conj_ofReal,
+      inner_conj_symm, P.hermitian u v]
   exists_shifted_lower_bound := by
     obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
     refine ⟨c, ω - α, hc, fun u => ?_⟩
-    have hre : RCLike.re (P.form u u + (α : 𝕜) * ⟪P.inclusion u, P.inclusion u⟫_𝕜) =
-        RCLike.re (P.form u u) + α * ‖P.inclusion u‖ ^ 2 := by
-      rw [map_add, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul,
-        RCLike.ofReal_re]
-    simpa only [add_apply, smul_apply, ContinuousLinearMap.bilinearComp_apply, innerSL_apply_apply,
-      smul_eq_mul, hre] using (by linarith [hbound u] :
-        c * ‖u‖ ^ 2 ≤ RCLike.re (P.form u u) + α * ‖P.inclusion u‖ ^ 2 +
-          (ω - α) * ‖P.inclusion u‖ ^ 2)
+    have hu := hbound u
+    rw [← energy_def] at hu
+    rw [re_shiftForm_self]
+    linarith
 
 @[simp]
 theorem shift_inclusion (P : CompactFormPair 𝕜 E H) (α : ℝ) :
@@ -209,13 +216,12 @@ theorem shift_inclusion (P : CompactFormPair 𝕜 E H) (α : ℝ) :
 @[simp]
 theorem shift_form_apply (P : CompactFormPair 𝕜 E H) (α : ℝ) (u v : E) :
     (P.shift α).form u v = P.form u v + (α : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 :=
-  (rfl)
+  shiftForm_apply P α u v
 
 @[simp]
 theorem shift_energy (P : CompactFormPair 𝕜 E H) (α : ℝ) (u : E) :
-    (P.shift α).energy u = P.energy u + α * ‖P.inclusion u‖ ^ 2 := by
-  rw [energy_def, shift_form_apply, map_add, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow,
-    ← RCLike.ofReal_mul, RCLike.ofReal_re, ← energy_def]
+    (P.shift α).energy u = P.energy u + α * ‖P.inclusion u‖ ^ 2 :=
+  re_shiftForm_self P α u
 
 @[simp]
 theorem shift_zero (P : CompactFormPair 𝕜 E H) : P.shift 0 = P := by
@@ -311,7 +317,9 @@ def comapEquiv (P : CompactFormPair 𝕜 E H) (e : E' ≃L[𝕜] E) :
   dense := P.dense.comp e.surjective.denseRange P.inclusion.continuous
   compact := P.compact.comp_clm e.toContinuousLinearMap
   form := P.form.bilinearComp e.toContinuousLinearMap e.toContinuousLinearMap
-  hermitian u v := P.hermitian (e u) (e v)
+  hermitian u v := by
+    simp only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearEquiv.coe_coe,
+      P.hermitian (e u) (e v)]
   exists_shifted_lower_bound := by
     obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
     set M : ℝ := ‖(e.symm : E →L[𝕜] E')‖ + 1
@@ -328,7 +336,8 @@ def comapEquiv (P : CompactFormPair 𝕜 E H) (e : E' ≃L[𝕜] E) :
       calc c / M ^ 2 * ‖u‖ ^ 2 ≤ c / M ^ 2 * (M ^ 2 * ‖e u‖ ^ 2) :=
             mul_le_mul_of_nonneg_left hsq (by positivity)
         _ = c * ‖e u‖ ^ 2 := by field_simp
-    exact hle.trans (hbound (e u))
+    simpa only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe] using hle.trans (hbound (e u))
 
 @[simp]
 theorem comapEquiv_inclusion_apply (P : CompactFormPair 𝕜 E H) (e : E' ≃L[𝕜] E) (u : E') :
@@ -363,18 +372,26 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup H] [NormedSpace 𝕜 H]
 
+private def restrictInclusion (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) :
+    V₁ →L[𝕜] (V₁.map P.inclusion.toLinearMap).topologicalClosure :=
+  (P.inclusion.comp V₁.subtypeL).codRestrict
+    (V₁.map P.inclusion.toLinearMap).topologicalClosure
+    fun u => Submodule.le_topologicalClosure _ ⟨u.1, u.2, rfl⟩
+
+private theorem restrictInclusion_coe (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) (u : V₁) :
+    (restrictInclusion P V₁ u : H) = P.inclusion u.1 := by
+  rw [restrictInclusion, ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply]
+
 /-- Restrict a compact form pair to a submodule `V₁ ≤ E`, replacing the ambient space with the
 norm closure `(V₁.map P.inclusion.toLinearMap).topologicalClosure` so that density is preserved. -/
 def restrict (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) :
     CompactFormPair 𝕜 V₁ (V₁.map P.inclusion.toLinearMap).topologicalClosure where
-  inclusion :=
-    (P.inclusion.comp V₁.subtypeL).codRestrict
-      (V₁.map P.inclusion.toLinearMap).topologicalClosure
-      fun u => Submodule.le_topologicalClosure _ ⟨u.1, u.2, rfl⟩
+  inclusion := restrictInclusion P V₁
   injective u v huv := by
-    apply Subtype.ext
-    apply P.injective
-    exact congrArg Subtype.val huv
+    have huv' := congrArg Subtype.val huv
+    rw [restrictInclusion_coe, restrictInclusion_coe] at huv'
+    exact Subtype.ext (P.injective huv')
   dense := by
     rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
     refine subset_trans (le_of_eq (Submodule.topologicalClosure_coe _)) (closure_mono ?_)
@@ -386,15 +403,21 @@ def restrict (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) :
       (fun u => Submodule.le_topologicalClosure _ ⟨u.1, u.2, rfl⟩)
       (V₁.map P.inclusion.toLinearMap).isClosed_topologicalClosure
   form := P.form.bilinearComp V₁.subtypeL V₁.subtypeL
-  hermitian u v := P.hermitian u.1 v.1
+  hermitian u v := by
+    simp only [ContinuousLinearMap.bilinearComp_apply, Submodule.subtypeL_apply,
+      P.hermitian u.1 v.1]
   exists_shifted_lower_bound := by
     obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
-    exact ⟨c, ω, hc, fun u => hbound u.1⟩
+    refine ⟨c, ω, hc, fun u => ?_⟩
+    rw [ContinuousLinearMap.bilinearComp_apply, Submodule.subtypeL_apply,
+      ← Submodule.norm_coe u, ← Submodule.norm_coe ((P.restrictInclusion V₁) u),
+      restrictInclusion_coe]
+    exact hbound u.1
 
 @[simp]
 theorem restrict_inclusion_coe (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) (u : V₁) :
     ((P.restrict V₁).inclusion u : H) = P.inclusion u :=
-  (rfl)
+  restrictInclusion_coe P V₁ u
 
 @[simp]
 theorem restrict_form_apply (P : CompactFormPair 𝕜 E H) (V₁ : Submodule 𝕜 E) (u v : V₁) :
@@ -415,62 +438,80 @@ variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
   [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
   [∀ i, SeminormedAddCommGroup (H i)] [∀ i, NormedSpace 𝕜 (H i)]
 
+-- Note: `PiLp.proj` requires `NormedAddCommGroup (E i)`, whereas here `E i` is only
+-- `SeminormedAddCommGroup`.
+private def piProj (𝕜 : Type*) [RCLike 𝕜] {ι : Type*} (E : ι → Type*)
+    [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] (i : ι) :
+    PiLp 2 E →L[𝕜] E i :=
+  (ContinuousLinearMap.proj (R := 𝕜) i).comp
+    (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap
+
+private theorem piProj_apply (𝕜 : Type*) [RCLike 𝕜] {ι : Type*} (E : ι → Type*)
+    [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] (i : ι) (u : PiLp 2 E) :
+    piProj 𝕜 E i u = u i :=
+  rfl
+
+private def piInclusion (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
+    PiLp 2 E →L[𝕜] PiLp 2 H :=
+  (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap.comp
+    ((ContinuousLinearMap.piMap fun i => (P i).inclusion).comp
+      (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap)
+
+omit [Fintype ι] in
+private theorem piInclusion_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i))
+    (u : PiLp 2 E) (i : ι) :
+    piInclusion P u i = (P i).inclusion (u i) :=
+  rfl
+
+private def piForm (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
+    PiLp 2 E →L⋆[𝕜] PiLp 2 E →L[𝕜] 𝕜 :=
+  ∑ i : ι, (P i).form.bilinearComp (piProj 𝕜 E i) (piProj 𝕜 E i)
+
+private theorem piForm_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i))
+    (u v : PiLp 2 E) :
+    piForm P u v = ∑ i : ι, (P i).form (u i) (v i) := by
+  simp only [piForm, FunLike.coe_sum, Finset.sum_apply,
+    ContinuousLinearMap.bilinearComp_apply, piProj_apply]
+
 /-- Finite `ℓ²`-direct sum of compact form pairs. -/
 def pi (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
     CompactFormPair 𝕜 (PiLp 2 E) (PiLp 2 H) where
-  inclusion :=
-    (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap.comp
-      (ContinuousLinearMap.pi fun i =>
-        (P i).inclusion.comp
-          ((ContinuousLinearMap.proj (R := 𝕜) i).comp
-            (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap))
-  injective u v huv := by
-    ext i
-    exact (P i).injective (congrFun (congrArg WithLp.ofLp huv) i)
+  inclusion := piInclusion P
+  injective := by
+    rw [piInclusion, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearMap.coe_piMap']
+    exact (PiLp.continuousLinearEquiv 2 𝕜 H).symm.injective.comp
+      ((Function.Injective.piMap fun i => (P i).injective).comp
+        (PiLp.continuousLinearEquiv 2 𝕜 E).injective)
   dense := by
-    have hcomp :
-        (⇑((PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap.comp
-          (ContinuousLinearMap.pi fun i =>
-            (P i).inclusion.comp
-              ((ContinuousLinearMap.proj (R := 𝕜) i).comp
-                (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap)))) =
-        (PiLp.continuousLinearEquiv 2 𝕜 H).symm ∘ ((Pi.map fun i => ⇑(P i).inclusion) ∘
-          PiLp.continuousLinearEquiv 2 𝕜 E) := by
-      ext u i
-      simp
-    rw [hcomp]
+    rw [piInclusion, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearMap.coe_piMap']
     exact (PiLp.continuousLinearEquiv 2 𝕜 H).symm.surjective.denseRange.comp
       ((DenseRange.piMap fun i => (P i).dense).comp
         (PiLp.continuousLinearEquiv 2 𝕜 E).surjective.denseRange
         (Continuous.piMap fun i => (P i).inclusion.continuous))
       (PiLp.continuousLinearEquiv 2 𝕜 H).symm.continuous
-  compact :=
-    (IsCompactOperator.pi fun i =>
-      (P i).compact.comp_clm
-        ((ContinuousLinearMap.proj (R := 𝕜) i).comp
-          (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap)).clm_comp
+  compact := by
+    have hprod : IsCompactOperator (ContinuousLinearMap.piMap fun i => (P i).inclusion) := by
+      have hpi : IsCompactOperator (fun (x : ∀ i, E i) i => (P i).inclusion (x i)) :=
+        IsCompactOperator.pi (f := fun i (x : ∀ j, E j) => (P i).inclusion (x i)) fun i =>
+          (P i).compact.comp_clm (ContinuousLinearMap.proj (R := 𝕜) i)
+      rw [ContinuousLinearMap.coe_piMap']
+      exact hpi
+    exact (hprod.comp_clm (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap).clm_comp
       (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap
-  form := ∑ i : ι,
-    (P i).form.bilinearComp
-      ((ContinuousLinearMap.proj (R := 𝕜) i).comp
-        (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap)
-      ((ContinuousLinearMap.proj (R := 𝕜) i).comp
-        (PiLp.continuousLinearEquiv 2 𝕜 E).toContinuousLinearMap)
+  form := piForm P
   hermitian u v := by
-    simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.bilinearComp_apply,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
-      ContinuousLinearEquiv.coe_coe, PiLp.continuousLinearEquiv_apply, star_sum,
-      fun i => (P i).hermitian (u i) (v i)]
+    simp only [piForm_apply, star_sum, fun i => (P i).hermitian (u i) (v i)]
   exists_shifted_lower_bound := by
     choose c ω hc hbound using fun i => (P i).exists_shifted_lower_bound
     by_cases hne : (Finset.univ : Finset ι).Nonempty
     · refine ⟨Finset.univ.inf' hne c, Finset.univ.sup' hne ω,
         (Finset.lt_inf'_iff hne).mpr fun i _ => hc i, fun u => ?_⟩
-      simp only [PiLp.norm_sq_eq_of_L2, FunLike.coe_sum, Finset.sum_apply,
-        ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.proj_apply, ContinuousLinearMap.pi_apply,
-        PiLp.continuousLinearEquiv_apply, PiLp.continuousLinearEquiv_symm_apply,
-        ContinuousLinearEquiv.coe_coe, map_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+      simp only [PiLp.norm_sq_eq_of_L2, piForm_apply, piInclusion_apply, map_sum,
+        Finset.mul_sum, ← Finset.sum_add_distrib]
       refine Finset.sum_le_sum fun i _ => ?_
       have hc_le : Finset.univ.inf' hne c * ‖u i‖ ^ 2 ≤ c i * ‖u i‖ ^ 2 :=
         mul_le_mul_of_nonneg_right (Finset.inf'_le c (Finset.mem_univ i)) (sq_nonneg _)
@@ -480,17 +521,17 @@ def pi (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
       linarith [hbound i (u i)]
     · rw [Finset.not_nonempty_iff_eq_empty] at hne
       refine ⟨1, 0, zero_lt_one, fun u => ?_⟩
-      simp [PiLp.norm_sq_eq_of_L2, hne]
+      simp [PiLp.norm_sq_eq_of_L2, piForm_apply, hne]
 
 @[simp]
 theorem pi_inclusion_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) (u : PiLp 2 E) (i : ι) :
     (CompactFormPair.pi P).inclusion u i = (P i).inclusion (u i) :=
-  (rfl)
+  piInclusion_apply P u i
 
 @[simp]
 theorem pi_form_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) (u v : PiLp 2 E) :
-    (CompactFormPair.pi P).form u v = ∑ i : ι, (P i).form (u i) (v i) := by
-  simp [pi]
+    (CompactFormPair.pi P).form u v = ∑ i : ι, (P i).form (u i) (v i) :=
+  piForm_apply P u v
 
 @[simp]
 theorem pi_energy (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) (u : PiLp 2 E) :
@@ -505,6 +546,23 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
   [SeminormedAddCommGroup H] [NormedSpace 𝕜 H] [NormedSpace ℝ H] [IsScalarTower ℝ 𝕜 H]
 
+private def formAsRealLinear (P : CompactFormPair 𝕜 E H) : E →L[ℝ] StrongDual 𝕜 E where
+  toFun := P.form
+  map_add' := P.form.map_add'
+  map_smul' r u := by
+    rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smulₛₗ, RCLike.conj_ofReal,
+      RingHom.id_apply, ← RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+  cont := P.form.continuous
+
+private def restrictScalarsForm (P : CompactFormPair 𝕜 E H) : E →L⋆[ℝ] E →L[ℝ] ℝ :=
+  (StrongDual.extendRCLikeL (𝕜 := 𝕜) (F := E)).symm.toContinuousLinearMap.comp
+    (formAsRealLinear P)
+
+omit [NormedSpace ℝ H] [IsScalarTower ℝ 𝕜 H] in
+private theorem restrictScalarsForm_apply (P : CompactFormPair 𝕜 E H) (u v : E) :
+    restrictScalarsForm P u v = RCLike.re (P.form u v) :=
+  rfl
+
 /-- View a compact form pair over `𝕜` as a real compact form pair on the same underlying spaces
 with real symmetric bilinear form `(u, v) ↦ Re (P.form u v)`. -/
 def restrictScalars (P : CompactFormPair 𝕜 E H) : CompactFormPair ℝ E H where
@@ -512,32 +570,14 @@ def restrictScalars (P : CompactFormPair 𝕜 E H) : CompactFormPair ℝ E H whe
   injective := P.injective
   dense := P.dense
   compact := P.compact
-  form :=
-    { toFun := fun u => RCLike.reCLM.comp ((P.form u).restrictScalars ℝ)
-      map_add' := fun u₁ u₂ => by
-        ext v
-        simp
-      map_smul' := fun r u => by
-        ext v
-        simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-          RCLike.reCLM_apply, smul_apply, RCLike.conj_to_real, smul_eq_mul]
-        rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smulₛₗ, smul_apply, RCLike.conj_ofReal,
-          smul_eq_mul, RCLike.re_ofReal_mul]
-      cont :=
-        Continuous.const_clm_comp
-          (Continuous.comp (ContinuousLinearMap.continuous_restrictScalars ℝ) P.form.continuous)
-          RCLike.reCLM }
+  form := restrictScalarsForm P
   hermitian u v := by
-    simp only [ContinuousLinearMap.coe_mk', LinearMap.coe_mk, AddHom.coe_mk,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-      RCLike.reCLM_apply, star_trivial]
-    exact P.re_form_symm u v
+    simp only [restrictScalarsForm_apply, star_trivial, P.re_form_symm u v]
   exists_shifted_lower_bound := by
     obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
-    refine ⟨c, ω, hc, fun u => ?_⟩
-    simpa only [ContinuousLinearMap.coe_mk', LinearMap.coe_mk, AddHom.coe_mk,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-      RCLike.reCLM_apply, RCLike.re_to_real] using hbound u
+    exact ⟨c, ω, hc, fun u => by
+      simpa only [restrictScalarsForm_apply, RCLike.re_to_real,
+        ContinuousLinearMap.coe_restrictScalars'] using hbound u⟩
 
 @[simp]
 theorem restrictScalars_inclusion (P : CompactFormPair 𝕜 E H) :
@@ -547,7 +587,7 @@ theorem restrictScalars_inclusion (P : CompactFormPair 𝕜 E H) :
 @[simp]
 theorem restrictScalars_form_apply (P : CompactFormPair 𝕜 E H) (u v : E) :
     P.restrictScalars.form u v = RCLike.re (P.form u v) :=
-  (rfl)
+  restrictScalarsForm_apply P u v
 
 @[simp]
 theorem restrictScalars_energy (P : CompactFormPair 𝕜 E H) (u : E) :

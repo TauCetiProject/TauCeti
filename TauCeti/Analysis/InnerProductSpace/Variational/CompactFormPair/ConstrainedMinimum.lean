@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Bas
 public import TauCeti.Analysis.InnerProductSpace.Variational.Rayleigh
 public import TauCeti.Analysis.Variational.BoundedSublevels
 import Mathlib.Analysis.InnerProductSpace.Convex
+import Mathlib.Analysis.Normed.Module.RCLike.Extend
 import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Convex.Uniform.Basic
@@ -18,6 +19,7 @@ import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 import TauCeti.Analysis.Normed.Operator.DunfordPettis.Basic
+import TauCeti.Analysis.Variational.DirectMethod
 import TauCeti.Order.Filter.Extr
 
 /-!
@@ -343,6 +345,35 @@ theorem energy_le_of_tendsto_toWeakSpace_of_le (P : CompactFormPair 𝕜 E H)
     P.energy x ≤ b :=
   P.energy_le_of_tendsto_toWeakSpace_of_le_tendsto hlim tendsto_const_nhds hb
 
+/-- Weak convergence `u n ⇀ x` together with energy convergence `P.energy (u n) → P.energy x`
+implies strong (norm) convergence `u n → x`. -/
+theorem tendsto_of_tendsto_toWeakSpace_of_tendsto_energy (P : CompactFormPair 𝕜 E H)
+    {u : ℕ → E} {x : E}
+    (hlim : Tendsto (fun n => toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)))
+    (henergy : Tendsto (fun n => P.energy (u n)) atTop (𝓝 (P.energy x))) :
+    Tendsto u atTop (𝓝 x) := by
+  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
+  have hsq_le : ∀ n,
+      ‖u n - x‖ ^ 2 ≤
+        (P.energy (u n) - P.energy x -
+          (2 * RCLike.re (P.form x (u n - x)) - ω * ‖P.inclusion (u n - x)‖ ^ 2)) / c := by
+    intro n
+    rw [le_div_iff₀ hc]
+    linarith [P.energy_add_coercive_le hbound (u n) x]
+  have hrhs :
+      Tendsto (fun n =>
+        (P.energy (u n) - P.energy x -
+          (2 * RCLike.re (P.form x (u n - x)) - ω * ‖P.inclusion (u n - x)‖ ^ 2)) / c)
+        atTop (𝓝 0) := by
+    have hdiff := (henergy.sub_const (P.energy x)).sub (P.tendsto_energy_sub_lower ω hlim)
+    simpa using hdiff.div_const c
+  have hnorm_sq : Tendsto (fun n => ‖u n - x‖ ^ 2) atTop (𝓝 0) :=
+    squeeze_zero (fun n => sq_nonneg _) hsq_le hrhs
+  have hnorm : Tendsto (fun n => ‖u n - x‖) atTop (𝓝 0) := by
+    have hsqrt := (Real.continuous_sqrt.tendsto 0).comp hnorm_sq
+    simpa only [Function.comp_def, Real.sqrt_sq (norm_nonneg _), Real.sqrt_zero] using hsqrt
+  exact tendsto_iff_norm_sub_tendsto_zero.mpr hnorm
+
 end WeakSequential
 
 section WeakCompactness
@@ -419,29 +450,10 @@ theorem isCompact_minimizers_unitConstraint_of_surjective (P : CompactFormPair �
       mem_image_of_mem (toWeakSpace 𝕜 E) (hsub_eq ▸ hu n)
   have hxmin : x ∈ {v ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) v} :=
     hsub_eq ▸ hxsub
-  refine ⟨x, hxmin, φ, hφ, ?_⟩
-  obtain ⟨c, ω, hc, hbound⟩ := P.exists_shifted_lower_bound
+  refine ⟨x, hxmin, φ, hφ, P.tendsto_of_tendsto_toWeakSpace_of_tendsto_energy hlim ?_⟩
   have heq_energy : ∀ n, P.energy (u (φ n)) = P.energy x :=
     fun n => le_antisymm ((hu (φ n)).2 hxmin.1) (hxmin.2 (hu (φ n)).1)
-  have hsq_le : ∀ n,
-      ‖u (φ n) - x‖ ^ 2 ≤
-        -(2 * RCLike.re (P.form x (u (φ n) - x)) - ω * ‖P.inclusion (u (φ n) - x)‖ ^ 2) / c := by
-    intro n
-    rw [le_div_iff₀ hc]
-    have h1 := P.energy_add_coercive_le hbound (u (φ n)) x
-    rw [heq_energy n] at h1
-    linarith
-  have hrhs :
-      Tendsto (fun n =>
-        -(2 * RCLike.re (P.form x (u (φ n) - x)) - ω * ‖P.inclusion (u (φ n) - x)‖ ^ 2) / c)
-        atTop (𝓝 0) := by
-    simpa using (P.tendsto_energy_sub_lower ω hlim).neg.div_const c
-  have hnorm_sq : Tendsto (fun n => ‖u (φ n) - x‖ ^ 2) atTop (𝓝 0) :=
-    squeeze_zero (fun n => sq_nonneg _) hsq_le hrhs
-  have hnorm : Tendsto (fun n => ‖u (φ n) - x‖) atTop (𝓝 0) := by
-    have hsqrt := (Real.continuous_sqrt.tendsto 0).comp hnorm_sq
-    simpa only [Function.comp_def, Real.sqrt_sq (norm_nonneg _), Real.sqrt_zero] using hsqrt
-  exact tendsto_iff_norm_sub_tendsto_zero.mpr hnorm
+  exact tendsto_const_nhds.congr fun n => (heq_energy n).symm
 
 /-- Weak compactness of the set of constrained minimizers in a reflexive space. -/
 theorem isCompact_toWeakSpace_minimizers_unitConstraint_of_surjective (P : CompactFormPair 𝕜 E H)
@@ -463,8 +475,6 @@ theorem exists_minimum_on_unitConstraint_of_surjective (P : CompactFormPair 𝕜
     ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u := by
   obtain ⟨u₀, hu₀⟩ := (P.unitConstraint_nonempty_iff W).mpr hne
   let S₀ : Set E := {v ∈ P.unitConstraint W | P.energy v ≤ P.energy u₀}
-  have hS₀_ne : (toWeakSpace 𝕜 E '' S₀).Nonempty :=
-    ⟨toWeakSpace 𝕜 E u₀, mem_image_of_mem _ ⟨hu₀, le_rfl⟩⟩
   have hcomp : IsCompact (toWeakSpace 𝕜 E '' S₀) :=
     P.isCompact_toWeakSpace_sublevel_unitConstraint hE W hW (P.energy u₀)
   have hlsc :
@@ -480,10 +490,7 @@ theorem exists_minimum_on_unitConstraint_of_surjective (P : CompactFormPair 𝕜
       exact ⟨v, ⟨hvW, le_min hvu₀ (by simpa using hvb)⟩, rfl⟩
     · obtain ⟨v', ⟨_, hv'min⟩, rfl⟩ := hwC
       simpa using (le_min_iff.mp hv'min).2
-  obtain ⟨w, hw, hmin⟩ := LowerSemicontinuousOn.exists_isMinOn hS₀_ne hcomp hlsc
-  obtain ⟨u, ⟨huW, hu_le⟩, rfl⟩ := hw
-  refine ⟨u, huW, (TauCeti.isMinOn_sublevel_iff hu_le).mp fun v hv => ?_⟩
-  simpa using hmin (mem_image_of_mem (toWeakSpace 𝕜 E) hv)
+  exact TauCeti.exists_isMinOn_of_isCompact_toWeakSpace_sublevel ⟨u₀, hu₀, le_rfl⟩ hcomp hlsc
 
 end WeakCompactness
 
@@ -569,6 +576,38 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
+private theorem re_shift_form_eq_zero_of_isMinOn (P : CompactFormPair 𝕜 E H)
+    (W : Submodule 𝕜 H) {u : E} (hu : u ∈ P.unitConstraint W)
+    (hmin : IsMinOn P.energy (P.unitConstraint W) u) :
+    ∀ w : E, P.inclusion w ∈ W →
+      RCLike.re ((P.shift (-P.energy u)).form u w) = 0 := by
+  have hquad : ∀ v : E, P.inclusion v ∈ W → P.energy u * ‖P.inclusion v‖ ^ 2 ≤ P.energy v :=
+    P.isMinOn_unitConstraint_iff_forall_mul_norm_sq_le.mp hmin
+  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  let _ : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
+  let _ : NormedSpace ℝ H := NormedSpace.restrictScalars ℝ 𝕜 H
+  let _ : IsScalarTower ℝ 𝕜 H := RestrictScalars.isScalarTower ℝ 𝕜 H
+  let P' := (P.shift (-P.energy u)).restrictScalars
+  let V₀ : Submodule ℝ E := (W.comap P.inclusion.toLinearMap).restrictScalars ℝ
+  let B : LinearMap.BilinForm ℝ V₀ := P'.form.toBilinForm.domRestrict₁₂ V₀ V₀
+  have hB_apply : ∀ x y : V₀, B x y = P'.form x.1 y.1 := fun _ _ => by
+    rw [LinearMap.domRestrict₁₂_apply, ContinuousLinearMap.toBilinForm_apply]
+  have hs : ∀ x : V₀, 0 ≤ B x x := fun x => by
+    rw [hB_apply, ← RCLike.re_to_real (x := P'.form x.1 x.1), ← energy_def,
+      restrictScalars_energy, shift_energy]
+    linarith [hquad x.1 x.2]
+  have hB : LinearMap.IsSymm B := ⟨fun x y => by
+    rw [hB_apply, hB_apply, RingHom.id_apply, P'.hermitian x.1 y.1, star_trivial]⟩
+  have hBu : B ⟨u, hu.1⟩ ⟨u, hu.1⟩ = 0 := by
+    rw [hB_apply, ← RCLike.re_to_real (x := P'.form u u), ← energy_def,
+      restrictScalars_energy, shift_energy, hu.2]
+    ring
+  have hker : ⟨u, hu.1⟩ ∈ LinearMap.ker B := (B.apply_apply_same_eq_zero_iff hs hB).mp hBu
+  intro w hwW
+  have h := LinearMap.congr_fun (LinearMap.mem_ker.mp hker) ⟨w, hwW⟩
+  rw [hB_apply, restrictScalars_form_apply] at h
+  exact h
+
 /-- **The restricted Euler–Lagrange equation**: any minimizer `u` of `P.energy` on the constrained
 sphere `P.unitConstraint W` satisfies
 `P.form u v = (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜`
@@ -579,69 +618,22 @@ theorem equation_of_constrained_minimum (P : CompactFormPair 𝕜 E H)
     (hmin : IsMinOn P.energy (P.unitConstraint W) u) :
     ∀ v : E, P.inclusion v ∈ W →
       P.form u v = (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 := by
-  have hquad : ∀ v : E, P.inclusion v ∈ W → P.energy u * ‖P.inclusion v‖ ^ 2 ≤ P.energy v :=
-    P.isMinOn_unitConstraint_iff_forall_mul_norm_sq_le.mp hmin
   let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
   let _ : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
-  let V₀ : Submodule ℝ E := (W.comap P.inclusion.toLinearMap).restrictScalars ℝ
-  let B : LinearMap.BilinForm ℝ V₀ :=
-    LinearMap.mk₂ ℝ
-      (fun x y : V₀ =>
-        RCLike.re (P.form x.1 y.1) - P.energy u * RCLike.re ⟪P.inclusion x.1, P.inclusion y.1⟫_𝕜)
-      (fun x₁ x₂ y => by
-        simp only [Submodule.coe_add, map_add, add_apply, inner_add_left]
-        ring)
-      (fun r x y => by
-        rw [SetLike.val_smul, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
-        simp only [map_smulₛₗ, smul_apply, RingHom.id_apply, RCLike.conj_ofReal, smul_eq_mul,
-          RCLike.re_ofReal_mul, inner_smul_left]
-        ring)
-      (fun x y₁ y₂ => by
-        simp only [Submodule.coe_add, map_add, inner_add_right]
-        ring)
-      (fun r x y => by
-        rw [SetLike.val_smul, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
-        simp only [map_smul, smul_eq_mul, RCLike.re_ofReal_mul, inner_smul_right]
-        ring)
-  have hs : ∀ x : V₀, 0 ≤ B x x := by
-    intro x
-    dsimp only [B, LinearMap.mk₂_apply]
-    rw [← P.energy_def, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, RCLike.ofReal_re]
-    linarith [hquad x.1 x.2]
-  have hB : LinearMap.IsSymm B := ⟨fun x y => by
-    dsimp only [B, LinearMap.mk₂_apply]
-    rw [P.re_form_symm x.1 y.1, ← inner_conj_symm, RCLike.conj_re]
-    rfl⟩
-  have hBu : B ⟨u, hu.1⟩ ⟨u, hu.1⟩ = 0 := by
-    dsimp only [B, LinearMap.mk₂_apply]
-    rw [← P.energy_def, inner_self_eq_norm_sq_to_K, hu.2]
-    simp
-  have hker : ⟨u, hu.1⟩ ∈ LinearMap.ker B := (B.apply_apply_same_eq_zero_iff hs hB).mp hBu
-  have hzero_re : ∀ w : E, P.inclusion w ∈ W →
-      RCLike.re (P.form u w - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion w⟫_𝕜) = 0 := by
-    intro w hwW
-    have h := LinearMap.congr_fun (LinearMap.mem_ker.mp hker) ⟨w, hwW⟩
-    dsimp only [B, LinearMap.mk₂_apply] at h
-    simpa only [LinearMap.zero_apply, map_sub, RCLike.re_ofReal_mul] using h
+  let V : Submodule 𝕜 E := W.comap P.inclusion.toLinearMap
+  let φ : StrongDual 𝕜 V := ((P.shift (-P.energy u)).form u).comp V.subtypeL
+  have hre : (StrongDual.extendRCLikeL (𝕜 := 𝕜) (F := V)).symm φ = 0 := by
+    ext w
+    rw [StrongDual.extendRCLikeL_symm_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_restrictScalars', RCLike.reCLM_apply, zero_apply]
+    exact P.re_shift_form_eq_zero_of_isMinOn W hu hmin w.1 w.2
+  have hφ : φ = 0 := (StrongDual.extendRCLikeL (𝕜 := 𝕜) (F := V)).symm.injective
+    (by simpa only [map_zero] using hre)
   intro v hvW
-  have hre : RCLike.re (P.form u v - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜) = 0 :=
-    hzero_re v hvW
-  have him : RCLike.im (P.form u v - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜) = 0 := by
-    have hIw : P.inclusion ((RCLike.I : 𝕜) • v) ∈ W := by
-      rw [map_smul]
-      exact W.smul_mem _ hvW
-    have h := hzero_re ((RCLike.I : 𝕜) • v) hIw
-    have hmul :
-        P.form u ((RCLike.I : 𝕜) • v) -
-            (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion ((RCLike.I : 𝕜) • v)⟫_𝕜 =
-          (RCLike.I : 𝕜) * (P.form u v - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜) := by
-      rw [map_smul, map_smul, smul_eq_mul, inner_smul_right]
-      ring
-    rw [hmul, RCLike.I_mul_re] at h
-    linarith
-  have hdiff : P.form u v - (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 = 0 :=
-    RCLike.ext (by simpa using hre) (by simpa using him)
-  exact sub_eq_zero.mp hdiff
+  have h := DFunLike.congr_fun hφ ⟨v, hvW⟩
+  simp only [φ, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, shift_form_apply,
+    RCLike.ofReal_neg, neg_mul, zero_apply] at h
+  exact sub_eq_zero.mp (by simpa only [sub_eq_add_neg] using h)
 
 end EulerLagrange
 

@@ -34,6 +34,29 @@ open Set Bornology NormedSpace
 
 namespace TauCeti
 
+section
+
+variable {𝕜 V : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V]
+  {β : Type*} [LinearOrder β] {E : V → β} {S : Set V}
+
+/-- A nonempty weakly compact sublevel on which the energy is weakly lower semicontinuous
+attains a global minimum on the admissible set. -/
+theorem exists_isMinOn_of_isCompact_toWeakSpace_sublevel
+    {b : β} (hne : {u ∈ S | E u ≤ b}.Nonempty)
+    (hcompact : IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b}))
+    (hE : LowerSemicontinuousOn (fun u : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm u))
+      (toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b})) :
+    ∃ u ∈ S, IsMinOn E S u := by
+  obtain ⟨w, hw, hmin⟩ :=
+    LowerSemicontinuousOn.exists_isMinOn (hne.image _) hcompact hE
+  obtain ⟨u, hu, rfl⟩ := hw
+  refine ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 fun x hx ↦ ?_⟩
+  simpa only [mem_ofPred_eq, LinearEquiv.symm_apply_apply] using
+    hmin (mem_image_of_mem (toWeakSpace 𝕜 V) hx)
+
+end
+
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
   [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   {β : Type*} [LinearOrder β] {E : V → β} {S : Set V}
@@ -71,12 +94,7 @@ theorem exists_isMinOn_of_weak_closed_of_isBounded_sublevel
   have hcompact := isCompact_toWeakSpace_sublevel hV hS hE b hb
   have hsubset : toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} ⊆ toWeakSpace 𝕜 V '' S :=
     image_mono fun _ hx ↦ hx.1
-  obtain ⟨w, hw, hmin⟩ :=
-    LowerSemicontinuousOn.exists_isMinOn (hne.image _) hcompact (hE.mono hsubset)
-  obtain ⟨u, hu, rfl⟩ := hw
-  refine ⟨u, hu.1, (isMinOn_sublevel_iff hu.2).1 fun x hx ↦ ?_⟩
-  simpa only [mem_ofPred_eq, LinearEquiv.symm_apply_apply] using
-    hmin (mem_image_of_mem (toWeakSpace 𝕜 V) hx)
+  exact exists_isMinOn_of_isCompact_toWeakSpace_sublevel hne hcompact (hE.mono hsubset)
 
 /-- **The direct method.** A weakly lower semicontinuous energy with bounded sublevels on
 a nonempty weakly closed set in a reflexive space attains its minimum. -/
