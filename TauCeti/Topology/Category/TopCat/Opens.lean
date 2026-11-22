@@ -101,7 +101,7 @@ subspaces induced by `f : X ⟶ Y` when `U ≤ (Opens.map f).obj V`. -/
 def resLE (f : X ⟶ Y) (V : Opens Y) (U : Opens X) (e : U ≤ (Opens.map f).obj V) :
     (Opens.toTopCat X).obj U ⟶ (Opens.toTopCat Y).obj V :=
   TopCat.ofHom
-    ⟨fun x ↦ ⟨f x.val, e x.property⟩, (f.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩
+    ⟨fun x ↦ ⟨f x.val, e x.property⟩, (f.hom.continuous.comp continuous_subtypeVal).subtype_mk _⟩
 
 /-- `Opens.resLE` commutes with the open inclusions `Opens.inclusion'` into `X` and `Y`. -/
 @[reassoc (attr := simp)]
