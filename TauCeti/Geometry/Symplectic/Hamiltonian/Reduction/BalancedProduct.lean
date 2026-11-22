@@ -52,8 +52,8 @@ the Marsden–Weinstein–Meyer theorem then says that `Q` carries a unique symp
 (`IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_orbitProj_eq_sub`).
 Consequently the two-form `i_Y^* σ - pr_Y^* ω_KKS` on `Y_O` is closed, and its null space at each
 point is the kernel of the differential of `q_Y`
-(`IsEquivariantMomentMap.isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv`):
-the reduced space is the quotient of `Y_O` by the null foliation of this form.
+(`IsEquivariantMomentMap.isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv`), so the null spaces of
+this form are the tangent spaces to the fibres of `q_Y`, the `G`-orbits.
 
 ## Main results
 
@@ -241,11 +241,6 @@ theorem mpullback_quotientMk_eq_iff_mpullback_orbitProj_eq_sub
   have hq := BalancedProduct.isSubmersion_orbitProj_rightTranslation (I := I) (F := F) hπZ
   -- Both sides are compared after pulling back to `G × Z`, along the submersion `π` onto `Y_O`
   -- and then along the second projection.
-  have hsnd : Injective (SmoothForm.mpullback (F := ℝ) (k := 2)
-      (Prod.snd : ((Lie.coadjointRepresentation ℝ I G).stabilizer c).RightTranslation × Z → Z)
-      (contMDiff_snd (I := I) (J := IZ))) :=
-    SmoothForm.mpullback_injective_of_surjective contMDiff_snd Prod.snd_surjective fun x v ↦
-      ⟨(0, v), by rw [mfderiv_snd]; rfl⟩
   have hqπ : SmoothForm.mpullback _ hπ.contMDiff
       (SmoothForm.mpullback BalancedProduct.orbitProj hq.contMDiff η) =
         SmoothForm.mpullback Prod.snd contMDiff_snd (SmoothForm.mpullback _ hπZ.contMDiff η) :=
@@ -255,7 +250,7 @@ theorem mpullback_quotientMk_eq_iff_mpullback_orbitProj_eq_sub
   rw [← (SmoothForm.mpullback_injective_of_surjective hπ.contMDiff Quotient.mk_surjective
     (hπ.surjective_mfderiv (by simp))).eq_iff, hqπ,
     h.mpullback_quotientMk_liftRightTranslation_sub_proj hG hι hιc hc]
-  exact hsnd.eq_iff.symm
+  exact SmoothForm.mpullback_snd_injective.eq_iff.symm
 
 end IsMomentMap
 
@@ -307,7 +302,7 @@ theorem existsUnique_isSymplectic_mpullback_orbitProj_eq_sub (hσ : σ.IsSymplec
               (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d)).contMDiff η =
           SmoothForm.mpullback (BalancedProduct.liftRightTranslation (h.levelSubMulActionVal c))
               (BalancedProduct.contMDiff_liftRightTranslation (I := I) (IZ := 𝓘(ℝ, Fin n → ℝ))
-                (F := F) (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff) σ -
+                (F := F) (h.contMDiff_levelSubMulActionVal hreg hn)) σ -
             SmoothForm.mpullback (BalancedProduct.proj (h.levelSubMulAction c)
                 Subgroup.RightTranslation.quotientMk_smul)
               (BalancedProduct.contMDiff_proj_rightTranslation
@@ -319,25 +314,27 @@ theorem existsUnique_isSymplectic_mpullback_orbitProj_eq_sub (hσ : σ.IsSymplec
   have := d.contMDiffSMul (M := G) (I'' := I)
   let _ := h.levelSubMulActionChartedSpace c hreg hn
   have := h.isManifold_levelSubMulAction hreg hn
-  have hemb := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
-  have := h.contMDiffSMul_levelSubMulAction d.contMDiff_subtypeVal hemb
+  have := h.contMDiffSMul_levelSubMulAction d.contMDiff_subtypeVal
+    (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn)
   let _ := h.orbitRelQuotientChartedSpace c hreg hn d
   have := h.isManifold_orbitRelQuotient hreg hn d
   -- The reduced form is characterized on the balanced product by the previous equivalence.
   refine (existsUnique_congr fun η ↦ and_congr_right fun _ ↦
     h.toIsMomentMap.mpullback_quotientMk_eq_iff_mpullback_orbitProj_eq_sub (F := F)
-      (ι := h.levelSubMulActionVal c) hG hemb.contMDiff
-      (fun z ↦ h.mem_levelSubMulAction.1 z.property) (fun z ↦ h.momentCocycle_eq_zero z)
+      (ι := h.levelSubMulActionVal c) hG (h.contMDiff_levelSubMulActionVal hreg hn)
+      (fun z ↦ by simpa using h.mem_levelSubMulAction.1 z.property)
+      (fun _ ↦ h.momentCocycle_eq_zero _)
       (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d) η).1 ?_
-  exact h.existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback hreg hn d hσ hG
+  simpa only [coe_levelSubMulActionVal] using
+    h.existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback hreg hn d hσ hG
 
 /-- **The null foliation of `i_Y^* σ - pr_Y^* ω_KKS`.** With the hypotheses of the
 Marsden–Weinstein–Meyer theorem, the two-form `i_Y^* σ - pr_Y^* ω_KKS` on
 `Y_O = G ×_{G_c} μ⁻¹(c)`, for `i_Y [g, z] = g • z` and the projection `pr_Y [g, z] = g G_c` onto
 the coadjoint orbit, is closed, and its null space at each point is the kernel of the differential
-of `q_Y : Y_O → μ⁻¹(c) ⧸ G_c`, `[g, z] ↦ [z]`. So the reduced space is the quotient of `Y_O` by the
-null foliation of this form, whose leaves are the fibres of `q_Y`, the `G`-orbits
-(`TauCeti.BalancedProduct.orbitProj_eq_orbitProj_iff`). -/
+of `q_Y : Y_O → μ⁻¹(c) ⧸ G_c`, `[g, z] ↦ [z]`. So the null distribution of this form is the
+vertical bundle `ker d q_Y`, and the fibres of `q_Y`, the `G`-orbits
+(`TauCeti.BalancedProduct.orbitProj_eq_orbitProj_iff`), are unions of its null leaves. -/
 theorem isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
@@ -357,7 +354,7 @@ theorem isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv (hσ : σ.IsSymplectic)
       (I := I) (IZ := 𝓘(ℝ, Fin n → ℝ)) (F := F)
     (SmoothForm.mpullback (BalancedProduct.liftRightTranslation (h.levelSubMulActionVal c))
           (BalancedProduct.contMDiff_liftRightTranslation (I := I) (IZ := 𝓘(ℝ, Fin n → ℝ))
-            (F := F) (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff) σ -
+            (F := F) (h.contMDiff_levelSubMulActionVal hreg hn)) σ -
         SmoothForm.mpullback (BalancedProduct.proj (h.levelSubMulAction c)
             Subgroup.RightTranslation.quotientMk_smul)
           (BalancedProduct.contMDiff_proj_rightTranslation
@@ -367,7 +364,7 @@ theorem isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv (hσ : σ.IsSymplectic)
       ∀ y, LinearMap.ker ((SmoothForm.mpullback
           (BalancedProduct.liftRightTranslation (h.levelSubMulActionVal c))
             (BalancedProduct.contMDiff_liftRightTranslation (I := I) (IZ := 𝓘(ℝ, Fin n → ℝ))
-              (F := F) (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff) σ -
+              (F := F) (h.contMDiff_levelSubMulActionVal hreg hn)) σ -
           SmoothForm.mpullback (BalancedProduct.proj (h.levelSubMulAction c)
               Subgroup.RightTranslation.quotientMk_smul)
             (BalancedProduct.contMDiff_proj_rightTranslation

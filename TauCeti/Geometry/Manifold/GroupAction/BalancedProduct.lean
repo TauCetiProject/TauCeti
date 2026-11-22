@@ -161,21 +161,15 @@ theorem isSubmersion_orbitProj {EQ HQ : Type*} [NormedAddCommGroup EQ] [NormedSp
       (orbitProj : BalancedProduct K P Z → MulAction.orbitRel.Quotient K Z) := by
     rw [contMDiff_iff (IK := IK) (IP := IP) (IZ := IZ) le_rfl, hcomp]
     exact hq.contMDiff.comp hsnd
-  refine (hO.isSubmersionOfComplement_of_surjective_mfderiv (by simp) fun y ↦ ?_).isSubmersion
-  obtain ⟨x, rfl⟩ := Quotient.mk_surjective y
-  -- The differential of `orbitProj ∘ π = π_Z ∘ Prod.snd` at `x` factors through that of
-  -- `orbitProj`, and it is surjective.
-  have hchain := mfderiv_comp x (hO.mdifferentiableAt (by simp))
-    (hπ.contMDiff.mdifferentiableAt (by simp))
-  have hchainZ := mfderiv_comp x (hq.contMDiff.mdifferentiableAt (by simp))
-    (hsnd.mdifferentiableAt (by simp))
-  have hs : Function.Surjective ((mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EP × EZ)) JQ
-      orbitProj (Quotient.mk _ x)).comp
-        (mfderiv (IP.prod IZ) 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EP × EZ))
-          (Quotient.mk (MulAction.orbitRel K (P × Z))) x)) := by
-    rw [← hchain, hcomp, hchainZ, mfderiv_snd]
+  -- `orbitProj ∘ π = π_Z ∘ Prod.snd` is a submersion, as its differentials are surjective.
+  have hZ : IsSubmersion (IP.prod IZ) JQ ∞
+      (Quotient.mk (MulAction.orbitRel K Z) ∘ (Prod.snd : P × Z → Z)) := by
+    refine ((hq.contMDiff.comp hsnd).isSubmersionOfComplement_of_surjective_mfderiv (by simp)
+      fun x ↦ ?_).isSubmersion
+    rw [mfderiv_comp x (hq.contMDiff.mdifferentiableAt (by simp))
+      (hsnd.mdifferentiableAt (by simp)), mfderiv_snd]
     exact (hq.surjective_mfderiv (by simp) x.2).comp fun v ↦ ⟨(0, v), rfl⟩
-  rw [ContinuousLinearMap.coe_comp] at hs
-  exact hs.of_comp
+  rw [← hcomp] at hZ
+  exact hZ.of_comp hπ.contMDiff Quotient.mk_surjective hO (by simp)
 
 end TauCeti.BalancedProduct

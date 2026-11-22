@@ -144,7 +144,7 @@ theorem coe_levelSubMulAction (h : σ.IsEquivariantMomentMap μ) :
 variable (c) in
 /-- **The inclusion of the level** `μ⁻¹(c) → M`, equivariant along the inclusion `G_c → G` of the
 coadjoint stabilizer. -/
-@[expose] def levelSubMulActionVal (h : σ.IsEquivariantMomentMap μ) :
+def levelSubMulActionVal (h : σ.IsEquivariantMomentMap μ) :
     h.levelSubMulAction c →ₑ[((↑) : (Lie.coadjointRepresentation ℝ I G).stabilizer c → G)] M where
   toFun := Subtype.val
   map_smul' := SubMulAction.val_smul
