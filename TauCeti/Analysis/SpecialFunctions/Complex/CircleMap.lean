@@ -35,6 +35,8 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
   `s ↦ c + R e^{i s / R}`, has unit velocity `e^{i s / R} i`.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
+* `TauCeti.continuous_uncurry_circleMap`: a function jointly continuous on a product of two
+  circles pulls back along the two angle parametrizations to a continuous function on `ℝ × ℝ`.
 -/
 
 public section
@@ -130,5 +132,14 @@ theorem contDiff_circleMap_zpow (R : ℝ) (k : ℤ) {n : WithTop ℕ∞} :
     ContDiff ℝ n fun θ ↦ circleMap 0 R θ ^ k := by
   simp_rw [circleMap_zero_zpow]
   exact (contDiff_circleMap 0 (R ^ k)).comp (contDiff_const.mul contDiff_id)
+
+/-- The pullback of a function jointly continuous on a product of circles
+`sphere c |R| ×ˢ sphere c' |R'|` along the two angle parametrizations is continuous on `ℝ × ℝ`. -/
+theorem continuous_uncurry_circleMap {X : Type*} [TopologicalSpace X] {F : ℂ → ℂ → X}
+    {c c' : ℂ} {R R' : ℝ}
+    (hF : ContinuousOn (Function.uncurry F) (sphere c |R| ×ˢ sphere c' |R'|)) :
+    Continuous (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ)) :=
+  hF.comp_continuous (f := fun p : ℝ × ℝ ↦ (circleMap c R p.1, circleMap c' R' p.2))
+    (by fun_prop) fun p ↦ ⟨circleMap_mem_sphere' c R p.1, circleMap_mem_sphere' c' R' p.2⟩
 
 end TauCeti

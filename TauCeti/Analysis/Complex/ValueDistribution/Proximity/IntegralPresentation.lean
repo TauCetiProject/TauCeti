@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.ValueDistribution.Proximity.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.PosLog
 import TauCeti.Analysis.Meromorphic.Basic
+import TauCeti.MeasureTheory.Integral.Circle.Prod
 
 /-!
 # Cartan's single-circle integral presentation of the proximity function
@@ -40,6 +41,9 @@ The product-integrability and Fubini arguments localize
 Stefan Kebekus) from global `Meromorphic f` to `MeromorphicOn f (sphere 0 |R|)`. Because
 `ValueDistribution.Cartan.cartanKernel` in Mathlib is unexposed in a `public section` without an
 unfolding lemma, we state the public integrability theorem directly for the uncurried kernel.
+Given that product integrability, the two iterated circle-average results are instances of the
+circle-average Fubini lemmas `TauCeti.circleIntegrable_circleAverage` and
+`TauCeti.circleAverage_circleAverage_swap`.
 
 ## References
 
@@ -152,19 +156,9 @@ theorem integrableOn_log_norm_circleMap_sub (hf : MeromorphicOn f (sphere 0 |R|)
 meromorphic on `sphere 0 |R|`, then `a ↦ circleAverage (Real.log ‖f · - a‖) 0 R` is circle
 integrable on the unit circle. -/
 theorem circleIntegrable_circleAverage_log_norm_sub (hf : MeromorphicOn f (sphere 0 |R|)) :
-    CircleIntegrable (fun a ↦ circleAverage (fun z ↦ Real.log ‖f z - a‖) 0 R) 0 1 := by
-  have h_int := hf.integrableOn_log_norm_circleMap_sub
-  rw [uIoc_of_le two_pi_pos.le, IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
-    at h_int
-  have h_right :
-      IntegrableOn
-        (fun α ↦ ∫ β in 0..2 * π, Real.log ‖f (circleMap 0 R β) - circleMap 0 1 α‖)
-        (Ioc 0 (2 * π)) := by
-    simpa [IntegrableOn, Function.uncurry, intervalIntegral.integral_of_le two_pi_pos.le] using
-      h_int.integral_prod_left
-  rw [CircleIntegrable, intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le]
-  exact IntegrableOn.congr_fun (h_right.const_mul (2 * π)⁻¹)
-    (fun _ _ ↦ by simp [circleAverage]) measurableSet_Ioc
+    CircleIntegrable (fun a ↦ circleAverage (fun z ↦ Real.log ‖f z - a‖) 0 R) 0 1 :=
+  TauCeti.circleIntegrable_circleAverage (F := fun a z ↦ Real.log ‖f z - a‖)
+    hf.integrableOn_log_norm_circleMap_sub
 
 /-- Local version of `ValueDistribution.circleAverage_circleAverage_eq_proximity_top`: if `f` is
 meromorphic on `sphere 0 |R|`, then the unit-circle average over `a` of
@@ -172,25 +166,8 @@ meromorphic on `sphere 0 |R|`, then the unit-circle average over `a` of
 theorem circleAverage_circleAverage_eq_proximity_top (hf : MeromorphicOn f (sphere 0 |R|)) :
     circleAverage (fun a ↦ circleAverage (fun z ↦ Real.log ‖f z - a‖) 0 R) 0 1 =
       ValueDistribution.proximity f ⊤ R := by
-  let F : ℝ → ℝ → ℝ := fun α β ↦ Real.log ‖f (circleMap 0 R β) - circleMap 0 1 α‖
-  calc circleAverage (fun a ↦ circleAverage (fun z ↦ Real.log ‖f z - a‖) 0 R) 0 1
-    _ = (2 * π)⁻¹ * (2 * π)⁻¹ * ∫ α in 0..2 * π, ∫ β in 0..2 * π, F α β := by
-      simp [circleAverage, F, mul_assoc]
-    _ = (2 * π)⁻¹ * (2 * π)⁻¹ * ∫ β in 0..2 * π, ∫ α in 0..2 * π, F α β := by
-      rw [MeasureTheory.intervalIntegral_intervalIntegral_swap
-        hf.integrableOn_log_norm_circleMap_sub]
-    _ = (2 * π)⁻¹ * ∫ β in 0..2 * π, ((2 * π)⁻¹ * ∫ α in 0..2 * π, F α β) := by
-      simp [mul_comm, mul_left_comm, mul_assoc]
-    _ = (2 * π)⁻¹ * ∫ β in 0..2 * π, log⁺ ‖f (circleMap 0 R β)‖ := by
-      congr 1
-      refine intervalIntegral.integral_congr fun β _ ↦ ?_
-      calc (2 * π)⁻¹ * ∫ α in 0..2 * π, F α β
-        _ = circleAverage (Real.log ‖f (circleMap 0 R β) - ·‖) 0 1 := by
-          simp [F, circleAverage]
-        _ = log⁺ ‖f (circleMap 0 R β)‖ := by
-          simp [norm_sub_rev]
-    _ = ValueDistribution.proximity f ⊤ R := by
-      simp [ValueDistribution.proximity_top, circleAverage,
-        intervalIntegral.integral_of_le two_pi_pos.le]
+  rw [TauCeti.circleAverage_circleAverage_swap (F := fun a z ↦ Real.log ‖f z - a‖)
+    hf.integrableOn_log_norm_circleMap_sub, ValueDistribution.proximity_top]
+  simp [norm_sub_rev]
 
 end MeromorphicOn

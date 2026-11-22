@@ -6,76 +6,81 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.CircleAverage
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # Fubini's theorem for circle averages
 
-For a function `F : ℂ → ℂ → E` that is jointly continuous on the product of two circles
-`sphere c |R| ×ˢ sphere c' |R'|`, the inner circle average `z ↦ circleAverage (F z) c' R'` is
-circle integrable, and the two iterated circle averages agree:
+Let `F : ℂ → ℂ → E` be a function whose pullback
+`(θ, φ) ↦ F (circleMap c R θ) (circleMap c' R' φ)` along the two angle parametrizations is
+integrable on `(0, 2π] × (0, 2π]`. Then the inner circle average
+`z ↦ circleAverage (F z) c' R'` is circle integrable, and the two iterated circle averages agree:
 
 `circleAverage (fun z ↦ circleAverage (F z) c' R') c R =`
 `circleAverage (fun w ↦ circleAverage (fun z ↦ F z w) c R) c' R'`.
 
+The integrability hypothesis holds in particular when `F` is jointly continuous on the product of
+circles `sphere c |R| ×ˢ sphere c' |R'|`.
+
 Iterated circle averages of this kind arise when a kernel representation over one circle is
-averaged over a second, concentric circle, as in the estimate of the proximity function of a
-logarithmic derivative.
+averaged over a second circle, as in Cartan's formula for the proximity function and in the
+estimate of the proximity function of a logarithmic derivative.
 
 ## Main results
 
-* `Real.circleIntegrable_circleAverage`: the inner circle average is circle integrable.
-* `Real.circleAverage_circleAverage_swap`: the order of two circle averages can be exchanged.
+* `TauCeti.circleIntegrable_circleAverage`: the inner circle average is circle integrable.
+* `TauCeti.circleAverage_circleAverage_swap`: the order of two circle averages can be exchanged.
+* `TauCeti.integrableOn_uncurry_circleMap`: joint continuity on a product of circles gives the
+  integrability hypothesis of both results.
 
 ## Implementation notes
 
-Pulled back along `circleMap`, the integrand is a continuous function on `ℝ × ℝ`, so the
-statements reduce to the parametric continuity
-`intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'` and Fubini's theorem
-for interval integrals, `MeasureTheory.intervalIntegral_intervalIntegral_swap`.
+The statements reduce to the marginal integrability `MeasureTheory.Integrable.integral_prod_left`
+and Fubini's theorem for interval integrals, `MeasureTheory.intervalIntegral_intervalIntegral_swap`.
 -/
 
 public section
 
-open MeasureTheory Metric Set
+open MeasureTheory Metric Real Set
 
-namespace Real
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {F : ℂ → ℂ → E} {c c' : ℂ}
   {R R' : ℝ}
 
-omit [NormedSpace ℝ E] in
-/-- The pullback of a function jointly continuous on a product of circles along the two angle
-parametrizations is continuous on `ℝ × ℝ`. -/
-private theorem continuous_uncurry_circleMap
-    (hF : ContinuousOn (Function.uncurry F) (sphere c |R| ×ˢ sphere c' |R'|)) :
-    Continuous (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ)) :=
-  hF.comp_continuous (f := fun p : ℝ × ℝ ↦ (circleMap c R p.1, circleMap c' R' p.2))
-    (by fun_prop) fun p ↦ ⟨circleMap_mem_sphere' c R p.1, circleMap_mem_sphere' c' R' p.2⟩
-
-/-- If `F` is jointly continuous on `sphere c |R| ×ˢ sphere c' |R'|`, then the inner circle
-average `z ↦ circleAverage (F z) c' R'` is circle integrable over `sphere c |R|`. -/
+/-- If the pullback of `F` along the two angle parametrizations is integrable on
+`(0, 2π] × (0, 2π]`, then the inner circle average `z ↦ circleAverage (F z) c' R'` is circle
+integrable over `sphere c |R|`. -/
 theorem circleIntegrable_circleAverage
-    (hF : ContinuousOn (Function.uncurry F) (sphere c |R| ×ˢ sphere c' |R'|)) :
+    (hF : IntegrableOn (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ))
+      (uIoc 0 (2 * π) ×ˢ uIoc 0 (2 * π))) :
     CircleIntegrable (fun z ↦ circleAverage (F z) c' R') c R := by
-  simp only [CircleIntegrable, circleAverage_def]
-  exact ((intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
-    (continuous_uncurry_circleMap hF) 0 (2 * π)).const_smul _).intervalIntegrable _ _
+  rw [uIoc_of_le two_pi_pos.le, IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
+    at hF
+  rw [CircleIntegrable, intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le]
+  simpa [IntegrableOn, Function.uncurry, circleAverage_def, Pi.smul_def,
+    intervalIntegral.integral_of_le two_pi_pos.le] using hF.integral_prod_left.smul (2 * π)⁻¹
 
-/-- **Fubini's theorem for circle averages.** If `F` is jointly continuous on
-`sphere c |R| ×ˢ sphere c' |R'|`, then the two iterated circle averages of `F` agree. -/
+/-- **Fubini's theorem for circle averages.** If the pullback of `F` along the two angle
+parametrizations is integrable on `(0, 2π] × (0, 2π]`, then the two iterated circle averages of
+`F` agree. -/
 theorem circleAverage_circleAverage_swap
-    (hF : ContinuousOn (Function.uncurry F) (sphere c |R| ×ˢ sphere c' |R'|)) :
+    (hF : IntegrableOn (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ))
+      (uIoc 0 (2 * π) ×ˢ uIoc 0 (2 * π))) :
     circleAverage (fun z ↦ circleAverage (F z) c' R') c R =
       circleAverage (fun w ↦ circleAverage (fun z ↦ F z w) c R) c' R' := by
-  have hG := continuous_uncurry_circleMap hF
-  have hint : IntegrableOn
-      (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ))
-      (uIoc 0 (2 * π) ×ˢ uIoc 0 (2 * π)) :=
-    (hG.continuousOn.integrableOn_compact (isCompact_uIcc.prod isCompact_uIcc)).mono_set
-      (prod_mono uIoc_subset_uIcc uIoc_subset_uIcc)
   simp only [circleAverage_def, intervalIntegral.integral_smul]
-  rw [intervalIntegral_intervalIntegral_swap hint]
+  rw [intervalIntegral_intervalIntegral_swap hF]
 
-end Real
+omit [NormedSpace ℝ E] in
+/-- If `F` is jointly continuous on `sphere c |R| ×ˢ sphere c' |R'|`, then its pullback along the
+two angle parametrizations is integrable on `(0, 2π] × (0, 2π]`. -/
+theorem integrableOn_uncurry_circleMap
+    (hF : ContinuousOn (Function.uncurry F) (sphere c |R| ×ˢ sphere c' |R'|)) :
+    IntegrableOn (Function.uncurry fun θ φ ↦ F (circleMap c R θ) (circleMap c' R' φ))
+      (uIoc 0 (2 * π) ×ˢ uIoc 0 (2 * π)) :=
+  ((continuous_uncurry_circleMap hF).continuousOn.integrableOn_compact
+    (isCompact_uIcc.prod isCompact_uIcc)).mono_set (prod_mono uIoc_subset_uIcc uIoc_subset_uIcc)
+
+end TauCeti
