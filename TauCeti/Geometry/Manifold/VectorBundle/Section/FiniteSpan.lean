@@ -42,7 +42,7 @@ variable {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- For `n ≤ ∞`, a compact `C^n` real vector bundle admits a finite family of global `C^n` sections
 spanning each fiber. This includes rank zero and the empty base. -/
-theorem exists_fin_spanning_contMDiffSection (hn : n ≤ ∞ := by rfl) :
+theorem exists_fin_spanning_contMDiffSection [ENat.LEInfty n] :
     ∃ (m : ℕ) (s : Fin m → ContMDiffSection I F n V),
       ∀ x, Submodule.span ℝ (range fun i ↦ s i x) = ⊤ := by
   classical
@@ -51,8 +51,9 @@ theorem exists_fin_spanning_contMDiffSection (hn : n ≤ ∞ := by rfl) :
   have hlocal (x : M) : ∃ s : Fin (finrank ℝ F) → ContMDiffSection I F n V,
       ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
         ∀ y ∈ U, Submodule.span ℝ (range fun i ↦ s i y) = ⊤ := by
-    obtain ⟨f, hf, heq⟩ := (e x).exists_contMDiff_eventuallyEq_localFrame (I := I) (n := n) b hn
-      (mem_baseSet_trivializationAt F V x)
+    obtain ⟨f, hf, heq⟩ :=
+      (e x).exists_contMDiff_eventuallyEq_localFrame (I := I) (n := n) b ENat.LEInfty.out
+        (mem_baseSet_trivializationAt F V x)
     obtain ⟨U, hU, hUopen, hxU⟩ := eventually_nhds_iff.mp (Filter.eventually_all.mpr heq)
     refine ⟨fun i ↦ ⟨f i, hf i⟩, U ∩ (e x).baseSet,
       hUopen.inter (e x).open_baseSet, ⟨hxU, mem_baseSet_trivializationAt F V x⟩, ?_⟩

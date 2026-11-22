@@ -135,7 +135,7 @@ example {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
         (TauCeti.sectionLinearization (F := F) 𝓘(ℝ, X) id s x)) ∧
         {x | s x = 0}.Finite ∧ ∀ x ∈ S, s x ≠ 0 := by
   exact TauCeti.exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero
-    hdim hS le_rfl (by norm_num)
+    hdim hS le_rfl
 
 -- A C¹ real bundle modelled on a complex line: full countable avoidance.
 example {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M]
@@ -152,7 +152,7 @@ example {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M]
   have := IsManifold.restrictScalars_of_ne_zero 1 one_ne_zero
     ‹IsManifold 𝓘(ℂ, ℂ) 1 M›
   apply TauCeti.exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero
-    (n := 1) (X := ℂ) _ hS le_rfl (by norm_num)
+    (n := 1) (X := ℂ) _ hS le_rfl
   simp [Module.finrank_pi_fintype]
 
 -- The actual point-avoidance conclusion under C¹, preserving regular and finite zeros.
@@ -170,7 +170,7 @@ example {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
         {y | s y = 0}.Finite ∧ s x ≠ 0 := by
   obtain ⟨s, hr, hf, ha⟩ :=
     TauCeti.exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero
-      (n := 1) (V := V) hdim (countable_singleton x) le_rfl (by norm_num)
+      (n := 1) (V := V) hdim (countable_singleton x) le_rfl
   exact ⟨s, hr, hf, ha x rfl⟩
 
 -- Negative index needs C¹ only; no finite-dimensionality of `X` or `F` is assumed.
@@ -183,7 +183,7 @@ example {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     (hdim : Module.finrank ℝ X < Module.finrank ℝ F) :
     ∃ s : ContMDiffSection 𝓘(ℝ, X) F 1 V, ∀ x, s x ≠ 0 := by
   exact TauCeti.exists_contMDiffSection_forall_ne_zero_of_finrank_lt
-    hdim le_rfl (by norm_num)
+    hdim le_rfl
 
 -- Spanning includes order zero, rank zero, corners and Empty without a chosen centre.
 example {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
@@ -195,7 +195,7 @@ example {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle 0 F V I] :
     ∃ (m : ℕ) (s : Fin m → ContMDiffSection I F 0 V),
       ∀ x, Submodule.span ℝ (range fun i ↦ s i x) = ⊤ := by
-  exact TauCeti.exists_fin_spanning_contMDiffSection (by norm_num)
+  exact TauCeti.exists_fin_spanning_contMDiffSection
 
 example {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     [FiniteDimensional ℝ X] [TopologicalSpace H] {I : ModelWithCorners ℝ X H}
@@ -206,7 +206,7 @@ example {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle 0 F V I] :
     ∃ (m : ℕ) (s : Fin m → ContMDiffSection I F 0 V),
       ∀ x, Submodule.span ℝ (range fun i ↦ s i x) = ⊤ := by
-  exact TauCeti.exists_fin_spanning_contMDiffSection (by norm_num)
+  exact TauCeti.exists_fin_spanning_contMDiffSection
 
 -- Zero-dimensional regular-zero existence does not add a positive-rank assumption.
 example {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
@@ -219,7 +219,7 @@ example {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     ∃ s : ContMDiffSection 𝓘(ℝ, X) F 1 V,
       (∀ x, s x = 0 → Surjective
         (TauCeti.sectionLinearization (F := F) 𝓘(ℝ, X) id s x)) ∧ {x | s x = 0}.Finite := by
-  apply TauCeti.exists_contMDiffSection_regular_finite_zero_of_finrank_eq _ le_rfl (by norm_num)
+  apply TauCeti.exists_contMDiffSection_regular_finite_zero_of_finrank_eq _ le_rfl
   simp only [Module.finrank_eq_zero_of_subsingleton]
 
 -- Rank zero cannot avoid even one actual point; the avoidance Nontrivial hypothesis has content.

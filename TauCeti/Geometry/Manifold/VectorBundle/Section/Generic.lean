@@ -307,8 +307,9 @@ variable {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 /-- A `C^n` real vector bundle, `1 ≤ n ≤ ∞`, of finite rank exceeding the dimension of its
 compact Hausdorff base has a `C^n` nowhere-zero section. The base model `X` need not be assumed
 finite-dimensional: compactness forces this whenever the base is nonempty. -/
-theorem exists_contMDiffSection_forall_ne_zero_of_finrank_lt (hdim : finrank ℝ X < finrank ℝ F)
-    (hn : 1 ≤ n := by norm_num) (hn_top : n ≤ ∞ := by rfl) :
+theorem exists_contMDiffSection_forall_ne_zero_of_finrank_lt [ENat.LEInfty n]
+    (hdim : finrank ℝ X < finrank ℝ F)
+    (hn : 1 ≤ n := by norm_num) :
     ∃ s : ContMDiffSection 𝓘(ℝ, X) F n V, ∀ x, s x ≠ 0 := by
   rcases isEmpty_or_nonempty M with _ | _
   · exact ⟨0, fun x ↦ isEmptyElim x⟩
@@ -316,7 +317,7 @@ theorem exists_contMDiffSection_forall_ne_zero_of_finrank_lt (hdim : finrank ℝ
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (pos_of_gt hdim)
   let : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact X M
   obtain ⟨m, s, hspan⟩ :=
-    exists_fin_spanning_contMDiffSection (I := 𝓘(ℝ, X)) (F := F) (V := V) hn_top
+    exists_fin_spanning_contMDiffSection (n := n) (I := 𝓘(ℝ, X)) (F := F) (V := V)
   obtain ⟨a, ha⟩ := (dense_setOf_affineFamily_ne_zero 0 s hspan hdim hn).nonempty
   exact ⟨affineFamily 0 s a, ha⟩
 
@@ -325,8 +326,9 @@ of the base model `X`, has a `C^n` section with surjective intrinsic linearizati
 and finitely many zeros. The base model need not be assumed finite-dimensional: compactness
 forces this whenever the base is nonempty. -/
 theorem exists_contMDiffSection_regular_finite_zero_of_finrank_eq [FiniteDimensional ℝ F]
+    [ENat.LEInfty n]
     (hdim : finrank ℝ X = finrank ℝ F)
-    (hn : 1 ≤ n := by norm_num) (hn_top : n ≤ ∞ := by rfl) :
+    (hn : 1 ≤ n := by norm_num) :
     ∃ s : ContMDiffSection 𝓘(ℝ, X) F n V,
       (∀ x, s x = 0 → Surjective (TauCeti.sectionLinearization (F := F) 𝓘(ℝ, X) id s x)) ∧
         {x | s x = 0}.Finite := by
@@ -335,7 +337,7 @@ theorem exists_contMDiffSection_regular_finite_zero_of_finrank_eq [FiniteDimensi
   have : FiniteDimensional ℝ X := .of_locallyCompact_manifold M 𝓘(ℝ, X)
   let : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact X M
   obtain ⟨m, s, hspan⟩ :=
-    exists_fin_spanning_contMDiffSection (I := 𝓘(ℝ, X)) (F := F) (V := V) hn_top
+    exists_fin_spanning_contMDiffSection (n := n) (I := 𝓘(ℝ, X)) (F := F) (V := V)
   obtain ⟨a, ha⟩ := (dense_of_mem_residual
     (mem_residual_setOf_regular_and_finite_zero_affineFamily 0 s hspan hdim hn)).nonempty
   exact ⟨affineFamily 0 s a, TauCeti.isRegularSectionParameter_iff.mp ha.1, ha.2⟩
@@ -426,15 +428,15 @@ variable {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 /-- A compact `C^n` bundle, `1 ≤ n ≤ ∞`, of equal base and fibre dimensions and nontrivial
 model fibre has a `C^n` section with surjective intrinsic linearization at every zero and
 finitely many zeros, none in a prescribed countable set. -/
-theorem exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero
+theorem exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero [ENat.LEInfty n]
     (hdim : finrank ℝ X = finrank ℝ F) {S : Set M} (hS : S.Countable)
-    (hn : 1 ≤ n := by norm_num) (hn_top : n ≤ ∞ := by rfl) :
+    (hn : 1 ≤ n := by norm_num) :
     ∃ s : ContMDiffSection 𝓘(ℝ, X) F n V,
       (∀ x, s x = 0 → Surjective (TauCeti.sectionLinearization (F := F) 𝓘(ℝ, X) id s x)) ∧
         {x | s x = 0}.Finite ∧ ∀ x ∈ S, s x ≠ 0 := by
   let : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact X M
   obtain ⟨m, s, hspan⟩ :=
-    exists_fin_spanning_contMDiffSection (I := 𝓘(ℝ, X)) (F := F) (V := V) hn_top
+    exists_fin_spanning_contMDiffSection (n := n) (I := 𝓘(ℝ, X)) (F := F) (V := V)
   obtain ⟨a, ha, hS⟩ := (dense_of_mem_residual
     (inter_mem
       (mem_residual_setOf_regular_and_finite_zero_affineFamily 0 s hspan hdim hn)
