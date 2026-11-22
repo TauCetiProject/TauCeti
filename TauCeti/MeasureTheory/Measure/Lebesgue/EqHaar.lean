@@ -7,9 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Linear
-import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!

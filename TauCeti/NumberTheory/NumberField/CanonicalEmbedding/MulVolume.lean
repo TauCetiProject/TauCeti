@@ -96,10 +96,11 @@ theorem integral_comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   have he : ⇑e = (c * ·) := funext fun x ↦ by
     simp only [e, LinearEquiv.coe_toContinuousLinearEquiv', Units.mulLeftLinearEquiv_apply,
       IsUnit.unit_spec]
-  have hlin : (e : mixedSpace K →ₗ[ℝ] mixedSpace K) = Algebra.lmul ℝ (mixedSpace K) c :=
-    LinearMap.ext fun x ↦ by
-      simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv, he,
-        Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
+  have hlin : (e : mixedSpace K →ₗ[ℝ] mixedSpace K) = Algebra.lmul ℝ (mixedSpace K) c := by
+    rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, Units.toLinearMap_mulLeftLinearEquiv,
+      IsUnit.unit_spec]
+    exact LinearMap.ext fun x ↦ by
+      rw [LinearMap.mulLeft_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
   have h := Measure.integral_comp_continuousLinearEquiv volume g e
   rwa [he, hlin, ← Algebra.norm_apply, abs_algebraNorm] at h
 

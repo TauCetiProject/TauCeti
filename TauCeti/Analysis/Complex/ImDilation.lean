@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -163,12 +164,14 @@ theorem abs_le_mul_im_of_eq_zero_on_real {M : ℝ} {χ : ℂ → ℝ} (hχ : Dif
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- **Change of variables for a dilation of the normal coordinate** on a preimage. -/
+/-- **Change of variables for a dilation of the normal coordinate** on a preimage: the case of
+`ContinuousLinearEquiv.integral_image_affine` for `TauCeti.imDilationEquiv`. -/
 theorem setIntegral_comp_imDilation {c : ℝ} (hc : c ≠ 0) (f : ℂ → F) (s : Set ℂ) :
     ∫ z in imDilation c ⁻¹' s, f (imDilation c z) = |c|⁻¹ • ∫ w in s, f w := by
-  have he := measurableEmbedding_imDilation hc
-  rw [← he.integral_map, ← he.restrict_map, map_imDilation_volume hc, Measure.restrict_smul,
-    integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
+  have h := (imDilationEquiv hc).integral_image_affine 0 f (imDilation c ⁻¹' s) volume
+  simp only [zero_add, det_imDilationEquiv, coe_imDilationEquiv, integral_smul] at h
+  rw [image_preimage_eq s (coe_imDilationEquiv hc ▸ (imDilationEquiv hc).surjective)] at h
+  rw [h, smul_smul, inv_mul_cancel₀ (abs_ne_zero.mpr hc), one_smul]
 
 omit [NormedSpace ℝ F] in
 /-- Integrability transfers along a dilation of the normal coordinate. -/

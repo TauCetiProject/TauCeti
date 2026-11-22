@@ -15,6 +15,7 @@ public import Mathlib.LinearAlgebra.Matrix.Transvection
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Congruence and the change of variables on the symmetric subspace
@@ -52,7 +53,9 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
   the trace against the inverse scale `(C * Cᵀ)⁻¹` into the plain trace.
 * `Matrix.GeneralLinearGroup.map_symmetricCongruence_restrict_posDef` — the same change of
   variables on the positive-definite cone, which congruence by an invertible matrix preserves,
-  together with its lower- and Bochner-integral forms.
+  together with its lower-integral form. The Bochner-integral form
+  (`Matrix.GeneralLinearGroup.integral_posDef_symmetricCongruence`) is the case of
+  `ContinuousLinearEquiv.integral_image_affine` for congruence on the cone.
 
 ## References
 
@@ -546,7 +549,9 @@ theorem lintegral_posDef_symmetricCongruence
   rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
   rw [← h, map_symmetricCongruence_restrict_posDef, lintegral_smul_measure, smul_eq_mul]
 
-/-- The congruence change of variables for Bochner integrals over the positive-definite cone. -/
+/-- The congruence change of variables for Bochner integrals over the positive-definite cone: the
+case of `ContinuousLinearEquiv.integral_image_affine` for congruence by `C`, which maps the cone
+onto itself. -/
 theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E) :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
@@ -555,15 +560,15 @@ theorem integral_posDef_symmetricCongruence {E : Type*} [NormedAddCommGroup E]
       (|Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1))⁻¹ •
         ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
           (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p := by
-  have hJ : (0 : ℝ) < |Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1) :=
-    pow_pos (abs_pos.2 (Matrix.GeneralLinearGroup.det_ne_zero C)) _
-  have h := integral_map_equiv (μ := (symmetricLebesgue p).restrict
+  have hJ : |Matrix.det (C : Matrix (Fin p) (Fin p) ℝ)| ^ (p + 1) ≠ 0 :=
+    pow_ne_zero _ (abs_ne_zero.2 (Matrix.GeneralLinearGroup.det_ne_zero C))
+  have h := (symmetricCongruence C).integral_image_affine 0 f
     {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).PosDef})
-    (symmetricCongruence C).toHomeomorph.toMeasurableEquiv f
-  rw [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
-  rw [← h, map_symmetricCongruence_restrict_posDef, integral_smul_measure,
-    ENNReal.toReal_inv, ← ENNReal.ofReal_pow (abs_nonneg _), ENNReal.toReal_ofReal hJ.le]
+      (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (symmetricLebesgue p)
+  conv_lhs at h => rw [← preimage_symmetricCongruence_posDef C]
+  simp only [zero_add, Set.image_preimage_eq _ (symmetricCongruence C).surjective] at h
+  rw [det_symmetricCongruence, abs_pow, integral_smul] at h
+  rw [h, smul_smul, inv_mul_cancel₀ hJ, one_smul]
 
 end Cone
 

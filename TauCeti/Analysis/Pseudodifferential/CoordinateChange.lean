@@ -95,6 +95,24 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Com
 
 /-! ### The change of variables in absolutely convergent integrals -/
 
+/-- Substituting `ζ = N ζ'` for an invertible continuous linear map `N` multiplies an integral
+against an additive Haar measure by `|det N|`: the forward form of
+`ContinuousLinearEquiv.integral_image_affine` over the whole space. -/
+private theorem integral_eq_abs_det_smul_integral_comp_of_isUnit {E G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] [NormedAddCommGroup G] [NormedSpace ℝ G] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {N : E →L[ℝ] E} (hN : IsUnit N) (g : E → G) :
+    ∫ ζ, g ζ ∂μ = |N.det| • ∫ ζ, g (N ζ) ∂μ := by
+  obtain ⟨T, rfl⟩ := hN
+  set e := ContinuousLinearEquiv.unitsEquiv ℝ E T
+  have he : (e : E →ₗ[ℝ] E) = ((T : E →L[ℝ] E) : E →ₗ[ℝ] E) := by
+    ext
+    simp [e]
+  have h := e.integral_image_affine 0 g univ μ
+  simp only [zero_add, image_univ_of_surjective e.surjective, Measure.restrict_univ,
+    integral_smul, he] at h
+  simpa only [e, ContinuousLinearEquiv.unitsEquiv_apply] using h
+
 section ChangeOfVariables
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -179,21 +197,8 @@ private theorem integral_fourierChar_smul_apply_fourier_comp_eq {κ : E ≃ₜ E
     by_cases hy : ψ y = 0
     · simp [f, k, s, huv, hy]
     have hy' : y ∈ tsupport ψ := subset_tsupport _ hy
-    -- Substitute `ζ = N(y) ζ'` along the equivalence `T'` of the unit `T` with value `N y`.
-    obtain ⟨T, hT⟩ := hNu y hy'
-    set T' := ContinuousLinearEquiv.unitsEquiv ℝ E T
-    have hT' : (T' : E →L[ℝ] E) = N y := by
-      ext ζ
-      simp [T', ← hT]
-    have hcov := Measure.integral_comp_continuousLinearEquiv volume (fun ζ ↦ f (T' ζ) (κ y))
-      T'.symm
-    have hdet : LinearMap.det (T'.symm : E →ₗ[ℝ] E) = (N y).det⁻¹ := by
-      rw [← hT', ← ContinuousLinearEquiv.det_coe_symm, ContinuousLinearMap.det,
-        ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-    simp only [ContinuousLinearEquiv.apply_symm_apply] at hcov
-    rw [hdet, abs_inv, inv_inv] at hcov
-    simp only [← ContinuousLinearEquiv.coe_coe, hT'] at hcov
-    rw [hcov, smul_smul, ← integral_smul]
+    rw [integral_eq_abs_det_smul_integral_comp_of_isUnit volume (hNu y hy')
+      (fun ζ ↦ f ζ (κ y)), smul_smul, ← integral_smul]
     refine integral_congr_ae (ae_of_all _ fun ζ ↦ ?_)
     have hΦ := ContDiff.sub_eq_hadamardFactor_apply κ hκ y x
     simp only [f, k, s, huv, hΦ, hNΦ y hy', ContinuousLinearMap.map_smul_of_tower,

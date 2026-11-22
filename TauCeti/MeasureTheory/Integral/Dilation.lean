@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Dilation scaling of the lower Lebesgue integral
@@ -22,7 +23,9 @@ the left-hand side is `g 0 * μ univ`, which is `∞` in positive dimension unle
 Dilating each coordinate of `ℝ^ι` by its own nonzero factor `cᵢ` rescales an additive Haar
 measure by `|∏ᵢ cᵢ|⁻¹` (`MeasureTheory.Measure.map_mul_pi_addHaar_eq_smul`), by Mathlib's
 `MeasureTheory.Measure.map_linearMap_addHaar_eq_smul_addHaar` for the diagonal matrix of the
-factors, and so rescales the Bochner integral by the same factor (`TauCeti.integral_comp_mul_pi`).
+factors. The Bochner integral is rescaled by the same factor (`TauCeti.integral_comp_mul_pi`), by
+the linear change of variables `MeasureTheory.Measure.integral_comp_continuousLinearEquiv` for the
+diagonal automorphism.
 
 ## Main declarations
 
@@ -128,14 +131,19 @@ theorem integral_comp_mul_pi {ι G : Type*} [Fintype ι] [NormedAddCommGroup G] 
     {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure] {c : ι → ℝ} (hc : ∀ i, c i ≠ 0)
     (F : (ι → ℝ) → G) :
     ∫ x, F (fun i ↦ c i * x i) ∂μ = |∏ i, c i|⁻¹ • ∫ y, F y ∂μ := by
-  let e : (ι → ℝ) ≃ᵐ (ι → ℝ) :=
-    (Homeomorph.piCongrRight fun i ↦ Homeomorph.mulLeft₀ (c i) (hc i)).toMeasurableEquiv
+  classical
+  have hdet : LinearMap.det (Matrix.toLin' (Matrix.diagonal c)) = ∏ i, c i := by
+    rw [LinearMap.det_toLin', Matrix.det_diagonal]
+  -- The coordinatewise dilation is the automorphism given by the diagonal matrix of the `cᵢ`.
+  let e : (ι → ℝ) ≃L[ℝ] (ι → ℝ) := (LinearMap.equivOfDetNeZero _
+    (hdet ▸ Finset.prod_ne_zero_iff.2 fun i _ ↦ hc i)).toContinuousLinearEquiv
+  have hlin : (e : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) = Matrix.toLin' (Matrix.diagonal c) := by
+    rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, LinearEquiv.coe_ofIsUnitDet]
   have he : ⇑e = fun x i ↦ c i * x i := by
     funext x i
-    simp [e]
-  have h := integral_map_equiv (μ := μ) e F
-  rw [he, Measure.map_mul_pi_addHaar_eq_smul μ hc,
-    integral_smul_measure, ENNReal.toReal_ofReal (by positivity)] at h
-  exact h.symm
+    simp only [e, LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.ofIsUnitDet_apply,
+      Matrix.toLin'_apply, Matrix.mulVec_diagonal]
+  have h := Measure.integral_comp_continuousLinearEquiv μ F e
+  rwa [he, hlin, hdet] at h
 
 end TauCeti
