@@ -88,7 +88,8 @@ inequality and the first inequality at the exponent `q` give
 ## Homogeneous blocks
 
 The last section bounds a single block of the homogeneous partition
-(`ContDiffBump.littlewoodPaley`, `j ∈ ℤ`), the `L²` multiplier `Pⱼ` with symbol `ψⱼ`, on every
+(`ContDiffBump.littlewoodPaley`, `j ∈ ℤ`), the `L²` multiplier `Pⱼ` with symbol `ψⱼ`, whose
+symbol is the dilate `ψ₀ (2^{-j} ·)` (`ContDiffBump.ae_eq_littlewoodPaley_zero_comp_smul`), on every
 `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in the scale: `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p` for `f ∈ L²`
 (`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and `‖Pⱼ‖ ≤ 1` on `L²`
 (`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`). On a nontrivial space the blocks
@@ -807,6 +808,15 @@ private theorem eq_toLp_littlewoodPaleySchwartz {j : ℤ} {m : Lp ℂ ∞ (volum
   Lp.ext <| hm.trans <| by
     filter_upwards [(littlewoodPaleySchwartz φ j).coeFn_toLp ∞ volume] with ξ h
     rw [h, coe_littlewoodPaleySchwartz]
+
+variable {φ} in
+/-- Every symbol in `L^∞` almost everywhere equal to `ψⱼ` is almost everywhere equal to the dilate
+`ψ₀ (2^{-j} ·)`. -/
+theorem ae_eq_littlewoodPaley_zero_comp_smul {j : ℤ} {m : Lp ℂ ∞ (volume : Measure V)}
+    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley 0 (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) := by
+  filter_upwards [hm] with ξ hξ
+  rw [hξ, φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j]
 
 /-- The kernel `𝓕⁻ ψⱼ` of a homogeneous Littlewood–Paley block is a Schwartz function, so it lies
 in every `Lᵖ`. -/

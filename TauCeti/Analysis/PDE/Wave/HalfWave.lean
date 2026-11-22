@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fourier.LaplacianSymbol
 public import TauCeti.Analysis.Fourier.PhaseGroup
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The half-wave propagators on `L²`
@@ -100,9 +101,7 @@ theorem norm_halfWavePropagator_comp_fourierMultiplierCLM_le {m : Lp ℂ ∞ (vo
     _ ≤ 1 * B := by
         gcongr
         · exact norm_halfWavePropagator_le _
-        · refine (Lp.norm_fourierMultiplierCLM_le m).trans ?_
-          rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable m)]
-          exact ENNReal.toReal_le_of_le_ofReal hB (eLpNormEssSup_le_of_ae_bound hm)
+        · exact (Lp.norm_fourierMultiplierCLM_le m).trans (Lp.norm_top_le_of_ae_bound hB hm)
     _ = B := one_mul B
 
 /-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
