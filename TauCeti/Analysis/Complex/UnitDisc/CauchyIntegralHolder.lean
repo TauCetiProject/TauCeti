@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Topology.Circle.Metric
 
 /-!
 # The Cauchy integral of Hölder boundary data on the unit circle
@@ -79,13 +80,24 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
+/-- A point of the open unit disc is off the unit circle, in the form that
+`hasDerivAt_circleIntegral_sub_inv_smul` asks for. -/
+private theorem notMem_sphere_abs_one_of_mem_ball {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
+    z ∉ sphere (0 : ℂ) |1| := by
+  rw [abs_one, mem_sphere_zero_iff_norm]
+  exact (mem_ball_zero_iff.1 hz).ne
+
+/-- The kernel bound `s ↦ (|s| + ε)^p` is continuous for `ε > 0`. -/
+private theorem continuous_abs_add_rpow {ε : ℝ} (hε : 0 < ε) (p : ℝ) :
+    Continuous fun s : ℝ ↦ (|s| + ε) ^ p :=
+  (continuous_abs.add continuous_const).rpow_const fun s ↦
+    Or.inl (add_pos_of_nonneg_of_pos (abs_nonneg s) hε).ne'
+
 /-- The integral of `(|s| + ε)^(α - 2)` over `[-π, π]`, for `ε > 0` and `α < 1`, is at most
 `2 ε^(α - 1) / (1 - α)`. -/
 private theorem integral_abs_add_rpow_le {ε α : ℝ} (hε : 0 < ε) (hα : α < 1) :
     ∫ s in -π..π, (|s| + ε) ^ (α - 2) ≤ 2 * (ε ^ (α - 1) / (1 - α)) := by
-  have hcont : Continuous fun s : ℝ ↦ (|s| + ε) ^ (α - 2) :=
-    (continuous_abs.add continuous_const).rpow_const fun s ↦
-      Or.inl (add_pos_of_nonneg_of_pos (abs_nonneg s) hε).ne'
+  have hcont := continuous_abs_add_rpow hε (α - 2)
   -- The integral over `[0, π]`, by the power rule after translating by `ε`.
   have hright : ∫ s in (0 : ℝ)..π, (|s| + ε) ^ (α - 2) ≤ ε ^ (α - 1) / (1 - α) := by
     rw [intervalIntegral.integral_congr (g := fun s ↦ (s + ε) ^ (α - 2)) fun s hs ↦ by
@@ -157,19 +169,11 @@ private theorem norm_circleMap_sub_le {z : ℂ} (hz : ‖z‖ < 1) {s : ℝ} (hs
   · simpa [hw] using norm_sub_norm_le (circleMap 0 1 (arg z + s)) z
   · simpa [hw₀] using norm_sub_le_norm_sub_add_norm_sub (circleMap 0 1 (arg z + s)) z
       (circleMap 0 1 (arg z))
-  · -- The chord `|e^{is} - 1| = 2 |sin (s / 2)|` is at least `|s| / 2` for `|s| ≤ π`.
-    have hchord : ‖circleMap 0 1 (arg z + s) - circleMap 0 1 (arg z)‖ = ‖2 * Real.sin (s / 2)‖ := by
-      rw [← norm_exp_I_mul_ofReal_sub_one s, circleMap_zero, circleMap_zero, ofReal_one, one_mul,
-        one_mul, ofReal_add, add_mul, Complex.exp_add, ← mul_sub_one, norm_mul,
-        norm_exp_ofReal_mul_I, one_mul, mul_comm I]
-    have hsin : 2 / π * (|s| / 2) ≤ |Real.sin (s / 2)| := by
-      rcases abs_cases s with ⟨h, h0⟩ | ⟨h, h0⟩
-      · rw [h, abs_of_nonneg (Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith))]
-        exact Real.mul_le_sin (by linarith) (by linarith)
-      · rw [h, abs_of_nonpos (Real.sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)),
-          ← Real.sin_neg, show -s / 2 = -(s / 2) by ring]
-        exact Real.mul_le_sin (by linarith) (by linarith)
-    rw [hchord, norm_mul, Real.norm_two, Real.norm_eq_abs]
+  · -- The chord `|e^{is} - 1| = 2 sin (|s| / 2)` is at least `|s| / 2` for `|s| ≤ π`.
+    rw [← dist_eq_norm, dist_circleMap_eq_two_mul_sin_abs 0 1
+      (by rw [add_sub_cancel_left]; linarith [Real.pi_pos]), add_sub_cancel_left, abs_one, mul_one]
+    have hsin : 2 / π * (|s| / 2) ≤ Real.sin (|s| / 2) :=
+      Real.mul_le_sin (by positivity) (by linarith)
     have : |s| / 2 / 2 ≤ 2 / π * (|s| / 2) := by
       rw [div_mul_eq_mul_div, le_div_iff₀ Real.pi_pos]
       nlinarith [Real.pi_le_four, abs_nonneg s]
@@ -214,9 +218,7 @@ theorem norm_deriv_circleIntegral_sub_inv_smul_le [CompleteSpace E] {φ : ℂ �
   have hε : 0 < 1 - ‖z‖ := by linarith
   have hα1' : (α : ℝ) < 1 := by exact_mod_cast hα1
   have hint : CircleIntegrable φ 0 1 := (hφ.continuousOn hα0).circleIntegrable zero_le_one
-  have hz' : z ∉ sphere (0 : ℂ) |1| := by
-    rw [abs_one, mem_sphere_zero_iff_norm]
-    exact hzn.ne
+  have hz' := notMem_sphere_abs_one_of_mem_ball hz
   set w₀ := circleMap 0 1 (arg z)
   set g : ℂ → E := fun w ↦ (w - z) ^ (-2 : ℤ) • (φ w - φ w₀)
   -- The kernel `(w - z)⁻²` integrates to zero, so `φ(w)` may be replaced by `φ(w) - φ(w₀)`.
@@ -237,9 +239,7 @@ theorem norm_deriv_circleIntegral_sub_inv_smul_le [CompleteSpace E] {φ : ℂ �
     congr 1
     ring
   rw [hderiv, hshift]
-  have hcont : Continuous fun s : ℝ ↦ (|s| + (1 - ‖z‖)) ^ ((α : ℝ) - 2) :=
-    (continuous_abs.add continuous_const).rpow_const fun s ↦
-      Or.inl (add_pos_of_nonneg_of_pos (abs_nonneg s) hε).ne'
+  have hcont := continuous_abs_add_rpow hε ((α : ℝ) - 2)
   refine (norm_integral_le_of_norm_le (g := fun s ↦ 72 * K * (|s| + (1 - ‖z‖)) ^ ((α : ℝ) - 2))
     (by linarith [Real.pi_pos]) (Filter.Eventually.of_forall fun s hs ↦ ?_)
     ((hcont.const_smul (72 * (K : ℝ))).intervalIntegrable _ _)).trans ?_
@@ -265,10 +265,8 @@ theorem holderOnWith_ball_circleIntegral_sub_inv_smul [CompleteSpace E] {φ : �
   have hderiv (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) :
       HasDerivAt (fun z ↦ (2 * π * I)⁻¹ • ∮ w in C(0, 1), (w - z)⁻¹ • φ w)
         ((2 * π * I)⁻¹ • deriv (fun z ↦ ∮ w in C(0, 1), (w - z)⁻¹ • φ w) z) z := by
-    have hz' : z ∉ sphere (0 : ℂ) |1| := by
-      rw [abs_one, mem_sphere_zero_iff_norm]
-      exact (mem_ball_zero_iff.1 hz).ne
-    exact (hasDerivAt_circleIntegral_sub_inv_smul hint hz').differentiableAt.hasDerivAt.const_smul _
+    exact (hasDerivAt_circleIntegral_sub_inv_smul hint
+      (notMem_sphere_abs_one_of_mem_ball hz)).differentiableAt.hasDerivAt.const_smul _
   refine holderOnWith_ball_of_norm_fderiv_le_mul_rpow hα0 hα1.le
     (fun z hz ↦ ((hderiv z hz).differentiableAt.restrictScalars ℝ).differentiableWithinAt)
     fun z hz ↦ ?_
@@ -276,9 +274,7 @@ theorem holderOnWith_ball_circleIntegral_sub_inv_smul [CompleteSpace E] {φ : �
     ContinuousLinearMap.norm_restrictScalars, ContinuousLinearMap.norm_toSpanSingleton, norm_smul,
     dist_zero_right]
   have hbound := norm_deriv_circleIntegral_sub_inv_smul_le hα0 hα1 hφ hz
-  have hnorm : ‖(2 * π * I)⁻¹‖ = (2 * π)⁻¹ := by
-    rw [norm_inv, norm_mul, norm_I, mul_one, norm_mul, Complex.norm_two, norm_real,
-      Real.norm_of_nonneg Real.pi_pos.le]
+  have hnorm : ‖(2 * π * I)⁻¹‖ = (2 * π)⁻¹ := by simp [abs_of_pos Real.pi_pos]
   have hpow : 0 ≤ (1 - ‖z‖) ^ ((α : ℝ) - 1) := Real.rpow_nonneg (by
     linarith [mem_ball_zero_iff.1 hz]) _
   have hconst : (2 * π)⁻¹ * (144 / (1 - α)) ≤ 36 / (1 - α) := by
